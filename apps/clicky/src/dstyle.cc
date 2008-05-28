@@ -977,7 +977,8 @@ void dcss::add(PermString name, const String &value)
     }
 }
 
-bool dcss::hard_match_context(crouter *cr, const delt *e, int *sensitivity) const
+bool dcss::hard_match_context(crouter *cr, const delt *e, int *sensitivity,
+			      bool strict) const
 {
     if (!e)
 	return _context.begin() == _context.end();
@@ -986,6 +987,13 @@ bool dcss::hard_match_context(crouter *cr, const delt *e, int *sensitivity) cons
     const dcss_selector *sel_precise = _context.end();
     const dcss_selector *sel_approx = _context.end();
 
+    if (strict && _context.begin() != _context.end()) {
+	if (!_context.back().match(cr, e, sensitivity))
+	    return false;
+	--sel_precise;
+	--sel_approx;
+    }
+    
     while (!e->root() && sel_approx != _context.begin()) {
 	if (sel_precise != sel_approx && sel_precise != _context.begin()
 	    && sel_precise[-1].match(cr, e, 0))
@@ -1500,12 +1508,12 @@ void dcss_set::collect_port_styles(crouter *cr, const delt *e, bool isoutput,
     for (dcss *s = ccss_list("port"); s; s = s->_next)
 	if ((s->pflags() & pflag_port)
 	    && s->selector().match_port(isoutput, port, processing)
-	    && s->match_context(cr, e))
+	    && s->strict_match_context(cr, e))
 	    result.push_back(s);
     for (dcss *s = _s[0]; s; s = s->_next)
 	if ((s->pflags() & pflag_port)
 	    && s->selector().match_port(isoutput, port, processing)
-	    && s->match_context(cr, e))
+	    && s->strict_match_context(cr, e))
 	    result.push_back(s);
     collect_elt_styles(cr, e, pflag_port | pflag_no_below, result, 0);
     if (_below)
@@ -1661,6 +1669,8 @@ ref_ptr<delt_style> dcss_set::elt_style(crouter *cr, const delt *e, int *sensiti
 		sty->display = dedisp_fsplit;
 	} else if (s.equals("passthrough", 11))
 	    sty->display = dedisp_passthrough;
+	else if (s.equals("expanded", 8))
+	    sty->display = dedisp_expanded;
 	sty->font = elt_pm[11].vstring("font");
 	sty->decorations = elt_pm[12].vstring("decorations");
 	sty->queue_stripe_style = elt_pm[13].vborder_style("queue-stripe-style");

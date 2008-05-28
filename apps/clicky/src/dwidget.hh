@@ -22,6 +22,21 @@ class dqueue_style;
 class ddecor;
 class crouter;
 
+enum {
+    dedisp_none = 0,
+    dedisp_open = 1,
+    dedisp_closed = 2,
+    dedisp_vsplit = 3,
+    dedisp_fsplit = 4,
+    dedisp_passthrough = -1,
+    dedisp_expanded = -2,
+    dedisp_placeholder = -99
+};
+
+enum {
+    desplit_inputs = 1
+};
+    
 struct dcontext {
     
     crouter *cr;
@@ -95,10 +110,7 @@ class dwidget : public rectangle { public:
 
 class dconn : public dwidget { public:
 
-    dconn(delt *fe, int fp, delt *te, int tp, int z_index)
-	: dwidget(dw_conn, z_index), _from_elt(fe), _from_port(fp),
-	  _to_elt(te), _to_port(tp) {
-    }
+    inline dconn(delt *fe, int fp, delt *te, int tp, int z_index);
 
     delt *from_elt() const {
 	return _from_elt;
@@ -149,9 +161,10 @@ class delt : public dwidget { public:
     class layoutelt;
 
     delt(delt *parent = 0, int z_index = 0)
-	: dwidget(dw_elt, z_index), _e(0), _decor(0), _generation(0),
+	: dwidget(dw_elt, z_index), _e(0), _resolved_router(0),
+	  _decor(0), _generation(0),
 	  _port_text_offsets(0), _parent(parent), _split(0),
-	  _visible(false), _displayed(0),
+	  _visible(false), _display(dedisp_placeholder),
 	  _aligned(true), _split_type(0),
 	  _des_sensitivity(0), _dess_sensitivity(0), _dps_sensitivity(0),
 	  _markup_sensitivity(0),
@@ -170,8 +183,8 @@ class delt : public dwidget { public:
     
     int orientation() const;
     bool vertical() const;
-    int8_t displayed() const {
-	return _displayed;
+    int display() const {
+	return _display;
     }
     bool visible() const {
 	return _visible;
@@ -206,6 +219,7 @@ class delt : public dwidget { public:
 	} while (d && d != this);
 	return 0;
     }
+    delt *find_flow_split(int port, bool isoutput);
 
     bool root() const {
 	return !_parent;
@@ -213,6 +227,7 @@ class delt : public dwidget { public:
     bool fake() const {
 	return !_e;
     }
+    String display_name() const;
     const String &name() const {
 	return (_e ? _e->name() : String::empty_string());
     }
@@ -302,15 +317,14 @@ class delt : public dwidget { public:
     void create_elements(crouter *cr, RouterT *router, ProcessingT *processing,
 			 HashTable<String, delt *> &collector,
 			 Vector<ElementT *> &path, int &z_index);
+    void create_connections(crouter *cr, int &z_index);
     
   private:
 
-    enum {
-	desplit_inputs = 1
-    };
-    
     ElementT *_e;
     String _processing_code;
+    String _flow_code;
+    RouterT *_resolved_router;
     std::vector<delt *> _elt;
     std::vector<dconn *> _conn;
     ref_ptr<delt_style> _des;
@@ -328,7 +342,7 @@ class delt : public dwidget { public:
     String _markup;
 
     bool _visible;
-    int8_t _displayed;
+    int8_t _display;
     bool _aligned : 1;
     int8_t _split_type;
     unsigned _des_sensitivity : 2;
@@ -346,6 +360,17 @@ class delt : public dwidget { public:
     
     double _contents_width;
     double _contents_height;
+
+    struct delt_conn {
+	delt *from;
+	int from_port;
+	delt *to;
+	int to_port;
+	delt_conn(delt *f, int fp, delt *t, int tp)
+	    : from(f), from_port(fp), to(t), to_port(tp) {
+	    assert(f && t);
+	}
+    };
     
     delt(const delt &);
     delt &operator=(const delt &);
@@ -354,14 +379,18 @@ class delt : public dwidget { public:
 			crouter *cr, ProcessingT *processing,
 			HashTable<String, delt *> &collector,
 			Vector<ElementT *> &path, int &z_index);
-    delt *create_split(int split_type);
+    delt *create_split(int split_type, int *z_index_ptr);
+    void create_connections(std::vector<delt_conn> &cc, crouter *cr, int &z_index) const;
 
     void layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, const Bitvector &connlive, int scc);
     void position_contents_scc(RouterT *);
+    void unparse_contents_dot(StringAccum &sa, crouter *cr, HashTable<int, delt *> &z_index_lookup) const;
     void position_contents_dot(crouter *cr, ErrorHandler *errh);
-    const char *parse_connection_dot(int eindex, int esplit, const char *s, const char *end);
+    const char *parse_connection_dot(delt *e1, const HashTable<int, delt *> &z_index_lookup, const char *s, const char *end);
+    void create_bbox_contents(double bbox[4], double mbbox[4], bool include_compound_ports) const;
+    void shift_contents(double dx, double dy) const;
 
-    bool reccss(crouter *cr, int change);
+    bool reccss(crouter *cr, int change, int *z_index_ptr = 0);
     void layout_contents(dcontext &dcx);
     void layout_ports(dcontext &dcx);
     void layout(dcontext &dcx);
@@ -417,7 +446,8 @@ inline void dwidget::draw(dcontext &dcx) {
 
 
 inline bool dconn::visible() const {
-    return _from_elt->displayed() > 0 && _to_elt->displayed() > 0;
+    // see also dedisp_visible
+    return _from_elt->display() > 0 && _to_elt->display() > 0;
 }
 
 inline double delt::port_position(bool isoutput, int port,
@@ -430,6 +460,22 @@ inline double delt::port_position(bool isoutput, int port,
 	return side_length / 2;
     else
 	return hard_port_position(isoutput, port, side_length);
+}
+
+inline dconn::dconn(delt *fe, int fp, delt *te, int tp, int z_index)
+    : dwidget(dw_conn, z_index), _from_port(fp), _to_port(tp)
+{
+    assert(fe->display() != dedisp_placeholder
+	   && te->display() != dedisp_placeholder);
+    if (fe->display() == dedisp_fsplit)
+	fe = fe->find_flow_split(fp, true);
+    if (te->display() == dedisp_fsplit)
+	te = te->find_flow_split(tp, false);
+    else if (te->display() == dedisp_vsplit)
+	te = te->find_split(desplit_inputs);
+    assert(fe && te);
+    _from_elt = fe;
+    _to_elt = te;
 }
 
 }

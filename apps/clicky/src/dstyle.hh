@@ -38,14 +38,14 @@ enum {
     destyle_queue = 1
 };
 
-enum {
-    dedisp_none = 0,
-    dedisp_open = 1,
-    dedisp_closed = 2,
-    dedisp_vsplit = 3,
-    dedisp_fsplit = 4,
-    dedisp_passthrough = 5
-};
+static inline bool dedisp_visible(int dedisp) {
+    // see also dconn::visible
+    return dedisp > 0;
+}
+
+static inline bool dedisp_children_visible(int dedisp) {
+    return dedisp == dedisp_open || dedisp == dedisp_expanded;
+}
 
 enum {
     dpdisp_none = 0,
@@ -383,7 +383,10 @@ class dcss { public:
 	return _context.size() > 0;
     }
     bool match_context(crouter *cr, const delt *e, int *sensitivity = 0) const {
-	return !_context.size() || hard_match_context(cr, e, sensitivity);
+	return !_context.size() || hard_match_context(cr, e, sensitivity, false);
+    }
+    bool strict_match_context(crouter *cr, const delt *e, int *sensitivity = 0) const {
+	return !_context.size() || hard_match_context(cr, e, sensitivity, true);
     }
     unsigned pflags() const {
 	return _pflags;
@@ -415,7 +418,7 @@ class dcss { public:
     const dcss_property *find(PermString name) const;
     inline dcss_property *find(PermString name);
     void add(PermString name, const String &value);
-    bool hard_match_context(crouter *cr, const delt *e, int *sensitivity) const;
+    bool hard_match_context(crouter *cr, const delt *e, int *sensitivity, bool strict) const;
     void parse_border(const String &str, const char *s, const char *send, const String &prefix);
     void parse_shadow(const String &str, const char *s, const char *send);
     void parse_background(const String &str, const char *s, const char *send);

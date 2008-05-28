@@ -36,6 +36,7 @@ cdiagram::cdiagram(crouter *cr, PangoLayout *pl, unsigned generation)
 	int z_index = 0;
 	_relt->create_elements(cr, cr->router(), cr->processing(),
 			       _elt_map, path, z_index);
+	_relt->create_connections(cr, z_index);
 
 	dcontext dcx(cr, pl, 0, generation, 0, 1);
 	ElementMap::push_default(cr->element_map());
@@ -78,7 +79,7 @@ delt *cdiagram::point_elt(const point &p) const
     for (eltsi = elts.begin(); eltsi != elts.end(); ++eltsi)
 	if ((*eltsi)->contains(p))
 	    if (delt *e = (*eltsi)->cast_elt())
-		if (e->displayed() > 0)
+		if (dedisp_visible(e->display()))
 		    return e;
     return 0;
 }
