@@ -1858,7 +1858,7 @@ bool cp_bandwidth(const String &str, uint32_t *result)
     cp_errno = CPE_OVERFLOW;
     *result = 0xFFFFFFFFU;
   } else {
-    if (after_unit == str.end())
+    if (after_unit == str.end() && *result)
       cp_errno = CPE_NOUNITS;
     *result *= factor;
   }
