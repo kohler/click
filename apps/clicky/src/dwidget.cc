@@ -965,8 +965,8 @@ bool delt::reccss(crouter *cr, int change, int *z_index_ptr)
 	}
     }
 
-    if (((change & dsense_always)
-	 || (_des != old_des && _des->decorations != old_des->decorations))
+    if ((!old_des || _des->decorations != old_des->decorations
+	 || (!_decor && _des->decorations))
 	&& _visible) {
 	ddecor::free_list(_decor);
 	String s = _des->decorations;

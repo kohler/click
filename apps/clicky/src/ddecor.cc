@@ -72,9 +72,9 @@ void dfullness_decor::notify(crouter *cr, delt *e, handler_value *hv)
 	return;
 
     if (!lv)
-	lv = cr->hvalues().find(e->flat_name() + ".length");
+	lv = cr->hvalues().find(e->flat_name() + "." + _dfs->length);
     if (!cv && _dfs->capacity && _capacity < 0)
-	cv = cr->hvalues().find(e->flat_name() + ".capacity");
+	cv = cr->hvalues().find(e->flat_name() + "." + _dfs->capacity);
     
     if (lv && !lv->have_hvalue())
 	lv->refresh(cr);
