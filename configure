@@ -5357,7 +5357,8 @@ done
 
 
 
-for ac_func in snprintf strtoul tcgetpgrp vsnprintf
+
+for ac_func in random snprintf strtoul tcgetpgrp vsnprintf
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 { echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -9109,7 +9110,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 9112 "configure"
+#line 9113 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER

@@ -115,7 +115,7 @@ LinkStat::send_hook()
   link_probe::update_cksum(p->data() + sizeof(click_ether));
   
   unsigned max_jitter = _period / 10;
-  long r2 = random();
+  long r2 = click_random();
   unsigned j = (unsigned) ((r2 >> 1) % (max_jitter + 1));
   _next_bcast += Timestamp::make_usec(1000 * ((r2 & 1) ? _period - j : _period + j));
   _send_timer->schedule_at(_next_bcast);

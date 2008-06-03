@@ -82,8 +82,8 @@ FastTCPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 FastTCPFlows::change_ports(int flow)
 {
-  unsigned short sport = (random() >> 2) % 0xFFFF;
-  unsigned short dport = (random() >> 2) % 0xFFFF;
+  unsigned short sport = (click_random() >> 2) % 0xFFFF;
+  unsigned short dport = (click_random() >> 2) % 0xFFFF;
   click_ip *ip = 
     reinterpret_cast<click_ip *>(_flows[flow].syn_packet->data()+14);
   click_tcp *tcp = reinterpret_cast<click_tcp *>(ip + 1);
@@ -131,7 +131,7 @@ FastTCPFlows::get_packet()
     return 0;
   }
   else {
-    int flow = (random() >> 2) % _nflows;
+    int flow = (click_random() >> 2) % _nflows;
     if (_flows[flow].flow_count == _flowsize) {
       change_ports(flow);
       _flows[flow].flow_count = 0;
@@ -161,8 +161,8 @@ FastTCPFlows::initialize(ErrorHandler *)
   _flows = new flow_t[_nflows];
 
   for (int i=0; i<_nflows; i++) {
-    unsigned short sport = (random() >> 2) % 0xFFFF;
-    unsigned short dport = (random() >> 2) % 0xFFFF;
+    unsigned short sport = (click_random() >> 2) % 0xFFFF;
+    unsigned short dport = (click_random() >> 2) % 0xFFFF;
    
     // SYN packet
     _flows[i].syn_packet = Packet::make(_len);
@@ -188,8 +188,8 @@ FastTCPFlows::initialize(ErrorHandler *)
     // set up TCP header
     tcp->th_sport = sport;
     tcp->th_dport = dport;
-    tcp->th_seq = random();
-    tcp->th_ack = random();
+    tcp->th_seq = click_random();
+    tcp->th_ack = click_random();
     tcp->th_off = sizeof(click_tcp) >> 2;
     tcp->th_flags = TH_SYN;
     tcp->th_win = 65535;
@@ -223,8 +223,8 @@ FastTCPFlows::initialize(ErrorHandler *)
     // set up TCP header
     tcp->th_sport = sport;
     tcp->th_dport = dport;
-    tcp->th_seq = random();
-    tcp->th_ack = random();
+    tcp->th_seq = click_random();
+    tcp->th_ack = click_random();
     tcp->th_off = sizeof(click_tcp) >> 2;
     tcp->th_flags = TH_PUSH | TH_ACK;
     tcp->th_win = 65535;
@@ -258,8 +258,8 @@ FastTCPFlows::initialize(ErrorHandler *)
     // set up TCP header
     tcp->th_sport = sport;
     tcp->th_dport = dport;
-    tcp->th_seq = random();
-    tcp->th_ack = random();
+    tcp->th_seq = click_random();
+    tcp->th_ack = click_random();
     tcp->th_off = sizeof(click_tcp) >> 2;
     tcp->th_flags = TH_FIN;
     tcp->th_win = 65535;

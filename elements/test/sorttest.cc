@@ -762,8 +762,8 @@ SortTest::initialize(ErrorHandler *errh)
 		return errh->error("sort %d, element %u differs (%s vs. %s)", i, x, classes[x], sorted_classes[x]);
 
 	for (size_t permute = 0; permute < nclasses * 2; permute++) {
-	    size_t a = random() % nclasses;
-	    size_t b = random() % nclasses;
+	    size_t a = click_random() % nclasses;
+	    size_t b = click_random() % nclasses;
 	    const char *xa = classes[a];
 	    classes[a] = classes[b];
 	    classes[b] = xa;

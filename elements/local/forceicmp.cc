@@ -75,9 +75,9 @@ ForceICMP::simple_action(Packet *p_in)
 
   ih = (click_icmp *) (((char *)ip) + hlen);
 
-  if ((random() >> 6) & 1){
-    ih->icmp_type = random() % 20;
-    ih->icmp_code = random() % 20;
+  if (click_random(0, 1)) {
+      ih->icmp_type = click_random(0, 19);
+      ih->icmp_code = click_random(0, 19);
   }
 
   if(_type >= 0)

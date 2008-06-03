@@ -67,7 +67,7 @@ RandomSample::initialize(ErrorHandler *)
 void
 RandomSample::push(int, Packet *p)
 {
-    if (!_active || (uint32_t)(random() & SAMPLING_MASK) < _sampling_prob)
+    if (!_active || (click_random() & SAMPLING_MASK) < _sampling_prob)
 	output(0).push(p);
     else {
 	checked_output_push(1, p);
@@ -81,7 +81,7 @@ RandomSample::pull(int)
     Packet *p = input(0).pull();
     if (!p)
 	return 0;
-    else if (!_active || (uint32_t)(random() & SAMPLING_MASK) < _sampling_prob)
+    else if (!_active || (click_random() & SAMPLING_MASK) < _sampling_prob)
 	return p;
     else {
 	checked_output_push(1, p);

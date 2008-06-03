@@ -105,7 +105,7 @@ IPFragmenter::fragment(Packet *p_in)
     // output the first fragment
     // If we're cheating the DF bit, we can't trust the ip_id; set to random.
     if (ip->ip_off & htons(IP_DF)) {
-	ip->ip_id = random();
+	ip->ip_id = click_random();
 	ip->ip_off &= ~htons(IP_DF);
     }
     bool had_mf = (ip->ip_off & htons(IP_MF)) != 0;

@@ -103,7 +103,7 @@ void
 IPRateMonitor::push(int port, Packet *p)
 {
   // Only inspect 1 in RATIO packets
-  bool ewma = ((unsigned) ((random() >> 5) & 0xffff) <= _ratio);
+  bool ewma = ((unsigned) ((click_random() >> 5) & 0xffff) <= _ratio);
   _lock->acquire();
   update_rates(p, port == 0, ewma);
   _lock->release();
@@ -115,7 +115,7 @@ IPRateMonitor::pull(int port)
 {
   Packet *p = input(port).pull();
   if (p) {
-    bool ewma = ((unsigned) ((random() >> 5) & 0xffff) <= _ratio);
+    bool ewma = ((unsigned) ((click_random() >> 5) & 0xffff) <= _ratio);
     _lock->acquire();
     update_rates(p, port == 0, ewma);
     _lock->release();
@@ -172,7 +172,7 @@ IPRateMonitor::forced_fold()
 void
 IPRateMonitor::fold(int thresh)
 {
-  char forward = ((char) random()) & 0x01;
+  char forward = (char) click_random(0, 1);
   _prev_deleted = _next_deleted = 0;
   Stats *s = (forward ? _first : _last);
 

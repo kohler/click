@@ -182,7 +182,7 @@ LinkTable::update_link(IPAddress from, IPAddress to,
 LinkTable::Link 
 LinkTable::random_link()
 {
-  int ndx = random() % _links.size();
+  int ndx = click_random(0, _links.size() - 1);
   int current_ndx = 0;
   for (LTIter iter = _links.begin(); iter.live(); iter++, current_ndx++) {
     if (current_ndx == ndx) {

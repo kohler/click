@@ -47,7 +47,7 @@ public:
 
   static int myrandom(int x) {
     // return a number in [0,x)
-    return (int) (x * ( (float)(random() & 0xfffe) / (float)(0xffff)));
+    return (int) (x * ( (float)(click_random() & 0xfffe) / (float)(0xffff)));
   }
 
   static long double gettime() {

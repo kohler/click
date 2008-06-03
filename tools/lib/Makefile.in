@@ -52,7 +52,7 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 	@-sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
 
 
-OBJS = string.o straccum.o \
+OBJS = string.o straccum.o glue.o \
 	bitvector.o vectorv.o vectori.o \
 	ipaddress.o etheraddress.o \
 	timestamp.o error.o \

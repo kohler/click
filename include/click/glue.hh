@@ -106,22 +106,59 @@ void click_lfree(volatile void *p, size_t size);
 // RANDOMNESS
 
 CLICK_DECLS
-extern void click_random_srandom(); // srand(), but use true randomness
-CLICK_ENDDECLS
 
-#if CLICK_LINUXMODULE
-extern "C" {
+/** @brief Return a number between 0 and CLICK_RAND_MAX, inclusive.
+ *
+ * CLICK_RAND_MAX is guaranteed to be at least 2^31 - 1. */
+uint32_t click_random();
+
+/** @brief Return a number between @a low and @a high, inclusive.
+ *
+ * Returns @a low if @a low >= @a high. */
+uint32_t click_random(uint32_t low, uint32_t high);
+
+/** @brief Set the click_random() seed to @a seed. */
+void click_srandom(uint32_t seed);
+
+/** @brief Set the click_random() seed using a source of true randomness,
+ * if available. */
+void click_random_srandom();
+
+#if CLICK_BSDMODULE
+# define CLICK_RAND_MAX 0x7FFFFFFFU
+#elif !CLICK_LINUXMODULE && RAND_MAX >= 0x7FFFFFFFU
+# define CLICK_RAND_MAX RAND_MAX
+#else
+# define CLICK_RAND_MAX 0x7FFFFFFFU
 extern uint32_t click_random_seed;
-extern void srandom(uint32_t);
-#define	RAND_MAX	2147483647
-inline uint32_t
-random()
-{
-    click_random_seed = click_random_seed*69069L + 1;
-    return (click_random_seed ^ jiffies) & RAND_MAX;
-}
-}
 #endif
+
+inline uint32_t click_random() {
+#if CLICK_BSDMODULE
+    return random();
+#elif CLICK_LINUXMODULE
+    click_random_seed = click_random_seed * 69069L + 5;
+    return (click_random_seed ^ jiffies) & RAND_MAX; // XXX jiffies??
+#elif HAVE_RANDOM && CLICK_RAND_MAX == RAND_MAX
+    return random();
+#else
+    return rand();
+#endif
+}
+
+inline void click_srandom(uint32_t seed) {
+#if CLICK_BSDMODULE
+    srandom(seed);
+#elif !CLICK_LINUXMODULE && HAVE_RANDOM && CLICK_RAND_MAX == RAND_MAX
+    srandom(seed);
+#elif !CLICK_LINUXMODULE && CLICK_RAND_MAX == RAND_MAX
+    srand(seed);
+#else
+    click_random_seed = seed;
+#endif
+}
+
+CLICK_ENDDECLS
 
 
 // SORTING

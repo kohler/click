@@ -162,7 +162,7 @@ GridLocationInfo::uniform()
 {
   double x;
         
-  x = (double)random() / 0x7fffffff;
+  x = (double)click_random() / 0x7fffffff;
   return(x);
 }
 

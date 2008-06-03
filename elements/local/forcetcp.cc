@@ -74,7 +74,7 @@ ForceTCP::simple_action(Packet *p_in)
     int noff;
 #if 1
     if(ilen - hlen - sizeof(click_tcp) > 0){
-      noff = random() % (ilen - hlen - sizeof(click_tcp));
+      noff = click_random(0, ilen - hlen - sizeof(click_tcp) - 1);
     } else {
       noff = ilen - hlen;
     }
@@ -96,10 +96,10 @@ ForceTCP::simple_action(Packet *p_in)
     if((_count & 7) < 2){
       th->th_dport = htons(80);
     } else if((_count & 7) == 3){
-      th->th_dport = htons(random() % 1024);
+      th->th_dport = htons(click_random() % 1024);
     }
 #else
-    th->th_dport = htons(random() % 1024);
+    th->th_dport = htons(click_random() % 1024);
 #endif
   }
   _count++;

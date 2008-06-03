@@ -156,7 +156,7 @@ TCPConn::connect_handler(IPFlowID f)
     _listen = false;
     _established = false;
     _flow = f;
-    _seq_nxt = random();
+    _seq_nxt = click_random();
     send_syn();
     return true;
   }

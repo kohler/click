@@ -398,7 +398,7 @@ LinkTester::init_random()
     return false;
   
   close(fd);
-  srandom(seed);
+  click_srandom(seed);
   return true;
 }
 
@@ -407,7 +407,7 @@ LinkTester::draw_random(double lambda)
 {
   // draw an exponentially distributed variable with parameter lambda
 #if 0
-  double r = (double) random() / (double) RAND_MAX;
+  double r = (double) click_random() / (double) RAND_MAX;
   return -lambda * log(r);
 #else
   lambda = 0;

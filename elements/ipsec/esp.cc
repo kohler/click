@@ -80,9 +80,9 @@ IPsecESPEncap::simple_action(Packet *p)
  	//if the replay counter rolls over...set it to the agreed start value
         sa_data->cur_rpl = sa_data->replay_start_counter;
   }
-  i = random() >> 2;
+  i = click_random() >> 2;
   memmove(&esp->esp_iv[0], &i, 4);
-  i = random() >> 2;
+  i = click_random() >> 2;
   memmove(&esp->esp_iv[4], &i, 4);
   memmove(q->data(), esp, sizeof(struct esp_new));
 

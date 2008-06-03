@@ -350,8 +350,8 @@ IPRw::Pattern::create_mapping(int ip_p, const IPFlowID& in,
 	out.set_dport(_dport);
 
     if (_variation_top) {
-	uint32_t val = (_sequential ? _next_variation : random() & _variation_mask);
-	uint32_t step = (_sequential ? 1 : random() | 1);
+	uint32_t val = (_sequential ? _next_variation : click_random() & _variation_mask);
+	uint32_t step = (_sequential ? 1 : click_random() | 1);
 	uint32_t base = (_is_napt ? ntohs(_sport) : ntohl(_saddr.addr()));
 	IPFlowID lookup = out.rev();
 	for (uint32_t count = 0; count <= _variation_mask; count++, val = (val + step) & _variation_mask)

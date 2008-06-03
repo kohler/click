@@ -33,18 +33,16 @@ RandomSeed::~RandomSeed()
 int
 RandomSeed::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (conf.size() == 1 && !conf[0])
-	conf.clear();
-    bool truly_random = (conf.size() == 0);
+    bool seed_given = false;
     uint32_t seed;
     if (cp_va_kparse(conf, this, errh,
-		     "SEED", cpkP+cpkM, cpUnsigned, &seed,
+		     "SEED", cpkP+cpkC, &seed_given, cpUnsigned, &seed,
 		     cpEnd) < 0)
 	return -1;
-    if (truly_random)
+    if (!seed_given)
 	click_random_srandom();
     else
-	srandom(seed);
+	click_srandom(seed);
     return 0;
 }
 

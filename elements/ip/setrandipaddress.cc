@@ -59,7 +59,7 @@ SetRandIPAddress::pick()
   uint32_t x;
   uint32_t mask = (uint32_t) _mask;
 
-  x = (random() & ~mask) | ((uint32_t)_ip & mask);
+  x = (click_random() & ~mask) | ((uint32_t)_ip & mask);
   
   return(IPAddress(x));
 }
@@ -70,7 +70,7 @@ SetRandIPAddress::simple_action(Packet *p)
   IPAddress ipa;
 
   if(_addrs && _max > 0){
-    ipa = _addrs[random() % _max];
+    ipa = _addrs[click_random(0, _max - 1)];
   } else {
     ipa = pick();
   }

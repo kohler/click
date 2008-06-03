@@ -1459,7 +1459,7 @@ DSDVRouteTable::hello_hook()
   }
 
   // reschedule periodic update
-  long r2 = random();
+  long r2 = click_random();
   long r = (r2 >> 1);
   unsigned int jitter = (unsigned int) (r % (_jitter + 1));
   if (r2 & 1) {

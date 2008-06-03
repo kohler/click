@@ -75,7 +75,7 @@ LookupIPRouteRON::initialize(ErrorHandler *)
 
 int
 LookupIPRouteRON::myrandom(int x) {
-  return (int) (x * ( (float)(random() & 0xfffe) / (float)(0xffff)));
+  return (int) (x * ( (float)(click_random() & 0xfffe) / (float)(0xffff)));
 }
 
 void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool first_syn)

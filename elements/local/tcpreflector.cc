@@ -67,7 +67,7 @@ TCPReflector::tcp_input(Packet *xp)
 
   if(th->th_flags == TH_SYN){
     th->th_flags = TH_SYN | TH_ACK;
-    th->th_seq = random();
+    th->th_seq = click_random(0, 0xFFFFFFFFU);
     th->th_ack = htonl(seq + 1);
   } else if(th->th_flags & TH_SYN){
     goto ignore;

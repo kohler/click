@@ -204,7 +204,7 @@ void RONRouteModular::send_rst(Packet *p, unsigned long seq, int outport) {
 }
 int
 RONRouteModular::myrandom(int x) {
-  return (int) (x * ( (float)(random() & 0xfffe) / (float)(0xffff)));
+  return (int) (x * ( (float)(click_random() & 0xfffe) / (float)(0xffff)));
 }
 void RONRouteModular::duplicate_pkt(Packet *p) {
 }

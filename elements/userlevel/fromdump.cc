@@ -388,7 +388,7 @@ FromDump::read_packet(ErrorHandler *errh)
     
     // checking sampling probability
     if (_sampling_prob < (1 << SAMPLING_SHIFT)
-	&& (uint32_t)(random() & ((1<<SAMPLING_SHIFT)-1)) >= _sampling_prob) {
+	&& (click_random() & ((1<<SAMPLING_SHIFT)-1)) >= _sampling_prob) {
 	_ff.shift_pos(caplen + skiplen);
 	return true;
     }

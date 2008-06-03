@@ -84,7 +84,7 @@ SendGridLRHello::run_timer(Timer *)
 
   // XXX this random stuff is not right i think... wouldn't it be nice
   // if click had a phat RNG like ns?
-  int r2 = random();
+  int r2 = click_random();
   double r = (double) (r2 >> 1);
   int  jitter = (int) (((double) _jitter) * r / ((double) 0x7FffFFff));
   if (r2 & 1)

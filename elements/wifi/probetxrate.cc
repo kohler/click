@@ -117,7 +117,7 @@ ProbeTXRate::assign_rate(Packet *p_in) {
     //pick a random rate.
     Vector<int> possible = nfo->pick_rate();
     if (possible.size()) {
-      ceh->rate = possible[random() % possible.size()];
+      ceh->rate = possible[click_random(0, possible.size() - 1)];
       ceh->max_tries = 2;
     } else {
       // no rates to sample from

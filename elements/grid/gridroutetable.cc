@@ -1411,7 +1411,7 @@ GridRouteTable::hello_hook(Timer *, void *thunk)
   // make and send the packet
   n->send_routing_update(rte_entries);
 
-  int r2 = random();
+  int r2 = click_random();
   double r = (double) (r2 >> 1);
   int jitter = (int) (((double) n->_jitter) * r / ((double) 0x7FffFFff));
   if (r2 & 1)

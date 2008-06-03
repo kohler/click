@@ -213,7 +213,7 @@ PI::run_timer(Timer *)
 bool
 PI::should_drop()
 {
-	double _random_value = random();
+	double _random_value = click_random();
     if (_random_value > _p*MAX_RAND) {
 		return true;
     }

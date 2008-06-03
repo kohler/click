@@ -88,7 +88,7 @@ PEP::run_timer(Timer *)
 {
   purge_old();
   output(0).push(make_PEP());
-  _timer.schedule_after_msec(random() % (pep_update * 1000 * 2));
+  _timer.schedule_after_msec(click_random() % (pep_update * 1000 * 2));
 }
 
 void

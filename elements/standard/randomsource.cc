@@ -64,9 +64,9 @@ RandomSource::make_packet()
     int i;
     char *d = (char *) p->data();
     for (i = 0; i < _length; i += sizeof(int))
-	*(int*)(d + i) = random();
+	*(int*)(d + i) = click_random();
     for( ; i < _length; i++)
-	*(d + i) = random();
+	*(d + i) = click_random();
 
     p->timestamp_anno().set_now();
     return p;

@@ -5,6 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2007 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -343,6 +344,10 @@ click_lfree(volatile void *p, size_t size)
 
 CLICK_DECLS
 
+#if CLICK_LINUXMODULE || (!CLICK_BSDMODULE && CLICK_RAND_MAX != RAND_MAX)
+uint32_t click_random_seed = 152;
+#endif
+
 void
 click_random_srandom()
 {
@@ -376,23 +381,31 @@ click_random_srandom()
 	result ^= buf[i];
 	result = (result << 1) | (result >> 31);
     }
-    srandom(result);
+    click_srandom(result);
+}
+
+uint32_t
+click_random(uint32_t low, uint32_t high)
+{
+    if (unlikely(low > high))
+	return low;
+    uint32_t r;
+    if (unlikely(high - low > CLICK_RAND_MAX)) {
+	while ((r = (click_random() << 17) ^ (click_random() >> 14)) > high - low)
+	    /* try again */;
+	return r + low;
+    } else if (high == low + 1) { // common case
+	return low + ((click_random() >> 14) & 1);
+    } else {
+	uint32_t count = ((uint32_t) CLICK_RAND_MAX + 1) / (high - low + 1);
+	uint32_t max = count * (high - low + 1);
+	while ((r = click_random()) > max)
+	    /* try again */;
+	return (r / count) + low;
+    }
 }
 
 CLICK_ENDDECLS
-
-
-#if CLICK_LINUXMODULE
-extern "C" {
-uint32_t click_random_seed = 152;
-
-void
-srandom(uint32_t seed)
-{
-    click_random_seed = seed;
-}
-}
-#endif
 
 
 // SORTING

@@ -231,7 +231,8 @@ RFC2507c::simple_action(Packet *p)
       _ccbs[cid]._context = ti;
     } else {
       /* pick a CID to re-use */
-      cid = (random() % (TCP_SPACE-1)) + 1;
+      // cid = (random() % (TCP_SPACE-1)) + 1;
+      cid = click_random(1, TCP_SPACE - 1);
 
       /* delete the old key */
       IPFlowID okey(_ccbs[cid]._context);

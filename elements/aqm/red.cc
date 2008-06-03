@@ -244,13 +244,13 @@ RED::should_drop()
 	click_chatter("%s: drop, random drop (%d, %d, %d, %d)", declaration().c_str(), _count, p_b, _random_value, _random_value/p_b);
 #endif
 	_count = 0;
-	_random_value = (random() >> 5) & 0xFFFF;
+	_random_value = (click_random() >> 5) & 0xFFFF;
 	return true;
     }
 
     // otherwise, not dropping
     if (_count == 0)
-	_random_value = (random() >> 5) & 0xFFFF;
+	_random_value = (click_random() >> 5) & 0xFFFF;
     
 #if RED_DEBUG
     click_chatter("%s: no drop", declaration().c_str());

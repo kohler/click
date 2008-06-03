@@ -164,7 +164,7 @@ RandomBitErrors::simple_action(Packet *p_in)
   int kind = _kind;
   
   for (unsigned i = 0; i < len; i++) {
-    int v = (random() >> 3) & 0xFFFFFFF;
+    int v = (click_random() >> 3) & 0xFFFFFFF;
     if (v <= p_error[0])
 	continue;
     
@@ -174,7 +174,7 @@ RandomBitErrors::simple_action(Packet *p_in)
 
     int idx = bit_flip_array_idx[nb];
     int n = bit_flip_array_idx[nb+1] - idx;
-    unsigned char errors = bit_flip_array[ ((random() >> 5) % n) + idx ];
+    unsigned char errors = bit_flip_array[ ((click_random() >> 5) % n) + idx ];
     
     if (kind == 0)
       data[i] &= ~errors;

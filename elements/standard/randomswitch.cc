@@ -31,7 +31,7 @@ RandomSwitch::~RandomSwitch()
 void
 RandomSwitch::push(int, Packet *p)
 {
-    int o = (random() >> 5) % noutputs();
+    int o = click_random(0, noutputs() - 1);
     output(o).push(p);
 }
 

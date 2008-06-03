@@ -82,8 +82,8 @@ FastUDPFlows::change_ports(int flow)
   click_ip *ip = reinterpret_cast<click_ip *>(_flows[flow].packet->data()+14);
   click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
 
-  udp->uh_sport = (random() >> 2) % 0xFFFF;
-  udp->uh_dport = (random() >> 2) % 0xFFFF;
+  udp->uh_sport = (click_random() >> 2) % 0xFFFF;
+  udp->uh_dport = (click_random() >> 2) % 0xFFFF;
   udp->uh_sum = 0;
   unsigned short len = _len-14-sizeof(click_ip);
   if (_cksum) {
@@ -102,7 +102,7 @@ FastUDPFlows::get_packet()
   _last_flow = _last_flow+1;
   if (_last_flow >= _nflows) _last_flow = 0;
 #else
-  int flow = (random() >> 2) % _nflows;
+  int flow = (click_random() >> 2) % _nflows;
 #endif
 
   if (_flows[flow].flow_count == _flowsize) {
@@ -144,8 +144,8 @@ FastUDPFlows::initialize(ErrorHandler *)
     _flows[i].packet->set_ip_header(ip, sizeof(click_ip));
   
     // set up UDP header
-    udp->uh_sport = (random() >> 2) % 0xFFFF;
-    udp->uh_dport = (random() >> 2) % 0xFFFF;
+    udp->uh_sport = (click_random() >> 2) % 0xFFFF;
+    udp->uh_dport = (click_random() >> 2) % 0xFFFF;
     udp->uh_sum = 0;
     unsigned short len = _len-14-sizeof(click_ip);
     udp->uh_ulen = htons(len);

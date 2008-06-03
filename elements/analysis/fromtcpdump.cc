@@ -572,7 +572,7 @@ FromTcpdump::run_task(Task *)
 	}
 	// check sampling probability
 	if (_sampling_prob >= (1 << SAMPLING_SHIFT)
-	    || (uint32_t)(random() & ((1 << SAMPLING_SHIFT) - 1)) < _sampling_prob)
+	    || (click_random() & ((1 << SAMPLING_SHIFT) - 1)) < _sampling_prob)
 	    break;
 	if (p)
 	    p->kill();
@@ -601,7 +601,7 @@ FromTcpdump::pull(int)
 	}
 	// check sampling probability
 	if (_sampling_prob >= (1 << SAMPLING_SHIFT)
-	    || (uint32_t)(random() & ((1 << SAMPLING_SHIFT) - 1)) < _sampling_prob)
+	    || (click_random() & ((1 << SAMPLING_SHIFT) - 1)) < _sampling_prob)
 	    break;
 	if (p)
 	    p->kill();

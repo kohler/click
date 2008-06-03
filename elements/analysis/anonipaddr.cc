@@ -57,10 +57,10 @@ AnonymizeIPAddr::new_node_block()
     return &block[0];
 }
 
-static uint32_t
+static inline uint32_t
 rand32()
 {
-    return ((random() << 8) & 0xFFFF0000) | ((random() >> 12) & 0x0000FFFF);
+    return click_random(0, 0xFFFFFFFFU);
 }
 
 int
