@@ -39,6 +39,7 @@ dfullness_decor::dfullness_decor(PermString name, crouter *cr, delt *e,
 	e->handler_interest(cr, _dfs->length, _dfs->autorefresh > 0, _dfs->autorefresh_period);
     if (_dfs->capacity && !cp_double(_dfs->capacity, &_capacity))
 	e->handler_interest(cr, _dfs->capacity, _dfs->autorefresh > 1, _dfs->autorefresh_period);
+    notify(cr, e, 0);
 }
 
 
@@ -64,12 +65,14 @@ void dfullness_decor::draw(delt *e, double *sides, dcontext &dcx)
 void dfullness_decor::notify(crouter *cr, delt *e, handler_value *hv)
 {
     handler_value *lv = 0, *cv = 0;
-    if (hv->handler_name() == _dfs->length)
-	lv = hv;
-    else if (hv->handler_name() == _dfs->capacity)
-	cv = hv;
-    else
-	return;
+    if (hv) {
+	if (hv->handler_name() == _dfs->length)
+	    lv = hv;
+	else if (hv->handler_name() == _dfs->capacity)
+	    cv = hv;
+	else
+	    return;
+    }
 
     if (!lv)
 	lv = cr->hvalues().find(e->flat_name() + "." + _dfs->length);
