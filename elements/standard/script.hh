@@ -285,6 +285,12 @@ Parses its parameters as a space-separated list of arguments.  The first
 argument is a format string; the remaining arguments are formatted
 accordingly.  For example, 'C<sprintf "%05x" 127>' returns "C<0007F>".
 
+=h random "read with parameters"
+
+Given zero arguments, returns a random integer between 0 and RAND_MAX.  Given
+one argument N, returns a random integer between 0 and N-1.  Given two
+arguments N1 and N2, returns a random integer between N1 and N2.
+
 =a DriverManager
 
 */

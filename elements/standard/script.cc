@@ -250,14 +250,9 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	}
 
 	wait_time:
-	case INSN_WAIT_TIME: {
-	    Timestamp ts;
-	    if (cp_time(conf[i], &ts))
-		add_insn(INSN_WAIT_TIME, ts.sec(), ts.subsec());
-	    else
-		goto syntax_error;
+	case INSN_WAIT_TIME:
+	    add_insn(INSN_WAIT_TIME, 0, 0, conf[i]);
 	    break;
-	}
 
 	case INSN_LABEL: {
 	    String word = cp_pop_spacevec(conf[i]);
@@ -323,9 +318,13 @@ Script::initialize(ErrorHandler *errh)
     assert(insn <= INSN_WAIT_TIME);
     if (_type == TYPE_SIGNAL || _type == TYPE_PASSIVE)
 	/* passive, do nothing */;
-    else if (insn == INSN_WAIT_TIME)
-	_timer.schedule_after(Timestamp(_args[_insn_pos], _args2[_insn_pos]));
-    else if (insn == INSN_INITIAL) {
+    else if (insn == INSN_WAIT_TIME) {
+	Timestamp ts;
+	if (cp_time(cp_expand(_args3[_insn_pos], expander), &ts))
+	    _timer.schedule_after(ts);
+	else
+	    errh->error("syntax error at 'wait'");
+    } else if (insn == INSN_INITIAL) {
 	// get rid of the initial runcount so we get called right away
 	if (_type == TYPE_DRIVER)
 	    router()->adjust_runcount(-1);
@@ -382,8 +381,12 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 
 	case INSN_WAIT_TIME:
 	    if (_step_count == nsteps) {
-		_timer.schedule_after(Timestamp(_args[ipos], _args2[ipos]));
-		_insn_pos--;
+		Timestamp ts;
+		if (cp_time(cp_expand(_args3[ipos], expander), &ts)) {
+		    _timer.schedule_after(ts);
+		    _insn_pos--;
+		} else
+		    errh->error("syntax error at 'wait'");
 		goto done;
 	    }
 	    _step_count++;
@@ -626,7 +629,7 @@ enum {
     ST_STEP = 0, ST_RUN, ST_GOTO,
     AR_ADD = 0, AR_SUB, AR_MUL, AR_DIV, AR_IDIV,
     AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
-    AR_FIRST, AR_NOT, AR_SPRINTF
+    AR_FIRST, AR_NOT, AR_SPRINTF, ar_random
 };
 
 int
@@ -687,7 +690,7 @@ Script::step_handler(int, String &str, Element *e, const Handler *h, ErrorHandle
 #endif
 
 int
-Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorHandler *errh)
+Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh)
 {
     int what = (uintptr_t) h->user_data1();
 
@@ -903,7 +906,28 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
 	str = result.take_string();
 	return 0;
     }
-	
+
+    case ar_random: {
+	if (!str)
+	    str = String(click_random());
+	else {
+	    uint32_t n1, n2;
+	    bool have_n2 = false;
+	    if (cp_va_space_kparse(str, e, errh,
+				   "N1", cpkP+cpkM, cpUnsigned, &n1,
+				   "N2", cpkP+cpkM+cpkC, &have_n2, cpUnsigned, &n2,
+				   cpEnd) < 0)
+		return -1;
+	    if ((have_n2 && n2 < n1) || (!have_n2 && n1 == 0))
+		return errh->error("bad N");
+	    if (have_n2)
+		str = String(click_random(n1, n2));
+	    else
+		str = String(click_random(0, n1 - 1));
+	}
+	return 0;
+    }
+	  
     }
 
     return -1;
@@ -929,6 +953,7 @@ Script::add_handlers()
     set_handler("not", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_NOT, 0);
     set_handler("sprintf", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_SPRINTF, 0);
     set_handler("first", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_FIRST, 0);
+    set_handler("random", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_random, 0);
 }
 
 EXPORT_ELEMENT(Script)
