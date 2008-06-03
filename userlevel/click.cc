@@ -131,9 +131,11 @@ static bool started = 0;
 
 extern "C" {
 static void
-catch_signal(int sig)
+stop_signal_handler(int sig)
 {
+#if !HAVE_SIGACTION
     signal(sig, SIG_DFL);
+#endif
     if (!started)
 	kill(getpid(), sig);
     else
@@ -271,11 +273,11 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
 
   // catch signals (only need to do the first time)
   if (!hotswap) {
-    // catch control-C and SIGTERM
-    signal(SIGINT, catch_signal);
-    signal(SIGTERM, catch_signal);
-    // ignore SIGPIPE
-    signal(SIGPIPE, SIG_IGN);
+      // catch control-C and SIGTERM
+      click_signal(SIGINT, stop_signal_handler, true);
+      click_signal(SIGTERM, stop_signal_handler, true);
+      // ignore SIGPIPE
+      click_signal(SIGPIPE, SIG_IGN, false);
   }
 
   // register hotswap router on new router

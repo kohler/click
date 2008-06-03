@@ -10,7 +10,30 @@ bool glob_match(const String &string, const String &pattern);
 
 String percent_substitute(const String &string, int format1, ...);
 
+/** @brief strcmp() replacement that compares numbers numerically.
+ * @return < 0 if @a a < @a b, > 0 if @a a > @a b, 0 if @a a == @a b
+ *
+ * Compares strings of digit characters like numbers, and other characters
+ * using character-by-character comparison.  For example:
+ * @code
+ * assert(click_strcmp("a", "b") < 0);
+ * assert(click_strcmp("a9", "a10") < 0);
+ * assert(click_strcmp("a001", "a2") < 0);   // 1 < 2
+ * assert(click_strcmp("a001", "a1") > 0);   // longer string of initial zeros
+ * @endcode
+ *
+ * Two strings compare as equal only if they are character-by-character
+ * equal. */
 int click_strcmp(const String &a, const String &b);
+
+/** @brief Portable replacement for sigaction().
+ * @param signum signal number
+ * @param handler signal action function
+ * @param resethand true if the handler should be reset when the signal is
+ * received, false otherwise
+ *
+ * Expands to either sigaction() or signal(). */
+void click_signal(int signum, void (*handler)(int), bool resethand);
 
 const char *filename_landmark(const char *, bool file_is_expr = false);
 

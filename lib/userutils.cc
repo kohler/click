@@ -120,6 +120,21 @@ glob_match(const String &str, const String &pattern)
     return false;
 }
 
+void
+click_signal(int signum, void (*handler)(int), bool resethand)
+{
+#if HAVE_SIGACTION
+    struct sigaction sa;
+    sa.sa_handler = handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = (resethand ? SA_RESETHAND : 0);
+    sigaction(signum, &sa, 0);
+#else
+    signal(signum, handler);
+    (void) resethand;
+#endif
+}
+
 String
 percent_substitute(const String &pattern, int format1, ...)
 {
@@ -404,7 +419,7 @@ extern "C" {
 static void
 signal_handler(int)
 {
-  exit(2);
+    exit(2);
 }
 
 static void
@@ -424,9 +439,9 @@ remove_file_on_exit(const String &file)
     if (file) {
 	if (!remove_files) {
 	    remove_files = new Vector<char *>;
-	    signal(SIGINT, signal_handler);
-	    signal(SIGTERM, signal_handler);
-	    signal(SIGPIPE, signal_handler);
+	    click_signal(SIGINT, signal_handler, false);
+	    click_signal(SIGTERM, signal_handler, false);
+	    click_signal(SIGPIPE, signal_handler, false);
 	    atexit(atexit_remover);
 	}
 	if (char *x = new char[file.length() + 1]) {

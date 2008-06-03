@@ -22,6 +22,9 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include <click/handlercall.hh>
+#if CLICK_USERLEVEL
+# include <click/userutils.hh>
+#endif
 #if CLICK_USERLEVEL && HAVE_SYS_EVENT_H && HAVE_KQUEUE
 # include <sys/event.h>
 # if HAVE_EV_SET_UDATA_POINTER
@@ -1012,16 +1015,8 @@ Master::add_signal_handler(int signo, Router *router, const String &handler)
 
     si->next = _siginfo;
     _siginfo = si;
-    
-#if HAVE_SIGACTION
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(struct sigaction));
-    sa.sa_handler = sighandler;
-    sa.sa_flags = SA_RESETHAND;
-    sigaction(signo, &sa, 0);
-#else
-    signal(signo, sighandler);
-#endif
+
+    click_signal(signo, sighandler, true);
 
     _signal_lock.release();
     return 0;
@@ -1046,7 +1041,7 @@ Master::remove_signal_handler(int signo, Router *router, const String &handler)
 	}
 
     if (!_signal_adding && status >= 0 && nhandlers == 0)
-	signal(signo, SIG_DFL);
+	click_signal(signo, SIG_DFL, false);
     _signal_lock.release();
     return status;
 }
