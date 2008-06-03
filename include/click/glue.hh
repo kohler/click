@@ -244,29 +244,36 @@ typedef struct device net_device;
 
 
 // TIMEVALS AND JIFFIES
+// click_jiffies_t is the type of click_jiffies() and is usually unsigned.
+// click_jiffies_difference_t is the signed version of click_jiffies_t.
+// CLICK_JIFFIES_MONOTONIC is true if click_jiffies() never goes backwards.
 
 #if CLICK_LINUXMODULE
+# define click_gettimeofday(tvp)	(do_gettimeofday(tvp))
 typedef unsigned long click_jiffies_t;
 typedef long click_jiffies_difference_t;
-# define click_gettimeofday(tvp)	(do_gettimeofday(tvp))
 # define click_jiffies()		(jiffies)
+# define CLICK_JIFFIES_MONOTONIC	1
 # define CLICK_HZ			HZ
+# define click_jiffies_less(a, b)	((click_jiffies_difference_t) ((a) - (b)) < 0)
 #elif CLICK_BSDMODULE
+# define click_gettimeofday(tvp)	(getmicrotime(tvp))
 typedef int click_jiffies_t;
 typedef int click_jiffies_difference_t;
-# define click_gettimeofday(tvp)	(getmicrotime(tvp))
-# define click_jiffies()		((unsigned)ticks)
+# define click_jiffies()		(ticks)
 # define CLICK_HZ			hz
+# define click_jiffies_less(a, b)	((click_jiffies_difference_t) ((a) - (b)) < 0)
 #else
-typedef unsigned click_jiffies_t;
-typedef int click_jiffies_difference_t;
 #if !CLICK_NS
 # define click_gettimeofday(tvp)	(gettimeofday(tvp, (struct timezone *)0))
 #else
 # define click_gettimeofday(tvp)	(simclick_gettimeofday(tvp))
 #endif
 CLICK_DECLS
+typedef unsigned click_jiffies_t;
+typedef int click_jiffies_difference_t;
 click_jiffies_t click_jiffies();
+# define click_jiffies_less(a, b)	((click_jiffies_difference_t) ((a) - (b)) < 0)
 CLICK_ENDDECLS
 # define CLICK_HZ			1000
 #endif
