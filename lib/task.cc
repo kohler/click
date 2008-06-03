@@ -369,7 +369,6 @@ void
 Task::strong_unschedule()
 {
     bool done = false;
-    _should_be_scheduled = false;
     _should_be_strong_unscheduled = true;
 #if CLICK_BSDMODULE
     GIANT_REQUIRED;
@@ -502,9 +501,19 @@ Task::process_pending(RouterThread *thread)
     int s = splimp();
 #endif
 
+    // The quiescent threads, which have thread_id() < 0, never run, and so
+    // they never call process_pending().  Process their tasks as well.
+    RouterThread *other_thread = 0;
+    if (_thread && _thread != thread && _thread->thread_id() < 0) {
+	other_thread = _thread;
+	other_thread->lock_tasks();
+	goto change_schedule;
+    }
+
     if (_thread == thread) {
 	// we know the thread is locked.
 	// see also move_thread() above
+      change_schedule:
 	int want_thread_id;
 	if (_should_be_strong_unscheduled)
 	    want_thread_id = RouterThread::THREAD_STRONG_UNSCHEDULE;
@@ -515,16 +524,17 @@ Task::process_pending(RouterThread *thread)
 	    if (scheduled())
 		fast_unschedule(true);
 	    _thread = _router->master()->thread(want_thread_id);
-	    if (_should_be_scheduled)
-		add_pending();
 	} else if (_should_be_scheduled && _router->running()) {
 	    if (!scheduled())
 		fast_schedule();
 	}
     }
 
-    if (_should_be_scheduled && !scheduled())
+    if (_should_be_scheduled && !_should_be_strong_unscheduled && !scheduled())
 	add_pending();
+
+    if (other_thread)
+	other_thread->unlock_tasks();
     
 #if CLICK_BSDMODULE
     splx(s);
