@@ -190,6 +190,18 @@ EOF
 	provisions="$provisions AddressInfo AlignmentInfo ErrorElement PortInfo ScheduleInfo Storage"
     fi
 
+    # add 'multithread' provision based on driver
+    if echo "$provisions" | grep userlevel >/dev/null 2>&1; then
+	if echo "$provisions" | grep umultithread >/dev/null 2>&1; then
+	    provisions="$provisions multithread"
+	fi
+    fi
+    if echo "$provisions" | grep linuxmodule >/dev/null 2>&1; then
+	if echo "$provisions" | grep smpclick >/dev/null 2>&1; then
+	    provisions="$provisions multithread"
+	fi
+    fi
+
     # expand provisions and unprovisions: require one per line
     provisions=`echo "$provisions" | tr -s ' \011\015\014\013' '\012'`
     unprovisions=`echo "$unprovisions" | tr -s ' \011\015\014\013' '\012'`

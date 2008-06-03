@@ -1973,12 +1973,24 @@ read_task_scheduled(Element *e, void *thunk)
   return String(task->scheduled());
 }
 
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
 static String
 read_task_home_thread(Element *e, void *thunk)
 {
   Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
   return String(task->home_thread_id());
+}
+
+static int
+write_task_home_thread(const String &str, Element *e, void *thunk, ErrorHandler *errh)
+{
+    Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
+    Master *m = task->master();
+    int tid;
+    if (!cp_integer(str, &tid) || tid > m->nthreads())
+	return errh->error("bad thread");
+    task->move_thread(tid);
+    return 0;
 }
 #endif
 
@@ -2013,8 +2025,9 @@ Element::add_task_handlers(Task *task, const String &prefix)
   add_read_handler(prefix + "tickets", read_task_tickets, thunk);
   add_write_handler(prefix + "tickets", write_task_tickets, thunk);
 #endif
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
   add_read_handler(prefix + "home_thread", read_task_home_thread, thunk);
+  add_write_handler(prefix + "home_thread", write_task_home_thread, thunk);
 #endif
 }
 

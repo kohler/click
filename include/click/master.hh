@@ -79,6 +79,8 @@ class Master { public:
     spinlock_t _master_lock;
     struct task_struct *_master_lock_task;
     int _master_lock_count;
+#elif HAVE_MULTITHREAD
+    Spinlock _master_lock;
 #endif
     atomic_uint32_t _master_paused;
     inline void lock_master();
@@ -114,6 +116,8 @@ class Master { public:
 #if CLICK_LINUXMODULE
     spinlock_t _timer_lock;
     struct task_struct *_timer_task;
+#elif HAVE_MULTITHREAD
+    Spinlock _timer_lock;
 #endif
     Timestamp _timer_check;
     uint32_t _timer_check_reports;
@@ -221,6 +225,8 @@ Master::lock_master()
 	_master_lock_task = current;
     } else
 	_master_lock_count++;
+#elif HAVE_MULTITHREAD
+    _master_lock.acquire();
 #endif
 }
 
@@ -234,6 +240,8 @@ Master::unlock_master()
 	spin_unlock(&_master_lock);
     } else
 	_master_lock_count--;
+#elif HAVE_MULTITHREAD
+    _master_lock.release();
 #endif
 }
 
@@ -262,6 +270,8 @@ Master::lock_timers()
 #if CLICK_LINUXMODULE
     if (current != _timer_task)
     	spin_lock(&_timer_lock);
+#elif HAVE_MULTITHREAD
+    _timer_lock.acquire();
 #endif
 }
 
@@ -270,6 +280,8 @@ Master::attempt_lock_timers()
 {
 #if CLICK_LINUXMODULE
     return spin_trylock(&_timer_lock);
+#elif HAVE_MULTITHREAD
+    return _timer_lock.attempt();
 #else
     return true;
 #endif
@@ -281,6 +293,8 @@ Master::unlock_timers()
 #if CLICK_LINUXMODULE
     if (current != _timer_task)
 	spin_unlock(&_timer_lock);
+#elif HAVE_MULTITHREAD
+    _timer_lock.release();
 #endif
 }
 

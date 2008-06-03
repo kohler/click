@@ -6,9 +6,10 @@
 struct Driver {
     enum {
 	USERLEVEL = 0, LINUXMODULE = 1, BSDMODULE = 2, NSMODULE = 3,
-	ALLMASK = 0xF, COUNT = 4
+	ALLMASK = 0xF, COUNT = 4, MULTITHREAD = COUNT
     };
     static const char *name(int);
+    static const char *multithread_name(int);
     static const char *requirement(int);
     static int driver(const String&);
     static int driver_mask(const String&);

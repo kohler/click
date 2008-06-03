@@ -54,5 +54,4 @@ StaticThreadSched::initial_home_thread_id(Task *task, bool scheduled)
 	return THREAD_UNKNOWN;
 }
 
-ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(StaticThreadSched)

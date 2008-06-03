@@ -363,7 +363,7 @@ click_init_sched(ErrorHandler *errh)
   click_thread_pids = new Vector<int>;
   bool greedy = click_parm(CLICKPARM_GREEDY);
 
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
   click_master = new Master(click_parm(CLICKPARM_THREADS));
   if (num_possible_cpus() != NUM_CLICK_CPUS)
     click_chatter("warning: click compiled for %d cpus, machine allows %d", 

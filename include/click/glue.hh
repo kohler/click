@@ -68,6 +68,9 @@ CLICK_CXX_UNPROTECT
 # if CLICK_NS
 extern "C" int simclick_gettimeofday(struct timeval *);
 # endif
+# if HAVE_MULTITHREAD
+#  include <pthread.h>
+# endif
 
 #endif
 
@@ -171,13 +174,6 @@ int click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, c
 
 #if CLICK_LINUXMODULE
 
-// current processor
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-#  define click_current_processor()	(current_thread_info()->cpu)
-# else
-#  define click_current_processor()	(current->processor)
-# endif
-
 // provide a definition for net_device for kernel compatibility
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
 typedef struct device net_device;
@@ -241,6 +237,45 @@ typedef struct device net_device;
 // COMPILE-TIME ASSERTION CHECKING
 
 #define static_assert(c) switch (c) case 0: case (c):
+
+
+// PROCESSOR IDENTITIES
+
+#if CLICK_LINUXMODULE
+typedef uint32_t click_processor_t;
+#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
+typedef pthread_t click_processor_t;
+#else
+typedef int8_t click_processor_t;
+#endif
+
+inline click_processor_t
+click_current_processor()
+{
+#if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    return current_thread_info()->cpu;
+# else
+    return current->processor;
+# endif
+#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
+    return pthread_self();
+#else
+    return 0;
+#endif
+}
+
+inline click_processor_t
+click_invalid_processor()
+{
+#if CLICK_LINUXMODULE
+    return -1;
+#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
+    return 0;
+#else
+    return -1;
+#endif
+}
 
 
 // TIMEVALS AND JIFFIES
@@ -459,6 +494,18 @@ click_get_cycles()
     return xlo;
 #elif CLICK_BSDMODULE
     return rdtsc();
+#elif CLICK_USERLEVEL && HAVE_INT64_TYPES && __i386__
+    uint64_t x;
+    __asm__ __volatile__ ("rdtsc" : "=A" (x));
+    return x;
+#elif CLICK_USERLEVEL && HAVE_INT64_TYPES && __x86_64__
+    uint32_t xlo, xhi;
+    __asm__ __volatile__ ("rdtsc" : "=a" (xlo), "=d" (xhi));
+    return xlo | (((uint64_t) xhi) << 32);
+#elif CLICK_USERLEVEL && __i386__
+    uint32_t xlo, xhi;
+    __asm__ __volatile__ ("rdtsc" : "=a" (xlo), "=d" (xhi));
+    return xlo;
 #else
     // add other architectures here
     return 0;

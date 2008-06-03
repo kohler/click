@@ -7,6 +7,7 @@
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
  * Copyright (c) 2004-2006 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -66,6 +67,7 @@ CLICK_USING_DECLS
 #define WARNINGS_OPT		313
 #define ALLOW_RECONFIG_OPT	314
 #define EXIT_HANDLER_OPT	315
+#define THREADS_OPT		316
 
 static const Clp_Option options[] = {
   { "allow-reconfigure", 'R', ALLOW_RECONFIG_OPT, 0, Clp_Negate },
@@ -77,6 +79,9 @@ static const Clp_Option options[] = {
   { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
   { "port", 'p', PORT_OPT, Clp_ValInt, 0 },
   { "quit", 'q', QUIT_OPT, 0, 0 },
+#if HAVE_MULTITHREAD
+  { "threads", 0, THREADS_OPT, Clp_ValInt, 0 },
+#endif
   { "time", 't', TIME_OPT, 0, 0 },
   { "unix-socket", 'u', UNIX_SOCKET_OPT, Clp_ValString, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
@@ -107,8 +112,11 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
-  -e, --expression EXPR         Use EXPR as router configuration.\n\
-  -p, --port PORT               Listen for control connections on TCP port.\n\
+  -e, --expression EXPR         Use EXPR as router configuration.\n"
+#if HAVE_MULTITHREAD
+"      --threads N               Start N threads (default 1).\n"
+#endif
+"  -p, --port PORT               Listen for control connections on TCP port.\n\
   -u, --unix-socket FILE        Listen for control connections on Unix socket.\n\
   -R, --allow-reconfigure       Provide a writable 'hotconfig' handler.\n\
   -h, --handler ELEMENT.H       Call ELEMENT's read handler H after running\n\
@@ -140,6 +148,16 @@ stop_signal_handler(int sig)
 	kill(getpid(), sig);
     else
 	router->set_runcount(Router::STOP_RUNCOUNT);
+}
+
+static void
+ignore_signal_handler(int sig)
+{
+#if !HAVE_SIGACTION
+    signal(sig, ignore_signal_handler);
+#else
+    (void) sig;
+#endif
 }
 }
 
@@ -255,12 +273,14 @@ hotswap_hook(Task *, void *)
 static Vector<String> cs_unix_sockets;
 static Vector<int> cs_ports;
 static bool warnings = true;
+static int nthreads = 1;
 
 static Router *
 parse_configuration(const String &text, bool text_is_expr, bool hotswap,
 		    ErrorHandler *errh)
 {
-  Router *r = click_read_router(text, text_is_expr, errh, false, (router ? router->master() : 0));
+  Master *master = (router ? router->master() : new Master(nthreads));
+  Router *r = click_read_router(text, text_is_expr, errh, false, master);
   if (!r)
     return 0;
 
@@ -278,6 +298,10 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
       click_signal(SIGTERM, stop_signal_handler, true);
       // ignore SIGPIPE
       click_signal(SIGPIPE, SIG_IGN, false);
+#if HAVE_MULTITHREAD
+      // use SIGIO as a request to wake up a thread
+      click_signal(SIGIO, ignore_signal_handler, false);
+#endif
   }
 
   // register hotswap router on new router
@@ -316,6 +340,17 @@ round_timeval(struct timeval *tv, int usec_divider)
 	++tv->tv_sec;
     }
 }
+
+#if HAVE_MULTITHREAD
+extern "C" {
+static void *thread_driver(void *user_data)
+{
+    RouterThread *thread = static_cast<RouterThread *>(user_data);
+    thread->driver();
+    return 0;
+}
+}
+#endif
 
 int
 main(int argc, char **argv)
@@ -410,6 +445,14 @@ main(int argc, char **argv)
       warnings = clp->negated;
       break;
 
+#if HAVE_MULTITHREAD
+     case THREADS_OPT:
+      nthreads = clp->val.i;
+      if (nthreads <= 1)
+	  nthreads = 1;
+      break;
+#endif
+
      case CLICKPATH_OPT:
       set_clickpath(clp->vstr);
       break;
@@ -492,6 +535,12 @@ particular purpose.\n");
       hotswap_task.initialize(hotswap_thunk_router, false);
       hotswap_thunk_router->activate(false, errh);
     }
+#if HAVE_MULTITHREAD
+    for (int t = 1; t < nthreads; ++t) {
+	pthread_t p;
+	pthread_create(&p, 0, thread_driver, router->master()->thread(t));
+    }
+#endif
     router->master()->thread(0)->driver();
   } else if (!quit_immediately && warnings)
     errh->warning("%s: configuration has no elements, exiting", filename_landmark(router_file, file_is_expr));

@@ -32,8 +32,9 @@ B<Multithreaded Click note:> NotifierQueue is designed to be used in an
 environment with at most one concurrent pusher and at most one concurrent
 puller.  Thus, at most one thread pushes to the NotifierQueue at a time and at
 most one thread pulls from the NotifierQueue at a time.  Different threads can
-push to and pull from the NotifierQueue concurrently, however.  See MSQueue for
-a queue that can support multiple concurrent pushers.
+push to and pull from the NotifierQueue concurrently, however.  See
+ThreadSafeQueue for a queue that can support multiple concurrent pushers and
+pullers.
 
 =n
 
@@ -64,7 +65,7 @@ When written, resets the C<drops> and C<highwater_length> counters.
 
 When written, drops all packets in the queue.
 
-=a Queue, SimpleQueue, MixedQueue, FrontDropQueue, MSQueue */
+=a Queue, SimpleQueue, MixedQueue, FrontDropQueue, ThreadSafeQueue */
 
 class NotifierQueue : public SimpleQueue { public:
 

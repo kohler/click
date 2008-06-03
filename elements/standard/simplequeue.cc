@@ -219,11 +219,8 @@ SimpleQueue::read_handler(Element *e, void *thunk)
 void
 SimpleQueue::reset()
 {
-    while (_head != _tail) {
-	int i = _head;
-	_head = next_i(_head);
-	checked_output_push(1, _q[i]);
-    }
+    while (Packet *p = pull(0))
+	checked_output_push(1, p);
 }
 
 int

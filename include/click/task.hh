@@ -3,7 +3,7 @@
 #define CLICK_TASK_HH
 #include <click/element.hh>
 #include <click/sync.hh>
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
 # include <click/atomic.hh>
 # include <click/ewma.hh>
 #endif
@@ -153,7 +153,7 @@ class Task { public:
     inline unsigned utilization() const;
     inline void clear_runs();
 #endif
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
     inline int cycles() const;
     inline unsigned cycle_runs() const;
     inline void update_cycles(unsigned c);
@@ -191,7 +191,7 @@ class Task { public:
     unsigned _runs;
     unsigned _work_done;
 #endif
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
     DirectEWMA _cycles;
     unsigned _cycle_runs;
 #endif
@@ -248,7 +248,7 @@ Task::Task(TaskCallback f, void *user_data)
 #if HAVE_ADAPTIVE_SCHEDULER
       _runs(0), _work_done(0),
 #endif
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
       _cycle_runs(0),
 #endif
       _thread(0), _home_thread_id(-1),
@@ -271,7 +271,7 @@ Task::Task(Element* e)
 #if HAVE_ADAPTIVE_SCHEDULER
       _runs(0), _work_done(0),
 #endif
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
       _cycle_runs(0),
 #endif
       _thread(0), _home_thread_id(-1),
@@ -528,7 +528,7 @@ Task::reschedule()
 inline void
 Task::fire()
 {
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
     _cycle_runs++;
 #endif
 #ifdef HAVE_ADAPTIVE_SCHEDULER
@@ -571,7 +571,7 @@ Task::clear_runs()
 }
 #endif
 
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
 inline int
 Task::cycles() const
 {

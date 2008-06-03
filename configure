@@ -1355,6 +1355,7 @@ Optional Features:
   --disable-standard      do not include standard elements
   --disable-tcpudp        do not include TCP and UDP elements
   --enable-test           include regression test elements
+  --disable-threads       do not include scheduling management elements
   --enable-wifi           include wifi elements and support
   --enable-experimental   enable experimental elements in normal groups
   --disable-int64         disable 64-bit integer support
@@ -4696,6 +4697,10 @@ _ACEOF
 #define __MTCLICK__ 1
 _ACEOF
 
+    cat >>confdefs.h <<_ACEOF
+#define HAVE_LINUXMODULE_MULTITHREAD 1
+_ACEOF
+
     saveflags="$CPPFLAGS"
     CPPFLAGS="$saveflags -D__MTCLICK__"
 else
@@ -5076,6 +5081,17 @@ else
 fi
 test "x$enable_all_elements" = xyes -a "x$enable_test" = xNO && enable_test=yes
 if test "x$enable_test" = xyes; then
+    :
+
+fi
+# Check whether --enable-threads was given.
+if test "${enable_threads+set}" = set; then
+  enableval=$enable_threads;
+else
+  enable_threads=yes
+fi
+test "x$enable_all_elements" = xyes -a "x$enable_threads" = xNO && enable_threads=yes
+if test "x$enable_threads" = xyes; then
     :
 
 fi
@@ -9110,7 +9126,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 9113 "configure"
+#line 9129 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER

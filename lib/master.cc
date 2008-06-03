@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2003-7 The Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),

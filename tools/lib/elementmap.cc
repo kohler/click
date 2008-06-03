@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -547,12 +548,18 @@ ElementMap::compatible_driver_mask(const RouterT *r, ErrorHandler *errh) const
     int mask = Driver::ALLMASK;
     for (int i = 0; i < indexes.size(); i++) {
 	int idx = indexes[i];
-	int this_mask = 0;
+	int elt_mask = 0;
 	while (idx > 0) {
-	    this_mask |= _e[idx].driver_mask;
+	    int idx_mask = _e[idx].driver_mask;
+	    if (idx_mask & (1 << Driver::MULTITHREAD))
+		for (int d = 0; d < Driver::COUNT; ++d)
+		    if ((idx_mask & (1 << d))
+			&& !provides_global(Driver::multithread_name(d)))
+			idx_mask &= ~(1 << d);
+	    elt_mask |= idx_mask;
 	    idx = _e[idx].name_next;
 	}
-	mask &= this_mask;
+	mask &= elt_mask;
     }
     return mask;
 }
@@ -560,26 +567,7 @@ ElementMap::compatible_driver_mask(const RouterT *r, ErrorHandler *errh) const
 bool
 ElementMap::driver_compatible(const RouterT *r, int driver, ErrorHandler *errh) const
 {
-#if 0
-    Vector<int> indexes;
-    collect_indexes(r, indexes, errh);
-    int mask = 1 << driver;
-    for (int i = 0; i < indexes.size(); i++) {
-	int idx = indexes[i];
-	if (idx > 0 && !(_e[idx].driver_mask & mask)) {
-	    while (idx > 0) {
-		if (_e[idx].driver_mask & mask)
-		    goto found;
-		idx = _e[idx].name_next;
-	    }
-	    return false;
-	}
-      found: ;
-    }
-    return true;
-#else
     return compatible_driver_mask(r, errh) & (1 << driver);
-#endif
 }
 
 void

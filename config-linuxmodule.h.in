@@ -74,6 +74,9 @@
 /* Define if the Click linuxmodule is compiled for a 2.6 kernel. */
 #undef HAVE_LINUXMODULE_2_6
 
+/* Define if the linuxmodule driver might run multiple threads. */
+#undef HAVE_LINUXMODULE_MULTITHREAD
+
 /* Define if you have the net_enable_timestamp function. */
 #undef HAVE_NET_ENABLE_TIMESTAMP
 
@@ -101,6 +104,11 @@ typedef unsigned long uintptr_t; /* XXX? */
 /* Define HAVE_INT64_IS_LONG_LONG based on HAVE_INT64_IS_LONG_LONG_LINUXMODULE. */
 #if HAVE_LONG_LONG && defined(HAVE_INT64_IS_LONG_LONG_LINUXMODULE)
 # define HAVE_INT64_IS_LONG_LONG HAVE_INT64_IS_LONG_LONG_LINUXMODULE
+#endif
+
+/* Define HAVE_MULTITHREAD based on HAVE_LINUXMODULE_MULTITHREAD. */
+#ifdef HAVE_LINUXMODULE_MULTITHREAD
+# define HAVE_MULTITHREAD HAVE_LINUXMODULE_MULTITHREAD
 #endif
 
 /* Define KBUILD symbols. */

@@ -6,6 +6,7 @@
  * Copyright (c) 2000-2001 Massachusetts Institute of Technology
  * Copyright (c) 2001-2002 International Computer Science Institute
  * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -85,6 +86,9 @@ RouterThread::RouterThread(Master *m, int id)
     _linux_task = 0;
     _task_lock_waiting = 0;
     spin_lock_init(&_lock);
+#elif HAVE_MULTITHREAD
+    _running_processor = click_invalid_processor();
+    _task_lock_waiting = 0;
 #endif
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     _max_click_share = 80 * Task::MAX_UTILIZATION / 100;
@@ -137,12 +141,20 @@ RouterThread::~RouterThread()
 inline void
 RouterThread::driver_lock_tasks()
 {
-#if CLICK_LINUXMODULE
     // If other people are waiting for the task lock, give them a chance to
     // catch it before we claim it.
+#if CLICK_LINUXMODULE
     for (int i = 0; _task_lock_waiting > 0 && i < 10; i++)
 	schedule();
     spin_lock(&_lock);
+#elif HAVE_MULTITHREAD
+# if CLICK_USERLEVEL
+    for (int i = 0; _task_lock_waiting > 0 && i < 10; i++) {
+	struct timeval waiter = { 0, 1 };
+	select(0, 0, 0, 0, &waiter);
+    }
+# endif
+    _lock.acquire();
 #endif
 }
 
@@ -151,6 +163,8 @@ RouterThread::driver_unlock_tasks()
 {
 #if CLICK_LINUXMODULE
     spin_unlock(&_lock);
+#elif HAVE_MULTITHREAD
+    _lock.release();
 #endif
 }
 
@@ -331,9 +345,9 @@ RouterThread::run_tasks(int ntasks)
     if (ntasks > 32768)
 	ntasks = 32768;
 
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
     // cycle counter for adaptive scheduling among processors
-    uint64_t cycles;
+    click_cycles_t cycles;
 #endif
 
     Task *t;
@@ -349,7 +363,7 @@ RouterThread::run_tasks(int ntasks)
 	if (t->_pending_nextptr)
 	    break;
 
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
 	int runs = t->cycle_runs();
 	if (runs > PROFILE_ELEMENT)
 	    cycles = click_get_cycles();
@@ -384,7 +398,7 @@ RouterThread::run_tasks(int ntasks)
 	}
 #endif
 
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
 	if (runs > PROFILE_ELEMENT) {
 	    unsigned delta = click_get_cycles() - cycles;
 	    t->update_cycles(delta/32 + (t->cycles()*31)/32);
@@ -458,6 +472,8 @@ RouterThread::driver()
 #if CLICK_LINUXMODULE
     // this task is running the driver
     _linux_task = current;
+#elif HAVE_MULTITHREAD
+    _running_processor = click_current_processor();
 #endif
 
     driver_lock_tasks();
@@ -565,6 +581,8 @@ RouterThread::driver()
 #endif
 #if CLICK_LINUXMODULE
     _linux_task = 0;
+#elif HAVE_MULTITHREAD
+    _running_processor = click_invalid_processor();
 #endif
 }
 
@@ -586,9 +604,12 @@ RouterThread::driver_once()
     // this task is running the driver
     _linux_task = current;
     spin_lock(&_lock);
+#elif HAVE_MULTITHREAD
+    _running_processor = click_current_processor();
+    _lock.acquire();
 #endif
     Task *t = task_begin();
-    if (t != task_end()) {
+    if (t != task_end() && !t->_pending_nextptr) {
 	t->fast_unschedule(false);
 	t->fire();
     }
@@ -598,6 +619,9 @@ RouterThread::driver_once()
 #if CLICK_LINUXMODULE
     spin_unlock(&_lock);
     _linux_task = 0;
+#elif HAVE_MULTITHREAD
+    _lock.release();
+    _running_processor = click_invalid_processor();
 #endif
 }
 

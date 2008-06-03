@@ -268,8 +268,8 @@ inline uint32_t
 atomic_uint32_t::swap(uint32_t v)
 {
 #if (CLICK_LINUXMODULE && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))) || CLICK_ATOMIC_X86
-    asm ("xchgl %0,%1"
-	 : "=r" (v), "=m" (CLICK_ATOMIC_VAL));
+    asm volatile ("xchgl %0,%1"
+		  : "=r" (v), "=m" (CLICK_ATOMIC_VAL));
     return v;
 #elif CLICK_LINUXMODULE
     unsigned long flags;

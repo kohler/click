@@ -54,7 +54,6 @@ class ElementMap { public:
 
     int check_completeness(const RouterT*, ErrorHandler*) const;
     bool driver_indifferent(const RouterT*, int driver_mask = Driver::ALLMASK, ErrorHandler* = 0) const;
-    int compatible_driver_mask(const RouterT*, ErrorHandler* = 0) const;
     bool driver_compatible(const RouterT*, int driver, ErrorHandler* = 0) const;
 
     int provided_driver_mask() const	{ return _provided_driver_mask; }
@@ -87,6 +86,7 @@ class ElementMap { public:
     int driver_elt_index(int) const;
 
     void collect_indexes(const RouterT*, Vector<int>&, ErrorHandler*) const;
+    int compatible_driver_mask(const RouterT*, ErrorHandler* = 0) const;
 
     static int32_t version_counter;
     static ElementMap* the_element_map;

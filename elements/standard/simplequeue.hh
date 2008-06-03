@@ -25,8 +25,9 @@ B<Multithreaded Click note:> SimpleQueue is designed to be used in an
 environment with at most one concurrent pusher and at most one concurrent
 puller.  Thus, at most one thread pushes to the SimpleQueue at a time and at
 most one thread pulls from the SimpleQueue at a time.  Different threads can
-push to and pull from the SimpleQueue concurrently, however.  See MSQueue for
-a queue that can support multiple concurrent pushers.
+push to and pull from the SimpleQueue concurrently, however.  See
+ThreadSafeQueue for a queue that can support multiple concurrent pushers and
+pullers.
 
 =n
 
@@ -59,7 +60,7 @@ When written, resets the C<drops> and C<highwater_length> counters.
 
 When written, drops all packets in the queue.
 
-=a Queue, NotifierQueue, MixedQueue, RED, FrontDropQueue, MSQueue */
+=a Queue, NotifierQueue, MixedQueue, RED, FrontDropQueue, ThreadSafeQueue */
 
 class SimpleQueue : public Element, public Storage { public:
 

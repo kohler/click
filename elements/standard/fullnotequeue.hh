@@ -30,12 +30,12 @@ respects but notification, Queue behaves exactly like SimpleQueue.
 
 You may also use the old element name "FullNoteQueue".
 
-B<Multithreaded Click note:> Queue is designed to be used in an
-environment with at most one concurrent pusher and at most one concurrent
-puller.  Thus, at most one thread pushes to the Queue at a time and at
-most one thread pulls from the Queue at a time.  Different threads can
-push to and pull from the Queue concurrently, however.  See MSQueue for
-a queue that can support multiple concurrent pushers.
+B<Multithreaded Click note:> Queue is designed to be used in an environment
+with at most one concurrent pusher and at most one concurrent puller.  Thus,
+at most one thread pushes to the Queue at a time and at most one thread pulls
+from the Queue at a time.  Different threads can push to and pull from the
+Queue concurrently, however.  See ThreadSafeQueue for a queue that can support
+multiple concurrent pushers and pullers.
 
 =h length read-only
 
@@ -61,7 +61,7 @@ When written, resets the C<drops> and C<highwater_length> counters.
 
 When written, drops all packets in the queue.
 
-=a SimpleQueue, NotifierQueue, MixedQueue, FrontDropQueue, MSQueue */
+=a ThreadSafeQueue, SimpleQueue, NotifierQueue, MixedQueue, FrontDropQueue */
 
 class FullNoteQueue : public NotifierQueue { public:
 
@@ -71,28 +71,85 @@ class FullNoteQueue : public NotifierQueue { public:
     const char *class_name() const		{ return "Queue"; }
     void *cast(const char *);
 
-    inline void reset();			// NB: does notification
-    
     int configure(Vector<String> &conf, ErrorHandler *);
-    void add_handlers();
     int live_reconfigure(Vector<String> &conf, ErrorHandler *errh);
     
-    void push(int port, Packet *);
+    void push(int port, Packet *p);
     Packet *pull(int port);
 
-  private:
+  protected:
 
     ActiveNotifier _full_note;
+
+    inline void push_success(int h, int t, int nt, Packet *p);
+    inline void push_failure(Packet *p);
+    inline Packet *pull_success(int h, int t, int nh);
+    inline Packet *pull_failure();
 
     static int write_handler(const String&, Element*, void*, ErrorHandler*);
     
 };
 
 inline void
-FullNoteQueue::reset()
+FullNoteQueue::push_success(int h, int t, int nt, Packet *p)
 {
-    NotifierQueue::reset();
+    _q[t] = p;
+    asm("" : : : "memory");
+    _tail = nt;
+
+    int s = size(h, nt);
+    if (s > _highwater_length)
+	_highwater_length = s;
+
+    _empty_note.wake(); 
+
+    if (s == capacity()) {
+	_full_note.sleep();
+#if HAVE_MULTITHREAD
+	// Work around race condition between push() and pull().
+	// We might have just undone pull()'s Notifier::wake() call.
+	// Easiest lock-free solution: check whether we should wake again!
+	if (size() < capacity())
+	    _full_note.wake();
+#endif
+    }
+}
+
+inline void
+FullNoteQueue::push_failure(Packet *p)
+{
+    if (_drops == 0)
+	click_chatter("%{element}: overflow", this);
+    _drops++;
+    p->kill();
+}
+
+inline Packet *
+FullNoteQueue::pull_success(int h, int, int nh)
+{
+    Packet *p = _q[h];
+    asm("" : : : "memory");
+    _head = nh;
+
+    _sleepiness = 0;
     _full_note.wake();
+    return p;
+}
+
+inline Packet *
+FullNoteQueue::pull_failure()
+{
+    if (++_sleepiness == SLEEPINESS_TRIGGER) {
+        _empty_note.sleep();
+#if HAVE_MULTITHREAD
+	// Work around race condition between push() and pull().
+	// We might have just undone push()'s Notifier::wake() call.
+	// Easiest lock-free solution: check whether we should wake again!
+	if (size())
+	    _empty_note.wake();
+#endif
+    }
+    return 0;
 }
 
 CLICK_ENDDECLS

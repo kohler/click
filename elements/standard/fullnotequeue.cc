@@ -62,34 +62,10 @@ FullNoteQueue::push(int, Packet *p)
     // Code taken from SimpleQueue::push().
     int h = _head, t = _tail, nt = next_i(t);
 
-    if (nt != h) {
-	_q[t] = p;
-	// memory barrier here
-	_tail = nt;
-
-	int s = size(h, nt);
-	if (s > _highwater_length)
-	    _highwater_length = s;
-
-	_empty_note.wake(); 
-
-	if (s == capacity()) {
-	    _full_note.sleep();
-#if __MTCLICK__
-	    // Work around race condition between push() and pull().
-	    // We might have just undone pull()'s Notifier::wake() call.
-	    // Easiest lock-free solution: check whether we should wake again!
-	    if (size() < capacity())
-		_full_note.wake();
-#endif
-	}
-
-    } else {
-	if (_drops == 0)
-	    click_chatter("%{element}: overflow", this);
-	_drops++;
-	p->kill();
-    }
+    if (nt != h)
+	push_success(h, t, nt, p);
+    else
+	push_failure(p);
 }
 
 Packet *
@@ -98,44 +74,10 @@ FullNoteQueue::pull(int)
     // Code taken from SimpleQueue::deq.
     int h = _head, t = _tail, nh = next_i(h);
 
-    if (h != t) {
-	Packet *p = _q[h];
-	// memory barrier here
-	_head = nh;
-
-	_sleepiness = 0;
-
-	_full_note.wake();
-	
-	return p;
-	
-    } else if (++_sleepiness == SLEEPINESS_TRIGGER) {
-        _empty_note.sleep();
-#if __MTCLICK__
-	// Work around race condition between push() and pull().
-	// We might have just undone push()'s Notifier::wake() call.
-	// Easiest lock-free solution: check whether we should wake again!
-	if (size())
-	    _empty_note.wake();
-#endif
-    }
-
-    return 0;
-}
-
-int
-FullNoteQueue::write_handler(const String &, Element *e, void *, ErrorHandler *)
-{
-    FullNoteQueue *q = static_cast<FullNoteQueue *>(e);
-    q->reset();
-    return 0;
-}
-
-void
-FullNoteQueue::add_handlers()
-{
-    NotifierQueue::add_handlers();
-    add_write_handler("reset", write_handler);
+    if (h != t)
+	return pull_success(h, t, nh);
+    else
+	return pull_failure();
 }
 
 CLICK_ENDDECLS

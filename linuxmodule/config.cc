@@ -85,7 +85,7 @@ parse_router(String s)
 
 /*********************** Installing and killing routers **********************/
 
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
 extern "C" int click_threads();
 #endif
 

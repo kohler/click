@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,15 +33,28 @@ static String::Initializer string_initializer;
 ElementTraits ElementTraits::the_null_traits;
 
 static const char * const driver_names[] = {
-    "userlevel", "linuxmodule", "bsdmodule", "ns"
+    "userlevel", "linuxmodule", "bsdmodule", "ns", "multithread"
+};
+
+static const char * const driver_multithread_names[] = {
+    "umultithread", "smpclick", "??", "??"
 };
 
 const char *
 Driver::name(int d)
 {
     static_assert(USERLEVEL == 0 && LINUXMODULE == 1 && BSDMODULE == 2 && NSMODULE == 3);
-    if (d >= 0 && d < COUNT)
+    if (d >= 0 && d <= COUNT)
 	return driver_names[d];
+    else
+	return "??";
+}
+
+const char *
+Driver::multithread_name(int d)
+{
+    if (d >= 0 && d < COUNT)
+	return driver_multithread_names[d];
     else
 	return "??";
 }
@@ -48,7 +62,7 @@ Driver::name(int d)
 const char *
 Driver::requirement(int d)
 {
-    if (d >= 0 && d < COUNT)
+    if (d >= 0 && d <= COUNT)
 	return driver_names[d];
     else
 	return "";
@@ -156,6 +170,8 @@ ElementTraits::calculate_driver_mask()
 	driver_mask |= 1 << Driver::NSMODULE;
     if (driver_mask == 0)
 	driver_mask = Driver::ALLMASK;
+    if (requirement_contains(requirements, "multithread"))
+	driver_mask |= 1 << Driver::MULTITHREAD;
 }
 
 String *

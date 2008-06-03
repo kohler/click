@@ -56,7 +56,7 @@ NotifierQueue::push(int, Packet *p)
 
     if (nt != h) {
 	_q[t] = p;
-	// memory barrier here
+	asm("" : : : "memory");
 	_tail = nt;
 
 	int s = size(h, nt);
@@ -82,7 +82,7 @@ NotifierQueue::pull(int)
 	_sleepiness = 0;
     else if (++_sleepiness == SLEEPINESS_TRIGGER) {
 	_empty_note.sleep();
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
 	// Work around race condition between push() and pull().
 	// We might have just undone push()'s Notifier::wake() call.
 	// Easiest lock-free solution: check whether we should wake again!

@@ -45,7 +45,7 @@ CLICK_INT_MODULE_PARAM(gid);
 MODULE_PARM_DESC(uid, "UID owning /click [0]");
 MODULE_PARM_DESC(gid, "GID owning /click [0]");
 
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
 static int threads = 1;
 CLICK_INT_MODULE_PARAM(threads);
 MODULE_PARM_DESC(threads, "number of Click threads per router [1]");
@@ -81,7 +81,7 @@ click_parm(int which)
     case CLICKPARM_CPU:
 	return cpu;
 #endif
-#if __MTCLICK__
+#if HAVE_MULTITHREAD
     case CLICKPARM_THREADS:
 	return threads;
 #endif

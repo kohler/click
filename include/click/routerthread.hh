@@ -17,6 +17,9 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 #endif
+#if CLICK_USERLEVEL && HAVE_MULTITHREAD
+# include <signal.h>
+#endif
 
 #define CLICK_DEBUG_SCHEDULING 0
 
@@ -97,6 +100,10 @@ class RouterThread
 #if CLICK_LINUXMODULE
     struct task_struct *_linux_task;
     spinlock_t _lock;
+    atomic_uint32_t _task_lock_waiting;
+#elif HAVE_MULTITHREAD
+    click_processor_t _running_processor;
+    Spinlock _lock;
     atomic_uint32_t _task_lock_waiting;
 #endif
     
@@ -279,6 +286,10 @@ RouterThread::lock_tasks()
 	spin_lock(&_lock);
 	_task_lock_waiting--;
     }
+#elif HAVE_MULTITHREAD
+    _task_lock_waiting++;
+    _lock.acquire();
+    _task_lock_waiting--;
 #endif
 }
 
@@ -289,6 +300,8 @@ RouterThread::attempt_lock_tasks()
     if (likely(current == _linux_task))
 	return true;
     return spin_trylock(&_lock);
+#elif HAVE_MULTITHREAD
+    return _lock.attempt();
 #else
     return true;
 #endif
@@ -300,6 +313,8 @@ RouterThread::unlock_tasks()
 #if CLICK_LINUXMODULE
     if (unlikely(current != _linux_task))
 	spin_unlock(&_lock);
+#elif HAVE_MULTITHREAD
+    _lock.release();
 #endif
 }
 
@@ -307,8 +322,13 @@ inline void
 RouterThread::wake()
 {
 #if CLICK_LINUXMODULE
-    if (_linux_task)
-	wake_up_process(_linux_task);
+    struct task_struct *task = _linux_task;
+    if (task)
+	wake_up_process(task);
+#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
+    click_processor_t tid = _running_processor;
+    if (tid != click_invalid_processor())
+	pthread_kill(tid, SIGIO);
 #endif
 #if CLICK_BSDMODULE && !BSD_NETISRSCHED
     if (_sleep_ident)
