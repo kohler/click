@@ -60,7 +60,6 @@ class BandwidthMeter : public Element { protected:
   unsigned rate_freq() const		{ return _rate.epoch_frequency(); }
   
   int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
   void add_handlers();
   
   void push(int port, Packet *);

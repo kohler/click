@@ -33,17 +33,17 @@ Align::~Align()
 int
 Align::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  unsigned count;
+  unsigned modulus;
   if (cp_va_kparse(conf, this, errh,
-		   "MODULUS", cpkP+cpkM, cpUnsigned, &count,
+		   "MODULUS", cpkP+cpkM, cpUnsigned, &modulus,
 		   "OFFSET", cpkP+cpkM, cpUnsigned, &_offset,
 		   cpEnd) < 0)
     return -1;
-  if (count != 2 && count != 4 && count != 8)
+  if (modulus != 2 && modulus != 4 && modulus != 8)
     return errh->error("align modulus must be 2, 4, or 8");
-  if (_offset >= (int)count)
+  if (_offset >= (int)modulus)
     return errh->error("align offset must be smaller than modulus");
-  _mask = count - 1;
+  _mask = modulus - 1;
   return 0;
 }
 

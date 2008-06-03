@@ -72,12 +72,6 @@ BandwidthMeter::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-int
-BandwidthMeter::initialize(ErrorHandler *)
-{
-  return 0;
-}
-
 void
 BandwidthMeter::push(int, Packet *p)
 {

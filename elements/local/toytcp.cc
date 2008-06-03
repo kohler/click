@@ -166,10 +166,11 @@ ToyTCP::tcp_output(Packet *xp)
     p = Packet::make(headroom, (const unsigned char *)0, plen, 0);
   } else {
     p = xp->uniqueify();
-    if(p->length() < plen)
-      p = p->put(plen - p->length());
-    else if(p->length() > plen)
-      p->take(p->length() - plen);
+    if (p->length() > plen)
+	p->take(p->length() - plen);
+    else if (p->length() < plen)
+	if (!(p = p->put(plen - p->length())))
+	    return;
   }
 
   click_tcp *th = (click_tcp *) p->data();
