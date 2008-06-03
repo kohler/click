@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2002 International Computer Science Institute
  * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -43,17 +44,16 @@ CLICK_DECLS
  * instance variable.
  *
  * Tasks are called very frequently, up to tens of thousands of times per
- * second.  Unlike Timer objects and selections, tasks are called
- * unconditionally.  Elements generally use Tasks for frequent tasks, and
- * implement their own algorithms for scheduling and unscheduling the tasks
- * when there's work to be done.  For infrequent events, it is far more
- * efficient to use Timer objects.
+ * second.  Elements generally use Tasks for frequent tasks, and implement
+ * their own algorithms for scheduling and unscheduling the tasks when there's
+ * work to be done.  For infrequent events, it is far more efficient to use
+ * Timer objects.
  *
- * A Task's hook function, which is called when the task fires, has bool
- * return type.  The hook should return true if the task did useful work, and
- * false if it was not able to do useful work (for example, because there were
- * no packets in the configuration to return).  Adaptive algorithms may use
- * this information to fine-tune Click's scheduling behavior.
+ * A Task's callback function, which is called when the task fires, has bool
+ * return type.  The callback should return true if the task did useful work,
+ * and false if it was not able to do useful work (for example, because there
+ * were no packets in the configuration to return).  Adaptive algorithms may
+ * use this information to fine-tune Click's scheduling behavior.
  *
  * Since Click tasks are cooperatively scheduled, executing a task should not
  * take a long time.  Slow tasks can inappropriately delay timers and other
@@ -110,8 +110,6 @@ Task::~Task()
 #endif
 }
 
-/** @brief Return the master where this task will be scheduled.
- */
 Master *
 Task::master() const
 {
@@ -258,9 +256,13 @@ Task::add_pending()
     m->_task_lock.release(flags);
 }
 
-/** @brief Unschedules the task.
+/** @brief Unschedule the task.
  *
- * When unschedule() returns, the task will not be scheduled on any thread.
+ * After unschedule() returns, the task will not run until it is rescheduled
+ * with reschedule().
+ *
+ * @note scheduled() may return true for a short time even after unschedule().
+ *
  * @sa reschedule, strong_unschedule, fast_unschedule
  */
 void
@@ -353,7 +355,7 @@ Task::true_reschedule()
 	add_pending();
 }
 
-/** @brief Unschedules the Task and moves it to a quiescent thread.
+/** @brief Unschedule the Task and move it to a quiescent thread.
  *
  * When strong_unschedule() returns, the task will not be scheduled on any
  * thread.  Furthermore, the task has been moved to a temporary "dead" thread.
@@ -394,7 +396,7 @@ Task::strong_unschedule()
 	add_pending();
 }
 
-/** @brief Reschedules the Task, moving it from the "dead" thread to its home
+/** @brief Reschedule the Task, moving it from the "dead" thread to its home
  * thread if appropriate.
  *
  * This function undoes any previous strong_unschedule().  If the task is on

@@ -20,7 +20,8 @@ extern "C" {
 
 #define PASS_GT(a, b)	((int)(a - b) > 0)
 
-typedef bool (*TaskHook)(Task *, void *);
+typedef bool (*TaskCallback)(Task *, void *);
+typedef TaskCallback TaskHook CLICK_DEPRECATED;
 class RouterThread;
 class TaskList;
 class Master;
@@ -35,13 +36,92 @@ class Task { public:
     enum { MAX_UTILIZATION = 1000 };
 #endif
 
-    inline Task(TaskHook hook, void *thunk);
-    inline Task(Element *e);		// call element->run_task()
+    /** @brief Construct a task that calls @a f with @a user_data argument.
+     *
+     * @param f callback function
+     * @param user_data argument for callback function
+     *
+     * Constructs a task that, when fired, calls @a f like so:
+     *
+     * @code
+     * bool work_done = f(task, user_data);
+     * @endcode
+     *
+     * where @a task is a pointer to this task.  @a f should return true if
+     * the task accomplished some meaningful work, and false if it did not.
+     * For example, a task that polls a network driver for packets should
+     * return true if it emits at least one packet, and false if no packets
+     * were available. */
+    inline Task(TaskCallback f, void *user_data);
+
+    /** @brief Construct a task that calls @a e ->@link Element::run_task(Task
+     * *) run_task()@endlink.
+     *
+     * @param e element to call
+     *
+     * Constructs a task that, when fired, calls the element @a e's @link
+     * Element::run_task(Task *) run_task()@endlink method, passing this Task
+     * as an argument.
+     *
+     * @sa Task(TaskCallback, void *) */
+    inline Task(Element *e);
+
+    /** @brief Destroy a task.
+     *
+     * Unschedules the task if necessary. */
     ~Task();
 
-    inline TaskHook hook() const;
-    inline void *thunk() const;
+
+    /** @brief Return the task's callback function.
+     *
+     * Returns null if the task was constructed with the Task(Element *)
+     * constructor. */
+    inline TaskCallback callback() const {
+	return _hook;
+    }
+
+    /** @brief Return the task callback function's user data. */
+    inline void *user_data() const {
+	return _thunk;
+    }
+    
+    /** @brief Return the task's associated element, if any.
+     *
+     * Returns null if the task was not constructed with the Task(Element *)
+     * constructor. */
     inline Element *element() const;
+
+
+    /** @brief Return true iff the task has been initialize()d. */
+    inline bool initialized() const;
+
+    /** @brief Return the task's home thread ID.
+     *
+     * This is the @link RouterThread::thread_id() thread_id()@endlink of the
+     * thread on which this Task would run if it were scheduled.  This need
+     * not equal the ID of the current thread(), since changes in
+     * home_thread_id() aren't always implemented immediately (because of
+     * locking issues). */
+    inline int home_thread_id() const;
+
+    /** @brief Return the thread on which this element is currently scheduled,
+     * or would be scheduled.
+     *
+     * Usually, task->thread()->@link RouterThread::thread_id()
+     * thread_id()@endlink == task->home_thread_id().  They can differ,
+     * however, if move_thread() was called but the task hasn't yet been moved
+     * to the new thread, or if the task was strongly unscheduled with
+     * strong_unschedule().  (In this last case, task->thread()->@link
+     * RouterThread::thread_id() thread_id()@endlink ==
+     * RouterThread::THREAD_STRONG_UNSCHEDULE.) */
+    inline RouterThread *thread() const;
+    
+    /** @brief Return the master where this task will be scheduled. */
+    Master *master() const;
+
+    void initialize(Router *router, bool scheduled);
+    void initialize(Element *e, bool scheduled);
+
 
     inline bool scheduled() const;
 
@@ -57,7 +137,6 @@ class Task { public:
     inline void fast_reschedule();
 #endif
 
-    inline int home_thread_id() const;
     void move_thread(int thread_id);
  
 #if HAVE_STRIDE_SCHED
@@ -66,13 +145,7 @@ class Task { public:
     inline void adjust_tickets(int delta);
 #endif
 
-    inline bool initialized() const;
-    void initialize(Router *, bool scheduled);
-    void initialize(Element *, bool scheduled);
-    inline RouterThread *thread() const;
-    Master *master() const;
-
-    inline void call_hook();
+    inline void fire();
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     inline unsigned runs() const;
@@ -86,6 +159,11 @@ class Task { public:
     inline void update_cycles(unsigned c);
 #endif
 
+    /** @cond never */
+    inline TaskCallback hook() const CLICK_DEPRECATED;
+    inline void *thunk() const CLICK_DEPRECATED;
+    /** @endcond never */
+    
   private:
 
     /* if gcc keeps this ordering, we may get some cache locality on a 16 or 32
@@ -106,7 +184,7 @@ class Task { public:
     int _tickets;
 #endif
   
-    TaskHook _hook;
+    TaskCallback _hook;
     void* _thunk;
   
 #ifdef HAVE_ADAPTIVE_SCHEDULER
@@ -155,24 +233,8 @@ CLICK_ENDDECLS
 CLICK_DECLS
 
 
-/** @brief Construct a task that calls @a hook with @a thunk argument.
- *
- * @param hook task hook
- * @param thunk user data for task hook
- *
- * Constructs a task that, when fired, calls the @a hook function like so:
- *
- * @code
- * bool work_done = hook(task, thunk);
- * @endcode
- *
- * where @a task is a pointer to this task.  The @a hook should return true if
- * the task accomplished some meaningful work, and false if it did not.  For
- * example, a task that polls a network driver for packets should return true
- * if it emits at least one packet, and false if no packets were available.
- */
 inline
-Task::Task(TaskHook hook, void* thunk)
+Task::Task(TaskCallback f, void *user_data)
 #if HAVE_TASK_HEAP
     : _schedpos(-1),
 #else
@@ -182,7 +244,7 @@ Task::Task(TaskHook hook, void* thunk)
 #if HAVE_STRIDE_SCHED
       _pass(0), _stride(0), _tickets(-1),
 #endif
-      _hook(hook), _thunk(thunk),
+      _hook(f), _thunk(user_data),
 #if HAVE_ADAPTIVE_SCHEDULER
       _runs(0), _work_done(0),
 #endif
@@ -194,17 +256,6 @@ Task::Task(TaskHook hook, void* thunk)
 {
 }
 
-/** @brief Construct a task that calls @a e ->@link Element::run_task(Task *)
- * run_task()@endlink.
- *
- * @param e element to call
- *
- * Constructs a task that, when fired, calls the element @a e's @link
- * Element::run_task(Task *) run_task()@endlink method, passing this Task
- * as an argument.
- *
- * @sa Task(TaskHook, void *)
- */
 inline
 Task::Task(Element* e)
 #if HAVE_TASK_HEAP
@@ -228,18 +279,18 @@ Task::Task(Element* e)
 {
 }
 
-/** @brief Returns true iff the task has been initialize()d. */
 inline bool
 Task::initialized() const
 {
     return _router != 0;
 }
 
-/** @brief Returns true iff the task is currently scheduled to run.
+/** @brief Return true iff the task is currently scheduled to run.
  *
- * This function will return false for a task in reschedule-pending state,
- * where the task will soon be rescheduled but isn't right now due to locking
- * issues.
+ * @note The scheduled() function is only approximate.  It may return false
+ * for a scheduled task, or true for an unscheduled task, due to locking
+ * issues that prevent some unschedule() and reschedule() operations from
+ * completing immediately.
  */
 inline bool
 Task::scheduled() const
@@ -251,60 +302,34 @@ Task::scheduled() const
 #endif
 }
 
-/** @brief Returns the task's hook function.
- *
- * Returns null if the task was constructed with the Task(Element *)
- * constructor.
- */
-inline TaskHook
+/** @brief Return the task's callback function.
+ * @deprecated Use callback() instead. */
+inline TaskCallback
 Task::hook() const
 {
     return _hook;
 }
 
-/** @brief Returns the task's thunk (the user data passed to its hook).
- */
+/** @brief Return the task's callback data.
+ * @deprecated Use user_data() instead. */
 inline void *
 Task::thunk() const
 {
     return _thunk;
 }
 
-/** @brief Returns the task's associated element, if any.
- *
- * Only works if the task was constructed with the Task(Element *)
- * constructor.
- */
 inline Element *
 Task::element()	const
 { 
     return _hook ? 0 : reinterpret_cast<Element*>(_thunk); 
 }
 
-/** @brief Returns the task's home thread ID.
- *
- * This is the @link RouterThread::thread_id() thread_id()@endlink of the
- * thread on which this Task would run if it were scheduled.  This need not
- * equal the ID of the current thread(), since changes in home_thread_id()
- * aren't always implemented immediately (because of locking issues).
- */
 inline int
 Task::home_thread_id() const
 {
     return _home_thread_id;
 }
 
-/** @brief Returns the thread on which this element is currently scheduled, or
- * would be scheduled.
- *
- * Usually, task->thread()->@link RouterThread::thread_id()
- * thread_id()@endlink == task->home_thread_id().  They can differ, however,
- * if move_thread() was called but the task hasn't yet been moved to
- * the new thread, or if the task was strongly unscheduled with
- * strong_unschedule().  (In this last case, task->thread()->@link
- * RouterThread::thread_id() thread_id()@endlink ==
- * RouterThread::THREAD_STRONG_UNSCHEDULE.)
- */
 inline RouterThread *
 Task::thread() const
 {
@@ -338,7 +363,7 @@ Task::fast_unschedule(bool should_be_scheduled)
 
 #if HAVE_STRIDE_SCHED
 
-/** @brief Returns the task's number of tickets.
+/** @brief Return the task's number of tickets.
  *
  * Tasks with larger numbers of tickets are scheduled more often.  Tasks are
  * initialized with tickets() == DEFAULT_TICKETS.
@@ -351,10 +376,10 @@ Task::tickets() const
     return _tickets;
 }
 
-/** @brief Sets the task's number of tickets.
+/** @brief Set the task's ticket count.
  * @param n the ticket count
  *
- * The ticket count @a n is pinned in the range [1, MAX_TICKETS].
+ * The ticket count @a n is pinned to the range [1, MAX_TICKETS].
  *
  * @sa tickets, adjust_tickets
  */
@@ -384,12 +409,12 @@ Task::adjust_tickets(int delta)
 }
 
 # if !HAVE_TASK_HEAP
-/** @brief Reschedules the task.  The task's current thread must be currently
+/** @brief Reschedule the task.  The task's current thread must be currently
  * locked.
  *
  * This accomplishes the same function as reschedule(), but does a faster job
  * because it assumes the task's thread lock is held.  Generally, this can be
- * guaranteed only from within a task's run_task() hook function.
+ * guaranteed only from within a task's run_task() callback function.
  */
 inline void
 Task::fast_reschedule()
@@ -478,7 +503,7 @@ Task::fast_schedule()
 #endif /* HAVE_STRIDE_SCHED */
 
 
-/** @brief Reschedules the task.
+/** @brief Reschedule the task.
  *
  * The task is rescheduled on its home thread.  The task will eventually run
  * (unless the home thread is quiescent).  Due to locking issues, the task may
@@ -495,13 +520,13 @@ Task::reschedule()
 }
 
 
-/** @brief Call the task's hook.
+/** @brief Fire the task by calling its callback function.
  *
  * This function is generally called by the RouterThread implementation; there
  * should be no need to call it yourself.
  */
 inline void
-Task::call_hook()
+Task::fire()
 {
 #if __MTCLICK__
     _cycle_runs++;

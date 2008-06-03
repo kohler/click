@@ -20,8 +20,8 @@ class Timer { public:
 
     /** @brief Construct a Timer that calls @a f(this, @a user_data) when
      * fired.
-     * @param f the callback function
-     * @param user_data argument for the callback function */
+     * @param f callback function
+     * @param user_data argument for callback function */
     Timer(TimerHook f, void *user_data);
 
     /** @brief Create a Timer that calls @a element ->@link

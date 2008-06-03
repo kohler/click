@@ -369,7 +369,7 @@ RouterThread::run_tasks(int ntasks)
 	_pass = t->_pass;
 #endif
 	
-	t->call_hook();
+	t->fire();
 
 #if HAVE_TASK_HEAP
 	if (_task_heap_hole) {
@@ -590,7 +590,7 @@ RouterThread::driver_once()
     Task *t = task_begin();
     if (t != task_end()) {
 	t->fast_unschedule(false);
-	t->call_hook();
+	t->fire();
     }
 #ifdef CLICK_BSDMODULE  /* XXX MARKO */
     splx(s);
