@@ -195,7 +195,8 @@ class HashContainer { public:
      * n, then @a element becomes the first element in bucket @em n.  Other
      * elements in the bucket, if any, are chained along.
      *
-     * On return, @a it is updated to point to @a element.
+     * On return, @a it is updated to point immediately after @a element.
+     * If @a it was not live before, then it will not be live after.
      *
      * @note HashContainer never automatically rehashes itself, so element
      * insertion leaves any existing iterators valid.  For best performance,

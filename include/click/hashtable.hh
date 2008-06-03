@@ -207,8 +207,19 @@ class HashTable<T> {
      *
      * If an element with @a key already exists in the table, then find(@a
      * key) and find_insert(@a key) are equivalent.  Otherwise, find_insert
-     * adds a new value T(@a key) to the table and returns its iterator. */
+     * adds a new value T(@a key) to the table and returns its iterator.
+     *
+     * @sa operator[] */
     inline iterator find_insert(key_const_reference key);
+
+    /** @brief Ensure an element with key @a key and return its reference.
+     *
+     * If an element with @a key already exists in the table, then returns a
+     * reference to that element.  Otherwise, adds a new value T(@a key) to
+     * the table and returns a reference to the new element.
+     *
+     * @sa find_insert(key_const_reference) */
+    inline value_type &operator[](key_const_reference key);
 
     /** @brief Ensure an element with key @a value.hashkey() and return its iterator.
      *
@@ -300,6 +311,12 @@ class HashTable_const_iterator { public:
 	return _rep.get()->v;
     }
 
+    /** @brief Return this element's key.
+     * @pre *this != end() */
+    typename HashTable<T>::key_const_reference key() const {
+	return _rep.get()->hashkey();
+    }
+    
     /** @brief Return true iff *this != end(). */
     bool live() const {
 	return (bool) _rep;
@@ -868,6 +885,13 @@ HashTable_iterator<T> HashTable<T>::find_insert(key_const_reference key)
 	    insert_balance(i, e);
 	}
     return i;
+}
+
+template <typename T>
+typename HashTable<T>::value_type &
+HashTable<T>::operator[](key_const_reference key)
+{
+    return *find_insert(key);
 }
 
 template <typename T>
