@@ -34,7 +34,8 @@ class Packet { public:
 	ADDR_ANNO_SIZE = 16,
 	USER_ANNO_SIZE = 24,
 	USER_ANNO_U16_SIZE = USER_ANNO_SIZE / 2,
-	USER_ANNO_U32_SIZE = USER_ANNO_SIZE / 4
+	USER_ANNO_U32_SIZE = USER_ANNO_SIZE / 4,
+	USER_ANNO_U64_SIZE = USER_ANNO_SIZE / 8
     };
 
     /** @name Data */
@@ -223,6 +224,13 @@ class Packet { public:
     /** @brief Set the next packet annotation. */
     inline void set_next(Packet *p);
 
+    /** @brief Return the previous packet annotation. */
+    inline Packet *prev() const;
+    /** @overload */
+    inline Packet *&prev();
+    /** @brief Set the previous packet annotation. */
+    inline void set_prev(Packet *p);
+
     /** @brief Return a pointer to the address annotation area.
      *
      * The area is ADDR_ANNO_SIZE bytes long. */
@@ -257,6 +265,12 @@ class Packet { public:
 
     /** @overload */
     const void *user_anno() const	{ return &anno()->user.u8[0]; }
+
+    /** @brief Return a pointer to the user annotation area as uint8_ts. */
+    uint8_t *user_anno_u8()		{ return &anno()->user.u8[0]; }
+
+    /** @brief overload */
+    const uint8_t *user_anno_u8() const	{ return &anno()->user.u8[0]; }
 
     /** @brief Return a pointer to the user annotation area as uint32_ts. */
     uint32_t *user_anno_u32()		{ return &anno()->user.u32[0]; }
@@ -320,7 +334,24 @@ class Packet { public:
      * Affects user annotation bytes [4*@a i, 4*@a i+3]. */
     void set_user_anno_s32(int i, int32_t v) { anno()->user.u32[i] = v; }
 
-    inline void clear_annotations();
+#if HAVE_INT64_TYPES
+    /** @brief Return 64-bit user annotation @a i.
+     * @param i annotation index
+     * @pre 0 <= @a i < USER_ANNO_U64_SIZE
+     *
+     * Affects user annotation bytes [8*@a i, 8*@a i+7]. */
+    uint64_t user_anno_u64(int i) const	{ return anno()->user.u64[i]; }
+
+    /** @brief Set 64-bit user annotation @a i.
+     * @param i annotation index
+     * @param v value
+     * @pre 0 <= @a i < USER_ANNO_U64_SIZE
+     *
+     * Affects user annotation bytes [8*@a i, 8*@a i+7]. */
+    void set_user_anno_u64(int i, uint64_t v) { anno()->user.u64[i] = v; }
+#endif
+    
+    inline void clear_annotations(bool all = true);
     inline void copy_annotations(const Packet *);
     //@}
 
@@ -357,6 +388,9 @@ class Packet { public:
 	    uint8_t u8[USER_ANNO_SIZE];
 	    uint16_t u16[USER_ANNO_U16_SIZE];
 	    uint32_t u32[USER_ANNO_U32_SIZE];
+#if HAVE_INT64_TYPES
+	    uint64_t u64[USER_ANNO_U64_SIZE];
+#endif
 	} user;
 	// flag allocations: see packet_anno.hh
     
@@ -388,6 +422,7 @@ class Packet { public:
     struct mbuf *_m;
 # endif
     Packet *_next;
+    Packet *_prev;
 # if CLICK_NS
     SimPacketinfoWrapper _sim_packetinfo;
 # endif
@@ -585,6 +620,36 @@ Packet::set_next(Packet *p)
     skb()->next = p->skb();
 #else
     _next = p;
+#endif
+}
+
+inline Packet *
+Packet::prev() const
+{
+#if CLICK_LINUXMODULE
+    return (Packet *)(skb()->prev);
+#else
+    return _prev;
+#endif
+}
+
+inline Packet *&
+Packet::prev()
+{
+#if CLICK_LINUXMODULE
+    return (Packet *&)(skb()->prev);
+#else
+    return _prev;
+#endif
+}
+
+inline void
+Packet::set_prev(Packet *p)
+{
+#if CLICK_LINUXMODULE
+    skb()->prev = p->skb();
+#else
+    _prev = p;
 #endif
 }
 
@@ -804,7 +869,10 @@ Packet::set_packet_type_anno(PacketType p)
  *
  * The @a data is copied into the new packet.  If @a data is null, the
  * packet's data is left uninitialized.  The new packet's headroom equals
- * DEFAULT_HEADROOM, its tailroom is 0. */
+ * DEFAULT_HEADROOM, its tailroom is 0.
+ *
+ * The returned packet's annotations are cleared and its header pointers are
+ * null. */
 inline WritablePacket *
 Packet::make(const char *data, uint32_t length)
 {
@@ -823,7 +891,10 @@ Packet::make(const unsigned char *data, uint32_t length)
  * @return new packet, or null if no packet could be created
  *
  * The packet's data is left uninitialized.  The new packet's headroom equals
- * DEFAULT_HEADROOM, its tailroom is 0. */
+ * DEFAULT_HEADROOM, its tailroom is 0.
+ *
+ * The returned packet's annotations are cleared and its header pointers are
+ * null. */ 
 inline WritablePacket *
 Packet::make(uint32_t length)
 {
@@ -841,7 +912,14 @@ Packet::make(uint32_t length)
  * <tt>skb_orphan(skb)</tt> and returned.  If it is larger than 1, then @a skb
  * is cloned and the clone is returned.  (sk_buffs used for Click Packet
  * objects must have <tt>skb->users</tt> == 1.)  Null might be returned if
- * there's no memory for the clone.  */
+ * there's no memory for the clone.
+ *
+ * The returned packet's annotations and header pointers <em>are not
+ * cleared</em>: they have the same values they did in the sk_buff.  If the
+ * packet came from Linux, then the header pointers and shared annotations
+ * (timestamp, packet type, next/prev packet) might have valid values, but the
+ * Click annotations (address, user) likely do not.  Use clear_annotations()
+ * to clear them. */
 inline Packet *
 Packet::make(struct sk_buff *skb)
 {
@@ -1253,13 +1331,13 @@ Packet::change_headroom_and_length(uint32_t headroom, uint32_t length)
 }
 #endif
 
-inline IPAddress 
+inline IPAddress
 Packet::dst_ip_anno() const
 {
     return IPAddress(anno()->addr.ip4);
 }
 
-inline void 
+inline void
 Packet::set_dst_ip_anno(IPAddress a)
 { 
     anno()->addr.ip4 = a.addr(); 
@@ -1514,21 +1592,30 @@ Packet::transport_header_offset() const
 }
 
 /** @brief Clear all packet annotations.
+ * @param  all  If true, clear all annotations.  If false, clear only Click's
+ *   internal annotations.
  *
  * All user annotations and the address annotation are set to zero, the packet
  * type annotation is set to HOST, the device annotation and all header
  * pointers are set to null, the timestamp annotation is cleared, and the
- * next-packet annotation is set to null. */
+ * next/prev-packet annotations are set to null.
+ *
+ * If @a all is false, then the packet type, device, timestamp, header, and
+ * next/prev-packet annotations are left alone.
+ */
 inline void
-Packet::clear_annotations()
+Packet::clear_annotations(bool all)
 {
     memset(anno(), '\0', sizeof(Anno));
-    set_packet_type_anno(HOST);
-    set_device_anno(0);
-    set_timestamp_anno(Timestamp());
-    set_mac_header(0);
-    set_network_header(0, 0);
-    set_next(0);
+    if (all) {
+	set_packet_type_anno(HOST);
+	set_device_anno(0);
+	set_timestamp_anno(Timestamp());
+	set_mac_header(0);
+	set_network_header(0, 0);
+	set_next(0);
+	set_prev(0);
+    }
 }
 
 /** @brief Copy most packet annotations from @a p.
@@ -1538,7 +1625,7 @@ Packet::clear_annotations()
  * device annotation, and timestamp annotation are set to the corresponding
  * annotations from @a p.
  *
- * @note The next-packet and header annotations are not copied. */
+ * @note The next/prev-packet and header annotations are not copied. */
 inline void
 Packet::copy_annotations(const Packet *p)
 {

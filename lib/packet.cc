@@ -130,8 +130,8 @@ CLICK_DECLS
  * <li><b>Performance counter</b> (linuxmodule only): A 64-bit integer
  * intended to hold a performance counter value.  Used by SetCycleCount and
  * others.</li>
- * <li><b>Next packet:</b> A pointer is provided to allow elements to chain
- * packets into a singly linked list.</li>
+ * <li><b>Next and previous packet:</b> Pointers provided to allow elements to
+ * chain packets into a doubly linked list.</li>
  * <li><b>Address:</b> Each packet has ADDR_ANNO_SIZE bytes available for a
  * network address.  Routing elements, such as RadixIPLookup, set the address
  * annotation to indicate the desired next hop; ARPQuerier uses this
@@ -332,7 +332,10 @@ Packet::make(uint32_t headroom, const unsigned char *data,
  * or because of something like a push() or full(), the @a destructor will be
  * called with arguments @a destructor(@a data, @a length).  (If @a destructor
  * is null, the packet data will be freed by <tt>delete[] @a data</tt>.)  The
- * packet has zero headroom and tailroom. */
+ * packet has zero headroom and tailroom.
+ *
+ * The returned packet's annotations are cleared and its header pointers are
+ * null. */ 
 WritablePacket *
 Packet::make(unsigned char *data, uint32_t length,
 	     void (*destructor)(unsigned char *, size_t))
