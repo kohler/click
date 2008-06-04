@@ -95,7 +95,7 @@ my(@section_headers) =
       'annotations'		=> 'Annotations',
       'debugging'		=> 'Debugging',
       'control'			=> 'Control',
-      'smpclick'		=> 'Multithreaded Click',
+      'threads'			=> 'Thread Management',
       'test'			=> 'Regression Tests'
       );
 my(%section_headers);

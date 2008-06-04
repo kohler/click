@@ -230,7 +230,7 @@ dnl ELEMENTS_ARG_ENABLE(snmp, [include SNMP elements], NO)
 ELEMENTS_ARG_ENABLE(standard, [include standard elements], yes)
 ELEMENTS_ARG_ENABLE(tcpudp, [include TCP and UDP elements], yes)
 ELEMENTS_ARG_ENABLE(test, [include regression test elements], NO)
-ELEMENTS_ARG_ENABLE(threads, [include scheduling management elements], yes)
+ELEMENTS_ARG_ENABLE(threads, [include thread management elements], yes)
 ELEMENTS_ARG_ENABLE(wifi, [include wifi elements and support], NO)
 AC_ARG_ENABLE(experimental, [  --enable-experimental   enable experimental elements in normal groups], :, enable_experimental=no)
 

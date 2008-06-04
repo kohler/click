@@ -5,7 +5,7 @@
 /*
  * =c
  * BalancedThreadSched([INTERVAL, INCREASING])
- * =s smpclick
+ * =s threads
  * bin packing scheduler
  * =d
  *

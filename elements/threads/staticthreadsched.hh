@@ -5,7 +5,7 @@
 /*
  * =c
  * StaticThreadSched(ELEMENT THREAD, ...)
- * =s smpclick
+ * =s threads
  * specifies element and thread scheduling parameters
  * =d
  * Statically binds elements to threads. If more than one StaticThreadSched

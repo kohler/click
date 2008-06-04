@@ -7,10 +7,12 @@ CLICK_DECLS
 /*
  * =c
  * SpinlockAcquire(LOCK)
- * =s smpclick
+ * =s threads
  * acquires spinlock
  * =d
- * Acquires the spinlock named LOCK. LOCK must be defined in a SpinlockInfo element.
+ * Acquires the spinlock named LOCK. LOCK must be defined in a SpinlockInfo
+ * element.
+ * =a SpinlockInfo, SpinlockRelease
  */
 
 class SpinlockAcquire : public Element {
@@ -21,8 +23,6 @@ public:
   ~SpinlockAcquire()			{}
 
   const char *class_name() const	{ return "SpinlockAcquire"; }
-  const char *port_count() const	{ return "-/-"; }
-  const char *processing() const	{ return AGNOSTIC; }
   
   int configure(Vector<String> &, ErrorHandler *);
   

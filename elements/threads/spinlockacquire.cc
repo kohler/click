@@ -1,8 +1,9 @@
 /*
  * spinlockacquire.{cc,hh} -- element acquires spinlock
- * Benjie Chen
+ * Benjie Chen, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later
@@ -14,7 +15,7 @@
 #include <click/router.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include "spinlockinfo.hh"
+#include <click/nameinfo.hh>
 #include "spinlockacquire.hh"
 CLICK_DECLS
 
@@ -24,15 +25,8 @@ SpinlockAcquire::configure(Vector<String> &conf, ErrorHandler *errh)
     String name;
     if (cp_va_kparse(conf, this, errh, "LOCK", cpkP+cpkM, cpString, &name, cpEnd)<0)
 	return -1;
-    for (int i = 0; i < router()->nelements(); i++) {
-	if (SpinlockInfo *si = 
-	    (SpinlockInfo *)(router()->element(i)->cast("SpinlockInfo"))) {
-	    _lock = si->query(name, Element::name());
-	    if (!_lock)
-		return errh->error("cannot locate spinlock %s",name.c_str());
-	    break;
-	}
-    }
+    if (!NameInfo::query(NameInfo::T_SPINLOCK, this, name, &_lock, sizeof(Spinlock *)))
+	return errh->error("cannot locate spinlock %s", name.c_str());
     return 0;
 }
 

@@ -9,21 +9,19 @@ CLICK_DECLS
 /*
  * =c
  * SpinlockInfo(NAME, ...)
- * =s smpclick
+ * =s threads
  * specifies names of spinlocks
  * =d
  *
  * Lets you use mnemonic names for spinlocks. Each name names a spinlock that
  * the SpinlockAcquire and SpinlockRelease elements can use to reference a
  * spinlock.
+ * =a SpinlockAcquire, SpinlockRelease
  */
 
 class SpinlockInfo : public Element {
 
-  HashTable<String, int> _map;
-  Vector<Spinlock *> _spinlocks;
-
-  int add_spinlock(const Vector<String> &, const String &, ErrorHandler *);
+  Vector<Spinlock> _spinlocks;
 
 public:
   
@@ -32,9 +30,7 @@ public:
   const char *class_name() const	{ return "SpinlockInfo"; }
   int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
   int configure(Vector<String> &, ErrorHandler *);
-  void cleanup(CleanupStage);
-  
-  Spinlock *query(const String &, const String &) const;
+
 };
 
 CLICK_ENDDECLS

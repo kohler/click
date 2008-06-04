@@ -7,10 +7,12 @@ CLICK_DECLS
 /*
  * =c
  * SpinlockRelease(LOCK)
- * =s smpclick
+ * =s threads
  * releases spinlock
  * =d
- * Releases the spinlock named LOCK. LOCK must be defined in a SpinlockInfo element.
+ * Releases the spinlock named LOCK. LOCK must be defined in a SpinlockInfo
+ * element.
+ * =a SpinlockInfo, SpinlockAcquire
  */
 
 class SpinlockRelease : public Element {

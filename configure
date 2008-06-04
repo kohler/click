@@ -1355,7 +1355,7 @@ Optional Features:
   --disable-standard      do not include standard elements
   --disable-tcpudp        do not include TCP and UDP elements
   --enable-test           include regression test elements
-  --disable-threads       do not include scheduling management elements
+  --disable-threads       do not include thread management elements
   --enable-wifi           include wifi elements and support
   --enable-experimental   enable experimental elements in normal groups
   --disable-int64         disable 64-bit integer support
