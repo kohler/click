@@ -141,7 +141,7 @@ inline uint32_t click_random() {
     return random();
 #elif CLICK_LINUXMODULE
     click_random_seed = click_random_seed * 69069L + 5;
-    return (click_random_seed ^ jiffies) & RAND_MAX; // XXX jiffies??
+    return (click_random_seed ^ jiffies) & CLICK_RAND_MAX; // XXX jiffies??
 #elif HAVE_RANDOM && CLICK_RAND_MAX == RAND_MAX
     return random();
 #else
