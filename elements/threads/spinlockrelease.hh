@@ -23,8 +23,6 @@ public:
   ~SpinlockRelease()			{}
 
   const char *class_name() const	{ return "SpinlockRelease"; }
-  const char *port_count() const	{ return "-/-"; }
-  const char *processing() const	{ return AGNOSTIC; }
   
   int configure(Vector<String> &, ErrorHandler *);
   
