@@ -58,4 +58,10 @@
 #define IPSEC_SA_DATA_REFERENCE_ANNO(p)	((p)->user_anno_u32(5))
 #define SET_IPSEC_SA_DATA_REFERENCE_ANNO(p, v) ((p)->set_user_anno_u32(5, (v)))
 
+#if HAVE_INT64_TYPES
+// bytes 24-31
+# define PERFCTR_ANNO(p)		((p)->user_anno_u64(3))
+# define SET_PERFCTR_ANNO(p, v)		((p)->set_user_anno_u64(3, (v)))
+#endif
+
 #endif

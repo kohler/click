@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include "setcyclecount.hh"
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 
 SetCycleCount::SetCycleCount()
 {
@@ -30,7 +31,7 @@ SetCycleCount::~SetCycleCount()
 void
 SetCycleCount::push(int, Packet *p)
 {
-  p->set_perfctr_anno(click_get_cycles());
+  SET_PERFCTR_ANNO(p, click_get_cycles());
   output(0).push(p);
 }
 
@@ -39,7 +40,7 @@ SetCycleCount::pull(int)
 {
   Packet *p = input(0).pull();
   if (p)
-    p->set_perfctr_anno(click_get_cycles());
+    SET_PERFCTR_ANNO(p, click_get_cycles());
   return p;
 }
 

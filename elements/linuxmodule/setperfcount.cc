@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 #include <asm/msr.h>
 
 SetPerfCount::SetPerfCount()
@@ -59,7 +60,7 @@ SetPerfCount::smaction(Packet *p)
   unsigned l, h;
   rdpmc(_which, l, h);
   uint64_t hq = h;
-  p->set_perfctr_anno((hq << 32) | l);
+  SET_PERFCTR_ANNO(p, (hq << 32) | l);
 }
 
 void

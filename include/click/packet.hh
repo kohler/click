@@ -32,7 +32,7 @@ class Packet { public:
 	DEFAULT_HEADROOM = 28,
 	MIN_BUFFER_LENGTH = 64,
 	ADDR_ANNO_SIZE = 16,
-	USER_ANNO_SIZE = 24,
+	USER_ANNO_SIZE = 32,
 	USER_ANNO_U16_SIZE = USER_ANNO_SIZE / 2,
 	USER_ANNO_U32_SIZE = USER_ANNO_SIZE / 4,
 	USER_ANNO_U64_SIZE = USER_ANNO_SIZE / 8
@@ -187,13 +187,6 @@ class Packet { public:
     inline PacketType packet_type_anno() const;
     /** @brief Set the packet type annotation. */
     inline void set_packet_type_anno(PacketType t);
-
-#if CLICK_LINUXMODULE && HAVE_INT64_TYPES
-    /** @brief Return the performance counter annotation (linuxmodule). */
-    uint64_t perfctr_anno() const	{ return anno()->perfctr; }
-    /** @brief Set the performance counter annotation (linuxmodule). */
-    void set_perfctr_anno(uint64_t pc)	{ anno()->perfctr = pc; }
-#endif
 
 #if CLICK_NS
     class SimPacketinfoWrapper { public:
@@ -393,10 +386,6 @@ class Packet { public:
 #endif
 	} user;
 	// flag allocations: see packet_anno.hh
-    
-#if (CLICK_LINUXMODULE || CLICK_BSDMODULE) && defined(HAVE_INT64_TYPES)
-	uint64_t perfctr;
-#endif
     };
     /** @endcond never */
 

@@ -18,6 +18,7 @@
 
 #include <click/config.h>
 #include "cyclecountaccum.hh"
+#include <click/packet_anno.hh>
 #include <click/glue.hh>
 
 CycleCountAccum::CycleCountAccum()
@@ -32,8 +33,8 @@ CycleCountAccum::~CycleCountAccum()
 inline void
 CycleCountAccum::smaction(Packet *p)
 {
-    if (p->perfctr_anno()) {
-	_accum += click_get_cycles() - p->perfctr_anno();
+    if (PERFCTR_ANNO(p)) {
+	_accum += click_get_cycles() - PERFCTR_ANNO(p);
 	_count++;
     } else {
 	_zero_count++;

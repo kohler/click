@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 #include <asm/msr.h>
 
 PerfCountAccum::PerfCountAccum()
@@ -66,7 +67,7 @@ PerfCountAccum::smaction(Packet *p)
   unsigned l, h;
   rdpmc(_which, l, h);
   uint64_t delta =
-    p->perfctr_anno() - (((uint64_t)h << 32) | l);
+    PERFCTR_ANNO(p) - (((uint64_t)h << 32) | l);
   _accum += delta;
   _count++;
 }
