@@ -90,6 +90,8 @@ operator<<(StringAccum &sa, const struct timeval &tv)
 	int len;
 	if (tv.tv_sec >= 0)
 	    len = sprintf(x, "%ld.%06ld", (long)tv.tv_sec, (long)tv.tv_usec);
+	else if (tv.tv_usec == 0)
+	    len = sprintf(x, "-%ld.%06ld", -(long)tv.tv_sec, (long)0);
 	else
 	    len = sprintf(x, "-%ld.%06ld", -((long)tv.tv_sec) - 1L, 1000000L - (long)tv.tv_usec);
 	sa.adjust_length(len);
@@ -110,19 +112,23 @@ operator<<(StringAccum &sa, const Timestamp& ts)
 	if (ts.sec() >= 0)
 	    sec = ts.sec(), subsec = ts.subsec();
 	else {
-	    *x++ = '-', sa.adjust_length(1);
-	    sec = -ts.sec() - 1, subsec = Timestamp::NSUBSEC - ts.subsec();
+	    *x++ = '-';
+	    sa.adjust_length(1);
+	    if (ts.subsec() == 0)
+		sec = -ts.sec(), subsec = 0;
+	    else
+		sec = -ts.sec() - 1, subsec = Timestamp::NSUBSEC - ts.subsec();
 	}
 	
 	int len;
 #if HAVE_NANOTIMESTAMP
 	uint32_t usec = subsec / 1000;
 	if (usec * 1000 == subsec)
-	    len = sprintf(x, "%u.%06u", sec, usec);
+	    len = sprintf(x, "%ld.%06u", (long) sec, usec);
 	else
-	    len = sprintf(x, "%u.%09u", sec, subsec);
+	    len = sprintf(x, "%ld.%09u", (long) sec, subsec);
 #else
-	len = sprintf(x, "%u.%06u", sec, subsec);
+	len = sprintf(x, "%ld.%06u", (long) sec, subsec);
 #endif
 	sa.adjust_length(len);
     }

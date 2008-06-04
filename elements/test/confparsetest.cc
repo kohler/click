@@ -140,6 +140,14 @@ ConfParseTest::initialize(ErrorHandler *errh)
     }
 #endif
 
+    Timestamp t;
+    CHECK(cp_time("-1.0001", &t) == true
+	  && t.sec() == -2 && t.usec() == 999900);
+    CHECK(t.unparse() == "-1.001000");
+    CHECK(cp_time("-10", &t) == true
+	  && t.sec() == -10 && t.subsec() == 0);
+    CHECK(t.unparse() == "-10.000000");
+
     errh->message("All tests pass!");
     return 0;
 }

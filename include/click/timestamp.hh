@@ -79,9 +79,15 @@ class Timestamp { public:
 #endif
 
     static inline Timestamp make_sec(seconds_type sec);
-    static inline Timestamp make_msec(uint32_t msec);
+    static inline Timestamp make_msec(unsigned long msec);
+    static inline Timestamp make_msec(long msec);
+    static inline Timestamp make_msec(unsigned msec);
+    static inline Timestamp make_msec(int msec);
     static inline Timestamp make_usec(seconds_type sec, uint32_t usec);
-    static inline Timestamp make_usec(uint32_t usec);
+    static inline Timestamp make_usec(unsigned long usec);
+    static inline Timestamp make_usec(unsigned usec);
+    static inline Timestamp make_usec(long usec);
+    static inline Timestamp make_usec(int usec);
     static inline Timestamp make_nsec(seconds_type sec, uint32_t nsec);
     
     static inline Timestamp epsilon();
@@ -304,9 +310,40 @@ Timestamp::make_sec(seconds_type sec)
     milliseconds.
     @param msec number of milliseconds (may be greater than 1000) */
 inline Timestamp
-Timestamp::make_msec(uint32_t msec)
+Timestamp::make_msec(unsigned long msec)
 {
     return Timestamp(msec / 1000, msec_to_subsec(msec % 1000));
+}
+
+/** @brief Return a timestamp representing an interval of @a msec
+    milliseconds.
+    @param msec number of milliseconds (may be negative or greater than 1000) */
+inline Timestamp
+Timestamp::make_msec(long msec)
+{
+    if (msec < 0) {
+	int32_t s = -(-msec / 1000);
+	int32_t ss = msec_to_subsec(-msec % 1000);
+	if (ss == 0)
+	    return Timestamp(s);
+	else
+	    return Timestamp(s - 1, NSUBSEC - ss);
+    } else
+	return Timestamp(msec / 1000, msec_to_subsec(msec % 1000));
+}
+
+/** @overload */
+inline Timestamp
+Timestamp::make_msec(unsigned msec)
+{
+    return make_msec(static_cast<unsigned long>(msec));
+}
+
+/** @overload */
+inline Timestamp
+Timestamp::make_msec(int msec)
+{
+    return make_msec(static_cast<long>(msec));
 }
 
 /** @brief Return a timestamp representing @a sec seconds plus @a usec
@@ -323,9 +360,40 @@ Timestamp::make_usec(seconds_type sec, uint32_t usec)
     microseconds.
     @param usec number of microseconds (may be greater than 1000000) */
 inline Timestamp
-Timestamp::make_usec(uint32_t usec)
+Timestamp::make_usec(unsigned long usec)
 {
     return Timestamp(usec / 1000000, usec_to_subsec(usec % 1000000));
+}
+
+/** @brief Return a timestamp representing an interval of @a usec
+    microseconds.
+    @param usec number of microseconds (may be negative or greater than 1000000) */
+inline Timestamp
+Timestamp::make_usec(long usec)
+{
+    if (usec < 0) {
+	int32_t s = -(-usec / 1000000);
+	int32_t ss = -usec % 1000000;
+	if (ss == 0)
+	    return Timestamp(s);
+	else
+	    return Timestamp(s - 1, NSUBSEC - ss);
+    } else
+	return Timestamp(usec / 1000000, usec_to_subsec(usec % 1000000));
+}
+
+/** @overload */
+inline Timestamp
+Timestamp::make_usec(unsigned usec)
+{
+    return make_usec(static_cast<unsigned long>(usec));
+}
+
+/** @overload */
+inline Timestamp
+Timestamp::make_usec(int usec)
+{
+    return make_usec(static_cast<long>(usec));
 }
 
 /** @brief Return a timestamp representing @a sec seconds plus @a nsec
