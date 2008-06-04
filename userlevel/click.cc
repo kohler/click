@@ -150,15 +150,17 @@ stop_signal_handler(int sig)
 	router->set_runcount(Router::STOP_RUNCOUNT);
 }
 
+#if HAVE_MULTITHREAD
 static void
 ignore_signal_handler(int sig)
 {
-#if !HAVE_SIGACTION
+# if !HAVE_SIGACTION
     signal(sig, ignore_signal_handler);
-#else
+# else
     (void) sig;
-#endif
+# endif
 }
+#endif
 }
 
 
