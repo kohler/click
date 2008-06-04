@@ -76,7 +76,7 @@ ForceUDP::simple_action(Packet *p_in)
   if(_dport >= 0){
     uh->uh_dport = htons(_dport);
   } else {
-    uh->uh_dport = htons(click_random() % 1024);
+    uh->uh_dport = htons(click_random(0, 1023));
   }
   _count++;
 

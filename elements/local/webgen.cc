@@ -77,7 +77,7 @@ WebGen::pick_src ()
   uint32_t x;
   uint32_t mask = (uint32_t) _mask;
 
-  x = (random () & ~mask) | ((uint32_t) _src_prefix & mask);
+  x = (click_random() & ~mask) | ((uint32_t) _src_prefix & mask);
   
   return IPAddress (x);
 }
@@ -490,11 +490,11 @@ WebGen::CB::reset (IPAddress src)
 {
   _src = src;
   _dport = htons (80);
-  _iss = random () & 0x0fffffff;
+  _iss = click_random() & 0x0fffffff;
   _irs = 0;
   _snd_nxt = _iss;
   _snd_una = _iss;
-  _sport = htons (1024 + (random () % 60000));
+  _sport = htons (1024 + (click_random() % 60000));
   _do_send = 0;
   _connected = 0;
   _got_fin = 0;
@@ -502,9 +502,9 @@ WebGen::CB::reset (IPAddress src)
   _closed = 0;
   _resends = 0;
 
-  int dir = random () % 10;
-  int file = random () % 9;		// 0 .. 8 exist
-  int c = random () % 3;		// 0 .. 3 exist
+  int dir = click_random(0, 9);
+  int file = click_random(0, 8);	// 0 .. 8 exist
+  int c = click_random(0, 2);		// 0 .. 3 exist
   sprintf (sndbuf, "GET /spec/%d/%d-%d-%d HTTP/1.0\r\n\r\n",
            dir, dir, c, file);
   sndlen = strlen (sndbuf);

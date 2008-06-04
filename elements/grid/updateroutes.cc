@@ -504,7 +504,7 @@ UpdateGridRoutes::hello_hook(Timer *, void *thunk)
 
   // XXX this random stuff is not right i think... wouldn't it be nice
   // if click had a phat RNG like ns?
-  int r2 = click_random();
+  uint32_t r2 = click_random();
   double r = (double) (r2 >> 1);
   int jitter = (int) (((double) n->_jitter) * r / ((double) 0x7FffFFff));
   if (r2 & 1)
