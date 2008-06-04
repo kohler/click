@@ -128,7 +128,7 @@ public:
   chash_t (size_t ns, unsigned short *ids, size_t nn, int seed = 0x1) 
     : num_servers (ns), num_nodes (nn)
   {
-    srandom (seed);
+    click_srandom(seed);
 
     int max_servers = -1;
     for (size_t i = 0; i < num_servers; i++) 
@@ -149,7 +149,7 @@ public:
     for (unsigned short i = 0; i < max_servers; i++) {
       bool inc = false;
       for (unsigned int j = 0; j < num_nodes; j++) {
-	int tmp = random (); // XXX: assumes randoms # from 0 to INT_MAX
+	int tmp = click_random(); // XXX: assumes randoms # from 0 to INT_MAX
 	if (servmap[i]) {
 	  if (!inc) {
 	    inc = true;

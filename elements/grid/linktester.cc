@@ -407,7 +407,7 @@ LinkTester::draw_random(double lambda)
 {
   // draw an exponentially distributed variable with parameter lambda
 #if 0
-  double r = (double) click_random() / (double) RAND_MAX;
+  double r = (double) click_random() / (double) CLICK_RAND_MAX;
   return -lambda * log(r);
 #else
   lambda = 0;

@@ -1459,8 +1459,8 @@ DSDVRouteTable::hello_hook()
   }
 
   // reschedule periodic update
-  long r2 = click_random();
-  long r = (r2 >> 1);
+  uint32_t r2 = click_random();
+  uint32_t r = (r2 >> 1);
   unsigned int jitter = (unsigned int) (r % (_jitter + 1));
   if (r2 & 1) {
     if (jitter <= msecs_to_next_ad) // hello can only happen in the future
