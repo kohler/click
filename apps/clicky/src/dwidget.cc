@@ -1751,7 +1751,7 @@ void delt::draw_background(dcontext &dcx)
 	cairo_set_border(dcx, _des->queue_stripe_color, _des->queue_stripe_style, _des->queue_stripe_width);
 	int o = _des->orientation;
 	double qls = _dess->queue_stripe_spacing;
-	int num_lines = (int) ((side_length(o) - _dess->padding[o]) / qls);
+	int num_lines = (int) ((side_length(o) - std::max(2.0, _dess->padding[o])) / qls);
 	double xpos = pos[(o + 2) & 3] + 0.5;
 	if (!side_greater(o))
 	    qls = -qls, xpos -= 1;
