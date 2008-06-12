@@ -449,8 +449,7 @@ Element::~Element()
  * @endcode
  */
 
-/** @brief Called to attempt to cast the element to a named type.
- *
+/** @brief Attempt to cast the element to a named type.
  * @param name name of the type being cast to
  *
  * Click calls this function to see whether this element has a given type,
@@ -614,7 +613,7 @@ Element::set_nports(int new_ninputs, int new_noutputs)
     return 0;
 }
 
-/** @brief Called to fetch the element's port count specifier.
+/** @brief Return the element's port count specifier.
  *
  * An element class overrides this virtual function to return a C string
  * describing its port counts.  The string gives acceptable input and output
@@ -770,7 +769,7 @@ Element::connect_port(bool isoutput, int port, Element* e, int e_port)
 
 // FLOW
 
-/** @brief Called to fetch the element's internal packet flow specifier (its
+/** @brief Return the element's internal packet flow specifier (its
  * <em>flow code</em>).
  *
  * An element class overrides this virtual function to return a C string
@@ -1036,7 +1035,7 @@ Element::port_flow(bool isoutput, int p, Bitvector* travels) const
 
 // PUSH OR PULL PROCESSING
 
-/** @brief Called to fetch the element's processing specifier.
+/** @brief Return the element's processing specifier.
  *
  * An element class overrides this virtual function to return a C string
  * describing which of its ports are push, pull, or agnostic.  The string
@@ -1152,15 +1151,58 @@ Element::processing_vector(int* in_v, int* out_v, ErrorHandler* errh) const
     }
 }
 
+/** @brief Return the element's flags.
+ *
+ * @warning This interface is not stable.
+ *
+ * This virtual function is called to fetch a string describing the element's
+ * flags.  A flags word includes one or more space-separated flag settings,
+ * where a flag setting consists of an uppercase letter optionally followed by
+ * a number.  The following flags are currently defined.
+ *
+ * <dl>
+ * <dt><tt>A</tt></dt> <dd>This element requires AlignmentInfo information.
+ * The click-align tool uses this flag; it does not generate AlignmentInfo for
+ * elements that lack the <tt>A</tt> flag.</dd>
+ * <dt><tt>S0</tt></dt> <dd>This element neither generates nor consumes
+ * packets.  Notification can use this flag to determine when a path is
+ * permanently idle.</dd>
+ * </dl>
+ */
 const char*
 Element::flags() const
 {
     return "";
 }
 
+/** @brief Return the flag value for @a flag in flags().
+ * @param flag the flag
+ *
+ * Returns the numeric flag value if @a flag was specified in flags(), 1 if @a
+ * flag was specified without a numeric flag value, and -1 if @a flag was not
+ * specified. */
+int
+Element::flag_value(int flag) const
+{
+    assert(flag > 0 && flag < 256);
+    for (const unsigned char *data = reinterpret_cast<const unsigned char *>(flags()); *data; ++data)
+	if (*data == flag) {
+	    if (data[1] && isdigit(data[1])) {
+		int value = 0;
+		for (++data; isdigit(*data); ++data)
+		    value = 10 * value + *data - '0';
+		return value;
+	    } else
+		return 1;
+	} else
+	    while (isspace(*data))
+		++data;
+    return -1;
+}
+
 // CLONING AND CONFIGURING
 
-/** @brief Called to fetch the element's configure phase, which determines the
+/** @brief Return the element's configure phase, which determines the
  * order in which elements are configured and initialized.
  *
  * Click configures and initializes elements in increasing order of
@@ -1207,7 +1249,7 @@ Element::configure_phase() const
     return CONFIGURE_PHASE_DEFAULT;
 }
 
-/** @brief Called to parse the element's configuration arguments.
+/** @brief Parse the element's configuration arguments.
  *
  * @param conf configuration arguments
  * @param errh error handler
@@ -1272,7 +1314,7 @@ Element::configure(Vector<String> &conf, ErrorHandler *errh)
     return cp_va_kparse(conf, this, errh, cpEnd);
 }
 
-/** @brief Called when an element should install its handlers.
+/** @brief Install the element's handlers.
  *
  * The add_handlers() method should install any handlers the element provides
  * by calling add_read_handler(), add_write_handler(), and set_handler().
@@ -1300,7 +1342,7 @@ Element::add_handlers()
 {
 }
 
-/** @brief Called to initialize an element.
+/** @brief Initialize the element.
  *
  * @param errh error handler
  *
@@ -1360,8 +1402,8 @@ Element::initialize(ErrorHandler *errh)
     return 0;
 }
 
-/** @brief Called when this element should take @a old_element's state, if
- * possible, during a hotswap operation.
+/** @brief Initialize the element for hotswap, where the element should take
+ * @a old_element's state, if possible.
  *
  * @param old_element element in the old configuration; result of
  * hotswap_element()
@@ -1410,7 +1452,7 @@ Element::take_state(Element *old_element, ErrorHandler *errh)
     (void) old_element, (void) errh;
 }
 
-/** @brief Returns a compatible element in the hotswap router.
+/** @brief Return a compatible element in the hotswap router.
  *
  * hotswap_element() searches the hotswap router, router()->@link
  * Router::hotswap_router() hotswap_router()@endlink, for an element
@@ -1439,7 +1481,7 @@ Element::hotswap_element() const
     return 0;
 }
 
-/** @brief Called when an element should clean up its state.
+/** @brief Clean up the element's state.
  *
  * @param stage this element's maximum initialization stage
  *
@@ -1503,7 +1545,7 @@ Element::cleanup(CleanupStage stage)
 
 // LIVE CONFIGURATION
 
-/** @brief Called to check whether an element supports live reconfiguration.
+/** @brief Return whether an element supports live reconfiguration.
  *
  * Returns true iff this element can be reconfigured as the router is running.
  * Click will make the element's "config" handler writable if
@@ -1517,7 +1559,7 @@ Element::can_live_reconfigure() const
   return false;
 }
 
-/** @brief Called to reconfigure an element while the router is running.
+/** @brief Reconfigure the element while the router is running.
  *
  * @param conf configuration arguments
  * @param errh error handler
@@ -1552,7 +1594,7 @@ Element::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 
-/** @brief Returns the element's current configuration string.
+/** @brief Return the element's current configuration string.
  *
  * The configuration string is obtained by calling the element's "config"
  * read handler.  The default read handler calls Router::econfiguration().
@@ -1571,7 +1613,7 @@ Element::configuration() const
 
 #if CLICK_USERLEVEL
 
-/** @brief Called to handle a file descriptor event.
+/** @brief Handle a file descriptor event.
  *
  * @param fd the file descriptor
  *
@@ -1789,7 +1831,7 @@ Element::set_handler(const String &name, int flags, HandlerHook hook, int user_d
     Router::set_handler(this, name, flags, hook, (void *) (uintptr_t) user_data1, (void *) (uintptr_t) user_data2);
 }
 
-/** @brief Sets flags for the handler named @a name.
+/** @brief Set flags for the handler named @a name.
  * @param name handler name
  * @param set_flags handler flags to set
  * @param clear_flags handler flags to clear
@@ -2464,7 +2506,7 @@ Element::reconfigure_keyword_handler(const String &arg, Element *e,
     return configuration_handler(Handler::OP_WRITE, str, e, -1, (const char *) user_data, errh);
 }
 
-/** @brief Called to handle a low-level remote procedure call.
+/** @brief Handle a low-level remote procedure call.
  *
  * @param command command number
  * @param[in,out] data pointer to any data for the command
@@ -2523,7 +2565,7 @@ Element::local_llrpc(unsigned command, void *data)
 
 // RUNNING
 
-/** @brief Called to push packet @a p onto push input @a port.
+/** @brief Push packet @a p onto push input @a port.
  *
  * @param port the input port number on which the packet arrives
  * @param p the packet
@@ -2545,7 +2587,7 @@ Element::push(int port, Packet *p)
 	output(0).push(p);
 }
 
-/** @brief Called to pull a packet from pull output @a port.
+/** @brief Pull a packet from pull output @a port.
  *
  * @param port the output port number receiving the pull request.
  * @return a packet
@@ -2567,7 +2609,7 @@ Element::pull(int port)
     return p;
 }
 
-/** @brief Called to implement simple packet filters.
+/** @brief Process a packet for a simple packet filter.
  *
  * @param p the input packet
  * @return the output packet, or null
@@ -2617,7 +2659,7 @@ Element::simple_action(Packet *p)
     return p;
 }
 
-/** @brief Called to run an element's task.
+/** @brief Run the element's task.
  *
  * @return true if the task accomplished some meaningful work, false otherwise
  *
@@ -2634,7 +2676,7 @@ Element::run_task(Task *)
     return run_task();
 }
 
-/** @brief Called to run an element's task (deprecated).
+/** @brief Run the element's task (deprecated).
  *
  * @return true if the task accomplished some meaningful work, false otherwise
  *
@@ -2653,7 +2695,7 @@ Element::run_task()
     return false;
 }
 
-/** @brief Called to run an element's timer.
+/** @brief Run the element's timer.
  *
  * @param timer the timer object that fired
  *
@@ -2674,7 +2716,7 @@ Element::run_timer(Timer *timer)
     (void) timer;
 }
 
-/** @brief Called to run an element's timer (deprecated).
+/** @brief Run the element's timer (deprecated).
  *
  * @deprecated This method is deprecated.  Elements should override the
  * run_timer(Timer *) function instead, which can differentiate between

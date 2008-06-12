@@ -64,6 +64,7 @@ class Element { public:
     static const char COMPLETE_FLOW[];
     
     virtual const char *flags() const;
+    int flag_value(int flag) const;
 
     virtual void *cast(const char *);
     

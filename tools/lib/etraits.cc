@@ -150,7 +150,7 @@ ElementTraits::flag_value(int flag) const
 	    } else
 		return 1;
 	} else
-	    while (i < len && !isspace((unsigned char) data[i]))
+	    while (i < len && !isspace(data[i]))
 		i++;
     }
     return -1;

@@ -68,6 +68,7 @@ class TimeSortedSched : public Element { public:
     const char *class_name() const	{ return "TimeSortedSched"; }
     const char *port_count() const	{ return "-/1"; }
     const char *processing() const	{ return PULL; }
+    const char *flags() const		{ return "S0"; }
     void *cast(const char *);
 
     int configure(Vector<String> &, ErrorHandler *);

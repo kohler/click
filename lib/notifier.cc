@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2002 International Computer Science Institute
  * Copyright (c) 2004-2005 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -460,8 +461,13 @@ NotifierElementFilter::check_match(Element* e, bool isoutput, int port)
 	
     } else if (port >= 0) {
 	Bitvector flow;
-	if (e->port_active(isoutput, port) // went from pull <-> push
-	    || (e->port_flow(isoutput, port, &flow), flow.zero())) {
+	if (e->port_active(isoutput, port)) {
+	    // went from pull <-> push
+	    _signal = NotifierSignal::busy_signal();
+	    return true;
+	} else if ((e->port_flow(isoutput, port, &flow), flow.zero())
+		   && e->flag_value('S') != 0) {
+	    // ran out of ports, but element might generate packets
 	    _signal = NotifierSignal::busy_signal();
 	    return true;
 	} else
