@@ -259,15 +259,15 @@ TCPConn::ctrl_write_handler
   addr0 = IPAddress(str_addr0);
   addr1 = IPAddress(str_addr1);
 
-  if (action == "connect")
+  if (action == "connect") {
     if (!(reinterpret_cast<TCPConn*>(e))->connect_handler
 	   (IPFlowID(addr0,htons(port0),addr1,htons(port1))))
       return errh->error("cannot connect");
-  else if (action == "listen")
+  } else if (action == "listen") {
     if (!(reinterpret_cast<TCPConn*>(e))->listen_handler
            (IPFlowID(addr0,htons(port0),0,0)))
       return errh->error("cannot listen");
-  else
+  } else
    return errh->error("action must be connect or listen\n");
   return 0;
 }

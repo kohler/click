@@ -119,8 +119,8 @@ public:
 
   grid_region() : _radius(0) { }
 
-  const unsigned int radius() { return ntohl(_radius); }
-  const struct grid_location center() { return _center; }
+  unsigned int radius() const { return ntohl(_radius); }
+  const grid_location &center() const { return _center; }
 
 #ifdef CLICK_USERLEVEL
   bool contains(const grid_location &l) 

@@ -444,7 +444,7 @@ private:
 
 inline size_t DSRRouteTable::ForwardedReqKey::hashcode() const {
   return ((unsigned int)( // XXX is this reasonable?
-			 ((_src.addr() << 16) + _src.addr() >> 16) ^
+			 ((_src.addr() << 16) + (_src.addr() >> 16)) ^
 			 _target.addr() ^
 			 _id));
 }

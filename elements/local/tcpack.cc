@@ -143,7 +143,7 @@ bool
 TCPAck::oput(Packet *p)
 {
   const click_tcp *tcph = p->tcp_header();
-  if (tcph->th_flags&(TH_SYN|TH_ACK) == (TH_SYN|TH_ACK)) {
+  if ((tcph->th_flags&(TH_SYN|TH_ACK)) == (TH_SYN|TH_ACK)) {
     // synack on output, meaning next ackn is the ackn in packet
     _ack_nxt = ntohl(tcph->th_ack);
     _synack = true;
