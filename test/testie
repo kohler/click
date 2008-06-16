@@ -6,6 +6,7 @@ require 5.006;
 
 ($attempts, $internal_errors, $errors, $require_errors) = (0, 0, 0, 0);
 ($preserve_temporaries, $expand_mode) = (0, 0);
+($running_pid) = (0);
 
 ## utilities
 
@@ -715,9 +716,11 @@ sub _shell ($$$$$) {
 	open(STDERR, ">", $stderr) || die "$stderr: $!\n";
 	exec $SHELL, "-e", $scriptfn;
     } else {
+	$running_pid = $child_pid;
 	waitpid($child_pid, 0);	# assume it succeeds
 	my($result) = $?;
 	kill('HUP', -$child_pid); # kill any processes left behind
+	$running_pid = 0;
 	$result;
     }
 }
@@ -871,6 +874,7 @@ sub run_test (;$$) {
 }
 
 $SIG{'INT'} = $SIG{'QUIT'} = $SIG{'TERM'} = $SIG{'__DIE__'} = sub {
+    kill('HUP', -$running_pid) if $running_pid; # kill any processes left behind
     system("/bin/rm -rf $dir 2>/dev/null") if !$preserve_temporaries;
     exit(1);
 };
