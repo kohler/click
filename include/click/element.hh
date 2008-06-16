@@ -30,17 +30,17 @@ class Element { public:
     static int nelements_allocated;
 
     // RUNTIME
-    virtual void push(int port, Packet*);
-    virtual Packet* pull(int port);
-    virtual Packet* simple_action(Packet*);
+    virtual void push(int port, Packet *p);
+    virtual Packet *pull(int port);
+    virtual Packet *simple_action(Packet *p);
 
-    virtual bool run_task(Task *);	// return true iff did useful work
-    virtual void run_timer(Timer *);
+    virtual bool run_task(Task *task);	// return true iff did useful work
+    virtual void run_timer(Timer *timer);
 #if CLICK_USERLEVEL
     virtual void selected(int fd);
 #endif
 
-    inline void checked_output_push(int port, Packet*) const;
+    inline void checked_output_push(int port, Packet *p) const;
     
     // ELEMENT CHARACTERISTICS
     virtual const char *class_name() const = 0;
@@ -66,7 +66,7 @@ class Element { public:
     virtual const char *flags() const;
     int flag_value(int flag) const;
 
-    virtual void *cast(const char *);
+    virtual void *cast(const char *name);
     
     // CONFIGURATION, INITIALIZATION, AND CLEANUP
     enum ConfigurePhase {
@@ -78,13 +78,13 @@ class Element { public:
     };
     virtual int configure_phase() const;
     
-    virtual int configure(Vector<String>&, ErrorHandler*);
+    virtual int configure(Vector<String> &conf, ErrorHandler *errh);
     
     virtual void add_handlers();
   
-    virtual int initialize(ErrorHandler*);
+    virtual int initialize(ErrorHandler *errh);
     
-    virtual void take_state(Element *old_element, ErrorHandler*);
+    virtual void take_state(Element *old_element, ErrorHandler *errh);
     virtual Element *hotswap_element() const;
 
     enum CleanupStage {
@@ -97,7 +97,7 @@ class Element { public:
 	CLEANUP_ROUTER_INITIALIZED,
 	CLEANUP_MANUAL
     };
-    virtual void cleanup(CleanupStage);
+    virtual void cleanup(CleanupStage stage);
 
     static inline void static_initialize();
     static inline void static_cleanup();
@@ -111,6 +111,12 @@ class Element { public:
     inline int eindex() const;
     inline int eindex(Router *r) const;
     Master *master() const;
+
+    inline void attach_router(Router *r, int eindex) {
+	assert(!_router);
+	_router = r;
+	_eindex = eindex;
+    }
 
     // INPUTS AND OUTPUTS
     inline int nports(bool isoutput) const;
@@ -236,10 +242,8 @@ class Element { public:
 
     Element(const Element &);
     Element &operator=(const Element &);
-  
+
     // METHODS USED BY ROUTER
-    inline void attach_router(Router* r, int n)	{ _router = r; _eindex = n; }
-    
     int set_nports(int, int);
     int notify_nports(int, int, ErrorHandler *);
     enum Processing { VAGNOSTIC, VPUSH, VPULL };
