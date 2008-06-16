@@ -5,6 +5,7 @@
 #include <click/ipaddress.hh>
 #include <click/sync.hh>
 #include <click/timer.hh>
+#include "arptable.hh"
 CLICK_DECLS
 
 /*
@@ -48,11 +49,27 @@ Keyword arguments are:
 
 =over 8
 
+=item TABLE
+
+Element.  Names an ARPTable element that holds this element's corresponding
+ARP state.  By default ARPQuerier creates its own internal ARPTable and uses
+that.  If TABLE is specified, CAPACITY, ENTRY_CAPACITY, and TIMEOUT are
+ignored.
+
 =item CAPACITY
 
-Unsigned integer.  The maximum number of saved IP packets the element will
-hold at a time.  Default is 2048.  Note that, unlike the number of packets,
-the total number of ARP entries the element will hold is currently unlimited.
+Unsigned integer.  The maximum number of saved IP packets the table will
+hold at a time.  Default is 2048.
+
+=item ENTRY_CAPACITY
+
+Unsigned integer.  The maximum number of ARP entries the table will hold
+at a time.  Default is 0, which means unlimited.
+
+=item TIMEOUT
+
+Time in seconds.  Amount of time before an ARP entry expires.  Defaults to
+1 minute.
 
 =item BROADCAST
 
@@ -85,6 +102,10 @@ ARPQuerier will send at most 10 queries a second for any IP address.
 
 Returns or sets the ARPQuerier's source IP address.
 
+=h broadcast read-only
+
+Returns the ARPQuerier's IP broadcast address.
+
 =h table read-only
 
 Returns a textual representation of the ARP table.
@@ -105,91 +126,75 @@ Returns the number of responses received.
 
 Returns the number of packets dropped.
 
+=h insert w
+
+Add an entry to the ARP table.  The input string should have the form "IP ETH".
+
+=h delete w
+
+Delete an entry from the ARP table.  The input string should be an IP address.
+
+=h clear w
+
+Clear the ARP table.
+
 =a
 
-ARPResponder, ARPFaker, AddressInfo
+ARPTable, ARPResponder, ARPFaker, AddressInfo
 */
 
 class ARPQuerier : public Element { public:
   
-  ARPQuerier();
-  ~ARPQuerier();
+    ARPQuerier();
+    ~ARPQuerier();
   
-  const char *class_name() const		{ return "ARPQuerier"; }
-  const char *port_count() const		{ return "2/1-2"; }
-  const char *processing() const		{ return PUSH; }
-  const char *flow_code() const			{ return "xy/x"; }
+    const char *class_name() const		{ return "ARPQuerier"; }
+    const char *port_count() const		{ return "2/1-2"; }
+    const char *processing() const		{ return PUSH; }
+    const char *flow_code() const		{ return "xy/x"; }
+    void *cast(const char *name);
 
-  void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *);
+    int live_reconfigure(Vector<String> &, ErrorHandler *);
+    bool can_live_reconfigure() const		{ return true; }
+    int initialize(ErrorHandler *errh);
+    void add_handlers();
+    void cleanup(CleanupStage stage);
+    void take_state(Element *e, ErrorHandler *errh);
   
-  int configure(Vector<String> &, ErrorHandler *);
-  int live_reconfigure(Vector<String> &, ErrorHandler *);
-  bool can_live_reconfigure() const		{ return true; }
-
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  void clear_map();
+    void push(int port, Packet *p);
   
-  void take_state(Element *, ErrorHandler *);
-  
-  void push(int port, Packet *);
-  
-  Packet *make_query(unsigned char tpa[4],
-                     unsigned char sha[6], unsigned char spa[4]);
-
-    struct ARPEntry {		// This structure is now larger than I'd like
-	IPAddress ip;		// (40B) but probably still fine.
-	EtherAddress en;	// Deleting head and pprev could get it down to
-	bool ok;		// 32B, with some time cost.
-	bool polling;		// It used to be 24B... :|
-	click_jiffies_t last_response_jiffies;
-	Packet *head;
-	Packet *tail;
-	ARPEntry *next;
-	ARPEntry **pprev;
-	ARPEntry *age_next;
-	ARPEntry **age_pprev;
-    };
+    Packet *make_query(unsigned char tpa[4],
+		       unsigned char sha[6], unsigned char spa[4]);
 
   private:
-    
-    ReadWriteLock _lock;
 
-    enum { NMAP = 256 };
-    ARPEntry *_map[NMAP];
-    ARPEntry *_age_head;
-    ARPEntry *_age_tail;
+    ARPTable *_arpt;
     EtherAddress _my_en;
     IPAddress _my_ip;
     IPAddress _my_bcast_ip;
-    Timer _expire_timer;
-    uint32_t _capacity;
-    
+
     // statistics
-    atomic_uint32_t _cache_size;
     atomic_uint32_t _arp_queries;
     atomic_uint32_t _drops;
     atomic_uint32_t _arp_responses;
+    atomic_uint32_t _broadcasts;
+    bool _my_arpt;
     
-    static inline int ip_bucket(IPAddress);
     void send_query_for(IPAddress);
   
-    void handle_ip(Packet *);
-    void handle_response(Packet *);
+    void handle_ip(Packet *p, bool response);
+    void handle_response(Packet *p);
 
-    enum { EXPIRE_TIMEOUT_MS = 60 * 1000 };
     static void expire_hook(Timer *, void *);
     static String read_table(Element *, void *);
-    static String read_stats(Element *, void *);
+    static String read_table_xml(Element *, void *);
+    static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-  
-};
 
-inline int
-ARPQuerier::ip_bucket(IPAddress ipa)
-{
-    return (ipa.data()[0] + ipa.data()[3]) % NMAP;
-}
+    enum { h_table, h_table_xml, h_stats, h_insert, h_delete, h_clear };
+    
+};
 
 CLICK_ENDDECLS
 #endif
