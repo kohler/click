@@ -164,9 +164,6 @@ class ARPQuerier : public Element { public:
   
     void push(int port, Packet *p);
   
-    Packet *make_query(unsigned char tpa[4],
-		       unsigned char sha[6], unsigned char spa[4]);
-
   private:
 
     ARPTable *_arpt;
@@ -181,7 +178,7 @@ class ARPQuerier : public Element { public:
     atomic_uint32_t _broadcasts;
     bool _my_arpt;
     
-    void send_query_for(IPAddress);
+    void send_query_for(Packet *p);
   
     void handle_ip(Packet *p, bool response);
     void handle_response(Packet *p);

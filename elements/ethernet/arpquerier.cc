@@ -185,18 +185,17 @@ ARPQuerier::take_state(Element *e, ErrorHandler *)
 }
 
 void
-ARPQuerier::send_query_for(IPAddress want_ip)
+ARPQuerier::send_query_for(Packet *p)
 {
     WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
     if (!q) {
 	click_chatter("in arp querier: cannot make packet!");
 	return;
     }
-    memset(q->data(), '\0', q->length());
   
     click_ether *e = (click_ether *) q->data();
     q->set_ether_header(e);
-    memcpy(e->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
+    memset(e->ether_dhost, 0xff, 6);
     memcpy(e->ether_shost, _my_en.data(), 6);
     e->ether_type = htons(ETHERTYPE_ARP);
 
@@ -206,9 +205,13 @@ ARPQuerier::send_query_for(IPAddress want_ip)
     ea->ea_hdr.ar_hln = 6;
     ea->ea_hdr.ar_pln = 4;
     ea->ea_hdr.ar_op = htons(ARPOP_REQUEST);
-    memcpy(ea->arp_tpa, want_ip.data(), 4);
     memcpy(ea->arp_sha, _my_en.data(), 6);
     memcpy(ea->arp_spa, _my_ip.data(), 4);
+    memset(ea->arp_tha, 0, 6);
+    IPAddress want_ip = p->dst_ip_anno();
+    memcpy(ea->arp_tpa, want_ip.data(), 4);
+
+    q->set_timestamp_anno(p->timestamp_anno());
 
     _arp_queries++;
     output(noutputs() - 1).push(q);
@@ -274,7 +277,7 @@ ARPQuerier::handle_ip(Packet *p, bool response)
     }
 
     if (r > 0)			// poll
-	send_query_for(dst_ip);
+	send_query_for(q);
 }
 
 /*
