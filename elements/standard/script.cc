@@ -30,6 +30,7 @@
 #if CLICK_USERLEVEL
 # include <signal.h>
 # include <click/master.hh>
+# include <click/userutils.hh>
 #endif
 CLICK_DECLS
 
@@ -629,7 +630,7 @@ enum {
     ST_STEP = 0, ST_RUN, ST_GOTO,
     AR_ADD = 0, AR_SUB, AR_MUL, AR_DIV, AR_IDIV,
     AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
-    AR_FIRST, AR_NOT, AR_SPRINTF, ar_random
+    AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat
 };
 
 int
@@ -927,6 +928,17 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	}
 	return 0;
     }
+
+#if CLICK_USERLEVEL
+    case ar_cat: {
+	String filename;
+	if (!cp_filename(str, &filename))
+	    return errh->error("bad FILE");
+	int nerrors = errh->nerrors();
+	str = file_string(filename, errh);
+	return (errh->nerrors() == nerrors ? 0 : -errno);
+    }
+#endif
 	  
     }
 
@@ -954,6 +966,9 @@ Script::add_handlers()
     set_handler("sprintf", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_SPRINTF, 0);
     set_handler("first", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_FIRST, 0);
     set_handler("random", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_random, 0);
+#if CLICK_USERLEVEL
+    set_handler("cat", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_cat, 0);
+#endif
 }
 
 EXPORT_ELEMENT(Script)

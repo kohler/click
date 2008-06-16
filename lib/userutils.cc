@@ -314,6 +314,7 @@ file_string(FILE *f, ErrorHandler *errh)
     } else {
       if (errh)
 	errh->error("file too large, out of memory");
+      errno = ENOMEM;
       return String();
     }
   return sa.take_string();
