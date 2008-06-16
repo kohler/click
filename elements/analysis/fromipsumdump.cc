@@ -49,7 +49,7 @@ CLICK_DECLS
 #define GET1(p)		((p)[0])
 
 FromIPSummaryDump::FromIPSummaryDump()
-    : _work_packet(0), _task(this)
+    : _work_packet(0), _task(this), _timer(this)
 {
     _ff.set_landmark_pattern("%f:%l");
 }
@@ -70,7 +70,7 @@ FromIPSummaryDump::cast(const char *n)
 int
 FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    bool stop = false, active = true, zero = true, checksum = false, multipacket = false;
+    bool stop = false, active = true, zero = true, checksum = false, multipacket = false, timing = false;
     uint8_t default_proto = IP_PROTO_TCP;
     _sampling_prob = (1 << SAMPLING_SHIFT);
     String default_contents, default_flowid;
@@ -80,6 +80,7 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "STOP", 0, cpBool, &stop,
 		     "ACTIVE", 0, cpBool, &active,
 		     "ZERO", 0, cpBool, &zero,
+		     "TIMING", 0, cpBool, &timing,
 		     "CHECKSUM", 0, cpBool, &checksum,
 		     "SAMPLE", 0, cpUnsignedReal2, SAMPLING_SHIFT, &_sampling_prob,
 		     "PROTO", 0, cpByte, &default_proto,
@@ -101,6 +102,8 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _active = active;
     _zero = zero;
     _checksum = checksum;
+    _timing = timing;
+    _have_timing = false;
     _multipacket = multipacket;
     _have_flowid = _have_aggregate = _use_flowid = _use_aggregate = _binary = false;
     if (default_contents)
@@ -143,6 +146,7 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
     // make sure notifier is initialized
     if (!output_is_push(0))
 	_notifier.initialize(Notifier::EMPTY_NOTIFIER, router());
+    _timer.initialize(router());
     
     if (_ff.initialize(errh) < 0)
 	return -1;
@@ -1432,6 +1436,44 @@ FromIPSummaryDump::handle_multipacket(Packet *p)
     return p;
 }
 
+void
+FromIPSummaryDump::run_timer(Timer *)
+{
+    if (_active) {
+	if (output_is_pull(0))
+	    _notifier.wake();
+	else
+	    _task.reschedule();
+    }
+}
+
+bool
+FromIPSummaryDump::check_timing(Packet *p)
+{
+    assert(!_work_packet || _work_packet == p);
+    if (!_have_timing) {
+	_timing_offset = Timestamp::now() - p->timestamp_anno();
+	_have_timing = true;
+    }
+    Timestamp now = Timestamp::now();
+    Timestamp t = p->timestamp_anno() + _timing_offset;
+    if (now < t) {
+	t -= Timer::adjustment();
+	if (now < t) {
+	    _timer.schedule_at(t);
+	    if (output_is_pull(0))
+		_notifier.sleep();
+	} else {
+	    if (output_is_push(0))
+		_task.fast_reschedule();
+	}
+	_work_packet = p;
+	return false;
+    }
+    _work_packet = 0;
+    return true;
+}
+
 bool
 FromIPSummaryDump::run_task(Task *)
 {
@@ -1447,6 +1489,8 @@ FromIPSummaryDump::run_task(Task *)
 	    return false;
 	} else if (!p)
 	    break;
+	if (p && _timing && !check_timing(p))
+	    return false;
 	if (_multipacket)
 	    p = handle_multipacket(p);
 	// check sampling probability
@@ -1478,6 +1522,8 @@ FromIPSummaryDump::pull(int)
 	    _notifier.sleep();
 	    return 0;
 	}
+	if (p && _timing && !check_timing(p))
+	    return 0;
 	if (_multipacket)
 	    p = handle_multipacket(p);
 	// check sampling probability
@@ -1541,11 +1587,11 @@ FromIPSummaryDump::write_handler(const String &s_in, Element *e, void *thunk, Er
 void
 FromIPSummaryDump::add_handlers()
 {
-    add_read_handler("sampling_prob", read_handler, (void *)H_SAMPLING_PROB);
-    add_read_handler("active", read_handler, (void *)H_ACTIVE, Handler::CHECKBOX);
-    add_write_handler("active", write_handler, (void *)H_ACTIVE);
-    add_read_handler("encap", read_handler, (void *)H_ENCAP);
-    add_write_handler("stop", write_handler, (void *)H_STOP, Handler::BUTTON);
+    add_read_handler("sampling_prob", read_handler, H_SAMPLING_PROB);
+    add_read_handler("active", read_handler, H_ACTIVE, Handler::CHECKBOX);
+    add_write_handler("active", write_handler, H_ACTIVE);
+    add_read_handler("encap", read_handler, H_ENCAP);
+    add_write_handler("stop", write_handler, H_STOP, Handler::BUTTON);
     _ff.add_handlers(this);
     if (output_is_push(0))
 	add_task_handlers(&_task);

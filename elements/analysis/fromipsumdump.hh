@@ -3,6 +3,7 @@
 #define CLICK_FROMIPSUMDUMP_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include <click/timer.hh>
 #include <click/notifier.hh>
 #include <click/ipflowid.hh>
 #include "elements/userlevel/fromfile.hh"
@@ -12,7 +13,7 @@ CLICK_DECLS
 /*
 =c
 
-FromIPSummaryDump(FILENAME [, I<KEYWORDS>])
+FromIPSummaryDump(FILENAME [, I<keywords> STOP, TIMING, ACTIVE, ZERO, CHECKSUM, PROTO, MULTIPACKET, SAMPLE, CONTENTS, FLOWID])
 
 =s traces
 
@@ -39,6 +40,12 @@ Keyword arguments are:
 
 Boolean. If true, then FromIPSummaryDump will ask the router to stop when it
 is done reading. Default is false.
+
+=item TIMING
+
+Boolean. If true, then FromIPSummaryDump tries to maintain the timing of the
+original packet stream. The first packet is emitted immediately; thereafter,
+FromIPSummaryDump maintains the delays between packets. Default is false.
 
 =item ACTIVE
 
@@ -149,6 +156,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
     bool run_task(Task *);
     Packet *pull(int);
+    void run_timer(Timer *timer);
 
     enum { DO_IPOPT_PADDING = 1, DO_IPOPT_ROUTE = 2, DO_IPOPT_TS = 4,
 	   DO_IPOPT_UNKNOWN = 32,
@@ -185,13 +193,17 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     bool _have_aggregate : 1;
     bool _use_aggregate : 1;
     bool _binary : 1;
+    bool _timing : 1;
+    bool _have_timing : 1;
     Packet *_work_packet;
     uint32_t _multipacket_length;
     Timestamp _multipacket_timestamp_delta;
     Timestamp _multipacket_end_timestamp;
+    Timestamp _timing_offset;
 
     Task _task;
     ActiveNotifier _notifier;
+    Timer _timer;
 
     int _minor_version;
     IPFlowID _given_flowid;
@@ -203,6 +215,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     void bang_aggregate(const String &, ErrorHandler *);
     void bang_binary(const String &, ErrorHandler *);
     void check_defaults();
+    bool check_timing(Packet *p);
     Packet *read_packet(ErrorHandler *);
     Packet *handle_multipacket(Packet *);
 

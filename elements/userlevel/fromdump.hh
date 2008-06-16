@@ -12,7 +12,7 @@ class HandlerCall;
 /*
 =c
 
-FromDump(FILENAME [, I<keywords> TIMING, STOP, SAMPLE, FORCE_IP, START, START_AFTER, END, END_AFTER, INTERVAL, END_CALL, FILEPOS])
+FromDump(FILENAME [, I<keywords> STOP, TIMING, SAMPLE, FORCE_IP, START, START_AFTER, END, END_AFTER, INTERVAL, END_CALL, FILEPOS, MMAP])
 
 =s traces
 
@@ -20,10 +20,9 @@ reads packets from a tcpdump file
 
 =d
 
-Reads packets from a file produced by `tcpdump -w FILENAME' or ToDump. Pushes
-them out the output, and optionally stops the driver when there are no more
-packets. If TIMING is true, then FromDump tries to maintain the timing of the
-original packet stream. TIMING is false by default.
+Reads packets from a file produced by `tcpdump -w FILENAME' or ToDump and
+emits them from the output, optionally stopping the driver when there are no
+more packets.
 
 FromDump also transparently reads gzip- and bzip2-compressed tcpdump files, if
 you have zcat(1) and bzcat(1) installed.
@@ -31,6 +30,17 @@ you have zcat(1) and bzcat(1) installed.
 Keyword arguments are:
 
 =over 8
+
+=item STOP
+
+Boolean.  If true, then FromDump will ask the router to stop when it is done
+reading its tcpdump file (or the END time is reached).  Default is false.
+
+=item TIMING
+
+Boolean. If true, then FromDump tries to maintain the timing of the original
+packet stream. The first packet is emitted immediately; thereafter, FromDump
+maintains the delays between packets. Default is false.
 
 =item SAMPLE
 
@@ -45,11 +55,6 @@ probability.
 Boolean. If true, then FromDump will emit only IP packets with their IP header
 annotations correctly set. (If FromDump has two outputs, non-IP packets are
 pushed out on output 1; otherwise, they are dropped.) Default is false.
-
-=item STOP
-
-Boolean.  If true, then FromDump will ask the router to stop when it is done
-reading its tcpdump file (or the END time is reached).  Default is false.
 
 =item START
 
@@ -84,21 +89,10 @@ Specify a handler to call once the end time is reached, or the dump runs out
 of packets.  This defaults to 'I<FromDump>.active false'.  END_CALL and STOP
 are mutually exclusive.
 
-=item TIMING
-
-Boolean. Same as the TIMING argument.
-
 =item ACTIVE
 
 Boolean. If false, then FromDump will not emit packets (until the `C<active>'
 handler is written). Default is true.
-
-=item MMAP
-
-Boolean. If true, then FromDump will use mmap(2) to access the tcpdump file.
-This can result in slightly better performance on some machines. FromDump's
-regular file discipline is pretty optimized, so the difference is often small
-in practice. Default is true on most operating systems, but false on Linux.
 
 =item FILEPOS
 
@@ -106,6 +100,13 @@ File offset. If supplied, then FromDump will start emitting packets from
 this (uncompressed) file position. This is dangerous; there's no cheap way
 to check whether you got the offset wrong, and if you did get it wrong,
 FromDump will emit garbage.
+
+=item MMAP
+
+Boolean. If true, then FromDump will use mmap(2) to access the tcpdump file.
+This can result in slightly better performance on some machines. FromDump's
+regular file discipline is pretty optimized, so the difference is often small
+in practice. Default is true on most operating systems, but false on Linux.
 
 =back
 
