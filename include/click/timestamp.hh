@@ -78,6 +78,16 @@ class Timestamp { public:
     inline double doubleval() const;
 #endif
 
+#if !CLICK_TOOL
+    /** @brief Return a timestamp representing an interval of @a jiffies. */
+    static inline Timestamp make_jiffies(click_jiffies_t jiffies);
+    /** @brief Return the number of jiffies represented by this timestamp.
+     *
+     * Treats the current timestamp as an interval (rather than an absolute
+     * timestamp). */
+    inline click_jiffies_t jiffies() const;
+#endif
+    
     static inline Timestamp make_sec(seconds_type sec);
     static inline Timestamp make_msec(unsigned long msec);
     static inline Timestamp make_msec(long msec);
@@ -570,6 +580,34 @@ Timestamp::timespec() const
     return tv;
 }
 # endif
+#endif
+
+#if !CLICK_TOOL
+/** @brief Returns this timestamp, converted to a jiffies value. */ 
+inline click_jiffies_t
+Timestamp::jiffies() const
+{
+    click_jiffies_t j = ((click_jiffies_t) sec()) * CLICK_HZ;
+# if CLICK_HZ == 100 || CLICK_HZ == 1000 || CLICK_HZ == 10000 || CLICK_HZ == 100000 || CLICK_HZ == 1000000
+    return j + ((click_jiffies_t) subsec()) / (NSUBSEC / CLICK_HZ);
+# else
+    // This is not very precise when CLICK_HZ doesn't divide NSUBSEC evenly.
+    return j + ((click_jiffies_t) subsec()) / (NSUBSEC / CLICK_HZ);
+# endif
+}
+
+inline Timestamp
+Timestamp::make_jiffies(click_jiffies_t jiffies)
+{
+# if CLICK_HZ == 100 || CLICK_HZ == 1000 || CLICK_HZ == 10000 || CLICK_HZ == 100000 || CLICK_HZ == 1000000
+    uint32_t subsec = (jiffies * (NSUBSEC / CLICK_HZ)) % NSUBSEC;
+    return Timestamp(jiffies / (NSUBSEC / CLICK_HZ), subsec);
+# else
+    // This is not very precise when CLICK_HZ doesn't divide NSUBSEC evenly.
+    uint32_t subsec = (jiffies * (NSUBSEC / CLICK_HZ)) % NSUBSEC;
+    return Timestamp(jiffies / (NSUBSEC / CLICK_HZ), subsec);
+# endif
+}
 #endif
 
 /** @relates Timestamp
