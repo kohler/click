@@ -6,6 +6,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2006 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -34,15 +35,8 @@ CLICK_DECLS
     The EtherAddress type represents an Ethernet address. It supports equality
     operations and provides methods for unparsing addresses into ASCII form. */
 
-/** @brief Unparses this address into a dash-separated hex String.
-
-    Examples include "00-00-00-00-00-00" and "00-05-4E-50-3C-1A".
-
-    @note The IEEE standard for printing Ethernet addresses uses dashes as
-    separators, not colons.  Use unparse_colon() to unparse into the
-    nonstandard colon-separated form. */
 String
-EtherAddress::unparse() const
+EtherAddress::unparse_dash() const
 {
     String str = String::garbage_string(17);
     // NB: mutable_c_str() creates space for the terminating null character
@@ -54,11 +48,6 @@ EtherAddress::unparse() const
     return str;
 }
 
-/** @brief Unparses this address into a colon-separated hex String.
-
-    Examples include "00:00:00:00:00:00" and "00:05:4E:50:3C:1A".
-
-    @note Use unparse() to create the IEEE standard dash-separated form. */
 String
 EtherAddress::unparse_colon() const
 {
