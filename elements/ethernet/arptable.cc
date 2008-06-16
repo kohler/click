@@ -233,7 +233,11 @@ ARPTable::append_query(IPAddress ip, Packet *p)
     ARPEntry *ae = ensure(ip);
     if (!ae)
 	return -ENOMEM;
-    if (!ae->_eth.is_broadcast()) {
+
+    click_jiffies_t now = click_jiffies();
+    if (!ae->_eth.is_broadcast()
+	&& (!click_jiffies_less(ae->_live_jiffies + _expire_jiffies, now)
+	    || !_expire_jiffies)) {
 	_lock.release_write();
 	return -EAGAIN;
     }
@@ -249,7 +253,6 @@ ARPTable::append_query(IPAddress ip, Packet *p)
     ae->_tail = p;
     p->set_next(0);
 
-    click_jiffies_t now = click_jiffies();
     int r;
     if (!click_jiffies_less(now, ae->_poll_jiffies + CLICK_HZ / 10)) {
 	ae->_poll_jiffies = now;
