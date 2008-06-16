@@ -121,9 +121,7 @@ class DirectEWMAX : public P { public:
     /** @brief  Update the moving average with a new observation (deprecated).
      *  @param  value  the observation (unscaled)
      *  @deprecated  Use update() instead. */
-    inline void update_with(value_type value) CLICK_DEPRECATED {
-	update(value);
-    }
+    inline void update_with(value_type value) CLICK_DEPRECATED;
 
   private:
   
@@ -177,6 +175,13 @@ inline String
 DirectEWMAX<P>::unparse() const
 {
     return cp_unparse_real2(scaled_average(), P::scale());
+}
+
+template <typename P>
+inline void
+DirectEWMAX<P>::update_with(value_type value)
+{
+    update(value);
 }
 
 /** @class FixedEWMAXParameters include/click/ewma.hh <click/ewma.hh>
