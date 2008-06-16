@@ -698,6 +698,14 @@ sub process_portcount ($) {
     process_one_portcount($i, "input") . ", " . process_one_portcount($o, "output");
 }
 
+sub process_handler_type ($) {
+    my($h) = @_;
+    $h = "read-only" if $h eq 'r';
+    $h = "write-only" if $h eq 'w';
+    $h = "read/write" if $h eq 'rw';
+    $h;
+}
+
 sub process_summary_section ($$) {
     my($summary, $file) = @_;
     my($i);
@@ -973,7 +981,7 @@ sub process_comment ($$) {
 	    while ($i < @section_text && $section_name[$i] eq 'h') {
 		if ($section_args[$i] =~ /\A\s*(.*?)\s*"(.*?)"\s*\Z/
 		    || $section_args[$i] =~ /\A\s*(.*?)\s*(\S+)\s*\Z/) {
-		    $t .= "=item B<$1> ($2)\n";
+		    $t .= "=item B<$1> (" . process_handler_type($2) . ")\n";
 		} else {
 		    print STDERR "click-elem2man: $Filename: bad handler section arguments ('=h $section_args[$i]')\n";
 		    $t .= "=item B<$section_args[$i]>\n";
