@@ -188,7 +188,27 @@ Within the script, the C<$args> variable equals the C<run> handler's
 arguments.  C<$1>, C<$2>, etc. equal the first, second, etc. space-separated
 portions of C<$args>, and C<$#> equals the number of space-separated
 arguments.
-	  
+
+=item C<PROXY>
+
+A proxy script runs in response to I<any> handler (except Script's predefined
+handlers).  Within the script, the C<$0> variable equals the handler's name.
+Also, the C<$write> variable is "true" if the handler was called as a write
+handler.  For example, consider:
+
+   s :: Script(TYPE PROXY,
+          goto nota $(ne $0 a),
+	  returnq "you called 'a'",
+	  label nota,
+	  goto notb $(ne $0 b),
+	  returnq "you called 'b'",
+	  label notb,
+	  error bad handler);
+
+Calling the read handler "s.a" will return "you called 'a'", calling "s.b"
+will return "you called 'b'", and anything else will produce a "bad handler"
+error.
+
 =item C<DRIVER>
 
 A driver script manages the Click driver's stop events.  See DriverManager for
@@ -279,6 +299,11 @@ lexicographic order.  For example, 'C<eq 10x 10x>' return "C<true>".
 Useful for true/false operations.  Parses its parameter as a Boolean and
 returns its negation.
 
+=h and, or "read with parameters"
+
+Useful for true/false operations.  Parses all parameters as Booleans and
+returns their conjunction or disjunction, respectively.
+
 =h sprintf "read with parameters"
 
 Parses its parameters as a space-separated list of arguments.  The first
@@ -327,7 +352,7 @@ class Script : public Element { public:
   private:
 
     enum Type {
-	TYPE_ACTIVE, TYPE_DRIVER, TYPE_SIGNAL, TYPE_PASSIVE
+	TYPE_ACTIVE, TYPE_DRIVER, TYPE_SIGNAL, TYPE_PASSIVE, type_proxy
     };
 
     enum {
@@ -341,7 +366,9 @@ class Script : public Element { public:
     Vector<String> _args3;
     
     Vector<String> _vars;
+    String _run_handler_name;
     String _run_args;
+    int _run_op;
 
     int _insn_pos;
     int _step_count;
@@ -368,6 +395,7 @@ class Script : public Element { public:
 
     static int step_handler(int, String&, Element*, const Handler*, ErrorHandler*);
     static int arithmetic_handler(int, String&, Element*, const Handler*, ErrorHandler*);
+    static int star_write_handler(const String&, Element*, void*, ErrorHandler*);
 
     friend class DriverManager;
     friend class Expander;

@@ -164,6 +164,8 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	_type = TYPE_ACTIVE;
     else if (type_word == "PASSIVE" && !type_arg)
 	_type = TYPE_PASSIVE;
+    else if (type_word == "PROXY" && !type_arg)
+	_type = type_proxy;
     else if (type_word == "DRIVER" && !type_arg)
 	_type = TYPE_DRIVER;
 #if CLICK_USERLEVEL
@@ -317,7 +319,7 @@ Script::initialize(ErrorHandler *errh)
 
     int insn = _insns[_insn_pos];
     assert(insn <= INSN_WAIT_TIME);
-    if (_type == TYPE_SIGNAL || _type == TYPE_PASSIVE)
+    if (_type == TYPE_SIGNAL || _type == TYPE_PASSIVE || _type == type_proxy)
 	/* passive, do nothing */;
     else if (insn == INSN_WAIT_TIME) {
 	Timestamp ts;
@@ -448,8 +450,10 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	    String arg = (insn == INSN_READ ? _args3[ipos] : cp_unquote(_args3[ipos]));
 	    HandlerCall hc(cp_expand(arg, expander));
 	    if (hc.initialize_read(this, errh) >= 0) {
-		String result = hc.call_read(errh);
-		errh->message("%s:\n%s\n", hc.handler()->unparse_name(hc.element()).c_str(), result.c_str());
+		ContextErrorHandler c_errh(errh, "While calling '" + hc.unparse() + "':");
+		String result = hc.call_read(&c_errh);
+		ErrorHandler *d_errh = ErrorHandler::default_handler();
+		d_errh->message("%s:\n%s\n", hc.handler()->unparse_name(hc.element()).c_str(), result.c_str());
 	    }
 	    break;
 	}
@@ -458,8 +462,10 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	case INSN_WRITEQ: {
 	    String arg = (insn == INSN_WRITE ? _args3[ipos] : cp_unquote(_args3[ipos]));
 	    HandlerCall hc(cp_expand(arg, expander));
-	    if (hc.initialize_write(this, errh) >= 0)
-		_write_status = hc.call_write(errh);
+	    if (hc.initialize_write(this, errh) >= 0) {
+		ContextErrorHandler c_errh(errh, "While calling '" + hc.unparse() + "':");
+		_write_status = hc.call_write(&c_errh);
+	    }
 	    break;
 	}
 
@@ -593,8 +599,13 @@ Script::Expander::expand(const String &vname, int vartype, int quote, StringAccu
 	return true;
     }
 
-    if (vname.length() == 4 && memcmp(vname.data(), "args", 4) == 0) {
+    if (vname.equals("args", 4)) {
 	sa << cp_expand_in_quotes(script->_run_args, quote);
+	return true;
+    }
+
+    if (vname.length() == 1 && vname[0] == '0') {
+	sa << script->_run_handler_name;
 	return true;
     }
 
@@ -614,6 +625,11 @@ Script::Expander::expand(const String &vname, int vartype, int quote, StringAccu
 	sa << cp_expand_in_quotes(String(x), quote);
 	return true;
     }
+
+    if (vname.equals("write", 5)) {
+	sa << cp_unparse_bool(script->_run_op & Handler::OP_WRITE);
+	return true;
+    }
     
     if (vartype == '(') {
 	HandlerCall hc(vname);
@@ -630,16 +646,20 @@ enum {
     ST_STEP = 0, ST_RUN, ST_GOTO,
     AR_ADD = 0, AR_SUB, AR_MUL, AR_DIV, AR_IDIV,
     AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
-    AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat
+    AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat,
+    ar_and, ar_or
 };
 
 int
-Script::step_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh)
+Script::step_handler(int op, String &str, Element *e, const Handler *h, ErrorHandler *errh)
 {
     Script *scr = (Script *) e;
     String data = cp_uncomment(str);
     int nsteps, steptype;
     int what = (uintptr_t) h->user_data1();
+    scr->_run_handler_name = h->name();
+    scr->_run_args = String();
+    scr->_run_op = op;
 
     if (what == ST_GOTO) {
 	int step = scr->find_label(cp_uncomment(data));
@@ -819,6 +839,19 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	return 0;
     }
 
+    case ar_and:
+    case ar_or: {
+	bool zero = (what == ar_and), current_value = zero;
+	while (current_value == zero && str) {
+	    bool x;
+	    if (!cp_bool(cp_pop_spacevec(str), &x))
+		return errh->error("syntax error");
+	    current_value = (what == ar_and ? current_value && x : current_value || x);
+	}
+	str = cp_unparse_bool(current_value);
+	return 0;
+    }
+
     case AR_SPRINTF: {
 	String format = cp_unquote(cp_pop_spacevec(str));
 	const char *s = format.begin(), *pct, *end = format.end();
@@ -945,6 +978,14 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
     return -1;
 }
 
+int
+Script::star_write_handler(const String &str, Element *e, void *, ErrorHandler *)
+{
+    Script *s = static_cast<Script *>(e);
+    s->set_handler(str, Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE, step_handler, ST_RUN, 0);
+    return Router::hindex(s, str);
+}
+
 void
 Script::add_handlers()
 {
@@ -966,9 +1007,13 @@ Script::add_handlers()
     set_handler("sprintf", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_SPRINTF, 0);
     set_handler("first", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_FIRST, 0);
     set_handler("random", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_random, 0);
+    set_handler("and", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_and, 0);
+    set_handler("or", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_or, 0);
 #if CLICK_USERLEVEL
     set_handler("cat", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_cat, 0);
 #endif
+    if (_type == type_proxy)
+	add_write_handler("*", star_write_handler, 0);
 }
 
 EXPORT_ELEMENT(Script)

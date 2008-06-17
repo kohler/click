@@ -97,4 +97,4 @@ done
 
 %ignorex
 !.*
-While{{.*}}:
+While.*:
