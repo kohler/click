@@ -1122,15 +1122,6 @@ Router::set_hotswap_router(Router *r)
     The HandlerCall class simplifies interaction with handlers and is
     preferred to direct Handler calls for most purposes. */
 
-/** @brief Call a read handler, possibly with parameters.
-    @param e element on which to call the handler
-    @param param parameters, or an empty string if no parameters
-    @param raw true iff param is raw text (see raw())
-    @param errh optional error handler
-
-    The element must be nonnull; to call a global handler, pass the relevant
-    router's Router::root_element().  @a errh may be null, in which case
-    errors are reported to ErrorHandler::silent_handler(). */
 String
 Handler::call_read(Element* e, const String& param, bool raw, ErrorHandler* errh) const
 {
@@ -1152,15 +1143,6 @@ Handler::call_read(Element* e, const String& param, bool raw, ErrorHandler* errh
     return String();
 }
 
-/** @brief Call a write handler.
-    @param value value to write to the handler
-    @param e element on which to call the handler
-    @param raw true iff value is raw text (see raw())
-    @param errh optional error handler
-
-    The element must be nonnull; to call a global handler, pass the relevant
-    router's Router::root_element().  @a errh may be null, in which case
-    errors are reported to ErrorHandler::silent_handler(). */
 int
 Handler::call_write(const String& value, Element* e, bool raw, ErrorHandler* errh) const
 {
@@ -1179,13 +1161,6 @@ Handler::call_write(const String& value, Element* e, bool raw, ErrorHandler* err
     }
 }
 
-/** @brief Unparse a handler name.
- *  @param  e      relevant element, if any
- *  @param  hname  handler name
- *
- *  If @a e is an actual element on some router, then returns "ENAME.hname",
- *  where ENAME is @a e's @link Element::name() name@endlink.  Otherwise, just
- *  returns @a hname.*/
 String
 Handler::unparse_name(Element *e, const String &hname)
 {
@@ -1195,12 +1170,6 @@ Handler::unparse_name(Element *e, const String &hname)
 	return hname;
 }
 
-/** @brief Unparse this handler's name.
-    @param  e  relevant element
-
-    If @a e is an actual element, then returns "ENAME.HNAME", where ENAME is
-    @a e's @link Element::name() name@endlink and HNAME is this handler's
-    name().  Otherwise, just returns name(). */
 String
 Handler::unparse_name(Element *e) const
 {

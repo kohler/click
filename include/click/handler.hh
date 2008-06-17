@@ -27,53 +27,176 @@ class Handler { public:
 	SPECIAL_FLAGS = OP_READ | OP_WRITE | READ_PARAM | COMPREHENSIVE,
 				///< @brief These flags may not be set by
 				///  Router::set_handler_flags().
-	EXCLUSIVE = 0x0010,	///< @brief Handler is exclusive.
+	EXCLUSIVE = 0x0010,	///< @brief Handler is exclusive: router threads
+				///  must stop while it is called.
 	RAW = 0x0020,		///< @brief Don't add newline to results.
-	DEPRECATED = 0x0040,	///< @brief Handler is deprecated and available
+	READ_PRIVATE = 0x0040,	///< @brief Read handler private (invisible
+				///  outside the router configuration).
+	WRITE_PRIVATE = 0x0080,	///< @brief Write handler private (invisible
+				///  outside the router configuration).
+	DEPRECATED = 0x0100,	///< @brief Handler is deprecated and available
 				///  only for compatibility.
-	UNCOMMON = 0x0080,	///< @brief User interfaces should not display
+	UNCOMMON = 0x0200,	///< @brief User interfaces should not display
 				///  handler by default.
-	CALM = 0x0100,		///< @brief Read handler value changes rarely.
-	EXPENSIVE = 0x0200,	///< @brief Read handler is expensive to call.
-	BUTTON = 0x0400,	///< @brief Write handler ignores data.
-	CHECKBOX = 0x0800,	///< @brief Read/write handler is boolean and
+	CALM = 0x0400,		///< @brief Read handler value changes rarely.
+	EXPENSIVE = 0x0800,	///< @brief Read handler is expensive to call.
+	BUTTON = 0x1000,	///< @brief Write handler ignores data.
+	CHECKBOX = 0x2000,	///< @brief Read/write handler is boolean and
 				///  should be rendered as a checkbox.
-	DRIVER_FLAG_SHIFT = 12,
+	DRIVER_FLAG_SHIFT = 20,
 	DRIVER_FLAG_0 = 1 << DRIVER_FLAG_SHIFT,
 				///< @brief First uninterpreted handler flag
 				///  available for drivers.  Equals 1 <<
 				///  DRIVER_FLAG_SHIFT.
-	USER_FLAG_SHIFT = 17,
+	USER_FLAG_SHIFT = 25,
 	USER_FLAG_0 = 1 << USER_FLAG_SHIFT
 				///< @brief First uninterpreted handler flag
 				///  available for element-specific use.
 				///  Equals 1 << USER_FLAG_SHIFT.
     };
 
-    inline const String &name() const;
-    inline uint32_t flags() const;
-    inline void *user_data1() const;
-    inline void *user_data2() const;
+    /** @brief Return this handler's name. */
+    inline const String &name() const {
+	return _name;
+    }
 
-    inline bool readable() const;
-    inline bool read_param() const;
-    inline bool read_visible() const;
-    inline bool writable() const;
-    inline bool write_visible() const;
-    inline bool visible() const;
+    /** @brief Return this handler's flags.
+     *
+     * The result is a bitwise-or of flags from the Flags enumeration type. */
+    inline uint32_t flags() const {
+	return _flags;
+    }
+    
+    /** @brief Return this handler's first callback data. */
+    inline void *user_data1() const {
+	return _thunk1;
+    }
+
+    /** @brief Return this handler's second callback data. */
+    inline void *user_data2() const {
+	return _thunk2;
+    }
+
+
+    /** @brief Check if this is a valid read handler. */
+    inline bool readable() const {
+	return _flags & OP_READ;
+    }
+
+    /** @brief Check if this is a valid read handler that may accept
+     * parameters. */
+    inline bool read_param() const {
+	return _flags & READ_PARAM;
+    }
+
+    /** @brief Check if this is a public read handler.
+     *
+     * Private handlers may be not called from outside the router
+     * configuration.  Handlers are public by default; to make a read handler
+     * private, add the READ_PRIVATE flag. */
+    inline bool read_visible() const {
+	return (_flags & (OP_READ | READ_PRIVATE)) == OP_READ;
+    }
+
+    /** @brief Check if this is a valid write handler. */
+    inline bool writable() const {
+	return _flags & OP_WRITE;
+    }
+
+    /** @brief Check if this is a public write handler.
+     *
+     * Private handlers may not be called from outside the router
+     * configuration.  Handlers are public by default; to make a write handler
+     * private, add the WRITE_PRIVATE flag. */
+    inline bool write_visible() const {
+	return (_flags & (OP_WRITE | WRITE_PRIVATE)) == OP_WRITE;
+    }
+
+    /** @brief Check if this is a public read or write handler. */
+    inline bool visible() const {
+	return read_visible() || write_visible();
+    }
+
+    /** @brief Check if this handler is exclusive.
+     *
+     * Exclusive handlers are mutually exclusive with all other router
+     * processing.  In the Linux kernel module driver, reading or writing an
+     * exclusive handler using the Click filesystem will first lock all router
+     * threads and handlers.  Exclusivity is set by the EXCLUSIVE flag.  */
     inline bool exclusive() const;
-    inline bool raw() const;
 
-    inline String call_read(Element *e, ErrorHandler *errh = 0) const;
+    /** @brief Check if quotes should be removed when calling this handler.
+     *
+     * A raw handler expects and returns raw text.  Click will unquote quoted
+     * text before passing it to a raw handler, and (in the Linux kernel
+     * module) will not add a courtesy newline to the end of a raw handler's
+     * value.  Rawness is set by the RAW flag. */
+    inline bool raw() const {
+	return _flags & RAW;
+    }
+
+
+    /** @brief Call a read handler, possibly with parameters.
+     * @param e element on which to call the handler
+     * @param param parameters, or an empty string if no parameters
+     * @param raw true iff param is raw text (see raw())
+     * @param errh optional error handler
+     *
+     * The element must be nonnull; to call a global handler, pass the
+     * relevant router's Router::root_element().  @a errh may be null, in
+     * which case errors are reported to ErrorHandler::silent_handler(). */
     String call_read(Element *e, const String &param, bool raw,
 		     ErrorHandler *errh) const;
+
+    /** @brief Call a read handler without parameters.
+     * @param e element on which to call the handler
+     * @param errh error handler
+     *
+     * The element must be nonnull; to call a global handler, pass the
+     * relevant router's Router::root_element().  @a errh may be null, in
+     * which case errors are ignored. */
+    inline String call_read(Element *e, ErrorHandler *errh = 0) const {
+	return call_read(e, String(), false, errh);
+    }
+
+    /** @brief Call a write handler.
+     * @param value value to write to the handler
+     * @param e element on which to call the handler
+     * @param raw true iff value is raw text (see raw())
+     * @param errh optional error handler
+     *
+     * The element must be nonnull; to call a global handler, pass the
+     * relevant router's Router::root_element().  @a errh may be null, in
+     * which case errors are reported to ErrorHandler::silent_handler(). */
     int call_write(const String &value, Element *e, bool raw,
 		   ErrorHandler *errh) const;
   
+
+    /** @brief Unparse this handler's name.
+     * @param e relevant element
+     *
+     * If @a e is an actual element, then returns "ENAME.HNAME", where ENAME
+     * is @a e's @link Element::name() name@endlink and HNAME is this
+     * handler's name().  Otherwise, just returns name(). */
     String unparse_name(Element *e) const;
+
+    /** @brief Unparse a handler name.
+     * @param e relevant element, if any
+     * @param hname handler name
+     *
+     * If @a e is an actual element on some router, then returns
+     * "ENAME.hname", where ENAME is @a e's @link Element::name()
+     * name@endlink.  Otherwise, just returns @a hname.*/
     static String unparse_name(Element *e, const String &hname);
 
-    static inline const Handler *blank_handler();
+
+    /** @brief Returns a handler incapable of doing anything.
+     *
+     *  The returned handler returns false for readable() and writable() and
+     *  has flags() of zero. */
+    static inline const Handler *blank_handler() {
+	return the_blank_handler;
+    }
 
   private:
 
@@ -103,134 +226,6 @@ class Handler { public:
 
 /* The largest size a write handler is allowed to have. */
 #define LARGEST_HANDLER_WRITE 65536
-
-
-/** @brief Returns this handler's name. */
-inline const String&
-Handler::name() const
-{
-    return _name;
-}
-
-/** @brief Returns this handler's flags.
-
-    The result is a bitwise-or of flags from the Flags enumeration type. */
-inline uint32_t
-Handler::flags() const
-{
-    return _flags;
-}
-
-/** @brief Returns this handler's first callback data. */
-inline void*
-Handler::user_data1() const
-{
-    return _thunk1;
-}
-
-/** @brief Returns this handler's second callback data. */
-inline void*
-Handler::user_data2() const
-{
-    return _thunk2;
-}
-
-/** @brief Returns true iff this is a valid read handler. */
-inline bool
-Handler::readable() const
-{
-    return _flags & OP_READ;
-}
-
-/** @brief Returns true iff this is a valid read handler that may accept
-    parameters. */
-inline bool
-Handler::read_param() const
-{
-    return _flags & READ_PARAM;
-}
-
-/** @brief Returns true iff this is a valid visible read handler.
-
-    Only visible handlers may be called from outside the router
-    configuration. */
-inline bool
-Handler::read_visible() const
-{
-    return _flags & OP_READ;
-}
-
-/** @brief Returns true iff this is a valid write handler. */
-inline bool
-Handler::writable() const
-{
-    return _flags & OP_WRITE;
-}
-
-/** @brief Returns true iff this is a valid visible write handler.
-
-    Only visible handlers may be called from outside the router
-    configuration. */
-inline bool
-Handler::write_visible() const
-{
-    return _flags & OP_WRITE;
-}
-
-/** @brief Returns true iff this handler is visible. */
-inline bool
-Handler::visible() const
-{
-    return _flags & (OP_READ | OP_WRITE);
-}
-
-/** @brief Returns true iff this handler is exclusive.
-
-    Exclusive means mutually exclusive with all other router processing.  In
-    the Linux kernel module driver, reading or writing an exclusive handler
-    using the Click filesystem will first lock all router threads and
-    handlers.  Exclusivity is set by the EXCLUSIVE flag.  */
-inline bool
-Handler::exclusive() const
-{
-    return _flags & EXCLUSIVE;
-}
-
-/** @brief Returns true iff quotes should be removed when calling this
-    handler.
-
-    A raw handler expects and returns raw text.  Click will unquote quoted
-    text before passing it to a raw handler, and (in the Linux kernel module)
-    will not add a courtesy newline to the end of a raw handler's value.
-    Rawness is set by the RAW flag. */
-inline bool
-Handler::raw() const
-{
-    return _flags & RAW;
-}
-
-/** @brief Call a read handler without parameters.
-    @param e element on which to call the handler
-    @param errh error handler
-
-    The element must be nonnull; to call a global handler, pass the relevant
-    router's Router::root_element().  @a errh may be null, in which case
-    errors are ignored. */
-inline String
-Handler::call_read(Element* e, ErrorHandler* errh) const
-{
-    return call_read(e, String(), false, errh);
-}
-
-/** @brief Returns a handler incapable of doing anything.
- *
- *  The returned handler returns false for readable() and writable()
- *  and has flags() of zero. */
-inline const Handler *
-Handler::blank_handler()
-{
-    return the_blank_handler;
-}
 
 CLICK_ENDDECLS
 #endif
