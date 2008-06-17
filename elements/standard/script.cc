@@ -1010,7 +1010,7 @@ Script::add_handlers()
     set_handler("and", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_and, 0);
     set_handler("or", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_or, 0);
 #if CLICK_USERLEVEL
-    set_handler("cat", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_cat, 0);
+    set_handler("cat", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, arithmetic_handler, ar_cat, 0);
 #endif
     if (_type == type_proxy)
 	add_write_handler("*", star_write_handler, 0);

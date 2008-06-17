@@ -3,6 +3,7 @@ test device up/down
 
 %require
 [ `whoami` = root ]
+click-buildtool provides linuxmodule
 ifconfig eth1 >/dev/null 2>&1
 
 %script

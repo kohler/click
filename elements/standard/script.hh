@@ -318,8 +318,9 @@ arguments N1 and N2, returns a random integer between N1 and N2.
 
 =h cat "read with parameters"
 
-User-level only.  Argument is a filename.  Reads and returns the file's
-contents.
+User-level only.  Argument is a filename; reads and returns the file's
+contents.  This handler is "private," meaning that it is not accessible via
+ControlSocket.
 
 =a DriverManager
 
