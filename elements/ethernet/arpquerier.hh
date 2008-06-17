@@ -108,7 +108,8 @@ Returns the ARPQuerier's IP broadcast address.
 
 =h table read-only
 
-Returns a textual representation of the ARP table.
+Returns a textual representation of the ARP table.  See ARPTable's table
+handler.
 
 =h stats read-only
 

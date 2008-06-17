@@ -60,7 +60,7 @@ ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_kparse_remove_keywords(conf, this, errh,
 		"CAPACITY", cpkC, &have_capacity, cpUnsigned, &capacity,
 		"ENTRY_CAPACITY", cpkC, &have_entry_capacity, cpUnsigned, &entry_capacity,
-		"TIMEOUT", cpkC, &have_timeout, cpUnsigned, &timeout,
+		"TIMEOUT", cpkC, &have_timeout, cpTimestamp, &timeout,
 		"BROADCAST", cpkC, &have_broadcast, cpIPAddress, &_my_bcast_ip,
 		"TABLE", 0, cpElement, &arpt,
 		cpEnd) < 0)
@@ -108,7 +108,7 @@ ARPQuerier::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_kparse_remove_keywords(conf, this, errh,
 		"CAPACITY", cpkC, &have_capacity, cpUnsigned, &capacity,
 		"ENTRY_CAPACITY", cpkC, &have_entry_capacity, cpUnsigned, &entry_capacity,
-		"TIMEOUT", cpkC, &have_timeout, cpUnsigned, &timeout,
+		"TIMEOUT", cpkC, &have_timeout, cpTimestamp, &timeout,
 		"BROADCAST", cpkC, &have_broadcast, cpIPAddress, &my_bcast_ip,
 		"TABLE", 0, cpIgnore,
 		cpEnd) < 0)
@@ -163,22 +163,15 @@ ARPQuerier::cleanup(CleanupStage stage)
 }
 
 void
-ARPQuerier::take_state(Element *e, ErrorHandler *)
+ARPQuerier::take_state(Element *e, ErrorHandler *errh)
 {
     ARPQuerier *arpq = (ARPQuerier *) e->cast("ARPQuerier");
     if (!arpq || _my_ip != arpq->_my_ip || _my_en != arpq->_my_en
-	|| _my_bcast_ip != arpq->_my_bcast_ip || _my_arpt != arpq->_my_arpt)
+	|| _my_bcast_ip != arpq->_my_bcast_ip)
 	return;
 
-    if (_my_arpt) {
-	ARPTable *t = _arpt;
-	_arpt = arpq->_arpt;
-	arpq->_arpt = t;
-	_arpt->set_capacity(t->capacity());
-	_arpt->set_entry_capacity(t->entry_capacity());
-	_arpt->set_timeout(t->timeout());
-    }
-
+    if (_my_arpt && arpq->_my_arpt)
+	_arpt->take_state(arpq->_arpt, errh);
     _arp_queries = arpq->_arp_queries;
     _drops = arpq->_drops;
     _arp_responses = arpq->_arp_responses;
@@ -376,4 +369,5 @@ ARPQuerier::add_handlers()
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(ARPQuerier)
+ELEMENT_REQUIRES(ARPTable)
 ELEMENT_MT_SAFE(ARPQuerier)

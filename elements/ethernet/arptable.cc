@@ -118,7 +118,7 @@ ARPTable::slim()
 
     // Delete old entries.
     while ((ae = _age_head)
-	   && (!click_jiffies_less(now, ae->_live_jiffies + _expire_jiffies)
+	   && (ae->expired(now, _expire_jiffies)
 	       || (_entry_capacity && _entry_count > _entry_capacity))) {
 	_table.erase(ae->_ip);
 
@@ -201,6 +201,7 @@ ARPTable::insert(IPAddress ip, const EtherAddress &eth, Packet **head)
 	return -ENOMEM;
 
     ae->_eth = eth;
+    ae->_unicast = !eth.is_broadcast();
     
     ae->_live_jiffies = click_jiffies();
     ae->_poll_jiffies = ae->_live_jiffies - CLICK_HZ;
@@ -235,9 +236,7 @@ ARPTable::append_query(IPAddress ip, Packet *p)
 	return -ENOMEM;
 
     click_jiffies_t now = click_jiffies();
-    if (!ae->_eth.is_broadcast()
-	&& (!click_jiffies_less(ae->_live_jiffies + _expire_jiffies, now)
-	    || !_expire_jiffies)) {
+    if (ae->unicast(now, _expire_jiffies)) {
 	_lock.release_write();
 	return -EAGAIN;
     }
@@ -291,9 +290,11 @@ ARPTable::read_handler(Element *e, void *user_data)
     click_jiffies_t now = click_jiffies();
     switch (reinterpret_cast<uintptr_t>(user_data)) {
       case h_table:
-	for (Table::const_iterator it = arpt->_table.begin(); it; ++it)
-	    sa << it->_ip << ' ' << it->_eth << ' '
+	for (Table::const_iterator it = arpt->_table.begin(); it; ++it) {
+	    int ok = it->unicast(now, arpt->_expire_jiffies);
+	    sa << it->_ip << ' ' << ok << ' ' << it->_eth << ' '
 	       << Timestamp::make_jiffies(now - it->_live_jiffies) << '\n';
+	}
 	break;
     }
     return sa.take_string();
