@@ -9,8 +9,8 @@ class Handler;
 /*
 =c
 
-ControlSocket("TCP", PORTNUMBER [, I<KEYWORDS>])
-ControlSocket("UNIX", FILENAME [, I<KEYWORDS>])
+ControlSocket("TCP", PORTNUMBER [, I<keywords READONLY, PROXY, VERBOSE, LOCALHOST, RETRIES, RETRY_WARNINGS>])
+ControlSocket("UNIX", FILENAME [, I<keywords>])
 
 =s control
 
@@ -68,6 +68,11 @@ useful with elements like KernelHandlerProxy. Default is empty (no proxy).
 
 Boolean. When true, ControlSocket will print messages whenever it accepts a
 new connection or drops an old one. Default is false.
+
+=item LOCALHOST
+
+Boolean. When true, a TCP ControlSocket will only accept connections from the
+local host (127.0.0.1). Default is false.
 
 =item RETRIES
 
@@ -223,6 +228,7 @@ class ControlSocket : public Element { public:
   bool _verbose : 1;
   bool _retry_warnings : 1;
   bool _tcp_socket : 1;
+  bool _localhost : 1;
   Element *_proxy;
   HandlerProxy *_full_proxy;
   

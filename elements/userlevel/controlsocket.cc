@@ -84,7 +84,7 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
 
   // remove keyword arguments
-  bool read_only = false, verbose = false, retry_warnings = true;
+  bool read_only = false, verbose = false, retry_warnings = true, localhost = false;
   _retries = 0;
   if (cp_va_kparse_remove_keywords(conf, this, errh,
 		"READONLY", 0, cpBool, &read_only,
@@ -92,11 +92,13 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 		"VERBOSE", 0, cpBool, &verbose,
 		"RETRIES", 0, cpInteger, &_retries,
 		"RETRY_WARNINGS", 0, cpBool, &retry_warnings,
+		"LOCALHOST", 0, cpBool, &localhost,
 		cpEnd) < 0)
     return -1;
   _read_only = read_only;
   _verbose = verbose;
   _retry_warnings = retry_warnings;
+  _localhost = localhost;
   
   socktype = socktype.upper();
   if (socktype == "TCP") {
@@ -162,7 +164,10 @@ ControlSocket::initialize_socket(ErrorHandler *errh)
     struct sockaddr_in sa;
     sa.sin_family = AF_INET;
     sa.sin_port = htons(portno);
-    sa.sin_addr = inet_makeaddr(0, 0);
+    if (_localhost)
+	sa.sin_addr = inet_makeaddr(127, 1);
+    else
+	sa.sin_addr = inet_makeaddr(0, 0);
     if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
       return initialize_socket_error(errh, "bind");
 
