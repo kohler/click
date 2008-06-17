@@ -316,6 +316,10 @@ Given zero arguments, returns a random integer between 0 and RAND_MAX.  Given
 one argument N, returns a random integer between 0 and N-1.  Given two
 arguments N1 and N2, returns a random integer between N1 and N2.
 
+=h now r
+
+Returns the current timestamp.
+
 =h cat "read with parameters"
 
 User-level only.  Argument is a filename; reads and returns the file's

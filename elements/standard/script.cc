@@ -647,7 +647,7 @@ enum {
     AR_ADD = 0, AR_SUB, AR_MUL, AR_DIV, AR_IDIV,
     AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
     AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat,
-    ar_and, ar_or
+    ar_and, ar_or, ar_now
 };
 
 int
@@ -852,6 +852,10 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	return 0;
     }
 
+    case ar_now:
+	str = Timestamp::now().unparse();
+	return 0;
+	
     case AR_SPRINTF: {
 	String format = cp_unquote(cp_pop_spacevec(str));
 	const char *s = format.begin(), *pct, *end = format.end();
@@ -1009,6 +1013,7 @@ Script::add_handlers()
     set_handler("random", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_random, 0);
     set_handler("and", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_and, 0);
     set_handler("or", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_or, 0);
+    set_handler("now", Handler::OP_READ, arithmetic_handler, ar_now, 0);
 #if CLICK_USERLEVEL
     set_handler("cat", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, arithmetic_handler, ar_cat, 0);
 #endif
