@@ -97,7 +97,7 @@ PacketTest::initialize(ErrorHandler *errh)
     p->kill();
 #endif
 
-#if 0
+#if 1
     // test shift_data()
     p = Packet::make(10, lowers, 60, 4);
     CHECK(p->headroom() == 10 && p->tailroom() == 4);
@@ -126,6 +126,17 @@ PacketTest::initialize(ErrorHandler *errh)
     p = p->shift_data(3);
     CHECK(p->headroom() >= 8 && p->length() == 60);
     CHECK_DATA(p->data(), lowers, 60);
+    CHECK_ALIGNED(p->data());
+    p->kill();
+
+    p = Packet::make(5, lowers, 60, 2);
+    p->set_mac_header(p->data(), 2);
+    p->pull(2);
+    p = p->shift_data(-3);
+    CHECK(p->mac_header() == p->data() - 2);
+    CHECK(p->headroom() >= 2 && p->length() == 58);
+    CHECK_DATA(p->mac_header(), lowers, 2);
+    CHECK_DATA(p->data(), lowers + 2, 58);
     CHECK_ALIGNED(p->data());
     p->kill();
 #endif

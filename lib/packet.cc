@@ -613,42 +613,56 @@ Packet::expensive_put(uint32_t nbytes)
  * there isn't enough memory.  If it fails, shift_data returns null, and if @a
  * free_on_failure is true (the default), the input packet is freed.
  *
+ * The packet's mac_header, network_header, and transport_header areas are
+ * preserved, even if they lie within the headroom.  Any headroom outside
+ * these regions may be overwritten, as may any tailroom.
+ *
  * @post new data() == old data() + @a offset (if no copy is made)
  * @post new buffer() == old buffer() (if no copy is made) */
 Packet *
 Packet::shift_data(int offset, bool free_on_failure)
 {
-  if (offset == 0)
-    return this;
-  else if (!shared() && (offset < 0 ? headroom() >= (uint32_t)(-offset) : tailroom() >= (uint32_t)offset)) {
-    WritablePacket *q = static_cast<WritablePacket *>(this);
-    uint8_t *old_head, *new_head;
-    if (offset < 0)
-      old_head = q->data() - offset, new_head = q->data();
-    else
-      old_head = q->data(), new_head = q->data() + offset;
-    memmove(new_head, old_head, q->end_data() - old_head);
+    if (offset == 0)
+	return this;
+
+    // Preserve mac_header, network_header, and transport_header.
+    const unsigned char *dp = data();
+    if (mac_header() && mac_header() >= buffer()
+	&& mac_header() <= end_buffer() && mac_header() < dp)
+	dp = mac_header();
+    if (network_header() && network_header() >= buffer()
+	&& network_header() <= end_buffer() && network_header() < dp)
+	dp = network_header();
+    if (transport_header() && transport_header() >= buffer()
+	&& transport_header() <= end_buffer() && transport_header() < dp)
+	dp = network_header();
+    
+    if (!shared()
+	&& (offset < 0 ? (dp - buffer()) >= (ptrdiff_t)(-offset)
+	    : tailroom() >= (uint32_t)offset)) {
+	WritablePacket *q = static_cast<WritablePacket *>(this);
+	memmove((unsigned char *) dp + offset, dp, q->end_data() - dp);
 #if CLICK_LINUXMODULE
-    struct sk_buff *mskb = q->skb();
-    mskb->data += offset;
-    mskb->tail += offset;
+	struct sk_buff *mskb = q->skb();
+	mskb->data += offset;
+	mskb->tail += offset;
 #else				/* User-space and BSD kernel module */
-    q->_data += offset;
-    q->_tail += offset;
+	q->_data += offset;
+	q->_tail += offset;
 # if CLICK_BSDMODULE
-    q->m()->m_data += offset;
+	q->m()->m_data += offset;
 # endif
 #endif
-    shift_header_annotations(offset);
-    return this;
-  } else {
-    int tailroom_offset = (offset < 0 ? -offset : 0);
-    if (offset < 0 && headroom() < (uint32_t)(-offset))
-      offset = -headroom() + ((uintptr_t)(data() + offset) & 7);
-    else
-      offset += ((uintptr_t)buffer() & 7);
-    return expensive_uniqueify(offset, tailroom_offset, free_on_failure);
-  }
+	shift_header_annotations(offset);
+	return this;
+    } else {
+	int tailroom_offset = (offset < 0 ? -offset : 0);
+	if (offset < 0 && headroom() < (uint32_t)(-offset))
+	    offset = -headroom() + ((uintptr_t)(data() + offset) & 7);
+	else
+	    offset += ((uintptr_t)buffer() & 7);
+	return expensive_uniqueify(offset, tailroom_offset, free_on_failure);
+    }
 }
 
 CLICK_ENDDECLS
