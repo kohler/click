@@ -69,11 +69,11 @@ template <class T> bool
 DEQueue<T>::reserve(int want)
 {
     if (want < 0)
-	want = _cap > 0 ? _cap * 2 : 4;
-    if (want <= _cap)
+	want = _cap > 0 ? _cap * 2 - 1 : 3;
+    if (want < _cap)
 	return true;
 
-    T *new_l = (T *) CLICK_LALLOC(want * sizeof(T));
+    T *new_l = (T *) CLICK_LALLOC((want + 1) * sizeof(T));
     if (!new_l)
 	return false;
   
@@ -85,7 +85,7 @@ DEQueue<T>::reserve(int want)
     CLICK_LFREE(_l, _cap * sizeof(T));
 
     _l = new_l;
-    _cap = want;
+    _cap = want + 1;
     _head = 0;
     _tail = _n;
     return true;
@@ -107,7 +107,7 @@ template <class T> void
 DEQueue<T>::resize(int nn, const T &e)
 {
   // extra/excess els are added/removed to/from back of queue
-  if (nn <= _cap || reserve(nn)) {
+  if (nn < _cap || reserve(nn)) {
     // construct new els
     for ( ; _n < nn; _tail = next_i(_tail), _n++)
       new(velt(_tail)) T(e);
