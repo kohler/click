@@ -62,8 +62,29 @@ dnl userlevel driver and features
 AC_ARG_ENABLE(userlevel, [  --disable-userlevel     disable user-level driver], :, enable_userlevel=yes)
 
 AC_ARG_ENABLE(user-multithread, [[    --enable-user-multithread support userlevel multithreading (EXPERIMENTAL)]], :, [enable_user_multithread=no])
+
+PTHREAD_LIBS=""
+AC_SUBST(PTHREAD_LIBS)
+
 if test "x$enable_user_multithread" = xyes; then
-    AC_DEFINE(HAVE_USER_MULTITHREAD)
+    SAVE_LIBS="$LIBS"
+    AC_SEARCH_LIBS([pthread_create], [pthread], [ac_have_libpthread=yes], [ac_have_libpthread=no])
+    AC_CHECK_HEADERS([pthread.h], [ac_have_pthread_h=yes], [ac_have_pthread_h=no])
+    if test "$ac_have_libpthread$ac_have_pthread_h" = yesyes; then
+	AC_DEFINE(HAVE_USER_MULTITHREAD)
+	if echo "$LIBS" | grep -e -lpthread >/dev/null 2>&1; then
+	    PTHREAD_LIBS="-lpthread"
+	fi
+    else
+	AC_MSG_ERROR([
+=========================================
+
+Can't find -lpthread and/or <pthread.h>, so I can't compile with
+--enable-user-multithread.
+
+=========================================])
+    fi
+    LIBS="$SAVE_LIBS"
 fi
 
 

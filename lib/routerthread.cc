@@ -347,7 +347,7 @@ RouterThread::run_tasks(int ntasks)
 
 #if HAVE_MULTITHREAD
     // cycle counter for adaptive scheduling among processors
-    click_cycles_t cycles;
+    click_cycles_t cycles = 0;
 #endif
 
     Task *t;

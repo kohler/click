@@ -122,5 +122,4 @@ QueueThreadTest2::run_task(Task *)
 
 ELEMENT_REQUIRES(userlevel umultithread)
 EXPORT_ELEMENT(QueueThreadTest1 QueueThreadTest2)
-ELEMENT_LIBS(-lpthread)
 CLICK_ENDDECLS
