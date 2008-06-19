@@ -123,7 +123,9 @@ class Handler { public:
      * processing.  In the Linux kernel module driver, reading or writing an
      * exclusive handler using the Click filesystem will first lock all router
      * threads and handlers.  Exclusivity is set by the EXCLUSIVE flag.  */
-    inline bool exclusive() const;
+    inline bool exclusive() const {
+	return _flags & EXCLUSIVE;
+    }
 
     /** @brief Check if quotes should be removed when calling this handler.
      *
