@@ -86,6 +86,9 @@ delt *delt::create(ElementT *e, delt *parent,
     RouterT::flatten_path(path, de->_flat_name, de->_flat_config);
     collector[de->_flat_name] = de;
 
+    ElementClassT *resolved_type = e->resolved_type(processing->scope());
+    de->_primitive = resolved_type->primitive();
+    
     // initial styles
     int x;
     de->_dess = cr->ccss()->elt_size_style(cr, de, &x);
@@ -93,7 +96,7 @@ delt *delt::create(ElementT *e, delt *parent,
     de->_des = cr->ccss()->elt_style(cr, de, &x);
     de->_des_sensitivity = x;
 
-    if (e->resolved_router(processing->scope())) {
+    if (resolved_type->cast_router()) {
 	ProcessingT subprocessing(*processing, e);
 	de->create_elements(cr, subprocessing.router(), &subprocessing,
 			    collector, path, z_index);

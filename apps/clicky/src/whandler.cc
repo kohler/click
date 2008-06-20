@@ -450,11 +450,15 @@ void whandler::display(const String &ename, bool incremental)
 
 	if (!ename || _rw->empty())
 	    /* there are no elements; do nothing */;
-	else if (!_rw->element_exists(ename)) {
-	    GtkWidget *l = gtk_label_new(NULL);
-	    gtk_label_set_markup(GTK_LABEL(l), _("Unknown element"));
-	    gtk_widget_show(l);
-	    gtk_box_pack_start(_handlerbox, l, FALSE, FALSE, 0);
+	else if (!_rw->element_exists(ename, true)) {
+	    // either not an element, or a compound (compounds have no
+	    // handlers).  Report an error if not an element at all.
+	    if (!_rw->element_exists(ename)) {
+		GtkWidget *l = gtk_label_new(NULL);
+		gtk_label_set_markup(GTK_LABEL(l), _("Unknown element"));
+		gtk_widget_show(l);
+		gtk_box_pack_start(_handlerbox, l, FALSE, FALSE, 0);
+	    }
 	} else if (_rw->driver()) {
 	    GtkWidget *l = gtk_label_new(NULL);
 	    gtk_label_set_markup(GTK_LABEL(l), _("<i>Loading...</i>"));

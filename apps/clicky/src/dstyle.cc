@@ -581,7 +581,7 @@ bool dcss_selector::match(crouter *cr, const delt *e, int *sensitivity) const
 		|| ex2(e->parent()->flat_name(), e->eindex()))
 		return false;
 	} else if ((s = find(*k, '=')) != k->end()) {
-	    if (!cr->driver() || !e->flat_name())
+	    if (!cr->driver() || !e->flat_name() || !e->primitive())
 		return false;
 	    handler_value *hv = cr->hvalues().find_placeholder(e->flat_name() + "." + k->substring(k->begin(), s), hflag_notify_delt);
 	    if (!hv)

@@ -54,10 +54,11 @@ bool crouter::empty() const
     return (!_r && !_conf && (!_driver || !_driver->active()));
 }
 
-bool crouter::element_exists(const String &ename) const
+bool crouter::element_exists(const String &ename, bool only_primitive) const
 {
     Vector<ElementT *> path;
-    return (_r && _r->element_path(ename, path));
+    return (_r && _r->element_path(ename, path)
+	    && (!only_primitive || path.back()->type()->primitive()));
 }
 
 ElementClassT *crouter::element_type(const String &ename) const

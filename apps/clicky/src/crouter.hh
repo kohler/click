@@ -37,7 +37,7 @@ class crouter { public:
     RouterT *router() const {
 	return _r;
     }
-    bool element_exists(const String &ename) const;
+    bool element_exists(const String &ename, bool only_primitive = false) const;
     ElementClassT *element_type(const String &ename) const;
 
     ElementMap *element_map() const {

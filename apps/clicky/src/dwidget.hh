@@ -165,7 +165,7 @@ class delt : public dwidget { public:
 	  _decor(0), _generation(0),
 	  _port_text_offsets(0), _parent(parent), _split(0),
 	  _visible(false), _display(dedisp_placeholder),
-	  _aligned(true), _split_type(0),
+	  _aligned(true), _primitive(false), _split_type(0),
 	  _des_sensitivity(0), _dess_sensitivity(0), _dps_sensitivity(0),
 	  _markup_sensitivity(0),
 	  _highlight(0), _drawn_highlight(0),
@@ -250,7 +250,7 @@ class delt : public dwidget { public:
 	return _e->router();
     }
     bool primitive() const {
-	return _elt.size() == 0;
+	return _primitive;
     }
     bool passthrough() const {
 	return _elt.size() == 2;
@@ -344,6 +344,7 @@ class delt : public dwidget { public:
     bool _visible;
     int8_t _display;
     bool _aligned : 1;
+    bool _primitive : 1;
     int8_t _split_type;
     unsigned _des_sensitivity : 2;
     unsigned _dess_sensitivity : 2;

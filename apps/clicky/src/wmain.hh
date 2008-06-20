@@ -89,11 +89,6 @@ class wmain : public crouter { public:
     gboolean csocket_event(GIOCondition);
 
     enum { elist_sort_none = 0, elist_sort_name, elist_sort_class };
-    enum { cscmd_config, cscmd_list, cscmd_handlers, cscmd_readhandler,
-	   cscmd_writehandler,
-	   cscmd_quiet,		// commands >= cscmd_quiet don't report errors
-	   cscmd_check_hotconfig };
-    enum { cscmdflag_background = 1, cscmdflag_clear = 2 };
     
   private:
 
