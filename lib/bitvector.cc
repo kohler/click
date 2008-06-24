@@ -69,11 +69,12 @@ Bitvector::resize_to_max(int new_max, bool valid_n)
 void
 Bitvector::clear_last()
 {
-    if ((_max&0x1F) != 0x1F) {
+    if (unlikely(_max < 0))
+	_data[0] = 0;
+    else if ((_max&0x1F) != 0x1F) {
 	uint32_t mask = (1U << ((_max&0x1F)+1)) - 1;
 	_data[_max>>5] &= mask;
-    } else if (_max < 0)
-	_data[0] = 0;
+    }
 }
 
 Bitvector &
@@ -103,7 +104,9 @@ Bitvector::assign(int n, bool value)
 {
     resize(n);
     uint32_t bits = (value ? 0xFFFFFFFFU : 0U);
-    int copy = max_word();
+    // 24.Jun.2008 -- Even if n <= 0, at least one word must be set to "bits."
+    // Otherwise assert(_max >= 0 || _data[0] == 0) will not hold.
+    int copy = (n > 32 ? max_word() : 0);
     for (int i = 0; i <= copy; i++)
 	_data[i] = bits;
     if (value)
@@ -165,7 +168,8 @@ Bitvector::or_at(const Bitvector &o, int offset)
     int my_max_word = max_word();
     int o_max_word = o.max_word();
     uint32_t *data = _data;
-    uint32_t *o_data = o._data;
+    const uint32_t *o_data = o._data;
+    assert((o._max < 0 && o_data[0] == 0) || (o._max & 0x1F) == 0 || (o_data[o_max_word] & ((1U << ((o._max & 0x1F) + 1)) - 1)) == o_data[o_max_word]);
 
     while (true) {
 	uint32_t val = o_data[o_pos];
