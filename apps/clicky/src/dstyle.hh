@@ -443,7 +443,9 @@ class dcss_set { public:
     }
 
     dcss_set *remedia(const String &media);
-    
+
+    static String expand_imports(const String &text, const String &filename, ErrorHandler *errh = 0);
+
     void parse(const String &text);
     void add(dcss *s);
 

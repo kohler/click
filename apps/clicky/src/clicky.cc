@@ -20,6 +20,7 @@
 #include "wmain.hh"
 #include "tmain.hh"
 #include "wdiagram.hh"
+#include "dstyle.hh"
 #include <click/hashtable.hh>
 #include <netdb.h>
 
@@ -141,11 +142,11 @@ particular purpose.\n");
 	    if (clp->negated)
 		css_text = String();
 	    else
-		css_text += file_string(clp->vstr, ErrorHandler::default_handler());
+		css_text += clicky::dcss_set::expand_imports(file_string(clp->vstr, ErrorHandler::default_handler()), clp->vstr, ErrorHandler::default_handler());
 	    break;
 
 	  case STYLE_EXPR_OPT:
-	    css_text += clp->vstr;
+	    css_text += clicky::dcss_set::expand_imports(clp->vstr, "<style>", ErrorHandler::default_handler());
 	    break;
 
 	  case EXPRESSION_OPT:

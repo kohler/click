@@ -14,7 +14,6 @@ class wmain;
 class handler_value;
 class delt;
 class dconn;
-class dcss_set;
 class delt_style;
 class delt_size_style;
 class dport_style;

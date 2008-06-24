@@ -426,7 +426,8 @@ bool cp_color(const String &str, double *r, double *g, double *b, double *a)
     return false;
 }
 
-static const char *ccss_skip_braces(const char *s, const char *send)
+static const char *ccss_skip_braces(const char *s, const char *send,
+				    bool one_word = false)
 {
     int nopen = 0;
     for (; s != send; ++s)
@@ -444,10 +445,16 @@ static const char *ccss_skip_braces(const char *s, const char *send)
 		    break;
 	    if (s == send)
 		break;
+	    if (one_word && !nopen) {
+		++s;
+		break;
+	    }
 	} else if (*s == '}' && --nopen < 0)
 	    return s + 1;
 	else if (*s == '{')
 	    ++nopen;
+	else if (one_word && (isspace((unsigned char) *s) || *s == ';'))
+	    break;
     return s;
 }
 
@@ -1314,6 +1321,67 @@ void dcss::assign_all(dcss_propmatch *props, dcss_propmatch **pp, int n,
 /*****
  *
  */
+
+String dcss_set::expand_imports(const String &text, const String &filename,
+				ErrorHandler *errh)
+{
+    LocalErrorHandler lerrh(errh);
+    const char *s = text.begin(), *send = text.end();
+    StringAccum expansion;
+
+    while (1) {
+	s = cp_skip_comment_space(s, send);
+	if (s == send || s + 7 >= send || memcmp(s, "@import", 7) != 0)
+	    break;
+	const char *fnbegin = cp_skip_comment_space(s + 7, send);
+	const char *fnend = s = ccss_skip_braces(fnbegin, send, true);
+	if (fnbegin == fnend || *fnbegin == '{') {
+	    lerrh.error("%s: bad @import rule", filename.c_str());
+	    break;
+	}
+
+	// get @media
+	String atmedia;
+	s = cp_skip_comment_space(s, send);
+	if (s != send && *s != ';') {
+	    const char *atmedia_start = s;
+	    while (s != send && *s != ';')
+		if (*s == '/' && s + 1 != send && (s[1] == '/' || s[1] == '*'))
+		    s = cp_skip_comment_space(s, send);
+		else
+		    ++s;
+	    atmedia = text.substring(atmedia_start, s);
+	}
+	// skip past ';'
+	if (s != send)
+	    ++s;
+	
+	String fn;
+	if (!cp_filename(text.substring(fnbegin, fnend), &fn) || !fn) {
+	    lerrh.error("%s: bad @import rule", filename.c_str());
+	    break;
+	}
+	if (fn[0] != '/' && filename && filename[0] != '<') {
+	    String prefix = filename;
+	    while (prefix && prefix.back() != '/')
+		prefix = prefix.substring(0, prefix.length() - 1);
+	    fn = prefix + fn;
+	}
+
+	String text = file_string(fn, &lerrh);
+	if (atmedia)
+	    expansion << "@media " << atmedia << " {\n";
+	expansion << expand_imports(text, fn, &lerrh) << '\n';
+	if (atmedia)
+	    expansion << "}\n";
+    }
+
+    if (expansion) {
+	expansion << text.substring(s, text.end());
+	return expansion.take_string();
+    } else
+	return text.substring(s, text.end());
+}
 
 dcss_set::dcss_set(const String &text, const String &media)
     : _text(), _media(media), _media_next(0), _below(0),

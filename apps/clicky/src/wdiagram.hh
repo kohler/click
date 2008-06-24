@@ -12,7 +12,6 @@ class wmain;
 class handler_value;
 class dwidget;
 class delt;
-class dcss_set;
 class crouter;
 
 class cdiagram : public rectangle { public:
