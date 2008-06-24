@@ -129,7 +129,7 @@ inline bool cp_integer(const String &str, int64_t *result);
 inline bool cp_integer(const String &str, uint64_t *result);
 #endif
 
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_TOOL
 bool cp_file_offset(const String& str, off_t* result);
 #endif
 
@@ -193,7 +193,7 @@ bool cp_handler(const String& str, int flags, Element** result_element, const Ha
 bool cp_des_cblock(const String& str, unsigned char* result);
 #endif
 
-#if CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_TOOL
 bool cp_filename(const String& str, String* result);
 #endif
 //@}

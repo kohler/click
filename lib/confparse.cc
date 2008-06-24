@@ -49,7 +49,7 @@
 # define CP_CONTEXT
 # define CP_PASS_CONTEXT
 #endif
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_TOOL
 # include <pwd.h>
 #endif
 #include <stdarg.h>
@@ -1167,7 +1167,7 @@ cp_basic_integer(const char *begin, const char *end, int flags, int size,
 }
 
 
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_TOOL
 
 /** @brief  Parse a file offset from @a str.
  * @param  str  string
@@ -2661,7 +2661,7 @@ cp_des_cblock(const String &str, unsigned char *result)
 }
 #endif
 
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_TOOL
 
 /** @brief Parse a filename string from @a str.
  * @param  str  string
@@ -3012,7 +3012,7 @@ default_parsefunc(cp_value *v, const String &arg,
     break;
 #endif
 
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_TOOL
    case cpiFileOffset:
     if (!cp_file_offset(arg, (off_t *) &v->v))
       goto type_mismatch;
@@ -3221,7 +3221,7 @@ default_parsefunc(cp_value *v, const String &arg,
    }
 #endif
 
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_TOOL
    case cpiFilename:
     if (!cp_filename(arg, &v->v_string))
       goto type_mismatch;
