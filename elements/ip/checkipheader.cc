@@ -149,8 +149,11 @@ CheckIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
 
   _verbose = verbose;
-  if (details)
-    _reason_drops = new atomic_uint32_t[NREASONS];
+  if (details) {
+      _reason_drops = new atomic_uint32_t[NREASONS];
+      for (int i = 0; i < NREASONS; ++i)
+	  _reason_drops[i] = 0;
+  }
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   // check alignment
