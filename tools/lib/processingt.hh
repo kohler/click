@@ -161,7 +161,7 @@ class ProcessingT { public:
     void follow_connections(const Bitvector &source, bool source_isoutput, Bitvector &sink) const;
     void follow_connections(const PortT &source, bool source_isoutput, Bitvector &sink) const;
     void follow_flow(const Bitvector &source, bool source_isoutput, Bitvector &sink, ErrorHandler *errh = 0) const;
-    void follow_reachable(Bitvector &ports, bool isoutput, bool forward, ErrorHandler *errh = 0) const;
+    void follow_reachable(Bitvector &ports, bool isoutput, bool forward, ErrorHandler *errh = 0, ErrorHandler *debug_errh = 0) const;
 
     String compound_port_count_code() const;
     String compound_processing_code() const;
@@ -193,6 +193,7 @@ class ProcessingT { public:
     void check_connections(ErrorHandler *);
     void check_nports(const ElementT *, const int *, const int *, ErrorHandler *);
     void resolve_agnostics();	// change remaining AGNOSTICs to PUSH
+    void debug_print_pidxes(const Bitvector &ports, bool isoutput, const String &prefix, ErrorHandler *debug_errh) const;
 
 };
 

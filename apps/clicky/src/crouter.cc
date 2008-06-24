@@ -375,7 +375,7 @@ void crouter::reachable_match_t::set_seed_connections(ElementT *e, int port)
 	set_seed(*cit);
 }
 
-bool crouter::reachable_match_t::add_matches(reachable_t &reach)
+bool crouter::reachable_match_t::add_matches(reachable_t &reach, ErrorHandler *debug_errh)
 {
     for (RouterT::iterator it = _router->begin_elements();
 	 it != _router->end_elements(); ++it)
@@ -386,9 +386,9 @@ bool crouter::reachable_match_t::add_matches(reachable_t &reach)
 	else if (it->resolved_router(_processing->scope())) {
 	    reachable_match_t sub_match(*this, it);
 	    RouterT *sub_router = sub_match._router;
-	    if (sub_match.add_matches(reach)) {
+	    if (sub_match.add_matches(reach, debug_errh)) {
 		assert(!reach.compound.get_pointer(sub_match._router_name));
-		sub_match.export_matches(reach);
+		sub_match.export_matches(reach, debug_errh);
 		assert(sub_router->element(0)->name() == "input"
 		       && sub_router->element(1)->name() == "output");
 		for (int p = 0; p < sub_router->element(_forward)->nports(!_forward); ++p)
@@ -397,13 +397,13 @@ bool crouter::reachable_match_t::add_matches(reachable_t &reach)
 	    }
 	}
     if (_seed.size()) {
-	_processing->follow_reachable(_seed, !_forward, _forward);
+	_processing->follow_reachable(_seed, !_forward, _forward, 0, debug_errh);
 	return true;
     } else
 	return false;
 }
 
-void crouter::reachable_match_t::export_matches(reachable_t &reach)
+void crouter::reachable_match_t::export_matches(reachable_t &reach, ErrorHandler *debug_errh)
 {
     Bitvector &x = (_router_name ? reach.compound[_router_name] : reach.main);
     if (!x.size())
@@ -431,8 +431,8 @@ void crouter::reachable_match_t::export_matches(reachable_t &reach)
 		if (_seed[pidx + p])
 		    sub_match.set_seed_connections(sub_router->element(!_forward), p);
 	    if (sub_match._seed.size()) {
-		sub_match._processing->follow_reachable(sub_match._seed, !_forward, _forward);
-		sub_match.export_matches(reach);
+		sub_match._processing->follow_reachable(sub_match._seed, !_forward, _forward, 0, debug_errh);
+		sub_match.export_matches(reach, debug_errh);
 	    }
 	}
     }
@@ -445,8 +445,8 @@ void crouter::calculate_reachable(const String &str, bool forward, reachable_t &
     parse_port(str, ename, port);
 
     reachable_match_t match(ename, port, forward, _r, _processing);
-    match.add_matches(reach);
-    match.export_matches(reach);
+    match.add_matches(reach, 0);
+    match.export_matches(reach, 0);
 }
 
 }

@@ -690,7 +690,7 @@ int
 ProcessingT::code_flow(const String &flow_code, int port, bool isoutput,
 		       Bitvector *bv, int size, ErrorHandler *errh)
 {
-    if (port < 0) {
+    if (port < 0 || size == 0) {
 	bv->assign(size, false);
 	return 0;
     } else if (!flow_code || flow_code.equals("x/x", 3)) {
@@ -727,6 +727,28 @@ ProcessingT::code_flow(const String &flow_code, int port, bool isoutput,
     return 0;
 }
 
+void
+ProcessingT::debug_print_pidxes(const Bitvector &ports, bool isoutput,
+				const String &prefix, ErrorHandler *debug_errh) const
+{
+    if (debug_errh) {
+	assert(ports.size() == npidx(isoutput));
+	StringAccum sa;
+	for (int i = 0; i < npidx(isoutput); i++)
+	    if (ports[i]) {
+		if (sa)
+		    sa << ' ';
+		sa << port(i, isoutput).unparse(isoutput);
+	    }
+	if (prefix && !sa)
+	    sa << "(none)";
+	if (prefix)
+	    debug_errh->message("%s%s", prefix.c_str(), sa.c_str());
+	else if (sa)
+	    debug_errh->message("%s", sa.c_str());
+    }
+}
+    
 void
 ProcessingT::follow_connections(const Bitvector &source, bool source_isoutput,
 				Bitvector &sink) const
@@ -772,13 +794,17 @@ ProcessingT::follow_flow(const Bitvector &source, bool source_isoutput,
 }
 
 void
-ProcessingT::follow_reachable(Bitvector &ports, bool isoutput, bool forward, ErrorHandler *errh) const
+ProcessingT::follow_reachable(Bitvector &ports, bool isoutput, bool forward, ErrorHandler *errh, ErrorHandler *debug_errh) const
 {
     assert(ports.size() == npidx(isoutput));
     Bitvector other_ports(npidx(!isoutput), false);
     Bitvector new_ports(npidx(isoutput), false);
     Bitvector diff(ports);
-    while (1) {
+    for (int round = 0; true; ++round) {
+	if (debug_errh) {
+	    debug_print_pidxes(diff, isoutput, (round ? "round " + String(round) : "initial") + String(": "), debug_errh);
+	    other_ports.assign(npidx(!isoutput), false);
+	}
 	if (isoutput != forward) {
 	    follow_flow(diff, isoutput, other_ports, errh);
 	    follow_connections(other_ports, !isoutput, new_ports);

@@ -190,8 +190,8 @@ class crouter { public:
 	inline bool get_seed(int eindex, int port) const;
 	inline void set_seed(const ConnectionT &conn);
 	inline void set_seed_connections(ElementT *element, int port);
-	bool add_matches(reachable_t &reach);
-	void export_matches(reachable_t &reach);
+	bool add_matches(reachable_t &reach, ErrorHandler *debug_errh);
+	void export_matches(reachable_t &reach, ErrorHandler *debug_errh);
     };
     void calculate_reachable(const String &str, bool forward, reachable_t &reach);
     
