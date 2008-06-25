@@ -36,6 +36,7 @@ cflags=
 compileflag=-c
 quiet=
 gpl=y
+exit=
 while true; do
     bad=x
     case $1 in
@@ -47,19 +48,19 @@ while true; do
 	driver=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
       --c|--cf|--cfl|--cfla|--cflag|--cflags|--de|--def|--defs)
 	echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ -I$includedir
-	exit 0;;
+	exit=y; shift 1;;
       --l|--li|--lib|--libs)
 	echo -L$libdir -lclick @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@ @PTHREAD_LIBS@
-	exit 0;;
+	exit=y; shift 1;;
       --toolc|--toolcf|--toolcfl|--toolcfla|--toolcflag|--toolcflags)
 	echo -DCLICK_TOOL -I$includedir
-	exit 0;;
+	exit=y; shift 1;;
       --tooll|--toolli|--toollib|--toollibs)
 	echo -L$libdir -lclicktool @DL_LIBS@ @SOCKET_LIBS@
-	exit 0;;
+	exit=y; shift 1;;
       --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)
 	echo @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@ @PTHREAD_LIBS@
-	exit 0;;
+	exit=y; shift 1;;
       -d|--di|--dir|--dire|--direc|--direct|--directo|--director|--directory)
 	directory=$2; shift 2;;
       -d*)
@@ -131,6 +132,8 @@ EOF
     esac
     if test -z "$bad"; then break; fi
 done
+
+if test -n "$exit"; then exit 0; fi
 
 cd $directory
 
