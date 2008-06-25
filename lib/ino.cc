@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software")
@@ -272,6 +273,9 @@ ClickIno::name_search(const String &n, int first_xi, int last_xi, int name_offse
 ino_t
 ClickIno::lookup(ino_t ino, const String &component)
 {
+    // BEWARE: "component" might be a fake String pointing to mutable data; do
+    // not save any references to it!
+    
     // must be called with config_lock held
     int elementno = INO_ELEMENTNO(ino);
     int nelements = (_router ? _router->nelements() : 0);
@@ -361,9 +365,12 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 	Vector<int> his;
 	Router::element_hindexes(element, his);
 	while (f_pos >= RD_HOFF && f_pos < his.size() + RD_HOFF) {
-	    const Handler* h = Router::handler(_router, his[f_pos - RD_HOFF]);
+	    // Traverse element_hindexes in reverse because new handler
+	    // names are added at the end.
+	    int hi = his[his.size() - (f_pos - RD_HOFF) - 1];
+	    const Handler* h = Router::handler(_router, hi);
 	    if (h->visible())
-		FILLDIR(h->name().data(), h->name().length(), INO_MKHANDLER(elementno, his[f_pos - RD_HOFF]), DT_REG, f_pos, thunk);
+		FILLDIR(h->name().data(), h->name().length(), INO_MKHANDLER(elementno, hi), DT_REG, f_pos, thunk);
 	    f_pos++;
 	}
     }

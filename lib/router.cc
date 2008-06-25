@@ -1201,22 +1201,25 @@ Handler::unparse_name(Element *e) const
 // implement.)
 
 int
-Router::find_ehandler(int eindex, const String& name, bool allow_star) const
+Router::find_ehandler(int eindex, const String &hname, bool allow_star) const
 {
     int eh = _ehandler_first_by_element[eindex];
     int star_h = -1;
     while (eh >= 0) {
 	int h = _ehandler_to_handler[eh];
-	const String &hname = xhandler(h)->name();
-	if (hname == name)
+	const String &hn = xhandler(h)->name();
+	if (hn == hname)
 	    return eh;
-	else if (hname.length() == 1 && hname[0] == '*')
+	else if (hn.length() == 1 && hn[0] == '*')
 	    star_h = h;
 	eh = _ehandler_next[eh];
     }
     if (allow_star && star_h >= 0 && xhandler(star_h)->writable()) {
-	if (xhandler(star_h)->call_write(name, element(eindex), true, ErrorHandler::default_handler()) >= 0)
-	    eh = find_ehandler(eindex, name, false);
+	// BEWARE: hname might be a fake string pointing to mutable data, so
+	// make a copy of the string before it might escape.
+	String real_hname(hname.data(), hname.length());
+	if (xhandler(star_h)->call_write(real_hname, element(eindex), true, ErrorHandler::default_handler()) >= 0)
+	    eh = find_ehandler(eindex, real_hname, false);
     }
     return eh;
 }
@@ -1432,6 +1435,9 @@ Router::handler(const Element* e, const String& hname)
 int
 Router::hindex(const Element *e, const String &hname)
 {
+    // BEWARE: This function must work correctly even if hname is a fake
+    // string pointing to mutable data, so find_ehandler() makes a copy of the
+    // string at the point where it might escape.
     if (e && e->eindex() >= 0) {
 	const Router *r = e->router();
 	int eh = r->find_ehandler(e->eindex(), hname, true);
