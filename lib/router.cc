@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -102,7 +103,8 @@ Router::~Router()
     // Clean up elements in reverse configuration order
     if (_state == ROUTER_LIVE) {
 	// Unschedule tasks and timers
-	_master->kill_router(this);
+	if (_master)
+	    _master->kill_router(this);
 	for (int ord = _elements.size() - 1; ord >= 0; ord--)
 	    _elements[ _element_configure_order[ord] ]->cleanup(Element::CLEANUP_ROUTER_INITIALIZED);
     } else if (_state != ROUTER_DEAD) {
