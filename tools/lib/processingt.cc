@@ -788,7 +788,7 @@ ProcessingT::follow_flow(const Bitvector &source, bool source_isoutput,
 		if (source[pidx]) {
 		    PortT p = port(pidx, source_isoutput);
 		    (void) port_flow(p, source_isoutput, &bv, errh);
-		    sink.or_at(bv, _pidx[!source_isoutput][p.eindex()]);
+		    sink.offset_or(bv, _pidx[!source_isoutput][p.eindex()]);
 		}
 	}
 }

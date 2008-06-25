@@ -5,6 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2002 International Computer Science Institute
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -159,7 +160,7 @@ Bitvector::operator^=(const Bitvector &o)
 }
 
 void
-Bitvector::or_at(const Bitvector &o, int offset)
+Bitvector::offset_or(const Bitvector &o, int offset)
 {
     assert(offset >= 0 && offset + o._max <= _max);
     uint32_t bits_1st = offset&0x1F;
@@ -191,10 +192,9 @@ Bitvector::or_at(const Bitvector &o, int offset)
 void
 Bitvector::or_with_difference(const Bitvector &o, Bitvector &diff)
 {
-    if (o._max > _max)
-	resize(o._max + 1);
-    if (diff._max > _max)
-	diff.resize(o._max + 1);
+    assert(o._max == _max);
+    if (diff._max != _max)
+	diff.resize(_max + 1);
     int nn = max_word();
     uint32_t *data = _data, *diff_data = diff._data;
     const uint32_t *o_data = o._data;

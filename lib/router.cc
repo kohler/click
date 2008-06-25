@@ -809,7 +809,7 @@ Router::global_port_flow(bool forward, Element* first_element, int first_port, E
 		Hookup h = gport_hookup(!forward, g);
 		if (!stop_filter || !stop_filter->check_match(_elements[h.idx], !forward, h.port)) {
 		    _elements[h.idx]->port_flow(!forward, h.port, &scratch);
-		    source.or_at(scratch, _gports[forward].e2g[h.idx]);
+		    source.offset_or(scratch, _gports[forward].e2g[h.idx]);
 		}
 	    }
     }
