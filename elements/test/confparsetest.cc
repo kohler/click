@@ -147,6 +147,20 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(t.sec() == -10 && t.subsec() == 0);
     CHECK(t.unparse() == "-10.000000");
 
+    // some string tests for good measure
+    CHECK(String("abcdef").substring(-3) == "def");
+    CHECK(String("abc").substring(-3) == "abc");
+    CHECK(String("ab").substring(-3) == "ab");
+    CHECK(String("abcdef").substring(-3, -2) == "d");
+    CHECK(String("abcdef").substring(-3, 2) == "de");
+    CHECK(String("abcdef").substring(2, -3) == "c");
+    CHECK(String("abcdef").substring(2, 3) == "cde");
+    CHECK(String("abcdef").substring(2, 10) == "cdef");
+    CHECK(String("abcdef").substring(-2, 10) == "ef");
+    CHECK(String("abcdef").substring(-10, -3) == "abc");
+    CHECK(String("abcdef").substring(-10, -9) == "");
+    CHECK(String("abcdef").substring(10, -9) == "");
+
     errh->message("All tests pass!");
     return 0;
 }

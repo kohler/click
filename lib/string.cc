@@ -477,25 +477,38 @@ String::c_str() const
  * @param len length of the substring.
  *
  * If @a pos is negative, starts that far from the end of the string.  If @a
- * len is negative, leaves that many characters off the end of the string.
- * (This follows perl's semantics.)  Returns a null string if the adjusted @a
- * pos is out of range.  Truncates the substring if @a len goes beyond the end
- * of the string.
+ * len is negative, leaves that many characters off the end of the string.  If
+ * @a pos and @a len specify a substring that is partly outside the string,
+ * only the part within the string is returned.  If the substring is beyond
+ * either end of the string, returns an empty string (but this should be
+ * considered a programming error; a future version may generate a warning for
+ * this case).
+ *
+ * @note String::substring() is intended to behave like Perl's substr().
  */
 String
 String::substring(int pos, int len) const
 {
     if (pos < 0)
 	pos += _length;
+
+    int pos2;
     if (len < 0)
-	len = _length - pos + len;
-    if (pos + len > _length)
-	len = _length - pos;
-  
-    if (pos < 0 || len <= 0)
+	pos2 = _length + len;
+    else if (pos >= 0 && len >= _length) // avoid integer overflow
+	pos2 = _length;
+    else
+	pos2 = pos + len;
+
+    if (pos < 0)
+	pos = 0;
+    if (pos2 > _length)
+	pos2 = _length;
+
+    if (pos >= pos2)
 	return String();
     else
-	return String(_data + pos, len, _memo);
+	return String(_data + pos, pos2 - pos, _memo);
 }
 
 /** @brief Search for a character in a string.

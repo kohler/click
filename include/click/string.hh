@@ -431,9 +431,10 @@ String::stable_string(const char *begin, const char *end)
  * @param begin pointer to the first character in the desired substring.
  * @param end pointer one beyond the last character in the desired substring.
  *
- * Returns a null string if @a begin @> @a end, or if @a begin or @a end is
- * out of range (i.e., either less than this->begin() or greater than
- * this->end()).
+ * Returns an empty string if @a begin @> @a end.  Also returns an empty
+ * string if @a begin or @a end is out of range (i.e., either less than
+ * this->begin() or greater than this->end()), but this should be considered a
+ * programming error; a future version may generate a warning for this case.
  */
 inline String
 String::substring(const char *begin, const char *end) const
@@ -446,12 +447,19 @@ String::substring(const char *begin, const char *end) const
 
 /** @brief Return the suffix of the current string starting at index @a pos.
  *
- * Same as String::substring(@a pos, INT_MAX).
+ * If @a pos is negative, starts that far from the end of the string.  If @a
+ * pos is so negative that the suffix starts outside the string, then the
+ * entire string is returned.  If the substring is beyond the end of the
+ * string (@a pos > length()), returns an empty string (but this should be
+ * considered a programming error; a future version may generate a warning for
+ * this case).
+ *
+ * @note String::substring() is intended to behave like Perl's substr().
  */
 inline String
 String::substring(int pos) const
 {
-  return substring(pos, _length);
+    return substring((pos <= -_length ? 0 : pos), _length);
 }
 
 /** @brief Compare two strings.
