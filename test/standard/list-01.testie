@@ -1,0 +1,12 @@
+%info
+Tests List functionality with the ListTest element.
+
+%require
+click-buildtool provides ListTest
+
+%script
+click -qe ListTest
+
+%expect stderr
+config:1:{{.*}}
+  All tests pass!
