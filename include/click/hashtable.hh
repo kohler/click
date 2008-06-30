@@ -1,7 +1,7 @@
 #ifndef CLICK_HASHTABLE_HH
 #define CLICK_HASHTABLE_HH
 /*
- * hashtable.{cc,hh} -- HashTable template
+ * hashtable.hh -- HashTable template
  * Eddie Kohler
  *
  * Copyright (c) 2008 Meraki, Inc.
@@ -22,7 +22,7 @@
 CLICK_DECLS
 
 /** @file <click/hashtable.hh>
- * @brief Click's hash table helper template.
+ * @brief Click's hash table container template.
  */
 
 template <typename K, typename V = void> class HashTable;
