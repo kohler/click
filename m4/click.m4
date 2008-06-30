@@ -50,6 +50,7 @@ AC_DEFUN([CLICK_PROG_CC], [
 
     CFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
     AC_SUBST(CFLAGS_NDEBUG)
+    AC_CHECK_HEADERS(sys/types.h unistd.h)
 ])
 
 

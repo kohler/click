@@ -11,7 +11,7 @@ dnl The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
 dnl notice is a summary of the Click LICENSE file; the license in that file is
 dnl legally binding.
 
-AC_INIT(click, 1.6.0)
+AC_INIT([click], [1.6.0])
 AC_PREREQ(2.50)
 AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in)
 
@@ -345,6 +345,7 @@ dnl
 
 AC_ARG_ENABLE(int64, [  --disable-int64         disable 64-bit integer support], :, enable_int64=yes)
 
+AC_CHECK_HEADERS(time.h)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(size_t)
@@ -410,7 +411,7 @@ dnl
 dnl headers, event detection, dynamic linking
 dnl
 
-AC_CHECK_HEADERS(unistd.h termio.h netdb.h sys/event.h pwd.h grp.h)
+AC_CHECK_HEADERS(termio.h netdb.h sys/event.h pwd.h grp.h)
 CLICK_CHECK_POLL_H
 AC_CHECK_FUNCS(sigaction)
 
