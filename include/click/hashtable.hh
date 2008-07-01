@@ -371,7 +371,7 @@ class HashTable_const_iterator { public:
  
   These iterators apply to HashTable classes that store either a unified
   key-value pair (HashTable<T>), or to HashTable classes that map keys to
-  explicit vlaues (HashTable<K, V>).
+  explicit values (HashTable<K, V>).
  
   Iterators for HashTable<K, V> objects have additional methods.  Given
   HashTable<K, V>::iterator it:
