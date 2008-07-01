@@ -258,7 +258,15 @@ class HashContainer { public:
      *
      * @note Rehashing invalidates all existing iterators. */
     void rehash(size_type n);
-    
+
+    /** @brief Rehash the table if it is unbalanced.
+     *
+     * @note Rehashing invalidates all existing iterators. */
+    inline void balance() {
+	if (unbalanced())
+	    rehash(bucket_count() + 1);
+    }
+
   private:
 
     HashContainer_rep<T, A> _rep;

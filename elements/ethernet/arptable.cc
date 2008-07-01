@@ -205,9 +205,7 @@ ARPTable::insert(IPAddress ip, const EtherAddress &eth, Packet **head)
 	    --_packet_count;
     }
 
-    if (_table.unbalanced())
-	_table.rehash(_table.bucket_count() + 1);
-
+    _table.balance();
     _lock.release_write();
     return 0;
 }
@@ -243,9 +241,7 @@ ARPTable::append_query(IPAddress ip, Packet *p)
     } else
 	r = 0;
 
-    if (_table.unbalanced())
-	_table.rehash(_table.bucket_count() + 1);
-
+    _table.balance();
     _lock.release_write();
     return r;
 }
