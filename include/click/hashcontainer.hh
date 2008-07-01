@@ -200,13 +200,14 @@ class HashContainer { public:
      *
      * @note HashContainer never automatically rehashes itself, so element
      * insertion leaves any existing iterators valid.  For best performance,
-     * however, users must call rehash() to resize the container when it
+     * however, users must call balance() to resize the container when it
      * becomes unbalanced(). */
     inline void insert_at(iterator &it, T *element);
 
     /** @brief Replace the element at position @a it with @a element.
      * @param it iterator
      * @param element element (can be null)
+     * @param balance whether to balance the hash table
      * @return the previous value of it.get()
      * @pre @a it.can_insert()
      * @pre @a it.bucket() == bucket(@a element->hashkey())
@@ -214,12 +215,14 @@ class HashContainer { public:
      *
      * Replaces the element pointed to by @a it with @a element, and returns
      * the former element.  If @a element is null the former element is
-     * removed; if there is no former element then @a element is inserted.
+     * removed.  If there is no former element then @a element is inserted.
+     * When inserting an element with @a balance true, set() may rebalance the
+     * hash table.
      *
      * As a side effect, @a it is advanced to point at the newly inserted @a
      * element.  If @a element is null, then @a it is advanced to point at the
      * next element as by ++@a it. */
-    inline T *set(iterator &it, T *element);
+    T *set(iterator &it, T *element, bool balance = false);
 
     /** @brief Replace the element with @a element->hashkey() with @a element.
      * @param element element
@@ -533,7 +536,7 @@ inline T *HashContainer<T, A>::get(const key_type &key) const
 }
 
 template <typename T, typename A>
-inline T *HashContainer<T, A>::set(iterator &it, T *element)
+T *HashContainer<T, A>::set(iterator &it, T *element, bool balance)
 {
     click_hash_assert(it._hc == this && it._bucket < _rep.nbuckets);
     click_hash_assert(bucket(_rep.hashkey(element)) == it._bucket);
@@ -551,6 +554,11 @@ inline T *HashContainer<T, A>::set(iterator &it, T *element)
 	_rep.hashnext(element) = _rep.hashnext(old);
     else {
 	++_rep.size;
+	if (unlikely(unbalanced()) && balance) {
+	    rehash(bucket_count() + 1);
+	    it._bucket = bucket(_rep.hashkey(element));
+	    it._pprev = &_rep.buckets[it._bucket];
+	}
 	if (!(_rep.hashnext(element) = *it._pprev))
 	    _rep.first_bucket = 0;
     }

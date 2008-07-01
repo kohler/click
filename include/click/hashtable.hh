@@ -121,7 +121,7 @@ class HashTable<T> {
     /** @brief Const reference to key type. */
     typedef typename T::key_const_reference key_const_reference;
 
-    /** @brief Value type.  Must define a key_type. */
+    /** @brief Value type.  value_type::key_type must exist. */
     typedef T value_type;
 
     /** @brief Type of sizes (size(), bucket_count()). */
@@ -200,14 +200,21 @@ class HashTable<T> {
     /** @brief Return an iterator for the element with key @a key, if any.
      *
      * Like find(), but additionally moves the found element to the head of
-     * its bucket, possibly speeding up future lookups. */
+     * its bucket, possibly speeding up future lookups.
+     *
+     * @note find_prefer() rearranges the ordering of a bucket, and therefore
+     * invalidates outstanding iterators. */
     inline iterator find_prefer(key_const_reference key);
 
     /** @brief Ensure an element with key @a key and return its iterator.
      *
-     * If an element with @a key already exists in the table, then find(@a
-     * key) and find_insert(@a key) are equivalent.  Otherwise, find_insert
-     * adds a new value T(@a key) to the table and returns its iterator.
+     * If an element with @a key already exists in the table, then, like
+     * find(@a key), returns an iterator pointing at at element.  Otherwise,
+     * find_insert adds a new value T(@a key) to the table and returns its
+     * iterator.
+     *
+     * @note find_insert() may rebalance the hash table, and thus invalidates
+     * outstanding iterators.
      *
      * @sa operator[] */
     inline iterator find_insert(key_const_reference key);
@@ -218,15 +225,21 @@ class HashTable<T> {
      * reference to that element.  Otherwise, adds a new value T(@a key) to
      * the table and returns a reference to the new element.
      *
+     * @note operator[] may rebalance the hash table, and thus invalidates
+     * outstanding iterators.
+     *
      * @sa find_insert(key_const_reference) */
     inline value_type &operator[](key_const_reference key);
 
     /** @brief Ensure an element with key @a value.hashkey() and return its iterator.
      *
-     * If an element with @a value.hashkey() already exists in the table, then
-     * find(@a value.hashkey()) and find_insert(@a value) are equivalent.
+     * If an element with @a value.hashkey() already exists in the table,
+     * then, like find(), returns an iterator pointing at at element.
      * Otherwise, find_insert adds a copy of @a value to the table and returns
-     * its iterator. */
+     * its iterator.
+     *
+     * @note find_insert() may rebalance the hash table, and thus invalidates
+     * outstanding iterators. */
     inline iterator find_insert(const value_type &value);
 
     /** @brief Add @a value to the table, replacing any element with that key.
@@ -234,7 +247,10 @@ class HashTable<T> {
      * Inserts @a value into the table.  If an element with @a value.hashkey()
      * already exists in the table, then it is replaced, and the function
      * returns false.  Otherwise, a copy of @a value is added, and the
-     * function returns true. */
+     * function returns true.
+     *
+     * @note set() may rebalance the hash table, and thus invalidates
+     * outstanding iterators. */
     bool set(const value_type &value);
 
     /** @brief Remove the element indicated by @a it.
@@ -275,7 +291,6 @@ class HashTable<T> {
     
     void clone_elements(const HashTable<T> &);
     void copy_elements(const HashTable<T> &);
-    inline void insert_balance(typename rep_type::iterator &i, elt *e);
     
     friend class HashTable_iterator<T>;
     friend class HashTable_const_iterator<T>;
@@ -775,7 +790,7 @@ class HashTable {
     void clear() {
 	_rep.clear();
     }
-    
+
 
     /** @brief Swap the contents of this hash table and @a x. */
     void swap(HashTable<K, V> &x) {
@@ -866,23 +881,13 @@ inline HashTable_iterator<T> HashTable<T>::find_prefer(key_const_reference key)
 }
 
 template <typename T>
-void HashTable<T>::insert_balance(typename rep_type::iterator &i, elt *e)
-{
-    if (_rep.unbalanced()) {
-	_rep.rehash(_rep.bucket_count() + 1);
-	i = _rep.find(e->hashkey());
-    }
-    _rep.set(i, e);
-}
-
-template <typename T>
 HashTable_iterator<T> HashTable<T>::find_insert(key_const_reference key)
 {
     typename rep_type::iterator i = _rep.find(key);
     if (!i)
 	if (elt *e = reinterpret_cast<elt *>(_alloc.allocate())) {
 	    new(reinterpret_cast<void *>(&e->v)) T(key);
-	    insert_balance(i, e);
+	    _rep.set(i, e, true);
 	}
     return i;
 }
@@ -901,7 +906,7 @@ HashTable_iterator<T> HashTable<T>::find_insert(const value_type &v)
     if (!i)
 	if (elt *e = reinterpret_cast<elt *>(_alloc.allocate())) {
 	    new(reinterpret_cast<void *>(&e->v)) T(v);
-	    insert_balance(i, e);
+	    _rep.set(i, e, true);
 	}
     return i;
 }
@@ -914,7 +919,7 @@ bool HashTable<T>::set(const value_type &value)
 	i->v = value;
     else if (elt *e = reinterpret_cast<elt *>(_alloc.allocate())) {
 	new(reinterpret_cast<void *>(&e->v)) T(value);
-	insert_balance(i, e);
+	_rep.set(i, e, true);
 	return true;
     }
     return false;
@@ -928,7 +933,7 @@ bool HashTable<K, V>::set(const key_type &key, const mapped_type &value)
 	i->v.second = value;
     else if (typename rep_type::elt *e = reinterpret_cast<typename rep_type::elt *>(_rep._alloc.allocate())) {
 	new(reinterpret_cast<void *>(&e->v)) value_type(key, value);
-	_rep.insert_balance(i, e);
+	_rep._rep.set(i, e, true);
 	return true;
     }
     return false;
