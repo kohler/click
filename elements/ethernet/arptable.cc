@@ -31,7 +31,7 @@
 CLICK_DECLS
 
 ARPTable::ARPTable()
-    : _age_head(0), _age_tail(0), _entry_capacity(0), _packet_capacity(2048),
+    : _entry_capacity(0), _packet_capacity(2048),
       _expire_jiffies(300 * CLICK_HZ), _expire_timer(this)
 {
     _entry_count = _packet_count = _drops = 0;
@@ -79,7 +79,7 @@ ARPTable::clear()
 	_alloc.deallocate(ae);
     }
     _entry_count = _packet_count = 0;
-    _age_head = _age_tail = 0;
+    _age.__clear();
 }
 
 void
@@ -94,18 +94,12 @@ ARPTable::take_state(Element *e, ErrorHandler *errh)
     }
 
     _table.swap(arpt->_table);
-    _age_head = arpt->_age_head;
-    _age_tail = arpt->_age_tail;
+    _age.swap(arpt->_age);
     _entry_count = arpt->_entry_count;
     _packet_count = arpt->_packet_count;
     _drops = arpt->_drops;
     _alloc.swap(arpt->_alloc);
     
-    // need to change some pprev entries
-    if (_age_head)
-	_age_head->_age_pprev = &_age_head;
-    
-    arpt->_age_head = arpt->_age_tail = 0;
     arpt->_entry_count = 0;
     arpt->_packet_count = 0;
 }
@@ -117,17 +111,12 @@ ARPTable::slim()
     ARPEntry *ae;
 
     // Delete old entries.
-    while ((ae = _age_head)
+    while ((ae = _age.front())
 	   && (ae->expired(now, _expire_jiffies)
 	       || (_entry_capacity && _entry_count > _entry_capacity))) {
 	_table.erase(ae->_ip);
+	_age.pop_front();
 
-	assert(ae->_age_pprev == &_age_head);
-	if ((_age_head = ae->_age_next))
-	    _age_head->_age_pprev = &_age_head;
-	else
-	    _age_tail = 0;
-	
 	while (Packet *p = ae->_head) {
 	    ae->_head = p->next();
 	    p->kill();
@@ -149,7 +138,7 @@ ARPTable::slim()
 	    --_packet_count;
 	    ++_drops;
 	}
-	ae = ae->_age_next;
+	ae = ae->_age_link.next();
     }
 }
 
@@ -186,9 +175,7 @@ ARPTable::ensure(IPAddress ip)
 	ae->_poll_jiffies = ae->_live_jiffies - CLICK_HZ;
 	_table.set(it, ae);
 
-	ae->_age_pprev = (_age_tail ? &_age_tail->_age_next : &_age_head);
-	ae->_age_next = 0;
-	*ae->_age_pprev = _age_tail = ae;
+	_age.push_back(ae);
     }
     return it.get();
 }
@@ -206,12 +193,9 @@ ARPTable::insert(IPAddress ip, const EtherAddress &eth, Packet **head)
     ae->_live_jiffies = click_jiffies();
     ae->_poll_jiffies = ae->_live_jiffies - CLICK_HZ;
     
-    if (ae->_age_next) {
-	*ae->_age_pprev = ae->_age_next;
-	ae->_age_next->_age_pprev = ae->_age_pprev;
-	ae->_age_pprev = &_age_tail->_age_next;
-	ae->_age_next = 0;
-	*ae->_age_pprev = _age_tail = ae;
+    if (ae->_age_link.next()) {
+	_age.erase(ae);
+	_age.push_back(ae);
     }
 
     if (head) {

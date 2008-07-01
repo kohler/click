@@ -6,6 +6,7 @@
 #include <click/hashallocator.hh>
 #include <click/sync.hh>
 #include <click/timer.hh>
+#include <click/list.hh>
 CLICK_DECLS
 
 /*
@@ -136,8 +137,7 @@ class ARPTable : public Element { public:
 	click_jiffies_t _poll_jiffies;
 	Packet *_head;
 	Packet *_tail;
-	ARPEntry *_age_next;
-	ARPEntry **_age_pprev;
+	List_member<ARPEntry> _age_link;
 	typedef IPAddress key_type;
 	typedef IPAddress key_const_reference;
 	key_const_reference hashkey() const {
@@ -151,8 +151,8 @@ class ARPTable : public Element { public:
 	    return _unicast && !expired(now, expire_jiffies);
 	}
 	ARPEntry(IPAddress ip)
-	    : _ip(ip), _hashnext(0), _eth(EtherAddress::broadcast()),
-	      _unicast(false), _head(0), _tail(0), _age_next(0), _age_pprev(0) {
+	    : _ip(ip), _hashnext(), _eth(EtherAddress::broadcast()),
+	      _unicast(false), _head(), _tail() {
 	}
     };
 
@@ -162,8 +162,8 @@ class ARPTable : public Element { public:
 
     typedef HashContainer<ARPEntry> Table;
     Table _table;
-    ARPEntry *_age_head;
-    ARPEntry *_age_tail;
+    typedef List<ARPEntry, &ARPEntry::_age_link> AgeList;
+    AgeList _age;
     atomic_uint32_t _entry_count;
     atomic_uint32_t _packet_count;
     uint32_t _entry_capacity;
