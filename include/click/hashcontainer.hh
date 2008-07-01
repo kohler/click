@@ -633,6 +633,7 @@ void HashContainer<T, A>::rehash(size_type n)
     T **old_buckets = _rep.buckets;
     _rep.nbuckets = new_nbuckets;
     _rep.buckets = new_buckets;
+    _rep.first_bucket = 0;
     
     for (size_t b = 0; b < old_nbuckets; b++)
 	for (T *element = old_buckets[b]; element; ) {
