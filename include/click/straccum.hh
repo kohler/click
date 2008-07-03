@@ -10,6 +10,11 @@
 #else	/* User-space */
 # include <string.h>
 #endif
+#if __GNUC__ > 4
+# define CLICK_SNPRINTF_ATTR __attribute__((__format__(__printf__, 3, 4)))
+#else
+# define CLICK_SNPRINTF_ATTR /* nothing */
+#endif
 CLICK_DECLS
 
 /** @file <click/straccum.hh>
@@ -331,7 +336,7 @@ class StringAccum { public:
      * should make sure that the printf() invocation represented by your
      * arguments will never write more than @a n characters, not including the
      * terminating null. */
-    StringAccum &snprintf(int n, const char *format, ...);
+    StringAccum &snprintf(int n, const char *format, ...) CLICK_SNPRINTF_ATTR;
 
   
     /** @brief Return a String object with this StringAccum's contents.
@@ -596,5 +601,6 @@ operator<<(StringAccum &sa, const StringAccum &sb)
     return sa;
 }
 
+#undef CLICK_SNPRINTF_ATTR
 CLICK_ENDDECLS
 #endif

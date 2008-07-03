@@ -434,7 +434,6 @@ class String { public:
     int find_right(char c, int start = 0x7FFFFFFF) const;
 
     /** @brief Return true iff this string begins with prefix @a x.
-     * @param x string to compare to
      * 
      * Same as String::starts_with(@a x.data(), @a x.length()). */
     inline bool starts_with(const String &x) const {

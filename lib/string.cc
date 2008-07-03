@@ -347,11 +347,10 @@ String::append(const char *s, int len)
 		      && s + len <= _memo->_real_data + _memo->_capacity))) {
 	if (char *space = append_garbage(len))
 	    memcpy(space, s, len);
-    } else if (char *copy = (char *) CLICK_LALLOC(len)) {
-	memcpy(copy, s, len);
+    } else {
+	String preserve_s(*this);
 	if (char *space = append_garbage(len))
-	    memcpy(space, copy, len);
-	CLICK_LFREE(copy, len);
+	    memcpy(space, s, len);
     }
 }
 
