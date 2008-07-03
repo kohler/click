@@ -21,6 +21,7 @@
 #include "confparsetest.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/straccum.hh>
 CLICK_DECLS
 
 ConfParseTest::ConfParseTest()
@@ -161,6 +162,20 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(String("abcdef").substring(-10, -9) == "");
     CHECK(String("abcdef").substring(10, -9) == "");
 
+    String x("abcdefghijklmn");
+    x.append(x.data() + 1, 12);
+    CHECK(x == "abcdefghijklmnbcdefghijklm");
+    x += x;
+    CHECK(x == "abcdefghijklmnbcdefghijklmabcdefghijklmnbcdefghijklm");
+
+    StringAccum xx(24);
+    xx << "abcdefghijklmn";
+    CHECK(xx.capacity() - xx.length() < 12);
+    xx.append(xx.data() + 1, 12);
+    CHECK(strcmp(xx.c_str(), "abcdefghijklmnbcdefghijklm") == 0);
+    xx << xx;
+    CHECK(strcmp(xx.c_str(), "abcdefghijklmnbcdefghijklmabcdefghijklmnbcdefghijklm") == 0);
+    
     errh->message("All tests pass!");
     return 0;
 }

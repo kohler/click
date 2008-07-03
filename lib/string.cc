@@ -5,6 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -70,6 +71,7 @@ String::Memo *String::oom_memo = 0;
 String *String::null_string_p = 0;
 String *String::oom_string_p = 0;
 const char String::oom_string_data = 0;
+const char String::bool_data[] = "true\0false";
 
 /** @cond never */
 inline
@@ -106,94 +108,75 @@ String::Memo::~Memo()
 /** @endcond never */
 
 
-/** @brief Create a String containing the ASCII base-10 representation of @a i.
- */
 String::String(int i)
 {
   char buf[128];
   sprintf(buf, "%d", i);
-  assign(buf, -1);
+  assign(buf, -1, false);
 }
 
-/** @brief Create a String containing the ASCII base-10 representation of @a u.
- */
 String::String(unsigned u)
 {
   char buf[128];
   sprintf(buf, "%u", u);
-  assign(buf, -1);
+  assign(buf, -1, false);
 }
 
-/** @brief Create a String containing the ASCII base-10 representation of @a i.
- */
 String::String(long i)
 {
   char buf[128];
   sprintf(buf, "%ld", i);
-  assign(buf, -1);
+  assign(buf, -1, false);
 }
 
-/** @brief Create a String containing the ASCII base-10 representation of @a u.
- */
 String::String(unsigned long u)
 {
   char buf[128];
   sprintf(buf, "%lu", u);
-  assign(buf, -1);
+  assign(buf, -1, false);
 }
 
 // Implemented a [u]int64_t converter in StringAccum
 // (use the code even at user level to hunt out bugs)
 
 #if HAVE_LONG_LONG
-/** @brief Create a String containing the ASCII base-10 representation of @a q.
- */
 String::String(long long q)
 {
   StringAccum sa;
   sa << q;
-  assign(sa.data(), sa.length());
+  assign(sa.take_string());
 }
 
-/** @brief Create a String containing the ASCII base-10 representation of @a q.
- */
 String::String(unsigned long long q)
 {
   StringAccum sa;
   sa << q;
-  assign(sa.data(), sa.length());
+  assign(sa.take_string());
 }
 #endif
 
 #if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
-/** @brief Create a String containing the ASCII base-10 representation of @a q.
- */
 String::String(int64_t q)
 {
   StringAccum sa;
   sa << q;
-  assign(sa.data(), sa.length());
+  assign(sa.take_string());
 }
 
-/** @brief Create a String containing the ASCII base-10 representation of @a q.
- */
 String::String(uint64_t q)
 {
   StringAccum sa;
   sa << q;
-  assign(sa.data(), sa.length());
+  assign(sa.take_string());
 }
 #endif
 
 #if HAVE_FLOAT_TYPES
-/** @brief Create a String containing the ASCII base-10 representation of @a d.
- * @note This function is only available at user level.
- */
 String::String(double d)
 {
   char buf[128];
   int len = sprintf(buf, "%.12g", d);
-  assign(buf, len);
+  assign(buf, len, false);
 }
 #endif
 
@@ -208,13 +191,6 @@ String::claim_string(char *str, int len, int capacity)
     return String(&oom_string_data, 0, oom_memo);
 }
 
-/** @brief Return a String that directly references the first @a len
- * characters of @a s.
- *
- * This function is suitable for static constant strings whose data is known
- * to stay around forever, such as C string constants.  If @a len @< 0, treats
- * @a s as a null-terminated C string.
- */
 String
 String::stable_string(const char *s, int len)
 {
@@ -223,7 +199,6 @@ String::stable_string(const char *s, int len)
   return String(s, len, permanent_memo);
 }
 
-/** @brief Create and return a String containing @a len random characters. */
 String
 String::garbage_string(int len)
 {
@@ -232,11 +207,6 @@ String::garbage_string(int len)
   return s;
 }
 
-/** @brief Create and return a String containing an ASCII representation of @a num.
- *  @param  num        Number.
- *  @param  base       Base; must be 8, 10, or 16.  Defaults to 10.
- *  @param  uppercase  If true, then use uppercase letters in base 16.
- */
 String
 String::numeric_string(int_large_t num, int base, bool uppercase)
 {
@@ -245,11 +215,6 @@ String::numeric_string(int_large_t num, int base, bool uppercase)
     return sa.take_string();
 }
 
-/** @brief Create and return a String containing an ASCII representation of @a num.
- *  @param  num        Number.
- *  @param  base       Base; must be 8, 10, or 16.  Defaults to 10.
- *  @param  uppercase  If true, then use uppercase letters in base 16.
- */
 String
 String::numeric_string(uint_large_t num, int base, bool uppercase)
 {
@@ -264,23 +229,35 @@ String::make_out_of_memory()
   if (_memo)
     deref();
   _memo = oom_memo;
-  _memo->_refcount++;
+  ++_memo->_refcount;
   _data = _memo->_real_data;
   _length = 0;
 }
 
 void
-String::assign(const char *str, int len)
+String::assign(const char *str, int len, bool need_deref)
 {
   if (!str) {
     assert(len <= 0);
     len = 0;
   } else if (len < 0)
     len = strlen(str);
+
+  // need to start with dereference
+  if (need_deref) {
+      if (unlikely(str >= _memo->_real_data
+		   && str + len <= _memo->_real_data + _memo->_capacity)) {
+	  // Be careful about "String s = ...; s = s.c_str();"
+	  _data = str;
+	  _length = len;
+	  return;
+      } else
+	  deref();
+  }
   
   if (len == 0) {
     _memo = (str == &oom_string_data ? oom_memo : null_memo);
-    _memo->_refcount++;
+    ++_memo->_refcount;
     
   } else {
     // Make 'capacity' a multiple of 16 characters and bigger than 'len'.
@@ -297,11 +274,6 @@ String::assign(const char *str, int len)
   _length = len;
 }
 
-/** @brief Append @a len random characters to this string.
-    @return  Modifiable pointer to the appended random characters.
-
-    The caller may safely modify the returned memory.  Null is returned if the
-    string becomes out-of-memory. */
 char *
 String::append_garbage(int len)
 {
@@ -356,30 +328,33 @@ String::append_garbage(int len)
     return new_data;
 }
 
-/** @brief Append the first @a len characters of @a suffix to this string.
- *
- * @param suffix data to append
- * @param len length of data
- *
- * If @a len @< 0, treats @a suffix as a null-terminated C string. */ 
 void
-String::append(const char *suffix, int len)
+String::append(const char *s, int len)
 {
-    if (!suffix) {
+    if (!s) {
 	assert(len <= 0);
 	len = 0;
     } else if (len < 0)
-	len = strlen(suffix);
+	len = strlen(s);
 
-    if (suffix == &oom_string_data)
+    if (s == &oom_string_data)
 	// Appending "out of memory" to a regular string makes it "out of
 	// memory"
 	make_out_of_memory();
-    else if (char *space = append_garbage(len))
-	memcpy(space, suffix, len);
+    else if (unlikely(len == 0))
+	/* do nothing */;
+    else if (likely(!(s >= _memo->_real_data
+		      && s + len <= _memo->_real_data + _memo->_capacity))) {
+	if (char *space = append_garbage(len))
+	    memcpy(space, s, len);
+    } else if (char *copy = (char *) CLICK_LALLOC(len)) {
+	memcpy(copy, s, len);
+	if (char *space = append_garbage(len))
+	    memcpy(space, copy, len);
+	CLICK_LFREE(copy, len);
+    }
 }
 
-/** @brief Append @a len copies of character @a c to this string. */
 void
 String::append_fill(int c, int len)
 {
@@ -388,8 +363,6 @@ String::append_fill(int c, int len)
 	memset(space, c, len);
 }
 
-/** @brief Ensure the string's data is unshared and return a mutable pointer
- * to it. */
 char *
 String::mutable_data()
 {
@@ -402,13 +375,10 @@ String::mutable_data()
   // _length; and if _capacity == 0, then deref() doesn't free _real_data.
   assert(!_memo->_capacity || _memo->_refcount > 1);
   deref();
-  assign(_data, _length);
+  assign(_data, _length, false);
   return const_cast<char *>(_data);
 }
 
-/** @brief Null-terminates the string and returns a mutable pointer to its
- * data.
- * @sa String::c_str */
 char *
 String::mutable_c_str()
 {
@@ -417,12 +387,6 @@ String::mutable_c_str()
   return const_cast<char *>(_data);
 }
 
-/** @brief Null-terminates the string.
- *
- * The terminating null character isn't considered part of the string, so
- * this->length() doesn't change.  Returns a corresponding C string pointer.
- * The returned pointer is semi-temporary; it will persist until the string is
- * destroyed, or someone appends to it. */
 const char *
 String::c_str() const
 {
@@ -466,26 +430,10 @@ String::c_str() const
   
   char *real_data = const_cast<char *>(_data);
   real_data[_length] = '\0';
-  _memo->_dirty++;		// include '\0' in used portion of _memo
+  ++_memo->_dirty;		// include '\0' in used portion of _memo
   return _data;
 }
 
-/** @brief Returns a substring of this string, consisting of the @a len
- * characters starting at index @a pos.
- * 
- * @param pos substring's first position relative to the string.
- * @param len length of the substring.
- *
- * If @a pos is negative, starts that far from the end of the string.  If @a
- * len is negative, leaves that many characters off the end of the string.  If
- * @a pos and @a len specify a substring that is partly outside the string,
- * only the part within the string is returned.  If the substring is beyond
- * either end of the string, returns an empty string (but this should be
- * considered a programming error; a future version may generate a warning for
- * this case).
- *
- * @note String::substring() is intended to behave like Perl's substr().
- */
 String
 String::substring(int pos, int len) const
 {
@@ -511,14 +459,6 @@ String::substring(int pos, int len) const
 	return String(_data + pos, pos2 - pos, _memo);
 }
 
-/** @brief Search for a character in a string.
- *
- * @param c character to search for
- * @param start initial search position
- *
- * Return the index of the leftmost occurence of @a c, starting at index @a
- * start and working up to the end of the string.  Returns -1 if @a c is not
- * found. */
 int
 String::find_left(char c, int start) const
 {
@@ -530,14 +470,6 @@ String::find_left(char c, int start) const
     return -1;
 }
 
-/** @brief Search for a substring in a string.
- *
- * @param str substring to search for
- * @param start initial search position
- *
- * Return the index of the leftmost occurence of the substring @a str, starting
- * at index @a start and working up to the end of the string.  Returns -1 if
- * @a str is not found. */
 int
 String::find_left(const String &str, int start) const
 {
@@ -556,15 +488,6 @@ String::find_left(const String &str, int start) const
     return -1;
 }
 
-/** @brief Search for a character in a string.
- *
- * @param c character to search for
- * @param start initial search position
- *
- * Return the index of the rightmost occurence of the character @a c, starting
- * at index @a start and working back to the beginning of the string.  Returns
- * -1 if @a c is not found.  @a start may start beyond the end of the
- * string. */
 int
 String::find_right(char c, int start) const
 {
@@ -587,10 +510,6 @@ hard_lower(const String &s, int pos)
     return new_s;
 }
 
-/** @brief Returns a lowercased version of this string.
- *
- * Translates the ASCII characters 'A' through 'Z' into their lowercase
- * equivalents. */
 String
 String::lower() const
 {
@@ -612,10 +531,6 @@ hard_upper(const String &s, int pos)
     return new_s;
 }
 
-/** @brief Returns an uppercased version of this string.
- *
- * Translates the ASCII characters 'a' through 'z' into their uppercase
- * equivalents. */
 String
 String::upper() const
 {
@@ -644,11 +559,6 @@ hard_printable(const String &s, int pos)
     return sa.take_string();
 }
 
-/** @brief Returns a "printable" version of this string.
- *
- * Translates control characters 0-31 into "control" sequences, such as "^@"
- * for the null character, and characters 127-255 into octal escape sequences,
- * such as "\377" for 255. */
 String
 String::printable() const
 {
@@ -659,7 +569,6 @@ String::printable() const
     return *this;
 }
 
-/** @brief Returns a substring with spaces trimmed from the end. */
 String
 String::trim_space() const
 {
@@ -670,9 +579,6 @@ String::trim_space() const
     return (_length ? String() : *this);
 }
 
-/** @brief Returns a hex-quoted version of the string.
- *
- * For example, the string "Abcd" would convert to "\<41626364>". */
 String
 String::quoted_hex() const
 {
@@ -692,15 +598,6 @@ String::quoted_hex() const
     return sa.take_string();
 }
 
-/* @brief Returns a 32-bit hash function of the characters in [begin, end).
- *
- * Uses Paul Hsieh's "SuperFastHash" algorithm, described at
- * http://www.azillionmonkeys.com/qed/hash.html
- * This hash function uses all characters in the string.
- *
- * @invariant If end1 - begin1 == end2 - begin2 and memcmp(begin1, begin2,
- * end1 - begin1) == 0, then hashcode(begin1, end1) == hashcode(begin2, end2).
- */
 uint32_t
 String::hashcode(const char *begin, const char *end)
 {
@@ -782,11 +679,6 @@ String::hashcode(const char *begin, const char *end)
 #if 0
 // 11.Apr.2008 -- This old hash function was swapped out in favor of
 // SuperFastHash, above.
-/** @brief Hash function.
- * @return The hash value of this String.
- *
- * Equal String objects always have equal hashcode() values.
- */
 size_t
 String::hashcode() const
 {
@@ -804,14 +696,6 @@ String::hashcode() const
 }
 #endif
 
-/** @brief Return true iff this string is equal to the data in @a s.
- * @param s string data to compare to
- * @param len length of @a s
- * 
- * Same as String::compare(*this, String(s, len)) == 0.  If @a len @< 0, then
- * treats @a s as a null-terminated C string.
- *
- * @sa String::compare(const String &a, const String &b) */
 bool
 String::equals(const char *s, int len) const
 {
@@ -831,14 +715,6 @@ String::equals(const char *s, int len) const
 	return memcmp(_data, s, len) == 0;
 }
 
-/** @brief Return true iff this string begins with the data in @a s.
- * @param s string data to compare to
- * @param len length of @a s
- * 
- * Same as String::equals(substring(0, len), String(s, len)) == 0.  If @a len
- * @< 0, then treats @a s as a null-terminated C string.
- *
- * @sa String::compare(const String &a, const String &b) */
 bool
 String::starts_with(const char *s, int len) const
 {
@@ -855,14 +731,6 @@ String::starts_with(const char *s, int len) const
 	return memcmp(_data, s, len) == 0;
 }
 
-/** @brief Compare this string with the data in @a s.
- * @param s string data to compare to
- * @param len length of @a s
- * 
- * Same as String::compare(*this, String(s, len)).  If @a len @< 0, then treats
- * @a s as a null-terminated C string.
- *
- * @sa String::compare(const String &a, const String &b) */
 int
 String::compare(const char *s, int len) const
 {
@@ -886,32 +754,11 @@ String::compare(const char *s, int len) const
 }
 
 
-/** @class String::Initializer
- * @brief Initializes the String implementation.
- *
- * This class's constructor initializes the String implementation by calling
- * String::static_initialize().  You should declare a String::Initializer
- * object at global scope in any file that declares a global String object.
- * For example:
- * @code
- *    static String::Initializer initializer;
- *    String global_string = "100";
- * @endcode */
-
 String::Initializer::Initializer()
 {
     String::static_initialize();
 }
 
-/** @brief Initialize the String implementation.
- *
- * This function must be called before any String functionality is used.  It
- * is safe to call it multiple times.
- *
- * @note Elements don't need to worry about static_initialize(); Click drivers
- * have already called it for you.
- *
- * @sa String::Initializer */
 void
 String::static_initialize()
 {
@@ -921,13 +768,13 @@ String::static_initialize()
 	CLICK_DMALLOC_REG("str0");
 #endif
 	null_memo = new Memo;
-	null_memo->_refcount++;
+	++null_memo->_refcount;
 	permanent_memo = new Memo;
-	permanent_memo->_refcount++;
+	++permanent_memo->_refcount;
 	// use a separate string for oom_memo's data, so we can distinguish
 	// the pointer
 	oom_memo = new Memo;
-	oom_memo->_refcount++;
+	++oom_memo->_refcount;
 	oom_memo->_real_data = const_cast<char*>(&oom_string_data);
 	null_string_p = new String;
 	oom_string_p = new String(&oom_string_data, 0, oom_memo);
@@ -937,10 +784,6 @@ String::static_initialize()
     }
 }
 
-/** @brief Clean up the String implementation.
- *
- * Call this function to release any memory allocated by the String
- * implementation. */
 void
 String::static_cleanup()
 {

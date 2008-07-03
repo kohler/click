@@ -7,42 +7,167 @@ CLICK_DECLS
 
 class String { public:
   
-    // Call static_initialize() before any function which might deal with
-    // Strings, and declare a String::Initializer in any file in which you
-    // declare static global Strings.
+    /** @brief Initialize the String implementation.
+     *
+     * This function must be called before any String functionality is
+     * used.  It is safe to call multiple times.
+     *
+     * @note Elements don't need to worry about static_initialize(); Click
+     * drivers have already called it for you.
+     *
+     * @sa String::Initializer */
     static void static_initialize();
+
+    /** @brief Clean up the String implementation.
+     *
+     * Call this function to release any memory allocated by the String
+     * implementation. */
     static void static_cleanup();
+
+    /** @class String::Initializer
+     * @brief Initializes the String implementation.
+     *
+     * This class's constructor initializes the String implementation by
+     * calling String::static_initialize().  You should declare a
+     * String::Initializer object at global scope in any file that declares a
+     * global String object.  For example:
+     * @code
+     *    static String::Initializer initializer;
+     *    String global_string = "100";
+     * @endcode */
     struct Initializer { Initializer(); };
 
-    inline String();
-    inline String(const String &str);
-    inline String(const char *cstr);
-    inline String(const char *s, int len);
-    inline String(const char *begin, const char *end);
-    explicit inline String(bool b);
-    explicit inline String(char c);
-    explicit inline String(unsigned char c);
-    explicit String(int i);
-    explicit String(unsigned u);
-    explicit String(long i);
-    explicit String(unsigned long u);
+
+    /** @brief Construct an empty String (with length 0). */
+    inline String()
+	: _data(null_memo->_real_data), _length(0), _memo(null_memo) {
+	++_memo->_refcount;
+    }
+
+    /** @brief Construct a copy of the String @a x. */
+    inline String(const String &x) {
+	assign(x);
+    }
+
+    /** @brief Construct a String containing the C string @a cstr.
+     * @param cstr a null-terminated C string
+     * @return A String containing the characters of @a cstr, up to but not
+     * including the terminating null character.
+     *
+     * If @a cstr equals String::out_of_memory_data(), returns an
+     * out-of-memory string. */
+    inline String(const char *cstr) {
+	assign(cstr, -1, false);
+    }
+
+    /** @brief Construct a String containing the first @a len characters of
+     * string @a s.
+     * @param s a string
+     * @param len number of characters to take from @a s.  If @a len @< 0,
+     * then takes @c strlen(@a s) characters.
+     * @return A String containing @a len characters of @a s.
+     *	
+     * If @a s equals String::out_of_memory_data(), returns an out-of-memory
+     * string. */
+    inline String(const char *s, int len) {
+	assign(s, len, false);
+    }
+
+    /** @brief Construct a String containing the characters from @a begin
+     * to @a end.
+     * @param begin first character in string (begin iterator)
+     * @param end pointer one past last character in string (end iterator)
+     * @return A String containing the characters from @a begin to @a end.
+     *
+     * Returns a null string if @a begin @>= @a end.  If @a begin equals
+     * String::out_of_memory_data(), returns an out-of-memory string. */
+    inline String(const char *begin, const char *end) {
+	assign(begin, (end > begin ? end - begin : 0), false);
+    }
+
+    /** @brief Construct a String equal to "true" or "false" depending on the
+     * value of @a b. */
+    explicit inline String(bool b)
+	: _data(bool_data + (b ? 0 : 5)), _length(b ? 4 : 5),
+	  _memo(permanent_memo) {
+	++_memo->_refcount;
+    }
+
+    /** @brief Construct a String containing the single character @a c. */
+    explicit inline String(char c) {
+	assign(&c, 1, false);
+    }
+
+    /** @overload */
+    explicit inline String(unsigned char c) {
+	assign(reinterpret_cast<char *>(&c), 1, false);
+    }
+
+    /** @brief Construct a base-10 string representation of @a x. */
+    explicit String(int x);
+    /** @overload */
+    explicit String(unsigned x);
+    /** @overload */
+    explicit String(long x);
+    /** @overload */
+    explicit String(unsigned long x);
 #if HAVE_LONG_LONG
-    explicit String(long long q);
-    explicit String(unsigned long long q);
+    /** @overload */
+    explicit String(long long x);
+    /** @overload */
+    explicit String(unsigned long long x);
 #endif
 #if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
-    explicit String(int64_t q);
-    explicit String(uint64_t q);
+    /** @overload */
+    explicit String(int64_t x);
+    /** @overload */
+    explicit String(uint64_t x);
 #endif
 #if HAVE_FLOAT_TYPES
-    explicit String(double d);
+    /** @brief Construct a base-10 string representation of @a x.
+     * @note This function is only available at user level. */
+    explicit String(double x);
 #endif
-    inline ~String();
-  
-    static inline const String &empty_string();
-    static String garbage_string(int len);	// len garbage characters
-    static String stable_string(const char *s, int len = -1); // stable read-only mem.
-    static inline String stable_string(const char *begin, const char *end);
+
+    /** @brief Destroy a String, freeing memory if necessary. */
+    inline ~String() {
+	deref();
+    }
+
+    
+    /** @brief Return an empty String.
+     *
+     * Returns a global constant, so it's quicker than String::String(). */
+    static inline const String &empty_string() {
+	return *null_string_p;
+    }
+
+    /** @brief Return a String containing @a len unknown characters. */
+    static String garbage_string(int len);
+
+    /** @brief Return a String that directly references the first @a len
+     * characters of @a s.
+     *
+     * This function is suitable for static constant strings whose data is
+     * known to stay around forever, such as C string constants.  If @a len @<
+     * 0, treats @a s as a null-terminated C string. */
+    static String stable_string(const char *s, int len = -1);
+
+    /** @brief Return a String that directly references the character data in
+     * [@a begin, @a end).
+     * @param begin pointer to the first character in the character data
+     * @param end pointer one beyond the last character in the character data
+     *
+     * This function is suitable for static constant strings whose data is
+     * known to stay around forever, such as C string constants.  Returns an
+     * empty string if @a begin @>= @a end. */
+    static inline String stable_string(const char *begin, const char *end) {
+	if (begin < end)
+	    return String::stable_string(begin, end - begin);
+	else
+	    return String();
+    }
+
 
 #if HAVE_INT64_TYPES && (!HAVE_LONG_LONG || SIZEOF_LONG_LONG <= 8)
     typedef int64_t int_large_t;
@@ -55,35 +180,140 @@ class String { public:
     typedef unsigned long uint_large_t;
 #endif
   
-    static String numeric_string(int_large_t num, int base = 10, bool uppercase = true);
-    static String numeric_string(uint_large_t num, int base = 10, bool uppercase = true);
+    /** @brief Create and return a string representation of @a x.
+     * @param x number
+     * @param base base; must be 8, 10, or 16, defaults to 10
+     * @param uppercase if true, then use uppercase letters in base 16 */
+    static String numeric_string(int_large_t x, int base = 10, bool uppercase = true);
+    /** @overload */
+    static String numeric_string(uint_large_t x, int base = 10, bool uppercase = true);
   
-    inline int length() const;
-    inline const char *data() const;
+
+    /** @brief Return the string's length. */
+    inline int length() const {
+	return _length;
+    }
+
+    /** @brief Return a pointer to the string's data.
+     *
+     * Only the first length() characters are valid, and the string data
+     * might not be null-terminated. */
+    inline const char *data() const {
+	return _data;
+    }
+
   
     typedef const char *const_iterator;
     typedef const_iterator iterator;
-    inline const_iterator begin() const;
-    inline const_iterator end() const;
+
+    /** @brief Return an iterator for the first character in the string.
+     *
+     * String iterators are simply pointers into string data, so they are
+     * quite efficient.  @sa String::data */
+    inline const_iterator begin() const {
+	return _data;
+    }
+
+    /** @brief Return an iterator for the end of the string.
+     *
+     * The return value points one character beyond the last character in the
+     * string. */
+    inline const_iterator end() const {
+	return _data + _length;
+    }
+
 
     typedef int (String::*unspecified_bool_type)() const;
-    inline operator unspecified_bool_type() const;
-  
-    inline char operator[](int i) const;
-    inline char at(int i) const;
-    inline char front() const;
-    inline char back() const;
-  
-    const char *c_str() const;		// pointer returned is semi-transient
+    /** @brief Return true iff the string is nonempty. */
+    inline operator unspecified_bool_type() const {
+	return _length != 0 ? &String::length : 0;
+    }
 
-    static uint32_t hashcode(const char *begin, const char *end);
-    static inline uint32_t hashcode(const unsigned char *begin,
-				    const unsigned char *end);
-    inline uint32_t hashcode() const;
+    /** @brief Return true iff the string is empty. */
+    inline bool operator!() const {
+	return _length == 0;
+    }
+
   
+    /** @brief Return the @a i th character in the string.
+     *
+     * Does not check bounds.  @sa String::at */
+    inline char operator[](int i) const {
+	return _data[i];
+    }
+
+    /** @brief Return the @a i th character in the string.
+     *
+     * Checks bounds: an assertion will fail if @a i is less than 0 or not
+     * less than length().  @sa String::operator[] */
+    inline char at(int i) const {
+	assert(i >= 0 && i < _length);
+	return _data[i];
+    }
+
+    /** @brief Return the first character in the string.
+     *
+     * Does not check bounds.  Same as (*this)[0]. */
+    inline char front() const {
+	return _data[0];
+    }
+
+    /** @brief Return the last character in the string.
+     *
+     * Does not check bounds.  Same as (*this)[length() - 1]. */
+    inline char back() const {
+	return _data[_length - 1];
+    }
+
+
+    /** @brief Null-terminate the string.
+     *
+     * The terminating null character isn't considered part of the string, so
+     * this->length() doesn't change.  Returns a corresponding C string
+     * pointer.  The returned pointer is semi-temporary; it will persist until
+     * the string is destroyed or appended to. */
+    const char *c_str() const;
+
+
+    /* @brief Returns a 32-bit hash function of the characters in [begin, end).
+     *
+     * Uses Paul Hsieh's "SuperFastHash" algorithm, described at
+     * http://www.azillionmonkeys.com/qed/hash.html
+     * This hash function uses all characters in the string.
+     *
+     * @invariant If end1 - begin1 == end2 - begin2 and memcmp(begin1, begin2,
+     * end1 - begin1) == 0, then hashcode(begin1, end1) == hashcode(begin2,
+     * end2). */
+    static uint32_t hashcode(const char *begin, const char *end);
+
+    /** @overload */
+    static inline uint32_t hashcode(const unsigned char *begin,
+				    const unsigned char *end) {
+	return hashcode(reinterpret_cast<const char *>(begin),
+			reinterpret_cast<const char *>(end));
+    }
+
+    /** @brief Returns a 32-bit hash function of this string's characters.
+     *
+     * Equivalent to String::hashcode(begin(), end()).  Uses Paul Hsieh's
+     * "SuperFastHash."
+     *
+     * @invariant  If s1 == s2, then s1.hashcode() == s2.hashcode(). */
+    inline uint32_t hashcode() const {
+	return length() ? hashcode(begin(), end()) : 0;
+    }
+
+  
+    /** @brief Return true iff this string is equal to the data in @a s.
+     * @param s string data to compare to
+     * @param len length of @a s
+     * 
+     * Same as String::compare(*this, String(s, len)) == 0.  If @a len @< 0,
+     * then treats @a s as a null-terminated C string.
+     *
+     * @sa String::compare(const String &a, const String &b) */
     bool equals(const char *s, int len) const;
-    inline bool starts_with(const String &str) const;
-    bool starts_with(const char *s, int len) const;
+
     // bool operator==(const String &, const String &);
     // bool operator==(const String &, const char *);
     // bool operator==(const char *, const String &);
@@ -91,38 +321,231 @@ class String { public:
     // bool operator!=(const String &, const char *);
     // bool operator!=(const char *, const String &);
 
-    static inline int compare(const String &a, const String &b);
-    inline int compare(const String &str) const;
+
+    /** @brief Compare two strings.
+     * @param a first string to compare
+     * @param b second string to compare
+     *
+     * Returns 0 if @a a == @a b, negative if @a a @< @a b in lexicographic
+     * order, and positive if @a a @> @a b in lexicographic order.  The
+     * lexicographic order treats all characters as unsigned. */
+    static inline int compare(const String &a, const String &b) {
+	return a.compare(b);
+    }
+
+    /** @brief Compare this string with string @a x.
+     *
+     * Same as String::compare(*this, @a x).
+     * @sa String::compare(const String &a, const String &b) */
+    inline int compare(const String &x) const {
+	return compare(x._data, x._length);
+    }
+
+    /** @brief Compare this string with the data in @a s.
+     * @param s string data to compare to
+     * @param len length of @a s
+     * 
+     * Same as String::compare(*this, String(s, len)).  If @a len @< 0, then
+     * treats @a s as a null-terminated C string.
+     *
+     * @sa String::compare(const String &a, const String &b) */
     int compare(const char *s, int len) const;
+    
     // bool operator<(const String &, const String &);
     // bool operator<=(const String &, const String &);
     // bool operator>(const String &, const String &);
     // bool operator>=(const String &, const String &);
 
-    inline String substring(const char *begin, const char *end) const;
-    String substring(int pos, int len) const;
-    inline String substring(int pos) const;
-  
-    int find_left(char c, int start = 0) const;
-    int find_left(const String &s, int start = 0) const;
-    int find_right(char c, int start = 0x7FFFFFFF) const;
-  
-    String lower() const;			// lowercase
-    String upper() const;			// uppercase
-    String printable() const;		// quote non-ASCII characters
-    String trim_space() const;		// trim space from right
-    String quoted_hex() const;		// hex enclosed in '\<...>'
-  
-    inline String &operator=(const String &str);
-    inline String &operator=(const char *cstr);
 
+    /** @brief Return a substring of the current string starting at @a begin
+     * and ending before @a end.
+     * @param begin pointer to the first substring character
+     * @param end pointer one beyond the last substring character
+     *
+     * Returns an empty string if @a begin @>= @a end.  Also returns an empty
+     * string if @a begin or @a end is out of range (i.e., either less than
+     * this->begin() or greater than this->end()), but this should be
+     * considered a programming error; a future version may generate a warning
+     * for this case. */
+    inline String substring(const char *begin, const char *end) const {
+	if (begin < end && begin >= _data && end <= _data + _length)
+	    return String(begin, end - begin, _memo);
+	else
+	    return String();
+    }
+
+    /** @brief Return a substring of this string, consisting of the @a len
+     * characters starting at index @a pos.
+     * @param pos substring's first position relative to the string
+     * @param len length of substring
+     *
+     * If @a pos is negative, starts that far from the end of the string.  If
+     * @a len is negative, leaves that many characters off the end of the
+     * string.  If @a pos and @a len specify a substring that is partly
+     * outside the string, only the part within the string is returned.  If
+     * the substring is beyond either end of the string, returns an empty
+     * string (but this should be considered a programming error; a future
+     * version may generate a warning for this case).
+     *
+     * @note String::substring() is intended to behave like Perl's substr(). */
+    String substring(int pos, int len) const;
+
+    /** @brief Return the suffix of the current string starting at index @a pos.
+     *
+     * If @a pos is negative, starts that far from the end of the string.  If
+     * @a pos is so negative that the suffix starts outside the string, then
+     * the entire string is returned.  If the substring is beyond the end of
+     * the string (@a pos > length()), returns an empty string (but this
+     * should be considered a programming error; a future version may generate
+     * a warning for this case).
+     *
+     * @note String::substring() is intended to behave like Perl's substr(). */
+    inline String substring(int pos) const {
+	return substring((pos <= -_length ? 0 : pos), _length);
+    }
+  
+
+    /** @brief Search for a character in a string.
+     * @param c character to search for
+     * @param start initial search position
+     *
+     * Return the index of the leftmost occurence of @a c, starting at index
+     * @a start and working up to the end of the string.  Returns -1 if @a c
+     * is not found. */
+    int find_left(char c, int start = 0) const;
+
+    /** @brief Search for a substring in a string.
+     * @param str substring to search for
+     * @param start initial search position
+     *
+     * Return the index of the leftmost occurence of the substring @a str,
+     * starting at index @a start and working up to the end of the string.
+     * Returns -1 if @a str is not found. */
+    int find_left(const String &s, int start = 0) const;
+
+    /** @brief Search for a character in a string.
+     * @param c character to search for
+     * @param start initial search position
+     *
+     * Return the index of the rightmost occurence of the character @a c,
+     * starting at index @a start and working back to the beginning of the
+     * string.  Returns -1 if @a c is not found.  @a start may start beyond
+     * the end of the string. */
+    int find_right(char c, int start = 0x7FFFFFFF) const;
+
+    /** @brief Return true iff this string begins with prefix @a x.
+     * @param x string to compare to
+     * 
+     * Same as String::starts_with(@a x.data(), @a x.length()). */
+    inline bool starts_with(const String &x) const {
+	return starts_with(x._data, x._length);
+    }
+
+    /** @brief Return true iff this string begins with the data in @a s.
+     * @param s string data to compare to
+     * @param len length of @a s
+     * 
+     * If @a len @< 0, then treats @a s as a null-terminated C string.
+     *
+     * @sa String::compare(const String &a, const String &b) */
+    bool starts_with(const char *s, int len) const;
+
+
+    /** @brief Return a lowercased version of this string.
+     *
+     * Translates the ASCII characters 'A' through 'Z' into their lowercase
+     * equivalents. */
+    String lower() const;
+
+    /** @brief Return an uppercased version of this string.
+     *
+     * Translates the ASCII characters 'a' through 'z' into their uppercase
+     * equivalents. */
+    String upper() const;
+
+    /** @brief Return a "printable" version of this string.
+     *
+     * Translates control characters 0-31 into "control" sequences, such as
+     * "^@" for the null character, and characters 127-255 into octal escape
+     * sequences, such as "\377" for 255. */
+    String printable() const;
+
+    /** @brief Return a substring with spaces trimmed from the end. */
+    String trim_space() const;
+
+    /** @brief Return a hex-quoted version of the string.
+     *
+     * For example, the string "Abcd" would convert to "\<41626364>". */
+    String quoted_hex() const;
+
+  
+    /** @brief Assign this string to @a x. */
+    inline String &operator=(const String &x) {
+	if (likely(&x != this)) {
+	    deref();
+	    assign(x);
+	}
+	return *this;
+    }
+
+    /** @brief Assign this string to the C string @a cstr. */
+    inline String &operator=(const char *cstr) {
+	assign(cstr, -1, true);
+	return *this;
+    }
+
+
+    /** @brief Append the first @a len characters of @a s to this string.
+     * @param s data to append
+     * @param len length of data
+     *
+     * If @a len @< 0, treats @a s as a null-terminated C string. */ 
     void append(const char *s, int len);
-    inline void append(const char *begin, const char *end);
+    
+    /** @brief Appends the data from @a begin to @a end to the end of this
+     * string.
+     *
+     * Does nothing if @a begin @>= @a end. */
+    inline void append(const char *begin, const char *end) {
+	if (begin < end)
+	    append(begin, end - begin);
+    }
+
+    /** @brief Append @a len copies of character @a c to this string. */
     void append_fill(int c, int len);
+
+    /** @brief Append @a len unknown characters to this string.
+     * @return Modifiable pointer to the appended characters.
+     * 
+     * The caller may safely modify the returned memory.  Null is returned if
+     * the string becomes out-of-memory. */
     char *append_garbage(int len);
-    inline String &operator+=(const String &str);
-    inline String &operator+=(const char *cstr);
-    inline String &operator+=(char c);
+
+
+    /** @brief Append a copy of @a x to the end of this string.
+     *
+     * Returns the result. */
+    inline String &operator+=(const String &x) {
+	append(x._data, x._length);
+	return *this;
+    }
+
+    /** @brief Append a copy of the C string @a cstr to the end of this string.
+     *
+     * Returns the result. */
+    inline String &operator+=(const char *cstr) {
+	append(cstr, -1);
+	return *this;
+    }
+
+    /** @brief Append the character @a c to the end of this string.
+     *
+     * Returns the result. */
+    inline String &operator+=(char c) {
+	append(&c, 1);
+	return *this;
+    }
+
 
     // String operator+(String, const String &);
     // String operator+(String, const char *);
@@ -134,13 +557,39 @@ class String { public:
     // String operator+(PermString, PermString);
     // String operator+(String, char);
 
-    inline bool data_shared() const;
+
+    /** @brief Return true iff the String's data is shared or immutable. */
+    inline bool data_shared() const {
+	return !_memo->_capacity || _memo->_refcount != 1;
+    }
+
+    /** @brief Ensure the string's data is unshared and return a mutable
+     * pointer to it. */
     char *mutable_data();
+
+    /** @brief Null-terminate the string and return a mutable pointer to its
+     * data.
+     * @sa String::c_str */
     char *mutable_c_str();
 
-    inline bool out_of_memory() const;
-    static inline const String &out_of_memory_string();
-    static inline const char *out_of_memory_data();
+
+    /** @brief Return true iff this is an out-of-memory string. */
+    inline bool out_of_memory() const {
+	return _data == &oom_string_data;
+    }
+
+    /** @brief Return a reference to an out-of-memory String. */
+    static inline const String &out_of_memory_string() {
+	return *oom_string_p;
+    }
+
+    /** @brief Return the data pointer used for out-of-memory strings.
+     *
+     * The returned value may be dereferenced; it points to a null
+     * character. */
+    static inline const char *out_of_memory_data() {
+	return &oom_string_data;
+    }
     
   private:
 
@@ -162,11 +611,24 @@ class String { public:
     mutable int _length;
     mutable Memo *_memo;
   
-    inline String(const char *, int, Memo *);
+    inline String(const char *data, int length, Memo *memo)
+	: _data(data), _length(length), _memo(memo) {
+	++_memo->_refcount;
+    }
   
-    inline void assign(const String &) const;
-    void assign(const char *, int);
-    inline void deref() const;
+    inline void assign(const String &x) const {
+	_data = x._data;
+	_length = x._length;
+	_memo = x._memo;
+	++_memo->_refcount;
+    }
+
+    inline void deref() const {
+	if (_memo->_refcount.dec_and_test())
+	    delete _memo;
+    }
+	
+    void assign(const char *cstr, int len, bool need_deref);
     void make_out_of_memory();
   
     static Memo *null_memo;
@@ -175,325 +637,16 @@ class String { public:
     static String *null_string_p;
     static String *oom_string_p;
     static const char oom_string_data;
+    static const char bool_data[11];
   
     static String claim_string(char *, int, int); // claim memory
-
+    
     friend class String::Initializer;
     friend class StringAccum;
   
 };
 
 
-inline
-String::String(const char *data, int length, Memo *memo)
-    : _data(data), _length(length), _memo(memo)
-{
-    _memo->_refcount++;
-}
-
-inline void
-String::assign(const String &str) const
-{
-    _data = str._data;
-    _length = str._length;
-    _memo = str._memo;
-    _memo->_refcount++;
-}
-
-inline void
-String::deref() const
-{
-    if (_memo->_refcount.dec_and_test())
-	delete _memo;
-}
-
-/** @brief Create an empty String (with length 0). */
-inline
-String::String()
-    : _data(null_memo->_real_data), _length(0), _memo(null_memo)
-{
-    _memo->_refcount++;
-}
-
-/** @brief Create a String containing a copy of the C string @a cstr.
- * @param cstr a null-terminated C string.
- * @return A String containing the characters of @a cstr, up to but not
- * including the terminating null character.
- *
- * If @a cstr equals String::out_of_memory_data(), returns an
- * out-of-memory string.
- */
-inline
-String::String(const char *cstr)
-{
-    assign(cstr, -1);
-}
-
-/** @brief Create a String containing a copy of the first @a len characters of
- * string @a s.
- * @param s a string.
- * @param len number of characters to take from @a cc.  If @a len @< 0, then
- * takes @c strlen(@a s) characters.
- * @return A String containing @a len characters of @a s.
- *
- * If @a s equals String::out_of_memory_data(), returns an
- * out-of-memory string.
- */
-inline
-String::String(const char *s, int len)
-{
-    assign(s, len);
-}
-
-/** @brief Create a String containing a copy of the characters from @a begin
- * to @a end.
- * @param begin first character in string (begin iterator).
- * @param end pointer one past last character in string (end iterator).
- * @return A String containing the characters from @a begin to @a end.
- *
- * Returns a null string if @a begin @> @a end. 
- * If @a begin equals String::out_of_memory_data(), returns an
- * out-of-memory string.
- */
-inline
-String::String(const char *begin, const char *end)
-{
-    assign(begin, (end > begin ? end - begin : 0));
-}
-
-/** @brief Create a String equal to "true" or "false" depending on the
- * value of @a b.
- * @param b a boolean variable.
- */
-inline
-String::String(bool b)
-    : _data(b ? "true" : "false"), _length(b ? 4 : 5), _memo(permanent_memo)
-{
-    _memo->_refcount++;
-}
-
-/** @brief Create a String containing the single character @a c.
- * @param c a character.
- */
-inline
-String::String(char c)
-{
-    assign(&c, 1);
-}
-
-/** @brief Create a String containing the single character @a c.
- * @param c an unsigned character.
- */
-inline
-String::String(unsigned char c)
-{
-    assign(reinterpret_cast<char *>(&c), 1);
-}
-
-/** @brief Create a String containing a copy of the String @a str.
- * @param str a String.
- */
-inline
-String::String(const String &str)
-{
-    assign(str);
-}
-
-/** @brief Destroy a String, freeing memory if necessary. */
-inline
-String::~String()
-{
-    deref();
-}
-
-/** @brief Return the string's length. */
-inline int
-String::length() const
-{
-    return _length;
-}
-
-/** @brief Return a pointer to the string's data.
- *
- * Only the first length() characters are valid, and the string data might not
- * be null-terminated. */
-inline const char *
-String::data() const
-{
-    return _data;
-}
-
-/** @brief Return an iterator for the first character in the string.
- *
- * String iterators are simply pointers into string data, so they are quite
- * efficient.  @sa String::data */
-inline String::const_iterator
-String::begin() const
-{
-    return _data;
-}
-
-/** @brief Return an iterator for the end of the string.
- *
- * The return value points one character beyond the last character in the
- * string. */
-inline String::const_iterator
-String::end() const
-{
-    return _data + _length;
-}
-
-/** @brief Returns true iff the string is nonempty. */
-inline
-String::operator unspecified_bool_type() const
-{
-    return _length != 0 ? &String::length : 0;
-}
-  
-/** @brief Returns the @a i th character in the string.
- *
- * Does not check bounds.
- * @sa String::at */
-inline char
-String::operator[](int i) const
-{
-    return _data[i];
-}
-
-/** @brief Returns the @a i th character in the string.
- *
- * Checks bounds: an assertion will fail if @a i is less than 0 or not less
- * than length().
- * @sa String::operator[]
- */
-inline char
-String::at(int i) const
-{
-    assert(i >= 0 && i < _length);
-    return _data[i];
-}
-
-/** @brief Returns the first character in the string.
- *
- * Does not do check bounds.  Same as (*this)[0]. */
-inline char
-String::front() const
-{
-    return _data[0];
-}
-
-/** @brief Returns the last character in the string.
- *
- * Does not check bounds.  Same as (*this)[length() - 1]. */
-inline char
-String::back() const
-{
-    return _data[_length - 1];
-}
-
-/** @brief Return true iff the String's data is shared or immutable. */
-inline bool
-String::data_shared() const
-{
-    return !_memo->_capacity || _memo->_refcount != 1;
-}
-
-/** @brief Return an empty String.
- *
- * Returns a global constant, so it's quicker than String::String().
- */
-inline const String &
-String::empty_string()
-{
-    return *null_string_p;
-}
-
-/** @brief Return a String that directly references the character data in
- * [@a begin, @a end).
- * @param begin pointer to the first character in the character data.
- * @param end pointer one beyond the last character in the character data.
- *
- * This function is suitable for static constant strings whose data is known
- * to stay around forever, such as C string constants.  Returns a null string
- * if @a begin @> @a end.
- */
-inline String
-String::stable_string(const char *begin, const char *end)
-{
-    if (begin < end)
-	return String::stable_string(begin, end - begin);
-    else
-	return String();
-}
-
-/** @brief Return a substring of the current string starting at @a begin and
- * ending before @a end.
- * @param begin pointer to the first character in the desired substring.
- * @param end pointer one beyond the last character in the desired substring.
- *
- * Returns an empty string if @a begin @> @a end.  Also returns an empty
- * string if @a begin or @a end is out of range (i.e., either less than
- * this->begin() or greater than this->end()), but this should be considered a
- * programming error; a future version may generate a warning for this case.
- */
-inline String
-String::substring(const char *begin, const char *end) const
-{
-    if (begin < end && begin >= _data && end <= _data + _length)
-	return String(begin, end - begin, _memo);
-    else
-	return String();
-}
-
-/** @brief Return the suffix of the current string starting at index @a pos.
- *
- * If @a pos is negative, starts that far from the end of the string.  If @a
- * pos is so negative that the suffix starts outside the string, then the
- * entire string is returned.  If the substring is beyond the end of the
- * string (@a pos > length()), returns an empty string (but this should be
- * considered a programming error; a future version may generate a warning for
- * this case).
- *
- * @note String::substring() is intended to behave like Perl's substr().
- */
-inline String
-String::substring(int pos) const
-{
-    return substring((pos <= -_length ? 0 : pos), _length);
-}
-
-/** @brief Compare two strings.
- * @param a first string to compare
- * @param b second string to compare
- *
- * Returns 0 if @a a == @a b, negative if @a a @< @a b in lexicographic
- * order, and positive if @a a @> @a b in lexicographic order.
- */
-inline int
-String::compare(const String &a, const String &b)
-{
-    return a.compare(b);
-}
-
-/** @brief Compare this string with string @a str.
- *
- * Same as String::compare(*this, @a str).
- * @sa String::compare(const String &a, const String &b) */
-inline int
-String::compare(const String &str) const
-{
-    return compare(str._data, str._length);
-}
-
-/** @brief Return true iff this string begins with the data in @a str.
- * @param str string data to compare to
- * 
- * Same as String::starts_with(@a str.data(), @a str.length()). */
-inline bool
-String::starts_with(const String &str) const
-{
-    return starts_with(str._data, str._length);
-}
 
 /** @relates String
  * @brief Compares two strings for equality.
@@ -503,23 +656,17 @@ String::starts_with(const String &str) const
  * null-terminated C string.
  * @sa String::compare
  */
-inline bool
-operator==(const String &a, const String &b)
-{
+inline bool operator==(const String &a, const String &b) {
     return a.equals(b.data(), b.length());
 }
 
 /** @relates String */
-inline bool
-operator==(const char *a, const String &b)
-{
+inline bool operator==(const char *a, const String &b) {
     return b.equals(a, -1);
 }
 
 /** @relates String */
-inline bool
-operator==(const String &a, const char *b)
-{
+inline bool operator==(const String &a, const char *b) {
     return a.equals(b, -1);
 }
 
@@ -528,23 +675,17 @@ operator==(const String &a, const char *b)
  *
  * Returns true iff !(@a a == @a b).  At most one of the operands can be a
  * null-terminated C string. */
-inline bool
-operator!=(const String &a, const String &b)
-{
+inline bool operator!=(const String &a, const String &b) {
     return !a.equals(b.data(), b.length());
 }
 
 /** @relates String */
-inline bool
-operator!=(const char *a, const String &b)
-{
+inline bool operator!=(const char *a, const String &b) {
     return !b.equals(a, -1);
 }
 
 /** @relates String */
-inline bool
-operator!=(const String &a, const char *b)
-{
+inline bool operator!=(const String &a, const char *b) {
     return !a.equals(b, -1);
 }
 
@@ -554,9 +695,7 @@ operator!=(const String &a, const char *b)
  * Returns true iff @a a @< @a b in lexicographic order.
  * @sa String::compare
  */
-inline bool
-operator<(const String &a, const String &b)
-{
+inline bool operator<(const String &a, const String &b) {
     return a.compare(b.data(), b.length()) < 0;
 }
 
@@ -566,9 +705,7 @@ operator<(const String &a, const String &b)
  * Returns true iff @a a @<= @a b in lexicographic order.
  * @sa String::compare
  */
-inline bool
-operator<=(const String &a, const String &b)
-{
+inline bool operator<=(const String &a, const String &b) {
     return a.compare(b.data(), b.length()) <= 0;
 }
 
@@ -578,9 +715,7 @@ operator<=(const String &a, const String &b)
  * Returns true iff @a a @> @a b in lexicographic order.
  * @sa String::compare
  */
-inline bool
-operator>(const String &a, const String &b)
-{
+inline bool operator>(const String &a, const String &b) {
     return a.compare(b.data(), b.length()) > 0;
 }
 
@@ -590,115 +725,27 @@ operator>(const String &a, const String &b)
  * Returns true iff @a a @>= @a b in lexicographic order.
  * @sa String::compare
  */
-inline bool
-operator>=(const String &a, const String &b)
-{
+inline bool operator>=(const String &a, const String &b) {
     return a.compare(b.data(), b.length()) >= 0;
-}
-
-/** @overload */
-inline uint32_t
-String::hashcode(const unsigned char *begin, const unsigned char *end)
-{
-    return hashcode(reinterpret_cast<const char *>(begin),
-		    reinterpret_cast<const char *>(end));
-}
-
-/** @brief Returns a 32-bit hash function of this string's characters.
- *
- * Equivalent to String::hashcode(begin(), end()).  Uses Paul Hsieh's
- * "SuperFastHash."
- *
- * @invariant  If s1 == s2, then s1.hashcode() == s2.hashcode(). */
-inline uint32_t
-String::hashcode() const
-{
-    return length() ? hashcode(begin(), end()) : 0;
-}
-
-/** @brief Makes this string a copy of @a str. */
-inline String &
-String::operator=(const String &str)
-{
-    if (&str != this) {
-	deref();
-	assign(str);
-    }
-    return *this;
-}
-
-/** @brief Make this string a copy of the C string @a cstr. */
-inline String &
-String::operator=(const char *cstr)
-{
-    deref();
-    assign(cstr, -1);
-    return *this;
-}
-
-/** @brief Appends the data from @a begin to @a end to the end of this string.
- *
- * Does nothing if @a begin @>= @a end. */
-inline void
-String::append(const char *begin, const char *end)
-{
-    if (begin < end)
-	append(begin, end - begin);
-}
-
-/** @brief Append a copy of @a str to the end of this string.
- *
- * Returns the result. */
-inline String &
-String::operator+=(const String &str)
-{
-    append(str._data, str._length);
-    return *this;
-}
-
-/** @brief Append a copy of the C string @a cstr to the end of this string.
- *
- * Returns the result. */
-inline String &
-String::operator+=(const char *cstr)
-{
-    append(cstr, -1);
-    return *this;
-}
-
-/** @brief Append the character @a c to the end of this string.
- *
- * Returns the result. */
-inline String &
-String::operator+=(char c)
-{
-    append(&c, 1);
-    return *this;
 }
 
 /** @relates String
  * @brief Concatenate the operands and return the result.
  *
  * At most one of the two operands can be a null-terminated C string. */
-inline String
-operator+(String a, const String &b)
-{
+inline String operator+(String a, const String &b) {
     a += b;
     return a;
 }
 
 /** @relates String */
-inline String
-operator+(String a, const char *b)
-{
+inline String operator+(String a, const char *b) {
     a.append(b, -1);
     return a;
 }
 
 /** @relates String */
-inline String
-operator+(const char *a, const String &b)
-{
+inline String operator+(const char *a, const String &b) {
     String s1(a);
     s1 += b;
     return s1;
@@ -708,49 +755,21 @@ operator+(const char *a, const String &b)
  * @brief Concatenate the operands and return the result.
  *
  * The second operand is a single character. */
-inline String
-operator+(String a, char b)
-{
+inline String operator+(String a, char b) {
     a.append(&b, 1);
     return a;
 }
 
-/** @brief Returns true iff this is an out-of-memory string. */
-inline bool
-String::out_of_memory() const
-{
-    return _data == &oom_string_data;
-}
-
-/** @brief Return a reference to an out-of-memory String. */
-inline const String &
-String::out_of_memory_string()
-{
-    return *oom_string_p;
-}
-
-/** @brief Return the data pointer used for out-of-memory strings.
- *
- * The returned value may be dereferenced; it points to a null character. 
- */
-inline const char *
-String::out_of_memory_data()
-{
-    return &oom_string_data;
-}
-
 // find methods
 
-inline const char *rfind(const char *begin, const char *end, char c)
-{
+inline const char *rfind(const char *begin, const char *end, char c) {
     for (const char *bb = end - 1; bb >= begin; bb--)
 	if (*bb == c)
 	    return bb;
     return end;
 }
 
-inline const char *find(const String &s, char c)
-{
+inline const char *find(const String &s, char c) {
     return find(s.begin(), s.end(), c);
 }
 

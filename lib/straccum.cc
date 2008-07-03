@@ -87,7 +87,6 @@ StringAccum::grow(int want)
     return true;
 }
 
-/** @brief Append @a len copies of character @a c to this StringAccum. */
 void
 StringAccum::append_fill(int c, int len)
 {
@@ -95,12 +94,6 @@ StringAccum::append_fill(int c, int len)
 	memset(s, c, len);
 }
 
-/** @brief Null-terminate this StringAccum and return its data.
-
-    Note that the null character does not contribute to the StringAccum's
-    length(), and later append() and similar operations can overwrite it.  If
-    appending the null character fails, the StringAccum becomes out-of-memory
-    and the returned value is a null string. */
 const char *
 StringAccum::c_str()
 {
@@ -109,13 +102,15 @@ StringAccum::c_str()
     return reinterpret_cast<char *>(_s);
 }
 
-/** @brief Return a String object with this StringAccum's contents.
+void
+StringAccum::append_unsafe_data(const char *s, int len)
+{
+    char *copy = (char *) CLICK_LALLOC(len);
+    memcpy(copy, s, len);
+    append_safe_data(copy, len);
+    CLICK_LFREE(copy, len);
+}
 
-    This operation donates the StringAccum's memory to the returned String.
-    After a call to take_string(), the StringAccum object becomes empty, and
-    any future append() operations may cause memory allocations.  If the
-    StringAccum is out-of-memory, the returned String is also out-of-memory.
-    However, take_string() resets the StringAccum's out-of-memory state. */
 String
 StringAccum::take_string()
 {
@@ -134,7 +129,6 @@ StringAccum::take_string()
     }
 }
 
-/** @brief Swaps this StringAccum's contents with @a o. */
 void
 StringAccum::swap(StringAccum &o)
 {
@@ -172,10 +166,6 @@ operator<<(StringAccum &sa, unsigned long u)
     return sa;
 }
 
-/** @brief Append representation of @a num to this StringAccum.
-    @param  num        number to append
-    @param  base       numeric base: must be 8, 10, or 16
-    @param  uppercase  true means use uppercase letters in base 16 */
 void
 StringAccum::append_numeric(String::uint_large_t num, int base, bool uppercase)
 {
@@ -230,7 +220,6 @@ StringAccum::append_numeric(String::uint_large_t num, int base, bool uppercase)
     append(trav, buf + 256);
 }
 
-/** @overload */
 void
 StringAccum::append_numeric(String::int_large_t num, int base, bool uppercase)
 {
@@ -269,18 +258,6 @@ operator<<(StringAccum &sa, void *ptr)
     return sa;
 }
 
-/** @brief Append result of snprintf() to this StringAccum.
-    @param  n       maximum number of characters to print
-    @param  format  format argument to snprintf()
-
-    The terminating null character is not appended to the string.
-    
-    @note The safe vsnprintf() variant is called if it exists.  It does in
-    the Linux kernel, and on modern Unix variants.  However,
-    if it does not exist on your machine, then this function is actually
-    unsafe, and you should make sure that the printf() invocation represented
-    by your arguments will never write more than @a n characters, not
-    including the terminating null. */
 StringAccum &
 StringAccum::snprintf(int n, const char *format, ...)
 {
