@@ -120,14 +120,14 @@ class StringAccum { public:
 	return _len != 0 ? &StringAccum::capacity : 0;
     }
 
-    /** @brief Returns true iff the StringAccum does not contain characters.
+    /** @brief Return true iff the StringAccum does not contain characters.
      *
      * Returns true for empty and out-of-memory StringAccums. */
     bool operator!() const {
 	return _len == 0;
     }
 
-    /** @brief Returns true iff the StringAccum is out-of-memory. */
+    /** @brief Return true iff the StringAccum is out-of-memory. */
     bool out_of_memory() const {
 	return _cap < 0;
     }
@@ -216,7 +216,7 @@ class StringAccum { public:
 	    return 0;
     }
 
-    /** @brief Sets the StringAccum's length to @a len.
+    /** @brief Set the StringAccum's length to @a len.
      * @param len new length in characters
      * @pre 0 <= @a len <= capacity()
      * @sa adjust_length */
