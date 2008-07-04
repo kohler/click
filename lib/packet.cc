@@ -167,9 +167,10 @@ CLICK_DECLS
  * WritablePacket's interface is the same as Packet's except for these type
  * differences.  For documentation, see Packet.
  *
- * @warning The Packet/WritablePacket convention does not eliminate, the
- * likelihood of error when modifying packet data.  It is possible to create a
- * shared WritablePacket; for instance:
+ * @warning The WritablePacket convention reduces the likelihood of error
+ * when modifying packet data, but does not eliminate it.  For instance, by
+ * calling WritablePacket::clone(), it is possible to create a WritablePacket
+ * whose data is shared:
  * @code
  * Packet *p = ...;
  * if (WritablePacket *q = p->uniqueify()) {

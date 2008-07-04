@@ -36,6 +36,45 @@ template <typename T, List_member<T> T::*member> class List;
   (This is unlike Vector or HashTable, which manage space for their contents.)
   The main advantage of intrusive containers is that a single element can be
   on multiple lists.
+
+  Here's an example linked list of integers built using List and List_member.
+
+  @code
+  #include <click/list.hh>
+
+  struct intlist_node {
+      int value;
+      List_member<intlist_node> link;
+      intlist_node(int v)
+          : value(v) {
+      }
+  };
+
+  typedef List<intlist_node, &intlist_node::link> intlist;
+
+  void make_intlist(intlist &l, int begin, int end, int step) {
+      for (int i = begin; i < end; i += step)
+          l.push_back(new intlist_node(i));
+      // Note that l does not manage its contents' memory!
+      // Whoever destroys l should first delete its contents.
+  }
+
+  void print_intlist(const intlist &l) {
+      size_t n = 0;
+      for (intlist::const_iterator it = l.begin(); it != l.end(); ++it, ++n)
+          click_chatter("#%ld: %d\n", (long) n, it->value);
+  }
+
+  template <typename T>
+  void remove_every_other(T &list) {
+      typename T::iterator it = list.begin();
+      while (it != l.end()) {
+          ++it;
+	  if (it != l.end())
+	      it = list.erase(it);
+      }
+  }
+  @endcode
 */
 
 /** @class List_member
