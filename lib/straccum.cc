@@ -247,7 +247,7 @@ operator<<(StringAccum &sa, double d)
 #endif
 
 /** @relates StringAccum
-    @brief Append hexadecimal representation @a ptr's value to @a sa.
+    @brief Append hexadecimal representation of @a ptr's value to @a sa.
     @return @a sa */
 StringAccum &
 operator<<(StringAccum &sa, void *ptr)
