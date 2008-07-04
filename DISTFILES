@@ -665,7 +665,6 @@ elementt.cc
 elementt.hh
 etraits.cc
 etraits.hh
-hashmapi.cc
 lexert.cc
 lexert.hh
 lexertinfo.cc
