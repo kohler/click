@@ -443,7 +443,7 @@ class List { public:
 		--*this;
 	    return *this;
 	}
-	/** @brief Move this iterator backward by -@a x positions.
+	/** @brief Move this iterator backward by @a x positions.
 	 * @return reference to this iterator
 	 * @note This function takes O(abs(@a x)) time. */
 	const_iterator &operator-=(int x) {
@@ -518,7 +518,7 @@ class List { public:
 		--*this;
 	    return *this;
 	}
-	/** @brief Move this iterator backward by -@a x positions.
+	/** @brief Move this iterator backward by @a x positions.
 	 * @return reference to this iterator
 	 * @note This function takes O(abs(@a x)) time. */
 	iterator &operator-=(int x) {
