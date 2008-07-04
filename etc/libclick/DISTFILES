@@ -29,6 +29,7 @@ include/click/bitvector.hh
 include/click/bighashmap.cc
 include/click/bighashmap.hh
 include/click/bighashmap_arena.hh
+include/click/bigint.hh
 include/click/clp.h
 include/click/confparse.hh
 include/click/crc32.h

@@ -155,9 +155,15 @@ files etc/linux-*-patch, linuxmodule/clickfs.cc, linuxmodule/proclikefs.c,
 linuxmodule/sched.cc, and linuxmodule/skbmgr.cc, and some of the files in
 elements/linuxmodule.
 
-    Typically, element code that uses only Click's interfaces will *not* be
-derived from the Linux kernel, so the BSD-like 'LICENSE' will apply, not
-the GPL.
+    Portions of the Click software are derived from the GNU Multiple
+Precision Arithmetic Library, and are thus distributed under the GNU Lesser
+General Public License, version 3.  This license is available via the Web
+at <http://www.gnu.org/licenses/lgpl.html>.  The LGPL applies to the source
+file include/click/bigint.hh.
+
+    Element code that uses only Click's interfaces will *not* be derived
+from the Linux kernel, so the BSD-like 'LICENSE' will apply, not the GPL or
+the LGPL.
 
 
 BUGS, QUESTIONS, ETC.

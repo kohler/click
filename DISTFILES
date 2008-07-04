@@ -318,6 +318,7 @@ atomic.hh
 bighashmap.cc
 bighashmap.hh
 bighashmap_arena.hh
+bigint.hh
 bitvector.hh
 clp.h
 confparse.hh

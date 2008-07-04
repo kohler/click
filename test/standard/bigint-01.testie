@@ -1,0 +1,12 @@
+%info
+Tests Bigint multiple-precision arithmetic with the BigintTest element.
+
+%require
+click-buildtool provides BigintTest
+
+%script
+click -qe BigintTest
+
+%expect stderr
+config:1:{{.*}}
+  All tests pass!
