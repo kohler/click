@@ -415,13 +415,13 @@ class String { public:
     int find_left(char c, int start = 0) const;
 
     /** @brief Search for a substring in a string.
-     * @param str substring to search for
+     * @param x substring to search for
      * @param start initial search position
      *
      * Return the index of the leftmost occurence of the substring @a str,
      * starting at index @a start and working up to the end of the string.
      * Returns -1 if @a str is not found. */
-    int find_left(const String &s, int start = 0) const;
+    int find_left(const String &x, int start = 0) const;
 
     /** @brief Search for a character in a string.
      * @param c character to search for

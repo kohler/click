@@ -23,7 +23,7 @@ while (@ARGV && $ARGV[0] =~ /^-/) {
     } elsif (/^-D$/ || /^--doxygen$/) {
 	$DOXYGEN = 1;
     } else {
-	die "Usage: ./mkwebdoc.pl [-x] [-p|--progman] CLICKWEBDIR";
+	die "Usage: ./mkwebdoc.pl [-x] [-D] [-p|--progman] CLICKWEBDIR";
     }
 }
 $ELEMENTS = $PROGMAN = $EXAMPLES = $DOXYGEN = $DOC_TAR_GZ = $NEWS = 1
@@ -57,7 +57,7 @@ mysystem("$MAKE distdir") if ($INSTALL);
 my($VERSION);
 open(CONFIN, "$top_srcdir/configure.in") || die "no configure.in";
 while (<CONFIN>) {
-  if (/AC_INIT\(click, (\S*?)\)/) {
+  if (/AC_INIT\(\[?click\]?, \[?(\S*?)\]?\)/) {
     $VERSION = $1;
     last;
   }

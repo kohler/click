@@ -278,7 +278,8 @@ Notifier::add_dependent_signal(NotifierSignal* signal)
 }
 
 /** @brief Initialize the associated NotifierSignal, if necessary.
- * @param r the associated router
+ * @param name signal name
+ * @param r associated router
  *
  * Initialize the Notifier's associated NotifierSignal by calling @a r's
  * Router::new_notifier_signal() method, obtaining a new basic activity

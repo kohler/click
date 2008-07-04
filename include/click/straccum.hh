@@ -319,9 +319,9 @@ class StringAccum { public:
      * @param x number to append
      * @param base numeric base: must be 8, 10, or 16
      * @param uppercase true means use uppercase letters in base 16 */
-    void append_numeric(String::int_large_t num, int base = 10, bool uppercase = true);
+    void append_numeric(String::int_large_t x, int base = 10, bool uppercase = true);
     /** @overload */
-    void append_numeric(String::uint_large_t num, int base = 10, bool uppercase = true);
+    void append_numeric(String::uint_large_t x, int base = 10, bool uppercase = true);
 
 
     /** @brief Append result of snprintf() to this StringAccum.
@@ -446,9 +446,11 @@ StringAccum::StringAccum(int capacity)
     }
 }
 
+/** @cond never */
 inline void StringAccum::forward(int delta) {
     adjust_length(delta);
 }
+/** @endcond never */
 
 /** @relates StringAccum
     @brief Append character @a c to StringAccum @a sa.

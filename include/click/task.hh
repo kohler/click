@@ -302,6 +302,7 @@ Task::scheduled() const
 #endif
 }
 
+/** @cond never */
 /** @brief Return the task's callback function.
  * @deprecated Use callback() instead. */
 inline TaskCallback
@@ -317,6 +318,7 @@ Task::thunk() const
 {
     return _thunk;
 }
+/** @endcond never */
 
 inline Element *
 Task::element()	const
