@@ -164,7 +164,9 @@ class Bigint { public:
      * @param n number of limbs in @a x and @a a
      * @param b 1-limb multiplicand
      *
-     * Like @a x += @a a * @a b.  Both @a x and @a a must have @a n limbs. */
+     * Like @a x += @a a * @a b.  Both @a x and @a a must have @a n limbs.  It
+     * is safe for @a x and @a a to point to exactly the same memory, but they
+     * must not otherwise overlap. */
     static limb_type multiply_add(limb_type *x, const limb_type *a, int n,
 				  limb_type b) {
 	limb_type carry = 0;
@@ -187,7 +189,9 @@ class Bigint { public:
      * @param n number of limbs in @a x and @a a
      * @param b 1-limb divisor
      *
-     * Like @a x = @a a / @a b.  Both @a x and @a a must have @a n limbs. */
+     * Like @a x = @a a / @a b.  Both @a x and @a a must have @a n limbs.  It
+     * is safe for @a x and @a a to point to exactly the same memory, but they
+     * must not otherwise overlap. */
     static limb_type divide(limb_type *x, const limb_type *a, int n,
 			    limb_type b) {
 	x += n - 1;   /* Make x point at most significant quotient limb */

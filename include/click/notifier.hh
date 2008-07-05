@@ -109,8 +109,40 @@ class NotifierSignal { public:
     
     static void static_initialize();
     
+    /** @relates NotifierSignal
+     * @brief Compare two NotifierSignals for equality.
+     *
+     * Returns true iff the two NotifierSignals are the same -- i.e., they
+     * combine information about exactly the same sets of basic signals.
+     *
+     * All idle() signals compare equal.  busy_signal() and
+     * overderived_signal() do not compare equal, however. */
     friend bool operator==(const NotifierSignal &a, const NotifierSignal &b);
+
+    /** @relates NotifierSignal
+     * @brief Compare two NotifierSignals for inequality.
+     *
+     * Returns true iff !(@a a == @a b). */
     friend bool operator!=(const NotifierSignal &a, const NotifierSignal &b);
+
+    /** @relates NotifierSignal
+     * @brief Return a derived signal.
+     *
+     * Returns a derived signal that combines information from its arguments.
+     * The result will be active whenever @a a and/or @a b is active.  If the
+     * combination of @a a and @a b is too complex to represent, returns an
+     * overderived signal; this trivially follows the invariant since it is
+     * always active.
+     *
+     * Signal derivation is commutative and associative.  The following
+     * special combinations are worth remembering:
+     *
+     *  - An idle() signal plus any other signal @a a equals @a a.  Thus,
+     *    idle_signal() is the identity for signal derivation.
+     *  - A busy() signal plus any other signal is busy().  Thus,
+     *    busy_signal() is the "zero element" for signal derivation.
+     *
+     * @sa NotifierSignal::operator+= */
     friend NotifierSignal operator+(NotifierSignal a, const NotifierSignal &b);
 
   private:
@@ -330,15 +362,6 @@ NotifierSignal::operator=(const NotifierSignal &x)
     return *this;
 }
 
-/** @relates NotifierSignal
- * @brief Compare two NotifierSignals for equality.
- *
- * Returns true iff the two NotifierSignals are the same -- i.e., they combine
- * information about exactly the same sets of basic signals.
- *
- * All idle() signals compare equal.  busy_signal() and overderived_signal()
- * do not compare equal, however.
- */
 inline bool
 operator==(const NotifierSignal& a, const NotifierSignal& b)
 {
@@ -351,36 +374,12 @@ operator==(const NotifierSignal& a, const NotifierSignal& b)
 	return false;
 }
 
-/** @relates NotifierSignal
- * @brief Compare two NotifierSignals for inequality.
- *
- * Returns true iff !(@a a == @a b).
- */
 inline bool
 operator!=(const NotifierSignal& a, const NotifierSignal& b)
 {
     return !(a == b);
 }
 
-/** @relates NotifierSignal
- * @brief Return a derived signal.
- *
- * Returns a derived signal that combines information from its arguments.  The
- * result will be active whenever @a a and/or @a b is active.  If the
- * combination of @a a and @a b is too complex to represent, returns an
- * overderived signal; this trivially follows the invariant since it is always
- * active.
- *
- * Signal derivation is commutative and associative.  The following special
- * combinations are worth remembering:
- *
- *  - An idle() signal plus any other signal @a a equals @a a.  Thus,
- *    idle_signal() is the identity for signal derivation.
- *  - A busy() signal plus any other signal is busy().  Thus, busy_signal()
- *    is the "zero element" for signal derivation.
- *
- * @sa NotifierSignal::operator+=
- */
 inline NotifierSignal
 operator+(NotifierSignal a, const NotifierSignal& b)
 {

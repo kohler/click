@@ -1161,12 +1161,21 @@ Element::processing_vector(int* in_v, int* out_v, ErrorHandler* errh) const
  * a number.  The following flags are currently defined.
  *
  * <dl>
+ *
  * <dt><tt>A</tt></dt> <dd>This element requires AlignmentInfo information.
- * The click-align tool uses this flag; it does not generate AlignmentInfo for
- * elements that lack the <tt>A</tt> flag.</dd>
+ * The click-align tool only generates AlignmentInfo for <tt>A</tt>-flagged
+ * elements.</dd>
+ *
  * <dt><tt>S0</tt></dt> <dd>This element neither generates nor consumes
- * packets.  Notification can use this flag to determine when a path is
- * permanently idle.</dd>
+ * packets.  In other words, every packet received on its inputs will be
+ * emitted on its outputs, and every packet emitted on its outputs must have
+ * originated from its inputs.  Notification uses this flag to discover
+ * certain idle paths.  For example, packet schedulers (RoundRobinSched,
+ * PrioSched) never generate packets and so declare the <tt>S0</tt> flag.  As
+ * a result, degenerate paths like "RoundRobinSched -> ToDevice", where
+ * RoundRobinSched has 0 inputs, are idle rather than busy, and waste no
+ * CPU time.</dd>
+ *
  * </dl>
  */
 const char*

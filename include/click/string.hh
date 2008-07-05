@@ -275,7 +275,7 @@ class String { public:
     const char *c_str() const;
 
 
-    /** @brief Returns a 32-bit hash function of the characters in [begin, end).
+    /** @brief Return a 32-bit hash function of the characters in [begin, end).
      *
      * Uses Paul Hsieh's "SuperFastHash" algorithm, described at
      * http://www.azillionmonkeys.com/qed/hash.html
