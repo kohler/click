@@ -56,7 +56,8 @@ template <typename T, List_member<T> T::*member> class List;
       for (int i = begin; i < end; i += step)
           l.push_back(new intlist_node(i));
       // Note that l does not manage its contents' memory!
-      // Whoever destroys l should first delete its contents.
+      // Whoever destroys l should first delete its contents,
+      // for example by calling trash_intlist(l).
   }
 
   void print_intlist(const intlist &l) {
@@ -65,6 +66,14 @@ template <typename T, List_member<T> T::*member> class List;
           click_chatter("#%ld: %d\n", (long) n, it->value);
   }
 
+  void trash_intlist(intlist &l) {
+      while (!l.empty()) {
+          intlist_node *n = l.front();
+	  l.pop_front();
+	  delete n;
+      }
+  }
+  
   template <typename T>
   void remove_every_other(T &list) {
       typename T::iterator it = list.begin();
