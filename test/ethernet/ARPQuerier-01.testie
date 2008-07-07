@@ -1,8 +1,8 @@
 %script
 click CONFIG 2> PRINT
-sort < TABLE | sed 's/:/-/' > SORTEDTABLE
+sort < TABLE | sed 's/:/-/g' > SORTEDTABLE
 click CONFIG2 2> PRINT2
-sort < TABLE | sed 's/:/-/' > SORTEDTABLE2
+sort < TABLE | sed 's/:/-/g' > SORTEDTABLE2
 
 %file CONFIG
 FromIPSummaryDump(IN, STOP true)

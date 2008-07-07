@@ -2,7 +2,8 @@
 Check ARPQuerier hotswap in the absence of ARPTables.
 
 %script
-click -R CONFIG
+click -R CONFIG 2>CHECKX
+sed '/^1\./s/:/-/g' <CHECKX >CHECK
 
 %file CONFIG
 d::FromIPSummaryDump(DUMP, TIMING true, ACTIVE false, STOP true)
@@ -45,7 +46,7 @@ arpq[1] -> ARPPrint(arp2r, TIMESTAMP true)
 0 1.0.0.2 8
 0 1.0.0.3 9
 
-%expect stderr
+%expect CHECK
 arpo:   54 | 02010000 010f0201 000a0a0f 08004501
 arpo:   54 | 02010000 020f0201 000a0a0f 08004502
 arpr: 0.000000: arp who-has 1.0.0.3 tell 1.0.10.10
@@ -60,6 +61,6 @@ arpq.table:
 
 arp2o:   54 | 02010000 010d0201 000a0a0f 08004507
 
-%ignore stderr
+%ignore CHECK
 expensive{{.*}}
 While executing{{.*}}
