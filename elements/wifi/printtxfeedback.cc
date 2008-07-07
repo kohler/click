@@ -67,7 +67,7 @@ PrintTXFeedback::simple_action(Packet *p)
   } else {
       sa << "PrintTXFeedback";
   }
-  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->user_anno();  
+  struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);  
   sa << " " << p->timestamp_anno();
   sa << " " << dst;
   sa << " flags " << (int) ceh->flags;

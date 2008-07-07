@@ -60,7 +60,7 @@ class PacketLogger2 : public Element { public:
   struct log_entry {
     Timestamp timestamp;
     unsigned length;
-    uint8_t anno[Packet::USER_ANNO_SIZE];
+    uint8_t anno[Packet::anno_size];
     uint8_t bytes[NBYTES];
   };
 

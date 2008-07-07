@@ -20,6 +20,7 @@
 
 #include <click/config.h>
 #include <click/packet.hh>
+#include <click/packet_anno.hh>
 #include <click/glue.hh>
 #if CLICK_USERLEVEL
 # include <unistd.h>
@@ -132,19 +133,14 @@ CLICK_DECLS
  * others.</li>
  * <li><b>Next and previous packet:</b> Pointers provided to allow elements to
  * chain packets into a doubly linked list.</li>
- * <li><b>Address:</b> Each packet has ADDR_ANNO_SIZE bytes available for a
- * network address.  Routing elements, such as RadixIPLookup, set the address
- * annotation to indicate the desired next hop; ARPQuerier uses this
- * annotation to query the next hop's MAC.  All address annotations share the
- * same space.  The most common use for the area is a destination
- * IP address annotation.</li>
- * <li><b>User annotations:</b> An additional USER_ANNO_SIZE bytes of space
- * are provided for user annotations, which are uninterpreted by Linux or by
- * Click's core.  Instead, elements agree to use portions of the user
- * annotation area in ways that make mutual sense.  The user annotation area
- * can be accessed as a byte array, or as an array of 16- or 32-bit integers.
- * Macros in the <click/packet_anno.hh> header file define the user
- * annotations used by Click's current elements.</li>
+ * <li><b>Annotations:</b> Each packet has @link Packet::anno_size anno_size
+ * @endlink bytes available for annotations.  Elements agree to use portions
+ * of the annotation area to communicate per-packet information.  Macros in
+ * the <click/packet_anno.hh> header file define the annotations used by
+ * Click's current elements.  One common annotation is the network address
+ * annotation -- see Packet::dst_ip_anno().  Routing elements, such as
+ * RadixIPLookup, set the address annotation to indicate the desired next hop;
+ * ARPQuerier uses this annotation to query the next hop's MAC.</li>
  * </ul>
  *
  * New packets start wth all annotations set to zero or null.  Cloning a
@@ -185,6 +181,17 @@ CLICK_DECLS
 inline
 Packet::Packet()
 {
+    static_assert(addr_anno_offset % 8 == 0 && user_anno_offset % 8 == 0);
+    static_assert(addr_anno_offset + addr_anno_size <= anno_size);
+    static_assert(user_anno_offset + user_anno_size <= anno_size);
+    static_assert(dst_ip_anno_offset == DST_IP_ANNO_OFFSET
+		  && dst_ip6_anno_offset == DST_IP6_ANNO_OFFSET
+		  && dst_ip_anno_size == DST_IP_ANNO_SIZE
+		  && dst_ip6_anno_size == DST_IP6_ANNO_SIZE
+		  && dst_ip_anno_size == 4
+		  && dst_ip6_anno_size == 16
+		  && dst_ip_anno_offset + 4 <= anno_size
+		  && dst_ip6_anno_offset + 16 <= anno_size);
 #if CLICK_LINUXMODULE
     static_assert(sizeof(Anno) <= sizeof(((struct sk_buff *)0)->cb));
     panic("Packet constructor");
@@ -233,9 +240,9 @@ bool
 Packet::alloc_data(uint32_t headroom, uint32_t len, uint32_t tailroom)
 {
   uint32_t n = len + headroom + tailroom;
-  if (n < MIN_BUFFER_LENGTH) {
-    tailroom = MIN_BUFFER_LENGTH - len - headroom;
-    n = MIN_BUFFER_LENGTH;
+  if (n < min_buffer_length) {
+    tailroom = min_buffer_length - len - headroom;
+    n = min_buffer_length;
   }
 #if CLICK_USERLEVEL
   unsigned char *d = new unsigned char[n];
@@ -282,9 +289,10 @@ Packet::alloc_data(uint32_t headroom, uint32_t len, uint32_t tailroom)
  *
  * The @a data is copied into the new packet.  If @a data is null, the
  * packet's data is left uninitialized.  The resulting packet's
- * buffer_length() will be at least MIN_BUFFER_LENGTH; if @a headroom + @a
- * length + @a tailroom would be less, then @a tailroom is increased to make
- * the total MIN_BUFFER_LENGTH.
+ * buffer_length() will be at least @link Packet::min_buffer_length
+ * min_buffer_length @endlink; if @a headroom + @a length + @a tailroom would
+ * be less, then @a tailroom is increased to make the total @link
+ * Packet::min_buffer_length min_buffer_length @endlink.
  *
  * The new packet's annotations are cleared and its header pointers are
  * null. */

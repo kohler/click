@@ -52,7 +52,7 @@ Packet *
 SetTXPower::simple_action(Packet *p_in)
 {
   if (p_in) {
-    struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->user_anno();
+    struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p_in);
     ceh->magic = WIFI_EXTRA_MAGIC;
     ceh->power = _power;
     return p_in;

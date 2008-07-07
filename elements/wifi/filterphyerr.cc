@@ -39,8 +39,8 @@ FilterPhyErr::~FilterPhyErr()
 Packet *
 FilterPhyErr::simple_action(Packet *p)
 {
-  struct click_wifi_extra *ceha = (struct click_wifi_extra *) p->user_anno();  
-  struct click_wifi_extra *cehp = (struct click_wifi_extra *) p->data();
+    struct click_wifi_extra *ceha = WIFI_EXTRA_ANNO(p);
+    struct click_wifi_extra *cehp = (struct click_wifi_extra *) p->data();
   
   
   if ((ceha->magic == WIFI_EXTRA_MAGIC && ceha->flags & WIFI_EXTRA_RX_ERR) ||

@@ -37,7 +37,7 @@ PacketLogger2::simple_action(Packet *p_in)
   log_entry d;
   d.timestamp = p_in->timestamp_anno();
   d.length = p_in->length();
-  memcpy(d.anno, p_in->user_anno(), Packet::USER_ANNO_SIZE);
+  memcpy(d.anno, p_in->anno(), Packet::anno_size);
   memcpy(d.bytes, p_in->data(), _nb < d.length ? _nb : d.length);
   
   int s_pre = _p.size();
@@ -85,7 +85,7 @@ PacketLogger2::print_log(Element *e, void *)
   int bytes_per_entry = 9 + 1 + 9; // 9 digits, '.', 9 digits
   bytes_per_entry += 5;            // " XXXX" (size)
   bytes_per_entry += 4;            // " | "
-  bytes_per_entry += 2 * Packet::USER_ANNO_SIZE; 
+  bytes_per_entry += 2 * Packet::anno_size; 
   bytes_per_entry += 4;            // " | "
   bytes_per_entry += 2 * p->_nb;
   bytes_per_entry += p->_nb / 4;   // ' ' every 4 bytes of data
@@ -104,7 +104,7 @@ PacketLogger2::print_log(Element *e, void *)
     sa << d.timestamp;
     char *buf = sa.data() + sa.length();
     int pos = sprintf(buf, " %4u | ", d.length);
-    for (int i = 0; i < Packet::USER_ANNO_SIZE; i++) {
+    for (int i = 0; i < Packet::anno_size; i++) {
       sprintf(buf + pos, "%02x", d.anno[i]);
       pos += 2;
     }

@@ -309,7 +309,7 @@ Packet *
 PrintWifi::simple_action(Packet *p)
 {
   struct click_wifi *wh = (struct click_wifi *) p->data();
-  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->user_anno();  
+  struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
   int type = wh->i_fc[0] & WIFI_FC0_TYPE_MASK;
   int subtype = wh->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
   int duration = cpu_to_le16(*(uint16_t *) wh->i_dur);

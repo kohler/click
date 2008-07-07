@@ -331,8 +331,8 @@ FromCapDump::read_packet(ErrorHandler *errh)
 		tcph->th_ack = htonl(0);
 	    (void) packno2seqno(seqno, payload_len + (tcph->th_flags & TH_SYN ? 1 : 0) + (tcph->th_flags & TH_FIN ? 1 : 0));
 	}
-	SET_PACKET_NUMBER_ANNO(q, 0, uniqno);
-	SET_PACKET_NUMBER_ANNO(q, 1, seqno);
+	SET_PACKET_NUMBER_ANNO(q, uniqno);
+	SET_SEQUENCE_NUMBER_ANNO(q, seqno);
 	
 	tcph->th_off = (q->end_data() - q->transport_header()) >> 2;
 	

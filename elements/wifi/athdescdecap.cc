@@ -29,6 +29,7 @@ CLICK_DECLS
 
 AthdescDecap::AthdescDecap()
 {
+    static_assert(WIFI_EXTRA_ANNO_SIZE >= sizeof(click_wifi_extra));
 }
 
 AthdescDecap::~AthdescDecap()
@@ -53,7 +54,7 @@ AthdescDecap::simple_action(Packet *p)
 	WritablePacket *q = p->uniqueify();
 	if (q) {
 		struct ar5212_desc *desc = (struct ar5212_desc *) (q->data() + 8);
-		click_wifi_extra *eh = (click_wifi_extra *) q->user_anno();
+		click_wifi_extra *eh = WIFI_EXTRA_ANNO(q);
 		memset(eh, 0, sizeof(click_wifi_extra));
 		eh->magic = WIFI_EXTRA_MAGIC;
 		if (desc->frame_len == 0) {

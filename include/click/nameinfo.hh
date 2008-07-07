@@ -39,9 +39,10 @@ class NameInfo { public:
     enum DBType {
 	T_NONE = 0,			///< Nonexistent names database
 	T_SCHEDULEINFO = 0x00000001,	///< ScheduleInfo database
-	T_SCRIPT_INSN = 0x00000002,	///< Script instruction names database
-	T_SIGNO = 0x00000003,		///< User-level signal names database
-	T_SPINLOCK = 0x00000004,	///< Spinlock names database
+	T_ANNOTATION = 0x00000002,	///< Packet annotation database
+	T_SCRIPT_INSN = 0x00000003,	///< Script instruction names database
+	T_SIGNO = 0x00000004,		///< User-level signal names database
+	T_SPINLOCK = 0x00000005,	///< Spinlock names database
 	T_ETHERNET_ADDR = 0x01000001,	///< Ethernet address names database
 	T_IP_ADDR = 0x04000001,		///< IP address names database
 	T_IP_PREFIX = 0x04000002,	///< IP prefix names database

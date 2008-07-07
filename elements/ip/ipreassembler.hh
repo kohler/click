@@ -32,6 +32,10 @@ drops below 3/4*HIMEM bytes. Default HIMEM is 256K.
 
 Output packets have no MAC headers, and input MAC headers are ignored.
 
+The IPREASSEMBLER annotation area is used to store packet metadata about
+packets in the process of reassembly.  On emitted reassembled packets,
+this annotation area is set to 0.
+
 Keyword arguments are:
 
 =over 8
@@ -71,10 +75,6 @@ class IPReassembler : public Element { public:
     struct ChunkLink {
 	uint16_t off;
 	uint16_t lastoff;
-    };
-    struct PacketInfo {
-	uint32_t padding[3];	// preserve paint annotation
-	ChunkLink chunk;
     };
 
   private:

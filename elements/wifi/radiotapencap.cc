@@ -83,7 +83,7 @@ RadiotapEncap::simple_action(Packet *p)
 
   if (p_out) {
 	  struct click_radiotap_header *crh  = (struct click_radiotap_header *) p_out->data();
-	  click_wifi_extra *ceh = (click_wifi_extra *) p->user_anno();
+	  click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
 	  
 	  memset(crh, 0, sizeof(struct click_radiotap_header));
 	  

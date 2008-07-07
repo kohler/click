@@ -74,7 +74,7 @@ WifiSeq::simple_action(Packet *p_in) {
   WritablePacket *p = p_in ? p_in->uniqueify() : 0;
 
   if (p && p->length() > _offset + _bytes) {
-    struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->user_anno();
+    struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p_in);
     ceh->flags |= WIFI_EXTRA_NO_SEQ;
     char *data = (char *)(p->data() + _offset);
     if (_bytes == 2) {

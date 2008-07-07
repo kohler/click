@@ -120,7 +120,7 @@ Packet *
 RadiotapDecap::simple_action(Packet *p)
 {
 	struct ieee80211_radiotap_header *th = (struct ieee80211_radiotap_header *) p->data();
-	struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->user_anno();
+	struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
 	if (rt_check_header(th, p->length())) {
 		ceh->magic = WIFI_EXTRA_MAGIC;
 

@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
 =c
 
-SetAnnoByte(OFFSET, VALUE)
+SetAnnoByte(ANNO, VALUE)
 
 =s annotations
 
@@ -14,39 +14,37 @@ sets packet user annotations
 
 =d
 
-Sets each packet's user annotation byte at OFFSET to VALUE, an integer
-0..255.  Permissible values for OFFSET are 0 to n-1, inclusive, where
-n is typically 24.
+Sets each packet's user annotation byte at ANNO to VALUE, an integer
+0..255.  Permissible values for ANNO are 0 to n-1, inclusive, where
+n is typically 48, or the name of a one-byte annotation.
 
-=h offset read-only  
-Returns OFFSET
-=h value read-only   
-Returns VALUE 
+=h anno read-only
+Returns ANNO as an integer offset
+=h value read/write
+Returns or sets VALUE 
 
 =a Paint */
 
-class SetAnnoByte : public Element {
+class SetAnnoByte : public Element { public:
   
-  unsigned int _offset;
-  unsigned char _value;
- public:
+    SetAnnoByte();
+    ~SetAnnoByte();
   
-  SetAnnoByte();
-  ~SetAnnoByte();
-  
-  const char *class_name() const		{ return "SetAnnoByte"; }
-  const char *port_count() const		{ return PORTS_1_1; }
-  const char *processing() const		{ return AGNOSTIC; }
+    const char *class_name() const		{ return "SetAnnoByte"; }
+    const char *port_count() const		{ return PORTS_1_1; }
+    const char *processing() const		{ return AGNOSTIC; }
 
-  bool can_live_reconfigure() const             { return true; }
+    int configure(Vector<String> &, ErrorHandler *);
+    bool can_live_reconfigure() const		{ return true; }
+    void add_handlers();
+
+    Packet *simple_action(Packet *);
+
+  private:
   
-  int configure(Vector<String> &, ErrorHandler *);
+    int _offset;
+    unsigned char _value;
 
-  Packet *simple_action(Packet *);
-
-  void add_handlers();
-  static String offset_read_handler(Element *e, void *);
-  static String value_read_handler(Element *e, void *);
 };
 
 CLICK_ENDDECLS

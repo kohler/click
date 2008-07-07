@@ -575,9 +575,9 @@ DSRRouteTable::push(int port, Packet *p_in)
 	if (old_frv) {
 	  DEBUG_CHATTER(" * already forwarded this route request (%d, %d)\n", 
 			this_metric, old_frv->best_metric);
-	  if (metric_preferable(this_metric, old_frv->best_metric)) {
+	  if (metric_preferable(this_metric, old_frv->best_metric))
 	    DEBUG_CHATTER(" * but this one is better\n");
-	  } else
+	  else
 	    DEBUG_CHATTER(" * and this one's not as good\n");
 	}
 	

@@ -7,6 +7,7 @@
  * Copyright (c) 2000-2001 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
  * Copyright (c) 2004-2008 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,20 +29,20 @@
 #include <click/straccum.hh>
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
-#ifdef HAVE_IP6
+#include <click/hashtable.hh>
+#if HAVE_IP6
 # include <click/ip6address.hh>
 # include <click/ip6flowid.hh>
 #endif
-#ifndef CLICK_TOOL
+#if !CLICK_TOOL
 # include <click/router.hh>
 # include <click/handlercall.hh>
 # include <click/nameinfo.hh>
 # include <click/standard/addressinfo.hh>
-# include <click/hashtable.hh>
+# include <click/packet_anno.hh>
 # define CP_CONTEXT , Element *context
 # define CP_PASS_CONTEXT , context
 #else
-# include <click/hashtable.hh>
 # include <click/timestamp.hh>
 # if HAVE_NETDB_H
 #  include <netdb.h>
@@ -2722,6 +2723,59 @@ cp_filename(const String &str, String *result)
 #endif
 
 
+#if !CLICK_TOOL
+/** @brief Parse a packet annotation value from @a str.
+ * @param  str  string
+ * @param  size  annotation size, or <= 0 to not check size
+ * @param[out]  result  stores parsed result
+ * @param  context  element context
+ * @return  True if @a str parsed correctly, false otherwise.
+ *
+ * Parses a packet annotation value from @a str.  This is either a predefined
+ * annotation name, such as PAINT or ICMP_PARAM_PROB (all names from
+ * <click/packet_anno.hh> are defined by default); a user-defined name (see
+ * the AnnotationInfo element); or an integer indicating the byte offset into
+ * the annotation area.
+ *
+ * If @a size <= 0, then the annotation value is returned as is.  Use the
+ * #ANNOTATIONINFO_OFFSET and #ANNOTATIONINFO_SIZE macros to extract the
+ * offset and size portions.  If @a size > 0, then the annotation value is
+ * checked to ensure that the sizes are compatible.  For instance, if @a size
+ * == 1, then the "DST_IP" annotation is rejected since it has the wrong size.
+ * In this case, the value stored in *@a result equals the annotation offset
+ * -- the size is masked off.
+ *
+ * Values that extend past the end of the annotation area are rejected.  
+ *
+ * If the string fully parses, then the result is stored in *@a result and the
+ * function returns true.  Otherwise, *@a result remains unchanged and the
+ * function returns false.
+ */
+bool
+cp_anno(const String &str, int size, int *result  CP_CONTEXT)
+{
+    int32_t annoval;
+    if (!NameInfo::query_int(NameInfo::T_ANNOTATION, context, str, &annoval))
+	return false;
+    if (size > 0) {
+	if (ANNOTATIONINFO_SIZE(annoval) && ANNOTATIONINFO_SIZE(annoval) != size)
+	    return false;
+# if !HAVE_INDIFFERENT_ALIGNMENT
+	if ((size == 2 || size == 4 || size == 8)
+	    && (ANNOTATIONINFO_OFFSET(annoval) % size) != 0)
+	    return false;
+# endif
+	if (ANNOTATIONINFO_OFFSET(annoval) + size > Packet::anno_size)
+	    return false;
+	annoval = ANNOTATIONINFO_OFFSET(annoval);
+    } else if (ANNOTATIONINFO_OFFSET(annoval) >= Packet::anno_size)
+	return false;
+    *result = annoval;
+    return true;
+}
+#endif
+
+
 //
 // CP_VA_PARSE AND FRIENDS
 //
@@ -2784,6 +2838,7 @@ const CpVaParseCmd
   cpIP6AddressOrPrefix	= "ip6_addr_or_prefix",
   cpDesCblock		= "des_cblock",
   cpFilename		= "filename",
+  cpAnno		= "anno",
   cpInterval		= cpTimeval,
   cpReadHandlerCall	= cpHandlerCallPtrRead,
   cpWriteHandlerCall	= cpHandlerCallPtrWrite;
@@ -2840,7 +2895,8 @@ enum {
   cpiIP6Prefix,
   cpiIP6AddressOrPrefix,
   cpiDesCblock,
-  cpiFilename
+  cpiFilename,
+  cpiAnno
 };
 
 #define NARGTYPE_HASH 128
@@ -3009,13 +3065,6 @@ default_parsefunc(cp_value *v, const String &arg,
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
       errh->error("%s too large; max %^64u", argname, v->v.u64);
-    break;
-#endif
-
-#if CLICK_USERLEVEL || CLICK_TOOL
-   case cpiFileOffset:
-    if (!cp_file_offset(arg, (off_t *) &v->v))
-      goto type_mismatch;
     break;
 #endif
 
@@ -3226,6 +3275,18 @@ default_parsefunc(cp_value *v, const String &arg,
     if (!cp_filename(arg, &v->v_string))
       goto type_mismatch;
     break;
+
+   case cpiFileOffset:
+    if (!cp_file_offset(arg, (off_t *) &v->v))
+      goto type_mismatch;
+    break;
+#endif
+
+#if !CLICK_TOOL
+    case cpiAnno:
+      if (!cp_anno(arg, v->extra, &v->v.i  CP_PASS_CONTEXT))
+	  goto type_mismatch;
+      break;
 #endif
 
    type_mismatch:
@@ -3284,7 +3345,8 @@ default_storefunc(cp_value *v  CP_CONTEXT)
    case cpiSeconds:
    case cpiSecondsAsMilli:
    case cpiSecondsAsMicro:
-   case cpiBandwidth: {
+   case cpiBandwidth:
+   case cpiAnno: {
      int *istore = (int *)v->store;
      *istore = v->v.i;
      break;
@@ -3298,7 +3360,7 @@ default_storefunc(cp_value *v  CP_CONTEXT)
      break; 
    }
 
-#ifdef HAVE_INT64_TYPES
+#if HAVE_INT64_TYPES
    case cpiInteger64: {
      int64_t *llstore = (int64_t *)v->store;
      *llstore = v->v.i64;
@@ -3312,7 +3374,7 @@ default_storefunc(cp_value *v  CP_CONTEXT)
    }
 #endif
 
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_TOOL
    case cpiFileOffset: {
      off_t *offstore = (off_t *)v->store;
      *offstore = *((off_t *)&v->v);
@@ -3320,7 +3382,7 @@ default_storefunc(cp_value *v  CP_CONTEXT)
    }
 #endif
 
-#ifdef HAVE_FLOAT_TYPES
+#if HAVE_FLOAT_TYPES
    case cpiDouble: {
      double *dstore = (double *)v->store;
      *dstore = v->v.d;
@@ -3368,7 +3430,7 @@ default_storefunc(cp_value *v  CP_CONTEXT)
     helper = 4;
     goto address;
 
-#ifdef HAVE_IP6
+#if HAVE_IP6
    case cpiIP6Address:
     helper = 16;
     goto address;
@@ -3378,7 +3440,7 @@ default_storefunc(cp_value *v  CP_CONTEXT)
     helper = 6;
     goto address;
 
-#ifdef HAVE_IPSEC
+#if HAVE_IPSEC
    case cpiDesCblock:
     helper = 8;
     goto address;
@@ -3399,7 +3461,7 @@ default_storefunc(cp_value *v  CP_CONTEXT)
      break;
    }
 
-#ifdef HAVE_IP6
+#if HAVE_IP6
    case cpiIP6Prefix:
    case cpiIP6AddressOrPrefix: {
      unsigned char *addrstore = (unsigned char *)v->store;
@@ -3417,7 +3479,7 @@ default_storefunc(cp_value *v  CP_CONTEXT)
      break;
    }
 
-#ifndef CLICK_TOOL
+#if !CLICK_TOOL
    case cpiElement: {
      Element **elementstore = (Element **)v->store;
      *elementstore = v->v.element;
@@ -4597,18 +4659,15 @@ cp_va_static_initialize()
     cp_register_argtype(cpInteger, "int", 0, default_parsefunc, default_storefunc, cpiInteger);
     cp_register_argtype(cpUnsigned, "unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned);
     cp_register_argtype(cpNamedInteger, "named int", cpArgExtraInt, default_parsefunc, default_storefunc, cpiNamedInteger);
-#ifdef HAVE_INT64_TYPES
+#if HAVE_INT64_TYPES
     cp_register_argtype(cpInteger64, "64-bit int", 0, default_parsefunc, default_storefunc, cpiInteger64);
     cp_register_argtype(cpUnsigned64, "64-bit unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned64);
-#endif
-#ifdef CLICK_USERLEVEL
-    cp_register_argtype(cpFileOffset, "file offset", 0, default_parsefunc, default_storefunc, cpiFileOffset);
 #endif
     cp_register_argtype(cpReal2, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal2);
     cp_register_argtype(cpUnsignedReal2, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal2);
     cp_register_argtype(cpReal10, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal10);
     cp_register_argtype(cpUnsignedReal10, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal10);
-#ifdef HAVE_FLOAT_TYPES
+#if HAVE_FLOAT_TYPES
     cp_register_argtype(cpDouble, "double", 0, default_parsefunc, default_storefunc, cpiDouble);
 #endif
     cp_register_argtype(cpSeconds, "time in sec", 0, default_parsefunc, default_storefunc, cpiSeconds);
@@ -4624,7 +4683,7 @@ cp_va_static_initialize()
     cp_register_argtype(cpEthernetAddress, "Ethernet address", 0, default_parsefunc, default_storefunc, cpiEthernetAddress);
     cp_register_argtype(cpTCPPort, "TCP port", 0, default_parsefunc, default_storefunc, cpiTCPPort);
     cp_register_argtype(cpUDPPort, "UDP port", 0, default_parsefunc, default_storefunc, cpiUDPPort);
-#ifndef CLICK_TOOL
+#if !CLICK_TOOL
     cp_register_argtype(cpElement, "element name", 0, default_parsefunc, default_storefunc, cpiElement);
     cp_register_argtype(cpHandlerName, "handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiHandlerName);
     cp_register_argtype(cpHandlerCallRead, "read handler name", 0, default_parsefunc, default_storefunc, cpiHandlerCallRead);
@@ -4632,16 +4691,20 @@ cp_va_static_initialize()
     cp_register_argtype(cpHandlerCallPtrRead, "read handler name", 0, default_parsefunc, default_storefunc, cpiHandlerCallPtrRead);
     cp_register_argtype(cpHandlerCallPtrWrite, "write handler name and value", 0, default_parsefunc, default_storefunc, cpiHandlerCallPtrWrite);
 #endif
-#ifdef HAVE_IP6
+#if HAVE_IP6
     cp_register_argtype(cpIP6Address, "IPv6 address", 0, default_parsefunc, default_storefunc, cpiIP6Address);
     cp_register_argtype(cpIP6Prefix, "IPv6 address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6Prefix);
     cp_register_argtype(cpIP6AddressOrPrefix, "IPv6 address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6AddressOrPrefix);
 #endif
-#ifdef HAVE_IPSEC
+#if HAVE_IPSEC
     cp_register_argtype(cpDesCblock, "DES cipher block", 0, default_parsefunc, default_storefunc, cpiDesCblock);
 #endif
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_TOOL
+    cp_register_argtype(cpFileOffset, "file offset", 0, default_parsefunc, default_storefunc, cpiFileOffset);
     cp_register_argtype(cpFilename, "filename", 0, default_parsefunc, default_storefunc, cpiFilename);
+#endif
+#if !CLICK_TOOL
+    cp_register_argtype(cpAnno, "packet annotation", cpArgExtraInt, default_parsefunc, default_storefunc, cpiAnno);
 #endif
 
     cp_values = new cp_value[CP_VALUES_SIZE];

@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+#include <click/packet_anno.hh>
 CLICK_DECLS
 
 /** @file nameinfo.hh
@@ -104,6 +105,33 @@ CLICK_DECLS
 
 static NameInfo *the_name_info;
 
+#define MKAI(n) MAKE_ANNOTATIONINFO(n ## _ANNO_OFFSET, n ## _ANNO_SIZE)
+
+static const StaticNameDB::Entry annotation_entries[] = {
+    { "AGGREGATE", MKAI(AGGREGATE) },
+    { "DST_IP", MKAI(DST_IP) },
+    { "DST_IP6", MKAI(DST_IP6) },
+    { "EXTRA_LENGTH", MKAI(EXTRA_LENGTH) },
+    { "EXTRA_PACKETS", MKAI(EXTRA_PACKETS) },
+    { "FIRST_TIMESTAMP", MKAI(FIRST_TIMESTAMP) },
+    { "FIX_IP_SRC", MKAI(FIX_IP_SRC) },
+    { "FWD_RATE", MKAI(FWD_RATE) },
+    { "GRID_ROUTE_CB", MKAI(GRID_ROUTE_CB) },
+    { "ICMP_PARAMPROB", MKAI(ICMP_PARAMPROB) },
+    { "IPREASSEMBLER", MKAI(IPREASSEMBLER) },
+    { "IPSEC_SA_DATA_REFERENCE", MKAI(IPSEC_SA_DATA_REFERENCE) },
+    { "IPSEC_SPI", MKAI(IPSEC_SPI) },
+    { "MISC_IP", MKAI(MISC_IP) },
+    { "PACKET_NUMBER", MKAI(PACKET_NUMBER) },
+    { "PAINT", MKAI(PAINT) },
+#if HAVE_INT64_TYPES
+    { "PERFCTR", MKAI(PERFCTR) },
+#endif
+    { "REV_RATE", MKAI(REV_RATE) },
+    { "SEQUENCE_NUMBER", MKAI(SEQUENCE_NUMBER) },
+    { "WIFI_EXTRA", MKAI(WIFI_EXTRA) }
+};
+
 bool
 NameDB::define(const String &, const void *, size_t)
 {
@@ -122,6 +150,9 @@ StaticNameDB::query(const String &name, void *value, size_t vsize)
     assert(vsize == 4);
     const char *namestr = name.c_str();
     size_t l = 0, r = _nentries;
+    // common case: looking up an integer in a name table
+    if ((unsigned char) namestr[0] < (unsigned char) _entries[0].name[0])
+	r = 0;
     while (l < r) {
 	size_t m = l + (r - l) / 2;
 	int cmp = strcmp(namestr, _entries[m].name);
@@ -271,6 +302,8 @@ void
 NameInfo::static_initialize()
 {
     the_name_info = new NameInfo;
+    NameDB *db = new StaticNameDB(NameInfo::T_ANNOTATION, String(), annotation_entries, sizeof(annotation_entries) / sizeof(annotation_entries[0]));
+    NameInfo::installdb(db, 0);
 }
 
 void

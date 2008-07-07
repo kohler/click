@@ -73,7 +73,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
   }
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
-  struct click_wifi_extra *eh = (struct click_wifi_extra *) p_in->user_anno();
+  struct click_wifi_extra *eh = WIFI_EXTRA_ANNO(p_in);
   bool success = !(eh->flags & WIFI_EXTRA_TX_FAIL);
   bool used_alt_rate = (eh->flags & WIFI_EXTRA_TX_USED_ALT_RATE);
   int rate = eh->rate;
@@ -181,7 +181,7 @@ AutoRateFallback::assign_rate(Packet *p_in)
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
 
-    struct click_wifi_extra *eh = (struct click_wifi_extra *) p_in->user_anno();
+  struct click_wifi_extra *eh = WIFI_EXTRA_ANNO(p_in);
   eh->magic = WIFI_EXTRA_MAGIC;
 
   if (dst.is_group()) {

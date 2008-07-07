@@ -49,7 +49,7 @@ SetRTS::simple_action(Packet *p)
 {
 
   if (p) {
-    struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->user_anno();
+    struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
     ceh->magic = WIFI_EXTRA_MAGIC;
     if (_rts) {
       ceh->flags |= WIFI_EXTRA_DO_RTS_CTS;

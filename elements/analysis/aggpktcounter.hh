@@ -31,10 +31,12 @@ Keyword arguments are:
 
 =over 8
 
-=item PACKETNO
+=item ANNO
 
-Integer.  Defines which packet number annotation to examine.  Must be 0, 1, or
-negative; negative means ignore any packet number annotations.
+Annotation name.  Defines which packet number annotation to examine.  Normal
+choices are PACKET_NUMBER, SEQUENCE_NUMBER, or NONE (do not examine any
+annotation), but any 4-byte annotation may be used.  By default, the
+PACKET_NUMBER annotation is used.
 
 =back
 
@@ -140,7 +142,7 @@ class AggregatePacketCounter : public Element { public:
     uint32_t _total_flows;
     packetctr_t _total_packets;
 
-    int _packetno;
+    int _anno;
     
     Flow *find_flow(uint32_t aggregate);
     void end_flow(Flow *, ErrorHandler *);

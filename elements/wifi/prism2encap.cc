@@ -59,7 +59,7 @@ Prism2Encap::simple_action(Packet *p)
   p_out = p_out->push(sizeof(wlan_ng_prism2_header));
   if (p_out) {
 	  wlan_ng_prism2_header *ph = (wlan_ng_prism2_header *) p_out->data();
-	  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->user_anno();  
+	  struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
 	  
 	  memset(ph, 0, sizeof(wlan_ng_prism2_header));
 	  ph->msgcode = DIDmsg_lnxind_wlansniffrm;

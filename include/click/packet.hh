@@ -29,13 +29,9 @@ class WritablePacket;
 class Packet { public:
 
     enum {
-	DEFAULT_HEADROOM = 28,
-	MIN_BUFFER_LENGTH = 64,
-	ADDR_ANNO_SIZE = 16,
-	USER_ANNO_SIZE = 32,
-	USER_ANNO_U16_SIZE = USER_ANNO_SIZE / 2,
-	USER_ANNO_U32_SIZE = USER_ANNO_SIZE / 4,
-	USER_ANNO_U64_SIZE = USER_ANNO_SIZE / 8
+	default_headroom = 28,
+	min_buffer_length = 64,
+	anno_size = 48
     };
 
     /** @name Data */
@@ -140,13 +136,13 @@ class Packet { public:
 
   private:
     /** @cond never */
-    struct Anno;
+    union Anno;
 #if CLICK_LINUXMODULE
-    const Anno *anno() const		{ return (const Anno *)skb()->cb; }
-    Anno *anno()			{ return (Anno *)skb()->cb; }
+    const Anno *xanno() const		{ return (const Anno *)skb()->cb; }
+    Anno *xanno()			{ return (Anno *)skb()->cb; }
 #else
-    const Anno *anno() const		{ return (const Anno *)_cb; }
-    Anno *anno()			{ return (Anno *)_cb; }
+    const Anno *xanno() const		{ return (const Anno *)_cb; }
+    Anno *xanno()			{ return (Anno *)_cb; }
 #endif
     /** @endcond never */
   public:
@@ -224,13 +220,11 @@ class Packet { public:
     /** @brief Set the previous packet annotation. */
     inline void set_prev(Packet *p);
 
-    /** @brief Return a pointer to the address annotation area.
-     *
-     * The area is ADDR_ANNO_SIZE bytes long. */
-    void *addr_anno()			{ return anno()->addr.c; }
-    /** @overload */
-    const void *addr_anno() const	{ return anno()->addr.c; }
-    
+    enum {
+	dst_ip_anno_offset = 0, dst_ip_anno_size = 4,
+	dst_ip6_anno_offset = 0, dst_ip6_anno_size = 16
+    };
+
     /** @brief Return the destination IPv4 address annotation.
      *
      * The value is taken from the address annotation area. */
@@ -250,98 +244,149 @@ class Packet { public:
      *
      * The value is stored in the address annotation area. */
     inline void set_dst_ip6_anno(const IP6Address &addr);
-    
-    /** @brief Return a pointer to the user annotation area.
+
+    /** @brief Return a pointer to the annotation area.
      *
-     * The area is USER_ANNO_SIZE bytes long. */
-    void *user_anno()			{ return &anno()->user.u8[0]; }
+     * The area is @link Packet::anno_size anno_size @endlink bytes long. */
+    void *anno()			{ return xanno(); }
 
     /** @overload */
-    const void *user_anno() const	{ return &anno()->user.u8[0]; }
+    const void *anno() const		{ return xanno(); }
 
-    /** @brief Return a pointer to the user annotation area as uint8_ts. */
-    uint8_t *user_anno_u8()		{ return &anno()->user.u8[0]; }
-
-    /** @brief overload */
-    const uint8_t *user_anno_u8() const	{ return &anno()->user.u8[0]; }
-
-    /** @brief Return a pointer to the user annotation area as uint32_ts. */
-    uint32_t *user_anno_u32()		{ return &anno()->user.u32[0]; }
+    /** @brief Return a pointer to the annotation area as uint8_ts. */
+    uint8_t *anno_u8()			{ return &xanno()->u8[0]; }
 
     /** @brief overload */
-    const uint32_t *user_anno_u32() const { return &anno()->user.u32[0]; }
+    const uint8_t *anno_u8() const	{ return &xanno()->u8[0]; }
 
-    /** @brief Return user annotation byte @a i.
-     * @param i annotation index
-     * @pre 0 <= @a i < USER_ANNO_SIZE */
-    uint8_t user_anno_u8(int i) const	{ return anno()->user.u8[i]; }
+    /** @brief Return a pointer to the annotation area as uint32_ts. */
+    uint32_t *anno_u32()		{ return &xanno()->u32[0]; }
+
+    /** @brief overload */
+    const uint32_t *anno_u32() const	{ return &xanno()->u32[0]; }
+
+    /** @brief Return annotation byte at offset @a i.
+     * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink */
+    uint8_t anno_u8(int i) const {
+	assert(i >= 0 && i < anno_size);
+	return xanno()->u8[i];
+    }
     
-    /** @brief Set user annotation byte @a i.
-     * @param i annotation index
+    /** @brief Set annotation byte at offset @a i.
      * @param v value
-     * @pre 0 <= @a i < USER_ANNO_SIZE */
-    void set_user_anno_u8(int i, uint8_t v) { anno()->user.u8[i] = v; }
+     * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink */
+    void set_anno_u8(int i, uint8_t v) {
+	assert(i >= 0 && i < anno_size);
+	xanno()->u8[i] = v;
+    }
     
-    /** @brief Return 16-bit user annotation @a i.
-     * @param i annotation index
-     * @pre 0 <= @a i < USER_ANNO_U16_SIZE
+    /** @brief Return 16-bit annotation at offset @a i.
+     * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 1
+     * @pre On aligned targets, @a i must be evenly divisible by 2.
      *
-     * Affects user annotation bytes [2*@a i, 2*@a i+1]. */
-    uint16_t user_anno_u16(int i) const	{ return anno()->user.u16[i]; }
+     * Affects annotation bytes [@a i, @a i+1]. */
+    uint16_t anno_u16(int i) const {
+	assert(i >= 0 && i < anno_size - 1);
+#if !HAVE_INDIFFERENT_ALIGNMENT
+	assert(i % 2 == 0);
+#endif
+	return *reinterpret_cast<const uint16_t *>(xanno()->u8 + i);
+    }
 
-    /** @brief Set 16-bit user annotation @a i.
-     * @param i annotation index
+    /** @brief Set 16-bit annotation at offset @a i.
      * @param v value
-     * @pre 0 <= @a i < USER_ANNO_U16_SIZE
+     * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 1
+     * @pre On aligned targets, @a i must be evenly divisible by 2.
      *
-     * Affects user annotation bytes [2*@a i, 2*@a i+1]. */
-    void set_user_anno_u16(int i, uint16_t v) { anno()->user.u16[i] = v; }
+     * Affects annotation bytes [@a i, @a i+1]. */
+    void set_anno_u16(int i, uint16_t v) {
+	assert(i >= 0 && i < anno_size - 1);
+#if !HAVE_INDIFFERENT_ALIGNMENT
+	assert(i % 2 == 0);
+#endif
+	*reinterpret_cast<uint16_t *>(xanno()->u8 + i) = v;
+    }
 
-    /** @brief Return 32-bit user annotation @a i.
-     * @param i annotation index
-     * @pre 0 <= @a i < USER_ANNO_U32_SIZE
+    /** @brief Return 32-bit annotation at offset @a i.
+     * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 3
+     * @pre On aligned targets, @a i must be evenly divisible by 4.
      *
-     * Affects user annotation bytes [4*@a i, 4*@a i+3]. */
-    uint32_t user_anno_u32(int i) const	{ return anno()->user.u32[i]; }
+     * Affects user annotation bytes [@a i, @a i+3]. */
+    uint32_t anno_u32(int i) const {
+	assert(i >= 0 && i < anno_size - 3);
+#if !HAVE_INDIFFERENT_ALIGNMENT
+	assert(i % 4 == 0);
+#endif
+	return *reinterpret_cast<const uint32_t *>(xanno()->u8 + i);
+    }
 
-    /** @brief Set 32-bit user annotation @a i.
-     * @param i annotation index
+    /** @brief Set 32-bit annotation at offset @a i.
      * @param v value
-     * @pre 0 <= @a i < USER_ANNO_U32_SIZE
+     * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 3
+     * @pre On aligned targets, @a i must be evenly divisible by 4.
+     *
+     * Affects user annotation bytes [@a i, @a i+3]. */
+    void set_anno_u32(int i, uint32_t v) {
+	assert(i >= 0 && i < anno_size - 3);
+#if !HAVE_INDIFFERENT_ALIGNMENT
+	assert(i % 4 == 0);
+#endif
+	*reinterpret_cast<uint32_t *>(xanno()->u8 + i) = v;
+    }
+
+    /** @brief Return 32-bit annotation at offset @a i.
+     * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 3
      *
      * Affects user annotation bytes [4*@a i, 4*@a i+3]. */
-    void set_user_anno_u32(int i, uint32_t v) { anno()->user.u32[i] = v; }
+    int32_t anno_s32(int i) const {
+	assert(i >= 0 && i < anno_size - 3);
+#if !HAVE_INDIFFERENT_ALIGNMENT
+	assert(i % 4 == 0);
+#endif
+	return *reinterpret_cast<const int32_t *>(xanno()->u8 + i);
+    }
 
-    /** @brief Return 32-bit user annotation @a i.
-     * @param i annotation index
-     * @pre 0 <= @a i < USER_ANNO_U32_SIZE
-     *
-     * Affects user annotation bytes [4*@a i, 4*@a i+3]. */
-    int32_t user_anno_s32(int i) const	{ return anno()->user.u32[i]; }
-
-    /** @brief Set 32-bit user annotation @a i.
-     * @param i annotation index
+    /** @brief Set 32-bit annotation at offset @a i.
      * @param v value
-     * @pre 0 <= @a i < USER_ANNO_U32_SIZE
+     * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 3
+     * @pre On aligned targets, @a i must be evenly divisible by 4.
      *
-     * Affects user annotation bytes [4*@a i, 4*@a i+3]. */
-    void set_user_anno_s32(int i, int32_t v) { anno()->user.u32[i] = v; }
+     * Affects user annotation bytes [@a i, @a i+3]. */
+    void set_anno_s32(int i, int32_t v) {
+	assert(i >= 0 && i < anno_size - 3);
+#if !HAVE_INDIFFERENT_ALIGNMENT
+	assert(i % 4 == 0);
+#endif
+	*reinterpret_cast<int32_t *>(xanno()->u8 + i) = v;
+    }
 
 #if HAVE_INT64_TYPES
-    /** @brief Return 64-bit user annotation @a i.
-     * @param i annotation index
-     * @pre 0 <= @a i < USER_ANNO_U64_SIZE
+    /** @brief Return 64-bit annotation at offset @a i.
+     * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 7
+     * @pre On aligned targets, @a i must be aligned properly for uint64_t.
      *
-     * Affects user annotation bytes [8*@a i, 8*@a i+7]. */
-    uint64_t user_anno_u64(int i) const	{ return anno()->user.u64[i]; }
+     * Affects user annotation bytes [@a i, @a i+7]. */
+    uint64_t anno_u64(int i) const {
+	assert(i >= 0 && i < anno_size - 7);
+#if !HAVE_INDIFFERENT_ALIGNMENT
+	assert(i % __alignof__(uint64_t) == 0);
+#endif
+	return *reinterpret_cast<const uint64_t *>(xanno()->u8 + i);
+    }
 
-    /** @brief Set 64-bit user annotation @a i.
-     * @param i annotation index
+    /** @brief Set 64-bit annotation at offset @a i.
      * @param v value
-     * @pre 0 <= @a i < USER_ANNO_U64_SIZE
+     * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 7
+     * @pre On aligned targets, @a i must be aligned properly for uint64_t.
      *
-     * Affects user annotation bytes [8*@a i, 8*@a i+7]. */
-    void set_user_anno_u64(int i, uint64_t v) { anno()->user.u64[i] = v; }
+     * Affects user annotation bytes [@a i, @a i+7]. */
+    void set_anno_u64(int i, uint64_t v) {
+	assert(i >= 0 && i < anno_size - 7);
+#if !HAVE_INDIFFERENT_ALIGNMENT
+	assert(i % __alignof__(uint64_t) == 0);
+#endif
+	*reinterpret_cast<uint64_t *>(xanno()->u8 + i) = v;
+    }
 #endif
     
     inline void clear_annotations(bool all = true);
@@ -349,7 +394,40 @@ class Packet { public:
     //@}
 
     /** @cond never */
+    enum {
+	DEFAULT_HEADROOM = default_headroom,
+	MIN_BUFFER_LENGTH = min_buffer_length,
+	addr_anno_offset = 0,
+	addr_anno_size = 16,
+	user_anno_offset = 16,
+	user_anno_size = 32,
+	ADDR_ANNO_SIZE = addr_anno_size,
+	USER_ANNO_SIZE = user_anno_size,
+	USER_ANNO_U16_SIZE = USER_ANNO_SIZE / 2,
+	USER_ANNO_U32_SIZE = USER_ANNO_SIZE / 4,
+	USER_ANNO_U64_SIZE = USER_ANNO_SIZE / 8
+    } CLICK_DEPRECATED;
     inline const unsigned char *buffer_data() const CLICK_DEPRECATED;
+    inline void *addr_anno() CLICK_DEPRECATED;
+    inline const void *addr_anno() const CLICK_DEPRECATED;
+    inline void *user_anno() CLICK_DEPRECATED;
+    inline const void *user_anno() const CLICK_DEPRECATED;
+    inline uint8_t *user_anno_u8() CLICK_DEPRECATED;
+    inline const uint8_t *user_anno_u8() const CLICK_DEPRECATED;
+    inline uint32_t *user_anno_u32() CLICK_DEPRECATED;
+    inline const uint32_t *user_anno_u32() const CLICK_DEPRECATED;
+    inline uint8_t user_anno_u8(int i) const CLICK_DEPRECATED;
+    inline void set_user_anno_u8(int i, uint8_t v) CLICK_DEPRECATED;
+    inline uint16_t user_anno_u16(int i) const CLICK_DEPRECATED;
+    inline void set_user_anno_u16(int i, uint16_t v) CLICK_DEPRECATED;
+    inline uint32_t user_anno_u32(int i) const CLICK_DEPRECATED;
+    inline void set_user_anno_u32(int i, uint32_t v) CLICK_DEPRECATED;
+    inline int32_t user_anno_s32(int i) const CLICK_DEPRECATED;
+    inline void set_user_anno_s32(int i, int32_t v) CLICK_DEPRECATED;
+#if HAVE_INT64_TYPES
+    inline uint64_t user_anno_u64(int i) const CLICK_DEPRECATED;
+    inline void set_user_anno_u64(int i, uint64_t v) CLICK_DEPRECATED;
+#endif
     inline const uint8_t *all_user_anno() const CLICK_DEPRECATED;
     inline uint8_t *all_user_anno() CLICK_DEPRECATED;
     inline const uint32_t *all_user_anno_u() const CLICK_DEPRECATED;
@@ -370,22 +448,15 @@ class Packet { public:
 
     // Anno must fit in sk_buff's char cb[48].
     /** @cond never */
-    struct Anno {
-	union {
-	    char ch[ADDR_ANNO_SIZE];
-	    uint8_t c[ADDR_ANNO_SIZE];
-	    uint32_t ip4;
-	} addr;
-    
-	union {
-	    uint8_t u8[USER_ANNO_SIZE];
-	    uint16_t u16[USER_ANNO_U16_SIZE];
-	    uint32_t u32[USER_ANNO_U32_SIZE];
+    union Anno {
+	char c[anno_size];
+	uint8_t u8[anno_size];
+	uint16_t u16[anno_size / 2];
+	uint32_t u32[anno_size / 4];
 #if HAVE_INT64_TYPES
-	    uint64_t u64[USER_ANNO_U64_SIZE];
+	uint64_t u64[anno_size / 8];
 #endif
-	} user;
-	// flag allocations: see packet_anno.hh
+	// allocations: see packet_anno.hh
     };
     /** @endcond never */
 
@@ -858,21 +929,21 @@ Packet::set_packet_type_anno(PacketType p)
  *
  * The @a data is copied into the new packet.  If @a data is null, the
  * packet's data is left uninitialized.  The new packet's headroom equals
- * DEFAULT_HEADROOM, its tailroom is 0.
+ * @link Packet::default_headroom default_headroom @endlink, its tailroom is 0.
  *
  * The returned packet's annotations are cleared and its header pointers are
  * null. */
 inline WritablePacket *
 Packet::make(const char *data, uint32_t length)
 {
-    return make(DEFAULT_HEADROOM, (const unsigned char *) data, length, 0);
+    return make(default_headroom, (const unsigned char *) data, length, 0);
 }
 
 /** @overload */
 inline WritablePacket *
 Packet::make(const unsigned char *data, uint32_t length)
 {
-    return make(DEFAULT_HEADROOM, (const unsigned char *) data, length, 0);
+    return make(default_headroom, (const unsigned char *) data, length, 0);
 }
 
 /** @brief Create and return a new packet.
@@ -880,14 +951,14 @@ Packet::make(const unsigned char *data, uint32_t length)
  * @return new packet, or null if no packet could be created
  *
  * The packet's data is left uninitialized.  The new packet's headroom equals
- * DEFAULT_HEADROOM, its tailroom is 0.
+ * @link Packet::default_headroom default_headroom @endlink, its tailroom is 0.
  *
  * The returned packet's annotations are cleared and its header pointers are
  * null. */ 
 inline WritablePacket *
 Packet::make(uint32_t length)
 {
-    return make(DEFAULT_HEADROOM, (const unsigned char *) 0, length, 0);
+    return make(default_headroom, (const unsigned char *) 0, length, 0);
 }
 
 #if CLICK_LINUXMODULE
@@ -1323,25 +1394,25 @@ Packet::change_headroom_and_length(uint32_t headroom, uint32_t length)
 inline IPAddress
 Packet::dst_ip_anno() const
 {
-    return IPAddress(anno()->addr.ip4);
+    return IPAddress(xanno()->u32[dst_ip_anno_offset / 4]);
 }
 
 inline void
 Packet::set_dst_ip_anno(IPAddress a)
 { 
-    anno()->addr.ip4 = a.addr(); 
+    xanno()->u32[dst_ip_anno_offset / 4] = a.addr(); 
 }
 
 inline const IP6Address &
 Packet::dst_ip6_anno() const
 {
-    return *reinterpret_cast<const IP6Address *>(anno()->addr.ch);
+    return *reinterpret_cast<const IP6Address *>(xanno()->c + dst_ip6_anno_offset);
 }
 
 inline void
 Packet::set_dst_ip6_anno(const IP6Address &a)
 {
-    memcpy(anno()->addr.ch, &a, 16);
+    memcpy(xanno()->c + dst_ip6_anno_offset, &a, 16);
 }
 
 /** @brief Set the MAC header pointer.
@@ -1595,7 +1666,7 @@ Packet::transport_header_offset() const
 inline void
 Packet::clear_annotations(bool all)
 {
-    memset(anno(), '\0', sizeof(Anno));
+    memset(xanno(), '\0', sizeof(Anno));
     if (all) {
 	set_packet_type_anno(HOST);
 	set_device_anno(0);
@@ -1618,7 +1689,7 @@ Packet::clear_annotations(bool all)
 inline void
 Packet::copy_annotations(const Packet *p)
 {
-    *anno() = *p->anno();
+    *xanno() = *p->xanno();
     set_packet_type_anno(p->packet_type_anno());
     set_device_anno(p->device_anno());
     set_timestamp_anno(p->timestamp_anno());
@@ -1652,88 +1723,239 @@ Packet::buffer_data() const
 #endif
 }
 
-/** @brief Return a pointer to the user annotation area.
- * @deprecated Use user_anno() instead. */
-inline const uint8_t *Packet::all_user_anno() const {
-    return &anno()->user.u8[0];
+/** @brief Return a pointer to the address annotation area.
+ * @deprecated Use anno() instead.
+ *
+ * The area is ADDR_ANNO_SIZE bytes long. */
+inline void *Packet::addr_anno() {
+    return anno_u8() + addr_anno_offset;
 }
 
-/** @overload
- * @deprecated Use user_anno() instead. */
-inline uint8_t *Packet::all_user_anno() {
-    return &anno()->user.u8[0];
+/** @overload */
+inline const void *Packet::addr_anno() const {
+    return anno_u8() + addr_anno_offset;
+}
+    
+/** @brief Return a pointer to the user annotation area.
+ * @deprecated Use Packet::anno() instead.
+ *
+ * The area is USER_ANNO_SIZE bytes long. */
+inline void *Packet::user_anno() {
+    return anno_u8() + user_anno_offset;
+}
+
+/** @overload */
+inline const void *Packet::user_anno() const {
+    return anno_u8() + user_anno_offset;
+}
+
+/** @brief Return a pointer to the user annotation area as uint8_ts.
+ * @deprecated Use Packet::anno_u8() instead. */
+inline uint8_t *Packet::user_anno_u8() {
+    return anno_u8() + user_anno_offset;
+}
+
+/** @brief overload */
+inline const uint8_t *Packet::user_anno_u8() const {
+    return anno_u8() + user_anno_offset;
 }
 
 /** @brief Return a pointer to the user annotation area as uint32_ts.
- * @deprecated Use user_anno_u32() instead. */
-inline const uint32_t *Packet::all_user_anno_u() const {
-    return &anno()->user.u32[0];
+ * @deprecated Use Packet::anno_u32() instead. */
+inline uint32_t *Packet::user_anno_u32() {
+    return anno_u32() + user_anno_offset / 4;
 }
 
-/** @overload
- * @deprecated Use user_anno_u32() instead. */
-inline uint32_t *Packet::all_user_anno_u() {
-    return &anno()->user.u32[0];
+/** @brief overload */
+inline const uint32_t *Packet::user_anno_u32() const {
+    return anno_u32() + user_anno_offset / 4;
 }
 
 /** @brief Return user annotation byte @a i.
- * @deprecated Use user_anno_u8() instead. */
-inline uint8_t Packet::user_anno_c(int i) const {
-    return anno()->user.u8[i];
+ * @param i annotation index
+ * @pre 0 <= @a i < USER_ANNO_SIZE
+ * @deprecated Use Packet::anno_u8(@a i) instead. */
+inline uint8_t Packet::user_anno_u8(int i) const {
+    return anno_u8(user_anno_offset + i);
 }
 
 /** @brief Set user annotation byte @a i.
- * @deprecated Use set_user_anno_u8() instead. */
+ * @param i annotation index
+ * @param v value
+ * @pre 0 <= @a i < USER_ANNO_SIZE
+ * @deprecated Use Packet::set_anno_u8(@a i, @a v) instead. */
+inline void Packet::set_user_anno_u8(int i, uint8_t v) {
+    set_anno_u8(user_anno_offset + i, v);
+}
+
+/** @brief Return 16-bit user annotation @a i.
+ * @param i annotation index
+ * @pre 0 <= @a i < USER_ANNO_U16_SIZE
+ * @deprecated Use Packet::anno_u16(@a i * 2) instead.
+ *
+ * Affects user annotation bytes [2*@a i, 2*@a i+1]. */
+inline uint16_t Packet::user_anno_u16(int i) const {
+    return anno_u16(user_anno_offset + i * 2);
+}
+
+/** @brief Set 16-bit user annotation @a i.
+ * @param i annotation index
+ * @param v value
+ * @pre 0 <= @a i < USER_ANNO_U16_SIZE
+ * @deprecated Use Packet::set_anno_u16(@a i * 2, @a v) instead.
+ *
+ * Affects user annotation bytes [2*@a i, 2*@a i+1]. */
+inline void Packet::set_user_anno_u16(int i, uint16_t v) {
+    set_anno_u16(user_anno_offset + i * 2, v);
+}
+
+/** @brief Return 32-bit user annotation @a i.
+ * @param i annotation index
+ * @pre 0 <= @a i < USER_ANNO_U32_SIZE
+ * @deprecated Use Packet::anno_u32(@a i * 4) instead.
+ *
+ * Affects user annotation bytes [4*@a i, 4*@a i+3]. */
+inline uint32_t Packet::user_anno_u32(int i) const {
+    return anno_u32(user_anno_offset + i * 4);
+}
+
+/** @brief Set 32-bit user annotation @a i.
+ * @param i annotation index
+ * @param v value
+ * @pre 0 <= @a i < USER_ANNO_U32_SIZE
+ * @deprecated Use Packet::set_anno_u32(@a i * 4, @a v) instead.
+ *
+ * Affects user annotation bytes [4*@a i, 4*@a i+3]. */
+inline void Packet::set_user_anno_u32(int i, uint32_t v) {
+    set_anno_u32(user_anno_offset + i * 4, v);
+}
+
+/** @brief Return 32-bit user annotation @a i.
+ * @param i annotation index
+ * @pre 0 <= @a i < USER_ANNO_U32_SIZE
+ * @deprecated Use Packet::anno_s32(@a i * 4) instead.
+ *
+ * Affects user annotation bytes [4*@a i, 4*@a i+3]. */
+inline int32_t Packet::user_anno_s32(int i) const {
+    return anno_s32(user_anno_offset + i * 4);
+}
+
+/** @brief Set 32-bit user annotation @a i.
+ * @param i annotation index
+ * @param v value
+ * @pre 0 <= @a i < USER_ANNO_U32_SIZE
+ * @deprecated Use Packet::set_anno_s32(@a i * 4, @a v) instead.
+ *
+ * Affects user annotation bytes [4*@a i, 4*@a i+3]. */
+inline void Packet::set_user_anno_s32(int i, int32_t v) {
+    set_anno_s32(user_anno_offset + i * 4, v);
+}
+
+#if HAVE_INT64_TYPES
+/** @brief Return 64-bit user annotation @a i.
+ * @param i annotation index
+ * @pre 0 <= @a i < USER_ANNO_U64_SIZE
+ * @deprecated Use Packet::anno_u64(@a i * 8) instead.
+ *
+ * Affects user annotation bytes [8*@a i, 8*@a i+7]. */
+inline uint64_t Packet::user_anno_u64(int i) const {
+    return anno_u64(user_anno_offset + i * 8);
+}
+
+/** @brief Set 64-bit user annotation @a i.
+ * @param i annotation index
+ * @param v value
+ * @pre 0 <= @a i < USER_ANNO_U64_SIZE
+ * @deprecated Use Packet::set_anno_u64(@a i * 8, @a v) instead.
+ *
+ * Affects user annotation bytes [8*@a i, 8*@a i+7]. */
+inline void Packet::set_user_anno_u64(int i, uint64_t v) {
+    set_anno_u64(user_anno_offset + i * 8, v);
+}
+#endif
+
+/** @brief Return a pointer to the user annotation area.
+ * @deprecated Use anno() instead. */
+inline const uint8_t *Packet::all_user_anno() const {
+    return anno_u8() + user_anno_offset;
+}
+
+/** @overload
+ * @deprecated Use anno() instead. */
+inline uint8_t *Packet::all_user_anno() {
+    return anno_u8() + user_anno_offset;
+}
+
+/** @brief Return a pointer to the user annotation area as uint32_ts.
+ * @deprecated Use anno_u32() instead. */
+inline const uint32_t *Packet::all_user_anno_u() const {
+    return anno_u32() + user_anno_offset / 4;
+}
+
+/** @overload
+ * @deprecated Use anno_u32() instead. */
+inline uint32_t *Packet::all_user_anno_u() {
+    return anno_u32() + user_anno_offset / 4;
+}
+
+/** @brief Return user annotation byte @a i.
+ * @deprecated Use anno_u8() instead. */
+inline uint8_t Packet::user_anno_c(int i) const {
+    return anno_u8(user_anno_offset + i);
+}
+
+/** @brief Set user annotation byte @a i.
+ * @deprecated Use set_anno_u8() instead. */
 inline void Packet::set_user_anno_c(int i, uint8_t v) {
-    anno()->user.u8[i] = v;
+    set_anno_u8(user_anno_offset + i, v);
 }
 
 /** @brief Return 16-bit user annotation @a i.
- * @deprecated Use user_anno_u16() instead. */
+ * @deprecated Use anno_u16() instead. */
 inline uint16_t Packet::user_anno_us(int i) const {
-    return anno()->user.u16[i];
+    return anno_u16(user_anno_offset + i * 2);
 }
 
 /** @brief Set 16-bit user annotation @a i.
- * @deprecated Use set_user_anno_u16() instead. */
+ * @deprecated Use set_anno_u16() instead. */
 inline void Packet::set_user_anno_us(int i, uint16_t v) {
-    anno()->user.u16[i] = v;
+    set_anno_u16(user_anno_offset + i * 2, v);
 }
 
 /** @brief Return 16-bit user annotation @a i.
- * @deprecated Use user_anno_u16() instead. */
+ * @deprecated Use anno_u16() instead. */
 inline int16_t Packet::user_anno_s(int i) const {
-    return anno()->user.u16[i];
+    return (int16_t) anno_u16(user_anno_offset + i * 2);
 }
 
 /** @brief Set 16-bit user annotation @a i.
- * @deprecated Use set_user_anno_u16() instead. */
+ * @deprecated Use set_anno_u16() instead. */
 inline void Packet::set_user_anno_s(int i, int16_t v) {
-    anno()->user.u16[i] = v;
+    set_anno_u16(user_anno_offset + i * 2, v);
 }
 
 /** @brief Return 32-bit user annotation @a i.
- * @deprecated Use user_anno_u32() instead. */
+ * @deprecated Use anno_u32() instead. */
 inline uint32_t Packet::user_anno_u(int i) const {
-    return anno()->user.u32[i];
+    return anno_u32(user_anno_offset + i * 4);
 }
 
 /** @brief Set 32-bit user annotation @a i.
- * @deprecated Use set_user_anno_u32() instead. */
+ * @deprecated Use set_anno_u32() instead. */
 inline void Packet::set_user_anno_u(int i, uint32_t v) {
-    anno()->user.u32[i] = v;
+    set_anno_u32(user_anno_offset + i * 4, v);
 }
 
 /** @brief Return 32-bit user annotation @a i.
- * @deprecated Use user_anno_s32() instead. */
+ * @deprecated Use anno_s32() instead. */
 inline int32_t Packet::user_anno_i(int i) const {
-    return anno()->user.u32[i];
+    return anno_s32(user_anno_offset + i * 4);
 }
 
 /** @brief Set 32-bit user annotation @a i.
- * @deprecated Use set_user_anno_s32() instead. */
+ * @deprecated Use set_anno_s32() instead. */
 inline void Packet::set_user_anno_i(int i, int32_t v) {
-    anno()->user.u32[i] = v;
+    set_anno_s32(user_anno_offset + i * 4, v);
 }
 /** @endcond never */
 

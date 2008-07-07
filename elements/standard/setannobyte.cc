@@ -37,50 +37,24 @@ SetAnnoByte::~SetAnnoByte()
 int
 SetAnnoByte::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "OFFSET", cpkP+cpkM, cpUnsigned, &_offset,
-			 "VALUE", cpkP+cpkM, cpByte, &_value,
-			 cpEnd);
-  if (res < 0) 
-    return res;
-
-  if (_offset >= Packet::USER_ANNO_SIZE) 
-    return errh->error("offset value is too large, max valid offset is %u", Packet::USER_ANNO_SIZE - 1);
-
-  return res;
+    return cp_va_kparse(conf, this, errh,
+			"ANNO", cpkP+cpkM, cpAnno, 1, &_offset,
+			"VALUE", cpkP+cpkM, cpByte, &_value,
+			cpEnd);
 }
 
 Packet *
 SetAnnoByte::simple_action(Packet *p)
 {
-  (p)->set_user_anno_u8(_offset, _value);
-  return p;
-}
-
-String
-SetAnnoByte::offset_read_handler(Element *e, void *)
-{
-  SetAnnoByte *anno = (SetAnnoByte *)e;
-  StringAccum sa;
-  sa << anno->_offset;
-  return sa.take_string();
-}
-
-
-String
-SetAnnoByte::value_read_handler(Element *e, void *)
-{
-  SetAnnoByte *anno = (SetAnnoByte *)e;
-  StringAccum sa;
-  sa << (int)anno->_value;
-  return sa.take_string();
+    (p)->set_anno_u8(_offset, _value);
+    return p;
 }
 
 void
 SetAnnoByte::add_handlers()
 {
-  add_read_handler("offset", offset_read_handler, (void *)0);
-  add_read_handler("value", value_read_handler, (void *)0);
+    add_data_handlers("anno", Handler::OP_READ, &_offset);
+    add_data_handlers("value", Handler::OP_READ | Handler::OP_WRITE, &_value);
 }
 
 CLICK_ENDDECLS

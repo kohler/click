@@ -5,6 +5,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -97,16 +98,18 @@ int
 AggregatePacketCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
-    _packetno = 0;
+    String anno = String::stable_string("PACKET_NUMBER");
     
     if (cp_va_kparse(conf, this, errh,
 		     "NOTIFIER", 0, cpElement, &e,
-		     "PACKETNO", 0, cpInteger, &_packetno,
+		     "ANNO", 0, cpWord, &anno,
 		     cpEnd) < 0)
 	return -1;
 
-    if (_packetno > 1)
-	return errh->error("'PACKETNO' cannot be bigger than 1");
+    if (anno == "NONE")
+	_anno = -1;
+    else if (!cp_anno(anno, 4, &_anno, this))
+	return errh->error("bad ANNO");
     /*if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
       return errh->error("%s is not an AggregateNotifier", e->name().c_str()); */
 
@@ -184,8 +187,8 @@ AggregatePacketCounter::smaction(int port, Packet *p)
 {
     _total_packets++;
     if (Flow *f = find_flow(AGGREGATE_ANNO(p))) {
-	if (_packetno >= 0)
-	    f->add(PACKET_NUMBER_ANNO(p, _packetno), port);
+	if (_anno >= 0)
+	    f->add(p->anno_u32(_anno), port);
 	else
 	    f->add(0, port);
     }

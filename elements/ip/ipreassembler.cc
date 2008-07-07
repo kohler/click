@@ -26,10 +26,11 @@
 #include <click/bitvector.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 #include <click/straccum.hh>
 CLICK_DECLS
 
-#define PACKET_CHUNK(p)		(((PacketInfo *)((p)->user_anno_u32()))->chunk)
+#define PACKET_CHUNK(p)		(*((ChunkLink *)((p)->anno_u8() + IPREASSEMBLER_ANNO_OFFSET)))
 #define PACKET_DLEN(p)		((p)->transport_length())
 #define IP_BYTE_OFF(iph)	((ntohs((iph)->ip_off) & IP_OFFMASK) << 3)
 
@@ -37,8 +38,7 @@ IPReassembler::IPReassembler()
 {
     for (int i = 0; i < NMAP; i++)
 	_map[i] = 0;
-    static_assert(sizeof(PacketInfo) <= Packet::USER_ANNO_SIZE);
-    static_assert(sizeof(ChunkLink) <= 8);
+    static_assert(sizeof(ChunkLink) == IPREASSEMBLER_ANNO_SIZE);
 }
 
 IPReassembler::~IPReassembler()
@@ -164,7 +164,7 @@ IPReassembler::emit_whole_packet(WritablePacket *q, WritablePacket **q_pprev,
     q_iph->ip_sum = click_in_cksum((const unsigned char *)q_iph, q_iph->ip_hl << 2);
 
     // zero out the annotations we used
-    memset(&PACKET_CHUNK(q), 0, sizeof(struct PacketInfo) - offsetof(struct PacketInfo, chunk));
+    memset(&PACKET_CHUNK(q), 0, sizeof(ChunkLink));
     q->set_timestamp_anno(p_in->timestamp_anno());
     q->set_next(0);
 

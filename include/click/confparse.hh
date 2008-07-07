@@ -129,24 +129,20 @@ inline bool cp_integer(const String &str, int64_t *result);
 inline bool cp_integer(const String &str, uint64_t *result);
 #endif
 
-#if CLICK_USERLEVEL || CLICK_TOOL
-bool cp_file_offset(const String& str, off_t* result);
-#endif
-
 #define CP_REAL2_MAX_FRAC_BITS 28
 bool cp_real2(const String& str, int frac_bits, int32_t* result);
 bool cp_real2(const String& str, int frac_bits, uint32_t* result);
 bool cp_real10(const String& str, int frac_digits, int32_t* result);
 bool cp_real10(const String& str, int frac_digits, uint32_t* result);
 bool cp_real10(const String& str, int frac_digits, uint32_t* result_int, uint32_t* result_frac);
-#ifdef HAVE_FLOAT_TYPES
+#if HAVE_FLOAT_TYPES
 bool cp_double(const String& str, double* result);
 #endif
 
 bool cp_seconds_as(const String& str, int frac_digits, uint32_t* result);
 bool cp_seconds_as_milli(const String& str, uint32_t* result);
 bool cp_seconds_as_micro(const String& str, uint32_t* result);
-#ifdef HAVE_FLOAT_TYPES
+#if HAVE_FLOAT_TYPES
 bool cp_seconds(const String& str, double* result);
 #endif
 bool cp_time(const String& str, Timestamp* result);
@@ -166,7 +162,7 @@ bool cp_ip_prefix(const String& str, IPAddress* result_addr, IPAddress* result_m
 bool cp_ip_prefix(const String& str, unsigned char* result_addr, unsigned char* result_mask  CP_OPT_CONTEXT);
 bool cp_ip_address_list(const String& str, Vector<IPAddress>* result  CP_OPT_CONTEXT);
 
-#ifdef HAVE_IP6
+#if HAVE_IP6
 class IP6Address;
 bool cp_ip6_address(const String& str, IP6Address* result  CP_OPT_CONTEXT);
 bool cp_ip6_address(const String& str, unsigned char* result  CP_OPT_CONTEXT);
@@ -182,19 +178,24 @@ bool cp_ethernet_address(const String& str, unsigned char* result  CP_OPT_CONTEX
 
 bool cp_tcpudp_port(const String& str, int proto, uint16_t* result  CP_OPT_CONTEXT);
 
-#ifndef CLICK_TOOL
+#if !CLICK_TOOL
 Element *cp_element(const String& str, Element* context, ErrorHandler* errh=0);
 Element *cp_element(const String& str, Router* router, ErrorHandler* errh=0);
 bool cp_handler_name(const String& str, Element** result_element, String* result_hname, Element* context, ErrorHandler* errh=0);
 bool cp_handler(const String& str, int flags, Element** result_element, const Handler** result_handler, Element* context, ErrorHandler* errh=0);
 #endif
 
-#ifdef HAVE_IPSEC
+#if HAVE_IPSEC
 bool cp_des_cblock(const String& str, unsigned char* result);
 #endif
 
 #if CLICK_USERLEVEL || CLICK_TOOL
 bool cp_filename(const String& str, String* result);
+bool cp_file_offset(const String& str, off_t* result);
+#endif
+
+#if !CLICK_TOOL
+bool cp_anno(const String &str, int size, int *result  CP_OPT_CONTEXT);
 #endif
 //@}
 
@@ -244,17 +245,14 @@ extern const CpVaParseCmd
     cpInteger,		///< Result storage int32_t*, parsed by cp_integer().
     cpUnsigned,		///< Result storage uint32_t*, parsed by cp_integer().
     cpNamedInteger,	///< Parse parameter uint32_t nameinfo_type, result storage int32_t*, parsed by NameInfo::query_int.
-#ifdef HAVE_INT64_TYPES
+#if HAVE_INT64_TYPES
     cpInteger64,	///< Result storage int64_t*, parsed by cp_integer().
     cpUnsigned64,	///< Result storage uint64_t*, parsed by cp_integer().
-#endif
-#ifdef CLICK_USERLEVEL
-    cpFileOffset,	///< Result storage off_t*, parsed by cp_integer().
 #endif
     cpUnsignedReal2,	///< Parse parameter int frac_bits, result storage uint32_t*, parsed by cp_real2().
     cpReal10,		///< Parse parameter int frac_digits, result storage int32_t*, parsed by cp_real10().
     cpUnsignedReal10,	///< Parse parameter int frac_digits, result storage uint32_t*, parsed by cp_real10().
-#ifdef HAVE_FLOAT_TYPES
+#if HAVE_FLOAT_TYPES
     cpDouble,		///< Result storage double*, parsed by cp_double().
 #endif
     cpSeconds,		///< Result storage uint32_t*, parsed by cp_seconds_as() with frac_digits 0.
@@ -281,7 +279,13 @@ extern const CpVaParseCmd
     cpIP6Prefix,	///< Result storage IP6Address* addr and IP6Address* mask, parsed by cp_ip6_prefix().
     cpIP6AddressOrPrefix,///< Result storage IP6Address* addr and IP6Address* mask, parsed by cp_ip6_prefix().
     cpDesCblock,	///< Result storage uint8_t[8], parsed by cp_des_cblock().
+#if CLICK_USERLEVEL || CLICK_TOOL
     cpFilename,		///< Result storage String*, parsed by cp_filename().
+    cpFileOffset,	///< Result storage off_t*, parsed by cp_integer().
+#endif
+#if !CLICK_TOOL
+    cpAnno,		///< Parse parameter int annotation_size, result storage int*, parsed by cp_anno().
+#endif
     cpOptional,		///< cp_va_parse only: Following arguments are optional.
     cpKeywords,		///< cp_va_parse only: Following arguments are keywords.
     cpConfirmKeywords,	///< cp_va_parse only: Following arguments are confirmed keywords.
@@ -298,7 +302,7 @@ extern const CpVaParseCmd
 String cp_unparse_bool(bool value);
 String cp_unparse_real2(int32_t value, int frac_bits);
 String cp_unparse_real2(uint32_t value, int frac_bits);
-#ifdef HAVE_INT64_TYPES
+#if HAVE_INT64_TYPES
 String cp_unparse_real2(int64_t value, int frac_bits);
 String cp_unparse_real2(uint64_t value, int frac_bits);
 #endif
@@ -371,11 +375,11 @@ struct cp_value {
 	bool b;
 	int32_t i;
 	uint32_t u;
-#ifdef HAVE_INT64_TYPES
+#if HAVE_INT64_TYPES
 	int64_t i64;
 	uint64_t u64;
 #endif
-#ifdef HAVE_FLOAT_TYPES
+#if HAVE_FLOAT_TYPES
 	double d;
 #endif
 	unsigned char address[16];

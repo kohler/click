@@ -72,7 +72,7 @@ SetTXRate::simple_action(Packet *p_in)
     return p_in;
   }
 
-  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->user_anno();
+  struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p_in);
   ceh->magic = WIFI_EXTRA_MAGIC;
   ceh->rate = _rate ? _rate : 2;
   ceh->max_tries = _tries;
