@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
 =c
 
-Paint(COLOR)
+Paint(COLOR [, ANNO])
 
 =s paint
 
@@ -14,43 +14,36 @@ sets packet paint annotations
 
 =d
 
-Sets each packet's paint annotation to COLOR, an integer 0..255. Note that a
-packet may only be painted with one color.
+Sets each packet's paint annotation to COLOR, an integer 0..255.
 
+Paint sets the packet's PAINT annotation by default, but the ANNO argument can
+specify any one-byte annotation.
 
 =h color read/write
 
-get/set the color to paint
-
-=n
-
-The paint annotation is stored in user annotation 0.
+Get/set the color to paint.
 
 =a PaintTee */
 
-class Paint : public Element {
+class Paint : public Element { public:
   
-  unsigned char _color;
-  
- public:
-  
-  Paint();
-  ~Paint();
-  
-  const char *class_name() const		{ return "Paint"; }
-  const char *port_count() const		{ return PORTS_1_1; }
-  const char *processing() const		{ return AGNOSTIC; }
-  
-  int configure(Vector<String> &, ErrorHandler *);
-  bool can_live_reconfigure() const		{ return true; }
+    Paint();
+    ~Paint();
 
-  int color() const				{ return _color; }
-  void set_color(unsigned char in_color)	{ _color = in_color; }
-  
-  Packet *simple_action(Packet *);
+    const char *class_name() const		{ return "Paint"; }
+    const char *port_count() const		{ return PORTS_1_1; }
+    const char *processing() const		{ return AGNOSTIC; }
 
-  void add_handlers();
-  static String color_read_handler(Element *, void *);
+    int configure(Vector<String> &, ErrorHandler *);
+    bool can_live_reconfigure() const		{ return true; }
+    void add_handlers();
+
+    Packet *simple_action(Packet *);
+
+  private:
+
+    uint8_t _anno;
+    uint8_t _color;
   
 };
 

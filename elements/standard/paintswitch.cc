@@ -3,6 +3,7 @@
  * Douglas S. J. De Couto.  Based on Switch element by Eddie Kohler
  *
  * Copyright (c) 2002 MIT
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,21 +31,32 @@ PaintSwitch::~PaintSwitch()
 {
 }
 
+int
+PaintSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+    int anno = PAINT_ANNO_OFFSET;
+    if (cp_va_kparse(conf, this, errh,
+		     "ANNO", cpkP, cpAnno, 1, &anno,
+		     cpEnd) < 0)
+	return -1;
+    _anno = anno;
+    return 0;
+}
+
 void
 PaintSwitch::push(int, Packet *p)
 {
-  int output_port = static_cast<int>(PAINT_ANNO(p));
-  if (output_port != 0xFF) 
-    checked_output_push(output_port, p);
-  else { // duplicate to all output ports
-    int n = noutputs();
-    for (int i = 0; i < n - 1; i++) 
-      if (Packet *q = p->clone())
-	output(i).push(q);
-    output(n - 1).push(p);
-  }
+    int output_port = static_cast<int>(p->anno_u8(_anno));
+    if (output_port != 0xFF) 
+	checked_output_push(output_port, p);
+    else { // duplicate to all output ports
+	int n = noutputs();
+	for (int i = 0; i < n - 1; i++) 
+	    if (Packet *q = p->clone())
+		output(i).push(q);
+	output(n - 1).push(p);
+    }
 }
-
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(PaintSwitch)

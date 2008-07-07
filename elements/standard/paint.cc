@@ -1,8 +1,9 @@
 /*
  * paint.{cc,hh} -- element sets packets' paint annotation
- * Robert Morris
+ * Eddie Kohler, Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,7 +26,8 @@ CLICK_DECLS
 
 Paint::Paint()
 {
-  _color = 0;
+    _anno = PAINT_ANNO_OFFSET;
+    _color = 0;
 }
 
 Paint::~Paint()
@@ -35,30 +37,27 @@ Paint::~Paint()
 int
 Paint::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_kparse(conf, this, errh,
-		      "COLOR", cpkP+cpkM, cpByte, &_color,
-		      cpEnd);
+    int anno = PAINT_ANNO_OFFSET;
+    if (cp_va_kparse(conf, this, errh,
+		     "COLOR", cpkP+cpkM, cpByte, &_color,
+		     "ANNO", cpkP, cpAnno, 1, &anno,
+		     cpEnd) < 0)
+	return -1;
+    _anno = anno;
+    return 0;
 }
 
 Packet *
 Paint::simple_action(Packet *p)
 {
-  SET_PAINT_ANNO(p, _color);
-  return p;
-}
-
-String
-Paint::color_read_handler(Element *e, void *)
-{
-  Paint *the_paint = (Paint *)e;
-  return String(the_paint->color());
+    p->set_anno_u8(_anno, _color);
+    return p;
 }
 
 void
 Paint::add_handlers()
 {
-    add_read_handler("color", color_read_handler);
-    add_write_handler("color", reconfigure_keyword_handler, "0 COLOR");
+    add_data_handlers("color", Handler::OP_READ | Handler::OP_WRITE, &_color);
 }
 
 CLICK_ENDDECLS
