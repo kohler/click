@@ -80,9 +80,10 @@ class Timer { public:
      *
      * Before a timer can be used, it must be attached to a containing router.
      * When that router is destroyed, the timer is automatically
-     * unscheduled. */
+     * unscheduled.  It is safe to initialize the timer multiple times
+     * on the same router. */
     inline void initialize(Router *router) {
-	assert(!initialized());
+	assert(!initialized() || _router == router);
 	_router = router;
     }
 
