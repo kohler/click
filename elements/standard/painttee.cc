@@ -1,8 +1,9 @@
 /*
  * painttee.{cc,hh} -- element checks paint annotation
- * Robert Morris
+ * Eddie Kohler, Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,19 +34,28 @@ PaintTee::~PaintTee()
 int
 PaintTee::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "COLOR", cpkP+cpkM, cpUnsigned, &_color,
-		   cpEnd) < 0)
-    return -1;
-  return 0;
+    int anno = PAINT_ANNO_OFFSET;
+    if (cp_va_kparse(conf, this, errh,
+		     "COLOR", cpkP+cpkM, cpUnsigned, &_color,
+		     "ANNO", cpkP, cpAnno, 1, &anno,
+		     cpEnd) < 0)
+	return -1;
+    _anno = anno;
+    return 0;
 }
 
 Packet *
 PaintTee::simple_action(Packet *p)
 {
-  if (PAINT_ANNO(p) == _color)
-    output(1).push(p->clone());
-  return(p);
+    if (p->anno_u8(_anno) == _color)
+	output(1).push(p->clone());
+    return(p);
+}
+
+void
+PaintTee::add_handlers()
+{
+    add_data_handlers("color", Handler::OP_READ | Handler::OP_WRITE, &_color);
 }
 
 CLICK_ENDDECLS

@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
 =c
 
-CheckPaint(COLOR)
+CheckPaint(COLOR [, ANNO])
 
 =s paint
 
@@ -18,25 +18,30 @@ Checks that incoming packets have paint annotation equal to COLOR. If their
 paints are not equal to COLOR, then they are dropped or emitted on output 1,
 depending on how many outputs were used.
 
+CheckPaint uses the packet's PAINT annotation by default, but the ANNO
+argument can specify any one-byte annotation.
+
 =a Paint, PaintTee */
 
 class CheckPaint : public Element { public:
 
-  CheckPaint();
-  ~CheckPaint();
+    CheckPaint();
+    ~CheckPaint();
   
-  const char *class_name() const	{ return "CheckPaint"; }
-  const char *port_count() const	{ return PORTS_1_1X2; }
-  const char *processing() const	{ return PROCESSING_A_AH; }
+    const char *class_name() const	{ return "CheckPaint"; }
+    const char *port_count() const	{ return PORTS_1_1X2; }
+    const char *processing() const	{ return PROCESSING_A_AH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
+    void add_handlers();
   
-  void push(int, Packet *);
-  Packet *pull(int);
+    void push(int, Packet *);
+    Packet *pull(int);
   
- private:
-  
-  uint8_t _color;
+  private:
+
+    uint8_t _anno;
+    uint8_t _color;
   
 };
 

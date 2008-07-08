@@ -5,13 +5,17 @@ CLICK_DECLS
 
 /*
  * =c
- * PaintTee(COLOR)
+ * PaintTee(COLOR [, ANNO])
  * =s paint
  * duplicates packets with given paint annotation
  * =d
+ *
  * PaintTee sends every packet through output 0. If the packet's
- * color annotation is equal to COLOR (an integer), it also
+ * paint annotation is equal to COLOR (an integer), it also
  * sends a copy through output 1.
+ *
+ * PaintTee uses the PAINT annotation by default, but the ANNO argument can
+ * specify any one-byte annotation.
  *
  * =e
  * Intended to produce redirects in conjunction with Paint and
@@ -24,22 +28,24 @@ CLICK_DECLS
  * =a Paint, ICMPError
  */
 
-class PaintTee : public Element {
-  
-  int _color;
-  
- public:
-  
-  PaintTee();
-  ~PaintTee();
-  
-  const char *class_name() const	{ return "PaintTee"; }
-  const char *port_count() const	{ return "1/2"; }
-  const char *processing() const	{ return PROCESSING_A_AH; }
-  
-  int configure(Vector<String> &, ErrorHandler *);
-  
-  Packet *simple_action(Packet *);
+class PaintTee : public Element { public:
+
+    PaintTee();
+    ~PaintTee();
+
+    const char *class_name() const	{ return "PaintTee"; }
+    const char *port_count() const	{ return "1/2"; }
+    const char *processing() const	{ return PROCESSING_A_AH; }
+
+    int configure(Vector<String> &, ErrorHandler *);
+    void add_handlers();
+
+    Packet *simple_action(Packet *);
+
+  private:
+
+    uint8_t _anno;
+    uint8_t _color;
   
 };
 

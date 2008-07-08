@@ -28,15 +28,17 @@ class WritablePacket;
 
 class Packet { public:
 
-    enum {
-	default_headroom = 28,
-	min_buffer_length = 64,
-	anno_size = 48
-    };
-
     /** @name Data */
     //@{
     // PACKET CREATION
+
+    enum {
+	default_headroom = 28,		///< Default packet headroom() for
+					///  Packet::make().
+	min_buffer_length = 64		///< Minimum buffer_length() for
+					///  Packet::make()
+    };
+
     static WritablePacket *make(uint32_t headroom, const unsigned char *data,
 				uint32_t length, uint32_t tailroom);
     static inline WritablePacket *make(const char *data, uint32_t length);
@@ -149,7 +151,11 @@ class Packet { public:
 
     /** @name Annotations */
     //@{
-    
+
+    enum {
+	anno_size = 48			///< Size of annotation area.
+    };
+
     /** @brief Return the timestamp annotation. */
     inline const Timestamp &timestamp_anno() const;
     /** @overload */

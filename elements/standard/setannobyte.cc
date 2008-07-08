@@ -37,6 +37,7 @@ SetAnnoByte::~SetAnnoByte()
 int
 SetAnnoByte::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    errh->warning("SetAnnoByte(ANNO, VALUE) is obsolete, use Paint(VALUE, ANNO) instead");
     return cp_va_kparse(conf, this, errh,
 			"ANNO", cpkP+cpkM, cpAnno, 1, &_offset,
 			"VALUE", cpkP+cpkM, cpByte, &_value,
@@ -46,7 +47,7 @@ SetAnnoByte::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 SetAnnoByte::simple_action(Packet *p)
 {
-    (p)->set_anno_u8(_offset, _value);
+    p->set_anno_u8(_offset, _value);
     return p;
 }
 

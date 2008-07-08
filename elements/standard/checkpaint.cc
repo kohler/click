@@ -1,8 +1,9 @@
 /*
  * checkpaint.{cc,hh} -- element checks paint annotation
- * Robert Morris
+ * Eddie Kohler, Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,29 +34,40 @@ CheckPaint::~CheckPaint()
 int
 CheckPaint::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_kparse(conf, this, errh,
-		      "COLOR", cpkP+cpkM, cpByte, &_color,
-		      cpEnd);
+    int anno = PAINT_ANNO_OFFSET;
+    if (cp_va_kparse(conf, this, errh,
+		     "COLOR", cpkP+cpkM, cpByte, &_color,
+		     "ANNO", cpkP, cpAnno, 1, &anno,
+		     cpEnd) < 0)
+	return -1;
+    _anno = anno;
+    return 0;
 }
 
 void
 CheckPaint::push(int, Packet *p)
 {
-  if (PAINT_ANNO(p) != _color)
-    checked_output_push(1, p);
-  else
-    output(0).push(p);
+    if (p->anno_u8(_anno) != _color)
+	checked_output_push(1, p);
+    else
+	output(0).push(p);
 }
 
 Packet *
 CheckPaint::pull(int)
 {
-  Packet *p = input(0).pull();
-  if (p && PAINT_ANNO(p) != _color) {
-    checked_output_push(1, p);
-    p = 0;
-  }
-  return p;
+    Packet *p = input(0).pull();
+    if (p && p->anno_u8(_anno) != _color) {
+	checked_output_push(1, p);
+	p = 0;
+    }
+    return p;
+}
+
+void
+CheckPaint::add_handlers()
+{
+    add_data_handlers("color", Handler::OP_READ | Handler::OP_WRITE, &_color);
 }
 
 CLICK_ENDDECLS
