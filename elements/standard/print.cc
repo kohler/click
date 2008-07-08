@@ -91,7 +91,7 @@ Packet *
 Print::simple_action(Packet *p)
 {
     if (!_active)
-	return false;
+	return p;
     
     int bytes = (_contents ? _bytes : 0);
     if (bytes < 0 || (int) p->length() < bytes)
