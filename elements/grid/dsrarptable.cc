@@ -292,8 +292,4 @@ DSRArpTable::lookup_ip(IPAddress ip)
 }
 
 EXPORT_ELEMENT(DSRArpTable)
-
-#include <click/bighashmap.cc>
-template class HashMap<IPAddress, EtherAddress>;
-
 CLICK_ENDDECLS

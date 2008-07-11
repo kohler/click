@@ -18,8 +18,6 @@
 
 #ifndef CLICK_HASHMAP_CC
 #define CLICK_HASHMAP_CC
-
-CLICK_ENDDECLS
 #include <click/hashmap.hh>
 #include <click/bighashmap_arena.hh>
 #include <click/glue.hh>
@@ -719,4 +717,5 @@ _HashMap_const_iterator<K, void *>::operator++(int)
   }
 }
 
+CLICK_ENDDECLS
 #endif

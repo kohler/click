@@ -123,6 +123,4 @@ EtherSwitch::add_handlers()
 }
 
 EXPORT_ELEMENT(EtherSwitch)
-
-#include <click/hashmap.cc>
 CLICK_ENDDECLS

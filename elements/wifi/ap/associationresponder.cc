@@ -411,8 +411,5 @@ AssociationResponder::add_handlers()
   add_write_handler("debug", AssociationResponder_write_param, (void *) H_DEBUG);
 }
 
-
-#include <click/bighashmap.cc>
-#include <click/hashmap.cc>
 CLICK_ENDDECLS
 EXPORT_ELEMENT(AssociationResponder)

@@ -67,5 +67,4 @@ ListenEtherSwitch::push(int source, Packet *p)
 
 ELEMENT_REQUIRES(EtherSwitch)
 EXPORT_ELEMENT(ListenEtherSwitch)
-#include <click/hashmap.cc>
 CLICK_ENDDECLS

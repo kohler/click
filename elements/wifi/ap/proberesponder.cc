@@ -359,8 +359,5 @@ ProbeResponder::add_handlers()
   add_write_handler("interval", ProbeResponder_write_param, (void *) H_INTERVAL);
 }
 
-
-#include <click/bighashmap.cc>
-#include <click/hashmap.cc>
 CLICK_ENDDECLS
 EXPORT_ELEMENT(ProbeResponder)

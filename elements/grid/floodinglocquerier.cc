@@ -420,8 +420,4 @@ FloodingLocQuerier::add_handlers()
 }
 
 EXPORT_ELEMENT(FloodingLocQuerier)
-
-#include <click/hashmap.cc>
-template class HashMap<IPAddress, FloodingLocQuerier::LocEntry>;
-template class HashMap<IPAddress, FloodingLocQuerier::seq_t>;
 CLICK_ENDDECLS

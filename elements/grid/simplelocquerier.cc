@@ -121,7 +121,4 @@ SimpleLocQuerier::add_handlers()
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(SimpleLocQuerier)
-
-#include <click/bighashmap.cc>
-template class HashMap<IPAddress, grid_location>;
 CLICK_ENDDECLS

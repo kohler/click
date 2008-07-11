@@ -110,5 +110,4 @@ TCPDemux::remove_flow(IPAddress sa, unsigned short sp,
 }
 
 EXPORT_ELEMENT(TCPDemux)
-#include <click/hashmap.cc>
 CLICK_ENDDECLS

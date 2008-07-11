@@ -191,10 +191,6 @@ WifiDefrag::add_handlers()
   add_write_handler("debug", write_param, (void *) H_DEBUG);
 }
 
-#include <click/hashmap.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<EtherAddress, WifiDefrag::PacketInfo>;
-#endif
 EXPORT_ELEMENT(WifiDefrag)
 CLICK_ENDDECLS
 

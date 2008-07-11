@@ -373,13 +373,7 @@ AutoRateFallback::add_handlers()
   add_write_handler("offset", AutoRateFallback_write_param, (void *) H_OFFSET);
   add_write_handler("active", AutoRateFallback_write_param, (void *) H_ACTIVE);
 }
-// generate Vector template instance
-#include <click/bighashmap.cc>
-#include <click/dequeue.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<EtherAddress, AutoRateFallback::DstInfo>;
-template class DEQueue<AutoRateFallback::tx_result>;
-#endif
+
 CLICK_ENDDECLS
 EXPORT_ELEMENT(AutoRateFallback)
 

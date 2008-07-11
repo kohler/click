@@ -124,10 +124,6 @@ PacketStore::add_handlers()
 	add_task_handlers(&_task);
 }
 
-#include <click/dequeue.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class DEQueue<struct click_wifi_extra>;
-#endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(PacketStore)
 

@@ -731,14 +731,5 @@ LinkTable::add_handlers() {
 
 }
 
-
-
-#include <click/bighashmap.cc>
-#include <click/hashmap.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<IPAddress, IPAddress>;
-template class HashMap<IPPair, LinkTable::LinkInfo>;
-template class HashMap<IPAddress, LinkTable::HostInfo>;
-#endif
 EXPORT_ELEMENT(LinkTable)
 CLICK_ENDDECLS

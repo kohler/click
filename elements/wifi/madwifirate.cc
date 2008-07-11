@@ -451,13 +451,7 @@ MadwifiRate::add_handlers()
   add_write_handler("alt_rate", MadwifiRate_write_param, (void *) H_ALT_RATE);
 
 }
-// generate Vector template instance
-#include <click/bighashmap.cc>
-#include <click/dequeue.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<EtherAddress, MadwifiRate::DstInfo>;
-template class DEQueue<MadwifiRate::tx_result>;
-#endif
+
 CLICK_ENDDECLS
 EXPORT_ELEMENT(MadwifiRate)
 

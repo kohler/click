@@ -122,11 +122,7 @@ RXStats::add_handlers()
   add_write_handler("reset", RXStats_write_param, (void *) H_RESET, Handler::BUTTON);
 
 }
-// generate Vector template instance
-#include <click/bighashmap.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<EtherAddress, RXStats::DstInfo>;
-#endif
+
 CLICK_ENDDECLS
 EXPORT_ELEMENT(RXStats)
 

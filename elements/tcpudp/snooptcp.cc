@@ -617,5 +617,3 @@ SnoopTCP::PCB::add_ack(Packet *p, unsigned th_ack, int data_len,
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(SnoopTCP)
-
-#include <click/hashmap.cc>

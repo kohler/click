@@ -580,8 +580,4 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(UpdateGridRoutes)
-
-#include <click/bighashmap.cc>
-template class HashMap<IPAddress, UpdateGridRoutes::NbrEntry>;
-template class HashMap<IPAddress, UpdateGridRoutes::far_entry>;
 CLICK_ENDDECLS

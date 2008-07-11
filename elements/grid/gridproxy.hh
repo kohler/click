@@ -73,6 +73,5 @@ public:
     
 };
 
-#include <click/hashmap.cc>
 CLICK_ENDDECLS
 #endif

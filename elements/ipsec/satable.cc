@@ -101,9 +101,5 @@ SATable::print_sa_data()
   return sa.take_string();
 }
 
-#include <click/bighashmap.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<SPI,SADataTuple>;
-#endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(SATable)

@@ -126,7 +126,4 @@ LocationTable::add_handlers()
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LocationTable)
-
-#include <click/bighashmap.cc>
-template class HashMap<IPAddress, LocationTable::entry>;
 CLICK_ENDDECLS

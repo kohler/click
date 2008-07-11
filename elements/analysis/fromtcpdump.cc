@@ -672,5 +672,4 @@ FromTcpdump::add_handlers()
 
 ELEMENT_REQUIRES(userlevel FromFile IPSummaryDump)
 EXPORT_ELEMENT(FromTcpdump)
-#include <click/hashmap.cc>
 CLICK_ENDDECLS

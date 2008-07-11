@@ -333,8 +333,5 @@ BeaconScanner::add_handlers()
   add_write_handler("reset", BeaconScanner_write_param, (void *) H_RESET, Handler::BUTTON);
 }
 
-
-#include <click/bighashmap.cc>
-#include <click/hashmap.cc>
 CLICK_ENDDECLS
 EXPORT_ELEMENT(BeaconScanner)

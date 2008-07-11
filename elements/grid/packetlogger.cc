@@ -114,9 +114,6 @@ PacketLogger::print_log(Element *e, void *)
   return sa.take_string();
 }
 
-#include <click/dequeue.cc>
-template class DEQueue<PacketLogger::log_entry>;
-
 CLICK_ENDDECLS
 EXPORT_ELEMENT(PacketLogger)
 

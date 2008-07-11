@@ -18,8 +18,6 @@
 
 #ifndef CLICK_DEQUEUE_CC
 #define CLICK_DEQUEUE_CC
-
-CLICK_ENDDECLS
 #include <click/dequeue.hh>
 CLICK_DECLS
 
@@ -165,6 +163,5 @@ DEQueue<T>::check_rep()
   }      
 }
 
-
-
+CLICK_ENDDECLS
 #endif

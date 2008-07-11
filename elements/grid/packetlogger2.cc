@@ -128,9 +128,6 @@ PacketLogger2::print_log(Element *e, void *)
   return sa.take_string();
 }
 
-#include <click/dequeue.cc>
-template class DEQueue<PacketLogger2::log_entry>;
-
 CLICK_ENDDECLS
 EXPORT_ELEMENT(PacketLogger2)
 

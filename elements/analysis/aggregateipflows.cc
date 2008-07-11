@@ -609,5 +609,4 @@ AggregateIPFlows::add_handlers()
 
 ELEMENT_REQUIRES(AggregateNotifier)
 EXPORT_ELEMENT(AggregateIPFlows)
-#include <click/hashmap.cc>
 CLICK_ENDDECLS

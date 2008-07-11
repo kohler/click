@@ -698,6 +698,4 @@ IPRw::clear_map(Map &table)
 }
 
 ELEMENT_PROVIDES(IPRw)
-
-#include <click/hashmap.cc>
 CLICK_ENDDECLS

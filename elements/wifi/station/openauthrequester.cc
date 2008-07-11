@@ -233,8 +233,5 @@ OpenAuthRequester::add_handlers()
   add_write_handler("send_auth_req", OpenAuthRequester_write_param, (void *) H_SEND_AUTH_REQ);
 }
 
-
-#include <click/bighashmap.cc>
-#include <click/hashmap.cc>
 CLICK_ENDDECLS
 EXPORT_ELEMENT(OpenAuthRequester)

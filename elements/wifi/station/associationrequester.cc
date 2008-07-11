@@ -407,8 +407,5 @@ AssociationRequester::add_handlers()
 
 }
 
-
-#include <click/bighashmap.cc>
-#include <click/hashmap.cc>
 CLICK_ENDDECLS
 EXPORT_ELEMENT(AssociationRequester)

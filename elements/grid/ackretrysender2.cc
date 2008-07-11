@@ -266,8 +266,5 @@ ACKRetrySender2::add_stat(const Timestamp &t, unsigned num_tx, bool succ)
     num_fail++;
 }
 
-#include <click/dequeue.cc>
-template class DEQueue<ACKRetrySender2::tx_result_t>;
-
 CLICK_ENDDECLS
 EXPORT_ELEMENT(ACKRetrySender2)

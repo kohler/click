@@ -489,9 +489,4 @@ LinkStat::link_entry::write(unsigned char *d) const
 }
 
 EXPORT_ELEMENT(LinkStat)
-
-#include <click/hashmap.cc>
-#include <click/dequeue.cc>
-template class DEQueue<LinkStat::probe_t>;
-template class HashMap<EtherAddress, LinkStat::probe_list_t>;
 CLICK_ENDDECLS

@@ -218,12 +218,5 @@ BeaconTracker::add_handlers()
   add_write_handler("reset", write_param, (void *) H_RESET, Handler::BUTTON);
 }
 
-
-#include <click/bighashmap.cc>
-#include <click/hashmap.cc>
-#include <click/dequeue.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class DEQueue<LinkStat::beacon_t>;
-#endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(BeaconTracker)

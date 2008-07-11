@@ -578,4 +578,5 @@ operator!=(const _HashMap_const_iterator<K, V> &a, const _HashMap_const_iterator
 }
 
 CLICK_ENDDECLS
+#include <click/hashmap.cc>
 #endif

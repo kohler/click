@@ -257,8 +257,5 @@ ACKRetrySender::clear_history(const String &, Element *e, void *, ErrorHandler *
   return 0;
 }
 
-#include <click/dequeue.cc>
-template class DEQueue<ACKRetrySender::tx_result_t>;
-
 CLICK_ENDDECLS
 EXPORT_ELEMENT(ACKRetrySender)

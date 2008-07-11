@@ -228,8 +228,5 @@ OpenAuthResponder::add_handlers()
   add_write_handler("debug", OpenAuthResponder_write_param, (void *) H_DEBUG);
 }
 
-
-#include <click/bighashmap.cc>
-#include <click/hashmap.cc>
 CLICK_ENDDECLS
 EXPORT_ELEMENT(OpenAuthResponder)

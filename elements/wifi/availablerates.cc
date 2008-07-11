@@ -240,14 +240,6 @@ AvailableRates::add_handlers()
   
 }
 
-
-
-
-// generate Vector template instance
-#include <click/bighashmap.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<IPAddress, AvailableRates::DstInfo>;
-#endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(AvailableRates)
 

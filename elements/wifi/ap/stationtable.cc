@@ -83,14 +83,6 @@ StationTable::add_handlers()
 
 }
 
-
-
-
-// generate Vector template instance
-#include <click/bighashmap.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<EtherAddress, Station>;
-#endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(StationTable)
 

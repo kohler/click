@@ -1619,10 +1619,4 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridRouteTable)
 ELEMENT_PROVIDES(GridGenericRouteTable)
-
-#include <click/bighashmap.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<IPAddress, GridRouteTable::RTEntry>;
-template class HashMap<IPAddress, bool>;
-#endif
 CLICK_ENDDECLS

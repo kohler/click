@@ -207,8 +207,5 @@ ProbeRequester::add_handlers()
   add_write_handler("send_probe", ProbeRequester_write_param, (void *) H_SEND_PROBE);
 }
 
-
-#include <click/bighashmap.cc>
-#include <click/hashmap.cc>
 CLICK_ENDDECLS
 EXPORT_ELEMENT(ProbeRequester)

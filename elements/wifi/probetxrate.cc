@@ -366,13 +366,7 @@ ProbeTXRate::add_handlers()
   add_write_handler("active", ProbeTXRate_write_param, (void *) H_ACTIVE);
   
 }
-// generate Vector template instance
-#include <click/bighashmap.cc>
-#include <click/dequeue.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<EtherAddress, ProbeTXRate::DstInfo>;
-template class DEQueue<ProbeTXRate::tx_result>;
-#endif
+
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(bitrate)
 EXPORT_ELEMENT(ProbeTXRate)

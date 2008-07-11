@@ -1674,12 +1674,4 @@ DSDVRouteTable::dsdv_assert_(const char *file, int line, const char *expr) const
 
 ELEMENT_PROVIDES(GridGenericRouteTable)
 EXPORT_ELEMENT(DSDVRouteTable)
-
-#include <click/hashmap.cc>
-template class HashMap<IPAddress, DSDVRouteTable::RTEntry>;
-template class HashMap<IPAddress, Timer *>;
-
-#include <click/dequeue.cc>
-template class DEQueue<unsigned>;
-
 CLICK_ENDDECLS

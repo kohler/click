@@ -143,4 +143,5 @@ DEQueue<T>::pop_back()
 }
 
 CLICK_ENDDECLS
+#include <click/dequeue.cc>
 #endif

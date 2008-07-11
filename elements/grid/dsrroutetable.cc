@@ -1974,11 +1974,4 @@ DSRRouteTable::last_forwarder_eth(Packet *p)
 
 ELEMENT_REQUIRES(LinkTable)
 EXPORT_ELEMENT(DSRRouteTable)
-
-#include <click/bighashmap.cc>
-template class HashMap<DSRRouteTable::ForwardedReqKey, DSRRouteTable::ForwardedReqVal>;
-template class HashMap<IPAddress, DSRRouteTable::InitiatedReq>;
-template class HashMap<IPAddress, DSRRouteTable::SendBuffer>;
-template class HashMap<IPAddress, DSRRouteTable::BlacklistEntry>;
-
 CLICK_ENDDECLS

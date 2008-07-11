@@ -336,10 +336,4 @@ LinkTracker::add_handlers()
 
 ELEMENT_REQUIRES(userlevel|ns)
 EXPORT_ELEMENT(LinkTracker)
-
-#include <click/hashmap.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<IPAddress, LinkTracker::stat_t>;
-template class HashMap<IPAddress, LinkTracker::bcast_t>;
-#endif
 CLICK_ENDDECLS
