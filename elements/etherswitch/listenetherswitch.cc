@@ -35,7 +35,7 @@ ListenEtherSwitch::~ListenEtherSwitch()
 void
 ListenEtherSwitch::push(int source, Packet *p)
 {
-    click_ether* e = (click_ether*) p->data();
+    const click_ether* e = (const click_ether*) p->data();
     int outport = -1;		// Broadcast
 
     // 0 timeout means dumb switch
