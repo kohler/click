@@ -729,8 +729,3 @@ ElementMap::TraitsIterator::operator++(int)
 	_index++;
     }
 }
-
-
-// template instance
-#include <click/vector.cc>
-template class Vector<ElementMap::Globals>;

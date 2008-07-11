@@ -454,11 +454,9 @@ MadwifiRate::add_handlers()
 // generate Vector template instance
 #include <click/bighashmap.cc>
 #include <click/dequeue.cc>
-#include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class HashMap<EtherAddress, MadwifiRate::DstInfo>;
 template class DEQueue<MadwifiRate::tx_result>;
-template class Vector<EtherAddress>;
 #endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(MadwifiRate)

@@ -1676,10 +1676,8 @@ ELEMENT_PROVIDES(GridGenericRouteTable)
 EXPORT_ELEMENT(DSDVRouteTable)
 
 #include <click/hashmap.cc>
-#include <click/vector.cc>
 template class HashMap<IPAddress, DSDVRouteTable::RTEntry>;
 template class HashMap<IPAddress, Timer *>;
-template class Vector<DSDVRouteTable::RTEntry>;
 
 #include <click/dequeue.cc>
 template class DEQueue<unsigned>;

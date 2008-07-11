@@ -243,7 +243,3 @@ ElementTraits::make(int component, ...)
     va_end(val);
     return t;
 }
-
-// template instance
-#include <click/vector.cc>
-template class Vector<ElementTraits>;

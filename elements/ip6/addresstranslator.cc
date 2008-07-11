@@ -790,9 +790,7 @@ EXPORT_ELEMENT(AddressTranslator)
 
 // generate Vector template instance
 #include <click/hashmap.cc>
-#include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<AddressTranslator::EntryMap>;
 template class HashMap<IP6FlowID, AddressTranslator::Mapping *>
 template class HashMapIterator<IP6FlowID, AddressTranslator::Mapping *>;
 #endif

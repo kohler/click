@@ -233,7 +233,4 @@ ArchiveElement::arindex(const Vector<ArchiveElement> &archive, const String &wha
   return -1;
 }
 
-// generate Vector template instance
-#include <click/vector.cc>
-template class Vector<ArchiveElement>;
 CLICK_ENDDECLS

@@ -1144,5 +1144,3 @@ LexerT::finish(const VariableEnvironment &global_scope)
     // returned router has one reference count
     return r;
 }
-
-#include <click/vector.cc>

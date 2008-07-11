@@ -4,7 +4,6 @@
 #include <click/config.h>
 #include "cdriver.hh"
 #include <click/confparse.hh>
-#include <click/vector.cc>
 #include <click/llrpc.h>
 #include <clicktool/etraits.hh>
 #include <sys/types.h>

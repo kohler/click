@@ -309,4 +309,5 @@ class Vector<T*>: private Vector<void*> {
 };
 
 CLICK_ENDDECLS
+#include <click/vector.cc>
 #endif

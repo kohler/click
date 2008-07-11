@@ -271,10 +271,4 @@ IP6NDAdvertiser::simple_action(Packet *p)
 
 ELEMENT_REQUIRES(ip6)
 EXPORT_ELEMENT(IP6NDAdvertiser)
-
-// generate Vector template instance
-#include <click/vector.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<IP6NDAdvertiser::Entry>;
-#endif
 CLICK_ENDDECLS

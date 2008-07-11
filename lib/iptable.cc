@@ -78,9 +78,6 @@ IPTable::del(IPAddress dst, IPAddress mask)
     }
 }
 
-
-// generate Vector template instance
-#include <click/vector.cc>
-// must always generate the whole instance! LookupIPRoute demands it
+// must always generate the whole template instance! LookupIPRoute demands it
 template class Vector<IPTable::Entry>;
 CLICK_ENDDECLS

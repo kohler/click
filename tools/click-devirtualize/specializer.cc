@@ -594,8 +594,3 @@ Specializer::output_new_elementmap(const ElementMap &full_em, ElementMap &em,
 	    em.add(e);
 	}
 }
-
-// Vector template instantiation
-#include <click/vector.cc>
-template class Vector<ElementTypeInfo>;
-template class Vector<SpecializedClass>;

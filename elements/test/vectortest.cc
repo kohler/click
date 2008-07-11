@@ -70,6 +70,5 @@ VectorTest::initialize(ErrorHandler *errh)
     return 0;
 }
 
-EXPORT_ELEMENT(VectorTest)
-#include <click/vector.cc>
 CLICK_ENDDECLS
+EXPORT_ELEMENT(VectorTest)

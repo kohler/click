@@ -582,11 +582,6 @@ ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(UpdateGridRoutes)
 
 #include <click/bighashmap.cc>
-#include <click/vector.cc>
 template class HashMap<IPAddress, UpdateGridRoutes::NbrEntry>;
 template class HashMap<IPAddress, UpdateGridRoutes::far_entry>;
-#if 0 // now included in the new DSDV implementation, gridroutetable.cc
-template class Vector<IPAddress>;
-#endif
-template class Vector<grid_nbr_entry>;
 CLICK_ENDDECLS

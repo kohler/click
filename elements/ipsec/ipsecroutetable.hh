@@ -3,7 +3,6 @@
 #define CLICK_IPSECROUTETABLE_HH
 #include <click/glue.hh>
 #include <click/element.hh>
-#include <click/vector.cc>
 #include "satable.hh"
 #include "sadatatuple.hh"
 CLICK_DECLS

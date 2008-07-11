@@ -1161,10 +1161,6 @@ LookupIPRouteRON::print_time(char* s) {
 }
 
 
-// generate Vector template instance
-#include <click/vector.cc>
-// must always generate the whole instance! LookupIPRoute demands it
+// must always generate the whole template instance! LookupIPRoute demands it
 template class Vector<LookupIPRouteRON::FlowTableEntry>;
-
-
 EXPORT_ELEMENT(LookupIPRouteRON)

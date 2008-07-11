@@ -2121,8 +2121,4 @@ Router::sim_get_next_pkt_id() {
 
 #endif // CLICK_NS
 
-#if CLICK_USERLEVEL
-// Vector template instance
-# include <click/vector.cc>
-#endif
 CLICK_ENDDECLS

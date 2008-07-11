@@ -1142,9 +1142,4 @@ Master::info() const
 
 #endif
 
-
-#if CLICK_USERLEVEL
-// Vector template instance
-# include <click/vector.cc>
-#endif
 CLICK_ENDDECLS

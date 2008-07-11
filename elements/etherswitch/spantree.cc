@@ -299,12 +299,6 @@ EtherSpanTree::generate_packet(int output)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(EtherSpanTree)
 ELEMENT_REQUIRES(Suppressor EtherSwitchBridgeMessage)
-
-// generate Vector template instance
-#include <click/vector.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<EtherSpanTree::PortInfo>;
-#endif
-CLICK_ENDDECLS

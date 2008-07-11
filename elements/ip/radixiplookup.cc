@@ -216,9 +216,6 @@ RadixIPLookup::lookup_route(IPAddress addr, IPAddress &gw) const
     }
 }
 
-// generate Vector template instance
-#include <click/vector.cc>
-//template class Vector<RadixIPLookup::Entry>;
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRouteTable)
 EXPORT_ELEMENT(RadixIPLookup)

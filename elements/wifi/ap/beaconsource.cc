@@ -383,9 +383,6 @@ BeaconSource::add_handlers()
 
 #include <click/bighashmap.cc>
 #include <click/hashmap.cc>
-#include <click/vector.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-#endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(BeaconSource)
   

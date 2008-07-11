@@ -24,8 +24,6 @@
 #include <click/etheraddress.hh>
 CLICK_DECLS
 
-#include <click/vector.cc>
-template class Vector<Router::Hookup>;
 template class Vector<int>;
 template class Vector<unsigned int>;
 template class Vector<String>;

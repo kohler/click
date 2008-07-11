@@ -106,5 +106,3 @@ LandmarkSetT::offset_to_decorated_string(unsigned offset1, unsigned offset2) con
 	sa << "<unknown>";
     return sa.take_string();
 }
-
-#include <click/vector.cc>

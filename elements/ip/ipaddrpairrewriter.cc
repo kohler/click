@@ -242,5 +242,4 @@ IPAddrPairRewriter::add_handlers()
 ELEMENT_REQUIRES(IPRw IPRewriterPatterns)
 EXPORT_ELEMENT(IPAddrPairRewriter)
 #include <click/hashmap.cc>
-#include <click/vector.cc>
 CLICK_ENDDECLS

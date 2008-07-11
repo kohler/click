@@ -97,7 +97,4 @@ IP6Table::dump()
     return sa.take_string();
 }
 
-// generate Vector template instance
-#include <click/vector.cc>
-template class Vector<IP6Table::Entry>;
 CLICK_ENDDECLS

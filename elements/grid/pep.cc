@@ -420,9 +420,6 @@ PEP::add_handlers()
   add_read_handler("status", pep_read_handler, (void *) 0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(GridLocationInfo Amoeba)
 EXPORT_ELEMENT(PEP)
-
-#include <click/vector.cc>
-template class Vector<PEP::Entry>;
-CLICK_ENDDECLS

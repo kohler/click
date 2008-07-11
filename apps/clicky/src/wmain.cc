@@ -16,7 +16,6 @@
 #include <click/straccum.hh>
 #include <click/confparse.hh>
 #include <click/pathvars.h>
-#include <click/vector.cc>
 #include <math.h>
 #include <algorithm>
 #include <unistd.h>

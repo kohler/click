@@ -211,7 +211,3 @@ Signatures::analyze(ElementMap &em)
     _sigid.swap(new_sigid);
   }
 }
-
-// generate Vector template instance
-#include <click/vector.cc>
-template class Vector<SignatureNode>;

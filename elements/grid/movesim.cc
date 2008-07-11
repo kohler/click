@@ -144,9 +144,6 @@ MovementSimulator::find_entry(unsigned int t, event_entry **retval)
   return false;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel GridLocationInfo)
 EXPORT_ELEMENT(MovementSimulator)
-
-#include <click/vector.cc>
-template class Vector<MovementSimulator::node_event>;
-CLICK_ENDDECLS

@@ -176,7 +176,6 @@ AggregateIP::add_handlers()
     add_read_handler("field", read_handler, (void *)3);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel IPFieldInfo)
 EXPORT_ELEMENT(AggregateIP)
-#include <click/vector.cc>
-CLICK_ENDDECLS

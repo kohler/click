@@ -11,7 +11,6 @@
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/pair.hh>
-#include <click/vector.cc>
 #include <clicktool/routert.hh>
 #include <clicktool/lexert.hh>
 #include <clicktool/lexertinfo.hh>

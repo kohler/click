@@ -700,8 +700,4 @@ IPRw::clear_map(Map &table)
 ELEMENT_PROVIDES(IPRw)
 
 #include <click/hashmap.cc>
-#include <click/vector.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<IPRw::InputSpec>;
-#endif
 CLICK_ENDDECLS

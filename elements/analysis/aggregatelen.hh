@@ -2,6 +2,7 @@
 #ifndef CLICK_AGGREGATELEN_HH
 #define CLICK_AGGREGATELEN_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -62,4 +63,5 @@ class AggregateLength : public Element { public:
     
 };
 
+CLICK_ENDDECLS
 #endif

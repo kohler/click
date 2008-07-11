@@ -382,8 +382,6 @@ EstimateRouterRegion::add_handlers()
   add_read_handler("status", pep_read_handler, (void *) 0);
 }
 
-#include <click/vector.cc>
-template class Vector<EstimateRouterRegion::Entry>;
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(GridLocationInfo Amoeba RectRegion)
 EXPORT_ELEMENT(EstimateRouterRegion)

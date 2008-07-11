@@ -77,9 +77,6 @@ PortInfo::configure(Vector<String> &conf, ErrorHandler *errh)
     return (errh->nerrors() == before ? 0 : -1);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(PortInfo)
 ELEMENT_HEADER(<click/standard/portinfo.hh>)
-
-// template instance
-#include <click/vector.cc>
-CLICK_ENDDECLS

@@ -666,7 +666,3 @@ particular purpose.\n");
     exit(1);
   return 0;
 }
-
-// generate Vector template instance
-#include <click/vector.cc>
-template class Vector<Alignment>;

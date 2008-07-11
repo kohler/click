@@ -1819,5 +1819,4 @@ Lexer::expand_connection(const Hookup &this_end, bool is_out,
   }
 }
 
-#include <click/vector.cc>
 CLICK_ENDDECLS

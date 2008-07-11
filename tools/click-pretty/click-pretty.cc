@@ -1418,5 +1418,3 @@ particular purpose.\n");
 	
     exit(errh->nerrors() > 0 ? 1 : 0);
 }
-
-#include <click/vector.cc>

@@ -818,7 +818,3 @@ CxxInfo::parse_file(const String &original_text, bool header,
     *store_includes = original_text.substring(0, p);
   }
 }
-
-// Vector template instantiation
-#include <click/vector.cc>
-template class Vector<CxxFunction>;

@@ -252,8 +252,7 @@ IPAddrRewriter::add_handlers()
     add_read_handler("patterns", dump_patterns_handler, (void *)0);
 }
 
+#include <click/hashmap.cc>
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRw IPRewriterPatterns)
 EXPORT_ELEMENT(IPAddrRewriter)
-#include <click/hashmap.cc>
-#include <click/vector.cc>
-CLICK_ENDDECLS

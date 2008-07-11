@@ -1052,14 +1052,7 @@ Classifier::push(int, Packet *p)
   checked_output_push(-pos, p);
 }
 
-
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(AlignmentInfo)
 EXPORT_ELEMENT(Classifier)
 ELEMENT_MT_SAFE(Classifier)
-
-// generate Vector template instance
-#include <click/vector.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<Classifier::Expr>;
-#endif
-CLICK_ENDDECLS

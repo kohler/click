@@ -243,7 +243,6 @@ LinearIPLookup::push(int, Packet *p)
     output(e.port).push(p);
 }
 
-#include <click/vector.cc>
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRouteTable)
 EXPORT_ELEMENT(LinearIPLookup)

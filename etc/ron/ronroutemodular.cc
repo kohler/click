@@ -267,10 +267,7 @@ RONRouteModular::FlowTable::remove(IPAddress src, unsigned short sport,
 }
 
 
-// generate Vector template instance
-#include <click/vector.cc>
-// must always generate the whole instance! RONRouteModular demands it
+// must always generate the whole template instance! RONRouteModular demands it
 template class Vector<RONRouteModular::Policy*>;
 //template class Vector<RONRouteModular::FlowTableEntry>;
-
 EXPORT_ELEMENT(RONRouteModular)

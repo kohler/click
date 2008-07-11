@@ -17,7 +17,6 @@
 
 #include <click/config.h>
 
-#include <click/vector.cc>
 #include <click/string.hh>
 #include <click/ipaddress.hh>
 #include "routert.hh"

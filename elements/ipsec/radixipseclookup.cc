@@ -225,9 +225,6 @@ RadixIPsecLookup::lookup_route(IPAddress addr, IPAddress &gw, unsigned int &spi,
     }
 }
 
-// generate Vector template instance
-#include <click/vector.cc>
-//template class Vector<RadixIPsecLookup::Entry>;
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPsecRouteTable)
 EXPORT_ELEMENT(RadixIPsecLookup)

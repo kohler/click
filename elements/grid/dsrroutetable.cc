@@ -1976,10 +1976,8 @@ ELEMENT_REQUIRES(LinkTable)
 EXPORT_ELEMENT(DSRRouteTable)
 
 #include <click/bighashmap.cc>
-#include <click/vector.cc>
 template class HashMap<DSRRouteTable::ForwardedReqKey, DSRRouteTable::ForwardedReqVal>;
 template class HashMap<IPAddress, DSRRouteTable::InitiatedReq>;
-template class Vector<DSRRouteTable::BufferedPacket>;
 template class HashMap<IPAddress, DSRRouteTable::SendBuffer>;
 template class HashMap<IPAddress, DSRRouteTable::BlacklistEntry>;
 

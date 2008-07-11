@@ -221,7 +221,6 @@ BeaconTracker::add_handlers()
 
 #include <click/bighashmap.cc>
 #include <click/hashmap.cc>
-#include <click/vector.cc>
 #include <click/dequeue.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class DEQueue<LinkStat::beacon_t>;

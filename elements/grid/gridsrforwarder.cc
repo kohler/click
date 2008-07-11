@@ -149,9 +149,6 @@ GridSRForwarder::handle_host(Packet *p)
   }
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(GridSRForwarder)
 ELEMENT_REQUIRES(userlevel)
-
-#include <click/vector.cc>
-template class Vector<unsigned short>;
-CLICK_ENDDECLS

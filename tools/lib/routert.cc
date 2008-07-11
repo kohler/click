@@ -1429,6 +1429,3 @@ RouterT::unparse_signature() const
 {
     return ElementClassT::unparse_signature(name(), &_scope.values(), -1, ninputs(), noutputs());
 }
-
-
-#include <click/vector.cc>

@@ -45,7 +45,5 @@ SpinlockInfo::configure(Vector<String> &conf, ErrorHandler *errh)
     return (errh->nerrors() == before ? 0 : -1);
 }
 
-// template instance
-#include <click/vector.cc>
 CLICK_ENDDECLS
 EXPORT_ELEMENT(SpinlockInfo)

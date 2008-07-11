@@ -2221,5 +2221,3 @@ int delt::find_gadget(wdiagram *d, double window_x, double window_y) const
 }
 
 }
-
-#include <click/vector.cc>

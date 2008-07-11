@@ -510,7 +510,6 @@ void PolicyProbe::FlowTable::remove(FlowTableEntry *entry) {
   remove(entry->src, entry->sport, entry->dst, entry->dport);
 }
 
-#include <click/vector.cc>
 template class Vector<PolicyProbe::FlowTableEntry*>;
 template class Vector<PolicyProbe::FlowTableEntry>;
 ELEMENT_PROVIDES(PolicyProbe)

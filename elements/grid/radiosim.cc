@@ -188,9 +188,6 @@ RadioSim::add_handlers()
   add_read_handler("loc", rs_read_handler, (void *) 0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(FilterByRange)
 EXPORT_ELEMENT(RadioSim)
-
-#include <click/vector.cc>
-template class Vector<RadioSim::Node>;
-CLICK_ENDDECLS

@@ -215,10 +215,4 @@ ARPResponder::add_handlers()
 }
 
 EXPORT_ELEMENT(ARPResponder)
-
-// generate Vector template instance
-#include <click/vector.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<ARPResponder::Entry>;
-#endif
 CLICK_ENDDECLS

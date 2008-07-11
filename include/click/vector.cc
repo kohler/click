@@ -18,8 +18,6 @@
 
 #ifndef CLICK_VECTOR_CC
 #define CLICK_VECTOR_CC
-
-CLICK_ENDDECLS
 #include <click/glue.hh>
 #include <click/vector.hh>
 CLICK_DECLS
@@ -177,4 +175,5 @@ Vector<T>::swap(Vector<T> &x)
     x._capacity = cap;
 }
 
+CLICK_ENDDECLS
 #endif

@@ -86,9 +86,6 @@ LocFromFile::choose_new_leg(double *nlat, double *nlon, double *nt)
     _next = 0;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel GridLocationInfo)
 EXPORT_ELEMENT(LocFromFile)
-
-#include <click/vector.cc>
-template class Vector<LocFromFile::delta>;
-CLICK_ENDDECLS

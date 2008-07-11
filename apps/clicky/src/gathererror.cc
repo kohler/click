@@ -156,5 +156,3 @@ String GatherErrorHandler::message_string(const_iterator begin, const_iterator e
 	sa << begin->message;
     return sa.take_string();
 }
-
-#include <click/vector.cc>

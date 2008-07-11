@@ -6,6 +6,7 @@
 #include <click/confparse.hh>
 #include <clicknet/ip.h>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 AggregateLength::AggregateLength()
 {
@@ -69,7 +70,6 @@ AggregateLength::pull(int)
     return p;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(AggregateLength)
-
-#include <click/vector.cc>
