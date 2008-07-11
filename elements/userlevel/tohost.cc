@@ -50,14 +50,10 @@ ToHost::~ToHost()
 int
 ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "DEVNAME", cpkP+cpkM, cpString, &_dev_name, 
-		   cpEnd) < 0)
-    return -1;
-
-  return 0;
+    return cp_va_kparse(conf, this, errh,
+			"DEVNAME", cpkP+cpkM, cpString, &_dev_name, 
+			cpEnd);
 }
-
 
 int
 ToHost::initialize(ErrorHandler *errh)
@@ -81,8 +77,8 @@ ToHost::initialize(ErrorHandler *errh)
 void
 ToHost::push(int, Packet *p)
 {
-    if (p->length() < sizeof(struct click_ether)){
-	click_chatter("ToHost: packet to small");
+    if (p->length() < sizeof(click_ether)) {
+	click_chatter("ToHost: packet too small");
 	p->kill();
 	return;
     }

@@ -138,6 +138,10 @@ new connection or drops an old one. Default is false.
 Boolean. PlanetLab specific. If true and Click has been configured
 --with-proper, use Proper to bind a reserved port.
 
+=item HEADROOM
+
+Integer. Per-packet headroom. Defaults to 28.
+
 =back
 
 =e
@@ -226,6 +230,7 @@ private:
   int _sndbuf;			// maximum socket send buffer in bytes
   int _rcvbuf;			// maximum socket receive buffer in bytes
   int _snaplen;			// maximum received packet length
+  unsigned _headroom;
   int _nodelay;			// disable Nagle algorithm
   bool _verbose;		// be verbose
   bool _client;			// client or server

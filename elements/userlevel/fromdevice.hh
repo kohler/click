@@ -23,7 +23,7 @@ CLICK_DECLS
 
 =c
 
-FromDevice(DEVNAME [, I<keywords> SNIFFER, PROMISC, SNAPLEN, FORCE_IP, CAPTURE, BPF_FILTER, OUTBOUND])
+FromDevice(DEVNAME [, I<keywords> SNIFFER, PROMISC, SNAPLEN, FORCE_IP, CAPTURE, BPF_FILTER, OUTBOUND, HEADROOM])
 
 =s netdevices
 
@@ -96,6 +96,11 @@ then any filter expression is ignored with a warning.
 Boolean. If true, then emit packets that the kernel sends to the given
 interface, as well as packets that the kernel receives from it. Default is
 false.
+
+=item HEADROOM
+
+Integer. Amount of bytes of headroom to leave before the packet data. Defaults
+to roughly 28.
 
 =back
 
@@ -193,6 +198,7 @@ class FromDevice : public Element { public:
     bool _outbound : 1;
     int _was_promisc : 2;
     int _snaplen;
+    unsigned _headroom;
     enum { CAPTURE_PCAP, CAPTURE_LINUX };
     int _capture;
 #if FROMDEVICE_PCAP

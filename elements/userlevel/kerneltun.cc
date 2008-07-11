@@ -85,13 +85,15 @@ int
 KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _gw = IPAddress();
-    _headroom = Packet::DEFAULT_HEADROOM;
+    _headroom = Packet::default_headroom;
+    _adjust_headroom = false;
+    _headroom += (4 - _headroom % 4) % 4; // default 4/0 alignment
     _mtu_out = DEFAULT_MTU;
     if (cp_va_kparse(conf, this, errh,
 		     "ADDR", cpkP+cpkM, cpIPPrefix, &_near, &_mask,
 		     "GATEWAY", cpkP, cpIPAddress, &_gw,
 		     "TAP", 0, cpBool, &_tap,
-		     "HEADROOM", 0, cpUnsigned, &_headroom,
+		     "HEADROOM", cpkC, &_adjust_headroom, cpUnsigned, &_headroom,
 		     "ETHER", 0, cpEthernetAddress, &_macaddr,
 		     "IGNORE_QUEUE_OVERFLOWS", 0, cpBool, &_ignore_q_errs,
 		     "MTU", 0, cpInteger, &_mtu_out,
@@ -115,7 +117,10 @@ KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
 
     if (_mtu_out < (int) sizeof(click_ip))
 	return errh->error("MTU must be greater than %d", sizeof(click_ip));
-    
+    if (_headroom > 8192)
+	return errh->error("HEADROOM too big");
+    else
+	_adjust_headroom = !_adjust_headroom;
     return 0;
 }
 
@@ -404,6 +409,12 @@ KernelTun::initialize(ErrorHandler *errh)
     if (input_is_pull(0)) {
 	ScheduleInfo::join_scheduler(this, &_task, errh);
 	_signal = Notifier::upstream_empty_signal(this, 0, &_task);
+    }
+    if (_adjust_headroom) {
+	if (_tap && _type == LINUX_UNIVERSAL)
+	    _headroom += (4 - (_headroom + 2) % 4) % 4; // default 4/2 alignment
+	else
+	    _headroom += (4 - _headroom % 4) % 4; // default 4/0 alignment
     }
     add_select(_fd, SELECT_READ);
     return 0;

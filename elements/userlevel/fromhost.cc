@@ -52,23 +52,24 @@ FromHost::~FromHost()
 int
 FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _headroom = Packet::DEFAULT_HEADROOM;
-  _mtu_out = DEFAULT_MTU;
+    _headroom = Packet::default_headroom;
+    _headroom += (4 - (_headroom + 2) % 4) % 4; // default 4/2 alignment
+    _mtu_out = DEFAULT_MTU;
 
-  if (cp_va_kparse(conf, this, errh,
-		   "DEVNAME", cpkP+cpkM, cpString, &_dev_name, 
-		   "DST", cpkP, cpIPPrefix, &_near, &_mask,
-		   "ETHER", 0, cpEthernetAddress, &_macaddr,
-		   "HEADROOM", 0, cpUnsigned, &_headroom,
-		   "MTU", 0, cpInteger, &_mtu_out,
-		   cpEnd) < 0)
-    return -1;
+    if (cp_va_kparse(conf, this, errh,
+		     "DEVNAME", cpkP+cpkM, cpString, &_dev_name, 
+		     "DST", cpkP, cpIPPrefix, &_near, &_mask,
+		     "ETHER", 0, cpEthernetAddress, &_macaddr,
+		     "HEADROOM", 0, cpUnsigned, &_headroom,
+		     "MTU", 0, cpInteger, &_mtu_out,
+		     cpEnd) < 0)
+	return -1;
 
-  if (!_dev_name) {
-      return errh->error("must specify device name");
-  }
-
-  return 0;
+    if (!_dev_name)
+	return errh->error("must specify device name");
+    if (_headroom > 8192)
+	return errh->error("HEADROOM too large");
+    return 0;
 }
 
 int

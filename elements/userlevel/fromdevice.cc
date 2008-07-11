@@ -74,6 +74,8 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool promisc = false, outbound = false, sniffer = true;
     _snaplen = 2046;
+    _headroom = Packet::default_headroom;
+    _headroom += (4 - (_headroom + 2) % 4) % 4; // default 4/2 alignment
     _force_ip = false;
     String bpf_filter, capture;
     if (cp_va_kparse(conf, this, errh,
@@ -85,10 +87,13 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "CAPTURE", 0, cpWord, &capture,
 		     "BPF_FILTER", 0, cpString, &bpf_filter,
 		     "OUTBOUND", 0, cpBool, &outbound,
+		     "HEADROOM", 0, cpUnsigned, &_headroom,
 		     cpEnd) < 0)
 	return -1;
     if (_snaplen > 8190 || _snaplen < 14)
-	return errh->error("maximum packet length out of range");
+	return errh->error("SNAPLEN out of range");
+    if (_headroom > 8190)
+	return errh->error("HEADROOM out of range");
     
 #if FROMDEVICE_PCAP
     _bpf_filter = bpf_filter;
@@ -345,24 +350,7 @@ FromDevice_get_packet(u_char* clientdata,
 
     FromDevice *fd = (FromDevice *) clientdata;
     int length = pkthdr->caplen;
-#if defined(__sparc)
-    // Packet::make(data,length) allocates new buffer to install
-    // DEFAULT_HEADROOM (28 bytes). Thus data winds up on a 4 byte
-    // boundary, irrespective of its original alignment. We assume we
-    // want a two byte offset from a four byte boundary (DLT_EN10B).
-    //
-    // Furthermore, note that pcap-dlpi on Solaris uses bufmod by
-    // default, hence while pcap-dlpi.pcap_read() is careful to load
-    // the initial read from the stream head into a buffer aligned
-    // appropriately for the network interface type, (I believe)
-    // subsequent packets in the batched read will be copied from the
-    // Stream's byte sequence into the pcap-dlpi user-level buffer at
-    // arbitrary alignments.
-    Packet *p = Packet::make(data - 2, length + 2);
-    p->pull(2); 
-#else
-    Packet *p = Packet::make(data, length);
-#endif
+    Packet *p = Packet::make(fd->_headroom, data, length, 0);
 
     // set packet type annotation
     if (p->data()[0] & 1) {
@@ -403,13 +391,7 @@ FromDevice::selected(int)
     if (_capture == CAPTURE_LINUX) {
 	struct sockaddr_ll sa;
 	socklen_t fromlen = sizeof(sa);
-	// store data offset 2 bytes into the packet, assuming that first 14
-	// bytes are ether header, and that we want remaining data to be
-	// 4-byte aligned.  this assumes that _packetbuf is 4-byte aligned,
-	// and that the buffer allocated by Packet::make is also 4-byte
-	// aligned.  Actually, it doesn't matter if the packet is 4-byte
-	// aligned; perhaps there is some efficiency aspect?  who cares....
-	WritablePacket *p = Packet::make(2, 0, _snaplen, 0);
+	WritablePacket *p = Packet::make(_headroom, 0, _snaplen, 0);
 	int len = recvfrom(_linux_fd, p->data(), p->length(), MSG_TRUNC, (sockaddr *)&sa, &fromlen);
 	if (len > 0 && (sa.sll_pkttype != PACKET_OUTGOING || _outbound)) {
 	    if (len > _snaplen) {

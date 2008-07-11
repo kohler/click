@@ -136,13 +136,14 @@ class KernelTun : public Element { public:
     IPAddress _mask;
     IPAddress _gw;
     EtherAddress _macaddr;
-    int _headroom;
+    unsigned _headroom;
     Task _task;
     NotifierSignal _signal;
     
     bool _ignore_q_errs;
     bool _printed_write_err;
     bool _printed_read_err;
+    bool _adjust_headroom;
 
     static String print_dev_name(Element *e, void *);
 

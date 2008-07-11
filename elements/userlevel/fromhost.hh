@@ -40,7 +40,7 @@ CLICK_DECLS
  * is specified, then FromHost tries to set up a default route through that
  * host.  HEADROOM is the number of bytes left empty before the packet data
  * (to leave room for additional encapsulation headers). Default HEADROOM is
- * 0.
+ * roughly 28.
  *
  * Keyword arguments are:
  *
@@ -120,7 +120,7 @@ class FromHost : public Element { public:
     String _dev_name;
     IPAddress _near;
     IPAddress _mask;
-    int _headroom;
+    unsigned _headroom;
 
     EtherAddress _macaddr;
 

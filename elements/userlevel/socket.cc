@@ -44,7 +44,7 @@ Socket::Socket()
     _fd(-1), _active(-1), _rq(0), _wq(0),
     _local_port(0), _local_pathname(""),
     _timestamp(true), _sndbuf(-1), _rcvbuf(-1),
-    _snaplen(2048), _nodelay(1),
+    _snaplen(2048), _headroom(Packet::default_headroom), _nodelay(1),
     _verbose(false), _client(false), _proper(false), _allow(0), _deny(0)
 {
 }
@@ -69,6 +69,7 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_kparse_remove_keywords(conf, this, errh,
 		"VERBOSE", 0, cpBool, &_verbose,
 		"SNAPLEN", 0, cpUnsigned, &_snaplen,
+		"HEADROOM", 0, cpUnsigned, &_headroom,
 		"TIMESTAMP", 0, cpBool, &_timestamp,
 		"RCVBUF", 0, cpUnsigned, &_rcvbuf,
 		"SNDBUF", 0, cpUnsigned, &_sndbuf,
@@ -367,7 +368,7 @@ Socket::selected(int fd)
 
     // read data from socket
     if (!_rq)
-      _rq = Packet::make(_snaplen);
+      _rq = Packet::make(_headroom, 0, _snaplen, 0);
     if (_rq) {
       if (_socktype == SOCK_STREAM)
 	len = read(_active, _rq->data(), _rq->length());

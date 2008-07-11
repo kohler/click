@@ -48,7 +48,7 @@ CLICK_DECLS
 RawSocket::RawSocket()
   : _task(this), _timer(this),
     _fd(-1), _port(0), _proper(false), _snaplen(2048),
-    _headroom(Packet::DEFAULT_HEADROOM), _rq(0), _wq(0)
+    _headroom(Packet::default_headroom), _rq(0), _wq(0)
 {
 }
 
