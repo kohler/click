@@ -161,7 +161,11 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     if (!_dev)
 	return errh->error("out of memory! registering device '%s'", _devname.c_str());
     else if ((res = register_netdev(_dev)) < 0) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+	free_netdev(_dev);
+#else
 	kfree(_dev);
+#endif
 	_dev = 0;
 	return errh->error("error %d registering device '%s'", res, _devname.c_str());
     }
@@ -271,7 +275,11 @@ FromHost::cleanup(CleanupStage)
 	    if (_dev->flags & IFF_UP)
 		dev_updown(_dev, -1, 0);
 	    unregister_netdev(_dev);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+	    free_netdev(_dev);
+#else
 	    kfree(_dev);
+#endif
 	    _dev = 0;
 	}
     }
