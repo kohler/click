@@ -401,17 +401,20 @@ ToDevice::queue_packet(Packet *p)
      * I can't figure out where Linux does this, so I don't
      * know the correct procedure.
      */
-    if (!_no_pad && skb1->len < 60) {
-	if (skb_tailroom(skb1) < 60 - skb1->len) {
+    int need_tail = 60 - p->length();
+
+    if (!_no_pad && need_tail > 0) {
+	if (skb_tailroom(skb1) < need_tail) {
 	    if (++_too_short == 1)
-		printk("<1>ToDevice %s packet too small (len %d, tailroom %d), had to copy\n", skb1->len, skb_tailroom(skb1));
+		printk("<1>ToDevice %s packet too small (len %d, tailroom %d, need %d), had to copy\n", _dev->name, skb1->len, skb_tailroom(skb1), need_tail);
 	    struct sk_buff *nskb = skb_copy_expand(skb1, skb_headroom(skb1), skb_tailroom(skb1) + 60 - skb1->len, GFP_ATOMIC);
 	    kfree_skb(skb1);
 	    if (!nskb)
 		return -1;
 	    skb1 = nskb;
 	}
-	skb_put(skb1, 60 - skb1->len);
+	// printk("padding %d:%d:%d\n", skb1->truesize, skb1->len, 60-skb1->len);
+	skb_put(skb1, need_tail);
     }
 
     // set the device annotation;
