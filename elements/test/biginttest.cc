@@ -143,6 +143,9 @@ BigintTest::initialize(ErrorHandler *errh)
 	CHECK(test_div(a, b & ~0x80000000, errh), a, b & ~0x80000000);
 	CHECK(test_div(a, b | 0x80000000, errh), a, b | 0x80000000);
     }
+
+    uint32_t x[3] = { 3481, 592182, 3024921038U };
+    CHECK0(bigint::unparse_clear(x, 3) == "55799944231168388787108580761");
     
     errh->message("All tests pass!");
     return 0;

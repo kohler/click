@@ -10,6 +10,17 @@ CLICK_DECLS
  * @brief Functions for manipulating integers.
  */
 
+#if HAVE_INT64_TYPES && (!HAVE_LONG_LONG || SIZEOF_LONG_LONG <= 8)
+typedef int64_t click_int_large_t;
+typedef uint64_t click_uint_large_t;
+#elif HAVE_LONG_LONG
+typedef long long click_int_large_t;
+typedef unsigned long long click_uint_large_t;
+#else
+typedef long click_int_large_t;
+typedef unsigned long click_uint_large_t;
+#endif
+
 #ifdef HAVE_INT64_TYPES
 
 /** @brief Return @a x translated from host to network byte order. */

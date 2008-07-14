@@ -20,6 +20,7 @@
  * Using the interfaces provided by this file does not create a derived work.
  */
 #include <click/integers.hh>
+#include <click/string.hh>
 CLICK_DECLS
 
 /** @file <click/bigint.hh>
@@ -31,8 +32,9 @@ CLICK_DECLS
  *
  * The Bigint template provides a couple simple, but useful, functions for
  * multiple-precision integer arithmetic.  It is a port of a very limited
- * subset of the GNU Multiple Precision Arithmetic library's mpz functionality
- * (architecture-generic functions that work on integers of known size).
+ * subset of the GNU Multiple Precision Arithmetic library's mpn functionality
+ * (architecture-generic functions that work on unsigned integers of known
+ * size).
  *
  * A multiple-precision integer is an array of "limbs," or machine integers.
  * The multiply_add() and divide() functions take arrays of limbs as
@@ -157,6 +159,20 @@ class Bigint { public:
 	return q1 * limb_half | q0;
     }
 
+    /** @brief Set @a n-limb integer @a a to the value @a b.
+     * @param[out] a points to @a n-limb result
+     * @param n number of limbs in @a a
+     * @param b input value
+     * @return carry */
+    static click_uint_large_t set(limb_type *a, int n, click_uint_large_t b) {
+	while (n > 0) {
+	    *a++ = b;
+	    n--;
+	    b >>= sizeof(b) * 8;
+	}
+	return b;
+    }
+
     /** @brief Multiply @a n-limb integer @a a by 1-limb integer @a b and add
      * the result to @a n-limb integer @a x.
      * @param[in,out] x points to @a n-limb addend and result
@@ -188,6 +204,7 @@ class Bigint { public:
      * @param a points to @a n-limb dividend
      * @param n number of limbs in @a x and @a a
      * @param b 1-limb divisor
+     * @return the remainder
      *
      * Like @a x = @a a / @a b.  Both @a x and @a a must have @a n limbs.  It
      * is safe for @a x and @a a to point to exactly the same memory, but they
@@ -244,6 +261,38 @@ class Bigint { public:
 	}
 
 	return r;
+    }
+
+    /** @brief Return a string representation of @a n-limb integer @a x and
+     * set @a x to 0.
+     * @param[in,out] x @a n-limb input, set to zero on output
+     * @param n number of limbs in @a x
+     * @param base base (between 2 and 36)
+     * @param uppercase if true, use uppercase letters for digits >= 10 */
+    static String unparse_clear(limb_type *x, int n, int base = 10, bool uppercase = false) {
+	// need d chars, min d s.t. 10^d >= 2^(sizeof(limb_type) * 8 * n)
+	// == min d s.t. d >= sizeof(limb_type) * 8 * n / lg 10
+	int div = (base >= 16 ? 4 : (base >= 8 ? 3 : 1));
+	String s = String::garbage_string((n * limb_bits) / div + 1);
+	char *q = const_cast<char *>(s.end());
+	assert(base >= 2 && base <= 36);
+	while (1) {
+	    while (n > 0 && x[n - 1] == 0)
+		--n;
+	    if (n == 0)
+		break;
+	    int r = divide(x, x, n, base);
+	    if (r <= 9)
+		*--q = '0' + r;
+	    else if (uppercase)
+		*--q = 'A' + r - 10;
+	    else
+		*--q = 'a' + r - 10;
+	}
+	assert(q >= s.begin());
+	if (q == s.end())
+	    *--q = '0';
+	return s.substring(q, s.end());
     }
 
   private:
