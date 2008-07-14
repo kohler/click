@@ -332,6 +332,7 @@ IPReassembler::simple_action(Packet *p)
 	memcpy(q->ip_header(), p->ip_header(), hl);
 	q->ip_header()->ip_off = old_ip_off;
 	//q->copy_annotations(p); XXX
+	q->set_device_anno(p->device_anno());
     }
 
     // clear MF if incoming packet has it cleared
