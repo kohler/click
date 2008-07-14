@@ -651,13 +651,13 @@ Lexer::next_lexeme()
       goto more_word_characters;
     _pos = s;
     String word = _big_string.substring(word_pos, s);
-    if (word.length() == 16 && memcmp(word.data(), "connectiontunnel", 16) == 0)
+    if (word.equals("connectiontunnel", 16))
       return Lexeme(lexTunnel, word);
-    else if (word.length() == 12 && memcmp(word.data(), "elementclass", 12) == 0)
+    else if (word.equals("elementclass", 12))
       return Lexeme(lexElementclass, word);
-    else if (word.length() == 7 && memcmp(word.data(), "require", 7) == 0)
+    else if (word.equals("require", 7))
       return Lexeme(lexRequire, word);
-    else if (word.length() == 6 && memcmp(word.data(), "define", 3) == 0)
+    else if (word.equals("define", 6))
       return Lexeme(lexDefine, word);
     else
       return Lexeme(lexIdent, word);
