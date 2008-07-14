@@ -20,7 +20,7 @@ CLICK_DECLS
  * output 1 is connected to an ICMPError element with type 3 (UNREACH) and
  * code 4 (NEEDFRAG).
  *
- * Only the mac_broadcast annotation is copied into the fragments.
+ * Copies all annotations to the fragments.
  *
  * Sends the fragments in order, starting with the first.
  *

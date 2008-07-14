@@ -196,7 +196,7 @@ Timer::Timer()
 {
 }
 
-Timer::Timer(TimerHook f, void *user_data)
+Timer::Timer(TimerCallback f, void *user_data)
     : _schedpos(-1), _hook(f), _thunk(user_data), _router(0)
 {
 }
@@ -211,7 +211,7 @@ Timer::Timer(Task* task)
 {
 }
 
-void Timer::assign(TimerHook f, void *user_data)
+void Timer::assign(TimerCallback f, void *user_data)
 {
     _hook = f;
     _thunk = user_data;

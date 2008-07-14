@@ -55,7 +55,7 @@ class atomic_uint32_t { public:
     inline uint32_t value() const;
     inline operator uint32_t() const;
   
-    inline atomic_uint32_t &operator=(uint32_t v);
+    inline atomic_uint32_t &operator=(uint32_t x);
 
     inline atomic_uint32_t &operator+=(int32_t delta);
     inline atomic_uint32_t &operator-=(int32_t delta);
@@ -67,7 +67,7 @@ class atomic_uint32_t { public:
     inline void operator--();
     inline void operator--(int);
 
-    inline uint32_t swap(uint32_t v);
+    inline uint32_t swap(uint32_t x);
     inline uint32_t fetch_and_add(uint32_t delta);
     inline bool dec_and_test();
     inline bool compare_and_swap(uint32_t test_value, uint32_t new_value);
@@ -102,14 +102,14 @@ atomic_uint32_t::operator uint32_t() const
     return value();
 }
 
-/** @brief  Set the value to @a v. */
+/** @brief  Set the value to @a x. */
 inline atomic_uint32_t &
-atomic_uint32_t::operator=(uint32_t v)
+atomic_uint32_t::operator=(uint32_t x)
 {
 #if CLICK_LINUXMODULE
-    atomic_set(&_val, v);
+    atomic_set(&_val, x);
 #else
-    CLICK_ATOMIC_VAL = v;
+    CLICK_ATOMIC_VAL = x;
 #endif
     return *this;
 }
@@ -256,31 +256,31 @@ atomic_uint32_t::operator--(int)
 #endif
 }
 
-/** @brief  Atomically assign the value to @a v, returning the old value.
+/** @brief  Atomically assign the value to @a x, returning the old value.
  *
  * Behaves like this, but in one atomic step:
  * @code
  * uint32_t old_value = value();
- * *this = v;
+ * *this = x;
  * return old_value;
  * @endcode*/
 inline uint32_t
-atomic_uint32_t::swap(uint32_t v)
+atomic_uint32_t::swap(uint32_t x)
 {
 #if (CLICK_LINUXMODULE && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))) || CLICK_ATOMIC_X86
     asm volatile ("xchgl %0,%1"
-		  : "=r" (v), "=m" (CLICK_ATOMIC_VAL));
-    return v;
+		  : "=r" (x), "=m" (CLICK_ATOMIC_VAL));
+    return x;
 #elif CLICK_LINUXMODULE
     unsigned long flags;
     local_irq_save(flags);
     uint32_t old_value = value();
-    CLICK_ATOMIC_VAL = v;
+    CLICK_ATOMIC_VAL = x;
     local_irq_restore(flags);
     return old_value;
 #else
     uint32_t old_value = value();
-    CLICK_ATOMIC_VAL = v;
+    CLICK_ATOMIC_VAL = x;
     return old_value;
 #endif
 }

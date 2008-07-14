@@ -11,7 +11,8 @@ class Router;
 class Timer;
 class Task;
 
-typedef void (*TimerHook)(Timer *, void *);
+typedef void (*TimerCallback)(Timer *, void *);
+typedef TimerCallback TimerHook CLICK_DEPRECATED;
 
 class Timer { public:
 
@@ -22,7 +23,7 @@ class Timer { public:
      * fired.
      * @param f callback function
      * @param user_data argument for callback function */
-    Timer(TimerHook f, void *user_data);
+    Timer(TimerCallback f, void *user_data);
 
     /** @brief Create a Timer that calls @a element ->@link
      * Element::run_timer() run_timer@endlink(this) when fired.
@@ -43,7 +44,7 @@ class Timer { public:
     /** @brief Change the Timer to call @a f(this, @a user_data) when fired.
      * @param f the callback function
      * @param user_data argument for the callback function */
-    void assign(TimerHook f, void *user_data);
+    void assign(TimerCallback f, void *user_data);
 
     /** @brief Change the Timer to call @a element ->@link
      * Element::run_timer() run_timer@endlink(this) when fired.
@@ -122,8 +123,8 @@ class Timer { public:
      * @param delta interval until expiration time
      *
      * The schedule_after methods schedule the timer relative to the current
-     * system time, Timestamp::now().  When called from a timer's expiration
-     * hook, this will usually be slightly after the timer's nominal
+     * system time, Timestamp::now().  When called from a timer's callback
+     * function, this will usually be slightly after the timer's nominal
      * expiration time.  To schedule a timer at a strict interval,
      * compensating for small amounts of drift, use the reschedule_after
      * methods. */
@@ -227,7 +228,7 @@ class Timer { public:
   
     int _schedpos;
     Timestamp _expiry;
-    TimerHook _hook;
+    TimerCallback _hook;
     void *_thunk;
     Router *_router;
 
