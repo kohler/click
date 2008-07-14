@@ -20,10 +20,12 @@ ANY PARTICULAR PURPOSE.
 */
 
 #include <click/config.h>
-#include <click/router.hh>
-#include <click/confparse.hh>
+#include <click/glue.hh>
 #include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
+
 #include <linux/module.h>
 #include <linux/poll.h>
 #include <linux/version.h>
@@ -310,11 +312,12 @@ Packet* FromUserDevice::pull(int)
 }
 
 //cleanup
-void FromUserDevice::cleanup(CleanupStage)
+void FromUserDevice::cleanup(CleanupStage stage)
 {
     ulong flags;
     
-    click_chatter("cleanup\n");
+    if (stage < CLEANUP_CONFIGURED)
+        return; // have to quit, as configure was never called
 
     spin_lock_irqsave(&_lock, flags);
     DEV_NUM--;
@@ -337,7 +340,7 @@ void FromUserDevice::cleanup(CleanupStage)
 	    _size--;
 	}
         click_lfree((char*)_buff, _capacity * sizeof(WritablePacket*));
-    }  
+    }
 }
 
 enum { H_COUNT, H_DROPS, H_WRITE_CALLS, H_CAPACITY,

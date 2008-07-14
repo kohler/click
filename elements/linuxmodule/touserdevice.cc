@@ -20,9 +20,10 @@ ANY PARTICULAR PURPOSE.
 */
 
 #include <click/config.h>
-#include <click/router.hh>
-#include <click/confparse.hh>
+#include <click/glue.hh>
 #include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 
 #include <click/cxxprotect.h>
@@ -115,7 +116,7 @@ int ToUserDevice::dev_open(struct inode *inode, struct file *filp)
     return 0;
 }
 
-// close function - called when the "file" /dev/toclikc is closed in userspace  
+// close function - called when the "file" /dev/toclick is closed in userspace  
 int ToUserDevice::dev_release(struct inode *inode, struct file *filp)
 {
     ToUserDevice *elem = GETELEM(filp);
@@ -137,7 +138,7 @@ int ToUserDevice::dev_ioctl(struct inode *inode, struct file *filp,
 	return ((uintptr_t) filp->private_data) & 1;
     else if (command == CLICK_IOC_TOUSERDEVICE_SET_MULTI) {
 	if ((int) address != 0 && (int) address != 1)
-	    return -EINVAL;
+            return -EINVAL;
 	filp->private_data = (void *) ((uintptr_t) elem | (int) address);
 	return 0;
     } else
@@ -307,15 +308,15 @@ int ToUserDevice::initialize(ErrorHandler *errh)
 }
 
 //cleanup
-void ToUserDevice::cleanup(CleanupStage)
+void ToUserDevice::cleanup(CleanupStage stage)
 {
     //click_chatter("cleanup...");
-
+    if (stage < CLEANUP_CONFIGURED)
+        return; // have to quit, as configure was never called
     spin_lock(&_lock); // LOCK
     DEV_NUM--;
     _exit = true; // signal for exit
     spin_unlock(&_lock); // UNLOCK
-
     if (_q) {
         //click_chatter(" Start ");
         wake_up_interruptible(&_proc_queue);
@@ -336,7 +337,7 @@ void ToUserDevice::cleanup(CleanupStage)
 	}
         click_lfree((char*)_q, _capacity * sizeof(Packet *));
     }
-    click_chatter("cleanup Done. ");
+    //click_chatter("cleanup Done. ");
 }
 
 bool ToUserDevice::process(Packet *p)
