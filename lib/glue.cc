@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2007 Regents of the University of California
  * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2008 Mazu Networks, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -133,6 +134,7 @@ click_chatter(const char *fmt, ...)
 uint32_t click_dmalloc_where = 0x3F3F3F3F;
 size_t click_dmalloc_curnew = 0;
 size_t click_dmalloc_totalnew = 0;
+size_t click_dmalloc_failnew = 0;
 #if CLICK_DMALLOC
 size_t click_dmalloc_curmem = 0;
 size_t click_dmalloc_maxmem = 0;
@@ -186,46 +188,66 @@ printable_where(Chunk *c)
 void *
 operator new(size_t sz) throw ()
 {
-  click_dmalloc_curnew++;
   click_dmalloc_totalnew++;
 # if CLICK_DMALLOC
-  void *v = CLICK_ALLOC(sz + sizeof(Chunk));
-  Chunk *c = (Chunk *)v;
-  c->magic = CHUNK_MAGIC;
-  c->size = sz;
-  c->where = click_dmalloc_where;
-  c->prev = &chunks;
-  c->next = chunks.next;
-  c->next->prev = chunks.next = c;
-  click_dmalloc_curmem += sz;
-  if (click_dmalloc_curmem > click_dmalloc_maxmem)
+  if (void *v = CLICK_ALLOC(sz + sizeof(Chunk))) {
+    click_dmalloc_curnew++;
+    Chunk *c = (Chunk *)v;
+    c->magic = CHUNK_MAGIC;
+    c->size = sz;
+    c->where = click_dmalloc_where;
+    c->prev = &chunks;
+    c->next = chunks.next;
+    c->next->prev = chunks.next = c;
+    click_dmalloc_curmem += sz;
+    if (click_dmalloc_curmem > click_dmalloc_maxmem)
       click_dmalloc_maxmem = click_dmalloc_curmem;
-  return (void *)((unsigned char *)v + sizeof(Chunk));
+    return (void *)((unsigned char *)v + sizeof(Chunk));
+  } else {
+    click_dmalloc_failnew++;
+    return 0;
+  }
 # else
-  return CLICK_ALLOC(sz);
+  if (void *v = CLICK_ALLOC(sz)) {
+    click_dmalloc_curnew++;
+    return v;
+  } else {
+    click_dmalloc_failnew++;
+    return 0;
+  }
 # endif
 }
 
 void *
 operator new[](size_t sz) throw ()
 {
-  click_dmalloc_curnew++;
   click_dmalloc_totalnew++;
 # if CLICK_DMALLOC
-  void *v = CLICK_ALLOC(sz + sizeof(Chunk));
-  Chunk *c = (Chunk *)v;
-  c->magic = CHUNK_MAGIC;
-  c->size = sz;
-  c->where = click_dmalloc_where;
-  c->prev = &chunks;
-  c->next = chunks.next;
-  c->next->prev = chunks.next = c;
-  click_dmalloc_curmem += sz;
-  if (click_dmalloc_curmem > click_dmalloc_maxmem)
+  if (void *v = CLICK_ALLOC(sz + sizeof(Chunk))) {
+    click_dmalloc_curnew++;
+    Chunk *c = (Chunk *)v;
+    c->magic = CHUNK_MAGIC;
+    c->size = sz;
+    c->where = click_dmalloc_where;
+    c->prev = &chunks;
+    c->next = chunks.next;
+    c->next->prev = chunks.next = c;
+    click_dmalloc_curmem += sz;
+    if (click_dmalloc_curmem > click_dmalloc_maxmem)
       click_dmalloc_maxmem = click_dmalloc_curmem;
-  return (void *)((unsigned char *)v + sizeof(Chunk));
+    return (void *)((unsigned char *)v + sizeof(Chunk));
+  } else {
+    click_dmalloc_failnew++;
+    return 0;
+  }
 # else
-  return CLICK_ALLOC(sz);
+  if (void *v = CLICK_ALLOC(sz)) {
+    click_dmalloc_curnew++;
+    return v;
+  } else {
+    click_dmalloc_failnew++;
+    return 0;
+  }
 # endif
 }
 
@@ -317,10 +339,15 @@ void *
 click_lalloc(size_t size)
 {
     void *v;
+    click_dmalloc_totalnew++;
     if ((v = ((size > CLICK_LALLOC_MAX_SMALL) ? vmalloc(size) : kmalloc(size, GFP_ATOMIC)))) {
 	click_dmalloc_curnew++;
-	click_dmalloc_totalnew++;
-    }
+# if CLICK_DMALLOC
+	click_dmalloc_curmem += size;
+	click_dmalloc_totalmem += size;
+# endif
+    } else
+	click_dmalloc_failnew++;
     return v;
 }
 
@@ -333,6 +360,9 @@ click_lfree(volatile void *p, size_t size)
 	else
 	    kfree((void *) p);
 	click_dmalloc_curnew--;
+# if CLICK_DMALLOC
+	click_dmalloc_curmem -= size;
+# endif
     }
 }
 
