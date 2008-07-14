@@ -141,7 +141,6 @@ Router::~Router()
 	_notifier_signals = ns->next;
 	delete ns;
     }
-    delete[] _notifier_signals;
     delete _name_info;
     if (_master)
 	_master->unregister_router(this);
