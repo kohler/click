@@ -192,7 +192,8 @@ inline PermString PermString::decapsule(Capsule c)
     return PermString(c);
 }
 
-inline size_t hashcode(PermString s)
+template <>
+inline size_t hashcode(const PermString &s)
 {
     return (uintptr_t) s.c_str();
 }

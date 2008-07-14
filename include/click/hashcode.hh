@@ -2,78 +2,98 @@
 #define CLICK_HASHCODE_HH
 CLICK_DECLS
 
+// Notes about the hashcode template: On GCC 4.3.0, "template <>" is required
+// on the specializations or they aren't used.  Just plain overloaded
+// functions aren't used.  The specializations must be e.g. "const char &",
+// not "char", or GCC complains about a specialization not matching the
+// general template.  The main template takes a const reference for two
+// reasons.  First, providing both "size_t hashcode(T)" and "size_t
+// hashcode(const T&)" leads to ambiguity errors.  Second, providing only
+// "size_t hashcode(T)" is slower by looks like 8% when T is a String, because
+// of copy constructors; for types with more expensive non-default copy
+// constructors this would probably be worse.
+
 template <typename T>
-inline size_t
-hashcode(const T &x)
-{
+inline size_t hashcode(const T &x) {
     return x.hashcode();
 }
 
-inline size_t hashcode(char c) {
+template <>
+inline size_t hashcode(const char &c) {
     return c;
 }
 
-inline size_t hashcode(signed char c) {
+template <>
+inline size_t hashcode(const signed char &c) {
     return c;
 }
 
-inline size_t hashcode(unsigned char c) {
+template <>
+inline size_t hashcode(const unsigned char &c) {
     return c;
 }
 
-inline size_t hashcode(short s) {
+template <>
+inline size_t hashcode(const short &s) {
     return s;
 }
 
-inline size_t hashcode(unsigned short us) {
+template <>
+inline size_t hashcode(const unsigned short &us) {
     return us;
 }
 
-inline size_t hashcode(int i) {
+template <>
+inline size_t hashcode(const int &i) {
     return i;
 }
 
-inline size_t hashcode(unsigned u) {
+template <>
+inline size_t hashcode(const unsigned &u) {
     return u;
 }
 
-inline size_t hashcode(long l) {
+template <>
+inline size_t hashcode(const long &l) {
     return l;
 }
 
-inline size_t hashcode(unsigned long ul) {
+template <>
+inline size_t hashcode(const unsigned long &ul) {
     return ul;
 }
 
 #if HAVE_LONG_LONG
-inline size_t hashcode(long long ll) {
-    return ll;
+template <>
+inline size_t hashcode(const long long &ll) {
+    return (ll >> 32) ^ ll;
 }
 
-inline size_t hashcode(unsigned long long ull) {
-    return ull;
+template <>
+inline size_t hashcode(const unsigned long long &ull) {
+    return (ull >> 32) ^ ull;
 }
 #endif
 
 #if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
-inline size_t hashcode(int64_t q) {
-    return q;
+template <>
+inline size_t hashcode(const int64_t &q) {
+    return (q >> 32) ^ q;
 }
 
-inline size_t hashcode(uint64_t uq) {
-    return uq;
+template <>
+inline size_t hashcode(const uint64_t &uq) {
+    return (uq >> 32) ^ uq;
 }
 #endif
 
 template <typename T>
-inline size_t hashcode(T *v) {
+inline size_t hashcode(T * const &v) {
     return reinterpret_cast<uintptr_t>(v) >> 3;
 }
 
 template <typename T>
-inline typename T::key_const_reference
-hashkey(const T &x)
-{
+inline typename T::key_const_reference hashkey(const T &x) {
     return x.hashkey();
 }
 

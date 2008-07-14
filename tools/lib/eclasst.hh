@@ -204,8 +204,9 @@ ElementClassT::provides(const String &req) const
     return traits().provides(req);
 }
 
-inline size_t hashcode(ElementClassT *e) {
-    return CLICK_NAME(hashcode)(static_cast<void *>(e));
+template <>
+inline size_t hashcode(const ElementClassT * const &e) {
+    return CLICK_NAME(hashcode)(static_cast<const void *>(e));
 }
 
 #endif
