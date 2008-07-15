@@ -175,6 +175,25 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(strcmp(xx.c_str(), "abcdefghijklmnbcdefghijklm") == 0);
     xx << xx;
     CHECK(strcmp(xx.c_str(), "abcdefghijklmnbcdefghijklmabcdefghijklmnbcdefghijklm") == 0);
+
+    // String hash codes
+    {
+	static const char hash1[] = "boot_countXXXXXXYboot_countYYYYYZZboot_countZZZZWWWboot_countWWW";
+	String s1 = String::stable_string(hash1, 10);
+	String s2 = String::stable_string(hash1 + 17, 10);
+	String s3 = String::stable_string(hash1 + 34, 10);
+	String s4 = String::stable_string(hash1 + 51, 10);
+	CHECK(s1 == s2 && s2 == s3 && s3 == s4 && s4 == s1);
+	CHECK(s1.hashcode() == s2.hashcode());
+	CHECK(s1.hashcode() == s3.hashcode());
+	CHECK(s1.hashcode() == s4.hashcode());
+	CHECK(((uintptr_t) s1.data() & 3) != ((uintptr_t) s2.data() & 3));
+	CHECK(((uintptr_t) s1.data() & 3) != ((uintptr_t) s3.data() & 3));
+	CHECK(((uintptr_t) s2.data() & 3) != ((uintptr_t) s3.data() & 3));
+	CHECK(((uintptr_t) s1.data() & 3) != ((uintptr_t) s4.data() & 3));
+	CHECK(((uintptr_t) s2.data() & 3) != ((uintptr_t) s4.data() & 3));
+	CHECK(((uintptr_t) s3.data() & 3) != ((uintptr_t) s4.data() & 3));
+    }
     
     errh->message("All tests pass!");
     return 0;
