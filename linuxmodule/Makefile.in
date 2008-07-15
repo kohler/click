@@ -270,7 +270,7 @@ elemlist:
 	@/bin/rm -f elements.conf
 	@$(MAKE) elements.conf
 elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
-	echo "linuxmodule @element_groups@" | $(top_builddir)/click-buildtool findelem -r linuxmodule -p $(top_srcdir) -X $(srcdir)/elements.reject > elements.conf
+	echo "linuxmodule @element_groups@" | $(top_builddir)/click-buildtool findelem -r linuxmodule -p $(top_srcdir) -X $(srcdir)/elements.exclude > elements.conf
 $(ELEMENTSCONF).mk: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
 	$(CLICK_ELEM2MAKE) -x "$(STD_ELEMENT_OBJS)" < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).mk
 $(ELEMENTSCONF).cc: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
@@ -288,6 +288,7 @@ clean:
 	-rm -f *~ *.d *.o *.mod.c *.ko
 	-rm -f .version .*.o.flags .*.o.d .*.o.cmd .*.ko.cmd
 	-rm -f $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc $(KSYMS).c elements.conf
+	-rm -rf Module.symvers .tmp_versions
 distclean: clean
 	-rm -f Makefile
 
