@@ -627,8 +627,10 @@ String::hashcode(const char *begin, const char *end)
     } else {
 # if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
 #  define get16(p) (((unsigned char) (p)[0] << 8) + (unsigned char) (p)[1])
-# else
+# elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
 #  define get16(p) ((unsigned char) (p)[0] + ((unsigned char) (p)[1] << 8))
+# else
+#  error "unknown CLICK_BYTE_ORDER"
 # endif
 	// should be exactly the same as the code above
 	for (; begin != end; begin += 4) {
