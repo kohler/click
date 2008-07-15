@@ -129,10 +129,19 @@ class Handler { public:
 
     /** @brief Check if quotes should be removed when calling this handler.
      *
-     * A raw handler expects and returns raw text.  Click will unquote quoted
-     * text before passing it to a raw handler, and (in the Linux kernel
-     * module) will not add a courtesy newline to the end of a raw handler's
-     * value.  Rawness is set by the RAW flag. */
+     * A raw handler expects and returns unquoted text.  Rawness is set by the
+     * RAW flag.
+     *
+     * <ul>
+     * <li>The linuxmodule driver adds a terminating newline to non-raw read
+     * handler values, but does not modify raw read handlers' values in any
+     * way.</li>
+     * <li>The same applies to handler values returned by the userlevel
+     * driver's <tt>-h</tt> option.</li>
+     * <li>The HandlerCall class unquotes arguments via cp_unquote before
+     * passing them to a raw write handler.  It does not modify arguments
+     * passed to a non-raw write handler.</li>
+     * </ul> */
     inline bool raw() const {
 	return _flags & RAW;
     }
