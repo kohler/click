@@ -129,7 +129,7 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
 	    _carrier_ok = carrier_ok;
 	    if (_down_call && !_carrier_ok)
 		_down_call->call_write(ErrorHandler::default_handler());
-	    else if (_up_call && _carrier_ok)
+	    if (_up_call && _carrier_ok)
 		_up_call->call_write(ErrorHandler::default_handler());
 	}
 	return;
@@ -139,7 +139,7 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
     if (_dev) {
 	if (_down_call && _carrier_ok)
 	    _down_call->call_write(ErrorHandler::default_handler());
-	else if (!_quiet)
+	if (!_down_call && !_quiet)
 	    click_chatter("%s: device '%s' went down", declaration().c_str(), _devname.c_str());
     }
     
@@ -172,7 +172,7 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
     if (_dev) {
 	if (_up_call && _carrier_ok)
 	    _up_call->call_write(ErrorHandler::default_handler());
-	else if (!_quiet)
+	if (!_up_call && !_quiet)
 	    click_chatter("%s: device '%s' came up", declaration().c_str(), _devname.c_str());
     }
 }

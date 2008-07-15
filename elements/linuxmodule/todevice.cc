@@ -91,13 +91,11 @@ static int
 tx_notifier_hook(struct notifier_block *nb, unsigned long val, void *v) 
 {
     struct net_device *dev = (struct net_device *)v;
-    if (!dev) {
+    if (!dev)
 	return 0;
-    }
     Vector<AnyDevice *> es;
-    bool down = true;
     to_device_map.lock(false);
-    to_device_map.lookup_all(dev, down, es);
+    to_device_map.lookup_all(dev, true, es);
     for (int i = 0; i < es.size(); i++) 
 	((ToDevice *)(es[i]))->tx_wake_queue(dev);
     to_device_map.unlock(false);
@@ -442,12 +440,14 @@ ToDevice::queue_packet(Packet *p)
 void
 ToDevice::change_device(net_device *dev)
 {
-    if (dev != _dev)
+    bool dev_change = _dev != dev;
+
+    if (dev_change)
 	_task.strong_unschedule();
     
     set_device(dev, &to_device_map, true);
 
-    if (_dev)
+    if (dev_change && _dev)
 	_task.strong_reschedule();
 }
 
@@ -460,13 +460,13 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 	flags = NETDEV_DOWN;
 #endif
     if (flags == NETDEV_DOWN || flags == NETDEV_UP || flags == NETDEV_CHANGE) {
-	bool down = (flags == NETDEV_DOWN);
+	bool exists = (flags != NETDEV_UP);
 	net_device *dev = (net_device *)v;
 	Vector<AnyDevice *> es;
 	to_device_map.lock(true);
-	to_device_map.lookup_all(dev, down, es);
+	to_device_map.lookup_all(dev, exists, es);
 	for (int i = 0; i < es.size(); i++)
-	    ((ToDevice *)(es[i]))->change_device(down ? 0 : dev);
+	    ((ToDevice *)(es[i]))->change_device(flags == NETDEV_DOWN ? 0 : dev);
 	to_device_map.unlock(true);
     }
     return 0;

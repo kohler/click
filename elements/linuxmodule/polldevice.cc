@@ -309,26 +309,29 @@ void
 PollDevice::change_device(net_device *dev)
 {
 #if HAVE_LINUX_POLLING
-    if (_dev == dev)		// no op
-	return;
+    bool dev_change = _dev != dev;
+
+    if (dev_change) {
+	_task.strong_unschedule();
     
-    _task.strong_unschedule();
-    
-    if (dev && (!dev->poll_on || dev->polling < 0)) {
-	click_chatter("%s: device '%s' does not support polling", declaration().c_str(), _devname.c_str());
-	dev = 0;
+	if (dev && (!dev->poll_on || dev->polling < 0)) {
+	    click_chatter("%s: device '%s' does not support polling", declaration().c_str(), _devname.c_str());
+	    dev = 0;
+	}
+
+	if (_dev)
+	    _dev->poll_off(_dev);
     }
-    
-    if (_dev)
-	_dev->poll_off(_dev);
 
     set_device(dev, &poll_device_map, true);
-    
-    if (_dev && !_dev->polling)
-	_dev->poll_on(_dev);
 
-    if (_dev)
-	_task.strong_reschedule();
+    if (dev_change) {
+	if (_dev && !_dev->polling)
+	    _dev->poll_on(_dev);
+
+	if (_dev)
+	    _task.strong_reschedule();
+    }
 #else
     (void) dev;
 #endif /* HAVE_LINUX_POLLING */
@@ -343,13 +346,13 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 	flags = NETDEV_DOWN;
 #endif
     if (flags == NETDEV_DOWN || flags == NETDEV_UP || flags == NETDEV_CHANGE) {
-	bool down = (flags == NETDEV_DOWN);
+	bool exists = (flags != NETDEV_UP);
 	net_device *dev = (net_device *)v;
 	Vector<AnyDevice *> es;
 	poll_device_map.lock(true);
-	poll_device_map.lookup_all(dev, down, es);
+	poll_device_map.lookup_all(dev, exists, es);
 	for (int i = 0; i < es.size(); i++)
-	    ((PollDevice *)(es[i]))->change_device(down ? 0 : dev);
+	    ((PollDevice *)(es[i]))->change_device(flags == NETDEV_DOWN ? 0 : dev);
 	poll_device_map.unlock(true);
     }
     return 0;

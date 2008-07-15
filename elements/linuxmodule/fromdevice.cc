@@ -226,13 +226,13 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 	flags = NETDEV_DOWN;
 #endif
     if (flags == NETDEV_DOWN || flags == NETDEV_UP || flags == NETDEV_CHANGE) {
-	bool down = (flags == NETDEV_DOWN);
+	bool exists = (flags != NETDEV_UP);
 	net_device* dev = (net_device*)v;
 	Vector<AnyDevice*> es;
 	from_device_map.lock(true);
-	from_device_map.lookup_all(dev, down, es);
+	from_device_map.lookup_all(dev, exists, es);
 	for (int i = 0; i < es.size(); i++)
-	    ((FromDevice*)(es[i]))->set_device(down ? 0 : dev, &from_device_map, true);
+	    ((FromDevice*)(es[i]))->set_device(flags == NETDEV_DOWN ? 0 : dev, &from_device_map, true);
 	from_device_map.unlock(true);
     }
     return 0;
