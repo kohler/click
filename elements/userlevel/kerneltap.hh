@@ -43,7 +43,7 @@ tap.
 =item MTU
 
 Integer.  The interface's maximum transmission unit, not including the
-Ethernet header.  Default is 1500; some operating systems do not alllow it to
+Ethernet header.  Default is 1500; some operating systems do not allow it to
 be set.
 
 =item HEADROOM
