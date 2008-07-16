@@ -47,8 +47,9 @@ room for additional encapsulation headers. Default is 28.
 
 =item MTU
 
-Integer. The interface's MTU. KernelTun will refuse to send packets larger
-than the MTU. Default is 1500; not all operating systems allow MTU to be set.
+Integer. The interface's MTU, not including any link headers. KernelTun will
+refuse to send packets larger than the MTU. Default is 1500; not all operating
+systems allow MTU to be set.
 
 =item ETHER
 

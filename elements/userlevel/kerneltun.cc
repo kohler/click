@@ -514,29 +514,36 @@ void
 KernelTun::push(int, Packet *p)
 {
     const click_ip *iph = 0;
+    int check_length;
     
     // sanity checks
-    if (!_tap) {
-	iph = p->ip_header();
-	if (!iph || p->network_length() < (int) sizeof(click_ip))
-	    click_chatter("KernelTun(%s): no network header", _dev_name.c_str());
-	else if (iph->ip_v != 4 && iph->ip_v != 6)
-	    click_chatter("KernelTun(%s): unknown IP version %d", _dev_name.c_str(), iph->ip_v);
-	else {
-	    p->change_headroom_and_length(p->headroom() + p->network_header_offset(), p->network_length());
-	    goto check_length;
+    if (_tap) {
+	if (p->length() < sizeof(click_ether)) {
+	    click_chatter("%s(%s): packet too small", class_name(), _dev_name.c_str());
+	    goto kill;
 	}
-    kill:
-	p->kill();
-	return;
-    } else if (p->length() < sizeof(click_ether)) {
-	click_chatter("KernelTap(%s): packet too small", _dev_name.c_str());
-	goto kill;
+	// use network length for MTU
+	check_length = p->length() - sizeof(click_ether);
+
+    } else {
+	iph = p->ip_header();
+	// check IP header
+	if (!iph || p->network_length() < (int) sizeof(click_ip)) {
+	    click_chatter("%s(%s): no network header", class_name(), _dev_name.c_str());
+	kill:
+	    p->kill();
+	    return;
+	} else if (iph->ip_v != 4 && iph->ip_v != 6) {
+	    click_chatter("%s(%s): unknown IP version %d", class_name(), _dev_name.c_str(), iph->ip_v);
+	    goto kill;
+	}
+	// strip link headers
+	p->change_headroom_and_length(p->headroom() + p->network_header_offset(), p->network_length());
+	check_length = p->length();
     }
 
     // check MTU
- check_length:
-    if ((int) p->length() > _mtu_out) {
+    if (check_length > _mtu_out) {
 	click_chatter("%s(%s): packet larger than MTU (%d)", class_name(), _dev_name.c_str(), _mtu_out);
 	goto kill;
     }
@@ -560,10 +567,12 @@ KernelTun::push(int, Packet *p)
 	uint32_t ethertype = (iph->ip_v == 4 ? htonl(ETHERTYPE_IP) : htonl(ETHERTYPE_IP6));
 	if ((q = p->push(4)))
 	    *(uint32_t *)(q->data()) = ethertype;
+	p = q;
     } else if (_type == BSD_TUN) { 
 	uint32_t af = (iph->ip_v == 4 ? htonl(AF_INET) : htonl(AF_INET6));
 	if ((q = p->push(4)))
 	    *(uint32_t *)(q->data()) = af;
+	p = q;
     } else if (_type == LINUX_ETHERTAP) {
 	uint16_t ethertype = (iph->ip_v == 4 ? htons(ETHERTYPE_IP) : htons(ETHERTYPE_IP6));
 	if ((q = p->push(16))) {
@@ -574,6 +583,7 @@ KernelTun::push(int, Packet *p)
 	    memcpy(q->data(), "\x00\x00\xFE\xFD\x00\x00\x00\x00\xFE\xFD\x00\x00\x00\x00", 14);
 	    *(uint16_t *)(q->data() + 14) = ethertype;
 	}
+	p = q;
     } else {
 	/* existing packet is OK */;
     }
