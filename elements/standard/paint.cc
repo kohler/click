@@ -26,8 +26,6 @@ CLICK_DECLS
 
 Paint::Paint()
 {
-    _anno = PAINT_ANNO_OFFSET;
-    _color = 0;
 }
 
 Paint::~Paint()
