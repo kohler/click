@@ -405,17 +405,23 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 #if SIZEOF_LONG == 4
        case 'l':
 #endif
+#if SIZEOF_SIZE_T == 4
+       case 'z':
+#endif
 	 num = va_arg(val, unsigned);
 	 if ((flags & SIGNED) && (int) num < 0)
 	   num = -(int) num, flags |= NEGATIVE;
 	 break;
-#ifdef HAVE_INT64_TYPES
-#if SIZEOF_LONG == 8
+#if HAVE_INT64_TYPES
+# if SIZEOF_LONG == 8
        case 'l':
-#endif
-#if SIZEOF_LONG_LONG == 8
+# endif
+# if SIZEOF_LONG_LONG == 8
        case 'L':
-#endif
+# endif
+# if SIZEOF_SIZE_T == 8
+       case 'z':
+# endif
        case -64: {
 	 uint64_t qnum = va_arg(val, uint64_t);
 	 if ((flags & SIGNED) && (int64_t)qnum < 0)
@@ -432,7 +438,7 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
        }
        s1 = do_number(num, (char *)s2, base, flags);
 
-#ifdef HAVE_INT64_TYPES
+#if HAVE_INT64_TYPES
       got_number:
 #endif
        s1 = do_number_flags((char *)s1, (char *)s2, base, flags,
@@ -459,7 +465,7 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
        break;
      }
 
-#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+#if HAVE_FLOAT_TYPES
      case 'e': case 'f': case 'g':
      case 'E': case 'F': case 'G': {
        char format[80], *f = format, new_numbuf[NUMBUF_SIZE];
