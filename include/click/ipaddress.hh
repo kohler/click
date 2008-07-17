@@ -31,7 +31,7 @@ class IPAddress { public:
     inline unsigned char* data();
     inline const unsigned char* data() const;
 
-    inline size_t hashcode() const;
+    inline uint32_t hashcode() const;
   
     int mask_to_prefix_len() const;
     inline bool matches_prefix(IPAddress addr, IPAddress mask) const;
@@ -316,7 +316,7 @@ operator~(IPAddress a)
  *
  * Equal IPAddress objects always have equal hashcode() values.
  */
-inline size_t
+inline uint32_t
 IPAddress::hashcode() const
 {
     return addr();

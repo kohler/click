@@ -9,8 +9,9 @@ class HashMap_ArenaFactory;
 //
 //		K::K(const K &)
 //		k1 == k2
-// unsigned	hashcode(const K &)
+// hashcode_t	hashcode(const K &)
 //			If hashcode(k1) != hashcode(k2), then k1 != k2.
+//			hashcode() can return any unsigned value.
 //
 //		V::V() -- only used for default value
 // 		V::V(const V &)

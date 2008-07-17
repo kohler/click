@@ -1,7 +1,6 @@
 // -*- c-basic-offset: 4; related-file-name: "../include/click/ip6address.hh" -*-
 /*
- * ip6address.{cc,hh} -- an IP6 address class. Useful for its hashcode()
- * method
+ * ip6address.{cc,hh} -- an IP6 address class
  * Peilei Fan, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology

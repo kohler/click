@@ -1,7 +1,6 @@
 // -*- related-file-name: "../include/click/etheraddress.hh" -*-
 /*
- * etheraddress.{cc,hh} -- an Ethernet address class. Useful for its
- * hashcode() method
+ * etheraddress.{cc,hh} -- an Ethernet address class
  * Robert Morris / John Jannotti, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology

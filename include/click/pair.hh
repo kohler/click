@@ -74,7 +74,7 @@ inline bool operator<(const Pair<T, U> &a, const Pair<T, U> &b)
 template <class T, class U>
 inline size_t Pair<T, U>::hashcode() const
 {
-    return (CLICK_NAME(hashcode)(first) << 13) ^ CLICK_NAME(hashcode)(second);
+    return (CLICK_NAME(hashcode)(first) << 7) ^ CLICK_NAME(hashcode)(second);
 }
 
 template <class T, class U>

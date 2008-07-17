@@ -1,7 +1,6 @@
 // -*- c-basic-offset: 4; related-file-name: "../include/click/ipaddress.hh" -*-
 /*
- * ipaddress.{cc,hh} -- an IP address class. Useful for its hashcode()
- * method
+ * ipaddress.{cc,hh} -- an IP address class
  * Robert Morris / John Jannotti / Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology

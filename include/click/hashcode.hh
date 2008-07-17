@@ -13,83 +13,85 @@ CLICK_DECLS
 // of copy constructors; for types with more expensive non-default copy
 // constructors this would probably be worse.
 
+typedef size_t hashcode_t;	///< Typical type for a hashcode() value.
+
 template <typename T>
-inline size_t hashcode(const T &x) {
+inline hashcode_t hashcode(const T &x) {
     return x.hashcode();
 }
 
 template <>
-inline size_t hashcode(const char &c) {
-    return c;
+inline hashcode_t hashcode(const char &x) {
+    return x;
 }
 
 template <>
-inline size_t hashcode(const signed char &c) {
-    return c;
+inline hashcode_t hashcode(const signed char &x) {
+    return x;
 }
 
 template <>
-inline size_t hashcode(const unsigned char &c) {
-    return c;
+inline hashcode_t hashcode(const unsigned char &x) {
+    return x;
 }
 
 template <>
-inline size_t hashcode(const short &s) {
-    return s;
+inline hashcode_t hashcode(const short &x) {
+    return x;
 }
 
 template <>
-inline size_t hashcode(const unsigned short &us) {
-    return us;
+inline hashcode_t hashcode(const unsigned short &x) {
+    return x;
 }
 
 template <>
-inline size_t hashcode(const int &i) {
-    return i;
+inline hashcode_t hashcode(const int &x) {
+    return x;
 }
 
 template <>
-inline size_t hashcode(const unsigned &u) {
-    return u;
+inline hashcode_t hashcode(const unsigned &x) {
+    return x;
 }
 
 template <>
-inline size_t hashcode(const long &l) {
-    return l;
+inline hashcode_t hashcode(const long &x) {
+    return x;
 }
 
 template <>
-inline size_t hashcode(const unsigned long &ul) {
-    return ul;
+inline hashcode_t hashcode(const unsigned long &x) {
+    return x;
 }
 
 #if HAVE_LONG_LONG
 template <>
-inline size_t hashcode(const long long &ll) {
-    return (ll >> 32) ^ ll;
+inline hashcode_t hashcode(const long long &x) {
+    return (x >> 32) ^ x;
 }
 
 template <>
-inline size_t hashcode(const unsigned long long &ull) {
-    return (ull >> 32) ^ ull;
+inline hashcode_t hashcode(const unsigned long long &x) {
+    return (x >> 32) ^ x;
 }
 #endif
 
 #if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
 template <>
-inline size_t hashcode(const int64_t &q) {
-    return (q >> 32) ^ q;
+inline hashcode_t hashcode(const int64_t &x) {
+    return (x >> 32) ^ x;
 }
 
 template <>
-inline size_t hashcode(const uint64_t &uq) {
-    return (uq >> 32) ^ uq;
+inline hashcode_t hashcode(const uint64_t &x) {
+    return (x >> 32) ^ x;
 }
 #endif
 
 template <typename T>
-inline size_t hashcode(T * const &v) {
-    return reinterpret_cast<uintptr_t>(v) >> 3;
+inline hashcode_t hashcode(T * const &x) {
+    return reinterpret_cast<uintptr_t>(x) >> 3;
 }
 
 template <typename T>

@@ -16,7 +16,7 @@ class IP6Address { public:
   explicit IP6Address(const click_in6_addr &a)	: _addr(a) { }
   static IP6Address make_prefix(int);
 
-  typedef size_t (IP6Address::*unspecified_bool_type)() const;
+  typedef uint32_t (IP6Address::*unspecified_bool_type)() const;
   operator unspecified_bool_type() const;
   
   operator const click_in6_addr &() const	{ return _addr; }
@@ -29,7 +29,7 @@ class IP6Address { public:
   unsigned *data32()			{ return &_addr.s6_addr32[0]; }
   const unsigned *data32() const	{ return &_addr.s6_addr32[0]; }
 
-    inline size_t hashcode() const;
+    inline uint32_t hashcode() const;
   
   int mask_to_prefix_len() const;
   bool matches_prefix(const IP6Address &addr, const IP6Address &mask) const;
@@ -181,10 +181,10 @@ IP6Address::operator=(const click_in6_addr &a)
   return *this;
 }
 
-inline size_t
+inline uint32_t
 IP6Address::hashcode() const
 {
-  return data32()[3];
+    return (data32()[3] << 1) + data32()[4];
 }
 
 CLICK_ENDDECLS
