@@ -2,7 +2,6 @@
 #ifndef CLICK_PACKET_HH
 #define CLICK_PACKET_HH
 #include <click/ipaddress.hh>
-#include <click/ip6address.hh>
 #include <click/glue.hh>
 #include <click/timestamp.hh>
 #if CLICK_LINUXMODULE

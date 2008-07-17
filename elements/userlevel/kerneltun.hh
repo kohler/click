@@ -2,7 +2,7 @@
 #ifndef CLICK_KERNELTUN_HH
 #define CLICK_KERNELTUN_HH
 #include <click/element.hh>
-#include <click/ipaddress.hh>
+#include <click/etheraddress.hh>
 #include <click/task.hh>
 #include <click/notifier.hh>
 CLICK_DECLS

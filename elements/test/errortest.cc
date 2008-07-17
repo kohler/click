@@ -20,6 +20,7 @@
 #include "errortest.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/etheraddress.hh>
 CLICK_DECLS
 
 namespace {

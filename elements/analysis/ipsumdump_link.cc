@@ -23,6 +23,7 @@
 #include <click/packet_anno.hh>
 #include <clicknet/ether.h>
 #include <click/confparse.hh>
+#include <click/etheraddress.hh>
 CLICK_DECLS
 
 enum { T_ETH_SRC, T_ETH_DST };

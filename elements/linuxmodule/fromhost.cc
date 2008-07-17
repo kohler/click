@@ -24,6 +24,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
+#include <clicknet/ip6.h>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
