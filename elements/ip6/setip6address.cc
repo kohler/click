@@ -40,8 +40,8 @@ SetIP6Address::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 SetIP6Address::simple_action(Packet *p)
 {
-  p->set_dst_ip6_anno(_ip6);
-  return p;
+    SET_DST_IP6_ANNO(p, _ip6);
+    return p;
 }
 
 CLICK_ENDDECLS

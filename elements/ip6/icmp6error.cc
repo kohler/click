@@ -206,7 +206,7 @@ ICMP6Error::simple_action(Packet *p)
 
   if (_type == ICMP6_REDIRECT && _code == 0) {
     click_icmp6_redirect *icpr = (click_icmp6_redirect *) (nip + 1);
-    icpr->icmp6_target = p->dst_ip6_anno();
+    icpr->icmp6_target = DST_IP6_ANNO(p);
     icpr->icmp6_dst = ipp->ip6_dst;
     memcpy((void *)(icpr + 1), p->data(), xlen);
   } else
@@ -214,7 +214,7 @@ ICMP6Error::simple_action(Packet *p)
 
   icp->icmp6_cksum = htons(in6_fast_cksum(&nip->ip6_src, &nip->ip6_dst, nip->ip6_plen, nip->ip6_nxt, 0, (unsigned char *)icp, nip->ip6_plen));
   
-  q->set_dst_ip6_anno(IP6Address(nip->ip6_dst));
+  SET_DST_IP6_ANNO(q, IP6Address(nip->ip6_dst));
   SET_FIX_IP_SRC_ANNO(q, 1); // fix_ip_src: shared flag with IPv4 
   q->set_ip6_header(nip, sizeof(click_ip6));
 

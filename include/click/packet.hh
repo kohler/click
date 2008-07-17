@@ -385,16 +385,6 @@ class Packet { public:
      * The value is stored in the address annotation area. */
     inline void set_dst_ip_anno(IPAddress addr);
     
-    /** @brief Return the destination IPv6 address annotation.
-     *
-     * The value is taken from the address annotation area. */
-    inline const IP6Address &dst_ip6_anno() const;
-
-    /** @brief Set the destination IPv6 address annotation.
-     *
-     * The value is stored in the address annotation area. */
-    inline void set_dst_ip6_anno(const IP6Address &addr);
-
     /** @brief Return a pointer to the annotation area.
      *
      * The area is @link Packet::anno_size anno_size @endlink bytes long. */
@@ -1446,18 +1436,6 @@ inline void
 Packet::set_dst_ip_anno(IPAddress a)
 { 
     xanno()->u32[dst_ip_anno_offset / 4] = a.addr(); 
-}
-
-inline const IP6Address &
-Packet::dst_ip6_anno() const
-{
-    return *reinterpret_cast<const IP6Address *>(xanno()->c + dst_ip6_anno_offset);
-}
-
-inline void
-Packet::set_dst_ip6_anno(const IP6Address &a)
-{
-    memcpy(xanno()->c + dst_ip6_anno_offset, &a, 16);
 }
 
 /** @brief Set the MAC header pointer.

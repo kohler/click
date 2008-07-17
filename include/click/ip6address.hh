@@ -5,6 +5,10 @@
 #include <clicknet/ip6.h>
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
+#if !CLICK_TOOL
+# include <click/packet.hh>
+# include <click/packet_anno.hh>
+#endif
 CLICK_DECLS
 
 class IP6Address { public:
@@ -186,6 +190,26 @@ IP6Address::hashcode() const
 {
     return (data32()[3] << 1) + data32()[4];
 }
+
+#if !CLICK_TOOL
+inline const IP6Address &
+DST_IP6_ANNO(Packet *p)
+{
+    return *reinterpret_cast<IP6Address *>(p->anno_u8() + DST_IP6_ANNO_OFFSET);
+}
+
+inline void
+SET_DST_IP6_ANNO(Packet *p, const IP6Address &a)
+{
+    memcpy(p->anno_u8() + DST_IP6_ANNO_OFFSET, a.data(), DST_IP6_ANNO_SIZE);
+}
+
+inline void
+SET_DST_IP6_ANNO(Packet *p, const click_in6_addr &a)
+{
+    memcpy(p->anno_u8() + DST_IP6_ANNO_OFFSET, &a, DST_IP6_ANNO_SIZE);
+}
+#endif
 
 CLICK_ENDDECLS
 #endif

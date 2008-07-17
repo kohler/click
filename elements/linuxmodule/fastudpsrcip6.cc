@@ -115,7 +115,7 @@ FastUDPSourceIP6::initialize(ErrorHandler *)
   ip6->ip6_hlim = 250; 
   ip6->ip6_src = _sip6addr;
   ip6->ip6_dst = _dip6addr;
-  _packet->set_dst_ip6_anno(IP6Address(_dip6addr));
+  SET_DST_IP6_ANNO(_packet, _dip6addr);
   _packet->set_ip6_header(ip6, sizeof(click_ip6));
 
   // set up UDP header

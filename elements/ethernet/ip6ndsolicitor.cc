@@ -194,7 +194,7 @@ IP6NDSolicitor::send_query_for(const u_char want_ip6[16])
 void
 IP6NDSolicitor::handle_ip6(Packet *p)
 {  
-  IP6Address ipa = p->dst_ip6_anno();
+  IP6Address ipa = DST_IP6_ANNO(p);
   int bucket = (ipa.data()[0] + ipa.data()[15]) % NMAP;
   NDEntry *ae = _map[bucket];
   while (ae && ae->ip6 != ipa)
@@ -219,7 +219,7 @@ IP6NDSolicitor::handle_ip6(Packet *p)
 	_pkts_killed++;
       }
       ae->p = p;
-      send_query_for(p->dst_ip6_anno().data());
+      send_query_for(DST_IP6_ANNO(p).data());
     }
     
   } else {
@@ -230,7 +230,7 @@ IP6NDSolicitor::handle_ip6(Packet *p)
     ae->next = _map[bucket];
     _map[bucket] = ae;
 
-    send_query_for(p->dst_ip6_anno().data());
+    send_query_for(DST_IP6_ANNO(p).data());
   }
 }
 
