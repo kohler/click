@@ -608,26 +608,6 @@ Packet::expensive_put(uint32_t nbytes)
     return 0;
 }
 
-/** @brief Shift packet data within the data buffer.
- * @param offset amount to shift packet data
- * @param free_on_failure if true, then delete the input packet on failure
- * @return a packet with shifted data, or null on failure
- *
- * Useful to align packet data.  For example, if the packet's embedded IP
- * header is located at pointer value 0x8CCA03, then shift_data(1) or
- * shift_data(-3) will both align the header on a 4-byte boundary.
- *
- * If the packet is shared() or there isn't enough headroom or tailroom for
- * the operation, the packet is passed to uniqueify() first.  This can fail if
- * there isn't enough memory.  If it fails, shift_data returns null, and if @a
- * free_on_failure is true (the default), the input packet is freed.
- *
- * The packet's mac_header, network_header, and transport_header areas are
- * preserved, even if they lie within the headroom.  Any headroom outside
- * these regions may be overwritten, as may any tailroom.
- *
- * @post new data() == old data() + @a offset (if no copy is made)
- * @post new buffer() == old buffer() (if no copy is made) */
 Packet *
 Packet::shift_data(int offset, bool free_on_failure)
 {

@@ -40,28 +40,28 @@ class Packet { public:
     };
 
     static WritablePacket *make(uint32_t headroom, const unsigned char *data,
-				uint32_t length, uint32_t tailroom);
-    static inline WritablePacket *make(const char *data, uint32_t length);
-    static inline WritablePacket *make(const unsigned char *data, uint32_t length);
-    static inline WritablePacket *make(uint32_t length);
+				uint32_t length, uint32_t tailroom) CLICK_WARN_UNUSED_RESULT;
+    static inline WritablePacket *make(const char *data, uint32_t length) CLICK_WARN_UNUSED_RESULT;
+    static inline WritablePacket *make(const unsigned char *data, uint32_t length) CLICK_WARN_UNUSED_RESULT;
+    static inline WritablePacket *make(uint32_t length) CLICK_WARN_UNUSED_RESULT;
 #if CLICK_LINUXMODULE
-    static Packet *make(struct sk_buff *skb);
+    static Packet *make(struct sk_buff *skb) CLICK_WARN_UNUSED_RESULT;
 #endif
 #if CLICK_BSDMODULE
     // Packet::make(mbuf *) wraps a Packet around an existing mbuf.
     // Packet now owns the mbuf.
-    static inline Packet *make(struct mbuf *mbuf);
+    static inline Packet *make(struct mbuf *mbuf) CLICK_WARN_UNUSED_RESULT;
 #endif
 #if CLICK_USERLEVEL
     static WritablePacket *make(unsigned char *data, uint32_t length,
-				void (*destructor)(unsigned char *, size_t));
+				void (*destructor)(unsigned char *, size_t)) CLICK_WARN_UNUSED_RESULT;
 #endif
 
     inline void kill();
 
     inline bool shared() const;
-    Packet *clone();
-    inline WritablePacket *uniqueify();
+    Packet *clone() CLICK_WARN_UNUSED_RESULT;
+    inline WritablePacket *uniqueify() CLICK_WARN_UNUSED_RESULT;
   
     inline const unsigned char *data() const;
     inline const unsigned char *end_data() const;
@@ -81,15 +81,160 @@ class Packet { public:
     struct mbuf *steal_m();
 #endif
 
-    WritablePacket *push(uint32_t len); // Add more space before packet.
-    WritablePacket *push_mac_header(uint32_t len);
-    Packet *nonunique_push(uint32_t len);
-    void pull(uint32_t len);		// Get rid of initial bytes.
-    WritablePacket *put(uint32_t len);	// Add bytes to end of pkt.
-    Packet *nonunique_put(uint32_t len);
-    void take(uint32_t len);		// Delete bytes from end of pkt.
 
-    Packet *shift_data(int offset, bool free_on_failure = true);
+    /** @brief Add space for a header before the packet.
+     * @param len amount of space to add
+     * @return packet with added header space, or null on failure
+     *
+     * Returns a packet with an additional @a len bytes of uninitialized space
+     * before the current packet's data().  A copy of the packet data is made
+     * if there isn't enough headroom() in the current packet, or if the
+     * current packet is shared().  If no copy is made, this operation is
+     * quite efficient.
+     *
+     * If a data copy would be required, but the copy fails because of lack of
+     * memory, then the current packet is freed.
+     *
+     * push() is usually used like this:
+     * @code
+     * WritablePacket *q = p->push(14);
+     * if (!q)
+     *     return 0;
+     * // p must not be used here.
+     * @endcode
+     *
+     * @post new length() == old length() + @a len (if no failure)
+     *
+     * @sa nonunique_push, push_mac_header, pull */
+    WritablePacket *push(uint32_t len) CLICK_WARN_UNUSED_RESULT;
+
+    /** @brief Add space for a MAC header before the packet.
+     * @param len amount of space to add and length of MAC header
+     * @return packet with added header space, or null on failure
+     *
+     * Combines the action of push() and set_mac_header().  @a len bytes are
+     * pushed for a MAC header, and on success, the packet's returned MAC and
+     * network header pointers are set as by set_mac_header(data(), @a len).
+     *
+     * @sa push */
+    WritablePacket *push_mac_header(uint32_t len) CLICK_WARN_UNUSED_RESULT;
+
+    /** @brief Add space for a header before the packet.
+     * @param len amount of space to add
+     * @return packet with added header space, or null on failure
+     *
+     * This is a variant of push().  Returns a packet with an additional @a
+     * len bytes of uninitialized space before the current packet's data().  A
+     * copy of the packet data is made if there isn't enough headroom() in the
+     * current packet.  However, no copy is made if the current packet is
+     * shared; and if no copy is made, this operation is quite efficient.
+     *
+     * If a data copy would be required, but the copy fails because of lack of
+     * memory, then the current packet is freed.
+     *
+     * @note Unlike push(), nonunique_push() returns a Packet object, which
+     * has non-writable data.
+     *
+     * @sa push */
+    Packet *nonunique_push(uint32_t len) CLICK_WARN_UNUSED_RESULT;
+
+    /** @brief Remove a header from the front of the packet.
+     * @param len amount of space to remove
+     *
+     * Removes @a len bytes from the initial part of the packet, usually
+     * corresponding to some network header (for example, pull(14) removes an
+     * Ethernet header).  This operation is efficient: it just bumps a
+     * pointer.
+     *
+     * It is an error to attempt to pull more than length() bytes.
+     *
+     * @post new data() == old data() + @a len
+     * @post new length() == old length() - @a len
+     *
+     * @sa push */
+    void pull(uint32_t len);
+
+    /** @brief Add space for data after the packet.
+     * @param len amount of space to add
+     * @return packet with added trailer space, or null on failure
+     *
+     * Returns a packet with an additional @a len bytes of uninitialized space
+     * after the current packet's data (starting at end_data()).  A copy of
+     * the packet data is made if there isn't enough tailroom() in the current
+     * packet, or if the current packet is shared().  If no copy is made, this
+     * operation is quite efficient.
+     *
+     * If a data copy would be required, but the copy fails because of lack of
+     * memory, then the current packet is freed.
+     *
+     * put() is usually used like this:
+     * @code
+     * WritablePacket *q = p->put(100);
+     * if (!q)
+     *     return 0;
+     * // p must not be used here.
+     * @endcode
+     *
+     * @post new length() == old length() + @a len (if no failure)
+     *
+     * @sa nonunique_put, take */
+    WritablePacket *put(uint32_t len) CLICK_WARN_UNUSED_RESULT;
+
+    /** @brief Add space for data after the packet.
+     * @param len amount of space to add
+     * @return packet with added trailer space, or null on failure
+     *
+     * This is a variant of put().  Returns a packet with an additional @a len
+     * bytes of uninitialized space after the current packet's data (starting
+     * at end_data()).  A copy of the packet data is made if there isn't
+     * enough tailroom() in the current packet.  However, no copy is made if
+     * the current packet is shared; and if no copy is made, this operation is
+     * quite efficient.
+     *
+     * If a data copy would be required, but the copy fails because of lack of
+     * memory, then the current packet is freed.
+     *
+     * @sa put */
+    Packet *nonunique_put(uint32_t len) CLICK_WARN_UNUSED_RESULT;
+
+    /** @brief Remove space from the end of the packet.
+     * @param len amount of space to remove
+     *
+     * Removes @a len bytes from the end of the packet.  This operation is
+     * efficient: it just bumps a pointer.
+     *
+     * It is an error to attempt to pull more than length() bytes.
+     *
+     * @post new data() == old data()
+     * @post new end_data() == old end_data() - @a len
+     * @post new length() == old length() - @a len
+     *
+     * @sa push */
+    void take(uint32_t len);
+
+
+    /** @brief Shift packet data within the data buffer.
+     * @param offset amount to shift packet data
+     * @param free_on_failure if true, then delete the input packet on failure
+     * @return a packet with shifted data, or null on failure
+     *
+     * Useful to align packet data.  For example, if the packet's embedded IP
+     * header is located at pointer value 0x8CCA03, then shift_data(1) or
+     * shift_data(-3) will both align the header on a 4-byte boundary.
+     *
+     * If the packet is shared() or there isn't enough headroom or tailroom
+     * for the operation, the packet is passed to uniqueify() first.  This can
+     * fail if there isn't enough memory.  If it fails, shift_data returns
+     * null, and if @a free_on_failure is true (the default), the input packet
+     * is freed.
+     *
+     * The packet's mac_header, network_header, and transport_header areas are
+     * preserved, even if they lie within the headroom.  Any headroom outside
+     * these regions may be overwritten, as may any tailroom.
+     *
+     * @post new data() == old data() + @a offset (if no copy is made)
+     * @post new buffer() == old buffer() (if no copy is made) */
+    Packet *shift_data(int offset, bool free_on_failure = true) CLICK_WARN_UNUSED_RESULT;
 #if CLICK_USERLEVEL
     inline void shrink_data(const unsigned char *data, uint32_t length);
     inline void change_headroom_and_length(uint32_t headroom, uint32_t length);
@@ -1114,29 +1259,6 @@ Packet::uniqueify()
 	return expensive_uniqueify(0, 0, true);
 }
 
-/** @brief Add space for a header before the packet.
- * @param len amount of space to add
- * @return packet with added header space, or null on failure
- *
- * Returns a packet with an additional @a len bytes of uninitialized space
- * before the current packet's data().  A copy of the packet data is made if
- * there isn't enough headroom() in the current packet, or if the current
- * packet is shared().  If no copy is made, this operation is quite efficient.
- *
- * If a data copy would be required, but the copy fails because of lack of
- * memory, then the current packet is freed.
- *
- * push() is usually used like this:
- * @code
- * WritablePacket *q = p->push(14);
- * if (!q)
- *     return 0;
- * // p must not be used here.
- * @endcode
- *
- * @post new length() == old length() + @a len (if no failure)
- *
- * @sa nonunique_push, push_mac_header, pull */
 inline WritablePacket *
 Packet::push(uint32_t len)
 {
@@ -1157,23 +1279,6 @@ Packet::push(uint32_t len)
 	return expensive_push(len);
 }
 
-/** @brief Add space for a header before the packet.
- * @param len amount of space to add
- * @return packet with added header space, or null on failure
- *
- * This is a variant of push().  Returns a packet with an additional @a len
- * bytes of uninitialized space before the current packet's data().  A copy of
- * the packet data is made if there isn't enough headroom() in the current
- * packet.  However, no copy is made if the current packet is shared; and if
- * no copy is made, this operation is quite efficient.
- *
- * If a data copy would be required, but the copy fails because of lack of
- * memory, then the current packet is freed.
- *
- * @note Unlike push(), nonunique_push() returns a Packet object, which has
- * non-writable data.
- *
- * @sa push */
 inline Packet *
 Packet::nonunique_push(uint32_t len)
 {
@@ -1193,19 +1298,6 @@ Packet::nonunique_push(uint32_t len)
 	return expensive_push(len);
 }
 
-/** @brief Remove a header from the front of the packet.
- * @param len amount of space to remove
- *
- * Removes @a len bytes from the initial part of the packet, usually
- * corresponding to some network header (for example, pull(14) removes an
- * Ethernet header).  This operation is efficient: it just bumps a pointer.
- *
- * It is an error to attempt to pull more than length() bytes.
- *
- * @post new data() == old data() + @a len
- * @post new length() == old length() - @a len
- *
- * @sa push */
 inline void
 Packet::pull(uint32_t len)
 {
@@ -1225,30 +1317,6 @@ Packet::pull(uint32_t len)
 #endif
 }
 
-/** @brief Add space for data after the packet.
- * @param len amount of space to add
- * @return packet with added trailer space, or null on failure
- *
- * Returns a packet with an additional @a len bytes of uninitialized space
- * after the current packet's data (starting at end_data()).  A copy of the
- * packet data is made if there isn't enough tailroom() in the current packet,
- * or if the current packet is shared().  If no copy is made, this operation
- * is quite efficient.
- *
- * If a data copy would be required, but the copy fails because of lack of
- * memory, then the current packet is freed.
- *
- * put() is usually used like this:
- * @code
- * WritablePacket *q = p->put(100);
- * if (!q)
- *     return 0;
- * // p must not be used here.
- * @endcode
- *
- * @post new length() == old length() + @a len (if no failure)
- *
- * @sa nonunique_put, take */
 inline WritablePacket *
 Packet::put(uint32_t len)
 {
@@ -1268,21 +1336,6 @@ Packet::put(uint32_t len)
 	return expensive_put(len);
 }
 
-/** @brief Add space for data after the packet.
- * @param len amount of space to add
- * @return packet with added trailer space, or null on failure
- *
- * This is a variant of put().  Returns a packet with an additional @a len
- * bytes of uninitialized space after the current packet's data (starting at
- * end_data()).  A copy of the packet data is made if there isn't enough
- * tailroom() in the current packet.  However, no copy is made if the current
- * packet is shared; and if no copy is made, this operation is quite
- * efficient.
- *
- * If a data copy would be required, but the copy fails because of lack of
- * memory, then the current packet is freed.
- *
- * @sa put */
 inline Packet *
 Packet::nonunique_put(uint32_t len)
 {
@@ -1301,19 +1354,6 @@ Packet::nonunique_put(uint32_t len)
 	return expensive_put(len);
 }
 
-/** @brief Remove space from the end of the packet.
- * @param len amount of space to remove
- *
- * Removes @a len bytes from the end of the packet.  This operation is
- * efficient: it just bumps a pointer.
- *
- * It is an error to attempt to pull more than length() bytes.
- *
- * @post new data() == old data()
- * @post new end_data() == old end_data() - @a len
- * @post new length() == old length() - @a len
- *
- * @sa push */
 inline void
 Packet::take(uint32_t len)
 {
@@ -1460,15 +1500,6 @@ Packet::set_ether_header(const click_ether *ethh)
     set_mac_header(reinterpret_cast<const unsigned char *>(ethh), 14);
 }
 
-/** @brief Add space for a MAC header before the packet.
- * @param len amount of space to add and length of MAC header
- * @return packet with added header space, or null on failure
- *
- * Combines the action of push() and set_mac_header().  @a len bytes are
- * pushed for a MAC header, and on success, the packet's returned MAC and
- * network header pointers are set as by set_mac_header(data(), @a len).
- *
- * @sa push */
 inline WritablePacket *
 Packet::push_mac_header(uint32_t len)
 {

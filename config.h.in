@@ -121,9 +121,16 @@
 
 /* Define macro for deprecated functions. */
 #if __GNUC__ < 3 || (__GNUC__ == 3 && __GNUC_MINOR__ == 0)
-#define CLICK_DEPRECATED
+# define CLICK_DEPRECATED /* nothing */
 #else
-#define CLICK_DEPRECATED __attribute__((deprecated))
+# define CLICK_DEPRECATED __attribute__((deprecated))
+#endif
+
+/* Define macro for functions whose results should not be ignored. */
+#if __GNUC__ < 3 || (__GNUC__ == 3 && __GNUC_MINOR__ < 4)
+# define CLICK_WARN_UNUSED_RESULT /* nothing */
+#else
+# define CLICK_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #endif
 
 /* Define ARCH_IS_BIG_ENDIAN based on CLICK_BYTE_ORDER. */

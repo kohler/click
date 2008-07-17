@@ -31,7 +31,7 @@ class Element { public:
 
     // RUNTIME
     virtual void push(int port, Packet *p);
-    virtual Packet *pull(int port);
+    virtual Packet *pull(int port) CLICK_WARN_UNUSED_RESULT;
     virtual Packet *simple_action(Packet *p);
 
     virtual bool run_task(Task *task);	// return true iff did useful work

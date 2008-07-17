@@ -1042,6 +1042,7 @@ PREDEFINED             = CLICK_DECLS= \
                          CLICK_USERLEVEL \
                          CLICK_LINUXMODULE \
                          CLICK_DEPRECATED= \
+                         CLICK_WARN_UNUSED_RESULT= \
                          CLICK_ELEMENT_PORT_COUNT_DEPRECATED= \
                          __attribute__(x)= \
                          HAVE_INT64_TYPES \

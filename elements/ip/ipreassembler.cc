@@ -325,7 +325,7 @@ IPReassembler::simple_action(Packet *p)
 	int old_ip_off = q->ip_header()->ip_off;
 	int hl = iph->ip_hl << 2;
 	if (hl > (int) q->network_header_length())
-	    (void) q->nonunique_push(hl - q->network_header_length());
+	    q = q->push(hl - q->network_header_length());
 	else
 	    q->pull(q->network_header_length() - hl);
 	q->set_ip_header((click_ip *)(q->transport_header() - hl), hl);
