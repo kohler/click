@@ -34,6 +34,7 @@ LDFLAGS ?= $(CLICKLDFLAGS)
 
 packagesrcdir ?= $(srcdir)
 PACKAGE_OBJS ?= kpackage.ko
+PACKAGE_DEPS ?=
 
 CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
 CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
@@ -78,13 +79,13 @@ endif
 
 ifeq ($(CLICK_LINUXMODULE_2_6),1)
 # Jump through hoops to avoid missing symbol warnings
-$(package).ko: Makefile Kbuild always
-	{ ( $(MAKE) -C $(clicklinuxdir) M=$(shell pwd) CLICK_PACKAGE_MAKING=linuxmodule-26 modules 2>&1 1>&3; echo $$? > .$(package).ko.status ) | grep -v '^\*\*\* Warning:.*undefined' 1>&2; } 3>&1; v=`cat .$(package).ko.status`; rm .$(package).ko.status; exit $$v
+$(package).ko: Makefile Kbuild always $(PACKAGE_DEPS)
+	{ ( $(MAKE) -C $(clicklinuxdir) M=$(shell pwd) CLICK_PACKAGE_MAKING=linuxmodule-26 modules 2>&1 1>&3; echo $$? > .$(package).ko.status ) | grep -iv '^[\* ]*Warning:.*undefined' 1>&2; } 3>&1; v=`cat .$(package).ko.status`; rm .$(package).ko.status; exit $$v
 Kbuild: $(CLICK_BUILDTOOL)
 	echo 'include $$(obj)/Makefile' > Kbuild
 	$(CLICK_BUILDTOOL) kbuild >> Kbuild
 else
-$(package).ko: $(clickdatadir)/pkg-linuxmodule.mk $(OBJS)
+$(package).ko: $(clickdatadir)/pkg-linuxmodule.mk $(OBJS) $(PACKAGE_DEPS)
 	$(LD) -r -o $(package).ko $(OBJS)
 	$(STRIP) -g $(package).ko
 endif

@@ -34,6 +34,8 @@ LDFLAGS ?= $(CLICKLDMODULEFLAGS)
 
 packagesrcdir ?= $(srcdir)
 PACKAGE_OBJS ?= upackage.uo
+PACKAGE_LIBS ?=
+PACKAGE_DEPS ?=
 
 CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
 CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
@@ -73,8 +75,8 @@ endif
 
 OBJS = $(ELEMENT_OBJS) $(PACKAGE_OBJS)
 
-$(package).uo: $(clickdatadir)/pkg-userlevel.mk $(OBJS)
-	$(CXXLINK) -o $(package).uo $(OBJS) $(ELEMENT_LIBS)
+$(package).uo: $(clickdatadir)/pkg-userlevel.mk $(OBJS) $(PACKAGE_DEPS)
+	$(CXXLINK) -o $(package).uo $(OBJS) $(ELEMENT_LIBS) $(PACKAGE_LIBS)
 	$(STRIP_UPACKAGE) $(package).uo
 
 elemlist uelements.conf: $(CLICK_BUILDTOOL)
