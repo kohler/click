@@ -55,10 +55,10 @@ endif
 all: $(TARGETS)
 
 $(package).uo: Makefile always
-	$(MAKE) CLICK_PACKAGE_MAKING=userlevel $(package).uo
+	$(MAKE) -R CLICK_PACKAGE_MAKING=userlevel $(package).uo
 
 $(package).ko: Makefile always
-	$(MAKE) CLICK_PACKAGE_MAKING=linuxmodule $(package).ko
+	$(MAKE) -R CLICK_PACKAGE_MAKING=linuxmodule $(package).ko
 
 ifneq ($(wildcard $(srcdir)/Makefile.in),)
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
