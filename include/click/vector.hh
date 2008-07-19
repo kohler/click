@@ -51,8 +51,14 @@ class Vector { public:
   bool reserve(size_type);
 
   // element access
-  T& operator[](size_type i)		{ assert(i>=0 && i<_n); return _l[i]; }
-  const T& operator[](size_type i) const{ assert(i>=0 && i<_n); return _l[i]; }
+    T &operator[](size_type i) {
+	assert((unsigned) i < (unsigned) _n);
+	return _l[i];
+    }
+    const T &operator[](size_type i) const {
+	assert((unsigned) i < (unsigned) _n);
+	return _l[i];
+    }
   T& at(size_type i)			{ return operator[](i); }
   const T& at(size_type i) const	{ return operator[](i); }
   T& front()				{ return operator[](0); }
