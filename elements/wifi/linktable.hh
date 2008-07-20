@@ -42,7 +42,7 @@ class IPPair {
 	return (_to == foo) ? _from : _to;
     }
 
-    inline size_t hashcode() const {
+    inline hashcode_t hashcode() const {
 	return CLICK_NAME(hashcode)(_to) + CLICK_NAME(hashcode)(_from);
     }
 

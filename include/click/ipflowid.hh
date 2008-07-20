@@ -28,7 +28,7 @@ class IPFlowID { public:
   
   IPFlowID rev() const;
 
-  inline size_t hashcode() const;
+  inline hashcode_t hashcode() const;
 
   String unparse() const;
   operator String() const		{ return unparse(); }
@@ -72,13 +72,13 @@ IPFlowID::rev() const
 
 #define ROT(v, r) ((v)<<(r) | ((unsigned)(v))>>(32-(r)))
 
-inline size_t IPFlowID::hashcode() const
+inline hashcode_t IPFlowID::hashcode() const
 { 
   // more complicated hashcode, but causes less collision
   uint16_t s = ntohs(sport());
   uint16_t d = ntohs(dport());
-  size_t sx = CLICK_NAME(hashcode)(saddr());
-  size_t dx = CLICK_NAME(hashcode)(daddr());
+  hashcode_t sx = CLICK_NAME(hashcode)(saddr());
+  hashcode_t dx = CLICK_NAME(hashcode)(daddr());
   return (ROT(sx, s%16)
           ^ ROT(dx, 31-d%16))
 	  ^ ((d << 16) | s);

@@ -6,10 +6,10 @@ CLICK_DECLS
 
 typedef Vector<IPAddress> Path;
 
-
-inline size_t hashcode(const Path &p)
+template <>
+inline hashcode_t hashcode(const Path &p)
 {
-    unsigned h = 0;
+    hashcode_t h = 0;
     for (int x = 0; x < p.size(); x++)
 	h ^= CLICK_NAME(hashcode)(p[x]);
     return h;

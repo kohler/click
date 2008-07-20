@@ -62,7 +62,7 @@ class SPI {
 	{
     		return (_spi);
 	}
-	inline size_t hashcode() const;
+	inline hashcode_t hashcode() const;
    private:
 	uint32_t _spi;
  };
@@ -119,7 +119,7 @@ String unparse_entries() const
 };
 
 
-inline size_t SPI::hashcode() const
+inline hashcode_t SPI::hashcode() const
 {
     return _spi;
 }

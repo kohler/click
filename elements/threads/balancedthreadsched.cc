@@ -65,12 +65,14 @@ BalancedThreadSched::initialize(ErrorHandler *)
 
 static int task_increasing_sorter(const void *va, const void *vb) {
     Task **a = (Task **)va, **b = (Task **)vb;
-    return (*a)->cycles() - (*b)->cycles();
+    int ca = (*a)->cycles(), cb = (*b)->cycles();
+    return (ca < cb ? -1 : (cb < ca ? 1 : 0));
 }
 
 static int task_decreasing_sorter(const void *va, const void *vb) {
     Task **a = (Task **)va, **b = (Task **)vb;
-    return (*b)->cycles() - (*a)->cycles();
+    int ca = (*a)->cycles(), cb = (*b)->cycles();
+    return (ca < cb ? 1 : (cb < ca ? -1 : 0));
 }
 
 void

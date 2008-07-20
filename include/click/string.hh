@@ -772,5 +772,15 @@ inline const char *find(const String &s, char c) {
     return find(s.begin(), s.end(), c);
 }
 
+// sort methods
+
+template <typename T> int click_compare(const void *, const void *);
+
+template <> inline int click_compare<String>(const void *a, const void *b) {
+    const String *ta = reinterpret_cast<const String *>(a);
+    const String *tb = reinterpret_cast<const String *>(b);
+    return String::compare(*ta, *tb);
+}
+
 CLICK_ENDDECLS
 #endif

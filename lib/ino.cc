@@ -163,14 +163,6 @@ ClickIno::true_prepare(Router *r, uint32_t generation)
 }
 
 
-static int
-string_compar(const void *v1, const void *v2)
-{
-    const String *a = reinterpret_cast<const String *>(v1);
-    const String *b = reinterpret_cast<const String *>(v2);
-    return String::compare(*a, *b);
-}
-
 void
 ClickIno::calculate_handler_conflicts(int parent_elementno)
 {
@@ -196,8 +188,7 @@ ClickIno::calculate_handler_conflicts(int parent_elementno)
     }
 
     // sort names
-    if (names.size())
-	click_qsort(&names[0], names.size(), sizeof(String), string_compar);
+    click_qsort(names.begin(), names.size());
 
     // run over the arrays, marking conflicts
     int xi = parent_xindex + 1;

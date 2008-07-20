@@ -38,7 +38,7 @@ operator==(const AggregateIPAddrPair::HostPair &a, const AggregateIPAddrPair::Ho
     return a.a == b.a && a.b == b.b;
 }
 
-inline size_t
+inline hashcode_t
 AggregateIPAddrPair::HostPair::hashcode() const
 {
     return (a << 12) + b + ((a >> 20) & 0x1F);

@@ -166,8 +166,66 @@ CLICK_ENDDECLS
 
 // SORTING
 
-int click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *, void *), void *thunk);
-int click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *));
+/** @brief Sort array of elements according to @a compar.
+ * @param base pointer to array of elements
+ * @param n number of elements in @a param
+ * @param size size of an element
+ * @param compar comparison function
+ * @param user_data user data for comparison function
+ *
+ * Sorts an array of elements.  The comparison function is called as "@a
+ * param(@i a, @i b, @a user_data)", where @i a and @i b are pointers into the
+ * array starting at @a base, and @a user_data is click_qsort's @a user_data
+ * parameter.  The function should return an integer less than zero, equal to
+ * zero, or greater than zero depending on whether @i a compares less than @i
+ * b, equal to @i b, or greater than @i b, respectively.  On return the
+ * elements in the @a param array have been reordered into strictly increasing
+ * order.  The function always returns 0.
+ *
+ * @warning click_qsort() shuffles elements by swapping memory, rather than by
+ * calling copy constructors or swap().  It is thus not safe for all types.
+ * In particular, objects like Bitvector that maintain pointers into their own
+ * representations are not safe to sort with click_qsort().  Conservatively,
+ * it is safe to sort fundamental data types (like int and pointers), plain
+ * old data types, and simple objects.  It is also safe to sort String,
+ * StringAccum, and Vector objects.
+ *
+ * @note The implementation is based closely on "Engineering a Sort Function,"
+ * Jon L. Bentley and M. Douglas McIlroy, <em>Software---Practice &
+ * Experience</em>, 23(11), 1249-1265, Nov. 1993.  It has been coded
+ * iteratively rather than recursively, and does no dynamic memory allocation,
+ * so it will not exhaust stack space in the kernel. */
+int click_qsort(void *base, size_t n, size_t size,
+		int (*compar)(const void *a, const void *b, void *user_data),
+		void *user_data);
+
+/** @brief Sort array of elements according to @a compar.
+ * @param base pointer to array of elements
+ * @param n number of elements in @a param
+ * @param size size of an element
+ * @param compar comparison function
+ *
+ * Sorts an array of elements.  The comparison function is called as "@a
+ * param(@i a, @i b)", where @i a and @i b are pointers into the array
+ * starting at @a base. */
+int click_qsort(void *base, size_t n, size_t size,
+		int (*compar)(const void *, const void *));
+
+/** @brief Generic comparison function useful for click_qsort.
+ *
+ * Compares @a a and @a b using operator<(). */
+template <typename T> int click_compare(const void *a, const void *b)
+{
+    const T *ta = static_cast<const T *>(a);
+    const T *tb = static_cast<const T *>(b);
+    return (*ta < *tb ? -1 : (*tb < *ta ? 1 : 0));
+}
+
+/** @brief Sort array of elements using operator<(). */
+template <typename T> int click_qsort(T *base, size_t n)
+{
+    return click_qsort(base, n, sizeof(T), &click_compare<T>);
+}
 
 
 // OTHER

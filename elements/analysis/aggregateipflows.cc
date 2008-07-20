@@ -51,7 +51,7 @@ operator==(const AggregateIPFlows::HostPair &a, const AggregateIPFlows::HostPair
     return a.a == b.a && a.b == b.b;
 }
 
-inline size_t
+inline hashcode_t
 AggregateIPFlows::HostPair::hashcode() const
 {
     return (a << 12) + b + ((a >> 20) & 0x1F);

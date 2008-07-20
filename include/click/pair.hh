@@ -32,7 +32,7 @@ struct Pair {
 	: first(p.first), second(p.second) {
     }
     
-    typedef size_t (Pair<T, U>::*unspecified_bool_type)() const;
+    typedef hashcode_t (Pair<T, U>::*unspecified_bool_type)() const;
     inline operator unspecified_bool_type() const {
 	return first || second ? &Pair<T, U>::hashcode : 0;
     }
@@ -41,7 +41,7 @@ struct Pair {
 	return first;
     }
     
-    inline size_t hashcode() const;
+    inline hashcode_t hashcode() const;
 
     template <typename V, typename W>
     Pair<T, U> &operator=(const Pair<V, W> &p) {
@@ -72,7 +72,7 @@ inline bool operator<(const Pair<T, U> &a, const Pair<T, U> &b)
 }
 
 template <class T, class U>
-inline size_t Pair<T, U>::hashcode() const
+inline hashcode_t Pair<T, U>::hashcode() const
 {
     return (CLICK_NAME(hashcode)(first) << 7) ^ CLICK_NAME(hashcode)(second);
 }

@@ -519,13 +519,13 @@ HashTableTest::initialize(ErrorHandler *errh)
     {
 	char blah[] = "Hello, this is a story I will tell.\0\0\0\0";
 	size_t l = strlen(blah);
-	uint32_t a = String::hashcode(blah, blah + l);
+	hashcode_t a = String::hashcode(blah, blah + l);
 	memmove(blah + 1, blah, l);
-	uint32_t b = String::hashcode(blah + 1, blah + l + 1);
+	hashcode_t b = String::hashcode(blah + 1, blah + l + 1);
 	memmove(blah + 2, blah + 1, l);
-	uint32_t c = String::hashcode(blah + 2, blah + l + 2);
+	hashcode_t c = String::hashcode(blah + 2, blah + l + 2);
 	memmove(blah + 3, blah + 2, l);
-	uint32_t d = String::hashcode(blah + 3, blah + l + 3);
+	hashcode_t d = String::hashcode(blah + 3, blah + l + 3);
 	CHECK(a == b);
 	CHECK(a == c);
 	CHECK(a == d);

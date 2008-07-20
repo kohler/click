@@ -27,7 +27,7 @@ class IP6FlowID { public:
   
   inline IP6FlowID rev() const;
 
-  inline size_t hashcode() const;
+  inline hashcode_t hashcode() const;
 
   String unparse() const;
   operator String() const		{ return unparse(); }
@@ -72,7 +72,7 @@ IP6FlowID::rev() const
 #define ROT(v, r) ((v)<<(r) | ((unsigned)(v))>>(32-(r)))
 
 #if 0
-inline size_t
+inline hashcode_t
 IP6FlowID::hashcode() const
 { 
   return (ROT(_saddr.hashcode(), 13) 
@@ -80,13 +80,13 @@ IP6FlowID::hashcode() const
 }
 #endif
 
-inline size_t IP6FlowID::hashcode() const
+inline hashcode_t IP6FlowID::hashcode() const
 { 
   // more complicated hashcode, but causes less collision
   uint16_t s = ntohs(sport());
   uint16_t d = ntohs(dport());
-  size_t sx = CLICK_NAME(hashcode)(saddr());
-  size_t dx = CLICK_NAME(hashcode)(daddr());
+  hashcode_t sx = CLICK_NAME(hashcode)(saddr());
+  hashcode_t dx = CLICK_NAME(hashcode)(daddr());
   return (ROT(sx, s%16)
           ^ ROT(dx, 31-d%16))
 	  ^ ((d << 16) | s);
