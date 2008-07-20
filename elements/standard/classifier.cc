@@ -988,6 +988,90 @@ Classifier::add_handlers()
 }
 
 //
+// COMPRESSED PROGRAMS
+//
+
+void
+Classifier::compress_exprs(Vector<uint32_t> &prog, bool perform_binary_search,
+			   unsigned min_binary_search) const
+{
+  // Compress the program into "prog."
+  
+  // The compressed program groups related Exprs together and sorts large
+  // sequences of common primitives ("port 80 or port 90 or port 92 or ..."),
+  // allowing the use of binary search.
+
+  // The compressed program is a sequence of tests.  Each test consists of
+  // five or more 32-bit words, as follows.
+  //
+  // +--------+--------+--------+--------+--------+-------
+  // |nval|off|   no   |   yes  |  mask  |  value | value...
+  // +--------+--------+--------+--------+--------+-------
+  // nval (16 bits)  - number of values in the test
+  // off (16 bits)   - offset of word into the data packet
+  //                   (might be > TRANSP_FAKE_OFFSET)
+  // no (32 bits)    - jump if test fails
+  // yes (32 bits)   - jump if test succeeds
+  // mask (32 bits)  - masked with packet data before comparing with values
+  // value (32 bits) - comparison data (nval values).  The values are sorted
+  //                   in numerical order if 'nval >= MIN_BINARY_SEARCH.'
+  //
+  // The test succeeds if the 32 bits of packet data starting at 'off,'
+  // bitwise anded with 'mask,' equal any one of the 'value's.  If a 'jump'
+  // value is <= 0, it is the negative of the relevant IPFilter output port.
+  // A positive 'jump' value equals the number of 32-bit words to move the
+  // instruction pointer.
+  
+  // It often helps to do another bubblesort for things like ports.
+
+  assert(prog.size() == 0);
+  
+  Vector<int> wanted(_exprs.size() + 1, 0);
+  wanted[0] = 1;
+  for (const Expr *ex = _exprs.begin(); ex < _exprs.end(); ex++)
+      if (wanted[ex - _exprs.begin()])
+	  for (int j = 0; j < 2; j++)
+	      if (ex->j[j] > 0)
+		  wanted[ex->j[j]]++;
+
+  Vector<int> offsets;
+  for (int i = 0; i < _exprs.size(); i++) {
+      int off = prog.size();
+      offsets.push_back(off);
+      if (wanted[i] == 0)
+	  continue;
+      assert(_exprs[i].offset >= 0);
+      prog.push_back(_exprs[i].offset + 0x10000);
+      prog.push_back(_exprs[i].no());
+      prog.push_back(_exprs[i].yes());
+      prog.push_back(_exprs[i].mask.u);
+      prog.push_back(_exprs[i].value.u);
+      int no;
+      while ((no = (int32_t) prog[off+1]) > 0 && wanted[no] == 1
+	     && _exprs[no].yes() == _exprs[i].yes()
+	     && _exprs[no].offset == _exprs[i].offset
+	     && _exprs[no].mask.u == _exprs[i].mask.u) {
+	  prog[off] += 0x10000;
+	  prog[off+1] = _exprs[no].no();
+	  prog.push_back(_exprs[no].value.u);
+	  wanted[no]--;
+      }
+      if (perform_binary_search && (prog[off] >> 16) >= min_binary_search)
+	  click_qsort(&prog[off+4], prog[off] >> 16);
+  }
+  offsets.push_back(prog.size());
+  
+  for (int i = 0; i < _exprs.size(); i++)
+      if (offsets[i] < prog.size() && offsets[i] < offsets[i+1]) {
+	  int off = offsets[i];
+	  if ((int32_t) prog[off+1] > 0)
+	      prog[off+1] = offsets[prog[off+1]] - off;
+	  if ((int32_t) prog[off+2] > 0)
+	      prog[off+2] = offsets[prog[off+2]] - off;
+      }
+}
+
+//
 // RUNNING
 //
 

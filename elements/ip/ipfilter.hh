@@ -126,9 +126,12 @@ class IPFilter : public Classifier { public:
   // this element does not need AlignmentInfo; override Classifier's "A" flag
   const char *flags() const			{ return ""; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  
-  void push(int port, Packet *);
+    int configure(Vector<String> &, ErrorHandler *);
+    void add_handlers();
+
+    void push(int port, Packet *);
+
+    static String compressed_program_string(Element *, void *);
 
   enum {
     TYPE_NONE	= 0,		// data types

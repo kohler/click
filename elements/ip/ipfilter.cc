@@ -356,7 +356,7 @@ IPFilter::Primitive::check(const Primitive &p, uint32_t provided_mask, ErrorHand
   // if _type is erroneous, return -1 right away
   if (_type < 0)
     return -1;
-  
+
   // set _type if it was not specified
   if (!_type) {
 
@@ -866,14 +866,21 @@ parse_brackets(IPFilter::Primitive& prim, const Vector<String>& words, int pos,
   return pos;
 
  non_syntax_error:
-  if (len < 1 || len > 4)
+  int multiplier = 8;
+  fieldpos *= multiplier, len *= multiplier;
+  if (len < 1 || len > 32)
     errh->error("LEN in '[POS:LEN]' out of range, should be between 1 and 4");
-  else if ((fieldpos & ~3) != ((fieldpos + len - 1) & ~3))
-    errh->error("field [%d:%d] does not fit in a single word", fieldpos, len);
-  else if (prim._transp_proto == IPFilter::UNKNOWN)
-    prim.set_type(IPFilter::TYPE_FIELD | ((fieldpos*8) << IPFilter::FIELD_OFFSET_SHIFT) | ((len*8 - 1) << IPFilter::FIELD_LENGTH_SHIFT), errh);
-  else
-    prim.set_type(IPFilter::TYPE_FIELD | (prim._transp_proto << IPFilter::FIELD_PROTO_SHIFT) | ((fieldpos*8) << IPFilter::FIELD_OFFSET_SHIFT) | ((len*8 - 1) << IPFilter::FIELD_LENGTH_SHIFT), errh);
+  else if ((fieldpos & ~31) != ((fieldpos + len - 1) & ~31))
+      errh->error("field [%d:%d] does not fit in a single word", fieldpos/multiplier, len/multiplier);
+  else {
+    int transp = prim._transp_proto;
+    if (transp == IPFilter::UNKNOWN)
+      transp = 0;
+    prim.set_type(IPFilter::TYPE_FIELD
+		  | (transp << IPFilter::FIELD_PROTO_SHIFT)
+		  | (fieldpos << IPFilter::FIELD_OFFSET_SHIFT)
+		  | ((len - 1) << IPFilter::FIELD_LENGTH_SHIFT), errh);
+  }
   return pos;
 }
 
@@ -1066,14 +1073,6 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   return pos;
 }
 
-static int
-qsort_uint32_t(const void *ax, const void *bx)
-{
-    const uint32_t *a = reinterpret_cast<const uint32_t *>(ax);
-    const uint32_t *b = reinterpret_cast<const uint32_t *>(bx);
-    return (*a > *b ? 1 : (*a == *b ? 0 : -1));
-}
-
 int
 IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -1149,81 +1148,53 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   optimize_exprs(errh);
 
-  // Optimize into an unsigned-integer program.
-  
+  // Compress the program into _prog.
   // It helps to do another bubblesort for things like ports.
   bubble_sort_and_exprs();
-  
-  Vector<int> wanted(_exprs.size() + 1, 0);
-  wanted[0] = 1;
-  for (const Expr *ex = _exprs.begin(); ex < _exprs.end(); ex++)
-      for (int j = 0; j < 2; j++)
-	  if (ex->j[j] > 0)
-	      wanted[ex->j[j]]++;
-
-  Vector<int> offsets;
-  for (int i = 0; i < _exprs.size(); i++) {
-      int off = _prog.size();
-      offsets.push_back(off);
-      if (wanted[i] == 0)
-	  continue;
-      assert(_exprs[i].offset >= 0);
-      _prog.push_back(_exprs[i].offset + 0x10000);
-      _prog.push_back(_exprs[i].no());
-      _prog.push_back(_exprs[i].yes());
-      _prog.push_back(_exprs[i].mask.u);
-      _prog.push_back(_exprs[i].value.u);
-      int no;
-      while ((no = (int32_t) _prog[off+1]) > 0 && wanted[no] == 1
-	     && _exprs[no].yes() == _exprs[i].yes()
-	     && _exprs[no].offset == _exprs[i].offset
-	     && _exprs[no].mask.u == _exprs[i].mask.u) {
-	  _prog[off] += 0x10000;
-	  _prog[off+1] = _exprs[no].no();
-	  _prog.push_back(_exprs[no].value.u);
-	  wanted[no]--;
-      }
-      if (PERFORM_BINARY_SEARCH && (_prog[off] >> 16) >= MIN_BINARY_SEARCH)
-	  click_qsort(&_prog[off+4], _prog[off] >> 16, sizeof(_prog[0]), qsort_uint32_t);
-  }
-  offsets.push_back(_prog.size());
-  
-  for (int i = 0; i < _exprs.size(); i++)
-      if (offsets[i] < _prog.size() && offsets[i] < offsets[i+1]) {
-	  int off = offsets[i];
-	  if ((int32_t) _prog[off+1] > 0)
-	      _prog[off+1] = offsets[_prog[off+1]] - off;
-	  if ((int32_t) _prog[off+2] > 0)
-	      _prog[off+2] = offsets[_prog[off+2]] - off;
-      }
-
-#if 0 && CLICK_USERLEVEL
-  // print program
-  StringAccum sa;
-  int x = 0;
-  for (int i = 0; i < _prog.size(); i++) {
-      while (x < offsets.size() && i > offsets[x])
-	  x++;
-      if (x < offsets.size() && i == offsets[x]) {
-	  sa.snprintf(80, "%3d  %d #%d  %08x  yes->", i, (uint16_t) _prog[i], _prog[i] >> 16, htonl(_prog[i+3]));
-	  if ((int32_t) _prog[i+2] > 0)
-	      sa << "step " << (_prog[i+2] + i);
-	  else
-	      sa << "[" << -((int32_t) _prog[i+2]) << "]";
-	  if ((int32_t) _prog[i+1] > 0)
-	      sa << "  no->step " << (_prog[i+1] + i);
-	  else
-	      sa << "  no->[" << -((int32_t) _prog[i+1]) << "]";
-	  sa << "\n";
-	  i += 3;
-      } else
-	  sa.snprintf(80, "%3d    %08x\n", i, htonl(_prog[i]));
-  }
-  fputs(sa.c_str(), stderr);
-#endif
+  compress_exprs(_prog, PERFORM_BINARY_SEARCH, MIN_BINARY_SEARCH);
   
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   return (errh->nerrors() == before_nerrors ? 0 : -1);
+}
+
+#if CLICK_USERLEVEL
+String
+IPFilter::compressed_program_string(Element *e, void *)
+{
+    IPFilter *c = static_cast<IPFilter *>(e);
+    const Vector<uint32_t> &prog = c->_prog;
+
+    StringAccum sa;
+    for (int i = 0; i < prog.size(); ) {
+	sa.snprintf(80, "%3d %3d/%08x%%%08x  yes->", i, (uint16_t) prog[i], htonl(prog[i+4]), htonl(prog[i+3]));
+	if ((int32_t) prog[i+2] > 0)
+	    sa << "step " << (prog[i+2] + i);
+	else
+	    sa << "[" << -((int32_t) prog[i+2]) << "]";
+	if ((int32_t) prog[i+1] > 0)
+	    sa << "  no->step " << (prog[i+1] + i);
+	else
+	    sa << "  no->[" << -((int32_t) prog[i+1]) << "]";
+	sa << "\n";
+	for (unsigned x = 1; x < (prog[i] >> 16); ++x)
+	    sa.snprintf(80, "        %08x\n", htonl(prog[i+4+x]));
+	i += (prog[i] >> 16) + 4;
+    }
+    if (prog.size() == 0)
+	sa << "all->[" << c->_output_everything << "]\n";
+    sa << "safe length " << c->_safe_length << "\n";
+    sa << "alignment offset " << c->_align_offset << "\n";
+    return sa.take_string();
+}
+#endif
+
+void
+IPFilter::add_handlers()
+{
+    Classifier::add_handlers();
+#if CLICK_USERLEVEL
+    add_read_handler("compressed_program", compressed_program_string, 0);
+#endif
 }
 
 

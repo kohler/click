@@ -143,6 +143,8 @@ class Classifier : public Element { public:
   void count_inbranches(Vector<int> &) const;
   void bubble_sort_and_exprs(int sort_stopper = 0x7FFFFFFF);
   void optimize_exprs(ErrorHandler *, int sort_stopper = 0x7FFFFFFF);
+  void compress_exprs(Vector<uint32_t> &prog, bool perform_binary_search = true,
+		      unsigned min_binary_search = 7) const;
   
   static String program_string(Element *, void *);
   
