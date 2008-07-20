@@ -23,7 +23,7 @@
 #include <click/glue.hh>
 CLICK_DECLS
 
-#define BIGHASHMAP_REARRANGE_ON_FIND 1
+#define BIGHASHMAP_REARRANGE_ON_FIND 0
 
 template <class K, class V>
 void
