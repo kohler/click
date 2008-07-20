@@ -20,7 +20,7 @@
 #endif
 CLICK_DECLS
 
-// loop-in-cache spinlock implementation: 8 bytes. if the size of this class
+// loop-in-cache spinlock implementation: 12 bytes. if the size of this class
 // changes, change size of padding in ReadWriteLock below.
 
 /** @file <click/sync.hh>
@@ -63,7 +63,7 @@ class Spinlock { public:
 #if CLICK_MULTITHREAD_SPINLOCK
   private:
     atomic_uint32_t _lock;
-    uint32_t _depth;
+    int32_t _depth;
     click_processor_t _owner;
 #endif
   
@@ -73,13 +73,13 @@ class Spinlock { public:
 inline
 Spinlock::Spinlock()
 #if CLICK_MULTITHREAD_SPINLOCK
-    : _depth(0), _owner(-1)
+    : _depth(0), _owner(click_invalid_processor())
 #endif
 {
 #if CLICK_MULTITHREAD_SPINLOCK
     _lock = 0;
 #endif
-} 
+}
 
 inline
 Spinlock::~Spinlock()
@@ -122,10 +122,9 @@ Spinlock::attempt()
 {
 #if CLICK_MULTITHREAD_SPINLOCK
     if (_owner != click_current_processor()) {
-	if (_lock.swap(1))
+	if (_lock.swap(1) != 0)
 	    return false;
-	else
-	    _owner = click_current_processor();
+	_owner = click_current_processor();
     }
     _depth++;
     return true;
@@ -143,16 +142,15 @@ inline void
 Spinlock::release()
 {
 #if CLICK_MULTITHREAD_SPINLOCK
-    if (_owner != click_current_processor())
+    if (unlikely(_owner != click_current_processor()))
 	click_chatter("releasing someone else's lock");
-    if (_depth != 0) 
-	_depth--;
-    else
-	click_chatter("lock already freed");
-    if (_depth == 0) {
-	_owner = -1;
-	_lock = 0;
-    }
+    if (likely(_depth > 0)) {
+	if (--_depth == 0) {
+	    _owner = click_invalid_processor();
+	    _lock = 0;
+	}
+    } else
+	click_chatter("lock already released");
 #endif
 }
 
@@ -314,7 +312,7 @@ class ReadWriteLock { public:
     // allocate 32 bytes (size of a cache line) for every member
     struct lock_t {
 	Spinlock _lock;
-	unsigned char reserved[24];
+	unsigned char reserved[20];
     } *_l;
 #endif
     
