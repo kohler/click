@@ -97,7 +97,7 @@ public:
     
     int    configure(Vector<String> &, ErrorHandler *);
     bool   process(Packet *);
-    bool   run_task();
+    bool   run_task(Task *);
     int    initialize(ErrorHandler *);
     void   cleanup(CleanupStage);
     void   add_handlers();

@@ -369,7 +369,7 @@ void ToUserDevice::push(int, Packet *p)
 }
 
 // something is upstream so we can run
-bool ToUserDevice::run_task()
+bool ToUserDevice::run_task(Task *)
 {
     Packet *p = input(0).pull();
     int     res;
