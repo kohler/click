@@ -111,6 +111,7 @@ class KernelTun : public Element { public:
     const char *flags() const		{ return "S3"; }
 
     void *cast(const char *);
+    int configure_phase() const		{ return CONFIGURE_PHASE_PRIVILEGED - 1; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);

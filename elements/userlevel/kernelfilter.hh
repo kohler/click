@@ -45,20 +45,29 @@ FromDevice.u, ToDevice.u, KernelTap, ifconfig(8) */
 
 class KernelFilter : public Element { public:
   
+    enum ConfigurePhase {
+	CONFIGURE_PHASE_FROMDEVICE = CONFIGURE_PHASE_PRIVILEGED - 1,
+	CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMDEVICE + 1,
+	CONFIGURE_PHASE_KERNELFILTER = CONFIGURE_PHASE_FROMDEVICE + 1
+    };
+
     KernelFilter();
     ~KernelFilter();
   
     const char *class_name() const	{ return "KernelFilter"; }
     const char *port_count() const	{ return PORTS_0_0; }
-    int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
+    int configure_phase() const		{ return CONFIGURE_PHASE_KERNELFILTER; }
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
 
+    static int device_filter(const String &devname, bool add_filter,
+			     ErrorHandler *errh);
+
   private:
 
-    Vector<String> _filters;
+    Vector<String> _drop_devices;
     
 };
 

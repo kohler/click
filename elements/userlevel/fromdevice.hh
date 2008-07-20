@@ -1,6 +1,7 @@
 #ifndef CLICK_FROMDEVICE_HH
 #define CLICK_FROMDEVICE_HH
 #include <click/element.hh>
+#include "elements/userlevel/kernelfilter.hh"
 #ifdef __linux__
 # define FROMDEVICE_LINUX 1
 #endif
@@ -136,11 +137,6 @@ Returns a string indicating the encapsulation type on this link. Can be
 
 class FromDevice : public Element { public:
 
-    enum ConfigurePhase {
-	CONFIGURE_PHASE_FROMDEVICE = CONFIGURE_PHASE_PRIVILEGED - 1,
-	CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_PRIVILEGED
-    };
-  
     FromDevice();
     ~FromDevice();
   
@@ -148,7 +144,7 @@ class FromDevice : public Element { public:
     const char *port_count() const	{ return PORTS_0_1; }
     const char *processing() const	{ return PUSH; }
   
-    int configure_phase() const		{ return CONFIGURE_PHASE_FROMDEVICE; }
+    int configure_phase() const		{ return KernelFilter::CONFIGURE_PHASE_FROMDEVICE; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
@@ -207,8 +203,6 @@ class FromDevice : public Element { public:
 
     static String read_handler(Element*, void*);
     static int write_handler(const String&, Element*, void*, ErrorHandler*);
-
-    int device_filter(bool add, ErrorHandler *);
 
 };
 

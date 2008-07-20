@@ -45,7 +45,7 @@ KernelFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	    return -1;
 	if (action != "drop" || type != "dev" || !arg)
 	    return errh->error("arguments must follow 'drop dev DEVNAME'");
-	_filters.push_back("INPUT -i " + shell_quote(arg) + " -j DROP");
+	_drop_devices.push_back(arg);
     }
     return 0;
 }
@@ -55,15 +55,9 @@ KernelFilter::initialize(ErrorHandler *errh)
 {
     // If you update this, also update the device_filter code in FromDevice.u
     int before = errh->nerrors();
-    for (int i = 0; i < _filters.size(); i++) {
-	String out = shell_command_output_string("/sbin/iptables -A " + _filters[i], "", errh);
-	if (errh->nerrors() != before)
-	    _filters.resize(i);
-	else if (out) {
-	    errh->error("iptables -A %s: %s", _filters[i].c_str(), out.c_str());
-	    _filters.resize(i);
-	}
-    }
+    for (int i = 0; i < _drop_devices.size(); ++i)
+	if (device_filter(_drop_devices[i], true, errh) < 0)
+	    _drop_devices[i] = String();
     return before == errh->nerrors() ? 0 : -1;
 }
 
@@ -72,12 +66,25 @@ KernelFilter::cleanup(CleanupStage stage)
 {
     if (stage >= CLEANUP_INITIALIZED) {
 	ErrorHandler *errh = ErrorHandler::default_handler();
-	for (int i = _filters.size() - 1; i >= 0; i++) {
-	    String out = shell_command_output_string("/sbin/iptables -D " + _filters[i], "", errh);
-	    if (out)
-		errh->error("iptables -D %s: %s", _filters[i].c_str(), out.c_str());
-	}
+	for (int i = _drop_devices.size() - 1; i >= 0; --i)
+	    if (_drop_devices[i])
+		device_filter(_drop_devices[i], false, errh);
     }
+}
+
+int
+KernelFilter::device_filter(const String &devname, bool add_filter,
+			    ErrorHandler *errh)
+{
+    StringAccum cmda;
+    cmda << "/sbin/iptables " << (add_filter ? "-A" : "-D") << " INPUT -i "
+	 << shell_quote(devname) << " -j DROP";
+    String cmd = cmda.take_string();
+    int before = errh->nerrors();
+    String out = shell_command_output_string(cmd, "", errh);
+    if (out)
+	errh->error("%s: %s", cmd.c_str(), out.c_str());
+    return errh->nerrors() == before ? 0 : -1;
 }
 
 CLICK_ENDDECLS
