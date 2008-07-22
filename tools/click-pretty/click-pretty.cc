@@ -74,7 +74,6 @@ static const Clp_Option options[] = {
     { "write-template", 0, WRITE_TEMPLATE_OPT, 0, 0 },
 };
 
-static String::Initializer string_initializer;
 static const char *program_name;
 static HashTable<String, String> definitions;
 static int specified_driver = -1;

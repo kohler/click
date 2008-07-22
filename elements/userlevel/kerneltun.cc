@@ -98,7 +98,7 @@ KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "IGNORE_QUEUE_OVERFLOWS", 0, cpBool, &_ignore_q_errs,
 		     "MTU", 0, cpInteger, &_mtu_out,
 #if KERNELTUN_LINUX
-		     "DEV_NAME", 0, cpString, &_dev_name, // deprecated
+		     "DEV_NAME", cpkD, cpString, &_dev_name, // deprecated
 		     "DEVNAME", 0, cpString, &_dev_name,
 #endif
 		    cpEnd) < 0)

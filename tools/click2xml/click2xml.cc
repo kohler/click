@@ -58,7 +58,6 @@ static const Clp_Option options[] = {
     { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
-static String::Initializer string_initializer;
 static const char *program_name;
 static int specified_driver = -1;
 

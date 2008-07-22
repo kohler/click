@@ -329,7 +329,6 @@ CxxClass::find_should_rewrite()
   if (_fn_map.get("never_devirtualize") >= 0)
     return false;
 
-  static String::Initializer initializer;
   static String push_pattern = compile_pattern("output(#0).push(#1)");
   static String pull_pattern = compile_pattern("input(#0).pull()");
   static String checked_push_pattern = compile_pattern("checked_output_push(#0,#1)");

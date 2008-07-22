@@ -429,7 +429,6 @@ read_handler(Element *, void *thunk)
 void
 click_static_initialize()
 {
-    String::static_initialize();
     NameInfo::static_initialize();
     cp_va_static_initialize();
 
@@ -464,8 +463,6 @@ click_static_cleanup()
     delete click_buildtool_prog;
     tmpdir = click_buildtool_prog = 0;
 # endif /* HAVE_DYNAMIC_LINKING */
-
-    String::static_cleanup();
 }
 
 Router *
@@ -530,7 +527,6 @@ CLICK_DECLS
 void
 click_static_initialize()
 {
-    String::static_initialize();
     cp_va_static_initialize();
     ErrorHandler::static_initialize(new FileErrorHandler(stderr, ""));
     LandmarkT::static_initialize();

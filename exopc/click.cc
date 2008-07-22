@@ -29,7 +29,6 @@ extern void click_export_elements(Lexer *);
 int
 main(int argc, char **argv)
 {
-  String::static_initialize();
   ErrorHandler *errh = new FileErrorHandler(stderr, "ipb: ");
   ErrorHandler::static_initialize(errh);
   

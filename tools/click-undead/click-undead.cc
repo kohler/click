@@ -65,7 +65,6 @@ static const Clp_Option options[] = {
 };
 
 static const char *program_name;
-static String::Initializer string_initializer;
 static bool verbose;
 
 static HashTable<String, int> element_ninputs(-1);

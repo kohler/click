@@ -217,7 +217,6 @@ extern "C" int
 init_module()
 {
     // C++ static initializers
-    String::static_initialize();
     NameInfo::static_initialize();
     cp_va_static_initialize();
 
@@ -305,7 +304,6 @@ cleanup_module()
   
     // String (after any operations that might destroy Strings)
     NameInfo::static_cleanup();
-    String::static_cleanup();
 
     // report memory leaks
     if (Element::nelements_allocated)

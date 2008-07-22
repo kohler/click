@@ -24,7 +24,6 @@
 #include <string.h>
 #include <ctype.h>
 
-static String::Initializer string_initializer;
 static HashTable<String, String> html_entities;
 
 

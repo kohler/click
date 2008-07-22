@@ -18,7 +18,6 @@ namespace clicky {
  *
  */
 
-static String::Initializer string_initializer;
 const String handler_value::no_hvalue_string = String::stable_string("???", 3);
 
 namespace {

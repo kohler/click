@@ -65,45 +65,55 @@ CLICK_DECLS
  * returns an out-of-memory string.
  */
 
-String::Memo *String::null_memo = 0;
-String::Memo *String::permanent_memo = 0;
-String::Memo *String::oom_memo = 0;
-String *String::null_string_p = 0;
-String *String::oom_string_p = 0;
+const char String::null_string_data = 0;
 const char String::oom_string_data = 0;
 const char String::bool_data[] = "true\0false";
 
+__StringMemo String::null_memo = {
+    2, 0, 0, const_cast<char *>(&null_string_data)
+};
+__StringMemo String::permanent_memo = {
+    1, 0, 0, const_cast<char *>(&null_string_data)
+};
+__StringMemo String::oom_memo = {
+    2, 0, 0, const_cast<char *>(&oom_string_data)
+};
+
+const __StringRep String::null_string_rep = {
+    &null_string_data, 0, &null_memo
+};
+const __StringRep String::oom_string_rep = {
+    &oom_string_data, 0, &oom_memo
+};
+
 /** @cond never */
-inline
-String::Memo::Memo()
-    : _capacity(0), _real_data(const_cast<char *>(""))
-{
-    _refcount = 0;
-    _dirty = 0;
-}
-
-inline
-String::Memo::Memo(char *data, int dirty, int capacity)
-  : _capacity(capacity), _real_data(data)
-{
-    _refcount = 0;
-    _dirty = dirty;
-}
-
-String::Memo::Memo(int dirty, int capacity)
-  : _capacity(capacity), _real_data((char *) CLICK_LALLOC(capacity))
+__StringMemo *
+String::create_memo(char *data, int dirty, int capacity)
 {
     assert(capacity >= dirty);
-    _refcount = 1;
-    _dirty = dirty;
+    __StringMemo *memo = new __StringMemo;
+    if (memo) {
+	if (data)
+	    memo->real_data = data;
+	else if (!(memo->real_data = (char *) CLICK_LALLOC(capacity))) {
+	    delete memo;
+	    return 0;
+	}
+	memo->capacity = capacity;
+	memo->dirty = dirty;
+	memo->refcount = (data ? 0 : 1);
+    }
+    return memo;
 }
 
-String::Memo::~Memo()
+void
+String::delete_memo(__StringMemo *memo)
 {
-  if (_capacity) {
-    assert(_capacity >= _dirty);
-    CLICK_LFREE(_real_data, _capacity);
-  }
+    if (memo->capacity) {
+	assert(memo->capacity >= memo->dirty);
+	CLICK_LFREE(memo->real_data, memo->capacity);
+    }
+    delete memo;
 }
 /** @endcond never */
 
@@ -184,11 +194,10 @@ String
 String::claim_string(char *str, int len, int capacity)
 {
   assert(str && len > 0 && capacity >= len);
-  Memo *new_memo = new Memo(str, len, capacity);
-  if (new_memo)
+  if (__StringMemo *new_memo = create_memo(str, len, capacity))
     return String(str, len, new_memo);
   else
-    return String(&oom_string_data, 0, oom_memo);
+    return String(&oom_string_data, 0, &oom_memo);
 }
 
 String
@@ -196,7 +205,7 @@ String::stable_string(const char *s, int len)
 {
   if (len < 0)
     len = (s ? strlen(s) : 0);
-  return String(s, len, permanent_memo);
+  return String(s, len, &permanent_memo);
 }
 
 String
@@ -226,12 +235,12 @@ String::numeric_string(uint_large_t num, int base, bool uppercase)
 void
 String::make_out_of_memory()
 {
-  if (_memo)
+  if (_r.memo)
     deref();
-  _memo = oom_memo;
-  ++_memo->_refcount;
-  _data = _memo->_real_data;
-  _length = 0;
+  _r.memo = &oom_memo;
+  _r.data = _r.memo->real_data;
+  _r.length = 0;
+  atomic_uint32_t::inc(oom_memo.refcount);
 }
 
 void
@@ -245,52 +254,52 @@ String::assign(const char *str, int len, bool need_deref)
 
   // need to start with dereference
   if (need_deref) {
-      if (unlikely(str >= _memo->_real_data
-		   && str + len <= _memo->_real_data + _memo->_capacity)) {
+      if (unlikely(str >= _r.memo->real_data
+		   && str + len <= _r.memo->real_data + _r.memo->capacity)) {
 	  // Be careful about "String s = ...; s = s.c_str();"
-	  _data = str;
-	  _length = len;
+	  _r.data = str;
+	  _r.length = len;
 	  return;
       } else
 	  deref();
   }
   
   if (len == 0) {
-    _memo = (str == &oom_string_data ? oom_memo : null_memo);
-    ++_memo->_refcount;
+    _r.memo = (str == &oom_string_data ? &oom_memo : &null_memo);
+    atomic_uint32_t::inc(_r.memo->refcount);
     
   } else {
     // Make 'capacity' a multiple of 16 characters and bigger than 'len'.
     int capacity = (len + 16) & ~15;
-    _memo = new Memo(len, capacity);
-    if (!_memo || !_memo->_real_data) {
+    _r.memo = create_memo(0, len, capacity);
+    if (!_r.memo) {
       make_out_of_memory();
       return;
     }
-    memcpy(_memo->_real_data, str, len);
+    memcpy(_r.memo->real_data, str, len);
   }
   
-  _data = _memo->_real_data;
-  _length = len;
+  _r.data = _r.memo->real_data;
+  _r.length = len;
 }
 
 char *
 String::append_garbage(int len)
 {
     // Appending anything to "out of memory" leaves it as "out of memory"
-    if (len <= 0 || _memo == oom_memo)
+    if (len <= 0 || _r.memo == &oom_memo)
 	return 0;
   
     // If we can, append into unused space. First, we check that there's
     // enough unused space for 'len' characters to fit; then, we check
     // that the unused space immediately follows the data in '*this'.
-    uint32_t dirty = _memo->_dirty;
-    if (_memo->_capacity > dirty + len) {
-	char *real_dirty = _memo->_real_data + dirty;
-	if (real_dirty == _data + _length
-	    && _memo->_dirty.compare_and_swap(dirty, dirty + len)) {
-	    _length += len;
-	    assert(_memo->_dirty < _memo->_capacity);
+    uint32_t dirty = _r.memo->dirty;
+    if (_r.memo->capacity > dirty + len) {
+	char *real_dirty = _r.memo->real_data + dirty;
+	if (real_dirty == _r.data + _r.length
+	    && atomic_uint32_t::compare_and_swap(_r.memo->dirty, dirty, dirty + len)) {
+	    _r.length += len;
+	    assert(_r.memo->dirty < _r.memo->capacity);
 	    return real_dirty;
 	}
     }
@@ -299,32 +308,31 @@ String::append_garbage(int len)
     // multiple of 16 characters and that it is at least 16. But for large
     // strings, allocate a power of 2, since power-of-2 sizes minimize waste
     // in frequently-used allocators, like Linux kmalloc.
-    int new_capacity = (_length + len < 1024 ? (_length + 16) & ~15 : 1024);
-    while (new_capacity < _length + len)
+    int new_capacity = (_r.length + len < 1024 ? (_r.length + 16) & ~15 : 1024);
+    while (new_capacity < _r.length + len)
 	new_capacity *= 2;
 
 #if CLICK_DMALLOC
     // Keep total allocation a power of 2 by leaving extra space for the
     // DMALLOC Chunk.
-    if (_length + len < new_capacity - 32)
+    if (_r.length + len < new_capacity - 32)
 	new_capacity -= 32;
 #endif
     
-    Memo *new_memo = new Memo(_length + len, new_capacity);
-    if (!new_memo || !new_memo->_real_data) {
-	delete new_memo;
+    __StringMemo *new_memo = create_memo(0, _r.length + len, new_capacity);
+    if (!new_memo) {
 	make_out_of_memory();
 	return 0;
     }
 
-    char *new_data = new_memo->_real_data;
-    memcpy(new_data, _data, _length);
+    char *new_data = new_memo->real_data;
+    memcpy(new_data, _r.data, _r.length);
   
     deref();
-    _data = new_data;
-    new_data += _length;	// now new_data points to the garbage
-    _length += len;
-    _memo = new_memo;
+    _r.data = new_data;
+    new_data += _r.length;	// now new_data points to the garbage
+    _r.length += len;
+    _r.memo = new_memo;
     return new_data;
 }
 
@@ -343,8 +351,8 @@ String::append(const char *s, int len)
 	make_out_of_memory();
     else if (unlikely(len == 0))
 	/* do nothing */;
-    else if (likely(!(s >= _memo->_real_data
-		      && s + len <= _memo->_real_data + _memo->_capacity))) {
+    else if (likely(!(s >= _r.memo->real_data
+		      && s + len <= _r.memo->real_data + _r.memo->capacity))) {
 	if (char *space = append_garbage(len))
 	    memcpy(space, s, len);
     } else {
@@ -367,15 +375,15 @@ String::mutable_data()
 {
   // If _memo has a capacity (it's not one of the special strings) and it's
   // uniquely referenced, return _data right away.
-  if (_memo->_capacity && _memo->_refcount == 1)
-    return const_cast<char *>(_data);
+  if (_r.memo->capacity && _r.memo->refcount == 1)
+    return const_cast<char *>(_r.data);
   
   // Otherwise, make a copy of it. Rely on: deref() doesn't change _data or
   // _length; and if _capacity == 0, then deref() doesn't free _real_data.
-  assert(!_memo->_capacity || _memo->_refcount > 1);
+  assert(!_r.memo->capacity || _r.memo->refcount > 1);
   deref();
-  assign(_data, _length, false);
-  return const_cast<char *>(_data);
+  assign(_r.data, _r.length, false);
+  return const_cast<char *>(_r.data);
 }
 
 char *
@@ -383,7 +391,7 @@ String::mutable_c_str()
 {
   (void) mutable_data();
   (void) c_str();
-  return const_cast<char *>(_data);
+  return const_cast<char *>(_r.data);
 }
 
 const char *
@@ -393,69 +401,69 @@ String::c_str() const
   // or PermString). We are guaranteed, in these strings, that _data[_length]
   // exists. We can return _data immediately if we have a '\0' in the right
   // place.
-  if (!_memo->_capacity && _data[_length] == '\0')
-    return _data;
+  if (!_r.memo->capacity && _r.data[_r.length] == '\0')
+    return _r.data;
   
   // Otherwise, this invariant must hold (there's more real data in _memo than
   // in our substring).
-  assert(!_memo->_capacity
-	 || _memo->_real_data + _memo->_dirty >= _data + _length);
+  assert(!_r.memo->capacity
+	 || _r.memo->real_data + _r.memo->dirty >= _r.data + _r.length);
   
   // Has the character after our substring been set?
-  uint32_t dirty = _memo->_dirty;
-  if (_memo->_real_data + dirty == _data + _length) {
-      if (_memo->_capacity > dirty
-	  && _memo->_dirty.compare_and_swap(dirty, dirty + 1)) {
+  uint32_t dirty = _r.memo->dirty;
+  if (_r.memo->real_data + dirty == _r.data + _r.length) {
+      if (_r.memo->capacity > dirty
+	  && atomic_uint32_t::compare_and_swap(_r.memo->dirty, dirty, dirty + 1)) {
 	  // Character after our substring has not been set. Change it to '\0'.
 	  // This case will never occur on special strings.
-	  char *real_data = const_cast<char *>(_data);
-	  real_data[_length] = '\0';
-	  return _data;
+	  char *real_data = const_cast<char *>(_r.data);
+	  real_data[_r.length] = '\0';
+	  return _r.data;
       }
     
   } else {
     // Character after our substring has been set. OK to return _data if it is
     // already '\0'.
-    if (_data[_length] == '\0')
-      return _data;
+    if (_r.data[_r.length] == '\0')
+      return _r.data;
   }
   
   // If we get here, we must make a copy of our portion of the string.
   {
-    String s(_data, _length);
+    String s(_r.data, _r.length);
     deref();
     assign(s);
   }
   
-  char *real_data = const_cast<char *>(_data);
-  real_data[_length] = '\0';
-  ++_memo->_dirty;		// include '\0' in used portion of _memo
-  return _data;
+  char *real_data = const_cast<char *>(_r.data);
+  real_data[_r.length] = '\0';
+  ++_r.memo->dirty;		// include '\0' in used portion of _memo
+  return _r.data;
 }
 
 String
 String::substring(int pos, int len) const
 {
     if (pos < 0)
-	pos += _length;
+	pos += _r.length;
 
     int pos2;
     if (len < 0)
-	pos2 = _length + len;
-    else if (pos >= 0 && len >= _length) // avoid integer overflow
-	pos2 = _length;
+	pos2 = _r.length + len;
+    else if (pos >= 0 && len >= _r.length) // avoid integer overflow
+	pos2 = _r.length;
     else
 	pos2 = pos + len;
 
     if (pos < 0)
 	pos = 0;
-    if (pos2 > _length)
-	pos2 = _length;
+    if (pos2 > _r.length)
+	pos2 = _r.length;
 
     if (pos >= pos2)
 	return String();
     else
-	return String(_data + pos, pos2 - pos, _memo);
+	return String(_r.data + pos, pos2 - pos, _r.memo);
 }
 
 int
@@ -463,8 +471,8 @@ String::find_left(char c, int start) const
 {
     if (start < 0)
 	start = 0;
-    for (int i = start; i < _length; i++)
-	if (_data[i] == c)
+    for (int i = start; i < _r.length; i++)
+	if (_r.data[i] == c)
 	    return i;
     return -1;
 }
@@ -482,7 +490,7 @@ String::find_left(const String &str, int start) const
     int pos = start, max_pos = length() - str.length();
     for (pos = find_left(first_c, pos); pos >= 0 && pos <= max_pos;
 	 pos = find_left(first_c, pos + 1))
-	if (!memcmp(_data + pos, str._data, str.length()))
+	if (!memcmp(_r.data + pos, str._r.data, str.length()))
 	    return pos;
     return -1;
 }
@@ -490,10 +498,10 @@ String::find_left(const String &str, int start) const
 int
 String::find_right(char c, int start) const
 {
-    if (start >= _length)
-	start = _length - 1;
+    if (start >= _r.length)
+	start = _r.length - 1;
     for (int i = start; i >= 0; i--)
-	if (_data[i] == c)
+	if (_r.data[i] == c)
 	    return i;
     return -1;
 }
@@ -513,8 +521,8 @@ String
 String::lower() const
 {
     // avoid copies
-    for (int i = 0; i < _length; i++)
-	if (_data[i] >= 'A' && _data[i] <= 'Z')
+    for (int i = 0; i < _r.length; i++)
+	if (_r.data[i] >= 'A' && _r.data[i] <= 'Z')
 	    return hard_lower(*this, i);
     return *this;
 }
@@ -534,8 +542,8 @@ String
 String::upper() const
 {
     // avoid copies
-    for (int i = 0; i < _length; i++)
-	if (_data[i] >= 'a' && _data[i] <= 'z')
+    for (int i = 0; i < _r.length; i++)
+	if (_r.data[i] >= 'a' && _r.data[i] <= 'z')
 	    return hard_upper(*this, i);
     return *this;
 }
@@ -562,8 +570,8 @@ String
 String::printable() const
 {
     // avoid copies
-    for (int i = 0; i < _length; i++)
-	if (_data[i] < 32 || _data[i] > 126)
+    for (int i = 0; i < _r.length; i++)
+	if (_r.data[i] < 32 || _r.data[i] > 126)
 	    return hard_printable(*this, i);
     return *this;
 }
@@ -571,11 +579,11 @@ String::printable() const
 String
 String::trim_space() const
 {
-    for (int i = _length - 1; i >= 0; i--)
-	if (!isspace((unsigned char) _data[i]))
+    for (int i = _r.length - 1; i >= 0; i--)
+	if (!isspace((unsigned char) _r.data[i]))
 	    return substring(0, i + 1);
     // return out-of-memory string if input is out-of-memory string
-    return (_length ? String() : *this);
+    return (_r.length ? String() : *this);
 }
 
 String
@@ -706,14 +714,14 @@ String::equals(const char *s, int len) const
     // strings compare unequal to other null strings, but equal to each other.
     if (len < 0)
 	len = strlen(s);
-    if (_length != len)
+    if (_r.length != len)
 	return false;
-    else if (_data == s)
+    else if (_r.data == s)
 	return true;
     else if (len == 0)
-	return (s != &oom_string_data && _memo != oom_memo);
+	return (s != &oom_string_data && _r.memo != &oom_memo);
     else
-	return memcmp(_data, s, len) == 0;
+	return memcmp(_r.data, s, len) == 0;
 }
 
 bool
@@ -722,14 +730,14 @@ String::starts_with(const char *s, int len) const
     // See note on equals() re: "out-of-memory" strings.
     if (len < 0)
 	len = strlen(s);
-    if (_length < len)
+    if (_r.length < len)
 	return false;
-    else if (_data == s)
+    else if (_r.data == s)
 	return true;
     else if (len == 0)
-	return (s != &oom_string_data && _memo != oom_memo);
+	return (s != &oom_string_data && _r.memo != &oom_memo);
     else
-	return memcmp(_data, s, len) == 0;
+	return memcmp(_r.data, s, len) == 0;
 }
 
 int
@@ -737,19 +745,19 @@ String::compare(const char *s, int len) const
 {
     if (len < 0)
 	len = strlen(s);
-    if (_data == s)
-	return _length - len;
-    else if (_memo == oom_memo)
+    if (_r.data == s)
+	return _r.length - len;
+    else if (_r.memo == &oom_memo)
 	return 1;
     else if (s == &oom_string_data)
 	return -1;
-    else if (_length == len)
-	return memcmp(_data, s, len);
-    else if (_length < len) {
-	int v = memcmp(_data, s, _length);
+    else if (_r.length == len)
+	return memcmp(_r.data, s, len);
+    else if (_r.length < len) {
+	int v = memcmp(_r.data, s, _r.length);
 	return (v ? v : -1);
     } else {
-	int v = memcmp(_data, s, len);
+	int v = memcmp(_r.data, s, len);
 	return (v ? v : 1);
     }
 }
@@ -757,50 +765,16 @@ String::compare(const char *s, int len) const
 
 String::Initializer::Initializer()
 {
-    String::static_initialize();
 }
 
 void
 String::static_initialize()
 {
-    // function called to initialize static globals
-    if (!null_memo) {
-#if CLICK_DMALLOC
-	CLICK_DMALLOC_REG("str0");
-#endif
-	null_memo = new Memo;
-	++null_memo->_refcount;
-	permanent_memo = new Memo;
-	++permanent_memo->_refcount;
-	// use a separate string for oom_memo's data, so we can distinguish
-	// the pointer
-	oom_memo = new Memo;
-	++oom_memo->_refcount;
-	oom_memo->_real_data = const_cast<char*>(&oom_string_data);
-	null_string_p = new String;
-	oom_string_p = new String(&oom_string_data, 0, oom_memo);
-#if CLICK_DMALLOC
-	CLICK_DMALLOC_REG("????");
-#endif
-    }
 }
 
 void
 String::static_cleanup()
 {
-    if (null_string_p) {
-	delete null_string_p;
-	null_string_p = 0;
-	delete oom_string_p;
-	oom_string_p = 0;
-	if (oom_memo->_refcount.dec_and_test())
-	    delete oom_memo;
-	if (permanent_memo->_refcount.dec_and_test())
-	    delete permanent_memo;
-	if (null_memo->_refcount.dec_and_test())
-	    delete null_memo;
-	null_memo = permanent_memo = oom_memo = 0;
-    }
 }
 
 CLICK_ENDDECLS

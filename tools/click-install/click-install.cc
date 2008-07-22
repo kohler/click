@@ -94,7 +94,6 @@ static const char *program_name;
 static bool output_map;
 #endif
 
-static String::Initializer string_initializer;
 static String tmpdir;
 
 void

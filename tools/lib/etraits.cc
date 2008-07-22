@@ -29,7 +29,6 @@
 #include "toolutils.hh"
 #include <click/confparse.hh>
 
-static String::Initializer string_initializer;
 ElementTraits ElementTraits::the_null_traits;
 
 static const char * const driver_names[] = {

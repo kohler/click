@@ -34,7 +34,6 @@ static void elementtreesort_callback(GtkButton *, gpointer);
 static gboolean on_error_view_event(GtkWidget *, GdkEvent *, gpointer);
 }
 
-static String::Initializer initializer;
 String wmain::last_savefile;
 static int num_main_windows = 0;
 

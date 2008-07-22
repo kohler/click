@@ -327,7 +327,8 @@ RouterThread::wake()
 	wake_up_process(task);
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     click_processor_t tid = _running_processor;
-    if (tid != click_invalid_processor())
+    if (tid != click_current_processor()
+	&& tid != click_invalid_processor())
 	pthread_kill(tid, SIGIO);
 #endif
 #if CLICK_BSDMODULE && !BSD_NETISRSCHED

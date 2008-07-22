@@ -72,6 +72,10 @@ class atomic_uint32_t { public:
     inline bool dec_and_test();
     inline bool compare_and_swap(uint32_t test_value, uint32_t new_value);
   
+    inline static void inc(volatile uint32_t &x);
+    inline static bool dec_and_test(volatile uint32_t &x);
+    inline static bool compare_and_swap(volatile uint32_t &x, uint32_t test_value, uint32_t new_value);
+
   private:
 
 #if CLICK_LINUXMODULE
@@ -190,6 +194,23 @@ atomic_uint32_t::operator&=(uint32_t mask)
     CLICK_ATOMIC_VAL &= mask;
 #endif
     return *this;
+}
+
+/** @brief  Atomically increment value @a x. */
+inline void
+atomic_uint32_t::inc(volatile uint32_t &x)
+{
+#if CLICK_LINUXMODULE
+    static_assert(sizeof(atomic_t) == sizeof(x));
+    atomic_inc((atomic_t *) &x);
+#elif CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "incl %0"
+		  : "=m" (x)
+		  : "m" (x)
+		  : "cc");
+#else
+    x++;
+#endif
 }
 
 /** @brief  Atomically increment the value. */
@@ -313,6 +334,71 @@ atomic_uint32_t::fetch_and_add(uint32_t delta)
     uint32_t old_value = value();
     CLICK_ATOMIC_VAL += delta;
     return old_value;
+#endif
+}
+
+/** @brief  Atomically decrement @a x, returning true if the new @a x
+ *	    is 0.
+ *
+ * Behaves like this, but in one atomic step:
+ * @code
+ * --x;
+ * return x == 0;
+ * @endcode */
+inline bool
+atomic_uint32_t::dec_and_test(volatile uint32_t &x)
+{
+#if CLICK_LINUXMODULE
+    static_assert(sizeof(atomic_t) == sizeof(x));
+    return atomic_dec_and_test((atomic_t *) &x);
+#elif CLICK_ATOMIC_X86
+    uint8_t result;
+    asm volatile (CLICK_ATOMIC_LOCK "decl %0 ; sete %1"
+		  : "=m" (x), "=qm" (result)
+		  : "m" (x)
+		  : "cc");
+    return result;
+#else
+    return (--x == 0);
+#endif
+}
+
+/** @brief  Perform a compare-and-swap operation.
+ *  @param  x           value
+ *  @param  test_value  test value
+ *  @param  new_value   new value
+ *  @return True if the old @a x equaled @a test_value (in which case @a x
+ *	    was set to @a new_value), false otherwise.
+ *
+ * Behaves like this, but in one atomic step:
+ * @code
+ * uint32_t old_value = x;
+ * if (x == test_value)
+ *     x = new_value;
+ * return old_value == test_value;
+ * @endcode */
+inline bool
+atomic_uint32_t::compare_and_swap(volatile uint32_t &x, uint32_t test_value, uint32_t new_value)
+{
+#if (CLICK_LINUXMODULE && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))) || CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "cmpxchgl %2,%0 ; sete %%al"
+		  : "=m" (x), "=a" (test_value)
+		  : "r" (new_value), "m" (x), "a" (test_value)
+		  : "cc");
+    return (uint8_t) test_value;
+#elif CLICK_LINUXMODULE
+    unsigned long flags;
+    local_irq_save(flags);
+    uint32_t old_value = x;
+    if (old_value == test_value)
+	x = new_value;
+    local_irq_restore(flags);
+    return old_value == test_value;
+#else
+    uint32_t old_value = x;
+    if (old_value == test_value)
+	x = new_value;
+    return old_value == test_value;
 #endif
 }
 

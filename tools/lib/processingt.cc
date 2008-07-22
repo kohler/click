@@ -33,7 +33,6 @@
 const char ProcessingT::processing_letters[] = "ahlXahlX";
 const char ProcessingT::decorated_processing_letters[] = "ahlXaHLX";
 
-static String::Initializer initializer;
 static String dpcode_push("h");
 static String dpcode_pull("l");
 static String dpcode_agnostic("a");

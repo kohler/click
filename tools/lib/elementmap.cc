@@ -38,7 +38,6 @@ ElementMap::ElementMap()
     : _name_map(0), _use_count(0), _driver_mask(Driver::ALLMASK),
       _provided_driver_mask(0)
 {
-    String::static_initialize();
     _e.push_back(Traits());
     _def.push_back(Globals());
     incr_version();

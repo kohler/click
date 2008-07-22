@@ -29,7 +29,6 @@
 #include <click/variableenv.hh>
 #include <stdlib.h>
 
-static String::Initializer string_initializer;
 static HashTable<String, int> base_type_map(-1);
 static Vector<ElementClassT *> base_types;
 
