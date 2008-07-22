@@ -231,7 +231,7 @@ typedef const char *CpVaParseCmd;
 
 extern const CpVaParseCmd
     cpEnd,		///< Use as argument name.  Ends cp_va argument list.
-    cpIgnoreRest,	///< Use as argument name.  No result storage; causes cp_va_kparse to ignore unparsed arguments and any remaining items.
+    cpIgnoreRest,	///< Use as argument name.  No result storage; causes cp_va_kparse() to ignore unparsed arguments and any remaining items.
     cpIgnore,		///< No result storage, ignores this argument.
     cpArgument,		///< Result storage String*, accepts any argument.
     cpArguments,	///< Result storage Vector<String>*, accepts any number of arguments with the same keyword.
@@ -340,7 +340,7 @@ int cp_va_parse_remove_keywords(Vector<String>& conf, int first, CP_VA_PARSE_ARG
 // Stores no values in the result arguments on error.
 //@}
 
-/// @name Argument Types for cp_va_kparse
+/// @name Argument Types for cp_va_kparse()
 //@{
 struct cp_value;
 struct cp_argtype;

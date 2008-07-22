@@ -73,7 +73,11 @@ int cp_errno;
 /// errors, and return the number of arguments successfully assigned on
 /// success or a negative value on failure.
 ///
-/// Here are some examples of its use.
+/// @note Previous versions of Click used cp_va_parse() and friends instead of
+/// cp_va_kparse().  A guide for transitioning from cp_va_parse() to
+/// cp_va_kparse() is given in the documentation for cp_va_parse().
+///
+/// Here are some cp_va_kparse() examples.
 ///
 /// @code
 /// int MyElement::configure(Vector<String> &conf, ErrorHandler *errh) {
@@ -4043,8 +4047,91 @@ CpVaHelper::parse_arguments(const char *argname,
 }
 
 
+/// @brief Legacy function for parsing a list of arguments.
+/// @param conf argument list
+/// @param context element context
+/// @param errh error handler
+/// @param ... zero or more parameter descriptions, terminated by cpEnd
+/// @deprecated Use cp_va_kparse() instead.
+///
+/// Older versions of Click used cp_va_parse() instead of the current
+/// cp_va_kparse().  This guide shows how to transition cp_va_parse()
+/// calls into cp_va_kparse().
+///
+/// There are two major differences between the variants.  First,
+/// <em>every</em> argument to cp_va_kparse() must have a keyword name,
+/// including arguments that are normally specified by position.  Second, each
+/// cp_va_parse() argument includes an "argument description string" used to
+/// improve error messages.  cp_va_kparse() arguments do not take such a
+/// string; the keyword generates better, more concise messages.
+///
+/// The following examples, taken from Click elements, show how to change
+/// concrete cp_va_parse() calls into cp_va_kparse() calls.
+///
+/// @code
+/// // 1. Paint: Mandatory arguments are marked with cpkP+cpkM.
+/// //    Element documentation and other analogous elements are
+/// //    good places to look for keywords.
+/// ... cp_va_parse(conf, this, errh,
+///                 cpByte, "color", &_color,    // "color" is the description string
+///                 cpEnd) ...
+///    /* => */
+/// ... cp_va_kparse(conf, this, errh,
+///                  "COLOR", cpkP+cpkM, cpByte, &_color,
+///                  cpEnd) ...
+///
+/// // 2. Switch: Optional arguments are marked with cpkP (no cpkM).
+/// ... cp_va_parse(conf, this, errh,
+///                 cpOptional,
+///                 cpInteger, "active output", &_output,
+///                 cpEnd) ...
+///    /* => */
+/// ... cp_va_kparse(conf, this, errh,
+///                  "OUTPUT", cpkP, cpInteger, &_output,
+///                  cpEnd) ...
+///
+/// // 3. Counter: Keywords are marked with cpkN (or, equivalently, 0).
+/// ... cp_va_parse(conf, this, errh,
+///                 cpKeywords,
+///                 "COUNT_CALL", cpArgument, "handler to call after a count", &count_call,
+///                 "BYTE_COUNT_CALL", cpArgument, "handler to call after a byte count", &byte_count_call,
+///                 cpEnd) ...
+///    /* => */
+/// ... cp_va_kparse(conf, this, errh,
+///                  "COUNT_CALL", cpkN, cpArgument, &count_call,
+///                  "BYTE_COUNT_CALL", cpkN, cpArgument, &byte_count_call,
+///                  cpEnd) ...
+///
+/// // 4. IPFragmenter: Combining all of the above.
+/// ... cp_va_parse(conf, this, errh,
+///                 cpUnsigned, "MTU", &_mtu,
+///                 cpOptional,
+///                 cpBool, "HONOR_DF", &_honor_df,
+///                 cpKeywords,
+///                 "HONOR_DF", cpBool, "honor DF bit?", &_honor_df,
+///                 "VERBOSE", cpBool, "be verbose?", &_verbose,
+///                 cpEnd) ...
+///    /* => */
+/// ... cp_va_kparse(conf, this, errh,
+///                  "MTU", cpkP+cpkM, cpUnsigned, &_mtu,
+///                  "HONOR_DF", cpkP, cpBool, &_honor_df,   // NB only one HONOR_DF
+///                  "VERBOSE", cpkN, cpBool, &_verbose,
+///                  cpEnd) ...
+///
+/// // 5. AggregateIPFlows: Confirmed keywords are marked with cpkC.
+/// ... cp_va_parse(conf, this, errh,
+///                 "TCP_TIMEOUT", cpSeconds, "timeout for active TCP connections", &_tcp_timeout, ...,
+///                 cpConfirmKeywords,
+///                 "FRAGMENTS", cpBool, "handle fragmented packets?", &gave_fragments, &fragments,
+///                 cpEnd) ...
+///    /* => */
+/// ... cp_va_kparse(conf, this, errh,
+///                  "TCP_TIMEOUT", cpkN, cpSeconds, &_tcp_timeout, ...,
+///                  "FRAGMENTS", cpkC, &gave_fragments, cpBool, &fragments,  // Note different order
+///                  cpEnd) ...
+/// @endcode
 int
-cp_va_parse(const Vector<String> &argv,
+cp_va_parse(const Vector<String> &conf,
 #ifndef CLICK_TOOL
 	    Element *context,
 #endif
@@ -4055,15 +4142,23 @@ cp_va_parse(const Vector<String> &argv,
   CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
   int retval = cpva.develop_values(val, errh);
   if (retval >= 0)
-    retval = cpva.assign_arguments(argv, "argument", errh);
+    retval = cpva.assign_arguments(conf, "argument", errh);
   if (retval >= 0)
     retval = cpva.parse_arguments("argument"  CP_PASS_CONTEXT, errh);
   va_end(val);
   return retval;
 }
 
+/// @brief Legacy function for parsing a comma-separated argument string.
+/// @param str comma-separated argument string
+/// @param context element context
+/// @param errh error handler
+/// @param ... zero or more parameter descriptions, terminated by cpEnd
+/// @deprecated Use cp_va_kparse() instead.  See
+/// cp_va_parse(const Vector<String> &, Element *, ErrorHandler *, ...) for a
+/// transition guide.
 int
-cp_va_parse(const String &confstr,
+cp_va_parse(const String &str,
 #ifndef CLICK_TOOL
 	    Element *context,
 #endif
@@ -4072,7 +4167,7 @@ cp_va_parse(const String &confstr,
   va_list val;
   va_start(val, errh);
   Vector<String> argv;
-  cp_argvec(confstr, argv);
+  cp_argvec(str, argv);
   CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
   int retval = cpva.develop_values(val, errh);
   if (retval >= 0)
@@ -4083,8 +4178,16 @@ cp_va_parse(const String &confstr,
   return retval;
 }
 
+/// @brief Legacy function for parsing a space-separated argument string.
+/// @param str space-separated argument string
+/// @param context element context
+/// @param errh error handler
+/// @param ... zero or more parameter descriptions, terminated by cpEnd
+/// @deprecated Use cp_va_space_kparse() instead.  See
+/// cp_va_parse(const Vector<String> &, Element *, ErrorHandler *, ...) for a
+/// transition guide.
 int
-cp_va_space_parse(const String &arg,
+cp_va_space_parse(const String &str,
 #ifndef CLICK_TOOL
 		  Element *context,
 #endif
@@ -4093,7 +4196,7 @@ cp_va_space_parse(const String &arg,
   va_list val;
   va_start(val, errh);
   Vector<String> argv;
-  cp_spacevec(arg, argv);
+  cp_spacevec(str, argv);
   CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
   int retval = cpva.develop_values(val, errh);
   if (retval >= 0)
@@ -4104,8 +4207,16 @@ cp_va_space_parse(const String &arg,
   return retval;
 }
 
+/// @brief Legacy function for parsing a single argument.
+/// @param str argument
+/// @param context element context
+/// @param errh error handler
+/// @param ... zero or more parameter descriptions, terminated by cpEnd
+/// @deprecated Use cp_va_kparse_keyword() instead.  See
+/// cp_va_parse(const Vector<String> &, Element *, ErrorHandler *, ...) for a
+/// transition guide.
 int
-cp_va_parse_keyword(const String &arg,
+cp_va_parse_keyword(const String &str,
 #ifndef CLICK_TOOL
 		    Element *context,
 #endif
@@ -4114,7 +4225,7 @@ cp_va_parse_keyword(const String &arg,
   va_list val;
   va_start(val, errh);
   Vector<String> argv;
-  argv.push_back(arg);
+  argv.push_back(str);
   CpVaHelper cpva(cp_values, CP_VALUES_SIZE, true);
   int retval = cpva.develop_values(val, errh);
   if (retval >= 0)
@@ -4125,17 +4236,28 @@ cp_va_parse_keyword(const String &arg,
   return retval;
 }
 
+/// @brief Legacy function for parsing and removing matching arguments from
+///   @a conf.
+/// @param conf argument list
+/// @param first index of first non-mandatory argument
+/// @param context element context
+/// @param errh error handler
+/// @param ... zero or more parameter descriptions, terminated by cpEnd
+/// @deprecated Use cp_va_kparse_remove_keywords() instead.  See
+/// cp_va_parse(const Vector<String> &, Element *, ErrorHandler *, ...) for a
+/// transition guide.  Note that cp_va_kparse_remove_keywords() does not take
+/// the @a first argument; simply leave it off.
 int
-cp_va_parse_remove_keywords(Vector<String> &argv, int first,
+cp_va_parse_remove_keywords(Vector<String> &conf, int first,
 #ifndef CLICK_TOOL
 			    Element *context,
 #endif
 			    ErrorHandler *errh, ...)
 {
-  Vector<String> conf2, *confp = &argv;
+  Vector<String> conf2, *confp = &conf;
   if (first > 0) {
-    for (int i = first; i < argv.size(); i++)
-      conf2.push_back(argv[i]);
+    for (int i = first; i < conf.size(); i++)
+      conf2.push_back(conf[i]);
     confp = &conf2;
   }
   
@@ -4152,12 +4274,12 @@ cp_va_parse_remove_keywords(Vector<String> &argv, int first,
   // remove keywords that were used
   if (retval >= 0) {
     int delta = 0;
-    for (int i = first; i < argv.size(); i++)
+    for (int i = first; i < conf.size(); i++)
       if ((*cp_parameter_used)[i - first])
 	delta++;
       else if (delta)
-	argv[i - delta] = argv[i];
-    argv.resize(argv.size() - delta);
+	conf[i - delta] = conf[i];
+    conf.resize(conf.size() - delta);
   }
   
   return retval;
@@ -4180,7 +4302,7 @@ cp_va_parse_remove_keywords(Vector<String> &argv, int first,
  * negative error code.
  *
  * The @a context argument is passed to any parsing functions that require
- * element context.  See above for more information on cp_va_kparse items.
+ * element context.  See above for more information on cp_va_kparse() items.
  *
  * The item list must be terminated with cpEnd.  An error message such as
  * "warning: missing sentinel in function call" indicates that you terminated
@@ -4627,7 +4749,7 @@ cp_unparse_bandwidth(uint32_t bw)
 
 // initialization and cleanup
 
-/** @brief Initialize the cp_va_kparse implementation.
+/** @brief Initialize the cp_va_kparse() implementation.
  *
  * This function must be called before any cp_va function is called.  It is
  * safe to call it multiple times.
@@ -4721,7 +4843,7 @@ cp_va_static_initialize()
 #endif
 }
 
-/** @brief Clean up the cp_va_kparse implementation.
+/** @brief Clean up the cp_va_kparse() implementation.
  *
  * Call this function to release any memory allocated by the cp_va
  * implementation.  As a side effect, this function unregisters all argument

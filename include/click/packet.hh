@@ -413,6 +413,7 @@ class Packet { public:
     }
     
     /** @brief Set annotation byte at offset @a i.
+     * @param i annotation offset in bytes
      * @param v value
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink */
     void set_anno_u8(int i, uint8_t v) {
@@ -434,6 +435,7 @@ class Packet { public:
     }
 
     /** @brief Set 16-bit annotation at offset @a i.
+     * @param i annotation offset in bytes
      * @param v value
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 1
      * @pre On aligned targets, @a i must be evenly divisible by 2.
@@ -461,6 +463,7 @@ class Packet { public:
     }
 
     /** @brief Set 16-bit annotation at offset @a i.
+     * @param i annotation offset in bytes
      * @param v value
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 1
      * @pre On aligned targets, @a i must be evenly divisible by 2.
@@ -488,6 +491,7 @@ class Packet { public:
     }
 
     /** @brief Set 32-bit annotation at offset @a i.
+     * @param i annotation offset in bytes
      * @param v value
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 3
      * @pre On aligned targets, @a i must be evenly divisible by 4.
@@ -514,6 +518,7 @@ class Packet { public:
     }
 
     /** @brief Set 32-bit annotation at offset @a i.
+     * @param i annotation offset in bytes
      * @param v value
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 3
      * @pre On aligned targets, @a i must be evenly divisible by 4.
@@ -542,6 +547,7 @@ class Packet { public:
     }
 
     /** @brief Set 64-bit annotation at offset @a i.
+     * @param i annotation offset in bytes
      * @param v value
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 7
      * @pre On aligned targets, @a i must be aligned properly for uint64_t.
