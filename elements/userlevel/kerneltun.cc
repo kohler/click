@@ -385,7 +385,14 @@ KernelTun::setup_tun(ErrorHandler *errh)
 
     // calculate maximum packet size needed to receive data from
     // tun/tap.
-    if (_type == LINUX_UNIVERSAL)
+    if (_tap) {
+	if (_type == LINUX_UNIVERSAL)
+	    _mtu_in = _mtu_out + 18;
+	else if (_type == LINUX_ETHERTAP)
+	    _mtu_in = _mtu_out + 16;
+	else
+	    _mtu_in = _mtu_out + 14;
+    } else if (_type == LINUX_UNIVERSAL)
 	_mtu_in = _mtu_out + 4;
     else if (_type == BSD_TUN)
 	_mtu_in = _mtu_out + 4;
