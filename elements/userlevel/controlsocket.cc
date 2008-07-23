@@ -402,7 +402,7 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
 }
 
 int
-ControlSocket::read_command(int fd, const String &handlername, String param, bool readdata)
+ControlSocket::read_command(int fd, const String &handlername, String param)
 {
   Element *e;
   const Handler* h = parse_handler(fd, handlername, &e);
@@ -416,7 +416,7 @@ ControlSocket::read_command(int fd, const String &handlername, String param, boo
   _proxied_handler = h->name();
   _proxied_errh = &errh;
   
-  String data = h->call_read(e, param, readdata, &errh);
+  String data = h->call_read(e, param, &errh);
 
   // did we get an error message?
   if (errh.nerrors() > 0)
@@ -449,7 +449,7 @@ ControlSocket::write_command(int fd, const String &handlername, String data)
   ControlSocketErrorHandler errh;
   
   // call handler
-  int result = h->call_write(data, e, true, &errh);
+  int result = h->call_write(data, e, &errh);
 
   // add a generic error message for certain handler codes
   int code = errh.error_code();
@@ -596,7 +596,7 @@ ControlSocket::parse_command(int fd, const String &line)
       String param;
       if (words.size() > 2)
 	  param = line.substring(words[2].begin(), words.back().end());
-      return read_command(fd, words[1], param, false);
+      return read_command(fd, words[1], param);
     
   } else if (command == "READDATA") {
       if (words.size() != 3)
@@ -612,7 +612,7 @@ ControlSocket::parse_command(int fd, const String &line)
       }
       String data = _in_texts[fd].substring(0, datalen);
       _in_texts[fd] = _in_texts[fd].substring(datalen);
-      return read_command(fd, words[1], data, true);
+      return read_command(fd, words[1], data);
 
   } else if (command == "WRITE" || command == "SET") {
       if (words.size() < 2)

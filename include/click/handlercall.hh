@@ -485,22 +485,22 @@ HandlerCall::initialize_write(Element* context, ErrorHandler* errh)
 inline String
 HandlerCall::call_read(ErrorHandler *errh) const
 {
-    return _h->call_read(_e, _value, false, errh);
+    return _h->call_read(_e, _value, errh);
 }
 
 inline int
 HandlerCall::call_write(ErrorHandler *errh) const
 {
-    return _h->call_write(_value, _e, false, errh);
+    return _h->call_write(_value, _e, errh);
 }
 
 inline int
 HandlerCall::call_write(const String &value_ext, ErrorHandler *errh) const
 {
     if (_value && value_ext)
-	return _h->call_write(_value + " " + value_ext, _e, false, errh);
+	return _h->call_write(_value + " " + value_ext, _e, errh);
     else
-	return _h->call_write(_value ? _value : value_ext, _e, false, errh);
+	return _h->call_write(_value ? _value : value_ext, _e, errh);
 }
 
 /** @brief  Call a write handler specified by element and handler name.

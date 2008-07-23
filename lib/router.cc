@@ -1124,7 +1124,7 @@ Router::set_hotswap_router(Router *r)
     preferred to direct Handler calls for most purposes. */
 
 String
-Handler::call_read(Element* e, const String& param, bool raw, ErrorHandler* errh) const
+Handler::call_read(Element* e, const String& param, ErrorHandler* errh) const
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();
@@ -1134,8 +1134,6 @@ Handler::call_read(Element* e, const String& param, bool raw, ErrorHandler* errh
 	return _hook.rw.r(e, _thunk1);
     else if (_flags & OP_READ) {
 	String s(param);
-	if ((_flags & RAW) && !raw)
-	    s = cp_unquote(s);
 	if (_hook.h(OP_READ, s, e, this, errh) >= 0)
 	    return s;
     } else
@@ -1145,13 +1143,11 @@ Handler::call_read(Element* e, const String& param, bool raw, ErrorHandler* errh
 }
 
 int
-Handler::call_write(const String& value, Element* e, bool raw, ErrorHandler* errh) const
+Handler::call_write(const String& value, Element* e, ErrorHandler* errh) const
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();
     String value_copy(value);
-    if ((_flags & RAW) && !raw)
-	value_copy = cp_unquote(value_copy);
     if ((_flags & (COMPREHENSIVE | OP_WRITE)) == OP_WRITE)
 	return _hook.rw.w(value_copy, e, _thunk2, errh);
     else if (_flags & OP_WRITE)
@@ -1217,7 +1213,7 @@ Router::find_ehandler(int eindex, const String &hname, bool allow_star) const
 	// BEWARE: hname might be a fake string pointing to mutable data, so
 	// make a copy of the string before it might escape.
 	String real_hname(hname.data(), hname.length());
-	if (xhandler(star_h)->call_write(real_hname, element(eindex), true, ErrorHandler::default_handler()) >= 0)
+	if (xhandler(star_h)->call_write(real_hname, element(eindex), ErrorHandler::default_handler()) >= 0)
 	    eh = find_ehandler(eindex, real_hname, false);
     }
     return eh;

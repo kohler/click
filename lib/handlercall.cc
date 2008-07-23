@@ -136,7 +136,7 @@ HandlerCall::call_read(Element *e, const String &hname, ErrorHandler *errh)
     HandlerCall hc;
     String empty;
     if (hc.assign(e, hname, empty, OP_READ, errh) >= 0)
-	return hc._h->call_read(hc._e, empty, true, errh);
+	return hc._h->call_read(hc._e, empty, errh);
     else
 	return empty;
 }

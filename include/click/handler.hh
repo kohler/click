@@ -127,10 +127,13 @@ class Handler { public:
 	return _flags & EXCLUSIVE;
     }
 
-    /** @brief Check if quotes should be removed when calling this handler.
+    /** @brief Check if spaces should be preserved when calling this handler.
      *
-     * A raw handler expects and returns unquoted text.  Rawness is set by the
-     * RAW flag.
+     * Some Click drivers perform some convenience processing on handler
+     * values, for example by removing a terminating newline from write
+     * handler values or adding a terminating newline to read handler values.
+     * Raw handlers do not have their values manipulated in this way.  Rawness
+     * is set by the RAW flag.
      *
      * <ul>
      * <li>The linuxmodule driver adds a terminating newline to non-raw read
@@ -138,9 +141,9 @@ class Handler { public:
      * way.</li>
      * <li>The same applies to handler values returned by the userlevel
      * driver's <tt>-h</tt> option.</li>
-     * <li>The HandlerCall class unquotes arguments via cp_unquote before
-     * passing them to a raw write handler.  It does not modify arguments
-     * passed to a non-raw write handler.</li>
+     * <li>The linuxmodule driver removes an optional terminating newline from
+     * a one-line non-raw write handler value, but does not modify raw write
+     * handlers' values in any way.</li>
      * </ul> */
     inline bool raw() const {
 	return _flags & RAW;
@@ -150,14 +153,25 @@ class Handler { public:
     /** @brief Call a read handler, possibly with parameters.
      * @param e element on which to call the handler
      * @param param parameters, or an empty string if no parameters
-     * @param raw true iff param is raw text (see raw())
      * @param errh optional error handler
      *
      * The element must be nonnull; to call a global handler, pass the
      * relevant router's Router::root_element().  @a errh may be null, in
      * which case errors are reported to ErrorHandler::silent_handler(). */
-    String call_read(Element *e, const String &param, bool raw,
-		     ErrorHandler *errh) const;
+    String call_read(Element *e, const String &param, ErrorHandler *errh) const;
+
+    /** @brief Call a read handler, possibly with parameters.
+     * @param e element on which to call the handler
+     * @param param parameters, or an empty string if no parameters
+     * @param raw true iff param is raw text (see raw())
+     * @param errh optional error handler
+     * @deprecated The @a raw argument is deprecated and ignored.
+     *
+     * The element must be nonnull; to call a global handler, pass the
+     * relevant router's Router::root_element().  @a errh may be null, in
+     * which case errors are reported to ErrorHandler::silent_handler(). */
+    inline String call_read(Element *e, const String &param, bool raw,
+			    ErrorHandler *errh) const CLICK_DEPRECATED;
 
     /** @brief Call a read handler without parameters.
      * @param e element on which to call the handler
@@ -167,20 +181,31 @@ class Handler { public:
      * relevant router's Router::root_element().  @a errh may be null, in
      * which case errors are ignored. */
     inline String call_read(Element *e, ErrorHandler *errh = 0) const {
-	return call_read(e, String(), false, errh);
+	return call_read(e, String(), errh);
     }
+
+    /** @brief Call a write handler.
+     * @param value value to write to the handler
+     * @param e element on which to call the handler
+     * @param errh optional error handler
+     *
+     * The element must be nonnull; to call a global handler, pass the
+     * relevant router's Router::root_element().  @a errh may be null, in
+     * which case errors are reported to ErrorHandler::silent_handler(). */
+    int call_write(const String &value, Element *e, ErrorHandler *errh) const;
 
     /** @brief Call a write handler.
      * @param value value to write to the handler
      * @param e element on which to call the handler
      * @param raw true iff value is raw text (see raw())
      * @param errh optional error handler
+     * @deprecated The @a raw argument is deprecated and ignored.
      *
      * The element must be nonnull; to call a global handler, pass the
      * relevant router's Router::root_element().  @a errh may be null, in
      * which case errors are reported to ErrorHandler::silent_handler(). */
-    int call_write(const String &value, Element *e, bool raw,
-		   ErrorHandler *errh) const;
+    inline int call_write(const String &value, Element *e, bool raw,
+			  ErrorHandler *errh) const CLICK_DEPRECATED;
   
 
     /** @brief Unparse this handler's name.
@@ -237,6 +262,20 @@ class Handler { public:
 
 /* The largest size a write handler is allowed to have. */
 #define LARGEST_HANDLER_WRITE 65536
+
+inline String
+Handler::call_read(Element *e, const String &param, bool,
+		   ErrorHandler *errh) const
+{
+    return call_read(e, param, errh);
+}
+
+inline int
+Handler::call_write(const String &value, Element *e, bool,
+		    ErrorHandler *errh) const
+{
+    return call_write(value, e, errh);
+}
 
 CLICK_ENDDECLS
 #endif

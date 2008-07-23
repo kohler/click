@@ -196,7 +196,7 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
 	    if (h->writable()) {
 		ContextErrorHandler cerrh
 		    (errh, "In write handler '" + h->unparse_name(he) + "':");
-		h->call_write(poke->_h_value[hpos], he, false, &cerrh);
+		h->call_write(poke->_h_value[hpos], he, &cerrh);
 	    } else
 		perrh.error("no write handler '%s'", h->unparse_name(he).c_str());
 	}
