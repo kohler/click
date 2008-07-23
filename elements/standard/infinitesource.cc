@@ -181,14 +181,10 @@ InfiniteSource::change_param(const String &s, Element *e, void *vparam,
   InfiniteSource *is = (InfiniteSource *)e;
   switch ((intptr_t)vparam) {
 
-   case 0: {			// data
-     String data;
-     if (!cp_string(s, &data))
-       return errh->error("data parameter must be string");
-     is->_data = data;
+   case 0:			// data
+     is->_data = s;
      is->setup_packet();
      break;
-   }
    
    case 1: {			// limit
      int limit;
