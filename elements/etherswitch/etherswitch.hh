@@ -65,7 +65,7 @@ class EtherSwitch : public Element { public:
   ~EtherSwitch();
   
   const char *class_name() const		{ return "EtherSwitch"; }
-  const char *port_count() const		{ return "-/="; }
+  const char *port_count() const		{ return "2-/="; }
   const char *processing() const		{ return PUSH; }
   const char *flow_code() const			{ return "#/[^#]"; }
 

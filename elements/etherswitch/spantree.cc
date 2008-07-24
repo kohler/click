@@ -51,16 +51,13 @@ EtherSpanTree::configure(Vector<String> &conf, ErrorHandler *errh)
 		   cpEnd) < 0)
     return -1;
   
-  if (!in->cast("Suppressor"))
+  if (!(_input_sup = static_cast<Suppressor *>(in->cast("Suppressor"))))
     return errh->error("EtherSpanTree needs an input Suppressor");
-  if (!out->cast("Suppressor"))
+  if (!(_output_sup = static_cast<Suppressor *>(out->cast("Suppressor"))))
     return errh->error("EtherSpanTree needs an output Suppressor");
-  if (!sw->cast("EtherSwitch"))
+  if (!(_switch = static_cast<EtherSwitch *>(sw->cast("EtherSwitch"))))
     return errh->error("EtherSpanTree needs an EtherSwitch");
   
-  _input_sup = (Suppressor*)in;
-  _output_sup = (Suppressor*)out;
-  _switch = (EtherSwitch*)sw;
   memcpy(&_bridge_id, _addr, 6);
   return 0;
 }

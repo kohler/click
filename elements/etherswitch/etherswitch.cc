@@ -47,6 +47,7 @@ void
 EtherSwitch::broadcast(int source, Packet *p)
 {
   int n = noutputs();
+  assert((unsigned) source < (unsigned) n);
   int sent = 0;
   for (int i = 0; i < n; i++)
     if (i != source) {
@@ -54,6 +55,7 @@ EtherSwitch::broadcast(int source, Packet *p)
       output(i).push(pp);
       sent++;
     }
+  assert(sent == n - 1);
 }
 
 void
