@@ -145,16 +145,16 @@ class HandlerCall { public:
     //@{
     static String call_read(Element *e, const String &hname,
 			    ErrorHandler *errh = 0);
-    static String call_read(const String &hdesc, Element *context,
+    static String call_read(const String &hdesc, const Element *context,
 			    ErrorHandler *errh = 0);
     static int call_write(Element *e, const String &hname,
 			  ErrorHandler *errh = 0);
     static int call_write(Element *e, const String &hname, const String &value,
 			  ErrorHandler *errh = 0);
     static int call_write(const String &hdesc,
-			  Element *context, ErrorHandler *errh = 0);
+			  const Element *context, ErrorHandler *errh = 0);
     static int call_write(const String &hdesc, const String &value,
-			  Element *context, ErrorHandler *errh = 0);
+			  const Element *context, ErrorHandler *errh = 0);
     //@}
 
 
@@ -217,7 +217,7 @@ class HandlerCall { public:
      *  whether or not the handler exists).  Absent a syntax error,
      *  initialize() will return 0 for success even though the HandlerCall
      *  remains uninitialized. */
-    int initialize(int flags, Element *context, ErrorHandler *errh = 0);
+    int initialize(int flags, const Element *context, ErrorHandler *errh = 0);
 
     /** @brief  Initialize the HandlerCall for reading.
      *  @param  context  optional element context
@@ -225,7 +225,7 @@ class HandlerCall { public:
      *
      *  Equivalent to @link initialize(int, Element*, ErrorHandler*)
      *  initialize@endlink(OP_READ, @a context, @a errh). */
-    inline int initialize_read(Element *context, ErrorHandler *errh = 0);
+    inline int initialize_read(const Element *context, ErrorHandler *errh = 0);
 
     /** @brief  Initialize the HandlerCall for writing.
      *  @param  context  optional element context
@@ -233,7 +233,7 @@ class HandlerCall { public:
      *
      *  Equivalent to @link initialize(int, Element*, ErrorHandler*)
      *  initialize@endlink(OP_WRITE, @a context, @a errh). */
-    inline int initialize_write(Element *context, ErrorHandler *errh = 0);
+    inline int initialize_write(const Element *context, ErrorHandler *errh = 0);
 
     
     typedef bool (HandlerCall::*unspecified_bool_type)() const;
@@ -313,7 +313,7 @@ class HandlerCall { public:
      *
      *  If @a errh is nonnull, then any errors are reported there. */
     static int reset(HandlerCall *&hcall, const String &hdesc, int flags,
-		     Element *context, ErrorHandler *errh = 0);
+		     const Element *context, ErrorHandler *errh = 0);
 
     /** @brief  Create and initialize a HandlerCall on element @a e.
      *  @param  hcall  stores the HandlerCall result
@@ -341,7 +341,7 @@ class HandlerCall { public:
      *  Equivalent to
      *  @link reset(HandlerCall*&, const String&, int, Element*, ErrorHandler*) reset@endlink(@a hcall, @a hdesc, OP_READ, @a context, @a errh). */
     static inline int reset_read(HandlerCall *&hcall, const String &hdesc,
-				 Element *context, ErrorHandler *errh = 0);
+				 const Element *context, ErrorHandler *errh = 0);
 
     /** @brief  Create and initialize a read HandlerCall from @a hdesc.
      *  @param  hcall  stores the HandlerCall result
@@ -366,7 +366,7 @@ class HandlerCall { public:
      *  Equivalent to
      *  @link reset(HandlerCall*&, const String&, int, Element*, ErrorHandler*) reset@endlink(@a hcall, @a hdesc, OP_WRITE, @a context, @a errh). */
     static inline int reset_write(HandlerCall *&hcall, const String &hdesc,
-				  Element *context, ErrorHandler *errh = 0);
+				  const Element *context, ErrorHandler *errh = 0);
 
     /** @brief  Create and initialize a read HandlerCall from @a hdesc.
      *  @param  hcall  stores the HandlerCall result
@@ -447,13 +447,13 @@ class HandlerCall { public:
 };
 
 inline int
-HandlerCall::reset_read(HandlerCall*& hcall, const String& hdesc, Element* context, ErrorHandler* errh)
+HandlerCall::reset_read(HandlerCall*& hcall, const String& hdesc, const Element* context, ErrorHandler* errh)
 {
     return reset(hcall, hdesc, OP_READ, context, errh);
 }
 
 inline int
-HandlerCall::reset_write(HandlerCall*& hcall, const String& hdesc, Element* context, ErrorHandler* errh)
+HandlerCall::reset_write(HandlerCall*& hcall, const String& hdesc, const Element* context, ErrorHandler* errh)
 {
     return reset(hcall, hdesc, OP_WRITE, context, errh);
 }
@@ -471,13 +471,13 @@ HandlerCall::reset_write(HandlerCall*& hcall, Element* e, const String& hname, c
 }
 
 inline int
-HandlerCall::initialize_read(Element* context, ErrorHandler* errh)
+HandlerCall::initialize_read(const Element* context, ErrorHandler* errh)
 {
     return initialize(OP_READ, context, errh);
 }
 
 inline int
-HandlerCall::initialize_write(Element* context, ErrorHandler* errh)
+HandlerCall::initialize_write(const Element* context, ErrorHandler* errh)
 {
     return initialize(OP_WRITE, context, errh);
 }

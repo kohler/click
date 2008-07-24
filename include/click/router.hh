@@ -52,7 +52,7 @@ class Router { public:
     
     Element* find(const String& name, ErrorHandler* errh = 0) const;
     Element* find(const String& name, String context, ErrorHandler* errh = 0) const;
-    Element* find(const String& name, Element* context, ErrorHandler* errh = 0) const;
+    Element* find(const String& name, const Element* context, ErrorHandler* errh = 0) const;
 
     int downstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);
     int upstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);

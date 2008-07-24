@@ -257,7 +257,7 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
 
 
 bool
-AddressInfo::query_ip(String s, unsigned char *store, Element *e)
+AddressInfo::query_ip(String s, unsigned char *store, const Element *e)
 {
     int colon = s.find_right(':');
     if (colon >= 0 && s.substring(colon).lower() != ":ip"
@@ -307,7 +307,7 @@ AddressInfo::query_ip(String s, unsigned char *store, Element *e)
 
 bool
 AddressInfo::query_ip_prefix(String s, unsigned char *store,
-			     unsigned char *mask_store, Element *e)
+			     unsigned char *mask_store, const Element *e)
 {
     int colon = s.find_right(':');
     if (colon >= 0 && s.substring(colon).lower() != ":ipnet"
@@ -330,7 +330,7 @@ AddressInfo::query_ip_prefix(String s, unsigned char *store,
 #ifdef HAVE_IP6
 
 bool
-AddressInfo::query_ip6(String s, unsigned char *store, Element *e)
+AddressInfo::query_ip6(String s, unsigned char *store, const Element *e)
 {
     int colon = s.find_right(':');
     if (colon >= 0 && s.substring(colon).lower() != ":ip6")
@@ -343,7 +343,7 @@ AddressInfo::query_ip6(String s, unsigned char *store, Element *e)
 
 bool
 AddressInfo::query_ip6_prefix(String s, unsigned char *store,
-			      int *bits_store, Element *e)
+			      int *bits_store, const Element *e)
 {
     int colon = s.find_right(':');
     if (colon >= 0 && s.substring(colon).lower() != ":ip6net")
@@ -365,7 +365,7 @@ AddressInfo::query_ip6_prefix(String s, unsigned char *store,
 
 
 bool
-AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
+AddressInfo::query_ethernet(String s, unsigned char *store, const Element *e)
 {
     int colon = s.find_right(':');
     if (colon >= 0 && s.substring(colon).lower() != ":eth"

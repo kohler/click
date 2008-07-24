@@ -95,13 +95,13 @@ class AddressInfo : public Element { public:
   int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
   int configure(Vector<String> &, ErrorHandler *);
 
-  static bool query_ip(String, unsigned char *, Element *);
-  static bool query_ip_prefix(String, unsigned char *, unsigned char *, Element *);
+  static bool query_ip(String, unsigned char *, const Element *);
+  static bool query_ip_prefix(String, unsigned char *, unsigned char *, const Element *);
 #ifdef HAVE_IP6
-  static bool query_ip6(String, unsigned char *, Element *);
-  static bool query_ip6_prefix(String, unsigned char *, int *, Element *);
+  static bool query_ip6(String, unsigned char *, const Element *);
+  static bool query_ip6_prefix(String, unsigned char *, int *, const Element *);
 #endif
-  static bool query_ethernet(String, unsigned char *, Element *);
+  static bool query_ethernet(String, unsigned char *, const Element *);
 
 };
 

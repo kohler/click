@@ -219,7 +219,7 @@ Router::find(const String &name, String context, ErrorHandler *errh) const
  *  returns null.  The error is "<tt>no element named 'name'</tt>".  If @a
  *  errh is null, no error is reported. */
 Element *
-Router::find(const String &name, Element *context, ErrorHandler *errh) const
+Router::find(const String &name, const Element *context, ErrorHandler *errh) const
 {
   String prefix = ename(context->eindex());
   int slash = prefix.find_right('/');

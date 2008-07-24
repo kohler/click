@@ -14,9 +14,9 @@ class Element;
 class Router;
 class Handler;
 class HandlerCall;
-# define CP_VA_PARSE_ARGS_REST	Element*, ErrorHandler*, ...
-# define CP_OPT_CONTEXT		, Element* context = 0
-# define CP_CONTEXT		, Element* context
+# define CP_VA_PARSE_ARGS_REST	const Element*, ErrorHandler*, ...
+# define CP_OPT_CONTEXT		, const Element* context = 0
+# define CP_CONTEXT		, const Element* context
 # define CP_PASS_CONTEXT	, context
 #else
 # define CP_VA_PARSE_ARGS_REST	ErrorHandler*, ...
@@ -179,10 +179,10 @@ bool cp_ethernet_address(const String& str, unsigned char* result  CP_OPT_CONTEX
 bool cp_tcpudp_port(const String& str, int proto, uint16_t* result  CP_OPT_CONTEXT);
 
 #if !CLICK_TOOL
-Element *cp_element(const String& str, Element* context, ErrorHandler* errh=0);
+Element *cp_element(const String& str, const Element* context, ErrorHandler* errh=0);
 Element *cp_element(const String& str, Router* router, ErrorHandler* errh=0);
-bool cp_handler_name(const String& str, Element** result_element, String* result_hname, Element* context, ErrorHandler* errh=0);
-bool cp_handler(const String& str, int flags, Element** result_element, const Handler** result_handler, Element* context, ErrorHandler* errh=0);
+bool cp_handler_name(const String& str, Element** result_element, String* result_hname, const Element* context, ErrorHandler* errh=0);
+bool cp_handler(const String& str, int flags, Element** result_element, const Handler** result_handler, const Element* context, ErrorHandler* errh=0);
 #endif
 
 #if HAVE_IPSEC
@@ -675,6 +675,18 @@ inline bool cp_seconds_as(int want_power, const String &str, uint32_t *result)
 {
     return cp_seconds_as(str, want_power, result);
 }
+
+#if !CLICK_TOOL
+inline int cp_register_argtype(const char* name, const char* description, int flags,
+			       void (*parsefunc)(cp_value *, const String &, ErrorHandler *, const char *, Element *),
+			       void (*storefunc)(cp_value *, Element *),
+			       void *user_data = 0) {
+    return cp_register_argtype(name, description, flags,
+			       (cp_parsefunc) parsefunc,
+			       (cp_storefunc) storefunc,
+			       user_data);
+}
+#endif
 
 #undef CP_VA_ARGS_REST
 #undef CP_OPT_CONTEXT

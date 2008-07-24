@@ -29,7 +29,7 @@ CLICK_DECLS
  */
 
 int
-HandlerCall::initialize(int flags, Element* context, ErrorHandler* errh)
+HandlerCall::initialize(int flags, const Element* context, ErrorHandler* errh)
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();
@@ -45,7 +45,7 @@ HandlerCall::initialize(int flags, Element* context, ErrorHandler* errh)
 	    return -EINVAL;
 	// local handler reference
 	if (e->eindex() == -1 && _value[0] != '.' && Router::handler(context, hname))
-	    e = context;
+	    e = const_cast<Element *>(context);
     } else
 	hname = _h->name();
 
@@ -93,7 +93,7 @@ HandlerCall::assign(Element *e, const String &hname, const String &value, int fl
 }
 
 int
-HandlerCall::reset(HandlerCall*& call, const String& hdesc, int flags, Element* context, ErrorHandler* errh)
+HandlerCall::reset(HandlerCall*& call, const String& hdesc, int flags, const Element* context, ErrorHandler* errh)
 {
     HandlerCall hcall(hdesc);
     int retval = hcall.initialize(flags, context, errh);
@@ -156,7 +156,7 @@ HandlerCall::call_read(Element *e, const String &hname, ErrorHandler *errh)
  *  handler, are reported there.  If @a hdesc has no <tt>ename</tt>, then
  *  calls the global handler named <tt>hname</tt> on @a context's router. */
 String
-HandlerCall::call_read(const String &hdesc, Element *context, ErrorHandler* errh)
+HandlerCall::call_read(const String &hdesc, const Element *context, ErrorHandler* errh)
 {
     HandlerCall hcall(hdesc);
     if (hcall.initialize(OP_READ, context, errh) >= 0)
@@ -202,7 +202,7 @@ HandlerCall::call_write(Element* e, const String& hname, const String& value, Er
  *  element@endlink, calls the global write handler named @a hname on that
  *  router. */
 int
-HandlerCall::call_write(const String &hdesc, Element *context, ErrorHandler *errh)
+HandlerCall::call_write(const String &hdesc, const Element *context, ErrorHandler *errh)
 {
     HandlerCall hcall(hdesc);
     if (hcall.initialize(OP_WRITE, context, errh) >= 0)
@@ -228,7 +228,7 @@ HandlerCall::call_write(const String &hdesc, Element *context, ErrorHandler *err
  *  root element@endlink, calls the global write handler named @a hname on
  *  that router. */
 int
-HandlerCall::call_write(const String &hdesc, const String &value, Element *context, ErrorHandler *errh)
+HandlerCall::call_write(const String &hdesc, const String &value, const Element *context, ErrorHandler *errh)
 {
     HandlerCall hcall(hdesc);
     if (hcall.initialize(OP_WRITE, context, errh) >= 0) {

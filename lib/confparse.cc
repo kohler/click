@@ -40,7 +40,7 @@
 # include <click/nameinfo.hh>
 # include <click/standard/addressinfo.hh>
 # include <click/packet_anno.hh>
-# define CP_CONTEXT , Element *context
+# define CP_CONTEXT , const Element *context
 # define CP_PASS_CONTEXT , context
 #else
 # include <click/timestamp.hh>
@@ -2482,7 +2482,7 @@ cp_tcpudp_port(const String &str, int proto, uint16_t *result
 }
 
 
-#ifndef CLICK_TOOL
+#if !CLICK_TOOL
 /** @brief Parse an element reference from @a str.
  * @param  str  string
  * @param  context  element context
@@ -2503,7 +2503,7 @@ cp_tcpudp_port(const String &str, int proto, uint16_t *result
  * argument.
  */
 Element *
-cp_element(const String &str, Element *context, ErrorHandler *errh)
+cp_element(const String &str, const Element *context, ErrorHandler *errh)
 {
   String name;
   if (!cp_string(str, &name)) {
@@ -2571,7 +2571,7 @@ cp_element(const String &str, Router *router, ErrorHandler *errh)
 bool
 cp_handler_name(const String& str,
 		Element** result_element, String* result_hname,
-		Element* context, ErrorHandler* errh)
+		const Element* context, ErrorHandler* errh)
 {
   SilentErrorHandler serrh;
   if (!errh)
@@ -2624,7 +2624,7 @@ cp_handler_name(const String& str,
 bool
 cp_handler(const String &str, int flags,
 	   Element** result_element, const Handler** result_handler,
-	   Element* context, ErrorHandler* errh)
+	   const Element* context, ErrorHandler* errh)
 {
   HandlerCall hc(str);
   if (hc.initialize(flags, context, errh) < 0)
@@ -4006,8 +4006,8 @@ CpVaHelper::assign_arguments(const Vector<String> &args, const char *argname, Er
 
 int
 CpVaHelper::parse_arguments(const char *argname,
-#ifndef CLICK_TOOL
-			    Element *context,
+#if !CLICK_TOOL
+			    const Element *context,
 #endif
 			    ErrorHandler *errh)
 {
@@ -4132,8 +4132,8 @@ CpVaHelper::parse_arguments(const char *argname,
 /// @endcode
 int
 cp_va_parse(const Vector<String> &conf,
-#ifndef CLICK_TOOL
-	    Element *context,
+#if !CLICK_TOOL
+	    const Element *context,
 #endif
 	    ErrorHandler *errh, ...)
 {
@@ -4159,8 +4159,8 @@ cp_va_parse(const Vector<String> &conf,
 /// transition guide.
 int
 cp_va_parse(const String &str,
-#ifndef CLICK_TOOL
-	    Element *context,
+#if !CLICK_TOOL
+	    const Element *context,
 #endif
 	    ErrorHandler *errh, ...)
 {
@@ -4188,8 +4188,8 @@ cp_va_parse(const String &str,
 /// transition guide.
 int
 cp_va_space_parse(const String &str,
-#ifndef CLICK_TOOL
-		  Element *context,
+#if !CLICK_TOOL
+		  const Element *context,
 #endif
 		  ErrorHandler *errh, ...)
 {
@@ -4217,8 +4217,8 @@ cp_va_space_parse(const String &str,
 /// transition guide.
 int
 cp_va_parse_keyword(const String &str,
-#ifndef CLICK_TOOL
-		    Element *context,
+#if !CLICK_TOOL
+		    const Element *context,
 #endif
 		    ErrorHandler *errh, ...)
 {
@@ -4249,8 +4249,8 @@ cp_va_parse_keyword(const String &str,
 /// the @a first argument; simply leave it off.
 int
 cp_va_parse_remove_keywords(Vector<String> &conf, int first,
-#ifndef CLICK_TOOL
-			    Element *context,
+#if !CLICK_TOOL
+			    const Element *context,
 #endif
 			    ErrorHandler *errh, ...)
 {
@@ -4310,8 +4310,8 @@ cp_va_parse_remove_keywords(Vector<String> &conf, int first,
  */
 int
 cp_va_kparse(const Vector<String> &conf,
-#ifndef CLICK_TOOL
-	     Element *context,
+#if !CLICK_TOOL
+	     const Element *context,
 #endif
 	     ErrorHandler *errh, ...)
 {
@@ -4340,8 +4340,8 @@ cp_va_kparse(const Vector<String> &conf,
  */
 int
 cp_va_kparse(const String &str,
-#ifndef CLICK_TOOL
-	     Element *context,
+#if !CLICK_TOOL
+	     const Element *context,
 #endif
 	     ErrorHandler *errh, ...)
 {
@@ -4372,8 +4372,8 @@ cp_va_kparse(const String &str,
  */
 int
 cp_va_space_kparse(const String &str,
-#ifndef CLICK_TOOL
-		   Element *context,
+#if !CLICK_TOOL
+		   const Element *context,
 #endif
 		   ErrorHandler *errh, ...)
 {
@@ -4404,8 +4404,8 @@ cp_va_space_kparse(const String &str,
  */
 int
 cp_va_kparse_keyword(const String &str,
-#ifndef CLICK_TOOL
-		     Element *context,
+#if !CLICK_TOOL
+		     const Element *context,
 #endif
 		     ErrorHandler *errh, ...)
 {
@@ -4444,8 +4444,8 @@ cp_va_kparse_keyword(const String &str,
  */
 int
 cp_va_kparse_remove_keywords(Vector<String> &conf,
-#ifndef CLICK_TOOL
-			     Element *context,
+#if !CLICK_TOOL
+			     const Element *context,
 #endif
 			     ErrorHandler *errh, ...)
 {
