@@ -97,6 +97,7 @@ struct click_ip {
 #define IP_PROTO_WBMON		78
 #define IP_PROTO_WBEXPAK	79
 #define IP_PROTO_SCTP		132
+#define IP_PROTO_UDPLITE	136
 
 #define IP_PROTO_NONE		257
 #define IP_PROTO_TRANSP		258
