@@ -314,18 +314,28 @@ skip_backslash(const char *s, const char *end)
     return s + 2;
 }
 
-static const char *
-skip_double_quote(const char *s, const char *end)
+/** @brief  Return the first character after a double-quoted string starting at @a begin.
+ *  @param  begin  beginning of double-quoted string
+ *  @param  end    one past end of string
+ *  @return Pointer to first character in [@a begin, @a end) after the
+ *          double-quoted string, or @a end if the double-quoted portion is not
+ *          correctly terminated.
+ *  @pre    @a begin < @a end and *@a begin == '\"'
+ *
+ *  cp_skip_double_quote() understands all the backslash escapes processed
+ *  by cp_process_backslash(). */
+const char *
+cp_skip_double_quote(const char *begin, const char *end)
 {
-  assert(s < end && *s == '\"');
+  assert(begin < end && *begin == '\"');
 
-  for (s++; s < end; )
-    if (*s == '\\')
-      s = skip_backslash(s, end);
-    else if (*s == '\"')
-      return s + 1;
+  for (begin++; begin < end; )
+    if (*begin == '\\')
+      begin = skip_backslash(begin, end);
+    else if (*begin == '\"')
+      return begin + 1;
     else
-      s++;
+      begin++;
 
   return end;
 }
@@ -401,7 +411,7 @@ partial_uncomment(const String &str, int i, int *comma_pos)
       if (*s == '\'')
 	s = skip_single_quote(s, end);
       else if (*s == '\"')
-	s = skip_double_quote(s, end);
+	s = cp_skip_double_quote(s, end);
       else if (*s == '\\' && s + 1 < end && s[1] == '<')
 	s = skip_backslash(s, end);
       else
@@ -721,7 +731,7 @@ skip_spacevec_item(const char *s, const char *end)
       break;
       
      case '\"':
-      s = skip_double_quote(s, end);
+      s = cp_skip_double_quote(s, end);
       break;
       
      case '\'':
@@ -874,7 +884,7 @@ cp_string(const String &str, String *result, String *rest)
       goto done;
 
      case '\"':
-      s = skip_double_quote(s, end);
+      s = cp_skip_double_quote(s, end);
       break;
 
      case '\'':

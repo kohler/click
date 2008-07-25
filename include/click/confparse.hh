@@ -40,6 +40,7 @@ class HandlerCall;
 //@{
 const char* cp_skip_space(const char* begin, const char* end);
 const char* cp_skip_comment_space(const char* begin, const char* end);
+const char* cp_skip_double_quote(const char* begin, const char* end);
 bool cp_eat_space(String &str);
 inline bool cp_is_space(const String &str);
 bool cp_is_word(const String &str);
