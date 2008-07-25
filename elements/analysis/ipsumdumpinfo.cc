@@ -21,6 +21,7 @@
 #include "ipsumdumpinfo.hh"
 #include <click/packet.hh>
 #include <click/packet_anno.hh>
+#include <click/confparse.hh>
 #include <clicknet/ip.h>
 CLICK_DECLS
 
@@ -150,7 +151,7 @@ static bool none_extract(PacketDesc&, int)
 
 static Field* fields;
 const Field null_field = {
-    "none", B_0, 0, none_extract, num_outa, outb, inb, 0, 0
+    "none", B_0, 0, 0, none_extract, 0, num_outa, num_ina, outb, inb, 0, 0
 };
 
 int Field::binary_size() const
@@ -193,21 +194,26 @@ const Field* find_field(const String& name, bool likely_synonyms)
     return 0;
 }
 
-int register_unparser(const char* name, int thunk,
-		      void (*prepare)(PacketDesc&),
-		      bool (*extract)(PacketDesc&, int),
-		      void (*outa)(const PacketDesc&, int),
-		      void (*outb)(const PacketDesc&, bool, int),
-		      const uint8_t *(*inb)(PacketDesc&, const uint8_t*, const uint8_t*, int))
+int register_field(const char* name, int thunk,
+		   void (*prepare)(PacketDesc&), int order,
+		   bool (*extract)(PacketDesc&, int),
+		   void (*inject)(PacketOdesc&, int),		      
+		   void (*outa)(const PacketDesc&, int),
+		   bool (*ina)(PacketOdesc&, const String&, int),
+		   void (*outb)(const PacketDesc&, bool, int),
+		   const uint8_t *(*inb)(PacketOdesc&, const uint8_t*, const uint8_t*, int))
 {
     Field* f = const_cast<Field*>(find_field(name, false));
     if (f) {
 	if (f == &null_field
 	    || f->synonym
 	    || f->thunk != thunk
+	    || f->order != order
 	    || (f->prepare && f->prepare != prepare)
 	    || (f->extract && f->extract != extract)
+	    || (f->inject && f->inject != inject)
 	    || (f->outa && f->outa != outa)
+	    || (f->ina && f->ina != ina)
 	    || (f->outb && f->outb != outb)
 	    || (f->inb && f->inb != inb))
 	    return -1;
@@ -215,8 +221,12 @@ int register_unparser(const char* name, int thunk,
 	    f->prepare = prepare;
 	if (!f->extract && extract)
 	    f->extract = extract;
+	if (!f->inject && inject)
+	    f->inject = inject;
 	if (!f->outa && outa)
 	    f->outa = outa;
+	if (!f->ina && ina)
+	    f->ina = ina;
 	if (!f->outb && outb)
 	    f->outb = outb;
 	if (!f->inb && inb)
@@ -226,9 +236,12 @@ int register_unparser(const char* name, int thunk,
 	    return -1;
 	f->name = name;
 	f->thunk = thunk;
+	f->order = order;
 	f->prepare = prepare;
 	f->extract = extract;
+	f->inject = inject;
 	f->outa = outa;
+	f->ina = ina;
 	f->outb = outb;
 	f->inb = inb;
 	f->synonym = 0;
@@ -326,9 +339,40 @@ bool hard_field_missing(const PacketDesc &d, int proto, int l)
 #endif
 #define PUT1(p, d)	((p)[0] = (d))
 
-void num_outa(const PacketDesc& d, int)
+void num_outa(const PacketDesc& d, int thunk)
 {
-    *d.sa << d.v;
+    if ((thunk & B_TYPEMASK) == B_8) {
+#if HAVE_INT64_TYPES
+	uint64_t v = ((uint64_t) d.u32[1] << 32) | d.u32[0];
+	*d.sa << v;
+#else
+	// XXX silently truncate large numbers
+	*d.sa << d.u32[0];
+#endif
+    } else
+	*d.sa << d.v;
+}
+
+bool num_ina(PacketOdesc& d, const String &s, int thunk)
+{
+#if HAVE_INT64_TYPES
+    if ((thunk & B_TYPEMASK) == B_8) {
+	uint64_t v;
+	if (!cp_integer(s, &v))
+	    return false;
+	d.u32[0] = v;
+	d.u32[1] = v >> 32;
+	return true;
+    }
+#else
+    // XXX die on large numbers
+#endif
+    if (!cp_integer(s, &d.v))
+	return false;
+    if (((thunk & B_TYPEMASK) == B_1 && d.v > 255)
+	|| ((thunk & B_TYPEMASK) == B_2 && d.v > 65535))
+	return false;
+    return true;
 }
 
 void outb(const PacketDesc& d, bool, int thunk)
@@ -358,8 +402,8 @@ void outb(const PacketDesc& d, bool, int thunk)
       }
       case B_8: {
 	  char* c = d.sa->extend(8);
-	  PUT4(c, d.v);
-	  PUT4(c + 4, d.v2);
+	  PUT4(c, d.u32[1]);
+	  PUT4(c + 4, d.u32[0]);
 	  break;
       }
       case B_4NET: {
@@ -370,7 +414,7 @@ void outb(const PacketDesc& d, bool, int thunk)
     }
 }
 
-const uint8_t *inb(PacketDesc& d, const uint8_t *s, const uint8_t *end, int thunk)
+const uint8_t *inb(PacketOdesc& d, const uint8_t *s, const uint8_t *end, int thunk)
 {
     d.v = 0;
     switch (thunk & B_TYPEMASK) {
@@ -391,11 +435,16 @@ const uint8_t *inb(PacketDesc& d, const uint8_t *s, const uint8_t *end, int thun
 	    goto bad;
 	d.v = GET4(s);
 	return s + 4;
+    case B_6PTR:
+	if (s + 6 >= end)
+	    goto bad;
+	memcpy(d.u8, s, 6);
+	return s + 6;
       case B_8:
 	if (s + 7 >= end)
 	    goto bad;
-	d.v = GET4(s);
-	d.v2 = GET4(s + 4);
+	d.u32[1] = GET4(s);
+	d.u32[0] = GET4(s + 4);
 	return s + 8;
       case B_4NET:
 	if (s + 3 >= end)
@@ -404,7 +453,7 @@ const uint8_t *inb(PacketDesc& d, const uint8_t *s, const uint8_t *end, int thun
 	return s + 4;
       bad:
       default:
-	d.v = d.v2 = 0;
+	d.clear_values();
 	return end;
     }
 }

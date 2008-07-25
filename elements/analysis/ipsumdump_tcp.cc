@@ -27,12 +27,13 @@
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
 #include <clicknet/icmp.h>
+#include <click/confparse.hh>
 CLICK_DECLS
+
+namespace IPSummaryDump {
 
 enum { T_TCP_SEQ, T_TCP_ACK, T_TCP_FLAGS, T_TCP_WINDOW, T_TCP_URP, T_TCP_OPT,
        T_TCP_NTOPT, T_TCP_SACK, T_TCP_OFF };
-
-namespace IPSummaryDump {
 
 static bool tcp_extract(PacketDesc& d, int thunk)
 {
@@ -70,10 +71,10 @@ static bool tcp_extract(PacketDesc& d, int thunk)
 	if (!d.tcph || transport_length < 13 || (d.tcph->th_off > 5 && transport_length < (int)(d.tcph->th_off << 2)))
 	    goto no_tcp_opt;
 	if (d.tcph->th_off <= 5)
-	    d.vptr = 0, d.v2 = 0;
+	    d.vptr[0] = d.vptr[1] = 0;
 	else {
-	    d.vptr = (const uint8_t *) (d.tcph + 1);
-	    d.v2 = (int)(d.tcph->th_off << 2) - sizeof(click_tcp);
+	    d.vptr[0] = (const uint8_t *) (d.tcph + 1);
+	    d.vptr[1] = d.vptr[0] + (d.tcph->th_off << 2) - sizeof(click_tcp);
 	}
 	return true;
       case T_TCP_NTOPT:
@@ -84,12 +85,12 @@ static bool tcp_extract(PacketDesc& d, int thunk)
 	else if (d.tcph->th_off <= 5
 		 || (d.tcph->th_off == 8 && transport_length >= 24
 		     && *(reinterpret_cast<const uint32_t *>(d.tcph + 1)) == htonl(0x0101080A)))
-	    d.vptr = 0, d.v2 = 0;
+	    d.vptr[0] = d.vptr[1] = 0;
 	else if (transport_length < (int)(d.tcph->th_off << 2))
 	    goto no_tcp_opt;
 	else {
-	    d.vptr = (const uint8_t *) (d.tcph + 1);
-	    d.v2 = (int)(d.tcph->th_off << 2) - sizeof(click_tcp);
+	    d.vptr[0] = (const uint8_t *) (d.tcph + 1);
+	    d.vptr[1] = d.vptr[0] + (d.tcph->th_off << 2) - sizeof(click_tcp);
 	}
 	return true;
 	
@@ -99,6 +100,68 @@ static bool tcp_extract(PacketDesc& d, int thunk)
 	return false;
       no_tcp_opt:
 	return field_missing(d, IP_PROTO_TCP, transport_length + 1);
+    }
+}
+
+static void tcp_inject(PacketOdesc& d, int thunk)
+{
+    if (!d.make_ip(IP_PROTO_TCP) || !d.make_transp())
+	return;
+    if (d.p->transport_length() < (int) sizeof(click_tcp)) {
+	if (!(d.p = d.p->put(sizeof(click_tcp) - d.p->transport_length())))
+	    return;
+	click_tcp *tcph = d.p->tcp_header();
+	tcph->th_off = sizeof(click_tcp) >> 2;
+    }
+
+    click_tcp *tcph = d.p->tcp_header();
+    switch (thunk & ~B_TYPEMASK) {
+    case T_TCP_SEQ:
+	tcph->th_seq = htonl(d.v);
+	break;
+    case T_TCP_ACK:
+	tcph->th_ack = htonl(d.v);
+	break;
+    case T_TCP_FLAGS:
+	tcph->th_flags = d.v;
+	tcph->th_flags2 = d.v >> 8;
+	break;
+    case T_TCP_OFF:
+	d.v = (d.v + 3) & ~3;
+	if ((int) d.v > (tcph->th_off << 2)) {
+	    int more = d.v - (tcph->th_off << 2);
+	    if (!(d.p = d.p->put(more)))
+		return;
+	    tcph = d.p->tcp_header();
+	    memset(d.p->transport_header() + d.v - more, TCPOPT_EOL, more);
+	}
+	tcph->th_off = d.v >> 2;
+	break;
+    case T_TCP_WINDOW:
+	tcph->th_win = htons(d.v);
+	break;
+    case T_TCP_URP:
+	tcph->th_urp = htons(d.v);
+	break;
+    case T_TCP_OPT:
+    case T_TCP_NTOPT:
+    case T_TCP_SACK: {
+	if (!d.vptr[0] || d.vptr[0] == d.vptr[1])
+	    return;
+	int olen = d.vptr[1] - d.vptr[0];
+	int th_off = (sizeof(click_tcp) + olen + 3) & ~3;
+	if (d.p->transport_length() < th_off) {
+	    if (!(d.p = d.p->put(th_off - d.p->transport_length())))
+		return;
+	    tcph = d.p->tcp_header();
+	}
+	if (th_off > (tcph->th_off << 2))
+	    tcph->th_off = th_off >> 2;
+	memcpy(d.p->transport_header() + sizeof(click_tcp), d.vptr[0], olen);
+	memset(d.p->transport_header() + sizeof(click_tcp) + olen,
+	       TCPOPT_EOL, th_off - olen);
+	break;
+    }
     }
 }
 
@@ -121,20 +184,44 @@ static void tcp_outa(const PacketDesc& d, int thunk)
 	if (!d.vptr)
 	    *d.sa << '.';
 	else
-	    unparse_tcp_opt(*d.sa, d.vptr, d.v2, DO_TCPOPT_ALL_NOPAD);
+	    unparse_tcp_opt(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_TCPOPT_ALL_NOPAD);
 	break;
       case T_TCP_NTOPT:
 	if (!d.vptr)
 	    *d.sa << '.';
 	else
-	    unparse_tcp_opt(*d.sa, d.vptr, d.v2, DO_TCPOPT_NTALL);
+	    unparse_tcp_opt(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_TCPOPT_NTALL);
 	break;
       case T_TCP_SACK:
 	if (!d.vptr)
 	    *d.sa << '.';
 	else
-	    unparse_tcp_opt(*d.sa, d.vptr, d.v2, DO_TCPOPT_SACK);
+	    unparse_tcp_opt(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_TCPOPT_SACK);
 	break;
+    }
+}
+
+static bool tcp_ina(PacketOdesc& d, const String &str, int thunk)
+{
+    switch (thunk & ~B_TYPEMASK) {
+    case T_TCP_FLAGS:
+	if (str.equals(".", 1))
+	    d.v = 0;
+	else if (!str)
+	    return false;
+	else if (isdigit((unsigned char) str[0]))
+	    return cp_integer(str, &d.v) && d.v < 0x1000;
+	else {
+	    d.v = 0;
+	    for (const char *s = str.begin(); s != str.end(); s++)
+		if (uint8_t fm = IPSummaryDump::tcp_flag_mapping[(unsigned char) *s])
+		    d.v |= 1 << (fm - 1);
+		else
+		    return false;
+	}
+	return true;
+    default:
+	return false;
     }
 }
 
@@ -145,32 +232,32 @@ static void tcp_outb(const PacketDesc& d, bool ok, int thunk)
 	if (!ok || !d.vptr)
 	    *d.sa << '\0';
 	else
-	    unparse_tcp_opt_binary(*d.sa, d.vptr, d.v2, DO_TCPOPT_ALL);
+	    unparse_tcp_opt_binary(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_TCPOPT_ALL);
 	break;
       case T_TCP_NTOPT:
 	if (!ok || !d.vptr)
 	    *d.sa << '\0';
 	else
-	    unparse_tcp_opt_binary(*d.sa, d.vptr, d.v2, DO_TCPOPT_NTALL);
+	    unparse_tcp_opt_binary(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_TCPOPT_NTALL);
 	break;
       case T_TCP_SACK:
 	if (!ok || !d.vptr)
 	    *d.sa << '\0';
 	else
-	    unparse_tcp_opt_binary(*d.sa, d.vptr, d.v2, DO_TCPOPT_SACK);
+	    unparse_tcp_opt_binary(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_TCPOPT_SACK);
 	break;
     }
 }    
 
-static const uint8_t* tcp_inb(PacketDesc& d, const uint8_t* s, const uint8_t* ends, int thunk)
+static const uint8_t* tcp_inb(PacketOdesc& d, const uint8_t* s, const uint8_t* ends, int thunk)
 {
     switch (thunk & ~B_TYPEMASK) {
       case T_TCP_OPT:
       case T_TCP_NTOPT:
       case T_TCP_SACK:
 	if (s + s[0] + 1 <= ends) {
-	    d.vptr = s + 1;
-	    d.v2 = s[0];
+	    d.vptr[0] = s + 1;
+	    d.vptr[1] = d.vptr[0] + s[0];
 	    return s + s[0] + 1;
 	}
 	break;
@@ -338,141 +425,164 @@ void unparse_tcp_opt_binary(StringAccum& sa, const click_tcp *tcph, int mask)
     unparse_tcp_opt_binary(sa, reinterpret_cast<const uint8_t *>(tcph + 1), (tcph->th_off << 2) - sizeof(click_tcp), mask);
 }
 
+static void append_net_uint32_t(StringAccum &sa, uint32_t u)
+{
+    sa << (char)(u >> 24) << (char)(u >> 16) << (char)(u >> 8) << (char)u;
+}
+
+static bool tcp_opt_ina(PacketOdesc &d, const String &str, int thunk)
+{
+    if (!str || str.equals(".", 1))
+	return true;
+    else if (str.equals("-", 1))
+	return false;
+    const uint8_t *s = reinterpret_cast<const uint8_t *>(str.begin());
+    const uint8_t *end = reinterpret_cast<const uint8_t *>(str.end());
+    int contents = DO_TCPOPT_ALL;
+    if ((thunk & ~B_TYPEMASK) == T_TCP_SACK)
+	contents = DO_TCPOPT_SACK;
+    else if ((thunk & ~B_TYPEMASK) == T_TCP_NTOPT)
+	contents = DO_TCPOPT_NTALL;
+    d.sa.clear();
+
+    while (1) {
+	uint32_t u1, u2;
+
+	if (s + 3 < end && memcmp(s, "mss", 3) == 0
+	    && (contents & DO_TCPOPT_MSS)) {
+	    u1 = 0x10000U;	// bad value
+	    s = cp_integer(s + 3, end, 0, &u1);
+	    if (u1 <= 0xFFFFU)
+		d.sa << (char)TCPOPT_MAXSEG << (char)TCPOLEN_MAXSEG << (char)(u1 >> 8) << (char)u1;
+	    else
+		goto bad_opt;
+	} else if (s + 6 < end && memcmp(s, "wscale", 6) == 0
+		   && (contents & DO_TCPOPT_WSCALE)) {
+	    u1 = 256;		// bad value
+	    s = cp_integer(s + 6, end, 0, &u1);
+	    if (u1 <= 255)
+		d.sa << (char)TCPOPT_WSCALE << (char)TCPOLEN_WSCALE << (char)u1;
+	    else
+		goto bad_opt;
+	} else if (s + 6 <= end && memcmp(s, "sackok", 6) == 0
+		   && (contents & DO_TCPOPT_SACK)) {
+	    d.sa << (char)TCPOPT_SACK_PERMITTED << (char)TCPOLEN_SACK_PERMITTED;
+	    s += 6;
+	} else if (s + 4 < end && memcmp(s, "sack", 4) == 0
+		   && (contents & DO_TCPOPT_SACK)) {
+	    // combine adjacent SACK options into a block
+	    int sa_pos = d.sa.length();
+	    d.sa << (char)TCPOPT_SACK << (char)0;
+	    s += 4;
+	    while (1) {
+		const unsigned char *t = cp_integer(s, end, 0, &u1);
+		if (t >= end || (*t != ':' && *t != '-'))
+		    goto bad_opt;
+		t = cp_integer(t + 1, end, 0, &u2);
+		append_net_uint32_t(d.sa, u1);
+		append_net_uint32_t(d.sa, u2);
+		if (t < s + 3) // at least 1 digit in each block
+		    goto bad_opt;
+		s = t;
+		if (s + 5 >= end || memcmp(s, ",sack", 5) != 0)
+		    break;
+		s += 5;
+	    }
+	    d.sa[sa_pos + 1] = (char)(d.sa.length() - sa_pos);
+	} else if (s + 2 < end && memcmp(s, "ts", 2) == 0
+		   && (contents & DO_TCPOPT_TIMESTAMP)) {
+	    const unsigned char *t = cp_integer(s + 2, end, 0, &u1);
+	    if (t >= end || *t != ':')
+		goto bad_opt;
+	    t = cp_integer(t + 1, end, 0, &u2);
+	    if (d.sa.length() == 0)
+		d.sa << (char)TCPOPT_NOP << (char)TCPOPT_NOP;
+	    d.sa << (char)TCPOPT_TIMESTAMP << (char)TCPOLEN_TIMESTAMP;
+	    append_net_uint32_t(d.sa, u1);
+	    append_net_uint32_t(d.sa, u2);
+	    if (t < s + 5)	// at least 1 digit in each block
+		goto bad_opt;
+	    s = t;
+	} else if (s < end && isdigit(*s)
+		   && (contents & DO_TCPOPT_UNKNOWN)) {
+	    s = cp_integer(s, end, 0, &u1);
+	    if (u1 >= 256)
+		goto bad_opt;
+	    d.sa << (char)u1;
+	    if (s + 1 < end && *s == '=' && isdigit(s[1])) {
+		int pos0 = d.sa.length();
+		d.sa << (char)0;
+		do {
+		    s = cp_integer(s + 1, end, 0, &u1);
+		    if (u1 >= 256)
+			goto bad_opt;
+		    d.sa << (char)u1;
+		} while (s + 1 < end && *s == ':' && isdigit(s[1]));
+		if (d.sa.length() > pos0 + 254)
+		    goto bad_opt;
+		d.sa[pos0] = (char)(d.sa.length() - pos0 + 1);
+	    }
+	} else if (s + 3 <= end && memcmp(s, "nop", 3) == 0
+		   && (contents & DO_TCPOPT_PADDING)) {
+	    d.sa << (char)TCPOPT_NOP;
+	    s += 3;
+	} else if (s + 3 <= end && strncmp((const char *) s, "eol", 3) == 0
+		   && (contents & DO_TCPOPT_PADDING)
+		   && (s + 3 == end || s[3] != ',')) {
+	    d.sa << (char)TCPOPT_EOL;
+	    s += 3;
+	} else
+	    goto bad_opt;
+
+	if (s >= end || isspace(*s)) {
+	    // check for improper padding
+	    while (d.sa.length() > 40 && d.sa[0] == TCPOPT_NOP) {
+		memmove(&d.sa[0], &d.sa[1], d.sa.length() - 1);
+		d.sa.pop_back();
+	    }
+	    // options too long?
+	    if (d.sa.length() > 40)
+		goto bad_opt;
+	    // otherwise ok
+	    d.vptr[0] = reinterpret_cast<const uint8_t *>(d.sa.begin());
+	    d.vptr[1] = reinterpret_cast<const uint8_t *>(d.sa.end());
+	    return true;
+	} else if (*s != ',' && *s != ';')
+	    goto bad_opt;
+
+	s++;
+    }
+
+  bad_opt:
+    return false;
+}
+
+
 
 void tcp_register_unparsers()
 {
-    register_unparser("tcp_seq", T_TCP_SEQ | B_4, ip_prepare, tcp_extract, num_outa, outb, inb);
-    register_unparser("tcp_ack", T_TCP_ACK | B_4, ip_prepare, tcp_extract, num_outa, outb, inb);
-    register_unparser("tcp_off", T_TCP_OFF | B_1, ip_prepare, tcp_extract, num_outa, outb, inb);
-    register_unparser("tcp_flags", T_TCP_FLAGS | B_1, ip_prepare, tcp_extract, tcp_outa, outb, inb);
-    register_unparser("tcp_window", T_TCP_WINDOW | B_2, ip_prepare, tcp_extract, num_outa, outb, inb);
-    register_unparser("tcp_urp", T_TCP_URP | B_2, ip_prepare, tcp_extract, num_outa, outb, inb);
-    register_unparser("tcp_opt", T_TCP_OPT | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb, tcp_inb);
-    register_unparser("tcp_ntopt", T_TCP_NTOPT | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb, tcp_inb);
-    register_unparser("tcp_sack", T_TCP_SACK | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb, tcp_inb);
+    register_field("tcp_seq", T_TCP_SEQ | B_4, ip_prepare, order_transp,
+		   tcp_extract, tcp_inject, num_outa, num_ina, outb, inb);
+    register_field("tcp_ack", T_TCP_ACK | B_4, ip_prepare, order_transp,
+		   tcp_extract, tcp_inject, num_outa, num_ina, outb, inb);
+    register_field("tcp_off", T_TCP_OFF | B_1, ip_prepare, order_transp - 1,
+		   tcp_extract, tcp_inject, num_outa, num_ina, outb, inb);
+    register_field("tcp_flags", T_TCP_FLAGS | B_1, ip_prepare, order_transp,
+		   tcp_extract, tcp_inject, tcp_outa, tcp_ina, outb, inb);
+    register_field("tcp_window", T_TCP_WINDOW | B_2, ip_prepare, order_transp,
+		   tcp_extract, tcp_inject, num_outa, num_ina, outb, inb);
+    register_field("tcp_urp", T_TCP_URP | B_2, ip_prepare, order_transp,
+		   tcp_extract, tcp_inject, num_outa, num_ina, outb, inb);
+    register_field("tcp_opt", T_TCP_OPT | B_SPECIAL, ip_prepare, order_transp + 3,
+		   tcp_extract, tcp_inject, tcp_outa, tcp_opt_ina, tcp_outb, tcp_inb);
+    register_field("tcp_ntopt", T_TCP_NTOPT | B_SPECIAL, ip_prepare, order_transp + 2,
+		   tcp_extract, tcp_inject, tcp_outa, tcp_opt_ina, tcp_outb, tcp_inb);
+    register_field("tcp_sack", T_TCP_SACK | B_SPECIAL, ip_prepare, order_transp + 1,
+		   tcp_extract, tcp_inject, tcp_outa, tcp_opt_ina, tcp_outb, tcp_inb);
 
     register_synonym("tcp_seqno", "tcp_seq");
     register_synonym("tcp_ackno", "tcp_ack");
     register_synonym("tcp_win", "tcp_window");
-}
-
-
-enum { T_UDP_LEN };
-
-static bool udp_extract(PacketDesc& d, int thunk)
-{
-    int transport_length = d.p->transport_length();
-    switch (thunk & ~B_TYPEMASK) {
-	
-#define CHECK(l) do { if (!d.udph || transport_length < (l)) return field_missing(d, IP_PROTO_UDP, (l)); } while (0)
-	
-      case T_UDP_LEN:
-	CHECK(6);
-	d.v = ntohs(d.udph->uh_ulen);
-	return true;
-	
-#undef CHECK
-
-      default:
-	return false;
-    }
-}
-
-void udp_register_unparsers()
-{
-    register_unparser("udp_len", T_UDP_LEN | B_4, ip_prepare, udp_extract, num_outa, outb, inb);
-}
-
-
-enum { T_ICMP_TYPE, T_ICMP_TYPE_NAME, T_ICMP_CODE, T_ICMP_CODE_NAME,
-       T_ICMP_FLOWID, T_ICMP_SEQ, T_ICMP_NEXTMTU };
-
-enum {
-    ICMP_TYPE_HAVE_FLOW = ((1U << ICMP_ECHO) | (1U << ICMP_ECHOREPLY)
-			   | (1U << ICMP_IREQ) | (1U << ICMP_IREQREPLY)
-			   | (1U << ICMP_TSTAMP) | (1U << ICMP_TSTAMPREPLY))
-};
-
-static bool icmp_extract(PacketDesc& d, int thunk)
-{
-    int transport_length = d.p->transport_length();
-    switch (thunk & ~B_TYPEMASK) {
-	
-#define CHECK(l) do { if (!d.icmph || transport_length < (l)) return field_missing(d, IP_PROTO_ICMP, (l)); } while (0)
-
-      case T_ICMP_TYPE:
-      case T_ICMP_TYPE_NAME:
-	CHECK(1);
-	d.v = d.icmph->icmp_type;
-	return true;
-
-      case T_ICMP_CODE:
-      case T_ICMP_CODE_NAME:
-	CHECK(2);
-	d.v = d.icmph->icmp_code;
-	return true;
-
-      case T_ICMP_FLOWID:
-	CHECK(1);
-	if (d.icmph->icmp_type >= 32
-	    || (ICMP_TYPE_HAVE_FLOW & (1 << d.icmph->icmp_type)) == 0)
-	    return false;
-	CHECK(6);
-	d.v = ntohs(reinterpret_cast<const click_icmp_sequenced *>(d.icmph)->icmp_identifier);
-	return true;
-
-      case T_ICMP_SEQ:
-	CHECK(1);
-	if (d.icmph->icmp_type >= 32
-	    || (ICMP_TYPE_HAVE_FLOW & (1 << d.icmph->icmp_type)) == 0)
-	    return false;
-	CHECK(8);
-	d.v = ntohs(reinterpret_cast<const click_icmp_sequenced *>(d.icmph)->icmp_sequence);
-	return true;
-	
-      case T_ICMP_NEXTMTU:
-	CHECK(2);
-	if (d.icmph->icmp_type != ICMP_UNREACH
-	    || d.icmph->icmp_code != ICMP_UNREACH_NEEDFRAG)
-	    return false;
-	CHECK(8);
-	d.v = ntohs(reinterpret_cast<const click_icmp_needfrag *>(d.icmph)->icmp_nextmtu);
-	return true;
-	
-#undef CHECK
-
-      default:
-	return false;
-    }
-}
-
-static void icmp_outa(const PacketDesc &d, int thunk)
-{
-    switch (thunk & ~B_TYPEMASK) {
-      case T_ICMP_TYPE_NAME:
-	if (String s = NameInfo::revquery_int(NameInfo::T_ICMP_TYPE, d.e, d.v))
-	    *d.sa << s;
-	else
-	    *d.sa << d.v;
-	break;
-      case T_ICMP_CODE_NAME:
-	if (String s = NameInfo::revquery_int(NameInfo::T_ICMP_CODE + d.icmph->icmp_type, d.e, d.v))
-	    *d.sa << s;
-	else
-	    *d.sa << d.v;
-	break;
-    }
-}
-
-void icmp_register_unparsers()
-{
-    register_unparser("icmp_type", T_ICMP_TYPE | B_1, ip_prepare, icmp_extract, num_outa, outb, inb);
-    register_unparser("icmp_code", T_ICMP_CODE | B_1, ip_prepare, icmp_extract, num_outa, outb, inb);
-    register_unparser("icmp_type_name", T_ICMP_TYPE_NAME | B_1, ip_prepare, icmp_extract, icmp_outa, outb, inb);
-    register_unparser("icmp_code_name", T_ICMP_CODE_NAME | B_1, ip_prepare, icmp_extract, icmp_outa, outb, inb);
-    register_unparser("icmp_flowid", T_ICMP_FLOWID | B_2, ip_prepare, icmp_extract, num_outa, outb, inb);
-    register_unparser("icmp_seq", T_ICMP_SEQ | B_2, ip_prepare, icmp_extract, num_outa, outb, inb);
-    register_unparser("icmp_nextmtu", T_ICMP_NEXTMTU | B_2, ip_prepare, icmp_extract, num_outa, outb, inb);
 }
 
 }

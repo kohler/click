@@ -26,7 +26,7 @@
 #include <click/etheraddress.hh>
 CLICK_DECLS
 
-enum { T_ETH_SRC, T_ETH_DST };
+enum { T_ETH_SRC, T_ETH_DST, T_ETH_TYPE };
 
 namespace IPSummaryDump {
 
@@ -44,11 +44,15 @@ static bool link_extract(PacketDesc& d, int thunk)
 #define CHECK() do { if (!mac || mac + 14 != network) return field_missing(d, MISSING_ETHERNET, 0); } while (0)	
       case T_ETH_SRC:
 	CHECK();
-	d.vptr = mac + 6;
+	d.vptr[0] = mac + 6;
 	return true;
       case T_ETH_DST:
 	CHECK();
-	d.vptr = mac;
+	d.vptr[0] = mac;
+	return true;
+    case T_ETH_TYPE:
+	CHECK();
+	d.v = (mac[12]<<8) + mac[13];
 	return true;
 #undef CHECK
 
@@ -57,23 +61,63 @@ static bool link_extract(PacketDesc& d, int thunk)
     }
 }
 
+static void link_inject(PacketOdesc& d, int thunk)
+{
+    if (!d.p->mac_header() && !(d.p = d.p->push_mac_header(14)))
+	return;
+    switch (thunk) {
+      case T_ETH_SRC:
+	memcpy(d.p->ether_header()->ether_shost, d.u8, 6);
+	break;
+      case T_ETH_DST:
+	memcpy(d.p->ether_header()->ether_dhost, d.u8, 6);
+	break;
+    case T_ETH_TYPE:
+	d.p->ether_header()->ether_type = htons(d.v);
+	if (d.v != ETHERTYPE_IP && d.v != ETHERTYPE_IP6)
+	    d.is_ip = false;
+	break;
+    }
+}
+
 static void link_outa(const PacketDesc& d, int thunk)
 {
     switch (thunk & ~B_TYPEMASK) {
       case T_ETH_SRC:
       case T_ETH_DST:
-	*d.sa << EtherAddress(d.vptr);
+	*d.sa << EtherAddress(d.vptr[0]);
 	break;
+    case T_ETH_TYPE:
+	d.sa->snprintf(4, "%04X", d.v);
+	break;
+    }
+}
+
+static bool link_ina(PacketOdesc& d, const String &str, int thunk)
+{
+    switch (thunk & ~B_TYPEMASK) {
+    case T_ETH_SRC:
+    case T_ETH_DST:
+	return cp_ethernet_address(str, d.u8, d.e);
+    case T_ETH_TYPE:
+	return cp_integer(str, 16, &d.v) && d.v < 65536;
+    default:
+	return false;
     }
 }
 
 void link_register_unparsers()
 {
-    register_unparser("eth_src", T_ETH_SRC | B_6PTR, 0, link_extract, link_outa, outb, 0);
-    register_unparser("eth_dst", T_ETH_DST | B_6PTR, 0, link_extract, link_outa, outb, 0);
+    register_field("eth_src", T_ETH_SRC | B_6PTR, 0, order_link,
+		   link_extract, link_inject, link_outa, link_ina, outb, inb);
+    register_field("eth_dst", T_ETH_DST | B_6PTR, 0, order_link,
+		   link_extract, link_inject, link_outa, link_ina, outb, inb);
+    register_field("eth_type", T_ETH_DST | B_2, 0, order_link,
+		   link_extract, link_inject, link_outa, link_ina, outb, inb);
 
     register_synonym("ether_src", "eth_src");
     register_synonym("ether_dst", "eth_dst");
+    register_synonym("ether_type", "eth_type");
 }
 
 }

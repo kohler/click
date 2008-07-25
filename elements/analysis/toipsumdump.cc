@@ -48,6 +48,7 @@ ToIPSummaryDump::static_initialize()
     IPSummaryDump::tcp_register_unparsers();
     IPSummaryDump::udp_register_unparsers();
     IPSummaryDump::icmp_register_unparsers();
+    IPSummaryDump::payload_register_unparsers();
 }
 
 void
@@ -214,6 +215,7 @@ ToIPSummaryDump::summary(Packet* p, StringAccum& sa, StringAccum* bad_sa, bool f
 	for (int i = 0; i < _fields.size(); i++) {
 	    if (i)
 		sa << ' ';
+	    d.clear_values();
 	    if (_fields[i]->extract(d, _fields[i]->thunk) && _fields[i]->outa)
 		_fields[i]->outa(d, _fields[i]->thunk);
 	    else
@@ -341,6 +343,6 @@ ToIPSummaryDump::add_handlers()
     add_write_handler("flush", flush_handler, 0);
 }
 
-ELEMENT_REQUIRES(userlevel IPSummaryDump IPSummaryDump_Anno IPSummaryDump_IP IPSummaryDump_TCP IPSummaryDump_Link)
+ELEMENT_REQUIRES(userlevel IPSummaryDump IPSummaryDump_Anno IPSummaryDump_IP IPSummaryDump_TCP IPSummaryDump_UDP IPSummaryDump_ICMP IPSummaryDump_Payload IPSummaryDump_Link)
 EXPORT_ELEMENT(ToIPSummaryDump)
 CLICK_ENDDECLS

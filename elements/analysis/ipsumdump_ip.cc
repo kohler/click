@@ -27,11 +27,12 @@
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
 #include <click/confparse.hh>
+#include <click/ipflowid.hh>
 CLICK_DECLS
 
 enum { T_IP_SRC, T_IP_DST, T_IP_TOS, T_IP_TTL, T_IP_FRAG, T_IP_FRAGOFF,
        T_IP_ID, T_IP_SUM, T_IP_PROTO, T_IP_OPT, T_IP_LEN, T_IP_CAPTURE_LEN,
-       T_SPORT, T_DPORT, T_PAYLOAD_LEN, T_PAYLOAD, T_PAYLOAD_MD5, T_IP_HL };
+       T_SPORT, T_DPORT, T_IP_HL };
 
 namespace IPSummaryDump {
 
@@ -132,7 +133,10 @@ static bool ip_extract(PacketDesc& d, int thunk)
 	return true;
       case T_IP_FRAG:
 	CHECK(8);
-	d.v = (IP_ISFRAG(d.iph) ? (IP_FIRSTFRAG(d.iph) ? 'F' : 'f') : '.');
+	if (IP_ISFRAG(d.iph))
+	    d.v = (IP_FIRSTFRAG(d.iph) ? 'F' : 'f');
+	else
+	    d.v = (d.iph->ip_off & htons(IP_DF) ? '!' : '.');
 	return true;
       case T_IP_FRAGOFF:
 	CHECK(8);
@@ -154,10 +158,10 @@ static bool ip_extract(PacketDesc& d, int thunk)
 	if (!d.iph || (d.iph->ip_hl > 5 && network_length < (int)(d.iph->ip_hl << 2)))
 	    return field_missing(d, MISSING_IP, (d.iph ? d.iph->ip_hl << 2 : 20));
 	if (d.iph->ip_hl <= 5)
-	    d.vptr = 0, d.v2 = 0;
+	    d.vptr[0] = d.vptr[1] = 0;
 	else {
-	    d.vptr = (const uint8_t *) (d.iph + 1);
-	    d.v2 = (d.iph->ip_hl << 2) - sizeof(click_ip);
+	    d.vptr[0] = (const uint8_t *) (d.iph + 1);
+	    d.vptr[1] = d.vptr[0] + (d.iph->ip_hl << 2) - sizeof(click_ip);
 	}
 	return true;
       case T_IP_LEN:
@@ -183,6 +187,152 @@ static bool ip_extract(PacketDesc& d, int thunk)
     }
 }
 
+bool PacketOdesc::hard_make_ip()
+{
+    if (!is_ip)
+	return false;
+    if (!p->network_header())
+	p->set_network_header(p->data(), 0);
+    if (p->network_length() < (int) sizeof(click_ip)) {
+	if (!(p = p->put(sizeof(click_ip) - p->network_length())))
+	    return false;
+	p->set_network_header(p->network_header(), sizeof(click_ip));
+	click_ip *iph = p->ip_header();
+	iph->ip_v = 4;
+	iph->ip_hl = sizeof(click_ip) >> 2;
+	iph->ip_p = default_ip_p;
+	iph->ip_off = 0;
+	if (default_ip_flowid) {
+	    iph->ip_src.s_addr = default_ip_flowid->saddr().addr();
+	    iph->ip_dst.s_addr = default_ip_flowid->daddr().addr();
+	}
+    }
+    return true;
+}
+
+static inline bool ip_proto_has_udp_ports(int ip_p)
+{
+    return ip_p == IP_PROTO_TCP || ip_p == IP_PROTO_UDP
+	|| ip_p == IP_PROTO_DCCP || ip_p == IP_PROTO_UDPLITE;
+}
+
+bool PacketOdesc::hard_make_transp()
+{
+    click_ip *iph = p->ip_header();
+    if (IP_FIRSTFRAG(iph)) {
+	int len;
+	switch (iph->ip_p) {
+	case IP_PROTO_TCP:
+	    len = sizeof(click_tcp);
+	    break;
+	case IP_PROTO_UDP:
+	case IP_PROTO_UDPLITE:
+	    len = sizeof(click_udp);
+	    break;
+	case IP_PROTO_DCCP:
+	    len = 12;
+	    break;
+	case 0:
+	    len = 8;
+	    break;
+	default:
+	    return true;
+	}
+
+	if (p->transport_length() < len) {
+	    if (!(p = p->put(len - p->transport_length())))
+		return false;
+	    if (p->ip_header()->ip_p == IP_PROTO_TCP)
+		p->tcp_header()->th_off = sizeof(click_tcp) >> 2;
+	    if (default_ip_flowid) {
+		click_udp *udph = p->udp_header();
+		udph->uh_sport = default_ip_flowid->sport();
+		udph->uh_dport = default_ip_flowid->dport();
+	    }
+	}
+    }
+
+    return true;
+}
+	    
+static void ip_inject(PacketOdesc& d, int thunk)
+{
+    if (!d.make_ip(0))
+	return;
+
+    click_ip *iph = d.p->ip_header();
+    switch (thunk & ~B_TYPEMASK) {
+	// IP header properties
+    case T_IP_SRC:
+	iph->ip_src.s_addr = d.v;
+	break;
+    case T_IP_DST:
+	iph->ip_dst.s_addr = d.v;
+	break;
+    case T_IP_TOS:
+	iph->ip_tos = d.v;
+	break;
+    case T_IP_TTL:
+	iph->ip_ttl = d.v;
+	break;
+    case T_IP_FRAG:
+    case T_IP_FRAGOFF:
+	iph->ip_off = htons(d.v);
+	break;
+    case T_IP_ID:
+	iph->ip_id = htons(d.v);
+	break;
+    case T_IP_SUM:
+	iph->ip_sum = htons(d.v);
+	break;
+    case T_IP_PROTO:
+	iph->ip_p = d.v;
+	break;
+    case T_IP_OPT: {
+	if (!d.vptr[0])
+	    return;
+	int olen = d.vptr[1] - d.vptr[0];
+	int ip_hl = (sizeof(click_ip) + olen + 3) & ~3;
+	if (d.p->network_length() < ip_hl) {
+	    if (!(d.p = d.p->put(ip_hl - d.p->network_length())))
+		return;
+	    iph = d.p->ip_header();
+	}
+	if (ip_hl > (iph->ip_hl << 2)) {
+	    d.p->set_ip_header(iph, ip_hl);
+	    iph->ip_hl = ip_hl >> 2;
+	}
+	memcpy(d.p->network_header() + sizeof(click_ip), d.vptr[0], olen);
+	memset(d.p->network_header() + sizeof(click_ip) + olen,
+	       IPOPT_EOL, ip_hl - olen);
+	break;
+    }
+#if 0
+    case T_IP_CAPTURE_LEN: {
+	uint32_t allow_len = (iph ? network_length : d.p->length());
+	uint32_t len = (iph ? ntohs(iph->ip_len) : allow_len);
+	d.v = (len < allow_len ? len : allow_len);
+	break;
+    }
+#endif
+    case T_IP_HL:
+	d.v = (d.v + 3) & ~3;
+	if ((int) d.v > (iph->ip_hl << 2)) {
+	    int more = d.v - (iph->ip_hl << 2);
+	    if (!(d.p = d.p->put(more)))
+		return;
+	    iph = d.p->ip_header();
+	    d.p->set_ip_header(iph, d.v);
+	    memset(d.p->transport_header() - more, IPOPT_EOL, more);
+	}
+	iph->ip_hl = d.v >> 2;
+	break;
+    case T_IP_LEN:
+	iph->ip_len = htons(d.v);
+	break;
+    }
+}
+
 static void ip_outa(const PacketDesc& d, int thunk)
 {
     switch (thunk & ~B_TYPEMASK) {
@@ -197,6 +347,8 @@ static void ip_outa(const PacketDesc& d, int thunk)
 	*d.sa << ((d.v & IP_OFFMASK) << 3);
 	if (d.v & IP_MF)
 	    *d.sa << '+';
+	if (d.v & IP_DF)
+	    *d.sa << '!';
 	break;
       case T_IP_PROTO:
 	switch (d.v) {
@@ -207,12 +359,79 @@ static void ip_outa(const PacketDesc& d, int thunk)
 	}
 	break;
       case T_IP_OPT:
-	if (!d.vptr)
+	if (!d.vptr[0])
 	    *d.sa << '.';
 	else
-	    unparse_ip_opt(*d.sa, d.vptr, d.v2, DO_IPOPT_ALL_NOPAD);
+	    unparse_ip_opt(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_IPOPT_ALL_NOPAD);
 	break;
     }
+}
+
+static bool ip_ina(PacketOdesc& d, const String &s, int thunk)
+{
+    switch (thunk & ~B_TYPEMASK) {
+    case T_IP_SRC:
+    case T_IP_DST: {
+	IPAddress a;
+	if (cp_ip_address(s, &a, d.e)) {
+	    d.v = a.addr();
+	    return true;
+	}
+	break;
+    }
+    case T_IP_FRAG:
+    case T_IP_FRAGOFF: {
+	if (s.length() == 1) {
+	    if (s[0] == '.') {
+		d.v = 0;
+		return true;
+	    } else if (s[0] == '!') {
+		d.v = IP_DF;
+		return true;
+	    } else if (s[0] == 'F') {
+		d.v = IP_MF;
+		return true;
+	    } else if (s[0] == 'f') {
+		d.v = 100;	// arbitrary nonzero offset
+		return true;
+	    }
+	}
+	d.v = 0;
+	const char *new_end = cp_integer(s.begin(), s.end(), 0, &d.v);
+	for (; new_end != s.end(); ++new_end)
+	    if (*new_end == '!')
+		d.v |= IP_DF;
+	    else if (*new_end == '+')
+		d.v |= IP_MF;
+	    else
+		break;
+	if (new_end == s.end() && s.length())
+	    return true;
+	break;
+    }
+    case T_IP_PROTO:
+	if (s.equals("T", 1)) {
+	    d.v = IP_PROTO_TCP;
+	    return true;
+	} else if (s.equals("U", 1)) {
+	    d.v = IP_PROTO_UDP;
+	    return true;
+	} else if (s.equals("I", 1)) {
+	    d.v = IP_PROTO_ICMP;
+	    return true;
+	} else if (cp_integer(s, &d.v) && d.v < 256)
+	    return true;
+	break;
+#if 0
+      case T_IP_OPT:
+	if (!d.vptr[0])
+	    *d.sa << '.';
+	else
+	    unparse_ip_opt(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_IPOPT_ALL_NOPAD);
+	break;
+#endif
+    }
+    return false;
 }
 
 static void ip_outb(const PacketDesc& d, bool ok, int thunk)
@@ -221,15 +440,15 @@ static void ip_outb(const PacketDesc& d, bool ok, int thunk)
 	if (!ok || !d.vptr)
 	    *d.sa << '\0';
 	else
-	    unparse_ip_opt_binary(*d.sa, d.vptr, d.v2, DO_IPOPT_ALL);
+	    unparse_ip_opt_binary(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_IPOPT_ALL);
     }
 }
 
-static const uint8_t* ip_inb(PacketDesc& d, const uint8_t *s, const uint8_t *ends, int thunk)
+static const uint8_t* ip_inb(PacketOdesc& d, const uint8_t *s, const uint8_t *ends, int thunk)
 {
     if ((thunk & ~B_TYPEMASK) == T_IP_OPT && s + s[0] + 1 <= ends) {
-	d.vptr = s + 1;
-	d.v2 = s[0];
+	d.vptr[0] = s + 1;
+	d.vptr[1] = d.vptr[0] + s[0];
 	return s + s[0] + 1;
     } else
 	return ends;
@@ -240,105 +459,43 @@ static bool transport_extract(PacketDesc& d, int thunk)
 {
     Packet* p = d.p;
     switch (thunk & ~B_TYPEMASK) {
-	
 	// TCP/UDP header properties
-#define CHECK(l) do { if ((!d.tcph && !d.udph) || p->transport_length() < (l)) return field_missing(d, IP_PROTO_TCP_OR_UDP, (l)); } while (0)
-      case T_SPORT:
-	CHECK(2);
-	d.v = ntohs(p->udp_header()->uh_sport);
-	return true;
-      case T_DPORT:
-	CHECK(4);
-	d.v = ntohs(p->udp_header()->uh_dport);
-	return true;
-#undef CHECK
-
-      case T_PAYLOAD_LEN:
-	if (d.iph) {
-	    d.v = ntohs(d.iph->ip_len);
-	    int32_t off = p->network_header_length();
-	    if (d.tcph && p->transport_length() >= 13
-		&& off + (int32_t) (d.tcph->th_off << 2) <= (int32_t) d.v)
-		off += (d.tcph->th_off << 2);
-	    else if (d.udph)
-		off += sizeof(click_udp);
-	    else if (IP_FIRSTFRAG(d.iph) && (d.iph->ip_p == IP_PROTO_TCP || d.iph->ip_p == IP_PROTO_UDP))
-		off = d.v;
-	    d.v -= off;
-	    d.v += (d.force_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
-	} else
-	    d.v = p->length() + EXTRA_LENGTH_ANNO(p);
-	return true;
-      case T_PAYLOAD:
-      case T_PAYLOAD_MD5:
-	return true;
-
-      default:
-	return false;
+    case T_SPORT:
+    case T_DPORT: {
+	bool dport = ((thunk & ~B_TYPEMASK) == T_DPORT);
+	if (d.iph
+	    && p->network_length() > (int)(d.iph->ip_hl << 2)
+	    && IP_FIRSTFRAG(d.iph)
+	    && ip_proto_has_udp_ports(d.iph->ip_p)
+	    && p->transport_length() >= (dport ? 4 : 2)) {
+	    const click_udp *udph = p->udp_header();
+	    d.v = ntohs(dport ? udph->uh_dport : udph->uh_sport);
+	    return true;
+	}
+	return field_missing(d, IP_PROTO_TCP_OR_UDP, dport ? 4 : 2);
     }
+    }
+    return false;
 }
 
-static void payload_info(const PacketDesc &d, int32_t &off, uint32_t &len)
+static void transport_inject(PacketOdesc& d, int thunk)
 {
-    if (d.iph) {
-	len = ntohs(d.iph->ip_len);
-	off = d.p->transport_header_offset();
-	if (d.tcph && d.p->transport_length() >= 13
-	    && off + (int32_t) (d.tcph->th_off << 2) <= (int32_t) len)
-	    off += (d.tcph->th_off << 2);
-	else if (d.udph)
-	    off += sizeof(click_udp);
-	len = len - off + d.p->network_header_offset();
-	if (len + off > d.p->length()) // EXTRA_LENGTH?
-	    len = d.p->length() - off;
-    } else {
-	off = 0;
-	len = d.p->length();
+    if (!d.make_ip(0) || !d.make_transp())
+	return;
+    click_ip *iph = d.p->ip_header();
+    if (iph->ip_p && !ip_proto_has_udp_ports(iph->ip_p))
+	return;
+
+    switch (thunk & ~B_TYPEMASK) {
+	// TCP/UDP header properties
+    case T_SPORT:
+	d.p->udp_header()->uh_sport = htons(d.v);
+	break;
+    case T_DPORT:
+	d.p->udp_header()->uh_dport = htons(d.v);
+	break;
     }
 }
-
-static void transport_outa(const PacketDesc& d, int thunk)
-{
-    switch (thunk & ~B_TYPEMASK) {
-      case T_PAYLOAD:
-      case T_PAYLOAD_MD5: {
-	  int32_t off;
-	  uint32_t len;
-	  payload_info(d, off, len);
-	  if ((thunk & ~B_TYPEMASK) == T_PAYLOAD) {
-	      String s = String::stable_string((const char *)(d.p->data() + off), len);
-	      *d.sa << cp_quote(s);
-	  } else {
-	      md5_state_t pms;
-	      md5_init(&pms);
-	      md5_append(&pms, (const md5_byte_t *) (d.p->data() + off), len);
-	      if (char *buf = d.sa->extend(MD5_TEXT_DIGEST_SIZE))
-		  md5_finish_text(&pms, buf, 1);
-	      md5_free(&pms);
-	  }
-	  break;
-      }
-    }
-} 
-
-static void transport_outb(const PacketDesc& d, bool, int thunk)
-{
-    switch (thunk & ~B_TYPEMASK) {
-      case T_PAYLOAD_MD5: {
-	  int32_t off;
-	  uint32_t len;
-	  payload_info(d, off, len);
-	  md5_state_t pms;
-	  md5_init(&pms);
-	  md5_append(&pms, (const md5_byte_t *) (d.p->data() + off), len);
-	  if (char *buf = d.sa->extend(MD5_DIGEST_SIZE))
-	      md5_finish(&pms, (md5_byte_t *) buf);
-	  md5_free(&pms);
-	  break;
-      }
-    }
-} 
-
 
 
 #define U DO_IPOPT_UNKNOWN
@@ -556,32 +713,274 @@ void unparse_ip_opt_binary(StringAccum& sa, const click_ip *iph, int mask)
     unparse_ip_opt_binary(sa, reinterpret_cast<const uint8_t *>(iph + 1), (iph->ip_hl << 2) - sizeof(click_ip), mask);
 }
 
+static void append_net_uint32_t(StringAccum &sa, uint32_t u)
+{
+    sa << (char)(u >> 24) << (char)(u >> 16) << (char)(u >> 8) << (char)u;
+}
+
+static bool ip_opt_ina(PacketOdesc &d, const String &str, int)
+{
+    if (!str || str.equals(".", 1))
+	return true;
+    else if (str.equals("-", 1))
+	return false;
+    const uint8_t *s = reinterpret_cast<const uint8_t *>(str.begin());
+    const uint8_t *end = reinterpret_cast<const uint8_t *>(str.end());
+    int contents = DO_IPOPT_ALL;
+    d.sa.clear();
+    
+    while (1) {
+	const unsigned char *t;
+	uint32_t u1;
+
+	if (s + 3 < end && memcmp(s, "rr{", 3) == 0
+	    && (contents & DO_IPOPT_ROUTE)) {
+	    // record route
+	    d.sa << (char)IPOPT_RR;
+	    s += 3;
+	  parse_route:
+	    int sa_pos = d.sa.length() - 1;
+	    int pointer = -1;
+	    d.sa << '\0' << '\0';
+	    // loop over entries
+	    while (1) {
+		if (s < end && *s == '^' && pointer < 0)
+		    pointer = d.sa.length() - sa_pos + 1, s++;
+		if (s >= end || !isdigit(*s))
+		    break;
+		for (int i = 0; i < 4; i++) {
+		    u1 = 256;
+		    s = cp_integer(s, end, 10, &u1) + (i < 3);
+		    if (u1 > 255 || (i < 3 && (s > end || s[-1] != '.')))
+			goto bad_opt;
+		    d.sa << (char)u1;
+		}
+		if (s < end && *s == ',')
+		    s++;
+	    }
+	    if (s >= end || *s != '}') // must end with a brace
+		goto bad_opt;
+	    d.sa[sa_pos + 2] = (pointer >= 0 ? pointer : d.sa.length() - sa_pos + 1);
+	    if (s + 2 < end && s[1] == '+' && isdigit(s[2])) {
+		s = cp_integer(s + 2, end, 10, &u1);
+		if (u1 < 64)
+		    d.sa.append_fill('\0', u1 * 4);
+	    } else
+		s++;
+	    if (d.sa.length() - sa_pos > 255)
+		goto bad_opt;
+	    d.sa[sa_pos + 1] = d.sa.length() - sa_pos;
+	    
+	} else if (s + 5 < end && memcmp(s, "ssrr{", 5) == 0
+		   && (contents & DO_IPOPT_ROUTE)) {
+	    // strict source route option
+	    d.sa << (char)IPOPT_SSRR;
+	    s += 5;
+	    goto parse_route;
+	    
+	} else if (s + 5 < end && memcmp(s, "lsrr{", 5) == 0
+		   && (contents & DO_IPOPT_ROUTE)) {
+	    // loose source route option
+	    d.sa << (char)IPOPT_LSRR;
+	    s += 5;
+	    goto parse_route;
+	    
+	} else if (s + 3 < end
+		   && (memcmp(s, "ts{", 3) == 0 || memcmp(s, "ts.", 3) == 0)
+		   && (contents & DO_IPOPT_TS)) {
+	    // timestamp option
+	    int sa_pos = d.sa.length();
+	    d.sa << (char)IPOPT_TS << (char)0 << (char)0 << (char)0;
+	    uint32_t top_bit;
+	    int flag = -1;
+	    if (s[2] == '.') {
+		if (s + 6 < end && memcmp(s + 3, "ip{", 3) == 0)
+		    flag = 1, s += 6;
+		else if (s + 9 < end && memcmp(s + 3, "preip{", 6) == 0)
+		    flag = 3, s += 9;
+		else if (isdigit(s[3])
+			 && (t = cp_integer(s + 3, end, 0, (uint32_t *)&flag))
+			 && flag <= 15 && t < end && *t == '{')
+		    s = t + 1;
+		else
+		    goto bad_opt;
+	    } else
+		s += 3;
+	    int pointer = -1;
+	    
+	    // loop over timestamp entries
+	    while (1) {
+		if (s < end && *s == '^' && pointer < 0)
+		    pointer = d.sa.length() - sa_pos + 1, s++;
+		if (s >= end || (!isdigit(*s) && *s != '!'))
+		    break;
+		const unsigned char *entry = s;
+		
+	      retry_entry:
+		if (flag == 1 || flag == 3 || flag == -2) {
+		    // parse IP address
+		    for (int i = 0; i < 4; i++) {
+			u1 = 256;
+			s = cp_integer(s, end, 10, &u1) + (i < 3);
+			if (u1 > 255 || (i < 3 && (s > end || s[-1] != '.')))
+			    goto bad_opt;
+			d.sa << (char)u1;
+		    }
+		    // prespecified IPs if we get here
+		    if (pointer >= 0 && flag == -2)
+			flag = 3;
+		    // check for valid value: either "=[DIGIT]", "=!", "=?"
+		    // (for pointer >= 0)
+		    if (s + 1 < end && *s == '=') {
+			if (isdigit(s[1]) || s[1] == '!')
+			    s++;
+			else if (s[1] == '?' && pointer >= 0) {
+			    d.sa << (char)0 << (char)0 << (char)0 << (char)0;
+			    s += 2;
+			    goto done_entry;
+			} else
+			    goto bad_opt;
+		    } else if (pointer >= 0) {
+			d.sa << (char)0 << (char)0 << (char)0 << (char)0;
+			goto done_entry;
+		    } else
+			goto bad_opt;
+		}
+		
+		// parse timestamp value
+		assert(s < end);
+		top_bit = 0;
+		if (*s == '!')
+		    top_bit = 0x80000000U, s++;
+		if (s >= end || !isdigit(*s))
+		    goto bad_opt;
+		s = cp_integer(s, end, 0, &u1);
+		if (s < end && *s == '.' && flag == -1) {
+		    flag = -2;
+		    s = entry;
+		    goto retry_entry;
+		} else if (flag == -1)
+		    flag = 0;
+		u1 |= top_bit;
+		append_net_uint32_t(d.sa, u1);
+	      done_entry:
+		// check separator
+		if (s < end && *s == ',')
+		    s++;
+	    }
+	    
+	    // done with entries
+	    if (s < end && *s++ != '}')
+		goto bad_opt;
+	    if (flag == -2)
+		flag = 1;
+	    d.sa[sa_pos + 2] = (pointer >= 0 ? pointer : d.sa.length() - sa_pos + 1);
+	    if (s + 1 < end && *s == '+' && isdigit(s[1])
+		&& (s = cp_integer(s + 1, end, 0, &u1))
+		&& u1 < 64)
+		d.sa.append_fill('\0', u1 * (flag == 1 || flag == 3 ? 8 : 4));
+	    int overflow = 0;
+	    if (s + 2 < end && *s == '+' && s[1] == '+' && isdigit(s[2])
+		&& (s = cp_integer(s + 2, end, 0, &u1))
+		&& u1 < 16)
+		overflow = u1;
+	    d.sa[sa_pos + 3] = (overflow << 4) | flag;
+	    if (d.sa.length() - sa_pos > 255)
+		goto bad_opt;
+	    d.sa[sa_pos + 1] = d.sa.length() - sa_pos;
+	    
+	} else if (s < end && isdigit(*s) && (contents & DO_IPOPT_UNKNOWN)) {
+	    // unknown option
+	    s = cp_integer(s, end, 0, &u1);
+	    if (u1 >= 256)
+		goto bad_opt;
+	    d.sa << (char)u1;
+	    if (s + 1 < end && *s == '=' && isdigit(s[1])) {
+		int pos0 = d.sa.length();
+		d.sa << (char)0;
+		do {
+		    s = cp_integer(s + 1, end, 0, &u1);
+		    if (u1 >= 256)
+			goto bad_opt;
+		    d.sa << (char)u1;
+		} while (s + 1 < end && *s == ':' && isdigit(s[1]));
+		if (d.sa.length() > pos0 + 254)
+		    goto bad_opt;
+		d.sa[pos0] = (char)(d.sa.length() - pos0 + 1);
+	    }
+	} else if (s + 3 <= end && memcmp(s, "nop", 3) == 0
+		   && (contents & DO_IPOPT_PADDING)) {
+	    d.sa << (char)IPOPT_NOP;
+	    s += 3;
+	} else if (s + 3 <= end && memcmp(s, "eol", 3) == 0
+		   && (contents & DO_IPOPT_PADDING)
+		   && (s + 3 == end || s[3] != ',')) {
+	    d.sa << (char)IPOPT_EOL;
+	    s += 3;
+	} else
+	    goto bad_opt;
+
+	if (s >= end) {
+	    // check for improper padding
+	    while (d.sa.length() > 40 && d.sa[0] == IPOPT_NOP) {
+		memmove(&d.sa[0], &d.sa[1], d.sa.length() - 1);
+		d.sa.pop_back();
+	    }
+	    // options too long?
+	    if (d.sa.length() > 40)
+		goto bad_opt;
+	    // otherwise ok
+	    d.vptr[0] = reinterpret_cast<const uint8_t *>(d.sa.begin());
+	    d.vptr[1] = reinterpret_cast<const uint8_t *>(d.sa.end());
+	    return true;
+	} else if (*s != ',' && *s != ';')
+	    goto bad_opt;
+
+	s++;
+    }
+
+  bad_opt:
+    return false;
+}
+
+
 
 void ip_register_unparsers()
 {
-    register_unparser("ip_src", T_IP_SRC | B_4NET, ip_prepare, ip_extract, ip_outa, outb, inb);
-    register_unparser("ip_dst", T_IP_DST | B_4NET, ip_prepare, ip_extract, ip_outa, outb, inb);
-    register_unparser("ip_tos", T_IP_TOS | B_1, ip_prepare, ip_extract, num_outa, outb, inb);
-    register_unparser("ip_ttl", T_IP_TTL | B_1, ip_prepare, ip_extract, num_outa, outb, inb);
-    register_unparser("ip_frag", T_IP_FRAG | B_1, ip_prepare, ip_extract, ip_outa, outb, inb);
-    register_unparser("ip_fragoff", T_IP_FRAGOFF | B_2, ip_prepare, ip_extract, ip_outa, outb, inb);
-    register_unparser("ip_id", T_IP_ID | B_2, ip_prepare, ip_extract, num_outa, outb, inb);
-    register_unparser("ip_sum", T_IP_SUM | B_2, ip_prepare, ip_extract, num_outa, outb, inb);
-    register_unparser("ip_proto", T_IP_PROTO | B_1, ip_prepare, ip_extract, ip_outa, outb, inb);
-    register_unparser("ip_hl", T_IP_HL | B_1, ip_prepare, ip_extract, num_outa, outb, inb);
-    register_unparser("ip_len", T_IP_LEN | B_4, ip_prepare, ip_extract, num_outa, outb, inb);
-    register_unparser("ip_capture_len", T_IP_CAPTURE_LEN | B_4, ip_prepare, ip_extract, num_outa, outb, inb);
-    register_unparser("ip_opt", T_IP_OPT | B_SPECIAL, ip_prepare, ip_extract, ip_outa, ip_outb, ip_inb);
+    register_field("ip_src", T_IP_SRC | B_4NET, ip_prepare, order_net,
+		   ip_extract, ip_inject, ip_outa, ip_ina, outb, inb);
+    register_field("ip_dst", T_IP_DST | B_4NET, ip_prepare, order_net,
+		   ip_extract, ip_inject, ip_outa, ip_ina, outb, inb);
+    register_field("ip_tos", T_IP_TOS | B_1, ip_prepare, order_net,
+		   ip_extract, ip_inject, num_outa, num_ina, outb, inb);
+    register_field("ip_ttl", T_IP_TTL | B_1, ip_prepare, order_net,
+		   ip_extract, ip_inject, num_outa, num_ina, outb, inb);
+    register_field("ip_frag", T_IP_FRAG | B_1, ip_prepare, order_net - 2,
+		   ip_extract, ip_inject, ip_outa, ip_ina, outb, inb);
+    register_field("ip_fragoff", T_IP_FRAGOFF | B_2, ip_prepare, order_net - 1,
+		   ip_extract, ip_inject, ip_outa, ip_ina, outb, inb);
+    register_field("ip_id", T_IP_ID | B_2, ip_prepare, order_net,
+		   ip_extract, ip_inject, num_outa, num_ina, outb, inb);
+    register_field("ip_sum", T_IP_SUM | B_2, ip_prepare, order_net + 2,
+		   ip_extract, ip_inject, num_outa, num_ina, outb, inb);
+    register_field("ip_proto", T_IP_PROTO | B_1, ip_prepare, order_net,
+		   ip_extract, ip_inject, ip_outa, ip_ina, outb, inb);
+    register_field("ip_hl", T_IP_HL | B_1, ip_prepare, order_net - 1,
+		   ip_extract, ip_inject, num_outa, num_ina, outb, inb);
+    register_field("ip_len", T_IP_LEN | B_4, ip_prepare, order_net + 1,
+		   ip_extract, ip_inject, num_outa, num_ina, outb, inb);
+    register_field("ip_capture_len", T_IP_CAPTURE_LEN | B_4, ip_prepare, order_net + 1,
+		   ip_extract, 0, num_outa, num_ina, outb, inb);
+    register_field("ip_opt", T_IP_OPT | B_SPECIAL, ip_prepare, order_net,
+		   ip_extract, ip_inject, ip_outa, ip_opt_ina, ip_outb, ip_inb);
 
-    register_unparser("sport", T_SPORT | B_2, ip_prepare, transport_extract, num_outa, outb, inb);
-    register_unparser("dport", T_DPORT | B_2, ip_prepare, transport_extract, num_outa, outb, inb);
-    register_unparser("payload_len", T_PAYLOAD_LEN | B_4, ip_prepare, transport_extract, num_outa, outb, inb);
-    register_unparser("payload", T_PAYLOAD | B_NOTALLOWED, ip_prepare, transport_extract, transport_outa, 0, 0);
-    register_unparser("payload_md5", T_PAYLOAD_MD5 | B_16, ip_prepare, transport_extract, transport_outa, transport_outb, 0);
-
+    register_field("sport", T_SPORT | B_2, ip_prepare, order_transp,
+		   transport_extract, transport_inject, num_outa, num_ina, outb, inb);
+    register_field("dport", T_DPORT | B_2, ip_prepare, order_transp,
+		   transport_extract, transport_inject, num_outa, num_ina, outb, inb);
+    
     register_synonym("length", "ip_len");
     register_synonym("ip_p", "ip_proto");
-    register_synonym("payload_length", "payload_len");
 }
 
 }

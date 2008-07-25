@@ -157,18 +157,6 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     bool run_task(Task *);
     Packet *pull(int);
     void run_timer(Timer *timer);
-
-    enum { DO_IPOPT_PADDING = 1, DO_IPOPT_ROUTE = 2, DO_IPOPT_TS = 4,
-	   DO_IPOPT_UNKNOWN = 32,
-	   DO_IPOPT_ALL = 0xFFFFFFFFU, DO_IPOPT_ALL_NOPAD = 0xFFFFFFFEU };
-    static const unsigned char *parse_ip_opt_ascii(const unsigned char *begin, const unsigned char *end, String *, int);
-
-    enum { DO_TCPOPT_PADDING = 1, DO_TCPOPT_MSS = 2, DO_TCPOPT_WSCALE = 4,
-	   DO_TCPOPT_SACK = 8, DO_TCPOPT_TIMESTAMP = 16,
-	   DO_TCPOPT_UNKNOWN = 32,
-	   DO_TCPOPT_ALL = 0xFFFFFFFFU, DO_TCPOPT_ALL_NOPAD = 0xFFFFFFFEU,
-	   DO_TCPOPT_NTALL = 0xFFFFFFEEU };
-    static const unsigned char *parse_tcp_opt_ascii(const unsigned char *begin, const unsigned char *end, String *, int);
     
   private:
 
@@ -176,7 +164,8 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
     FromFile _ff;
 
-    Vector<int> _contents;
+    Vector<const IPSummaryDump::Field*> _fields;
+    Vector<int> _field_order;
     uint16_t _default_proto;
     uint32_t _sampling_prob;
     IPFlowID _flowid;
@@ -189,9 +178,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     bool _active : 1;
     bool _multipacket : 1;
     bool _have_flowid : 1;
-    bool _use_flowid : 1;
     bool _have_aggregate : 1;
-    bool _use_aggregate : 1;
     bool _binary : 1;
     bool _timing : 1;
     bool _have_timing : 1;
@@ -210,6 +197,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
     int read_binary(String &, ErrorHandler *);
     
+    static int sort_fields_compare(const void *, const void *, void *);
     void bang_data(const String &, ErrorHandler *);
     void bang_flowid(const String &, ErrorHandler *);
     void bang_aggregate(const String &, ErrorHandler *);

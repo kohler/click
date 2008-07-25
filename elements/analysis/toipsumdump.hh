@@ -46,9 +46,10 @@ contain those fields. Valid field names, with examples, are:
    ip_src       IP source address: '192.150.187.37'
    ip_dst       IP destination address: '192.168.1.100'
    ip_frag      IP fragment: 'F' (1st frag), 'f' (2nd or
-                later frag), or '.' (not frag)
-   ip_fragoff   IP fragmentation offset: '0', '0+' (suffix
-                '+' means MF is set; offset in bytes)
+                later frag), '!' (nonfrag with DF), or
+		'.' (normal nonfrag)
+   ip_fragoff   IP fragmentation offset: '0', '0+', '0!'
+                ('+' adds MF, '!' adds DF; offset in bytes)
    ip_len       IP length: '132'
    ip_proto     IP protocol: '10', or 'I' for ICMP, 'T' for
                 TCP, 'U' for UDP

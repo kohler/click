@@ -105,7 +105,7 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _timing = timing;
     _have_timing = false;
     _multipacket = multipacket;
-    _have_flowid = _have_aggregate = _use_flowid = _use_aggregate = _binary = false;
+    _have_flowid = _have_aggregate = _binary = false;
     if (default_contents)
 	bang_data(default_contents, errh);
     if (default_flowid)
@@ -167,7 +167,7 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
     } else {
 	// parse line again, warn if this doesn't look like a dump
 	if (line.substring(0, 8) != "!creator" && line.substring(0, 5) != "!data" && line.substring(0, 9) != "!contents") {
-	    if (!_contents.size() /* don't warn on DEFAULT_CONTENTS */)
+	    if (!_fields.size() /* don't warn on DEFAULT_CONTENTS */)
 		_ff.warning(errh, "missing banner line; is this an IP summary dump?");
 	}
     }
@@ -187,58 +187,51 @@ FromIPSummaryDump::cleanup(CleanupStage)
     _work_packet = 0;
 }
 
+int
+FromIPSummaryDump::sort_fields_compare(const void *ap, const void *bp,
+				       void *user_data)
+{
+    int a = *reinterpret_cast<const int *>(ap);
+    int b = *reinterpret_cast<const int *>(bp);
+    FromIPSummaryDump *f = reinterpret_cast<FromIPSummaryDump *>(user_data);
+    const IPSummaryDump::Field *fa = f->_fields[a];
+    const IPSummaryDump::Field *fb = f->_fields[b];
+    if (fa->order < fb->order)
+	return -1;
+    if (fa->order > fb->order)
+	return 1;
+    return (a < b ? -1 : (a == b ? 0 : 1));
+}
+
 void
 FromIPSummaryDump::bang_data(const String &line, ErrorHandler *errh)
 {
     Vector<String> words;
     cp_spacevec(line, words);
 
-    _contents.clear();
-    uint32_t all_contents = 0;
+    _fields.clear();
+    _field_order.clear();
     for (int i = 0; i < words.size(); i++) {
 	String word = cp_unquote(words[i]);
-	int what = parse_content(word);
-	if (what >= W_NONE && what < W_LAST) {
-	    _contents.push_back(what);
-	    all_contents |= (1 << (what - W_NONE));
-	} else if (i > 0 || (word != "!data" && word != "!contents")) {
+	if (i == 0 && (word == "!data" || word == "!contents"))
+	    continue;
+	const IPSummaryDump::Field *f = IPSummaryDump::find_field(word);
+	if (!f) {
 	    _ff.warning(errh, "unknown content type '%s'", word.c_str());
-	    _contents.push_back(W_NONE);
+	    f = &IPSummaryDump::null_field;
+	} else if (!f->inject) {
+	    _ff.warning(errh, "content type '%s' ignored on input", word.c_str());
+	    f = &IPSummaryDump::null_field;
 	}
+	_fields.push_back(f);
+	_field_order.push_back(_fields.size() - 1);
     }
 
-    if (_contents.size() == 0)
+    if (_fields.size() == 0)
 	_ff.error(errh, "no contents specified");
 
-    // If we have W_IP_FRAGOFF, ignore W_IP_FRAG.
-    if (all_contents & (1 << (W_IP_FRAGOFF - W_NONE)))
-	for (int i = 0; i < _contents.size(); i++)
-	    if (_contents[i] == W_IP_FRAG)
-		_contents[i] = W_NONE;
-
-    // recheck whether to use '!flowid' and '!aggregate'
-    check_defaults();
-}
-
-void
-FromIPSummaryDump::check_defaults()
-{
-    _use_flowid = false;
-    _flowid = (_have_flowid ? _given_flowid : IPFlowID());
-    _use_aggregate = _have_aggregate;
-    for (int i = 0; i < _contents.size(); i++)
-	if (_contents[i] == W_IP_SRC)
-	    _flowid.set_saddr(IPAddress());
-	else if (_contents[i] == W_IP_DST)
-	    _flowid.set_daddr(IPAddress());
-	else if (_contents[i] == W_SPORT)
-	    _flowid.set_sport(0);
-	else if (_contents[i] == W_DPORT)
-	    _flowid.set_dport(0);
-	else if (_contents[i] == W_AGGREGATE)
-	    _use_aggregate = false;
-    if (_flowid || _flowid.sport() || _flowid.dport())
-	_use_flowid = true;
+    click_qsort(_field_order.begin(), _fields.size(), sizeof(int),
+		sort_fields_compare, this);
 }
 
 void
@@ -256,7 +249,7 @@ FromIPSummaryDump::bang_flowid(const String &line, ErrorHandler *errh)
 	|| (!cp_integer(words[4], &dport) && words[4] != "-")
 	|| sport > 65535 || dport > 65535) {
 	_ff.error(errh, "bad !flowid specification");
-	_have_flowid = _use_flowid = false;
+	_have_flowid = false;
     } else {
 	if (words.size() >= 6) {
 	    if (cp_integer(words[5], &proto) && proto < 256)
@@ -272,7 +265,6 @@ FromIPSummaryDump::bang_flowid(const String &line, ErrorHandler *errh)
 	}
 	_given_flowid = IPFlowID(src, htons(sport), dst, htons(dport));
 	_have_flowid = true;
-	check_defaults();
     }
 }
 
@@ -285,11 +277,9 @@ FromIPSummaryDump::bang_aggregate(const String &line, ErrorHandler *errh)
     if (words.size() != 2
 	|| !cp_integer(words[1], &_aggregate)) {
 	_ff.error(errh, "bad !aggregate specification");
-	_have_aggregate = _use_aggregate = false;
-    } else {
+	_have_aggregate = false;
+    } else
 	_have_aggregate = true;
-	check_defaults();
-    }
 }
 
 void
@@ -299,386 +289,9 @@ FromIPSummaryDump::bang_binary(const String &line, ErrorHandler *errh)
     cp_spacevec(line, words);
     if (words.size() != 1)
 	_ff.error(errh, "bad !binary specification");
-    for (int i = 0; i < _contents.size(); i++)
-	if (content_binary_size(_contents[i]) < 0) {
-	    _ff.error(errh, "contents incompatible with !binary");
-	    // XXX _pos = 0xFFFFFFFFU;	// prevent reading more data
-	}
     _binary = true;
     _ff.set_landmark_pattern("%f:record %l");
     _ff.set_lineno(1);
-}
-
-static void
-append_net_uint32_t(StringAccum &sa, uint32_t u)
-{
-    sa << (char)(u >> 24) << (char)(u >> 16) << (char)(u >> 8) << (char)u;
-}
-
-const unsigned char *
-FromIPSummaryDump::parse_ip_opt_ascii(const unsigned char *begin, const unsigned char *end, String *result, int contents)
-{
-    StringAccum sa;
-    const unsigned char *s = begin;
-    
-    while (1) {
-	const unsigned char *t;
-	uint32_t u1;
-
-	if (s + 3 < end && memcmp(s, "rr{", 3) == 0
-	    && (contents & DO_IPOPT_ROUTE)) {
-	    // record route
-	    sa << (char)IPOPT_RR;
-	    s += 3;
-	  parse_route:
-	    int sa_pos = sa.length() - 1;
-	    int pointer = -1;
-	    sa << '\0' << '\0';
-	    // loop over entries
-	    while (1) {
-		if (s < end && *s == '^' && pointer < 0)
-		    pointer = sa.length() - sa_pos + 1, s++;
-		if (s >= end || !isdigit(*s))
-		    break;
-		for (int i = 0; i < 4; i++) {
-		    u1 = 256;
-		    s = cp_integer(s, end, 10, &u1) + (i < 3);
-		    if (u1 > 255 || (i < 3 && (s > end || s[-1] != '.')))
-			goto bad_opt;
-		    sa << (char)u1;
-		}
-		if (s < end && *s == ',')
-		    s++;
-	    }
-	    if (s >= end || *s != '}') // must end with a brace
-		goto bad_opt;
-	    sa[sa_pos + 2] = (pointer >= 0 ? pointer : sa.length() - sa_pos + 1);
-	    if (s + 2 < end && s[1] == '+' && isdigit(s[2])) {
-		s = cp_integer(s + 2, end, 10, &u1);
-		if (u1 < 64)
-		    sa.append_fill('\0', u1 * 4);
-	    } else
-		s++;
-	    if (sa.length() - sa_pos > 255)
-		goto bad_opt;
-	    sa[sa_pos + 1] = sa.length() - sa_pos;
-	    
-	} else if (s + 5 < end && memcmp(s, "ssrr{", 5) == 0
-		   && (contents & DO_IPOPT_ROUTE)) {
-	    // strict source route option
-	    sa << (char)IPOPT_SSRR;
-	    s += 5;
-	    goto parse_route;
-	    
-	} else if (s + 5 < end && memcmp(s, "lsrr{", 5) == 0
-		   && (contents & DO_IPOPT_ROUTE)) {
-	    // loose source route option
-	    sa << (char)IPOPT_LSRR;
-	    s += 5;
-	    goto parse_route;
-	    
-	} else if (s + 3 < end
-		   && (memcmp(s, "ts{", 3) == 0 || memcmp(s, "ts.", 3) == 0)
-		   && (contents & DO_IPOPT_TS)) {
-	    // timestamp option
-	    int sa_pos = sa.length();
-	    sa << (char)IPOPT_TS << (char)0 << (char)0 << (char)0;
-	    uint32_t top_bit;
-	    int flag = -1;
-	    if (s[2] == '.') {
-		if (s + 6 < end && memcmp(s + 3, "ip{", 3) == 0)
-		    flag = 1, s += 6;
-		else if (s + 9 < end && memcmp(s + 3, "preip{", 6) == 0)
-		    flag = 3, s += 9;
-		else if (isdigit(s[3])
-			 && (t = cp_integer(s + 3, end, 0, (uint32_t *)&flag))
-			 && flag <= 15 && t < end && *t == '{')
-		    s = t + 1;
-		else
-		    goto bad_opt;
-	    } else
-		s += 3;
-	    int pointer = -1;
-	    
-	    // loop over timestamp entries
-	    while (1) {
-		if (s < end && *s == '^' && pointer < 0)
-		    pointer = sa.length() - sa_pos + 1, s++;
-		if (s >= end || (!isdigit(*s) && *s != '!'))
-		    break;
-		const unsigned char *entry = s;
-		
-	      retry_entry:
-		if (flag == 1 || flag == 3 || flag == -2) {
-		    // parse IP address
-		    for (int i = 0; i < 4; i++) {
-			u1 = 256;
-			s = cp_integer(s, end, 10, &u1) + (i < 3);
-			if (u1 > 255 || (i < 3 && (s > end || s[-1] != '.')))
-			    goto bad_opt;
-			sa << (char)u1;
-		    }
-		    // prespecified IPs if we get here
-		    if (pointer >= 0 && flag == -2)
-			flag = 3;
-		    // check for valid value: either "=[DIGIT]", "=!", "=?"
-		    // (for pointer >= 0)
-		    if (s + 1 < end && *s == '=') {
-			if (isdigit(s[1]) || s[1] == '!')
-			    s++;
-			else if (s[1] == '?' && pointer >= 0) {
-			    sa << (char)0 << (char)0 << (char)0 << (char)0;
-			    s += 2;
-			    goto done_entry;
-			} else
-			    goto bad_opt;
-		    } else if (pointer >= 0) {
-			sa << (char)0 << (char)0 << (char)0 << (char)0;
-			goto done_entry;
-		    } else
-			goto bad_opt;
-		}
-		
-		// parse timestamp value
-		assert(s < end);
-		top_bit = 0;
-		if (*s == '!')
-		    top_bit = 0x80000000U, s++;
-		if (s >= end || !isdigit(*s))
-		    goto bad_opt;
-		s = cp_integer(s, end, 0, &u1);
-		if (s < end && *s == '.' && flag == -1) {
-		    flag = -2;
-		    s = entry;
-		    goto retry_entry;
-		} else if (flag == -1)
-		    flag = 0;
-		u1 |= top_bit;
-		append_net_uint32_t(sa, u1);
-	      done_entry:
-		// check separator
-		if (s < end && *s == ',')
-		    s++;
-	    }
-	    
-	    // done with entries
-	    if (s < end && *s++ != '}')
-		goto bad_opt;
-	    if (flag == -2)
-		flag = 1;
-	    sa[sa_pos + 2] = (pointer >= 0 ? pointer : sa.length() - sa_pos + 1);
-	    if (s + 1 < end && *s == '+' && isdigit(s[1])
-		&& (s = cp_integer(s + 1, end, 0, &u1))
-		&& u1 < 64)
-		sa.append_fill('\0', u1 * (flag == 1 || flag == 3 ? 8 : 4));
-	    int overflow = 0;
-	    if (s + 2 < end && *s == '+' && s[1] == '+' && isdigit(s[2])
-		&& (s = cp_integer(s + 2, end, 0, &u1))
-		&& u1 < 16)
-		overflow = u1;
-	    sa[sa_pos + 3] = (overflow << 4) | flag;
-	    if (sa.length() - sa_pos > 255)
-		goto bad_opt;
-	    sa[sa_pos + 1] = sa.length() - sa_pos;
-	    
-	} else if (s < end && isdigit(*s) && (contents & DO_IPOPT_UNKNOWN)) {
-	    // unknown option
-	    s = cp_integer(s, end, 0, &u1);
-	    if (u1 >= 256)
-		goto bad_opt;
-	    sa << (char)u1;
-	    if (s + 1 < end && *s == '=' && isdigit(s[1])) {
-		int pos0 = sa.length();
-		sa << (char)0;
-		do {
-		    s = cp_integer(s + 1, end, 0, &u1);
-		    if (u1 >= 256)
-			goto bad_opt;
-		    sa << (char)u1;
-		} while (s + 1 < end && *s == ':' && isdigit(s[1]));
-		if (sa.length() > pos0 + 254)
-		    goto bad_opt;
-		sa[pos0] = (char)(sa.length() - pos0 + 1);
-	    }
-	} else if (s + 3 <= end && memcmp(s, "nop", 3) == 0
-		   && (contents & DO_IPOPT_PADDING)) {
-	    sa << (char)IPOPT_NOP;
-	    s += 3;
-	} else if (s + 3 <= end && memcmp(s, "eol", 3) == 0
-		   && (contents & DO_IPOPT_PADDING)
-		   && (s + 3 == end || s[3] != ',')) {
-	    sa << (char)IPOPT_EOL;
-	    s += 3;
-	} else
-	    goto bad_opt;
-
-	if (s >= end || isspace(*s)) {
-	    // check for improper padding
-	    while (sa.length() > 40 && sa[0] == TCPOPT_NOP) {
-		memmove(&sa[0], &sa[1], sa.length() - 1);
-		sa.pop_back();
-	    }
-	    // options too long?
-	    if (sa.length() > 40)
-		goto bad_opt;
-	    // otherwise ok
-	    *result = sa.take_string();
-	    return s;
-	} else if (*s != ',' && *s != ';')
-	    goto bad_opt;
-
-	s++;
-    }
-
-  bad_opt:
-    *result = String();
-    return begin;
-}
-
-const unsigned char *
-FromIPSummaryDump::parse_tcp_opt_ascii(const unsigned char *begin, const unsigned char *end, String *result, int contents)
-{
-    StringAccum sa;
-    const unsigned char *s = begin;
-    
-    while (1) {
-	uint32_t u1, u2;
-
-	if (s + 3 < end && memcmp(s, "mss", 3) == 0
-	    && (contents & DO_TCPOPT_MSS)) {
-	    u1 = 0x10000U;	// bad value
-	    s = cp_integer(s + 3, end, 0, &u1);
-	    if (u1 <= 0xFFFFU)
-		sa << (char)TCPOPT_MAXSEG << (char)TCPOLEN_MAXSEG << (char)(u1 >> 8) << (char)u1;
-	    else
-		goto bad_opt;
-	} else if (s + 6 < end && memcmp(s, "wscale", 6) == 0
-		   && (contents & DO_TCPOPT_WSCALE)) {
-	    u1 = 256;		// bad value
-	    s = cp_integer(s + 6, end, 0, &u1);
-	    if (u1 <= 255)
-		sa << (char)TCPOPT_WSCALE << (char)TCPOLEN_WSCALE << (char)u1;
-	    else
-		goto bad_opt;
-	} else if (s + 6 <= end && memcmp(s, "sackok", 6) == 0
-		   && (contents & DO_TCPOPT_SACK)) {
-	    sa << (char)TCPOPT_SACK_PERMITTED << (char)TCPOLEN_SACK_PERMITTED;
-	    s += 6;
-	} else if (s + 4 < end && memcmp(s, "sack", 4) == 0
-		   && (contents & DO_TCPOPT_SACK)) {
-	    // combine adjacent SACK options into a block
-	    int sa_pos = sa.length();
-	    sa << (char)TCPOPT_SACK << (char)0;
-	    s += 4;
-	    while (1) {
-		const unsigned char *t = cp_integer(s, end, 0, &u1);
-		if (t >= end || (*t != ':' && *t != '-'))
-		    goto bad_opt;
-		t = cp_integer(t + 1, end, 0, &u2);
-		append_net_uint32_t(sa, u1);
-		append_net_uint32_t(sa, u2);
-		if (t < s + 3) // at least 1 digit in each block
-		    goto bad_opt;
-		s = t;
-		if (s + 5 >= end || memcmp(s, ",sack", 5) != 0)
-		    break;
-		s += 5;
-	    }
-	    sa[sa_pos + 1] = (char)(sa.length() - sa_pos);
-	} else if (s + 2 < end && memcmp(s, "ts", 2) == 0
-		   && (contents & DO_TCPOPT_TIMESTAMP)) {
-	    const unsigned char *t = cp_integer(s + 2, end, 0, &u1);
-	    if (t >= end || *t != ':')
-		goto bad_opt;
-	    t = cp_integer(t + 1, end, 0, &u2);
-	    if (sa.length() == 0)
-		sa << (char)TCPOPT_NOP << (char)TCPOPT_NOP;
-	    sa << (char)TCPOPT_TIMESTAMP << (char)TCPOLEN_TIMESTAMP;
-	    append_net_uint32_t(sa, u1);
-	    append_net_uint32_t(sa, u2);
-	    if (t < s + 5)	// at least 1 digit in each block
-		goto bad_opt;
-	    s = t;
-	} else if (s < end && isdigit(*s)
-		   && (contents & DO_TCPOPT_UNKNOWN)) {
-	    s = cp_integer(s, end, 0, &u1);
-	    if (u1 >= 256)
-		goto bad_opt;
-	    sa << (char)u1;
-	    if (s + 1 < end && *s == '=' && isdigit(s[1])) {
-		int pos0 = sa.length();
-		sa << (char)0;
-		do {
-		    s = cp_integer(s + 1, end, 0, &u1);
-		    if (u1 >= 256)
-			goto bad_opt;
-		    sa << (char)u1;
-		} while (s + 1 < end && *s == ':' && isdigit(s[1]));
-		if (sa.length() > pos0 + 254)
-		    goto bad_opt;
-		sa[pos0] = (char)(sa.length() - pos0 + 1);
-	    }
-	} else if (s + 3 <= end && memcmp(s, "nop", 3) == 0
-		   && (contents & DO_TCPOPT_PADDING)) {
-	    sa << (char)TCPOPT_NOP;
-	    s += 3;
-	} else if (s + 3 <= end && strncmp((const char *) s, "eol", 3) == 0
-		   && (contents & DO_TCPOPT_PADDING)
-		   && (s + 3 == end || s[3] != ',')) {
-	    sa << (char)TCPOPT_EOL;
-	    s += 3;
-	} else
-	    goto bad_opt;
-
-	if (s >= end || isspace(*s)) {
-	    // check for improper padding
-	    while (sa.length() > 40 && sa[0] == TCPOPT_NOP) {
-		memmove(&sa[0], &sa[1], sa.length() - 1);
-		sa.pop_back();
-	    }
-	    // options too long?
-	    if (sa.length() > 40)
-		goto bad_opt;
-	    // otherwise ok
-	    *result = sa.take_string();
-	    return s;
-	} else if (*s != ',' && *s != ';')
-	    goto bad_opt;
-
-	s++;
-    }
-
-  bad_opt:
-    *result = String();
-    return begin;
-}
-
-static WritablePacket *
-handle_ip_opt(WritablePacket *q, const String &optstr)
-{
-    int olen = (optstr.length() + 3) & ~3;
-    if (!(q = q->put(olen)))
-	return 0;
-    memmove(q->transport_header() + olen, q->transport_header(), sizeof(click_tcp));
-    q->ip_header()->ip_hl = (sizeof(click_ip) + olen) >> 2;
-    memcpy(q->ip_header() + 1, optstr.data(), optstr.length());
-    if (optstr.length() & 3)
-	*(reinterpret_cast<uint8_t *>(q->ip_header() + 1) + optstr.length()) = IPOPT_EOL;
-    q->set_ip_header(q->ip_header(), sizeof(click_ip) + olen);
-    return q;
-}
-
-static WritablePacket *
-handle_tcp_opt(WritablePacket *q, const String &optstr)
-{
-    int olen = (optstr.length() + 3) & ~3;
-    if (!(q = q->put(olen)))
-	return 0;
-    q->tcp_header()->th_off = (sizeof(click_tcp) + olen) >> 2;
-    memcpy(q->tcp_header() + 1, optstr.data(), optstr.length());
-    if (optstr.length() & 3)
-	*(reinterpret_cast<uint8_t *>(q->tcp_header() + 1) + optstr.length()) = TCPOPT_EOL;
-    return q;
 }
 
 static void
@@ -710,8 +323,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     // read non-packet lines
     bool binary;
     String line;
-    const unsigned char *data;
-    const unsigned char *end;
+    const char *data;
+    const char *end;
     
     while (1) {
 	if ((binary = _binary)) {
@@ -726,8 +339,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    return 0;
 	}
 
-	data = (const unsigned char *) line.begin();
-	end = (const unsigned char *) line.end();
+	data = line.begin();
+	end = line.end();
 
 	if (data == end)
 	    /* do nothing */;
@@ -737,27 +350,177 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 
 	// parse bang lines
 	if (data[0] == '!') {
-	    if (data + 6 <= end && memcmp(data, "!data", 5) == 0 && isspace(data[5]))
+	    if (data + 6 <= end && memcmp(data, "!data", 5) == 0 && isspace((unsigned char) data[5]))
 		bang_data(line, errh);
-	    else if (data + 8 <= end && memcmp(data, "!flowid", 7) == 0 && isspace(data[7]))
+	    else if (data + 8 <= end && memcmp(data, "!flowid", 7) == 0 && isspace((unsigned char) data[7]))
 		bang_flowid(line, errh);
-	    else if (data + 11 <= end && memcmp(data, "!aggregate", 10) == 0 && isspace(data[10]))
+	    else if (data + 11 <= end && memcmp(data, "!aggregate", 10) == 0 && isspace((unsigned char) data[10]))
 		bang_aggregate(line, errh);
-	    else if (data + 8 <= end && memcmp(data, "!binary", 7) == 0 && isspace(data[7]))
+	    else if (data + 8 <= end && memcmp(data, "!binary", 7) == 0 && isspace((unsigned char) data[7]))
 		bang_binary(line, errh);
-	    else if (data + 10 <= end && memcmp(data, "!contents", 9) == 0 && isspace(data[9]))
+	    else if (data + 10 <= end && memcmp(data, "!contents", 9) == 0 && isspace((unsigned char) data[9]))
 		bang_data(line, errh);
 	}
     }
 
     // read packet data
-    WritablePacket *q = Packet::make(0, (const unsigned char *)0, sizeof(click_ip) + sizeof(click_tcp), 32);
+    WritablePacket *q = Packet::make(14, (const unsigned char *) 0, 0, 1000);
     if (!q) {
 	_ff.error(errh, strerror(ENOMEM));
 	return 0;
     }
     if (_zero)
-	memset(q->data(), 0, q->length());
+	memset(q->buffer(), 0, q->buffer_length());
+
+    // prepare packet data
+    StringAccum sa;
+    IPSummaryDump::PacketOdesc d(this, q, _default_proto, (_have_flowid ? &_flowid : 0));
+    int nfields = 0;
+
+    // new code goes here
+    if (_binary) {
+	Vector<const unsigned char *> args;
+	int nbytes;
+	for (const IPSummaryDump::Field * const *fp = _fields.begin(); fp != _fields.end(); ++fp) {
+	    if (!(*fp)->inb)
+		goto bad_field;
+	    switch ((*fp)->thunk & IPSummaryDump::B_TYPEMASK) {
+	      case IPSummaryDump::B_0:
+		nbytes = 0;
+		goto got_nbytes;
+	      case IPSummaryDump::B_1:
+		nbytes = 1;
+		goto got_nbytes;
+	      case IPSummaryDump::B_2:
+		nbytes = 2;
+		goto got_nbytes;
+	      case IPSummaryDump::B_4:
+	      case IPSummaryDump::B_4NET:
+		nbytes = 4;
+		goto got_nbytes;
+	      case IPSummaryDump::B_6PTR:
+		nbytes = 6;
+		goto got_nbytes;
+	      case IPSummaryDump::B_8:
+		nbytes = 8;
+		goto got_nbytes;
+	      case IPSummaryDump::B_16:
+		nbytes = 16;
+		goto got_nbytes;
+	      got_nbytes:
+		if (data + nbytes <= end) {
+		    args.push_back((const unsigned char *) data);
+		    data += nbytes;
+		} else
+		    goto bad_field;
+		break;
+	      case IPSummaryDump::B_SPECIAL:
+		args.push_back((const unsigned char *) data);
+		data = (const char *) (*fp)->inb(d, (const uint8_t *) data, (const uint8_t *) end, (*fp)->thunk);
+		break;
+	      bad_field:
+	      default:
+		args.push_back(0);
+		data = end;
+		break;
+	    }
+	}
+
+	for (int *fip = _field_order.begin();
+	     fip != _field_order.end() && d.p;
+	     ++fip) {
+	    const IPSummaryDump::Field *f = _fields[*fip];
+	    if (!args[*fip] || !f->inject)
+		continue;
+	    d.clear_values();
+	    if (f->inb(d, args[*fip], (const uint8_t *) end, f->thunk)) {
+		f->inject(d, f->thunk);
+		nfields++;
+	    }
+	}
+	
+    } else {
+	Vector<String> args;
+	while (args.size() < _fields.size()) {
+	    const char *original_data = data;
+	    while (data < end)
+		if (isspace((unsigned char) *data))
+		    break;
+		else if (*data == '\"')
+		    data = cp_skip_double_quote(data, end);
+		else
+		    ++data;
+	    args.push_back(line.substring(original_data, data));
+	    while (data < end && isspace((unsigned char) *data))
+		++data;
+	}
+
+	for (int *fip = _field_order.begin();
+	     fip != _field_order.end() && d.p;
+	     ++fip) {
+	    const IPSummaryDump::Field *f = _fields[*fip];
+	    if (!args[*fip] || args[*fip].equals("-", 1) || !f->inject)
+		continue;
+	    d.clear_values();
+	    if (f->ina(d, args[*fip], f->thunk)) {
+		f->inject(d, f->thunk);
+		nfields++;
+	    }
+	}
+    }
+
+    if (!nfields) {	// bad format
+	if (!_format_complaint) {
+	    // don't complain if the line was all blank
+	    if (binary || (int) strspn(line.data(), " \t\n\r") != line.length()) {
+		if (_fields.size() == 0)
+		    _ff.error(errh, "no '!data' provided");
+		else
+		    _ff.error(errh, "packet parse error");
+		_format_complaint = true;
+	    }
+	}
+	if (d.p)
+	    d.p->kill();
+	d.p = 0;
+    }
+
+    // set source and destination ports even if no transport info on packet
+    if (d.p && d.default_ip_flowid)
+	if (d.make_ip(0))
+	    d.make_transp();	// may fail
+
+    if (d.p && d.is_ip) {
+	// set IP length
+	if (!d.p->ip_header()->ip_len) {
+	    int len = d.p->network_length() + EXTRA_LENGTH_ANNO(d.p);
+	    if (len > 0xFFFF)
+		len = 0xFFFF;
+	    d.p->ip_header()->ip_len = htons(len);
+	}
+
+	// set UDP length
+	if (d.p->ip_header()->ip_p == IP_PROTO_UDP
+	    && IP_FIRSTFRAG(d.p->ip_header())
+	    && !d.p->udp_header()->uh_ulen) {
+	    int len = htons(d.p->ip_header()->ip_len) - d.p->network_header_length();
+	    d.p->udp_header()->uh_ulen = htons(len);
+	}
+
+	// set extra length annotation (post-IP length adjustment)
+	SET_EXTRA_LENGTH_ANNO(d.p, ntohs(d.p->ip_header()->ip_len) - d.p->length());
+
+	// set destination IP address annotation
+	d.p->set_dst_ip_anno(d.p->ip_header()->ip_dst);
+
+	// set checksum
+	if (_checksum)
+	    set_checksums(d.p, d.p->ip_header());
+    }
+
+    return d.p;
+
+#if 0
     q->set_ip_header((click_ip *)q->data(), sizeof(click_ip));
     click_ip *iph = q->ip_header();
     iph->ip_v = 4;
@@ -1280,7 +1043,9 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    q->kill();
 	return 0;
     }
+#endif
 
+#if 0
     // append EOL IP options to fill out ip_hl
     if (sizeof(click_ip) + ip_opt.length() < ip_hl)
 	ip_opt.append_fill(IPOPT_EOL, ip_hl - ip_opt.length() - sizeof(click_ip));
@@ -1362,6 +1127,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     // set checksum
     if (_checksum && ip_ok)
 	set_checksums(q, iph);
+#endif
     
     return q;
 }
@@ -1597,6 +1363,6 @@ FromIPSummaryDump::add_handlers()
 	add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(userlevel FromFile IPSummaryDumpInfo)
+ELEMENT_REQUIRES(userlevel FromFile IPSummaryDumpInfo ToIPSummaryDump)
 EXPORT_ELEMENT(FromIPSummaryDump)
 CLICK_ENDDECLS

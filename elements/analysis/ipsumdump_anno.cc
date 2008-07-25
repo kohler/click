@@ -21,6 +21,7 @@
 
 #include "ipsumdumpinfo.hh"
 #include <click/packet.hh>
+#include <click/confparse.hh>
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
@@ -34,8 +35,8 @@ static bool anno_extract(PacketDesc& d, int thunk)
     Packet *p = d.p;
     switch (thunk & ~B_TYPEMASK) {
       case T_TIMESTAMP:
-	d.v = p->timestamp_anno().sec();
-	d.v2 = p->timestamp_anno().nsec();
+	d.u32[0] = p->timestamp_anno().sec();
+	d.u32[1] = p->timestamp_anno().nsec();
 	return true;
       case T_TIMESTAMP_SEC:
 	d.v = p->timestamp_anno().sec();
@@ -46,19 +47,19 @@ static bool anno_extract(PacketDesc& d, int thunk)
       case T_TIMESTAMP_USEC1: {
 #if HAVE_INT64_TYPES
 	  uint64_t v3 = ((uint64_t)p->timestamp_anno().sec() * 1000000) + p->timestamp_anno().usec();
-	  d.v = v3 >> 32;
-	  d.v2 = v3;
+	  d.u32[1] = v3;
+	  d.u32[0] = v3 >> 32;
 	  return true;
 #else
 	  // XXX silently output garbage if 64-bit ints not supported
-	  d.v = 0;
-	  d.v2 = (p->timestamp_anno().sec() * 1000000) + p->timestamp_anno().usec();
+	  d.u32[1] = (p->timestamp_anno().sec() * 1000000) + p->timestamp_anno().usec();
+	  d.u32[0] = 0;
 	  return true;
 #endif
       }
       case T_FIRST_TIMESTAMP:
-	d.v = FIRST_TIMESTAMP_ANNO(p).sec();
-	d.v2 = FIRST_TIMESTAMP_ANNO(p).nsec();
+	d.u32[0] = FIRST_TIMESTAMP_ANNO(p).sec();
+	d.u32[1] = FIRST_TIMESTAMP_ANNO(p).nsec();
 	return true;
       case T_COUNT:
 	d.v = 1 + EXTRA_PACKETS_ANNO(p);
@@ -75,19 +76,52 @@ static bool anno_extract(PacketDesc& d, int thunk)
     }
 }
 
+static void anno_inject(PacketOdesc& d, int thunk)
+{
+    WritablePacket *p = d.p;
+    switch (thunk & ~B_TYPEMASK) {
+    case T_TIMESTAMP:
+	p->set_timestamp_anno(Timestamp::make_nsec(d.u32[0], d.u32[1]));
+	break;
+    case T_TIMESTAMP_SEC:
+	p->timestamp_anno().set_sec(d.v);
+	break;
+    case T_TIMESTAMP_USEC:
+	p->timestamp_anno().set_subsec(Timestamp::usec_to_subsec(d.v));
+	break;
+    case T_TIMESTAMP_USEC1: {
+#if HAVE_INT64_TYPES
+	uint64_t v3 = ((uint64_t) d.u32[1] << 32) | d.u32[0];
+	p->set_timestamp_anno(Timestamp::make_usec(v3 / 1000000, v3 % 1000000));
+	break;
+#else
+	// XXX silently output garbage if 64-bit ints not supported
+	p->set_timestamp_anno(Timestamp::make_usec(d.u32[0] / 1000000, d.u32[0] % 1000000));
+	break;
+#endif
+    }
+    case T_FIRST_TIMESTAMP:
+	SET_FIRST_TIMESTAMP_ANNO(p, Timestamp::make_nsec(d.u32[0], d.u32[1]));
+	break;
+    case T_COUNT:
+	SET_EXTRA_PACKETS_ANNO(p, d.v ? d.v - 1 : 0);
+	break;
+    case T_LINK:
+    case T_DIRECTION:
+	SET_PAINT_ANNO(p, d.v);
+	break;
+    case T_AGGREGATE:
+	SET_AGGREGATE_ANNO(p, d.v);
+	break;
+    }
+}
+
 static void anno_outa(const PacketDesc& d, int thunk)
 {
     switch (thunk & ~B_TYPEMASK) {
       case T_TIMESTAMP:
       case T_FIRST_TIMESTAMP:
-	*d.sa << Timestamp::make_nsec(d.v, d.v2);
-	break;
-      case T_TIMESTAMP_USEC1:
-#if HAVE_INT64_TYPES
-	*d.sa << ((((uint64_t)d.v) << 32) | d.v2);
-#else
-	*d.sa << d.v2;
-#endif
+	*d.sa << Timestamp::make_nsec(d.u32[0], d.u32[1]);
 	break;
       case T_DIRECTION:
 	if (d.v == 0)
@@ -100,6 +134,33 @@ static void anno_outa(const PacketDesc& d, int thunk)
     }
 }
 
+static bool anno_ina(PacketOdesc& d, const String &s, int thunk)
+{
+    switch (thunk & ~B_TYPEMASK) {
+    case T_TIMESTAMP:
+    case T_FIRST_TIMESTAMP: {
+	Timestamp ts;
+	if (cp_time(s, &ts)) {
+	    d.u32[0] = ts.sec();
+	    d.u32[1] = ts.nsec();
+	    return true;
+	}
+	break;
+    }
+    case T_LINK:
+    case T_DIRECTION:
+	if (s.equals(">", 1)) {
+	    d.v = 0;
+	    return true;
+	} else if (s.equals("<", 1)) {
+	    d.v = 1;
+	    return true;
+	} else
+	    return cp_integer(s, &d.v);
+    }
+    return false;
+}
+
 #ifdef i386
 # define PUT4(p, d)	*reinterpret_cast<uint32_t *>((p)) = htonl((d))
 # define GET4(p)	ntohl(*reinterpret_cast<const uint32_t *>((p)))
@@ -108,35 +169,46 @@ static void anno_outa(const PacketDesc& d, int thunk)
 # define GET4(p)	((p)[0]<<24 | (p)[1]<<16 | (p)[2]<<8 | (p)[3])
 #endif
 
-static void timestamp_outb(const PacketDesc& d, bool, int)
+static void utimestamp_outb(const PacketDesc& d, bool, int)
 {
     char* c = d.sa->extend(8);
-    PUT4(c, d.v);
-    PUT4(c + 4, d.v2 / 1000);
+    PUT4(c, d.u32[0]);
+    PUT4(c + 4, d.u32[1] / 1000);
 }
 
-static const uint8_t *timestamp_inb(PacketDesc& d, const uint8_t* s, const uint8_t *ends, int)
+static const uint8_t *utimestamp_inb(PacketOdesc& d, const uint8_t* s, const uint8_t *ends, int)
 {
     if (s + 7 <= ends)
 	return ends;
-    d.v = GET4(s);
-    d.v2 = GET4(s + 4) * 1000;
+    d.u32[0] = GET4(s);
+    d.u32[1] = GET4(s + 4) * 1000;
     return s + 8;
 }
 
 void anno_register_unparsers()
 {
-    register_unparser("timestamp", T_TIMESTAMP | B_8, 0, anno_extract, anno_outa, timestamp_outb, timestamp_inb);
-    register_unparser("ntimestamp", T_TIMESTAMP | B_8, 0, anno_extract, anno_outa, outb, inb);
-    register_unparser("ts_sec", T_TIMESTAMP_SEC | B_4, 0, anno_extract, num_outa, outb, inb);
-    register_unparser("ts_usec", T_TIMESTAMP_USEC | B_4, 0, anno_extract, num_outa, outb, inb);
-    register_unparser("ts_usec1", T_TIMESTAMP_USEC1 | B_8, 0, anno_extract, anno_outa, outb, inb);
-    register_unparser("first_timestamp", T_FIRST_TIMESTAMP | B_8, 0, anno_extract, anno_outa, timestamp_outb, timestamp_inb);
-    register_unparser("first_ntimestamp", T_FIRST_TIMESTAMP | B_8, 0, anno_extract, anno_outa, outb, inb);
-    register_unparser("count", T_COUNT | B_4, 0, anno_extract, num_outa, outb, inb);
-    register_unparser("link", T_LINK | B_1, 0, anno_extract, num_outa, outb, inb);
-    register_unparser("direction", T_DIRECTION | B_1, 0, anno_extract, anno_outa, outb, inb);
-    register_unparser("aggregate", T_AGGREGATE | B_4, 0, anno_extract, num_outa, outb, inb);
+    register_field("timestamp", T_TIMESTAMP | B_8, 0, order_anno,
+		   anno_extract, anno_inject, anno_outa, anno_ina, utimestamp_outb, utimestamp_inb);
+    register_field("ntimestamp", T_TIMESTAMP | B_8, 0, order_anno,
+		   anno_extract, anno_inject, anno_outa, anno_ina, outb, inb);
+    register_field("ts_sec", T_TIMESTAMP_SEC | B_4, 0, order_anno,
+		   anno_extract, anno_inject, num_outa, num_ina, outb, inb);
+    register_field("ts_usec", T_TIMESTAMP_USEC | B_4, 0, order_anno,
+		   anno_extract, anno_inject, num_outa, num_ina, outb, inb);
+    register_field("ts_usec1", T_TIMESTAMP_USEC1 | B_8, 0, order_anno,
+		   anno_extract, anno_inject, num_outa, num_ina, outb, inb);
+    register_field("first_timestamp", T_FIRST_TIMESTAMP | B_8, 0, order_anno,
+		   anno_extract, anno_inject, anno_outa, anno_ina, utimestamp_outb, utimestamp_inb);
+    register_field("first_ntimestamp", T_FIRST_TIMESTAMP | B_8, 0, order_anno,
+		   anno_extract, anno_inject, anno_outa, anno_ina, outb, inb);
+    register_field("count", T_COUNT | B_4, 0, order_anno,
+		   anno_extract, anno_inject, num_outa, num_ina, outb, inb);
+    register_field("link", T_LINK | B_1, 0, order_anno,
+		   anno_extract, anno_inject, num_outa, anno_ina, outb, inb);
+    register_field("direction", T_DIRECTION | B_1, 0, order_anno,
+		   anno_extract, anno_inject, anno_outa, anno_ina, outb, inb);
+    register_field("aggregate", T_AGGREGATE | B_4, 0, order_anno,
+		   anno_extract, anno_inject, num_outa, num_ina, outb, inb);
     
     register_synonym("utimestamp", "timestamp");
     register_synonym("ts", "utimestamp");
