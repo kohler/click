@@ -351,7 +351,7 @@ $bad_files"
 }
 /:class[ 	]/ {
   sub(/^class[ 	]*/, "", $2);
-  sub(/[ 	]*$/, "", $2);
+  sub(/[ 	].*$/, "", $2);
   cur_class = $2;
   next
 }
@@ -370,8 +370,17 @@ $bad_files"
   next
 }
 /:ELEMENT_PROVIDES/ {
-  if (!($1 in exports)) {
-    exports[$1] = ""; nexports++
+  sub(/.*ELEMENT_PROVIDES[ 	]*\([ 	]*/, "", $2);
+  sub(/[ 	]*\).*/, "", $2);
+  split($2, provs, / /)
+  for (i in provs) {
+    if (provs[i] != "") {
+      if (exports[$1] == "")
+        nexports++;
+      else
+        exports[$1] = exports[$1] " ";
+      exports[$1] = exports[$1] "*" provs[i]
+    }
   }
   next
 }
@@ -414,38 +423,38 @@ END {
   if (line_warned || nexports == 0)
     system("kill -HUP '$$'")
   for (i in exports) {
+    if (header[i] == "") {
+      header[i] = "\"" i "\""; sub(/\.cc/, ".hh", header[i])
+    }
     ex = exports[i]
-    if (ex == "") {
-      print i
-    } else {
-      if (header[i] == "") {
-	header[i] = "\"" i "\""; sub(/\.cc/, ".hh", header[i])
+    split(ex, exes, / /); ex = ""
+    for (j in exes) {
+      star = index(exes[j], "*")
+      dash = index(exes[j], "-")
+      if (star == 0 && dash == 0) {
+	dash = length(exes[j]);
+        if (class_name[exes[j]] == "")
+          exes[j] = exes[j] "-" exes[j];
+        else
+          exes[j] = exes[j] "-" class_name[exes[j]];
       }
-      split(ex, exes, / /); ex = ""
-      for (j in exes) {
-        dash = index(exes[j], "-")
-	if (dash == 0) {
-	  dash = length(exes[j]);
-          if (class_name[exes[j]] == "")
-            exes[j] = exes[j] "-" exes[j];
-          else
-            exes[j] = exes[j] "-" class_name[exes[j]];
-        }
-	ex = ex exes[j] " ";
+      if (star == 0) {
+	ex = ex exes[j] " "
 	klass = substr(exes[j], 1, dash)
-        if (static_initialize[klass]) {
-	  ex = ex klass "-!si ";
-	  static_initialize[klass] = 0
-	}
-        if (static_cleanup[klass]) {
-	  ex = ex klass "-!sc ";
-	  static_cleanup[klass] = 0
-	}
+      } else
+	klass = substr(exes[j], star + 1)
+      if (static_initialize[klass]) {
+	ex = ex klass "-!si ";
+	static_initialize[klass] = 0
+      }
+      if (static_cleanup[klass]) {
+	ex = ex klass "-!sc ";
+	static_cleanup[klass] = 0
       }
       if (libs[i])
-	ex = ex "-!lib" libs[i] " ";
-      print '"$outscriptlet"'
+	ex = ex "-!lib" libs[i] " "
     }
+    print '"$outscriptlet"'
   }
 }' | sort
 
