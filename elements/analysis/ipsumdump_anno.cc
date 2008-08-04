@@ -205,7 +205,7 @@ static const IPSummaryDump::FieldWriter anno_writers[] = {
     { "link", B_1, T_LINK,
       0, anno_extract, num_outa, outb },
     { "direction", B_1, T_DIRECTION,
-      0, anno_extract, num_outa, outb },
+      0, anno_extract, anno_outa, outb },
     { "aggregate", B_4, T_AGGREGATE,
       0, anno_extract, num_outa, outb }
 };
