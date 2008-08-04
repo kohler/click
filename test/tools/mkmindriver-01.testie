@@ -22,6 +22,7 @@ elements/standard/scheduleinfo.cc	<click/standard/scheduleinfo.hh>	ScheduleInfo-
 elements/userlevel/controlsocket.cc	"elements/userlevel/controlsocket.hh"	ControlSocket-ControlSocket
 elements/userlevel/fakepcap.cc	"elements/userlevel/fakepcap.hh"	
 elements/userlevel/fromdevice.cc	"elements/userlevel/fromdevice.hh"	FromDevice-FromDevice
+elements/userlevel/kernelfilter.cc	"elements/userlevel/kernelfilter.hh"	KernelFilter-KernelFilter
 elements/userlevel/todump.cc	"elements/userlevel/todump.hh"	ToDump-ToDump
 
 %ignorex
