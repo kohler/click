@@ -39,24 +39,6 @@ ToIPSummaryDump::~ToIPSummaryDump()
 {
 }
 
-void
-ToIPSummaryDump::static_initialize()
-{
-    IPSummaryDump::anno_register_unparsers();
-    IPSummaryDump::link_register_unparsers();
-    IPSummaryDump::ip_register_unparsers();
-    IPSummaryDump::tcp_register_unparsers();
-    IPSummaryDump::udp_register_unparsers();
-    IPSummaryDump::icmp_register_unparsers();
-    IPSummaryDump::payload_register_unparsers();
-}
-
-void
-ToIPSummaryDump::static_cleanup()
-{
-    IPSummaryDump::static_cleanup();
-}
-
 int
 ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -88,7 +70,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _binary_size = 4;
     for (int i = 0; i < v.size(); i++) {
 	String word = cp_unquote(v[i]);
-	const IPSummaryDump::Field* f = IPSummaryDump::find_field(word);
+	const IPSummaryDump::FieldWriter *f = IPSummaryDump::FieldWriter::find(word);
 	if (!f) {
 	    errh->error("unknown content type '%s'", word.c_str());
 	    continue;
@@ -201,14 +183,14 @@ ToIPSummaryDump::summary(Packet* p, StringAccum& sa, StringAccum* bad_sa, bool f
     IPSummaryDump::PacketDesc d(this, p, &sa, bad_sa, _careful_trunc, force_extra_length);
 
     for (int i = 0; i < _prepare_fields.size(); i++)
-	_prepare_fields[i]->prepare(d);
+	_prepare_fields[i]->prepare(d, _prepare_fields[i]);
 
     if (_binary) {
 	sa.extend(4);
 	for (int i = 0; i < _fields.size(); i++) {
 	    d.clear_values();
-	    bool ok = _fields[i]->extract(d, _fields[i]->thunk);
-	    _fields[i]->outb(d, ok, _fields[i]->thunk);
+	    bool ok = _fields[i]->extract(d, _fields[i]);
+	    _fields[i]->outb(d, ok, _fields[i]);
 	}
 	*(reinterpret_cast<uint32_t*>(sa.data())) = htonl(sa.length());
     } else {
@@ -216,8 +198,8 @@ ToIPSummaryDump::summary(Packet* p, StringAccum& sa, StringAccum* bad_sa, bool f
 	    if (i)
 		sa << ' ';
 	    d.clear_values();
-	    if (_fields[i]->extract(d, _fields[i]->thunk) && _fields[i]->outa)
-		_fields[i]->outa(d, _fields[i]->thunk);
+	    if (_fields[i]->extract(d, _fields[i]) && _fields[i]->outa)
+		_fields[i]->outa(d, _fields[i]);
 	    else
 		sa << '-';
 	}

@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 
-#include "ipsumdumpinfo.hh"
+#include "ipsumdump_link.hh"
 #include <click/packet.hh>
 #include <click/packet_anno.hh>
 #include <clicknet/ether.h>
@@ -30,7 +30,7 @@ enum { T_ETH_SRC, T_ETH_DST, T_ETH_TYPE };
 
 namespace IPSummaryDump {
 
-static bool link_extract(PacketDesc& d, int thunk)
+static bool link_extract(PacketDesc& d, const FieldWriter *f)
 {
     const unsigned char *mac = d.p->mac_header();
     if (!mac && d.p->network_header() && d.p->data() < d.p->network_header())
@@ -38,7 +38,7 @@ static bool link_extract(PacketDesc& d, int thunk)
     const unsigned char *network = d.p->network_header();
     if (!network)
 	network = d.p->end_data();
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
 
 	// IP header properties
 #define CHECK() do { if (!mac || mac + 14 != network) return field_missing(d, MISSING_ETHERNET, 0); } while (0)	
@@ -61,11 +61,11 @@ static bool link_extract(PacketDesc& d, int thunk)
     }
 }
 
-static void link_inject(PacketOdesc& d, int thunk)
+static void link_inject(PacketOdesc& d, const FieldReader *f)
 {
     if (!d.p->mac_header() && !(d.p = d.p->push_mac_header(14)))
 	return;
-    switch (thunk) {
+    switch (f->user_data) {
       case T_ETH_SRC:
 	memcpy(d.p->ether_header()->ether_shost, d.u8, 6);
 	break;
@@ -80,9 +80,9 @@ static void link_inject(PacketOdesc& d, int thunk)
     }
 }
 
-static void link_outa(const PacketDesc& d, int thunk)
+static void link_outa(const PacketDesc& d, const FieldWriter *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
       case T_ETH_SRC:
       case T_ETH_DST:
 	*d.sa << EtherAddress(d.vptr[0]);
@@ -93,9 +93,9 @@ static void link_outa(const PacketDesc& d, int thunk)
     }
 }
 
-static bool link_ina(PacketOdesc& d, const String &str, int thunk)
+static bool link_ina(PacketOdesc& d, const String &str, const FieldReader *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_ETH_SRC:
     case T_ETH_DST:
 	return cp_ethernet_address(str, d.u8, d.e);
@@ -106,20 +106,52 @@ static bool link_ina(PacketOdesc& d, const String &str, int thunk)
     }
 }
 
-void link_register_unparsers()
-{
-    register_field("eth_src", T_ETH_SRC | B_6PTR, 0, order_link,
-		   link_extract, link_inject, link_outa, link_ina, outb, inb);
-    register_field("eth_dst", T_ETH_DST | B_6PTR, 0, order_link,
-		   link_extract, link_inject, link_outa, link_ina, outb, inb);
-    register_field("eth_type", T_ETH_DST | B_2, 0, order_link,
-		   link_extract, link_inject, link_outa, link_ina, outb, inb);
+static const FieldWriter link_writers[] = {
+    { "eth_src", B_6PTR, T_ETH_SRC,
+      0, link_extract, link_outa, outb },
+    { "eth_dst", B_6PTR, T_ETH_DST,
+      0, link_extract, link_outa, outb },
+    { "eth_type", B_2, T_ETH_TYPE,
+      0, link_extract, link_outa, outb }
+};
 
-    register_synonym("ether_src", "eth_src");
-    register_synonym("ether_dst", "eth_dst");
-    register_synonym("ether_type", "eth_type");
+static const FieldReader link_readers[] = {
+    { "eth_src", B_6PTR, T_ETH_SRC, order_link,
+      link_ina, inb, link_inject },
+    { "eth_dst", B_6PTR, T_ETH_DST, order_link,
+      link_ina, inb, link_inject },
+    { "eth_type", B_2, T_ETH_TYPE, order_link,
+      link_ina, inb, link_inject }
+};
+
+static const FieldSynonym link_synonyms[] = {
+    { "ether_src", "eth_src" },
+    { "ether_dst", "eth_dst" },
+    { "ether_type", "eth_type" }
+};
+
 }
 
+void IPSummaryDump_Link::static_initialize()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(link_writers) / sizeof(link_writers[0]); ++i)
+	FieldWriter::add(&link_writers[i]);
+    for (size_t i = 0; i < sizeof(link_readers) / sizeof(link_readers[0]); ++i)
+	FieldReader::add(&link_readers[i]);
+    for (size_t i = 0; i < sizeof(link_synonyms) / sizeof(link_synonyms[0]); ++i)
+	FieldSynonym::add(&link_synonyms[i]);
+}
+
+void IPSummaryDump_Link::static_cleanup()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(link_writers) / sizeof(link_writers[0]); ++i)
+	FieldWriter::remove(&link_writers[i]);
+    for (size_t i = 0; i < sizeof(link_readers) / sizeof(link_readers[0]); ++i)
+	FieldReader::remove(&link_readers[i]);
+    for (size_t i = 0; i < sizeof(link_synonyms) / sizeof(link_synonyms[0]); ++i)
+	FieldSynonym::remove(&link_synonyms[i]);
 }
 
 ELEMENT_REQUIRES(userlevel IPSummaryDump)

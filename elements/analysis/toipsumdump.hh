@@ -341,8 +341,6 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     const char *processing() const	{ return AGNOSTIC; }
     const char *flags() const		{ return "S2"; }
 
-    static void static_initialize();
-    static void static_cleanup();
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
@@ -360,8 +358,8 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
     String _filename;
     FILE *_f;
-    Vector<const IPSummaryDump::Field*> _fields;
-    Vector<const IPSummaryDump::Field*> _prepare_fields;
+    Vector<const IPSummaryDump::FieldWriter *> _fields;
+    Vector<const IPSummaryDump::FieldWriter *> _prepare_fields;
     bool _verbose : 1;
     bool _bad_packets : 1;
     bool _careful_trunc : 1;

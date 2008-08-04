@@ -20,7 +20,7 @@
 
 #include <click/config.h>
 
-#include "ipsumdumpinfo.hh"
+#include "ipsumdump_udp.hh"
 #include <click/packet.hh>
 #include <click/nameinfo.hh>
 #include <clicknet/ip.h>
@@ -34,10 +34,10 @@ namespace IPSummaryDump {
 
 enum { T_UDP_LEN };
 
-static bool udp_extract(PacketDesc& d, int thunk)
+static bool udp_extract(PacketDesc& d, const FieldWriter *f)
 {
     int transport_length = d.p->transport_length();
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
 	
 #define CHECK(l) do { if (!d.udph || transport_length < (l)) return field_missing(d, IP_PROTO_UDP, (l)); } while (0)
 	
@@ -53,7 +53,7 @@ static bool udp_extract(PacketDesc& d, int thunk)
     }
 }
 
-static void udp_inject(PacketOdesc& d, int thunk)
+static void udp_inject(PacketOdesc& d, const FieldReader *f)
 {
     if (!d.make_ip(0) || !d.make_transp())
 	return;
@@ -64,19 +64,41 @@ static void udp_inject(PacketOdesc& d, int thunk)
 	&& !(d.p = d.p->put(sizeof(click_udp) - d.p->transport_length())))
 	return;
 
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_UDP_LEN:
 	d.p->udp_header()->uh_ulen = htons(d.v);
 	break;
     }
 }
 
-void udp_register_unparsers()
-{
-    register_field("udp_len", T_UDP_LEN | B_4, ip_prepare, order_transp,
-		   udp_extract, udp_inject, num_outa, num_ina, outb, inb);
+static const FieldWriter udp_writers[] = {
+    { "udp_len", B_4, T_UDP_LEN,
+      ip_prepare, udp_extract, num_outa, outb }
+};
+
+static const FieldReader udp_readers[] = {
+    { "udp_len", B_4, T_UDP_LEN, order_transp,
+      num_ina, inb, udp_inject }
+};
+
 }
 
+void IPSummaryDump_UDP::static_initialize()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(udp_writers) / sizeof(udp_writers[0]); ++i)
+	FieldWriter::add(&udp_writers[i]);
+    for (size_t i = 0; i < sizeof(udp_readers) / sizeof(udp_readers[0]); ++i)
+	FieldReader::add(&udp_readers[i]);
+}
+
+void IPSummaryDump_UDP::static_cleanup()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(udp_writers) / sizeof(udp_writers[0]); ++i)
+	FieldWriter::remove(&udp_writers[i]);
+    for (size_t i = 0; i < sizeof(udp_readers) / sizeof(udp_readers[0]); ++i)
+	FieldReader::remove(&udp_readers[i]);
 }
 
 ELEMENT_REQUIRES(userlevel IPSummaryDump)

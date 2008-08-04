@@ -194,8 +194,8 @@ FromIPSummaryDump::sort_fields_compare(const void *ap, const void *bp,
     int a = *reinterpret_cast<const int *>(ap);
     int b = *reinterpret_cast<const int *>(bp);
     FromIPSummaryDump *f = reinterpret_cast<FromIPSummaryDump *>(user_data);
-    const IPSummaryDump::Field *fa = f->_fields[a];
-    const IPSummaryDump::Field *fb = f->_fields[b];
+    const IPSummaryDump::FieldReader *fa = f->_fields[a];
+    const IPSummaryDump::FieldReader *fb = f->_fields[b];
     if (fa->order < fb->order)
 	return -1;
     if (fa->order > fb->order)
@@ -215,13 +215,13 @@ FromIPSummaryDump::bang_data(const String &line, ErrorHandler *errh)
 	String word = cp_unquote(words[i]);
 	if (i == 0 && (word == "!data" || word == "!contents"))
 	    continue;
-	const IPSummaryDump::Field *f = IPSummaryDump::find_field(word);
+	const IPSummaryDump::FieldReader *f = IPSummaryDump::FieldReader::find(word);
 	if (!f) {
 	    _ff.warning(errh, "unknown content type '%s'", word.c_str());
-	    f = &IPSummaryDump::null_field;
+	    f = &IPSummaryDump::null_reader;
 	} else if (!f->inject) {
 	    _ff.warning(errh, "content type '%s' ignored on input", word.c_str());
-	    f = &IPSummaryDump::null_field;
+	    f = &IPSummaryDump::null_reader;
 	}
 	_fields.push_back(f);
 	_field_order.push_back(_fields.size() - 1);
@@ -381,10 +381,10 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     if (_binary) {
 	Vector<const unsigned char *> args;
 	int nbytes;
-	for (const IPSummaryDump::Field * const *fp = _fields.begin(); fp != _fields.end(); ++fp) {
+	for (const IPSummaryDump::FieldReader * const *fp = _fields.begin(); fp != _fields.end(); ++fp) {
 	    if (!(*fp)->inb)
 		goto bad_field;
-	    switch ((*fp)->thunk & IPSummaryDump::B_TYPEMASK) {
+	    switch ((*fp)->type) {
 	      case IPSummaryDump::B_0:
 		nbytes = 0;
 		goto got_nbytes;
@@ -416,7 +416,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		break;
 	      case IPSummaryDump::B_SPECIAL:
 		args.push_back((const unsigned char *) data);
-		data = (const char *) (*fp)->inb(d, (const uint8_t *) data, (const uint8_t *) end, (*fp)->thunk);
+		data = (const char *) (*fp)->inb(d, (const uint8_t *) data, (const uint8_t *) end, *fp);
 		break;
 	      bad_field:
 	      default:
@@ -429,12 +429,12 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	for (int *fip = _field_order.begin();
 	     fip != _field_order.end() && d.p;
 	     ++fip) {
-	    const IPSummaryDump::Field *f = _fields[*fip];
+	    const IPSummaryDump::FieldReader *f = _fields[*fip];
 	    if (!args[*fip] || !f->inject)
 		continue;
 	    d.clear_values();
-	    if (f->inb(d, args[*fip], (const uint8_t *) end, f->thunk)) {
-		f->inject(d, f->thunk);
+	    if (f->inb(d, args[*fip], (const uint8_t *) end, f)) {
+		f->inject(d, f);
 		nfields++;
 	    }
 	}
@@ -458,12 +458,12 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	for (int *fip = _field_order.begin();
 	     fip != _field_order.end() && d.p;
 	     ++fip) {
-	    const IPSummaryDump::Field *f = _fields[*fip];
+	    const IPSummaryDump::FieldReader *f = _fields[*fip];
 	    if (!args[*fip] || args[*fip].equals("-", 1) || !f->inject)
 		continue;
 	    d.clear_values();
-	    if (f->ina(d, args[*fip], f->thunk)) {
-		f->inject(d, f->thunk);
+	    if (f->ina(d, args[*fip], f)) {
+		f->inject(d, f);
 		nfields++;
 	    }
 	}

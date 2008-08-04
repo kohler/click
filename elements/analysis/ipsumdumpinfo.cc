@@ -22,119 +22,49 @@
 #include <click/packet.hh>
 #include <click/packet_anno.hh>
 #include <click/confparse.hh>
+#include <click/ipflowid.hh>
 #include <clicknet/ip.h>
+#include <clicknet/tcp.h>
+#include <clicknet/udp.h>
 CLICK_DECLS
 
-int
-IPSummaryDumpInfo::parse_content(const String &word)
+static Vector<const void *> *writers;
+static Vector<const void *> *readers;
+static Vector<const void *> *synonyms;
+
+static void field_add(Vector<const void *> *&vec, const void *value)
 {
-    if (word == "timestamp" || word == "ts")
-	return W_TIMESTAMP;
-    else if (word == "sec" || word == "ts_sec")
-	return W_TIMESTAMP_SEC;
-    else if (word == "usec" || word == "ts_usec")
-	return W_TIMESTAMP_USEC;
-    else if (word == "usec1" || word == "ts_usec1")
-	return W_TIMESTAMP_USEC1;
-    else if (word == "src" || word == "ip_src")
-	return W_IP_SRC;
-    else if (word == "dst" || word == "ip_dst")
-	return W_IP_DST;
-    else if (word == "sport")
-	return W_SPORT;
-    else if (word == "dport")
-	return W_DPORT;
-    else if (word == "frag" || word == "ip_frag")
-	return W_IP_FRAG;
-    else if (word == "fragoff" || word == "ip_fragoff")
-	return W_IP_FRAGOFF;
-    else if (word == "len" || word == "length" || word == "ip_len")
-	return W_IP_LEN;
-    else if (word == "id" || word == "ip_id")
-	return W_IP_ID;
-    else if (word == "proto" || word == "ip_proto" || word == "ip_p")
-	return W_IP_PROTO;
-    else if (word == "tcp_seq" || word == "tcp_seqno")
-	return W_TCP_SEQ;
-    else if (word == "tcp_ack" || word == "tcp_ackno")
-	return W_TCP_ACK;
-    else if (word == "tcp_flags")
-	return W_TCP_FLAGS;
-    else if (word == "tcp_sack")
-	return W_TCP_SACK;
-    else if (word == "tcp_opt")
-	return W_TCP_OPT;
-    else if (word == "tcp_ntopt")
-	return W_TCP_NTOPT;
-    else if (word == "payload_len" || word == "payload_length")
-	return W_PAYLOAD_LEN;
-    else if (word == "count" || word == "pkt_count" || word == "packet_count")
-	return W_COUNT;
-    else if (word == "payload")
-	return W_PAYLOAD;
-    else if (word == "payload_md5")
-	return W_PAYLOAD_MD5;
-    else if (word == "link" || word == "direction")
-	return W_LINK;
-    else if (word == "aggregate" || word == "agg")
-	return W_AGGREGATE;
-    else if (word == "first_timestamp" || word == "first_ts")
-	return W_FIRST_TIMESTAMP;
-    else if (word == "ntimestamp")
-	return W_NTIMESTAMP;
-    else if (word == "first_ntimestamp")
-	return W_FIRST_NTIMESTAMP;
-    else if (word == "tcp_window" || word == "tcp_win")
-	return W_TCP_WINDOW;
-    else if (word == "ip_opt")
-	return W_IP_OPT;
-    else if (word == "ip_tos")
-	return W_IP_TOS;
-    else if (word == "ip_ttl")
-	return W_IP_TTL;
-    else if (word == "ip_capture_len")
-	return W_IP_CAPTURE_LEN;
-    else if (word == "none")
-	return W_NONE;
-    else if (word == "tcp_urp")
-	return W_TCP_URP;
-    else if (word == "ip_hl")
-	return W_IP_HL;
-    else if (word == "tcp_off")
-	return W_TCP_OFF;
-    else if (word == "icmp_type" || word == "icmp_type_name")
-	return W_ICMP_TYPE;
-    else if (word == "icmp_code" || word == "icmp_code_name")
-	return W_ICMP_CODE;
-    else if (find(word, ' ') != word.end()) {
-	const char *space = find(word, ' ');
-	return parse_content(word.substring(word.begin(), space) + "_" + word.substring(space + 1, word.end()));
-    } else
-	return -1;
+    if (!vec)
+	vec = new Vector<const void *>;
+    vec->push_back(value);
 }
 
-static int content_binary_sizes[] = {
-    0, 8, 4, 4, 4,	// W_NONE, W_TIMESTAMP, W_TS_SEC, W_TS_USEC, W_IP_SRC
-    4, 4, 1, 2, 2,	// W_IP_DST, W_IP_LEN, W_IP_PROTO, W_IP_ID, W_SPORT
-    2, 4, 4, 1, 4,	// W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS,
-			// W_PAYLOAD_LEN
-    4, 1, 2, -10000, 1,	// W_COUNT, W_IP_FRAG, W_IP_FRAGOFF, W_PAYLOAD, W_LINK
-    4, 4, 4, 4, 8,      // W_AGGREGATE, W_TCP_SACK, W_TCP_OPT, W_TCP_NTOPT,
-			// W_FIRST_TIMESTAMP
-    2, 4, 1, 1, 8,	// W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL,
-			// W_TIMESTAMP_USEC1
-    4, 2, 8, 8, 16,	// W_IP_CAPTURE_LEN, W_TCP_URP, W_NTIMESTAMP,
-			// W_FIRST_NTIMESTAMP, W_PAYLOAD_MD5
-    1, 1, 1, 1		// W_IP_HL, W_TCP_OFF, W_ICMP_TYPE, W_ICMP_CODE
-};
-
-int
-IPSummaryDumpInfo::content_binary_size(int content)
+static void field_remove(Vector<const void *> *&vec, const void *value)
 {
-    if (content < 0 || content >= (int)(sizeof(content_binary_sizes) / sizeof(content_binary_sizes[0])))
-	return -10000;
-    else
-	return content_binary_sizes[content];
+    if (vec) {
+	const void **x = find(vec->begin(), vec->end(), value);
+	if (x != vec->end())
+	    vec->erase(x);
+    }
+}
+
+static const void *field_find(Vector<const void *> *&vec, const String &name)
+{
+    if (vec)
+	for (const void **x = vec->begin(); x != vec->end(); ++x) {
+	    const IPSummaryDump::FieldSynonym *fs = reinterpret_cast<const IPSummaryDump::FieldSynonym *>(*x);
+	    if (name == fs->name)
+		return *x;
+	}
+    return 0;
+}
+
+void IPSummaryDumpInfo::static_cleanup()
+{
+    delete writers;
+    delete readers;
+    delete synonyms;
+    writers = readers = synonyms = 0;
 }
 
 
@@ -144,139 +74,92 @@ IPSummaryDumpInfo::content_binary_size(int content)
 
 namespace IPSummaryDump {
 
-static bool none_extract(PacketDesc&, int)
+void FieldWriter::add(const FieldWriter *w)
+{
+    field_add(writers, w);
+}
+
+void FieldWriter::remove(const FieldWriter *w)
+{
+    field_remove(writers, w);
+}
+
+void FieldReader::add(const FieldReader *r)
+{
+    field_add(readers, r);
+}
+
+void FieldReader::remove(const FieldReader *r)
+{
+    field_remove(readers, r);
+}
+
+void FieldSynonym::add(const FieldSynonym *s)
+{
+    field_add(synonyms, s);
+}
+
+void FieldSynonym::remove(const FieldSynonym *s)
+{
+    field_remove(synonyms, s);
+}
+
+
+static String update_name(const String &name)
+{
+    // change spaces to underscores
+    const char *s = find(name, ' ');
+    if (s != name.end())
+	return name.substring(name.begin(), s) + "_"
+	    + name.substring(s + 1, name.end());
+    
+    // change "X" to "ip_X"
+    if (find(name, '_') == name.end())
+	return "ip_" + name;
+    
+    // not found
+    return String();
+}
+
+static bool none_extract(PacketDesc &, const FieldWriter *)
 {
     return false;
 }
 
-static Field* fields;
-const Field null_field = {
-    "none", B_0, 0, 0, none_extract, 0, num_outa, num_ina, outb, inb, 0, 0
+const FieldReader null_reader = {
+    "none", B_0, 0, order_anno,
+    num_ina, inb, 0
 };
 
-int Field::binary_size() const
+const FieldWriter null_writer = {
+    "none", B_0, 0,
+    0, none_extract, num_outa, outb
+};
+
+const FieldReader *FieldReader::find(const String &name)
 {
-    switch (thunk & B_TYPEMASK) {
-      case B_0:		return 0;
-      case B_1:		return 1;
-      case B_2:		return 2;
-      case B_4:		return 4;
-      case B_6PTR:	return 6;
-      case B_8:		return 8;
-      case B_16:	return 16;
-      case B_4NET:	return 4;
-      case B_SPECIAL:	return 4;
-      default:		return -1;
+    if (const void *x = field_find(synonyms, name)) {
+	const FieldSynonym *s = reinterpret_cast<const FieldSynonym *>(x);
+	return find(s->synonym);
     }
-}
-    
-const Field* find_field(const String& name, bool likely_synonyms)
-{
-    // search for "name"
-    for (Field* f = fields; f; f = f->next)
-	if (name == f->name)
-	    return (f->synonym ? f->synonym : f);
-    if (name == "none")
-	return &null_field;
-    if (!likely_synonyms)
-	return 0;
-    
-    // if not found, change spaces to underscores and try again
-    const char *s = find(name, ' ');
-    if (s != name.end())
-	return find_field(name.substring(name.begin(), s) + "_" + name.substring(s + 1, name.end()));
-    
-    // if not found, change "X" to "ip_X" and try again
-    if (find(name, '_') == name.end())
-	return find_field("ip_" + name);
-    
-    // not found
+    if (const void *x = field_find(readers, name))
+	return reinterpret_cast<const FieldReader *>(x);
+    if (String new_name = update_name(name))
+	return find(new_name);
     return 0;
 }
 
-int register_field(const char* name, int thunk,
-		   void (*prepare)(PacketDesc&), int order,
-		   bool (*extract)(PacketDesc&, int),
-		   void (*inject)(PacketOdesc&, int),		      
-		   void (*outa)(const PacketDesc&, int),
-		   bool (*ina)(PacketOdesc&, const String&, int),
-		   void (*outb)(const PacketDesc&, bool, int),
-		   const uint8_t *(*inb)(PacketOdesc&, const uint8_t*, const uint8_t*, int))
+const FieldWriter *FieldWriter::find(const String &name)
 {
-    Field* f = const_cast<Field*>(find_field(name, false));
-    if (f) {
-	if (f == &null_field
-	    || f->synonym
-	    || f->thunk != thunk
-	    || f->order != order
-	    || (f->prepare && f->prepare != prepare)
-	    || (f->extract && f->extract != extract)
-	    || (f->inject && f->inject != inject)
-	    || (f->outa && f->outa != outa)
-	    || (f->ina && f->ina != ina)
-	    || (f->outb && f->outb != outb)
-	    || (f->inb && f->inb != inb))
-	    return -1;
-	if (!f->prepare && prepare)
-	    f->prepare = prepare;
-	if (!f->extract && extract)
-	    f->extract = extract;
-	if (!f->inject && inject)
-	    f->inject = inject;
-	if (!f->outa && outa)
-	    f->outa = outa;
-	if (!f->ina && ina)
-	    f->ina = ina;
-	if (!f->outb && outb)
-	    f->outb = outb;
-	if (!f->inb && inb)
-	    f->inb = inb;
-    } else if (!f) {
-	if (!(f = new Field))
-	    return -1;
-	f->name = name;
-	f->thunk = thunk;
-	f->order = order;
-	f->prepare = prepare;
-	f->extract = extract;
-	f->inject = inject;
-	f->outa = outa;
-	f->ina = ina;
-	f->outb = outb;
-	f->inb = inb;
-	f->synonym = 0;
-	f->next = fields;
-	fields = f;
+    if (const void *x = field_find(synonyms, name)) {
+	const FieldSynonym *s = reinterpret_cast<const FieldSynonym *>(x);
+	return find(s->synonym);
     }
+    if (const void *x = field_find(writers, name))
+	return reinterpret_cast<const FieldWriter *>(x);
+    if (String new_name = update_name(name))
+	return find(new_name);
     return 0;
-}
-
-void static_cleanup()
-{
-    while (Field* f = fields) {
-	fields = f->next;
-	delete f;
-    }
-}
-
-int register_synonym(const char* name, const char* synonym)
-{
-    Field* synf = const_cast<Field*>(find_field(synonym));
-    if (!synf)
-	return -1;
-    
-    Field* f = const_cast<Field*>(find_field(name, false));
-    if (f)
-	return f->synonym == synf;
-    else {
-	if (!(f = new Field))
-	    return -1;
-	f->name = name;
-	f->synonym = synf;
-	f->next = fields;
-	fields = f;
-	return 0;
-    }
 }
 
 static const char *field_missing_proto_name(int proto)
@@ -339,9 +222,9 @@ bool hard_field_missing(const PacketDesc &d, int proto, int l)
 #endif
 #define PUT1(p, d)	((p)[0] = (d))
 
-void num_outa(const PacketDesc& d, int thunk)
+void num_outa(const PacketDesc& d, const FieldWriter *f)
 {
-    if ((thunk & B_TYPEMASK) == B_8) {
+    if (f->type == B_8) {
 #if HAVE_INT64_TYPES
 	uint64_t v = ((uint64_t) d.u32[1] << 32) | d.u32[0];
 	*d.sa << v;
@@ -353,10 +236,10 @@ void num_outa(const PacketDesc& d, int thunk)
 	*d.sa << d.v;
 }
 
-bool num_ina(PacketOdesc& d, const String &s, int thunk)
+bool num_ina(PacketOdesc& d, const String &s, const FieldReader *f)
 {
 #if HAVE_INT64_TYPES
-    if ((thunk & B_TYPEMASK) == B_8) {
+    if (f->type == B_8) {
 	uint64_t v;
 	if (!cp_integer(s, &v))
 	    return false;
@@ -369,15 +252,14 @@ bool num_ina(PacketOdesc& d, const String &s, int thunk)
 #endif
     if (!cp_integer(s, &d.v))
 	return false;
-    if (((thunk & B_TYPEMASK) == B_1 && d.v > 255)
-	|| ((thunk & B_TYPEMASK) == B_2 && d.v > 65535))
+    if ((f->type == B_1 && d.v > 255) || (f->type == B_2 && d.v > 65535))
 	return false;
     return true;
 }
 
-void outb(const PacketDesc& d, bool, int thunk)
+void outb(const PacketDesc& d, bool, const FieldWriter *f)
 {
-    switch (thunk & B_TYPEMASK) {
+    switch (f->type) {
       case B_0:
 	break;
       case B_1: {
@@ -414,10 +296,10 @@ void outb(const PacketDesc& d, bool, int thunk)
     }
 }
 
-const uint8_t *inb(PacketOdesc& d, const uint8_t *s, const uint8_t *end, int thunk)
+const uint8_t *inb(PacketOdesc& d, const uint8_t *s, const uint8_t *end, const FieldReader *f)
 {
     d.v = 0;
-    switch (thunk & B_TYPEMASK) {
+    switch (f->type) {
       case B_0:
 	return s;
       case B_1:
@@ -456,6 +338,143 @@ const uint8_t *inb(PacketOdesc& d, const uint8_t *s, const uint8_t *end, int thu
 	d.clear_values();
 	return end;
     }
+}
+
+
+
+void ip_prepare(PacketDesc& d, const FieldWriter *)
+{
+    Packet* p = d.p;
+    d.iph = p->ip_header();
+    d.tcph = p->tcp_header();
+    d.udph = p->udp_header();
+    d.icmph = p->icmp_header();
+    
+#define BAD(msg, hdr) do { if (d.bad_sa && !*d.bad_sa) *d.bad_sa << "!bad " << msg << '\n'; hdr = 0; } while (0)
+#define BAD2(msg, val, hdr) do { if (d.bad_sa && !*d.bad_sa) *d.bad_sa << "!bad " << msg << val << '\n'; hdr = 0; } while (0)
+    // check IP header
+    if (!d.iph)
+	/* nada */;
+    else if (p->network_length() < (int) offsetof(click_ip, ip_id))
+	BAD("truncated IP header", d.iph);
+    else if (d.iph->ip_v != 4)
+	BAD2("IP version ", d.iph->ip_v, d.iph);
+    else if (d.iph->ip_hl < (sizeof(click_ip) >> 2))
+	BAD2("IP header length ", d.iph->ip_hl, d.iph);
+    else if (ntohs(d.iph->ip_len) < (d.iph->ip_hl << 2))
+	BAD2("IP length ", ntohs(d.iph->ip_len), d.iph);
+    else {
+	// truncate packet length to IP length if necessary
+	int ip_len = ntohs(d.iph->ip_len);
+	if (p->network_length() > ip_len) {
+	    SET_EXTRA_LENGTH_ANNO(p, EXTRA_LENGTH_ANNO(p) + p->network_length() - ip_len);
+	    p->take(p->network_length() - ip_len);
+	} else if (d.careful_trunc && p->network_length() + EXTRA_LENGTH_ANNO(p) < (uint32_t) ip_len) {
+	    /* This doesn't actually kill the IP header. */ 
+	    int scratch;
+	    BAD2("truncated IP missing ", (ntohs(d.iph->ip_len) - p->network_length() - EXTRA_LENGTH_ANNO(p)), scratch);
+	}
+    }
+
+    // check TCP header
+    if (!d.iph || !d.tcph
+	|| p->network_length() <= (int)(d.iph->ip_hl << 2)
+	|| d.iph->ip_p != IP_PROTO_TCP
+	|| !IP_FIRSTFRAG(d.iph))
+	d.tcph = 0;
+    else if (p->transport_length() > 12
+	     && d.tcph->th_off < (sizeof(click_tcp) >> 2))
+	BAD2("TCP header length ", d.tcph->th_off, d.tcph);
+
+    // check UDP header
+    if (!d.iph || !d.udph
+	|| p->network_length() <= (int)(d.iph->ip_hl << 2)
+	|| d.iph->ip_p != IP_PROTO_UDP
+	|| !IP_FIRSTFRAG(d.iph))
+	d.udph = 0;
+
+    // check ICMP header
+    if (!d.iph || !d.icmph
+	|| p->network_length() <= (int)(d.iph->ip_hl << 2)
+	|| d.iph->ip_p != IP_PROTO_ICMP
+	|| !IP_FIRSTFRAG(d.iph))
+	d.icmph = 0;
+#undef BAD
+#undef BAD2
+
+    // Adjust extra length, since we calculate lengths here based on ip_len.
+    if (d.iph && EXTRA_LENGTH_ANNO(p) > 0) {
+	int32_t full_len = p->length() + EXTRA_LENGTH_ANNO(p);
+	if (ntohs(d.iph->ip_len) + 8 >= full_len - p->network_header_offset())
+	    SET_EXTRA_LENGTH_ANNO(p, 0);
+	else {
+	    full_len = full_len - ntohs(d.iph->ip_len);
+	    SET_EXTRA_LENGTH_ANNO(p, full_len);
+	}
+    }
+}
+
+
+bool PacketOdesc::hard_make_ip()
+{
+    if (!is_ip)
+	return false;
+    if (!p->network_header())
+	p->set_network_header(p->data(), 0);
+    if (p->network_length() < (int) sizeof(click_ip)) {
+	if (!(p = p->put(sizeof(click_ip) - p->network_length())))
+	    return false;
+	p->set_network_header(p->network_header(), sizeof(click_ip));
+	click_ip *iph = p->ip_header();
+	iph->ip_v = 4;
+	iph->ip_hl = sizeof(click_ip) >> 2;
+	iph->ip_p = default_ip_p;
+	iph->ip_off = 0;
+	if (default_ip_flowid) {
+	    iph->ip_src.s_addr = default_ip_flowid->saddr().addr();
+	    iph->ip_dst.s_addr = default_ip_flowid->daddr().addr();
+	}
+    }
+    return true;
+}
+
+bool PacketOdesc::hard_make_transp()
+{
+    click_ip *iph = p->ip_header();
+    if (IP_FIRSTFRAG(iph)) {
+	int len;
+	switch (iph->ip_p) {
+	case IP_PROTO_TCP:
+	    len = sizeof(click_tcp);
+	    break;
+	case IP_PROTO_UDP:
+	case IP_PROTO_UDPLITE:
+	    len = sizeof(click_udp);
+	    break;
+	case IP_PROTO_DCCP:
+	    len = 12;
+	    break;
+	case 0:
+	    len = 8;
+	    break;
+	default:
+	    return true;
+	}
+
+	if (p->transport_length() < len) {
+	    if (!(p = p->put(len - p->transport_length())))
+		return false;
+	    if (p->ip_header()->ip_p == IP_PROTO_TCP)
+		p->tcp_header()->th_off = sizeof(click_tcp) >> 2;
+	    if (default_ip_flowid) {
+		click_udp *udph = p->udp_header();
+		udph->uh_sport = default_ip_flowid->sport();
+		udph->uh_dport = default_ip_flowid->dport();
+	    }
+	}
+    }
+
+    return true;
 }
 
 

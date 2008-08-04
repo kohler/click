@@ -20,7 +20,7 @@
 
 #include <click/config.h>
 
-#include "ipsumdumpinfo.hh"
+#include "ipsumdump_icmp.hh"
 #include <click/packet.hh>
 #include <click/nameinfo.hh>
 #include <clicknet/ip.h>
@@ -39,10 +39,10 @@ enum {
 			   | (1U << ICMP_TSTAMP) | (1U << ICMP_TSTAMPREPLY))
 };
 
-static bool icmp_extract(PacketDesc& d, int thunk)
+static bool icmp_extract(PacketDesc& d, const FieldWriter *f)
 {
     int transport_length = d.p->transport_length();
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
 	
 #define CHECK(l) do { if (!d.icmph || transport_length < (l)) return field_missing(d, IP_PROTO_ICMP, (l)); } while (0)
 
@@ -92,7 +92,7 @@ static bool icmp_extract(PacketDesc& d, int thunk)
     }
 }
 
-static void icmp_inject(PacketOdesc& d, int thunk)
+static void icmp_inject(PacketOdesc& d, const FieldReader *f)
 {
     if (!d.make_ip(IP_PROTO_ICMP) || !d.make_transp())
 	return;
@@ -101,7 +101,7 @@ static void icmp_inject(PacketOdesc& d, int thunk)
 	return;
 
     click_icmp *icmph = d.p->icmp_header();
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_ICMP_TYPE:
     case T_ICMP_TYPE_NAME: {
 	icmph->icmp_type = d.v;
@@ -155,9 +155,9 @@ static void icmp_inject(PacketOdesc& d, int thunk)
     }
 }
 
-static void icmp_outa(const PacketDesc &d, int thunk)
+static void icmp_outa(const PacketDesc &d, const FieldWriter *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
       case T_ICMP_TYPE_NAME:
 	if (String s = NameInfo::revquery_int(NameInfo::T_ICMP_TYPE, d.e, d.v))
 	    *d.sa << s;
@@ -173,9 +173,9 @@ static void icmp_outa(const PacketDesc &d, int thunk)
     }
 }
 
-static bool icmp_ina(PacketOdesc &d, const String &str, int thunk)
+static bool icmp_ina(PacketOdesc &d, const String &str, const FieldReader *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_ICMP_TYPE:
     case T_ICMP_TYPE_NAME:
 	if (NameInfo::query_int(NameInfo::T_ICMP_TYPE, d.e, str, &d.v)
@@ -197,24 +197,58 @@ static bool icmp_ina(PacketOdesc &d, const String &str, int thunk)
     return false;
 }
 
-void icmp_register_unparsers()
-{
-    register_field("icmp_type", T_ICMP_TYPE | B_1, ip_prepare, order_transp,
-		   icmp_extract, icmp_inject, num_outa, icmp_ina, outb, inb);
-    register_field("icmp_code", T_ICMP_CODE | B_1, ip_prepare, order_transp + 1,
-		   icmp_extract, icmp_inject, num_outa, icmp_ina, outb, inb);
-    register_field("icmp_type_name", T_ICMP_TYPE_NAME | B_1, ip_prepare, order_transp,
-		   icmp_extract, icmp_inject, icmp_outa, icmp_ina, outb, inb);
-    register_field("icmp_code_name", T_ICMP_CODE_NAME | B_1, ip_prepare, order_transp + 1,
-		   icmp_extract, icmp_inject, icmp_outa, icmp_ina, outb, inb);
-    register_field("icmp_flowid", T_ICMP_FLOWID | B_2, ip_prepare, order_transp + 2,
-		   icmp_extract, icmp_inject, num_outa, num_ina, outb, inb);
-    register_field("icmp_seq", T_ICMP_SEQ | B_2, ip_prepare, order_transp + 2,
-		   icmp_extract, icmp_inject, num_outa, num_ina, outb, inb);
-    register_field("icmp_nextmtu", T_ICMP_NEXTMTU | B_2, ip_prepare, order_transp + 2,
-		   icmp_extract, icmp_inject, num_outa, num_ina, outb, inb);
+static const FieldWriter icmp_writers[] = {
+    { "icmp_type", B_1, T_ICMP_TYPE,
+      ip_prepare, icmp_extract, num_outa, outb },
+    { "icmp_code", B_1, T_ICMP_CODE,
+      ip_prepare, icmp_extract, num_outa, outb },
+    { "icmp_type_name", B_1, T_ICMP_TYPE_NAME,
+      ip_prepare, icmp_extract, icmp_outa, outb },
+    { "icmp_code_name", B_1, T_ICMP_CODE_NAME,
+      ip_prepare, icmp_extract, icmp_outa, outb },
+    { "icmp_flowid", B_2, T_ICMP_FLOWID,
+      ip_prepare, icmp_extract, num_outa, outb },
+    { "icmp_seq", B_2, T_ICMP_SEQ,
+      ip_prepare, icmp_extract, num_outa, outb },
+    { "icmp_nextmtu", B_2, T_ICMP_NEXTMTU,
+      ip_prepare, icmp_extract, num_outa, outb }
+};
+
+static const FieldReader icmp_readers[] = {
+    { "icmp_type", B_1, T_ICMP_TYPE, order_transp,
+      icmp_ina, inb, icmp_inject },
+    { "icmp_code", B_1, T_ICMP_CODE, order_transp + 1,
+      icmp_ina, inb, icmp_inject },
+    { "icmp_type_name", B_1, T_ICMP_TYPE_NAME, order_transp,
+      icmp_ina, inb, icmp_inject },
+    { "icmp_code_name", B_1, T_ICMP_CODE_NAME, order_transp + 1,
+      icmp_ina, inb, icmp_inject },
+    { "icmp_flowid", B_2, T_ICMP_FLOWID, order_transp + 2,
+      num_ina, inb, icmp_inject },
+    { "icmp_seq", B_2, T_ICMP_SEQ, order_transp + 2,
+      num_ina, inb, icmp_inject },
+    { "icmp_nextmtu", B_2, T_ICMP_NEXTMTU, order_transp + 2,
+      num_ina, inb, icmp_inject }
+};
+
 }
 
+void IPSummaryDump_ICMP::static_initialize()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(icmp_writers) / sizeof(icmp_writers[0]); ++i)
+	FieldWriter::add(&icmp_writers[i]);
+    for (size_t i = 0; i < sizeof(icmp_readers) / sizeof(icmp_readers[0]); ++i)
+	FieldReader::add(&icmp_readers[i]);
+}
+
+void IPSummaryDump_ICMP::static_cleanup()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(icmp_writers) / sizeof(icmp_writers[0]); ++i)
+	FieldWriter::remove(&icmp_writers[i]);
+    for (size_t i = 0; i < sizeof(icmp_readers) / sizeof(icmp_readers[0]); ++i)
+	FieldReader::remove(&icmp_readers[i]);
 }
 
 ELEMENT_REQUIRES(userlevel IPSummaryDump)

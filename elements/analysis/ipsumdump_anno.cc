@@ -1,6 +1,6 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
- * ipsumdump_general.{cc,hh} -- general IP summary dump unparsers
+ * ipsumdump_anno.{cc,hh} -- IP summary dump (un)parsers for annotations
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 
-#include "ipsumdumpinfo.hh"
+#include "ipsumdump_anno.hh"
 #include <click/packet.hh>
 #include <click/confparse.hh>
 #include <click/packet_anno.hh>
@@ -30,10 +30,10 @@ enum { T_TIMESTAMP, T_TIMESTAMP_SEC, T_TIMESTAMP_USEC, T_TIMESTAMP_USEC1,
 
 namespace IPSummaryDump {
 
-static bool anno_extract(PacketDesc& d, int thunk)
+static bool anno_extract(PacketDesc& d, const FieldWriter *f)
 {
     Packet *p = d.p;
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
       case T_TIMESTAMP:
 	d.u32[0] = p->timestamp_anno().sec();
 	d.u32[1] = p->timestamp_anno().nsec();
@@ -76,10 +76,10 @@ static bool anno_extract(PacketDesc& d, int thunk)
     }
 }
 
-static void anno_inject(PacketOdesc& d, int thunk)
+static void anno_inject(PacketOdesc& d, const FieldReader *f)
 {
     WritablePacket *p = d.p;
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_TIMESTAMP:
 	p->set_timestamp_anno(Timestamp::make_nsec(d.u32[0], d.u32[1]));
 	break;
@@ -116,9 +116,9 @@ static void anno_inject(PacketOdesc& d, int thunk)
     }
 }
 
-static void anno_outa(const PacketDesc& d, int thunk)
+static void anno_outa(const PacketDesc& d, const FieldWriter *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
       case T_TIMESTAMP:
       case T_FIRST_TIMESTAMP:
 	*d.sa << Timestamp::make_nsec(d.u32[0], d.u32[1]);
@@ -134,9 +134,9 @@ static void anno_outa(const PacketDesc& d, int thunk)
     }
 }
 
-static bool anno_ina(PacketOdesc& d, const String &s, int thunk)
+static bool anno_ina(PacketOdesc& d, const String &s, const FieldReader *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_TIMESTAMP:
     case T_FIRST_TIMESTAMP: {
 	Timestamp ts;
@@ -169,14 +169,14 @@ static bool anno_ina(PacketOdesc& d, const String &s, int thunk)
 # define GET4(p)	((p)[0]<<24 | (p)[1]<<16 | (p)[2]<<8 | (p)[3])
 #endif
 
-static void utimestamp_outb(const PacketDesc& d, bool, int)
+static void utimestamp_outb(const PacketDesc& d, bool, const FieldWriter *)
 {
     char* c = d.sa->extend(8);
     PUT4(c, d.u32[0]);
     PUT4(c + 4, d.u32[1] / 1000);
 }
 
-static const uint8_t *utimestamp_inb(PacketOdesc& d, const uint8_t* s, const uint8_t *ends, int)
+static const uint8_t *utimestamp_inb(PacketOdesc& d, const uint8_t* s, const uint8_t *ends, const FieldReader *)
 {
     if (s + 7 <= ends)
 	return ends;
@@ -185,43 +185,91 @@ static const uint8_t *utimestamp_inb(PacketOdesc& d, const uint8_t* s, const uin
     return s + 8;
 }
 
-void anno_register_unparsers()
-{
-    register_field("timestamp", T_TIMESTAMP | B_8, 0, order_anno,
-		   anno_extract, anno_inject, anno_outa, anno_ina, utimestamp_outb, utimestamp_inb);
-    register_field("ntimestamp", T_TIMESTAMP | B_8, 0, order_anno,
-		   anno_extract, anno_inject, anno_outa, anno_ina, outb, inb);
-    register_field("ts_sec", T_TIMESTAMP_SEC | B_4, 0, order_anno,
-		   anno_extract, anno_inject, num_outa, num_ina, outb, inb);
-    register_field("ts_usec", T_TIMESTAMP_USEC | B_4, 0, order_anno,
-		   anno_extract, anno_inject, num_outa, num_ina, outb, inb);
-    register_field("ts_usec1", T_TIMESTAMP_USEC1 | B_8, 0, order_anno,
-		   anno_extract, anno_inject, num_outa, num_ina, outb, inb);
-    register_field("first_timestamp", T_FIRST_TIMESTAMP | B_8, 0, order_anno,
-		   anno_extract, anno_inject, anno_outa, anno_ina, utimestamp_outb, utimestamp_inb);
-    register_field("first_ntimestamp", T_FIRST_TIMESTAMP | B_8, 0, order_anno,
-		   anno_extract, anno_inject, anno_outa, anno_ina, outb, inb);
-    register_field("count", T_COUNT | B_4, 0, order_anno,
-		   anno_extract, anno_inject, num_outa, num_ina, outb, inb);
-    register_field("link", T_LINK | B_1, 0, order_anno,
-		   anno_extract, anno_inject, num_outa, anno_ina, outb, inb);
-    register_field("direction", T_DIRECTION | B_1, 0, order_anno,
-		   anno_extract, anno_inject, anno_outa, anno_ina, outb, inb);
-    register_field("aggregate", T_AGGREGATE | B_4, 0, order_anno,
-		   anno_extract, anno_inject, num_outa, num_ina, outb, inb);
-    
-    register_synonym("utimestamp", "timestamp");
-    register_synonym("ts", "utimestamp");
-    register_synonym("sec", "ts_sec");
-    register_synonym("usec", "ts_usec");
-    register_synonym("usec1", "ts_usec1");
-    register_synonym("first_utimestamp", "first_timestamp");
-    register_synonym("first_ts", "first_utimestamp");
-    register_synonym("pkt_count", "count");
-    register_synonym("packet_count", "count");
-    register_synonym("agg", "aggregate");
+static const IPSummaryDump::FieldWriter anno_writers[] = {
+    { "timestamp", B_8, T_TIMESTAMP,
+      0, anno_extract, anno_outa, utimestamp_outb },
+    { "ntimestamp", B_8, T_TIMESTAMP,
+      0, anno_extract, anno_outa, outb },
+    { "ts_sec", B_4, T_TIMESTAMP_SEC,
+      0, anno_extract, num_outa, outb },
+    { "ts_usec", B_4, T_TIMESTAMP_USEC,
+      0, anno_extract, num_outa, outb },
+    { "ts_usec1", B_8, T_TIMESTAMP_USEC1,
+      0, anno_extract, num_outa, outb },
+    { "first_timestamp", B_8, T_FIRST_TIMESTAMP,
+      0, anno_extract, anno_outa, utimestamp_outb },
+    { "first_ntimestamp", B_8, T_FIRST_TIMESTAMP,
+      0, anno_extract, anno_outa, outb },
+    { "count", B_4, T_COUNT,
+      0, anno_extract, num_outa, outb },
+    { "link", B_1, T_LINK,
+      0, anno_extract, num_outa, outb },
+    { "direction", B_1, T_DIRECTION,
+      0, anno_extract, num_outa, outb },
+    { "aggregate", B_4, T_AGGREGATE,
+      0, anno_extract, num_outa, outb }
+};
+
+static const IPSummaryDump::FieldReader anno_readers[] = {
+    { "timestamp", B_8, T_TIMESTAMP, order_anno,
+      anno_ina, utimestamp_inb, anno_inject },
+    { "ntimestamp", B_8, T_TIMESTAMP, order_anno,
+      anno_ina, inb, anno_inject },
+    { "ts_sec", B_4, T_TIMESTAMP_SEC, order_anno,
+      num_ina, inb, anno_inject },
+    { "ts_usec", B_4, T_TIMESTAMP_USEC, order_anno,
+      num_ina, inb, anno_inject },
+    { "ts_usec1", B_8, T_TIMESTAMP_USEC1, order_anno,
+      num_ina, inb, anno_inject },
+    { "first_timestamp", B_8, T_FIRST_TIMESTAMP, order_anno,
+      anno_ina, utimestamp_inb, anno_inject },
+    { "first_ntimestamp", B_8, T_FIRST_TIMESTAMP, order_anno,
+      anno_ina, inb, anno_inject },
+    { "count", B_4, T_COUNT, order_anno,
+      num_ina, inb, anno_inject },
+    { "link", B_1, T_LINK, order_anno,
+      anno_ina, inb, anno_inject },
+    { "direction", B_1, T_DIRECTION, order_anno,
+      anno_ina, inb, anno_inject },
+    { "aggregate", B_4, T_AGGREGATE, order_anno,
+      num_ina, inb, anno_inject }
+};
+
+static const IPSummaryDump::FieldSynonym anno_synonyms[] = {
+    { "utimestamp", "timestamp" },
+    { "ts", "utimestamp" },
+    { "sec", "ts_sec" },
+    { "usec", "ts_usec" },
+    { "usec1", "ts_usec1" },
+    { "first_utimestamp", "first_timestamp" },
+    { "first_ts", "first_utimestamp" },
+    { "pkt_count", "count" },
+    { "packet_count", "count" },
+    { "agg", "aggregate" }
+};
+
 }
 
+void IPSummaryDump_Anno::static_initialize()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(anno_writers) / sizeof(anno_writers[0]); ++i)
+	FieldWriter::add(&anno_writers[i]);
+    for (size_t i = 0; i < sizeof(anno_readers) / sizeof(anno_readers[0]); ++i)
+	FieldReader::add(&anno_readers[i]);
+    for (size_t i = 0; i < sizeof(anno_synonyms) / sizeof(anno_synonyms[0]); ++i)
+	FieldSynonym::add(&anno_synonyms[i]);
+}
+
+void IPSummaryDump_Anno::static_cleanup()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(anno_writers) / sizeof(anno_writers[0]); ++i)
+	FieldWriter::remove(&anno_writers[i]);
+    for (size_t i = 0; i < sizeof(anno_readers) / sizeof(anno_readers[0]); ++i)
+	FieldReader::remove(&anno_readers[i]);
+    for (size_t i = 0; i < sizeof(anno_synonyms) / sizeof(anno_synonyms[0]); ++i)
+	FieldSynonym::remove(&anno_synonyms[i]);
 }
 
 ELEMENT_REQUIRES(userlevel IPSummaryDump)

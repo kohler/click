@@ -164,7 +164,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
     FromFile _ff;
 
-    Vector<const IPSummaryDump::Field*> _fields;
+    Vector<const IPSummaryDump::FieldReader *> _fields;
     Vector<int> _field_order;
     uint16_t _default_proto;
     uint32_t _sampling_prob;

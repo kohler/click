@@ -20,7 +20,7 @@
 
 #include <click/config.h>
 
-#include "ipsumdumpinfo.hh"
+#include "ipsumdump_tcp.hh"
 #include <click/packet.hh>
 #include <click/nameinfo.hh>
 #include <clicknet/ip.h>
@@ -35,10 +35,10 @@ namespace IPSummaryDump {
 enum { T_TCP_SEQ, T_TCP_ACK, T_TCP_FLAGS, T_TCP_WINDOW, T_TCP_URP, T_TCP_OPT,
        T_TCP_NTOPT, T_TCP_SACK, T_TCP_OFF };
 
-static bool tcp_extract(PacketDesc& d, int thunk)
+static bool tcp_extract(PacketDesc& d, const FieldWriter *f)
 {
     int transport_length = d.p->transport_length();
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
 	
 #define CHECK(l) do { if (!d.tcph || transport_length < (l)) return field_missing(d, IP_PROTO_TCP, (l)); } while (0)
 	
@@ -103,7 +103,7 @@ static bool tcp_extract(PacketDesc& d, int thunk)
     }
 }
 
-static void tcp_inject(PacketOdesc& d, int thunk)
+static void tcp_inject(PacketOdesc& d, const FieldReader *f)
 {
     if (!d.make_ip(IP_PROTO_TCP) || !d.make_transp())
 	return;
@@ -115,7 +115,7 @@ static void tcp_inject(PacketOdesc& d, int thunk)
     }
 
     click_tcp *tcph = d.p->tcp_header();
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_TCP_SEQ:
 	tcph->th_seq = htonl(d.v);
 	break;
@@ -165,9 +165,9 @@ static void tcp_inject(PacketOdesc& d, int thunk)
     }
 }
 
-static void tcp_outa(const PacketDesc& d, int thunk)
+static void tcp_outa(const PacketDesc& d, const FieldWriter *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
       case T_TCP_FLAGS:
 	if (d.v == (TH_ACK | TH_PUSH))
 	    *d.sa << 'P' << 'A';
@@ -201,9 +201,9 @@ static void tcp_outa(const PacketDesc& d, int thunk)
     }
 }
 
-static bool tcp_ina(PacketOdesc& d, const String &str, int thunk)
+static bool tcp_ina(PacketOdesc& d, const String &str, const FieldReader *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_TCP_FLAGS:
 	if (str.equals(".", 1))
 	    d.v = 0;
@@ -225,9 +225,9 @@ static bool tcp_ina(PacketOdesc& d, const String &str, int thunk)
     }
 }
 
-static void tcp_outb(const PacketDesc& d, bool ok, int thunk)
+static void tcp_outb(const PacketDesc& d, bool ok, const FieldWriter *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
       case T_TCP_OPT:
 	if (!ok || !d.vptr)
 	    *d.sa << '\0';
@@ -249,9 +249,9 @@ static void tcp_outb(const PacketDesc& d, bool ok, int thunk)
     }
 }    
 
-static const uint8_t* tcp_inb(PacketOdesc& d, const uint8_t* s, const uint8_t* ends, int thunk)
+static const uint8_t* tcp_inb(PacketOdesc& d, const uint8_t* s, const uint8_t* ends, const FieldReader *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
       case T_TCP_OPT:
       case T_TCP_NTOPT:
       case T_TCP_SACK:
@@ -430,7 +430,7 @@ static void append_net_uint32_t(StringAccum &sa, uint32_t u)
     sa << (char)(u >> 24) << (char)(u >> 16) << (char)(u >> 8) << (char)u;
 }
 
-static bool tcp_opt_ina(PacketOdesc &d, const String &str, int thunk)
+static bool tcp_opt_ina(PacketOdesc &d, const String &str, const FieldReader *f)
 {
     if (!str || str.equals(".", 1))
 	return true;
@@ -439,9 +439,9 @@ static bool tcp_opt_ina(PacketOdesc &d, const String &str, int thunk)
     const uint8_t *s = reinterpret_cast<const uint8_t *>(str.begin());
     const uint8_t *end = reinterpret_cast<const uint8_t *>(str.end());
     int contents = DO_TCPOPT_ALL;
-    if ((thunk & ~B_TYPEMASK) == T_TCP_SACK)
+    if (f->user_data == T_TCP_SACK)
 	contents = DO_TCPOPT_SACK;
-    else if ((thunk & ~B_TYPEMASK) == T_TCP_NTOPT)
+    else if (f->user_data == T_TCP_NTOPT)
 	contents = DO_TCPOPT_NTALL;
     d.sa.clear();
 
@@ -557,34 +557,76 @@ static bool tcp_opt_ina(PacketOdesc &d, const String &str, int thunk)
     return false;
 }
 
+static const FieldWriter tcp_writers[] = {
+    { "tcp_seq", B_4, T_TCP_SEQ,
+      ip_prepare, tcp_extract, num_outa, outb },
+    { "tcp_ack", B_4, T_TCP_ACK,
+      ip_prepare, tcp_extract, num_outa, outb },
+    { "tcp_off", B_1, T_TCP_OFF,
+      ip_prepare, tcp_extract, num_outa, outb },
+    { "tcp_flags", B_1, T_TCP_FLAGS,
+      ip_prepare, tcp_extract, tcp_outa, outb },
+    { "tcp_window", B_2, T_TCP_WINDOW,
+      ip_prepare, tcp_extract, num_outa, outb },
+    { "tcp_urp", B_2, T_TCP_URP,
+      ip_prepare, tcp_extract, num_outa, outb },
+    { "tcp_opt", B_SPECIAL, T_TCP_OPT,
+      ip_prepare, tcp_extract, tcp_outa, tcp_outb },
+    { "tcp_ntopt", B_SPECIAL, T_TCP_NTOPT,
+      ip_prepare, tcp_extract, tcp_outa, tcp_outb },
+    { "tcp_sack", B_SPECIAL, T_TCP_SACK,
+      ip_prepare, tcp_extract, tcp_outa, tcp_outb }
+};
 
+static const FieldReader tcp_readers[] = {
+    { "tcp_seq", B_4, T_TCP_SEQ, order_transp,
+      num_ina, inb, tcp_inject },
+    { "tcp_ack", B_4, T_TCP_ACK, order_transp,
+      num_ina, inb, tcp_inject },
+    { "tcp_off", B_1, T_TCP_OFF, order_transp - 1,
+      num_ina, inb, tcp_inject },
+    { "tcp_flags", B_1, T_TCP_FLAGS, order_transp,
+      tcp_ina, inb, tcp_inject },
+    { "tcp_window", B_2, T_TCP_WINDOW, order_transp,
+      num_ina, inb, tcp_inject },
+    { "tcp_urp", B_2, T_TCP_URP, order_transp,
+      num_ina, inb, tcp_inject },
+    { "tcp_opt", B_SPECIAL, T_TCP_OPT, order_transp + 3,
+      tcp_opt_ina, tcp_inb, tcp_inject },
+    { "tcp_ntopt", B_SPECIAL, T_TCP_NTOPT, order_transp + 2,
+      tcp_opt_ina, tcp_inb, tcp_inject },
+    { "tcp_sack", B_SPECIAL, T_TCP_SACK, order_transp + 1,
+      tcp_opt_ina, tcp_inb, tcp_inject }
+};
 
-void tcp_register_unparsers()
-{
-    register_field("tcp_seq", T_TCP_SEQ | B_4, ip_prepare, order_transp,
-		   tcp_extract, tcp_inject, num_outa, num_ina, outb, inb);
-    register_field("tcp_ack", T_TCP_ACK | B_4, ip_prepare, order_transp,
-		   tcp_extract, tcp_inject, num_outa, num_ina, outb, inb);
-    register_field("tcp_off", T_TCP_OFF | B_1, ip_prepare, order_transp - 1,
-		   tcp_extract, tcp_inject, num_outa, num_ina, outb, inb);
-    register_field("tcp_flags", T_TCP_FLAGS | B_1, ip_prepare, order_transp,
-		   tcp_extract, tcp_inject, tcp_outa, tcp_ina, outb, inb);
-    register_field("tcp_window", T_TCP_WINDOW | B_2, ip_prepare, order_transp,
-		   tcp_extract, tcp_inject, num_outa, num_ina, outb, inb);
-    register_field("tcp_urp", T_TCP_URP | B_2, ip_prepare, order_transp,
-		   tcp_extract, tcp_inject, num_outa, num_ina, outb, inb);
-    register_field("tcp_opt", T_TCP_OPT | B_SPECIAL, ip_prepare, order_transp + 3,
-		   tcp_extract, tcp_inject, tcp_outa, tcp_opt_ina, tcp_outb, tcp_inb);
-    register_field("tcp_ntopt", T_TCP_NTOPT | B_SPECIAL, ip_prepare, order_transp + 2,
-		   tcp_extract, tcp_inject, tcp_outa, tcp_opt_ina, tcp_outb, tcp_inb);
-    register_field("tcp_sack", T_TCP_SACK | B_SPECIAL, ip_prepare, order_transp + 1,
-		   tcp_extract, tcp_inject, tcp_outa, tcp_opt_ina, tcp_outb, tcp_inb);
+static const FieldSynonym tcp_synonyms[] = {
+    { "tcp_seqno", "tcp_seq" },
+    { "tcp_ackno", "tcp_ack" },
+    { "tcp_win", "tcp_window" }
+};
 
-    register_synonym("tcp_seqno", "tcp_seq");
-    register_synonym("tcp_ackno", "tcp_ack");
-    register_synonym("tcp_win", "tcp_window");
 }
 
+void IPSummaryDump_TCP::static_initialize()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(tcp_writers) / sizeof(tcp_writers[0]); ++i)
+	FieldWriter::add(&tcp_writers[i]);
+    for (size_t i = 0; i < sizeof(tcp_readers) / sizeof(tcp_readers[0]); ++i)
+	FieldReader::add(&tcp_readers[i]);
+    for (size_t i = 0; i < sizeof(tcp_synonyms) / sizeof(tcp_synonyms[0]); ++i)
+	FieldSynonym::add(&tcp_synonyms[i]);
+}
+
+void IPSummaryDump_TCP::static_cleanup()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(tcp_writers) / sizeof(tcp_writers[0]); ++i)
+	FieldWriter::remove(&tcp_writers[i]);
+    for (size_t i = 0; i < sizeof(tcp_readers) / sizeof(tcp_readers[0]); ++i)
+	FieldReader::remove(&tcp_readers[i]);
+    for (size_t i = 0; i < sizeof(tcp_synonyms) / sizeof(tcp_synonyms[0]); ++i)
+	FieldSynonym::remove(&tcp_synonyms[i]);
 }
 
 ELEMENT_REQUIRES(userlevel IPSummaryDump)

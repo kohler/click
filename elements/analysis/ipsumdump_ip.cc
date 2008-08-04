@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 
-#include "ipsumdumpinfo.hh"
+#include "ipsumdump_ip.hh"
 #include <click/packet.hh>
 #include <click/packet_anno.hh>
 #include <click/md5.h>
@@ -36,82 +36,10 @@ enum { T_IP_SRC, T_IP_DST, T_IP_TOS, T_IP_TTL, T_IP_FRAG, T_IP_FRAGOFF,
 
 namespace IPSummaryDump {
 
-void ip_prepare(PacketDesc& d)
-{
-    Packet* p = d.p;
-    d.iph = p->ip_header();
-    d.tcph = p->tcp_header();
-    d.udph = p->udp_header();
-    d.icmph = p->icmp_header();
-    
-#define BAD(msg, hdr) do { if (d.bad_sa && !*d.bad_sa) *d.bad_sa << "!bad " << msg << '\n'; hdr = 0; } while (0)
-#define BAD2(msg, val, hdr) do { if (d.bad_sa && !*d.bad_sa) *d.bad_sa << "!bad " << msg << val << '\n'; hdr = 0; } while (0)
-    // check IP header
-    if (!d.iph)
-	/* nada */;
-    else if (p->network_length() < (int) offsetof(click_ip, ip_id))
-	BAD("truncated IP header", d.iph);
-    else if (d.iph->ip_v != 4)
-	BAD2("IP version ", d.iph->ip_v, d.iph);
-    else if (d.iph->ip_hl < (sizeof(click_ip) >> 2))
-	BAD2("IP header length ", d.iph->ip_hl, d.iph);
-    else if (ntohs(d.iph->ip_len) < (d.iph->ip_hl << 2))
-	BAD2("IP length ", ntohs(d.iph->ip_len), d.iph);
-    else {
-	// truncate packet length to IP length if necessary
-	int ip_len = ntohs(d.iph->ip_len);
-	if (p->network_length() > ip_len) {
-	    SET_EXTRA_LENGTH_ANNO(p, EXTRA_LENGTH_ANNO(p) + p->network_length() - ip_len);
-	    p->take(p->network_length() - ip_len);
-	} else if (d.careful_trunc && p->network_length() + EXTRA_LENGTH_ANNO(p) < (uint32_t) ip_len) {
-	    /* This doesn't actually kill the IP header. */ 
-	    int scratch;
-	    BAD2("truncated IP missing ", (ntohs(d.iph->ip_len) - p->network_length() - EXTRA_LENGTH_ANNO(p)), scratch);
-	}
-    }
-
-    // check TCP header
-    if (!d.iph || !d.tcph
-	|| p->network_length() <= (int)(d.iph->ip_hl << 2)
-	|| d.iph->ip_p != IP_PROTO_TCP
-	|| !IP_FIRSTFRAG(d.iph))
-	d.tcph = 0;
-    else if (p->transport_length() > 12
-	     && d.tcph->th_off < (sizeof(click_tcp) >> 2))
-	BAD2("TCP header length ", d.tcph->th_off, d.tcph);
-
-    // check UDP header
-    if (!d.iph || !d.udph
-	|| p->network_length() <= (int)(d.iph->ip_hl << 2)
-	|| d.iph->ip_p != IP_PROTO_UDP
-	|| !IP_FIRSTFRAG(d.iph))
-	d.udph = 0;
-
-    // check ICMP header
-    if (!d.iph || !d.icmph
-	|| p->network_length() <= (int)(d.iph->ip_hl << 2)
-	|| d.iph->ip_p != IP_PROTO_ICMP
-	|| !IP_FIRSTFRAG(d.iph))
-	d.icmph = 0;
-#undef BAD
-#undef BAD2
-
-    // Adjust extra length, since we calculate lengths here based on ip_len.
-    if (d.iph && EXTRA_LENGTH_ANNO(p) > 0) {
-	int32_t full_len = p->length() + EXTRA_LENGTH_ANNO(p);
-	if (ntohs(d.iph->ip_len) + 8 >= full_len - p->network_header_offset())
-	    SET_EXTRA_LENGTH_ANNO(p, 0);
-	else {
-	    full_len = full_len - ntohs(d.iph->ip_len);
-	    SET_EXTRA_LENGTH_ANNO(p, full_len);
-	}
-    }
-}
-
-static bool ip_extract(PacketDesc& d, int thunk)
+static bool ip_extract(PacketDesc& d, const FieldWriter *f)
 {
     int network_length = d.p->network_length();
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
 
 	// IP header properties
 #define CHECK(l) do { if (!d.iph || network_length < (l)) return field_missing(d, MISSING_IP, (l)); } while (0)	
@@ -187,81 +115,19 @@ static bool ip_extract(PacketDesc& d, int thunk)
     }
 }
 
-bool PacketOdesc::hard_make_ip()
-{
-    if (!is_ip)
-	return false;
-    if (!p->network_header())
-	p->set_network_header(p->data(), 0);
-    if (p->network_length() < (int) sizeof(click_ip)) {
-	if (!(p = p->put(sizeof(click_ip) - p->network_length())))
-	    return false;
-	p->set_network_header(p->network_header(), sizeof(click_ip));
-	click_ip *iph = p->ip_header();
-	iph->ip_v = 4;
-	iph->ip_hl = sizeof(click_ip) >> 2;
-	iph->ip_p = default_ip_p;
-	iph->ip_off = 0;
-	if (default_ip_flowid) {
-	    iph->ip_src.s_addr = default_ip_flowid->saddr().addr();
-	    iph->ip_dst.s_addr = default_ip_flowid->daddr().addr();
-	}
-    }
-    return true;
-}
-
 static inline bool ip_proto_has_udp_ports(int ip_p)
 {
     return ip_p == IP_PROTO_TCP || ip_p == IP_PROTO_UDP
 	|| ip_p == IP_PROTO_DCCP || ip_p == IP_PROTO_UDPLITE;
 }
-
-bool PacketOdesc::hard_make_transp()
-{
-    click_ip *iph = p->ip_header();
-    if (IP_FIRSTFRAG(iph)) {
-	int len;
-	switch (iph->ip_p) {
-	case IP_PROTO_TCP:
-	    len = sizeof(click_tcp);
-	    break;
-	case IP_PROTO_UDP:
-	case IP_PROTO_UDPLITE:
-	    len = sizeof(click_udp);
-	    break;
-	case IP_PROTO_DCCP:
-	    len = 12;
-	    break;
-	case 0:
-	    len = 8;
-	    break;
-	default:
-	    return true;
-	}
-
-	if (p->transport_length() < len) {
-	    if (!(p = p->put(len - p->transport_length())))
-		return false;
-	    if (p->ip_header()->ip_p == IP_PROTO_TCP)
-		p->tcp_header()->th_off = sizeof(click_tcp) >> 2;
-	    if (default_ip_flowid) {
-		click_udp *udph = p->udp_header();
-		udph->uh_sport = default_ip_flowid->sport();
-		udph->uh_dport = default_ip_flowid->dport();
-	    }
-	}
-    }
-
-    return true;
-}
 	    
-static void ip_inject(PacketOdesc& d, int thunk)
+static void ip_inject(PacketOdesc& d, const FieldReader *f)
 {
     if (!d.make_ip(0))
 	return;
 
     click_ip *iph = d.p->ip_header();
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
 	// IP header properties
     case T_IP_SRC:
 	iph->ip_src.s_addr = d.v;
@@ -333,9 +199,9 @@ static void ip_inject(PacketOdesc& d, int thunk)
     }
 }
 
-static void ip_outa(const PacketDesc& d, int thunk)
+static void ip_outa(const PacketDesc& d, const FieldWriter *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
       case T_IP_SRC:
       case T_IP_DST:
 	*d.sa << IPAddress(d.v);
@@ -367,9 +233,9 @@ static void ip_outa(const PacketDesc& d, int thunk)
     }
 }
 
-static bool ip_ina(PacketOdesc& d, const String &s, int thunk)
+static bool ip_ina(PacketOdesc& d, const String &s, const FieldReader *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_IP_SRC:
     case T_IP_DST: {
 	IPAddress a;
@@ -434,9 +300,9 @@ static bool ip_ina(PacketOdesc& d, const String &s, int thunk)
     return false;
 }
 
-static void ip_outb(const PacketDesc& d, bool ok, int thunk)
+static void ip_outb(const PacketDesc& d, bool ok, const FieldWriter *f)
 {
-    if ((thunk & ~B_TYPEMASK) == T_IP_OPT) {
+    if (f->user_data == T_IP_OPT) {
 	if (!ok || !d.vptr)
 	    *d.sa << '\0';
 	else
@@ -444,9 +310,9 @@ static void ip_outb(const PacketDesc& d, bool ok, int thunk)
     }
 }
 
-static const uint8_t* ip_inb(PacketOdesc& d, const uint8_t *s, const uint8_t *ends, int thunk)
+static const uint8_t* ip_inb(PacketOdesc& d, const uint8_t *s, const uint8_t *ends, const FieldReader *f)
 {
-    if ((thunk & ~B_TYPEMASK) == T_IP_OPT && s + s[0] + 1 <= ends) {
+    if (f->user_data == T_IP_OPT && s + s[0] + 1 <= ends) {
 	d.vptr[0] = s + 1;
 	d.vptr[1] = d.vptr[0] + s[0];
 	return s + s[0] + 1;
@@ -455,14 +321,14 @@ static const uint8_t* ip_inb(PacketOdesc& d, const uint8_t *s, const uint8_t *en
 }
 
 
-static bool transport_extract(PacketDesc& d, int thunk)
+static bool transport_extract(PacketDesc& d, const FieldWriter *f)
 {
     Packet* p = d.p;
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
 	// TCP/UDP header properties
     case T_SPORT:
     case T_DPORT: {
-	bool dport = ((thunk & ~B_TYPEMASK) == T_DPORT);
+	bool dport = (f->user_data == T_DPORT);
 	if (d.iph
 	    && p->network_length() > (int)(d.iph->ip_hl << 2)
 	    && IP_FIRSTFRAG(d.iph)
@@ -478,7 +344,7 @@ static bool transport_extract(PacketDesc& d, int thunk)
     return false;
 }
 
-static void transport_inject(PacketOdesc& d, int thunk)
+static void transport_inject(PacketOdesc& d, const FieldReader *f)
 {
     if (!d.make_ip(0) || !d.make_transp())
 	return;
@@ -486,7 +352,7 @@ static void transport_inject(PacketOdesc& d, int thunk)
     if (iph->ip_p && !ip_proto_has_udp_ports(iph->ip_p))
 	return;
 
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
 	// TCP/UDP header properties
     case T_SPORT:
 	d.p->udp_header()->uh_sport = htons(d.v);
@@ -718,7 +584,7 @@ static void append_net_uint32_t(StringAccum &sa, uint32_t u)
     sa << (char)(u >> 24) << (char)(u >> 16) << (char)(u >> 8) << (char)u;
 }
 
-static bool ip_opt_ina(PacketOdesc &d, const String &str, int)
+static bool ip_opt_ina(PacketOdesc &d, const String &str, const FieldReader *)
 {
     if (!str || str.equals(".", 1))
 	return true;
@@ -943,46 +809,97 @@ static bool ip_opt_ina(PacketOdesc &d, const String &str, int)
     return false;
 }
 
+static const FieldWriter ip_writers[] = {
+    { "ip_src", B_4NET, T_IP_SRC,
+      ip_prepare, ip_extract, ip_outa, outb },
+    { "ip_dst", B_4NET, T_IP_DST,
+      ip_prepare, ip_extract, ip_outa, outb },
+    { "ip_tos", B_1, T_IP_TOS,
+      ip_prepare, ip_extract, num_outa, outb },
+    { "ip_ttl", B_1, T_IP_TTL,
+      ip_prepare, ip_extract, num_outa, outb },
+    { "ip_frag", B_1, T_IP_FRAG,
+      ip_prepare, ip_extract, ip_outa, outb },
+    { "ip_fragoff", B_2, T_IP_FRAGOFF,
+      ip_prepare, ip_extract, ip_outa, outb },
+    { "ip_id", B_2, T_IP_ID,
+      ip_prepare, ip_extract, num_outa, outb },
+    { "ip_sum", B_2, T_IP_SUM,
+      ip_prepare, ip_extract, num_outa, outb },
+    { "ip_proto", B_1, T_IP_PROTO,
+      ip_prepare, ip_extract, ip_outa, outb },
+    { "ip_hl", B_1, T_IP_HL,
+      ip_prepare, ip_extract, num_outa, outb },
+    { "ip_len", B_4, T_IP_LEN,
+      ip_prepare, ip_extract, num_outa, outb },
+    { "ip_capture_len", B_4, T_IP_CAPTURE_LEN,
+      ip_prepare, ip_extract, num_outa, outb },
+    { "ip_opt", B_SPECIAL, T_IP_OPT,
+      ip_prepare, ip_extract, ip_outa, ip_outb },
+    { "sport", B_2, T_SPORT,
+      ip_prepare, transport_extract, num_outa, outb },
+    { "dport", B_2, T_DPORT,
+      ip_prepare, transport_extract, num_outa, outb }
+};
 
+static const FieldReader ip_readers[] = {
+    { "ip_src", B_4NET, T_IP_SRC, order_net, 
+      ip_ina, inb, ip_inject },
+    { "ip_dst", B_4NET, T_IP_DST, order_net, 
+      ip_ina, inb, ip_inject },
+    { "ip_tos", B_1, T_IP_TOS, order_net, 
+      num_ina, inb, ip_inject },
+    { "ip_ttl", B_1, T_IP_TTL, order_net, 
+      num_ina, inb, ip_inject },
+    { "ip_frag", B_1, T_IP_FRAG, order_net - 2, 
+      ip_ina, inb, ip_inject },
+    { "ip_fragoff", B_2, T_IP_FRAGOFF, order_net - 1, 
+      ip_ina, inb, ip_inject },
+    { "ip_id", B_2, T_IP_ID, order_net, 
+      num_ina, inb, ip_inject },
+    { "ip_sum", B_2, T_IP_SUM, order_net + 2, 
+      num_ina, inb, ip_inject },
+    { "ip_proto", B_1, T_IP_PROTO, order_net, 
+      ip_ina, inb, ip_inject },
+    { "ip_hl", B_1, T_IP_HL, order_net - 1, 
+      num_ina, inb, ip_inject },
+    { "ip_len", B_4, T_IP_LEN, order_net + 1, 
+      num_ina, inb, ip_inject },
+    { "ip_opt", B_SPECIAL, T_IP_OPT, order_net, 
+      ip_opt_ina, ip_inb, ip_inject },
+    { "sport", B_2, T_SPORT, order_transp, 
+      num_ina, inb, transport_inject },
+    { "dport", B_2, T_DPORT, order_transp, 
+      num_ina, inb, transport_inject }
+};
 
-void ip_register_unparsers()
-{
-    register_field("ip_src", T_IP_SRC | B_4NET, ip_prepare, order_net,
-		   ip_extract, ip_inject, ip_outa, ip_ina, outb, inb);
-    register_field("ip_dst", T_IP_DST | B_4NET, ip_prepare, order_net,
-		   ip_extract, ip_inject, ip_outa, ip_ina, outb, inb);
-    register_field("ip_tos", T_IP_TOS | B_1, ip_prepare, order_net,
-		   ip_extract, ip_inject, num_outa, num_ina, outb, inb);
-    register_field("ip_ttl", T_IP_TTL | B_1, ip_prepare, order_net,
-		   ip_extract, ip_inject, num_outa, num_ina, outb, inb);
-    register_field("ip_frag", T_IP_FRAG | B_1, ip_prepare, order_net - 2,
-		   ip_extract, ip_inject, ip_outa, ip_ina, outb, inb);
-    register_field("ip_fragoff", T_IP_FRAGOFF | B_2, ip_prepare, order_net - 1,
-		   ip_extract, ip_inject, ip_outa, ip_ina, outb, inb);
-    register_field("ip_id", T_IP_ID | B_2, ip_prepare, order_net,
-		   ip_extract, ip_inject, num_outa, num_ina, outb, inb);
-    register_field("ip_sum", T_IP_SUM | B_2, ip_prepare, order_net + 2,
-		   ip_extract, ip_inject, num_outa, num_ina, outb, inb);
-    register_field("ip_proto", T_IP_PROTO | B_1, ip_prepare, order_net,
-		   ip_extract, ip_inject, ip_outa, ip_ina, outb, inb);
-    register_field("ip_hl", T_IP_HL | B_1, ip_prepare, order_net - 1,
-		   ip_extract, ip_inject, num_outa, num_ina, outb, inb);
-    register_field("ip_len", T_IP_LEN | B_4, ip_prepare, order_net + 1,
-		   ip_extract, ip_inject, num_outa, num_ina, outb, inb);
-    register_field("ip_capture_len", T_IP_CAPTURE_LEN | B_4, ip_prepare, order_net + 1,
-		   ip_extract, 0, num_outa, num_ina, outb, inb);
-    register_field("ip_opt", T_IP_OPT | B_SPECIAL, ip_prepare, order_net,
-		   ip_extract, ip_inject, ip_outa, ip_opt_ina, ip_outb, ip_inb);
+static const FieldSynonym ip_synonyms[] = {
+    { "length", "ip_len" },
+    { "ip_p", "ip_proto" }
+};
 
-    register_field("sport", T_SPORT | B_2, ip_prepare, order_transp,
-		   transport_extract, transport_inject, num_outa, num_ina, outb, inb);
-    register_field("dport", T_DPORT | B_2, ip_prepare, order_transp,
-		   transport_extract, transport_inject, num_outa, num_ina, outb, inb);
-    
-    register_synonym("length", "ip_len");
-    register_synonym("ip_p", "ip_proto");
 }
 
+void IPSummaryDump_IP::static_initialize()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(ip_writers) / sizeof(ip_writers[0]); ++i)
+	FieldWriter::add(&ip_writers[i]);
+    for (size_t i = 0; i < sizeof(ip_readers) / sizeof(ip_readers[0]); ++i)
+	FieldReader::add(&ip_readers[i]);
+    for (size_t i = 0; i < sizeof(ip_synonyms) / sizeof(ip_synonyms[0]); ++i)
+	FieldSynonym::add(&ip_synonyms[i]);
+}
+
+void IPSummaryDump_IP::static_cleanup()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(ip_writers) / sizeof(ip_writers[0]); ++i)
+	FieldWriter::remove(&ip_writers[i]);
+    for (size_t i = 0; i < sizeof(ip_readers) / sizeof(ip_readers[0]); ++i)
+	FieldReader::remove(&ip_readers[i]);
+    for (size_t i = 0; i < sizeof(ip_synonyms) / sizeof(ip_synonyms[0]); ++i)
+	FieldSynonym::remove(&ip_synonyms[i]);
 }
 
 ELEMENT_REQUIRES(userlevel IPSummaryDump)

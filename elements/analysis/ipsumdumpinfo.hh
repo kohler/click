@@ -67,24 +67,72 @@ struct PacketOdesc {
     bool hard_make_transp();
 };
 
-struct Field {
-    const char* name;
-    int thunk;
-    int order;
-    void (*prepare)(PacketDesc&);
-    bool (*extract)(PacketDesc&, int);
-    void (*inject)(PacketOdesc&, int);
-    void (*outa)(const PacketDesc&, int);
-    bool (*ina)(PacketOdesc&, const String&, int);
-    void (*outb)(const PacketDesc&, bool ok, int);
-    const uint8_t *(*inb)(PacketOdesc&, const uint8_t*, const uint8_t*, int);
-    Field* synonym;
-    Field* next;
-    int binary_size() const;
+
+enum {
+    B_0 = 0,
+    B_1 = 1,
+    B_2 = 2,
+    B_4 = 4,
+    B_6PTR = 6,
+    B_8 = 8,
+    B_16 = 16,
+    B_4NET = 4 + 256,
+    B_SPECIAL = 4 + 512,
+    B_NOTALLOWED = -1
 };
 
-extern const Field null_field;
-const Field* find_field(const String&, bool likely_synonyms = true);
+struct FieldWriter {
+    const char *name;		// must come first
+    int type;
+    int user_data;
+    void (*prepare)(PacketDesc &, const FieldWriter *);
+    bool (*extract)(PacketDesc &, const FieldWriter *);
+    void (*outa)(const PacketDesc &, const FieldWriter *);
+    void (*outb)(const PacketDesc &, bool ok, const FieldWriter *);
+
+    static void add(const FieldWriter *);
+    static void remove(const FieldWriter *);
+    static const FieldWriter *find(const String &name);
+
+    static int binary_size(int type) {
+	if (type < 0)
+	    return -1;
+	else
+	    return type & 256;
+    }
+    inline int binary_size() const {
+	return binary_size(type);
+    }
+};
+
+struct FieldReader {
+    const char *name;		// must come first
+    int type;
+    int user_data;
+    int order;
+    bool (*ina)(PacketOdesc &, const String &, const FieldReader *);
+    const uint8_t *(*inb)(PacketOdesc &, const uint8_t *, const uint8_t *,
+			  const FieldReader *);
+    void (*inject)(PacketOdesc &, const FieldReader *);
+
+    static void add(const FieldReader *);
+    static void remove(const FieldReader *);
+    static const FieldReader *find(const String &name);
+
+    inline int binary_size() const {
+	return FieldWriter::binary_size(type);
+    }
+};
+
+struct FieldSynonym {
+    const char *name;		// must come first
+    const char *synonym;
+    static void add(const FieldSynonym *);
+    static void remove(const FieldSynonym *);
+};
+
+extern const FieldReader null_reader;
+extern const FieldWriter null_writer;
 
 enum {
     order_anno = 100,
@@ -95,36 +143,11 @@ enum {
     order_offset = 50
 };
 
-int register_field(const char* name, int thunk,
-		   void (*prepare)(PacketDesc&),
-		   int order,
-		   bool (*extract)(PacketDesc&, int),
-		   void (*inject)(PacketOdesc&, int),
-		   void (*outa)(const PacketDesc&, int),
-		   bool (*ina)(PacketOdesc&, const String&, int),
-		   void (*outb)(const PacketDesc&, bool, int),
-		   const uint8_t *(*inb)(PacketOdesc&, const uint8_t*, const uint8_t*, int));
-int register_synonym(const char* name, const char* synonym);
-void static_cleanup();
+void num_outa(const PacketDesc&, const FieldWriter *);
+void outb(const PacketDesc&, bool ok, const FieldWriter *);
 
-void num_outa(const PacketDesc&, int);
-bool num_ina(PacketOdesc&, const String &, int);
-
-enum {
-    B_TYPEMASK = 0x7F000000,
-    B_0 = 0x00000000,
-    B_1 = 0x01000000,
-    B_2 = 0x02000000,
-    B_4 = 0x03000000,
-    B_8 = 0x04000000,
-    B_16 = 0x05000000,
-    B_4NET = 0x06000000,
-    B_SPECIAL = 0x07000000,
-    B_NOTALLOWED = 0x08000000,
-    B_6PTR = 0x09000000
-};
-void outb(const PacketDesc&, bool ok, int);
-const uint8_t *inb(PacketOdesc&, const uint8_t*, const uint8_t*, int);
+bool num_ina(PacketOdesc&, const String &, const FieldReader *);
+const uint8_t *inb(PacketOdesc&, const uint8_t*, const uint8_t*, const FieldReader *);
 
 enum { MISSING_IP = 0,
        MISSING_ETHERNET = 260 };
@@ -132,15 +155,7 @@ inline bool field_missing(const PacketDesc &d, int proto, int l);
 bool hard_field_missing(const PacketDesc &d, int proto, int l);
 
 // particular parsers
-void ip_prepare(PacketDesc&);
-
-void anno_register_unparsers();
-void link_register_unparsers();
-void ip_register_unparsers();
-void tcp_register_unparsers();
-void udp_register_unparsers();
-void icmp_register_unparsers();
-void payload_register_unparsers();
+void ip_prepare(PacketDesc &, const FieldWriter *);
 
 enum { DO_IPOPT_PADDING = 1,
        DO_IPOPT_ROUTE = 2,
@@ -210,22 +225,8 @@ inline bool field_missing(const PacketDesc &d, int proto, int l)
 
 }
 
-
 class IPSummaryDumpInfo { public:
-    
-enum Content {
-    W_NONE, W_TIMESTAMP, W_TIMESTAMP_SEC, W_TIMESTAMP_USEC, W_IP_SRC,
-    W_IP_DST, W_IP_LEN, W_IP_PROTO, W_IP_ID, W_SPORT,
-    W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS, W_PAYLOAD_LEN,
-    W_COUNT, W_IP_FRAG, W_IP_FRAGOFF, W_PAYLOAD, W_LINK,
-    W_AGGREGATE, W_TCP_SACK, W_TCP_OPT, W_TCP_NTOPT, W_FIRST_TIMESTAMP,
-    W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL, W_TIMESTAMP_USEC1,
-    W_IP_CAPTURE_LEN, W_TCP_URP, W_NTIMESTAMP, W_FIRST_NTIMESTAMP, W_PAYLOAD_MD5,
-    W_IP_HL, W_TCP_OFF, W_ICMP_TYPE, W_ICMP_CODE, W_LAST
-};
-static int parse_content(const String &);
-static int content_binary_size(int);
-
+    static void static_cleanup();
 };
 
 CLICK_ENDDECLS

@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 
-#include "ipsumdumpinfo.hh"
+#include "ipsumdump_payload.hh"
 #include <click/packet.hh>
 #include <click/packet_anno.hh>
 #include <click/md5.h>
@@ -61,9 +61,9 @@ static void payload_info(Packet *p, const click_ip *iph,
     }
 }
 
-static bool payload_extract(PacketDesc &d, int thunk)
+static bool payload_extract(PacketDesc &d, const FieldWriter *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_PAYLOAD_LEN: {
 	int32_t off;
 	payload_info(d.p, d.iph, off, d.v);
@@ -79,7 +79,7 @@ static bool payload_extract(PacketDesc &d, int thunk)
     }
 }
 
-static void payload_inject(PacketOdesc &d, int thunk)
+static void payload_inject(PacketOdesc &d, const FieldReader *f)
 {
     if (d.make_ip(0))		// add default IPFlowID and protocol if nec.
 	d.make_transp();	// don't care if we fail
@@ -89,7 +89,7 @@ static void payload_inject(PacketOdesc &d, int thunk)
     int32_t off;
     uint32_t len;
     payload_info(d.p, d.is_ip ? d.p->ip_header() : 0, off, len);
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_PAYLOAD: {
 	if (!d.vptr[0] || d.vptr[0] == d.vptr[1])
 	    return;
@@ -107,9 +107,9 @@ static void payload_inject(PacketOdesc &d, int thunk)
     }
 }
 
-static void payload_outa(const PacketDesc& d, int thunk)
+static void payload_outa(const PacketDesc& d, const FieldWriter *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_PAYLOAD:
     case T_PAYLOAD_MD5: {
 	int32_t off;
@@ -117,7 +117,7 @@ static void payload_outa(const PacketDesc& d, int thunk)
 	payload_info(d.p, d.iph, off, len);
 	if (off + len > (uint32_t) d.p->length())
 	    len = d.p->length() - off;
-	if ((thunk & ~B_TYPEMASK) == T_PAYLOAD) {
+	if (f->user_data == T_PAYLOAD) {
 	    String s = String::stable_string((const char *)(d.p->data() + off), len);
 	    *d.sa << cp_quote(s);
 	} else {
@@ -133,9 +133,9 @@ static void payload_outa(const PacketDesc& d, int thunk)
     }
 } 
 
-static bool payload_ina(PacketOdesc& d, const String &str, int thunk)
+static bool payload_ina(PacketOdesc& d, const String &str, const FieldReader *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_PAYLOAD: {
 	String s;
 	if (cp_string(str, &s)) {
@@ -151,9 +151,9 @@ static bool payload_ina(PacketOdesc& d, const String &str, int thunk)
     return false;
 } 
 
-static void payload_outb(const PacketDesc& d, bool, int thunk)
+static void payload_outb(const PacketDesc& d, bool, const FieldWriter *f)
 {
-    switch (thunk & ~B_TYPEMASK) {
+    switch (f->user_data) {
     case T_PAYLOAD_MD5: {
 	int32_t off;
 	uint32_t len;
@@ -171,18 +171,48 @@ static void payload_outb(const PacketDesc& d, bool, int thunk)
     }
 } 
 
-void payload_register_unparsers()
-{
-    register_field("payload_len", T_PAYLOAD_LEN | B_4, ip_prepare, order_payload + 1,
-		   payload_extract, payload_inject, num_outa, num_ina, outb, inb);
-    register_field("payload", T_PAYLOAD | B_NOTALLOWED, ip_prepare, order_payload,
-		   payload_extract, payload_inject, payload_outa, payload_ina, 0, 0);
-    register_field("payload_md5", T_PAYLOAD_MD5 | B_16, ip_prepare, order_payload,
-		   payload_extract, 0, payload_outa, 0, payload_outb, 0);
+static const FieldWriter payload_writers[] = {
+    { "payload_len", B_4, T_PAYLOAD_LEN,
+      ip_prepare, payload_extract, num_outa, outb },
+    { "payload", B_NOTALLOWED, T_PAYLOAD,
+      ip_prepare, payload_extract, payload_outa, 0 },
+    { "payload_md5", B_16, T_PAYLOAD_MD5,
+      ip_prepare, payload_extract, payload_outa, payload_outb }
+};
 
-    register_synonym("payload_length", "payload_len");
+static const FieldReader payload_readers[] = {
+    { "payload_len", B_4, T_PAYLOAD_LEN, order_payload + 1,
+      num_ina, inb, payload_inject },
+    { "payload", B_NOTALLOWED, T_PAYLOAD, order_payload,
+      payload_ina, 0, payload_inject }
+};
+
+static const FieldSynonym payload_synonyms[] = {
+    { "payload_length", "payload_len" }
+};
+
 }
 
+void IPSummaryDump_Payload::static_initialize()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(payload_writers) / sizeof(payload_writers[0]); ++i)
+	FieldWriter::add(&payload_writers[i]);
+    for (size_t i = 0; i < sizeof(payload_readers) / sizeof(payload_readers[0]); ++i)
+	FieldReader::add(&payload_readers[i]);
+    for (size_t i = 0; i < sizeof(payload_synonyms) / sizeof(payload_synonyms[0]); ++i)
+	FieldSynonym::add(&payload_synonyms[i]);
+}
+
+void IPSummaryDump_Payload::static_cleanup()
+{
+    using namespace IPSummaryDump;
+    for (size_t i = 0; i < sizeof(payload_writers) / sizeof(payload_writers[0]); ++i)
+	FieldWriter::remove(&payload_writers[i]);
+    for (size_t i = 0; i < sizeof(payload_readers) / sizeof(payload_readers[0]); ++i)
+	FieldReader::remove(&payload_readers[i]);
+    for (size_t i = 0; i < sizeof(payload_synonyms) / sizeof(payload_synonyms[0]); ++i)
+	FieldSynonym::remove(&payload_synonyms[i]);
 }
 
 ELEMENT_REQUIRES(userlevel IPSummaryDump)
