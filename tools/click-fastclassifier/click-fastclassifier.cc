@@ -992,8 +992,3 @@ particular purpose.\n");
   
   exit(0);
 }
-
-// generate Vector template instance
-#include <click/vector.cc>
-template class Vector<Classifier_Insn>;
-template class Vector<Classifier_Program>;
