@@ -38,10 +38,12 @@ SpinlockInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	for (int i = 0; i < conf.size(); ++i)
 	    if (cp_string(conf[i], &name)) {
 		_spinlocks.push_back(Spinlock());
-		ndb->define(name, &_spinlocks.back(), sizeof(Spinlock *));
+		Spinlock *spinptr = &_spinlocks.back();
+		ndb->define(name, &spinptr, sizeof(Spinlock *));
 	    } else
 		errh->error("bad NAME");
-    }
+    } else
+	errh->error("out of memory!");
     return (errh->nerrors() == before ? 0 : -1);
 }
 
