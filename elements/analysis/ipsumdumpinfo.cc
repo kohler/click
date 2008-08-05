@@ -430,6 +430,7 @@ bool PacketOdesc::hard_make_ip()
 	iph->ip_hl = sizeof(click_ip) >> 2;
 	iph->ip_p = default_ip_p;
 	iph->ip_off = 0;
+	iph->ip_ttl = 100;
 	if (default_ip_flowid) {
 	    iph->ip_src.s_addr = default_ip_flowid->saddr().addr();
 	    iph->ip_dst.s_addr = default_ip_flowid->daddr().addr();

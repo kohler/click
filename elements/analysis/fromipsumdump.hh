@@ -59,8 +59,12 @@ E<lparen>the default), this data is zero. If false, it is random garbage.
 
 =item CHECKSUM
 
-Boolean. If true, then output packets' IP, TCP, and UDP checksums are set. If
-false (the default), the checksum fields contain random garbage.
+Boolean. If true, then output packets' IP, TCP, and UDP checksums are set, and
+have actual data bytes covering the entire IP length (whether or not those
+data bytes were defined). If false (the default), then the checksum fields
+contain random garbage, and output packets may be shorter than their IP
+headers' length fields (the EXTRA_LENGTH annotation is set to account for the
+difference).
 
 =item PROTO
 
