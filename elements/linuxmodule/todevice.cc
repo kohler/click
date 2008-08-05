@@ -449,6 +449,8 @@ ToDevice::change_device(net_device *dev)
 
     if (dev_change && _dev)
 	_task.strong_reschedule();
+    else if (_dev && _carrier_ok)
+	_task.reschedule();
 }
 
 extern "C" {
