@@ -96,7 +96,8 @@ WifiEncap::simple_action(Packet *p)
   memcpy(p_out->data(), WIFI_LLC_HEADER, WIFI_LLC_HEADER_LEN);
   memcpy(p_out->data() + 6, &ethtype, 2);
 
-  p_out->push(sizeof(struct click_wifi));
+  if (!(p_out = p_out->push(sizeof(struct click_wifi))))
+      return 0;
   struct click_wifi *w = (struct click_wifi *) p_out->data();
 
   memset(p_out->data(), 0, sizeof(click_wifi));
