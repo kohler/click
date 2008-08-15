@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include <click/string.hh>
+#include <click/hashcode.hh>
 class PermString;
 inline bool operator==(PermString a, PermString b);
 inline bool operator!=(PermString a, PermString b);
@@ -50,6 +51,10 @@ class PermString { struct Doodad; public:
 
     inline Capsule capsule() const;
     inline static PermString decapsule(Capsule c);
+
+    inline hashcode_t hashcode() const {
+	return (uintptr_t) _rep;
+    }
 
   private:
   
@@ -190,12 +195,6 @@ inline PermString::Capsule PermString::capsule() const
 inline PermString PermString::decapsule(Capsule c)
 {
     return PermString(c);
-}
-
-template <>
-inline size_t hashcode(const PermString &s)
-{
-    return (uintptr_t) s.c_str();
 }
 
 PermString operator+(PermString a, PermString b);
