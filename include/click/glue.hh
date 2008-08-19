@@ -62,6 +62,7 @@ CLICK_CXX_UNPROTECT
 # include <ctype.h>
 # include <errno.h>
 # include <limits.h>
+# include <time.h>
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <sys/time.h>

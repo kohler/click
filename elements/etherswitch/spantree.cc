@@ -94,8 +94,7 @@ EtherSpanTree::add_handlers()
 void
 EtherSpanTree::periodic() {
     // Push LISTEN and LEARN ports forward.
-    Timestamp cutoff = Timestamp::now();
-    cutoff._sec -= _best._forward_delay;
+    Timestamp cutoff = Timestamp::now() - Timestamp(_best._forward_delay);
 
     for (int i = 0; i < _port.size(); i++) {
 	if (_port[i].state == LISTEN || _port[i].state == LEARN)
@@ -110,8 +109,7 @@ EtherSpanTree::periodic() {
 
 bool
 EtherSpanTree::expire() {
-    Timestamp t = Timestamp::now();
-    t._sec -= _best._max_age;
+    Timestamp t = Timestamp::now() - Timestamp(_best._max_age);
 
     bool expired = false;
     for (int i = 0; i < _port.size(); i++) {
@@ -278,8 +276,7 @@ EtherSpanTree::generate_packet(int output)
     msg->bridge_id = htonq(((uint64_t)_bridge_priority << 48) | _bridge_id);
     msg->port_id = htons(output);
     if (_topology_change) {
-      Timestamp cutoff = Timestamp::now();
-      cutoff._sec -= _best._forward_delay + _best._max_age;
+      Timestamp cutoff = Timestamp::now() - Timestamp(_best._forward_delay + _best._max_age);
       if (*_topology_change < cutoff) {
 	delete _topology_change;
 	_topology_change = 0;

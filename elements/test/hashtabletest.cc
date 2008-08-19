@@ -483,10 +483,10 @@ HashTableTest::initialize(ErrorHandler *errh)
     MAP_S2I map;
     
     struct rusage ru0, ru1;
-    struct timeval tv0, tv1;
+    Timestamp ts0, ts1;
     if (getrusage(RUSAGE_SELF, &ru0) < 0)
 	return errh->error("rusage: %s", strerror(errno));
-    click_gettimeofday(&tv0);
+    ts0.set_now();
 
     for (int i = 0; i < 100; i++) {
 	map.clear();
@@ -509,11 +509,11 @@ HashTableTest::initialize(ErrorHandler *errh)
 
     if (getrusage(RUSAGE_SELF, &ru1) < 0)
 	return errh->error("rusage: %s", strerror(errno));
-    click_gettimeofday(&tv1);
+    ts1.set_now();
 
     ru1.ru_utime = ru1.ru_utime - ru0.ru_utime;
-    tv1 = tv1 - tv0;
-    errh->message("Time: %{timeval}u %{timeval} total %u/%u", &ru1.ru_utime, &tv1, map.size(), map.bucket_count());
+    ts1 -= ts0;
+    errh->message("Time: %{timeval}u %{timestamp} total %u/%u", &ru1.ru_utime, &ts1, map.size(), map.bucket_count());
 #endif
 
     {

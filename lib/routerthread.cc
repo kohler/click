@@ -217,10 +217,10 @@ RouterThread::client_set_tickets(int client, int new_tickets)
 }
 
 inline void
-RouterThread::client_update_pass(int client, const struct timeval &t_before, const struct timeval &t_after)
+RouterThread::client_update_pass(int client, const Timestamp &t_before, const Timestamp &t_after)
 {
     Client &c = _clients[client];
-    int elapsed = (1000000 * (t_after.tv_sec - t_before.tv_sec)) + (t_after.tv_usec - t_before.tv_usec);
+    Timestamp::seconds_type elapsed = (t_after - t_before).usec1();
     if (elapsed > 0)
 	c.pass += (c.stride * elapsed) / DRIVER_QUANTUM;
     else
@@ -228,9 +228,9 @@ RouterThread::client_update_pass(int client, const struct timeval &t_before, con
 }
 
 inline void
-RouterThread::check_restride(struct timeval &t_before, const struct timeval &t_now, int &restride_iter)
+RouterThread::check_restride(Timestamp &t_before, const Timestamp &t_now, int &restride_iter)
 {
-    int elapsed = (1000000 * (t_now.tv_sec - t_before.tv_sec)) + (t_now.tv_usec - t_before.tv_usec);
+    Timestamp::seconds_type elapsed = (t_now - t_before).usec1();
     if (elapsed > DRIVER_RESTRIDE_INTERVAL || elapsed < 0) {
 	// mark new measurement period
 	t_before = t_now;
@@ -275,7 +275,7 @@ RouterThread::check_restride(struct timeval &t_before, const struct timeval &t_n
 /******************************/
 
 #if CLICK_DEBUG_SCHEDULING
-timeval
+Timestamp
 RouterThread::task_epoch_time(uint32_t epoch) const
 {
     if (epoch >= _task_epoch_first && epoch <= _driver_task_epoch)
@@ -284,7 +284,7 @@ RouterThread::task_epoch_time(uint32_t epoch) const
 	// "-1" makes this code work even if _task_epoch overflows
 	return _task_epoch_time[epoch - (_task_epoch_first - TASK_EPOCH_BUFSIZ)];
     else
-	return make_timeval(0, 0);
+	return Timestamp();
 }
 #endif
 
@@ -336,7 +336,7 @@ RouterThread::run_tasks(int ntasks)
 {
 #if CLICK_DEBUG_SCHEDULING
     _driver_task_epoch++;
-    click_gettimeofday(&_task_epoch_time[_driver_task_epoch % TASK_EPOCH_BUFSIZ]);
+    _task_epoch_time[_driver_task_epoch % TASK_EPOCH_BUFSIZ].set_now();
     if ((_driver_task_epoch % TASK_EPOCH_BUFSIZ) == 0)
 	_task_epoch_first = _driver_task_epoch;
 #endif
@@ -437,7 +437,7 @@ RouterThread::run_os()
 	schedule();
     } else if (Timestamp wait = _master->next_timer_expiry_adjusted()) {
 	wait -= Timestamp::now();
-	if (!(wait.sec() > 0 || (wait.sec() == 0 && wait.subsec() > (Timestamp::NSUBSEC / CLICK_HZ))))
+	if (!(wait > Timestamp(0, Timestamp::NSUBSEC / CLICK_HZ)))
 	    goto short_pause;
 	SET_STATE(S_TIMER);
 	if (wait.sec() >= LONG_MAX / CLICK_HZ - 1)
@@ -480,11 +480,13 @@ RouterThread::driver()
     
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     int restride_iter = 0;
-    struct timeval t_before, restride_t_before, t_now;
+    Timestamp t_before = Timestamp::uninitialized_t();
+    Timestamp restride_t_before = Timestamp::uninitialized_t();
+    Timestamp t_now = Timestamp::uninitialized_t();
     client_set_tickets(C_CLICK, DRIVER_TOTAL_TICKETS / 2);
     client_set_tickets(C_KERNEL, DRIVER_TOTAL_TICKETS / 2);
     _cur_click_share = Task::MAX_UTILIZATION / 2;
-    click_gettimeofday(&restride_t_before);
+    restride_t_before.set_now();
 #endif
 
     SET_STATE(S_RUNNING);
@@ -542,7 +544,7 @@ RouterThread::driver()
     splx(s);
 # endif
 #else /* HAVE_ADAPTIVE_SCHEDULER */
-    click_gettimeofday(&t_before);
+    t_before.set_now();
     int client;
     if (PASS_GT(_clients[C_KERNEL].pass, _clients[C_CLICK].pass)) {
 	client = C_CLICK;
@@ -551,7 +553,7 @@ RouterThread::driver()
 	client = C_KERNEL;
 	run_os();
     }
-    click_gettimeofday(&t_now);
+    t_now.set_now();
     client_update_pass(client, t_before, t_now);
     check_restride(restride_t_before, t_now, restride_iter);
 #endif

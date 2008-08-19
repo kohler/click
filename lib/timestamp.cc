@@ -33,10 +33,10 @@ CLICK_DECLS
  @brief Represents a moment or interval in time.
 
  The Click Timestamp class represents both moments in time and intervals in
- time.  For example, Timer expiry times use the Timestamp class.  In most
- Click code, Timestamp replaces the Unix "struct timeval" and "struct
- timespec" structures.  Timestamps may be added, subtracted, and compared
- using the usual operators.
+ time.  In most Click code, Timestamp replaces the Unix "struct timeval" and
+ "struct timespec" structures; for example, Timer expiry times use the
+ Timestamp class.  Timestamps may be added, subtracted, and compared using the
+ usual operators.
 
  Timestamp measures time in seconds using a fixed-point representation, like
  "struct timeval" and "struct timespec".  Seconds and "subseconds", or
@@ -51,8 +51,8 @@ CLICK_DECLS
 
  A Timestamp with sec() < 0 is negative.  Note that subsec() is always
  nonnegative.  A Timestamp's value always equals (sec() + subsec() / (double)
- NSUBSEC); thus, the Timestamp value of -0.1 is represented (with microsecond
- precision) as sec() == -1, subsec() == +900000.
+ NSUBSEC); thus, the Timestamp value of -0.1 is represented as sec() == -1,
+ usec() == +900000.
  */
 
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
@@ -70,7 +70,7 @@ Timestamp::set_timeval_ioctl(int fd, int ioctl_selector)
     int r;
 # if TIMESTAMP_PUNS_TIMEVAL
     r = ioctl(fd, ioctl_selector, this);
-# elif SIZEOF_STRUCT_TIMEVAL == 8
+# elif SIZEOF_STRUCT_TIMEVAL == 8 && !TIMESTAMP_PUNS_INT64
     if ((r = ioctl(fd, ioctl_selector, this)) >= 0)
 	_subsec = usec_to_subsec(_subsec);
 # else

@@ -11,6 +11,13 @@
 /* Define if you have the <byteswap.h> header file. */
 #undef HAVE_BYTESWAP_H
 
+/* Define if you have the clock_gettime function. */
+#undef HAVE_CLOCK_GETTIME
+
+/* Define to 1 if you have the declaration
+   of 'clock_gettime', and to 0 if you don't. */
+#undef HAVE_DECL_CLOCK_GETTIME
+
 /* Define to 1 if you have the declaration
    of 'madvise', and to 0 if you don't. */
 #undef HAVE_DECL_MADVISE
@@ -229,8 +236,8 @@ char *strerror(int errno);
 #endif
 
 /* Use nanosecond-granularity timestamps if they are enabled. */
-#ifdef HAVE_NANOTIMESTAMP_ENABLED
-#define HAVE_NANOTIMESTAMP 1
+#if HAVE_NANOTIMESTAMP_ENABLED
+# define HAVE_NANOTIMESTAMP 1
 #endif
 
 #ifdef __cplusplus

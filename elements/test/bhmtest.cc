@@ -437,10 +437,10 @@ BigHashMapTest::initialize(ErrorHandler *errh)
     HashMap<String, int> map(-1);
     
     struct rusage ru0, ru1;
-    struct timeval tv0, tv1;
+    Timestamp ts0, ts1;
     if (getrusage(RUSAGE_SELF, &ru0) < 0)
 	return errh->error("rusage: %s", strerror(errno));
-    click_gettimeofday(&tv0);
+    ts0.set_now();
 
     for (int i = 0; i < 100; i++) {
 	map.clear();
@@ -455,11 +455,11 @@ BigHashMapTest::initialize(ErrorHandler *errh)
 
     if (getrusage(RUSAGE_SELF, &ru1) < 0)
 	return errh->error("rusage: %s", strerror(errno));
-    click_gettimeofday(&tv1);
+    ts1.set_now();
 
     ru1.ru_utime = ru1.ru_utime - ru0.ru_utime;
-    tv1 = tv1 - tv0;
-    errh->message("%{timeval}u %{timeval} total", &ru1.ru_utime, &tv1);
+    ts1 -= ts0;
+    errh->message("%{timeval}u %{timestamp} total", &ru1.ru_utime, &ts1);
 #endif
     
     errh->message("All tests pass!");

@@ -41,6 +41,9 @@
 /* Define if your Linux kernel architecture defines atomic_set_mask. */
 #undef HAVE_LINUX_ATOMIC_SET_MASK
 
+/* Define if you have the <linux/ktime.h> header file. */
+#undef HAVE_LINUX_KTIME_H
+
 /* Define if your Linux kernel has polling extensions. */
 #undef HAVE_LINUX_POLLING
 

@@ -50,7 +50,7 @@ while true; do
 	echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ -I$includedir
 	exit=y; shift 1;;
       --l|--li|--lib|--libs)
-	echo -L$libdir -lclick @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@ @PTHREAD_LIBS@
+	echo -L$libdir -lclick @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@ @PTHREAD_LIBS@ @POSIX_CLOCK_LIBS@
 	exit=y; shift 1;;
       --toolc|--toolcf|--toolcfl|--toolcfla|--toolcflag|--toolcflags)
 	echo -DCLICK_TOOL -I$includedir
@@ -59,7 +59,7 @@ while true; do
 	echo -L$libdir -lclicktool @DL_LIBS@ @SOCKET_LIBS@
 	exit=y; shift 1;;
       --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)
-	echo @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@ @PTHREAD_LIBS@
+	echo @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@ @PTHREAD_LIBS@ @POSIX_CLOCK_LIBS@
 	exit=y; shift 1;;
       -d|--di|--dir|--dire|--direc|--direct|--directo|--director|--directory)
 	directory=$2; shift 2;;

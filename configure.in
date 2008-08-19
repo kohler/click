@@ -345,7 +345,6 @@ dnl
 
 AC_ARG_ENABLE(int64, [  --disable-int64         disable 64-bit integer support], :, enable_int64=yes)
 
-AC_CHECK_HEADERS(time.h)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(size_t)
@@ -355,11 +354,6 @@ if test "x$enable_int64" = xyes; then
     AC_CHECK_SIZEOF(long long)
     CLICK_CHECK_INT64_TYPES
 fi
-AC_CHECK_SIZEOF([struct timeval])
-AC_CHECK_TYPES([struct timespec], have_timespec=yes, have_timespec=no)
-if test "x$have_timespec" = xyes; then
-    AC_CHECK_SIZEOF([struct timespec])
-fi
 CLICK_CHECK_ENDIAN
 CLICK_CHECK_SIGNED_SHIFT
 CLICK_CHECK_ADDRESSABLE_VA_LIST
@@ -367,13 +361,21 @@ CLICK_CHECK_INTEGER_BUILTINS
 
 
 dnl
-dnl nanosecond-precision timestamps
+dnl timestamps
 dnl
 
 AC_ARG_ENABLE(nanotimestamp, [  --enable-nanotimestamp  enable nanosecond timestamps])
 if test "x$enable_nanotimestamp" = xyes; then
     AC_DEFINE(HAVE_NANOTIMESTAMP_ENABLED)
 fi
+
+AC_CHECK_HEADERS(time.h)
+AC_CHECK_SIZEOF([struct timeval])
+AC_CHECK_TYPES([struct timespec], have_timespec=yes, have_timespec=no)
+if test "x$have_timespec" = xyes; then
+    AC_CHECK_SIZEOF([struct timespec])
+fi
+CLICK_CHECK_POSIX_CLOCKS
 
 
 dnl
@@ -586,6 +588,14 @@ AC_CACHE_CHECK(for tulip_interrupt_hook kernel symbol, ac_cv_linux_tulip_intr_ho
 else ac_cv_linux_tulip_intr_hook=no; fi])
 if test $ac_cv_linux_tulip_intr_hook = yes; then
     AC_DEFINE(HAVE_LINUX_TULIP_INTERRUPT_HOOK)
+fi
+
+AC_CACHE_CHECK(for <linux/ktime.h>, ac_cv_linux_ktime_h,
+[if grep ktime_t `find_linuxdir include/linux/ktime.h` >/dev/null 2>&1; then
+  ac_cv_linux_ktime_h=yes
+else ac_cv_linux_ktime_h=no; fi])
+if test $ac_cv_linux_ktime_h = yes; then
+    AC_DEFINE(HAVE_LINUX_KTIME_H)
 fi
 
 AC_CACHE_CHECK(for device polling kernel extension, ac_cv_linux_poll_extension,

@@ -77,7 +77,7 @@ class RouterThread
     static String thread_state_name(int);
     uint32_t driver_epoch() const	{ return _driver_epoch; }
     uint32_t driver_task_epoch() const	{ return _driver_task_epoch; }
-    timeval task_epoch_time(uint32_t epoch) const;
+    Timestamp task_epoch_time(uint32_t epoch) const;
 # if CLICK_LINUXMODULE
     struct task_struct *sleeper() const	{ return _linux_task; }
 # endif
@@ -142,7 +142,7 @@ class RouterThread
     uint32_t _driver_task_epoch;
     enum { TASK_EPOCH_BUFSIZ = 32 };
     uint32_t _task_epoch_first;
-    timeval _task_epoch_time[TASK_EPOCH_BUFSIZ];
+    Timestamp _task_epoch_time[TASK_EPOCH_BUFSIZ];
 #endif
     
     // called by Master
@@ -159,8 +159,8 @@ class RouterThread
     inline void run_os();
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     void client_set_tickets(int client, int tickets);
-    inline void client_update_pass(int client, const struct timeval &before, const struct timeval &after);
-    inline void check_restride(struct timeval &before, const struct timeval &now, int &restride_iter);
+    inline void client_update_pass(int client, const Timestamp &before, const Timestamp &after);
+    inline void check_restride(Timestamp &before, const Timestamp &now, int &restride_iter);
 #endif
 #if HAVE_TASK_HEAP
     void task_reheapify_from(int pos, Task*);
