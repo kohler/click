@@ -180,10 +180,10 @@ RouterThread::set_cpu_share(unsigned min_frac, unsigned max_frac)
 {
     if (min_frac == 0)
 	min_frac = 1;
-    if (min_frac > MAX_UTILIZATION - 1)
-	min_frac = MAX_UTILIZATION - 1;
-    if (max_frac > MAX_UTILIZATION - 1)
-	max_frac = MAX_UTILIZATION - 1;
+    if (min_frac > Task::MAX_UTILIZATION - 1)
+	min_frac = Task::MAX_UTILIZATION - 1;
+    if (max_frac > Task::MAX_UTILIZATION - 1)
+	max_frac = Task::MAX_UTILIZATION - 1;
     if (max_frac < min_frac)
 	max_frac = min_frac;
     _min_click_share = min_frac;
