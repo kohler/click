@@ -14297,23 +14297,22 @@ _ACEOF
 
 fi
 
-{ echo "$as_me:$LINENO: checking for SMP" >&5
-echo $ECHO_N "checking for SMP... $ECHO_C" >&6; }
-if test "${ac_cv_smp+set}" = set; then
+{ echo "$as_me:$LINENO: checking for atomic_add_return" >&5
+echo $ECHO_N "checking for atomic_add_return... $ECHO_C" >&6; }
+if test "${ac_cv_linux_atomic_add_return+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if grep "#define CONFIG_SMP 1" `find_linuxdir include/linux/autoconf.h` >/dev/null 2>&1; then
-  ac_cv_smp=yes
-else ac_cv_smp=no; fi
+  if grep atomic_add_return `find_linuxdir include/asm/atomic.h` >/dev/null 2>&1; then
+  ac_cv_linux_atomic_add_return=yes
+else ac_cv_linux_atomic_add_return=no; fi
 fi
-{ echo "$as_me:$LINENO: result: $ac_cv_smp" >&5
-echo "${ECHO_T}$ac_cv_smp" >&6; }
-if test $ac_cv_smp = yes; then
+{ echo "$as_me:$LINENO: result: $ac_cv_linux_atomic_add_return" >&5
+echo "${ECHO_T}$ac_cv_linux_atomic_add_return" >&6; }
+if test $ac_cv_linux_atomic_add_return = yes; then
     cat >>confdefs.h <<\_ACEOF
-#define __SMP__ 1
+#define HAVE_LINUX_ATOMIC_ADD_RETURN 1
 _ACEOF
 
-    KERNEL_CXX="$KERNEL_CXX -D__SMP__"
 fi
 
 { echo "$as_me:$LINENO: checking for <asm/alternative.h>" >&5
@@ -14330,6 +14329,24 @@ echo "${ECHO_T}$ac_cv_linux_asm_alternative_h" >&6; }
 if test $ac_cv_linux_asm_alternative_h = yes; then
     cat >>confdefs.h <<\_ACEOF
 #define HAVE_LINUX_ASM_ALTERNATIVE_H 1
+_ACEOF
+
+fi
+
+{ echo "$as_me:$LINENO: checking for <asm/system.h>" >&5
+echo $ECHO_N "checking for <asm/system.h>... $ECHO_C" >&6; }
+if test "${ac_cv_linux_asm_system_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -r `find_linuxdir include/asm/system.h` >/dev/null 2>&1; then
+  ac_cv_linux_asm_system_h=yes
+else ac_cv_linux_asm_system_h=no; fi
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_linux_asm_system_h" >&5
+echo "${ECHO_T}$ac_cv_linux_asm_system_h" >&6; }
+if test $ac_cv_linux_asm_system_h = yes; then
+    cat >>confdefs.h <<\_ACEOF
+#define HAVE_LINUX_ASM_SYSTEM_H 1
 _ACEOF
 
 fi

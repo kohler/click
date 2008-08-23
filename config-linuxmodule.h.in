@@ -9,9 +9,6 @@
 #define __KERNEL__ 1
 #define MODULE 1
 
-/* Define if your Linux kernel is running in SMP mode. */
-#undef __SMP__
-
 /* Define if Click should use an adaptive scheduler to share the CPU(s) more
    fairly with the kernel. */
 #undef HAVE_ADAPTIVE_SCHEDULER
@@ -37,6 +34,12 @@
 
 /* Define if you have the <asm/alternative.h> header file. */
 #undef HAVE_LINUX_ASM_ALTERNATIVE_H
+
+/* Define if you have the <asm/system.h> header file. */
+#undef HAVE_LINUX_ASM_SYSTEM_H
+
+/* Define if your Linux kernel architecture defines atomic_add_return. */
+#undef HAVE_LINUX_ATOMIC_ADD_RETURN
 
 /* Define if your Linux kernel architecture defines atomic_set_mask. */
 #undef HAVE_LINUX_ATOMIC_SET_MASK
@@ -92,9 +95,7 @@
 #endif
 
 /* Include integer type definitions. */
-#if !HAVE_LINUXMODULE_2_6
-# include <linux/autoconf.h>
-#endif
+#include <linux/autoconf.h>
 #include <linux/types.h>
 typedef ptrdiff_t intptr_t;
 typedef unsigned long uintptr_t; /* XXX? */

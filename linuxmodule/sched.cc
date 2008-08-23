@@ -110,7 +110,7 @@ click_sched(void *thunk)
   rt->set_cpu_share(min_click_frac, max_click_frac);
 #endif
 
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
   int mycpu = click_parm(CLICKPARM_CPU);
   if (mycpu >= 0) {
       mycpu += rt->thread_id();

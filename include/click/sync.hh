@@ -3,12 +3,8 @@
 #define CLICK_SYNC_HH
 #include <click/glue.hh>
 #include <click/atomic.hh>
-#if CLICK_LINUXMODULE && defined(__SMP__)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
-#  include <linux/threads.h>
-# else
-#  include <linux/tasks.h>
-# endif
+#if CLICK_LINUXMODULE && defined(CONFIG_SMP)
+# include <linux/threads.h>
 # include <linux/sched.h>
 # define my_cpu click_current_processor()
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
@@ -66,7 +62,7 @@ class Spinlock { public:
     int32_t _depth;
     click_processor_t _owner;
 #endif
-  
+
 };
 
 /** @brief Create a Spinlock. */
@@ -275,11 +271,11 @@ SpinlockIRQ::release(flags_t flags)
  * read/write lock is implemented with Spinlock objects, so acquiring a lock
  * is a polling operation.  ReadWriteLocks can be used to synchronize access
  * to shared data among multiple Click SMP threads.  ReadWriteLocks should not
- * be held for long periods of time: use them for quick updates and such.
+ * be held for long periods of time.
  *
- * ReadWriteLock operations do nothing unless Click was compiled with SMP
- * support (with --enable-multithread).  Therefore, ReadWriteLock should not
- * be used to, for example, synchronize handlers with main element threads.
+ * ReadWriteLock operations do nothing unless Click was compiled with
+ * --enable-multithread.  Therefore, ReadWriteLock should not be used to, for
+ * example, synchronize handlers with main element threads.
  *
  * The main ReadWriteLock operations are acquire_read() and acquire_write(),
  * which acquire the lock for reading or writing, respectively, and
@@ -296,7 +292,7 @@ SpinlockIRQ::release(flags_t flags)
 class ReadWriteLock { public:
 
     inline ReadWriteLock();
-#if CLICK_LINUXMODULE && defined(__SMP__)
+#if CLICK_LINUXMODULE && defined(CONFIG_SMP)
     inline ~ReadWriteLock();
 #endif
 
@@ -307,7 +303,7 @@ class ReadWriteLock { public:
     inline bool attempt_write();
     inline void release_write();
 
-#if CLICK_LINUXMODULE && defined(__SMP__)
+#if CLICK_LINUXMODULE && defined(CONFIG_SMP)
   private:
     // allocate 32 bytes (size of a cache line) for every member
     struct lock_t {
@@ -322,12 +318,12 @@ class ReadWriteLock { public:
 inline
 ReadWriteLock::ReadWriteLock()
 {
-#if CLICK_LINUXMODULE && defined(__SMP__)
+#if CLICK_LINUXMODULE && defined(CONFIG_SMP)
     _l = new lock_t[num_possible_cpus()];
 #endif
 }
 
-#if CLICK_LINUXMODULE && defined(__SMP__)
+#if CLICK_LINUXMODULE && defined(CONFIG_SMP)
 inline
 ReadWriteLock::~ReadWriteLock()
 {
@@ -347,7 +343,7 @@ ReadWriteLock::~ReadWriteLock()
 inline void
 ReadWriteLock::acquire_read()
 {
-#if CLICK_LINUXMODULE && defined(__SMP__)
+#if CLICK_LINUXMODULE && defined(CONFIG_SMP)
     assert(click_current_processor() >= 0);
     _l[click_current_processor()]._lock.acquire();
 #endif
@@ -362,7 +358,7 @@ ReadWriteLock::acquire_read()
 inline bool
 ReadWriteLock::attempt_read()
 {
-#if CLICK_LINUXMODULE && defined(__SMP__)
+#if CLICK_LINUXMODULE && defined(CONFIG_SMP)
     assert(click_current_processor() >= 0);
     return _l[click_current_processor()]._lock.attempt();
 #else
@@ -379,7 +375,7 @@ ReadWriteLock::attempt_read()
 inline void
 ReadWriteLock::release_read()
 {
-#if CLICK_LINUXMODULE && defined(__SMP__)
+#if CLICK_LINUXMODULE && defined(CONFIG_SMP)
     assert(click_current_processor() >= 0);
     _l[click_current_processor()]._lock.release();
 #endif
@@ -397,7 +393,7 @@ ReadWriteLock::release_read()
 inline void
 ReadWriteLock::acquire_write()
 {
-#if CLICK_LINUXMODULE && defined(__SMP__)
+#if CLICK_LINUXMODULE && defined(CONFIG_SMP)
     for (unsigned i = 0; i < num_possible_cpus(); i++)
 	_l[i]._lock.acquire();
 #endif
@@ -416,7 +412,7 @@ ReadWriteLock::acquire_write()
 inline bool
 ReadWriteLock::attempt_write()
 {
-#if CLICK_LINUXMODULE && defined(__SMP__)
+#if CLICK_LINUXMODULE && defined(CONFIG_SMP)
     bool all = true;
     unsigned i;
     for (i = 0; i < num_possible_cpus(); i++)
@@ -444,7 +440,7 @@ ReadWriteLock::attempt_write()
 inline void
 ReadWriteLock::release_write()
 {
-#if CLICK_LINUXMODULE && defined(__SMP__)
+#if CLICK_LINUXMODULE && defined(CONFIG_SMP)
     for (unsigned i = 0; i < num_possible_cpus(); i++)
 	_l[i]._lock.release();
 #endif

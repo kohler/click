@@ -614,13 +614,12 @@ if test $ac_cv_linux_atomic_set_mask = yes; then
     AC_DEFINE(HAVE_LINUX_ATOMIC_SET_MASK)
 fi
 
-AC_CACHE_CHECK(for SMP, ac_cv_smp,
-[if grep "#define CONFIG_SMP 1" `find_linuxdir include/linux/autoconf.h` >/dev/null 2>&1; then
-  ac_cv_smp=yes
-else ac_cv_smp=no; fi])
-if test $ac_cv_smp = yes; then
-    AC_DEFINE(__SMP__)
-    KERNEL_CXX="$KERNEL_CXX -D__SMP__"
+AC_CACHE_CHECK(for atomic_add_return, ac_cv_linux_atomic_add_return,
+[if grep atomic_add_return `find_linuxdir include/asm/atomic.h` >/dev/null 2>&1; then
+  ac_cv_linux_atomic_add_return=yes
+else ac_cv_linux_atomic_add_return=no; fi])
+if test $ac_cv_linux_atomic_add_return = yes; then
+    AC_DEFINE(HAVE_LINUX_ATOMIC_ADD_RETURN)
 fi
 
 AC_CACHE_CHECK(for <asm/alternative.h>, ac_cv_linux_asm_alternative_h,
@@ -629,6 +628,14 @@ AC_CACHE_CHECK(for <asm/alternative.h>, ac_cv_linux_asm_alternative_h,
 else ac_cv_linux_asm_alternative_h=no; fi])
 if test $ac_cv_linux_asm_alternative_h = yes; then
     AC_DEFINE(HAVE_LINUX_ASM_ALTERNATIVE_H)
+fi
+
+AC_CACHE_CHECK(for <asm/system.h>, ac_cv_linux_asm_system_h,
+[if test -r `find_linuxdir include/asm/system.h` >/dev/null 2>&1; then
+  ac_cv_linux_asm_system_h=yes
+else ac_cv_linux_asm_system_h=no; fi])
+if test $ac_cv_linux_asm_system_h = yes; then
+    AC_DEFINE(HAVE_LINUX_ASM_SYSTEM_H)
 fi
 
 fi

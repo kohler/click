@@ -6,20 +6,22 @@
 #endif
 CLICK_DECLS
 #if CLICK_LINUXMODULE
+# if HAVE_LINUX_ASM_SYSTEM_H
+#  include <asm/system.h>
+# endif
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 #  define CLICK_ATOMIC_VAL	_val.counter
 # else
 #  define CLICK_ATOMIC_VAL	__atomic_fool_gcc(&_val)
 # endif
-# ifdef __SMP__
-#  define CLICK_ATOMIC_LOCK	"lock ; "
-# else
-#  define CLICK_ATOMIC_LOCK	/* nothing */
-# endif
 #else
 # define CLICK_ATOMIC_VAL	_val
-# if HAVE_MULTITHREAD && defined(__i386__)
+#endif
+#if defined(__i386__) || defined(__arch_um__) || defined(__x86_64__)
+# if CLICK_LINUXMODULE || HAVE_MULTITHREAD
 #  define CLICK_ATOMIC_X86	1
+# endif
+# if (CLICK_LINUXMODULE && defined(CONFIG_SMP)) || HAVE_MULTITHREAD
 #  define CLICK_ATOMIC_LOCK	"lock ; "
 # else
 #  define CLICK_ATOMIC_LOCK	/* nothing */
@@ -158,16 +160,17 @@ atomic_uint32_t::operator|=(uint32_t mask)
 {
 #if CLICK_LINUXMODULE && HAVE_LINUX_ATOMIC_SET_MASK
     atomic_set_mask(mask, &_val);
-#elif CLICK_LINUXMODULE
-    unsigned long flags;
-    local_irq_save(flags);
-    CLICK_ATOMIC_VAL |= mask;
-    local_irq_restore(flags);
 #elif CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "orl %1,%0"
 		  : "=m" (CLICK_ATOMIC_VAL)
 		  : "r" (mask), "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
+#elif CLICK_LINUXMODULE
+# warn "using nonatomic approximation for atomic_uint32_t::operator|="
+    unsigned long flags;
+    local_irq_save(flags);
+    CLICK_ATOMIC_VAL |= mask;
+    local_irq_restore(flags);
 #else
     CLICK_ATOMIC_VAL |= mask;
 #endif
@@ -180,16 +183,17 @@ atomic_uint32_t::operator&=(uint32_t mask)
 {
 #if CLICK_LINUXMODULE && HAVE_LINUX_ATOMIC_SET_MASK
     atomic_clear_mask(~mask, &_val);
-#elif CLICK_LINUXMODULE
-    unsigned long flags;
-    local_irq_save(flags);
-    CLICK_ATOMIC_VAL &= mask;
-    local_irq_restore(flags);
 #elif CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "andl %1,%0"
 		  : "=m" (CLICK_ATOMIC_VAL)
 		  : "r" (mask), "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
+#elif CLICK_LINUXMODULE
+# warn "using nonatomic approximation for atomic_uint32_t::operator&="
+    unsigned long flags;
+    local_irq_save(flags);
+    CLICK_ATOMIC_VAL &= mask;
+    local_irq_restore(flags);
 #else
     CLICK_ATOMIC_VAL &= mask;
 #endif
@@ -288,17 +292,15 @@ atomic_uint32_t::operator--(int)
 inline uint32_t
 atomic_uint32_t::swap(uint32_t x)
 {
-#if (CLICK_LINUXMODULE && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))) || CLICK_ATOMIC_X86
+#if CLICK_ATOMIC_X86
     asm volatile ("xchgl %0,%1"
-		  : "=r" (x), "=m" (CLICK_ATOMIC_VAL));
+		  : "=r" (x), "=m" (CLICK_ATOMIC_VAL)
+		  : "0" (x), "m" (CLICK_ATOMIC_VAL));
     return x;
+#elif CLICK_LINUXMODULE && defined(xchg)
+    return atomic_xchg(&_val, x);
 #elif CLICK_LINUXMODULE
-    unsigned long flags;
-    local_irq_save(flags);
-    uint32_t old_value = value();
-    CLICK_ATOMIC_VAL = x;
-    local_irq_restore(flags);
-    return old_value;
+# error "need xchg for atomic_uint32_t::swap"
 #else
     uint32_t old_value = value();
     CLICK_ATOMIC_VAL = x;
@@ -317,13 +319,16 @@ atomic_uint32_t::swap(uint32_t x)
 inline uint32_t
 atomic_uint32_t::fetch_and_add(uint32_t delta)
 {
-#if (CLICK_LINUXMODULE && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))) || CLICK_ATOMIC_X86
+#if CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "xaddl %0,%1"
 		  : "=r" (delta), "=m" (CLICK_ATOMIC_VAL) 
 		  : "0" (delta), "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
     return delta;
+#elif CLICK_LINUXMODULE && HAVE_LINUX_ATOMIC_ADD_RETURN
+    return atomic_add_return(&_val, delta) - delta;
 #elif CLICK_LINUXMODULE
+# warn "using nonatomic approximation for atomic_uint32_t::fetch_and_add"
     unsigned long flags;
     local_irq_save(flags);
     uint32_t old_value = value();
@@ -380,13 +385,16 @@ atomic_uint32_t::dec_and_test(volatile uint32_t &x)
 inline bool
 atomic_uint32_t::compare_and_swap(volatile uint32_t &x, uint32_t test_value, uint32_t new_value)
 {
-#if (CLICK_LINUXMODULE && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))) || CLICK_ATOMIC_X86
+#if CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "cmpxchgl %2,%0 ; sete %%al"
 		  : "=m" (x), "=a" (test_value)
 		  : "r" (new_value), "m" (x), "a" (test_value)
 		  : "cc");
     return (uint8_t) test_value;
+#elif CLICK_LINUXMODULE && defined(cmpxchg)
+    return cmpxchg(&x, test_value, new_value) == test_value;
 #elif CLICK_LINUXMODULE
+# warn "using nonatomic approximation for atomic_uint32_t::compare_and_swap"
     unsigned long flags;
     local_irq_save(flags);
     uint32_t old_value = x;
@@ -443,13 +451,16 @@ atomic_uint32_t::dec_and_test()
 inline bool
 atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
 {
-#if (CLICK_LINUXMODULE && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))) || CLICK_ATOMIC_X86
+#if CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "cmpxchgl %2,%0 ; sete %%al"
 		  : "=m" (CLICK_ATOMIC_VAL), "=a" (test_value)
 		  : "r" (new_value), "m" (CLICK_ATOMIC_VAL), "a" (test_value)
 		  : "cc");
     return (uint8_t) test_value;
+#elif CLICK_LINUXMODULE && defined(atomic_cmpxchg)
+    return atomic_cmpxchg(&_val, test_value, new_value) == test_value;
 #elif CLICK_LINUXMODULE
+# warn "using nonatomic approximation for atomic_uint32_t::compare_and_swap"
     unsigned long flags;
     local_irq_save(flags);
     uint32_t old_value = value();
