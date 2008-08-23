@@ -389,7 +389,7 @@ skbmgr_allocate_skbs(unsigned headroom, unsigned size, int *want)
   size += SKBMGR_DEF_TAILSZ;
 
 #if __MTCLICK__
-  int cpu = click_current_processor();
+  click_processor_t cpu = click_get_processor();
   int producer = cpu;
   int bucket = RecycledSkbPool::size_to_higher_bucket(headroom + size);
 
@@ -401,7 +401,9 @@ skbmgr_allocate_skbs(unsigned headroom, unsigned size, int *want)
     if (pool[cpu]._last_producer >= 0)
       producer = pool[cpu]._last_producer;
   }
-  return pool[producer].allocate(headroom, size, w, want);
+  sk_buff *skb = pool[producer].allocate(headroom, size, w, want);
+  click_put_processor();
+  return skb;
 #else
   return pool.allocate(headroom, size, *want, want);
 #endif
@@ -411,8 +413,9 @@ void
 skbmgr_recycle_skbs(struct sk_buff *skbs)
 {
 #if __MTCLICK__
-  int cpu = click_current_processor();
+  click_processor_t cpu = click_get_processor();
   pool[cpu].recycle(skbs);
+  click_put_processor();
 #else
   pool.recycle(skbs);
 #endif

@@ -114,7 +114,9 @@ Print::simple_action(Packet *p)
     }
 #ifdef CLICK_LINUXMODULE
     if (_cpu) {
-	sa << '(' << click_current_processor() << ')';
+	click_processor_t my_cpu = click_get_processor();
+	sa << '(' << my_cpu << ')';
+	click_put_processor();
 	sep = ": ";
     }
 #endif

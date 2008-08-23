@@ -309,11 +309,37 @@ typedef int8_t click_processor_t;
 #endif
 
 inline click_processor_t
+click_get_processor()
+{
+#if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    return get_cpu();
+# else
+    return current->processor;
+# endif
+#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
+    return pthread_self();
+#else
+    return 0;
+#endif
+}
+
+inline void
+click_put_processor()
+{
+#if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    put_cpu_no_resched();
+# endif
+#endif
+}
+
+inline click_processor_t
 click_current_processor()
 {
 #if CLICK_LINUXMODULE
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    return current_thread_info()->cpu;
+    return smp_processor_id();
 # else
     return current->processor;
 # endif

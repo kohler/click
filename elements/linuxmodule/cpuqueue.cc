@@ -61,15 +61,15 @@ CPUQueue::deq(int n)
 void
 CPUQueue::push(int, Packet *p)
 {
-  int n = click_current_processor();
-  int next = next_i(_q[n]._tail);
-  if (next != _q[n]._head) {
-    _q[n]._q[_q[n]._tail] = p;
-    _q[n]._tail = next;
-  } else {
-    p->kill();
-    _drops++;
-  }
+    int n = click_current_processor();
+    int next = next_i(_q[n]._tail);
+    if (next != _q[n]._head) {
+	_q[n]._q[_q[n]._tail] = p;
+	_q[n]._tail = next;
+    } else {
+	p->kill();
+	_drops++;
+    }
 }
 
 Packet *

@@ -6,7 +6,6 @@
 #if CLICK_LINUXMODULE && defined(CONFIG_SMP)
 # include <linux/threads.h>
 # include <linux/sched.h>
-# define my_cpu click_current_processor()
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 #  define num_possible_cpus()	smp_num_cpus
 # endif
@@ -15,9 +14,6 @@
 # define CLICK_MULTITHREAD_SPINLOCK 1
 #endif
 CLICK_DECLS
-
-// loop-in-cache spinlock implementation: 12 bytes. if the size of this class
-// changes, change size of padding in ReadWriteLock below.
 
 /** @file <click/sync.hh>
  * @brief Classes for synchronizing among multiple CPUs, particularly in the
@@ -58,6 +54,7 @@ class Spinlock { public:
 
 #if CLICK_MULTITHREAD_SPINLOCK
   private:
+
     atomic_uint32_t _lock;
     int32_t _depth;
     click_processor_t _owner;
@@ -97,11 +94,12 @@ inline void
 Spinlock::acquire()
 {
 #if CLICK_MULTITHREAD_SPINLOCK
-    if (_owner != click_current_processor()) {
+    click_processor_t my_cpu = click_get_processor();
+    if (_owner != my_cpu) {
 	while (_lock.swap(1) != 0)
 	    while (_lock != 0)
 		asm volatile ("" : : : "memory");
-	_owner = click_current_processor();
+	_owner = my_cpu;
     }
     _depth++;
 #endif
@@ -117,10 +115,13 @@ inline bool
 Spinlock::attempt()
 {
 #if CLICK_MULTITHREAD_SPINLOCK
-    if (_owner != click_current_processor()) {
-	if (_lock.swap(1) != 0)
+    click_processor_t my_cpu = click_get_processor();
+    if (_owner != my_cpu) {
+	if (_lock.swap(1) != 0) {
+	    click_put_processor();
 	    return false;
-	_owner = click_current_processor();
+	}
+	_owner = my_cpu;
     }
     _depth++;
     return true;
@@ -147,6 +148,7 @@ Spinlock::release()
 	}
     } else
 	click_chatter("lock already released");
+    click_put_processor();
 #endif
 }
 
@@ -308,7 +310,7 @@ class ReadWriteLock { public:
     // allocate 32 bytes (size of a cache line) for every member
     struct lock_t {
 	Spinlock _lock;
-	unsigned char reserved[20];
+	unsigned char reserved[32 - sizeof(Spinlock)];
     } *_l;
 #endif
     
@@ -344,8 +346,8 @@ inline void
 ReadWriteLock::acquire_read()
 {
 #if CLICK_LINUXMODULE && defined(CONFIG_SMP)
-    assert(click_current_processor() >= 0);
-    _l[click_current_processor()]._lock.acquire();
+    click_processor_t my_cpu = click_get_processor();
+    _l[my_cpu]._lock.acquire();
 #endif
 }
 
@@ -359,8 +361,11 @@ inline bool
 ReadWriteLock::attempt_read()
 {
 #if CLICK_LINUXMODULE && defined(CONFIG_SMP)
-    assert(click_current_processor() >= 0);
-    return _l[click_current_processor()]._lock.attempt();
+    click_processor_t my_cpu = click_get_processor();
+    bool result = _l[my_cpu]._lock.attempt();
+    if (!result)
+	click_put_processor();
+    return result;
 #else
     return true;
 #endif
@@ -376,8 +381,8 @@ inline void
 ReadWriteLock::release_read()
 {
 #if CLICK_LINUXMODULE && defined(CONFIG_SMP)
-    assert(click_current_processor() >= 0);
     _l[click_current_processor()]._lock.release();
+    click_put_processor();
 #endif
 }
 

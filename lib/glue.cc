@@ -109,11 +109,13 @@ click_chatter(const char *fmt, ...)
 #if CLICK_LINUXMODULE
 # if __MTCLICK__
     static char buf[NR_CPUS][512];	// XXX
-    int i = vsprintf(buf[click_current_processor()], fmt, val);
-    printk("<1>%s\n", buf[click_current_processor()]);
+    click_processor_t cpu = click_get_processor();
+    int i = vsnprintf(buf[cpu], 512, fmt, val);
+    printk("<1>%s\n", buf[cpu]);
+    click_put_processor();
 # else
     static char buf[512];		// XXX
-    int i = vsprintf(buf, fmt, val);
+    int i = vsnprintf(buf, 512, fmt, val);
     printk("<1>%s\n", buf);
 # endif
 #elif CLICK_BSDMODULE
