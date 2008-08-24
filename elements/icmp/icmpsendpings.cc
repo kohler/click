@@ -193,7 +193,7 @@ ICMPPingSource::push(int, Packet *p)
 	    uint32_t diffval;
 	    if (p->timestamp_anno()) {
 		Timestamp diff = p->timestamp_anno() - *send_ts;
-		diffval = diff.usec1();
+		diffval = diff.usecval();
 		if (diffval < _receiver->time_min || !_receiver->nreceived)
 		    _receiver->time_min = diffval;
 		if (diffval > _receiver->time_max || !_receiver->nreceived)

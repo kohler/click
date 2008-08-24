@@ -48,7 +48,7 @@ struct fake_pcap_file_header {
 struct fake_bpf_timeval {
 	int32_t tv_sec;
 	int32_t tv_usec;
-	inline static const Timestamp *make_timestamp(const fake_bpf_timeval *tv, fake_bpf_timeval *storage);
+	inline static const Timestamp *make_timestamp(const fake_bpf_timeval *tv, Timestamp *storage);
 };
 
 /*
@@ -91,15 +91,14 @@ fake_pcap_force_ip(WritablePacket*& p, int dlt)
 }
 
 inline const Timestamp *
-fake_bpf_timeval::make_timestamp(const fake_bpf_timeval *tv, fake_bpf_timeval *ts_storage)
+fake_bpf_timeval::make_timestamp(const fake_bpf_timeval *tv, Timestamp *ts_storage)
 {
-#if HAVE_NANOTIMESTAMP
-    ts_storage->tv_sec = tv->tv_sec;
-    ts_storage->tv_usec = Timestamp::usec_to_subsec(tv->tv_usec);
-    return reinterpret_cast<Timestamp*>(ts_storage);
-#else
+#if TIMESTAMP_REP_BIG_ENDIAN && !HAVE_NANOTIMESTAMP
     (void) ts_storage;
     return reinterpret_cast<const Timestamp*>(tv);
+#else
+    ts_storage->assign_usec(tv->tv_sec, tv->tv_usec);
+    return ts_storage;
 #endif
 }
 

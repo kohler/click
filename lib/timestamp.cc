@@ -43,16 +43,16 @@ CLICK_DECLS
  fractions of a second, are stored in separate integers.  Timestamps have
  either microsecond or nanosecond precision, depending on how Click is
  configured.  Thus, one subsecond might equal either one microsecond or one
- nanosecond.  The NSUBSEC enumeration constant equals the number of subseconds
- in a second; the timestamp's subsec() value should always lie between 0 and
- NSUBSEC - 1.  (The <tt>--enable-nanotimestamp</tt> configuration option
- enables nanosecond-precision timestamps at user level; kernel modules always
- use microsecond-precision timestamps.)
+ nanosecond.  The subsec_per_sec enumeration constant equals the number of
+ subseconds in a second; the timestamp's subsec() value should always lie
+ between 0 and subsec_per_sec - 1.  (The <tt>--enable-nanotimestamp</tt>
+ configuration option enables nanosecond-precision timestamps at user level;
+ kernel modules always use microsecond-precision timestamps.)
 
  A Timestamp with sec() < 0 is negative.  Note that subsec() is always
  nonnegative.  A Timestamp's value always equals (sec() + subsec() / (double)
- NSUBSEC); thus, the Timestamp value of -0.1 is represented as sec() == -1,
- usec() == +900000.
+ subsec_per_sec); thus, the Timestamp value of -0.1 is represented as sec() ==
+ -1, usec() == +900000.
  */
 
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
@@ -70,13 +70,13 @@ Timestamp::set_timeval_ioctl(int fd, int ioctl_selector)
     int r;
 # if TIMESTAMP_PUNS_TIMEVAL
     r = ioctl(fd, ioctl_selector, this);
-# elif SIZEOF_STRUCT_TIMEVAL == 8 && !TIMESTAMP_PUNS_INT64
+# elif SIZEOF_STRUCT_TIMEVAL == 8 && TIMESTAMP_REP_BIG_ENDIAN
     if ((r = ioctl(fd, ioctl_selector, this)) >= 0)
-	_subsec = usec_to_subsec(_subsec);
+	_t.subsec = usec_to_subsec(_t.subsec);
 # else
     struct timeval tv;
     if ((r = ioctl(fd, ioctl_selector, &tv)) >= 0)
-	set_usec(tv.tv_sec, tv.tv_usec);
+	assign_usec(tv.tv_sec, tv.tv_usec);
 # endif
     return r;
 }
@@ -117,13 +117,13 @@ operator<<(StringAccum &sa, const Timestamp& ts)
 	    if (ts.subsec() == 0)
 		sec = -ts.sec(), subsec = 0;
 	    else
-		sec = -ts.sec() - 1, subsec = Timestamp::NSUBSEC - ts.subsec();
+		sec = -ts.sec() - 1, subsec = Timestamp::subsec_per_sec - ts.subsec();
 	}
 	
 	int len;
 #if HAVE_NANOTIMESTAMP
-	uint32_t usec = subsec / 1000;
-	if (usec * 1000 == subsec)
+	uint32_t usec = subsec / Timestamp::nsec_per_usec;
+	if (usec * Timestamp::nsec_per_usec == subsec)
 	    len = sprintf(x, "%ld.%06u", (long) sec, usec);
 	else
 	    len = sprintf(x, "%ld.%09u", (long) sec, subsec);
@@ -139,7 +139,7 @@ operator<<(StringAccum &sa, const Timestamp& ts)
 
     Returns a string formatted like "10.000000", with at least six subsecond
     digits.  (Nanosecond-precision timestamps where the number of nanoseconds
-    is not evenly divisible by 1000 are given nine subsecond digits.) */
+    is not evenly divisible by 1000 have nine subsecond digits.) */
 String
 Timestamp::unparse() const
 {

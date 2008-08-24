@@ -828,7 +828,7 @@ Master::run_selects_poll(bool more_tasks)
 	    if (t.sec() >= INT_MAX / 1000)
 		timeout = INT_MAX - 1000;
 	    else
-		timeout = t.msec1();
+		timeout = t.msecval();
 	}
     }
 # endif /* CLICK_NS */

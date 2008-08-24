@@ -144,9 +144,28 @@ ConfParseTest::initialize(ErrorHandler *errh)
     Timestamp t = Timestamp(0, 0) - Timestamp::make_msec(1001);
     CHECK(t.sec() == -2 && t.usec() == 999000);
     CHECK(t.unparse() == "-1.001000");
-    t = Timestamp(-10, 0);
-    CHECK(t.sec() == -10 && t.subsec() == 0);
-    CHECK(t.unparse() == "-10.000000");
+    Timestamp t2 = Timestamp(-10, 0);
+    CHECK(t2.sec() == -10 && t2.subsec() == 0);
+    CHECK(t2.unparse() == "-10.000000");
+    CHECK(t2 < t);
+    CHECK((-t2).unparse() == "10.000000");
+    CHECK((-t).unparse() == "1.001000");
+    CHECK(-t2 > t);
+    CHECK((-t + t2).unparse() == "-8.999000");
+    t = Timestamp::make_msec(999);
+    CHECK((t + t).unparse() == "1.998000");
+    CHECK((-t - t).unparse() == "-1.998000");
+    CHECK(-t == Timestamp::make_msec(-999));
+    CHECK(t == Timestamp::make_usec(999000));
+    CHECK(-t == Timestamp::make_usec(-999000));
+    CHECK(t == Timestamp::make_nsec(999000000));
+    CHECK(-t == Timestamp::make_nsec(-999000000));
+    CHECK(t.msecval() == 999);
+    CHECK(t.usecval() == 999000);
+    CHECK(t.nsecval() == 999000000);
+    CHECK((-t).msecval() == -999);
+    CHECK((-t).usecval() == -999000);
+    CHECK((-t).nsecval() == -999000000);
 
     // some string tests for good measure
     CHECK(String("abcdef").substring(-3) == "def");

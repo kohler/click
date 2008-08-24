@@ -182,7 +182,7 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 	    SET_FIRST_TIMESTAMP_ANNO(q, Timestamp(j, 0)), ok++;
 	if (cp_integer(words[8], &j)) {
 	    if (j)
-		q->timestamp_anno().set(j, 0);
+		q->timestamp_anno().assign(j, 0);
 	    else
 		q->timestamp_anno() = FIRST_TIMESTAMP_ANNO(q);
 	    ok++;

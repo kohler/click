@@ -365,7 +365,7 @@ FromDump::read_packet(ErrorHandler *errh)
 
     // check times
   check_times:
-    ts_ptr = fake_bpf_timeval::make_timestamp(&ph->ts, &swapped_ph.ts);
+    ts_ptr = fake_bpf_timeval::make_timestamp(&ph->ts, (Timestamp *) &swapped_ph.ts);
     if (!_have_any_times)
 	prepare_times(*ts_ptr);
     if (_have_first_time) {
