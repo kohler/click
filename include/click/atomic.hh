@@ -288,14 +288,17 @@ atomic_uint32_t::operator--(int)
  * uint32_t old_value = value();
  * *this = x;
  * return old_value;
- * @endcode*/
+ * @endcode
+ *
+ * Also acts as a memory barrier. */
 inline uint32_t
 atomic_uint32_t::swap(uint32_t x)
 {
 #if CLICK_ATOMIC_X86
     asm volatile ("xchgl %0,%1"
 		  : "=r" (x), "=m" (CLICK_ATOMIC_VAL)
-		  : "0" (x), "m" (CLICK_ATOMIC_VAL));
+		  : "0" (x), "m" (CLICK_ATOMIC_VAL)
+		  : "memory");
     return x;
 #elif CLICK_LINUXMODULE && defined(xchg)
     return atomic_xchg(&_val, x);
@@ -381,7 +384,9 @@ atomic_uint32_t::dec_and_test(volatile uint32_t &x)
  * if (x == test_value)
  *     x = new_value;
  * return old_value == test_value;
- * @endcode */
+ * @endcode
+ *
+ * Also acts as a memory barrier. */
 inline bool
 atomic_uint32_t::compare_and_swap(volatile uint32_t &x, uint32_t test_value, uint32_t new_value)
 {
@@ -389,7 +394,7 @@ atomic_uint32_t::compare_and_swap(volatile uint32_t &x, uint32_t test_value, uin
     asm volatile (CLICK_ATOMIC_LOCK "cmpxchgl %2,%0 ; sete %%al"
 		  : "=m" (x), "=a" (test_value)
 		  : "r" (new_value), "m" (x), "a" (test_value)
-		  : "cc");
+		  : "cc", "memory");
     return (uint8_t) test_value;
 #elif CLICK_LINUXMODULE && defined(cmpxchg)
     return cmpxchg(&x, test_value, new_value) == test_value;
@@ -447,7 +452,9 @@ atomic_uint32_t::dec_and_test()
  * if (old_value == test_value)
  *     *this = new_value;
  * return old_value == test_value;
- * @endcode */
+ * @endcode
+ *
+ * Also acts as a memory barrier. */
 inline bool
 atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
 {
@@ -455,7 +462,7 @@ atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
     asm volatile (CLICK_ATOMIC_LOCK "cmpxchgl %2,%0 ; sete %%al"
 		  : "=m" (CLICK_ATOMIC_VAL), "=a" (test_value)
 		  : "r" (new_value), "m" (CLICK_ATOMIC_VAL), "a" (test_value)
-		  : "cc");
+		  : "cc", "memory");
     return (uint8_t) test_value;
 #elif CLICK_LINUXMODULE && defined(atomic_cmpxchg)
     return atomic_cmpxchg(&_val, test_value, new_value) == test_value;
