@@ -2,6 +2,9 @@
 #ifndef CLICK_TIMESTAMP_HH
 #define CLICK_TIMESTAMP_HH
 #include <click/glue.hh>
+#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+# include <math.h>
+#endif
 CLICK_DECLS
 class String;
 
@@ -9,68 +12,107 @@ class String;
 // * TIMESTAMP_REP_FLAT64: a 64-bit integer number of nanoseconds
 // * TIMESTAMP_REP_BIG_ENDIAN: 32 bits of seconds plus 32 bits of subseconds
 // * TIMESTAMP_REP_LITTLE_ENDIAN: 32 bits of subseconds plus 32 bits of seconds
-// 64-bit arithmetic is used when possible for speed.
-// If Timestamp puns timespec/timeval, define TIMESTAMP_PUNS_TIMESPEC/TIMEVAL.
+//
+// Rationale: The linuxmodule driver must select the same representation as
+// Linux's sk_buff tstamp member, which may use any of these representations.
+// (Linuxmodule Packet objects are equivalent to sk_buffs, and
+// Packet::timestamp_anno() maps to sk_buff::tstamp.  We want to avoid
+// conversion expense when accessing timestamp_anno().  More seriously, it is
+// very convenient to treat timestamp_anno() as a modifiable reference.)
 
-#if CLICK_LINUXMODULE
-// The linuxmodule driver requires that Timestamp have the same representation
-// as sk_buff's stamp/tstamp member.
-# undef TIMESTAMP_REP_FLAT64
-# undef TIMESTAMP_REP_BIG_ENDIAN
-# undef TIMESTAMP_REP_LITTLE_ENDIAN
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 24)
-#  define TIMESTAMP_REP_BIG_ENDIAN 1
-# elif BITS_PER_LONG == 64 || defined(CONFIG_KTIME_SCALAR)
+#if !TIMESTAMP_REP_FLAT64 && !TIMESTAMP_REP_BIG_ENDIAN && !TIMESTAMP_REP_LITTLE_ENDIAN
+# if CLICK_LINUXMODULE
+#  if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 24)
+#   define TIMESTAMP_REP_BIG_ENDIAN 1
+#  elif BITS_PER_LONG == 64 || defined(CONFIG_KTIME_SCALAR)
+#   define TIMESTAMP_REP_FLAT64 1
+#  elif defined(__BIG_ENDIAN)
+#   define TIMESTAMP_REP_BIG_ENDIAN 1
+#  else
+#   define TIMESTAMP_REP_LITTLE_ENDIAN 1
+#  endif
+# elif HAVE_INT64_TYPES && SIZEOF_LONG == 8
 #  define TIMESTAMP_REP_FLAT64 1
-# elif defined(__BIG_ENDIAN)
-#  define TIMESTAMP_REP_BIG_ENDIAN 1
-# else
+# elif HAVE_INT64_TYPES && CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
 #  define TIMESTAMP_REP_LITTLE_ENDIAN 1
-# endif
-
-#elif !TIMESTAMP_REP_FLAT64 && !TIMESTAMP_REP_BIG_ENDIAN && !TIMESTAMP_REP_LITTLE_ENDIAN
-# if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
-#  define TIMESTAMP_REP_BIG_ENDIAN 1
 # else
-#  define TIMESTAMP_REP_LITTLE_ENDIAN 1
+#  define TIMESTAMP_REP_BIG_ENDIAN 1
 # endif
 #endif
 
-#if HAVE_INT64_TYPES && !TIMESTAMP_REP_FLAT64 && ((TIMESTAMP_REP_BIG_ENDIAN && CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN) || (TIMESTAMP_REP_LITTLE_ENDIAN && CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN))
-# define TIMESTAMP_MATH_FLAT64 1
+
+// Timestamp can use microsecond or nanosecond precision.  Nanosecond
+// precision is used if TIMESTAMP_NANOSEC == 1.  In the Linux kernel, we
+// choose what Linux uses for sk_buff::tstamp.  Elsewhere, we default to
+// microsecond precision (XXX); "./configure --enable-nanotimestamp" selects
+// nanosecond precision.
+
+#ifndef TIMESTAMP_NANOSEC
+# if CLICK_LINUXMODULE
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+#   define TIMESTAMP_NANOSEC 1
+#  endif
+# endif
 #endif
 
-#if TIMESTAMP_REP_BIG_ENDIAN && !HAVE_NANOTIMESTAMP && SIZEOF_STRUCT_TIMEVAL == 8
-# define TIMESTAMP_PUNS_TIMEVAL 1
-#elif TIMESTAMP_REP_BIG_ENDIAN && HAVE_NANOTIMESTAMP && HAVE_STRUCT_TIMESPEC && SIZEOF_STRUCT_TIMESPEC == 8
-# define TIMESTAMP_PUNS_TIMESPEC 1
+
+// Define TIMESTAMP_MATH_FLAT64 if despite a seconds-and-subseconds
+// representation, 64-bit arithmetic should be used for timestamp addition,
+// subtraction, and comparisons.  This can be faster than operating on two
+// separate 32-bit integers.
+
+#if HAVE_INT64_TYPES && !TIMESTAMP_REP_FLAT64
+# if (TIMESTAMP_REP_BIG_ENDIAN && CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN) \
+    || (TIMESTAMP_REP_LITTLE_ENDIAN && CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN)
+#  define TIMESTAMP_MATH_FLAT64 1
+# endif
 #endif
 
-#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
-# include <math.h>
-#endif
-#if (CLICK_USERLEVEL || CLICK_TOOL) && !CLICK_NS && HAVE_DECL_CLOCK_GETTIME && HAVE_CLOCK_GETTIME
-# define CLICK_USE_CLOCK_GETTIME 1
+
+// If a Timestamp's internal representation is identical to struct timespec
+// or struct timeval, define TIMESTAMP_PUNS_TIMESPEC or TIMESTAMP_PUNS_TIMEVAL.
+
+#if TIMESTAMP_REP_BIG_ENDIAN
+# if !TIMESTAMP_NANOSEC && SIZEOF_STRUCT_TIMEVAL == 8
+#  define TIMESTAMP_PUNS_TIMEVAL 1
+# elif TIMESTAMP_NANOSEC && HAVE_STRUCT_TIMESPEC && SIZEOF_STRUCT_TIMESPEC == 8
+#  define TIMESTAMP_PUNS_TIMESPEC 1
+# endif
 #endif
 
-#if TIMESTAMP_REP_FLAT64
-# define TIMESTAMP_ASSIGN(s, ss) _t.x = (int64_t) (s) * subsec_per_sec + (ss)
-#else
-# define TIMESTAMP_ASSIGN(s, ss) _t.sec = (s), _t.subsec = (ss)
+
+// Timestamp::value_type is the type of arguments to, for example,
+// Timestamp::make_msec(), and should be as large as possible.  This is
+// int64_t at userlevel.  In the linuxmodule driver, int64_t can only be used
+// if the relevant Linux provides 64-bit divide, which is do_div.
+// TIMESTAMP_VALUE_INT64 is defined to 1 if Timestamp::value_type is int64_t.
+
+#if !defined(TIMESTAMP_VALUE_INT64) && HAVE_INT64_TYPES
+# if CLICK_LINUXMODULE && defined(do_div)
+#  define TIMESTAMP_VALUE_INT64 1
+# elif !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+#  define TIMESTAMP_VALUE_INT64 1
+# endif
 #endif
 
-#if HAVE_NANOTIMESTAMP
+
+// PRITIMESTAMP is a printf format string for Timestamps.  The corresponding
+// printf argument list is Timestamp::sec() and Timestamp::subsec(), in that
+// order.
+
+#if TIMESTAMP_NANOSEC
 # define PRITIMESTAMP "%d.%09d"
 #else
 # define PRITIMESTAMP "%d.%06d"
 #endif
+
 
 class Timestamp { public:
 
     /** @brief  Type represents a number of seconds. */
     typedef int32_t seconds_type;
     /** @brief  Return type for msecval(), usecval(), and nsecval(). */
-#if HAVE_INT64_TYPES
+#if TIMESTAMP_VALUE_INT64
     typedef int64_t value_type;
 #else
     typedef int32_t value_type;
@@ -85,7 +127,7 @@ class Timestamp { public:
 	usec_per_sec = 1000000,
 	usec_per_msec = 1000,
 	msec_per_sec = 1000,
-#if HAVE_NANOTIMESTAMP
+#if TIMESTAMP_NANOSEC
 	subsec_per_sec = nsec_per_sec
 				/**< Number of subseconds in a second.  Can be
 				     1000000 or 1000000000, depending on how
@@ -105,7 +147,7 @@ class Timestamp { public:
 
     /** @brief Construct a zero-valued Timestamp. */
     inline Timestamp() {
-	TIMESTAMP_ASSIGN(0, 0);
+	assign(0, 0);
     }
 
     /** @brief Construct a Timestamp of @a sec seconds plus @a subsec
@@ -118,19 +160,19 @@ class Timestamp { public:
      * min_seconds @endlink and @link Timestamp::max_seconds max_seconds
      * @endlink.  Errors are not necessarily checked. */
     inline Timestamp(long sec, uint32_t subsec = 0) {
-	TIMESTAMP_ASSIGN(sec, subsec);
+	assign(sec, subsec);
     }
     /** @overload */
     inline Timestamp(int sec, uint32_t subsec = 0) {
-	TIMESTAMP_ASSIGN(sec, subsec);
+	assign(sec, subsec);
     }
     /** @overload */
     inline Timestamp(unsigned long sec, uint32_t subsec = 0) {
-	TIMESTAMP_ASSIGN(sec, subsec);
+	assign(sec, subsec);
     }
     /** @overload */
     inline Timestamp(unsigned sec, uint32_t subsec = 0) {
-	TIMESTAMP_ASSIGN(sec, subsec);
+	assign(sec, subsec);
     }
 #if HAVE_FLOAT_TYPES
     inline Timestamp(double);
@@ -180,7 +222,7 @@ class Timestamp { public:
     /** @brief Return this timestamp's interval length in milliseconds. */
     inline value_type msecval() const {
 #if TIMESTAMP_REP_FLAT64
-	return _t.x / (subsec_per_sec / msec_per_sec);
+	return value_div(_t.x, subsec_per_sec / msec_per_sec);
 #else
 	return (value_type) _t.sec * msec_per_sec + subsec_to_msec(_t.subsec);
 #endif
@@ -188,7 +230,7 @@ class Timestamp { public:
     /** @brief Return this timestamp's interval length in microseconds. */
     inline value_type usecval() const {
 #if TIMESTAMP_REP_FLAT64
-	return _t.x / (subsec_per_sec / usec_per_sec);
+	return value_div(_t.x, subsec_per_sec / usec_per_sec);
 #else
 	return (value_type) _t.sec * usec_per_sec + subsec_to_usec(_t.subsec);
 #endif
@@ -203,32 +245,64 @@ class Timestamp { public:
     }
 
 #if !CLICK_TOOL
-    /** @brief Return a timestamp representing an interval of @a jiffies. */
+    /** @brief Return a timestamp representing @a jiffies. */
     static inline Timestamp make_jiffies(click_jiffies_t jiffies);
     /** @brief Return the number of jiffies represented by this timestamp. */
     inline click_jiffies_t jiffies() const;
 #endif
 
-    static inline Timestamp make_sec(seconds_type sec);
-    static inline Timestamp make_msec(value_type msec);
-    static inline Timestamp make_usec(seconds_type sec, uint32_t usec);
-    static inline Timestamp make_usec(value_type usec);
-    static inline Timestamp make_nsec(seconds_type sec, uint32_t nsec);
+    /** @brief Return a timestamp representing @a sec seconds. */
+    static inline Timestamp make_sec(seconds_type sec) {
+	return Timestamp(sec, 0);
+    }
+    /** @brief Return a timestamp representing @a sec seconds plus @a msec
+     *  milliseconds.
+     *  @pre 0 <= @a msec < 1000 */
+    static inline Timestamp make_msec(seconds_type sec, uint32_t msec) {
+	return Timestamp(sec, msec_to_subsec(msec));
+    }
+    /** @brief Return a timestamp representing @a msec milliseconds. */
+    static inline Timestamp make_msec(value_type msec) {
+	Timestamp t = Timestamp::uninitialized_t();
+#if TIMESTAMP_REP_FLAT64
+	t._t.x = msec * (subsec_per_sec / msec_per_sec);
+#else
+	value_div_mod(t._t.sec, t._t.subsec, msec, msec_per_sec);
+	t._t.subsec *= subsec_per_sec / msec_per_sec;
+#endif
+	return t;
+    }
+    /** @brief Return a timestamp representing @a sec seconds plus @a usec
+     *  microseconds.
+     *  @pre 0 <= @a usec < 1000000 */
+    static inline Timestamp make_usec(seconds_type sec, uint32_t usec) {
+	return Timestamp(sec, usec_to_subsec(usec));
+    }
+    /** @brief Return a timestamp representing @a usec microseconds. */
+    static inline Timestamp make_usec(value_type usec) {
+	Timestamp t = Timestamp::uninitialized_t();
+#if TIMESTAMP_REP_FLAT64
+	t._t.x = usec * (subsec_per_sec / usec_per_sec);
+#else
+	value_div_mod(t._t.sec, t._t.subsec, usec, usec_per_sec);
+	t._t.subsec *= subsec_per_sec / usec_per_sec;
+#endif
+	return t;
+    }
+    /** @brief Return a timestamp representing @a sec seconds plus @a nsec
+     *  nanoseconds.
+     *  @pre 0 <= @a nsec < 1000000000 */
+    static inline Timestamp make_nsec(seconds_type sec, uint32_t nsec) {
+	return Timestamp(sec, nsec_to_subsec(nsec));
+    }
+    /** @brief Return a timestamp representing @a nsec nanoseconds. */
     static inline Timestamp make_nsec(value_type nsec) {
 	Timestamp t = Timestamp::uninitialized_t();
 #if TIMESTAMP_REP_FLAT64
-	t._t.x = nsec / (nsec_per_sec / subsec_per_sec);
+	t._t.x = value_div(nsec, nsec_per_sec / subsec_per_sec);
 #else
-	// This arithmetic is about twice as fast on my laptop as the
-	// alternative "t._t.sec = nsec / nsec_per_sec;
-	//		nsec -= t._t.sec * nsec_per_sec;
-	//		if (nsec < 0) t._t.sec--, nsec += nsec_per_sec;".
-	if (unlikely(nsec < 0))
-	    t._t.sec = -((-nsec - 1) / nsec_per_sec) - 1;
-	else
-	    t._t.sec = nsec / nsec_per_sec;
-	nsec -= t._t.sec * nsec_per_sec;
-	t._t.subsec = nsec / (nsec_per_sec / subsec_per_sec);
+	value_div_mod(t._t.sec, t._t.subsec, nsec, nsec_per_sec);
+	t._t.subsec /= nsec_per_sec / subsec_per_sec;
 #endif
 	return t;
     }
@@ -239,10 +313,17 @@ class Timestamp { public:
 	return Timestamp(0, 1);
     }
 
-    /** Assign this timestamp to a seconds-and-subseconds value.
+    /** Set this timestamp to a seconds-and-subseconds value.
      *
      * @sa Timestamp(int, int) */
-    inline void assign(seconds_type sec, uint32_t subsec = 0);
+    inline void assign(seconds_type sec, uint32_t subsec = 0) {
+#if TIMESTAMP_REP_FLAT64
+	_t.x = (int64_t) sec * subsec_per_sec + subsec;
+#else
+	_t.sec = sec;
+	_t.subsec = subsec;
+#endif
+    }
     /** Assign this timestamp to a seconds-and-microseconds value. */
     inline void assign_usec(seconds_type sec, uint32_t usec) {
 	assign(sec, usec_to_subsec(usec));
@@ -318,10 +399,65 @@ class Timestamp { public:
 #endif
     } _t;
 
-#if !TIMESTAMP_REP_FLAT64
-    inline void add_fix();
-    inline void sub_fix();
+    inline void add_fix() {
+#if TIMESTAMP_REP_FLAT64
+	/* no fix necessary */
+#elif TIMESTAMP_MATH_FLAT64
+	if (_t.subsec >= subsec_per_sec)
+	    _t.x += (uint32_t) -subsec_per_sec;
+#else
+	if (_t.subsec >= subsec_per_sec)
+	    _t.sec++, _t.subsec -= subsec_per_sec;
 #endif
+    }
+
+    inline void sub_fix() {
+#if TIMESTAMP_REP_FLAT64
+	/* no fix necessary */
+#elif TIMESTAMP_MATH_FLAT64
+	if (_t.subsec < 0)
+	    _t.subsec += subsec_per_sec;
+#else
+	if (_t.subsec < 0)
+	    _t.sec--, _t.subsec += subsec_per_sec;
+#endif
+    }
+
+    static inline value_type value_div(value_type a, uint32_t b) {
+#if CLICK_LINUXMODULE && TIMESTAMP_VALUE_INT64 && BITS_PER_LONG < 64
+	do_div(a, b);
+	return a;
+#else
+	return a / b;
+#endif
+    }
+
+    static inline void value_div_mod(int32_t &div, int32_t &rem,
+				     value_type a, uint32_t b) {
+#if CLICK_LINUXMODULE && TIMESTAMP_VALUE_INT64 && BITS_PER_LONG < 64
+	if (unlikely(a < 0)) {
+	    a = -a - 1;
+	    rem = do_div(a, b);
+	    div = -a - 1;
+	} else {
+	    rem = do_div(a, b);
+	    div = a;
+	}
+#else
+	// This arithmetic is about twice as fast on my laptop as the
+	// alternative "div = a / b;
+	//		mod = a - (value_type) div * b;
+	//		if (mod < 0) div--, mod += b;",
+	// and 3-4x faster than "div = a / b;
+	//			 mod = a % b;
+	//			 if (mod < 0) div--, mod += b;".
+	if (unlikely(a < 0))
+	    div = -((-a - 1) / b) - 1;
+	else
+	    div = a / b;
+	rem = a - (value_type) div * b;
+#endif
+    }
 
     friend inline bool operator==(const Timestamp &a, const Timestamp &b);
     friend inline bool operator<(const Timestamp &a, const Timestamp &b);
@@ -337,7 +473,7 @@ class Timestamp { public:
 inline
 Timestamp::Timestamp(const struct timeval& tv)
 {
-    TIMESTAMP_ASSIGN(tv.tv_sec, usec_to_subsec(tv.tv_usec));
+    assign(tv.tv_sec, usec_to_subsec(tv.tv_usec));
 }
 
 #if HAVE_STRUCT_TIMESPEC
@@ -346,7 +482,7 @@ Timestamp::Timestamp(const struct timeval& tv)
 inline
 Timestamp::Timestamp(const struct timespec& ts)
 {
-    TIMESTAMP_ASSIGN(ts.tv_sec, nsec_to_subsec(ts.tv_nsec));
+    assign(ts.tv_sec, nsec_to_subsec(ts.tv_nsec));
 }
 #endif
 
@@ -361,15 +497,6 @@ Timestamp::operator unspecified_bool_type() const
 #endif
 }
 
-/** @brief Set this timestamp's components.
-    @param sec number of seconds
-    @param subsec number of subseconds */
-inline void
-Timestamp::assign(seconds_type sec, uint32_t subsec)
-{
-    TIMESTAMP_ASSIGN(sec, subsec);
-}
-
 /** @brief Set this timestamp to the current time.
 
  The current time is measured in seconds since January 1, 1970 GMT.
@@ -378,7 +505,7 @@ Timestamp::assign(seconds_type sec, uint32_t subsec)
 inline void
 Timestamp::set_now()
 {
-#if HAVE_NANOTIMESTAMP && (!CLICK_USERLEVEL || CLICK_USE_CLOCK_GETTIME)
+#if TIMESTAMP_NANOSEC && (!CLICK_USERLEVEL || HAVE_USE_CLOCK_GETTIME)
     // nanosecond precision
 # if TIMESTAMP_PUNS_TIMESPEC
     struct timespec *tsp = (struct timespec *) this;
@@ -434,77 +561,7 @@ Timestamp::now()
     return t;
 }
 
-/** @brief Return a timestamp representing an interval of @a sec
-    seconds.
-    @param sec number of seconds */
-inline Timestamp
-Timestamp::make_sec(seconds_type sec)
-{
-    return Timestamp(sec, 0);
-}
-
-/** @brief Return a timestamp representing an interval of @a msec
-    milliseconds.
-    @param msec number of milliseconds (may be negative or greater than 1000) */
-inline Timestamp
-Timestamp::make_msec(value_type msec)
-{
-    Timestamp t = Timestamp::uninitialized_t();
-#if TIMESTAMP_REP_FLAT64
-    t._t.x = msec * (subsec_per_sec / msec_per_sec);
-#else
-    if (unlikely(msec < 0))
-	t._t.sec = -((-msec - 1) / msec_per_sec) - 1;
-    else
-	t._t.sec = msec / msec_per_sec;
-    msec -= t._t.sec * msec_per_sec;
-    t._t.subsec = msec * (subsec_per_sec / msec_per_sec);
-#endif
-    return t;
-}
-
-/** @brief Return a timestamp representing @a sec seconds plus @a usec
-    microseconds.
-    @param sec number of seconds
-    @param usec number of microseconds (less than 1000000) */
-inline Timestamp
-Timestamp::make_usec(seconds_type sec, uint32_t usec)
-{
-    return Timestamp(sec, usec_to_subsec(usec));
-}
-
-/** @brief Return a timestamp representing an interval of @a usec
-    microseconds.
-    @param usec number of microseconds (may be negative or greater than 1000000) */
-inline Timestamp
-Timestamp::make_usec(value_type usec)
-{
-    Timestamp t = Timestamp::uninitialized_t();
-#if TIMESTAMP_REP_FLAT64
-    t._t.x = usec * (subsec_per_sec / usec_per_sec);
-#else
-    if (unlikely(usec < 0))
-	t._t.sec = -((-usec - 1) / usec_per_sec) - 1;
-    else
-	t._t.sec = usec / usec_per_sec;
-    usec -= t._t.sec * usec_per_sec;
-    t._t.subsec = usec * (subsec_per_sec / usec_per_sec);
-#endif
-    return t;
-}
-
-/** @brief Return a timestamp representing @a sec seconds plus @a nsec
-    nanoseconds.
-    @param sec number of seconds
-    @param nsec number of nanoseconds (less than 1000000000) */
-inline Timestamp
-Timestamp::make_nsec(seconds_type sec, uint32_t nsec)
-{
-    return Timestamp(sec, nsec_to_subsec(nsec));
-}
-
 /** @brief Set this timestamp's seconds component.
-    @param sec number of seconds
     
     The subseconds component is left unchanged. */
 inline void
@@ -526,8 +583,8 @@ inline void
 Timestamp::set_subsec(uint32_t subsec)
 {
 #if TIMESTAMP_REP_FLAT64
-    uint32_t ss = this->subsec();
-    _t.x = _t.x - ss + subsec;
+    seconds_type s = sec();
+    _t.x = (int64_t) s * subsec_per_sec + subsec;
 #else
     _t.subsec = subsec;
 #endif
@@ -538,10 +595,10 @@ inline Timestamp::seconds_type
 Timestamp::sec() const
 {
 #if TIMESTAMP_REP_FLAT64
-    if (_t.x < 0)
-	return (_t.x + 1) / subsec_per_sec - 1;
+    if (unlikely(_t.x < 0))
+	return -value_div(-_t.x - 1, subsec_per_sec) - 1;
     else
-	return _t.x / subsec_per_sec;
+	return value_div(_t.x, subsec_per_sec);
 #else
     return _t.sec;
 #endif
@@ -552,10 +609,7 @@ inline uint32_t
 Timestamp::subsec() const
 {
 #if TIMESTAMP_REP_FLAT64
-    if (_t.x < 0)
-	return subsec_per_sec - 1 - (-_t.x - 1) % subsec_per_sec;
-    else
-	return _t.x % subsec_per_sec;
+    return _t.x - sec() * subsec_per_sec;
 #else
     return _t.subsec;
 #endif
@@ -593,7 +647,7 @@ inline Timestamp::seconds_type
 Timestamp::msec1() const
 {
 #if TIMESTAMP_REP_FLAT64
-    return _t.x / (subsec_per_sec / msec_per_sec);
+    return value_div(_t.x, subsec_per_sec / msec_per_sec);
 #else
     return _t.sec * msec_per_sec + subsec_to_msec(_t.subsec);
 #endif
@@ -607,7 +661,7 @@ inline Timestamp::seconds_type
 Timestamp::usec1() const
 {
 #if TIMESTAMP_REP_FLAT64
-    return _t.x / (subsec_per_sec / usec_per_sec);
+    return value_div(_t.x, subsec_per_sec / usec_per_sec);
 #else
     return _t.sec * usec_per_sec + subsec_to_usec(_t.subsec);
 #endif
@@ -680,7 +734,7 @@ Timestamp::jiffies() const
 {
 # if TIMESTAMP_REP_FLAT64
     // This is not very precise when CLICK_HZ doesn't divide NSUBSEC evenly.
-    return _t.x / (subsec_per_sec / CLICK_HZ);
+    return value_div(_t.x, subsec_per_sec / CLICK_HZ);
 # else
     click_jiffies_t j = ((click_jiffies_t) sec()) * CLICK_HZ;
 #  if CLICK_HZ == 100 || CLICK_HZ == 1000 || CLICK_HZ == 10000 || CLICK_HZ == 100000 || CLICK_HZ == 1000000
@@ -798,48 +852,19 @@ operator>(const Timestamp &a, const Timestamp &b)
     return b < a;
 }
 
-#if !TIMESTAMP_REP_FLAT64
-inline void
-Timestamp::add_fix()
-{
-# if TIMESTAMP_MATH_FLAT64
-    if (_t.subsec >= subsec_per_sec)
-	_t.x += (uint32_t) -subsec_per_sec;
-# else
-    if (_t.subsec >= subsec_per_sec)
-	_t.sec++, _t.subsec -= subsec_per_sec;
-# endif
-}
-
-inline void
-Timestamp::sub_fix()
-{
-# if TIMESTAMP_MATH_FLAT64
-    if (_t.subsec < 0)
-	_t.subsec += subsec_per_sec;
-# else
-    if (_t.subsec < 0)
-	_t.sec--, _t.subsec += subsec_per_sec;
-# endif
-}
-#endif
-
 /** @brief Add @a b to @a a.
 
     Returns the result (the new value of @a a). */
 inline Timestamp &
 operator+=(Timestamp &a, const Timestamp &b)
 {
-#if TIMESTAMP_REP_FLAT64
+#if TIMESTAMP_REP_FLAT64 || TIMESTAMP_MATH_FLAT64
     a._t.x += b._t.x;
-#elif TIMESTAMP_MATH_FLAT64
-    a._t.x += b._t.x;
-    a.add_fix();
 #else
     a._t.sec += b._t.sec;
     a._t.subsec += b._t.subsec;
-    a.add_fix();
 #endif
+    a.add_fix();
     return a;
 }
 
@@ -849,16 +874,13 @@ operator+=(Timestamp &a, const Timestamp &b)
 inline Timestamp &
 operator-=(Timestamp &a, const Timestamp &b)
 {
-#if TIMESTAMP_REP_FLAT64
+#if TIMESTAMP_REP_FLAT64 || TIMESTAMP_MATH_FLAT64
     a._t.x -= b._t.x;
-#elif TIMESTAMP_MATH_FLAT64
-    a._t.x -= b._t.x;
-    a.sub_fix();
 #else
     a._t.sec -= b._t.sec;
     a._t.subsec -= b._t.subsec;
-    a.sub_fix();
 #endif
+    a.sub_fix();
     return a;
 }
 
@@ -987,5 +1009,4 @@ operator/(const Timestamp &a, const Timestamp &b)
 StringAccum& operator<<(StringAccum&, const Timestamp&);
 
 CLICK_ENDDECLS
-#undef TIMESTAMP_ASSIGN
 #endif

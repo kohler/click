@@ -121,7 +121,7 @@ operator<<(StringAccum &sa, const Timestamp& ts)
 	}
 	
 	int len;
-#if HAVE_NANOTIMESTAMP
+#if TIMESTAMP_NANOSEC
 	uint32_t usec = subsec / Timestamp::nsec_per_usec;
 	if (usec * Timestamp::nsec_per_usec == subsec)
 	    len = sprintf(x, "%ld.%06u", (long) sec, usec);

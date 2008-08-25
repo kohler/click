@@ -1044,12 +1044,14 @@ PREDEFINED             = CLICK_DECLS= \
                          CLICK_DEPRECATED= \
                          CLICK_WARN_UNUSED_RESULT= \
                          CLICK_ELEMENT_PORT_COUNT_DEPRECATED= \
+			 CLICK_BYTE_ORDER=4321 \
+			 CLICK_BIG_ENDIAN=4321 \
                          __attribute__(x)= \
                          HAVE_INT64_TYPES \
 			 HAVE_INT64_DIVIDE \
                          HAVE_STRIDE_SCHED \
                          HAVE_STRUCT_TIMESPEC \
-                         HAVE_NANOTIMESTAMP \
+                         TIMESTAMP_NANOSEC \
 			 HAVE_FLOAT_TYPES \
 			 HAVE_IP6 \
 			 HAVE___BUILTIN_CLZ \

@@ -123,7 +123,7 @@ ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
 	    int pos;
 
 	    buf.u[1] = ntohl(_pkt[pi].timestamp.sec());
-#if HAVE_NANOTIMESTAMP
+#if TIMESTAMP_NANOSEC
 	    buf.u[2] = ntohl(_pkt[pi].timestamp.nsec());
 #else
 	    buf.u[2] = ntohl(_pkt[pi].timestamp.usec());
@@ -198,7 +198,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 	   << (_ip_p == IP_PROTO_TCP ? 'T' : 'U')
 	   << "\n!aggregate " << _aggregate << '\n';
 
-#if HAVE_NANOTIMESTAMP
+#if TIMESTAMP_NANOSEC
 	sa << "!data ntimestamp";
 #else
 	sa << "!data timestamp";

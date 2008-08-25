@@ -213,6 +213,13 @@ typedef unsigned long uintptr_t;
 # define HAVE_MULTITHREAD HAVE_USER_MULTITHREAD
 #endif
 
+/* Define HAVE_USE_CLOCK_GETTIME if the clock_gettime function is usable. */
+#ifndef HAVE_USE_CLOCK_GETTIME
+# if HAVE_DECL_CLOCK_GETTIME && HAVE_CLOCK_GETTIME
+#  define HAVE_USE_CLOCK_GETTIME 1
+# endif
+#endif
+
 /* Include assert macro. */
 #include <assert.h>
 
@@ -237,7 +244,8 @@ char *strerror(int errno);
 
 /* Use nanosecond-granularity timestamps if they are enabled. */
 #if HAVE_NANOTIMESTAMP_ENABLED
-# define HAVE_NANOTIMESTAMP 1
+# define TIMESTAMP_NANOSEC 1
+# define HAVE_NANOTIMESTAMP 1	/* Deprecated */
 #endif
 
 #ifdef __cplusplus

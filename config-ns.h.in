@@ -12,6 +12,9 @@
 
 #endif /* __cplusplus */
 
+/* The ns driver probably can't use clock_gettime. */
+#define HAVE_USE_CLOCK_GETTIME 0
+
 /* Include userlevel configuration. */
 #define CLICK_USERLEVEL 1
 #include <click/config-userlevel.h>

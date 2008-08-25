@@ -93,7 +93,7 @@ fake_pcap_force_ip(WritablePacket*& p, int dlt)
 inline const Timestamp *
 fake_bpf_timeval::make_timestamp(const fake_bpf_timeval *tv, Timestamp *ts_storage)
 {
-#if TIMESTAMP_REP_BIG_ENDIAN && !HAVE_NANOTIMESTAMP
+#if TIMESTAMP_REP_BIG_ENDIAN && !TIMESTAMP_NANOSEC
     (void) ts_storage;
     return reinterpret_cast<const Timestamp*>(tv);
 #else
