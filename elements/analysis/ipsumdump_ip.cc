@@ -164,7 +164,7 @@ static void ip_inject(PacketOdesc& d, const FieldReader *f)
 		return;
 	    iph = d.p->ip_header();
 	}
-	if (ip_hl > (iph->ip_hl << 2)) {
+	if (ip_hl > (int) (iph->ip_hl << 2)) {
 	    d.p->set_ip_header(iph, ip_hl);
 	    iph->ip_hl = ip_hl >> 2;
 	}
@@ -183,7 +183,7 @@ static void ip_inject(PacketOdesc& d, const FieldReader *f)
 #endif
     case T_IP_HL:
 	d.v = (d.v + 3) & ~3;
-	if ((int) d.v > (iph->ip_hl << 2)) {
+	if ((int) d.v > (int) (iph->ip_hl << 2)) {
 	    int more = d.v - (iph->ip_hl << 2);
 	    if (!(d.p = d.p->put(more)))
 		return;
