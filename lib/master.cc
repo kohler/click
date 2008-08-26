@@ -746,20 +746,6 @@ Master::run_selects_kqueue(bool more_tasks)
 # else /* !CLICK_NS */
     // Never wait if anything is scheduled; otherwise, if no timers, block
     // indefinitely.
-#  if SIZEOF_STRUCT_TIMESPEC == 8
-    Timestamp t;
-    struct timespec *wait_ptr = (struct timespec*) &t;
-    if (!more_tasks) {
-	t = next_timer_expiry_adjusted();
-	if (t.sec() == 0)
-	    wait_ptr = 0;
-	else if ((t -= Timestamp::now(), t.sec() >= 0))
-	    // fix up subseconds <-> nanoseconds
-	    t.set_subsec(Timestamp::subsec_to_nsec(t.subsec()));
-	else
-	    t.set(0, 0);
-    }
-#  else /* SIZEOF_STRUCT_TIMESPEC != 8 */
     struct timespec wait, *wait_ptr = &wait;
     wait.tv_sec = wait.tv_nsec = 0;
     if (!more_tasks) {
@@ -769,7 +755,6 @@ Master::run_selects_kqueue(bool more_tasks)
 	else if ((t -= Timestamp::now(), t.sec() >= 0))
 	    wait = t.timespec();
     }
-#  endif /* SIZEOF_STRUCT_TIMESPEC == 8 */
 # endif
 
     // Bump selected_callno
@@ -878,20 +863,6 @@ Master::run_selects_select(bool more_tasks)
 # else /* !CLICK_NS */
     // Never wait if anything is scheduled; otherwise, if no timers, block
     // indefinitely.
-#  if SIZEOF_STRUCT_TIMEVAL == 8
-    Timestamp t;
-    struct timeval *wait_ptr = (struct timeval*) &t;
-    if (!more_tasks) {
-	t = next_timer_expiry_adjusted();
-	if (t.sec() == 0)
-	    wait_ptr = 0;
-	else if ((t -= Timestamp::now(), t.sec() >= 0))
-	    // fix up subseconds <-> microseconds
-	    t.set_subsec(Timestamp::subsec_to_usec(t.subsec()));
-	else
-	    t.set(0, 0);
-    }
-#  else /* SIZEOF_STRUCT_TIMEVAL != 8 */
     struct timeval wait, *wait_ptr = &wait;
     timerclear(&wait);
     if (!more_tasks) {
@@ -901,7 +872,6 @@ Master::run_selects_select(bool more_tasks)
 	else if ((t -= Timestamp::now(), t.sec() >= 0))
 	    wait = t.timeval();
     }
-#  endif /* SIZEOF_STRUCT_TIMEVAL == 8 */
 # endif /* CLICK_NS */
 
     fd_set read_mask = _read_select_fd_set;

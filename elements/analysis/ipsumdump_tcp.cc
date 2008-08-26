@@ -128,7 +128,7 @@ static void tcp_inject(PacketOdesc& d, const FieldReader *f)
 	break;
     case T_TCP_OFF:
 	d.v = (d.v + 3) & ~3;
-	if ((int) d.v > (tcph->th_off << 2)) {
+	if ((int) d.v > (int) (tcph->th_off << 2)) {
 	    int more = d.v - (tcph->th_off << 2);
 	    if (!(d.p = d.p->put(more)))
 		return;
@@ -155,7 +155,7 @@ static void tcp_inject(PacketOdesc& d, const FieldReader *f)
 		return;
 	    tcph = d.p->tcp_header();
 	}
-	if (th_off > (tcph->th_off << 2))
+	if (th_off > (int) (tcph->th_off << 2))
 	    tcph->th_off = th_off >> 2;
 	memcpy(d.p->transport_header() + sizeof(click_tcp), d.vptr[0], olen);
 	memset(d.p->transport_header() + sizeof(click_tcp) + olen,
