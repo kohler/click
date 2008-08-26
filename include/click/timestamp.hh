@@ -439,6 +439,8 @@ class Timestamp { public:
 	    a = -a - 1;
 	    rem = do_div(a, b);
 	    div = -a - 1;
+	    if (rem)
+		rem = b - rem;
 	} else {
 	    rem = do_div(a, b);
 	    div = a;
