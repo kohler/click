@@ -166,7 +166,7 @@ atomic_uint32_t::operator|=(uint32_t mask)
 		  : "r" (mask), "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
 #elif CLICK_LINUXMODULE
-# warn "using nonatomic approximation for atomic_uint32_t::operator|="
+# warning "using nonatomic approximation for atomic_uint32_t::operator|="
     unsigned long flags;
     local_irq_save(flags);
     CLICK_ATOMIC_VAL |= mask;
@@ -189,7 +189,7 @@ atomic_uint32_t::operator&=(uint32_t mask)
 		  : "r" (mask), "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
 #elif CLICK_LINUXMODULE
-# warn "using nonatomic approximation for atomic_uint32_t::operator&="
+# warning "using nonatomic approximation for atomic_uint32_t::operator&="
     unsigned long flags;
     local_irq_save(flags);
     CLICK_ATOMIC_VAL &= mask;
@@ -331,7 +331,7 @@ atomic_uint32_t::fetch_and_add(uint32_t delta)
 #elif CLICK_LINUXMODULE && HAVE_LINUX_ATOMIC_ADD_RETURN
     return atomic_add_return(&_val, delta) - delta;
 #elif CLICK_LINUXMODULE
-# warn "using nonatomic approximation for atomic_uint32_t::fetch_and_add"
+# warning "using nonatomic approximation for atomic_uint32_t::fetch_and_add"
     unsigned long flags;
     local_irq_save(flags);
     uint32_t old_value = value();
@@ -399,7 +399,7 @@ atomic_uint32_t::compare_and_swap(volatile uint32_t &x, uint32_t test_value, uin
 #elif CLICK_LINUXMODULE && defined(cmpxchg)
     return cmpxchg(&x, test_value, new_value) == test_value;
 #elif CLICK_LINUXMODULE
-# warn "using nonatomic approximation for atomic_uint32_t::compare_and_swap"
+# warning "using nonatomic approximation for atomic_uint32_t::compare_and_swap"
     unsigned long flags;
     local_irq_save(flags);
     uint32_t old_value = x;
@@ -467,7 +467,7 @@ atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
 #elif CLICK_LINUXMODULE && defined(atomic_cmpxchg)
     return atomic_cmpxchg(&_val, test_value, new_value) == test_value;
 #elif CLICK_LINUXMODULE
-# warn "using nonatomic approximation for atomic_uint32_t::compare_and_swap"
+# warning "using nonatomic approximation for atomic_uint32_t::compare_and_swap"
     unsigned long flags;
     local_irq_save(flags);
     uint32_t old_value = value();
