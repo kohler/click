@@ -45,11 +45,27 @@ click-combine \- combines two or more Click configurations into one
 The
 .B click-combine
 tool combines two or more Click router configurations into a single
-configuration representing the network. For example, say there is a
+virtual configuration representing the network. Special RouterLink elements
+represent links between routers. For example, say there is a
 point-to-point link from router A's eth0 interface to router B's eth1
 interface. Then in the combined configuration, A's ToDevice(eth0) element
 and B's PollDevice(eth1) element will be replaced with a new RouterLink
-element; packets will flow from A to B via the RouterLink element. You can
+element; packets will flow from A to B via the RouterLink element.
+.LP
+Click drivers can't execute the resulting virtual configuration since the
+RouterLink "element class" has no definition. If you want to execute a
+combined configuration, edit the configuration to replace the RouterLinks
+with real elements representing the relevant link properties. For example,
+this definition gives point-to-point links 10\~microsecond latency and
+1\~MBps bandwidth:
+.LP
+.nf
+   elementclass RouterLink { $srcclass, $srcargs, $dstclass, $dstargs |
+       input -> LinkUnqueue(10us, 1MBps) -> output
+   }
+.fi
+.LP
+You can
 edit the combined configuration with tools, which are effectively able to
 consider the whole network. For example, they can check cross-router
 properties or perform cross-router optimizations. Use the
