@@ -27,8 +27,12 @@ class Handler { public:
 	SPECIAL_FLAGS = OP_READ | OP_WRITE | READ_PARAM | COMPREHENSIVE,
 				///< @brief These flags may not be set by
 				///  Router::set_handler_flags().
-	EXCLUSIVE = 0x0010,	///< @brief Handler is exclusive: router threads
-				///  must stop while it is called.
+	EXCLUSIVE = 0,		///< @brief Handler is exclusive (the default):
+				///  router threads must stop while it is
+				///  called.
+	NONEXCLUSIVE = 0x0010,	///< @brief Handler is nonexclusive: router
+				///  threads don't need to stop while it is
+				///  called.
 	RAW = 0x0020,		///< @brief Don't add newline to results.
 	READ_PRIVATE = 0x0040,	///< @brief Read handler private (invisible
 				///  outside the router configuration).
@@ -122,9 +126,10 @@ class Handler { public:
      * Exclusive handlers are mutually exclusive with all other router
      * processing.  In the Linux kernel module driver, reading or writing an
      * exclusive handler using the Click filesystem will first lock all router
-     * threads and handlers.  Exclusivity is set by the EXCLUSIVE flag.  */
+     * threads and handlers.  Handlers are exclusive by default.  Exclusivity
+     * is cleared by the NONEXCLUSIVE flag.  */
     inline bool exclusive() const {
-	return _flags & EXCLUSIVE;
+	return !(_flags & NONEXCLUSIVE);
     }
 
     /** @brief Check if spaces should be preserved when calling this handler.
