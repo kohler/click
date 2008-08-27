@@ -27,17 +27,25 @@ endif
 INSTALL = @INSTALL@
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
+ifeq ($(V),1)
+ccompile = $(COMPILE) $(1)
+cxxcompile = $(CXXCOMPILE) $(1)
+else
+ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
+cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
+endif
+
 .SUFFIXES:
 .SUFFIXES: .S .c .cc .o .s
 
 .c.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,CC)
 .s.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,ASM)
 .S.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,ASM)
 .cc.o:
-	$(CXXCOMPILE) -c $<
+	$(call cxxcompile,-c $< -o $@,CXX)
 
 
 OBJS = cxxclass.o specializer.o signature.o click-devirtualize.o

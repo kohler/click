@@ -29,26 +29,38 @@ INSTALL_DATA = @INSTALL@ -m 644
 INSTALL_DATA_IF_CHANGED = @INSTALL_IF_CHANGED@ -m 644
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
+ifeq ($(V),1)
+ccompile = $(COMPILE) $(1)
+build_ccompile = $(BUILD_COMPILE) $(1)
+cxxcompile = $(CXXCOMPILE) $(1)
+build_cxxcompile = $(BUILD_CXXCOMPILE) $(1)
+else
+ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
+build_ccompile = @/bin/echo ' ' $(2) $< && $(BUILD_COMPILE) $(1)
+cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
+build_cxxcompile = @/bin/echo ' ' $(2) $< && $(BUILD_CXXCOMPILE) $(1)
+endif
+
 .SUFFIXES:
 .SUFFIXES: .S .c .cc .o .bo .s
 
 .c.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,CC)
 	@-/bin/mv $*.d $*.hd
 .s.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,ASM)
 	@-/bin/mv $*.d $*.hd
 .S.o:
-	$(COMPILE) -c $<
+	$(call ccompile,-c $< -o $@,ASM)
 	@-/bin/mv $*.d $*.hd
 .cc.o:
-	$(CXXCOMPILE) -c $<
+	$(call cxxcompile,-c $< -o $@,CXX)
 	@-/bin/mv $*.d $*.hd
 .c.bo:
-	$(BUILD_COMPILE) -c $< -o $@
+	$(call build_ccompile,-c $< -o $@,BUILDCC)
 	@-sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
 .cc.bo:
-	$(BUILD_CXXCOMPILE) -c $< -o $@
+	$(call build_cxxcompile,-c $< -o $@,BUILDCXX)
 	@-sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
 
 

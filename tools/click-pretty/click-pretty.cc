@@ -252,8 +252,8 @@ struct OutputItem {
     int _type;
     enum { OI_NORMAL, OI_ELEMENT_REF, OI_ECLASS_REF };
     
-    OutputItem() : pos(-1), _other(-1), active(0), _end_item(0), _type(OI_NORMAL) { }
-    OutputItem(int p, const String &t, bool ei) : pos(p), text(t), _other(-1), active(0), _end_item(ei), _type(OI_NORMAL) { }
+    OutputItem() : pos(-1), _other(-1), active(0), _end_item(0), _type(OI_NORMAL) { _u.element = 0; }
+    OutputItem(int p, const String &t, bool ei) : pos(p), text(t), _other(-1), active(0), _end_item(ei), _type(OI_NORMAL) { _u.element = 0; }
     OutputItem(int p, ElementT *e, bool ei) : pos(p), _other(-1), active(0), _end_item(ei), _type(OI_ELEMENT_REF) { _u.element = e; }
     OutputItem(int p, ElementClassT *ec, bool ei) : pos(p), _other(-1), active(0), _end_item(ei), _type(OI_ECLASS_REF) { _u.eclass = ec; }
 
