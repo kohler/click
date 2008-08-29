@@ -43,7 +43,7 @@
 static uint32_t crc_table[256];
 
 static void
-gen_crc_table()
+gen_crc_table(void)
  /* generate the table of CRC remainders for all possible bytes */
  { register int i, j;  register uint32_t crc_accum;
    for ( i = 0;  i < 256;  i++ )
