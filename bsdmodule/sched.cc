@@ -329,7 +329,7 @@ click_timer(void *arg)
 
 
 void
-click_netisr(void)
+click_netisr(struct mbuf* buf)
 {
   RouterThread *rt = click_master->thread(0);
   rt->driver();

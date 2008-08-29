@@ -35,10 +35,8 @@ struct clickfs_mount {
 };
 
 static int
-clickfs_mount(struct mount *mp, char *user_path, caddr_t data,
-	      struct nameidata *ndp, struct thread *td)
+clickfs_mount(struct mount *mp, struct thread *td)
 {
-    char path[MAXPATHLEN];
     size_t count;
     int error;
     struct clickfs_mount *cmp;
@@ -47,10 +45,6 @@ clickfs_mount(struct mount *mp, char *user_path, caddr_t data,
 	return EOPNOTSUPP;
 
     vfs_getnewfsid(mp);
-
-    error = copyinstr(user_path, path, MAXPATHLEN, &count);
-    if (error)
-	return error;
 
     MALLOC(cmp, struct clickfs_mount *, sizeof(struct clickfs_mount),
 	   M_CLICKFS, M_WAITOK | M_ZERO);
@@ -66,9 +60,7 @@ clickfs_mount(struct mount *mp, char *user_path, caddr_t data,
     mp->mnt_stat.f_ffree  = 1;
     mp->mnt_stat.f_flags  = mp->mnt_flag;
 
-    strcpy(mp->mnt_stat.f_mntonname, path);
-    strcpy(mp->mnt_stat.f_mntfromname, "clickfs");
-    strcpy(mp->mnt_stat.f_fstypename, "clickfs");
+    vfs_mountedfrom(mp, "clickfs");
 
     error = clickfs_rootvnode(mp, &cmp->click_root);
     if (error < 0) {
@@ -100,13 +92,13 @@ clickfs_unmount(struct mount *mp, int mntflags, struct thread *td)
 }
 
 static int
-clickfs_root(struct mount *mp, struct vnode **vpp)
+clickfs_root(struct mount *mp, int flags, struct vnode **vpp, struct thread *td)
 {
     struct clickfs_mount *cmp = (struct clickfs_mount *)mp->mnt_data;
 
     *vpp = cmp->click_root;
     VREF(*vpp);
-    vn_lock(*vpp, LK_EXCLUSIVE | LK_RETRY, curthread);
+    //vn_lock(*vpp, LK_EXCLUSIVE | LK_RETRY, curthread);
 
     return 0;
 }
@@ -119,8 +111,7 @@ clickfs_statfs(struct mount *mp, struct statfs *sbp, struct thread *td)
 }
 
 static int
-clickfs_sync(struct mount *mp, int waitfor, struct ucred *cred,
-	     struct thread *td)
+clickfs_sync(struct mount *mp, int waitfor, struct thread *td)
 {
     return 0;
 }
@@ -137,7 +128,7 @@ clickfs_uninit(struct vfsconf *vfsp)
     return 0;
 }
 
-extern "C" struct vfsops clickfs_vfsops = {
+struct vfsops clickfs_vfsops = {
 	clickfs_mount,
 	NULL,
 	clickfs_unmount,
@@ -145,7 +136,6 @@ extern "C" struct vfsops clickfs_vfsops = {
 	NULL,
 	clickfs_statfs,
 	clickfs_sync,
-	NULL,
 	NULL,
 	NULL,
 	NULL,
