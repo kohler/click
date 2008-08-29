@@ -36,7 +36,7 @@ init_router_element_procs()
 
     for (int curelem = 0; curelem<nelements; curelem++) {
 	const Element *e = click_router->element(curelem);
-	const String &id = e->id();
+	const String &id = e->name();
 	char namebuf[CLICKFS_DIRENT_NAMLEN], linkbuf[CLICKFS_DIRENT_NAMLEN];
 	char *lbp, *nbp;
 	struct clickfs_dirent *cde;
@@ -75,8 +75,11 @@ init_router_element_procs()
 	handlers.clear();
 	click_router->element_hindexes(e, handlers);
 	for (int h_idx=0; h_idx < handlers.size(); h_idx++)
-	    clickfs_tree_add_handle(elemdp,
-		Router::handler(e, handlers[h_idx]), curelem, handlers[h_idx]);
+	    clickfs_tree_add_handle(
+	    	  elemdp,
+		  Router::handler(click_router, handlers[h_idx]),
+		  curelem,
+		  handlers[h_idx]);
     }
 }
 
