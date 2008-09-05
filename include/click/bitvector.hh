@@ -114,7 +114,7 @@ class Bitvector { public:
 
 
     /** @brief Return the bitwise negation of this bitvector. */
-    Bitvector operator~() const;
+    inline Bitvector operator~() const;
 
     /** @brief Return the bitwise and of two bitvectors.
      * @pre @a x.size() == size() */
