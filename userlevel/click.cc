@@ -491,7 +491,7 @@ particular purpose.\n");
  done:
   // provide hotconfig handler if asked
   if (allow_reconfigure)
-      Router::add_write_handler(0, "hotconfig", hotconfig_handler, 0, Handler::RAW);
+      Router::add_write_handler(0, "hotconfig", hotconfig_handler, 0, Handler::RAW | Handler::NONEXCLUSIVE);
 
   // parse configuration
   router = parse_configuration(router_file, file_is_expr, false, errh);
