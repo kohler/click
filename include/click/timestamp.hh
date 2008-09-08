@@ -935,7 +935,7 @@ inline
 Timestamp::Timestamp(double d)
 {
 # if TIMESTAMP_REP_FLAT64
-    _t.x = floor(d * subsec_per_sec + 0.5);
+    _t.x = (int64_t) floor(d * subsec_per_sec + 0.5);
 # else
     double dfloor = floor(d);
     _t.sec = (seconds_type) dfloor;
