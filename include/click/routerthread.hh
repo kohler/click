@@ -99,13 +99,11 @@ class RouterThread
 
 #if CLICK_LINUXMODULE
     struct task_struct *_linux_task;
-    spinlock_t _lock;
-    atomic_uint32_t _task_lock_waiting;
 #elif HAVE_MULTITHREAD
     click_processor_t _running_processor;
+#endif
     Spinlock _lock;
     atomic_uint32_t _task_lock_waiting;
-#endif
     
     uint32_t _any_pending;
 
@@ -283,7 +281,7 @@ RouterThread::lock_tasks()
 #if CLICK_LINUXMODULE
     if (unlikely(current != _linux_task)) {
 	_task_lock_waiting++;
-	spin_lock(&_lock);
+	_lock.acquire();
 	_task_lock_waiting--;
     }
 #elif HAVE_MULTITHREAD
@@ -299,7 +297,7 @@ RouterThread::attempt_lock_tasks()
 #if CLICK_LINUXMODULE
     if (likely(current == _linux_task))
 	return true;
-    return spin_trylock(&_lock);
+    return _lock.attempt();
 #elif HAVE_MULTITHREAD
     return _lock.attempt();
 #else
@@ -312,7 +310,7 @@ RouterThread::unlock_tasks()
 {
 #if CLICK_LINUXMODULE
     if (unlikely(current != _linux_task))
-	spin_unlock(&_lock);
+	_lock.release();
 #elif HAVE_MULTITHREAD
     _lock.release();
 #endif

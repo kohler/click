@@ -85,7 +85,6 @@ RouterThread::RouterThread(Master *m, int id)
 #if CLICK_LINUXMODULE
     _linux_task = 0;
     _task_lock_waiting = 0;
-    spin_lock_init(&_lock);
 #elif HAVE_MULTITHREAD
     _running_processor = click_invalid_processor();
     _task_lock_waiting = 0;
@@ -146,7 +145,7 @@ RouterThread::driver_lock_tasks()
 #if CLICK_LINUXMODULE
     for (int i = 0; _task_lock_waiting > 0 && i < 10; i++)
 	schedule();
-    spin_lock(&_lock);
+    _lock.acquire();
 #elif HAVE_MULTITHREAD
 # if CLICK_USERLEVEL
     for (int i = 0; _task_lock_waiting > 0 && i < 10; i++) {
@@ -161,9 +160,7 @@ RouterThread::driver_lock_tasks()
 inline void
 RouterThread::driver_unlock_tasks()
 {
-#if CLICK_LINUXMODULE
-    spin_unlock(&_lock);
-#elif HAVE_MULTITHREAD
+#if CLICK_LINUXMODULE || HAVE_MULTITHREAD
     _lock.release();
 #endif
 }
@@ -605,7 +602,7 @@ RouterThread::driver_once()
 #if CLICK_LINUXMODULE
     // this task is running the driver
     _linux_task = current;
-    spin_lock(&_lock);
+    _lock.acquire();
 #elif HAVE_MULTITHREAD
     _running_processor = click_current_processor();
     _lock.acquire();
@@ -619,7 +616,7 @@ RouterThread::driver_once()
     splx(s);
 #endif
 #if CLICK_LINUXMODULE
-    spin_unlock(&_lock);
+    _lock.release();
     _linux_task = 0;
 #elif HAVE_MULTITHREAD
     _lock.release();
