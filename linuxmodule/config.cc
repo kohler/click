@@ -85,10 +85,6 @@ parse_router(String s)
 
 /*********************** Installing and killing routers **********************/
 
-#if HAVE_MULTITHREAD
-extern "C" int click_threads();
-#endif
-
 static void
 install_router(const String &config, Router *r)
 {
