@@ -1,5 +1,5 @@
-#ifndef FASTUDPSRC_HH
-#define FASTUDPSRC_HH
+#ifndef CLICK_FASTUDPSRC_BSDMODULE_HH
+#define CLICK_FASTUDPSRC_BSDMODULE_HH
 
 /*
  * =title FastUDPSource.b

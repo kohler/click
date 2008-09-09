@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
-#ifndef CLICK_TOHOST_HH
-#define CLICK_TOHOST_HH
+#ifndef CLICK_TOHOST_USERLEVEL_HH
+#define CLICK_TOHOST_USERLEVEL_HH
 #include <click/element.hh>
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
