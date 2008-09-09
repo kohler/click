@@ -132,14 +132,27 @@ struct ClickInodeInfo {
     uint32_t config_generation;
 };
 
-inline bool
-inode_out_of_date(struct inode *inode)
-{
-    return INO_ELEMENTNO(inode->i_ino) >= 0
-	&& INODE_INFO(inode).config_generation != click_config_generation;
-}
-
 static ClickIno click_ino;
+
+// Must be called with LOCK_CONFIG_READ.
+// Return "subdir_error" if this subdirectory was configuration-specific and
+// the configuration was changed.  Otherwise, updates this directory's link
+// count (if the configuration was changed) and returns 0.
+
+static int
+inode_out_of_date(struct inode *inode, int subdir_error)
+{
+    int error;
+    if (INODE_INFO(inode).config_generation != click_config_generation) {
+	if (INO_ELEMENTNO(inode->i_ino) >= 0)
+	    return subdir_error;
+	if ((error = click_ino.prepare(click_router, click_config_generation)) < 0)
+	    return error;
+	INODE_INFO(inode).config_generation = click_config_generation;
+	inode->i_nlink = click_ino.nlink(inode->i_ino);
+    }
+    return 0;
+}
 
 
 /*************************** Inode operations ********************************/
@@ -225,11 +238,7 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
 
     struct inode *inode = 0;
     int error;
-    if (inode_out_of_date(dir))
-	error = -EIO;
-    else if ((error = click_ino.prepare(click_router, click_config_generation)) < 0)
-	/* save error */;
-    else {
+    if ((error = inode_out_of_date(dir, -EIO)) >= 0) {
 	// BEWARE!  Using stable_string() here is quite dangerous, since the
 	// data is actually mutable.  The code path has been audited to make
 	// sure this is OK.
@@ -312,11 +321,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 
     LOCK_CONFIG_READ();
 
-    int error;
-    if (inode_out_of_date(inode))
-	error = -ENOENT;
-    else
-	error = click_ino.prepare(click_router, click_config_generation);
+    int error = inode_out_of_date(inode, -ENOENT);
 
     // '.' and '..'
     if (error >= 0 && f_pos == 0) {
@@ -590,8 +595,8 @@ handler_open(struct inode *inode, struct file *filp)
 	|| (filp->f_flags & O_APPEND)
 	|| (writing && !(filp->f_flags & O_TRUNC)))
 	retval = -EACCES;
-    else if (inode_out_of_date(inode))
-	retval = -EIO;
+    else if ((retval = inode_out_of_date(inode, -EIO)) < 0)
+	/* save retval */;
     else if (!(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino))))
 	retval = -EIO;
     else if ((reading && !h->read_visible())
@@ -628,8 +633,9 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	int retval;
 	const Handler *h;
 	struct inode *inode = filp->f_dentry->d_inode;
-	if (inode_out_of_date(inode)
-	    || !(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino))))
+	if ((retval = inode_out_of_date(inode, -EIO)) < 0)
+	    /* save retval */;
+	else if (!(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino))))
 	    retval = -EIO;
 	else if (!h->read_visible())
 	    retval = -EPERM;
@@ -710,11 +716,12 @@ handler_do_write(struct file *filp, void *address_ptr)
     int stringno = FILP_WRITE_STRINGNO(filp);
     struct inode *inode = filp->f_dentry->d_inode;
     const Handler *h;
-    int retval = 0;
+    int retval;
     
-    if (inode_out_of_date(inode)
-	|| !(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino)))
-	|| !h->write_visible())
+    if ((retval = inode_out_of_date(inode, -EIO)) < 0)
+	/* save retval */;
+    else if (!(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino)))
+	     || !h->write_visible())
 	retval = -EIO;
     else if (handler_strings[stringno].out_of_memory())
 	retval = -ENOMEM;
@@ -827,8 +834,8 @@ handler_ioctl(struct inode *inode, struct file *filp,
     int retval;
     Element *e;
     
-    if (inode_out_of_date(inode))
-	retval = -EIO;
+    if ((retval = inode_out_of_date(inode, -EIO)) < 0)
+	/* save retval */;
     else if (!click_router)
 	retval = -EINVAL;
     else if (command == CLICK_LLRPC_CALL_HANDLER)
