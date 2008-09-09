@@ -13,7 +13,7 @@ class Router;
 #define INO_DT_U			0x2U /* element numbers */
 #define INO_DT_HN			0x3U /* handlers + names */
 #define INO_DT_N			0x4U /* names */
-#define INO_DT_GLOBAL			0x5U /* handlers + names + all #s */
+#define INO_DT_GLOBAL			0x5U /* handlers + names + "elements" */
 #define INO_DT_HAS_H(ino)		(INO_DIRTYPE((ino)) & INO_DT_H)
 #define INO_DT_HAS_N(ino)		(INO_DIRTYPE((ino)) >= INO_DT_HN)
 #define INO_DT_HAS_U(ino)		(INO_DIRTYPE((ino)) == INO_DT_U)
@@ -26,7 +26,7 @@ class Router;
 #define INO_ENUMBERSDIR			(INO_DT_U << 28)
 #define INO_ISHANDLER(ino)		(((ino) & 0x80000000U) != 0)
 
-#define INO_DEBUG			1
+#define INO_DEBUG			0
 
 class ClickIno { public:
 
