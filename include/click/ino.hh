@@ -6,25 +6,27 @@ CLICK_DECLS
 class Router;
 
 // NB: inode number 0 is reserved for the system.
-#define INO_DIRTYPE(ino)		((ino) >> 28)
+#define INO_DIRTYPE(ino)		((int) ((unsigned) (ino) >> 28))
 #define INO_ELEMENTNO(ino)		((int)((ino) & 0xFFFFU) - 1)
 #define INO_HANDLERNO(ino)		((((ino) & 0xFFFFU) ? 0 : Router::FIRST_GLOBAL_HANDLER) + (((ino) >> 16) & 0x7FFFU))
 #define INO_DT_H			0x1U /* handlers only */
-#define INO_DT_N			0x2U /* names */
+#define INO_DT_U			0x2U /* element numbers */
 #define INO_DT_HN			0x3U /* handlers + names */
+#define INO_DT_N			0x4U /* names */
 #define INO_DT_GLOBAL			0x5U /* handlers + names + all #s */
 #define INO_DT_HAS_H(ino)		(INO_DIRTYPE((ino)) & INO_DT_H)
-#define INO_DT_HAS_N(ino)		(INO_DIRTYPE((ino)) >= INO_DT_N)
-#define INO_DT_HAS_U(ino)		(INO_DIRTYPE((ino)) == INO_DT_GLOBAL)
+#define INO_DT_HAS_N(ino)		(INO_DIRTYPE((ino)) >= INO_DT_HN)
+#define INO_DT_HAS_U(ino)		(INO_DIRTYPE((ino)) == INO_DT_U)
 
 #define INO_MKHANDLER(e, hi)		((((hi) & 0x7FFFU) << 16) | (((e) + 1) & 0xFFFFU) | 0x80000000U)
 #define INO_MKHDIR(e)			((INO_DT_H << 28) | (((e) + 1) & 0xFFFFU))
 #define INO_MKNDIR(e)			((INO_DT_N << 28) | (((e) + 1) & 0xFFFFU))
 #define INO_MKHNDIR(e)			((INO_DT_HN << 28) | (((e) + 1) & 0xFFFFU))
 #define INO_GLOBALDIR			(INO_DT_GLOBAL << 28)
+#define INO_ENUMBERSDIR			(INO_DT_U << 28)
 #define INO_ISHANDLER(ino)		(((ino) & 0x80000000U) != 0)
 
-#define INO_DEBUG			0
+#define INO_DEBUG			1
 
 class ClickIno { public:
 

@@ -335,7 +335,7 @@ String
 ControlSocket::proxied_handler_name(const String &n) const
 {
   if (_full_proxy && find(n, '.') == n.end())
-    return "0." + n;
+    return "." + n;
   else
     return n;
 }
@@ -481,7 +481,7 @@ ControlSocket::check_command(int fd, const String &hname, bool write)
   if (_full_proxy) {
     String phname = canonical_handler_name(hname);
     if (find(phname, '.') == phname.end())
-      phname = "0." + phname;
+      phname = "." + phname;
     ok = _full_proxy->check_handler(phname, write, &errh);
   } else {
     Element *e;

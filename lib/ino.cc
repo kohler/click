@@ -186,6 +186,8 @@ ClickIno::calculate_handler_conflicts(int parent_elementno)
 	if (h->visible())
 	    names.push_back(h->name());
     }
+    if (parent_elementno < 0)
+	names.push_back("elements");
 
     // sort names
     click_qsort(names.begin(), names.size());
@@ -242,6 +244,8 @@ ClickIno::nlink(ino_t ino)
 	    xi += _x[xi].skip + 1;
 	}
     }
+    if (ino == INO_GLOBALDIR)
+	nlink++;		// for "elements" subdirectory
     return nlink;
 }
 
@@ -280,20 +284,23 @@ ClickIno::lookup(ino_t ino, const String &component)
 	return ino;
     
     // look for numbers
-    if (INO_DT_HAS_U(ino) && component[0] >= '1' && component[0] <= '9') {
+    if (INO_DT_HAS_U(ino) && component[0] >= '0' && component[0] <= '9') {
 	int eindex = component[0] - '0';
 	for (int i = 1; i < component.length(); i++)
 	    if (component[i] >= '0' && component[i] <= '9' && eindex < 1000000000)
 		eindex = (eindex * 10) + component[i] - '0';
 	    else
 		goto number_failed;
-	eindex--;
 	if (!_router || eindex >= _router->nelements())
 	    goto number_failed;
 	return INO_MKHDIR(eindex);
     }
     
   number_failed:
+    // look for element number directory
+    if (ino == INO_GLOBALDIR && component.equals("elements", 8))
+	return INO_ENUMBERSDIR;
+
     // look for handlers
     if (INO_DT_HAS_H(ino) && elementno < nelements) {
 	Element *element = Router::element(_router, elementno);
@@ -334,15 +341,15 @@ int
 ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 {
     // File positions:
-    // 0x00000-0x0FFFF  ignored
-    // 0x10000-0x1FFFF  handlers
-    // 0x20000-0x2FFFF  numbers
-    // 0x30000-0x3FFFF	names
+    // 0x000000-0x0FFFFF  ignored
+    // 0x100000-0x1FFFFF  handlers
+    // 0x200000-0x2FFFFF  numbers
+    // 0x300000-0x3FFFFF  names
 
-#define RD_HOFF		0x10000
-#define RD_UOFF		0x20000
-#define RD_NOFF		0x30000
-#define RD_XOFF		0x40000
+#define RD_HOFF		0x100000
+#define RD_UOFF		0x200000
+#define RD_NOFF		0x300000
+#define RD_XOFF		0x400000
 #define FILLDIR(a, b, c, d, e, f)  do { if (!filldir(a, b, c, d, e, f)) return 0; } while (0)
     
     int elementno = INO_ELEMENTNO(ino);
@@ -374,7 +381,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 	int nelem = _router->nelements();
 	while (f_pos >= RD_UOFF && f_pos < RD_UOFF + nelem) {
 	    int elem = f_pos - RD_UOFF;
-	    sprintf(buf, "%d", elem + 1);
+	    sprintf(buf, "%d", elem);
 	    FILLDIR(buf, strlen(buf), INO_MKHDIR(elem), DT_DIR, f_pos, thunk);
 	    f_pos++;
 	}
@@ -401,8 +408,12 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 		f_pos++;
 	    }
     }
+
+    // "elements" in global directory
+    if (f_pos <= RD_XOFF && ino == INO_GLOBALDIR)
+	FILLDIR("elements", 8, INO_ENUMBERSDIR, DT_DIR, f_pos, thunk);
     
-    f_pos = RD_XOFF;
+    f_pos = RD_XOFF + 1;
     return 1;
 }
 

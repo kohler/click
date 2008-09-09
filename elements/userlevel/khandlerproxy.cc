@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2000-2001 Mazu Networks, Inc.
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -97,7 +98,7 @@ KernelHandlerProxy::complain_about_open(ErrorHandler *errh,
     String try_fn = "/click/" + k_elt;
     if (access("/click", F_OK) < 0)
       complain(errh, hname, CSERR_NO_ROUTER, "No router installed");
-    else if (k_elt != "0" && access(try_fn.c_str(), F_OK) < 0)
+    else if (k_elt != "" && access(try_fn.c_str(), F_OK) < 0)
       complain(errh, hname, CSERR_NO_SUCH_ELEMENT, "No element named '" + k_elt.printable() + "'");
     else
       complain(errh, hname, CSERR_NO_SUCH_HANDLER, "No handler named '" + hname.printable() + "'");
@@ -113,7 +114,7 @@ int
 KernelHandlerProxy::check_handler_name(const String &hname, ErrorHandler *errh)
 {
   const char *dot = find(hname, '.');
-  if (dot == hname.begin() || dot >= hname.end() - 1)
+  if (dot >= hname.end() - 1)
     return complain(errh, hname, CSERR_SYNTAX, "Bad handler name '" + hname.printable() + "'");
 
   // check characters for validity -- don't want to screw stuff up
@@ -133,12 +134,11 @@ KernelHandlerProxy::check_handler_name(const String &hname, ErrorHandler *errh)
 static String
 handler_name_to_file_name(const String &str)
 {
-  if (str[0] == '0' && str[1] == '.')
-    return "/click/" + str.substring(2);
-  else {
     const char *dot = find(str, '.');
-    return "/click/" + str.substring(str.begin(), dot) + "/" + str.substring(dot + 1, str.end());
-  }
+    if (dot == str.begin())
+	return "/click/" + str.substring(1);
+    else
+	return "/click/" + str.substring(str.begin(), dot) + "/" + str.substring(dot + 1, str.end());
 }
 
 int
