@@ -1180,6 +1180,9 @@ CLICK_PROG_INSTALL
 CLICK_PROG_GMAKE
 CLICK_PROG_AUTOCONF
 CLICK_PROG_PERL5
+AC_PROG_AWK
+AC_PROG_GREP
+AC_PROG_EGREP
 
 if test -z "$GMAKE"; then
     AC_MSG_ERROR([
@@ -1261,7 +1264,7 @@ dnl
 
 shell_expand () {
     val=`eval echo '$'"$1"`
-    while echo "x$val" | fgrep '$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
+    while echo "x$val" | grep '\$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
     eval "$1='$val'"
 }
 

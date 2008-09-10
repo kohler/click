@@ -1,5 +1,5 @@
-#ifndef CLICK_TODEVICE_HH
-#define CLICK_TODEVICE_HH
+#ifndef CLICK_TODEVICE_BSDMODULE_HH
+#define CLICK_TODEVICE_BSDMODULE_HH
 
 /*
 =title ToDevice.b

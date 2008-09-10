@@ -1,5 +1,5 @@
-#ifndef CLICK_TOHOST_HH
-#define CLICK_TOHOST_HH
+#ifndef CLICK_TOHOST_BSDMODULE_HH
+#define CLICK_TOHOST_BSDMODULE_HH
 #include <click/element.hh>
 #include <net/ethernet.h>
 #include "elements/bsdmodule/anydevice.hh"

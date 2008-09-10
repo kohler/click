@@ -34,14 +34,10 @@ driver_provisions="@DRIVERS@"
 
 trap "exit 1" HUP
 
-# find a good version of awk
-if test -x /usr/bin/gawk; then
-    awk=gawk
-elif test -x /usr/bin/nawk; then
-    awk=nawk
-else
-    awk=awk
-fi
+# find good versions of awk and grep
+awk="@AWK@"
+grep="@GREP@"
+egrep="@EGREP@"
 
 echo_n () {
 	# suns can't echo -n, and Mac OS X can't echo "x\c"
@@ -62,7 +58,7 @@ Try 'click-buildtool findelem --help' for more information." 1>&2
 
 elementmap_provisions () {
     elementmap="$1"
-    grep "^<elementmap \|^<entry " <"$elementmap" | $awk '/ name="([^"]*)"/ {
+    $grep "^<elementmap \|^<entry " <"$elementmap" | $awk '/ name="([^"]*)"/ {
   sub(/.* name="/, "", $0);
   sub(/".*/, "", $0);
   prov[$0] = 1;
@@ -202,13 +198,13 @@ EOF
     fi
 
     # add 'multithread' provision based on driver
-    if echo "$provisions" | grep userlevel >/dev/null 2>&1; then
-	if echo "$provisions" | grep umultithread >/dev/null 2>&1; then
+    if echo "$provisions" | $grep userlevel >/dev/null 2>&1; then
+	if echo "$provisions" | $grep umultithread >/dev/null 2>&1; then
 	    provisions="$provisions multithread"
 	fi
     fi
-    if echo "$provisions" | grep linuxmodule >/dev/null 2>&1; then
-	if echo "$provisions" | grep smpclick >/dev/null 2>&1; then
+    if echo "$provisions" | $grep linuxmodule >/dev/null 2>&1; then
+	if echo "$provisions" | $grep smpclick >/dev/null 2>&1; then
 	    provisions="$provisions multithread"
 	fi
     fi
@@ -241,18 +237,18 @@ $bad_first_files" | sort | uniq -u`
     files=""
     for i in $first_files; do
 	ppfx="$pfx"
-	if test -d "${pfx}elements/$i" && echo "$i" | grep -v '^\.' >/dev/null; then
+	if test -d "${pfx}elements/$i" && echo "$i" | $grep -v '^\.' >/dev/null; then
 	    ppfx="${pfx}elements/"
 	fi
 	if test -d "${ppfx}$i"; then
 	    files="$files
-"`find ${ppfx}$i -follow \( -name \*.cc -o -name \*.c \) -print | grep -v '/[.,][^/]*$'`
+"`find ${ppfx}$i -follow \( -name \*.cc -o -name \*.c \) -print | $grep -v '/[.,][^/]*$'`
 	elif test -r "${ppfx}$i"; then
 	    files="$files
 ${ppfx}$i"
 	fi
     done
-    files=`echo "$files" | sort | uniq | grep .`
+    files=`echo "$files" | sort | uniq | $grep .`
 
     # die if no files
     if test -z "$files"; then
@@ -271,7 +267,7 @@ ${ppfx}$i"
 
     # first remove files that provide an unprovision
     awk_exports=`echo "$unprovisions" | sed 's/\(..*\)/dep["\1"]=-1;/'`
-    bad_files=`egrep '^EXPORT_ELEMENT|^ELEMENT_PROVIDES' $files | sed 's/EXPORT_ELEMENT[ 	]*(\(.*\)).*/\1/
+    bad_files=`$egrep '^EXPORT_ELEMENT|^ELEMENT_PROVIDES' $files | sed 's/EXPORT_ELEMENT[ 	]*(\(.*\)).*/\1/
 s/ELEMENT_PROVIDES[ 	]*(\(.*\)).*/\1/' | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'}
 {
   split($2, deps, / +/);
@@ -295,11 +291,11 @@ $bad_files" | sort | uniq -u`
 
     # then cycle, removing files that require something not provided
     while true; do
-	provides=`egrep '^EXPORT_ELEMENT|^ELEMENT_PROVIDES' $files | sed 's/.*(\(.*\)).*/\1/' | tr ' \011' '\012'`
+	provides=`$egrep '^EXPORT_ELEMENT|^ELEMENT_PROVIDES' $files | sed 's/.*(\(.*\)).*/\1/' | tr ' \011' '\012'`
 	awk_exports=`echo "$provides"'
 '"$provisions" | sed 's/\(..*\)/dep["\1"]=1;/'`"
 "`echo "$unprovisions" | sed 's/\(..*\)/dep["\1"]=-1;/'`
-	new_bad_files=`grep '^ELEMENT_REQUIRES' $files | sed 's/ELEMENT_REQUIRES[ 	]*(\(.*\)).*/\1/' | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'dep["true"]=1; dep["1"]=1;}
+	new_bad_files=`$grep '^ELEMENT_REQUIRES' $files | sed 's/ELEMENT_REQUIRES[ 	]*(\(.*\)).*/\1/' | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'dep["true"]=1; dep["1"]=1;}
 {
   split($2, deps, / +/);
   for (j in deps) {
@@ -346,7 +342,7 @@ $bad_files"
 	outscriptlet='i, "\t", header[i], "\t", ex'
     fi
 
-    egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^ELEMENT_LIBS|^class|^[ 	]*const *char *\* *class_name|^[ 	]*static *void *static_[ic]|^}' $files $header_files /dev/null 2>/dev/null | $awk -F: 'BEGIN {
+    $egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^ELEMENT_LIBS|^class|^[ 	]*const *char *\* *class_name|^[ 	]*static *void *static_[ic]|^}' $files $header_files /dev/null 2>/dev/null | $awk -F: 'BEGIN {
   OFS = ""; cur_class = ""; line_warned = 0; nexports = 0
 }
 /:class[ 	]/ {
@@ -457,6 +453,33 @@ END {
     print '"$outscriptlet"'
   }
 }' | sort
+
+  # attempt to detect reuse of a header protection #define
+  for x in $header_files; do
+    xp=`echo "$x" | tr -c -d 'a-zA-Z0-9 /_.@~=:+;,?-'`
+    head -n 10 $x 2>/dev/null | sed 's,^,'"$xp"':,'
+  done | $awk -F: 'BEGIN {
+  OFS = ""; errors = 0
+}
+/: *# *ifndef/ {
+  sub(/ *# *ifndef[ 	]*/, "", $2);
+  sub(/[ 	\/].*/, "", $2);
+  if (!protector[$1]) {
+    protector[$1] = $2;
+    if (protecting[$2]) {
+      print $1, ": header protector #ifndef ", $2, " reused" | "cat 1>&2";
+      print protecting[$2], ": first use was here" | "cat 1>&2";
+      if (errors == 0)
+	print "  (Every element header must use a different #ifndef symbol.)" | "cat 1>&2";
+      ++errors;
+    } else
+      protecting[$2] = $1;
+  }
+}
+END {
+  if (errors)
+    system("kill -HUP '$$'");
+}'
 
   exit $?
 }
@@ -571,13 +594,13 @@ EOF
 
     # expand list of files
     elemconf=`cat`
-    files=`echo "$elemconf" | grep -v '^#' | sed 's/[ 	].*//'`
+    files=`echo "$elemconf" | $grep -v '^#' | sed 's/[ 	].*//'`
 
     # find libraries
-    libs=`echo "$elemconf" | sed '/-!lib/!d;s/^.*-!lib//g;s/;/ /g' | grep .`
+    libs=`echo "$elemconf" | sed '/-!lib/!d;s/^.*-!lib//g;s/;/ /g' | $grep .`
     if test -n "$libs"; then
 	libs=`echo "$libs" | sed 's/^\([^ ][^ ]*\) *$/\1 \1/'`
-	while echo "$libs" | grep ' [^ ].* [^ ]' >/dev/null; do
+	while echo "$libs" | $grep ' [^ ].* [^ ]' >/dev/null; do
 	    libs=`echo "$libs" | sed '/ [^ ].* [^ ]/s/^\([^ ][^ ]*\)  *\([^ ][^ ]*\) /\1 \2\\
 \2 /'`
 	done
@@ -892,9 +915,9 @@ $requirements"; shift 1;;
     done
 
     [ $stdin = y ] && requirements="`cat` $requirements"
-    provisions="`echo "$provisions" | tr -s ' \011\015\014\013' '\012' | grep . | sort | uniq`"
+    provisions="`echo "$provisions" | tr -s ' \011\015\014\013' '\012' | $grep . | sort | uniq`"
     [ $query = y ] && echo "$provisions"
-    requirements="`echo "$requirements" | tr -s ' \011\015\014\013' '\012' | grep . | sort | uniq`"
+    requirements="`echo "$requirements" | tr -s ' \011\015\014\013' '\012' | $grep . | sort | uniq`"
     awk_provisions="`echo "$provisions" | sed 's/\(..*\)/dep["\1"]=1;/'`"
     echo "$requirements" | $awk -F: 'BEGIN {
 '"$awk_provisions"'
@@ -1178,7 +1201,7 @@ $1"; shift 1
 
     if test -n "$dir"; then cd "$dir"; fi
     echo > ${L}elements.conf
-    echo "$srcs" | grep . | elem2make -t $driver > ${L}elements.mk
+    echo "$srcs" | $grep . | elem2make -t $driver > ${L}elements.mk
     echo "PACKAGE_OBJS :=" >> ${L}elements.mk
 
     echo "package = $pkg

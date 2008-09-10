@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
-#ifndef CLICK_FROMHOST_HH
-#define CLICK_FROMHOST_HH
+#ifndef CLICK_FROMHOST_BSDMODULE_HH
+#define CLICK_FROMHOST_BSDMODULE_HH
 #include <click/element.hh>
 #include <click/notifier.hh>
 #include "elements/bsdmodule/anydevice.hh"
