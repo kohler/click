@@ -133,7 +133,7 @@ void
 DelayShaper::add_handlers()
 {
     add_read_handler("delay", read_param, (void *)0, Handler::CALM);
-    add_write_handler("delay", write_param, (void *)0);
+    add_write_handler("delay", write_param, (void *)0, Handler::NONEXCLUSIVE);
 }
 
 CLICK_ENDDECLS
