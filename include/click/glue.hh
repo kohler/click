@@ -21,7 +21,6 @@ CLICK_CXX_PROTECT
 #  define HAVE_MOD_USE_COUNT 1
 # endif
 # include <linux/kernel.h>
-# include <linux/version.h>
 # include <linux/string.h>
 # include <linux/skbuff.h>
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)

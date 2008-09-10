@@ -1016,6 +1016,15 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
 
+    AC_CACHE_CHECK([whether uintptr_t is defined in the Linux kernel],
+	ac_cv_uintptr_t_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/types.h>
+]], [[uintptr_t i = 0;]])], ac_cv_uintptr_t_linuxmodule=yes, ac_cv_uintptr_t_linuxmodule=no)])
+    if test $ac_cv_uintptr_t_linuxmodule = yes; then
+	AC_DEFINE([HAVE_UINTPTR_T_LINUXMODULE], [1], [Define to 1 if Linux defines the type 'uintptr_t'.])
+    fi
+
+
     AC_CACHE_CHECK([whether struct sk_buff has a security member], [ac_cv_linuxmodule_skbuff_security],
 	[AC_LANG_C
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[

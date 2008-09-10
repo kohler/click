@@ -89,16 +89,24 @@
 /* Define if you have the netif_tx_lock function. */
 #undef HAVE_NETIF_TX_LOCK
 
+/* Define to 1 if Linux defines the type 'uintptr_t'. */
+#undef HAVE_UINTPTR_T_LINUXMODULE
+
 /* Define if fast checksum functions require correct alignment. */
 #ifndef __i386__
 # define FAST_CHECKSUM_ALIGNED 1
 #endif
 
-/* Include integer type definitions. */
-#include <linux/autoconf.h>
+/* Include Linux configuration and type definitions. */
+#ifndef AUTOCONF_INCLUDED
+# include <linux/autoconf.h>
+#endif
+#include <linux/version.h>
 #include <linux/types.h>
 typedef ptrdiff_t intptr_t;
-typedef unsigned long uintptr_t; /* XXX? */
+#if !HAVE_UINTPTR_T_LINUXMODULE
+typedef unsigned long uintptr_t;
+#endif
 
 /* Define HAVE_INT64_IS_LONG based on HAVE_INT64_IS_LONG_LINUXMODULE. */
 #ifdef HAVE_INT64_IS_LONG_LINUXMODULE

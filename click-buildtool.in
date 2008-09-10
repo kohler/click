@@ -1034,7 +1034,6 @@ EOF
 
     cat <<EOF
 #include <click/config.h>
-#include <linux/version.h>
 #include <linux/module.h>
 
 /* a new version of EXPORT_NO_SYMBOLS that works */
