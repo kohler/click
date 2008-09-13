@@ -251,8 +251,9 @@ UpdateGridRoutes::simple_action(Packet *packet)
 		triggered_rtes.push_back(new_entry);
 	    }
 	  }
-	  else
-	    ; // else we never had a route to this broken destination anyway
+	  else {
+	    // we never had a route to this broken destination anyway
+	  }
 
 	  continue;
 	}

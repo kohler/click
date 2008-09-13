@@ -47,7 +47,7 @@ class BeaconTracker : public Element { public:
   DEQueue<beacon_t> _beacons;
 
   int _beacon_int;
-  struct timeval _start;
+  Timestamp _start;
   
   void trim();
   void add_handlers();

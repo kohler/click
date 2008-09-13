@@ -55,7 +55,6 @@ class MadwifiRate : public Element { public:
 
   
   EtherAddress _bcast;
-  struct timeval _rate_window;
   void assign_rate(Packet *);
 
   void process_feedback(Packet *);

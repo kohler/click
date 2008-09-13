@@ -66,7 +66,7 @@ The records are returned in increasing, sequential order by packet ID.
 class ChuckCheck : public Element {
 
   struct Stat {
-    struct timeval time;
+    Timestamp time;
     unsigned saddr;
   };
 

@@ -129,12 +129,7 @@ GridLocationInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 double
 GridLocationInfo::now()
 {
-  struct timeval tv;
-  double t;
-
-  click_gettimeofday(&tv);
-  t = tv.tv_sec + (tv.tv_usec / 1000000.0);
-  return(t);
+  return Timestamp::now().doubleval();
 }
 
 double

@@ -41,13 +41,12 @@ ToyTCP::ToyTCP()
 void
 ToyTCP::restart()
 {
-  struct timeval tv;
-  click_gettimeofday(&tv);
+  Timestamp tv = Timestamp::now();
 
-  _iss = tv.tv_sec & 0x0fffffff;
+  _iss = tv.sec() & 0x0fffffff;
   _irs = 0;
   _snd_nxt = _iss;
-  _sport = htons(1024 + (tv.tv_usec % 60000));
+  _sport = htons(1024 + (tv.usec() % 60000));
   _state = 0;
   _grow = 0;
   _wc = 0;

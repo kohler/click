@@ -69,7 +69,7 @@ LinkTracker::remove_all_stats(IPAddress dst)
   
 
 void
-LinkTracker::add_stat(IPAddress dst, int sig, int qual, struct timeval when)
+LinkTracker::add_stat(IPAddress dst, int sig, int qual, Timestamp when)
 {
   if (sig == 0 && qual == 0) {
     click_chatter("LinkTracker: ignoring probably bad link info from %s\n",
@@ -77,8 +77,7 @@ LinkTracker::add_stat(IPAddress dst, int sig, int qual, struct timeval when)
     return;
   }
 
-  struct timeval now;
-  gettimeofday(&now, 0);
+  Timestamp now = Timestamp::now();
 
   stat_t *s = _stats.findp(dst);
   if (s == 0) {
@@ -97,16 +96,15 @@ LinkTracker::add_stat(IPAddress dst, int sig, int qual, struct timeval when)
   }
   else {
     /* assumes ``when'' is later in time than last data point */
-    timeval tv = when - s->last_data;
-    if (tv.tv_sec == 0 && tv.tv_usec == 0) {
+    Timestamp tv = when - s->last_data;
+    if (!tv) {
       /* this isn't new data, just a repeat of an old statistic.  it
          may be true that packets can arrive at a node and stats can
          be generated faster than once per usec, (or whatever the
          gettimeofday granularity is), but we won't worry about that */
       return; 
     }
-    double delta = tv.tv_sec;
-    delta += tv.tv_usec / 1.0e6;
+    double delta = tv.doubleval();
     
     double old_weight = exp(-delta / _tau);
 
@@ -140,7 +138,7 @@ LinkTracker::add_stat(IPAddress dst, int sig, int qual, struct timeval when)
 
 
 bool
-LinkTracker::get_stat(IPAddress dst, int &sig, int &qual, struct timeval &last_update)
+LinkTracker::get_stat(IPAddress dst, int &sig, int &qual, Timestamp &last_update)
 {
   stat_t *s = _stats.findp(dst);
   if (s == 0)
@@ -154,7 +152,7 @@ LinkTracker::get_stat(IPAddress dst, int &sig, int &qual, struct timeval &last_u
 }
 
 void 
-LinkTracker::add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num_expected, struct timeval last_bcast)
+LinkTracker::add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num_expected, Timestamp last_bcast)
 {
   /* can only believe num_expected if the receiver heard at least 2 packets */
   if (num_rx < 2)
@@ -178,8 +176,7 @@ LinkTracker::add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num
    */
   double r = (num_rx_ - 0.5) / num_expected_;
     
-  struct timeval now;
-  gettimeofday(&now, 0);
+  Timestamp now = Timestamp::now();
   
   bcast_t *s = _bcast_stats.findp(dst);
   if (s == 0) {
@@ -194,12 +191,11 @@ LinkTracker::add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num
     _bcast_stats.insert(dst, s2);
   }
   else {
-    timeval tv = last_bcast - s->last_bcast;
-    if (tv.tv_sec == 0 && tv.tv_usec == 0) 
+    Timestamp tv = last_bcast - s->last_bcast;
+    if (!tv) 
       return; // repeat of old data
     
-    double delta = tv.tv_sec;
-    delta += tv.tv_usec / 1.0e6;
+    double delta = tv.doubleval();
     
     double old_weight = exp(-delta / _tau);
     
@@ -219,7 +215,7 @@ LinkTracker::add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num
  
 
 bool
-LinkTracker::get_bcast_stat(IPAddress dst, double &delivery_rate, struct timeval &last_update)
+LinkTracker::get_bcast_stat(IPAddress dst, double &delivery_rate, Timestamp &last_update)
 {
   bcast_t *s = _bcast_stats.findp(dst);
   if (s == 0)
@@ -245,9 +241,8 @@ LinkTracker::simple_action(Packet *p)
   case grid_hdr::GRID_ROUTE_REPLY: {
 #ifndef SMALL_GRID_HEADERS
     struct grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
-    struct timeval tv;
-    tv.tv_sec = ntohl(nb->measurement_time.tv_sec);
-    tv.tv_usec = ntohl(nb->measurement_time.tv_usec);
+    Timestamp tv = Timestamp::make_usec(ntohl(nb->measurement_time.tv_sec),
+					ntohl(nb->measurement_time.tv_usec));
     add_stat(IPAddress(gh->tx_ip), ntohl(nb->link_sig), ntohl(nb->link_qual), tv);
 #endif
     break;
@@ -277,8 +272,8 @@ LinkTracker::read_stats(Element *xf, void *)
   String s;
   for (HashMap<IPAddress, LinkTracker::stat_t>::iterator i = f->_stats.begin(); i.live(); i++) {
     snprintf(timebuf, 80, " %ld.%06ld", 
-	     (long) i.value().last_update.tv_sec, 
-	     (long) i.value().last_update.tv_usec);
+	     (long) i.value().last_update.sec(), 
+	     (long) i.value().last_update.usec());
     s += i.key().unparse() 
       + String(timebuf)
       + " sig: " + String(i.value().sig_top / i.value().sig_bot) 
@@ -296,8 +291,8 @@ LinkTracker::read_bcast_stats(Element *xf, void *)
   String s;
   for (HashMap<IPAddress, LinkTracker::bcast_t>::iterator i = f->_bcast_stats.begin(); i.live(); i++) {
     snprintf(timebuf, 80, " %ld.%06ld", 
-	     (long) i.value().last_update.tv_sec, 
-	     (long) i.value().last_update.tv_usec);
+	     (long) i.value().last_update.sec(), 
+	     (long) i.value().last_update.usec());
     s += i.key().unparse() 
       + String(timebuf)
       + " " + String(i.value().r_top / i.value().r_bot) + "\n";

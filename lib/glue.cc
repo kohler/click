@@ -22,6 +22,7 @@
 #include <click/config.h>
 
 #include <click/glue.hh>
+#include <click/timestamp.hh>
 #include <click/error.hh>
 
 #ifdef CLICK_USERLEVEL
@@ -384,10 +385,15 @@ void
 click_random_srandom()
 {
     static const int bufsiz = 16;
-    uint32_t buf[bufsiz];
+    union {
+	uint8_t c[bufsiz];
+	uint32_t u32[bufsiz / 4];
+    } buf;
     int pos = 0;
-    click_gettimeofday((struct timeval *)(buf + pos));
-    pos += sizeof(struct timeval) / sizeof(uint32_t);
+
+    ((Timestamp *) (buf.c + pos))->set_now();
+    pos += sizeof(Timestamp);
+
 #ifdef CLICK_USERLEVEL
 # ifdef O_NONBLOCK
     int fd = open("/dev/random", O_RDONLY | O_NONBLOCK);
@@ -397,20 +403,26 @@ click_random_srandom()
     int fd = open("/dev/random", O_RDONLY);
 # endif
     if (fd >= 0) {
-	int amt = read(fd, buf + pos, sizeof(uint32_t) * (bufsiz - pos));
+	ssize_t amt = read(fd, buf.c + pos, bufsiz - pos);
 	close(fd);
 	if (amt > 0)
-	    pos += (amt / sizeof(uint32_t));
+	    pos += amt;
     }
-    if (pos < bufsiz)
-	buf[pos++] = getpid();
-    if (pos < bufsiz)
-	buf[pos++] = getuid();
+
+    struct {
+	pid_t p;
+	uid_t u;
+    } pu;
+    pu.p = getpid();
+    pu.u = getuid();
+    int pu_amt = (bufsiz - pos < (int) sizeof(pu) ? bufsiz - pos : (int) sizeof(pu));
+    memcpy(buf.c + pos, &pu, pu_amt);
+    pos += pu_amt;
 #endif
 
     uint32_t result = 0;
-    for (int i = 0; i < pos; i++) {
-	result ^= buf[i];
+    for (int i = 0; i < pos / 4; i++) {
+	result ^= buf.u32[i];
 	result = (result << 1) | (result >> 31);
     }
     click_srandom(result);
@@ -614,12 +626,16 @@ click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const
 # endif
 CLICK_DECLS
 
+void
+click_gettimeofday(timeval *tvp)
+{
+    *tvp = Timestamp::now().timeval();
+}
+
 click_jiffies_t
 click_jiffies()
 {
-    struct timeval tv;
-    click_gettimeofday(&tv);
-    return (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
+    return Timestamp::now().msecval();
 }
 
 CLICK_ENDDECLS

@@ -191,7 +191,7 @@ BeaconScanner::simple_action(Packet *p)
   ap->_basic_rates.clear();
   ap->_rates.clear();
   Vector<int> all_rates;
-  click_gettimeofday(&ap->_last_rx);
+  ap->_last_rx.set_now();
   if (rates_l) {
     for (int x = 0; x < min((int)rates_l[1], WIFI_RATE_SIZE); x++) {
       uint8_t rate = rates_l[x + 2];
@@ -231,8 +231,7 @@ String
 BeaconScanner::scan_string()
 {
   StringAccum sa;
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
   for (APIter iter = _waps.begin(); iter.live(); iter++) {
     wap ap = iter.value();
     sa << ap._eth << " ";

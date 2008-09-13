@@ -330,7 +330,7 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     // leave src location update to FixSrcLoc element
     int sig = 0;
     int qual = 0;
-    struct timeval tv = { 0, 0 };
+    Timestamp tv;
 #ifdef CLICK_USERLEVEL
     if (_link_tracker)
       _link_tracker->get_stat(next_hop_ip, sig, qual, tv);

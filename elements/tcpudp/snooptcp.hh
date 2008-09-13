@@ -47,7 +47,7 @@ class SnoopTCP : public Element { public:
     Packet *packet;
     unsigned seq;
     unsigned size;
-    struct timeval snd_time;
+    Timestamp snd_time;
     int num_rxmit;
     int sender_rxmit;
     
@@ -98,7 +98,7 @@ struct SnoopTCP::PCB {
   
   int s_cache_size() const	{ return (_head >= _tail ? _head - _tail : S_CACHE_SIZE - (_tail - _head)); }
   
-  void clean(unsigned, struct timeval *);
+  void clean(unsigned);
   
   Packet *s_data(Packet *, const click_tcp *, int datalen);
   void s_ack(Packet *, const click_tcp *, int datalen);

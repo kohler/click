@@ -146,9 +146,9 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
 
 	time_t when = time(0);
 	const char *cwhen = ctime(&when);
-	struct timeval tv;
-	if (gettimeofday(&tv, 0) >= 0)
-	    sa << "!runtime " << tv << " (" << String(cwhen, strlen(cwhen) - 1) << ")\n";
+	Timestamp now = Timestamp::now();
+	if (now)
+	    sa << "!runtime " << now << " (" << String(cwhen, strlen(cwhen) - 1) << ")\n";
     }
 
     // data description

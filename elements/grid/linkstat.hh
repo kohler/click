@@ -152,9 +152,9 @@ private:
 
   // record probes received from other hosts
   struct probe_t {
-    struct timeval when;  
-    unsigned int   seq_no;  
-    probe_t(const struct timeval &t, unsigned int s) : when(t), seq_no(s) { }
+    Timestamp when;  
+    unsigned seq_no;  
+    probe_t(const Timestamp &t, unsigned int s) : when(t), seq_no(s) { }
   };
 
   struct probe_list_t {
@@ -172,12 +172,12 @@ private:
 
   // record delivery rate data about our outgoing links
   struct outgoing_link_entry_t : public link_entry {
-    struct timeval received_at;
-    unsigned int   tau;
+    Timestamp received_at;
+    unsigned  tau;
     outgoing_link_entry_t() { memset(this, 0, sizeof(*this)); }
-    outgoing_link_entry_t(const link_entry &l, const struct timeval &now, unsigned int t) 
+    outgoing_link_entry_t(const link_entry &l, const Timestamp &now, unsigned int t) 
       : link_entry(l), received_at(now), tau(t) { }
-    outgoing_link_entry_t(const unsigned char *d, const struct timeval &now, unsigned int t) 
+    outgoing_link_entry_t(const unsigned char *d, const Timestamp &now, unsigned int t) 
       : link_entry(d), received_at(now), tau(t) { }
   };
 
@@ -219,7 +219,7 @@ private:
   // period TAU milliseconds, as recorded at time T.  R is a
   // percentage (0-100).  Return true iff we have data.
   bool get_forward_rate(const EtherAddress &eth, unsigned int *r, unsigned int *tau, 
-			struct timeval *t);
+			Timestamp *t);
 
   // Get reverse delivery rate R from node ETH to this node over
   // period TAU milliseconds, as of now.  R is a percentage 0-100.

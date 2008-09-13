@@ -261,7 +261,7 @@ FromDevice::got_skb(struct sk_buff *skb)
 	_queue[_tail] = p; /* hand it to run_task */
 
 #if CLICK_DEBUG_SCHEDULING
-	click_gettimeofday(&_schinfo[_tail].enq_time);
+	_schinfo[_tail].enq_time.set_now();
 	RouterThread *rt = _task.thread();
 	_schinfo[_tail].enq_state = rt->thread_state();
 	int enq_process_asleep = rt->sleeper() && rt->sleeper()->state != TASK_RUNNING;
@@ -292,14 +292,13 @@ FromDevice::got_skb(struct sk_buff *skb)
 void
 FromDevice::emission_report(int idx)
 {
-    struct timeval now;
-    click_gettimeofday(&now);
+    Timestamp now = Timestamp::now();
     RouterThread *rt = _task.thread();
     StringAccum sa;
     sa << "dt " << (now - _schinfo[idx].enq_time);
     if (_schinfo[idx].enq_state != RouterThread::S_RUNNING) {
-	struct timeval etime = rt->task_epoch_time(_schinfo[idx].enq_task_epoch + 1);
-	if (timerisset(&etime))
+	Timestamp etime = rt->task_epoch_time(_schinfo[idx].enq_task_epoch + 1);
+	if (etime)
 	    sa << " dt_thread " << (etime - _schinfo[idx].enq_time);
     }
     sa << " arrst " << RouterThread::thread_state_name(_schinfo[idx].enq_state)

@@ -125,7 +125,7 @@ public:
   
   IPTable _blacklist;
   
-  struct timeval dijkstra_time;
+  Timestamp dijkstra_time;
 private: 
   class LinkInfo {
   public:
@@ -134,14 +134,13 @@ private:
     unsigned _metric;
     uint32_t _seq;
     uint32_t _age;
-    struct timeval _last_updated;
+    Timestamp _last_updated;
     LinkInfo() { 
       _from = IPAddress(); 
       _to = IPAddress(); 
       _metric = 0; 
       _seq = 0;
       _age = 0;
-      _last_updated.tv_sec = 0; 
     }
     
     LinkInfo(IPAddress from, IPAddress to, 
@@ -151,7 +150,7 @@ private:
       _metric = metric;
       _seq = seq;
       _age = age;
-      click_gettimeofday(&_last_updated);
+      _last_updated.set_now();
     }
 
     LinkInfo(const LinkInfo &p) : 
@@ -162,9 +161,8 @@ private:
     { }
 
     uint32_t age() {
-      struct timeval now;
-      click_gettimeofday(&now);
-      return _age + (now.tv_sec - _last_updated.tv_sec);
+	Timestamp now = Timestamp::now();
+	return _age + (now.sec() - _last_updated.sec());
     }
     void update(uint32_t seq, uint32_t age, unsigned metric) {
       if (seq <= _seq) {
@@ -173,7 +171,7 @@ private:
       _metric = metric; 
       _seq = seq;
       _age = age;
-      click_gettimeofday(&_last_updated); 
+      _last_updated.set_now(); 
     }
     
   };
@@ -239,7 +237,7 @@ private:
 
 
   IPAddress _ip;
-  struct timeval _stale_timeout;
+  Timestamp _stale_timeout;
   Timer _timer;
 };
   

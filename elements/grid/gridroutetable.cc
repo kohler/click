@@ -237,7 +237,7 @@ GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
   case EstBySigQual: {
     int sig = 0;
     int qual = 0;
-    struct timeval last;
+    Timestamp last;
     bool res = _link_tracker->get_stat(ip, sig, qual, last);
     if (!res) {
       h(1);
@@ -306,7 +306,7 @@ GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
   }
   case EstByMeas: {
     h(11);
-    struct timeval last;
+    Timestamp last;
     bool res = _link_tracker->get_bcast_stat(ip, rate, last);
     return res;
     break;
@@ -452,7 +452,7 @@ GridRouteTable::init_metric(RTEntry &r)
   case MetricCumulativeSigPct: {
     int sig = 0;
     int qual = 0;
-    struct timeval last;
+    Timestamp last;
     bool res = _link_tracker->get_stat(r.dest_ip, sig, qual, last);
     if (!res) {
       click_chatter("GridRouteTable: no link sig/qual stats from 1-hop neighbor %s; not initializing metric\n",
@@ -461,10 +461,8 @@ GridRouteTable::init_metric(RTEntry &r)
       r.metric_valid = false;
       return;
     }
-    struct timeval now;
-    gettimeofday(&now, 0);
-    now = now - last;
-    int delta_ms = 1000 * now.tv_sec + (now.tv_usec / 1000);
+    Timestamp now = Timestamp::now() - last;
+    int delta_ms = now.msecval();
     if (delta_ms > _timeout) {
       click_chatter("GridRouteTable: link sig/qual stats from 1-hop neighbor %s are too old; not initializing metric\n",
 		    r.dest_ip.unparse().c_str());

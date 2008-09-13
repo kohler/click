@@ -26,17 +26,9 @@
 CLICK_DECLS
 
 static int
-timeval_diff (struct timeval *t1, struct timeval *t2)
+timestamp_diff(const Timestamp &t1, const Timestamp &t2)
 {
-  return (t1->tv_sec - t2->tv_sec) * 1000000 + (t1->tv_usec - t2->tv_usec);
-}
-
-static void
-timeval_add (struct timeval *tv, int us)
-{
-  int nu = tv->tv_usec + us;
-  tv->tv_sec += nu / 1000000;
-  tv->tv_usec = nu % 1000000;
+    return (t1.sec() - t2.sec()) * 1000000 + (t1.usec() - t2.usec());
 }
 
 WebGen::WebGen()
@@ -105,8 +97,7 @@ WebGen::initialize (ErrorHandler *)
   }
   click_chatter ("Allocated %d CBs\n", ncbs);
 
-  struct timeval now;
-  click_gettimeofday (&now);
+  Timestamp now = Timestamp::now();
   perf_tv = now;
   start_tv = now;
 
@@ -158,9 +149,7 @@ WebGen::recycle (CB *cb)
 void
 WebGen::do_perf_stats ()
 {
-  struct timeval now;
-
-  click_gettimeofday (&now);
+  Timestamp now = Timestamp::now();
 
   //double td = ((double) perf_diff) / 1000000.0;
   //double ips = perfcnt.initiated / td;
@@ -180,12 +169,10 @@ void
 WebGen::run_timer (Timer *)
 {
   CB *cb;
-  struct timeval now;
+  Timestamp now = Timestamp::now();
 
-  click_gettimeofday (&now);
-
-  while (timeval_diff (&now, &start_tv) > start_interval) {
-    timeval_add (&start_tv, start_interval);
+  while (timestamp_diff(now, start_tv) > start_interval) {
+    start_tv += Timestamp::make_usec(start_interval);
     cb = cbfree;
 
     if (cb) {
@@ -208,7 +195,7 @@ WebGen::run_timer (Timer *)
     if (cb == rexmit_tail)
       break;
 
-    if (timeval_diff (&now, &cb->last_send) > resend_dt) {
+    if (timestamp_diff(now, cb->last_send) > resend_dt) {
       if (cb->_resends++ > resend_max) {
 	perfcnt.timeout++;
 	recycle (cb);
@@ -220,7 +207,7 @@ WebGen::run_timer (Timer *)
     }
   } while (cb != lrxcb);
 
-  if (timeval_diff (&now, &perf_tv) > perf_dt)
+  if (timestamp_diff(now, perf_tv) > perf_dt)
     do_perf_stats ();
 
   _timer.schedule_after_msec(1);
@@ -482,7 +469,7 @@ WebGen::CB::CB ()
   rexmit_next = NULL;
   rexmit_prev = NULL;
 
-  click_gettimeofday (&last_send);
+  last_send.set_now();
 }
 
 void
@@ -550,7 +537,7 @@ WebGen::CB::rexmit_unlink ()
 void
 WebGen::CB::rexmit_update (CB *tail)
 {
-  click_gettimeofday (&last_send);
+  last_send.set_now();
 
   rexmit_unlink ();
 

@@ -173,9 +173,6 @@ MadwifiRate::process_feedback(Packet *p_in)
   bool success = !(ceh->flags & WIFI_EXTRA_TX_FAIL);
   bool used_alt_rate = ceh->flags & WIFI_EXTRA_TX_USED_ALT_RATE;
 
-  struct timeval now;
-  click_gettimeofday(&now);
-
   if (dst.is_group() || !ceh->rate || 
       (success && p_in->length() < _packet_size_threshold)) {
     return;

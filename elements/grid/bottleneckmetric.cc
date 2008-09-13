@@ -71,7 +71,7 @@ GridGenericMetric::metric_t
 BottleneckMetric::get_link_metric(const EtherAddress &e, bool data_sender) const
 {
   unsigned tau;
-  struct timeval t;
+  Timestamp t;
   bool res;
   unsigned r;
 

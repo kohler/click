@@ -71,7 +71,7 @@ ETXMetric::get_link_metric(const EtherAddress &e, bool) const
 
   unsigned tau_fwd, tau_rev;
   unsigned r_fwd, r_rev;
-  struct timeval t_fwd;
+  Timestamp t_fwd;
 
   bool res_fwd = _ls->get_forward_rate(e, &r_fwd, &tau_fwd, &t_fwd);
   bool res_rev = _ls->get_reverse_rate(e, &r_rev, &tau_rev);

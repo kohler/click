@@ -78,9 +78,6 @@ AutoRateFallback::process_feedback(Packet *p_in)
   bool used_alt_rate = (eh->flags & WIFI_EXTRA_TX_USED_ALT_RATE);
   int rate = eh->rate;
 
-  struct timeval now;
-  click_gettimeofday(&now);
-  
   if (dst.is_group()) {
     /* don't record info for bcast packets */
     return;

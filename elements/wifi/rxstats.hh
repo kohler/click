@@ -53,7 +53,7 @@ class RXStats : public Element { public:
     int _packets;
     unsigned _sum_signal;
     unsigned _sum_noise;
-    struct timeval _last_received;
+    Timestamp _last_received;
     
     DstInfo() { 
       memset(this, 0, sizeof(*this));

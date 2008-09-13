@@ -150,7 +150,7 @@ BeaconTracker::trim()
 void 
 BeaconTracker::reset() 
 {
-  click_gettimeofday(&_start);
+  _start.set_now();
   _beacons.clear();
 }
 
@@ -169,12 +169,10 @@ read_param(Element *e, void *thunk)
     case H_TRACK:
       return String(td->_track) + "\n";
     case H_STATS: {
-      struct timeval now;
-      struct timeval diff;
+      Timestamp now = Timestamp::now();
       td->trim();
-      click_gettimeofday(&now);
-      timersub(&now, &td->_start, &diff);
-      int expected = min(1000*diff.tv_sec + diff.tv_usec/1000, td->_track);
+      Timestamp diff = now - td->_start;
+      int expected = min(diff.msecval(), td->_track);
       int count = td->_beacons.size();
       int p = expected ? count*100/expected : 0;
       return String(p) + "\n";

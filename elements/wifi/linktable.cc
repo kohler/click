@@ -74,8 +74,7 @@ LinkTable::configure (Vector<String> &conf, ErrorHandler *errh)
   if (!_ip) 
     return errh->error("IP not specified");
 
-  _stale_timeout.tv_sec = stale_period;
-  _stale_timeout.tv_usec = 0;
+  _stale_timeout.assign(stale_period, 0);
 
   _hosts.insert(_ip, HostInfo(_ip));
   return ret;
@@ -148,7 +147,7 @@ LinkTable::update_link(IPAddress from, IPAddress to,
   if (!from || !to || !metric) {
     return false;
   }
-  if (_stale_timeout.tv_sec < (int) age) {
+  if (_stale_timeout.sec() < (int) age) {
     return true;
   }
 
@@ -278,8 +277,6 @@ LinkTable::get_link_age(IPAddress from, IPAddress to)
   if (!nfo) {
     return 0;
   }
-  struct timeval now;
-  click_gettimeofday(&now);
   return nfo->age();
 }
   
@@ -385,8 +382,6 @@ String
 LinkTable::print_links() 
 {
   StringAccum sa;
-  struct timeval now;
-  click_gettimeofday(&now);
   for (LTIter iter = _links.begin(); iter.live(); iter++) {
     LinkInfo n = iter.value();
     sa << n._from.unparse() << " " << n._to.unparse();
@@ -467,7 +462,7 @@ LinkTable::clear_stale() {
   LTable links;
   for (LTIter iter = _links.begin(); iter.live(); iter++) {
     LinkInfo nfo = iter.value();
-    if ((unsigned) _stale_timeout.tv_sec >= nfo.age()) {
+    if ((unsigned) _stale_timeout.sec() >= nfo.age()) {
       links.insert(IPPair(nfo._from, nfo._to), nfo);
     } else {
       if (0) {
@@ -520,9 +515,7 @@ LinkTable::get_neighbors(IPAddress ip)
 void
 LinkTable::dijkstra(bool from_me) 
 {
-  struct timeval start;
-  struct timeval finish;
-  click_gettimeofday(&start);
+  Timestamp start = Timestamp::now();
   IPAddress src = _ip;
 
   typedef HashMap<IPAddress, bool> IPMap;
@@ -625,8 +618,7 @@ LinkTable::dijkstra(bool from_me)
     
   }
   
-  click_gettimeofday(&finish);
-  timersub(&finish, &start, &dijkstra_time);
+  dijkstra_time = Timestamp::now() - start;
   //StringAccum sa;
   //sa << "dijstra took " << finish - start;
   //click_chatter("%s: %s\n", name().c_str(), sa.take_string().c_str());

@@ -138,7 +138,7 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
     Packet *_queue[QSIZE+1];
 #if CLICK_DEBUG_SCHEDULING
     struct Schinfo {
-	struct timeval enq_time;
+	Timestamp enq_time;
 	char enq_state;
 	char enq_woke_process;
 	char enq_task_scheduled;

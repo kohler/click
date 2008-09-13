@@ -56,7 +56,6 @@ UMLSwitch::initialize(ErrorHandler *errh)
   }
 
   // set up a local address
-  struct timeval tv;
   struct {
     char zero;
     int pid;
@@ -64,8 +63,7 @@ UMLSwitch::initialize(ErrorHandler *errh)
   } name;
   name.zero = 0;
   name.pid = getpid();
-  gettimeofday(&tv, NULL);
-  name.usecs = tv.tv_usec;
+  name.usecs = Timestamp::now().usec();
   _local_addr.sun_family = AF_UNIX;
   memcpy(_local_addr.sun_path, &name, sizeof(name));
 

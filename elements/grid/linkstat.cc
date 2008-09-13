@@ -128,10 +128,7 @@ LinkStat::count_rx(const probe_list_t *pl)
   if (!pl)
     return 0;
 
-  struct timeval now;
-  click_gettimeofday(&now);
-  struct timeval period = { _tau / 1000, 1000 * (_tau % 1000) };
-  struct timeval earliest = now - period;
+  Timestamp earliest = Timestamp::now() - Timestamp::make_msec(_tau);
 
   int num = 0;
   for (int i = pl->probes.size() - 1; i >= 0; i--) {
@@ -201,8 +198,7 @@ LinkStat::simple_action(Packet *p)
   add_bcast_stat(EtherAddress(eh->ether_shost), lp);
 
   // look in received packet for info about our outgoing link
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
   unsigned int max_entries = (p->length() - sizeof(*eh) - link_probe::size) / link_entry::size;
   unsigned int num_entries = lp.num_links;
   if (num_entries > max_entries) {
@@ -226,7 +222,7 @@ LinkStat::simple_action(Packet *p)
 
 bool
 LinkStat::get_forward_rate(const EtherAddress &eth, unsigned int *r, 
-			   unsigned int *tau, struct timeval *t)
+			   unsigned int *tau, Timestamp *t)
 {
   outgoing_link_entry_t *ol = _rev_bcast_stats.findp(eth);
   if (!ol)
@@ -284,8 +280,7 @@ LinkStat::get_reverse_rate(const EtherAddress &eth, unsigned int *r,
 void
 LinkStat::add_bcast_stat(const EtherAddress &eth, const link_probe &lp)
 {
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
   probe_t probe(now, lp.seq_no);
   
   unsigned int new_period = lp.period;
@@ -345,8 +340,7 @@ LinkStat::read_bcast_stats(Element *xf, void *)
   for (ReverseProbeMap::const_iterator i = e->_rev_bcast_stats.begin(); i.live(); i++)
     eth_addrs.insert(i.key(), true);
 
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
 
   StringAccum sa;
   for (EthMap::const_iterator i = eth_addrs.begin(); i.live(); i++) {
@@ -359,7 +353,7 @@ LinkStat::read_bcast_stats(Element *xf, void *)
     
     sa << "fwd ";
     if (ol) {
-      struct timeval age = now - ol->received_at;
+      Timestamp age = now - ol->received_at;
       sa << "age=" << age << " tau=" << ol->tau << " num_rx=" << (unsigned) ol->num_rx 
 	 << " period=" << e->_period << " pct=" << calc_pct(ol->tau, e->_period, ol->num_rx);
     }

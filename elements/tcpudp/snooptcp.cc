@@ -115,16 +115,16 @@ SnoopTCP::PCB::initialize(bool is_s, const click_tcp *tcph, int datalen)
 }
 
 void
-SnoopTCP::PCB::clean(unsigned ack, struct timeval *last_cleaned_time)
+SnoopTCP::PCB::clean(unsigned ack)
 {
   //snoop_untimeout(cs);
-  timerclear(last_cleaned_time);
+  Timestamp last_cleaned_time;
   
   int i = _tail;
   while (i != _head && SEQ_LEQ(_s_cache[i].seq + _s_cache[i].size, ack)) {
     SCacheEntry &cache = _s_cache[i];
-    if (timercmp(&cache.snd_time, last_cleaned_time, >))
-      *last_cleaned_time = cache.snd_time;
+    if (cache.snd_time > last_cleaned_time)
+      last_cleaned_time = cache.snd_time;
     cache.clear();
     i = next_i(i);
   }
@@ -202,7 +202,7 @@ SnoopTCP::PCB::s_data(Packet *p, const click_tcp *tcph, int datalen)
     _s_cache[entry].sender_rxmit = 1;
   else
     _s_cache[entry].sender_rxmit = 0;
-  click_gettimeofday(&_s_cache[entry].snd_time);
+  _s_cache[entry].snd_time.set_now();
   DEBUG_CHATTER("\t%d at %d\n", seq, entry);
   
   // XXX if (!in_sequence) snoop_untimeout();
@@ -220,8 +220,7 @@ SnoopTCP::PCB::mh_new_ack(unsigned ack)
   if (_tail != _head && _s_cache[_tail].num_rxmit)
     old_tail = _tail;
   
-  struct timeval last_cleaned_time;
-  clean(ack, &last_cleaned_time);
+  clean(ack);
   
   //if ((cs->wi_state & SNOOP_RTTFLAG) && timerisset(&sndtime))
   //snoop_rtt(cs, &sndtime);

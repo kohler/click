@@ -79,7 +79,7 @@ class BeaconScanner : public Element { public:
     Vector<int> _rates;
     Vector<int> _basic_rates;
     int _rssi;
-    struct timeval _last_rx;
+    Timestamp _last_rx;
   };
 
   typedef HashMap<EtherAddress, wap> APTable;

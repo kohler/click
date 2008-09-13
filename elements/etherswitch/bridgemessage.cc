@@ -76,7 +76,7 @@ void
 BridgeMessage::reset(uint64_t bridge_id) {
   _root = _bridge_id = bridge_id;
   _cost = 0;
-  _timestamp.set_sec(~(1 << 31)); // Never expire
+  _timestamp = Timestamp::make_sec(Timestamp::max_seconds); // Never expire
   _tc = false;
   _max_age = 20;
   _hello_time = 2;
@@ -97,7 +97,7 @@ bool BridgeMessage::expire(const Timestamp& cutoff) {
 void BridgeMessage::expire() {
   _root = _bridge_id = ~(uint64_t)0; // Worst possible
   _cost = ~(uint16_t)0;	// Worst possible
-  _timestamp.set_sec(~(1 << 31)); // Never expire
+  _timestamp = Timestamp::make_sec(Timestamp::max_seconds); // Never expire
   _tc = false;
 }
 
@@ -135,7 +135,7 @@ BridgeMessage::to_wire(BridgeMessage::wire* msg) const {
   msg->bridge_id = htonq(_bridge_id);
   msg->port_id = htons(_port_id);
   // How stale is this message?
-  if (_timestamp.sec() == ~(1<<31)) { // Special "do not expire" value
+  if (_timestamp.sec() == Timestamp::max_seconds) { // Special "do not expire" value
     msg->message_age = htons(0);
   } else {
     Timestamp t = Timestamp::now() - _timestamp;

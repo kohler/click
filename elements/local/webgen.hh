@@ -69,7 +69,7 @@ private:
 	_spare_bits:3;
     char _resends;
 
-    struct timeval last_send;
+    Timestamp last_send;
     char sndbuf[64];
     unsigned sndlen;
 
@@ -101,11 +101,11 @@ private:
 
   // Scheduling new connections
   int start_interval;			// ms between connections
-  struct timeval start_tv;
+  Timestamp start_tv;
 
   // Performance measurement
   static const int perf_dt = 5000000;
-  struct timeval perf_tv;
+  Timestamp perf_tv;
   struct {
     int initiated;
     int completed;

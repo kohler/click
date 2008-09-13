@@ -28,10 +28,10 @@ class GridProxy : public Element {
   class DstInfo {
   public:
     IPAddress _ip;
-    timeval _last_updated;
+    Timestamp _last_updated;
     IPAddress _gw;
-    DstInfo() {_ip = IPAddress(0); _last_updated.tv_sec = 0; _gw = IPAddress(0); }
-    DstInfo(IPAddress ip, IPAddress gw, timeval now) {
+    DstInfo() {_ip = IPAddress(0); _gw = IPAddress(0); }
+    DstInfo(IPAddress ip, IPAddress gw, Timestamp now) {
       _ip = ip;
       _last_updated = now;
       _gw = gw;

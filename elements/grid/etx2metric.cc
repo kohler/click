@@ -71,7 +71,7 @@ GridGenericMetric::metric_t
 ETX2Metric::get_link_metric(const EtherAddress &e, bool data_sender) const
 {
   unsigned tau_foo;
-  struct timeval t_foo;
+  Timestamp t_foo;
   unsigned r_data, r_ack;
 
 

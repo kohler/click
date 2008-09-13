@@ -133,15 +133,17 @@ struct click_dsr_source {
 
 #define DSR_SALVAGE_LIMIT     4
 
-#define DSR_LAST_HOP_IP_ANNO(p)		((p)->user_anno_u32(1))
-#define SET_DSR_LAST_HOP_IP_ANNO(p, v)	((p)->set_user_anno_u32(1, (v)))
+#define DSR_LAST_HOP_IP_ANNO(p)		((p)->anno_u32(Packet::user_anno_offset + 4))
+#define SET_DSR_LAST_HOP_IP_ANNO(p, v)	((p)->set_anno_u32(Packet::user_anno_offset + 4, (v)))
 
-#define DSR_LAST_HOP_ETH_ANNO1(p)		((p)->user_anno_u16(9))
-#define DSR_LAST_HOP_ETH_ANNO2(p)		((p)->user_anno_u16(11))
-#define DSR_LAST_HOP_ETH_ANNO3(p)		((p)->user_anno_u16(13))
-#define SET_DSR_LAST_HOP_ETH_ANNO1(p, v)	((p)->set_user_anno_u16( 9, (v)))
-#define SET_DSR_LAST_HOP_ETH_ANNO2(p, v)	((p)->set_user_anno_u16(11, (v)))
-#define SET_DSR_LAST_HOP_ETH_ANNO3(p, v)	((p)->set_user_anno_u16(13, (v)))
+#define DSR_LAST_HOP_ETH_ANNO1(p)	((p)->anno_u16(Packet::user_anno_offset + 18))
+#define SET_DSR_LAST_HOP_ETH_ANNO1(p, v) ((p)->set_anno_u16(Packet::user_anno_offset + 18, (v)))
+
+#define DSR_LAST_HOP_ETH_ANNO2(p)	((p)->anno_u16(Packet::user_anno_offset + 22))
+#define SET_DSR_LAST_HOP_ETH_ANNO2(p, v) ((p)->set_anno_u16(Packet::user_anno_offset + 22, (v)))
+
+#define DSR_LAST_HOP_ETH_ANNO3(p)	((p)->anno_u16(Packet::user_anno_offset + 26))
+#define SET_DSR_LAST_HOP_ETH_ANNO3(p, v) ((p)->set_anno_u16(Packet::user_anno_offset + 26, (v)))
 
 CLICK_ENDDECLS
 

@@ -104,9 +104,6 @@ WifiDupeFilter::static_read_stats(Element *xf, void *)
 {
   WifiDupeFilter *e = (WifiDupeFilter *) xf;
   StringAccum sa;
-  struct timeval now;
-
-  click_gettimeofday(&now);
 
   for(DstTable::const_iterator i = e->_table.begin(); i.live(); i++) {
     DstInfo nfo = i.value();

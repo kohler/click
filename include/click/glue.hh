@@ -383,12 +383,8 @@ typedef int click_jiffies_difference_t;
 # define CLICK_HZ			hz
 # define click_jiffies_less(a, b)	((click_jiffies_difference_t) ((a) - (b)) < 0)
 #else
-#if !CLICK_NS
-# define click_gettimeofday(tvp)	(gettimeofday(tvp, (struct timezone *)0))
-#else
-# define click_gettimeofday(tvp)	(simclick_gettimeofday(tvp))
-#endif
 CLICK_DECLS
+void click_gettimeofday(timeval *tvp) CLICK_DEPRECATED;
 typedef unsigned click_jiffies_t;
 typedef int click_jiffies_difference_t;
 click_jiffies_t click_jiffies();
@@ -435,6 +431,18 @@ CLICK_ENDDECLS
 #endif
 
 #ifndef CLICK_TIMEVAL_OPERATORS
+
+inline timeval make_timeval(int sec, int usec) CLICK_DEPRECATED;
+inline bool operator==(const timeval &a, const timeval &b) CLICK_DEPRECATED;
+inline bool operator!=(const timeval &a, const timeval &b) CLICK_DEPRECATED;
+inline bool operator<(const timeval &a, const timeval &b) CLICK_DEPRECATED;
+inline bool operator<=(const timeval &a, const timeval &b) CLICK_DEPRECATED;
+inline bool operator>(const timeval &a, const timeval &b) CLICK_DEPRECATED;
+inline bool operator>=(const timeval &a, const timeval &b) CLICK_DEPRECATED;
+inline timeval &operator+=(timeval &a, const timeval &b) CLICK_DEPRECATED;
+inline timeval &operator-=(timeval &a, const timeval &b) CLICK_DEPRECATED;
+inline timeval operator+(timeval a, const timeval &b) CLICK_DEPRECATED;
+inline timeval operator-(timeval a, const timeval &b) CLICK_DEPRECATED;
 
 inline struct timeval
 make_timeval(int sec, int usec)
@@ -484,38 +492,28 @@ operator>(const struct timeval &a, const struct timeval &b)
 inline struct timeval &
 operator+=(struct timeval &a, const struct timeval &b)
 {
-    a.tv_sec += b.tv_sec;
-    a.tv_usec += b.tv_usec;
-    if (a.tv_usec >= 1000000) {
-	a.tv_sec++;
-	a.tv_usec -= 1000000;
-    }
+    timeradd(&a, &b, &a);
     return a;
 }
 
 inline struct timeval &
 operator-=(struct timeval &a, const struct timeval &b)
 {
-    a.tv_sec -= b.tv_sec;
-    a.tv_usec -= b.tv_usec;
-    if (a.tv_usec < 0) {
-	a.tv_sec--;
-	a.tv_usec += 1000000;
-    }
+    timersub(&a, &b, &a);
     return a;
 }
 
 inline struct timeval
 operator+(struct timeval a, const struct timeval &b)
 {
-    a += b;
+    timeradd(&a, &b, &a);
     return a;
 }
 
 inline struct timeval
 operator-(struct timeval a, const struct timeval &b)
 {
-    a -= b;
+    timersub(&a, &b, &a);
     return a;
 }
 

@@ -40,7 +40,7 @@ void
 ChuckCheck::count(Packet *p)
 {
     Stat &s = _info[_tail];
-    click_gettimeofday(&s.time);
+    s.time.set_now();
     s.saddr = p->ip_header()->ip_src.s_addr;
     _tail = (_tail + 1) % BUCKETS;
     if (_tail == _head) {
@@ -82,8 +82,8 @@ ChuckCheck::read_handler(Element *e, void *)
 
     for (unsigned i = head; i != tail; i = (i + 1) % BUCKETS) {
 	buf[j++] = num++;
-	buf[j++] = cc->_info[i].time.tv_sec;
-	buf[j++] = cc->_info[i].time.tv_usec;
+	buf[j++] = cc->_info[i].time.sec();
+	buf[j++] = cc->_info[i].time.usec();
 	buf[j++] = cc->_info[i].saddr;
     }
 

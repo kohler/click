@@ -54,7 +54,7 @@ private:
   int _seq;
 
   struct Entry {
-    struct timeval _when; // When we last updated this entry.
+    Timestamp _when; // When we last updated this entry.
     pep_rgn_fix _fix;
   };
   Vector<Entry> _entries; // hops stored and transmitted are hops to us

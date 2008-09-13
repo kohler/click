@@ -88,12 +88,12 @@ public:
   {
   public:
     Packet *_p;
-    struct timeval _time_added;
+    Timestamp _time_added;
 
     BufferedPacket(Packet *p) {
       assert(p);
       _p=p;
-      click_gettimeofday(&_time_added);
+      _time_added.set_now();
     }
     void check() const { assert(_p); }
   };
@@ -142,18 +142,17 @@ public:
 
   class ForwardedReqVal {
   public:
-    timeval _time_forwarded;
+    Timestamp _time_forwarded;
 
     unsigned short best_metric; // best metric we've forwarded so far
     
     // the following two variables are set if we're waiting for a
     // unidirectionality test (RREQ with TTL 1) to come back
-    timeval _time_unidtest_issued;
+    Timestamp _time_unidtest_issued;
     Packet *p;
 
     void check() const {
-      assert(_time_forwarded.tv_usec > 0);
-      assert(_time_forwarded.tv_sec > 0);
+      assert(_time_forwarded > 0);
       assert(best_metric > 0);
     }
   };
@@ -182,12 +181,11 @@ public:
   
   class BlacklistEntry {
   public:
-    timeval _time_updated;
+    Timestamp _time_updated;
     int _status;
 
     void check() const {
-      assert(_time_updated.tv_usec > 0);
-      assert(_time_updated.tv_sec > 0);
+      assert(_time_updated > 0);
       switch (_status) {
       case DSR_BLACKLIST_NOENTRY:
       case DSR_BLACKLIST_UNI_PROBABLE:
@@ -212,7 +210,7 @@ public:
     
     IPAddress _target;
     int _ttl; // ttl used on the last request
-    struct timeval _time_last_issued;
+    Timestamp _time_last_issued;
 
     // number of times we've issued a request to this target since
     // last receiving a reply
@@ -240,7 +238,7 @@ public:
       _times_issued = 1;
       _backoff_interval = DSR_RREQ_DELAY1;
 
-      click_gettimeofday(&_time_last_issued);
+      _time_last_issued.set_now();
 
       check();
     }
@@ -250,8 +248,7 @@ public:
     void check() const {
       assert(_target);
       assert(_ttl > 0);
-      assert(_time_last_issued.tv_sec > 0);
-      assert(_time_last_issued.tv_usec > 0);
+      assert(_time_last_issued > 0);
       assert(_times_issued > 0);
       assert(_backoff_interval > 0);
     }
@@ -428,7 +425,7 @@ private:
   int check_blacklist(IPAddress ip);
   void set_blacklist(IPAddress ip, int s);
 
-  static unsigned long diff_in_ms(timeval, timeval);
+  static unsigned long diff_in_ms(const Timestamp &, const Timestamp &);
 
   static IPAddress next_hop(Packet *p);
 

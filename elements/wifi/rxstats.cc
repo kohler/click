@@ -57,7 +57,7 @@ RXStats::simple_action(Packet *p_in)
   nfo->_packets++;
   nfo->_sum_signal += ceh->rssi;
   nfo->_sum_noise += ceh->silence;
-  click_gettimeofday(&nfo->_last_received);
+  nfo->_last_received.set_now();
 
   return p_in;
 }
@@ -70,13 +70,12 @@ RXStats_read_param(Element *e, void *thunk)
   RXStats *td = (RXStats *)e;
   switch ((uintptr_t) thunk) {
   case H_STATS: {
-    struct timeval now;
-    click_gettimeofday(&now);
+    Timestamp now = Timestamp::now();
     
     StringAccum sa;
     for (RXStats::NIter iter = td->_neighbors.begin(); iter.live(); iter++) {
       RXStats::DstInfo n = iter.value();
-      struct timeval age = now - n._last_received;
+      Timestamp age = now - n._last_received;
       Timestamp avg_signal;
       Timestamp avg_noise;
       if (n._packets) {

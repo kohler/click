@@ -153,8 +153,7 @@ GridProxy::forward_mapping(Packet *p_in) {
   /* record the gateway that the src picked */
   src = IPAddress(p_in->ip_header()->ip_src);
 
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
   _map.insert(src, DstInfo(src, gateway, now));
 
   output(0).push(p_in);  
@@ -173,8 +172,7 @@ GridProxy::print_stats()
 {
   StringAccum sa;
 
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
 
   for (ProxyMap::iterator iter = _map.begin(); iter.live(); iter++) {
     DstInfo nfo = iter.value();

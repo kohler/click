@@ -35,7 +35,7 @@
 
 CLICK_DECLS
 
-#define DEBUG_CHATTER  if (_debug) click_chatter
+#define DEBUG_CHATTER(arg, ...)  do { if (_debug) click_chatter(arg, ## __VA_ARGS__); } while (0)
 
 
 DSRRouteTable::DSRRouteTable()
@@ -49,9 +49,7 @@ DSRRouteTable::DSRRouteTable()
 {
   me = new IPAddress;
   
-  timeval tv;
-  click_gettimeofday(&tv);
-  _rreq_id = tv.tv_sec & 0xffff;
+  _rreq_id = Timestamp::now().sec() & 0xffff;
 
   // IP packets - input 0
   // incoming DSR packets - input 1
@@ -210,8 +208,7 @@ DSRRouteTable::rreq_expire_hook()
   // unidirectionality -- e.g. if we get a tx error forwarding a route
   // reply in the meantime.
 
-  struct timeval curr_time;
-  click_gettimeofday(&curr_time);
+  Timestamp curr_time = Timestamp::now();
   
 //   click_chatter("checking\n");
   
@@ -293,8 +290,7 @@ DSRRouteTable::sendbuffer_timer_hook()
 {
   //  DEBUG_CHATTER ("checking sendbuffer\n");
 
-  struct timeval curr_time;
-  click_gettimeofday(&curr_time);
+  Timestamp curr_time = Timestamp::now();
 
   int total = 0; // total packets sent this scheduling
   bool check_next_time = false;
@@ -428,8 +424,7 @@ DSRRouteTable::static_blacklist_timer_hook(Timer *, void *v)
 void 
 DSRRouteTable::blacklist_timer_hook()
 {
-  timeval curr_time;
-  click_gettimeofday(&curr_time);
+  Timestamp curr_time = Timestamp::now();
 
   for (BlacklistIter i = _blacklist.begin(); i.live(); i++) {
     if ((i.value()._status == DSR_BLACKLIST_UNI_PROBABLE) &&
@@ -594,8 +589,7 @@ DSRRouteTable::push(int port, Packet *p_in)
 
 	  ForwardedReqVal new_frv; // new entry for _forwarded_rreq_map
 
-	  struct timeval current_time;
-	  click_gettimeofday(&current_time);
+	  Timestamp current_time = Timestamp::now();
 	  new_frv._time_forwarded = current_time;
 
 	  IPAddress last_forwarder = IPAddress(DSR_LAST_HOP_IP_ANNO(p_in));
@@ -1697,8 +1691,7 @@ DSRRouteTable::rreq_issue_hook()
 {
   // look through the initiated rreqs and check if it's time to send
   // anything out
-  timeval curr_time;
-  click_gettimeofday(&curr_time);
+  Timestamp curr_time = Timestamp::now();
 
   // DEBUG_CHATTER("checking issued rreq table\n");
 
@@ -1826,7 +1819,7 @@ DSRRouteTable::set_blacklist(IPAddress ip, int s)
   _blacklist.remove(ip);
   if (s != DSR_BLACKLIST_NOENTRY) {
     BlacklistEntry e;
-    click_gettimeofday(&(e._time_updated));
+    e._time_updated.set_now();
     e._status = s;
     _blacklist.insert(ip, e);
   }
@@ -1835,33 +1828,11 @@ DSRRouteTable::set_blacklist(IPAddress ip, int s)
 }
 
 unsigned long
-DSRRouteTable::diff_in_ms(timeval t1, timeval t2)
+DSRRouteTable::diff_in_ms(const Timestamp &t1, const Timestamp &t2)
 {
-  unsigned long s, us, ms;
-
-//   DEBUG_CHATTER ("diff_in_ms: t1 %ld %ld; t2 %ld %ld\n",
-// 		 t1.tv_sec, t1.tv_usec,
-// 		 t2.tv_sec, t2.tv_usec);
-
-  while (t1.tv_usec < t2.tv_usec) {
-    t1.tv_usec += 1000000;
-    t1.tv_sec -= 1;
-  }
-
-  assert(t1.tv_sec >= t2.tv_sec);
-
-  s = t1.tv_sec - t2.tv_sec;
-  assert(s < ((unsigned long)(1<<31))/1000);
-
-  us = t1.tv_usec - t2.tv_usec;
-  ms = s * 1000L + us / 1000L;
-
-//   DEBUG_CHATTER ("diff_in_ms: difference is %ld %ld -> %ld\n",
-// 		 s, 
-// 		 us,
-// 		 ms);
-
-  return ms;
+    Timestamp diff = t1 - t2;
+    assert(diff.sec() < (Timestamp::seconds_type) ((1 << 31) / 1000));
+    return diff.msecval();
 }
 
 // Ask LinkStat for the metric for the link from other to us.
@@ -1873,7 +1844,7 @@ DSRRouteTable::get_metric(EtherAddress other)
   unsigned char dft = DSR_INVALID_HOP_METRIC; // default metric
   if (_ls){
     unsigned int tau;
-    struct timeval tv;
+    Timestamp tv;
     unsigned int frate, rrate;
     bool res = _ls->get_forward_rate(other, &frate, &tau, &tv);
     if(res == false) {

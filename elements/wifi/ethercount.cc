@@ -57,9 +57,6 @@ EtherCount_read_param(Element *e, void *thunk)
   EtherCount *td = (EtherCount *)e;
   switch ((uintptr_t) thunk) {
   case H_STATS: {
-    struct timeval now;
-    click_gettimeofday(&now);
-    
     StringAccum sa;
     for (EtherCount::NIter iter = td->_neighbors.begin(); iter.live(); iter++) {
 	    EtherCount::DstInfo n = iter.value();

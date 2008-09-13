@@ -92,14 +92,12 @@ EstimateRouterRegion::run_timer(Timer *)
 void
 EstimateRouterRegion::purge_old()
 {
-  struct timeval tv;
-
-  click_gettimeofday(&tv);
+  Timestamp tv = Timestamp::now();
 
   int i = 0;
   int j;
   for(j = 0; j < _entries.size(); j++){
-    if(tv.tv_sec - _entries[j]._when.tv_sec <= pep_purge){
+    if(tv.sec() - _entries[j]._when.sec() <= pep_purge){
       _entries[i++] = _entries[j];
     } else {
       if(_debug)
@@ -107,8 +105,8 @@ EstimateRouterRegion::purge_old()
                       name().c_str(),
                       _my_ip.unparse().c_str(),
                       IPAddress(_entries[j]._fix.fix_id).unparse().c_str(),
-                      (int) _entries[j]._when.tv_sec,
-                      (int) tv.tv_sec,
+                      (int) _entries[j]._when.sec(),
+                      (int) tv.sec(),
                       pep_purge);
     }
   }
@@ -139,10 +137,9 @@ EstimateRouterRegion::sort_entries()
 bool
 EstimateRouterRegion::sendable(Entry e)
 {
-  struct timeval tv;
+  Timestamp tv = Timestamp::now();
 
-  click_gettimeofday(&tv);
-  if(e._when.tv_sec + pep_stale > tv.tv_sec &&
+  if(e._when.sec() + pep_stale > tv.sec() &&
      e._fix.fix_hops < pep_max_hops){
     return(true);
   }
@@ -244,9 +241,7 @@ EstimateRouterRegion::simple_action(Packet *p)
 {
   int nf;
   pep_rgn_proto *pp;
-  struct timeval tv;
-
-  click_gettimeofday(&tv);
+  Timestamp tv = Timestamp::now();
 
   if(p->length() != sizeof(pep_rgn_proto)) {
     click_chatter("EstimateRouterRegion: bad size packet (%d bytes)", p->length());
@@ -348,9 +343,7 @@ EstimateRouterRegion::s()
 {
   String s;
   int i, n;
-  struct timeval now;
-
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
 
   if(_fixed){
     s = _my_ip.unparse() + " " +
@@ -370,7 +363,7 @@ EstimateRouterRegion::s()
              f.fix_seq,
              f.fix_loc.s().c_str(),
              f.fix_hops,
-             (int)(now.tv_sec - _entries[i]._when.tv_sec));
+             (int)(now.sec() - _entries[i]._when.sec()));
     s += buf;
   }
   return s;

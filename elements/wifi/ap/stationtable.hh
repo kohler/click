@@ -10,7 +10,7 @@ CLICK_DECLS
 class Station {
 public:
   EtherAddress _eth;
-  struct timeval _when; // When we last heard from this node.
+  Timestamp _when; // When we last heard from this node.
   Station() { 
     memset(this, 0, sizeof(*this));
   }
