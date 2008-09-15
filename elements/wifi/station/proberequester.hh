@@ -1,7 +1,7 @@
 #ifndef CLICK_PROBEREQUESTER_HH
 #define CLICK_PROBEREQUESTER_HH
 #include <click/element.hh>
-#include <clicknet/ether.h>
+#include <click/etheraddress.hh>
 CLICK_DECLS
 
 class ProbeRequester : public Element { public:

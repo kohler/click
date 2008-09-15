@@ -1,7 +1,7 @@
 #ifndef CLICK_ASSOCIATIONREQUESTER_HH
 #define CLICK_ASSOCIATIONREQUESTER_HH
 #include <click/element.hh>
-#include <clicknet/ether.h>
+#include <click/etheraddress.hh>
 CLICK_DECLS
 
 /*
