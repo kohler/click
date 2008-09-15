@@ -2,12 +2,12 @@
 Test that private handlers are hidden from ControlSocket.
 
 %script
-usleep () {
-   click -e "DriverManager(wait $1us)"
+msleep () {
+   click -e "DriverManager(wait $1ms)"
 }
 
-(usleep 5000 && nc localhost 41900 <CSIN >CSOUT) &
-click -p 41900 -e 's :: Script(print "SCARY => $(cat SCARY)")'
+(msleep 40 && nc localhost 41930 <CSIN >CSOUT) &
+click -p 41930 -e 's :: Script(print "SCARY => $(cat SCARY)", wait 3s, stop)'
 
 %file CSIN
 read s.add 1 1

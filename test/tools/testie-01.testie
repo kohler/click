@@ -35,7 +35,7 @@ testie -V TEST1 TEST2 TEST3 TEST4 || true
 .*Running.*
 
 %expect stderr
-TEST1:1: failure at 'false'
+TEST1:2: failure at 'false'
 TEST2: Success!
 TEST3: Success!
 TEST4: Success!
