@@ -84,11 +84,11 @@ RouterThread::RouterThread(Master *m, int id)
     _any_pending = 0;
 #if CLICK_LINUXMODULE
     _linux_task = 0;
-    _task_lock_waiting = 0;
 #elif HAVE_MULTITHREAD
     _running_processor = click_invalid_processor();
-    _task_lock_waiting = 0;
 #endif
+    _task_blocker = 0;
+    _task_blocker_waiting = 0;
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     _max_click_share = 80 * Task::MAX_UTILIZATION / 100;
     _min_click_share = Task::MAX_UTILIZATION / 200;
@@ -143,26 +143,23 @@ RouterThread::driver_lock_tasks()
     // If other people are waiting for the task lock, give them a chance to
     // catch it before we claim it.
 #if CLICK_LINUXMODULE
-    for (int i = 0; _task_lock_waiting > 0 && i < 10; i++)
+    for (int i = 0; _task_blocker_waiting > 0 && i < 10; i++)
 	schedule();
-    _lock.acquire();
-#elif HAVE_MULTITHREAD
-# if CLICK_USERLEVEL
-    for (int i = 0; _task_lock_waiting > 0 && i < 10; i++) {
+#elif HAVE_MULTITHREAD && CLICK_USERLEVEL
+    for (int i = 0; _task_blocker_waiting > 0 && i < 10; i++) {
 	struct timeval waiter = { 0, 1 };
 	select(0, 0, 0, 0, &waiter);
     }
-# endif
-    _lock.acquire();
 #endif
+    while (!_task_blocker.compare_and_swap(0, -1))
+	/* do nothing */;
 }
 
 inline void
 RouterThread::driver_unlock_tasks()
 {
-#if CLICK_LINUXMODULE || HAVE_MULTITHREAD
-    _lock.release();
-#endif
+    bool ok = _task_blocker.compare_and_swap(-1, 0);
+    assert(ok);
 }
 
 
@@ -596,30 +593,28 @@ RouterThread::driver_once()
     if (!_master->check_driver())
 	return;
   
-#ifdef CLICK_BSDMODULE  /* XXX MARKO */
+#if CLICK_BSDMODULE  /* XXX MARKO */
     int s = splimp();
-#endif
-#if CLICK_LINUXMODULE
+#elif CLICK_LINUXMODULE
     // this task is running the driver
     _linux_task = current;
-    _lock.acquire();
 #elif HAVE_MULTITHREAD
     _running_processor = click_current_processor();
-    _lock.acquire();
 #endif
+    driver_lock_tasks();
+
     Task *t = task_begin();
     if (t != task_end() && !t->_pending_nextptr) {
 	t->fast_unschedule(false);
 	t->fire();
     }
-#ifdef CLICK_BSDMODULE  /* XXX MARKO */
+
+    driver_unlock_tasks();
+#if CLICK_BSDMODULE  /* XXX MARKO */
     splx(s);
-#endif
-#if CLICK_LINUXMODULE
-    _lock.release();
+#elif CLICK_LINUXMODULE
     _linux_task = 0;
 #elif HAVE_MULTITHREAD
-    _lock.release();
     _running_processor = click_invalid_processor();
 #endif
 }

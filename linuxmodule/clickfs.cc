@@ -549,8 +549,9 @@ static void
 lock_threads()
 {
     for (int i = 0; i < click_master->nthreads(); i++)
-	while (!click_master->thread(i)->attempt_lock_tasks())
-	    schedule();
+	click_master->thread(i)->schedule_block_tasks();
+    for (int i = 0; i < click_master->nthreads(); i++)
+	click_master->thread(i)->block_tasks(true, true);
     click_master->pause();
 }
 
@@ -559,7 +560,7 @@ unlock_threads()
 {
     click_master->unpause();
     for (int i = click_master->nthreads() - 1; i >= 0; i--)
-	click_master->thread(i)->unlock_tasks();
+	click_master->thread(i)->unblock_tasks();
 }
 
 

@@ -49,13 +49,17 @@ class RouterThread
     inline bool attempt_lock_tasks();
     inline void unlock_tasks();
 
+    inline void schedule_block_tasks();
+    inline void block_tasks(bool scheduled, bool nice);
+    inline void unblock_tasks();
+
     inline Master* master() const;
     void driver();
     void driver_once();
 
     void unschedule_router_tasks(Router*);
 
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
     // min_cpu_share() and max_cpu_share() are expressed on a scale with
     // Task::MAX_UTILIZATION == 100%.
     unsigned min_cpu_share() const	{ return _min_click_share; }
@@ -102,8 +106,9 @@ class RouterThread
 #elif HAVE_MULTITHREAD
     click_processor_t _running_processor;
 #endif
-    Spinlock _lock;
-    atomic_uint32_t _task_lock_waiting;
+    Spinlock _task_lock;
+    atomic_uint32_t _task_blocker;
+    atomic_uint32_t _task_blocker_waiting;
     
     uint32_t _any_pending;
 
@@ -163,6 +168,7 @@ class RouterThread
 #if HAVE_TASK_HEAP
     void task_reheapify_from(int pos, Task*);
 #endif
+    inline bool current_thread_is_running() const;
     
     friend class Task;
     friend class Master;
@@ -275,45 +281,83 @@ RouterThread::task_end() const
 #endif
 }
 
-inline void
-RouterThread::lock_tasks()
-{
-#if CLICK_LINUXMODULE
-    if (unlikely(current != _linux_task)) {
-	_task_lock_waiting++;
-	_lock.acquire();
-	_task_lock_waiting--;
-    }
-#elif HAVE_MULTITHREAD
-    _task_lock_waiting++;
-    _lock.acquire();
-    _task_lock_waiting--;
-#endif
-}
-
 inline bool
-RouterThread::attempt_lock_tasks()
+RouterThread::current_thread_is_running() const
 {
 #if CLICK_LINUXMODULE
-    if (likely(current == _linux_task))
-	return true;
-    return _lock.attempt();
-#elif HAVE_MULTITHREAD
-    return _lock.attempt();
+    return current == _linux_task;
+#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
+    return click_current_processor() == _running_processor;
 #else
     return true;
 #endif
 }
 
 inline void
+RouterThread::schedule_block_tasks()
+{
+    assert(!current_thread_is_running());
+    ++_task_blocker_waiting;
+}
+
+inline void
+RouterThread::block_tasks(bool scheduled, bool nice)
+{
+    assert(!current_thread_is_running());
+    if (!scheduled)
+	++_task_blocker_waiting;
+    while (1) {
+	int32_t blocker = _task_blocker.value();
+	if (blocker >= 0
+	    && _task_blocker.compare_and_swap(blocker, blocker + 1))
+	    break;
+	if (nice) {
+#if CLICK_LINUXMODULE
+	    schedule();
+#endif
+	}
+    }
+    --_task_blocker_waiting;
+}
+
+inline void
+RouterThread::unblock_tasks()
+{
+    assert(_task_blocker > 0);
+    --_task_blocker;
+}
+
+inline void
+RouterThread::lock_tasks()
+{
+    if (unlikely(!current_thread_is_running())) {
+	block_tasks(false, false);
+	_task_lock.acquire();
+    }
+}
+
+inline bool
+RouterThread::attempt_lock_tasks()
+{
+    if (likely(current_thread_is_running()))
+	return true;
+    int32_t blocker = _task_blocker.value();
+    if (blocker < 0
+	|| !_task_blocker.compare_and_swap(blocker, blocker + 1))
+	return false;
+    if (_task_lock.attempt())
+	return true;
+    --_task_blocker;
+    return false;
+}
+
+inline void
 RouterThread::unlock_tasks()
 {
-#if CLICK_LINUXMODULE
-    if (unlikely(current != _linux_task))
-	_lock.release();
-#elif HAVE_MULTITHREAD
-    _lock.release();
-#endif
+    if (unlikely(!current_thread_is_running())) {
+	_task_lock.release();
+	unblock_tasks();
+    }
 }
 
 inline void
@@ -328,8 +372,7 @@ RouterThread::wake()
     if (tid != click_current_processor()
 	&& tid != click_invalid_processor())
 	pthread_kill(tid, SIGIO);
-#endif
-#if CLICK_BSDMODULE && !BSD_NETISRSCHED
+#elif CLICK_BSDMODULE && !BSD_NETISRSCHED
     if (_sleep_ident)
 	wakeup_one(&_sleep_ident);
 #endif
