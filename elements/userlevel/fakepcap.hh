@@ -48,7 +48,12 @@ struct fake_pcap_file_header {
 struct fake_bpf_timeval {
 	int32_t tv_sec;
 	int32_t tv_usec;
-	inline static const Timestamp *make_timestamp(const fake_bpf_timeval *tv, Timestamp *storage);
+};
+
+union fake_bpf_timeval_union {
+	struct fake_bpf_timeval tv;
+	char timestamp_storage[sizeof(Timestamp)];
+	inline static const Timestamp *make_timestamp(const fake_bpf_timeval_union *tv, fake_bpf_timeval_union *storage);
 };
 
 /*
@@ -57,7 +62,7 @@ struct fake_bpf_timeval {
  * packet interfaces.
  */
 struct fake_pcap_pkthdr {
-	struct fake_bpf_timeval ts;	/* time stamp */
+	fake_bpf_timeval_union ts;	/* time stamp */
 	uint32_t caplen;	/* length of portion present */
 	uint32_t len;		/* length this packet (off wire) */
 };
@@ -91,14 +96,15 @@ fake_pcap_force_ip(WritablePacket*& p, int dlt)
 }
 
 inline const Timestamp *
-fake_bpf_timeval::make_timestamp(const fake_bpf_timeval *tv, Timestamp *ts_storage)
+fake_bpf_timeval_union::make_timestamp(const fake_bpf_timeval_union *tv, fake_bpf_timeval_union *ts_storage)
 {
 #if TIMESTAMP_REP_BIG_ENDIAN && !TIMESTAMP_NANOSEC
     (void) ts_storage;
-    return reinterpret_cast<const Timestamp*>(tv);
+    return reinterpret_cast<const Timestamp *>(tv->timestamp_storage);
 #else
-    ts_storage->assign_usec(tv->tv_sec, tv->tv_usec);
-    return ts_storage;
+    Timestamp *ts = reinterpret_cast<Timestamp *>(ts_storage->timestamp_storage);
+    ts->assign_usec(tv->tv.tv_sec, tv->tv.tv_usec);
+    return ts;
 #endif
 }
 

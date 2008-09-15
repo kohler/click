@@ -202,11 +202,11 @@ ToDump::write_packet(Packet *p)
     const Timestamp& ts = p->timestamp_anno();
     if (!ts) {
 	Timestamp now = Timestamp::now();
-	ph.ts.tv_sec = now.sec();
-	ph.ts.tv_usec = now.usec();
+	ph.ts.tv.tv_sec = now.sec();
+	ph.ts.tv.tv_usec = now.usec();
     } else {
-	ph.ts.tv_sec = ts.sec();
-	ph.ts.tv_usec = ts.usec();
+	ph.ts.tv.tv_sec = ts.sec();
+	ph.ts.tv.tv_usec = ts.usec();
     }
 
     unsigned to_write = p->length();

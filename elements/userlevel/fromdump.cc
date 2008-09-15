@@ -179,8 +179,8 @@ swap_file_header(const fake_pcap_file_header *hp, fake_pcap_file_header *outp)
 static void
 swap_packet_header(const fake_pcap_pkthdr *hp, fake_pcap_pkthdr *outp)
 {
-    outp->ts.tv_sec = SWAPLONG(hp->ts.tv_sec);
-    outp->ts.tv_usec = SWAPLONG(hp->ts.tv_usec);
+    outp->ts.tv.tv_sec = SWAPLONG(hp->ts.tv.tv_sec);
+    outp->ts.tv.tv_usec = SWAPLONG(hp->ts.tv.tv_usec);
     outp->caplen = SWAPLONG(hp->caplen);
     outp->len = SWAPLONG(hp->len);
 }
@@ -365,7 +365,7 @@ FromDump::read_packet(ErrorHandler *errh)
 
     // check times
   check_times:
-    ts_ptr = fake_bpf_timeval::make_timestamp(&ph->ts, (Timestamp *) &swapped_ph.ts);
+    ts_ptr = fake_bpf_timeval_union::make_timestamp(&ph->ts, &swapped_ph.ts);
     if (!_have_any_times)
 	prepare_times(*ts_ptr);
     if (_have_first_time) {
