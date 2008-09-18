@@ -98,6 +98,7 @@ class clickfs_cdriver : public cdriver { public:
     crouter *_cr;
     String _prefix;
     bool _active;
+    bool _dot_h;
 
     String filename(const String &ename, const String &hname) const;
     void complain(const String &fullname, const String &ename, const String &hname, int errno_val, messagevector &messages);

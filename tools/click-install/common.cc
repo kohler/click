@@ -37,7 +37,8 @@
 #include <sys/wait.h>
 
 #if FOR_BSDMODULE || FOR_LINUXMODULE
-const char *clickfs_prefix = "/click";
+String clickfs_dir = String::stable_string("/click");
+String clickfs_prefix = String::stable_string("/click");
 #endif
 
 bool verbose = false;
@@ -67,6 +68,19 @@ read_package_file(String filename, StringMap &packages, ErrorHandler *errh)
     return false;
   read_package_string(str, packages);
   return true;
+}
+
+bool
+adjust_clickfs_prefix()
+{
+#if FOR_LINUXMODULE
+    String clickfs_h_prefix = clickfs_prefix + String::stable_string("/.h");
+    if (access(clickfs_h_prefix.c_str(), F_OK) >= 0) {
+	clickfs_prefix = clickfs_h_prefix;
+	return true;
+    }
+#endif
+    return false;
 }
 
 bool
@@ -157,12 +171,13 @@ remove_unneeded_packages(const StringMap &active_modules, const StringMap &packa
 int
 unload_click(ErrorHandler *errh)
 {
-  String clickfs_packages = clickfs_prefix + String("/packages");
+  adjust_clickfs_prefix();
   
   // do nothing if Click not installed
+  String clickfs_packages = clickfs_prefix + String("/packages");  
   if (access(clickfs_packages.c_str(), F_OK) < 0)
     return 0;
-  
+
   // first, write nothing to /proc/click/config -- frees up modules
   if (kill_current_configuration(errh) < 0)
     return -1;
@@ -171,7 +186,7 @@ unload_click(ErrorHandler *errh)
   HashTable<String, int> active_modules(-1);
   HashTable<String, int> packages(-1);
   read_active_modules(active_modules, errh);
-  read_package_file(clickfs_prefix + String("/packages"), packages, errh);
+  read_package_file(clickfs_packages, packages, errh);
 
   // remove unused packages
   (void) remove_unneeded_packages(active_modules, packages, errh);
@@ -179,10 +194,10 @@ unload_click(ErrorHandler *errh)
 #if FOR_BSDMODULE
   // unmount Click file system
   if (verbose)
-    errh->message("Unmounting Click filesystem at %s", clickfs_prefix);
-  int unmount_retval = unmount(clickfs_prefix, MNT_FORCE);
+    errh->message("Unmounting Click filesystem at %s", clickfs_dir.c_str());
+  int unmount_retval = unmount(clickfs_dir.c_str(), MNT_FORCE);
   if (unmount_retval < 0)
-    errh->error("cannot unmount %s: %s", clickfs_prefix, strerror(errno));
+    errh->error("cannot unmount %s: %s", clickfs_dir.c_str(), strerror(errno));
 #endif
 
   // remove Click module
@@ -201,8 +216,8 @@ unload_click(ErrorHandler *errh)
   // proclikefs will take care of the unmount for us, but we'll give it a shot
   // anyway.
   if (verbose)
-    errh->message("Unmounting Click filesystem at %s", clickfs_prefix);
-  (void) umount(clickfs_prefix);
+    errh->message("Unmounting Click filesystem at %s", clickfs_dir.c_str());
+  (void) umount(clickfs_dir.c_str());
 #endif
 
   // see if we successfully removed it

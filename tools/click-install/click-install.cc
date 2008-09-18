@@ -6,6 +6,7 @@
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2002 International Computer Science Institute
  * Copyright (c) 2006 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -469,11 +470,7 @@ particular purpose.\n");
     exit(1);
 
   // pathnames of important Click files
-  String clickfs_config = clickfs_prefix + String("/config");
-  String clickfs_hotconfig = clickfs_prefix + String("/hotconfig");
-  String clickfs_errors = clickfs_prefix + String("/errors");
   String clickfs_packages = clickfs_prefix + String("/packages");
-  String clickfs_priority = clickfs_prefix + String("/priority");
   
   // uninstall Click if requested
   if (uninstall)
@@ -531,21 +528,21 @@ particular purpose.\n");
 
 #if FOR_BSDMODULE || FOR_LINUXMODULE
     // make clickfs_prefix directory if required
-    if (access(clickfs_prefix, F_OK) < 0 && errno == ENOENT) {
-      if (mkdir(clickfs_prefix, 0777) < 0)
-	errh->fatal("cannot make directory %s: %s", clickfs_prefix, strerror(errno));
+    if (access(clickfs_dir.c_str(), F_OK) < 0 && errno == ENOENT) {
+      if (mkdir(clickfs_dir.c_str(), 0777) < 0)
+	errh->fatal("cannot make directory %s: %s", clickfs_dir.c_str(), strerror(errno));
     }
     
     // mount Click file system
     if (verbose)
-      errh->message("Mounting Click module at %s", clickfs_prefix);
+      errh->message("Mounting Click module at %s", clickfs_dir.c_str());
 # if FOR_BSDMODULE
-    int mount_retval = mount("click", clickfs_prefix, 0, 0);
+    int mount_retval = mount("click", clickfs_dir.c_str(), 0, 0);
 # else
-    int mount_retval = mount("none", clickfs_prefix, "click", 0, 0);
+    int mount_retval = mount("none", clickfs_dir.c_str(), "click", 0, 0);
 # endif
     if (mount_retval < 0 && (verbose || errno != EBUSY))
-      errh->error("cannot mount %s: %s", clickfs_prefix, strerror(errno));
+      errh->error("cannot mount %s: %s", clickfs_dir.c_str(), strerror(errno));
 #endif
 
     // check that all is well
@@ -558,6 +555,15 @@ particular purpose.\n");
 #endif
   }
 
+  // check for new-style directory layout
+  if (adjust_clickfs_prefix())
+      clickfs_packages = clickfs_prefix + String("/packages");
+
+  String clickfs_config = clickfs_prefix + String("/config");
+  String clickfs_hotconfig = clickfs_prefix + String("/hotconfig");
+  String clickfs_errors = clickfs_prefix + String("/errors");
+  String clickfs_priority = clickfs_prefix + String("/priority");
+  
   // find current packages
   HashTable<String, int> active_modules(-1);
   HashTable<String, int> packages(-1);

@@ -30,9 +30,14 @@
 # define COMPILETARGET "bsdmodule"
 #endif
 
-extern const char *clickfs_prefix;
+#if FOR_LINUXMODULE || FOR_BSDMODULE
+extern String clickfs_dir;
+extern String clickfs_prefix;
+#endif
+
 extern bool verbose;
 
+bool adjust_clickfs_prefix();
 bool read_package_file(String filename, StringMap &packages, ErrorHandler *);
 bool read_active_modules(StringMap &packages, ErrorHandler *);
 int remove_unneeded_packages(const StringMap &active, const StringMap &packages, ErrorHandler *);

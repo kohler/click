@@ -95,7 +95,7 @@ ClickIno::true_prepare(Router *r, uint32_t generation)
     if (nelem == 1) {
 	_generation = generation;
 	_router = r;
-	_x[0].flags = X_SUBDIR_CONFLICTS_CALCULATED;
+	_x[0].flags = 0;
 	return 0;
     }
 
@@ -163,97 +163,11 @@ ClickIno::true_prepare(Router *r, uint32_t generation)
 }
 
 
-void
-ClickIno::calculate_handler_conflicts(int parent_elementno)
-{
-    // configuration lock must be held!
-    
-    // no conflicts if no router, no children, or this element is fake
-    assert(parent_elementno >= -1 && parent_elementno < _nentries - 1);
-    int parent_xindex = xindex(parent_elementno);
-    if ((_x[parent_xindex].flags & (X_FAKE | X_SUBDIR_CONFLICTS_CALCULATED))
-	|| _x[parent_xindex].skip == 0) {
-	_x[parent_xindex].flags |= X_SUBDIR_CONFLICTS_CALCULATED;
-	return;
-    }
-
-    // find the relevant handler indexes and names
-    Vector<int> his;
-    Router::element_hindexes(Router::element(_router, parent_elementno), his);
-    Vector<String> names;
-    for (int* hip = his.begin(); hip < his.end(); hip++) {
-	const Handler* h = Router::handler(_router, *hip);
-	if (h->visible())
-	    names.push_back(h->name());
-    }
-    if (parent_elementno < 0)
-	names.push_back("elements");
-
-    // sort names
-    click_qsort(names.begin(), names.size());
-
-    // run over the arrays, marking conflicts
-    int xi = parent_xindex + 1;
-    int next_xi = next_xindex(parent_elementno);
-    int hi = 0;
-    int name_start = (parent_xindex ? _x[parent_xindex].name.length() + 1 : 0);
-    while (xi < next_xi && hi < names.size()) {
-	int compare = String::compare(_x[xi].name.substring(name_start), names[hi]);
-	if (compare == 0) {	// there is a conflict
-	    _x[xi].flags |= X_HANDLER_CONFLICT;
-	    xi += _x[xi].skip + 1;
-	    hi++;
-	} else if (compare < 0)
-	    xi += _x[xi].skip + 1;
-	else
-	    hi++;
-    }
-
-    // mark subdirectory as calculated
-    _x[parent_xindex].flags |= X_SUBDIR_CONFLICTS_CALCULATED;
-}
-
-
-int
-ClickIno::nlink(ino_t ino)
-{
-    // must be called with config_lock held
-    int elementno = INO_ELEMENTNO(ino);
-
-    // it might be a handler
-    if (INO_ISHANDLER(ino)) {
-	int xi = xindex(elementno);
-	// one for the number directory (or global directory), plus one if the
-	// name directory exists (for element handlers whose element name
-	// isn't a handler conflict)
-	return 1 + (xi > 0 && !(_x[xi].flags & X_HANDLER_CONFLICT));
-    }
-    
-    // otherwise, it is a directory
-    int nlink = 2;
-    if (INO_DT_HAS_U(ino) && _router)
-	nlink += _router->nelements();
-    if (INO_DT_HAS_N(ino)) {
-	int xi = xindex(elementno) + 1;
-	if (!(_x[xi - 1].flags & X_SUBDIR_CONFLICTS_CALCULATED))
-	    calculate_handler_conflicts(elementno);
-	int next_xi = next_xindex(elementno);
-	while (xi < next_xi) {
-	    if (!(_x[xi].flags & X_HANDLER_CONFLICT) || INO_DIRTYPE(ino) == INO_DT_N)
-		nlink++;
-	    xi += _x[xi].skip + 1;
-	}
-    }
-    if (ino == INO_GLOBALDIR)
-	nlink++;		// for "elements" subdirectory
-    return nlink;
-}
-
 int
 ClickIno::name_search(const String &n, int first_xi, int last_xi, int name_offset) const
 {
     while (first_xi <= last_xi) {
-	int mid = (first_xi + last_xi) >> 1;
+	int mid = first_xi + ((last_xi - first_xi) >> 1);
 	int cmp = String::compare(n, _x[mid].name.substring(name_offset));
 	if (cmp == 0)
 	    return mid;
@@ -263,6 +177,50 @@ ClickIno::name_search(const String &n, int first_xi, int last_xi, int name_offse
 	    first_xi = mid + 1;
     }
     return -1;
+}
+
+int
+ClickIno::element_name_search(const String &n, int elementno) const
+{
+    int xi = xindex(elementno);
+    int firstpos = _x[xi].name ? _x[xi].name.length() + 1 : 0;
+    return name_search(n, xi + 1, next_xindex(elementno) - 1, firstpos);
+}
+
+int
+ClickIno::nlink(ino_t ino)
+{
+    // must be called with config_lock held
+    int elementno = INO_ELEMENTNO(ino);
+
+    // it might be a handler
+    if (INO_ISHANDLER(ino)) {
+	// Number of links per handler: one for the .h directory; plus
+	// if element, one for the .e/EINDEX directory; plus
+	// if no conflict, one for the global or element directory.
+	int handlerno = INO_HANDLERNO(ino);
+	const Handler *h = Router::handler(_router, handlerno);
+	return 1 + (elementno >= 0 ? 1 : 0)
+	    + (element_name_search(h->name(), elementno) < 0 ? 1 : 0);
+    }
+
+    // otherwise, it is a directory
+    int nlink = 2;
+    if (ino == INO_ENUMBERSDIR && _router)
+	nlink += _router->nelements();
+    if (INO_DT_HAS_N(ino)) {
+	int xi = xindex(elementno) + 1;
+	int next_xi = next_xindex(elementno);
+	if (INO_DT_HAS_H(ino) && !(_x[xi - 1].flags & X_FAKE))
+	    nlink++;		// for ".h" subdirectory
+	while (xi < next_xi) {
+	    nlink++;
+	    xi += _x[xi].skip + 1;
+	}
+    }
+    if (ino == INO_GLOBALDIR)
+	nlink++;		// for ".e" subdirectory
+    return nlink;
 }
 
 ino_t
@@ -284,7 +242,7 @@ ClickIno::lookup(ino_t ino, const String &component)
 	return ino;
     
     // look for numbers
-    if (INO_DT_HAS_U(ino) && component[0] >= '0' && component[0] <= '9') {
+    if (ino == INO_ENUMBERSDIR && component[0] >= '0' && component[0] <= '9') {
 	int eindex = component[0] - '0';
 	for (int i = 1; i < component.length(); i++)
 	    if (component[i] >= '0' && component[i] <= '9' && eindex < 1000000000)
@@ -293,13 +251,26 @@ ClickIno::lookup(ino_t ino, const String &component)
 		goto number_failed;
 	if (!_router || eindex >= _router->nelements())
 	    goto number_failed;
-	return INO_MKHDIR(eindex);
+	return INO_MKHUDIR(eindex);
     }
     
   number_failed:
     // look for element number directory
-    if (ino == INO_GLOBALDIR && component.equals("elements", 8))
+    if (ino == INO_GLOBALDIR && component.equals(".e", 2))
 	return INO_ENUMBERSDIR;
+
+    // look for handler directory
+    if (INO_DT_HAS_H(ino) && INO_DT_HAS_N(ino) && component.equals(".h", 2)
+	&& !(_x[xindex(elementno)].flags & X_FAKE))
+	return INO_MKHHDIR(elementno);
+
+    // look for names
+    if (INO_DT_HAS_N(ino)) {
+	// delimit boundaries of search region
+	int found = element_name_search(component, elementno);
+	if (found >= 0) 
+	    return INO_MKHNDIR(ClickIno::elementno(found));
+    }
 
     // look for handlers
     if (INO_DT_HAS_H(ino) && elementno < nelements) {
@@ -310,27 +281,23 @@ ClickIno::lookup(ino_t ino, const String &component)
 		return INO_MKHANDLER(elementno, hi);
     }
 
-    // look for names
-    if (INO_DT_HAS_N(ino)) {
-	// delimit boundaries of search region
-	int first_xi = xindex(elementno) + 1;
-	int last_xi = next_xindex(elementno) - 1;
-	int name_offset = _x[first_xi - 1].name.length() + 1;
-	int found = name_search(component, first_xi, last_xi, (name_offset > 1 ? name_offset : 0));
-	if (found >= 0) 
-	    return INO_MKHNDIR(ClickIno::elementno(found));
-    }
-
     // check for dot dot
-    if (component[0] == '.' && component.length() == 2 && component[1] == '.') {
-	int xi = xindex(elementno);
-	int slash = _x[xi].name.find_right('/');
-	if (slash < 0 || INO_DIRTYPE(ino) == INO_DT_H)
+    if (component.equals("..", 2)) {
+	if (ino == INO_ENUMBERSDIR || ino == INO_MKHHDIR(-1))
 	    return INO_GLOBALDIR;
-	int found = name_search(_x[xi].name.substring(0, slash), 1, _nentries - 1, 0);
-	if (found >= 0)
+	else if (INO_DIRTYPE(ino) == INO_DT_HU)
+	    return INO_ENUMBERSDIR;
+	else if (INO_DIRTYPE(ino) == INO_DT_HH)
+	    return INO_MKHNDIR(elementno);
+	else {
+	    int xi = xindex(elementno);
+	    int slash = _x[xi].name.find_right('/');
+	    if (slash < 0)
+		return INO_GLOBALDIR;
+	    int found = name_search(_x[xi].name.substring(0, slash), 1, _nentries - 1, 0);
+	    assert(found >= 0);
 	    return INO_MKHNDIR(ClickIno::elementno(found));
-	panic("clickfs: ..");	// should never happen
+	}
     }
 
     // no luck
@@ -367,8 +334,10 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 	    // names are added at the end.
 	    int hi = his[his.size() - (f_pos - RD_HOFF) - 1];
 	    const Handler* h = Router::handler(_router, hi);
-	    if (h->visible())
-		FILLDIR(h->name().data(), h->name().length(), INO_MKHANDLER(elementno, hi), DT_REG, f_pos, thunk);
+	    if (!INO_DT_HAS_N(ino) || element_name_search(h->name(), elementno) < 0) {
+		if (h->visible())
+		    FILLDIR(h->name().data(), h->name().length(), INO_MKHANDLER(elementno, hi), DT_REG, f_pos, thunk);
+	    }
 	    f_pos++;
 	}
     }
@@ -376,13 +345,13 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
     // subdirectory numbers
     if (f_pos < RD_UOFF)
 	f_pos = RD_UOFF;
-    if (f_pos < RD_NOFF && INO_DT_HAS_U(ino) && _router) {
+    if (f_pos < RD_NOFF && ino == INO_ENUMBERSDIR && _router) {
 	char buf[10];
 	int nelem = _router->nelements();
 	while (f_pos >= RD_UOFF && f_pos < RD_UOFF + nelem) {
 	    int elem = f_pos - RD_UOFF;
 	    sprintf(buf, "%d", elem);
-	    FILLDIR(buf, strlen(buf), INO_MKHDIR(elem), DT_DIR, f_pos, thunk);
+	    FILLDIR(buf, strlen(buf), INO_MKHUDIR(elem), DT_DIR, f_pos, thunk);
 	    f_pos++;
 	}
     }
@@ -395,25 +364,30 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
     if (f_pos < RD_NOFF)
 	f_pos = RD_NOFF;
     if (f_pos < RD_XOFF && INO_DT_HAS_N(ino)) {
-	bool include_conflicts = (INO_DIRTYPE(ino) == INO_DT_N);
-	if (!include_conflicts && !(_x[xi - 1].flags & X_SUBDIR_CONFLICTS_CALCULATED))
-	    calculate_handler_conflicts(elementno);
 	int name_offset = _x[xi - 1].name.length();
 	if (name_offset > 0)
 	    name_offset++;	// skip slash
 	for (int j = RD_NOFF; xi < next_xi; xi += _x[xi].skip + 1, j++)
 	    if (f_pos == j) {
-		if (!(_x[xi].flags & X_HANDLER_CONFLICT) || include_conflicts)
-		    FILLDIR(_x[xi].name.data() + name_offset, _x[xi].name.length() - name_offset, INO_MKHNDIR(ClickIno::elementno(xi)), DT_DIR, f_pos, thunk);
+		FILLDIR(_x[xi].name.data() + name_offset, _x[xi].name.length() - name_offset, INO_MKHNDIR(ClickIno::elementno(xi)), DT_DIR, f_pos, thunk);
 		f_pos++;
 	    }
     }
 
-    // "elements" in global directory
-    if (f_pos <= RD_XOFF && ino == INO_GLOBALDIR)
-	FILLDIR("elements", 8, INO_ENUMBERSDIR, DT_DIR, f_pos, thunk);
+    // ".e" in global directory
+    if (f_pos < RD_XOFF)
+	f_pos = RD_XOFF;
+    if (f_pos == RD_XOFF && ino == INO_GLOBALDIR) {
+	FILLDIR(".e", 2, INO_ENUMBERSDIR, DT_DIR, f_pos, thunk);
+	f_pos++;
+    }
+    if (f_pos <= RD_XOFF + 1 && INO_DT_HAS_N(ino)
+	&& !(_x[xindex(elementno)].flags & X_FAKE)) {
+	FILLDIR(".h", 2, INO_MKHHDIR(elementno), DT_DIR, f_pos, thunk);
+	f_pos++;
+    }
     
-    f_pos = RD_XOFF + 1;
+    f_pos = RD_XOFF + 2;
     return 1;
 }
 
@@ -435,10 +409,6 @@ ClickIno::info() const
 	    sa << '\t';
 	    if (_x[i].flags & X_FAKE)
 		sa << 'F';
-	    if (_x[i].flags & X_HANDLER_CONFLICT)
-		sa << 'H';
-	    if (_x[i].flags & X_SUBDIR_CONFLICTS_CALCULATED)
-		sa << 'S';
 	}
 	sa << '\n';
     }

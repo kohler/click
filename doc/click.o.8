@@ -202,23 +202,26 @@ handler:
 Read/write. A Boolean value. If true, then Click will attempt to stop the
 running router, if any, if an assertion fails. Default is false.
 '
+.PP
+Elements with unusual names (such as "config :: Idle;") will override these
+handlers with directories.  To reliably access a global handler, use the
+.B /click/.h
+directory, which contains only global handlers.
+'
 .SS "Element directories"
 '
 Every element in the current router configuration has a directory under
 /click. You can access the directory by number or element name. The
 .IR i th
-element in /click/list has directory
-.RI `/click/ i ',
+element in /click/list (starting from 0) has directory
+.RI `/click/.e/ i ',
 and if the element is named
 .IR n ,
 that directory can be accessed as
 .RI `/click/ n '.
 This works even if the name contains slashes 
 .RB ( click.o
-creates directories for each name component). However, if an element name
-conflicts with a handler name, the handler is preferred. Thus, if you call
-an element "config", you will be able to access that element's handlers
-only via its number directory.
+creates directories for each name component).
 .PP
 Handlers in these element directories include:
 '
@@ -270,6 +273,14 @@ files representing RED parameters, and Counter elements (see
 provide read-only
 .BR count " and " rate
 files to report packet counts and the recent rate.
+.PP
+Subelements with unusual names will override element-specific handlers
+(consider "a, a/config :: Idle;").  To reliably access an element handler,
+use the
+.B /click/xxx/.h
+directory, which contains element
+.BR xxx 's
+handlers and no subelements.
 .PP
 The subdirectories and generic files are always created, but
 element-specific files are created only if the router configuration was

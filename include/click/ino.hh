@@ -9,24 +9,30 @@ class Router;
 #define INO_DIRTYPE(ino)		((int) ((unsigned) (ino) >> 28))
 #define INO_ELEMENTNO(ino)		((int)((ino) & 0xFFFFU) - 1)
 #define INO_HANDLERNO(ino)		((((ino) & 0xFFFFU) ? 0 : Router::FIRST_GLOBAL_HANDLER) + (((ino) >> 16) & 0x7FFFU))
-#define INO_DT_H			0x1U /* handlers only */
-#define INO_DT_U			0x2U /* element numbers */
-#define INO_DT_HN			0x3U /* handlers + names */
-#define INO_DT_N			0x4U /* names */
-#define INO_DT_GLOBAL			0x5U /* handlers + names + "elements" */
-#define INO_DT_HAS_H(ino)		(INO_DIRTYPE((ino)) & INO_DT_H)
-#define INO_DT_HAS_N(ino)		(INO_DIRTYPE((ino)) >= INO_DT_HN)
-#define INO_DT_HAS_U(ino)		(INO_DIRTYPE((ino)) == INO_DT_U)
+#define INO_DT_U			0x1U /* .e directory */
+#define INO_DT_HH			0x2U /* .h directory */
+#define INO_DT_HU			0x3U /* .e/index directory */
+#define INO_DT_HN			0x4U /* element name directory */
+#define INO_DT_GLOBAL			0x5U /* global directory */
+#define INO_DT_HAS_H(ino)		(INO_DIRTYPE((ino)) > (int) INO_DT_U)
+#define INO_DT_HAS_N(ino)		(INO_DIRTYPE((ino)) >= (int) INO_DT_HN)
 
 #define INO_MKHANDLER(e, hi)		((((hi) & 0x7FFFU) << 16) | (((e) + 1) & 0xFFFFU) | 0x80000000U)
-#define INO_MKHDIR(e)			((INO_DT_H << 28) | (((e) + 1) & 0xFFFFU))
-#define INO_MKNDIR(e)			((INO_DT_N << 28) | (((e) + 1) & 0xFFFFU))
+#define INO_MKHHDIR(e)			((INO_DT_HH << 28) | (((e) + 1) & 0xFFFFU))
+#define INO_MKHUDIR(e)			((INO_DT_HU << 28) | (((e) + 1) & 0xFFFFU))
 #define INO_MKHNDIR(e)			((INO_DT_HN << 28) | (((e) + 1) & 0xFFFFU))
 #define INO_GLOBALDIR			(INO_DT_GLOBAL << 28)
 #define INO_ENUMBERSDIR			(INO_DT_U << 28)
 #define INO_ISHANDLER(ino)		(((ino) & 0x80000000U) != 0)
 
 #define INO_DEBUG			0
+
+// /click: .e > .h > element names > global handlers
+// /click/.e: element numbers
+// /click/.e/NUM: handlers
+// /click/.h: global handlers
+// /click/ELEMENTNAME: .h > element names > element handlers
+// /click/ELEMENTNAME/.h: element handlers
 
 class ClickIno { public:
 
@@ -36,14 +42,14 @@ class ClickIno { public:
     uint32_t generation() const		{ return _generation; }
     
     // All operations should be called with a configuration lock held.
-    inline int prepare(Router*, uint32_t);
-    int nlink(ino_t);
-    ino_t lookup(ino_t dir, const String& component);
+    inline int prepare(Router *router, uint32_t generation);
+    int nlink(ino_t ino);
+    ino_t lookup(ino_t dir, const String &component);
 
     // readdir doesn't handle '.' or '..'.
     // It returns 0 for "filldir failed, have more", 1 for "out", <0 on error.
-    typedef bool (*filldir_t)(const char* name, int name_len, ino_t ino, int dirtype, uint32_t f_pos, void* thunk);
-    int readdir(ino_t dir, uint32_t& f_pos, filldir_t, void* thunk);
+    typedef bool (*filldir_t)(const char *name, int name_len, ino_t ino, int dirtype, uint32_t f_pos, void *user_data);
+    int readdir(ino_t dir, uint32_t &f_pos, filldir_t fd, void *user_data);
 
 #if INO_DEBUG
     String info() const;
@@ -67,16 +73,13 @@ class ClickIno { public:
 	uint16_t skip;
 
 	// See enum below. X_FAKE is true on fake directories added for
-	// compound elements; X_HANDLER_CONFLICT is true if this element name
-	// conflicts with a handler; X_SUBDIR_CONFLICTS_CALCULATED is true if
-	// we've already checked for name conflicts on this element's
-	// children.
+	// compound elements.
 	uint16_t flags;
     };
     
   private:
 
-    enum { X_FAKE = 1, X_HANDLER_CONFLICT = 2, X_SUBDIR_CONFLICTS_CALCULATED = 4 };
+    enum { X_FAKE = 1 };
     
     Entry* _x;
     int _nentries;
@@ -88,10 +91,10 @@ class ClickIno { public:
     inline int next_xindex(int elementno) const;
     inline int elementno(int xindex) const;
 
-    int name_search(const String& n, int first_xi, int last_xi, int name_offset) const;
+    int name_search(const String &n, int first_xi, int last_xi, int name_offset) const;
+    int element_name_search(const String &n, int elementno) const;
     
     int grow(int min_size);
-    void calculate_handler_conflicts(int);
     int true_prepare(Router*, uint32_t);
 
 };

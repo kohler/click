@@ -488,6 +488,8 @@ clickfs_cdriver::clickfs_cdriver(crouter *cr, const String &prefix)
     assert(_prefix.length());
     if (_prefix.back() != '/')
 	_prefix += '/';
+    String prefix_h = _prefix + ".h";
+    _dot_h = (access(prefix_h.c_str(), F_OK) >= 0);
     do_read("config", String(), 0);
     do_check_write("hotconfig", 0);
     do_read("list", String(), 0);
@@ -526,6 +528,8 @@ String clickfs_cdriver::filename(const String &ename, const String &hname) const
     sa << _prefix << ename;
     if (ename)
 	sa << '/';
+    if (_dot_h)
+	sa << ".h/";
     sa << hname;
     return sa.take_string();
 }

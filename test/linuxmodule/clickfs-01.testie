@@ -1,0 +1,89 @@
+%info
+test device up/down
+
+%require
+[ `whoami` = root ]
+click-buildtool provides linuxmodule
+
+%script
+xtest () {
+    (cd /click; find . -type f -printf '%i %n %p\n') | awk 'BEGIN { OFS = ""; }
+{
+    nlinks[$1]++;
+    if ($1 in linkcount && linkcount[$1] != $2)
+	print $3, ": linkcount disagrees (", $2, " vs. ", linkcount[$1], ")";
+    if (!($1 in filename))
+	filename[$1] = $3;
+    linkcount[$1] = $2;
+}
+END {
+    for (i in nlinks)
+	if (nlinks[i] != linkcount[i])
+	    print filename[i], ": bad linkcount (", nlinks[i], " not ", linkcount[i], ")";
+}' 1>&2
+
+    (cd /click; find . -type d -printf '%i %n %p %h\n') | awk 'BEGIN { OFS = ""; }
+{
+    ino[$3] = $1;
+    linkcount[$3] = $2;
+    nlinks[$3] += 2; /* one for ., one for .. */
+    if (index($3, "/"))
+	nlinks[$4]++;
+}
+END {
+    for (i in linkcount)
+	if (nlinks[i] != linkcount[i])
+	    print i, ": bad linkcount (", nlinks[i], " not ", linkcount[i], ")";
+}' 1>&2
+}
+
+testie_subtest 1
+click-install CONFIG1
+xtest
+
+testie_subtest 2
+click-install CONFIG2
+xtest
+
+testie_subtest 3
+click-install CONFIG3
+xtest
+
+testie_subtest 4
+click-install CONFIG4
+xtest
+
+click-uninstall
+
+%file CONFIG1
+i :: Idle;
+
+%file CONFIG2
+Idle;
+Idle;
+Idle;
+Idle;
+Idle;
+Idle;
+Idle;
+Idle;
+Idle;
+Idle;
+Idle;
+Idle;
+Idle;
+Idle;
+Idle;
+
+%file CONFIG3
+config :: Idle;
+classes :: Idle;
+
+%file CONFIG4
+a/b/c :: Idle;
+a/b/d :: Idle;
+a/b/name :: Idle;
+a/b :: Idle;
+a/c/x :: Idle;
+
+%expect stderr

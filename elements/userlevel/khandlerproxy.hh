@@ -65,7 +65,10 @@ class KernelHandlerProxy : public HandlerProxy { public:
 
     bool _detailed_error_message;
     bool _verbose;
+    bool _dot_h_checked;
+    bool _dot_h;
   
+    String handler_name_to_file_name(const String &str);
     static int handler_hook(int, String&, Element*, const Handler*, ErrorHandler*);
     static int star_write_handler(const String&, Element*, void*, ErrorHandler*);
     int complain(ErrorHandler*, const String&, int errcode, const String&);

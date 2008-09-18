@@ -30,7 +30,7 @@
 CLICK_DECLS
 
 KernelHandlerProxy::KernelHandlerProxy()
-  : _detailed_error_message(false)
+    : _detailed_error_message(false), _dot_h_checked(false), _dot_h(false)
 {
 }
 
@@ -131,14 +131,23 @@ KernelHandlerProxy::check_handler_name(const String &hname, ErrorHandler *errh)
   return 0;
 }
 
-static String
-handler_name_to_file_name(const String &str)
+String
+KernelHandlerProxy::handler_name_to_file_name(const String &str)
 {
+    if (!_dot_h_checked) {
+	_dot_h_checked = true;
+	_dot_h = (access("/click/.h", F_OK) >= 0);
+    }
+
     const char *dot = find(str, '.');
+    String hpart = str.substring(dot + 1, str.end());
+    if (_dot_h)
+	hpart = String::stable_string(".h/", 3) + hpart;
+
     if (dot == str.begin())
-	return "/click/" + str.substring(1);
+	return "/click/" + hpart;
     else
-	return "/click/" + str.substring(str.begin(), dot) + "/" + str.substring(dot + 1, str.end());
+	return "/click/" + str.substring(str.begin(), dot) + "/" + hpart;
 }
 
 int
@@ -181,7 +190,7 @@ KernelHandlerProxy::handler_hook(int op, String& str, Element* e, const Handler*
 {
     KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
     const String& hname = handler->name();
-    String fn = handler_name_to_file_name(hname);
+    String fn = khp->handler_name_to_file_name(hname);
 
     if (op == Handler::OP_READ) {
 	errno = 0;
