@@ -52,7 +52,8 @@ SetTCPChecksum::simple_action(Packet *p_in)
   unsigned plen = ntohs(iph->ip_len) - (iph->ip_hl << 2);
   unsigned csum;
 
-  if (!tcph || plen < sizeof(click_tcp) || plen > (unsigned)p->transport_length())
+  if (!p->has_transport_header() || plen < sizeof(click_tcp)
+      || plen > (unsigned)p->transport_length())
     goto bad;
   
   if (_fixoff) {

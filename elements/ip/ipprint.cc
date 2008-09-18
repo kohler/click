@@ -322,8 +322,7 @@ IPPrint::icmp_line(StringAccum &sa, const Packet *p, int transport_length) const
 Packet *
 IPPrint::simple_action(Packet *p)
 {
-    const click_ip *iph = p->ip_header();
-    if (!_active || !iph)
+    if (!_active || !p->has_network_header())
 	return p;
 
     StringAccum sa;
@@ -342,6 +341,7 @@ IPPrint::simple_action(Packet *p)
     if (p->network_length() < (int) sizeof(click_ip))
 	sa << "truncated-ip";
     else {
+	const click_ip *iph = p->ip_header();
 	int ip_len = ntohs(iph->ip_len);
 	int payload_len = ip_len - (iph->ip_hl << 2);
 	int transport_length = p->transport_length();

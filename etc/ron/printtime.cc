@@ -84,13 +84,13 @@ Packet *
 IPPrintTime::simple_action(Packet *p)
 {
   String s = "";
-  const click_ip *iph = p->ip_header();
 
-  if (!iph) {
+  if (!p->has_network_header()) {
     s = "(Not an IP packet)";
     return p;
   }
 
+  const click_ip *iph = p->ip_header();
   IPAddress src(iph->ip_src.s_addr);
   IPAddress dst(iph->ip_dst.s_addr);
   unsigned ip_len = ntohs(iph->ip_len);

@@ -118,9 +118,8 @@ AggregateIPAddrPair::reap()
 Packet *
 AggregateIPAddrPair::simple_action(Packet *p)
 {
-    const click_ip *iph = p->ip_header();
-    
-    if (iph) {
+    if (p->has_network_header()) {
+	const click_ip *iph = p->ip_header();
 	HostPair hosts(iph->ip_src.s_addr, iph->ip_dst.s_addr);
 	FlowInfo *finfo = &_map[hosts];
 

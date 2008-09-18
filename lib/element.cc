@@ -301,24 +301,24 @@ void BetterCounter2::push(int port, Packet *p) {
 
 Leaks involving error conditions are more common in practice.  For instance,
 this push() method counts IP packets.  The programmer has defensively checked
-whether or not the input packet is IP.
+whether or not the input packet's network header pointer is set.
 
 @code
 void LeakyIPCounter::push(int port, Packet *p) {
-    if (!p->ip_header())
+    if (!p->has_network_header())
         return;
     _counter++;
     output(0).push(p);
 }
 @endcode
 
-Close, but no cigar: if the input packet has no IP header, the packet will
-leak.  Here are some better versions.
+Close, but no cigar: if the input packet has no network header pointer, the
+packet will leak.  Here are some better versions.
 
 @code
 void BetterIPCounter1::push(int port, Packet *p) {
     // In this version, non-IP packets are dropped.  This is closest to LeakyIPCounter's intended functionality.
-    if (!p->ip_header()) {
+    if (!p->has_network_header()) {
         p->kill();
 	return;
     }
@@ -328,14 +328,14 @@ void BetterIPCounter1::push(int port, Packet *p) {
 
 void BetterIPCounter2::push(int port, Packet *p) {
     // This programmer thinks non-IP packets are serious errors and should cause a crash.
-    assert(p->ip_header());
+    assert(p->has_network_header());
     _counter++;
     output(0).push(p);
 }
 
 void BetterIPCounter3::push(int port, Packet *p) {
     // This programmer passes non-IP packets through without counting them.
-    if (p->ip_header())
+    if (p->has_network_header())
         _counter++;
     output(0).push(p);
 }

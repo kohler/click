@@ -79,13 +79,14 @@ IPReassembler::cleanup(CleanupStage)
 void
 IPReassembler::check_error(ErrorHandler *errh, int bucket, const Packet *p, const char *format, ...)
 {
-    const click_ip *iph = p->ip_header();
     va_list val;
     va_start(val, format);
     StringAccum sa;
     sa << "buck " << bucket << ": ";
-    if (iph)
+    if (p->has_network_header()) {
+	const click_ip *iph = p->ip_header();
 	sa << iph->ip_src << " > " << iph->ip_dst << " [" << ntohs(iph->ip_id) << ':' << PACKET_DLEN(p) << ((iph->ip_off & htons(IP_MF)) ? "+]: " : "]: ");
+    }
     sa << format;
     errh->verror(ErrorHandler::ERR_ERROR, String(), sa.c_str(), val);
     va_end(val);
@@ -99,7 +100,8 @@ IPReassembler::check(ErrorHandler *errh)
     uint32_t mem_used = 0;
     for (int b = 0; b < NMAP; b++)
 	for (WritablePacket *q = _map[b]; q; q = (WritablePacket *)(q->next()))
-	    if (const click_ip *qip = q->ip_header()) {
+	    if (q->has_network_header()) {
+		const click_ip *qip = q->ip_header();
 		if (bucketno(qip) != b)
 		    check_error(errh, b, q, "in wrong bucket");
 		mem_used += IPH_MEM_USED + q->transport_length();
@@ -221,8 +223,8 @@ Packet *
 IPReassembler::simple_action(Packet *p)
 {
     // check common case: not a fragment 
+    assert(p->has_network_header());
     const click_ip *iph = p->ip_header();
-    assert(iph);
     if (!IP_ISFRAG(iph))
 	return p;
 

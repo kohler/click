@@ -317,7 +317,7 @@ const click_ip *
 AggregateIPFlows::icmp_encapsulated_header(const Packet *p)
 {
     const click_icmp *icmph = p->icmp_header();
-    if (icmph
+    if (p->has_transport_header()
 	&& (icmph->icmp_type == ICMP_UNREACH
 	    || icmph->icmp_type == ICMP_TIMXCEED
 	    || icmph->icmp_type == ICMP_PARAMPROB
@@ -485,14 +485,14 @@ AggregateIPFlows::handle_packet(Packet *p)
     }
     
     // extract encapsulated ICMP header if appropriate
-    if (iph && iph->ip_p == IP_PROTO_ICMP && IP_FIRSTFRAG(iph)
-	&& _handle_icmp_errors) {
+    if (p->has_network_header() && iph->ip_p == IP_PROTO_ICMP
+	&& IP_FIRSTFRAG(iph) && _handle_icmp_errors) {
 	iph = icmp_encapsulated_header(p);
 	paint = 2;
     }
 
     // return if not a proper TCP/UDP packet
-    if (!iph
+    if (!p->has_network_header()
 	|| (iph->ip_p != IP_PROTO_TCP && iph->ip_p != IP_PROTO_UDP)
 	|| (iph->ip_src.s_addr == 0 && iph->ip_dst.s_addr == 0))
 	return ACT_DROP;

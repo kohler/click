@@ -173,8 +173,8 @@ IPGWOptions::handle_options(Packet *p)
 Packet *
 IPGWOptions::simple_action(Packet *p)
 {
+  assert(p->has_network_header());
   const click_ip *ip = p->ip_header();
-  assert(ip);
   unsigned hlen = ip->ip_hl << 2;
   if (hlen <= sizeof(click_ip) || (p = handle_options(p)))
     return(p);

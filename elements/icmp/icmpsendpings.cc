@@ -176,7 +176,7 @@ ICMPPingSource::push(int, Packet *p)
 {
     const click_ip *iph = p->ip_header();
     const click_icmp_echo *icmph = reinterpret_cast<const click_icmp_echo *>(p->icmp_header());
-    if (iph && iph->ip_p == IP_PROTO_ICMP
+    if (p->has_network_header() && iph->ip_p == IP_PROTO_ICMP
 	&& p->transport_length() >= (int)sizeof(click_icmp_echo)
 	&& icmph->icmp_type == ICMP_ECHOREPLY
 	&& icmph->icmp_identifier == _icmp_id) {

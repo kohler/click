@@ -168,7 +168,7 @@ ICMPError::simple_action(Packet *p)
   unsigned hlen, xlen;
   static int id = 1;
 
-  if (!ipp)
+  if (!p->has_network_header())
     goto out;
 
   hlen = ipp->ip_hl << 2;

@@ -61,8 +61,8 @@ IPOutputCombo::push(int, Packet *p_in)
   
   // IPGWOptions
   WritablePacket *p = p_in->uniqueify();
+  assert(p->has_network_header());
   click_ip *ip = p->ip_header();
-  assert(ip);
   unsigned hlen = (ip->ip_hl << 2);
 
   if (hlen > sizeof(click_ip)) {

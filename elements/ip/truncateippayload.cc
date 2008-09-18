@@ -57,7 +57,7 @@ TruncateIPPayload::simple_action(Packet *p)
     const click_ip *iph = p->ip_header();
     unsigned nbytes = _nbytes >> 2;
 
-    if (!iph) {
+    if (!p->has_network_header()) {
 	if (p->length() <= nbytes)
 	    return p;
 	nbytes = p->length() - nbytes;

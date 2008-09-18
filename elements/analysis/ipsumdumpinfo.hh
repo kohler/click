@@ -200,7 +200,7 @@ inline PacketOdesc::PacketOdesc(const Element *e_, WritablePacket* p_, int defau
 
 inline bool PacketOdesc::make_ip(int ip_p)
 {
-    if ((!is_ip || !p->network_header() || p->network_length() < (int) sizeof(click_ip))
+    if ((!is_ip || !p->has_network_header() || p->network_length() < (int) sizeof(click_ip))
 	&& !hard_make_ip())
 	return false;
     return !ip_p || !p->ip_header()->ip_p || p->ip_header()->ip_p == ip_p;

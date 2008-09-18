@@ -88,7 +88,7 @@ CheckUDPHeader::simple_action(Packet *p)
   const click_udp *udph = p->udp_header();
   unsigned len, iph_len;
   
-  if (!iph || iph->ip_p != IP_PROTO_UDP)
+  if (!p->has_network_header() || iph->ip_p != IP_PROTO_UDP)
     return drop(NOT_UDP, p);
 
   iph_len = iph->ip_hl << 2;

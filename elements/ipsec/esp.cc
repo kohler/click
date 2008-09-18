@@ -57,8 +57,8 @@ IPsecESPEncap::simple_action(Packet *p)
   u_char ip_p=0;
 
   // extract protocol header
-  const click_ip *ip = p->ip_header();
-  if(ip != NULL) {ip_p = ip->ip_p;}	
+  if (p->has_network_header())
+      ip_p = p->ip_header()->ip_p;
   sa_data=(SADataTuple *)IPSEC_SA_DATA_REFERENCE_ANNO(p);
   
   // make room for ESP header and padding

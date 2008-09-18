@@ -511,9 +511,9 @@ HashTableTest::initialize(ErrorHandler *errh)
 	return errh->error("rusage: %s", strerror(errno));
     ts1.set_now();
 
-    ru1.ru_utime = ru1.ru_utime - ru0.ru_utime;
+    Timestamp ru_delta = Timestamp(ru1.ru_utime) - Timestamp(ru0.ru_utime);
     ts1 -= ts0;
-    errh->message("Time: %{timeval}u %{timestamp} total %u/%u", &ru1.ru_utime, &ts1, map.size(), map.bucket_count());
+    errh->message("Time: %{timestamp}u %{timestamp} total %u/%u", &ru_delta, &ts1, map.size(), map.bucket_count());
 #endif
 
     {

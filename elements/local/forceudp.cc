@@ -58,7 +58,7 @@ ForceUDP::simple_action(Packet *p_in)
   char itmp[9];
   click_udp *uh;
 
-  if (!ip || plen < sizeof(click_ip))
+  if (!p->has_network_header() || plen < sizeof(click_ip))
     goto bad;
 
   hlen = ip->ip_hl << 2;

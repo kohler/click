@@ -42,7 +42,7 @@ MarkIPCE::smaction(Packet *p)
 {
   const click_ip *iph = p->ip_header();
 
-  if (!iph || (iph->ip_tos & IP_ECNMASK) == IP_ECN_NOT_ECT) {
+  if (!p->has_network_header() || (iph->ip_tos & IP_ECNMASK) == IP_ECN_NOT_ECT) {
     p->kill();
     return 0;
   } else if ((iph->ip_tos & IP_ECNMASK) == IP_ECN_CE)

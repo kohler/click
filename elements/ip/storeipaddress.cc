@@ -62,7 +62,7 @@ StoreIPAddress::simple_action(Packet *p)
     memcpy(q->data() + _offset, &ipa, 4);
     return q;
     
-  } else if (_offset >= (unsigned) -16 && p->ip_header()
+  } else if (_offset >= (unsigned) -16 && p->has_network_header()
 	     && p->ip_header_length() >= sizeof(click_ip)) {
       // special case: store IP address into IP header
       // and update checksums incrementally

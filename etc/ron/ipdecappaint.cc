@@ -37,9 +37,8 @@ IPDecapPaint::~IPDecapPaint()
 Packet *
 IPDecapPaint::simple_action(Packet *p)
 {
-
+  assert(p->has_network_header());
   const click_ip *ip = p->ip_header();
-  assert(ip);
 
   if (ip->ip_p != IP_PROTO_IPIP) {
     p->kill();

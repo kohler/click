@@ -32,12 +32,21 @@ namespace IPSummaryDump {
 
 static bool link_extract(PacketDesc& d, const FieldWriter *f)
 {
-    const unsigned char *mac = d.p->mac_header();
-    if (!mac && d.p->network_header() && d.p->data() < d.p->network_header())
-	mac = d.p->data();
-    const unsigned char *network = d.p->network_header();
-    if (!network)
+    const unsigned char *mac;
+    if (!d.p->has_mac_header()) {
+	if (d.p->has_network_header() && d.p->data() < d.p->network_header())
+	    mac = d.p->data();
+	else
+	    mac = 0;
+    } else
+	mac = d.p->mac_header();
+
+    const unsigned char *network;
+    if (!d.p->has_network_header())
 	network = d.p->end_data();
+    else
+	network = d.p->network_header();
+
     switch (f->user_data) {
 
 	// IP header properties

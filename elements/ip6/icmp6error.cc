@@ -140,7 +140,7 @@ ICMP6Error::simple_action(Packet *p)
   unsigned xlen;
 
 
-  if (!ipp)
+  if (!p->has_network_header())
     goto out;
   
 

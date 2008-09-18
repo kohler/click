@@ -29,7 +29,8 @@ IPFlowID::IPFlowID(const Packet *p)
 {
   const click_ip *iph = p->ip_header();
   const click_udp *udph = p->udp_header();
-  assert(iph && udph && IP_FIRSTFRAG(iph));
+  assert(p->has_network_header() && p->has_transport_header()
+	 && IP_FIRSTFRAG(iph));
   
   _saddr = IPAddress(iph->ip_src.s_addr);
   _daddr = IPAddress(iph->ip_dst.s_addr);

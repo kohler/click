@@ -109,8 +109,8 @@ TCPRewriter::TCPMapping::apply_sack(click_tcp *tcph, int len)
 void
 TCPRewriter::TCPMapping::apply(WritablePacket *p)
 {
+    assert(p->has_network_header());
     click_ip *iph = p->ip_header();
-    assert(iph);
 
     // IP header
     iph->ip_src = _mapto.saddr();

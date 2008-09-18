@@ -41,7 +41,7 @@ Packet *
 AggregateLength::handle_packet(Packet *p)
 {
     int offset;
-    if (_ip && !p->ip_header())
+    if (_ip && !p->has_network_header())
 	return bad_packet(p);
     else if (_ip)
 	offset = p->network_header_offset();

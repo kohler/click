@@ -50,8 +50,8 @@ inline Packet *
 SetIPDSCP::smaction(Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
+  assert(p->has_network_header());
   click_ip *ip = p->ip_header();
-  assert(ip);
   
   uint16_t old_hw = (reinterpret_cast<uint16_t *>(ip))[0];
   ip->ip_tos = (ip->ip_tos & 0x3) | _dscp;

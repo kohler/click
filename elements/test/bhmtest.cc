@@ -457,9 +457,9 @@ BigHashMapTest::initialize(ErrorHandler *errh)
 	return errh->error("rusage: %s", strerror(errno));
     ts1.set_now();
 
-    ru1.ru_utime = ru1.ru_utime - ru0.ru_utime;
+    Timestamp ru_delta = Timestamp(ru1.ru_utime) - Timestamp(ru0.ru_utime);
     ts1 -= ts0;
-    errh->message("%{timeval}u %{timestamp} total", &ru1.ru_utime, &ts1);
+    errh->message("%{timestamp}u %{timestamp} total", &ru_delta, &ts1);
 #endif
     
     errh->message("All tests pass!");

@@ -90,7 +90,7 @@ CheckICMPHeader::simple_action(Packet *p)
   unsigned csum, icmp_len;
   const click_icmp *icmph = p->icmp_header();
   
-  if (!iph || iph->ip_p != IP_PROTO_ICMP)
+  if (!p->has_network_header() || iph->ip_p != IP_PROTO_ICMP)
     return drop(NOT_ICMP, p);
   
   icmp_len = p->length() - p->transport_header_offset();

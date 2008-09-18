@@ -535,7 +535,8 @@ KernelTun::push(int, Packet *p)
     } else {
 	iph = p->ip_header();
 	// check IP header
-	if (!iph || p->network_length() < (int) sizeof(click_ip)) {
+	if (!p->has_network_header()
+	    || p->network_length() < (int) sizeof(click_ip)) {
 	    click_chatter("%s(%s): no network header", class_name(), _dev_name.c_str());
 	kill:
 	    p->kill();

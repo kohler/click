@@ -242,6 +242,7 @@ class Packet { public:
 
     /** @name Header Pointers */
     //@{
+    inline bool has_mac_header() const;
     inline const unsigned char *mac_header() const;
     inline int mac_header_offset() const;
     inline uint32_t mac_header_length() const;
@@ -249,6 +250,7 @@ class Packet { public:
     inline void set_mac_header(const unsigned char *p);
     inline void set_mac_header(const unsigned char *p, uint32_t len);
 
+    inline bool has_network_header() const;
     inline const unsigned char *network_header() const;
     inline int network_header_offset() const;
     inline uint32_t network_header_length() const;
@@ -256,6 +258,7 @@ class Packet { public:
     inline void set_network_header(const unsigned char *p, uint32_t len);
     inline void set_network_header_length(uint32_t len);
 
+    inline bool has_transport_header() const;
     inline const unsigned char *transport_header() const;
     inline int transport_header_offset() const;
     inline int transport_length() const;
@@ -738,50 +741,13 @@ inline const unsigned char *
 Packet::end_data() const
 {
 #if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    return skb_tail_pointer(skb());
+# else
     return skb()->tail;
+# endif
 #else
     return _tail;
-#endif
-}
-
-/** @brief Return the packet's length. */
-inline uint32_t
-Packet::length() const
-{
-#if CLICK_LINUXMODULE
-    return skb()->len;
-#else
-    return _tail - _data;
-#endif
-}
-
-/** @brief Return the packet's headroom.
- *
- * The headroom is the amount of space available in the current packet buffer
- * before data().  A push() operation is cheap if the packet's unshared and
- * the length pushed is less than headroom(). */
-inline uint32_t
-Packet::headroom() const
-{
-#if CLICK_LINUXMODULE
-    return skb()->data - skb()->head;
-#else
-    return _data - _head;
-#endif
-}
-
-/** @brief Return the packet's tailroom.
- *
- * The tailroom is the amount of space available in the current packet buffer
- * following end_data().  A put() operation is cheap if the packet's unshared
- * and the length put is less than tailroom(). */
-inline uint32_t
-Packet::tailroom() const
-{
-#if CLICK_LINUXMODULE
-    return skb()->end - skb()->tail;
-#else
-    return _end - _tail;
 #endif
 }
 
@@ -807,10 +773,47 @@ inline const unsigned char *
 Packet::end_buffer() const
 {
 #if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    return skb_end_pointer(skb());
+# else
     return skb()->end;
+# endif
 #else
     return _end;
 #endif
+}
+
+/** @brief Return the packet's length. */
+inline uint32_t
+Packet::length() const
+{
+#if CLICK_LINUXMODULE
+    return skb()->len;
+#else
+    return _tail - _data;
+#endif
+}
+
+/** @brief Return the packet's headroom.
+ *
+ * The headroom is the amount of space available in the current packet buffer
+ * before data().  A push() operation is cheap if the packet's unshared and
+ * the length pushed is less than headroom(). */
+inline uint32_t
+Packet::headroom() const
+{
+    return data() - buffer();
+}
+
+/** @brief Return the packet's tailroom.
+ *
+ * The tailroom is the amount of space available in the current packet buffer
+ * following end_data().  A put() operation is cheap if the packet's unshared
+ * and the length put is less than tailroom(). */
+inline uint32_t
+Packet::tailroom() const
+{
+    return end_buffer() - end_data();
 }
 
 /** @brief Return the packet's buffer length.
@@ -819,11 +822,7 @@ Packet::end_buffer() const
 inline uint32_t
 Packet::buffer_length() const
 {
-#if CLICK_LINUXMODULE
-    return skb()->end - skb()->head;
-#else
-    return _end - _head;
-#endif
+    return end_buffer() - buffer();
 }
 
 inline Packet *
@@ -886,39 +885,107 @@ Packet::set_prev(Packet *p)
 #endif
 }
 
+/** @brief Return true iff the packet's MAC header pointer is set. */
+inline bool
+Packet::has_mac_header() const
+{
+#if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    return skb_mac_header_was_set(skb());
+# else
+    return skb()->mac.raw != 0;
+# endif
+#else
+    return _mac != 0;
+#endif
+}
+
 /** @brief Return the packet's MAC header pointer.
+ * @warning Not useful if !has_mac_header().
  * @sa ether_header, set_mac_header, mac_header_length, mac_length */
 inline const unsigned char *
 Packet::mac_header() const
 {
 #if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    return skb_mac_header(skb());
+# else
     return skb()->mac.raw;
+# endif
 #else
     return _mac;
 #endif
 }
 
+/** @brief Return true iff the packet's network header pointer is set. */
+inline bool
+Packet::has_network_header() const
+{
+#if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+#  if NET_SKBUFF_DATA_USES_OFFSET
+    return skb()->network_header == ~0U;
+#  else
+    return skb()->network_header != 0;
+#  endif
+# else
+    return skb()->nh.raw != 0;
+# endif
+#else
+    return _nh != 0;
+#endif
+}
+
 /** @brief Return the packet's network header pointer.
+ * @warning Not useful if !has_network_header().
  * @sa ip_header, ip6_header, set_network_header, network_header_length,
  * network_length */
 inline const unsigned char *
 Packet::network_header() const
 {
 #if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    return skb_network_header(skb());
+# else
     return skb()->nh.raw;
+# endif
 #else
     return _nh;
 #endif
 }
 
+/** @brief Return true iff the packet's network header pointer is set. */
+inline bool
+Packet::has_transport_header() const
+{
+#if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+#  if NET_SKBUFF_DATA_USES_OFFSET
+    return skb()->transport_header == ~0U;
+#  else
+    return skb()->transport_header != 0;
+#  endif
+# else
+    return skb()->h.raw != 0;
+# endif
+#else
+    return _h != 0;
+#endif
+}
+
 /** @brief Return the packet's transport header pointer.
+ * @warning Not useful if !has_transport_header().
  * @sa tcp_header, udp_header, icmp_header, set_transport_header,
  * transport_length */
 inline const unsigned char *
 Packet::transport_header() const
 {
 #if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    return skb_transport_header(skb());
+# else
     return skb()->h.raw;
+# endif
 #else
     return _h;
 #endif
@@ -926,6 +993,7 @@ Packet::transport_header() const
 
 /** @brief Return the packet's MAC header pointer as Ethernet.
  * @invariant (void *) ether_header() == (void *) mac_header()
+ * @warning Not useful if !has_mac_header().
  * @sa mac_header */
 inline const click_ether *
 Packet::ether_header() const
@@ -935,6 +1003,7 @@ Packet::ether_header() const
 
 /** @brief Return the packet's network header pointer as IPv4.
  * @invariant (void *) ip_header() == (void *) network_header()
+ * @warning Not useful if !has_network_header().
  * @sa network_header */
 inline const click_ip *
 Packet::ip_header() const
@@ -944,6 +1013,7 @@ Packet::ip_header() const
 
 /** @brief Return the packet's network header pointer as IPv6.
  * @invariant (void *) ip6_header() == (void *) network_header()
+ * @warning Not useful if !has_network_header().
  * @sa network_header */
 inline const click_ip6 *
 Packet::ip6_header() const
@@ -953,6 +1023,7 @@ Packet::ip6_header() const
 
 /** @brief Return the packet's transport header pointer as ICMP.
  * @invariant (void *) icmp_header() == (void *) transport_header()
+ * @warning Not useful if !has_transport_header().
  * @sa transport_header */
 inline const click_icmp *
 Packet::icmp_header() const
@@ -962,6 +1033,7 @@ Packet::icmp_header() const
 
 /** @brief Return the packet's transport header pointer as TCP.
  * @invariant (void *) tcp_header() == (void *) transport_header()
+ * @warning Not useful if !has_transport_header().
  * @sa transport_header */
 inline const click_tcp *
 Packet::tcp_header() const
@@ -971,6 +1043,7 @@ Packet::tcp_header() const
 
 /** @brief Return the packet's transport header pointer as UDP.
  * @invariant (void *) udp_header() == (void *) transport_header()
+ * @warning Not useful if !has_transport_header().
  * @sa transport_header */
 inline const click_udp *
 Packet::udp_header() const
@@ -980,7 +1053,7 @@ Packet::udp_header() const
 
 /** @brief Return the packet's length starting from its MAC header pointer.
  * @invariant mac_length() == end_data() - mac_header()
- * @warning Not useful if mac_header() is null. */
+ * @warning Not useful if !has_mac_header(). */
 inline int
 Packet::mac_length() const
 {
@@ -989,7 +1062,7 @@ Packet::mac_length() const
 
 /** @brief Return the packet's length starting from its network header pointer.
  * @invariant network_length() == end_data() - network_header()
- * @warning Not useful if network_header() is null. */
+ * @warning Not useful if !has_network_header(). */
 inline int
 Packet::network_length() const
 {
@@ -998,7 +1071,7 @@ Packet::network_length() const
 
 /** @brief Return the packet's length starting from its transport header pointer.
  * @invariant transport_length() == end_data() - transport_header()
- * @warning Not useful if transport_header() is null. */
+ * @warning Not useful if !has_transport_header(). */
 inline int
 Packet::transport_length() const
 {
@@ -1010,9 +1083,9 @@ Packet::timestamp_anno() const
 {
 #if CLICK_LINUXMODULE
 # if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 13)
-    return *(const Timestamp *) &skb()->stamp;
+    return *reinterpret_cast<const Timestamp *>(&skb()->stamp);
 # else
-    return *(const Timestamp *) &skb()->tstamp;
+    return *reinterpret_cast<const Timestamp *>(&skb()->tstamp);
 # endif
 #else
     return _timestamp;
@@ -1024,9 +1097,9 @@ Packet::timestamp_anno()
 {
 #if CLICK_LINUXMODULE
 # if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 13)
-    return *(Timestamp *) &skb()->stamp;
+    return *reinterpret_cast<Timestamp *>(&skb()->stamp);
 # else
-    return *(Timestamp *) &skb()->tstamp;
+    return *reinterpret_cast<Timestamp *>(&skb()->tstamp);
 # endif
 #else
     return _timestamp;
@@ -1036,15 +1109,7 @@ Packet::timestamp_anno()
 inline void
 Packet::set_timestamp_anno(const Timestamp &timestamp)
 {
-#if CLICK_LINUXMODULE
-# if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 13)
-    memcpy(&skb()->stamp, &timestamp, 8);
-# else
-    skb_set_timestamp(skb(), &timestamp.timeval());
-# endif
-#else
-    _timestamp = timestamp;
-#endif
+    timestamp_anno() = timestamp;
 }
 
 inline net_device *
@@ -1476,8 +1541,13 @@ Packet::set_dst_ip_anno(IPAddress a)
 inline void
 Packet::set_mac_header(const unsigned char *p)
 {
+    assert(p >= buffer() && p <= end_buffer());
 #if CLICK_LINUXMODULE	/* Linux kernel module */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    skb_set_mac_header(skb(), p - data());
+# else
     skb()->mac.raw = const_cast<unsigned char *>(p);
+# endif
 #else				/* User-space and BSD kernel module */
     _mac = const_cast<unsigned char *>(p);
 #endif
@@ -1490,9 +1560,15 @@ Packet::set_mac_header(const unsigned char *p)
 inline void
 Packet::set_mac_header(const unsigned char *p, uint32_t len)
 {
+    assert(p >= buffer() && p + len <= end_buffer());
 #if CLICK_LINUXMODULE	/* Linux kernel module */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    skb_set_mac_header(skb(), p - data());
+    skb_set_network_header(skb(), (p + len) - data());
+# else
     skb()->mac.raw = const_cast<unsigned char *>(p);
     skb()->nh.raw = const_cast<unsigned char *>(p) + len;
+# endif
 #else				/* User-space and BSD kernel module */
     _mac = const_cast<unsigned char *>(p);
     _nh = const_cast<unsigned char *>(p) + len;
@@ -1541,9 +1617,15 @@ Packet::push_mac_header(uint32_t len)
 inline void
 Packet::set_network_header(const unsigned char *p, uint32_t len)
 {
+    assert(p >= buffer() && p + len <= end_buffer());
 #if CLICK_LINUXMODULE	/* Linux kernel module */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    skb_set_network_header(skb(), p - data());
+    skb_set_transport_header(skb(), (p + len) - data());
+# else
     skb()->nh.raw = const_cast<unsigned char *>(p);
     skb()->h.raw = const_cast<unsigned char *>(p) + len;
+# endif
 #else				/* User-space and BSD kernel module */
     _nh = const_cast<unsigned char *>(p);
     _h = const_cast<unsigned char *>(p) + len;
@@ -1559,8 +1641,13 @@ Packet::set_network_header(const unsigned char *p, uint32_t len)
 inline void
 Packet::set_network_header_length(uint32_t len)
 {
+    assert(network_header() + len <= end_buffer());
 #if CLICK_LINUXMODULE	/* Linux kernel module */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    skb_set_transport_header(skb(), (network_header() + len) - data());
+# else
     skb()->h.raw = skb()->nh.raw + len;
+# endif
 #else				/* User-space and BSD kernel module */
     _h = _nh + len;
 #endif
@@ -1603,7 +1690,7 @@ Packet::set_ip6_header(const click_ip6 *ip6h)
 
 /** @brief Return the offset from the packet data to the MAC header.
  * @return mac_header() - data()
- * @warning Not useful if mac_header() is null. */
+ * @warning Not useful if !has_mac_header(). */
 inline int
 Packet::mac_header_offset() const
 {
@@ -1615,7 +1702,7 @@ Packet::mac_header_offset() const
  *
  * This equals the offset from the MAC header pointer to the network header
  * pointer.
- * @warning Not useful if mac_header() or network_header() is null. */
+ * @warning Not useful if !has_mac_header() or !has_network_header(). */
 inline uint32_t
 Packet::mac_header_length() const
 {
@@ -1624,7 +1711,7 @@ Packet::mac_header_length() const
 
 /** @brief Return the offset from the packet data to the network header.
  * @return network_header() - data()
- * @warning Not useful if network_header() is null. */
+ * @warning Not useful if !has_network_header(). */
 inline int
 Packet::network_header_offset() const
 {
@@ -1636,7 +1723,7 @@ Packet::network_header_offset() const
  *
  * This equals the offset from the network header pointer to the transport
  * header pointer.
- * @warning Not useful if network_header() or transport_header() is null. */
+ * @warning Not useful if !has_network_header() or !has_transport_header(). */
 inline uint32_t
 Packet::network_header_length() const
 {
@@ -1645,7 +1732,7 @@ Packet::network_header_length() const
 
 /** @brief Return the offset from the packet data to the IP header.
  * @return network_header() - mac_header()
- * @warning Not useful if network_header() is null.
+ * @warning Not useful if !has_network_header().
  * @sa network_header_offset */
 inline int
 Packet::ip_header_offset() const
@@ -1658,7 +1745,7 @@ Packet::ip_header_offset() const
  *
  * This equals the offset from the network header pointer to the transport
  * header pointer.
- * @warning Not useful if network_header() or transport_header() is null.
+ * @warning Not useful if !has_network_header() or !has_transport_header().
  * @sa network_header_length */
 inline uint32_t
 Packet::ip_header_length() const
@@ -1668,7 +1755,7 @@ Packet::ip_header_length() const
 
 /** @brief Return the offset from the packet data to the IPv6 header.
  * @return network_header() - data()
- * @warning Not useful if network_header() is null.
+ * @warning Not useful if !has_network_header().
  * @sa network_header_offset */
 inline int
 Packet::ip6_header_offset() const
@@ -1681,7 +1768,7 @@ Packet::ip6_header_offset() const
  *
  * This equals the offset from the network header pointer to the transport
  * header pointer.
- * @warning Not useful if network_header() or transport_header() is null.
+ * @warning Not useful if !has_network_header() or !has_transport_header().
  * @sa network_header_length */
 inline uint32_t
 Packet::ip6_header_length() const
@@ -1691,7 +1778,7 @@ Packet::ip6_header_length() const
 
 /** @brief Return the offset from the packet data to the transport header.
  * @return transport_header() - data()
- * @warning Not useful if transport_header() is null. */
+ * @warning Not useful if !has_transport_header(). */
 inline int
 Packet::transport_header_offset() const
 {
@@ -1718,8 +1805,20 @@ Packet::clear_annotations(bool all)
 	set_packet_type_anno(HOST);
 	set_device_anno(0);
 	set_timestamp_anno(Timestamp());
+
+#if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
+	struct sk_buff *mskb = skb();
+	mskb->mac_header = mskb->network_header = mskb->transport_header = ~0U;
+# else
 	set_mac_header(0);
 	set_network_header(0, 0);
+# endif
+#else
+	set_mac_header(0);
+	set_network_header(0, 0);
+#endif
+
 	set_next(0);
 	set_prev(0);
     }
@@ -1745,15 +1844,24 @@ Packet::copy_annotations(const Packet *p)
 inline void
 Packet::shift_header_annotations(ptrdiff_t shift)
 {
-#if CLICK_USERLEVEL || CLICK_BSDMODULE
-    _mac += (_mac ? shift : 0);
-    _nh += (_nh ? shift : 0);
-    _h += (_h ? shift : 0);
-#else
+#if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
+    (void) shift;
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    struct sk_buff *mskb = skb();
+    mskb->mac_header += (mskb->mac_header ? shift : 0);
+    mskb->network_header += (mskb->network_header ? shift : 0);
+    mskb->transport_header += (mskb->transport_header ? shift : 0);
+# else
     struct sk_buff *mskb = skb();
     mskb->mac.raw += (mskb->mac.raw ? shift : 0);
     mskb->nh.raw += (mskb->nh.raw ? shift : 0);
     mskb->h.raw += (mskb->h.raw ? shift : 0);
+# endif
+#else
+    _mac += (_mac ? shift : 0);
+    _nh += (_nh ? shift : 0);
+    _h += (_h ? shift : 0);
 #endif
 }
 

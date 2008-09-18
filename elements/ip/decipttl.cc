@@ -43,8 +43,8 @@ DecIPTTL::drop_it(Packet *p)
 Packet *
 DecIPTTL::simple_action(Packet *p_in)
 {
+  assert(p_in->has_network_header());
   const click_ip *ip_in = p_in->ip_header();
-  assert(ip_in);
   
   if (ip_in->ip_ttl <= 1) {
     drop_it(p_in);

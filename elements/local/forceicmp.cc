@@ -62,7 +62,7 @@ ForceICMP::simple_action(Packet *p_in)
   unsigned hlen, ilen;
   click_icmp *ih;
 
-  if (!ip || plen < sizeof(click_ip))
+  if (!p->has_network_header() || plen < sizeof(click_ip))
     goto bad;
 
   hlen = ip->ip_hl << 2;

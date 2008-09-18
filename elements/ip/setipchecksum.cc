@@ -33,12 +33,15 @@ Packet *
 SetIPChecksum::simple_action(Packet *p_in)
 {
     if (WritablePacket *p = p_in->uniqueify()) {
-	click_ip *ip = p->ip_header();
-	unsigned plen = p->network_length();
-	unsigned hlen;
+	click_ip *ip;
+	unsigned plen, hlen;
 	
-  	if (!ip || plen < sizeof(click_ip))
+  	if (!p->has_network_header())
 	    goto bad;
+	plen = p->network_length();
+	if (plen < sizeof(click_ip))
+	    goto bad;
+	ip = p->ip_header();
 	hlen = ip->ip_hl << 2;
 	if (hlen < sizeof(click_ip) || hlen > plen)
 	    goto bad;

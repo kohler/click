@@ -277,7 +277,7 @@ Packet *
 AnonymizeIPAddr::simple_action(Packet *p)
 {
     const click_ip *in_iph = p->ip_header();
-    if (!in_iph || in_iph->ip_v != 4) {
+    if (!p->has_network_header() || in_iph->ip_v != 4) {
 	checked_output_push(1, p);
 	return 0;
     } else if (WritablePacket *q = p->uniqueify()) {

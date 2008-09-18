@@ -230,7 +230,7 @@ AggregateCounter::update(Packet *p, bool frozen)
 	amount = 1 + (_use_packet_count ? EXTRA_PACKETS_ANNO(p) : 0);
     else {
 	amount = p->length() + (_use_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
-	if (_ip_bytes && p->network_header())
+	if (_ip_bytes && p->has_network_header())
 	    amount -= p->network_header_offset();
     }
     

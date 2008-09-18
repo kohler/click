@@ -59,7 +59,8 @@ Packet *
 StatelessTCPResponder::simple_action(Packet *p)
 {
     const click_ip *iph = p->ip_header();
-    if (!iph || iph->ip_p != IP_PROTO_TCP || !IP_FIRSTFRAG(iph)
+    if (!p->has_network_header()
+	|| iph->ip_p != IP_PROTO_TCP || !IP_FIRSTFRAG(iph)
 	|| p->transport_length() < sizeof(click_tcp)) {
 	checked_output_push(1, p);
 	return 0;

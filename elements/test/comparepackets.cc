@@ -76,12 +76,12 @@ ComparePackets::check(Packet *p, Packet *q)
     if (p->timestamp_anno() != q->timestamp_anno() && _timestamp)
 	_diff_details[D_TIMESTAMP]++, different = true;
     
-    if (p->network_header() && q->network_header()) {
+    if (p->has_network_header() && q->has_network_header()) {
 	if (p->network_header_offset() != q->network_header_offset())
 	    _diff_details[D_NETOFF]++, different = true;
 	if (p->network_header_length() != q->network_header_length())
 	    _diff_details[D_NETLEN]++, different = true;
-    } else if ((p->network_header() != 0) != (q->network_header() != 0))
+    } else if (p->has_network_header() != q->has_network_header())
 	_diff_details[D_NETHDR]++, different = true;
     
     if (different)

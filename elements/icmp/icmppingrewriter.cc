@@ -157,8 +157,8 @@ ICMPPingRewriter::Mapping::make_pair(const IPFlowID &inf, const IPFlowID &outf,
 void
 ICMPPingRewriter::Mapping::apply(WritablePacket *p)
 {
+  assert(p->has_network_header());
   click_ip *iph = p->ip_header();
-  assert(iph);
   
   // IP header
   iph->ip_src = _mapto.saddr();

@@ -397,6 +397,15 @@ class Timestamp { public:
 	    int32_t sec;
 	};
 #endif
+#if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+	ktime_t ktime;
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 14)
+	skb_timeval skbtime;
+# else
+	timeval tv;
+# endif
+#endif
     } _t;
 
     inline void add_fix() {

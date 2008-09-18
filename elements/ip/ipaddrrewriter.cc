@@ -29,8 +29,8 @@ CLICK_DECLS
 void
 IPAddrRewriter::IPAddrMapping::apply(WritablePacket *p)
 {
+    assert(p->has_network_header());
     click_ip *iph = p->ip_header();
-    assert(iph);
 
     // IP header
     if (is_primary())

@@ -89,7 +89,7 @@ CheckTCPHeader::simple_action(Packet *p)
   const click_tcp *tcph = p->tcp_header();
   unsigned len, iph_len, tcph_len, csum;
   
-  if (!iph || iph->ip_p != IP_PROTO_TCP)
+  if (!p->has_network_header() || iph->ip_p != IP_PROTO_TCP)
     return drop(NOT_TCP, p);
 
   iph_len = iph->ip_hl << 2;

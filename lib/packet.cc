@@ -616,13 +616,13 @@ Packet::shift_data(int offset, bool free_on_failure)
 
     // Preserve mac_header, network_header, and transport_header.
     const unsigned char *dp = data();
-    if (mac_header() && mac_header() >= buffer()
+    if (has_mac_header() && mac_header() >= buffer()
 	&& mac_header() <= end_buffer() && mac_header() < dp)
 	dp = mac_header();
-    if (network_header() && network_header() >= buffer()
+    if (has_network_header() && network_header() >= buffer()
 	&& network_header() <= end_buffer() && network_header() < dp)
 	dp = network_header();
-    if (transport_header() && transport_header() >= buffer()
+    if (has_transport_header() && transport_header() >= buffer()
 	&& transport_header() <= end_buffer() && transport_header() < dp)
 	dp = network_header();
     

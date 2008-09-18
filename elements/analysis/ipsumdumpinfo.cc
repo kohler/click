@@ -345,10 +345,10 @@ const uint8_t *inb(PacketOdesc& d, const uint8_t *s, const uint8_t *end, const F
 void ip_prepare(PacketDesc& d, const FieldWriter *)
 {
     Packet* p = d.p;
-    d.iph = p->ip_header();
-    d.tcph = p->tcp_header();
-    d.udph = p->udp_header();
-    d.icmph = p->icmp_header();
+    d.iph = (p->has_network_header() ? p->ip_header() : 0);
+    d.tcph = (p->has_transport_header() ? p->tcp_header() : 0);
+    d.udph = (p->has_transport_header() ? p->udp_header() : 0);
+    d.icmph = (p->has_transport_header() ? p->icmp_header() : 0);
     
 #define BAD(msg, hdr) do { if (d.bad_sa && !*d.bad_sa) *d.bad_sa << "!bad " << msg << '\n'; hdr = 0; } while (0)
 #define BAD2(msg, val, hdr) do { if (d.bad_sa && !*d.bad_sa) *d.bad_sa << "!bad " << msg << val << '\n'; hdr = 0; } while (0)
@@ -419,7 +419,7 @@ bool PacketOdesc::hard_make_ip()
 {
     if (!is_ip)
 	return false;
-    if (!p->network_header())
+    if (!p->has_network_header())
 	p->set_network_header(p->data(), 0);
     if (p->network_length() < (int) sizeof(click_ip)) {
 	if (!(p = p->put(sizeof(click_ip) - p->network_length())))

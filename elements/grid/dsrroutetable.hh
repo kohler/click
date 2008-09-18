@@ -306,8 +306,8 @@ public:
       
       // click_chatter("link_filter: checking packet %ld\n", (long)p);
       
+      assert(p->has_network_header());
       const click_ip *ip = p->ip_header();
-      assert(ip);
       
       if (ip->ip_p != IP_PROTO_DSR)
 	return false;

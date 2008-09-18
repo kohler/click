@@ -113,12 +113,10 @@ ARPPrint::cleanup(CleanupStage)
 Packet *
 ARPPrint::simple_action(Packet *p)
 {
-    const click_ether_arp *ap = (const click_ether_arp *) p->network_header();
-    if (!ap)
+    if (!p->has_network_header())
 	return p;
 
     StringAccum sa;
-
     if (_label)
 	sa << _label << ": ";
     if (_print_timestamp)
@@ -127,6 +125,7 @@ ARPPrint::simple_action(Packet *p)
     if (p->network_length() < (int) sizeof(click_arp))
 	sa << "truncated-arp (" << p->network_length() << ")";
     else {
+	const click_ether_arp *ap = (const click_ether_arp *) p->network_header();
 	uint16_t hrd = ntohs(ap->ea_hdr.ar_hrd);
 	uint16_t pro = ntohs(ap->ea_hdr.ar_pro);
 	uint8_t hln = ap->ea_hdr.ar_hln;

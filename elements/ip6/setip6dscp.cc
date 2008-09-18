@@ -51,8 +51,8 @@ inline Packet *
 SetIP6DSCP::smaction(Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
+  assert(p->has_network_header());
   click_ip6 *ip6 = p->ip6_header();
-  assert(ip6);
 
   uint32_t flow = ntohl(ip6->ip6_flow);
   ip6->ip6_flow = htonl((flow & ~IP6_DSCP_MASK) | _dscp);

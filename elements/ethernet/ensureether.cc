@@ -52,7 +52,7 @@ EnsureEther::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 EnsureEther::smaction(Packet *p)
 {
-  if (!p->ip_header() || p->ip_header_offset() < 0)
+  if (!p->has_network_header() || p->ip_header_offset() < 0)
     return p;
 
   if (p->ip_header_offset() == 14) {

@@ -66,8 +66,7 @@ FixIPSrc::fix_it(Packet *p_in)
 Packet *
 FixIPSrc::simple_action(Packet *p)
 {
-  const click_ip *ip = p->ip_header();
-  if (FIX_IP_SRC_ANNO(p) && ip)
+  if (FIX_IP_SRC_ANNO(p) && p->has_network_header())
     p = fix_it(p);
   return p;
 }
