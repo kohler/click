@@ -323,14 +323,8 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 
     int error = inode_out_of_date(inode, -ENOENT);
 
-    // '.' and '..'
-    if (error >= 0 && f_pos == 0) {
-	if (my_filldir(".", 1, ino, f_pos, DT_DIR, &mfd))
-	    f_pos++;
-	else
-	    error = -1;
-    }
-    if (error >= 0 && f_pos == 1) {
+    // global '..'
+    if (ino == INO_GLOBALDIR && f_pos == 0) {
 	if (my_filldir("..", 2, filp->f_dentry->d_parent->d_inode->i_ino, f_pos, DT_DIR, &mfd))
 	    f_pos++;
 	else

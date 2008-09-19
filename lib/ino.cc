@@ -308,7 +308,8 @@ int
 ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 {
     // File positions:
-    // 0x000000-0x0FFFFF  ignored
+    // 0x000001           ..
+    // 0x000002-0x0FFFFF  ignored
     // 0x100000-0x1FFFFF  handlers
     // 0x200000-0x2FFFFF  numbers
     // 0x300000-0x3FFFFF  names
@@ -322,6 +323,17 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
     int elementno = INO_ELEMENTNO(ino);
     int nelements = (_router ? _router->nelements() : 0);
 
+    // ".." and "."
+    if (f_pos == 0) {
+	if (ino_t dotdot = lookup(ino, String::stable_string("..", 2)))
+	    FILLDIR("..", 2, dotdot, DT_DIR, f_pos, thunk);
+	f_pos++;
+    }
+    if (f_pos == 1) {
+	FILLDIR(".", 1, ino, DT_DIR, f_pos, thunk);
+	f_pos++;
+    }
+    
     // handler names
     if (f_pos < RD_HOFF)
 	f_pos = RD_HOFF;
