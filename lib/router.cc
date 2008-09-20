@@ -1945,7 +1945,7 @@ Router::element_ports_string(const Element *e) const
 // STATIC INITIALIZATION, DEFAULT GLOBAL HANDLERS
 
 enum { GH_VERSION, GH_CONFIG, GH_FLATCONFIG, GH_LIST, GH_REQUIREMENTS,
-       GH_DRIVER };
+       GH_DRIVER, GH_ACTIVE_PORTS, GH_ACTIVE_PORT_STATS };
 
 String
 Router::router_read_handler(Element *e, void *thunk)
@@ -1993,6 +1993,34 @@ Router::router_read_handler(Element *e, void *thunk)
 #else
 	break;
 #endif
+
+#if CLICK_STATS >= 1
+    case GH_ACTIVE_PORTS:
+	if (r)
+	    for (int ei = 0; ei < r->nelements(); ++ei) {
+		Element *e = r->element(ei);
+		for (int p = 0; p < e->ninputs(); ++p)
+		    if (e->input_is_pull(p))
+			sa << e->name() << '\t' << 'i' << p << '\n';
+		for (int p = 0; p < e->noutputs(); ++p)
+		    if (e->output_is_push(p))
+			sa << e->name() << '\t' << 'o' << p << '\n';
+	    }
+	break;
+
+    case GH_ACTIVE_PORT_STATS:
+	if (r)
+	    for (int ei = 0; ei < r->nelements(); ++ei) {
+		Element *e = r->element(ei);
+		for (int p = 0; p < e->ninputs(); ++p)
+		    if (e->input_is_pull(p))
+			sa << e->input(p).npackets() << '\n';
+		for (int p = 0; p < e->noutputs(); ++p)
+		    if (e->output_is_push(p))
+			sa << e->output(p).npackets() << '\n';
+	    }
+	break;
+#endif
     
     }
     return sa.take_string();
@@ -2023,6 +2051,10 @@ Router::static_initialize()
 	add_read_handler(0, "handlers", Element::read_handlers_handler, 0);
 	add_read_handler(0, "list", router_read_handler, (void *)GH_LIST);
 	add_write_handler(0, "stop", stop_global_handler, 0);
+#if CLICK_STATS >= 1
+	add_read_handler(0, "active_ports", router_read_handler, (void *)GH_ACTIVE_PORTS);
+	add_read_handler(0, "active_port_stats", router_read_handler, (void *)GH_ACTIVE_PORT_STATS);
+#endif
     }
 }
 
