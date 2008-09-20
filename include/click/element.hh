@@ -252,7 +252,8 @@ class Element { public:
 
     void initialize_ports(const int* input_codes, const int* output_codes);
     int connect_port(bool isoutput, int port, Element*, int);
-    
+
+    static String read_handlers_handler(Element *e, void *user_data);
     void add_default_handlers(bool writable_config);
     void add_data_handlers(const String &name, int flags, ReadHandlerHook read_hook, WriteHandlerHook write_hook, void *data);
 

@@ -1951,6 +1951,7 @@ String
 Router::router_read_handler(Element *e, void *thunk)
 {
     Router *r = (e ? e->router() : 0);
+    StringAccum sa;
     switch (reinterpret_cast<intptr_t>(thunk)) {
 
       case GH_VERSION:
@@ -1962,30 +1963,22 @@ Router::router_read_handler(Element *e, void *thunk)
 	break;
 
       case GH_FLATCONFIG:
-	if (r) {
-	    StringAccum sa;
+	if (r)
 	    r->unparse(sa);
-	    return sa.take_string();
-	}
 	break;
 
       case GH_LIST:
 	if (r) {
-	    StringAccum sa;
 	    sa << r->nelements() << "\n";
 	    for (int i = 0; i < r->nelements(); i++)
 		sa << r->_element_names[i] << "\n";
-	    return sa.take_string();
 	}
 	break;
 
       case GH_REQUIREMENTS:
-	if (r) {
-	    StringAccum sa;
+	if (r)
 	    for (int i = 0; i < r->_requirements.size(); i++)
 		sa << r->_requirements[i] << "\n";
-	    return sa.take_string();
-	}
 	break;
 
       case GH_DRIVER:
@@ -2002,7 +1995,7 @@ Router::router_read_handler(Element *e, void *thunk)
 #endif
     
     }
-    return String();
+    return sa.take_string();
 }
 
 static int
@@ -2023,11 +2016,12 @@ Router::static_initialize()
     if (!nglobalh) {
 	Handler::the_blank_handler = new Handler("<bad handler>");
 	add_read_handler(0, "version", router_read_handler, (void *)GH_VERSION);
+	add_read_handler(0, "driver", router_read_handler, (void *)GH_DRIVER);
 	add_read_handler(0, "config", router_read_handler, (void *)GH_CONFIG);
 	add_read_handler(0, "flatconfig", router_read_handler, (void *)GH_FLATCONFIG);
-	add_read_handler(0, "list", router_read_handler, (void *)GH_LIST);
 	add_read_handler(0, "requirements", router_read_handler, (void *)GH_REQUIREMENTS);
-	add_read_handler(0, "driver", router_read_handler, (void *)GH_DRIVER);
+	add_read_handler(0, "handlers", Element::read_handlers_handler, 0);
+	add_read_handler(0, "list", router_read_handler, (void *)GH_LIST);
 	add_write_handler(0, "stop", stop_global_handler, 0);
     }
 }

@@ -1890,8 +1890,8 @@ read_ports_handler(Element *e, void *)
     return e->router()->element_ports_string(e);
 }
 
-static String
-read_handlers_handler(Element *e, void *)
+String
+Element::read_handlers_handler(Element *e, void *)
 {
     Vector<int> hindexes;
     Router::element_hindexes(e, hindexes);
