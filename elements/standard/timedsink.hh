@@ -35,7 +35,7 @@ class TimedSink : public Element { public:
   private:
 
     Timer _timer;
-    int _interval;
+    Timestamp _interval;
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);

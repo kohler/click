@@ -16,7 +16,7 @@ periodically generates a packet
 =d
 
 Creates packets consisting of DATA. Pushes such a packet out its single output
-about once every INTERVAL seconds. INTERVAL has millisecond precision. Default
+about once every INTERVAL seconds. Default
 INTERVAL is 500 milliseconds; default DATA is at least 64 bytes long.
 
 Keyword arguments are:
@@ -29,7 +29,7 @@ String. Same as the DATA argument.
 
 =item INTERVAL
 
-Number of seconds. Same as the INTERVAL argument.
+Time. Same as the INTERVAL argument.
 
 =item LIMIT
 
@@ -76,7 +76,7 @@ class TimedSource : public Element { public:
  private:
   
   Packet *_packet;
-  uint32_t _interval;
+  Timestamp _interval;
   int _limit;
   int _count;
   bool _active : 1;

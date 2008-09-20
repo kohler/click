@@ -24,7 +24,7 @@
 CLICK_DECLS
 
 TimedSource::TimedSource()
-  : _packet(0), _timer(this)
+    : _packet(0), _interval(0, Timestamp::subsec_per_sec / 2), _timer(this)
 {
 }
 
@@ -37,11 +37,10 @@ TimedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String data = "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
   int limit = -1;
-  int interval = 500;
   bool active = true, stop = false;
 
   if (cp_va_kparse(conf, this, errh,
-		   "INTERVAL", cpkP, cpSecondsAsMilli, &interval,
+		   "INTERVAL", cpkP, cpTimestamp, &_interval,
 		   "DATA", cpkP, cpString, &data,
 		   "LIMIT", 0, cpInteger, &limit,
 		   "ACTIVE", 0, cpBool, &active,
@@ -50,7 +49,6 @@ TimedSource::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
 
   _data = data;
-  _interval = interval;
   _limit = limit;
   _count = 0;
   _active = active;
@@ -65,7 +63,7 @@ TimedSource::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
   if (_active)
-    _timer.schedule_after_msec(_interval);
+    _timer.schedule_after(_interval);
   return 0;
 }
 
@@ -87,7 +85,7 @@ TimedSource::run_timer(Timer *)
 	p->timestamp_anno().set_now();
 	output(0).push(p);
 	_count++;
-	_timer.reschedule_after_msec(_interval);
+	_timer.reschedule_after(_interval);
     } else if (_stop)
 	router()->please_stop_driver();
 }
@@ -100,7 +98,7 @@ TimedSource::read_param(Element *e, void *vparam)
    case 0:			// data
     return ts->_data;
    case 2:			// interval
-    return cp_unparse_milliseconds(ts->_interval);
+    return ts->_interval.unparse_interval();
    case 3:			// active
     return cp_unparse_bool(ts->_active);
    default:
@@ -123,9 +121,9 @@ TimedSource::change_param(const String &s, Element *e, void *vparam,
       break;
    
    case 2: {			// interval
-     uint32_t interval;
-     if (!cp_seconds_as_milli(s, &interval) || interval < 1)
-       return errh->error("interval parameter must be integer >= 1");
+     Timestamp interval;
+     if (!cp_time(s, &interval) || !interval)
+       return errh->error("bad interval");
      ts->_interval = interval;
      break;
    }
@@ -133,7 +131,7 @@ TimedSource::change_param(const String &s, Element *e, void *vparam,
    case 3: {			// active
      bool active;
      if (!cp_bool(s, &active))
-       return errh->error("active parameter must be boolean");
+       return errh->error("bad active");
      ts->_active = active;
      if (!ts->_timer.scheduled() && active)
        ts->_timer.schedule_now();

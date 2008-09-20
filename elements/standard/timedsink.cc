@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 TimedSink::TimedSink()
-  : _timer(this)
+    : _timer(this), _interval(0, Timestamp::subsec_per_sec / 2)
 {
 }
 
@@ -34,18 +34,17 @@ TimedSink::~TimedSink()
 int
 TimedSink::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _interval = 500;
-  return cp_va_kparse(conf, this, errh,
-		      "INTERVAL", cpkP, cpSecondsAsMilli, &_interval,
-		      cpEnd);
+    return cp_va_kparse(conf, this, errh,
+			"INTERVAL", cpkP, cpTimestamp, &_interval,
+			cpEnd);
 }
 
 int
 TimedSink::initialize(ErrorHandler *)
 {
-  _timer.initialize(this);
-  _timer.schedule_after_msec(_interval);
-  return 0;
+    _timer.initialize(this);
+    _timer.schedule_after(_interval);
+    return 0;
 }
 
 void
@@ -54,7 +53,7 @@ TimedSink::run_timer(Timer *)
   Packet *p = input(0).pull();
   if (p)
     p->kill();
-  _timer.reschedule_after_msec(_interval);
+  _timer.reschedule_after(_interval);
 }
 
 enum { H_INTERVAL };
@@ -65,7 +64,7 @@ TimedSink::read_handler(Element *e, void *vparam)
     TimedSink *ts = static_cast<TimedSink *>(e);
     switch ((intptr_t)vparam) {
       case H_INTERVAL:
-	return cp_unparse_milliseconds(ts->_interval);
+	return ts->_interval.unparse_interval();
       default:
 	return "";
     }
@@ -78,9 +77,9 @@ TimedSink::write_handler(const String &s, Element *e, void *vparam,
     TimedSink *ts = static_cast<TimedSink *>(e);
     switch ((intptr_t)vparam) {
       case H_INTERVAL: {	// interval
-	  uint32_t interval;
-	  if (!cp_seconds_as_milli(s, &interval) || interval < 1)
-	      return errh->error("interval parameter must be integer >= 1");
+	  Timestamp interval;
+	  if (!cp_time(s, &interval) || !interval)
+	      return errh->error("bad interval");
 	  ts->_interval = interval;
 	  break;
       }
