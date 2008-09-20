@@ -264,6 +264,8 @@ static bool ip_ina(PacketOdesc& d, const String &s, const FieldReader *f)
 	}
 	d.v = 0;
 	const char *new_end = cp_integer(s.begin(), s.end(), 0, &d.v);
+	if (d.minor_version > 0)
+	    d.v >>= 3;
 	for (; new_end != s.end(); ++new_end)
 	    if (*new_end == '!')
 		d.v |= IP_DF;

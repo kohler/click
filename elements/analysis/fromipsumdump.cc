@@ -374,7 +374,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 
     // prepare packet data
     StringAccum sa;
-    IPSummaryDump::PacketOdesc d(this, q, _default_proto, (_have_flowid ? &_flowid : 0));
+    IPSummaryDump::PacketOdesc d(this, q, _default_proto, (_have_flowid ? &_flowid : 0), _minor_version);
     int nfields = 0;
 
     // new code goes here
