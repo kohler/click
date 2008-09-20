@@ -14,6 +14,9 @@
 /* Version number of package */
 #undef CLICK_VERSION
 
+/* Define to desired statistics level. */
+#undef CLICK_STATS
+
 /* Define if PollDevice should run fast to get good benchmark numbers */
 #undef CLICK_WARP9
 
