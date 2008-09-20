@@ -311,8 +311,8 @@ String cp_unparse_real10(int32_t value, int frac_digits);
 String cp_unparse_real10(uint32_t value, int frac_digits);
 String cp_unparse_milliseconds(uint32_t value);
 String cp_unparse_microseconds(uint32_t value);
-String cp_unparse_interval(const Timestamp& value);
-String cp_unparse_interval(const struct timeval& value);
+String cp_unparse_interval(const Timestamp& value) CLICK_DEPRECATED;
+String cp_unparse_interval(const struct timeval& value) CLICK_DEPRECATED;
 String cp_unparse_bandwidth(uint32_t value);
 //@}
 

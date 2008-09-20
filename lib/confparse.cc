@@ -4728,19 +4728,13 @@ cp_unparse_microseconds(uint32_t us)
 String
 cp_unparse_interval(const Timestamp& ts)
 {
-    if (ts.sec() == 0)
-	return cp_unparse_microseconds(ts.usec());
-    else {
-	StringAccum sa;
-	sa << ts << 's';
-	return sa.take_string();
-    }
+    return ts.unparse_interval();
 }
 
 String
 cp_unparse_interval(const timeval& tv)
 {
-    return cp_unparse_interval(*(const Timestamp*) &tv);
+    return Timestamp(tv).unparse_interval();
 }
 
 String

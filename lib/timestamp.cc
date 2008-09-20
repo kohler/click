@@ -148,4 +148,29 @@ Timestamp::unparse() const
     return sa.take_string();
 }
 
+/** @brief Unparse this timestamp into a String as an interval.
+
+    Returns a string formatted like "1us" or "1.000002s". */
+String
+Timestamp::unparse_interval() const
+{
+    StringAccum sa;
+    if (sec() == 0) {
+	uint32_t ss = subsec();
+	if (ss % subsec_per_msec == 0)
+	    sa << (ss / subsec_per_msec) << 'm' << 's';
+#if TIMESTAMP_NANOSEC
+	else if (ss % subsec_per_usec == 0)
+	    sa << (ss / subsec_per_usec) << 'u' << 's';
+	else
+	    sa << ss << 'n' << 's';
+#else
+	else
+	    sa << ss << 'u' << 's';
+#endif
+    } else
+	sa << *this << 's';
+    return sa.take_string();
+}
+
 CLICK_ENDDECLS

@@ -128,13 +128,15 @@ class Timestamp { public:
 	usec_per_msec = 1000,
 	msec_per_sec = 1000,
 #if TIMESTAMP_NANOSEC
-	subsec_per_sec = nsec_per_sec
+	subsec_per_sec = nsec_per_sec,
 				/**< Number of subseconds in a second.  Can be
 				     1000000 or 1000000000, depending on how
 				     Click is compiled. */
 #else
-	subsec_per_sec = usec_per_sec
+	subsec_per_sec = usec_per_sec,
 #endif
+	subsec_per_msec = subsec_per_sec / msec_per_sec,
+	subsec_per_usec = subsec_per_sec / usec_per_sec
     };
 
     enum {
@@ -349,6 +351,7 @@ class Timestamp { public:
 #endif
 
     String unparse() const;
+    String unparse_interval() const;
 
     /** @brief Convert milliseconds to subseconds.
      *

@@ -117,7 +117,7 @@ String
 DelayShaper::read_param(Element *e, void *)
 {
     DelayShaper *u = (DelayShaper *)e;
-    return cp_unparse_interval(u->_delay);
+    return u->_delay.unparse_interval();
 }
 
 int
