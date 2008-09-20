@@ -351,6 +351,8 @@ void wdiagram::router_create(bool incremental, bool always)
 	g_object_unref(G_OBJECT(pl));
 	scroll_recenter(point(0, 0));
     }
+    if (handler_value *hv = _rw->hvalues().find_placeholder("active_ports", hflag_r | hflag_notify_delt))
+	hv->refresh(_rw, true);
     if (!incremental)
 	redraw();
 }
@@ -462,10 +464,75 @@ void wdiagram::export_diagram(const char *filename, bool eps)
  *
  */
 
+void wdiagram::notify_active_ports(String value)
+{
+    _active_ports.clear();
+    while (value) {
+	const char *nl = find(value, '\n');
+	if (nl < value.end())
+	    ++nl;
+	String line = value.substring(value.begin(), nl);
+	value = value.substring(nl, value.end());
+
+	String enamestr = cp_pop_spacevec(line);
+	String portstr = cp_pop_spacevec(line);
+	int port_number;
+	if (!enamestr || !portstr
+	    || (portstr[0] != 'i' && portstr[0] != 'o')
+	    || !cp_integer(portstr.substring(1), &port_number)) {
+	    // odd line, explode
+	    _active_ports.clear();
+	    break;
+	}
+
+	dconn *c = 0;
+	if (delt *e = _cdiagram->elt(enamestr))
+	    c = e->find_connection(portstr[0] == 'o', port_number);
+	_active_ports.push_back(c);
+    }
+
+    // inquire into port statistics
+    handler_value *pstats = _rw->hvalues().find_placeholder("active_port_stats", hflag_r | hflag_notify_delt, 3000);
+    if (_active_ports.size()) {
+	pstats->set_flags(_rw, pstats->flags() | hflag_autorefresh);
+	pstats->refresh(_rw);
+    } else
+	pstats->set_flags(_rw, pstats->flags() & ~hflag_autorefresh);
+}
+
+void wdiagram::notify_active_port_stats(String value)
+{
+    size_t lineno = 0;
+    while (value) {
+	const char *nl = find(value, '\n');
+	if (nl < value.end())
+	    ++nl;
+	String line = value.substring(value.begin(), nl);
+	value = value.substring(nl, value.end());
+
+	unsigned value;
+	if (cp_integer(cp_pop_spacevec(line), &value)
+	    && lineno < _active_ports.size()
+	    && _active_ports[lineno]) {
+	    if (_active_ports[lineno]->change_count(value))
+		redraw(*_active_ports[lineno]);
+	}
+	++lineno;
+    }
+
+    if (lineno != _active_ports.size())
+	_rw->hvalues().find_force("active_ports")->refresh(_rw);
+}
+
 void wdiagram::notify_read(handler_value *hv)
 {
-    if (delt *e = elt(hv->element_name()))
-	e->notify_read(this, hv);
+    if (hv->element_name()) {
+	if (delt *e = elt(hv->element_name()))
+	    e->notify_read(this, hv);
+    } else if (hv->handler_name() == "active_ports")
+	notify_active_ports(hv->hvalue());
+    else if (hv->handler_name() == "active_port_stats")
+	notify_active_port_stats(hv->hvalue());
 }
 
 

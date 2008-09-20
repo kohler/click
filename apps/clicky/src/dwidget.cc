@@ -619,8 +619,8 @@ const char *delt::parse_connection_dot(delt *e1, const HashTable<int, delt *> &z
     if (route.size() > 0 && (route.size() % 3) == 0) {
 	for (std::vector<dconn *>::iterator ci = _conn.begin();
 	     ci != _conn.end(); ++ci)
-	    if ((*ci)->_from_elt == e1 && (*ci)->_to_elt == e2
-		&& (*ci)->_from_port == eport && (*ci)->_to_port == oeport) {
+	    if ((*ci)->_elt[1] == e1 && (*ci)->_elt[0] == e2
+		&& (*ci)->_port[1] == eport && (*ci)->_port[0] == oeport) {
 		(*ci)->_route.swap(route);
 		route.clear();
 		break;
@@ -767,12 +767,12 @@ void delt::position_contents_dot(crouter *cr, ErrorHandler *errh)
     unparse_contents_dot(sa, cr, z_index_lookup);
 
     for (std::vector<dconn *>::iterator ci = _conn.begin(); ci != _conn.end(); ++ci) {
-	delt *eout = (*ci)->_from_elt, *ein = (*ci)->_to_elt;
+	delt *eout = (*ci)->_elt[1], *ein = (*ci)->_elt[0];
 	sa << 'n' << eout->z_index()
-	   << ':' << 'o' << (*ci)->_from_port << ':'
+	   << ':' << 'o' << (*ci)->_port[1] << ':'
 	   << (eout->vertical() ? 's' : 'e')
 	   << " -> n" << ein->z_index()
-	   << ':' << 'i' << (*ci)->_to_port << ':'
+	   << ':' << 'i' << (*ci)->_port[0] << ':'
 	   << (ein->vertical() ? 'n' : 'w') << ";\n";
     }
     sa << "}\n";
@@ -1367,9 +1367,9 @@ bool dconn::layout()
 {
     if (!visible())
 	return false;
-    point op = _from_elt->output_position(_from_port, 0);
-    point ip = _to_elt->input_position(_to_port, 0);
-    if (_from_elt->orientation() == 0 && _to_elt->orientation() == 0) {
+    point op = _elt[1]->output_position(_port[1], 0);
+    point ip = _elt[0]->input_position(_port[0], 0);
+    if (_elt[1]->orientation() == 0 && _elt[0]->orientation() == 0) {
 	_x = MIN(op.x(), ip.x() - 3);
 	_y = MIN(op.y(), ip.y() - 12);
 	_width = MAX(op.x(), ip.x() + 3) - _x;
@@ -1434,7 +1434,7 @@ void delt::remove(rect_search<dwidget> &rects, rectangle &bounds)
 	p = p->parent();
     for (std::vector<dconn *>::iterator it = p->_conn.begin();
 	 it != p->_conn.end(); ++it)
-	if ((*it)->_from_elt->_e == _e || (*it)->_to_elt->_e == _e) {
+	if ((*it)->_elt[1]->_e == _e || (*it)->_elt[0]->_e == _e) {
 	    bounds |= **it;
 	    rects.remove(*it);
 	}
@@ -1459,7 +1459,7 @@ void delt::insert(rect_search<dwidget> &rects, crouter *cr,
 	p = p->parent();
     for (std::vector<dconn *>::iterator it = p->_conn.begin();
 	 it != p->_conn.end(); ++it)
-	if ((*it)->_from_elt->_e == _e || (*it)->_to_elt->_e == _e) {
+	if ((*it)->_elt[1]->_e == _e || (*it)->_elt[0]->_e == _e) {
 	    (*it)->layout();
 	    bounds |= **it;
 	    rects.insert(*it);
@@ -1470,6 +1470,17 @@ void delt::insert(rect_search<dwidget> &rects, crouter *cr,
 	_elt[0]->insert(rects, cr, bounds);
 	_elt[1]->insert(rects, cr, bounds);
     }
+}
+
+dconn *delt::find_connection(bool isoutput, int port)
+{
+    delt *e = find_port_container(isoutput, port);
+    for (std::vector<dconn *>::iterator it = _parent->_conn.begin();
+	 it != _parent->_conn.end(); ++it)
+	if ((*it)->elt(isoutput) == e
+	    && (*it)->port(isoutput) == port)
+	    return *it;
+    return 0;
 }
 
 /*****
@@ -1487,7 +1498,7 @@ double delt::hard_port_position(bool isoutput, int port,
 		 / _portoff[isoutput][_e->nports(isoutput)];
 }
 
-delt *delt::find_flow_split(int port, bool isoutput)
+delt *delt::find_flow_split(bool isoutput, int port)
 {
     int c = flow_split_char(_des->flow_split, port, isoutput);
     return find_split(c);
@@ -2020,22 +2031,37 @@ void delt::draw(dcontext &dcx)
 
 void dconn::draw(dcontext &dcx)
 {
-    cairo_set_source_rgb(dcx, 0, 0, 0);
-    cairo_set_line_width(dcx, 1);
+    int cdisp = change_display(_count_change);
+    double width = 1;
+    switch (cdisp) {
+    case 0:
+	cairo_set_source_rgb(dcx, 0.5, 0.5, 0.5);
+	break;
+    case 1:
+	cairo_set_source_rgb(dcx, 0, 0, 0);
+	break;
+    default: {
+	double scale = (double) cdisp / (sizeof(unsigned) * 8 - 1);
+	cairo_set_source_rgb(dcx, scale, 0, 0);
+	width = 8 * scale + 1;
+	break;
+    }
+    }
+    cairo_set_line_width(dcx, width);
     cairo_set_dash(dcx, 0, 0, 0);
 
-    point op = _from_elt->output_position(_from_port, 0);
-    point ip = _to_elt->input_position(_to_port, 0);
+    point op = _elt[1]->output_position(_port[1], 0);
+    point ip = _elt[0]->input_position(_port[0], 0);
     point next_to_last;
     
-    if (_from_elt->vertical())
+    if (_elt[1]->vertical())
 	cairo_move_to(dcx, op.x(), op.y() - 0.5);
     else
 	cairo_move_to(dcx, op.x() - 0.5, op.y());
     
-    if ((_from_elt->vertical() && _to_elt->vertical()
+    if ((_elt[1]->vertical() && _elt[0]->vertical()
 	 && fabs(ip.x() - op.x()) <= 6)
-	|| (!_from_elt->vertical() && !_to_elt->vertical()
+	|| (!_elt[1]->vertical() && !_elt[0]->vertical()
 	    && fabs(ip.y() - op.y()) <= 6)) {
 	/* no curves */
 	cairo_line_to(dcx, ip.x(), ip.y());
@@ -2051,14 +2077,14 @@ void dconn::draw(dcontext &dcx)
 	
     } else {
 	point curvea;
-	if (_from_elt->vertical()) {
+	if (_elt[1]->vertical()) {
 	    cairo_line_to(dcx, op.x(), op.y() + 3);
 	    curvea = point(op.x(), op.y() + 10);
 	} else {
 	    cairo_line_to(dcx, op.x() + 3, op.y());
 	    curvea = point(op.x() + 10, op.y());
 	}
-	if (_to_elt->vertical()) {
+	if (_elt[0]->vertical()) {
 	    cairo_curve_to(dcx, curvea.x(), curvea.y(),
 			   ip.x(), ip.y() - 12, ip.x(), ip.y() - 7);
 	    next_to_last = point(ip.x(), ip.y() - 7);
@@ -2074,12 +2100,13 @@ void dconn::draw(dcontext &dcx)
     cairo_stroke(dcx);
 
     double epx = ip.x(), epy = ip.y();
-    (_to_elt->vertical() ? epy : epx) += 0.25;
+    (_elt[0]->vertical() ? epy : epx) += 0.25;
     double angle = (ip - next_to_last).angle();
     cairo_move_to(dcx, epx, epy);
-    cairo_rel_line_to_point(dcx, point(-5.75, -3).rotated(angle));
-    cairo_rel_line_to_point(dcx, point(+2.00, +3).rotated(angle));
-    cairo_rel_line_to_point(dcx, point(-2.00, +3).rotated(angle));
+    double arrow_width = 3 * (width + 3) / 4;
+    cairo_rel_line_to_point(dcx, point(-5.75, -arrow_width).rotated(angle));
+    cairo_rel_line_to_point(dcx, point(+2.00, +arrow_width).rotated(angle));
+    cairo_rel_line_to_point(dcx, point(-2.00, +arrow_width).rotated(angle));
     cairo_close_path(dcx);
     cairo_fill(dcx);
 }
@@ -2181,6 +2208,19 @@ void delt::notify_read(wdiagram *d, handler_value *hv)
 	d->redraw(*this);
 	if (_split && _split->visible())
 	    d->redraw(*_split);
+    }
+}
+
+bool dconn::change_count(unsigned new_count)
+{
+    if (_count_last == ~0U && _count_change == ~0U) {
+	_count_last = new_count;
+	return false;
+    } else {
+	unsigned old_change = _count_change;
+	_count_change = new_count - _count_last;
+	_count_last = new_count;
+	return change_display(old_change) != change_display(_count_change);
     }
 }
 

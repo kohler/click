@@ -12,6 +12,7 @@ class wmain;
 class handler_value;
 class dwidget;
 class delt;
+class dconn;
 class crouter;
 
 class cdiagram : public rectangle { public:
@@ -116,6 +117,8 @@ class wdiagram { public:
 
     std::list<delt *> _highlight[3];
 
+    std::vector<dconn *> _active_ports;
+
     enum {
 	drag_none,
 	drag_start,
@@ -147,6 +150,9 @@ class wdiagram { public:
     void on_drag_hand_motion(double x_root, double y_root);
     void on_drag_complete();
     void on_drag_rect_complete();
+
+    void notify_active_ports(String value);
+    void notify_active_port_stats(String value);
     
     friend class delt;
     

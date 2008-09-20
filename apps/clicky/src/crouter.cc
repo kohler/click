@@ -263,7 +263,8 @@ void crouter::on_handler_read(const String &hname, const String &hparam,
 	if ((changed && hv->notify_whandlers()) || hv->notify_delt(changed))
 	    on_handler_read(hv, changed);
     }
-    if (status == 200)
+    if (status == 200 || hname.equals("handlers", 8)
+	|| hname.equals("active_ports", 12))
 	messages.clear();
 }
 

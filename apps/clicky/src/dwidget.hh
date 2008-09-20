@@ -5,6 +5,7 @@
 #include "rectangle.hh"
 #include "rectsearch.hh"
 #include "ref.hh"
+#include <click/integers.hh>
 #include <clicktool/elementt.hh>
 class Bitvector;
 class ProcessingT;
@@ -33,6 +34,7 @@ enum {
 };
 
 enum {
+    desplit_outputs = 0,
     desplit_inputs = 1
 };
     
@@ -111,18 +113,26 @@ class dconn : public dwidget { public:
 
     inline dconn(delt *fe, int fp, delt *te, int tp, int z_index);
 
+    delt *elt(bool isoutput) const {
+	return _elt[isoutput];
+    }
+    int port(bool isoutput) const {
+	return _port[isoutput];
+    }
     delt *from_elt() const {
-	return _from_elt;
+	return _elt[1];
     }
     int from_port() const {
-	return _from_port;
+	return _port[1];
     }
     delt *to_elt() const {
-	return _to_elt;
+	return _elt[0];
     }
     int to_port() const {
-	return _to_port;
+	return _port[0];
     }
+
+    bool change_count(unsigned new_count);
 
     bool visible() const;
     
@@ -131,12 +141,14 @@ class dconn : public dwidget { public:
 
   private:
 
-    delt *_from_elt;
-    int _from_port;
-    delt *_to_elt;
-    int _to_port;
+    delt *_elt[2];
+    int _port[2];
+    unsigned _count_last;
+    unsigned _count_change;
     Vector<point> _route;
 
+    static inline int change_display(unsigned change);
+    
     friend class delt;
 
 };
@@ -218,7 +230,15 @@ class delt : public dwidget { public:
 	} while (d && d != this);
 	return 0;
     }
-    delt *find_flow_split(int port, bool isoutput);
+    inline delt *find_port_container(bool isoutput, int port) {
+	if (display() == dedisp_fsplit)
+	    return find_flow_split(isoutput, port);
+	else if (display() == dedisp_vsplit)
+	    return find_split(isoutput ? desplit_outputs : desplit_inputs);
+	else
+	    return this;
+    }
+    dconn *find_connection(bool isoutput, int port);
 
     bool root() const {
 	return !_parent;
@@ -389,6 +409,7 @@ class delt : public dwidget { public:
     const char *parse_connection_dot(delt *e1, const HashTable<int, delt *> &z_index_lookup, const char *s, const char *end);
     void create_bbox_contents(double bbox[4], double mbbox[4], bool include_compound_ports) const;
     void shift_contents(double dx, double dy) const;
+    delt *find_flow_split(bool isoutput, int port);
 
     bool reccss(crouter *cr, int change, int *z_index_ptr = 0);
     void layout_contents(dcontext &dcx);
@@ -447,7 +468,7 @@ inline void dwidget::draw(dcontext &dcx) {
 
 inline bool dconn::visible() const {
     // see also dedisp_visible
-    return _from_elt->display() > 0 && _to_elt->display() > 0;
+    return _elt[0]->display() > 0 && _elt[1]->display() > 0;
 }
 
 inline double delt::port_position(bool isoutput, int port,
@@ -463,19 +484,25 @@ inline double delt::port_position(bool isoutput, int port,
 }
 
 inline dconn::dconn(delt *fe, int fp, delt *te, int tp, int z_index)
-    : dwidget(dw_conn, z_index), _from_port(fp), _to_port(tp)
+    : dwidget(dw_conn, z_index), _count_last(~0U), _count_change(~0U)
 {
     assert(fe->display() != dedisp_placeholder
 	   && te->display() != dedisp_placeholder);
-    if (fe->display() == dedisp_fsplit)
-	fe = fe->find_flow_split(fp, true);
-    if (te->display() == dedisp_fsplit)
-	te = te->find_flow_split(tp, false);
-    else if (te->display() == dedisp_vsplit)
-	te = te->find_split(desplit_inputs);
-    assert(fe && te);
-    _from_elt = fe;
-    _to_elt = te;
+    _elt[1] = fe->find_port_container(true, fp);
+    _elt[0] = te->find_port_container(false, tp);
+    assert(_elt[0] && _elt[1]);
+    _port[1] = fp;
+    _port[0] = tp;
+}
+
+inline int dconn::change_display(unsigned change)
+{
+    if (change == ~0U || (change >= 1 && change < 4))
+	return 1;
+    else if (change == 0)
+	return 0;
+    else
+	return sizeof(unsigned) * 8 - ffs_msb(change);
 }
 
 }

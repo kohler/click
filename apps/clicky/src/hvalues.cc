@@ -261,13 +261,16 @@ handler_value *handler_values::hard_find_placeholder(const String &hname,
 						     int flags,
 						     int autorefresh_period)
 {
-    int dot = hname.find_right('.');
-    if (dot < 0 || !_cr->driver())
+    if (!_cr->driver())
 	return 0;
-    handler_value *hh = _hv.find_insert(hname.substring(0, dot + 1) + "handlers").get();
+
+    int dot = hname.find_right('.');
+    String base = (dot > 0 ? hname.substring(0, dot + 1) : String());
+    handler_value *hh = _hv.find_insert(base + "handlers").get();
     if (hh->have_hvalue())
 	return 0;
     hh->refresh(_cr);
+
     handler_value *hv = _hv.find_insert(hname).get();
     hv->set_flags(_cr, hv->flags() | flags);
     if (autorefresh_period > 10
