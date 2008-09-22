@@ -308,7 +308,8 @@ int
 ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 {
     // File positions:
-    // 0x000001           ..
+    // 0x000000           ..
+    // 0x000001           .
     // 0x000002-0x0FFFFF  ignored
     // 0x100000-0x1FFFFF  handlers
     // 0x200000-0x2FFFFF  numbers
