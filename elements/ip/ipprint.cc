@@ -386,7 +386,9 @@ IPPrint::simple_action(Packet *p)
 		data = p->data();
 
 	    int bytes = _bytes;
-	    if (bytes < 0 || (int) (p->end_data() - data) < bytes)
+	    if (data >= p->end_data())
+		bytes = 0;
+	    else if (bytes < 0 || (int) (p->end_data() - data) < bytes)
 		bytes = p->end_data() - data;
 	    int amt = 3*bytes + (bytes/4+1) + 3*(bytes/24+1) + 1;
 	    
