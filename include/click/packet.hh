@@ -249,6 +249,7 @@ class Packet { public:
     inline int mac_length() const;
     inline void set_mac_header(const unsigned char *p);
     inline void set_mac_header(const unsigned char *p, uint32_t len);
+    inline void clear_mac_header();
 
     inline bool has_network_header() const;
     inline const unsigned char *network_header() const;
@@ -257,11 +258,13 @@ class Packet { public:
     inline int network_length() const;
     inline void set_network_header(const unsigned char *p, uint32_t len);
     inline void set_network_header_length(uint32_t len);
+    inline void clear_network_header();
 
     inline bool has_transport_header() const;
     inline const unsigned char *transport_header() const;
     inline int transport_header_offset() const;
     inline int transport_length() const;
+    inline void clear_transport_header();
 
     // CONVENIENCE HEADER ANNOTATIONS
     inline const click_ether *ether_header() const;
@@ -885,7 +888,8 @@ Packet::set_prev(Packet *p)
 #endif
 }
 
-/** @brief Return true iff the packet's MAC header pointer is set. */
+/** @brief Return true iff the packet's MAC header pointer is set.
+ * @sa set_mac_header, clear_mac_header */
 inline bool
 Packet::has_mac_header() const
 {
@@ -902,7 +906,8 @@ Packet::has_mac_header() const
 
 /** @brief Return the packet's MAC header pointer.
  * @warning Not useful if !has_mac_header().
- * @sa ether_header, set_mac_header, mac_header_length, mac_length */
+ * @sa ether_header, set_mac_header, clear_mac_header, mac_header_length,
+ * mac_length */
 inline const unsigned char *
 Packet::mac_header() const
 {
@@ -917,7 +922,8 @@ Packet::mac_header() const
 #endif
 }
 
-/** @brief Return true iff the packet's network header pointer is set. */
+/** @brief Return true iff the packet's network header pointer is set.
+ * @sa set_network_header, clear_network_header */
 inline bool
 Packet::has_network_header() const
 {
@@ -938,8 +944,8 @@ Packet::has_network_header() const
 
 /** @brief Return the packet's network header pointer.
  * @warning Not useful if !has_network_header().
- * @sa ip_header, ip6_header, set_network_header, network_header_length,
- * network_length */
+ * @sa ip_header, ip6_header, set_network_header, clear_network_header,
+ * network_header_length, network_length */
 inline const unsigned char *
 Packet::network_header() const
 {
@@ -954,7 +960,8 @@ Packet::network_header() const
 #endif
 }
 
-/** @brief Return true iff the packet's network header pointer is set. */
+/** @brief Return true iff the packet's network header pointer is set.
+ * @sa set_network_header, clear_transport_header */
 inline bool
 Packet::has_transport_header() const
 {
@@ -976,7 +983,7 @@ Packet::has_transport_header() const
 /** @brief Return the packet's transport header pointer.
  * @warning Not useful if !has_transport_header().
  * @sa tcp_header, udp_header, icmp_header, set_transport_header,
- * transport_length */
+ * clear_transport_header, transport_length */
 inline const unsigned char *
 Packet::transport_header() const
 {
@@ -1586,6 +1593,25 @@ Packet::set_ether_header(const click_ether *ethh)
     set_mac_header(reinterpret_cast<const unsigned char *>(ethh), 14);
 }
 
+/** @brief Unset the MAC header pointer.
+ * @post has_mac_header() == false
+ * Does not affect the network or transport header pointers. */
+inline void
+Packet::clear_mac_header()
+{
+#if CLICK_LINUXMODULE	/* Linux kernel module */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
+    skb()->mac_header = ~0U;
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    skb()->mac_header = 0;
+# else
+    skb()->mac.raw = 0;
+# endif
+#else				/* User-space and BSD kernel module */
+    _mac = 0;
+#endif
+}
+
 inline WritablePacket *
 Packet::push_mac_header(uint32_t len)
 {
@@ -1688,6 +1714,25 @@ Packet::set_ip6_header(const click_ip6 *ip6h)
     set_ip6_header(ip6h, 40);
 }
 
+/** @brief Unset the network header pointer.
+ * @post has_network_header() == false
+ * Does not affect the MAC or transport header pointers. */
+inline void
+Packet::clear_network_header()
+{
+#if CLICK_LINUXMODULE	/* Linux kernel module */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
+    skb()->network_header = ~0U;
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    skb()->network_header = 0;
+# else
+    skb()->nh.raw = 0;
+# endif
+#else				/* User-space and BSD kernel module */
+    _nh = 0;
+#endif
+}
+
 /** @brief Return the offset from the packet data to the MAC header.
  * @return mac_header() - data()
  * @warning Not useful if !has_mac_header(). */
@@ -1785,6 +1830,25 @@ Packet::transport_header_offset() const
     return transport_header() - data();
 }
 
+/** @brief Unset the transport header pointer.
+ * @post has_transport_header() == false
+ * Does not affect the MAC or network header pointers. */
+inline void
+Packet::clear_transport_header()
+{
+#if CLICK_LINUXMODULE	/* Linux kernel module */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
+    skb()->transport_header = ~0U;
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    skb()->transport_header = 0;
+# else
+    skb()->h.raw = 0;
+# endif
+#else				/* User-space and BSD kernel module */
+    _h = 0;
+#endif
+}
+
 /** @brief Clear all packet annotations.
  * @param  all  If true, clear all annotations.  If false, clear only Click's
  *   internal annotations.
@@ -1806,18 +1870,9 @@ Packet::clear_annotations(bool all)
 	set_device_anno(0);
 	set_timestamp_anno(Timestamp());
 
-#if CLICK_LINUXMODULE
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
-	struct sk_buff *mskb = skb();
-	mskb->mac_header = mskb->network_header = mskb->transport_header = ~0U;
-# else
-	set_mac_header(0);
-	set_network_header(0, 0);
-# endif
-#else
-	set_mac_header(0);
-	set_network_header(0, 0);
-#endif
+	clear_mac_header();
+	clear_network_header();
+	clear_transport_header();
 
 	set_next(0);
 	set_prev(0);
