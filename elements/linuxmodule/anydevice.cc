@@ -261,11 +261,11 @@ AnyDeviceMap::lookup_unknown(net_device *dev, AnyDevice *last) const
 	return 0;
 
     // look by device name and Ethernet address
-    String dev_name = dev->name;
+    int dev_name_len = strlen(dev->name);
     unsigned char en[6];
     
     for (AnyDevice *d = (last ? last->_next : _unknown_map); d; d = d->_next)
-	if (d->devname() == dev_name) {
+	if (d->devname().equals(dev->name, dev_name_len)) {
 	    d->_devname_exists = true;
 	    return d;
 	} else if ((dev->type == ARPHRD_ETHER || dev->type == ARPHRD_80211)
@@ -277,16 +277,19 @@ AnyDeviceMap::lookup_unknown(net_device *dev, AnyDevice *last) const
     return 0;
 }
 
-void
-AnyDeviceMap::lookup_all(net_device *dev, bool known, Vector<AnyDevice *> &v) const
+int
+AnyDeviceMap::lookup_all(net_device *dev, bool known, AnyDevice **dev_store,
+			 int ndev) const
     // must be called between AnyDeviceMap::lock() ... unlock()
 {
+    int i = 0;
     if (known)
-	for (AnyDevice *d = 0; d = lookup(dev, d); v.push_back(d))
-	    /* nada */;
+	for (AnyDevice *d = 0; i < ndev && (d = lookup(dev, d)); ++i)
+	    dev_store[i] = d;
     else
-	for (AnyDevice *d = 0; d = lookup_unknown(dev, d); v.push_back(d))
-	    /* nada */;
+	for (AnyDevice *d = 0; i < ndev && (d = lookup_unknown(dev, d)); ++i)
+	    dev_store[i] = d;
+    return i;
 }
 
 

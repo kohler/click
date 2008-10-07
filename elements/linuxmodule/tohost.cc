@@ -119,10 +119,10 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
     if (flags == NETDEV_DOWN || flags == NETDEV_UP) {
 	bool exists = (flags != NETDEV_UP);
 	net_device *dev = (net_device *)v;
-	Vector<AnyDevice *> es;
 	to_host_map.lock(true);
-	to_host_map.lookup_all(dev, exists, es);
-	for (int i = 0; i < es.size(); i++)
+	AnyDevice *es[8];
+	int nes = to_host_map.lookup_all(dev, exists, es, 8);
+	for (int i = 0; i < nes; i++)
 	    ((ToHost *)(es[i]))->set_device(flags == NETDEV_DOWN ? 0 : dev, &to_host_map, true);
 	to_host_map.unlock(true);
     }

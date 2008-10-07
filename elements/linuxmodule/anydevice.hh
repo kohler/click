@@ -170,7 +170,7 @@ class AnyDeviceMap { public:
     inline void unlock(bool write);
     inline AnyDevice *lookup(net_device *, AnyDevice *) const;
     AnyDevice *lookup_unknown(net_device *, AnyDevice *) const;
-    void lookup_all(net_device *, bool known, Vector<AnyDevice *> &) const;
+    int lookup_all(net_device *, bool known, AnyDevice **dev_store, int ndev) const;
     void insert(AnyDevice *, bool locked);
     void remove(AnyDevice *, bool locked);
 
