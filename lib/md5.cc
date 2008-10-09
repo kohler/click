@@ -389,7 +389,7 @@ md5_finish(md5_state_t *pms, md5_byte_t digest[16])
 int
 md5_finish_text(md5_state_t *pms, char *buf, int allow_at)
 {
-	static const char *chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_@";
+	static const char chars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_@";
 	md5_byte_t digest[16];
 	char *initial_buf = buf;
 	int bit;

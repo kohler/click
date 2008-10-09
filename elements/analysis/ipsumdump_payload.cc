@@ -32,7 +32,7 @@ CLICK_DECLS
 
 namespace IPSummaryDump {
 
-enum { T_PAYLOAD_LEN, T_PAYLOAD, T_PAYLOAD_MD5 };
+enum { T_PAYLOAD_LEN, T_PAYLOAD, T_PAYLOAD_MD5, T_PAYLOAD_MD5_HEX };
 
 static void payload_info(Packet *p, const click_ip *iph,
 			 int32_t &off, uint32_t &len)
@@ -72,8 +72,9 @@ static bool payload_extract(PacketDesc &d, const FieldWriter *f)
 	    d.v += EXTRA_LENGTH_ANNO(d.p);
 	return true;
     }
-      case T_PAYLOAD:
-      case T_PAYLOAD_MD5:
+    case T_PAYLOAD:
+    case T_PAYLOAD_MD5:
+    case T_PAYLOAD_MD5_HEX:
 	return true;
       default:
 	return false;
@@ -112,7 +113,8 @@ static void payload_outa(const PacketDesc& d, const FieldWriter *f)
 {
     switch (f->user_data) {
     case T_PAYLOAD:
-    case T_PAYLOAD_MD5: {
+    case T_PAYLOAD_MD5:
+    case T_PAYLOAD_MD5_HEX: {
 	int32_t off;
 	uint32_t len;
 	payload_info(d.p, d.iph, off, len);
@@ -125,8 +127,22 @@ static void payload_outa(const PacketDesc& d, const FieldWriter *f)
 	    md5_state_t pms;
 	    md5_init(&pms);
 	    md5_append(&pms, (const md5_byte_t *) (d.p->data() + off), len);
-	    if (char *buf = d.sa->extend(MD5_TEXT_DIGEST_SIZE))
-		md5_finish_text(&pms, buf, 1);
+
+	    if (f->user_data == T_PAYLOAD_MD5_HEX) {
+		if (char *buf = d.sa->extend(MD5_DIGEST_SIZE * 2)) {
+		    md5_finish(&pms, (md5_byte_t *) buf);
+		    const char digits[] = "0123456789abcdef";
+		    for (int i = MD5_DIGEST_SIZE - 1; i >= 0; --i) {
+			int b = (unsigned char) buf[i];
+			buf[2*i + 1] = digits[b & 15];
+			buf[2*i] = digits[b >> 4];
+		    }
+		}
+	    } else {
+		if (char *buf = d.sa->extend(MD5_TEXT_DIGEST_SIZE))
+		    md5_finish_text(&pms, buf, 1);
+	    }
+
 	    md5_free(&pms);
 	}
 	break;
@@ -155,7 +171,8 @@ static bool payload_ina(PacketOdesc& d, const String &str, const FieldReader *f)
 static void payload_outb(const PacketDesc& d, bool, const FieldWriter *f)
 {
     switch (f->user_data) {
-    case T_PAYLOAD_MD5: {
+    case T_PAYLOAD_MD5:
+    case T_PAYLOAD_MD5_HEX: {
 	int32_t off;
 	uint32_t len;
 	payload_info(d.p, d.iph, off, len);
@@ -178,6 +195,8 @@ static const FieldWriter payload_writers[] = {
     { "payload", B_NOTALLOWED, T_PAYLOAD,
       ip_prepare, payload_extract, payload_outa, 0 },
     { "payload_md5", B_16, T_PAYLOAD_MD5,
+      ip_prepare, payload_extract, payload_outa, payload_outb },
+    { "payload_md5_hex", B_16, T_PAYLOAD_MD5_HEX,
       ip_prepare, payload_extract, payload_outa, payload_outb }
 };
 
