@@ -40,17 +40,18 @@ static void payload_info(Packet *p, const click_ip *iph,
     if (iph) {
 	len = ntohs(iph->ip_len);
 	off = p->transport_header_offset();
+	uint32_t nlen = len + p->network_header_offset();
 	if (IP_FIRSTFRAG(iph))
 	    switch (iph->ip_p) {
 	    case IP_PROTO_TCP:
 		if (p->transport_length() >= 13
-		    && ((uint32_t) off + (p->tcp_header()->th_off << 2) <= len
+		    && ((uint32_t) off + (p->tcp_header()->th_off << 2) <= nlen
 			|| len == 0))
 		    off += (p->tcp_header()->th_off << 2);
 		break;
 	    case IP_PROTO_UDP:
 	    case IP_PROTO_UDPLITE:
-		if (off + sizeof(click_udp) <= len || len == 0)
+		if (off + sizeof(click_udp) <= nlen || len == 0)
 		    off += sizeof(click_udp);
 		break;
 	    }
