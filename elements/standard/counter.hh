@@ -28,12 +28,14 @@ Keyword arguments are:
 =item COUNT_CALL
 
 Argument is `I<N> I<HANDLER> [I<VALUE>]'. When the packet count reaches I<N>,
-call the write handler I<HANDLER> with value I<VALUE>.
+call the write handler I<HANDLER> with value I<VALUE> before emitting the
+packet.
 
 =item BYTE_COUNT_CALL
 
 Argument is `I<N> I<HANDLER> [I<VALUE>]'. When the byte count reaches or
-exceeds I<N>, call the write handler I<HANDLER> with value I<VALUE>.
+exceeds I<N>, call the write handler I<HANDLER> with value I<VALUE> before
+emitting the packet.
 
 =back
 
