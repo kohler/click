@@ -159,7 +159,7 @@ Actual packet output immediately follows the 'C<!bad>' line.  Default is true.
 
 Here are a couple lines from the start of a sample verbose dump.
 
-  !IPSummaryDump 1.2
+  !IPSummaryDump 1.3
   !creator "aciri-ipsumdump -i wvlan0"
   !host no.lcdf.org
   !runtime 996022410.322317 (Tue Jul 24 17:53:30 2001)
@@ -201,7 +201,8 @@ and 'C<Y>' for ECE and CWR, respectively.
 
 Verson 1.0 of the IPSummaryDump file format expressed fragment offsets in
 8-byte units, not bytes. Content types in old dumps were sometimes quoted and
-contained spaces instead of underscores.
+contained spaces instead of underscores. In Version 1.2 files payload MD5
+checksums were sometimes incorrect.
 
 =head1 IP OPTIONS
 

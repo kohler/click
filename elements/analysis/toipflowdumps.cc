@@ -192,7 +192,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
     sa.reserve(_npkt * (_binary ? 28 : 40) + _note_text.length() + _nnote * 8 + _opt_info.length() + 16);
     
     if (!_outputted) {
-	sa << "!IPSummaryDump 1.2\n!flowid "
+	sa << "!IPSummaryDump 1.3\n!flowid "
 	   << _flowid.saddr() << ' ' << ntohs(_flowid.sport()) << ' '
 	   << _flowid.daddr() << ' ' << ntohs(_flowid.dport()) << ' '
 	   << (_ip_p == IP_PROTO_TCP ? 'T' : 'U')

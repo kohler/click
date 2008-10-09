@@ -10,10 +10,12 @@ class IPFlowID;
 
 namespace IPSummaryDump {
 
-enum { MAJOR_VERSION = 1, MINOR_VERSION = 2 };
+enum { MAJOR_VERSION = 1, MINOR_VERSION = 3 };
 // MINOR_VERSION 0 has W_IP_FRAGOFF fields in multiples of 8 bytes.
 // MINOR_VERSION 1 uses 'W' for TCP flag CWR (now we use 'C'), and often
 // uses ':' in sack blocks.
+// MINOR_VERSION 2 can have incorrect payload MD5 checksums for some packets
+// (usually short packets with link headers).
     
 
 struct PacketDesc {
