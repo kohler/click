@@ -60,7 +60,6 @@ CLICKDIR/tools			Click tools
 CLICKDIR/tools/lib		... common code for tools
 CLICKDIR/tools/click-align	... handles alignment for non-x86 machines
 CLICKDIR/tools/click-combine	... merges routers into combined configuration
-CLICKDIR/tools/click-compile	... compiles element source code portably
 CLICKDIR/tools/click-devirtualize   ... removes virtual functions from source
 CLICKDIR/tools/click-fastclassifier ... specializes Classifiers into C++ code
 CLICKDIR/tools/click-mkmindriver    ... build environments for minimal drivers

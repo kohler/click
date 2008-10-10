@@ -1124,7 +1124,7 @@ makepackage () {
     dir=
     pkg=
     srcs=
-    quiet=
+    if test -n "$verbose"; then quiet=V=1; else quiet=; fi
     cflags=
     while [ x"$1" != x ]; do
     case $1 in
@@ -1149,6 +1149,8 @@ makepackage () {
 	dir="`echo "$1" | sed 's/^[^=]*=//'`"/; shift 1;;
     -q|--q|--qu|--qui|--quie|--quiet)
 	quiet="-s"; shift 1;;
+    -V|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
+	quiet="V=1"; shift 1;;
     -h|--h|--he|--hel|--help)
 	cat <<'EOF' 1>&2
 'Click-buildtool makepackage' builds a Click package for the specified
@@ -1160,6 +1162,7 @@ Options:
   -t, --driver DRIVER      Set target driver to DRIVER ('userlevel',
                            'linuxmodule', 'bsdmodule', 'ns', or 'tool').
   -q, --quiet              Build quietly (may be ignored).
+  -V, --verbose            Build verbosely (may be ignored).
   -C, --directory DIR      Switch to DIR directory before building.
   -h, --help               Print this message and exit.
   -[other options]         Passed to the C/C++ compiler.
@@ -1349,6 +1352,7 @@ Usage: click-buildtool elem2make [-V] [-p PREFIX] < [ELEMENTS]
    or: click-buildtool kbuild
    or: click-buildtool kversion [--gpl]
    or: click-buildtool ksyms OBJS > KSYMSFILE
+   or: click-buildtool [--cflags | --otherlibs | --toolcflags | --toollibs]
 
 Options:
   -V, --verbose            Print more information.
@@ -1380,6 +1384,15 @@ EOF
      shift 1; kbuild "$@"; exit 0;;
   ksyms)
      shift 1; ksyms "$@"; exit 0;;
+  --c|--cf|--cfl|--cfla|--cflag|--cflags|--d|--de|--def|--defs)
+     echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ -I@includedir@; exit 0;;
+  --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)
+     echo @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@ @PTHREAD_LIBS@ @POSIX_CLOCK_LIBS@;
+     exit 0;;
+  --toolc|--toolcf|--toolcfl|--toolcfla|--toolcflag|--toolcflags)
+     echo -DCLICK_TOOL -I@includedir@; exit 0;;
+  --tooll|--toolli|--toollib|--toollibs)
+     echo -L@libdir@ -lclicktool @DL_LIBS@ @SOCKET_LIBS@; exit 0;;
   *)
      echo "Usage: click-buildtool TOOLNAME [ARGUMENTS]
 Try 'click-buildtool --help' for more information." 1>&2

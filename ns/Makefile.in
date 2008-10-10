@@ -78,7 +78,7 @@ DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(srcdir) -I$(top_srcdir) @PCAP_INCLUDES@
 LDFLAGS = @LDMODULEFLAGS@
-LIBS = @LIBS@ `$(top_builddir)/click-compile --otherlibs` $(ELEMENT_LIBS)
+LIBS = @LIBS@ `$(top_builddir)/click-buildtool --otherlibs` $(ELEMENT_LIBS)
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
 CXXLD = $(CXX)

@@ -71,7 +71,7 @@ AC_SUBST(clickbindir)
 AC_SUBST(clicksbindir)
 AC_SUBST(clickdatadir)
 
-CLICKTOOL_LIBS='`$(clickbindir)/click-compile --toollibs`'
+CLICKTOOL_LIBS='`$(clickbindir)/click-buildtool --toollibs`'
 AC_SUBST(CLICKTOOL_LIBS)
 
 dnl

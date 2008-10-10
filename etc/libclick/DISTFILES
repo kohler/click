@@ -6,7 +6,6 @@ README
 
 etc/libclick/lc-Makefile.in:Makefile.in
 click-buildtool.in
-click-compile.in
 click-mkelemmap
 config.guess
 config.h.in

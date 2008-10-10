@@ -263,7 +263,7 @@ click_compile_archive_file(const Vector<ArchiveElement> &archive, int ai,
 	while (eb < el && isspace((unsigned char) el[-1]))
 	    el--;
 
-	// check for click-compile
+	// check for compile arguments signalled by "click-compile"
 	if (eb + 20 < send && memcmp(eb, "/** click-compile:", 18) == 0
 	    && el[-1] == '/' && el[-2] == '*') {
 	    for (const char *x = eb + 18; x < el - 2; x++)

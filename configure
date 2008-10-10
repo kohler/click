@@ -16114,7 +16114,7 @@ echo $ECHO_N "checking for Linux 2.6 compilation flags... $ECHO_C" >&6; }
 	echo "include $linuxdir/Makefile
 fwablongie:
 	@echo \$(CFLAGS)" >conftest.mk
-	make -C "${linuxdir}" M="`pwd`" -f "`pwd`/conftest.mk" --no-print-directory fwablongie >conftest.dat
+	(unset CFLAGS; make -C "${linuxdir}" M="`pwd`" -f "`pwd`/conftest.mk" --no-print-directory fwablongie) >conftest.dat
 	if test $? != 0; then
 	    { echo "$as_me:$LINENO: result: not found" >&5
 echo "${ECHO_T}not found" >&6; }

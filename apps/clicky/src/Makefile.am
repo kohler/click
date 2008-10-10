@@ -4,7 +4,7 @@ INCLUDES = \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
 	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \
 	@PACKAGE_CFLAGS@ \
-	`@clickbindir@/click-compile --toolcflags`
+	`@clickbindir@/click-buildtool --toolcflags`
 
 bin_PROGRAMS = clicky
 

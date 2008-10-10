@@ -924,7 +924,7 @@ if test $ac_have_linux_kernel = y; then
 	echo "include $linuxdir/Makefile
 fwablongie:
 	@echo \$(CFLAGS)" >conftest.mk
-	make -C "${linuxdir}" M="`pwd`" -f "`pwd`/conftest.mk" --no-print-directory fwablongie >conftest.dat
+	(unset CFLAGS; make -C "${linuxdir}" M="`pwd`" -f "`pwd`/conftest.mk" --no-print-directory fwablongie) >conftest.dat
 	if test $? != 0; then
 	    AC_MSG_RESULT([not found])
 	    AC_MSG_ERROR([
