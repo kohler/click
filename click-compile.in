@@ -56,7 +56,7 @@ while true; do
 	echo -DCLICK_TOOL -I$includedir
 	exit=y; shift 1;;
       --tooll|--toolli|--toollib|--toollibs)
-	echo -L$libdir -lclicktool @DL_LIBS@ @SOCKET_LIBS@
+	echo -L$libdir -lclicktool @DL_LIBS@ @SOCKET_LIBS@ @POSIX_CLOCK_LIBS@
 	exit=y; shift 1;;
       --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)
 	echo @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@ @PTHREAD_LIBS@ @POSIX_CLOCK_LIBS@

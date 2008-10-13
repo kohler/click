@@ -519,7 +519,7 @@ Timestamp::operator unspecified_bool_type() const
 inline void
 Timestamp::set_now()
 {
-#if TIMESTAMP_NANOSEC && (!CLICK_USERLEVEL || HAVE_USE_CLOCK_GETTIME)
+#if TIMESTAMP_NANOSEC && (CLICK_LINUXMODULE || CLICK_BSDMODULE || HAVE_USE_CLOCK_GETTIME)
     // nanosecond precision
 # if TIMESTAMP_PUNS_TIMESPEC
     struct timespec *tsp = (struct timespec *) this;

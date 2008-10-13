@@ -1392,7 +1392,7 @@ EOF
   --toolc|--toolcf|--toolcfl|--toolcfla|--toolcflag|--toolcflags)
      echo -DCLICK_TOOL -I@includedir@; exit 0;;
   --tooll|--toolli|--toollib|--toollibs)
-     echo -L@libdir@ -lclicktool @DL_LIBS@ @SOCKET_LIBS@; exit 0;;
+     echo -L@libdir@ -lclicktool @DL_LIBS@ @SOCKET_LIBS@ @POSIX_CLOCK_LIBS@; exit 0;;
   *)
      echo "Usage: click-buildtool TOOLNAME [ARGUMENTS]
 Try 'click-buildtool --help' for more information." 1>&2
