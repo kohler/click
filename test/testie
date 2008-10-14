@@ -7,6 +7,7 @@ require 5.006;
 ($attempts, $internal_errors, $errors, $require_errors) = (0, 0, 0, 0);
 ($preserve_temporaries, $expand_mode) = (0, 0);
 ($running_pid) = (0);
+%require_error_commands = ();
 
 ## utilities
 
@@ -81,10 +82,11 @@ sub command_at ($$;$) {
 }
 
 # report an error
-sub file_err ($$) {
-    my($tt, $text) = @_;
+sub file_err ($$;$) {
+    my($tt, $text, $lineno) = @_;
     $text .= "\n" if $text !~ /\n$/s;
-    print STDERR $tt->{"_file"}, ":", $tt->{"_line"}, ': ', $text;
+    $lineno = $tt->{"_line"} if !defined($lineno);
+    print STDERR $tt->{"_file"}, ":", $lineno, ': ', $text;
     $tt->{'err'}++;
 }
 
@@ -273,6 +275,8 @@ sub _read_file_section ($$$$) {
     }
     
     # read contents
+    my($seclineno) = $tt->{"_line"};
+    my($firstline) = $tt->{"_file"} . ":" . ($seclineno + 1);
     my($file_data) = "";
     if (defined($length)) {
 	my($t);
@@ -284,7 +288,8 @@ sub _read_file_section ($$$$) {
 		$file_data = substr($file_data, 0, $length);
 	    }
 	}
-	$tt->file_err("file too short") if length($file_data) != $length;
+	$tt->file_err("file too short", $seclineno)
+	    if length($file_data) != $length;
     } else {
 	$file_data = $tt->_read_text();
     }
@@ -313,21 +318,25 @@ sub _read_file_section ($$$$) {
 	if (($fn eq 'stdin' && $secname ne 'file')
 	    || (($fn eq 'stdout' || $fn eq 'stderr') && $secname eq 'file')
 	    || ($fn eq 'all' && ($secname ne 'ignore' && $secname ne 'ignorev' && $secname ne 'ignorex'))) {
-	    $tt->file_err("'$fn' not meaningful for '\%$secname'");
+	    $tt->file_err("'$fn' not meaningful for '\%$secname'", $seclineno);
 	}
 
 	my($hashkey) = $prefix . ":" . $fn;
-	if ($fn !~ m/^[A-Za-z_.0-9]+$/) {
-	    $tt->file_err("fileref error: '$fn' contains illegal characters");
+	if (!($fn =~ m,\A[-A-Za-z_0-9.]+\Z,
+	      || ($fn =~ m,\A[-A-Za-z_0-9./]+\Z,
+		  && $fn !~ m,(\A\.\./|/\.\./|/\.\.\Z|\A/|//|/\Z),))) {
+	    $tt->file_err("bad filename '\%$secname $fn'", $seclineno);
+	    next;
 	} elsif (!exists($tt->{$hashkey})) {
 	    push @{$tt->{$secname}}, $fn;
 	    $tt->{$hashkey} = [];
 	} elsif (!$alternate) {
-	    $tt->file_err("'\%$secname $fn' already defined");
+	    $tt->file_err("'\%$secname $fn' already defined", $seclineno);
 	}
 
 	push @{$tt->{$hashkey}}, $file_data;
 	$tt->{"F:$fn"} = 1;
+	$tt->{"$hashkey:firstline"} = $firstline;
     }
 }
 
@@ -453,8 +462,24 @@ sub empty ($) {
 
 sub save_files ($&) {
     my($tt, $fileref_subr) = @_;
-    foreach my $fn (@{$tt->{'file'}}) {
-	my($actual) = $fileref_subr->($fn);
+    my($fn, $dirn, $actual);
+
+    # create implied subdirectories
+    foreach $fn (keys %$tt) {
+	next if $fn !~ m,\AF:(.*)/([^/]*)\Z,;
+	$dirn = $1;
+	while (!-d $fileref_subr->($dirn)) {
+	    $fn = $dirn;
+	    $fn = $1 while ($fn =~ m,\A(.*)/([^/]*)\Z,
+			    && !-d $fileref_subr->($1));
+	    $actual = $fileref_subr->($fn);
+	    mkdir $actual || die "$actual: $!\n";
+	}
+    }
+
+    # write '%file' contents
+    foreach $fn (@{$tt->{'file'}}) {
+	$actual = $fileref_subr->($fn);
 	next if !defined($actual);
 	open OUT, ">", $actual || die "$actual: $!\n";
 	print OUT $tt->{"f:$fn"}->[0];
@@ -552,9 +577,9 @@ sub output_error ($$$$) {
     
     my($cmd) = $tt->command_at($lineno, $script_type);
 
-    # exit early if quiet
+    # exit early if quiet
     return 1 if $tt->{$script_type . '_quietline'}->{$lineno} && !$verbose;
-    
+
     if ($errortext =~ /^testie_error:/) {
 	while ($errortext =~ /^testie_error:([^\n]*)/g) {
 	    print STDERR $lineno, ": ", $1, "\n";
@@ -572,83 +597,65 @@ sub output_error ($$$$) {
 	if (length($cmd) > 40) {
 	    $cmd = substr($cmd, 0, 40) . "...";
 	}
-	print STDERR $lineno, ": $failure_text at '$cmd'\n";
-	while ($errortext =~ /([^\n]*)/g) {
-	    print STDERR $lineno, ":   $1\n" if $1 ne '';
+	# if nonverbose requirement, remember command, don't print error
+	if (defined($script_type) && $script_type eq 'require' && !$verbose) {
+	    $::require_error_commands{$cmd} = 1;
+	} else {
+	    print STDERR $lineno, ": $failure_text at '$cmd'\n";
+	    while ($errortext =~ /([^\n]*)/g) {
+		print STDERR $lineno, ":   $1\n" if $1 ne '';
+	    }
 	}
     }
 
     1;
 }
 
-sub _output_expectation_error ($$$$$$$$) {
-    my($fp, $efn, $lineno, $wanted, $got, $mode, $subtest, $message) = @_;
+sub _output_expectation_error ($$$) {
+    my($fp, $efn, $etrack) = @_;
 
     # fix subtest description
-    if (defined($subtest)) {
+    if (defined($etrack->{"subtest"})) {
 	$fp =~ s/: \Z/ /;
-	$fp .= "subtest $subtest: ";
+	$fp .= "subtest " . $etrack->{"subtest"} . ": ";
+    }
+    if (defined($etrack->{"expectedline"})) {
+	$fp = $etrack->{"expectedline"} . ": ";
     }
     
     # output message
     if ($efn eq 'stdout') {
-	print STDERR $fp, "standard output has unexpected value starting at line $lineno\n";
+	print STDERR $fp, "standard output has unexpected value starting at line " . $etrack->{"textline"} . "\n";
     } elsif ($efn eq 'stderr') {
-	print STDERR $fp, "standard error has unexpected value starting at line $lineno\n";
+	print STDERR $fp, "standard error has unexpected value starting at line " . $etrack->{"textline"} . "\n";
     } else {
-	print STDERR $fp, "file $efn has unexpected value starting at line $lineno\n";
+	print STDERR $fp, "file $efn has unexpected value starting at line " . $etrack->{"textline"} . "\n";
     }
 
-    # output '$wanted' and '$got' if possible
-    $wanted = "<end of file>" if $wanted eq "\376";
-    $wanted =~ s/\r?\n?\Z//;
-    $got = "<end of file>" if $got eq "\376";
-    $got =~ s/\r?\n?\Z//;
-    if ($wanted =~ /\A[\t\040-\176]*\Z/ && $got =~ /\A[\t\040-\176]*\Z/) {
-	$wanted =~ s/\s*\{\{\?.*?\}\}\s*//g if $mode != 0;
-	print STDERR $fp, "$efn:$lineno: expected '$wanted'\n", $fp, "$efn:$lineno: but got  '$got'\n";
+    # output expected and text data if possible
+    $etrack->{"expected"} = "<end of file>" if $etrack->{"expected"} eq "\376";
+    $etrack->{"expected"} =~ s/\r?\n?\Z//;
+    $etrack->{"text"} = "<end of file>" if $etrack->{"text"} eq "\376";
+    $etrack->{"text"} =~ s/\r?\n?\Z//;
+    if ($etrack->{"expected"} =~ /\A[\t\040-\176]*\Z/
+	&& $etrack->{"text"} =~ /\A[\t\040-\176]*\Z/) {
+	$etrack->{"expected"} =~ s/\s*\{\{\?.*?\}\}\s*//g if $etrack->{"mode"} != 0;
+	print STDERR $fp, $efn, ":", $etrack->{"textline"}, ": expected '", $etrack->{"expected"}, "'\n",
+		$fp, $efn, ":", $etrack->{"textline"}, ": but got  '", $etrack->{"text"}, "'\n";
     }
-    if (defined($message)) {
-	print STDERR $fp, "$efn:$lineno: ", $message, "\n";
+    if (defined($etrack->{"message"})) {
+	print STDERR $fp, $efn, ":", $etrack->{"textline"}, ": ", $etrack->{"message"}, "\n";
     }
 
     # maintain error count
     $::errors++;
 }
 
-sub _check_one_expect ($$$) {
-    my($tt, $fileref_subr, $efn) = @_;
-    my($fp) = $tt->{'errprefix'};
-    my($xtp, $xtl, $xel, $xmode, $xsubtest, $xmessage);
+sub _check_one_typed_expect ($$$$$) {
+    my($tt, $raw_text, $fn, $ignores, $etrack) = @_;
+    my($mode) = ($fn =~ /^v/ ? 0 : ($fn =~ /^e/ ? 1 : 2));
 
-    # read file text
-    if (!open(IN, "<", $fileref_subr->($efn))) {
-	print STDERR $fp, $efn, ": ", $!, "\n";
-	$::errors++;
-	return 0;
-    }
-    my($raw_text) = <IN>;
-    $raw_text = '' if !defined($raw_text);
-    close IN;
-
-    # prepare $ignores
-    my($ignores) = '';
-    $ignores .= join("\n", @{$tt->{"i:$efn"}}) . "\n" if exists($tt->{"i:$efn"});
-    $ignores .= join("\n", @{$tt->{"i:all"}}) . "\n" if exists($tt->{"i:all"});
-    # ignore testie messages
-    $ignores .= "testie_lineno:.*\ntestie_error:.*\n" if $efn eq 'stderr';
-    if ($ignores ne '') {
-	$ignores =~ s{^([ \t]*\S[^\n]*)}{\$text =~ s<^$1\[ \\t\]*\$><\\377>mg;\n}mg;
-    }
-    
-    # now compare alternates
-    my($mode, $expect_marker) = (0, {});
-    foreach my $exp (@{$tt->{"v:$efn"}}, $expect_marker, @{$tt->{"e:$efn"}}, $expect_marker, @{$tt->{"x:$efn"}}) {
-	# check for change of mode
-	if (ref($exp)) {
-	    $mode++;
-	    next;
-	}
+    foreach my $exp (@{$tt->{$fn}}) {
 	my($text) = $raw_text;
 
 	# escape in common case
@@ -707,14 +714,57 @@ sub _check_one_expect ($$$) {
 	}
 	return 0 if $tp >= @tl || $ep >= @el;
 
-	($xtp, $xel, $xtl, $xmode, $xsubtest, $xmessage)
-	    = ($tp + 1, $el[$ep], $tl[$tp], $mode, $subtest, $message)
-	    if !defined($xtp) || $tp + 1 > $xtp;
+	if (!defined($etrack->{"textline"}) || $tp + 1 > $etrack->{"textline"}) {
+	    $etrack->{"text"} = $tl[$tp];
+	    $etrack->{"expected"} = $el[$ep];
+	    $etrack->{"textline"} = $tp + 1;
+	    if (defined($tt->{"$fn:firstline"})
+		&& $tt->{"$fn:firstline"} =~ /^(.*):(\d+)$/) {
+		$etrack->{"expectedline"} = $1 . ":" . ($2 + $ep);
+	    } else {
+		$etrack->{"expectedline"} = undef;
+	    }
+	    $etrack->{"mode"} = $mode;
+	    $etrack->{"subtest"} = $subtest;
+	    $etrack->{"message"} = $message;
+	}
+    }
+
+    return -1;
+}
+
+sub _check_one_expect ($$$) {
+    my($tt, $fileref_subr, $efn) = @_;
+    my($fp) = $tt->{'errprefix'};
+    my($etrack) = {};
+
+    # read file text
+    if (!open(IN, "<", $fileref_subr->($efn))) {
+	print STDERR $fp, $efn, ": ", $!, "\n";
+	$::errors++;
+	return 0;
+    }
+    my($raw_text) = <IN>;
+    $raw_text = '' if !defined($raw_text);
+    close IN;
+
+    # prepare $ignores
+    my($ignores) = '';
+    $ignores .= join("\n", @{$tt->{"i:$efn"}}) . "\n" if exists($tt->{"i:$efn"});
+    $ignores .= join("\n", @{$tt->{"i:all"}}) . "\n" if exists($tt->{"i:all"});
+    # ignore testie messages
+    $ignores .= "testie_lineno:.*\ntestie_error:.*\n" if $efn eq 'stderr';
+    if ($ignores ne '') {
+	$ignores =~ s{^([ \t]*\S[^\n]*)}{\$text =~ s<^$1\[ \\t\]*\$><\\377>mg;\n}mg;
+    }
+    
+    # now compare alternates
+    foreach my $fn ("v:$efn", "e:$efn", "x:$efn") {
+	return 0 if _check_one_typed_expect($tt, $raw_text, $fn, $ignores, $etrack) >= 0;
     }
 
     # if we get here, none of the attempts matched
-    _output_expectation_error($fp, $efn, $xtp, $xel, $xtl,
-			      $xmode, $xsubtest, $xmessage);
+    _output_expectation_error($fp, $efn, $etrack);
 }
     
 
@@ -821,8 +871,6 @@ sub execute_test ($$$) {
 	    # if it exited with a bad value, quit
 	    if ($exitval) {
 		return $tt->output_error(\&out_script_fn_to_fn, 'require', $verbose);
-	    } elsif ($verbose) {
-		print STDERR $tt->{'errprefix'}, "Requirements OK\n";
 	    }
 	}
     }
@@ -988,8 +1036,10 @@ EOD;
 
 sub print_version () {
     print <<'EOD;';
-Testie 1.1
+Testie 1.2
 Copyright (c) 2002-2003 International Computer Science Institute
+Copyright (c) 2004-2007 Regents of the University of California
+Copyright (c) 2008 Meraki, Inc.
 This is free software; see the source for copying conditions.
 There is NO warranty, not even for merchantability or fitness for a
 particular purpose.
@@ -1021,10 +1071,10 @@ sub search_dir ($$) {
     }
     my(@f) = grep { !/^\.\.?$/ } readdir(DIR);
     closedir(DIR);
-    foreach my $f (@f) {
+    foreach my $f (sort { $a cmp $b } @f) {
 	if (-d "$dir/$f") {
 	    &search_dir("$dir/$f", $aref);
-	} elsif ($f =~ /\.testie$/) {
+	} elsif ($f =~ /^[^#\.].*\.testie$/) {
 	    push @$aref, "$dir/$f";
 	}
     }
@@ -1112,6 +1162,13 @@ foreach my $test (@tests) {
     system("/bin/rm -rf $dir") if !$preserve_temporaries;
     undef $dir;
     ++$testnumber;
+}
+
+# Print messages about failed requirements
+@require_error_commands = sort { $a cmp $b } keys %require_error_commands;
+if (@require_error_commands) {
+    print STDERR "testie: requirement failures blocked ", $require_errors, ($require_errors > 1 ? " tests" : " test"), ", use '-V' for details\n";
+    print STDERR "testie: (required '", join("', '", @require_error_commands), "')\n";
 }
 
 if ($internal_errors > 0) {
@@ -1238,9 +1295,12 @@ expected value.
 
 A shell script (in sh syntax) defining prerequisites that must be satisfied
 before the test can run. Every command in the script must succeed, with
-exit status 0, for the test to run. %require's output is not checked,
-however. The C<-q> flag tells testie not to print an error message if a
-requirement fails.
+exit status 0, for the test to run. Standard output and error are not
+checked, however. The C<-q> flag tells testie not to print an error message
+if a requirement fails.
+
+Testie runs the requirement script before creating any other test files.
+For example, contents of %file sections are not available.
 
 =item %desc
 
@@ -1263,8 +1323,7 @@ the script's standard input. If LENGTH is provided, the file data consists
 of the LENGTH bytes following this line. Otherwise, it consists of the data
 up to the next section. The C<-d> flag tells testie to delete the
 first character of each line in the section; this makes it possible to
-include files that have lines that start with %. FILENAME cannot contain
-slashes.
+include files that have lines that start with %.
 
 =item %expectv [-a] [-d] [+LENGTH] FILENAME...
 

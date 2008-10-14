@@ -1,0 +1,26 @@
+%info
+Test testie files that include directories
+
+%script
+cat X/Y > Y/X
+testie TEST1
+
+%file X/Y
+Hello
+
+%expect Y/X
+Hello
+
+%file -d TEST1
+ %script
+ true
+ %file ../
+ %file /A
+ %file A/
+ %file A//B
+
+%expect stderr
+TEST1:3: bad filename '%file ../'
+TEST1:4: bad filename '%file /A'
+TEST1:5: bad filename '%file A/'
+TEST1:6: bad filename '%file A//B'
