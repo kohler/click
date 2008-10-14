@@ -94,17 +94,17 @@ int Element::nelements_allocated = 0;
   properties, such as class names, valid numbers of ports, and port processing
   types.  Their values are automatically extracted from element source code
   for use by tools, so your source code should follow a specific syntax.
-  Examples: class_name(), port_count(), processing(), flow_code(), flags().
-  Honorary examples: cast(), configure_phase(), can_live_reconfigure().</dd>
+  Examples: class_name(), port_count(), processing(), flow_code(), flags().</dd>
   <dt>Configuration, initialization, and cleanup</dt>
   <dd>Configuration and initialization functions are called to set up an
   element as a router is initialized (or when the element itself is
   reconfigured).  Most of the functions are passed an ErrorHandler argument,
   to which they should report any errors.  By returning negative values, they
-  can prevent the router from initializing.  Other functions clean up
-  elements when a router is removed and reconfigure an element as the router
-  runs.  Examples: configure(), add_handlers(), initialize(), take_state(),
-  cleanup(), live_reconfigure().</dd>
+  can prevent the router from initializing.  Other functions clean up elements
+  when a router is removed and reconfigure an element as the router runs.
+  Examples: cast(), configure(), configure_phase(), add_handlers(),
+  initialize(), take_state(), cleanup(), can_live_reconfigure(),
+  live_reconfigure().</dd>
   <dt>Packet and event processing</dt>
   <dd>These functions are called as the router runs to process packets and
   other events.  Examples: push(), pull(), simple_action(), run_task(),
@@ -488,6 +488,8 @@ Element::~Element()
  *
  * You should also override cast() if your element provides another interface,
  * such as Storage or a Notifier.
+ *
+ * @sa port_cast
  */
 void *
 Element::cast(const char *name)
@@ -497,6 +499,32 @@ Element::cast(const char *name)
 	return this;
     else
 	return 0;
+}
+
+/** @brief Attempt to cast an element's port to a named type.
+ * @param isoutput false for input ports, true for output ports
+ * @param port port number
+ * @param name name of the type being cast to
+ *
+ * Click calls this function to see whether a port corresponds to an object of
+ * a given type, identified by @a name.  The function should return a pointer
+ * to the named object, or a null pointer if this element doesn't have that
+ * type.  @a name can name an element class or another type of interface, such
+ * as @c "Storage" or Notifier::EMPTY_NOTIFIER.
+ *
+ * The default implementation returns the result of cast(), ignoring the @a
+ * isoutput and @a port arguments.
+ *
+ * The cast() method suffices for most purposes, but some Click functionality,
+ * such as Notifiers, can use the additional precision of port_cast().
+ *
+ * @sa cast
+ */
+void *
+Element::port_cast(bool isoutput, int port, const char *name)
+{
+    (void) isoutput, (void) port;
+    return cast(name);
 }
 
 /** @brief Return the element's master. */

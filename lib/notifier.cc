@@ -70,9 +70,9 @@ const char Notifier::FULL_NOTIFIER[] = "full";
  *
  * The Notifier class represents a basic activity signal associated with an
  * element.  Elements that contain a Notifier object will override
- * Element::cast() to return that Notifier when given the proper name.  This
- * lets other parts of the configuration find the Notifiers.  See
- * upstream_empty_signal() and downstream_full_signal().
+ * Element::cast() or Element::port_cast() to return that Notifier when given
+ * the proper name.  This lets other parts of the configuration find the
+ * Notifiers.  See upstream_empty_signal() and downstream_full_signal().
  *
  * The ActiveNotifier class, which derives from Notifier, can wake up clients
  * when its activity signal becomes active.
@@ -92,8 +92,8 @@ const char Notifier::FULL_NOTIFIER[] = "full";
  * Task.
  *
  * Elements that contain ActiveNotifier objects will generally override
- * Element::cast(), allowing other parts of the configuration to find the
- * Notifiers.
+ * Element::cast() or Element::port_cast(), allowing other parts of the
+ * configuration to find the Notifiers.
  */
 
 
@@ -448,8 +448,9 @@ NotifierElementFilter::NotifierElementFilter(const char* name)
 bool
 NotifierElementFilter::check_match(Element* e, bool isoutput, int port)
 {
-    if (Notifier* n = (Notifier*) (e->cast(_name))) {
-	_notifiers.push_back(n);
+    if (Notifier* n = (Notifier*) (e->port_cast(isoutput, port, _name))) {
+	if (find(_notifiers.begin(), _notifiers.end(), n) == _notifiers.end())
+	    _notifiers.push_back(n);
 	if (!n->signal().initialized())
 	    n->initialize(_name, e->router());
 	_signal += n->signal();

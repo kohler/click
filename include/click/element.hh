@@ -67,7 +67,8 @@ class Element { public:
     int flag_value(int flag) const;
 
     virtual void *cast(const char *name);
-    
+    virtual void *port_cast(bool isoutput, int port, const char *name);
+
     // CONFIGURATION, INITIALIZATION, AND CLEANUP
     enum ConfigurePhase {
 	CONFIGURE_PHASE_FIRST = 0,
