@@ -332,14 +332,7 @@ click_init_sched(ErrorHandler *errh)
   click_thread_pids = new Vector<int>;
 #endif
 
-#if __MTCLICK__
-  click_master = new Master(click_threads());
-  if (smp_num_cpus != NUM_CLICK_CPUS)
-    click_chatter("warning: click compiled for %d cpus, machine allows %d", 
-	          NUM_CLICK_CPUS, smp_num_cpus);
-#else
   click_master = new Master(1);
-#endif
 
 #ifdef BSD_NETISRSCHED
   netisr_register(NETISR_CLICK, click_netisr, NULL, 0);
