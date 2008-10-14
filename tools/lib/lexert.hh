@@ -22,7 +22,6 @@ enum {
     lex2Colon,
     lex2Bar,
     lex3Dot,
-    lexTunnel,
     lexElementclass,
     lexRequire,
     lexDefine
@@ -76,7 +75,6 @@ class LexerT { public:
     bool yconnection();
     void ycompound_arguments(RouterT *);
     void yelementclass(const char *pos1);
-    void ytunnel();
     ElementClassT *ycompound(String, const char *decl_pos1, const char *name_pos1);
     void yrequire();
     void yvar();

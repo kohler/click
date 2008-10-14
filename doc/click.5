@@ -310,8 +310,7 @@ a -> X -> b;
 c -> Y -> d;
 .Re
 .PP
-The `input' and `output' pseudoelements incur no run-time overhead. (In
-fact, they are connection tunnel endpoints; see below for more.)
+The `input' and `output' pseudoelements incur no run-time overhead.
 .PP
 The actual expansions will differ from these examples because the elements
 will have different names. A prefix is prepended to the components' names,
@@ -513,91 +512,6 @@ test :: Test(1, 2);
 elementclass Test { $a, $b | /* nothing */ || ... }
 .Re
 '
-.SH "CONNECTION TUNNELS"
-'
-A
-.I connection tunnel
-is a pair of element names that acts as a tunnel for connections.
-Consider a tunnel
-.RI ` p1 " -> " p2 '.
-Then connections to 
-.I p1
-pass through the tunnel and are transformed, at compile time, into
-connections from
-.IR p2 .
-For example, this code, with a tunnel,
-.Rs
-connectiontunnel p1 -> p2;
-.br
-a -> p1; p2 -> b;
-.Re
-is transformed into this code, without it:
-.Rs
-a -> b;
-.Re
-The connections to p1's 
-.IR i th
-input port have been expanded into connections from p2's
-.IR i th
-output port. Thus, a is connected to b in the result because a was
-connected to p1's input port 0, and p2's output port 0 was connected to b.
-Here is a slightly more complicated example involving several connections
-and different port numbers:
-.Rs
-connectiontunnel p1 -> p2;
-.br
-a -> p1; b -> p1; p2 -> c;
-.br
-a [1] -> [1] p1; p2 [1] -> Discard;
-.Re
-is transformed into
-.Rs
-a -> c; b -> c;
-.br
-a [1] -> Discard;
-.Re
-And one final example:
-.Rs
-connectiontunnel p1 -> p2;
-.br
-a -> p1; p2 -> b; p2 -> c;
-.Re
-becomes
-.Rs
-a -> b; a -> c;
-.Re
-.PP
-Connection tunnels can be connected to each other. The system will
-recursively expand the tunnels until none of them remain. (Circular
-connections are silently ignored.) For example:
-.Rs
-connectiontunnel p1 -> p2, q1 -> q2;
-.br
-a -> p1; p2 -> q1; q2 -> b;
-.Re
-becomes
-.Rs
-a -> b;
-.Re
-.PP
-An identifier that has been used for a connection tunnel cannot be used for
-an element, and vice versa. However, an identifier can be used for two
-tunnels, once as the input end and once as the output end. For example:
-.Rs
-connectiontunnel p -> p/input, p/output -> p;
-.br
-a -> p; // using `p' as input
-.br
-p/input -> Counter -> p/output; 
-.br
-p -> b; // using `p' as output
-.Re
-becomes
-.Rs
-a -> Counter -> b;
-.Re
-Compound elements use this mechanism.
-'
 .SH "REQUIREMENTS"
 '
 A configuration can say that it depends on optional packages by using the
@@ -648,7 +562,7 @@ their own identifiers. Identifiers are case-sensitive. No component of an
 identifier may consist solely of numbers; for example, `1/x' is an illegal
 identifier.
 .PP
-The keywords `connectiontunnel', `elementclass', `require', and `define'
+The keywords `elementclass', `require', and `define'
 may not be used as identifiers. The normal identifiers `input' and `output'
 have special meaning inside compound element definitions.
 .PP
@@ -720,7 +634,7 @@ kernel module will not accept archives; use
 .br
 .IR stmt " ::= " declaration " | " connection
 .br
-.RI "    | " tunnelstmt " | " elementclassstmt " | " requirestmt
+.RI "    | " elementclassstmt " | " requirestmt
 .br
 .RI "    | " definestmt " | "";"""
 .br
@@ -761,8 +675,6 @@ kernel module will not accept archives; use
 .IR opt-config " ::= ""("" configstring "")"" | " empty
 .br
 .IR opt-port " ::= ""["" portnumber ""]"" | " empty
-.br
-.IR tunnelstmt " ::= ""connectiontunnel"" identifier ""->"" identifier"
 .br
 .IR elementclassstmt " ::= ""elementclass"" identifier " class
 .br

@@ -7,6 +7,7 @@
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
  * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -651,9 +652,7 @@ Lexer::next_lexeme()
       goto more_word_characters;
     _pos = s;
     String word = _big_string.substring(word_pos, s);
-    if (word.equals("connectiontunnel", 16))
-      return Lexeme(lexTunnel, word);
-    else if (word.equals("elementclass", 12))
+    if (word.equals("elementclass", 12))
       return Lexeme(lexElementclass, word);
     else if (word.equals("require", 7))
       return Lexeme(lexRequire, word);
@@ -746,8 +745,6 @@ Lexer::lexeme_string(int kind)
     return "'||'";
   else if (kind == lex3Dot)
     return "'...'";
-  else if (kind == lexTunnel)
-    return "'connectiontunnel'";
   else if (kind == lexElementclass)
     return "'elementclass'";
   else if (kind == lexRequire)
@@ -1271,7 +1268,6 @@ Lexer::yconnection()
      case '{':
      case '}':
      case lex2Bar:
-     case lexTunnel:
      case lexElementclass:
      case lexRequire:
      case lexDefine:
@@ -1321,27 +1317,6 @@ Lexer::yelementclass()
     lerror("syntax error near '%#s'", tnext.string().c_str());
     ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
   }
-}
-
-void
-Lexer::ytunnel()
-{
-  Lexeme tname1 = lex();
-  if (!tname1.is(lexIdent)) {
-    unlex(tname1);
-    lerror("expected tunnel input name");
-  }
-
-  expect(lexArrow);
-    
-  Lexeme tname2 = lex();
-  if (!tname2.is(lexIdent)) {
-    unlex(tname2);
-    lerror("expected tunnel output name");
-  }
-  
-  if (tname1.is(lexIdent) && tname2.is(lexIdent))
-    add_tunnel(tname1.string(), tname2.string());
 }
 
 void
@@ -1532,10 +1507,6 @@ Lexer::ystatement(bool nested)
     yelementclass();
     return true;
     
-   case lexTunnel:
-    ytunnel();
-    return true;
-
    case lexRequire:
     yrequire();
     return true;

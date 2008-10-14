@@ -16,7 +16,6 @@ enum Lexemes {
     lex2Colon,
     lex2Bar,
     lex3Dot,
-    lexTunnel,
     lexElementclass,
     lexRequire,
     lexDefine
@@ -91,7 +90,6 @@ class Lexer { public:
     void ydeclaration(const String &first_element = String());
     bool yconnection();
     void yelementclass();
-    void ytunnel();
     void ycompound_arguments(Compound *);
     int ycompound(String name = String());
     void yrequire();

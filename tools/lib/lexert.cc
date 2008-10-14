@@ -7,6 +7,7 @@
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
  * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -286,10 +287,7 @@ LexerT::next_lexeme()
       goto more_word_characters;
     _pos = s;
     String word = _big_string.substring(word_pos, s);
-    if (word.equals("connectiontunnel", 16)) {
-      _lexinfo->notify_keyword(word, word_pos, s);
-      return Lexeme(lexTunnel, word, word_pos);
-    } else if (word.equals("elementclass", 12)) {
+    if (word.equals("elementclass", 12)) {
       _lexinfo->notify_keyword(word, word_pos, s);
       return Lexeme(lexElementclass, word, word_pos);
     } else if (word.equals("require", 7)) {
@@ -389,8 +387,6 @@ LexerT::lexeme_string(int kind)
     return "'||'";
   else if (kind == lex3Dot)
     return "'...'";
-  else if (kind == lexTunnel)
-    return "'connectiontunnel'";
   else if (kind == lexElementclass)
     return "'elementclass'";
   else if (kind == lexRequire)
@@ -801,7 +797,6 @@ LexerT::yconnection()
 	  case '{':
 	  case '}':
 	  case lex2Bar:
-	  case lexTunnel:
 	  case lexElementclass:
 	  case lexRequire:
 	  case lexDefine:
@@ -856,27 +851,6 @@ LexerT::yelementclass(const char *pos1)
 	
     } else
 	lerror(tnext, "syntax error near '%#s'", tnext.string().c_str());
-}
-
-void
-LexerT::ytunnel()
-{
-    Lexeme tname1 = lex();
-    if (!tname1.is(lexIdent)) {
-	unlex(tname1);
-	lerror(tname1, "expected tunnel input name");
-    }
-    
-    expect(lexArrow);
-  
-    Lexeme tname2 = lex();
-    if (!tname2.is(lexIdent)) {
-	unlex(tname2);
-	lerror(tname2, "expected tunnel output name");
-    }
-  
-    if (tname1.is(lexIdent) && tname2.is(lexIdent))
-	_router->add_tunnel(tname1.string(), tname2.string(), landmarkt(tname1.pos1(), tname2.pos2()), _errh);
 }
 
 void
@@ -1095,10 +1069,6 @@ LexerT::ystatement(bool nested)
     yelementclass(t.pos1());
     return true;
     
-   case lexTunnel:
-    ytunnel();
-    return true;
-
    case lexRequire:
     yrequire();
     return true;
