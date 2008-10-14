@@ -10,15 +10,21 @@
 #define _KERNEL 1
 #define KLD_MODULE 1
 
-/* Define if your BSD kernel has Click extensions. */
-#undef HAVE_CLICK_BSD_KERNEL
+/* Define if Click should use an adaptive scheduler to share the CPU(s) more
+   fairly with the kernel. */
+#undef HAVE_ADAPTIVE_SCHEDULER
 
 /* Define if your BSD kernel has polling extensions. */
 #undef HAVE_BSD_POLLING
 
-/* Define if Click should use an adaptive scheduler to share the CPU(s) more
-   fairly with the kernel. */
-#undef HAVE_ADAPTIVE_SCHEDULER
+/* Define if your BSD kernel has Click extensions. */
+#undef HAVE_CLICK_BSD_KERNEL
+
+/* Define if 'int64_t' is typedefed to 'long' in bsdmodule. */
+#undef HAVE_INT64_IS_LONG_BSDMODULE
+
+/* Define if 'int64_t' is typedefed to 'long long' in bsdmodule. */
+#undef HAVE_INT64_IS_LONG_LONG_BSDMODULE
 
 /* Include integer and other type definitions. */
 #include <sys/types.h>
@@ -29,6 +35,16 @@
 /* Define likely and unlikely macros. */
 #define likely(x)	(x)
 #define unlikely(x)	(x)
+
+/* Define HAVE_INT64_IS_LONG based on HAVE_INT64_IS_LONG_BSDMODULE. */
+#ifdef HAVE_INT64_IS_LONG_BSDMODULE
+# define HAVE_INT64_IS_LONG HAVE_INT64_IS_LONG_BSDMODULE
+#endif
+
+/* Define HAVE_INT64_IS_LONG_LONG based on HAVE_INT64_IS_LONG_LONG_BSDMODULE. */
+#if HAVE_LONG_LONG && defined(HAVE_INT64_IS_LONG_LONG_BSDMODULE)
+# define HAVE_INT64_IS_LONG_LONG HAVE_INT64_IS_LONG_LONG_BSDMODULE
+#endif
 
 #ifdef __cplusplus
 

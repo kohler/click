@@ -653,13 +653,14 @@ dnl
 
 if test $ac_have_bsd_kernel = y; then
     KERNEL_CXX="$KERNEL_CXX -fpermissive"
+
     AC_CACHE_CHECK(FreeBSD version, ac_cv_freebsd_version, [
 	save_flags="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
-	AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <sys/param.h>
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/param.h>
 #if __FreeBSD_version < 500000
 #include <NONEXISTENT_FILE>
-#endif]])], ac_cv_freebsd_version=yes, ac_cv_freebsd_version=no)
+#endif]], [[]])], ac_cv_freebsd_version=yes, ac_cv_freebsd_version=no)
 	CPPFLAGS="$save_flags"])
     if test $ac_cv_freebsd_version = yes; then
 	AC_DEFINE(HAVE_CLICK_BSD_KERNEL)
@@ -671,6 +672,32 @@ if test $ac_have_bsd_kernel = y; then
 Your version of FreeBSD is old.  Click works with FreeBSD 5.x and later.
 
 =========================================])
+    fi
+
+    AC_CACHE_CHECK([whether long and int64_t are the same type in the FreeBSD kernel],
+	ac_cv_long_64_bsdmodule, [save_flags="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/param.h>
+#include <linux/types.h>
+void f1(long) {
+}
+void f1(int64_t) { // will fail if long long and int64_t are the same type
+}]], [[]])], ac_cv_long_64_bsdmodule=no, ac_cv_long_64_bsdmodule=yes)])
+    if test $ac_cv_long_64_bsdmodule = yes; then
+	AC_DEFINE([HAVE_INT64_IS_LONG_BSDMODULE], [1], [Define if 'int64_t' is typedefed to 'long' in bsdmodule.])
+    fi
+
+    AC_CACHE_CHECK([whether long long and int64_t are the same type in the FreeBSD kernel],
+	ac_cv_long_long_64_bsdmodule, [save_flags="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/param.h>
+#include <linux/types.h>
+void f1(long long) {
+}
+void f1(int64_t) { // will fail if long long and int64_t are the same type
+}]], [[]])], ac_cv_long_long_64_bsdmodule=no, ac_cv_long_long_64_bsdmodule=yes)])
+    if test $ac_cv_long_long_64_bsdmodule = yes; then
+	AC_DEFINE([HAVE_INT64_IS_LONG_LONG_BSDMODULE], [1], [Define if 'int64_t' is typedefed to 'long long' in bsdmodule.])
     fi
 fi
 
