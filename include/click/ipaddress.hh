@@ -9,19 +9,73 @@ class StringAccum;
 
 class IPAddress { public:
   
-    inline IPAddress();
+    /** @brief Constructs an IPAddress equal to 0.0.0.0. */
+    inline IPAddress()
+	: _addr(0) {
+    }
+
+    /** @brief Constructs an IPAddress from an integer in network byte order.
+     * @param a the address, in network byte order */
+    inline IPAddress(unsigned int a)
+	: _addr(a) {
+    }
+
+    /** @brief Constructs an IPAddress from an integer in network byte order.
+     * @param a the address, in network byte order */
+    explicit inline IPAddress(int a)
+	: _addr(a) {
+    }
+
+    /** @brief Constructs an IPAddress from an integer in network byte order.
+     * @param a the address, in network byte order */
+    explicit inline IPAddress(unsigned long a)
+	: _addr(a) {
+    }
+
+    /** @brief Constructs an IPAddress from an integer in network byte order.
+     * @param a the address, in network byte order */
+    explicit inline IPAddress(long a)
+	: _addr(a) {
+    }
+
+    /** @brief Constructs an IPAddress from a struct in_addr.
+     * @param ina the address */
+    inline IPAddress(struct in_addr ina)
+	: _addr(ina.s_addr) {
+    }
+
     explicit IPAddress(const unsigned char*);
-    inline IPAddress(unsigned int);	// network byte order IP address
-    inline explicit IPAddress(int);	// network byte order IP address
-    inline explicit IPAddress(unsigned long); // network byte order IP address
-    inline explicit IPAddress(long);	// network byte order IP address
     explicit IPAddress(const String&);	// "18.26.4.99"
-    inline IPAddress(struct in_addr);
+
+    /** @brief Return an IPAddress equal to the prefix mask of length @a
+     * prefix.
+     * @param prefix_len prefix length; 0 <= @a prefix_len <= 32
+     *
+     * For example, make_prefix(0) is 0.0.0.0, make_prefix(8) is 255.0.0.0, and
+     * make_prefix(32) is 255.255.255.255.  Causes an assertion failure if @a
+     * prefix_len is out of range.
+     * @sa mask_to_prefix_len */
     static IPAddress make_prefix(int prefix_len);
 
+    /** @brief Return the broadcast IP address, 255.255.255.255. */
+    static inline IPAddress make_broadcast() {
+	return IPAddress(0xFFFFFFFF);
+    }
+
+
     typedef uint32_t (IPAddress::*unspecified_bool_type)() const;
-    inline operator unspecified_bool_type() const;
-    
+    /** @brief Returns true iff the address is not 0.0.0.0. */
+    inline operator unspecified_bool_type() const {
+	return _addr != 0 ? &IPAddress::addr : 0;
+    }
+
+    /** @brief Return true iff the address is a multicast address.
+     *
+     * These are the class D addresses, 224.0.0.0-239.255.255.255. */
+    inline bool is_multicast() const {
+	return (_addr & htonl(0xF0000000)) == htonl(0xE0000000);
+    }
+
     inline uint32_t addr() const;
     inline operator uint32_t() const;
   
@@ -65,59 +119,6 @@ class IPAddress { public:
 
 };
 
-/** @brief Constructs an IPAddress equal to 0.0.0.0. */
-inline
-IPAddress::IPAddress()
-    : _addr(0)
-{
-}
-
-/** @brief Constructs an IPAddress from an integer in network byte order.
-    @param a the address, in network byte order */
-inline
-IPAddress::IPAddress(unsigned int a)
-    : _addr(a)
-{
-}
-
-/** @brief Constructs an IPAddress from an integer in network byte order.
-    @param a the address, in network byte order */
-inline
-IPAddress::IPAddress(int a)
-    : _addr(a)
-{
-}
-
-/** @brief Constructs an IPAddress from an integer in network byte order.
-    @param a the address, in network byte order */
-inline
-IPAddress::IPAddress(unsigned long a)
-    : _addr(a)
-{
-}
-
-/** @brief Constructs an IPAddress from an integer in network byte order.
-    @param a the address, in network byte order */
-inline
-IPAddress::IPAddress(long a)
-    : _addr(a)
-{
-}
-
-/** @brief Constructs an IPAddress from a struct in_addr.
-    @param ina the address */
-inline
-IPAddress::IPAddress(struct in_addr ina)
-    : _addr(ina.s_addr)
-{
-}
-
-/** @brief Returns true iff the address is not 0.0.0.0. */
-inline
-IPAddress::operator unspecified_bool_type() const
-{
-    return _addr != 0 ? &IPAddress::addr : 0;
-}
 
 /** @brief Returns the address as a uint32_t in network byte order. */
 inline

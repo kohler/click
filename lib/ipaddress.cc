@@ -60,13 +60,6 @@ IPAddress::IPAddress(const String &str)
 	_addr = 0;
 }
 
-/** @brief Returns an IPAddress equal to the prefix mask of length @a prefix.
-    @param prefix_len prefix length; 0 <= @a prefix_len <= 32
-
-    For example, make_prefix(0) is 0.0.0.0, make_prefix(8) is 255.0.0.0, and
-    make_prefix(32) is 255.255.255.255.  Causes an assertion failure if @a
-    prefix_len is out of range.
-    @sa mask_to_prefix_len */
 IPAddress
 IPAddress::make_prefix(int prefix_len)
 {
