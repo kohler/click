@@ -73,7 +73,7 @@ ElementClassT *ElementClassT::the_tunnel_type = new TraitsElementClassT("<tunnel
 
 ElementClassT::ElementClassT(const String &name)
     : _name(name),
-      _printable_name(name ? name : String::stable_string("<anonymous>")),
+      _printable_name(name ? name : String::make_stable("<anonymous>")),
       _use_count(0), _traits_version(-1)
 {
     //fprintf(stderr, "%p: %s\n", this, printable_name_c_str());

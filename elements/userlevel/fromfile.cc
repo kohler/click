@@ -69,7 +69,7 @@ String
 FromFile::print_filename() const
 {
     if (!_filename || _filename == "-")
-	return String::stable_string("<stdin>", 7);
+	return String::make_stable("<stdin>", 7);
     else
 	return _filename;
 }
@@ -250,7 +250,7 @@ FromFile::read_line(String &result, ErrorHandler *errh, bool temporary)
 	s += (*s == '\r' && s[1] == '\n' ? 2 : 1);
 	int new_pos = s - _buffer;
 	if (temporary)
-	    result = String::stable_string((const char *) (_buffer + _pos), new_pos - _pos);
+	    result = String::make_stable((const char *) (_buffer + _pos), new_pos - _pos);
 	else
 	    result = String((const char *) (_buffer + _pos), new_pos - _pos);
 	_pos = new_pos;
@@ -472,9 +472,9 @@ FromFile::get_string(size_t size, ErrorHandler *errh)
     if (_pos + size <= _len) {
 	const uint8_t *chunk = _buffer + _pos;
 	_pos += size;
-	return String::stable_string((const char *) chunk, size);
+	return String::make_stable((const char *) chunk, size);
     } else {
-	String s = String::garbage_string(size);
+	String s = String::make_garbage(size);
 	if (read(s.mutable_data(), size, errh) == (int) size)
 	    return s;
 	else

@@ -206,7 +206,7 @@ VariableEnvironment::value(const String &formal, bool &found) const
 	v = v->_parent;
     }
     found = false;
-    return String::empty_string();
+    return String::make_empty();
 }
 
 bool

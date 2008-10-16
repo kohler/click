@@ -248,10 +248,10 @@ class delt : public dwidget { public:
     }
     String display_name() const;
     const String &name() const {
-	return (_e ? _e->name() : String::empty_string());
+	return (_e ? _e->name() : String::make_empty());
     }
     String type_name() const {
-	return (_e ? _e->type_name() : String::empty_string());
+	return (_e ? _e->type_name() : String::make_empty());
     }
     const String &flat_name() const {
 	return _flat_name;

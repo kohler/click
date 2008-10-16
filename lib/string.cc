@@ -61,7 +61,7 @@ CLICK_DECLS
  *
  * All out-of-memory strings are equal and share the same data(), which is
  * different from the data() of any other string.  See
- * String::out_of_memory_data().  The String::out_of_memory_string() function
+ * String::out_of_memory_data().  The String::make_out_of_memory() function
  * returns an out-of-memory string.
  */
 
@@ -191,7 +191,7 @@ String::String(double d)
 #endif
 
 String
-String::claim_string(char *str, int len, int capacity)
+String::make_claim(char *str, int len, int capacity)
 {
   assert(str && len > 0 && capacity >= len);
   if (__StringMemo *new_memo = create_memo(str, len, capacity))
@@ -201,7 +201,7 @@ String::claim_string(char *str, int len, int capacity)
 }
 
 String
-String::stable_string(const char *s, int len)
+String::make_stable(const char *s, int len)
 {
   if (len < 0)
     len = (s ? strlen(s) : 0);
@@ -209,7 +209,7 @@ String::stable_string(const char *s, int len)
 }
 
 String
-String::garbage_string(int len)
+String::make_garbage(int len)
 {
   String s;
   s.append_garbage(len);
@@ -217,7 +217,7 @@ String::garbage_string(int len)
 }
 
 String
-String::numeric_string(int_large_t num, int base, bool uppercase)
+String::make_numeric(int_large_t num, int base, bool uppercase)
 {
     StringAccum sa;
     sa.append_numeric(num, base, uppercase);
@@ -225,7 +225,7 @@ String::numeric_string(int_large_t num, int base, bool uppercase)
 }
 
 String
-String::numeric_string(uint_large_t num, int base, bool uppercase)
+String::make_numeric(uint_large_t num, int base, bool uppercase)
 {
     StringAccum sa;
     sa.append_numeric(num, base, uppercase);
@@ -233,7 +233,7 @@ String::numeric_string(uint_large_t num, int base, bool uppercase)
 }
 
 void
-String::make_out_of_memory()
+String::assign_out_of_memory()
 {
   if (_r.memo)
     deref();
@@ -273,7 +273,7 @@ String::assign(const char *str, int len, bool need_deref)
     int capacity = (len + 16) & ~15;
     _r.memo = create_memo(0, len, capacity);
     if (!_r.memo) {
-      make_out_of_memory();
+      assign_out_of_memory();
       return;
     }
     memcpy(_r.memo->real_data, str, len);
@@ -321,7 +321,7 @@ String::append_garbage(int len)
     
     __StringMemo *new_memo = create_memo(0, _r.length + len, new_capacity);
     if (!new_memo) {
-	make_out_of_memory();
+	assign_out_of_memory();
 	return 0;
     }
 
@@ -348,7 +348,7 @@ String::append(const char *s, int len)
     if (s == &oom_string_data)
 	// Appending "out of memory" to a regular string makes it "out of
 	// memory"
-	make_out_of_memory();
+	assign_out_of_memory();
     else if (unlikely(len == 0))
 	/* do nothing */;
     else if (likely(!(s >= _r.memo->real_data
@@ -593,7 +593,7 @@ String::quoted_hex() const
     StringAccum sa;
     char *buf;
     if (out_of_memory() || !(buf = sa.extend(length() * 2 + 3)))
-	return out_of_memory_string();
+	return make_out_of_memory();
     *buf++ = '\\';
     *buf++ = '<';
     const uint8_t *e = reinterpret_cast<const uint8_t*>(end());

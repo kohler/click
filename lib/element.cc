@@ -544,7 +544,7 @@ Element::name() const
     String s;
     if (Router *r = router())
 	s = r->ename(_eindex);
-    return (s ? s : String::stable_string("<unknown>", 9));
+    return (s ? s : String::make_stable("<unknown>", 9));
 }
 
 /** @brief Return the element's name (deprecated).
@@ -579,7 +579,7 @@ Element::landmark() const
     String s;
     if (Router *r = router())
 	s = r->elandmark(_eindex);
-    return (s ? s : String::stable_string("<unknown>", 9));
+    return (s ? s : String::make_stable("<unknown>", 9));
 }
 
 // INPUTS AND OUTPUTS

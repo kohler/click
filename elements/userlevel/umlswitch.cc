@@ -88,10 +88,10 @@ UMLSwitch::initialize(ErrorHandler *errh)
   addrlen = (int)sizeof(((struct sockaddr_un *)0)->sun_path);
   socket_conf.push_back(String("UNIX_DGRAM"));
   socket_conf.push_back(String('"') +
-			String::stable_string(_data_addr.sun_path, addrlen).quoted_hex() +
+			String::make_stable(_data_addr.sun_path, addrlen).quoted_hex() +
 			String('"'));
   socket_conf.push_back(String('"') +
-			String::stable_string(_local_addr.sun_path, addrlen).quoted_hex() +
+			String::make_stable(_local_addr.sun_path, addrlen).quoted_hex() +
 			String('"'));
   socket_conf.push_back(String("CLIENT true"));
   if ((err = Socket::configure(socket_conf, errh)) ||

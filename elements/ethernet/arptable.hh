@@ -150,7 +150,7 @@ class ARPTable : public Element { public:
 	    return _unicast && !expired(now, expire_jiffies);
 	}
 	ARPEntry(IPAddress ip)
-	    : _ip(ip), _hashnext(), _eth(EtherAddress::broadcast()),
+	    : _ip(ip), _hashnext(), _eth(EtherAddress::make_broadcast()),
 	      _unicast(false), _head(), _tail() {
 	}
     };
@@ -206,7 +206,7 @@ ARPTable::lookup(IPAddress ip)
     if (lookup(ip, &eth, 0) >= 0)
 	return eth;
     else
-	return EtherAddress::broadcast();
+	return EtherAddress::make_broadcast();
 }
 
 CLICK_ENDDECLS

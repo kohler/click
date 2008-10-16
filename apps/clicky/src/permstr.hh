@@ -40,7 +40,7 @@ class PermString { struct Doodad; public:
 	return *_rep;
     }
     inline operator String() const {
-	return String::stable_string(_rep, length());
+	return String::make_stable(_rep, length());
     }
   
     inline const char *begin() const;

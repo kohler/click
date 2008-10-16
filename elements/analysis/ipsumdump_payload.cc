@@ -121,7 +121,7 @@ static void payload_outa(const PacketDesc& d, const FieldWriter *f)
 	if (off + len > (uint32_t) d.p->length())
 	    len = d.p->length() - off;
 	if (f->user_data == T_PAYLOAD) {
-	    String s = String::stable_string((const char *)(d.p->data() + off), len);
+	    String s = String::make_stable((const char *)(d.p->data() + off), len);
 	    *d.sa << cp_quote(s);
 	} else {
 	    md5_state_t pms;

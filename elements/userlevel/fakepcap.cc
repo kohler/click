@@ -71,9 +71,9 @@ fake_pcap_unparse_dlt(int dlt)
 {
     for (const dlt_name* d = dlt_names; d < dlt_names + (sizeof(dlt_names) / sizeof(dlt_names[0])); d++)
 	if (dlt == d->dlt)
-	    return String::stable_string(d->name);
+	    return String::make_stable(d->name);
     if (dlt < 0)
-	return String::stable_string("<none>");
+	return String::make_stable("<none>");
     return "#" + String(dlt);
 }
 

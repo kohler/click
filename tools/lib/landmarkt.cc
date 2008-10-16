@@ -77,9 +77,9 @@ LandmarkSetT::offset_to_string(unsigned offset) const
 	else if (fname)
 	    return fname;
 	else if (i->lineno)
-	    return String::stable_string("line ", 5) + String(i->lineno);
+	    return String::make_stable("line ", 5) + String(i->lineno);
     }
-    return String::stable_string("<unknown>", 9);
+    return String::make_stable("<unknown>", 9);
 }
 
 String

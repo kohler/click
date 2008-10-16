@@ -6,7 +6,7 @@
 CLICK_DECLS
 
 class EtherAddress { public:
-  
+
     /** @brief Construct an EtherAddress equal to 00-00-00-00-00-00. */
     inline EtherAddress() {
 	_data[0] = _data[1] = _data[2] = 0;
@@ -21,9 +21,11 @@ class EtherAddress { public:
     }
 
     /** @brief Return the broadcast EtherAddress, FF-FF-FF-FF-FF-FF. */
-    static EtherAddress broadcast() {
+    static EtherAddress make_broadcast() {
 	return EtherAddress(0xFFFF);
     }
+
+    static inline EtherAddress broadcast() CLICK_DEPRECATED;
 
 
     typedef bool (EtherAddress::*unspecified_bool_type)() const;
@@ -31,7 +33,7 @@ class EtherAddress { public:
     inline operator unspecified_bool_type() const {
 	return _data[0] || _data[1] || _data[2] ? &EtherAddress::is_group : 0;
     }
-    
+
     /** @brief Return true iff this address is a group address.
      *
      * Group addresses have the low-order bit of the first byte set to 1, as
@@ -46,17 +48,17 @@ class EtherAddress { public:
     inline bool is_broadcast() const {
 	return _data[0] == 0xFFFF && _data[1] == 0xFFFF && _data[2] == 0xFFFF;
     }
-    
+
     /** @brief Return a pointer to the address data. */
     inline unsigned char *data() {
 	return reinterpret_cast<unsigned char *>(_data);
     }
-    
+
     /** @overload */
     inline const unsigned char *data() const {
 	return reinterpret_cast<const unsigned char *>(_data);
     }
-    
+
     /** @brief Return a pointer to the address data, as an array of
      * uint16_ts. */
     inline const uint16_t *sdata() const {
@@ -68,7 +70,7 @@ class EtherAddress { public:
 	return (_data[2] | ((size_t) _data[1] << 16))
 	    ^ ((size_t) _data[0] << 9);
     }
-    
+
     // bool operator==(EtherAddress, EtherAddress);
     // bool operator!=(EtherAddress, EtherAddress);
 
@@ -107,9 +109,9 @@ class EtherAddress { public:
      * @deprecated The unparse() function should be preferred to this cast.
      * @sa unparse */
     inline operator String() const CLICK_DEPRECATED;
-  
+
  private:
-  
+
     uint16_t _data[3];
 
     EtherAddress(uint16_t m) {
@@ -117,6 +119,10 @@ class EtherAddress { public:
     }
   
 };
+
+inline EtherAddress EtherAddress::broadcast() {
+    return make_broadcast();
+}
 
 inline
 EtherAddress::operator String() const

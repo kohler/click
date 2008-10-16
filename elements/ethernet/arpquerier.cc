@@ -250,7 +250,7 @@ ARPQuerier::handle_ip(Packet *p, bool response)
 	output(0).push(q);
     } else if (dst_ip.addr() == 0xFFFFFFFFU || dst_ip == _my_bcast_ip) {
 	// Check special IP addresses
-	*dst_eth = EtherAddress::broadcast();
+	*dst_eth = EtherAddress::make_broadcast();
 	memcpy(&q->ether_header()->ether_shost, _my_en.data(), 6);
 	output(0).push(q);
 	r = 0;

@@ -84,7 +84,7 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
 	    next_timeout = 0;
 	} else if (word == "read" || word == "print") {
 	    if (cp_handler_name(text, &e, &hname, this, errh)) {
-		add(e, hname, String::stable_string(READ_MARKER), next_timeout);
+		add(e, hname, String::make_stable(READ_MARKER), next_timeout);
 		next_timeout = 0;
 	    }
 	} else if (word == "write") {

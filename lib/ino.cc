@@ -326,7 +326,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 
     // ".." and "."
     if (f_pos == 0) {
-	if (ino_t dotdot = lookup(ino, String::stable_string("..", 2)))
+	if (ino_t dotdot = lookup(ino, String::make_stable("..", 2)))
 	    FILLDIR("..", 2, dotdot, DT_DIR, f_pos, thunk);
 	f_pos++;
     }

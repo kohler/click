@@ -824,7 +824,7 @@ ProcessingT::compound_port_count_code() const
     ElementT *output = _router->element("output");
     assert(input && output && input->tunnel() && output->tunnel());
     if (input->noutputs() == 0 && output->ninputs() == 0)
-	return String::stable_string("0/0", 3);
+	return String::make_stable("0/0", 3);
     else
 	return String(input->noutputs()) + "/" + String(output->ninputs());
 }

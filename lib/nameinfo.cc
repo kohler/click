@@ -175,7 +175,7 @@ StaticNameDB::revquery(const void *value, size_t vsize)
     memcpy(&ivalue, value, 4);
     for (size_t i = 0; i < _nentries; i++)
 	if (_entries[i].value == ivalue)
-	    return String::stable_string(_entries[i].name);
+	    return String::make_stable(_entries[i].name);
     return String();
 }
 

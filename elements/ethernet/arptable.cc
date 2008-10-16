@@ -302,7 +302,7 @@ ARPTable::write_handler(const String &str, Element *e, void *user_data, ErrorHan
 				  "IP", cpkP+cpkM, cpIPAddress, &ip,
 				  cpEnd) < 0)
 	      return -1;
-	  arpt->insert(ip, EtherAddress::broadcast()); // XXX?
+	  arpt->insert(ip, EtherAddress::make_broadcast()); // XXX?
 	  return 0;
       }
       case h_clear:

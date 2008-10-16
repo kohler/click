@@ -251,7 +251,7 @@ const String &
 Router::ename(int eindex) const
 {
     if (eindex < 0 || eindex >= nelements())
-	return String::empty_string();
+	return String::make_empty();
     else
 	return _element_names[eindex];
 }
@@ -270,7 +270,7 @@ const String &
 Router::econfiguration(int eindex) const
 {
     if (eindex < 0 || eindex >= nelements())
-	return String::empty_string();
+	return String::make_empty();
     else
 	return _element_configurations[eindex];
 }
@@ -298,7 +298,7 @@ const String &
 Router::elandmark(int eindex) const
 {
     if (eindex < 0 || eindex >= nelements())
-	return String::empty_string();
+	return String::make_empty();
     else
 	return _element_landmarks[eindex];
 }
@@ -1983,13 +1983,13 @@ Router::router_read_handler(Element *e, void *thunk)
 
       case GH_DRIVER:
 #if CLICK_NS
-	return String::stable_string("ns", 2);
+	return String::make_stable("ns", 2);
 #elif CLICK_USERLEVEL
-	return String::stable_string("userlevel", 9);
+	return String::make_stable("userlevel", 9);
 #elif CLICK_LINUXMODULE
-	return String::stable_string("linuxmodule", 11);
+	return String::make_stable("linuxmodule", 11);
 #elif CLICK_BSDMODULE
-	return String::stable_string("bsdmodule", 9);
+	return String::make_stable("bsdmodule", 9);
 #else
 	break;
 #endif

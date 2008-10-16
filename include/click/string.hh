@@ -148,15 +148,15 @@ class String { public:
     }
 
     
-    /** @brief Return an empty String.
+    /** @brief Return a const reference to an empty String.
      *
-     * Returns a global constant, so it's quicker than String::String(). */
-    static inline const String &empty_string() {
+     * May be quicker than String::String(). */
+    static inline const String &make_empty() {
 	return reinterpret_cast<const String &>(null_string_rep);
     }
 
     /** @brief Return a String containing @a len unknown characters. */
-    static String garbage_string(int len);
+    static String make_garbage(int len);
 
     /** @brief Return a String that directly references the first @a len
      * characters of @a s.
@@ -164,7 +164,7 @@ class String { public:
      * This function is suitable for static constant strings whose data is
      * known to stay around forever, such as C string constants.  If @a len @<
      * 0, treats @a s as a null-terminated C string. */
-    static String stable_string(const char *s, int len = -1);
+    static String make_stable(const char *s, int len = -1);
 
     /** @brief Return a String that directly references the character data in
      * [@a begin, @a end).
@@ -174,9 +174,9 @@ class String { public:
      * This function is suitable for static constant strings whose data is
      * known to stay around forever, such as C string constants.  Returns an
      * empty string if @a begin @>= @a end. */
-    static inline String stable_string(const char *begin, const char *end) {
+    static inline String make_stable(const char *begin, const char *end) {
 	if (begin < end)
-	    return String::stable_string(begin, end - begin);
+	    return String::make_stable(begin, end - begin);
 	else
 	    return String();
     }
@@ -197,10 +197,18 @@ class String { public:
      * @param x number
      * @param base base; must be 8, 10, or 16, defaults to 10
      * @param uppercase if true, then use uppercase letters in base 16 */
-    static String numeric_string(int_large_t x, int base = 10, bool uppercase = true);
+    static String make_numeric(int_large_t x, int base = 10, bool uppercase = true);
     /** @overload */
-    static String numeric_string(uint_large_t x, int base = 10, bool uppercase = true);
-  
+    static String make_numeric(uint_large_t x, int base = 10, bool uppercase = true);
+
+
+    static inline const String &empty_string() CLICK_DEPRECATED;
+    static inline String garbage_string(int len) CLICK_DEPRECATED;
+    static inline String stable_string(const char *s, int len = -1) CLICK_DEPRECATED;
+    static inline String stable_string(const char *begin, const char *end) CLICK_DEPRECATED;
+    static inline String numeric_string(int_large_t x, int base = 10, bool uppercase = true) CLICK_DEPRECATED;
+    static inline String numeric_string(uint_large_t x, int base = 10, bool uppercase = true) CLICK_DEPRECATED;
+
 
     /** @brief Return the string's length. */
     inline int length() const {
@@ -590,8 +598,8 @@ class String { public:
 	return _r.data == &oom_string_data;
     }
 
-    /** @brief Return a reference to an out-of-memory String. */
-    static inline const String &out_of_memory_string() {
+    /** @brief Return a const reference to an out-of-memory String. */
+    static inline const String &make_out_of_memory() {
 	return reinterpret_cast<const String &>(oom_string_rep);
     }
 
@@ -627,7 +635,7 @@ class String { public:
     }
 
     void assign(const char *cstr, int len, bool need_deref);
-    void make_out_of_memory();
+    void assign_out_of_memory();
     static __StringMemo *create_memo(char *data, int dirty, int capacity);
     static void delete_memo(__StringMemo *memo);
 
@@ -640,13 +648,49 @@ class String { public:
     static const __StringRep null_string_rep;
     static const __StringRep oom_string_rep;
   
-    static String claim_string(char *, int, int); // claim memory
+    static String make_claim(char *, int, int); // claim memory
     
-    friend class String::Initializer;
     friend class StringAccum;
   
 };
 
+
+/** @brief Return a const reference to an empty String.
+ * @deprecated Use make_empty() instead. */
+inline const String &String::empty_string() {
+    return make_empty();
+}
+
+/** @brief Return a String containing @a len unknown characters.
+ * @deprecated Use make_garbage() instead. */
+inline String String::garbage_string(int len) {
+    return make_garbage(len);
+}
+
+/** @brief Return a String that directly references the first @a len
+ * characters of @a s.
+ * @deprecated Use make_stable() instead. */
+inline String String::stable_string(const char *s, int len) {
+    return make_stable(s, len);
+}
+
+/** @brief Return a String that directly references the character data in
+ * [@a begin, @a end).
+ * @deprecated Use make_stable() instead. */
+inline String String::stable_string(const char *begin, const char *end) {
+    return make_stable(begin, end);
+}
+
+/** @brief Create and return a string representation of @a x.
+ * @deprecated Use make_numeric() instead. */
+inline String String::numeric_string(int_large_t x, int base, bool uppercase) {
+    return make_numeric(x, base, uppercase);
+}
+
+/** @overload */
+inline String String::numeric_string(uint_large_t x, int base, bool uppercase) {
+    return make_numeric(x, base, uppercase);
+}
 
 
 /** @relates String

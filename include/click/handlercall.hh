@@ -403,7 +403,7 @@ class HandlerCall { public:
      *
      *  Returns the empty string if invalid. */
     const String &value() const	{
-	return initialized() ? _value : String::empty_string();
+	return initialized() ? _value : String::make_empty();
     }
 
     /** @brief  Sets the write handler value and/or read handler parameters.

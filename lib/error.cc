@@ -223,7 +223,7 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
   // prepend 'warning: ' to every line if appropriate
   String begin_lines;
   if (seriousness >= ERR_MIN_WARNING && seriousness < ERR_MIN_ERROR) {
-    begin_lines = String::stable_string("warning: ", 9);
+    begin_lines = String::make_stable("warning: ", 9);
     msg << begin_lines;
   }
   

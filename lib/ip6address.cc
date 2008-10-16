@@ -130,7 +130,7 @@ IP6Address::unparse() const
     // do some work to print the address well
     if (_addr.s6_addr32[0] == 0 && _addr.s6_addr32[1] == 0) {
 	if (_addr.s6_addr32[2] == 0 && _addr.s6_addr32[3] == 0)
-	    return String::stable_string("::", 2); // empty address
+	    return String::make_stable("::", 2); // empty address
 	else if (_addr.s6_addr32[2] == 0) {
 	    sprintf(buf, "::%d.%d.%d.%d", _addr.s6_addr[12], _addr.s6_addr[13],
 		    _addr.s6_addr[14], _addr.s6_addr[15]);

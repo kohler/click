@@ -142,7 +142,7 @@ KernelHandlerProxy::handler_name_to_file_name(const String &str)
     const char *dot = find(str, '.');
     String hpart = str.substring(dot + 1, str.end());
     if (_dot_h)
-	hpart = String::stable_string(".h/", 3) + hpart;
+	hpart = String::make_stable(".h/", 3) + hpart;
 
     if (dot == str.begin())
 	return "/click/" + hpart;

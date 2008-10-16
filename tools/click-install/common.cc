@@ -37,8 +37,8 @@
 #include <sys/wait.h>
 
 #if FOR_BSDMODULE || FOR_LINUXMODULE
-String clickfs_dir = String::stable_string("/click");
-String clickfs_prefix = String::stable_string("/click");
+String clickfs_dir = String::make_stable("/click");
+String clickfs_prefix = String::make_stable("/click");
 #endif
 
 bool verbose = false;
@@ -74,7 +74,7 @@ bool
 adjust_clickfs_prefix()
 {
 #if FOR_LINUXMODULE
-    String clickfs_h_prefix = clickfs_prefix + String::stable_string("/.h");
+    String clickfs_h_prefix = clickfs_prefix + String::make_stable("/.h");
     if (access(clickfs_h_prefix.c_str(), F_OK) >= 0) {
 	clickfs_prefix = clickfs_h_prefix;
 	return true;

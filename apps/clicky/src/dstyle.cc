@@ -752,7 +752,7 @@ const char *dcss_selector::parse(const String &str, const char *s)
 	    ++s;
 	}
 	if (s == n && start == '#' && *s == '#' && !_name && !_type) {
-	    _type = String::stable_string("~handler~", 9);
+	    _type = String::make_stable("~handler~", 9);
 	    s = ++n;
 	    goto retry;
 	} else if (s == n && start) {

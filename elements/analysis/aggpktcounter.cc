@@ -98,7 +98,7 @@ int
 AggregatePacketCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
-    String anno = String::stable_string("PACKET_NUMBER");
+    String anno = String::make_stable("PACKET_NUMBER");
     
     if (cp_va_kparse(conf, this, errh,
 		     "NOTIFIER", 0, cpElement, &e,

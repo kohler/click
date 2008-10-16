@@ -33,7 +33,7 @@ CheckPacket::~CheckPacket()
 int
 CheckPacket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    _data = String::out_of_memory_string();
+    _data = String::make_out_of_memory();
     _data_offset = 0;
     String alignment;
     int length_eq = -1, length_ge = -1, length_le = -1;

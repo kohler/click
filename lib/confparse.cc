@@ -4579,9 +4579,9 @@ String
 cp_unparse_bool(bool b)
 {
     if (b)
-	return String::stable_string("true", 4);
+	return String::make_stable("true", 4);
     else
-	return String::stable_string("false", 5);
+	return String::make_stable("false", 5);
 }
 
 String

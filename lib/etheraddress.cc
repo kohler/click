@@ -37,7 +37,7 @@ CLICK_DECLS
 String
 EtherAddress::unparse_dash() const
 {
-    String str = String::garbage_string(17);
+    String str = String::make_garbage(17);
     // NB: mutable_c_str() creates space for the terminating null character
     if (char *x = str.mutable_c_str()) {
 	const unsigned char *p = this->data();
@@ -50,7 +50,7 @@ EtherAddress::unparse_dash() const
 String
 EtherAddress::unparse_colon() const
 {
-    String str = String::garbage_string(17);
+    String str = String::make_garbage(17);
     if (char *x = str.mutable_c_str()) {
 	const unsigned char *p = this->data();
 	sprintf(x, "%02X:%02X:%02X:%02X:%02X:%02X",

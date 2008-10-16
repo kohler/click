@@ -68,7 +68,7 @@ QuitWatcher::initialize(ErrorHandler *errh)
 void
 QuitWatcher::run_timer(Timer *)
 {
-    String unscheduled_string = String::stable_string("false", 5);
+    String unscheduled_string = String::make_stable("false", 5);
     for (int i = 0; i < _e.size(); i++) {
 	String s = _handlers[i]->call_read(_e[i]);
 	if (s == unscheduled_string) {

@@ -182,7 +182,7 @@ KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
 inline String
 KernelErrorHandler::stable_string() const
 {
-  return String::stable_string(&_logbuf[0], &_logbuf[_pos]);
+  return String::make_stable(&_logbuf[0], &_logbuf[_pos]);
 }
 
 static String
@@ -195,7 +195,7 @@ read_errors(Element *, void *thunk)
     // Problems are possible, of course.
     return errh->stable_string();
   else
-    return String::out_of_memory_string();
+    return String::make_out_of_memory();
 }
 
 void

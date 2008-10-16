@@ -252,7 +252,7 @@ String
 PortT::unparse(bool isoutput) const
 {
     if (!element)
-	return String::stable_string("<>");
+	return String::make_stable("<>");
     else if (isoutput)
 	return element->name() + "[" + String(port) + "]";
     else

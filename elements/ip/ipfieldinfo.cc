@@ -293,7 +293,7 @@ String
 IPField::unparse(Element *elt, bool tcpdump_rules)
 {
     if (!ok())
-	return String::stable_string("<bad>");
+	return String::make_stable("<bad>");
     
     String protstr;
     int32_t val = proto();

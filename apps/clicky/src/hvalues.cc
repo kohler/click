@@ -18,7 +18,7 @@ namespace clicky {
  *
  */
 
-const String handler_value::no_hvalue_string = String::stable_string("???", 3);
+const String handler_value::no_hvalue_string = String::make_stable("???", 3);
 
 namespace {
 struct autorefresher {

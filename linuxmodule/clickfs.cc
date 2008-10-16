@@ -242,7 +242,7 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
 	// BEWARE!  Using stable_string() here is quite dangerous, since the
 	// data is actually mutable.  The code path has been audited to make
 	// sure this is OK.
-	String dentry_name = String::stable_string(reinterpret_cast<const char *>(dentry->d_name.name), dentry->d_name.len);
+	String dentry_name = String::make_stable(reinterpret_cast<const char *>(dentry->d_name.name), dentry->d_name.len);
 	if (ino_t new_ino = click_ino.lookup(dir->i_ino, dentry_name))
 	    inode = click_inode(dir->i_sb, new_ino);
 	else

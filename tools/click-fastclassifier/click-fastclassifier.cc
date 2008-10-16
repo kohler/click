@@ -226,7 +226,7 @@ Classifier_Program::handler_value(const String &name) const
   for (int i = 0; i < handler_names.size(); i++)
     if (handler_names[i] == name)
       return handler_values[i];
-  return String::empty_string();
+  return String::make_empty();
 }
 
 bool

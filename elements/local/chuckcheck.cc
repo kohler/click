@@ -70,9 +70,9 @@ ChuckCheck::read_handler(Element *e, void *)
     // XXX multiprocessors
     
     ChuckCheck *cc = (ChuckCheck *)e;
-    String str = String::garbage_string((1 + BUCKETS*4) * sizeof(unsigned));
+    String str = String::make_garbage((1 + BUCKETS*4) * sizeof(unsigned));
     if (!str)
-	return String::stable_string("out of memory\n");
+	return String::make_stable("out of memory\n");
 
     unsigned *buf = (unsigned *)(str.mutable_data());
     unsigned j = 1;

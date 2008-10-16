@@ -121,12 +121,12 @@ StringAccum::take_string()
     if (len > 0) {
 	_s = 0;
 	_len = _cap = 0;
-	return String::claim_string(str, len, cap);
+	return String::make_claim(str, len, cap);
     } else if (!out_of_memory())
 	return String();
     else {
 	clear();
-	return String::out_of_memory_string();
+	return String::make_out_of_memory();
     }
 }
 
