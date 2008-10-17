@@ -63,7 +63,7 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 
 	    const char *beforedollar = s, *cstart;
 	    String vname;
-	    int vtype;
+	    int vtype, expand_vname = 0;
 
 	    if (s[1] == '{') {
 		vtype = '{';
@@ -75,7 +75,7 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 		vname = config.substring(cstart, s++);
 		
 	    } else if (s[1] == '(') {
-		int level = 1, nquote = 0, anydollar = 0;
+		int level = 1, nquote = 0;
 		vtype = '(';
 		s += 2;
 		for (cstart = s; s < end && level; s++)
@@ -101,17 +101,13 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 			break;
 		      case '$':
 			if (nquote != '\'')
-			    anydollar = 1;
+			    expand_vname = 1;
 			break;
 		    }
 
 		if (s == cstart || s[-1] != ')')
 		    goto done;
-		if (anydollar)
-		    // XXX recursive call: potential stack overflow
-		    vname = cp_expand(config.substring(cstart, s - 1), ve);
-		else
-		    vname = config.substring(cstart, s - 1);
+		vname = config.substring(cstart, s - 1);
 		
 	    } else if (isalnum((unsigned char) s[1]) || s[1] == '_') {
 		vtype = 'a';
@@ -132,6 +128,8 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 	    output << config.substring(uninterpolated, beforedollar);
 
 	    bool result;
+	    if (expand_vname)
+		vname = cp_expand(vname, ve);
 	    if (expand_quote && quote == 0) {
 		output << '\"';
 		result = ve.expand(vname, vtype, '\"', output);
@@ -139,8 +137,18 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 	    } else
 		result = ve.expand(vname, vtype, quote, output);
 
-	    uninterpolated = (result ? s : beforedollar);
+	    uninterpolated = s;
+	    if (!result) {
+		if (expand_quote && quote == 0)
+		    output.pop_back(2);
+		if (expand_vname)
+		    output << '$' << '(' << vname << ')';
+		else
+		    uninterpolated = beforedollar;
+	    }
+
 	    s--;
+	    break;
 	}
 	}
 

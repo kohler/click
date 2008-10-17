@@ -1,0 +1,24 @@
+%info
+Test Script expansion.
+
+%script
+click -e '
+	define($j sub)
+	Script(print $(add 1 2),
+		set i add,
+		print $($i 3 4),
+		print $($(s.run).name),
+		print $($j 8 5),
+		print $($j.run),
+		stop)
+	s :: Script(TYPE PASSIVE,
+		return i2)
+	sub :: Script(TYPE PASSIVE, return Hello)
+	i1, i2 :: Idle'
+
+%expect stdout
+3
+7
+i2
+3
+Hello
