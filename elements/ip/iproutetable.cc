@@ -99,16 +99,19 @@ int
 IPRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int before = errh->nerrors();
-    IPRoute r;
+    int r = 0, r1;
+    IPRoute route;
     for (int i = 0; i < conf.size(); i++) {
-	if (cp_ip_route(conf[i], &r, false, this)
-	    && r.port >= 0 && r.port < noutputs())
-	    (void) add_route(r, false, 0, errh);
-	else
+	if (cp_ip_route(conf[i], &route, false, this)
+	    && route.port >= 0 && route.port < noutputs()) {
+	    if ((r1 = add_route(route, false, 0, errh)) < 0)
+		r = r1;
+	} else {
 	    errh->error("argument %d should be 'ADDR/MASK [GATEWAY] OUTPUT'", i+1);
+	    r = -EINVAL;
+	}
     }
-
-    return (errh->nerrors() != before ? -1 : 0);
+    return r;
 }
 
 int
