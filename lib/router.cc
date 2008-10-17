@@ -1026,14 +1026,18 @@ Router::initialize(ErrorHandler *errh)
 #endif
 	    ContextErrorHandler cerrh
 		(errh, context_message(i, "While configuring"));
-	    int before = cerrh.nerrors();
+	    int before = cerrh.nerrors(), r;
 	    conf.clear();
 	    cp_argvec(_element_configurations[i], conf);
-	    if (_elements[i]->configure(conf, &cerrh) < 0) {
+	    if ((r = _elements[i]->configure(conf, &cerrh)) < 0) {
 		element_stage[i] = Element::CLEANUP_CONFIGURE_FAILED;
 		all_ok = false;
-		if (cerrh.nerrors() == before)
-		    cerrh.error("unspecified error");
+		if (cerrh.nerrors() == before) {
+		    if (r == -ENOMEM)
+			cerrh.error("out of memory");
+		    else
+			cerrh.error("unspecified error");
+		}
 	    } else
 		element_stage[i] = Element::CLEANUP_CONFIGURED;
 	}
