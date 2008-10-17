@@ -201,7 +201,7 @@ ProgressBar::run_timer(Timer *)
     }
     
     // get position
-    double pos;
+    double pos = 0;
     bool have_pos = get_value(_first_pos_h, _es.size(), &pos);
 
     // measure how far along we are
@@ -278,17 +278,21 @@ ProgressBar::run_timer(Timer *)
 
     // collect time
     if (_status < ST_DONE
-	&& (!_have_size || elapsed <= 0.0 || pos > _size))
+	&& (!have_pos || !_have_size || elapsed <= 0.0 || pos > _size))
 	sa << "   --:-- ETA";
     else if (wait.sec() >= STALLTIME)
 	sa << " - stalled -";
     else {
 	int time_remaining;
-	if (_status >= ST_DONE)
+	bool eta;
+	if (_status >= ST_DONE || !have_pos || pos < 1e-6) {
 	    time_remaining = (int)elapsed;
-	else
+	    eta = false;
+	} else {
 	    time_remaining = (int)(_size / (pos / elapsed) - elapsed);
-	
+	    eta = true;
+	}
+
 	int hr = time_remaining / 3600;
 	if (hr)
 	    sa.snprintf(12, "%2d:", hr);
@@ -296,7 +300,7 @@ ProgressBar::run_timer(Timer *)
 	    sa << "   ";
 	int sec = time_remaining % 3600;
 	sa.snprintf(12, "%02d:%02d%s", sec / 60, sec % 60,
-		    (_status >= ST_DONE ? "    " : " ETA"));
+		    (eta ? " ETA" : "    "));
     }
 
     // add \n if appropriate
