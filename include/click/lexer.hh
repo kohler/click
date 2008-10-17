@@ -45,7 +45,8 @@ class Lexer { public:
   
     class TunnelEnd;
     class Compound;
-    typedef Router::Hookup Hookup;
+    typedef Router::Port Port;
+    typedef Router::Connection Connection;
   
     Lexer();
     virtual ~Lexer();
@@ -79,7 +80,6 @@ class Lexer { public:
   
     int remove_element_type(int t)	{ return remove_element_type(t, 0); }
 
-    void connect(int element1, int port1, int element2, int port2);
     String element_name(int) const;
     String element_landmark(int) const;
     
@@ -146,9 +146,8 @@ class Lexer { public:
     // elements
     HashTable<String, int> _element_map;
     Compound *_c;
-  
-    TunnelEnd *_definputs;
-    TunnelEnd *_defoutputs;
+
+    Vector<TunnelEnd *> _tunnels;
   
     // compound elements
     int _anonymous_offset;
@@ -169,10 +168,10 @@ class Lexer { public:
     int remove_element_type(int, int *);
     int make_compound_element(int);
     void expand_compound_element(int, VariableEnvironment &);
-    void add_router_connections(int, const Vector<int> &, Router *);
+    void add_router_connections(int, const Vector<int> &);
 
-    void find_connections(const Hookup &, bool, Vector<Hookup> &) const;
-    void expand_connection(const Hookup &, bool, Vector<Hookup> &) const;
+    TunnelEnd *find_tunnel(const Port &p, bool isoutput, bool insert);
+    void expand_connection(const Port &p, bool isoutput, Vector<Port> &);
   
     friend class Compound;
     friend class TunnelEnd;

@@ -134,14 +134,58 @@ class Router { public:
 
     /** @cond never */
     // Needs to be public for Lexer, etc., but not useful outside
-    struct Hookup {
+    struct Port {
 	int idx;
 	int port;
-	Hookup()				: idx(-1) { }
-	Hookup(int i, int p)			: idx(i), port(p) { }
+
+	Port() {
+	}
+	Port(int i, int p)
+	    : idx(i), port(p) {
+	}
+
+	bool operator==(const Port &x) const {
+	    return idx == x.idx && port == x.port;
+	}
+	bool operator!=(const Port &x) const {
+	    return idx != x.idx || port != x.port;
+	}
+	bool operator<(const Port &x) const {
+	    return idx < x.idx || (idx == x.idx && port < x.port);
+	}
+	bool operator<=(const Port &x) const {
+	    return idx < x.idx || (idx == x.idx && port <= x.port);
+	}
+    };
+
+    struct Connection {
+	Port p[2];
+
+	Connection() {
+	}
+	Connection(int from_idx, int from_port, int to_idx, int to_port) {
+	    p[0] = Port(to_idx, to_port);
+	    p[1] = Port(from_idx, from_port);
+	}
+
+	const Port &operator[](int i) const {
+	    assert(i >= 0 && i < 2);
+	    return p[i];
+	}
+	Port &operator[](int i) {
+	    assert(i >= 0 && i < 2);
+	    return p[i];
+	}
+
+	bool operator==(const Connection &x) const {
+	    return p[0] == x.p[0] && p[1] == x.p[1];
+	}
+	bool operator<(const Connection &x) const {
+	    return p[0] < x.p[0] || (p[0] == x.p[0] && p[1] < x.p[1]);
+	}
     };
     /** @endcond never */
-      
+
 #if CLICK_NS
     simclick_node_t *simnode() const;
     int sim_get_ifid(const char* ifname);
@@ -181,26 +225,19 @@ class Router { public:
     Vector<String> _element_names;
     Vector<String> _element_configurations;
     Vector<String> _element_landmarks;
+
+    mutable Vector<int> _element_name_sorter;
+    Vector<int> _element_gport_offset[2];
     Vector<int> _element_configure_order;
 
-    Vector<Hookup> _hookup_from;
-    Vector<Hookup> _hookup_to;
-
-    /** @cond never */
-    struct Gport {
-	Vector<int> e2g;
-	Vector<int> g2e;
-	int size() const			{ return g2e.size(); }
-    };
-    /** @endcond never */
-    Gport _gports[2];
-  
-    Vector<int> _hookup_gports[2];
+    Vector<Connection> _conn;
+    Vector<int> _conn_output_sorter;
 
     Vector<String> _requirements;
 
     volatile int _state;
     bool _have_connections : 1;
+    bool _conn_sorted : 1;
     volatile int _running;
   
     Vector<int> _ehandler_first_by_element;
@@ -247,25 +284,28 @@ class Router { public:
     Router(const Router&);
     Router& operator=(const Router&);
   
-    void remove_hookup(int);
-    void hookup_error(const Hookup&, bool, const char*, ErrorHandler*);
+    Connection *remove_connection(Connection *cp);
+    void hookup_error(const Port &p, bool isoutput, const char *message,
+		      ErrorHandler *errh, bool active = false);
     int check_hookup_elements(ErrorHandler*);
     int check_hookup_range(ErrorHandler*);
     int check_hookup_completeness(ErrorHandler*);
 
     const char *hard_flow_code_override(int e) const;
-    int processing_error(const Hookup&, const Hookup&, bool, int, ErrorHandler*);
+    int processing_error(const Connection &conn, bool, int, ErrorHandler*);
     int check_push_and_pull(ErrorHandler*);
-    
-    void make_gports();
-    int ngports(bool isout) const	{ return _gports[isout].g2e.size(); }
-    inline int gport(bool isoutput, const Hookup&) const;
-    inline Hookup gport_hookup(bool isoutput, int) const;
-    void gport_list_elements(bool, const Bitvector&, Vector<Element*>&) const;
-    void make_hookup_gports();
-  
+
     void set_connections();
-  
+    void sort_connections();
+    int connindex_lower_bound(bool isoutput, const Port &port) const;
+    void port_list_elements(Vector<Port>&, Vector<Element*>&) const;
+
+    void make_gports();
+    inline int ngports(bool isout) const {
+	return _element_gport_offset[isout].back();
+    }
+    inline int gport(bool isoutput, const Port &port) const;
+
     String context_message(int element_no, const char*) const;
     int element_lerror(ErrorHandler*, Element*, const char*, ...) const;
 
@@ -274,11 +314,11 @@ class Router { public:
     inline Handler* xhandler(int) const;
     int find_ehandler(int, const String&, bool allow_star) const;
     static inline Handler fetch_handler(const Element*, const String&);
-    void store_local_handler(int, const Handler&);
-    static void store_global_handler(const Handler&);
-    static inline void store_handler(const Element*, const Handler&);
+    void store_local_handler(int eindex, Handler &h, int type);
+    static void store_global_handler(Handler &h, int type);
+    static inline void store_handler(const Element *element, Handler &h, int type);
 
-    int global_port_flow(bool forward, Element* first_element, int first_port, ElementFilter* stop_filter, Bitvector& results);
+    int global_port_flow(bool forward, Element* first_element, int first_port, ElementFilter* stop_filter, Vector<Port> &results);
 
     // global handlers
     static String router_read_handler(Element*, void*);
@@ -291,18 +331,6 @@ class Router { public:
   
 };
 
-
-inline bool
-operator==(const Router::Hookup& a, const Router::Hookup& b)
-{
-    return a.idx == b.idx && a.port == b.port;
-}
-
-inline bool
-operator!=(const Router::Hookup& a, const Router::Hookup& b)
-{
-    return a.idx != b.idx || a.port != b.port;
-}
 
 /** @brief  Increment the router's reference count.
  *
@@ -524,14 +552,6 @@ Handler::Handler(const String &name)
 {
     _hook.rw.r = 0;
     _hook.rw.w = 0;
-}
-
-inline bool
-Handler::compatible(const Handler& o) const
-{
-    return (_hook.rw.r == o._hook.rw.r && _hook.rw.w == o._hook.rw.w
-	    && _thunk1 == o._thunk1 && _thunk2 == o._thunk2
-	    && _flags == o._flags);
 }
 
 CLICK_ENDDECLS

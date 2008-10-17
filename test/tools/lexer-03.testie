@@ -1,0 +1,26 @@
+%info
+Check port reuse and missing port errors
+
+%script
+click -q X || true
+click -q Y || true
+click -q Z || true
+
+%file X
+i::InfiniteSource -> Print -> d::Discard;
+InfiniteSource -> Print -> d;
+
+%file Y
+i::InfiniteSource -> Print -> d::Discard;
+i -> Print -> d;
+
+%file Z
+i::InfiniteSource -> Print -> d::Discard;
+InfiniteSource -> p::Print;
+
+%expect stderr
+Y:1: illegal reuse of 'i :: InfiniteSource' push output 0
+Z:2: 'p :: Print' output 0 unused
+
+%ignore stderr
+Router could not be initialized!

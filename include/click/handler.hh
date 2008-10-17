@@ -256,13 +256,15 @@ class Handler { public:
     int _next_by_name;
 
     static const Handler *the_blank_handler;
-    
+
     Handler(const String & = String());
 
-    bool compatible(const Handler &) const;
-  
+    enum { combine_read, combine_write, combine_comprehensive };
+    inline void combine(const Handler &x, int type);
+    inline bool compatible(const Handler &x) const;
+
     friend class Router;
-  
+
 };
 
 /* The largest size a write handler is allowed to have. */

@@ -67,7 +67,8 @@ static int globalh_cap;
  *  parse the configuration string).  The router is registered with the Master
  *  object, but not initialized or activated. */
 Router::Router(const String &configuration, Master *master)
-    : _master(0), _state(ROUTER_NEW), _have_connections(false),
+    : _master(0), _state(ROUTER_NEW),
+      _have_connections(false), _conn_sorted(true),
       _running(RUNNING_INACTIVE),
       _handler_bufs(0), _nhandlers_bufs(0), _free_handler(-1),
       _root_element(0),
@@ -159,6 +160,15 @@ Router::unuse()
 
 // ACCESS
 
+static int
+element_name_sorter_compar(const void *ap, const void *bp, void *user_data)
+{
+    int a = *reinterpret_cast<const int *>(ap);
+    int b = *reinterpret_cast<const int *>(bp);
+    const Vector<String> &element_names = *reinterpret_cast<Vector<String> *>(user_data);
+    return String::compare(element_names[a], element_names[b]);
+}
+
 /** @brief  Finds an element named @a name.
  *  @param  name     element name
  *  @param  context  compound element context
@@ -178,29 +188,39 @@ Router::unuse()
 Element *
 Router::find(const String &name, String context, ErrorHandler *errh) const
 {
-  while (1) {
-    int got = -1;
-    String n = context + name;
-    for (int i = 0; i < _elements.size(); i++)
-      if (_element_names[i] == n) {
-	if (got >= 0) {
-	  if (errh) errh->error("more than one element named '%s'", n.c_str());
-	  return 0;
-	} else
-	  got = i;
-      }
-    if (got >= 0)
-      return _elements[got];
-    if (!context)
-      break;
-    
-    int slash = context.find_right('/', context.length() - 2);
-    context = (slash >= 0 ? context.substring(0, slash + 1) : String());
-  }
-  
-  if (errh)
-    errh->error("no element named '%s'", name.c_str());
-  return 0;
+    if (_element_name_sorter.size() != _element_names.size()) {
+	while (_element_name_sorter.size() != _element_names.size())
+	    _element_name_sorter.push_back(_element_name_sorter.size());
+	click_qsort(_element_name_sorter.begin(), _element_name_sorter.size(),
+		    sizeof(_element_name_sorter[0]),
+		    element_name_sorter_compar, (void *) &_element_names);
+    }
+
+    while (1) {
+	String n = context + name;
+	int *l = _element_name_sorter.begin();
+	int *r = _element_name_sorter.end();
+	while (l < r) {
+	    int *m = l + (r - l) / 2;
+	    int cmp = String::compare(n, _element_names[*m]);
+	    if (cmp < 0)
+		r = m;
+	    else if (cmp > 0)
+		l = m + 1;
+	    else
+		return _elements[*m];
+	}
+
+	if (!context)
+	    break;
+
+	int slash = context.find_right('/', context.length() - 2);
+	context = (slash >= 0 ? context.substring(0, slash + 1) : String());
+    }
+
+    if (errh)
+	errh->error("no element named '%s'", name.c_str());
+    return 0;
 }
 
 /** @brief  Finds an element named @a name.
@@ -349,14 +369,25 @@ Router::add_connection(int from_idx, int from_port, int to_idx, int to_port)
     assert(from_idx >= 0 && from_port >= 0 && to_idx >= 0 && to_port >= 0);
     if (_state != ROUTER_NEW)
 	return -1;
-    Hookup hfrom(from_idx, from_port);
-    Hookup hto(to_idx, to_port);
-    // only add new connections
-    for (int i = 0; i < _hookup_from.size(); i++)
-	if (_hookup_from[i] == hfrom && _hookup_to[i] == hto)
+
+    Connection c(from_idx, from_port, to_idx, to_port);
+    
+    // check for continuing sorted order
+    if (_conn_sorted && _conn.size() && c < _conn.back())
+	_conn_sorted = false;
+
+    // check for duplicate connections, which are not errors
+    // (but which, if included in _conn, would cause errors later)
+    if (!_conn_sorted) {
+	for (int i = 0; i < _conn.size(); i++)
+	    if (_conn[i] == c)
+		return 0;
+    } else {
+	if (_conn.size() && _conn.back() == c)
 	    return 0;
-    _hookup_from.push_back(hfrom);
-    _hookup_to.push_back(hto);
+    }
+
+    _conn.push_back(c);
     return 0;
 }
 
@@ -370,23 +401,27 @@ Router::add_requirement(const String &r)
 
 // CHECKING HOOKUP
 
-void
-Router::remove_hookup(int c)
+Router::Connection *
+Router::remove_connection(Connection *cp)
 {
-    _hookup_from[c] = _hookup_from.back();
-    _hookup_from.pop_back();
-    _hookup_to[c] = _hookup_to.back();
-    _hookup_to.pop_back();
+    assert(cp >= _conn.begin() && cp < _conn.end());
+    *cp = _conn.back();
+    _conn.pop_back();
+    _conn_sorted = false;
+    return cp;
 }
 
 void
-Router::hookup_error(const Hookup &h, bool is_from, const char *message,
-		     ErrorHandler *errh)
+Router::hookup_error(const Port &p, bool isoutput, const char *message,
+		     ErrorHandler *errh, bool active)
 {
-    bool is_output = is_from;
-    const char *kind = (is_output ? "output" : "input");
-    element_lerror(errh, _elements[h.idx], message,
-		   _elements[h.idx], kind, h.port);
+    const char *kind;
+    if (active)
+	kind = (isoutput ? "push output" : "pull input");
+    else
+	kind = (isoutput ? "output" : "input");
+    element_lerror(errh, _elements[p.idx], message,
+		   _elements[p.idx], kind, p.port);
 }
 
 int
@@ -395,29 +430,23 @@ Router::check_hookup_elements(ErrorHandler *errh)
     if (!errh)
 	errh = ErrorHandler::default_handler();
     int before = errh->nerrors();
-  
+
     // Check each hookup to ensure it connects valid elements
-    for (int c = 0; c < _hookup_from.size(); c++) {
-	Hookup &hfrom = _hookup_from[c];
-	Hookup &hto = _hookup_to[c];
+    for (Connection *cp = _conn.begin(); cp != _conn.end(); ) {
 	int before = errh->nerrors();
-    
-	if (hfrom.idx < 0 || hfrom.idx >= nelements() || !_elements[hfrom.idx])
-	    errh->error("bad element number '%d'", hfrom.idx);
-	if (hto.idx < 0 || hto.idx >= nelements() || !_elements[hto.idx])
-	    errh->error("bad element number '%d'", hto.idx);
-	if (hfrom.port < 0)
-	    errh->error("bad port number '%d'", hfrom.port);
-	if (hto.port < 0)
-	    errh->error("bad port number '%d'", hto.port);
-    
-	// remove the connection if there were errors
-	if (errh->nerrors() != before) {
-	    remove_hookup(c);
-	    c--;
+	for (int p = 0; p < 2; ++p) {
+	    if ((*cp)[p].idx < 0 || (*cp)[p].idx >= nelements()
+		|| !_elements[(*cp)[p].idx])
+		errh->error("bad element number '%d'", (*cp)[p].idx);
+	    if ((*cp)[p].port < 0)
+		errh->error("bad port number '%d'", (*cp)[p].port);
 	}
+	if (errh->nerrors() != before)
+	    cp = remove_connection(cp);
+	else
+	    ++cp;
     }
-  
+
     return (errh->nerrors() == before ? 0 : -1);
 }
 
@@ -429,33 +458,25 @@ Router::check_hookup_range(ErrorHandler *errh)
     // Count inputs and outputs, and notify elements how many they have
     Vector<int> nin(nelements(), -1);
     Vector<int> nout(nelements(), -1);
-    for (int c = 0; c < _hookup_from.size(); c++) {
-	if (_hookup_from[c].port > nout[_hookup_from[c].idx])
-	    nout[_hookup_from[c].idx] = _hookup_from[c].port;
-	if (_hookup_to[c].port > nin[_hookup_to[c].idx])
-	    nin[_hookup_to[c].idx] = _hookup_to[c].port;
+    for (Connection *cp = _conn.begin(); cp != _conn.end(); ++cp) {
+	if ((*cp)[1].port > nout[(*cp)[1].idx])
+	    nout[(*cp)[1].idx] = (*cp)[1].port;
+	if ((*cp)[0].port > nin[(*cp)[0].idx])
+	    nin[(*cp)[0].idx] = (*cp)[0].port;
     }
     for (int f = 0; f < nelements(); f++)
 	_elements[f]->notify_nports(nin[f] + 1, nout[f] + 1, errh);
 
     // Check each hookup to ensure its port numbers are within range
-    for (int c = 0; c < _hookup_from.size(); c++) {
-	Hookup &hfrom = _hookup_from[c];
-	Hookup &hto = _hookup_to[c];
+    for (Connection *cp = _conn.begin(); cp != _conn.end(); ) {
 	int before = errh->nerrors();
-    
-	if (hfrom.port >= _elements[hfrom.idx]->noutputs())
-	    hookup_error(hfrom, true, "'%{element}' has no %s %d", errh);
-	if (hto.port >= _elements[hto.idx]->ninputs())
-	    hookup_error(hto, false, "'%{element}' has no %s %d", errh);
-    
-	// remove the connection if there were errors
-	if (errh->nerrors() == before)
-	    /* do nothing */;
-	else {
-	    remove_hookup(c);
-	    c--;
-	}
+	for (int p = 0; p < 2; ++p)
+	    if ((*cp)[p].port >= _elements[(*cp)[p].idx]->nports(p))
+		hookup_error((*cp)[p], p, "'%{element}' has no %s %d", errh);
+	if (errh->nerrors() != before)
+	    cp = remove_connection(cp);
+	else
+	    ++cp;
     }
     
     return errh->nerrors() == before_all ? 0 : -1;
@@ -464,43 +485,43 @@ Router::check_hookup_range(ErrorHandler *errh)
 int
 Router::check_hookup_completeness(ErrorHandler *errh)
 {
-    Bitvector used_outputs(ngports(true), false);
-    Bitvector used_inputs(ngports(false), false);
+    sort_connections();
     int before_all = errh->nerrors();
-  
-    // Check each hookup to ensure it doesn't reuse a port.
-    // Completely duplicate connections never got into the Router
-    for (int c = 0; c < _hookup_from.size(); c++) {
-	Hookup &hfrom = _hookup_from[c];
-	Hookup &hto = _hookup_to[c];
-	int before = errh->nerrors();
-    
-	int fromg = gport(true, hfrom);
-	int tog = gport(false, hto);
-	if (used_outputs[fromg]
-	    && _elements[hfrom.idx]->output_is_push(hfrom.port))
-	    hookup_error(hfrom, true, "illegal reuse of '%{element}' push %s %d", errh);
-	else if (used_inputs[tog]
-		 && _elements[hto.idx]->input_is_pull(hto.port))
-	    hookup_error(hto, false, "illegal reuse of '%{element}' pull %s %d", errh);
-	
-	// remove the connection if there were errors
-	if (errh->nerrors() == before) {
-	    used_outputs[fromg] = true;
-	    used_inputs[tog] = true;
-	} else {
-	    remove_hookup(c);
-	    c--;
-	}
-    }
 
-    // Check for unused inputs and outputs.
-    for (int g = 0; g < ngports(false); g++)
-	if (!used_inputs[g])
-	    hookup_error(gport_hookup(false, g), false, "'%{element}' %s %d unused", errh);
-    for (int g = 0; g < ngports(true); g++)
-	if (!used_outputs[g])
-	    hookup_error(gport_hookup(true, g), true, "'%{element}' %s %d unused", errh);
+    // check that connections don't reuse active ports
+    if (_conn.size())
+	for (int p = 0; p < 2; ++p) {
+	    int ci = (p ? _conn_output_sorter[0] : 0);
+	    Port last = _conn[ci][p];
+	    for (int cix = 1; cix < _conn.size(); ++cix) {
+		ci = (p ? _conn_output_sorter[cix] : cix);
+		if (likely(last != _conn[ci][p]))
+		    last = _conn[ci][p];
+		else if (_elements[last.idx]->port_active(p, last.port))
+		    hookup_error(last, p, "illegal reuse of '%{element}' %s %d", errh, true);
+	    }
+	}
+
+    // check for unused ports
+    for (int p = 0; p < 2; ++p) {
+	int cix = 0;
+	Port conn(-1, 0), all(0, 0);
+	while (all.idx < _elements.size())
+	    if (all.port >= _elements[all.idx]->nports(p)) {
+		++all.idx;
+		all.port = 0;
+	    } else if (conn < all && cix >= _conn.size())
+		conn.idx = _elements.size();
+	    else if (conn < all) {
+		int ci = (p ? _conn_output_sorter[cix] : cix);
+		conn = _conn[ci][p];
+		++cix;
+	    } else {
+		if (unlikely(conn != all))
+		    hookup_error(all, p, "'%{element}' %s %d unused", errh);
+		++all.port;
+	    }
+    }
 
     return errh->nerrors() == before_all ? 0 : -1;
 }
@@ -508,82 +529,97 @@ Router::check_hookup_completeness(ErrorHandler *errh)
 
 // PORT INDEXES
 
+static int
+conn_output_sorter_compar(const void *ap, const void *bp, void *user_data)
+{
+    int a = *reinterpret_cast<const int *>(ap);
+    int b = *reinterpret_cast<const int *>(bp);
+    const Vector<Router::Connection> &conn = *reinterpret_cast<Vector<Router::Connection> *>(user_data);
+    if (conn[a][1] < conn[b][1])
+	return -1;
+    else if (conn[a][1] == conn[b][1]) {
+	if (conn[a][0] < conn[b][0])
+	    return -1;
+	else if (conn[a][0] == conn[b][0])
+	    return 0;
+    }
+    return 1;
+}
+
+void
+Router::sort_connections()
+{
+    if (!_conn_sorted) {
+	click_qsort(_conn.begin(), _conn.size());
+	_conn_output_sorter.clear();
+	_conn_sorted = true;
+    }
+    if (_conn_output_sorter.size() != _conn.size()) {
+	while (_conn_output_sorter.size() != _conn.size())
+	    _conn_output_sorter.push_back(_conn_output_sorter.size());
+	click_qsort(_conn_output_sorter.begin(), _conn_output_sorter.size(),
+		    sizeof(_conn_output_sorter[0]),
+		    conn_output_sorter_compar, (void *) &_conn);
+    }
+}
+
+int
+Router::connindex_lower_bound(bool isoutput, const Port &p) const
+{
+    assert(_conn_sorted && _conn_output_sorter.size() == _conn.size());
+    int l = 0, r = _conn.size();
+    while (l < r) {
+	int m = l + (r - l) / 2;
+	int ci = (isoutput ? _conn_output_sorter[m] : m);
+	if (p <= _conn[ci][isoutput])
+	    r = m;
+	else
+	    l = m + 1;
+    }
+    return r;
+}
+
 void
 Router::make_gports()
 {
-    _gports[0].e2g.assign(1, 0);
-    _gports[1].e2g.assign(1, 0);
-    _gports[0].g2e.clear();
-    _gports[1].g2e.clear();
-    for (int i = 0; i < _elements.size(); i++) {
-	Element *e = _elements[i];
-	_gports[0].e2g.push_back(_gports[0].e2g.back() + e->ninputs());
-	_gports[1].e2g.push_back(_gports[1].e2g.back() + e->noutputs());
-	for (int j = 0; j < e->ninputs(); j++)
-	    _gports[0].g2e.push_back(i);
-	for (int j = 0; j < e->noutputs(); j++)
-	    _gports[1].g2e.push_back(i);
+    _element_gport_offset[0].assign(1, 0);
+    _element_gport_offset[1].assign(1, 0);
+    for (Element **ep = _elements.begin(); ep != _elements.end(); ++ep) {
+	_element_gport_offset[0].push_back(_element_gport_offset[0].back() + (*ep)->ninputs());
+	_element_gport_offset[1].push_back(_element_gport_offset[1].back() + (*ep)->noutputs());
     }
 }
 
 inline int
-Router::gport(bool isoutput, const Hookup &h) const
+Router::gport(bool isoutput, const Port &h) const
 {
-    return _gports[isoutput].e2g[h.idx] + h.port;
-}
-
-inline Router::Hookup
-Router::gport_hookup(bool isoutput, int g) const
-{
-    int e = _gports[isoutput].g2e[g];
-    return Hookup(e, g - _gports[isoutput].e2g[e]);
+    return _element_gport_offset[isoutput][h.idx] + h.port;
 }
 
 void
-Router::gport_list_elements(bool isoutput, const Bitvector& bv, Vector<Element*>& results) const
+Router::port_list_elements(Vector<Port> &ports, Vector<Element*>& results) const
 {
-    const Gport& gport = _gports[isoutput];
-    int ng = gport.size();
-    assert(bv.size() == ng);
-    const int* gp = gport.e2g.begin();
-    for (int g = 0; g < ng; ) {
-	while (g >= gp[1])
-	    gp++;
-	if (bv[g]) {
-	    results.push_back(_elements[gp - gport.e2g.begin()]);
-	    g = gp[1];
-	} else
-	    g++;
-    }
-}
-
-void
-Router::make_hookup_gports()
-{
-    if (_hookup_gports[0].size() != _hookup_to.size()) {
-	for (int c = 0; c < _hookup_to.size(); c++) {
-	    _hookup_gports[0].push_back(gport(false, _hookup_to[c]));
-	    _hookup_gports[1].push_back(gport(true, _hookup_from[c]));
-	}
-	assert(_hookup_gports[0].size() == _hookup_to.size());
-    }
+    click_qsort(ports.begin(), ports.size());
+    for (Port *pp = ports.begin(); pp != ports.end(); ++pp)
+	if (pp == ports.begin() || pp[-1].idx != pp->idx)
+	    results.push_back(_elements[pp->idx]);
 }
 
 // PROCESSING
 
 int
-Router::processing_error(const Hookup &hfrom, const Hookup &hto, bool aggie,
+Router::processing_error(const Connection &c, bool aggie,
 			 int processing_from, ErrorHandler *errh)
 {
     const char *type1 = (processing_from == Element::VPUSH ? "push" : "pull");
     const char *type2 = (processing_from == Element::VPUSH ? "pull" : "push");
     if (!aggie)
 	errh->error("'%{element}' %s output %d connected to '%{element}' %s input %d",
-		    _elements[hfrom.idx], type1, hfrom.port,
-		    _elements[hto.idx], type2, hto.port);
+		    _elements[c[1].idx], type1, c[1].port,
+		    _elements[c[0].idx], type2, c[0].port);
     else
 	errh->error("agnostic '%{element}' in mixed context: %s input %d, %s output %d",
-		    _elements[hfrom.idx], type2, hto.port, type1, hfrom.port);
+		    _elements[c[1].idx], type2, c[0].port, type1, c[1].port);
     return -1;
 }
 
@@ -596,58 +632,59 @@ Router::check_push_and_pull(ErrorHandler *errh)
     // set up processing vectors
     Vector<int> input_pers(ngports(false), 0);
     Vector<int> output_pers(ngports(true), 0);
-    for (int e = 0; e < nelements(); e++)
-	_elements[e]->processing_vector(input_pers.begin() + _gports[0].e2g[e], output_pers.begin() + _gports[1].e2g[e], errh);
-  
+    for (int ei = 0; ei < nelements(); ++ei)
+	_elements[ei]->processing_vector
+	    (input_pers.begin() + gport(false, Port(ei, 0)),
+	     output_pers.begin() + gport(true, Port(ei, 0)), errh);
+
     // add fake connections for agnostics
-    Vector<Hookup> hookup_from = _hookup_from;
-    Vector<Hookup> hookup_to = _hookup_to;
+    Vector<Connection> conn = _conn;
     Bitvector bv;
-    for (int* inputp = input_pers.begin(); inputp < input_pers.end(); inputp++)
-	if (*inputp == Element::VAGNOSTIC) {
-	    Hookup h = gport_hookup(false, inputp - input_pers.begin());
-	    _elements[h.idx]->port_flow(false, h.port, &bv);
-	    int og = _gports[1].e2g[h.idx];
-	    for (int j = 0; j < bv.size(); j++)
-		if (bv[j] && output_pers[og+j] == Element::VAGNOSTIC) {
-		    hookup_from.push_back(Hookup(h.idx, j));
-		    hookup_to.push_back(Hookup(h.idx, h.port));
-		}
-	}
+    for (int ei = 0, *inputp = input_pers.begin(); ei < _elements.size(); ++ei) {
+	assert(inputp - input_pers.begin() == gport(false, Port(ei, 0)));
+	for (int port = 0; port < _elements[ei]->ninputs(); ++port, ++inputp)
+	    if (*inputp == Element::VAGNOSTIC) {
+		_elements[ei]->port_flow(false, port, &bv);
+		int og = gport(true, Port(ei, 0));
+		for (int j = 0; j < bv.size(); ++j)
+		    if (bv[j] && output_pers[og + j] == Element::VAGNOSTIC)
+			conn.push_back(Connection(ei, j, ei, port));
+	    }
+    }
     
     int before = errh->nerrors();
-    int first_agnostic = _hookup_from.size();
+    Connection *first_agnostic = conn.begin() + _conn.size();
   
     // spread personalities
     while (true) {
     
 	bool changed = false;
-	for (int c = 0; c < hookup_from.size(); c++) {
-	    if (hookup_from[c].idx < 0)
+	for (Connection *cp = conn.begin(); cp != conn.end(); ++cp) {
+	    if ((*cp)[1].idx < 0)
 		continue;
-      
-	    int gf = gport(true, hookup_from[c]);
-	    int gt = gport(false, hookup_to[c]);
+
+	    int gf = gport(true, (*cp)[1]);
+	    int gt = gport(false, (*cp)[0]);
 	    int pf = output_pers[gf];
 	    int pt = input_pers[gt];
-      
+
 	    switch (pt) {
-		
+
 	      case Element::VAGNOSTIC:
 		if (pf != Element::VAGNOSTIC) {
 		    input_pers[gt] = pf;
 		    changed = true;
 		}
 		break;
-	
+
 	      case Element::VPUSH:
 	      case Element::VPULL:
 		if (pf == Element::VAGNOSTIC) {
 		    output_pers[gf] = pt;
 		    changed = true;
 		} else if (pf != pt) {
-		    processing_error(hookup_from[c], hookup_to[c], c >= first_agnostic, pf, errh);
-		    hookup_from[c].idx = -1;
+		    processing_error(*cp, cp >= first_agnostic, pf, errh);
+		    (*cp)[1].idx = -1;
 		}
 		break;
 	
@@ -661,8 +698,10 @@ Router::check_push_and_pull(ErrorHandler *errh)
     if (errh->nerrors() != before)
 	return -1;
 
-    for (int e = 0; e < nelements(); e++)
-	_elements[e]->initialize_ports(input_pers.begin() + _gports[0].e2g[e], output_pers.begin() + _gports[1].e2g[e]);
+    for (int ei = 0; ei < nelements(); ++ei)
+	_elements[ei]->initialize_ports
+	    (input_pers.begin() + gport(false, Port(ei, 0)),
+	     output_pers.begin() + gport(true, Port(ei, 0)));
     return 0;
 }
 
@@ -684,13 +723,11 @@ void
 Router::set_connections()
 {
     // actually assign ports
-    for (int c = 0; c < _hookup_from.size(); c++) {
-	Hookup& hfrom = _hookup_from[c];
-	Element* frome = _elements[hfrom.idx];
-	Hookup& hto = _hookup_to[c];
-	Element* toe = _elements[hto.idx];
-	frome->connect_port(true, hfrom.port, toe, hto.port);
-	toe->connect_port(false, hto.port, frome, hfrom.port);
+    for (Connection *cp = _conn.begin(); cp != _conn.end(); ++cp) {
+	Element *frome = _elements[(*cp)[1].idx];
+	Element *toe = _elements[(*cp)[0].idx];
+	frome->connect_port(true, (*cp)[1].port, toe, (*cp)[0].port);
+	toe->connect_port(false, (*cp)[0].port, frome, (*cp)[1].port);
     }
     _have_connections = true;
 }
@@ -769,51 +806,53 @@ Router::set_flow_code_override(int eindex, const String &flow_code)
 }
 
 int
-Router::global_port_flow(bool forward, Element* first_element, int first_port, ElementFilter* stop_filter, Bitvector& results)
+Router::global_port_flow(bool forward, Element* first_element, int first_port,
+			 ElementFilter* stop_filter, Vector<Port> &results)
 {
     if (!_have_connections || first_element->router() != this)
 	return -1;
-    make_hookup_gports();
-    int nresult = ngports(!forward);
-    int nsource = ngports(forward);
+
+    sort_connections();
     
-    Bitvector old_results(nresult, false);
-    results.assign(nresult, false);
-    Bitvector diff, scratch;
-    
-    Bitvector source(nsource, false);
-    int first_gport = _gports[forward].e2g[first_element->eindex()];
-    if (first_port < 0)
-	for (int i = 0; i < first_element->nports(forward); i++)
-	    source[first_gport + i] = true;
-    else if (first_port < first_element->nports(forward))
-	source[first_gport + first_port] = true;
+    results.clear();
+    Bitvector result_bv(ngports(!forward), false), scratch;
+
+    Vector<Port> sources;
+    if (first_port < 0) {
+	for (int port = 0; port < first_element->nports(forward); ++port)
+	    sources.push_back(Port(first_element->eindex(), port));
+    } else if (first_port < first_element->nports(forward))
+	sources.push_back(Port(first_element->eindex(), first_port));
 
     while (true) {
-	old_results = results;
+	int old_nresults = results.size();
 
-	for (const int* gfrom = _hookup_gports[forward].begin(); gfrom < _hookup_gports[forward].end(); gfrom++)
-	    if (source[*gfrom]) {
-		int i = gfrom - _hookup_gports[forward].begin();
-		results[_hookup_gports[!forward][i]] = true;
-	    }
-    
-	diff = results - old_results;
-	if (diff.zero())
-	    break;
-	
-	source.assign(nsource, false);
-	for (int g = 0; g < nresult; g++)
-	    if (diff[g]) {
-		Hookup h = gport_hookup(!forward, g);
-		if (!stop_filter || !stop_filter->check_match(_elements[h.idx], !forward, h.port)) {
-		    _elements[h.idx]->port_flow(!forward, h.port, &scratch);
-		    source.offset_or(scratch, _gports[forward].e2g[h.idx]);
+	for (Port *sp = sources.begin(); sp != sources.end(); ++sp)
+	    for (int cix = connindex_lower_bound(forward, *sp);
+		 cix < _conn.size(); ++cix) {
+		int ci = (forward ? _conn_output_sorter[cix] : cix);
+		if (_conn[ci][forward] != *sp)
+		    break;
+		Port connpt = _conn[ci][!forward];
+		int conng = gport(!forward, connpt);
+		if (!result_bv[conng]) {
+		    results.push_back(connpt);
+		    result_bv[conng] = true;
 		}
 	    }
+
+	if (results.size() == old_nresults)
+	    return 0;
+
+	sources.clear();
+	for (Port *rp = results.begin() + old_nresults; rp != results.end(); ++rp)
+	    if (!stop_filter || !stop_filter->check_match(_elements[rp->idx], !forward, rp->port)) {
+		_elements[rp->idx]->port_flow(!forward, rp->port, &scratch);
+		for (int port = 0; port < scratch.size(); ++port)
+		    if (scratch[port])
+			sources.push_back(Port(rp->idx, port));
+	    }
     }
-  
-    return 0;
 }
 
 /** @brief Search for elements downstream from @a e.
@@ -839,10 +878,10 @@ Router::global_port_flow(bool forward, Element* first_element, int first_port, E
 int
 Router::downstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element *> &result)
 {
-    Bitvector bv;
-    if (global_port_flow(true, e, port, filter, bv) < 0)
+    Vector<Port> result_ports;
+    if (global_port_flow(true, e, port, filter, result_ports) < 0)
 	return -1;
-    gport_list_elements(false, bv, result);
+    port_list_elements(result_ports, result);
     return 0;
 }
 
@@ -869,10 +908,10 @@ Router::downstream_elements(Element *e, int port, ElementFilter *filter, Vector<
 int
 Router::upstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element *> &result)
 {
-    Bitvector bv;
-    if (global_port_flow(false, e, port, filter, bv) < 0)
+    Vector<Port> result_ports;
+    if (global_port_flow(false, e, port, filter, result_ports) < 0)
 	return -1;
-    gport_list_elements(true, bv, result);
+    port_list_elements(result_ports, result);
     return 0;
 }
 
@@ -1123,6 +1162,29 @@ Router::set_hotswap_router(Router *r)
     The HandlerCall class simplifies interaction with handlers and is
     preferred to direct Handler calls for most purposes. */
 
+inline void
+Handler::combine(const Handler &x, int type)
+{
+    if (type == combine_read && !(x._flags & COMPREHENSIVE)) {
+	_hook.rw.w = x._hook.rw.w;
+	_thunk2 = x._thunk2;
+	_flags |= x._flags & (OP_WRITE | ~SPECIAL_FLAGS);
+    } else if (type == combine_write && !(x._flags & COMPREHENSIVE)) {
+	_hook.rw.r = x._hook.rw.r;
+	_thunk1 = x._thunk1;
+	_flags |= x._flags & (OP_READ | ~SPECIAL_FLAGS);
+    } else if (type == combine_read || type == combine_write)
+	_flags |= x._flags & ~SPECIAL_FLAGS;
+}
+
+inline bool
+Handler::compatible(const Handler &x) const
+{
+    return (_hook.rw.r == x._hook.rw.r && _hook.rw.w == x._hook.rw.w
+	    && _thunk1 == x._thunk1 && _thunk2 == x._thunk2
+	    && _flags == x._flags);
+}
+
 String
 Handler::call_read(Element* e, const String& param, ErrorHandler* errh) const
 {
@@ -1229,23 +1291,36 @@ Router::fetch_handler(const Element* e, const String& name)
 }
 
 void
-Router::store_local_handler(int eindex, const Handler& to_store)
+Router::store_local_handler(int eindex, Handler &to_store, int type)
 {
     int old_eh = find_ehandler(eindex, to_store.name(), false);
-    if (old_eh >= 0)
-	xhandler(_ehandler_to_handler[old_eh])->_use_count--;
+    if (old_eh >= 0) {
+	Handler *old_h = xhandler(_ehandler_to_handler[old_eh]);
+	to_store.combine(*old_h, type);
+	old_h->_use_count--;
+    }
   
     // find the offset in _name_handlers
     int name_index;
-    for (name_index = 0;
-	 name_index < _handler_first_by_name.size();
-	 name_index++) {
-	int h = _handler_first_by_name[name_index];
-	if (xhandler(h)->_name == to_store._name)
-	    break;
+    {
+	int *l = _handler_first_by_name.begin();
+	int *r = _handler_first_by_name.end();
+	while (l < r) {
+	    int *m = l + (r - l) / 2;
+	    int cmp = String::compare(to_store._name, xhandler(*m)->_name);
+	    if (cmp < 0)
+		r = m;
+	    else if (cmp > 0)
+		l = m + 1;
+	    else {
+		l = m;
+		break;
+	    }
+	}
+	if (l >= r)
+	    l = _handler_first_by_name.insert(l, -1);
+	name_index = l - _handler_first_by_name.begin();
     }
-    if (name_index == _handler_first_by_name.size())
-	_handler_first_by_name.push_back(-1);
 
     // find a similar handler, if any exists
     int* prev_h = &_handler_first_by_name[name_index];
@@ -1322,10 +1397,11 @@ Router::store_local_handler(int eindex, const Handler& to_store)
 }
 
 void
-Router::store_global_handler(const Handler &h)
+Router::store_global_handler(Handler &h, int type)
 {
     for (int i = 0; i < nglobalh; i++)
 	if (globalh[i]._name == h._name) {
+	    h.combine(globalh[i], type);
 	    globalh[i] = h;
 	    globalh[i]._use_count = 1;
 	    return;
@@ -1349,12 +1425,12 @@ Router::store_global_handler(const Handler &h)
 }
 
 inline void
-Router::store_handler(const Element* e, const Handler& to_store)
+Router::store_handler(const Element *e, Handler &to_store, int type)
 {
     if (e && e->eindex() >= 0)
-	e->router()->store_local_handler(e->eindex(), to_store);
+	e->router()->store_local_handler(e->eindex(), to_store, type);
     else
-	store_global_handler(to_store);
+	store_global_handler(to_store, type);
 }
 
 
@@ -1499,16 +1575,11 @@ void
 Router::add_read_handler(const Element *e, const String &hname,
 			 ReadHandlerHook hook, void *user_data, uint32_t flags)
 {
-    Handler to_add = fetch_handler(e, hname);
-    if (to_add._flags & Handler::COMPREHENSIVE) {
-	to_add._hook.rw.w = 0;
-	to_add._thunk2 = 0;
-	to_add._flags &= ~Handler::SPECIAL_FLAGS;
-    }
+    Handler to_add(hname);
     to_add._hook.rw.r = hook;
     to_add._thunk1 = user_data;
-    to_add._flags |= Handler::OP_READ | (flags & ~Handler::SPECIAL_FLAGS);
-    store_handler(e, to_add);
+    to_add._flags = Handler::OP_READ | (flags & ~Handler::SPECIAL_FLAGS);
+    store_handler(e, to_add, Handler::combine_read);
 }
 
 /** @brief Add an @a e.@a hname write handler.
@@ -1536,16 +1607,11 @@ void
 Router::add_write_handler(const Element *e, const String &hname,
 			  WriteHandlerHook hook, void *user_data, uint32_t flags)
 {
-    Handler to_add = fetch_handler(e, hname);
-    if (to_add._flags & Handler::COMPREHENSIVE) {
-	to_add._hook.rw.r = 0;
-	to_add._thunk1 = 0;
-	to_add._flags &= ~Handler::SPECIAL_FLAGS;
-    }
+    Handler to_add(hname);
     to_add._hook.rw.w = hook;
     to_add._thunk2 = user_data;
-    to_add._flags |= Handler::OP_WRITE | (flags & ~Handler::SPECIAL_FLAGS);
-    store_handler(e, to_add);
+    to_add._flags = Handler::OP_WRITE | (flags & ~Handler::SPECIAL_FLAGS);
+    store_handler(e, to_add, Handler::combine_write);
 }
 
 /** @brief Add a uniform @a e.@a hname handler.
@@ -1588,7 +1654,7 @@ Router::set_handler(const Element *e, const String &hname, uint32_t flags,
     to_add._thunk1 = user_data1;
     to_add._thunk2 = user_data2;
     to_add._flags = flags | Handler::COMPREHENSIVE;
-    store_handler(e, to_add);
+    store_handler(e, to_add, Handler::combine_comprehensive);
 }
 
 /** @brief Change the @a e.@a hname handler's flags.
@@ -1615,7 +1681,7 @@ Router::set_handler_flags(const Element *e, const String &hname,
 	clear_flags &= ~Handler::SPECIAL_FLAGS;
 	set_flags &= ~Handler::SPECIAL_FLAGS;
 	to_add._flags = (to_add._flags & ~clear_flags) | set_flags;
-	store_handler(e, to_add);
+	store_handler(e, to_add, Handler::combine_comprehensive);
 	return 0;
     } else
 	return -1;
@@ -1782,43 +1848,43 @@ Router::unparse_declarations(StringAccum &sa, const String &indent) const
 void
 Router::unparse_connections(StringAccum &sa, const String &indent) const
 {  
-  int nhookup = _hookup_from.size();
-  Vector<int> next(nhookup, -1);
-  Bitvector startchain(nhookup, true);
-  for (int c = 0; c < nhookup; c++) {
-    const Hookup &ht = _hookup_to[c];
+  int nc = _conn.size();
+  Vector<int> next(nc, -1);
+  Bitvector startchain(nc, true);
+  for (int ci = 0; ci < nc; ++ci) {
+    const Port &ht = _conn[ci][0];
     if (ht.port != 0) continue;
     int result = -1;
-    for (int d = 0; d < nhookup; d++)
-      if (d != c && _hookup_from[d] == ht) {
+    for (int d = 0; d < nc; d++)
+      if (d != ci && _conn[d][1] == ht) {
 	result = d;
-	if (_hookup_to[d].port == 0)
+	if (_conn[d][0].port == 0)
 	  break;
       }
     if (result >= 0) {
-      next[c] = result;
+      next[ci] = result;
       startchain[result] = false;
     }
   }
   
   // print hookup
-  Bitvector used(nhookup, false);
+  Bitvector used(nc, false);
   bool done = false;
   while (!done) {
     // print chains
-    for (int c = 0; c < nhookup; c++) {
-      if (used[c] || !startchain[c]) continue;
+    for (int ci = 0; ci < nc; ++ci) {
+      if (used[ci] || !startchain[ci]) continue;
       
-      const Hookup &hf = _hookup_from[c];
+      const Port &hf = _conn[ci][1];
       sa << indent << _element_names[hf.idx];
       if (hf.port)
 	sa << " [" << hf.port << "]";
       
-      int d = c;
+      int d = ci;
       while (d >= 0 && !used[d]) {
-	if (d == c) sa << " -> ";
+	if (d == ci) sa << " -> ";
 	else sa << "\n" << indent << "    -> ";
-	const Hookup &ht = _hookup_to[d];
+	const Port &ht = _conn[d][0];
 	if (ht.port)
 	  sa << "[" << ht.port << "] ";
 	sa << _element_names[ht.idx];
@@ -1831,9 +1897,9 @@ Router::unparse_connections(StringAccum &sa, const String &indent) const
 
     // add new chains to include cycles
     done = true;
-    for (int c = 0; c < nhookup && done; c++)
-      if (!used[c])
-	startchain[c] = true, done = false;
+    for (int ci = 0; ci < nc && done; ++ci)
+      if (!used[ci])
+	startchain[ci] = true, done = false;
   }
 }
 
@@ -1898,12 +1964,12 @@ Router::element_ports_string(const Element *e) const
 	    sa << "-\t";
     
 	// connections
-	Hookup h(e->eindex(), i);
+	Port h(e->eindex(), i);
 	const char *sep = "";
-	for (int c = 0; c < _hookup_from.size(); c++)
-	    if (_hookup_to[c] == h) {
-		sa << sep << _element_names[_hookup_from[c].idx]
-		   << " [" << _hookup_from[c].port << "]";
+	for (const Connection *cp = _conn.begin(); cp != _conn.end(); ++cp)
+	    if ((*cp)[0] == h) {
+		sa << sep << _element_names[(*cp)[1].idx]
+		   << " [" << (*cp)[1].port << "]";
 		sep = ", ";
 	    }
 	sa << "\n";
@@ -1927,12 +1993,12 @@ Router::element_ports_string(const Element *e) const
 	    sa << "-\t";
     
 	// hookup
-	Hookup h(e->eindex(), i);
+	Port h(e->eindex(), i);
 	const char *sep = "";
-	for (int c = 0; c < _hookup_from.size(); c++)
-	    if (_hookup_from[c] == h) {
-		sa << sep << "[" << _hookup_to[c].port << "] "
-		   << _element_names[_hookup_to[c].idx];
+	for (const Connection *cp = _conn.begin(); cp != _conn.end(); ++cp)
+	    if ((*cp)[1] == h) {
+		sa << sep << "[" << (*cp)[0].port << "] "
+		   << _element_names[(*cp)[0].idx];
 		sep = ", ";
 	    }
 	sa << "\n";
