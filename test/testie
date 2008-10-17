@@ -1168,7 +1168,7 @@ foreach my $test (@tests) {
 @require_error_commands = sort { $a cmp $b } keys %require_error_commands;
 if (@require_error_commands) {
     print STDERR "testie: requirement failures blocked ", $require_errors, ($require_errors > 1 ? " tests" : " test"), ", use '-V' for details\n";
-    print STDERR "testie: (required '", join("', '", @require_error_commands), "')\n";
+    print STDERR "testie: (", (@require_error_commands > 1 ? "commands" : "command"), " '", join("', '", @require_error_commands), "')\n";
 }
 
 if ($internal_errors > 0) {
