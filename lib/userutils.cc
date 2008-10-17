@@ -676,15 +676,25 @@ init_archive_element(const String &name, int mode)
 bool
 compressed_data(const unsigned char *buf, int len)
 {
-    return (len >= 3
-	    && ((buf[0] == 037 && buf[1] == 0235)
-		|| (buf[0] == 037 && buf[1] == 0213)
-		|| (buf[0] == 'B' && buf[1] == 'Z' && buf[2] == 'h')));
+    // check for gzip signatures
+    if (len >= 3 && buf[0] == 037 && (buf[1] == 0235 || buf[1] == 0213))
+	return true;
+    // check for bzip2 signatures
+    if (len >= 5 && buf[0] == 'B' && buf[1] == 'Z' && buf[2] == 'h'
+	&& buf[3] >= '0' && buf[3] <= '9') {
+	if (buf[4] == 0x17)	// compressed empty file
+	    return true;
+	if (len >= 10 && memcmp(buf + 4, "1AY&SY", 6) == 0)
+	    return true;
+    }
+    // otherwise unknown
+    return false;
 }
 
 FILE *
-open_uncompress_pipe(const String &filename, const unsigned char *buf, int, ErrorHandler *errh)
+open_uncompress_pipe(const String &filename, const unsigned char *buf, int len, ErrorHandler *errh)
 {
+    assert(len >= 1);
     StringAccum cmd;
     if (buf[0] == 'B')
 	cmd << "bzcat";

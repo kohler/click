@@ -59,8 +59,19 @@ ArchiveElement init_archive_element(const String &, int);
 String shell_quote(const String &, bool quote_tilde = false);
 String shell_command_output_string(String command_line, const String &command_stdin, ErrorHandler *);
 
-bool compressed_data(const unsigned char *, int);
-FILE *open_uncompress_pipe(const String &filename, const unsigned char *, int, ErrorHandler *);
+
+/** @brief Return true iff @a buf looks like it contains compressed data.
+ * @param buf buffer
+ * @param len number of characters in @a buf, should be >= 10
+ *
+ * Checks @a buf for signatures corresponding to zip, gzip, and bzip2
+ * compressed data, returning true iff a signature matches.  @a len can be any
+ * number, but should be relatively large or compression might not be
+ * detected.  Currently it must be at least 10 to detect bzip2 compression. */
+bool compressed_data(const unsigned char *buf, int len);
+
+FILE *open_uncompress_pipe(const String &filename, const unsigned char *buf,
+			   int len, ErrorHandler *errh);
 
 int compressed_filename(const String &filename);
 FILE *open_compress_pipe(const String &filename, ErrorHandler *);
