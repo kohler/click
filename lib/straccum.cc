@@ -54,7 +54,7 @@ CLICK_DECLS
     
 
 void
-StringAccum::make_out_of_memory()
+StringAccum::assign_out_of_memory()
 {
     assert(_cap >= 0);
     CLICK_LFREE(_s, _cap);
@@ -76,7 +76,7 @@ StringAccum::grow(int want)
   
     unsigned char *n = (unsigned char *) CLICK_LALLOC(ncap);
     if (!n) {
-	make_out_of_memory();
+	assign_out_of_memory();
 	return false;
     }
   
