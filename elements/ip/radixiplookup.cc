@@ -154,7 +154,7 @@ RadixIPLookup::add_route(const IPRoute& route, bool set, IPRoute* old_route, Err
 	    int r;
 	    if (old_route)
 		*old_route = _v[j];
-	    if (!set) {
+	    if (!set && found != j) {
 		_v[found] = _v[j];
 		r = -EEXIST;
 	    } else {
