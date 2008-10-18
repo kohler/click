@@ -471,6 +471,7 @@ Lexer::end_parse(int cookie)
       *tep = t->next();
       delete t;
     }
+  _tunnels.clear();
 
   delete _c;
   _c = 0;
