@@ -197,6 +197,8 @@ IPRouteTable::run_command(int command, const String &str, Vector<IPRoute>* old_r
 	errh->error("conflict with existing route '%s'", old_route.unparse().c_str());
     if (r == -ENOENT && errh->nerrors() == before)
 	errh->error("route '%s' not found", route.unparse().c_str());
+    if (r == -ENOMEM && errh->nerrors() == before)
+	errh->error("no memory to store route '%s'", route.unparse().c_str());
     return r;
 }
 
