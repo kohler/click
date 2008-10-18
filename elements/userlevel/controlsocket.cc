@@ -5,6 +5,7 @@
  * Copyright (c) 2000 Massachusetts Institute of Technology
  * Copyright (c) 2001-3 International Computer Science Institute
  * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +33,7 @@
 #include <fcntl.h>
 CLICK_DECLS
 
-const char ControlSocket::protocol_version[] = "1.2";
+const char ControlSocket::protocol_version[] = "1.3";
 
 struct ControlSocketErrorHandler : public BaseErrorHandler { public:
 
@@ -590,20 +591,25 @@ ControlSocket::parse_command(int fd, const String &line)
 
   // branch on command
   String command = words[0].upper();
-  if (command == "READ" || command == "GET") {
+  if (command == "READ" || command == "GET" || command == "WRITE"
+      || command == "SET") {
       if (words.size() < 2)
 	  return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
-      String param;
+      String data;
       if (words.size() > 2)
-	  param = line.substring(words[2].begin(), words.back().end());
-      return read_command(fd, words[1], param);
-    
-  } else if (command == "READDATA") {
+	  data = line.substring(words[2].begin(), words.back().end());
+      if (command[0] == 'R' || command[0] == 'G')
+	  return read_command(fd, words[1], data);
+      else
+	  return write_command(fd, words[1], data);
+
+  } else if (command == "READDATA" || command == "WRITEDATA"
+	     || command == "SETDATA") {
       if (words.size() != 3)
 	  return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
       int datalen;
       if (!cp_integer(words[2], &datalen) || datalen < 0)
-	  return message(fd, CSERR_SYNTAX, "Syntax error in 'readdata'");
+	  return message(fd, CSERR_SYNTAX, "Syntax error in '%s'", command.c_str());
       if (_in_texts[fd].length() < datalen) {
 	  if (_flags[fd] & READ_CLOSED)
 	      return message(fd, CSERR_SYNTAX, "Not enough data");
@@ -612,41 +618,47 @@ ControlSocket::parse_command(int fd, const String &line)
       }
       String data = _in_texts[fd].substring(0, datalen);
       _in_texts[fd] = _in_texts[fd].substring(datalen);
-      return read_command(fd, words[1], data);
+      if (command[0] == 'R')
+	  return read_command(fd, words[1], data);
+      else
+	  return write_command(fd, words[1], data);
 
-  } else if (command == "WRITE" || command == "SET") {
+  } else if (command == "READUNTIL" || command == "WRITEUNTIL") {
       if (words.size() < 2)
 	  return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
-      String data;
+      String until;
       if (words.size() > 2)
-	  data = line.substring(words[2].begin(), words.back().end());
-      return write_command(fd, words[1], data);
-    
-  } else if (command == "WRITEDATA" || command == "SETDATA") {
-    if (words.size() != 3)
-      return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
-    int datalen;
-    if (!cp_integer(words[2], &datalen) || datalen < 0)
-      return message(fd, CSERR_SYNTAX, "Syntax error in 'writedata'");
-    if (_in_texts[fd].length() < datalen) {
-      if (_flags[fd] & READ_CLOSED)
-	return message(fd, CSERR_SYNTAX, "Not enough data");
-      else			// retry
-	return 1;
-    }
-    String data = _in_texts[fd].substring(0, datalen);
-    _in_texts[fd] = _in_texts[fd].substring(datalen);
-    return write_command(fd, words[1], data);
+	  until = line.substring(words[2].begin(), words.back().end());
+      const char *s = _in_texts[fd].begin(), *linebegin, *lineend;
+      while (1) {
+	  linebegin = lineend = s;
+	  for (; s != _in_texts[fd].end() && *s != '\n' && *s != '\r'; ++s)
+	      if (!isspace((unsigned char) *s))
+		  lineend = s + 1;
+	  if (s == _in_texts[fd].end()) {
+	      if (_flags[fd] & READ_CLOSED)
+		  return message(fd, CSERR_SYNTAX, "Connection closed");
+	      else		// retry
+		  return 1;
+	  }
+	  if (*s == '\r' && s + 1 != _in_texts[fd].end() && s[1] == '\n')
+	      s += 2;
+	  else
+	      ++s;
+	  if (_in_texts[fd].substring(linebegin, lineend) == until)
+	      break;
+      }
+      String data = _in_texts[fd].substring(_in_texts[fd].begin(), linebegin);
+      _in_texts[fd] = _in_texts[fd].substring(lineend, _in_texts[fd].end());
+      if (command[0] == 'R')
+	  return read_command(fd, words[1], data);
+      else
+	  return write_command(fd, words[1], data);
 
-  } else if (command == "CHECKREAD") {
+  } else if (command == "CHECKREAD" || command == "CHECKWRITE") {
     if (words.size() != 2)
       return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
-    return check_command(fd, words[1], false);
-    
-  } else if (command == "CHECKWRITE") {
-    if (words.size() != 2)
-      return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
-    return check_command(fd, words[1], true);
+    return check_command(fd, words[1], command[5] == 'W');
 
   } else if (command == "LLRPC") {
     if (words.size() != 2 && words.size() != 3)
@@ -676,8 +688,10 @@ ControlSocket::parse_command(int fd, const String &line)
     message(fd, CSERR_OK, "Commands supported:", true);
     message(fd, CSERR_OK, "READ handler [arg...]   call read handler, return DATA", true);
     message(fd, CSERR_OK, "READDATA handler len    call read handler with len data bytes, return DATA", true);
+    message(fd, CSERR_OK, "READUNTIL handler term  call read handler, take data until term, return DATA", true);
     message(fd, CSERR_OK, "WRITE handler [arg...]  call write handler", true);
     message(fd, CSERR_OK, "WRITEDATA handler len   call write handler, pass len data bytes", true);
+    message(fd, CSERR_OK, "WRITEUNTIL handler term call write handler, take data until term", true);
     message(fd, CSERR_OK, "CHECKREAD handler       check if read handler is valid", true);
     message(fd, CSERR_OK, "CHECKWRITE handler      check if write handler is valid", true);
     message(fd, CSERR_OK, "LLRPC elt#number [len]  call LLRPC, pass len data bytes, return DATA", true);

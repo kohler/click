@@ -38,8 +38,8 @@ The server will accept lines terminated by CR, LF, or CRLF. Its response
 lines are always terminated by CRLF.
 
 When a connection is opened, the server responds by stating its protocol
-version number with a line like "Click::ControlSocket/1.2". The current
-version number is 1.2. Changes in minor version number will only add commands
+version number with a line like "Click::ControlSocket/1.3". The current
+version number is 1.3. Changes in minor version number will only add commands
 and functionality to this specification, not change existing functionality.
 
 ControlSocket supports hot-swapping, meaning you can change configurations
@@ -119,6 +119,16 @@ that terminates) the READDATA line as arguments, and return the results with
 "DATA I<n>" as in the READ command. Introduced in version 1.2 of the
 ControlSocket protocol.
 
+=item READUNTIL I<handler> I<terminator>
+
+Call a read I<handler> and return the results with "DATA I<n>" as in the READ
+command. Parameters for I<handler> are read from the input stream. Parameter
+reading stops at the first line that equals I<terminator>. If I<terminator> is
+not supplied, parameter reading stops at the first blank line. When searching
+for a terminator, ControlSocket removes trailing spaces from both
+I<terminator> and the input lines. Introduced in version 1.3 of the
+ControlSocket protocol.
+
 =item WRITE I<handler> I<params...>
 
 Call a write I<handler>, passing the I<params>, if any, as arguments.
@@ -127,6 +137,11 @@ Call a write I<handler>, passing the I<params>, if any, as arguments.
 
 Call a write I<handler>. The arguments to pass are the I<n> bytes immediately
 following (the CRLF that terminates) the WRITEDATA line.
+
+=item WRITEUNTIL I<handler> I<terminator>
+
+Call a write I<handler>. The arguments to pass are the read from the input
+stream, stopping at the first line that equals I<terminator>.
 
 =item CHECKREAD I<handler>
 
