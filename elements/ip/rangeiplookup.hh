@@ -89,7 +89,9 @@ class RangeIPLookup : public IPRouteTable { public:
     const char *port_count() const	{ return "1/-"; }
     const char *processing() const      { return PUSH; }
 
-    int initialize(ErrorHandler *);
+    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int initialize(ErrorHandler *errh);
+    void cleanup(CleanupStage);
     void add_handlers();
     void push(int port, Packet* p);
 
@@ -99,7 +101,6 @@ class RangeIPLookup : public IPRouteTable { public:
     String dump_routes();
 
     static int flush_handler(const String &, Element *, void *, ErrorHandler *);
-;
 
   protected:
 
@@ -116,7 +117,7 @@ class RangeIPLookup : public IPRouteTable { public:
     uint32_t *_range_t;
     bool _active;
 
-    DirectIPLookup::Table *_helper;
+    DirectIPLookup::Table _helper;
 
 };
 

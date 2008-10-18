@@ -70,10 +70,9 @@ Clears the entire routing table in a single atomic operation.
 See IPRouteTable for a performance comparison of the various IP routing
 elements.
 
-DirectIPLookup's memory allocation does not work in the Linux kernel, because
-Linux uses a special function vmalloc() to allocate huge objects.  A useful
-project would be to make DirectIPLookup suitable for the Linux kernel module,
-by changing its memory allocation to use vmalloc().
+DirectIPLookup's data structures are inherently limited: at most 2^16 /24
+networks can contain routes for /25-or-smaller subnetworks, no matter how much
+memory you have.  If you need more than this, try RangeIPLookup.
 
 =a IPRouteTable, RangeIPLookup, RadixIPLookup, StaticIPLookup, LinearIPLookup,
 SortedIPLookup, LinuxIPLookup
@@ -94,7 +93,8 @@ class DirectIPLookup : public IPRouteTable { public:
     const char *port_count() const	{ return "1/-"; }
     const char *processing() const	{ return PUSH; }
 
-    int initialize(ErrorHandler *);
+    int configure(Vector<String> &conf, ErrorHandler *errh);
+    void cleanup(CleanupStage stage);
     void add_handlers();
 
     void push(int port, Packet* p);
@@ -106,11 +106,13 @@ class DirectIPLookup : public IPRouteTable { public:
 
     static int flush_handler(const String &, Element *, void *, ErrorHandler *);
 
-    enum { RT_SIZE_MAX = 256 * 1024 }; // accomodate a full BGP view and more
-    enum { SEC_SIZE_MAX = 4096 };      // max 32768!
-    enum { VPORTS_MAX = 1024 };	       // max 32768!
-    enum { PREF_HASHSIZE = 64 * 1024 }; // must be a power of 2!
-    enum { DISCARD_PORT = -1 };
+    enum {
+	RT_SIZE_MAX = 256 * 1024, // accomodate a full BGP view and more
+	tbl_24_31_capacity_limit = 32768 * 256,
+	vport_capacity_limit = 32768,
+	PREF_HASHSIZE = 64 * 1024, // must be a power of 2!
+	DISCARD_PORT = -1
+    };
     
     struct CleartextEntry {
 	int ll_next;
@@ -131,32 +133,46 @@ class DirectIPLookup : public IPRouteTable { public:
 
     struct Table {
 	// Structures used for IP lookup
-	uint16_t _tbl_0_23[1 << 24];
-	uint16_t _tbl_24_31[SEC_SIZE_MAX << 8];
-	VirtualPort _vport[VPORTS_MAX];
+	uint16_t *_tbl_0_23;
+	uint16_t *_tbl_24_31;
+	VirtualPort *_vport;
 
 	// Structures used for lookup table maintenance (add/remove operations)
-	CleartextEntry _rtable[RT_SIZE_MAX];
-	int _rt_hashtbl[PREF_HASHSIZE];
-	uint8_t _tbl_0_23_plen[1 << 24];
-	uint8_t _tbl_24_31_plen[SEC_SIZE_MAX << 8];
+	CleartextEntry *_rtable;
+	int *_rt_hashtbl; // [PREF_HASHSIZE];
+	uint8_t *_tbl_0_23_plen;
+	uint8_t *_tbl_24_31_plen;
 
-	uint32_t _rt_size;
-	uint32_t _sec_t_size;
-	uint32_t _vport_t_size;
+	uint32_t _rtable_size;
+	uint32_t _tbl_24_31_size;
+	uint32_t _vport_size;
 	int _rt_empty_head;
-	uint16_t _sec_t_empty_head;
+	uint16_t _tbl_24_31_empty_head;
 	int _vport_head;
 	int _vport_empty_head;
 
-	Table() { }
+	uint32_t _rtable_capacity;
+	uint32_t _tbl_24_31_capacity;
+	uint32_t _vport_capacity;
+
+	Table()
+	    : _tbl_0_23(0), _tbl_24_31(0), _vport(0), _rtable(0),
+	      _rt_hashtbl(0), _tbl_0_23_plen(0), _tbl_24_31_plen(0) {
+	}
+
+	~Table() {
+	    cleanup();
+	}
+
+	int initialize();
+	void cleanup();
 	
 	static inline uint32_t prefix_hash(uint32_t, uint32_t);
 
 	int find_entry(uint32_t, uint32_t) const;
 	String dump() const;
 
-	uint16_t vport_ref(IPAddress, int16_t);
+	int vport_find(IPAddress gw, int16_t port);
 	void vport_unref(uint16_t);
 
 	int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
@@ -167,7 +183,7 @@ class DirectIPLookup : public IPRouteTable { public:
 
   protected:
 
-    Table *_t;
+    Table _t;
 
     friend class RangeIPLookup;
     
