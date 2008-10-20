@@ -21,6 +21,7 @@
 
 #include "sampleelt.hh"
 #include <click/error.hh>
+CLICK_DECLS
 
 SamplePackageElement::SamplePackageElement()
 {
@@ -37,4 +38,5 @@ SamplePackageElement::initialize(ErrorHandler *errh)
     return 0;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(SamplePackageElement)

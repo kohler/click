@@ -1,5 +1,7 @@
 #ifndef SAMPLEPACKAGEELEMENT_HH
 #define SAMPLEPACKAGEELEMENT_HH
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -12,18 +14,16 @@
  * write an element that will be placed in a package. It does nothing except
  * report that the package was successfully loaded when it initializes. */
 
-#include <click/element.hh>
-
 class SamplePackageElement : public Element { public:
-  
+
     SamplePackageElement();		// SEE sample.cc FOR CONSTRUCTOR
     ~SamplePackageElement();		// SEE sample.cc FOR DESTRUCTOR
-  
-    const char *class_name() const	{ return "SamplePackageElement"; }
-    const char *processing() const	{ return AGNOSTIC; }
 
-    int initialize(ErrorHandler *);
-  
+    const char *class_name() const	{ return "SamplePackageElement"; }
+
+    int initialize(ErrorHandler *errh);
+
 };
 
+CLICK_ENDDECLS
 #endif
