@@ -33,7 +33,7 @@ class Packet { public:
 
     enum {
 	default_headroom = 28,		///< Default packet headroom() for
-					///  Packet::make().
+					///  Packet::make().  4-byte aligned.
 	min_buffer_length = 64		///< Minimum buffer_length() for
 					///  Packet::make()
     };
@@ -61,7 +61,7 @@ class Packet { public:
     inline bool shared() const;
     Packet *clone() CLICK_WARN_UNUSED_RESULT;
     inline WritablePacket *uniqueify() CLICK_WARN_UNUSED_RESULT;
-  
+
     inline const unsigned char *data() const;
     inline const unsigned char *end_data() const;
     inline uint32_t length() const;
@@ -682,7 +682,7 @@ class Packet { public:
     void assimilate_mbuf();
 #endif
 
-    inline void shift_header_annotations(ptrdiff_t shift);
+    inline void shift_header_annotations(const unsigned char *old_head, int32_t extra_headroom);
     WritablePacket *expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom, bool free_on_failure);
     WritablePacket *expensive_push(uint32_t nbytes);
     WritablePacket *expensive_put(uint32_t nbytes);
@@ -1897,23 +1897,29 @@ Packet::copy_annotations(const Packet *p)
 }
 
 inline void
-Packet::shift_header_annotations(ptrdiff_t shift)
+Packet::shift_header_annotations(const unsigned char *old_head,
+				 int32_t extra_headroom)
 {
 #if CLICK_LINUXMODULE
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
-    (void) shift;
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
     struct sk_buff *mskb = skb();
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
+    (void) old_head;
+    mskb->mac_header += (mskb->mac_header == ~0U ? 0 : extra_headroom);
+    mskb->network_header += (mskb->network_header == ~0U ? 0 : extra_headroom);
+    mskb->transport_header += (mskb->transport_header == ~0U ? 0 : extra_headroom);
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    ptrdiff_t shift = (mskb->head - old_head) + extra_headroom;
     mskb->mac_header += (mskb->mac_header ? shift : 0);
     mskb->network_header += (mskb->network_header ? shift : 0);
     mskb->transport_header += (mskb->transport_header ? shift : 0);
 # else
-    struct sk_buff *mskb = skb();
+    ptrdiff_t shift = (mskb->head - old_head) + extra_headroom;
     mskb->mac.raw += (mskb->mac.raw ? shift : 0);
     mskb->nh.raw += (mskb->nh.raw ? shift : 0);
     mskb->h.raw += (mskb->h.raw ? shift : 0);
 # endif
 #else
+    ptrdiff_t shift = (_head - old_head) + extra_headroom;
     _mac += (_mac ? shift : 0);
     _nh += (_nh ? shift : 0);
     _h += (_h ? shift : 0);

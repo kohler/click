@@ -192,6 +192,7 @@ Packet::Packet()
 		  && dst_ip6_anno_size == 16
 		  && dst_ip_anno_offset + 4 <= anno_size
 		  && dst_ip6_anno_offset + 16 <= anno_size);
+    static_assert((default_headroom & 3) == 0);
 #if CLICK_LINUXMODULE
     static_assert(sizeof(Anno) <= sizeof(((struct sk_buff *)0)->cb));
     panic("Packet constructor");
@@ -480,7 +481,7 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
 #  endif
 # endif
 
-  shift_header_annotations(nskb->head + extra_headroom - old_head);
+  shift_header_annotations(old_head, extra_headroom);
   return static_cast<WritablePacket *>(this);
 
 #else		/* User-level or BSD kernel module */
@@ -526,7 +527,7 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
 
   _use_count = 1;
   _data_packet = 0;
-  shift_header_annotations(_head + extra_headroom - old_head);
+  shift_header_annotations(old_head, extra_headroom);
   return static_cast<WritablePacket *>(this);
   
 #endif /* CLICK_LINUXMODULE */
@@ -642,7 +643,7 @@ Packet::shift_data(int offset, bool free_on_failure)
 	q->m()->m_data += offset;
 # endif
 #endif
-	shift_header_annotations(offset);
+	shift_header_annotations(q->buffer(), offset);
 	return this;
     } else {
 	int tailroom_offset = (offset < 0 ? -offset : 0);
