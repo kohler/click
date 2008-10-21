@@ -364,7 +364,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     }
 
     // read packet data
-    WritablePacket *q = Packet::make(14, (const unsigned char *) 0, 0, 1000);
+    WritablePacket *q = Packet::make(16, (const unsigned char *) 0, 0, 1000);
     if (!q) {
 	_ff.error(errh, strerror(ENOMEM));
 	return 0;
