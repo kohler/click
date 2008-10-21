@@ -1713,9 +1713,9 @@ Lexer::TunnelEnd *
 Lexer::find_tunnel(const Router::Port &h, bool isoutput, bool insert)
 {
   // binary search for tunnel
-  int l = 0, r = _tunnels.size();
+  unsigned l = 0, r = _tunnels.size();
   while (l < r) {
-    int m = l + (r - l) / 2;
+    unsigned m = l + (r - l) / 2;
     if (h.idx < _tunnels[m]->_port.idx)
       r = m;
     else if (h.idx > _tunnels[m]->_port.idx)
