@@ -72,23 +72,27 @@ Vector<T>::assign(size_type n, const T &e)
 template <class T> typename Vector<T>::iterator
 Vector<T>::insert(iterator i, const T& e)
 {
-  assert(i >= begin() && i <= end());
-  size_type pos = i - begin();
-  if (_n < _capacity || reserve(RESERVE_GROW)) {
+    assert(i >= begin() && i <= end());
+    if (_n == _capacity) {
+	size_type pos = i - begin();
+	if (!reserve(RESERVE_GROW))
+	    return end();
+	i = begin() + pos;
+    }
 #ifdef VALGRIND_MAKE_MEM_UNDEFINED
     VALGRIND_MAKE_MEM_UNDEFINED(velt(_n), sizeof(T));
 #endif
-    for (iterator j = end() - 1; j >= begin() + pos; j--) {
-      new((void*) (j+1)) T(*j);
-      j->~T();
+    for (iterator j = end(); j > i; ) {
+	--j;
+	new((void*) (j + 1)) T(*j);
+	j->~T();
 #ifdef VALGRIND_MAKE_MEM_UNDEFINED
-      VALGRIND_MAKE_MEM_UNDEFINED(j, sizeof(T));
+	VALGRIND_MAKE_MEM_UNDEFINED(j, sizeof(T));
 #endif
     }
-    new(velt(pos)) T(e);
+    new((void*) i) T(e);
     _n++;
-  }
-  return begin() + pos;
+    return i;
 }
 
 template <class T> typename Vector<T>::iterator
