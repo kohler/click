@@ -415,7 +415,7 @@ class Packet { public:
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink */
     uint8_t anno_u8(int i) const {
 	assert(i >= 0 && i < anno_size);
-	return xanno()->c[i];
+	return xanno()->u8[i];
     }
     
     /** @brief Set annotation byte at offset @a i.
@@ -424,7 +424,7 @@ class Packet { public:
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink */
     void set_anno_u8(int i, uint8_t v) {
 	assert(i >= 0 && i < anno_size);
-	xanno()->c[i] = v;
+	xanno()->u8[i] = v;
     }
 
     /** @brief Return 16-bit annotation at offset @a i.
