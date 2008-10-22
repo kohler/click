@@ -204,7 +204,7 @@ proclikefs_reinitialize_supers(struct proclikefs_file_system *pfs,
 {
     struct super_block *sb;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
-	struct list_head *p;
+    struct list_head *p;
 #endif
     spin_lock(&fslist_lock);
     /* transfer superblocks */
@@ -297,114 +297,40 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
     DEBUG("done killing super");
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
-static int bad_follow_link(struct dentry *dent, struct nameidata *nd)
-{
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-	nd_set_link(nd, ERR_PTR(-EIO));
-	return 0;
-# else
-	return vfs_follow_link(nd, ERR_PTR(-EIO));
-# endif
-}
-#endif
-
-static int return_EIO(void)
-{
-	return -EIO;
-}
-
 void
 proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 {
-    struct super_block *sb;
+    struct super_block *sb, dummy_sb;
     struct file *filp;
     struct list_head *p;
     struct proclikefs_file_operations *pfo;
     struct proclikefs_inode_operations *pio;
-    
+    struct inode dummy_inode;
+
     if (!pfs)
 	return;
 
     DEBUG("unregister_filesystem entry");
     spin_lock(&fslist_lock);
 
+    /* create a garbage inode (which requires creating a garbage superblock) */
+    inode_init_once(&dummy_inode);
+    dummy_sb.s_time_gran = 0;
+    dummy_inode.i_sb = &dummy_sb;
+    make_bad_inode(&dummy_inode);
+
     /* clear out file operations */
     for (pfo = pfs->pfs_pfo; pfo; pfo = pfo->pfo_next) {
 	struct file_operations *fo = &pfo->pfo_op;
-	fo->llseek = (void *) return_EIO;
-	fo->read = (void *) return_EIO;
-	fo->write = (void *) return_EIO;
-	fo->readdir = (void *) return_EIO;
-	fo->poll = (void *) return_EIO;
-	fo->ioctl = (void *) return_EIO;
-	fo->mmap = (void *) return_EIO;
-	fo->open = (void *) return_EIO;
-	fo->flush = (void *) return_EIO;
-	fo->release = (void *) return_EIO;
-	fo->fsync = (void *) return_EIO;
-	fo->fasync = (void *) return_EIO;
-	fo->lock = (void *) return_EIO;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
-	fo->readv = (void *) return_EIO;
-	fo->writev = (void *) return_EIO;
-#endif
-	fo->sendpage = (void *) return_EIO;
-	fo->get_unmapped_area = (void *) return_EIO;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-	fo->aio_read = (void *) return_EIO;
-	fo->aio_write = (void *) return_EIO;
-	fo->unlocked_ioctl = (void *) return_EIO;
-	fo->compat_ioctl = (void *) return_EIO;
-	fo->aio_fsync = (void *) return_EIO;
-	fo->sendfile = (void *) return_EIO;
-	fo->check_flags = (void *) return_EIO;
-	fo->flock = (void *) return_EIO;
-#endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
-	fo->dir_notify = (void *) return_EIO;
-	fo->splice_write = (void *) return_EIO;
-	fo->splice_read = (void *) return_EIO;
-#endif
+	memcpy(&fo->llseek, &dummy_inode.i_fop->llseek,
+	       sizeof(struct file_operations) - offsetof(struct file_operations, llseek));
     }
 
     for (pio = pfs->pfs_pio; pio; pio = pio->pio_next) {
 	struct inode_operations *io = &pio->pio_op;
-	io->create = (void *) return_EIO;
-	io->lookup = (void *) return_EIO;
-	io->link = (void *) return_EIO;
-	io->unlink = (void *) return_EIO;
-	io->symlink = (void *) return_EIO;
-	io->mkdir = (void *) return_EIO;
-	io->rmdir = (void *) return_EIO;
-	io->mknod = (void *) return_EIO;
-	io->rename = (void *) return_EIO;
-	io->readlink = (void *) return_EIO;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
-	io->follow_link = 0;
-#else
-	io->follow_link = bad_follow_link;
-#endif
-	io->truncate = (void *) return_EIO;
-	io->permission = (void *) return_EIO;
-	io->setattr = (void *) return_EIO;
-	io->getattr = (void *) return_EIO;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 20)
-	io->setxattr = (void *) return_EIO;
-	io->getxattr = (void *) return_EIO;
-	io->listxattr = (void *) return_EIO;
-	io->removexattr = (void *) return_EIO;
-#endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-	io->put_link = (void *) return_EIO;
-#else
-	io->revalidate = (void *) return_EIO;
-#endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
-	io->truncate_range = (void *) return_EIO;
-#endif
+	memcpy(io, dummy_inode.i_op, sizeof(struct inode_operations));
     }
-    
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     /* file operations cleared out superblock by superblock, below */
     (void) filp;
@@ -422,7 +348,7 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 	filp->f_op = &pfs->pfs_pfo->pfo_op;
     }
 #endif
-    
+
     spin_lock(&pfs->lock);
 
     /* clear out superblock operations */
