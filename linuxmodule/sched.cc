@@ -50,20 +50,13 @@ CLICK_CXX_UNPROTECT
 # define NICE2PRIO(n)	(MIN_PRIO + (n) + 20)
 # define DEF_PRIO	NICE2PRIO(0)
 # define TASK_PRIO(t)	((t)->static_prio)
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+#else
 # define MIN_PRIO	(-20)
 # define MAX_PRIO	20
 # define PRIO2NICE(p)	(p)
 # define NICE2PRIO(n)	(n)
 # define DEF_PRIO	DEF_NICE
 # define TASK_PRIO(t)	((t)->nice)
-#else
-# define MIN_PRIO	1
-# define MAX_PRIO	(2 * DEF_PRIORITY)
-# define PRIO2NICE(p)	(DEF_PRIORITY - (p))
-# define NICE2PRIO(n)	(DEF_PRIORITY - (n))
-# define DEF_PRIO	DEF_PRIORITY
-# define TASK_PRIO(t)	((t)->priority)
 #endif
 
 #define SOFT_SPIN_LOCK(l)	do { /*MDEBUG("soft_lock %s", #l);*/ soft_spin_lock((l)); } while (0)
@@ -88,14 +81,6 @@ soft_spin_lock(spinlock_t *l)
 static int
 click_sched(void *thunk)
 {
-#ifdef LINUX_2_2
-  // In Linux 2.2, daemonize() doesn't do exit_files.
-  exit_files(current);
-  current->files = init_task.files;
-  if (current->files)
-    atomic_inc(&current->files->count);
-#endif
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
   daemonize("kclick");
 #else

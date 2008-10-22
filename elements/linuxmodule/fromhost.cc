@@ -40,12 +40,6 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-# define netif_start_queue(dev)	do { dev->start=1; dev->tbusy=0; } while (0)
-# define netif_stop_queue(dev)	do { dev->tbusy=1; } while (0)
-# define netif_wake_queue(dev)	do { dev->tbusy=0; } while (0)
-#endif
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 # define netdev_ioctl(cmd, arg)	dev_ioctl(&init_net, (cmd), (arg))
 #else
@@ -93,9 +87,7 @@ static void fromhost_inet_setup(struct net_device *dev)
 net_device *
 FromHost::new_device(const char *name)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     read_lock(&dev_base_lock);
-#endif
     void (*setup)(struct net_device *) = (_macaddr ? ether_setup : fromhost_inet_setup);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     net_device *dev = alloc_netdev(0, name, setup);
@@ -103,19 +95,10 @@ FromHost::new_device(const char *name)
     int errcode;
     net_device *dev = dev_alloc(name, &errcode);
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     read_unlock(&dev_base_lock);
-#endif
     if (!dev)
 	return 0;
     
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-    // need to zero out the dev structure
-    char *nameptr = dev->name;
-    memset(dev, 0, sizeof(*dev));
-    dev->name = nameptr;
-#endif
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     setup(dev);
 #endif
@@ -189,12 +172,10 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 static void
 dev_locks(int up)
 {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     if (up > 0)
 	rtnl_lock();
     else
 	rtnl_unlock();
-# endif
 }
 #endif
 

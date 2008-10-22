@@ -9,11 +9,7 @@ CLICK_DECLS
 # if HAVE_LINUX_ASM_SYSTEM_H
 #  include <asm/system.h>
 # endif
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
-#  define CLICK_ATOMIC_VAL	_val.counter
-# else
-#  define CLICK_ATOMIC_VAL	__atomic_fool_gcc(&_val)
-# endif
+# define CLICK_ATOMIC_VAL	_val.counter
 #else
 # define CLICK_ATOMIC_VAL	_val
 #endif

@@ -157,20 +157,6 @@ inode_out_of_date(struct inode *inode, int subdir_error)
 
 /*************************** Inode operations ********************************/
 
-#ifdef LINUX_2_2
-// borrowed from Linux 2.4
-static inline struct inode *
-new_inode(struct super_block *sb)
-{
-    struct inode *inode = get_empty_inode();
-    if (inode) {
-	inode->i_sb = sb;
-	inode->i_dev = sb->s_dev;
-    }
-    return inode;
-}
-#endif
-
 static struct inode *
 click_inode(struct super_block *sb, ino_t ino)
 {
@@ -193,9 +179,7 @@ click_inode(struct super_block *sb, ino_t ino)
 	    inode->i_uid = click_fsmode.uid;
 	    inode->i_gid = click_fsmode.gid;
 	    inode->i_op = click_handler_inode_ops;
-#ifdef LINUX_2_4
 	    inode->i_fop = click_handler_file_ops;
-#endif
 	    inode->i_nlink = click_ino.nlink(ino);
 	} else {
 	    // can't happen
@@ -208,9 +192,7 @@ click_inode(struct super_block *sb, ino_t ino)
 	inode->i_uid = click_fsmode.uid;
 	inode->i_gid = click_fsmode.gid;
 	inode->i_op = click_dir_inode_ops;
-#ifdef LINUX_2_4
 	inode->i_fop = click_dir_file_ops;
-#endif
 	inode->i_nlink = click_ino.nlink(ino);
     }
 
@@ -298,12 +280,7 @@ static bool
 my_filldir(const char *name, int namelen, ino_t ino, int dirtype, uint32_t f_pos, void *thunk)
 {
     my_filldir_container *mfd = (my_filldir_container *)thunk;
-#ifdef LINUX_2_2
-    (void)dirtype;
-    int error = mfd->filldir(mfd->dirent, name, namelen, f_pos, ino);
-#else
     int error = mfd->filldir(mfd->dirent, name, namelen, f_pos, ino, dirtype);
-#endif
     return error >= 0;
 }
 
@@ -349,21 +326,6 @@ static struct super_operations click_superblock_ops;
 
 extern "C" {
 
-#ifdef LINUX_2_2
-static void
-click_write_inode(struct inode *)
-{
-}
-
-static void
-click_put_inode(struct inode *inode)
-{
-    // Delete inodes when they're unused, since we can recreate them easily.
-    if (inode->i_count == 1)
-	inode->i_nlink = 0;
-}
-#endif
-
 static struct super_block *
 click_read_super(struct super_block *sb, void * /* data */, int)
 {
@@ -381,11 +343,7 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     UNLOCK_CONFIG_READ();
     if (!root_inode)
 	goto out_no_root;
-#ifdef LINUX_2_4
     sb->s_root = d_alloc_root(root_inode);
-#else
-    sb->s_root = d_alloc_root(root_inode, 0);
-#endif
     MDEBUG("got root inode %p:%p", root_inode, root_inode->i_op);
     if (!sb->s_root)
 	goto out_no_root;
@@ -443,19 +401,11 @@ click_reread_super(struct super_block *sb)
     unlock_super(sb);
 }
 
-#ifdef LINUX_2_4
 static int
 click_delete_dentry(struct dentry *)
 {
     return 1;
 }
-#else
-static void
-click_delete_dentry(struct dentry *dentry)
-{
-    d_drop(dentry);
-}
-#endif
 
 } // extern "C"
 
@@ -790,11 +740,7 @@ handler_flush(struct file *filp
     int stringno = FILP_WRITE_STRINGNO(filp);
     int retval = 0;
 
-#ifdef LINUX_2_2
-    int f_count = filp->f_count;
-#else
     int f_count = atomic_read(&filp->f_count);
-#endif
 
     if (writing && f_count == 1
 	&& stringno >= 0 && stringno < handler_strings_cap
@@ -894,15 +840,6 @@ handler_ioctl(struct inode *inode, struct file *filp,
     return retval;
 }
 
-#ifdef LINUX_2_2
-static int
-proc_click_readlink_proc(proc_dir_entry *, char *page)
-{
-    strcpy(page, "/click");
-    return 6;
-}
-#endif
-
 #if INO_DEBUG
 static String
 read_ino_info(Element *, void *)
@@ -956,28 +893,19 @@ init_clickfs()
 	return -EINVAL;
     }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0) \
-	&& LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     click_superblock_ops.put_inode = force_delete;
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-    click_superblock_ops.write_inode = click_write_inode;
-    click_superblock_ops.put_inode = click_put_inode;
 #endif
     click_superblock_ops.put_super = proclikefs_put_super;
     // XXX statfs
 
     click_dentry_ops.d_delete = click_delete_dentry;
 
-#ifdef LINUX_2_4
     click_dir_file_ops->read = generic_read_dir;
-#endif
     click_dir_file_ops->readdir = click_dir_readdir;
     click_dir_inode_ops->lookup = click_dir_lookup;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     click_dir_inode_ops->revalidate = click_dir_revalidate;
-#endif
-#ifdef LINUX_2_2
-    click_dir_inode_ops->default_file_ops = click_dir_file_ops;
 #endif
 
     click_handler_file_ops->read = handler_read;
@@ -987,22 +915,13 @@ init_clickfs()
     click_handler_file_ops->flush = handler_flush;
     click_handler_file_ops->release = handler_release;
 
-#ifdef LINUX_2_2
-    click_handler_inode_ops->default_file_ops = click_handler_file_ops;
-#endif
-
     click_ino.initialize();
 
     proclikefs_reinitialize_supers(clickfs, click_reread_super);
     clickfs_ready = 1;
 
     // initialize a symlink from /proc/click -> /click, to ease transition
-#ifdef LINUX_2_4
     (void) proc_symlink("click", 0, "/click");
-#elif defined(LINUX_2_2)
-    if (proc_dir_entry *link = create_proc_entry("click", S_IFLNK | S_IRUGO | S_IWUGO | S_IXUGO, 0))
-	link->readlink_proc = proc_click_readlink_proc;
-#endif
 
 #if INO_DEBUG
     Router::add_read_handler(0, "ino_info", read_ino_info, 0);
@@ -1015,10 +934,8 @@ void
 cleanup_clickfs()
 {
     MDEBUG("cleanup_clickfs");
-#if defined(LINUX_2_4) || defined(LINUX_2_2)
     // remove the '/proc/click' directory
     remove_proc_entry("click", 0);
-#endif
 
     // kill filesystem
     MDEBUG("proclikefs_unregister_filesystem");

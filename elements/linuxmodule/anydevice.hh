@@ -69,12 +69,6 @@ CLICK_CXX_UNPROTECT
 
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-typedef struct enet_statistics net_device_stats;
-#define dev_hold(dev)		/* nada */
-#define dev_put(dev)		/* nada */
-#endif
-
 class AnyDeviceMap;
 
 class AnyDevice : public Element { public:

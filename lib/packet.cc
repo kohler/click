@@ -234,7 +234,7 @@ Packet::~Packet()
 inline WritablePacket *
 Packet::make(int, int, int)
 {
-  return static_cast<WritablePacket *>(new Packet(6, 6, 6));
+    return static_cast<WritablePacket *>(new Packet(6, 6, 6));
 }
 
 bool
@@ -375,34 +375,34 @@ Packet *
 Packet::clone()
 {
 #if CLICK_LINUXMODULE
-  
-  struct sk_buff *nskb = skb_clone(skb(), GFP_ATOMIC);
-  return reinterpret_cast<Packet *>(nskb);
-  
+
+    struct sk_buff *nskb = skb_clone(skb(), GFP_ATOMIC);
+    return reinterpret_cast<Packet *>(nskb);
+
 #elif CLICK_USERLEVEL || CLICK_BSDMODULE
 # if CLICK_BSDMODULE
-  struct mbuf *m;
+    struct mbuf *m;
 
-  if ((m = m_dup(this->_m, M_DONTWAIT)) == NULL)
-    return 0;
+    if ((m = m_dup(this->_m, M_DONTWAIT)) == NULL)
+	return 0;
 # endif
-  
-  // timing: .31-.39 normal, .43-.55 two allocs, .55-.58 two memcpys
-  Packet *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
-  if (!p)
-    return 0;
-  memcpy(p, this, sizeof(Packet));
-  p->_use_count = 1;
-  p->_data_packet = this;
+
+    // timing: .31-.39 normal, .43-.55 two allocs, .55-.58 two memcpys
+    Packet *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
+    if (!p)
+	return 0;
+    memcpy(p, this, sizeof(Packet));
+    p->_use_count = 1;
+    p->_data_packet = this;
 # if CLICK_USERLEVEL
-  p->_destructor = 0;
+    p->_destructor = 0;
 # else
-  p->_m = m;
+    p->_m = m;
 # endif
-  // increment our reference count because of _data_packet reference
-  _use_count++;
-  return p;
-  
+    // increment our reference count because of _data_packet reference
+    _use_count++;
+    return p;
+
 #endif /* CLICK_LINUXMODULE */
 }
 
@@ -410,134 +410,116 @@ WritablePacket *
 Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
 			    bool free_on_failure)
 {
-  assert(extra_headroom >= (int32_t)(-headroom()) && extra_tailroom >= (int32_t)(-tailroom()));
-  
+    assert(extra_headroom >= (int32_t)(-headroom()) && extra_tailroom >= (int32_t)(-tailroom()));
+
 #if CLICK_LINUXMODULE
-  
-  struct sk_buff *nskb = skb();
-  unsigned char *old_head = nskb->head;
-  uint32_t old_headroom = headroom(), old_length = length();
-  
-  uint32_t size = buffer_length() + extra_headroom + extra_tailroom;
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-  size = ((size + 15) & ~15); 
-  unsigned char *new_head = reinterpret_cast<unsigned char *>(kmalloc(size + sizeof(atomic_t), GFP_ATOMIC));
-# else
-  size = SKB_DATA_ALIGN(size);
-  unsigned char *new_head = reinterpret_cast<unsigned char *>(kmalloc(size + sizeof(struct skb_shared_info), GFP_ATOMIC));
-# endif
-  if (!new_head) {
-    if (free_on_failure)
-      kill();
-    return 0;
-  }
 
-  unsigned char *start_copy = old_head + (extra_headroom >= 0 ? 0 : -extra_headroom);
-  unsigned char *end_copy = old_head + buffer_length() + (extra_tailroom >= 0 ? 0 : extra_tailroom);
-  memcpy(new_head + (extra_headroom >= 0 ? extra_headroom : 0), start_copy, end_copy - start_copy);
+    struct sk_buff *nskb = skb();
+    unsigned char *old_head = nskb->head;
+    uint32_t old_headroom = headroom(), old_length = length();
 
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-  if (!nskb->cloned || atomic_dec_and_test(skb_datarefp(nskb)))
-    kfree(old_head);
-# else
-  if (!nskb->cloned || atomic_dec_and_test(&(skb_shinfo(nskb)->dataref))) {
-    assert(!skb_shinfo(nskb)->nr_frags && !skb_shinfo(nskb)->frag_list);
-    kfree(old_head);
-  }
-# endif
-  
-  nskb->head = new_head;
-  nskb->data = new_head + old_headroom + extra_headroom;
+    uint32_t size = buffer_length() + extra_headroom + extra_tailroom;
+    size = SKB_DATA_ALIGN(size);
+    unsigned char *new_head = reinterpret_cast<unsigned char *>(kmalloc(size + sizeof(struct skb_shared_info), GFP_ATOMIC));
+    if (!new_head) {
+	if (free_on_failure)
+	    kill();
+	return 0;
+    }
+
+    unsigned char *start_copy = old_head + (extra_headroom >= 0 ? 0 : -extra_headroom);
+    unsigned char *end_copy = old_head + buffer_length() + (extra_tailroom >= 0 ? 0 : extra_tailroom);
+    memcpy(new_head + (extra_headroom >= 0 ? extra_headroom : 0), start_copy, end_copy - start_copy);
+
+    if (!nskb->cloned || atomic_dec_and_test(&(skb_shinfo(nskb)->dataref))) {
+	assert(!skb_shinfo(nskb)->nr_frags && !skb_shinfo(nskb)->frag_list);
+	kfree(old_head);
+    }
+
+    nskb->head = new_head;
+    nskb->data = new_head + old_headroom + extra_headroom;
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
-  skb_set_tail_pointer(nskb, old_length);
+    skb_set_tail_pointer(nskb, old_length);
 # else
-  nskb->tail = nskb->data + old_length;
+    nskb->tail = nskb->data + old_length;
 # endif
 # ifdef NET_SKBUFF_DATA_USES_OFFSET
-  nskb->end = size;
+    nskb->end = size;
 # else
-  nskb->end = new_head + size;
+    nskb->end = new_head + size;
 # endif
-  nskb->len = old_length;
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-  nskb->is_clone = 0;
-# endif
-  nskb->cloned = 0;
+    nskb->len = old_length;
+    nskb->cloned = 0;
 
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-  nskb->truesize = size;
-  atomic_set(skb_datarefp(nskb), 1);
-# else
-  nskb->truesize = size + sizeof(struct sk_buff);
-  struct skb_shared_info *nskb_shinfo = skb_shinfo(nskb);
-  atomic_set(&nskb_shinfo->dataref, 1);
-  nskb_shinfo->nr_frags = 0;
-  nskb_shinfo->frag_list = 0;
-#  if HAVE_LINUX_SKB_SHINFO_GSO_SIZE
-  nskb_shinfo->gso_size = 0;
-  nskb_shinfo->gso_segs = 0;
-  nskb_shinfo->gso_type = 0;
-#  elif HAVE_LINUX_SKB_SHINFO_TSO_SIZE
-  nskb_shinfo->tso_size = 0;
-  nskb_shinfo->tso_segs = 0;
-#  endif
-#  if HAVE_LINUX_SKB_SHINFO_UFO_SIZE
-  nskb_shinfo->ufo_size = 0;
-#  endif
-#  if HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID
-  nskb_shinfo->ip6_frag_id = 0;
-#  endif
+    nskb->truesize = size + sizeof(struct sk_buff);
+    struct skb_shared_info *nskb_shinfo = skb_shinfo(nskb);
+    atomic_set(&nskb_shinfo->dataref, 1);
+    nskb_shinfo->nr_frags = 0;
+    nskb_shinfo->frag_list = 0;
+# if HAVE_LINUX_SKB_SHINFO_GSO_SIZE
+    nskb_shinfo->gso_size = 0;
+    nskb_shinfo->gso_segs = 0;
+    nskb_shinfo->gso_type = 0;
+# elif HAVE_LINUX_SKB_SHINFO_TSO_SIZE
+    nskb_shinfo->tso_size = 0;
+    nskb_shinfo->tso_segs = 0;
+# endif
+# if HAVE_LINUX_SKB_SHINFO_UFO_SIZE
+    nskb_shinfo->ufo_size = 0;
+# endif
+# if HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID
+    nskb_shinfo->ip6_frag_id = 0;
 # endif
 
-  shift_header_annotations(old_head, extra_headroom);
-  return static_cast<WritablePacket *>(this);
+    shift_header_annotations(old_head, extra_headroom);
+    return static_cast<WritablePacket *>(this);
 
-#else		/* User-level or BSD kernel module */
+#else /* !CLICK_LINUXMODULE */
 
-  // If someone else has cloned this packet, then we need to leave its data
-  // pointers around. Make a clone and uniqueify that.
-  if (_use_count > 1) {
-    Packet *p = clone();
-    WritablePacket *q = (p ? p->expensive_uniqueify(extra_headroom, extra_tailroom, true) : 0);
-    if (q || free_on_failure)
-      kill();
-    return q;
-  }
-  
-  uint8_t *old_head = _head, *old_end = _end;
+    // If someone else has cloned this packet, then we need to leave its data
+    // pointers around. Make a clone and uniqueify that.
+    if (_use_count > 1) {
+	Packet *p = clone();
+	WritablePacket *q = (p ? p->expensive_uniqueify(extra_headroom, extra_tailroom, true) : 0);
+	if (q || free_on_failure)
+	    kill();
+	return q;
+    }
+
+    uint8_t *old_head = _head, *old_end = _end;
 # if CLICK_BSDMODULE
-  struct mbuf *old_m = _m;
+    struct mbuf *old_m = _m;
 # endif
-  
-  if (!alloc_data(headroom() + extra_headroom, length(), tailroom() + extra_tailroom)) {
-    if (free_on_failure)
-      kill();
-    return 0;
-  }
-  
-  unsigned char *start_copy = old_head + (extra_headroom >= 0 ? 0 : -extra_headroom);
-  unsigned char *end_copy = old_end + (extra_tailroom >= 0 ? 0 : extra_tailroom);
-  memcpy(_head + (extra_headroom >= 0 ? extra_headroom : 0), start_copy, end_copy - start_copy);
 
-  // free old data
-  if (_data_packet)
-    _data_packet->kill();
+    if (!alloc_data(headroom() + extra_headroom, length(), tailroom() + extra_tailroom)) {
+	if (free_on_failure)
+	    kill();
+	return 0;
+    }
+
+    unsigned char *start_copy = old_head + (extra_headroom >= 0 ? 0 : -extra_headroom);
+    unsigned char *end_copy = old_end + (extra_tailroom >= 0 ? 0 : extra_tailroom);
+    memcpy(_head + (extra_headroom >= 0 ? extra_headroom : 0), start_copy, end_copy - start_copy);
+
+    // free old data
+    if (_data_packet)
+	_data_packet->kill();
 # if CLICK_USERLEVEL
-  else if (_destructor)
-    _destructor(old_head, old_end - old_head);
-  else
-    delete[] old_head;
-  _destructor = 0;
+    else if (_destructor)
+	_destructor(old_head, old_end - old_head);
+    else
+	delete[] old_head;
+    _destructor = 0;
 # elif CLICK_BSDMODULE
-  else
-    m_freem(old_m);
+    else
+	m_freem(old_m);
 # endif
 
-  _use_count = 1;
-  _data_packet = 0;
-  shift_header_annotations(old_head, extra_headroom);
-  return static_cast<WritablePacket *>(this);
-  
+    _use_count = 1;
+    _data_packet = 0;
+    shift_header_annotations(old_head, extra_headroom);
+    return static_cast<WritablePacket *>(this);
+
 #endif /* CLICK_LINUXMODULE */
 }
 

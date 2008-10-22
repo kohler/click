@@ -232,12 +232,6 @@ template <typename T> int click_qsort(T *base, size_t n)
 
 #if CLICK_LINUXMODULE
 
-// provide a definition for net_device for kernel compatibility
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-typedef struct device net_device;
-#  define dev_get_by_name dev_get
-# endif
-
 extern "C" {
 
 long strtol(const char *, char **, int);
@@ -248,7 +242,7 @@ strtoul(const char *nptr, char **endptr, int base)
     return simple_strtoul(nptr, endptr, base);
 }
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0) && __GNUC__ == 2 && __GNUC_MINOR__ == 96
+# if __GNUC__ == 2 && __GNUC_MINOR__ == 96
 int click_strcmp(const char *, const char *);
 
 inline int

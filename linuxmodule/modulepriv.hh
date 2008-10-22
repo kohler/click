@@ -14,9 +14,7 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-# define LINUX_2_2 1
-#else
-# define LINUX_2_4 1
+# error "Linux version too old"
 #endif
 
 #if 0
