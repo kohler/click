@@ -240,7 +240,7 @@ static RecycledSkbPool pool;
 #endif
 
 #define SKBMGR_DEF_TAILSZ 64
-#define SKBMGR_DEF_HEADSZ 64
+#define SKBMGR_DEF_HEADSZ 64 // must be divisible by 4
 
 
 #if __MTCLICK__
@@ -389,7 +389,7 @@ skbmgr_cleanup()
 struct sk_buff *
 skbmgr_allocate_skbs(unsigned headroom, unsigned size, int *want)
 {
-  if (headroom < SKBMGR_DEF_HEADSZ)
+  if (headroom == 0)
     headroom = SKBMGR_DEF_HEADSZ;
   size += SKBMGR_DEF_TAILSZ;
 
