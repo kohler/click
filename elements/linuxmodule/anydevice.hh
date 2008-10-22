@@ -8,6 +8,9 @@ class HandlerCall;
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <linux/netdevice.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+# include <net/net_namespace.h>
+#endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
@@ -97,6 +100,16 @@ class AnyDevice : public Element { public:
     int find_device(AnyDeviceMap *, ErrorHandler *);
     void set_device(net_device *, AnyDeviceMap *, bool locked = false);
     void clear_device(AnyDeviceMap *);
+
+    static inline net_device *get_by_name(const char *name) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+	return dev_get_by_name(&init_net, name);
+#else
+	return dev_get_by_name(name);
+#endif
+    }
+
+    static net_device *get_by_ether_address(const String &name, Element *context);
 
   protected:
 
@@ -212,7 +225,5 @@ AnyDeviceMap::lookup(net_device *dev, AnyDevice *last) const
 	d = d->_next;
     return d;
 }
-
-net_device *dev_get_by_ether_address(const String &, Element *);
 
 #endif

@@ -151,7 +151,11 @@ ToHost::push(int port, Packet *p)
     skb->pkt_type &= PACKET_TYPE_MASK;
 
     // MAC header is the data pointer
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    skb_set_mac_header(skb, 0);
+#else
     skb->mac.raw = skb->data;
+#endif
     
     // set skb->protocol
     if (_type == ARPHRD_NONE)

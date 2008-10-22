@@ -421,12 +421,12 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
   uint32_t size = buffer_length() + extra_headroom + extra_tailroom;
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
   size = ((size + 15) & ~15); 
-  unsigned char *new_data = reinterpret_cast<unsigned char *>(kmalloc(size + sizeof(atomic_t), GFP_ATOMIC));
+  unsigned char *new_head = reinterpret_cast<unsigned char *>(kmalloc(size + sizeof(atomic_t), GFP_ATOMIC));
 # else
   size = SKB_DATA_ALIGN(size);
-  unsigned char *new_data = reinterpret_cast<unsigned char *>(kmalloc(size + sizeof(struct skb_shared_info), GFP_ATOMIC));
+  unsigned char *new_head = reinterpret_cast<unsigned char *>(kmalloc(size + sizeof(struct skb_shared_info), GFP_ATOMIC));
 # endif
-  if (!new_data) {
+  if (!new_head) {
     if (free_on_failure)
       kill();
     return 0;
@@ -434,7 +434,7 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
 
   unsigned char *start_copy = old_head + (extra_headroom >= 0 ? 0 : -extra_headroom);
   unsigned char *end_copy = old_head + buffer_length() + (extra_tailroom >= 0 ? 0 : extra_tailroom);
-  memcpy(new_data + (extra_headroom >= 0 ? extra_headroom : 0), start_copy, end_copy - start_copy);
+  memcpy(new_head + (extra_headroom >= 0 ? extra_headroom : 0), start_copy, end_copy - start_copy);
 
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
   if (!nskb->cloned || atomic_dec_and_test(skb_datarefp(nskb)))
@@ -446,10 +446,18 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
   }
 # endif
   
-  nskb->head = new_data;
-  nskb->data = new_data + old_headroom + extra_headroom;
+  nskb->head = new_head;
+  nskb->data = new_head + old_headroom + extra_headroom;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+  skb_set_tail_pointer(nskb, old_length);
+# else
   nskb->tail = nskb->data + old_length;
-  nskb->end = new_data + size;
+# endif
+# ifdef NET_SKBUFF_DATA_USES_OFFSET
+  nskb->end = size;
+# else
+  nskb->end = new_head + size;
+# endif
   nskb->len = old_length;
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
   nskb->is_clone = 0;

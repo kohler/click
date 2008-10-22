@@ -255,7 +255,11 @@ FromDevice::got_skb(struct sk_buff *skb)
 	assert(skb_shared(skb) == 0); /* else skb = skb_clone(skb, GFP_ATOMIC); */
 
 	/* Retrieve the MAC header. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+	skb_push(skb, skb->data - skb_mac_header(skb));
+#else
 	skb_push(skb, skb->data - skb->mac.raw);
+#endif
 
 	Packet *p = Packet::make(skb);
 	_queue[_tail] = p; /* hand it to run_task */

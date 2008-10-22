@@ -123,9 +123,9 @@ TulipStats::configure(Vector<String> &conf, ErrorHandler *errh)
 		   "DEVNAME", cpkP+cpkM, cpString, &_devname,
 		   cpEnd) < 0)
     return -1;
-  _dev = dev_get_by_name(_devname.c_str());
+  _dev = AnyDevice::get_by_name(_devname.c_str());
   if (!_dev)
-    _dev = dev_get_by_ether_address(_devname, this);
+    _dev = AnyDevice::get_by_ether_address(_devname, this);
   if (!_dev)
     return errh->error("unknown device '%s'", _devname.c_str());
   return 0;

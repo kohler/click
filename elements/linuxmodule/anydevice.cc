@@ -29,7 +29,10 @@
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-#include <linux/if_arp.h>
+# include <linux/if_arp.h>
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+# include <net/net_namespace.h>
 #endif
 #include <linux/smp_lock.h>
 CLICK_CXX_UNPROTECT
@@ -91,10 +94,10 @@ AnyDevice::initialize_keywords(ErrorHandler *errh)
 int
 AnyDevice::find_device(AnyDeviceMap *adm, ErrorHandler *errh)
 {
-    _dev = dev_get_by_name(_devname.c_str());
+    _dev = get_by_name(_devname.c_str());
     _devname_exists = (bool) _dev;
     if (!_dev)
-	_dev = dev_get_by_ether_address(_devname, this);
+	_dev = get_by_ether_address(_devname, this);
 
     if (!_dev && !_allow_nonexistent)
 	return errh->error("unknown device '%s'", _devname.c_str());
@@ -294,14 +297,18 @@ AnyDeviceMap::lookup_all(net_device *dev, bool known, AnyDevice **dev_store,
 
 
 net_device *
-dev_get_by_ether_address(const String &name, Element *context)
+AnyDevice::get_by_ether_address(const String &name, Element *context)
 {
     unsigned char en[6];
     if (!cp_ethernet_address(name, en, context))
 	return 0;
     read_lock(&dev_base_lock);
     net_device *dev;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    for_each_netdev(&init_net, dev)
+#else
     for (dev = dev_base; dev; dev = dev->next)
+#endif
 	if ((dev->type == ARPHRD_ETHER || dev->type == ARPHRD_80211)
 	    && memcmp(en, dev->dev_addr, 6) == 0) {
 	    dev_hold(dev);	// dev_get_by_name does dev_hold; so
