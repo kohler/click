@@ -178,29 +178,6 @@ RouterT::check() const
 }
 
 
-bool
-RouterT::element_path(const String &name, Vector<ElementT *> &path) const
-{
-    String n(name), suffix;
-    while (1) {
-	int ei = eindex(n);
-	if (ei >= 0 && !suffix) {
-	    path.push_back(_elements[ei]);
-	    return true;
-	} else if (ei >= 0 && _elements[ei]->resolved_compound()) {
-	    path.push_back(_elements[ei]);
-	    if (_elements[ei]->resolved_router()->element_path(suffix, path))
-		return true;
-	    path.pop_back();
-	}
-	int slash = n.find_right('/');
-	if (slash < 0)
-	    return false;
-	n = name.substring(0, slash);
-	suffix = name.substring(slash + 1);
-    }
-}
-
 ElementT *
 RouterT::add_element(const ElementT &elt_in)
 {
@@ -1167,53 +1144,6 @@ RouterT::flatten(ErrorHandler *errh, bool expand_vars)
 }
 
 void
-RouterT::flatten_path(const Vector<ElementT *> &path, String &name, String &config)
-{
-    // common case
-    if (path.size() == 1) {
-	name = path.back()->name();
-	config = path.back()->configuration();
-	return;
-    }
-
-    // expansion case
-    StringAccum sa;
-    Vector<VariableEnvironment *> envs;
-    envs.push_back(new VariableEnvironment(0));
-    assert(path.size());
-    for (int i = 0; i < path.size() - 1; i++) {
-	ElementT *e = path[i];
-	RouterT *c = e->type()->cast_router();
-	assert(c);
-	
-	sa << e->name();
-	if (sa.back() != '/')
-	    sa << '/';
-
-	Vector<String> args;
-	cp_argvec(cp_expand(e->configuration(), *envs.back()), args);
-	(void) c->assign_arguments(args, &args);
-
-	VariableEnvironment *new_env = new VariableEnvironment(envs.back()->parent_of(c->_scope.depth()));
-	for (int i = 0; i < c->_nformals && i < args.size(); i++)
-	    new_env->define(c->_scope.name(i), args[i], true);
-	for (int i = args.size(); i < c->_nformals; i++)
-	    new_env->define(c->_scope.name(i), "$" + c->_scope.name(i), true);
-	for (int i = c->_nformals; i < c->_scope.size(); i++)
-	    new_env->define(c->_scope.name(i), cp_expand(c->_scope.value(i), *new_env), true);
-	envs.push_back(new_env);
-    }
-    
-    sa << path.back()->name();
-    name = sa.take_string();
-    config = cp_expand(path.back()->config(), *envs.back());
-    
-    for (Vector<VariableEnvironment *>::iterator i = envs.begin(); i != envs.end(); i++)
-	delete *i;
-}
-
-
-void
 RouterT::const_iterator::step(const RouterT *r, int eindex)
 {
     int n = (r ? r->nelements() : -1);
@@ -1359,17 +1289,18 @@ RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *
 }
 
 void
-RouterT::update_scope(const Vector<String> &args,
+RouterT::create_scope(const Vector<String> &args,
 		      const VariableEnvironment &env,
-		      VariableEnvironment *new_env)
+		      VariableEnvironment &new_env)
 {
-    *new_env = VariableEnvironment(env.parent_of(_scope.depth()));
+    assert(&new_env != &env);
+    new_env = VariableEnvironment(env.parent_of(_scope.depth()));
     for (int i = 0; i < _nformals && i < args.size(); i++)
-	new_env->define(_scope.name(i), args[i], true);
+	new_env.define(_scope.name(i), args[i], true);
     for (int i = args.size(); i < _nformals; i++)
-	new_env->define(_scope.name(i), String(), true);
+	new_env.define(_scope.name(i), String(), true);
     for (int i = _nformals; i < _scope.size(); i++)
-	new_env->define(_scope.name(i), cp_expand(_scope.value(i), env), true);
+	new_env.define(_scope.name(i), cp_expand(_scope.value(i), env), true);
 }
 
 ElementT *
@@ -1403,7 +1334,7 @@ RouterT::complex_expand_element(
     // create prefix
     assert(compound->name());
     VariableEnvironment new_env(0);
-    update_scope(args, env, &new_env);
+    create_scope(args, env, new_env);
     String new_prefix = prefix + compound->name(); // includes previous prefix
     if (new_prefix.back() != '/')
 	new_prefix += '/';

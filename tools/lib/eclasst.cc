@@ -145,7 +145,7 @@ ElementClassT::resolve(int, int, Vector<String> &, ErrorHandler *, const Landmar
 }
 
 void
-ElementClassT::update_scope(const Vector<String> &, const VariableEnvironment &, VariableEnvironment *)
+ElementClassT::create_scope(const Vector<String> &, const VariableEnvironment &, VariableEnvironment &)
 {
 }
 
@@ -283,7 +283,7 @@ SynonymElementClassT::resolve(int ninputs, int noutputs, Vector<String> &args, E
 }
 
 void
-SynonymElementClassT::update_scope(const Vector<String> &, const VariableEnvironment &, VariableEnvironment *)
+SynonymElementClassT::create_scope(const Vector<String> &, const VariableEnvironment &, VariableEnvironment &)
 {
     assert(0);
 }

@@ -163,7 +163,7 @@ ElementT::resolve(const VariableEnvironment &env,
     if (!t)
 	t = _type;
     if (new_env)
-	t->update_scope(conf, env, new_env);
+	t->create_scope(conf, env, *new_env);
     return t;
 }
 
@@ -198,12 +198,6 @@ ElementT::resolved_type(const VariableEnvironment &env, ErrorHandler *errh) cons
     _resolved_type = t;
     _resolved_type->use();
     return t;
-}
-
-ElementClassT *
-ElementT::resolved_type() const
-{
-    return resolved_type(VariableEnvironment(0));
 }
     
 

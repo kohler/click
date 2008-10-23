@@ -29,16 +29,13 @@ struct ElementT {
 			   VariableEnvironment *new_env,
 			   ErrorHandler *errh = 0) const;
     ElementClassT *resolved_type(const VariableEnvironment &env, ErrorHandler *errh = 0) const;
-    ElementClassT *resolved_type() const;
     
     String type_name() const		{ return _type->name(); }
     String printable_type_name() const	{ return _type->printable_name(); }
     const char *type_name_c_str() const	{ return _type->printable_name_c_str(); }
     
     void set_type(ElementClassT *);
-    inline bool resolved_compound() const;
     inline RouterT *resolved_router(const VariableEnvironment &env, ErrorHandler *errh = 0) const;
-    inline RouterT *resolved_router() const;
 
     inline const String &flow_code(ElementMap *emap) const;
     inline const String &flow_code() const;
@@ -225,26 +222,10 @@ ElementT::simple_kill()
     unresolve_type();
 }
 
-inline bool
-ElementT::resolved_compound() const
-{
-    ElementClassT *t = resolved_type();
-    return t && t->cast_router();
-}
-
 inline RouterT *
 ElementT::resolved_router(const VariableEnvironment &env, ErrorHandler *errh) const
 {
     if (ElementClassT *t = resolved_type(env, errh))
-	return t->cast_router();
-    else
-	return 0;
-}
-
-inline RouterT *
-ElementT::resolved_router() const
-{
-    if (ElementClassT *t = resolved_type())
 	return t->cast_router();
     else
 	return 0;

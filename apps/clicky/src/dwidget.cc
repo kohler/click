@@ -11,6 +11,7 @@
 #include <click/bitvector.hh>
 #include <clicktool/processingt.hh>
 #include <clicktool/elementmap.hh>
+#include "scopechain.hh"
 #include <list>
 #include <math.h>
 #include "crouter.hh"
@@ -72,7 +73,7 @@ String dwidget::unparse() const
 delt *delt::create(ElementT *e, delt *parent,
 		   crouter *cr, ProcessingT *processing,
 		   HashTable<String, delt *> &collector,
-		   Vector<ElementT *> &path, int &z_index)
+		   ScopeChain &chain, int &z_index)
 {
     // see also create_split()
     delt *de = new delt(parent, z_index);
@@ -82,11 +83,11 @@ delt *delt::create(ElementT *e, delt *parent,
     de->_processing_code = processing->decorated_processing_code(e);
     de->_flow_code = processing->flow_code(e);
 
-    path.push_back(e);
-    RouterT::flatten_path(path, de->_flat_name, de->_flat_config);
+    de->_flat_name = chain.flat_name(e->name());
+    de->_flat_config = chain.resolved_config(e->config());
     collector[de->_flat_name] = de;
 
-    ElementClassT *resolved_type = e->resolved_type(processing->scope());
+    ElementClassT *resolved_type = chain.resolved_type(e);
     de->_primitive = resolved_type->primitive();
     
     // initial styles
@@ -97,11 +98,12 @@ delt *delt::create(ElementT *e, delt *parent,
     de->_des_sensitivity = x;
 
     if (resolved_type->cast_router()) {
+	chain.enter_element(e);
 	ProcessingT subprocessing(*processing, e);
 	de->create_elements(cr, subprocessing.router(), &subprocessing,
-			    collector, path, z_index);
+			    collector, chain, z_index);
+	chain.pop_element();
     }
-    path.pop_back();
 
     return de;
 }
@@ -153,7 +155,7 @@ delt::~delt()
 void delt::create_elements(crouter *cr, RouterT *router,
 			   ProcessingT *processing,
 			   HashTable<String, delt *> &collector,
-			   Vector<ElementT *> &path, int &z_index)
+			   ScopeChain &chain, int &z_index)
 {
     assert(!_resolved_router && _elt.size() == 0);
     _resolved_router = router;
@@ -163,7 +165,7 @@ void delt::create_elements(crouter *cr, RouterT *router,
     _elt.resize(router->nelements(), 0);
     for (int i = 0; i < router->nelements(); ++i) {
 	delt *e = delt::create(router->element(i), this,
-			       cr, processing, collector, path, z_index);
+			       cr, processing, collector, chain, z_index);
 	// Can't combine with previous statement in case _elt changes!
 	_elt[i] = e;
     }
@@ -899,8 +901,8 @@ void delt::position_contents_dot(crouter *cr, ErrorHandler *errh)
 		mbbox[3] = std::min(mbbox[3], (*it)->_x);
 	    }
 
-    _contents_width = bbox[1] - bbox[3];
-    _contents_height = bbox[2] - bbox[0];
+    _contents_width = std::max(bbox[1] - bbox[3], 0.);
+    _contents_height = std::max(bbox[2] - bbox[0], 0.);
     shift_contents(-bbox[3], -bbox[0]);
 
     if (!root() && first_time)
@@ -989,8 +991,13 @@ bool delt::reccss(crouter *cr, int change, int *z_index_ptr)
     } else if (_display == dedisp_fsplit && !_split) {
 	Bitvector map(256);
 	assert(!_split_type);
+	int portno = 0, max_ports = ninputs();
 	for (const char *s = _des->flow_split.begin(); s != _des->flow_split.end(); ++s)
-	    if (*s != '/' && !map[(unsigned char) *s]) {
+	    if (*s == '/')
+		portno = 0, max_ports = noutputs();
+	    else if (portno++ >= max_ports)
+		/* do nothing */;
+	    else if (!map[(unsigned char) *s]) {
 		map[(unsigned char) *s] = true;
 		if (!_split_type)
 		    _split_type = (unsigned char) *s;
@@ -1000,6 +1007,10 @@ bool delt::reccss(crouter *cr, int change, int *z_index_ptr)
 		    redraw = true;
 		}
 	    }
+	if (!_split) {		// flowsplit didn't actually split anything
+	    _split_type = 0;
+	    _display = dedisp_closed;
+	}
     }
     
     return redraw;
@@ -1475,8 +1486,11 @@ void delt::insert(rect_search<dwidget> &rects, crouter *cr,
 dconn *delt::find_connection(bool isoutput, int port)
 {
     delt *e = find_port_container(isoutput, port);
-    for (std::vector<dconn *>::iterator it = _parent->_conn.begin();
-	 it != _parent->_conn.end(); ++it)
+    delt *p = _parent;
+    while (!p->root() && p->display() == dedisp_expanded)
+	p = p->_parent;
+    for (std::vector<dconn *>::iterator it = p->_conn.begin();
+	 it != p->_conn.end(); ++it)
 	if ((*it)->elt(isoutput) == e
 	    && (*it)->port(isoutput) == port)
 	    return *it;

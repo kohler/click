@@ -22,8 +22,7 @@ class RouterT : public ElementClassT { public:
     inline const ElementT *element(const String &) const;
     inline ElementT *element(const String &);
     int eindex(const String &name) const { return _element_name_map[name]; }
-    bool element_path(const String &name, Vector<ElementT *> &path) const;
-    
+
     const ElementT *element(int i) const{ return _elements[i]; }
     ElementT *element(int i)		{ return _elements[i]; }
     
@@ -65,8 +64,12 @@ class RouterT : public ElementClassT { public:
     // CONNECTIONS
     int nconnections() const			{ return _conn.size(); }
     const Vector<ConnectionT> &connections() const { return _conn; }
-    const ConnectionT &connection(int c) const	{ return _conn[c]; }
-    bool connection_live(int c) const		{ return _conn[c].live(); }
+    const ConnectionT &connection(int cid) const {
+	return _conn[cid];
+    }
+    bool connection_live(int cid) const {
+	return _conn[cid].live();
+    }
 
     enum { end_to = ConnectionT::end_to, end_from = ConnectionT::end_from };
     
@@ -97,7 +100,16 @@ class RouterT : public ElementClassT { public:
     inline bool has_connection(const PortT &from, const PortT &to) const;
     int find_connection(const PortT &from, const PortT &to) const;
     void find_connections_touching(ElementT *e, bool isoutput, Vector<int> &v) const;
+
+    /** @brief Return the ID of unique connection touching port @a port.
+     * @a port port specification
+     * @a isoutput true if @a port is an output port
+     *
+     * Returns -1 if there is no connection touching the port, or -2 if there
+     * is more than one.
+     * @sa connection() */
     int find_connection_id_touching(const PortT &port, bool isoutput) const;
+
     void find_connections_touching(const PortT &port, bool isoutput, Vector<PortT> &v, bool clear = true) const;
     void find_connections_touching(const PortT &port, bool isoutput, Vector<int> &v) const;
     void find_connection_vector_touching(ElementT *e, bool isoutput, Vector<int> &v) const;
@@ -170,8 +182,6 @@ class RouterT : public ElementClassT { public:
     void expand_into(RouterT *dest, const String &prefix, VariableEnvironment &env, ErrorHandler *errh);
     void flatten(ErrorHandler *errh, bool expand_vars = false);
 
-    static void flatten_path(const Vector<ElementT *> &path, String &name, String &config);
-
     // UNPARSING
     void unparse(StringAccum &, const String & = String()) const;
     void unparse_requirements(StringAccum &, const String & = String()) const;
@@ -204,7 +214,7 @@ class RouterT : public ElementClassT { public:
     
     bool need_resolve() const;
     ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const LandmarkT &landmark);
-    void update_scope(const Vector<String> &args, const VariableEnvironment &env, VariableEnvironment *dest_env);
+    void create_scope(const Vector<String> &args, const VariableEnvironment &env, VariableEnvironment &new_env);
     ElementT *complex_expand_element(ElementT *, const Vector<String> &, RouterT *, const String &prefix, const VariableEnvironment &, ErrorHandler *);
 
     String unparse_signature() const;

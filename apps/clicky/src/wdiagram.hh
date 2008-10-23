@@ -117,7 +117,10 @@ class wdiagram { public:
 
     std::list<delt *> _highlight[3];
 
-    std::vector<dconn *> _active_ports;
+    std::vector<dconn *> _active_conns;
+    std::vector<int> _active_offsets;
+    std::vector<int> _active_ports;
+    int _active_nports;
 
     enum {
 	drag_none,

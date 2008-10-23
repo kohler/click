@@ -5,6 +5,7 @@
 #include "crouter.hh"
 #include "cdriver.hh"
 #include "dstyle.hh"
+#include "scopechain.hh"
 #include <clicktool/routert.hh>
 #include <clicktool/lexert.hh>
 #include <clicktool/lexertinfo.hh>
@@ -55,18 +56,16 @@ bool crouter::empty() const
 
 bool crouter::element_exists(const String &ename, bool only_primitive) const
 {
-    Vector<ElementT *> path;
-    return (_r && _r->element_path(ename, path)
-	    && (!only_primitive || path.back()->type()->primitive()));
+    ScopeChain chain(_r);
+    ElementT *e = chain.push_element(ename);
+    return e && (!only_primitive || chain.resolved_type(e)->primitive());
 }
 
 ElementClassT *crouter::element_type(const String &ename) const
 {
-    Vector<ElementT *> path;
-    if (_r && _r->element_path(ename, path))
-	return path.back()->type();
-    else
-	return 0;
+    ScopeChain chain(_r);
+    ElementT *e = chain.push_element(ename);
+    return (e ? chain.resolved_type(e) : 0);
 }
 
 void crouter::clear(bool alive)

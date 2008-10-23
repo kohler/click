@@ -7,6 +7,7 @@
 #include "whandler.hh"
 #include "cdriver.hh"
 #include "dstyle.hh"
+#include "scopechain.hh"
 #include <clicktool/routert.hh>
 #include <clicktool/lexert.hh>
 #include <clicktool/lexertinfo.hh>
@@ -490,8 +491,9 @@ void wmain::element_show(String ename, int expand, bool incremental)
 {
     // check if element exists
     RouterT *r = router();
-    Vector<ElementT *> epath;
-    if (r && ename && !r->element_path(ename, epath))
+    ScopeChain chain(r);
+    ElementT *element = chain.push_element(ename);
+    if (!element)
 	ename = String();
 
     if (_eview_name == ename && incremental)
@@ -520,17 +522,16 @@ void wmain::element_show(String ename, int expand, bool incremental)
     } else {
 	element_unhighlight();
 	_eview_name = ename;
-	
-	String name, config;
-	RouterT::flatten_path(epath, name, config);
-	assert(name == ename);
+
+	ElementClassT *eclass = chain.resolved_type(element);
+	String config = chain.resolved_config(element->config());
 
 	// set element name, class, and config
 	GtkLabel *l = GTK_LABEL(lookup_widget(_window, "eview_label"));
-	gtk_label_set_text(l, name.c_str());
+	gtk_label_set_text(l, ename.c_str());
 
 	GtkWidget *n = lookup_widget(_window, "eview_class");
-	gtk_entry_set_text(GTK_ENTRY(n), epath.back()->type_name_c_str());
+	gtk_entry_set_text(GTK_ENTRY(n), element->type_name_c_str());
 	gtk_widget_show(gtk_widget_get_parent(n));
 
 	n = lookup_widget(_window, "eview_config");
@@ -538,13 +539,12 @@ void wmain::element_show(String ename, int expand, bool incremental)
 	gtk_text_buffer_set_text(buffer, config.data(), config.length());
 
 	ElementMap::push_default(element_map());
-	ElementClassT *eclass = epath.back()->type();
 	n = lookup_widget(_window, "eview_classinfo_ports");
 	gtk_label_set_text(GTK_LABEL(n), eclass->port_count_code().c_str());
 	n = lookup_widget(_window, "eview_classinfo_processing");
 	gtk_label_set_text(GTK_LABEL(n), eclass->processing_code().c_str());
 	n = lookup_widget(_window, "eview_classinfo_flow");
-	gtk_label_set_text(GTK_LABEL(n), epath.back()->flow_code().c_str());
+	gtk_label_set_text(GTK_LABEL(n), element->flow_code().c_str());
 	ElementMap::pop_default();
 	
 	// clear handlers
@@ -555,9 +555,9 @@ void wmain::element_show(String ename, int expand, bool incremental)
 	    gtk_widget_hide(n);
 
 	// highlight config and diagram
-	ElementT *backe = epath.back();
-	if (backe->landmarkt().offset1() != backe->landmarkt().offset2() && expand >= 0 && _config_clean_elements)
-	    _element_highlight = backe;
+	if (element->landmarkt().offset1() != element->landmarkt().offset2()
+	    && expand >= 0 && _config_clean_elements)
+	    _element_highlight = element;
     }
 
     // expand and highlight whether or not viewed element changed
@@ -635,66 +635,79 @@ static void on_eview_refresh_clicked(GtkButton *, gpointer user_data)
 }
 
 namespace {
-bool ename_sorter(const Pair<String, ElementT *> &a, const Pair<String, ElementT *> &b) {
-    return click_strcmp(a.first, b.first) < 0;
+bool ename_sorter(const wmain::element_lister &a,
+		  const wmain::element_lister &b) {
+    return click_strcmp(a.compound + a.name, b.compound + b.name) < 0;
 }
-bool eclass_sorter(const Pair<String, ElementT *> &a, const Pair<String, ElementT *> &b) {
-    int c = click_strcmp(a.second->type_name(), b.second->type_name());
+bool eclass_sorter(const wmain::element_lister &a,
+		   const wmain::element_lister &b) {
+    int c = click_strcmp(a.element->type_name(), b.element->type_name());
     if (c == 0)
-	return a.first < b.first;
+	return click_strcmp(a.name, b.name) < 0;
     else
 	return c < 0;
 }
 }
 
-void wmain::fill_elements(RouterT *r, const String &compound, int compound_state, Vector<Pair<String, ElementT *> > &v)
+void wmain::fill_elements(RouterT *r, const String &compound, bool only_primitive, const VariableEnvironment &scope, Vector<element_lister> &v)
 {
     for (RouterT::iterator i = r->begin_elements(); i != r->end_elements(); ++i) {
 	if (i->tunnel())
 	    continue;
-	String n = (compound ? compound + i->name() : i->name());
-	// XXX this is not the right way to do this
-	bool is_compound = i->resolved_compound();
-	if (compound_state <= 1 || !is_compound)
-	    v.push_back(make_pair(n, i.operator->()));
-	if (compound_state >= 1 && is_compound) {
-	    RouterT *subr = i->resolved_type()->cast_router();
-	    n += "/";
-	    fill_elements(subr, n, compound_state, v);
-	}
+
+	element_lister el;
+	el.compound = compound;
+	el.name = i->name();
+	el.element = i;
+
+	VariableEnvironment new_scope(0);
+	ElementClassT *eclass = i->resolve(scope, &new_scope);
+	RouterT *subr = eclass->cast_router();
+
+	if (!only_primitive || !subr)
+	    v.push_back(el);
+	if (subr)
+	    fill_elements(subr, el.compound + el.name + "/", only_primitive, new_scope, v);
     }
 }
 
-void wmain::fill_elements_tree_store(GtkTreeStore *store, RouterT *r, GtkTreeIter *parent, const String &compound)
+Vector<wmain::element_lister>::iterator wmain::fill_elements_tree_store_helper(GtkTreeStore *store, GtkTreeIter *parent, Vector<element_lister>::iterator it, Vector<element_lister>::iterator end)
 {
-    Vector<Pair<String, ElementT *> > v;
-    fill_elements(r, "", (_elist_sort == elist_sort_class ? 1 : 0), v);
+    StringAccum sa1, sa2;
+    GtkTreeIter li;
+
+    gtk_tree_store_append(store, &li, parent);
+
+    if (_elist_sort == elist_sort_class)
+	sa1 << it->element->printable_type_name() << ' ' << it->compound << it->name;
+    else
+	sa1 << it->name << " :: " << it->element->printable_type_name();
+    sa2 << it->compound << it->name;
+    gtk_tree_store_set(store, &li, 0, sa1.c_str(), 1, sa2.c_str(), -1);
+
+    Vector<element_lister>::iterator next = it + 1;
+    while (next != end && next->compound.length() > it->compound.length()
+	   && _elist_sort != elist_sort_class
+	   && next->compound == it->compound + it->name + "/")
+	next = fill_elements_tree_store_helper(store, &li, next, end);
+
+    return next;
+}
+
+void wmain::fill_elements_tree_store(GtkTreeStore *store, RouterT *r)
+{
+    Vector<element_lister> v;
+    fill_elements(r, "", (_elist_sort == elist_sort_class),
+		  VariableEnvironment(0), v);
     
     if (_elist_sort == elist_sort_name)
 	std::sort(v.begin(), v.end(), ename_sorter);
     else if (_elist_sort == elist_sort_class)
 	std::sort(v.begin(), v.end(), eclass_sorter);
 
-    StringAccum sa1, sa2;
-    for (Vector<Pair<String, ElementT *> >::iterator vi = v.begin(); vi != v.end(); ++vi) {
-	GtkTreeIter li;
-	gtk_tree_store_append(store, &li, parent);
-	sa1.clear(), sa2.clear();
-	if (_elist_sort == elist_sort_class)
-	    sa1 << vi->second->printable_type_name() << ' ' << vi->first;
-	else
-	    sa1 << vi->first << " :: " << vi->second->printable_type_name();
-	sa2 << compound << vi->first;
-	gtk_tree_store_set(store, &li,
-			   0, sa1.c_str(),
-			   1, sa2.c_str(),
-			   -1);
-	if (_elist_sort != elist_sort_class
-	    && vi->second->resolved_compound()) {
-	    RouterT *subr = vi->second->resolved_type()->cast_router();
-	    fill_elements_tree_store(store, subr, &li, compound + vi->first + "/");
-	}
-    }
+    Vector<element_lister>::iterator it = v.begin();
+    while (it != v.end())
+	it = fill_elements_tree_store_helper(store, 0, it, v.end());
 }
 
 void wmain::element_tree_sort(int state)
@@ -715,7 +728,7 @@ void wmain::element_tree_sort(int state)
 	gtk_button_set_label(b, "Sort: Class");
 
     gtk_tree_store_clear(_elist_store);
-    fill_elements_tree_store(_elist_store, router(), 0, "");
+    fill_elements_tree_store(_elist_store, router());
 }
 
 void wmain::etree_fill() {
@@ -751,7 +764,7 @@ void wmain::etree_fill() {
 	gtk_tree_store_clear(_elist_store);
     
     if (router())
-	fill_elements_tree_store(_elist_store, router(), 0, "");
+	fill_elements_tree_store(_elist_store, router());
 
     element_show(_eview_name, 0, false);
     diagram()->element_show(_eview_name, false);

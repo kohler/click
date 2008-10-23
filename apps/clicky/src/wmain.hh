@@ -1,6 +1,7 @@
 #ifndef CLICKY_WMAIN_HH
 #define CLICKY_WMAIN_HH 1
 #include "crouter.hh"
+class VariableEnvironment;
 namespace clicky {
 class whandler;
 class wdiagram;
@@ -90,6 +91,12 @@ class wmain : public crouter { public:
 
     enum { elist_sort_none = 0, elist_sort_name, elist_sort_class };
     
+    struct element_lister {
+	String compound;
+	String name;
+	ElementT *element;
+    };
+
   private:
 
     // router
@@ -143,8 +150,9 @@ class wmain : public crouter { public:
     
     void dialogs_connect();
 
-    static void fill_elements(RouterT *r, const String &compound, int compound_state, Vector<Pair<String, ElementT *> > &v);
-    void fill_elements_tree_store(GtkTreeStore *treestore, RouterT *r, GtkTreeIter *parent, const String &compound);
+    static void fill_elements(RouterT *r, const String &compound, bool only_primitive, const VariableEnvironment &scope, Vector<element_lister> &v);
+    Vector<element_lister>::iterator fill_elements_tree_store_helper(GtkTreeStore *store, GtkTreeIter *parent, Vector<element_lister>::iterator it, Vector<element_lister>::iterator end);
+    void fill_elements_tree_store(GtkTreeStore *treestore, RouterT *r);
     void etree_fill();
 
     bool error_view_motion_offsets(int off1, int off2, int index);

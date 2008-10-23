@@ -13,6 +13,7 @@ clicky_SOURCES = \
 	support.c support.h \
 	gathererror.cc gathererror.hh \
 	permstr.cc permstr.hh \
+	scopechain.cc scopechain.hh \
 	crouter.cc crouter.hh \
 	cdriver.cc cdriver.hh \
 	hvalues.cc hvalues.hh \

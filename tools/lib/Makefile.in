@@ -46,22 +46,22 @@ endif
 
 .c.o:
 	$(call ccompile,-c $< -o $@,CC)
-	@-/bin/mv $*.d $*.hd
+	@-/bin/mv $*.d $*.hd 2>/dev/null
 .s.o:
 	$(call ccompile,-c $< -o $@,ASM)
-	@-/bin/mv $*.d $*.hd
+	@-/bin/mv $*.d $*.hd 2>/dev/null
 .S.o:
 	$(call ccompile,-c $< -o $@,ASM)
-	@-/bin/mv $*.d $*.hd
+	@-/bin/mv $*.d $*.hd 2>/dev/null
 .cc.o:
 	$(call cxxcompile,-c $< -o $@,CXX)
-	@-/bin/mv $*.d $*.hd
+	@-/bin/mv $*.d $*.hd 2>/dev/null
 .c.bo:
 	$(call build_ccompile,-c $< -o $@,BUILDCC)
-	@-sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
+	@-test -f $*.d && sed 's/\.o:/\.bo:/' < $*.d > $*.bd && /bin/rm -f $*.d
 .cc.bo:
 	$(call build_cxxcompile,-c $< -o $@,BUILDCXX)
-	@-sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
+	@-test -f $*.d && sed 's/\.o:/\.bo:/' < $*.d > $*.bd && /bin/rm -f $*.d
 
 
 OBJS = string.o straccum.o glue.o \

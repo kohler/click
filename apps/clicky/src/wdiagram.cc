@@ -16,6 +16,7 @@
 #include "crouter.hh"
 #include "whandler.hh"
 #include "dstyle.hh"
+#include "scopechain.hh"
 extern "C" {
 #include "support.h"
 }
@@ -34,8 +35,9 @@ cdiagram::cdiagram(crouter *cr, PangoLayout *pl, unsigned generation)
     if (cr->router()) {
 	Vector<ElementT *> path;
 	int z_index = 0;
+	ScopeChain chain(cr->router());
 	_relt->create_elements(cr, cr->router(), cr->processing(),
-			       _elt_map, path, z_index);
+			       _elt_map, chain, z_index);
 	_relt->create_connections(cr, z_index);
 
 	dcontext dcx(cr, pl, 0, generation, 0, 1);
@@ -466,7 +468,9 @@ void wdiagram::export_diagram(const char *filename, bool eps)
 
 void wdiagram::notify_active_ports(String value)
 {
-    _active_ports.clear();
+    std::vector<std::pair<dconn *, int> > actives;
+    int lineno = 0;
+
     while (value) {
 	const char *nl = find(value, '\n');
 	if (nl < value.end())
@@ -476,24 +480,69 @@ void wdiagram::notify_active_ports(String value)
 
 	String enamestr = cp_pop_spacevec(line);
 	String portstr = cp_pop_spacevec(line);
-	int port_number;
+	ScopeChain chain(_rw->router());
+
+	ElementT *element;
+	int port;
 	if (!enamestr || !portstr
 	    || (portstr[0] != 'i' && portstr[0] != 'o')
-	    || !cp_integer(portstr.substring(1), &port_number)) {
+	    || !(element = chain.push_element(enamestr))
+	    || !cp_integer(portstr.substring(1), &port)
+	    || port < 0 || port >= element->nports(portstr[0] == 'o')) {
 	    // odd line, explode
-	    _active_ports.clear();
+	    actives.clear();
 	    break;
 	}
+	bool isoutput = (portstr[0] == 'o');
 
-	dconn *c = 0;
-	if (delt *e = _cdiagram->elt(enamestr))
-	    c = e->find_connection(portstr[0] == 'o', port_number);
-	_active_ports.push_back(c);
+	while (1) {
+	    String ename = chain.flat_name(element->name());
+	    if (delt *e = _cdiagram->elt(ename))
+		if (dconn *c = e->find_connection(isoutput, port))
+		    actives.push_back(std::make_pair(c, lineno));
+
+	    int cid = chain.back_router()->find_connection_id_touching(PortT(element, port), isoutput);
+	    assert(cid >= 0);
+
+	    PortT oport = chain.back_router()->connection(cid).end(!isoutput);
+	    ElementClassT *oclass = chain.resolved_type(oport.element);
+	    if (RouterT *subr = oclass->cast_router()) {
+		chain.enter_element(oport.element);
+		element = subr->element(!isoutput);
+		port = oport.port;
+	    } else if (oport.element == chain.back_router()->element(isoutput)
+		       && oport.element->router() != _rw->router()) {
+		String back_component = chain.back_component();
+		chain.pop_element();
+		element = chain.back_router()->element(back_component);
+		port = oport.port;
+	    } else
+		break;
+	}
+
+	++lineno;
     }
+
+    // compile 'actives' into actual arrays
+    std::sort(actives.begin(), actives.end());
+    _active_conns.clear();
+    _active_offsets.clear();
+    _active_ports.clear();
+    for (std::vector<std::pair<dconn *, int> >::iterator it = actives.begin();
+	 it != actives.end(); ) {
+	std::vector<std::pair<dconn *, int> >::iterator fit = it;
+	_active_conns.push_back(fit->first);
+	_active_offsets.push_back(_active_ports.size());
+	for (; it != actives.end() && it->first == fit->first; ++it)
+	    _active_ports.push_back(it->second);
+    }
+    if (actives.size())
+	_active_offsets.push_back(_active_ports.size());
+    _active_nports = (actives.size() ? lineno : -1);
 
     // inquire into port statistics
     handler_value *pstats = _rw->hvalues().find_placeholder("active_port_stats", hflag_r | hflag_notify_delt, 3000);
-    if (_active_ports.size()) {
+    if (_active_offsets.size()) {
 	pstats->set_flags(_rw, pstats->flags() | hflag_autorefresh);
 	pstats->refresh(_rw);
     } else
@@ -502,7 +551,8 @@ void wdiagram::notify_active_ports(String value)
 
 void wdiagram::notify_active_port_stats(String value)
 {
-    size_t lineno = 0;
+    int lineno = 0;
+    std::vector<unsigned> counts;
     while (value) {
 	const char *nl = find(value, '\n');
 	if (nl < value.end())
@@ -512,15 +562,21 @@ void wdiagram::notify_active_port_stats(String value)
 
 	unsigned value;
 	if (cp_integer(cp_pop_spacevec(line), &value)
-	    && lineno < _active_ports.size()
-	    && _active_ports[lineno]) {
-	    if (_active_ports[lineno]->change_count(value))
-		redraw(*_active_ports[lineno]);
-	}
+	    && lineno < _active_nports)
+	    counts.push_back(value);
+
 	++lineno;
     }
 
-    if (lineno != _active_ports.size())
+    if (lineno == _active_nports) {
+	for (size_t i = 0; i < _active_conns.size(); ++i) {
+	    unsigned x = 0;
+	    for (int o = _active_offsets[i]; o < _active_offsets[i+1]; ++o)
+		x += counts[_active_ports[o]];
+	    if (_active_conns[i]->change_count(x))
+		redraw(*_active_conns[i]);
+	}
+    } else
 	_rw->hvalues().find_force("active_ports")->refresh(_rw);
 }
 

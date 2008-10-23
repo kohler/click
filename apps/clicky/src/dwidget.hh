@@ -9,6 +9,7 @@
 #include <clicktool/elementt.hh>
 class Bitvector;
 class ProcessingT;
+class ScopeChain;
 namespace clicky {
 class wdiagram;
 class wmain;
@@ -302,7 +303,7 @@ class delt : public dwidget { public:
 
     // creating
     void create(RouterT *router, ProcessingT *processing,
-		HashTable<String, delt *> &collector, Vector<ElementT *> &epath,
+		HashTable<String, delt *> &collector, ScopeChain &chain,
 		int &z_index);
     
     // gadgets
@@ -335,7 +336,7 @@ class delt : public dwidget { public:
 
     void create_elements(crouter *cr, RouterT *router, ProcessingT *processing,
 			 HashTable<String, delt *> &collector,
-			 Vector<ElementT *> &path, int &z_index);
+			 ScopeChain &chain, int &z_index);
     void create_connections(crouter *cr, int &z_index);
     
   private:
@@ -398,7 +399,7 @@ class delt : public dwidget { public:
     static delt *create(ElementT *e, delt *parent,
 			crouter *cr, ProcessingT *processing,
 			HashTable<String, delt *> &collector,
-			Vector<ElementT *> &path, int &z_index);
+			ScopeChain &chain, int &z_index);
     delt *create_split(int split_type, int *z_index_ptr);
     void create_connections(std::vector<delt_conn> &cc, crouter *cr, int &z_index) const;
 

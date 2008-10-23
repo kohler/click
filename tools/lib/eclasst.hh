@@ -76,9 +76,17 @@ class ElementClassT { public:
 				   ErrorHandler *errh,
 				   const LandmarkT &landmark);
 
-    virtual void update_scope(const Vector<String> &args,
-			      const VariableEnvironment &env,
-			      VariableEnvironment *dest);
+    /** @brief Create a new scope with the appropriate declarations.
+     * @param args configuration arguments
+     * @param scope original scope
+     * @param[out] new_scope new scope
+     * @pre &scope != &new_scope
+     *
+     * The new scope equals the old scope, possibly restricted according to
+     * lexical scoping, plus declarations for the configuration arguments. */
+    virtual void create_scope(const Vector<String> &args,
+			      const VariableEnvironment &scope,
+			      VariableEnvironment &new_scope);
     
     virtual ElementT *complex_expand_element(ElementT *element,
 					     const Vector<String> &conf,
@@ -125,7 +133,7 @@ class SynonymElementClassT : public ElementClassT { public:
 
     bool need_resolve() const;
     ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const LandmarkT &);
-    void update_scope(const Vector<String> &, const VariableEnvironment &, VariableEnvironment *);
+    void create_scope(const Vector<String> &, const VariableEnvironment &, VariableEnvironment &);
     ElementT *complex_expand_element(ElementT *, const Vector<String> &, RouterT *, const String &prefix, const VariableEnvironment &, ErrorHandler *);
     
     void collect_types(HashTable<ElementClassT *, int> &) const;
