@@ -90,7 +90,7 @@ usage()
 which contains just the elements required to support one or more\n\
 configurations. Run 'click-mkmindriver' in the relevant driver's build\n\
 directory and supply a package name with the '-p PKG' option. Running\n\
-'make MINDRIVER=PKG' will build a 'PKGclick' user-level driver or 'PKGclick.o'\n\
+'make MINDRIVER=PKG' will build a 'PKGclick' user-level driver or 'PKGclick.ko'\n\
 kernel module.\n\
 \n\
 Usage: %s -p PKG [-ku] [OPTION]... [ROUTERFILE]...\n\
@@ -577,7 +577,7 @@ particular purpose.\n");
 	if (driver == Driver::USERLEVEL)
 	    errh->message("Build '%sclick' with 'make MINDRIVER=%s'.", package_name, package_name);
 	else
-	    errh->message("Build '%sclick.o' with 'make MINDRIVER=%s'.", package_name, package_name);
+	    errh->message("Build '%sclick.ko' with 'make MINDRIVER=%s'.", package_name, package_name);
 	return 0;
     } else
 	exit(1);

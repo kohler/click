@@ -153,7 +153,7 @@ void
 ClassifierAligner::adjust_flow(Vector<Alignment>::iterator ain, int nin, Vector<Alignment>::const_iterator, int)
 {
     Alignment a = common_alignment(ain, nin);
-    if (a.chunk() < 4)
+    if (a.modulus() < 4)
 	a = Alignment(4, a.offset());
     for (int j = 0; j < nin; ++j, ++ain)
 	*ain = a;
@@ -242,12 +242,12 @@ AlignAlignClass::AlignAlignClass()
 Aligner *
 AlignAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
 {
-  int offset, chunk;
+  int offset, modulus;
   ContextErrorHandler cerrh(errh, "While analyzing alignment for '" + e->declaration() + "':");
   if (cp_va_kparse(e->configuration(), &cerrh,
-		   "MODULUS", cpkP+cpkM, cpUnsigned, &chunk,
+		   "MODULUS", cpkP+cpkM, cpUnsigned, &modulus,
 		   "OFFSET", cpkP+cpkM, cpUnsigned, &offset,
 		   cpEnd) < 0)
     return default_aligner();
-  return new GeneratorAligner(Alignment(chunk, offset));
+  return new GeneratorAligner(Alignment(modulus, offset));
 }

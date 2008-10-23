@@ -228,12 +228,12 @@ RouterAlign::print(FILE *f)
     fprintf(f, "%s :", x->name_c_str());
     for (int j = 0; j < _icount[i]; j++) {
       const Alignment &a = _ialign[ _ioffset[i] + j ];
-      fprintf(f, " %d/%d", a.chunk(), a.offset());
+      fprintf(f, " %d/%d", a.modulus(), a.offset());
     }
     fprintf(f, " -");
     for (int j = 0; j < _ocount[i]; j++) {
       const Alignment &a = _oalign[ _ooffset[i] + j ];
-      fprintf(f, " %d/%d", a.chunk(), a.offset());
+      fprintf(f, " %d/%d", a.modulus(), a.offset());
     }
     fprintf(f, "\n");
   }
@@ -503,7 +503,7 @@ particular purpose.\n");
 		else {
 		    ElementT *e = router->get_element
 			(aligner_name(anonymizer), align_class,
-			 String(want.chunk()) + ", " + String(want.offset()),
+			 String(want.modulus()) + ", " + String(want.offset()),
 			 LandmarkT("<click-align>"));
 		    router->insert_before(e, PortT(router->element(i), j));
 		    anonymizer++;
@@ -541,7 +541,7 @@ particular purpose.\n");
      * Add Aligns required for adjustment alignments
      *
      * Classifier is an example: it can cope with any alignment that is
-     * consistent and has a chunk >= 4. Rather than require a specific
+     * consistent and has a modulus >= 4. Rather than require a specific
      * alignment above, we handle Classifier here; required alignments may
      * have generated an alignment we can deal with.
      */
@@ -566,7 +566,7 @@ particular purpose.\n");
 		else {
 		    ElementT *e = router->get_element
 			(aligner_name(anonymizer), align_class,
-			 String(want.chunk()) + ", " + String(want.offset()),
+			 String(want.modulus()) + ", " + String(want.offset()),
 			 LandmarkT("<click-align>"));
 		    router->insert_before(e, PortT(router->element(i), j));
 		    anonymizer++;
@@ -645,7 +645,7 @@ particular purpose.\n");
 		int i = x->eindex();
 		for (int j = 0; j < ral._icount[i]; j++) {
 		    const Alignment &a = ral._ialign[ ral._ioffset[i] + j ];
-		    sa << "  " << a.chunk() << " " << a.offset();
+		    sa << "  " << a.modulus() << " " << a.offset();
 		}
 	    }
 	}

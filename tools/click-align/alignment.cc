@@ -21,69 +21,69 @@
 bool
 Alignment::operator<=(const Alignment &o) const
 {
-  if (_chunk < 0 || o._chunk < 0)
-    return false;
-  else if (o._chunk <= 1)
-    return true;
-  else if (_chunk <= 1)
-    return false;
-  else if (_chunk % o._chunk != 0)
-    return false;
-  else
-    return (_offset % o._chunk == o._offset);
+    if (_modulus < 0 || o._modulus < 0)
+	return false;
+    else if (o._modulus <= 1)
+	return true;
+    else if (_modulus <= 1)
+	return false;
+    else if (_modulus % o._modulus != 0)
+	return false;
+    else
+	return (_offset % o._modulus == o._offset);
 }
 
 Alignment &
 Alignment::operator+=(int delta)
 {
-  if (_chunk > 1) {
-    if (delta < 0)
-      delta += ((-delta)/_chunk + 1) * _chunk;
-    _offset = (_offset + delta) % _chunk;
-  }
-  return *this;
+    if (_modulus > 1) {
+	if (delta < 0)
+	    delta += ((-delta)/_modulus + 1) * _modulus;
+	_offset = (_offset + delta) % _modulus;
+    }
+    return *this;
 }
 
 Alignment &
 Alignment::operator|=(const Alignment &o)
 {
-  if (_chunk == 0 || o._chunk < 0)
-    return (*this = o);
-  else if (_chunk <= 1 || o._chunk == 0)
-    return *this;
-  
-  // new_chunk = gcd(_chunk, o._chunk)
-  int new_chunk = _chunk, b = o._chunk;
-  while (b) {			// Euclid's algorithm
-    int r = new_chunk % b;
-    new_chunk = b;
-    b = r;
-  }
+    if (_modulus == 0 || o._modulus < 0)
+	return (*this = o);
+    else if (_modulus <= 1 || o._modulus == 0)
+	return *this;
 
-  // calculate new offsets
-  int new_off1 = _offset % new_chunk;
-  int new_off2 = o._offset % new_chunk;
-  if (new_off1 == new_off2) {
-    _chunk = new_chunk;
-    _offset = new_off1;
-    return *this;
-  }
+    // new_modulus = gcd(_modulus, o._modulus)
+    int new_modulus = _modulus, b = o._modulus;
+    while (b) {			// Euclid's algorithm
+	int r = new_modulus % b;
+	new_modulus = b;
+	b = r;
+    }
 
-  // check for lowering chunk
-  int diff = new_off2 - new_off1;
-  if (diff < 0)
-      diff += new_chunk;
-  if (diff > new_chunk / 2)
-      diff = new_chunk - diff;
-  if (new_chunk % diff == 0) {
-    _chunk = diff;
-    _offset = new_off1 % diff;
-  } else {
-    _chunk = 1;
-    _offset = 0;
-  }
-  
-  return *this;
+    // calculate new offsets
+    int new_off1 = _offset % new_modulus;
+    int new_off2 = o._offset % new_modulus;
+    if (new_off1 == new_off2) {
+	_modulus = new_modulus;
+	_offset = new_off1;
+	return *this;
+    }
+
+    // check for lowering modulus
+    int diff = new_off2 - new_off1;
+    if (diff < 0)
+	diff += new_modulus;
+    if (diff > new_modulus / 2)
+	diff = new_modulus - diff;
+    if (new_modulus % diff == 0) {
+	_modulus = diff;
+	_offset = new_off1 % diff;
+    } else {
+	_modulus = 1;
+	_offset = 0;
+    }
+
+    return *this;
 }
 
 Alignment &
@@ -102,10 +102,10 @@ Alignment::operator&=(const Alignment &o)
 String
 Alignment::unparse() const
 {
-  if (bad())
-    return "BAD";
-  else if (empty())
-    return "EMPTY";
-  else
-    return String(_chunk) + "/" + String(_offset);
+    if (bad())
+	return "BAD";
+    else if (empty())
+	return "EMPTY";
+    else
+	return String(_modulus) + "/" + String(_offset);
 }

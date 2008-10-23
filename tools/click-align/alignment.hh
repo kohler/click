@@ -4,13 +4,26 @@
 
 class Alignment { public:
 
-    Alignment()				: _chunk(0), _offset(0) { }
-    Alignment(int, int);
+    Alignment()
+	: _modulus(0), _offset(0) {
+    }
+    Alignment(int m, int o)
+	: _modulus(m), _offset(o) {
+	assert(m > 0 && o >= 0 && o < m);
+    }
 
-    int chunk() const			{ return (_chunk > 1 ? _chunk : 1); }
-    int offset() const			{ return _offset; }
-    bool bad() const			{ return _chunk < 0; }
-    bool empty() const			{ return _chunk == 0; }
+    int modulus() const {
+	return (_modulus > 1 ? _modulus : 1);
+    }
+    int offset() const {
+	return _offset;
+    }
+    bool bad() const {
+	return _modulus < 0;
+    }
+    bool empty() const {
+	return _modulus == 0;
+    }
 
     bool operator==(const Alignment &) const;
     bool operator!=(const Alignment &) const;
@@ -22,64 +35,58 @@ class Alignment { public:
     Alignment &operator&=(const Alignment &);
 
     String unparse() const;
-    String s() const			{ return unparse(); }
 
   private:
 
-    int _chunk;
+    int _modulus;
     int _offset;
 
-    Alignment(int a, int b, int)		: _chunk(a), _offset(b) { }
+    Alignment(int m, int o, int)
+	: _modulus(m), _offset(o) {
+    }
 
 };
-
-inline
-Alignment::Alignment(int c, int o)
-  : _chunk(c), _offset(o)
-{
-  assert(c > 0 && o >= 0 && o < c);
-}
 
 inline bool
 Alignment::operator==(const Alignment &o) const
 {
-  return _chunk == o._chunk && _offset == o._offset;
+    return _modulus == o._modulus && _offset == o._offset;
 }
 
 inline bool
 Alignment::operator!=(const Alignment &o) const
 {
-  return _chunk != o._chunk || _offset != o._offset;
+    return _modulus != o._modulus || _offset != o._offset;
 }
 
 inline Alignment &
 Alignment::operator-=(int off)
 {
-  return *this += (-off);
+    return *this += (-off);
 }
 
 inline Alignment
 operator+(Alignment a, int off)
 {
-  return a += off;
+    return a += off;
 }
 
 inline Alignment
 operator-(Alignment a, int off)
 {
-  return a += (-off);
+    return a += (-off);
 }
 
 inline Alignment
 operator|(Alignment a, const Alignment &b)
 {
-  return a |= b;
+    return a |= b;
 }
 
 inline Alignment
 operator&(Alignment a, const Alignment &b)
 {
-  return a &= b;
+    return a &= b;
 }
 
 #endif
