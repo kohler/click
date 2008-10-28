@@ -2,6 +2,7 @@
 # Eddie Kohler
 #
 # Copyright (c) 2006-2007 Regents of the University of California
+# Copyright (c) 2008 Meraki, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -16,12 +17,14 @@
 CLICKBUILD = linux26module
 
 CLICKCPPFLAGS += -DCLICK_LINUXMODULE
-CLICKINCLUDES := -I$(clickincludedir) -I$(clicksrcdir) -I$(clicklinuxdir)/include
+CLICKINCLUDES := -I$(clickincludedir) -I$(clicksrcdir)
 
-LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS)" | sed \
+LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS)" \
+	"$(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) $(CFLAGS_MODULE)" | sed \
 	-e s,-fno-unit-at-a-time,, -e s,-Wstrict-prototypes,, \
 	-e s,-Wdeclaration-after-statement,, \
-	-e s,-Wno-pointer-sign,, -e s,-fno-common,,)
+	-e s,-Wno-pointer-sign,, -e s,-fno-common,, \
+	-e s,-Iinclude/,-I$(clicklinux_srcdir)include/,g)
 
 CXXFLAGS ?= $(CLICKCXXFLAGS_NDEBUG)
 DEPCFLAGS ?= -Wp,-MD,$(depfile)

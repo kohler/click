@@ -690,7 +690,8 @@ STRIP
 AR_CREATEFLAGS
 PTHREAD_LIBS
 INCLUDE_KSYMS
-linuxdir
+linux_builddir
+linux_srcdir
 element_groups
 freebsd_srcdir
 freebsd_includedir
@@ -723,7 +724,7 @@ PROPER_LIBS
 XML2CLICK
 EXPAT_INCLUDES
 EXPAT_LIBS
-LINUX_CFLAGS
+linux_makeargs
 INSTALL_PROGRAM
 INSTALL_SCRIPT
 INSTALL_DATA
@@ -5832,12 +5833,12 @@ fi
 
 # Check whether --with-linux was given.
 if test "${with_linux+set}" = set; then
-  withval=$with_linux; linuxdir=$withval
+  withval=$with_linux; linuxpath=$withval
 else
-  linuxdir=NONE
+  linuxpath=NONE
 fi
 
-test -z "$linuxdir" -o "$linuxdir" = yes && linuxdir=yes
+test -z "$linuxpath" -o "$linuxpath" = yes && linuxpath=yes
 
 
 # Check whether --with-linux-map was given.
@@ -5850,28 +5851,28 @@ fi
 
 linux_system_map_boot=no
 
-if test "x$linuxdir" = xNONE -o "x$linuxdir" = xyes; then
+if test "x$linuxpath" = xNONE -o "x$linuxpath" = xyes; then
     if uname -r 2>/dev/null | grep '^2\.6' >/dev/null 2>&1; then
-	linuxdir=/lib/modules/"`uname -r`"/build
+	linuxpath=/lib/modules/"`uname -r`"/build
 	linux_system_map_boot="`uname -r`"
     else
-	linuxdir=/usr/src/linux
+	linuxpath=/usr/src/linux
     fi
-    if test ! -d "$linuxdir" -a "x$enable_linuxmodule" = xyes; then
+    if test ! -d "$linuxpath" -a "x$enable_linuxmodule" = xyes; then
 	if test "x$enable_linuxmodule_default" = xyes; then
-	    linuxdir=NONE; enable_linuxmodule=no
+	    linuxpath=NONE; enable_linuxmodule=no
 	else
 	    { { echo "$as_me:$LINENO: error:
 =========================================
 
-Can't find $linuxdir, so I can't compile the linuxmodule driver!
+Can't find $linuxpath, so I can't compile the linuxmodule driver!
 (You may need the --with-linux=DIR option.)
 
 =========================================" >&5
 echo "$as_me: error:
 =========================================
 
-Can't find $linuxdir, so I can't compile the linuxmodule driver!
+Can't find $linuxpath, so I can't compile the linuxmodule driver!
 (You may need the --with-linux=DIR option.)
 
 =========================================" >&2;}
@@ -5880,10 +5881,8 @@ Can't find $linuxdir, so I can't compile the linuxmodule driver!
     fi
 fi
 
-linuxpath=`echo "$linuxdir" | sed 's/^[^:]*:*//'`
-linuxdir=`echo "$linuxdir" | sed 's/^\([^:]*\).*/\1/'`
-find_linuxdir () {
-    path="$linuxdir:$linuxpath"
+find_linuxpath () {
+    path="$linuxpath"
     while test -n "$path"; do
 	l=`echo "$path" | sed 's/^\([^:]*\).*/\1/'`
 	path=`echo "$path" | sed 's/^[^:]*:*//'`
@@ -5895,47 +5894,83 @@ find_linuxdir () {
     echo "/nonexistent_file"
 }
 
-if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != xyes; then
+if test "x$linuxpath" = xNONE -o "x$linuxpath" = xno -o "x$enable_linuxmodule" != xyes; then
     ac_have_linux_kernel=n
-    linuxdir=NONE
-elif expr "_$linuxdir" : '_[^/\\]' >/dev/null; then
-    { { echo "$as_me:$LINENO: error:
-=========================================
-
-The --with-linux directory $linuxdir is relative.
-You must supply an absolute path starting with /.
-
-=========================================" >&5
-echo "$as_me: error:
-=========================================
-
-The --with-linux directory $linuxdir is relative.
-You must supply an absolute path starting with /.
-
-=========================================" >&2;}
-   { (exit 1); exit 1; }; }
-elif test -r `find_linuxdir include/linux/skbuff.h`; then
-    ac_have_linux_kernel=y
+    linuxpath=NONE
+    linux_srcdir=NONE
+    linux_builddir=NONE
 else
-    { { echo "$as_me:$LINENO: error:
+        path="$linuxpath"
+    while test -n "$path"; do
+	l=`echo "$path" | sed 's/^\([^:]*\).*/\1/'`
+	path=`echo "$path" | sed 's/^[^>]*:*//'`
+	if test -n "$l" && expr "_$l" : '_[^/\\]' >/dev/null; then
+	    { { echo "$as_me:$LINENO: error:
 =========================================
 
-Can't find $linuxdir/include/linux/skbuff.h.
-Are you sure $linuxdir contains Linux kernel source?
+The --with-linux directory $l is relative.
+All Linux directories must be absolute paths starting with /.
 
 =========================================" >&5
 echo "$as_me: error:
 =========================================
 
-Can't find $linuxdir/include/linux/skbuff.h.
-Are you sure $linuxdir contains Linux kernel source?
+The --with-linux directory $l is relative.
+All Linux directories must be absolute paths starting with /.
 
 =========================================" >&2;}
    { (exit 1); exit 1; }; }
+	fi
+    done
+
+    linux_skbuff_h=`find_linuxpath include/linux/skbuff.h`
+    if test -r "$linux_skbuff_h"; then
+	linux_srcdir=`echo "$linux_skbuff_h" | sed 's_include/linux/skbuff\.h__'`
+	ac_have_linux_kernel=y
+    else
+	{ { echo "$as_me:$LINENO: error:
+=========================================
+
+Can't find include/linux/skbuff.h in $linuxpath.
+Are you sure $linuxpath contains Linux kernel source?
+
+=========================================" >&5
+echo "$as_me: error:
+=========================================
+
+Can't find include/linux/skbuff.h in $linuxpath.
+Are you sure $linuxpath contains Linux kernel source?
+
+=========================================" >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+
+    linux_config=`find_linuxpath .config`
+    if test -r "$linux_config"; then
+	linux_builddir=`echo "$linux_config" | sed 's_/\.config__'`
+    else
+	{ { echo "$as_me:$LINENO: error:
+=========================================
+
+Can't find .config in $linuxpath.
+Are you sure $linuxpath contains a Linux kernel build?
+
+=========================================" >&5
+echo "$as_me: error:
+=========================================
+
+Can't find .config in $linuxpath.
+Are you sure $linuxpath contains a Linux kernel build?
+
+=========================================" >&2;}
+   { (exit 1); exit 1; }; }
+    fi
 fi
 
+
+
 cat >>confdefs.h <<_ACEOF
-#define LINUX_SRCDIR "${linuxdir}"
+#define LINUX_SRCDIR "${linux_srcdir}"
 _ACEOF
 
 
@@ -8974,7 +9009,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 8977 "configure"
+#line 9012 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -14101,7 +14136,7 @@ if test $ac_have_linux_kernel = y; then
 
 
 if test "$linux_system_map" = NONE; then
-    linux_system_map=`find_linuxdir System.map`
+    linux_system_map=`find_linuxpath System.map`
     if test "x$linux_system_map_boot" != xno -a ! -f "$linux_system_map"; then
 	linux_system_map=/boot/System.map-"$linux_system_map_boot"
     fi
@@ -14112,7 +14147,7 @@ if test ! -f "$linux_system_map"; then
 	{ echo "$as_me:$LINENO: WARNING:
 =========================================
 
-Can't find Linux System.map file '$linux_system_map',
+Can't find Linux System.map file $linux_system_map,
 so I won't compile the linuxmodule driver.
 (You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
@@ -14120,24 +14155,27 @@ so I won't compile the linuxmodule driver.
 echo "$as_me: WARNING:
 =========================================
 
-Can't find Linux System.map file '$linux_system_map',
+Can't find Linux System.map file $linux_system_map,
 so I won't compile the linuxmodule driver.
 (You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================" >&2;}
 	ac_have_linux_kernel=no
     else
+	if test "$linux_system_map" = /nonexistent_file; then
+	    linux_system_map="in $linuxpath"
+	fi
 	{ { echo "$as_me:$LINENO: error:
 =========================================
 
-Can't find Linux System.map file '$linux_system_map'.
+Can't find Linux System.map file $linux_system_map.
 (You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================" >&5
 echo "$as_me: error:
 =========================================
 
-Can't find Linux System.map file '$linux_system_map'.
+Can't find Linux System.map file $linux_system_map.
 (You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================" >&2;}
@@ -14155,7 +14193,7 @@ echo $ECHO_N "checking for Linux 2.6... $ECHO_C" >&6; }
 if test "${ac_cv_linux26+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if grep '^PATCHLEVEL 	*= 	*6' `find_linuxdir Makefile` >/dev/null 2>&1; then ac_cv_linux26=1; else ac_cv_linux26=0; fi
+  if grep '^PATCHLEVEL 	*= 	*6' `find_linuxpath Makefile` >/dev/null 2>&1; then ac_cv_linux26=1; else ac_cv_linux26=0; fi
 fi
 { echo "$as_me:$LINENO: result: $ac_cv_linux26" >&5
 echo "${ECHO_T}$ac_cv_linux26" >&6; }
@@ -14264,7 +14302,7 @@ echo $ECHO_N "checking for <linux/ktime.h>... $ECHO_C" >&6; }
 if test "${ac_cv_linux_ktime_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if grep ktime_t `find_linuxdir include/linux/ktime.h` >/dev/null 2>&1; then
+  if grep ktime_t `find_linuxpath include/linux/ktime.h` >/dev/null 2>&1; then
   ac_cv_linux_ktime_h=yes
 else ac_cv_linux_ktime_h=no; fi
 fi
@@ -14282,7 +14320,7 @@ echo $ECHO_N "checking for device polling kernel extension... $ECHO_C" >&6; }
 if test "${ac_cv_linux_poll_extension+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if grep polling `find_linuxdir include/linux/netdevice.h` >/dev/null 2>&1; then
+  if grep polling `find_linuxpath include/linux/netdevice.h` >/dev/null 2>&1; then
   ac_cv_linux_poll_extension=yes
 else ac_cv_linux_poll_extension=no; fi
 fi
@@ -14300,7 +14338,7 @@ echo $ECHO_N "checking for atomic_set_mask... $ECHO_C" >&6; }
 if test "${ac_cv_linux_atomic_set_mask+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if grep atomic_set_mask `find_linuxdir include/asm/atomic.h` >/dev/null 2>&1; then
+  if grep atomic_set_mask `find_linuxpath include/asm/atomic.h` >/dev/null 2>&1; then
   ac_cv_linux_atomic_set_mask=yes
 else ac_cv_linux_atomic_set_mask=no; fi
 fi
@@ -14318,7 +14356,7 @@ echo $ECHO_N "checking for atomic_add_return... $ECHO_C" >&6; }
 if test "${ac_cv_linux_atomic_add_return+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if grep atomic_add_return `find_linuxdir include/asm/atomic.h` >/dev/null 2>&1; then
+  if grep atomic_add_return `find_linuxpath include/asm/atomic.h` >/dev/null 2>&1; then
   ac_cv_linux_atomic_add_return=yes
 else ac_cv_linux_atomic_add_return=no; fi
 fi
@@ -14336,7 +14374,7 @@ echo $ECHO_N "checking for <asm/alternative.h>... $ECHO_C" >&6; }
 if test "${ac_cv_linux_asm_alternative_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if test -r `find_linuxdir include/asm/alternative.h` >/dev/null 2>&1; then
+  if test -r `find_linuxpath include/asm/alternative.h` >/dev/null 2>&1; then
   ac_cv_linux_asm_alternative_h=yes
 else ac_cv_linux_asm_alternative_h=no; fi
 fi
@@ -14354,7 +14392,7 @@ echo $ECHO_N "checking for <asm/system.h>... $ECHO_C" >&6; }
 if test "${ac_cv_linux_asm_system_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if test -r `find_linuxdir include/asm/system.h` >/dev/null 2>&1; then
+  if test -r `find_linuxpath include/asm/system.h` >/dev/null 2>&1; then
   ac_cv_linux_asm_system_h=yes
 else ac_cv_linux_asm_system_h=no; fi
 fi
@@ -14373,7 +14411,6 @@ fi
 
 if test $ac_have_bsd_kernel = y; then
     KERNEL_CXX="$KERNEL_CXX -fpermissive"
-
     { echo "$as_me:$LINENO: checking FreeBSD version" >&5
 echo $ECHO_N "checking FreeBSD version... $ECHO_C" >&6; }
 if test "${ac_cv_freebsd_version+set}" = set; then
@@ -16244,13 +16281,34 @@ fi
 
 if test $ac_have_linux_kernel = y; then
 
-        if test $LINUXMODULE_2_6 = 1; then
+    save_cc="$CC"
+    save_cxx="$CXX"
+    save_cppflags="$CPPFLAGS"
+    save_cflags="$CFLAGS"
+    unset -v CFLAGS CPPFLAGS
+    CC="$KERNEL_CC"
+    CXX="$KERNEL_CXX"
+
+        linux_makeargs=
+    if test -n "$ARCH"; then
+	linux_makeargs="$linux_makeargs ARCH=$ARCH"
+    fi
+    if test -n "$CROSS_COMPILE"; then
+	linux_makeargs="$linux_makeargs CROSS_COMPILE=$CROSS_COMPILE"
+    elif test -n "$ac_tool_prefix"; then
+	linux_makeargs="$linux_makeargs CROSS_COMPILE=$ac_tool_prefix"
+    fi
+
+
+        if test -n "$LINUX_CFLAGS"; then
+	:
+    elif test $LINUXMODULE_2_6 = 1; then
 	{ echo "$as_me:$LINENO: checking for Linux 2.6 compilation flags" >&5
 echo $ECHO_N "checking for Linux 2.6 compilation flags... $ECHO_C" >&6; }
-	echo "include $linuxdir/Makefile
+	echo "include ${linux_srcdir}Makefile
 fwablongie:
 	@echo \$(CFLAGS)" >conftest.mk
-	(unset CFLAGS; make -C "${linuxdir}" M="`pwd`" -f "`pwd`/conftest.mk" --no-print-directory fwablongie) >conftest.dat
+	make -I $linux_builddir -C "${linux_srcdir}" M="`pwd`" $linux_makeargs -f "`pwd`/conftest.mk" --no-print-directory fwablongie >conftest.dat
 	if test $? != 0; then
 	    { echo "$as_me:$LINENO: result: not found" >&5
 echo "${ECHO_T}not found" >&6; }
@@ -16268,25 +16326,20 @@ Can't find Linux 2.6 compilation flags.
 ==============================================" >&2;}
    { (exit 1); exit 1; }; }
 	fi
-	LINUX_CFLAGS="`sed -e s,-Iinclude,-I$linuxdir/include,g \
-	    -e 's,-W^ *,,g' \
-	    -e 's,-Wno-pointer-sign,,g' \
+	LINUX_CFLAGS="`sed -e s,-Iinclude,-I${linux_srcdir}include,g \
+	    -e 's, include/, $linux_builddir/include,g' \
+	    -e s,-Wno-pointer-sign,,g \
 	    -e s,-fno-unit-at-a-time,,g \
 	    -e s,-Wstrict-prototypes,,g \
 	    -e s,-Wdeclaration-after-statement,,g \
-	    -e s,-fno-common,,g <conftest.dat`"
+	    -e s,-fno-common,,g \
+	    -e 's,-W^ *,,g' < conftest.dat`"
 	{ echo "$as_me:$LINENO: result: $LINUX_CFLAGS" >&5
 echo "${ECHO_T}$LINUX_CFLAGS" >&6; }
-    else
-    	LINUX_CFLAGS=""
     fi
 
 
-
-    SAVE_CXX="$CXX"
-    CXX="$KERNEL_CXX"
-    saveflags="$CPPFLAGS"
-    CPPFLAGS="$saveflags -D__KERNEL__ -I$linuxdir/include $LINUX_CFLAGS"
+    CPPFLAGS="$save_cppflags -D__KERNEL__ -I${linux_srcdir}include $LINUX_CFLAGS"
 
 
     # CLICK_LINUXMODULE_PROLOGUE()
@@ -17408,8 +17461,11 @@ _ACEOF
     fi
 
 
-    CXX="$SAVE_CXX"
-    CPPFLAGS="$saveflags"
+    CC="$save_cc"
+    CXX="$save_cxx"
+    CPPFLAGS="$save_cppflags"
+    CFLAGS="$save_cflags"
+    export CFLAGS CPPFLAGS
 
     if test $ac_cv_cxx_aware_system = yes; then
 	DRIVERS="$DRIVERS linuxmodule"
@@ -18173,7 +18229,8 @@ if test "x$ac_cv_under_linux" = xyes; then
 fi
 
 if test $ac_have_linux_kernel = y; then
-    ac_linux_version_code=`grep LINUX_VERSION_CODE $linuxdir/include/linux/version.h | sed 's/^.*CODE //'`
+    linux_version_h=`find_linuxpath include/linux/version.h`
+    ac_linux_version_code=`grep LINUX_VERSION_CODE $linux_version_h | sed 's/^.*CODE //'`
     if test $ac_linux_version_code -ge 131584 -a $ac_linux_version_code -lt 131840; then
 	provisions="$provisions linux_2_2"
     elif test $ac_linux_version_code -ge 132096 -a $ac_linux_version_code -lt 132352; then
@@ -18927,7 +18984,8 @@ STRIP!$STRIP$ac_delim
 AR_CREATEFLAGS!$AR_CREATEFLAGS$ac_delim
 PTHREAD_LIBS!$PTHREAD_LIBS$ac_delim
 INCLUDE_KSYMS!$INCLUDE_KSYMS$ac_delim
-linuxdir!$linuxdir$ac_delim
+linux_builddir!$linux_builddir$ac_delim
+linux_srcdir!$linux_srcdir$ac_delim
 element_groups!$element_groups$ac_delim
 freebsd_srcdir!$freebsd_srcdir$ac_delim
 freebsd_includedir!$freebsd_includedir$ac_delim
@@ -18945,7 +19003,6 @@ SOCKET_LIBS!$SOCKET_LIBS$ac_delim
 EXTRA_DRIVER_OBJS!$EXTRA_DRIVER_OBJS$ac_delim
 EXTRA_TOOL_OBJS!$EXTRA_TOOL_OBJS$ac_delim
 LINUXMODULE_2_6!$LINUXMODULE_2_6$ac_delim
-POSSIBLE_DRIVERS!$POSSIBLE_DRIVERS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -18987,6 +19044,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+POSSIBLE_DRIVERS!$POSSIBLE_DRIVERS$ac_delim
 DRIVERS!$DRIVERS$ac_delim
 HAVE_USERLEVEL_DRIVER!$HAVE_USERLEVEL_DRIVER$ac_delim
 HAVE_LINUXMODULE_DRIVER!$HAVE_LINUXMODULE_DRIVER$ac_delim
@@ -19001,7 +19059,7 @@ PROPER_LIBS!$PROPER_LIBS$ac_delim
 XML2CLICK!$XML2CLICK$ac_delim
 EXPAT_INCLUDES!$EXPAT_INCLUDES$ac_delim
 EXPAT_LIBS!$EXPAT_LIBS$ac_delim
-LINUX_CFLAGS!$LINUX_CFLAGS$ac_delim
+linux_makeargs!$linux_makeargs$ac_delim
 INSTALL_PROGRAM!$INSTALL_PROGRAM$ac_delim
 INSTALL_SCRIPT!$INSTALL_SCRIPT$ac_delim
 INSTALL_DATA!$INSTALL_DATA$ac_delim
@@ -19023,7 +19081,7 @@ provisions!$provisions$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 34; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 35; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

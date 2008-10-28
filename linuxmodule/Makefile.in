@@ -10,7 +10,9 @@ exec_prefix = @exec_prefix@
 bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
-linuxdir = @linuxdir@
+linux_builddir = @linux_builddir@
+linux_srcdir = @linux_srcdir@
+linux_makeargs = @linux_makeargs@
 
 LIB_CXX_OBJS = string.o straccum.o nameinfo.o \
 	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
@@ -53,7 +55,7 @@ ifeq (@LINUXMODULE_2_6@,1)
 ##########################################################################
 ## LINUX 2.6								##
 
-KERNELPATH = @linuxdir@
+KERNELPATH = @linux_builddir@
 
 ifeq ($(KBUILD_EXTMOD),)
 top_srcdir := @top_srcdir@
@@ -84,10 +86,12 @@ CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make --linux26
 CLICKCC = @KERNEL_CC@
 CLICKCXX = @KERNEL_CXX@
 
-LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS) $(CFLAGS_MODULE)" | sed \
+LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS)" \
+	"$(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) $(CFLAGS_MODULE)" | sed \
 	-e s,-fno-unit-at-a-time,, -e s,-Wstrict-prototypes,, \
 	-e s,-Wdeclaration-after-statement,, \
-	-e s,-Wno-pointer-sign,, -e s,-fno-common,,)
+	-e s,-Wno-pointer-sign,, -e s,-fno-common,, \
+	-e s,-Iinclude/,-I$(linux_srcdir)include/,g)
 CLICKCPPFLAGS = @CPPFLAGS@ -DCLICK_LINUXMODULE
 CLICKCFLAGS = @CFLAGS_NDEBUG@
 CLICKCXXFLAGS = @CXXFLAGS_NDEBUG@
@@ -95,7 +99,7 @@ CLICKDEPCFLAGS = -Wp,-MD,$(depfile)
 
 CLICKDEFS = @DEFS@ 
 CLICKINCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(srcdir) -I$(top_srcdir) -I$(linuxdir)/include
+	-I$(srcdir) -I$(top_srcdir)
 
 CXXCOMPILE = $(CLICKCXX) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
 	$(CLICKCXXFLAGS) $(CLICKDEFS) $(CLICKINCLUDES) $(CLICKDEPCFLAGS)
@@ -125,7 +129,7 @@ KSYM_OBJS = $(LIB_C_OBJS) $(LIB_CXX_OBJS) $(STD_ELEMENT_OBJS) \
 	$(ELEMENT_OBJS) $(LINUXMODULE_C_OBJS) $(LINUXMODULE_CXX_OBJS)
 
 all: Makefile $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc always
-	$(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules
+	$(MAKE) -C $(KERNELPATH) M=$(shell pwd) $(linux_makeargs) modules
 
 
 $(addprefix $(obj)/,$(LIB_CXX_OBJS)): $(obj)/%.o : $(top_srcdir)/lib/%.cc
@@ -227,7 +231,7 @@ DEPCFLAGS = @DEPCFLAGS@
 
 DEFS = @DEFS@ 
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(srcdir) -I$(top_srcdir) -I$(linuxdir)/include
+	-I$(srcdir) -I$(top_srcdir)
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 

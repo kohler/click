@@ -148,8 +148,8 @@ dnl How to build linuxmodule driver?
 dnl
 
 AC_ARG_WITH(linux, [[  --with-linux[=PATH]     Linux source code is in PATH]],
-    [linuxdir=$withval], [linuxdir=NONE])
-test -z "$linuxdir" -o "$linuxdir" = yes && linuxdir=yes
+    [linuxpath=$withval], [linuxpath=NONE])
+test -z "$linuxpath" -o "$linuxpath" = yes && linuxpath=yes
 
 AC_ARG_WITH(linux-map, [[  --with-linux-map[=FILE] filename for Linux System.map [LINUXDIR/System.map]]],
   [linux_system_map=$withval; if test -z "$withval" -o "$withval" = yes; then linux_system_map=NONE; fi],
@@ -157,21 +157,21 @@ AC_ARG_WITH(linux-map, [[  --with-linux-map[=FILE] filename for Linux System.map
 
 linux_system_map_boot=no
 
-if test "x$linuxdir" = xNONE -o "x$linuxdir" = xyes; then
+if test "x$linuxpath" = xNONE -o "x$linuxpath" = xyes; then
     if uname -r 2>/dev/null | grep '^2\.6' >/dev/null 2>&1; then
-	linuxdir=/lib/modules/"`uname -r`"/build
+	linuxpath=/lib/modules/"`uname -r`"/build
 	linux_system_map_boot="`uname -r`"
     else
-	linuxdir=/usr/src/linux
+	linuxpath=/usr/src/linux
     fi
-    if test ! -d "$linuxdir" -a "x$enable_linuxmodule" = xyes; then
+    if test ! -d "$linuxpath" -a "x$enable_linuxmodule" = xyes; then
 	if test "x$enable_linuxmodule_default" = xyes; then
-	    linuxdir=NONE; enable_linuxmodule=no
+	    linuxpath=NONE; enable_linuxmodule=no
 	else
 	    AC_MSG_ERROR([
 =========================================
 
-Can't find $linuxdir, so I can't compile the linuxmodule driver!
+Can't find $linuxpath, so I can't compile the linuxmodule driver!
 (You may need the --with-linux=DIR option.)
 
 =========================================])
@@ -179,11 +179,9 @@ Can't find $linuxdir, so I can't compile the linuxmodule driver!
     fi
 fi
 
-dnl allow linuxdir to be a path
-linuxpath=`echo "$linuxdir" | sed 's/^[[^:]]*:*//'`
-linuxdir=`echo "$linuxdir" | sed 's/^\([[^:]]*\).*/\1/'`
-find_linuxdir () {
-    path="$linuxdir:$linuxpath"
+dnl find files in the Linux path
+find_linuxpath () {
+    path="$linuxpath"
     while test -n "$path"; do
 	l=`echo "$path" | sed 's/^\([[^:]]*\).*/\1/'`
 	path=`echo "$path" | sed 's/^[[^:]]*:*//'`
@@ -195,30 +193,59 @@ find_linuxdir () {
     echo "/nonexistent_file"
 }
 
-if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != xyes; then
+if test "x$linuxpath" = xNONE -o "x$linuxpath" = xno -o "x$enable_linuxmodule" != xyes; then
     ac_have_linux_kernel=n
-    linuxdir=NONE
-elif expr "_$linuxdir" : '_[[^/\\]]' >/dev/null; then 
-    AC_MSG_ERROR([
-=========================================
-
-The --with-linux directory $linuxdir is relative.
-You must supply an absolute path starting with /.
-
-=========================================])
-elif test -r `find_linuxdir include/linux/skbuff.h`; then
-    ac_have_linux_kernel=y
+    linuxpath=NONE
+    linux_srcdir=NONE
+    linux_builddir=NONE
 else
-    AC_MSG_ERROR([
+    dnl check $linuxpath for relative directories
+    path="$linuxpath"
+    while test -n "$path"; do
+	l=`echo "$path" | sed 's/^\([[^:]]*\).*/\1/'`
+	path=`echo "$path" | sed 's/^[[^>]]*:*//'`
+	if test -n "$l" && expr "_$l" : '_[[^/\\]]' >/dev/null; then
+	    AC_MSG_ERROR([
 =========================================
 
-Can't find $linuxdir/include/linux/skbuff.h.
-Are you sure $linuxdir contains Linux kernel source?
+The --with-linux directory $l is relative.
+All Linux directories must be absolute paths starting with /.
 
 =========================================])
+	fi
+    done
+
+    linux_skbuff_h=`find_linuxpath include/linux/skbuff.h`
+    if test -r "$linux_skbuff_h"; then
+	linux_srcdir=`echo "$linux_skbuff_h" | sed 's_include/linux/skbuff\.h__'`
+	ac_have_linux_kernel=y
+    else
+	AC_MSG_ERROR([
+=========================================
+
+Can't find include/linux/skbuff.h in $linuxpath.
+Are you sure $linuxpath contains Linux kernel source?
+
+=========================================])
+    fi
+
+    linux_config=`find_linuxpath .config`
+    if test -r "$linux_config"; then
+	linux_builddir=`echo "$linux_config" | sed 's_/\.config__'`
+    else
+	AC_MSG_ERROR([
+=========================================
+
+Can't find .config in $linuxpath.
+Are you sure $linuxpath contains a Linux kernel build?
+
+=========================================])
+    fi
 fi
-AC_SUBST(linuxdir)
-AC_DEFINE_UNQUOTED(LINUX_SRCDIR, "${linuxdir}")
+
+AC_SUBST(linux_builddir)
+AC_SUBST(linux_srcdir)
+AC_DEFINE_UNQUOTED(LINUX_SRCDIR, "${linux_srcdir}")
 
 
 
@@ -514,7 +541,7 @@ if test $ac_have_linux_kernel = y; then
 dnl Look for System.map
 
 if test "$linux_system_map" = NONE; then
-    linux_system_map=`find_linuxdir System.map`
+    linux_system_map=`find_linuxpath System.map`
     if test "x$linux_system_map_boot" != xno -a ! -f "$linux_system_map"; then
 	linux_system_map=/boot/System.map-"$linux_system_map_boot"
     fi
@@ -525,17 +552,20 @@ if test ! -f "$linux_system_map"; then
 	AC_MSG_WARN([
 =========================================
 
-Can't find Linux System.map file '$linux_system_map',
+Can't find Linux System.map file $linux_system_map,
 so I won't compile the linuxmodule driver.
 (You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================])
 	ac_have_linux_kernel=no
     else
+	if test "$linux_system_map" = /nonexistent_file; then
+	    linux_system_map="in $linuxpath"
+	fi
 	AC_MSG_ERROR([
 =========================================
 
-Can't find Linux System.map file '$linux_system_map'.
+Can't find Linux System.map file $linux_system_map.
 (You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================])
@@ -549,7 +579,7 @@ dnl Check for Linux 2.6
 if test $ac_have_linux_kernel = y; then
 
 AC_CACHE_CHECK([for Linux 2.6], [ac_cv_linux26],
-    [if grep '^PATCHLEVEL[ 	]*=[ 	]*6' `find_linuxdir Makefile` >/dev/null 2>&1; then ac_cv_linux26=1; else ac_cv_linux26=0; fi])
+    [if grep '^PATCHLEVEL[ 	]*=[ 	]*6' `find_linuxpath Makefile` >/dev/null 2>&1; then ac_cv_linux26=1; else ac_cv_linux26=0; fi])
 LINUXMODULE_2_6=$ac_cv_linux26
 AC_SUBST(LINUXMODULE_2_6)
 if test $LINUXMODULE_2_6 = 1; then
@@ -597,7 +627,7 @@ if test $ac_cv_linux_tulip_intr_hook = yes; then
 fi
 
 AC_CACHE_CHECK(for <linux/ktime.h>, ac_cv_linux_ktime_h,
-[if grep ktime_t `find_linuxdir include/linux/ktime.h` >/dev/null 2>&1; then
+[if grep ktime_t `find_linuxpath include/linux/ktime.h` >/dev/null 2>&1; then
   ac_cv_linux_ktime_h=yes
 else ac_cv_linux_ktime_h=no; fi])
 if test $ac_cv_linux_ktime_h = yes; then
@@ -605,7 +635,7 @@ if test $ac_cv_linux_ktime_h = yes; then
 fi
 
 AC_CACHE_CHECK(for device polling kernel extension, ac_cv_linux_poll_extension,
-[if grep polling `find_linuxdir include/linux/netdevice.h` >/dev/null 2>&1; then
+[if grep polling `find_linuxpath include/linux/netdevice.h` >/dev/null 2>&1; then
   ac_cv_linux_poll_extension=yes
 else ac_cv_linux_poll_extension=no; fi])
 if test $ac_cv_linux_poll_extension = yes; then
@@ -613,7 +643,7 @@ if test $ac_cv_linux_poll_extension = yes; then
 fi
 
 AC_CACHE_CHECK(for atomic_set_mask, ac_cv_linux_atomic_set_mask,
-[if grep atomic_set_mask `find_linuxdir include/asm/atomic.h` >/dev/null 2>&1; then
+[if grep atomic_set_mask `find_linuxpath include/asm/atomic.h` >/dev/null 2>&1; then
   ac_cv_linux_atomic_set_mask=yes
 else ac_cv_linux_atomic_set_mask=no; fi])
 if test $ac_cv_linux_atomic_set_mask = yes; then
@@ -621,7 +651,7 @@ if test $ac_cv_linux_atomic_set_mask = yes; then
 fi
 
 AC_CACHE_CHECK(for atomic_add_return, ac_cv_linux_atomic_add_return,
-[if grep atomic_add_return `find_linuxdir include/asm/atomic.h` >/dev/null 2>&1; then
+[if grep atomic_add_return `find_linuxpath include/asm/atomic.h` >/dev/null 2>&1; then
   ac_cv_linux_atomic_add_return=yes
 else ac_cv_linux_atomic_add_return=no; fi])
 if test $ac_cv_linux_atomic_add_return = yes; then
@@ -629,7 +659,7 @@ if test $ac_cv_linux_atomic_add_return = yes; then
 fi
 
 AC_CACHE_CHECK(for <asm/alternative.h>, ac_cv_linux_asm_alternative_h,
-[if test -r `find_linuxdir include/asm/alternative.h` >/dev/null 2>&1; then
+[if test -r `find_linuxpath include/asm/alternative.h` >/dev/null 2>&1; then
   ac_cv_linux_asm_alternative_h=yes
 else ac_cv_linux_asm_alternative_h=no; fi])
 if test $ac_cv_linux_asm_alternative_h = yes; then
@@ -637,7 +667,7 @@ if test $ac_cv_linux_asm_alternative_h = yes; then
 fi
 
 AC_CACHE_CHECK(for <asm/system.h>, ac_cv_linux_asm_system_h,
-[if test -r `find_linuxdir include/asm/system.h` >/dev/null 2>&1; then
+[if test -r `find_linuxpath include/asm/system.h` >/dev/null 2>&1; then
   ac_cv_linux_asm_system_h=yes
 else ac_cv_linux_asm_system_h=no; fi])
 if test $ac_cv_linux_asm_system_h = yes; then
@@ -653,7 +683,6 @@ dnl
 
 if test $ac_have_bsd_kernel = y; then
     KERNEL_CXX="$KERNEL_CXX -fpermissive"
-
     AC_CACHE_CHECK(FreeBSD version, ac_cv_freebsd_version, [
 	save_flags="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
@@ -945,13 +974,35 @@ dnl check linuxmodule for Linux
 
 if test $ac_have_linux_kernel = y; then
 
+    save_cc="$CC"
+    save_cxx="$CXX"
+    save_cppflags="$CPPFLAGS"
+    save_cflags="$CFLAGS"
+    unset -v CFLAGS CPPFLAGS
+    CC="$KERNEL_CC"
+    CXX="$KERNEL_CXX"
+    
+    dnl check for arguments to pass to Linux make
+    linux_makeargs=
+    if test -n "$ARCH"; then
+	linux_makeargs="$linux_makeargs ARCH=$ARCH"
+    fi
+    if test -n "$CROSS_COMPILE"; then
+	linux_makeargs="$linux_makeargs CROSS_COMPILE=$CROSS_COMPILE"
+    elif test -n "$ac_tool_prefix"; then
+	linux_makeargs="$linux_makeargs CROSS_COMPILE=$ac_tool_prefix"
+    fi
+    AC_SUBST(linux_makeargs)
+
     dnl check for Linux 2.6 #includes
-    if test $LINUXMODULE_2_6 = 1; then
+    if test -n "$LINUX_CFLAGS"; then
+	:
+    elif test $LINUXMODULE_2_6 = 1; then
 	AC_MSG_CHECKING([for Linux 2.6 compilation flags])
-	echo "include $linuxdir/Makefile
+	echo "include ${linux_srcdir}Makefile
 fwablongie:
 	@echo \$(CFLAGS)" >conftest.mk
-	(unset CFLAGS; make -C "${linuxdir}" M="`pwd`" -f "`pwd`/conftest.mk" --no-print-directory fwablongie) >conftest.dat
+	make -I $linux_builddir -C "${linux_srcdir}" M="`pwd`" $linux_makeargs -f "`pwd`/conftest.mk" --no-print-directory fwablongie >conftest.dat
 	if test $? != 0; then
 	    AC_MSG_RESULT([not found])
 	    AC_MSG_ERROR([
@@ -961,24 +1012,19 @@ Can't find Linux 2.6 compilation flags.
 
 ==============================================])
 	fi
-	LINUX_CFLAGS="`sed -e s,-Iinclude,-I$linuxdir/include,g \
-	    -e 's,-W[^ ]*,,g' \
-	    -e 's,-Wno-pointer-sign,,g' \
+	LINUX_CFLAGS="`sed -e s,-Iinclude,-I${linux_srcdir}include,g \
+	    -e 's, include/, $linux_builddir/include,g' \
+	    -e s,-Wno-pointer-sign,,g \
 	    -e s,-fno-unit-at-a-time,,g \
 	    -e s,-Wstrict-prototypes,,g \
 	    -e s,-Wdeclaration-after-statement,,g \
-	    -e s,-fno-common,,g <conftest.dat`"
+	    -e s,-fno-common,,g \
+	    -e 's,-W[^ ]*,,g' < conftest.dat`"
 	AC_MSG_RESULT($LINUX_CFLAGS)
-    else
-    	LINUX_CFLAGS=""
     fi
-    AC_SUBST(LINUX_CFLAGS)
 
 
-    SAVE_CXX="$CXX"
-    CXX="$KERNEL_CXX"
-    saveflags="$CPPFLAGS"
-    CPPFLAGS="$saveflags -D__KERNEL__ -I$linuxdir/include $LINUX_CFLAGS"
+    CPPFLAGS="$save_cppflags -D__KERNEL__ -I${linux_srcdir}include $LINUX_CFLAGS"
 
 
     # CLICK_LINUXMODULE_PROLOGUE()
@@ -1140,8 +1186,11 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
 
-    CXX="$SAVE_CXX"
-    CPPFLAGS="$saveflags"
+    CC="$save_cc"
+    CXX="$save_cxx"
+    CPPFLAGS="$save_cppflags"
+    CFLAGS="$save_cflags"
+    export CFLAGS CPPFLAGS
 
     if test $ac_cv_cxx_aware_system = yes; then
 	DRIVERS="$DRIVERS linuxmodule"
@@ -1370,7 +1419,8 @@ fi
 
 dnl add provision for linux kernel version
 if test $ac_have_linux_kernel = y; then
-    ac_linux_version_code=`grep LINUX_VERSION_CODE $linuxdir/include/linux/version.h | sed 's/^.*CODE //'`
+    linux_version_h=`find_linuxpath include/linux/version.h`
+    ac_linux_version_code=`grep LINUX_VERSION_CODE $linux_version_h | sed 's/^.*CODE //'`
     if test $ac_linux_version_code -ge 131584 -a $ac_linux_version_code -lt 131840; then
 	provisions="$provisions linux_2_2"
     elif test $ac_linux_version_code -ge 132096 -a $ac_linux_version_code -lt 132352; then

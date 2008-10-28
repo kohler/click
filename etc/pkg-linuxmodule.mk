@@ -2,6 +2,7 @@
 # Eddie Kohler
 #
 # Copyright (c) 2006 Regents of the University of California
+# Copyright (c) 2008 Meraki, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -29,8 +30,10 @@ CXXFLAGS ?= $(CLICKCXXFLAGS_NDEBUG)
 DEPCFLAGS ?= $(CLICKDEPCFLAGS)
 
 DEFS ?= $(CLICKDEFS)
-INCLUDES ?=  -I$(clickincludedir) -I$(clicksrcdir) -I$(clicklinuxdir)/include
+INCLUDES ?= -I$(clickincludedir) -I$(clicksrcdir)
 LDFLAGS ?= $(CLICKLDFLAGS)
+
+LINUX_MAKEARGS ?= $(CLICKLINUX_MAKEARGS)
 
 packagesrcdir ?= $(srcdir)
 PACKAGE_OBJS ?= kpackage.ko
@@ -80,7 +83,7 @@ endif
 ifeq ($(CLICK_LINUXMODULE_2_6),1)
 # Jump through hoops to avoid missing symbol warnings
 $(package).ko: Makefile Kbuild always $(PACKAGE_DEPS)
-	{ ( $(MAKE) -C $(clicklinuxdir) M=$(shell pwd) CLICK_PACKAGE_MAKING=linuxmodule-26 modules 2>&1 1>&3; echo $$? > .$(package).ko.status ) | grep -iv '^[\* ]*Warning:.*undefined' 1>&2; } 3>&1; v=`cat .$(package).ko.status`; rm .$(package).ko.status; exit $$v
+	{ ( $(MAKE) -C $(clicklinux_builddir) M=$(shell pwd) $(LINUX_MAKEARGS) CLICK_PACKAGE_MAKING=linuxmodule-26 modules 2>&1 1>&3; echo $$? > .$(package).ko.status ) | grep -iv '^[\* ]*Warning:.*undefined' 1>&2; } 3>&1; v=`cat .$(package).ko.status`; rm .$(package).ko.status; exit $$v
 Kbuild: $(CLICK_BUILDTOOL)
 	echo 'include $$(obj)/Makefile' > Kbuild
 	$(CLICK_BUILDTOOL) kbuild >> Kbuild
