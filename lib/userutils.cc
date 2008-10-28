@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -178,8 +179,9 @@ percent_substitute(const String &pattern, int format1, ...)
 int
 click_strcmp(const String &a, const String &b)
 {
-    const char *ad = a.data(), *ae = a.data() + a.length();
-    const char *bd = b.data(), *be = b.data() + b.length();
+    const char *ad = a.begin(), *ae = a.end();
+    const char *bd = b.begin(), *be = b.end();
+    int raw_compare = 0;
     
     while (ad < ae && bd < be) {
 	if (isdigit((unsigned char) *ad) && isdigit((unsigned char) *bd)) {
@@ -188,45 +190,50 @@ click_strcmp(const String &a, const String &b)
 	    // first, skip initial '0's
 	    const char *iad = ad, *ibd = bd;
 	    while (ad < ae && *ad == '0')
-		ad++;
+		++ad;
 	    while (bd < be && *bd == '0')
-		bd++;
+		++bd;
 	    int longer_zeros = (ad - iad) - (bd - ibd);
-	    // skip to end of number
-	    const char *nad = ad, *nbd = bd;
-	    while (ad < ae && isdigit((unsigned char) *ad))
-		ad++;
-	    while (bd < be && isdigit((unsigned char) *bd))
-		bd++;
-	    // longer number must be larger
-	    if ((ad - nad) != (bd - nbd))
-		return (ad - nad) - (bd - nbd);
-	    // otherwise, compare numbers with the same length
-	    for (; nad < ad && nbd < bd; nad++, nbd++)
-		if (*nad != *nbd)
-		    return *nad - *nbd;
-	    // finally, longer string of initial '0's wins
-	    if (longer_zeros != 0)
+	    // walk over digits, remembering digit comparison
+	    int a_digit, b_digit, digit_compare = 0;
+	    while (1) {
+		a_digit = ad < ae && isdigit((unsigned char) *ad);
+		b_digit = bd < be && isdigit((unsigned char) *bd);
+		if (!a_digit || !b_digit)
+		    break;
+		if (digit_compare == 0)
+		    digit_compare = *ad - *bd;
+		++ad;
+		++bd;
+	    }
+	    // if one number is longer, it must also be larger;
+	    // otherwise, digit comparisons take precedence, then zero counts
+	    if (a_digit != b_digit)
+		return a_digit - b_digit;
+	    else if (digit_compare)
+		return digit_compare;
+	    else if (longer_zeros)
 		return longer_zeros;
 	} else if (isdigit((unsigned char) *ad))
 	    return (isalpha((unsigned char) *bd) ? -1 : 1);
 	else if (isdigit((unsigned char) *bd))
 	    return (isalpha((unsigned char) *ad) ? 1 : -1);
 	else {
-	    int d = tolower((unsigned char) *ad) - tolower((unsigned char) *bd);
-	    if (d != 0)
-		return d;
-	    ad++;
-	    bd++;
+	    int alower = (unsigned char) tolower((unsigned char) *ad);
+	    int blower = (unsigned char) tolower((unsigned char) *bd);
+	    if (alower != blower)
+		return alower - blower;
+	    if (raw_compare == 0)
+		raw_compare = (unsigned char) *ad - (unsigned char) *bd;
+	    ++ad;
+	    ++bd;
 	}
     }
 
     if ((ae - ad) != (be - bd))
 	return (ae - ad) - (be - bd);
-    else {
-	assert(a.length() == b.length());
-	return memcmp(a.data(), b.data(), a.length());
-    }
+    else
+	return raw_compare;
 }
 
 const char *

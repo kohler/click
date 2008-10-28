@@ -13,13 +13,23 @@ String percent_substitute(const String &string, int format1, ...);
 /** @brief strcmp() replacement that compares numbers numerically.
  * @return < 0 if @a a < @a b, > 0 if @a a > @a b, 0 if @a a == @a b
  *
- * Compares strings of digit characters like numbers, and other characters
- * using character-by-character comparison.  For example:
+ * Compares strings of digit characters like decimal numbers, and other
+ * characters using character-by-character comparison.  For example:
  * @code
  * assert(click_strcmp("a", "b") < 0);
  * assert(click_strcmp("a9", "a10") < 0);
  * assert(click_strcmp("a001", "a2") < 0);   // 1 < 2
  * assert(click_strcmp("a001", "a1") > 0);   // longer string of initial zeros
+ * @endcode
+ *
+ * Letters are compared first by lowercase.  If two strings are identical
+ * except for case, then uppercase letters compare less than lowercase
+ * letters.  For example:
+ * @code
+ * assert(click_strcmp("a", "B") < 0);
+ * assert(click_strcmp("Baa", "baa") < 0);
+ * assert(click_strcmp("Baa", "caa") < 0);
+ * assert(click_strcmp("baa", "Caa") < 0);
  * @endcode
  *
  * Two strings compare as equal only if they are character-by-character

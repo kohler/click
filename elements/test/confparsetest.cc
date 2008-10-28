@@ -22,6 +22,9 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
+#if CLICK_USERLEVEL
+# include <click/userutils.hh>
+#endif
 CLICK_DECLS
 
 ConfParseTest::ConfParseTest()
@@ -213,7 +216,23 @@ ConfParseTest::initialize(ErrorHandler *errh)
 	CHECK(((uintptr_t) s2.data() & 3) != ((uintptr_t) s4.data() & 3));
 	CHECK(((uintptr_t) s3.data() & 3) != ((uintptr_t) s4.data() & 3));
     }
-    
+
+#if CLICK_USERLEVEL
+    // click_strcmp
+    CHECK(click_strcmp("a", "b") < 0);
+    CHECK(click_strcmp("a9", "a10") < 0);
+    CHECK(click_strcmp("a001", "a2") < 0);   // 1 < 2
+    CHECK(click_strcmp("a001", "a1") > 0);   // longer string of initial zeros
+    CHECK(click_strcmp("a", "B") < 0);
+    CHECK(click_strcmp("Baa", "baa") < 0);
+    CHECK(click_strcmp("Baa", "caa") < 0);
+    CHECK(click_strcmp("baa", "Caa") < 0);
+    CHECK(click_strcmp("baa", "Baa") > 0);
+    CHECK(click_strcmp("baA", "baA") == 0);
+    CHECK(click_strcmp("a9x", "a10") < 0);
+    CHECK(click_strcmp("a9x", "a9xy") < 0);
+#endif
+
     errh->message("All tests pass!");
     return 0;
 }
