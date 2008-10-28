@@ -1,0 +1,4584 @@
+diff --git a/arch/arm/mach-iop13xx/irq.c b/arch/arm/mach-iop13xx/irq.c
+index 69f07b2..e217167 100644
+--- a/arch/arm/mach-iop13xx/irq.c
++++ b/arch/arm/mach-iop13xx/irq.c
+@@ -38,7 +38,7 @@ static u32 read_intctl_0(void)
+ }
+ static void write_intctl_0(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c0, c4, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c0, c4, 0": :"r" (val));
+ }
+ 
+ /* INTCTL1 CP6 R1 Page 4
+@@ -51,7 +51,7 @@ static u32 read_intctl_1(void)
+ }
+ static void write_intctl_1(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c1, c4, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c1, c4, 0": :"r" (val));
+ }
+ 
+ /* INTCTL2 CP6 R2 Page 4
+@@ -64,7 +64,7 @@ static u32 read_intctl_2(void)
+ }
+ static void write_intctl_2(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c2, c4, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c2, c4, 0": :"r" (val));
+ }
+ 
+ /* INTCTL3 CP6 R3 Page 4
+@@ -77,49 +77,49 @@ static u32 read_intctl_3(void)
+ }
+ static void write_intctl_3(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c3, c4, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c3, c4, 0": :"r" (val));
+ }
+ 
+ /* INTSTR0 CP6 R0 Page 5
+  */
+ static void write_intstr_0(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c0, c5, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c0, c5, 0": :"r" (val));
+ }
+ 
+ /* INTSTR1 CP6 R1 Page 5
+  */
+ static void write_intstr_1(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c1, c5, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c1, c5, 0": :"r" (val));
+ }
+ 
+ /* INTSTR2 CP6 R2 Page 5
+  */
+ static void write_intstr_2(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c2, c5, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c2, c5, 0": :"r" (val));
+ }
+ 
+ /* INTSTR3 CP6 R3 Page 5
+  */
+ static void write_intstr_3(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c3, c5, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c3, c5, 0": :"r" (val));
+ }
+ 
+ /* INTBASE CP6 R0 Page 2
+  */
+ static void write_intbase(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c0, c2, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c0, c2, 0": :"r" (val));
+ }
+ 
+ /* INTSIZE CP6 R2 Page 2
+  */
+ static void write_intsize(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c2, c2, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c2, c2, 0": :"r" (val));
+ }
+ 
+ /* 0 = Interrupt Masked and 1 = Interrupt not masked */
+diff --git a/arch/arm/mach-iop13xx/msi.c b/arch/arm/mach-iop13xx/msi.c
+index 63ef112..ae64d43 100644
+--- a/arch/arm/mach-iop13xx/msi.c
++++ b/arch/arm/mach-iop13xx/msi.c
+@@ -38,7 +38,7 @@ static u32 read_imipr_0(void)
+ }
+ static void write_imipr_0(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c8, c1, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c8, c1, 0": :"r" (val));
+ }
+ 
+ /* IMIPR1 CP6 R9 Page 1
+@@ -51,7 +51,7 @@ static u32 read_imipr_1(void)
+ }
+ static void write_imipr_1(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c9, c1, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c9, c1, 0": :"r" (val));
+ }
+ 
+ /* IMIPR2 CP6 R10 Page 1
+@@ -64,7 +64,7 @@ static u32 read_imipr_2(void)
+ }
+ static void write_imipr_2(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c10, c1, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c10, c1, 0": :"r" (val));
+ }
+ 
+ /* IMIPR3 CP6 R11 Page 1
+@@ -77,7 +77,7 @@ static u32 read_imipr_3(void)
+ }
+ static void write_imipr_3(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c11, c1, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c11, c1, 0": :"r" (val));
+ }
+ 
+ static u32 (*read_imipr[])(void) = {
+diff --git a/arch/arm/mach-s3c2412/pm.c b/arch/arm/mach-s3c2412/pm.c
+index 8988dac..74bb8e4 100644
+--- a/arch/arm/mach-s3c2412/pm.c
++++ b/arch/arm/mach-s3c2412/pm.c
+@@ -52,7 +52,7 @@ static void s3c2412_cpu_suspend(void)
+ 	    ".align 5\n\t"
+ 	    "1:\n\t"
+ 	    "mcr p15, 0, %0, c7, c10, 4\n\t"
+-	    "mcr p15, 0, %0, c7, c0, 4" :: "r" (tmp));
++	    "mcr p15, 0, %0, c7, c0, 4" : : "r" (tmp));
+ 
+ 	/* we should never get past here */
+ 
+diff --git a/arch/avr32/kernel/kprobes.c b/arch/avr32/kernel/kprobes.c
+index 799ba89..7229b7b 100644
+--- a/arch/avr32/kernel/kprobes.c
++++ b/arch/avr32/kernel/kprobes.c
+@@ -244,7 +244,7 @@ int __kprobes setjmp_pre_handler(struct kprobe *p, struct pt_regs *regs)
+ 
+ void __kprobes jprobe_return(void)
+ {
+-	asm volatile("breakpoint" ::: "memory");
++	asm volatile("breakpoint" : : : "memory");
+ }
+ 
+ int __kprobes longjmp_break_handler(struct kprobe *p, struct pt_regs *regs)
+diff --git a/arch/frv/kernel/gdb-stub.c b/arch/frv/kernel/gdb-stub.c
+index e89cad1..b69b130 100644
+--- a/arch/frv/kernel/gdb-stub.c
++++ b/arch/frv/kernel/gdb-stub.c
+@@ -1331,26 +1331,26 @@ void gdbstub_get_mmu_state(void)
+ 		p = __debug_mmu.tlb;
+ 
+ 		/* way 0 */
+-		asm volatile("movgs %0,tpxr" :: "r"(0 << TPXR_WAY_SHIFT));
++		asm volatile("movgs %0,tpxr" : : "r"(0 << TPXR_WAY_SHIFT));
+ 		for (loop = 0; loop < 64; loop++) {
+-			asm volatile("tlbpr %0,gr0,#1,#0" :: "r"(loop << PAGE_SHIFT));
++			asm volatile("tlbpr %0,gr0,#1,#0" : : "r"(loop << PAGE_SHIFT));
+ 			asm volatile("movsg tplr,%0" : "=r"(p->L));
+ 			asm volatile("movsg tppr,%0" : "=r"(p->P));
+ 			p++;
+ 		}
+ 
+ 		/* way 1 */
+-		asm volatile("movgs %0,tpxr" :: "r"(1 << TPXR_WAY_SHIFT));
++		asm volatile("movgs %0,tpxr" : : "r"(1 << TPXR_WAY_SHIFT));
+ 		for (loop = 0; loop < 64; loop++) {
+-			asm volatile("tlbpr %0,gr0,#1,#0" :: "r"(loop << PAGE_SHIFT));
++			asm volatile("tlbpr %0,gr0,#1,#0" : : "r"(loop << PAGE_SHIFT));
+ 			asm volatile("movsg tplr,%0" : "=r"(p->L));
+ 			asm volatile("movsg tppr,%0" : "=r"(p->P));
+ 			p++;
+ 		}
+ 
+-		asm volatile("movgs %0,tplr" :: "r"(__debug_mmu.regs.tplr));
+-		asm volatile("movgs %0,tppr" :: "r"(__debug_mmu.regs.tppr));
+-		asm volatile("movgs %0,tpxr" :: "r"(__debug_mmu.regs.tpxr));
++		asm volatile("movgs %0,tplr" : : "r"(__debug_mmu.regs.tplr));
++		asm volatile("movgs %0,tppr" : : "r"(__debug_mmu.regs.tppr));
++		asm volatile("movgs %0,tpxr" : : "r"(__debug_mmu.regs.tpxr));
+ 	} while(0);
+ #endif
+ 
+@@ -1421,7 +1421,7 @@ void gdbstub(int sigval)
+ 	if (temp3 == temp + TBR_TT_DECREMENT_TIMER ||
+ 	    temp3 == temp2 + TBR_TT_DECREMENT_TIMER
+ 	    ) {
+-		asm volatile("movgs %0,timerd" :: "r"(10000000));
++		asm volatile("movgs %0,timerd" : : "r"(10000000));
+ 		asm volatile("movsg pcsr,%0" : "=r"(__debug_frame->pc));
+ 		__debug_frame->psr |= PSR_ET;
+ 		__debug_frame->psr &= ~PSR_S;
+@@ -1696,13 +1696,13 @@ void gdbstub(int sigval)
+ 				ptr = hex2mem(ptr, &temp, 4);
+ 
+ 			ptr = hex2mem(ptr, &temp, 4);
+-			asm volatile("movgs %0,scr0" :: "r"(temp));
++			asm volatile("movgs %0,scr0" : : "r"(temp));
+ 			ptr = hex2mem(ptr, &temp, 4);
+-			asm volatile("movgs %0,scr1" :: "r"(temp));
++			asm volatile("movgs %0,scr1" : : "r"(temp));
+ 			ptr = hex2mem(ptr, &temp, 4);
+-			asm volatile("movgs %0,scr2" :: "r"(temp));
++			asm volatile("movgs %0,scr2" : : "r"(temp));
+ 			ptr = hex2mem(ptr, &temp, 4);
+-			asm volatile("movgs %0,scr3" :: "r"(temp));
++			asm volatile("movgs %0,scr3" : : "r"(temp));
+ 
+ 			ptr = hex2mem(ptr, &__debug_frame->lr,  4);
+ 			ptr = hex2mem(ptr, &__debug_frame->lcr, 4);
+diff --git a/arch/frv/kernel/setup.c b/arch/frv/kernel/setup.c
+index a74c087..07f197b 100644
+--- a/arch/frv/kernel/setup.c
++++ b/arch/frv/kernel/setup.c
+@@ -843,7 +843,7 @@ void __init setup_arch(char **cmdline_p)
+ #endif
+ 
+ 	/* start the decrement timer running */
+-//	asm volatile("movgs %0,timerd" :: "r"(10000000));
++//	asm volatile("movgs %0,timerd" : : "r"(10000000));
+ //	__set_HSR(0, __get_HSR(0) | HSR0_ETMD);
+ 
+ } /* end setup_arch() */
+diff --git a/arch/frv/mm/fault.c b/arch/frv/mm/fault.c
+index 05093d4..79a730b 100644
+--- a/arch/frv/mm/fault.c
++++ b/arch/frv/mm/fault.c
+@@ -243,7 +243,7 @@ asmlinkage void do_page_fault(int datammu, unsigned long esr0, unsigned long ear
+ 		pte = (pte_t *) damlr + __pte_index(ear0);
+ 		val = pte_val(*pte);
+ 
+-		asm volatile("movgs %0,dampr2" :: "r" (dampr));
++		asm volatile("movgs %0,dampr2" : : "r" (dampr));
+ 
+ 		printk(KERN_ALERT "  PTE : %8p { %08lx }\n", pte, val);
+ 	}
+diff --git a/arch/frv/mm/mmu-context.c b/arch/frv/mm/mmu-context.c
+index 1530a41..75ddb32 100644
+--- a/arch/frv/mm/mmu-context.c
++++ b/arch/frv/mm/mmu-context.c
+@@ -118,7 +118,7 @@ void change_mm_context(mm_context_t *old, mm_context_t *ctx, pgd_t *pgd)
+ 	/* map the PGD into uncached virtual memory */
+ 	asm volatile("movgs %0,ttbr"   : : "r"(_pgd));
+ 	asm volatile("movgs %0,dampr3"
+-		     :: "r"(_pgd | xAMPRx_L | xAMPRx_M | xAMPRx_SS_16Kb |
++		     : : "r"(_pgd | xAMPRx_L | xAMPRx_M | xAMPRx_SS_16Kb |
+ 			    xAMPRx_S | xAMPRx_C | xAMPRx_V));
+ 
+ } /* end change_mm_context() */
+diff --git a/arch/h8300/kernel/setup.c b/arch/h8300/kernel/setup.c
+index b2e86d0..0c46f51 100644
+--- a/arch/h8300/kernel/setup.c
++++ b/arch/h8300/kernel/setup.c
+@@ -65,7 +65,7 @@ static void gdb_console_output(struct console *c, const char *msg, unsigned len)
+ {
+ 	for (; len > 0; len--) {
+ 		asm("mov.w %0,r2\n\t"
+-                    "jsr @0xc4"::"r"(*msg++):"er2");
++                    "jsr @0xc4": :"r"(*msg++):"er2");
+ 	}
+ }
+ 
+diff --git a/arch/h8300/platform/h8300h/ptrace_h8300h.c b/arch/h8300/platform/h8300h/ptrace_h8300h.c
+index 746b1ae..913a5af 100644
+--- a/arch/h8300/platform/h8300h/ptrace_h8300h.c
++++ b/arch/h8300/platform/h8300h/ptrace_h8300h.c
+@@ -191,7 +191,7 @@ static int isbranch(struct task_struct *task,int reson)
+ 		"bld #2,%w0\n\t"
+ 		"bor #0,%w0\n\t"
+ 		"bst #6,%w0\n\t"
+-		:"=&r"(cond)::"cc");
++		:"=&r"(cond): :"cc");
+ 	cond &= condmask[reson >> 1];
+ 	if (!(reson & 1))
+ 		return cond == 0;
+diff --git a/arch/m68k/kernel/process.c b/arch/m68k/kernel/process.c
+index 3ee9186..82d26c8 100644
+--- a/arch/m68k/kernel/process.c
++++ b/arch/m68k/kernel/process.c
+@@ -301,15 +301,15 @@ int dump_fpu (struct pt_regs *regs, struct user_m68kfp_struct *fpu)
+ 	}
+ 
+ 	/* First dump the fpu context to avoid protocol violation.  */
+-	asm volatile ("fsave %0" :: "m" (fpustate[0]) : "memory");
++	asm volatile ("fsave %0" : : "m" (fpustate[0]) : "memory");
+ 	if (!CPU_IS_060 ? !fpustate[0] : !fpustate[2])
+ 		return 0;
+ 
+ 	asm volatile ("fmovem %/fpiar/%/fpcr/%/fpsr,%0"
+-		:: "m" (fpu->fpcntl[0])
++		: : "m" (fpu->fpcntl[0])
+ 		: "memory");
+ 	asm volatile ("fmovemx %/fp0-%/fp7,%0"
+-		:: "m" (fpu->fpregs[0])
++		: : "m" (fpu->fpregs[0])
+ 		: "memory");
+ 	return 1;
+ }
+diff --git a/arch/m68knommu/kernel/process.c b/arch/m68knommu/kernel/process.c
+index 47502d5..5ff9350 100644
+--- a/arch/m68knommu/kernel/process.c
++++ b/arch/m68knommu/kernel/process.c
+@@ -268,15 +268,15 @@ int dump_fpu(struct pt_regs *regs, struct user_m68kfp_struct *fpu)
+ 	}
+ 
+ 	/* First dump the fpu context to avoid protocol violation.  */
+-	asm volatile ("fsave %0" :: "m" (fpustate[0]) : "memory");
++	asm volatile ("fsave %0" : : "m" (fpustate[0]) : "memory");
+ 	if (!fpustate[0])
+ 		return 0;
+ 
+ 	asm volatile ("fmovem %/fpiar/%/fpcr/%/fpsr,%0"
+-		:: "m" (fpu->fpcntl[0])
++		: : "m" (fpu->fpcntl[0])
+ 		: "memory");
+ 	asm volatile ("fmovemx %/fp0-%/fp7,%0"
+-		:: "m" (fpu->fpregs[0])
++		: : "m" (fpu->fpregs[0])
+ 		: "memory");
+ #endif
+ 	return 1;
+diff --git a/arch/mips/au1000/common/reset.c b/arch/mips/au1000/common/reset.c
+index b8638d2..b2c919e 100644
+--- a/arch/mips/au1000/common/reset.c
++++ b/arch/mips/au1000/common/reset.c
+@@ -158,7 +158,7 @@ void au1000_restart(char *command)
+ 	board_reset();
+ 
+ 	/* Jump to the beggining in case board_reset() is empty */
+-	__asm__ __volatile__("jr\t%0"::"r"(0xbfc00000));
++	__asm__ __volatile__("jr\t%0": :"r"(0xbfc00000));
+ }
+ 
+ void au1000_halt(void)
+diff --git a/arch/mips/gt64120/wrppmc/reset.c b/arch/mips/gt64120/wrppmc/reset.c
+index c355cff..5d8d219 100644
+--- a/arch/mips/gt64120/wrppmc/reset.c
++++ b/arch/mips/gt64120/wrppmc/reset.c
+@@ -23,7 +23,7 @@ void wrppmc_machine_restart(char *command)
+ 	change_c0_config(CONF_CM_CMASK, CONF_CM_UNCACHED);
+ 	flush_cache_all();
+ 	write_c0_wired(0);
+-	__asm__ __volatile__("jr\t%0"::"r"(0xbfc00000));
++	__asm__ __volatile__("jr\t%0": :"r"(0xbfc00000));
+ }
+ 
+ void wrppmc_machine_halt(void)
+diff --git a/arch/mips/lemote/lm2e/reset.c b/arch/mips/lemote/lm2e/reset.c
+index 099387a..e09d8d8 100644
+--- a/arch/mips/lemote/lm2e/reset.c
++++ b/arch/mips/lemote/lm2e/reset.c
+@@ -20,7 +20,7 @@ static void loongson2e_restart(char *command)
+ 	*(unsigned long *)0xffffffffbfe00104 &= ~(1 << 2);
+ 	*(unsigned long *)0xffffffffbfe00104 |= (1 << 2);
+ #endif
+-	__asm__ __volatile__("jr\t%0"::"r"(0xbfc00000));
++	__asm__ __volatile__("jr\t%0": :"r"(0xbfc00000));
+ }
+ 
+ static void loongson2e_halt(void)
+diff --git a/arch/mips/pmc-sierra/msp71xx/msp_setup.c b/arch/mips/pmc-sierra/msp71xx/msp_setup.c
+index c936756..c935835 100644
+--- a/arch/mips/pmc-sierra/msp71xx/msp_setup.c
++++ b/arch/mips/pmc-sierra/msp71xx/msp_setup.c
+@@ -123,7 +123,7 @@ void msp_restart(char *command)
+ 	flush_cache_all();
+ 	write_c0_wired(0);
+ 
+-	__asm__ __volatile__("jr\t%0"::"r"(0xbfc00000));
++	__asm__ __volatile__("jr\t%0": :"r"(0xbfc00000));
+ #endif
+ }
+ 
+diff --git a/arch/powerpc/kernel/btext.c b/arch/powerpc/kernel/btext.c
+index 9c74fdf..2e2d951 100644
+--- a/arch/powerpc/kernel/btext.c
++++ b/arch/powerpc/kernel/btext.c
+@@ -318,12 +318,12 @@ void btext_flushscreen(void)
+ 	{
+ 		unsigned int *ptr = base;
+ 		for(j = width; j > 0; j -= 8) {
+-			__asm__ __volatile__ ("dcbst 0,%0" :: "r" (ptr));
++			__asm__ __volatile__ ("dcbst 0,%0" : : "r" (ptr));
+ 			ptr += 8;
+ 		}
+ 		base += (dispDeviceRowBytes >> 2);
+ 	}
+-	__asm__ __volatile__ ("sync" ::: "memory");
++	__asm__ __volatile__ ("sync" : : : "memory");
+ }
+ 
+ void btext_flushline(void)
+@@ -337,12 +337,12 @@ void btext_flushline(void)
+ 	{
+ 		unsigned int *ptr = base;
+ 		for(j = width; j > 0; j -= 8) {
+-			__asm__ __volatile__ ("dcbst 0,%0" :: "r" (ptr));
++			__asm__ __volatile__ ("dcbst 0,%0" : : "r" (ptr));
+ 			ptr += 8;
+ 		}
+ 		base += (dispDeviceRowBytes >> 2);
+ 	}
+-	__asm__ __volatile__ ("sync" ::: "memory");
++	__asm__ __volatile__ ("sync" : : : "memory");
+ }
+ 
+ 
+diff --git a/arch/powerpc/kernel/kprobes.c b/arch/powerpc/kernel/kprobes.c
+index 5338e48..153333c 100644
+--- a/arch/powerpc/kernel/kprobes.c
++++ b/arch/powerpc/kernel/kprobes.c
+@@ -519,7 +519,7 @@ int __kprobes setjmp_pre_handler(struct kprobe *p, struct pt_regs *regs)
+ 
+ void __kprobes jprobe_return(void)
+ {
+-	asm volatile("trap" ::: "memory");
++	asm volatile("trap" : : : "memory");
+ }
+ 
+ void __kprobes jprobe_return_end(void)
+diff --git a/arch/powerpc/mm/hash_native_64.c b/arch/powerpc/mm/hash_native_64.c
+index 34e5c0b..0977a9e 100644
+--- a/arch/powerpc/mm/hash_native_64.c
++++ b/arch/powerpc/mm/hash_native_64.c
+@@ -124,7 +124,7 @@ static inline void native_unlock_hpte(struct hash_pte *hptep)
+ {
+ 	unsigned long *word = &hptep->v;
+ 
+-	asm volatile("lwsync":::"memory");
++	asm volatile("lwsync": : :"memory");
+ 	clear_bit(HPTE_LOCK_BIT, word);
+ }
+ 
+@@ -448,7 +448,7 @@ static void native_hpte_clear(void)
+ 		}
+ 	}
+ 
+-	asm volatile("eieio; tlbsync; ptesync":::"memory");
++	asm volatile("eieio; tlbsync; ptesync": : :"memory");
+ 	spin_unlock(&native_tlbie_lock);
+ 	local_irq_restore(flags);
+ }
+@@ -497,7 +497,7 @@ static void native_flush_hash_range(unsigned long number, int local)
+ 
+ 	if (cpu_has_feature(CPU_FTR_TLBIEL) &&
+ 	    mmu_psize_defs[psize].tlbiel && local) {
+-		asm volatile("ptesync":::"memory");
++		asm volatile("ptesync": : :"memory");
+ 		for (i = 0; i < number; i++) {
+ 			va = batch->vaddr[i];
+ 			pte = batch->pte[i];
+@@ -507,14 +507,14 @@ static void native_flush_hash_range(unsigned long number, int local)
+ 				__tlbiel(va, psize, ssize);
+ 			} pte_iterate_hashed_end();
+ 		}
+-		asm volatile("ptesync":::"memory");
++		asm volatile("ptesync": : :"memory");
+ 	} else {
+ 		int lock_tlbie = !cpu_has_feature(CPU_FTR_LOCKLESS_TLBIE);
+ 
+ 		if (lock_tlbie)
+ 			spin_lock(&native_tlbie_lock);
+ 
+-		asm volatile("ptesync":::"memory");
++		asm volatile("ptesync": : :"memory");
+ 		for (i = 0; i < number; i++) {
+ 			va = batch->vaddr[i];
+ 			pte = batch->pte[i];
+@@ -524,7 +524,7 @@ static void native_flush_hash_range(unsigned long number, int local)
+ 				__tlbie(va, psize, ssize);
+ 			} pte_iterate_hashed_end();
+ 		}
+-		asm volatile("eieio; tlbsync; ptesync":::"memory");
++		asm volatile("eieio; tlbsync; ptesync": : :"memory");
+ 
+ 		if (lock_tlbie)
+ 			spin_unlock(&native_tlbie_lock);
+diff --git a/arch/powerpc/mm/slb.c b/arch/powerpc/mm/slb.c
+index 50d7372..b9d7eaa 100644
+--- a/arch/powerpc/mm/slb.c
++++ b/arch/powerpc/mm/slb.c
+@@ -298,5 +298,5 @@ void slb_initialize(void)
+ 	 * so the stack is in the bolted segment.  By the time it goes
+ 	 * elsewhere, we'll call _switch() which will bolt in the new
+ 	 * one. */
+-	asm volatile("isync":::"memory");
++	asm volatile("isync": : :"memory");
+ }
+diff --git a/arch/powerpc/mm/stab.c b/arch/powerpc/mm/stab.c
+index 50448d5..2ddf8f2 100644
+--- a/arch/powerpc/mm/stab.c
++++ b/arch/powerpc/mm/stab.c
+@@ -142,7 +142,7 @@ static int __ste_allocate(unsigned long ea, struct mm_struct *mm)
+ 		__get_cpu_var(stab_cache_ptr) = offset;
+ 
+ 		/* Order update */
+-		asm volatile("sync":::"memory");
++		asm volatile("sync": : :"memory");
+ 	}
+ 
+ 	return 0;
+@@ -196,7 +196,7 @@ void switch_stab(struct task_struct *tsk, struct mm_struct *mm)
+ 		}
+ 	}
+ 
+-	asm volatile("sync; slbia; sync":::"memory");
++	asm volatile("sync; slbia; sync": : :"memory");
+ 
+ 	__get_cpu_var(stab_cache_ptr) = 0;
+ 
+@@ -265,11 +265,11 @@ void stab_initialize(unsigned long stab)
+ 	unsigned long vsid = get_kernel_vsid(PAGE_OFFSET, MMU_SEGSIZE_256M);
+ 	unsigned long stabreal;
+ 
+-	asm volatile("isync; slbia; isync":::"memory");
++	asm volatile("isync; slbia; isync": : :"memory");
+ 	make_ste(stab, GET_ESID(PAGE_OFFSET), vsid);
+ 
+ 	/* Order update */
+-	asm volatile("sync":::"memory");
++	asm volatile("sync": : :"memory");
+ 
+ 	/* Set ASR */
+ 	stabreal = get_paca()->stab_real | 0x1ul;
+diff --git a/arch/powerpc/platforms/celleb/scc_epci.c b/arch/powerpc/platforms/celleb/scc_epci.c
+index 9d07642..4d7dcab 100644
+--- a/arch/powerpc/platforms/celleb/scc_epci.c
++++ b/arch/powerpc/platforms/celleb/scc_epci.c
+@@ -41,7 +41,7 @@
+ #define MAX_PCI_DEVICES   32
+ #define MAX_PCI_FUNCTIONS  8
+ 
+-#define iob()  __asm__ __volatile__("eieio; sync":::"memory")
++#define iob()  __asm__ __volatile__("eieio; sync": : :"memory")
+ 
+ struct epci_private {
+ 	dma_addr_t	dummy_page_da;
+diff --git a/arch/powerpc/platforms/chrp/smp.c b/arch/powerpc/platforms/chrp/smp.c
+index 10a4a4d..9d4270d 100644
+--- a/arch/powerpc/platforms/chrp/smp.c
++++ b/arch/powerpc/platforms/chrp/smp.c
+@@ -34,7 +34,7 @@
+ static void __devinit smp_chrp_kick_cpu(int nr)
+ {
+ 	*(unsigned long *)KERNELBASE = nr;
+-	asm volatile("dcbf 0,%0"::"r"(KERNELBASE):"memory");
++	asm volatile("dcbf 0,%0": :"r"(KERNELBASE):"memory");
+ }
+ 
+ static void __devinit smp_chrp_setup_cpu(int cpu_nr)
+diff --git a/arch/ppc/kernel/smp-tbsync.c b/arch/ppc/kernel/smp-tbsync.c
+index d0cf3f8..31fa2ac 100644
+--- a/arch/ppc/kernel/smp-tbsync.c
++++ b/arch/ppc/kernel/smp-tbsync.c
+@@ -70,8 +70,8 @@ smp_generic_take_timebase( void )
+ 		if( cmd == kSetAndTest ) {
+ 			while( tbsync->handshake )
+ 				;
+-			asm volatile ("mttbl %0" :: "r" (tbl) );
+-			asm volatile ("mttbu %0" :: "r" (tbu) );
++			asm volatile ("mttbl %0" : : "r" (tbl) );
++			asm volatile ("mttbu %0" : : "r" (tbu) );
+ 		} else {
+ 			while( tbsync->handshake )
+ 				;
+diff --git a/arch/ppc/platforms/ev64260.c b/arch/ppc/platforms/ev64260.c
+index 976270d..9ae5597 100644
+--- a/arch/ppc/platforms/ev64260.c
++++ b/arch/ppc/platforms/ev64260.c
+@@ -493,7 +493,7 @@ ev64260_reset_board(void *addr)
+ 	 "li      4,(1<<6)\n\t"
+ 	 "mtspr   27,4\n\t"
+ 	 "rfi\n\t"
+-	 :: "r" (addr):"r4");
++	 : : "r" (addr):"r4");
+ 
+ 	return;
+ }
+diff --git a/arch/ppc/platforms/hdpu.c b/arch/ppc/platforms/hdpu.c
+index ca5de13..62a3bbc 100644
+--- a/arch/ppc/platforms/hdpu.c
++++ b/arch/ppc/platforms/hdpu.c
+@@ -441,7 +441,7 @@ static void __init hdpu_set_l1pe()
+ 	unsigned long ictrl;
+ 	asm volatile ("mfspr %0, 1011":"=r" (ictrl):);
+ 	ictrl |= ICTRL_EICE | ICTRL_EDC | ICTRL_EICP;
+-	asm volatile ("mtspr 1011, %0"::"r" (ictrl));
++	asm volatile ("mtspr 1011, %0": :"r" (ictrl));
+ }
+ 
+ /*
+@@ -807,7 +807,7 @@ static void smp_hdpu_kick_cpu(int nr)
+ 	 */
+ 	mdelay(100);
+ 	*(unsigned long *)KERNELBASE = nr;
+-	asm volatile ("dcbf 0,%0"::"r" (KERNELBASE):"memory");
++	asm volatile ("dcbf 0,%0": :"r" (KERNELBASE):"memory");
+ 
+ 	iounmap(bootaddr);
+ 
+diff --git a/arch/ppc/platforms/pplus.c b/arch/ppc/platforms/pplus.c
+index 8a1788c..543b87e 100644
+--- a/arch/ppc/platforms/pplus.c
++++ b/arch/ppc/platforms/pplus.c
+@@ -737,7 +737,7 @@ static int __init smp_pplus_probe(void)
+ static void __init smp_pplus_kick_cpu(int nr)
+ {
+ 	*(unsigned long *)KERNELBASE = nr;
+-	asm volatile ("dcbf 0,%0"::"r" (KERNELBASE):"memory");
++	asm volatile ("dcbf 0,%0": :"r" (KERNELBASE):"memory");
+ 	printk(KERN_INFO "CPU1 reset, waiting\n");
+ }
+ 
+diff --git a/arch/ppc/platforms/prep_setup.c b/arch/ppc/platforms/prep_setup.c
+index 3c56654..42052f1 100644
+--- a/arch/ppc/platforms/prep_setup.c
++++ b/arch/ppc/platforms/prep_setup.c
+@@ -1027,7 +1027,7 @@ static void __init
+ smp_prep_kick_cpu(int nr)
+ {
+ 	*(unsigned long *)KERNELBASE = nr;
+-	asm volatile("dcbf 0,%0"::"r"(KERNELBASE):"memory");
++	asm volatile("dcbf 0,%0": :"r"(KERNELBASE):"memory");
+ 	printk("CPU1 released, waiting\n");
+ }
+ 
+diff --git a/arch/ppc/syslib/btext.c b/arch/ppc/syslib/btext.c
+index d116670..2f12f9c 100644
+--- a/arch/ppc/syslib/btext.c
++++ b/arch/ppc/syslib/btext.c
+@@ -273,7 +273,7 @@ void BTEXT btext_clearscreen(void)
+ 
+ __inline__ void dcbst(const void* addr)
+ {
+-	__asm__ __volatile__ ("dcbst 0,%0" :: "r" (addr));
++	__asm__ __volatile__ ("dcbst 0,%0" : : "r" (addr));
+ }
+ 
+ void BTEXT btext_flushscreen(void)
+diff --git a/arch/ppc/syslib/ibm440gx_common.c b/arch/ppc/syslib/ibm440gx_common.c
+index 6ad52f4..a36358f 100644
+--- a/arch/ppc/syslib/ibm440gx_common.c
++++ b/arch/ppc/syslib/ibm440gx_common.c
+@@ -155,7 +155,7 @@ void __init ibm440gx_l2c_enable(void){
+ 	}
+ 
+ 	local_irq_save(flags);
+-	asm volatile ("sync" ::: "memory");
++	asm volatile ("sync" : : : "memory");
+ 
+ 	/* Disable SRAM */
+ 	mtdcr(DCRN_SRAM0_DPC,   mfdcr(DCRN_SRAM0_DPC)   & ~SRAM_DPC_ENABLE);
+@@ -187,7 +187,7 @@ void __init ibm440gx_l2c_enable(void){
+ 	r |= 0x80000000 | L2C_SNP_SSR_32G | L2C_SNP_ESR;
+ 	mtdcr(DCRN_L2C0_SNP1, r);
+ 
+-	asm volatile ("sync" ::: "memory");
++	asm volatile ("sync" : : : "memory");
+ 
+ 	/* Enable ICU/DCU ports */
+ 	r = mfdcr(DCRN_L2C0_CFG);
+@@ -197,7 +197,7 @@ void __init ibm440gx_l2c_enable(void){
+ 		| L2C_CFG_CPIM | L2C_CFG_TPIM | L2C_CFG_LIM | L2C_CFG_SMCM;
+ 	mtdcr(DCRN_L2C0_CFG, r);
+ 
+-	asm volatile ("sync; isync" ::: "memory");
++	asm volatile ("sync; isync" : : : "memory");
+ 	local_irq_restore(flags);
+ }
+ 
+@@ -207,7 +207,7 @@ void __init ibm440gx_l2c_disable(void){
+ 	unsigned long flags;
+ 
+ 	local_irq_save(flags);
+-	asm volatile ("sync" ::: "memory");
++	asm volatile ("sync" : : : "memory");
+ 
+ 	/* Disable L2C mode */
+ 	r = mfdcr(DCRN_L2C0_CFG) & ~(L2C_CFG_L2M | L2C_CFG_ICU | L2C_CFG_DCU);
+@@ -224,7 +224,7 @@ void __init ibm440gx_l2c_disable(void){
+ 	mtdcr(DCRN_SRAM0_SB3CR,
+ 	      SRAM_SBCR_BAS3 | SRAM_SBCR_BS_64KB | SRAM_SBCR_BU_RW);
+ 
+-	asm volatile ("sync; isync" ::: "memory");
++	asm volatile ("sync; isync" : : : "memory");
+ 	local_irq_restore(flags);
+ }
+ 
+diff --git a/arch/um/include/sysdep-x86_64/barrier.h b/arch/um/include/sysdep-x86_64/barrier.h
+index 7b610be..6db9fa3 100644
+--- a/arch/um/include/sysdep-x86_64/barrier.h
++++ b/arch/um/include/sysdep-x86_64/barrier.h
+@@ -2,6 +2,6 @@
+ #define __SYSDEP_X86_64_BARRIER_H
+ 
+ /* Copied from include/asm-x86_64 for use by userspace. */
+-#define mb() 	asm volatile("mfence":::"memory")
++#define mb() 	asm volatile("mfence": : :"memory")
+ 
+ #endif
+diff --git a/arch/v850/kernel/highres_timer.c b/arch/v850/kernel/highres_timer.c
+index b16ad1e..d869603 100644
+--- a/arch/v850/kernel/highres_timer.c
++++ b/arch/v850/kernel/highres_timer.c
+@@ -34,7 +34,7 @@ void highres_timer_slow_tick_irq (void)
+ 	     "st.w	sp, %0[r0];"
+ 	     "ld.w	%1[r0], sp;" /* restore pre-irq stack-pointer */
+ 	     "reti"
+-	     ::
++	     : :
+ 	      "i" (HIGHRES_TIMER_SLOW_TICKS_ADDR),
+ 	      "i" (ENTRY_SP_ADDR)
+ 	     : "memory");
+diff --git a/arch/v850/kernel/process.c b/arch/v850/kernel/process.c
+index e4a4b8e..8e80c1b 100644
+--- a/arch/v850/kernel/process.c
++++ b/arch/v850/kernel/process.c
+@@ -38,7 +38,7 @@ extern void ret_from_fork (void);
+ static void default_idle (void)
+ {
+ 	while (! need_resched ())
+-		asm ("halt; nop; nop; nop; nop; nop" ::: "cc");
++		asm ("halt; nop; nop; nop; nop; nop" : : : "cc");
+ }
+ 
+ void (*idle)(void) = default_idle;
+diff --git a/arch/v850/kernel/v850e_cache.c b/arch/v850/kernel/v850e_cache.c
+index ea3e51c..48d5384 100644
+--- a/arch/v850/kernel/v850e_cache.c
++++ b/arch/v850/kernel/v850e_cache.c
+@@ -51,7 +51,7 @@ void v850e_cache_enable (u16 bhc, u16 icc, u16 dcc)
+ 	*r0_ram 	= 0x5640006b;	/* jmp [r11] */
+ 
+ 	asm ("mov hilo(1f), r11; jmp [%1]; 1:;"
+-	     :: "r" (bhc_val), "r" (R0_RAM_ADDR) : "r11");
++	     : : "r" (bhc_val), "r" (R0_RAM_ADDR) : "r11");
+ }
+ 
+ static void clear_icache (void)
+diff --git a/arch/v850/lib/memcpy.c b/arch/v850/lib/memcpy.c
+index 492847b..9346336 100644
+--- a/arch/v850/lib/memcpy.c
++++ b/arch/v850/lib/memcpy.c
+@@ -32,7 +32,7 @@
+ 	"sst.w r13, 8[ep]; sst.w r14, 12[ep];"	\
+ 	"sst.w r15, 16[ep]; sst.w r17, 20[ep];"	\
+ 	"sst.w r18, 24[ep]; sst.w r19, 28[ep]"	\
+-	:: "r" (src), "r" (dst)			\
++	: : "r" (src), "r" (dst)			\
+ 	: "r1", "r12", "r13", "r14", "r15",	\
+ 	  "r17", "r18", "r19", "ep", "memory");
+ 
+diff --git a/arch/v850/lib/memset.c b/arch/v850/lib/memset.c
+index d1b2ad8..86df332 100644
+--- a/arch/v850/lib/memset.c
++++ b/arch/v850/lib/memset.c
+@@ -42,7 +42,7 @@ void *memset (void *dst, int val, __kernel_size_t count)
+ 			     "sst.w %0, 8[ep]; sst.w %0, 12[ep];"
+ 			     "sst.w %0, 16[ep]; sst.w %0, 20[ep];"
+ 			     "sst.w %0, 24[ep]; sst.w %0, 28[ep]"
+-			     :: "r" (val) : "memory");
++			     : : "r" (val) : "memory");
+ 			ptr += 32;
+ 		}
+ 		count %= 32;
+diff --git a/arch/v850/lib/negdi2.c b/arch/v850/lib/negdi2.c
+index 571e04f..4ba83cd 100644
+--- a/arch/v850/lib/negdi2.c
++++ b/arch/v850/lib/negdi2.c
+@@ -21,5 +21,5 @@ DItype __negdi2 (DItype x)
+ 		 "setf	c, r6;"
+ 		 "not	r7, r11;"
+ 		 "add	r6, r11"
+-		 ::: "r6", "r7", "r10", "r11");
++		 : : : "r6", "r7", "r10", "r11");
+ }
+diff --git a/arch/x86/ia32/ia32_aout.c b/arch/x86/ia32/ia32_aout.c
+index f82e1a9..1c5250c 100644
+--- a/arch/x86/ia32/ia32_aout.c
++++ b/arch/x86/ia32/ia32_aout.c
+@@ -412,7 +412,7 @@ beyond_if:
+ 	current->mm->start_stack =
+ 		(unsigned long)create_aout_tables((char __user *)bprm->p, bprm);
+ 	/* start thread */
+-	asm volatile("movl %0,%%fs" :: "r" (0)); \
++	asm volatile("movl %0,%%fs" : : "r" (0)); \
+ 	asm volatile("movl %0,%%es; movl %0,%%ds": :"r" (__USER32_DS));
+ 	load_gs_index(0); 
+ 	(regs)->rip = ex.a_entry;
+diff --git a/arch/x86/ia32/ia32_binfmt.c b/arch/x86/ia32/ia32_binfmt.c
+index 55822d2..acd5ab2 100644
+--- a/arch/x86/ia32/ia32_binfmt.c
++++ b/arch/x86/ia32/ia32_binfmt.c
+@@ -203,7 +203,7 @@ do {							\
+ 
+ #undef start_thread
+ #define start_thread(regs,new_rip,new_rsp) do { \
+-	asm volatile("movl %0,%%fs" :: "r" (0)); \
++	asm volatile("movl %0,%%fs" : : "r" (0)); \
+ 	asm volatile("movl %0,%%es; movl %0,%%ds": :"r" (__USER32_DS)); \
+ 	load_gs_index(0); \
+ 	(regs)->rip = (new_rip); \
+diff --git a/arch/x86/ia32/ia32_signal.c b/arch/x86/ia32/ia32_signal.c
+index 4eaaf78..fb58f9e 100644
+--- a/arch/x86/ia32/ia32_signal.c
++++ b/arch/x86/ia32/ia32_signal.c
+@@ -487,8 +487,8 @@ int ia32_setup_frame(int sig, struct k_sigaction *ka,
+ 	regs->rdx = 0;
+ 	regs->rcx = 0;
+ 
+-	asm volatile("movl %0,%%ds" :: "r" (__USER32_DS)); 
+-	asm volatile("movl %0,%%es" :: "r" (__USER32_DS)); 
++	asm volatile("movl %0,%%ds" : : "r" (__USER32_DS)); 
++	asm volatile("movl %0,%%es" : : "r" (__USER32_DS)); 
+ 
+ 	regs->cs = __USER32_CS; 
+ 	regs->ss = __USER32_DS; 
+@@ -593,8 +593,8 @@ int ia32_setup_rt_frame(int sig, struct k_sigaction *ka, siginfo_t *info,
+ 	regs->rdx = (unsigned long) &frame->info;
+ 	regs->rcx = (unsigned long) &frame->uc;
+ 
+-	asm volatile("movl %0,%%ds" :: "r" (__USER32_DS)); 
+-	asm volatile("movl %0,%%es" :: "r" (__USER32_DS)); 
++	asm volatile("movl %0,%%ds" : : "r" (__USER32_DS)); 
++	asm volatile("movl %0,%%es" : : "r" (__USER32_DS)); 
+ 	
+ 	regs->cs = __USER32_CS; 
+ 	regs->ss = __USER32_DS; 
+diff --git a/arch/x86/kernel/setup64.c b/arch/x86/kernel/setup64.c
+index 3558ac7..2026eb5 100644
+--- a/arch/x86/kernel/setup64.c
++++ b/arch/x86/kernel/setup64.c
+@@ -119,7 +119,7 @@ void pda_init(int cpu)
+ 	struct x8664_pda *pda = cpu_pda(cpu);
+ 
+ 	/* Setup up data that may be needed in __get_free_pages early */
+-	asm volatile("movl %0,%%fs ; movl %0,%%gs" :: "r" (0)); 
++	asm volatile("movl %0,%%fs ; movl %0,%%gs" : : "r" (0)); 
+ 	/* Memory clobbers used to order PDA accessed */
+ 	mb();
+ 	wrmsrl(MSR_GS_BASE, pda);
+diff --git a/arch/x86/pci/pci.h b/arch/x86/pci/pci.h
+index 36cb44c..aa35562 100644
+--- a/arch/x86/pci/pci.h
++++ b/arch/x86/pci/pci.h
+@@ -130,15 +130,15 @@ static inline unsigned int mmio_config_readl(void __iomem *pos)
+ 
+ static inline void mmio_config_writeb(void __iomem *pos, u8 val)
+ {
+-	asm volatile("movb %%al,(%1)" :: "a" (val), "r" (pos) : "memory");
++	asm volatile("movb %%al,(%1)" : : "a" (val), "r" (pos) : "memory");
+ }
+ 
+ static inline void mmio_config_writew(void __iomem *pos, u16 val)
+ {
+-	asm volatile("movw %%ax,(%1)" :: "a" (val), "r" (pos) : "memory");
++	asm volatile("movw %%ax,(%1)" : : "a" (val), "r" (pos) : "memory");
+ }
+ 
+ static inline void mmio_config_writel(void __iomem *pos, u32 val)
+ {
+-	asm volatile("movl %%eax,(%1)" :: "a" (val), "r" (pos) : "memory");
++	asm volatile("movl %%eax,(%1)" : : "a" (val), "r" (pos) : "memory");
+ }
+diff --git a/arch/xtensa/kernel/platform.c b/arch/xtensa/kernel/platform.c
+index 69675f2..c4c3e8f 100644
+--- a/arch/xtensa/kernel/platform.c
++++ b/arch/xtensa/kernel/platform.c
+@@ -33,7 +33,7 @@ _F(void, init_irq, (void), { });
+ _F(void, restart, (void), { while(1); });
+ _F(void, halt, (void), { while(1); });
+ _F(void, power_off, (void), { while(1); });
+-_F(void, idle, (void), { __asm__ __volatile__ ("waiti 0" ::: "memory"); });
++_F(void, idle, (void), { __asm__ __volatile__ ("waiti 0" : : : "memory"); });
+ _F(void, heartbeat, (void), { });
+ _F(int,  pcibios_fixup, (void), { return 0; });
+ _F(int, get_rtc_time, (time_t* t), { return 0; });
+diff --git a/drivers/infiniband/hw/ipath/ipath_kernel.h b/drivers/infiniband/hw/ipath/ipath_kernel.h
+index 8786dd7..d195bcb 100644
+--- a/drivers/infiniband/hw/ipath/ipath_kernel.h
++++ b/drivers/infiniband/hw/ipath/ipath_kernel.h
+@@ -962,7 +962,7 @@ dma_addr_t ipath_map_single(struct pci_dev *, void *, size_t, int);
+  * barrier.
+  */
+ #if defined(CONFIG_X86_64)
+-#define ipath_flush_wc() asm volatile("sfence" ::: "memory")
++#define ipath_flush_wc() asm volatile("sfence" : : : "memory")
+ #else
+ #define ipath_flush_wc() wmb()
+ #endif
+diff --git a/drivers/input/joystick/iforce/iforce.h b/drivers/input/joystick/iforce/iforce.h
+index a964a7c..d716872 100644
+--- a/drivers/input/joystick/iforce/iforce.h
++++ b/drivers/input/joystick/iforce/iforce.h
+@@ -47,7 +47,7 @@
+ 
+ #define IFORCE_MAX_LENGTH	16
+ 
+-/* iforce::bus */
++/* iforce: :bus */
+ #define IFORCE_232	1
+ #define IFORCE_USB	2
+ 
+@@ -87,7 +87,7 @@ struct iforce_core_effect {
+ /* Buffer for async write */
+ #define XMIT_SIZE		256
+ #define XMIT_INC(var, n)	(var)+=n; (var)&= XMIT_SIZE -1
+-/* iforce::xmit_flags */
++/* iforce: :xmit_flags */
+ #define IFORCE_XMIT_RUNNING	0
+ #define IFORCE_XMIT_AGAIN	1
+ 
+diff --git a/drivers/input/serio/i8042-ppcio.h b/drivers/input/serio/i8042-ppcio.h
+index 2906e1b..ff23beb 100644
+--- a/drivers/input/serio/i8042-ppcio.h
++++ b/drivers/input/serio/i8042-ppcio.h
+@@ -77,7 +77,7 @@ static inline int i8042_read_data(void)
+ 	asm volatile("lis     7,0xff88        \n\
+ 		      lswi    6,7,0x8         \n\
+ 		      mr      %0,6"
+-	              : "=r" (kbd_data) :: "6", "7");
++	              : "=r" (kbd_data) : : "6", "7");
+ 
+ 	__raw_writel(0x00000000, 0xff50000c);
+ 	eieio();
+@@ -99,7 +99,7 @@ static inline int i8042_read_status(void)
+ 		      ori     7,7,0x8         \n\
+ 		      lswi    6,7,0x8         \n\
+ 		      mr      %0,6"
+-		      : "=r" (kbd_status) :: "6", "7");
++		      : "=r" (kbd_status) : : "6", "7");
+ 
+ 	__raw_writel(0x00000000, 0xff50000c);
+ 	eieio();
+diff --git a/drivers/input/tablet/gtco.c b/drivers/input/tablet/gtco.c
+index d2c6da2..9c769ac 100644
+--- a/drivers/input/tablet/gtco.c
++++ b/drivers/input/tablet/gtco.c
+@@ -278,7 +278,7 @@ static void parse_hid_report_descriptor(struct gtco *device, char * report,
+ 				else if (data == 3)
+ 					strcpy(globtype, "Var|Const");
+ 
+-				dbg("::::: Saving Report: %d input #%d Max: 0x%X(%d) Min:0x%X(%d) of %d bits",
++				dbg(": : : : : Saving Report: %d input #%d Max: 0x%X(%d) Min:0x%X(%d) of %d bits",
+ 				    globalval[TAG_GLOB_REPORT_ID], inputnum,
+ 				    globalval[TAG_GLOB_LOG_MAX], globalval[TAG_GLOB_LOG_MAX],
+ 				    globalval[TAG_GLOB_LOG_MIN], globalval[TAG_GLOB_LOG_MIN],
+diff --git a/drivers/kvm/svm.c b/drivers/kvm/svm.c
+index 4e04e49..87abc30 100644
+--- a/drivers/kvm/svm.c
++++ b/drivers/kvm/svm.c
+@@ -130,7 +130,7 @@ static inline void stgi(void)
+ 
+ static inline void invlpga(unsigned long addr, u32 asid)
+ {
+-	asm volatile (SVM_INVLPGA :: "a"(addr), "c"(asid));
++	asm volatile (SVM_INVLPGA : : "a"(addr), "c"(asid));
+ }
+ 
+ static inline unsigned long kvm_read_cr2(void)
+@@ -143,7 +143,7 @@ static inline unsigned long kvm_read_cr2(void)
+ 
+ static inline void kvm_write_cr2(unsigned long val)
+ {
+-	asm volatile ("mov %0, %%cr2" :: "r" (val));
++	asm volatile ("mov %0, %%cr2" : : "r" (val));
+ }
+ 
+ static inline unsigned long read_dr6(void)
+@@ -156,7 +156,7 @@ static inline unsigned long read_dr6(void)
+ 
+ static inline void write_dr6(unsigned long val)
+ {
+-	asm volatile ("mov %0, %%dr6" :: "r" (val));
++	asm volatile ("mov %0, %%dr6" : : "r" (val));
+ }
+ 
+ static inline unsigned long read_dr7(void)
+@@ -169,7 +169,7 @@ static inline unsigned long read_dr7(void)
+ 
+ static inline void write_dr7(unsigned long val)
+ {
+-	asm volatile ("mov %0, %%dr7" :: "r" (val));
++	asm volatile ("mov %0, %%dr7" : : "r" (val));
+ }
+ 
+ static inline void force_new_asid(struct kvm_vcpu *vcpu)
+diff --git a/drivers/md/raid6sse1.c b/drivers/md/raid6sse1.c
+index 0666237..d60dc15 100644
+--- a/drivers/md/raid6sse1.c
++++ b/drivers/md/raid6sse1.c
+@@ -148,7 +148,7 @@ static void raid6_sse12_gen_syndrome(int disks, size_t bytes, void **ptrs)
+ 		asm volatile("movntq %%mm6,%0" : "=m" (q[d+8]));
+ 	}
+ 
+-	asm volatile("sfence" : :: "memory");
++	asm volatile("sfence" : : : "memory");
+ 	kernel_fpu_end();
+ }
+ 
+diff --git a/drivers/md/raid6sse2.c b/drivers/md/raid6sse2.c
+index b034ad8..2ccc812 100644
+--- a/drivers/md/raid6sse2.c
++++ b/drivers/md/raid6sse2.c
+@@ -178,7 +178,7 @@ static void raid6_sse24_gen_syndrome(int disks, size_t bytes, void **ptrs)
+ 
+ 	kernel_fpu_begin();
+ 
+-	asm volatile("movdqa %0,%%xmm0" :: "m" (raid6_sse_constants.x1d[0]));
++	asm volatile("movdqa %0,%%xmm0" : : "m" (raid6_sse_constants.x1d[0]));
+ 	asm volatile("pxor %xmm2,%xmm2");	/* P[0] */
+ 	asm volatile("pxor %xmm3,%xmm3");	/* P[1] */
+ 	asm volatile("pxor %xmm4,%xmm4"); 	/* Q[0] */
+@@ -195,8 +195,8 @@ static void raid6_sse24_gen_syndrome(int disks, size_t bytes, void **ptrs)
+ 	for ( d = 0 ; d < bytes ; d += 64 ) {
+ 		for ( z = z0 ; z >= 0 ; z-- ) {
+ 			/* The second prefetch seems to improve performance... */
+-			asm volatile("prefetchnta %0" :: "m" (dptr[z][d]));
+-			asm volatile("prefetchnta %0" :: "m" (dptr[z][d+32]));
++			asm volatile("prefetchnta %0" : : "m" (dptr[z][d]));
++			asm volatile("prefetchnta %0" : : "m" (dptr[z][d+32]));
+ 			asm volatile("pcmpgtb %xmm4,%xmm5");
+ 			asm volatile("pcmpgtb %xmm6,%xmm7");
+ 			asm volatile("pcmpgtb %xmm12,%xmm13");
+@@ -213,10 +213,10 @@ static void raid6_sse24_gen_syndrome(int disks, size_t bytes, void **ptrs)
+ 			asm volatile("pxor %xmm7,%xmm6");
+ 			asm volatile("pxor %xmm13,%xmm12");
+ 			asm volatile("pxor %xmm15,%xmm14");
+-			asm volatile("movdqa %0,%%xmm5" :: "m" (dptr[z][d]));
+-			asm volatile("movdqa %0,%%xmm7" :: "m" (dptr[z][d+16]));
+-			asm volatile("movdqa %0,%%xmm13" :: "m" (dptr[z][d+32]));
+-			asm volatile("movdqa %0,%%xmm15" :: "m" (dptr[z][d+48]));
++			asm volatile("movdqa %0,%%xmm5" : : "m" (dptr[z][d]));
++			asm volatile("movdqa %0,%%xmm7" : : "m" (dptr[z][d+16]));
++			asm volatile("movdqa %0,%%xmm13" : : "m" (dptr[z][d+32]));
++			asm volatile("movdqa %0,%%xmm15" : : "m" (dptr[z][d+48]));
+ 			asm volatile("pxor %xmm5,%xmm2");
+ 			asm volatile("pxor %xmm7,%xmm3");
+ 			asm volatile("pxor %xmm13,%xmm10");
+diff --git a/drivers/message/fusion/mptlan.c b/drivers/message/fusion/mptlan.c
+index 7950fc6..48019f1 100644
+--- a/drivers/message/fusion/mptlan.c
++++ b/drivers/message/fusion/mptlan.c
+@@ -196,7 +196,7 @@ lan_reply (MPT_ADAPTER *ioc, MPT_FRAME_HDR *mf, MPT_FRAME_HDR *reply)
+ 		switch (GET_LAN_FORM(tmsg)) {
+ 
+ 		// NOTE!  (Optimization) First case here is now caught in
+-		//  mptbase.c::mpt_interrupt() routine and callcack here
++		//  mptbase.c: :mpt_interrupt() routine and callcack here
+ 		//  is now skipped for this case!
+ #if 0
+ 		case LAN_REPLY_FORM_MESSAGE_CONTEXT:
+diff --git a/drivers/mtd/nand/cmx270_nand.c b/drivers/mtd/nand/cmx270_nand.c
+index cb663ef..6dafd6b 100644
+--- a/drivers/mtd/nand/cmx270_nand.c
++++ b/drivers/mtd/nand/cmx270_nand.c
+@@ -40,7 +40,7 @@
+ #define DRAIN_WB() \
+ 	do { \
+ 		unsigned char dummy; \
+-		asm volatile ("mcr p15, 0, r0, c7, c10, 4":::"r0"); \
++		asm volatile ("mcr p15, 0, r0, c7, c10, 4": : :"r0"); \
+ 		dummy=*((unsigned char*)UNCACHED_ADDR); \
+ 	} while(0)
+ 
+diff --git a/drivers/net/ioc3-eth.c b/drivers/net/ioc3-eth.c
+index 373f72c..4081dec 100644
+--- a/drivers/net/ioc3-eth.c
++++ b/drivers/net/ioc3-eth.c
+@@ -158,7 +158,7 @@ static inline unsigned long ioc3_map(void *ptr, unsigned long vdev)
+ 
+ /* DMA barrier to separate cached and uncached accesses.  */
+ #define BARRIER()							\
+-	__asm__("sync" ::: "memory")
++	__asm__("sync" : : : "memory")
+ 
+ 
+ #define IOC3_SIZE 0x100000
+diff --git a/drivers/net/wireless/hostap/hostap_hw.c b/drivers/net/wireless/hostap/hostap_hw.c
+index c592641..f9a28f3 100644
+--- a/drivers/net/wireless/hostap/hostap_hw.c
++++ b/drivers/net/wireless/hostap/hostap_hw.c
+@@ -1982,7 +1982,7 @@ static void prism2_rx(local_info_t *local)
+ 	macport = (status >> 8) & 0x07;
+ 
+ 	/* Drop frames with too large reported payload length. Monitor mode
+-	 * seems to sometimes pass frames (e.g., ctrl::ack) with signed and
++	 * seems to sometimes pass frames (e.g., ctrl: :ack) with signed and
+ 	 * negative value, so allow also values 65522 .. 65534 (-14 .. -2) for
+ 	 * macport 7 */
+ 	if (len > PRISM2_DATA_MAXLEN + 8 /* WEP */) {
+@@ -2396,7 +2396,7 @@ static void prism2_txexc(local_info_t *local)
+ 
+ 	fc = le16_to_cpu(txdesc.frame_control);
+ 	PDEBUG(DEBUG_EXTRA, "   retry_count=%d tx_rate=%d fc=0x%04x "
+-	       "(%s%s%s::%d%s%s)\n",
++	       "(%s%s%s: :%d%s%s)\n",
+ 	       txdesc.retry_count, txdesc.tx_rate, fc,
+ 	       WLAN_FC_GET_TYPE(fc) == IEEE80211_FTYPE_MGMT ? "Mgmt" : "",
+ 	       WLAN_FC_GET_TYPE(fc) == IEEE80211_FTYPE_CTL ? "Ctrl" : "",
+diff --git a/drivers/net/wireless/rayctl.h b/drivers/net/wireless/rayctl.h
+index 49d9b26..6a97633 100644
+--- a/drivers/net/wireless/rayctl.h
++++ b/drivers/net/wireless/rayctl.h
+@@ -418,9 +418,7 @@ struct status {
+ };
+ 
+ /****** Host-to-ECF Data Area at Shared RAM offset 0x200 *********************/
+-struct host_to_ecf_area {
+-    
+-};
++EMPTY_STRUCT_DECL(host_to_ecf_area);
+ 
+ /****** ECF-to-Host Data Area at Shared RAM offset 0x0300 ********************/
+ struct startup_res_518 {
+diff --git a/drivers/video/i810/i810_main.h b/drivers/video/i810/i810_main.h
+index 51d4f3d..15fea07 100644
+--- a/drivers/video/i810/i810_main.h
++++ b/drivers/video/i810/i810_main.h
+@@ -54,7 +54,7 @@ static inline void i810_delete_i2c_busses(struct i810fb_par *par) { }
+ #ifdef CONFIG_X86
+ static inline void flush_cache(void)
+ {
+-	asm volatile ("wbinvd":::"memory");
++	asm volatile ("wbinvd": : :"memory");
+ }
+ #else
+ #define flush_cache() do { } while(0)
+diff --git a/fs/file_table.c b/fs/file_table.c
+index 664e3f2..be65d93 100644
+--- a/fs/file_table.c
++++ b/fs/file_table.c
+@@ -30,6 +30,7 @@ struct files_stat_struct files_stat = {
+ 
+ /* public. Not pretty! */
+ __cacheline_aligned_in_smp DEFINE_SPINLOCK(files_lock);
++EXPORT_SYMBOL(files_lock);
+ 
+ static struct percpu_counter nr_files __cacheline_aligned_in_smp;
+ 
+diff --git a/fs/super.c b/fs/super.c
+index ceaf2e3..073f907 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -43,6 +43,8 @@
+ LIST_HEAD(super_blocks);
+ DEFINE_SPINLOCK(sb_lock);
+ 
++EXPORT_SYMBOL(sb_lock);
++
+ /**
+  *	alloc_super	-	create new superblock
+  *	@type:	filesystem type superblock should belong to
+diff --git a/include/asm-alpha/core_tsunami.h b/include/asm-alpha/core_tsunami.h
+index 58d4fe4..48b8229 100644
+--- a/include/asm-alpha/core_tsunami.h
++++ b/include/asm-alpha/core_tsunami.h
+@@ -282,8 +282,7 @@ union TPchipPERRMASK {
+ /*
+  * Data structure for handling TSUNAMI machine checks:
+  */
+-struct el_TSUNAMI_sysdata_mcheck {
+-};
++EMPTY_STRUCT_DECL(el_TSUNAMI_sysdata_mcheck);
+ 
+ 
+ #ifdef __KERNEL__
+diff --git a/include/asm-alpha/processor.h b/include/asm-alpha/processor.h
+index 425b7b6..b7689a3 100644
+--- a/include/asm-alpha/processor.h
++++ b/include/asm-alpha/processor.h
+@@ -31,8 +31,8 @@ typedef struct {
+ } mm_segment_t;
+ 
+ /* This is dead.  Everything has been moved to thread_info.  */
+-struct thread_struct { };
+-#define INIT_THREAD  { }
++EMPTY_STRUCT_DECL(thread_struct);
++#define INIT_THREAD  EMPTY_STRUCT_INIT(thread_struct)
+ 
+ /* Return saved PC of a blocked thread.  */
+ struct task_struct;
+diff --git a/include/asm-alpha/system.h b/include/asm-alpha/system.h
+index fd9dc88..efadd2e 100644
+--- a/include/asm-alpha/system.h
++++ b/include/asm-alpha/system.h
+@@ -553,7 +553,7 @@ __xchg_u64_local(volatile long *m, unsigned long val)
+ #define __HAVE_ARCH_CMPXCHG 1
+ 
+ static inline unsigned long
+-__cmpxchg_u8(volatile char *m, long old, long new)
++__cmpxchg_u8(volatile char *m, long old, long n)
+ {
+ 	unsigned long prev, tmp, cmp, addr64;
+ 
+@@ -575,14 +575,14 @@ __cmpxchg_u8(volatile char *m, long old, long new)
+ 	".subsection 2\n"
+ 	"3:	br	1b\n"
+ 	".previous"
+-	: "=&r" (prev), "=&r" (new), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
+-	: "r" ((long)m), "Ir" (old), "1" (new) : "memory");
++	: "=&r" (prev), "=&r" (n), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
++	: "r" ((long)m), "Ir" (old), "1" (n) : "memory");
+ 
+ 	return prev;
+ }
+ 
+ static inline unsigned long
+-__cmpxchg_u16(volatile short *m, long old, long new)
++__cmpxchg_u16(volatile short *m, long old, long n)
+ {
+ 	unsigned long prev, tmp, cmp, addr64;
+ 
+@@ -604,14 +604,14 @@ __cmpxchg_u16(volatile short *m, long old, long new)
+ 	".subsection 2\n"
+ 	"3:	br	1b\n"
+ 	".previous"
+-	: "=&r" (prev), "=&r" (new), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
+-	: "r" ((long)m), "Ir" (old), "1" (new) : "memory");
++	: "=&r" (prev), "=&r" (n), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
++	: "r" ((long)m), "Ir" (old), "1" (n) : "memory");
+ 
+ 	return prev;
+ }
+ 
+ static inline unsigned long
+-__cmpxchg_u32(volatile int *m, int old, int new)
++__cmpxchg_u32(volatile int *m, int old, int n)
+ {
+ 	unsigned long prev, cmp;
+ 
+@@ -630,13 +630,13 @@ __cmpxchg_u32(volatile int *m, int old, int new)
+ 	"3:	br 1b\n"
+ 	".previous"
+ 	: "=&r"(prev), "=&r"(cmp), "=m"(*m)
+-	: "r"((long) old), "r"(new), "m"(*m) : "memory");
++	: "r"((long) old), "r"(n), "m"(*m) : "memory");
+ 
+ 	return prev;
+ }
+ 
+ static inline unsigned long
+-__cmpxchg_u64(volatile long *m, unsigned long old, unsigned long new)
++__cmpxchg_u64(volatile long *m, unsigned long old, unsigned long n)
+ {
+ 	unsigned long prev, cmp;
+ 
+@@ -655,7 +655,7 @@ __cmpxchg_u64(volatile long *m, unsigned long old, unsigned long new)
+ 	"3:	br 1b\n"
+ 	".previous"
+ 	: "=&r"(prev), "=&r"(cmp), "=m"(*m)
+-	: "r"((long) old), "r"(new), "m"(*m) : "memory");
++	: "r"((long) old), "r"(n), "m"(*m) : "memory");
+ 
+ 	return prev;
+ }
+@@ -665,17 +665,17 @@ __cmpxchg_u64(volatile long *m, unsigned long old, unsigned long new)
+ extern void __cmpxchg_called_with_bad_pointer(void);
+ 
+ static __always_inline unsigned long
+-__cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
++__cmpxchg(volatile void *ptr, unsigned long old, unsigned long n, int size)
+ {
+ 	switch (size) {
+ 		case 1:
+-			return __cmpxchg_u8(ptr, old, new);
++			return __cmpxchg_u8(ptr, old, n);
+ 		case 2:
+-			return __cmpxchg_u16(ptr, old, new);
++			return __cmpxchg_u16(ptr, old, n);
+ 		case 4:
+-			return __cmpxchg_u32(ptr, old, new);
++			return __cmpxchg_u32(ptr, old, n);
+ 		case 8:
+-			return __cmpxchg_u64(ptr, old, new);
++			return __cmpxchg_u64(ptr, old, n);
+ 	}
+ 	__cmpxchg_called_with_bad_pointer();
+ 	return old;
+@@ -690,7 +690,7 @@ __cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
+   })
+ 
+ static inline unsigned long
+-__cmpxchg_u8_local(volatile char *m, long old, long new)
++__cmpxchg_u8_local(volatile char *m, long old, long n)
+ {
+ 	unsigned long prev, tmp, cmp, addr64;
+ 
+@@ -709,14 +709,14 @@ __cmpxchg_u8_local(volatile char *m, long old, long new)
+ 	".subsection 2\n"
+ 	"3:	br	1b\n"
+ 	".previous"
+-	: "=&r" (prev), "=&r" (new), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
+-	: "r" ((long)m), "Ir" (old), "1" (new) : "memory");
++	: "=&r" (prev), "=&r" (n), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
++	: "r" ((long)m), "Ir" (old), "1" (n) : "memory");
+ 
+ 	return prev;
+ }
+ 
+ static inline unsigned long
+-__cmpxchg_u16_local(volatile short *m, long old, long new)
++__cmpxchg_u16_local(volatile short *m, long old, long n)
+ {
+ 	unsigned long prev, tmp, cmp, addr64;
+ 
+@@ -735,14 +735,14 @@ __cmpxchg_u16_local(volatile short *m, long old, long new)
+ 	".subsection 2\n"
+ 	"3:	br	1b\n"
+ 	".previous"
+-	: "=&r" (prev), "=&r" (new), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
+-	: "r" ((long)m), "Ir" (old), "1" (new) : "memory");
++	: "=&r" (prev), "=&r" (n), "=&r" (tmp), "=&r" (cmp), "=&r" (addr64)
++	: "r" ((long)m), "Ir" (old), "1" (n) : "memory");
+ 
+ 	return prev;
+ }
+ 
+ static inline unsigned long
+-__cmpxchg_u32_local(volatile int *m, int old, int new)
++__cmpxchg_u32_local(volatile int *m, int old, int n)
+ {
+ 	unsigned long prev, cmp;
+ 
+@@ -758,13 +758,13 @@ __cmpxchg_u32_local(volatile int *m, int old, int new)
+ 	"3:	br 1b\n"
+ 	".previous"
+ 	: "=&r"(prev), "=&r"(cmp), "=m"(*m)
+-	: "r"((long) old), "r"(new), "m"(*m) : "memory");
++	: "r"((long) old), "r"(n), "m"(*m) : "memory");
+ 
+ 	return prev;
+ }
+ 
+ static inline unsigned long
+-__cmpxchg_u64_local(volatile long *m, unsigned long old, unsigned long new)
++__cmpxchg_u64_local(volatile long *m, unsigned long old, unsigned long n)
+ {
+ 	unsigned long prev, cmp;
+ 
+@@ -780,24 +780,24 @@ __cmpxchg_u64_local(volatile long *m, unsigned long old, unsigned long new)
+ 	"3:	br 1b\n"
+ 	".previous"
+ 	: "=&r"(prev), "=&r"(cmp), "=m"(*m)
+-	: "r"((long) old), "r"(new), "m"(*m) : "memory");
++	: "r"((long) old), "r"(n), "m"(*m) : "memory");
+ 
+ 	return prev;
+ }
+ 
+ static __always_inline unsigned long
+-__cmpxchg_local(volatile void *ptr, unsigned long old, unsigned long new,
++__cmpxchg_local(volatile void *ptr, unsigned long old, unsigned long n,
+ 		int size)
+ {
+ 	switch (size) {
+ 		case 1:
+-			return __cmpxchg_u8_local(ptr, old, new);
++			return __cmpxchg_u8_local(ptr, old, n);
+ 		case 2:
+-			return __cmpxchg_u16_local(ptr, old, new);
++			return __cmpxchg_u16_local(ptr, old, n);
+ 		case 4:
+-			return __cmpxchg_u32_local(ptr, old, new);
++			return __cmpxchg_u32_local(ptr, old, n);
+ 		case 8:
+-			return __cmpxchg_u64_local(ptr, old, new);
++			return __cmpxchg_u64_local(ptr, old, n);
+ 	}
+ 	__cmpxchg_called_with_bad_pointer();
+ 	return old;
+diff --git a/include/asm-arm/arch-iop13xx/iop13xx.h b/include/asm-arm/arch-iop13xx/iop13xx.h
+index 52b7fab..7432f6a 100644
+--- a/include/asm-arm/arch-iop13xx/iop13xx.h
++++ b/include/asm-arm/arch-iop13xx/iop13xx.h
+@@ -28,7 +28,7 @@ static inline u32 read_wdtcr(void)
+ }
+ static inline void write_wdtcr(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c7, c9, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c7, c9, 0": :"r" (val));
+ }
+ 
+ /* WDTSR CP6 R8 Page 9 */
+@@ -40,7 +40,7 @@ static inline u32 read_wdtsr(void)
+ }
+ static inline void write_wdtsr(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c8, c9, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c8, c9, 0": :"r" (val));
+ }
+ 
+ /* RCSR - Reset Cause Status Register  */
+diff --git a/include/asm-arm/arch-omap/mtd-xip.h b/include/asm-arm/arch-omap/mtd-xip.h
+index a73a285..7b6e3fe 100644
+--- a/include/asm-arm/arch-omap/mtd-xip.h
++++ b/include/asm-arm/arch-omap/mtd-xip.h
+@@ -56,6 +56,6 @@ static inline unsigned long xip_omap_mpu_timer_read(int nr)
+  * As above, this should not rely upon standard kernel code.
+  */
+ 
+-#define xip_cpu_idle()  asm volatile ("mcr p15, 0, %0, c7, c0, 4" :: "r" (1))
++#define xip_cpu_idle()  asm volatile ("mcr p15, 0, %0, c7, c0, 4" : : "r" (1))
+ 
+ #endif /* __ARCH_OMAP_MTD_XIP_H__ */
+diff --git a/include/asm-arm/arch-pxa/mtd-xip.h b/include/asm-arm/arch-pxa/mtd-xip.h
+index 8704dbc..d50e227 100644
+--- a/include/asm-arm/arch-pxa/mtd-xip.h
++++ b/include/asm-arm/arch-pxa/mtd-xip.h
+@@ -32,6 +32,6 @@
+  * As above, this should not rely upon standard kernel code.
+  */
+ 
+-#define xip_cpu_idle()  asm volatile ("mcr p14, 0, %0, c7, c0, 0" :: "r" (1))
++#define xip_cpu_idle()  asm volatile ("mcr p14, 0, %0, c7, c0, 0" : : "r" (1))
+ 
+ #endif /* __ARCH_PXA_MTD_XIP_H__ */
+diff --git a/include/asm-arm/hardware/iop3xx.h b/include/asm-arm/hardware/iop3xx.h
+index ede377e..bc2ca63 100644
+--- a/include/asm-arm/hardware/iop3xx.h
++++ b/include/asm-arm/hardware/iop3xx.h
+@@ -289,7 +289,7 @@ static inline u32 read_wdtcr(void)
+ }
+ static inline void write_wdtcr(u32 val)
+ {
+-	asm volatile("mcr p6, 0, %0, c7, c1, 0"::"r" (val));
++	asm volatile("mcr p6, 0, %0, c7, c1, 0": :"r" (val));
+ }
+ 
+ extern unsigned long get_iop_tick_rate(void);
+diff --git a/include/asm-arm/system.h b/include/asm-arm/system.h
+index 28425c4..18dde7c 100644
+--- a/include/asm-arm/system.h
++++ b/include/asm-arm/system.h
+@@ -117,8 +117,8 @@ void hook_fault_code(int nr, int (*fn)(unsigned long, unsigned int,
+ #define xchg(ptr,x) \
+ 	((__typeof__(*(ptr)))__xchg((unsigned long)(x),(ptr),sizeof(*(ptr))))
+ 
+-extern asmlinkage void __backtrace(void);
+-extern asmlinkage void c_backtrace(unsigned long fp, int pmode);
++asmlinkage void __backtrace(void);
++asmlinkage void c_backtrace(unsigned long fp, int pmode);
+ 
+ struct mm_struct;
+ extern void show_pte(struct mm_struct *mm, unsigned long addr);
+diff --git a/include/asm-avr32/user.h b/include/asm-avr32/user.h
+index 060fb3a..9fea936 100644
+--- a/include/asm-avr32/user.h
++++ b/include/asm-avr32/user.h
+@@ -38,9 +38,8 @@
+  *	to write an integer number of pages.
+  */
+ 
+-struct user_fpu_struct {
+-	/* We have no FPU (yet) */
+-};
++EMPTY_STRUCT_DECL(user_fpu_struct);
++/* We have no FPU (yet) */
+ 
+ struct user {
+ 	struct pt_regs	regs;			/* entire machine state */
+diff --git a/include/asm-blackfin/processor.h b/include/asm-blackfin/processor.h
+index c571e95..f55761d 100644
+--- a/include/asm-blackfin/processor.h
++++ b/include/asm-blackfin/processor.h
+@@ -21,7 +21,7 @@ static inline unsigned long rdusp(void)
+ 
+ static inline void wrusp(unsigned long usp)
+ {
+-	__asm__ __volatile__("usp = %0;\n\t"::"da"(usp));
++	__asm__ __volatile__("usp = %0;\n\t": :"da"(usp));
+ }
+ 
+ /*
+diff --git a/include/asm-blackfin/system.h b/include/asm-blackfin/system.h
+index 4a92737..3b97dcb 100644
+--- a/include/asm-blackfin/system.h
++++ b/include/asm-blackfin/system.h
+@@ -124,7 +124,7 @@ extern unsigned long irq_flags;
+ /*
+  * Force strict CPU ordering.
+  */
+-#define nop()  asm volatile ("nop;\n\t"::)
++#define nop()  asm volatile ("nop;\n\t": :)
+ #define mb()   asm volatile (""   : : :"memory")
+ #define rmb()  asm volatile (""   : : :"memory")
+ #define wmb()  asm volatile (""   : : :"memory")
+diff --git a/include/asm-cris/arch-v10/io.h b/include/asm-cris/arch-v10/io.h
+index 11ef5b5..42df6a2 100644
+--- a/include/asm-cris/arch-v10/io.h
++++ b/include/asm-cris/arch-v10/io.h
+@@ -184,8 +184,8 @@ extern volatile unsigned long *port_csp4_addr;
+  ({ int _Foofoo; __asm__ volatile ("bmod [%0],%0" : "=r" (_Foofoo) : "0" \
+ 			       (255)); _Foofoo; })
+ 
+-#define TRACE_OFF() do { __asm__ volatile ("bmod [%0],%0" :: "r" (254)); } while (0)
+-#define SIM_END() do { __asm__ volatile ("bmod [%0],%0" :: "r" (28)); } while (0)
++#define TRACE_OFF() do { __asm__ volatile ("bmod [%0],%0" : : "r" (254)); } while (0)
++#define SIM_END() do { __asm__ volatile ("bmod [%0],%0" : : "r" (28)); } while (0)
+ #define CRIS_CYCLES() __extension__ \
+  ({ unsigned long c; asm ("bmod [%1],%0" : "=r" (c) : "r" (27)); c;})
+ #endif /* ! defined CONFIG_SVINTO_SIM */
+diff --git a/include/asm-cris/module.h b/include/asm-cris/module.h
+index 7ee7231..238845f 100644
+--- a/include/asm-cris/module.h
++++ b/include/asm-cris/module.h
+@@ -1,7 +1,7 @@
+ #ifndef _ASM_CRIS_MODULE_H
+ #define _ASM_CRIS_MODULE_H
+ /* cris is simple */
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+diff --git a/include/asm-frv/bug.h b/include/asm-frv/bug.h
+index 6b1b44d..9dd122c 100644
+--- a/include/asm-frv/bug.h
++++ b/include/asm-frv/bug.h
+@@ -17,7 +17,7 @@
+ /*
+  * Tell the user there is some problem.
+  */
+-extern asmlinkage void __debug_bug_trap(int signr);
++asmlinkage void __debug_bug_trap(int signr);
+ 
+ #ifdef CONFIG_NO_KERNEL_MSG
+ #define	_debug_bug_printk()
+diff --git a/include/asm-frv/fpu.h b/include/asm-frv/fpu.h
+index d73c60b..a648f88 100644
+--- a/include/asm-frv/fpu.h
++++ b/include/asm-frv/fpu.h
+@@ -6,6 +6,6 @@
+  * MAX floating point unit state size (FSAVE/FRESTORE)
+  */
+ 
+-#define kernel_fpu_end() do { asm volatile("bar":::"memory"); preempt_enable(); } while(0)
++#define kernel_fpu_end() do { asm volatile("bar": : :"memory"); preempt_enable(); } while(0)
+ 
+ #endif /* __ASM_FPU_H */
+diff --git a/include/asm-frv/gdb-stub.h b/include/asm-frv/gdb-stub.h
+index 24f9738..ebe41e0 100644
+--- a/include/asm-frv/gdb-stub.h
++++ b/include/asm-frv/gdb-stub.h
+@@ -87,14 +87,14 @@ extern void gdbstub_tx_char(unsigned char ch);
+ extern void gdbstub_tx_flush(void);
+ extern void gdbstub_do_rx(void);
+ 
+-extern asmlinkage void __debug_stub_init_break(void);
+-extern asmlinkage void __break_hijack_kernel_event(void);
+-extern asmlinkage void __break_hijack_kernel_event_breaks_here(void);
+-extern asmlinkage void start_kernel(void);
+-
+-extern asmlinkage void gdbstub_rx_handler(void);
+-extern asmlinkage void gdbstub_rx_irq(void);
+-extern asmlinkage void gdbstub_intercept(void);
++asmlinkage void __debug_stub_init_break(void);
++asmlinkage void __break_hijack_kernel_event(void);
++asmlinkage void __break_hijack_kernel_event_breaks_here(void);
++asmlinkage void start_kernel(void);
++
++asmlinkage void gdbstub_rx_handler(void);
++asmlinkage void gdbstub_rx_irq(void);
++asmlinkage void gdbstub_intercept(void);
+ 
+ extern uint32_t __entry_usertrap_table[];
+ extern uint32_t __entry_kerneltrap_table[];
+diff --git a/include/asm-frv/highmem.h b/include/asm-frv/highmem.h
+index ff4d6cd..e62541f 100644
+--- a/include/asm-frv/highmem.h
++++ b/include/asm-frv/highmem.h
+@@ -82,11 +82,11 @@ extern struct page *kmap_atomic_to_page(void *ptr);
+ 	dampr = paddr | xAMPRx_L | xAMPRx_M | xAMPRx_S | xAMPRx_SS_16Kb | xAMPRx_V;		\
+ 												\
+ 	if (type != __KM_CACHE)									\
+-		asm volatile("movgs %0,dampr"#ampr :: "r"(dampr) : "memory");			\
++		asm volatile("movgs %0,dampr"#ampr : : "r"(dampr) : "memory");			\
+ 	else											\
+ 		asm volatile("movgs %0,iampr"#ampr"\n"						\
+ 			     "movgs %0,dampr"#ampr"\n"						\
+-			     :: "r"(dampr) : "memory"						\
++			     : : "r"(dampr) : "memory"						\
+ 			     );									\
+ 												\
+ 	asm("movsg damlr"#ampr",%0" : "=r"(damlr));						\
+@@ -140,9 +140,9 @@ static inline void *kmap_atomic(struct page *page, enum km_type type)
+ 
+ #define __kunmap_atomic_primary(type, ampr)				\
+ do {									\
+-	asm volatile("movgs gr0,dampr"#ampr"\n" ::: "memory");		\
++	asm volatile("movgs gr0,dampr"#ampr"\n" : : : "memory");		\
+ 	if (type == __KM_CACHE)						\
+-		asm volatile("movgs gr0,iampr"#ampr"\n" ::: "memory");	\
++		asm volatile("movgs gr0,iampr"#ampr"\n" : : : "memory");	\
+ } while(0)
+ 
+ #define __kunmap_atomic_secondary(slot, vaddr)				\
+diff --git a/include/asm-frv/module.h b/include/asm-frv/module.h
+index 3d5c636..6f65848 100644
+--- a/include/asm-frv/module.h
++++ b/include/asm-frv/module.h
+@@ -11,9 +11,7 @@
+ #ifndef _ASM_MODULE_H
+ #define _ASM_MODULE_H
+ 
+-struct mod_arch_specific
+-{
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr	Elf32_Shdr
+ #define Elf_Sym		Elf32_Sym
+diff --git a/include/asm-frv/pgtable.h b/include/asm-frv/pgtable.h
+index 147e995..1a48661 100644
+--- a/include/asm-frv/pgtable.h
++++ b/include/asm-frv/pgtable.h
+@@ -176,7 +176,7 @@ extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
+ #define set_pte(pteptr, pteval)				\
+ do {							\
+ 	*(pteptr) = (pteval);				\
+-	asm volatile("dcf %M0" :: "U"(*pteptr));	\
++	asm volatile("dcf %M0" : : "U"(*pteptr));	\
+ } while(0)
+ #define set_pte_at(mm,addr,ptep,pteval) set_pte(ptep,pteval)
+ 
+@@ -210,7 +210,7 @@ static inline void pgd_clear(pgd_t *pgd)	{ }
+ #define set_pgd(pgdptr, pgdval)				\
+ do {							\
+ 	memcpy((pgdptr), &(pgdval), sizeof(pgd_t));	\
+-	asm volatile("dcf %M0" :: "U"(*(pgdptr)));	\
++	asm volatile("dcf %M0" : : "U"(*(pgdptr)));	\
+ } while(0)
+ 
+ static inline pud_t *pud_offset(pgd_t *pgd, unsigned long address)
+@@ -391,21 +391,21 @@ static inline pte_t pte_mkwrite(pte_t pte)	{ (pte).pte &= ~_PAGE_WP; return pte;
+ static inline int ptep_test_and_clear_young(struct vm_area_struct *vma, unsigned long addr, pte_t *ptep)
+ {
+ 	int i = test_and_clear_bit(_PAGE_BIT_ACCESSED, ptep);
+-	asm volatile("dcf %M0" :: "U"(*ptep));
++	asm volatile("dcf %M0" : : "U"(*ptep));
+ 	return i;
+ }
+ 
+ static inline pte_t ptep_get_and_clear(struct mm_struct *mm, unsigned long addr, pte_t *ptep)
+ {
+ 	unsigned long x = xchg(&ptep->pte, 0);
+-	asm volatile("dcf %M0" :: "U"(*ptep));
++	asm volatile("dcf %M0" : : "U"(*ptep));
+ 	return __pte(x);
+ }
+ 
+ static inline void ptep_set_wrprotect(struct mm_struct *mm, unsigned long addr, pte_t *ptep)
+ {
+ 	set_bit(_PAGE_BIT_WP, ptep);
+-	asm volatile("dcf %M0" :: "U"(*ptep));
++	asm volatile("dcf %M0" : : "U"(*ptep));
+ }
+ 
+ /*
+diff --git a/include/asm-frv/processor.h b/include/asm-frv/processor.h
+index 3744f2e..b8fed28 100644
+--- a/include/asm-frv/processor.h
++++ b/include/asm-frv/processor.h
+@@ -111,9 +111,9 @@ static inline void release_thread(struct task_struct *dead_task)
+ {
+ }
+ 
+-extern asmlinkage int kernel_thread(int (*fn)(void *), void * arg, unsigned long flags);
+-extern asmlinkage void save_user_regs(struct user_context *target);
+-extern asmlinkage void *restore_user_regs(const struct user_context *target, ...);
++asmlinkage int kernel_thread(int (*fn)(void *), void * arg, unsigned long flags);
++asmlinkage void save_user_regs(struct user_context *target);
++asmlinkage void *restore_user_regs(const struct user_context *target, ...);
+ 
+ #define copy_segments(tsk, mm)		do { } while (0)
+ #define release_segments(mm)		do { } while (0)
+diff --git a/include/asm-frv/spr-regs.h b/include/asm-frv/spr-regs.h
+index c2a541e..8ff9d8b 100644
+--- a/include/asm-frv/spr-regs.h
++++ b/include/asm-frv/spr-regs.h
+@@ -329,7 +329,7 @@ do {								\
+ 
+ #define restore_dampr(R, _dampr)			\
+ do {							\
+-	asm volatile("movgs %0,dampr"R :: "r"(_dampr));	\
++	asm volatile("movgs %0,dampr"R : : "r"(_dampr));	\
+ } while(0)
+ 
+ /*
+diff --git a/include/asm-frv/system.h b/include/asm-frv/system.h
+index 9f5663b..ef97869 100644
+--- a/include/asm-frv/system.h
++++ b/include/asm-frv/system.h
+@@ -22,7 +22,7 @@ struct thread_struct;
+  * `prev' will never be the same as `next'.
+  * The `mb' is to tell GCC not to cache `current' across this call.
+  */
+-extern asmlinkage
++asmlinkage
+ struct task_struct *__switch_to(struct thread_struct *prev_thread,
+ 				struct thread_struct *next_thread,
+ 				struct task_struct *prev);
+@@ -174,7 +174,7 @@ do {							\
+ /*
+  * Force strict CPU ordering.
+  */
+-#define nop()			asm volatile ("nop"::)
++#define nop()			asm volatile ("nop": :)
+ #define mb()			asm volatile ("membar" : : :"memory")
+ #define rmb()			asm volatile ("membar" : : :"memory")
+ #define wmb()			asm volatile ("membar" : : :"memory")
+diff --git a/include/asm-generic/bitops/hweight.h b/include/asm-generic/bitops/hweight.h
+index fbbc383..2c04824 100644
+--- a/include/asm-generic/bitops/hweight.h
++++ b/include/asm-generic/bitops/hweight.h
+@@ -3,9 +3,15 @@
+ 
+ #include <asm/types.h>
+ 
++#if defined(__cplusplus)
++extern "C" {
++#endif
+ extern unsigned int hweight32(unsigned int w);
+ extern unsigned int hweight16(unsigned int w);
+ extern unsigned int hweight8(unsigned int w);
+ extern unsigned long hweight64(__u64 w);
++#if defined(__cplusplus)
++}
++#endif
+ 
+ #endif /* _ASM_GENERIC_BITOPS_HWEIGHT_H_ */
+diff --git a/include/asm-h8300/bitops.h b/include/asm-h8300/bitops.h
+index cb18e3b..4debe69 100644
+--- a/include/asm-h8300/bitops.h
++++ b/include/asm-h8300/bitops.h
+@@ -39,7 +39,7 @@ static __inline__ unsigned long ffz(unsigned long word)
+ 
+ #define H8300_GEN_BITOP_CONST(OP,BIT)			    \
+ 	case BIT:					    \
+-	__asm__(OP " #" #BIT ",@%0"::"r"(b_addr):"memory"); \
++	__asm__(OP " #" #BIT ",@%0": :"r"(b_addr):"memory"); \
+ 	break;
+ 
+ #define H8300_GEN_BITOP(FNAME,OP)				      \
+@@ -59,7 +59,7 @@ static __inline__ void FNAME(int nr, volatile unsigned long* addr)    \
+ 			H8300_GEN_BITOP_CONST(OP,7)		      \
+ 		}						      \
+ 	} else {						      \
+-		__asm__(OP " %w0,@%1"::"r"(nr),"r"(b_addr):"memory"); \
++		__asm__(OP " %w0,@%1": :"r"(nr),"r"(b_addr):"memory"); \
+ 	}							      \
+ }
+ 
+diff --git a/include/asm-h8300/module.h b/include/asm-h8300/module.h
+index de23231..afbaf5a 100644
+--- a/include/asm-h8300/module.h
++++ b/include/asm-h8300/module.h
+@@ -3,7 +3,7 @@
+ /*
+  * This file contains the H8/300 architecture specific module code.
+  */
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+ #define Elf_Ehdr Elf32_Ehdr
+diff --git a/include/asm-h8300/system.h b/include/asm-h8300/system.h
+index 2c1e83f..f5ac15f 100644
+--- a/include/asm-h8300/system.h
++++ b/include/asm-h8300/system.h
+@@ -78,7 +78,7 @@ asmlinkage void resume(void);
+  * Force strict CPU ordering.
+  * Not really required on H8...
+  */
+-#define nop()  asm volatile ("nop"::)
++#define nop()  asm volatile ("nop": :)
+ #define mb()   asm volatile (""   : : :"memory")
+ #define rmb()  asm volatile (""   : : :"memory")
+ #define wmb()  asm volatile (""   : : :"memory")
+diff --git a/include/asm-ia64/gcc_intrin.h b/include/asm-ia64/gcc_intrin.h
+index e58d329..1acac4a 100644
+--- a/include/asm-ia64/gcc_intrin.h
++++ b/include/asm-ia64/gcc_intrin.h
+@@ -13,13 +13,13 @@
+ 
+ /* Optimization barrier */
+ /* The "volatile" is due to gcc bugs */
+-#define ia64_barrier()	asm volatile ("":::"memory")
++#define ia64_barrier()	asm volatile ("": : :"memory")
+ 
+-#define ia64_stop()	asm volatile (";;"::)
++#define ia64_stop()	asm volatile (";;": :)
+ 
+-#define ia64_invala_gr(regnum)	asm volatile ("invala.e r%0" :: "i"(regnum))
++#define ia64_invala_gr(regnum)	asm volatile ("invala.e r%0" : : "i"(regnum))
+ 
+-#define ia64_invala_fr(regnum)	asm volatile ("invala.e f%0" :: "i"(regnum))
++#define ia64_invala_fr(regnum)	asm volatile ("invala.e f%0" : : "i"(regnum))
+ 
+ extern void ia64_bad_param_for_setreg (void);
+ extern void ia64_bad_param_for_getreg (void);
+@@ -30,24 +30,24 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ ({										\
+ 	switch (regnum) {							\
+ 	    case _IA64_REG_PSR_L:						\
+-		    asm volatile ("mov psr.l=%0" :: "r"(val) : "memory");	\
++		    asm volatile ("mov psr.l=%0" : : "r"(val) : "memory");	\
+ 		    break;							\
+ 	    case _IA64_REG_AR_KR0 ... _IA64_REG_AR_EC:				\
+-		    asm volatile ("mov ar%0=%1" ::				\
++		    asm volatile ("mov ar%0=%1" : :				\
+ 		    			  "i" (regnum - _IA64_REG_AR_KR0),	\
+ 					  "r"(val): "memory");			\
+ 		    break;							\
+ 	    case _IA64_REG_CR_DCR ... _IA64_REG_CR_LRR1:			\
+-		    asm volatile ("mov cr%0=%1" ::				\
++		    asm volatile ("mov cr%0=%1" : :				\
+ 				          "i" (regnum - _IA64_REG_CR_DCR),	\
+ 					  "r"(val): "memory" );			\
+ 		    break;							\
+ 	    case _IA64_REG_SP:							\
+-		    asm volatile ("mov r12=%0" ::				\
++		    asm volatile ("mov r12=%0" : :				\
+ 			    		  "r"(val): "memory");			\
+ 		    break;							\
+ 	    case _IA64_REG_GP:							\
+-		    asm volatile ("mov gp=%0" :: "r"(val) : "memory");		\
++		    asm volatile ("mov gp=%0" : : "r"(val) : "memory");		\
+ 		break;								\
+ 	    default:								\
+ 		    ia64_bad_param_for_setreg();				\
+@@ -96,7 +96,7 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ ({								\
+ 	switch (mode) {						\
+ 	case ia64_hint_pause:					\
+-		asm volatile ("hint @pause" ::: "memory");	\
++		asm volatile ("hint @pause" : : : "memory");	\
+ 		break;						\
+ 	}							\
+ })
+@@ -199,31 +199,31 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ #define ia64_stfs(x, regnum)						\
+ ({									\
+ 	register double __f__ asm ("f"#regnum);				\
+-	asm volatile ("stfs [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stfs [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_stfd(x, regnum)						\
+ ({									\
+ 	register double __f__ asm ("f"#regnum);				\
+-	asm volatile ("stfd [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stfd [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_stfe(x, regnum)						\
+ ({									\
+ 	register double __f__ asm ("f"#regnum);				\
+-	asm volatile ("stfe [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stfe [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_stf8(x, regnum)						\
+ ({									\
+ 	register double __f__ asm ("f"#regnum);				\
+-	asm volatile ("stf8 [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stf8 [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_stf_spill(x, regnum)						\
+ ({										\
+ 	register double __f__ asm ("f"#regnum);					\
+-	asm volatile ("stf.spill [%0]=%1" :: "r"(x), "f"(__f__) : "memory");	\
++	asm volatile ("stf.spill [%0]=%1" : : "r"(x), "f"(__f__) : "memory");	\
+ })
+ 
+ #define ia64_fetchadd4_acq(p, inc)						\
+@@ -303,7 +303,7 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ #define ia64_cmpxchg1_acq(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg1.acq %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -312,7 +312,7 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ #define ia64_cmpxchg1_rel(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg1.rel %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -321,7 +321,7 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ #define ia64_cmpxchg2_acq(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg2.acq %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -330,7 +330,7 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ #define ia64_cmpxchg2_rel(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 											\
+ 	asm volatile ("cmpxchg2.rel %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+@@ -340,7 +340,7 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ #define ia64_cmpxchg4_acq(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg4.acq %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -349,7 +349,7 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ #define ia64_cmpxchg4_rel(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg4.rel %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -358,7 +358,7 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ #define ia64_cmpxchg8_acq(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 	asm volatile ("cmpxchg8.acq %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+@@ -367,17 +367,17 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ #define ia64_cmpxchg8_rel(ptr, new, old)						\
+ ({											\
+ 	__u64 ia64_intri_res;								\
+-	asm volatile ("mov ar.ccv=%0;;" :: "rO"(old));					\
++	asm volatile ("mov ar.ccv=%0;;" : : "rO"(old));					\
+ 											\
+ 	asm volatile ("cmpxchg8.rel %0=[%1],%2,ar.ccv":					\
+ 			      "=r"(ia64_intri_res) : "r"(ptr), "r"(new) : "memory");	\
+ 	ia64_intri_res;									\
+ })
+ 
+-#define ia64_mf()	asm volatile ("mf" ::: "memory")
+-#define ia64_mfa()	asm volatile ("mf.a" ::: "memory")
++#define ia64_mf()	asm volatile ("mf" : : : "memory")
++#define ia64_mfa()	asm volatile ("mf.a" : : : "memory")
+ 
+-#define ia64_invala() asm volatile ("invala" ::: "memory")
++#define ia64_invala() asm volatile ("invala" : : : "memory")
+ 
+ #define ia64_thash(addr)							\
+ ({										\
+@@ -386,8 +386,8 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ 	ia64_intri_res;								\
+ })
+ 
+-#define ia64_srlz_i()	asm volatile (";; srlz.i ;;" ::: "memory")
+-#define ia64_srlz_d()	asm volatile (";; srlz.d" ::: "memory");
++#define ia64_srlz_i()	asm volatile (";; srlz.i ;;" : : : "memory")
++#define ia64_srlz_d()	asm volatile (";; srlz.d" : : : "memory");
+ 
+ #ifdef HAVE_SERIALIZE_DIRECTIVE
+ # define ia64_dv_serialize_data()		asm volatile (".serialize.data");
+@@ -397,18 +397,18 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ # define ia64_dv_serialize_instruction()
+ #endif
+ 
+-#define ia64_nop(x)	asm volatile ("nop %0"::"i"(x));
++#define ia64_nop(x)	asm volatile ("nop %0": :"i"(x));
+ 
+-#define ia64_itci(addr)	asm volatile ("itc.i %0;;" :: "r"(addr) : "memory")
++#define ia64_itci(addr)	asm volatile ("itc.i %0;;" : : "r"(addr) : "memory")
+ 
+-#define ia64_itcd(addr)	asm volatile ("itc.d %0;;" :: "r"(addr) : "memory")
++#define ia64_itcd(addr)	asm volatile ("itc.d %0;;" : : "r"(addr) : "memory")
+ 
+ 
+ #define ia64_itri(trnum, addr) asm volatile ("itr.i itr[%0]=%1"				\
+-					     :: "r"(trnum), "r"(addr) : "memory")
++					     : : "r"(trnum), "r"(addr) : "memory")
+ 
+ #define ia64_itrd(trnum, addr) asm volatile ("itr.d dtr[%0]=%1"				\
+-					     :: "r"(trnum), "r"(addr) : "memory")
++					     : : "r"(trnum), "r"(addr) : "memory")
+ 
+ #define ia64_tpa(addr)								\
+ ({										\
+@@ -418,22 +418,22 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ })
+ 
+ #define __ia64_set_dbr(index, val)						\
+-	asm volatile ("mov dbr[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov dbr[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_ibr(index, val)						\
+-	asm volatile ("mov ibr[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov ibr[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_pkr(index, val)						\
+-	asm volatile ("mov pkr[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov pkr[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_pmc(index, val)						\
+-	asm volatile ("mov pmc[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov pmc[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_pmd(index, val)						\
+-	asm volatile ("mov pmd[%0]=%1" :: "r"(index), "r"(val) : "memory")
++	asm volatile ("mov pmd[%0]=%1" : : "r"(index), "r"(val) : "memory")
+ 
+ #define ia64_set_rr(index, val)							\
+-	asm volatile ("mov rr[%0]=%1" :: "r"(index), "r"(val) : "memory");
++	asm volatile ("mov rr[%0]=%1" : : "r"(index), "r"(val) : "memory");
+ 
+ #define ia64_get_cpuid(index)								\
+ ({											\
+@@ -485,35 +485,35 @@ register unsigned long ia64_r13 asm ("r13") __attribute_used__;
+ 	ia64_intri_res;								\
+ })
+ 
+-#define ia64_fc(addr)	asm volatile ("fc %0" :: "r"(addr) : "memory")
++#define ia64_fc(addr)	asm volatile ("fc %0" : : "r"(addr) : "memory")
+ 
+ 
+-#define ia64_sync_i()	asm volatile (";; sync.i" ::: "memory")
++#define ia64_sync_i()	asm volatile (";; sync.i" : : : "memory")
+ 
+-#define ia64_ssm(mask)	asm volatile ("ssm %0":: "i"((mask)) : "memory")
+-#define ia64_rsm(mask)	asm volatile ("rsm %0":: "i"((mask)) : "memory")
+-#define ia64_sum(mask)	asm volatile ("sum %0":: "i"((mask)) : "memory")
+-#define ia64_rum(mask)	asm volatile ("rum %0":: "i"((mask)) : "memory")
++#define ia64_ssm(mask)	asm volatile ("ssm %0": : "i"((mask)) : "memory")
++#define ia64_rsm(mask)	asm volatile ("rsm %0": : "i"((mask)) : "memory")
++#define ia64_sum(mask)	asm volatile ("sum %0": : "i"((mask)) : "memory")
++#define ia64_rum(mask)	asm volatile ("rum %0": : "i"((mask)) : "memory")
+ 
+-#define ia64_ptce(addr)	asm volatile ("ptc.e %0" :: "r"(addr))
++#define ia64_ptce(addr)	asm volatile ("ptc.e %0" : : "r"(addr))
+ 
+ #define ia64_ptcga(addr, size)							\
+ do {										\
+-	asm volatile ("ptc.ga %0,%1" :: "r"(addr), "r"(size) : "memory");	\
++	asm volatile ("ptc.ga %0,%1" : : "r"(addr), "r"(size) : "memory");	\
+ 	ia64_dv_serialize_data();						\
+ } while (0)
+ 
+ #define ia64_ptcl(addr, size)							\
+ do {										\
+-	asm volatile ("ptc.l %0,%1" :: "r"(addr), "r"(size) : "memory");	\
++	asm volatile ("ptc.l %0,%1" : : "r"(addr), "r"(size) : "memory");	\
+ 	ia64_dv_serialize_data();						\
+ } while (0)
+ 
+ #define ia64_ptri(addr, size)						\
+-	asm volatile ("ptr.i %0,%1" :: "r"(addr), "r"(size) : "memory")
++	asm volatile ("ptr.i %0,%1" : : "r"(addr), "r"(size) : "memory")
+ 
+ #define ia64_ptrd(addr, size)						\
+-	asm volatile ("ptr.d %0,%1" :: "r"(addr), "r"(size) : "memory")
++	asm volatile ("ptr.d %0,%1" : : "r"(addr), "r"(size) : "memory")
+ 
+ /* Values for lfhint in ia64_lfetch and ia64_lfetch_fault */
+ 
+@@ -544,16 +544,16 @@ do {										\
+ ({									\
+         switch (lfhint) {						\
+         case ia64_lfhint_none:						\
+-                asm volatile ("lfetch.excl [%0]" :: "r"(y));		\
++                asm volatile ("lfetch.excl [%0]" : : "r"(y));		\
+                 break;							\
+         case ia64_lfhint_nt1:						\
+-                asm volatile ("lfetch.excl.nt1 [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.excl.nt1 [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nt2:						\
+-                asm volatile ("lfetch.excl.nt2 [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.excl.nt2 [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nta:						\
+-                asm volatile ("lfetch.excl.nta [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.excl.nta [%0]" : : "r"(y));	\
+                 break;							\
+         }								\
+ })
+@@ -580,16 +580,16 @@ do {										\
+ ({									\
+         switch (lfhint) {						\
+         case ia64_lfhint_none:						\
+-                asm volatile ("lfetch.fault.excl [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.fault.excl [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nt1:						\
+-                asm volatile ("lfetch.fault.excl.nt1 [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.fault.excl.nt1 [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nt2:						\
+-                asm volatile ("lfetch.fault.excl.nt2 [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.fault.excl.nt2 [%0]" : : "r"(y));	\
+                 break;							\
+         case ia64_lfhint_nta:						\
+-                asm volatile ("lfetch.fault.excl.nta [%0]" :: "r"(y));	\
++                asm volatile ("lfetch.fault.excl.nta [%0]" : : "r"(y));	\
+                 break;							\
+         }								\
+ })
+@@ -600,7 +600,7 @@ do {								\
+ 		      "(p6) ssm psr.i;"				\
+ 		      "(p7) rsm psr.i;;"			\
+ 		      "(p6) srlz.d"				\
+-		      :: "r"((x)) : "p6", "p7", "memory");	\
++		      : : "r"((x)) : "p6", "p7", "memory");	\
+ } while (0)
+ 
+ #endif /* _ASM_IA64_GCC_INTRIN_H */
+diff --git a/include/asm-ia64/spinlock.h b/include/asm-ia64/spinlock.h
+index 0229fb9..792214e 100644
+--- a/include/asm-ia64/spinlock.h
++++ b/include/asm-ia64/spinlock.h
+@@ -91,7 +91,7 @@ __raw_spin_lock_flags (raw_spinlock_t *lock, unsigned long flags)
+ /* Unlock by doing an ordered store and releasing the cacheline with nta */
+ static inline void __raw_spin_unlock(raw_spinlock_t *x) {
+ 	barrier();
+-	asm volatile ("st4.rel.nta [%0] = r0\n\t" :: "r"(x));
++	asm volatile ("st4.rel.nta [%0] = r0\n\t" : : "r"(x));
+ }
+ 
+ #else /* !ASM_SUPPORTED */
+@@ -150,7 +150,7 @@ do {										\
+ 		"cmpxchg4.acq r2 = [%0], r29, ar.ccv;;\n"			\
+ 		"cmp4.eq p0,p7 = r0, r2\n"					\
+ 		"(p7) br.cond.spnt.few 1b;;\n"					\
+-		:: "r"(rw) : "ar.ccv", "p7", "r2", "r29", "memory");		\
++		: : "r"(rw) : "ar.ccv", "p7", "r2", "r29", "memory");		\
+ } while(0)
+ 
+ #define __raw_write_trylock(rw)							\
+@@ -169,7 +169,7 @@ static inline void __raw_write_unlock(raw_rwlock_t *x)
+ {
+ 	u8 *y = (u8 *)x;
+ 	barrier();
+-	asm volatile ("st1.rel.nta [%0] = r0\n\t" :: "r"(y+3) : "memory" );
++	asm volatile ("st1.rel.nta [%0] = r0\n\t" : : "r"(y+3) : "memory" );
+ }
+ 
+ #else /* !ASM_SUPPORTED */
+diff --git a/include/asm-m32r/module.h b/include/asm-m32r/module.h
+index eb73ee0..8de3326 100644
+--- a/include/asm-m32r/module.h
++++ b/include/asm-m32r/module.h
+@@ -1,7 +1,7 @@
+ #ifndef _ASM_M32R_MODULE_H
+ #define _ASM_M32R_MODULE_H
+ 
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr	Elf32_Shdr
+ #define Elf_Sym		Elf32_Sym
+diff --git a/include/asm-m68k/system.h b/include/asm-m68k/system.h
+index caa9b16..6f7bec3 100644
+--- a/include/asm-m68k/system.h
++++ b/include/asm-m68k/system.h
+@@ -163,23 +163,23 @@ static inline unsigned long __xchg(unsigned long x, volatile void * ptr, int siz
+ #define __HAVE_ARCH_CMPXCHG	1
+ 
+ static inline unsigned long __cmpxchg(volatile void *p, unsigned long old,
+-				      unsigned long new, int size)
++				      unsigned long n, int size)
+ {
+ 	switch (size) {
+ 	case 1:
+ 		__asm__ __volatile__ ("casb %0,%2,%1"
+ 				      : "=d" (old), "=m" (*(char *)p)
+-				      : "d" (new), "0" (old), "m" (*(char *)p));
++				      : "d" (n), "0" (old), "m" (*(char *)p));
+ 		break;
+ 	case 2:
+ 		__asm__ __volatile__ ("casw %0,%2,%1"
+ 				      : "=d" (old), "=m" (*(short *)p)
+-				      : "d" (new), "0" (old), "m" (*(short *)p));
++				      : "d" (n), "0" (old), "m" (*(short *)p));
+ 		break;
+ 	case 4:
+ 		__asm__ __volatile__ ("casl %0,%2,%1"
+ 				      : "=d" (old), "=m" (*(int *)p)
+-				      : "d" (new), "0" (old), "m" (*(int *)p));
++				      : "d" (n), "0" (old), "m" (*(int *)p));
+ 		break;
+ 	}
+ 	return old;
+diff --git a/include/asm-m68knommu/mcfwdebug.h b/include/asm-m68knommu/mcfwdebug.h
+index 27f70e4..10a0aaa 100644
+--- a/include/asm-m68knommu/mcfwdebug.h
++++ b/include/asm-m68knommu/mcfwdebug.h
+@@ -108,10 +108,10 @@ static inline void wdebug(int reg, unsigned long data) {
+ 	asm(	"move.l	%0, %%a0\n\t"
+ 		".word	0xfbd0\n\t"
+ 		".word	0x0003\n\t"
+-	    :: "g" (dbg) : "a0");
++	    : : "g" (dbg) : "a0");
+ #else
+ 	// And this is for when it does
+-	asm(	"wdebug	(%0)" :: "a" (dbg));
++	asm(	"wdebug	(%0)" : : "a" (dbg));
+ #endif
+ }
+ 
+diff --git a/include/asm-m68knommu/system.h b/include/asm-m68knommu/system.h
+index 15b4c7d..121396e 100644
+--- a/include/asm-m68knommu/system.h
++++ b/include/asm-m68knommu/system.h
+@@ -100,7 +100,7 @@ asmlinkage void resume(void);
+  * Force strict CPU ordering.
+  * Not really required on m68k...
+  */
+-#define nop()  asm volatile ("nop"::)
++#define nop()  asm volatile ("nop": :)
+ #define mb()   asm volatile (""   : : :"memory")
+ #define rmb()  asm volatile (""   : : :"memory")
+ #define wmb()  asm volatile (""   : : :"memory")
+@@ -194,14 +194,14 @@ static inline unsigned long __xchg(unsigned long x, volatile void * ptr, int siz
+ #define __HAVE_ARCH_CMPXCHG	1
+ 
+ static __inline__ unsigned long
+-cmpxchg(volatile int *p, int old, int new)
++cmpxchg(volatile int *p, int old, int n)
+ {
+ 	unsigned long flags;
+ 	int prev;
+ 
+ 	local_irq_save(flags);
+ 	if ((prev = *p) == old)
+-		*p = new;
++		*p = n;
+ 	local_irq_restore(flags);
+ 	return(prev);
+ }
+diff --git a/include/asm-mips/edac.h b/include/asm-mips/edac.h
+index 4da0c1f..9c7273c 100644
+--- a/include/asm-mips/edac.h
++++ b/include/asm-mips/edac.h
+@@ -14,7 +14,7 @@ static inline void atomic_scrub(void *va, u32 size)
+ 		 * Very carefully read and write to memory atomically
+ 		 * so we are interrupt, DMA and SMP safe.
+ 		 *
+-		 * Intel: asm("lock; addl $0, %0"::"m"(*virt_addr));
++		 * Intel: asm("lock; addl $0, %0": :"m"(*virt_addr));
+ 		 */
+ 
+ 		__asm__ __volatile__ (
+diff --git a/include/asm-mips/fpu.h b/include/asm-mips/fpu.h
+index e59d4c0..b2169fe 100644
+--- a/include/asm-mips/fpu.h
++++ b/include/asm-mips/fpu.h
+@@ -28,11 +28,11 @@
+ struct sigcontext;
+ struct sigcontext32;
+ 
+-extern asmlinkage int (*save_fp_context)(struct sigcontext __user *sc);
+-extern asmlinkage int (*restore_fp_context)(struct sigcontext __user *sc);
++asmlinkage int (*save_fp_context)(struct sigcontext __user *sc);
++asmlinkage int (*restore_fp_context)(struct sigcontext __user *sc);
+ 
+-extern asmlinkage int (*save_fp_context32)(struct sigcontext32 __user *sc);
+-extern asmlinkage int (*restore_fp_context32)(struct sigcontext32 __user *sc);
++asmlinkage int (*save_fp_context32)(struct sigcontext32 __user *sc);
++asmlinkage int (*restore_fp_context32)(struct sigcontext32 __user *sc);
+ 
+ extern void fpu_emulator_init_fpu(void);
+ extern void _init_fpu(void);
+diff --git a/include/asm-mips/io.h b/include/asm-mips/io.h
+index e62058b..957f9b7 100644
+--- a/include/asm-mips/io.h
++++ b/include/asm-mips/io.h
+@@ -455,7 +455,7 @@ __BUILDIO(q, u64)
+ static inline void writes##bwlq(volatile void __iomem *mem,		\
+ 				const void *addr, unsigned int count)	\
+ {									\
+-	const volatile type *__addr = addr;				\
++  const volatile type *__addr = (const type *) addr;			\
+ 									\
+ 	while (count--) {						\
+ 		__mem_write##bwlq(*__addr, mem);			\
+@@ -466,7 +466,7 @@ static inline void writes##bwlq(volatile void __iomem *mem,		\
+ static inline void reads##bwlq(volatile void __iomem *mem, void *addr,	\
+ 			       unsigned int count)			\
+ {									\
+-	volatile type *__addr = addr;					\
++  volatile type *__addr = (const type *) addr;				\
+ 									\
+ 	while (count--) {						\
+ 		*__addr = __mem_read##bwlq(mem);			\
+@@ -479,7 +479,7 @@ static inline void reads##bwlq(volatile void __iomem *mem, void *addr,	\
+ static inline void outs##bwlq(unsigned long port, const void *addr,	\
+ 			      unsigned int count)			\
+ {									\
+-	const volatile type *__addr = addr;				\
++  const volatile type *__addr = (const type *) addr;			\
+ 									\
+ 	while (count--) {						\
+ 		__mem_out##bwlq(*__addr, port);				\
+@@ -490,7 +490,7 @@ static inline void outs##bwlq(unsigned long port, const void *addr,	\
+ static inline void ins##bwlq(unsigned long port, void *addr,		\
+ 			     unsigned int count)			\
+ {									\
+-	volatile type *__addr = addr;					\
++  volatile type *__addr = (const type *) addr;				\
+ 									\
+ 	while (count--) {						\
+ 		*__addr = __mem_in##bwlq(port);				\
+@@ -512,7 +512,7 @@ BUILDSTRING(q, u64)
+ 
+ 
+ /* Depends on MIPS II instruction set */
+-#define mmiowb() asm volatile ("sync" ::: "memory")
++#define mmiowb() asm volatile ("sync" : : : "memory")
+ 
+ static inline void memset_io(volatile void __iomem *addr, unsigned char val, int count)
+ {
+diff --git a/include/asm-mips/ip32/mace.h b/include/asm-mips/ip32/mace.h
+index d08d7c6..5874977 100644
+--- a/include/asm-mips/ip32/mace.h
++++ b/include/asm-mips/ip32/mace.h
+@@ -308,11 +308,9 @@ struct mace_perif {
+  */
+ 
+ /* Parallel port */
+-struct mace_parallel {
+-};
++EMPTY_STRUCT_DECL(mace_parallel);
+ 
+-struct mace_ecp1284 {	/* later... */
+-};
++EMPTY_STRUCT_DECL(mace_ecp1284);/* later... */
+ 
+ /* Serial port */
+ struct mace_serial {
+diff --git a/include/asm-mips/mips-boards/sim.h b/include/asm-mips/mips-boards/sim.h
+index acb7c23..3b85e6a 100644
+--- a/include/asm-mips/mips-boards/sim.h
++++ b/include/asm-mips/mips-boards/sim.h
+@@ -31,7 +31,7 @@
+ ({					   \
+ 	__asm__  __volatile__( \
+         "sltiu $0,$0, %0" \
+-		::"i"(code)					\
++		: :"i"(code)					\
+ 		); \
+ })
+ 
+diff --git a/include/asm-mips/mipsregs.h b/include/asm-mips/mipsregs.h
+index aa17f65..cdd0488 100644
+--- a/include/asm-mips/mipsregs.h
++++ b/include/asm-mips/mipsregs.h
+@@ -1049,15 +1049,15 @@ do {									\
+ #define mfhi2() ({ long mfhi2; __asm__("mfhi %0, $ac2" : "=r" (mfhi2)); mfhi2;})
+ #define mfhi3() ({ long mfhi3; __asm__("mfhi %0, $ac3" : "=r" (mfhi3)); mfhi3;})
+ 
+-#define mtlo0(x) __asm__("mtlo %0, $ac0" ::"r" (x))
+-#define mtlo1(x) __asm__("mtlo %0, $ac1" ::"r" (x))
+-#define mtlo2(x) __asm__("mtlo %0, $ac2" ::"r" (x))
+-#define mtlo3(x) __asm__("mtlo %0, $ac3" ::"r" (x))
++#define mtlo0(x) __asm__("mtlo %0, $ac0" : :"r" (x))
++#define mtlo1(x) __asm__("mtlo %0, $ac1" : :"r" (x))
++#define mtlo2(x) __asm__("mtlo %0, $ac2" : :"r" (x))
++#define mtlo3(x) __asm__("mtlo %0, $ac3" : :"r" (x))
+ 
+-#define mthi0(x) __asm__("mthi %0, $ac0" ::"r" (x))
+-#define mthi1(x) __asm__("mthi %0, $ac1" ::"r" (x))
+-#define mthi2(x) __asm__("mthi %0, $ac2" ::"r" (x))
+-#define mthi3(x) __asm__("mthi %0, $ac3" ::"r" (x))
++#define mthi0(x) __asm__("mthi %0, $ac0" : :"r" (x))
++#define mthi1(x) __asm__("mthi %0, $ac1" : :"r" (x))
++#define mthi2(x) __asm__("mthi %0, $ac2" : :"r" (x))
++#define mthi3(x) __asm__("mthi %0, $ac3" : :"r" (x))
+ 
+ #else
+ 
+@@ -1387,13 +1387,13 @@ clear_c0_##name(unsigned int clear)				\
+ }								\
+ 								\
+ static inline unsigned int					\
+-change_c0_##name(unsigned int change, unsigned int new)		\
++change_c0_##name(unsigned int change, unsigned int n)		\
+ {								\
+ 	unsigned int res;					\
+ 								\
+ 	res = read_c0_##name();					\
+ 	res &= ~change;						\
+-	res |= (new & change);					\
++	res |= (n & change);					\
+ 	write_c0_##name(res);					\
+ 								\
+ 	return res;						\
+@@ -1491,7 +1491,7 @@ clear_c0_##name(unsigned int clear)				\
+ }								\
+ 								\
+ static inline unsigned int					\
+-change_c0_##name(unsigned int change, unsigned int new)		\
++change_c0_##name(unsigned int change, unsigned int n)		\
+ {								\
+ 	unsigned int res;					\
+ 	unsigned int omt;					\
+@@ -1502,7 +1502,7 @@ change_c0_##name(unsigned int change, unsigned int new)		\
+ 	omt = __dmt();						\
+ 	res = read_c0_##name();					\
+ 	res &= ~change;						\
+-	res |= (new & change);					\
++	res |= (n & change);					\
+ 	write_c0_##name(res);					\
+ 	__emt(omt);						\
+ 	local_irq_restore(flags);				\
+diff --git a/include/asm-mips/paccess.h b/include/asm-mips/paccess.h
+index c2394f8..434f89e 100644
+--- a/include/asm-mips/paccess.h
++++ b/include/asm-mips/paccess.h
+@@ -22,8 +22,8 @@
+ #define __PA_ADDR	".dword"
+ #endif
+ 
+-extern asmlinkage void handle_ibe(void);
+-extern asmlinkage void handle_dbe(void);
++asmlinkage void handle_ibe(void);
++asmlinkage void handle_dbe(void);
+ 
+ #define put_dbe(x, ptr) __put_dbe((x), (ptr), sizeof(*(ptr)))
+ #define get_dbe(x, ptr) __get_dbe((x), (ptr), sizeof(*(ptr)))
+diff --git a/include/asm-mips/processor.h b/include/asm-mips/processor.h
+index 83bc945..0c85b5d 100644
+--- a/include/asm-mips/processor.h
++++ b/include/asm-mips/processor.h
+@@ -233,7 +233,7 @@ unsigned long get_wchan(struct task_struct *p);
+  * overhead of a function call by forcing the compiler to save the return
+  * address register on the stack.
+  */
+-#define return_address() ({__asm__ __volatile__("":::"$31");__builtin_return_address(0);})
++#define return_address() ({__asm__ __volatile__("": : :"$31");__builtin_return_address(0);})
+ 
+ #ifdef CONFIG_CPU_HAS_PREFETCH
+ 
+diff --git a/include/asm-mips/ptrace.h b/include/asm-mips/ptrace.h
+index 786f7e3..681e9ce 100644
+--- a/include/asm-mips/ptrace.h
++++ b/include/asm-mips/ptrace.h
+@@ -84,7 +84,7 @@ struct pt_regs {
+ #define instruction_pointer(regs) ((regs)->cp0_epc)
+ #define profile_pc(regs) instruction_pointer(regs)
+ 
+-extern asmlinkage void do_syscall_trace(struct pt_regs *regs, int entryexit);
++asmlinkage void do_syscall_trace(struct pt_regs *regs, int entryexit);
+ 
+ extern NORET_TYPE void die(const char *, const struct pt_regs *) ATTRIB_NORET;
+ 
+diff --git a/include/asm-mips/smp.h b/include/asm-mips/smp.h
+index dc77002..73cd0d9 100644
+--- a/include/asm-mips/smp.h
++++ b/include/asm-mips/smp.h
+@@ -111,7 +111,7 @@ static inline void smp_send_reschedule(int cpu)
+ 	core_send_ipi(cpu, SMP_RESCHEDULE_YOURSELF);
+ }
+ 
+-extern asmlinkage void smp_call_function_interrupt(void);
++void smp_call_function_interrupt(void);
+ 
+ #endif /* CONFIG_SMP */
+ 
+diff --git a/include/asm-mips/system.h b/include/asm-mips/system.h
+index a944eda..8345f55 100644
+--- a/include/asm-mips/system.h
++++ b/include/asm-mips/system.h
+@@ -27,7 +27,7 @@
+  * switch_to(n) should switch tasks to task nr n, first
+  * checking that n isn't the current task, in which case it does nothing.
+  */
+-extern asmlinkage void *resume(void *last, void *next, void *next_ti);
++asmlinkage void *resume(void *last, void *next, void *next_ti);
+ 
+ struct task_struct;
+ 
+@@ -189,9 +189,9 @@ static inline unsigned long __xchg(unsigned long x, volatile void * ptr, int siz
+ {
+ 	switch (size) {
+ 	case 4:
+-		return __xchg_u32(ptr, x);
++	  return __xchg_u32((volatile int *)ptr, x);
+ 	case 8:
+-		return __xchg_u64(ptr, x);
++	  return __xchg_u64((volatile __u64 *)ptr, x);
+ 	}
+ 	__xchg_called_with_bad_pointer();
+ 	return x;
+diff --git a/include/asm-parisc/system.h b/include/asm-parisc/system.h
+index ee80c92..6173c9e 100644
+--- a/include/asm-parisc/system.h
++++ b/include/asm-parisc/system.h
+@@ -122,7 +122,7 @@ static inline void set_eiem(unsigned long val)
+ ** The __asm__ op below simple prevents gcc/ld from reordering
+ ** instructions across the mb() "call".
+ */
+-#define mb()		__asm__ __volatile__("":::"memory")	/* barrier() */
++#define mb()		__asm__ __volatile__("": : :"memory")	/* barrier() */
+ #define rmb()		mb()
+ #define wmb()		mb()
+ #define smp_mb()	mb()
+diff --git a/include/asm-powerpc/iseries/hv_call_xm.h b/include/asm-powerpc/iseries/hv_call_xm.h
+index 392ac3f..46da613 100644
+--- a/include/asm-powerpc/iseries/hv_call_xm.h
++++ b/include/asm-powerpc/iseries/hv_call_xm.h
+@@ -50,7 +50,7 @@ static inline u64 HvCallXm_connectBusUnit(u16 busNumber, u8 subBusNumber,
+ {
+ 	return HvCall5(HvCallXmConnectBusUnit, busNumber,
+ 			(subBusNumber << 8) | deviceId, interruptToken, 0,
+-			0 /* HvLpConfig::mapDsaToQueueIndex(HvLpDSA(busNumber, xBoard, xCard)) */);
++			0 /* HvLpConfig: :mapDsaToQueueIndex(HvLpDSA(busNumber, xBoard, xCard)) */);
+ }
+ 
+ static inline u64 HvCallXm_loadTod(void)
+diff --git a/include/asm-powerpc/reg.h b/include/asm-powerpc/reg.h
+index e775ff1..bc30d18 100644
+--- a/include/asm-powerpc/reg.h
++++ b/include/asm-powerpc/reg.h
+@@ -745,8 +745,8 @@
+ 			asm volatile("mftbu %0" : "=r" (rval)); rval;})
+ #endif /* !__powerpc64__ */
+ 
+-#define mttbl(v)	asm volatile("mttbl %0":: "r"(v))
+-#define mttbu(v)	asm volatile("mttbu %0":: "r"(v))
++#define mttbl(v)	asm volatile("mttbl %0": : "r"(v))
++#define mttbu(v)	asm volatile("mttbu %0": : "r"(v))
+ 
+ #ifdef CONFIG_PPC32
+ #define mfsrin(v)	({unsigned int rval; \
+diff --git a/include/asm-ppc/system.h b/include/asm-ppc/system.h
+index 51df94c..3d62efe 100644
+--- a/include/asm-ppc/system.h
++++ b/include/asm-ppc/system.h
+@@ -187,7 +187,7 @@ extern inline void * xchg_ptr(void * m, void * val)
+ #define __HAVE_ARCH_CMPXCHG	1
+ 
+ static __inline__ unsigned long
+-__cmpxchg_u32(volatile unsigned int *p, unsigned int old, unsigned int new)
++__cmpxchg_u32(volatile unsigned int *p, unsigned int old, unsigned int n)
+ {
+ 	unsigned int prev;
+ 
+@@ -203,7 +203,7 @@ __cmpxchg_u32(volatile unsigned int *p, unsigned int old, unsigned int new)
+ #endif /* CONFIG_SMP */
+ "2:"
+ 	: "=&r" (prev), "=m" (*p)
+-	: "r" (p), "r" (old), "r" (new), "m" (*p)
++	: "r" (p), "r" (old), "r" (n), "m" (*p)
+ 	: "cc", "memory");
+ 
+ 	return prev;
+@@ -214,14 +214,14 @@ __cmpxchg_u32(volatile unsigned int *p, unsigned int old, unsigned int new)
+ extern void __cmpxchg_called_with_bad_pointer(void);
+ 
+ static __inline__ unsigned long
+-__cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
++__cmpxchg(volatile void *ptr, unsigned long old, unsigned long n, int size)
+ {
+ 	switch (size) {
+ 	case 4:
+-		return __cmpxchg_u32(ptr, old, new);
++		return __cmpxchg_u32(ptr, old, n);
+ #if 0	/* we don't have __cmpxchg_u64 on 32-bit PPC */
+ 	case 8:
+-		return __cmpxchg_u64(ptr, old, new);
++		return __cmpxchg_u64(ptr, old, n);
+ #endif /* 0 */
+ 	}
+ 	__cmpxchg_called_with_bad_pointer();
+diff --git a/include/asm-s390/system.h b/include/asm-s390/system.h
+index 44bda78..742ca0b 100644
+--- a/include/asm-s390/system.h
++++ b/include/asm-s390/system.h
+@@ -208,7 +208,7 @@ static inline unsigned long __xchg(unsigned long x, void * ptr, int size)
+ extern void __cmpxchg_called_with_bad_pointer(void);
+ 
+ static inline unsigned long
+-__cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
++__cmpxchg(volatile void *ptr, unsigned long old, unsigned long n, int size)
+ {
+ 	unsigned long addr, prev, tmp;
+ 	int shift;
+@@ -231,7 +231,7 @@ __cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
+ 			"	jnz	0b\n"
+ 			"1:"
+ 			: "=&d" (prev), "=&d" (tmp)
+-			: "d" (old << shift), "d" (new << shift), "a" (ptr),
++			: "d" (old << shift), "d" (n << shift), "a" (ptr),
+ 			  "d" (~(255 << shift))
+ 			: "memory", "cc");
+ 		return prev >> shift;
+@@ -252,21 +252,21 @@ __cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
+ 			"	jnz	0b\n"
+ 			"1:"
+ 			: "=&d" (prev), "=&d" (tmp)
+-			: "d" (old << shift), "d" (new << shift), "a" (ptr),
++			: "d" (old << shift), "d" (n << shift), "a" (ptr),
+ 			  "d" (~(65535 << shift))
+ 			: "memory", "cc");
+ 		return prev >> shift;
+ 	case 4:
+ 		asm volatile(
+ 			"	cs	%0,%2,0(%3)\n"
+-			: "=&d" (prev) : "0" (old), "d" (new), "a" (ptr)
++			: "=&d" (prev) : "0" (old), "d" (n), "a" (ptr)
+ 			: "memory", "cc");
+ 		return prev;
+ #ifdef __s390x__
+ 	case 8:
+ 		asm volatile(
+ 			"	csg	%0,%2,0(%3)\n"
+-			: "=&d" (prev) : "0" (old), "d" (new), "a" (ptr)
++			: "=&d" (prev) : "0" (old), "d" (n), "a" (ptr)
+ 			: "memory", "cc");
+ 		return prev;
+ #endif /* __s390x__ */
+diff --git a/include/asm-sh/module.h b/include/asm-sh/module.h
+index 118d5a2..05ba528 100644
+--- a/include/asm-sh/module.h
++++ b/include/asm-sh/module.h
+@@ -5,9 +5,7 @@
+  * This file contains the SH architecture specific module code.
+  */
+ 
+-struct mod_arch_specific {
+-	/* Nothing to see here .. */
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific); /* Nothing to see here .. */
+ 
+ #define Elf_Shdr		Elf32_Shdr
+ #define Elf_Sym			Elf32_Sym
+diff --git a/include/asm-sh64/module.h b/include/asm-sh64/module.h
+index c313650..ead1e17 100644
+--- a/include/asm-sh64/module.h
++++ b/include/asm-sh64/module.h
+@@ -4,9 +4,7 @@
+  * This file contains the SH architecture specific module code.
+  */
+ 
+-struct mod_arch_specific {
+-	/* empty */
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr		Elf32_Shdr
+ #define Elf_Sym			Elf32_Sym
+diff --git a/include/asm-sparc/module.h b/include/asm-sparc/module.h
+index cbd9e67..776af53 100644
+--- a/include/asm-sparc/module.h
++++ b/include/asm-sparc/module.h
+@@ -1,6 +1,6 @@
+ #ifndef _ASM_SPARC_MODULE_H
+ #define _ASM_SPARC_MODULE_H
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+ #define Elf_Ehdr Elf32_Ehdr
+diff --git a/include/asm-sparc/system.h b/include/asm-sparc/system.h
+index 2655d14..9853a88 100644
+--- a/include/asm-sparc/system.h
++++ b/include/asm-sparc/system.h
+@@ -170,9 +170,9 @@ extern void fpsave(unsigned long *fpregs, unsigned long *fsr,
+ #define wmb()	mb()
+ #define read_barrier_depends()	do { } while(0)
+ #define set_mb(__var, __value)  do { __var = __value; mb(); } while(0)
+-#define smp_mb()	__asm__ __volatile__("":::"memory")
+-#define smp_rmb()	__asm__ __volatile__("":::"memory")
+-#define smp_wmb()	__asm__ __volatile__("":::"memory")
++#define smp_mb()	__asm__ __volatile__("": : :"memory")
++#define smp_rmb()	__asm__ __volatile__("": : :"memory")
++#define smp_wmb()	__asm__ __volatile__("": : :"memory")
+ #define smp_read_barrier_depends()	do { } while(0)
+ 
+ #define nop() __asm__ __volatile__ ("nop")
+diff --git a/include/asm-sparc/vaddrs.h b/include/asm-sparc/vaddrs.h
+index 9109739..c067acf 100644
+--- a/include/asm-sparc/vaddrs.h
++++ b/include/asm-sparc/vaddrs.h
+@@ -20,7 +20,7 @@
+ #define SRMMU_MIN_NOCACHE_PAGES (550)
+ #define SRMMU_MAX_NOCACHE_PAGES	(1280)
+ 
+-/* The following constant is used in mm/srmmu.c::srmmu_nocache_calcsize()
++/* The following constant is used in mm/srmmu.c: :srmmu_nocache_calcsize()
+  * to determine the amount of memory that will be reserved as nocache:
+  *
+  * 256 pages will be taken as nocache per each
+diff --git a/include/asm-sparc64/module.h b/include/asm-sparc64/module.h
+index 3d77ba4..fa77dc6 100644
+--- a/include/asm-sparc64/module.h
++++ b/include/asm-sparc64/module.h
+@@ -1,6 +1,6 @@
+ #ifndef _ASM_SPARC64_MODULE_H
+ #define _ASM_SPARC64_MODULE_H
+-struct mod_arch_specific { };
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ #define Elf_Shdr Elf64_Shdr
+ #define Elf_Sym Elf64_Sym
+ #define Elf_Ehdr Elf64_Ehdr
+diff --git a/include/asm-sparc64/system.h b/include/asm-sparc64/system.h
+index 99a669c..f038640 100644
+--- a/include/asm-sparc64/system.h
++++ b/include/asm-sparc64/system.h
+@@ -86,9 +86,9 @@ do {	__asm__ __volatile__("ba,pt	%%xcc, 1f\n\t" \
+ #define smp_wmb()	wmb()
+ #define smp_read_barrier_depends()	read_barrier_depends()
+ #else
+-#define smp_mb()	__asm__ __volatile__("":::"memory")
+-#define smp_rmb()	__asm__ __volatile__("":::"memory")
+-#define smp_wmb()	__asm__ __volatile__("":::"memory")
++#define smp_mb()	__asm__ __volatile__("": : :"memory")
++#define smp_rmb()	__asm__ __volatile__("": : :"memory")
++#define smp_wmb()	__asm__ __volatile__("": : :"memory")
+ #define smp_read_barrier_depends()	do { } while(0)
+ #endif
+ 
+diff --git a/include/asm-um/module-i386.h b/include/asm-um/module-i386.h
+index 5ead4a0..8ca53f2 100644
+--- a/include/asm-um/module-i386.h
++++ b/include/asm-um/module-i386.h
+@@ -2,9 +2,7 @@
+ #define __UM_MODULE_I386_H
+ 
+ /* UML is simple */
+-struct mod_arch_specific
+-{
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+diff --git a/include/asm-um/module-x86_64.h b/include/asm-um/module-x86_64.h
+index 35b5491..047a326 100644
+--- a/include/asm-um/module-x86_64.h
++++ b/include/asm-um/module-x86_64.h
+@@ -8,9 +8,7 @@
+ #define __UM_MODULE_X86_64_H
+ 
+ /* UML is simple */
+-struct mod_arch_specific
+-{
+-};
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf64_Shdr
+ #define Elf_Sym Elf64_Sym
+diff --git a/include/asm-v850/bitops.h b/include/asm-v850/bitops.h
+index f82f5b4..4b07568 100644
+--- a/include/asm-v850/bitops.h
++++ b/include/asm-v850/bitops.h
+@@ -48,13 +48,13 @@
+ 
+ #define __const_bit_op(op, nr, addr)					\
+   ({ __asm__ (op " (%0 - 0x123), %1"					\
+-	      :: "g" (((nr) & 0x7) + 0x123),				\
++	      : : "g" (((nr) & 0x7) + 0x123),				\
+ 		 "m" (*((char *)(addr) + ((nr) >> 3)))			\
+ 	      : "memory"); })
+ #define __var_bit_op(op, nr, addr)					\
+   ({ int __nr = (nr);							\
+      __asm__ (op " %0, [%1]"						\
+-	      :: "r" (__nr & 0x7),					\
++	      : : "r" (__nr & 0x7),					\
+ 		 "r" ((char *)(addr) + (__nr >> 3))			\
+ 	      : "memory"); })
+ #define __bit_op(op, nr, addr)						\
+diff --git a/include/asm-v850/system.h b/include/asm-v850/system.h
+index a34ddfa..acdde34 100644
+--- a/include/asm-v850/system.h
++++ b/include/asm-v850/system.h
+@@ -40,7 +40,7 @@ extern void *switch_thread (struct thread_struct *last,
+ #define local_save_flags(flags) \
+   __asm__ __volatile__ ("stsr %1, %0" : "=r" (flags) : "i" (SR_PSW))
+ #define local_restore_flags(flags) \
+-  __asm__ __volatile__ ("ldsr %0, %1" :: "r" (flags), "i" (SR_PSW))
++  __asm__ __volatile__ ("ldsr %0, %1" : : "r" (flags), "i" (SR_PSW))
+ 
+ /* For spinlocks etc */
+ #define	local_irq_save(flags) \
+@@ -62,7 +62,7 @@ static inline int irqs_disabled (void)
+  * Not really required on v850...
+  */
+ #define nop()			__asm__ __volatile__ ("nop")
+-#define mb()			__asm__ __volatile__ ("" ::: "memory")
++#define mb()			__asm__ __volatile__ ("" : : : "memory")
+ #define rmb()			mb ()
+ #define wmb()			mb ()
+ #define read_barrier_depends()	((void)0)
+diff --git a/include/asm-v850/v850e_intc.h b/include/asm-v850/v850e_intc.h
+index 6fdf957..6d72d49 100644
+--- a/include/asm-v850/v850e_intc.h
++++ b/include/asm-v850/v850e_intc.h
+@@ -49,7 +49,7 @@
+ static inline void v850e_intc_enable_irq (unsigned irq)
+ {
+ 	__asm__ __volatile__ ("clr1 %0, [%1]"
+-			      :: "r" (V850E_INTC_IMR_BIT (irq)),
++			      : : "r" (V850E_INTC_IMR_BIT (irq)),
+ 			         "r" (V850E_INTC_IMR_ADDR (irq))
+ 			      : "memory");
+ }
+@@ -61,7 +61,7 @@ static inline void v850e_intc_enable_irq (unsigned irq)
+ static inline void v850e_intc_disable_irq (unsigned irq)
+ {
+ 	__asm__ __volatile__ ("set1 %0, [%1]"
+-			      :: "r" (V850E_INTC_IMR_BIT (irq)),
++			      : : "r" (V850E_INTC_IMR_BIT (irq)),
+ 			         "r" (V850E_INTC_IMR_ADDR (irq))
+ 			      : "memory");
+ }
+@@ -93,7 +93,7 @@ static inline void _v850e_intc_disable_irqs (unsigned limit)
+ static inline void v850e_intc_clear_pending_irq (unsigned irq)
+ {
+ 	__asm__ __volatile__ ("clr1 %0, 0[%1]"
+-			      :: "i" (V850E_INTC_IC_IF_BIT),
++			      : : "i" (V850E_INTC_IC_IF_BIT),
+ 			         "r" (V850E_INTC_IC_ADDR (irq))
+ 			      : "memory");
+ }
+diff --git a/include/asm-x86/elf.h b/include/asm-x86/elf.h
+index ec42a4d..3d2f281 100644
+--- a/include/asm-x86/elf.h
++++ b/include/asm-x86/elf.h
+@@ -255,7 +255,7 @@ extern int dump_task_extended_fpu (struct task_struct *,
+ #define VDSO_HIGH_EHDR		((const struct elfhdr *) VDSO_HIGH_BASE)
+ #define VDSO_EHDR		((const struct elfhdr *) VDSO_CURRENT_BASE)
+ 
+-extern void __kernel_vsyscall;
++extern void *__kernel_vsyscall;
+ 
+ #define VDSO_ENTRY		VDSO_SYM(&__kernel_vsyscall)
+ 
+diff --git a/include/asm-x86/mach-voyager/irq_vectors.h b/include/asm-x86/mach-voyager/irq_vectors.h
+index 165421f..9920031 100644
+--- a/include/asm-x86/mach-voyager/irq_vectors.h
++++ b/include/asm-x86/mach-voyager/irq_vectors.h
+@@ -66,14 +66,14 @@
+ #define invalid_vm86_irq(irq)	((irq) < 3 || (irq) > 15)
+ 
+ #ifndef __ASSEMBLY__
+-extern asmlinkage void vic_cpi_interrupt(void);
+-extern asmlinkage void vic_sys_interrupt(void);
+-extern asmlinkage void vic_cmn_interrupt(void);
+-extern asmlinkage void qic_timer_interrupt(void);
+-extern asmlinkage void qic_invalidate_interrupt(void);
+-extern asmlinkage void qic_reschedule_interrupt(void);
+-extern asmlinkage void qic_enable_irq_interrupt(void);
+-extern asmlinkage void qic_call_function_interrupt(void);
++asmlinkage void vic_cpi_interrupt(void);
++asmlinkage void vic_sys_interrupt(void);
++asmlinkage void vic_cmn_interrupt(void);
++asmlinkage void qic_timer_interrupt(void);
++asmlinkage void qic_invalidate_interrupt(void);
++asmlinkage void qic_reschedule_interrupt(void);
++asmlinkage void qic_enable_irq_interrupt(void);
++asmlinkage void qic_call_function_interrupt(void);
+ #endif /* !__ASSEMBLY__ */
+ 
+ #endif /* _ASM_IRQ_VECTORS_H */
+diff --git a/include/asm-x86/page_32.h b/include/asm-x86/page_32.h
+index 80ecc66..c2adaf2 100644
+--- a/include/asm-x86/page_32.h
++++ b/include/asm-x86/page_32.h
+@@ -76,7 +76,10 @@ static inline pmd_t native_make_pmd(unsigned long long val)
+ 
+ static inline pte_t native_make_pte(unsigned long long val)
+ {
+-	return (pte_t) { .pte_low = val, .pte_high = (val >> 32) } ;
++	pte_t __pte;
++	__pte.pte_low = val;
++	__pte.pte_high = (val >> 32);
++	return __pte;
+ }
+ 
+ #ifndef CONFIG_PARAVIRT
+@@ -109,7 +112,9 @@ static inline pgd_t native_make_pgd(unsigned long val)
+ 
+ static inline pte_t native_make_pte(unsigned long val)
+ {
+-	return (pte_t) { .pte_low = val };
++	pte_t __pte;
++	__pte.pte_low = val;
++	return __pte;
+ }
+ 
+ #define HPAGE_SHIFT	22
+diff --git a/include/asm-x86/thread_info_64.h b/include/asm-x86/thread_info_64.h
+index beae2bf..9bf28e2 100644
+--- a/include/asm-x86/thread_info_64.h
++++ b/include/asm-x86/thread_info_64.h
+@@ -60,7 +60,7 @@ struct thread_info {
+ static inline struct thread_info *current_thread_info(void)
+ { 
+ 	struct thread_info *ti;
+-	ti = (void *)(read_pda(kernelstack) + PDA_STACKOFFSET - THREAD_SIZE);
++	ti = (struct thread_info *)(read_pda(kernelstack) + PDA_STACKOFFSET - THREAD_SIZE);
+ 	return ti; 
+ }
+ 
+diff --git a/include/asm-xtensa/module.h b/include/asm-xtensa/module.h
+index ffb25bf..8fb21fb 100644
+--- a/include/asm-xtensa/module.h
++++ b/include/asm-xtensa/module.h
+@@ -13,10 +13,8 @@
+ #ifndef _XTENSA_MODULE_H
+ #define _XTENSA_MODULE_H
+ 
+-struct mod_arch_specific
+-{
+-	/* Module support is not completely implemented. */
+-};
++/* Module support is not completely implemented. */
++EMPTY_STRUCT_DECL(mod_arch_specific);
+ 
+ #define Elf_Shdr Elf32_Shdr
+ #define Elf_Sym Elf32_Sym
+diff --git a/include/asm-xtensa/pgtable.h b/include/asm-xtensa/pgtable.h
+index c0fcc1c..3757634 100644
+--- a/include/asm-xtensa/pgtable.h
++++ b/include/asm-xtensa/pgtable.h
+@@ -250,7 +250,7 @@ static inline void update_pte(pte_t *ptep, pte_t pteval)
+ {
+ 	*ptep = pteval;
+ #if (DCACHE_WAY_SIZE > PAGE_SIZE) && XCHAL_DCACHE_IS_WRITEBACK
+-	__asm__ __volatile__ ("dhwb %0, 0" :: "a" (ptep));
++	__asm__ __volatile__ ("dhwb %0, 0" : : "a" (ptep));
+ #endif
+ 
+ }
+diff --git a/include/asm-xtensa/processor.h b/include/asm-xtensa/processor.h
+index 35145bc..5925a7c 100644
+--- a/include/asm-xtensa/processor.h
++++ b/include/asm-xtensa/processor.h
+@@ -190,7 +190,7 @@ extern unsigned long get_wchan(struct task_struct *p);
+ 
+ /* Special register access. */
+ 
+-#define WSR(v,sr) __asm__ __volatile__ ("wsr %0,"__stringify(sr) :: "a"(v));
++#define WSR(v,sr) __asm__ __volatile__ ("wsr %0,"__stringify(sr) : : "a"(v));
+ #define RSR(v,sr) __asm__ __volatile__ ("rsr %0,"__stringify(sr) : "=a"(v));
+ 
+ #define set_sr(x,sr) ({unsigned int v=(unsigned int)x; WSR(v,sr);})
+diff --git a/include/asm-xtensa/system.h b/include/asm-xtensa/system.h
+index ddc9708..3192aaf 100644
+--- a/include/asm-xtensa/system.h
++++ b/include/asm-xtensa/system.h
+@@ -21,21 +21,21 @@
+ 	__asm__ __volatile__ ("rsr %0,"__stringify(PS) : "=a" (x));
+ #define local_irq_restore(x)	do {					\
+ 	__asm__ __volatile__ ("wsr %0, "__stringify(PS)" ; rsync" 	\
+-	    		      :: "a" (x) : "memory"); } while(0);
++	    		      : : "a" (x) : "memory"); } while(0);
+ #define local_irq_save(x)	do {					\
+ 	__asm__ __volatile__ ("rsil %0, "__stringify(LOCKLEVEL) 	\
+-	    		      : "=a" (x) :: "memory");} while(0);
++	    		      : "=a" (x) : : "memory");} while(0);
+ 
+ static inline void local_irq_disable(void)
+ {
+ 	unsigned long flags;
+ 	__asm__ __volatile__ ("rsil %0, "__stringify(LOCKLEVEL)
+-	    		      : "=a" (flags) :: "memory");
++	    		      : "=a" (flags) : : "memory");
+ }
+ static inline void local_irq_enable(void)
+ {
+ 	unsigned long flags;
+-	__asm__ __volatile__ ("rsil %0, 0" : "=a" (flags) :: "memory");
++	__asm__ __volatile__ ("rsil %0, 0" : "=a" (flags) : : "memory");
+ 
+ }
+ 
+@@ -51,7 +51,7 @@ static inline int irqs_disabled(void)
+ 	} while(0);
+ #define WSR_CPENABLE(x)	do {						  \
+   	__asm__ __volatile__("wsr %0," __stringify(CPENABLE)";rsync" 	  \
+-	    		     :: "a" (x));} while(0);
++	    		     : : "a" (x));} while(0);
+ 
+ #define clear_cpenable() __clear_cpenable()
+ 
+@@ -221,7 +221,7 @@ static inline void spill_registers(void)
+ 		"mov	a0, a12\n\t"
+ 		"wsr	a13," __stringify(SAR) "\n\t"
+ 		"wsr	a14," __stringify(PS) "\n\t"
+-		:: "a" (&a0), "a" (&ps)
++		: : "a" (&a0), "a" (&ps)
+ 		: "a2", "a3", "a12", "a13", "a14", "a15", "memory");
+ }
+ 
+diff --git a/include/asm-xtensa/timex.h b/include/asm-xtensa/timex.h
+index a5fca59..3d9e94d 100644
+--- a/include/asm-xtensa/timex.h
++++ b/include/asm-xtensa/timex.h
+@@ -63,9 +63,9 @@ extern cycles_t cacheflush_time;
+  * Register access.
+  */
+ 
+-#define WSR_CCOUNT(r)	  __asm__("wsr %0,"__stringify(CCOUNT) :: "a" (r))
++#define WSR_CCOUNT(r)	  __asm__("wsr %0,"__stringify(CCOUNT) : : "a" (r))
+ #define RSR_CCOUNT(r)	  __asm__("rsr %0,"__stringify(CCOUNT) : "=a" (r))
+-#define WSR_CCOMPARE(x,r) __asm__("wsr %0,"__stringify(CCOMPARE)"+"__stringify(x) :: "a"(r))
++#define WSR_CCOMPARE(x,r) __asm__("wsr %0,"__stringify(CCOMPARE)"+"__stringify(x) : : "a"(r))
+ #define RSR_CCOMPARE(x,r) __asm__("rsr %0,"__stringify(CCOMPARE)"+"__stringify(x) : "=a"(r))
+ 
+ static inline unsigned long get_ccount (void)
+diff --git a/include/linux/compat.h b/include/linux/compat.h
+index 0e69d2c..329ebc9 100644
+--- a/include/linux/compat.h
++++ b/include/linux/compat.h
+@@ -114,7 +114,7 @@ extern int put_compat_rusage(const struct rusage *, struct compat_rusage __user
+ 
+ struct compat_siginfo;
+ 
+-extern asmlinkage long compat_sys_waitid(int, compat_pid_t,
++asmlinkage long compat_sys_waitid(int, compat_pid_t,
+ 		struct compat_siginfo __user *, int,
+ 		struct compat_rusage __user *);
+ 
+diff --git a/include/linux/dqblk_v1.h b/include/linux/dqblk_v1.h
+index 57f1250..9532712 100644
+--- a/include/linux/dqblk_v1.h
++++ b/include/linux/dqblk_v1.h
+@@ -18,7 +18,6 @@
+ #define V1_DEL_REWRITE 2
+ 
+ /* Special information about quotafile */
+-struct v1_mem_dqinfo {
+-};
++EMPTY_STRUCT_DECL(v1_mem_dqinfo);
+ 
+ #endif	/* _LINUX_DQBLK_V1_H */
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index b3ec4a4..f3186b5 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -2013,7 +2013,7 @@ int simple_transaction_release(struct inode *inode, struct file *file);
+ 
+ static inline void simple_transaction_set(struct file *file, size_t n)
+ {
+-	struct simple_transaction_argresp *ar = file->private_data;
++  struct simple_transaction_argresp *ar = (struct simple_transaction_argresp *)file->private_data;
+ 
+ 	BUG_ON(n > SIMPLE_TRANSACTION_LIMIT);
+ 
+diff --git a/include/linux/gfp.h b/include/linux/gfp.h
+index 7e93a9a..a60b474 100644
+--- a/include/linux/gfp.h
++++ b/include/linux/gfp.h
+@@ -128,20 +128,20 @@ static inline enum zone_type gfp_zone(gfp_t flags)
+ 
+ #ifdef CONFIG_ZONE_DMA
+ 	if (flags & __GFP_DMA)
+-		return base + ZONE_DMA;
++		return (enum zone_type)(base + ZONE_DMA);
+ #endif
+ #ifdef CONFIG_ZONE_DMA32
+ 	if (flags & __GFP_DMA32)
+-		return base + ZONE_DMA32;
++		return (enum zone_type)(base + ZONE_DMA32);
+ #endif
+ 	if ((flags & (__GFP_HIGHMEM | __GFP_MOVABLE)) ==
+ 			(__GFP_HIGHMEM | __GFP_MOVABLE))
+-		return base + ZONE_MOVABLE;
++		return (enum zone_type)(base + ZONE_MOVABLE);
+ #ifdef CONFIG_HIGHMEM
+ 	if (flags & __GFP_HIGHMEM)
+-		return base + ZONE_HIGHMEM;
++		return (enum zone_type)(base + ZONE_HIGHMEM);
+ #endif
+-	return base + ZONE_NORMAL;
++	return (enum zone_type)(base + ZONE_NORMAL);
+ }
+ 
+ static inline gfp_t set_migrateflags(gfp_t gfp, gfp_t migrate_flags)
+diff --git a/include/linux/highmem.h b/include/linux/highmem.h
+index 1fcb003..eeac0f5 100644
+--- a/include/linux/highmem.h
++++ b/include/linux/highmem.h
+@@ -155,8 +155,8 @@ static inline void copy_user_highpage(struct page *to, struct page *from,
+ {
+ 	char *vfrom, *vto;
+ 
+-	vfrom = kmap_atomic(from, KM_USER0);
+-	vto = kmap_atomic(to, KM_USER1);
++	vfrom = (char*)kmap_atomic(from, KM_USER0);
++	vto = (char*)kmap_atomic(to, KM_USER1);
+ 	copy_user_page(vto, vfrom, vaddr, to);
+ 	kunmap_atomic(vfrom, KM_USER0);
+ 	kunmap_atomic(vto, KM_USER1);
+@@ -170,8 +170,8 @@ static inline void copy_highpage(struct page *to, struct page *from)
+ {
+ 	char *vfrom, *vto;
+ 
+-	vfrom = kmap_atomic(from, KM_USER0);
+-	vto = kmap_atomic(to, KM_USER1);
++	vfrom = (char*)kmap_atomic(from, KM_USER0);
++	vto = (char*)kmap_atomic(to, KM_USER1);
+ 	copy_page(vto, vfrom);
+ 	kunmap_atomic(vfrom, KM_USER0);
+ 	kunmap_atomic(vto, KM_USER1);
+diff --git a/include/linux/inetdevice.h b/include/linux/inetdevice.h
+index d83fee2..e28b471 100644
+--- a/include/linux/inetdevice.h
++++ b/include/linux/inetdevice.h
+@@ -168,7 +168,7 @@ static __inline__ int bad_mask(__be32 mask, __be32 addr)
+ 
+ static inline struct in_device *__in_dev_get_rcu(const struct net_device *dev)
+ {
+-	struct in_device *in_dev = dev->ip_ptr;
++  struct in_device *in_dev = (struct in_device *)dev->ip_ptr;
+ 	if (in_dev)
+ 		in_dev = rcu_dereference(in_dev);
+ 	return in_dev;
+diff --git a/include/linux/jhash.h b/include/linux/jhash.h
+index 2a2f99f..128ca9a 100644
+--- a/include/linux/jhash.h
++++ b/include/linux/jhash.h
+@@ -44,7 +44,7 @@
+ static inline u32 jhash(const void *key, u32 length, u32 initval)
+ {
+ 	u32 a, b, c, len;
+-	const u8 *k = key;
++	const u8 *k = (const u8*)key;
+ 
+ 	len = length;
+ 	a = b = JHASH_GOLDEN_RATIO;
+diff --git a/include/linux/kexec.h b/include/linux/kexec.h
+index 2d9c448..fc86e2d 100644
+--- a/include/linux/kexec.h
++++ b/include/linux/kexec.h
+@@ -106,12 +106,12 @@ struct kimage {
+ extern NORET_TYPE void machine_kexec(struct kimage *image) ATTRIB_NORET;
+ extern int machine_kexec_prepare(struct kimage *image);
+ extern void machine_kexec_cleanup(struct kimage *image);
+-extern asmlinkage long sys_kexec_load(unsigned long entry,
++asmlinkage long sys_kexec_load(unsigned long entry,
+ 					unsigned long nr_segments,
+ 					struct kexec_segment __user *segments,
+ 					unsigned long flags);
+ #ifdef CONFIG_COMPAT
+-extern asmlinkage long compat_sys_kexec_load(unsigned long entry,
++asmlinkage long compat_sys_kexec_load(unsigned long entry,
+ 				unsigned long nr_segments,
+ 				struct compat_kexec_segment __user *segments,
+ 				unsigned long flags);
+diff --git a/include/linux/ktime.h b/include/linux/ktime.h
+index 816cf4e..7b3e7fc 100644
+--- a/include/linux/ktime.h
++++ b/include/linux/ktime.h
+@@ -71,6 +71,12 @@ typedef union ktime ktime_t;		/* Kill this */
+ 
+ #if (BITS_PER_LONG == 64) || defined(CONFIG_KTIME_SCALAR)
+ 
++#ifdef __cplusplus
++# define KTIME_TV64(__s)({ ktime_t __kt; __kt.tv64 = (__s); __kt; })
++#else
++# define KTIME_TV64(__s)((ktime_t) { .tv64 = (__s) })
++#endif
++
+ /**
+  * ktime_set - Set a ktime_t variable from a seconds/nanoseconds value
+  * @secs:	seconds to set
+@@ -82,32 +88,36 @@ static inline ktime_t ktime_set(const long secs, const unsigned long nsecs)
+ {
+ #if (BITS_PER_LONG == 64)
+ 	if (unlikely(secs >= KTIME_SEC_MAX))
+-		return (ktime_t){ .tv64 = KTIME_MAX };
++	  return KTIME_TV64(KTIME_MAX);
+ #endif
+-	return (ktime_t) { .tv64 = (s64)secs * NSEC_PER_SEC + (s64)nsecs };
++	return KTIME_TV64((s64)secs * NSEC_PER_SEC + (s64)nsecs);
+ }
+ 
+ /* Subtract two ktime_t variables. rem = lhs -rhs: */
+ #define ktime_sub(lhs, rhs) \
+-		({ (ktime_t){ .tv64 = (lhs).tv64 - (rhs).tv64 }; })
++  KTIME_TV64((lhs).tv64 - (rhs).tv64)
+ 
+ /* Add two ktime_t variables. res = lhs + rhs: */
+ #define ktime_add(lhs, rhs) \
+-		({ (ktime_t){ .tv64 = (lhs).tv64 + (rhs).tv64 }; })
++  KTIME_TV64((lhs).tv64 + (rhs).tv64)
+ 
+ /*
+  * Add a ktime_t variable and a scalar nanosecond value.
+  * res = kt + nsval:
+  */
+ #define ktime_add_ns(kt, nsval) \
+-		({ (ktime_t){ .tv64 = (kt).tv64 + (nsval) }; })
++  KTIME_TV64((kt).tv64 + (nsval))
+ 
+ /*
+  * Subtract a scalar nanosecod from a ktime_t variable
+  * res = kt - nsval:
+  */
+-#define ktime_sub_ns(kt, nsval) \
+-		({ (ktime_t){ .tv64 = (kt).tv64 - (nsval) }; })
++static inline ktime_t ktime_sub_ns(const ktime_t kt, u64 nsval)
++{
++	ktime_t __kt;
++	__kt.tv64 = kt.tv64 - nsval;
++	return __kt;
++}
+ 
+ /* convert a timespec to ktime_t format: */
+ static inline ktime_t timespec_to_ktime(struct timespec ts)
+@@ -132,6 +142,18 @@ static inline ktime_t timeval_to_ktime(struct timeval tv)
+ 
+ #else
+ 
++#ifdef __cplusplus
++# define KTIME_TV64(__s)({ ktime_t __kt; __kt.tv64 = (__s); __kt; })
++# define KTIME_SEC_NSEC(__sec, __nsec)({ ktime_t __kt; __kt.tv.sec = (__sec); __kt.tv.nsec = (__nsec); __kt; })
++# define TIMEVAL_SEC_USEC(__sec, __usec) ({ struct timeval __tv; __tv.tv_sec = (__sec); __tv.tv_usec = (__usec); __tv; })
++# define TIMESPEC_SEC_NSEC(__sec, __nsec) ({ struct timespec __ts; __ts.tv_sec = (__sec); __ts.tv_nsec = (__nsec); __ts; })
++#else
++# define KTIME_TV64(__s)((ktime_t) { .tv64 = (__s) })
++# define KTIME_SEC_NSEC(__sec, __nsec)((ktime_t) { .tv = { .sec = (__sec), .nsec = (__nsec) } })
++# define TIMEVAL_SEC_USEC(__sec, __usec) ((struct timeval) { .tv_sec = (__sec), .tv_usec = (__usec) })
++# define TIMESPEC_SEC_NSEC(__sec, __nsec) ((struct timespec) { .tv_sec = (__sec), .tv_nsec = (__nsec) })
++#endif
++
+ /*
+  * Helper macros/inlines to get the ktime_t math right in the timespec
+  * representation. The macros are sometimes ugly - their actual use is
+@@ -150,7 +172,7 @@ static inline ktime_t timeval_to_ktime(struct timeval tv)
+ /* Set a ktime_t variable to a value in sec/nsec representation: */
+ static inline ktime_t ktime_set(const long secs, const unsigned long nsecs)
+ {
+-	return (ktime_t) { .tv = { .sec = secs, .nsec = nsecs } };
++  return KTIME_SEC_NSEC(secs, nsecs);
+ }
+ 
+ /**
+@@ -223,8 +245,7 @@ extern ktime_t ktime_sub_ns(const ktime_t kt, u64 nsec);
+  */
+ static inline ktime_t timespec_to_ktime(const struct timespec ts)
+ {
+-	return (ktime_t) { .tv = { .sec = (s32)ts.tv_sec,
+-			   	   .nsec = (s32)ts.tv_nsec } };
++  return KTIME_SEC_NSEC((s32)ts.tv_sec, (s32)ts.tv_nsec);
+ }
+ 
+ /**
+@@ -235,8 +256,7 @@ static inline ktime_t timespec_to_ktime(const struct timespec ts)
+  */
+ static inline ktime_t timeval_to_ktime(const struct timeval tv)
+ {
+-	return (ktime_t) { .tv = { .sec = (s32)tv.tv_sec,
+-				   .nsec = (s32)tv.tv_usec * 1000 } };
++  return KTIME_SEC_NSEC((s32)tv.tv_sec, (s32)tv.tv_usec * 1000);
+ }
+ 
+ /**
+@@ -247,8 +267,7 @@ static inline ktime_t timeval_to_ktime(const struct timeval tv)
+  */
+ static inline struct timespec ktime_to_timespec(const ktime_t kt)
+ {
+-	return (struct timespec) { .tv_sec = (time_t) kt.tv.sec,
+-				   .tv_nsec = (long) kt.tv.nsec };
++  return TIMESPEC_SEC_NSEC((time_t) kt.tv.sec, (long) kt.tv.nsec);
+ }
+ 
+ /**
+@@ -259,9 +278,8 @@ static inline struct timespec ktime_to_timespec(const ktime_t kt)
+  */
+ static inline struct timeval ktime_to_timeval(const ktime_t kt)
+ {
+-	return (struct timeval) {
+-		.tv_sec = (time_t) kt.tv.sec,
+-		.tv_usec = (suseconds_t) (kt.tv.nsec / NSEC_PER_USEC) };
++  return TIMEVAL_SEC_USEC((time_t) kt.tv.sec,
++			  (suseconds_t) (kt.tv.nsec / NSEC_PER_USEC));
+ }
+ 
+ /**
+@@ -318,7 +336,7 @@ extern ktime_t ktime_add_safe(const ktime_t lhs, const ktime_t rhs);
+  * idea of the (in)accuracy of timers. Timer values are rounded up to
+  * this resolution values.
+  */
+-#define KTIME_LOW_RES		(ktime_t){ .tv64 = TICK_NSEC }
++#define KTIME_LOW_RES		KTIME_TV64(TICK_NSEC)
+ 
+ /* Get the monotonic time in timespec format: */
+ extern void ktime_get_ts(struct timespec *ts);
+diff --git a/include/linux/linkage.h b/include/linux/linkage.h
+index ff203dd..ae2bdef 100644
+--- a/include/linux/linkage.h
++++ b/include/linux/linkage.h
+@@ -12,6 +12,13 @@
+ #ifndef asmlinkage
+ #define asmlinkage CPP_ASMLINKAGE
+ #endif
++#ifndef extern_asmlinkage
++# ifdef __cplusplus
++#  define extern_asmlinkage asmlinkage
++# else
++#  define extern_asmlinkage extern asmlinkage
++# endif
++#endif
+ 
+ #ifndef prevent_tail_call
+ # define prevent_tail_call(ret) do { } while (0)
+diff --git a/include/linux/list.h b/include/linux/list.h
+index 75ce2cb..9a0f278 100644
+--- a/include/linux/list.h
++++ b/include/linux/list.h
+@@ -40,50 +40,50 @@ static inline void INIT_LIST_HEAD(struct list_head *list)
+  * the prev/next entries already!
+  */
+ #ifndef CONFIG_DEBUG_LIST
+-static inline void __list_add(struct list_head *new,
++static inline void __list_add(struct list_head *entry,
+ 			      struct list_head *prev,
+ 			      struct list_head *next)
+ {
+-	next->prev = new;
+-	new->next = next;
+-	new->prev = prev;
+-	prev->next = new;
++	next->prev = entry;
++	entry->next = next;
++	entry->prev = prev;
++	prev->next = entry;
+ }
+ #else
+-extern void __list_add(struct list_head *new,
++extern void __list_add(struct list_head *entry,
+ 			      struct list_head *prev,
+ 			      struct list_head *next);
+ #endif
+ 
+ /**
+  * list_add - add a new entry
+- * @new: new entry to be added
++ * @entry: new entry to be added
+  * @head: list head to add it after
+  *
+  * Insert a new entry after the specified head.
+  * This is good for implementing stacks.
+  */
+ #ifndef CONFIG_DEBUG_LIST
+-static inline void list_add(struct list_head *new, struct list_head *head)
++static inline void list_add(struct list_head *entry, struct list_head *head)
+ {
+-	__list_add(new, head, head->next);
++	__list_add(entry, head, head->next);
+ }
+ #else
+-extern void list_add(struct list_head *new, struct list_head *head);
++extern void list_add(struct list_head *entry, struct list_head *head);
+ #endif
+ 
+ 
+ /**
+  * list_add_tail - add a new entry
+- * @new: new entry to be added
++ * @entry: new entry to be added
+  * @head: list head to add it before
+  *
+  * Insert a new entry before the specified head.
+  * This is useful for implementing queues.
+  */
+-static inline void list_add_tail(struct list_head *new, struct list_head *head)
++static inline void list_add_tail(struct list_head *entry, struct list_head *head)
+ {
+-	__list_add(new, head->prev, head);
++	__list_add(entry, head->prev, head);
+ }
+ 
+ /*
+@@ -92,19 +92,19 @@ static inline void list_add_tail(struct list_head *new, struct list_head *head)
+  * This is only for internal list manipulation where we know
+  * the prev/next entries already!
+  */
+-static inline void __list_add_rcu(struct list_head * new,
++static inline void __list_add_rcu(struct list_head * entry,
+ 		struct list_head * prev, struct list_head * next)
+ {
+-	new->next = next;
+-	new->prev = prev;
++	entry->next = next;
++	entry->prev = prev;
+ 	smp_wmb();
+-	next->prev = new;
+-	prev->next = new;
++	next->prev = entry;
++	prev->next = entry;
+ }
+ 
+ /**
+  * list_add_rcu - add a new entry to rcu-protected list
+- * @new: new entry to be added
++ * @entry: new entry to be added
+  * @head: list head to add it after
+  *
+  * Insert a new entry after the specified head.
+@@ -118,14 +118,14 @@ static inline void __list_add_rcu(struct list_head * new,
+  * the _rcu list-traversal primitives, such as
+  * list_for_each_entry_rcu().
+  */
+-static inline void list_add_rcu(struct list_head *new, struct list_head *head)
++static inline void list_add_rcu(struct list_head *entry, struct list_head *head)
+ {
+-	__list_add_rcu(new, head, head->next);
++	__list_add_rcu(entry, head, head->next);
+ }
+ 
+ /**
+  * list_add_tail_rcu - add a new entry to rcu-protected list
+- * @new: new entry to be added
++ * @entry: new entry to be added
+  * @head: list head to add it before
+  *
+  * Insert a new entry before the specified head.
+@@ -139,10 +139,10 @@ static inline void list_add_rcu(struct list_head *new, struct list_head *head)
+  * the _rcu list-traversal primitives, such as
+  * list_for_each_entry_rcu().
+  */
+-static inline void list_add_tail_rcu(struct list_head *new,
++static inline void list_add_tail_rcu(struct list_head *entry,
+ 					struct list_head *head)
+ {
+-	__list_add_rcu(new, head->prev, head);
++	__list_add_rcu(entry, head->prev, head);
+ }
+ 
+ /*
+@@ -168,8 +168,8 @@ static inline void __list_del(struct list_head * prev, struct list_head * next)
+ static inline void list_del(struct list_head *entry)
+ {
+ 	__list_del(entry->prev, entry->next);
+-	entry->next = LIST_POISON1;
+-	entry->prev = LIST_POISON2;
++	entry->next = (struct list_head*)(LIST_POISON1);
++	entry->prev = (struct list_head*)(LIST_POISON2);
+ }
+ #else
+ extern void list_del(struct list_head *entry);
+@@ -202,49 +202,49 @@ extern void list_del(struct list_head *entry);
+ static inline void list_del_rcu(struct list_head *entry)
+ {
+ 	__list_del(entry->prev, entry->next);
+-	entry->prev = LIST_POISON2;
++	entry->prev = (struct list_head *)(LIST_POISON2);
+ }
+ 
+ /**
+  * list_replace - replace old entry by new one
+  * @old : the element to be replaced
+- * @new : the new element to insert
++ * @entry : the new element to insert
+  *
+  * If @old was empty, it will be overwritten.
+  */
+ static inline void list_replace(struct list_head *old,
+-				struct list_head *new)
++				struct list_head *entry)
+ {
+-	new->next = old->next;
+-	new->next->prev = new;
+-	new->prev = old->prev;
+-	new->prev->next = new;
++	entry->next = old->next;
++	entry->next->prev = entry;
++	entry->prev = old->prev;
++	entry->prev->next = entry;
+ }
+ 
+ static inline void list_replace_init(struct list_head *old,
+-					struct list_head *new)
++					struct list_head *entry)
+ {
+-	list_replace(old, new);
++	list_replace(old, entry);
+ 	INIT_LIST_HEAD(old);
+ }
+ 
+ /**
+  * list_replace_rcu - replace old entry by new one
+  * @old : the element to be replaced
+- * @new : the new element to insert
++ * @entry : the new element to insert
+  *
+- * The @old entry will be replaced with the @new entry atomically.
++ * The @old entry will be replaced with the @entry entry atomically.
+  * Note: @old should not be empty.
+  */
+ static inline void list_replace_rcu(struct list_head *old,
+-				struct list_head *new)
++				struct list_head *entry)
+ {
+-	new->next = old->next;
+-	new->prev = old->prev;
++	entry->next = old->next;
++	entry->prev = old->prev;
+ 	smp_wmb();
+-	new->next->prev = new;
+-	new->prev->next = new;
+-	old->prev = LIST_POISON2;
++	entry->next->prev = entry;
++	entry->prev->next = entry;
++	old->prev = (struct list_head *)LIST_POISON2;
+ }
+ 
+ /**
+@@ -736,8 +736,8 @@ static inline void __hlist_del(struct hlist_node *n)
+ static inline void hlist_del(struct hlist_node *n)
+ {
+ 	__hlist_del(n);
+-	n->next = LIST_POISON1;
+-	n->pprev = LIST_POISON2;
++	n->next = (struct hlist_node*)(LIST_POISON1);
++	n->pprev = (struct hlist_node**)(LIST_POISON2);
+ }
+ 
+ /**
+@@ -762,7 +762,7 @@ static inline void hlist_del(struct hlist_node *n)
+ static inline void hlist_del_rcu(struct hlist_node *n)
+ {
+ 	__hlist_del(n);
+-	n->pprev = LIST_POISON2;
++	n->pprev = (struct hlist_node**)(LIST_POISON2);
+ }
+ 
+ static inline void hlist_del_init(struct hlist_node *n)
+@@ -776,22 +776,22 @@ static inline void hlist_del_init(struct hlist_node *n)
+ /**
+  * hlist_replace_rcu - replace old entry by new one
+  * @old : the element to be replaced
+- * @new : the new element to insert
++ * @entry : the new element to insert
+  *
+- * The @old entry will be replaced with the @new entry atomically.
++ * The @old entry will be replaced with the @entry entry atomically.
+  */
+ static inline void hlist_replace_rcu(struct hlist_node *old,
+-					struct hlist_node *new)
++					struct hlist_node *entry)
+ {
+ 	struct hlist_node *next = old->next;
+ 
+-	new->next = next;
+-	new->pprev = old->pprev;
++	entry->next = next;
++	entry->pprev = old->pprev;
+ 	smp_wmb();
+ 	if (next)
+-		new->next->pprev = &new->next;
+-	*new->pprev = new;
+-	old->pprev = LIST_POISON2;
++		entry->next->pprev = &entry->next;
++	*entry->pprev = entry;
++	old->pprev = (struct hlist_node**)(LIST_POISON2);
+ }
+ 
+ static inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
+diff --git a/include/linux/lockdep.h b/include/linux/lockdep.h
+index 4c4d236..49a7702 100644
+--- a/include/linux/lockdep.h
++++ b/include/linux/lockdep.h
+@@ -337,7 +337,7 @@ static inline void lockdep_on(void)
+ /*
+  * The class key takes no space if lockdep is disabled:
+  */
+-struct lock_class_key { };
++EMPTY_STRUCT_DECL(lock_class_key);
+ 
+ #define lockdep_depth(tsk)	(0)
+ 
+diff --git a/include/linux/mempolicy.h b/include/linux/mempolicy.h
+index 59c4865..5135484 100644
+--- a/include/linux/mempolicy.h
++++ b/include/linux/mempolicy.h
+@@ -167,7 +167,7 @@ int do_migrate_pages(struct mm_struct *mm,
+ 
+ #else
+ 
+-struct mempolicy {};
++EMPTY_STRUCT_DECL(shared_policy);
+ 
+ static inline int mpol_equal(struct mempolicy *a, struct mempolicy *b)
+ {
+@@ -190,8 +190,6 @@ static inline struct mempolicy *mpol_copy(struct mempolicy *old)
+ 	return NULL;
+ }
+ 
+-struct shared_policy {};
+-
+ static inline int mpol_set_shared_policy(struct shared_policy *info,
+ 					struct vm_area_struct *vma,
+ 					struct mempolicy *new)
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index 1b7b95c..6afa427 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -279,7 +279,7 @@ typedef void compound_page_dtor(struct page *);
+ static inline void set_compound_page_dtor(struct page *page,
+ 						compound_page_dtor *dtor)
+ {
+-	page[1].lru.next = (void *)dtor;
++	page[1].lru.next = (struct list_head *)dtor;
+ }
+ 
+ static inline compound_page_dtor *get_compound_page_dtor(struct page *page)
+@@ -296,7 +296,7 @@ static inline int compound_order(struct page *page)
+ 
+ static inline void set_compound_order(struct page *page, unsigned long order)
+ {
+-	page[1].lru.prev = (void *)order;
++	page[1].lru.prev = (struct list_head *)order;
+ }
+ 
+ /*
+@@ -443,7 +443,7 @@ static inline void set_compound_order(struct page *page, unsigned long order)
+ 
+ static inline enum zone_type page_zonenum(struct page *page)
+ {
+-	return (page->flags >> ZONES_PGSHIFT) & ZONES_MASK;
++  return (enum zone_type) ((page->flags >> ZONES_PGSHIFT) & ZONES_MASK);
+ }
+ 
+ /*
+diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
+index b0813c3..2f1df8b 100644
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -716,6 +716,46 @@ struct net_device
+ 	/* macvlan */
+ 	struct macvlan_port	*macvlan_port;
+ 
++       /* Click polling support */
++       /*
++        * polling is < 0 if the device does not support polling, == 0 if the
++        * device supports polling but interrupts are on, and > 0 if polling
++        * is on.
++        */
++       int                     polling;
++       int                     (*poll_on)(struct net_device *);
++       int                     (*poll_off)(struct net_device *);
++       /*
++        * rx_poll returns to caller a linked list of sk_buff objects received
++        * by the device. on call, the want argument specifies the number of
++        * packets wanted. on return, the want argument specifies the number
++        * of packets actually returned.
++        */
++       struct sk_buff *        (*rx_poll)(struct net_device*, int *want);
++       /* refill rx dma ring using the given sk_buff list. returns 0 if
++        * successful, or if there are more entries need to be cleaned,
++        * returns the number of dirty entries. the ptr to the sk_buff list is
++        * updated by the driver to point to any unused skbs.
++        */
++       int                     (*rx_refill)(struct net_device*, struct sk_buff**);
++       /*
++        * place sk_buff on the transmit ring. returns 0 if successful, 1
++        * otherwise
++        */
++       int                     (*tx_queue)(struct net_device *, struct sk_buff*);
++       /*
++        * clean tx dma ring. returns the list of skb objects cleaned
++        */
++       struct sk_buff*         (*tx_clean)(struct net_device *);
++       /*
++        * start transmission. returns 0 if successful, 1 otherwise
++        */
++       int                     (*tx_start)(struct net_device *);
++       /*
++        * tell device the end of a batch of packets
++        */
++       int                     (*tx_eob)(struct net_device *);
++
+ 	/* class/net/name entry */
+ 	struct device		dev;
+ 	/* space for optional statistics and wireless sysfs groups */
+@@ -843,6 +883,9 @@ extern void		free_netdev(struct net_device *dev);
+ extern void		synchronize_net(void);
+ extern int 		register_netdevice_notifier(struct notifier_block *nb);
+ extern int		unregister_netdevice_notifier(struct notifier_block *nb);
++extern int		register_net_in(struct notifier_block *nb); /* Click */
++extern int		unregister_net_in(struct notifier_block *nb); /* Click */
++extern int		ptype_dispatch(struct sk_buff *skb, unsigned short type); /* Click */
+ extern int call_netdevice_notifiers(unsigned long val, struct net_device *dev);
+ extern struct net_device	*dev_get_by_index(struct net *net, int ifindex);
+ extern struct net_device	*__dev_get_by_index(struct net *net, int ifindex);
+@@ -1085,7 +1128,8 @@ extern void dev_kfree_skb_any(struct sk_buff *skb);
+ extern int		netif_rx(struct sk_buff *skb);
+ extern int		netif_rx_ni(struct sk_buff *skb);
+ #define HAVE_NETIF_RECEIVE_SKB 1
+-extern int		netif_receive_skb(struct sk_buff *skb);
++#define HAVE___NETIF_RECEIVE_SKB 1
++extern int             __netif_receive_skb(struct sk_buff *skb, unsigned short protocol, int ignore_notifiers);
+ extern int		dev_valid_name(const char *name);
+ extern int		dev_ioctl(struct net *net, unsigned int cmd, void __user *);
+ extern int		dev_ethtool(struct net *net, struct ifreq *);
+@@ -1224,6 +1268,11 @@ extern void netif_device_detach(struct net_device *dev);
+ 
+ extern void netif_device_attach(struct net_device *dev);
+ 
++static inline int netif_receive_skb(struct sk_buff *skb)
++{
++       return __netif_receive_skb(skb, skb->protocol, 0);
++}
++
+ /*
+  * Network interface message level settings
+  */
+diff --git a/include/linux/netlink.h b/include/linux/netlink.h
+index d5bfaba..5251abd 100644
+--- a/include/linux/netlink.h
++++ b/include/linux/netlink.h
+@@ -240,7 +240,7 @@ __nlmsg_put(struct sk_buff *skb, u32 pid, u32 seq, int type, int len, int flags)
+ 	nlh->nlmsg_flags = flags;
+ 	nlh->nlmsg_pid = pid;
+ 	nlh->nlmsg_seq = seq;
+-	memset(NLMSG_DATA(nlh) + len, 0, NLMSG_ALIGN(size) - size);
++	memset((char*)NLMSG_DATA(nlh) + len, 0, NLMSG_ALIGN(size) - size);
+ 	return nlh;
+ }
+ 
+diff --git a/include/linux/prefetch.h b/include/linux/prefetch.h
+index af7c36a..c27d6a6 100644
+--- a/include/linux/prefetch.h
++++ b/include/linux/prefetch.h
+@@ -54,9 +54,9 @@ static inline void prefetch_range(void *addr, size_t len)
+ {
+ #ifdef ARCH_HAS_PREFETCH
+ 	char *cp;
+-	char *end = addr + len;
++	char *end = (char*)(addr) + len;
+ 
+-	for (cp = addr; cp < end; cp += PREFETCH_STRIDE)
++	for (cp = (char*)(addr); cp < end; cp += PREFETCH_STRIDE)
+ 		prefetch(cp);
+ #endif
+ }
+diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
+index a531682..44553fb 100644
+--- a/include/linux/proc_fs.h
++++ b/include/linux/proc_fs.h
+@@ -281,7 +281,7 @@ static inline struct proc_dir_entry *PDE(const struct inode *inode)
+ 
+ static inline struct net *PDE_NET(struct proc_dir_entry *pde)
+ {
+-	return pde->parent->data;
++	return (struct net *)(pde->parent->data);
+ }
+ 
+ struct net *get_proc_net(const struct inode *inode);
+diff --git a/include/linux/reiserfs_fs_sb.h b/include/linux/reiserfs_fs_sb.h
+index 10fa0c8..bd843b5 100644
+--- a/include/linux/reiserfs_fs_sb.h
++++ b/include/linux/reiserfs_fs_sb.h
+@@ -338,8 +338,7 @@ typedef struct reiserfs_proc_info_data {
+ 	} journal;
+ } reiserfs_proc_info_data_t;
+ #else
+-typedef struct reiserfs_proc_info_data {
+-} reiserfs_proc_info_data_t;
++typedef EMPTY_STRUCT_DECL(reiserfs_proc_info_data) reiserfs_proc_info_data_t;
+ #endif
+ 
+ /* reiserfs union of in-core super block data */
+diff --git a/include/linux/rtnetlink.h b/include/linux/rtnetlink.h
+index 4e81836..c0d7d47 100644
+--- a/include/linux/rtnetlink.h
++++ b/include/linux/rtnetlink.h
+@@ -730,7 +730,7 @@ __rta_reserve(struct sk_buff *skb, int attrtype, int attrlen)
+ 	rta = (struct rtattr*)skb_put(skb, RTA_ALIGN(size));
+ 	rta->rta_type = attrtype;
+ 	rta->rta_len = size;
+-	memset(RTA_DATA(rta) + attrlen, 0, RTA_ALIGN(size) - size);
++	memset((char*) RTA_DATA(rta) + attrlen, 0, RTA_ALIGN(size) - size);
+ 	return rta;
+ }
+ 
+diff --git a/include/linux/scatterlist.h b/include/linux/scatterlist.h
+index e3ff21d..2566ee2 100644
+--- a/include/linux/scatterlist.h
++++ b/include/linux/scatterlist.h
+@@ -290,7 +290,7 @@ static inline dma_addr_t sg_phys(struct scatterlist *sg)
+  **/
+ static inline void *sg_virt(struct scatterlist *sg)
+ {
+-	return page_address(sg_page(sg)) + sg->offset;
++	return (void*)((unsigned char*)page_address(sg_page(sg)) + sg->offset);
+ }
+ 
+ #endif /* _LINUX_SCATTERLIST_H */
+diff --git a/include/linux/seccomp.h b/include/linux/seccomp.h
+index 262a8dc..3e289fa 100644
+--- a/include/linux/seccomp.h
++++ b/include/linux/seccomp.h
+@@ -21,7 +21,7 @@ extern long prctl_set_seccomp(unsigned long);
+ 
+ #else /* CONFIG_SECCOMP */
+ 
+-typedef struct { } seccomp_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) seccomp_t;
+ 
+ #define secure_computing(x) do { } while (0)
+ 
+diff --git a/include/linux/security.h b/include/linux/security.h
+index d842ee3..40390e1 100644
+--- a/include/linux/security.h
++++ b/include/linux/security.h
+@@ -2258,7 +2258,7 @@ static inline int security_netlink_recv (struct sk_buff *skb, int cap)
+ static inline struct dentry *securityfs_create_dir(const char *name,
+ 					struct dentry *parent)
+ {
+-	return ERR_PTR(-ENODEV);
++  return (struct dentry *) ERR_PTR(-ENODEV);
+ }
+ 
+ static inline struct dentry *securityfs_create_file(const char *name,
+@@ -2267,7 +2267,7 @@ static inline struct dentry *securityfs_create_file(const char *name,
+ 						void *data,
+ 						struct file_operations *fops)
+ {
+-	return ERR_PTR(-ENODEV);
++  return (struct dentry *) ERR_PTR(-ENODEV);
+ }
+ 
+ static inline void securityfs_remove(struct dentry *dentry)
+diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
+index bddd50b..e0ef30b 100644
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
+@@ -186,6 +186,12 @@ enum {
+ 	SKB_GSO_TCPV6 = 1 << 4,
+ };
+ 
++/* Click: overload sk_buff.pkt_type to contain information about whether
++   a packet is clean. Clean packets have the following fields zero:
++   dst, destructor, pkt_bridged, prev, list, sk, security, priority. */
++#define PACKET_CLEAN           128             /* Is packet clean? */
++#define PACKET_TYPE_MASK       127             /* Actual packet type */
++
+ #if BITS_PER_LONG > 32
+ #define NET_SKBUFF_DATA_USES_OFFSET 1
+ #endif
+@@ -363,6 +369,7 @@ extern struct sk_buff *skb_copy(const struct sk_buff *skb,
+ 				gfp_t priority);
+ extern struct sk_buff *pskb_copy(struct sk_buff *skb,
+ 				 gfp_t gfp_mask);
++extern struct sk_buff *skb_recycle(struct sk_buff *skb);
+ extern int	       pskb_expand_head(struct sk_buff *skb,
+ 					int nhead, int ntail,
+ 					gfp_t gfp_mask);
+@@ -1422,7 +1429,7 @@ static inline int skb_padto(struct sk_buff *skb, unsigned int len)
+ }
+ 
+ static inline int skb_add_data(struct sk_buff *skb,
+-			       char __user *from, int copy)
++			       unsigned char __user *from, int copy)
+ {
+ 	const int off = skb->len;
+ 
+@@ -1498,7 +1505,8 @@ static inline void skb_postpull_rcsum(struct sk_buff *skb,
+ 				      const void *start, unsigned int len)
+ {
+ 	if (skb->ip_summed == CHECKSUM_COMPLETE)
+-		skb->csum = csum_sub(skb->csum, csum_partial(start, len, 0));
++	  skb->csum = csum_sub(skb->csum, csum_partial((const unsigned char *) start, len, 0));
++
+ }
+ 
+ unsigned char *skb_pull_rcsum(struct sk_buff *skb, unsigned int len);
+diff --git a/include/linux/spinlock.h b/include/linux/spinlock.h
+index c376f3b..ab846b3 100644
+--- a/include/linux/spinlock.h
++++ b/include/linux/spinlock.h
+@@ -53,6 +53,7 @@
+ #include <linux/kernel.h>
+ #include <linux/stringify.h>
+ #include <linux/bottom_half.h>
++#include <linux/types.h>
+ 
+ #include <asm/system.h>
+ 
+diff --git a/include/linux/spinlock_types.h b/include/linux/spinlock_types.h
+index f6a3a95..61a7cb9 100644
+--- a/include/linux/spinlock_types.h
++++ b/include/linux/spinlock_types.h
+@@ -20,6 +20,7 @@
+ typedef struct {
+ 	raw_spinlock_t raw_lock;
+ #if defined(CONFIG_PREEMPT) && defined(CONFIG_SMP)
++#error "Click does not support CONFIG_PREEMPT yet"
+ 	unsigned int break_lock;
+ #endif
+ #ifdef CONFIG_DEBUG_SPINLOCK
+@@ -52,36 +53,36 @@ typedef struct {
+ #define SPINLOCK_OWNER_INIT	((void *)-1L)
+ 
+ #ifdef CONFIG_DEBUG_LOCK_ALLOC
+-# define SPIN_DEP_MAP_INIT(lockname)	.dep_map = { .name = #lockname }
++# define SPIN_DEP_MAP_INIT(lockname)	dep_map : { name : #lockname }
+ #else
+ # define SPIN_DEP_MAP_INIT(lockname)
+ #endif
+ 
+ #ifdef CONFIG_DEBUG_LOCK_ALLOC
+-# define RW_DEP_MAP_INIT(lockname)	.dep_map = { .name = #lockname }
++# define RW_DEP_MAP_INIT(lockname)	dep_map : { name : #lockname }
+ #else
+ # define RW_DEP_MAP_INIT(lockname)
+ #endif
+ 
+ #ifdef CONFIG_DEBUG_SPINLOCK
+ # define __SPIN_LOCK_UNLOCKED(lockname)					\
+-	(spinlock_t)	{	.raw_lock = __RAW_SPIN_LOCK_UNLOCKED,	\
+-				.magic = SPINLOCK_MAGIC,		\
+-				.owner = SPINLOCK_OWNER_INIT,		\
+-				.owner_cpu = -1,			\
++	(spinlock_t)	{	raw_lock : __RAW_SPIN_LOCK_UNLOCKED,	\
++				magic : SPINLOCK_MAGIC,			\
++				owner : SPINLOCK_OWNER_INIT,		\
++				owner_cpu : -1,				\
+ 				SPIN_DEP_MAP_INIT(lockname) }
+ #define __RW_LOCK_UNLOCKED(lockname)					\
+-	(rwlock_t)	{	.raw_lock = __RAW_RW_LOCK_UNLOCKED,	\
+-				.magic = RWLOCK_MAGIC,			\
+-				.owner = SPINLOCK_OWNER_INIT,		\
+-				.owner_cpu = -1,			\
++	(rwlock_t)	{	raw_lock : __RAW_RW_LOCK_UNLOCKED,	\
++				magic : RWLOCK_MAGIC,			\
++				owner : SPINLOCK_OWNER_INIT,		\
++				owner_cpu : -1,				\
+ 				RW_DEP_MAP_INIT(lockname) }
+ #else
+ # define __SPIN_LOCK_UNLOCKED(lockname) \
+-	(spinlock_t)	{	.raw_lock = __RAW_SPIN_LOCK_UNLOCKED,	\
++	(spinlock_t)	{	raw_lock : __RAW_SPIN_LOCK_UNLOCKED,	\
+ 				SPIN_DEP_MAP_INIT(lockname) }
+ #define __RW_LOCK_UNLOCKED(lockname) \
+-	(rwlock_t)	{	.raw_lock = __RAW_RW_LOCK_UNLOCKED,	\
++	(rwlock_t)	{	raw_lock : __RAW_RW_LOCK_UNLOCKED,	\
+ 				RW_DEP_MAP_INIT(lockname) }
+ #endif
+ 
+diff --git a/include/linux/spinlock_types_up.h b/include/linux/spinlock_types_up.h
+index 04135b0..b8cbfef 100644
+--- a/include/linux/spinlock_types_up.h
++++ b/include/linux/spinlock_types_up.h
+@@ -22,15 +22,19 @@ typedef struct {
+ 
+ #else
+ 
+-typedef struct { } raw_spinlock_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) raw_spinlock_t;
+ 
+ #define __RAW_SPIN_LOCK_UNLOCKED { }
+ 
+ #endif
+ 
++#ifdef CONFIG_DEBUG_LOCK_ALLOC
+ typedef struct {
+ 	/* no debug version on UP */
+ } raw_rwlock_t;
++#else
++typedef EMPTY_STRUCT_DECL(/* unnamed */) raw_rwlock_t;
++#endif
+ 
+ #define __RAW_RW_LOCK_UNLOCKED { }
+ 
+diff --git a/include/linux/stddef.h b/include/linux/stddef.h
+index 6a40c76..05598b6 100644
+--- a/include/linux/stddef.h
++++ b/include/linux/stddef.h
+@@ -12,10 +12,12 @@
+ 
+ #ifdef __KERNEL__
+ 
++#ifndef __cplusplus
+ enum {
+ 	false	= 0,
+ 	true	= 1
+ };
++#endif
+ 
+ #undef offsetof
+ #ifdef __compiler_offsetof
+diff --git a/include/linux/sysctl.h b/include/linux/sysctl.h
+index 4f5047d..b26fbe1 100644
+--- a/include/linux/sysctl.h
++++ b/include/linux/sysctl.h
+@@ -955,7 +955,7 @@ typedef int ctl_handler (struct ctl_table *table, int __user *name, int nlen,
+ 			 void __user *oldval, size_t __user *oldlenp,
+ 			 void __user *newval, size_t newlen);
+ 
+-typedef int proc_handler (struct ctl_table *ctl, int write, struct file * filp,
++typedef int proc_handler_t (struct ctl_table *ctl, int write, struct file * filp,
+ 			  void __user *buffer, size_t *lenp, loff_t *ppos);
+ 
+ extern int proc_dostring(struct ctl_table *, int, struct file *,
+@@ -1043,7 +1043,7 @@ struct ctl_table
+ 	mode_t mode;
+ 	struct ctl_table *child;
+ 	struct ctl_table *parent;	/* Automatically set */
+-	proc_handler *proc_handler;	/* Callback for text formatting */
++	proc_handler_t *proc_handler;	/* Callback for text formatting */
+ 	ctl_handler *strategy;		/* Callback function for all r/w */
+ 	void *extra1;
+ 	void *extra2;
+diff --git a/include/linux/textsearch.h b/include/linux/textsearch.h
+index 004808a..dfd8bdb 100644
+--- a/include/linux/textsearch.h
++++ b/include/linux/textsearch.h
+@@ -164,9 +164,9 @@ static inline struct ts_config *alloc_ts_config(size_t payload,
+ {
+ 	struct ts_config *conf;
+ 
+-	conf = kmalloc(TS_PRIV_ALIGN(sizeof(*conf)) + payload, gfp_mask);
++	conf = (struct ts_config *) kmalloc(TS_PRIV_ALIGN(sizeof(*conf)) + payload, gfp_mask);
+ 	if (conf == NULL)
+-		return ERR_PTR(-ENOMEM);
++	  return (struct ts_config *) ERR_PTR(-ENOMEM);
+ 
+ 	memset(conf, 0, TS_PRIV_ALIGN(sizeof(*conf)) + payload);
+ 	return conf;
+diff --git a/include/linux/timer.h b/include/linux/timer.h
+index 78cf899..baffaaf 100644
+--- a/include/linux/timer.h
++++ b/include/linux/timer.h
+@@ -4,6 +4,7 @@
+ #include <linux/list.h>
+ #include <linux/ktime.h>
+ #include <linux/stddef.h>
++#include <linux/hrtimer.h>
+ 
+ struct tvec_t_base_s;
+ 
+diff --git a/include/linux/types.h b/include/linux/types.h
+index f4f8d19..0a196b2 100644
+--- a/include/linux/types.h
++++ b/include/linux/types.h
+@@ -30,7 +30,9 @@ typedef __kernel_clockid_t	clockid_t;
+ typedef __kernel_mqd_t		mqd_t;
+ 
+ #ifdef __KERNEL__
++#ifndef __cplusplus
+ typedef _Bool			bool;
++#endif
+ 
+ typedef __kernel_uid32_t	uid_t;
+ typedef __kernel_gid32_t	gid_t;
+@@ -206,4 +208,12 @@ struct ustat {
+ 	char			f_fpack[6];
+ };
+ 
++/*
++ * Click: Macros for defining empty structures. Needed because GCC's C and C++
++ * compilers have different ABIs for empty structures.
++ */
++
++#define EMPTY_STRUCT_DECL(s) struct s { int gcc_is_buggy; }
++#define EMPTY_STRUCT_INIT(s) (s) { 0 }
++
+ #endif /* _LINUX_TYPES_H */
+diff --git a/include/linux/unwind.h b/include/linux/unwind.h
+index 7760860..cbdc02e 100644
+--- a/include/linux/unwind.h
++++ b/include/linux/unwind.h
+@@ -14,7 +14,7 @@
+ 
+ struct module;
+ 
+-struct unwind_frame_info {};
++EMPTY_STRUCT_DECL(unwind_frame_info);
+ 
+ static inline void unwind_init(void) {}
+ static inline void unwind_setup(void) {}
+diff --git a/include/linux/wait.h b/include/linux/wait.h
+index 8eb6420..5e0966d 100644
+--- a/include/linux/wait.h
++++ b/include/linux/wait.h
+@@ -445,7 +445,7 @@ int wake_bit_function(wait_queue_t *wait, unsigned mode, int sync, void *key);
+ static inline int wait_on_bit(void *word, int bit,
+ 				int (*action)(void *), unsigned mode)
+ {
+-	if (!test_bit(bit, word))
++  if (!test_bit(bit, (volatile unsigned long *) word))
+ 		return 0;
+ 	return out_of_line_wait_on_bit(word, bit, action, mode);
+ }
+@@ -469,7 +469,7 @@ static inline int wait_on_bit(void *word, int bit,
+ static inline int wait_on_bit_lock(void *word, int bit,
+ 				int (*action)(void *), unsigned mode)
+ {
+-	if (!test_and_set_bit(bit, word))
++  if (!test_and_set_bit(bit, (volatile unsigned long *) word))
+ 		return 0;
+ 	return out_of_line_wait_on_bit_lock(word, bit, action, mode);
+ }
+diff --git a/include/net/compat.h b/include/net/compat.h
+index 406db24..1a25874 100644
+--- a/include/net/compat.h
++++ b/include/net/compat.h
+@@ -33,9 +33,9 @@ extern int compat_sock_get_timestampns(struct sock *, struct timespec __user *);
+ 
+ extern int get_compat_msghdr(struct msghdr *, struct compat_msghdr __user *);
+ extern int verify_compat_iovec(struct msghdr *, struct iovec *, char *, int);
+-extern asmlinkage long compat_sys_sendmsg(int,struct compat_msghdr __user *,unsigned);
+-extern asmlinkage long compat_sys_recvmsg(int,struct compat_msghdr __user *,unsigned);
+-extern asmlinkage long compat_sys_getsockopt(int, int, int, char __user *, int __user *);
++asmlinkage long compat_sys_sendmsg(int,struct compat_msghdr __user *,unsigned);
++asmlinkage long compat_sys_recvmsg(int,struct compat_msghdr __user *,unsigned);
++asmlinkage long compat_sys_getsockopt(int, int, int, char __user *, int __user *);
+ extern int put_cmsg_compat(struct msghdr*, int, int, int, void *);
+ 
+ extern int cmsghdr_from_user_compat_to_kern(struct msghdr *, struct sock *, unsigned char *, int);
+diff --git a/include/net/neighbour.h b/include/net/neighbour.h
+index a4f2618..b948f84 100644
+--- a/include/net/neighbour.h
++++ b/include/net/neighbour.h
+@@ -237,7 +237,7 @@ extern int			neigh_sysctl_register(struct net_device *dev,
+ 						      struct neigh_parms *p,
+ 						      int p_id, int pdev_id,
+ 						      char *p_name,
+-						      proc_handler *proc_handler,
++						      proc_handler_t *proc_handler,
+ 						      ctl_handler *strategy);
+ extern void			neigh_sysctl_unregister(struct neigh_parms *p);
+ 
+diff --git a/include/net/netlink.h b/include/net/netlink.h
+index 9298218..6149881 100644
+--- a/include/net/netlink.h
++++ b/include/net/netlink.h
+@@ -311,7 +311,7 @@ static inline int nlmsg_len(const struct nlmsghdr *nlh)
+ static inline struct nlattr *nlmsg_attrdata(const struct nlmsghdr *nlh,
+ 					    int hdrlen)
+ {
+-	unsigned char *data = nlmsg_data(nlh);
++	unsigned char *data = (unsigned char*)nlmsg_data(nlh);
+ 	return (struct nlattr *) (data + NLMSG_ALIGN(hdrlen));
+ }
+ 
+@@ -730,7 +730,7 @@ static inline struct nlattr *nla_next(const struct nlattr *nla, int *remaining)
+  */
+ static inline struct nlattr *nla_find_nested(struct nlattr *nla, int attrtype)
+ {
+-	return nla_find(nla_data(nla), nla_len(nla), attrtype);
++	return nla_find((struct nlattr*)nla_data(nla), nla_len(nla), attrtype);
+ }
+ 
+ /**
+@@ -746,7 +746,7 @@ static inline int nla_parse_nested(struct nlattr *tb[], int maxtype,
+ 				   struct nlattr *nla,
+ 				   const struct nla_policy *policy)
+ {
+-	return nla_parse(tb, maxtype, nla_data(nla), nla_len(nla), policy);
++	return nla_parse(tb, maxtype, (struct nlattr*)nla_data(nla), nla_len(nla), policy);
+ }
+ 
+ /**
+@@ -772,7 +772,7 @@ static inline int __nla_parse_nested_compat(struct nlattr *tb[], int maxtype,
+ 		return -1;
+ 	if (nla_len(nla) >= NLA_ALIGN(len) + sizeof(struct nlattr))
+ 		return nla_parse_nested(tb, maxtype,
+-					nla_data(nla) + NLA_ALIGN(len),
++					(struct nlattr*)((unsigned char*)nla_data(nla) + NLA_ALIGN(len)),
+ 					policy);
+ 	memset(tb, 0, sizeof(struct nlattr *) * (maxtype + 1));
+ 	return 0;
+@@ -1051,7 +1051,7 @@ static inline struct nlattr *nla_nest_compat_start(struct sk_buff *skb,
+  */
+ static inline int nla_nest_compat_end(struct sk_buff *skb, struct nlattr *start)
+ {
+-	struct nlattr *nest = (void *)start + NLMSG_ALIGN(start->nla_len);
++	struct nlattr *nest = (struct nlattr*)((unsigned char *)start + NLMSG_ALIGN(start->nla_len));
+ 
+ 	start->nla_len = skb_tail_pointer(skb) - (unsigned char *)start;
+ 	return nla_nest_end(skb, nest);
+@@ -1085,7 +1085,7 @@ static inline int nla_nest_cancel(struct sk_buff *skb, struct nlattr *start)
+ static inline int nla_validate_nested(struct nlattr *start, int maxtype,
+ 				      const struct nla_policy *policy)
+ {
+-	return nla_validate(nla_data(start), nla_len(start), maxtype, policy);
++	return nla_validate((struct nlattr*)nla_data(start), nla_len(start), maxtype, policy);
+ }
+ 
+ /**
+diff --git a/include/net/pkt_cls.h b/include/net/pkt_cls.h
+index f285de6..0ba90de 100644
+--- a/include/net/pkt_cls.h
++++ b/include/net/pkt_cls.h
+@@ -303,9 +303,7 @@ static inline int tcf_em_tree_match(struct sk_buff *skb,
+ 
+ #else /* CONFIG_NET_EMATCH */
+ 
+-struct tcf_ematch_tree
+-{
+-};
++EMPTY_STRUCT_DECL(tcf_ematch_tree);
+ 
+ #define tcf_em_tree_validate(tp, tb, t) ((void)(t), 0)
+ #define tcf_em_tree_destroy(tp, t) do { (void)(t); } while(0)
+diff --git a/include/net/request_sock.h b/include/net/request_sock.h
+index cff4608..6a40f89 100644
+--- a/include/net/request_sock.h
++++ b/include/net/request_sock.h
+@@ -60,7 +60,8 @@ struct request_sock {
+ 
+ static inline struct request_sock *reqsk_alloc(const struct request_sock_ops *ops)
+ {
+-	struct request_sock *req = kmem_cache_alloc(ops->slab, GFP_ATOMIC);
++	struct request_sock *req = (struct request_sock *)kmem_cache_alloc(
++							ops->slab, GFP_ATOMIC);
+ 
+ 	if (req != NULL)
+ 		req->rsk_ops = ops;
+diff --git a/include/net/route.h b/include/net/route.h
+index 59b0b19..fe381d3 100644
+--- a/include/net/route.h
++++ b/include/net/route.h
+@@ -146,6 +146,16 @@ static inline int ip_route_connect(struct rtable **rp, __be32 dst,
+ 				   __be16 sport, __be16 dport, struct sock *sk,
+ 				   int flags)
+ {
++#ifdef __cplusplus
++       struct flowi fl;
++       fl.oif = oif;
++       fl.nl_u.ip4_u.daddr = dst;
++       fl.nl_u.ip4_u.saddr = src;
++       fl.nl_u.ip4_u.tos = tos;
++       fl.proto = protocol;
++       fl.uli_u.ports.sport = sport;
++       fl.uli_u.ports.dport = dport;
++#else
+ 	struct flowi fl = { .oif = oif,
+ 			    .nl_u = { .ip4_u = { .daddr = dst,
+ 						 .saddr = src,
+@@ -154,7 +164,7 @@ static inline int ip_route_connect(struct rtable **rp, __be32 dst,
+ 			    .uli_u = { .ports =
+ 				       { .sport = sport,
+ 					 .dport = dport } } };
+-
++#endif
+ 	int err;
+ 	if (!dst || !src) {
+ 		err = __ip_route_output_key(rp, &fl);
+diff --git a/include/net/sock.h b/include/net/sock.h
+index 6e1542d..24cf4ed 100644
+--- a/include/net/sock.h
++++ b/include/net/sock.h
+@@ -1125,13 +1125,13 @@ static inline int skb_copy_to_page(struct sock *sk, char __user *from,
+ {
+ 	if (skb->ip_summed == CHECKSUM_NONE) {
+ 		int err = 0;
+-		__wsum csum = csum_and_copy_from_user(from,
+-						     page_address(page) + off,
++		__wsum csum = csum_and_copy_from_user((unsigned char *)from,
++						      (unsigned char *)page_address(page) + off,
+ 							    copy, 0, &err);
+ 		if (err)
+ 			return err;
+ 		skb->csum = csum_block_add(skb->csum, csum, skb->len);
+-	} else if (copy_from_user(page_address(page) + off, from, copy))
++	} else if (copy_from_user((char*)page_address(page) + off, from, copy))
+ 		return -EFAULT;
+ 
+ 	skb->len	     += copy;
+@@ -1394,9 +1394,9 @@ extern int net_msg_warn;
+ static inline void sock_valbool_flag(struct sock *sk, int bit, int valbool)
+ {
+ 	if (valbool)
+-		sock_set_flag(sk, bit);
++	  sock_set_flag(sk, (enum sock_flags)bit);
+ 	else
+-		sock_reset_flag(sk, bit);
++	  sock_reset_flag(sk, (enum sock_flags)bit);
+ }
+ 
+ extern __u32 sysctl_wmem_max;
+diff --git a/include/rdma/ib_user_verbs.h b/include/rdma/ib_user_verbs.h
+index 64a721f..b2afe07 100644
+--- a/include/rdma/ib_user_verbs.h
++++ b/include/rdma/ib_user_verbs.h
+@@ -503,8 +503,7 @@ struct ib_uverbs_modify_qp {
+ 	__u64 driver_data[0];
+ };
+ 
+-struct ib_uverbs_modify_qp_resp {
+-};
++EMPTY_STRUCT_DECL(ib_uverbs_modify_qp_resp);
+ 
+ struct ib_uverbs_destroy_qp {
+ 	__u64 response;
+diff --git a/kernel/sched.c b/kernel/sched.c
+index f8dc213..6e3c329 100644
+--- a/kernel/sched.c
++++ b/kernel/sched.c
+@@ -5484,7 +5484,7 @@ static void sd_free_ctl_entry(struct ctl_table **tablep)
+ static void
+ set_table_entry(struct ctl_table *entry,
+ 		const char *procname, void *data, int maxlen,
+-		mode_t mode, proc_handler *proc_handler)
++		mode_t mode, proc_handler_t *proc_handler)
+ {
+ 	entry->procname = procname;
+ 	entry->data = data;
+diff --git a/net/core/dev.c b/net/core/dev.c
+index 82f77ef..6186be0 100644
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -238,6 +238,9 @@ static void unlist_netdevice(struct net_device *dev)
+ 	write_unlock_bh(&dev_base_lock);
+ }
+ 
++/* Click: input packet handlers, might steal packets from net_rx_action. */
++static RAW_NOTIFIER_HEAD(net_in_chain);
++
+ /*
+  *	Our notifier list
+  */
+@@ -1882,6 +1885,29 @@ static inline int deliver_skb(struct sk_buff *skb,
+ 	return pt_prev->func(skb, skb->dev, pt_prev, orig_dev);
+ }
+ 
++/*
++ * Click: Allow Click to ask to intercept input packets.
++ */
++int
++register_net_in(struct notifier_block *nb)
++{
++       int err;
++       rtnl_lock();
++       err = raw_notifier_chain_register(&net_in_chain, nb);
++       rtnl_unlock();
++       return err;
++}
++
++int
++unregister_net_in(struct notifier_block *nb)
++{
++       int err;
++       rtnl_lock();
++       err = raw_notifier_chain_unregister(&net_in_chain, nb);
++       rtnl_unlock();
++       return err;
++}
++
+ #if defined(CONFIG_BRIDGE) || defined (CONFIG_BRIDGE_MODULE)
+ /* These hooks defined here for ATM */
+ struct net_bridge;
+@@ -2015,12 +2041,11 @@ out:
+  *	NET_RX_SUCCESS: no congestion
+  *	NET_RX_DROP: packet was dropped
+  */
+-int netif_receive_skb(struct sk_buff *skb)
++int __netif_receive_skb(struct sk_buff *skb, unsigned short type, int notifier_data)
+ {
+ 	struct packet_type *ptype, *pt_prev;
+ 	struct net_device *orig_dev;
+ 	int ret = NET_RX_DROP;
+-	__be16 type;
+ 
+ 	/* if we've gotten here through NAPI, check netpoll */
+ 	if (netpoll_receive_skb(skb))
+@@ -2043,6 +2068,14 @@ int netif_receive_skb(struct sk_buff *skb)
+ 	skb_reset_transport_header(skb);
+ 	skb->mac_len = skb->network_header - skb->mac_header;
+ 
++       /* Click: may want to steal the packet */
++       if (notifier_data >= 0
++           && raw_notifier_call_chain(&net_in_chain,
++                                  notifier_data,
++                                  skb) & NOTIFY_STOP_MASK) {
++               return ret;
++       }
++
+ 	pt_prev = NULL;
+ 
+ 	rcu_read_lock();
+@@ -2076,7 +2109,6 @@ ncls:
+ 	if (!skb)
+ 		goto out;
+ 
+-	type = skb->protocol;
+ 	list_for_each_entry_rcu(ptype, &ptype_base[ntohs(type)&15], list) {
+ 		if (ptype->type == type &&
+ 		    (!ptype->dev || ptype->dev == skb->dev)) {
+@@ -2124,7 +2156,7 @@ static int process_backlog(struct napi_struct *napi, int quota)
+ 
+ 		dev = skb->dev;
+ 
+-		netif_receive_skb(skb);
++		__netif_receive_skb(skb, skb->protocol, skb_queue_len(&queue->input_pkt_queue));
+ 
+ 		dev_put(dev);
+ 	} while (++work < quota && jiffies == start_time);
+@@ -4469,6 +4501,7 @@ EXPORT_SYMBOL(dev_get_by_flags);
+ EXPORT_SYMBOL(dev_get_by_index);
+ EXPORT_SYMBOL(dev_get_by_name);
+ EXPORT_SYMBOL(dev_open);
++EXPORT_SYMBOL(dev_ioctl);
+ EXPORT_SYMBOL(dev_queue_xmit);
+ EXPORT_SYMBOL(dev_remove_pack);
+ EXPORT_SYMBOL(dev_set_allmulti);
+@@ -4481,10 +4514,16 @@ EXPORT_SYMBOL(netdev_boot_setup_check);
+ EXPORT_SYMBOL(netdev_set_master);
+ EXPORT_SYMBOL(netdev_state_change);
+ EXPORT_SYMBOL(netif_receive_skb);
++EXPORT_SYMBOL(__netif_receive_skb);
+ EXPORT_SYMBOL(netif_rx);
+ EXPORT_SYMBOL(register_gifconf);
+ EXPORT_SYMBOL(register_netdevice);
+ EXPORT_SYMBOL(register_netdevice_notifier);
++
++/* Click */
++EXPORT_SYMBOL(register_net_in);
++EXPORT_SYMBOL(unregister_net_in);
++
+ EXPORT_SYMBOL(skb_checksum_help);
+ EXPORT_SYMBOL(synchronize_net);
+ EXPORT_SYMBOL(unregister_netdevice);
+diff --git a/net/core/neighbour.c b/net/core/neighbour.c
+index 29b8ee4..050d5f8 100644
+--- a/net/core/neighbour.c
++++ b/net/core/neighbour.c
+@@ -2638,7 +2638,7 @@ static struct neigh_sysctl_table {
+ 
+ int neigh_sysctl_register(struct net_device *dev, struct neigh_parms *p,
+ 			  int p_id, int pdev_id, char *p_name,
+-			  proc_handler *handler, ctl_handler *strategy)
++			  proc_handler_t *handler, ctl_handler *strategy)
+ {
+ 	struct neigh_sysctl_table *t = kmemdup(&neigh_sysctl_template,
+ 					       sizeof(*t), GFP_KERNEL);
+diff --git a/net/core/skbuff.c b/net/core/skbuff.c
+index b628377..f8ebcd5 100644
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -508,6 +508,109 @@ static void copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
+ 	skb_shinfo(new)->gso_type = skb_shinfo(old)->gso_type;
+ }
+ 
++/* Click: clear skb header state */
++static inline void skb_headerinit(struct sk_buff *skb, unsigned long flags)
++{
++	skb->next = NULL;
++	skb->prev = NULL;
++	skb->sk = NULL;
++	skb->tstamp.tv64 = 0;     /* No idea about time */
++	skb->dev = NULL;
++	/*skb->input_dev = NULL;*/
++	skb->dst = NULL;
++	skb->sp = NULL;
++	memset(skb->cb, 0, sizeof(skb->cb));
++	skb->priority = 0;
++	skb->pkt_type = PACKET_HOST;   /* Default type */
++	skb->ip_summed = 0;
++	skb->destructor = NULL;
++
++#ifdef CONFIG_NETFILTER
++# if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
++	skb->nfct_reasm = NULL;
++# endif
++# ifdef CONFIG_BRIDGE_NETFILTER
++	skb->nf_bridge = NULL;
++# endif
++#endif
++#ifdef CONFIG_NET_SCHED
++	skb->tc_index = 0;
++# ifdef CONFIG_NET_CLS_ACT
++	skb->tc_verd = 0;
++# endif
++#endif
++}
++
++/* Click: attempts to recycle a sk_buff. if it can be recycled, return it */
++struct sk_buff *skb_recycle(struct sk_buff *skb)
++{
++	if (atomic_dec_and_test(&skb->users)) {
++		dst_release(skb->dst);
++#ifdef CONFIG_XFRM
++		secpath_put(skb->sp);
++#endif
++		if(skb->destructor) {
++			WARN_ON(in_irq());
++			skb->destructor(skb);
++		}
++#ifdef CONFIG_NETFILTER
++# if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
++		nf_conntrack_put(skb->nfct);
++		nf_conntrack_put_reasm(skb->nfct_reasm);
++# endif
++# ifdef CONFIG_BRIDGE_NETFILTER
++		nf_bridge_put(skb->nf_bridge);
++# endif
++#endif
++		skb_headerinit(skb, 0);
++	
++		if (skb->fclone == SKB_FCLONE_UNAVAILABLE
++		    && (!skb->cloned ||
++			atomic_read(&skb_shinfo(skb)->dataref) == (skb->nohdr ? (1 << SKB_DATAREF_SHIFT) + 1 : 1))) {
++			/* Don't need to atomic_sub skb_shinfo(skb)->dataref,
++			   as we set that to 1 below. */
++			
++			if (skb_shinfo(skb)->nr_frags) {
++				int i;
++				for (i = 0; i < skb_shinfo(skb)->nr_frags; i++)
++					put_page(skb_shinfo(skb)->frags[i].page\
++				    );
++				/* Joonwoo Park patch */
++				skb_shinfo(skb)->nr_frags = 0;
++			}
++			if (skb_shinfo(skb)->frag_list)
++				skb_drop_fraglist(skb);
++			
++			/* Load the data pointers. */
++			skb->data = skb->head;
++			skb_reset_tail_pointer(skb);
++
++			/* end and truesize should have never changed */
++			/* skb->end = skb->data + skb->truesize; */
++			
++			/* set up other state */
++			skb->len = 0;
++			skb->cloned = 0;
++			
++			atomic_set(&skb->users, 1);
++			atomic_set(&(skb_shinfo(skb)->dataref), 1);
++			/* Joonwoo Park patch */
++			skb_shinfo(skb)->gso_size = 0;
++			skb_shinfo(skb)->gso_segs = 0;
++			skb_shinfo(skb)->gso_type = 0;
++			skb_shinfo(skb)->ip6_frag_id = 0;
++
++			return skb;
++	        }
++
++		skb_release_data(skb);
++		kfree_skbmem(skb);
++	}
++	
++	return 0;
++}
++
++
+ /**
+  *	skb_copy	-	create private copy of an sk_buff
+  *	@skb: buffer to copy
+@@ -2225,6 +2328,7 @@ EXPORT_SYMBOL(pskb_copy);
+ EXPORT_SYMBOL(pskb_expand_head);
+ EXPORT_SYMBOL(skb_checksum);
+ EXPORT_SYMBOL(skb_clone);
++EXPORT_SYMBOL(skb_recycle);
+ EXPORT_SYMBOL(skb_copy);
+ EXPORT_SYMBOL(skb_copy_and_csum_bits);
+ EXPORT_SYMBOL(skb_copy_and_csum_dev);
+diff --git a/net/ipv4/devinet.c b/net/ipv4/devinet.c
+index b42f746..bfcb2c3 100644
+--- a/net/ipv4/devinet.c
++++ b/net/ipv4/devinet.c
+@@ -1575,3 +1575,4 @@ EXPORT_SYMBOL(inet_select_addr);
+ EXPORT_SYMBOL(inetdev_by_index);
+ EXPORT_SYMBOL(register_inetaddr_notifier);
+ EXPORT_SYMBOL(unregister_inetaddr_notifier);
++EXPORT_SYMBOL(devinet_ioctl);

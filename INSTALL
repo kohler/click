@@ -12,14 +12,14 @@ notes for architectures other than the x86.
 
 The Linux kernel module requires a patched Linux 2.2, 2.4, or 2.6 system.
 We provide patches for Linux 2.2.18 through 2.2.21, 2.4.18 through 2.4.32,
-2.6.16.13, and 2.6.19.2.  The patches do not apply against Red Hat kernels;
-use vanilla kernels from kernel.org.
+2.6.16.13, 2.6.19.2, and 2.6.24.7.  The patches do not apply against Red
+Hat kernels; use vanilla kernels from kernel.org.
 
 The preliminary FreeBSD Click kernel module compiles against unpatched
 FreeBSD-STABLE versions after 440002.
 
 The ns module requires a patched version of the NS simulator.  We provide
-patches for ns versions 2.29 and 2.30.  See the NS SIMULATOR section below.
+patches for ns version 2.30.  See the NS SIMULATOR section below.
 
 
 CONFIGURING
@@ -98,9 +98,9 @@ and running Linux kernels.
     do not work.)  Unpack this distribution into /usr/src/linux.  (Save the
     old kernel source tree, if you had one.)
 
-    We supply patches for Linux 2.4.18-32, 2.6.16.13, and 2.6.19.2.  A
-    patch may or may not work for a slightly different kernel version; we
-    suggest you try it.
+    We supply patches for Linux 2.4.18-32, 2.6.16.13, 2.6.19.2, and
+    2.6.24.7.  A patch may or may not work for a slightly different kernel
+    version; we suggest you try it.
 
  3. Install the Click Linux kernel patch:
 
@@ -110,6 +110,7 @@ and running Linux kernels.
     Use the VERSION that applies to your kernel, as follows:
 
     Kernel version	Patch
+    2.6.24.7		linux-2.6.24.7-patch
     2.6.19.2		linux-2.6.19.2-patch
     2.6.16.13		linux-2.6.16.13-patch
     2.4.32		linux-2.4.32-patch
