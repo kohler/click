@@ -32,6 +32,7 @@ CLICK_CXX_PROTECT
 # include <linux/if_arp.h>
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+# include <linux/rtnetlink.h>
 # include <net/net_namespace.h>
 #endif
 #include <linux/smp_lock.h>
@@ -91,6 +92,18 @@ AnyDevice::initialize_keywords(ErrorHandler *errh)
     return 0;
 }
 
+void
+AnyDevice::alter_promiscuity(int delta)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    rtnl_lock();
+    dev_set_promiscuity(_dev, delta);
+    rtnl_unlock();
+#else
+    dev_set_promiscuity(_dev, delta);
+#endif
+}
+
 int
 AnyDevice::find_device(AnyDeviceMap *adm, ErrorHandler *errh)
 {
@@ -111,7 +124,7 @@ AnyDevice::find_device(AnyDeviceMap *adm, ErrorHandler *errh)
     }
 
     if (_dev && _promisc)
-	dev_set_promiscuity(_dev, 1);
+	alter_promiscuity(1);
 #if HAVE_NET_ENABLE_TIMESTAMP
     if (_dev && _timestamp)
 	net_enable_timestamp();
@@ -147,7 +160,7 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
     }
     
     if (_dev && _promisc)
-	dev_set_promiscuity(_dev, -1);
+	alter_promiscuity(-1);
 #if HAVE_NET_ENABLE_TIMESTAMP
     if (_dev && _timestamp)
 	net_disable_timestamp();
@@ -164,7 +177,7 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
 	adm->insert(this, locked);
 
     if (_dev && _promisc)
-	dev_set_promiscuity(_dev, 1);
+	alter_promiscuity(1);
 #if HAVE_NET_ENABLE_TIMESTAMP
     if (_dev && _timestamp)
 	net_enable_timestamp();
@@ -184,7 +197,7 @@ void
 AnyDevice::clear_device(AnyDeviceMap *adm)
 {
     if (_dev && _promisc)
-	dev_set_promiscuity(_dev, -1);
+	alter_promiscuity(-1);
 #if HAVE_NET_ENABLE_TIMESTAMP
     if (_dev && _timestamp)
 	net_disable_timestamp();
