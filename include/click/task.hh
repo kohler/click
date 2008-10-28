@@ -104,7 +104,7 @@ class Task { public:
      * locking issues). */
     inline int home_thread_id() const;
 
-    /** @brief Return the thread on which this element is currently scheduled,
+    /** @brief Return the thread on which this task is currently scheduled,
      * or would be scheduled.
      *
      * Usually, task->thread()->@link RouterThread::thread_id()
@@ -115,7 +115,12 @@ class Task { public:
      * RouterThread::thread_id() thread_id()@endlink ==
      * RouterThread::THREAD_STRONG_UNSCHEDULE.) */
     inline RouterThread *thread() const;
-    
+
+    /** @brief Return the router to which this task belongs. */
+    inline Router *router() const {
+	return _router;
+    }
+
     /** @brief Return the master where this task will be scheduled. */
     Master *master() const;
 

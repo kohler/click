@@ -25,12 +25,12 @@ class Timer { public:
      * @param user_data argument for callback function */
     Timer(TimerCallback f, void *user_data);
 
-    /** @brief Create a Timer that calls @a element ->@link
+    /** @brief Construct a Timer that calls @a element ->@link
      * Element::run_timer() run_timer@endlink(this) when fired.
      * @param element the element */
     Timer(Element *element);
 
-    /** @brief Create a Timer that schedules @a task when fired.
+    /** @brief Construct a Timer that schedules @a task when fired.
      * @param task the task */
     Timer(Task *task);
 
@@ -42,9 +42,12 @@ class Timer { public:
 
 
     /** @brief Change the Timer to call @a f(this, @a user_data) when fired.
-     * @param f the callback function
-     * @param user_data argument for the callback function */
-    void assign(TimerCallback f, void *user_data);
+     * @param f callback function
+     * @param user_data argument for callback function */
+    inline void assign(TimerCallback f, void *user_data) {
+	_hook = f;
+	_thunk = user_data;
+    }
 
     /** @brief Change the Timer to call @a element ->@link
      * Element::run_timer() run_timer@endlink(this) when fired.
@@ -56,17 +59,17 @@ class Timer { public:
     void assign(Task *task);
 
     
-    /** @brief Returns true iff the Timer has been initialized. */
+    /** @brief Return true iff the Timer has been initialized. */
     inline bool initialized() const {
 	return _router != 0;
     }
 
-    /** @brief Returns true iff the Timer is currently scheduled. */
+    /** @brief Return true iff the Timer is currently scheduled. */
     inline bool scheduled() const {
 	return _schedpos >= 0;
     }
 
-    /** @brief Returns the Timer's current expiration time.
+    /** @brief Return the Timer's current expiration time.
      *
      * The expiration time is the absolute time at which the timer is next
      * scheduled to fire.  If the timer is not currently scheduled, then

@@ -211,12 +211,6 @@ Timer::Timer(Task* task)
 {
 }
 
-void Timer::assign(TimerCallback f, void *user_data)
-{
-    _hook = f;
-    _thunk = user_data;
-}
-
 void Timer::assign(Element* element)
 {
     _hook = element_hook;
