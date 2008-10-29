@@ -14,6 +14,9 @@
 /* Version number of package */
 #undef CLICK_VERSION
 
+/* Version number of package, in CLICK_MAKE_VERSION_CODE format */
+#undef CLICK_VERSION_CODE
+
 /* Define to desired statistics level. */
 #undef CLICK_STATS
 
@@ -112,6 +115,10 @@
 #define EXPLICIT_TEMPLATE_INSTANCES 1
 #endif
 #endif /* __cplusplus */
+
+/* Define macro for creating Click version codes (a la Linux version codes). */
+#define CLICK_MAKE_VERSION_CODE(major, minor, patch) \
+		(((major) << 16) | ((minor) << 8) | (patch))
 
 /* Define macros for declaring packed structures. */
 #ifdef __GNUC__

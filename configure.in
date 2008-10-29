@@ -18,8 +18,11 @@ AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pat
 CLICK_VERSION=$PACKAGE_VERSION
 
 AC_SUBST(ac_configure_args)
-AC_DEFINE_UNQUOTED(CLICK_VERSION, "$CLICK_VERSION")
+AC_DEFINE_UNQUOTED([CLICK_VERSION], ["$CLICK_VERSION"])
 AC_SUBST(CLICK_VERSION)
+
+click_version_code_in=`echo "$CLICK_VERSION" | tr . ,`
+AC_DEFINE_UNQUOTED([CLICK_VERSION_CODE], [CLICK_MAKE_VERSION_CODE($click_version_code_in)])
 
 CLICK_INIT('$(top_srcdir)')
 
