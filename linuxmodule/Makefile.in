@@ -91,6 +91,7 @@ LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS)" \
 	-e s,-fno-unit-at-a-time,, -e s,-Wstrict-prototypes,, \
 	-e s,-Wdeclaration-after-statement,, \
 	-e s,-Wno-pointer-sign,, -e s,-fno-common,, \
+	-e s,-Werror-implicit-function-declaration,, \
 	-e s,-Iinclude/,-I$(linux_srcdir)include/,g)
 CLICKCPPFLAGS = @CPPFLAGS@ -DCLICK_LINUXMODULE
 CLICKCFLAGS = @CFLAGS_NDEBUG@

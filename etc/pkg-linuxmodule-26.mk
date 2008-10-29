@@ -24,6 +24,7 @@ LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS)" \
 	-e s,-fno-unit-at-a-time,, -e s,-Wstrict-prototypes,, \
 	-e s,-Wdeclaration-after-statement,, \
 	-e s,-Wno-pointer-sign,, -e s,-fno-common,, \
+	-e s,-Werror-implicit-function-declaration,, \
 	-e s,-Iinclude/,-I$(clicklinux_srcdir)include/,g)
 
 CXXFLAGS ?= $(CLICKCXXFLAGS_NDEBUG)
