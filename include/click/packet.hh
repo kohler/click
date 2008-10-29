@@ -930,7 +930,7 @@ Packet::has_network_header() const
 #if CLICK_LINUXMODULE
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 #  if NET_SKBUFF_DATA_USES_OFFSET
-    return skb()->network_header == ~0U;
+    return skb()->network_header != ~0U;
 #  else
     return skb()->network_header != 0;
 #  endif
@@ -968,7 +968,7 @@ Packet::has_transport_header() const
 #if CLICK_LINUXMODULE
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 #  if NET_SKBUFF_DATA_USES_OFFSET
-    return skb()->transport_header == ~0U;
+    return skb()->transport_header != ~0U;
 #  else
     return skb()->transport_header != 0;
 #  endif
