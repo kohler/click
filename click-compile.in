@@ -217,8 +217,8 @@ case $driver in
     idefs="@DEFS@ -DCLICK_NS"
     iincludes="${include_source} -I${includedir}"
     icppflags="@CPPFLAGS@"
-    icxxflags="-fPIC @CXXFLAGS@ @DEPCFLAGS@"
-    icflags="-fPIC @CFLAGS@ @DEPCFLAGS@"
+    icxxflags="-fPIC -fno-builtin @CXXFLAGS@ @DEPCFLAGS@"
+    icflags="-fPIC -fno-builtin @CFLAGS@ @DEPCFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     c_command="${CC-@CC@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CFLAGS-$icflags} $cflags $compileflag"
     driver=ns;;
