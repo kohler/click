@@ -298,7 +298,7 @@ Packet::alloc_data(uint32_t headroom, uint32_t len, uint32_t tailroom)
  * The new packet's annotations are cleared and its header pointers are
  * null. */
 WritablePacket *
-Packet::make(uint32_t headroom, const unsigned char *data,
+Packet::make(uint32_t headroom, const void *data,
 	     uint32_t length, uint32_t tailroom)
 {
 #if CLICK_LINUXMODULE
@@ -345,7 +345,7 @@ Packet::make(uint32_t headroom, const unsigned char *data,
  * packet has zero headroom and tailroom.
  *
  * The returned packet's annotations are cleared and its header pointers are
- * null. */ 
+ * null. */
 WritablePacket *
 Packet::make(unsigned char *data, uint32_t length,
 	     void (*destructor)(unsigned char *, size_t))

@@ -38,10 +38,9 @@ class Packet { public:
 					///  Packet::make()
     };
 
-    static WritablePacket *make(uint32_t headroom, const unsigned char *data,
+    static WritablePacket *make(uint32_t headroom, const void *data,
 				uint32_t length, uint32_t tailroom) CLICK_WARN_UNUSED_RESULT;
-    static inline WritablePacket *make(const char *data, uint32_t length) CLICK_WARN_UNUSED_RESULT;
-    static inline WritablePacket *make(const unsigned char *data, uint32_t length) CLICK_WARN_UNUSED_RESULT;
+    static inline WritablePacket *make(const void *data, uint32_t length) CLICK_WARN_UNUSED_RESULT;
     static inline WritablePacket *make(uint32_t length) CLICK_WARN_UNUSED_RESULT;
 #if CLICK_LINUXMODULE
     static Packet *make(struct sk_buff *skb) CLICK_WARN_UNUSED_RESULT;
@@ -1179,16 +1178,9 @@ Packet::set_packet_type_anno(PacketType p)
  * The returned packet's annotations are cleared and its header pointers are
  * null. */
 inline WritablePacket *
-Packet::make(const char *data, uint32_t length)
+Packet::make(const void *data, uint32_t length)
 {
-    return make(default_headroom, (const unsigned char *) data, length, 0);
-}
-
-/** @overload */
-inline WritablePacket *
-Packet::make(const unsigned char *data, uint32_t length)
-{
-    return make(default_headroom, (const unsigned char *) data, length, 0);
+    return make(default_headroom, data, length, 0);
 }
 
 /** @brief Create and return a new packet.
