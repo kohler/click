@@ -14,6 +14,7 @@ class Timer;
 class Element;
 class ErrorHandler;
 class Bitvector;
+class EtherAddress;
 
 /** @file <click/element.hh>
  * @brief Click's Element class.
@@ -158,7 +159,7 @@ class Element { public:
     void set_handler(const String &name, int flags, HandlerHook hook, int user_data1, int user_data2 = 0);
     int set_handler_flags(const String &name, int set_flags, int clear_flags = 0);
     void add_task_handlers(Task *task, const String& prefix = String());
-    
+
     void add_data_handlers(const String &name, int flags, uint8_t *data);
     void add_data_handlers(const String &name, int flags, bool *data);
     void add_data_handlers(const String &name, int flags, int *data);
@@ -175,6 +176,7 @@ class Element { public:
 #endif
     void add_data_handlers(const String &name, int flags, String *data);
     void add_data_handlers(const String &name, int flags, IPAddress *data);
+    void add_data_handlers(const String &name, int flags, EtherAddress *data);
 
     static String read_positional_handler(Element*, void*);
     static String read_keyword_handler(Element*, void*);

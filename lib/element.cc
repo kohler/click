@@ -29,6 +29,7 @@
 #include <click/router.hh>
 #include <click/master.hh>
 #include <click/straccum.hh>
+#include <click/etheraddress.hh>
 #if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -2127,19 +2128,19 @@ uint8_t_write_data_handler(const String &str, Element *element, void *user_data,
 	return 0;
     } else
 	return errh->error("expected uint8_t");
-} 
+}
 
 static String
 bool_read_data_handler(Element *element, void *user_data)
 {
-    bool *ptr  = reinterpret_cast<bool *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    bool *ptr = reinterpret_cast<bool *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
     return cp_unparse_bool(*ptr);
 }
 
 static int
 bool_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *errh)
 {
-    bool *ptr  = reinterpret_cast<bool *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    bool *ptr = reinterpret_cast<bool *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
     if (cp_bool(str, ptr))
 	return 0;
     else
@@ -2149,14 +2150,14 @@ bool_write_data_handler(const String &str, Element *element, void *user_data, Er
 template <typename T> static String
 integer_read_data_handler(Element *element, void *user_data)
 {
-    T *ptr  = reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    T *ptr = reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
     return String(*ptr);
 }
 
 template <typename T> static int
 integer_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *errh)
 {
-    T *ptr  = reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    T *ptr = reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
     if (cp_integer(str, ptr))
 	return 0;
     else
@@ -2166,14 +2167,14 @@ integer_write_data_handler(const String &str, Element *element, void *user_data,
 static String
 atomic_uint32_t_read_data_handler(Element *element, void *user_data)
 {
-    atomic_uint32_t *ptr  = reinterpret_cast<atomic_uint32_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    atomic_uint32_t *ptr = reinterpret_cast<atomic_uint32_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
     return String(ptr->value());
 }
 
 static int
 atomic_uint32_t_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *errh)
 {
-    atomic_uint32_t *ptr  = reinterpret_cast<atomic_uint32_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    atomic_uint32_t *ptr = reinterpret_cast<atomic_uint32_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
     uint32_t value;
     if (cp_integer(str, &value)) {
 	*ptr = value;
@@ -2186,14 +2187,14 @@ atomic_uint32_t_write_data_handler(const String &str, Element *element, void *us
 static String
 double_read_data_handler(Element *element, void *user_data)
 {
-    double *ptr  = reinterpret_cast<double *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    double *ptr = reinterpret_cast<double *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
     return String(*ptr);
 }
 
 static int
 double_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *errh)
 {
-    double *ptr  = reinterpret_cast<double *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    double *ptr = reinterpret_cast<double *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
     if (cp_double(str, ptr))
 	return 0;
     else
@@ -2204,14 +2205,14 @@ double_write_data_handler(const String &str, Element *element, void *user_data, 
 static String
 string_read_data_handler(Element *element, void *user_data)
 {
-    String *ptr  = reinterpret_cast<String *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    String *ptr = reinterpret_cast<String *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
     return *ptr;
 }
 
 static int
 string_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *)
 {
-    String *ptr  = reinterpret_cast<String *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    String *ptr = reinterpret_cast<String *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
     *ptr = str;
     return 0;
 }
@@ -2219,20 +2220,35 @@ string_write_data_handler(const String &str, Element *element, void *user_data, 
 static String
 ip_address_read_data_handler(Element *element, void *user_data)
 {
-    IPAddress *ptr  = reinterpret_cast<IPAddress *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    IPAddress *ptr = reinterpret_cast<IPAddress *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
     return ptr->unparse();
 }
 
 static int
 ip_address_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *errh)
 {
-    IPAddress *ptr  = reinterpret_cast<IPAddress *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
-    IPAddress value;
-    if (cp_ip_address(str, &value)) {
-	*ptr = value;
+    IPAddress *ptr = reinterpret_cast<IPAddress *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    if (cp_ip_address(str, ptr, element))
 	return 0;
-    } else
+    else
 	return errh->error("expected IP address");
+}
+
+static String
+ether_address_read_data_handler(Element *element, void *user_data)
+{
+    EtherAddress *ptr = reinterpret_cast<EtherAddress *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    return ptr->unparse();
+}
+
+static int
+ether_address_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *errh)
+{
+    EtherAddress *ptr = reinterpret_cast<EtherAddress *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    if (cp_ethernet_address(str, ptr, element))
+	return 0;
+    else
+	return errh->error("expected Ethernet address");
 }
 
 void
@@ -2353,6 +2369,13 @@ void
 Element::add_data_handlers(const String &name, int flags, IPAddress *data)
 {
     add_data_handlers(name, flags, ip_address_read_data_handler, ip_address_write_data_handler, data);
+}
+
+/** @overload */
+void
+Element::add_data_handlers(const String &name, int flags, EtherAddress *data)
+{
+    add_data_handlers(name, flags, ether_address_read_data_handler, ether_address_write_data_handler, data);
 }
 
 
