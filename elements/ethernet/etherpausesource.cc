@@ -69,7 +69,7 @@ EtherPauseSource::configure(Vector<String> &conf, ErrorHandler *errh)
     click_ether_macctl *emch = (click_ether_macctl *) q->network_header();
     emch->ether_macctl_opcode = htons(ETHER_MACCTL_OP_PAUSE);
     emch->ether_macctl_param = htons(pausetime);
-    memset(emch->ether_macctl_must_be_zero, 0, sizeof(emch->ether_macctl_must_be_zero));
+    memset(emch->ether_macctl_reserved, 0, sizeof(emch->ether_macctl_reserved));
 
     _packet = q;
     return 0;

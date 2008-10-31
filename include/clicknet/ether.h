@@ -26,6 +26,7 @@ struct click_ether {,
 #define ETHERTYPE_TRAIL		0x1000
 #define ETHERTYPE_8021Q		0x8100
 #define ETHERTYPE_IP6		0x86DD
+#define ETHERTYPE_MACCONTROL	0x8808
 #define ETHERTYPE_GRID		0x7fff	/* wvlan_cs driver won't transmit frames with high bit of protocol number set */
 
 struct click_arp {		/* Offsets relative to ARP (Ethernet) header */
@@ -68,6 +69,17 @@ struct click_ether_vlan {,
     uint16_t    ether_vlan_tci;		/* 14-15 tag control information      */
     uint16_t    ether_vlan_encap_proto;	/* 16-17 Ethernet protocol	      */
 });
+
+
+/* Ethernet MAC control (802.3) */
+
+struct click_ether_macctl {
+    uint16_t	ether_macctl_opcode;
+    uint16_t	ether_macctl_param;
+    uint8_t	ether_macctl_reserved[42];
+};
+
+#define ETHER_MACCTL_OP_PAUSE	0x0001
 
 
 #define ND_SOL 0x0087       /* Neighborhood Solicitation Message Type */
