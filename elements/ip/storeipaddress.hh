@@ -1,5 +1,5 @@
-#ifndef STOREADDRESS_HH
-#define STOREADDRESS_HH
+#ifndef CLICK_STOREIPADDRESS_HH
+#define CLICK_STOREIPADDRESS_HH
 #include <click/element.hh>
 #include <click/ipaddress.hh>
 CLICK_DECLS
@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 StoreIPAddress(OFFSET)
-StoreIPAddress(ADDRESS, OFFSET)
+StoreIPAddress(ADDR, OFFSET)
 =s ip
 stores IP address in packet
 =d
@@ -16,14 +16,17 @@ The one-argument form writes the destination IP address annotation into the
 packet at offset OFFSET, usually an integer. But if the annotation is zero, it
 doesn't change the packet.
 
-The two-argument form writes ADDRESS into the packet at offset OFFSET. ADDRESS
-can be zero.
+The two-argument form writes IP address ADDR into the packet at offset
+OFFSET. ADDR can be zero.
 
 The OFFSET argument may be the special string 'src' or 'dst'.  In this case,
 incoming packets must be IP packets.  StoreIPAddress writes the address into
 either the source or destination field of the IP packet header, as specified,
 and incrementally updates the IP checksum (and, if appropriate, the TCP/UDP
 checksum) to account for the change.
+
+If OFFSET is out of range, the packet is dropped or emitted on optional output
+1.
 
 =n
 
@@ -49,24 +52,24 @@ IPAddrRewriter
 */
 
 class StoreIPAddress : public Element { public:
-  
-  StoreIPAddress();
-  ~StoreIPAddress();
-  
-  const char *class_name() const		{ return "StoreIPAddress"; }
-  const char *port_count() const		{ return PORTS_1_1; }
-  const char *processing() const		{ return AGNOSTIC; }
-  
-  int configure(Vector<String> &, ErrorHandler *);
-  
-  Packet *simple_action(Packet *);
 
- private:
+    StoreIPAddress();
+    ~StoreIPAddress();
 
-  unsigned _offset;
-  IPAddress _address;
-  bool _use_address;
-  
+    const char *class_name() const		{ return "StoreIPAddress"; }
+    const char *port_count() const		{ return PORTS_1_1X2; }
+    const char *processing() const		{ return PROCESSING_A_AH; }
+
+    int configure(Vector<String> &, ErrorHandler *);
+
+    Packet *simple_action(Packet *);
+
+  private:
+
+    unsigned _offset;
+    IPAddress _address;
+    bool _use_address;
+
 };
 
 CLICK_ENDDECLS

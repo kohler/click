@@ -54,41 +54,46 @@ StoreIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 StoreIPAddress::simple_action(Packet *p)
 {
-  // XXX error reporting?
-  IPAddress ipa = (_use_address ? _address : p->dst_ip_anno());
-  if ((ipa || _use_address) && _offset + 4 <= p->length()) {
-    // normal case
-    WritablePacket *q = p->uniqueify();
-    memcpy(q->data() + _offset, &ipa, 4);
-    return q;
-    
-  } else if (_offset >= (unsigned) -16 && p->has_network_header()
-	     && p->ip_header_length() >= sizeof(click_ip)) {
-      // special case: store IP address into IP header
-      // and update checksums incrementally
-      WritablePacket *q = p->uniqueify();
-      uint16_t *x = reinterpret_cast<uint16_t *>(q->network_header() - _offset);
-      uint32_t old_hw = (uint32_t) x[0] + x[1];
-      old_hw += (old_hw >> 16);
-      
-      memcpy(x, &ipa, 4);
-      
-      uint32_t new_hw = (uint32_t) x[0] + x[1];
-      new_hw += (new_hw >> 16);
-      click_ip *iph = q->ip_header();
-      click_update_in_cksum(&iph->ip_sum, old_hw, new_hw);
-      if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)
-	  && q->transport_length() >= (int) sizeof(click_tcp))
-	  click_update_in_cksum(&q->tcp_header()->th_sum, old_hw, new_hw);
-      if (iph->ip_p == IP_PROTO_UDP && IP_FIRSTFRAG(iph)
-	  && q->transport_length() >= (int) sizeof(click_udp)
-	  && q->udp_header()->uh_sum)
-	  click_update_in_cksum(&q->udp_header()->uh_sum, old_hw, new_hw);
-      
-      return q;
-      
-  } else
-    return p;
+    // XXX error reporting?
+    IPAddress ipa = (_use_address ? _address : p->dst_ip_anno());
+    if ((ipa || _use_address) && _offset + 4 <= p->length()) {
+	if (WritablePacket *q = p->uniqueify()) {
+	    memcpy(q->data() + _offset, &ipa, 4);
+	    return q;
+	} else
+	    return 0;
+
+    } else if (_offset >= (unsigned) -16 && p->has_network_header()
+	       && p->ip_header_length() >= sizeof(click_ip)) {
+	// special case: store IP address into IP header
+	// and update checksums incrementally
+	if (WritablePacket *q = p->uniqueify()) {
+	    uint16_t *x = reinterpret_cast<uint16_t *>(q->network_header() - _offset);
+	    uint32_t old_hw = (uint32_t) x[0] + x[1];
+	    old_hw += (old_hw >> 16);
+
+	    memcpy(x, &ipa, 4);
+
+	    uint32_t new_hw = (uint32_t) x[0] + x[1];
+	    new_hw += (new_hw >> 16);
+	    click_ip *iph = q->ip_header();
+	    click_update_in_cksum(&iph->ip_sum, old_hw, new_hw);
+	    if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)
+		&& q->transport_length() >= (int) sizeof(click_tcp))
+		click_update_in_cksum(&q->tcp_header()->th_sum, old_hw, new_hw);
+	    if (iph->ip_p == IP_PROTO_UDP && IP_FIRSTFRAG(iph)
+		&& q->transport_length() >= (int) sizeof(click_udp)
+		&& q->udp_header()->uh_sum)
+		click_update_in_cksum(&q->udp_header()->uh_sum, old_hw, new_hw);
+
+	    return q;
+	} else
+	    return 0;
+
+    } else {
+	checked_output_push(1, p);
+	return 0;
+    }
 }
 
 CLICK_ENDDECLS
