@@ -40,7 +40,7 @@ Returns or sets the DST parameter.
 
 =a
 
-ARPQuerier, EnsureEther */
+ARPQuerier, EnsureEther, StoreEtherAddress */
 
 class EtherEncap : public Element { public:
   
