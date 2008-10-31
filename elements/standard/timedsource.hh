@@ -36,6 +36,11 @@ Time. Same as the INTERVAL argument.
 Integer. Stops sending after LIMIT packets are generated; but if LIMIT is
 negative, sends packets forever.
 
+=item HEADROOM
+
+Unsigned integer. Sets the amount of headroom on generated packets. Default is
+the default packet headroom.
+
 =item STOP
 
 Boolean. If true, then stop the driver once LIMIT packets are sent. Default is
@@ -74,19 +79,21 @@ class TimedSource : public Element { public:
   void run_timer(Timer *);
   
  private:
-  
-  Packet *_packet;
-  Timestamp _interval;
-  int _limit;
-  int _count;
-  bool _active : 1;
-  bool _stop : 1;
-  Timer _timer;
-  String _data;
 
-  static String read_param(Element *, void *);
-  static int change_param(const String &, Element *, void *, ErrorHandler *);
-  
+    Packet *_packet;
+    Timestamp _interval;
+    int _limit;
+    int _count;
+    bool _active;
+    bool _stop;
+    Timer _timer;
+    String _data;
+    uint32_t _headroom;
+
+    enum { h_data, h_interval, h_active, h_reset, h_headroom };
+    static String read_param(Element *, void *);
+    static int change_param(const String &, Element *, void *, ErrorHandler *);
+
 };
 
 CLICK_ENDDECLS

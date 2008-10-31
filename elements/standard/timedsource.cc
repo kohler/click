@@ -24,7 +24,9 @@
 CLICK_DECLS
 
 TimedSource::TimedSource()
-    : _packet(0), _interval(0, Timestamp::subsec_per_sec / 2), _timer(this)
+    : _packet(0), _interval(0, Timestamp::subsec_per_sec / 2), _limit(-1),
+      _count(0), _active(true), _stop(false), _timer(this),
+      _headroom(Packet::default_headroom)
 {
 }
 
@@ -36,25 +38,21 @@ int
 TimedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String data = "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
-  int limit = -1;
-  bool active = true, stop = false;
 
   if (cp_va_kparse(conf, this, errh,
 		   "INTERVAL", cpkP, cpTimestamp, &_interval,
 		   "DATA", cpkP, cpString, &data,
-		   "LIMIT", 0, cpInteger, &limit,
-		   "ACTIVE", 0, cpBool, &active,
-		   "STOP", 0, cpBool, &stop,
+		   "LIMIT", 0, cpInteger, &_limit,
+		   "ACTIVE", 0, cpBool, &_active,
+		   "STOP", 0, cpBool, &_stop,
+		   "HEADROOM", 0, cpUnsigned, &_headroom,
 		   cpEnd) < 0)
     return -1;
 
   _data = data;
-  _limit = limit;
-  _count = 0;
-  _active = active;
-  _stop = stop;
-  if (_packet) _packet->kill();
-  _packet = Packet::make(_data.data(), _data.length());
+  if (_packet)
+      _packet->kill();
+  _packet = Packet::make(_headroom, _data.data(), _data.length(), 0);
   return 0;
 }
 
@@ -93,74 +91,82 @@ TimedSource::run_timer(Timer *)
 String
 TimedSource::read_param(Element *e, void *vparam)
 {
-  TimedSource *ts = (TimedSource *)e;
-  switch ((intptr_t)vparam) {
-   case 0:			// data
-    return ts->_data;
-   case 2:			// interval
-    return ts->_interval.unparse_interval();
-   case 3:			// active
-    return cp_unparse_bool(ts->_active);
-   default:
-    return "";
-  }
+    TimedSource *ts = (TimedSource *)e;
+    switch ((intptr_t)vparam) {
+    case h_interval:
+	return ts->_interval.unparse_interval();
+    default:
+	return "";
+    }
 }
 
 int
 TimedSource::change_param(const String &s, Element *e, void *vparam,
 			  ErrorHandler *errh)
 {
-  TimedSource *ts = (TimedSource *)e;
-  switch ((intptr_t)vparam) {
+    TimedSource *ts = (TimedSource *)e;
+    switch ((intptr_t)vparam) {
 
-  case 0:			// data
-      ts->_data = s;
-      if (ts->_packet)
-	  ts->_packet->kill();
-      ts->_packet = Packet::make(ts->_data.data(), ts->_data.length());
-      break;
-   
-   case 2: {			// interval
+    case h_data:
+	ts->_data = s;
+	goto remake_packet;
+
+    case h_headroom:
+	if (!cp_integer(s, &ts->_headroom))
+	    return errh->error("bad headroom");
+	goto remake_packet;
+
+    remake_packet: {
+	Packet *p = Packet::make(ts->_headroom, ts->_data.data(), ts->_data.length(), 0);
+	if (!p)
+	    return errh->error("out of memory"), -ENOMEM;
+	if (ts->_packet)
+	    ts->_packet->kill();
+	ts->_packet = p;
+	break;
+    }
+
+   case h_interval: {
      Timestamp interval;
      if (!cp_time(s, &interval) || !interval)
        return errh->error("bad interval");
      ts->_interval = interval;
      break;
    }
-   
-   case 3: {			// active
-     bool active;
-     if (!cp_bool(s, &active))
+
+   case h_active: {
+     if (!cp_bool(s, &ts->_active))
        return errh->error("bad active");
-     ts->_active = active;
-     if (!ts->_timer.scheduled() && active)
+     if (!ts->_timer.scheduled() && ts->_active)
        ts->_timer.schedule_now();
      break;
    }
 
-   case 5: {			// reset
+   case h_reset: {
      ts->_count = 0;
      if (!ts->_timer.scheduled() && ts->_active)
        ts->_timer.schedule_now();
      break;
    }
 
-  }
-  return 0;
+    }
+    return 0;
 }
 
 void
 TimedSource::add_handlers()
 {
-  add_read_handler("data", read_param, (void *)0, Handler::CALM);
-  add_write_handler("data", change_param, (void *)0, Handler::RAW);
-  add_data_handlers("limit", Handler::OP_READ | Handler::OP_WRITE | Handler::CALM, &_limit);
-  add_read_handler("interval", read_param, (void *)2, Handler::CALM);
-  add_write_handler("interval", change_param, (void *)2);
-  add_read_handler("active", read_param, (void *)3, Handler::CALM | Handler::CHECKBOX);
-  add_write_handler("active", change_param, (void *)3);
-  add_data_handlers("count", Handler::OP_READ, &_count);
-  add_write_handler("reset", change_param, (void *)5, Handler::BUTTON);
+    add_data_handlers("data", Handler::OP_READ | Handler::CALM, &_data);
+    add_write_handler("data", change_param, h_data, Handler::RAW);
+    add_data_handlers("limit", Handler::OP_READ | Handler::OP_WRITE | Handler::CALM, &_limit);
+    add_read_handler("interval", read_param, h_interval, Handler::CALM);
+    add_write_handler("interval", change_param, h_interval);
+    add_data_handlers("active", Handler::OP_READ | Handler::CALM | Handler::CHECKBOX, &_active);
+    add_write_handler("active", change_param, h_active);
+    add_data_handlers("count", Handler::OP_READ, &_count);
+    add_data_handlers("headroom", Handler::OP_READ | Handler::CALM, &_headroom);
+    add_write_handler("headroom", change_param, h_headroom);
+    add_write_handler("reset", change_param, h_reset, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS
