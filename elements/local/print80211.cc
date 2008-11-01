@@ -23,13 +23,16 @@
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/etheraddress.hh>
-CLICK_DECLS
-
-#if defined(__FreeBSD__) && __FreeBSD__ >= 4
-#include <net/ethernet.h>
-#include <net/if.h>
-#include <net/if_ieee80211.h>
+#if __FreeBSD__ >= 4
+# include <net/ethernet.h>
+# include <net/if.h>
+# if __FreeBSD__ >= 6
+#  include <net80211/ieee80211.h>
+# else
+#  include <net/if_ieee80211.h>
+# endif
 #endif
+CLICK_DECLS
 
 Print80211::Print80211()
 {
@@ -68,13 +71,13 @@ hex_string(unsigned i, bool add_x = false)
 }
 
 static void
-print_data(StringAccum &s, bool /* verbose */, const u_int8_t *buf, unsigned int buflen)
+print_data(StringAccum &s, bool /* verbose */, const uint8_t *buf, unsigned int buflen)
 {
   if (buflen < 26) {
     s << "Data frame too short (have " << buflen << ", wanted at least 26)";
     return;
   }
-  u_int8_t fc1 = buf[1];
+  uint8_t fc1 = buf[1];
   bool to_ds = ((fc1 & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_TODS);
   bool from_ds = ((fc1 & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_FROMDS);
   EtherAddress a1(buf + 4);
@@ -97,7 +100,7 @@ print_data(StringAccum &s, bool /* verbose */, const u_int8_t *buf, unsigned int
 }
 
 static void
-print_mgmt(StringAccum &s, bool /* verbose */, const u_int8_t *buf, unsigned int buflen)
+print_mgmt(StringAccum &s, bool /* verbose */, const uint8_t *buf, unsigned int buflen)
 {
   if (buflen < 24) {
     s << "Management frame too short (have " << buflen << ", wanted at least 24)\n";
@@ -110,9 +113,9 @@ print_mgmt(StringAccum &s, bool /* verbose */, const u_int8_t *buf, unsigned int
 }
 
 static void
-print_ctl(StringAccum &s, bool /* verbose */, const u_int8_t *buf, unsigned int /* buflen */)
+print_ctl(StringAccum &s, bool /* verbose */, const uint8_t *buf, unsigned int /* buflen */)
 {
-  u_int8_t fc0 = buf[0];
+  uint8_t fc0 = buf[0];
   switch (fc0 & IEEE80211_FC0_SUBTYPE_MASK) {
   case IEEE80211_FC0_SUBTYPE_RTS: {
     EtherAddress ra(buf + 4);
@@ -146,11 +149,11 @@ print_ctl(StringAccum &s, bool /* verbose */, const u_int8_t *buf, unsigned int 
 }
 
 static const char *
-frame_type(const u_int8_t *fctl)
+frame_type(const uint8_t *fctl)
 {
   static String s;
   s = "";
-  u_int8_t fc0 = fctl[0];
+  uint8_t fc0 = fctl[0];
   unsigned type = IEEE80211_FC0_TYPE_MASK & fc0;
   unsigned subtype = IEEE80211_FC0_SUBTYPE_MASK & fc0;
 
