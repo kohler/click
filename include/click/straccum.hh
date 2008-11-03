@@ -27,7 +27,7 @@ class StringAccum { public:
     StringAccum()
 	: _s(0), _len(0), _cap(0) {
     }
-    
+
     /** @brief Construct a StringAccum with room for at least @a capacity
      * characters.
      * @param capacity initial capacity
@@ -70,7 +70,7 @@ class StringAccum { public:
     inline char *data() {
 	return reinterpret_cast<char *>(_s);
     }
-    
+
     /** @brief Return the length of the StringAccum. */
     int length() const {
 	return _len;
@@ -114,8 +114,8 @@ class StringAccum { public:
     inline iterator end() {
 	return reinterpret_cast<char *>(_s + _len);
     }
-    
-    
+
+
     typedef int (StringAccum::*unspecified_bool_type)() const;
 
     /** @brief Return true iff the StringAccum contains characters.
@@ -137,7 +137,7 @@ class StringAccum { public:
 	return _cap < 0;
     }
 
-  
+
     /** @brief Null-terminate this StringAccum and return its data.
      *
      * Note that the null character does not contribute to the StringAccum's
@@ -154,7 +154,7 @@ class StringAccum { public:
 	assert(i>=0 && i<_len);
 	return static_cast<char>(_s[i]);
     }
-    
+
     /** @brief Return a reference to the <a>i</a>th character in the string.
      * @param i character index
      * @pre 0 <= @a i < length() */
@@ -202,7 +202,7 @@ class StringAccum { public:
 	_len = 0;
     }
 
-  
+
     /** @brief Reserve space for at least @a n characters.
      * @return a pointer to at least @a n characters, or null if allocation
      * fails
@@ -338,7 +338,7 @@ class StringAccum { public:
      * terminating null. */
     StringAccum &snprintf(int n, const char *format, ...) CLICK_SNPRINTF_ATTR;
 
-  
+
     /** @brief Return a String object with this StringAccum's contents.
      *
      * This operation donates the StringAccum's memory to the returned String.
@@ -373,11 +373,11 @@ class StringAccum { public:
     /** @endcond never */
 
   private:
-  
+
     unsigned char *_s;
     int _len;
     int _cap;
-  
+
     bool grow(int);
     void assign_out_of_memory();
     inline void append_safe_data(const char *s, int len) {
@@ -398,7 +398,7 @@ class StringAccum { public:
 #if HAVE_PERMSTRING
     friend StringAccum &operator<<(StringAccum &sa, PermString s);
 #endif
-  
+
 };
 
 inline StringAccum &operator<<(StringAccum &, char);

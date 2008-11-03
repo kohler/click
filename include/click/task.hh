@@ -84,7 +84,7 @@ class Task { public:
     inline void *user_data() const {
 	return _thunk;
     }
-    
+
     /** @brief Return the task's associated element, if any.
      *
      * Returns null if the task was not constructed with the Task(Element *)
@@ -143,7 +143,7 @@ class Task { public:
 #endif
 
     void move_thread(int thread_id);
- 
+
 #if HAVE_STRIDE_SCHED
     inline int tickets() const;
     inline void set_tickets(int n);
@@ -168,7 +168,7 @@ class Task { public:
     inline TaskCallback hook() const CLICK_DEPRECATED;
     inline void *thunk() const CLICK_DEPRECATED;
     /** @endcond never */
-    
+
   private:
 
     /* if gcc keeps this ordering, we may get some cache locality on a 16 or 32
@@ -182,16 +182,16 @@ class Task { public:
 #endif
     bool _should_be_scheduled;
     bool _should_be_strong_unscheduled;
-    
+
 #if HAVE_STRIDE_SCHED
     unsigned _pass;
     unsigned _stride;
     int _tickets;
 #endif
-  
+
     TaskCallback _hook;
     void* _thunk;
-  
+
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     unsigned _runs;
     unsigned _work_done;
@@ -203,7 +203,7 @@ class Task { public:
 
     RouterThread* _thread;
     int _home_thread_id;
-  
+
     Router* _router;
 
     volatile uintptr_t _pending_nextptr;
@@ -211,7 +211,7 @@ class Task { public:
     Task(const Task&);
     Task& operator=(const Task&);
     void cleanup();
-    
+
     void add_pending();
     void process_pending(RouterThread*);
     inline void fast_schedule();
@@ -225,10 +225,10 @@ class Task { public:
 
     static inline Task *pending_to_task(uintptr_t);
     inline Task *pending_to_task() const;
-    
+
     friend class RouterThread;
     friend class Master;
-  
+
 };
 
 
@@ -327,8 +327,8 @@ Task::thunk() const
 
 inline Element *
 Task::element()	const
-{ 
-    return _hook ? 0 : reinterpret_cast<Element*>(_thunk); 
+{
+    return _hook ? 0 : reinterpret_cast<Element*>(_thunk);
 }
 
 inline int
@@ -390,7 +390,7 @@ Task::tickets() const
  *
  * @sa tickets, adjust_tickets
  */
-inline void 
+inline void
 Task::set_tickets(int n)
 {
     if (n > MAX_TICKETS)
@@ -409,7 +409,7 @@ Task::set_tickets(int n)
  *
  * @sa set_tickets
  */
-inline void 
+inline void
 Task::adjust_tickets(int delta)
 {
     set_tickets(_tickets + delta);
@@ -459,7 +459,7 @@ Task::fast_reschedule()
 	while (n != _thread && !PASS_GT(n->_pass, _pass))
 #   endif
 	    n = n->_next;
-    
+
 	// schedule before 'n'
 	_prev = n->_prev;
 	_next = n;
@@ -592,7 +592,7 @@ Task::cycle_runs() const
 }
 
 inline void
-Task::update_cycles(unsigned c) 
+Task::update_cycles(unsigned c)
 {
     _cycles.update(c);
     _cycle_runs = 0;

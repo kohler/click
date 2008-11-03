@@ -54,7 +54,7 @@ class HashContainer_adapter { public:
   Unlike many hash tables HashContainer does not automatically grow itself to
   maintain good lookup performance.  Its users are expected to call rehash()
   when appropriate.  See unbalanced().
-  
+
   With the default adapter type (A), the template type T must:
 
   <ul>
@@ -71,7 +71,7 @@ class HashContainer_adapter { public:
   HashContainer can store multiple elements with the same key, although this
   is not the normal use.  An element stored in a HashContainer should not
   modify its key.
-  
+
   HashContainer is used to implement Click's HashTable template.
 */
 template <typename T, typename A>
@@ -87,7 +87,7 @@ class HashContainer { public:
 
     /** @brief Type of sizes. */
     typedef size_t size_type;
-    
+
     enum {
 #if CLICK_LINUXMODULE
 	max_bucket_count = 4194303,
@@ -138,10 +138,10 @@ class HashContainer { public:
     inline bool unbalanced() const {
 	return _rep.size > 2 * _rep.nbuckets && _rep.nbuckets < max_bucket_count;
     }
-    
+
     typedef HashContainer_const_iterator<T, A> const_iterator;
     typedef HashContainer_iterator<T, A> iterator;
-    
+
     /** @brief Return an iterator for the first element in the container.
      *
      * @note HashContainer iterators return elements in random order. */
@@ -273,17 +273,17 @@ class HashContainer { public:
   private:
 
     HashContainer_rep<T, A> _rep;
-    
+
     HashContainer(const HashContainer<T, A> &);
     HashContainer<T, A> &operator=(const HashContainer<T, A> &);
-    
+
     friend class HashContainer_iterator<T, A>;
     friend class HashContainer_const_iterator<T, A>;
-  
+
 };
 
 /** @class HashContainer_const_iterator
- * @brief The const_iterator type for HashContainer. */ 
+ * @brief The const_iterator type for HashContainer. */
 template <typename T, typename A>
 class HashContainer_const_iterator { public:
 
@@ -297,12 +297,12 @@ class HashContainer_const_iterator { public:
     T *get() const {
 	return _element;
     }
-    
+
     /** @brief Return a pointer to the element, null if *this == end(). */
     T *operator->() const {
 	return _element;
     }
-    
+
     /** @brief Return a reference to the element.
      * @pre *this != end() */
     T &operator*() const {
@@ -313,7 +313,7 @@ class HashContainer_const_iterator { public:
     inline bool live() const {
 	return _element;
     }
-    
+
     typedef T *(HashContainer_const_iterator::*unspecified_bool_type)() const;
     /** @brief Return true iff *this != end(). */
     inline operator unspecified_bool_type() const {
@@ -329,7 +329,7 @@ class HashContainer_const_iterator { public:
     size_type bucket() const {
 	return _bucket;
     }
-    
+
     /** @brief Advance this iterator to the next element. */
     void operator++() {
 	if (_element && _hc->_rep.hashnext(_element)) {
@@ -344,7 +344,7 @@ class HashContainer_const_iterator { public:
 	    _element = 0;
 	}
     }
-    
+
     /** @brief Advance this iterator to the next element. */
     void operator++(int) {
 	++*this;
@@ -356,7 +356,7 @@ class HashContainer_const_iterator { public:
     T **_pprev;
     size_type _bucket;
     const HashContainer<T, A> *_hc;
-    
+
     inline HashContainer_const_iterator(const HashContainer<T, A> *hc)
 	: _hc(hc) {
 	_bucket = hc->_rep.first_bucket;
@@ -383,7 +383,7 @@ class HashContainer_const_iterator { public:
   @brief The iterator type for HashContainer. */
 template <typename T, typename A>
 class HashContainer_iterator : public HashContainer_const_iterator<T, A> { public:
-    
+
     typedef HashContainer_const_iterator<T, A> inherited;
 
     /** @brief Construct an uninitialized iterator. */
@@ -406,15 +406,15 @@ class HashContainer_iterator : public HashContainer_const_iterator<T, A> { publi
     }
 
   private:
-    
+
     inline HashContainer_iterator(HashContainer<T, A> *hc)
 	: inherited(hc) {
     }
-    
+
     inline HashContainer_iterator(HashContainer<T, A> *hc, typename inherited::size_type b, T **pprev, T *element)
 	: inherited(hc, b, pprev, element) {
     }
-    
+
     friend class HashContainer<T, A>;
 
 };
@@ -628,13 +628,13 @@ void HashContainer<T, A>::rehash(size_type n)
     T **new_buckets = (T **) CLICK_LALLOC(sizeof(T *) * new_nbuckets);
     for (size_type b = 0; b < new_nbuckets; ++b)
 	new_buckets[b] = 0;
-    
+
     size_type old_nbuckets = _rep.nbuckets;
     T **old_buckets = _rep.buckets;
     _rep.nbuckets = new_nbuckets;
     _rep.buckets = new_buckets;
     _rep.first_bucket = 0;
-    
+
     for (size_t b = 0; b < old_nbuckets; b++)
 	for (T *element = old_buckets[b]; element; ) {
 	    T *next = _rep.hashnext(element);
@@ -643,7 +643,7 @@ void HashContainer<T, A>::rehash(size_type n)
 	    new_buckets[new_b] = element;
 	    element = next;
 	}
-    
+
     CLICK_LFREE(old_buckets, sizeof(T *) * old_nbuckets);
 }
 

@@ -158,7 +158,7 @@ class HandlerCall { public:
     //@}
 
 
-    
+
     /** @brief  Construct an empty HandlerCall.
      *
      *  Any attempt to read, write, or initialize the HandlerCall will
@@ -235,7 +235,7 @@ class HandlerCall { public:
      *  initialize@endlink(OP_WRITE, @a context, @a errh). */
     inline int initialize_write(const Element *context, ErrorHandler *errh = 0);
 
-    
+
     typedef bool (HandlerCall::*unspecified_bool_type)() const;
 
     /** @brief  Test if HandlerCall is empty.
@@ -245,7 +245,7 @@ class HandlerCall { public:
     operator unspecified_bool_type() const {
 	return _h != Handler::blank_handler() || _e ? &HandlerCall::empty : 0;
     }
-    
+
     /** @brief  Test if HandlerCall is empty.
      *  @return True if HandlerCall is empty, false otherwise. */
     bool empty() const {
@@ -391,7 +391,7 @@ class HandlerCall { public:
     Element *element() const {
 	return _e;
     }
-    
+
     /** @brief  Return the Handler corresponding to this HandlerCall.
      *
      *  Returns Handler::blank_handler() if invalid. */
@@ -419,7 +419,7 @@ class HandlerCall { public:
      *
      *  Will work even if the HandlerCall has not been initialized. */
     String unparse() const;
-    
+
     /** @brief  Make this HandlerCall empty.
      *
      *  Subsequent attempts to read, write, or initialize the HandlerCall will
@@ -434,9 +434,9 @@ class HandlerCall { public:
     /** @cond never */
     enum { CHECK_READ = OP_READ, CHECK_WRITE = OP_WRITE };
     /** @endcond never */
-    
+
   private:
-    
+
     Element *_e;
     const Handler *_h;
     String _value;

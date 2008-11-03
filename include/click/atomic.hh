@@ -49,10 +49,10 @@ class atomic_uint32_t { public:
 
     // No constructors because, unfortunately, GCC generates worse code. Use
     // operator= instead.
-  
+
     inline uint32_t value() const;
     inline operator uint32_t() const;
-  
+
     inline atomic_uint32_t &operator=(uint32_t x);
 
     inline atomic_uint32_t &operator+=(int32_t delta);
@@ -69,7 +69,7 @@ class atomic_uint32_t { public:
     inline uint32_t fetch_and_add(uint32_t delta);
     inline bool dec_and_test();
     inline bool compare_and_swap(uint32_t test_value, uint32_t new_value);
-  
+
     inline static void inc(volatile uint32_t &x);
     inline static bool dec_and_test(volatile uint32_t &x);
     inline static bool compare_and_swap(volatile uint32_t &x, uint32_t test_value, uint32_t new_value);
@@ -320,7 +320,7 @@ atomic_uint32_t::fetch_and_add(uint32_t delta)
 {
 #if CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "xaddl %0,%1"
-		  : "=r" (delta), "=m" (CLICK_ATOMIC_VAL) 
+		  : "=r" (delta), "=m" (CLICK_ATOMIC_VAL)
 		  : "0" (delta), "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
     return delta;

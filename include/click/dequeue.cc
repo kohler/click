@@ -74,7 +74,7 @@ DEQueue<T>::reserve(int want)
     T *new_l = (T *) CLICK_LALLOC((want + 1) * sizeof(T));
     if (!new_l)
 	return false;
-  
+
     for (int i = _head, j = 0; j < _n; j++, i = next_i(i)) {
 	new(velt(new_l, j)) T(_l[i]);
 	_l[i].~T();
@@ -160,7 +160,7 @@ DEQueue<T>::check_rep()
       assert(_head == _tail);
     else
       assert(_n == (_tail >= _head ? _tail - _head : _cap - _head + _tail));
-  }      
+  }
 }
 
 CLICK_ENDDECLS

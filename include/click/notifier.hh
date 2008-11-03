@@ -40,7 +40,7 @@ class NotifierSignal { public:
      * represent.  An overderived signal, like a busy signal, is always
      * active. */
     static inline NotifierSignal overderived_signal();
-    
+
     /** @brief Return an uninitialized signal.
      *
      * Uninitialized signals may be used occasionally as placeholders for true
@@ -60,7 +60,7 @@ class NotifierSignal { public:
     /** @brief Return whether the signal is idle.
      * @return true iff the signal is idle, i.e. it will never be active. */
     inline bool idle() const;
-    
+
     /** @brief Return whether the signal is busy.
      * @return true iff the signal is busy, i.e. it will always be active.
      *
@@ -91,7 +91,7 @@ class NotifierSignal { public:
 
     /** @brief Assign a signal. */
     NotifierSignal &operator=(const NotifierSignal &x);
-    
+
     /** @brief Make this signal derived by adding information from @a x.
      * @param x the signal to add
      *
@@ -106,9 +106,9 @@ class NotifierSignal { public:
      *
      * Useful for signal debugging. */
     String unparse(Router *router) const;
-    
+
     static void static_initialize();
-    
+
     /** @relates NotifierSignal
      * @brief Compare two NotifierSignals for equality.
      *
@@ -173,13 +173,13 @@ class NotifierSignal { public:
 class Notifier { public:
 
     enum SearchOp { SEARCH_STOP = 0, SEARCH_CONTINUE, SEARCH_CONTINUE_WAKE };
-    
+
     inline Notifier(SearchOp op = SEARCH_STOP);
     inline Notifier(const NotifierSignal &signal, SearchOp op = SEARCH_STOP);
     virtual ~Notifier();
 
     int initialize(const char *name, Router *router);
-    
+
     inline const NotifierSignal &signal() const;
     inline SearchOp search_op() const;
 
@@ -188,14 +188,14 @@ class Notifier { public:
     inline void set_active(bool active);
     inline void wake();
     inline void sleep();
-    
+
     virtual int add_listener(Task *task);
     virtual void remove_listener(Task *task);
     virtual int add_dependent_signal(NotifierSignal *signal);
 
     static const char EMPTY_NOTIFIER[];
     static const char FULL_NOTIFIER[];
-    
+
     static NotifierSignal upstream_empty_signal(Element* e, int port, Task* task, Notifier* dependent_notifier = 0);
     static NotifierSignal downstream_full_signal(Element* e, int port, Task* task, Notifier* dependent_notifier = 0);
 
@@ -203,7 +203,7 @@ class Notifier { public:
 
     NotifierSignal _signal;
     SearchOp _search_op;
-    
+
 };
 
 class ActiveNotifier : public Notifier { public:
@@ -219,7 +219,7 @@ class ActiveNotifier : public Notifier { public:
     inline void set_active(bool active, bool schedule = true);
     inline void wake();
     inline void sleep();
-    
+
   private:
 
     typedef union {
@@ -227,12 +227,12 @@ class ActiveNotifier : public Notifier { public:
 	NotifierSignal *s;
 	void *v;
     } task_or_signal_t;
-    
+
     Task* _listener1;
     task_or_signal_t* _listeners;
 
     int listener_change(void *what, int where, bool rem);
-    
+
     ActiveNotifier(const ActiveNotifier&); // does not exist
     ActiveNotifier& operator=(const ActiveNotifier&); // does not exist
 
@@ -486,7 +486,7 @@ inline void
 Notifier::set_active(bool active)
 {
     _signal.set_active(active);
-}   
+}
 
 /** @brief Sets the associated signal to active.
  * @sa set_active
@@ -495,7 +495,7 @@ inline void
 Notifier::wake()
 {
     set_active(true);
-}   
+}
 
 /** @brief Sets the associated signal to inactive.
  * @sa set_active
@@ -504,7 +504,7 @@ inline void
 Notifier::sleep()
 {
     set_active(false);
-}   
+}
 
 /** @brief Sets the associated signal's activity, possibly scheduling any
  * listener tasks.
@@ -526,7 +526,7 @@ ActiveNotifier::set_active(bool active, bool schedule)
 	// reschedule might run BEFORE we set the notifier; after which it
 	// would go to sleep forever.
 	Notifier::set_active(active);
-	
+
 	if (active && schedule) {
 	    if (_listener1)
 		_listener1->reschedule();

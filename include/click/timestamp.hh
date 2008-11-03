@@ -200,7 +200,7 @@ class Timestamp { public:
 
     inline void set_sec(seconds_type sec);
     inline void set_subsec(uint32_t subsec);
-    
+
     inline seconds_type msec1() const CLICK_DEPRECATED;
     inline seconds_type usec1() const CLICK_DEPRECATED;
     inline seconds_type nsec1() const CLICK_DEPRECATED;
@@ -576,7 +576,7 @@ Timestamp::now()
 }
 
 /** @brief Set this timestamp's seconds component.
-    
+
     The subseconds component is left unchanged. */
 inline void
 Timestamp::set_sec(seconds_type sec)
@@ -591,7 +591,7 @@ Timestamp::set_sec(seconds_type sec)
 
 /** @brief Set this timestamp's subseconds component.
     @param subsec number of subseconds
-    
+
     The seconds component is left unchanged. */
 inline void
 Timestamp::set_subsec(uint32_t subsec)
@@ -742,7 +742,7 @@ Timestamp::timespec() const
 #endif
 
 #if !CLICK_TOOL
-/** @brief Returns this timestamp, converted to a jiffies value. */ 
+/** @brief Returns this timestamp, converted to a jiffies value. */
 inline click_jiffies_t
 Timestamp::jiffies() const
 {

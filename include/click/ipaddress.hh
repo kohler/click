@@ -8,7 +8,7 @@ CLICK_DECLS
 class StringAccum;
 
 class IPAddress { public:
-  
+
     /** @brief Constructs an IPAddress equal to 0.0.0.0. */
     inline IPAddress()
 	: _addr(0) {
@@ -78,7 +78,7 @@ class IPAddress { public:
 
     inline uint32_t addr() const;
     inline operator uint32_t() const;
-  
+
     inline struct in_addr in_addr() const;
     inline operator struct in_addr() const;
 
@@ -86,7 +86,7 @@ class IPAddress { public:
     inline const unsigned char* data() const;
 
     inline uint32_t hashcode() const;
-  
+
     int mask_to_prefix_len() const;
     inline bool matches_prefix(IPAddress addr, IPAddress mask) const;
     inline bool mask_as_specific(IPAddress mask) const;
@@ -96,12 +96,12 @@ class IPAddress { public:
     // bool operator==(IPAddress, uint32_t);
     // bool operator!=(IPAddress, IPAddress);
     // bool operator!=(IPAddress, uint32_t);
-  
+
     // IPAddress operator&(IPAddress, IPAddress);
     // IPAddress operator|(IPAddress, IPAddress);
     // IPAddress operator^(IPAddress, IPAddress);
     // IPAddress operator~(IPAddress);
-  
+
     inline IPAddress& operator&=(IPAddress);
     inline IPAddress& operator|=(IPAddress);
     inline IPAddress& operator^=(IPAddress);
@@ -109,12 +109,12 @@ class IPAddress { public:
     String unparse() const;
     String unparse_mask() const;
     String unparse_with_mask(IPAddress) const;
-  
+
     inline String s() const;
     inline operator String() const CLICK_DEPRECATED;
 
   private:
-  
+
     uint32_t _addr;
 
 };
@@ -173,7 +173,7 @@ operator!=(IPAddress a, uint32_t b)
 }
 
 /** @brief Returns a pointer to the address data.
-    
+
     Since the address is stored in network byte order, data()[0] is the top 8
     bits of the address, data()[1] the next 8 bits, and so forth. */
 inline const unsigned char*
@@ -183,7 +183,7 @@ IPAddress::data() const
 }
 
 /** @brief Returns a pointer to the address data.
-    
+
     Since the address is stored in network byte order, data()[0] is the top 8
     bits of the address, data()[1] the next 8 bits, and so forth. */
 inline unsigned char*

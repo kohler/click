@@ -225,20 +225,20 @@ class NameInfo { public:
     static void check(const Element *, ErrorHandler *);
     /** @endcond never */
 #endif
-    
+
   private:
-    
+
     Vector<NameDB *> _namedb_roots;
     Vector<NameDB *> _namedbs;
 
     inline NameDB *install_dynamic_sentinel() { return (NameDB *) this; }
     NameDB *namedb(uint32_t type, size_t size, const String &prefix, NameDB *installer);
-    
+
 #if CLICK_NAMEDB_CHECK
     uintptr_t _check_generation;
     void checkdb(NameDB *db, NameDB *parent, ErrorHandler *errh);
 #endif
-    
+
 };
 
 class NameDB { public:
@@ -278,7 +278,7 @@ class NameDB { public:
     NameDB *context_parent() const {
 	return _context_parent;
     }
-    
+
     /** @brief Return the database's value size. */
     size_t value_size() const {
 	return _value_size;
@@ -327,9 +327,9 @@ class NameDB { public:
     virtual void check(ErrorHandler *);
     /** @endcond never */
 #endif
-    
+
   private:
-    
+
     uint32_t _type;
     String _context;
     size_t _value_size;
@@ -341,9 +341,9 @@ class NameDB { public:
 #if CLICK_NAMEDB_CHECK
     uintptr_t _check_generation;
 #endif
-    
+
     friend class NameInfo;
-    
+
 };
 
 class StaticNameDB : public NameDB { public:
@@ -391,12 +391,12 @@ class StaticNameDB : public NameDB { public:
     void check(ErrorHandler *);
     /** @endcond never */
 #endif
-    
+
   private:
 
     const Entry *_entries;
     size_t _nentries;
-	
+
 };
 
 class DynamicNameDB : public NameDB { public:
@@ -436,13 +436,13 @@ class DynamicNameDB : public NameDB { public:
      *
      * The @a value_size parameter must equal this database's value size. */
     bool define(const String &name, const void *value, size_t value_size);
-    
+
 #if CLICK_NAMEDB_CHECK
     /** @cond never */
     void check(ErrorHandler *);
     /** @endcond never */
 #endif
-    
+
   private:
 
     Vector<String> _names;
@@ -451,7 +451,7 @@ class DynamicNameDB : public NameDB { public:
 
     void *find(const String &name, bool create);
     void sort();
-    
+
 };
 
 

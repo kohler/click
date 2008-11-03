@@ -70,7 +70,7 @@ class Handler { public:
     inline uint32_t flags() const {
 	return _flags;
     }
-    
+
     /** @brief Return this handler's first callback data. */
     inline void *user_data1() const {
 	return _thunk1;
@@ -211,7 +211,7 @@ class Handler { public:
      * which case errors are reported to ErrorHandler::silent_handler(). */
     inline int call_write(const String &value, Element *e, bool raw,
 			  ErrorHandler *errh) const CLICK_DEPRECATED;
-  
+
 
     /** @brief Unparse this handler's name.
      * @param e relevant element

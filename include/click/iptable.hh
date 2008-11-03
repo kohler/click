@@ -11,18 +11,18 @@ CLICK_DECLS
 // Each entry contains a gateway and an output index.
 
 class IPTable { public:
-  
+
   IPTable();
   ~IPTable();
 
   bool lookup(IPAddress dst, IPAddress &gw, int &index) const;
-  
+
   void add(IPAddress dst, IPAddress mask, IPAddress gw, int index);
   void del(IPAddress dst, IPAddress mask);
   void clear()				{ _v.clear(); }
 
  private:
-  
+
   struct Entry {
     IPAddress dst;
     IPAddress mask;
@@ -31,7 +31,7 @@ class IPTable { public:
     bool valid() const			{ return mask || !dst; }
   };
   Vector<Entry> _v;
-  
+
 };
 
 CLICK_ENDDECLS

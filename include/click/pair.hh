@@ -11,36 +11,36 @@ struct Pair {
     typedef U second_type;
     typedef T key_type;
     typedef const T &key_const_reference;
-    
+
     T first;
     U second;
-    
+
     inline Pair()
 	: first(), second() {
     }
-    
+
     inline Pair(const T &t, const U &u)
 	: first(t), second(u) {
     }
-    
+
     inline Pair(const Pair<T, U> &p)
 	: first(p.first), second(p.second) {
     }
-    
+
     template <typename V, typename W>
     inline Pair(const Pair<V, W> &p)
 	: first(p.first), second(p.second) {
     }
-    
+
     typedef hashcode_t (Pair<T, U>::*unspecified_bool_type)() const;
     inline operator unspecified_bool_type() const {
 	return first || second ? &Pair<T, U>::hashcode : 0;
     }
-    
+
     inline const T &hashkey() const {
 	return first;
     }
-    
+
     inline hashcode_t hashcode() const;
 
     template <typename V, typename W>
@@ -49,7 +49,7 @@ struct Pair {
 	second = p.second;
 	return *this;
     }
-    
+
 };
 
 template <class T, class U>

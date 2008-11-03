@@ -126,20 +126,20 @@ Vector<T>::reserve(size_type want)
     want = (_capacity > 0 ? _capacity * 2 : 4);
   if (want <= _capacity)
     return true;
-  
+
   T *new_l = (T *) CLICK_LALLOC(sizeof(T) * want);
   if (!new_l)
     return false;
 #ifdef VALGRIND_MAKE_MEM_NOACCESS
   VALGRIND_MAKE_MEM_NOACCESS(new_l + _n, (want - _n) * sizeof(T));
 #endif
-  
+
   for (size_type i = 0; i < _n; i++) {
     new(velt(new_l, i)) T(_l[i]);
     _l[i].~T();
   }
   CLICK_LFREE(_l, sizeof(T) * _capacity);
-  
+
   _l = new_l;
   _capacity = want;
   return true;

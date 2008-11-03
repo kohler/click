@@ -40,7 +40,7 @@ class ClickIno { public:
     void cleanup();
 
     uint32_t generation() const		{ return _generation; }
-    
+
     // All operations should be called with a configuration lock held.
     inline int prepare(Router *router, uint32_t generation);
     int nlink(ino_t ino);
@@ -76,11 +76,11 @@ class ClickIno { public:
 	// compound elements.
 	uint16_t flags;
     };
-    
+
   private:
 
     enum { X_FAKE = 1 };
-    
+
     Entry* _x;
     int _nentries;
     int _cap;
@@ -93,7 +93,7 @@ class ClickIno { public:
 
     int name_search(const String &n, int first_xi, int last_xi, int name_offset) const;
     int element_name_search(const String &n, int elementno) const;
-    
+
     int grow(int min_size);
     int true_prepare(Router*, uint32_t);
 

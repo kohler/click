@@ -188,7 +188,7 @@ class HashTable<T> {
     inline iterator end();
     /** @overload */
     inline const_iterator end() const;
-    
+
 
     /** @brief Return an iterator for the element with key @a key, if any.
      *
@@ -283,23 +283,23 @@ class HashTable<T> {
 
     /** @brief Assign this hash table's contents to a copy of @a x. */
     HashTable<T> &operator=(const HashTable<T> &x);
-    
+
   private:
-    
+
     rep_type _rep;
     HashAllocator<sizeof(elt)> _alloc;
-    
+
     void clone_elements(const HashTable<T> &);
     void copy_elements(const HashTable<T> &);
-    
+
     friend class HashTable_iterator<T>;
     friend class HashTable_const_iterator<T>;
     template <typename K, typename V> friend class HashTable;
-    
+
 };
 
 /** @class HashTable_const_iterator
- * @brief The const_iterator type for HashTable. */ 
+ * @brief The const_iterator type for HashTable. */
 template <typename T>
 class HashTable_const_iterator { public:
 
@@ -331,7 +331,7 @@ class HashTable_const_iterator { public:
     typename HashTable<T>::key_const_reference key() const {
 	return _rep.get()->hashkey();
     }
-    
+
     /** @brief Return true iff *this != end(). */
     bool live() const {
 	return (bool) _rep;
@@ -356,11 +356,11 @@ class HashTable_const_iterator { public:
   private:
 
     typename HashTable<T>::rep_type::const_iterator _rep;
-    
+
     inline HashTable_const_iterator(const typename HashTable<T>::rep_type::const_iterator &i)
 	: _rep(i) {
     }
-    
+
     friend class HashTable<T>;
     friend class HashTable_iterator<T>;
 
@@ -368,14 +368,14 @@ class HashTable_const_iterator { public:
 
 /** @class HashTable_iterator
   @brief The iterator type for HashTable.
- 
+
   These iterators apply to HashTable classes that store either a unified
   key-value pair (HashTable<T>), or to HashTable classes that map keys to
   explicit values (HashTable<K, V>).
- 
+
   Iterators for HashTable<K, V> objects have additional methods.  Given
   HashTable<K, V>::iterator it:
- 
+
   <ul>
   <li>*it has type Pair<const K, V>.</li>
   <li>it.key() returns the associated key, and is equivalent to it->first.</li>
@@ -387,23 +387,23 @@ class HashTable_const_iterator { public:
 */
 template <typename T>
 class HashTable_iterator : public HashTable_const_iterator<T> { public:
-    
+
     typedef HashTable_const_iterator<T> inherited;
 
     /** @brief Construct an uninitialized iterator. */
     HashTable_iterator() {
     }
-    
+
     /** @brief Return a pointer to the element, null if *this == end(). */
     T *get() const {
 	return const_cast<T *>(inherited::get());
     }
-    
+
     /** @brief Return a pointer to the element, null if *this == end(). */
     inline T *operator->() const {
 	return const_cast<T *>(inherited::operator->());
     }
-    
+
     /** @brief Return a reference to the element.
      * @pre *this != end() */
     inline T &operator*() const {
@@ -411,17 +411,17 @@ class HashTable_iterator : public HashTable_const_iterator<T> { public:
     }
 
   private:
-    
+
     inline HashTable_iterator(const typename HashTable<T>::rep_type::const_iterator &i)
 	: inherited(i) {
     }
-    
+
     friend class HashTable<T>;
 
 };
 
 /** @class HashTable_const_iterator
- * @brief The const_iterator type for HashTable. */ 
+ * @brief The const_iterator type for HashTable. */
 template <typename K, typename V>
 class HashTable_const_iterator<Pair<K, V> > { public:
 
@@ -436,12 +436,12 @@ class HashTable_const_iterator<Pair<K, V> > { public:
 	else
 	    return 0;
     }
-    
+
     /** @brief Return a pointer to the element, null if *this == end(). */
     const Pair<K, V> *operator->() const {
 	return get();
     }
-    
+
     /** @brief Return a reference to the element.
      * @pre *this != end() */
     const Pair<K, V> &operator*() const {
@@ -464,18 +464,18 @@ class HashTable_const_iterator<Pair<K, V> > { public:
     bool live() const {
 	return (bool) _rep;
     }
-    
+
     typedef bool (HashTable_const_iterator::*unspecified_bool_type)() const;
     /** @brief Return true iff *this != end(). */
     inline operator unspecified_bool_type() const {
 	return _rep ? &HashTable_const_iterator::live : 0;
     }
-    
+
     /** @brief Advance this iterator to the next element. */
     void operator++(int) {
 	_rep++;
     }
-    
+
     /** @brief Advance this iterator to the next element. */
     void operator++() {
 	++_rep;
@@ -484,37 +484,37 @@ class HashTable_const_iterator<Pair<K, V> > { public:
   private:
 
     typename HashTable<Pair<K, V> >::rep_type::const_iterator _rep;
-    
+
     inline HashTable_const_iterator(const typename HashTable<Pair<K, V> >::rep_type::const_iterator &i)
 	: _rep(i) {
     }
-    
+
     friend class HashTable<Pair<K, V> >;
     friend class HashTable_iterator<Pair<K, V> >;
 
 };
 
 /** @class HashTable_iterator
- * @brief The iterator type for HashTable. */ 
+ * @brief The iterator type for HashTable. */
 template <typename K, typename V>
 class HashTable_iterator<Pair<K, V> > : public HashTable_const_iterator<Pair<K, V> > { public:
-    
+
     typedef HashTable_const_iterator<Pair<K, V> > inherited;
 
     /** @brief Construct an uninitialized iterator. */
     HashTable_iterator() {
     }
-    
+
     /** @brief Return a pointer to the element, null if *this == end(). */
     Pair<K, V> *get() const {
 	return const_cast<Pair<K, V> *>(inherited::get());
     }
-    
+
     /** @brief Return a pointer to the element, null if *this == end(). */
     inline Pair<K, V> *operator->() const {
 	return get();
     }
-    
+
     /** @brief Return a reference to the element.
      * @pre *this != end() */
     inline Pair<K, V> &operator*() const {
@@ -528,11 +528,11 @@ class HashTable_iterator<Pair<K, V> > : public HashTable_const_iterator<Pair<K, 
     }
 
   private:
-    
+
     inline HashTable_iterator(const typename HashTable<Pair<K, V> >::rep_type::const_iterator &i)
 	: inherited(i) {
     }
-    
+
     friend class HashTable<Pair<K, V> >;
 
 };
@@ -617,10 +617,10 @@ class HashTable {
 	return _default_value;
     }
 
-    
+
     typedef HashTable_const_iterator<value_type> const_iterator;
     typedef HashTable_iterator<value_type> iterator;
-    
+
     /** @brief Return an iterator for the first element in the table.
      *
      * @note HashTable iterators return elements in undefined order. */
@@ -631,7 +631,7 @@ class HashTable {
     inline const_iterator begin() const {
 	return _rep.begin();
     }
-    
+
     /** @brief Return an iterator for the end of the table.
      * @invariant end().live() == false */
     inline iterator end() {
@@ -817,12 +817,12 @@ class HashTable {
 	_default_value = x._default_value;
 	return *this;
     }
-    
+
   private:
-    
+
     rep_type _rep;
     V _default_value;
-  
+
 };
 
 

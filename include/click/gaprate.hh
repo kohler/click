@@ -48,10 +48,10 @@ class GapRate { public:
      *  @param  r  initial rate (events per second) */
     inline GapRate(unsigned r);
 
-    
+
     /** @brief  Return the current rate. */
     inline unsigned rate() const;
-    
+
     /** @brief  Set the current rate to @a r.
      *  @param  r  desired rate (events per second)
      *
@@ -106,9 +106,9 @@ class GapRate { public:
 
     enum { UGAP_SHIFT = 12 };
     enum { MAX_RATE = 1000000U << UGAP_SHIFT };
-    
+
   private:
-  
+
     unsigned _ugap;		// (1000000 << UGAP_SHIFT) / _rate
     int _sec_count;		// number of updates this second so far
     Timestamp::seconds_type _tv_sec;	// current second
@@ -211,7 +211,7 @@ GapRate::expiry() const
 	    sec += count / _rate;
 	    count = count % _rate;
 	}
-	
+
 	// uint32_t usec = (int) (count * 1000000.0 / _rate)
 	uint32_t usec = (count * _ugap) >> UGAP_SHIFT;
 	return Timestamp::make_usec(sec, usec);

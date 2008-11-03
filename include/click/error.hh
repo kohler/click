@@ -18,7 +18,7 @@
 CLICK_DECLS
 
 class ErrorHandler { public:
-  
+
   enum Seriousness {
     ERRVERBOSITY_CONTEXT= 0x8000,
     ERRVERBOSITY_MAX	= 0xFFFF,
@@ -34,7 +34,7 @@ class ErrorHandler { public:
 
     // fatal() with no explicit exit status exits with this status
     FATAL_EXITSTATUS	= 1,
-    
+
     ERR_DEBUG		= ERR_MIN_DEBUG + ERRVERBOSITY_DEFAULT,
     ERR_CONTEXT_MESSAGE	= ERR_MIN_MESSAGE + ERRVERBOSITY_CONTEXT,
     ERR_MESSAGE		= ERR_MIN_MESSAGE + ERRVERBOSITY_DEFAULT,
@@ -43,19 +43,19 @@ class ErrorHandler { public:
     ERR_ERROR		= ERR_MIN_ERROR + ERRVERBOSITY_DEFAULT,
     ERR_FATAL		= ERR_MIN_FATAL + ERRVERBOSITY_DEFAULT + (FATAL_EXITSTATUS << ERRVERBOSITY_SHIFT)
   };
-  
+
   ErrorHandler()			{ }
   virtual ~ErrorHandler()		{ }
-  
+
   static ErrorHandler *static_initialize(ErrorHandler *errh); // returns errh
   static void static_cleanup();
 
   static ErrorHandler *default_handler();
   static ErrorHandler *silent_handler();
- 
-  static bool has_default_handler(); 
+
+  static bool has_default_handler();
   static void set_default_handler(ErrorHandler *);
-  
+
   virtual int nwarnings() const = 0;
   virtual int nerrors() const = 0;
   virtual void reset_counts() = 0;
@@ -80,7 +80,7 @@ class ErrorHandler { public:
 
   int verror(Seriousness, const String &landmark, const char *format, va_list);
   int verror_text(Seriousness, const String &landmark, const String &text);
-  
+
   String make_text(Seriousness, const char *, ...);
   virtual String make_text(Seriousness, const char *, va_list);
   virtual String decorate_text(Seriousness, const String &, const String &);
@@ -100,7 +100,7 @@ class ErrorHandler { public:
   };
   static Conversion *add_conversion(const String &, ConversionHook);
   static int remove_conversion(Conversion *);
-  
+
 };
 
 class BaseErrorHandler : public ErrorHandler { public:
@@ -115,7 +115,7 @@ class BaseErrorHandler : public ErrorHandler { public:
 
 class SilentErrorHandler : public BaseErrorHandler { public:
   SilentErrorHandler()			{ }
-  void handle_text(Seriousness, const String &);  
+  void handle_text(Seriousness, const String &);
 };
 
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
@@ -143,7 +143,7 @@ class LocalErrorHandler : public BaseErrorHandler { public:
  private:
 
   ErrorHandler *_errh;
- 
+
 };
 
 class ErrorVeneer : public ErrorHandler { public:
@@ -164,7 +164,7 @@ class ErrorVeneer : public ErrorHandler { public:
  protected:
 
   ErrorHandler *_errh;
- 
+
 };
 
 class ContextErrorHandler : public ErrorVeneer { public:

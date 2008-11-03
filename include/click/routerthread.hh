@@ -36,7 +36,7 @@ class RouterThread
 
     enum { THREAD_QUIESCENT = -1, THREAD_STRONG_UNSCHEDULE = -2,
 	   THREAD_UNKNOWN = -1000 };
-    
+
     inline int thread_id() const;
 
     // Task list functions
@@ -44,7 +44,7 @@ class RouterThread
     inline Task *task_begin() const;
     inline Task *task_next(Task *task) const;
     inline Task *task_end() const;
-    
+
     inline void lock_tasks();
     inline bool attempt_lock_tasks();
     inline void unlock_tasks();
@@ -72,7 +72,7 @@ class RouterThread
     bool greedy() const			{ return _greedy; }
     void set_greedy(bool g)		{ _greedy = g; }
 #endif
-    
+
     inline void wake();
 
 #if CLICK_DEBUG_SCHEDULING
@@ -97,7 +97,7 @@ class RouterThread
     int _task_heap_hole;
     unsigned _pass;
 #endif
-    
+
     Master *_master;
     int _id;
 
@@ -109,13 +109,13 @@ class RouterThread
     Spinlock _task_lock;
     atomic_uint32_t _task_blocker;
     atomic_uint32_t _task_blocker_waiting;
-    
+
     uint32_t _any_pending;
 
 #if CLICK_LINUXMODULE
     bool _greedy;
 #endif
-    
+
 #if CLICK_BSDMODULE
     // XXX FreeBSD
     u_int64_t _old_tsc; /* MARKO - temp. */
@@ -147,7 +147,7 @@ class RouterThread
     uint32_t _task_epoch_first;
     Timestamp _task_epoch_time[TASK_EPOCH_BUFSIZ];
 #endif
-    
+
     // called by Master
     RouterThread(Master *, int);
     ~RouterThread();
@@ -169,7 +169,7 @@ class RouterThread
     void task_reheapify_from(int pos, Task*);
 #endif
     inline bool current_thread_is_running() const;
-    
+
     friend class Task;
     friend class Master;
 

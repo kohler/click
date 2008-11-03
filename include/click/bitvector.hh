@@ -52,7 +52,7 @@ class Bitvector { public:
 
     /** @brief Return true iff the bitvector's bits are all false. */
     bool zero() const;
-    
+
     typedef bool (Bitvector::*unspecified_bool_type)() const;
     /** @brief Return true iff the bitvector's bits are all false.
      * @sa zero() */
@@ -195,7 +195,7 @@ class Bitvector { public:
 
     /** @brief Swap the contents of this bitvector and @a x. */
     void swap(Bitvector &x);
-    
+
 
     /** @brief Data word type.
      *
@@ -224,7 +224,7 @@ class Bitvector { public:
     }
 
   private:
-    
+
     enum { MAX_INLINE_BIT = 63, MAX_INLINE_WORD = 1 };
 
     int _max;

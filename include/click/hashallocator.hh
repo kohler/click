@@ -36,7 +36,7 @@ class HashAllocator { public:
     buffer *_buffer;
 
     void *hard_allocate();
-    
+
 };
 
 template <size_t size>

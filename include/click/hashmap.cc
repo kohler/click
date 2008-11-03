@@ -187,7 +187,7 @@ HashMap<K, V>::resize0(size_t new_nbuckets)
   _buckets = new_buckets;
   if (dynamic_resizing())
     set_dynamic_resizing(true);	// reset threshold
-  
+
   for (size_t i = 0; i < old_nbuckets; i++)
     for (Elt *e = old_buckets[i]; e; ) {
       Elt *n = e->next;
@@ -227,7 +227,7 @@ HashMap<K, V>::insert(const K &key, const V &value)
     resize(_nbuckets + 1);
     b = bucket(key);
   }
-  
+
   if (Elt *e = reinterpret_cast<Elt *>(_arena->alloc())) {
     new(reinterpret_cast<void *>(&e->key)) K(key);
     new(reinterpret_cast<void *>(&e->value)) V(value);
@@ -551,7 +551,7 @@ HashMap<K, void *>::resize0(size_t new_nbuckets)
   _buckets = new_buckets;
   if (dynamic_resizing())
     set_dynamic_resizing(true);	// reset threshold
-  
+
   for (size_t i = 0; i < old_nbuckets; i++)
     for (Elt *e = old_buckets[i]; e; ) {
       Elt *n = e->next;
@@ -591,7 +591,7 @@ HashMap<K, void *>::insert(const K &key, void *value)
     resize(_nbuckets + 1);
     b = bucket(key);
   }
-  
+
   if (Elt *e = reinterpret_cast<Elt *>(_arena->alloc())) {
     new(reinterpret_cast<void *>(&e->key)) K(key);
     e->value = value;

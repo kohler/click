@@ -73,7 +73,7 @@ template <typename T, List_member<T> T::*member> class List;
 	  delete n;
       }
   }
-  
+
   template <typename T>
   void remove_every_other(T &list) {
       typename T::iterator it = list.begin();
@@ -95,7 +95,7 @@ template <typename T, List_member<T> T::*member> class List;
   previous-element pointers, but all modifications must take place via List
   functions like List::push_back() and List::insert().  List_member has
   private copy constructor and default assignment operators.
-  
+
   @sa List
 */
 template <typename T>
@@ -556,7 +556,7 @@ class List { public:
 
     List(const List<T, member> &x);
     List<T, member> &operator=(const List<T, member> &x);
-    
+
 };
 
 #undef LIST_HEAD_MARKER

@@ -15,7 +15,7 @@ class HashMap_Arena { public:
 
     void *alloc();
     void free(void *);
-    
+
   private:
 
     struct Link {
@@ -27,7 +27,7 @@ class HashMap_Arena { public:
 				// too-large bucket
     char *_cur_buffer;
     int _buffer_pos;
-    
+
     uint32_t _element_size;
 
     char **_buffers;
@@ -36,12 +36,12 @@ class HashMap_Arena { public:
 
     uint32_t _refcount;
     bool _detached;
-    
+
     ~HashMap_Arena();
     void *hard_alloc();
 
     friend class Link;		// shut up, compiler
-    
+
 };
 
 class HashMap_ArenaFactory { public:
@@ -51,17 +51,17 @@ class HashMap_ArenaFactory { public:
 
     static void static_initialize();
     static void static_cleanup();
-    
+
     static HashMap_Arena *get_arena(uint32_t, HashMap_ArenaFactory * =0);
     virtual HashMap_Arena *get_arena_func(uint32_t);
-    
+
   private:
 
     HashMap_Arena **_arenas[2];
     int _narenas[2];
 
     static HashMap_ArenaFactory *the_factory;
-    
+
 };
 
 inline void

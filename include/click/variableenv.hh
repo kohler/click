@@ -16,7 +16,7 @@ class VariableExpander { public:
 };
 
 class VariableEnvironment : public VariableExpander { public:
-  
+
     VariableEnvironment(VariableEnvironment *parent);
 
     int depth() const			{ return _depth; }

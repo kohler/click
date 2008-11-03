@@ -5,7 +5,7 @@
  *
  * API for sending packets to Click. Mostly intended for use
  * by a network simulator which wants to use Click to do routing.
- * 
+ *
  */
 
 #ifdef __cplusplus
@@ -80,7 +80,7 @@ int simclick_click_write_handler(simclick_node_t *sim,
 				 const char* writestring);
 
 /*
- * We also provide a gettimeofday substitute which utilizes the 
+ * We also provide a gettimeofday substitute which utilizes the
  * state info passed to us by the simulator.
  */
 int simclick_gettimeofday(struct timeval* tv);
@@ -90,7 +90,7 @@ int simclick_gettimeofday(struct timeval* tv);
  * notably some way of injecting packets back into the system,
  * mapping interface names to id numbers, and arranging for click
  * to execute at a specified time in the future.
- * We implement 
+ * We implement
  */
 #define SIMCLICK_VERSION		0  // none
 #define SIMCLICK_SUPPORTS		1  // int call

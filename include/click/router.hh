@@ -49,7 +49,7 @@ class Router { public:
     const String& elandmark(int i) const;
     const String& econfiguration(int i) const;
     void set_econfiguration(int i, const String& conf);
-    
+
     Element* find(const String& name, ErrorHandler* errh = 0) const;
     Element* find(const String& name, String context, ErrorHandler* errh = 0) const;
     Element* find(const String& name, const Element* context, ErrorHandler* errh = 0) const;
@@ -59,7 +59,7 @@ class Router { public:
 
     inline const char *flow_code_override(int eindex) const;
     void set_flow_code_override(int eindex, const String &flow_code);
-    
+
     // HANDLERS
     // 'const Handler *' results last until that element/handlername modified
     static const Handler *handler(const Element *e, const String &hname);
@@ -77,7 +77,7 @@ class Router { public:
     void* attachment(const String& aname) const;
     void*& force_attachment(const String& aname);
     void* set_attachment(const String& aname, void* value);
-    
+
     ErrorHandler* chatter_channel(const String& channel_name) const;
     HashMap_ArenaFactory* arena_factory() const;
 
@@ -100,7 +100,7 @@ class Router { public:
 
     String element_ports_string(const Element *e) const;
     //@}
-  
+
     // INITIALIZATION
     /** @name Internal Functions */
     //@{
@@ -203,7 +203,7 @@ class Router { public:
     Vector<Vector<int> *> _listenvecs;
     Vector<int>* sim_listenvec(int ifid);
 #endif
-  
+
   private:
 
     enum {
@@ -216,11 +216,11 @@ class Router { public:
     };
 
     Master* _master;
-    
+
     atomic_uint32_t _runcount;
 
     atomic_uint32_t _refcount;
-  
+
     Vector<Element*> _elements;
     Vector<String> _element_names;
     Vector<String> _element_configurations;
@@ -239,7 +239,7 @@ class Router { public:
     bool _have_connections : 1;
     bool _conn_sorted : 1;
     volatile int _running;
-  
+
     Vector<int> _ehandler_first_by_element;
     Vector<int> _ehandler_to_handler;
     Vector<int> _ehandler_next;
@@ -253,7 +253,7 @@ class Router { public:
 
     Vector<String> _attachment_names;
     Vector<void*> _attachments;
-  
+
     Element* _root_element;
     String _configuration;
 
@@ -280,10 +280,10 @@ class Router { public:
 #if CLICK_LINUXMODULE
     Vector<struct module*> _modules;
 #endif
-    
+
     Router(const Router&);
     Router& operator=(const Router&);
-  
+
     Connection *remove_connection(Connection *cp);
     void hookup_error(const Port &p, bool isoutput, const char *message,
 		      ErrorHandler *errh, bool active = false);
@@ -328,7 +328,7 @@ class Router { public:
     friend class Task;
     friend int Element::set_nports(int, int);
     /** @endcond never */
-  
+
 };
 
 

@@ -7,7 +7,7 @@ CLICK_DECLS
 class ErrorHandler;
 
 struct ArchiveElement {
-  
+
     String name;
     int date;
     int uid;
@@ -22,7 +22,7 @@ struct ArchiveElement {
     static int parse(const String &str, Vector<ArchiveElement> &ar, ErrorHandler *errh = 0);
     static String unparse(const Vector<ArchiveElement> &ar, ErrorHandler *errh = 0);
     static int arindex(const Vector<ArchiveElement> &ar, const String &name);
-  
+
 };
 
 CLICK_ENDDECLS

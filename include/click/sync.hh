@@ -46,7 +46,7 @@ class Spinlock { public:
 
     inline Spinlock();
     inline ~Spinlock();
-  
+
     inline void acquire();
     inline void release();
     inline bool attempt();
@@ -78,7 +78,7 @@ inline
 Spinlock::~Spinlock()
 {
 #if CLICK_MULTITHREAD_SPINLOCK
-    if (_depth != 0) 
+    if (_depth != 0)
 	click_chatter("warning: freeing unreleased lock");
 #endif
 }
@@ -197,7 +197,7 @@ class SpinlockIRQ { public:
 #else
     typedef int flags_t;
 #endif
-    
+
     inline flags_t acquire();
     inline void release(flags_t);
 
@@ -208,7 +208,7 @@ class SpinlockIRQ { public:
   private:
     Spinlock _lock;
 #endif
-  
+
 };
 
 /** @brief Creates a SpinlockIRQ. */
@@ -218,7 +218,7 @@ SpinlockIRQ::SpinlockIRQ()
 #if CLICK_LINUXMODULE
     spin_lock_init(&_lock);
 #endif
-} 
+}
 
 /** @brief Acquires the SpinlockIRQ.
  * @return The current state of the interrupt flags.
@@ -313,7 +313,7 @@ class ReadWriteLock { public:
 	unsigned char reserved[32 - sizeof(Spinlock)];
     } *_l;
 #endif
-    
+
 };
 
 /** @brief Creates a ReadWriteLock. */

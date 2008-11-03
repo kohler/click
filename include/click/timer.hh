@@ -58,7 +58,7 @@ class Timer { public:
      * @param task the task */
     void assign(Task *task);
 
-    
+
     /** @brief Return true iff the Timer has been initialized. */
     inline bool initialized() const {
 	return _router != 0;
@@ -140,7 +140,7 @@ class Timer { public:
     inline void schedule_after_sec(uint32_t delta_sec) {
 	schedule_after(Timestamp(delta_sec, 0));
     }
-	
+
     /** @brief Schedule the timer to fire after @a delta_msec milliseconds.
      * @param delta_msec interval until expiration time, in milliseconds
      *
@@ -226,9 +226,9 @@ class Timer { public:
     inline void reschedule_after_ms(uint32_t delta_sec) CLICK_DEPRECATED;
 
     enum { behind_sec = 1 };
-    
+
   private:
-  
+
     int _schedpos;
     Timestamp _expiry;
     TimerCallback _hook;
@@ -239,7 +239,7 @@ class Timer { public:
     Timer &operator=(const Timer &);
 
     friend class Master;
-  
+
 };
 
 inline void

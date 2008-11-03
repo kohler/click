@@ -24,7 +24,7 @@ class IP6FlowID { public:
   void set_daddr(const IP6Address &a)	{ _daddr = a; }
   void set_sport(uint16_t p)		{ _sport = p; }
   void set_dport(uint16_t p)		{ _dport = p; }
-  
+
   inline IP6FlowID rev() const;
 
   inline hashcode_t hashcode() const;
@@ -32,9 +32,9 @@ class IP6FlowID { public:
   String unparse() const;
   operator String() const		{ return unparse(); }
   String s() const			{ return unparse(); }
-  
+
  protected:
-  
+
   // note: several functions depend on this field order!
   IP6Address _saddr;
   IP6Address _daddr;
@@ -74,14 +74,14 @@ IP6FlowID::rev() const
 #if 0
 inline hashcode_t
 IP6FlowID::hashcode() const
-{ 
-  return (ROT(_saddr.hashcode(), 13) 
+{
+  return (ROT(_saddr.hashcode(), 13)
 	  ^ ROT(_daddr.hashcode(), 23) ^ (_sport | (_dport<<16)));
 }
 #endif
 
 inline hashcode_t IP6FlowID::hashcode() const
-{ 
+{
   // more complicated hashcode, but causes less collision
   uint16_t s = ntohs(sport());
   uint16_t d = ntohs(dport());

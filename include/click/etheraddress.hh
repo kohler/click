@@ -117,7 +117,7 @@ class EtherAddress { public:
     EtherAddress(uint16_t m) {
 	_data[0] = _data[1] = _data[2] = m;
     }
-  
+
 };
 
 inline EtherAddress EtherAddress::broadcast() {

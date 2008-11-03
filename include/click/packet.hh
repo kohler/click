@@ -268,7 +268,7 @@ class Packet { public:
     // CONVENIENCE HEADER ANNOTATIONS
     inline const click_ether *ether_header() const;
     inline void set_ether_header(const click_ether *ethh);
-  
+
     inline const click_ip *ip_header() const;
     inline int ip_header_offset() const;
     inline uint32_t ip_header_length() const;
@@ -356,7 +356,7 @@ class Packet { public:
     simclick_simpacketinfo *get_sim_packetinfo() {
 	return &(_sim_packetinfo._pinfo);
     }
-    void set_sim_packetinfo(simclick_simpacketinfo* pinfo) { 
+    void set_sim_packetinfo(simclick_simpacketinfo* pinfo) {
 	_sim_packetinfo._pinfo = *pinfo;
     }
 #endif
@@ -389,7 +389,7 @@ class Packet { public:
      *
      * The value is stored in the address annotation area. */
     inline void set_dst_ip_anno(IPAddress addr);
-    
+
     /** @brief Return a pointer to the annotation area.
      *
      * The area is @link Packet::anno_size anno_size @endlink bytes long. */
@@ -416,7 +416,7 @@ class Packet { public:
 	assert(i >= 0 && i < anno_size);
 	return xanno()->u8[i];
     }
-    
+
     /** @brief Set annotation byte at offset @a i.
      * @param i annotation offset in bytes
      * @param v value
@@ -566,7 +566,7 @@ class Packet { public:
 	*reinterpret_cast<uint64_t *>(xanno()->c + i) = v;
     }
 #endif
-    
+
     inline void clear_annotations(bool all = true);
     inline void copy_annotations(const Packet *);
     //@}
@@ -621,7 +621,7 @@ class Packet { public:
     inline uint32_t user_anno_u(int) const CLICK_DEPRECATED;
     inline void set_user_anno_u(int, uint32_t) CLICK_DEPRECATED;
     /** @endcond never */
-  
+
   private:
 
     // Anno must fit in sk_buff's char cb[48].
@@ -665,7 +665,7 @@ class Packet { public:
     SimPacketinfoWrapper _sim_packetinfo;
 # endif
 #endif
-  
+
     Packet();
     Packet(const Packet &);
     ~Packet();
@@ -692,7 +692,7 @@ class Packet { public:
 
 
 class WritablePacket : public Packet { public:
-  
+
     inline unsigned char *data() const;
     inline unsigned char *end_data() const;
     inline unsigned char *buffer() const;
@@ -710,7 +710,7 @@ class WritablePacket : public Packet { public:
     /** @cond never */
     inline unsigned char *buffer_data() const CLICK_DEPRECATED;
     /** @endcond never */
-    
+
  private:
 
     WritablePacket()				{ }
@@ -718,7 +718,7 @@ class WritablePacket : public Packet { public:
     ~WritablePacket()				{ }
 
     friend class Packet;
-  
+
 };
 
 
@@ -1191,7 +1191,7 @@ Packet::make(const void *data, uint32_t length)
  * @link Packet::default_headroom default_headroom @endlink, its tailroom is 0.
  *
  * The returned packet's annotations are cleared and its header pointers are
- * null. */ 
+ * null. */
 inline WritablePacket *
 Packet::make(uint32_t length)
 {
@@ -1531,8 +1531,8 @@ Packet::dst_ip_anno() const
 
 inline void
 Packet::set_dst_ip_anno(IPAddress a)
-{ 
-    xanno()->u32[dst_ip_anno_offset / 4] = a.addr(); 
+{
+    xanno()->u32[dst_ip_anno_offset / 4] = a.addr();
 }
 
 /** @brief Set the MAC header pointer.
@@ -1943,7 +1943,7 @@ inline void *Packet::addr_anno() {
 inline const void *Packet::addr_anno() const {
     return anno_u8() + addr_anno_offset;
 }
-    
+
 /** @brief Return a pointer to the user annotation area.
  * @deprecated Use Packet::anno() instead.
  *

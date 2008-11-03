@@ -120,7 +120,7 @@ class Bigint { public:
 	limb_type r2 = (limb_type) al * bh + high(r0) + r1;
 	if (r2 < r1)
 	    r3 += limb_half;
-	
+
 	x1 = r3 + high(r2);
 	x0 = (r2 << half_limb_bits) + low(r0);
     }
@@ -132,7 +132,7 @@ class Bigint { public:
      * overflow, @a y is the largest possible number (i.e., only ones). */
     static limb_type inverse(limb_type x) {
 	limb_type y1 = ~x, y0 = ~(limb_type) 0;
-	
+
 	// now calculate [y1y0] / x
 	limb_type x1 = high(x), x0 = low(x);
 	limb_type q1 = y1 / x1;
@@ -214,7 +214,7 @@ class Bigint { public:
 	x += n - 1;   /* Make x point at most significant quotient limb */
 	a += n - 1;   /* Make a point at most significant dividend limb */
 	limb_type r = 0;
-	
+
 	if (b & limb_high_bit) {
 	    /* High quotient limb is 0 or 1, skip a divide step. */
 	    r = *a;
@@ -228,7 +228,7 @@ class Bigint { public:
 		preinverted_divide(*x, r, r, *a, b, b_inverse);
 		--x, --a, --n;
 	    }
-	    
+
 	} else {
 	    /* Most significant bit of divisor == 0.  */
 	    /* Skip a division if high < divisor (high quotient 0).  Testing

@@ -27,14 +27,14 @@ class HashMap { public:
     typedef K key_type;
     typedef V mapped_type;
     struct Pair;
-  
+
     HashMap();
     explicit HashMap(const V &, HashMap_ArenaFactory * = 0);
     HashMap(const HashMap<K, V> &);
     ~HashMap();
 
   void set_arena(HashMap_ArenaFactory *);
-  
+
   size_t size() const			{ return _n; }
   bool empty() const			{ return _n == 0; }
   size_t nbuckets() const		{ return _nbuckets; }
@@ -51,7 +51,7 @@ class HashMap { public:
   V &find_force(const K &k, const V &v) { return *findp_force(k, v); }
   V *findp_force(const K &k)	{ return findp_force(k, _default_value); }
   V &find_force(const K &k)	{ return *findp_force(k, _default_value); }
-  
+
   bool insert(const K &, const V &);
   bool erase(const K &);
   bool remove(const K &key) {
@@ -68,7 +68,7 @@ class HashMap { public:
   inline iterator begin();
   inline const_iterator end() const;
   inline iterator end();
-  
+
   // dynamic resizing
   void resize(size_t);
   bool dynamic_resizing() const		{ return _capacity < 0x7FFFFFFF; }
@@ -84,9 +84,9 @@ class HashMap { public:
   enum { MAX_NBUCKETS = 4194303,
 	 DEFAULT_INITIAL_NBUCKETS = 127,
 	 DEFAULT_RESIZE_THRESHOLD = 2 };
-  
+
  private:
-  
+
     struct Elt : public Pair {
 	Elt *next;
 #if defined(__GNUC__) && __GNUC__ < 4
@@ -111,7 +111,7 @@ class HashMap { public:
 
   friend class _HashMap_iterator<K, V>;
   friend class _HashMap_const_iterator<K, V>;
-  
+
 };
 
 template <class K, class V>
@@ -122,7 +122,7 @@ class _HashMap_const_iterator { public:
   inline operator unspecified_bool_type() const CLICK_DEPRECATED;
   void operator++(int);
   void operator++()			{ (*this)++; }
-  
+
   typedef typename HashMap<K, V>::Pair Pair;
   const Pair *pair() const		{ return _elt; }
 
@@ -151,7 +151,7 @@ class _HashMap_iterator : public _HashMap_const_iterator<K, V> { public:
   V &value() const	{ return const_cast<V &>(inherited::value()); }
 
  private:
-  
+
   _HashMap_iterator(HashMap<K, V> *m, bool begin) : inherited(m, begin) { }
   friend class HashMap<K, V>;
 
@@ -235,9 +235,9 @@ class HashMap<K, void *> { public:
   explicit HashMap(void *, HashMap_ArenaFactory * = 0);
   HashMap(const HashMap<K, void *> &);
   ~HashMap();
-  
+
   void set_arena(HashMap_ArenaFactory *);
-  
+
   size_t size() const			{ return _n; }
   bool empty() const			{ return _n == 0; }
   size_t nbuckets() const		{ return _nbuckets; }
@@ -254,7 +254,7 @@ class HashMap<K, void *> { public:
   void *&find_force(const K &k, void *v) { return *findp_force(k, v); }
   void **findp_force(const K &k) { return findp_force(k, _default_value); }
   void *&find_force(const K &k)  { return *findp_force(k, _default_value); }
-  
+
   bool insert(const K &, void *);
   bool erase(const K &);
   bool remove(const K &key) {
@@ -283,13 +283,13 @@ class HashMap<K, void *> { public:
     K key;
     void *value;
   };
-  
+
   enum { MAX_NBUCKETS = 32767,
 	 DEFAULT_INITIAL_NBUCKETS = 127,
 	 DEFAULT_RESIZE_THRESHOLD = 2 };
-  
+
   private:
-  
+
     struct Elt : public Pair {
 	Elt *next;
 #if defined(__GNUC__) && __GNUC__ < 4
@@ -314,7 +314,7 @@ class HashMap<K, void *> { public:
 
   friend class _HashMap_iterator<K, void *>;
   friend class _HashMap_const_iterator<K, void *>;
-  
+
 };
 
 template <class K>
@@ -325,13 +325,13 @@ class _HashMap_const_iterator<K, void *> { public:
   inline operator unspecified_bool_type() const CLICK_DEPRECATED;
   void operator++(int);
   void operator++()			{ (*this)++; }
-  
+
   typedef typename HashMap<K, void *>::Pair Pair;
   const Pair *pair() const		{ return _elt; }
-  
+
   const K &key() const			{ return _elt->key; }
   void *value() const			{ return _elt->value; }
-  
+
  private:
 
   const HashMap<K, void *> *_hm;
@@ -434,32 +434,32 @@ class HashMap<K, T *> : public HashMap<K, void *> { public:
     typedef T *mapped_type;
     typedef HashMap<K, void *> inherited;
     struct Pair;
-  
+
   HashMap()				: inherited() { }
   explicit HashMap(T *def, HashMap_ArenaFactory *factory = 0)
 					: inherited(def, factory) { }
   HashMap(const HashMap<K, T *> &o) : inherited(o) { }
   ~HashMap()				{ }
-  
+
   void set_arena(HashMap_ArenaFactory *af) { inherited::set_arena(af); }
-  
+
   // size_t size() const		inherited
   // bool empty() const			inherited
   // size_t nbuckets() const		inherited
-  
+
   Pair *find_pair(const K &k) const { return reinterpret_cast<Pair *>(inherited::find_pair(k)); }
   T **findp(const K &k) const { return reinterpret_cast<T **>(inherited::findp(k)); }
   T *find(const K &k, T *v) const { return reinterpret_cast<T *>(inherited::find(k, v)); }
   T *find(const K &k) const { return reinterpret_cast<T *>(inherited::find(k)); }
   T *operator[](const K &k) const { return reinterpret_cast<T *>(inherited::operator[](k)); }
-  
+
   Pair *find_pair_force(const K &k, T *v) { return reinterpret_cast<Pair *>(inherited::find_pair_force(k, v)); }
   Pair *find_pair_force(const K &k) { return reinterpret_cast<Pair *>(inherited::find_pair_force(k)); }
   T **findp_force(const K &k, T *v) { return reinterpret_cast<T **>(inherited::findp_force(k, v)); }
   T *&find_force(const K &k, T *v) { return *reinterpret_cast<T **>(inherited::findp_force(k, v)); }
   T **findp_force(const K &k) { return reinterpret_cast<T **>(inherited::findp_force(k)); }
   T *&find_force(const K &k) { return *reinterpret_cast<T **>(inherited::findp_force(k)); }
-  
+
   bool insert(const K &k, T *v)		{ return inherited::insert(k, v); }
   // bool erase(const K &)		inherited
   // bool remove(const K &)		inherited
@@ -469,7 +469,7 @@ class HashMap<K, T *> : public HashMap<K, void *> { public:
 
   // iteration
   typedef _HashMap_const_iterator<K, T *> const_iterator;
-  typedef _HashMap_iterator<K, T *> iterator;  
+  typedef _HashMap_iterator<K, T *> iterator;
   inline const_iterator begin() const;
   inline iterator begin();
   inline const_iterator end() const;
@@ -483,7 +483,7 @@ class HashMap<K, T *> : public HashMap<K, void *> { public:
     K key;
     T *value;
   };
-  
+
 };
 
 template <class K, class T>
@@ -496,21 +496,21 @@ class _HashMap_const_iterator<K, T *> { public:
     inline operator unspecified_bool_type() const CLICK_DEPRECATED;
     void operator++(int)	{ _i.operator++(0); }
     void operator++()		{ _i.operator++(); }
-  
+
     typedef typename HashMap<K, T *>::Pair Pair;
     const Pair *pair() const { return reinterpret_cast<const Pair *>(_i.pair()); }
-  
+
     const K &key() const	{ return _i.key(); }
     T *value() const		{ return reinterpret_cast<T *>(_i.value()); }
 
  private:
 
     inherited _i;
-    
-    _HashMap_const_iterator(const HashMap<K, T *> *t, bool begin) : _i(t, begin) { }  
+
+    _HashMap_const_iterator(const HashMap<K, T *> *t, bool begin) : _i(t, begin) { }
     friend class _HashMap_iterator<K, T *>;
     template <class, class> friend class HashMap;
-  
+
 };
 
 template <class K, class T>
@@ -523,10 +523,10 @@ class _HashMap_iterator<K, T *> : public _HashMap_const_iterator<K, T *> { publi
   T *&value() const	{ return pair()->value; }
 
  private:
-  
+
   _HashMap_iterator(HashMap<K, T *> *t, bool begin) : inherited(t, begin) { }
   template <class, class> friend class HashMap;
-  
+
 };
 
 template <class K, class T>

@@ -74,7 +74,7 @@ template <typename P>
 class DirectEWMAX : public P { public:
 
     typedef typename P::value_type value_type;
-    
+
     /** @brief  Create a EWMA with initial average 0. */
     DirectEWMAX()
 	: _avg(0) {
@@ -84,7 +84,7 @@ class DirectEWMAX : public P { public:
     DirectEWMAX(value_type scaled_value)
 	: _avg(scaled_value) {
     }
-    
+
     /** @brief  Return the current scaled moving average.
      *  @note   The returned value has scale() bits of fraction. */
     value_type scaled_average() const {
@@ -124,9 +124,9 @@ class DirectEWMAX : public P { public:
     inline void update_with(value_type value) CLICK_DEPRECATED;
 
   private:
-  
+
     value_type _avg;
-  
+
 };
 
 template <typename P>
@@ -227,7 +227,7 @@ class FixedEWMAXParameters { public:
     static unsigned compensation() {
 	return 1 << (STABILITY - 1);
     }
-    
+
 };
 
 /** @brief A DirectEWMAX with stability shift 4 (alpha 1/16), scaling factor
@@ -279,7 +279,7 @@ class StabilityEWMAXParameters { public:
     void set_stability_shift(unsigned stability_shift) {
 	_stability = stability_shift;
     }
-    
+
     /** @brief  Returns this EWMA's scaling factor (bits of fraction).
      *  @return  the 1st template parameter */
     static unsigned scale() {
@@ -295,7 +295,7 @@ class StabilityEWMAXParameters { public:
   private:
 
     unsigned _stability;
-    
+
 };
 
 
@@ -383,7 +383,7 @@ class RateEWMAX : public P { public:
     unsigned scale(unsigned ratenum = 0) const {
 	return _avg[ratenum].scale();
     }
-    
+
     /** @brief  Return the current rate in samples per second.
      *  @param  ratenum  rate index (0 <= ratenum < rate_count)
      *  @note   The returned value is unscaled.
@@ -392,7 +392,7 @@ class RateEWMAX : public P { public:
      *		should call update(0, @a ratenum) before calling this
      *		function. */
     inline int rate(unsigned ratenum = 0) const;
- 
+
     /** @brief  Update the sample count for the current epoch.
      *  @param  delta    increment for current epoch sample count
      *  @param  ratenum  rate index (0 <= ratenum < rate_count)
@@ -412,15 +412,15 @@ class RateEWMAX : public P { public:
      *		should call update(0, @a ratenum) before calling this
      *		function. */
     String unparse_rate(unsigned ratenum = 0) const;
-  
+
   private:
-  
+
     unsigned _current_epoch;
     value_type _current[P::rate_count];
     DirectEWMAX<P> _avg[P::rate_count];
-  
+
     inline void update_time(unsigned now);
-    
+
 };
 
 /** @class RateEWMAXParameters include/click/ewma.hh <click/ewma.hh>

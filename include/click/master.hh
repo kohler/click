@@ -36,14 +36,14 @@ class Master { public:
     inline RouterThread* thread(int id) const;
 
     const volatile int* stopper_ptr() const	{ return &_stopper; }
-    
+
     Timestamp next_timer_expiry() const		{ return _timer_expiry; }
     const Timestamp &timer_check() const	{ return _timer_check; }
     void run_timers();
     unsigned max_timer_stride() const		{ return _max_timer_stride; }
     unsigned timer_stride() const		{ return _timer_stride; }
     void set_max_timer_stride(unsigned timer_stride);
-    
+
 #if CLICK_USERLEVEL
     int add_select(int fd, Element*, int mask);
     int remove_select(int fd, Element*, int mask);
@@ -55,12 +55,12 @@ class Master { public:
 #endif
 
     void kill_router(Router*);
-    
+
 #if CLICK_NS
     void initialize_ns(simclick_node_t *simnode);
     simclick_node_t *simnode() const		{ return _simnode; }
 #endif
-    
+
 #if CLICK_DEBUG_MASTER
     String info() const;
 #endif
@@ -68,13 +68,13 @@ class Master { public:
 #if CLICK_USERLEVEL
     static volatile sig_atomic_t signals_pending;
 #endif
-    
+
   private:
 
     // stick _timer_expiry here so it will most likely fit in a cache line,
     // & we don't have to worry about its parts being updated separately
     Timestamp _timer_expiry;
-    
+
 #if CLICK_LINUXMODULE
     spinlock_t _master_lock;
     struct task_struct *_master_lock_task;
@@ -173,15 +173,15 @@ class Master { public:
 #if CLICK_NS
     simclick_node_t *_simnode;
 #endif
-    
+
     Master(const Master&);
     Master& operator=(const Master&);
-        
+
     friend class Task;
     friend class Timer;
     friend class RouterThread;
     friend class Router;
-    
+
 };
 
 inline int

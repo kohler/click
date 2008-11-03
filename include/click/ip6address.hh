@@ -12,7 +12,7 @@
 CLICK_DECLS
 
 class IP6Address { public:
- 
+
   IP6Address();
   explicit IP6Address(const unsigned char *);
   explicit IP6Address(IPAddress ip);
@@ -22,7 +22,7 @@ class IP6Address { public:
 
   typedef uint32_t (IP6Address::*unspecified_bool_type)() const;
   operator unspecified_bool_type() const;
-  
+
   operator const click_in6_addr &() const	{ return _addr; }
   operator click_in6_addr &()			{ return _addr; }
   const click_in6_addr &in6_addr() const	{ return _addr;	}
@@ -34,17 +34,17 @@ class IP6Address { public:
   const unsigned *data32() const	{ return &_addr.s6_addr32[0]; }
 
     inline uint32_t hashcode() const;
-  
+
   int mask_to_prefix_len() const;
   bool matches_prefix(const IP6Address &addr, const IP6Address &mask) const;
   bool mask_as_specific(const IP6Address &) const;
-  
+
   bool ether_address(EtherAddress &) const;
   bool ip4_address(IPAddress &) const;
-  
+
   // bool operator==(const IP6Address &, const IP6Address &);
   // bool operator!=(const IP6Address &, const IP6Address &);
-  
+
   // IP6Address operator&(const IP6Address &, const IP6Address &);
   // IP6Address operator|(const IP6Address &, const IP6Address &);
   // IP6Address operator~(const IP6Address &);
@@ -53,17 +53,17 @@ class IP6Address { public:
   IP6Address &operator&=(const click_in6_addr &);
   IP6Address &operator|=(const IP6Address &);
   IP6Address &operator|=(const click_in6_addr &);
-  
+
   IP6Address &operator=(const click_in6_addr &);
 
   String unparse() const;
   String unparse_expanded() const;
-  
+
   operator String() const		{ return unparse(); }
   String s() const			{ return unparse(); }
 
  private:
-  
+
   click_in6_addr _addr;
 
 };

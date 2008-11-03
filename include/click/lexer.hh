@@ -25,46 +25,46 @@ class Lexeme { public:
 
     Lexeme()				: _kind(lexEOF) { }
     Lexeme(int k, const String &s)	: _kind(k), _s(s) { }
-  
+
     int kind() const			{ return _kind; }
     bool is(int k) const		{ return _kind == k; }
-  
+
     const String &string() const	{ return _s; }
     String &string()			{ return _s; }
-  
+
   private:
-  
+
     int _kind;
     String _s;
-  
+
 };
 
 class Lexer { public:
 
     enum { TUNNEL_TYPE = 0, ERROR_TYPE = 1 };
-  
+
     class TunnelEnd;
     class Compound;
     typedef Router::Port Port;
     typedef Router::Connection Connection;
-  
+
     Lexer();
     virtual ~Lexer();
-  
+
     int begin_parse(const String &data, const String &filename, LexerExtra *, ErrorHandler * = 0);
     void end_parse(int);
 
     VariableEnvironment &global_scope()	{ return _global_scope; }
     ErrorHandler *errh() const		{ return _errh; }
-  
+
     String remaining_text() const;
     void set_remaining_text(const String &);
-  
+
     const Lexeme &lex();
     void unlex(const Lexeme &);
     String lex_config();
     String landmark() const;
-  
+
     bool expect(int, bool report_error = true);
 
     typedef Element *(*ElementFactory)(uintptr_t);
@@ -77,14 +77,14 @@ class Lexer { public:
     int force_element_type(String name, bool report_error = true);
 
     void element_type_names(Vector<String> &) const;
-  
+
     int remove_element_type(int t)	{ return remove_element_type(t, 0); }
 
     String element_name(int) const;
     String element_landmark(int) const;
-    
+
     void add_tunnel(String, String);
-  
+
     bool yport(int &port);
     bool yelement(int &element, bool comma_ok);
     void ydeclaration(const String &first_element = String());
@@ -95,23 +95,23 @@ class Lexer { public:
     void yrequire();
     void yvar();
     bool ystatement(bool nested = false);
-  
+
     Router *create_router(Master *);
 
   private:
-    
+
     // lexer
     String _big_string;
-  
+
     const char *_data;
     const char *_end;
     const char *_pos;
-  
+
     String _filename;
     String _original_filename;
     unsigned _lineno;
     LexerExtra *_lextra;
-  
+
     const char *skip_line(const char *);
     const char *skip_slash_star(const char *);
     const char *skip_backslash_angle(const char *);
@@ -119,13 +119,13 @@ class Lexer { public:
     const char *process_line_directive(const char *);
     Lexeme next_lexeme();
     static String lexeme_string(int);
-  
+
     // parser
     enum { TCIRCLE_SIZE = 8 };
     Lexeme _tcircle[TCIRCLE_SIZE];
     int _tpos;
     int _tfull;
-  
+
     // element types
     struct ElementType {
 	ElementFactory factory;
@@ -148,16 +148,16 @@ class Lexer { public:
     Compound *_c;
 
     Vector<TunnelEnd *> _tunnels;
-  
+
     // compound elements
     int _anonymous_offset;
 
     // requirements
     Vector<String> _requirements;
-  
+
     // errors
     ErrorHandler *_errh;
-  
+
     int lerror(const char *, ...);
 
     String anon_element_name(const String &) const;
@@ -172,17 +172,17 @@ class Lexer { public:
 
     TunnelEnd *find_tunnel(const Port &p, bool isoutput, bool insert);
     void expand_connection(const Port &p, bool isoutput, Vector<Port> &);
-  
+
     friend class Compound;
     friend class TunnelEnd;
-  
+
 };
 
 class LexerExtra { public:
-  
+
     LexerExtra()			{ }
     virtual ~LexerExtra()		{ }
-  
+
     virtual void require(String, ErrorHandler *);
 
 };

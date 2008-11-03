@@ -28,7 +28,7 @@ public:
   const T &front() const                { return at(0); }
   const T &back() const			{ return at(_n - 1); }
   const T &at_u(int i) const		{ return _l[idx(i)]; }
-  
+
   T &at(int i)				{ assert(i>=0 && i<_n); return _l[idx(i)]; }
   T &operator[](int i)			{ return at(i); }
   T &front()                            { return at(0); }
@@ -61,7 +61,7 @@ public:
 	T &operator*() const { return const_cast<T &>(const_iterator::operator*()); }
 	T *operator->() const { return const_cast<T *>(const_iterator::operator->()); }
     };
-  
+
     iterator begin()			{ return iterator(*this, 0); }
     const_iterator begin() const	{ return const_iterator((DEQueue<T> &) *this, 0); }
     iterator end()			{ return iterator(*this, _n); }
@@ -69,7 +69,7 @@ public:
 
     inline void push_back(const T &);
     inline void pop_back();
-  
+
     inline void push_front(const T &);
     inline void pop_front();
 
@@ -96,7 +96,7 @@ private:
   void *velt(int i) const		{ return (void *) &_l[i]; }
   static void *velt(T *l, int i)	{ return (void *) &l[i];  }
   void shrink(int nn);
-  
+
   friend class iterator;
   friend class const_iterator;
 

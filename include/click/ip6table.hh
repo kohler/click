@@ -11,19 +11,19 @@ CLICK_DECLS
 // Each entry contains a gateway and an output index.
 
 class IP6Table { public:
-  
+
   IP6Table();
   ~IP6Table();
 
   bool lookup(const IP6Address &dst, IP6Address &gw, int &index) const;
-  
+
   void add(const IP6Address &dst, const IP6Address &mask, const IP6Address &gw, int index);
   void del(const IP6Address &dst, const IP6Address &mask);
   void clear()				{ _v.clear(); }
   String dump();
 
  private:
-  
+
   struct Entry {
     IP6Address _dst;
     IP6Address _mask;
@@ -32,7 +32,7 @@ class IP6Table { public:
     int _valid;
   };
   Vector<Entry> _v;
-  
+
 };
 
 CLICK_ENDDECLS

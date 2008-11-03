@@ -25,7 +25,7 @@ class IPFlowID { public:
   void set_daddr(IPAddress a)		{ _daddr = a; }
   void set_sport(uint16_t p)		{ _sport = p; }	// network order
   void set_dport(uint16_t p)		{ _dport = p; }	// network order
-  
+
   IPFlowID rev() const;
 
   inline hashcode_t hashcode() const;
@@ -35,7 +35,7 @@ class IPFlowID { public:
   String s() const			{ return unparse(); }
 
  protected:
-  
+
   // note: several functions depend on this field order!
   IPAddress _saddr;
   IPAddress _daddr;
@@ -73,7 +73,7 @@ IPFlowID::rev() const
 #define ROT(v, r) ((v)<<(r) | ((unsigned)(v))>>(32-(r)))
 
 inline hashcode_t IPFlowID::hashcode() const
-{ 
+{
   // more complicated hashcode, but causes less collision
   uint16_t s = ntohs(sport());
   uint16_t d = ntohs(dport());
