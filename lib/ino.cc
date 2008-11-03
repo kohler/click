@@ -132,7 +132,7 @@ ClickIno::true_prepare(Router *r, uint32_t generation)
 	    n++;
 	}
     }
- 
+
     // resort _x if necessary
     if (n != nelem)
 	click_qsort(&_x[1], n - 1, sizeof(Entry), entry_compar);
@@ -228,7 +228,7 @@ ClickIno::lookup(ino_t ino, const String &component)
 {
     // BEWARE: "component" might be a fake String pointing to mutable data; do
     // not save any references to it!
-    
+
     // must be called with config_lock held
     int elementno = INO_ELEMENTNO(ino);
     int nelements = (_router ? _router->nelements() : 0);
@@ -240,7 +240,7 @@ ClickIno::lookup(ino_t ino, const String &component)
     // quick check for dot
     if (component[0] == '.' && component.length() == 1)
 	return ino;
-    
+
     // look for numbers
     if (ino == INO_ENUMBERSDIR && component[0] >= '0' && component[0] <= '9') {
 	int eindex = component[0] - '0';
@@ -253,7 +253,7 @@ ClickIno::lookup(ino_t ino, const String &component)
 	    goto number_failed;
 	return INO_MKHUDIR(eindex);
     }
-    
+
   number_failed:
     // look for element number directory
     if (ino == INO_GLOBALDIR && component.equals(".e", 2))
@@ -268,7 +268,7 @@ ClickIno::lookup(ino_t ino, const String &component)
     if (INO_DT_HAS_N(ino)) {
 	// delimit boundaries of search region
 	int found = element_name_search(component, elementno);
-	if (found >= 0) 
+	if (found >= 0)
 	    return INO_MKHNDIR(ClickIno::elementno(found));
     }
 
@@ -320,7 +320,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 #define RD_NOFF		0x300000
 #define RD_XOFF		0x400000
 #define FILLDIR(a, b, c, d, e, f)  do { if (!filldir(a, b, c, d, e, f)) return 0; } while (0)
-    
+
     int elementno = INO_ELEMENTNO(ino);
     int nelements = (_router ? _router->nelements() : 0);
 
@@ -334,7 +334,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 	FILLDIR(".", 1, ino, DT_DIR, f_pos, thunk);
 	f_pos++;
     }
-    
+
     // handler names
     if (f_pos < RD_HOFF)
 	f_pos = RD_HOFF;
@@ -342,7 +342,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 	Element *element = Router::element(_router, elementno);
 	Vector<int> his;
 	Router::element_hindexes(element, his);
-	while (f_pos >= RD_HOFF && f_pos < his.size() + RD_HOFF) {
+	while (f_pos >= RD_HOFF && f_pos < (uint32_t) his.size() + RD_HOFF) {
 	    // Traverse element_hindexes in reverse because new handler
 	    // names are added at the end.
 	    int hi = his[his.size() - (f_pos - RD_HOFF) - 1];
@@ -361,7 +361,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
     if (f_pos < RD_NOFF && ino == INO_ENUMBERSDIR && _router) {
 	char buf[10];
 	int nelem = _router->nelements();
-	while (f_pos >= RD_UOFF && f_pos < RD_UOFF + nelem) {
+	while (f_pos >= RD_UOFF && f_pos < (uint32_t) RD_UOFF + nelem) {
 	    int elem = f_pos - RD_UOFF;
 	    sprintf(buf, "%d", elem);
 	    FILLDIR(buf, strlen(buf), INO_MKHUDIR(elem), DT_DIR, f_pos, thunk);
@@ -380,7 +380,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 	int name_offset = _x[xi - 1].name.length();
 	if (name_offset > 0)
 	    name_offset++;	// skip slash
-	for (int j = RD_NOFF; xi < next_xi; xi += _x[xi].skip + 1, j++)
+	for (uint32_t j = RD_NOFF; xi < next_xi; xi += _x[xi].skip + 1, j++)
 	    if (f_pos == j) {
 		FILLDIR(_x[xi].name.data() + name_offset, _x[xi].name.length() - name_offset, INO_MKHNDIR(ClickIno::elementno(xi)), DT_DIR, f_pos, thunk);
 		f_pos++;
@@ -399,7 +399,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 	FILLDIR(".h", 2, INO_MKHHDIR(elementno), DT_DIR, f_pos, thunk);
 	f_pos++;
     }
-    
+
     f_pos = RD_XOFF + 2;
     return 1;
 }
