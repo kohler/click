@@ -3,7 +3,6 @@
 #define CLICK_ANYDEVICE_HH
 #include <click/element.hh>
 #include <click/task.hh>
-
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #define DEVICE_POLLING
@@ -14,21 +13,19 @@ CLICK_CXX_PROTECT
 #include <machine/limits.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
-
 #define CLICK_CYCLE_COMPENSATION 0
-
 #ifdef BSD_NETISRSCHED
 # define NETISR_CLICK 1		// must match empty slots in net/netisr.h !!!
 #endif
-
 #if HAVE_STRIDE_SCHED
 # define CLICK_DEVICE_ADJUST_TICKETS 1
 #endif
-
 #define GET_STATS_RESET(a,b,c,d,e,f)	/* nothing */
 #define SET_STATS(a,b,c)		/* nothing */
 
 extern int *polling;            // 1 = BSD poller; 2 = Click poller
+
+CLICK_DECLS
 
 class AnyDeviceMap;
 
@@ -165,4 +162,5 @@ AnyDeviceMap::lookup(struct ifnet *dev)
 
 struct ifnet *find_device_by_ether_address(const String &, Element *);
 
+CLICK_ENDDECLS
 #endif

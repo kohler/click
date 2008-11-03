@@ -27,6 +27,7 @@ CLICK_CXX_PROTECT
 #include <sys/lock.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
+CLICK_DECLS
 
 AnyDevice::AnyDevice()
   : _dev(0), _task(this), _idles(0), _next(0)
@@ -181,5 +182,6 @@ find_device_by_ether_address(const String &name, Element *context)
   return 0;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(bsdmodule)
 ELEMENT_PROVIDES(AnyDevice)
