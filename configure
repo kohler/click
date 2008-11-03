@@ -16313,7 +16313,7 @@ if test $ac_have_linux_kernel = y; then
 echo $ECHO_N "checking for Linux 2.6 compilation flags... $ECHO_C" >&6; }
 	echo "include ${linux_srcdir}Makefile
 fwablongie:
-	@echo \$(CFLAGS)" >conftest.mk
+	@echo \$(KBUILD_CFLAGS) \$(CFLAGS)" >conftest.mk
 	make -I $linux_builddir -C "${linux_srcdir}" M="`pwd`" $linux_makeargs -f "`pwd`/conftest.mk" --no-print-directory fwablongie >conftest.dat
 	if test $? != 0; then
 	    { echo "$as_me:$LINENO: result: not found" >&5
