@@ -15,19 +15,22 @@ CLICK_DECLS
  * =a SpinlockInfo, SpinlockRelease
  */
 
-class SpinlockAcquire : public Element {
-  Spinlock *_lock;
- 
-public:
-  SpinlockAcquire()			: _lock(0) {}
-  ~SpinlockAcquire()			{}
+class SpinlockAcquire : public Element { public:
 
-  const char *class_name() const	{ return "SpinlockAcquire"; }
-  const char *port_count() const	{ return PORTS_1_1; }
-  
-  int configure(Vector<String> &, ErrorHandler *);
-  
-  Packet *simple_action(Packet *p)  	{ _lock->acquire(); return p; }
+    SpinlockAcquire()			: _lock(0) {}
+    ~SpinlockAcquire()			{}
+
+    const char *class_name() const	{ return "SpinlockAcquire"; }
+    const char *port_count() const	{ return PORTS_1_1; }
+
+    int configure(Vector<String> &, ErrorHandler *);
+
+    Packet *simple_action(Packet *p)  	{ _lock->acquire(); return p; }
+
+  private:
+
+    Spinlock *_lock;
+
 };
 
 CLICK_ENDDECLS

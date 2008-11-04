@@ -19,17 +19,18 @@ CLICK_DECLS
  * =a SpinlockAcquire, SpinlockRelease
  */
 
-class SpinlockInfo : public Element {
+class SpinlockInfo : public Element { public:
 
-  Vector<Spinlock> _spinlocks;
+    SpinlockInfo();
+    ~SpinlockInfo();
 
-public:
-  
-  SpinlockInfo();
-  ~SpinlockInfo();
-  const char *class_name() const	{ return "SpinlockInfo"; }
-  int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
-  int configure(Vector<String> &, ErrorHandler *);
+    const char *class_name() const	{ return "SpinlockInfo"; }
+    int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
+    int configure(Vector<String> &, ErrorHandler *);
+
+  private:
+
+    Vector<Spinlock> _spinlocks;
 
 };
 

@@ -41,14 +41,14 @@ BalancedThreadSched::BalancedThreadSched()
 BalancedThreadSched::~BalancedThreadSched()
 {
 }
-  
-int 
+
+int
 BalancedThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _interval = 1000;
     _increasing = true;
-    if (cp_va_kparse(conf, this, errh, 
-		     "INTERVAL", cpkP, cpUnsigned, &_interval, 
+    if (cp_va_kparse(conf, this, errh,
+		     "INTERVAL", cpkP, cpUnsigned, &_interval,
 		     "INCREASING", cpkP, cpBool, &_increasing,
 		     cpEnd) < 0)
 	return -1;
@@ -115,7 +115,7 @@ BalancedThreadSched::run_timer(Timer *)
 	// lock max_thread
 	RouterThread *thread = m->thread(max_tid);
 	thread->lock_tasks();
-	
+
 	// collect tasks from max-loaded thread
 	total_load -= load[max_tid];
 	load[max_tid] = 0;
@@ -127,7 +127,7 @@ BalancedThreadSched::run_timer(Timer *)
 	}
 	total_load += load[max_tid];
 	avg_load = total_load / m->nthreads();
-	
+
 	// sort tasks by cycle count
 	click_qsort(tasks.begin(), tasks.size(), sizeof(Task *), (_increasing ? task_increasing_sorter : task_decreasing_sorter));
 
@@ -144,7 +144,7 @@ BalancedThreadSched::run_timer(Timer *)
 	// done with this round!
 	thread->unlock_tasks();
     }
-  
+
     _timer.schedule_after_msec(_interval);
 }
 

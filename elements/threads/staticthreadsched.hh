@@ -22,13 +22,13 @@ class StaticThreadSched : public Element, public ThreadSched { public:
 
     StaticThreadSched();
     ~StaticThreadSched();
-  
+
     const char *class_name() const	{ return "StaticThreadSched"; }
-  
+
     int configure(Vector<String> &, ErrorHandler *);
 
     int initial_home_thread_id(Task *, bool);
-    
+
   private:
 
     Vector<int> _thread_preferences;

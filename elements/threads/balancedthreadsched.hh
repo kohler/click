@@ -25,7 +25,7 @@ class BalancedThreadSched : public Element { public:
 
     BalancedThreadSched();
     ~BalancedThreadSched();
-  
+
     const char *class_name() const	{ return "BalancedThreadSched"; }
     int configure(Vector<String> &, ErrorHandler *);
 
