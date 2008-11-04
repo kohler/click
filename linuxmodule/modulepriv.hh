@@ -32,20 +32,20 @@ CLICK_CXX_UNPROTECT
 
 
 class KernelErrorHandler : public BaseErrorHandler { public:
-  
-  KernelErrorHandler()			: _pos(0), _generation(0) { }
-  void handle_text(Seriousness, const String &);
-  void clear_log()			{ _pos = 0; _generation += 2; }
-  inline String stable_string() const;
-  
- private:
-  
-  enum { LOGBUF_SIZ = 4096, LOGBUF_SAVESIZ = 2048 };
-  char _logbuf[LOGBUF_SIZ];
-  int _pos;
-  unsigned _generation;
-  void log_line(const char *begin, const char *end);
-  
+
+    KernelErrorHandler()		: _pos(0), _generation(0) { }
+    void handle_text(Seriousness, const String &);
+    void clear_log()			{ _pos = 0; _generation += 2; }
+    inline String stable_string() const;
+
+  private:
+
+    enum { logbuf_siz = 4096, logbuf_savesiz = 2048 };
+    char _logbuf[logbuf_siz];
+    uint32_t _pos;
+    unsigned _generation;
+    void log_line(const char *begin, const char *end);
+
 };
 
 extern KernelErrorHandler *click_logged_errh;

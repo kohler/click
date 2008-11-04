@@ -82,65 +82,65 @@ static int
 click_sched(void *thunk)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-  daemonize("kclick");
+    daemonize("kclick");
 #else
-  daemonize();
-  strcpy(current->comm, "kclick");
+    daemonize();
+    strcpy(current->comm, "kclick");
 #endif
-  
-  TASK_PRIO(current) = click_thread_priority;
 
-  RouterThread *rt = (RouterThread *)thunk;
+    TASK_PRIO(current) = click_thread_priority;
+
+    RouterThread *rt = (RouterThread *)thunk;
 #ifdef HAVE_ADAPTIVE_SCHEDULER
-  rt->set_cpu_share(min_click_frac, max_click_frac);
+    rt->set_cpu_share(min_click_frac, max_click_frac);
 #endif
 
 #ifdef CONFIG_SMP
-  int mycpu = click_parm(CLICKPARM_CPU);
-  if (mycpu >= 0) {
-      mycpu += rt->thread_id();
+    int mycpu = click_parm(CLICKPARM_CPU);
+    if (mycpu >= 0) {
+	mycpu += rt->thread_id();
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-      if (mycpu < num_possible_cpus() && cpu_online(mycpu))
-	  set_cpus_allowed(current, cpumask_of_cpu(mycpu));
-      else
-	  printk("<1>click: warning: cpu %d for thread %d offline\n", mycpu, rt->thread_id());
+	if (mycpu < num_possible_cpus() && cpu_online(mycpu))
+	    set_cpus_allowed(current, cpumask_of_cpu(mycpu));
+	else
+	    printk("<1>click: warning: cpu %d for thread %d offline\n", mycpu, rt->thread_id());
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 21)
-      if (mycpu < smp_num_cpus && (cpu_online_map & (1UL << cpu_logical_map(mycpu))))
-	  set_cpus_allowed(current, 1UL << cpu_logical_map(mycpu));
-      else
-	  printk("<1>click: warning: cpu %d for thread %d offline\n", mycpu, rt->thread_id());
+	if (mycpu < smp_num_cpus && (cpu_online_map & (1UL << cpu_logical_map(mycpu))))
+	    set_cpus_allowed(current, 1UL << cpu_logical_map(mycpu));
+	else
+	    printk("<1>click: warning: cpu %d for thread %d offline\n", mycpu, rt->thread_id());
 # endif
-  }
-#endif
-  
-  printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);
-
-  // add pid to thread list
-  SOFT_SPIN_LOCK(&click_thread_lock);
-  if (click_thread_pids)
-    click_thread_pids->push_back(current->pid);
-  SPIN_UNLOCK(&click_thread_lock);
-
-  // driver loop; does not return for a while
-  rt->driver();
-
-  // release master (preserved in click_init_sched)
-  click_master->unuse();
-
-  // remove pid from thread list
-  SOFT_SPIN_LOCK(&click_thread_lock);
-  if (click_thread_pids)
-    for (int i = 0; i < click_thread_pids->size(); i++) {
-      if ((*click_thread_pids)[i] == current->pid) {
-	(*click_thread_pids)[i] = click_thread_pids->back();
-	click_thread_pids->pop_back();
-	break;
-      }
     }
-  printk("<1>click: stopping router thread pid %d\n", current->pid);
-  SPIN_UNLOCK(&click_thread_lock);
-  
-  return 0;
+#endif
+
+    printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);
+
+    // add pid to thread list
+    SOFT_SPIN_LOCK(&click_thread_lock);
+    if (click_thread_pids)
+	click_thread_pids->push_back(current->pid);
+    SPIN_UNLOCK(&click_thread_lock);
+
+    // driver loop; does not return for a while
+    rt->driver();
+
+    // release master (preserved in click_init_sched)
+    click_master->unuse();
+
+    // remove pid from thread list
+    SOFT_SPIN_LOCK(&click_thread_lock);
+    if (click_thread_pids)
+	for (int i = 0; i < click_thread_pids->size(); i++) {
+	    if ((*click_thread_pids)[i] == current->pid) {
+		(*click_thread_pids)[i] = click_thread_pids->back();
+		click_thread_pids->pop_back();
+		break;
+	    }
+	}
+    printk("<1>click: stopping router thread pid %d\n", current->pid);
+    SPIN_UNLOCK(&click_thread_lock);
+
+    return 0;
 }
 
 static int
@@ -149,7 +149,7 @@ kill_router_threads()
     delete placeholder_router;
     if (click_router)
 	click_router->set_runcount(Router::STOP_RUNCOUNT);
-  
+
     // wait up to 5 seconds for routers to exit
     unsigned long out_jiffies = jiffies + 5 * HZ;
     int num_threads;
@@ -162,11 +162,11 @@ kill_router_threads()
 	    schedule();
     } while (num_threads > 0 && jiffies < out_jiffies);
 
-  if (num_threads > 0) {
-    printk("<1>click: current router threads refuse to die!\n");
-    return -1;
-  } else
-    return 0;
+    if (num_threads > 0) {
+	printk("<1>click: current router threads refuse to die!\n");
+	return -1;
+    } else
+	return 0;
 }
 
 
@@ -175,51 +175,51 @@ kill_router_threads()
 static String
 read_threads(Element *, void *)
 {
-  StringAccum sa;
-  MDEBUG("reading threads");
-  SOFT_SPIN_LOCK(&click_thread_lock);
-  if (click_thread_pids)
-    for (int i = 0; i < click_thread_pids->size(); i++)
-      sa << (*click_thread_pids)[i] << '\n';
-  SPIN_UNLOCK(&click_thread_lock);
-  return sa.take_string();
+    StringAccum sa;
+    MDEBUG("reading threads");
+    SOFT_SPIN_LOCK(&click_thread_lock);
+    if (click_thread_pids)
+	for (int i = 0; i < click_thread_pids->size(); i++)
+	    sa << (*click_thread_pids)[i] << '\n';
+    SPIN_UNLOCK(&click_thread_lock);
+    return sa.take_string();
 }
 
 static String
 read_priority(Element *, void *)
 {
-  return String(PRIO2NICE(click_thread_priority)) + "\n";
+    return String(PRIO2NICE(click_thread_priority));
 }
 
 static int
 write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
 {
-  int priority;
-  if (!cp_integer(conf, &priority))
-    return errh->error("priority must be an integer");
+    int priority;
+    if (!cp_integer(conf, &priority))
+	return errh->error("priority must be an integer");
 
-  priority = NICE2PRIO(priority);
-  if (priority < MIN_PRIO) {
-    priority = MIN_PRIO;
-    errh->warning("priority pinned at %d", PRIO2NICE(priority));
-  } else if (priority > MAX_PRIO) {
-    priority = MAX_PRIO;
-    errh->warning("priority pinned at %d", PRIO2NICE(priority));
-  }
-
-  // change current thread priorities
-  MDEBUG("writing priority");
-  SOFT_SPIN_LOCK(&click_thread_lock);
-  click_thread_priority = priority;
-  if (click_thread_pids)
-    for (int i = 0; i < click_thread_pids->size(); i++) {
-      struct task_struct *task = find_task_by_pid((*click_thread_pids)[i]);
-      if (task)
-	TASK_PRIO(task) = priority;
+    priority = NICE2PRIO(priority);
+    if (priority < MIN_PRIO) {
+	priority = MIN_PRIO;
+	errh->warning("priority pinned at %d", PRIO2NICE(priority));
+    } else if (priority > MAX_PRIO) {
+	priority = MAX_PRIO;
+	errh->warning("priority pinned at %d", PRIO2NICE(priority));
     }
-  SPIN_UNLOCK(&click_thread_lock);
-  
-  return 0;
+
+    // change current thread priorities
+    MDEBUG("writing priority");
+    SOFT_SPIN_LOCK(&click_thread_lock);
+    click_thread_priority = priority;
+    if (click_thread_pids)
+	for (int i = 0; i < click_thread_pids->size(); i++) {
+	    struct task_struct *task = find_task_by_pid((*click_thread_pids)[i]);
+	    if (task)
+		TASK_PRIO(task) = priority;
+	}
+    SPIN_UNLOCK(&click_thread_lock);
+
+    return 0;
 }
 
 
@@ -227,7 +227,7 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
 static String
 read_master_info(Element *, void *)
 {
-  return click_master->info();
+    return click_master->info();
 }
 #endif
 
@@ -237,39 +237,40 @@ read_master_info(Element *, void *)
 static String
 read_cpu_share(Element *, void *thunk)
 {
-  int val = (thunk ? max_click_frac : min_click_frac);
-  return cp_unparse_real10(val, 3) + "\n";
+    int val = (thunk ? max_click_frac : min_click_frac);
+    return cp_unparse_real10(val, 3);
 }
 
 static String
 read_cur_cpu_share(Element *, void *)
 {
-  if (click_router) {
-    String s;
-    for (int i = 0; i < click_master->nthreads(); i++)
-      s += cp_unparse_real10(click_master->thread(i)->cur_cpu_share(), 3) + "\n";
-    return s;
-  } else
-    return "0\n";
+    if (click_router) {
+	StringAccum sa;
+	for (int i = 0; i < click_master->nthreads(); i++)
+	    sa << cp_unparse_real10(click_master->thread(i)->cur_cpu_share(), 3)
+	       << '\n';
+	return sa.take_string();
+    } else
+	return "0\n";
 }
 
 static int
 write_cpu_share(const String &conf, Element *, void *thunk, ErrorHandler *errh)
 {
-  const char *name = (thunk ? "max_" : "min_");
-  
-  int32_t frac;
-  if (!cp_real10(conf, 3, &frac) || frac < 1 || frac > 999)
-    return errh->error("%scpu_share must be a real number between 0.001 and 0.999", name);
+    const char *name = (thunk ? "max_" : "min_");
 
-  (thunk ? max_click_frac : min_click_frac) = frac;
+    int32_t frac;
+    if (!cp_real10(conf, 3, &frac) || frac < 1 || frac > 999)
+	return errh->error("%scpu_share must be a real number between 0.001 and 0.999", name);
 
-  // change current thread priorities
-  // XXX believed to be OK even if threads are currently running
-  for (int i = 0; i < click_master->nthreads(); i++)
-    click_master->thread(i)->set_cpu_share(min_click_frac, max_click_frac);
-  
-  return 0;
+    (thunk ? max_click_frac : min_click_frac) = frac;
+
+    // change current thread priorities
+    // XXX believed to be OK even if threads are currently running
+    for (int i = 0; i < click_master->nthreads(); i++)
+	click_master->thread(i)->set_cpu_share(min_click_frac, max_click_frac);
+
+    return 0;
 }
 
 #endif
@@ -278,11 +279,11 @@ enum { H_TASKS_PER_ITER, H_ITERS_PER_TIMERS, H_ITERS_PER_OS };
 
 
 static String
-read_sched_param(Element *, void *thunk) 
+read_sched_param(Element *, void *thunk)
 {
     String s;
     switch (reinterpret_cast<uintptr_t>(thunk)) {
-	
+
       case H_TASKS_PER_ITER:
 	for (int i = 0; i < click_master->nthreads(); i++)
 	    s += String(click_master->thread(i)->_tasks_per_iter) + "\n";
@@ -292,24 +293,24 @@ read_sched_param(Element *, void *thunk)
 	for (int i = 0; i < click_master->nthreads(); i++)
 	    s += String(click_master->max_timer_stride()) + "\n";
 	break;
-	  
+
       case H_ITERS_PER_OS:
 	for (int i = 0; i < click_master->nthreads(); i++)
 	    s += String(click_master->thread(i)->_iters_per_os) + "\n";
 	break;
-	
+
     }
     return s;
 }
 
 static int
-write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *errh) 
+write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *errh)
 {
     switch (reinterpret_cast<uintptr_t>(thunk)) {
 
       case H_TASKS_PER_ITER: {
 	  unsigned x;
-	  if (!cp_integer(conf, &x)) 
+	  if (!cp_integer(conf, &x))
 	      return errh->error("tasks_per_iter must be unsigned\n");
 	  for (int i = 0; i < click_master->nthreads(); i++)
 	      click_master->thread(i)->_tasks_per_iter = x;
@@ -318,7 +319,7 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 
       case H_ITERS_PER_TIMERS: {
 	  unsigned x;
-	  if (!cp_integer(conf, &x)) 
+	  if (!cp_integer(conf, &x))
 	      return errh->error("tasks_per_iter_timers must be unsigned\n");
 	  click_master->set_max_timer_stride(x);
 	  break;
@@ -326,13 +327,13 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 
       case H_ITERS_PER_OS: {
 	  unsigned x;
-	  if (!cp_integer(conf, &x)) 
+	  if (!cp_integer(conf, &x))
 	      return errh->error("tasks_per_iter_os must be unsigned\n");
 	  for (int i = 0; i < click_master->nthreads(); i++)
 	      click_master->thread(i)->_iters_per_os = x;
 	  break;
       }
-	
+
     }
     return 0;
 }
@@ -342,88 +343,88 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 void
 click_init_sched(ErrorHandler *errh)
 {
-  spin_lock_init(&click_thread_lock);
-  click_thread_pids = new Vector<int>;
-  bool greedy = click_parm(CLICKPARM_GREEDY);
+    spin_lock_init(&click_thread_lock);
+    click_thread_pids = new Vector<int>;
+    bool greedy = click_parm(CLICKPARM_GREEDY);
 
 #if HAVE_MULTITHREAD
-  click_master = new Master(click_parm(CLICKPARM_THREADS));
-  if (num_possible_cpus() != NUM_CLICK_CPUS)
-    click_chatter("warning: click compiled for %d cpus, machine allows %d", 
-	          NUM_CLICK_CPUS, num_possible_cpus());
+    click_master = new Master(click_parm(CLICKPARM_THREADS));
+    if (num_possible_cpus() != NUM_CLICK_CPUS)
+	click_chatter("warning: click compiled for %d cpus, machine allows %d",
+		      NUM_CLICK_CPUS, num_possible_cpus());
 #else
-  click_master = new Master(1);
+    click_master = new Master(1);
 #endif
-  click_master->use();
-
-  placeholder_router = new Router("", click_master);
-  placeholder_router->initialize(errh);
-  placeholder_router->activate(errh);
-
-  for (int i = 0; i < click_master->nthreads(); i++) {
     click_master->use();
-    RouterThread *thread = click_master->thread(i);
-    thread->set_greedy(greedy);
-    pid_t pid = kernel_thread 
-      (click_sched, thread, CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
-    if (pid < 0) {
-      errh->error("cannot create kernel thread for Click thread %i!", i); 
-      click_master->unuse();
+
+    placeholder_router = new Router("", click_master);
+    placeholder_router->initialize(errh);
+    placeholder_router->activate(errh);
+
+    for (int i = 0; i < click_master->nthreads(); i++) {
+	click_master->use();
+	RouterThread *thread = click_master->thread(i);
+	thread->set_greedy(greedy);
+	pid_t pid = kernel_thread
+	    (click_sched, thread, CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
+	if (pid < 0) {
+	    errh->error("cannot create kernel thread for Click thread %i!", i);
+	    click_master->unuse();
+	}
     }
-  }
 
-  Router::add_read_handler(0, "threads", read_threads, 0);
-  Router::add_read_handler(0, "priority", read_priority, 0);
-  Router::add_write_handler(0, "priority", write_priority, 0, Handler::NONEXCLUSIVE);
+    Router::add_read_handler(0, "threads", read_threads, 0);
+    Router::add_read_handler(0, "priority", read_priority, 0);
+    Router::add_write_handler(0, "priority", write_priority, 0, Handler::NONEXCLUSIVE);
 #ifdef HAVE_ADAPTIVE_SCHEDULER
-  static_assert(Task::MAX_UTILIZATION == 1000);
-  Router::add_read_handler(0, "min_cpu_share", read_cpu_share, 0);
-  Router::add_write_handler(0, "min_cpu_share", write_cpu_share, 0, Handler::NONEXCLUSIVE);
-  Router::add_read_handler(0, "max_cpu_share", read_cpu_share, (void *)1);
-  Router::add_write_handler(0, "max_cpu_share", write_cpu_share, (void *)1, Handler::NONEXCLUSIVE);
-  Router::add_read_handler(0, "cpu_share", read_cur_cpu_share, 0);
-#else 
-  Router::add_read_handler(0, "tasks_per_iter", read_sched_param, 
-			   (void *)H_TASKS_PER_ITER);
-  Router::add_read_handler(0, "iters_per_timers", read_sched_param, 
-			   (void *)H_ITERS_PER_TIMERS);
-  Router::add_read_handler(0, "iters_per_os", read_sched_param, 
-			   (void *)H_ITERS_PER_OS);
+    static_assert(Task::MAX_UTILIZATION == 1000);
+    Router::add_read_handler(0, "min_cpu_share", read_cpu_share, 0);
+    Router::add_write_handler(0, "min_cpu_share", write_cpu_share, 0, Handler::NONEXCLUSIVE);
+    Router::add_read_handler(0, "max_cpu_share", read_cpu_share, (void *)1);
+    Router::add_write_handler(0, "max_cpu_share", write_cpu_share, (void *)1, Handler::NONEXCLUSIVE);
+    Router::add_read_handler(0, "cpu_share", read_cur_cpu_share, 0);
+#else
+    Router::add_read_handler(0, "tasks_per_iter", read_sched_param,
+			     (void *)H_TASKS_PER_ITER);
+    Router::add_read_handler(0, "iters_per_timers", read_sched_param,
+			     (void *)H_ITERS_PER_TIMERS);
+    Router::add_read_handler(0, "iters_per_os", read_sched_param,
+			     (void *)H_ITERS_PER_OS);
 
-  // XXX believed to be OK to run in parallel with thread processing
-  Router::add_write_handler(0, "tasks_per_iter", write_sched_param, 
-			    (void *)H_TASKS_PER_ITER, Handler::NONEXCLUSIVE);
-  Router::add_write_handler(0, "iters_per_timers", write_sched_param, 
-			    (void *)H_ITERS_PER_TIMERS, Handler::NONEXCLUSIVE);
-  Router::add_write_handler(0, "iters_per_os", write_sched_param, 
-			    (void *)H_ITERS_PER_OS, Handler::NONEXCLUSIVE);
+    // XXX believed to be OK to run in parallel with thread processing
+    Router::add_write_handler(0, "tasks_per_iter", write_sched_param,
+			      (void *)H_TASKS_PER_ITER, Handler::NONEXCLUSIVE);
+    Router::add_write_handler(0, "iters_per_timers", write_sched_param,
+			      (void *)H_ITERS_PER_TIMERS, Handler::NONEXCLUSIVE);
+    Router::add_write_handler(0, "iters_per_os", write_sched_param,
+			      (void *)H_ITERS_PER_OS, Handler::NONEXCLUSIVE);
 
 #endif
 #if CLICK_DEBUG_MASTER
-  Router::add_read_handler(0, "master_info", read_master_info, 0);
+    Router::add_read_handler(0, "master_info", read_master_info, 0);
 #endif
 }
 
 int
 click_cleanup_sched()
 {
-  if (kill_router_threads() < 0) {
-    printk("<1>click: Following threads still active, expect a crash:\n");
-    SOFT_SPIN_LOCK(&click_thread_lock);
-    for (int i = 0; i < click_thread_pids->size(); i++) {
-      printk("<1>click:   router thread pid %d\n", (*click_thread_pids)[i]);
-      struct task_struct *ct = find_task_by_pid((*click_thread_pids)[i]);
-      if (ct)
-	  printk("<1>click:   state %d, EIP %08x\n", (int) ct->state, KSTK_EIP(ct));
+    if (kill_router_threads() < 0) {
+	printk("<1>click: Following threads still active, expect a crash:\n");
+	SOFT_SPIN_LOCK(&click_thread_lock);
+	for (int i = 0; i < click_thread_pids->size(); i++) {
+	    printk("<1>click:   router thread pid %d\n", (*click_thread_pids)[i]);
+	    struct task_struct *ct = find_task_by_pid((*click_thread_pids)[i]);
+	    if (ct)
+		printk("<1>click:   state %d, EIP %08x\n", (int) ct->state, KSTK_EIP(ct));
+	}
+	SPIN_UNLOCK(&click_thread_lock);
+	click_master->unuse();
+	return -1;
+    } else {
+	delete click_thread_pids;
+	click_thread_pids = 0;
+	click_master->unuse();
+	click_master = 0;
+	return 0;
     }
-    SPIN_UNLOCK(&click_thread_lock);
-    click_master->unuse();
-    return -1;
-  } else {
-    delete click_thread_pids;
-    click_thread_pids = 0;
-    click_master->unuse();
-    click_master = 0;
-    return 0;
-  }
 }

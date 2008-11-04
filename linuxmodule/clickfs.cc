@@ -164,7 +164,7 @@ click_inode(struct super_block *sb, ino_t ino)
 
     if (click_ino.prepare(click_router, click_config_generation) < 0)
 	return 0;
-    
+
     struct inode *inode = new_inode(sb);
     if (!inode)
 	return 0;
@@ -197,7 +197,7 @@ click_inode(struct super_block *sb, ino_t ino)
     }
 
     inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
-    
+
     MDEBUG("%lx:%p:%p: leaving click_inode", ino, inode, inode->i_op);
     return inode;
 }
@@ -252,7 +252,7 @@ click_dir_revalidate(struct dentry *dentry)
     MDEBUG("click_dir_revalidate %lx", (inode ? inode->i_ino : 0));
     if (!inode)
 	return -EINVAL;
-    
+
     int error = 0;
     LOCK_CONFIG_READ();
     if (INODE_INFO(inode).config_generation != click_config_generation) {
@@ -290,7 +290,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
     struct my_filldir_container mfd;
     mfd.filldir = filldir;
     mfd.dirent = dirent;
-    
+
     struct inode *inode = filp->f_dentry->d_inode;
     ino_t ino = inode->i_ino;
     uint32_t f_pos = filp->f_pos;
@@ -434,7 +434,7 @@ increase_handler_strings()
 
     if (handler_strings_cap < 0)	// in process of cleaning up module
 	return -1;
-    
+
     int new_cap = (handler_strings_cap ? 2*handler_strings_cap : 16);
     String *new_strs = new String[new_cap];
     if (!new_strs)
@@ -444,7 +444,7 @@ increase_handler_strings()
 	delete[] new_strs;
 	return -1;
     }
-    
+
     for (int i = 0; i < handler_strings_cap; i++)
 	new_strs[i] = handler_strings[i];
     for (int i = handler_strings_cap; i < new_cap; i++)
@@ -531,11 +531,11 @@ handler_open(struct inode *inode, struct file *filp)
 
     bool reading = (filp->f_flags & O_ACCMODE) != O_WRONLY;
     bool writing = (filp->f_flags & O_ACCMODE) != O_RDONLY;
-    
+
     int retval = 0;
     int stringno = -1;
     const Handler *h;
-    
+
     if ((reading && writing)
 	|| (filp->f_flags & O_APPEND)
 	|| (writing && !(filp->f_flags & O_TRUNC)))
@@ -555,7 +555,7 @@ handler_open(struct inode *inode, struct file *filp)
     }
 
     UNLOCK_CONFIG_READ();
-    
+
     if (retval < 0 && stringno >= 0) {
 	free_handler_string(stringno);
 	stringno = -1;
@@ -662,7 +662,7 @@ handler_do_write(struct file *filp, void *address_ptr)
     struct inode *inode = filp->f_dentry->d_inode;
     const Handler *h;
     int retval;
-    
+
     if ((retval = inode_out_of_date(inode, -EIO)) < 0)
 	/* save retval */;
     else if (!(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino)))
@@ -682,7 +682,7 @@ handler_do_write(struct file *filp, void *address_ptr)
 	    retval = r;
 	    goto exit;
 	}
-	
+
 	String data = handler_strings[stringno];
 	if (!h->raw()
 	    && !(handler_strings_info[stringno].flags & HANDLER_RAW)
@@ -690,7 +690,7 @@ handler_do_write(struct file *filp, void *address_ptr)
 	    && data
 	    && data.back() == '\n')
 	    data = data.substring(data.begin(), data.end() - 1);
-	
+
 	ClickfsHandlerErrorHandler cerrh;
 	if (h->exclusive()) {
 	    lock_threads();
@@ -698,7 +698,7 @@ handler_do_write(struct file *filp, void *address_ptr)
 	    unlock_threads();
 	} else
 	    retval = h->call_write(data, e, true, &cerrh);
-	
+
 	handler_strings_info[stringno].flags |= HANDLER_DONE;
 
 	if (cerrh._sa && !address_ptr) {
@@ -724,7 +724,7 @@ handler_do_write(struct file *filp, void *address_ptr)
 	    }
 	}
     }
-    
+
   exit:
     return retval;
 }
@@ -774,7 +774,7 @@ handler_ioctl(struct inode *inode, struct file *filp,
 
     int retval;
     Element *e;
-    
+
     if ((retval = inode_out_of_date(inode, -EIO)) < 0)
 	/* save retval */;
     else if (!click_router)
