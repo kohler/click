@@ -130,7 +130,7 @@ write_assert_stop(const String &s, Element *, void *, ErrorHandler *errh)
 void
 KernelErrorHandler::log_line(const char *begin, const char *end)
 {
-    static_assert(logbuf_siz == logbuf_savesiz * 2);
+    static_assert((logbuf_siz & (logbuf_siz - 1)) == 0);
 
     // ensure begin <= end
     if (begin > end)
@@ -140,23 +140,36 @@ KernelErrorHandler::log_line(const char *begin, const char *end)
     if (begin + 9 <= end && memcmp(begin, "chatter: ", 9) == 0)
 	begin += 9;
 
-    // manipulate log buffer to prevent memory overflow
-    if (_pos + end - begin > logbuf_siz - 1 && _pos >= logbuf_savesiz) {
-	memcpy(&_logbuf[0], &_logbuf[logbuf_savesiz], _pos - logbuf_savesiz);
-	_pos -= logbuf_savesiz;
-	_generation++;
-    }
-    if (_pos + end - begin > logbuf_siz - 1) {
-	_pos = 0;
-	_generation += 2;
-    }
-    if (_pos + end - begin > logbuf_siz - 1)
-	begin = end - (logbuf_siz - 1);
+    // truncate a long line
+    if (end - begin > logbuf_siz - 1)
+	end = begin + logbuf_siz - 1;
 
-    // log line
-    memcpy(&_logbuf[_pos], begin, end - begin);
-    _pos += end - begin;
-    _logbuf[_pos++] = '\n';
+    // allocate space in the buffer
+    uint32_t line_head, line_tail;
+    do {
+	line_head = _tail;
+	line_tail = line_head + (end - begin) + 1;
+    } while (!atomic_uint32_t::compare_and_swap(_tail, line_head, line_tail));
+    while (line_tail - _head > logbuf_siz)
+	/* spin */;
+
+    // copy the line into the buffer
+    uint32_t line_head_pos = line_head & (logbuf_siz - 1);
+    uint32_t line_tail_pos = ((line_tail - 1) & (logbuf_siz - 1)) + 1;
+    if (line_head_pos < line_tail_pos)
+	memcpy(_logbuf + line_head_pos, begin, end - begin);
+    else {
+	uint32_t first = logbuf_siz - line_head_pos;
+	memcpy(_logbuf + line_head_pos, begin, first);
+	memcpy(_logbuf, begin + first, (end - begin) - first);
+    }
+    _logbuf[line_tail_pos - 1] = '\n';
+
+    // mark the line as stored
+    while (!atomic_uint32_t::compare_and_swap(_head, line_head, line_tail))
+	/* spin */;
+    if (line_tail > logbuf_siz)
+	_wrapped = true;
 }
 
 void
@@ -177,21 +190,55 @@ KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
 	panic("click");
 }
 
-inline String
-KernelErrorHandler::stable_string() const
+String
+KernelErrorHandler::read(click_handler_direct_info *hdi) const
 {
-    return String::make_stable(&_logbuf[0], &_logbuf[_pos]);
+    uint32_t initial;
+    if (!*hdi->string) {
+	initial = (_wrapped ? _tail - logbuf_siz : 0);
+	*hdi->string = String(initial);
+    } else
+	cp_integer(*hdi->string, &initial);
+
+    uint32_t tail = _tail;
+    uint32_t len = tail - initial;
+    loff_t f_pos = *hdi->store_f_pos;
+    if (f_pos > len)
+	f_pos = len;
+    if (f_pos + hdi->count > len)
+	hdi->count = len - f_pos;
+
+    loff_t last_f_pos = f_pos + hdi->count;
+    while (f_pos < last_f_pos) {
+	size_t pos = (initial + f_pos) & (logbuf_siz - 1);
+	size_t amount = logbuf_siz - pos;
+	if (amount > last_f_pos - f_pos)
+	    amount = last_f_pos - f_pos;
+	if (copy_to_user(hdi->buffer, _logbuf + pos, amount) > 0) {
+	    hdi->retval = -EFAULT;
+	    return String();
+	}
+	hdi->buffer += amount;
+	f_pos += amount;
+    }
+    hdi->count = f_pos - *hdi->store_f_pos;
+    return String();
 }
 
 static String
-read_errors(Element *, void *thunk)
+read_errors(Element *, void *user_data)
 {
-    KernelErrorHandler *errh = (thunk ? syslog_errh : click_logged_errh);
-    if (errh)
-	// OK to return a stable_string, even though the data is not really
-	// stable, because we use it for a very short time (HANDLER_REREAD).
-	// Problems are possible, of course.
-	return errh->stable_string();
+    if (click_logged_errh)
+	return click_logged_errh->read((click_handler_direct_info *) user_data);
+    else
+	return String::make_out_of_memory();
+}
+
+static String
+read_messages(Element *, void *user_data)
+{
+    if (syslog_errh)
+	return syslog_errh->read((click_handler_direct_info *) user_data);
     else
 	return String::make_out_of_memory();
 }
@@ -237,8 +284,8 @@ init_module()
 #if HAVE_INT64_TYPES
     Router::add_read_handler(0, "cycles", read_cycles, 0);
 #endif
-    Router::add_read_handler(0, "errors", read_errors, 0, HANDLER_REREAD);
-    Router::add_read_handler(0, "messages", read_errors, (void *)1, HANDLER_REREAD);
+    Router::add_read_handler(0, "errors", read_errors, 0, HANDLER_DIRECT);
+    Router::add_read_handler(0, "messages", read_messages, 0, HANDLER_DIRECT);
 #if HAVE_KERNEL_ASSERT
     Router::add_read_handler(0, "assert_stop", read_assert_stop, 0);
     Router::add_write_handler(0, "assert_stop", write_assert_stop, 0, Handler::NONEXCLUSIVE);

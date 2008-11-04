@@ -170,7 +170,7 @@ click_init_config()
     Router::add_read_handler(0, "classes", read_classes, 0);
     Router::add_write_handler(0, "config", write_config, 0);
     Router::add_write_handler(0, "hotconfig", write_config, (void *)1);
-    Router::set_handler_flags(0, "config", HANDLER_REREAD | HANDLER_WRITE_UNLIMITED | Handler::RAW | Handler::NONEXCLUSIVE);
+    Router::set_handler_flags(0, "config", HANDLER_WRITE_UNLIMITED | Handler::RAW | Handler::NONEXCLUSIVE);
     Router::set_handler_flags(0, "hotconfig", HANDLER_WRITE_UNLIMITED | Handler::RAW | Handler::NONEXCLUSIVE);
 
     click_config_generation = 1;

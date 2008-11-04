@@ -573,7 +573,7 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	return -EIO;
 
     // (re)read handler if necessary
-    if ((handler_strings_info[stringno].flags & (HANDLER_REREAD | HANDLER_DONE)) != HANDLER_DONE) {
+    if ((handler_strings_info[stringno].flags & (HANDLER_DIRECT | HANDLER_DONE)) != HANDLER_DONE) {
 	LOCK_CONFIG_READ();
 	int retval;
 	const Handler *h;
@@ -587,14 +587,27 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	else {
 	    int eindex = INO_ELEMENTNO(inode->i_ino);
 	    Element *e = Router::element(click_router, eindex);
-	    if (h->exclusive()) {
+
+	    if (handler_strings_info[stringno].flags & HANDLER_DIRECT) {
+		click_handler_direct_info hdi;
+		hdi.buffer = buffer;
+		hdi.count = count;
+		hdi.store_f_pos = store_f_pos;
+		hdi.string = &handler_strings[stringno];
+		hdi.retval = 0;
+		(void) (*h->read_callback())(e, &hdi);
+		count = hdi.count;
+		retval = hdi.retval;
+	    } else if (h->exclusive()) {
 		lock_threads();
 		handler_strings[stringno] = h->call_read(e);
 		unlock_threads();
 	    } else
 		handler_strings[stringno] = h->call_read(e);
+
 	    if (!h->raw()
 		&& !(handler_strings_info[stringno].flags & HANDLER_RAW)
+		&& !(handler_strings_info[stringno].flags & HANDLER_DIRECT)
 		&& handler_strings[stringno]
 		&& handler_strings[stringno].back() != '\n')
 		handler_strings[stringno] += '\n';
@@ -606,11 +619,16 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	handler_strings_info[stringno].flags |= HANDLER_DONE;
     }
 
-    const String &s = handler_strings[stringno];
-    if (f_pos + count > s.length())
-	count = s.length() - f_pos;
-    if (copy_to_user(buffer, s.data() + f_pos, count) > 0)
-	return -EFAULT;
+    if (!(handler_strings_info[stringno].flags & HANDLER_DIRECT)) {
+	const String &s = handler_strings[stringno];
+	if (f_pos > s.length())
+	    f_pos = s.length();
+	if (f_pos + count > s.length())
+	    count = s.length() - f_pos;
+	if (copy_to_user(buffer, s.data() + f_pos, count) > 0)
+	    return -EFAULT;
+    }
+
     *store_f_pos += count;
     return count;
 }
@@ -877,7 +895,7 @@ init_clickfs()
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo));
 #endif
-    static_assert(HANDLER_REREAD + HANDLER_DONE + HANDLER_RAW + HANDLER_SPECIAL_INODE + HANDLER_WRITE_UNLIMITED < Handler::USER_FLAG_0);
+    static_assert(HANDLER_DIRECT + HANDLER_DONE + HANDLER_RAW + HANDLER_SPECIAL_INODE + HANDLER_WRITE_UNLIMITED < Handler::USER_FLAG_0);
 
     spin_lock_init(&handler_strings_lock);
     spin_lock_init(&clickfs_lock);
