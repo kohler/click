@@ -118,7 +118,7 @@ RouterThread::RouterThread(Master *m, int id)
 #if CLICK_LINUXMODULE
     greedy_schedule_jiffies = jiffies;
 #endif
-    
+
 #if CLICK_DEBUG_SCHEDULING
     _thread_state = S_BLOCKED;
     _driver_epoch = 0;
@@ -228,7 +228,7 @@ RouterThread::check_restride(Timestamp &t_before, const Timestamp &t_now, int &r
     if (elapsed > DRIVER_RESTRIDE_INTERVAL || elapsed < 0) {
 	// mark new measurement period
 	t_before = t_now;
-	
+
 	// reset passes every 10 intervals, or when time moves backwards
 	if (++restride_iter == 10 || elapsed < 0) {
 	    _global_pass = _clients[C_CLICK].tickets = _clients[C_KERNEL].tickets = 0;
@@ -297,7 +297,7 @@ RouterThread::task_reheapify_from(int pos, Task* t)
     Task** tbegin = _task_heap.begin();
     Task** tend = _task_heap.end();
     int npos;
-    
+
     while (pos > 0
 	   && (npos = (pos-1) >> 1, PASS_GT(tbegin[npos]->_pass, t->_pass))) {
 	tbegin[pos] = tbegin[npos];
@@ -334,7 +334,7 @@ RouterThread::run_tasks(int ntasks)
     if ((_driver_task_epoch % TASK_EPOCH_BUFSIZ) == 0)
 	_task_epoch_first = _driver_task_epoch;
 #endif
-    
+
     // never run more than 32768 tasks
     if (ntasks > 32768)
 	ntasks = 32768;
@@ -376,7 +376,7 @@ RouterThread::run_tasks(int ntasks)
 	// with fast_schedule() (passes got out of sync).
 	_pass = t->_pass;
 #endif
-	
+
 	t->fire();
 
 #if HAVE_TASK_HEAP
@@ -454,7 +454,7 @@ RouterThread::run_os()
 #else
 # error "Compiling for unknown target."
 #endif
-    
+
     driver_lock_tasks();
 }
 
@@ -471,7 +471,7 @@ RouterThread::driver()
 #endif
 
     driver_lock_tasks();
-    
+
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     int restride_iter = 0;
     Timestamp t_before = Timestamp::uninitialized_t();
@@ -500,7 +500,7 @@ RouterThread::driver()
 #if CLICK_USERLEVEL
 	_master->run_signals();
 #endif
-	
+
 #if !(HAVE_ADAPTIVE_SCHEDULER||BSD_NETISRSCHED)
 	if ((iter % _iters_per_os) == 0)
 	    run_os();
@@ -562,7 +562,7 @@ RouterThread::driver()
 	    goto finish_driver;
     }
 #endif
-    
+
 #if !CLICK_NS && !BSD_NETISRSCHED
     // Everyone except the NS driver stays in driver() until the driver is
     // stopped.
@@ -592,7 +592,7 @@ RouterThread::driver_once()
 {
     if (!_master->check_driver())
 	return;
-  
+
 #if CLICK_BSDMODULE  /* XXX MARKO */
     int s = splimp();
 #elif CLICK_LINUXMODULE

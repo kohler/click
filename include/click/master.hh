@@ -105,7 +105,7 @@ class Master { public:
     // PENDING TASKS
     uintptr_t _pending_head;
     volatile uintptr_t *_pending_tail;
-    SpinlockIRQ _task_lock;
+    SpinlockIRQ _master_task_lock;
     void process_pending(RouterThread*);
 
     // TIMERS

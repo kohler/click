@@ -164,9 +164,9 @@ Master::pause()
 #if CLICK_USERLEVEL
     _select_lock.acquire();
 #endif
-    SpinlockIRQ::flags_t flags = _task_lock.acquire();
+    SpinlockIRQ::flags_t flags = _master_task_lock.acquire();
     _master_paused++;
-    _task_lock.release(flags);
+    _master_task_lock.release(flags);
 #if CLICK_USERLEVEL
     _select_lock.release();
 #endif
@@ -379,16 +379,16 @@ Master::process_pending(RouterThread *thread)
     // must be called with thread's lock acquired
 
     // claim the current pending list
-    SpinlockIRQ::flags_t flags = _task_lock.acquire();
+    SpinlockIRQ::flags_t flags = _master_task_lock.acquire();
     if (_master_paused > 0) {
-	_task_lock.release(flags);
+	_master_task_lock.release(flags);
 	return;
     }
     uintptr_t my_pending = _pending_head;
     _pending_head = 0;
     _pending_tail = &_pending_head;
     thread->_any_pending = 0;
-    _task_lock.release(flags);
+    _master_task_lock.release(flags);
 
     // process the list
     while (Task *t = Task::pending_to_task(my_pending)) {

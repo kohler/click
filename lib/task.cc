@@ -186,7 +186,7 @@ Task::cleanup()
 	    // Perhaps the task is enqueued on the current pending collection.
 	    // If so, remove it.
 	    Master *m = _router->master();
-	    SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
+	    SpinlockIRQ::flags_t flags = m->_master_task_lock.acquire();
 	    if (_pending_nextptr) {
 		volatile uintptr_t *tptr = &m->_pending_head;
 		while (Task *t = pending_to_task(*tptr))
@@ -199,7 +199,7 @@ Task::cleanup()
 		    } else
 			tptr = &t->_pending_nextptr;
 	    }
-	    m->_task_lock.release(flags);
+	    m->_master_task_lock.release(flags);
 
 	    // If not on the current pending list, perhaps this task is on
 	    // some list currently being processed by
@@ -245,7 +245,7 @@ void
 Task::add_pending()
 {
     Master *m = _router->master();
-    SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
+    SpinlockIRQ::flags_t flags = m->_master_task_lock.acquire();
     if (_router->_running >= Router::RUNNING_PREPARING
 	&& !_pending_nextptr) {
 	*m->_pending_tail = reinterpret_cast<uintptr_t>(this);
@@ -253,7 +253,7 @@ Task::add_pending()
 	_pending_nextptr = 1;
 	_thread->add_pending();
     }
-    m->_task_lock.release(flags);
+    m->_master_task_lock.release(flags);
 }
 
 /** @brief Unschedule the task.

@@ -50,7 +50,7 @@ class RouterThread
     inline void unlock_tasks();
 
     inline void schedule_block_tasks();
-    inline void block_tasks(bool scheduled, bool nice);
+    inline void block_tasks(bool scheduled);
     inline void unblock_tasks();
 
     inline Master* master() const;
@@ -301,7 +301,7 @@ RouterThread::schedule_block_tasks()
 }
 
 inline void
-RouterThread::block_tasks(bool scheduled, bool nice)
+RouterThread::block_tasks(bool scheduled)
 {
     assert(!current_thread_is_running());
     if (!scheduled)
@@ -311,11 +311,17 @@ RouterThread::block_tasks(bool scheduled, bool nice)
 	if (blocker >= 0
 	    && _task_blocker.compare_and_swap(blocker, blocker + 1))
 	    break;
-	if (nice) {
 #if CLICK_LINUXMODULE
-	    schedule();
+	// 3.Nov.2008: Must allow other threads a chance to run.  Otherwise,
+	// soft lock is possible: the thread in block_tasks() waits for
+	// RouterThread::_linux_task to complete a task set, but
+	// RouterThread::_linux_task can't run until the thread in
+	// block_tasks() relinquishes the CPU.
+	//
+	// We might be able to avoid schedule() in some cases, but don't
+	// bother to try.
+	schedule();
 #endif
-	}
     }
     --_task_blocker_waiting;
 }
@@ -331,7 +337,7 @@ inline void
 RouterThread::lock_tasks()
 {
     if (unlikely(!current_thread_is_running())) {
-	block_tasks(false, false);
+	block_tasks(false);
 	_task_lock.acquire();
     }
 }

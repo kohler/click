@@ -495,7 +495,7 @@ lock_threads()
     for (int i = 0; i < click_master->nthreads(); i++)
 	click_master->thread(i)->schedule_block_tasks();
     for (int i = 0; i < click_master->nthreads(); i++)
-	click_master->thread(i)->block_tasks(true, true);
+	click_master->thread(i)->block_tasks(true);
     click_master->pause();
 }
 
