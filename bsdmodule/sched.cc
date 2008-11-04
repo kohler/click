@@ -309,12 +309,13 @@ extern "C" int click_threads();
 
 #ifdef BSD_NETISRSCHED
 
+#if 0
 static void
 click_poll(struct ifnet *ifp, enum poll_cmd cmd, int count)
 {
   schednetisr(NETISR_CLICK);
 }
-
+#endif
 
 static void
 click_timer(void *arg)
