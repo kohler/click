@@ -151,12 +151,12 @@ class Element { public:
 #endif
 
     // HANDLERS
-    void add_read_handler(const String &name, ReadHandlerHook read_hook, const void *user_data = 0, uint32_t flags = 0);
-    void add_read_handler(const String &name, ReadHandlerHook read_hook, int user_data, uint32_t flags = 0);
-    void add_write_handler(const String &name, WriteHandlerHook write_hook, const void *user_data = 0, uint32_t flags = 0);
-    void add_write_handler(const String &name, WriteHandlerHook write_hook, int user_data, uint32_t flags = 0);
-    void set_handler(const String &name, int flags, HandlerHook hook, const void *user_data1 = 0, const void *user_data2 = 0);
-    void set_handler(const String &name, int flags, HandlerHook hook, int user_data1, int user_data2 = 0);
+    void add_read_handler(const String &name, ReadHandlerCallback read_callback, const void *user_data = 0, uint32_t flags = 0);
+    void add_read_handler(const String &name, ReadHandlerCallback read_callback, int user_data, uint32_t flags = 0);
+    void add_write_handler(const String &name, WriteHandlerCallback write_callback, const void *user_data = 0, uint32_t flags = 0);
+    void add_write_handler(const String &name, WriteHandlerCallback write_callback, int user_data, uint32_t flags = 0);
+    void set_handler(const String &name, int flags, HandlerCallback callback, const void *user_data1 = 0, const void *user_data2 = 0);
+    void set_handler(const String &name, int flags, HandlerCallback callback, int user_data1, int user_data2 = 0);
     int set_handler_flags(const String &name, int set_flags, int clear_flags = 0);
     void add_task_handlers(Task *task, const String& prefix = String());
 
@@ -258,7 +258,7 @@ class Element { public:
 
     static String read_handlers_handler(Element *e, void *user_data);
     void add_default_handlers(bool writable_config);
-    void add_data_handlers(const String &name, int flags, ReadHandlerHook read_hook, WriteHandlerHook write_hook, void *data);
+    void add_data_handlers(const String &name, int flags, ReadHandlerCallback read_hook, WriteHandlerCallback write_hook, void *data);
 
     friend class Router;
 

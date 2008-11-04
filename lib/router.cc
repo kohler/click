@@ -454,7 +454,7 @@ int
 Router::check_hookup_range(ErrorHandler *errh)
 {
     int before_all = errh->nerrors();
-    
+
     // Count inputs and outputs, and notify elements how many they have
     Vector<int> nin(nelements(), -1);
     Vector<int> nout(nelements(), -1);
@@ -478,7 +478,7 @@ Router::check_hookup_range(ErrorHandler *errh)
 	else
 	    ++cp;
     }
-    
+
     return errh->nerrors() == before_all ? 0 : -1;
 }
 
@@ -975,14 +975,14 @@ Router::initialize(ErrorHandler *errh)
 
     // initialize handlers to empty
     initialize_handlers(false, false);
-  
+
     // clear attachments
     _attachment_names.clear();
     _attachments.clear();
-  
+
     if (check_hookup_elements(errh) < 0)
 	return -1;
-  
+
     // set up configuration order
     _element_configure_order.assign(nelements(), 0);
     if (_element_configure_order.size()) {
@@ -997,7 +997,7 @@ Router::initialize(ErrorHandler *errh)
     // remember how far the configuration process got for each element
     Vector<int> element_stage(nelements(), Element::CLEANUP_BEFORE_CONFIGURE);
     bool all_ok = false;
-    
+
     // check connections
     if (check_hookup_range(errh) >= 0) {
 	make_gports();
@@ -1555,18 +1555,18 @@ Router::element_hindexes(const Element *e, Vector<int> &result)
 /** @brief Add an @a e.@a hname read handler.
  * @param e element, if any
  * @param hname handler name
- * @param hook read hook
- * @param user_data user data for read hook
+ * @param callback read callback
+ * @param user_data user data for read callback
  * @param flags additional flags to set (Handler::flags())
  *
  * Adds a read handler named @a hname for element @a e.  If @a e is NULL or
  * equal to some root_element(), then adds a global read handler.  The
- * handler's hook function is @a hook.  When the read handler is triggered,
- * Click will call @a hook(@a e, @a user_data).
+ * handler's callback function is @a callback.  When the read handler is
+ * triggered, Click will call @a callback(@a e, @a user_data).
  *
  * Any previous read handler with the same name and element is replaced.  Any
- * uniform handler function (see set_handler()) is replaced.  Any write-only
- * handler (add_write_handler()) remains.
+ * comprehensive handler function (see set_handler()) is replaced.  Any
+ * write-only handler (add_write_handler()) remains.
  *
  * The new handler's flags equal the old flags or'ed with @a flags.  Any
  * special flags in @a flags are ignored.
@@ -1577,10 +1577,11 @@ Router::element_hindexes(const Element *e, Vector<int> &result)
  */
 void
 Router::add_read_handler(const Element *e, const String &hname,
-			 ReadHandlerHook hook, void *user_data, uint32_t flags)
+			 ReadHandlerCallback callback, void *user_data,
+			 uint32_t flags)
 {
     Handler to_add(hname);
-    to_add._hook.rw.r = hook;
+    to_add._hook.rw.r = callback;
     to_add._thunk1 = user_data;
     to_add._flags = Handler::OP_READ | (flags & ~Handler::SPECIAL_FLAGS);
     store_handler(e, to_add, Handler::combine_read);
@@ -1589,18 +1590,18 @@ Router::add_read_handler(const Element *e, const String &hname,
 /** @brief Add an @a e.@a hname write handler.
  * @param e element, if any
  * @param hname handler name
- * @param hook read hook
- * @param user_data user data for write hook
+ * @param callback read callback
+ * @param user_data user data for write callback
  * @param flags additional flags to set (Handler::flags())
  *
  * Adds a write handler named @a hname for element @a e.  If @a e is NULL or
  * equal to some root_element(), then adds a global write handler.  The
- * handler's hook function is @a hook.  When the write handler is triggered,
- * Click will call @a hook(data, @a e, @a user_data, errh).
+ * handler's callback function is @a callback.  When the write handler is
+ * triggered, Click will call @a callback(data, @a e, @a user_data, errh).
  *
  * Any previous write handler with the same name and element is replaced.  Any
- * uniform handler function (see set_handler()) is replaced.  Any read-only
- * handler (add_read_handler()) remains.
+ * comprehensive handler function (see set_handler()) is replaced.  Any
+ * read-only handler (add_read_handler()) remains.
  *
  * The new handler's flags equal the old flags or'ed with @a flags.  Any
  * special flags in @a flags are ignored.
@@ -1609,32 +1610,33 @@ Router::add_read_handler(const Element *e, const String &hname,
  */
 void
 Router::add_write_handler(const Element *e, const String &hname,
-			  WriteHandlerHook hook, void *user_data, uint32_t flags)
+			  WriteHandlerCallback callback, void *user_data,
+			  uint32_t flags)
 {
     Handler to_add(hname);
-    to_add._hook.rw.w = hook;
+    to_add._hook.rw.w = callback;
     to_add._thunk2 = user_data;
     to_add._flags = Handler::OP_WRITE | (flags & ~Handler::SPECIAL_FLAGS);
     store_handler(e, to_add, Handler::combine_write);
 }
 
-/** @brief Add a uniform @a e.@a hname handler.
+/** @brief Add a comprehensive @a e.@a hname handler.
  * @param e element, if any
  * @param hname handler name
  * @param flags flags to set (Handler::flags())
- * @param hook uniform handler hook
- * @param user_data1 first user data for hook
- * @param user_data2 second user data for hook
+ * @param callback comprehensive handler callback
+ * @param user_data1 first user data for @a callback
+ * @param user_data2 second user data for @a callback
  *
  * Sets a handler named @a hname for element @a e.  If @a e is NULL or equal
- * to some root_element(), then sets a global handler.  The handler's hook
- * function is @a hook.  The resulting handler is a read handler if @a flags
+ * to some root_element(), then sets a global handler.  The handler's callback
+ * function is @a callback.  The resulting handler is a read handler if @a flags
  * contains Handler::OP_READ, and a write handler if @a flags contains
  * Handler::OP_WRITE.  If the flags contain Handler::READ_PARAM, then any read
  * handler will accept parameters.
  *
- * When the handler is triggered, Click will call @a hook(operation, data, @a
- * e, h, errh), where:
+ * When the handler is triggered, Click will call @a callback(operation, data,
+ * @a e, h, errh), where:
  *
  * <ul>
  * <li>"operation" is Handler::OP_READ or Handler::OP_WRITE;</li>
@@ -1651,10 +1653,11 @@ Router::add_write_handler(const Element *e, const String &hname,
  */
 void
 Router::set_handler(const Element *e, const String &hname, uint32_t flags,
-		    HandlerHook hook, void *user_data1, void *user_data2)
+		    HandlerCallback callback,
+		    void *user_data1, void *user_data2)
 {
     Handler to_add(hname);
-    to_add._hook.h = hook;
+    to_add._hook.h = callback;
     to_add._thunk1 = user_data1;
     to_add._thunk2 = user_data2;
     to_add._flags = flags | Handler::COMPREHENSIVE;
@@ -1870,7 +1873,7 @@ Router::unparse_connections(StringAccum &sa, const String &indent) const
       startchain[result] = false;
     }
   }
-  
+
   // print hookup
   Bitvector used(nc, false);
   bool done = false;
@@ -1878,12 +1881,12 @@ Router::unparse_connections(StringAccum &sa, const String &indent) const
     // print chains
     for (int ci = 0; ci < nc; ++ci) {
       if (used[ci] || !startchain[ci]) continue;
-      
+
       const Port &hf = _conn[ci][1];
       sa << indent << _element_names[hf.idx];
       if (hf.port)
 	sa << " [" << hf.port << "]";
-      
+
       int d = ci;
       while (d >= 0 && !used[d]) {
 	if (d == ci) sa << " -> ";
@@ -1943,7 +1946,7 @@ Router::element_ports_string(const Element *e) const
 {
     if (!e || e->eindex() < 0 || e->router() != this)
 	return String();
-  
+
     StringAccum sa;
     Vector<int> pers(e->ninputs() + e->noutputs(), 0);
     int *in_pers = pers.begin();
@@ -1958,7 +1961,7 @@ Router::element_ports_string(const Element *e) const
 	    sa << persid << "~\t";
 	else
 	    sa << persid << "\t";
-    
+
 	// counts
 #if CLICK_STATS >= 1
 	if (e->input_is_pull(i) || CLICK_STATS >= 2)
@@ -1966,7 +1969,7 @@ Router::element_ports_string(const Element *e) const
 	else
 #endif
 	    sa << "-\t";
-    
+
 	// connections
 	Port h(e->eindex(), i);
 	const char *sep = "";
@@ -1987,7 +1990,7 @@ Router::element_ports_string(const Element *e) const
 	    sa << persid << "~\t";
 	else
 	    sa << persid << "\t";
-    
+
 	// counts
 #if CLICK_STATS >= 1
 	if (e->output_is_push(i) || CLICK_STATS >= 2)
@@ -1995,7 +1998,7 @@ Router::element_ports_string(const Element *e) const
 	else
 #endif
 	    sa << "-\t";
-    
+
 	// hookup
 	Port h(e->eindex(), i);
 	const char *sep = "";
@@ -2007,7 +2010,7 @@ Router::element_ports_string(const Element *e) const
 	    }
 	sa << "\n";
     }
-  
+
     return sa.take_string();
 }
 
@@ -2026,7 +2029,7 @@ Router::router_read_handler(Element *e, void *thunk)
 
       case GH_VERSION:
 	return String(CLICK_VERSION);
-    
+
       case GH_CONFIG:
 	if (r)
 	    return r->configuration_string();
@@ -2091,7 +2094,7 @@ Router::router_read_handler(Element *e, void *thunk)
 	    }
 	break;
 #endif
-    
+
     }
     return sa.take_string();
 }

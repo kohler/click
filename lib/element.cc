@@ -1730,15 +1730,16 @@ Element::remove_select(int fd, int mask)
 /** @brief Register a read handler named @a name.
  *
  * @param name handler name
- * @param read_hook function called when handler is read
- * @param user_data user data parameter passed to @a read_hook
+ * @param read_callback function called when handler is read
+ * @param user_data user data parameter passed to @a read_callback
  * @param flags flags to set
  *
  * Adds a read handler named @a name for this element.  Reading the handler
- * returns the result of the @a read_hook function, which is called like this:
+ * returns the result of the @a read_callback function, which is called like
+ * this:
  *
  * @code
- * String result = read_hook(e, user_data);
+ * String result = read_callback(e, user_data);
  * @endcode
  *
  * @a e is this element pointer.
@@ -1751,39 +1752,39 @@ Element::remove_select(int fd, int mask)
  * parameters, use set_handler() or set_handler_flags().
  *
  * @sa read_positional_handler, read_keyword_handler: standard read handler
- * hook functions
+ * callback functions
  * @sa add_write_handler, set_handler, add_task_handlers
  */
 void
-Element::add_read_handler(const String &name, ReadHandlerHook read_hook, const void *user_data, uint32_t flags)
+Element::add_read_handler(const String &name, ReadHandlerCallback read_callback, const void *user_data, uint32_t flags)
 {
-    Router::add_read_handler(this, name, read_hook, (void *) user_data, flags);
+    Router::add_read_handler(this, name, read_callback, (void *) user_data, flags);
 }
 
 /** @brief Register a read handler named @a name.
  *
  * This version of add_read_handler() is useful when @a user_data is an
- * integer.  Note that the @a read_hook function must still cast its <tt>void
- * *</tt> argument to <tt>intptr_t</tt> to obtain the integer value.
+ * integer.  Note that the @a read_callback function must still cast its
+ * <tt>void *</tt> argument to <tt>intptr_t</tt> to obtain the integer value.
  */
 void
-Element::add_read_handler(const String &name, ReadHandlerHook read_hook, int user_data, uint32_t flags)
+Element::add_read_handler(const String &name, ReadHandlerCallback read_callback, int user_data, uint32_t flags)
 {
-    Router::add_read_handler(this, name, read_hook, (void *) (uintptr_t) user_data, flags);
+    Router::add_read_handler(this, name, read_callback, (void *) (uintptr_t) user_data, flags);
 }
 
 /** @brief Register a write handler named @a name.
  *
  * @param name handler name
- * @param write_hook function called when handler is written
- * @param user_data user data parameter passed to @a write_hook
+ * @param write_callback function called when handler is written
+ * @param user_data user data parameter passed to @a write_callback
  * @param flags flags to set
  *
  * Adds a write handler named @a name for this element.  Writing the handler
- * calls the @a write_hook function like this:
+ * calls the @a write_callback function like this:
  *
  * @code
- * int r = write_hook(data, e, user_data, errh);
+ * int r = write_callback(data, e, user_data, errh);
  * @endcode
  *
  * @a e is this element pointer.  The return value @a r should be negative on
@@ -1795,49 +1796,49 @@ Element::add_read_handler(const String &name, ReadHandlerHook read_hook, int use
  * add_read_handler(@a name) remains in effect.
  *
  * @sa reconfigure_positional_handler, reconfigure_keyword_handler: standard
- * write handler hook functions
+ * write handler callback functions
  * @sa add_read_handler, set_handler, add_task_handlers
  */
 void
-Element::add_write_handler(const String &name, WriteHandlerHook write_hook, const void *user_data, uint32_t flags)
+Element::add_write_handler(const String &name, WriteHandlerCallback write_callback, const void *user_data, uint32_t flags)
 {
-    Router::add_write_handler(this, name, write_hook, (void *) user_data, flags);
+    Router::add_write_handler(this, name, write_callback, (void *) user_data, flags);
 }
 
 /** @brief Register a write handler named @a name.
  *
  * This version of add_write_handler() is useful when @a user_data is an
- * integer.  Note that the @a write_hook function must still cast its <tt>void
- * *</tt> argument to <tt>intptr_t</tt> to obtain the integer value.
+ * integer.  Note that the @a write_callback function must still cast its
+ * <tt>void *</tt> argument to <tt>intptr_t</tt> to obtain the integer value.
  */
 void
-Element::add_write_handler(const String &name, WriteHandlerHook write_hook, int user_data, uint32_t flags)
+Element::add_write_handler(const String &name, WriteHandlerCallback write_callback, int user_data, uint32_t flags)
 {
-    Router::add_write_handler(this, name, write_hook, (void *) (uintptr_t) user_data, flags);
+    Router::add_write_handler(this, name, write_callback, (void *) (uintptr_t) user_data, flags);
 }
 
 /** @brief Register a comprehensive handler named @a name.
  *
  * @param name handler name
  * @param flags handler flags
- * @param hook function called when handler is written
+ * @param callback function called when handler is written
  * @param user_data1 user data parameter stored in the handler
  * @param user_data2 user data parameter stored in the handler
  *
  * Registers a comprehensive handler named @a name for this element.  The
  * handler handles the operations specified by @a flags, which can include
  * Handler::OP_READ, Handler::OP_WRITE, Handler::READ_PARAM, and others.
- * Reading the handler calls the @a hook function like this:
+ * Reading the handler calls the @a callback function like this:
  *
  * @code
  * String data;
- * int r = hook(Handler::OP_READ, data, e, h, errh);
+ * int r = callback(Handler::OP_READ, data, e, h, errh);
  * @endcode
  *
  * Writing the handler calls it like this:
  *
  * @code
- * int r = hook(Handler::OP_WRITE, data, e, h, errh);
+ * int r = callback(Handler::OP_WRITE, data, e, h, errh);
  * @endcode
  *
  * @a e is this element pointer, and @a h points to the Handler object for
@@ -1852,9 +1853,9 @@ Element::add_write_handler(const String &name, WriteHandlerHook write_hook, int 
  * name).
  */
 void
-Element::set_handler(const String& name, int flags, HandlerHook hook, const void *user_data1, const void *user_data2)
+Element::set_handler(const String& name, int flags, HandlerCallback callback, const void *user_data1, const void *user_data2)
 {
-    Router::set_handler(this, name, flags, hook, (void *) user_data1, (void *) user_data2);
+    Router::set_handler(this, name, flags, callback, (void *) user_data1, (void *) user_data2);
 }
 
 /** @brief Register a comprehensive handler named @a name.
@@ -1864,9 +1865,9 @@ Element::set_handler(const String& name, int flags, HandlerHook hook, const void
  * values.
  */
 void
-Element::set_handler(const String &name, int flags, HandlerHook hook, int user_data1, int user_data2)
+Element::set_handler(const String &name, int flags, HandlerCallback callback, int user_data1, int user_data2)
 {
-    Router::set_handler(this, name, flags, hook, (void *) (uintptr_t) user_data1, (void *) (uintptr_t) user_data2);
+    Router::set_handler(this, name, flags, callback, (void *) (uintptr_t) user_data1, (void *) (uintptr_t) user_data2);
 }
 
 /** @brief Set flags for the handler named @a name.
@@ -2252,13 +2253,13 @@ ether_address_write_data_handler(const String &str, Element *element, void *user
 }
 
 void
-Element::add_data_handlers(const String &name, int flags, ReadHandlerHook read_hook, WriteHandlerHook write_hook, void *data)
+Element::add_data_handlers(const String &name, int flags, ReadHandlerCallback read_callback, WriteHandlerCallback write_callback, void *data)
 {
     uintptr_t x = reinterpret_cast<uintptr_t>(data) - reinterpret_cast<uintptr_t>(this);
-    if ((flags & Handler::OP_READ) && read_hook)
-	add_read_handler(name, read_hook, reinterpret_cast<void *>(x), flags);
-    if ((flags & Handler::OP_WRITE) && write_hook)
-	add_write_handler(name, write_hook, reinterpret_cast<void *>(x), flags);
+    if ((flags & Handler::OP_READ) && read_callback)
+	add_read_handler(name, read_callback, reinterpret_cast<void *>(x), flags);
+    if ((flags & Handler::OP_WRITE) && write_callback)
+	add_write_handler(name, write_callback, reinterpret_cast<void *>(x), flags);
 }
 
 /** @brief Register read and/or write handlers accessing @a data.

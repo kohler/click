@@ -63,9 +63,9 @@ class Router { public:
     // HANDLERS
     // 'const Handler *' results last until that element/handlername modified
     static const Handler *handler(const Element *e, const String &hname);
-    static void add_read_handler(const Element *e, const String &hname, ReadHandlerHook hook, void *user_data, uint32_t flags = 0);
-    static void add_write_handler(const Element *e, const String &hname, WriteHandlerHook hook, void *user_data, uint32_t flags = 0);
-    static void set_handler(const Element *e, const String &hname, uint32_t flags, HandlerHook hook, void *user_data1 = 0, void *user_data2 = 0);
+    static void add_read_handler(const Element *e, const String &hname, ReadHandlerCallback callback, void *user_data, uint32_t flags = 0);
+    static void add_write_handler(const Element *e, const String &hname, WriteHandlerCallback callback, void *user_data, uint32_t flags = 0);
+    static void set_handler(const Element *e, const String &hname, uint32_t flags, HandlerCallback callback, void *user_data1 = 0, void *user_data2 = 0);
     static int set_handler_flags(const Element *e, const String &hname, uint32_t set_flags, uint32_t clear_flags = 0);
 
     enum { FIRST_GLOBAL_HANDLER = 0x40000000 };

@@ -10,11 +10,11 @@ class Handler;
  * @brief The Handler class for router handlers.
  */
 
-typedef int (*HandlerHook)(int operation, String &data, Element *element,
-			   const Handler *handler, ErrorHandler *errh);
-typedef String (*ReadHandlerHook)(Element *handler, void *user_data);
-typedef int (*WriteHandlerHook)(const String &data, Element *element,
-				void *user_data, ErrorHandler *errh);
+typedef int (*HandlerCallback)(int operation, String &data, Element *element,
+			       const Handler *handler, ErrorHandler *errh);
+typedef String (*ReadHandlerCallback)(Element *handler, void *user_data);
+typedef int (*WriteHandlerCallback)(const String &data, Element *element,
+				    void *user_data, ErrorHandler *errh);
 
 class Handler { public:
 
@@ -22,7 +22,7 @@ class Handler { public:
 	OP_READ = 0x0001,	///< @brief Handler supports read operations.
 	OP_WRITE = 0x0002,	///< @brief Handler supports write operations.
 	READ_PARAM = 0x0004,	///< @brief Read handler takes parameters.
-	COMPREHENSIVE = 0x0008,	///< @brief Use comprehensive hook for all
+	COMPREHENSIVE = 0x0008,	///< @brief Use comprehensive callback for all
 				///  operations.
 	SPECIAL_FLAGS = OP_READ | OP_WRITE | READ_PARAM | COMPREHENSIVE,
 				///< @brief These flags may not be set by
@@ -69,6 +69,38 @@ class Handler { public:
      * The result is a bitwise-or of flags from the Flags enumeration type. */
     inline uint32_t flags() const {
 	return _flags;
+    }
+
+    /** @brief Return this handler's comprehensive callback function.
+     *
+     * Returns 0 if the handler doesn't have a comprehensive callback. */
+    inline HandlerCallback callback() const {
+	if (_flags & COMPREHENSIVE)
+	    return _hook.h;
+	else
+	    return 0;
+    }
+
+    /** @brief Return this handler's read callback function.
+     *
+     * Returns 0 if the handler is not readable or has a comprehensive
+     * callback. */
+    inline ReadHandlerCallback read_callback() const {
+	if ((_flags & (OP_READ | COMPREHENSIVE)) == OP_READ)
+	    return _hook.rw.r;
+	else
+	    return 0;
+    }
+
+    /** @brief Return this handler's write callback function.
+     *
+     * Returns 0 if the handler is not writable or has a comprehensive
+     * callback. */
+    inline WriteHandlerCallback write_callback() const {
+	if ((_flags & (OP_WRITE | COMPREHENSIVE)) == OP_WRITE)
+	    return _hook.rw.w;
+	else
+	    return 0;
     }
 
     /** @brief Return this handler's first callback data. */
@@ -243,10 +275,10 @@ class Handler { public:
 
     String _name;
     union {
-	HandlerHook h;
+	HandlerCallback h;
 	struct {
-	    ReadHandlerHook r;
-	    WriteHandlerHook w;
+	    ReadHandlerCallback r;
+	    WriteHandlerCallback w;
 	} rw;
     } _hook;
     void *_thunk1;
@@ -283,6 +315,10 @@ Handler::call_write(const String &value, Element *e, bool,
 {
     return call_write(value, e, errh);
 }
+
+typedef HandlerCallback HandlerHook CLICK_DEPRECATED;
+typedef ReadHandlerCallback ReadHandlerHook CLICK_DEPRECATED;
+typedef WriteHandlerCallback WriteHandlerHook CLICK_DEPRECATED;
 
 CLICK_ENDDECLS
 #endif
