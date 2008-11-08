@@ -151,14 +151,14 @@ RouterThread::driver_lock_tasks()
 	select(0, 0, 0, 0, &waiter);
     }
 #endif
-    while (!_task_blocker.compare_and_swap(0, -1))
+    while (!_task_blocker.compare_and_swap(0, (uint32_t) -1))
 	/* do nothing */;
 }
 
 inline void
 RouterThread::driver_unlock_tasks()
 {
-    bool ok = _task_blocker.compare_and_swap(-1, 0);
+    bool ok = _task_blocker.compare_and_swap((uint32_t) -1, 0);
     assert(ok);
 }
 

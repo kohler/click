@@ -329,7 +329,7 @@ RouterThread::block_tasks(bool scheduled)
 inline void
 RouterThread::unblock_tasks()
 {
-    assert(_task_blocker > 0);
+    assert((int32_t) _task_blocker.value() > 0);
     --_task_blocker;
 }
 
