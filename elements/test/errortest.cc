@@ -26,14 +26,13 @@ CLICK_DECLS
 namespace {
 class ErrorTestHandler : public BaseErrorHandler { public:
     ErrorTestHandler() { }
-    void handle_text(Seriousness s, const String &text) {
-	_seriousness = s;
-	_text = text;
+    void *emit(const String &str, void *, bool) {
+	_text = str;
+	return 0;
     }
-    bool check(Seriousness s, const String &text) {
-	return (_seriousness == s && _text == text);
+    bool check(const String &text) {
+	return (_text == text);
     }
-    Seriousness _seriousness;
     String _text;
 };
 }
@@ -46,7 +45,7 @@ ErrorTest::~ErrorTest()
 {
 }
 
-#define CHECK(s, text) if (!errh.check((s), (text))) return init_errh->error("%s:%d: test `%s' failed", __FILE__, __LINE__, (text));
+#define CHECK(text) if (!errh.check((text))) return init_errh->error("%s:%d: test `%s' failed", __FILE__, __LINE__, (text));
 
 int
 ErrorTest::initialize(ErrorHandler *init_errh)
@@ -57,7 +56,7 @@ ErrorTest::initialize(ErrorHandler *init_errh)
     EtherAddress etha;
     cp_ethernet_address("0:1:3:5:A:B", &etha);
     errh.error("IP %{ip_ptr} %% ETH %{ether_ptr}", &ipa, &etha);
-    CHECK(ErrorHandler::ERR_ERROR, "IP 1.0.2.3 % ETH 00-01-03-05-0A-0B");
+    CHECK("<3>IP 1.0.2.3 % ETH 00-01-03-05-0A-0B");
 
     init_errh->message("All tests pass!");
     return 0;

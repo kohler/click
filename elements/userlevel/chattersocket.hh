@@ -100,7 +100,7 @@ class ChatterSocket : public Element { public:
   ~ChatterSocket();
 
   const char *class_name() const	{ return "ChatterSocket"; }
-  
+
   int configure_phase() const	 	{ return CONFIGURE_PHASE_INFO; }
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);
@@ -109,7 +109,7 @@ class ChatterSocket : public Element { public:
 
   void selected(int);
 
-  void handle_text(ErrorHandler::Seriousness, const String &);
+  void emit(const String &);
   void flush();
 
  private:
@@ -138,20 +138,20 @@ class ChatterSocket : public Element { public:
   int initialize_socket_error(ErrorHandler *, const char *);
   int initialize_socket(ErrorHandler *);
   static void retry_hook(Timer *, void *);
-  
+
   int flush(int fd);
 
 };
 
 inline void
-ChatterSocket::handle_text(ErrorHandler::Seriousness, const String &message)
+ChatterSocket::emit(const String &message)
 {
-  if (_live_fds && message.length()) {
-    _messages.push_back(message);
-    _message_pos.push_back(_max_pos);
-    _max_pos += message.length();
-    flush();
-  }
+    if (_live_fds && message.length()) {
+	_messages.push_back(message);
+	_message_pos.push_back(_max_pos);
+	_max_pos += message.length();
+	flush();
+    }
 }
 
 CLICK_ENDDECLS

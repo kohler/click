@@ -69,7 +69,7 @@ xml_error(XML_Parser parser, const char *format, ...)
 {
     va_list val;
     va_start(val, format);
-    xml_errh->verror(ErrorHandler::ERR_ERROR, xml_landmark(parser), format, val);
+    xml_errh->xmessage(xml_landmark(parser), ErrorHandler::e_error, format, val);
     va_end(val);
     return -EINVAL;
 }

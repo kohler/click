@@ -58,8 +58,7 @@ HandlerProxy::remove_error_receiver(ErrorReceiverHook hook, void *thunk)
 int
 HandlerProxy::check_handler(const String &hname, bool, ErrorHandler *errh)
 {
-    errh->set_error_code(CSERR_UNSPECIFIED);
-    errh->error("Handler '%#s' status unknown", hname.printable().c_str());
+    errh->error("{ec:%d}Handler '%#s' status unknown", CSERR_UNSPECIFIED, hname.printable().c_str());
     return -1;
 }
 

@@ -128,7 +128,21 @@ write_assert_stop(const String &s, Element *, void *, ErrorHandler *errh)
 /****************************** Error handlers *******************************/
 
 void
-KernelErrorHandler::log_line(const char *begin, const char *end)
+KernelErrorHandler::buffer_store(uint32_t head, const char *begin, const char *end)
+{
+    uint32_t head_pos = head & (logbuf_siz - 1);
+    uint32_t tail_pos = ((head + end - begin - 1) & (logbuf_siz - 1)) + 1;
+    if (head_pos < tail_pos)
+	memcpy(_logbuf + head_pos, begin, end - begin);
+    else {
+	uint32_t first = logbuf_siz - head_pos;
+	memcpy(_logbuf + head_pos, begin, first);
+	memcpy(_logbuf, begin + first, (end - begin) - first);
+    }
+}
+
+void
+KernelErrorHandler::log_line(String landmark, const char *begin, const char *end)
 {
     static_assert((logbuf_siz & (logbuf_siz - 1)) == 0);
 
@@ -141,29 +155,26 @@ KernelErrorHandler::log_line(const char *begin, const char *end)
 	begin += 9;
 
     // truncate a long line
-    if (end - begin > logbuf_siz - 1)
-	end = begin + logbuf_siz - 1;
+    if (end - begin + landmark.length() > logbuf_siz - 1) {
+	if (landmark.length() > logbuf_siz / 2)
+	    landmark = landmark.substring(0, logbuf_siz / 2);
+	end = begin + logbuf_siz - 1 - landmark.length();
+    }
 
     // allocate space in the buffer
     uint32_t line_head, line_tail;
     do {
 	line_head = _tail;
-	line_tail = line_head + (end - begin) + 1;
+	line_tail = line_head + (end - begin) + 1 + landmark.length();
     } while (!atomic_uint32_t::compare_and_swap(_tail, line_head, line_tail));
     while (line_tail - _head > logbuf_siz)
 	/* spin */;
 
     // copy the line into the buffer
-    uint32_t line_head_pos = line_head & (logbuf_siz - 1);
-    uint32_t line_tail_pos = ((line_tail - 1) & (logbuf_siz - 1)) + 1;
-    if (line_head_pos < line_tail_pos)
-	memcpy(_logbuf + line_head_pos, begin, end - begin);
-    else {
-	uint32_t first = logbuf_siz - line_head_pos;
-	memcpy(_logbuf + line_head_pos, begin, first);
-	memcpy(_logbuf, begin + first, (end - begin) - first);
-    }
-    _logbuf[line_tail_pos - 1] = '\n';
+    if (landmark)
+	buffer_store(line_head, landmark.begin(), landmark.end());
+    buffer_store(line_head + landmark.length(), begin, end);
+    _logbuf[(line_tail - 1) & (logbuf_siz - 1)] = '\n';
 
     // mark the line as stored
     while (!atomic_uint32_t::compare_and_swap(_head, line_head, line_tail))
@@ -172,22 +183,27 @@ KernelErrorHandler::log_line(const char *begin, const char *end)
 	_wrapped = true;
 }
 
-void
-KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
+void *
+KernelErrorHandler::emit(const String &str, void *, bool)
 {
-    // print message to syslog
-    const char *begin = message.begin();
-    const char *end = message.end();
-    while (begin < end) {
-	const char *newline = find(begin, end, '\n');
-	printk("<1>%.*s\n", newline - begin, begin);
-	log_line(begin, newline);
-	begin = newline + 1;
-    }
+    String landmark;
+    int level = 3;
+    const char *s = parse_anno(str, str.begin(), str.end(), "l", &landmark,
+			       "#<>", &level, (const char *) 0);
+    landmark = clean_landmark(landmark, true);
+    level = (level < 0 ? 0 : (level > 7 ? 7 : level));
+    printk("<%d>%.*s%.*s\n", level, landmark.length(), landmark.begin(),
+	   str.end() - s, s);
+    log_line(landmark, s, str.end());
+    return 0;
+}
 
-    // panic on fatal errors
-    if (seriousness >= ERR_MIN_FATAL)
-	panic("click");
+void
+KernelErrorHandler::account(int level)
+{
+    BaseErrorHandler::account(level);
+    if (level <= el_fatal)
+	panic("kclick");
 }
 
 String

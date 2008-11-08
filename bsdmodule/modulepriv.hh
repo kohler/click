@@ -32,10 +32,11 @@ CLICK_DECLS
 
 class KernelErrorHandler : public BaseErrorHandler { public:
 
-  KernelErrorHandler()                  : _pos(0), _generation(0) { }
-  void handle_text(Seriousness, const String &);
-  void clear_log()                      { _pos = 0; _generation += 2; }
-  inline String stable_string() const;
+    KernelErrorHandler()		: _pos(0), _generation(0) { }
+    void *emit(const String &str, void *user_data, bool more);
+    void account(int level);
+    void clear_log()			{ _pos = 0; _generation += 2; }
+    inline String stable_string() const;
 
  private:
 

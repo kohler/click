@@ -39,17 +39,16 @@ MessageElement::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "TYPE", cpkP, cpKeyword, &type,
 		     cpEnd) < 0)
 	return -1;
-    ErrorHandler::Seriousness s;
+    const char *err;
     if (type == "MESSAGE")
-	s = ErrorHandler::ERR_MESSAGE;
+	err = ErrorHandler::e_info;
     else if (type == "WARNING")
-	s = ErrorHandler::ERR_WARNING;
+	err = ErrorHandler::e_warning_annotated;
     else if (type == "ERROR")
-	s = ErrorHandler::ERR_ERROR;
+	err = ErrorHandler::e_error;
     else
 	return errh->error("unrecognized message type");
-    errh->verror_text(s, String(), message);
-    return (s >= ErrorHandler::ERR_ERROR ? ErrorHandler::ERROR_RESULT : ErrorHandler::OK_RESULT);
+    return errh->xmessage(err, message);
 }
 
 CLICK_ENDDECLS

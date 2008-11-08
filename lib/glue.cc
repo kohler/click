@@ -103,9 +103,8 @@ click_chatter(const char *fmt, ...)
   va_list val;
   va_start(val, fmt);
 
-  if (ErrorHandler::has_default_handler()) {
-    ErrorHandler *errh = ErrorHandler::default_handler();
-    errh->verror(ErrorHandler::ERR_MESSAGE, "", fmt, val);
+  if (ErrorHandler *errh = ErrorHandler::default_handler()) {
+    errh->xmessage(ErrorHandler::e_info, fmt, val);
   } else {
 #if CLICK_LINUXMODULE
 # if __MTCLICK__
@@ -126,7 +125,7 @@ click_chatter(const char *fmt, ...)
     fprintf(stderr, "\n");
 #endif
   }
-  
+
   va_end(val);
 }
 }

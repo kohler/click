@@ -714,7 +714,8 @@ Router::element_lerror(ErrorHandler *errh, Element *e,
 {
     va_list val;
     va_start(val, format);
-    errh->verror(ErrorHandler::ERR_ERROR, e->landmark(), format, val);
+    String l = ErrorHandler::make_landmark_anno(e->landmark());
+    errh->xmessage(ErrorHandler::e_error + l, format, val);
     va_end(val);
     return -1;
 }
@@ -1088,8 +1089,8 @@ Router::initialize(ErrorHandler *errh)
 	return 0;
     } else {
 	_state = ROUTER_DEAD;
-	errh->verror_text(ErrorHandler::ERR_CONTEXT_ERROR, "", "Router could not be initialized!");
-    
+	errh->error("Router could not be initialized!");
+
 	// Unschedule tasks and timers
 	master()->kill_router(this);
 

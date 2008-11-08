@@ -327,13 +327,13 @@ void wmain::on_config_changed(bool replace, LexerTInfo *linfo)
     GtkTextTag *error_tag = gtk_text_tag_table_lookup(gtk_text_buffer_get_tag_table(_config_buffer), "error");
     for (GatherErrorHandler::iterator gi = gerrh->begin();
 	 gi != gerrh->end(); ++gi)
-	if (gi->errpos1 < gi->errpos2 && gi->seriousness >= ErrorHandler::ERR_MIN_ERROR)
+	if (gi->errpos1 < gi->errpos2 && gi->level <= ErrorHandler::el_error)
 	    cinfo->apply_tag(conf_begin + gi->errpos1, conf_begin + gi->errpos2, error_tag);
 
     _diagram->router_create(false, false);
     _config_clean_elements = true;
     config_choose_driver();
-    
+
     if (router() && replace)
 	etree_fill();
     if (gerrh->nerrors() || gerrh->nwarnings())
@@ -856,7 +856,7 @@ bool wmain::error_view_motion_position(gint x, gint y)
 	result = error_view_motion_offsets(message->offset1, message->offset2(), message - gerrh->begin());
 
     // get more motion events
-    GdkModifierType mod;   
+    GdkModifierType mod;
     (void) gdk_window_get_pointer(_error_view->window, &x, &y, &mod);
 
     return result;

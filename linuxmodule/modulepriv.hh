@@ -36,7 +36,10 @@ class KernelErrorHandler : public BaseErrorHandler { public:
     KernelErrorHandler()
 	: _head(0), _tail(0), _wrapped(false) {
     }
-    void handle_text(Seriousness, const String &);
+
+    void *emit(const String &str, void *user_data, bool more);
+    void account(int level);
+
     void clear_log() {
 	_head = _tail = 0;
 	_wrapped = false;
@@ -51,7 +54,8 @@ class KernelErrorHandler : public BaseErrorHandler { public:
     volatile uint32_t _tail;
     bool _wrapped;
 
-    void log_line(const char *begin, const char *end);
+    void buffer_store(uint32_t head, const char *begin, const char *end);
+    void log_line(String landmark, const char *begin, const char *end);
 
 };
 

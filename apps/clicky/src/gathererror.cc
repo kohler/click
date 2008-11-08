@@ -9,52 +9,20 @@ GatherErrorHandler::GatherErrorHandler()
 {
 }
 
-String GatherErrorHandler::decorate_text(Seriousness, const String &landmark, const String &text)
+void *GatherErrorHandler::emit(const String &str, void *, bool more)
 {
-  String new_text = text;
-
-  // skip initial special-purpose portion of a landmark ('\<...>')
-  int first_lpos = 0;
-  if (landmark.length() > 2 && landmark[0] == '\\' && landmark[1] == '<') {
-      const char *slash1 = landmark.begin() + 2;
-      const char *slash2 = find(slash1, landmark.end(), '>');
-      if (slash2 != landmark.end()) {
-	  const char *comma = find(slash1, slash2, ',');
-	  unsigned off1, off2;
-	  if (comma != slash2 && cp_integer(slash1, comma, 10, &off1)
-	      && cp_integer(comma + 1, slash2, 10, &off2)) {
-	      _next_errpos1 = off1;
-	      _next_errpos2 = off2;
-	  }
-	  first_lpos = slash2 + 1 - landmark.begin();
-      }
-  }
-  
-  // handle landmark
-  if (first_lpos < landmark.length()) {
-    // fix landmark: skip trailing spaces and trailing colon
-    int i, len = landmark.length();
-    for (i = len - 1; i >= first_lpos; i--)
-      if (!isspace((unsigned char) landmark[i]))
-	break;
-    if (i >= first_lpos && landmark[i] == ':')
-      i--;
-
-    // prepend landmark, unless all spaces
-    if (i >= first_lpos)
-      new_text = prepend_lines(landmark.substring(first_lpos, i + 1 - first_lpos) + ": ", new_text);
-  }
-
-  return new_text;
-}
-
-void GatherErrorHandler::handle_text(Seriousness seriousness, const String &str)
-{
-    _v.push_back(Message(seriousness, str, _end_offset, _next_errpos1, _next_errpos2));
-    if (!str || str.back() != '\n')
-	_v.back().message += "\n";
-    _next_errpos1 = _next_errpos2 = 0;
+    int xlevel = 1000;
+    String landmark;
+    const char *s = parse_anno(str, str.begin(), str.end(), "l", &landmark,
+			       "#l1", &_next_errpos1, "#l2", &_next_errpos2,
+			       "#<>", &xlevel, (const char *) 0);
+    String x = clean_landmark(landmark, true) + str.substring(s, str.end())
+	+ "\n";
+    _v.push_back(Message(x, xlevel, _end_offset, _next_errpos1, _next_errpos2));
+    if (!more)
+	_next_errpos1 = _next_errpos2 = 0;
     _end_offset += _v.back().message.length();
+    return 0;
 }
 
 void GatherErrorHandler::clear()
@@ -97,11 +65,11 @@ GatherErrorHandler::iterator GatherErrorHandler::erase(iterator begin, iterator 
 void GatherErrorHandler::translate_prefix(const String &from, const String &to, int beginpos)
 {
     assert(beginpos >= 0 && beginpos <= _v.size());
-    
+
     int offset1 = 0;
     if (beginpos > 0)
 	offset1 = _v[beginpos - 1].offset1 + _v[beginpos - 1].message.length();
-    
+
     for (iterator i = _v.begin() + beginpos; i != _v.end(); i++) {
 	i->offset1 = offset1;
 	if (i->message.length() >= from.length()
@@ -115,7 +83,7 @@ void GatherErrorHandler::translate_prefix(const String &from, const String &to, 
 void GatherErrorHandler::run_dialog(GtkWindow *w, int beginpos)
 {
     assert(beginpos >= 0 && beginpos <= _v.size());
-    
+
     StringAccum sa;
     for (iterator i = _v.begin() + beginpos; i != _v.end(); i++)
 	sa << i->message;

@@ -512,10 +512,9 @@ namespace {
 class ClickfsHandlerErrorHandler : public BaseErrorHandler { public:
     ClickfsHandlerErrorHandler() {
     }
-    void handle_text(Seriousness, const String &s) {
-	_sa << s;
-	if (s && s.back() != '\n')
-	    _sa << '\n';
+    void *emit(const String &str, void *, bool) {
+	_sa << str << '\n';
+	return 0;
     }
     StringAccum _sa;
 };
@@ -720,19 +719,37 @@ handler_do_write(struct file *filp, void *address_ptr)
 	handler_strings_info[stringno].flags |= HANDLER_DONE;
 
 	if (cerrh._sa && !address_ptr) {
-	    String imsg = ErrorHandler::prepend_lines("  ", cerrh._sa.take_string());
+	    ErrorHandler *errh = click_logged_errh;
 	    if (e)
-		click_logged_errh->message("In write handler '%s' for '%s':\n%s", h->name().c_str(), e->declaration().c_str(), imsg.c_str());
+		errh->message("In write handler '%s' for '%s':", h->name().c_str(), e->declaration().c_str());
 	    else
-		click_logged_errh->message("In write handler '%s':\n%s", h->name().c_str(), imsg.c_str());
+		errh->message("In write handler '%s':", h->name().c_str());
+	    String str = cerrh._sa.take_string();
+	    const char *s = str.begin(), *end = str.end();
+	    while (s != end) {
+		const char *nl = find(s, end, '\n');
+		errh->xmessage(ErrorHandler::combine_anno(str.substring(s, nl), "  "));
+		s = nl + (nl != end);
+	    }
 	}
 	if (address_ptr && chs.errorlen > 0) {
-	    size_t s = cerrh._sa.length();
-	    if (s > chs.errorlen)
-		s = chs.errorlen;
+	    String str = cerrh._sa.take_string();
+	    const char *s = str.begin(), *end = str.end();
+	    while (s != end) {
+		String landmark;
+		s = ErrorHandler::parse_anno(str, s, end, "l", &landmark,
+					     (const char *) 0);
+		const char *nl = find(s, end, '\n');
+		cerrh._sa << ErrorHandler::clean_landmark(landmark, true)
+			  << str.substring(s, nl) << '\n';
+		s = nl + (nl != end);
+	    }
+	    size_t len = cerrh._sa.length();
+	    if (len > chs.errorlen)
+		len = chs.errorlen;
 	    chs.errorlen = cerrh._sa.length();
 	    if (chs.errorlen > 0
-		&& (r = CLICK_LLRPC_PUT_DATA(chs.errorbuf, cerrh._sa.data(), s)) < 0) {
+		&& (r = CLICK_LLRPC_PUT_DATA(chs.errorbuf, cerrh._sa.data(), len)) < 0) {
 		retval = r;
 		goto exit;
 	    }

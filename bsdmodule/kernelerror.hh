@@ -4,13 +4,12 @@
 CLICK_DECLS
 
 class KernelErrorHandler : public BaseErrorHandler { public:
-  KernelErrorHandler()			{ }
-  void handle_text(Seriousness, const String &);
-};
 
-class SyslogErrorHandler : public BaseErrorHandler { public:
-  SyslogErrorHandler()			{ }
-  void handle_text(Seriousness, const String &);
+    KernelErrorHandler() { }
+
+    void *emit(const String &str, void *user_data, bool more);
+    void account(int level);
+
 };
 
 CLICK_ENDDECLS

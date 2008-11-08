@@ -29,7 +29,7 @@ void tmain::on_error(bool, const String &)
     GatherErrorHandler *gerrh = error_handler();
     for (GatherErrorHandler::iterator gi = gerrh->begin();
 	 gi != gerrh->end(); ++gi)
-	errh->verror_text(gi->seriousness, String(), gi->message);
+	errh->xmessage("{}" + gi->message);
     gerrh->clear();
 }
 

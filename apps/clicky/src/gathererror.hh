@@ -6,29 +6,27 @@
 #include <click/vector.hh>
 
 class GatherErrorHandler : public BaseErrorHandler { public:
-    
+
     GatherErrorHandler();
 
     struct Message {
-	ErrorHandler::Seriousness seriousness;
 	String message;
+	int level;
 
 	int offset1;
 
 	int errpos1;
 	int errpos2;
 
-	Message(ErrorHandler::Seriousness s, const String &m, int off,
-		int ep1, int ep2)
-	    : seriousness(s), message(m), offset1(off), errpos1(ep1),
-	      errpos2(ep2) {
+	Message(const String &m, int l, int off, int ep1, int ep2)
+	    : message(m), level(l), offset1(off), errpos1(ep1), errpos2(ep2) {
 	}
 
 	int offset2() const {
 	    return offset1 + message.length();
 	}
     };
-    
+
     inline int size() const {
 	return _v.size();
     }
@@ -38,9 +36,8 @@ class GatherErrorHandler : public BaseErrorHandler { public:
 	_next_errpos2 = ep2;
     }
 
-    String decorate_text(Seriousness, const String &landmark, const String &text);
-    void handle_text(Seriousness, const String &);
-    
+    void *emit(const String &str, void *user_data, bool more);
+
     void clear();
     void pop_back();
     typedef Vector<Message>::iterator iterator;
@@ -62,14 +59,14 @@ class GatherErrorHandler : public BaseErrorHandler { public:
     void run_dialog(GtkWindow *w, int beginpos = 0);
 
     static String message_string(const_iterator begin, const_iterator end);
-    
+
   private:
-    
+
     Vector<Message> _v;
     int _end_offset;
     int _next_errpos1;
     int _next_errpos2;
-    
+
 };
 
 inline void GatherErrorHandler::pop_back()

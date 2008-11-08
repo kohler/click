@@ -34,20 +34,22 @@ const char ChatterSocket::protocol_version[] = "1.0";
 
 struct ChatterSocketErrorHandler : public ErrorVeneer {
 
-  Vector<ChatterSocket *> _chatter_sockets;
+    Vector<ChatterSocket *> _chatter_sockets;
 
- public:
+  public:
 
-  ChatterSocketErrorHandler(ErrorHandler *errh)	: ErrorVeneer(errh) { }
+    ChatterSocketErrorHandler(ErrorHandler *errh)
+	: ErrorVeneer(errh) {
+    }
 
-  ErrorHandler *base_errh() const	{ return _errh; }
-  int nchatter_sockets() const		{ return _chatter_sockets.size(); }
-  
-  void add_chatter_socket(ChatterSocket *);
-  void remove_chatter_socket(ChatterSocket *);
-  
-  void handle_text(Seriousness, const String &);
-  
+    ErrorHandler *base_errh() const	{ return _errh; }
+    int nchatter_sockets() const	{ return _chatter_sockets.size(); }
+
+    void add_chatter_socket(ChatterSocket *);
+    void remove_chatter_socket(ChatterSocket *);
+
+    void *emit(const String &str, void *user_data, bool more);
+
 };
 
 void
@@ -70,15 +72,20 @@ ChatterSocketErrorHandler::remove_chatter_socket(ChatterSocket *cs)
     }
 }
 
-void
-ChatterSocketErrorHandler::handle_text(Seriousness seriousness, const String &m)
+void *
+ChatterSocketErrorHandler::emit(const String &str, void *user_data, bool more)
 {
-  String actual_m = m;
-  if (m.length() > 0 && m.back() != '\n')
-    actual_m += '\n';
-  _errh->handle_text(seriousness, actual_m);
-  for (int i = 0; i < _chatter_sockets.size(); i++)
-    _chatter_sockets[i]->handle_text(seriousness, actual_m);
+    user_data = _errh->emit(str, user_data, more);
+
+    String landmark;
+    const char *s = parse_anno(str, str.begin(), str.end(),
+			       "l", &landmark, (const char *) 0);
+    String x = clean_landmark(landmark, true) + str.substring(s, str.end())
+	+ String("\n");
+
+    for (int i = 0; i < _chatter_sockets.size(); i++)
+	_chatter_sockets[i]->emit(x);
+    return user_data;
 }
 
 

@@ -88,7 +88,7 @@ IPReassembler::check_error(ErrorHandler *errh, int bucket, const Packet *p, cons
 	sa << iph->ip_src << " > " << iph->ip_dst << " [" << ntohs(iph->ip_id) << ':' << PACKET_DLEN(p) << ((iph->ip_off & htons(IP_MF)) ? "+]: " : "]: ");
     }
     sa << format;
-    errh->verror(ErrorHandler::ERR_ERROR, String(), sa.c_str(), val);
+    errh->xmessage(ErrorHandler::e_error, sa.c_str(), val);
     va_end(val);
 }
 

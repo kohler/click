@@ -101,9 +101,9 @@ FromFile::error(ErrorHandler *errh, const char *format, ...) const
 	errh = ErrorHandler::default_handler();
     va_list val;
     va_start(val, format);
-    errh->verror(ErrorHandler::ERR_ERROR, landmark(), format, val);
+    int r = errh->xmessage(landmark(), ErrorHandler::e_error, format, val);
     va_end(val);
-    return ErrorHandler::ERROR_RESULT;
+    return r;
 }
 
 int
@@ -113,9 +113,9 @@ FromFile::warning(ErrorHandler *errh, const char *format, ...) const
 	errh = ErrorHandler::default_handler();
     va_list val;
     va_start(val, format);
-    errh->verror(ErrorHandler::ERR_WARNING, landmark(), format, val);
+    int r = errh->xmessage(landmark(), ErrorHandler::e_warning_annotated, format, val);
     va_end(val);
-    return ErrorHandler::ERROR_RESULT;
+    return r;
 }
 
 #ifdef ALLOW_MMAP
@@ -129,7 +129,7 @@ munmap_destructor(unsigned char *data, size_t amount)
 int
 FromFile::read_buffer_mmap(ErrorHandler *errh)
 {
-    if (_mmap_unit == 0) {  
+    if (_mmap_unit == 0) {
 	size_t page_size = getpagesize();
 	_mmap_unit = (WANT_MMAP_UNIT / page_size) * page_size;
 	_mmap_off = 0;
@@ -152,7 +152,7 @@ FromFile::read_buffer_mmap(ErrorHandler *errh)
     _len = _mmap_unit;
     if ((off_t)(_mmap_off + _len) > statbuf.st_size)
 	_len = statbuf.st_size - _mmap_off;
-    
+
     void *mmap_data = mmap(0, _len, PROT_READ, MAP_SHARED, _fd, _mmap_off);
 
     if (mmap_data == MAP_FAILED)
@@ -167,7 +167,7 @@ FromFile::read_buffer_mmap(ErrorHandler *errh)
     // don't care about errors
     (void) madvise((caddr_t)mmap_data, _len, MADV_SEQUENTIAL);
 # endif
-    
+
     return 1;
 }
 #endif
@@ -195,14 +195,14 @@ FromFile::read_buffer(ErrorHandler *errh)
 	_len = 0;
     }
 #endif
-    
+
     _data_packet = Packet::make(0, 0, BUFFER_SIZE, 0);
     if (!_data_packet)
 	return error(errh, strerror(ENOMEM));
     _buffer = _data_packet->data();
     unsigned char *data = _data_packet->data();
     assert(_data_packet->headroom() == 0);
-    
+
     while (_len < BUFFER_SIZE) {
 	ssize_t got = ::read(_fd, data + _len, BUFFER_SIZE - _len);
 	if (got > 0)
@@ -212,7 +212,7 @@ FromFile::read_buffer(ErrorHandler *errh)
 	else if (got < 0 && errno != EINTR && errno != EAGAIN)
 	    return error(errh, strerror(errno));
     }
-    
+
     return _len;
 }
 
@@ -318,7 +318,7 @@ FromFile::seek(off_t want, ErrorHandler* errh)
 	_pos = want;
 	return 0;
     }
-    
+
 #ifdef ALLOW_MMAP
     if (_mmap) {
 	_mmap_off = (want / _mmap_unit) * _mmap_unit;
@@ -383,7 +383,7 @@ FromFile::initialize(ErrorHandler *errh)
 	_fd = fileno(_pipe);
 	goto retry_file;
     }
-    
+
     return 0;
 }
 

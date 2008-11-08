@@ -37,32 +37,35 @@ const char ControlSocket::protocol_version[] = "1.3";
 
 struct ControlSocketErrorHandler : public BaseErrorHandler { public:
 
-  ControlSocketErrorHandler()		{ _error_code = ControlSocket::CSERR_OK; }
+    ControlSocketErrorHandler() {
+	_error_code = ControlSocket::CSERR_OK;
+    }
 
-  const Vector<String> &messages() const { return _messages; }
-  int error_code() const		{ return _error_code; }
-  
-  void handle_text(Seriousness, const String &);
+    const Vector<String> &messages() const {
+	return _messages;
+    }
+    int error_code() const {
+	return _error_code;
+    }
 
-  void set_error_code(int c)		{ _error_code = c; }
-  
- private:
+    void *emit(const String &str, void *user_data, bool more);
 
-  Vector<String> _messages;
-  int _error_code;
+  private:
+
+    Vector<String> _messages;
+    int _error_code;
 
 };
 
-void
-ControlSocketErrorHandler::handle_text(Seriousness, const String &m)
+void *
+ControlSocketErrorHandler::emit(const String &str, void *, bool)
 {
-  const char *begin = m.begin();
-  const char *end = m.end();
-  while (begin < end) {
-    const char *nl = find(begin, end, '\n');
-    _messages.push_back(m.substring(begin, nl));
-    begin = nl + 1;
-  }
+    String landmark;
+    const char *s = parse_anno(str, str.begin(), str.end(), "l", &landmark,
+			       "#cserr", &_error_code, (const char *) 0);
+    _messages.push_back(clean_landmark(landmark, true)
+			+ str.substring(s, str.end()));
+    return 0;
 }
 
 

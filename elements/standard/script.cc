@@ -903,7 +903,6 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 		    break;
 	    }
 	    // conversion
-	    ErrorHandler *xerrh = ErrorHandler::silent_handler();
 	    if (pct < end && (*pct == 'o' || *pct == 'x' || *pct == 'X' || *pct == 'u')) {
 		click_uintmax_t ival;
 		String x = cp_pop_spacevec(str);
@@ -914,7 +913,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 		else if (width_flag == 0 || width_flag == 'l')
 		    ival = (unsigned long) ival;
 		pf << CLICK_INTMAX_CVT << *pct;
-		result << xerrh->make_text(ErrorHandler::ERR_MESSAGE, pf.c_str(), ival);
+		result << ErrorHandler::format(pf.c_str(), ival);
 	    } else if (pct < end && (*pct == 'd' || *pct == 'i')) {
 		click_intmax_t ival;
 		if (!cp_integer(cp_pop_spacevec(str), &ival))
@@ -924,16 +923,16 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 		else if (width_flag == 0 || width_flag == 'l')
 		    ival = (long) ival;
 		pf << CLICK_INTMAX_CVT << *pct;
-		result << xerrh->make_text(ErrorHandler::ERR_MESSAGE, pf.c_str(), ival);
+		result << ErrorHandler::format(pf.c_str(), ival);
 	    } else if (pct < end && *pct == '%') {
 		pf << '%';
-		result << xerrh->make_text(ErrorHandler::ERR_MESSAGE, pf.c_str());
+		result << ErrorHandler::format(pf.c_str());
 	    } else if (pct < end && *pct == 's') {
 		String s;
 		if (!cp_string(cp_pop_spacevec(str), &s))
 		    return errh->error("syntax error");
 		pf << *pct;
-		result << xerrh->make_text(ErrorHandler::ERR_MESSAGE, pf.c_str(), s.c_str());
+		result << ErrorHandler::format(pf.c_str(), s.c_str());
 	    } else
 		return errh->error("syntax error");
 	    s = pct + 1;

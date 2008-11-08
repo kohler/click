@@ -25,38 +25,27 @@ CLICK_USING_DECLS
 
 static StringAccum *all_errors = 0;
 
-void
-syslog_message(const String &message)
-{
-  int pos = 0, nl;
-  while ((nl = message.find_left('\n', pos)) >= 0) {
-    String x = message.substring(pos, nl - pos);
-    printf("%s\n", x.c_str());
-    pos = nl + 1;
-  }
-  if (pos < message.length()) {
-    String x = message.substring(pos);
-    printf("%s\n", x.c_str());
-  }
-}
-
 CLICK_DECLS
 
-void
-KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
+void *
+KernelErrorHandler::emit(const String &str, void *, bool)
 {
-  syslog_message(message);
-  if (all_errors)
-    *all_errors << message << "\n";
-  
-  if (seriousness >= ERR_MIN_FATAL)
-    panic("KernelErrorHandler");
+    String landmark;
+    const char *s = parse_anno(str, str.begin(), str.end(),
+			       "l", &landmark, (const char *) 0);
+    landmark = clean_landmark(landmark, true);
+    printf("%.*s%.*s\n", landmark.length(), landmark.begin(), str.end() - s, s);
+    if (all_errors)
+	*all_errors << landmark << str.substring(s, str.end()) << '\n';
+    return 0;
 }
 
 void
-SyslogErrorHandler::handle_text(Seriousness, const String &message)
+KernelErrorHandler::account(int level)
 {
-  syslog_message(message);
+    BaseErrorHandler::account(level);
+    if (level <= err_fatal)
+	panic("click");
 }
 
 CLICK_ENDDECLS

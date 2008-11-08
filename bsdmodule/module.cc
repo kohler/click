@@ -156,21 +156,23 @@ KernelErrorHandler::log_line(const char *begin, const char *end)
     _logbuf[_pos++] = '\n';
 }
 
-void
-KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
+void *
+KernelErrorHandler::emit(const String &str, void *, bool)
 {
-    // print message to syslog
-    const char *begin = message.begin();
-    const char *end = message.end();
-    while (begin < end) {
-	const char *newline = find(begin, end, '\n');
-	printf("%.*s\n", newline - begin, begin);
-	log_line(begin, newline);
-	begin = newline + 1;
-    }
+    String landmark;
+    const char *s = parse_anno(str, str.begin(), str.end(),
+			       "l", &landmark, (const char *) 0);
+    landmark = clean_landmark(landmark, true);
+    printf("%.*s%.*s\n", landmark.length(), landmark.begin(), str.end() - s, s);
+    log_line(s, str.end());	// XXX do not save landmark
+    return 0;
+}
 
-    // panic on fatal errors
-    if (seriousness >= ERR_MIN_FATAL)
+void
+KernelErrorHandler::account(int level)
+{
+    BaseErrorHandler::account(level);
+    if (level <= el_fatal)
 	panic("click");
 }
 

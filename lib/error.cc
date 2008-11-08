@@ -1,10 +1,10 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/error.hh" -*-
+// -*- related-file-name: "../include/click/error.hh" -*-
 /*
  * error.{cc,hh} -- flexible classes for error reporting
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
- * Copyright (c) 2001-2007 Eddie Kohler
+ * Copyright (c) 2001-2008 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,127 +29,274 @@
 #include <click/confparse.hh>
 CLICK_DECLS
 
+/** @file error.hh
+ * @brief Flexible error handling classes.
+ */
+
 struct ErrorHandler::Conversion {
-  String name;
-  ConversionHook hook;
-  Conversion *next;
+    String name;
+    ConversionFunction hook;
+    Conversion *next;
 };
 static ErrorHandler::Conversion *error_items;
 
-const int ErrorHandler::OK_RESULT = 0;
-const int ErrorHandler::ERROR_RESULT = -EINVAL;
+const char ErrorHandler::e_abort[] = "<-999>";
+const char ErrorHandler::e_fatal[] = "<-1>";
+const char ErrorHandler::e_emergency[] = "<0>";
+const char ErrorHandler::e_alert[] = "<1>";
+const char ErrorHandler::e_critical[] = "<2>";
+const char ErrorHandler::e_error[] = "<3>";
+const char ErrorHandler::e_warning[] = "<4>";
+const char ErrorHandler::e_warning_annotated[] = "<4>warning: ";
+const char ErrorHandler::e_notice[] = "<5>";
+const char ErrorHandler::e_info[] = "<6>";
+const char ErrorHandler::e_debug[] = "<7>";
 
-int
-ErrorHandler::min_verbosity() const
-{
-  return 0;
-}
+const int ErrorHandler::ok_result = 0;
+const int ErrorHandler::error_result = -EINVAL;
 
-void
-ErrorHandler::debug(const char *format, ...)
-{
-  va_list val;
-  va_start(val, format);
-  verror(ERR_DEBUG, String(), format, val);
-  va_end(val);
-}
+ErrorHandler *ErrorHandler::the_default_handler = 0;
+ErrorHandler *ErrorHandler::the_silent_handler = 0;
 
-void
-ErrorHandler::message(const char *format, ...)
-{
-  va_list val;
-  va_start(val, format);
-  verror(ERR_MESSAGE, String(), format, val);
-  va_end(val);
-}
 
-int
-ErrorHandler::warning(const char *format, ...)
-{
-  va_list val;
-  va_start(val, format);
-  verror(ERR_WARNING, String(), format, val);
-  va_end(val);
-  return ERROR_RESULT;
-}
+// ANNOTATION MANAGEMENT
 
-int
-ErrorHandler::error(const char *format, ...)
+static const char *
+parse_level(const char *begin, const char *end, int *result)
 {
-  va_list val;
-  va_start(val, format);
-  verror(ERR_ERROR, String(), format, val);
-  va_end(val);
-  return ERROR_RESULT;
-}
+    int x = 0;
+    const char *s = begin;
 
-int
-ErrorHandler::fatal(const char *format, ...)
-{
-  va_list val;
-  va_start(val, format);
-  verror(ERR_FATAL, String(), format, val);
-  va_end(val);
-  return ERROR_RESULT;
-}
+    bool negative = false;
+    if (s != end && *s == '-') {
+	negative = true;
+	++s;
+    } else if (s != end && *s == '+')
+	++s;
 
-void
-ErrorHandler::ldebug(const String &where, const char *format, ...)
-{
-  va_list val;
-  va_start(val, format);
-  verror(ERR_DEBUG, where, format, val);
-  va_end(val);
-}
+    const char *digits = s;
+    for (; s != end && *s >= '0' && *s <= '9'; ++s)
+	x = x * 10 + *s - '0';
 
-void
-ErrorHandler::lmessage(const String &where, const char *format, ...)
-{
-  va_list val;
-  va_start(val, format);
-  verror(ERR_MESSAGE, where, format, val);
-  va_end(val);
-}
+    if (s != end && *s == '.')
+	for (++s; s != end && *s >= '0' && *s <= '9'; ++s)
+	    /* nada */;
 
-int
-ErrorHandler::lwarning(const String &where, const char *format, ...)
-{
-  va_list val;
-  va_start(val, format);
-  verror(ERR_WARNING, where, format, val);
-  va_end(val);
-  return ERROR_RESULT;
-}
-
-int
-ErrorHandler::lerror(const String &where, const char *format, ...)
-{
-  va_list val;
-  va_start(val, format);
-  verror(ERR_ERROR, where, format, val);
-  va_end(val);
-  return ERROR_RESULT;
-}
-
-int
-ErrorHandler::lfatal(const String &where, const char *format, ...)
-{
-  va_list val;
-  va_start(val, format);
-  verror(ERR_FATAL, where, format, val);
-  va_end(val);
-  return ERROR_RESULT;
+    if (s == digits || (s == digits + 1 && s[-1] == '.'))
+	return begin;
+    if (result)
+	*result = (negative ? -x : x);
+    return s;
 }
 
 String
-ErrorHandler::make_text(Seriousness seriousness, const char *format, ...)
+ErrorHandler::make_anno(const char *name, const String &value)
 {
-  va_list val;
-  va_start(val, format);
-  String s = make_text(seriousness, format, val);
-  va_end(val);
-  return s;
+    StringAccum sa;
+    sa.reserve(value.length() + 10);
+
+    // level annotation requires special handling
+    if (name[0] == '<' && name[1] == '>' && name[2] == 0) {
+	if (parse_level(value.begin(), value.end(), 0) == value.end()) {
+	    sa << '<' << value << '>';
+	    return sa.take_string();
+	} else
+	    return String();
+    }
+
+    sa << '{' << name << ':';
+    const char *last = value.begin(), *end = value.end();
+    for (const char *s = value.begin(); s != end; ++s)
+	if (*s == '\\' || *s == '}') {
+	    sa.append(last, s);
+	    sa << '\\' << *s;
+	    last = s + 1;
+	} else if (*s == '\n') {
+	    sa.append(last, s);
+	    sa << '\\' << 'n';
+	    last = s + 1;
+	}
+    sa.append(last, end);
+    sa << '}';
+    return sa.take_string();
 }
+
+const char *
+ErrorHandler::skip_anno(const String &str, const char *begin, const char *end,
+			String *name_result, String *value_result, bool raw)
+{
+    String name, value;
+    const char *s = begin;
+
+    if (s + 3 <= end && *s == '<') {
+	const char *x = parse_level(s + 1, end, 0);
+	if (x != s + 1 && x != end && *x == '>') {
+	    name = String::make_stable("<>", 2);
+	    value = str.substring(begin + 1, x);
+	    begin = x + 1;
+	}
+
+    } else if (s + 2 <= end && *s == '{' && s[1] == '}')
+	begin = s + 2;
+
+    else if (s + 3 <= end && *s == '{') {
+	for (++s; s != end && isalnum((unsigned char) *s); ++s)
+	    /* nada */;
+	if (s != end && s != begin + 1) {
+	    if (*s == '}') {
+		name = str.substring(begin + 1, s);
+		begin = s + 1;
+	    } else if (*s == ':') {
+		const char *x, *last = s + 1;
+		StringAccum sa;
+		for (x = s + 1; x != end && *x != '\n' && *x != '}'; ++x)
+		    if (*x == '\\' && x + 1 != end && x[1] != '\n') {
+			if (!raw) {
+			    sa.append(last, x);
+			    sa << (x[1] == 'n' ? '\n' : x[1]);
+			    last = x + 2;
+			}
+			++x;
+		    }
+		if (x != end && *x == '}') {
+		    name = str.substring(begin + 1, s);
+		    if (sa) {
+			sa.append(last, x);
+			value = sa.take_string();
+		    } else
+			value = str.substring(s + 1, x);
+		    begin = x + 1;
+		}
+	    }
+	}
+    }
+
+    if (name_result)
+	*name_result = name;
+    if (value_result)
+	*value_result = value;
+    return begin;
+}
+
+const char *
+ErrorHandler::parse_anno(const String &str, const char *begin, const char *end,
+			 ...)
+{
+    const char *names[8];
+    void *values[8];
+    int nanno = 0;
+
+    va_list val;
+    va_start(val, end);
+    while (const char *n = va_arg(val, const char *)) {
+	assert(nanno < 8);
+	names[nanno] = n;
+	if (n[0] == '#')
+	    values[nanno] = va_arg(val, int *);
+	else
+	    values[nanno] = va_arg(val, String *);
+	++nanno;
+    }
+
+    String name, value;
+    while (1) {
+	begin = skip_anno(str, begin, end, &name, &value, false);
+	if (!name)
+	    break;
+	for (int i = 0; i < nanno; ++i)
+	    if (names[i][0] == '#') {
+		if (name == (names[i] + 1))
+		    parse_level(value.begin(), value.end(), (int *) values[i]);
+	    } else {
+		if (name == names[i])
+		    *(String *) values[i] = value;
+	    }
+    }
+
+    return begin;
+}
+
+String
+ErrorHandler::combine_anno(const String &text, const String &anno)
+{
+    if (!anno)
+	return text;
+
+    String names[8], values[8];
+    int nanno = 0;
+    const char *abegin = anno.begin();
+    while (abegin != anno.end()) {
+	assert(nanno < 8);
+	abegin = skip_anno(anno, abegin, anno.end(), &names[nanno], &values[nanno], true);
+	if (names[nanno])
+	    ++nanno;
+	else
+	    break;
+    }
+
+    const char *last = text.begin(), *s = last;
+    String name;
+    StringAccum sa;
+    while (s != text.end()) {
+	const char *line = s;
+	uint32_t mask = (1U << nanno) - 1;
+	while (1) {
+	    s = skip_anno(text, s, text.end(), &name, 0, false);
+	    if (!name)
+		break;
+	    for (int i = 0; i < nanno; ++i)
+		if (name == names[i])
+		    mask &= ~(1U << i);
+	}
+
+	if (mask) {
+	    sa.append(last, line);
+	    for (int i = 0; i < nanno; ++i)
+		if (mask & (1U << i)) {
+		    if (names[i].equals("<>", 2))
+			sa << '<' << values[i] << '>';
+		    else
+			sa << '{' << names[i] << ':' << values[i] << '}';
+		}
+	    last = line;
+	}
+	if (abegin != anno.end()) {
+	    sa.append(last, s);
+	    sa.append(abegin, anno.end());
+	    last = s;
+	}
+
+	while (s != text.end() && *s != '\n')
+	    ++s;
+	if (s != text.end())
+	    ++s;
+    }
+
+    if (sa) {
+	sa.append(last, text.end());
+	return sa.take_string();
+    } else
+	return text;
+}
+
+String
+ErrorHandler::clean_landmark(const String &landmark, bool with_colon)
+{
+    const char *end = landmark.end();
+    while (end != landmark.begin() && isspace((unsigned char) end[-1]))
+	--end;
+    if (end != landmark.begin() && end[-1] == ':')
+	--end;
+    if (end == landmark.begin())
+	return String();
+    else if (with_colon)
+	return landmark.substring(landmark.begin(), end) + ": ";
+    else
+	return landmark.substring(landmark.begin(), end);
+}
+
+
+// FORMATTING
 
 #define NUMBUF_SIZE	128
 #define ErrH		ErrorHandler
@@ -157,467 +304,512 @@ ErrorHandler::make_text(Seriousness seriousness, const char *format, ...)
 static char *
 do_number(unsigned long num, char *after_last, int base, int flags)
 {
-  const char *digits =
-    ((flags & ErrH::UPPERCASE) ? "0123456789ABCDEF" : "0123456789abcdef");
-  char *pos = after_last;
-  while (num) {
-    *--pos = digits[num % base];
-    num /= base;
-  }
-  if (pos == after_last)
-    *--pos = '0';
-  return pos;
+    const char *digits =
+	((flags & ErrH::f_uppercase) ? "0123456789ABCDEF" : "0123456789abcdef");
+    char *pos = after_last;
+    while (num) {
+	*--pos = digits[num % base];
+	num /= base;
+    }
+    if (pos == after_last)
+	*--pos = '0';
+    return pos;
 }
 
 static char *
 do_number_flags(char *pos, char *after_last, int base, int flags,
 		int precision, int field_width)
 {
-  // remove ALTERNATE_FORM for zero results in base 16
-  if ((flags & ErrH::ALTERNATE_FORM) && base == 16 && *pos == '0')
-    flags &= ~ErrH::ALTERNATE_FORM;
-  
-  // account for zero padding
-  if (precision >= 0)
-    while (after_last - pos < precision)
-      *--pos = '0';
-  else if (flags & ErrH::ZERO_PAD) {
-    if ((flags & ErrH::ALTERNATE_FORM) && base == 16)
-      field_width -= 2;
-    if ((flags & ErrH::NEGATIVE)
-	|| (flags & (ErrH::PLUS_POSITIVE | ErrH::SPACE_POSITIVE)))
-      field_width--;
-    while (after_last - pos < field_width)
-      *--pos = '0';
-  }
-  
-  // alternate forms
-  if ((flags & ErrH::ALTERNATE_FORM) && base == 8 && pos[1] != '0')
-    *--pos = '0';
-  else if ((flags & ErrH::ALTERNATE_FORM) && base == 16) {
-    *--pos = ((flags & ErrH::UPPERCASE) ? 'X' : 'x');
-    *--pos = '0';
-  }
-  
-  // sign
-  if (flags & ErrH::NEGATIVE)
-    *--pos = '-';
-  else if (flags & ErrH::PLUS_POSITIVE)
-    *--pos = '+';
-  else if (flags & ErrH::SPACE_POSITIVE)
-    *--pos = ' ';
-  
-  return pos;
+    // remove f_alternate_form for zero results in base 16
+    if ((flags & ErrH::f_alternate_form) && base == 16 && *pos == '0')
+	flags &= ~ErrH::f_alternate_form;
+
+    // account for zero padding
+    if (precision >= 0)
+	while (after_last - pos < precision)
+	    *--pos = '0';
+    else if (flags & ErrH::f_zero_pad) {
+	if ((flags & ErrH::f_alternate_form) && base == 16)
+	    field_width -= 2;
+	if ((flags & ErrH::f_negative)
+	    || (flags & (ErrH::f_plus_positive | ErrH::f_space_positive)))
+	    field_width--;
+	while (after_last - pos < field_width)
+	    *--pos = '0';
+    }
+
+    // alternate forms
+    if ((flags & ErrH::f_alternate_form) && base == 8 && pos[1] != '0')
+	*--pos = '0';
+    else if ((flags & ErrH::f_alternate_form) && base == 16) {
+	*--pos = ((flags & ErrH::f_uppercase) ? 'X' : 'x');
+	*--pos = '0';
+    }
+
+    // sign
+    if (flags & ErrH::f_negative)
+	*--pos = '-';
+    else if (flags & ErrH::f_plus_positive)
+	*--pos = '+';
+    else if (flags & ErrH::f_space_positive)
+	*--pos = ' ';
+
+    return pos;
 }
 
 String
-ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
+ErrorHandler::format(const char *s, va_list val)
 {
-  StringAccum msg;
+    StringAccum msg;
 
-  char numbuf[NUMBUF_SIZE];	// for numerics
-  numbuf[NUMBUF_SIZE-1] = 0;
+    char numbuf[NUMBUF_SIZE];	// for numerics
+    numbuf[NUMBUF_SIZE-1] = 0;
 
-  String placeholder;		// to ensure temporaries aren't destroyed
+    String placeholder;		// to ensure temporaries aren't destroyed
 
-  // prepend 'warning: ' to every line if appropriate
-  String begin_lines;
-  if (seriousness >= ERR_MIN_WARNING && seriousness < ERR_MIN_ERROR) {
-    begin_lines = String::make_stable("warning: ", 9);
-    msg << begin_lines;
-  }
-  
-  // declare and initialize these here to make gcc shut up about possible 
-  // use before initialization
-  int flags = 0;
-  int field_width = -1;
-  int precision = -1;
-  int width_flag = 0;
-  int base = 10;
-  while (1) {
-    
-    const char *pct = strchr(s, '%');
+    // declare and initialize these here to make gcc shut up about possible
+    // use before initialization
+    int flags = 0;
+    int field_width = -1;
+    int precision = -1;
+    int width_flag = 0;
+    int base = 10;
+    while (1) {
 
-    // handle begin_lines
-    const char *nl;
-    while (begin_lines && (nl = strchr(s, '\n')) && (!pct || nl < pct)) {
-      msg.append(s, nl + 1 - s);
-      if (nl[1])
-	msg.append(begin_lines.data(), begin_lines.length());
-      s = nl + 1;
-    }
-    
-    if (!pct) {
-      if (*s)
-	msg << s;
-      break;
-    }
-    if (pct != s) {
-      msg.append(s, pct - s);
-      s = pct;
-    }
-    
-    // parse flags
-    flags = 0;
-   flags:
-    switch (*++s) {
-     case '#': flags |= ALTERNATE_FORM; goto flags;
-     case '0': flags |= ZERO_PAD; goto flags;
-     case '-': flags |= LEFT_JUST; goto flags;
-     case ' ': flags |= SPACE_POSITIVE; goto flags;
-     case '+': flags |= PLUS_POSITIVE; goto flags;
-    }
-    
-    // parse field width
-    field_width = -1;
-    if (*s == '*') {
-      field_width = va_arg(val, int);
-      if (field_width < 0) {
-	field_width = -field_width;
-	flags |= LEFT_JUST;
-      }
-      s++;
-    } else if (*s >= '0' && *s <= '9')
-      for (field_width = 0; *s >= '0' && *s <= '9'; s++)
-	field_width = 10*field_width + *s - '0';
-    
-    // parse precision
-    precision = -1;
-    if (*s == '.') {
-      s++;
-      precision = 0;
-      if (*s == '*') {
-	precision = va_arg(val, int);
-	s++;
-      } else if (*s >= '0' && *s <= '9')
-	for (; *s >= '0' && *s <= '9'; s++)
-	  precision = 10*precision + *s - '0';
-    }
-    
-    // parse width flags
-    width_flag = 0;
-   width_flags:
-    switch (*s) {
-    case 'h': case 'l':
-      if (width_flag == *s)
-	width_flag = *s + 'A' - 'a';
-      else if (width_flag)
-	break;
-      else
-	width_flag = *s;
-      s++;
-      goto width_flags;
-    case 'z':
-      if (width_flag)
-	break;
-      width_flag = *s++;
-      break;
-    case '^':
-      if (!isdigit((unsigned char) s[1]) || width_flag)
-	break;
-      for (s++; isdigit((unsigned char) *s); s++)
-	width_flag = width_flag * 10 + *s - '0';
-      width_flag = -width_flag;
-      break;
-    }
-    
-    // conversion character
-    // after switch, data lies between `s1' and `s2'
-    const char *s1 = 0, *s2 = 0;
-    base = 10;
-    switch (*s++) {
-      
-     case 's': {
-       s1 = va_arg(val, const char *);
-       if (!s1)
-	 s1 = "(null)";
-       if (flags & ALTERNATE_FORM) {
-	 placeholder = String(s1).printable();
-	 s1 = placeholder.c_str();
-       }
-       for (s2 = s1; *s2 && precision != 0; s2++)
-	 if (precision > 0)
-	   precision--;
-       break;
-     }
+	const char *pct = strchr(s, '%');
+	if (!pct) {
+	    if (*s)
+		msg << s;
+	    break;
+	}
+	if (pct != s) {
+	    msg.append(s, pct - s);
+	    s = pct;
+	}
 
-     case 'c': {
-       int c = va_arg(val, int);
-       // check for extension of 'signed char' to 'int'
-       if (c < 0)
-	 c += 256;
-       // assume ASCII
-       if (c == '\n')
-	 strcpy(numbuf, "\\n");
-       else if (c == '\t')
-	 strcpy(numbuf, "\\t");
-       else if (c == '\r')
-	 strcpy(numbuf, "\\r");
-       else if (c == '\0')
-	 strcpy(numbuf, "\\0");
-       else if (c < 0 || c >= 256)
-	 strcpy(numbuf, "(bad char)");
-       else if (c < 32 || c >= 0177)
-	 sprintf(numbuf, "\\%03o", c);
-       else
-	 sprintf(numbuf, "%c", c);
-       s1 = numbuf;
-       s2 = strchr(numbuf, 0);
-       break;
-     }
-     
-     case '%': {
-       numbuf[0] = '%';
-       s1 = numbuf;
-       s2 = s1 + 1;
-       break;
-     }
+	// parse flags
+	flags = 0;
+    flags:
+	switch (*++s) {
+	case '#': flags |= f_alternate_form; goto flags;
+	case '0': flags |= f_zero_pad; goto flags;
+	case '-': flags |= f_left_just; goto flags;
+	case ' ': flags |= f_space_positive; goto flags;
+	case '+': flags |= f_plus_positive; goto flags;
+	}
 
-     case 'd':
-     case 'i':
-      flags |= SIGNED;
-     case 'u':
-     number: {
-       // protect numbuf from overflow
-       if (field_width > NUMBUF_SIZE)
-	 field_width = NUMBUF_SIZE;
-       if (precision > NUMBUF_SIZE - 4)
-	 precision = NUMBUF_SIZE - 4;
-       
-       s2 = numbuf + NUMBUF_SIZE;
-       
-       unsigned long num;
-       switch (width_flag) {
-       case 'H':
-       case -8:
-	 num = (unsigned char) va_arg(val, int);
-	 if ((flags & SIGNED) && (signed char) num < 0)
-	   num = -(signed char) num, flags |= NEGATIVE;
-	 break;
-       case 'h':
-       case -16:
-	 num = (unsigned short) va_arg(val, int);
-	 if ((flags & SIGNED) && (short) num < 0)
-	   num = -(short) num, flags |= NEGATIVE;
-	 break;
-       case 0:
-       case -32:
+	// parse field width
+	field_width = -1;
+	if (*s == '*') {
+	    field_width = va_arg(val, int);
+	    if (field_width < 0) {
+		field_width = -field_width;
+		flags |= f_left_just;
+	    }
+	    s++;
+	} else if (*s >= '0' && *s <= '9')
+	    for (field_width = 0; *s >= '0' && *s <= '9'; s++)
+		field_width = 10*field_width + *s - '0';
+
+	// parse precision
+	precision = -1;
+	if (*s == '.') {
+	    s++;
+	    precision = 0;
+	    if (*s == '*') {
+		precision = va_arg(val, int);
+		s++;
+	    } else if (*s >= '0' && *s <= '9')
+		for (; *s >= '0' && *s <= '9'; s++)
+		    precision = 10*precision + *s - '0';
+	}
+
+	// parse width flags
+	width_flag = 0;
+    width_flags:
+	switch (*s) {
+	case 'h': case 'l':
+	    if (width_flag == *s)
+		width_flag = *s + 'A' - 'a';
+	    else if (width_flag)
+		break;
+	    else
+		width_flag = *s;
+	    s++;
+	    goto width_flags;
+	case 'z':
+	    if (width_flag)
+		break;
+	    width_flag = *s++;
+	    break;
+	case '^':
+	    if (!isdigit((unsigned char) s[1]) || width_flag)
+		break;
+	    for (s++; isdigit((unsigned char) *s); s++)
+		width_flag = width_flag * 10 + *s - '0';
+	    width_flag = -width_flag;
+	    break;
+	}
+
+	// conversion character
+	// after switch, data lies between `s1' and `s2'
+	const char *s1 = 0, *s2 = 0;
+	base = 10;
+	switch (*s++) {
+
+	case 's': {
+	    s1 = va_arg(val, const char *);
+	    if (!s1)
+		s1 = "(null)";
+	    if (flags & f_alternate_form) {
+		placeholder = String(s1).printable();
+		s1 = placeholder.c_str();
+	    }
+	    for (s2 = s1; *s2 && precision != 0; s2++)
+		if (precision > 0)
+		    precision--;
+	    break;
+	}
+
+	case 'c': {
+	    int c = va_arg(val, int);
+	    // check for extension of 'signed char' to 'int'
+	    if (c < 0)
+		c += 256;
+	    // assume ASCII
+	    if (c == '\n')
+		strcpy(numbuf, "\\n");
+	    else if (c == '\t')
+		strcpy(numbuf, "\\t");
+	    else if (c == '\r')
+		strcpy(numbuf, "\\r");
+	    else if (c == '\0')
+		strcpy(numbuf, "\\0");
+	    else if (c < 0 || c >= 256)
+		strcpy(numbuf, "(bad char)");
+	    else if (c < 32 || c >= 0177)
+		sprintf(numbuf, "\\%03o", c);
+	    else
+		sprintf(numbuf, "%c", c);
+	    s1 = numbuf;
+	    s2 = strchr(numbuf, 0);
+	    break;
+	}
+
+	case '%': {
+	    numbuf[0] = '%';
+	    s1 = numbuf;
+	    s2 = s1 + 1;
+	    break;
+	}
+
+	case 'd':
+	case 'i':
+	    flags |= f_signed;
+	case 'u':
+	number: {
+	    // protect numbuf from overflow
+	    if (field_width > NUMBUF_SIZE)
+		field_width = NUMBUF_SIZE;
+	    if (precision > NUMBUF_SIZE - 4)
+		precision = NUMBUF_SIZE - 4;
+
+	    s2 = numbuf + NUMBUF_SIZE;
+
+	    unsigned long num;
+	    switch (width_flag) {
+	    case 'H':
+	    case -8:
+		num = (unsigned char) va_arg(val, int);
+		if ((flags & f_signed) && (signed char) num < 0)
+		    num = -(signed char) num, flags |= f_negative;
+		break;
+	    case 'h':
+	    case -16:
+		num = (unsigned short) va_arg(val, int);
+		if ((flags & f_signed) && (short) num < 0)
+		    num = -(short) num, flags |= f_negative;
+		break;
+	    case 0:
+	    case -32:
 #if SIZEOF_LONG == 4
-       case 'l':
+	    case 'l':
 #endif
 #if SIZEOF_SIZE_T == 4
-       case 'z':
+	    case 'z':
 #endif
-	 num = va_arg(val, unsigned);
-	 if ((flags & SIGNED) && (int) num < 0)
-	   num = -(int) num, flags |= NEGATIVE;
-	 break;
+		num = va_arg(val, unsigned);
+		if ((flags & f_signed) && (int) num < 0)
+		    num = -(int) num, flags |= f_negative;
+		break;
 #if HAVE_INT64_TYPES
 # if SIZEOF_LONG == 8
-       case 'l':
+	    case 'l':
 # endif
 # if SIZEOF_LONG_LONG == 8
-       case 'L':
+	    case 'L':
 # endif
 # if SIZEOF_SIZE_T == 8
-       case 'z':
+	    case 'z':
 # endif
-       case -64: {
-	 uint64_t qnum = va_arg(val, uint64_t);
-	 if ((flags & SIGNED) && (int64_t)qnum < 0)
-	   qnum = -(int64_t) qnum, flags |= NEGATIVE;
-	 StringAccum sa;
-	 sa.append_numeric(static_cast<String::uint_large_t>(qnum), base, (flags & UPPERCASE));
-	 s1 = s2 - sa.length();
-	 memcpy(const_cast<char*>(s1), sa.data(), s2 - s1);
-	 goto got_number;
-       }
+	    case -64: {
+		uint64_t qnum = va_arg(val, uint64_t);
+		if ((flags & f_signed) && (int64_t)qnum < 0)
+		    qnum = -(int64_t) qnum, flags |= f_negative;
+		StringAccum sa;
+		sa.append_numeric(static_cast<String::uint_large_t>(qnum), base, (flags & f_uppercase));
+		s1 = s2 - sa.length();
+		memcpy(const_cast<char*>(s1), sa.data(), s2 - s1);
+		goto got_number;
+	    }
 #endif
-       default:
-	 goto error;
-       }
-       s1 = do_number(num, (char *)s2, base, flags);
+	    default:
+		goto error;
+	    }
+	    s1 = do_number(num, (char *)s2, base, flags);
 
 #if HAVE_INT64_TYPES
-      got_number:
+	got_number:
 #endif
-       s1 = do_number_flags((char *)s1, (char *)s2, base, flags,
-			    precision, field_width);
-       break;
-     }
-     
-     case 'o':
-      base = 8;
-      goto number;
-      
-     case 'X':
-      flags |= UPPERCASE;
-     case 'x':
-      base = 16;
-      goto number;
-      
-     case 'p': {
-       void *v = va_arg(val, void *);
-       s2 = numbuf + NUMBUF_SIZE;
-       s1 = do_number((unsigned long)v, (char *)s2, 16, flags);
-       s1 = do_number_flags((char *)s1, (char *)s2, 16, flags | ALTERNATE_FORM,
-			    precision, field_width);
-       break;
-     }
+	    s1 = do_number_flags((char *)s1, (char *)s2, base, flags,
+				 precision, field_width);
+	    break;
+	}
+
+	case 'o':
+	    base = 8;
+	    goto number;
+
+	case 'X':
+	    flags |= f_uppercase;
+	case 'x':
+	    base = 16;
+	    goto number;
+
+	case 'p': {
+	    void *v = va_arg(val, void *);
+	    s2 = numbuf + NUMBUF_SIZE;
+	    s1 = do_number((unsigned long)v, (char *)s2, 16, flags);
+	    s1 = do_number_flags((char *)s1, (char *)s2, 16, flags | f_alternate_form,
+				 precision, field_width);
+	    break;
+	}
 
 #if HAVE_FLOAT_TYPES
-     case 'e': case 'f': case 'g':
-     case 'E': case 'F': case 'G': {
-       char format[80], *f = format, new_numbuf[NUMBUF_SIZE];
-       *f++ = '%';
-       if (flags & ALTERNATE_FORM)
-	 *f++ = '#';
-       if (precision >= 0)
-	 f += sprintf(f, ".%d", precision);
-       *f++ = s[-1];
-       *f++ = 0;
+	case 'e': case 'f': case 'g':
+	case 'E': case 'F': case 'G': {
+	    char format[80], *f = format, new_numbuf[NUMBUF_SIZE];
+	    *f++ = '%';
+	    if (flags & f_alternate_form)
+		*f++ = '#';
+	    if (precision >= 0)
+		f += sprintf(f, ".%d", precision);
+	    *f++ = s[-1];
+	    *f++ = 0;
 
-       int len = sprintf(new_numbuf, format, va_arg(val, double));
+	    int len = sprintf(new_numbuf, format, va_arg(val, double));
 
-       s2 = numbuf + NUMBUF_SIZE;
-       s1 = s2 - len;
-       memcpy((char *)s1, new_numbuf, len); // note: no terminating \0
-       s1 = do_number_flags((char *)s1, (char *)s2, 10, flags & ~ALTERNATE_FORM, -1, field_width);
-       break;
-     }
+	    s2 = numbuf + NUMBUF_SIZE;
+	    s1 = s2 - len;
+	    memcpy((char *)s1, new_numbuf, len); // note: no terminating \0
+	    s1 = do_number_flags((char *)s1, (char *)s2, 10, flags & ~f_alternate_form, -1, field_width);
+	    break;
+	}
 #endif
-     
-     case '{': {
-       const char *rbrace = strchr(s, '}');
-       if (!rbrace || rbrace == s)
-	 assert(0 /* Bad %{ in error */);
-       String name(s, rbrace - s);
-       s = rbrace + 1;
-       for (Conversion *item = error_items; item; item = item->next)
-	 if (item->name == name) {
-	   placeholder = item->hook(flags, VA_LIST_REF(val));
-	   s1 = placeholder.data();
-	   s2 = s1 + placeholder.length();
-	   goto got_result;
-	 }
-       goto error;
-     }
 
-     error:
-     default:
-      assert(0 /* Bad % in error */);
-      break;
-      
+	case '{': {
+	    const char *rbrace = strchr(s, '}');
+	    if (!rbrace || rbrace == s)
+		assert(0 /* Bad %{ in error */);
+	    String name(s, rbrace - s);
+	    s = rbrace + 1;
+	    for (Conversion *item = error_items; item; item = item->next)
+		if (item->name == name) {
+		    placeholder = item->hook(flags, VA_LIST_REF(val));
+		    s1 = placeholder.data();
+		    s2 = s1 + placeholder.length();
+		    goto got_result;
+		}
+	    goto error;
+	}
+
+	error:
+	default:
+	    assert(0 /* Bad % in error */);
+	    break;
+
+	}
+
+	// add result of conversion
+    got_result:
+	int slen = s2 - s1;
+	if (slen > field_width)
+	    field_width = slen;
+	char *dest = msg.extend(field_width);
+	if (flags & f_left_just) {
+	    memcpy(dest, s1, slen);
+	    memset(dest + slen, ' ', field_width - slen);
+	} else {
+	    memcpy(dest + field_width - slen, s1, slen);
+	    memset(dest, (flags & f_zero_pad ? '0' : ' '), field_width - slen);
+	}
     }
 
-    // add result of conversion
-   got_result:
-    int slen = s2 - s1;
-    if (slen > field_width) field_width = slen;
-    char *dest = msg.extend(field_width);
-    if (flags & LEFT_JUST) {
-      memcpy(dest, s1, slen);
-      memset(dest + slen, ' ', field_width - slen);
-    } else {
-      memcpy(dest + field_width - slen, s1, slen);
-      memset(dest, (flags & ZERO_PAD ? '0' : ' '), field_width - slen);
-    }
-  }
-
-  return msg.take_string();
+    return msg.take_string();
 }
 
 String
-ErrorHandler::decorate_text(Seriousness, const String &landmark, const String &text)
+ErrorHandler::format(const char *fmt, ...)
 {
-  String new_text = text;
-
-  // skip initial special-purpose portion of a landmark ('\<...>')
-  int first_lpos = 0;
-  if (landmark.length() > 2 && landmark[0] == '\\' && landmark[1] == '<') {
-    int end_special = landmark.find_left('>');
-    if (end_special > 0)
-      first_lpos = end_special + 1;
-  }
-  
-  // handle landmark
-  if (first_lpos < landmark.length()) {
-    // fix landmark: skip trailing spaces and trailing colon
-    int i, len = landmark.length();
-    for (i = len - 1; i >= first_lpos; i--)
-      if (!isspace((unsigned char) landmark[i]))
-	break;
-    if (i >= first_lpos && landmark[i] == ':')
-      i--;
-
-    // prepend landmark, unless all spaces
-    if (i >= first_lpos)
-      new_text = prepend_lines(landmark.substring(first_lpos, i + 1 - first_lpos) + ": ", new_text);
-  }
-
-  return new_text;
+    va_list val;
+    va_start(val, fmt);
+    String s = format(fmt, val);
+    va_end(val);
+    return s;
 }
 
-int
-ErrorHandler::verror(Seriousness seriousness, const String &where,
-		     const char *s, va_list val)
-{
-  String text = make_text(seriousness, s, val);
-  text = decorate_text(seriousness, where, text);
-  handle_text(seriousness, text);
-  return count_error(seriousness, text);
-}
 
-int
-ErrorHandler::verror_text(Seriousness seriousness, const String &where,
-			  const String &text)
+// ERROR MESSAGE SHORTHAND
+
+void
+ErrorHandler::debug(const char *fmt, ...)
 {
-  // text is already made
-  String dec_text = decorate_text(seriousness, where, text);
-  handle_text(seriousness, dec_text);
-  return count_error(seriousness, dec_text);
+    va_list val;
+    va_start(val, fmt);
+    xmessage(String::make_stable(e_debug, 3), fmt, val);
+    va_end(val);
 }
 
 void
-ErrorHandler::set_error_code(int)
+ErrorHandler::message(const char *fmt, ...)
 {
+    va_list val;
+    va_start(val, fmt);
+    xmessage(String::make_stable(e_info, 3), fmt, val);
+    va_end(val);
+}
+
+int
+ErrorHandler::warning(const char *fmt, ...)
+{
+    va_list val;
+    va_start(val, fmt);
+    int r = xmessage(String::make_stable(e_warning_annotated, 12), fmt, val);
+    va_end(val);
+    return r;
+}
+
+int
+ErrorHandler::error(const char *fmt, ...)
+{
+    va_list val;
+    va_start(val, fmt);
+    int r = xmessage(String::make_stable(e_error, 3), fmt, val);
+    va_end(val);
+    return r;
+}
+
+int
+ErrorHandler::fatal(const char *fmt, ...)
+{
+    va_list val;
+    va_start(val, fmt);
+    int r = xmessage(String::make_stable(e_fatal, 4), fmt, val);
+    va_end(val);
+    return r;
+}
+
+void
+ErrorHandler::ldebug(const String &landmark, const char *fmt, ...)
+{
+    va_list val;
+    va_start(val, fmt);
+    String l = make_landmark_anno(landmark);
+    xmessage(String::make_stable(e_debug, 3) + l, fmt, val);
+    va_end(val);
+}
+
+void
+ErrorHandler::lmessage(const String &landmark, const char *fmt, ...)
+{
+    va_list val;
+    va_start(val, fmt);
+    String l = make_landmark_anno(landmark);
+    xmessage(String::make_stable(e_info, 3) + l, fmt, val);
+    va_end(val);
+}
+
+int
+ErrorHandler::lwarning(const String &landmark, const char *fmt, ...)
+{
+    va_list val;
+    va_start(val, fmt);
+    String l = make_landmark_anno(landmark);
+    int r = xmessage(l + String::make_stable(e_warning_annotated, 12), fmt, val);
+    va_end(val);
+    return r;
+}
+
+int
+ErrorHandler::lerror(const String &landmark, const char *fmt, ...)
+{
+    va_list val;
+    va_start(val, fmt);
+    String l = make_landmark_anno(landmark);
+    int r = xmessage(String::make_stable(e_error, 3) + l, fmt, val);
+    va_end(val);
+    return r;
+}
+
+int
+ErrorHandler::lfatal(const String &landmark, const char *fmt, ...)
+{
+    va_list val;
+    va_start(val, fmt);
+    String l = make_landmark_anno(landmark);
+    int r = xmessage(String::make_stable(e_fatal, 4) + l, fmt, val);
+    va_end(val);
+    return r;
+}
+
+int
+ErrorHandler::xmessage(const String &str)
+{
+    String xstr = decorate(str);
+
+    int min_level = 1000, xlevel = 1000;
+    const char *s = xstr.begin(), *end = xstr.end();
+    void *user_data = 0;
+    while (s != end) {
+	const char *l = parse_anno(xstr, s, end, "#<>", &xlevel,
+				   (const char *) 0);
+	const char *nl = find(l, end, '\n');
+	String line = xstr.substring(s, nl);
+	s = nl + (nl != end);
+	user_data = emit(line, user_data, s != end);
+	min_level = (xlevel < min_level ? xlevel : min_level);
+    }
+
+    account(min_level);
+
+    return (min_level <= el_warning ? error_result : ok_result);
 }
 
 String
-ErrorHandler::prepend_lines(const String &prepend, const String &text)
+ErrorHandler::decorate(const String &str)
 {
-  if (!prepend)
-    return text;
-  
-  StringAccum sa;
-  const char *begin = text.begin();
-  const char *end = text.end();
-  while (begin < end) {
-    const char *nl = find(begin, end, '\n');
-    if (nl < end)
-      nl++;
-    sa << prepend << text.substring(begin, nl);
-    begin = nl;
-  }
-  
-  return sa.take_string();
+    return str;
 }
 
-
-//
-// BASE ERROR HANDLER
-//
-
-int
-BaseErrorHandler::count_error(Seriousness seriousness, const String &)
+void *
+ErrorHandler::emit(const String &, void *, bool)
 {
-  if (seriousness < ERR_MIN_WARNING)
-    /* do nothing */;
-  else if (seriousness < ERR_MIN_ERROR)
-    _nwarnings++;
-  else
-    _nerrors++;
-  return (seriousness < ERR_MIN_WARNING ? OK_RESULT : ERROR_RESULT);
+    return 0;
+}
+
+void
+ErrorHandler::account(int)
+{
 }
 
 
@@ -627,177 +819,156 @@ BaseErrorHandler::count_error(Seriousness seriousness, const String &)
 //
 
 FileErrorHandler::FileErrorHandler(FILE *f, const String &context)
-  : _f(f), _context(context)
+    : _f(f), _context(context)
 {
 }
 
-void
-FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
+void *
+FileErrorHandler::emit(const String &str, void *, bool)
 {
-  String text = prepend_lines(_context, message);
-  if (text && text.back() != '\n')
-    text += '\n';
-  fwrite(text.data(), 1, text.length(), _f);
-  
-  if (seriousness >= ERR_MIN_FATAL) {
-    int exit_status = (seriousness - ERR_MIN_FATAL) >> ERRVERBOSITY_SHIFT;
-    exit(exit_status);
-  }
+    String landmark;
+    const char *s = parse_anno(str, str.begin(), str.end(),
+			       "l", &landmark, (const char *) 0);
+    StringAccum sa;
+    sa << _context << clean_landmark(landmark, true)
+       << str.substring(s, str.end()) << '\n';
+    fwrite(sa.begin(), 1, sa.length(), _f);
+    return 0;
 }
+
+void
+FileErrorHandler::account(int level)
+{
+    BaseErrorHandler::account(level);
+    if (level <= el_abort)
+	abort();
+    else if (level <= el_fatal)
+	exit(-level);
+}
+
 #endif
-
-
-//
-// SILENT ERROR HANDLER
-//
-
-void
-SilentErrorHandler::handle_text(Seriousness, const String &)
-{
-}
 
 
 //
 // STATIC ERROR HANDLERS
 //
 
-static ErrorHandler *the_default_handler = 0;
-static ErrorHandler *the_silent_handler = 0;
-
 ErrorHandler::Conversion *
-ErrorHandler::add_conversion(const String &name, ConversionHook hook)
+ErrorHandler::add_conversion(const String &name, ConversionFunction function)
 {
-  if (Conversion *c = new Conversion) {
-    c->name = name;
-    c->hook = hook;
-    c->next = error_items;
-    error_items = c;
-    return c;
-  } else
-    return 0;
+    if (Conversion *c = new Conversion) {
+	c->name = name;
+	c->hook = function;
+	c->next = error_items;
+	error_items = c;
+	return c;
+    } else
+	return 0;
 }
 
 int
 ErrorHandler::remove_conversion(ErrorHandler::Conversion *conv)
 {
-  Conversion **pprev = &error_items;
-  for (Conversion *c = error_items; c; pprev = &c->next, c = *pprev)
-    if (c == conv) {
-      *pprev = c->next;
-      delete c;
-      return 0;
-    }
-  return -1;
+    Conversion **pprev = &error_items;
+    for (Conversion *c = error_items; c; pprev = &c->next, c = *pprev)
+	if (c == conv) {
+	    *pprev = c->next;
+	    delete c;
+	    return 0;
+	}
+    return -1;
 }
 
 static String
 timeval_error_hook(int, VA_LIST_REF_T val)
 {
-  const struct timeval *tvp = va_arg(VA_LIST_DEREF(val), const struct timeval *);
-  if (tvp) {
-    StringAccum sa;
-    sa << *tvp;
-    return sa.take_string();
-  } else
-    return "(null)";
+    const struct timeval *tvp = va_arg(VA_LIST_DEREF(val), const struct timeval *);
+    if (tvp) {
+	StringAccum sa;
+	sa << *tvp;
+	return sa.take_string();
+    } else
+	return String::make_stable("(null)", 6);
 }
 
 static String
 timestamp_error_hook(int, VA_LIST_REF_T val)
 {
-  const Timestamp *tsp = va_arg(VA_LIST_DEREF(val), const Timestamp *);
-  if (tsp) {
-    StringAccum sa;
-    sa << *tsp;
-    return sa.take_string();
-  } else
-    return "(null)";
+    const Timestamp *tsp = va_arg(VA_LIST_DEREF(val), const Timestamp *);
+    if (tsp) {
+	StringAccum sa;
+	sa << *tsp;
+	return sa.take_string();
+    } else
+	return String::make_stable("(null)", 6);
 }
 
 static String
 ip_ptr_error_hook(int, VA_LIST_REF_T val)
 {
-  const IPAddress *ipp = va_arg(VA_LIST_DEREF(val), const IPAddress *);
-  if (ipp)
-    return ipp->unparse();
-  else
-    return "(null)";
+    const IPAddress *ipp = va_arg(VA_LIST_DEREF(val), const IPAddress *);
+    if (ipp)
+	return ipp->unparse();
+    else
+	return String::make_stable("(null)", 6);
 }
 
 static String
 ether_ptr_error_hook(int, VA_LIST_REF_T val)
 {
-  const EtherAddress *ethp = va_arg(VA_LIST_DEREF(val), const EtherAddress *);
-  if (ethp)
-    return ethp->unparse();
-  else
-    return "(null)";
+    const EtherAddress *ethp = va_arg(VA_LIST_DEREF(val), const EtherAddress *);
+    if (ethp)
+	return ethp->unparse();
+    else
+	return String::make_stable("(null)", 6);
 }
 
 #ifndef CLICK_TOOL
 static String
 element_error_hook(int, VA_LIST_REF_T val)
 {
-  const Element *e = va_arg(VA_LIST_DEREF(val), const Element *);
-  if (e)
-    return e->declaration();
-  else
-    return "(null)";
+    const Element *e = va_arg(VA_LIST_DEREF(val), const Element *);
+    if (e)
+	return e->declaration();
+    else
+	return String::make_stable("(null)", 6);
 }
 #endif
 
 ErrorHandler *
 ErrorHandler::static_initialize(ErrorHandler *default_handler)
 {
-  the_default_handler = default_handler;
-  the_silent_handler = new SilentErrorHandler;
-  add_conversion("timeval", timeval_error_hook);
-  add_conversion("timestamp", timestamp_error_hook);
+    if (!the_silent_handler) {
+	the_default_handler = default_handler;
+	the_silent_handler = new SilentErrorHandler;
+	add_conversion("timeval", timeval_error_hook);
+	add_conversion("timestamp", timestamp_error_hook);
 #ifndef CLICK_TOOL
-  add_conversion("element", element_error_hook);
+	add_conversion("element", element_error_hook);
 #endif
-  add_conversion("ip_ptr", ip_ptr_error_hook);
-  add_conversion("ether_ptr", ether_ptr_error_hook);
-  return the_default_handler;
+	add_conversion("ip_ptr", ip_ptr_error_hook);
+	add_conversion("ether_ptr", ether_ptr_error_hook);
+    }
+    return default_handler;
 }
 
 void
 ErrorHandler::static_cleanup()
 {
-  delete the_default_handler;
-  delete the_silent_handler;
-  the_default_handler = the_silent_handler = 0;
-  while (error_items) {
-    Conversion *next = error_items->next;
-    delete error_items;
-    error_items = next;
-  }
-}
-
-bool
-ErrorHandler::has_default_handler()
-{
-  return the_default_handler ? true : false;
-}
-
-ErrorHandler *
-ErrorHandler::default_handler()
-{
-  assert(the_default_handler != 0);
-  return the_default_handler;
-}
-
-ErrorHandler *
-ErrorHandler::silent_handler()
-{
-  assert(the_silent_handler != 0);
-  return the_silent_handler;
+    delete the_default_handler;
+    delete the_silent_handler;
+    the_default_handler = the_silent_handler = 0;
+    while (error_items) {
+	Conversion *next = error_items->next;
+	delete error_items;
+	error_items = next;
+    }
 }
 
 void
 ErrorHandler::set_default_handler(ErrorHandler *errh)
 {
-  the_default_handler = errh;
+    the_default_handler = errh;
 }
 
 
@@ -808,55 +979,37 @@ ErrorHandler::set_default_handler(ErrorHandler *errh)
 int
 ErrorVeneer::nwarnings() const
 {
-  return _errh->nwarnings();
+    return _errh->nwarnings();
 }
 
 int
 ErrorVeneer::nerrors() const
 {
-  return _errh->nerrors();
+    return _errh->nerrors();
 }
 
 void
 ErrorVeneer::reset_counts()
 {
-  _errh->reset_counts();
-}
-
-int
-ErrorVeneer::min_verbosity() const
-{
-  return _errh->min_verbosity();
+    _errh->reset_counts();
 }
 
 String
-ErrorVeneer::make_text(Seriousness seriousness, const char *s, va_list val)
+ErrorVeneer::decorate(const String &str)
 {
-  return _errh->make_text(seriousness, s, val);
+    return _errh->decorate(str);
 }
 
-String
-ErrorVeneer::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
+void *
+ErrorVeneer::emit(const String &str, void *user_data, bool more)
 {
-  return _errh->decorate_text(seriousness, landmark, text);
-}
-
-void
-ErrorVeneer::handle_text(Seriousness seriousness, const String &text)
-{
-  _errh->handle_text(seriousness, text);
-}
-
-int
-ErrorVeneer::count_error(Seriousness seriousness, const String &text)
-{
-  return _errh->count_error(seriousness, text);
+    return _errh->emit(str, user_data, more);
 }
 
 void
-ErrorVeneer::set_error_code(int code)
+ErrorVeneer::account(int level)
 {
-  _errh->set_error_code(code);
+    _errh->account(level);
 }
 
 
@@ -864,46 +1017,29 @@ ErrorVeneer::set_error_code(int code)
 // LOCAL ERROR HANDLER
 //
 
-int
-LocalErrorHandler::min_verbosity() const
+String
+LocalErrorHandler::decorate(const String &str)
 {
-  return (_errh ? _errh->min_verbosity() : 0);
+    if (_errh)
+	return _errh->decorate(str);
+    else
+	return ErrorHandler::decorate(str);
 }
 
-String
-LocalErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
+void *
+LocalErrorHandler::emit(const String &str, void *user_data, bool more)
 {
-  return (_errh ? _errh->make_text(seriousness, s, val) : ErrorHandler::make_text(seriousness, s, val));
-}
-
-String
-LocalErrorHandler::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
-{
-  return (_errh ? _errh->decorate_text(seriousness, landmark, text) : ErrorHandler::decorate_text(seriousness, landmark, text));
+    if (_errh)
+	user_data = _errh->emit(str, user_data, more);
+    return user_data;
 }
 
 void
-LocalErrorHandler::handle_text(Seriousness seriousness, const String &text)
+LocalErrorHandler::account(int level)
 {
-  if (_errh)
-    _errh->handle_text(seriousness, text);
-}
-
-int
-LocalErrorHandler::count_error(Seriousness seriousness, const String &text)
-{
-  int val = BaseErrorHandler::count_error(seriousness, text);
-  if (_errh)
-    return _errh->count_error(seriousness, text);
-  else
-    return val;
-}
-
-void
-LocalErrorHandler::set_error_code(int code)
-{
-  if (_errh)
-    _errh->set_error_code(code);
+    BaseErrorHandler::account(level);
+    if (_errh)
+	_errh->account(level);
 }
 
 
@@ -915,28 +1051,30 @@ ContextErrorHandler::ContextErrorHandler(ErrorHandler *errh,
 					 const String &context,
 					 const String &indent,
 					 const String &context_landmark)
-  : ErrorVeneer(errh), _context(context), _indent(indent),
-    _context_landmark(context_landmark)
+    : ErrorVeneer(errh), _context(context), _indent(indent)
 {
+    if (context_landmark)
+	_context_landmark = make_landmark_anno(context_landmark);
 }
 
 String
-ContextErrorHandler::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
+ContextErrorHandler::decorate(const String &str)
 {
-  String context_lines;
-  if (_context) {
-    // do not print context or indent if underlying ErrorHandler doesn't want
-    // context
-    if (_errh->min_verbosity() > ERRVERBOSITY_CONTEXT)
-      _context = _indent = String();
-    else {
-      context_lines = _errh->decorate_text(ERR_MESSAGE, (_context_landmark ? _context_landmark : landmark), _context);
-      if (context_lines && context_lines.back() != '\n')
-	context_lines += '\n';
-      _context = String();
+    String cstr;
+    if (_context) {
+	String cl = _context_landmark;
+	if (!cl)
+	    (void) parse_anno(str, str.begin(), str.end(),
+			      "l", &cl, (const char *) 0);
+	cl = String::make_stable(e_info, 3) + cl;
+	cstr = combine_anno(_context, cl);
+	if (cstr && cstr.back() != '\n')
+	    cstr += '\n';
+	_context = String();
     }
-  }
-  return context_lines + _errh->decorate_text(seriousness, (landmark ? landmark : _context_landmark), prepend_lines(_indent, text));
+
+    cstr += combine_anno(str, _context_landmark + _indent);
+    return _errh->decorate(cstr);
 }
 
 
@@ -946,14 +1084,14 @@ ContextErrorHandler::decorate_text(Seriousness seriousness, const String &landma
 
 PrefixErrorHandler::PrefixErrorHandler(ErrorHandler *errh,
 				       const String &prefix)
-  : ErrorVeneer(errh), _prefix(prefix)
+    : ErrorVeneer(errh), _prefix(prefix)
 {
 }
 
 String
-PrefixErrorHandler::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
+PrefixErrorHandler::decorate(const String &str)
 {
-  return _errh->decorate_text(seriousness, landmark, prepend_lines(_prefix, text));
+    return _errh->decorate(combine_anno(str, _prefix));
 }
 
 
@@ -962,41 +1100,14 @@ PrefixErrorHandler::decorate_text(Seriousness seriousness, const String &landmar
 //
 
 LandmarkErrorHandler::LandmarkErrorHandler(ErrorHandler *errh, const String &landmark)
-  : ErrorVeneer(errh), _landmark(landmark)
+    : ErrorVeneer(errh), _landmark(make_landmark_anno(landmark))
 {
 }
 
 String
-LandmarkErrorHandler::decorate_text(Seriousness seriousness, const String &lm, const String &text)
+LandmarkErrorHandler::decorate(const String &str)
 {
-  if (lm)
-    return _errh->decorate_text(seriousness, lm, text);
-  else
-    return _errh->decorate_text(seriousness, _landmark, text);
-}
-
-
-//
-// VERBOSE FILTER ERROR HANDLER
-//
-
-VerboseFilterErrorHandler::VerboseFilterErrorHandler(ErrorHandler *errh, int min_verbosity)
-  : ErrorVeneer(errh), _min_verbosity(min_verbosity)
-{
-}
-
-int
-VerboseFilterErrorHandler::min_verbosity() const
-{
-  int m = _errh->min_verbosity();
-  return (m >= _min_verbosity ? m : _min_verbosity);
-}
-
-void
-VerboseFilterErrorHandler::handle_text(Seriousness s, const String &text)
-{
-  if ((s & ERRVERBOSITY_MASK) >= _min_verbosity)
-    _errh->handle_text(s, text);
+    return _errh->decorate(combine_anno(str, _landmark));
 }
 
 
@@ -1006,17 +1117,17 @@ VerboseFilterErrorHandler::handle_text(Seriousness s, const String &text)
 
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 
-BailErrorHandler::BailErrorHandler(ErrorHandler *errh, Seriousness s)
-  : ErrorVeneer(errh), _exit_seriousness(s)
+BailErrorHandler::BailErrorHandler(ErrorHandler *errh, int l)
+    : ErrorVeneer(errh), _level(l)
 {
 }
 
 void
-BailErrorHandler::handle_text(Seriousness s, const String &text)
+BailErrorHandler::account(int level)
 {
-  _errh->handle_text(s, text);
-  if (s >= _exit_seriousness)
-    exit(1);
+    ErrorVeneer::account(level);
+    if (level <= _level)
+	exit(1);
 }
 
 #endif

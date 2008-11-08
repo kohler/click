@@ -68,9 +68,10 @@ KernelHandlerProxy::add_handlers()
 static void
 complain_to(ErrorHandler *errh, int errcode, const String &complaint)
 {
-  if (errcode >= 0)
-    errh->set_error_code(errcode);
-  errh->verror_text(ErrorHandler::ERR_ERROR, String(), complaint);
+    String csc;
+    if (errcode >= 0)
+	csc = ErrorHandler::make_anno("cserr", String(errcode));
+    errh->xmessage(ErrorHandler::e_error + csc, complaint);
 }
 
 int
@@ -93,7 +94,7 @@ KernelHandlerProxy::complain_about_open(ErrorHandler *errh,
 {
   const char *dot = find(hname, '.');
   String k_elt = hname.substring(hname.begin(), dot);
-  
+
   if (errno_val == ENOENT) {
     String try_fn = "/click/" + k_elt;
     if (access("/click", F_OK) < 0)
@@ -176,8 +177,7 @@ KernelHandlerProxy::check_handler(const String &hname, bool write, ErrorHandler 
   struct stat buf;
   stat(fn.c_str(), &buf);
   if (S_ISDIR(buf.st_mode)) {
-    errh->set_error_code(CSERR_NO_SUCH_HANDLER);
-    errh->error("No handler named '%#s'", hname.printable().c_str());
+    errh->error("{ec:%d}No handler named '%#s'", CSERR_NO_SUCH_HANDLER, hname.printable().c_str());
     return 0;
   } else {
     errh->message("%s handler '%s' OK", (write ? "Write" : "Read"), hname.printable().c_str());

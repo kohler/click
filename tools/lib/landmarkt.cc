@@ -18,6 +18,7 @@
 
 #include <click/config.h>
 #include <click/straccum.hh>
+#include <click/error.hh>
 #include <algorithm>
 
 #include "landmarkt.hh"
@@ -90,9 +91,6 @@ LandmarkSetT::offset_to_decorated_string(unsigned offset1, unsigned offset2) con
     if (i == _linfo.end())
 	i = _linfo.begin();
     StringAccum sa;
-    if (offset1 != LandmarkT::noffset)
-	sa << '\\' << '<' << offset1 << ',' << offset2 << '>';
-    int length = sa.length();
     if (i != _linfo.end()) {
 	const String &fname = _fnames[i->filename];
 	if (fname && i->lineno)
@@ -102,7 +100,13 @@ LandmarkSetT::offset_to_decorated_string(unsigned offset1, unsigned offset2) con
 	else if (i->lineno)
 	    sa << "line " << i->lineno;
     }
-    if (sa.length() == length)
+    if (!sa)
 	sa << "<unknown>";
-    return sa.take_string();
+    if (offset1 != LandmarkT::noffset) {
+	String x = ErrorHandler::make_landmark_anno(sa.take_string());
+	sa.clear();
+	sa << x << "{l1:" << offset1 << "}{l2:" << offset2 << '}';
+	return sa.take_string();
+    } else
+	return sa.take_string();
 }

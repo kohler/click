@@ -56,7 +56,7 @@ Keyword arguments are:
 =item READONLY
 
 Boolean.  Disallows write handlers if true (it is false by
-default). 
+default).
 
 =item PROXY
 
@@ -212,7 +212,7 @@ class ControlSocket : public Element { public:
   ~ControlSocket();
 
   const char *class_name() const	{ return "ControlSocket"; }
-  
+
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
@@ -234,7 +234,7 @@ class ControlSocket : public Element { public:
     CSERR_NO_ROUTER		= HandlerProxy::CSERR_NO_ROUTER,       // 540
     CSERR_UNSPECIFIED		= HandlerProxy::CSERR_UNSPECIFIED      // 590
   };
-  
+
  private:
 
   String _unix_pathname;
@@ -246,11 +246,11 @@ class ControlSocket : public Element { public:
   bool _localhost : 1;
   Element *_proxy;
   HandlerProxy *_full_proxy;
-  
+
   Vector<String> _in_texts;
   Vector<String> _out_texts;
   Vector<int> _flags;
-  
+
   String _proxied_handler;
   ErrorHandler *_proxied_errh;
 
@@ -264,11 +264,11 @@ class ControlSocket : public Element { public:
   int initialize_socket_error(ErrorHandler *, const char *);
   int initialize_socket(ErrorHandler *);
   static void retry_hook(Timer *, void *);
-  
+
   int message(int fd, int code, const String &, bool continuation = false);
   int transfer_messages(int fd, int default_code, const String &first_message,
 			ControlSocketErrorHandler *);
-  
+
     String proxied_handler_name(const String &) const;
     const Handler* parse_handler(int fd, const String &, Element **);
     int read_command(int fd, const String &, String);

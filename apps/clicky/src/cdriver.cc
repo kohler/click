@@ -47,15 +47,15 @@ int cdriver::check_handler_name(const String &inname, String &ename, String &hna
 void cdriver::transfer_messages(crouter *cr, int status, const messagevector &messages)
 {
     if (messages.size()) {
-	ErrorHandler::Seriousness seriousness;
+	const char *err;
 	if (status <= 219)
-	    seriousness = ErrorHandler::ERR_MESSAGE;
+	    err = ErrorHandler::e_info;
 	else if (status <= 299)
-	    seriousness = ErrorHandler::ERR_WARNING;
+	    err = ErrorHandler::e_warning_annotated;
 	else
-	    seriousness = ErrorHandler::ERR_ERROR;
+	    err = ErrorHandler::e_error;
 	for (messagevector::const_iterator i = messages.begin(); i != messages.end(); ++i)
-	    cr->error_handler()->verror_text(seriousness, i->first, i->second);
+	    cr->error_handler()->xmessage(i->first, err, i->second);
 	cr->on_error(false, String());
     }
 }
@@ -168,12 +168,12 @@ gboolean csocket_cdriver::kill_with_dialog(GatherErrorHandler *gerrh, int begin_
     if (format) {
 	va_list val;
 	va_start(val, format);
-	gerrh->verror(ErrorHandler::ERR_ERROR, String(), format, val);
+	gerrh->xmessage(ErrorHandler::e_error, format, val);
 	va_end(val);
     }
 
     _cr->on_error(true, gerrh->message_string(gerrh->begin() + begin_pos, gerrh->end()));
-    
+
     return FALSE;
 }
 
@@ -409,7 +409,7 @@ bool csocket_cdriver::msg_parse(msg *m, GatherErrorHandler *gerrh, int gerrh_pos
 	_cr->on_handler_check_write(m->hname, status, messages);
 
     transfer_messages(_cr, status, messages);
-    
+
     delete m;
     _csocket_msgq.pop_front();
     return true;
@@ -551,7 +551,7 @@ void clickfs_cdriver::do_read(const String &fullname, const String &hparam, int 
 	transfer_messages(_cr, 500, messages);
 	return;
     }
-    
+
     String fn = filename(ename, hname);
     int fd = open(fn.c_str(), O_RDONLY);
     StringAccum results;
