@@ -37,83 +37,81 @@ static KernelErrorHandler *syslog_errh = 0;
 Router *click_router = 0;
 Master *click_master = 0;
 
+#if HAVE_KERNEL_ASSERT
+static bool assert_stops_router = false;
+#endif
+static int chatterlevel_ceiling = ErrorHandler::el_error;
+
 
 /***************************** Global handlers *******************************/
 
-#if HAVE_INT64_TYPES
-static String
-read_cycles(Element *, void *)
-{
-    StringAccum sa;
-    sa << click_get_cycles() << " cycles\n";
-    return sa.take_string();
-}
-#endif
+enum {
+    h_cycles, h_meminfo, h_packages, h_assert_stop
+};
 
 #ifdef HAVE_LINUX_READ_NET_SKBCOUNT
 extern "C" int read_net_skbcount(void);
 #endif
 
 static String
-read_meminfo(Element *, void *)
+read_global(Element *, void *user_data)
 {
-    extern size_t click_dmalloc_curnew, click_dmalloc_totalnew;
-#if CLICK_DMALLOC
-    extern size_t click_dmalloc_curmem, click_dmalloc_maxmem;
-#endif
     StringAccum sa;
-    sa << "outstanding news " << click_dmalloc_curnew << "\n"
-       << "news " << click_dmalloc_totalnew << "\n";
+    switch ((intptr_t) user_data) {
+#if HAVE_INT64_TYPES
+    case h_cycles:
+	sa << click_get_cycles();
+	break;
+#endif
+    case h_meminfo: {
+	extern size_t click_dmalloc_curnew, click_dmalloc_totalnew;
+	sa << "outstanding news " << click_dmalloc_curnew << "\n"
+	   << "news " << click_dmalloc_totalnew << "\n";
 #if CLICK_DMALLOC
-    sa << "current allocated mem " << click_dmalloc_curmem << '\n'
-       << "max allocated mem " << click_dmalloc_maxmem << '\n';
+	extern size_t click_dmalloc_curmem, click_dmalloc_maxmem;
+	sa << "current allocated mem " << click_dmalloc_curmem << '\n'
+	   << "max allocated mem " << click_dmalloc_maxmem << '\n';
 #endif
 #ifdef HAVE_LINUX_READ_NET_SKBCOUNT
-    sa << "net_skbcount " << read_net_skbcount() << "\n";
+	sa << "net_skbcount " << read_net_skbcount() << "\n";
 #endif
-    return sa.take_string();
-}
-
-static String
-read_packages(Element *, void *)
-{
-    StringAccum sa;
-    Vector<String> v;
-    click_public_packages(v);
-    for (int i = 0; i < v.size(); i++)
-	sa << v[i] << "\n";
+	break;
+    }
+    case h_packages: {
+	Vector<String> v;
+	click_public_packages(v);
+	for (int i = 0; i < v.size(); i++)
+	    sa << v[i] << "\n";
+	break;
+    }
+#if HAVE_KERNEL_ASSERT
+    case h_assert_stop:
+	sa << assert_stops_router;
+	break;
+#endif
+    }
     return sa.take_string();
 }
 
 
 /******************************* Assertions **********************************/
 
-#if HAVE_KERNEL_ASSERT
-static bool assert_stops_router = false;
-#endif
-
 extern "C" void
 click_assert_failed(const char *file, int line, const char *problem_text)
 {
-    click_chatter("%s:%d: assertion failed: %s", file, line, problem_text);
+    click_chatter(KERN_ALERT "%s:%d: assertion failed: %s", file, line, problem_text);
 #if HAVE_KERNEL_ASSERT
     if (assert_stops_router) {
 	if (click_router) {
-	    click_chatter("%s:%d: assertion failed: Asking router to stop", file, line);
+	    click_chatter(KERN_ALERT "%s:%d: assertion failed: Asking router to stop", file, line);
 	    click_router->set_runcount(Router::STOP_RUNCOUNT);
 	} else
-	    click_chatter("%s:%d: assertion failed: No router to stop", file, line);
+	    click_chatter(KERN_ALERT "%s:%d: assertion failed: No router to stop", file, line);
     }
 #endif
 }
 
 #if HAVE_KERNEL_ASSERT
-static String
-read_assert_stop(Element *, void *)
-{
-    return String(assert_stops_router);
-}
-
 static int
 write_assert_stop(const String &s, Element *, void *, ErrorHandler *errh)
 {
@@ -190,8 +188,12 @@ KernelErrorHandler::emit(const String &str, void *, bool)
     int level = 3;
     const char *s = parse_anno(str, str.begin(), str.end(), "l", &landmark,
 			       "#<>", &level, (const char *) 0);
-    landmark = clean_landmark(landmark, true);
+    // normalize level
     level = (level < 0 ? 0 : (level > 7 ? 7 : level));
+    if (level > chatterlevel_ceiling)
+	level = chatterlevel_ceiling;
+
+    landmark = clean_landmark(landmark, true);
     printk("<%d>%.*s%.*s\n", level, landmark.length(), landmark.begin(),
 	   str.end() - s, s);
     log_line(landmark, s, str.end());
@@ -295,15 +297,15 @@ init_module()
     click_init_config();
 
     // global handlers
-    Router::add_read_handler(0, "packages", read_packages, 0);
-    Router::add_read_handler(0, "meminfo", read_meminfo, 0);
+    Router::add_read_handler(0, "packages", read_global, (void *) (intptr_t) h_packages);
+    Router::add_read_handler(0, "meminfo", read_global, (void *) (intptr_t) h_meminfo);
 #if HAVE_INT64_TYPES
-    Router::add_read_handler(0, "cycles", read_cycles, 0);
+    Router::add_read_handler(0, "cycles", read_global, (void *) (intptr_t) h_cycles);
 #endif
     Router::add_read_handler(0, "errors", read_errors, 0, HANDLER_DIRECT);
     Router::add_read_handler(0, "messages", read_messages, 0, HANDLER_DIRECT);
 #if HAVE_KERNEL_ASSERT
-    Router::add_read_handler(0, "assert_stop", read_assert_stop, 0);
+    Router::add_read_handler(0, "assert_stop", read_global, (void *) (intptr_t) h_assert_stop);
     Router::add_write_handler(0, "assert_stop", write_assert_stop, 0, Handler::NONEXCLUSIVE);
 #endif
 

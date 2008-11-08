@@ -350,7 +350,7 @@ click_init_sched(ErrorHandler *errh)
 #if HAVE_MULTITHREAD
     click_master = new Master(click_parm(CLICKPARM_THREADS));
     if (num_possible_cpus() != NUM_CLICK_CPUS)
-	click_chatter("warning: click compiled for %d cpus, machine allows %d",
+	click_chatter(KERN_WARNING "warning: click compiled for %d cpus, machine allows %d",
 		      NUM_CLICK_CPUS, num_possible_cpus());
 #else
     click_master = new Master(1);
