@@ -264,7 +264,7 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	    add_insn(insn, 0, 0, word);
 	    break;
 	}
-	    
+
 	case INSN_LOOP_PSEUDO:
 	    insn = INSN_GOTO;
 	    /* fallthru */
@@ -293,7 +293,7 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	    if ((_args[i] = find_label(word)) >= _insns.size())
 		errh->error("no such label '%s'", word.c_str());
 	}
-    
+
     if (_insns.size() == 0 && _type == TYPE_DRIVER)
 	add_insn(INSN_WAIT_STEP, 1, 0);
     add_insn(_type == TYPE_DRIVER ? INSN_STOP : INSN_END, 0);
@@ -341,7 +341,7 @@ Script::initialize(ErrorHandler *errh)
 	for (int i = 0; i < _signos.size(); i++)
 	    master()->add_signal_handler(_signos[i], router(), name() + ".run");
 #endif
-    
+
     return 0;
 }
 
@@ -406,7 +406,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	case INSN_PRINT:
 	case INSN_PRINTN: {
 	    String text = _args3[ipos];
-	    
+
 #if CLICK_USERLEVEL || CLICK_TOOL
 	    FILE *f = stdout;
 	    if (text.length() && text[0] == '>') {
@@ -432,7 +432,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 		&& (!result || result.back() != '\n')
 		&& insn != INSN_PRINTN)
 		result += "\n";
-	    
+
 #if CLICK_USERLEVEL || CLICK_TOOL
 	    fwrite(result.data(), 1, result.length(), f);
 	    if (f == stdout)
@@ -440,11 +440,11 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	    else
 		fclose(f);
 #else
-	    click_chatter("%s", result.c_str());
+	    click_chatter("{}%s", result.c_str());
 #endif
 	    break;
 	}
-	    
+
 	case INSN_READ:
 	case INSN_READQ: {
 	    String arg = (insn == INSN_READ ? _args3[ipos] : cp_unquote(_args3[ipos]));
@@ -484,7 +484,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	    }
 	    break;
 	}
-	    
+
 	case INSN_GOTO: {
 	    // reset intervening instructions
 	    String cond_text = cp_expand(_args3[ipos], expander);
@@ -630,7 +630,7 @@ Script::Expander::expand(const String &vname, int vartype, int quote, StringAccu
 	sa << cp_unparse_bool(script->_run_op & Handler::OP_WRITE);
 	return true;
     }
-    
+
     if (vartype == '(') {
 	HandlerCall hc(vname);
 	if (hc.initialize_read(script, errh) >= 0) {
@@ -638,7 +638,7 @@ Script::Expander::expand(const String &vname, int vartype, int quote, StringAccu
 	    return true;
 	}
     }
-    
+
     return false;
 }
 
@@ -855,7 +855,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
     case ar_now:
 	str = Timestamp::now().unparse();
 	return 0;
-	
+
     case AR_SPRINTF: {
 	String format = cp_unquote(cp_pop_spacevec(str));
 	const char *s = format.begin(), *pct, *end = format.end();
@@ -975,7 +975,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	return (errh->nerrors() == nerrors ? 0 : -errno);
     }
 #endif
-	  
+
     }
 
     return -1;
