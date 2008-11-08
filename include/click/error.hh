@@ -62,8 +62,8 @@ CLICK_DECLS
  *
  * Users can add other arbitrary annotations, which can be useful to pass
  * error metadata.  A pair of braces ends the annotation area.  This example
- * has one user annotation @tt eoc, and a message area that would be mistaken
- * for an annotation except for the <tt>{}</tt>:
+ * has one user annotation <tt>eoc</tt>, and a message area that would be
+ * mistaken for an annotation except for the <tt>{}</tt>:
  *
  * <tt>"&lt;2&gt;{l:x.click:1}{eoc:520}{}{not:an annotation}"</tt>
  */
@@ -253,40 +253,41 @@ class ErrorHandler { public:
      *
      * <table>
      *
-     * <tr><td><tt>%d</tt>, <tt>%i</tt></td><td>Format an @tt int as a decimal
-     * string.  Understands flags in <tt>#0- +</tt>, field widths (including
-     * <tt>*</tt>), and precisions.</td></tr>
+     * <tr><td><tt>\%d</tt>, <tt>\%i</tt></td><td>Format an <tt>int</tt> as a
+     * decimal string.  Understands flags in <tt>#0- +</tt>, field widths
+     * (including <tt>*</tt>), and precisions.</td></tr>
      *
-     * <tr><td><tt>%hd</tt>, <tt>%ld</tt>, <tt>%lld</tt>,
-     * <tt>%zd</tt></td><td>Format a @tt short, @tt long, <tt>long long</tt>,
-     * or <tt>size_t</tt>.</td></tr>
+     * <tr><td><tt>\%hd</tt>, <tt>\%ld</tt>, <tt>\%lld</tt>,
+     * <tt>\%zd</tt></td><td>Format a <tt>short</tt>, <tt>long</tt>, <tt>long
+     * long</tt>, or <tt>size_t</tt>.</td></tr>
      *
-     * <tr><td><tt>%^16d</tt>, <tt>%^32d</tt>, <tt>%^64d</tt></td><td>Format a
-     * 16-, 32-, or 64-bit integer.</td></tr>
+     * <tr><td><tt>\%^16d</tt>, <tt>\%^32d</tt>, <tt>\%^64d</tt></td>
+     * <td>Format a 16-, 32-, or 64-bit integer.</td></tr>
      *
-     * <tr><td><tt>%o</tt>, <tt>%u</tt>, <tt>%x</tt>,
-     * <tt>%X</tt></td><td>Format an unsigned integer in octal, decimal, or
+     * <tr><td><tt>\%o</tt>, <tt>\%u</tt>, <tt>\%x</tt>,
+     * <tt>\%X</tt></td><td>Format an unsigned integer in octal, decimal, or
      * hexadecimal (with lower-case or upper-case letters).</td></tr>
      *
-     * <tr><td><tt>%s</tt></td><td>Format a C string (<tt>const char *</tt>).
-     * The alternate form <tt>%#s</tt> calls String::printable() on the input
-     * string.</td></tr>
+     * <tr><td><tt>\%s</tt></td><td>Format a C string (<tt>const char *</tt>).
+     * The alternate form <tt>\%\#s</tt> calls String::printable() on the
+     * input string.</td></tr>
      *
-     * <tr><td><tt>%c</tt></td><td>Format a character.  Prints a C-like escape
-     * if the input character isn't printable ASCII.</td></tr>
+     * <tr><td><tt>\%c</tt></td><td>Format a character.  Prints a C-like
+     * escape if the input character isn't printable ASCII.</td></tr>
      *
-     * <tr><td><tt>%p</tt></td><td>Format a pointer as a hexadecimal
+     * <tr><td><tt>\%p</tt></td><td>Format a pointer as a hexadecimal
      * value.</td></tr>
      *
-     * <tr><td><tt>%e<tt>, <tt>%E<tt>, <tt>%f<tt>, <tt>%F<tt>, <tt>%g<tt>,
-     * <tt>%G<tt></td><td>Format a @tt double (user-level only).</td></tr>
+     * <tr><td><tt>\%e</tt>, <tt>\%E</tt>, <tt>\%f</tt>, <tt>\%F</tt>,
+     * <tt>\%g</tt>, <tt>\%G</tt></td><td>Format a <tt>double</tt> (user-level
+     * only).</td></tr>
      *
-     * <tr><td><tt>%{...}</tt><td>Call a user-provided conversion function.
-     * For example, <tt>%{ip_ptr}</tt> reads an <tt>IPAddress *</tt> argument
+     * <tr><td><tt>\%{...}</tt><td>Call a user-provided conversion function.
+     * For example, <tt>\%{ip_ptr}</tt> reads an <tt>IPAddress *</tt> argument
      * from the argument list, and formats the pointed-to address using
      * IPAddress::unparse().</td></tr>
      *
-     * <tr><td><tt>%%</tt></td><td>Format a literal % character.</td></tr>
+     * <tr><td><tt>\%\%</tt></td><td>Format a literal \% character.</td></tr>
      *
      * </table> */
     static String format(const char *fmt, ...);
@@ -411,8 +412,8 @@ class ErrorHandler { public:
      * strings and value pointers, terminated by a null character pointer.
      * Each C string is an annotation name.  The corresponding annotation
      * value, if found, is stored as a String object in the value pointer.
-     * You can also store the @tt int value of an annotation by prefixing an
-     * annotation name with the '#' character.
+     * You can also store the <tt>int</tt> value of an annotation by prefixing
+     * an annotation name with the '#' character.
      *
      * For example:
      * @code
