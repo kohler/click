@@ -13,6 +13,11 @@
 #if CLICK_LINUXMODULE || (CLICK_USERLEVEL && HAVE_MULTITHREAD)
 # define CLICK_MULTITHREAD_SPINLOCK 1
 #endif
+#if CLICK_USERLEVEL && !NDEBUG
+# define SPINLOCK_ASSERTLEVEL "<-999>"
+#else
+# define SPINLOCK_ASSERTLEVEL "<1>"
+#endif
 CLICK_DECLS
 
 /** @file <click/sync.hh>
@@ -79,7 +84,7 @@ Spinlock::~Spinlock()
 {
 #if CLICK_MULTITHREAD_SPINLOCK
     if (_depth != 0)
-	click_chatter("warning: freeing unreleased lock");
+	click_chatter(SPINLOCK_ASSERTLEVEL "Spinlock::~Spinlock(): assertion \"_depth == 0\" failed");
 #endif
 }
 
@@ -140,14 +145,14 @@ Spinlock::release()
 {
 #if CLICK_MULTITHREAD_SPINLOCK
     if (unlikely(_owner != click_current_processor()))
-	click_chatter("releasing someone else's lock");
+	click_chatter(SPINLOCK_ASSERTLEVEL "Spinlock::release(): assertion \"owner == click_current_processor()\" failed");
     if (likely(_depth > 0)) {
 	if (--_depth == 0) {
 	    _owner = click_invalid_processor();
 	    _lock = 0;
 	}
     } else
-	click_chatter("lock already released");
+	click_chatter(SPINLOCK_ASSERTLEVEL "Spinlock::release(): assertion \"_depth > 0\" failed");
     click_put_processor();
 #endif
 }
@@ -452,4 +457,5 @@ ReadWriteLock::release_write()
 }
 
 CLICK_ENDDECLS
+#undef SPINLOCK_ASSERTLEVEL
 #endif
