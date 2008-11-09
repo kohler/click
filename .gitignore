@@ -1,7 +1,8 @@
-config.log
 config.cache
-config.status
 config.h
+config.log
+config.mk
+config.status
 click-buildtool
 click-compile
 elementmap
@@ -14,3 +15,4 @@ man
 autom4te*
 +*
 depcomp
+installch
