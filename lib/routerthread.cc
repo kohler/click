@@ -151,8 +151,12 @@ RouterThread::driver_lock_tasks()
 	select(0, 0, 0, 0, &waiter);
     }
 #endif
-    while (!_task_blocker.compare_and_swap(0, (uint32_t) -1))
-	/* do nothing */;
+
+    while (!_task_blocker.compare_and_swap(0, (uint32_t) -1)) {
+#if CLICK_LINUXMODULE
+	schedule();
+#endif
+    }
 }
 
 inline void
