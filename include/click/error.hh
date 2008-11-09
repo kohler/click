@@ -400,7 +400,7 @@ class ErrorHandler { public:
     /** @brief Parse error annotations from a string.
      * @param str the string
      * @param begin pointer within @a str to start of annotation area
-     * @param end pointer within @a str to end of annotation area
+     * @param end pointer to end of error region, usually @a str.end()
      * @return pointer to first character after annotation area
      * @pre @a str.begin() <= {@a begin, @a end} <= @a str.end()
      * @post @a begin <= returned value <= @a end
