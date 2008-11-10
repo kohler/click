@@ -88,7 +88,7 @@ int simclick_click_create(simclick_node_t *simnode, const char* router_file) {
     static bool didinit = false;
 
     setsimstate(simnode);
-    
+
     if (!didinit) {
 	click_static_initialize();
 	didinit = true;
@@ -99,7 +99,7 @@ int simclick_click_create(simclick_node_t *simnode, const char* router_file) {
     // lex
     ErrorHandler *errh = ErrorHandler::default_handler();
     int before = errh->nerrors();
-    
+
     Router *r = click_read_router(router_file, false, errh, false);
     simnode->clickinfo = r;
     if (!r)
@@ -218,7 +218,7 @@ int simclick_click_command(simclick_node_t *, int cmd, ...)
     va_list val;
     va_start(val, cmd);
     int r;
-    
+
     if (cmd == SIMCLICK_VERSION)
 	r = 0;
     else if (cmd == SIMCLICK_SUPPORTS) {

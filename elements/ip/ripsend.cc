@@ -60,7 +60,7 @@ RIPSend::run_timer(Timer *)
 {
   WritablePacket *p = Packet::make(sizeof(click_ip) + sizeof(click_udp) + 24);
   memset(p->data(), '\0', p->length());
-  
+
   /* for now just pseudo-header fields for UDP checksum */
   click_ip *ipp = reinterpret_cast<click_ip *>(p->data());
   ipp->ip_len = htons(p->length() - sizeof(*ipp));
@@ -90,9 +90,9 @@ RIPSend::run_timer(Timer *)
   ipp->ip_v = 4;
   ipp->ip_ttl = 200;
   ipp->ip_sum = click_in_cksum((unsigned char *) ipp, sizeof(*ipp));
-  
+
   p->set_ip_header(ipp, sizeof(click_ip));
-  
+
   output(0).push(p);
 
   _timer.schedule_after_msec(30 * 1000);

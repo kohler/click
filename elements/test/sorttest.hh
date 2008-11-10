@@ -77,7 +77,7 @@ class SortTest : public Element { public:
 #endif
 
     int initialize_vec(ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

@@ -49,7 +49,7 @@ DynamicUDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 		   "INTERVAL", cpkP, cpUnsigned, &_interval,
 		   cpEnd) < 0)
     return -1;
-  
+
   _id = 0;
   _cksum = do_cksum;
   _count = 0;
@@ -66,7 +66,7 @@ DynamicUDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
       errh->message("(Try passing the configuration through `click-align'.)");
   }
 #endif
-  
+
   return 0;
 }
 
@@ -99,7 +99,7 @@ DynamicUDPIPEncap::simple_action(Packet *p_in)
 #ifdef CLICK_LINUXMODULE
   }
 #endif
-  
+
   p->set_dst_ip_anno(IPAddress(_daddr));
   p->set_ip_header(ip, sizeof(click_ip));
 
@@ -113,7 +113,7 @@ DynamicUDPIPEncap::simple_action(Packet *p_in)
     unsigned csum = click_in_cksum((unsigned char *)udp, len);
     udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
   }
- 
+
   unsigned old_count = _count.fetch_and_add(1);
   if (old_count == _interval-1 && _interval > 0) {
     _sport ++;

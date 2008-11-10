@@ -12,7 +12,7 @@ class ddecor { public:
     ddecor(ddecor *next)
 	: _next(next) {
     }
-    
+
     virtual ~ddecor() {
     }
 
@@ -32,7 +32,7 @@ class ddecor { public:
 	    dd = dd->_next;
 	}
     }
-    
+
     static void free_list(ddecor *&dd) {
 	while (dd) {
 	    ddecor *n = dd->_next;
@@ -40,11 +40,11 @@ class ddecor { public:
 	    dd = n;
 	}
     }
-    
+
   private:
-    
+
     ddecor *_next;
-    
+
 };
 
 
@@ -62,7 +62,7 @@ class dfullness_decor : public ddecor { public:
     double _capacity;
     double _hvalue;
     double _drawn;
-    
+
 };
 
 
@@ -75,7 +75,7 @@ class dactivity_decor : public ddecor { public:
     void notify(crouter *cr, delt *e, handler_value *hv);
 
     gboolean on_decay();
-    
+
   private:
 
     PermString _name;
@@ -97,7 +97,7 @@ class dactivity_decor : public ddecor { public:
     guint _decay_source;
 
     double clean_samples(double now, bool want_prev);
-    
+
 };
 
 }

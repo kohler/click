@@ -23,7 +23,7 @@ Arguments are:
 How many bytes in the packet to put the seuqnce number. Default is 22.
 
 =item BYTES
-How many bytes the sequence number should use. Values can be 
+How many bytes the sequence number should use. Values can be
 2 or 4. Default is 2.
 
 =item SHIFT
@@ -39,7 +39,7 @@ Sets or reads the next sequence number
 =a WifiEncap */
 
 class WifiSeq : public Element { public:
-  
+
   WifiSeq();
   ~WifiSeq();
 

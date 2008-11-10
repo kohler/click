@@ -39,24 +39,24 @@ For IP packets you probably want to use ARPQuerier instead.
 EtherEncap */
 
 class EnsureEther : public Element { public:
-  
+
   EnsureEther();
   ~EnsureEther();
 
   const char *class_name() const	{ return "EnsureEther"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
 
   Packet *smaction(Packet *);
   void push(int, Packet *);
   Packet *pull(int);
-  
+
  private:
 
   click_ether _ethh;
-  
+
 };
 
 CLICK_ENDDECLS

@@ -78,7 +78,7 @@ class PokeHandlers : public Element { public:
     ~PokeHandlers();
 
     const char *class_name() const		{ return "PokeHandlers"; }
-    
+
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     bool can_live_reconfigure() const		{ return true; }
@@ -96,7 +96,7 @@ class PokeHandlers : public Element { public:
     Vector<Element *> _h_element;
     Vector<String> _h_handler;
     Vector<String> _h_value;
-  
+
     Vector<int> _h_timeout;
     Timer _timer;
 

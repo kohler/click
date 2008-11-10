@@ -80,7 +80,7 @@ class CheckPacket : public Element { public:
     uint8_t _data_op;
     uint8_t _length_op;
     bool _do_align : 1;
-    
+
 };
 
 CLICK_ENDDECLS

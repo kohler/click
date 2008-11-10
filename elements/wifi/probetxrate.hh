@@ -54,15 +54,15 @@ and a wifi-enabled kernel module. (like hostap or airo).
 
 
 class ProbeTXRate : public Element { public:
-  
+
   ProbeTXRate();
   ~ProbeTXRate();
-  
+
   const char *class_name() const		{ return "ProbeTXRate"; }
   const char *port_count() const		{ return "2/0-2"; }
   const char *processing() const		{ return "ah/a"; }
   const char *flow_code() const			{ return "#/#"; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
 
@@ -88,10 +88,10 @@ class ProbeTXRate : public Element { public:
     int _time;
     int _tries;
 
-    tx_result(const Timestamp &t, int rate, 
-	      bool success, int time, int tries) : 
-      _when(t), 
-      _rate(rate), 
+    tx_result(const Timestamp &t, int rate,
+	      bool success, int time, int tries) :
+      _when(t),
+      _rate(rate),
       _success(success),
       _time(time),
       _tries(tries)
@@ -99,7 +99,7 @@ class ProbeTXRate : public Element { public:
     tx_result() {}
   };
 
-  
+
   struct DstInfo {
   public:
 
@@ -107,7 +107,7 @@ class ProbeTXRate : public Element { public:
     DEQueue<tx_result> _results;
 
     Vector<int> _rates;
-    
+
     Vector<int> _packets;
     Vector<int> _total_time;
     Vector<int> _total_success;
@@ -117,10 +117,10 @@ class ProbeTXRate : public Element { public:
 
 
     unsigned _count;
-    DstInfo() { 
+    DstInfo() {
     }
 
-    DstInfo(EtherAddress eth, Vector<int> rates) { 
+    DstInfo(EtherAddress eth, Vector<int> rates) {
       _eth = eth;
       _rates = rates;
       _packets = Vector<int>(_rates.size(), 0);
@@ -164,7 +164,7 @@ class ProbeTXRate : public Element { public:
 	  }
 	  sum_time += _results[y]._time;
 	}
-      
+
       if (sum_success != _total_success[x]) {
 	click_chatter("rate %d mismatch success %d %d\n",
 		      _rates[x],
@@ -197,7 +197,7 @@ class ProbeTXRate : public Element { public:
       } else {
 	_total_fail[ndx]++;
       }
-      _results.push_back(tx_result(now, rate, 
+      _results.push_back(tx_result(now, rate,
 				   success, time, tries));
     }
 
@@ -211,7 +211,7 @@ class ProbeTXRate : public Element { public:
 	int ndx = rate_index(t._rate);
 
 	if (ndx < 0 || ndx >= _rates.size()) {
-	  click_chatter("%s: ???", 
+	  click_chatter("%s: ???",
 			__func__);
 	  continue;
 	}
@@ -223,7 +223,7 @@ class ProbeTXRate : public Element { public:
 	_packets[ndx]--;
 	_total_time[ndx] -= t._time;
 	_total_tries[ndx] -= t._tries;
-	
+
       }
     }
 
@@ -231,7 +231,7 @@ class ProbeTXRate : public Element { public:
       if (!_total_success[ndx]) {
 	return 0;
       }
-      
+
       return _total_time[ndx] / _total_success[ndx];
     }
 
@@ -268,16 +268,16 @@ class ProbeTXRate : public Element { public:
       int best_ndx = best_rate_ndx();
 
       if (_rates.size() == 0) {
-	click_chatter("no rates to pick from for %s\n", 
+	click_chatter("no rates to pick from for %s\n",
 		      _eth.unparse().c_str());
 	return _rates;
       }
-      
+
       if (best_ndx < 0) {
 	/* no rate has had a successful packet yet */
 	return _rates;
       }
-      
+
       int best_time = average(best_ndx);
       Vector<int> possible_rates;
       for (int x = 0; x < _rates.size(); x++) {
@@ -285,18 +285,18 @@ class ProbeTXRate : public Element { public:
 	  /* couldn't possibly be better */
 	  continue;
 	}
-	
+
 	if (_total_fail[x] > 3 && !_total_success[x]) {
 	  continue;
 	}
 	possible_rates.push_back(_rates[x]);
       }
-      
+
       return possible_rates;
 
     }
-    
-    
+
+
   };
   typedef HashMap<EtherAddress, DstInfo> NeighborTable;
   typedef NeighborTable::const_iterator NIter;

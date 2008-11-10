@@ -98,11 +98,11 @@ affine::rotate(double r)
 {
     double c = cos(r);
     double s = sin(r);
-    
+
     double a = _m[0], b = _m[2];
     _m[0] = a*c + b*s;
     _m[2] = b*c - a*s;
-    
+
     a = _m[1], b = _m[3];
     _m[1] = a*c + b*s;
     _m[3] = b*c - a*s;

@@ -25,7 +25,7 @@ CLICK_DECLS
 
 /*
  * At this point, I have to ask myself, ``is this really making your
- * life easier?''.  Also, of course, WWRD (what would Roger do?).  
+ * life easier?''.  Also, of course, WWRD (what would Roger do?).
  */
 
 static const GridHeaderInfo::info_t
@@ -33,7 +33,7 @@ handler_info_array[] = {
   { "grid_hdr_version"               , grid_hdr::GRID_VERSION           , 'h', -1 },
 
   { "grid_ether_proto"               , ETHERTYPE_GRID                   , 'h',  4 },
-  
+
   { "grid_proto_hello"               , grid_hdr::GRID_HELLO             , 'h',  2 },
   { "grid_proto_lr_hello"            , grid_hdr::GRID_LR_HELLO          , 'h',  2 },
   { "grid_proto_nbr_encap"           , grid_hdr::GRID_NBR_ENCAP         , 'h',  2 },
@@ -57,15 +57,15 @@ handler_info_array[] = {
 
   { "sizeof_linkstat_link_probe"     , LinkStat::link_probe::size       , 'd', -1 },
   { "sizeof_linkstat_link_entry"     , LinkStat::link_entry::size       , 'd', -1 },
- 	
+
   { "offsetof_grid_hdr_version"      , offsetof(grid_hdr, version)	, 'd', -1 },
   { "offsetof_grid_hdr_type"         , offsetof(grid_hdr, type)		, 'd', -1 },
   { "offsetof_grid_hdr_ip"           , offsetof(grid_hdr, ip)		, 'd', -1 },
   { "offsetof_grid_hdr_tx_ip"        , offsetof(grid_hdr, tx_ip)	, 'd', -1 },
   { "offsetof_grid_hdr_total_len"    , offsetof(grid_hdr, total_len)	, 'd', -1 },
- 	
+
   { "offsetof_grid_nbr_encap_dst_ip" , offsetof(grid_nbr_encap, dst_ip)	, 'd', -1 },
- 	
+
   { "offsetof_grid_loc_query_dst_ip" , offsetof(grid_loc_query, dst_ip) , 'd', -1 },
 };
 
@@ -120,7 +120,7 @@ ghi_read_handler(Element *, void *v)
 void
 GridHeaderInfo::add_handlers()
 {
-  for (unsigned int i = 0; i < sizeof(handler_info_array)/sizeof(GridHeaderInfo::info_t); i++) 
+  for (unsigned int i = 0; i < sizeof(handler_info_array)/sizeof(GridHeaderInfo::info_t); i++)
     add_read_handler(handler_info_array[i].name, ghi_read_handler, (void *) i);
 }
 

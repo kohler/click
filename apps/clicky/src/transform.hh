@@ -13,11 +13,11 @@ class affine { public:
 
     static affine mapping(const point &from1, const point &to1,
 			  const point &from2, const point &to2);
-    
+
     double operator[](int i) const	{ assert(i>=0&&i<6); return _m[i]; }
     bool null() const			{ return _null; }
     void check_null(double tolerance);
-  
+
     void scale(double, double);
     void scale(const point &p)			{ scale(p.x(), p.y()); }
     void scale(double d)			{ scale(d, d); }

@@ -530,7 +530,7 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
     return message(fd, CSERR_UNIMPLEMENTED, "Cannot call LLRPC '" + llrpcname + "' remotely");
 
   if (_read_only)		// can't tell whether an LLRPC is read-only;
-    				// so disallow them all
+				// so disallow them all
     return message(fd, CSERR_PERMISSION, "Permission denied for '" + llrpcname + "'");
 
   if ((command & _CLICK_IOC_IN) && data.length() != size)

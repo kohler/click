@@ -58,9 +58,9 @@ String unparse_beacon(Packet *p) {
   uint8_t *ptr;
   struct click_wifi *w = (struct click_wifi *) p->data();
   StringAccum sa;
-  
+
   ptr = (uint8_t *) (w+1);
-  
+
   //uint8_t *ts = ptr;
   ptr += 8;
 
@@ -133,7 +133,7 @@ String unparse_beacon(Packet *p) {
   if (rates_l) {
     for (int x = 0; x < min((int)rates_l[1], WIFI_RATE_SIZE); x++) {
       uint8_t rate = rates_l[x + 2];
-      
+
       if (rate & WIFI_RATE_BASIC) {
 	basic_rates.push_back((int)(rate & WIFI_RATE_VAL));
       } else {
@@ -142,11 +142,11 @@ String unparse_beacon(Packet *p) {
     }
   }
 
-  
+
   if (xrates_l) {
     for (int x = 0; x < min((int)xrates_l[1], WIFI_RATE_SIZE); x++) {
       uint8_t rate = xrates_l[x + 2];
-      
+
       if (rate & WIFI_RATE_BASIC) {
 	basic_rates.push_back((int)(rate & WIFI_RATE_VAL));
       } else {
@@ -154,8 +154,8 @@ String unparse_beacon(Packet *p) {
       }
     }
   }
-  
- 
+
+
   sa << "[ ";
   if (capability & WIFI_CAPINFO_ESS) {
     sa << "ESS ";
@@ -173,7 +173,7 @@ String unparse_beacon(Packet *p) {
     sa << "PRIVACY ";
   }
   sa << "] ";
-  
+
   sa << "({";
   for (int x = 0; x < basic_rates.size(); x++) {
     sa << basic_rates[x];
@@ -188,9 +188,9 @@ String unparse_beacon(Packet *p) {
       sa << " ";
     }
   }
-  
+
   sa << ")";
-  
+
   return sa.take_string();
 }
 
@@ -226,7 +226,7 @@ String status_string(int status) {
   case WIFI_STATUS_TOO_MANY_STATIONS: return "too_many_stations";
   case WIFI_STATUS_RATES: return "rates";
   case WIFI_STATUS_SHORTSLOT_REQUIRED: return "shortslot_required";
-  default: return "unknown status " + String(status);    
+  default: return "unknown status " + String(status);
   }
 }
 String capability_string(int capability) {
@@ -265,7 +265,7 @@ String get_ssid(u_int8_t *ptr) {
   if (ptr[0] != WIFI_ELEMID_SSID) {
     return "(invalid ssid)";
   }
-  return String((char *) ptr + 2, min((int)ptr[1], WIFI_NWID_MAXSIZE));  
+  return String((char *) ptr + 2, min((int)ptr[1], WIFI_NWID_MAXSIZE));
 }
 
 Vector<int> get_rates(u_int8_t *ptr) {
@@ -338,7 +338,7 @@ PrintWifi::simple_action(Packet *p)
     sa.adjust_length(len);
   }
   sa << "Mb ";
-  
+
   len = sprintf(sa.reserve(9), "+%2d/", ceh->rssi);
   sa.adjust_length(len);
 
@@ -381,7 +381,7 @@ PrintWifi::simple_action(Packet *p)
     case WIFI_FC0_SUBTYPE_ASSOC_REQ: {
       uint16_t capability = le16_to_cpu(*(uint16_t *) ptr);
       ptr += 2;
-      
+
       uint16_t l_int = le16_to_cpu(*(uint16_t *) ptr);
       ptr += 2;
 
@@ -400,16 +400,16 @@ PrintWifi::simple_action(Packet *p)
       break;
 
     }
-    case WIFI_FC0_SUBTYPE_ASSOC_RESP: {     
+    case WIFI_FC0_SUBTYPE_ASSOC_RESP: {
       uint16_t capability = le16_to_cpu(*(uint16_t *) ptr);
       ptr += 2;
-      
+
       uint16_t status = le16_to_cpu(*(uint16_t *) ptr);
       ptr += 2;
-      
+
       uint16_t associd = le16_to_cpu(*(uint16_t *) ptr);
       ptr += 2;
-      sa << "assoc_resp "; 
+      sa << "assoc_resp ";
       sa << capability_string(capability);
       sa << " status " << (int) status << " " << status_string(status);
       sa << " associd " << associd << " ";
@@ -418,7 +418,7 @@ PrintWifi::simple_action(Packet *p)
     case WIFI_FC0_SUBTYPE_REASSOC_REQ:    sa << "reassoc_req "; break;
     case WIFI_FC0_SUBTYPE_REASSOC_RESP:   sa << "reassoc_resp "; break;
     case WIFI_FC0_SUBTYPE_PROBE_REQ:      {
-      sa << "probe_req "; 
+      sa << "probe_req ";
       String ssid = get_ssid(ptr);
       ptr += ptr[1] + 2;
 
@@ -429,12 +429,12 @@ PrintWifi::simple_action(Packet *p)
       break;
 
     }
-    case WIFI_FC0_SUBTYPE_PROBE_RESP:     
-      sa << "probe_resp "; 
+    case WIFI_FC0_SUBTYPE_PROBE_RESP:
+      sa << "probe_resp ";
       sa << unparse_beacon(p);
       goto done;
-    case WIFI_FC0_SUBTYPE_BEACON:         
-      sa << "beacon "; 
+    case WIFI_FC0_SUBTYPE_BEACON:
+      sa << "beacon ";
       sa << unparse_beacon(p);
       goto done;
     case WIFI_FC0_SUBTYPE_ATIM:           sa << "atim "; break;
@@ -444,13 +444,13 @@ PrintWifi::simple_action(Packet *p)
       break;
     }
     case WIFI_FC0_SUBTYPE_AUTH: {
-      sa << "auth "; 
+      sa << "auth ";
       uint16_t algo = le16_to_cpu(*(uint16_t *) ptr);
       ptr += 2;
-      
+
       uint16_t seq = le16_to_cpu(*(uint16_t *) ptr);
       ptr += 2;
-      
+
       uint16_t status =le16_to_cpu(*(uint16_t *) ptr);
       ptr += 2;
       sa << "alg " << (int)  algo;

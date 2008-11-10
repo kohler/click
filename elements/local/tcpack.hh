@@ -51,11 +51,11 @@ private:
   bool _synack;
   bool _needack;
   unsigned _ack_nxt;
-  
+
   TCPBuffer *_tcpbuffer;
 
   unsigned _ackdelay_ms;
-  
+
   bool iput(Packet *);
   bool oput(Packet *);
   void send_ack();
@@ -63,7 +63,7 @@ private:
 public:
   TCPAck();
   ~TCPAck();
-  
+
   const char *class_name() const		{ return "TCPAck"; }
   const char *port_count() const		{ return "2/3"; }
   const char *processing() const		{ return "aa/aah"; }

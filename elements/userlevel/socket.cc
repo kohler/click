@@ -343,7 +343,7 @@ Socket::selected(int fd)
 
       if (_family == AF_INET) {
 	allow = allowed(IPAddress(from.in.sin_addr));
-	      
+
 	if (_verbose)
 	  click_chatter("%s: %s connection %d from %s:%d", declaration().c_str(),
 			allow ? "opened" : "denied",
@@ -433,7 +433,7 @@ Socket::write_packet(Packet *p)
 
   while (p->length()) {
     if (!IPAddress(_remote_ip) && _client && _family == AF_INET && _socktype != SOCK_STREAM) {
-      // If the IP address specified when the element was created is 0.0.0.0, 
+      // If the IP address specified when the element was created is 0.0.0.0,
       // send the packet to its IP destination annotation address
       _remote.in.sin_addr = p->dst_ip_anno();
     }

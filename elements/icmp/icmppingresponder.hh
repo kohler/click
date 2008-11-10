@@ -31,16 +31,16 @@ ICMPPingResponder does not pay attention to source route options; it should.
 ICMPSendPings, ICMPError */
 
 class ICMPPingResponder : public Element { public:
-  
+
   ICMPPingResponder();
   ~ICMPPingResponder();
-  
+
   const char *class_name() const	{ return "ICMPPingResponder"; }
   const char *port_count() const	{ return PORTS_1_1X2; }
-  const char *processing() const	{ return PROCESSING_A_AH; }  
+  const char *processing() const	{ return PROCESSING_A_AH; }
 
   Packet *simple_action(Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

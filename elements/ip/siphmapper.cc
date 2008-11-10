@@ -38,7 +38,7 @@ SourceIPHashMapper::cast(const char *name)
 int
 SourceIPHashMapper::parse_server (const String &conf, IPRw::Pattern **pstore,
 			      int *fport_store, int *rport_store,
-			      int *id_store, Element *e, 
+			      int *id_store, Element *e,
 			      ErrorHandler *errh)
 {
   Vector<String> words;
@@ -51,7 +51,7 @@ SourceIPHashMapper::parse_server (const String &conf, IPRw::Pattern **pstore,
     return errh->error("bad server ID in pattern spec");
   words.resize(words.size() - 1);
   *id_store = id;
-  return IPRw::Pattern::parse_with_ports (cp_unspacevec(words), pstore, 
+  return IPRw::Pattern::parse_with_ports (cp_unspacevec(words), pstore,
 					  fport_store,
 					  rport_store, e, errh);
 }
@@ -78,10 +78,10 @@ SourceIPHashMapper::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("number of nodes must be an integer");
   if (!cp_integer(params[1], &seed))
     return errh->error("hash seed must be an integer");
-  
+
   int idp = 0;
   unsigned short *ids = new unsigned short[conf.size ()];
-  
+
   for (int i = 1; i < conf.size(); i++) {
     IPRw::Pattern *p;
     int f, r, id;
@@ -94,7 +94,7 @@ SourceIPHashMapper::configure(Vector<String> &conf, ErrorHandler *errh)
     }
   }
 
-  if (_hasher) 
+  if (_hasher)
     delete (_hasher);
   _hasher = new chash_t<int> (idp, ids, nnodes, seed);
 
@@ -122,7 +122,7 @@ SourceIPHashMapper::notify_rewriter(IPRw *rw, ErrorHandler *errh)
 }
 
 IPRw::Mapping *
-SourceIPHashMapper::get_map(IPRw *rw, int ip_p, const IPFlowID &flow, 
+SourceIPHashMapper::get_map(IPRw *rw, int ip_p, const IPFlowID &flow,
 			    Packet *p)
 {
   const click_ip *iph = p->ip_header();
@@ -136,7 +136,7 @@ SourceIPHashMapper::get_map(IPRw *rw, int ip_p, const IPFlowID &flow,
   // note that this really isn't necessary for i386 alignment...
   tmp *= ((t2 << 24) | 0x1);
   tmp = tmp % INT_MAX;
-  
+
   int v = _hasher->hash2ind (tmp);
   IPRw::Pattern *pat = _patterns[v];
   int fport = _forward_outputs[v];

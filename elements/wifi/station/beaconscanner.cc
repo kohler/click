@@ -60,7 +60,7 @@ BeaconScanner::configure(Vector<String> &conf, ErrorHandler *errh)
 		   cpEnd) < 0)
     return -1;
 
-  if (_rtable && _rtable->cast("AvailableRates") == 0) 
+  if (_rtable && _rtable->cast("AvailableRates") == 0)
     return errh->error("AvailableRates element is not a AvailableRates");
 
   return 0;
@@ -99,7 +99,7 @@ BeaconScanner::simple_action(Packet *p)
   }
 
   uint8_t *ptr;
-  
+
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
   //uint8_t *ts = ptr;
@@ -177,7 +177,7 @@ BeaconScanner::simple_action(Packet *p)
   }
 
   struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
-  
+
   ap->_eth = bssid;
   if (ssid != "") {
     /* don't overwrite blank ssids */
@@ -195,7 +195,7 @@ BeaconScanner::simple_action(Packet *p)
   if (rates_l) {
     for (int x = 0; x < min((int)rates_l[1], WIFI_RATE_SIZE); x++) {
       uint8_t rate = rates_l[x + 2];
-      
+
       if (rate & WIFI_RATE_BASIC) {
 	ap->_basic_rates.push_back((int)(rate & WIFI_RATE_VAL));
       } else {
@@ -205,11 +205,11 @@ BeaconScanner::simple_action(Packet *p)
     }
   }
 
-  
+
   if (xrates_l) {
     for (int x = 0; x < min((int)xrates_l[1], WIFI_RATE_SIZE); x++) {
       uint8_t rate = xrates_l[x + 2];
-      
+
       if (rate & WIFI_RATE_BASIC) {
 	ap->_basic_rates.push_back((int)(rate & WIFI_RATE_VAL));
       } else {
@@ -222,7 +222,7 @@ BeaconScanner::simple_action(Packet *p)
   if (_rtable) {
     _rtable->insert(bssid, all_rates);
   }
-  
+
   return p;
 }
 
@@ -280,15 +280,15 @@ BeaconScanner::scan_string()
 }
 
 
-void 
-BeaconScanner::reset() 
+void
+BeaconScanner::reset()
 {
   _waps.clear();
 }
 
 enum {H_DEBUG, H_SCAN, H_RESET};
 
-static String 
+static String
 BeaconScanner_read_param(Element *e, void *thunk)
 {
   BeaconScanner *td = (BeaconScanner *)e;
@@ -301,7 +301,7 @@ BeaconScanner_read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 BeaconScanner_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -310,7 +310,7 @@ BeaconScanner_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -321,7 +321,7 @@ BeaconScanner_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 BeaconScanner::add_handlers()
 {

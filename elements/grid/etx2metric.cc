@@ -18,7 +18,7 @@
 #include <click/error.hh>
 #include "elements/grid/etx2metric.hh"
 #include "elements/grid/linkstat.hh"
-CLICK_DECLS 
+CLICK_DECLS
 
 ETX2Metric::ETX2Metric()
   : _ls_data(0), _ls_ack(0)
@@ -30,7 +30,7 @@ ETX2Metric::~ETX2Metric()
 }
 
 void *
-ETX2Metric::cast(const char *n) 
+ETX2Metric::cast(const char *n)
 {
   if (strcmp(n, "ETX2Metric") == 0)
     return (ETX2Metric *) this;
@@ -49,11 +49,11 @@ ETX2Metric::configure(Vector<String> &conf, ErrorHandler *errh)
 			 cpEnd);
   if (res < 0)
     return res;
-  if (_ls_data == 0) 
+  if (_ls_data == 0)
     errh->error("no data size LinkStat element specified");
   if (_ls_data->cast("LinkStat") == 0)
     return errh->error("data size LinkStat argument is wrong element type (should be LinkStat)");
-  if (_ls_ack == 0) 
+  if (_ls_ack == 0)
     errh->error("no ACK size LinkStat element specified");
   if (_ls_ack->cast("LinkStat") == 0)
     return errh->error("ACK size LinkStat argument is wrong element type (should be LinkStat)");
@@ -67,7 +67,7 @@ ETX2Metric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
   return m1.val() < m2.val();
 }
 
-GridGenericMetric::metric_t 
+GridGenericMetric::metric_t
 ETX2Metric::get_link_metric(const EtherAddress &e, bool data_sender) const
 {
   unsigned tau_foo;
@@ -75,7 +75,7 @@ ETX2Metric::get_link_metric(const EtherAddress &e, bool data_sender) const
   unsigned r_data, r_ack;
 
 
-  bool res_data = data_sender ? 
+  bool res_data = data_sender ?
     _ls_data->get_forward_rate(e, &r_data, &tau_foo, &t_foo) :
     _ls_data->get_reverse_rate(e, &r_data, &tau_foo);
 
@@ -96,7 +96,7 @@ ETX2Metric::get_link_metric(const EtherAddress &e, bool data_sender) const
   unsigned val = (100 * 100 * 100) / (r_data * r_ack);
   assert(val >= 100);
 
-  return metric_t(val);      
+  return metric_t(val);
 }
 
 GridGenericMetric::metric_t
@@ -104,7 +104,7 @@ ETX2Metric::append_metric(const metric_t &r, const metric_t &l) const
 {
   if (!r.good() || !l.good())
     return _bad_metric;
-  
+
   if (r.val() < 100)
     click_chatter("ETX2Metric %s: append_metric WARNING: metric %u%% transmissions is too low for route metric",
 		  name().c_str(), r.val());

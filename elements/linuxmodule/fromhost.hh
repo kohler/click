@@ -91,7 +91,7 @@ class FromHost : public AnyDevice { public:
     ~FromHost();
 
     static void static_initialize();
-    
+
     const char *class_name() const	{ return "FromHost"; }
     const char *port_count() const	{ return "0/1-2"; }
     const char *processing() const	{ return PUSH; }
@@ -106,7 +106,7 @@ class FromHost : public AnyDevice { public:
     int set_device_addresses(ErrorHandler *);
 
     bool run_task(Task *);
-    
+
   private:
 
     EtherAddress _macaddr;
@@ -122,7 +122,7 @@ class FromHost : public AnyDevice { public:
 
     net_device *new_device(const char *);
     static int fl_tx(struct sk_buff *, net_device *);
-    
+
 };
 
 #endif

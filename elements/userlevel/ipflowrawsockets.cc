@@ -52,7 +52,7 @@ IPFlowRawSockets::Flow::Flow(const Packet *p)
 {
     if (PAINT_ANNO(p) & 1)	// reverse _flowid
 	_flowid = _flowid.rev();
-    
+
     // sanity checks
     assert(_aggregate && (_ip_p == IP_PROTO_TCP || _ip_p == IP_PROTO_UDP));
 }
@@ -246,7 +246,7 @@ IPFlowRawSockets::find_aggregate(uint32_t agg, const Packet *p)
 {
     if (agg == 0)
 	return 0;
-    
+
     int bucket = (agg & (NFLOWMAP - 1));
     Flow *prev = 0, *f = _flowmap[bucket];
     while (f && f->aggregate() != agg) {
@@ -275,7 +275,7 @@ IPFlowRawSockets::find_aggregate(uint32_t agg, const Packet *p)
 	f->set_next(_flowmap[bucket]);
 	_flowmap[bucket] = f;
     }
-    
+
     return f;
 }
 

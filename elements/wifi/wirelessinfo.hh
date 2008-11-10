@@ -15,7 +15,7 @@ WirelessInfo([I<keywords CHANNEL, SSID, BSSID, INTERVAL])
 
 Tracks 802.11 configuration information (ssid, etc).
 
-=d 
+=d
 
 Tracks 80.211 configuration. Similar to what you can specify with 'iwconfig' in linux. Does not process packets.
 
@@ -33,13 +33,13 @@ Argument is a string.
 
 =item BSSID
 
-Argument is an Ethernet Address. 
+Argument is an Ethernet Address.
 
 =item INTERVAL
 
 Beacon interval for access points, in milliseconds.
 
-=back 
+=back
 
 =h ssid read/write
 
@@ -61,16 +61,16 @@ Same as 'INTERVAL'.
 
 
 class WirelessInfo : public Element { public:
-  
+
   WirelessInfo();
   ~WirelessInfo();
-  
+
   const char *class_name() const		{ return "WirelessInfo"; }
   const char *port_count() const		{ return PORTS_0_0; }
 
   int configure(Vector<String> &, ErrorHandler *);
   void add_handlers();
-  
+
   static String read_param(Element *, void *);
   static int write_param(const String &in_s, Element *, void *, ErrorHandler *);
 

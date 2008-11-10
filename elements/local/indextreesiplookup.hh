@@ -49,7 +49,7 @@ class IndexTreesIPLookup : public Element {
 public:
   IndexTreesIPLookup();
   ~IndexTreesIPLookup();
-  
+
   const char *class_name() const	{ return "IndexTreesIPLookup"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
@@ -62,7 +62,7 @@ public:
 
 private:
   TreeNode* _trees[INDEX_SIZE];
-  
+
   static const int INDEX_SIZE = 256;
   static int hash(unsigned a) { return ((a>>24)&255); }
 };

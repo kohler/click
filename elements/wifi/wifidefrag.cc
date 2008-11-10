@@ -113,7 +113,7 @@ WifiDefrag::simple_action(Packet *p)
 		    seq,
 		    frag);
     }
-    
+
   } else {
     /* copy frag to other packet */
     assert(nfo->p);
@@ -122,14 +122,14 @@ WifiDefrag::simple_action(Packet *p)
     p->pull(sizeof(click_wifi));
     nfo->p->put(p->length());
     memcpy((void *) (nfo->p->data() + len), p->data(), p->length());
-    p->kill();      
+    p->kill();
   }
 
   if (more_frag) {
     nfo->next_frag++;
     return 0;
   }
-   
+
   if (_debug) {
     click_chatter("%{element}: last frag %s seq %d frag %d\n",
 		  this,
@@ -154,7 +154,7 @@ WifiDefrag::simple_action(Packet *p)
 
 enum {H_DEBUG, };
 
-String 
+String
 WifiDefrag::read_param(Element *e, void *thunk)
 {
   WifiDefrag *td = (WifiDefrag *)e;
@@ -165,7 +165,7 @@ WifiDefrag::read_param(Element *e, void *thunk)
       return String();
     }
 }
-int 
+int
 WifiDefrag::write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -174,7 +174,7 @@ WifiDefrag::write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -182,7 +182,7 @@ WifiDefrag::write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 WifiDefrag::add_handlers()
 {

@@ -64,7 +64,7 @@ RawSocket::configure(Vector<String> &conf, ErrorHandler *errh)
     parsecmd = cpTCPPort;
   else if (conf.size() && conf[0].upper() == "UDP")
     parsecmd = cpUDPPort;
-  
+
   String socktype;
   if (cp_va_kparse(conf, this, errh,
 		   "TYPE", cpkP+cpkM, cpString, &socktype,
@@ -214,7 +214,7 @@ RawSocket::selected(int fd)
       p = input(0).pull();
     }
     if (p) {
-      // cast to int so very large plen is interpreted as negative 
+      // cast to int so very large plen is interpreted as negative
       if ((int)p->length() < (int)sizeof(click_ip)) {
 	errh->error("runt IP packet (%d bytes)", p->length());
 	p->kill();

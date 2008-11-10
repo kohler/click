@@ -6,7 +6,7 @@ CLICK_DECLS
 class HandlerProxy : public Element { public:
 
     typedef ErrorHandler* (*ErrorReceiverHook)(const String&, void*);
-  
+
     HandlerProxy();
     ~HandlerProxy();
 
@@ -14,7 +14,7 @@ class HandlerProxy : public Element { public:
     virtual int remove_error_receiver(ErrorReceiverHook, void*);
 
     virtual int check_handler(const String&, bool write, ErrorHandler*);
-  
+
     enum {
 	CSERR_OK		= 200,
 	CSERR_SYNTAX		= 500,
@@ -25,17 +25,17 @@ class HandlerProxy : public Element { public:
 	CSERR_NO_ROUTER		= 540,
 	CSERR_UNSPECIFIED	= 590
     };
-  
+
   protected:
 
     struct ErrorReceiver {
 	ErrorReceiverHook hook;
 	void* thunk;
     };
-  
+
     ErrorReceiver* _err_rcvs;
     int _nerr_rcvs;
-  
+
 };
 
 CLICK_ENDDECLS

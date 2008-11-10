@@ -15,13 +15,13 @@ CLICK_DECLS
  * =s Grid
  * Maintains an ARP table for DSR.
  *
- * =d 
- * 
+ * =d
+ *
  * Packets with ethernet headers pushed into input 2 are sent out
  * unchanged on output 2.  IP<->MAC address entries are added to the
  * ARP table for each pushed packet's source MAC address and source IP
  * address (derived from the various DSR option headers).
- * 
+ *
  * Pulls on outputs 0 and 1 pull packets from inputs 0 and 1,
  * respectively.  The pulled packets have a link-level MAC header
  * added to them and are sent out output 0.  The destination MAC
@@ -59,7 +59,7 @@ CLICK_DECLS
  * This node's IP address.
  *
  * =item ETHER
- * 
+ *
  * This node's ethernet address.
  *
  * =back
@@ -68,24 +68,24 @@ CLICK_DECLS
 
 /*
   todo: timeout entries.  the pull/push thing is retarded, but i
-  expect this element to be folded into routetable anyway.  see 
-  also the todo list in dsrroutetable.hh.  
+  expect this element to be folded into routetable anyway.  see
+  also the todo list in dsrroutetable.hh.
 */
 
 class DSRArpTable : public Element
-{      
+{
 
 public:
-  
+
   DSRArpTable();
   ~DSRArpTable();
-  
+
   const char *class_name() const	{ return "DSRArpTable"; }
   const char *port_count() const	{ return "3/3"; }
   const char *processing() const	{ return "llh/llh"; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *errh); 
+  int initialize(ErrorHandler *errh);
 
   Packet *pull(int);
   void push(int, Packet *);

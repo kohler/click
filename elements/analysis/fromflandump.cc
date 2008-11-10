@@ -57,7 +57,7 @@ FromFlanDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool stop = false, active = true;
     bool have_packets, packets, have_flows, flows;
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "FILENAME", cpkP+cpkM, cpFilename, &_dirname,
 		     "STOP", 0, cpBool, &stop,
@@ -104,7 +104,7 @@ FromFlanDump::FlanFile::open(const String &basename, const String &filename, int
 {
     assert(!_pipe && _fd < 0);
     _record_size = record_size;
-    
+
     String path = basename;
     if (basename.back() != '/')
 	path += "/";
@@ -143,7 +143,7 @@ FromFlanDump::FlanFile::read_more(off_t start_off)
 
     _offset += _len;
     _len = 0;
-    
+
     while (_len < BUFFER_SIZE) {
 	ssize_t got = read(_fd, _buffer + _len, BUFFER_SIZE - _len);
 	if (got > 0)
@@ -170,7 +170,7 @@ FromFlanDump::error_helper(ErrorHandler *errh, const char *x)
 int
 FromFlanDump::initialize(ErrorHandler *errh)
 {
-    
+
     if (_filename == "-") {
 	_fd = STDIN_FILENO;
 	_filename = "<stdin>";
@@ -203,7 +203,7 @@ FromFlanDump::initialize(ErrorHandler *errh)
 	_fd = fileno(_pipe);
 	goto retry_file;
     }
-    
+
     // if forcing IP packets, check datalink type to ensure we understand it
     if (_force_ip) {
 	if (!fake_pcap_dlt_force_ipable(_linktype))
@@ -215,7 +215,7 @@ FromFlanDump::initialize(ErrorHandler *errh)
     // check handler call
     if (_last_time_h && _last_time_h->initialize_write(this, errh) < 0)
 	return -1;
-    
+
     // try reading a packet
     _pos = 0;
     if (read_packet(errh)) {
@@ -268,7 +268,7 @@ FromFlanDump::read_flow_packet()
 	error_helper("out of memory!");
 	return 0;
     }
-    
+
     q->set_network_header(q->data(), sizeof(click_ip));
     click_ip *iph = q->ip_header();
     iph->ip_v = 4;
@@ -283,7 +283,7 @@ FromFlanDump::read_flow_packet()
 	tcph->th_sport = _ff[FF_SPORT]->read_uint16(_record);
     if (_ff[FF_DPORT])
 	tcph->th_dport = _ff[FF_DPORT]->read_uint16(_record);
-    
+
 }
 
 bool
@@ -300,7 +300,7 @@ FromFlanDump::read_packet(ErrorHandler *errh)
     // quit if we sampled or force_ip failed, but we are no longer active
     if (!more)
 	return false;
-    
+
     // we may need to read bits of the file
     if (_pos + sizeof(DAGCell) <= _len) {
 	cell = reinterpret_cast<const DAGCell *>(_buffer + _pos);
@@ -330,12 +330,12 @@ FromFlanDump::read_packet(ErrorHandler *errh)
 	// retry _last_time in case someone changed it
 	goto check_times;
     }
-    
+
     // checking sampling probability
     if (_sampling_prob < (1 << SAMPLING_SHIFT)
 	&& (click_random() & ((1<<SAMPLING_SHIFT)-1)) >= _sampling_prob)
 	goto retry;
-    
+
     // create packet
     if (cell != &static_cell) {
 	p = _data_packet->clone();
@@ -345,7 +345,7 @@ FromFlanDump::read_packet(ErrorHandler *errh)
 	}
 	p->shrink_packet(_pos - sizeof(DAGCell) + DAGCell::PAYLOAD_OFFSET, sizeof(DAGCell) - DAGCell::PAYLOAD_OFFSET);
 	p->set_timestamp_anno(tv);
-	
+
     } else {
 	WritablePacket *wp = Packet::make(0, 0, sizeof(DAGCell) - DAGCell::PAYLOAD_OFFSET, 0);
 	if (!wp) {
@@ -354,7 +354,7 @@ FromFlanDump::read_packet(ErrorHandler *errh)
 	}
 	memcpy(wp->data(), &cell->payload, sizeof(cell->payload));
 	wp->set_timestamp_anno(tv);
-	
+
 	p = wp;
     }
 

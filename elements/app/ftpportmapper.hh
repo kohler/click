@@ -96,7 +96,7 @@ class FTPPortMapper : public Element {
   IPRw::Pattern *_pattern;
   int _forward_port;
   int _reverse_port;
-  
+
  public:
 
   FTPPortMapper();
@@ -104,13 +104,13 @@ class FTPPortMapper : public Element {
 
   const char *class_name() const	{ return "FTPPortMapper"; }
   const char *port_count() const	{ return PORTS_1_1; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
-  
+
   Packet *simple_action(Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

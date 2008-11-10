@@ -134,10 +134,10 @@ cp_scanf(const char *begin, const char *end, const char *format, ...)
     bool must_space = false;
     uint32_t delimiters[8];
     bool know_delimiters = false;
-    
+
     va_list val;
     va_start(val, format);
-    
+
     for (s = begin; *format; format++)
 	if (*format == ' ') {
 	    if (must_space && format[1] != '%' && (s == end || !isspace((unsigned char) *s)))
@@ -253,7 +253,7 @@ IPField::parse(const char *begin, const char *end, int proto, IPField *result, E
     else if ((elim = cp_scanf(enam, end, " { %u - %u }", &offset, &length)))
 	length = length - offset + 1;
     else if (!field.ok()) {
-	click_chatter("%.*s", end - enam, enam); 
+	click_chatter("%.*s", end - enam, enam);
 	return cp_ip_field_helper(begin, 0, errh);}
     else
 	elim = enam;
@@ -267,7 +267,7 @@ IPField::parse(const char *begin, const char *end, int proto, IPField *result, E
 	field = IPField(header, offset, length);
     else if (!field.ok())
 	return cp_ip_field_helper(begin, 1, errh);
-    
+
     // limitations
     const char *epfx, *emask;
     if ((epfx = cp_scanf(elim, end, " / %u", &length))) {
@@ -294,7 +294,7 @@ IPField::unparse(Element *elt, bool tcpdump_rules)
 {
     if (!ok())
 	return String::make_stable("<bad>");
-    
+
     String protstr;
     int32_t val = proto();
     if (val == 0)
@@ -303,7 +303,7 @@ IPField::unparse(Element *elt, bool tcpdump_rules)
 	/* OK */;
     else
 	protstr = "ip proto " + String(proto());
-    
+
     String s;
     if ((s = NameInfo::revquery(NameInfo::T_IP_FIELDNAME + proto(), elt, &_val, 4)))
 	return protstr + " " + s;

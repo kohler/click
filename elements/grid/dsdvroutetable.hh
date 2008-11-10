@@ -19,7 +19,7 @@ CLICK_DECLS
  * =s Grid
  * Run DSDV local routing protocol
  *
- * =d 
+ * =d
  *
  * This is meant to be an `official' implementation of DSDV.  It is
  * intended to exactly replicate the behavior of DSDV as described in
@@ -38,7 +38,7 @@ CLICK_DECLS
  * =over 8
  *
  * =item TIMEOUT
- * 
+ *
  * Unsigned integer.  Milliseconds after which to expire route entries.
  *
  * =item PERIOD
@@ -74,7 +74,7 @@ CLICK_DECLS
  * gateway.
  *
  * =item MAX_HOPS
- * 
+ *
  * Unsigned integer.  The maximum number of hops for which a route
  * should propagate.  The default number of hops is 3.
  *
@@ -100,12 +100,12 @@ CLICK_DECLS
  * this element.
  *
  * =item WST0 (zero, not `oh')
- * 
+ *
  * Unsigned integer.  Initial weighted settling time in milliseconds.
  * Defaults to 6,000 (6 seconds).
  *
  * =item ALPHA
- * 
+ *
  * Unsigned integer.  DSDV settling time weighting parameter, in
  * percent, between 0 and 100 inclusive.  Defaults to 88%.
  *
@@ -194,7 +194,7 @@ class DSDVRouteTable : public GridGenericRouteTable {
 
 public:
   // generic rt methods
-  bool current_gateway(RouteEntry &entry);  
+  bool current_gateway(RouteEntry &entry);
   bool get_one_entry(const IPAddress &dest_ip, RouteEntry &entry);
   void get_all_entries(Vector<RouteEntry> &vec);
   unsigned get_number_direct_neigbors();
@@ -207,7 +207,7 @@ public:
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return "h/h"; }
   const char *flow_code() const                 { return "x/y"; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
@@ -216,7 +216,7 @@ public:
   Packet *simple_action(Packet *);
 
   void add_handlers();
-  
+
 private:
 
 #if SEQ_METRIC
@@ -225,8 +225,8 @@ private:
 #endif
 
   typedef GridGenericMetric::metric_t metric_t;
-  
-  /* 
+
+  /*
    * route table entry
    */
   class RTEntry : public RouteEntry {
@@ -234,7 +234,7 @@ private:
     bool                _init;
 
   public:
-    class EtherAddress  dest_eth;              // hardware address of destination; 
+    class EtherAddress  dest_eth;              // hardware address of destination;
                                                // may be all 0s if we don't hear any ads...
     bool                is_gateway;
 
@@ -261,14 +261,14 @@ private:
     bool broken() const { check(); return num_hops() == 0; }
     bool good()   const { check(); return num_hops() != 0; }
 
-    String dump()  const; 
-    void   check() const { 
-      assert(_init); 
-      assert((num_hops() > 0) != (seq_no() & 1)); 
+    String dump()  const;
+    void   check() const {
+      assert(_init);
+      assert((num_hops() > 0) != (seq_no() & 1));
       assert((num_hops() != 1) || (dest_ip == next_hop_ip && dest_eth == next_hop_eth));
       // only check if last_seq_jiff has been set
-      assert(last_seq_jiffies ? last_updated_jiffies >= last_seq_jiffies : true); 
-    } 
+      assert(last_seq_jiffies ? last_updated_jiffies >= last_seq_jiffies : true);
+    }
 
     void invalidate(unsigned int jiff) {
       check();
@@ -279,9 +279,9 @@ private:
       check();
     }
 
-    RTEntry() : 
-      _init(false), is_gateway(false), ttl(0), last_updated_jiffies(0), wst(0), 
-      last_seq_jiffies(0), advertise_ok_jiffies(0), need_seq_ad(false), 
+    RTEntry() :
+      _init(false), is_gateway(false), ttl(0), last_updated_jiffies(0), wst(0),
+      last_seq_jiffies(0), advertise_ok_jiffies(0), need_seq_ad(false),
       need_metric_ad(false), last_expired_jiffies(0)
     { }
 
@@ -289,24 +289,24 @@ private:
     RTEntry(IPAddress ip, EtherAddress eth, grid_hdr *gh, grid_hello *hlo,
 	    unsigned char interface, unsigned int jiff) :
       RouteEntry(ip, gh->loc_good, gh->loc_err, gh->loc, eth, ip, interface, hlo->seq_no, 1),
-      _init(true), dest_eth(eth), is_gateway(hlo->is_gateway), ttl(hlo->ttl), last_updated_jiffies(jiff), 
-      wst(0), last_seq_jiffies(jiff), advertise_ok_jiffies(0), need_seq_ad(false), 
+      _init(true), dest_eth(eth), is_gateway(hlo->is_gateway), ttl(hlo->ttl), last_updated_jiffies(jiff),
+      wst(0), last_seq_jiffies(jiff), advertise_ok_jiffies(0), need_seq_ad(false),
       need_metric_ad(false), last_expired_jiffies(0)
-    { 
-      loc_err = ntohs(loc_err); 
-      _seq_no = ntohl(_seq_no); 
+    {
+      loc_err = ntohs(loc_err);
+      _seq_no = ntohl(_seq_no);
       ttl = ntohl(ttl);
       check();
     }
 
     /* constructor from grid_nbr_entry, converting from net byte order */
-    RTEntry(IPAddress ip, EtherAddress eth, grid_nbr_entry *nbr, 
+    RTEntry(IPAddress ip, EtherAddress eth, grid_nbr_entry *nbr,
 	    unsigned char interface, unsigned int jiff) :
       RouteEntry(nbr->ip, nbr->loc_good, nbr->loc_err, nbr->loc,
-		 eth, ip, interface, 
+		 eth, ip, interface,
 		 nbr->seq_no, nbr->num_hops > 0 ? nbr->num_hops + 1 : 0),
-      _init(true), is_gateway(nbr->is_gateway), ttl(nbr->ttl), last_updated_jiffies(jiff), 
-      wst(0), last_seq_jiffies(0), 
+      _init(true), is_gateway(nbr->is_gateway), ttl(nbr->ttl), last_updated_jiffies(jiff),
+      wst(0), last_seq_jiffies(0),
       advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false),
       last_expired_jiffies(nbr->num_hops > 0 ? 0 : jiff)
     {
@@ -316,19 +316,19 @@ private:
       metric = metric_t(htonl(nbr->metric), nbr->metric_valid);
       check();
     }
-    
+
     /* copy data from this into nb, converting to net byte order */
     void fill_in(grid_nbr_entry *nb) const;
-    
+
   };
-  
+
   friend class RTEntry;
-  
+
   typedef HashMap<IPAddress, RTEntry> RTable;
   typedef RTable::const_iterator RTIter;
-  
+
   /* the route table */
-  // Invariants: 
+  // Invariants:
 
   // 1. every route in the table that is not expired (num_hops > 0) is
   // valid: i.e. its ttl has not run out, nor has it been in the table
@@ -349,13 +349,13 @@ private:
 #endif
 
   // returns true if route entry was inserted into route table, else return false
-  bool handle_update(RTEntry, const bool was_sender, const unsigned int jiff);  
-  
+  bool handle_update(RTEntry, const bool was_sender, const unsigned int jiff);
+
   void insert_route(const RTEntry &, const GridGenericLogger::reason_t why);
   void schedule_triggered_update(const IPAddress &ip, unsigned int when); // when is in jiffies
   bool lookup_route(const IPAddress &dest_ip, RTEntry &entry);
- 
-  
+
+
   typedef HashMap<IPAddress, Timer *> TMap;
   typedef TMap::iterator TMIter;
 
@@ -393,7 +393,7 @@ private:
   HMap _trigger_hooks;
 
   // check table, timer, and trigger hook invariants
-  void check_invariants(const IPAddress *ignore = 0) const; 
+  void check_invariants(const IPAddress *ignore = 0) const;
 
   /* max time to keep an entry in RT */
   unsigned int _timeout; // msecs
@@ -414,7 +414,7 @@ private:
   IPAddress _ip;
   EtherAddress _eth;
 
-  unsigned int _seq_no;       // latest sequence number for this node's route entry 
+  unsigned int _seq_no;       // latest sequence number for this node's route entry
   unsigned int _mtu;          // maximum total bytes per packet, including ethernet headers
   unsigned int _bcast_count;  // incremented on every broadcast
 
@@ -430,7 +430,7 @@ private:
   unsigned int _last_triggered_update; // jiffies
 
   /* Keep and propagate route with invalid metrics? */
-  bool _ignore_invalid_routes; 
+  bool _ignore_invalid_routes;
 
   Timer _hello_timer;
   static void static_hello_hook(Timer *, void *e) { ((DSDVRouteTable *) e)->hello_hook(); }
@@ -441,7 +441,7 @@ private:
   void log_dump_hook(bool reschedule);
 
 
-  static void static_expire_hook(Timer *, void *v) 
+  static void static_expire_hook(Timer *, void *v)
   { ((HookPair *) v)->obj->expire_hook(((HookPair *) v)->ip); }
 
   void expire_hook(const IPAddress &);
@@ -456,7 +456,7 @@ private:
 
   /* send a route advertisement containing the specified entries */
   void build_and_tx_ad(Vector<RTEntry> &);
-  int max_rtes_per_ad() const { 
+  int max_rtes_per_ad() const {
     int hdr_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
     return ((_mtu - hdr_sz) / sizeof(grid_nbr_entry));
   }
@@ -538,7 +538,7 @@ private:
   bool _use_seen;
   static const unsigned _metric_seen = 999999;
 #endif
-  
+
   // be verbose about warnings and status messages?
   bool _verbose;
 
@@ -546,14 +546,14 @@ private:
 
 };
 
-inline unsigned 
-dsdv_jiffies() 
+inline unsigned
+dsdv_jiffies()
 {
   static unsigned last_click_jiffies = 0;
-  unsigned j = click_jiffies(); 
-  assert(j >= last_click_jiffies); 
-  last_click_jiffies = j; 
-  return j; 
+  unsigned j = click_jiffies();
+  assert(j >= last_click_jiffies);
+  last_click_jiffies = j;
+  return j;
 }
 
 CLICK_ENDDECLS

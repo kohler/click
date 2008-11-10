@@ -9,7 +9,7 @@ CLICK_DECLS
  * =c
  * GridGatewayInfo(ROUTETABLE, IS_GATEWAY)
  * =s Grid
- * Manage grid node gateway info. 
+ * Manage grid node gateway info.
  *
  * =d
  *
@@ -28,12 +28,12 @@ CLICK_DECLS
  *
  * =h is_gateway read/write
  * Returns or sets boolean value of whether or not this node is a
- * gateway. 
+ * gateway.
  *
  * =a DSDVRouteTable, SetIPAddress */
 
 class GridGatewayInfo : public Element {
-  
+
 public:
 
   GridGatewayInfo();

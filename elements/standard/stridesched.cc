@@ -43,7 +43,7 @@ StrideSched::configure(Vector<String> &conf, ErrorHandler *errh)
     bool first = !_all;
     if (first && !(_all = new Client[nclients()]))
 	return errh->error("out of memory");
-    
+
     int before = errh->nerrors();
     for (int i = 0; i < conf.size(); i++) {
 	int v;
@@ -67,7 +67,7 @@ StrideSched::configure(Vector<String> &conf, ErrorHandler *errh)
     for (int i = nclients() - 1; i >= 0; i--)
 	if (_all[i]._tickets)
 	    _all[i].insert(&_list);
-    
+
     return (errh->nerrors() == before ? 0 : -1);
 }
 

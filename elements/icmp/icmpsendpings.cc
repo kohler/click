@@ -116,7 +116,7 @@ ICMPPingSource::make_packet()
 	return 0;
     memset(q->data(), '\0', sizeof(click_ip) + sizeof(struct click_icmp_echo));
     memcpy(q->data() + sizeof(click_ip) + sizeof(struct click_icmp_echo), _data.data(), _data.length());
-    
+
     click_ip *nip = reinterpret_cast<click_ip *>(q->data());
     nip->ip_v = 4;
     nip->ip_hl = sizeof(click_ip) >> 2;
@@ -140,14 +140,14 @@ ICMPPingSource::make_packet()
 #endif
 
     icp->icmp_cksum = click_in_cksum((const unsigned char *)icp, sizeof(click_icmp_sequenced) + _data.length());
-    
+
     q->set_dst_ip_anno(IPAddress(_dst));
     q->set_ip_header(nip, sizeof(click_ip));
     q->timestamp_anno().set_now();
 
     if (_receiver)
 	_receiver->send_timestamp[icp->icmp_sequence] = q->timestamp_anno();
-    
+
     return q;
 }
 
@@ -181,7 +181,7 @@ ICMPPingSource::push(int, Packet *p)
 	&& icmph->icmp_type == ICMP_ECHOREPLY
 	&& icmph->icmp_identifier == _icmp_id) {
 	Timestamp *send_ts = &_receiver->send_timestamp[icmph->icmp_sequence];
-	
+
 	if (!*send_ts)
 	    /* error */;
 	else {
@@ -205,7 +205,7 @@ ICMPPingSource::push(int, Packet *p)
 
 	    _receiver->nreceived++;
 	    *send_ts = -*send_ts;
-	    
+
 #ifdef __linux__
 	    uint16_t readable_seq = icmph->icmp_sequence;
 #else

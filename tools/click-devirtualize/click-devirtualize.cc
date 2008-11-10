@@ -171,7 +171,7 @@ reverse_transformation(RouterT *r, ErrorHandler *)
       if (requirements[i].substring(0, 12) == "devirtualize")
 	r->remove_requirement(requirements[i]);
   }
-  
+
   // remove archive elements
   for (int i = 0; i < r->narchive(); i++) {
     ArchiveElement &ae = r->archive(i);
@@ -242,16 +242,16 @@ main(int argc, char **argv)
   int reverse = 0;
   Vector<const char *> instruction_files;
   HashTable<String, int> specializing;
-  
+
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case HELP_OPT:
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("click-devirtualize (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2000 Massachusetts Institute of Technology\n\
@@ -266,7 +266,7 @@ particular purpose.\n");
      case CLICKPATH_OPT:
       set_clickpath(clp->vstr);
       break;
-      
+
      case ROUTER_OPT:
      case EXPRESSION_OPT:
      router_file:
@@ -290,19 +290,19 @@ particular purpose.\n");
       }
       output_file = clp->vstr;
       break;
-      
+
      case SOURCE_OPT:
       source_only = !clp->negated;
       break;
-      
+
      case CONFIG_OPT:
       config_only = !clp->negated;
       break;
-      
+
      case KERNEL_OPT:
       compile_kernel = !clp->negated;
       break;
-      
+
      case USERLEVEL_OPT:
       compile_user = !clp->negated;
       break;
@@ -310,7 +310,7 @@ particular purpose.\n");
      case DEVIRTUALIZE_OPT:
       specializing.set(clp->vstr, !clp->negated);
       break;
-      
+
      case NO_DEVIRTUALIZE_OPT:
       specializing.set(clp->vstr, 0);
       break;
@@ -322,19 +322,19 @@ particular purpose.\n");
      case REVERSE_OPT:
       reverse = !clp->negated;
       break;
-      
+
      bad_option:
      case Clp_BadOption:
       short_usage();
       exit(1);
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
     }
   }
-  
+
  done:
   if (config_only)
     compile_kernel = compile_user = 0;
@@ -412,10 +412,10 @@ particular purpose.\n");
       full_elementmap.set_driver(Driver::USERLEVEL);
     }
   }
-  
+
   // analyze signatures to determine specialization
   sigs.analyze(full_elementmap);
-  
+
   // initialize specializer
   Specializer specializer(router, full_elementmap);
   specializer.specialize(sigs, errh);
@@ -428,7 +428,7 @@ particular purpose.\n");
       write_router_file(router, outf, errh);
     exit(0);
   }
-  
+
   // find name of package
   String package_name;
   {
@@ -449,7 +449,7 @@ particular purpose.\n");
   header << "#ifndef CLICK_" << package_name << "_HH\n"
 	 << "#define CLICK_" << package_name << "_HH\n"
 	 << "#include <click/package.hh>\n#include <click/element.hh>\n";
-  
+
   specializer.output_package(package_name, suffix, source, errh);
   specializer.output(header, source);
 
@@ -462,7 +462,7 @@ particular purpose.\n");
     fclose(outf);
     exit(0);
   }
-  
+
   // add source to archive
   {
     ArchiveElement ae = init_archive_element(package_name + suffix + ".cc", 0600);
@@ -479,14 +479,14 @@ particular purpose.\n");
     int source_ae = router->archive_index(package_name + suffix + ".cc");
     BailErrorHandler berrh(errh);
     bool tmpdir_populated = false;
-    
+
     if (compile_kernel > 0)
 	if (String fn = click_compile_archive_file(router->archive(), source_ae, package_name, "linuxmodule", "", tmpdir_populated, &berrh)) {
 	    ArchiveElement ae = init_archive_element(package_name + ".ko", 0600);
 	    ae.data = file_string(fn, errh);
 	    router->add_archive(ae);
 	}
-    
+
     if (compile_user > 0)
 	if (String fn = click_compile_archive_file(router->archive(), source_ae, package_name, "userlevel", "", tmpdir_populated, &berrh)) {
 	    ArchiveElement ae = init_archive_element(package_name + ".uo", 0600);
@@ -497,7 +497,7 @@ particular purpose.\n");
 
   // retype elements
   specializer.fix_elements();
-  
+
   // add elementmap to archive
   {
     if (router->archive_index("elementmap-devirtualize.xml") < 0)
@@ -521,7 +521,7 @@ particular purpose.\n");
     }
     ae.data += sa.take_string();
   }
-  
+
   // write configuration
   if (config_only) {
     String s = router->configuration_string();

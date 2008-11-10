@@ -60,7 +60,7 @@ PEP::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if(fixed){
     float lat = ((float) lat_int) / 100000.0f;
-    float lon = ((float) lon_int) / 100000.0f; 
+    float lon = ((float) lon_int) / 100000.0f;
     if (lat > 90 || lat < -90)
       return errh->error("%s: latitude must be between +/- 90 degrees",
                          name().c_str());
@@ -297,7 +297,7 @@ PEP::algorithm1()
       weight += w;
     }
   }
-  
+
   return(grid_location(lat / weight, lon / weight));
 }
 
@@ -349,7 +349,7 @@ PEP::algorithm2()
 
   double pts[2];
   a.minimize(pts);
-  
+
   return(grid_location(pts[0], pts[1]));
 }
 

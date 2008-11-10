@@ -43,14 +43,14 @@ Returns or sets the DST parameter.
 ARPQuerier, EnsureEther, StoreEtherAddress */
 
 class EtherEncap : public Element { public:
-  
+
   EtherEncap();
   ~EtherEncap();
 
   const char *class_name() const	{ return "EtherEncap"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
   void add_handlers();
@@ -58,13 +58,13 @@ class EtherEncap : public Element { public:
   Packet *smaction(Packet *);
   void push(int, Packet *);
   Packet *pull(int);
-  
+
  private:
 
   click_ether _ethh;
 
   static String read_handler(Element *, void *);
-  
+
 };
 
 CLICK_ENDDECLS

@@ -82,7 +82,7 @@ Driver::driver_mask(const String& name)
     int d = driver(name);
     if (d >= 0)
 	return 1 << d;
-    
+
     int m = 0;
     const char* s = name.begin(), *end = name.end();
     while (s != end) {
@@ -111,7 +111,7 @@ requirement_contains(const String &req, const String &n)
 	    return true;
 	pos = rpos;
     }
-    return false;  
+    return false;
 }
 
 bool

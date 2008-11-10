@@ -15,7 +15,7 @@ Respond to 802.11 association requests.
 
 =d
 
-Keyword arguments are: 
+Keyword arguments are:
 
 =over 8
 
@@ -38,14 +38,14 @@ how often beacon packets are sent, in milliseconds.
 */
 
 class AssociationResponder : public Element { public:
-  
+
   AssociationResponder();
   ~AssociationResponder();
 
   const char *class_name() const	{ return "AssociationResponder"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
   void add_handlers();

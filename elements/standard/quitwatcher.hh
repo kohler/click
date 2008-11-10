@@ -25,7 +25,7 @@ class QuitWatcher : public Element { public:
 
   QuitWatcher();
   ~QuitWatcher();
-  
+
   const char *class_name() const		{ return "QuitWatcher"; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
@@ -33,11 +33,11 @@ class QuitWatcher : public Element { public:
   void run_timer(Timer *);
 
  private:
-    
+
   Vector<Element*> _e;
   Vector<const Handler*> _handlers;
   Timer _timer;
-  
+
 };
 
 CLICK_ENDDECLS

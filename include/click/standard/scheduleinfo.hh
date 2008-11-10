@@ -52,7 +52,7 @@ are expanded.
 
 The name of the first ScheduleInfo element starts with `c/', so it is
 used to look up scheduling parameters for elements named `c/I<whatever>'.
-V<>(This includes all components of the compound element `c'.) 
+V<>(This includes all components of the compound element `c'.)
 The second ScheduleInfo element, however, has no slash in its name,
 so it is used to look up all scheduling parameters,
 including scaling factors for compound elements.
@@ -70,12 +70,12 @@ then the InfiniteSource's final scaling parameter would be 10.5.
 class ScheduleInfo : public Element { public:
 
     enum { FRAC_BITS = 10 };
-  
+
     ScheduleInfo();
     ~ScheduleInfo();
-  
+
     const char* class_name() const	{ return "ScheduleInfo"; }
-  
+
     int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
     int configure(Vector<String>&, ErrorHandler*);
 

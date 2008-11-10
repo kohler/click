@@ -2,7 +2,7 @@
 /*
  * radixipseclookup.{cc,hh} -- looks up next-hop address in radix table
  * Small Changes to add_route to support IPSEC ESP.
- * Dimitris Syrivelis  
+ * Dimitris Syrivelis
  * Copyright (c) 2006 University of Thessaly
  *
  * Based on radixipseclookup.{cc,hh} -- looks up next-hop address in radix table
@@ -84,7 +84,7 @@ RadixIPsecLookup::Radix::change(uint32_t addr, uint32_t naddr, int key, uint32_t
 	    if (_children[i1].child)
 		return _children[i1].child->change(addr, naddr, key, key_priority);
 	}
-	
+
 	while (i1 < i2) {
 	    if (_children[i1].key_priority <= key_priority) {
 		if ((_children[i1].key >= 0) != (key >= 0))
@@ -95,7 +95,7 @@ RadixIPsecLookup::Radix::change(uint32_t addr, uint32_t naddr, int key, uint32_t
 	    i1++;
 	}
     }
-    
+
     return this;
 }
 

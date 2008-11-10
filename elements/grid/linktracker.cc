@@ -45,10 +45,10 @@ LinkTracker::configure(Vector<String> &conf, ErrorHandler *errh)
 			 cpEnd);
   if (res < 0)
     return res;
-  
+
   _tau = tau_int;
   _tau *= 0.001;
-  
+
   return res;
 }
 
@@ -66,7 +66,7 @@ LinkTracker::remove_all_stats(IPAddress dst)
   _stats.remove(dst);
   _bcast_stats.remove(dst);
 }
-  
+
 
 void
 LinkTracker::add_stat(IPAddress dst, int sig, int qual, Timestamp when)
@@ -85,13 +85,13 @@ LinkTracker::add_stat(IPAddress dst, int sig, int qual, Timestamp when)
     stat_t s2;
     s2.last_data = when;
     s2.last_update = now;
-    
+
     s2.qual_top = qual;
     s2.qual_bot = 1.0;
-    
+
     s2.sig_top = sig;
     s2.sig_bot = 1.0;
-   
+
     _stats.insert(dst, s2);
   }
   else {
@@ -102,10 +102,10 @@ LinkTracker::add_stat(IPAddress dst, int sig, int qual, Timestamp when)
          may be true that packets can arrive at a node and stats can
          be generated faster than once per usec, (or whatever the
          gettimeofday granularity is), but we won't worry about that */
-      return; 
+      return;
     }
     double delta = tv.doubleval();
-    
+
     double old_weight = exp(-delta / _tau);
 
     s->qual_top *= old_weight;
@@ -151,33 +151,33 @@ LinkTracker::get_stat(IPAddress dst, int &sig, int &qual, Timestamp &last_update
   return true;
 }
 
-void 
+void
 LinkTracker::add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num_expected, Timestamp last_bcast)
 {
   /* can only believe num_expected if the receiver heard at least 2 packets */
   if (num_rx < 2)
     return;
 
-  if (num_rx > num_expected) 
+  if (num_rx > num_expected)
     click_chatter("LinkTracker::add_bcast_stat WARNING num_rx (%d) > num_expected (%d) for %s",
 		  num_rx, num_expected, dst.unparse().c_str());
 
   double num_rx_ = num_rx;
   double num_expected_ = num_expected;
 
-  /* 
+  /*
    * calculate loss rate, being pessimistic.  that is, choose the loss
-   * rate r such that: 
+   * rate r such that:
    *
    * (r * num_expected) + 0.5 = num_rx
    *
    * this makes r the lowest rate such that (r * num_expected) rounds
-   * up to the number of packets actually received.  
+   * up to the number of packets actually received.
    */
   double r = (num_rx_ - 0.5) / num_expected_;
-    
+
   Timestamp now = Timestamp::now();
-  
+
   bcast_t *s = _bcast_stats.findp(dst);
   if (s == 0) {
     /* init entry */
@@ -192,13 +192,13 @@ LinkTracker::add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num
   }
   else {
     Timestamp tv = last_bcast - s->last_bcast;
-    if (!tv) 
+    if (!tv)
       return; // repeat of old data
-    
+
     double delta = tv.doubleval();
-    
+
     double old_weight = exp(-delta / _tau);
-    
+
     s->r_top *= old_weight;
     s->r_top += r;
 
@@ -212,7 +212,7 @@ LinkTracker::add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num
     }
   }
 }
- 
+
 
 bool
 LinkTracker::get_bcast_stat(IPAddress dst, double &delivery_rate, Timestamp &last_update)
@@ -235,9 +235,9 @@ LinkTracker::simple_action(Packet *p)
   grid_hdr *gh = (grid_hdr *) (eh + 1);
 
   switch (gh->type) {
-  case grid_hdr::GRID_NBR_ENCAP: 
+  case grid_hdr::GRID_NBR_ENCAP:
   case grid_hdr::GRID_LOC_REPLY:
-  case grid_hdr::GRID_ROUTE_PROBE: 
+  case grid_hdr::GRID_ROUTE_PROBE:
   case grid_hdr::GRID_ROUTE_REPLY: {
 #ifndef SMALL_GRID_HEADERS
     struct grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
@@ -271,12 +271,12 @@ LinkTracker::read_stats(Element *xf, void *)
   char timebuf[80];
   String s;
   for (HashMap<IPAddress, LinkTracker::stat_t>::iterator i = f->_stats.begin(); i.live(); i++) {
-    snprintf(timebuf, 80, " %ld.%06ld", 
-	     (long) i.value().last_update.sec(), 
+    snprintf(timebuf, 80, " %ld.%06ld",
+	     (long) i.value().last_update.sec(),
 	     (long) i.value().last_update.usec());
-    s += i.key().unparse() 
+    s += i.key().unparse()
       + String(timebuf)
-      + " sig: " + String(i.value().sig_top / i.value().sig_bot) 
+      + " sig: " + String(i.value().sig_top / i.value().sig_bot)
       + ", qual: " + String(i.value().qual_top / i.value().qual_bot) + "\n";
   }
   return s;
@@ -290,10 +290,10 @@ LinkTracker::read_bcast_stats(Element *xf, void *)
   char timebuf[80];
   String s;
   for (HashMap<IPAddress, LinkTracker::bcast_t>::iterator i = f->_bcast_stats.begin(); i.live(); i++) {
-    snprintf(timebuf, 80, " %ld.%06ld", 
-	     (long) i.value().last_update.sec(), 
+    snprintf(timebuf, 80, " %ld.%06ld",
+	     (long) i.value().last_update.sec(),
 	     (long) i.value().last_update.usec());
-    s += i.key().unparse() 
+    s += i.key().unparse()
       + String(timebuf)
       + " " + String(i.value().r_top / i.value().r_bot) + "\n";
   }
@@ -302,7 +302,7 @@ LinkTracker::read_bcast_stats(Element *xf, void *)
 
 
 int
-LinkTracker::write_tau(const String &arg, Element *el, 
+LinkTracker::write_tau(const String &arg, Element *el,
 		       void *, ErrorHandler *errh)
 {
   LinkTracker *e = (LinkTracker *) el;

@@ -71,7 +71,7 @@ OpenAuthRequester::push(int, Packet *p)
 
     p->kill();
     return;
-	      
+
   }
   struct click_wifi *w = (struct click_wifi *) p->data();
 
@@ -95,7 +95,7 @@ OpenAuthRequester::push(int, Packet *p)
   }
 
   uint8_t *ptr;
-  
+
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
 
@@ -122,13 +122,13 @@ OpenAuthRequester::push(int, Packet *p)
 
   if (_debug) {
     click_chatter("%{element}: auth %d seq %d status %d\n",
-		  this, 
+		  this,
 		  algo,
 		  seq,
 		  status);
   }
 
-  
+
   p->kill();
   return;
 }
@@ -137,12 +137,12 @@ OpenAuthRequester::send_auth_request()
 {
 
   EtherAddress bssid = _winfo ? _winfo->_bssid : EtherAddress();
-  int len = sizeof (struct click_wifi) + 
+  int len = sizeof (struct click_wifi) +
     2 +                  /* alg */
     2 +                  /* seq */
     2 +                  /* status */
     0;
-    
+
   WritablePacket *p = Packet::make(len);
 
   if (p == 0)
@@ -157,12 +157,12 @@ OpenAuthRequester::send_auth_request()
   memcpy(w->i_addr2, _eth.data(), 6);
   memcpy(w->i_addr3, bssid.data(), 6);
 
-  
+
   *(uint16_t *) w->i_dur = 0;
   *(uint16_t *) w->i_seq = 0;
 
   uint8_t *ptr;
-  
+
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
   *(uint16_t *)ptr = cpu_to_le16(WIFI_AUTH_ALG_OPEN);
@@ -180,7 +180,7 @@ OpenAuthRequester::send_auth_request()
 
 enum {H_DEBUG, H_ETH, H_SEND_AUTH_REQ};
 
-static String 
+static String
 OpenAuthRequester_read_param(Element *e, void *thunk)
 {
   OpenAuthRequester *td = (OpenAuthRequester *)e;
@@ -193,7 +193,7 @@ OpenAuthRequester_read_param(Element *e, void *thunk)
     return String();
   }
 }
-static int 
+static int
 OpenAuthRequester_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -202,14 +202,14 @@ OpenAuthRequester_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
   }
   case H_ETH: {    //debug
     EtherAddress e;
-    if (!cp_ethernet_address(s, &e)) 
+    if (!cp_ethernet_address(s, &e))
       return errh->error("eth parameter must be ethernet address");
     f->_eth = e;
     break;
@@ -221,7 +221,7 @@ OpenAuthRequester_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 OpenAuthRequester::add_handlers()
 {

@@ -138,7 +138,7 @@ FromDump are fragments, then AggregateIPFlows will still be hanging onto them
 when FromDump stops the driver. The DriverManager element waits for FromDump
 to request a driver stop, then calls the C<af.clear> handler to flush any
 remaining fragments.
-   
+
 =a
 
 AggregateIP, AggregateIPAddrPair, AggregateCounter, DriverManager */
@@ -152,16 +152,16 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     void *cast(const char *);
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PROCESSING_A_AH; }
-    
+
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void add_handlers();
     void cleanup(CleanupStage);
 
-#if CLICK_USERLEVEL		
+#if CLICK_USERLEVEL
     bool stats() const			{ return _traceinfo_file; }
 #endif
-    
+
     void push(int, Packet *);
     Packet *pull(int);
 
@@ -191,7 +191,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
 	bool reverse() const	{ return _reverse; }
     };
 
-#if CLICK_USERLEVEL	
+#if CLICK_USERLEVEL
     struct StatFlowInfo : public FlowInfo {
 	Timestamp _first_timestamp;
 	uint32_t _filepos;
@@ -211,7 +211,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     typedef HashTable<HostPair, HostPairInfo> Map;
     Map _tcp_map;
     Map _udp_map;
-    
+
     uint32_t _next;
     unsigned _active_sec;
     unsigned _gc_sec;
@@ -220,7 +220,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     int _tcp_done_timeout;
     int _udp_timeout;
     int _smallest_timeout;
-    
+
     unsigned _gc_interval;
     unsigned _fragment_timeout;
 
@@ -237,7 +237,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
 #endif
 
     static const click_ip *icmp_encapsulated_header(const Packet *);
-    
+
     void clean_map(Map &);
     void reap_map(Map &, uint32_t, uint32_t);
     void reap();
@@ -258,7 +258,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     int handle_packet(Packet *);
 
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

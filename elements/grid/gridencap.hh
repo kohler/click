@@ -10,11 +10,11 @@ CLICK_DECLS
 
 /*
  * =c
- * 
+ *
  * GridEncap(ETH, IP)
- * 
+ *
  * =s Grid
- * 
+ *
  * Encapsulates packets in static Grid data encapsulation header
  * (GRID_NBR_ENCAP), including ethernet, Grid, and grid data encap
  * headers.
@@ -26,29 +26,29 @@ CLICK_DECLS
  * ethertype; sets the ethernet source address to ETH.  Sets the Grid
  * src and tx IP to be IP.  Sets all locations to invalid.
  * Does not set checksum.
- * 
+ *
  * Sets the grid destination IP to the packet's dest_ip annotation.
  *
- * 
- * =a LookupLocalGridRoute, FixSrcLoc, FixDstLoc, SetGridChecksum */ 
+ *
+ * =a LookupLocalGridRoute, FixSrcLoc, FixDstLoc, SetGridChecksum */
 
 class GridEncap : public Element { public:
-  
+
   GridEncap();
   ~GridEncap();
-  
+
   const char *class_name() const		{ return "GridEncap"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   int initialize(ErrorHandler *);
 
   Packet *simple_action(Packet *);
-  
+
  private:
-  
+
   EtherAddress _eth;
   IPAddress _ip;
   click_ether _eh;

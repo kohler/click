@@ -108,7 +108,7 @@ class RED : public Element { public:
     enum { QUEUE_SCALE = 10 };
 
     typedef DirectEWMAX<StabilityEWMAXParameters<QUEUE_SCALE, uint64_t, int64_t> > ewma_type;
-    
+
     RED();
     ~RED();
 
@@ -160,7 +160,7 @@ class RED : public Element { public:
     static String read_handler(Element *, void *);
 
     int finish_configure(unsigned min_thresh, unsigned max_thresh, unsigned max_p, unsigned stability, const String &queues, ErrorHandler *errh);
-    
+
 };
 
 CLICK_ENDDECLS

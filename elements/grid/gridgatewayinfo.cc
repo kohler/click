@@ -40,7 +40,7 @@ GridGatewayInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 			 "ROUTETABLE", cpkP+cpkM, cpElement, &_rt,
 			 "IS_GATEWAY", cpkP+cpkM, cpBool, &_is_gateway,
 			 cpEnd);
-  if (_rt == 0) 
+  if (_rt == 0)
     return errh->error("No route table specified");
   if (_rt->cast("GridGenericRouteTable") == 0)
     return errh->error("Route table element is not the right type");
@@ -58,11 +58,11 @@ static String
 gw_read_handler(Element *f, void *)
 {
   GridGatewayInfo *l = (GridGatewayInfo *) f;
-  
+
   const int BUFSZ = 256;
   char buf[BUFSZ];
   snprintf(buf, BUFSZ, "%s\n", l->is_gateway() ? "true" : "false");
-  return String(buf);  
+  return String(buf);
 }
 
 String
@@ -70,7 +70,7 @@ GridGatewayInfo::print_best_gateway(Element *f, void *)
 {
   GridGatewayInfo *l = (GridGatewayInfo *) f;
   String s;
-  
+
   GridGenericRouteTable::RouteEntry gw;
   if (l->_rt->current_gateway(gw)) {
     s += gw.dest_ip.unparse() + "\n";
@@ -89,7 +89,7 @@ GridGatewayInfo::add_handlers()
 }
 
 Packet *
-GridGatewayInfo::simple_action(Packet *p) 
+GridGatewayInfo::simple_action(Packet *p)
 {
   GridGenericRouteTable::RouteEntry gw;
   if (_rt->current_gateway(gw)) {
@@ -101,7 +101,7 @@ GridGatewayInfo::simple_action(Packet *p)
     p->kill();
     return(0);
   }
-  
+
 }
 
 CLICK_ENDDECLS

@@ -31,16 +31,16 @@ CLICK_DECLS
  * OR, this element will work under linux using the Wireless
  * Extensions, but the wireless card driver will still need to be
  * modified to automatically add entries to the ``spy list''.
- * 
+ *
  * =a ToDevice */
 
 class AiroInfo : public Element {
-  
+
 public:
-  
+
   AiroInfo();
   ~AiroInfo();
-  
+
   const char *class_name() const		{ return "AiroInfo"; }
   const char *port_count() const		{ return PORTS_0_0; }
 
@@ -60,7 +60,7 @@ public:
   /* If possible, place the card's background noise measurements (in
      dBm) into the arguments, and return true.  Else return false */
   bool get_noise(int &max_over_sec, int &avg_over_minute, int &max_over_minute);
-  
+
   /* Clear all link-layer transmission statistics on the card */
   void clear_tx_stats();
 

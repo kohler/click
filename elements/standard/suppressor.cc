@@ -42,7 +42,7 @@ Suppressor::push(int source, Packet *p)
 {
     if (suppressed(source))
 	p->kill();
-    else			// forward	
+    else			// forward
 	output(source).push(p);
 }
 

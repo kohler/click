@@ -26,18 +26,18 @@ class StaticSwitch : public Element {
   int _output;
 
  public:
-  
+
   StaticSwitch();
   ~StaticSwitch();
-  
+
   const char *class_name() const		{ return "StaticSwitch"; }
   const char *port_count() const		{ return "1/-"; }
   const char *processing() const		{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   void push(int, Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

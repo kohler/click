@@ -14,7 +14,7 @@ class HashMap_ArenaFactory;
 //			hashcode() can return any unsigned value.
 //
 //		V::V() -- only used for default value
-// 		V::V(const V &)
+//		V::V(const V &)
 // V &		V::operator=(const V &)
 
 template <class K, class V = void> class _HashMap_const_iterator;

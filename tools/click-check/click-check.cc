@@ -108,7 +108,7 @@ check_once(const RouterT *r, const char *filename,
 	   ErrorHandler *full_errh)
 {
   const char *driver_name = Driver::name(driver);
-  
+
   if (!indifferent && !full_elementmap.driver_compatible(r, driver)) {
     if (!full_elementmap.provides_global(driver_name))
       full_errh->error("%s: Click compiled without support for %s driver", filename, driver_name);
@@ -156,7 +156,7 @@ main(int argc, char **argv)
   bool quiet = false;
   int driver_indifferent_mask = Driver::ALLMASK;
   int driver_mask = 0;
-  
+
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
@@ -165,7 +165,7 @@ main(int argc, char **argv)
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("click-check (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2000 Massachusetts Institute of Technology\n\
@@ -175,11 +175,11 @@ There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
-      
+
      case CLICKPATH_OPT:
       set_clickpath(clp->vstr);
       break;
-      
+
      case ROUTER_OPT:
      case EXPRESSION_OPT:
      router_file:
@@ -226,19 +226,19 @@ particular purpose.\n");
        driver_indifferent_mask &= ~dm;
        break;
      }
-      
+
      bad_option:
      case Clp_BadOption:
       short_usage();
       exit(1);
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
     }
   }
-  
+
  done:
   RouterT *r = read_router(router_file, file_is_expr, errh);
   if (r)
@@ -276,7 +276,7 @@ particular purpose.\n");
       check_once(r, router_file, elementmap,
 		 d, indifferent, driver_mask & ~(1 << d), !output && !quiet,
 		 errh);
-  
+
   // write configuration
   if (errh->nerrors() != 0)
     exit(1);

@@ -190,10 +190,10 @@ form.
 AggregateIP, AggregatePacketCounter, FromIPSummaryDump, FromDump */
 
 class AggregateCounter : public Element { public:
-  
+
     AggregateCounter();
     ~AggregateCounter();
-  
+
     const char *class_name() const	{ return "AggregateCounter"; }
     const char *port_count() const	{ return "1-2/1-2"; }
     const char *processing() const	{ return AGNOSTIC; }
@@ -212,7 +212,7 @@ class AggregateCounter : public Element { public:
     enum WriteFormat { WR_TEXT = 0, WR_BINARY = 1, WR_TEXT_IP = 2, WR_TEXT_PDF = 3 };
     int write_file(String, WriteFormat, ErrorHandler *) const;
     void reaggregate_counts();
-    
+
   private:
 
     struct Node {
@@ -227,7 +227,7 @@ class AggregateCounter : public Element { public:
     bool _use_extra_length : 1;
     bool _frozen;
     bool _active;
-    
+
     Node *_root;
     Node *_free;
     Vector<Node *> _blocks;
@@ -240,7 +240,7 @@ class AggregateCounter : public Element { public:
     HandlerCall *_call_count_h;
 
     String _output_banner;
-    
+
     Node *new_node();
     Node *new_node_block();
     void free_node(Node *);
@@ -254,7 +254,7 @@ class AggregateCounter : public Element { public:
     static int write_file_handler(const String &, Element *, void *, ErrorHandler *);
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 inline AggregateCounter::Node *

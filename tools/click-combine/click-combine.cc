@@ -111,9 +111,9 @@ cc_read_router(String name, String &next_name, int &next_number,
 		  next_name.c_str(), name.c_str());
   else if (name)
     next_name = name;
-  
+
   RouterT *r = read_router(filename, file_is_expr, errh);
-  
+
   if (r) {
     r->flatten(errh);
     if (next_name) {
@@ -137,14 +137,14 @@ try_find_device(String devname, String class1, String class2,
 {
   RouterT *r = routers[rn];
   String router_name = router_names[rn];
-  
+
   // fix config
   {
     Vector<String> words;
     cp_argvec(devname, words);
     devname = words[0];
   }
-  
+
   ElementClassT *t1 = ElementClassT::base_type(class1);
   ElementClassT *t2 = ElementClassT::base_type(class2);
   ElementT *found = 0;
@@ -170,7 +170,7 @@ try_find_device(String devname, String class1, String class2,
       }
     }
   }
-  
+
   return found;
 }
 
@@ -233,7 +233,7 @@ parse_link(String text, ErrorHandler *errh)
     errh->warning("router '%s' element '%s' has unexpected class", words[4].c_str(), words[6].c_str());
     errh->message("  expected FromDevice or PollDevice, got %s", tn2.c_str());
   }
-  
+
   // append link definition
   links_from.push_back(RouterPortT(element1, router1));
   links_to.push_back(RouterPortT(element2, router2));
@@ -265,7 +265,7 @@ combine_links(ErrorHandler *errh)
       }
   if (errh->nerrors() != before)
     return -1;
-  
+
   // combine links
   link_id.clear();
   for (int i = 0; i < links_from.size(); i++)
@@ -290,7 +290,7 @@ make_link(const Vector<RouterPortT> &from, const Vector<RouterPortT> &to,
 	  RouterT *combined)
 {
   static int linkno = 0;
-  
+
   Vector<RouterPortT> all(from);
   for (int i = 0; i < to.size(); i++)
     all.push_back(to[i]);
@@ -366,12 +366,12 @@ main(int argc, char **argv)
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case HELP_OPT:
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("click-combine (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2000 Massachusetts Institute of Technology\n\
@@ -380,7 +380,7 @@ There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
-      
+
      case ROUTER_OPT:
       cc_read_router(String(), next_name, next_number, clp->vstr, false, errh);
       break;
@@ -410,7 +410,7 @@ particular purpose.\n");
      case CONFIG_OPT:
       config_only = true;
       break;
-      
+
      case Clp_NotOption:
       if (const char *s = strchr(clp->vstr, ':'))
 	cc_read_router(String(clp->vstr, s - clp->vstr), next_name, next_number, s + 1, false, errh);
@@ -423,24 +423,24 @@ particular purpose.\n");
       } else
 	cc_read_router(String(), next_name, next_number, clp->vstr, false, errh);
       break;
-      
+
      bad_option:
      case Clp_BadOption:
       short_usage();
       exit(1);
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
     }
   }
-  
+
  done:
   // no routers is an error
   if (routers.size() == 0)
     p_errh->fatal("no routers specified");
-  
+
   // check that routers are named differently
   HashTable<String, int> name_map(-1);
   for (int i = 0; i < routers.size(); i++) {
@@ -488,7 +488,7 @@ particular purpose.\n");
     exit(1);
   add_links(combined);
   combined->remove_tunnels();
-  
+
   // add elementmap to archive
   if (!config_only) {
     ElementMap em;
@@ -530,7 +530,7 @@ particular purpose.\n");
     }
     ae.data = sa.take_string();
   }
-  
+
   write_router_file(combined, outf, errh);
   exit(0);
 }

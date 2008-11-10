@@ -32,35 +32,35 @@ CLICK_DECLS
 
 class SPI {
 
-   public: 
+   public:
 	inline SPI(unsigned int a)
-    	: _spi(a)
+	: _spi(a)
 	{
 	}
 
 	inline SPI()
 	{
-      		memset(this, 0, sizeof(*this));
+		memset(this, 0, sizeof(*this));
 	}
-	
-	inline operator bool() const 
+
+	inline operator bool() const
 	{
-    		return (_spi != 0);
+		return (_spi != 0);
 	}
 	inline bool
 	operator==(SPI b)
 	{
-    		return (this->_spi == b._spi);
+		return (this->_spi == b._spi);
 	}
 
 	inline bool
 	operator!=(SPI b)
 	{
-    		return (this->_spi != b._spi);
+		return (this->_spi != b._spi);
 	}
 	uint32_t getValue() const
 	{
-    		return (_spi);
+		return (_spi);
 	}
 	inline hashcode_t hashcode() const;
    private:
@@ -81,18 +81,18 @@ class SADataTuple {
     uint32_t bitmap;	/* Support out-of-order receive support */
     uint32_t lastseq;	/* in host order */
 
-    SADataTuple() { 
-       	memset(this, 0, sizeof(*this));
-    } 
+    SADataTuple() {
+	memset(this, 0, sizeof(*this));
+    }
 
-    SADataTuple(const void * enc_key , const void * Auth_key, uint32_t counter, uint8_t o_oowin) 
-     { 
-      		memset(this, 0, sizeof(*this));
-      		memcpy(Encryption_key, enc_key, KEY_SIZE);
-      		memcpy(Authentication_key, Auth_key, KEY_SIZE);
- 		replay_start_counter = counter;
- 		ooowin = o_oowin;
- 	        bitmap=0;
+    SADataTuple(const void * enc_key , const void * Auth_key, uint32_t counter, uint8_t o_oowin)
+     {
+		memset(this, 0, sizeof(*this));
+		memcpy(Encryption_key, enc_key, KEY_SIZE);
+		memcpy(Authentication_key, Auth_key, KEY_SIZE);
+		replay_start_counter = counter;
+		ooowin = o_oowin;
+	        bitmap=0;
 		lastseq=cur_rpl=counter;
      }
 
@@ -107,11 +107,11 @@ String unparse_entries() const
 	 int i,j;
 	 sprintf(buf," |");
 	 for(i=0,j=0;i<16;i++,j+=2) {
-	 	sprintf(&buf[2+j],"%02x",Encryption_key[i]);
+		sprintf(&buf[2+j],"%02x",Encryption_key[i]);
 	 }
 	 sprintf(&buf[34],"| |");
 	 for(i=0,j=0;i<16;i++,j+=2) {
-	 	sprintf(&buf[37+j],"%02x",Authentication_key[i]);
+		sprintf(&buf[37+j],"%02x",Authentication_key[i]);
 	 }
 	 sprintf(&buf[69],"|");
          return String(buf, 70);

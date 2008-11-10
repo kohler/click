@@ -20,7 +20,7 @@ Keyword arguments are:
 =over 8
 
 =item SIGNAL
-Boolean. Whether to set the upstream signal to active. 
+Boolean. Whether to set the upstream signal to active.
 
 =h signal read/write
 Returns if the signal is active. Same as the SIGNAL argument.
@@ -31,20 +31,20 @@ PullNull, PokeHandlers, InfiniteSource
 */
 
 class UpstreamNotifier : public Element { public:
-  
+
   UpstreamNotifier();
   ~UpstreamNotifier();
-  
+
   const char *class_name() const	{ return "UpstreamNotifier"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PUSH; }
 
   void *cast(const char *);
   int configure(Vector<String> &conf, ErrorHandler *);
-  
+
   void add_handlers();
   void push(int, Packet *);
-  
+
   ActiveNotifier _notifier;
 };
 

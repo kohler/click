@@ -11,7 +11,7 @@ struct click_dsr { // DSR options header -- exactly one per packet
   u_int16_t dsr_len;
 };
 
-struct click_dsr_option { // common part of option headers, used for determining type 
+struct click_dsr_option { // common part of option headers, used for determining type
   unsigned char dsr_type;
   unsigned char dsr_len;
 };
@@ -19,7 +19,7 @@ struct click_dsr_option { // common part of option headers, used for determining
 struct DSRHop {
   in_addr _ip;
   unsigned char _metric;
-    
+
 #define DSR_INVALID_HOP_METRIC 0xFF
 #define DSR_INVALID_ROUTE_METRIC 9999
 
@@ -38,7 +38,7 @@ struct click_dsr_rreq {
   in_addr target;
   DSRHop addr[];
 
-  unsigned int num_addrs() const { 
+  unsigned int num_addrs() const {
     if ((dsr_len - 6) % sizeof(DSRHop) != 0) click_chatter("click_dsr_rreq::length() -- warning: odd length (%d %d)\n",
 							   dsr_len, sizeof(DSRHop));
     return ((dsr_len - 6)/sizeof(DSRHop));
@@ -57,7 +57,7 @@ struct click_dsr_rrep {
   //  unsigned short dsr_id; // this doesn't exist in the spec
   DSRHop addr[];
 
-  unsigned int num_addrs() const { 
+  unsigned int num_addrs() const {
     if ((dsr_len - 1) % sizeof(DSRHop) != 0) click_chatter("click_dsr_rrep::length() -- warning: odd length\n");
     return ((dsr_len - 1)/sizeof(DSRHop));   // from the spec, sec 6.3
   }
@@ -101,7 +101,7 @@ struct click_dsr_source {
 
   DSRHop addr[];
 
-  unsigned int num_addrs() const { 
+  unsigned int num_addrs() const {
     if ((dsr_len - 2) % sizeof(DSRHop) != 0) click_chatter("click_dsr_source::length() -- warning: odd length\n");
     return ((dsr_len - 2) / sizeof(DSRHop));
   }

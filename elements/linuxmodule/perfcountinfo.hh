@@ -26,7 +26,7 @@
  * C<DCU_MISS_OUTSTANDING>, C<IFU_FETCH>, C<IFU_FETCH_MISS>, C<IFU_MEM_STALL>,
  * C<INST_RETIRED>, C<L2_IFETCH>, C<L2_LD>, C<L2_LINES_IN>, C<L2_LINES_OUT>,
  * C<L2_LINES_OUTM>, and C<L2_RQSTS>.
- * 
+ *
  * =a
  * SetPerfCount, PerfCountAccum, SetCycleCount, CycleCountAccum */
 
@@ -39,7 +39,7 @@ class PerfCountInfo : public PerfCountUser { public:
   void *cast(const char *);
   int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
   int configure(Vector<String> &, ErrorHandler *);
-  
+
 };
 
 #endif

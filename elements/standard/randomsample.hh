@@ -63,7 +63,7 @@ CLICK_DECLS
  * =a RandomBitErrors */
 
 class RandomSample : public Element { public:
-  
+
     RandomSample();
     ~RandomSample();
 
@@ -83,13 +83,13 @@ class RandomSample : public Element { public:
 
     enum { SAMPLING_SHIFT = 28 };
     enum { SAMPLING_MASK = (1 << SAMPLING_SHIFT) - 1 };
-    
+
     uint32_t _sampling_prob;		// out of (1<<SAMPLING_SHIFT)
     bool _active;
     atomic_uint32_t _drops;
 
     static String read_handler(Element *, void *);
-    
+
 };
 
 CLICK_ENDDECLS

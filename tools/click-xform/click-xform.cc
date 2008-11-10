@@ -49,7 +49,7 @@ class Matcher { public:
   void replace(RouterT *, const String &, const LandmarkT &, ErrorHandler *);
 
  private:
-  
+
   RouterT *_pat;
   AdjacencyMatrix *_pat_m;
   RouterT *_body;
@@ -58,7 +58,7 @@ class Matcher { public:
 
   ElementT *_pat_input;
   ElementT *_pat_output;
-  
+
   Vector<ElementT *> _match;
   Vector<ElementT *> _back_match;
   HashTable<String, String> _defs;
@@ -67,7 +67,7 @@ class Matcher { public:
   Vector<PortT> _to_pp_to;
   Vector<PortT> _from_pp_from;
   Vector<PortT> _from_pp_to;
-  
+
 };
 
 
@@ -178,7 +178,7 @@ Matcher::check_match()
       if (!match_config(_pat->element(i)->configuration(), _match[i]->configuration(), _defs))
 	return false;
     }
-  
+
   int bnf = _body->nelements();
   _back_match.assign(bnf, 0);
   bool all_previous_match = true;
@@ -254,11 +254,11 @@ uniqueify_prefix(const String &base_prefix, RouterT *r)
   if (!last_uniqueifier)
     last_uniqueifier = new HashTable<String, int>(1);
   int count = last_uniqueifier->get(base_prefix);
-  
+
   while (1) {
     String prefix = base_prefix + "@" + String(count);
     count++;
-    
+
     // look for things starting with that name
     int plen = prefix.length();
     for (RouterT::iterator x = r->begin_elements(); x; x++) {
@@ -280,7 +280,7 @@ Matcher::replace_config(ElementT *e) const
 {
   Vector<String> confvec;
   cp_argvec(e->configuration(), confvec);
-  
+
   bool changed = false;
   for (int i = 0; i < confvec.size(); i++) {
     if (confvec[i].length() <= 1 || confvec[i][0] != '$')
@@ -312,7 +312,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
       _body->free_element(_match[i]);
     } else
       old_names.push_back(String());
-  
+
   // add replacement
   // collect new element indices in 'changed_elements'
   _body->set_new_eindex_collector(&changed_elements);
@@ -340,7 +340,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
     if (_match[i]) {
       String n = _pat->ename(i);
       int new_index = _body->eindex(prefix + "/" + n);
-      if (new_index >= 0) 
+      if (new_index >= 0)
 	_body->change_ename(new_index, old_names[i]);
     }
 
@@ -352,7 +352,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   for (int i = 0; i < _from_pp_from.size(); i++)
     _body->add_connection(PortT(new_pp, _from_pp_from[i].port),
 			  _from_pp_to[i], landmark);
-  
+
   // cleanup
   _body->remove_tunnels();
   // remember to clear 'new_eindex_collector'!
@@ -404,7 +404,7 @@ match_config(const String &pat, const String &conf,
   // insert my defs into defs
   for (HashTable<String, String>::iterator iter = my_defs.begin(); iter.live(); iter++)
     defs.set(iter.key(), iter.value());
-  
+
   return true;
 }
 
@@ -476,7 +476,7 @@ read_pattern_file(const char *name, ErrorHandler *errh)
 
   Vector<ElementClassT *> compounds;
   pat_file->collect_locally_declared_types(compounds);
-  
+
   for (int i = 0; i < compounds.size(); i++) {
     String name = compounds[i]->name();
     if (compounds[i]->cast_router() && name.length() > 12
@@ -513,16 +513,16 @@ main(int argc, char **argv)
   bool file_is_expr = false;
   const char *output_file = 0;
   bool reverse = 0;
-  
+
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case HELP_OPT:
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("click-xform (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 1999-2000 Massachusetts Institute of Technology\n\
@@ -531,7 +531,7 @@ There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
-      
+
      case PATTERNS_OPT:
       read_pattern_file(clp->vstr, errh);
       break;
@@ -545,7 +545,7 @@ particular purpose.\n");
       router_file = clp->vstr;
       file_is_expr = (opt == EXPRESSION_OPT);
       break;
-      
+
      case OUTPUT_OPT:
       if (output_file) {
 	errh->error("output file specified twice");
@@ -557,7 +557,7 @@ particular purpose.\n");
      case REVERSE_OPT:
       reverse = !clp->negated;
       break;
-      
+
      case Clp_NotOption:
       if (click_maybe_define(clp->vstr, errh))
 	  break;
@@ -576,13 +576,13 @@ particular purpose.\n");
       short_usage();
       exit(1);
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
     }
   }
-  
+
  done:
   RouterT *r = read_router(router_file, file_is_expr, errh);
   if (r)
@@ -610,7 +610,7 @@ particular purpose.\n");
     for (int i = 0; i < patterns.size(); i++)
       patterns[i]->flatten(errh);
   }
-  
+
   // clear r's flags, so we know the current element complement
   // didn't come from replacements (paranoia)
   for (int i = 0; i < r->nelements(); i++)
@@ -620,7 +620,7 @@ particular purpose.\n");
   Vector<AdjacencyMatrix *> patterns_adj;
   for (int i = 0; i < patterns.size(); i++)
     patterns_adj.push_back(new AdjacencyMatrix(patterns[i]));
-  
+
   bool any = true;
   int nreplace = 0;
   AdjacencyMatrix matrix(r);

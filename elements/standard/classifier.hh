@@ -74,16 +74,16 @@ CLICK_DECLS
 class Classifier : public Element { public:
 
   class Expr;
-  
+
   Classifier();
   ~Classifier();
-  
+
   const char *class_name() const		{ return "Classifier"; }
   const char *port_count() const		{ return "1/-"; }
   const char *processing() const		{ return PUSH; }
   // this element needs AlignmentInfo, so supply the "A" flag
   const char *flags() const			{ return "A"; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   void add_handlers();
 
@@ -96,9 +96,9 @@ class Classifier : public Element { public:
   void negate_expr_subtree(Vector<int> &);
   enum Combiner { C_AND, C_OR, C_TERNARY };
   void finish_expr_subtree(Vector<int> &, Combiner = C_AND, int success = SUCCESS, int failure = FAILURE);
-  
+
   void push(int port, Packet *);
-  
+
   struct Expr {
     int offset;
     union {
@@ -127,14 +127,14 @@ class Classifier : public Element { public:
  protected:
 
   enum { UBYTES = (int)(sizeof(uint32_t)) };
-  
+
   Vector<Expr> _exprs;
   int _output_everything;
   unsigned _safe_length;
   unsigned _align_offset;
 
   void redirect_expr_subtree(int first, int next, int success, int failure);
-  
+
   void combine_compatible_states();
   bool remove_unused_states();
   //int count_occurrences(const Expr &, int state, bool first) const;
@@ -145,9 +145,9 @@ class Classifier : public Element { public:
   void optimize_exprs(ErrorHandler *, int sort_stopper = 0x7FFFFFFF);
   void compress_exprs(Vector<uint32_t> &prog, bool perform_binary_search = true,
 		      unsigned min_binary_search = 7) const;
-  
+
   static String program_string(Element *, void *);
-  
+
   void length_checked_push(Packet *);
 
  private:
@@ -174,7 +174,7 @@ class Classifier : public Element { public:
     Vector<int> _domlist_start;
 
     enum { MAX_DOMLIST = 4 };
-    
+
     Classifier::Expr &expr(int state) const;
     int nexprs() const;
 
@@ -184,7 +184,7 @@ class Classifier : public Element { public:
     int dom_shift_branch(int brno, int to_state, int dom, int dom_end, Vector<int> *collector);
     void shift_branch(int brno);
     void calculate_dom(int state);
-    
+
   };
 
   //bool check_path_iterative(Vector<int> &, int interested, int eventual) const;
@@ -193,7 +193,7 @@ class Classifier : public Element { public:
   //void drift_expr(int);
 
   friend class DominatorOptimizer;
-  
+
 };
 
 CLICK_ENDDECLS

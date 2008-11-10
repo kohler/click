@@ -61,9 +61,9 @@ WifiDecap::simple_action(Packet *p)
   int wifi_header_size = sizeof(struct click_wifi);
   if ((w->i_fc[1] & WIFI_FC1_DIR_MASK) == WIFI_FC1_DIR_DSTODS)
 	  wifi_header_size += WIFI_ADDR_LEN;
-  if (WIFI_QOS_HAS_SEQ(w)) 
+  if (WIFI_QOS_HAS_SEQ(w))
 	  wifi_header_size += sizeof(uint16_t);
-  
+
   if (p->length() < wifi_header_size + sizeof(struct click_llc)) {
     p->kill();
     return 0;
@@ -73,7 +73,7 @@ WifiDecap::simple_action(Packet *p)
     p->kill();
     return 0;
   }
-  
+
   dir = w->i_fc[1] & WIFI_FC1_DIR_MASK;
 
   switch (dir) {
@@ -116,7 +116,7 @@ WifiDecap::simple_action(Packet *p)
   }
 
   uint16_t ether_type;
-  if (!_strict || memcmp(WIFI_LLC_HEADER, p_out->data() + wifi_header_size, 
+  if (!_strict || memcmp(WIFI_LLC_HEADER, p_out->data() + wifi_header_size,
 			 WIFI_LLC_HEADER_LEN)) {
 	  memcpy(&ether_type, p_out->data() + wifi_header_size + sizeof(click_llc) - 2, 2);
   } else {
@@ -143,14 +143,14 @@ WifiDecap::simple_action(Packet *p)
 			bssid.unparse().c_str(),
 			ether_type);
   }
-  
+
   return p_out;
 }
 
 
 enum {H_DEBUG};
 
-static String 
+static String
 WifiDecap_read_param(Element *e, void *thunk)
 {
   WifiDecap *td = (WifiDecap *)e;
@@ -161,7 +161,7 @@ WifiDecap_read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 WifiDecap_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -170,7 +170,7 @@ WifiDecap_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -178,7 +178,7 @@ WifiDecap_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 WifiDecap::add_handlers()
 {

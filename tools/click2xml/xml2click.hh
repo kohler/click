@@ -26,7 +26,7 @@ struct CxConnection {
 struct CxConfig {
     Vector<CxElement> _elements;
     Vector<CxConnection> _connections;
-    
+
     Vector<String> _formals;
     Vector<String> _formal_types;
     CxConfig *_enclosing;
@@ -47,7 +47,7 @@ struct CxConfig {
     ElementClassT *_type;
     RouterT *_router;
     bool _completing;
-    
+
     CxConfig(CxConfig *enclosing, const String &xml_landmark);
     ~CxConfig();
 

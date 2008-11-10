@@ -60,7 +60,7 @@ FromTcpdump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool stop = false, active = true, zero = true, checksum = false;
     _sampling_prob = (1 << SAMPLING_SHIFT);
     _absolute_seq = -1;
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "FILENAME", cpkP+cpkM, cpFilename, &_ff.filename(),
 		     "STOP", 0, cpBool, &stop,
@@ -100,7 +100,7 @@ FromTcpdump::initialize(ErrorHandler *errh)
 	return -1;
     else if (!line || !isdigit((unsigned char) line[0]))
 	errh->lwarning(_ff.print_filename(), "first line suspicious; is this a tcpdump output file?");
-    
+
     _format_complaint = false;
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
@@ -123,7 +123,7 @@ static void
 set_checksums(WritablePacket *q, click_ip *iph)
 {
     assert(iph == q->ip_header());
-    
+
     iph->ip_sum = 0;
     iph->ip_sum = click_in_cksum((uint8_t *)iph, iph->ip_hl << 2);
 
@@ -170,7 +170,7 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
 	s = s2 + 2;
     else
 	s++;
-    
+
     // then read sequence numbers
     uint32_t seq = 0, end_seq = 0, ack_seq = 0;
     if (s < end && s[0] != 'a') {
@@ -235,7 +235,7 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
     }
     tcph->th_seq = htonl(seq);
     tcph->th_ack = htonl(ack_seq);
-    
+
     // check for 'win'
     uint32_t u;
     if (s + 4 < end && s[0] == 'w' && s[1] == 'i' && s[2] == 'n' && s[3] == ' ' && isdigit((unsigned char) s[4])) {
@@ -368,12 +368,12 @@ FromTcpdump::read_packet(ErrorHandler *errh)
     iph->ip_tos = 0;
     iph->ip_ttl = 2;
     click_udp *udph = q->udp_header();
-    
+
     String line;
     StringAccum payload;
     String ip_opt;
     String tcp_opt;
-    
+
     while (1) {
 
 	if (_ff.read_line(line, errh, true) <= 0) {
@@ -408,7 +408,7 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 	    else if (*colon == '.' || (*colon >= 'A' && *colon <= 'Z'))
 		iph->ip_p = IP_PROTO_TCP;
 	}
-	
+
 	// then, read source IP address and port
 	s2 = find(s, end, ' ');
 	if (s2 == s || s2 + 2 >= end || s2[1] != '>' || s2[2] != ' ')
@@ -468,7 +468,7 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 	    const char *close = s2;
 	    s2 = open - 1;
 	    uint32_t u;
-	    
+
 	    if (open >= s && open < close) {
 		const char *item = open + 1;
 		while (item < close) {
@@ -522,7 +522,7 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 		}
 	    }
 	}
-	
+
 	// set IP length
 	if (data_len < 0)
 	    data_len = 0;
@@ -532,11 +532,11 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 	// set UDP length (after IP length is available)
 	if (iph->ip_p == IP_PROTO_UDP && IP_FIRSTFRAG(iph))
 	    q->udp_header()->uh_ulen = htons(ntohs(iph->ip_len) - (iph->ip_hl << 2));
-	
+
 	// set checksum
 	if (_checksum)
 	    set_checksums(q, iph);
-	
+
 	return q;
     }
 

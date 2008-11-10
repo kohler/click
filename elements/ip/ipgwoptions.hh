@@ -34,10 +34,10 @@ CLICK_DECLS
  * =a ICMPError */
 
 class IPGWOptions : public Element { public:
-  
+
   IPGWOptions();
   ~IPGWOptions();
-  
+
   const char *class_name() const		{ return "IPGWOptions"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
@@ -45,12 +45,12 @@ class IPGWOptions : public Element { public:
   void add_handlers();
 
   uint32_t drops() const			{ return _drops; }
-  
+
   Packet *handle_options(Packet *);
   Packet *simple_action(Packet *);
-  
+
  private:
-  
+
   atomic_uint32_t _drops;
   struct in_addr _preferred_addr;
   Vector<IPAddress> _my_addrs;

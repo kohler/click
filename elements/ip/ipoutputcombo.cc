@@ -54,11 +54,11 @@ IPOutputCombo::push(int, Packet *p_in)
     p_in->kill();
     return;
   }
-  
+
   // PaintTee
   if (PAINT_ANNO(p_in) == _color)
     output(1).push(p_in->clone());
-  
+
   // IPGWOptions
   WritablePacket *p = p_in->uniqueify();
   assert(p->has_network_header());
@@ -93,7 +93,7 @@ IPOutputCombo::push(int, Packet *p_in)
       }
 
       // have a writable packet already
-    
+
       if(type == IPOPT_RR){
 	/*
 	 * Record Route.
@@ -163,7 +163,7 @@ IPOutputCombo::push(int, Packet *p_in)
 	  }
 	}
       }
-      
+
       oi += xlen;
     }
   }
@@ -174,7 +174,7 @@ IPOutputCombo::push(int, Packet *p_in)
     ip->ip_src = _my_ip;
     do_cksum = 1;
   }
-  
+
   // IPGWOptions / FixIPSrc
   if (do_cksum) {
     ip->ip_sum = 0;

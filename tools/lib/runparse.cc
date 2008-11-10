@@ -68,7 +68,7 @@ RouterT::unparse_declaration(StringAccum &sa, const String &indent, UnparseKind 
 	    sa << " ...\n";
 	return;
     }
-    
+
     _circularity_flag = true;
 
     if (uk == UNPARSE_NAMED)
@@ -160,7 +160,7 @@ RouterUnparseT::apply_relation(ElementClassT *a, ElementClassT *b, int new_relat
 	swap(a, b);
 	new_relation = relation_negater[new_relation];
     }
-    
+
     int *relation = _relation.findp(make_pair(a, b));
     int old_relation = *relation;
     *relation = relation_combiner[old_relation][new_relation];
@@ -248,7 +248,7 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
 	    print_state = 2;
 	}
     }
-    
+
     // print tunnel pairs
     for (int i = 0; i < nelements; i++)
 	if (_elements[i]->tunnel() && _elements[i]->tunnel_output()) {
@@ -311,7 +311,7 @@ RouterT::unparse_connections(StringAccum &sa, const String &indent) const
 	    const PortT &hf = _conn[c].from();
 	    if (used[c] || !startchain[c])
 		continue;
-	    
+
 	    sa << indent << hf.element->name();
 	    if (hf.port)
 		sa << " [" << hf.port << "]";

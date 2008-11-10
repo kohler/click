@@ -37,11 +37,11 @@ InfiniteSource::~InfiniteSource()
 }
 
 void *
-InfiniteSource::cast(const char *n) 
+InfiniteSource::cast(const char *n)
 {
-  if (strcmp(n, "InfiniteSource") == 0) 
+  if (strcmp(n, "InfiniteSource") == 0)
     return (InfiniteSource *)this;
-  else if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0) 
+  else if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0)
     return static_cast<Notifier *>(this);
   else
     return 0;
@@ -79,7 +79,7 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
   _stop = stop;
 
   setup_packet();
-  
+
   return 0;
 }
 
@@ -142,7 +142,7 @@ InfiniteSource::pull(int)
 }
 
 void
-InfiniteSource::setup_packet() 
+InfiniteSource::setup_packet()
 {
     if (_packet)
 	_packet->kill();
@@ -185,7 +185,7 @@ InfiniteSource::change_param(const String &s, Element *e, void *vparam,
      is->_data = s;
      is->setup_packet();
      break;
-   
+
    case 1: {			// limit
      int limit;
      if (!cp_integer(s, &limit))
@@ -193,7 +193,7 @@ InfiniteSource::change_param(const String &s, Element *e, void *vparam,
      is->_limit = limit;
      break;
    }
-   
+
    case 2: {			// burstsize
      int burstsize;
      if (!cp_integer(s, &burstsize) || burstsize < 1)
@@ -201,7 +201,7 @@ InfiniteSource::change_param(const String &s, Element *e, void *vparam,
      is->_burstsize = burstsize;
      break;
    }
-   
+
    case 3: {			// active
      bool active;
      if (!cp_bool(s, &active))
@@ -228,7 +228,7 @@ InfiniteSource::change_param(const String &s, Element *e, void *vparam,
   if (is->_active && (is->_limit < 0 || is->_count < is->_limit)) {
     if (is->output_is_push(0) && !is->_task.scheduled())
       is->_task.reschedule();
-    
+
     if (is->output_is_pull(0) && !is->Notifier::active())
       is->wake();
   }

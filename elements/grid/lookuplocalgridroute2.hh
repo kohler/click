@@ -5,10 +5,10 @@
  * =c
  * LookupLocalGridRoute2(ETH, IP, GenericGridRouteTable, I<KEYWORDS>)
  *
- * =s 
- * Grid 
+ * =s
+ * Grid
  *
- * =d 
+ * =d
  *
  * Forward packets according to the tables accumulated by the
  * GenericGridRouteTable element.
@@ -65,7 +65,7 @@ public:
   void *cast(const char *);
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 

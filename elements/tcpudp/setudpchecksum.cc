@@ -39,7 +39,7 @@ SetUDPChecksum::simple_action(Packet *p_in)
     WritablePacket *p = p_in->uniqueify();
     if (!p)
 	return 0;
-    
+
     // XXX check IP header/UDP protocol?
     click_ip *iph = p->ip_header();
     click_udp *udph = p->udp_header();

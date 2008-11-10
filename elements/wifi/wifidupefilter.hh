@@ -21,18 +21,18 @@ Filters out duplicate 802.11 packets based on their sequence number.
  */
 
 class WifiDupeFilter : public Element {
-  
+
  public:
-  
+
   WifiDupeFilter();
   ~WifiDupeFilter();
-  
+
   const char *class_name() const		{ return "WifiDupeFilter"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   Packet *simple_action(Packet *);
 
   static String static_read_stats(Element *xf, void *);

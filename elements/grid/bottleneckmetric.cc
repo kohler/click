@@ -18,7 +18,7 @@
 #include <click/error.hh>
 #include "elements/grid/bottleneckmetric.hh"
 #include "elements/grid/linkstat.hh"
-CLICK_DECLS 
+CLICK_DECLS
 
 BottleneckMetric::BottleneckMetric()
   : _ls(0)
@@ -30,7 +30,7 @@ BottleneckMetric::~BottleneckMetric()
 }
 
 void *
-BottleneckMetric::cast(const char *n) 
+BottleneckMetric::cast(const char *n)
 {
   if (strcmp(n, "BottleneckMetric") == 0)
     return (BottleneckMetric *) this;
@@ -48,7 +48,7 @@ BottleneckMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 			 cpEnd);
   if (res < 0)
     return res;
-  if (_ls == 0) 
+  if (_ls == 0)
     errh->error("no LinkStat element specified");
   if (_ls->cast("LinkStat") == 0)
     return errh->error("LinkStat argument is wrong element type (should be LinkStat)");
@@ -61,13 +61,13 @@ BottleneckMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
 {
   if (m1.good() && m2.good())
     return m1.val() > m2.val(); // larger bottlenecks are better, or `less than' in metric world.
-  else if (m2.good()) 
+  else if (m2.good())
     return false;
-  else 
+  else
     return true;
 }
 
-GridGenericMetric::metric_t 
+GridGenericMetric::metric_t
 BottleneckMetric::get_link_metric(const EtherAddress &e, bool data_sender) const
 {
   unsigned tau;
@@ -83,7 +83,7 @@ BottleneckMetric::get_link_metric(const EtherAddress &e, bool data_sender) const
   if (!res || r == 0)
     return _bad_metric;
 
-  return metric_t(r);      
+  return metric_t(r);
 }
 
 GridGenericMetric::metric_t
@@ -91,7 +91,7 @@ BottleneckMetric::append_metric(const metric_t &r, const metric_t &l) const
 {
   if (!r.good() || !l.good())
     return _bad_metric;
-  
+
   if (r.val() > 100)
     click_chatter("BottleneckMetric %s: append_metric WARNING: metric %u%% delivery ratio is too large for route metric",
 		  name().c_str(), r.val());

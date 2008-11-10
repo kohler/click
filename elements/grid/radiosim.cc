@@ -73,7 +73,7 @@ int
 RadioSim::initialize(ErrorHandler *errh)
 {
   int n, i;
-  
+
   n = ninputs();
   assert(n == noutputs());
   for(i = _nodes.size(); i < n; i++){
@@ -125,7 +125,7 @@ RadioSim::get_node_loc(int i)
 {
   if(i >= 0 && i < _nodes.size())
     return _nodes[i];
-  else 
+  else
     return Node(0, 0);
 }
 

@@ -50,7 +50,7 @@ ToDevice will seamlessly begin sending packets to it. Default is false.
 The FreeBSD networking code may also send packets out the device. Click won't
 see those packets. Worse, FreeBSD may cause the device to be busy when a
 ToDevice wants to send a packet. Click is not clever enough to re-queue
-such packets, and discards them. 
+such packets, and discards them.
 
 ToDevice's depend on the net driver's send operation for synchronization
 
@@ -68,22 +68,22 @@ Resets C<packets> counter to zero when written.
 #include <click/notifier.hh>
 
 class ToDevice : public AnyDevice {
-  
+
  public:
-  
+
   ToDevice();
   ~ToDevice();
-  
+
   const char *class_name() const	{ return "ToDevice"; }
   const char *port_count() const	{ return PORTS_1_0; }
   const char *processing() const	{ return PULL; }
-  
+
   int configure_phase() const		{ return CONFIGURE_PHASE_TODEVICE; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
   void add_handlers();
-  
+
   bool run_task(Task *);
 
   void reset_counts();
@@ -95,7 +95,7 @@ class ToDevice : public AnyDevice {
 
   unsigned _burst;
   NotifierSignal _signal;
-  
+
 };
 
 #endif

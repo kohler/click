@@ -180,7 +180,7 @@ ServicesNameDB::read_services()
     // On my Linux laptop, using the 'getprotoent()/getservent()' interface
     // takes approximately 0.1s more than the hand-coded version below
     // (which I coded before realizing 'getprotoent()/getservent()' exists).
-    
+
     if (type() == NameInfo::T_IP_PROTO) {
 	if (!_db)
 	    _db = new DynamicNameDB(type(), String(), 4);
@@ -209,7 +209,7 @@ ServicesNameDB::read_services()
 	}
 #else
     // Hand-coded version.
-    
+
     bool proto = (type() == NameInfo::T_IP_PROTO);
     String text = file_string(proto ? _PATH_PROTOCOLS : _PATH_SERVICES);
     if (!text)
@@ -256,7 +256,7 @@ ServicesNameDB::read_services()
 	    /* nada */;
 	if (db->type() != ptype)
 	    goto skip_to_eol;
-	
+
 	// a series of assignments
 	if (!db->_db)
 	    db->_db = new DynamicNameDB(ptype, "", 4);
@@ -293,7 +293,7 @@ ServicesNameDB::query(const String &name, void *value, size_t vsize)
 	read_services();
 	_read_db = true;
     }
-    
+
     if (type() == NameInfo::T_IP_PROTO) {
 	if (!_db) {
 	    if (const struct protoent *proto = getprotobyname(name.c_str())) {

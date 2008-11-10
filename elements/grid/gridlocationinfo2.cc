@@ -23,7 +23,7 @@
 #include <click/error.hh>
 CLICK_DECLS
 
-GridLocationInfo2::GridLocationInfo2() 
+GridLocationInfo2::GridLocationInfo2()
   : _seq_no(0), _tag("<unknown>"),
     _loc_good(false), _loc_err(0), _loc(0, 0, 0)
 {
@@ -74,7 +74,7 @@ GridLocationInfo2::configure(Vector<String> &conf, ErrorHandler *errh)
   int res = read_args(conf, errh);
   if (res < 0)
     return res;
-  
+
   return res;
 }
 
@@ -91,7 +91,7 @@ loc_read_handler(Element *f, void *)
 {
   GridLocationInfo2 *l = (GridLocationInfo2 *) f;
   grid_location loc = l->get_current_location();
-  
+
   const int BUFSZ = 255;
   char buf[BUFSZ];
   int res = snprintf(buf, BUFSZ, "%s (err=%hu good=%s seq=%u)\n", loc.s().c_str(),
@@ -100,7 +100,7 @@ loc_read_handler(Element *f, void *)
     click_chatter("GridLocationInfo2 read handler buffer too small");
     return String("");
   }
-  return String(buf);  
+  return String(buf);
 }
 
 

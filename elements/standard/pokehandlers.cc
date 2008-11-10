@@ -55,7 +55,7 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
     _h_handler.clear();
     _h_value.clear();
     _h_timeout.clear();
-    
+
     uint32_t timeout;
     Element *e;
     String hname;
@@ -155,7 +155,7 @@ PokeHandlers::unpause() {
 	return;
     _paused = false;
     if (_pos < _h_timeout.size())
-	_timer.schedule_after_msec(_h_timeout[_pos]); // XXX +1 ms? 
+	_timer.schedule_after_msec(_h_timeout[_pos]); // XXX +1 ms?
 }
 
 void
@@ -183,7 +183,7 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
 	    hpos++;
 	    break;
 	}
-	
+
 	const Handler *h = Router::handler(he, hname);
 	int before = perrh.nerrors();
 	if (!h)

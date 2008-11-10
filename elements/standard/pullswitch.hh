@@ -38,26 +38,26 @@ class PullSwitch : public Element { public:
 
   PullSwitch();
   ~PullSwitch();
-  
+
   const char *class_name() const		{ return "PullSwitch"; }
   const char *port_count() const		{ return "-/1"; }
   const char *processing() const		{ return PULL; }
 
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
-  void add_handlers();  
-  
+  void add_handlers();
+
   Packet *pull(int);
 
   int llrpc(unsigned, void *);
-  
+
  private:
 
   int _input;
 
   static String read_param(Element *, void *);
   static int write_param(const String &, Element *, void *, ErrorHandler *);
-  
+
 };
 
 CLICK_ENDDECLS

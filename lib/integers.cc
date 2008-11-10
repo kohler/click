@@ -113,7 +113,7 @@ int_sqrt(uint32_t x)
 {
     if (x + 1 <= 1)
 	return (x ? 0xFFFFU : 0);
-    
+
     // Newton's algorithm.
     uint32_t y, z;
     // Initial overestimate.

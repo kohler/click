@@ -65,14 +65,14 @@ ICMPPingResponder::simple_action(Packet *p_in)
     // (bug reported by David Scott Page)
     click_update_in_cksum(&iph->ip_sum, iph->ip_off, 0);
     iph->ip_off = 0;
-    
+
     // set TTL to 255, update checksum
     // (bug reported by <kp13@gmx.co.uk>)
     uint16_t old_hw = ((uint16_t *)iph)[4];
     iph->ip_ttl = 255;
     uint16_t new_hw = ((uint16_t *)iph)[4];
     click_update_in_cksum(&iph->ip_sum, old_hw, new_hw);
-    
+
     // set annotations
     // (dst_ip_anno bug reported by Sven Hirsch <hirschs@gmx.de>)
     q->set_dst_ip_anno(iph->ip_dst);

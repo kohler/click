@@ -42,7 +42,7 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   _offset = 0;
   _tries = WIFI_MAX_RETRIES+1;
   if (cp_va_kparse(conf, this, errh,
-		   "RATE", cpkP, cpUnsigned, &_rate, 
+		   "RATE", cpkP, cpUnsigned, &_rate,
 		   "TRIES", 0, cpUnsigned, &_tries,
 		   "ETHTYPE", 0, cpUnsignedShort, &_et,
 		   "OFFSET", 0, cpUnsigned, &_offset,
@@ -56,9 +56,9 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if (_tries < 1) {
 	  return errh->error("TRIES must be >= 0");
-  }  
-  
-  
+  }
+
+
   return 0;
 }
 
@@ -90,26 +90,26 @@ SetTXRate::read_handler(Element *e, void *thunk)
   case H_TRIES: return String(foo->_tries) + "\n";
   default:   return "\n";
   }
-  
+
 }
 
 int
 SetTXRate::write_handler(const String &arg, Element *e,
-			 void *vparam, ErrorHandler *errh) 
+			 void *vparam, ErrorHandler *errh)
 {
   SetTXRate *f = (SetTXRate *) e;
   String s = cp_uncomment(arg);
   switch((intptr_t)vparam) {
   case H_RATE: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("rate parameter must be unsigned");
     f->_rate = m;
     break;
   }
   case H_TRIES: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("tries parameter must be unsigned");
     f->_tries = m;
     break;

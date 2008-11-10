@@ -22,12 +22,12 @@
 #include "gridlogger.hh"
 CLICK_DECLS
 
-GridLogger::GridLogger() 
-  : GridGenericLogger(), _state(WAITING), _fd(-1), _bufptr(0) 
-{ 
+GridLogger::GridLogger()
+  : GridGenericLogger(), _state(WAITING), _fd(-1), _bufptr(0)
+{
 }
 
-GridLogger::~GridLogger() { 
+GridLogger::~GridLogger() {
   if (log_is_open())
     close_log();
 }
@@ -86,20 +86,20 @@ GridLogger::read_logfile(Element *e, void *)
 }
 
 int
-GridLogger::write_start_log(const String &arg, Element *e, 
+GridLogger::write_start_log(const String &arg, Element *e,
 			    void *, ErrorHandler *errh)
 {
   GridLogger *g = (GridLogger *) e;
   if (g->log_is_open())
     g->close_log();
   bool res = g->open_log(arg);
-  if (!res) 
+  if (!res)
     return errh->error("unable to open logfile ``%s''", ((String) arg).c_str());
   return 0;
 }
 
 int
-GridLogger::write_stop_log(const String &, Element *e, 
+GridLogger::write_stop_log(const String &, Element *e,
 			    void *, ErrorHandler *)
 {
   GridLogger *g = (GridLogger *) e;
@@ -109,7 +109,7 @@ GridLogger::write_stop_log(const String &, Element *e,
 }
 
 bool
-GridLogger::open_log(const String &filename) 
+GridLogger::open_log(const String &filename)
 {
   String new_fn = filename;
   int new_fd = open(new_fn.c_str(), O_WRONLY | O_CREAT, 0777);
@@ -121,13 +121,13 @@ GridLogger::open_log(const String &filename)
 		    name().c_str(), _fn.c_str());
     return false;
   }
-  
+
   if (log_is_open())
     close_log();
-  
+
   _fd = new_fd;
   _fn = new_fn;
-  
+
   click_chatter("GridLogger %s: started logging to %s", name().c_str(), _fn.c_str());
   return true;
 }

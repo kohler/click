@@ -82,11 +82,11 @@ class TCPRewriter : public IPRw { public:
     int update_seqno_delta(tcp_seq_t old_seqno, int32_t delta);
     tcp_seq_t new_seq(tcp_seq_t) const;
     tcp_seq_t new_ack(tcp_seq_t) const;
-    
+
     void apply(WritablePacket *p);
 
     String s() const;
-    
+
    private:
 
     tcp_seq_t _trigger;
@@ -99,7 +99,7 @@ class TCPRewriter : public IPRw { public:
 
   TCPRewriter();
   ~TCPRewriter();
-  
+
   const char *class_name() const		{ return "TCPRewriter"; }
   void *cast(const char *);
   const char *port_count() const		{ return "1-/1-256"; }
@@ -109,18 +109,18 @@ class TCPRewriter : public IPRw { public:
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
   void take_state(Element *, ErrorHandler *);
-  
+
   int notify_pattern(Pattern *, ErrorHandler *);
   TCPMapping *apply_pattern(Pattern *, int ip_p, const IPFlowID &, int, int);
   TCPMapping *get_mapping(int ip_p, const IPFlowID &) const;
-  
+
   void push(int, Packet *);
 
   void add_handlers();
   int llrpc(unsigned, void *);
 
  private:
-  
+
   Map _tcp_map;
   Mapping *_tcp_done;
   Mapping *_tcp_done_tail;
@@ -136,7 +136,7 @@ class TCPRewriter : public IPRw { public:
   int _tcp_done_timeout_jiffies;
 
   int _nmapping_failures;
-  
+
   static void tcp_gc_hook(Timer *, void *);
   static void tcp_done_gc_hook(Timer *, void *);
 

@@ -74,7 +74,7 @@ BufferConverter::oput(const String &s)
   if (q == 0) {
     click_chatter("BufferConverter: cannot make packet");
     return;
-  } 
+  }
   memset(q->data(), '\0', sizeof(*ip)+sizeof(*tcp));
   ip = (struct click_ip *) q->data();
   tcp = (struct click_tcp *) (ip + 1);
@@ -100,7 +100,7 @@ BufferConverter::oput(const String &s)
     _obuf = _obuf.substring(_mtu, _obuf.length()-_mtu);
     dlen -= _mtu;
     data += _mtu;
-  } 
+  }
   else if (_obuf.length() > 0) {
     memmove(data, _obuf.c_str(), _obuf.length());
     dlen -= _obuf.length();

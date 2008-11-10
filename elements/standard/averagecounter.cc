@@ -1,5 +1,5 @@
 /*
- * averagecounter.{cc,hh} -- element counts packets, measures duration 
+ * averagecounter.{cc,hh} -- element counts packets, measures duration
  * Benjie Chen
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology

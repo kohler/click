@@ -60,10 +60,10 @@ ListenEtherSwitch, EtherSpanTree
 */
 
 class EtherSwitch : public Element { public:
-  
+
   EtherSwitch();
   ~EtherSwitch();
-  
+
   const char *class_name() const		{ return "EtherSwitch"; }
   const char *port_count() const		{ return "2-/="; }
   const char *processing() const		{ return PUSH; }
@@ -85,13 +85,13 @@ class EtherSwitch : public Element { public:
     typedef HashTable<EtherAddress, AddrInfo> Table;
     Table _table;
     uint32_t _timeout;
-  
+
     void broadcast(int source, Packet*);
-    
+
     static String reader(Element *, void *);
     static int writer(const String &, Element *, void *, ErrorHandler *);
     friend class ListenEtherSwitch;
-    
+
 };
 
 inline

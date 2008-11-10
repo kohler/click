@@ -21,14 +21,14 @@ Copies the wifi_radiotap_header from Packet::anno() and pushes it onto the packe
 
 
 class RadiotapEncap : public Element { public:
-  
+
   RadiotapEncap();
   ~RadiotapEncap();
 
   const char *class_name() const	{ return "RadiotapEncap"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
 

@@ -37,7 +37,7 @@ class ElementClassT { public:
     virtual bool primitive() const	{ return true; }
     virtual bool overloaded() const	{ return false; }
     bool tunnel() const			{ return this == tunnel_type(); }
-    
+
     inline const ElementTraits &traits() const;
     inline const ElementTraits &traits(ElementMap *emap) const;
     virtual const ElementTraits *find_traits(ElementMap *emap) const;
@@ -53,7 +53,7 @@ class ElementClassT { public:
     // where was this type declared?
     virtual RouterT *declaration_scope() const;
     virtual ElementClassT *overload_type() const;
-    
+
     virtual void collect_types(HashTable<ElementClassT *, int> &) const;
     virtual void collect_overloads(Vector<ElementClassT *> &) const;
 
@@ -87,7 +87,7 @@ class ElementClassT { public:
     virtual void create_scope(const Vector<String> &args,
 			      const VariableEnvironment &scope,
 			      VariableEnvironment &new_scope);
-    
+
     virtual ElementT *complex_expand_element(ElementT *element,
 					     const Vector<String> &conf,
 					     RouterT *dest,
@@ -112,9 +112,9 @@ class ElementClassT { public:
 
     mutable int _traits_version;
     mutable const ElementTraits *_traits;
-    
+
     static ElementClassT *the_tunnel_type;
-    
+
     ElementClassT(const ElementClassT &);
     ElementClassT &operator=(const ElementClassT &);
 
@@ -135,7 +135,7 @@ class SynonymElementClassT : public ElementClassT { public:
     ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const LandmarkT &);
     void create_scope(const Vector<String> &, const VariableEnvironment &, VariableEnvironment &);
     ElementT *complex_expand_element(ElementT *, const Vector<String> &, RouterT *, const String &prefix, const VariableEnvironment &, ErrorHandler *);
-    
+
     void collect_types(HashTable<ElementClassT *, int> &) const;
     void collect_overloads(Vector<ElementClassT *> &) const;
 
@@ -144,13 +144,13 @@ class SynonymElementClassT : public ElementClassT { public:
     bool primitive() const		{ return false; }
     bool overloaded() const		{ return _eclass->overloaded(); }
     const ElementTraits *find_traits(ElementMap *emap) const;
-    
+
     RouterT *declaration_scope() const;
     ElementClassT *overload_type() const { return _eclass; }
-    
+
     SynonymElementClassT *cast_synonym() { return this; }
     RouterT *cast_router();
-  
+
   private:
 
     ElementClassT *_eclass;

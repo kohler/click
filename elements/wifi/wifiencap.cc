@@ -43,7 +43,7 @@ WifiEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   _debug = false;
   _mode = WIFI_FC1_DIR_NODS;
   if (cp_va_kparse(conf, this, errh,
-		   "MODE", cpkP+cpkM, cpUnsigned, &_mode, 
+		   "MODE", cpkP+cpkM, cpUnsigned, &_mode,
 		   "BSSID", cpkP, cpEthernetAddress, &_bssid,
 		   "WIRELESS_INFO", 0, cpElement, &_winfo,
 		   "DEBUG", 0, cpBool, &_debug,
@@ -72,7 +72,7 @@ WifiEncap::simple_action(Packet *p)
 
     p->kill();
     return 0;
-	      
+
   }
 
   click_ether *eh = (click_ether *) p->data();
@@ -142,7 +142,7 @@ WifiEncap::simple_action(Packet *p)
 
 enum {H_DEBUG, H_MODE, H_BSSID};
 
-static String 
+static String
 WifiEncap_read_param(Element *e, void *thunk)
 {
   WifiEncap *td = (WifiEncap *)e;
@@ -157,7 +157,7 @@ WifiEncap_read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 WifiEncap_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -166,7 +166,7 @@ WifiEncap_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -174,14 +174,14 @@ WifiEncap_write_param(const String &in_s, Element *e, void *vparam,
 
   case H_MODE: {    //mode
     int m;
-    if (!cp_integer(s, &m)) 
+    if (!cp_integer(s, &m))
       return errh->error("mode parameter must be int");
     f->_mode = m;
     break;
   }
   case H_BSSID: {    //debug
     EtherAddress e;
-    if (!cp_ethernet_address(s, &e)) 
+    if (!cp_ethernet_address(s, &e))
       return errh->error("bssid parameter must be ethernet address");
     f->_bssid = e;
     break;
@@ -189,7 +189,7 @@ WifiEncap_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 WifiEncap::add_handlers()
 {

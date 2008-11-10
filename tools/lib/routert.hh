@@ -18,14 +18,14 @@ class RouterT : public ElementClassT { public:
     // ELEMENTS
     int nelements() const		{ return _elements.size(); }
     int n_live_elements() const		{ return _n_live_elements; }
-    
+
     inline const ElementT *element(const String &) const;
     inline ElementT *element(const String &);
     int eindex(const String &name) const { return _element_name_map[name]; }
 
     const ElementT *element(int i) const{ return _elements[i]; }
     ElementT *element(int i)		{ return _elements[i]; }
-    
+
     class iterator;
     class const_iterator;
     class type_iterator;
@@ -36,13 +36,13 @@ class RouterT : public ElementClassT { public:
     inline const_type_iterator begin_elements(ElementClassT *) const;
     inline iterator end_elements();
     inline const_iterator end_elements() const;
-    
+
     bool elive(int i) const		{ return _elements[i]->live(); }
     bool edead(int i) const		{ return _elements[i]->dead(); }
     inline String ename(int) const;
     inline ElementClassT *etype(int) const;
     inline String etype_name(int) const;
-    
+
     ElementT *get_element(const String &name, ElementClassT *eclass, const String &configuration, const LandmarkT &landmark);
     ElementT *add_anon_element(ElementClassT *eclass, const String &configuration = String(), const LandmarkT &landmark = LandmarkT::empty_landmark());
     void change_ename(int, const String &);
@@ -72,20 +72,20 @@ class RouterT : public ElementClassT { public:
     }
 
     enum { end_to = ConnectionT::end_to, end_from = ConnectionT::end_from };
-    
+
     class conn_iterator;
     inline conn_iterator begin_connections() const;
     inline conn_iterator end_connections() const;
     conn_iterator begin_connections_touching(int eindex, int port, bool isoutput) const;
     inline conn_iterator begin_connections_touching(const PortT &port, bool isoutput) const;
     inline conn_iterator begin_connections_touching(ElementT *e, bool isoutput) const;
-    
+
     inline conn_iterator begin_connections_from(const PortT &port) const;
     inline conn_iterator begin_connections_from(ElementT *e) const;
     inline conn_iterator begin_connections_to(const PortT &port) const;
     inline conn_iterator begin_connections_to(ElementT *e) const;
     inline conn_iterator find_connection(int ci) const;
-    
+
     void add_tunnel(const String &namein, const String &nameout, const LandmarkT &, ErrorHandler *);
 
     bool add_connection(const PortT &, const PortT &, const LandmarkT &landmark = LandmarkT::empty_landmark());
@@ -113,7 +113,7 @@ class RouterT : public ElementClassT { public:
     void find_connections_touching(const PortT &port, bool isoutput, Vector<PortT> &v, bool clear = true) const;
     void find_connections_touching(const PortT &port, bool isoutput, Vector<int> &v) const;
     void find_connection_vector_touching(ElementT *e, bool isoutput, Vector<int> &v) const;
-    
+
     inline int find_connection_id_from(const PortT &output) const {
 	return find_connection_id_touching(output, end_from);
     }
@@ -130,7 +130,7 @@ class RouterT : public ElementClassT { public:
     void find_connection_vector_from(ElementT *e, Vector<int> &v) const {
 	find_connection_vector_touching(e, end_from, v);
     }
-    
+
     inline int find_connection_id_to(const PortT &input) const {
 	return find_connection_id_touching(input, end_to);
     }
@@ -152,7 +152,7 @@ class RouterT : public ElementClassT { public:
     bool insert_after(const PortT &, const PortT &);
     inline bool insert_before(ElementT *, const PortT &);
     inline bool insert_after(ElementT *, const PortT &);
-    
+
     // REQUIREMENTS
     void add_requirement(const String &);
     void remove_requirement(const String &);
@@ -195,35 +195,35 @@ class RouterT : public ElementClassT { public:
     String decorated_landmark() const	{ return _type_landmark.decorated_str(); }
     void set_landmarkt(const LandmarkT &l) { _type_landmark = l; }
     const ElementTraits *find_traits(ElementMap *emap) const;
-    
+
     bool primitive() const		{ return false; }
     bool overloaded() const;
-    
+
     int nformals() const		{ return _nformals; }
     const VariableEnvironment &scope() const { return _scope; }
     inline bool define(const String &name, const String &value, bool isformal);
     inline void redefine(const VariableEnvironment &);
     int ninputs() const			{ return _ninputs; }
     int noutputs() const		{ return _noutputs; }
-    
+
     RouterT *declaration_scope() const	{ return _declaration_scope; }
     ElementClassT *overload_type() const { return _overload_type; }
     void set_overload_type(ElementClassT *);
 
     int finish_type(ErrorHandler *);
-    
+
     bool need_resolve() const;
     ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const LandmarkT &landmark);
     void create_scope(const Vector<String> &args, const VariableEnvironment &env, VariableEnvironment &new_env);
     ElementT *complex_expand_element(ElementT *, const Vector<String> &, RouterT *, const String &prefix, const VariableEnvironment &, ErrorHandler *);
 
     String unparse_signature() const;
-    void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);    
+    void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);
 
     RouterT *cast_router()		{ return this; }
 
   private:
-  
+
     struct Pair {
 	int end[2];
 	Pair() { end[0] = end[1] = -1; }
@@ -253,7 +253,7 @@ class RouterT : public ElementClassT { public:
     Vector<ConnectionT> _conn;
     Vector<Pair> _first_conn;
     int _free_conn;
-    
+
     StringMap _declared_type_map;
     Vector<ElementType> _declared_types;
 
@@ -275,7 +275,7 @@ class RouterT : public ElementClassT { public:
     ElementClassT *_overload_type;
     LandmarkT _type_landmark;
     mutable ElementTraits _traits;
-    
+
     RouterT(const RouterT &);
     RouterT &operator=(const RouterT &);
 
@@ -292,7 +292,7 @@ class RouterT : public ElementClassT { public:
 
     friend class RouterUnparserT;
     friend class conn_iterator;
-    
+
 };
 
 class RouterT::const_iterator { public:

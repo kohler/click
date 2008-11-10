@@ -50,17 +50,17 @@ CheckICMPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   bool verbose = false;
   bool details = false;
-  
+
   if (cp_va_kparse(conf, this, errh,
 		   "VERBOSE", 0, cpBool, &verbose,
 		   "DETAILS", 0, cpBool, &details,
 		   cpEnd) < 0)
     return -1;
-  
+
   _verbose = verbose;
   if (details)
     _reason_drops = new atomic_uint32_t[NREASONS];
-  
+
   return 0;
 }
 
@@ -74,7 +74,7 @@ CheckICMPHeader::drop(Reason reason, Packet *p)
 
   if (_reason_drops)
     _reason_drops[reason]++;
-  
+
   if (noutputs() == 2)
     output(1).push(p);
   else
@@ -89,10 +89,10 @@ CheckICMPHeader::simple_action(Packet *p)
   const click_ip *iph = p->ip_header();
   unsigned csum, icmp_len;
   const click_icmp *icmph = p->icmp_header();
-  
+
   if (!p->has_network_header() || iph->ip_p != IP_PROTO_ICMP)
     return drop(NOT_ICMP, p);
-  
+
   icmp_len = p->length() - p->transport_header_offset();
   if (icmp_len < sizeof(click_icmp))
     return drop(BAD_LENGTH, p);

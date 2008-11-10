@@ -24,7 +24,7 @@ class GridRouteActionCallback {
 public:
 
     virtual ~GridRouteActionCallback() { }
-    
+
   enum Action {
     UnknownAction      = 0,
     SendToIP           = 1,
@@ -47,7 +47,7 @@ public:
     ConfigError        = 5,
     OwnLocUnknown      = 6,
     BadPacket          = 7
-  };    
+  };
 
   virtual void route_cb(int id, unsigned int dest_ip, Action a, unsigned int data, unsigned int data2) = 0;
 
@@ -99,9 +99,9 @@ protected:
   void notify_route_cbs(Packet *p, unsigned int dest_ip, GridRouteActionCallback::Action a,
 			unsigned int data, unsigned int data2) {
     for (int i = 0; i < _max_route_cbs; i++) {
-      if (_cbs[i] && cb_is_set(p, i)) 
+      if (_cbs[i] && cb_is_set(p, i))
 	_cbs[i]->route_cb(i, dest_ip, a, data, data2);
-    }    
+    }
   }
 };
 

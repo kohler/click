@@ -63,7 +63,7 @@ ProbeResponder::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
 
 
-  if (!_rtable || _rtable->cast("AvailableRates") == 0) 
+  if (!_rtable || _rtable->cast("AvailableRates") == 0)
     return errh->error("AvailableRates element is not provided or not a AvailableRates");
 
   if (_interval_ms <= 0) {
@@ -89,7 +89,7 @@ ProbeResponder::push(int, Packet *p)
 
     p->kill();
     return;
-	      
+
   }
   struct click_wifi *w = (struct click_wifi *) p->data();
 
@@ -113,7 +113,7 @@ ProbeResponder::push(int, Packet *p)
   }
 
   uint8_t *ptr;
-  
+
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
   uint8_t *end  = (uint8_t *) p->data() + p->length();
@@ -159,7 +159,7 @@ ProbeResponder::push(int, Packet *p)
     p->kill();
     return;
   }
-  
+
   EtherAddress src = EtherAddress(w->i_addr2);
 
   sa << "ProbeReq: " << src << " ssid " << ssid << " ";
@@ -168,7 +168,7 @@ ProbeResponder::push(int, Packet *p)
   if (rates_l) {
     for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
       uint8_t rate = rates_l[x + 2];
-      
+
       if (rate & WIFI_RATE_BASIC) {
 	sa << " * " << (int) (rate ^ WIFI_RATE_BASIC);
       } else {
@@ -184,7 +184,7 @@ ProbeResponder::push(int, Packet *p)
 		  sa.take_string().c_str());
   }
   send_probe_response(src);
-  
+
   p->kill();
   return;
 }
@@ -193,7 +193,7 @@ ProbeResponder::send_probe_response(EtherAddress dst)
 {
 
   Vector<int> rates = _rtable->lookup(_bssid);
-  int len = sizeof (struct click_wifi) + 
+  int len = sizeof (struct click_wifi) +
     8 +                  /* timestamp */
     2 +                  /* beacon interval */
     2 +                  /* cap_info */
@@ -202,7 +202,7 @@ ProbeResponder::send_probe_response(EtherAddress dst)
     2 + 1 +              /* ds parms */
     2 + 4 +              /* tim */
     0;
-    
+
   WritablePacket *p = Packet::make(len);
 
   if (p == 0)
@@ -217,19 +217,19 @@ ProbeResponder::send_probe_response(EtherAddress dst)
   memcpy(w->i_addr2, _bssid.data(), 6);
   memcpy(w->i_addr3, _bssid.data(), 6);
 
-  
+
   *(uint16_t *) w->i_dur = 0;
   *(uint16_t *) w->i_seq = 0;
 
   uint8_t *ptr;
-  
+
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
   /* timestamp is set in the hal. ??? */
   memset(ptr, 0, 8);
   ptr += 8;
 
-  
+
   uint16_t beacon_int = (uint16_t) _interval_ms;
   *(uint16_t *)ptr = cpu_to_le16(beacon_int);
   ptr += 2;
@@ -250,11 +250,11 @@ ProbeResponder::send_probe_response(EtherAddress dst)
   ptr[1] = min(WIFI_RATES_MAXSIZE, rates.size());
   for (int x = 0; x < min (WIFI_RATES_MAXSIZE, rates.size()); x++) {
     ptr[2 + x] = (uint8_t) rates[x];
-    
+
     if (rates[x] == 2) {
       ptr [2 + x] |= WIFI_RATE_BASIC;
     }
-    
+
   }
   ptr += 2 + rates.size();
 
@@ -281,7 +281,7 @@ ProbeResponder::send_probe_response(EtherAddress dst)
 
 enum {H_DEBUG, H_BSSID, H_SSID, H_CHANNEL, H_INTERVAL};
 
-static String 
+static String
 ProbeResponder_read_param(Element *e, void *thunk)
 {
   ProbeResponder *td = (ProbeResponder *)e;
@@ -300,7 +300,7 @@ ProbeResponder_read_param(Element *e, void *thunk)
     return String();
   }
 }
-static int 
+static int
 ProbeResponder_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -309,14 +309,14 @@ ProbeResponder_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
   }
   case H_BSSID: {    //debug
     EtherAddress e;
-    if (!cp_ethernet_address(s, &e)) 
+    if (!cp_ethernet_address(s, &e))
       return errh->error("bssid parameter must be ethernet address");
     f->_bssid = e;
     break;
@@ -327,14 +327,14 @@ ProbeResponder_write_param(const String &in_s, Element *e, void *vparam,
   }
   case H_CHANNEL: {    //channel
     int channel;
-    if (!cp_integer(s, &channel)) 
+    if (!cp_integer(s, &channel))
       return errh->error("channel parameter must be int");
     f->_channel = channel;
     break;
   }
   case H_INTERVAL: {    //mode
     int m;
-    if (!cp_integer(s, &m)) 
+    if (!cp_integer(s, &m))
       return errh->error("interval parameter must be int");
     f->_interval_ms = m;
     break;
@@ -342,7 +342,7 @@ ProbeResponder_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 ProbeResponder::add_handlers()
 {

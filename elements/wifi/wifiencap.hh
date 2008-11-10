@@ -14,7 +14,7 @@ WifiEncap(MODE, BSSID)
 
 Converts ethernet packets to 802.11 packets with a LLC header.
 
-=d 
+=d
 
 Strips the ethernet header off the front of the packet and pushes
 an 802.11 frame header and llc header onto the packet.
@@ -22,7 +22,7 @@ an 802.11 frame header and llc header onto the packet.
 Arguments are:
 
 =over 8
-=item BSSID 
+=item BSSID
 is an ethernet address. This ususally the access point's ethernet address.
 If you are using Mode 0, this is usually set to 00:00:00:00:00:00 for
 "psuedo-ibss" mode.
@@ -61,14 +61,14 @@ inf_src :: InfiniteSource(DATA \<ffff>, LIMIT 1000, ACTIVE false)
 =a EtherEncap */
 
 class WifiEncap : public Element { public:
-  
+
   WifiEncap();
   ~WifiEncap();
 
   const char *class_name() const	{ return "WifiEncap"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
 

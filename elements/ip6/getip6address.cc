@@ -1,7 +1,7 @@
 /*
  * getip6address.{cc,hh} -- element sets IP6 destination annotation from
  * packet header
- * Peilei Fan 
+ * Peilei Fan
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  *
@@ -43,11 +43,11 @@ GetIP6Address::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 GetIP6Address::simple_action(Packet *p)
 {
-  
+
   IP6Address dst=IP6Address((unsigned char *)(p->data()+ _offset));
-  SET_DST_IP6_ANNO(p, dst); 
+  SET_DST_IP6_ANNO(p, dst);
   return p;
 }
 
-CLICK_ENDDECLS 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(GetIP6Address)

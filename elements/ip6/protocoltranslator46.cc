@@ -1,10 +1,10 @@
 /*
- * protocoltranslator46{cc,hh} -- element that translates an IPv4 packet 
- * to an IPv6 packet. 
- * When translating an IPv6 packet to IPv6 packet, just simpley prefix the 
+ * protocoltranslator46{cc,hh} -- element that translates an IPv4 packet
+ * to an IPv6 packet.
+ * When translating an IPv6 packet to IPv6 packet, just simpley prefix the
  * ipv4 addresses with 96-bits prefix "0:0:0:0:ffff".
  *
- * 
+ *
  * Peilei Fan
  *
  * Copyright (c) 1999-2001 Massachusetts Institute of Technology.
@@ -51,13 +51,13 @@ ProtocolTranslator46::configure(Vector<String> &conf, ErrorHandler *errh)
 
 
 //make the ipv4->ipv6 translation of the packet according to SIIT (RFC 2765)
-Packet * 
-ProtocolTranslator46::make_translate46(IP6Address src, 
+Packet *
+ProtocolTranslator46::make_translate46(IP6Address src,
 				     IP6Address dst,
 				     click_ip * ip,
 				     unsigned char *a)
 {
- 
+
   WritablePacket *q = Packet::make(sizeof(click_ip6)-sizeof(click_ip)+ntohs(ip->ip_len));
 
   if (q==0) {
@@ -69,7 +69,7 @@ ProtocolTranslator46::make_translate46(IP6Address src,
   click_ip6 *ip6=(click_ip6 *)q->data();
   click_tcp *tcp = (click_tcp *)(ip6+1);
   click_udp *udp = (click_udp *)(ip6+1);
- 
+
   //set ipv6 header
   ip6->ip6_flow = 0;
   ip6->ip6_v = 6;
@@ -78,8 +78,8 @@ ProtocolTranslator46::make_translate46(IP6Address src,
   ip6->ip6_src = src;
   ip6->ip6_dst = dst;
   memcpy((unsigned char *)tcp, a, ntohs(ip6->ip6_plen));
-  
-  if (ip->ip_p == 6) //TCP 
+
+  if (ip->ip_p == 6) //TCP
     {
       ip6->ip6_nxt = ip->ip_p;
       tcp->th_sum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, tcp->th_sum, a, ip6->ip6_plen));
@@ -103,7 +103,7 @@ ProtocolTranslator46::make_translate46(IP6Address src,
     }
 
   return q;
-  
+
 }
 
 
@@ -119,41 +119,41 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
   unsigned char icmp_code = a[1];
   unsigned char icmp_pointer = a[4];
 
-  unsigned char icmp6_code = 0; 
+  unsigned char icmp6_code = 0;
   unsigned char icmp6_length;
-  
+
   WritablePacket *q2 = 0;
 
   switch (icmp_type)  {
   case (ICMP_ECHO): ; // icmp_type ==8
-  case (ICMP_ECHOREPLY):  {//icmp_type ==0 
+  case (ICMP_ECHOREPLY):  {//icmp_type ==0
     click_icmp_echo *icmp = (click_icmp_echo *)a;
-    ip = (click_ip *)(icmp+1); 
+    ip = (click_ip *)(icmp+1);
     icmp6_length = payload_length-sizeof(click_icmp_echo)+sizeof(click_icmp6_echo);
     q2=Packet::make(icmp6_length);
     memset(q2->data(), '\0', q2->length());
     click_icmp6_echo *icmp6 = (click_icmp6_echo *)q2->data();
     ip6=(unsigned char *)(icmp6+1);
-      
+
     if (icmp_type == ICMP_ECHO ) { // icmp_type ==8
-      icmp6->icmp6_type = ICMP6_ECHO;  // icmp6_type =128  
+      icmp6->icmp6_type = ICMP6_ECHO;  // icmp6_type =128
     }
     else if (icmp_type == ICMP_ECHOREPLY ) { // icmp_type ==0
-      icmp6->icmp6_type = ICMP6_ECHOREPLY;              // icmp6_type = 129   
+      icmp6->icmp6_type = ICMP6_ECHOREPLY;              // icmp6_type = 129
     }
     icmp6->icmp6_identifier = icmp->icmp_identifier;
     icmp6->icmp6_sequence = icmp->icmp_sequence;
     memcpy(ip6, (unsigned char *)ip, icmp6_length);
     icmp->icmp_cksum  = 0;
   icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.in6_addr(), &ip6_dst.in6_addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
-  
+
   }
-  break; 
+  break;
 
   case (ICMP_UNREACH):  { //icmp_type ==3
     click_icmp_unreach *icmp = (click_icmp_unreach *)a;
     ip = (click_ip *)(icmp+1);
-    
+
     if (icmp_code == 2 || icmp_code ==4) {
       switch (icmp_code) {
       case 2: {
@@ -170,7 +170,7 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
 	icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.in6_addr(), &ip6_dst.in6_addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
       }
       break;
-	    
+
       case 4: {
 	icmp6_length = payload_length-sizeof(click_icmp_unreach)+sizeof(click_icmp6_pkttoobig);
 	q2=Packet::make(icmp6_length);
@@ -187,15 +187,15 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
 	icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.in6_addr(), &ip6_dst.in6_addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
       }
       break;
-      default: ; 
+      default: ;
       }
     }
     else {
-    
+
       switch (icmp_code) {
       case 0 : ;
       case 1 : ;
-      case 6 : ; 
+      case 6 : ;
       case 7 : ;
       case 8 : ;
       case 11: ;
@@ -204,7 +204,7 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
       }
       break;
       case 3 : {
-	icmp6_code = 4; 
+	icmp6_code = 4;
       }
       break;
       case 5 : {
@@ -213,7 +213,7 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
       break;
       case 9 : ;
       case 10: {
-	icmp6_code = 1; 
+	icmp6_code = 1;
       }
       break;
       default:  {
@@ -232,8 +232,8 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
       }
     }
   }
-  break; 
-     
+  break;
+
   case (ICMP_TIMXCEED) : { //icmp ==11
     click_icmp_timxceed *icmp = (click_icmp_timxceed *)a;
     ip = (click_ip *)(icmp+1);
@@ -259,7 +259,7 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
     click_icmp6_paramprob *icmp6 = (click_icmp6_paramprob *)q2->data();
     ip6=(unsigned char *)(icmp6+1);
     icmp6->icmp6_type=ICMP6_PARAMPROB;
-	  
+
     switch (icmp_pointer) {
     case 0  : icmp6->icmp6_pointer = 0;  break;
     case 2  : icmp6->icmp6_pointer = 4;  break;
@@ -276,11 +276,11 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
   break;
 
   default: ;
-  
+
   }
 
   return q2;
-   
+
 }
 
 
@@ -291,18 +291,18 @@ ProtocolTranslator46::push(int, Packet *p)
 }
 
 
-void 
+void
 ProtocolTranslator46::handle_ip4(Packet *p)
 {
   click_ip *ip = (click_ip *)p->data();
-  
+
   IP6Address ip6a_src = IP6Address(IPAddress(ip->ip_src));
   IP6Address ip6a_dst = IP6Address(IPAddress(ip->ip_dst));
-  
+
   unsigned char *start_of_p = (unsigned char *)(ip+1);
   Packet *q = 0;
   q=make_translate46(ip6a_src, ip6a_dst, ip, start_of_p);
-      
+
   if (ip->ip_p == 1)
     {
       click_ip6 * ip6 = (click_ip6 *)q->data();
@@ -314,7 +314,7 @@ ProtocolTranslator46::handle_ip4(Packet *p)
       click_ip6 *start_of_q3 = (click_ip6 *)q3->data();
       memcpy(start_of_q3, q->data(), sizeof(click_ip6));
       unsigned char *start_of_icmp6 = (unsigned char *)(start_of_q3+1);
-      memcpy(start_of_icmp6, q2->data(), q2->length()); 
+      memcpy(start_of_icmp6, q2->data(), q2->length());
       click_ip6 * ip62=(click_ip6 *)q3->data();
       ip62->ip6_plen = htons(q3->length()-sizeof(click_ip6));
 
@@ -323,7 +323,7 @@ ProtocolTranslator46::handle_ip4(Packet *p)
       q2->kill();
       output(0).push(q3);
     }
-  else 
+  else
     {
       p->kill();
       output(0).push(q);

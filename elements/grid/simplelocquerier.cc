@@ -97,7 +97,7 @@ SimpleLocQuerier::add_entry(const String &arg, Element *element,
 			    void *, ErrorHandler *errh)
 {
   SimpleLocQuerier *l = (SimpleLocQuerier *) element;
-  
+
   IPAddress ip;
   int ilat, ilon;
   if (cp_va_space_kparse(arg, l, errh,

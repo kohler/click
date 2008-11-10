@@ -96,7 +96,7 @@ FastUDPFlows::change_ports(int flow)
 
 Packet *
 FastUDPFlows::get_packet()
-{ 
+{
 #if 0
   int flow = _last_flow;
   _last_flow = _last_flow+1;
@@ -115,7 +115,7 @@ FastUDPFlows::get_packet()
 }
 
 
-int 
+int
 FastUDPFlows::initialize(ErrorHandler *)
 {
   _count = 0;
@@ -126,7 +126,7 @@ FastUDPFlows::initialize(ErrorHandler *)
     memcpy(_flows[i].packet->data(), &_ethh, 14);
     click_ip *ip = reinterpret_cast<click_ip *>(_flows[i].packet->data()+14);
     click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
- 
+
     // set up IP header
     ip->ip_v = 4;
     ip->ip_hl = sizeof(click_ip) >> 2;
@@ -142,7 +142,7 @@ FastUDPFlows::initialize(ErrorHandler *)
     ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
     _flows[i].packet->set_dst_ip_anno(IPAddress(_dipaddr));
     _flows[i].packet->set_ip_header(ip, sizeof(click_ip));
-  
+
     // set up UDP header
     udp->uh_sport = (click_random() >> 2) % 0xFFFF;
     udp->uh_dport = (click_random() >> 2) % 0xFFFF;
@@ -272,7 +272,7 @@ FastUDPFlows_active_write_handler
 {
   FastUDPFlows *c = (FastUDPFlows *)e;
   bool active;
-  if (!cp_bool(s, &active)) 
+  if (!cp_bool(s, &active))
     return errh->error("active parameter must be boolean");
   c->_active = active;
   if (active) c->reset();

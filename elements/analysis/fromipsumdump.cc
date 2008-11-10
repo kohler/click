@@ -74,7 +74,7 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     uint8_t default_proto = IP_PROTO_TCP;
     _sampling_prob = (1 << SAMPLING_SHIFT);
     String default_contents, default_flowid;
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "FILENAME", cpkP+cpkM, cpFilename, &_ff.filename(),
 		     "STOP", 0, cpBool, &stop,
@@ -147,10 +147,10 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
     if (!output_is_push(0))
 	_notifier.initialize(Notifier::EMPTY_NOTIFIER, router());
     _timer.initialize(router());
-    
+
     if (_ff.initialize(errh) < 0)
 	return -1;
-    
+
     _minor_version = IPSummaryDump::MINOR_VERSION; // expected minor version
     String line;
     if (_ff.peek_line(line, errh, true) < 0)
@@ -171,7 +171,7 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
 		_ff.warning(errh, "missing banner line; is this an IP summary dump?");
 	}
     }
-    
+
     _format_complaint = false;
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
@@ -298,7 +298,7 @@ static void
 set_checksums(WritablePacket *q, click_ip *iph)
 {
     assert(iph == q->ip_header());
-    
+
     iph->ip_sum = 0;
     iph->ip_sum = click_in_cksum((uint8_t *)iph, iph->ip_hl << 2);
 
@@ -325,7 +325,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     String line;
     const char *data;
     const char *end;
-    
+
     while (1) {
 	if ((binary = _binary)) {
 	    int result = read_binary(line, errh);
@@ -438,7 +438,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		nfields++;
 	    }
 	}
-	
+
     } else {
 	Vector<String> args;
 	while (args.size() < _fields.size()) {
@@ -549,7 +549,7 @@ Packet *
 FromIPSummaryDump::handle_multipacket(Packet *p)
 {
     assert(!_work_packet || _work_packet == p);
-    
+
     if (!p || !EXTRA_PACKETS_ANNO(p)) {
 	_work_packet = 0;
 	return p;
@@ -586,7 +586,7 @@ FromIPSummaryDump::handle_multipacket(Packet *p)
 	SET_EXTRA_LENGTH_ANNO(p, _multipacket_length - p->length());
     }
 
-    // reduce weight of _work_packet 
+    // reduce weight of _work_packet
     SET_EXTRA_PACKETS_ANNO(_work_packet, count - 2);
     SET_EXTRA_LENGTH_ANNO(_work_packet, EXTRA_LENGTH_ANNO(_work_packet) - _multipacket_length);
     if (count == 2) {

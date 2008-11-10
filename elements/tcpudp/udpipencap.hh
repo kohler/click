@@ -56,12 +56,12 @@ class UDPIPEncap : public Element { public:
 
     UDPIPEncap();
     ~UDPIPEncap();
-  
+
     const char *class_name() const	{ return "UDPIPEncap"; }
     const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return AGNOSTIC; }
     const char *flags() const		{ return "A"; }
-  
+
     int configure(Vector<String> &, ErrorHandler *);
     bool can_live_reconfigure() const	{ return true; }
     void add_handlers();
@@ -83,7 +83,7 @@ class UDPIPEncap : public Element { public:
     atomic_uint32_t _id;
 
     static String read_handler(Element *, void *);
-    
+
 };
 
 CLICK_ENDDECLS

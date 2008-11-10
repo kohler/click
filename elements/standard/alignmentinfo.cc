@@ -44,10 +44,10 @@ AlignmentInfo::configure(Vector<String> &conf, ErrorHandler *errh)
   for (int i = 0; i < conf.size(); i++) {
     Vector<String> parts;
     cp_spacevec(conf[i], parts);
-    
+
     if (parts.size() == 0)
       errh->warning("empty configuration argument %d", i);
-    
+
     else if (Element *e = cp_element(parts[0], this, 0)) {
       int number = e->eindex();
       if (_elem_offset.size() <= number) {
@@ -78,10 +78,10 @@ AlignmentInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	      || memcmp(&_offsets[old_offset], &_offsets[_elem_offset[number]],
 			old_icount * sizeof(int)) != 0))
 	errh->error("conflicting AlignmentInfo for '%s'", parts[0].c_str());
-      
+
     }
   }
-  
+
   return 0;
 }
 

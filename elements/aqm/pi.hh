@@ -40,7 +40,7 @@ class PI : public Element { public:
     void run_timer(Timer *);
 
   protected:
-	
+
 	Timer _timer;
     Storage *_queue1;
     Vector<Storage *> _queues;
@@ -52,7 +52,7 @@ class PI : public Element { public:
 
     int _drops;
 
-	double _a, _b, _w, _p; 
+	double _a, _b, _w, _p;
 	unsigned _target_q, _old_q;
 
     Vector<Element *> _queue_elements;

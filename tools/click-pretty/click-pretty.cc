@@ -251,7 +251,7 @@ struct OutputItem {
     bool _end_item : 1;
     int _type;
     enum { OI_NORMAL, OI_ELEMENT_REF, OI_ECLASS_REF };
-    
+
     OutputItem() : pos(-1), _other(-1), active(0), _end_item(0), _type(OI_NORMAL) { _u.element = 0; }
     OutputItem(int p, const String &t, bool ei) : pos(p), text(t), _other(-1), active(0), _end_item(ei), _type(OI_NORMAL) { _u.element = 0; }
     OutputItem(int p, ElementT *e, bool ei) : pos(p), _other(-1), active(0), _end_item(ei), _type(OI_ELEMENT_REF) { _u.element = e; }
@@ -352,7 +352,7 @@ prepare_items(int last_pos)
     if (items_prepared)
 	return;
     items_prepared = true;
-    
+
     add_item(last_pos + 1, "", last_pos + 1, "");
     assert(items.size() == end_items.size());
 
@@ -368,7 +368,7 @@ prepare_items(int last_pos)
 	Vector<int> rev_permute(items.size(), -1);
 	for (int i = 0; i < items.size(); i++)
 	    rev_permute[permute[i]] = i;
-	
+
 	OutputItem *other_items = (which == 0 ? &end_items[0] : &items[0]);
 	for (int i = 0; i < items.size(); i++)
 	    other_items[i]._other = rev_permute[other_items[i]._other];
@@ -391,7 +391,7 @@ prepare_items(int last_pos)
 	    s->text = "<span title='" + s->_u.element->name() + " :: " + s->_u.element->type_name() + "'>";
 	}
     }
-    
+
     // combine items that need to be combined (<a href> and <a name>)
     for (int i = 0; i < items.size() - 1; i++) {
 	OutputItem *s1 = &items[i], *e1 = s1->other();
@@ -428,7 +428,7 @@ link_element_decl(ElementT *e)
 class PrettyLexerTInfo : public LexerTInfo { public:
 
     PrettyLexerTInfo(const String &config)	: _config(config) { }
-  
+
     void add_item(const char *pos1, const String &s1, const char *pos2, const String &s2) {
 	::add_item(pos1 - _config.begin(), s1, pos2 - _config.begin(), s2);
     }
@@ -490,7 +490,7 @@ pretty_read_router(const char *filename, bool file_is_expr,
 		   ErrorHandler *errh, String &config)
 {
     // This function is a paraphrase of read_router_file.
-  
+
     // read file string
     int before_nerrors = errh->nerrors();
 
@@ -524,7 +524,7 @@ pretty_read_router(const char *filename, bool file_is_expr,
     items.clear();
     end_items.clear();
     items_prepared = false;
-  
+
     // read router
     if (!config.length())
 	errh->warning("%s: empty configuration", filename);
@@ -695,7 +695,7 @@ class ElementsOutput { public:
 
     void run(ElementT *, FILE *);
     void run(FILE *);
-    
+
   private:
 
     RouterT *_router;
@@ -709,7 +709,7 @@ class ElementsOutput { public:
 
     void run_template(String, ElementT *, int, bool);
     String expand(const String &, ElementT *, int, bool);
-    
+
 };
 
 
@@ -751,7 +751,7 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_ou
 {
     ElementClassT *t = e->type();
     bool is_type = (e->landmark() == type_landmark);
-    
+
     String tag;
     HashTable<String, String> attrs;
     const char *templ = templ_str.c_str();
@@ -761,7 +761,7 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_ou
 
 	String next_sep;
 	int pre_expansion_pos = _sa.length();
-	
+
 	if (tag == "name") {
 	    String href, link = attrs["link"].lower();
 	    if (link == "type" || (is_type && link))
@@ -1039,12 +1039,12 @@ pretty_process(const char *infile, bool file_is_expr, const char *outfile,
     processing.check_types(errh);
 
     ElementMap::push_default(&emap);
-    
+
     // process template
     run_template(templ, r, r_config, emap, processing, outf);
 
     ElementMap::pop_default();
-    
+
     // close files, return
     if (outf != stdout)
 	fclose(outf);
@@ -1414,6 +1414,6 @@ particular purpose.\n");
 	pretty_process_graphml(router_file, file_is_expr, output_file, errh);
     else
 	pretty_process(router_file, file_is_expr, output_file, html_template.c_str(), errh);
-	
+
     exit(errh->nerrors() > 0 ? 1 : 0);
 }

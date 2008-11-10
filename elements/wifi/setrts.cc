@@ -74,7 +74,7 @@ SetRTS_read_param(Element *e, void *thunk)
 
 }
 
-static int 
+static int
 SetRTS_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -83,7 +83,7 @@ SetRTS_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_RTS: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("stepup parameter must be unsigned");
     f->_rts = m;
     break;

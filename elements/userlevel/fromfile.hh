@@ -14,7 +14,7 @@ class FromFile { public:
 
     FromFile();
     ~FromFile()				{ cleanup(); }
-    
+
     const String &filename() const	{ return _filename; }
     String &filename()			{ return _filename; }
     bool initialized() const		{ return _fd >= 0; }
@@ -46,19 +46,19 @@ class FromFile { public:
 
     int read_line(String &str, ErrorHandler *errh, bool temporary = false);
     int peek_line(String &str, ErrorHandler *errh, bool temporary = false);
-    
+
     int error(ErrorHandler *, const char *format, ...) const;
     int warning(ErrorHandler *, const char *format, ...) const;
-    
+
   private:
 
     enum { BUFFER_SIZE = 32768 };
-    
+
     int _fd;
     const uint8_t *_buffer;
     uint32_t _pos;
     uint32_t _len;
-    
+
     WritablePacket *_data_packet;
 
 #ifdef ALLOW_MMAP
@@ -88,7 +88,7 @@ class FromFile { public:
     static String filesize_handler(Element *, void *);
     static String filepos_handler(Element *, void *);
     static int filepos_write_handler(const String&, Element*, void*, ErrorHandler*);
-    
+
 };
 
 CLICK_ENDDECLS

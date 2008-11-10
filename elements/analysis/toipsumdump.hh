@@ -225,14 +225,14 @@ Single IP option fields have the following representations.
 		    timestamp" bit set]; the option has
 		    room for 2 more timestamps; the
 		    overflow counter is set to 3)
-		    
+
 		    'ts.ip{1.0.0.1=1,1.0.0.2=2}+5'
 		    (timestamps with IP addresses [type 1])
 
 		    'ts.preip{1.0.0.1=1^1.0.0.2,1.0.0.3}'
 		    (prespecified IP addresses [type 3];
 		    the caret is the pointer)
-		    
+
     Other options   '98' (option 98, no data),
                     '99=0:5:10' (option with data, data
 		    octets separated by colons)
@@ -357,7 +357,7 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     uint32_t output_count() const	{ return _output_count; }
     void add_note(const String &);
     void write_line(const String &);
-    
+
   private:
 
     String _filename;
@@ -378,13 +378,13 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
     StringAccum _sa;
     StringAccum _bad_sa;
-    
+
     String _banner;
 
     bool summary(Packet* p, StringAccum& sa, StringAccum* bad_sa, bool force_extra_length) const;
     void write_packet(Packet* p, int multipacket);
     static int flush_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

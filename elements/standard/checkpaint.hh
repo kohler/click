@@ -27,22 +27,22 @@ class CheckPaint : public Element { public:
 
     CheckPaint();
     ~CheckPaint();
-  
+
     const char *class_name() const	{ return "CheckPaint"; }
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PROCESSING_A_AH; }
 
     int configure(Vector<String> &, ErrorHandler *);
     void add_handlers();
-  
+
     void push(int, Packet *);
     Packet *pull(int);
-  
+
   private:
 
     uint8_t _anno;
     uint8_t _color;
-  
+
 };
 
 CLICK_ENDDECLS

@@ -32,7 +32,7 @@
 CLICK_DECLS
 
 class LocationTable : public Element {
-  
+
 public:
   LocationTable();
   ~LocationTable();

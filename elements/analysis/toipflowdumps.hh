@@ -143,10 +143,10 @@ annotations are relative to `C<!first_time>'.
 FromIPSummaryDump, ToIPSummaryDump, AggregateIPFlows */
 
 class ToIPFlowDumps : public Element, public AggregateListener { public:
-  
+
     ToIPFlowDumps();
     ~ToIPFlowDumps();
-  
+
     const char *class_name() const	{ return "ToIPFlowDumps"; }
     const char *port_count() const	{ return "1/0-1"; }
     const char *processing() const	{ return AGNOSTIC; }
@@ -181,7 +181,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 	int before_pkt;
 	uint32_t pos;
     };
-    
+
   private:
 
     class Flow { public:
@@ -201,11 +201,11 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 	int output(ErrorHandler *);
 	void compress(ErrorHandler *);
 	inline void unlink(ErrorHandler *);
-	
+
       private:
 
 	enum { NPKT = 128, NNOTE = 32 };
-	
+
 	Flow *_next;
 	IPFlowID _flowid;
 	int _ip_p;
@@ -231,7 +231,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 	int create_directories(const String &, ErrorHandler *);
 	void output_binary(StringAccum &);
 	void store_opt(const click_tcp *, int direction);
-	
+
     };
 
     enum { FLOWMAP_BITS = 10, NFLOWMAP = 1 << FLOWMAP_BITS };
@@ -254,7 +254,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     int _tcp_opt;
 
     uint32_t _mincount;
-    
+
     Task _task;
     NotifierSignal _signal;
 
@@ -263,7 +263,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 
     Vector<String> _compressables;
     int _compress_child;
-    
+
     String expand_filename(const Packet *, ErrorHandler *) const;
     Flow *find_aggregate(uint32_t, const Packet * = 0);
     void end_flow(Flow *, ErrorHandler *);
@@ -271,7 +271,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     inline void smaction(Packet *);
     static void gc_hook(Timer *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler*);
-    
+
 };
 
 CLICK_ENDDECLS

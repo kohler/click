@@ -71,7 +71,7 @@ compound_element_factory(uintptr_t)
 //
 
 class Lexer::TunnelEnd {
-  
+
   Router::Port _port;
   Vector<Router::Port> _correspond;
   int8_t _expanded;
@@ -80,13 +80,13 @@ class Lexer::TunnelEnd {
   TunnelEnd *_next;
 
   friend class Lexer;
-  
+
  public:
-  
+
   TunnelEnd(const Router::Port &port, bool isoutput, TunnelEnd *next)
     : _port(port), _expanded(0), _isoutput(isoutput), _other(0), _next(next) {
   }
-  
+
   const Router::Port &port() const	{ return _port; }
   bool isoutput() const			{ return _isoutput; }
   TunnelEnd *next() const		{ return _next; }
@@ -98,9 +98,9 @@ class Lexer::TunnelEnd {
     _other = d;
     d->_other = this;
   }
-  
+
   void expand(Lexer *, Vector<Router::Port> &);
-  
+
 };
 
 //
@@ -108,7 +108,7 @@ class Lexer::TunnelEnd {
 //
 
 class Lexer::Compound : public Element { public:
-  
+
   Compound(const String &, const String &, VariableEnvironment *parent);
 
   const String &name() const		{ return _name; }
@@ -126,7 +126,7 @@ class Lexer::Compound : public Element { public:
   int resolve(Lexer *, int etype, int ninputs, int noutputs, Vector<String> &, ErrorHandler *, const String &landmark);
   void expand_into(Lexer *, int, VariableEnvironment &);
   void connect(int from_idx, int from_port, int to_idx, int to_port);
-  
+
   const char *class_name() const	{ return _name.c_str(); }
   void *cast(const char *);
   Compound *clone() const		{ return 0; }
@@ -138,7 +138,7 @@ class Lexer::Compound : public Element { public:
   static String signature(const String &name, const Vector<String> *formal_types, int nargs, int ninputs, int noutputs);
 
  private:
-  
+
   mutable String _name;
   String _landmark;
   int _overload_type;
@@ -148,7 +148,7 @@ class Lexer::Compound : public Element { public:
   int _ninputs;
   int _noutputs;
   bool _scope_order_error : 1;
-  
+
   Vector<int> _elements;
   Vector<String> _element_names;
   Vector<String> _element_configurations;
@@ -157,7 +157,7 @@ class Lexer::Compound : public Element { public:
   Vector<Router::Connection> _conn;
 
   friend class Lexer;
-  
+
 };
 
 Lexer::Compound::Compound(const String &name, const String &lm, VariableEnvironment *parent)
@@ -232,14 +232,14 @@ Lexer::Compound::finish(Lexer *lexer, ErrorHandler *errh)
   bool to_in = false, from_out = false;
   for (int i = 0; i < _conn.size(); i++) {
     const Connection &c = _conn[i];
-    
+
     if (c[1].idx == 0) {
       if (from_in.size() <= c[1].port)
 	from_in.resize(c[1].port + 1, 0);
       from_in[c[1].port] = 1;
     } else if (c[1].idx == 1)
       from_out = true;
-    
+
     if (c[0].idx == 1) {
       if (to_out.size() <= c[0].port)
 	to_out.resize(c[0].port + 1, 0);
@@ -247,7 +247,7 @@ Lexer::Compound::finish(Lexer *lexer, ErrorHandler *errh)
     } else if (c[0].idx == 0)
       to_in = true;
   }
-  
+
   // store information
   _ninputs = from_in.size();
   if (to_in)
@@ -255,7 +255,7 @@ Lexer::Compound::finish(Lexer *lexer, ErrorHandler *errh)
   for (int i = 0; i < from_in.size(); i++)
     if (!from_in[i])
       errh->lerror(_landmark, "compound element '%s' input %d unused", printable_name_c_str(), i);
-  
+
   _noutputs = to_out.size();
   if (from_out)
     errh->lerror(_landmark, "'%s' pseudoelement 'output' may only be used as input", printable_name_c_str());
@@ -292,7 +292,7 @@ Lexer::Compound::resolve(Lexer *lexer, int etype, int ninputs, int noutputs, Vec
   Compound *ct = this;
   int closest_etype = -1;
   int nct = 0;
-  
+
   while (ct) {
     nct++;
     if (ct->_ninputs == ninputs && ct->_noutputs == noutputs
@@ -327,7 +327,7 @@ Lexer::Compound::signature(const String &name, const Vector<String> *formal_type
 {
   StringAccum sa;
   sa << (name ? name : String("<anonymous>"));
-  
+
   if (formal_types && formal_types->size()) {
     sa << '(';
     for (int i = 0; i < formal_types->size(); i++) {
@@ -351,7 +351,7 @@ Lexer::Compound::signature(const String &name, const Vector<String> *formal_type
     sa << nargs << pl_args;
   sa << ninputs << pl_ins << noutputs << pl_outs;
   sa << ']';
-  
+
   return sa.take_string();
 }
 
@@ -365,7 +365,7 @@ void
 Lexer::Compound::expand_into(Lexer *lexer, int which, VariableEnvironment &ve)
 {
   ErrorHandler *errh = lexer->_errh;
-  
+
   // 'name_slash' is 'name' constrained to end with a slash
   String ename = lexer->_c->_element_names[which];
   String ename_slash = ename + "/";
@@ -457,7 +457,7 @@ Lexer::begin_parse(const String &data, const String &filename,
 
   _lextra = lextra;
   _errh = (errh ? errh : ErrorHandler::default_handler());
-  
+
   return lexical_scoping_in();
 }
 
@@ -475,10 +475,10 @@ Lexer::end_parse(int cookie)
 
   delete _c;
   _c = 0;
-  
+
   _element_map.clear();
   _requirements.clear();
-  
+
   _big_string = "";
   // _data was freed by _big_string
   _data = 0;
@@ -489,7 +489,7 @@ Lexer::end_parse(int cookie)
   _lextra = 0;
   _tpos = 0;
   _tfull = 0;
-  
+
   _anonymous_offset = 0;
 
   _errh = ErrorHandler::default_handler();
@@ -587,7 +587,7 @@ Lexer::skip_quote(const char *s, char endc)
 
 const char *
 Lexer::process_line_directive(const char *s)
-{  
+{
   for (s++; s < _end && (*s == ' ' || *s == '\t'); s++)
     /* nada */;
   if (s + 4 < _end && *s == 'l' && s[1] == 'i'
@@ -601,12 +601,12 @@ Lexer::process_line_directive(const char *s)
     lerror("unknown preprocessor directive");
     return skip_line(s);
   }
-  
+
   // parse line number
   for (_lineno = 0; s < _end && isdigit((unsigned char) *s); s++)
     _lineno = _lineno * 10 + *s - '0';
   _lineno--;			// account for extra line
-  
+
   for (; s < _end && (*s == ' ' || *s == '\t'); s++)
     /* nada */;
   if (s < _end && *s == '\"') {
@@ -659,9 +659,9 @@ Lexer::next_lexeme()
     else
       break;
   }
-  
+
   const char *word_pos = s;
-  
+
   // find length of current word
   if (isalnum((unsigned char) *s) || *s == '_' || *s == '@') {
    more_word_characters:
@@ -693,7 +693,7 @@ Lexer::next_lexeme()
     } else
       s--;
   }
-  
+
   if (s + 1 < _end) {
     if (*s == '-' && s[1] == '>') {
       _pos = s + 2;
@@ -710,7 +710,7 @@ Lexer::next_lexeme()
     _pos = s + 3;
     return Lexeme(lex3Dot, _big_string.substring(s, s + 3));
   }
-  
+
   _pos = s + 1;
   return Lexeme(*s, _big_string.substring(s, s + 1));
 }
@@ -721,7 +721,7 @@ Lexer::lex_config()
   const char *config_pos = _pos;
   const char *s = _pos;
   unsigned paren_depth = 1;
-  
+
   for (; s < _end; s++)
     if (*s == '(')
       paren_depth++;
@@ -744,7 +744,7 @@ Lexer::lex_config()
       s = skip_quote(s + 1, *s) - 1;
     else if (*s == '\\' && s + 1 < _end && s[1] == '<')
       s = skip_backslash_angle(s + 2) - 1;
-  
+
   _pos = s;
   return _big_string.substring(config_pos, s);
 }
@@ -932,7 +932,7 @@ Lexer::remove_element_type(int removed, int *prev_hint)
   assert(prev_hint);
   if ((int)(*prev_hint & ET_TMASK) == removed)
     *prev_hint = (*prev_hint & ~ET_TMASK) | (_element_types[removed].next & ET_TMASK);
-  
+
   // fix up element type name map
   const String &name = _element_types[removed].name;
   if (name && _element_type_map[name] == removed) {
@@ -973,7 +973,7 @@ Lexer::add_tunnel(String namein, String nameout)
 {
   Port hin(get_element(namein, TUNNEL_TYPE), 0);
   Port hout(get_element(nameout, TUNNEL_TYPE), 0);
-  
+
   bool ok = true;
   if (_c->_elements[hin.idx] != TUNNEL_TYPE) {
     redeclaration_error(_errh, "element", namein, landmark(), _c->_element_landmarks[hin.idx]);
@@ -1005,14 +1005,14 @@ int
 Lexer::get_element(String name, int etype, const String &conf, const String &lm)
 {
   assert(name && etype >= 0 && etype < _element_types.size());
-  
+
   // if an element 'name' already exists return it
   if (_element_map[name] >= 0)
     return _element_map[name];
 
   int eid = _c->_elements.size();
   _element_map.set(name, eid);
-  
+
   // check 'name' for validity
   for (int i = 0; i < name.length(); i++) {
     bool ok = false;
@@ -1024,7 +1024,7 @@ Lexer::get_element(String name, int etype, const String &conf, const String &lm)
       break;
     }
   }
-  
+
   _c->_element_names.push_back(name);
   _c->_element_configurations.push_back(conf);
   _c->_element_landmarks.push_back(lm ? lm : landmark());
@@ -1104,7 +1104,7 @@ Lexer::yport(int &port)
     unlex(tlbrack);
     return false;
   }
-  
+
   const Lexeme &tword = lex();
   if (tword.is(lexIdent)) {
     if (!cp_integer(tword.string(), &port)) {
@@ -1152,7 +1152,7 @@ Lexer::yelement(int &element, bool comma_ok)
     expect(')');
   } else
     unlex(tparen);
-  
+
   if (etype >= 0)
     element = get_element(anon_element_name(name), etype, configuration, lm);
   else {
@@ -1166,7 +1166,7 @@ Lexer::yelement(int &element, bool comma_ok)
       element = get_element(anon_element_name(name), etype, configuration, lm);
     }
   }
-  
+
   return true;
 }
 
@@ -1180,14 +1180,14 @@ Lexer::ydeclaration(const String &first_element)
     decls.push_back(first_element);
     goto midpoint;
   }
-  
+
   while (true) {
     t = lex();
     if (!t.is(lexIdent))
       lerror("syntax error: expected element name");
     else
       decls.push_back(t.string());
-    
+
    midpoint:
     const Lexeme &tsep = lex();
     if (tsep.is(','))
@@ -1212,7 +1212,7 @@ Lexer::ydeclaration(const String &first_element)
     lerror("missing element type in declaration");
     return;
   }
-  
+
   String configuration;
   t = lex();
   if (t.is('(')) {
@@ -1241,11 +1241,11 @@ Lexer::yconnection()
   int element1 = -1;
   int port1;
   Lexeme t;
-  
+
   while (true) {
     int element2;
     int port2 = -1;
-    
+
     // get element
     yport(port2);
     if (!yelement(element2, element1 < 0)) {
@@ -1253,31 +1253,31 @@ Lexer::yconnection()
 	lerror("output port useless at end of chain");
       return element1 >= 0;
     }
-    
+
     if (element1 >= 0)
       _c->connect(element1, port1, element2, port2);
     else if (port2 >= 0)
       lerror("input port useless at start of chain");
-    
+
     port1 = -1;
-    
+
    relex:
     t = lex();
     switch (t.kind()) {
-      
+
      case ',':
      case lex2Colon:
       lerror("syntax error before '%#s'", t.string().c_str());
       goto relex;
-      
+
      case lexArrow:
       break;
-      
+
      case '[':
       unlex(t);
       yport(port1);
       goto relex;
-      
+
      case lexIdent:
      case '{':
      case '}':
@@ -1292,15 +1292,15 @@ Lexer::yconnection()
       if (port1 >= 0)
 	lerror("output port useless at end of chain", port1);
       return true;
-      
+
      default:
       lerror("syntax error near '%#s'", t.string().c_str());
       if (t.kind() >= lexIdent)	// save meaningful tokens
 	unlex(t);
       return true;
-      
+
     }
-    
+
     // have 'x ->'
     element1 = element2;
   }
@@ -1321,7 +1321,7 @@ Lexer::yelementclass()
   Lexeme tnext = lex();
   if (tnext.is('{'))
     ycompound(name);
-    
+
   else if (tnext.is(lexIdent)) {
     // define synonym type
     int t = force_element_type(tnext.string());
@@ -1337,7 +1337,7 @@ void
 Lexer::ycompound_arguments(Compound *comptype)
 {
   Lexeme t1, t2;
-  
+
   while (1) {
     String vartype, varname;
 
@@ -1386,7 +1386,7 @@ Lexer::ycompound(String name)
   old_element_map.swap(_element_map);
   HashTable<String, int> old_type_map(_element_type_map);
   int old_offset = _anonymous_offset;
-  
+
   Compound *first = 0, *last = 0;
   int extension = -1;
 
@@ -1399,7 +1399,7 @@ Lexer::ycompound(String name)
 	ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
       }
       extension = _element_type_map[name];
-      
+
       dots = lex();
       if (!first || !dots.is('}'))
 	lerror("'...' should occur last, after one or more compounds");
@@ -1407,7 +1407,7 @@ Lexer::ycompound(String name)
 	break;
     }
     unlex(dots);
-    
+
     // create a compound
     _element_map.clear();
     Compound *old_c = _c;
@@ -1456,7 +1456,7 @@ Lexer::yrequire()
     expect(')');
     // pre-read ';' to make it easier to write parsing extensions
     expect(';', false);
-    
+
     Vector<String> args;
     String word;
     cp_argvec(requirement, args);
@@ -1483,7 +1483,7 @@ Lexer::yvar()
   if (expect('(')) {
     String requirement = lex_config();
     expect(')');
-    
+
     Vector<String> args;
     String word;
     cp_argvec(requirement, args);
@@ -1509,18 +1509,18 @@ Lexer::ystatement(bool nested)
 {
   const Lexeme &t = lex();
   switch (t.kind()) {
-    
+
    case lexIdent:
    case '[':
    case '{':
     unlex(t);
     yconnection();
     return true;
-    
+
    case lexElementclass:
     yelementclass();
     return true;
-    
+
    case lexRequire:
     yrequire();
     return true;
@@ -1531,24 +1531,24 @@ Lexer::ystatement(bool nested)
 
    case ';':
     return true;
-    
+
    case '}':
    case lex2Bar:
     if (!nested)
       goto syntax_error;
     unlex(t);
     return false;
-    
+
    case lexEOF:
     if (nested)
       lerror("expected '}'");
     return false;
-    
+
    default:
    syntax_error:
     lerror("syntax error near '%#s'", t.string().c_str());
     return true;
-    
+
   }
 }
 
@@ -1595,13 +1595,13 @@ Lexer::expand_compound_element(int which, VariableEnvironment &ve)
   if (_element_types[etype].factory != compound_element_factory)
     return;
   Compound *c = (Compound *) _element_types[etype].thunk;
-  
+
   // find right version
   Vector<String> args;
   cp_argvec(_c->_element_configurations[which], args);
   int inputs_used = _c->_element_nports[0][which];
   int outputs_used = _c->_element_nports[1][which];
-  
+
   int found_type = c->resolve(this, etype, inputs_used, outputs_used, args, _errh, landmark());
 
   // check for error or non-compound, or expand compound
@@ -1611,7 +1611,7 @@ Lexer::expand_compound_element(int which, VariableEnvironment &ve)
     _c->_elements[which] = found_type;
   else {
     Compound *found_comp = (Compound *) _element_types[found_type].thunk;
-    
+
     VariableEnvironment new_ve(ve.parent_of(found_comp->depth()));
     for (int i = 0; i < found_comp->nformals(); i++)
       new_ve.define(found_comp->scope().name(i), args[i], true);
@@ -1628,7 +1628,7 @@ Lexer::create_router(Master *master)
   Router *router = new Router(_big_string, master);
   if (!router)
     return 0;
-  
+
   // expand compounds
   for (int i = 0; i < _global_scope.size(); i++)
     _c->scope().define(_global_scope.name(i), _global_scope.value(i), true);
@@ -1762,7 +1762,7 @@ Lexer::TunnelEnd::expand(Lexer *lexer, Vector<Router::Port> &into)
 {
   if (_expanded == 1)
     return;
-  
+
   if (_expanded == 0) {
     _expanded = 1;
 
@@ -1796,10 +1796,10 @@ Lexer::TunnelEnd::expand(Lexer *lexer, Vector<Router::Port> &into)
 
     for (int i = 0; i < connections.size(); i++)
       lexer->expand_connection(connections[i], _isoutput, _correspond);
-    
+
     _expanded = 2;
   }
-  
+
   for (int i = 0; i < _correspond.size(); i++)
     into.push_back(_correspond[i]);
 }

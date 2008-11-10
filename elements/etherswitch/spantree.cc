@@ -50,14 +50,14 @@ EtherSpanTree::configure(Vector<String> &conf, ErrorHandler *errh)
 		   "SWITCH", cpkP+cpkM, cpElement, &sw,
 		   cpEnd) < 0)
     return -1;
-  
+
   if (!(_input_sup = static_cast<Suppressor *>(in->cast("Suppressor"))))
     return errh->error("EtherSpanTree needs an input Suppressor");
   if (!(_output_sup = static_cast<Suppressor *>(out->cast("Suppressor"))))
     return errh->error("EtherSpanTree needs an output Suppressor");
   if (!(_switch = static_cast<EtherSwitch *>(sw->cast("EtherSwitch"))))
     return errh->error("EtherSpanTree needs an EtherSwitch");
-  
+
   memcpy(&_bridge_id, _addr, 6);
   return 0;
 }
@@ -262,11 +262,11 @@ EtherSpanTree::generate_packet(int output)
   if (cmp == 0 && !_send_tc_msg) {
     return 0;
   }
-  
+
   // _best is better (or we need send topology change)
   WritablePacket* p = Packet::make(sizeof(BridgeMessage::wire));
   BridgeMessage::wire* msg = reinterpret_cast<BridgeMessage::wire*>(p->data());
-  
+
   if (cmp == 0) {
     // Root port, send topology change message
     BridgeMessage::fill_tcm(msg);

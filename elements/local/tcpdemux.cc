@@ -92,7 +92,7 @@ TCPDemux::push(int, Packet *p)
 }
 
 bool
-TCPDemux::add_flow(IPAddress sa, unsigned short sp, 
+TCPDemux::add_flow(IPAddress sa, unsigned short sp,
                    IPAddress da, unsigned short dp, unsigned port)
 {
   if (_flows.findp(IPFlowID(sa, sp, da, dp)))
@@ -103,7 +103,7 @@ TCPDemux::add_flow(IPAddress sa, unsigned short sp,
 
 
 bool
-TCPDemux::remove_flow(IPAddress sa, unsigned short sp, 
+TCPDemux::remove_flow(IPAddress sa, unsigned short sp,
                       IPAddress da, unsigned short dp)
 {
   return _flows.remove(IPFlowID(sa, sp, da, dp));

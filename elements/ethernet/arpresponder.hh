@@ -55,10 +55,10 @@ CLICK_DECLS
  * ARPQuerier, ARPFaker, AddressInfo */
 
 class ARPResponder : public Element { public:
-  
+
   ARPResponder();
   ~ARPResponder();
-  
+
   const char *class_name() const		{ return "ARPResponder"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
@@ -66,11 +66,11 @@ class ARPResponder : public Element { public:
   int configure(Vector<String> &, ErrorHandler *);
   int live_reconfigure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const             { return true; }
-  
+
   void add_handlers();
 
   Packet *simple_action(Packet *);
-  
+
   Packet *make_response(unsigned char tha[6], unsigned char tpa[4],
                         unsigned char sha[6], unsigned char spa[4], Packet *);
 
@@ -84,11 +84,11 @@ private:
     EtherAddress ena;
   };
   Vector<Entry> _v;
-  
+
   void add_map(IPAddress dst, IPAddress mask, EtherAddress);
 
   static String read_handler(Element *, void *);
-  
+
 };
 
 CLICK_ENDDECLS

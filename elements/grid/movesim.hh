@@ -8,7 +8,7 @@
  * =io
  * None
  * =d
- * 
+ *
  * Generate programmed movement in Click-embedded Grid network
  * simulations.  Each argument tuple specifies a new velocity for the
  * GridLocationInfo element NODE-EL at time T milliseconds, with new
@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 class MovementSimulator : public Element {
-  
+
 public:
   MovementSimulator();
   ~MovementSimulator();
@@ -46,7 +46,7 @@ private:
     double v_lat;
     double v_lon;
     node_event() : loc_el(0) { }
-    node_event(GridLocationInfo *el, double vlat, double vlon) : 
+    node_event(GridLocationInfo *el, double vlat, double vlon) :
       loc_el(el), v_lat(vlat), v_lon(vlon) { }
   };
 

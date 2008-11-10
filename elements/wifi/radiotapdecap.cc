@@ -29,7 +29,7 @@ CLICK_DECLS
 
 #define NUM_RADIOTAP_ELEMENTS 18
 
-static const int radiotap_elem_to_bytes[NUM_RADIOTAP_ELEMENTS] = 
+static const int radiotap_elem_to_bytes[NUM_RADIOTAP_ELEMENTS] =
 	{8, /* IEEE80211_RADIOTAP_TSFT */
 	 1, /* IEEE80211_RADIOTAP_FLAGS */
 	 1, /* IEEE80211_RADIOTAP_RATE */
@@ -57,7 +57,7 @@ static int rt_el_present(struct ieee80211_radiotap_header *th, u_int32_t element
 	return th->it_present & (1 << element);
 }
 
-static int rt_check_header(struct ieee80211_radiotap_header *th, int len) 
+static int rt_check_header(struct ieee80211_radiotap_header *th, int len)
 {
 	int bytes = 0;
 	int x = 0;
@@ -68,7 +68,7 @@ static int rt_check_header(struct ieee80211_radiotap_header *th, int len)
 	if (th->it_len < sizeof(struct ieee80211_radiotap_header)) {
 		return 0;
 	}
-	
+
 	for (x = 0; x < NUM_RADIOTAP_ELEMENTS; x++) {
 		if (rt_el_present(th, x))
 		    bytes += radiotap_elem_to_bytes[x];
@@ -77,7 +77,7 @@ static int rt_check_header(struct ieee80211_radiotap_header *th, int len)
 	if (th->it_len < sizeof(struct ieee80211_radiotap_header) + bytes) {
 		return 0;
 	}
-	
+
 	if (th->it_len > len) {
 		return 0;
 	}
@@ -142,14 +142,14 @@ RadiotapDecap::simple_action(Packet *p)
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_RX_FLAGS)) {
 			u_int16_t flags = *((u_int16_t *) rt_el_offset(th, IEEE80211_RADIOTAP_RX_FLAGS));
-			if (flags & IEEE80211_RADIOTAP_F_RX_BADFCS) 
+			if (flags & IEEE80211_RADIOTAP_F_RX_BADFCS)
 				ceh->flags |= WIFI_EXTRA_RX_ERR;
 		}
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_TX_FLAGS)) {
 			u_int16_t flags = *((u_int16_t *) rt_el_offset(th, IEEE80211_RADIOTAP_TX_FLAGS));
 			ceh->flags |= WIFI_EXTRA_TX;
-			if (flags & IEEE80211_RADIOTAP_F_TX_FAIL) 
+			if (flags & IEEE80211_RADIOTAP_F_TX_FAIL)
 				ceh->flags |= WIFI_EXTRA_TX_FAIL;
 
 			if (flags & IEEE80211_RADIOTAP_F_FCS) {
@@ -159,7 +159,7 @@ RadiotapDecap::simple_action(Packet *p)
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_DATA_RETRIES))
 			ceh->retries = *((u_int8_t *) rt_el_offset(th, IEEE80211_RADIOTAP_DATA_RETRIES));
-		
+
 		p->pull(th->it_len);
 	}
 
@@ -169,7 +169,7 @@ RadiotapDecap::simple_action(Packet *p)
 
 enum {H_DEBUG};
 
-static String 
+static String
 RadiotapDecap_read_param(Element *e, void *thunk)
 {
   RadiotapDecap *td = (RadiotapDecap *)e;
@@ -180,7 +180,7 @@ RadiotapDecap_read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 RadiotapDecap_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -189,7 +189,7 @@ RadiotapDecap_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -197,7 +197,7 @@ RadiotapDecap_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 RadiotapDecap::add_handlers()
 {

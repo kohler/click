@@ -14,10 +14,10 @@ struct Driver {
     static int driver(const String&);
     static int driver_mask(const String&);
 };
-    
+
 
 struct ElementTraits {
-    
+
     String name;
     String cxx;
     String documentation_name;
@@ -38,13 +38,13 @@ struct ElementTraits {
     ElementTraits();
 
     static const ElementTraits &null_traits()	{ return the_null_traits; }
-    
+
     bool allows_driver(int d) const	{ return (driver_mask&(1<<d)) != 0; }
 
     bool requires(const String &) const;
     bool provides(const String &) const;
     int flag_value(int) const;
-    
+
     String *component(int);
     String *component(const String &);
 
@@ -61,11 +61,11 @@ struct ElementTraits {
     static ElementTraits make(int, ...);
 
   private:
-    
+
     static ElementTraits the_null_traits;
 
     friend class ElementMap;
-    
+
 };
 
 typedef ElementTraits Traits;

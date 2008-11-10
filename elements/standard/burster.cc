@@ -59,7 +59,7 @@ Burster::run_timer(Timer *)
   // don't care)
   if (_timer.scheduled())
     return;
-  
+
   for (int i = 0; i < _npackets; i++) {
     Packet *p = input(0).pull();
     if (!p)

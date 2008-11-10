@@ -69,7 +69,7 @@ ToDevice::~ToDevice()
 int
 ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  
+
   if (cp_va_kparse(conf, this, errh,
 		   "DEVNAME", cpkP+cpkM, cpString, &_ifname,
 		   "DEBUG", 0, cpBool, &_debug,
@@ -87,7 +87,7 @@ ToDevice::initialize(ErrorHandler *errh)
   _fd = -1;
 
 #if TODEVICE_BSD_DEV_BPF
-  
+
   /* pcap_open_live() doesn't open for writing. */
   for (int i = 0; i < 16 && _fd < 0; i++) {
     char tmp[64];
@@ -110,7 +110,7 @@ ToDevice::initialize(ErrorHandler *errh)
   _my_fd = true;
 
 #elif TODEVICE_LINUX || TODEVICE_PCAP
-  
+
   // find a FromDevice and reuse its socket if possible
   for (int ei = 0; ei < router()->nelements() && _fd < 0; ei++) {
     Element *e = router()->element(ei);
@@ -130,11 +130,11 @@ ToDevice::initialize(ErrorHandler *errh)
   }
   if (_fd < 0)
     return -1;
-  
+
 #else
-  
+
   return errh->error("ToDevice is not supported on this platform");
-  
+
 #endif
 
   // check for duplicate writers
@@ -164,7 +164,7 @@ ToDevice::cleanup(CleanupStage)
  * (bpf_poll() in sys/net/bpf.c) This function should behave
  * appropriately under both.  It makes use of select if it correctly
  * tells us when buffers are available, and it schedules a backoff
- * timer if buffers are not available.  
+ * timer if buffers are not available.
  * --jbicket
  */
 bool
@@ -176,11 +176,11 @@ ToDevice::run_task(Task *)
 	p = input(0).pull();
 	_pulls++;
     }
-    
+
     if (p) {
 	int retval;
 	const char *syscall;
-    
+
 #if TODEVICE_WRITE
 	retval = ((uint32_t) write(_fd, p->data(), p->length()) == p->length() ? 0 : -1);
 	syscall = "write";
@@ -190,7 +190,7 @@ ToDevice::run_task(Task *)
 #else
 	retval = 0;
 #endif
-    
+
 	if (retval >= 0) {
 	    _backoff = 0;
 	    checked_output_push(0, p);
@@ -213,7 +213,7 @@ ToDevice::run_task(Task *)
 	    }
 
 	    return false;
-	    
+
 	} else {
 	    click_chatter("ToDevice(%s) %s: %s", _ifname.c_str(), syscall, strerror(errno));
 	    checked_output_push(1, p);
@@ -227,7 +227,7 @@ ToDevice::run_task(Task *)
 }
 
 void
-ToDevice::selected(int) 
+ToDevice::selected(int)
 {
     _task.reschedule();
     remove_select(_fd, SELECT_WRITE);
@@ -254,7 +254,7 @@ ToDevice::read_param(Element *e, void *thunk)
   }
 }
 
-int 
+int
 ToDevice::write_param(const String &in_s, Element *e, void *vparam,
 		     ErrorHandler *errh)
 {
@@ -263,7 +263,7 @@ ToDevice::write_param(const String &in_s, Element *e, void *vparam,
   switch ((intptr_t)vparam) {
   case H_DEBUG: {
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     td->_debug = debug;
     break;

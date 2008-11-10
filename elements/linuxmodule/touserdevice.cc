@@ -16,7 +16,7 @@ endorse or promote products derived from this material without
 specific prior written permission. THIS SOFTWARE IS PROVIDED ``AS IS''
 AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT
 LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-ANY PARTICULAR PURPOSE. 
+ANY PARTICULAR PURPOSE.
 */
 
 #include <click/config.h>
@@ -31,7 +31,7 @@ CLICK_CXX_PROTECT
 #include <linux/mm.h>
 #include <linux/module.h>
 #include <linux/version.h>
-#include <linux/poll.h> 
+#include <linux/poll.h>
 #include <linux/fs.h>
 #include <asm/types.h>
 #include <asm/uaccess.h>
@@ -116,7 +116,7 @@ int ToUserDevice::dev_open(struct inode *inode, struct file *filp)
     return 0;
 }
 
-// close function - called when the "file" /dev/toclick is closed in userspace  
+// close function - called when the "file" /dev/toclick is closed in userspace
 int ToUserDevice::dev_release(struct inode *inode, struct file *filp)
 {
     ToUserDevice *elem = GETELEM(filp);
@@ -220,7 +220,7 @@ ssize_t ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t
 	p->kill();
 	spin_lock(&elem->_lock);
 	nfetched++;
-        elem->_pkt_read_count++;       
+        elem->_pkt_read_count++;
     }
 
     if (nread == 0 && elem->_exit)
@@ -278,12 +278,12 @@ int ToUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     if (DEV_NUM == 1)
     {
         // time to associate the devname with this class
-    
-        //register the device now. this will register 255 minor numbers 
+
+        //register the device now. this will register 255 minor numbers
         res = register_chrdev(_dev_major, DEV_NAME, dev_fops);
-        if (res < 0) 
+        if (res < 0)
         {
-            click_chatter("Failed to Register Dev:%s Major:%d Minor:%d\n", 
+            click_chatter("Failed to Register Dev:%s Major:%d Minor:%d\n",
                 DEV_NAME, _dev_major, _dev_minor);
             click_lfree((char*)_q, _capacity * sizeof(Packet *));
             _q = 0;
@@ -299,7 +299,7 @@ int ToUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 int ToUserDevice::initialize(ErrorHandler *errh)
 {
     click_chatter("**ToUserDevice init\n");
-    if (input_is_pull(0)) 
+    if (input_is_pull(0))
     {
         ScheduleInfo::initialize_task(this, &_task, errh);
         _signal = Notifier::upstream_empty_signal(this, 0, &_task);
@@ -358,7 +358,7 @@ bool ToUserDevice::process(Packet *p)
     _size++;
     spin_unlock(&_lock); // UNLOCK
     // wake up procs if any are sleeping
-    wake_up_interruptible(&_proc_queue); 
+    wake_up_interruptible(&_proc_queue);
     return true;
 }
 
@@ -389,7 +389,7 @@ String ToUserDevice::read_handler(Element *e, void *thunk)
 {
     ToUserDevice *c = (ToUserDevice *)e;
 
-    switch ((intptr_t)thunk) 
+    switch ((intptr_t)thunk)
     {
         case H_COUNT:      return String(c->_pkt_count);
         case H_FAILED:      return String(c->_failed_count);

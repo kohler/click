@@ -94,17 +94,17 @@ Resets C<count> counter to zero when written.
 #include "elements/linuxmodule/anydevice.hh"
 
 class PollDevice : public AnyTaskDevice { public:
-  
+
   PollDevice();
   ~PollDevice();
 
   static void static_initialize();
   static void static_cleanup();
-  
+
   const char *class_name() const	{ return "PollDevice"; }
   const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PUSH; }
-  
+
   int configure_phase() const		{ return CONFIGURE_PHASE_POLLDEVICE; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
@@ -118,7 +118,7 @@ class PollDevice : public AnyTaskDevice { public:
   bool run_task(Task *);
 
   void reset_counts();
-  
+
   uint32_t _npackets;
 #if CLICK_DEVICE_STATS
   uint64_t _time_poll;
@@ -140,7 +140,7 @@ class PollDevice : public AnyTaskDevice { public:
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
   click_cycles_t _push_cycles;
 #endif
-    
+
   uint32_t _buffers_reused;
 
  private:
@@ -150,5 +150,5 @@ class PollDevice : public AnyTaskDevice { public:
 
 };
 
-#endif 
+#endif
 

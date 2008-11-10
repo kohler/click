@@ -92,7 +92,7 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
     // check times
     _have_first_time = _have_last_time = true;
     _first_time_relative = _last_time_relative = _last_time_interval = false;
-    
+
     if ((bool) first_time + (bool) first_time_off > 1)
 	return errh->error("'START' and 'START_AFTER' are mutually exclusive");
     else if (first_time)
@@ -101,7 +101,7 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	_first_time = first_time_off, _first_time_relative = true;
     else
 	_have_first_time = false, _first_time_relative = true;
-    
+
     if ((bool) last_time + (bool) last_time_off + (bool) interval > 1)
 	return errh->error("'END', 'END_AFTER', and 'INTERVAL' are mutually exclusive");
     else if (last_time)
@@ -153,7 +153,7 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
       case C_FRPLUS: _cell_size = FRPlusCell::SIZE; break;
       case C_TSH: _cell_size = TSHCell::SIZE; break;
     }
-    
+
     // set other variables
     _have_any_times = false;
     _timing = timing;
@@ -173,7 +173,7 @@ FromNLANRDump::initialize(ErrorHandler *errh)
     // open file
     if (_ff.initialize(errh) < 0)
 	return -1;
-    
+
     // try reading a packet
     if (read_packet(errh))
 	_time_offset = Timestamp::now() - _packet->timestamp_anno();
@@ -232,7 +232,7 @@ FromNLANRDump::read_packet(ErrorHandler *errh)
     // quit if we sampled or force_ip failed, but we are no longer active
     if (!more)
 	return false;
-    
+
     // record file position
     _packet_filepos = _ff.file_pos();
 
@@ -264,12 +264,12 @@ FromNLANRDump::read_packet(ErrorHandler *errh)
 	// retry _last_time in case someone changed it
 	goto check_times;
     }
-    
+
     // checking sampling probability
     if (_sampling_prob < (1 << SAMPLING_SHIFT)
 	&& (click_random() & ((1<<SAMPLING_SHIFT)-1)) >= _sampling_prob)
 	goto retry;
-    
+
     // create packet
     if (_format != C_FR)
 	p = _ff.get_packet_from_data(&cell->iph, _cell_size - 8, _cell_size - 8, tv.sec(), tv.subsec(), errh);

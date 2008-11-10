@@ -46,12 +46,12 @@ to populate the IP protocol and TCP/UDP port databases.
 */
 
 class IPNameInfo : public Element { public:
-    
+
     const char *class_name() const		{ return "IPNameInfo"; }
 
     static void static_initialize();
     static void static_cleanup();
-    
+
 };
 
 CLICK_ENDDECLS

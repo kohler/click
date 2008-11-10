@@ -25,7 +25,7 @@ struct whandler {
     GtkBox *handler_box() const {
 	return _handlerbox;
     }
-    
+
     void display(const String &ename, bool incremental);
 
     void notify_element(const String &ename);
@@ -34,7 +34,7 @@ struct whandler {
 
     void refresh(const String &hname, bool always);
     void refresh_all(bool always);
-    bool on_autorefresh(const String &hname); 
+    bool on_autorefresh(const String &hname);
     void show_actions(GtkWidget *near, const String &hname, bool changed);
     void hide_actions(const String &hname = String(), bool restore = true);
     void apply_action(const String &hname, bool activate);
@@ -49,9 +49,9 @@ struct whandler {
     void on_preferences(int action);
 
     static const char *widget_hname(GtkWidget *w);
-    
+
   private:
-    
+
     struct hinfo {
 	handler_value *hv;
 	GtkWidget *wcontainer;
@@ -61,7 +61,7 @@ struct whandler {
 
 	int _old_flags;
 	int _old_autorefresh_period;
-	
+
 	hinfo(handler_value *hv_)
 	    : hv(hv_), wcontainer(0), wlabel(0), wdata(0), wposition(0) {
 	}
@@ -75,32 +75,32 @@ struct whandler {
 	bool editable() const {
 	    return hv->editable();
 	}
-	
+
 	void create(whandler *wh, int new_flags, bool always_position);
-	
+
 	void set_edit_active(wmain *rw, bool active);
 	void display(whandler *wh, bool change_form);
-	
+
       private:
 	int create_preferences(whandler *wh);
 	int create_display(whandler *wh);
     };
-    
+
     wmain *_rw;
-    
+
     std::deque<hinfo> _hinfo;
     String _display_ename;
 
     GtkWidget *_eviewbox;
     GtkBox *_handlerbox;
     GtkButtonBox *_hpref_actions;
-    
+
     GtkWidget *_actions[2];
     GtkWidget *_actions_apply[2];
     String _actions_hname;
     bool _actions_changed;
     int _updating;
-    
+
     GtkWidget *_eview_config;
 
     void make_actions(int which);
@@ -108,7 +108,7 @@ struct whandler {
     inline const hinfo *find_hinfo(const String &hname) const;
     inline hinfo *find_hinfo(const String &hname);
     inline hinfo *find_hinfo(handler_value *hv);
-    
+
 };
 
 inline void whandler::notify_element(const String &)

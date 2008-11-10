@@ -95,7 +95,7 @@ FastUDPSource::incr_ports()
     udp->uh_sum = 0;
 }
 
-int 
+int
 FastUDPSource::initialize(ErrorHandler *)
 {
   _count = 0;
@@ -104,7 +104,7 @@ FastUDPSource::initialize(ErrorHandler *)
   memcpy(_packet->data(), &_ethh, 14);
   click_ip *ip = reinterpret_cast<click_ip *>(_packet->data()+14);
   click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
- 
+
   // set up IP header
   ip->ip_v = 4;
   ip->ip_hl = sizeof(click_ip) >> 2;
@@ -133,7 +133,7 @@ FastUDPSource::initialize(ErrorHandler *)
 				    len, IP_PROTO_UDP, csum);
   } else
     udp->uh_sum = 0;
-    
+
   _skb = _packet->skb();
   return 0;
 }
@@ -157,11 +157,11 @@ FastUDPSource::pull(int)
   if(_rate_limited){
     if (_rate.need_update(Timestamp::now())) {
       _rate.update();
-      atomic_inc(&_skb->users); 
+      atomic_inc(&_skb->users);
       p = reinterpret_cast<Packet *>(_skb);
     }
   } else {
-    atomic_inc(&_skb->users); 
+    atomic_inc(&_skb->users);
     p = reinterpret_cast<Packet *>(_skb);
   }
 
@@ -251,7 +251,7 @@ FastUDPSource_active_write_handler
 {
   FastUDPSource *c = (FastUDPSource *)e;
   bool active;
-  if (!cp_bool(s, &active)) 
+  if (!cp_bool(s, &active))
     return errh->error("active parameter must be boolean");
   c->_active = active;
   if (active) c->reset();

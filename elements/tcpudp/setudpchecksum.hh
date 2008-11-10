@@ -23,10 +23,10 @@ CLICK_DECLS
  * =a CheckUDPHeader, SetIPChecksum, CheckIPHeader, SetTCPChecksum */
 
 class SetUDPChecksum : public Element { public:
-    
+
     SetUDPChecksum();
     ~SetUDPChecksum();
-  
+
     const char *class_name() const	{ return "SetUDPChecksum"; }
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PROCESSING_A_AH; }

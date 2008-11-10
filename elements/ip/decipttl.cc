@@ -45,7 +45,7 @@ DecIPTTL::simple_action(Packet *p_in)
 {
   assert(p_in->has_network_header());
   const click_ip *ip_in = p_in->ip_header();
-  
+
   if (ip_in->ip_ttl <= 1) {
     drop_it(p_in);
     return 0;
@@ -53,7 +53,7 @@ DecIPTTL::simple_action(Packet *p_in)
     WritablePacket *p = p_in->uniqueify();
     click_ip *ip = p->ip_header();
     ip->ip_ttl--;
-    
+
     // 19.Aug.1999 - incrementally update IP checksum as suggested by SOSP
     // reviewers, according to RFC1141, as updated by RFC1624.
     // new_sum = ~(~old_sum + ~old_halfword + new_halfword)
@@ -63,7 +63,7 @@ DecIPTTL::simple_action(Packet *p_in)
     //         = ~(~old_sum + 0xFEFF)
     unsigned long sum = (~ntohs(ip->ip_sum) & 0xFFFF) + 0xFEFF;
     ip->ip_sum = ~htons(sum + (sum >> 16));
-    
+
     return p;
   }
 }

@@ -43,7 +43,7 @@ void *
 HashMap_Arena::hard_alloc()
 {
     assert(_buffer_pos == 0);
-    
+
     if (_nbuffers == _buffers_cap) {
 	char **new_buffers = new char *[_buffers_cap * 2];
 	if (!new_buffers)
@@ -53,7 +53,7 @@ HashMap_Arena::hard_alloc()
 	_buffers = new_buffers;
 	_buffers_cap *= 2;
     }
-    
+
     char *new_buffer = new char[_element_size * NELEMENTS];
     if (!new_buffer)
 	return 0;

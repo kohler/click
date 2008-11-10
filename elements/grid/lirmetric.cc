@@ -19,7 +19,7 @@
 #include "elements/grid/lirmetric.hh"
 #include "elements/grid/linkstat.hh"
 #include "elements/grid/gridgenericrt.hh"
-CLICK_DECLS 
+CLICK_DECLS
 
 LIRMetric::LIRMetric()
   : _rt(0)
@@ -31,7 +31,7 @@ LIRMetric::~LIRMetric()
 }
 
 void *
-LIRMetric::cast(const char *n) 
+LIRMetric::cast(const char *n)
 {
   if (strcmp(n, "LIRMetric") == 0)
     return (LIRMetric *) this;
@@ -49,7 +49,7 @@ LIRMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 			 cpEnd);
   if (res < 0)
     return res;
-  if (_rt == 0) 
+  if (_rt == 0)
     errh->error("no GridGenericRouteTable element specified");
   if (_rt->cast("GridGenericRouteTable") == 0)
     return errh->error("GridGenericRouteTable argument is wrong element type (should be GridGenericRouteTable)");
@@ -63,14 +63,14 @@ LIRMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
   return m1.val() < m2.val();
 }
 
-GridGenericMetric::metric_t 
+GridGenericMetric::metric_t
 LIRMetric::get_link_metric(const EtherAddress &, bool) const
 {
   // XXX number of nbrs of senders, or number of neighbors of
   // receivers.  that is, for a an n+1 node route with n hops, do we
   // care about all n+1 nodes, or do we ignore the number of neighbors
   // of either the first or last node?
-  return metric_t(_rt->get_number_direct_neigbors());      
+  return metric_t(_rt->get_number_direct_neigbors());
 }
 
 GridGenericMetric::metric_t
@@ -78,7 +78,7 @@ LIRMetric::append_metric(const metric_t &r, const metric_t &l) const
 {
   if (!r.good() || !l.good())
     return _bad_metric;
-  
+
   // every node must have at least one 1-hop neighbor, or it wouldn't
   // be part of the network!
   if (r.val() < 1)

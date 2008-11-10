@@ -16,7 +16,7 @@ pretty-prints IP6 packets
 =d
 
 dumps simple information about ip6 packet.
-may someday be as good as IPPrint. TAG 
+may someday be as good as IPPrint. TAG
 specifies the label at the head of each
 line. NBYTES specify how many bytes to print
 and CONTENTS specify if the content should
@@ -26,16 +26,16 @@ are keywords.
 =a IPPrint, CheckIPHeader */
 
 class IP6Print : public Element { public:
-  
+
   IP6Print();
   ~IP6Print();
-  
+
   const char *class_name() const		{ return "IP6Print"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   Packet *simple_action(Packet *);
 
  private:

@@ -210,7 +210,7 @@ AmoebaTest::fn(double a[])
   int i;
 
   printf("xfunc(%f,%f) ", x, y);
-  
+
   for(i = 0; i < (int)(sizeof(da) / sizeof(da[0])); i++){
     double dx = x - da[i].x;
     double dy = y - da[i].y;

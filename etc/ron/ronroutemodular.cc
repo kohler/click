@@ -72,7 +72,7 @@ void RONRouteModular::push(int inport, Packet *p)
   }
 }
 
-void RONRouteModular::push_forward_packet(Packet *p) 
+void RONRouteModular::push_forward_packet(Packet *p)
 {
   const click_tcp *tcph;
   int policy = PAINT_ANNO(p);
@@ -87,7 +87,7 @@ void RONRouteModular::push_forward_packet(Packet *p)
     return;
   }
 
-  // if non-TCP just forward direct 
+  // if non-TCP just forward direct
   if (p->ip_header()->ip_p != IP_PROTO_TCP) {
     dprintf("non-TCP proto(%d)", p->ip_header()->ip_p);
     output(1).push(p);
@@ -98,7 +98,7 @@ void RONRouteModular::push_forward_packet(Packet *p)
   // TODO: save seq number
   tcph = p->tcp_header();
   _flowtable->insert(IPAddress(p->ip_header()->ip_src), ntohs(tcph->th_sport),
-		     IPAddress(p->ip_header()->ip_dst), ntohs(tcph->th_dport), 
+		     IPAddress(p->ip_header()->ip_dst), ntohs(tcph->th_dport),
 		     policy);
 
   if (tcph->th_flags & TH_SYN) {
@@ -114,13 +114,13 @@ void RONRouteModular::push_forward_packet(Packet *p)
   return;
 }
 
-void RONRouteModular::push_reverse_packet(int inport, Packet *p) 
+void RONRouteModular::push_reverse_packet(int inport, Packet *p)
 {
   const click_tcp *tcph;
   FlowTableEntry *entry;
   //d2printf("SAW REVERSE PACKET");
 
-  // if non-TCP just forward direct 
+  // if non-TCP just forward direct
   if (p->ip_header()->ip_p != IP_PROTO_TCP) {
     dprintf("non-TCP proto(%d)", p->ip_header()->ip_p);
     output(0).push(p);
@@ -128,11 +128,11 @@ void RONRouteModular::push_reverse_packet(int inport, Packet *p)
   }
 
   tcph = p->tcp_header();
-  entry = _flowtable->lookup(IPAddress(p->ip_header()->ip_dst), 
-			     ntohs(tcph->th_dport), 
-			     IPAddress(p->ip_header()->ip_src), 
+  entry = _flowtable->lookup(IPAddress(p->ip_header()->ip_dst),
+			     ntohs(tcph->th_dport),
+			     IPAddress(p->ip_header()->ip_src),
 			     ntohs(tcph->th_sport));
-			     
+
   if (!entry) {
     d2printf(" Could not find flow");
     // TODO: send reset
@@ -167,7 +167,7 @@ void RONRouteModular::send_rst(Packet *p, unsigned long seq, int outport) {
   iphdr  = rst_pkt->ip_header();
   tcphdr = rst_pkt->tcp_header();
 
-  tcphdr->th_sport = p->tcp_header()->th_dport;	
+  tcphdr->th_sport = p->tcp_header()->th_dport;
   tcphdr->th_dport = p->tcp_header()->th_sport;
   tcphdr->th_seq   = htonl(seq);
   tcphdr->th_ack   = htonl(ntohl(p->tcp_header()->th_seq) + 1);
@@ -176,7 +176,7 @@ void RONRouteModular::send_rst(Packet *p, unsigned long seq, int outport) {
   tcphdr->th_win   = ntohs(16384);
   tcphdr->th_urp   = 0;
   tcphdr->th_sum   = 0;
-	
+
   memset(iphdr, '\0', 9);
   iphdr->ip_sum = 0;
   iphdr->ip_len = htons(20);
@@ -191,7 +191,7 @@ void RONRouteModular::send_rst(Packet *p, unsigned long seq, int outport) {
   iphdr->ip_v   = 4;
   iphdr->ip_hl  = 5;
   iphdr->ip_id  = htons(0x1234);
-  iphdr->ip_off = 0; 
+  iphdr->ip_off = 0;
   iphdr->ip_ttl = 32;
   iphdr->ip_sum = 0;
 
@@ -225,9 +225,9 @@ void RONRouteModular::print_time(char* s) {
   click_chatter("%s (%ld.%06ld)", s, tp.tv_sec & 0xffff, tp.tv_usec);
 }
 
-RONRouteModular::FlowTableEntry * 
+RONRouteModular::FlowTableEntry *
 RONRouteModular::FlowTable::insert(IPAddress src, unsigned short sport,
-				   IPAddress dst, unsigned short dport, 
+				   IPAddress dst, unsigned short dport,
 				   int policy) {
   int i;
   for(i=_v.size()-1; i>=0; i--)
@@ -235,14 +235,14 @@ RONRouteModular::FlowTable::insert(IPAddress src, unsigned short sport,
       _v[i].policy = policy;
       return &_v[i];
     }
-  
+
   FlowTableEntry e(src, sport, dst, dport, policy);
   _v.push_back(e);
   //  d2printf(" inserting %s(%d) -> %s(%d)", src.unparse().c_str(), _v[_v.size()-1].sport, dst.unparse().c_str(), _v[_v.size()-1].dport);
   return &_v[_v.size()-1];
 }
 
-RONRouteModular::FlowTableEntry * 
+RONRouteModular::FlowTableEntry *
 RONRouteModular::FlowTable::lookup(IPAddress src, unsigned short sport,
 				   IPAddress dst, unsigned short dport) {
   int i;
@@ -263,7 +263,7 @@ RONRouteModular::FlowTable::remove(IPAddress src, unsigned short sport,
       for(j=i; j<_v.size()-1; j++)
 	_v[j] = _v[j+1];
       _v.pop_back();
-    }  
+    }
 }
 
 

@@ -145,10 +145,10 @@ ARPTable, ARPResponder, ARPFaker, AddressInfo
 */
 
 class ARPQuerier : public Element { public:
-  
+
     ARPQuerier();
     ~ARPQuerier();
-  
+
     const char *class_name() const		{ return "ARPQuerier"; }
     const char *port_count() const		{ return "2/1-2"; }
     const char *processing() const		{ return PUSH; }
@@ -162,9 +162,9 @@ class ARPQuerier : public Element { public:
     void add_handlers();
     void cleanup(CleanupStage stage);
     void take_state(Element *e, ErrorHandler *errh);
-  
+
     void push(int port, Packet *p);
-  
+
   private:
 
     ARPTable *_arpt;
@@ -178,9 +178,9 @@ class ARPQuerier : public Element { public:
     atomic_uint32_t _arp_responses;
     atomic_uint32_t _broadcasts;
     bool _my_arpt;
-    
+
     void send_query_for(Packet *p);
-  
+
     void handle_ip(Packet *p, bool response);
     void handle_response(Packet *p);
 
@@ -191,7 +191,7 @@ class ARPQuerier : public Element { public:
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
 
     enum { h_table, h_table_xml, h_stats, h_insert, h_delete, h_clear };
-    
+
 };
 
 CLICK_ENDDECLS

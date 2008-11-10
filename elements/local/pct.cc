@@ -5,7 +5,7 @@
 
 CLICK_DECLS
 
-Pct::Pct() 
+Pct::Pct()
 {
 }
 

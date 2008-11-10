@@ -38,8 +38,8 @@ RatedUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned r;
     CpVaParseCmd cmd = (is_bandwidth() ? cpBandwidth : cpUnsigned);
-    if (cp_va_kparse(conf, this, errh, 
-		     "RATE", cpkP+cpkM, cmd, &r, cpEnd) < 0) 
+    if (cp_va_kparse(conf, this, errh,
+		     "RATE", cpkP+cpkM, cmd, &r, cpEnd) < 0)
 	return -1;
     _rate.set_rate(r, errh);
     return 0;
@@ -61,7 +61,7 @@ RatedUnqueue::run_task(Task *)
     if (_rate.need_update(Timestamp::now())) {
 	//_rate.update();  // uncomment this if you want it to run periodically
 	if (Packet *p = input(0).pull()) {
-	    _rate.update();  
+	    _rate.update();
 	    output(0).push(p);
 	    worked = true;
 	} else  // no Packet available

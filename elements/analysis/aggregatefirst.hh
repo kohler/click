@@ -44,10 +44,10 @@ Only available in user-level processes.
 AggregateLast, AggregateIP, AggregateIPFlows, AggregateCounter, AggregateFilter */
 
 class AggregateFirst : public Element, public AggregateListener { public:
-  
+
     AggregateFirst();
     ~AggregateFirst();
-  
+
     const char *class_name() const	{ return "AggregateFirst"; }
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PROCESSING_A_AH; }
@@ -61,20 +61,20 @@ class AggregateFirst : public Element, public AggregateListener { public:
     Packet *pull(int);
 
     void aggregate_notify(uint32_t, AggregateEvent, const Packet *);
-    
+
   private:
 
     enum { ROW_BITS = 10, ROW_SHIFT = 0, NROW = 1<<ROW_BITS, ROW_MASK = NROW - 1,
 	   COL_BITS = 16, COL_SHIFT = ROW_BITS, NCOL = 1<<COL_BITS, COL_MASK = NCOL - 1,
 	   PLANE_BITS = 32 - ROW_BITS - COL_BITS, PLANE_SHIFT = COL_SHIFT + COL_BITS, NPLANE = 1<<PLANE_BITS, PLANE_MASK = NPLANE - 1 };
-    
+
     uint32_t **_kills[NPLANE];
     AggregateNotifier *_agg_notifier;
     uint32_t *_counts[NPLANE];
 
     uint32_t *create_row(uint32_t agg);
     inline uint32_t *row(uint32_t agg);
-    
+
 };
 
 inline uint32_t *

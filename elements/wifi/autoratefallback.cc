@@ -88,9 +88,9 @@ AutoRateFallback::process_feedback(Packet *p_in)
     return;
   }
   if (success && p_in->length() < _packet_size_threshold) {
-    /* 
-     * don't deal with short packets, 
-     * since they can skew what rate we should be at 
+    /*
+     * don't deal with short packets,
+     * since they can skew what rate we should be at
      */
     return;
   }
@@ -120,7 +120,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
 		    nfo->_rates[nfo->_current_index],
 		    nfo->_rates[next_index]);
     }
-    
+
     if (nfo->_wentup && _adaptive_stepup) {
       /* backoff the stepup */
       nfo->_stepup *= 2;
@@ -147,7 +147,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
     nfo->_successes = 0;
   }
 
-  if (nfo->_successes > nfo->_stepup && 
+  if (nfo->_successes > nfo->_stepup &&
 
       nfo->_current_index != nfo->_rates.size() - 1) {
     if (_debug) {
@@ -155,7 +155,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
 		    this,
 		    nfo->_eth.unparse().c_str(),
 		    nfo->_rates[nfo->_current_index],
-		    nfo->_rates[min(nfo->_rates.size() - 1, 
+		    nfo->_rates[min(nfo->_rates.size() - 1,
 				    nfo->_current_index + 1)]);
     }
     nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
@@ -221,7 +221,7 @@ AutoRateFallback::assign_rate(Packet *p_in)
   eh->max_tries2 = (ndx - 2 >= 0) ? 2 : 0;
   eh->max_tries3 = (ndx - 3 >= 0) ? 2 : 0;
   return;
-  
+
 }
 
 
@@ -253,7 +253,7 @@ AutoRateFallback::push(int port, Packet *p_in)
 
 
 String
-AutoRateFallback::print_rates() 
+AutoRateFallback::print_rates()
 {
     StringAccum sa;
   for (NIter iter = _neighbors.begin(); iter.live(); iter++) {
@@ -266,7 +266,7 @@ AutoRateFallback::print_rates()
 }
 
 
-enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET, 
+enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET,
       H_OFFSET, H_ACTIVE};
 
 
@@ -288,13 +288,13 @@ AutoRateFallback_read_param(Element *e, void *thunk)
   case H_RATES: {
     return td->print_rates();
   }
-  case H_ACTIVE: 
+  case H_ACTIVE:
     return String(td->_active) + "\n";
   default:
     return String();
   }
 }
-static int 
+static int
 AutoRateFallback_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -303,45 +303,45 @@ AutoRateFallback_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
   }
   case H_STEPUP: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("stepup parameter must be unsigned");
     f->_stepup = m;
     break;
   }
   case H_STEPDOWN: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("stepdown parameter must be unsigned");
     f->_stepdown = m;
     break;
   }
   case H_THRESHOLD: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("threshold parameter must be unsigned");
     f->_packet_size_threshold = m;
     break;
   }
   case H_OFFSET: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("offset parameter must be unsigned");
     f->_offset = m;
     break;
   }
-  case H_RESET: 
+  case H_RESET:
     f->_neighbors.clear();
     break;
  case H_ACTIVE: {
     bool active;
-    if (!cp_bool(s, &active)) 
+    if (!cp_bool(s, &active))
       return errh->error("active must be boolean");
     f->_active = active;
     break;

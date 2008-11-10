@@ -45,7 +45,7 @@ DecIP6HLIM::simple_action(Packet *p_in)
 {
   assert(p_in->has_network_header());
   const click_ip6 *ip_in = p_in->ip6_header();
-  
+
   if (ip_in->ip6_hlim <= 1) {
     drop_it(p_in);
     return 0;

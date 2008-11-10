@@ -51,7 +51,7 @@ CLICK_DECLS
  *
  * Out-of-memory StringAccum objects nominally have zero characters.
  */
-    
+
 
 void
 StringAccum::assign_out_of_memory()
@@ -69,17 +69,17 @@ StringAccum::grow(int want)
     // can't append to out-of-memory strings
     if (_cap < 0)
 	return false;
-  
+
     int ncap = (_cap ? _cap * 2 : 128);
     while (ncap <= want)
 	ncap *= 2;
-  
+
     unsigned char *n = (unsigned char *) CLICK_LALLOC(ncap);
     if (!n) {
 	assign_out_of_memory();
 	return false;
     }
-  
+
     if (_s)
 	memcpy(n, _s, _cap);
     CLICK_LFREE(_s, _cap);
@@ -172,7 +172,7 @@ StringAccum::append_numeric(String::uint_large_t num, int base, bool uppercase)
 {
     // Unparse a large integer. Linux kernel sprintf can't handle %lld, so we
     // provide our own function, and use it everywhere to catch bugs.
-  
+
     char buf[256];
     char *trav = buf + 256;
 
@@ -184,7 +184,7 @@ StringAccum::append_numeric(String::uint_large_t num, int base, bool uppercase)
 	    num >>= (base >> 3) + 2;
 	}
     }
-  
+
     while (num > 0) {
 	// k = Approx[num/10] -- know that k <= num/10
 	String::uint_large_t k = (num >> 4) + (num >> 5) + (num >> 8)
@@ -200,20 +200,20 @@ StringAccum::append_numeric(String::uint_large_t num, int base, bool uppercase)
 	    m = num - d;
 	    if (m < 10)
 		break;
-	
+
 	    // delta = Approx[m/10] -- know that delta <= m/10
 	    String::uint_large_t delta = (m >> 4) + (m >> 5) + (m >> 8) + (m >> 9);
 	    if (m >= 0x1000)
 		delta += (m >> 12) + (m >> 13) + (m >> 16) + (m >> 17);
-	
+
 	    // delta might have underflowed: add at least 1
 	    k += (delta ? delta : 1);
 	}
-      
+
 	*--trav = '0' + (unsigned)m;
 	num = k;
     }
-  
+
     // make sure at least one 0 is written
     if (trav == buf + 256)
 	*--trav = '0';

@@ -82,7 +82,7 @@ class MixedQueue : public NotifierQueue { public:
     void *cast(const char *);
 
     void push(int port, Packet *);
-    
+
 };
 
 CLICK_ENDDECLS

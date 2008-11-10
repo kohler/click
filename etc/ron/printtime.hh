@@ -14,7 +14,7 @@ pretty-prints IP packets
 
 =d
 
-Expects IP packets as input.  Should be placed downstream of a 
+Expects IP packets as input.  Should be placed downstream of a
 CheckIPHeader or equivalent element.
 
 Prints out IP packets in a human-readable tcpdump-like format, preceded by
@@ -23,18 +23,18 @@ the TAG text.
 =a Print, CheckIPHeader */
 
 class IPPrintTime : public Element { public:
-  
+
   IPPrintTime();
   ~IPPrintTime();
-  
+
   const char *class_name() const		{ return "IPPrintTime"; }
   const char *port_count() const		{ return "1/1"; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
-  
+
   Packet *simple_action(Packet *);
 
  private:

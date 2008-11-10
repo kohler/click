@@ -31,7 +31,7 @@
  * Every second, a node broadcasts the nearest fixes it knows about.
  * Only fixes heard about in the last 5 seconds are broadcast.
  * Also only fixes with hop count < 10.
- * 
+ *
  * There's a problem that an update with a new sequence number
  * may move quickly along a long path, and supersede an older
  * slower update that moved along the minimum length path.
@@ -64,30 +64,30 @@
 CLICK_DECLS
 
 class PEP : public GridLocationInfo {
-  
+
 public:
-  
+
   PEP();
   ~PEP();
-  
+
   const char *class_name() const		{ return "PEP"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   virtual void *cast(const char *);
   void run_timer(Timer *);
   void add_handlers();
   Packet *simple_action(Packet *p);
-  
+
   grid_location get_current_location(void);
   String s();
 
   bool _debug;
-  
+
 private:
-  
+
   IPAddress _my_ip;
   Timer _timer;
 

@@ -132,7 +132,7 @@ KernelErrorHandler::log_line(const char *begin, const char *end)
     // ensure begin <= end
     if (begin > end)
 	begin = end;
-  
+
     // skip "chatter: " for message log
     if (begin + 9 <= end && memcmp(begin, "chatter: ", 9) == 0)
 	begin += 9;
@@ -287,7 +287,7 @@ cleanup_module()
     // config manager, thread manager
     click_cleanup_config();
     click_cleanup_sched();
-  
+
     // filesystem interface
     clickfs_tree_cleanup();
 
@@ -298,12 +298,12 @@ cleanup_module()
     delete click_logged_errh;
     delete syslog_errh;
     click_logged_errh = syslog_errh = 0;
-  
+
     printf("Click module exiting\n");
-  
+
     // HashMap
     HashMap_ArenaFactory::static_cleanup();
-  
+
     // String (after any operations that might destroy Strings)
     NameInfo::static_cleanup();
 

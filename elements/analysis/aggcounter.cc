@@ -62,7 +62,7 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
     String call_nnz, call_count;
     freeze_nnz = stop_nnz = _call_nnz = (uint32_t)(-1);
     freeze_count = stop_count = _call_count = (uint64_t)(-1);
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "BYTES", 0, cpBool, &bytes,
 		     "IP_BYTES", 0, cpBool, &ip_bytes,
@@ -77,7 +77,7 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "BANNER", 0, cpString, &_output_banner,
 		     cpEnd) < 0)
 	return -1;
-    
+
     _bytes = bytes;
     _ip_bytes = ip_bytes;
     _use_packet_count = packet_count;
@@ -96,7 +96,7 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 	    return errh->error("'AGGREGATE_CALL' first word should be unsigned (number of aggregates)");
 	_call_nnz_h = new HandlerCall(call_nnz);
     }
-    
+
     if ((freeze_count != (uint64_t)(-1)) + (stop_count != (uint64_t)(-1)) + ((bool)call_count) > 1)
 	return errh->error("'COUNT_FREEZE', 'COUNT_STOP', and 'COUNT_CALL' are mutually exclusive");
     else if (freeze_count != (uint64_t)(-1)) {
@@ -110,7 +110,7 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 	    return errh->error("'COUNT_CALL' first word should be unsigned (count)");
 	_call_count_h = new HandlerCall(call_count);
     }
-    
+
     return 0;
 }
 
@@ -124,7 +124,7 @@ AggregateCounter::initialize(ErrorHandler *errh)
 
     if (clear(errh) < 0)
 	return -1;
-    
+
     _frozen = false;
     _active = true;
     return 0;
@@ -152,7 +152,7 @@ AggregateCounter::make_peer(uint32_t a, Node *n, bool frozen)
 
     if (frozen)
 	return 0;
-    
+
     Node *down[2];
     if (!(down[0] = new_node()))
 	return 0;
@@ -218,13 +218,13 @@ AggregateCounter::update(Packet *p, bool frozen)
 {
     if (!_active)
 	return false;
-    
+
     // AGGREGATE_ANNO is already in host byte order!
     uint32_t agg = AGGREGATE_ANNO(p);
     Node *n = find_node(agg, frozen);
     if (!n)
 	return false;
-    
+
     uint32_t amount;
     if (!_bytes)
 	amount = 1 + (_use_packet_count ? EXTRA_PACKETS_ANNO(p) : 0);
@@ -233,7 +233,7 @@ AggregateCounter::update(Packet *p, bool frozen)
 	if (_ip_bytes && p->has_network_header())
 	    amount -= p->network_header_offset();
     }
-    
+
     // update _num_nonzero; possibly call handler
     if (amount && !n->count) {
 	if (_num_nonzero >= _call_nnz) {
@@ -244,7 +244,7 @@ AggregateCounter::update(Packet *p, bool frozen)
 	}
 	_num_nonzero++;
     }
-    
+
     n->count += amount;
     _count += amount;
     if (_count >= _call_count) {
@@ -288,7 +288,7 @@ AggregateCounter::clear(ErrorHandler *errh)
 {
     if (_root)
 	clear_node(_root);
-    
+
     if (!(_root = new_node())) {
 	if (errh)
 	    errh->error("out of memory!");
@@ -309,7 +309,7 @@ AggregateCounter::reaggregate_node(Node *n)
     Node *l = n->child[0], *r = n->child[1];
     uint32_t count = n->count;
     free_node(n);
-    
+
     if ((n = find_node(count, false))) {
 	if (!n->count)
 	    _num_nonzero++;
@@ -399,7 +399,7 @@ AggregateCounter::write_file(String where, WriteFormat format,
 #endif
     } else if (format == WR_TEXT_IP)
 	fprintf(f, "!ip\n");
-    
+
     uint32_t buf[1024];
     int pos = 0;
     write_nodes(_root, f, format, buf, pos, 1024, errh);

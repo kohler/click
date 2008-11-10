@@ -11,18 +11,18 @@ class Station {
 public:
   EtherAddress _eth;
   Timestamp _when; // When we last heard from this node.
-  Station() { 
+  Station() {
     memset(this, 0, sizeof(*this));
   }
 };
-  
+
 
 
 class StationTable : public Element { public:
-  
+
   StationTable();
   ~StationTable();
-  
+
   const char *class_name() const		{ return "StationTable"; }
   const char *port_count() const		{ return PORTS_0_0; }
 
@@ -33,10 +33,10 @@ class StationTable : public Element { public:
   bool _debug;
 
 private:
-  
+
   typedef HashMap<EtherAddress, Station> STable;
   typedef STable::const_iterator STIter;
-  
+
   STable _table;
 
 };

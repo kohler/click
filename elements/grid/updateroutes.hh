@@ -75,11 +75,11 @@ public:
    is increased everytime an entry is propagated, as well as with the
    passage of time, to prevent stale data from sticking around
    (actually, the age is set, and then decremented, the entry is
-   thrown away when it's age is ~0). 
+   thrown away when it's age is ~0).
 
    The ``jiffies' of an entry are how long that entry has been in this
    particular routing table, we discard entries that are too old here
-   also.  It could be that the age makes jiffies redundant. 
+   also.  It could be that the age makes jiffies redundant.
 
    of course, we are comforted with this: jiffies are a local
    decision, while age is decided by the initiator of the entry */
@@ -92,22 +92,22 @@ public:
     IPAddress ip;
     unsigned int last_updated_jiffies;
     NbrEntry() : _init(false), last_updated_jiffies(0) { }
-    NbrEntry(EtherAddress eth_in, IPAddress ip_in, unsigned int jiff) 
+    NbrEntry(EtherAddress eth_in, IPAddress ip_in, unsigned int jiff)
       : _init(true), eth(eth_in), ip(ip_in), last_updated_jiffies(jiff) { }
     operator bool() const { return _init; }
     unsigned int hashcode() const { return *(unsigned int *)ip.data(); }
-    String s() const 
+    String s() const
     { return eth.unparse() + " -- " + ip.unparse() + " -- " + String(last_updated_jiffies); }
   };
 
   typedef HashMap<IPAddress, NbrEntry> Table;
   Table _addresses; // immediate nbrs
-  /* 
+  /*
    * _addresses is a mapping from IP to ether for nodes within our
    * radio range.  this information is extracted by snooping on all
-   * packets with grid headers .  
+   * packets with grid headers .
    */
- 
+
   struct far_entry {
     far_entry() : last_updated_jiffies(0) { }
     far_entry(int j, grid_nbr_entry n) : last_updated_jiffies(j), sent_new(false), nbr(n)  { }
@@ -118,7 +118,7 @@ public:
 
   typedef HashMap<IPAddress, far_entry> FarTable;
   FarTable _rtes; // immediate and multihop nbrs
-  /* 
+  /*
    * _rtes is our routing table; its information is maintained by
    * processing Grid Hello (GRID_LR_HELLO) packets only.  some
    * invariants: any entry listed as one hop in _rtes has an entry in
@@ -134,7 +134,7 @@ public:
    * up in the tables from other code, we will neve be in the middle
    * of updating the table.  Also, the tables are public so the static
    * read handlers can access them! -- perhaps eventually need a
-   * better design for accessing the table contents... 
+   * better design for accessing the table contents...
    */
 
 
@@ -145,12 +145,12 @@ public:
   void *cast(const char *);
   const char *port_count() const		{ return "1/2"; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   void add_handlers();
-  
+
   Packet *simple_action(Packet *);
 
   void get_rtes(Vector<grid_nbr_entry> *retval);
@@ -187,7 +187,7 @@ private:
   void send_routing_update(Vector<grid_nbr_entry> &rte_info, bool);
 #if 0
   Packet *make_hello();
-#endif  
+#endif
   // decrement, bottoming out at 0
   static unsigned int decr_age(unsigned int age, unsigned int decr)
   { return (age > decr ? age - decr : 0); }

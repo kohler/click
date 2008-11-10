@@ -139,17 +139,17 @@ class FromDevice : public Element { public:
 
     FromDevice();
     ~FromDevice();
-  
+
     const char *class_name() const	{ return "FromDevice"; }
     const char *port_count() const	{ return PORTS_0_1; }
     const char *processing() const	{ return PUSH; }
-  
+
     int configure_phase() const		{ return KernelFilter::CONFIGURE_PHASE_FROMDEVICE; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
     void add_handlers();
-  
+
     String ifname() const		{ return _ifname; }
     inline int fd() const;
 
@@ -164,9 +164,9 @@ class FromDevice : public Element { public:
 #endif
 
     void kernel_drops(bool& known, int& max_drops) const;
-  
+
   private:
-  
+
 #if FROMDEVICE_LINUX
     int _linux_fd;
     unsigned char *_linux_packetbuf;
@@ -187,7 +187,7 @@ class FromDevice : public Element { public:
     typedef uint32_t counter_t;
 #endif
     counter_t _count;
-  
+
     String _ifname;
     bool _sniffer : 1;
     bool _promisc : 1;

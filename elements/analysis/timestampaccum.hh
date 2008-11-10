@@ -33,10 +33,10 @@ Resets C<count> and C<time> counters to zero when written.
 =a SetCycleCount, RoundTripCycleCount, SetPerfCount, PerfCountAccum */
 
 class TimestampAccum : public Element { public:
-    
+
     TimestampAccum();
     ~TimestampAccum();
-  
+
     const char *class_name() const	{ return "TimestampAccum"; }
     const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return AGNOSTIC; }
@@ -47,13 +47,13 @@ class TimestampAccum : public Element { public:
     Packet *simple_action(Packet *);
 
   private:
-  
+
     double _usec_accum;
     uint64_t _count;
 
     static String read_handler(Element *, void *);
     static int reset_handler(const String &, Element *, void *, ErrorHandler *);
-  
+
 };
 
 CLICK_ENDDECLS

@@ -17,7 +17,7 @@ CLICK_DECLS
  * =d
  * Input packets need to be IPv4 (no ether header &c).
  * It's OK if they're not TCP.
- * 
+ *
  * How to specify various kinds of output? There is not really
  * a useful general standard. Perhaps emit each different format
  * of output on a different output() and let further modules
@@ -38,7 +38,7 @@ public:
     tcpip() { _ip.ip_src.s_addr = 0; }
     operator IPFlowID() const;
   };
-  
+
   RFC2507c();
   ~RFC2507c();
 
@@ -56,7 +56,7 @@ private:
   enum { PT_OTHER = 0, /* ordinary packet (not compressed, no CID) */
 	 PT_FULL_HEADER = 1, /* one byte CID, then full ip/tcp */
 	 PT_COMPRESSED_TCP = 2 }; /* CID, compressed packet */
-  
+
   /* per-connection control block, indexed by CID */
   struct ccb {
     struct tcpip _context;

@@ -40,13 +40,13 @@ RatedSource::~RatedSource()
 int
 RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  String data = 
+  String data =
     "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
   unsigned rate = 10;
   int limit = -1;
   int datasize = -1;
   bool active = true, stop = false;
-  
+
   if (cp_va_kparse(conf, this, errh,
 		   "DATA", cpkP, cpString, &data,
 		   "RATE", cpkP, cpUnsigned, &rate,
@@ -57,14 +57,14 @@ RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 		   "STOP", 0, cpBool, &stop,
 		   cpEnd) < 0)
     return -1;
-  
+
   _data = data;
   _datasize = datasize;
   _rate.set_rate(rate, errh);
   _limit = (limit >= 0 ? limit : NO_LIMIT);
   _active = active;
   _stop = stop;
-  
+
   setup_packet();
 
   return 0;
@@ -74,7 +74,7 @@ int
 RatedSource::initialize(ErrorHandler *errh)
 {
   _count = 0;
-  if (output_is_push(0)) 
+  if (output_is_push(0))
     ScheduleInfo::initialize_task(this, &_task, errh);
   return 0;
 }
@@ -97,7 +97,7 @@ RatedSource::run_task(Task *)
 	    router()->please_stop_driver();
 	return false;
     }
-  
+
     Timestamp now = Timestamp::now();
     if (_rate.need_update(now)) {
 	_rate.update();
@@ -119,13 +119,13 @@ RatedSource::pull(int)
     if (!_active)
 	return 0;
     if (_limit != NO_LIMIT && _count >= _limit) {
-	if (_stop) 
+	if (_stop)
 	    router()->please_stop_driver();
 	return 0;
     }
 
     Timestamp now = Timestamp::now();
-    if (_rate.need_update(now)) { 
+    if (_rate.need_update(now)) {
 	_rate.update();
 	_count++;
 	Packet *p = _packet->clone();
@@ -136,7 +136,7 @@ RatedSource::pull(int)
 }
 
 void
-RatedSource::setup_packet() 
+RatedSource::setup_packet()
 {
     if (_packet)
 	_packet->kill();
@@ -186,7 +186,7 @@ RatedSource::change_param(const String &s, Element *e, void *vparam,
 	  rs->_packet->kill();
       rs->_packet = Packet::make(rs->_data.data(), rs->_data.length());
       break;
-   
+
    case 1: {			// rate
      unsigned rate;
      if (!cp_integer(s, &rate))
@@ -205,7 +205,7 @@ RatedSource::change_param(const String &s, Element *e, void *vparam,
      rs->_limit = (limit < 0 ? NO_LIMIT : limit);
      break;
    }
-   
+
    case 3: {			// active
      bool active;
      if (!cp_bool(s, &active))
@@ -257,7 +257,7 @@ RatedSource::add_handlers()
   add_data_handlers("datasize", Handler::OP_READ | Handler::DEPRECATED, &_datasize);
   add_write_handler("datasize", change_param, (void *)6);
 
-  if (output_is_push(0)) 
+  if (output_is_push(0))
     add_task_handlers(&_task);
 }
 

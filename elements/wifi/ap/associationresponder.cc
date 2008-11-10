@@ -38,7 +38,7 @@ CLICK_DECLS
 AssociationResponder::AssociationResponder()
   : _associd(0),
     _rtable(0),
-    _winfo(0)  
+    _winfo(0)
 {
 }
 
@@ -59,14 +59,14 @@ AssociationResponder::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
 
 
-  if (!_rtable || _rtable->cast("AvailableRates") == 0) 
+  if (!_rtable || _rtable->cast("AvailableRates") == 0)
     return errh->error("AvailableRates element is not provided or not a AvailableRates");
 
   return 0;
 }
 
 
-void 
+void
 AssociationResponder::recv_association_request(Packet *p)
 {
   uint8_t type;
@@ -80,7 +80,7 @@ AssociationResponder::recv_association_request(Packet *p)
 
     p->kill();
     return;
-	      
+
   }
   struct click_wifi *w = (struct click_wifi *) p->data();
 
@@ -103,13 +103,13 @@ AssociationResponder::recv_association_request(Packet *p)
   }
 
   uint8_t *ptr;
-  
+
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
   /*capabilty */
   uint16_t capability = le16_to_cpu(*(uint16_t *) ptr);
   ptr += 2;
-  
+
   /* listen interval */
   uint16_t lint = le16_to_cpu(*(uint16_t *) ptr);
   ptr += 2;
@@ -146,7 +146,7 @@ AssociationResponder::recv_association_request(Packet *p)
   if (rates_l) {
     for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
       uint8_t rate = rates_l[x + 2];
-      
+
       if (rate & WIFI_RATE_BASIC) {
 	basic_rates.push_back((int)(rate & WIFI_RATE_VAL));
       } else {
@@ -232,7 +232,7 @@ AssociationResponder::recv_association_request(Packet *p)
     click_chatter("%{element}: association %s associd %d\n",
 		  this,
 		  src.unparse().c_str(),
-		  associd);		  
+		  associd);
   }
   send_association_response(src, WIFI_STATUS_SUCCESS, associd);
   p->kill();
@@ -251,14 +251,14 @@ AssociationResponder::send_association_response(EtherAddress dst, uint16_t statu
 {
   EtherAddress bssid = _winfo ? _winfo->_bssid : EtherAddress();
   Vector<int> rates = _rtable->lookup(bssid);
-  int max_len = sizeof (struct click_wifi) + 
+  int max_len = sizeof (struct click_wifi) +
     2 +                  /* cap_info */
     2 +                  /* status  */
     2 +                  /* assoc_id */
     2 + WIFI_RATES_MAXSIZE +  /* rates */
     2 + WIFI_RATES_MAXSIZE +  /* xrates */
     0;
-    
+
   WritablePacket *p = Packet::make(max_len);
 
   if (p == 0)
@@ -273,7 +273,7 @@ AssociationResponder::send_association_response(EtherAddress dst, uint16_t statu
   memcpy(w->i_addr2, bssid.data(), 6);
   memcpy(w->i_addr3, bssid.data(), 6);
 
-  
+
   *(uint16_t *) w->i_dur = 0;
   *(uint16_t *) w->i_seq = 0;
 
@@ -300,11 +300,11 @@ AssociationResponder::send_association_response(EtherAddress dst, uint16_t statu
   ptr[1] = min(WIFI_RATE_SIZE, rates.size());
   for (int x = 0; x < min (WIFI_RATE_SIZE, rates.size()); x++) {
     ptr[2 + x] = (uint8_t) rates[x];
-    
+
     if (rates[x] == 2) {
       ptr [2 + x] |= WIFI_RATE_BASIC;
     }
-    
+
   }
   ptr += 2 + min(WIFI_RATE_SIZE, rates.size());
   actual_length += 2 + min(WIFI_RATE_SIZE, rates.size());
@@ -317,11 +317,11 @@ AssociationResponder::send_association_response(EtherAddress dst, uint16_t statu
     ptr[1] = num_xrates;
     for (int x = 0; x < num_xrates; x++) {
       ptr[2 + x] = (uint8_t) rates[x + WIFI_RATE_SIZE];
-      
+
       if (rates[x + WIFI_RATE_SIZE] == 2) {
 	ptr [2 + x] |= WIFI_RATE_BASIC;
       }
-      
+
     }
     ptr += 2 + num_xrates;
     actual_length += 2 + num_xrates;
@@ -338,10 +338,10 @@ AssociationResponder::send_disassociation(EtherAddress dst, uint16_t reason)
 {
 
   EtherAddress bssid = _winfo ? _winfo->_bssid : EtherAddress();
-  int len = sizeof (struct click_wifi) + 
+  int len = sizeof (struct click_wifi) +
     2 +                  /* reason */
     0;
-    
+
   WritablePacket *p = Packet::make(len);
 
   if (p == 0)
@@ -356,13 +356,13 @@ AssociationResponder::send_disassociation(EtherAddress dst, uint16_t reason)
   memcpy(w->i_addr2, bssid.data(), 6);
   memcpy(w->i_addr3, bssid.data(), 6);
 
-  
+
   *(uint16_t *) w->i_dur = 0;
   *(uint16_t *) w->i_seq = 0;
 
 
   uint8_t *ptr;
-  
+
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
   *(uint16_t *)ptr = cpu_to_le16(reason);
@@ -374,7 +374,7 @@ AssociationResponder::send_disassociation(EtherAddress dst, uint16_t reason)
 
 enum {H_DEBUG};
 
-static String 
+static String
 AssociationResponder_read_param(Element *e, void *thunk)
 {
   AssociationResponder *td = (AssociationResponder *)e;
@@ -385,7 +385,7 @@ AssociationResponder_read_param(Element *e, void *thunk)
     return String();
   }
 }
-static int 
+static int
 AssociationResponder_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -394,7 +394,7 @@ AssociationResponder_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -402,7 +402,7 @@ AssociationResponder_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 AssociationResponder::add_handlers()
 {

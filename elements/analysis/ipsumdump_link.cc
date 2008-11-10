@@ -50,7 +50,7 @@ static bool link_extract(PacketDesc& d, const FieldWriter *f)
     switch (f->user_data) {
 
 	// IP header properties
-#define CHECK() do { if (!mac || mac + 14 != network) return field_missing(d, MISSING_ETHERNET, 0); } while (0)	
+#define CHECK() do { if (!mac || mac + 14 != network) return field_missing(d, MISSING_ETHERNET, 0); } while (0)
       case T_ETH_SRC:
 	CHECK();
 	d.vptr[0] = mac + 6;

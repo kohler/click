@@ -7,7 +7,7 @@ CLICK_DECLS
  * =c
  * MarkIP6Header([OFFSET])
  * =s ip6
- * 
+ *
  * =d
  *
  * Marks packets as IP6 packets by setting the IP6 Header annotation. The IP6
@@ -20,18 +20,18 @@ CLICK_DECLS
 class MarkIP6Header : public Element {
 
   int _offset;
-  
+
  public:
-  
+
   MarkIP6Header();
   ~MarkIP6Header();
-  
+
   const char *class_name() const		{ return "MarkIP6Header"; }
   const char *port_count() const		{ return PORTS_1_1; }
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   Packet *simple_action(Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

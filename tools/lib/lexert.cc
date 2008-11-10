@@ -56,7 +56,7 @@ void
 LexerT::reset(const String &data, const Vector<ArchiveElement> &archive, const String &filename)
 {
     clear();
-  
+
     _big_string = data;
     _data = _pos = _big_string.begin();
     _end = _big_string.end();
@@ -196,7 +196,7 @@ const char *
 LexerT::process_line_directive(const char *s)
 {
   const char *first_pos = s;
-  
+
   for (s++; s < _end && (*s == ' ' || *s == '\t'); s++)
     /* nada */;
   if (s + 4 < _end && *s == 'l' && s[1] == 'i'
@@ -211,12 +211,12 @@ LexerT::process_line_directive(const char *s)
     return skip_line(s);
   } else if (_ignore_line_directives)
     return skip_line(s);
-  
+
   // parse line number
   for (_lineno = 0; s < _end && isdigit((unsigned char) *s); s++)
     _lineno = _lineno * 10 + *s - '0';
   _lineno--;			// account for extra line
-  
+
   for (; s < _end && (*s == ' ' || *s == '\t'); s++)
     /* nada */;
   if (s < _end && *s == '\"') {
@@ -276,7 +276,7 @@ LexerT::next_lexeme()
   }
 
   const char *word_pos = s;
-  
+
   // find length of current word
   if (isalnum((unsigned char) *s) || *s == '_' || *s == '@') {
    more_word_characters:
@@ -328,7 +328,7 @@ LexerT::next_lexeme()
     _pos = s + 3;
     return Lexeme(lex3Dot, _big_string.substring(s, s + 3), word_pos);
   }
-  
+
   _pos = s + 1;
   return Lexeme(*s, _big_string.substring(s, s + 1), word_pos);
 }
@@ -339,7 +339,7 @@ LexerT::lex_config()
   const char *config_pos = _pos;
   const char *s = _pos;
   unsigned paren_depth = 1;
-  
+
   for (; s < _end; s++)
     if (*s == '(')
       paren_depth++;
@@ -364,7 +364,7 @@ LexerT::lex_config()
       s = skip_quote(s + 1, *s) - 1;
     else if (*s == '\\' && s + 1 < _end && s[1] == '<')
       s = skip_backslash_angle(s + 2) - 1;
-  
+
   _pos = s;
   _lexinfo->notify_config_string(config_pos, s);
   return Lexeme(lexConfig, _big_string.substring(config_pos, s),
@@ -644,7 +644,7 @@ LexerT::yelement(int &element, bool comma_ok)
 	unlex(tname);
 	return false;
     }
-    
+
     Lexeme configuration;
     const Lexeme &tparen = lex();
     if (tparen.is('(')) {
@@ -695,7 +695,7 @@ LexerT::ydeclaration(const Lexeme &first_element)
 	    lerror(t, "syntax error: expected element name");
 	else
 	    decls.push_back(t);
-    
+
       midpoint:
 	const Lexeme &tsep = lex();
 	if (tsep.is(','))
@@ -765,15 +765,15 @@ LexerT::yconnection()
 	    connect(element1, port1, port2, element2, last_element_pos, next_pos());
 	else if (port2 >= 0)
 	    lerror(port2_pos1, port2_pos2, "input port useless at start of chain");
-    
+
 	port1 = -1;
 	port1_pos1 = port1_pos2 = 0;
 	last_element_pos = next_element_pos;
-    
+
       relex:
 	t = lex();
 	switch (t.kind()) {
-      
+
 	  case ',':
 	  case lex2Colon:
 	    if (router()->element(element2)->anonymous())
@@ -782,15 +782,15 @@ LexerT::yconnection()
 	    else
 		lerror(t, "syntax error before '%s'", t.string().c_str());
 	    goto relex;
-      
+
 	  case lexArrow:
 	    break;
-      
+
 	  case '[':
 	    unlex(t);
 	    yport(port1, port1_pos1, port1_pos2);
 	    goto relex;
-      
+
 	  case lexIdent:
 	  case '{':
 	  case '}':
@@ -805,15 +805,15 @@ LexerT::yconnection()
 	    if (port1 >= 0)
 		lerror(port1_pos1, port1_pos2, "output port useless at end of chain", port1);
 	    return true;
-      
+
 	  default:
 	    lerror(t, "syntax error near '%#s'", t.string().c_str());
 	    if (t.kind() >= lexIdent)	// save meaningful tokens
 		unlex(t);
 	    return true;
-      
+
 	}
-    
+
 	// have 'x ->'
 	element1 = element2;
     }
@@ -846,7 +846,7 @@ LexerT::yelementclass(const char *pos1)
 	    _router->add_declared_type(new_ec, false);
 	    _lexinfo->notify_class_declaration(new_ec, false, pos1, tname.pos1(), tnext.pos2());
 	}
-	
+
     } else
 	lerror(tnext, "syntax error near '%#s'", tnext.string().c_str());
 }
@@ -877,7 +877,7 @@ LexerT::ycompound_arguments(RouterT *comptype)
 {
   Lexeme t1, t2;
   bool scope_order_error = false;
-  
+
   while (1) {
     String vartype, varname;
 
@@ -936,7 +936,7 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 
     const char *class_pos1 = name_pos1;
     const char *pos2 = name_pos1;
-    
+
     while (1) {
 	Lexeme dots = lex();
 	if (dots.is(lex3Dot)) {
@@ -948,7 +948,7 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 		extension = force_element_type(Lexeme(lexIdent, name, name_pos1));
 		_lexinfo->notify_class_extension(extension, dots.pos1(), dots.pos2());
 	    }
-	    
+
 	    dots = lex();
 	    if (!first || !dots.is('}'))
 		lerror(dots.pos1(), dots.pos2(), "'...' should occur last, after one or more compounds");
@@ -1028,7 +1028,7 @@ LexerT::yvar()
     if (expect('(')) {
 	Lexeme vars = lex_config();
 	expect(')');
-    
+
 	Vector<String> args;
 	String word;
 	cp_argvec(vars.string(), args);
@@ -1055,18 +1055,18 @@ LexerT::ystatement(bool nested)
 {
   const Lexeme &t = lex();
   switch (t.kind()) {
-    
+
    case lexIdent:
    case '[':
    case '{':
     unlex(t);
     yconnection();
     return true;
-    
+
    case lexElementclass:
     yelementclass(t.pos1());
     return true;
-    
+
    case lexRequire:
     yrequire();
     return true;
@@ -1077,24 +1077,24 @@ LexerT::ystatement(bool nested)
 
    case ';':
     return true;
-    
+
    case '}':
    case lex2Bar:
     if (!nested)
       goto syntax_error;
     unlex(t);
     return false;
-    
+
    case lexEOF:
     if (nested)
       lerror(t, "expected '}'");
     return false;
-    
+
    default:
    syntax_error:
     lerror(t, "syntax error near '%#s'", t.string().c_str());
     return true;
-    
+
   }
 }
 

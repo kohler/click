@@ -109,7 +109,7 @@ ICMPPingRewriter::take_state(Element *e, ErrorHandler *errh)
 	q = _all_patterns[j];
     pattern_map.push_back(q);
   }
-  
+
   take_state_map(_tcp_map, rw->_all_patterns, pattern_map);
   take_state_map(_udp_map, rw->_all_patterns, pattern_map);
 }
@@ -128,7 +128,7 @@ ICMPPingRewriter::Mapping::initialize(const IPFlowID &in, const IPFlowID &out,
   _mapto = out;
   _is_reverse = is_reverse;
   _reverse = reverse;
-  
+
   // set checksum deltas
   const unsigned short *source_words = (const unsigned short *)&in;
   const unsigned short *dest_words = (const unsigned short *)&_mapto;
@@ -159,7 +159,7 @@ ICMPPingRewriter::Mapping::apply(WritablePacket *p)
 {
   assert(p->has_network_header());
   click_ip *iph = p->ip_header();
-  
+
   // IP header
   iph->ip_src = _mapto.saddr();
   iph->ip_dst = _mapto.daddr();
@@ -188,7 +188,7 @@ ICMPPingRewriter::Mapping::apply(WritablePacket *p)
   // verify.
   if (!icmph->icmp_cksum)
     icmph->icmp_cksum = click_in_cksum((const unsigned char *)icmph, p->length() - p->transport_header_offset());
-  
+
   mark_used();
 }
 
@@ -207,7 +207,7 @@ void
 ICMPPingRewriter::run_timer(Timer *)
 {
   Vector<Mapping *> to_free;
-  
+
   for (Map::iterator iter = _request_map.begin(); iter.live(); iter++) {
     Mapping *m = iter.value();
     if (!m->used() && !m->reverse()->used())
@@ -215,14 +215,14 @@ ICMPPingRewriter::run_timer(Timer *)
     else
       m->clear_used();
   }
-  
+
   for (int i = 0; i < to_free.size(); i++) {
     _request_map.erase(to_free[i]->reverse()->flow_id().rev());
     _reply_map.erase(to_free[i]->flow_id().rev());
     delete to_free[i]->reverse();
     delete to_free[i];
   }
-  
+
   _timer.schedule_after_msec(GC_INTERVAL_SEC * 1000);
 }
 
@@ -277,7 +277,7 @@ ICMPPingRewriter::push(int port, Packet *p_in)
     p->kill();
     return;
   }
-  
+
   IPFlowID flow(iph->ip_src, icmph->icmp_identifier, iph->ip_dst, icmph->icmp_identifier);
   Mapping *m = map->get(flow);
   if (!m) {
@@ -294,7 +294,7 @@ ICMPPingRewriter::push(int port, Packet *p_in)
       return;
     }
   }
-  
+
   m->apply(p);
   if (icmph->icmp_type == ICMP_ECHOREPLY && noutputs() == 2)
     output(1).push(p);
@@ -307,7 +307,7 @@ String
 ICMPPingRewriter::dump_mappings_handler(Element *e, void *)
 {
   ICMPPingRewriter *rw = (ICMPPingRewriter *)e;
-  
+
   StringAccum sa;
   for (Map::iterator iter = rw->_request_map.begin(); iter.live(); iter++) {
     Mapping *m = iter.value();

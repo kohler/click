@@ -47,11 +47,11 @@ void
 PaintSwitch::push(int, Packet *p)
 {
     int output_port = static_cast<int>(p->anno_u8(_anno));
-    if (output_port != 0xFF) 
+    if (output_port != 0xFF)
 	checked_output_push(output_port, p);
     else { // duplicate to all output ports
 	int n = noutputs();
-	for (int i = 0; i < n - 1; i++) 
+	for (int i = 0; i < n - 1; i++)
 	    if (Packet *q = p->clone())
 		output(i).push(q);
 	output(n - 1).push(p);

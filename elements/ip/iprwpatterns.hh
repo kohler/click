@@ -28,7 +28,7 @@ class IPRewriterPatterns : public Element {
 
   IPRewriterPatterns();
   ~IPRewriterPatterns();
-  
+
   const char *class_name() const	{ return "IPRewriterPatterns"; }
 
   int configure_phase() const	{ return IPRw::CONFIGURE_PHASE_PATTERNS; }
@@ -36,7 +36,7 @@ class IPRewriterPatterns : public Element {
   void cleanup(CleanupStage);
 
   static IPRw::Pattern *find(Element *, const String &, ErrorHandler *);
-  
+
 };
 
 CLICK_ENDDECLS

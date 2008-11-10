@@ -12,7 +12,7 @@ class AggregateListener { public:
 
     enum AggregateEvent { NEW_AGG, DELETE_AGG };
     virtual void aggregate_notify(uint32_t, AggregateEvent, const Packet *);
-    
+
 };
 
 class AggregateNotifier { public:
@@ -24,11 +24,11 @@ class AggregateNotifier { public:
     void remove_listener(AggregateListener *);
 
     void notify(uint32_t, AggregateListener::AggregateEvent, const Packet *) const;
-    
+
   private:
 
     Vector<AggregateListener *> _listeners;
-    
+
 };
 
 inline void

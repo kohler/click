@@ -8,7 +8,7 @@ class PerfCountUser : public Element { public:
   ~PerfCountUser();
 
   bool is_base() const		{ return _metric0 > -2; }
-  
+
   int prepare(const String &, ErrorHandler *, int force = -1);
   int initialize(ErrorHandler *);
 
@@ -16,7 +16,7 @@ class PerfCountUser : public Element { public:
 
   int _metric0;
   int _metric1;
-  
+
 };
 
 #define MSR_OS			(1<<17)

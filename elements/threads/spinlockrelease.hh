@@ -25,7 +25,7 @@ class SpinlockRelease : public Element { public:
 
     int configure(Vector<String> &, ErrorHandler *);
 
-    Packet *simple_action(Packet *p)  	{ _lock->release(); return p; }
+    Packet *simple_action(Packet *p)	{ _lock->release(); return p; }
 
   private:
 

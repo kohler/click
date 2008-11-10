@@ -49,10 +49,10 @@ This configuration filters out a couple aggregates from the output of AggregateI
 IPFilter, Classifier, IPClassifier, AggregateIP, AggregateIPFlows */
 
 class AggregateFilter : public Element { public:
-  
+
     AggregateFilter();
     ~AggregateFilter();
-  
+
     const char *class_name() const	{ return "AggregateFilter"; }
     const char *port_count() const	{ return "1/1-254"; }
     const char *processing() const	{ return PUSH; }
@@ -65,7 +65,7 @@ class AggregateFilter : public Element { public:
     enum { GROUPSHIFT = 8, GROUPMASK = 0xFFFFFFFFU << GROUPSHIFT,
 	   NINGROUP = 1 << GROUPSHIFT, INGROUPMASK = NINGROUP - 1,
 	   NBUCKETS = 256 };
-    
+
   private:
 
     struct Group {
@@ -79,7 +79,7 @@ class AggregateFilter : public Element { public:
     int _default_output;
 
     Group *find_group(uint32_t);
-    
+
 };
 
 #endif

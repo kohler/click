@@ -26,7 +26,7 @@ class LinkTable;
  *
  * A DSR protocol implementation
  *
- * =d 
+ * =d
  *
  * This is meant to approximate an `official' implementation of DSR as of version
  * 10 of the IETF draft.  Network-layer acknowledgements and many optimizations (e.g.
@@ -40,7 +40,7 @@ class LinkTable;
  * This node's IP address.
  *
  * =item LINKTABLE
- * 
+ *
  * A LinkTable element which will function as a link cache for the protocol.
  *
  * =back
@@ -49,17 +49,17 @@ class LinkTable;
  *
  * =over 8
  * =item OUTQUEUE
- * 
- * A SimpleQueue from which the DSRRouteTable element will "yank" packets in the 
+ *
+ * A SimpleQueue from which the DSRRouteTable element will "yank" packets in the
  * event of a transmission error or received route error message.
  *
  * =item METRIC
- * 
+ *
  * A GridGenericMetric element to use for obtaining link metrics.  If
  * not specified, minimum hop-count is used.
  *
  * =item USE_BLACKLIST
- * 
+ *
  * Boolean.  Whether or not to perform "blacklisting" of links that appear to be
  * unidirectional.  See Section 4.6 of the IETF draft.  Default is true.
  *
@@ -67,7 +67,7 @@ class LinkTable;
  * =a
  * DSRArpTable */
 
-/* 
+/*
    todo:
    - combine routetable and arptable and split things up more sensibly, into
      more managable elements
@@ -76,7 +76,7 @@ class LinkTable;
    - proper handling of packets going over one hop with no SR option
    - eliminate metric field when not using ETX; new option type?
 */
-   
+
 class GridGenericMetric;
 
 class DSRRouteTable : public Element
@@ -97,16 +97,16 @@ public:
     }
     void check() const { assert(_p); }
   };
-  
+
 #define DSR_SENDBUFFER_MAX_LENGTH     5     // maximum number of packets to buffer per destination
 #define DSR_SENDBUFFER_MAX_BURST      5     // maximum number of packets to send in one sendbuffer check
 #define DSR_SENDBUFFER_TIMEOUT        5000 // how long packets can live in the sendbuffer (ms)
 #define DSR_SENDBUFFER_TIMER_INTERVAL 1000  // how often to check for expired packets (ms)
-  
+
   typedef Vector<BufferedPacket> SendBuffer;
   typedef HashMap<IPAddress, SendBuffer> SBMap;
   typedef SBMap::iterator SBMapIter;
-  
+
   // info about route requests we're forwarding (if waiting for a
   // unidirectionality test result) and those we've forwarded lately.
   // kept in a hash table indexed by (src,target,id).  these entries
@@ -130,7 +130,7 @@ public:
       f1.check();
       return ((_src    == f1._src) &&
 	      (_target == f1._target) &&
-	      (_id     == f1._id));	      
+	      (_id     == f1._id));
     }
     inline size_t hashcode() const;
     void check() const {
@@ -145,7 +145,7 @@ public:
     Timestamp _time_forwarded;
 
     unsigned short best_metric; // best metric we've forwarded so far
-    
+
     // the following two variables are set if we're waiting for a
     // unidirectionality test (RREQ with TTL 1) to come back
     Timestamp _time_unidtest_issued;
@@ -159,7 +159,7 @@ public:
 
 #define DSR_RREQ_TIMEOUT 600000 // how long before we timeout entries (ms)
 #define DSR_RREQ_EXPIRE_TIMER_INTERVAL 15000 // how often to check (ms)
-  
+
   typedef HashMap<ForwardedReqKey, ForwardedReqVal> ForwardedReqMap;
   typedef ForwardedReqMap::iterator FWReqIter;
 
@@ -178,7 +178,7 @@ public:
 #define DSR_BLACKLIST_UNITEST_TIMEOUT    1000 // ms
 #define DSR_BLACKLIST_TIMER_INTERVAL     300 // how often to check for expired entries (ms)
 #define DSR_BLACKLIST_ENTRY_TIMEOUT      45000 // how long until entries go from 'probable' to 'questionable'
-  
+
   class BlacklistEntry {
   public:
     Timestamp _time_updated;
@@ -191,30 +191,30 @@ public:
       case DSR_BLACKLIST_UNI_PROBABLE:
       case DSR_BLACKLIST_UNI_QUESTIONABLE:
 	break;
-      default: 
+      default:
 	assert(0);
       }
     }
   };
   typedef HashMap<IPAddress, BlacklistEntry> Blacklist;
   typedef Blacklist::iterator BlacklistIter;
-  
+
 
   // info about the last request we've originated to each target node.
   // these are kept in a hash table indexed by the target IP.  when a
   // route reply is received from a host, we remove the entry.
-  
+
   class InitiatedReq
   {
   public:
-    
+
     IPAddress _target;
     int _ttl; // ttl used on the last request
     Timestamp _time_last_issued;
 
     // number of times we've issued a request to this target since
     // last receiving a reply
-    unsigned int _times_issued; 
+    unsigned int _times_issued;
 
     // time from _time_last_issued until we can issue another, in ms
     unsigned long _backoff_interval;
@@ -262,11 +262,11 @@ public:
 
   DSRRouteTable();
   ~DSRRouteTable();
-  
+
   const char *class_name() const { return "DSRRouteTable"; }
   const char *port_count() const { return "3/3"; }
   const char *processing() const { return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
 
   int initialize(ErrorHandler *);
@@ -282,7 +282,7 @@ public:
 
   static void static_sendbuffer_timer_hook(Timer *, void *);
   void sendbuffer_timer_hook();
-  
+
   static void static_blacklist_timer_hook(Timer *, void *);
   void blacklist_timer_hook();
 
@@ -303,54 +303,54 @@ public:
     bool operator()(const Packet *p) {
       // returns true for packets which have a source route which contains
       // the link specified (_a,_b)
-      
+
       // click_chatter("link_filter: checking packet %ld\n", (long)p);
-      
+
       assert(p->has_network_header());
       const click_ip *ip = p->ip_header();
-      
+
       if (ip->ip_p != IP_PROTO_DSR)
 	return false;
-      
+
       const click_dsr *dsr = (const click_dsr *)(p->data() + sizeof(click_ip));
       unsigned int dsr_len = ntohs(dsr->dsr_len);
-      
+
       char *end = (char *)((char *)dsr + dsr_len);
-      
+
       const click_dsr_option *op = (const click_dsr_option *)((char *)dsr + sizeof(click_dsr));
-      
+
       while ((char *)op < end) {
 	// DEBUG_CHATTER("option at %ld < %ld\n", (long)op, (long)end);
-	
-	if (op->dsr_type == DSR_TYPE_RREP) { 
+
+	if (op->dsr_type == DSR_TYPE_RREP) {
 	  const click_dsr_rrep *rrep = (const click_dsr_rrep *)op;
 	  op = (const click_dsr_option *)(rrep->next_option());
-	} else if (op->dsr_type == DSR_TYPE_RREQ) { 
+	} else if (op->dsr_type == DSR_TYPE_RREQ) {
 	  const click_dsr_rreq *rreq = (const click_dsr_rreq *)op;
 	  op = (const click_dsr_option *)(rreq->next_option());
-	} else if (op->dsr_type == DSR_TYPE_RERR) { 
+	} else if (op->dsr_type == DSR_TYPE_RERR) {
 	  const click_dsr_rerr *rerr = (const click_dsr_rerr *)op;
 	  op = (const click_dsr_option *)(rerr->next_option());
-	} else if (op->dsr_type == DSR_TYPE_SOURCE_ROUTE) { 
+	} else if (op->dsr_type == DSR_TYPE_SOURCE_ROUTE) {
 	  int offset = (unsigned char *)op - p->data();
 	  DSRRoute r = extract_source_route(p, offset);
-	
+
 	  click_chatter("link_filter: packet has source route:\n");
 	  for (int i=0; i<r.size(); i++)
 	    click_chatter(" - %d  %s (%d)\n",
 			  i,
 			  r[i].ip().unparse().c_str(),
 			  r[i]._metric);
-	  
+
 	  int i1 = route_index_of(r, _a);
 	  if (i1 == -1) return false;
-	  
+
 	  int i2 = route_index_of(r, _b);
 	  if (i2 == -1) return false;
-	  
-	  click_chatter("link_filter: src/dst is %s/%s (%d/%d)\n", 
+
+	  click_chatter("link_filter: src/dst is %s/%s (%d/%d)\n",
 			_a.unparse().c_str(), _b.unparse().c_str(), i1, i2);
-	  
+
 	  /* XXX we're already assuming bidirectionality, so this abs
 	   * seems ok; really we should probably be checking the order,
 	   * and we should check if the packet has already been forwarded
@@ -364,7 +364,7 @@ public:
 	  }
 	}
       }
-      
+
       // couldn't find source route option
       return false;
     }
@@ -389,13 +389,13 @@ private:
   Timer _sendbuffer_timer;
   bool _sendbuffer_check_routes;
   Timer _blacklist_timer;
-  
+
   u_int16_t _rreq_id;
-  
+
   SimpleQueue *_outq;
   GridGenericMetric *_metric;
   bool _use_blacklist;
-  
+
   Packet *add_dsr_header(Packet *, const Vector<IPAddress> &);
   Packet *strip_headers(Packet *);
 
@@ -403,12 +403,12 @@ private:
   void stop_issuing_request(IPAddress host);
 
   void issue_rreq(IPAddress dst, unsigned int ttl, bool unicast);
-  void issue_rrep(IPAddress src, IPAddress dst, 
-	  	  DSRRoute reply_route, 
-	  	  DSRRoute source_route);
+  void issue_rrep(IPAddress src, IPAddress dst,
+		  DSRRoute reply_route,
+		  DSRRoute source_route);
 
-  void issue_rerr(IPAddress bad_src, IPAddress bad_dst, 
-		  IPAddress src, 
+  void issue_rerr(IPAddress bad_src, IPAddress bad_dst,
+		  IPAddress src,
 		  DSRRoute source_route);
 
   void forward_rreq(Packet *);
@@ -417,7 +417,7 @@ private:
   void forward_data(Packet *);
   static IPAddress next_sr_hop(Packet *, unsigned int);
   void forward_sr(Packet *, unsigned int, int);
-  
+
   void add_route_to_link_table(DSRRoute route);
 
   void buffer_packet(Packet *p);
@@ -432,7 +432,7 @@ private:
   unsigned char get_metric(EtherAddress);
   unsigned short route_metric(DSRRoute r);
   bool metric_preferable(unsigned short a, unsigned short b);
-  
+
   void flush_sendbuffer();
 
   EtherAddress last_forwarder_eth(Packet *);

@@ -19,10 +19,10 @@ CLICK_DECLS
 
 class DropBroadcasts : public Element {
  public:
-  
+
   DropBroadcasts();
   ~DropBroadcasts();
-  
+
   const char *class_name() const	{ return "DropBroadcasts"; }
   const char *port_count() const	{ return PORTS_1_1X2; }
   const char *processing() const	{ return PROCESSING_A_AH; }

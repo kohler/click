@@ -18,7 +18,7 @@
 #include <click/error.hh>
 #include "elements/grid/etxmetric.hh"
 #include "elements/grid/linkstat.hh"
-CLICK_DECLS 
+CLICK_DECLS
 
 ETXMetric::ETXMetric()
   : _ls(0)
@@ -30,7 +30,7 @@ ETXMetric::~ETXMetric()
 }
 
 void *
-ETXMetric::cast(const char *n) 
+ETXMetric::cast(const char *n)
 {
   if (strcmp(n, "ETXMetric") == 0)
     return (ETXMetric *) this;
@@ -48,7 +48,7 @@ ETXMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 			 cpEnd);
   if (res < 0)
     return res;
-  if (_ls == 0) 
+  if (_ls == 0)
     errh->error("no LinkStat element specified");
   if (_ls->cast("LinkStat") == 0)
     return errh->error("LinkStat argument is wrong element type (should be LinkStat)");
@@ -62,7 +62,7 @@ ETXMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
   return m1.val() < m2.val();
 }
 
-GridGenericMetric::metric_t 
+GridGenericMetric::metric_t
 ETXMetric::get_link_metric(const EtherAddress &e, bool) const
 {
   // ETX ix currently symmetric: it is the same in both directions, so
@@ -89,7 +89,7 @@ ETXMetric::get_link_metric(const EtherAddress &e, bool) const
   unsigned val = (100 * 100 * 100) / (r_fwd * r_rev);
   assert(val >= 100);
 
-  return metric_t(val);      
+  return metric_t(val);
 }
 
 GridGenericMetric::metric_t
@@ -97,7 +97,7 @@ ETXMetric::append_metric(const metric_t &r, const metric_t &l) const
 {
   if (!r.good() || !l.good())
     return _bad_metric;
-  
+
   if (r.val() < 100)
     click_chatter("ETXMetric %s: append_metric WARNING: metric %u%% transmissions is too low for route metric",
 		  name().c_str(), r.val());

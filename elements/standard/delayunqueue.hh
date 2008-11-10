@@ -29,7 +29,7 @@ Queue.
 DelayShaper, SetTimestamp */
 
 class DelayUnqueue : public Element { public:
-  
+
     DelayUnqueue();
     ~DelayUnqueue();
 
@@ -41,7 +41,7 @@ class DelayUnqueue : public Element { public:
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
     void add_handlers();
-  
+
     bool run_task(Task *);
     static String read_param(Element *e, void *);
 
@@ -52,7 +52,7 @@ class DelayUnqueue : public Element { public:
     Task _task;
     Timer _timer;
     NotifierSignal _signal;
-  
+
 };
 
 CLICK_ENDDECLS

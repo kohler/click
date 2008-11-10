@@ -59,7 +59,7 @@ ARPResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 
 	Vector<String> words;
 	cp_spacevec(conf[i], words);
-    
+
 	for (int j = 0; j < words.size(); j++)
 	    if (cp_ip_address(words[j], &ipa, this))
 		add_map(ipa, IPAddress(0xFFFFFFFFU), EtherAddress());
@@ -78,7 +78,7 @@ ARPResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 	for (int j = 0; !have_ena && j < words.size(); j++)
 	    if (cp_ethernet_address(words[j], &ena, this))
 		have_ena = true;
-    
+
 	if (first == _v.size())
 	    errh->error("argument %d had no IP address and masks", i);
 	if (!have_ena)
@@ -116,19 +116,19 @@ ARPResponder::make_response(u_char tha[6], /* him */
 	click_chatter("in arp responder: cannot make packet!");
 	return 0;
     }
-  
+
     // in case of FromLinux, set the device annotation: want to make it seem
     // that ARP response came from the device that the query arrived on
     q->set_device_anno(p->device_anno());
-  
+
     memset(q->data(), '\0', q->length());
-  
+
     click_ether *e = (click_ether *) q->data();
     q->set_ether_header(e);
     memcpy(e->ether_dhost, tha, 6);
     memcpy(e->ether_shost, sha, 6);
     e->ether_type = htons(ETHERTYPE_ARP);
-    
+
     click_ether_arp *ea = (click_ether_arp *) (e + 1);
     ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
     ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
@@ -139,7 +139,7 @@ ARPResponder::make_response(u_char tha[6], /* him */
     memcpy(ea->arp_tpa, tpa, 4);
     memcpy(ea->arp_sha, sha, 6);
     memcpy(ea->arp_spa, spa, 4);
-  
+
     return q;
 }
 
@@ -169,7 +169,7 @@ ARPResponder::simple_action(Packet *p)
     unsigned int tpa;
     memcpy(&tpa, ea->arp_tpa, 4);
     IPAddress ipa = IPAddress(tpa);
-    
+
     Packet *q = 0;
     if (p->length() >= sizeof(*e) + sizeof(click_ether_arp)
 	&& e->ether_type == htons(ETHERTYPE_ARP)
@@ -184,7 +184,7 @@ ARPResponder::simple_action(Packet *p)
 	struct in_addr ina;
 	memcpy(&ina, &ea->arp_tpa, 4);
     }
-    
+
     p->kill();
     return(q);
 }

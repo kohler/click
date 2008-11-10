@@ -32,7 +32,7 @@
 #include <clicknet/ip.h>
 
 class IPEncap2 : public Element {
-  
+
   int _ip_p; // IP protocol number field.
   struct in_addr _ip_src;
 #ifdef __KERNEL__
@@ -42,20 +42,20 @@ class IPEncap2 : public Element {
   short _id;
 
  public:
-  
+
   IPEncap2();
   ~IPEncap2();
-  
+
   const char *class_name() const		{ return "IPEncap2"; }
   const char *port_count() const		{ return "1/1"; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
 
   Packet *simple_action(Packet *);
-  
+
 };
 
 #endif

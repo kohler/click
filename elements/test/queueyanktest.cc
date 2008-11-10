@@ -35,7 +35,7 @@ int
 QueueYankTest::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e;
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "QUEUE", cpkP+cpkM, cpElement, &e,
 		     cpEnd) < 0)
@@ -43,7 +43,7 @@ QueueYankTest::configure(Vector<String> &conf, ErrorHandler *errh)
 
     if (!(_q = static_cast<SimpleQueue *>(e->cast("SimpleQueue"))))
 	return errh->error("QUEUE argument must be a Queue element");
-    
+
     return 0;
 }
 
@@ -81,7 +81,7 @@ QueueYankTest::run_timer(Timer *)
 {
     PrefixErrorHandler perrh(ErrorHandler::default_handler(), declaration() + ": ");
     ErrorHandler *errh = &perrh;
-    
+
     Packet *a = Packet::make("a", 1);
     Packet *b = Packet::make("b", 1);
     Packet *c = Packet::make("c", 1);
@@ -116,13 +116,13 @@ QueueYankTest::run_timer(Timer *)
     CHECK_PKT(v[1], 'd');
     CHECK_PKT(v[2], 'a');
     CHECK_DEQ("bc");
-    
+
     v.clear();
     PREPARE_Q();
     _q->yank(Foo("fhq"), v);
     CHECK(v.size() == 0);
     CHECK_DEQ("abcde");
-    
+
     v.clear();
     PREPARE_Q();
     _q->yank(Foo("edcba"), v);

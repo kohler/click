@@ -10,8 +10,8 @@ CLICK_DECLS
 #define FAKE_PCAP_VERSION_MINOR		4
 
 /* Canonical (pcap file) data link types (may differ from host versions) */
-#define FAKE_DLT_NONE			(-1)	/* Unknown */ 
-#define FAKE_DLT_NULL			0	/* Null encapsulation */ 
+#define FAKE_DLT_NONE			(-1)	/* Unknown */
+#define FAKE_DLT_NULL			0	/* Null encapsulation */
 #define FAKE_DLT_EN10MB			1	/* Ethernet (10Mb) */
 #define FAKE_DLT_PPP			9	/* PPP */
 #define FAKE_DLT_FDDI			10	/* FDDI */

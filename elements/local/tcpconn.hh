@@ -30,7 +30,7 @@ private:
   bool _active;
   bool _listen;
   bool _established;
- 
+
   unsigned _seq_nxt;
   IPFlowID _flow;
 
@@ -45,7 +45,7 @@ private:
 public:
   TCPConn();
   ~TCPConn();
-  
+
   const char *class_name() const		{ return "TCPConn"; }
   const char *port_count() const		{ return "2/3"; }
   const char *processing() const		{ return "hl/hlh"; }

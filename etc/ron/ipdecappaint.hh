@@ -16,18 +16,18 @@
 #include <click/element.hh>
 
 class IPDecapPaint : public Element {
-  
+
   unsigned _nbytes;
-  
+
  public:
-  
+
   IPDecapPaint();
   ~IPDecapPaint();
-  
+
   const char *class_name() const	{ return "IPDecapPaint"; }
   const char *port_count() const	{ return "1/1"; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   Packet *simple_action(Packet *);
   void add_handlers();
 };

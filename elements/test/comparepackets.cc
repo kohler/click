@@ -68,14 +68,14 @@ void
 ComparePackets::check(Packet *p, Packet *q)
 {
     bool different = false;
-    
+
     if (p->length() != q->length())
 	_diff_details[D_LEN]++, different = true;
     if (memcmp(p->data(), q->data(), p->length()) != 0)
 	_diff_details[D_DATA]++, different = true;
     if (p->timestamp_anno() != q->timestamp_anno() && _timestamp)
 	_diff_details[D_TIMESTAMP]++, different = true;
-    
+
     if (p->has_network_header() && q->has_network_header()) {
 	if (p->network_header_offset() != q->network_header_offset())
 	    _diff_details[D_NETOFF]++, different = true;
@@ -83,7 +83,7 @@ ComparePackets::check(Packet *p, Packet *q)
 	    _diff_details[D_NETLEN]++, different = true;
     } else if (p->has_network_header() != q->has_network_header())
 	_diff_details[D_NETHDR]++, different = true;
-    
+
     if (different)
 	_ndiff++;
 }

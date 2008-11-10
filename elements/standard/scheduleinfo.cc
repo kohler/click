@@ -41,7 +41,7 @@ int
 ScheduleInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     NameDB* db = NameInfo::getdb(NameInfo::T_SCHEDULEINFO, this, 4, true);
-    
+
     // compile scheduling info
     for (int i = 0; i < conf.size(); i++) {
 	Vector<String> parts;
@@ -54,7 +54,7 @@ ScheduleInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	else
 	    db->define(parts[0], &mt, 4);
     }
-  
+
     return 0;
 }
 
@@ -64,7 +64,7 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
 #if HAVE_STRIDE_SCHED
     // check prefixes in order of increasing length
     String id = e->name();
-    
+
     Vector<String> prefixes;
     prefixes.push_back(String());
     const char *slash = id.begin();
@@ -105,7 +105,7 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
 	String m = cp_unparse_real2(tickets_out, FRAC_BITS);
 	errh->warning("ScheduleInfo too high; reduced to %s", m.c_str());
     }
-  
+
     // return the result you've got
     return tickets_out;
 #else

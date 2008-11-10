@@ -26,10 +26,10 @@ ListenEtherSwitch
 */
 
 class ListenEtherSwitch : public EtherSwitch { public:
-  
+
     ListenEtherSwitch();
     ~ListenEtherSwitch();
-  
+
     const char *class_name() const		{ return "ListenEtherSwitch"; }
     const char *port_count() const		{ return "-/=+"; }
 

@@ -42,7 +42,7 @@ static bool ip_extract(PacketDesc& d, const FieldWriter *f)
     switch (f->user_data) {
 
 	// IP header properties
-#define CHECK(l) do { if (!d.iph || network_length < (l)) return field_missing(d, MISSING_IP, (l)); } while (0)	
+#define CHECK(l) do { if (!d.iph || network_length < (l)) return field_missing(d, MISSING_IP, (l)); } while (0)
       case T_IP_SRC:
 	CHECK(16);
 	d.v = d.iph->ip_src.s_addr;
@@ -120,7 +120,7 @@ static inline bool ip_proto_has_udp_ports(int ip_p)
     return ip_p == IP_PROTO_TCP || ip_p == IP_PROTO_UDP
 	|| ip_p == IP_PROTO_DCCP || ip_p == IP_PROTO_UDPLITE;
 }
-	    
+
 static void ip_inject(PacketOdesc& d, const FieldReader *f)
 {
     if (!d.make_ip(0))
@@ -371,24 +371,24 @@ static int ip_opt_mask_mapping[] = {
     DO_IPOPT_PADDING, DO_IPOPT_PADDING,		// EOL, NOP
     U, U, U, U,	U,				// 2, 3, 4, 5, 6
     DO_IPOPT_ROUTE,				// RR
-    U, U, U, U, U, U, U, U, U, U, U, U, U, 	// 8-20
-    U, U, U, U, U, U, U, U, U, U, 		// 21-30
-    U, U, U, U, U, U, U, U, U, U, 		// 31-40
-    U, U, U, U, U, U, U, U, U, U, 		// 41-50
-    U, U, U, U, U, U, U, U, U, U, 		// 51-60
-    U, U, U, U, U, U, U,	 		// 61-67
+    U, U, U, U, U, U, U, U, U, U, U, U, U,	// 8-20
+    U, U, U, U, U, U, U, U, U, U,		// 21-30
+    U, U, U, U, U, U, U, U, U, U,		// 31-40
+    U, U, U, U, U, U, U, U, U, U,		// 41-50
+    U, U, U, U, U, U, U, U, U, U,		// 51-60
+    U, U, U, U, U, U, U,			// 61-67
     DO_IPOPT_TS, U, U,				// TS, 69-70
-    U, U, U, U, U, U, U, U, U, U, 		// 71-80
-    U, U, U, U, U, U, U, U, U, U, 		// 81-90
-    U, U, U, U, U, U, U, U, U, U, 		// 91-100
-    U, U, U, U, U, U, U, U, U, U, 		// 101-110
-    U, U, U, U, U, U, U, U, U, U, 		// 111-120
+    U, U, U, U, U, U, U, U, U, U,		// 71-80
+    U, U, U, U, U, U, U, U, U, U,		// 81-90
+    U, U, U, U, U, U, U, U, U, U,		// 91-100
+    U, U, U, U, U, U, U, U, U, U,		// 101-110
+    U, U, U, U, U, U, U, U, U, U,		// 111-120
     U, U, U, U, U, U, U, U, U,			// 121-129
     DO_IPOPT_UNKNOWN, DO_IPOPT_ROUTE,		// SECURITY, LSRR
     U, U, U, U,					// 132-135
-    DO_IPOPT_UNKNOWN, DO_IPOPT_ROUTE, 		// SATID, SSRR
+    DO_IPOPT_UNKNOWN, DO_IPOPT_ROUTE,		// SATID, SSRR
     U, U, U,					// 138-140
-    U, U, U, U, U, U, U,	 		// 141-147
+    U, U, U, U, U, U, U,			// 141-147
     DO_IPOPT_UNKNOWN				// RA
 };
 #undef U
@@ -398,7 +398,7 @@ void unparse_ip_opt(StringAccum& sa, const uint8_t* opt, int opt_len, int mask)
     int initial_sa_len = sa.length();
     const uint8_t *end_opt = opt + opt_len;
     const char *sep = "";
-    
+
     while (opt < end_opt)
 	switch (*opt) {
 	  case IPOPT_EOL:
@@ -548,7 +548,7 @@ void unparse_ip_opt_binary(StringAccum& sa, const uint8_t *opt, int opt_len, int
     const uint8_t *end_opt = opt + opt_len;
     int initial_sa_len = sa.length();
     sa.append('\0');
-    
+
     while (opt < end_opt) {
 	// one-byte options
 	if (*opt == IPOPT_EOL) {
@@ -561,7 +561,7 @@ void unparse_ip_opt_binary(StringAccum& sa, const uint8_t *opt, int opt_len, int
 	    opt++;
 	    continue;
 	}
-	
+
 	// quit copying options if you encounter something obviously invalid
 	if (opt[1] < 2 || opt + opt[1] > end_opt)
 	    break;
@@ -596,7 +596,7 @@ static bool ip_opt_ina(PacketOdesc &d, const String &str, const FieldReader *)
     const uint8_t *end = reinterpret_cast<const uint8_t *>(str.end());
     int contents = DO_IPOPT_ALL;
     d.sa.clear();
-    
+
     while (1) {
 	const unsigned char *t;
 	uint32_t u1;
@@ -638,21 +638,21 @@ static bool ip_opt_ina(PacketOdesc &d, const String &str, const FieldReader *)
 	    if (d.sa.length() - sa_pos > 255)
 		goto bad_opt;
 	    d.sa[sa_pos + 1] = d.sa.length() - sa_pos;
-	    
+
 	} else if (s + 5 < end && memcmp(s, "ssrr{", 5) == 0
 		   && (contents & DO_IPOPT_ROUTE)) {
 	    // strict source route option
 	    d.sa << (char)IPOPT_SSRR;
 	    s += 5;
 	    goto parse_route;
-	    
+
 	} else if (s + 5 < end && memcmp(s, "lsrr{", 5) == 0
 		   && (contents & DO_IPOPT_ROUTE)) {
 	    // loose source route option
 	    d.sa << (char)IPOPT_LSRR;
 	    s += 5;
 	    goto parse_route;
-	    
+
 	} else if (s + 3 < end
 		   && (memcmp(s, "ts{", 3) == 0 || memcmp(s, "ts.", 3) == 0)
 		   && (contents & DO_IPOPT_TS)) {
@@ -675,7 +675,7 @@ static bool ip_opt_ina(PacketOdesc &d, const String &str, const FieldReader *)
 	    } else
 		s += 3;
 	    int pointer = -1;
-	    
+
 	    // loop over timestamp entries
 	    while (1) {
 		if (s < end && *s == '^' && pointer < 0)
@@ -683,7 +683,7 @@ static bool ip_opt_ina(PacketOdesc &d, const String &str, const FieldReader *)
 		if (s >= end || (!isdigit(*s) && *s != '!'))
 		    break;
 		const unsigned char *entry = s;
-		
+
 	      retry_entry:
 		if (flag == 1 || flag == 3 || flag == -2) {
 		    // parse IP address
@@ -714,7 +714,7 @@ static bool ip_opt_ina(PacketOdesc &d, const String &str, const FieldReader *)
 		    } else
 			goto bad_opt;
 		}
-		
+
 		// parse timestamp value
 		assert(s < end);
 		top_bit = 0;
@@ -736,7 +736,7 @@ static bool ip_opt_ina(PacketOdesc &d, const String &str, const FieldReader *)
 		if (s < end && *s == ',')
 		    s++;
 	    }
-	    
+
 	    // done with entries
 	    if (s < end && *s++ != '}')
 		goto bad_opt;
@@ -756,7 +756,7 @@ static bool ip_opt_ina(PacketOdesc &d, const String &str, const FieldReader *)
 	    if (d.sa.length() - sa_pos > 255)
 		goto bad_opt;
 	    d.sa[sa_pos + 1] = d.sa.length() - sa_pos;
-	    
+
 	} else if (s < end && isdigit(*s) && (contents & DO_IPOPT_UNKNOWN)) {
 	    // unknown option
 	    s = cp_integer(s, end, 0, &u1);
@@ -845,33 +845,33 @@ static const FieldWriter ip_writers[] = {
 };
 
 static const FieldReader ip_readers[] = {
-    { "ip_src", B_4NET, T_IP_SRC, order_net, 
+    { "ip_src", B_4NET, T_IP_SRC, order_net,
       ip_ina, inb, ip_inject },
-    { "ip_dst", B_4NET, T_IP_DST, order_net, 
+    { "ip_dst", B_4NET, T_IP_DST, order_net,
       ip_ina, inb, ip_inject },
-    { "ip_tos", B_1, T_IP_TOS, order_net, 
+    { "ip_tos", B_1, T_IP_TOS, order_net,
       num_ina, inb, ip_inject },
-    { "ip_ttl", B_1, T_IP_TTL, order_net, 
+    { "ip_ttl", B_1, T_IP_TTL, order_net,
       num_ina, inb, ip_inject },
-    { "ip_frag", B_1, T_IP_FRAG, order_net - 2, 
+    { "ip_frag", B_1, T_IP_FRAG, order_net - 2,
       ip_ina, inb, ip_inject },
-    { "ip_fragoff", B_2, T_IP_FRAGOFF, order_net - 1, 
+    { "ip_fragoff", B_2, T_IP_FRAGOFF, order_net - 1,
       ip_ina, inb, ip_inject },
-    { "ip_id", B_2, T_IP_ID, order_net, 
+    { "ip_id", B_2, T_IP_ID, order_net,
       num_ina, inb, ip_inject },
-    { "ip_sum", B_2, T_IP_SUM, order_net + 2, 
+    { "ip_sum", B_2, T_IP_SUM, order_net + 2,
       num_ina, inb, ip_inject },
-    { "ip_proto", B_1, T_IP_PROTO, order_net, 
+    { "ip_proto", B_1, T_IP_PROTO, order_net,
       ip_ina, inb, ip_inject },
-    { "ip_hl", B_1, T_IP_HL, order_net - 1, 
+    { "ip_hl", B_1, T_IP_HL, order_net - 1,
       num_ina, inb, ip_inject },
-    { "ip_len", B_4, T_IP_LEN, order_net + 1, 
+    { "ip_len", B_4, T_IP_LEN, order_net + 1,
       num_ina, inb, ip_inject },
-    { "ip_opt", B_SPECIAL, T_IP_OPT, order_net, 
+    { "ip_opt", B_SPECIAL, T_IP_OPT, order_net,
       ip_opt_ina, ip_inb, ip_inject },
-    { "sport", B_2, T_SPORT, order_transp, 
+    { "sport", B_2, T_SPORT, order_transp,
       num_ina, inb, transport_inject },
-    { "dport", B_2, T_DPORT, order_transp, 
+    { "dport", B_2, T_DPORT, order_transp,
       num_ina, inb, transport_inject }
 };
 

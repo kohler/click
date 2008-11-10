@@ -95,14 +95,14 @@ IP6Fragmenter::smaction(Packet *p)
       //click_chatter("IP6Fragmenter: length is OK, <= %x \n", _mtu);
       return(p);
     }
-  else 
+  else
     {
-      click_chatter("IP6Fragmenter: length is not OK, > %x \n", _mtu); 
+      click_chatter("IP6Fragmenter: length is not OK, > %x \n", _mtu);
       if (noutputs() == 2)
 	output(1).push(p);
       else
 	p->kill();
-      return 0; 
+      return 0;
     }
 }
 */

@@ -61,7 +61,7 @@ AggregateFilter::configure(Vector<String> &conf, ErrorHandler *errh)
     int before_nerrors = errh->nerrors();
     _default_output = noutputs() + 1;
     Group *g = 0;
-    
+
     for (int argno = 0; argno < conf.size(); argno++) {
 	Vector<String> words;
 	cp_spacevec(conf[argno], words);
@@ -73,7 +73,7 @@ AggregateFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	    errh->warning("pattern %d matches no packets", argno);
 	    continue;
 	}
-	
+
 	int port = noutputs();
 	if (words[0] == "allow")
 	    port = 0;

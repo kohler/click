@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * directiplookup.{cc,hh} -- lookup for output port and next-hop gateway 
+ * directiplookup.{cc,hh} -- lookup for output port and next-hop gateway
  * in one to max. two DRAM accesses with potential CPU cache / TLB misses
  * Marko Zec
  *
@@ -41,7 +41,7 @@ DirectIPLookup::Table::initialize()
     _tbl_24_31_capacity = 4096;
     _vport_capacity = 1024;
     _rtable_capacity = 2048;
-    
+
     if ((_tbl_0_23 = (uint16_t *) CLICK_LALLOC((sizeof(uint16_t) + sizeof(uint8_t)) * (1 << 24)))
 	&& (_tbl_24_31 = (uint16_t *) CLICK_LALLOC((sizeof(uint16_t) + sizeof(uint8_t)) * _tbl_24_31_capacity))
 	&& (_vport = (VirtualPort *) CLICK_LALLOC(sizeof(VirtualPort) * _vport_capacity))
@@ -438,7 +438,7 @@ DirectIPLookup::Table::remove_route(const IPRoute& route, IPRoute* old_route, Er
 		    sec_end = sec_start + (1 << (32 - plen));
 		} else {
 		    sec_start = 0;
-	    	    sec_end = 256;
+		    sec_end = 256;
 		}
 		for (j = sec_i + sec_start; j < sec_i + sec_end; j++) {
 		    if (plen == _tbl_24_31_plen[j]) {
@@ -468,7 +468,7 @@ DirectIPLookup::Table::remove_route(const IPRoute& route, IPRoute* old_route, Er
 		    _tbl_0_23_plen[i] = _tbl_24_31_plen[sec_i];
 		    // ... and free up the entry (adding it to free space list)
 		    _tbl_24_31[sec_i] = _tbl_24_31_empty_head;
-	    	    _tbl_24_31_empty_head = sec_i >> 8;
+		    _tbl_24_31_empty_head = sec_i >> 8;
 		}
 	    } else {
 		if (plen == _tbl_0_23_plen[i]) {

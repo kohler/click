@@ -75,7 +75,7 @@ flip_ports(uint32_t ports)
 AggregateIPFlows::AggregateIPFlows()
 #if CLICK_USERLEVEL
     : _traceinfo_file(0), _packet_source(0), _filepos_h(0)
-#endif		
+#endif
 {
 }
 
@@ -105,7 +105,7 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
     _fragments = 2;
     bool handle_icmp_errors = false;
     bool gave_fragments = false, fragments = true;
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "TCP_TIMEOUT", 0, cpSeconds, &_tcp_timeout,
 		     "TCP_DONE_TIMEOUT", 0, cpSeconds, &_tcp_done_timeout,
@@ -113,14 +113,14 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "FRAGMENT_TIMEOUT", 0, cpSeconds, &_fragment_timeout,
 		     "REAP", 0, cpSeconds, &_gc_interval,
 		     "ICMP", 0, cpBool, &handle_icmp_errors,
-#if CLICK_USERLEVEL			 
+#if CLICK_USERLEVEL
 		     "TRACEINFO", 0, cpFilename, &_traceinfo_filename,
 		     "SOURCE", 0, cpElement, &_packet_source,
 #endif
 		     "FRAGMENTS", cpkC, &gave_fragments, cpBool, &fragments,
 		     cpEnd) < 0)
 	return -1;
-    
+
     _smallest_timeout = (_tcp_timeout < _tcp_done_timeout ? _tcp_timeout : _tcp_done_timeout);
     _smallest_timeout = (_smallest_timeout < _udp_timeout ? _smallest_timeout : _udp_timeout);
     _handle_icmp_errors = handle_icmp_errors;
@@ -135,7 +135,7 @@ AggregateIPFlows::initialize(ErrorHandler *errh)
     _next = 1;
     _active_sec = _gc_sec = 0;
     _timestamp_warning = false;
-    
+
 #if CLICK_USERLEVEL
     if (_traceinfo_filename == "-")
 	_traceinfo_file = stdout;
@@ -157,7 +157,7 @@ AggregateIPFlows::initialize(ErrorHandler *errh)
 	_fragments = !input_is_pull(0);
     else if (_fragments == 1 && input_is_pull(0))
 	return errh->error("'FRAGMENTS true' is incompatible with pull; run this element in a push context");
-    
+
     return 0;
 }
 
@@ -166,7 +166,7 @@ AggregateIPFlows::cleanup(CleanupStage)
 {
     clean_map(_tcp_map);
     clean_map(_udp_map);
-#if CLICK_USERLEVEL		
+#if CLICK_USERLEVEL
     if (_traceinfo_file && _traceinfo_file != stdout) {
 	fprintf(_traceinfo_file, "</trace>\n");
 	fclose(_traceinfo_file);
@@ -178,7 +178,7 @@ AggregateIPFlows::cleanup(CleanupStage)
 inline void
 AggregateIPFlows::delete_flowinfo(const HostPair &hp, FlowInfo *finfo, bool really_delete)
 {
-#if CLICK_USERLEVEL	
+#if CLICK_USERLEVEL
     if (_traceinfo_file) {
 	StatFlowInfo *sinfo = static_cast<StatFlowInfo *>(finfo);
 	IPAddress src(sinfo->reverse() ? hp.b : hp.a);
@@ -201,7 +201,7 @@ AggregateIPFlows::delete_flowinfo(const HostPair &hp, FlowInfo *finfo, bool real
 	if (really_delete)
 	    delete sinfo;
     } else
-#endif			
+#endif
 	if (really_delete)
 	    delete finfo;
 }
@@ -240,7 +240,7 @@ AggregateIPFlows::packet_emit_hook(const Packet *p, const click_ip *iph, FlowInf
 {
     // account for timestamp
     finfo->_last_timestamp = p->timestamp_anno();
-    
+
     // check whether this indicates the flow is over
     if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)
 	/* 3.Feb.2004 - NLANR dumps do not contain full TCP headers! So relax
@@ -395,7 +395,7 @@ AggregateIPFlows::find_flow_info(Map &m, HostPairInfo *hpinfo, uint32_t ports, b
     } else
 #endif
 	finfo = new FlowInfo(ports, hpinfo->_flows, _next);
-    
+
     finfo->_reverse = flipped;
     hpinfo->_flows = finfo;
     _next++;
@@ -412,7 +412,7 @@ AggregateIPFlows::emit_fragment_head(HostPairInfo *hpinfo)
     const click_ip *iph = good_ip_header(head);
     // XXX multiple linear traversals of entire fragment list!
     // want a faster method that takes up little memory?
-    
+
     if (AGGREGATE_ANNO(head)) {
 	for (Packet *p = hpinfo->_fragment_head; p; p = p->next())
 	    if (good_ip_header(p)->ip_id == iph->ip_id) {
@@ -430,7 +430,7 @@ AggregateIPFlows::emit_fragment_head(HostPairInfo *hpinfo)
 	head->kill();
 	return;
     }
-    
+
   find_flowinfo:
     // find the packet's FlowInfo
     FlowInfo *finfo, **pprev = &hpinfo->_flows;
@@ -483,7 +483,7 @@ AggregateIPFlows::handle_packet(Packet *p)
 	}
 	p->timestamp_anno().set_now();
     }
-    
+
     // extract encapsulated ICMP header if appropriate
     if (p->has_network_header() && iph->ip_p == IP_PROTO_ICMP
 	&& IP_FIRSTFRAG(iph) && _handle_icmp_errors) {
@@ -496,7 +496,7 @@ AggregateIPFlows::handle_packet(Packet *p)
 	|| (iph->ip_p != IP_PROTO_TCP && iph->ip_p != IP_PROTO_UDP)
 	|| (iph->ip_src.s_addr == 0 && iph->ip_dst.s_addr == 0))
 	return ACT_DROP;
-    
+
     // find relevant HostPairInfo
     Map &m = (iph->ip_p == IP_PROTO_TCP ? _tcp_map : _udp_map);
     HostPair hosts(iph->ip_src.s_addr, iph->ip_dst.s_addr);
@@ -519,7 +519,7 @@ AggregateIPFlows::handle_packet(Packet *p)
 	    paint ^= 1;
 	if (paint & 1)
 	    ports = flip_ports(ports);
-	
+
 	finfo = find_flow_info(m, hpinfo, ports, paint & 1, p);
 	if (!finfo) {
 	    click_chatter("out of memory!");
@@ -554,11 +554,11 @@ void
 AggregateIPFlows::push(int, Packet *p)
 {
     int action = handle_packet(p);
-    
+
     // GC if necessary
     if (_active_sec >= _gc_sec)
 	reap();
-    
+
     if (action == ACT_EMIT)
 	output(0).push(p);
     else if (action == ACT_DROP)
@@ -574,7 +574,7 @@ AggregateIPFlows::pull(int)
     // GC if necessary
     if (_active_sec >= _gc_sec)
 	reap();
-    
+
     if (action == ACT_EMIT)
 	return p;
     else if (action == ACT_DROP)

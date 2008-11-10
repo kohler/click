@@ -193,7 +193,7 @@ void wmain::dialogs_connect()
 void wmain::on_open_file()
 {
     static GtkFileFilter *filter;
-    
+
     GtkWidget *dialog = gtk_file_chooser_dialog_new("Open File",
 				GTK_WINDOW(_window),
 				GTK_FILE_CHOOSER_ACTION_OPEN,
@@ -216,7 +216,7 @@ void wmain::on_open_file()
     }
 
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
-    
+
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
 	char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 	GatherErrorHandler gerrh;
@@ -276,7 +276,7 @@ bool cp_host_port(const String &hosts, const String &ports, IPAddress *result_ad
 	errh->error("IPv6 addresses not yet supported");
 	return false;
     }
-    
+
     if (!cp_tcpudp_port(ports, IP_PROTO_TCP, result_port)) {
 	errh->error("'%s' does not describe a TCP port", ports.c_str());
 	return false;
@@ -400,7 +400,7 @@ void wmain::on_save_file(bool save_as)
 	    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), dir);
 	    g_free(dir);
 	}
-	
+
 	if (gtk_dialog_run(GTK_DIALOG(dialog)) != GTK_RESPONSE_ACCEPT) {
 	    gtk_widget_destroy(dialog);
 	    return;
@@ -441,7 +441,7 @@ void wmain::on_export_diagram()
 				(const char *) NULL);
     gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_ACCEPT);
     gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);
-	
+
     if (gtk_dialog_run(GTK_DIALOG(dialog)) != GTK_RESPONSE_ACCEPT) {
 	gtk_widget_destroy(dialog);
 	return;

@@ -14,7 +14,7 @@ pretty-prints IP packets
 
 =d
 
-Expects IP packets as input.  Should be placed downstream of a 
+Expects IP packets as input.  Should be placed downstream of a
 CheckIPHeader or equivalent element.
 
 Prints out IP packets in a human-readable tcpdump-like format, preceded by
@@ -98,19 +98,19 @@ Boolean.  If false, then don't print messages.  Default is true.
 =a Print, CheckIPHeader */
 
 class IPPrint : public Element { public:
-  
+
   IPPrint();
   ~IPPrint();
-  
+
   const char *class_name() const		{ return "IPPrint"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
   void add_handlers();
-  
+
   Packet *simple_action(Packet *);
 
  private:
@@ -138,7 +138,7 @@ class IPPrint : public Element { public:
     void tcp_line(StringAccum &, const Packet *, int transport_len) const;
     void udp_line(StringAccum &, const Packet *, int transport_len) const;
     void icmp_line(StringAccum &, const Packet *, int transport_len) const;
-    
+
 };
 
 CLICK_ENDDECLS

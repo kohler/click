@@ -57,7 +57,7 @@ When written, drops all packets in, or partially in, the emulated link.
 DelayShaper, SetTimestamp */
 
 class LinkUnqueue : public Element, public Storage { public:
-  
+
     LinkUnqueue();
     ~LinkUnqueue();
 
@@ -70,7 +70,7 @@ class LinkUnqueue : public Element, public Storage { public:
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
     void add_handlers();
-  
+
     bool run_task(Task *);
 
   private:

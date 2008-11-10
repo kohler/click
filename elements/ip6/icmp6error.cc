@@ -91,14 +91,14 @@ ICMP6Error::unicast(const IP6Address &aa)
 
 /*
  * Is a source IP6 address valid
- * 
+ *
  */
 
 bool
 ICMP6Error::valid_source(const IP6Address &aa)
 {
   //unsigned int a = aa.s_addr;
-  //unsigned int ha = ntohl(a); 
+  //unsigned int ha = ntohl(a);
   //unsigned net = (ha >> 24) & 0xff;
 
   /* broadcast or multicast */
@@ -142,7 +142,7 @@ ICMP6Error::simple_action(Packet *p)
 
   if (!p->has_network_header())
     goto out;
-  
+
 
   /* These "don'ts" are from RFC1885 2.4.e: */
 
@@ -161,42 +161,42 @@ ICMP6Error::simple_action(Packet *p)
   if (p->packet_type_anno() == Packet::BROADCAST || p->packet_type_anno() == Packet::MULTICAST)
     goto out;
 
-  
+
   /* send back as much of invoding packet as will fit without the ICMPv6 packet exceeding 576 octets , ICMP6 header is 8 octets*/
 
   xlen = p->length();
   if (xlen > 568)
-    xlen = 568;           
+    xlen = 568;
 
   if (_type != ICMP6_REDIRECT)
     q = Packet::make(sizeof(struct click_ip6) + sizeof(struct click_icmp6) + xlen);
   else
     q = Packet::make(sizeof(struct click_ip6) + sizeof(struct click_icmp6_redirect) + xlen);
-  
+
   // guaranteed that packet data is aligned
   memset(q->data(), '\0', q->length());
-  
+
   //set ip6 header
   nip = (click_ip6 *) q->data();
   nip->ip6_flow = 0;
   nip->ip6_v = 6;
   nip->ip6_plen = htons(q->length()-40);
-  nip->ip6_nxt = IP_PROTO_ICMP6;  /* next header */ 
+  nip->ip6_nxt = IP_PROTO_ICMP6;  /* next header */
   nip->ip6_hlim = 0xff; //what hop limit shoud I set?
   nip->ip6_src = _src_ip;
   nip->ip6_dst = ipp->ip6_src;
-  
+
   //set icmp6 Message
   icp = (click_icmp6 *) (nip + 1);
   icp->icmp6_type = _type;
   icp->icmp6_code = _code;
 
-    
+
   if(_type == ICMP6_PKTTOOBIG && _code == 0){
     /* Set the mtu value. */
     ((click_icmp6_pkttoobig *)icp)->icmp6_mtusize = 1500;
   }
-  
+
   if(_type == 4 && _code == 0){
     /* Set the Parameter Problem pointer. */
     ((click_icmp6_paramprob *) icp)->icmp6_pointer = ICMP_PARAMPROB_ANNO(p);
@@ -213,9 +213,9 @@ ICMP6Error::simple_action(Packet *p)
     memcpy((void *)(icp + 1), p->data(), xlen);
 
   icp->icmp6_cksum = htons(in6_fast_cksum(&nip->ip6_src, &nip->ip6_dst, nip->ip6_plen, nip->ip6_nxt, 0, (unsigned char *)icp, nip->ip6_plen));
-  
+
   SET_DST_IP6_ANNO(q, IP6Address(nip->ip6_dst));
-  SET_FIX_IP_SRC_ANNO(q, 1); // fix_ip_src: shared flag with IPv4 
+  SET_FIX_IP_SRC_ANNO(q, 1); // fix_ip_src: shared flag with IPv4
   q->set_ip6_header(nip, sizeof(click_ip6));
 
  out:

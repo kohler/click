@@ -122,7 +122,7 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
 
   for (RouterT::type_iterator x = r->begin_elements(t); x; x++) {
     assert(x->type() == t);
-    
+
     String config = cp_uncomment(x->configuration());
     int val;
     if (!cp_integer(config, &val)) {
@@ -137,16 +137,16 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
 	errh->lerror(x->landmark(), "odd connections from '%s'", x->declaration().c_str());
 	break;
       }
-    
+
     ElementT *idle = r->add_anon_element(idlet, "", LandmarkT("<click-undead>"));
     int idle_in = 0, idle_out = 0;
-    
+
     PortT jump_hook;
     if (val < 0 || val >= x->noutputs() || connv_out[val] < 0)
       jump_hook = PortT(idle, idle_in++);
     else
       jump_hook = r->connection(connv_out[val]).to();
-    
+
     Vector<PortT> conns_to;
     r->find_connections_to(PortT(x, 0), conns_to);
     for (int j = 0; j < conns_to.size(); j++) {
@@ -169,7 +169,7 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
 
   for (RouterT::type_iterator x = r->begin_elements(t); x; x++) {
     assert(x->type() == t);
-    
+
     String config = cp_uncomment(x->configuration());
     int val;
     if (!cp_integer(config, &val)) {
@@ -184,16 +184,16 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
 	errh->lerror(x->landmark(), "odd connections to '%s'", x->declaration().c_str());
 	break;
       }
-    
+
     ElementT *idle = r->add_anon_element(idlet, "", LandmarkT("<click-undead>"));
     int idle_in = 0, idle_out = 0;
-    
+
     PortT jump_hook;
     if (val < 0 || val >= x->ninputs() || connv_in[val] < 0)
       jump_hook = PortT(idle, idle_out++);
     else
       jump_hook = r->connection(connv_in[val]).from();
-    
+
     Vector<PortT> conns_from;
     r->find_connections_from(PortT(x, 0), conns_from);
     for (int j = 0; j < conns_from.size(); j++) {
@@ -239,7 +239,7 @@ remove_nulls(RouterT *r, ElementClassT *t, ErrorHandler *errh)
       errh->lwarning(x->landmark(), "odd connections to '%s'", x->declaration().c_str());
       continue;
     }
-    
+
     Vector<int> hprev, hnext;
     r->find_connections_to(PortT(x, 0), hprev);
     r->find_connections_from(PortT(x, 0), hnext);
@@ -268,7 +268,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
       errh->lwarning(x->landmark(), "odd connections to '%s'", x->declaration().c_str());
       continue;
     }
-    
+
     Vector<int> hprev;
     Vector<String> args;
     r->find_connection_vector_to(x, hprev);
@@ -278,7 +278,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
       if (args.size() != hprev.size())
 	continue;
     }
-    
+
     for (int p = 0; p < hprev.size(); p++)
       if (hprev[p] == -1 || (hprev[p] >= 0 && r->connection(hprev[p]).from_element()->type() == idlet)) {
 	// remove that scheduler port
@@ -301,7 +301,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
 	hprev.pop_back();
 	p--;
       }
-    
+
     if (hprev.size() == 1) {
       if (verbose)
 	errh->lerror(x->landmark(), "removing redundant scheduler '%s'", x->declaration().c_str());
@@ -331,11 +331,11 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
       errh->lwarning(x->landmark(), "odd connections to '%s'", x->declaration().c_str());
       continue;
     }
-    
+
     Vector<int> hnext;
     Vector<String> args;
     r->find_connection_vector_from(x, hnext);
-    
+
     for (int p = hnext.size() - 1; p >= (is_pull_tee ? 1 : 0); p--)
       if (hnext[p] == -1 || (hnext[p] >= 0 && r->connection(hnext[p]).from_element()->type() == idlet)) {
 	// remove that tee port
@@ -348,7 +348,7 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
 	    r->kill_connection(r->find_connection(bad_connection));
 	hnext.pop_back();
       }
-    
+
     if (hnext.size() == 1) {
       if (verbose)
 	errh->lerror(x->landmark(), "removing redundant tee '%s'", x->declaration().c_str());
@@ -442,7 +442,7 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
 
   int nh = r->nconnections();
   const Vector<ConnectionT> &conn = r->connections();
-  
+
   // spread sources
   bool changed = true;
   while (changed) {
@@ -453,7 +453,7 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
 	sources[t] = changed = true;
     }
   }
-  
+
   // spread sinks
   changed = true;
   while (changed) {
@@ -539,16 +539,16 @@ main(int argc, char **argv)
   bool config_only = false;
   int check_kernel = -1;
   int check_userlevel = -1;
-  
+
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case HELP_OPT:
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("click-undead (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2000 Massachusetts Institute of Technology\n\
@@ -562,7 +562,7 @@ particular purpose.\n");
      case CLICKPATH_OPT:
       set_clickpath(clp->vstr);
       break;
-      
+
      case ROUTER_OPT:
      case EXPRESSION_OPT:
      router_file:
@@ -594,7 +594,7 @@ particular purpose.\n");
      case KERNEL_OPT:
       check_kernel = (clp->negated ? 0 : 1);
       break;
-      
+
      case USERLEVEL_OPT:
       check_userlevel = (clp->negated ? 0 : 1);
       break;
@@ -602,19 +602,19 @@ particular purpose.\n");
      case VERBOSE_OPT:
       verbose = !clp->negated;
       break;
-      
+
      bad_option:
      case Clp_BadOption:
       short_usage();
       exit(1);
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
     }
   }
-  
+
  done:
   RouterT *r = read_router(router_file, file_is_expr, default_errh);
   if (r)
@@ -656,7 +656,7 @@ particular purpose.\n");
 
   // set types
   idlet = ElementClassT::base_type("Idle");
-  
+
   // remove elements who make static routing decisions
   remove_static_switches(r, default_errh);
   remove_static_pull_switches(r, default_errh);
@@ -664,7 +664,7 @@ particular purpose.\n");
 
   // remove dead elements to improve processing checking
   r->remove_dead_elements();
-  
+
   // find live elements in the drivers
   Bitvector kernel_vec, user_vec;
   if (check_kernel > 0)
@@ -689,12 +689,12 @@ particular purpose.\n");
 	default_errh->lmessage(e->landmark(), "removing '%s'", e->declaration().c_str());
       e->simple_kill();
     }
-  
+
   // remove dead connections (not elements yet: keep indexes in 'processing'
   // the same)
   r->kill_bad_connections();
   r->check();
-  
+
   // remove redundant schedulers
   while (1) {
     int nchanges = 0;
@@ -708,10 +708,10 @@ particular purpose.\n");
 
   // hook up blanked-out live ports to a new Idle
   replace_blank_ports(r);
-  
+
   // NOW remove bad elements
   r->remove_dead_elements();
-  
+
   if (config_only) {
     String config = r->configuration_string();
     fwrite(config.data(), 1, config.length(), outf);

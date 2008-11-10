@@ -31,14 +31,14 @@ Clear all information for each source
 
 
 class RXStats : public Element { public:
-  
+
   RXStats();
   ~RXStats();
-  
+
   const char *class_name() const		{ return "RXStats"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   Packet *simple_action(Packet *);
 
   void add_handlers();
@@ -54,12 +54,12 @@ class RXStats : public Element { public:
     unsigned _sum_signal;
     unsigned _sum_noise;
     Timestamp _last_received;
-    
-    DstInfo() { 
+
+    DstInfo() {
       memset(this, 0, sizeof(*this));
     }
 
-    DstInfo(EtherAddress eth) { 
+    DstInfo(EtherAddress eth) {
       memset(this, 0, sizeof(*this));
       _eth = eth;
     }

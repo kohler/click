@@ -34,7 +34,7 @@ Specializer::Specializer(RouterT *router, const ElementMap &em)
     _etinfo_map(0), _header_file_map(-1), _parsed_sources(-1)
 {
   _etinfo.push_back(ElementTypeInfo());
-  
+
   for (RouterT::iterator x = router->begin_elements(); x; x++) {
     _noutputs[x->eindex()] = x->noutputs();
     _ninputs[x->eindex()] = x->ninputs();
@@ -102,7 +102,7 @@ Specializer::parse_source_file(ElementTypeInfo &etinfo,
   String fn = etinfo.header_file;
   if (!do_header && fn.substring(-3) == ".hh")
     fn = etinfo.header_file.substring(0, -3) + ".cc";
-  
+
   // don't parse a source file twice
   if (_parsed_sources.get(fn) < 0) {
     String text;
@@ -154,7 +154,7 @@ Specializer::check_specialize(int eindex, ErrorHandler *errh)
   if (_specials[sp].eindex > SPCE_NOT_DONE)
     return;
   _specials[sp].eindex = SPCE_NOT_SPECIAL;
-  
+
   // get type info
   ElementTypeInfo &old_eti = etype_info(eindex);
   if (!old_eti.click_name) {
@@ -162,7 +162,7 @@ Specializer::check_specialize(int eindex, ErrorHandler *errh)
 		  _router->etype_name(eindex).c_str());
     return;
   }
-  
+
   // read source code
   if (!old_eti.read_source)
     read_source(old_eti, errh);
@@ -225,7 +225,7 @@ Specializer::create_class(SpecializedClass &spc)
     new_cxxc->defun
       (CxxFunction("~" + spc.cxx_name, true, "", "()", " ", ""));
   }
-  
+
   new_cxxc->defun
     (CxxFunction("class_name", true, "const char *", "() const",
 		 String(" return \"") + spc.click_name + "\"; ", ""));
@@ -235,7 +235,7 @@ Specializer::create_class(SpecializedClass &spc)
     return v;\n  else if (strcmp(n, \"" + spc.click_name + "\") == 0\n\
 	  || strcmp(n, \"" + old_eti.click_name + "\") == 0)\n\
     return (Element *)this;\n  else\n    return 0;\n", ""));
-  
+
   // placeholders for input_pull and output_push
   new_cxxc->defun
     (CxxFunction("input_pull", false, "inline Packet *",
@@ -327,7 +327,7 @@ Specializer::create_connector_methods(SpecializedClass &spc)
   assert(spc.cxxc);
   int eindex = spc.eindex;
   CxxClass *cxxc = spc.cxxc;
-  
+
   // create mangled names of attached push and pull functions
   const Vector<ConnectionT> &conn = _router->connections();
   int nhook = _router->nconnections();
@@ -407,7 +407,7 @@ Specializer::create_connector_methods(SpecializedClass &spc)
     else
 	sa << "\n  assert(0);\n";
     cxxc->find("output_push")->set_body(sa.take_string());
-    
+
     sa.clear();
     if (_noutputs[eindex])
 	sa << "\n  if (i < " << _noutputs[eindex] << ")\n"
@@ -457,7 +457,7 @@ Specializer::output_includes(ElementTypeInfo &eti, StringAccum &out)
   // don't write includes twice for the same class
   if (eti.wrote_includes)
     return;
-  
+
   // must massage includes.
   // we may have something like '#include "element.hh"', relying on the
   // assumption that we are compiling 'element.cc'. must transform this
@@ -492,14 +492,14 @@ Specializer::output_includes(ElementTypeInfo &eti, StringAccum &out)
 
     if (p < p2 && s[p] == '#') {
       // we have a preprocessing directive!
-      
+
       // skip space after '#'
       for (p++; p < p2 && isspace((unsigned char) s[p]); p++)
 	/* nada */;
 
       // check for '#include'
       if (p + 7 < p2 && strncmp(s+p, "include", 7) == 0) {
-	
+
 	// find what is "#include"d
 	for (p += 7; p < p2 && isspace((unsigned char) s[p]); p++)
 	  /* nada */;
@@ -530,7 +530,7 @@ Specializer::output_includes(ElementTypeInfo &eti, StringAccum &out)
 	  }
 	}
       }
-      
+
     }
 
     out << includes.substring(start, p2 + 1 - start);
@@ -575,7 +575,7 @@ Specializer::output_package(const String &package_name, const String &suffix, St
 	    elem2package <<  "-\t\"" << package_name << suffix << ".hh\"\t" << _specials[i].cxx_name << '-' << _specials[i].click_name << '\n';
     String click_buildtool_prog = clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, errh);
     cmd_sa << click_buildtool_prog << " elem2package " << package_name;
-    out << shell_command_output_string(cmd_sa.take_string(), elem2package.take_string(), errh);    
+    out << shell_command_output_string(cmd_sa.take_string(), elem2package.take_string(), errh);
 }
 
 void

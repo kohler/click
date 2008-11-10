@@ -18,7 +18,7 @@ GridSRForwarder::~GridSRForwarder()
 }
 
 void *
-GridSRForwarder::cast(const char *name) 
+GridSRForwarder::cast(const char *name)
 {
   // XXX strcmp sucks
   if (strcmp(name, "GridSRForwarder") == 0)
@@ -30,7 +30,7 @@ GridSRForwarder::cast(const char *name)
 int
 GridSRForwarder::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh, 
+  int res = cp_va_kparse(conf, this, errh,
 			 "IP", cpkP+cpkM, cpIPAddress, &_ip,
 			 cpEnd);
   return res;
@@ -64,13 +64,13 @@ GridSRForwarder::handle_host(Packet *p)
   click_ip *iph = (click_ip *) p->data();
   click_udp *uh = (click_udp *) (iph + 1);
   unsigned short *sp = (unsigned short *) (uh + 1);
-  
+
   short route_len = ntohs(*sp);
   sp++;
   Vector<unsigned short> hops;
-  for (short i = 0; i < route_len; i++, sp++) 
+  for (short i = 0; i < route_len; i++, sp++)
     hops.push_back(ntohs(*sp));
-  
+
   unsigned long *lp = (unsigned long *) sp;
   unsigned long src = ntohl(*lp);
   lp++;
@@ -113,7 +113,7 @@ GridSRForwarder::handle_host(Packet *p)
     sp = (unsigned short *) (uh + 1);
     *sp = htons(route_len - 1);
     sp++;
-    for (int i = 1; i < route_len; i++, sp++) 
+    for (int i = 1; i < route_len; i++, sp++)
       *sp = htons(hops[i]);
     lp = (unsigned long *)sp;
     *lp = htonl(src);

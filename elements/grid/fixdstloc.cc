@@ -60,7 +60,7 @@ FixDstLoc::initialize(ErrorHandler *errh)
 Packet *
 FixDstLoc::simple_action(Packet *xp)
 {
-  assert(_loctab); 
+  assert(_loctab);
   grid_hdr *gh = (grid_hdr *) (xp->data() + sizeof(click_ether));
   if (gh->type != grid_hdr::GRID_NBR_ENCAP) {
     click_chatter("FixDstLoc %s: not an encapsulated data packet; not modifying it\n", name().c_str());

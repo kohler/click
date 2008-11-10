@@ -58,7 +58,7 @@ EstimateRouterRegion::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if(fixed){
     float lat = ((float) lat_int) / 100000.0f;
-    float lon = ((float) lon_int) / 100000.0f; 
+    float lon = ((float) lon_int) / 100000.0f;
     if (lat > 90 || lat < -90)
       return errh->error("%s: latitude must be between +/- 90 degrees",
                          name().c_str());
@@ -290,7 +290,7 @@ EstimateRouterRegion::simple_action(Packet *p)
   return(0);
 }
 
-double 
+double
 EstimateRouterRegion::radio_range(grid_location) // XXX degrees lat covered by range
 { return 0.002; }
 

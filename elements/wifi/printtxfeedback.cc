@@ -60,14 +60,14 @@ PrintTXFeedback::simple_action(Packet *p)
   uint8_t *dst_ptr = (uint8_t *) p->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
 
-  
+
   StringAccum sa;
   if (_label[0] != 0) {
     sa << _label.c_str() << ":";
   } else {
       sa << "PrintTXFeedback";
   }
-  struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);  
+  struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
   sa << " " << p->timestamp_anno();
   sa << " " << dst;
   sa << " flags " << (int) ceh->flags;
@@ -80,7 +80,7 @@ PrintTXFeedback::simple_action(Packet *p)
 
   click_chatter("%s\n", sa.c_str());
 
-    
+
   return p;
 }
 

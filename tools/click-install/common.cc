@@ -124,7 +124,7 @@ remove_unneeded_packages(const StringMap &active_modules, const StringMap &packa
 {
   // remove extra packages
   Vector<String> removals;
-  
+
   // go over all modules; figure out which ones are Click packages
   // by checking 'packages' array; mark old Click packages for removal
   for (StringMap::const_iterator iter = active_modules.begin(); iter.live(); iter++)
@@ -172,9 +172,9 @@ int
 unload_click(ErrorHandler *errh)
 {
   adjust_clickfs_prefix();
-  
+
   // do nothing if Click not installed
-  String clickfs_packages = clickfs_prefix + String("/packages");  
+  String clickfs_packages = clickfs_prefix + String("/packages");
   if (access(clickfs_packages.c_str(), F_OK) < 0)
     return 0;
 

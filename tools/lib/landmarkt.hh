@@ -19,18 +19,18 @@ class LandmarkT { public:
 
     typedef String (LandmarkT::*unspecified_bool_type)() const;
     inline operator unspecified_bool_type() const;
-  
+
     String str() const;
     operator String() const;
     String decorated_str() const;
 
     unsigned offset1() const		{ return _offset1; }
     unsigned offset2() const		{ return _offset2; }
-    
+
     inline LandmarkT &operator=(const LandmarkT &o);
-    
+
     enum { noffset = (unsigned) -1 };
-    
+
   private:
 
     LandmarkSetT *_lset;
@@ -44,7 +44,7 @@ class LandmarkT { public:
 class LandmarkSetT { public:
 
     LandmarkSetT();
-    LandmarkSetT(const String &filename, unsigned lineno); 
+    LandmarkSetT(const String &filename, unsigned lineno);
 
     inline void ref();
     inline void unref();
@@ -52,7 +52,7 @@ class LandmarkSetT { public:
     String offset_to_string(unsigned offset) const;
     String offset_to_decorated_string(unsigned offset1, unsigned offset2) const;
     void new_line(unsigned offset, const String &filename, unsigned lineno);
-    
+
     struct LandmarkInfo {
 	unsigned end_offset;
 	int filename;
@@ -62,13 +62,13 @@ class LandmarkSetT { public:
 	    : end_offset(o), filename(f), lineno(l) {
 	}
     };
-    
+
   private:
 
     int _refcount;
     Vector<LandmarkInfo> _linfo;
     Vector<String> _fnames;
-    
+
     LandmarkSetT(const LandmarkSetT &);
     ~LandmarkSetT();
     LandmarkSetT &operator=(const LandmarkSetT &);

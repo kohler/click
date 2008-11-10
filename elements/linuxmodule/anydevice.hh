@@ -123,7 +123,7 @@ class AnyDevice : public Element { public:
     HandlerCall *_down_call;
 
     void alter_promiscuity(int delta);
-    
+
     friend class AnyDeviceMap;
 
 };

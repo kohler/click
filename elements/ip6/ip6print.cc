@@ -30,7 +30,7 @@ IP6Print::configure(Vector<String> &conf, ErrorHandler *errh)
     _bytes = 1500;
     _label = "";
     _contents = false;
-  
+
     if (cp_va_kparse(conf, this, errh,
 		     "LABEL", cpkP, cpString, &_label,
 		     "CONTENTS", 0, cpBool, &_contents,
@@ -45,9 +45,9 @@ IP6Print::simple_action(Packet *p)
 {
     String s = "";
     const click_ip6 *iph = (click_ip6*) p->ip_header();
-  
+
     StringAccum sa;
-    if (_label) 
+    if (_label)
 	sa << _label << ": ";
     sa << reinterpret_cast<const IP6Address &>(iph->ip6_src)
        << " -> "
@@ -58,7 +58,7 @@ IP6Print::simple_action(Packet *p)
     const unsigned char *data = p->data();
     if (_contents) {
 	int amt = 3*_bytes + (_bytes/4+1) + 3*(_bytes/24+1) + 1;
-	
+
 	sa << "  ";
 	char *buf = sa.reserve(amt);
 	char *orig_buf = buf;

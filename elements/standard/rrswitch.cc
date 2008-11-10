@@ -38,7 +38,7 @@ RoundRobinSwitch::push(int, Packet *p)
     _next = 0;
 #else
   // in MT case try our best to be rr, but don't worry about it if we mess up
-  // once in awhile 
+  // once in awhile
   int newval = i+1;
   if (newval >= noutputs())
     newval = 0;

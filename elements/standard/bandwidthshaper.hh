@@ -8,7 +8,7 @@ CLICK_DECLS
  * =c
  * BandwidthShaper(RATE)
  * =s shaping
- * shapes traffic to maximum rate (bytes/s) 
+ * shapes traffic to maximum rate (bytes/s)
  * =processing
  * Pull
  * =d
@@ -26,14 +26,14 @@ CLICK_DECLS
  * =a Shaper, BandwidthRatedSplitter, BandwidthRatedUnqueue */
 
 class BandwidthShaper : public Shaper { public:
-  
+
     BandwidthShaper();
     ~BandwidthShaper();
-  
+
     const char *class_name() const	{ return "BandwidthShaper"; }
 
     Packet *pull(int);
-  
+
 };
 
 CLICK_ENDDECLS

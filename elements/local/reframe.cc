@@ -68,7 +68,7 @@ Reframe::initialize(ErrorHandler *errh)
     if (!_header) {
       return errh->error("out of memory");
     }
-    _header->take(_header->length());    
+    _header->take(_header->length());
   }
   return 0;
 }
@@ -128,7 +128,7 @@ Reframe::reframe(void)
 	assert(_flen == 1 || _flen == 2 || _flen == 4);
 	break;
       }
- 
+
       // we need this much to emit this frame
      _need = alignto(_need, _align) + _add;
     } else {

@@ -98,7 +98,7 @@ class IPAddrPairRewriter : public IPRw { public:
 	void apply(WritablePacket *p);
 
 	String unparse() const;
-    
+
     };
 
     IPAddrPairRewriter();

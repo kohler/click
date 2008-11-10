@@ -113,7 +113,7 @@ ElementT::name_ok(const String &name, bool allow_anon_names)
 	if (epos == len - 1 || data[epos] != '@')
 	    return false;
     }
-    
+
     // must have at least one character, must not start with slash
     if (pos >= len || data[pos] == '/')
 	return false;
@@ -199,7 +199,7 @@ ElementT::resolved_type(const VariableEnvironment &env, ErrorHandler *errh) cons
     _resolved_type->use();
     return t;
 }
-    
+
 
 const PortT PortT::null_port;
 

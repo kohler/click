@@ -101,7 +101,7 @@ class ChatterSocket : public Element { public:
 
   const char *class_name() const	{ return "ChatterSocket"; }
 
-  int configure_phase() const	 	{ return CONFIGURE_PHASE_INFO; }
+  int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
@@ -124,14 +124,14 @@ class ChatterSocket : public Element { public:
   Vector<String> _messages;
   Vector<uint32_t> _message_pos;
   uint32_t _max_pos;
-  
+
   Vector<int> _fd_alive;
   Vector<uint32_t> _fd_pos;
   int _live_fds;
 
   int _retries;
   Timer *_retry_timer;
-  
+
   static const char protocol_version[];
   enum { MAX_BACKLOG = 500000 };
 

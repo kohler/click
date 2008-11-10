@@ -54,7 +54,7 @@
 CLICK_DECLS
 
 FromDevice::FromDevice()
-    : 
+    :
 #if FROMDEVICE_LINUX
       _linux_fd(-1),
 #endif
@@ -94,7 +94,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("SNAPLEN out of range");
     if (_headroom > 8190)
 	return errh->error("HEADROOM out of range");
-    
+
 #if FROMDEVICE_PCAP
     _bpf_filter = bpf_filter;
 #endif
@@ -121,7 +121,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 #endif
     else
 	return errh->error("capture method '%s' not supported", capture.c_str());
-    
+
     if (bpf_filter && _capture != CAPTURE_PCAP)
 	errh->warning("not using PCAP capture method, BPF filter ignored");
 
@@ -166,7 +166,7 @@ FromDevice::open_packet_socket(String ifname, ErrorHandler *errh)
 
     // nonblocking I/O on the packet socket so we can poll
     fcntl(fd, F_SETFL, O_NONBLOCK);
-  
+
     return fd;
 }
 
@@ -255,7 +255,7 @@ FromDevice::initialize(ErrorHandler *errh)
 	bpf_u_int32 localnet;
 	if (pcap_lookupnet(ifname, &localnet, &netmask, ebuf) < 0)
 	    errh->warning("%s", ebuf);
-  
+
 	// Later versions of pcap distributed with linux (e.g. the redhat
 	// linux pcap-0.4-16) want to have a filter installed before they
 	// will pick up any packets.
@@ -300,7 +300,7 @@ FromDevice::initialize(ErrorHandler *errh)
     if (!_sniffer)
 	if (KernelFilter::device_filter(_ifname, true, errh) < 0)
 	    _sniffer = true;
-    
+
     return 0;
 }
 

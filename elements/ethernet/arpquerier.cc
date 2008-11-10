@@ -104,7 +104,7 @@ ARPQuerier::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
     Timestamp timeout;
     bool have_capacity, have_entry_capacity, have_timeout, have_broadcast;
     IPAddress my_bcast_ip;
-    
+
     if (cp_va_kparse_remove_keywords(conf, this, errh,
 		"CAPACITY", cpkC, &have_capacity, cpUnsigned, &capacity,
 		"ENTRY_CAPACITY", cpkC, &have_entry_capacity, cpUnsigned, &entry_capacity,
@@ -185,7 +185,7 @@ ARPQuerier::send_query_for(Packet *p)
 	click_chatter("in arp querier: cannot make packet!");
 	return;
     }
-  
+
     click_ether *e = (click_ether *) q->data();
     q->set_ether_header(e);
     memset(e->ether_dhost, 0xff, 6);
@@ -255,7 +255,7 @@ ARPQuerier::handle_ip(Packet *p, bool response)
 	output(0).push(q);
 	r = 0;
     } else if (!dst_ip) {
-	static bool zero_warned = false;  
+	static bool zero_warned = false;
 	if (!zero_warned) {
 	    click_chatter("%s: would query for 0.0.0.0; missing dest IP addr annotation?", declaration().c_str());
 	    zero_warned = true;
@@ -285,7 +285,7 @@ ARPQuerier::handle_response(Packet *p)
 	return;
 
     ++_arp_responses;
-  
+
     click_ether *ethh = (click_ether *) p->data();
     click_ether_arp *arph = (click_ether_arp *) (ethh + 1);
     IPAddress ipa = IPAddress(arph->arp_spa);

@@ -9,12 +9,12 @@ inline bool operator==(PermString a, PermString b);
 inline bool operator!=(PermString a, PermString b);
 
 class PermString { struct Doodad; public:
-  
+
     typedef Doodad *Capsule;
     // Declare a PermString::Initializer in any file in which you declare
     // static global PermStrings.
     struct Initializer { Initializer(); };
-  
+
     PermString()
 	: _rep(zero_char_doodad.data) {
     }
@@ -29,10 +29,10 @@ class PermString { struct Doodad; public:
     typedef int (PermString::*unspecified_bool_type)() const;
     inline operator unspecified_bool_type() const;
     inline bool operator!() const;
-    
+
     inline int length() const;
     char operator[](int i) const;
-    
+
     inline const char *c_str() const {
 	return _rep;
     }
@@ -42,7 +42,7 @@ class PermString { struct Doodad; public:
     inline operator String() const {
 	return String::make_stable(_rep, length());
     }
-  
+
     inline const char *begin() const;
     inline const char *end() const;
 
@@ -57,19 +57,19 @@ class PermString { struct Doodad; public:
     }
 
   private:
-  
+
     struct Doodad {
 	Doodad *next;
 	int length;
 	char data[2];
     };
-  
+
     const char *_rep;
-  
+
     PermString(Doodad* d)		: _rep(d->data) { }
     void initialize(const char*, int);
     Doodad* doodad() const { return (Doodad*)(_rep - offsetof(Doodad, data)); }
-  
+
     friend struct PermString::Initializer;
     static void static_initialize();
 

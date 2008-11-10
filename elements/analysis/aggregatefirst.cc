@@ -37,12 +37,12 @@ int
 AggregateFirst::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "NOTIFIER", 0, cpElement, &e,
 		     cpEnd) < 0)
 	return -1;
-    
+
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
 	return errh->error("%s is not an AggregateNotifier", e->name().c_str());
 
@@ -103,7 +103,7 @@ inline Packet *
 AggregateFirst::smaction(Packet *p)
 {
     uint32_t agg = AGGREGATE_ANNO(p);
-    
+
     if (uint32_t *r = row(agg)) {
 	r += (agg & ROW_MASK) >> 5;
 	uint32_t mask = 1 << (agg & 0x1F);
@@ -141,7 +141,7 @@ AggregateFirst::aggregate_notify(uint32_t agg, AggregateEvent event, const Packe
     uint32_t *r = row(agg);
     if (!r)			// out of memory
 	return;
-    
+
     if (event == NEW_AGG) {
 	if ((++_counts[plane][col]) == 1)
 	    _counts[plane][NCOL]++;

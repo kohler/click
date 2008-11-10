@@ -45,11 +45,11 @@ LookupIP6Route::configure(Vector<String> &conf, ErrorHandler *errh)
 
     Vector<String> words;
     cp_spacevec(conf[i], words);
-   
+
     if ((words.size()==2 || words.size()==3 )
-      && cp_ip6_prefix(words[0], (unsigned char *)&dst, (unsigned char *)&mask, true, this) 
+      && cp_ip6_prefix(words[0], (unsigned char *)&dst, (unsigned char *)&mask, true, this)
 	&& cp_integer(words.back(), &output_num))
-    { 
+    {
       if (words.size()==3)
 	ok = cp_ip6_address(words[1], (unsigned char *)&gw, this);
       else {
@@ -59,8 +59,8 @@ LookupIP6Route::configure(Vector<String> &conf, ErrorHandler *errh)
     }
 
   if (ok && output_num>=0) {
-    _t.add(dst, mask, gw, output_num); 
-    if( output_num > maxout) 
+    _t.add(dst, mask, gw, output_num);
+    if( output_num > maxout)
         maxout = output_num;
     } else {
       errh->error("argument %d should be DADDR/MASK [GW] OUTPUT", i+1);
@@ -68,7 +68,7 @@ LookupIP6Route::configure(Vector<String> &conf, ErrorHandler *errh)
   }
 
 
-  if (errh->nerrors()!=before) 
+  if (errh->nerrors()!=before)
     return -1;
   if (maxout <0)
     errh->warning("no routes");
@@ -95,7 +95,7 @@ LookupIP6Route::push(int, Packet *p)
   IP6Address a = DST_IP6_ANNO(p);
   IP6Address gw;
   int ifi = -1;
-  
+
   if (a) {
     if (a == _last_addr     ) {
       if (_last_gw)
@@ -108,7 +108,7 @@ LookupIP6Route::push(int, Packet *p)
  #ifdef IP_RT_CACHE2
     else if (a == _last_addr2) {
 #if 0
-      IP6address tmpa; 
+      IP6address tmpa;
       int tmpi;
       EXCHANGE(_last_addr, _last_addr2, tmpa);
       EXCHANGE(_last_gw, _last_gw2, tmpa);
@@ -122,15 +122,15 @@ LookupIP6Route::push(int, Packet *p)
     }
 #endif
   }
-  
- 
+
+
   if (_t.lookup(a, gw, ifi)) {
 #ifdef IP_RT_CACHE2
     _last_addr2 = _last_addr;
     _last_gw2 = _last_gw;
     _last_output2 = _last_output;
 #endif
-   
+
     _last_addr = a;
     _last_gw = gw;
     _last_output = ifi;
@@ -138,7 +138,7 @@ LookupIP6Route::push(int, Packet *p)
 	SET_DST_IP6_ANNO(p, IP6Address(gw));
     }
     output(ifi).push(p);
-    
+
   } else {
     p->kill();
   }
@@ -151,7 +151,7 @@ LookupIP6Route::add_route(IP6Address addr, IP6Address mask, IP6Address gw,
   if (output < 0 && output >= noutputs())
     return errh->error("port number out of range"); // Can't happen...
 
-  _t.add(addr, mask, gw, output); 
+  _t.add(addr, mask, gw, output);
   return 0;
 }
 
@@ -159,7 +159,7 @@ int
 LookupIP6Route::remove_route(IP6Address addr, IP6Address mask,
 			     ErrorHandler *)
 {
-  _t.del(addr, mask); 
+  _t.del(addr, mask);
   return 0;
 }
 

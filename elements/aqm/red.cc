@@ -214,7 +214,7 @@ RED::should_drop()
 	_size.update_n(0, _last_jiffies ? j - _last_jiffies : 1);
 	_last_jiffies = j;
     }
-    
+
     unsigned avg = _size.unscaled_average();
     if (avg <= _min_thresh) {
 	_count = -1;
@@ -236,7 +236,7 @@ RED::should_drop()
 	p_b = ((_C1 * _size.scaled_average()) >> QUEUE_SCALE) - _C2;
     else
 	p_b = ((_G1 * _size.scaled_average()) >> QUEUE_SCALE) - _G2;
-    
+
     _count++;
     // note: division had Approx[]
     if (_count > 0 && p_b > 0 && _count > _random_value / p_b) {
@@ -251,7 +251,7 @@ RED::should_drop()
     // otherwise, not dropping
     if (_count == 0)
 	_random_value = (click_random() >> 5) & 0xFFFF;
-    
+
 #if RED_DEBUG
     click_chatter("%s: no drop", declaration().c_str());
 #endif

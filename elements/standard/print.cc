@@ -50,7 +50,7 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
   _active = true;
   String label, contents = "HEX";
   unsigned bytes = 24;
-  
+
   if (cp_va_kparse(conf, this, errh,
 		   "LABEL", cpkP, cpString, &label,
 		   "MAXLENGTH", cpkP, cpInteger, &bytes,
@@ -76,7 +76,7 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
       _contents = 2;
   else
       return errh->error("bad contents value '%s'; should be 'NONE', 'HEX', or 'ASCII'", contents.c_str());
-  
+
   _label = label;
   _bytes = bytes;
   _timestamp = timestamp;
@@ -92,7 +92,7 @@ Print::simple_action(Packet *p)
 {
     if (!_active)
 	return p;
-    
+
     int bytes = (_contents ? _bytes : 0);
     if (bytes < 0 || (int) p->length() < bytes)
 	bytes = p->length();
@@ -134,7 +134,7 @@ Print::simple_action(Packet *p)
 	sa << " | ";
 	char *buf = sa.reserve(Packet::anno_size * 2);
 	int pos = 0;
-	for (unsigned j = 0; j < Packet::anno_size; j++, pos += 2) 
+	for (unsigned j = 0; j < Packet::anno_size; j++, pos += 2)
 	    sprintf(buf + pos, "%02x", p->anno_u8(j));
 	sa.adjust_length(pos);
     }

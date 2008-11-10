@@ -88,7 +88,7 @@ int Element::nelements_allocated = 0;
   classes override to define element behavior.  Good Click programmers
   understand how the Click system uses these functions to manipulate and
   initialize elements.  These functions fall into several categories:
- 
+
   <dl>
   <dt>Behavior specifications</dt>
   <dd>These functions return static constants that describe element
@@ -343,16 +343,16 @@ void BetterIPCounter3::push(int port, Packet *p) {
 @endcode
 
   <h3>Initialization Phases</h3>
- 
+
   The Click infrastructure calls element initialization functions in a
   specific order during router initialization.  Errors at any stage prevent
   later stages from running.
- 
+
   -# Collects element properties, specifically configure_phase(),
      port_count(), flow_code(), processing(), and can_live_reconfigure().
   -# Calculates how many of each element's input and output ports are used in
      the configuration.  There is an error if port_count() doesn't allow the
-     result.     
+     result.
   -# Calculates each port's push or pull status.  This depends on processing()
      values, and for agnostic ports, a constraint satisfaction algorithm that
      uses flow_code().
@@ -596,7 +596,7 @@ Element::set_nports(int new_ninputs, int new_noutputs)
 	    return -EBUSY;
 	_router->_have_connections = false;
     }
-    
+
     // decide if inputs & outputs were inlined
     bool old_in_inline =
 	(_ports[0] == _inline_ports);
@@ -728,7 +728,7 @@ Element::notify_nports(int ninputs, int noutputs, ErrorHandler *errh)
 
     if (notify_nports_pair(s, ends, ninlo, ninhi) < 0)
 	goto parse_error;
-    
+
     if (s == ends)
 	s = s_in;
     else if (*s == '/')
@@ -777,7 +777,7 @@ Element::initialize_ports(const int *in_v, const int *out_v)
 	int port = (in_v[i] == VPULL ? 0 : -1);
 	_ports[0][i] = Port(this, 0, port);
     }
-    
+
     for (int o = 0; o < noutputs(); o++) {
 	// allowed iff out_v[o] != VPULL
 	int port = (out_v[o] == VPULL ? -1 : 0);
@@ -891,7 +891,7 @@ Element::connect_port(bool isoutput, int port, Element* e, int e_port)
  *
  * Given an element @e E with input port @e M and output port @e N, imagine
  * this simple configuration (or a similar configuration):
- * 
+ *
  * <tt>... -> RED -> [@e M] E [@e N] -> Queue -> ...;</tt>
  *
  * Now, should the @e RED element include the @e Queue element in its queue
@@ -1033,7 +1033,7 @@ Element::port_flow(bool isoutput, int p, Bitvector* travels) const
 
     travels->assign(nother, false);
     ErrorHandler* errh = ErrorHandler::default_handler();
-  
+
     const char* f_in = f;
     const char* f_out = strchr(f, '/');
     f_out = (f_out ? f_out + 1 : f_in);
@@ -1047,7 +1047,7 @@ Element::port_flow(bool isoutput, int p, Bitvector* travels) const
 	f_in = f_out;
 	f_out = f_swap;
     }
-  
+
     Bitvector in_code;
     for (int i = 0; i < p; i++)
 	skip_flow_code(f_in);
@@ -1122,15 +1122,15 @@ int
 Element::next_processing_code(const char*& p, ErrorHandler* errh)
 {
     switch (*p) {
-    
+
       case 'h': case 'H':
 	p++;
 	return Element::VPUSH;
-    
+
       case 'l': case 'L':
 	p++;
 	return Element::VPULL;
-    
+
       case 'a': case 'A':
 	p++;
 	return Element::VAGNOSTIC;
@@ -1143,7 +1143,7 @@ Element::next_processing_code(const char*& p, ErrorHandler* errh)
 	    errh->error("bad processing code");
 	p++;
 	return -1;
-    
+
     }
 }
 
@@ -1366,7 +1366,7 @@ Element::configure(Vector<String> &conf, ErrorHandler *errh)
  * it runs, it is guaranteed that every configure() method succeeded and that
  * all connections are correct (push and pull match up correctly and there are
  * no unused or badly-connected ports).
- * 
+ *
  * Most add_handlers() methods simply call add_read_handler(),
  * add_write_handler(), add_task_handlers(), and possibly set_handler() one or
  * more times.  The default add_handlers() method does nothing.
@@ -2085,7 +2085,7 @@ write_task_home_thread(const String &str, Element *e, void *thunk, ErrorHandler 
  * @li A "scheduled" read handler, which returns @c true if the task is
  * scheduled and @c false if not.
  * @li A "tickets" read handler, which returns the task's tickets.
- * @li A "tickets" write handler to set the task's tickets.  
+ * @li A "tickets" write handler to set the task's tickets.
  * @li A "home_thread" read handler, which returns the task's home thread ID.
  *
  * Depending on Click's configuration options, some of these handlers might
@@ -2412,11 +2412,11 @@ configuration_handler(int operation, String &str, Element *e,
 	    conf[argno] = str;
 	else
 	    conf.push_back(String(keyword) + " " + str);
-	
+
 	// create new configuration before calling live_reconfigure(), in case
 	// it mucks with the 'conf' array
 	String new_config = cp_unargvec(conf);
-  
+
 	if (e->live_reconfigure(conf, errh) < 0)
 	    return -EINVAL;
 	e->router()->set_econfiguration(e->eindex(), new_config);

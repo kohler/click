@@ -26,7 +26,7 @@ class IP6Address { public:
   operator const click_in6_addr &() const	{ return _addr; }
   operator click_in6_addr &()			{ return _addr; }
   const click_in6_addr &in6_addr() const	{ return _addr;	}
-  click_in6_addr &in6_addr()		 	{ return _addr;	}
+  click_in6_addr &in6_addr()			{ return _addr;	}
 
   unsigned char *data()			{ return &_addr.s6_addr[0]; }
   const unsigned char *data() const	{ return &_addr.s6_addr[0]; }

@@ -96,7 +96,7 @@ CopyFlowID::set(Packet *p)
 
 void
 CopyFlowID::add_handlers()
-{ 
+{
   add_write_handler("reset", reset_write_handler, 0, Handler::BUTTON);
 }
 

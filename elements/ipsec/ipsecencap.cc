@@ -1,7 +1,7 @@
 /*
  * ipsecenncap.{cc,hh} -- element encapsulates packet in IP header and implements additional logic for IPSEC
  * (implemented in simple_action)
- * 
+ *
  * Dimitris Syrivelis
  * Copyright (c) 2006 University of Thessaly, Hellas
  *
@@ -62,7 +62,7 @@ IPsecEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   if (proto < 0 || proto > 255)
       return errh->error("bad IP protocol");
   iph.ip_p = proto;
-  
+
  int ect = 0;
   if (ect_str) {
     bool x;
@@ -73,7 +73,7 @@ IPsecEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     else
       return errh->error("bad ECT value '%s'", ect_str.c_str());
   }
-  
+
   if (tos >= 0 && dscp >= 0)
     return errh->error("cannot set both TOS and DSCP");
   else if (tos >= 0 && (ect || ce))
@@ -96,7 +96,7 @@ IPsecEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   if (df)
   iph.ip_off |= htons(IP_DF);
   _iph = iph;
-  
+
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   // check alignment
   {
@@ -109,7 +109,7 @@ IPsecEncap::configure(Vector<String> &conf, ErrorHandler *errh)
       errh->message("(Try passing the configuration through 'click-align'.)");
   }
 #endif
-  
+
   return 0;
 }
 
@@ -125,10 +125,10 @@ IPsecEncap::simple_action(Packet *p_in)
 {
    WritablePacket *p = p_in->push(sizeof(click_ip));
   if (!p) return 0;
-  
+
   click_ip *ip = reinterpret_cast<click_ip *>(p->data());
-  /*The basic difference from IPencap is actually the following. 
-    We retrieve the gateway address from annotations and set it as the destination address of the outgoing packet. 
+  /*The basic difference from IPencap is actually the following.
+    We retrieve the gateway address from annotations and set it as the destination address of the outgoing packet.
     This is the last tunneled packet.
     Set destination ip from annotation*/
   _iph.ip_dst = p->dst_ip_anno();
@@ -149,7 +149,7 @@ IPsecEncap::simple_action(Packet *p_in)
 #else
   ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 #endif
-  
+
   p->set_dst_ip_anno(IPAddress(ip->ip_dst));
   p->set_ip_header(ip, sizeof(click_ip));
   return p;

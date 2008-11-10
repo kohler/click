@@ -66,10 +66,10 @@ class SimpleQueue : public Element, public Storage { public:
 
     SimpleQueue();
     ~SimpleQueue();
-  
+
     int drops() const				{ return _drops; }
     int highwater_length() const		{ return _highwater_length; }
-    
+
     inline bool enq(Packet*);
     inline void lifo_enq(Packet*);
     inline Packet* deq();
@@ -77,7 +77,7 @@ class SimpleQueue : public Element, public Storage { public:
     // to be used with care
     Packet* packet(int i) const			{ return _q[i]; }
     void reset();				// NB: does not do notification
-    
+
     template <typename Filter> Packet* yank1(Filter);
     template <typename Filter> Packet* yank1_peek(Filter);
     template <typename Filter> int yank(Filter, Vector<Packet *> &);
@@ -86,7 +86,7 @@ class SimpleQueue : public Element, public Storage { public:
     const char *port_count() const		{ return PORTS_1_1X2; }
     const char *processing() const		{ return "h/lh"; }
     void* cast(const char*);
-  
+
     int configure(Vector<String>&, ErrorHandler*);
     int initialize(ErrorHandler*);
     void cleanup(CleanupStage);
@@ -94,12 +94,12 @@ class SimpleQueue : public Element, public Storage { public:
     int live_reconfigure(Vector<String>&, ErrorHandler*);
     void take_state(Element*, ErrorHandler*);
     void add_handlers();
-  
+
     void push(int port, Packet*);
     Packet* pull(int port);
-  
+
   protected:
-  
+
     Packet* volatile * _q;
     volatile int _drops;
     int _highwater_length;
@@ -111,7 +111,7 @@ class SimpleQueue : public Element, public Storage { public:
 
     static String read_handler(Element*, void*);
     static int write_handler(const String&, Element*, void*, ErrorHandler*);
-  
+
 };
 
 

@@ -21,15 +21,15 @@ n is typically 48, or the name of a one-byte annotation.
 =h anno read-only
 Returns ANNO as an integer offset
 =h value read/write
-Returns or sets VALUE 
+Returns or sets VALUE
 
 =a Paint */
 
 class SetAnnoByte : public Element { public:
-  
+
     SetAnnoByte();
     ~SetAnnoByte();
-  
+
     const char *class_name() const		{ return "SetAnnoByte"; }
     const char *port_count() const		{ return PORTS_1_1; }
     const char *processing() const		{ return AGNOSTIC; }
@@ -41,7 +41,7 @@ class SetAnnoByte : public Element { public:
     Packet *simple_action(Packet *);
 
   private:
-  
+
     int _offset;
     unsigned char _value;
 

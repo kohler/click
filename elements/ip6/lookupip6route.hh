@@ -9,7 +9,7 @@ CLICK_DECLS
  * =c
  * LookupIP6Route(DST1 MASK1 GW1 OUT1, DST2 MAS2 GW2 OUT2, ...)
  * =s ip6
- * 
+ *
  * =d
  * Input: IP6 packets (no ether header).
  * Expects a destination IP6 address annotation with each packet.
@@ -31,7 +31,7 @@ CLICK_DECLS
  *          3ffe:1ce1:2:0:200::/80: ::0 2,
  *          0::ffff:0:0/96 ::0 3,
  *          ::0/0 3ffe:1ce1:2::2 1);
-	
+
  *   rt[0] -> ToLinux;
  *   rt[1] -> ... -> ToDevice(eth0);
  *   rt[2] -> ... -> ToDevice(eth1);
@@ -43,11 +43,11 @@ class LookupIP6Route : public IP6RouteTable {
 public:
   LookupIP6Route();
   ~LookupIP6Route();
-  
+
   const char *class_name() const		{ return "LookupIP6Route"; }
   const char *port_count() const		{ return "1/-"; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
@@ -56,7 +56,7 @@ public:
 
   int add_route(IP6Address, IP6Address, IP6Address, int, ErrorHandler *);
   int remove_route(IP6Address, IP6Address, ErrorHandler *);
-  String dump_routes() 				{ return _t.dump(); };
+  String dump_routes()				{ return _t.dump(); };
 
 private:
 
@@ -71,7 +71,7 @@ private:
   IPAddress _last_gw2;
   int _last_output2;
 #endif
-  
+
 };
 
 CLICK_ENDDECLS

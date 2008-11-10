@@ -8,7 +8,7 @@ CLICK_DECLS
  * =c
  * DecIP6HLIM()
  * =s ip6
- * 
+ *
  * =d
  * Expects IP6 packet as input.
  * If the hlim is <= 1 (i.e. has expired),
@@ -16,7 +16,7 @@ CLICK_DECLS
  * output 1).
  * Otherwise it decrements the hlim,
  * and sends the packet to output 0.
- * 
+ *
  * Ordinarily output 1 is connected to an ICMP6 error packet generator.
  *
  * =e
@@ -31,23 +31,23 @@ CLICK_DECLS
 class DecIP6HLIM : public Element {
 
   int _drops;
-  
+
  public:
-  
+
   DecIP6HLIM();
   ~DecIP6HLIM();
-  
+
   const char *class_name() const		{ return "DecIP6HLIM"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
-  
+
   int drops()					{ return _drops; }
-  
+
   void add_handlers();
 
   Packet *simple_action(Packet *);
   void drop_it(Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

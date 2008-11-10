@@ -61,7 +61,7 @@ ProbeRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 		   cpEnd) < 0)
     return -1;
 
-  if (!_rtable || _rtable->cast("AvailableRates") == 0) 
+  if (!_rtable || _rtable->cast("AvailableRates") == 0)
     return errh->error("AvailableRates element is not provided or not a AvailableRates");
 
   return 0;
@@ -71,12 +71,12 @@ void
 ProbeRequester::send_probe_request()
 {
   Vector<int> rates = _rtable->lookup(_eth);
-  int max_len = sizeof (struct click_wifi) + 
+  int max_len = sizeof (struct click_wifi) +
     2 + (_winfo ? _winfo->_ssid.length() : 0) + /* ssid */
     2 + WIFI_RATE_SIZE + /* rates */
     2 + WIFI_RATE_SIZE + /* xrates */
     0;
-    
+
   WritablePacket *p = Packet::make(max_len);
 
   if (p == 0)
@@ -91,14 +91,14 @@ ProbeRequester::send_probe_request()
   memcpy(w->i_addr2, _eth.data(), 6);
   memset(w->i_addr3, 0xff, 6);
 
-  
+
   *(uint16_t *) w->i_dur = 0;
   *(uint16_t *) w->i_seq = 0;
 
   uint8_t *ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
   int actual_length = sizeof (struct click_wifi);
 
-  String ssid = _winfo ? _winfo->_ssid : "";  
+  String ssid = _winfo ? _winfo->_ssid : "";
   /* ssid */
   ptr[0] = WIFI_ELEMID_SSID;
   ptr[1] = ssid.length();
@@ -113,7 +113,7 @@ ProbeRequester::send_probe_request()
   ptr[1] = min(WIFI_RATE_SIZE, rates.size());
   for (int x = 0; x < min (WIFI_RATE_SIZE, rates.size()); x++) {
     ptr[2 + x] = (uint8_t) rates[x];
-    
+
     if (rates[x] == 2) {
       ptr [2 + x] |= WIFI_RATE_BASIC;
     }
@@ -121,7 +121,7 @@ ProbeRequester::send_probe_request()
     if (_winfo && _winfo->_channel > 15 && rates[x] == 12) {
       ptr [2 + x] |= WIFI_RATE_BASIC;
     }
-    
+
   }
   ptr += 2 + min(WIFI_RATE_SIZE, rates.size());
   actual_length += 2 + min(WIFI_RATE_SIZE, rates.size());
@@ -134,7 +134,7 @@ ProbeRequester::send_probe_request()
     ptr[1] = num_xrates;
     for (int x = 0; x < num_xrates; x++) {
       ptr[2 + x] = (uint8_t) rates[x + WIFI_RATE_SIZE];
-      
+
       if (rates[x + WIFI_RATE_SIZE] == 2) {
 	ptr [2 + x] |= WIFI_RATE_BASIC;
       }
@@ -142,11 +142,11 @@ ProbeRequester::send_probe_request()
       if (_winfo && _winfo->_channel > 15 && rates[x] == 12) {
 	ptr [2 + x] |= WIFI_RATE_BASIC;
       }
-      
+
     }
     ptr += 2 + num_xrates;
     actual_length += 2 + num_xrates;
-  }  
+  }
 
   p->take(max_len - actual_length);
   output(0).push(p);
@@ -155,7 +155,7 @@ ProbeRequester::send_probe_request()
 
 enum {H_DEBUG, H_ETH, H_SEND_PROBE};
 
-static String 
+static String
 ProbeRequester_read_param(Element *e, void *thunk)
 {
   ProbeRequester *td = (ProbeRequester *)e;
@@ -168,7 +168,7 @@ ProbeRequester_read_param(Element *e, void *thunk)
     return String();
   }
 }
-static int 
+static int
 ProbeRequester_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -177,14 +177,14 @@ ProbeRequester_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
   }
   case H_ETH: {
     EtherAddress e;
-    if (!cp_ethernet_address(s, &e)) 
+    if (!cp_ethernet_address(s, &e))
       return errh->error("bssid parameter must be ethernet address");
     f->_eth = e;
     break;
@@ -195,7 +195,7 @@ ProbeRequester_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 ProbeRequester::add_handlers()
 {

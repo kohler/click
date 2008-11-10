@@ -128,14 +128,14 @@ write_router_file(RouterT *r, FILE *f, ErrorHandler *errh)
 {
   if (!r)
     return;
-  
+
   String config_str = r->configuration_string();
-  
+
   // create archive if necessary
   const Vector<ArchiveElement> &archive = r->archive();
   if (archive.size()) {
     Vector<ArchiveElement> narchive;
-    
+
     // add configuration
     ArchiveElement config_ae;
     config_ae.name = "config";
@@ -145,7 +145,7 @@ write_router_file(RouterT *r, FILE *f, ErrorHandler *errh)
     config_ae.mode = 0644;
     config_ae.data = config_str;
     narchive.push_back(config_ae);
-    
+
     // add other archive elements
     for (int i = 0; i < archive.size(); i++)
       if (archive[i].live() && archive[i].name != "config")
@@ -154,7 +154,7 @@ write_router_file(RouterT *r, FILE *f, ErrorHandler *errh)
     if (narchive.size() > 1)
       config_str = ArchiveElement::unparse(narchive, errh);
   }
-  
+
   fwrite(config_str.data(), 1, config_str.length(), f);
 }
 

@@ -114,7 +114,7 @@ PermString::initialize(const char* s, int length)
 
     if (length < 0)
 	length = (s ? strlen(s) : 0);
-    
+
     if (length == 0) {
 	_rep = zero_char_doodad.data;
 	return;
@@ -143,7 +143,7 @@ PermString::initialize(const char* s, int length)
     buck->length = length;
     memcpy(buck->data, s, length);
     buck->data[length] = 0;
-    
+
     _rep = buck->data;
 }
 

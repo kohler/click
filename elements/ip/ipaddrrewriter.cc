@@ -166,7 +166,7 @@ IPAddrRewriter::push(int port, Packet *p_in)
 {
     WritablePacket *p = p_in->uniqueify();
     click_ip *iph = p->ip_header();
-  
+
     IPFlowID flow(iph->ip_src, 0, IPAddress(), 0);
     IPAddrMapping *m = static_cast<IPAddrMapping *>(_map.get(flow));
 
@@ -174,7 +174,7 @@ IPAddrRewriter::push(int port, Packet *p_in)
 	IPFlowID rflow = IPFlowID(IPAddress(), 0, iph->ip_dst, 0);
 	m = static_cast<IPAddrMapping *>(_map.get(rflow));
     }
-  
+
     if (!m) {			// create new mapping
 	const InputSpec &is = _input_specs[port];
 	switch (is.kind) {
@@ -199,14 +199,14 @@ IPAddrRewriter::push(int port, Packet *p_in)
 	      m = static_cast<IPAddrMapping *>(is.u.mapper->get_map(this, 0, flow, p));
 	      break;
 	  }
-     
+
 	}
 	if (!m) {
 	    p->kill();
 	    return;
 	}
     }
-  
+
     m->apply(p);
     output(m->output()).push(p);
 }

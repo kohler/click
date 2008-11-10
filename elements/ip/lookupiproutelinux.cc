@@ -150,7 +150,7 @@ LinuxIPLookup::init_routes(ErrorHandler *errh)
       }
     }
   }
-  
+
   fclose(fp);
   return(0);
 }

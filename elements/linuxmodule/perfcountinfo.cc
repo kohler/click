@@ -47,7 +47,7 @@ PerfCountInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 		   "METRIC1", cpkP, cpWord, &metric1,
 		   cpEnd) < 0)
     return -1;
-  
+
   bool ok = true;
   if (metric0) {
     if (PerfCountUser::prepare(metric0, errh, 0) < 0)
@@ -57,7 +57,7 @@ PerfCountInfo::configure(Vector<String> &conf, ErrorHandler *errh)
     if (PerfCountUser::prepare(metric1, errh, 1) < 0)
       ok = false;
   }
-  
+
   return (ok ? 0 : -1);
 }
 

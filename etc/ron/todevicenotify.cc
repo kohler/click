@@ -48,12 +48,12 @@
 #endif
 
 
-ToDeviceNotify::ToDeviceNotify() 
-  : ToDevice() 
+ToDeviceNotify::ToDeviceNotify()
+  : ToDevice()
 {
 }
 
-ToDeviceNotify::~ToDeviceNotify() 
+ToDeviceNotify::~ToDeviceNotify()
 {
   uninitialize();
 }
@@ -64,15 +64,15 @@ ToDeviceNotify::initialize(ErrorHandler *errh)
   int ok, i, ret;
   Vector<Element *> upstream_queues;
   CastElementFilter filter("QueueNotify");
-  
+
   ret = ToDevice::initialize(errh);
   if (ret) return ret;
   _data_ready = false;
-  
+
   ok = router()->upstream_elements(this, 0, &filter, upstream_queues);
-  if (ok < 0) 
+  if (ok < 0)
     return errh->error("could not find upstream notify queues");
-  
+
   for(i=0; i<upstream_queues.size(); i++) {
     ((QueueNotify*) upstream_queues[i])->subscribe_notification(this);
   }
@@ -80,10 +80,10 @@ ToDeviceNotify::initialize(ErrorHandler *errh)
   return 0;
 }
 
-void 
+void
 ToDeviceNotify::notify(int signal)
-{  
-  if (signal == QueueNotify::NODATA) 
+{
+  if (signal == QueueNotify::NODATA)
     _data_ready = false;
   else if (signal == QueueNotify::DATAREADY){
     _data_ready = true;
@@ -97,7 +97,7 @@ ToDeviceNotify::run_task(Task *)
   Packet *p = input(0).pull();
   if (p)
     send_packet(p);
-  
+
   if (_data_ready)
     _task.fast_reschedule();
   return p != 0;

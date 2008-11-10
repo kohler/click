@@ -53,7 +53,7 @@ CLICK_DECLS
  * UNKNOWN; default is ETHER.
  *
  * =back
- * 
+ *
  * =a
  * FromSimDevice.u */
 
@@ -65,15 +65,15 @@ CLICK_DECLS
  */
 
 class ToSimDevice : public Element { public:
-  
+
   ToSimDevice();
   ~ToSimDevice();
-  
+
   const char *class_name() const		{ return "ToSimDevice"; }
   const char *port_count() const		{ return PORTS_1_0; }
   const char *processing() const		{ return AGNOSTIC; }
   //const char *flags() const			{ return "S2"; }
-  
+
   int configure_phase() const { return CONFIGURE_PHASE_DEFAULT; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
@@ -94,9 +94,9 @@ class ToSimDevice : public Element { public:
     Task _task;
     int _encap_type;
     NotifierSignal _signal;
-  
+
     void send_packet(Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

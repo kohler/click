@@ -71,13 +71,13 @@ AggregateIPAddrPair::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _timeout = 0;
     _gc_interval = 20 * 60;
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "TIMEOUT", 0, cpSeconds, &_timeout,
 		     "REAP", 0, cpSeconds, &_gc_interval,
 		     cpEnd) < 0)
 	return -1;
-    
+
     return 0;
 }
 
@@ -87,7 +87,7 @@ AggregateIPAddrPair::initialize(ErrorHandler *)
     _next = 1;
     _active_sec = _gc_sec = 0;
     _timestamp_warning = false;
-    
+
     return 0;
 }
 
@@ -138,7 +138,7 @@ AggregateIPAddrPair::simple_action(Packet *p)
 		finfo->aggregate = 0;
 	    }
 	}
-	
+
 	if (!finfo->aggregate) {
 	    finfo->aggregate = _next;
 	    finfo->reverse = (hosts.a != iph->ip_src.s_addr);
@@ -158,7 +158,7 @@ AggregateIPAddrPair::simple_action(Packet *p)
 	int paint = finfo->reverse ^ (hosts.a != iph->ip_src.s_addr);
 	SET_PAINT_ANNO(p, paint);
 	return p;
-	
+
     } else {
 	checked_output_push(1, p);
 	return 0;

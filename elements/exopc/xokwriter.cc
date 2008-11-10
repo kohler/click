@@ -62,9 +62,9 @@ xokWriter::push(int port, Packet *p)
 
   int r = ae_eth_send(p->data(), p->length(), cardno);
   if (r < 0)
-    fprintf(stderr, "xokWriter: write to card %d failed, packet dropped\n", 
+    fprintf(stderr, "xokWriter: write to card %d failed, packet dropped\n",
 	    cardno);
-  
+
   p->kill();
 }
 

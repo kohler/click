@@ -41,7 +41,7 @@ class LinkTracker : public Element {
 
   struct bcast_t {
     // broadcast delivery rate
-    double r_top; 
+    double r_top;
     double r_bot;
     Timestamp last_bcast;
     Timestamp last_update;
@@ -56,14 +56,14 @@ public:
   void add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num_expected, Timestamp last_bcast);
   bool get_bcast_stat(IPAddress dst, double &delivery_rate, Timestamp &last_update);
   void remove_all_stats(IPAddress dst);
-  
+
   LinkTracker();
   ~LinkTracker();
-  
+
   const char *class_name() const		{ return "LinkTracker"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return "a/a"; }
-  
+
   void add_handlers();
 
   int configure(Vector<String> &, ErrorHandler *);

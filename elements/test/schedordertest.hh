@@ -78,7 +78,7 @@ class SchedOrderTest : public Element { public:
     bool _stop;
 
     static String read_handler(Element*, void*);
-    
+
 };
 
 CLICK_ENDDECLS

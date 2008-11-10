@@ -173,7 +173,7 @@ CheckIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
   //  click_chatter("bad: %s", IPAddress(_bad_src.vec[i]).s().c_str());
   //for (int i = 0; i < _good_dst.n; i++)
   //  click_chatter("good: %s", IPAddress(_good_dst.vec[i]).s().c_str());
-  
+
   return 0;
 }
 
@@ -186,7 +186,7 @@ CheckIPHeader::drop(Reason reason, Packet *p)
 
     if (_reason_drops)
 	_reason_drops[reason]++;
-  
+
     if (noutputs() == 2)
 	output(1).push(p);
     else
@@ -202,17 +202,17 @@ CheckIPHeader::simple_action(Packet *p)
   unsigned plen = p->length() - _offset;
   unsigned hlen, len;
 
-  // cast to int so very large plen is interpreted as negative 
+  // cast to int so very large plen is interpreted as negative
   if ((int)plen < (int)sizeof(click_ip))
     return drop(MINISCULE_PACKET, p);
 
   if (ip->ip_v != 4)
     return drop(BAD_VERSION, p);
-  
+
   hlen = ip->ip_hl << 2;
   if (hlen < sizeof(click_ip))
     return drop(BAD_HLEN, p);
-  
+
   len = ntohs(ip->ip_len);
   if (len > plen || len < hlen)
     return drop(BAD_IP_LEN, p);
@@ -246,7 +246,7 @@ CheckIPHeader::simple_action(Packet *p)
    * RFC1812 4.2.3.1: discard illegal destinations.
    * We now do this in the IP routing table.
    */
-  
+
   p->set_ip_header(ip, hlen);
 
   // shorten packet according to IP length field -- 7/28/2000
@@ -258,7 +258,7 @@ CheckIPHeader::simple_action(Packet *p)
   // always set destination IP address annotation; linuxmodule problem
   // reported by Parveen Kumar Patel at Utah -- 4/3/2002
   p->set_dst_ip_anno(ip->ip_dst);
-  
+
   return(p);
 }
 

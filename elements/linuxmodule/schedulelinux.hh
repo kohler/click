@@ -16,10 +16,10 @@
  * =a ScheduleInfo */
 
 class ScheduleLinux : public Element { public:
-  
+
   ScheduleLinux();
   ~ScheduleLinux();
-  
+
   const char *class_name() const		{ return "ScheduleLinux"; }
 
   int initialize(ErrorHandler *);
@@ -30,7 +30,7 @@ class ScheduleLinux : public Element { public:
  private:
 
   Task _task;
-  
+
 };
 
 #endif

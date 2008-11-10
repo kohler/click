@@ -27,9 +27,9 @@ public:
   static const int PURGE     = 1;
   static const int NO_SYNACK = 2;
 
-  PolicyProbe(RONRouteModular *parent, 
+  PolicyProbe(RONRouteModular *parent,
 	      long double delays, unsigned int numprobes, unsigned int numrandom,
-	      long double link_down_penalty, long double link_down_timeout, 
+	      long double link_down_penalty, long double link_down_timeout,
 	      long double history_timeout, int recycle);
   ~PolicyProbe();
   void initialize(int numpaths);
@@ -53,16 +53,16 @@ public:
   static long double gettime() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    return tv.tv_sec + (long double)((long double) tv.tv_usec 
+    return tv.tv_sec + (long double)((long double) tv.tv_usec
 				      / (long double)1000000);
   }
-  
+
 protected:
   class FlowTable;
-  class FlowTableEntry;  
+  class FlowTableEntry;
   class TimerQueue;
   class RTTHistory;
-  
+
   FlowTable *_flowtable;
   TimerQueue *_timerqueue;
   RTTHistory *_history;
@@ -76,7 +76,7 @@ protected:
   void send_probes(FlowTableEntry *flowentry, int numprobes);
 
   static long double tolongdouble(struct timeval *tv) {
-    return tv->tv_sec + (long double)((long double) tv->tv_usec 
+    return tv->tv_sec + (long double)((long double) tv->tv_usec
 				      / (long double)1000000);
   }
 };
@@ -99,7 +99,7 @@ public:
     if (debug){
       click_chatter("Punting");
       for(i=0; i<_history[port].size(); i++) {
-	fprintf(stderr, "before: %.4Lf %.4Lf\n", 
+	fprintf(stderr, "before: %.4Lf %.4Lf\n",
 		_history[port][i].timestamp, _history[port][i].rtt );
       }
     }
@@ -112,7 +112,7 @@ public:
 
     if (debug) {
       for(i=0; i<_history[port].size(); i++) {
-	fprintf(stderr, "after : %.4Lf %.4Lf\n", 
+	fprintf(stderr, "after : %.4Lf %.4Lf\n",
 		_history[port][i].timestamp, _history[port][i].rtt );
       }
     }
@@ -125,20 +125,20 @@ public:
     _history[port].push_back(e);
   }
   long double get_avg_rtt(int port) {
-    int i; 
+    int i;
     long double sum=0;
     punt_old(port);
     if (!_history[port].size())  return 0;
 
     for(i=0; i<_history[port].size(); i++)
       sum += _history[port][i].rtt;
-    return sum / _history[port].size(); 
+    return sum / _history[port].size();
   }
 };
 
 
 /*
-  Need a table mapping 
+  Need a table mapping
   Flow -> Time syn as sent
        -> Timeout callback pointer
        -> list of ports which I probed so far.
@@ -156,8 +156,8 @@ public:
   Packet *syn_pkt;
   unsigned long syn_seq;
   FlowTableEntry *next;
-  
-  
+
+
   FlowTableEntry() {
     syn_pkt = NULL;
     _port = 0;
@@ -175,7 +175,7 @@ public:
 		  IPAddress d, unsigned short dp) {
     src = s; sport = sp;
     dst = d; dport = dp;
-  } 
+  }
 
   bool match(IPAddress s, unsigned short sp,
 	     IPAddress d, unsigned short dp) {
@@ -222,7 +222,7 @@ public:
       }
     }
     return 0;
-    
+
   }
   long double get_rtt(int port) {
     int i;
@@ -258,14 +258,14 @@ protected:
 public:
   FlowTable(){ _head = NULL;}
 
-  PolicyProbe::FlowTableEntry * 
+  PolicyProbe::FlowTableEntry *
   insert(IPAddress src, unsigned short sport,
 	 IPAddress dst, unsigned short dport, unsigned long syn_seq);
-  
-  PolicyProbe::FlowTableEntry * 
+
+  PolicyProbe::FlowTableEntry *
   lookup(IPAddress src, unsigned short sport,
 	 IPAddress dst, unsigned short dport);
-  
+
   void remove(IPAddress src, unsigned short sport,
 	      IPAddress dst, unsigned short dport);
   void remove(FlowTableEntry *entry);
@@ -311,11 +311,11 @@ public:
     diff =  _head->time - gettime();
     if (diff < 0) diff = 0;
     dmsec = (uint32_t) (1000*( diff ));
-    
+
     //fprintf(stderr, "Scheduling after %ums (%Lf, %Lf)\n", dmsec, _head->time, gettime());
     _timer->schedule_after_ms( dmsec );
     _scheduled = 1;
-    
+
   }
   void print() {
     struct TimerEntry *p = _head;
@@ -392,5 +392,5 @@ public:
   }
 };
 
-  
+
 

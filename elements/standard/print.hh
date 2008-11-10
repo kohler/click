@@ -65,19 +65,19 @@ class Print : public Element { public:
 
     Print();
     ~Print();
-  
+
     const char *class_name() const		{ return "Print"; }
     const char *port_count() const		{ return PORTS_1_1; }
     const char *processing() const		{ return AGNOSTIC; }
-  
+
     int configure(Vector<String> &, ErrorHandler *);
     bool can_live_reconfigure() const		{ return true; }
     void add_handlers();
 
     Packet *simple_action(Packet *);
-  
+
  private:
-  
+
     String _label;
     int _bytes;		// How many bytes of a packet to print
     bool _active;
@@ -87,7 +87,7 @@ class Print : public Element { public:
 #endif
     bool _print_anno;
     uint8_t _contents;
-    
+
 };
 
 CLICK_ENDDECLS

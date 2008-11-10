@@ -51,15 +51,15 @@ AdjacencyMatrix::init(RouterT *r)
 {
   _router = r;
   int n = _n = r->nelements();
-  
+
   _cap = 0;
   for (int i = 1; i < n; i *= 2)
     _cap++;
-  
+
   int cap = _cap;
   delete[] _x;
   _x = new unsigned[1<<(2*cap)];
-  
+
   for (int i = 0; i < (1<<(2*cap)); i++)
     _x[i] = 0;
 
@@ -100,7 +100,7 @@ AdjacencyMatrix::update(const Vector<int> &changed_eindexes)
   }
 
   _n = r->nelements();
-  
+
   // clear out columns and rows
   _default_match.resize(_n, -2);
   Vector<int> updated_eindexes(_n, 0);
@@ -121,7 +121,7 @@ AdjacencyMatrix::update(const Vector<int> &changed_eindexes)
       _default_match[j] = -1;
     } else
       _default_match[j] = -2;
-    
+
     updated_eindexes[j] = 1;
   }
 
@@ -191,7 +191,7 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
   Vector<int> matchv(_default_match);
   int match_eindex;
   int direction;
-  
+
   if (matchv_e.size() == 0) {
     match_eindex = 0;
     direction = 1;
@@ -202,16 +202,16 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
     match_eindex = pat_n - 1;
     direction = -1;
   }
-  
+
   int *match = &matchv[0];	// avoid bounds checks
   if (!_output_0_of.size())
     init_pattern();
   int *output_0_of = &_output_0_of[0];
-  
+
   //print();
   //fprintf(stderr, "input:\n");
   //input->print();
-  
+
   while (match_eindex >= 0 && match_eindex < pat_n) {
     int rover = match[match_eindex] + 1;
     int max_rover;
@@ -260,10 +260,10 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
 	}
       }
       break;
-      
+
      failure: rover++;
     }
-    
+
     if (rover < max_rover) {
       match[match_eindex] = rover;
       match_eindex++;
@@ -280,7 +280,7 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
   for (int i = 0; i < match_eindex; i++)
     if (match[i] >= 0)
       matchv_e[i] = input_r->element(match[i]);
-  
+
   //for (int i = 0; i < pat_n; i++) fprintf(stderr,"%d ", match[i]);/* >= 0 ? input->_crap->ename(match[i]).c_str() : "<crap>");*/fputs("\n",stderr);
   return (match_eindex >= 0 ? true : false);
 }

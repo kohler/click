@@ -51,7 +51,7 @@ class QueueNotify : public Queue { public:
 
 protected:
   Vector<NotifiedElement*> _subscribers;
-  
+
 };
 
 

@@ -34,7 +34,7 @@ write_checked_body(const Classifier_Program &c, StringAccum &source)
 
   for (int i = 0; i < c.program.size(); i++) {
     const Classifier_Insn &e = c.program[i];
-    
+
     int want_l = e.offset + 4;
     if (!e.mask.c[3]) {
       want_l--;
@@ -44,13 +44,13 @@ write_checked_body(const Classifier_Program &c, StringAccum &source)
 	  want_l--;
       }
     }
-    
+
     bool switched = (e.yes == i + 1);
     int branch1 = (switched ? e.no : e.yes);
     int branch2 = (switched ? e.yes : e.no);
-    
+
     source << " lstep_" << i << ":\n";
-    
+
     int offset;
     String datavar;
     String length_check;
@@ -63,7 +63,7 @@ write_checked_body(const Classifier_Program &c, StringAccum &source)
       datavar = "ip_data";
       length_check = "false";
     }
-    
+
     if (want_l >= c.safe_length) {
       branch2 = e.no;
       goto output_branch2;
@@ -83,7 +83,7 @@ write_checked_body(const Classifier_Program &c, StringAccum &source)
       source << " {\n    output(" << -branch1 << ").push(p);\n    return;\n  }\n";
     else
       source << "\n    goto lstep_" << branch1 << ";\n";
-    
+
    output_branch2:
     if (branch2 <= -c.noutputs)
       source << "  p->kill();\n  return;\n";
@@ -102,7 +102,7 @@ write_unchecked_body(const Classifier_Program &c, StringAccum &source)
 
   for (int i = 0; i < c.program.size(); i++) {
     const Classifier_Insn &e = c.program[i];
-    
+
     bool switched = (e.yes == i + 1);
     int branch1 = (switched ? e.no : e.yes);
     int branch2 = (switched ? e.yes : e.no);
@@ -114,7 +114,7 @@ write_unchecked_body(const Classifier_Program &c, StringAccum &source)
       offset = (e.offset - IPCLASSIFIER_TRANSP_FAKE_OFFSET)/4, datavar = "transp_data";
     else
       offset = e.offset/4, datavar = "ip_data";
-    
+
     if (switched)
       source << "  if ((" << datavar << "[" << offset << "] & " << e.mask.u
 	     << "U) != " << e.value.u << "U)";

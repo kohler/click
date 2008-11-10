@@ -86,7 +86,7 @@ CheckARPHeader::simple_action(Packet *p)
   unsigned plen = p->length() - _offset;
   unsigned hlen;
 
-  // cast to int so very large plen is interpreted as negative 
+  // cast to int so very large plen is interpreted as negative
   if ((int) plen < (int) sizeof(click_arp))
       return drop(MINISCULE_PACKET, p);
 
@@ -98,7 +98,7 @@ CheckARPHeader::simple_action(Packet *p)
   else if ((ap->ar_pro == htons(ETHERTYPE_IP) && ap->ar_pln != 4)
 	   || (ap->ar_pro == htons(ETHERTYPE_IP6) && ap->ar_pln != 16))
       return drop(BAD_PRO, p);
-  
+
   p->set_network_header((const unsigned char *) ap, hlen);
   return p;
 }
@@ -111,11 +111,11 @@ CheckARPHeader::read_handler(Element *e, void *)
   for (int i = 0; i < NREASONS; i++)
       sa << c->_reason_drops[i] << '\t' << reason_texts[i] << '\n';
   return sa.take_string();
-}   
+}
 
 void
 CheckARPHeader::add_handlers()
-{ 
+{
     add_data_handlers("drops", Handler::OP_READ, &_drops);
     if (_reason_drops)
 	add_read_handler("drop_details", read_handler, (void *)1);

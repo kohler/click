@@ -63,21 +63,21 @@ Returns or sets the INTERVAL parameter.
 =a InfiniteSource */
 
 class TimedSource : public Element { public:
-  
+
   TimedSource();
   ~TimedSource();
-  
+
   const char *class_name() const		{ return "TimedSource"; }
   const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
   void add_handlers();
-  
+
   void run_timer(Timer *);
-  
+
  private:
 
     Packet *_packet;

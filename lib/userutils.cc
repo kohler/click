@@ -182,7 +182,7 @@ click_strcmp(const String &a, const String &b)
     const char *ad = a.begin(), *ae = a.end();
     const char *bd = b.begin(), *be = b.end();
     int raw_compare = 0;
-    
+
     while (ad < ae && bd < be) {
 	if (isdigit((unsigned char) *ad) && isdigit((unsigned char) *bd)) {
 	    // compare the two numbers, but don't treat them as numbers in
@@ -287,7 +287,7 @@ shell_command_output_string(String cmdline, const String &input, ErrorHandler *e
   fwrite(input.data(), 1, input.length(), f);
   fflush(f);
   rewind(f);
-  
+
   String new_cmdline = cmdline + " 0<&" + String(fileno(f));
   FILE *p = popen(new_cmdline.c_str(), "r");
   if (!p)
@@ -349,7 +349,7 @@ file_string(String filename, ErrorHandler *errh)
     s = file_string(f, &perrh);
   } else
     s = file_string(f);
-  
+
   if (f != stdin)
     fclose(f);
   return s;
@@ -376,7 +376,7 @@ unique_tmpnam(const String &pattern, ErrorHandler *errh)
     right = pattern.substring(star + 1, pattern.end());
   } else
     left = "/" + pattern;
-  
+
   int uniqueifier = getpid();
   while (1) {
     String name = tmpdir + left + String(uniqueifier) + right;
@@ -497,16 +497,16 @@ path_find_file_2(const String &filename, const String &path,
     const char *begin = path.begin();
     const char *end = path.end();
     int before_size = results.size();
-    
+
     do {
 	String dir = path.substring(begin, find(begin, end, ':'));
 	begin = dir.end() + 1;
-    
+
 	if (!dir && default_path) {
 	    // look in default path
 	    if (path_find_file_2(filename, default_path, "", 0, results, exit_early) && exit_early)
 		return true;
-      
+
 	} else if (dir) {
 	    if (dir.back() != '/')
 		dir += "/";
@@ -554,7 +554,7 @@ clickpath_find_file(const String &filename, const char *subdir,
 	&& (strcmp(subdir, "bin") == 0 || strcmp(subdir, "sbin") == 0))
 	if (const char *path_variable = getenv("PATH"))
 	    path_find_file_2(filename, path_variable, "", 0, fns, true);
-  
+
     if (!fns.size() && errh) {
 	if (default_path) {
 	    // CLICKPATH set, left no opportunity to use default path
@@ -567,7 +567,7 @@ clickpath_find_file(const String &filename, const char *subdir,
 	    errh->fatal("cannot find file '%s'\nin CLICKPATH or '%s'", filename.c_str(), was_default_path.c_str());
 	}
     }
-    
+
     return fns.size() ? fns[0] : String();
 }
 
@@ -612,7 +612,7 @@ click_mktmpdir(ErrorHandler *errh)
 #endif
     else
 	tmpdir = "/tmp";
-  
+
     int uniqueifier = getpid();
     while (1) {
 	String tmpsubdir = tmpdir + "/clicktmp" + String(uniqueifier);
@@ -644,7 +644,7 @@ parse_tabbed_lines(const String &str, Vector<String> *fields1, ...)
 
     const char *begin = str.begin();
     const char *end = str.end();
-  
+
     while (begin < end) {
 	// read a line
 	String line = str.substring(begin, find(begin, end, '\n'));

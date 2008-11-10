@@ -41,20 +41,20 @@ reported.
 
               ICSI BGP dump, 150700 routes, 2 next-hops
 
-         Element      | cycles  | lookups | setup | lookup 
+         Element      | cycles  | lookups | setup | lookup
                       | /lookup | /sec    | time  | tbl. size
      -----------------+---------+---------+-------+----------------
-     RadixIPLookup    |   1025  |  2.73M  | 0.59s |  5.8 MB   
-     DirectIPsecLookup   |    432  |  6.48M  | 0.74s | 33   MB   
+     RadixIPLookup    |   1025  |  2.73M  | 0.59s |  5.8 MB
+     DirectIPsecLookup   |    432  |  6.48M  | 0.74s | 33   MB
      RangeIPsecLookup    |    279  | 10.0 M  | 0.83s |  0.21MB (+33MB)
        " (warm cache) |     44  | 63.6 M  |   "   |    "       "
 
            routeviews.org dump, 167000 routes, 52 nexthops
 
-         Element      | cycles  | lookups | setup | lookup 
+         Element      | cycles  | lookups | setup | lookup
                       | /lookup | /sec    | time  | tbl. size
      -----------------+---------+---------+-------+----------------
-     RadixIPLookup    |   1095  |  2.55M  | 0.67s |  6.6 MB   
+     RadixIPLookup    |   1095  |  2.55M  | 0.67s |  6.6 MB
      DirectIPsecLookup   |    434  |  6.45M  | 0.77s | 33   MB
      RangeIPsecLookup    |    508  |  5.51M  | 0.88s |  0.51MB (+33MB)
        " (warm cache) |     61  | 45.9 M  |   "   |    "       "
@@ -64,10 +64,10 @@ for implementing large tables.  We also provide the LinearIPLookup,
 StaticIPLookup, and SortedIPLookup elements; they are simple, but their O(N)
 lookup speed is orders of magnitude slower.  RadixIPLookup or DirectIPsecLookup
 should be preferred for almost all purposes.
- 
+
            1500-entry fraction of the ICSI BGP dump
-   
-         Method     | cycles  | lookups | setup | lookup 
+
+         Method     | cycles  | lookups | setup | lookup
                     | /lookup | /sec    | time  | tbl. size
      ---------------+---------+---------+-------+----------
      LinearIPLookup |  12000  |  233K   |  10s  |   29 KB
@@ -161,7 +161,7 @@ the B<dump_routes> function. Normally hooked up to the `C<table>' handler.
 
 =head 1 IPSEC ESP SUPPORT
 
- Ports 0 and 1 must be connected to the proper IPSEC modules that handle incoming tunneled traffic and outgoing 
+ Ports 0 and 1 must be connected to the proper IPSEC modules that handle incoming tunneled traffic and outgoing
 tunneled traffic accordingly. All the routing table entries that refer to an IPSEC tunnel must use these ports respectively. Routing table entries that refer to an IPSEC ESP tunnel must have the following entries:
 |SPI| |128-BIT ENCRYPTION_KEY| |128-BIT AUTHENTICATION_KEY| |REPLAY PROTECTION COUNTER| |OUT-OF-ORDER REPLAY WINDOW|
 The encryption and authentication keys will generally be specified using
@@ -183,7 +183,7 @@ struct IPsecRoute {
     SADataTuple * sa_data;
 
     IPsecRoute()			: port(-1) { }
-    
+
     inline bool real() const	{ return port > (int32_t) -0x80000000; }
     inline void kill()		{ addr = 0; mask = 0xFFFFFFFFU; port = -0x80000000; }
     inline bool contains(IPAddress a) const;
@@ -219,11 +219,11 @@ class IPsecRouteTable : public Element { public:
     static String table_handler(Element*, void*);
     /*IPSEC extension: The security association database entry*/
     SATable _sa_table;
- 
+
   private:
     enum { CMD_ADD, CMD_SET, CMD_REMOVE };
     int run_command(int command, const String &, Vector<IPsecRoute>* old_routes, ErrorHandler*);
-    
+
 };
 
 inline StringAccum&

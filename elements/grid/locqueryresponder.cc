@@ -35,7 +35,7 @@ LocQueryResponder::LocQueryResponder()
 }
 
 int
-LocQueryResponder::initialize(ErrorHandler *) 
+LocQueryResponder::initialize(ErrorHandler *)
 {
   _expire_timer.initialize(this);
   _expire_timer.schedule_after_msec(EXPIRE_TIMEOUT_MS);
@@ -58,20 +58,20 @@ LocQueryResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 
 void
 LocQueryResponder::expire_hook(Timer *, void *thunk)
-{ 
+{
   LocQueryResponder *resp = (LocQueryResponder *)thunk;
   unsigned int jiff = click_jiffies();
 
   // flush old ``last query heard''
   typedef seq_map::iterator smi_t;
   Vector<IPAddress> old_seqs;
-  for (smi_t i = resp->_query_seqs.begin(); i.live(); i++) 
+  for (smi_t i = resp->_query_seqs.begin(); i.live(); i++)
     if (jiff - i.value().last_jiffies > resp->_timeout_jiffies)
       old_seqs.push_back(i.key());
 
-  for (int i = 0; i < old_seqs.size(); i++) 
+  for (int i = 0; i < old_seqs.size(); i++)
     resp->_query_seqs.remove(old_seqs[i]);
-  
+
   resp->_expire_timer.schedule_after_msec(EXPIRE_TIMEOUT_MS);
 }
 
@@ -82,7 +82,7 @@ LocQueryResponder::simple_action(Packet *p)
   click_ether *e = (click_ether *) p->data();
   grid_hdr *gh = (grid_hdr *) (e + 1);
   grid_loc_query *lq = (grid_loc_query *) (gh + 1);
-  
+
   if (gh->type != grid_hdr::GRID_LOC_QUERY) {
     click_chatter("LocQueryResponder %s: received unexpected Grid packet type %s; is the configuration wrong?",
 		  name().c_str(), grid_hdr::type_string(gh->type).c_str());
@@ -114,7 +114,7 @@ LocQueryResponder::simple_action(Packet *p)
   if (q == 0) {
     click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
-  } 
+  }
   ASSERT_4ALIGNED(q->data());
   q->pull(2);
 

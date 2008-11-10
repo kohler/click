@@ -61,7 +61,7 @@ FromNetFlowSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _active = _zero = true;
     _multipacket = _timing = false;
     String link = "input";
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "FILENAME", cpkP+cpkM, cpFilename, &_ff.filename(),
 		     "STOP", 0, cpBool, &stop,
@@ -98,7 +98,7 @@ FromNetFlowSummaryDump::initialize(ErrorHandler *errh)
     String line;
     if (_ff.peek_line(line, errh, true) < 0)
 	return -1;
-    
+
     _format_complaint = false;
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
@@ -132,11 +132,11 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
     iph->ip_v = 4;
     iph->ip_hl = sizeof(click_ip) >> 2;
     iph->ip_off = 0;
-    
+
     String line;
     String words[15];
     uint32_t j;
-    
+
     while (1) {
 
 	if (_ff.read_line(line, errh, true) <= 0) {
@@ -220,7 +220,7 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 
 	if (ok < 10)
 	    break;
-	
+
 	// set TCP offset to a reasonable value; possibly reduce packet length
 	int ip_len = (byte_count <= 65535 ? byte_count : 65535);
 	iph->ip_len = htons(ip_len);
@@ -267,7 +267,7 @@ Packet *
 FromNetFlowSummaryDump::handle_multipacket(Packet *p)
 {
     assert(!_work_packet || _work_packet == p);
-    
+
     if (!p || !EXTRA_PACKETS_ANNO(p)) {
 	_work_packet = 0;
 	return p;
@@ -304,7 +304,7 @@ FromNetFlowSummaryDump::handle_multipacket(Packet *p)
 	SET_EXTRA_LENGTH_ANNO(p, _multipacket_length - p->length());
     }
 
-    // reduce weight of _work_packet 
+    // reduce weight of _work_packet
     SET_EXTRA_PACKETS_ANNO(_work_packet, count - 2);
     SET_EXTRA_LENGTH_ANNO(_work_packet, EXTRA_LENGTH_ANNO(_work_packet) - _multipacket_length);
     if (count == 2) {

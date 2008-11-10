@@ -48,10 +48,10 @@ private:
   String	event_;
   String	additional_info_;
   SimPacketAnalyzer *_packetAnalyzer;
-  String 	_encap;
+  String	_encap;
   int		_offset;
   bool		_checkPaint;
-  
+
 };
 
 CLICK_ENDDECLS

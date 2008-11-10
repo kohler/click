@@ -11,7 +11,7 @@ CLICK_DECLS
  * =s shaping
  * splits flow of packets at specified rate
  * =d
- * 
+ *
  * RatedSplitter has two output ports. All incoming packets up to a maximum of
  * RATE packets per second are emitted on output port 0. Any remaining packets
  * are emitted on output port 1. Unlike Meter, RATE packets per second are
@@ -39,7 +39,7 @@ CLICK_DECLS
  * =a BandwidthRatedSplitter, ProbSplitter, Meter, Shaper, RatedUnqueue, Tee */
 
 class RatedSplitter : public Element { public:
-  
+
     RatedSplitter();
     ~RatedSplitter();
 
@@ -47,11 +47,11 @@ class RatedSplitter : public Element { public:
     const char *port_count() const	{ return "1/2"; }
     const char *processing() const	{ return PUSH; }
     bool is_bandwidth() const		{ return class_name()[0] == 'B'; }
- 
+
     int configure(Vector<String> &, ErrorHandler *);
     bool can_live_reconfigure() const	{ return true; }
     void add_handlers();
-  
+
     void push(int port, Packet *);
 
  protected:

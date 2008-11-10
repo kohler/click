@@ -84,7 +84,7 @@ AthdescDecap::simple_action(Packet *p)
 
 enum {H_DEBUG};
 
-static String 
+static String
 AthdescDecap_read_param(Element *e, void *thunk)
 {
   AthdescDecap *td = (AthdescDecap *)e;
@@ -95,7 +95,7 @@ AthdescDecap_read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 AthdescDecap_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -104,7 +104,7 @@ AthdescDecap_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -112,7 +112,7 @@ AthdescDecap_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 AthdescDecap::add_handlers()
 {

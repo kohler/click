@@ -25,20 +25,20 @@ Print information accumulated for each source
 =h reset
 Clear all information for each source
 
-=a 
+=a
 
 */
 
 
 class EtherCount : public Element { public:
-  
+
   EtherCount();
   ~EtherCount();
-  
+
   const char *class_name() const		{ return "EtherCount"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   bool can_live_reconfigure() const		{ return true; }
 
   Packet *simple_action(Packet *);
@@ -49,12 +49,12 @@ class EtherCount : public Element { public:
   public:
     EtherAddress _eth;
     int count;
-    
-    DstInfo() { 
+
+    DstInfo() {
       memset(this, 0, sizeof(*this));
     }
 
-    DstInfo(EtherAddress eth) { 
+    DstInfo(EtherAddress eth) {
       memset(this, 0, sizeof(*this));
       _eth = eth;
     }

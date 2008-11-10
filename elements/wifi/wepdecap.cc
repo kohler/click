@@ -127,12 +127,12 @@ WepDecap::simple_action(Packet *p_in)
   /* decrypt ICV and compare to CRC */
   icv = payload + payload_len;
   rc4_crypt_skip(&_rc4, icv, crcbuf, WIFI_WEP_CRCLEN, 0);
-  
+
   if (crc != ~le32_to_cpu(*(u_int32_t *)crcbuf)) {
     click_chatter("crc failed keyid %d iv %d %x wanted %x %x\n",
 		  keyid,
 		  iv,
-		  crc, 
+		  crc,
 		  ~le32_to_cpu(*(u_int32_t *)crcbuf),
 		  *(u_int32_t *)crcbuf);
     /* packet failed decrypt */
@@ -152,7 +152,7 @@ WepDecap::simple_action(Packet *p_in)
 
 enum {H_DEBUG, H_KEY, H_KEYID};
 
-static String 
+static String
 read_param(Element *e, void *thunk)
 {
   WepDecap *td = (WepDecap *)e;
@@ -164,7 +164,7 @@ read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -173,21 +173,21 @@ write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
   }
   case H_KEYID: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("keyid parameter must be unsigned");
     f->_keyid = m;
     break;
   }
   case H_KEY: {
     String m;
-    if (!cp_string(s, &m)) 
+    if (!cp_string(s, &m))
       return errh->error("key parameter must be unsigned");
     f->_key = m;
     break;
@@ -195,7 +195,7 @@ write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 WepDecap::add_handlers()
 {

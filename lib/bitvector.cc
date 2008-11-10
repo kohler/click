@@ -179,10 +179,10 @@ Bitvector::offset_or(const Bitvector &o, int offset)
 	my_pos++;
 	if (my_pos > my_max_word)
 	    break;
-    
+
 	if (bits_1st)
 	    data[my_pos] |= (val >> (32 - bits_1st));
-    
+
 	o_pos++;
 	if (o_pos > o_max_word)
 	    break;

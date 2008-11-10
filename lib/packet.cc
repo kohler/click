@@ -88,7 +88,7 @@ CLICK_DECLS
  *                   |                                |
  *           push()  |  pull()                take()  |  put()
  *          <======= | =======>              <======= | =======>
- *                   v                                v                 
+ *                   v                                v
  *       +===========+================================+===========+
  *       |XXXXXXXXXXX|        PACKET CONTENTS         |XXXXXXXXXXX|
  *       +===========+================================+===========+
@@ -616,7 +616,7 @@ Packet::shift_data(int offset, bool free_on_failure)
     if (has_transport_header() && transport_header() >= buffer()
 	&& transport_header() <= end_buffer() && transport_header() < dp)
 	dp = network_header();
-    
+
     if (!shared()
 	&& (offset < 0 ? (dp - buffer()) >= (ptrdiff_t)(-offset)
 	    : tailroom() >= (uint32_t)offset)) {

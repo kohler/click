@@ -12,7 +12,7 @@ CLICK_DECLS
  * =processing
  * Push
  * =d
- * 
+ *
  * BandwidthRatedSplitter has two output ports.  All incoming packets up to a
  * maximum of RATE are emitted on output port 0.  Any remaining packets are
  * emitted on output port 1.  RATE is a bandwidth, such as "384 kbps".
@@ -25,12 +25,12 @@ CLICK_DECLS
  * =a RatedSplitter, BandwidthMeter, BandwidthShaper, BandwidthRatedUnqueue */
 
 class BandwidthRatedSplitter : public RatedSplitter { public:
-  
+
     BandwidthRatedSplitter();
     ~BandwidthRatedSplitter();
 
     const char *class_name() const	{ return "BandwidthRatedSplitter"; }
-  
+
     void push(int port, Packet *);
 
 };

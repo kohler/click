@@ -39,13 +39,13 @@ AggregateLast::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
     _stop_after_clear = false;
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "NOTIFIER", 0, cpElement, &e,
 		     "STOP_AFTER_CLEAR", 0, cpBool, &_stop_after_clear,
 		     cpEnd) < 0)
 	return -1;
-    
+
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
 	return errh->error("%s is not an AggregateNotifier", e->name().c_str());
 
@@ -116,9 +116,9 @@ AggregateLast::push(int, Packet *p)
 	_clear_task.unschedule();
 	run_task(0);
     }
-    
+
     uint32_t agg = AGGREGATE_ANNO(p);
-    
+
     if (Packet **r = row(agg)) {
 	static_assert(ROW_SHIFT == 0);
 	r += (agg & ROW_MASK);
@@ -142,7 +142,7 @@ AggregateLast::aggregate_notify(uint32_t agg, AggregateEvent event, const Packet
     if (!r)			// out of memory
 	return;
     r += (agg & ROW_MASK);
-    
+
     if (event == NEW_AGG) {
 	if ((++_counts[plane][col]) == 1)
 	    _counts[plane][NCOL]++;
@@ -171,7 +171,7 @@ AggregateLast::run_task(Task *)
     if (!_needs_clear)
 	return false;
     _needs_clear = 0;
-    
+
     // may take a long time!
     for (int i = 0; i < NPLANE; i++)
 	if (Packet ***p = _packets[i]) {
@@ -186,7 +186,7 @@ AggregateLast::run_task(Task *)
 	    if (_agg_notifier)
 		delete[] _counts[i];
 	}
-    
+
     memset(_packets, 0, sizeof(_packets));
     memset(_counts, 0, sizeof(_counts));
 

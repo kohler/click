@@ -113,13 +113,13 @@ IPClassifier, Classifier, CheckIPHeader, MarkIPHeader, CheckIPHeader2,
 AddressInfo, tcpdump(1) */
 
 class IPFilter : public Classifier { public:
-  
+
   IPFilter();
   ~IPFilter();
 
   static void static_initialize();
   static void static_cleanup();
-  
+
   const char *class_name() const		{ return "IPFilter"; }
   const char *port_count() const		{ return "1/-"; }
   const char *processing() const		{ return PUSH; }
@@ -138,13 +138,13 @@ class IPFilter : public Classifier { public:
     TYPE_TYPE	= 1,
     TYPE_SYNTAX	= 2,
     TYPE_INT	= 3,
-    
+
     TYPE_HOST	= 10,		// expression types
     TYPE_PROTO	= 11,
     TYPE_IPFRAG	= 12,
     TYPE_PORT	= 13,
     TYPE_TCPOPT = 14,
-    
+
     TYPE_NET	= 30,		// shorthands
     TYPE_IPUNFRAG = 31,
     TYPE_IPECT	= 32,
@@ -197,7 +197,7 @@ class IPFilter : public Classifier { public:
     };
 
   struct Primitive {
-    
+
     int _type;
     int _data;
 
@@ -206,20 +206,20 @@ class IPFilter : public Classifier { public:
 
     int _srcdst;
     int _transp_proto;
-    
+
     union {
       uint32_t u;
       int32_t i;
       unsigned char c[4];
     } _u, _mask;
-    
+
     Primitive()				{ clear(); }
-    
+
     void clear();
     void set_type(int, ErrorHandler *);
     void set_srcdst(int, ErrorHandler *);
     void set_transp_proto(int, ErrorHandler *);
-    
+
     int set_mask(uint32_t full_mask, int shift, uint32_t provided_mask, ErrorHandler *);
     int check(const Primitive &, uint32_t provided_mask, ErrorHandler *);
     void add_exprs(Classifier *, Vector<int> &) const;
@@ -227,7 +227,7 @@ class IPFilter : public Classifier { public:
     bool has_transp_proto() const;
     bool negation_is_simple() const;
     void simple_negate();
-    
+
     String unparse_type() const;
     String unparse_op() const;
     static String unparse_type(int srcdst, int type);
@@ -236,26 +236,26 @@ class IPFilter : public Classifier { public:
    private:
 
     void add_comparison_exprs(Classifier *, Vector<int> &tree, int offset, int shift, bool swapped, bool op_negate) const;
-    
+
   };
 
  private:
 
   Vector<uint32_t> _prog;
-    
+
   int lookup(String word, int type, int transp_proto, uint32_t &data, ErrorHandler *errh) const;
-  
+
   int parse_expr(const Vector<String> &, int, Vector<int> &, Primitive &,
 		 ErrorHandler *);
   int parse_orexpr(const Vector<String> &, int, Vector<int> &, Primitive &,
 		 ErrorHandler *);
   int parse_term(const Vector<String> &, int, Vector<int> &, Primitive &,
-		 ErrorHandler *);  
+		 ErrorHandler *);
   int parse_factor(const Vector<String> &, int, Vector<int> &, Primitive &,
 		 bool negated, ErrorHandler *);
-  
+
   void length_checked_push(Packet *);
-  
+
 };
 
 

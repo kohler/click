@@ -18,7 +18,7 @@
 #include <click/error.hh>
 #include "elements/grid/yarvismetric.hh"
 #include "elements/grid/linkstat.hh"
-CLICK_DECLS 
+CLICK_DECLS
 
 YarvisMetric::YarvisMetric()
   : _ls(0)
@@ -30,7 +30,7 @@ YarvisMetric::~YarvisMetric()
 }
 
 void *
-YarvisMetric::cast(const char *n) 
+YarvisMetric::cast(const char *n)
 {
   if (strcmp(n, "YarvisMetric") == 0)
     return (YarvisMetric *) this;
@@ -48,7 +48,7 @@ YarvisMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 			 cpEnd);
   if (res < 0)
     return res;
-  if (_ls == 0) 
+  if (_ls == 0)
     errh->error("no LinkStat element specified");
   if (_ls->cast("LinkStat") == 0)
     return errh->error("LinkStat argument is wrong element type (should be LinkStat)");
@@ -62,7 +62,7 @@ YarvisMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
   return m1.val() < m2.val();
 }
 
-GridGenericMetric::metric_t 
+GridGenericMetric::metric_t
 YarvisMetric::get_link_metric(const EtherAddress &e, bool data_sender) const
 {
   unsigned tau_fwd, tau_rev;
@@ -89,11 +89,11 @@ YarvisMetric::get_link_metric(const EtherAddress &e, bool data_sender) const
   unsigned m;
 
   if      (r_fwd >= 90) m = 1;  // `Q3'
-  else if (r_fwd >= 79) m = 3;  // `Q2' 
+  else if (r_fwd >= 79) m = 3;  // `Q2'
   else if (r_fwd >= 47) m = 6;  // `Q1'
-  else                  m = 15; // `Q0' 
+  else                  m = 15; // `Q0'
 
-  return metric_t(m);      
+  return metric_t(m);
 }
 
 GridGenericMetric::metric_t
@@ -101,7 +101,7 @@ YarvisMetric::append_metric(const metric_t &r, const metric_t &l) const
 {
   if (!r.good() || !l.good())
     return _bad_metric;
-  
+
   if (l.val() > 15)
     click_chatter("YarvisMetric %s: append_metric WARNING: metric %u%% is too large (> 15!) for link metric",
 		  name().c_str(), r.val());

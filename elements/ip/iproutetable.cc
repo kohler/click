@@ -173,7 +173,7 @@ IPRouteTable::run_command(int command, const String &str, Vector<IPRoute>* old_r
 	|| route.port < (command == CMD_REMOVE ? -1 : 0)
 	|| route.port >= noutputs())
 	return errh->error("expected 'ADDR/MASK [GATEWAY%s'", (command == CMD_REMOVE ? " OUTPUT]" : "] OUTPUT"));
-    
+
     int r, before = errh->nerrors();
     if (command == CMD_ADD)
 	r = add_route(route, false, &old_route, errh);
@@ -202,7 +202,7 @@ IPRouteTable::run_command(int command, const String &str, Vector<IPRoute>* old_r
     return r;
 }
 
-    
+
 int
 IPRouteTable::add_route_handler(const String &conf, Element *e, void *thunk, ErrorHandler *errh)
 {
@@ -223,10 +223,10 @@ IPRouteTable::ctrl_handler(const String &conf_in, Element *e, void *, ErrorHandl
     IPRouteTable *table = static_cast<IPRouteTable *>(e);
     String conf = cp_uncomment(conf_in);
     const char* s = conf.begin(), *end = conf.end();
-    
+
     Vector<IPRoute> old_routes;
     int r = 0;
-    
+
     while (s < end) {
 	const char* nl = find(s, end, '\n');
 	String line = conf.substring(s, nl);
@@ -245,7 +245,7 @@ IPRouteTable::ctrl_handler(const String &conf_in, Element *e, void *, ErrorHandl
 	    r = errh->error("bad command '%#s'", first_word.c_str());
 	    goto rollback;
 	}
-	
+
 	if ((r = table->run_command(command, line, &old_routes, errh)) < 0)
 	    goto rollback;
 

@@ -272,9 +272,9 @@ class Vector<T*>: private Vector<void*> {
   ~Vector()				{ }
 
   Vector<T *> &operator=(const Vector<T *> &o)
-  		{ Base::operator=(o); return *this; }
+		{ Base::operator=(o); return *this; }
   Vector<T *> &assign(size_type n, T *e = 0)
-  		{ Base::assign(n, (void *)e); return *this; }
+		{ Base::assign(n, (void *)e); return *this; }
 
   // iterators
   const_iterator begin() const	{ return (const_iterator)(Base::begin()); }

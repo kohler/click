@@ -42,7 +42,7 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   int proto, tos = -1, dscp = -1;
   bool ce = false, df = false;
   String ect_str, dst_str;
-  
+
   if (cp_va_kparse(conf, this, errh,
 		   "PROTO", cpkP+cpkM, cpNamedInteger, NameInfo::T_IP_PROTO, &proto,
 		   "SRC", cpkP+cpkM, cpIPAddress, &iph.ip_src,
@@ -76,7 +76,7 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     else
       return errh->error("bad ECT value '%s'", ect_str.c_str());
   }
-  
+
   if (tos >= 0 && dscp >= 0)
     return errh->error("cannot set both TOS and DSCP");
   else if (tos >= 0 && (ect || ce))
@@ -106,11 +106,11 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 #else
   _iph.ip_sum = click_in_cksum((unsigned char *) &_iph, sizeof(click_ip));
 #endif
-  
+
   // store information about use_dst_anno in the otherwise useless
   // _iph.ip_len field
   _iph.ip_len = (use_dst_anno ? 1 : 0);
-  
+
   return 0;
 }
 
@@ -141,7 +141,7 @@ IPEncap::simple_action(Packet *p_in)
 {
   WritablePacket *p = p_in->push(sizeof(click_ip));
   if (!p) return 0;
-  
+
   click_ip *ip = reinterpret_cast<click_ip *>(p->data());
   memcpy(ip, &_iph, sizeof(click_ip));
   if (ip->ip_len) {		// use_dst_anno
@@ -154,9 +154,9 @@ IPEncap::simple_action(Packet *p_in)
   ip->ip_id = htons(_id.fetch_and_add(1));
   update_cksum(ip, 2);
   update_cksum(ip, 4);
-  
+
   p->set_ip_header(ip, sizeof(click_ip));
-  
+
   return p;
 }
 

@@ -39,7 +39,7 @@ int GridRouteActor::_next_free_cb = 0;
 
 LookupLocalGridRoute::LookupLocalGridRoute()
   : _gw_info(0), _link_tracker(0), _rtes(0),
-  _any_gateway_ip(0), _task(this), 
+  _any_gateway_ip(0), _task(this),
   _log(0)
 {
 }
@@ -80,7 +80,7 @@ LookupLocalGridRoute::initialize(ErrorHandler *errh)
     return errh->error("%s: GridRouteTable argument %s has the wrong type",
 		       name().c_str(),
 		       _rtes->name().c_str());
-  } 
+  }
 #if 0
   else if (_rtes == 0) {
     return errh->error("%s: no GridRouteTable element given",
@@ -92,13 +92,13 @@ LookupLocalGridRoute::initialize(ErrorHandler *errh)
     return errh->error("%s: GridGatewayInfo argument %s has the wrong type",
 		       name().c_str(),
 		       _gw_info->name().c_str());
-  } 
+  }
 
   if (_link_tracker && _link_tracker->cast("LinkTracker") == 0) {
     return errh->error("%s: LinkTracker argument %s has the wrong type",
 		       name().c_str(),
 		       _link_tracker->name().c_str());
-  } 
+  }
 
   if (_log && _log->cast("GridGenericLogger") == 0) {
     return errh->error("%s: GridGenericLogger element %s has the wrong type",
@@ -124,7 +124,7 @@ LookupLocalGridRoute::run_task(Task *)
 bool
 LookupLocalGridRoute::is_gw()
 {
-  return _gw_info && _gw_info->is_gateway(); 
+  return _gw_info && _gw_info->is_gateway();
 }
 
 
@@ -133,13 +133,13 @@ typedef GridRouteActionCallback GRCB;
 void
 LookupLocalGridRoute::push(int port, Packet *packet)
 {
-  /* 
+  /*
    * input 1 and output 1 hook up to higher level (e.g. ip), input 0
-   * and output 0 hook up to lower level (e.g. ethernet) 
+   * and output 0 hook up to lower level (e.g. ethernet)
    */
 
   assert(packet);
-  
+
   if (port == 0) {
     /*
      * input from net device
@@ -152,16 +152,16 @@ LookupLocalGridRoute::push(int port, Packet *packet)
     case grid_hdr::GRID_ROUTE_PROBE:
     case grid_hdr::GRID_ROUTE_REPLY:
       {
-	/* 
+	/*
 	* try to either receive the packet or forward it
 	*/
 	struct grid_nbr_encap *encap = (grid_nbr_encap *) (packet->data() + sizeof(click_ether) + gh->hdr_len);
 	IPAddress dest_ip(encap->dst_ip);
 #if NOISY
- 	click_chatter("lr %s: got %s packet for %s; I am %s; agi=%s, is_gw = %d\n",
+	click_chatter("lr %s: got %s packet for %s; I am %s; agi=%s, is_gw = %d\n",
 		      name().c_str(),
 		      grid_hdr::type_string(gh->type).c_str(),
-		      dest_ip.unparse().c_str(), 
+		      dest_ip.unparse().c_str(),
 		      _ipaddr.unparse().c_str(),
 		      _any_gateway_ip.unparse().c_str(),
 		      is_gw() ? 1 : 0);
@@ -183,7 +183,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 	  else
 	    click_chatter("%s: got %s packet for us, but don't know how to handle it",
 			  name().c_str(), grid_hdr::type_string(gh->type).c_str());
-	} 
+	}
 	else {
 	  // packet is not for us, try to forward it!
 	  forward_grid_packet(packet, encap->dst_ip);
@@ -192,7 +192,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
       break;
 
     default:
-      click_chatter("%s: received unexpected Grid packet type: %s", 
+      click_chatter("%s: received unexpected Grid packet type: %s",
 		    name().c_str(), grid_hdr::type_string(gh->type).c_str());
       notify_route_cbs(packet, 0, GRCB::Drop, GRCB::UnknownType, 0);
       output(3).push(packet);
@@ -209,7 +209,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 #if NOISY
     click_chatter("lr %s: got packet for %s; I am %s; agi=%s, is_gw=%d\n",
 		  name().c_str(),
-		  dst.unparse().c_str(), 
+		  dst.unparse().c_str(),
 		  _ipaddr.unparse().c_str(),
 		  _any_gateway_ip.unparse().c_str(),
 		  is_gw() ? 1 : 0);
@@ -237,8 +237,8 @@ LookupLocalGridRoute::push(int port, Packet *packet)
       /* FixSrcLoc will see that the gh->ip and gh->tx_ip fields are
          the same, and will fill in gh->loc, etc. */
       // gh->tx_ip is set in forward_grid_packet()
-      gh->ip = _ipaddr; 
-      
+      gh->ip = _ipaddr;
+
       struct grid_nbr_encap *encap = (grid_nbr_encap *) (new_packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
       encap->hops_travelled = 0;
       encap->dst_ip = dst;
@@ -252,7 +252,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 }
 
 bool
-LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, 
+LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth,
 				   IPAddress *next_hop_ip, unsigned char *next_hop_interface) const
 {
   assert(dest_eth != 0);
@@ -261,20 +261,20 @@ LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth,
   bool found_route;
 
   if (dest_ip == _any_gateway_ip) {
-    
+
     found_route = _rtes->current_gateway(rte);
-      
+
     // what if we are being asked to forward a grid packet to an
     // internet host, but we have no local routes to a gateway?
     // drop here?
-    
+
     // i guess we could do a loc query for a gateway...  seems a little
     // sketchy to me though.
 
   } else {
     found_route = _rtes->get_one_entry(dest_ip, rte);
   }
-  
+
   /* did we have a route? */
   if (found_route && rte.good()) {
     *dest_eth = rte.next_hop_eth;
@@ -344,7 +344,7 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 #if NOISY
     click_chatter("%s: unable to forward packet for %s with local routing, trying geographic routing", name().c_str(), dest_ip.unparse().c_str());
 #endif
-    
+
     // logging
     notify_route_cbs(packet, dest_ip, GRCB::FallbackToGF, 0, 0);
 

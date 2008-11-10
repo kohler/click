@@ -99,7 +99,7 @@ ARPTable::take_state(Element *e, ErrorHandler *errh)
     _packet_count = arpt->_packet_count;
     _drops = arpt->_drops;
     _alloc.swap(arpt->_alloc);
-    
+
     arpt->_entry_count = 0;
     arpt->_packet_count = 0;
 }
@@ -189,10 +189,10 @@ ARPTable::insert(IPAddress ip, const EtherAddress &eth, Packet **head)
 
     ae->_eth = eth;
     ae->_unicast = !eth.is_broadcast();
-    
+
     ae->_live_jiffies = click_jiffies();
     ae->_poll_jiffies = ae->_live_jiffies - CLICK_HZ;
-    
+
     if (ae->_age_link.next()) {
 	_age.erase(ae);
 	_age.push_back(ae);
@@ -250,7 +250,7 @@ IPAddress
 ARPTable::reverse_lookup(const EtherAddress &eth)
 {
     _lock.acquire_read();
-    
+
     IPAddress ip;
     for (Table::iterator it = _table.begin(); it; ++it)
 	if (it->_eth == eth) {
@@ -322,7 +322,7 @@ ARPTable::add_handlers()
     add_write_handler("delete", write_handler, h_delete);
     add_write_handler("clear", write_handler, h_clear);
 }
-    
+
 CLICK_ENDDECLS
 EXPORT_ELEMENT(ARPTable)
 ELEMENT_MT_SAFE(ARPTable)

@@ -131,7 +131,7 @@ IPFragmenter::fragment(Packet *p_in)
 	if (q) {
 	    q->set_network_header(q->data(), out_hlen);
 	    click_ip *qip = q->ip_header();
-	    
+
 	    memcpy(qip, ip, sizeof(click_ip));
 	    optcopy(ip, qip);
 	    memcpy(q->transport_header(), p->transport_header() + off, out_dlen);
@@ -145,14 +145,14 @@ IPFragmenter::fragment(Packet *p_in)
 	    qip->ip_sum = click_in_cksum((const unsigned char *)qip, out_hlen);
 
 	    q->copy_annotations(p);
-	    
+
 	    output(0).push(q);
 	    _fragments++;
 	}
 
 	off += out_dlen;
     }
-    
+
     p->kill();
 }
 

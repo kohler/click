@@ -132,11 +132,11 @@ main(int argc, char **argv)
   const char *output_file = 0;
   int action = FLATTEN_OPT;
   bool expand_vars = false;
-  
+
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case HELP_OPT:
       usage();
       exit(0);
@@ -152,7 +152,7 @@ There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
-      
+
      case CLICKPATH_OPT:
       set_clickpath(clp->vstr);
       break;
@@ -197,13 +197,13 @@ particular purpose.\n");
       short_usage();
       exit(1);
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
     }
   }
-  
+
  done:
   RouterT *router = read_router(router_file, file_is_expr, errh);
   if (router)
@@ -257,8 +257,8 @@ particular purpose.\n");
      output_sorted_one_per_line(elts, out);
      break;
    }
-   
+
   }
-  
+
   return 0;
 }

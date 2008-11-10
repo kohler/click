@@ -80,7 +80,7 @@ BeaconTracker::simple_action(Packet *p)
 
     p->kill();
     return 0;
-	      
+
   }
   struct click_wifi *w = (struct click_wifi *) p->data();
 
@@ -106,14 +106,14 @@ BeaconTracker::simple_action(Packet *p)
 
 
   EtherAddress bssid = EtherAddress(w->i_addr3);
-  
+
   if (_winfo->_bssid != bssid) {
     p->kill();
     return 0;
   }
 
   uint8_t *ptr;
-  
+
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
   //uint8_t *ts = ptr;
@@ -126,10 +126,10 @@ BeaconTracker::simple_action(Packet *p)
   struct beacon_t b;
   uint16_t seq = le16_to_cpu(*(uint16_t *) w->i_seq) >> WIFI_SEQ_SEQ_SHIFT;
 
-  
+
   b.rx = p->timestamp_anno();
   b.seq = seq;
-  
+
   _beacons.push_back(b);
   _beacon_int = beacon_int;
 
@@ -138,26 +138,26 @@ BeaconTracker::simple_action(Packet *p)
 }
 
 void
-BeaconTracker::trim() 
+BeaconTracker::trim()
 {
   Timestamp earliest = Timestamp::now() - Timestamp::make_msec(_track * _beacon_int);
   while (_beacons.size() && _beacons[0].rx < earliest) {
     _beacons.pop_front();
-  }  
+  }
 
 }
 
-void 
-BeaconTracker::reset() 
+void
+BeaconTracker::reset()
 {
   _start.set_now();
   _beacons.clear();
 }
 
-enum {H_DEBUG, H_SCAN, H_RESET, H_STATS, 
+enum {H_DEBUG, H_SCAN, H_RESET, H_STATS,
       H_TRACK, H_BEACON_INTERVAL};
 
-static String 
+static String
 read_param(Element *e, void *thunk)
 {
   BeaconTracker *td = (BeaconTracker *)e;
@@ -177,12 +177,12 @@ read_param(Element *e, void *thunk)
       int p = expected ? count*100/expected : 0;
       return String(p) + "\n";
     }
-      
+
     default:
       return String();
     }
 }
-static int 
+static int
 write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -191,7 +191,7 @@ write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -202,7 +202,7 @@ write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 BeaconTracker::add_handlers()
 {

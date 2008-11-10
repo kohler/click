@@ -517,7 +517,7 @@ click_qsort(void *base, size_t n, size_t size,
 	stack -= 2;
 	char *a = (char *) base + stack[0] * size;
 	n = stack[1] - stack[0];
-    
+
 	// insertion sort for tiny arrays
 	if (n < 7) {
 	    for (char *pi = a + size; pi < a + n * size; pi += size)

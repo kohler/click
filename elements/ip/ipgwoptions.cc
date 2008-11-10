@@ -84,7 +84,7 @@ IPGWOptions::handle_options(Packet *p)
       oa = wp->network_header(); // may have changed due to packet copy
     }
     uint8_t *woa = wp->network_header();
-    
+
     if(type == IPOPT_RR){
       /*
        * Record Route.
@@ -151,7 +151,7 @@ IPGWOptions::handle_options(Packet *p)
         }
       }
     }
-    
+
     oi += xlen;
   }
 

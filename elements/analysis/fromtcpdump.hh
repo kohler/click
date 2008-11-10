@@ -129,7 +129,7 @@ class FromTcpdump : public Element { public:
 
     bool run_task(Task *);
     Packet *pull(int);
-    
+
   private:
 
     enum { SAMPLING_SHIFT = 28 };
@@ -162,7 +162,7 @@ class FromTcpdump : public Element { public:
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

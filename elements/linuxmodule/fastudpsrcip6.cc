@@ -87,17 +87,17 @@ FastUDPSourceIP6::incr_ports()
   udp->uh_dport = htons(_dport+_incr);
   udp->uh_sum = 0;
   unsigned short len = _len-14-sizeof(click_ip6);
-  if (_cksum) {   
+  if (_cksum) {
     //need to chagne
     //unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
     //udp->uh_sum = csum_tcpudp_magic(_sip6addr.s_addr, _dip6addr.s_addr,
-    //      		    len, IP_PROTO_UDP, csum); 
+    //		    len, IP_PROTO_UDP, csum);
     udp->uh_sum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, udp->uh_sum, (unsigned char *)udp, ip6->ip6_plen));
   } else
     udp->uh_sum = 0;
 }
 
-int 
+int
 FastUDPSourceIP6::initialize(ErrorHandler *)
 {
   _count = 0;
@@ -106,13 +106,13 @@ FastUDPSourceIP6::initialize(ErrorHandler *)
   memcpy(_packet->data(), &_ethh, 14);
   click_ip6 *ip6 = reinterpret_cast<click_ip6 *>(_packet->data()+14);
   click_udp *udp = reinterpret_cast<click_udp *>(ip6 + 1);
-  
+
   // set up IP6 header
   ip6->ip6_flow = 0;
   ip6->ip6_v = 6;
   ip6->ip6_plen = htons(_len - 14 - sizeof(click_ip6));
   ip6->ip6_nxt = IP_PROTO_UDP;
-  ip6->ip6_hlim = 250; 
+  ip6->ip6_hlim = 250;
   ip6->ip6_src = _sip6addr;
   ip6->ip6_dst = _dip6addr;
   SET_DST_IP6_ANNO(_packet, _dip6addr);
@@ -133,7 +133,7 @@ FastUDPSourceIP6::initialize(ErrorHandler *)
 
   } else
     udp->uh_sum = 0;
-    
+
   _skb = _packet->skb();
   return 0;
 }
@@ -157,11 +157,11 @@ FastUDPSourceIP6::pull(int)
   if(_rate_limited){
     if (_rate.need_update(Timestamp::now())) {
       _rate.update();
-      atomic_inc(&_skb->users); 
+      atomic_inc(&_skb->users);
       p = reinterpret_cast<Packet *>(_skb);
     }
   } else {
-    atomic_inc(&_skb->users); 
+    atomic_inc(&_skb->users);
     p = reinterpret_cast<Packet *>(_skb);
   }
 
@@ -251,7 +251,7 @@ FastUDPSourceIP6_active_write_handler
 {
   FastUDPSourceIP6 *c = (FastUDPSourceIP6 *)e;
   bool active;
-  if (!cp_bool(s, &active)) 
+  if (!cp_bool(s, &active))
     return errh->error("active parameter must be boolean");
   c->_active = active;
   if (active) c->reset();

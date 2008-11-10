@@ -23,7 +23,7 @@ class CxxFunction {
  public:
 
   static bool parsing_header_file;
-  
+
   CxxFunction()				: _alive(false) { }
   CxxFunction(const String &, bool, const String &, const String &,
 	      const String &, const String &);
@@ -40,10 +40,10 @@ class CxxFunction {
   void set_body(const String &b)	{ _body = b; _clean_body = String(); }
   void kill()				{ _alive = false; }
   void unkill()				{ _alive = true; }
-  
+
   bool find_expr(const String &) const;
   bool replace_expr(const String &, const String &);
-  
+
 };
 
 class CxxClass {
@@ -66,7 +66,7 @@ class CxxClass {
   const String &name() const		{ return _name; }
   int nparents() const			{ return _parents.size(); }
   CxxClass *parent(int i) const		{ return _parents[i]; }
-  
+
   int nfunctions() const		{ return _functions.size(); }
   CxxFunction *find(const String &);
   CxxFunction &function(int i)		{ return _functions[i]; }
@@ -79,19 +79,19 @@ class CxxClass {
 
   void header_text(StringAccum &) const;
   void source_text(StringAccum &) const;
-  
+
 };
 
 class CxxInfo { public:
 
   CxxInfo();
   ~CxxInfo();
-  
+
   void parse_file(const String &, bool header, String * = 0);
 
   CxxClass *find_class(const String &) const;
   CxxClass *make_class(const String &);
-    
+
  private:
 
   HashTable<String, int> _class_map;
@@ -106,7 +106,7 @@ class CxxInfo { public:
   int parse_class_definition(const String &, int, const String &);
   int parse_class(const String &text, int p, const String &original,
 		  CxxClass *cxx_class);
-  
+
 };
 
 

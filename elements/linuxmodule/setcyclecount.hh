@@ -16,20 +16,20 @@
  *
  * A packet has room for either exactly one cycle count or exactly one
  * performance metric.
- * 
+ *
  * =a CycleCountAccum, RoundTripCycleCount, SetPerfCount, PerfCountAccum */
 
 #include <click/element.hh>
 
 class SetCycleCount : public Element { public:
-  
+
   SetCycleCount();
   ~SetCycleCount();
-  
+
   const char *class_name() const		{ return "SetCycleCount"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   void push(int, Packet *p);
   Packet *pull(int);
 

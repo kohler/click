@@ -234,7 +234,7 @@ static dcss_propmatch fullness_pm[] = {
     { "capacity", 0 },
     { "color", 0 },
     { "autorefresh", 0 },
-    { "autorefresh-period", 0 }    
+    { "autorefresh-period", 0 }
 };
 
 static dcss_propmatch activity_pm[] = {
@@ -251,7 +251,7 @@ static dcss_propmatch activity_pm[] = {
 enum {
     num_port_pm = sizeof(port_pm) / sizeof(port_pm[0]),
     pflag_port = 1,
-    
+
     num_elt_pm = sizeof(elt_pm) / sizeof(elt_pm[0]),
     pflag_elt = 2,
 
@@ -609,7 +609,7 @@ bool dcss_selector::match(crouter *cr, const delt *e, int *sensitivity) const
 	if ((e->highlights() & _highlight_match) != _highlight)
 	    answer = false;
     }
-    
+
     if (sensitivity)
 	*sensitivity |= senses;
     return answer;
@@ -620,7 +620,7 @@ bool dcss_selector::match_port(bool isoutput, int port, int processing) const
     if (_type && !_type.equals("port", 4))
 	if (!_type_glob || !glob_match(_type, "port"))
 	    return false;
-    
+
     for (const String *k = _klasses.begin(); k != _klasses.end(); ++k)
 	if (k->equals("input", 5)) {
 	    if (isoutput)
@@ -642,11 +642,11 @@ bool dcss_selector::match_port(bool isoutput, int port, int processing) const
 		return false;
 	} else
 	    return false;
-    
+
     if (_name && port >= 0
 	&& !int_match_string(_name.begin(), _name.end(), port))
 	return false;
-    
+
     return true;
 }
 
@@ -694,7 +694,7 @@ const char *dcss_selector::parse(const String &str, const char *s)
     while (s != send && *s != '>' && *s != '{' && *s != ',' && *s != '}'
 	   && !isspace((unsigned char) *s)) {
 	const char *n = s;
-	
+
 	if (*n == '[') {
 	    s = ++n;
 	    const char *last = s;
@@ -765,7 +765,7 @@ const char *dcss_selector::parse(const String &str, const char *s)
 	    n = s;
 	    glob = 0;
 	}
-	
+
 	if (start == '.')
 	    _klasses.push_back(str.substring(n, s));
 	else if (start == '#') {
@@ -821,11 +821,11 @@ bool dcss_property::hard_change_type(int t) const
 {
     if (_t == t_color)
 	delete[] _v.dp;
-    
+
     _t = t_none;
     if (!_vstr)
 	return t == t_none;
-    
+
     switch (t) {
 
       case t_numeric:
@@ -894,7 +894,7 @@ bool dcss_property::hard_change_type(int t) const
 	break;
 
     }
-    
+
     return _t == t;
 }
 
@@ -902,7 +902,7 @@ bool dcss_property::hard_change_relative_pixel() const
 {
     if (_t == t_color)
 	delete[] _v.dp;
-	
+
     _t = t_none;
     if (!_vstr)
 	return false;
@@ -1000,7 +1000,7 @@ bool dcss::hard_match_context(crouter *cr, const delt *e, int *sensitivity,
 	--sel_precise;
 	--sel_approx;
     }
-    
+
     while (!e->root() && sel_approx != _context.begin()) {
 	if (sel_precise != sel_approx && sel_precise != _context.begin()
 	    && sel_precise[-1].match(cr, e, 0))
@@ -1048,7 +1048,7 @@ const char *dcss::parse(const String &str, const String &media, const char *s)
 		++s;
 	    continue;
 	}
-	
+
 	if (s == send || *s == '{' || (*s == '}' && mediastk.size() == 0))
 	    break;
 	else if (*s == ';') {
@@ -1128,7 +1128,7 @@ void dcss::parse_border(const String &str, const char *s, const char *send,
 			const String &prefix)
 {
     double d;
-    
+
     while (s != send) {
 	s = cp_skip_comment_space(s, send);
 	const char *n = s;
@@ -1159,7 +1159,7 @@ void dcss::parse_border(const String &str, const char *s, const char *send,
 void dcss::parse_shadow(const String &str, const char *s, const char *send)
 {
     double d;
-    
+
     while (s != send) {
 	s = cp_skip_comment_space(s, send);
 	const char *n = s;
@@ -1190,7 +1190,7 @@ void dcss::parse_shadow(const String &str, const char *s, const char *send)
 void dcss::parse_background(const String &str, const char *s, const char *send)
 {
     double d;
-    
+
     while (s != send) {
 	s = cp_skip_comment_space(s, send);
 	const char *n = s;
@@ -1214,7 +1214,7 @@ void dcss::parse_box(const String &str, const char *s, const char *send, const S
     double d;
     String x[4];
     int pos = 0;
-    
+
     while (s != send) {
 	s = cp_skip_comment_space(s, send);
 	const char *n = s;
@@ -1355,7 +1355,7 @@ String dcss_set::expand_imports(const String &text, const String &filename,
 	// skip past ';'
 	if (s != send)
 	    ++s;
-	
+
 	String fn;
 	if (!cp_filename(text.substring(fnbegin, fnend), &fn) || !fn) {
 	    lerrh.error("%s: bad @import rule", filename.c_str());
@@ -1404,7 +1404,7 @@ dcss_set::dcss_set(const String &text, const String &media)
 	for (const dcss_propmatch *pm = activity_pm; pm != activity_pm + num_activity_pm; ++pm)
 	    property_map[pm->name] |= pflag_activity;
     }
-    
+
     parse(text);
 }
 
@@ -1457,7 +1457,7 @@ void dcss_set::parse(const String &str)
 {
     const char *s = str.begin(), *send = str.end();
     _text += str;
-    
+
     while (1) {
 	s = cp_skip_comment_space(s, send);
 	Vector<dcss *> cs;
@@ -1526,7 +1526,7 @@ void dcss_set::add(dcss *s)
 {
     s->_selector_index = _selector_index;
     ++_selector_index;
-    
+
     int si;
     if (!s->type() || s->type()[0] == '*' || s->type()[0] == '?'
 	|| s->type()[0] == '[' || s->type()[0] == '\\')
@@ -1668,7 +1668,7 @@ static String parse_flow_split(const char *begin, const char *end)
 {
     StringAccum sa;
     bool output = false;
-    
+
     for (begin = cp_skip_space(begin, end); begin < end; ++begin)
 	if (*begin == '/') {
 	    if (output || !sa.length())
@@ -1747,7 +1747,7 @@ ref_ptr<delt_style> dcss_set::elt_style(crouter *cr, const delt *e, int *sensiti
 
 	style_cache = ref_ptr<delt_style>(sty);
     }
-    
+
     return style_cache;
 }
 
@@ -1792,7 +1792,7 @@ ref_ptr<delt_size_style> dcss_set::elt_size_style(crouter *cr, const delt *e, in
 
 	style_cache = ref_ptr<delt_size_style>(sty);
     }
-    
+
     return style_cache;
 }
 
@@ -1885,7 +1885,7 @@ ref_ptr<dhandler_style> dcss_set::handler_style(crouter *cr, const delt *e, cons
 
 	style_cache = ref_ptr<dhandler_style>(sty);
     }
-    
+
     return style_cache;
 }
 
@@ -1944,7 +1944,7 @@ ref_ptr<dfullness_style> dcss_set::fullness_style(PermString decor, crouter *cr,
 
 	style_cache = ref_ptr<dfullness_style>(sty);
     }
-    
+
     return style_cache;
 }
 
@@ -2005,7 +2005,7 @@ ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, crouter *cr,
 	for (String *vsp = vs.begin(); vsp != vs.end(); ++vsp) {
 	    int x = sty->colors.size();
 	    sty->colors.resize(sty->colors.size() + 5);
-	    sty->colors[x] = -1;	    
+	    sty->colors[x] = -1;
 	    if (*vsp && isdigit((unsigned char) (*vsp)[0])) {
 		if (!cp_relative(cp_pop_spacevec(*vsp), &sty->colors[x])
 		    || sty->colors[x] < 0 || sty->colors[x] > 1)
@@ -2026,14 +2026,14 @@ ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, crouter *cr,
 	    } else if (sty->colors[i] < sty->colors[i - 5])
 		sty->colors[i] = sty->colors[i - 5] + 0.001;
 	}
-	
+
 	//if (sty->type == dactivity_rate)
 	//sty->decay_begin = std::max(sty->decay_begin, 10U);
 	//sty->decay_end = std::max(sty->decay_begin, sty->decay_end);
-	
+
 	style_cache = ref_ptr<dactivity_style>(sty);
     }
-    
+
     return style_cache;
 }
 
@@ -2053,7 +2053,7 @@ double dcss_set::vpixel(PermString name, crouter *cr, const delt *e) const
 
     dcss_propmatch pm = { name, 0 }, *pmp = &pm;
     dcss::assign_all(&pm, &pmp, 1, sv.begin(), sv.end());
-    
+
     return pm.vpixel(name.c_str(), cr, name, e->parent());
 }
 
@@ -2067,7 +2067,7 @@ String dcss_set::vstring(PermString name, PermString decor, crouter *cr, const d
 
     dcss_propmatch pm = { name, 0 }, *pmp = &pm;
     dcss::assign_all(&pm, &pmp, 1, sv.begin(), sv.end());
-    
+
     return pm.vstring(name.c_str());
 }
 

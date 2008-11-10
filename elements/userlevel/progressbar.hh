@@ -79,7 +79,7 @@ Here are some example progress bars. The first form occurs when the file size
 is known; the second, when it is not known.
 
    74% |**************     | 23315KB    00:01 ETA
-  
+
   |           ***          |  5184KB    --:-- ETA
 
 =n
@@ -154,7 +154,7 @@ class ProgressBar : public Element { public:
   private:
 
     enum { ST_FIRST, ST_MIDDLE, ST_DONE, ST_FIRSTDONE, ST_DEAD };
-    
+
     bool _have_size;
     int _status;
     double _size;
@@ -175,10 +175,10 @@ class ProgressBar : public Element { public:
     int _first_pos_h;
 
     bool get_value(int first, int last, double *);
-    
+
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler*);
-    
+
 };
 
 CLICK_ENDDECLS

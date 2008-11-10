@@ -61,10 +61,10 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   if (ret < 0) {
     return ret;
   }
-  if (_rate_window_ms <= 0) 
+  if (_rate_window_ms <= 0)
     return errh->error("WINDOW must be > 0");
 
-  if (!_rtable || _rtable->cast("AvailableRates") == 0) 
+  if (!_rtable || _rtable->cast("AvailableRates") == 0)
     return errh->error("AvailableRates element is not provided or not a AvailableRates");
 
 
@@ -173,12 +173,12 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     }
     return;
   }
-  
+
   if (!success && p_in->length() < _packet_size_threshold) {
-    /* 
-     * don't deal with short packets, 
+    /*
+     * don't deal with short packets,
      * since they can skew what rate
-     * we should be at 
+     * we should be at
      */
     if (_debug) {
           click_chatter("%{element} short success for %s\n",
@@ -209,14 +209,14 @@ ProbeTXRate::process_feedback(Packet *p_in) {
 
 
   int tries = retries+1;
-  int time = calc_usecs_wifi_packet(1500, ceh->rate, 
+  int time = calc_usecs_wifi_packet(1500, ceh->rate,
 				    retries);
 
   if (_debug) {
 	  click_chatter("%{element}::%s() rate %d tries %d (retries %d) time %d\n",
 			this, __func__, ceh->rate, tries, retries, time);
   }
-  nfo->add_result(now, ceh->rate, tries, 
+  nfo->add_result(now, ceh->rate, tries,
 		  success, time);
   //nfo->check();
   return ;
@@ -251,7 +251,7 @@ ProbeTXRate::push(int port, Packet *p_in)
 
 
 String
-ProbeTXRate::print_rates() 
+ProbeTXRate::print_rates()
 {
   StringAccum sa;
   for (NIter iter = _neighbors.begin(); iter.live(); iter++) {
@@ -283,12 +283,12 @@ ProbeTXRate::print_rates()
 }
 
 
-enum {H_DEBUG, 
-      H_RATES, 
-      H_THRESHOLD, 
-      H_RESET, 
+enum {H_DEBUG,
+      H_RATES,
+      H_THRESHOLD,
+      H_RESET,
       H_OFFSET,
-      H_ACTIVE, 
+      H_ACTIVE,
      };
 
 
@@ -306,7 +306,7 @@ ProbeTXRate_read_param(Element *e, void *thunk)
     return String();
   }
 }
-static int 
+static int
 ProbeTXRate_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -315,21 +315,21 @@ ProbeTXRate_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
   }
   case H_THRESHOLD: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("threshold parameter must be unsigned");
     f->_packet_size_threshold = m;
     break;
   }
   case H_OFFSET: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("offset parameter must be unsigned");
     f->_offset = m;
     break;
@@ -339,7 +339,7 @@ ProbeTXRate_write_param(const String &in_s, Element *e, void *vparam,
     break;
  case H_ACTIVE: {
     bool active;
-    if (!cp_bool(s, &active)) 
+    if (!cp_bool(s, &active))
       return errh->error("active must be boolean");
     f->_active = active;
     break;
@@ -364,7 +364,7 @@ ProbeTXRate::add_handlers()
   add_write_handler("offset", ProbeTXRate_write_param, (void *) H_OFFSET);
   add_write_handler("reset", ProbeTXRate_write_param, (void *) H_RESET, Handler::BUTTON);
   add_write_handler("active", ProbeTXRate_write_param, (void *) H_ACTIVE);
-  
+
 }
 
 CLICK_ENDDECLS

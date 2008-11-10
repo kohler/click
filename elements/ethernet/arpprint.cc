@@ -68,7 +68,7 @@ ARPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   _label = "";
   bool print_time = true;
   String channel;
-  
+
   if (cp_va_kparse(conf, this, errh,
 		   "LABEL", cpkP, cpString, &_label,
 		   "TIMESTAMP", 0, cpBool, &print_time,
@@ -134,7 +134,7 @@ ARPPrint::simple_action(Packet *p)
 
 	if ((pro != ETHERTYPE_IP && pro != ETHERTYPE_TRAIL) ||
 		pln != 4 || hln == 0) {
-	    sa << "arp-#" << op << " for proto #" << pro << " (" << pln << ") " 
+	    sa << "arp-#" << op << " for proto #" << pro << " (" << pln << ") "
 	    << "hardware #" << hrd << " (" << hln << ")";
 	    return p;
 	}
@@ -163,7 +163,7 @@ ARPPrint::simple_action(Packet *p)
 	    break;
 
 	case ARPOP_REVREQUEST:
-	    sa << "rarp who-is " << EtherAddress(tha) << " tell " << 
+	    sa << "rarp who-is " << EtherAddress(tha) << " tell " <<
 		EtherAddress(sha);
 	    break;
 

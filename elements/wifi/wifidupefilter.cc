@@ -1,5 +1,5 @@
 /*
- * wifidupefilter.{cc,hh} -- Filters out duplicate packets based on 
+ * wifidupefilter.{cc,hh} -- Filters out duplicate packets based on
  * 802.11 sequence numbers.
  * John Bicket
  *
@@ -77,7 +77,7 @@ WifiDupeFilter::simple_action(Packet *p_in)
     nfo->clear();
   }
 
-  if (w->i_fc[1] & WIFI_FC1_RETRY && seq == nfo->seq && 
+  if (w->i_fc[1] & WIFI_FC1_RETRY && seq == nfo->seq &&
       (!is_frag || frag <= nfo->frag)) {
 	  /* duplicate detected */
 	  if (_debug) {
@@ -100,7 +100,7 @@ WifiDupeFilter::simple_action(Packet *p_in)
 
 
 String
-WifiDupeFilter::static_read_stats(Element *xf, void *) 
+WifiDupeFilter::static_read_stats(Element *xf, void *)
 {
   WifiDupeFilter *e = (WifiDupeFilter *) xf;
   StringAccum sa;
@@ -120,7 +120,7 @@ WifiDupeFilter::static_read_stats(Element *xf, void *)
 
 enum {H_DEBUG, H_DUPES, H_RESET};
 
-static String 
+static String
 WifiDupeFilter_read_param(Element *e, void *thunk)
 {
   WifiDupeFilter *td = (WifiDupeFilter *)e;
@@ -133,7 +133,7 @@ WifiDupeFilter_read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 WifiDupeFilter_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -142,7 +142,7 @@ WifiDupeFilter_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -155,7 +155,7 @@ WifiDupeFilter_write_param(const String &in_s, Element *e, void *vparam,
   return 0;
 }
 void
-WifiDupeFilter::add_handlers() 
+WifiDupeFilter::add_handlers()
 {
   add_read_handler("debug", WifiDupeFilter_read_param, (void *) H_DEBUG);
   add_read_handler("dupes", WifiDupeFilter_read_param, (void *) H_DUPES);

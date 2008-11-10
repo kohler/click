@@ -39,18 +39,18 @@ CLICK_DECLS
 
 class FloodingLocQuerier : public Element, public GridRouteActor {
  public:
-  
+
   FloodingLocQuerier();
   ~FloodingLocQuerier();
-  
+
   const char *class_name() const		{ return "FloodingLocQuerier"; }
   const char *port_count() const		{ return "2/2"; }
   const char *processing() const		{ return PUSH; }
   void add_handlers();
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  
+
   void push(int port, Packet *);
 
   struct LocEntry {
@@ -60,7 +60,7 @@ class FloodingLocQuerier : public Element, public GridRouteActor {
     bool loc_good;
     unsigned int loc_seq_no;;
     unsigned int last_response_jiffies;
-    Packet *p; 
+    Packet *p;
     // if p == 0, we have sent the last p, and are now caching the
     // data; p == 0 ==> this data is valid at some time.  p != 0 ==>
     // this data is not valid, and packet p is waiting to be sent.
@@ -72,10 +72,10 @@ class FloodingLocQuerier : public Element, public GridRouteActor {
   // statistics
   unsigned int _loc_queries;
   unsigned int _pkts_killed;
-  
+
 
  private:
-  
+
   struct seq_t {
     unsigned int seq_no;
     unsigned int last_response_jiffies;
@@ -90,7 +90,7 @@ class FloodingLocQuerier : public Element, public GridRouteActor {
   Timer _expire_timer;
 
   void send_query_for(const IPAddress &);
-  
+
   void handle_nbr_encap(Packet *);
   void handle_reply(Packet *);
   void handle_query(Packet *);
@@ -100,7 +100,7 @@ class FloodingLocQuerier : public Element, public GridRouteActor {
   static void expire_hook(Timer *, void *);
   static String read_table(Element *, void *);
   static String read_seqs(Element *, void *);
-  
+
 };
 
 CLICK_ENDDECLS

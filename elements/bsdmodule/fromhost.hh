@@ -21,7 +21,7 @@ class FromHost : public AnyDevice {
     void cleanup(CleanupStage);
     bool run_task(Task *);
     struct ifqueue *_inq;
-  
+
   private:
     static const int QSIZE = 511;
     unsigned _burst;

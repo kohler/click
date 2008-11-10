@@ -16,13 +16,13 @@ CLICK_DECLS
  * Input should be ACKRetrySender2 packets.  When a packet addressed
  * to IP is received on the input, the ACKRetrySender header is
  * stripped, it is passed through to output 0, and an ACK response is
- * pushed out of output 1.  
+ * pushed out of output 1.
  *
  * The ACK response needs to be encapsulated with this node's ethernet
  * source address, the broadcast ethernet destination address, and the
  * ACK ethernet type (typicall 0x7ffc).
- * 
- * =a 
+ *
+ * =a
  * ACKRetrySender2, ACKResponder */
 
 class ACKResponder2 : public Element {

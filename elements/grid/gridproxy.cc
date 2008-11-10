@@ -31,8 +31,8 @@ GridProxy::~GridProxy()
 {
 }
 
-void 
-GridProxy::cleanup(CleanupStage) 
+void
+GridProxy::cleanup(CleanupStage)
 {
 }
 
@@ -55,7 +55,7 @@ GridProxy::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if (res < 0)
     return res;
-  
+
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   // check alignment
   {
@@ -68,7 +68,7 @@ GridProxy::configure(Vector<String> &conf, ErrorHandler *errh)
       errh->message("(Try passing the configuration through 'click-align'.)");
   }
 #endif
-  
+
   _iph = iph;
   return res;
 }
@@ -93,7 +93,7 @@ void GridProxy::push(int port, Packet *p_in)
 }
 
 
-void 
+void
 GridProxy::reverse_mapping(Packet *p_in) {
 
   /* decide where to send it */
@@ -132,7 +132,7 @@ GridProxy::reverse_mapping(Packet *p_in) {
   ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 #endif
 
-  output(1).push(p);  
+  output(1).push(p);
 }
 
 void
@@ -140,13 +140,13 @@ GridProxy::forward_mapping(Packet *p_in) {
 
   IPAddress gateway;
   IPAddress src;
-  
+
   gateway = IPAddress(p_in->ip_header()->ip_src);
 
   /* strip the ip header to get the actual ip packet */
   p_in->pull((int)p_in->transport_header_offset());
 
-  /* set the new ip header*/ 
+  /* set the new ip header*/
   const click_ip *ip = reinterpret_cast<const click_ip *>(p_in->data());
   p_in->set_ip_header(ip, ip->ip_hl << 2);
 
@@ -156,7 +156,7 @@ GridProxy::forward_mapping(Packet *p_in) {
   Timestamp now = Timestamp::now();
   _map.insert(src, DstInfo(src, gateway, now));
 
-  output(0).push(p_in);  
+  output(0).push(p_in);
   return;
 }
 
@@ -168,7 +168,7 @@ GridProxy::static_print_stats(Element *e, void *)
 }
 
 String
-GridProxy::print_stats() 
+GridProxy::print_stats()
 {
   StringAccum sa;
 
@@ -179,7 +179,7 @@ GridProxy::print_stats()
     sa << nfo._ip.unparse().c_str() << " ";
     sa << nfo._gw.unparse().c_str() << " ";
     sa << now - nfo._last_updated << "\n";
-    
+
   }
   return sa.take_string();
 

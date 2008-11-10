@@ -25,7 +25,7 @@ class rect_search { public:
 
     static void find_some(const std::list<T *> &l, double x, double y, std::vector<T *> &v);
     static void find_some(const std::list<T *> &l, const rectangle &r, std::vector<T *> &v);
-    
+
 };
 
 template <typename T, int CHUNK>
@@ -89,7 +89,7 @@ void rect_search<T, CHUNK>::find_some(const std::list<T *> &l, double x, double 
 	if ((*iter)->contains(x, y))
 	    result.push_back(*iter);
 }
-	
+
 template <typename T, int CHUNK>
 void rect_search<T, CHUNK>::find_some(const std::list<T *> &l, const rectangle &r, std::vector<T *> &result)
 {

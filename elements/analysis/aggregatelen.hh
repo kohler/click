@@ -48,19 +48,19 @@ class AggregateLength : public Element { public:
     const char *class_name() const	{ return "AggregateLength"; }
     const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return AGNOSTIC; }
-    
+
     int configure(Vector<String> &, ErrorHandler *);
 
     void push(int, Packet *);
     Packet *pull(int);
-    
+
   private:
 
     bool _ip;
 
     Packet *handle_packet(Packet *);
     Packet *bad_packet(Packet *);
-    
+
 };
 
 CLICK_ENDDECLS

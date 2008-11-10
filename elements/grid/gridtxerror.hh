@@ -20,7 +20,7 @@ CLICK_DECLS
 class GridGenericLogger;
 
 class GridTxError : public Element { public:
-  
+
   GridTxError();
   ~GridTxError();
 

@@ -89,7 +89,7 @@ IPFilter::lookup(String word, int type, int proto, uint32_t &data, ErrorHandler 
     if (type == 0 || type == TYPE_TYPE)
 	if (NameInfo::query(NameInfo::T_IPFILTER_TYPE, this, word, &data, sizeof(uint32_t)))
 	    return (data == TYPE_SYNTAX ? -1 : TYPE_TYPE);
-    
+
     // query each relevant database
     int got[5];
     int32_t val[5];
@@ -114,7 +114,7 @@ IPFilter::lookup(String word, int type, int proto, uint32_t &data, ErrorHandler 
 	&& (proto == UNKNOWN || proto == IP_PROTO_TCP || proto == IP_PROTO_TCP_OR_UDP);
     tgot[4] = got[4] && (type == 0 || type == FIELD_ICMP_TYPE)
 	&& (proto == UNKNOWN || proto == IP_PROTO_ICMP);
-    
+
     // remove one of TCP and UDP port if they give the same value
     if (tgot[1] && tgot[2] && val[1] == val[2])
 	tgot[2] = false;
@@ -259,14 +259,14 @@ String
 IPFilter::Primitive::unparse_type(int srcdst, int type)
 {
   StringAccum sa;
-  
+
   switch (srcdst) {
    case SD_SRC: sa << "src "; break;
    case SD_DST: sa << "dst "; break;
    case SD_OR: sa << "src or dst "; break;
    case SD_AND: sa << "src and dst "; break;
   }
-  
+
   switch (type) {
    case TYPE_NONE: sa << "<none>"; break;
    case TYPE_HOST: sa << "ip host"; break;
@@ -374,7 +374,7 @@ IPFilter::Primitive::check(const Primitive &p, uint32_t provided_mask, ErrorHand
      case TYPE_PROTO:
       _type = TYPE_PROTO;
       break;
-      
+
      case TYPE_PORT:
       _type = TYPE_PORT;
       if (!_srcdst)
@@ -382,7 +382,7 @@ IPFilter::Primitive::check(const Primitive &p, uint32_t provided_mask, ErrorHand
       if (_transp_proto == UNKNOWN)
 	_transp_proto = p._transp_proto;
       break;
-      
+
      case TYPE_INT:
       if (!(p._type & TYPE_FIELD) && p._type != TYPE_PROTO && p._type != TYPE_PORT)
 	return errh->error("specify header field or 'port'");
@@ -395,7 +395,7 @@ IPFilter::Primitive::check(const Primitive &p, uint32_t provided_mask, ErrorHand
       else
 	return errh->error("partial directive");
       break;
-      
+
      default:
       if (_data & TYPE_FIELD) {
 	_type = _data;
@@ -524,7 +524,7 @@ IPFilter::Primitive::check(const Primitive &p, uint32_t provided_mask, ErrorHand
 	return -1;
     }
     break;
-    
+
   }
 
   // fix _srcdst
@@ -533,7 +533,7 @@ IPFilter::Primitive::check(const Primitive &p, uint32_t provided_mask, ErrorHand
       _srcdst = SD_OR;
   } else if (old_srcdst)
     errh->warning("'src' or 'dst' is meaningless here");
-  
+
   return 0;
 }
 
@@ -583,7 +583,7 @@ IPFilter::Primitive::add_comparison_exprs(Classifier *c, Vector<int> &tree, int 
   //    U and MASK; combine with AND.
   //    Otherwise, fail.
   // Stop testing when U >= MASK.
-  
+
   int high_bit_record = 0;
   int count = 0;
 
@@ -627,7 +627,7 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
   // (before transport protocol to enhance later optimizations)
   if (_type == TYPE_PORT || _type == TYPE_TCPOPT || ((_type & TYPE_FIELD) && (_type & FIELD_PROTO_MASK)))
     c->add_expr(tree, 4, 0, htonl(0x00001FFF));
-  
+
   // handle transport protocol uniformly
   if (_transp_proto != UNKNOWN)
     add_exprs_for_proto(_transp_proto, 0xFF, c, tree);
@@ -709,7 +709,7 @@ separate_text(const String &text, Vector<String> &words)
       if (pos < len - 1 && s[pos+1] == '=')
 	goto two_char;
       goto one_char;
-      
+
      case '(': case ')': case '[': case ']': case ',': case ';':
      case '?':
      one_char:
@@ -731,7 +731,7 @@ separate_text(const String &text, Vector<String> &words)
 	words.push_back(text.substring(first, pos - first));
 	break;
       }
-      
+
     }
   }
 }
@@ -894,7 +894,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
     return pos;
 
   // easy cases
-  
+
   // 'true' and 'false'
   if (words[pos] == "true") {
     add_expr(tree, 0, 0, 0);
@@ -932,7 +932,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   }
 
   // hard case
-  
+
   // expect quals [relop] data
   int first_pos = pos;
   Primitive prim;
@@ -968,13 +968,13 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
 	prim.set_srcdst(SD_SRC, errh);
     } else if (wd == "dst" || wd == "dest")
       prim.set_srcdst(SD_DST, errh);
-    
+
     else if (wd == "ip")
       /* nada */;
-    
+
     else if (wd == "not" || wd == "!")
       negated = !negated;
-      
+
     else
       break;
   }
@@ -999,7 +999,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
       if (provided_mask == 0)
 	  errh->error("bitmask of 0 ignored");
   }
-  
+
   // optional relational operation
   pos++;
   if (wd == "=" || wd == "==")
@@ -1018,14 +1018,14 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
     prim._op_negated = true;
   } else
     pos--;
-  
+
   // now collect the actual data
   if (pos < words.size()) {
     wd = words[pos];
     uint32_t wdata;
     int wt = lookup(wd, prim._type, prim._transp_proto, wdata, errh);
     pos++;
-    
+
     if (wt == -2)		// ambiguous or incorrect word type
       /* absorb word, but do nothing */
       prim._type = -2;
@@ -1036,7 +1036,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
 
     } else if (cp_integer(wd, &prim._u.i))
       prim._data = TYPE_INT;
-  
+
     else if (cp_ip_address(wd, prim._u.c, this)) {
       if (pos < words.size() - 1 && words[pos] == "mask"
 	  && cp_ip_address(words[pos+1], prim._mask.c, this)) {
@@ -1046,7 +1046,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
 	prim._data = TYPE_NET;
       else
 	prim._data = TYPE_HOST;
-    
+
     } else if (cp_ip_prefix(wd, prim._u.c, prim._mask.c, this))
       prim._data = TYPE_NET;
 
@@ -1061,7 +1061,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
     errh->error("empty term near '%s'", wd.c_str());
     return pos;
   }
-  
+
   // add if it is valid
   if (prim.check(prev_prim, provided_mask, errh) >= 0) {
     prim.add_exprs(this, tree);
@@ -1084,7 +1084,7 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 
   Vector<int> tree;
   init_expr_subtree(tree);
-  
+
   // [QUALS] [host|net|port|proto] [data]
   // QUALS ::= src | dst | src and dst | src or dst | \empty
   //        |  ip | icmp | tcp | udp
@@ -1098,7 +1098,7 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
     }
 
     PrefixErrorHandler cerrh(errh, "pattern " + String(argno) + ": ");
-    
+
     // get slot
     int slot = noutputs();
     {
@@ -1133,18 +1133,18 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
     else {
       // start with a blank primitive
       Primitive prev_prim;
-      
+
       int pos = parse_expr(words, 1, tree, prev_prim, &cerrh);
       if (pos < words.size())
 	cerrh.error("garbage after expression at '%s'", words[pos].c_str());
     }
-    
+
     finish_expr_subtree(tree, C_AND, -slot);
   }
 
   if (tree.size())
     finish_expr_subtree(tree, C_OR, -noutputs(), -noutputs());
-  
+
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   optimize_exprs(errh);
 
@@ -1152,7 +1152,7 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
   // It helps to do another bubblesort for things like ports.
   bubble_sort_and_exprs();
   compress_exprs(_prog, PERFORM_BINARY_SEARCH, MIN_BINARY_SEARCH);
-  
+
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
   return (errh->nerrors() == before_nerrors ? 0 : -1);
 }
@@ -1211,12 +1211,12 @@ IPFilter::length_checked_push(Packet *p)
   const uint32_t *pr = _prog.begin();
   const uint32_t *pp;
   uint32_t data = 0;
-  
+
   while (1) {
       int off = (int16_t) pr[0];
       if (off + 4 > packet_length)
 	  goto check_length;
-    
+
     length_ok:
       if (off >= TRANSP_FAKE_OFFSET)
 	  data = *(const uint32_t *)(transph_data + off - TRANSP_FAKE_OFFSET);
@@ -1253,7 +1253,7 @@ IPFilter::length_checked_push(Packet *p)
       }
       pr += off;
       continue;
-   
+
     check_length:
       if (off < packet_length) {
 	  unsigned available = packet_length - off;
@@ -1272,7 +1272,7 @@ IPFilter::push(int, Packet *p)
 {
   const unsigned char *neth_data = p->network_header();
   const unsigned char *transph_data = p->transport_header();
-  
+
   if (_output_everything >= 0) {
     // must use checked_output_push because the output number might be
     // out of range

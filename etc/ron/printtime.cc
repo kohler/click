@@ -58,7 +58,7 @@ IPPrintTime::configure(Vector<String> &conf, ErrorHandler *errh)
   bool print_ttl = false;
   bool print_len = false;
   String channel;
-  
+
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpString, "label", &_label,
@@ -101,7 +101,7 @@ IPPrintTime::simple_action(Packet *p)
     sa << _label << ": ";
 
   switch (iph->ip_p) {
-    
+
   case IP_PROTO_TCP: {
     const click_tcp *tcph = p->tcp_header();
     unsigned short srcp = ntohs(tcph->th_sport);
@@ -123,10 +123,10 @@ IPPrintTime::simple_action(Packet *p)
       sa << 'P';
     if (!(tcph->th_flags & (TH_SYN | TH_FIN | TH_RST | TH_PUSH)))
       sa << '.';
-    
+
     break;
   }
-  
+
   case IP_PROTO_UDP: {
     const click_udp *udph = p->udp_header();
     unsigned short srcp = ntohs(udph->uh_sport);
@@ -140,7 +140,7 @@ IPPrintTime::simple_action(Packet *p)
     sa << src << " > " << dst << ": ip protocol " << (int)iph->ip_p;
     break;
   }
-  
+
   }
 
 

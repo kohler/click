@@ -38,7 +38,7 @@ ACKResponder2::simple_action(Packet *p)
   IPAddress dst(p->data() + 4);
 
   if (dst == _ip) {
-    WritablePacket *xp = Packet::make(8); 
+    WritablePacket *xp = Packet::make(8);
     memcpy(xp->data(), _ip.data(), 4);
     memcpy(xp->data() + 4, src.data(), 4);
     output(1).push(xp);

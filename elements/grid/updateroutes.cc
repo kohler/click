@@ -26,8 +26,8 @@
 #include "grid.hh"
 CLICK_DECLS
 
-UpdateGridRoutes::UpdateGridRoutes() : _max_hops(3), 
-  _hello_timer(hello_hook, this), 
+UpdateGridRoutes::UpdateGridRoutes() : _max_hops(3),
+  _hello_timer(hello_hook, this),
   _expire_timer(expire_hook, this),
   _sanity_timer(sanity_hook, this),
   _num_updates_sent(0), _seq_no(0)
@@ -117,7 +117,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
    */
   assert(packet);
   unsigned int jiff = click_jiffies();
-  
+
   /*
    * Update immediate neighbor table with this packet's transmitter's
    * info.
@@ -141,25 +141,25 @@ UpdateGridRoutes::simple_action(Packet *packet)
     // this src addr not already in map, so add it
     NbrEntry new_nbr(ethaddr, ipaddr, jiff);
     _addresses.insert(ipaddr, new_nbr);
-    click_chatter("%s: adding %s -- %s", name().c_str(), ipaddr.unparse().c_str(), ethaddr.unparse().c_str()); 
+    click_chatter("%s: adding %s -- %s", name().c_str(), ipaddr.unparse().c_str(), ethaddr.unparse().c_str());
   }
   else {
     // update jiffies and MAC for existing entry
     nbr->last_updated_jiffies = jiff;
-    if (nbr->eth != ethaddr) 
-      click_chatter("%s: updating %s -- %s", name().c_str(), ipaddr.unparse().c_str(), ethaddr.unparse().c_str()); 
+    if (nbr->eth != ethaddr)
+      click_chatter("%s: updating %s -- %s", name().c_str(), ipaddr.unparse().c_str(), ethaddr.unparse().c_str());
     nbr->eth = ethaddr;
   }
-  
+
   /* XXX need to update (or add) routing entry in _rtes to be the
      correct one-hop entry for destination of this sender, ipaddr. */
-  
+
   /*
    * perform further packet processing, extrace routing information from DSDV packets
    */
   switch (gh->type) {
   case grid_hdr::GRID_LR_HELLO:
-    {   
+    {
       grid_hello *hlo = (grid_hello *) (packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
 
       /*
@@ -181,7 +181,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	fe->nbr.loc_err = ntohs(gh->loc_err);
 	fe->nbr.loc_good = gh->loc_good;
 	fe->nbr.age = decr_age(ntohl(hlo->age), grid_hello::MIN_AGE_DECREMENT);
-      } else { 
+      } else {
 	/* i guess we always overwrite existing info, because we heard
            this info directly from the node... */
 	// update pre-existing information
@@ -195,9 +195,9 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	fe->nbr.age = decr_age(ntohl(hlo->age), grid_hello::MIN_AGE_DECREMENT);
       }
 
-      
-      /* 
-       * add this sender's nbrs to our far neighbor list.  
+
+      /*
+       * add this sender's nbrs to our far neighbor list.
        */
       int entry_sz = hlo->nbr_entry_sz;
       Vector<grid_nbr_entry> triggered_rtes;
@@ -205,7 +205,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
 
       // loop through all the route entries in the packet
       for (int i = 0; i < hlo->num_nbrs; i++) {
-	grid_nbr_entry *curr = (grid_nbr_entry *) (packet->data() + sizeof(click_ether) + 
+	grid_nbr_entry *curr = (grid_nbr_entry *) (packet->data() + sizeof(click_ether) +
 						   sizeof(grid_hdr) + sizeof(grid_hello) +
 						   i * entry_sz);
 
@@ -233,7 +233,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	      new_entry.num_hops = 0;
 	      // who told us about the broken route, so the
 	      // pseudo-split-horizon will ignore this entry
-	      new_entry.next_hop_ip = curr->ip; 
+	      new_entry.next_hop_ip = curr->ip;
 	      // broken route info should be odd seq_no's
 	      new_entry.seq_no = ntohl(curr->seq_no);
 	      assert((new_entry.seq_no & 1) == 1); // XXX convert this to more robust check
@@ -272,7 +272,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	  fe->nbr.loc_good = curr->loc_good;
 	  fe->nbr.age = decr_age(ntohl(curr->age), grid_hello::MIN_AGE_DECREMENT);
 	}
-	else { 
+	else {
 	  // replace iff seq_no is newer, or if seq_no is same and hops are less
 	  unsigned int curr_seq = ntohl(curr->seq_no);
 	  if (curr_seq > fe->nbr.seq_no ||
@@ -291,7 +291,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	  }
 	}
       }
-    
+
       if (triggered_rtes.size() > 0) {
         // send the triggered update
         send_routing_update(triggered_rtes, false);
@@ -302,7 +302,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	assert(_rtes.remove(broken_rtes[i]));
     }
     break;
-    
+
   default:
     break;
   }
@@ -311,17 +311,17 @@ UpdateGridRoutes::simple_action(Packet *packet)
 
 
 
-static String 
+static String
 print_rtes(Element *e, void *)
 {
   UpdateGridRoutes *n = (UpdateGridRoutes *) e;
-  
+
   String s;
   for (UpdateGridRoutes::FarTable::iterator iter = n->_rtes.begin(); iter.live(); iter++) {
     UpdateGridRoutes::far_entry f = iter.value();
-    s += IPAddress(f.nbr.ip).unparse() 
-      + " next_hop=" + IPAddress(f.nbr.next_hop_ip).unparse() 
-      + " num_hops=" + String((int) f.nbr.num_hops) 
+    s += IPAddress(f.nbr.ip).unparse()
+      + " next_hop=" + IPAddress(f.nbr.next_hop_ip).unparse()
+      + " num_hops=" + String((int) f.nbr.num_hops)
       + " loc=" + f.nbr.loc.s()
       + " err=" + (f.nbr.loc_good ? "" : "-") + String(f.nbr.loc_err) // negate loc if invalid
       + " seq_no=" + String(f.nbr.seq_no)
@@ -373,7 +373,7 @@ UpdateGridRoutes::add_handlers()
 
 
 void
-UpdateGridRoutes::get_rtes(Vector<grid_nbr_entry> *retval) 
+UpdateGridRoutes::get_rtes(Vector<grid_nbr_entry> *retval)
 {
   assert(retval != 0);
   expire_routes();
@@ -383,10 +383,10 @@ UpdateGridRoutes::get_rtes(Vector<grid_nbr_entry> *retval)
 
 
 void
-UpdateGridRoutes::sanity_hook(Timer *, void *thunk) 
+UpdateGridRoutes::sanity_hook(Timer *, void *thunk)
 {
   UpdateGridRoutes *n = (UpdateGridRoutes *) thunk;
-  
+
   if (n->_num_updates_sent > SANITY_CHECK_MAX_PACKETS)
     click_chatter("%s: sent more than %d routing updates in %d milliseconds!",
 		  n->name().c_str(), SANITY_CHECK_MAX_PACKETS, SANITY_CHECK_PERIOD);
@@ -396,7 +396,7 @@ UpdateGridRoutes::sanity_hook(Timer *, void *thunk)
 }
 
 void
-UpdateGridRoutes::expire_hook(Timer *, void *thunk) 
+UpdateGridRoutes::expire_hook(Timer *, void *thunk)
 {
   UpdateGridRoutes *n = (UpdateGridRoutes *) thunk;
 
@@ -412,9 +412,9 @@ UpdateGridRoutes::expire_hook(Timer *, void *thunk)
     // XXX yucky
     *((unsigned int *) &(iter.value().nbr.age)) = decr_age(iter.value().nbr.age, EXPIRE_TIMER_PERIOD);
   }
-  
+
   Vector<grid_nbr_entry> expired_info = n->expire_routes();
-  
+
   if (expired_info.size() > 0) {
     // make and send the packet advertising any broken routes
     n->send_routing_update(expired_info, false);
@@ -441,7 +441,7 @@ UpdateGridRoutes::expire_routes()
   Vector<grid_nbr_entry> expired_nbrs;
 
   // find the expired immediate entries
-  for (UpdateGridRoutes::Table::iterator iter = _addresses.begin(); iter.live(); iter++) 
+  for (UpdateGridRoutes::Table::iterator iter = _addresses.begin(); iter.live(); iter++)
     if (jiff - iter.value().last_updated_jiffies > _timeout_jiffies)
       expired_addresses.insert(iter.key(), true);
 
@@ -532,7 +532,7 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
   if (p == 0) {
     click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
-  } 
+  }
   ASSERT_4ALIGNED(p->data());
   p->pull(2);
   memset(p->data(), 0, p->length());
@@ -565,7 +565,7 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
        to us.  from DSDV paper. */
     _seq_no += 2;
   }
-  
+
   hlo->age = htonl(grid_hello::MAX_AGE_DEFAULT);
 
   grid_nbr_entry *curr = (grid_nbr_entry *) (hlo + 1);

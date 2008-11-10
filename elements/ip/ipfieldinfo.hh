@@ -12,7 +12,7 @@ class IPField { public:
 
     inline bool ok() const	{ return _val >= 0; }
     inline int32_t value() const { return _val; }
-    
+
     inline int proto() const	{ return (_val & PROTO_MASK) >> PROTO_SHIFT; }
 
     inline int bit_offset() const;
@@ -20,16 +20,16 @@ class IPField { public:
 
     inline int byte_offset() const;
     inline int byte_length() const;
-    
+
     enum {
 	PROTO_SHIFT = 20,
 	MAX_PROTO = 0x1FF,
 	PROTO_MASK = MAX_PROTO << PROTO_SHIFT,
-	
+
 	OFFSET_SHIFT = 6,
 	MAX_OFFSET = 0x1FFF,
 	OFFSET_MASK = MAX_OFFSET << OFFSET_SHIFT,
-	
+
 	LENGTH_SHIFT = 0,
 	MAX_LENGTH = 0x3F,
 	LENGTH_MASK = MAX_LENGTH << LENGTH_SHIFT,
@@ -45,11 +45,11 @@ class IPField { public:
 
     static const char *parse(const char *begin, const char *end, int proto, IPField *result, ErrorHandler *errh, Element *elt = 0);
     String unparse(Element *elt = 0, bool tcpdump_rules = false);
-    
+
   private:
-    
+
     int32_t _val;
-    
+
 };
 
 class IPFieldInfo : public Element { public:
@@ -60,7 +60,7 @@ class IPFieldInfo : public Element { public:
 
     static void static_initialize();
     static void static_cleanup();
-    
+
 };
 
 

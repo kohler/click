@@ -36,7 +36,7 @@ EraseIPPayload::simple_action(Packet *p_in)
     WritablePacket *p = p_in->uniqueify();
     if (!p)
 	return 0;
-    
+
     click_ip *ip = p->ip_header();
     if (ip->ip_p == IP_PROTO_TCP) {
 	int off = p->transport_header_offset() + (p->tcp_header()->th_off << 2);
@@ -56,7 +56,7 @@ EraseIPPayload::simple_action(Packet *p_in)
 	p->kill();
 	return 0;
     }
-  
+
     return p;
 }
 

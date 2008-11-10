@@ -30,13 +30,13 @@ class AnnotationInfo : public Element { public:
 
     AnnotationInfo();
     ~AnnotationInfo();
-    
+
     const char *class_name() const	{ return "AnnotationInfo"; }
 
     int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
     int configure(Vector<String> &conf, ErrorHandler *errh);
     int initialize(ErrorHandler *errh);
-    
+
 };
 
 CLICK_ENDDECLS

@@ -74,16 +74,16 @@ public:
 	stability_shift = 5,
 	scale = 10
     };
-    
+
     struct EWMAParameters : public FixedEWMAXParameters<stability_shift, scale> {
 	enum {
 	    rate_count = 2
 	};
-    
+
 	static unsigned epoch() {
 	    return click_jiffies() >> 3;
 	}
-    
+
 	static unsigned epoch_frequency() {
 	    return CLICK_HZ >> 3;
 	}
@@ -113,7 +113,7 @@ public:
 
   typedef RateEWMAX<EWMAParameters> MyEWMA;
   struct Stats; struct Counter;	// so they can find one another
-  
+
   struct Counter {
     // fwd_and_rev_rate.average[0] is forward rate
     // fwd_and_rev_rate.average[1] is reverse rate
@@ -131,7 +131,7 @@ public:
   struct Stats {
     // one Stats for each subnet
     enum { MAX_COUNTERS = 256 };
-    
+
     Counter *_parent;               // equals NULL for _base->_parent
     Stats *_prev, *_next;           // to maintain age-list
 
@@ -144,7 +144,7 @@ public:
   };
 
 protected:
-  
+
   // HACK! Functions for interaction between fold() and ~Stats()
   friend struct Stats;
   void set_prev(Stats *s)                       { _prev_deleted = s; }
@@ -157,7 +157,7 @@ private:
 
   enum { MAX_SHIFT = 24, PERIODIC_FOLD_INIT = 8192, MEMMAX_MIN = 100 };
   // every n packets, a fold() is done
-  
+
   bool _count_packets;		// packets or bytes
   bool _anno_packets;		// annotate packets?
   int _thresh;			// threshold, when to split
@@ -231,7 +231,7 @@ IPRateMonitor::set_anno_level(unsigned addr, unsigned level, unsigned when)
 // Dives in tables based on addr and raises all rates by val.
 //
 inline void
-IPRateMonitor::update(unsigned addr, int val, Packet *p, 
+IPRateMonitor::update(unsigned addr, int val, Packet *p,
                       bool forward, bool update_ewma)
 {
   Stats *s = _base;
@@ -241,7 +241,7 @@ IPRateMonitor::update(unsigned addr, int val, Packet *p,
 
   // zoom in to deepest opened level
   addr = ntohl(addr);		// need it in network order
-  
+
   int bitshift;
   for (bitshift = 24; bitshift >= 0; bitshift -= 8) {
     unsigned char byte = (addr >> bitshift) & 255;
@@ -259,15 +259,15 @@ IPRateMonitor::update(unsigned addr, int val, Packet *p,
       else
         c->fwd_and_rev_rate.update(val,1);
     }
-    
+
     // zoom in on subnet or host
     if (!c->next_level)
       break;
     s = c->next_level;
   }
-    
-  int fwd_rate = c->fwd_and_rev_rate.scaled_average(0); 
-  int rev_rate = c->fwd_and_rev_rate.scaled_average(1); 
+
+  int fwd_rate = c->fwd_and_rev_rate.scaled_average(0);
+  int rev_rate = c->fwd_and_rev_rate.scaled_average(1);
   int freq = EWMAParameters::epoch_frequency();
   fwd_rate = (fwd_rate * freq) >> scale;
   rev_rate = (rev_rate * freq) >> scale;
@@ -303,7 +303,7 @@ IPRateMonitor::update(unsigned addr, int val, Packet *p,
       }
       return;
     }
-    
+
     // tell parent about newly created Stats and make it youngest in age-list
     c->next_level->_parent = c;
 

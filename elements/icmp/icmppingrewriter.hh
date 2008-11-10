@@ -72,7 +72,7 @@ class ICMPPingRewriter : public Element { public:
   const char *class_name() const	{ return "ICMPPingRewriter"; }
   const char *port_count() const	{ return "1-2/1-2"; }
   const char *processing() const	{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
@@ -83,9 +83,9 @@ class ICMPPingRewriter : public Element { public:
 
   class Mapping;
   Mapping *get_mapping(bool is_request, const IPFlowID &flow) const;
-  
+
   class Mapping {
-    
+
     IPFlowID _mapto;
     Mapping *_reverse;
     bool _used;
@@ -95,7 +95,7 @@ class ICMPPingRewriter : public Element { public:
     unsigned short _icmp_csum_delta;
 
    public:
-    
+
     Mapping(bool dst_anno);
 
     void initialize(const IPFlowID &, const IPFlowID &, bool, Mapping *);
@@ -107,16 +107,16 @@ class ICMPPingRewriter : public Element { public:
     bool is_reverse() const		{ return _is_reverse; }
     Mapping *reverse() const		{ return _reverse; }
     bool used() const			{ return _used; }
-  
+
     void mark_used()			{ _used = true; }
     void clear_used()			{ _used = false; }
-    
+
     void apply(WritablePacket *);
 
     String s() const;
-    
+
   };
-  
+
  protected:
 
   typedef HashTable<IPFlowID, Mapping *> Map;
@@ -136,7 +136,7 @@ class ICMPPingRewriter : public Element { public:
   Mapping *apply_pattern(const IPFlowID &);
 
   static String dump_mappings_handler(Element *, void *);
-  
+
   // void take_state_map(Map &, const Vector<Pattern *> &, const Vector<Pattern *> &);
 
 };

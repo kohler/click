@@ -23,7 +23,7 @@ CLICK_DECLS
 class LinkStat;
 
 class ETX2Metric : public GridGenericMetric {
-  
+
 public:
 
   ETX2Metric();
@@ -42,7 +42,7 @@ public:
   bool metric_val_lt(const metric_t &, const metric_t &) const;
   metric_t get_link_metric(const EtherAddress &n, bool) const;
   metric_t append_metric(const metric_t &, const metric_t &) const;
-  metric_t prepend_metric(const metric_t &r, const metric_t &l) const 
+  metric_t prepend_metric(const metric_t &r, const metric_t &l) const
   { return append_metric(r, l); }
 
   unsigned char scale_to_char(const metric_t &) const;

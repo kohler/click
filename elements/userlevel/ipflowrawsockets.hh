@@ -89,8 +89,8 @@ unnecessary for capturing packets on PlanetLab Linux. Default is true.
 =item HEADROOM
 
 Unsigned Integer. Amount of headroom to reserve in packets created
-by this element. This could be useful for encapsulation protocols 
-which add headers to the packet, and can avoid expensive push 
+by this element. This could be useful for encapsulation protocols
+which add headers to the packet, and can avoid expensive push
 operations later in the packet's life.
 
 =back
@@ -134,10 +134,10 @@ represented by ip_from_intern and ip_to_intern.
 ToIPFlowDumps, AggregateIPFlows */
 
 class IPFlowRawSockets : public Element, public AggregateListener { public:
-  
+
     IPFlowRawSockets();
     ~IPFlowRawSockets();
-  
+
     const char *class_name() const	{ return "IPFlowRawSockets"; }
     const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return "a/h"; }
@@ -174,7 +174,7 @@ class IPFlowRawSockets : public Element, public AggregateListener { public:
       private:
 
 	enum { NPKT = 128, NNOTE = 32 };
-	
+
 	Flow *_next;
 	IPFlowID _flowid;
 	int _ip_p;
@@ -182,7 +182,7 @@ class IPFlowRawSockets : public Element, public AggregateListener { public:
 	int _wd, _rd;
 	pcap_t *_pcap;
 	int _datalink;
-	
+
     };
 
     enum { FLOWMAP_BITS = 10, NFLOWMAP = 1 << FLOWMAP_BITS };

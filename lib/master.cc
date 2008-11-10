@@ -106,7 +106,7 @@ Master::Master(int nthreads)
 #endif
     _timer_check = Timestamp::now();
     _timer_check_reports = 0;
-    
+
 #if CLICK_NS
     _simnode = 0;
 #endif
@@ -129,7 +129,7 @@ Master::~Master()
 
     if (_refcount > 0)
 	click_chatter("deleting master while ref count = %d", _refcount);
-    
+
     for (int i = 0; i < _threads.size(); i++)
 	delete _threads[i];
 #if CLICK_USERLEVEL && HAVE_SYS_EVENT_H && HAVE_KQUEUE
@@ -216,7 +216,7 @@ Master::kill_router(Router *router)
 #if CLICK_LINUXMODULE
     assert(!in_interrupt());
 #endif
-    
+
     lock_master();
     assert(router && router->_master == this);
     int was_running = router->_running;
@@ -238,7 +238,7 @@ Master::kill_router(Router *router)
     preempt_disable();
 #endif
     unlock_master();
-    
+
     // Remove tasks
     for (RouterThread **tp = _threads.begin(); tp < _threads.end(); tp++)
 	(*tp)->unschedule_router_tasks(router);
@@ -246,7 +246,7 @@ Master::kill_router(Router *router)
     // 4.Sep.2007 - Don't bother to remove pending tasks.  They will be
     // removed shortly anyway, either when the task itself is deleted or (more
     // likely) when the pending list is processed.
-    
+
     // Remove timers
     {
 	lock_timers();
@@ -317,7 +317,7 @@ Master::unregister_router(Router *router)
 
 	if (router->_running >= Router::RUNNING_PREPARING)
 	    kill_router(router);
-    
+
 	Router **pprev = &_routers;
 	for (Router *r = *pprev; r; r = r->_next_router)
 	    if (r != router) {
@@ -328,7 +328,7 @@ Master::unregister_router(Router *router)
 	_refcount--;		// balanced in register_router()
 	router->_master = 0;
     }
-    
+
     unlock_master();
 }
 
@@ -338,11 +338,11 @@ Master::check_driver()
 #if CLICK_LINUXMODULE
     assert(!in_interrupt());
 #endif
-    
+
     lock_master();
     _stopper = 0;
     bool any_active = false;
-    
+
     for (Router *r = _routers; r; ) {
 	Router *next_router = r->_next_router;
 	if (r->runcount() <= 0 && r->_running >= Router::RUNNING_BACKGROUND) {
@@ -426,7 +426,7 @@ Master::timer_reheapify_from(int pos, Timer* t, bool will_delete)
 	}
 	t->_expiry = _timer_check;
     }
-    
+
     while (pos > 0
 	   && (npos = (pos-1) >> 1, tbegin[npos]->_expiry > t->_expiry)) {
 	tbegin[pos] = tbegin[npos];
@@ -468,7 +468,7 @@ Master::run_timers()
 #endif
 	_timer_check = Timestamp::now();
 	Timer *t = _timer_heap.at_u(0);
-	
+
 	if (t->_expiry <= _timer_check) {
 	    // potentially adjust timer stride
 	    Timestamp adj_expiry = t->_expiry + Timer::adjustment();
@@ -481,7 +481,7 @@ Master::run_timers()
 		if (++_timer_stride >= _max_timer_stride)
 		    _timer_stride = _max_timer_stride;
 	    }
-	    
+
 	    // actually run timers
 	    int max_timers = 64;
 	    do {
@@ -513,13 +513,13 @@ Master::run_timers()
 		Vector<Timer*>::iterator i = v.begin();
 		for (; !_stopper && i != v.end(); ++i)
 		    (*i)->_hook(*i, (*i)->_thunk);
-		
+
 		// reschedule unrun timers if stopped early
 		for (; i != v.end(); ++i)
 		    (*i)->schedule_at((*i)->_expiry);
 	    }
 	}
-	
+
 #if CLICK_LINUXMODULE
 	_timer_task = 0;
 #endif
@@ -612,7 +612,7 @@ Master::add_select(int fd, Element *element, int mask)
 	}
     }
 #endif
-	
+
 #if !HAVE_POLL_H
     // Add 'mask' to the fd_sets
     if (fd < FD_SETSIZE) {
@@ -671,7 +671,7 @@ Master::remove_pollfd(int pi, int event)
     // exit unless there are no events left
     if (_pollfds[pi].events)
 	return;
-    
+
     // remove whole pollfd
 #if HAVE_SYS_EVENT_H && HAVE_KQUEUE
     // except we don't need to under kqueue
@@ -680,7 +680,7 @@ Master::remove_pollfd(int pi, int event)
 	return;
     }
 #endif
-    
+
     _pollfds[pi] = _pollfds.back();
     _pollfds.pop_back();
     // 31.Oct.2003 - Peter Swain: keep fds and elements in sync
@@ -763,7 +763,7 @@ Master::run_selects_kqueue(bool more_tasks)
 	memset(_selected_callnos.begin(), 0, _selected_callnos.size() * sizeof(int));
 	_selected_callno++;
     }
-    
+
     struct kevent kev[64];
     int n = kevent(_kqueue, 0, 0, &kev[0], 64, wait_ptr);
     int was_errno = errno;
@@ -880,7 +880,7 @@ Master::run_selects_select(bool more_tasks)
     int n = select(_max_select_fd + 1, &read_mask, &write_mask, (fd_set*) 0, wait_ptr);
     int was_errno = errno;
     run_signals();
-  
+
     if (n < 0 && was_errno != EINTR)
 	perror("select");
     else if (n > 0)

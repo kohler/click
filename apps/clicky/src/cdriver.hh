@@ -6,7 +6,7 @@ namespace clicky {
 class cdriver { public:
 
     virtual ~cdriver() { }
-    
+
     enum { dflag_background = 1, dflag_clear = 2, dflag_nonraw = 4 };
 
     virtual bool active() const = 0;
@@ -18,7 +18,7 @@ class cdriver { public:
 
     static int check_handler_name(const String &inname, String &ename, String &hname, ErrorHandler *errh);
     static void transfer_messages(crouter *rw, int status, const messagevector &messages);
-    
+
 };
 
 
@@ -31,14 +31,14 @@ class csocket_cdriver : public cdriver { public:
 
     bool active() const;
     int driver_mask() const;
-    
+
     void do_read(const String &hname, const String &hparam, int flags);
     void do_write(const String &hname, const String &hvalue, int flags);
     void do_check_write(const String &hname, int flags);
 
     // actually private
     gboolean csocket_event(GIOCondition);
-    
+
   private:
 
     enum { csocket_failed, csocket_connecting, csocket_initial,
@@ -59,7 +59,7 @@ class csocket_cdriver : public cdriver { public:
 	size_t rdatapos;
 	size_t rdatalen;
 	bool ignore_newline;
-	
+
 	msg(crouter *cr_, const String &hname_, const String &command_, int command_datalen_, int type_, int flags_)
 	    : tnotify(cr_, 400), type(type_), flags(flags_), hname(hname_),
 	      command(command_), command_datalen(command_datalen_),
@@ -78,7 +78,7 @@ class csocket_cdriver : public cdriver { public:
     gboolean kill_with_dialog(GatherErrorHandler *gerrh, int gerrh_pos, const char *format, ...);
     bool msg_parse(msg *m, GatherErrorHandler *gerrh, int gerrh_pos);
     void add_msg(const String &hname, const String &command, int command_datalen, int type, int flags);
-    
+
 };
 
 
@@ -88,13 +88,13 @@ class clickfs_cdriver : public cdriver { public:
 
     bool active() const;
     int driver_mask() const;
-    
+
     void do_read(const String &hname, const String &hparam, int flags);
     void do_write(const String &hname, const String &hvalue, int flags);
     void do_check_write(const String &hname, int flags);
 
   private:
-    
+
     crouter *_cr;
     String _prefix;
     bool _active;

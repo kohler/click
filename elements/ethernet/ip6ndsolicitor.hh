@@ -10,17 +10,17 @@ CLICK_DECLS
  * =c
  * IP6NDSolicitor(IP, ETH)
  * =s ip6
- * 
+ *
  * =d
- * Handles most of the Neighbor Discovery(ND) protocol. 
- * Argument IP should be this host's IP6 address, and ETH should 
+ * Handles most of the Neighbor Discovery(ND) protocol.
+ * Argument IP should be this host's IP6 address, and ETH should
  * be this host's ethernet address.
  *
  * Expects ordinary IP6 packets on input 0, each with a destination
  * address annotation. If an ethernet address is already known
  * for the destination, the IP6 packet is wrapped in an ethernet
  * header and sent to output 0. Otherwise the IP6 packet is saved and
- * an Neighbor Solicitation Message is sent to output 0. 
+ * an Neighbor Solicitation Message is sent to output 0.
  * If an Neighbor Advertisement Message arrives
  * on input 1 for an IP6 address that we need, the mapping is
  * recorded and the saved IP6 packet is sent.
@@ -49,24 +49,24 @@ CLICK_DECLS
 
 class IP6NDSolicitor : public Element {
  public:
-  
+
   IP6NDSolicitor();
   ~IP6NDSolicitor();
-  
+
   const char *class_name() const		{ return "IP6NDSolicitor"; }
   const char *port_count() const		{ return "2/1-2"; }
   const char *processing() const		{ return PUSH; }
   const char *flow_code() const			{ return "xy/x"; }
 
   void add_handlers();
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
   void take_state(Element *, ErrorHandler *);
-  
+
   void push(int port, Packet *);
-  
+
   Packet *make_query(unsigned char tpa[16],
                      unsigned char sha[6], unsigned char spa[16]);
 
@@ -85,7 +85,7 @@ class IP6NDSolicitor : public Element {
   // statistics
   int _arp_queries;
   int _pkts_killed;
-  
+
  private:
 
   enum { NMAP = 256 };
@@ -93,16 +93,16 @@ class IP6NDSolicitor : public Element {
   EtherAddress _my_en;
   IP6Address _my_ip6;
   Timer _expire_timer;
-  
+
   void send_query_for(const u_char want_ip6[16]);
-  
+
   void handle_ip6(Packet *);
   void handle_response(Packet *);
 
   enum { EXPIRE_TIMEOUT_MS = 15 * 1000 };
   static void expire_hook(Timer *, void *);
   static String read_table(Element *, void *);
-  
+
 };
 
 CLICK_ENDDECLS

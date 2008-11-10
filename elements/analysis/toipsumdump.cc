@@ -99,7 +99,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     }
     if (_fields.size() == 0)
 	errh->error("no contents specified");
-    
+
     _verbose = verbose;
     _bad_packets = bad_packets;
     _careful_trunc = careful_trunc;
@@ -136,7 +136,7 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
 
     if (_banner)
 	sa << "!creator " << cp_quote(_banner) << '\n';
-    
+
     // host and start time
     if (_verbose) {
 	char buf[BUFSIZ];
@@ -227,7 +227,7 @@ ToIPSummaryDump::write_packet(Packet* p, int multipacket)
 	    p->set_timestamp_anno(FIRST_TIMESTAMP_ANNO(p));
 	} else
 	    timestamp_delta = Timestamp();
-	
+
 	SET_EXTRA_PACKETS_ANNO(p, 0);
 	for (uint32_t i = count; i > 0; i--) {
 	    uint32_t l = total_len / i;
@@ -239,7 +239,7 @@ ToIPSummaryDump::write_packet(Packet* p, int multipacket)
 	    else
 		p->timestamp_anno() += timestamp_delta;
 	}
-	
+
     } else {
 	_sa.clear();
 	_bad_sa.clear();

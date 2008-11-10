@@ -109,7 +109,7 @@ ToHost::push(int, Packet *p)
 	m_freem(m);
 	return;
     }
-	
+
     m->m_pkthdr.rcvif = NULL; // tell click-ether-input to ignore this
     m_adj(m, ETHER_HDR_LEN);
 #if 1

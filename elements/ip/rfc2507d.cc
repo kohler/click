@@ -153,7 +153,7 @@ RFC2507d::simple_action(Packet *p)
     click_chatter("seq %d len %d",
                 (int)ntohl(tcph.th_seq),
                 q->length() - sizeof(tcph) - sizeof(iph));
-    
+
     {
       char *p = new char[q->length()];
       memcpy(p, q->data(), q->length());
@@ -173,7 +173,7 @@ RFC2507d::simple_action(Packet *p)
       if(click_in_cksum((unsigned char *)p, len) != 0){
         click_chatter(" tcp cksum failed");
       }
-      
+
       delete [] p;
     }
   }

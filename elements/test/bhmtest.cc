@@ -435,7 +435,7 @@ BigHashMapTest::initialize(ErrorHandler *errh)
 
 #if CLICK_USERLEVEL
     HashMap<String, int> map(-1);
-    
+
     struct rusage ru0, ru1;
     Timestamp ts0, ts1;
     if (getrusage(RUSAGE_SELF, &ru0) < 0)
@@ -461,7 +461,7 @@ BigHashMapTest::initialize(ErrorHandler *errh)
     ts1 -= ts0;
     errh->message("%{timestamp}u %{timestamp} total", &ru_delta, &ts1);
 #endif
-    
+
     errh->message("All tests pass!");
     return 0;
 }

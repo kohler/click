@@ -55,11 +55,11 @@ class CheckUDPHeader : public Element { public:
 
   CheckUDPHeader();
   ~CheckUDPHeader();
-  
+
   const char *class_name() const		{ return "CheckUDPHeader"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   void add_handlers();
 
@@ -81,10 +81,10 @@ class CheckUDPHeader : public Element { public:
     NREASONS
   };
   static const char *reason_texts[NREASONS];
-  
+
   Packet *drop(Reason, Packet *);
   static String read_handler(Element *, void *);
-  
+
 };
 
 CLICK_ENDDECLS

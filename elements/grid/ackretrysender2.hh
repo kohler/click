@@ -35,7 +35,7 @@ CLICK_DECLS
  * Output 0 should pass through an EtherEncap which puts encapsulated
  * the packet with this node's source ether address, the broadcast
  * ether dest, and the ACKRetry data ethertype (typically 0x7ffb).
- * 
+ *
  * Keyword arguments are:
  *
  * =over 8
@@ -77,7 +77,7 @@ CLICK_DECLS
  *
  * =h reset write-only
  * Reset packet retry statistics.
- * =a 
+ * =a
  * ACKResponder2, ACKRetrySender, ACKResponder, EtherEncap */
 
 /* packet formats:
@@ -87,8 +87,8 @@ Data/ACK packet formats:
 (pushed by later EtherEncap) ether dest [6]
 (pushed by later EtherEncap) ether src  [6]
 (pushed by later EtherEncap) ether type [2] (0x7ffb for data, 0x7ffc for ACK)
-src IP 
-dst IP 
+src IP
+dst IP
 <encapsulated data packet> (not for ACK)
 
 */
@@ -119,7 +119,7 @@ private:
   unsigned int _history_length;
 
   struct tx_result_t {
-    tx_result_t(const Timestamp &t, unsigned n, bool s) 
+    tx_result_t(const Timestamp &t, unsigned n, bool s)
       : pkt_time(t), num_tx(n), success(s) { }
     Timestamp pkt_time;
     unsigned num_tx;

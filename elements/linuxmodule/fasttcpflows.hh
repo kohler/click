@@ -43,10 +43,10 @@
  * Change ACTIVE
  *
  * =e
- *  FastTCPFlows(100000, 500000, 60, 
- *               0:0:0:0:0:0, 1.0.0.1, 1234, 
+ *  FastTCPFlows(100000, 500000, 60,
+ *               0:0:0:0:0:0, 1.0.0.1, 1234,
  *               1:1:1:1:1:1, 2.0.0.2, 1234,
- *               100, 10) 
+ *               100, 10)
  *    -> ToDevice;
  */
 
@@ -71,7 +71,7 @@ class FastTCPFlows : public Element {
   bool _cksum;
   click_jiffies_t _first;
   click_jiffies_t _last;
- 
+
   struct flow_t {
     WritablePacket *syn_packet;
     WritablePacket *fin_packet;
@@ -83,7 +83,7 @@ class FastTCPFlows : public Element {
   Packet *get_packet();
 
  public:
-  
+
   static const unsigned NO_LIMIT = 0xFFFFFFFFU;
 
   GapRate _rate;
@@ -93,11 +93,11 @@ class FastTCPFlows : public Element {
 
   FastTCPFlows();
   ~FastTCPFlows();
-  
+
   const char *class_name() const	{ return "FastTCPFlows"; }
   const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PULL; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);

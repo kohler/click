@@ -60,7 +60,7 @@ SetRandIPAddress::pick()
   uint32_t mask = (uint32_t) _mask;
 
   x = (click_random() & ~mask) | ((uint32_t)_ip & mask);
-  
+
   return(IPAddress(x));
 }
 

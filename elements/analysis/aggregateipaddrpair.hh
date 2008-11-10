@@ -52,7 +52,7 @@ notifications when new aggregates are created and old ones are deleted.
 
 Clears all flow information.  Future packets will get new aggregate annotation
 values.
-   
+
 =a
 
 AggregateIPFlows, AggregateCounter, AggregateIP
@@ -83,7 +83,7 @@ class AggregateIPAddrPair : public Element, public AggregateNotifier { public:
 	}
 	inline hashcode_t hashcode() const;
     };
-    
+
   private:
 
     struct FlowInfo {
@@ -92,13 +92,13 @@ class AggregateIPAddrPair : public Element, public AggregateNotifier { public:
 	bool reverse;
 	FlowInfo()		: aggregate(0) { }
     };
-    
+
     typedef HashTable<HostPair, FlowInfo> Map;
     Map _map;
 
     unsigned _active_sec;
     unsigned _gc_sec;
-    
+
     int _timeout;
     unsigned _gc_interval;
     bool _timestamp_warning;
@@ -107,7 +107,7 @@ class AggregateIPAddrPair : public Element, public AggregateNotifier { public:
     void reap();
 
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

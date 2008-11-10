@@ -69,7 +69,7 @@ AnonymizeIPAddr::configure(Vector<String> &conf, ErrorHandler *errh)
     _preserve_class = 0;
     String preserve_8;
     bool seed = true;
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "CLASS", 0, cpInteger, &_preserve_class,
 		     "PRESERVE_8", 0, cpArgument, &preserve_8,
@@ -98,7 +98,7 @@ AnonymizeIPAddr::configure(Vector<String> &conf, ErrorHandler *errh)
     // install seed if required
     if (seed)
 	click_random_srandom();
-    
+
     return 0;
 }
 
@@ -138,7 +138,7 @@ AnonymizeIPAddr::initialize(ErrorHandler *errh)
     memset(&_special_nodes[0], 0, sizeof(_special_nodes));
     _special_nodes[0].input = _special_nodes[0].output = 0;
     _special_nodes[1].input = _special_nodes[1].output = 0xFFFFFFFF;
-    
+
     return 0;
 }
 
@@ -171,7 +171,7 @@ AnonymizeIPAddr::make_peer(uint32_t a, Node *n)
     // watch out for special IP addresses, which never make it into the tree
     if (a == 0 || a == 0xFFFFFFFFU)
 	return &_special_nodes[a & 1];
-    
+
     /*
      * become a peer
      * algo: create two nodes, the two peers.  leave orig node as
@@ -226,7 +226,7 @@ AnonymizeIPAddr::find_node(uint32_t a)
 		n = n->child[0];
 	}
     }
-    
+
     click_chatter("AnonymizeIPAddr: out of memory!");
     return 0;
 }
@@ -256,12 +256,12 @@ AnonymizeIPAddr::handle_icmp(WritablePacket *q)
 	    return;
 
 	uint32_t src = embedded_iph->ip_src.s_addr, dst = embedded_iph->ip_dst.s_addr;
-	
+
 	// incrementally update IP checksum according to RFC1624:
 	// new_sum = ~(~old_sum + ~old_halfword + new_halfword)
 	uint32_t icmp_sum = (~icmph->icmp_cksum & 0xFFFF)
 	    + (~src & 0xFFFF) + (~src >> 16) + (~dst & 0xFFFF) + (~dst >> 16);
-	
+
 	embedded_iph->ip_src.s_addr = src = anonymize_addr(src);
 	embedded_iph->ip_dst.s_addr = dst = anonymize_addr(dst);
 
@@ -283,12 +283,12 @@ AnonymizeIPAddr::simple_action(Packet *p)
     } else if (WritablePacket *q = p->uniqueify()) {
 	click_ip *iph = q->ip_header();
 	uint32_t src = iph->ip_src.s_addr, dst = iph->ip_dst.s_addr;
-	
+
 	// incrementally update IP checksum according to RFC1624:
 	// new_sum = ~(~old_sum + ~old_halfword + new_halfword)
 	uint32_t sum = (~iph->ip_sum & 0xFFFF)
 	    + (~src & 0xFFFF) + (~src >> 16) + (~dst & 0xFFFF) + (~dst >> 16);
-	
+
 	iph->ip_src.s_addr = src = anonymize_addr(src);
 	iph->ip_dst.s_addr = dst = anonymize_addr(dst);
 
@@ -299,7 +299,7 @@ AnonymizeIPAddr::simple_action(Packet *p)
 	// check encapsulated headers for ICMP
 	if (iph->ip_p == IP_PROTO_ICMP)
 	    handle_icmp(q);
-	
+
 	return q;
     } else
 	return 0;

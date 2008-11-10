@@ -70,7 +70,7 @@ WebGen::pick_src ()
   uint32_t mask = (uint32_t) _mask;
 
   x = (click_random() & ~mask) | ((uint32_t) _src_prefix & mask);
-  
+
   return IPAddress (x);
 }
 

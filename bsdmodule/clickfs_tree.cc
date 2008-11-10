@@ -95,7 +95,7 @@ clickfs_tree_add_dir(struct clickfs_dirent *cde, char *name, int perm)
 	*cp = '/';
 	name = cp + 1;
     }
-    
+
     /* Check if a directory node with the same name already exists */
     for (de = cde->data.dir.head; de; de = de->next)
 	if ((tde = clickfs_tree_find_file(cde, name)) &&

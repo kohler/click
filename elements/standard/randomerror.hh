@@ -28,17 +28,17 @@ CLICK_DECLS
  * =a RandomSample */
 
 class RandomBitErrors : public Element {
-  
+
   int _p_error[9];		// out of 0xFFFF
   unsigned _p_bit_error;	// out of 0xFFFF
   int _kind;			// 0 clear, 1 set, 2 flip
   bool _on;
-  
+
  public:
-  
+
   RandomBitErrors();
   ~RandomBitErrors();
-  
+
   const char *class_name() const		{ return "RandomBitErrors"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
@@ -47,13 +47,13 @@ class RandomBitErrors : public Element {
   int kind() const				{ return _kind; }
   bool on() const				{ return _on; }
   void set_bit_error(unsigned);	// out of 0xFFFF
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   void add_handlers();
-  
+
   Packet *simple_action(Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

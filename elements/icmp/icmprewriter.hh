@@ -72,7 +72,7 @@ class ICMPRewriter : public Element { public:
   int configure(Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
-  
+
  protected:
 
   Vector<IPRw *> _maps;
@@ -83,7 +83,7 @@ class ICMPRewriter : public Element { public:
 		      const IPFlowID &, IPRw::Mapping *);
   void rewrite_ping_packet(WritablePacket *, click_ip *, click_icmp_echo *,
 			   const IPFlowID &, ICMPPingRewriter::Mapping *);
-  
+
 };
 
 CLICK_ENDDECLS

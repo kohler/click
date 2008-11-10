@@ -130,7 +130,7 @@ handler_value *handler_values::set(const String &hname, const String &hparam, co
 {
     if (hname.length() > 9 && memcmp(hname.end() - 9, ".handlers", 9) == 0)
 	set_handlers(hname, hparam, hvalue);
-    
+
     handler_value *hv = _hv.find_insert(hname).get();
     changed = (!hv->have_hvalue() || hparam != hv->_hparam
 	       || hvalue != hv->_hvalue);
@@ -153,9 +153,9 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	v->_driver_flags |= hflag_dead;
 	old_handlers.push_back(v);
     }
-    
+
     handlers->_next = 0;
-    
+
     // parse handler data into _hinfo
     const char *s = hvalue.begin();
     bool syntax_error = false;
@@ -212,7 +212,7 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	    flags &= ~hflag_button;
 	if (flags & hflag_rparam)
 	    flags &= ~hflag_checkbox;
-	
+
 	// default appearance
 	if (name == "class" || name == "name")
 	    flags |= hflag_special;
@@ -226,7 +226,7 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	    flags |= hflag_visible;
 	if (handler_value::default_refreshable(flags))
 	    flags |= hflag_refresh;
-	
+
 	String full_name = hname.substring(0, hname.length() - 8) + name;
 	handler_value *v = _hv.find_insert(full_name).get();
 	if (v != handlers) {
@@ -242,7 +242,7 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	    if (flags & hflag_refresh)
 		v->refresh(_cr);
 	}
-	
+
 	while (s != hvalue.end() && *s != '\r' && *s != '\n')
 	    ++s;
 	if (s + 1 < hvalue.end() && *s == '\r' && s[1] == '\n')

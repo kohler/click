@@ -9,7 +9,7 @@ class LexerTInfo { public:
 
     LexerTInfo()		{ }
     virtual ~LexerTInfo()	{ }
-    
+
     virtual void notify_comment(const char *pos1, const char *pos2);
     virtual void notify_error(const String &message, const char *pos1, const char *pos2);
     virtual void notify_line_directive(const char *pos1, const char *pos2);
@@ -23,7 +23,7 @@ class LexerTInfo { public:
 		ElementT *e, const char *pos1, const char *name_pos2, const char *decl_pos2);
     virtual void notify_element_reference(
 		ElementT *e, const char *pos1, const char *pos2);
-  
+
 };
 
 #endif

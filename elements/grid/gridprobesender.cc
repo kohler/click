@@ -26,7 +26,7 @@
 #include "grid.hh"
 CLICK_DECLS
 
-GridProbeSender::GridProbeSender() 
+GridProbeSender::GridProbeSender()
 {
 }
 
@@ -50,7 +50,7 @@ GridProbeSender::configure(Vector<String> &conf, ErrorHandler *errh)
 		      cpEnd);
 }
 
-void 
+void
 GridProbeSender::send_probe(IPAddress &ip, unsigned int nonce)
 {
   click_ether *e;
@@ -59,7 +59,7 @@ GridProbeSender::send_probe(IPAddress &ip, unsigned int nonce)
   grid_route_probe *rp;
   WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*gh) + sizeof(*nb) + sizeof(*rp) + 2);
   q->pull(2);
-  
+
   q->set_timestamp_anno(Timestamp::now());
 
   memset(q->data(), 0, q->length());
@@ -85,7 +85,7 @@ GridProbeSender::send_probe(IPAddress &ip, unsigned int nonce)
   rp->nonce = htonl(nonce);
   rp->send_time.tv_sec = htonl(q->timestamp_anno().sec());
   rp->send_time.tv_usec = htonl(q->timestamp_anno().usec());
-  
+
   output(0).push(q);
 }
 

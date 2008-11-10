@@ -47,8 +47,8 @@ Boolean. PlanetLab specific. If true and Click has been configured
 =item HEADROOM
 
 Unsigned Integer. Amount of headroom to reserve in packets created
-by this element. This could be useful for encapsulation protocols 
-which add headers to the packet, and can avoid expensive push 
+by this element. This could be useful for encapsulation protocols
+which add headers to the packet, and can avoid expensive push
 operations later in the packet's life.
 
 =back
@@ -56,7 +56,7 @@ operations later in the packet's life.
 =e
 
   RawSocket(UDP, 53) -> ...
- 
+
 =a Socket */
 
 class RawSocket : public Element { public:
@@ -88,7 +88,7 @@ private:
   uint16_t _port;		// (PlanetLab only) port to bind
   bool _proper;			// (PlanetLab only) use Proper to bind port
   int _snaplen;			// maximum received packet length
-  unsigned _headroom;           // header length to set aside in the packet 
+  unsigned _headroom;           // header length to set aside in the packet
 
   NotifierSignal _signal;	// packet is available to pull()
   WritablePacket *_rq;		// queue to receive pulled packets

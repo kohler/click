@@ -18,7 +18,7 @@ CLICK_DECLS
  * =s Grid
  * Handles Grid route probes, producing probe replies
  * =d
- * 
+ *
  * ETH and IP are this nodes's ethernet and IP addresses, respectively.
  * The 3rd, 4th, and 5th arguments are the configuration's local and
  * geographic forwarding elements.  They are required so that the
@@ -37,7 +37,7 @@ class GridProbeHandler : public Element, GridRouteActionCallback {
  public:
   GridProbeHandler();
   ~GridProbeHandler();
-  
+
   const char *class_name() const		{ return "GridProbeHandler"; }
   const char *port_count() const		{ return "1/2"; }
   const char *processing() const		{ return PUSH; }

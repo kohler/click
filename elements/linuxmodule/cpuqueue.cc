@@ -17,15 +17,15 @@ int
 CPUQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned new_capacity = 128;
-  if (cp_va_kparse(conf, this, errh, 
+  if (cp_va_kparse(conf, this, errh,
 		   "CAPACITY", cpkP, cpUnsigned, &new_capacity,
-		   cpEnd) < 0) 
-    return -1; 
+		   cpEnd) < 0)
+    return -1;
   _capacity = new_capacity;
   return 0;
 }
-  
-int 
+
+int
 CPUQueue::initialize(ErrorHandler *errh)
 {
   for (int i=0; i<NUM_CLICK_CPUS; i++)

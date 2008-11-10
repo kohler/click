@@ -1,5 +1,5 @@
 /*
- * SAtable.{cc,hh} -- Implements IPsec Security Association Table 
+ * SAtable.{cc,hh} -- Implements IPsec Security Association Table
  * Dimitris Syrivelis <jsyr@inf.uth.gr>, Ioannis Avramopoulos <iavramop@cs.princeton.edu>
  *
  * Copyright (c) 2006-2007 University of Thessaly
@@ -50,13 +50,13 @@ SATable::lookup(SPI this_spi)
 
 /*Eventually this will be called from userspace Internet Key Exchange transactions*/
 int
-SATable::insert(SPI spi , SADataTuple SA_data) 
+SATable::insert(SPI spi , SADataTuple SA_data)
 {
   if ((!spi) || (!SA_data)) {
     click_chatter("SATable %s: Attempt to insert data failed. Invalid arguments\n",name().c_str());
     return -1;
   }
-  SADataTuple * dat = _table.findp(spi); 
+  SADataTuple * dat = _table.findp(spi);
   if (!dat) {
     _table.insert(spi, SA_data);
   }
@@ -64,17 +64,17 @@ SATable::insert(SPI spi , SADataTuple SA_data)
 }
 
 /*Function to Remove Data*/
-int 
+int
 SATable::remove(unsigned int spi)
 {
   if(!spi){
-  	click_chatter("Invalid SPI parameter");
-  	return -1;
+	click_chatter("Invalid SPI parameter");
+	return -1;
   }
   SADataTuple  *dat = _table.findp(spi);
   if(!dat) {
 	click_chatter("No such entry");
-  	return -1;
+	return -1;
   }
   delete dat;
   _table.remove(SPI(spi));
@@ -84,17 +84,17 @@ SATable::remove(unsigned int spi)
 
 /*Return data to user space file*/
 String
-SATable::print_sa_data() 
+SATable::print_sa_data()
 {
   StringAccum sa;
   int k;
   for (SIter iter = _table.begin(); iter.live(); iter++) {
     SADataTuple n = iter.value();
     sa << "\nNew Entry\n";
-    for(k=0; k< 16;k++)	
-    	{sa << n.Encryption_key[k];}
+    for(k=0; k< 16;k++)
+	{sa << n.Encryption_key[k];}
     sa <<" ";
-    for(k=0; k< 16;k++)	
+    for(k=0; k< 16;k++)
         {sa << n.Authentication_key[k];}
     sa << " ";
   }

@@ -62,7 +62,7 @@ AnyDevice::configure_keywords(Vector<String> &conf, ErrorHandler *errh,
     bool quiet = _quiet;
     bool promisc = _promisc;
     bool timestamp = _timestamp;
-    
+
     if (cp_va_kparse_remove_keywords(conf, this, errh,
 			"UP_CALL", 0, cpHandlerCallPtrWrite, &_up_call,
 			"DOWN_CALL", 0, cpHandlerCallPtrWrite, &_down_call,
@@ -158,14 +158,14 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
 	if (!_down_call && !_quiet)
 	    click_chatter("%s: device '%s' went down", declaration().c_str(), _devname.c_str());
     }
-    
+
     if (_dev && _promisc)
 	alter_promiscuity(-1);
 #if HAVE_NET_ENABLE_TIMESTAMP
     if (_dev && _timestamp)
 	net_disable_timestamp();
 #endif
-    
+
     if (adm && _in_map)
 	adm->remove(this, locked);
     if (_dev)
@@ -232,7 +232,7 @@ AnyDeviceMap::insert(AnyDevice *d, bool locked)
     // lock when manipulating device map
     if (!locked)
 	lock(true);
-    
+
     // put new devices last on list
     int ifi = d->ifindex();
     AnyDevice **pprev = (ifi >= 0 ? &_map[ifi % MAP_SIZE] : &_unknown_map);
@@ -279,7 +279,7 @@ AnyDeviceMap::lookup_unknown(net_device *dev, AnyDevice *last) const
     // look by device name and Ethernet address
     int dev_name_len = strlen(dev->name);
     unsigned char en[6];
-    
+
     for (AnyDevice *d = (last ? last->_next : _unknown_map); d; d = d->_next)
 	if (d->devname().equals(dev->name, dev_name_len)) {
 	    d->_devname_exists = true;

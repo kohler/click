@@ -14,7 +14,7 @@ pretty-prints ARP packets a la tcpdump
 
 =d
 
-Expects ARP packets as input.  
+Expects ARP packets as input.
 
 Prints out ARP packets in a human-readable tcpdump-like format, preceded by
 the TAG text.
@@ -38,18 +38,18 @@ by OUTFILE instead of standard error.
 =a Print, CheckARPHeader */
 
 class ARPPrint : public Element { public:
-  
+
   ARPPrint();
   ~ARPPrint();
-  
+
     const char *class_name() const		{ return "ARPPrint"; }
     const char *port_count() const		{ return PORTS_1_1; }
     const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
-  
+
   Packet *simple_action(Packet *);
 
  private:

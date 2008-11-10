@@ -62,7 +62,7 @@ IPEncapPaint::configure(Vector<String> &conf, ErrorHandler *errh)
       errh->message("(Try passing the configuration through `click-align'.)");
   }
 #endif
-  
+
   return 0;
 }
 
@@ -78,7 +78,7 @@ IPEncapPaint::simple_action(Packet *p_in)
 {
   WritablePacket *p = p_in->push(sizeof(click_ip) +1);
   click_ip *ip = reinterpret_cast<click_ip *>( p->data());
-  
+
   ip->ip_v = 4;
   ip->ip_hl = sizeof(click_ip) >> 2;
   ip->ip_len = htons(p->length() );
@@ -107,10 +107,10 @@ IPEncapPaint::simple_action(Packet *p_in)
 #ifdef __KERNEL__
   }
 #endif
-  
+
   p->set_dst_ip_anno(IPAddress(ip->ip_dst));
   p->set_ip_header(ip, sizeof(click_ip));
-  
+
   return p;
 }
 

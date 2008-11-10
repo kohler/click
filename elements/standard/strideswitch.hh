@@ -11,7 +11,7 @@ CLICK_DECLS
  * =d
  * Has one input and N outputs.  Performs simple packet-based stride
  * switching, assigning TICKETSI<i> to output I<i>.
- * 
+ *
  * Each time a packet arrives on the input, StrideSwitch sends the packet to
  * the next scheduled output according to the stride scheduling algorithm.
  *
@@ -22,14 +22,14 @@ CLICK_DECLS
  */
 
 class StrideSwitch : public StrideSched { public:
-  
+
   StrideSwitch();
   ~StrideSwitch();
 
   const char *class_name() const		{ return "StrideSwitch"; }
   const char *port_count() const		{ return "1/1-"; }
   const char *processing() const		{ return PUSH; }
-  
+
   void push(int, Packet *);
 
 };

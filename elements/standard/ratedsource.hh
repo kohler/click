@@ -86,23 +86,23 @@ class RatedSource : public Element { public:
 
   RatedSource();
   ~RatedSource();
-  
+
   const char *class_name() const		{ return "RatedSource"; }
   const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return AGNOSTIC; }
   void add_handlers();
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
 
   bool run_task(Task *);
   Packet *pull(int);
-  
+
  protected:
-  
+
   void setup_packet();
-  
+
   static const unsigned NO_LIMIT = 0xFFFFFFFFU;
 
   GapRate _rate;
@@ -117,7 +117,7 @@ class RatedSource : public Element { public:
 
   static String read_param(Element *, void *);
   static int change_param(const String &, Element *, void *, ErrorHandler *);
-  
+
 };
 
 CLICK_ENDDECLS

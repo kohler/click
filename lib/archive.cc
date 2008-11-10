@@ -31,15 +31,15 @@
 68   first file data
 68+n second header block
      etc.
-   
+
    header block format:
-   
+
  0    char ar_name[16];		// Member file name, sometimes / terminated.
-16    char ar_date[12];		// File date, decimal seconds since Epoch. 
+16    char ar_date[12];		// File date, decimal seconds since Epoch.
 28    char ar_uid[6],
-34         ar_gid[6];		// User and group IDs, in ASCII decimal. 
-40    char ar_mode[8];		// File mode, in ASCII octal. 
-48    char ar_size[10];		// File size, in ASCII decimal. 
+34         ar_gid[6];		// User and group IDs, in ASCII decimal.
+40    char ar_mode[8];		// File mode, in ASCII octal.
+48    char ar_size[10];		// File size, in ASCII decimal.
 58    char ar_fmag[2];		// Always contains ARFMAG == "`\n".
 */
 
@@ -51,11 +51,11 @@ read_uint(const char *data, int max_len,
 {
   char buf[17];
   char *end;
-  
+
   assert(max_len <= 16);
   memcpy(buf, data, max_len);
   buf[max_len] = 0;
-  
+
   int result = strtol(buf, &end, base);
   if (end == buf)
     result = -1;
@@ -70,10 +70,10 @@ ArchiveElement::parse(const String &s, Vector<ArchiveElement> &v,
 {
   if (!errh)
     errh = ErrorHandler::silent_handler();
-  
+
   if (s.length() <= 8 || memcmp(s.data(), "!<arch>\n", 8) != 0)
     return errh->error("not an archive");
-  
+
   const char *data = s.data();
   int len = s.length();
   int p = 8;
@@ -82,28 +82,28 @@ ArchiveElement::parse(const String &s, Vector<ArchiveElement> &v,
 
   // loop over sections
   while (p+60 <= len) {
-    
+
     // check magic number
     if (data[p+58] != '`' || data[p+59] != '\n')
       return errh->error("bad archive: missing header magic number");
-    
+
     int size;
-    
+
     if (data[p+0] == '/' && data[p+1] == '/' && isspace((unsigned char) data[p+2])) {
       // GNUlike long name section
       if (longname_ae.data)
 	errh->error("two long name sections in archive");
-      
+
       size = read_uint(data+p+48, 10, "size", errh);
       if (size < 0 || p+60+size > len)
 	return errh->error("truncated archive");
 
       longname_ae.data = s.substring(p+60, size);
-      
+
     } else {
 
       ArchiveElement ae;
-      
+
       // read name
       int bsd_longname = 0;
       int j;
@@ -149,12 +149,12 @@ ArchiveElement::parse(const String &s, Vector<ArchiveElement> &v,
       // append archive element
       v.push_back(ae);
     }
-    
+
     p += 60 + size;
     if (size % 2 == 1)		// objects in archive are even # of bytes
       p++;
   }
-  
+
   if (p != len)
     return errh->error("truncated archive");
   else
@@ -166,7 +166,7 @@ ArchiveElement::unparse(const Vector<ArchiveElement> &v, ErrorHandler *errh)
 {
   if (!errh)
     errh = ErrorHandler::silent_handler();
-  
+
   StringAccum sa;
   int want_size = 8;
   sa << "!<arch>\n";

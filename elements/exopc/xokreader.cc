@@ -38,7 +38,7 @@ xokReader::xokReader(const xokReader &f)
   for(int i=0; i<MAX_DPF_FILTERS; i++)
   {
     dpf_ids[i] = f.dpf_ids[i];
-    if (dpf_ids[i] != -1) 
+    if (dpf_ids[i] != -1)
     {
       if (xok_sys_self_dpf_ref (CAP_USER, dpf_ids[i]) < 0)
         fprintf(stderr,"xokReader: could not reference filter %d\n",dpf_ids[i]);
@@ -55,12 +55,12 @@ xokReader::~xokReader()
   {
     if (dpf_ids[i] != -1)
     {
-      if (xok_sys_self_dpf_delete (CAP_USER, dpf_ids[i]) < 0) 
+      if (xok_sys_self_dpf_delete (CAP_USER, dpf_ids[i]) < 0)
         fprintf(stderr,"xokReader: could not remove filter %d\n",dpf_ids[i]);
     }
   }
 
-  if (fd != -1) 
+  if (fd != -1)
     close(fd);
 }
 
@@ -77,7 +77,7 @@ xokReader::configure(Vector<String> &conf, ErrorHandler *errh)
   Vector<String> args;
   cp_argvec(conf, args);
 
-  if (args.size() < 2) 
+  if (args.size() < 2)
   {
     fprintf(stderr,"xokReader: got %d arguments\n", args.size());
     errh->error("expecting at least 2 arguments: ring size and a classifier");
@@ -88,13 +88,13 @@ xokReader::configure(Vector<String> &conf, ErrorHandler *errh)
   {
     fprintf(stderr,"xokReader: got %d arguments\n", args.size());
     errh->error
-      ("expecting at most %d arguments: ring size and %d classifiers", 
+      ("expecting at most %d arguments: ring size and %d classifiers",
        MAX_DPF_FILTERS+1, MAX_DPF_FILTERS);
     return -1;
   }
 
   const char *ringsz_s = args[0].data();
-	          
+
   int ring_sz = atoi(ringsz_s);
   if (ring_sz < 1) {
     errh->error("given ring size too small");
@@ -119,14 +119,14 @@ xokReader::configure(Vector<String> &conf, ErrorHandler *errh)
 	errh->error("expected a digit");
 	return -1;
       }
-      
+
       int offset = 0;
       while (i < classifier_s_len && isdigit((unsigned char) classifier_s[i])) {
 	offset *= 10;
 	offset += classifier_s[i] - '0';
 	i++;
       }
-      
+
       if (i >= classifier_s_len || classifier_s[i] != '/') {
 	errh->error("expected `/'");
 	return -1;
@@ -134,11 +134,11 @@ xokReader::configure(Vector<String> &conf, ErrorHandler *errh)
       i++;
 
       int mask = 0, value = 0, iter = 0;
-      
+
       for (; i < classifier_s_len; i++) {
 	int d = 0;
 	int m = (classifier_s[i] == '?' ? 0 : 15);
-	
+
 	if (classifier_s[i] >= '0' && classifier_s[i] <= '9')
 	  d = classifier_s[i] - '0';
 	else if (classifier_s[i] >= 'a' && classifier_s[i] <= 'f')
@@ -151,15 +151,15 @@ xokReader::configure(Vector<String> &conf, ErrorHandler *errh)
         mask = mask + (m << (3-iter)*4);
 	value = value + (d << (3-iter)*4);
 	iter++;
-	  
-	if (iter == 4) 
+
+	if (iter == 4)
 	{
 	  dpf_meq16(&dpf_filters[argc-1], offset, mask, htons(value));
 	  mask = value = iter = 0;
 	  offset += 2;
 	}
       }
-      
+
       if (iter == 2)
       {
 	mask = mask >> 8;
@@ -168,10 +168,10 @@ xokReader::configure(Vector<String> &conf, ErrorHandler *errh)
 	mask = value = iter = 0;
 	offset += 1;
       }
-      
+
       else if (iter != 0)
 	errh->warning("at offset %d: odd number of hex digits", offset);
-    } // while i 
+    } // while i
   } // for argc
 
   /* now we have both pkt ring and filters parsed */
@@ -194,7 +194,7 @@ xokReader::configure(Vector<String> &conf, ErrorHandler *errh)
 
     if (dpf_ids[i] < 0) {
       errh->warning("cannot insert dpf filter %s", args[i+1].data());
-    } 
+    }
     else dpf_filter_inserted++;
   }
 
@@ -216,9 +216,9 @@ xokReader::selected(int fd)
 {
   char data[ETHER_MAX_LEN];
 
-  int r = read(fd, data, ETHER_MAX_LEN); 
+  int r = read(fd, data, ETHER_MAX_LEN);
   if (r != ETHER_MAX_LEN)
-    fprintf(stderr,"xokReader: corrupted packet on descriptor %d\n", fd); 
+    fprintf(stderr,"xokReader: corrupted packet on descriptor %d\n", fd);
   else
   {
     Packet *p = Packet::make(data, ETHER_MAX_LEN);

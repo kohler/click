@@ -24,7 +24,7 @@ CLICK_DECLS
  *
  * =item SHOW_PROBE_CONTENTS
  *
- * Boolean. Default false.  If true, print all the entries in each link probe. 
+ * Boolean. Default false.  If true, print all the entries in each link probe.
  *
  * =item VERBOSE
  *
@@ -37,31 +37,31 @@ CLICK_DECLS
  * =item PRINT_ETH
  *
  * Boolean.  Default false.  If true, print the ethernet header.
- * 
+ *
  * =a
  * Print
  */
 
 class PrintGrid : public Element {
-  
+
   String _label;
-  
+
  public:
-  
+
   PrintGrid();
   ~PrintGrid();
-  
+
   const char *class_name() const		{ return "PrintGrid"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   Packet *simple_action(Packet *);
 
 private:
   String encap_to_string(const grid_nbr_encap *) const;
-  
+
   bool _print_routes;
   String get_entries(const grid_hello *) const;
 
@@ -70,7 +70,7 @@ private:
 
   void print_ether_linkstat(Packet *) const;
 
-  bool _verbose;  
+  bool _verbose;
   bool _timestamp;
   bool _print_eth;
 };

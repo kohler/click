@@ -16,7 +16,7 @@ endorse or promote products derived from this material without
 specific prior written permission. THIS SOFTWARE IS PROVIDED ``AS IS''
 AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT
 LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-ANY PARTICULAR PURPOSE. 
+ANY PARTICULAR PURPOSE.
 */
 
 #include <click/config.h>
@@ -117,7 +117,7 @@ int FromUserDevice::dev_open(struct inode *inode, struct file *filp)
     return 0;
 }
 
-// close function - called when the "file" /dev/toclikc is closed in userspace  
+// close function - called when the "file" /dev/toclikc is closed in userspace
 int FromUserDevice::dev_release(struct inode *inode, struct file *filp)
 {
     FromUserDevice *elem = (FromUserDevice*)filp->private_data;
@@ -151,7 +151,7 @@ ssize_t FromUserDevice::dev_write (struct file *filp, const char *buf,
         click_chatter("Empty private struct!\n");
         return -EIO;
     }
-    
+
     // the incoming buffer is too big
     if (count > SLOT_SIZE)
     {
@@ -161,7 +161,7 @@ ssize_t FromUserDevice::dev_write (struct file *filp, const char *buf,
         click_chatter("Incoming buffer is bigger than current slot size\n");
         return -EFAULT;
     }
-    
+
     // we should make a copy_from_user here and not while we hold the spinlock
     p = WritablePacket::make(count);
     err = copy_from_user((char*)p->data(), buf, count);
@@ -225,7 +225,7 @@ int FromUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 
     if (!dev_fops)
 	return errh->error("file operations missing");
-    
+
     //click_chatter("CONFIGURE\n");
     if (cp_va_kparse(conf, this, errh,
 		     "DEV_MINOR", cpkP+cpkM, cpUnsigned, &_dev_minor,
@@ -246,12 +246,12 @@ int FromUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     {
         // time to associate the devname with this class
         // dynamically allocate the major number with the device
-    
-        //register the device now. this will register 255 minor numbers 
+
+        //register the device now. this will register 255 minor numbers
         res = register_chrdev(_dev_major, DEV_NAME, dev_fops);
-        if (res < 0) 
+        if (res < 0)
         {
-            click_chatter("Failed to Register Dev:%s Major:%d Minor:%d\n", 
+            click_chatter("Failed to Register Dev:%s Major:%d Minor:%d\n",
                 DEV_NAME, _dev_major, _dev_minor);
             click_lfree((char*)_buff, _capacity * sizeof(WritablePacket*));
             _buff = 0;
@@ -307,7 +307,7 @@ Packet* FromUserDevice::pull(int)
     }
     spin_unlock_irqrestore(&_lock, flags);
     // wake up procs if any are sleeping
-    wake_up_interruptible(&_proc_queue); 
+    wake_up_interruptible(&_proc_queue);
     return p;
 }
 
@@ -315,7 +315,7 @@ Packet* FromUserDevice::pull(int)
 void FromUserDevice::cleanup(CleanupStage stage)
 {
     ulong flags;
-    
+
     if (stage < CLEANUP_CONFIGURED)
         return; // have to quit, as configure was never called
 
@@ -350,7 +350,7 @@ String FromUserDevice::read_handler(Element *e, void *thunk)
 {
     FromUserDevice *c = (FromUserDevice *)e;
 
-    switch ((intptr_t)thunk) 
+    switch ((intptr_t)thunk)
     {
         case H_COUNT:       return String(c->_pkt_count);
         case H_FAILED:      return String(c->_failed_count);

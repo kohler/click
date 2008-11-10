@@ -8,7 +8,7 @@
  * Changed to use the Security Association Table. Dimitris Syrivelis <jsyr@inf.uth.gr>, University of Thessaly ,
  * Hellas
  *
- * 
+ *
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -82,13 +82,13 @@ Des::simple_action(Packet *p_in)
   unsigned char *ivp = esp->esp_iv;
   int i, plen = p->length() - sizeof(esp_new) - _ignore;
   idat = p->data() + sizeof(esp_new);
-  
+
   if (_op == DES_DECRYPT) { memcpy(iv, ivp, 8);}
-  
+
   sa_data =(SADataTuple *)IPSEC_SA_DATA_REFERENCE_ANNO(p);
   /*sanity check*/
      if(sa_data==NULL) {click_chatter("DES: No SADataTuple annotation. Check man page\n"); p->kill(); return 0;}
-  /*Set the key*/ 
+  /*Set the key*/
   des_set_key((unsigned char (*)[8])&sa_data->Encryption_key, _ks);
 
   // de/encrypt the payload
@@ -101,12 +101,12 @@ Des::simple_action(Packet *p_in)
       for (i = 0; i < 8; i++)
 	idat[i] ^= ivp[i];
       memcpy(ivp, hold, 8);
-      
+
     } else {
       /* CBC: XOR with the IV */
       for (i = 0; i < 8; i++)
 	idat[i] ^= ivp[i];
-      des_ecb_encrypt((des_cblock *)idat, (des_cblock *)idat, 
+      des_ecb_encrypt((des_cblock *)idat, (des_cblock *)idat,
 		      _ks, DES_ENCRYPT);
       ivp = idat;
     }
@@ -114,7 +114,7 @@ Des::simple_action(Packet *p_in)
     plen -= 8;
   }
 
-  if (_op == DES_DECRYPT) 
+  if (_op == DES_DECRYPT)
     memcpy(ivp, iv, 8);
   return(p);
 }
@@ -458,10 +458,10 @@ Des::des_encrypt(unsigned long *input,unsigned long *output,
   register unsigned long l,r,t,u;
   register int i;
   register unsigned long *s;
-  
+
   l=input[0];
   r=input[1];
-  
+
   /* do IP */
   PERM_OP(r,l,t, 4,0x0f0f0f0f);
   PERM_OP(l,r,t,16,0x0000ffff);
@@ -470,21 +470,21 @@ Des::des_encrypt(unsigned long *input,unsigned long *output,
   PERM_OP(r,l,t, 1,0x55555555);
   /* r and l are reversed - remember that :-) - fix
    * it in the next step */
-  
+
   /* Things have been modified so that the initial rotate is
-   * done outside the loop.  This required the 
+   * done outside the loop.  This required the
    * des_SPtrans values in sp.h to be rotated 1 bit to the right.
    * One perl script later and things have a 5% speed up on a sparc2.
    * Thanks to Richard Outerbridge <71755.204@CompuServe.COM>
    * for pointing this out. */
   t=(r<<1)|(r>>31);
-  r=(l<<1)|(l>>31); 
+  r=(l<<1)|(l>>31);
   l=t;
-  
+
   /* clear the top bits on machines with 8byte longs */
   l&=0xffffffff;
   r&=0xffffffff;
-  
+
   s=(unsigned long *)ks;
   /* I don't know if it is worth the effort of loop unrolling the
    * inner loop */
@@ -509,12 +509,12 @@ Des::des_encrypt(unsigned long *input,unsigned long *output,
   /* clear the top bits on machines with 8byte longs */
   l&=0xffffffff;
   r&=0xffffffff;
-  
+
   /* swap l and r
    * we will not do the swap so just remember they are
    * reversed for the rest of the subroutine
    * luckily FP fixes this problem :-) */
-  
+
   PERM_OP(r,l,t, 1,0x55555555);
   PERM_OP(l,r,t, 8,0x00ff00ff);
   PERM_OP(r,l,t, 2,0x33333333);
@@ -599,7 +599,7 @@ Des::des_set_key(des_cblock *key,des_key_schedule schedule)
 		/* table contained 0213 4657 */
 		*(k++)=((t<<16)|(s&0x0000ffff))&0xffffffff;
 		s=     ((s>>16)|(t&0xffff0000));
-		
+
 		s=(s<<4)|(s>>28);
 		*(k++)=s&0xffffffff;
 		}

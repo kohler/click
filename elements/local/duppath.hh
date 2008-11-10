@@ -14,16 +14,16 @@ class DupPath : public Element {
   Packet *deq();
 
  public:
-  
+
   DupPath();
   ~DupPath();
-  
+
   const char *class_name() const		{ return "DupPath"; }
   const char *port_count() const		{ return "1/2"; }
   const char *processing() const		{ return "h/hl"; }
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
-  
+
   void push(int port, Packet *);
   Packet *pull(int port);
 };

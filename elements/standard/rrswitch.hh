@@ -21,18 +21,18 @@ CLICK_DECLS
 class RoundRobinSwitch : public Element {
 
   atomic_uint32_t _next;
-  
+
  public:
-  
+
   RoundRobinSwitch();
   ~RoundRobinSwitch();
-  
+
   const char *class_name() const	{ return "RoundRobinSwitch"; }
   const char *port_count() const	{ return "1/1-"; }
   const char *processing() const	{ return PUSH; }
-  
+
   void push(int, Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

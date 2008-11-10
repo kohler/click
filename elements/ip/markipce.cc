@@ -50,7 +50,7 @@ MarkIPCE::smaction(Packet *p)
   else {
     WritablePacket *q = p->uniqueify();
     click_ip *q_iph = q->ip_header();
-  
+
     // incrementally update IP checksum
     // new_sum = ~(~old_sum + ~old_halfword + new_halfword)
     //         = ~(~old_sum + ~old_halfword + (old_halfword + 0x0001))
@@ -66,7 +66,7 @@ MarkIPCE::smaction(Packet *p)
     }
 
     q_iph->ip_tos |= IP_ECN_CE;
-    
+
     return q;
   }
 }

@@ -119,7 +119,7 @@ operator<<(StringAccum &sa, const Timestamp& ts)
 	    else
 		sec = -ts.sec() - 1, subsec = Timestamp::subsec_per_sec - ts.subsec();
 	}
-	
+
 	int len;
 #if TIMESTAMP_NANOSEC
 	uint32_t usec = subsec / Timestamp::nsec_per_usec;

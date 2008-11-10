@@ -64,7 +64,7 @@ IPsecAuthHMACSHA1::initialize(ErrorHandler *)
 Packet *
 IPsecAuthHMACSHA1::simple_action(Packet *p)
 {
-  SADataTuple * sa_data=(SADataTuple *)IPSEC_SA_DATA_REFERENCE_ANNO(p); 
+  SADataTuple * sa_data=(SADataTuple *)IPSEC_SA_DATA_REFERENCE_ANNO(p);
   unsigned int len;
   // compute HMAC
   len = SHA_DIGEST_LEN;
@@ -76,20 +76,20 @@ IPsecAuthHMACSHA1::simple_action(Packet *p)
     u_char *ah = ((u_char*)q->data())+q->length()-12;
     memmove(ah, digest, 12);
     return q;
-  } 
+  }
   else {
     const u_char *ah = p->data()+p->length()-12;
     unsigned char digest [SHA_DIGEST_LEN];
 
     HMAC(sa_data->Authentication_key,KEY_SIZE,(u_char*) p->data(),p->length()-12,digest,&len);
     if (memcmp(ah, digest, 12)) {
-      if (_drops == 0) 
+      if (_drops == 0)
 	click_chatter("Invalid SHA1 authentication digest");
       _drops++;
       if (noutputs() > 1)
 	output(1).push(p);
-      else 
-	p->kill(); 
+      else
+	p->kill();
       return 0;
     }
     //remove digest

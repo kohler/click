@@ -128,7 +128,7 @@ IP6NDSolicitor::send_query_for(const u_char want_ip6[16])
   if (q == 0) {
     click_chatter("in ndsol: cannot make packet!");
     assert(0);
-  } 
+  }
 
   memset(q->data(), '\0', q->length());
   e = (click_ether *) q->data();
@@ -136,26 +136,26 @@ IP6NDSolicitor::send_query_for(const u_char want_ip6[16])
   ea = (click_nd_sol *) (ip6 + 1);
 
   // set ethernet header
-  // dst add is a multicast add: first two octets : 0x3333, 
-  // last four octets is the lst four octets of DST IP6Address 
+  // dst add is a multicast add: first two octets : 0x3333,
+  // last four octets is the lst four octets of DST IP6Address
   // which is the solicited-node multicast address: "ff02::1:ff00:0" +
-  // 24 bits from targest ip6 address 
+  // 24 bits from targest ip6 address
   e->ether_dhost[0] = 0x33;
   e->ether_dhost[1] = 0x33;
   e->ether_dhost[2] = 0xff;
   e->ether_dhost[3] = want_ip6[13];
   e->ether_dhost[4] = want_ip6[14];
-  e->ether_dhost[5] = want_ip6[15]; 
+  e->ether_dhost[5] = want_ip6[15];
   memcpy(e->ether_shost, _my_en.data(), 6);
   e->ether_type = htons(ETHERTYPE_IP6);
-  
+
   // set ip6 header
   ip6->ip6_flow = 0;		// set flow to 0 (includes version)
   ip6->ip6_v = 6;		// then set version to 6
   ip6->ip6_plen=htons(sizeof(click_nd_sol));
   ip6->ip6_nxt=0x3a; //i.e. protocal: icmp6 message
   ip6->ip6_hlim=0xff; //indicate no router has processed it
-  ip6->ip6_src = _my_ip6; 
+  ip6->ip6_src = _my_ip6;
   unsigned char  dst2[16];
   dst2[0]=0xff;
   dst2[1]=0x02;
@@ -170,16 +170,16 @@ IP6NDSolicitor::send_query_for(const u_char want_ip6[16])
   ip6->ip6_dst = IP6Address(dst2);
 
   //set ICMP6 - Neighborhood Solicitation Message
-  ea->type = 0x87; 
+  ea->type = 0x87;
   ea->code =0;
   ea->reserved = htonl(0);
   memcpy(ea->nd_tpa, want_ip6, 16);
   ea->option_type = 0x1;
   ea->option_length = 0x1;
   memcpy(ea->nd_sha, _my_en.data(), 6);
- 
+
   ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), htons(sizeof(click_nd_sol))));
-  
+
   _arp_queries++;
   output(noutputs()-1).push(q);
 }
@@ -193,7 +193,7 @@ IP6NDSolicitor::send_query_for(const u_char want_ip6[16])
  */
 void
 IP6NDSolicitor::handle_ip6(Packet *p)
-{  
+{
   IP6Address ipa = DST_IP6_ANNO(p);
   int bucket = (ipa.data()[0] + ipa.data()[15]) % NMAP;
   NDEntry *ae = _map[bucket];
@@ -221,7 +221,7 @@ IP6NDSolicitor::handle_ip6(Packet *p)
       ae->p = p;
       send_query_for(DST_IP6_ANNO(p).data());
     }
-    
+
   } else {
     NDEntry *ae = new NDEntry;
     ae->ip6 = ipa;
@@ -235,7 +235,7 @@ IP6NDSolicitor::handle_ip6(Packet *p)
 }
 
 /*
- * Got an Neighborhood Advertisement (response to N. Solicitation Message) 
+ * Got an Neighborhood Advertisement (response to N. Solicitation Message)
  * Update our NDEntry table.
  * If there was a packet waiting to be sent, return it.
  */
@@ -244,7 +244,7 @@ IP6NDSolicitor::handle_response(Packet *p)
 {
   if (p->length() < sizeof(click_ether) + sizeof(click_ip6) + sizeof(click_nd_sol))
     return;
-  
+
   click_ether *ethh = (click_ether *) p->data();
   click_ip6 *ip6h = (click_ip6 *)(ethh+1);
   click_nd_adv * eah = (click_nd_adv*)(ip6h+1);
@@ -260,7 +260,7 @@ IP6NDSolicitor::handle_response(Packet *p)
         ae = ae->next;
       if (!ae)
         return;
-    
+
       if (ae->ok && ae->en != ena)
         click_chatter("IP6NDSolicitor overwriting an entry");
       ae->en = ena;
@@ -269,10 +269,10 @@ IP6NDSolicitor::handle_response(Packet *p)
       ae->last_response_jiffies = click_jiffies();
       Packet *cached_packet = ae->p;
       ae->p = 0;
-      
+
       if (cached_packet){
         handle_ip6(cached_packet);}
-    } 
+    }
 }
 
 void

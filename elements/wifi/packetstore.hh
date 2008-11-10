@@ -11,18 +11,18 @@ CLICK_DECLS
 /*
  * =c
  * PacketStore(I<KEYWORKDS>)
- * 
+ *
  * =s Wifi
  * Log transmit feedback stats for later analysis.
- * 
- * =d 
+ *
+ * =d
  * PacketStore records the size, timestamp, and other infor for
  * each packet that passed through.  The list of
  * recorded data can be dumped (and cleared) by repeated calls to the
  * read handler 'log'.
  *
  * =h log read-only
- * Print as much of the list of logged packets as possible, clearing 
+ * Print as much of the list of logged packets as possible, clearing
  * printed packets from the log.
  * =h more read-only
  * Returns how many entries are left to be read.
@@ -32,10 +32,10 @@ CLICK_DECLS
  */
 
 class PacketStore : public Element { public:
-  
+
   PacketStore();
   ~PacketStore();
-  
+
   const char *class_name() const		{ return "PacketStore"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char* processing() const		{ return AGNOSTIC; }

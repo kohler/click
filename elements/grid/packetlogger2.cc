@@ -39,14 +39,14 @@ PacketLogger2::simple_action(Packet *p_in)
   d.length = p_in->length();
   memcpy(d.anno, p_in->anno(), Packet::anno_size);
   memcpy(d.bytes, p_in->data(), _nb < d.length ? _nb : d.length);
-  
+
   int s_pre = _p.size();
   _p.push_back(d);
   int s_post = _p.size();
-  
-  if (s_post != s_pre + 1) 
+
+  if (s_post != s_pre + 1)
     click_chatter("PacketLogger2 %s: ERROR: couldn't add packet to log, log size = %d", name().c_str(), s_pre);
-      
+
   return p_in;
 }
 
@@ -59,7 +59,7 @@ PacketLogger2::add_handlers()
 }
 
 int
-PacketLogger2::clear(const String &foo, Element *e, void *vparam, ErrorHandler *errh) 
+PacketLogger2::clear(const String &foo, Element *e, void *vparam, ErrorHandler *errh)
 {
   PacketLogger2 *p = (PacketLogger2 *) e;
   while (p->_p.size()) {
@@ -85,12 +85,12 @@ PacketLogger2::print_log(Element *e, void *)
   int bytes_per_entry = 9 + 1 + 9; // 9 digits, '.', 9 digits
   bytes_per_entry += 5;            // " XXXX" (size)
   bytes_per_entry += 4;            // " | "
-  bytes_per_entry += 2 * Packet::anno_size; 
+  bytes_per_entry += 2 * Packet::anno_size;
   bytes_per_entry += 4;            // " | "
   bytes_per_entry += 2 * p->_nb;
   bytes_per_entry += p->_nb / 4;   // ' ' every 4 bytes of data
   bytes_per_entry += 1;            // '\n'
-  
+
   int n = p->_p.size() * bytes_per_entry;
   n = n > MAX_PROC_SIZE ? MAX_PROC_SIZE : n;
   if (n <= 0)

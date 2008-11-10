@@ -28,8 +28,8 @@
 CLICK_DECLS
 
 LinkStat::LinkStat()
-  : _window(100), _tau(10000), _period(1000), 
-  _probe_size(1000), _seq(0), _send_timer(0), 
+  : _window(100), _tau(10000), _period(1000),
+  _probe_size(1000), _seq(0), _send_timer(0),
   _use_proto2(false)
 {
 }
@@ -52,7 +52,7 @@ LinkStat::configure(Vector<String> &conf, ErrorHandler *errh)
 			 cpEnd);
   if (res < 0)
     return res;
-  
+
   unsigned min_sz = sizeof(click_ether) + link_probe::size;
   if (_probe_size < min_sz)
     return errh->error("Specified packet size is less than the minimum probe size of %u",
@@ -62,7 +62,7 @@ LinkStat::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-LinkStat::send_hook() 
+LinkStat::send_hook()
 {
   WritablePacket *p = Packet::make(_probe_size + 2); // +2 for alignment
   if (p == 0) {
@@ -74,8 +74,8 @@ LinkStat::send_hook()
   memset(p->data(), 0, p->length());
 
   p->set_timestamp_anno(Timestamp::now());
-  
-  // fill in ethernet header 
+
+  // fill in ethernet header
   click_ether *eh = (click_ether *) p->data();
   memset(eh->ether_dhost, 0xff, 6); // broadcast
   eh->ether_type = htons(_use_proto2 ? ETHERTYPE_LINKSTAT2 : ETHERTYPE_LINKSTAT);
@@ -96,9 +96,9 @@ LinkStat::send_hook()
   _seq++;
   unsigned char *d = p->data() + sizeof(click_ether);
   d += lp.write(d);
-  
-  for (ProbeMap::const_iterator i = _bcast_stats.begin(); 
-       i.live() && num_entries > 0; 
+
+  for (ProbeMap::const_iterator i = _bcast_stats.begin();
+       i.live() && num_entries > 0;
        num_entries--, i++) {
     const probe_list_t &val = i.value();
     if (val.probes.size() == 0) {
@@ -106,14 +106,14 @@ LinkStat::send_hook()
       continue;
     }
     unsigned n = count_rx(&val);
-    if (n > 0xFFff) 
+    if (n > 0xFFff)
       click_chatter("LinkStat %s: WARNING, overflow in number of probes received from %s", name().c_str(), val.eth.unparse().c_str());
     link_entry le(val.eth, n & 0xFFff);
     d += le.write(d);
   }
 
   link_probe::update_cksum(p->data() + sizeof(click_ether));
-  
+
   unsigned max_jitter = _period / 10;
   unsigned j = click_random(0, max_jitter * 2);
   _next_bcast += Timestamp::make_usec(1000 * (_period + j - max_jitter));
@@ -141,7 +141,7 @@ LinkStat::count_rx(const probe_list_t *pl)
 }
 
 unsigned int
-LinkStat::count_rx(const EtherAddress &eth) 
+LinkStat::count_rx(const EtherAddress &eth)
 {
   probe_list_t *pl = _bcast_stats.findp(eth);
   if (pl)
@@ -154,7 +154,7 @@ int
 LinkStat::initialize(ErrorHandler *errh)
 {
   if (noutputs() > 0) {
-    if (!_eth) 
+    if (!_eth)
       return errh->error("Source Ethernet address must be specified to send probes");
     _send_timer = new Timer(static_send_hook, this);
     _send_timer->initialize(this);
@@ -172,7 +172,7 @@ LinkStat::simple_action(Packet *p)
   unsigned min_sz = sizeof(click_ether) + link_probe::size;
   if (p->length() < min_sz) {
     click_chatter("LinkStat %s: packet is too small", name().c_str());
-    p->kill(); 
+    p->kill();
     return 0;
   }
 
@@ -191,10 +191,10 @@ LinkStat::simple_action(Packet *p)
     return 0;
   }
 
-  if (p->length() < lp.psz) 
+  if (p->length() < lp.psz)
     click_chatter("LinkStat %s: packet is smaller (%d) than it claims (%u)",
 		  name().c_str(), p->length(), lp.psz);
-  
+
   add_bcast_stat(EtherAddress(eh->ether_shost), lp);
 
   // look in received packet for info about our outgoing link
@@ -202,7 +202,7 @@ LinkStat::simple_action(Packet *p)
   unsigned int max_entries = (p->length() - sizeof(*eh) - link_probe::size) / link_entry::size;
   unsigned int num_entries = lp.num_links;
   if (num_entries > max_entries) {
-    click_chatter("LinkStat %s: WARNING, probe packet from %s contains fewer link entries (at most %u) than claimed (%u)", 
+    click_chatter("LinkStat %s: WARNING, probe packet from %s contains fewer link entries (at most %u) than claimed (%u)",
 		  name().c_str(), EtherAddress(eh->ether_shost).unparse().c_str(), max_entries, num_entries);
     num_entries = max_entries;
   }
@@ -221,7 +221,7 @@ LinkStat::simple_action(Packet *p)
 }
 
 bool
-LinkStat::get_forward_rate(const EtherAddress &eth, unsigned int *r, 
+LinkStat::get_forward_rate(const EtherAddress &eth, unsigned int *r,
 			   unsigned int *tau, Timestamp *t)
 {
   outgoing_link_entry_t *ol = _rev_bcast_stats.findp(eth);
@@ -250,7 +250,7 @@ LinkStat::get_forward_rate(const EtherAddress &eth, unsigned int *r,
 }
 
 bool
-LinkStat::get_reverse_rate(const EtherAddress &eth, unsigned int *r, 
+LinkStat::get_reverse_rate(const EtherAddress &eth, unsigned int *r,
 			   unsigned int *tau)
 {
   probe_list_t *pl = _bcast_stats.findp(eth);
@@ -282,9 +282,9 @@ LinkStat::add_bcast_stat(const EtherAddress &eth, const link_probe &lp)
 {
   Timestamp now = Timestamp::now();
   probe_t probe(now, lp.seq_no);
-  
+
   unsigned int new_period = lp.period;
-  
+
   probe_list_t *l = _bcast_stats.findp(eth);
   if (!l) {
     probe_list_t l2(eth, new_period, lp.tau);
@@ -298,11 +298,11 @@ LinkStat::add_bcast_stat(const EtherAddress &eth, const link_probe &lp)
     l->period = new_period;
     return;
   }
-  
+
   l->probes.push_back(probe);
 
   /* only keep stats for last _window *unique* sequence numbers */
-  while ((unsigned) l->probes.size() > _window) 
+  while ((unsigned) l->probes.size() > _window)
     l->probes.pop_front();
 }
 
@@ -334,8 +334,8 @@ LinkStat::read_bcast_stats(Element *xf, void *)
 
   typedef HashMap<EtherAddress, bool> EthMap;
   EthMap eth_addrs;
-  
-  for (ProbeMap::const_iterator i = e->_bcast_stats.begin(); i.live(); i++) 
+
+  for (ProbeMap::const_iterator i = e->_bcast_stats.begin(); i.live(); i++)
     eth_addrs.insert(i.key(), true);
   for (ReverseProbeMap::const_iterator i = e->_rev_bcast_stats.begin(); i.live(); i++)
     eth_addrs.insert(i.key(), true);
@@ -345,16 +345,16 @@ LinkStat::read_bcast_stats(Element *xf, void *)
   StringAccum sa;
   for (EthMap::const_iterator i = eth_addrs.begin(); i.live(); i++) {
     const EtherAddress &eth = i.key();
-    
+
     probe_list_t *pl = e->_bcast_stats.findp(eth);
     outgoing_link_entry_t *ol = e->_rev_bcast_stats.findp(eth);
-    
+
     sa << eth << ' ';
-    
+
     sa << "fwd ";
     if (ol) {
       Timestamp age = now - ol->received_at;
-      sa << "age=" << age << " tau=" << ol->tau << " num_rx=" << (unsigned) ol->num_rx 
+      sa << "age=" << age << " tau=" << ol->tau << " num_rx=" << (unsigned) ol->num_rx
 	 << " period=" << e->_period << " pct=" << calc_pct(ol->tau, e->_period, ol->num_rx);
     }
     else
@@ -363,10 +363,10 @@ LinkStat::read_bcast_stats(Element *xf, void *)
     sa << " -- rev ";
     if (pl) {
       unsigned num_rx = e->count_rx(pl);
-      sa << "tau=" << e->_tau << " num_rx=" << num_rx << " period=" << pl->period 
+      sa << "tau=" << e->_tau << " num_rx=" << num_rx << " period=" << pl->period
 	 << " pct=" << calc_pct(e->_tau, pl->period, num_rx);
     }
-    else 
+    else
       sa << "tau=-1 num_rx=-1 period=-1 pct=-1";
 
     sa << '\n';
@@ -388,7 +388,7 @@ LinkStat::calc_pct(unsigned tau, unsigned period, unsigned num_rx)
 
 
 int
-LinkStat::write_window(const String &arg, Element *el, 
+LinkStat::write_window(const String &arg, Element *el,
 		       void *, ErrorHandler *errh)
 {
   LinkStat *e = (LinkStat *) el;
@@ -398,7 +398,7 @@ LinkStat::write_window(const String &arg, Element *el,
 }
 
 int
-LinkStat::write_period(const String &arg, Element *el, 
+LinkStat::write_period(const String &arg, Element *el,
 		       void *, ErrorHandler *errh)
 {
   LinkStat *e = (LinkStat *) el;
@@ -409,7 +409,7 @@ LinkStat::write_period(const String &arg, Element *el,
 }
 
 int
-LinkStat::write_tau(const String &arg, Element *el, 
+LinkStat::write_tau(const String &arg, Element *el,
 		       void *, ErrorHandler *errh)
 {
   LinkStat *e = (LinkStat *) el;
@@ -435,7 +435,7 @@ LinkStat::add_handlers()
 
 
 LinkStat::link_probe::link_probe(const unsigned char *d)
-  : seq_no(uint_at(d + 0)), period(uint_at(d + 4)), num_links(uint_at(d + 8)), 
+  : seq_no(uint_at(d + 0)), period(uint_at(d + 4)), num_links(uint_at(d + 8)),
   tau(uint_at(d + 12)), cksum(ushort_at(d + 16)), psz(ushort_at(d + 18))
 {
 }
@@ -453,7 +453,7 @@ LinkStat::link_probe::write(unsigned char *d) const
 }
 
 void
-LinkStat::link_probe::update_cksum(unsigned char *d) 
+LinkStat::link_probe::update_cksum(unsigned char *d)
 {
   unsigned short cksum = calc_cksum(d);
   unsigned char *c = (unsigned char *) &cksum;
@@ -462,11 +462,11 @@ LinkStat::link_probe::update_cksum(unsigned char *d)
 }
 
 unsigned short
-LinkStat::link_probe::calc_cksum(const unsigned char *d) 
+LinkStat::link_probe::calc_cksum(const unsigned char *d)
 {
   link_probe lp(d);
   int nbytes = link_probe::size + lp.num_links * link_entry::size;
-  return click_in_cksum(d, nbytes);  
+  return click_in_cksum(d, nbytes);
 }
 
 LinkStat::link_entry::link_entry(const unsigned char *d)

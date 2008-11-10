@@ -59,8 +59,8 @@ AssociationRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 		   cpEnd) < 0)
     return -1;
 
-  
-  if (!_rtable || _rtable->cast("AvailableRates") == 0) 
+
+  if (!_rtable || _rtable->cast("AvailableRates") == 0)
     return errh->error("AvailableRates element is not provided or not a AvailableRates");
 
   return 0;
@@ -72,20 +72,20 @@ AssociationRequester::send_assoc_req()
   String ssid = _winfo ? _winfo->_ssid : "";
   int linterval = _winfo ? _winfo->_interval : 1;
   Vector<int> rates = _rtable->lookup(bssid);
-  int max_len = sizeof (struct click_wifi) + 
+  int max_len = sizeof (struct click_wifi) +
     2 + /* cap_info */
     2 + /* listen_int */
     2 + ssid.length() +
     2 + WIFI_RATES_MAXSIZE +  /* rates */
     2 + WIFI_RATES_MAXSIZE +  /* xrates */
     0;
-    
-    
+
+
   WritablePacket *p = Packet::make(max_len);
 
   if(p == 0)
     return;
-  
+
 
   if (!rates.size()) {
     click_chatter("%{element}: couldn't lookup rates for %s\n",
@@ -133,13 +133,13 @@ AssociationRequester::send_assoc_req()
   memcpy(ptr, ssid.c_str(), ssid.length());
   ptr += ssid.length();
   actual_length += ssid.length();
-  
+
   /* rates */
   ptr[0] = WIFI_ELEMID_RATES;
   ptr[1] = min(WIFI_RATE_SIZE, rates.size());
   for (int x = 0; x < min (WIFI_RATE_SIZE, rates.size()); x++) {
     ptr[2 + x] = (uint8_t) rates[x];
-    
+
     if (rates[x] == 2) {
       ptr [2 + x] |= WIFI_RATE_BASIC;
     }
@@ -147,7 +147,7 @@ AssociationRequester::send_assoc_req()
     if (_winfo && _winfo->_channel > 15 && rates[x] == 12) {
       ptr [2 + x] |= WIFI_RATE_BASIC;
     }
-    
+
   }
   ptr += 2 + min(WIFI_RATE_SIZE, rates.size());
   actual_length += 2 + min(WIFI_RATE_SIZE, rates.size());
@@ -160,31 +160,31 @@ AssociationRequester::send_assoc_req()
     ptr[1] = num_xrates;
     for (int x = 0; x < num_xrates; x++) {
       ptr[2 + x] = (uint8_t) rates[x + WIFI_RATE_SIZE];
-      
+
       if (rates[x + WIFI_RATE_SIZE] == 2) {
 	ptr [2 + x] |= WIFI_RATE_BASIC;
       }
       if (_winfo && _winfo->_channel > 15 && rates[x] == 12) {
 	ptr [2 + x] |= WIFI_RATE_BASIC;
       }
-      
+
     }
     ptr += 2 + num_xrates;
     actual_length += 2 + num_xrates;
-  }  
+  }
 
   p->take(max_len - actual_length);
   _associated = false;
   output(0).push(p);
 }
 
-void 
-AssociationRequester::process_response(Packet *p) 
+void
+AssociationRequester::process_response(Packet *p)
 {
   struct click_wifi *w = (struct click_wifi *) p->data();
   EtherAddress bssid = EtherAddress(w->i_addr3);
   uint8_t *ptr;
-  
+
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
   uint16_t capability = le16_to_cpu(*(uint16_t *) ptr);
@@ -195,16 +195,16 @@ AssociationRequester::process_response(Packet *p)
 
   uint16_t associd = le16_to_cpu(*(uint16_t *) ptr);
   ptr += 2;
-  
+
   uint8_t *rates_l = ptr;
-  
+
   Vector<int> basic_rates;
   Vector<int> rates;
   Vector<int> all_rates;
   if (rates_l) {
     for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
       uint8_t rate = rates_l[x + 2];
-      
+
       if (rate & WIFI_RATE_BASIC) {
 	basic_rates.push_back((int)(rate & WIFI_RATE_VAL));
       } else {
@@ -219,7 +219,7 @@ AssociationRequester::process_response(Packet *p)
   sa << bssid << " ";
   int rssi = ceh->rssi;
   sa << "+" << rssi << " ";
-  
+
   sa << "[ ";
   if (capability & WIFI_CAPINFO_ESS) {
     sa << "ESS ";
@@ -256,7 +256,7 @@ AssociationRequester::process_response(Packet *p)
 		  this,
 		  sa.take_string().c_str());
   }
-    
+
   if (_rtable) {
     _rtable->insert(bssid, all_rates);
   }
@@ -267,11 +267,11 @@ AssociationRequester::process_response(Packet *p)
   return;
 }
 
-void 
-AssociationRequester::process_disassociation(Packet *p) 
+void
+AssociationRequester::process_disassociation(Packet *p)
 {
   struct click_wifi *w = (struct click_wifi *) p->data();
-  uint8_t *ptr = (uint8_t *) p->data() + sizeof(struct click_wifi); 
+  uint8_t *ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
   EtherAddress bssid = EtherAddress(w->i_addr3);
   uint16_t reason = le16_to_cpu(*(uint16_t *) ptr);
 
@@ -285,7 +285,7 @@ AssociationRequester::process_disassociation(Packet *p)
     _associated = false;
   } else {
     click_chatter("%{element} BAD disassociation from %s reason %d\n",
-		  this, 
+		  this,
 		  bssid.unparse().c_str(),
 		  reason);
   }
@@ -308,7 +308,7 @@ AssociationRequester::push(int, Packet *p)
 
     p->kill();
     return ;
-	      
+
   }
 
   struct click_wifi *w = (struct click_wifi *) p->data();
@@ -345,12 +345,12 @@ AssociationRequester::push(int, Packet *p)
 
 }
 
-enum {H_DEBUG, H_ETH, 
+enum {H_DEBUG, H_ETH,
       H_SEND_ASSOC_REQ,
       H_ASSOCIATED,
 };
 
-static String 
+static String
 AssociationRequester_read_param(Element *e, void *thunk)
 {
   AssociationRequester *td = (AssociationRequester *)e;
@@ -365,7 +365,7 @@ AssociationRequester_read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 AssociationRequester_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -374,14 +374,14 @@ AssociationRequester_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
   }
   case H_ETH: {    //debug
     EtherAddress e;
-    if (!cp_ethernet_address(s, &e)) 
+    if (!cp_ethernet_address(s, &e))
       return errh->error("eth parameter must be ethernet address");
     f->_eth = e;
     break;
@@ -392,7 +392,7 @@ AssociationRequester_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 AssociationRequester::add_handlers()
   {

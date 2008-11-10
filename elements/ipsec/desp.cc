@@ -5,7 +5,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  *
  * Added Security Association Table support. Dimitris Syrivelis <jsyr@inf.uth.gr>, University of Thessaly, Hellas
- * Added Replay Check support originally written for linux ipsec-0.5 from John Ioannidis <ji@hol.gr> 
+ * Added Replay Check support originally written for linux ipsec-0.5 from John Ioannidis <ji@hol.gr>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -41,20 +41,20 @@ IPsecESPUnencap::~IPsecESPUnencap()
 {
 }
 
-int 
+int
 IPsecESPUnencap::checkreplaywindow(SADataTuple * sa_data,unsigned long seq)
   {
 	unsigned long diff;
-	
-  	if (seq == 0)
+
+	if (seq == 0)
 		return 0;		/* first == 0 or wrapped */
 	/*This logic has been added for the time being to deal with replay rollover*/
-	if((seq == sa_data->replay_start_counter) && (sa_data->lastseq!=sa_data->replay_start_counter)) { sa_data->bitmap=0;sa_data->lastseq=seq;return 1;} 
+	if((seq == sa_data->replay_start_counter) && (sa_data->lastseq!=sa_data->replay_start_counter)) { sa_data->bitmap=0;sa_data->lastseq=seq;return 1;}
 
 	if (seq > sa_data->lastseq)	/* new larger sequence number */
 	{
 		diff = seq - sa_data->lastseq;
-  		if (diff < sa_data->ooowin) /* In win, set bit for this pkt */
+		if (diff < sa_data->ooowin) /* In win, set bit for this pkt */
 			sa_data->bitmap = (sa_data->bitmap << diff) | 1;
 		else
 			sa_data->bitmap = 1; /* This packet has way larger */
@@ -66,7 +66,7 @@ IPsecESPUnencap::checkreplaywindow(SADataTuple * sa_data,unsigned long seq)
 	if (diff >= sa_data->ooowin) {	/* too old or wrapped */
 		click_chatter("Replay protection: This packet is too old to be accepted\n");
 		return 0;
-	
+
         }
 	if (sa_data->bitmap & (1 << diff)) { /* this packet already seen */
 		click_chatter("Replay protection: This packet is already seen...\n");
@@ -91,7 +91,7 @@ IPsecESPUnencap::simple_action(Packet *p)
   if(sa==NULL) {click_chatter("Null reference to Security Association Table");}
 
   if(!checkreplaywindow(sa,(unsigned long)ntohl(esp->esp_rpl))) {
-      p->kill(); //The packet failed replay check and it is therefore dropped 
+      p->kill(); //The packet failed replay check and it is therefore dropped
       return (0);
   }
 
@@ -109,7 +109,7 @@ IPsecESPUnencap::simple_action(Packet *p)
   blks = blk[blks - 2];
   blk = p->data() + p->length() - (blks + 2);
   for(i = 0; (i < blks) && (blk[i] == ++i);)
-      /* nothing */;    
+      /* nothing */;
   if(i<blks) {
     click_chatter("Corrupt padding");
     p->kill();

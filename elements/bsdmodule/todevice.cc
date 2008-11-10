@@ -96,7 +96,7 @@ int
 ToDevice::initialize(ErrorHandler *errh)
 {
     to_device_map.insert(this);
-  
+
     ScheduleInfo::initialize_task(this, &_task, device() != 0, errh);
     _signal = Notifier::upstream_empty_signal(this, 0, &_task);
 
@@ -114,7 +114,7 @@ void
 ToDevice::reset_counts()
 {
     _npackets = 0;
-    _busy_returns = 0; 
+    _busy_returns = 0;
 }
 
 void

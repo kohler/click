@@ -11,7 +11,7 @@ PrintOld([LABEL, AGE, MAXLENGTH])
 
 =s debugging
 
-conditionally prints packet contents 
+conditionally prints packet contents
 
 =d
 
@@ -23,7 +23,7 @@ Default MAXLENGTH is 24.
 
 =a
 
-IPPrint 
+IPPrint
 Print
 
 */
@@ -32,17 +32,17 @@ class PrintOld : public Element { public:
 
   PrintOld();
   ~PrintOld();
-  
+
   const char *class_name() const		{ return "PrintOld"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   Packet *simple_action(Packet *);
-  
+
  private:
-  
+
   String _label;
   int _bytes;			// How many bytes of a packet to print
   int _thresh;

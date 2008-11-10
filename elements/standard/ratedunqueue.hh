@@ -13,7 +13,7 @@ CLICK_DECLS
  * =s shaping
  * pull-to-push converter
  * =d
- * 
+ *
  * Pulls packets at the given RATE in packets per second, and pushes them out
  * its single output.
  *
@@ -22,20 +22,20 @@ CLICK_DECLS
  * =a BandwidthRatedUnqueue, Unqueue, Shaper, RatedSplitter */
 
 class RatedUnqueue : public Element { public:
-  
+
     RatedUnqueue();
     ~RatedUnqueue();
-  
+
     const char *class_name() const	{ return "RatedUnqueue"; }
     const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return PULL_TO_PUSH; }
     bool is_bandwidth() const		{ return class_name()[0] == 'B'; }
-  
+
     int configure(Vector<String> &, ErrorHandler *);
     bool can_live_reconfigure() const	{ return true; }
     int initialize(ErrorHandler *);
     void add_handlers();
-  
+
     bool run_task(Task *);
 
   protected:
@@ -45,7 +45,7 @@ class RatedUnqueue : public Element { public:
     NotifierSignal _signal;
 
     static String read_handler(Element *, void *);
-    
+
 };
 
 CLICK_ENDDECLS

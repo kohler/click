@@ -66,24 +66,24 @@ KernelTap accepts the same arguments as KernelTun.
 Linux will send ARP queries to the fake device. You must respond to these
 queries in order to receive any IP packets, but you can obviously respond
 with any Ethernet address you'd like. Here is one common idiom:
- 
+
   tap0 :: KernelTap(192.0.0.1/8)
        -> fromhost_cl :: Classifier(12/0806, 12/0800);
   fromhost_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> tap0;
   fromhost_cl[1] -> ... // IP packets
- 
+
 An error like "could not allocate a /dev/tap* device : No such file or
 directory" usually means that you have not enabled /dev/tap* in your
-kernel. 
+kernel.
 
 =a ToHost, KernelTun, ifconfig(8) */
 
 class KernelTap : public KernelTun { public:
-  
+
     KernelTap();
-  
+
     const char *class_name() const	{ return "KernelTap"; }
-    
+
 };
 
 CLICK_ENDDECLS

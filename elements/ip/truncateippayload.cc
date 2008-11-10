@@ -85,7 +85,7 @@ TruncateIPPayload::simple_action(Packet *p)
 		break;
 	    }
     }
-	
+
     if (p->network_length() <= (int) nbytes)
 	return p;
     nbytes = p->network_length() - nbytes;

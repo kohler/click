@@ -33,17 +33,17 @@ CLICK_DECLS
 #define NEXT_HOP_ETH_FIXUP 0
 
 bool
-GridRouteTable::get_one_entry(const IPAddress &dest_ip, RouteEntry &entry) 
+GridRouteTable::get_one_entry(const IPAddress &dest_ip, RouteEntry &entry)
 {
   RTEntry *r = _rtes.findp(dest_ip);
   if (r == 0)
     return false;
-  
+
   entry = RouteEntry(dest_ip, r->loc_good, r->loc_err, r->loc,
-		     r->next_hop_eth, r->next_hop_ip, 
+		     r->next_hop_eth, r->next_hop_ip,
 		     0, // ignore interface number info
 		     r->seq_no(), r->num_hops());
-  return true;  
+  return true;
 }
 
 void
@@ -51,18 +51,18 @@ GridRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 {
   for (RTIter iter = _rtes.begin(); iter.live(); iter++) {
     const RTEntry &rte = iter.value();
-    vec.push_back(RouteEntry(rte.dest_ip, rte.loc_good, rte.loc_err, rte.loc, 
+    vec.push_back(RouteEntry(rte.dest_ip, rte.loc_good, rte.loc_err, rte.loc,
 			     rte.next_hop_eth, rte.next_hop_ip, 0, // ignore interface info
 			     rte.seq_no(), rte.num_hops()));
   }
 }
 
 
-GridRouteTable::GridRouteTable() : 
+GridRouteTable::GridRouteTable() :
   _log(0), _dump_tick(0),
   _seq_no(0), _fake_seq_no(0), _bcast_count(0),
   _seq_delay(1),
-  _max_hops(3), 
+  _max_hops(3),
   _expire_timer(expire_hook, this),
   _hello_timer(hello_hook, this),
   _metric_type(MetricEstTxCount),
@@ -98,8 +98,8 @@ GridRouteTable::log_route_table ()
   for (RTIter i = _rtes.begin(); i.live(); i++) {
     const RTEntry &f = i.value();
 
-    snprintf(str, sizeof(str), 
-	     "%s %s %s %d %c %u\n", 
+    snprintf(str, sizeof(str),
+	     "%s %s %s %d %c %u\n",
 	     f.dest_ip.unparse().c_str(),
 	     f.loc.s().c_str(),
 	     f.next_hop_ip.unparse().c_str(),
@@ -188,7 +188,7 @@ GridRouteTable::current_gateway(RouteEntry &entry)
     const RTEntry &f = i.value();
 
     if (f.is_gateway) {
-      entry = RouteEntry(f.dest_ip, f.loc_good, f.loc_err, f.loc, 
+      entry = RouteEntry(f.dest_ip, f.loc_good, f.loc_err, f.loc,
 			 f.next_hop_eth, f.next_hop_ip, 0, // ignore interface info
 			 f.seq_no(), f.num_hops());
       return true;
@@ -205,7 +205,7 @@ GridRouteTable::qual_to_pct(int q)
   /* smaller quality is better, so should be a higher pct when closer to min quality */
   if (q > _max_metric)
     return 0;
-  else if (q < _min_metric) 
+  else if (q < _min_metric)
     return 100;
 
   int delta = _max_metric - _min_metric;
@@ -218,7 +218,7 @@ GridRouteTable::sig_to_pct(int s)
   /* large signal is better, so should be a higher pct when closer to max sig */
   if (s > _max_metric)
     return 100;
-  else if (s < _min_metric) 
+  else if (s < _min_metric)
     return 0;
 
   int delta = _max_metric - _min_metric;
@@ -233,7 +233,7 @@ GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
 {
   switch (_est_type) {
   case EstBySig:
-  case EstByQual: 
+  case EstByQual:
   case EstBySigQual: {
     int sig = 0;
     int qual = 0;
@@ -254,15 +254,15 @@ GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
 #if 0
       click_chatter("XXX %s", ip.unparse().c_str());
 #endif
-      /* 
+      /*
        * use jinyang's parameters, based on 1sec broadcast loss rates
-       * with 50-byte UDP packets.  
+       * with 50-byte UDP packets.
        *
-       * good = delivery rate > 80%.  
+       * good = delivery rate > 80%.
        *
        * these parameters are chosen to correctly classify 85% of good
        * links as good, while only classifying 2% of bad links as
-       * good.  
+       * good.
        */
       res = _link_tracker->get_bcast_stat(ip, rate, last);
       double z = 9.4519 + 0.0391 * sig + 0.5518 * qual;
@@ -322,7 +322,7 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
 {
   switch (_est_type) {
   case EstBySig:
-  case EstByQual: 
+  case EstByQual:
     h(101);
     return false;
     break;
@@ -352,14 +352,14 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
     double z2 = 1 / (1 + exp(z));
     double thresh = 0.8;
     bool link_good = z2 > thresh;
-    
+
     /* paper fuckedness: */
     if (link_good)
       rate = 1;
     else
       rate = 0.1;
     return true;
-    
+
     unsigned int window = 0;
     unsigned int num_rx = 0;
     unsigned int num_expected = 0;
@@ -447,7 +447,7 @@ GridRouteTable::init_metric(RTEntry &r)
     r.metric_valid = true;
     break;
   case MetricMinSigStrength:
-  case MetricMinSigQuality: 
+  case MetricMinSigQuality:
   case MetricCumulativeQualPct:
   case MetricCumulativeSigPct: {
     int sig = 0;
@@ -470,11 +470,11 @@ GridRouteTable::init_metric(RTEntry &r)
       r.metric_valid = false;
       return;
     }
-    if (_metric_type == MetricMinSigQuality) 
+    if (_metric_type == MetricMinSigQuality)
       r.metric = (unsigned int) qual;
     else if (_metric_type == MetricMinSigStrength)
       r.metric = (unsigned int) -sig; // deal in -dBm
-    else if (_metric_type == MetricCumulativeQualPct) 
+    else if (_metric_type == MetricCumulativeQualPct)
       r.metric = qual_to_pct(qual);
     else // _metric_type == MetricCumulativeSigPct
       r.metric = sig_to_pct(sig);
@@ -509,12 +509,12 @@ GridRouteTable::init_metric(RTEntry &r)
 	rev_rate = 1;
       }
       r.metric = (int) (100 / (fwd_rate * rev_rate));
-      if (r.metric < 100) 
+      if (r.metric < 100)
 	click_chatter("init_metric WARNING: metric too small (%d) for %s",
 		      r.metric, r.next_hop_ip.unparse().c_str());
       r.metric_valid = true;
       h(201);
-    } 
+    }
     else {
       r.metric = _bad_metric;
       r.metric_valid = false;
@@ -525,9 +525,9 @@ GridRouteTable::init_metric(RTEntry &r)
   default:
     assert(0);
   }
-} 
+}
 
-void 
+void
 GridRouteTable::update_metric(RTEntry &r)
 {
   if (r.num_hops() == 0)
@@ -554,7 +554,7 @@ GridRouteTable::update_metric(RTEntry &r)
     if (next_hop->metric > 1)
       click_chatter("GridRouteTable: WARNING metric type is hop count but next-hop %s metric is > 1 (%u)",
 		    next_hop->dest_ip.unparse().c_str(), next_hop->metric);
-  case MetricEstTxCount: 
+  case MetricEstTxCount:
     if (_metric_type == MetricEstTxCount) {
       if (r.metric < (unsigned) 100 * (r.num_hops() - 1))
 	click_chatter("update_metric WARNING received metric (%d) too low for %s (%d hops)",
@@ -570,7 +570,7 @@ GridRouteTable::update_metric(RTEntry &r)
   case MetricCumulativeSigPct:
     r.metric = (r.metric * next_hop->metric) / 100;
     break;
-  case MetricMinDeliveryRate: 
+  case MetricMinDeliveryRate:
     r.metric = (next_hop->metric < r.metric) ? next_hop->metric : r.metric;
     break;
   case MetricMinSigStrength:
@@ -593,16 +593,16 @@ GridRouteTable::metric_is_preferable(const RTEntry &r1, const RTEntry &r2)
 
   switch (_metric_type) {
   case MetricHopCount:
-  case MetricEstTxCount: 
+  case MetricEstTxCount:
     return r1.metric < r2.metric;
   case MetricCumulativeDeliveryRate:
   case MetricMinDeliveryRate:
     return r1.metric > r2.metric;
-  case MetricMinSigQuality: 
+  case MetricMinSigQuality:
   case MetricMinSigStrength:
     // smaller -dBm is stronger signal
     // *or* prefer smaller quality number
-    return r1.metric < r2.metric; 
+    return r1.metric < r2.metric;
   case MetricCumulativeQualPct:
   case MetricCumulativeSigPct:
   default:
@@ -616,38 +616,38 @@ bool
 GridRouteTable::should_replace_old_route(const RTEntry &old_route, const RTEntry &new_route)
 {
   /* prefer a strictly newer route */
-  if (old_route.seq_no() > new_route.seq_no()) 
+  if (old_route.seq_no() > new_route.seq_no())
     return false;
   if (old_route.seq_no() < new_route.seq_no())
     return true;
-  
-  /* 
-   * routes have same seqno, choose based on metric 
+
+  /*
+   * routes have same seqno, choose based on metric
    */
-  
+
   /* prefer a route with a valid metric */
   if (old_route.metric_valid && !new_route.metric_valid)
     return false;
   if (!old_route.metric_valid && new_route.metric_valid)
     return true;
-  
+
   /* if neither metric is valid, just keep the route we have -- to aid
    * in stability -- as if I have any notion about that....
    *
-   * actually, that's fucked.  would you prefer a 5-hop route or a 
+   * actually, that's fucked.  would you prefer a 5-hop route or a
    * 2-hop route, given that you don't have any other information about
-   * them?  duh.  fall back to hopcount. 
+   * them?  duh.  fall back to hopcount.
    * bwahhhaaaahahaha!!! */
   if (!old_route.metric_valid && !new_route.metric_valid) {
     // return false;
     return new_route.num_hops() < old_route.num_hops();
   }
-  
+
   // both metrics are valid
   /* update is from same node as last update, we should accept it to avoid unwarranted timeout */
   if (old_route.next_hop_ip == new_route.next_hop_ip)
     return true;
-   
+
   /* update route if the metric is better */
   return metric_is_preferable(new_route, old_route);
 }
@@ -662,9 +662,9 @@ GridRouteTable::simple_action(Packet *packet)
   assert(packet);
   unsigned int jiff = click_jiffies();
 
-  /* 
-   * sanity check the packet, get pointers to headers 
-   */  
+  /*
+   * sanity check the packet, get pointers to headers
+   */
   click_ether *eh = (click_ether *) packet->data();
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
     click_chatter("GridRouteTable %s: got non-Grid packet type", name().c_str());
@@ -678,7 +678,7 @@ GridRouteTable::simple_action(Packet *packet)
     packet->kill();
     return 0;
   }
-    
+
   IPAddress ipaddr((unsigned char *) &gh->tx_ip);
   EtherAddress ethaddr((unsigned char *) eh->ether_shost);
 
@@ -690,13 +690,13 @@ GridRouteTable::simple_action(Packet *packet)
   }
 
   grid_hello *hlo = (grid_hello *) (gh + 1);
-   
+
   // extended logging
   Timestamp ts = Timestamp::now();
   _extended_logging_errh->message("recvd %u from %s %d %d", ntohl(hlo->seq_no), ipaddr.unparse().c_str(), ts.sec(), ts.usec());
   if (_log)
     _log->log_start_recv_advertisement(ntohl(hlo->seq_no), ipaddr, ts);
-  
+
   if (_frozen) {
     if (_log)
       _log->log_end_recv_advertisement();
@@ -707,16 +707,16 @@ GridRouteTable::simple_action(Packet *packet)
 
   /*
    * add 1-hop route to packet's transmitter; perform some sanity
-   * checking if entry already existed 
+   * checking if entry already existed
    */
 
   RTEntry *r = _rtes.findp(ipaddr);
 
   if (!r)
-    click_chatter("GridRouteTable %s: adding new 1-hop route %{ip_ptr} -- %{ether_ptr}", 
-		  name().c_str(), &ipaddr, &ethaddr); 
+    click_chatter("GridRouteTable %s: adding new 1-hop route %{ip_ptr} -- %{ether_ptr}",
+		  name().c_str(), &ipaddr, &ethaddr);
   else if (r->num_hops() == 1 && r->next_hop_eth != ethaddr)
-    click_chatter("GridRouteTable %s: ethernet address of %{ip_ptr} changed from %{ether_ptr} to %{ether_ptr}", 
+    click_chatter("GridRouteTable %s: ethernet address of %{ip_ptr} changed from %{ether_ptr} to %{ether_ptr}",
 		  name().c_str(), &ipaddr, &r->next_hop_eth, &ethaddr);
 
   /*
@@ -737,16 +737,16 @@ GridRouteTable::simple_action(Packet *packet)
    * spaced.  we should use some time-weighted average, instead of the
    * usual sample-based average.  the node measuring at the other end
    * of the link needs to timestamp when packet come in and it takes
-   * the readings. 
+   * the readings.
    */
 
-  /* 
+  /*
    * individual link metric smoothing, or route metric smoothing?  we
    * will only smooth the ping-pong measurements on individual links;
    * we won't smooth metrics at the route level.  that's because we
    * can't even be sure that as the metrics change for a route to some
    * destination, the metric are even for the same route, i.e. same
-   * set of links. 
+   * set of links.
    */
 
   int entry_sz = hlo->nbr_entry_sz;
@@ -782,16 +782,16 @@ GridRouteTable::simple_action(Packet *packet)
     if (r)
       r->dest_eth = ethaddr;
   }
-  
+
   /*
-   * loop through and process other route entries in hello message 
+   * loop through and process other route entries in hello message
    */
   Vector<RTEntry> triggered_rtes;
   Vector<IPAddress> broken_dests;
 
   entry_ptr = (char *) (hlo + 1);
   for (int i = 0; i < hlo->num_nbrs; i++, entry_ptr += entry_sz) {
-    
+
     grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
     RTEntry route(ipaddr, ethaddr, curr, jiff);
 
@@ -800,7 +800,7 @@ GridRouteTable::simple_action(Packet *packet)
       continue;
 
     /* ignore route to ourself */
-    if (route.dest_ip == _ip)       
+    if (route.dest_ip == _ip)
       continue;
 
     /* pseudo-split-horizon: ignore routes from nbrs that go back
@@ -811,9 +811,9 @@ GridRouteTable::simple_action(Packet *packet)
     update_metric(route);
 
     RTEntry *our_rte = _rtes.findp(curr->ip);
-    
-    /* 
-     * broken route advertisement 
+
+    /*
+     * broken route advertisement
      */
     if (curr->num_hops == 0) {
 
@@ -823,20 +823,20 @@ GridRouteTable::simple_action(Packet *packet)
 		      &ipaddr, &route.dest_ip);
 	continue;
       }
-    
+
       /* if we don't have a route to this destination, ignore it */
       if (!our_rte)
 	continue;
 
-      /* 
+      /*
        * if our next hop to the destination is this packet's sender,
        * AND if the seq_no is newer than any information we have.
-       * remove the broken route. 
+       * remove the broken route.
        */
       if (our_rte->next_hop_ip == ipaddr &&
 	  route.seq_no() > our_rte->seq_no()) {
 	broken_dests.push_back(route.dest_ip);
-	
+
 	/* generate triggered broken route advertisement */
 	triggered_rtes.push_back(route);
 
@@ -846,7 +846,7 @@ GridRouteTable::simple_action(Packet *packet)
       /*
        * otherwise, triggered advertisement: if we have a good route
        * to the destination with a newer seq_no, advertise our new
-       * information. 
+       * information.
        */
       else if (route.seq_no() < our_rte->seq_no()) {
 	assert(!(our_rte->seq_no() & 1)); // valid routes have even seq_no
@@ -865,7 +865,7 @@ GridRouteTable::simple_action(Packet *packet)
     if (route.num_hops() + 1 > _max_hops)
       continue;
 
-    /* 
+    /*
      * regular route entry -- should we stick it in the table?
      */
     if (our_rte == 0 || should_replace_old_route(*our_rte, route)) {
@@ -886,13 +886,13 @@ GridRouteTable::simple_action(Packet *packet)
 	    // XXX how to calculate num_hops???, metric, etc.
 	    // XXX also, last_updated_jiffies, etc.
 	  }
-	}	
+	}
 	for (int i = 0; i < changed_next_hop.size(); i++)
 	  _rtes.insert(changed_next_hop[i].dest_ip, changed_next_hop[i]);
 #endif
 
       }
-      
+
       if (_log)
 	_log->log_added_route(GridLogger::WAS_ENTRY, make_generic_rte(route));
     }
@@ -919,7 +919,7 @@ GridRouteTable::simple_action(Packet *packet)
 
 
 
-String 
+String
 GridRouteTable::print_rtes_v(Element *e, void *)
 {
   GridRouteTable *n = (GridRouteTable *) e;
@@ -927,9 +927,9 @@ GridRouteTable::print_rtes_v(Element *e, void *)
   String s;
   for (RTIter i = n->_rtes.begin(); i.live(); i++) {
     const RTEntry &f = i.value();
-    s += f.dest_ip.unparse() 
-      + " next=" + f.next_hop_ip.unparse() 
-      + " hops=" + String((int) f.num_hops()) 
+    s += f.dest_ip.unparse()
+      + " next=" + f.next_hop_ip.unparse()
+      + " hops=" + String((int) f.num_hops())
       + " gw=" + (f.is_gateway ? "y" : "n")
       + " loc=" + f.loc.s()
       + " err=" + (f.loc_good ? "" : "-") + String(f.loc_err) // negate loc if invalid
@@ -938,11 +938,11 @@ GridRouteTable::print_rtes_v(Element *e, void *)
       + " metric=" + String(f.metric)
       + "\n";
   }
-  
+
   return s;
 }
 
-String 
+String
 GridRouteTable::print_rtes(Element *e, void *)
 {
   GridRouteTable *n = (GridRouteTable *) e;
@@ -950,16 +950,16 @@ GridRouteTable::print_rtes(Element *e, void *)
   String s;
   for (RTIter i = n->_rtes.begin(); i.live(); i++) {
     const RTEntry &f = i.value();
-    s += f.dest_ip.unparse() 
-      + " next=" + f.next_hop_ip.unparse() 
-      + " hops=" + String((int) f.num_hops()) 
+    s += f.dest_ip.unparse()
+      + " next=" + f.next_hop_ip.unparse()
+      + " hops=" + String((int) f.num_hops())
       + " gw=" + (f.is_gateway ? "y" : "n")
       //      + " loc=" + f.loc.unparse()
       //      + " err=" + (f.loc_good ? "" : "-") + String(f.loc_err) // negate loc if invalid
       + " seq=" + String(f.seq_no())
       + "\n";
   }
-  
+
   return s;
 }
 
@@ -967,7 +967,7 @@ String
 GridRouteTable::print_nbrs_v(Element *e, void *)
 {
   GridRouteTable *n = (GridRouteTable *) e;
-  
+
   String s;
   for (RTIter i = n->_rtes.begin(); i.live(); i++) {
     /* only print immediate neighbors */
@@ -989,7 +989,7 @@ String
 GridRouteTable::print_nbrs(Element *e, void *)
 {
   GridRouteTable *n = (GridRouteTable *) e;
-  
+
   String s;
   for (RTIter i = n->_rtes.begin(); i.live(); i++) {
     /* only print immediate neighbors */
@@ -1031,7 +1031,7 @@ GridRouteTable::metric_type_to_string(MetricType t)
   case MetricCumulativeQualPct: return "cumulative_qual_pct"; break;
   case MetricCumulativeSigPct: return "cumulative_sig_pct"; break;
   case MetricEstTxCount:   return "est_tx_count"; break;
-  default: 
+  default:
     return "unknown_metric_type";
   }
 }
@@ -1044,7 +1044,7 @@ GridRouteTable::print_metric_type(Element *e, void *)
   return metric_type_to_string(n->_metric_type) + "\n";
 }
 
-GridRouteTable::MetricType 
+GridRouteTable::MetricType
 GridRouteTable::check_metric_type(const String &s)
 {
   String s2 = s.lower();
@@ -1069,14 +1069,14 @@ GridRouteTable::check_metric_type(const String &s)
 }
 
 int
-GridRouteTable::write_metric_type(const String &arg, Element *el, 
+GridRouteTable::write_metric_type(const String &arg, Element *el,
 				  void *, ErrorHandler *errh)
 {
   GridRouteTable *rt = (GridRouteTable *) el;
   MetricType type = check_metric_type(arg);
   if (type < 0)
     return errh->error("unknown metric type ``%s''", ((String) arg).c_str());
-  
+
   if (type != rt->_metric_type) {
     rt->_metric_type = type;
 
@@ -1092,7 +1092,7 @@ GridRouteTable::write_metric_type(const String &arg, Element *el,
       rt->_max_metric = rt->_min_metric = 0;
 
     /* make sure we don't try to use the old metric for a route */
-    
+
     Vector<RTEntry> entries;
     for (RTIter i = rt->_rtes.begin(); i.live(); i++) {
       /* skanky, but there's no reason for this to be quick.  i guess
@@ -1101,8 +1101,8 @@ GridRouteTable::write_metric_type(const String &arg, Element *el,
       e.metric_valid = false;
       entries.push_back(e);
     }
-    
-    for (int i = 0; i < entries.size(); i++) 
+
+    for (int i = 0; i < entries.size(); i++)
       rt->_rtes.insert(entries[i].dest_ip, entries[i]);
   }
   return 0;
@@ -1112,12 +1112,12 @@ String
 GridRouteTable::print_metric_range(Element *e, void *)
 {
   GridRouteTable *rt = (GridRouteTable *) e;
-  
+
   return "max=" + String(rt->_max_metric) + " min=" + String(rt->_min_metric) + "\n";
 }
 
 int
-GridRouteTable::write_metric_range(const String &arg, Element *el, 
+GridRouteTable::write_metric_range(const String &arg, Element *el,
 				   void *, ErrorHandler *errh)
 {
   GridRouteTable *rt = (GridRouteTable *) el;
@@ -1145,12 +1145,12 @@ String
 GridRouteTable::print_est_type(Element *e, void *)
 {
   GridRouteTable *rt = (GridRouteTable *) e;
-  
+
   return String(rt->_est_type) + "\n";
 }
 
 int
-GridRouteTable::write_est_type(const String &arg, Element *el, 
+GridRouteTable::write_est_type(const String &arg, Element *el,
 			       void *, ErrorHandler *)
 {
   GridRouteTable *rt = (GridRouteTable *) el;
@@ -1164,12 +1164,12 @@ String
 GridRouteTable::print_seq_delay(Element *e, void *)
 {
   GridRouteTable *rt = (GridRouteTable *) e;
-  
+
   return String(rt->_seq_delay) + "\n";
 }
 
 int
-GridRouteTable::write_seq_delay(const String &arg, Element *el, 
+GridRouteTable::write_seq_delay(const String &arg, Element *el,
 				void *, ErrorHandler *)
 {
   GridRouteTable *rt = (GridRouteTable *) el;
@@ -1183,12 +1183,12 @@ String
 GridRouteTable::print_frozen(Element *e, void *)
 {
   GridRouteTable *rt = (GridRouteTable *) e;
-  
+
   return (rt->_frozen ? "true\n" : "false\n");
 }
 
 int
-GridRouteTable::write_frozen(const String &arg, Element *el, 
+GridRouteTable::write_frozen(const String &arg, Element *el,
 				void *, ErrorHandler *)
 {
   GridRouteTable *rt = (GridRouteTable *) el;
@@ -1203,7 +1203,7 @@ String
 GridRouteTable::print_links(Element *e, void *)
 {
   GridRouteTable *rt = (GridRouteTable *) e;
-  
+
   String s = "Metric type: " + metric_type_to_string(rt->_metric_type) + "\n";
 
   for (RTIter i = rt->_rtes.begin(); i.live(); i++) {
@@ -1274,7 +1274,7 @@ GridRouteTable::add_handlers()
 
 
 void
-GridRouteTable::expire_hook(Timer *, void *thunk) 
+GridRouteTable::expire_hook(Timer *, void *thunk)
 {
   GridRouteTable *n = (GridRouteTable *) thunk;
   n->expire_routes();
@@ -1288,7 +1288,7 @@ GridRouteTable::expire_routes()
   /*
    * remove expired routes from the routing table.  return a vector of
    * expired routes which is suitable for inclusion in a broken route
-   * advertisement. 
+   * advertisement.
    */
 
   /* overloading this timer function to occasionally dump full route table to log */
@@ -1301,7 +1301,7 @@ GridRouteTable::expire_routes()
       _log->log_route_dump(vec, Timestamp::now());
     }
   }
-      
+
   assert(_timeout > 0);
   unsigned int jiff = click_jiffies();
 
@@ -1344,7 +1344,7 @@ GridRouteTable::expire_routes()
       }
     }
   }
-  
+
   /* 2. Loop through RT a second time, picking up any multi-hop
      entries whose next hop is expired, and are not yet expired. */
   for (RTIter i = _rtes.begin(); i.live(); i++) {
@@ -1355,12 +1355,12 @@ GridRouteTable::expire_routes()
       expired_rtes.insert(i.value().dest_ip, true);
 
       _extended_logging_errh->message("next to %s expired %d %d", i.value().dest_ip.unparse().c_str(), ts.sec(), ts.usec());  // extended logging
-      
+
       if (_log)
 	_log->log_expired_route(GridLogger::NEXT_HOP_EXPIRED, i.value().dest_ip);
     }
   }
-  
+
   /* 3. Then, push all expired entries onto the return vector and
      erase them from the RT.  */
   for (xip_t::iterator i = expired_rtes.begin(); i.live(); i++) {
@@ -1437,7 +1437,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 
   Vector<RTEntry> rte_info = Vector<RTEntry>();
 
-  /* 
+  /*
    * if requested by caller, calculate the ttls each route entry
    * should be sent with.  Each entry's ttl must be decremented by a
    * minimum amount.  Only send the routes with valid ttls (> 0).
@@ -1471,7 +1471,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
   if (p == 0) {
     click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
-  } 
+  }
   ASSERT_4ALIGNED(p->data());
   p->pull(2);
   memset(p->data(), 0, p->length());
@@ -1506,11 +1506,11 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
   if (_log)
     _log->log_sent_advertisement(_seq_no, now);
 
-  /* 
+  /*
    * Update the sequence number for periodic updates, but not for
    * triggered updates.  originating sequence numbers are even,
    * starting at 0.  odd numbers are reserved for other nodes to
-   * advertise broken routes 
+   * advertise broken routes
    */
   assert(!(_seq_no & 1));
   if (update_seq) {
@@ -1518,7 +1518,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
     if ((_fake_seq_no % _seq_delay) == 0)
       _seq_no += 2;
   }
-  
+
   _bcast_count++;
   grid_hdr::set_pad_bytes(*gh, htonl(_bcast_count));
 
@@ -1530,20 +1530,20 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
   for (int i = 0; i < num_rtes; i++, curr++) {
 
     const RTEntry &f = rte_info[i];
-    snprintf(str, sizeof(str), 
-	     "%s %s %s %d %c %u %u\n", 
+    snprintf(str, sizeof(str),
+	     "%s %s %s %d %c %u %u\n",
 	     f.dest_ip.unparse().c_str(),
 	     f.loc.s().c_str(),
 	     f.next_hop_ip.unparse().c_str(),
 	     f.num_hops(),
 	     (f.is_gateway ? 'y' : 'n'),
-	     f.seq_no(), 
+	     f.seq_no(),
 	     f.metric);
     _extended_logging_errh->message(str);
 
     rte_info[i].fill_in(curr, _link_stat);
   }
-  
+
   _extended_logging_errh->message("\n");
 
   output(0).push(p);
@@ -1565,7 +1565,7 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
   nb->metric_valid = metric_valid;
   nb->is_gateway = is_gateway;
   nb->ttl = htonl(ttl);
-  
+
   /* ping-pong link stats back to sender */
 #ifndef SMALL_GRID_HEADERS
   nb->link_qual = 0;

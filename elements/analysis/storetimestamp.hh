@@ -49,11 +49,11 @@ class StoreTimestamp : public Element { public:
     int configure(Vector<String> &, ErrorHandler *);
 
     Packet *simple_action(Packet *);
-    
+
   private:
 
     int _offset;
-    
+
 };
 
 CLICK_ENDDECLS

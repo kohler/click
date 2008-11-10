@@ -25,7 +25,7 @@ Statistics about access points that the element has received beacons from.
 Clear the list of access points.
 
 =h channel
-If the channel is greater than 0, it will only record statistics for 
+If the channel is greater than 0, it will only record statistics for
 beacons received with that channel in the packet.
 If channel is 0, it will record statistics for all beacons received.
 If channel is less than 0, it will discard all beaconds
@@ -33,7 +33,7 @@ If channel is less than 0, it will discard all beaconds
 
 =e
 
-  FromDevice(ath0) 
+  FromDevice(ath0)
   -> Prism2Decap()
   -> ExtraDecap()
   -> Classifier(0/80%f0)  // only beacon packets
@@ -45,14 +45,14 @@ If channel is less than 0, it will discard all beaconds
 EtherEncap */
 
 class BeaconScanner : public Element { public:
-  
+
   BeaconScanner();
   ~BeaconScanner();
 
   const char *class_name() const	{ return "BeaconScanner"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
 
@@ -84,7 +84,7 @@ class BeaconScanner : public Element { public:
 
   typedef HashMap<EtherAddress, wap> APTable;
   typedef APTable::const_iterator APIter;
-  
+
   APTable _waps;
   AvailableRates *_rtable;
   WirelessInfo *_winfo;

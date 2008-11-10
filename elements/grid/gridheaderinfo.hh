@@ -8,7 +8,7 @@ CLICK_DECLS
  * =c
  * GridHeaderInfo
  * =s Grid
- * Provide information about Grid header version, header sizes, and offsets 
+ * Provide information about Grid header version, header sizes, and offsets
  * for the current router exectuable.
  *
  * =io
@@ -39,11 +39,11 @@ CLICK_DECLS
  * =h grid_proto_lr_hello           read-only
  * =h grid_proto_nbr_encap          read-only
  * =h grid_proto_loc_query          read-only
- * =h grid_proto_loc_reply          read-only 
+ * =h grid_proto_loc_reply          read-only
  * =h grid_proto_route_probe        read-only
- * =h grid_proto_route_reply        read-only 
+ * =h grid_proto_route_reply        read-only
  * =h grid_proto_geocast            read-only
- * =h grid_proto_link_probe         read-only 
+ * =h grid_proto_link_probe         read-only
  *
  * =h sizeof_grid_location           read-only
  * Each sizeof_foo handler returns C<sizeof(foo)>.
@@ -59,14 +59,14 @@ CLICK_DECLS
  *
  * =h sizeof_linkstat_link_probe     read_only
  * =h sizeof_linkstat_link_entry     read_only
- * 
+ *
  * =h offsetof_grid_hdr_version      read-only
  * Each offsetof_grid_hdr_foo handler returns C<offsetof(grid_hdr, foo)>
  * =h offsetof_grid_hdr_type         read-only
  * =h offsetof_grid_hdr_ip           read-only
  * =h offsetof_grid_hdr_tx_ip        read-only
  * =h offsetof_grid_hdr_total_len    read-only
- * 
+ *
  * =h offsetof_grid_nbr_encap_dst_ip read-only
  * Returns C<offsetof(grid_nbr_encap, dst_ip)>
  *
@@ -74,7 +74,7 @@ CLICK_DECLS
  * Returns C<offsetof(grid_loc_query, dst_ip)> */
 
 class GridHeaderInfo : public Element {
-  
+
 public:
 
   GridHeaderInfo();

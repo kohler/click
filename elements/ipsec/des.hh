@@ -10,7 +10,7 @@ CLICK_DECLS
  * =s ipsec
  * encrypt packet using DES-CBC
  * =d
- * 
+ *
  * Encrypts or decrypts packet using DES-CBC. If the first argument is 0,
  * IPsecDES will decrypt. If the first argument is 1, IPsecDES will encrypt.
  * KEY is the DES secret key. Gets IV value from ESP header. IGNORE is the
@@ -21,12 +21,12 @@ CLICK_DECLS
  */
 
 typedef unsigned char des_cblock[8];
-typedef struct des_ks_struct { 
-  union	{ 
-    des_cblock _; 
-    /* make sure things are correct size on machines with 8 byte longs */ 
-    unsigned long pad[2]; 
-  } ks; 
+typedef struct des_ks_struct {
+  union	{
+    des_cblock _;
+    /* make sure things are correct size on machines with 8 byte longs */
+    unsigned long pad[2];
+  } ks;
 } des_key_schedule[16];
 
 class Address;
@@ -36,18 +36,18 @@ public:
   Des();
   Des(int);
   ~Des();
-  
+
   const char *class_name() const	{ return "IPsecDES"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   Packet *simple_action(Packet *);
 
   enum { DES_DECRYPT = 0, DES_ENCRYPT = 1 };
-  
+
 private:
 
   void des_set_key(des_cblock *key, des_key_schedule schedule);

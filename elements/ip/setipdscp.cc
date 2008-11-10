@@ -52,17 +52,17 @@ SetIPDSCP::smaction(Packet *p_in)
   WritablePacket *p = p_in->uniqueify();
   assert(p->has_network_header());
   click_ip *ip = p->ip_header();
-  
+
   uint16_t old_hw = (reinterpret_cast<uint16_t *>(ip))[0];
   ip->ip_tos = (ip->ip_tos & 0x3) | _dscp;
   uint16_t new_hw = (reinterpret_cast<uint16_t *>(ip))[0];
-  
+
   // 19.Aug.1999 - incrementally update IP checksum according to RFC1624.
   // new_sum = ~(~old_sum + ~old_halfword + new_halfword)
   uint32_t sum = (~ip->ip_sum & 0xFFFF) + (~old_hw & 0xFFFF) + new_hw;
   sum = (sum & 0xFFFF) + (sum >> 16);
   ip->ip_sum = ~(sum + (sum >> 16));
-  
+
   return p;
 }
 

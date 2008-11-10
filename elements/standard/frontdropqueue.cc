@@ -50,11 +50,11 @@ FrontDropQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
   int new_capacity = _capacity;
   _capacity = old_capacity;
-  
+
   Packet **new_q = (Packet **) CLICK_LALLOC(sizeof(Packet *) * (new_capacity + 1));
   if (new_q == 0)
     return errh->error("out of memory");
-  
+
   int i, j;
   for (i = _tail - 1, j = new_capacity; i != _head; i = prev_i(i)) {
     new_q[--j] = _q[i];
@@ -77,12 +77,12 @@ FrontDropQueue::take_state(Element *e, ErrorHandler *errh)
     SimpleQueue *q = (SimpleQueue *)e->cast("SimpleQueue");
     if (!q)
 	return;
-  
+
     if (_tail != _head || _head != 0) {
 	errh->error("already have packets enqueued, can't take state");
 	return;
     }
-  
+
     _tail = _capacity;
     int i = _capacity, j = q->tail();
     while (i > 0 && j != q->head()) {
@@ -111,7 +111,7 @@ FrontDropQueue::push(int, Packet *p)
 
     // inline Queue::enq() for speed
     int next = next_i(_tail);
-  
+
     // should this stuff be in Queue::enq?
     if (next == _head) {
 	if (_drops == 0)
@@ -120,10 +120,10 @@ FrontDropQueue::push(int, Packet *p)
 	_drops++;
 	_head = next_i(_head);
     }
-  
+
     _q[_tail] = p;
     _tail = next;
-  
+
     int s = size();
     if (s > _highwater_length)
 	_highwater_length = s;

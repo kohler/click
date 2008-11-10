@@ -127,7 +127,7 @@ NotifierSignal::operator+=(const NotifierSignal &x)
     else if (this != &x)
 	for (vmpair *vm = x._v.vm; vm->mask; ++vm)
 	    hard_derive_one(vm->value, vm->mask);
-    
+
     return *this;
 }
 
@@ -206,7 +206,7 @@ NotifierSignal::unparse(Router *router) const
 	       << NotifierSignal(vm->value, vm->mask).unparse(router);
 	return sa.take_string();
     }
-    
+
     char buf[80];
     int pos;
     String s;
@@ -460,7 +460,7 @@ NotifierElementFilter::check_match(Element* e, bool isoutput, int port)
 	    return true;
 	} else
 	    return search_op == Notifier::SEARCH_STOP;
-	
+
     } else if (port >= 0) {
 	Bitvector flow;
 	if (e->port_active(isoutput, port)) {
@@ -531,7 +531,7 @@ Notifier::upstream_empty_signal(Element* e, int port, Task* task, Notifier* depe
 	filter._pass2 = true;
 	ok = e->router()->upstream_elements(e, port, &filter, v);
     }
-    
+
     // All bets are off if filter ran into a push output. That means there was
     // a regular Queue in the way (for example).
     if (ok < 0 || signal == NotifierSignal())
@@ -596,7 +596,7 @@ Notifier::downstream_full_signal(Element* e, int port, Task* task, Notifier* dep
 	filter._pass2 = true;
 	ok = e->router()->downstream_elements(e, port, &filter, v);
     }
-    
+
     // All bets are off if filter ran into a pull input. That means there was
     // a regular Queue in the way (for example).
     if (ok < 0 || signal == NotifierSignal())

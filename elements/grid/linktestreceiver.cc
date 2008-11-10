@@ -61,7 +61,7 @@ LinkTestReceiver::simple_action(Packet *p)
 
   bool res = false;
   int dbm, quality;
-  if (_ai) 
+  if (_ai)
     res = _ai->get_signal_info(src, dbm, quality);
   if (!_ai || !res)
     dbm = quality = -1;
@@ -74,14 +74,14 @@ LinkTestReceiver::simple_action(Packet *p)
     avg_over_sec = avg_over_minute = max_over_minute = -1;
 
   LinkTester::payload_t *payload = (LinkTester::payload_t *) (eh + 1);
-  
+
   click_chatter("%{timestamp},%u.%06u,%{ether_ptr},%{ether_ptr},%hu,%d,%u,%u\n",
 		&p->timestamp_anno(),
 		ntohl(payload->tx_sec), ntohl(payload->tx_usec),
 		&src, &dst, ntohs(payload->size),
-		payload->before ? 1 : 0, ntohl(payload->iteration), 
+		payload->before ? 1 : 0, ntohl(payload->iteration),
 		ntohl(payload->seq_no));
-		
+
   return p;
 }
 

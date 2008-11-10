@@ -112,11 +112,11 @@ static String update_name(const String &name)
     if (s != name.end())
 	return name.substring(name.begin(), s) + "_"
 	    + name.substring(s + 1, name.end());
-    
+
     // change "X" to "ip_X"
     if (find(name, '_') == name.end())
 	return "ip_" + name;
-    
+
     // not found
     return String();
 }
@@ -349,7 +349,7 @@ void ip_prepare(PacketDesc& d, const FieldWriter *)
     d.tcph = (p->has_transport_header() ? p->tcp_header() : 0);
     d.udph = (p->has_transport_header() ? p->udp_header() : 0);
     d.icmph = (p->has_transport_header() ? p->icmp_header() : 0);
-    
+
 #define BAD(msg, hdr) do { if (d.bad_sa && !*d.bad_sa) *d.bad_sa << "!bad " << msg << '\n'; hdr = 0; } while (0)
 #define BAD2(msg, val, hdr) do { if (d.bad_sa && !*d.bad_sa) *d.bad_sa << "!bad " << msg << val << '\n'; hdr = 0; } while (0)
     // check IP header
@@ -370,7 +370,7 @@ void ip_prepare(PacketDesc& d, const FieldWriter *)
 	    SET_EXTRA_LENGTH_ANNO(p, EXTRA_LENGTH_ANNO(p) + p->network_length() - ip_len);
 	    p->take(p->network_length() - ip_len);
 	} else if (d.careful_trunc && p->network_length() + EXTRA_LENGTH_ANNO(p) < (uint32_t) ip_len) {
-	    /* This doesn't actually kill the IP header. */ 
+	    /* This doesn't actually kill the IP header. */
 	    int scratch;
 	    BAD2("truncated IP missing ", (ntohs(d.iph->ip_len) - p->network_length() - EXTRA_LENGTH_ANNO(p)), scratch);
 	}
@@ -497,7 +497,7 @@ const uint8_t tcp_flag_mapping[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xC-
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xD-
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xE-
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // 0xF-    
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // 0xF-
 };
 
 }

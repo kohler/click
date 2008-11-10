@@ -6,7 +6,7 @@
  * LookupLocalGridRoute(ETH, IP, GenericGridRouteTable, I<KEYWORDS>)
  *
  * =s Grid
- * =d 
+ * =d
  * Forward packets according to the tables accumulated by the
  * GenericGridRouteTable element.  MAC-ADDRESS and IP-ADDRESS are the local
  * machine's addresses.
@@ -48,7 +48,7 @@
  *
  * =back
  *
- * =a 
+ * =a
  * LookupGeographicGridRoute, GenericGridRouteTable,
  * GridGatewayInfo, LinkTracker, GridLogger, Paint, PaintSwitch */
 
@@ -76,7 +76,7 @@ class LookupLocalGridRoute : public Element, public GridRouteActor  {
   void *cast(const char *);
   const char *port_count() const		{ return "2/4"; }
   const char *processing() const		{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
@@ -86,7 +86,7 @@ class LookupLocalGridRoute : public Element, public GridRouteActor  {
 
 private:
 
-  bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, 
+  bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth,
 		    IPAddress *next_hop_ip, unsigned char *next_hop_interface) const;
   void forward_grid_packet(Packet *packet, IPAddress dest_ip);
 

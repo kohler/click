@@ -52,7 +52,7 @@ TimeSortedSched::configure(Vector<String> &conf, ErrorHandler *errh)
 		       cpEnd);
 }
 
-int 
+int
 TimeSortedSched::initialize(ErrorHandler *errh)
 {
     _vec = new Packet*[ninputs()];
@@ -83,7 +83,7 @@ TimeSortedSched::pull(int)
     int which = -1;
     Timestamp* tv = 0;
     bool signals_on = false;
-    
+
     for (int i = 0; i < ninputs(); i++) {
 	if (!_vec[i] && _signals[i]) {
 	    _vec[i] = input(i).pull();

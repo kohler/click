@@ -18,25 +18,25 @@ MadwifiRate([I<KEYWORDS>])
 
 Madwifi wireless bit-rate selection algorithm
 
-=d 
+=d
 Rate Control present in the Madwifi driver
 (http://sourceforge.net/project/madwifi).
 
-=a 
+=a
 SetTXRate, FilterTX, AutoRateFallback
 */
 
 
 class MadwifiRate : public Element { public:
-  
+
   MadwifiRate();
   ~MadwifiRate();
-  
+
   const char *class_name() const		{ return "MadwifiRate"; }
   const char *port_count() const		{ return "2/0-2"; }
   const char *processing() const		{ return "ah/a"; }
   const char *flow_code() const			{ return "#/#"; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   int initialize(ErrorHandler *);
@@ -53,7 +53,7 @@ class MadwifiRate : public Element { public:
   static String static_print_stats(Element *e, void *);
   String print_rates();
 
-  
+
   EtherAddress _bcast;
   void assign_rate(Packet *);
 
@@ -69,22 +69,22 @@ class MadwifiRate : public Element { public:
 
   struct DstInfo {
   public:
-    
+
     EtherAddress _eth;
     Vector<int> _rates;
 
     int _credits;
-    
+
     int _current_index;
 
     int _successes;
     int _failures;
     int _retries;
 
-    DstInfo() { 
+    DstInfo() {
     }
 
-    DstInfo(EtherAddress eth) { 
+    DstInfo(EtherAddress eth) {
       _eth = eth;
     }
 
@@ -101,7 +101,7 @@ class MadwifiRate : public Element { public:
 
     int pick_rate() {
       if (_rates.size() == 0) {
-	click_chatter("no rates to pick from for %s\n", 
+	click_chatter("no rates to pick from for %s\n",
 		      _eth.unparse().c_str());
 	return 2;
       }
@@ -113,14 +113,14 @@ class MadwifiRate : public Element { public:
 
     int pick_alt_rate() {
       if (_rates.size() == 0) {
-	click_chatter("no rates to pick from for %s\n", 
+	click_chatter("no rates to pick from for %s\n",
 		      _eth.unparse().c_str());
 	return 2;
       }
       return _rates[0];
     }
   };
-  
+
   typedef HashMap<EtherAddress, DstInfo> NeighborTable;
   typedef NeighborTable::const_iterator NIter;
 

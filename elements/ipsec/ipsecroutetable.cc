@@ -1,11 +1,11 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * ipsecroutetable.{cc,hh} -- looks up next-hop address in route table and includes support for IPsec ESP tunnels 
+ * ipsecroutetable.{cc,hh} -- looks up next-hop address in route table and includes support for IPsec ESP tunnels
  * between a pair of gateways (check push and cp_ipsec_route)
- * Dimitris Syrivelis 
- * 
+ * Dimitris Syrivelis
+ *
  * Copyright (c) 2006 University of Thessaly, Hellas
- *  
+ *
  * This is an extended version of iproutetable
  * iproutetable.{cc,hh} -- looks up next-hop address in route table
  * Benjie Chen, Eddie Kohler
@@ -44,15 +44,15 @@ bool
 cp_ipsec_route(String s, IPsecRoute *r_store, bool remove_route, Element *context)
 {
     IPsecRoute r;
-    //Data to initialize the SADataTuple 
+    //Data to initialize the SADataTuple
     unsigned int replay;
-    uint8_t  oowin;	
+    uint8_t  oowin;
 
     SADataTuple * sa_data;
 
-    if (!cp_ip_prefix(cp_pop_spacevec(s), &r.addr, &r.mask, true, context)) 
+    if (!cp_ip_prefix(cp_pop_spacevec(s), &r.addr, &r.mask, true, context))
 	return false;
-    
+
     r.addr &= r.mask;
     String word = cp_pop_spacevec(s);
     if (word == "-")
@@ -67,11 +67,11 @@ cp_ipsec_route(String s, IPsecRoute *r_store, bool remove_route, Element *contex
     if (cp_integer(word, &r.port) || (!word && remove_route))
 	//Ipsec extensions parsing
 	word = cp_pop_spacevec(s);
-    
+
     if (!word) {
- 	//no further arguments found so no ipsec extensions need to be added for this route
+	//no further arguments found so no ipsec extensions need to be added for this route
 	r.spi = SPI(0);
-    	r.sa_data = NULL;
+	r.sa_data = NULL;
 	//store routing table
         *r_store = r;
 	return true;
@@ -126,9 +126,9 @@ IPsecRoute::unparse(StringAccum& sa, bool tabs) const
 	sa << port;
     if(spi != 0) {
 	sa << "  |TUNNELED CONNECTION| \n|SPI| |ENC KEY| |AUTH KEY| ||\n";
-	sa << " |" <<spi<<"|"; 
-    	sa << sa_data->unparse_entries().c_str() <<"\n";
-    }	
+	sa << " |" <<spi<<"|";
+	sa << sa_data->unparse_entries().c_str() <<"\n";
+    }
     return sa;
 }
 
@@ -195,18 +195,18 @@ IPsecRouteTable::dump_routes()
 void
 IPsecRouteTable::push(int, Packet *p)
 {
- 
+
     IPAddress gw;
     uint32_t spi;
-    SADataTuple * sa_data;	
-    const click_ip *ip = reinterpret_cast< const click_ip *>(p->data());	
- 
+    SADataTuple * sa_data;
+    const click_ip *ip = reinterpret_cast< const click_ip *>(p->data());
+
     int port = lookup_route(p->dst_ip_anno(), gw, spi, sa_data);
- 
+
     if (port >= 0) {
 	switch(port) {
 	  case 1: {
-  	   //This packet should be sent over a tunneled connection
+	   //This packet should be sent over a tunneled connection
 	   //so set proper annotations with references to Security Data to be used by IPsec modules
            if((spi == 0) || (sa_data == NULL)) {
 	       click_chatter("No Ipsec tunnel for %s. Wrong tunnel setup", p->dst_ip_anno().unparse().c_str());
@@ -217,7 +217,7 @@ IPsecRouteTable::push(int, Packet *p)
 	   break;
 	 }
 	 case 0: {
-  	    //Is this packet an ipsec ESP packet? What if one just needs to communicate with a server
+	    //Is this packet an ipsec ESP packet? What if one just needs to communicate with a server
             //that runs on this router?
 	    if(ip->ip_p != 50) {
 	      /*This not an IPSEC packet and it should be delivered to the host's linux network stack
@@ -229,9 +229,9 @@ IPsecRouteTable::push(int, Packet *p)
             // Careful this enhancement is 32-bit architecture specific!!
             struct esp_new * esp =(struct esp_new *)(p->data()+sizeof(click_ip));
             sa_data = _sa_table.lookup(SPI(ntohl(esp->esp_spi)));
-	    if(sa_data == NULL) { 
-	 	click_chatter("Invalid SPI %d, Dropping packet",ntohl(esp->esp_spi));  
-            	p->kill();
+	    if(sa_data == NULL) {
+		click_chatter("Invalid SPI %d, Dropping packet",ntohl(esp->esp_spi));
+	p->kill();
                 return;
            }
 	   SET_IPSEC_SA_DATA_REFERENCE_ANNO(p,(uint32_t)sa_data);
@@ -259,7 +259,7 @@ IPsecRouteTable::run_command(int command, const String &str, Vector<IPsecRoute> 
 	|| route.port < (command == CMD_REMOVE ? -1 : 0)
 	|| route.port >= noutputs())
 	return errh->error("expected 'ADDR/MASK [GATEWAY%s'", (command == CMD_REMOVE ? " OUTPUT]" : "] OUTPUT"));
-    
+
     int r, before = errh->nerrors();
     if (command == CMD_ADD)
 	r = add_route(route, false, &old_route, errh);
@@ -286,7 +286,7 @@ IPsecRouteTable::run_command(int command, const String &str, Vector<IPsecRoute> 
     return r;
 }
 
-    
+
 int
 IPsecRouteTable::add_route_handler(const String &conf, Element *e, void *thunk, ErrorHandler *errh)
 {
@@ -307,10 +307,10 @@ IPsecRouteTable::ctrl_handler(const String &conf_in, Element *e, void *, ErrorHa
     IPsecRouteTable *table = static_cast<IPsecRouteTable *>(e);
     String conf = cp_uncomment(conf_in);
     const char* s = conf.begin(), *end = conf.end();
-    
+
     Vector<IPsecRoute> old_routes;
     int r = 0;
-    
+
     while (s < end) {
 	const char* nl = find(s, end, '\n');
 	String line = conf.substring(s, nl);
@@ -329,7 +329,7 @@ IPsecRouteTable::ctrl_handler(const String &conf_in, Element *e, void *, ErrorHa
 	    r = errh->error("bad command '%#s'", first_word.c_str());
 	    goto rollback;
 	}
-	
+
 	if ((r = table->run_command(command, line, &old_routes, errh)) < 0)
 	    goto rollback;
 
@@ -366,7 +366,7 @@ IPsecRouteTable::lookup_handler(int, String& s, Element* e, const Handler*, Erro
     if (cp_ip_address(cp_uncomment(s), &a, table)) {
 	IPAddress gw;
 	uint32_t spi;
-	SADataTuple * sa_data;	
+	SADataTuple * sa_data;
 	int port = table->lookup_route(a, gw,spi,sa_data);
 	if (gw)
 	    s = String(port) + " " + gw.unparse();

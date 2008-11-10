@@ -39,7 +39,7 @@ PrintOld::configure(Vector<String> &conf, ErrorHandler* errh)
   _label = String();
   _bytes = 24;
   _thresh = 5;
-  
+
   if (cp_va_kparse(conf, this, errh,
 		   "LABEL", cpkP, cpString, &_label,
 		   "AGE", cpkP, cpInteger, &_thresh,
@@ -48,7 +48,7 @@ PrintOld::configure(Vector<String> &conf, ErrorHandler* errh)
 		   "NBYTES", cpkDeprecated, cpInteger, &_bytes,
 		   cpEnd) < 0)
     return -1;
-  
+
   return 0;
 }
 
@@ -74,13 +74,13 @@ PrintOld::simple_action(Packet *p)
   long age_s = tv_now.sec() - p->timestamp_anno().sec();
   long age_u = tv_now.usec() - p->timestamp_anno().usec();
 
-  // skankyness... 
+  // skankyness...
   long age_ms = age_s * 1000 + age_u / 1000;
 
 #if 1
   assert(sizeof(long) == sizeof(int));
   if (age_ms > _thresh)
-    click_chatter("%s Now-FromDevice age is %d (FromDevice time: %{timestamp}  dsec %ld  dusec %ld)", 
+    click_chatter("%s Now-FromDevice age is %d (FromDevice time: %{timestamp}  dsec %ld  dusec %ld)",
 		  name().c_str(), age_ms, &p->timestamp_anno(), age_s, age_u);
 #endif
 
@@ -97,8 +97,8 @@ PrintOld::simple_action(Packet *p)
     long age2_u = p->timestamp_anno().tv_usec - pcap_tv.tv_usec;
     long age2_ms = age2_s * 1000 + age2_u / 1000;
     if (age2_ms > _thresh)
-      click_chatter("%s FromDevice-PCAP age is %d (PCAP time: %ld.%06ld  dsec %ld  dusec %ld)", 
-		    name().c_str(), age2_ms, 
+      click_chatter("%s FromDevice-PCAP age is %d (PCAP time: %ld.%06ld  dsec %ld  dusec %ld)",
+		    name().c_str(), age2_ms,
 		    pcap_tv.tv_sec, pcap_tv.tv_usec,
 		    age2_s, age2_u);
   }
@@ -110,7 +110,7 @@ PrintOld::simple_action(Packet *p)
   // else print it...
 
   sa << _label;
-  
+
   // sa.reserve() must return non-null; we checked capacity above
   int len;
   sprintf(sa.reserve(9), "(%5ld msecs) %4d | %n", age_ms, p->length(), &len);

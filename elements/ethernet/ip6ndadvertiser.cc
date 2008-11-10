@@ -1,5 +1,5 @@
 /*
- * ip6ndadvertiser.{cc,hh} -- element that responds to 
+ * ip6ndadvertiser.{cc,hh} -- element that responds to
  * Neighbor Solitation Msg
  * Peilei Fan
  *
@@ -49,7 +49,7 @@ int
 IP6NDAdvertiser::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _v.clear();
-  
+
   int before = errh->nerrors();
   for (int i = 0; i < conf.size(); i++) {
     IP6Address ipa, mask;
@@ -59,13 +59,13 @@ IP6NDAdvertiser::configure(Vector<String> &conf, ErrorHandler *errh)
 
     Vector<String> words;
     cp_spacevec(conf[i], words);
-    
+
     for (int j = 0; j < words.size(); j++)
       if (cp_ip6_prefix(words[j], (unsigned char *)&ipa, (unsigned char *)&mask, true, this))
 	add_map(ipa, mask, EtherAddress());
       else if (cp_ip6_address(words[j], &ipa, this))
 	add_map(ipa, IP6Address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"), EtherAddress());
-      else if (cp_ethernet_address(words[j], &ena, this)) {	
+      else if (cp_ethernet_address(words[j], &ena, this)) {
 	if (have_ena)
 	  errh->error("argument %d has more than one Ethernet address", i);
 	have_ena = true;
@@ -100,12 +100,12 @@ IP6NDAdvertiser::make_response(u_char dha[6],   /*  des eth address */
   if (q == 0) {
     click_chatter("in NDadv: cannot make packet!");
     assert(0);
-  } 
+  }
   memset(q->data(), '\0', q->length());
   e = (click_ether *) q->data();
   ip6=(click_ip6 *) (e+1);
   ea = (click_nd_adv *) (ip6 + 1);
-  
+
   //set ethernet header
   memcpy(e->ether_dhost, dha, 6);
   memcpy(e->ether_shost, sha, 6);
@@ -120,9 +120,9 @@ IP6NDAdvertiser::make_response(u_char dha[6],   /*  des eth address */
   ip6->ip6_src = IP6Address(spa);
   ip6->ip6_dst = IP6Address(dpa);
 
- 
+
   //set Neighborhood Solicitation Validation Message
-  ea->type = 0x88; 
+  ea->type = 0x88;
   ea->code =0;
 
   // fixed from 0x60 thanks to Simona Fischera
@@ -130,17 +130,17 @@ IP6NDAdvertiser::make_response(u_char dha[6],   /*  des eth address */
                     //  ea->sender_is_router = 1;
                     //  ea->solicited =1;
                     //  ea->override = 0;
-  
+
   for (int i=0; i<3; i++) {
     ea->reserved[i] = 0;
   }
-  
+
   memcpy(ea->nd_tpa, tpa, 16);
   ea->option_type = 0x2;
   ea->option_length = 0x1;
   memcpy(ea->nd_tha, tha, 6);
   ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)ea, ip6->ip6_plen));
-  
+
   return q;
 }
 
@@ -150,7 +150,7 @@ IP6NDAdvertiser::make_response2(u_char dha[6],   /*  des eth address */
 			     u_char dpa[16],  /*  dst IP6 address */
 			     u_char spa[16],  /*  src IP6 address */
 			     u_char tpa[16])  /*  target IP6 address */
-			     
+
 {
   click_ether *e;
   click_ip6 *ip6;
@@ -159,12 +159,12 @@ IP6NDAdvertiser::make_response2(u_char dha[6],   /*  des eth address */
   if (q == 0) {
     click_chatter("in IP6NDAdvertiser: cannot make packet!");
     assert(0);
-  } 
+  }
   memset(q->data(), '\0', q->length());
   e = (click_ether *) q->data();
   ip6=(click_ip6 *) (e+1);
   ea = (click_nd_adv2 *) (ip6 + 1);
-  
+
   //set ethernet header
   memcpy(e->ether_dhost, dha, 6);
   memcpy(e->ether_shost, sha, 6);
@@ -179,9 +179,9 @@ IP6NDAdvertiser::make_response2(u_char dha[6],   /*  des eth address */
   ip6->ip6_src = IP6Address(spa);
   ip6->ip6_dst = IP6Address(dpa);
 
- 
+
   //set Neighbor Solicitation Validation Message
-  ea->type = 0x88; 
+  ea->type = 0x88;
   ea->code =0;
 
   // fixed from 0x60 thanks to Simona Fischera
@@ -189,15 +189,15 @@ IP6NDAdvertiser::make_response2(u_char dha[6],   /*  des eth address */
                     //  ea->sender_is_router = 1;
                     //  ea->solicited =1;
                     //  ea->override = 0;
-  
+
   for (int i=0; i<3; i++) {
     ea->reserved[i] = 0;
   }
-  
+
   memcpy(ea->nd_tpa, tpa, 16);
- 
+
   ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), htons(sizeof(click_nd_adv2))));
-  
+
   return q;
 }
 
@@ -243,28 +243,28 @@ IP6NDAdvertiser::simple_action(Packet *p)
       ip6->ip6_hlim ==0xff &&
       ea->type == ND_SOL &&
       ea->code == 0 &&
-      csum2 == ntohs(ea->checksum))    
+      csum2 == ntohs(ea->checksum))
     {
       EtherAddress ena;
       unsigned char host_ether[6];
-      if(lookup(ipa, ena)) 
+      if(lookup(ipa, ena))
 	{
-	  memcpy(&spa, ipa.data(), 16); 
+	  memcpy(&spa, ipa.data(), 16);
 	  memcpy(&host_ether, ena.data(),6);
 
-	  //use the finded ip6address as its source ip6 address in the 
+	  //use the finded ip6address as its source ip6 address in the
 	  //header in neighborhood advertisement message packet
 	  q = make_response(e->ether_shost, host_ether, dpa, spa, tpa, host_ether);
-	    
+
 	}
-    } 
-  
-  else 
+    }
+
+  else
     {
       click_in6_addr ina;
       memcpy(&ina, &ea->nd_tpa, 16);
     }
-  
+
   p->kill();
   return(q);
 }

@@ -98,7 +98,7 @@ FromHost::new_device(const char *name)
     read_unlock(&dev_base_lock);
     if (!dev)
 	return 0;
-    
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     setup(dev);
 #endif
@@ -120,7 +120,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "ETHER", 0, cpEthernetAddress, &_macaddr,
 		     cpEnd) < 0)
 	return -1;
-    
+
     // check for duplicate element
     if (_devname.length() > IFNAMSIZ - 1)
 	return errh->error("device name '%s' too long", _devname.c_str());
@@ -128,7 +128,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     if (used)
 	return errh->error("duplicate FromHost for device '%s'", _devname.c_str());
     used = this;
-    
+
     // check for existing device
     _dev = AnyDevice::get_by_name(_devname.c_str());
     if (_dev) {
@@ -147,7 +147,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 	_macaddr = EtherAddress();
     else if (type != "ETHER" && type != "")
 	return errh->error("bad TYPE");
-    
+
     // if not found, create new device
     int res;
     _dev = new_device(_devname.c_str());
@@ -254,7 +254,7 @@ FromHost::cleanup(CleanupStage)
 	_queue->kill();
 	_queue = 0;
     }
-    
+
     if (_dev) {
 	dev_put(_dev);
 	fromlinux_map.lock(false);
@@ -285,9 +285,9 @@ fl_wakeup(Timer *, void *thunk)
 
     if (dev->flags & IFF_UP)
 	dev_updown(dev, -1, &errh);
-    
+
     fl->set_device_addresses(&errh);
-    
+
     dev_updown(dev, 1, &errh);
 }
 
@@ -333,7 +333,7 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
 	    fl->_task.reschedule();
 	    fromlinux_map.unlock(false);
 	    netif_stop_queue(dev);
-    	    return 0;
+	    return 0;
 	}
     fromlinux_map.unlock(false);
     return -1;

@@ -27,14 +27,14 @@ Clear the list of access points.
  */
 
 class BeaconTracker : public Element { public:
-  
+
   BeaconTracker();
   ~BeaconTracker();
 
   const char *class_name() const	{ return "BeaconTracker"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
 
@@ -48,7 +48,7 @@ class BeaconTracker : public Element { public:
 
   int _beacon_int;
   Timestamp _start;
-  
+
   void trim();
   void add_handlers();
   void reset();

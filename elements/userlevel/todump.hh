@@ -85,7 +85,7 @@ Returns the filename.
 FromDump, FromDevice.u, ToDevice.u, tcpdump(1) */
 
 class ToDump : public Element { public:
-  
+
     ToDump();
     ~ToDump();
 
@@ -122,7 +122,7 @@ class ToDump : public Element { public:
     typedef uint32_t counter_t;
 #endif
     counter_t _count;
-    
+
     Task _task;
     NotifierSignal _signal;
     Element **_use_encap_from;

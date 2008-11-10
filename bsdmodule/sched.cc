@@ -94,13 +94,13 @@ kill_router_threads()
   if (click_router)
       click_router->set_runcount(Router::STOP_RUNCOUNT);
   delete placeholder_router;
-  
+
   // wait up to 5 seconds for routers to exit
   unsigned long out_ticks = ticks + 5 * hz;
   int num_threads;
   do {
     num_threads = click_thread_pids->size();
-    
+
     if (num_threads > 0)
       tsleep(curproc, PPAUSE, "unload", 1);
   } while (num_threads > 0 && ticks < out_ticks);
@@ -158,7 +158,7 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
 	resetpriority(proc);
     }
   }
-  
+
   return 0;
 }
 
@@ -197,7 +197,7 @@ static int
 write_cpu_share(const String &conf, Element *, void *thunk, ErrorHandler *errh)
 {
   const char *name = (thunk ? "max_" : "min_");
-  
+
   int32_t frac;
   if (!cp_real10(conf, 3, &frac) || frac < 1 || frac > 999)
     return errh->error("%scpu_share must be a real number between 0.001 and 0.999", name);
@@ -207,7 +207,7 @@ write_cpu_share(const String &conf, Element *, void *thunk, ErrorHandler *errh)
   // change current thread priorities
   for (int i = 0; i < click_master->nthreads(); i++)
     click_master->thread(i)->set_cpu_share(min_click_frac, max_click_frac);
-  
+
   return 0;
 }
 
@@ -219,7 +219,7 @@ enum { H_TASKS_PER_ITER, H_ITERS_PER_TIMERS, H_ITERS_PER_OS };
 
 
 static String
-read_sched_param(Element *, void *thunk) 
+read_sched_param(Element *, void *thunk)
 {
     switch ((int)thunk) {
     case H_TASKS_PER_ITER: {
@@ -253,16 +253,16 @@ read_sched_param(Element *, void *thunk)
 }
 
 static int
-write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *errh) 
+write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *errh)
 {
 
     switch((int)thunk) {
 
     case H_TASKS_PER_ITER: {
 	unsigned x;
-	if (!cp_integer(conf, &x)) 
+	if (!cp_integer(conf, &x))
 	    return errh->error("tasks_per_iter must be unsigned\n");
-	
+
 	// change current thread priorities
 	for (int i = 0; i < click_master->nthreads(); i++)
 	    click_master->thread(i)->_tasks_per_iter = x;
@@ -270,18 +270,18 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 
     case H_ITERS_PER_TIMERS: {
 	unsigned x;
-	if (!cp_integer(conf, &x)) 
+	if (!cp_integer(conf, &x))
 	    return errh->error("tasks_per_iter_timers must be unsigned\n");
-	
+
 	// change current thread priorities
 	click_master->set_max_timer_stride(x);
     }
 
     case H_ITERS_PER_OS: {
 	unsigned x;
-	if (!cp_integer(conf, &x)) 
+	if (!cp_integer(conf, &x))
 	    return errh->error("tasks_per_iter_os must be unsigned\n");
-	
+
 	// change current thread priorities
 	for (int i = 0; i < click_master->nthreads(); i++)
 	    click_master->thread(i)->_iters_per_os = x;
@@ -352,7 +352,7 @@ click_init_sched(ErrorHandler *errh)
     int error  = kthread_create
       (click_sched, click_master->thread(i), &p, "kclick");
     if (error < 0) {
-      errh->error("cannot create kernel thread for Click thread %i!", i); 
+      errh->error("cannot create kernel thread for Click thread %i!", i);
       click_master->unuse();
     }
   }
@@ -368,19 +368,19 @@ click_init_sched(ErrorHandler *errh)
   Router::add_read_handler(0, "max_cpu_share", read_cpu_share, (void *)1);
   Router::add_write_handler(0, "max_cpu_share", write_cpu_share, (void *)1);
   Router::add_read_handler(0, "cpu_share", read_cur_cpu_share, 0);
-#else 
-  Router::add_read_handler(0, "tasks_per_iter", read_sched_param, 
+#else
+  Router::add_read_handler(0, "tasks_per_iter", read_sched_param,
 			   (void *)H_TASKS_PER_ITER);
-  Router::add_read_handler(0, "iters_per_timers", read_sched_param, 
+  Router::add_read_handler(0, "iters_per_timers", read_sched_param,
 			   (void *)H_ITERS_PER_TIMERS);
-  Router::add_read_handler(0, "iters_per_os", read_sched_param, 
+  Router::add_read_handler(0, "iters_per_os", read_sched_param,
 			   (void *)H_ITERS_PER_OS);
 
-  Router::add_write_handler(0, "tasks_per_iter", write_sched_param, 
+  Router::add_write_handler(0, "tasks_per_iter", write_sched_param,
 			    (void *)H_TASKS_PER_ITER);
-  Router::add_write_handler(0, "iters_per_timers", write_sched_param, 
+  Router::add_write_handler(0, "iters_per_timers", write_sched_param,
 			    (void *)H_ITERS_PER_TIMERS);
-  Router::add_write_handler(0, "iters_per_os", write_sched_param, 
+  Router::add_write_handler(0, "iters_per_os", write_sched_param,
 			    (void *)H_ITERS_PER_OS);
 
 #endif

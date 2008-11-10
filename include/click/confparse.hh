@@ -438,7 +438,7 @@ inline bool cp_is_space(const String& str)
  * @param  base   base of integer: 0 or 2-36
  * @param[out]  result  stores parsed result
  * @return  pointer to first unparsed character in string; equals @a begin
- * 	     if the string didn't start with a valid integer
+ *	     if the string didn't start with a valid integer
  *
  * This function parses an integer from the initial characters of a string.
  * The resulting integer is stored in *@a result.

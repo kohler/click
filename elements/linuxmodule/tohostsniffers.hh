@@ -16,7 +16,7 @@
  * If DEVNAME is present, each packet is marked to appear as if it originated
  * from that network device. As with ToDevice, DEVNAME can be an Ethernet
  * address.
- * 
+ *
  * If TYPE is ETHER, then expects packets with Ethernet headers; this is the
  * default.  If TYPE is IP, then expects packets with raw IP headers.
  *
@@ -35,7 +35,7 @@ class ToHostSniffers : public ToHost { public:
     ~ToHostSniffers();
 
     const char *class_name() const		{ return "ToHostSniffers"; }
-  
+
 };
 
 #endif

@@ -82,7 +82,7 @@ Writes a new BYTE_COUNT_CALL argument. The handler can be omitted.
 
 Argument is a pointer to an integer that must be 0.  Returns the recent
 arrival rate (measured by exponential weighted moving average) in
-packets per second. 
+packets per second.
 
 =h CLICK_LLRPC_GET_COUNT llrpc
 
@@ -128,7 +128,7 @@ class Counter : public Element { public:
     typedef RateEWMAX<RateEWMAXParameters<4, 10> > rate_t;
     typedef RateEWMAX<RateEWMAXParameters<4, 4> > byte_rate_t;
 #endif
-    
+
     counter_t _count;
     counter_t _byte_count;
     rate_t _rate;

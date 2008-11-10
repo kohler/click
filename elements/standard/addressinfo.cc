@@ -71,7 +71,7 @@ int
 AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int before = errh->nerrors();
-  
+
     for (int i = 0; i < conf.size(); i++) {
 	Vector<String> parts;
 	cp_spacevec(conf[i], parts);
@@ -80,7 +80,7 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	    continue;
 	if (parts.size() < 2)
 	    errh->error("expected 'NAME [ADDRS]', got '%s'", conf[i].c_str());
-	
+
 	for (int j = 1; j < parts.size(); j++) {
 	    uint8_t d[24];
 	    if (cp_ip_address(parts[j], &d[0]))
@@ -104,7 +104,7 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 		errh->error("\"%s\" '%s' is not a recognizable address", parts[0].c_str(), parts[j].c_str());
 	}
     }
-    
+
     return (errh->nerrors() == before ? 0 : -1);
 }
 
@@ -130,13 +130,13 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
     if (!read_time || read_time + 30 < time(0)) {
 	device_names.clear();
 	device_addrs.clear();
-	
+
 # ifdef __linux__
 	int query_fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (query_fd < 0)
 	    return false;
 	struct ifreq ifr;
-	
+
 	String f = file_string("/proc/net/dev");
 	const char *begin = f.begin(), *end = f.end();
 	while (begin < end) {
@@ -192,7 +192,7 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
 		    return false;
 	    }
 	}
-	
+
 	for (char* pos = buf; pos < buf + if_needed; ) {
 	    // grab next if_msghdr
 	    struct if_msghdr* ifm = reinterpret_cast<struct if_msghdr*>(pos);
@@ -203,7 +203,7 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
 	    if (ifm->ifm_data.ifi_datalen)
 		datalen = ifm->ifm_data.ifi_datalen;
 #  endif
-	    
+
 	    // extract interface name from 'ifm'
 	    struct sockaddr_dl* sdl = reinterpret_cast<struct sockaddr_dl*>(pos + sizeof(struct if_msghdr) - sizeof(struct if_data) + datalen);
 	    String name(sdl->sdl_data, sdl->sdl_nlen);
@@ -213,14 +213,14 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
 		device_names.push_back(name);
 		device_addrs.push_back(String('e') + String((const char*)(LLADDR(sdl)), 6));
 	    }
-	    
+
 	    // parse all addresses, looking for IP
 	    pos += ifm->ifm_msglen;
 	    while (pos < buf + if_needed) {
 		struct if_msghdr* nextifm = reinterpret_cast<struct if_msghdr*>(pos);
 		if (nextifm->ifm_type != RTM_NEWADDR)
 		    break;
-		
+
 		struct ifa_msghdr* ifam = reinterpret_cast<struct ifa_msghdr*>(nextifm);
 		char* sa_buf = reinterpret_cast<char*>(ifam + 1);
 		pos += nextifm->ifm_msglen;
@@ -268,7 +268,7 @@ AddressInfo::query_ip(String s, unsigned char *store, const Element *e)
 	return false;
     else if (colon >= 0)
 	s = s.substring(0, colon);
-  
+
     if (NameInfo::query(NameInfo::T_IP_ADDR, e, s, store, 4))
 	return true;
 
@@ -407,7 +407,7 @@ AddressInfo::query_ethernet(String s, unsigned char *store, const Element *e)
     if (query_netdevice(s, store, 'e', 6))
 	return true;
 #endif
-    
+
     return false;
 }
 

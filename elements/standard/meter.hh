@@ -14,7 +14,7 @@ CLICK_DECLS
  * measured in packets per second using an exponential weighted moving
  * average. (The related BandwidthMeter element measures rates in bytes per
  * second.)
- * 
+ *
  * The configuration string consists of one or more rate arguments. Earlier
  * rates in the list must be less than later rates. A Meter with I<n> rate
  * arguments will have I<n>+1 outputs. It sends packets out the output
@@ -41,14 +41,14 @@ CLICK_DECLS
  * RatedUnqueue, BandwidthRatedUnqueue */
 
 class Meter : public BandwidthMeter { public:
-  
+
   Meter();
   ~Meter();
-  
+
   const char *class_name() const		{ return "Meter"; }
-  
+
   void push(int port, Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

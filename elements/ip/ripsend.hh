@@ -26,7 +26,7 @@ CLICK_DECLS
  */
 
 class RIPSend : public Element {
-  
+
   IPAddress _src; // IP header src field
   IPAddress _dst; // IP header dst field
   IPAddress _what; // Route to advertise
@@ -34,21 +34,21 @@ class RIPSend : public Element {
   int _metric;
 
   Timer _timer;
-  
+
  public:
-  
+
   RIPSend();
   ~RIPSend();
-  
+
   const char *class_name() const		{ return "RIPSend"; }
   const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  
+
   void run_timer(Timer *);
-  
+
 };
 
 CLICK_ENDDECLS

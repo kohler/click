@@ -6,7 +6,7 @@
  *
  * Copyright (c) 1996-2000 Whistle Communications, Inc.
  * All rights reserved.
- * 
+ *
  * Subject to the following obligations and disclaimer of warranty, use and
  * redistribution of this software, in source or object code forms, with or
  * without modifications are expressly permitted by Whistle Communications;
@@ -17,7 +17,7 @@
  *    Communications, Inc. trademarks, including the mark "WHISTLE
  *    COMMUNICATIONS" on advertising, endorsements, or otherwise except as
  *    such appears in the above copyright notice or in the software.
- * 
+ *
  * THIS SOFTWARE IS BEING PROVIDED BY WHISTLE COMMUNICATIONS "AS IS", AND
  * TO THE MAXIMUM EXTENT PERMITTED BY LAW, WHISTLE COMMUNICATIONS MAKES NO
  * REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, REGARDING THIS SOFTWARE,
@@ -42,7 +42,7 @@ static  void
 swap_bytes(unsigned char *a, unsigned char *b)
 {
 	unsigned char temp;
-	
+
 	temp = *a;
 	*a = *b;
 	*b = temp;
@@ -60,13 +60,13 @@ rc4_init(struct rc4_state *const state, const unsigned char *key, int keylen)
 
 	/* Initialize state with identity permutation */
 	for (i = 0; i < 256; i++)
-		state->perm[i] = (unsigned char)i; 
+		state->perm[i] = (unsigned char)i;
 	state->index1 = 0;
 	state->index2 = 0;
-  
+
 	/* Randomize the permutation using key data */
 	for (j = i = 0; i < 256; i++) {
-		j += state->perm[i] + key[i % keylen]; 
+		j += state->perm[i] + key[i % keylen];
 		swap_bytes(&state->perm[i], &state->perm[j]);
 	}
 }
@@ -115,8 +115,8 @@ rc4_crypt_skip(struct rc4_state *const state,
 }
 
 
-/*                                                                                  
- * CRC 32 -- routine from RFC 2083                                                  
+/*
+ * CRC 32 -- routine from RFC 2083
  */
 
 /* Table of CRCs of all 8-bit messages */
@@ -128,7 +128,7 @@ crc_init(void)
 {
   u_int32_t c;
   int n, k;
-  
+
   for (n = 0; n < 256; n++) {
     c = (u_int32_t)n;
     for (k = 0; k < 8; k++) {

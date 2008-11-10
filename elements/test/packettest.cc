@@ -38,7 +38,7 @@ PacketTest::initialize(ErrorHandler *errh)
 {
     const unsigned char *lowers = (const unsigned char *)"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
     IPAddress addr(String("1.2.3.4"));
-    
+
     Packet *p = Packet::make(10, lowers, 20, 30);
     CHECK(p->headroom() >= 10);
     CHECK(p->tailroom() >= 30);
@@ -107,21 +107,21 @@ PacketTest::initialize(ErrorHandler *errh)
     CHECK_DATA(p->data(), lowers, 60);
     CHECK_ALIGNED(p->data());
     p->kill();
-    
+
     p = Packet::make(9, lowers, 60, 4);
     p = p->shift_data(3);
     CHECK(p->headroom() == 12 && p->tailroom() == 1 && p->length() == 60);
     CHECK_DATA(p->data(), lowers, 60);
     CHECK_ALIGNED(p->data());
     p->kill();
-    
+
     p = Packet::make(1, lowers, 60, 4);
     p = p->shift_data(-5);
     CHECK(p->tailroom() >= 9 && p->length() == 60);
     CHECK_DATA(p->data(), lowers, 60);
     CHECK_ALIGNED(p->data());
     p->kill();
-    
+
     p = Packet::make(5, lowers, 60, 2);
     p = p->shift_data(3);
     CHECK(p->headroom() >= 8 && p->length() == 60);
@@ -140,7 +140,7 @@ PacketTest::initialize(ErrorHandler *errh)
     CHECK_ALIGNED(p->data());
     p->kill();
 #endif
-    
+
     errh->message("All tests pass!");
     return 0;
 }

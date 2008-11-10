@@ -100,14 +100,14 @@ ListTest::initialize(ErrorHandler *errh)
     for (i = 3; i >= 0; --i)
 	l.push_front(&x[i]);
     CHECK(l.size() == 4);
-    
+
     i = 0;
     for (stringlist::iterator it = l.end() - 1; it != l.begin(); ++i) {
 	--it;
 	CHECKI(it->s == x[2 - i].s, i);
     }
     CHECK(i == 3);
-    
+
     errh->message("All tests pass!");
     return 0;
 }

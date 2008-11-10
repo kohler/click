@@ -19,10 +19,10 @@ CLICK_CXX_UNPROTECT
 /*
 =c
 FromUserDevice(DEV_MINOR, [<keywords> CAPACITY])
- 
+
 =s netdevices
 Reads packets from the device's ring buffer and injects them into Click
- 
+
 =d
 Requires --enable-experimental.
 
@@ -58,7 +58,7 @@ class FromUserDevice : public Element
 
     static void static_initialize();
     static void static_cleanup();
-    
+
     const char *class_name() const      { return "FromUserDevice"; }
     const char *port_count() const      { return PORTS_0_1; }
     const char *processing() const      { return PULL; }
@@ -67,7 +67,7 @@ class FromUserDevice : public Element
     int  initialize(ErrorHandler *);
     void cleanup(CleanupStage);
     void add_handlers();
-    
+
     static String read_handler(Element *e, void *thunk);
 
     Packet* pull(int port);

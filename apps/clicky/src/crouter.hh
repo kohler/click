@@ -31,7 +31,7 @@ class crouter { public:
     String landmark() const {
 	return _landmark;
     }
-    
+
     // router
     bool empty() const;
     RouterT *router() const {
@@ -59,7 +59,7 @@ class crouter { public:
     };
     const reachable_t &downstream(const String &str);
     const reachable_t &upstream(const String &str);
-    
+
     // errors
     GatherErrorHandler *error_handler() const {
 	return &_gerrh;
@@ -121,7 +121,7 @@ class crouter { public:
     int selected_driver() const {
 	return _selected_driver;
     }
-    
+
     handler_values &hvalues() {
 	return _hvalues;
     }
@@ -145,14 +145,14 @@ class crouter { public:
 
     // diagram
     void export_diagram(const char *filename, bool eps, cdiagram *cd);
-    
+
     virtual void repaint(const rectangle &rect) {
 	(void) rect;
     }
     virtual void repaint_if_visible(const rectangle &rect, double dimen) {
 	(void) rect, (void) dimen;
     }
-    
+
   private:
 
     String _landmark;
@@ -163,7 +163,7 @@ class crouter { public:
     ProcessingT *_processing;
     HashTable<String, reachable_t> _downstreams;
     HashTable<String, reachable_t> _upstreams;
-    
+
     handler_values _hvalues;
     cdriver *_driver;
     bool _driver_active;
@@ -194,8 +194,8 @@ class crouter { public:
 	void export_matches(reachable_t &reach, ErrorHandler *debug_errh);
     };
     void calculate_reachable(const String &str, bool forward, reachable_t &reach);
-    
-};    
+
+};
 
 
 inline const crouter::reachable_t &crouter::upstream(const String &str)

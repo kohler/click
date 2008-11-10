@@ -56,12 +56,12 @@ WirelessInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 		     cpEnd);
 
 #if CLICK_NS
-  // nletor - change interface number ifid 
+  // nletor - change interface number ifid
   // to correct channel in simulator
   if (_ifid >= 0)
       simclick_sim_command(router()->simnode(), SIMCLICK_CHANGE_CHANNEL, _ifid, _channel);
 #endif
-  
+
   return res;
 }
 
@@ -81,7 +81,7 @@ WirelessInfo::reset()
   _ifid = -1;
 #endif
 }
-int 
+int
 WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
 			  ErrorHandler *errh)
 {
@@ -92,9 +92,9 @@ WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
     f->_ssid = s;
     break;
   }
-  case H_BSSID: { 
+  case H_BSSID: {
     EtherAddress e;
-    if (!cp_ethernet_address(s, &e)) 
+    if (!cp_ethernet_address(s, &e))
       return errh->error("bssid parameter must be ethernet address");
     f->_bssid = e;
     break;
@@ -102,7 +102,7 @@ WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
 
   case H_CHANNEL: {
     int m;
-    if (!cp_integer(s, &m)) 
+    if (!cp_integer(s, &m))
       return errh->error("channel parameter must be int");
     f->_channel = m;
 #if CLICK_NS
@@ -113,14 +113,14 @@ WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
   }
  case H_INTERVAL: {
     int m;
-    if (!cp_integer(s, &m)) 
+    if (!cp_integer(s, &m))
       return errh->error("interval parameter must be int");
     f->_interval = m;
     break;
  }
   case H_WEP: {    //debug
     bool wep;
-    if (!cp_bool(s, &wep)) 
+    if (!cp_bool(s, &wep))
       return errh->error("wep parameter must be boolean");
     f->_wep = wep;
     break;
@@ -130,7 +130,7 @@ WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
   return 0;
 }
 
-String 
+String
 WirelessInfo::read_param(Element *e, void *thunk)
 {
   WirelessInfo *td = (WirelessInfo *)e;
@@ -161,7 +161,7 @@ WirelessInfo::add_handlers()
   add_write_handler("interval", write_param, (void *) H_INTERVAL);
   add_write_handler("wep", write_param, (void *) H_WEP);
   add_write_handler("reset", write_param, (void *) H_RESET, Handler::BUTTON);
-  
+
 }
 
 CLICK_ENDDECLS

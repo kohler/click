@@ -6,16 +6,16 @@
 
 =c
 
-DivertSocket(DEVICE, DIVERTPORT, FWRULENUM, PROTOCOL, 
+DivertSocket(DEVICE, DIVERTPORT, FWRULENUM, PROTOCOL,
              SADDR/MASK, SPORT, DADDR/MASK, DPORT, [DIRECTION])
 
 DivertSocket(DIVERTPORT)
 
 =s sources
 
-=d 
+=d
 
-DivertSocket sets up a firewall rule according to the input 
+DivertSocket sets up a firewall rule according to the input
 parameters, and diverts matching IP packets to it's output port.
 
 DIRECTION can be either "in" or "out" for packets coming into this machine
@@ -75,7 +75,7 @@ private:
   bool _setup_fw;
   bool _have_sport;
   bool _have_dport;
-  
+
   int _fd;
   unsigned char _protocol;
   IPAddress _saddr, _smask, _daddr, _dmask;
@@ -89,16 +89,16 @@ private:
 
   int fw_sock;
 
-#endif 
+#endif
 
   int setup_firewall(ErrorHandler *errh);
-  int parse_ports(const String &param, ErrorHandler *errh, 
+  int parse_ports(const String &param, ErrorHandler *errh,
 		  int32_t *sportl, int32_t  *sporth);
   void send_packet(Packet *p);
-  
 
 
-  
+
+
 };
 
 #endif

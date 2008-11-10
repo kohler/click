@@ -26,10 +26,10 @@ CLICK_DECLS
  */
 
 class MSQueue : public ThreadSafeQueue { public:
-  
+
     MSQueue();
     ~MSQueue();
-  
+
     const char *class_name() const		{ return "MSQueue"; }
     void *cast(const char *);
 

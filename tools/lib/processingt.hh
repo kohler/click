@@ -72,7 +72,7 @@ class ProcessingT { public:
     PortT input_port(int pidx) const {
 	return port(pidx, end_to);
     }
-    
+
     int noutput_pidx() const {
 	return npidx(end_from);
     }
@@ -102,7 +102,7 @@ class ProcessingT { public:
     char decorated_output_processing_letter(const PortT &port) const;
     int input_processing(int eindex, int port) const;
     int output_processing(int eindex, int port) const;
-    
+
     bool input_is_pull(int eindex, int port) const;
     bool output_is_push(int eindex, int port) const;
 
@@ -139,7 +139,7 @@ class ProcessingT { public:
 	return code_flow(flow_code(port.element), port.port, isoutput,
 			 x, port.element->nports(!isoutput), errh);
     }
-    
+
     static int forward_flow(const String &code, int input_port, Bitvector *x, int noutputs, ErrorHandler *errh = 0) {
 	return code_flow(code, input_port, false, x, noutputs, errh);
     }
@@ -166,7 +166,7 @@ class ProcessingT { public:
     String compound_port_count_code() const;
     String compound_processing_code() const;
     String compound_flow_code(ErrorHandler *errh = 0) const;
-    
+
   private:
 
     RouterT *_router;

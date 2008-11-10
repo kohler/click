@@ -9,7 +9,7 @@ CLICK_DECLS
  * PrintWifi([TAG] [, KEYWORDS])
  * =s debugging
  * =d
- * Assumes input packets are Wifi packets (ie a wifi_pkt struct from 
+ * Assumes input packets are Wifi packets (ie a wifi_pkt struct from
  * wifi.hh). Prints out a description of those packets.
  *
  * Keyword arguments are:
@@ -21,20 +21,20 @@ CLICK_DECLS
  */
 
 class PrintWifi : public Element {
-  
+
   String _label;
-  
+
  public:
-  
+
   PrintWifi();
   ~PrintWifi();
-  
+
   const char *class_name() const		{ return "PrintWifi"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   Packet *simple_action(Packet *);
 
   bool _print_anno;

@@ -19,22 +19,22 @@ CLICK_DECLS
  */
 
 class Unstrip : public Element {
-  
+
   unsigned _nbytes;
-  
+
  public:
-  
+
   Unstrip(unsigned nbytes = 0);
   ~Unstrip();
-  
+
   const char *class_name() const	{ return "Unstrip"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

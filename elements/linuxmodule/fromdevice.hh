@@ -98,7 +98,7 @@ ACTIVE parameter if the device is up, or "false" if the device is down.
 #include <click/standard/storage.hh>
 
 class FromDevice : public AnyTaskDevice, public Storage { public:
-    
+
     FromDevice();
     ~FromDevice();
 
@@ -151,7 +151,7 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 #endif

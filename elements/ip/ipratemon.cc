@@ -30,7 +30,7 @@ CLICK_DECLS
 IPRateMonitor::IPRateMonitor()
   : _count_packets(true), _anno_packets(true),
     _thresh(1), _memmax(0), _ratio(1),
-    _lock(0), _base(0), _alloced_mem(0), _first(0), 
+    _lock(0), _base(0), _alloced_mem(0), _first(0),
     _last(0), _prev_deleted(0)
 {
 }
@@ -92,7 +92,7 @@ IPRateMonitor::initialize(ErrorHandler *errh)
 
 void
 IPRateMonitor::cleanup(CleanupStage)
-{ 
+{
   delete _base;
   delete _lock;
   _base = 0;
@@ -163,7 +163,7 @@ IPRateMonitor::forced_fold()
 // This means that a cleanup always starting at _first and proceeding forwards
 // is unfair to those in front of the list. It might cause starvation-like
 // phenomena. Therefore, choose randomly to traverse forwards or backwards
-// through list. 
+// through list.
 //
 // If there is no memory limitation, then don't fold more than FOLD_FACTOR.
 // Otherwise it takes too long.
@@ -289,7 +289,7 @@ IPRateMonitor::print(Stats *s, String ip)
     if (!(c = s->counter[i]))
       continue;
 
-    if (c->fwd_and_rev_rate.scaled_average(1) > 0 || 
+    if (c->fwd_and_rev_rate.scaled_average(1) > 0 ||
 	c->fwd_and_rev_rate.scaled_average(0) > 0) {
       String this_ip;
       if (ip)
@@ -299,13 +299,13 @@ IPRateMonitor::print(Stats *s, String ip)
       ret += this_ip;
 
       c->fwd_and_rev_rate.update(0);
-      ret += "\t"; 
+      ret += "\t";
       ret += c->fwd_and_rev_rate.unparse_rate(0);
-      ret += "\t"; 
+      ret += "\t";
       ret += c->fwd_and_rev_rate.unparse_rate(1);
-      
+
       ret += "\n";
-      if (c->next_level) 
+      if (c->next_level)
         ret += print(c->next_level, "\t" + this_ip);
     }
   }
@@ -392,7 +392,7 @@ IPRateMonitor::memmax_write_handler
 
   if (memmax && memmax < (int)MEMMAX_MIN)
     memmax = MEMMAX_MIN;
-  
+
   me->_lock->acquire();
   me->_memmax = memmax * 1024; // count bytes, not kbytes
 
@@ -419,7 +419,7 @@ IPRateMonitor::anno_level_write_handler
     errh->error("expecting 3 arguments");
     return -1;
   }
-  
+
   if (!cp_ip_address(args[0], &a)) {
     errh->error("not an IP address");
     return -1;
@@ -438,7 +438,7 @@ IPRateMonitor::anno_level_write_handler
 
   me->_lock->acquire();
   unsigned addr = a.addr();
-  me->set_anno_level(addr, static_cast<unsigned>(level), 
+  me->set_anno_level(addr, static_cast<unsigned>(level),
                      static_cast<unsigned>(when));
   me->_lock->release();
   return 0;
@@ -475,7 +475,7 @@ IPRateMonitor::llrpc(unsigned command, void *data)
     //		  or reverse rate for each of the 256 buckets at that level
     //		  into data[]. If a bucket has no rate, puts -1 into that
     //		  element of data[].
-    
+
     int which = (command == CLICK_LLRPC_IPRATEMON_LEVEL_FWD_AVG ? 0 : 1);
     unsigned *udata = (unsigned *)data;
     unsigned level, ipaddr;
@@ -485,11 +485,11 @@ IPRateMonitor::llrpc(unsigned command, void *data)
       return -EFAULT;
     if (level > 3)
       return -EINVAL;
-    
+
     int averages[256];
-    
+
     _lock->acquire();
-    
+
     // ipaddr is in network order
     Stats *s = _base;
     ipaddr = ntohl(ipaddr);
@@ -507,21 +507,21 @@ IPRateMonitor::llrpc(unsigned command, void *data)
     for (int i = 0; i < 256; i++) {
       if (s->counter[i]) {
 	s->counter[i]->fwd_and_rev_rate.update(0);
-	averages[i] = 
+	averages[i] =
 	  (s->counter[i]->fwd_and_rev_rate.scaled_average(which) * freq) >> scale;
       }
       else
 	averages[i] = -1;
     }
-    
+
     _lock->release();
 
     return CLICK_LLRPC_PUT_DATA(data, averages, sizeof(averages));
-    
+
   }
 
   else if (command == CLICK_LLRPC_IPRATEMON_FWD_N_REV_AVG) {
-    
+
     // Data	: int data[9]
     // Incoming : data[0] is the network-byte-order IP address to drill down
     //            on. data[1...8] are ignored.
@@ -534,10 +534,10 @@ IPRateMonitor::llrpc(unsigned command, void *data)
     unsigned ipaddr;
     if (CLICK_LLRPC_GET(ipaddr, udata) < 0)
       return -EFAULT;
-    
+
     int averages[9];
     int n = 0;
-    
+
     _lock->acquire();
 
     // ipaddr is in network order
@@ -545,14 +545,14 @@ IPRateMonitor::llrpc(unsigned command, void *data)
     ipaddr = ntohl(ipaddr);
     for (int bitshift = 24; bitshift >= 0; bitshift -= 8) {
       unsigned char b = (ipaddr >> bitshift) & 255;
-      if (!s->counter[b]) 
+      if (!s->counter[b])
 	break;
-      
+
       unsigned freq = EWMAParameters::epoch_frequency();
       s->counter[b]->fwd_and_rev_rate.update(0);
-      averages[n*2+1] = 
+      averages[n*2+1] =
 	(s->counter[b]->fwd_and_rev_rate.scaled_average(0) * freq) >> scale;
-      averages[n*2+2] = 
+      averages[n*2+2] =
 	(s->counter[b]->fwd_and_rev_rate.scaled_average(1) * freq) >> scale;
       n++;
 
@@ -560,7 +560,7 @@ IPRateMonitor::llrpc(unsigned command, void *data)
 	break;
       s = s->counter[b]->next_level;
     }
-    
+
     _lock->release();
 
     averages[0] = n;
@@ -568,7 +568,7 @@ IPRateMonitor::llrpc(unsigned command, void *data)
   }
 
   else if (command == CLICK_LLRPC_IPRATEMON_SET_ANNO_LEVEL) {
-    
+
     // Data	: int data[3]
     // Incoming : data[0] is the network-byte-order IP address. data[1] is the
     //            level at which annotations and expansion should stop.
@@ -577,26 +577,26 @@ IPRateMonitor::llrpc(unsigned command, void *data)
 
     unsigned *udata = (unsigned *)data;
     unsigned ipaddr, level, when;
-    
+
     if (CLICK_LLRPC_GET(ipaddr, udata) < 0)
       return -EFAULT;
-    
+
     if (CLICK_LLRPC_GET(level, udata+1) < 0 || level > 3)
       return -EFAULT;
-    
+
     if (CLICK_LLRPC_GET(when, udata+2) < 0 || when < 1)
       return -EFAULT;
-  
-    when *= EWMAParameters::epoch_frequency(); 
+
+    when *= EWMAParameters::epoch_frequency();
     when += EWMAParameters::epoch();
 
     _lock->acquire();
-    set_anno_level(ipaddr, static_cast<unsigned>(level), 
+    set_anno_level(ipaddr, static_cast<unsigned>(level),
 	           static_cast<unsigned>(when));
     _lock->release();
     return 0;
   }
-  
+
   else
     return Element::llrpc(command, data);
 }

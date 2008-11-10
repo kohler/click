@@ -59,7 +59,7 @@ DivertSocket::DivertSocket()
 }
 
 
-DivertSocket::~DivertSocket() 
+DivertSocket::~DivertSocket()
 {
   uninitialize();
 }
@@ -70,7 +70,7 @@ int DivertSocket::parse_ports(const String &param, ErrorHandler *errh,
   *portl =  *porth = 0;;
   dash = param.find_left('-');
 
-  if (dash < 0) 
+  if (dash < 0)
     dash = param.length();
 
   if (!cp_integer(param.substring(0,dash), portl)){
@@ -83,7 +83,7 @@ int DivertSocket::parse_ports(const String &param, ErrorHandler *errh,
       //errh->error("2 bad port in rule spec");
       return -1;
     }
-  } else 
+  } else
     *porth = *portl;
 
   if (*portl > *porth || *portl < 0 || *porth > 0xFFFF) {
@@ -103,17 +103,17 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
   for(int i=0; i < conf.size(); i++){
     click_chatter("  %s\n", ((String)conf[i]).c_str());
   }
-#endif	
+#endif
 
   if (conf.size() == 1) {
-    if (cp_va_parse(conf[0], this, errh, cpUnsigned, "divertport", 
+    if (cp_va_parse(conf[0], this, errh, cpUnsigned, "divertport",
 		    &_divertport, cpEnd) < 0)
       return -1;
     _setup_fw = false;
     return 0;
   }
 
-   
+
   if (conf.size() < confindex+1) {
     errh->error("not enough parameters for DivertSocket");
     return -1;
@@ -137,14 +137,14 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
   // parse rule number
   if (cp_va_parse(conf[2], this, errh, cpUnsigned, "rulenumber", &_rulenumber, cpEnd) < 0)
     return -1;
-  
+
 
   // parse protocol & src addr/mask
   if ((cp_va_parse(conf[3], this, errh, cpByte, "protocol", &_protocol, cpEnd) < 0) ||
       (!cp_ip_prefix(conf[4], &_saddr, &_smask, true, this))) {
     errh->error("invalid src addr/mask");
     return -1;
-  } 
+  }
   _saddr &= _smask;
 
 
@@ -152,7 +152,7 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
     errh->error("too many parameters for non TCP/UDP rule");
     return -1;
   }
-  
+
   // parse src ports
   if (_protocol == IP_PROTO_UDP || _protocol == IP_PROTO_TCP) {
     if (parse_ports(conf[5], errh, &_sportl, &_sporth) < 0)
@@ -176,7 +176,7 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   _daddr &= _dmask;
   confindex++;
-  
+
 
   // parse dst ports
   if (confindex < conf.size()) {
@@ -222,10 +222,10 @@ DivertSocket::setup_firewall(ErrorHandler *errh) {
 
   // Setup firewall to divert sockets
 #if defined(__FreeBSD__)
-  if (_protocol == 0) 
+  if (_protocol == 0)
     sprintf(prot, "ip");
   else
-    sprintf(prot, "%d", _protocol); 
+    sprintf(prot, "%d", _protocol);
 
   if (_have_sport) {
     if (_sportl == _sporth)
@@ -246,7 +246,7 @@ DivertSocket::setup_firewall(ErrorHandler *errh) {
   }
 
   sprintf(tmp, "/sbin/ipfw add %u divert %u %s from %s:%s %s to %s:%s %s %s via %s",
-	  _rulenumber, _divertport, 
+	  _rulenumber, _divertport,
 	  prot, _saddr.s().c_str(), _smask.s().c_str(), sport,
 	  _daddr.s().c_str(), _dmask.s().c_str(), dport, _inout.c_str(), _device.c_str() );
   printf("%s\n", tmp);
@@ -257,7 +257,7 @@ DivertSocket::setup_firewall(ErrorHandler *errh) {
     return -1;
   }
 #elif defined(__linux__)
-  
+
   /* fill in the rule first */
   bzero(&fw, sizeof (struct ip_fw));
   fw.fw_proto= _protocol;
@@ -332,18 +332,18 @@ DivertSocket::setup_firewall(ErrorHandler *errh) {
     return -1;
   }
 
-#else 
+#else
   close(_fd);
   errh->error("This platform is not yet supported by DivertSocket");
   return -1;
-  
+
 
 #endif
   return 0;
-}		  
+}
 
 int
-DivertSocket::initialize(ErrorHandler *errh) 
+DivertSocket::initialize(ErrorHandler *errh)
 {
   int ret, n;
   struct sockaddr_in bindPort; //, sin;
@@ -379,7 +379,7 @@ DivertSocket::initialize(ErrorHandler *errh)
     close (_fd);
     return -1;
   }
-  
+
   // bind to port
   ret=bind(_fd, (struct sockaddr *)&bindPort, sizeof(struct sockaddr_in));
 
@@ -399,42 +399,42 @@ DivertSocket::initialize(ErrorHandler *errh)
   return 0;
 }
 
-  
-void 
+
+void
 DivertSocket::uninitialize()
 {
 
   if (_fd >= 0) {
-    
+
     if (_setup_fw) {
 #if defined(__FreeBSD__)
       char tmp[64];
       sprintf(tmp, "/sbin/ipfw delete %u", _rulenumber);
       system(tmp);
-      
-#elif defined(__linux__) 
+
+#elif defined(__linux__)
       struct ip_fwdelnum ipfwd;
-      
+
       ipfwd.fwd_rulenum = ipfc.fwn_rulenum;
       strcpy(ipfwd.fwd_label, ipfc.fwn_label);
-      
-      
+
+
       if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_DELETE_NUM, &ipfwd, sizeof(ipfwd))==-1) {
 	fprintf(stderr, "could not remove firewall rule");
       }
-      
+
       if (_inout == "") {
 	ipfwd.fwd_rulenum = ipfc2.fwn_rulenum;
 	strcpy(ipfwd.fwd_label, ipfc2.fwn_label);
-	
+
 	if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_DELETE_NUM, &ipfwd, sizeof(ipfwd))==-1) {
 	  fprintf(stderr, "could not remove output firewall rule");
 	}
       }
       close(fw_sock);
-  
+
 #else
-  
+
 #endif
 
     }
@@ -448,15 +448,15 @@ DivertSocket::uninitialize()
 
 
 void
-DivertSocket::selected(int fd) 
+DivertSocket::selected(int fd)
 {
   struct sockaddr_in sa;
   socklen_t fromlen;
-  
+
   WritablePacket *p;
   int len;
 
-  if (fd != _fd) 
+  if (fd != _fd)
     return;
 
   fromlen = sizeof(sa);
@@ -465,9 +465,9 @@ DivertSocket::selected(int fd)
 
   if (len > 0) {
 
-    // set the timestamp 
+    // set the timestamp
     p->timestamp_anno() = Timestamp::now();
-    p->change_headroom_and_length(2, len);		 
+    p->change_headroom_and_length(2, len);
     output(0).push(p);
 
   } else {
@@ -490,7 +490,7 @@ DivertSocket::send_packet(Packet *p)
   memcpy(&sa.sin_addr.s_addr, p->data() + 16, 4);
   //printf("address: 0x%x\n", sa.sin_addr.s_addr);
 
-  n = sendto(_fd, p->data(), p->length() , 0, 
+  n = sendto(_fd, p->data(), p->length() , 0,
 	     (sockaddr *)&sa, sizeof(sa));
   //click_chatter("  %i bytes reinjected.", n);
 

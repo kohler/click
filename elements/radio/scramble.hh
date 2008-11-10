@@ -5,7 +5,7 @@ CLICK_DECLS
 
 /*
  * Scramble()
- * 
+ *
  * Exclusive-or each packet with a fixed repeating
  * sequence of bits. The point is to try to end up
  * with a balanced number of ones and zeroes so that
@@ -23,7 +23,7 @@ public:
   const char *class_name() const	{ return "Scramble"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   Packet *simple_action(Packet *);
 
 };

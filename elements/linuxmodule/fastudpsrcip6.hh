@@ -45,8 +45,8 @@
  * Change ACTIVE
  *
  * =e
- *  FastUDPSourceIP6(100000, 500000, 60, 0:0:0:0:0:0, 3ffe::1.0.0.1, 1234, 
- *                                    1:1:1:1:1:1, 3ff2::2.0.0.2, 1234) 
+ *  FastUDPSourceIP6(100000, 500000, 60, 0:0:0:0:0:0, 3ffe::1.0.0.1, 1234,
+ *                                    1:1:1:1:1:1, 3ff2::2.0.0.2, 1234)
  *    -> ToDevice;
  */
 
@@ -63,7 +63,7 @@ class FastUDPSourceIP6 : public Element {
   bool _rate_limited; // obey _rate? rather than as fast as possible.
   unsigned _len;
   click_ether _ethh;
-  IP6Address _sip6addr; 
+  IP6Address _sip6addr;
   IP6Address _dip6addr;
   uint16_t _sport;
   uint16_t _dport;
@@ -78,7 +78,7 @@ class FastUDPSourceIP6 : public Element {
   void incr_ports();
 
  public:
-  
+
   static const unsigned NO_LIMIT = 0xFFFFFFFFU;
 
   GapRate _rate;
@@ -88,11 +88,11 @@ class FastUDPSourceIP6 : public Element {
 
   FastUDPSourceIP6();
   ~FastUDPSourceIP6();
-  
+
   const char *class_name() const	{ return "FastUDPSourceIP6"; }
   const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PULL; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
@@ -105,11 +105,11 @@ class FastUDPSourceIP6 : public Element {
   click_jiffies_t last() { return _last; }
 
 #if 0
-  friend int FastUDPSourceIP6_limit_write_handler 
+  friend int FastUDPSourceIP6_limit_write_handler
     (const String &, Element *e, void *, ErrorHandler *);
-  friend int FastUDPSourceIP6_rate_write_handler 
+  friend int FastUDPSourceIP6_rate_write_handler
     (const String &, Element *e, void *, ErrorHandler *);
-  friend int FastUDPSourceIP6_active_write_handler 
+  friend int FastUDPSourceIP6_active_write_handler
     (const String &, Element *e, void *, ErrorHandler *);
 #endif
 };

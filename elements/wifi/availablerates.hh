@@ -9,7 +9,7 @@ CLICK_DECLS
 
 /*
 =c
- 
+
 AvailableRates()
 
 =s Wifi, Wireless Station, Wireless AccessPoint
@@ -34,10 +34,10 @@ Shows the entries in the database.
 
 
 class AvailableRates : public Element { public:
-  
+
   AvailableRates();
   ~AvailableRates();
-  
+
   const char *class_name() const		{ return "AvailableRates"; }
   const char *port_count() const		{ return PORTS_0_0; }
 
@@ -60,19 +60,19 @@ class AvailableRates : public Element { public:
   public:
     EtherAddress _eth;
     Vector<int> _rates;
-    DstInfo() { 
+    DstInfo() {
       memset(this, 0, sizeof(*this));
     }
 
-    DstInfo(EtherAddress eth) { 
+    DstInfo(EtherAddress eth) {
       memset(this, 0, sizeof(*this));
       _eth = eth;
     }
   };
-  
+
   typedef HashMap<EtherAddress, DstInfo> RTable;
   typedef RTable::const_iterator RIter;
-  
+
   RTable _rtable;
   Vector<int> _default_rates;
 private:

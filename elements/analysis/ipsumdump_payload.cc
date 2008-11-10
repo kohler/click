@@ -148,7 +148,7 @@ static void payload_outa(const PacketDesc& d, const FieldWriter *f)
 	break;
     }
     }
-} 
+}
 
 static bool payload_ina(PacketOdesc& d, const String &str, const FieldReader *f)
 {
@@ -166,7 +166,7 @@ static bool payload_ina(PacketOdesc& d, const String &str, const FieldReader *f)
     }
     }
     return false;
-} 
+}
 
 static void payload_outb(const PacketDesc& d, bool, const FieldWriter *f)
 {
@@ -187,7 +187,7 @@ static void payload_outb(const PacketDesc& d, bool, const FieldWriter *f)
 	break;
     }
     }
-} 
+}
 
 static const FieldWriter payload_writers[] = {
     { "payload_len", B_4, T_PAYLOAD_LEN,

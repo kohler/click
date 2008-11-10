@@ -28,7 +28,7 @@ class CLPTest : public Element { public:
     const char *class_name() const		{ return "CLPTest"; }
 
     int initialize(ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

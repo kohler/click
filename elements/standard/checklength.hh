@@ -20,21 +20,21 @@ output 1 (or dropped if there is no output 1).
 */
 
 class CheckLength : public Element { public:
-  
+
   CheckLength();
   ~CheckLength();
-  
+
   const char *class_name() const		{ return "CheckLength"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   void push(int, Packet *);
   Packet *pull(int);
-  
+
  protected:
-  
+
   unsigned _max;
 
 };

@@ -16,7 +16,7 @@ enum { MAJOR_VERSION = 1, MINOR_VERSION = 3 };
 // uses ':' in sack blocks.
 // MINOR_VERSION 2 can have incorrect payload MD5 checksums for some packets
 // (usually short packets with link headers).
-    
+
 
 struct PacketDesc {
     Packet* p;
@@ -31,13 +31,13 @@ struct PacketDesc {
 	uint8_t u8[8];
 	const uint8_t *vptr[2];
     };
-    
+
     StringAccum* sa;
     StringAccum* bad_sa;
     bool careful_trunc;
     bool force_extra_length;
     const Element *e;
-    
+
     inline PacketDesc(const Element *e, Packet *p, StringAccum* sa, StringAccum* bad_sa, bool careful_trunc, bool force_extra_length);
     void clear_values()			{ vptr[0] = vptr[1] = 0; }
 };
@@ -54,13 +54,13 @@ struct PacketOdesc {
 	uint8_t u8[8];
 	const uint8_t *vptr[2];
     };
-    
+
     StringAccum sa;
     const Element *e;
     int default_ip_p;
     const IPFlowID *default_ip_flowid;
     int minor_version;
-    
+
     inline PacketOdesc(const Element *e, WritablePacket *p, int default_ip_p, const IPFlowID *default_ip_flowid, int minor_version);
     void clear_values()			{ vptr[0] = vptr[1] = 0; }
     bool make_ip(int ip_p);

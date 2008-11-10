@@ -175,9 +175,9 @@ ElementClassT::direct_expand_element(
 	    return tor->get_element
 		(new_name, e->type(), new_configuration, e->landmarkt());
     }
-    
+
     // otherwise, not tunnel
-    
+
     // check for common case -- expanding router into itself
     if (fromr == tor && !prefix) {
 	e->set_configuration(new_configuration);
@@ -188,7 +188,7 @@ ElementClassT::direct_expand_element(
     // check for old element
     if (ElementT *new_e = tor->element(new_name))
 	ElementT::redeclaration_error(errh, "element", new_name, e->landmark(), new_e->landmark());
-    
+
     // add element
     return tor->get_element(new_name, this, new_configuration, e->landmarkt());
 }
@@ -235,7 +235,7 @@ ElementClassT::unparse_signature(const String &name, const Vector<String> *forma
 {
     StringAccum sa;
     sa << (name ? name : String("<anonymous>"));
-  
+
     if (formal_types && formal_types->size()) {
 	sa << '(';
 	for (int i = 0; i < formal_types->size(); i++) {
@@ -259,7 +259,7 @@ ElementClassT::unparse_signature(const String &name, const Vector<String> *forma
 	sa << nargs << pl_args;
     sa << ninputs << pl_ins << noutputs << pl_outs;
     sa << ']';
-  
+
     return sa.take_string();
 }
 

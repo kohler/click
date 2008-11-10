@@ -39,7 +39,7 @@ int
 TCPAck::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _ackdelay_ms = 20;
-  return cp_va_kparse(conf, this, errh, 
+  return cp_va_kparse(conf, this, errh,
 		      "DELAY", cpSecondsAsMilli, &_ackdelay_ms, cpEnd);
 }
 
@@ -49,10 +49,10 @@ TCPAck::initialize(ErrorHandler *errh)
 {
   CastElementFilter filter("TCPBuffer");
   Vector<Element*> tcpbuffers;
-  
+
   if (router()->downstream_elements(this, 0, &filter, tcpbuffers) < 0)
     return errh->error("flow-based router context failure");
-  if (tcpbuffers.size() < 1) 
+  if (tcpbuffers.size() < 1)
     return errh->error
       ("%d downstream elements found, expecting at least 1", tcpbuffers.size());
 
@@ -95,7 +95,7 @@ TCPAck::pull(int port)
       forward = iput(p);
     else
       forward = oput(p);
-    if (forward) 
+    if (forward)
       return p;
     else {
       p->kill();
@@ -134,7 +134,7 @@ TCPAck::iput(Packet *p)
   }
 
   _needack = true;
-  if (!_timer.scheduled()) 
+  if (!_timer.scheduled())
     _timer.schedule_after_msec(_ackdelay_ms);
   return true;
 }
@@ -175,11 +175,11 @@ TCPAck::send_ack()
   if (q == 0) {
     click_chatter("TCPAck: cannot make packet");
     return;
-  } 
+  }
   memset(q->data(), '\0', q->length());
   ip = (struct click_ip *) q->data();
   tcp = (struct click_tcp *) (ip + 1);
-  
+
   ip->ip_v = 4;
   ip->ip_hl = 5;
   ip->ip_tos = 0x10;

@@ -197,7 +197,7 @@ class dcss_selector { public:
     }
 
     const char *parse(const String &str, const char *s);
-    
+
   private:
 
     String _type;
@@ -209,7 +209,7 @@ class dcss_selector { public:
     char _highlight_match;
 
     bool type_glob_match(PermString decor) const;
-    
+
 };
 
 
@@ -252,7 +252,7 @@ struct dcss_property {
     bool change_relative_pixel() const {
 	return _t == t_pixel || _t == t_relative || hard_change_relative_pixel();
     }
-    
+
     double vnumeric() const {
 	return (change_type(t_numeric) ? _v.d : 0);
     }
@@ -296,9 +296,9 @@ struct dcss_property {
 
     static const dcss_property null_property;
     static const double transparent_color[4];
-    
+
   private:
-    
+
     PermString _name;
     String _vstr;
     mutable int _t;
@@ -310,7 +310,7 @@ struct dcss_property {
 
     bool hard_change_type(int t) const;
     bool hard_change_relative_pixel() const;
-    
+
 };
 
 struct dcss_propmatch {
@@ -400,11 +400,11 @@ class dcss { public:
 			   dcss **begin, dcss **end);
     static void assign_all(dcss_propmatch *props, dcss_propmatch **pp, int n,
 			   dcss **begin, dcss **end);
-    
+
     static void sort(dcss **begin, dcss **end);
-    
+
   private:
-    
+
     dcss_selector _selector;
     Vector<dcss_selector> _context;
     unsigned _selector_index;
@@ -424,7 +424,7 @@ class dcss { public:
     void parse_box(const String &str, const char *s, const char *send, const String &prefix);
 
     friend class dcss_set;
-    
+
 };
 
 
@@ -459,7 +459,7 @@ class dcss_set { public:
     String vstring(PermString name, PermString decor, crouter *cr, const delt *e) const;
 
     static dcss_set *default_set(const String &media);
-    
+
   private:
 
     String _text;
@@ -469,7 +469,7 @@ class dcss_set { public:
     dcss_set *_below;
     unsigned _selector_index;
     Vector<dcss *> _s;
-    
+
     bool _frozen;
 
     // XXX cache eviction

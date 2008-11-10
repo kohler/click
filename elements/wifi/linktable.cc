@@ -25,20 +25,20 @@
 #include <click/straccum.hh>
 CLICK_DECLS
 
-LinkTable::LinkTable() 
+LinkTable::LinkTable()
   : _timer(this)
 {
 }
 
 
 
-LinkTable::~LinkTable() 
+LinkTable::~LinkTable()
 {
 }
 
 
 int
-LinkTable::initialize (ErrorHandler *) 
+LinkTable::initialize (ErrorHandler *)
 {
   _timer.initialize(this);
   _timer.schedule_now();
@@ -46,7 +46,7 @@ LinkTable::initialize (ErrorHandler *)
 }
 
 void
-LinkTable::run_timer(Timer *) 
+LinkTable::run_timer(Timer *)
 {
   clear_stale();
   dijkstra(true);
@@ -70,8 +70,8 @@ LinkTable::configure (Vector<String> &conf, ErrorHandler *errh)
 		     "IP", 0, cpIPAddress, &_ip,
 		     "STALE", 0, cpUnsigned, &stale_period,
 		     cpEnd);
-  
-  if (!_ip) 
+
+  if (!_ip)
     return errh->error("IP not specified");
 
   _stale_timeout.assign(stale_period, 0);
@@ -81,11 +81,11 @@ LinkTable::configure (Vector<String> &conf, ErrorHandler *errh)
 }
 
 
-void 
+void
 LinkTable::take_state(Element *e, ErrorHandler *) {
   LinkTable *q = (LinkTable *)e->cast("LinkTable");
   if (!q) return;
-  
+
   _hosts = q->_hosts;
   _links = q->_links;
   dijkstra(true);
@@ -94,7 +94,7 @@ LinkTable::take_state(Element *e, ErrorHandler *) {
 
 int
 LinkTable::static_update_link(const String &arg, Element *e,
-			      void *, ErrorHandler *errh) 
+			      void *, ErrorHandler *errh)
 {
   LinkTable *n = (LinkTable *) e;
   Vector<String> args;
@@ -128,20 +128,20 @@ LinkTable::static_update_link(const String &arg, Element *e,
   if (!cp_unsigned(args[4], &age)) {
     return errh->error("Couldn't read age");
   }
-  
+
   n->update_link(from, to, seq, age, metric);
   return 0;
 
 }
 void
-LinkTable::clear() 
+LinkTable::clear()
 {
   _hosts.clear();
   _links.clear();
 
 }
-bool 
-LinkTable::update_link(IPAddress from, IPAddress to, 
+bool
+LinkTable::update_link(IPAddress from, IPAddress to,
 		       uint32_t seq, uint32_t age, uint32_t metric)
 {
   if (!from || !to || !metric) {
@@ -163,7 +163,7 @@ LinkTable::update_link(IPAddress from, IPAddress to,
     _hosts.insert(to, HostInfo(to));
     nto = _hosts.findp(to);
   }
-  
+
   assert(nfrom);
   assert(nto);
 
@@ -178,7 +178,7 @@ LinkTable::update_link(IPAddress from, IPAddress to,
 }
 
 
-LinkTable::Link 
+LinkTable::Link
 LinkTable::random_link()
 {
   int ndx = click_random(0, _links.size() - 1);
@@ -194,7 +194,7 @@ LinkTable::random_link()
   return Link();
 
 }
-Vector<IPAddress> 
+Vector<IPAddress>
 LinkTable::get_hosts()
 {
   Vector<IPAddress> v;
@@ -205,7 +205,7 @@ LinkTable::get_hosts()
   return v;
 }
 
-uint32_t 
+uint32_t
 LinkTable::get_host_metric_to_me(IPAddress s)
 {
   if (!s) {
@@ -218,7 +218,7 @@ LinkTable::get_host_metric_to_me(IPAddress s)
   return nfo->_metric_to_me;
 }
 
-uint32_t 
+uint32_t
 LinkTable::get_host_metric_from_me(IPAddress s)
 {
   if (!s) {
@@ -231,8 +231,8 @@ LinkTable::get_host_metric_from_me(IPAddress s)
   return nfo->_metric_from_me;
 }
 
-uint32_t 
-LinkTable::get_link_metric(IPAddress from, IPAddress to) 
+uint32_t
+LinkTable::get_link_metric(IPAddress from, IPAddress to)
 {
   if (!from || !to) {
     return 0;
@@ -247,8 +247,8 @@ LinkTable::get_link_metric(IPAddress from, IPAddress to)
   }
   return nfo->_metric;
 }
-uint32_t 
-LinkTable::get_link_seq(IPAddress from, IPAddress to) 
+uint32_t
+LinkTable::get_link_seq(IPAddress from, IPAddress to)
 {
   if (!from || !to) {
     return 0;
@@ -263,8 +263,8 @@ LinkTable::get_link_seq(IPAddress from, IPAddress to)
   }
   return nfo->_seq;
 }
-uint32_t 
-LinkTable::get_link_age(IPAddress from, IPAddress to) 
+uint32_t
+LinkTable::get_link_age(IPAddress from, IPAddress to)
 {
   if (!from || !to) {
     return 0;
@@ -279,11 +279,11 @@ LinkTable::get_link_age(IPAddress from, IPAddress to)
   }
   return nfo->age();
 }
-  
-  
-  
-unsigned 
-LinkTable::get_route_metric(const Vector<IPAddress> &route) 
+
+
+
+unsigned
+LinkTable::get_route_metric(const Vector<IPAddress> &route)
 {
   unsigned metric = 0;
   for (int i = 0; i < route.size() - 1; i++) {
@@ -294,28 +294,28 @@ LinkTable::get_route_metric(const Vector<IPAddress> &route)
     metric += m;
   }
   return metric;
-  
+
 }
 
-String 
+String
 LinkTable::route_to_string(Path p) {
 	StringAccum sa;
 	int hops = p.size()-1;
 	int metric = 0;
 	StringAccum sa2;
 	for (int i = 0; i < p.size(); i++) {
-		sa2 << p[i]; 
+		sa2 << p[i];
 		if (i != p.size()-1) {
 			int m = get_link_metric(p[i], p[i+1]);
 			sa2 << " (" << m << ") ";
 			metric += m;
-		}		
+		}
 	}
 	sa << p[p.size()-1] << " hops " << hops << " metric " << metric << " " << sa2;
 	return sa.take_string();
 }
 bool
-LinkTable::valid_route(const Vector<IPAddress> &route) 
+LinkTable::valid_route(const Vector<IPAddress> &route)
 {
   if (route.size() < 1) {
     return false;
@@ -338,7 +338,7 @@ LinkTable::valid_route(const Vector<IPAddress> &route)
 
   return true;
 }
-Vector<IPAddress> 
+Vector<IPAddress>
 LinkTable::best_route(IPAddress dst, bool from_me)
 {
   Vector<IPAddress> reverse_route;
@@ -346,7 +346,7 @@ LinkTable::best_route(IPAddress dst, bool from_me)
     return reverse_route;
   }
   HostInfo *nfo = _hosts.findp(dst);
-  
+
   if (from_me) {
     while (nfo && nfo->_metric_from_me != 0) {
       reverse_route.push_back(nfo->_ip);
@@ -364,7 +364,7 @@ LinkTable::best_route(IPAddress dst, bool from_me)
       reverse_route.push_back(nfo->_ip);
     }
   }
-  
+
 
   if (from_me) {
 	  Vector<IPAddress> route;
@@ -378,8 +378,8 @@ LinkTable::best_route(IPAddress dst, bool from_me)
   return reverse_route;
 }
 
-String 
-LinkTable::print_links() 
+String
+LinkTable::print_links()
 {
   StringAccum sa;
   for (LTIter iter = _links.begin(); iter.live(); iter++) {
@@ -395,29 +395,29 @@ static int ipaddr_sorter(const void *va, const void *vb) {
     IPAddress *a = (IPAddress *)va, *b = (IPAddress *)vb;
     if (a->addr() == b->addr()) {
 	return 0;
-    } 
+    }
     return (ntohl(a->addr()) < ntohl(b->addr())) ? -1 : 1;
 }
 
 
-String 
-LinkTable::print_routes(bool from_me, bool pretty) 
+String
+LinkTable::print_routes(bool from_me, bool pretty)
 {
   StringAccum sa;
 
   Vector<IPAddress> ip_addrs;
-  
+
   for (HTIter iter = _hosts.begin(); iter.live(); iter++)
     ip_addrs.push_back(iter.key());
-  
+
   click_qsort(ip_addrs.begin(), ip_addrs.size(), sizeof(IPAddress), ipaddr_sorter);
-  
+
   for (int x = 0; x < ip_addrs.size(); x++) {
     IPAddress ip = ip_addrs[x];
     Vector <IPAddress> r = best_route(ip, from_me);
     if (valid_route(r)) {
 	    if (pretty) {
-		    sa << route_to_string(r) << "\n";		    
+		    sa << route_to_string(r) << "\n";
 	    } else {
 		    sa << r[r.size()-1] << "  ";
 		    for (int a = 0; a < r.size(); a++) {
@@ -437,17 +437,17 @@ LinkTable::print_routes(bool from_me, bool pretty)
 }
 
 
-String 
-LinkTable::print_hosts() 
+String
+LinkTable::print_hosts()
 {
   StringAccum sa;
   Vector<IPAddress> ip_addrs;
-  
+
   for (HTIter iter = _hosts.begin(); iter.live(); iter++)
     ip_addrs.push_back(iter.key());
-  
+
   click_qsort(ip_addrs.begin(), ip_addrs.size(), sizeof(IPAddress), ipaddr_sorter);
-  
+
   for (int x = 0; x < ip_addrs.size(); x++)
     sa << ip_addrs[x] << "\n";
 
@@ -456,7 +456,7 @@ LinkTable::print_hosts()
 
 
 
-void 
+void
 LinkTable::clear_stale() {
 
   LTable links;
@@ -472,7 +472,7 @@ LinkTable::clear_stale() {
 		      nfo._from.unparse().c_str(),
 		      nfo._to.unparse().c_str(),
 		      nfo._metric,
-		      nfo._seq, 
+		      nfo._seq,
 		      nfo.age());
       }
     }
@@ -486,8 +486,8 @@ LinkTable::clear_stale() {
 
 }
 
-Vector<IPAddress> 
-LinkTable::get_neighbors(IPAddress ip) 
+Vector<IPAddress>
+LinkTable::get_neighbors(IPAddress ip)
 {
   Vector<IPAddress> neighbors;
 
@@ -507,13 +507,13 @@ LinkTable::get_neighbors(IPAddress ip)
 	neighbors.push_back(neighbor->_ip);
       }
     }
-    
+
   }
 
   return neighbors;
 }
 void
-LinkTable::dijkstra(bool from_me) 
+LinkTable::dijkstra(bool from_me)
 {
   Timestamp start = Timestamp::now();
   IPAddress src = _ip;
@@ -524,17 +524,17 @@ LinkTable::dijkstra(bool from_me)
   for (HTIter iter = _hosts.begin(); iter.live(); iter++) {
     ip_addrs.insert(iter.value()._ip, true);
   }
-  
+
   for (IPMap::const_iterator i = ip_addrs.begin(); i.live(); i++) {
     /* clear them all initially */
     HostInfo *n = _hosts.findp(i.key());
     n->clear(from_me);
   }
   HostInfo *root_info = _hosts.findp(src);
-  
-  
+
+
   assert(root_info);
-  
+
   if (from_me) {
     root_info->_prev_from_me = root_info->_ip;
     root_info->_metric_from_me = 0;
@@ -542,7 +542,7 @@ LinkTable::dijkstra(bool from_me)
     root_info->_prev_to_me = root_info->_ip;
     root_info->_metric_to_me = 0;
   }
-  
+
   IPAddress current_min_ip = root_info->_ip;
 
   while (current_min_ip) {
@@ -566,7 +566,7 @@ LinkTable::dijkstra(bool from_me)
       if (marked) {
 	continue;
       }
-      
+
       IPPair pair = IPPair(neighbor->_ip, current_min_ip);
       if (from_me) {
 	pair = IPPair(current_min_ip, neighbor->_ip);
@@ -577,15 +577,15 @@ LinkTable::dijkstra(bool from_me)
       }
       uint32_t neighbor_metric = neighbor->_metric_to_me;
       uint32_t current_metric = current_min->_metric_to_me;
-      
+
       if (from_me) {
 	neighbor_metric = neighbor->_metric_from_me;
 	current_metric = current_min->_metric_from_me;
       }
-      
-      
+
+
       uint32_t adjusted_metric = current_metric + lnfo->_metric;
-      if (!neighbor_metric || 
+      if (!neighbor_metric ||
 	  adjusted_metric < neighbor_metric) {
 	if (from_me) {
 	  neighbor->_metric_from_me = adjusted_metric;
@@ -594,7 +594,7 @@ LinkTable::dijkstra(bool from_me)
 	  neighbor->_metric_to_me = adjusted_metric;
 	  neighbor->_prev_to_me = current_min_ip;
 	}
-	
+
       }
     }
 
@@ -607,17 +607,17 @@ LinkTable::dijkstra(bool from_me)
       if (from_me) {
 	metric = nfo->_metric_from_me;
 	marked = nfo->_marked_from_me;
-      }      
-      if (!marked && metric && 
+      }
+      if (!marked && metric &&
 	  metric < min_metric) {
         current_min_ip = nfo->_ip;
         min_metric = metric;
       }
     }
-    
-    
+
+
   }
-  
+
   dijkstra_time = Timestamp::now() - start;
   //StringAccum sa;
   //sa << "dijstra took " << finish - start;
@@ -625,9 +625,9 @@ LinkTable::dijkstra(bool from_me)
 }
 
 
-enum {H_BLACKLIST, 
-      H_BLACKLIST_CLEAR, 
-      H_BLACKLIST_ADD, 
+enum {H_BLACKLIST,
+      H_BLACKLIST_CLEAR,
+      H_BLACKLIST_ADD,
       H_BLACKLIST_REMOVE,
       H_LINKS,
       H_ROUTES_OLD,
@@ -638,7 +638,7 @@ enum {H_BLACKLIST,
       H_DIJKSTRA,
       H_DIJKSTRA_TIME};
 
-static String 
+static String
 LinkTable_read_param(Element *e, void *thunk)
 {
   LinkTable *td = (LinkTable *)e;
@@ -647,7 +647,7 @@ LinkTable_read_param(Element *e, void *thunk)
       StringAccum sa;
       typedef HashMap<IPAddress, IPAddress> IPTable;
       typedef IPTable::const_iterator IPIter;
-  
+
 
       for (IPIter iter = td->_blacklist.begin(); iter.live(); iter++) {
 	sa << iter.value() << " ";
@@ -668,7 +668,7 @@ LinkTable_read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 LinkTable_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -681,14 +681,14 @@ LinkTable_write_param(const String &in_s, Element *e, void *vparam,
   }
   case H_BLACKLIST_ADD: {
     IPAddress m;
-    if (!cp_ip_address(s, &m)) 
+    if (!cp_ip_address(s, &m))
       return errh->error("blacklist_add parameter must be ipaddress");
     f->_blacklist.insert(m, m);
     break;
   }
   case H_BLACKLIST_REMOVE: {
     IPAddress m;
-    if (!cp_ip_address(s, &m)) 
+    if (!cp_ip_address(s, &m))
       return errh->error("blacklist_add parameter must be ipaddress");
     f->_blacklist.erase(m);
     break;

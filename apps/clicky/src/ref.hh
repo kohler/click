@@ -17,7 +17,7 @@
 template <typename T> class ref_ptr;
 
 class enable_ref_ptr { public:
-    
+
     enable_ref_ptr()
 	: _use_count(1) {
     }
@@ -25,9 +25,9 @@ class enable_ref_ptr { public:
     ~enable_ref_ptr() {
 	assert(!_use_count);
     }
-    
+
   private:
-    
+
     uint32_t _use_count;
 
     enable_ref_ptr(const enable_ref_ptr &);
@@ -47,7 +47,7 @@ class enable_ref_ptr { public:
     uint32_t use_count() const {
 	return _use_count;
     }
-    
+
 };
 
 
@@ -114,7 +114,7 @@ template <typename T> class ref_ptr { public:
     operator unspecified_bool_type() const {
 	return _t ? &ref_ptr::get : 0;
     }
-    
+
     bool operator!() const {
 	return !_t;
     }

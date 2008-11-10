@@ -156,12 +156,12 @@ class FromFlanDump : public Element { public:
     Packet *pull(int);
 
     void set_active(bool);
-    
+
   private:
 
     static const uint32_t BUFFER_SIZE = 32768;
     static const int SAMPLING_SHIFT = 28;
-    
+
     class FlanFile { public:
 	FlanFile();
 	~FlanFile();
@@ -206,7 +206,7 @@ class FromFlanDump : public Element { public:
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 inline off_t

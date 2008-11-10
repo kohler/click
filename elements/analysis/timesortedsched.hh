@@ -76,14 +76,14 @@ class TimeSortedSched : public Element { public:
     void cleanup(CleanupStage);
 
     Packet *pull(int);
-    
+
   private:
 
     Packet **_vec;
     NotifierSignal *_signals;
     Notifier _notifier;
     bool _stop;
-    
+
 };
 
 CLICK_ENDDECLS

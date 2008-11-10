@@ -46,8 +46,8 @@
  * Change ACTIVE
  *
  * =e
- *  FastUDPSource(100000, 500000, 60, 0:0:0:0:0:0, 1.0.0.1, 1234, 
- *                                    1:1:1:1:1:1, 2.0.0.2, 1234) 
+ *  FastUDPSource(100000, 500000, 60, 0:0:0:0:0:0, 1.0.0.1, 1234,
+ *                                    1:1:1:1:1:1, 2.0.0.2, 1234)
  *    -> ToDevice;
  */
 
@@ -77,7 +77,7 @@ class FastUDPSource : public Element {
   void incr_ports();
 
  public:
-  
+
   static const unsigned NO_LIMIT = 0xFFFFFFFFU;
 
   GapRate _rate;
@@ -87,11 +87,11 @@ class FastUDPSource : public Element {
 
   FastUDPSource();
   ~FastUDPSource();
-  
+
   const char *class_name() const	{ return "FastUDPSource"; }
   const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PULL; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
@@ -105,11 +105,11 @@ class FastUDPSource : public Element {
   click_jiffies_t last() { return _last; }
 
 #if 0
-  friend int FastUDPSource_limit_write_handler 
+  friend int FastUDPSource_limit_write_handler
     (const String &, Element *e, void *, ErrorHandler *);
-  friend int FastUDPSource_rate_write_handler 
+  friend int FastUDPSource_rate_write_handler
     (const String &, Element *e, void *, ErrorHandler *);
-  friend int FastUDPSource_active_write_handler 
+  friend int FastUDPSource_active_write_handler
     (const String &, Element *e, void *, ErrorHandler *);
 #endif
 };

@@ -10,7 +10,7 @@ CLICK_DECLS
  * =s ipsec
  * encrypt packet using DES-CBC
  * =d
- * 
+ *
  * Encrypts or decrypts packet using DES-CBC. If the first argument is 0,
  * IPsecAES will decrypt. If the first argument is 1, IPsecAES will encrypt.
  * KEY is the DES secret key. Gets IV value from ESP header. IGNORE is the
@@ -42,18 +42,18 @@ class Aes : public Element {
    Aes();
    Aes(int);
    ~Aes();
-  
+
    const char *class_name() const	{ return "IPsecAES"; }
    const char *port_count() const	{ return PORTS_1_1; }
    const char *processing() const	{ return AGNOSTIC; }
-  
+
    int configure(Vector<String> &, ErrorHandler *);
    int initialize(ErrorHandler *);
 
    Packet *simple_action(Packet *);
 
    enum { AES_DECRYPT = 0, AES_ENCRYPT = 1 };
-  
+
  private:
    int AES_set_encrypt_key(const unsigned char *userKey, const int bits, AES_KEY *key);
    int AES_set_decrypt_key(const unsigned char *userKey, const int bits, AES_KEY *key);

@@ -181,7 +181,7 @@ class FromNLANRDump : public Element { public:
     Packet *pull(int);
 
     void set_active(bool);
-    
+
   private:
 
     enum { C_FR, C_FRPLUS, C_TSH };
@@ -214,14 +214,14 @@ class FromNLANRDump : public Element { public:
 	click_tcp tcph;		// last 4 bytes left off
 	enum { SIZE = 44 };
     };
-    
+
     static const uint32_t BUFFER_SIZE = 32768;
     static const int SAMPLING_SHIFT = 28;
 
     FromFile _ff;
 
     Packet *_packet;
-    
+
     bool _timing : 1;
     bool _have_first_time : 1;
     bool _have_last_time : 1;
@@ -237,7 +237,7 @@ class FromNLANRDump : public Element { public:
     Timestamp _first_time;
     Timestamp _last_time;
     HandlerCall *_end_h;
-    
+
     Task _task;
 
     Timestamp _time_offset;
@@ -249,7 +249,7 @@ class FromNLANRDump : public Element { public:
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

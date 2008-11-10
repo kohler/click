@@ -55,9 +55,9 @@ class KernelHandlerProxy : public HandlerProxy { public:
     void* cast(const char*);
 
     int configure(Vector<String>&, ErrorHandler*);
-  
+
     int check_handler(const String&, bool write, ErrorHandler* errh);
-  
+
     void add_handlers();
     int llrpc(unsigned, void*);
 
@@ -67,14 +67,14 @@ class KernelHandlerProxy : public HandlerProxy { public:
     bool _verbose;
     bool _dot_h_checked;
     bool _dot_h;
-  
+
     String handler_name_to_file_name(const String &str);
     static int handler_hook(int, String&, Element*, const Handler*, ErrorHandler*);
     static int star_write_handler(const String&, Element*, void*, ErrorHandler*);
     int complain(ErrorHandler*, const String&, int errcode, const String&);
     int complain_about_open(ErrorHandler*, const String&, int);
     int check_handler_name(const String&, ErrorHandler*);
-  
+
 };
 
 CLICK_ENDDECLS

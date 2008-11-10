@@ -22,17 +22,17 @@ CLICK_DECLS
  */
 
 class SimplePrioSched : public Element { public:
-  
+
     SimplePrioSched();
     ~SimplePrioSched();
-  
+
     const char *class_name() const	{ return "SimplePrioSched"; }
     const char *port_count() const	{ return "-/1"; }
     const char *processing() const	{ return PULL; }
     const char *flags() const		{ return "S0"; }
 
     Packet *pull(int port);
-  
+
 };
 
 CLICK_ENDDECLS

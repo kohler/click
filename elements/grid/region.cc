@@ -20,16 +20,16 @@
 #include "region.hh"
 CLICK_DECLS
 
-static double 
-max(double a, double b) 
+static double
+max(double a, double b)
 { return a > b ? a : b; }
 
-static double 
-min(double a, double b) 
+static double
+min(double a, double b)
 { return a > b ? b : a; }
 
 String
-RectRegion::s() 
+RectRegion::s()
 {
   char buf[200];
   if (empty())
@@ -43,7 +43,7 @@ RectRegion
 RectRegion::intersect(RectRegion &r)
 {
   RectRegion ret; // empty default region
-  if (empty() || r.empty()) 
+  if (empty() || r.empty())
     return r;
   if (!(r._x > _x + _w ||
 	r._x + r._w < _x ||
@@ -54,7 +54,7 @@ RectRegion::intersect(RectRegion &r)
     ret._w = min(_x + _w, r._x + r._w) - ret._x;
     ret._h = min(_y + _h, r._h + r._h) - ret._y;
   }
-  return ret;  
+  return ret;
 }
 
 

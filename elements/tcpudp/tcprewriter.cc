@@ -70,12 +70,12 @@ TCPRewriter::TCPMapping::apply_sack(click_tcp *tcph, int len)
 		  goto done;
 	      } else {
 		  uint8_t *end_sack = opt + opt[1];
-		  
+
 		  // develop initial checksum value
 		  uint16_t *csum_begin = reinterpret_cast<uint16_t *>(begin_opt + ((opt + 2 - begin_opt) & ~1));
 		  for (uint16_t *csum = csum_begin; reinterpret_cast<uint8_t *>(csum) < end_sack; csum++)
 		      csum_delta += ~*csum & 0xFFFF;
-		  
+
 		  for (opt += 2; opt < end_sack; opt += 8) {
 #if HAVE_INDIFFERENT_ALIGNMENT
 		      uint32_t *uopt = reinterpret_cast<uint32_t *>(opt);
@@ -89,7 +89,7 @@ TCPRewriter::TCPMapping::apply_sack(click_tcp *tcph, int len)
 		      memcpy(opt, &buf[0], 8);
 #endif
 		  }
-		  
+
 		  // finish off csum_delta calculation
 		  for (uint16_t *csum = csum_begin; reinterpret_cast<uint8_t *>(csum) < end_sack; csum++)
 		      csum_delta += *csum;
@@ -123,11 +123,11 @@ TCPRewriter::TCPMapping::apply(WritablePacket *p)
     iph->ip_sum = ~(sum + (sum >> 16));
 
     mark_used();
-  
+
     // end if not first fragment
     if (!IP_FIRSTFRAG(iph))
 	return;
-  
+
     // TCP header
     click_tcp *tcph = p->tcp_header();
     tcph->th_sport = _mapto.sport();
@@ -231,7 +231,7 @@ TCPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if (conf.size() != ninputs())
       return errh->error("need %d arguments, one per input port", ninputs());
-  
+
   for (int i = 0; i < conf.size(); i++) {
     InputSpec is;
     if (parse_input_spec(conf[i], is, "input spec " + String(i), errh) >= 0)
@@ -298,7 +298,7 @@ TCPRewriter::take_state(Element *e, ErrorHandler *errh)
 	q = _all_patterns[j];
     pattern_map.push_back(q);
   }
-  
+
   take_state_map(_tcp_map, &_tcp_done, &_tcp_done_tail, rw->_all_patterns, pattern_map);
 }
 
@@ -334,7 +334,7 @@ TCPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
       Mapping::make_pair(ip_p, flow, flow, fport, rport, forward, reverse);
     else if (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse, _tcp_map))
       goto failure;
-    
+
     IPFlowID reverse_flow = forward->flow_id().rev();
     _tcp_map.set(flow, forward);
     _tcp_map.set(reverse_flow, reverse);
@@ -367,7 +367,7 @@ TCPRewriter::push(int port, Packet *p_in)
   }
 
   TCPMapping *m = static_cast<TCPMapping *>(_tcp_map.get(flow));
-  
+
   if (!m) {			// create new mapping
     const InputSpec &is = _input_specs[port];
     switch (is.kind) {
@@ -392,14 +392,14 @@ TCPRewriter::push(int port, Packet *p_in)
        m = static_cast<TCPMapping *>(is.u.mapper->get_map(this, IP_PROTO_TCP, flow, p));
        break;
      }
-     
+
     }
     if (!m) {
       p->kill();
       return;
     }
   }
-  
+
   m->apply(p);
   output(m->output()).push(p);
 
@@ -470,7 +470,7 @@ TCPRewriter::llrpc(unsigned command, void *data)
       return -EAGAIN;
     *val = m->flow_id();
     return 0;
-    
+
   } else
     return Element::llrpc(command, data);
 }

@@ -15,24 +15,24 @@ CLICK_DECLS
  */
 
 class DiscardNoFree : public Element { public:
-  
+
   DiscardNoFree();
   ~DiscardNoFree();
-  
+
   const char *class_name() const		{ return "DiscardNoFree"; }
   const char *port_count() const		{ return PORTS_1_0; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int initialize(ErrorHandler *);
   void add_handlers();
-  
+
   void push(int, Packet *);
   bool run_task(Task *);
 
  private:
 
   Task _task;
-  
+
 };
 
 CLICK_ENDDECLS

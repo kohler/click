@@ -74,10 +74,10 @@ ARPQuerier
 */
 
 class ARPTable : public Element { public:
-  
+
     ARPTable();
     ~ARPTable();
-  
+
     const char *class_name() const		{ return "ARPTable"; }
 
     int configure(Vector<String> &, ErrorHandler *);
@@ -85,7 +85,7 @@ class ARPTable : public Element { public:
     void take_state(Element *, ErrorHandler *);
     void add_handlers();
     void cleanup(CleanupStage);
-    
+
     int lookup(IPAddress ip, EtherAddress *eth, click_jiffies_t poll_jiffies);
     EtherAddress lookup(IPAddress ip);
     IPAddress reverse_lookup(const EtherAddress &eth);
@@ -120,13 +120,13 @@ class ARPTable : public Element { public:
     }
 
     void run_timer(Timer *);
-    
+
     enum {
 	h_table, h_insert, h_delete, h_clear
     };
     static String read_handler(Element *e, void *user_data);
     static int write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh);
-    
+
     struct ARPEntry {		// This structure is now larger than I'd like
 	IPAddress _ip;		// (40B) but probably still fine.
 	ARPEntry *_hashnext;
@@ -156,7 +156,7 @@ class ARPTable : public Element { public:
     };
 
   private:
-    
+
     ReadWriteLock _lock;
 
     typedef HashContainer<ARPEntry> Table;
@@ -174,7 +174,7 @@ class ARPTable : public Element { public:
 
     ARPEntry *ensure(IPAddress ip);
     void slim();
-    
+
 };
 
 inline int

@@ -13,17 +13,17 @@ CLICK_DECLS
  *
  * Splits packets based on the fwd_rate_anno and rev_rate_anno rate annotations
  * set by IPRateMonitor. If either annotation is greater than THRESH,
- * and FWD_WEIGHT*fwd_rate_anno > REV_WEIGHT*rev_rate_anno, 
+ * and FWD_WEIGHT*fwd_rate_anno > REV_WEIGHT*rev_rate_anno,
  * the packet is pushed on output 1, otherwise on output 0.
  *
  * =e
  *   b :: CompareBlock(5, 2, 100);
  * if (5*fwd_rate > 2*rev_rate) AND (fwd_rate > 100 or rev_rate > 100), send
  * packet out on output 1, otherwise on output 0.
- * 
+ *
  * =h fwd_weight read/write
  * value of FWD_WEIGHT
- * 
+ *
  * =h rev_weight read/write
  * value of REV_WEIGHT
  *
@@ -34,7 +34,7 @@ CLICK_DECLS
  */
 
 class CompareBlock : public Element { public:
-  
+
   CompareBlock();
   ~CompareBlock();
 
@@ -42,7 +42,7 @@ class CompareBlock : public Element { public:
   const char *port_count() const		{ return "1/2"; }
   const char *processing() const	        { return AGNOSTIC; }
   void add_handlers();
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   void push(int port, Packet *);
 

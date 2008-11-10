@@ -197,7 +197,7 @@ IPReassembler::make_queue(Packet *p, WritablePacket **q_pprev)
     q_iph->ip_off = (iph->ip_off & ~htons(IP_OFFMASK)); // leave MF, DF, RF
     if (p_off == 0)
 	q->copy_annotations(p);
-    
+
     // copy data
     memcpy(q->transport_header() + p_off, p->transport_header(), PACKET_DLEN(p));
     PACKET_CHUNK(q).off = p_off;
@@ -206,7 +206,7 @@ IPReassembler::make_queue(Packet *p, WritablePacket **q_pprev)
     // link it up
     q->set_next(*q_pprev);
     *q_pprev = q;
-    
+
     check();
 }
 
@@ -222,7 +222,7 @@ IPReassembler::next_chunk(WritablePacket *q, ChunkLink *chunk)
 Packet *
 IPReassembler::simple_action(Packet *p)
 {
-    // check common case: not a fragment 
+    // check common case: not a fragment
     assert(p->has_network_header());
     const click_ip *iph = p->ip_header();
     if (!IP_ISFRAG(iph))
@@ -340,7 +340,7 @@ IPReassembler::simple_action(Packet *p)
     // clear MF if incoming packet has it cleared
     if (!(iph->ip_off & htons(IP_MF)))
 	q->ip_header()->ip_off &= ~htons(IP_MF);
-    
+
     // Are we done with this packet?
     if ((q->ip_header()->ip_off & htons(IP_MF)) == 0
 	&& PACKET_CHUNK(q).off == 0

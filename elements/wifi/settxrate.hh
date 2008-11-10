@@ -19,7 +19,7 @@ Sets the Wifi TXRate Annotation on a packet.
 Regular Arguments:
 =over 8
 
-=item RATE 
+=item RATE
 Unsigned integer. Rate value is multiplied by 2 (i.e. 2
 means 1 Mbps, 11 means 5.5 Mbps)
 
@@ -32,25 +32,25 @@ Same as RATE Argument
 */
 
 class SetTXRate : public Element { public:
-  
+
   SetTXRate();
   ~SetTXRate();
-  
+
   const char *class_name() const		{ return "SetTXRate"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
 
   Packet *simple_action(Packet *);
 
   void add_handlers();
-  static String read_handler(Element *e, void *);  
+  static String read_handler(Element *e, void *);
   static int write_handler(const String &arg, Element *e,
 			   void *, ErrorHandler *errh);
 private:
-  
+
   int _rate;
   int _tries;
   uint16_t _et;     // This protocol's ethertype

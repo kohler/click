@@ -41,7 +41,7 @@ class StaticIPLookup : public LinearIPLookup { public:
 
     const char *class_name() const	{ return "StaticIPLookup"; }
     void add_handlers();
-    
+
     int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
     int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
 

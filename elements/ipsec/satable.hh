@@ -10,18 +10,18 @@
 CLICK_DECLS
 
 class SATable : public Element { public:
-  
+
   SATable();
   ~SATable();
-  
+
   const char *class_name() const		{ return "SATable"; }
-  String print_sa_data();    
+  String print_sa_data();
   int insert(SPI this_spi , SADataTuple SA_data) ;
   int remove(unsigned int spi);
   SADataTuple * lookup(SPI this_spi);
 
 private:
-  //Defines a click hashmap object the SA table in our case 
+  //Defines a click hashmap object the SA table in our case
   typedef HashMap<SPI,SADataTuple> STable;
   typedef STable::const_iterator SIter;
   STable _table;

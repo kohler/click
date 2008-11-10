@@ -19,7 +19,7 @@ CLICK_DECLS
  *
  * =e
  *   b :: Block(500);
- *   
+ *
  *   ... -> Monitor(...) ->
  *   ... -> b[0] -> ...
  *   ... -> b[1] -> Discard;
@@ -33,9 +33,9 @@ CLICK_DECLS
  */
 
 class Block : public Element {
-  
+
  public:
-  
+
   Block();
   ~Block();
 
@@ -43,10 +43,10 @@ class Block : public Element {
   const char *port_count() const		{ return "1/2"; }
   const char *processing() const	        { return AGNOSTIC; }
   void add_handlers();
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   // bool can_live_reconfigure() const		{ return true; }
-  
+
   void push(int port, Packet *);
   // Packet *pull(int port);
 
@@ -56,7 +56,7 @@ class Block : public Element {
 
   static int thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
   static String thresh_read_handler(Element *e, void *);
-  
+
 };
 
 CLICK_ENDDECLS

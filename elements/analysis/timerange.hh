@@ -67,17 +67,17 @@ class TimeRange : public Element { public:
     void add_handlers();
 
     Packet *simple_action(Packet *);
-    
+
   private:
 
     Timestamp _first;
     Timestamp _last;
-    
+
     bool _simple;
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler*);
-    
+
 };
 
 CLICK_ENDDECLS

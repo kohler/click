@@ -75,7 +75,7 @@ BIM::initialize(ErrorHandler *errh)
     return 0;
   else if (!_dev)
     return errh->error("device name not set");
-  
+
   char *dname = _dev.mutable_c_str();
   _fd = open(dname, O_RDWR|O_NONBLOCK, 0);
   if(_fd < 0)
@@ -115,7 +115,7 @@ BIM::initialize(ErrorHandler *errh)
 
   ScheduleInfo::join_scheduler(this, &_task, errh);
   add_select(_fd, SELECT_READ | SELECT_WRITE);
-  
+
   return 0;
 }
 
@@ -124,7 +124,7 @@ BIM::selected(int fd)
 {
   int cc, i;
   char b[128];
-  
+
   if (fd != _fd)
     return;
 
@@ -170,7 +170,7 @@ BIM::run_task(Task *)
 {
   Packet *p = input(0).pull();
   if (p)
-    push(0, p); 
+    push(0, p);
   _task.fast_reschedule();
   return p != 0;
 }

@@ -93,7 +93,7 @@ LookupGeographicGridRoute::run_task(Task *)
 {
   Packet *p = input(0).pull();
   if (p)
-    push(0, p); 
+    push(0, p);
   _task.fast_reschedule();
   return p != 0;
 }
@@ -117,14 +117,14 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     notify_route_cbs(packet, 0, GRCB::Drop, GRCB::UnknownType, 0);
     output(1).push(packet);
     return;
-  } 
+  }
 
   unsigned dest_ip = 0; // XXX this is a total fuckup, since we can only extract dest_ip for nbr_encap packets
   if (gh->type == grid_hdr::GRID_NBR_ENCAP) {
     struct grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
     dest_ip = nb->dst_ip;
   }
-  
+
 
   if (!_li->loc_good()) {
     click_chatter("LookupGeographicGridRoute %s: can't forward packet; we don't know our own location", name().c_str());
@@ -146,7 +146,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
   IPAddress next_hop_ip;
   unsigned char next_hop_interface = 0;
   IPAddress best_nbr_ip;
-  bool found_next_hop = get_next_geographic_hop(get_dest_loc(packet), &next_hop_eth, &next_hop_ip, 
+  bool found_next_hop = get_next_geographic_hop(get_dest_loc(packet), &next_hop_eth, &next_hop_ip,
 						&best_nbr_ip, &next_hop_interface);
 
   WritablePacket *xp = packet->uniqueify();
@@ -164,7 +164,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     output(0).push(xp);
   }
   else {
-    click_chatter("LookupGeographicGridRoute %s: unable to forward %s packet with geographic routing", 
+    click_chatter("LookupGeographicGridRoute %s: unable to forward %s packet with geographic routing",
 		  name().c_str(), grid_hdr::type_string(gh->type).c_str());
 #if 0
     if (gh->type ==  grid_hdr::GRID_NBR_ENCAP) {
@@ -185,9 +185,9 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
 }
 
 
-bool 
-LookupGeographicGridRoute::get_next_geographic_hop(grid_location dest_loc, EtherAddress *dest_eth, 
-						   IPAddress *dest_ip, IPAddress *best_nbr, 
+bool
+LookupGeographicGridRoute::get_next_geographic_hop(grid_location dest_loc, EtherAddress *dest_eth,
+						   IPAddress *dest_ip, IPAddress *best_nbr,
 						   unsigned char *next_hop_interface) const
 {
   /*
@@ -200,16 +200,16 @@ LookupGeographicGridRoute::get_next_geographic_hop(grid_location dest_loc, Ether
   assert(_li->loc_good());
   double d = grid_location::calc_range(dest_loc, _li->get_current_location());
   bool found_one = false;
-  
+
   Vector<GridGenericRouteTable::RouteEntry> rtes;
   _rt->get_all_entries(rtes);
-  
+
   GridGenericRouteTable::RouteEntry best_nbr_entry;
 
   for (int i = 0; i < rtes.size(); i++) {
     const GridGenericRouteTable::RouteEntry &rte = rtes[i];
     if (!rte.loc_good)
-      continue; 
+      continue;
     double new_d = grid_location::calc_range(dest_loc, rte.dest_loc);
     if (!found_one) {
       found_one = true;
@@ -240,9 +240,9 @@ LookupGeographicGridRoute::get_next_geographic_hop(grid_location dest_loc, Ether
   *dest_ip = best_nbr_entry.next_hop_ip;
   *next_hop_interface = best_nbr_entry.next_hop_interface;
   *best_nbr = best_nbr_entry.dest_ip;
-  
+
   return true;
-} 
+}
 
 
 void
@@ -301,7 +301,7 @@ bool
 LookupGeographicGridRoute::dest_loc_good(const Packet *p) const
 {
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
-    
+
   switch (gh->type) {
   case grid_hdr::GRID_NBR_ENCAP:
   case grid_hdr::GRID_LOC_REPLY:
@@ -310,7 +310,7 @@ LookupGeographicGridRoute::dest_loc_good(const Packet *p) const
 #ifndef SMALL_GRID_HEADERS
     struct grid_nbr_encap *encap = (grid_nbr_encap *) (p->data() + sizeof(click_ether) + gh->hdr_len);
     return encap->dst_loc_good;
-#else 
+#else
     return false;
 #endif
     break;

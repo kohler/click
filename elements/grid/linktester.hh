@@ -8,13 +8,13 @@
 CLICK_DECLS
 
 /*
- * =c 
+ * =c
  * LinkTester(SRC, DST [, KEYWORDS])
- * 
+ *
  * =s Grid
  *
- * =d 
- * 
+ * =d
+ *
  * Send experimental packets over wireless link to test link
  * characteristics.  Packets are sent with source and destination
  * ethernet address SRC_ETH and DST_ETH.  The ethernet type code is
@@ -58,7 +58,7 @@ CLICK_DECLS
  * =item BROADCAST_PACKET_SZ
  *
  * Unsigned integer.  Size of unicast or broadcast packets, including
- * ethernet header and experiment header. 
+ * ethernet header and experiment header.
  *
  * =item UNICAST_LAMBDA
  * =item BROADCAST_LAMBDA
@@ -96,7 +96,7 @@ public:
 private:
 
   void timer_hook();
-  static void static_timer_hook(Timer *, void *e) 
+  static void static_timer_hook(Timer *, void *e)
   { static_cast<LinkTester *>(e)->timer_hook(); }
 
   bool experiment_params_ok(ErrorHandler *);
@@ -122,7 +122,7 @@ private:
   Timestamp last_unicast_time(unsigned int iter);
   Timestamp last_bcast_time(unsigned int iter, bool before);
 
-  void send_unicast_packet(const Timestamp &, 
+  void send_unicast_packet(const Timestamp &,
 			   unsigned int seq, unsigned int iter);
   void send_broadcast_packet(unsigned short psz, const Timestamp &,
 			     bool before, unsigned int seq, unsigned int iter);
@@ -132,9 +132,9 @@ private:
   bool init_random();
   double draw_random(double lambda);
 
-  unsigned int draw_random_msecs(double lambda) 
+  unsigned int draw_random_msecs(double lambda)
   { return static_cast<unsigned int>(draw_random(lambda)); }
-  
+
   enum state_t {
     WAITING_TO_START,
     LISTENING,
@@ -165,7 +165,7 @@ private:
   unsigned int _packet_size;   // bytes, including ether header
   unsigned int _send_time;     // length of unicast sending period, milliseconds
   double _lambda;              // exponential distribution parameter
-  
+
   // broadcast tx parameters, as in unicast
   unsigned int _bcast_packet_size;
   unsigned int _bcast_send_time;

@@ -55,7 +55,7 @@ SetTCPChecksum::simple_action(Packet *p_in)
   if (!p->has_transport_header() || plen < sizeof(click_tcp)
       || plen > (unsigned)p->transport_length())
     goto bad;
-  
+
   if (_fixoff) {
     unsigned off = tcph->th_off << 2;
     if (off < sizeof(click_tcp))

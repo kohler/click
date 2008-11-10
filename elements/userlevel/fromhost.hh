@@ -11,11 +11,11 @@ CLICK_DECLS
 
 /*
  * =title FromHost.u
- * 
+ *
  * =c
- * 
+ *
  * FromHost(DEVNAME [, DST, GATEWAY, HEADROOM] [, I<KEYWORDS>])
- * 
+ *
  * =s comm
  *
  * interface to /dev/net/tun or ethertap (user-level)
@@ -64,21 +64,21 @@ CLICK_DECLS
  *      -> fromhost_cl :: Classifier(12/0806, 12/0800);
  *  fromhost_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> tap0;
  *  fromhost_cl[1] -> ... // IP packets
- * 
+ *
  * =e
  *
  *  FromHost(fake, 192.0.0.1/8) -> ...;
- * 
+ *
  * An error like "open /dev/net/tun: No such file or directory" usually means
  * that you have not enabled tunnel support in your kernel.
  *
  * =h dev_name read-only
  * Returns the name of the device that this element is using.
  *
- * =a 
- * 
- * ToHost.u, ifconfig(8) 
- * 
+ * =a
+ *
+ * ToHost.u, ifconfig(8)
+ *
  */
 
 class FromHost : public Element { public:
@@ -91,7 +91,7 @@ class FromHost : public Element { public:
 
     FromHost();
     ~FromHost();
-  
+
     const char *class_name() const	{ return "FromHost"; }
     const char *port_count() const	{ return PORTS_0_1; }
     const char *processing() const	{ return PUSH; }

@@ -5,7 +5,7 @@ CLICK_DECLS
 
 /*
  * B8B10(ENCODE)
- * 
+ *
  * If ENCODE is 1, encode each packet with a 8b10b code.
  * If ENCODE is 0, decode.
  *
@@ -24,7 +24,7 @@ public:
   const char *processing() const	{ return AGNOSTIC; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  
+
   Packet *simple_action(Packet *);
 
 private:

@@ -61,7 +61,7 @@ IPRw::Mapping::initialize(int ip_p, const IPFlowID &in, const IPFlowID &out,
     assert(output >= 0 && output < 256);
     _flags |= flags;
     _reverse = reverse;
-  
+
     // set checksum deltas
     const unsigned short* source_words = (const unsigned short*)&in;
     const unsigned short* dest_words = (const unsigned short*)&_mapto;
@@ -72,7 +72,7 @@ IPRw::Mapping::initialize(int ip_p, const IPFlowID &in, const IPFlowID &out,
     }
     delta = (delta & 0xFFFF) + (delta >> 16);
     _ip_csum_delta = delta + (delta >> 16);
-  
+
     for (int i = 4; i < 6; i++) {
 	delta += ~source_words[i] & 0xFFFF;
 	delta += dest_words[i];
@@ -95,7 +95,7 @@ IPRw::Mapping::apply(WritablePacket *p)
 {
     assert(p->has_network_header());
     click_ip *iph = p->ip_header();
-  
+
     // IP header
     iph->ip_src = _mapto.saddr();
     iph->ip_dst = _mapto.daddr();
@@ -111,15 +111,15 @@ IPRw::Mapping::apply(WritablePacket *p)
     // end if not first fragment
     if (!IP_FIRSTFRAG(iph))
 	return;
-  
+
     // UDP/TCP header
     if (_ip_p == IP_PROTO_TCP) {
-    
+
 	click_tcp *tcph = p->tcp_header();
 	tcph->th_sport = _mapto.sport();
 	tcph->th_dport = _mapto.dport();
 	click_update_in_cksum(&tcph->th_sum, 0xFFFF, _udp_csum_delta);
-    
+
 	// check for session ending flags
 	if (tcph->th_flags & TH_RST)
 	    set_session_over();
@@ -127,15 +127,15 @@ IPRw::Mapping::apply(WritablePacket *p)
 	    set_session_flow_over();
 	else if (tcph->th_flags & TH_SYN)
 	    clear_session_flow_over();
-	
+
     } else if (_ip_p == IP_PROTO_UDP) {
-    
+
 	click_udp *udph = p->udp_header();
 	udph->uh_sport = _mapto.sport();
 	udph->uh_dport = _mapto.dport();
 	if (udph->uh_sum)	// 0 checksum is no checksum
 	    click_update_in_cksum(&udph->uh_sum, 0xFFFF, _udp_csum_delta);
-    
+
     }
 }
 
@@ -184,16 +184,16 @@ IPRw::Pattern::parse_napt(Vector<String> &words, Pattern **pstore,
 {
     if (words.size() != 4)
 	return pattern_error(PE_NAPT, errh);
-  
+
     IPAddress saddr, daddr;
     int32_t sportl, sporth, dport;
     bool sequential = false;
-  
+
     if (words[0] == "-")
 	saddr = 0;
     else if (!cp_ip_address(words[0], &saddr, e))
 	return pattern_error(PE_SADDR, errh);
-  
+
     if (words[1] == "-")
 	sportl = sporth = 0;
     else {
@@ -213,7 +213,7 @@ IPRw::Pattern::parse_napt(Vector<String> &words, Pattern **pstore,
 	daddr = 0;
     else if (!cp_ip_address(words[2], &daddr, e))
 	return pattern_error(PE_DADDR, errh);
-  
+
     if (words[3] == "-")
 	dport = 0;
     else if (!cp_integer(words[3], &dport) || dport <= 0 || dport > 0xFFFF)
@@ -229,7 +229,7 @@ IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
 {
     if (words.size() != 1 && words.size() != 2)
 	return pattern_error(PE_NAT, errh);
-  
+
     IPAddress saddr1, saddr2;
     bool sequential = false;
     if (words[0] == "-")
@@ -265,7 +265,7 @@ IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
 	daddr = 0;
     else if (!cp_ip_address(words[1], &daddr, e) || !daddr)
 	return pattern_error(PE_DADDR, errh);
-    
+
     *pstore = new Pattern(saddr1, 0, daddr, 0, false, sequential, ntohl(saddr2.addr()) - ntohl(saddr1.addr()));
     return 0;
 }
@@ -476,9 +476,9 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
     if (!cp_word(line, &word, &rest))
 	return cerrh.error("empty argument");
     cp_eat_space(rest);
-  
+
     is.kind = INPUT_SPEC_DROP;
-  
+
     if (word == "pass" || word == "passthrough" || word == "nochange") {
 	int32_t outnum = 0;
 	if (rest && !cp_integer(rest, &outnum))
@@ -487,7 +487,7 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
 	    return cerrh.error("output port out of range");
 	is.kind = INPUT_SPEC_NOCHANGE;
 	is.u.output = outnum;
-    
+
     } else if (word == "keep") {
 	if (cp_va_space_kparse(rest, this, ErrorHandler::silent_handler(),
 			       "FOUTPUT", cpkP+cpkM, cpUnsigned, &is.u.pattern.fport,
@@ -498,11 +498,11 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
 	    return cerrh.error("output port out of range");
 	is.kind = INPUT_SPEC_KEEP;
 	is.u.pattern.p = 0;
-    
+
     } else if (word == "drop" || word == "discard") {
 	if (rest)
 	    return cerrh.error("syntax error, expected '%s'", word.c_str());
-    
+
     } else if (word == "pattern") {
 	if (Pattern::parse_with_ports(rest, &is.u.pattern.p, &is.u.pattern.fport, &is.u.pattern.rport, this, &cerrh) < 0)
 	    return -1;
@@ -512,7 +512,7 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
 	is.kind = INPUT_SPEC_PATTERN;
 	if (notify_pattern(is.u.pattern.p, &cerrh) < 0)
 	    return -1;
-    
+
     } else if (Element *e = cp_element(word, this, 0)) {
 	IPMapper *mapper = (IPMapper *)e->cast("IPMapper");
 	if (rest)
@@ -524,10 +524,10 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
 	    is.u.mapper = mapper;
 	    mapper->notify_rewriter(this, &cerrh);
 	}
-    
+
     } else
 	return cerrh.error("unknown specification");
-  
+
     return 0;
 }
 
@@ -555,7 +555,7 @@ IPRw::take_state_map(Map &map, Mapping **free_head, Mapping **free_tail,
     Mapping *to_free = 0;
     int np = in_patterns.size();
     int no = noutputs();
-  
+
     for (Map::iterator iter = map.begin(); iter.live(); iter++) {
 	Mapping *m = iter.value();
 	if (m->is_primary()) {

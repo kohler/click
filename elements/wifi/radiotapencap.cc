@@ -84,13 +84,13 @@ RadiotapEncap::simple_action(Packet *p)
   if (p_out) {
 	  struct click_radiotap_header *crh  = (struct click_radiotap_header *) p_out->data();
 	  click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
-	  
+
 	  memset(crh, 0, sizeof(struct click_radiotap_header));
-	  
+
 	  crh->wt_ihdr.it_version = 0;
 	  crh->wt_ihdr.it_len = sizeof(struct click_radiotap_header);
 	  crh->wt_ihdr.it_present = CLICK_RADIOTAP_PRESENT;
-	  
+
 	  crh->wt_rate = ceh->rate;
 	  crh->wt_txpower = ceh->power;
 	  crh->wt_rts_retries = 0;
@@ -98,14 +98,14 @@ RadiotapEncap::simple_action(Packet *p)
 		  crh->wt_data_retries = ceh->max_tries - 1;
 	  }
   }
-  
+
   return p_out;
 }
 
 
 enum {H_DEBUG};
 
-static String 
+static String
 RadiotapEncap_read_param(Element *e, void *thunk)
 {
   RadiotapEncap *td = (RadiotapEncap *)e;
@@ -116,7 +116,7 @@ RadiotapEncap_read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 RadiotapEncap_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -125,7 +125,7 @@ RadiotapEncap_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -133,7 +133,7 @@ RadiotapEncap_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 RadiotapEncap::add_handlers()
 {

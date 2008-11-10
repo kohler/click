@@ -62,10 +62,10 @@ AggregateFirst, AggregateIP, AggregateIPFlows, AggregateCounter,
 AggregateFilter */
 
 class AggregateLast : public Element, public AggregateListener { public:
-  
+
     AggregateLast();
     ~AggregateLast();
-  
+
     const char *class_name() const	{ return "AggregateLast"; }
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PUSH; }
@@ -79,17 +79,17 @@ class AggregateLast : public Element, public AggregateListener { public:
 
     void aggregate_notify(uint32_t, AggregateEvent, const Packet *);
     void add_handlers();
-    
+
   private:
 
     enum { ROW_BITS = 10, ROW_SHIFT = 0, NROW = 1<<ROW_BITS, ROW_MASK = NROW - 1,
 	   COL_BITS = 16, COL_SHIFT = ROW_BITS, NCOL = 1<<COL_BITS, COL_MASK = NCOL - 1,
 	   PLANE_BITS = 32 - ROW_BITS - COL_BITS, PLANE_SHIFT = COL_SHIFT + COL_BITS, NPLANE = 1<<PLANE_BITS, PLANE_MASK = NPLANE - 1 };
-    
+
     Packet ***_packets[NPLANE];
     AggregateNotifier *_agg_notifier;
     uint32_t *_counts[NPLANE];
-    
+
     Task _clear_task;
     uint32_t _needs_clear;	// XXX atomic
     bool _stop_after_clear;

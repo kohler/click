@@ -21,7 +21,7 @@ CLICK_DECLS
  * DRRSched uses notification to avoid pulling from empty inputs.
  *
  * =n
- * 
+ *
  * DRRSched is a notifier signal, active iff any of the upstream notifiers
  * are active.
  *
@@ -29,22 +29,22 @@ CLICK_DECLS
  */
 
 class DRRSched : public Element { public:
-  
+
     DRRSched();
     ~DRRSched();
-  
+
     const char *class_name() const		{ return "DRRSched"; }
     const char *port_count() const		{ return "-/1"; }
     const char *processing() const		{ return PULL; }
     const char *flags() const			{ return "S0"; }
     void *cast(const char *);
-  
+
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
-  
+
     Packet *pull(int port);
-    
+
   private:
 
     int _quantum;   // Number of bytes to send per round.
@@ -54,7 +54,7 @@ class DRRSched : public Element { public:
     NotifierSignal *_signals;	// upstream signals
     Notifier _notifier;
     int _next;      // Next input to consider.
-  
+
 };
 
 CLICK_ENDDECLS

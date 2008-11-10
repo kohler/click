@@ -7,7 +7,7 @@
  *
  * Added Security Association Database support. Dimitris Syrivelis <jsyr@inf.uth.gr>, University of Thessaly, *
  * Hellas
- *  
+ *
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -45,7 +45,7 @@ IPsecESPEncap::~IPsecESPEncap()
 
 int
 IPsecESPEncap::configure(Vector<String> &, ErrorHandler *)
-{ 
+{
   return 0;
 }
 
@@ -53,18 +53,18 @@ Packet *
 IPsecESPEncap::simple_action(Packet *p)
 {
   int i;
-  SADataTuple * sa_data; 
+  SADataTuple * sa_data;
   u_char ip_p=0;
 
   // extract protocol header
   if (p->has_network_header())
       ip_p = p->ip_header()->ip_p;
   sa_data=(SADataTuple *)IPSEC_SA_DATA_REFERENCE_ANNO(p);
-  
+
   // make room for ESP header and padding
   int plen = p->length();
   int padding = ((BLKS - ((plen + 2) % BLKS)) % BLKS) + 2;
-  
+
   WritablePacket *q = p->push(sizeof(esp_new));
   q = q->put(padding);
 
@@ -75,9 +75,9 @@ IPsecESPEncap::simple_action(Packet *p)
   // Get SPI from packet user annotation. This is the fourth user integer.
   esp->esp_spi = htonl((uint32_t)IPSEC_SPI_ANNO(p));
   esp->esp_rpl = htonl(sa_data->cur_rpl);
- 
+
   if((sa_data->cur_rpl++) == 0) {
- 	//if the replay counter rolls over...set it to the agreed start value
+	//if the replay counter rolls over...set it to the agreed start value
         sa_data->cur_rpl = sa_data->replay_start_counter;
   }
   i = click_random() >> 2;
@@ -93,7 +93,7 @@ IPsecESPEncap::simple_action(Packet *p)
 
   // next header = ip protocol number
   pad[padding - 1] = ip_p;
-  
+
   return(q);
 }
 

@@ -46,7 +46,7 @@ LocationTable::read_args(const Vector<String> &conf, ErrorHandler *errh)
 				 cpEnd);
     if (res < 0)
       return -1;
-    
+
     grid_location loc((double) lat /  1.0e7, (double) lon /  1.0e7);
     bool is_new = _locs.insert(ip, entry(loc, err));
     if (!is_new)
@@ -66,7 +66,7 @@ static String
 table_read_handler(Element *f, void *)
 {
   LocationTable *l = (LocationTable *) f;
-  
+
   String res("");
   const int BUFSZ = 255;
   char buf[BUFSZ];
@@ -82,7 +82,7 @@ table_read_handler(Element *f, void *)
   return res;
 }
 
-bool 
+bool
 LocationTable::get_location(IPAddress ip, grid_location &loc, int &err_radius)
 {
   entry *l2 = _locs.findp(ip);

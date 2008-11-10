@@ -127,7 +127,7 @@ combine_classifiers(RouterT *router, ElementT *from, int from_port, ElementT *to
 {
   ElementClassT *classifier_t = ElementClassT::base_type("Classifier");
   assert(from->type() == classifier_t && to->type() == classifier_t);
-  
+
   // find where 'to' is heading for
   Vector<int> first_hop, second_hop;
   router->find_connection_vector_from(from, first_hop);
@@ -366,12 +366,12 @@ static RouterT *
 classifiers_program(RouterT *r, const Vector<ElementT *> &classifiers)
 {
     RouterT *nr = new RouterT;
-    
+
     ElementT *idle = nr->add_anon_element(ElementClassT::base_type("Idle"));
     const Vector<String> &old_requirements = r->requirements();
     for (int i = 0; i < old_requirements.size(); i++)
 	nr->add_requirement(old_requirements[i]);
-  
+
     // copy AlignmentInfos and AddressInfos
     copy_elements(r, nr, ElementClassT::base_type("AlignmentInfo"));
     copy_elements(r, nr, ElementClassT::base_type("AddressInfo"));
@@ -379,10 +379,10 @@ classifiers_program(RouterT *r, const Vector<ElementT *> &classifiers)
     // copy all classifiers
     for (int i = 0; i < classifiers.size(); i++) {
 	ElementT *c = classifiers[i];
-    
+
 	// add new classifier and connections to idle
 	ElementT *nc = nr->get_element(c->name(), c->type(), c->configuration(), c->landmarkt());
-  
+
 	nr->add_connection(idle, i, nc, 0);
 	// count number of output ports
 	int noutputs = c->noutputs();
@@ -431,14 +431,14 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
 	pos1++;
       ename = handler_text.substring(pos, pos1 - pos);
       bool ok = false;
-      
+
       // read handler name
       if (pos1 < len && s[pos1] == '.') {
 	pos1 = pos = pos1 + 1;
 	while (pos1 < len && s[pos1] != ':' && !isspace((unsigned char) s[pos1]))
 	  pos1++;
 	hname = handler_text.substring(pos, pos1 - pos);
-	
+
 	// skip to EOL; data is good
 	if (pos1 < len && s[pos1] == ':') {
 	  for (pos1++; pos1 < len && s[pos1]!='\n' && s[pos1]!='\r'; pos1++)
@@ -449,7 +449,7 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
 	  ok = true;
 	}
       }
-      
+
       // skip to paragraph break
       int last_line_start = pos1;
       for (pos = pos1; pos1 < len; pos1++)
@@ -491,7 +491,7 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
     String classifier_tname = c->type_name();
     prog.type = cid_name_map.get(classifier_tname);
     assert(prog.type >= 0);
-    
+
     prog.safe_length = prog.output_everything = prog.align_offset = -1;
     prog.noutputs = c->noutputs();
     while (program) {
@@ -549,7 +549,7 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
       String class_name = "Fast" + classifier_tname + "@@" + c->name();
       String cxx_name = translate_class_name(class_name);
       prog.eclass = ElementClassT::base_type(class_name);
-      
+
       // add new program
       all_programs.push_back(prog);
       gen_eclass_names.push_back(class_name);
@@ -578,7 +578,7 @@ output_classifier_program(int which,
     cid->headers(prog, source);
     cid->headers = 0;		// only call cid->headers once
   }
-  
+
   header << "class " << cxx_name << " : public Element {\n\
   void devirtualize_all() { }\n\
  public:\n  "
@@ -603,7 +603,7 @@ output_classifier_program(int which,
       cid->checked_body(prog, source);
       source << "}\n";
     }
-    
+
     header << "  inline void length_unchecked_push(Packet *);\n\
   void push(int, Packet *);\n};\n";
     source << "inline void\n" << cxx_name
@@ -647,7 +647,7 @@ compile_classifiers(RouterT *r, const String &package_name,
 	classifier_e->set_configuration(String());
 	change_landmark(classifier_e);
     }
-  
+
     // write final text
     header << "#endif\n";
     source << "/** click-compile: -w */\n";
@@ -671,13 +671,13 @@ compile_classifiers(RouterT *r, const String &package_name,
 	ae.data = header.take_string();
 	r->add_archive(ae);
     }
-    
+
     // add compiled versions to archive
     if (compile_drivers) {
 	int source_ae = r->archive_index(package_name + ".cc");
 	BailErrorHandler berrh(errh);
 	bool tmpdir_populated = false;
-    
+
 	if (compile_drivers & (1 << Driver::LINUXMODULE))
 	    if (String fn = click_compile_archive_file(r->archive(), source_ae, package_name, "linuxmodule", "", tmpdir_populated, &berrh)) {
 		ArchiveElement ae = init_archive_element(package_name + ".ko", 0600);
@@ -763,7 +763,7 @@ reverse_transformation(RouterT *r, ErrorHandler *)
       if (requirements[i].substring(0, 14) == "fastclassifier")
 	r->remove_requirement(requirements[i]);
   }
-  
+
   // remove archive elements
   for (int i = 0; i < r->narchive(); i++) {
     ArchiveElement &ae = r->archive(i);
@@ -777,7 +777,7 @@ extern "C" {
 void add_fast_classifiers_1();
 void add_fast_classifiers_2();
 }
-  
+
 int
 main(int argc, char **argv)
 {
@@ -800,16 +800,16 @@ main(int argc, char **argv)
   bool config_only = false;
   bool reverse = false;
   bool file_is_expr = false;
-  
+
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case HELP_OPT:
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("click-fastclassifier (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 1999-2000 Massachusetts Institute of Technology\n\
@@ -825,7 +825,7 @@ particular purpose.\n");
      case CLICKPATH_OPT:
       set_clickpath(clp->vstr);
       break;
-      
+
      case ROUTER_OPT:
      case EXPRESSION_OPT:
      router_file:
@@ -853,27 +853,27 @@ particular purpose.\n");
      case COMBINE_OPT:
       combine_classifiers = !clp->negated;
       break;
-      
+
      case COMPILE_OPT:
       do_compile = !clp->negated;
       break;
-      
+
      case REVERSE_OPT:
       reverse = !clp->negated;
       break;
-      
+
      case SOURCE_OPT:
       source_only = !clp->negated;
       break;
-      
+
      case CONFIG_OPT:
       config_only = !clp->negated;
       break;
-      
+
      case KERNEL_OPT:
       compile_drivers |= 1 << Driver::LINUXMODULE;
       break;
-      
+
      case USERLEVEL_OPT:
       compile_drivers |= 1 << Driver::USERLEVEL;
       break;
@@ -891,13 +891,13 @@ particular purpose.\n");
       short_usage();
       exit(1);
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
     }
   }
-  
+
  done:
   RouterT *r = read_router(router_file, file_is_expr, errh);
   if (r)
@@ -926,7 +926,7 @@ particular purpose.\n");
   add_interesting_handler("program");
   add_fast_classifiers_1();
   add_fast_classifiers_2();
-  
+
   // find Click binaries
   runclick_prog = clickpath_find_file("click", "bin", CLICK_BINDIR, errh);
   click_buildtool_prog = clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, errh);
@@ -970,7 +970,7 @@ particular purpose.\n");
       md5_free(&pms);
       package_name = "clickfc_" + String(buf, buflen);
   }
-  
+
   if (do_compile)
     compile_classifiers(r, package_name, classprogr, classifiers, compile_drivers, errh);
 
@@ -989,6 +989,6 @@ particular purpose.\n");
     fwrite(config.data(), 1, config.length(), outf);
   } else
     write_router_file(r, outf, errh);
-  
+
   exit(0);
 }

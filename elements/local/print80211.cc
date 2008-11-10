@@ -54,7 +54,7 @@ Print80211::configure(Vector<String> &conf, ErrorHandler* errh)
 		   "VERBOSE", 0, cpBool, &verbose,
 		   cpEnd) < 0)
     return -1;
-  
+
   _label = label;
   _timestamp = timestamp;
   _verbose = verbose;
@@ -63,7 +63,7 @@ Print80211::configure(Vector<String> &conf, ErrorHandler* errh)
 
 #if defined(__FreeBSD__) && __FreeBSD__ >= 4
 static String
-hex_string(unsigned i, bool add_x = false) 
+hex_string(unsigned i, bool add_x = false)
 {
   char buf[100];
   snprintf(buf, sizeof(buf), "%s%x", (add_x ? "0x" : ""), i);
@@ -84,7 +84,7 @@ print_data(StringAccum &s, bool /* verbose */, const uint8_t *buf, unsigned int 
   EtherAddress a2(buf + 10);
   EtherAddress a3(buf + 16);
   // see spec pg. 44, section 7.2.2 table 4.
-  if (!to_ds && !from_ds) 
+  if (!to_ds && !from_ds)
     s << "SA " << a2.s() << " -> DA " << a1.s() << ", BSSID " << a3.s();
   else if (!to_ds && from_ds)
     s << "BSSID " << a2.s() << " -> DA " << a1.s() << ", SA " << a3.s();
@@ -162,7 +162,7 @@ frame_type(const uint8_t *fctl)
     s = "Management, ";
     switch (subtype) {
     case IEEE80211_FC0_SUBTYPE_ASSOC_REQ: s += "Association request"; break;
-    case IEEE80211_FC0_SUBTYPE_ASSOC_RESP: s += "Association response"; break;  
+    case IEEE80211_FC0_SUBTYPE_ASSOC_RESP: s += "Association response"; break;
     case IEEE80211_FC0_SUBTYPE_REASSOC_REQ: s += "Reassociation request"; break;
     case IEEE80211_FC0_SUBTYPE_REASSOC_RESP: s += "Reassociation response"; break;
     case IEEE80211_FC0_SUBTYPE_PROBE_REQ: s += "Probe request"; break;
@@ -217,14 +217,14 @@ Print80211::simple_action(Packet *p)
     sa << ": ";
   if (_timestamp)
     sa << p->timestamp_anno() << ": ";
-  
+
   char sbuf[100];
   snprintf(sbuf, sizeof(sbuf), "%4d | ", p->length());
   sa << sbuf;
-  
-#if defined(__FreeBSD__) && __FreeBSD__ >= 4  
+
+#if defined(__FreeBSD__) && __FreeBSD__ >= 4
   ieee80211_frame *frame = (ieee80211_frame *) p->data();
-  
+
   // print type, try to put together 802.11 headers...
   sa << "Frame type: " << frame_type(frame->i_fc) << "  ";
 
@@ -238,7 +238,7 @@ Print80211::simple_action(Packet *p)
     snprintf(sbuf, sizeof(sbuf), "Duration: %02x %02x  ", dur0, dur1);
     sa << sbuf;
   }
-  
+
   unsigned type = fc0 & IEEE80211_FC0_TYPE_MASK;
   switch (type) {
   case IEEE80211_FC0_TYPE_DATA: print_data(sa, _verbose, p->data(), p->length()); break;

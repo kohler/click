@@ -39,8 +39,8 @@ PI::~PI()
 }
 
 int
-PI::check_params(double w, double a, double b, unsigned target_q, 
-					unsigned stability, ErrorHandler *errh) const 
+PI::check_params(double w, double a, double b, unsigned target_q,
+					unsigned stability, ErrorHandler *errh) const
 {
     unsigned max_allow_thresh = 0xFFFF;
 	if (target_q > max_allow_thresh)
@@ -84,14 +84,14 @@ PI::configure(Vector<String> &conf, ErrorHandler *errh)
 		cp_spacevec(queues_string, eids);
 		_queue_elements.clear();
 	for (int i = 0; i < eids.size(); i++)
-	 	if (Element *e = router()->find(eids[i], this, errh))
+		if (Element *e = router()->find(eids[i], this, errh))
 			_queue_elements.push_back(e);
 		if (eids.size() != _queue_elements.size())
-	   	return -1;
+		return -1;
     }
 
     // OK: set variables
-	_a = a; 
+	_a = a;
 	_b = b;
 	_w = w;
 	_target_q = target_q;
@@ -125,7 +125,7 @@ PI::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 		errh->warning("QUEUES argument ignored");
 
     // OK: set variables
-	_a = a; 
+	_a = a;
 	_b = b;
 	_w = w;
 	_target_q = target_q;
@@ -203,7 +203,7 @@ PI::queue_size() const
     }
 }
 
-void 
+void
 PI::run_timer(Timer *)
 {
 	_p = _a*(queue_size() - _target_q) - _b*(_old_q - _target_q) + _p;
@@ -268,7 +268,7 @@ PI::read_parameter(Element *f, void *vparam)
     PI *pi = (PI *)f;
     StringAccum sa;
     switch ((int)vparam) {
-      case 3:			// _target_q 
+      case 3:			// _target_q
 	return String(pi->_target_q);
       case 4:			// stats
 	sa << red->queue_size() << " current queue\n"

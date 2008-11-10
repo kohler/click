@@ -41,7 +41,7 @@ CLICK_DECLS
  * String.  A symbolic name used to identify this node's location,
  * e.g. "ne43-521b", or "Robert's office".
  *
- * =h loc read/write 
+ * =h loc read/write
  *
  * When reading, returns the element's location information, in this
  * format: ``lat, lon, height (err=<err-radius> good=<good?> seq=<seq>)''.
@@ -62,7 +62,7 @@ CLICK_DECLS
  * FixSrcLoc, GridLocationInfo */
 
 class GridLocationInfo2 : public GridGenericLocInfo {
-  
+
 public:
   GridLocationInfo2();
   ~GridLocationInfo2();

@@ -230,8 +230,8 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _inq = NULL;
     bool allow_nonexistent = false;
     _burst = 8;
-    if (cp_va_kparse(conf, this, errh, 
-		     "DEVNAME", cpkP+cpkM, cpString, &_devname, 
+    if (cp_va_kparse(conf, this, errh,
+		     "DEVNAME", cpkP+cpkM, cpString, &_devname,
 		     "PROMISC", cpkP, cpBool, &_promisc,
 		     "BURST", cpkP, cpUnsigned, &_burst,
 		     "ALLOW_NONEXISTENT", 0, cpBool, &allow_nonexistent,
@@ -266,7 +266,7 @@ FromDevice::initialize(ErrorHandler *errh)
     from_device_map.insert(this);
     if (_promisc && device())
 	ifpromisc(device(), 1);
-    
+
     assert(device());
     int s = splimp();
     if (_inq == NULL) {
@@ -346,7 +346,7 @@ FromDevice::cleanup(CleanupStage)
 	}
 	free(q, M_DEVBUF);
     }
-    
+
     from_device_map.remove(this);
     if (_promisc && device())
 	ifpromisc(device(), 0);

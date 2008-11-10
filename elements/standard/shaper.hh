@@ -9,7 +9,7 @@ CLICK_DECLS
  * =c
  * Shaper(RATE)
  * =s shaping
- * shapes traffic to maximum rate (pkt/s) 
+ * shapes traffic to maximum rate (pkt/s)
  * =d
  *
  * Shaper is a pull element that allows a maximum of RATE packets per second
@@ -44,7 +44,7 @@ class Shaper : public Element { public:
     const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return PULL; }
     bool is_bandwidth() const		{ return class_name()[0] == 'B'; }
-    
+
     int configure(Vector<String> &, ErrorHandler *);
     bool can_live_reconfigure() const	{ return true; }
     void add_handlers();

@@ -5,14 +5,14 @@
 CLICK_DECLS
 
 class ProbeRequester : public Element { public:
-  
+
   ProbeRequester();
   ~ProbeRequester();
 
   const char *class_name() const	{ return "ProbeRequester"; }
   const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
   void add_handlers();

@@ -21,7 +21,7 @@
 #include "incseqno.hh"
 CLICK_DECLS
 
-IncrementSeqNo::IncrementSeqNo() 
+IncrementSeqNo::IncrementSeqNo()
   : _seqno(0), _offset(0)
 {
 }
@@ -75,7 +75,7 @@ IncrementSeqNo::add_handlers() {
   add_write_handler("seq", write_seq, 0);
 }
 
-int 
+int
 IncrementSeqNo::write_seq(const String &in_s, Element *e, void *,
 			  ErrorHandler *errh)
 {

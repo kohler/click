@@ -114,7 +114,7 @@ class AnonymizeIPAddr : public Element { public:
     Packet *simple_action(Packet *);
 
     int llrpc(unsigned, void *);
-    
+
   private:
 
     struct Node {
@@ -130,7 +130,7 @@ class AnonymizeIPAddr : public Element { public:
 
     int _preserve_class;
     Vector<uint32_t> _preserve_8;
-    
+
     Node *new_node();
     Node *new_node_block();
     void free_node(Node *);
@@ -141,7 +141,7 @@ class AnonymizeIPAddr : public Element { public:
     inline uint32_t anonymize_addr(uint32_t);
 
     void handle_icmp(WritablePacket *);
-    
+
 };
 
 inline AnonymizeIPAddr::Node *

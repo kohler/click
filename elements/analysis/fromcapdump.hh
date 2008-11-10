@@ -184,12 +184,12 @@ class FromCapDump : public Element { public:
 
     uint32_t packno2seqno(uint32_t packno);
     uint32_t packno2seqno(uint32_t packno, int len);
-    
+
     Packet *read_packet(ErrorHandler *);
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

@@ -7,7 +7,7 @@ class whandler;
 class wdiagram;
 
 class wmain : public crouter { public:
-    
+
     wmain();
     ~wmain();
 
@@ -50,7 +50,7 @@ class wmain : public crouter { public:
     void on_config_changed(bool replace, LexerTInfo *linfo);
     void on_throbber_changed(bool show);
     void on_error(bool replace, const String &dialog);
-    
+
     void on_handler_create(handler_value *hv, bool was_empty);
     void on_handler_read(const String &hname, const String &hparam,
 			 const String &hvalue,
@@ -69,14 +69,14 @@ class wmain : public crouter { public:
     void on_config_changed();
     void config_set_driver(int driver);
     void config_check(bool install);
-    
+
     const String &element_showing() const {
 	return _eview_name;
     }
     void element_show(String ename, int expand, bool incremental);
 
     void set_diagram_mode(bool diagram);
-    
+
     gboolean error_view_event(GdkEvent *event);
     gboolean error_tag_event(GtkTextTag *tag, GObject *event_object,
 			     GdkEvent *event, GtkTextIter *pos);
@@ -84,13 +84,13 @@ class wmain : public crouter { public:
 
     void repaint(const rectangle &rect);
     void repaint_if_visible(const rectangle &rect, double dimen);
-    
+
     void element_tree_sort(int state);
-    
+
     gboolean csocket_event(GIOCondition);
 
     enum { elist_sort_none = 0, elist_sort_name, elist_sort_class };
-    
+
     struct element_lister {
 	String compound;
 	String name;
@@ -109,7 +109,7 @@ class wmain : public crouter { public:
     PangoAttrList *_small_attr;
     PangoAttrList *_bold_attr;
     PangoAttrList *_small_bold_attr;
-    
+
     GtkWidget *_config_view;
     GtkTextBuffer *_config_buffer;
     bool _config_clean_errors;
@@ -125,7 +125,7 @@ class wmain : public crouter { public:
     int _error_highlight_index;
     gdouble _error_highlight_x;
     gdouble _error_highlight_y;
-    guint _error_scroller; 
+    guint _error_scroller;
 
     GtkTreeView *_elist_view;
     GtkTreeStore *_elist_store;
@@ -137,17 +137,17 @@ class wmain : public crouter { public:
 
     // configuration
     gulong _config_changed_signal;
-    
+
     GtkTextTagTable *_binary_tag_table;
     mutable GtkTextTag *_binary_tag;
-    
+
     GdkCursor *_normal_cursor;
     GdkCursor *_link_cursor;
 
     // subsystems
     whandler *_handlers;
     wdiagram *_diagram;
-    
+
     void dialogs_connect();
 
     static void fill_elements(RouterT *r, const String &compound, bool only_primitive, const VariableEnvironment &scope, Vector<element_lister> &v);
@@ -166,7 +166,7 @@ class wmain : public crouter { public:
 
     friend class whandler;
     friend class wdiagram;
-    
+
 };
 
 }

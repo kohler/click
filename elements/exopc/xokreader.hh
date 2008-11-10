@@ -22,10 +22,10 @@ extern "C" {
  * given, all using the same packet ring.
  *
  * =e
- * For example, 
+ * For example,
  *
  *   xokReader(32, 12/0806 14/99)
- * 
+ *
  * says that the reader should keep a ring size of 32. output 0 should get
  * packets that have 0x0806 at byte 12 and 0x99 at byte 14.
  *
@@ -40,17 +40,17 @@ class xokReader : public Element {
   int fd;
 
  public:
-  
+
   xokReader();
   xokReader(const xokReader &);
   ~xokReader();
-  
+
   const char *class_name() const		{ return "xokReader"; }
   const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   void selected(int fd);
 };
 

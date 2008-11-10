@@ -30,7 +30,7 @@ RRSched::~RRSched()
 {
 }
 
-int 
+int
 RRSched::initialize(ErrorHandler *errh)
 {
     if (!(_signals = new NotifierSignal[ninputs()]))

@@ -87,7 +87,7 @@ void
 SnoopTCP::PCB::initialize(bool is_s, const click_tcp *tcph, int datalen)
 {
   unsigned seq = ntohl(tcph->th_seq);
-  
+
   if (is_s) {
     assert(!_s_exists);
     _s_exists = _s_alive = true;
@@ -96,14 +96,14 @@ SnoopTCP::PCB::initialize(bool is_s, const click_tcp *tcph, int datalen)
     _mh_last_ack = seq - 1;
     _mh_expected_dup_acks = 0;
     _mh_dup_acks = 0;
-    //cs->iss = seq;     
+    //cs->iss = seq;
     //cs->expected_next_ack = cs->buftail;
     //if (tcpip_hdr->ti_flags & TH_ACK)
     //cs->wl_last_ack = ack;
-    /* 
-     * Ideally, this should be initialized to the rtt estimate 
-     * from another connection to the same destination, if one 
-     * exists. For now, choose an uninformed and conservative 
+    /*
+     * Ideally, this should be initialized to the rtt estimate
+     * from another connection to the same destination, if one
+     * exists. For now, choose an uninformed and conservative
      * default.
      */
     //cs->srtt = SNOOP_RTTDEFAULT;
@@ -119,7 +119,7 @@ SnoopTCP::PCB::clean(unsigned ack)
 {
   //snoop_untimeout(cs);
   Timestamp last_cleaned_time;
-  
+
   int i = _tail;
   while (i != _head && SEQ_LEQ(_s_cache[i].seq + _s_cache[i].size, ack)) {
     SCacheEntry &cache = _s_cache[i];
@@ -129,7 +129,7 @@ SnoopTCP::PCB::clean(unsigned ack)
     i = next_i(i);
   }
   _tail = i;
-  
+
   // if (_head != _tail) snoop_timeout(cs);
 }
 
@@ -150,13 +150,13 @@ SnoopTCP::PCB::s_data(Packet *p, const click_tcp *tcph, int datalen)
     initialize(true, tcph, datalen);
   else
     _s_alive = true;
-  
+
   bool full = next_i(_head) == _tail;
   int entry = -1;
   bool in_sequence = false;
   bool repeat_packet = false;
   unsigned seq = ntohl(tcph->th_seq);
-  
+
   // insert the packet into the cache
   if (SEQ_GEQ(seq, _s_max)) {
     // common case
@@ -167,7 +167,7 @@ SnoopTCP::PCB::s_data(Packet *p, const click_tcp *tcph, int datalen)
     entry = _head;
     _head = next_i(_head);
     in_sequence = true;
-    
+
   } else {
     for (int i = _tail; i != _head; i = next_i(i))
       if (_s_cache[i].seq == seq) {
@@ -178,7 +178,7 @@ SnoopTCP::PCB::s_data(Packet *p, const click_tcp *tcph, int datalen)
 	repeat_packet = true;
 	entry = i;
 	break;
-	
+
       } else if (SEQ_GT(_s_cache[i].seq, seq)) {
 	// out-of-order packet
 	if (full) return p;
@@ -190,7 +190,7 @@ SnoopTCP::PCB::s_data(Packet *p, const click_tcp *tcph, int datalen)
 	break;
       }
   }
-  
+
   // cache packet at `_cache[entry]'
   assert(entry >= 0 && 0);
   _s_cache[entry].packet = p->clone();
@@ -204,10 +204,10 @@ SnoopTCP::PCB::s_data(Packet *p, const click_tcp *tcph, int datalen)
     _s_cache[entry].sender_rxmit = 0;
   _s_cache[entry].snd_time.set_now();
   DEBUG_CHATTER("\t%d at %d\n", seq, entry);
-  
+
   // XXX if (!in_sequence) snoop_untimeout();
   // XXX snoop_timeout();
-  
+
   return p;
 }
 
@@ -219,20 +219,20 @@ SnoopTCP::PCB::mh_new_ack(unsigned ack)
   int old_tail = -1;
   if (_tail != _head && _s_cache[_tail].num_rxmit)
     old_tail = _tail;
-  
+
   clean(ack);
-  
+
   //if ((cs->wi_state & SNOOP_RTTFLAG) && timerisset(&sndtime))
   //snoop_rtt(cs, &sndtime);
-  
+
   // check for burst loss
   if (old_tail >= 0 && s_cache_size() > 1 && next_i(old_tail) == _tail
       && _s_cache[_tail].num_rxmit == 0)
-    //snoop_rexmt_pkt(cs, packet, 
+    //snoop_rexmt_pkt(cs, packet,
     //IPTOS_LOWDELAY|IPTOS_RELIABILITY|
     //IPTOS_THROUGHPUT);
     /* do nothing */;
-  
+
   //cs->wi_state |= SNOOP_RTTFLAG;
   _mh_expected_dup_acks = 0;
   _mh_dup_acks = 0;
@@ -247,28 +247,28 @@ SnoopTCP::PCB::mh_dup_ack(Packet *p, const click_tcp *tcph, unsigned ack)
   // if snoop cache empty, nothing to do
   if (_head == _tail)
     return p;
-  
+
   // window change advertisements are not semantically duplicate acks
   if (_mh_last_win != ntohs(tcph->th_win))
     return p;
-  
+
   // if we don't have the packet, nothing to do
   SCacheEntry &cache = _s_cache[_tail];
   if (SEQ_LT(ack, cache.seq))
     return p;
-  
+
   // if sender retransmission, nothing to do
   if (cache.sender_rxmit)
     return p;
-  
+
   // otherwise, a duplicate ack we can handle
   _mh_dup_acks++;
-  
+
   if (_mh_dup_acks <= SNOOP_RTX_THRESH) {
     // ignore first SNOOP_RTX_THRESH duplicate acks
     p->kill();
     return 0;
-    
+
   } else if (_mh_dup_acks == SNOOP_RTX_THRESH + 1) {
     // the SNOOP_RTX_THRESHth duplicate ack: calculate how many were
     // expected, generate a retransmission
@@ -277,12 +277,12 @@ SnoopTCP::PCB::mh_dup_ack(Packet *p, const click_tcp *tcph, unsigned ack)
       /*snoop_rexmt_pkt(cs, packet, IPTOS_LOWDELAY)*/;
     p->kill();
     return 0;
-    
+
   } else if (_mh_dup_acks < _mh_expected_dup_acks) {
     // delete expected duplicate acks
     p->kill();
     return 0;
-    
+
   } else {
     // too many duplicate acks; retransmit last packet once, then start
     // letting duplicate acks pass through
@@ -302,21 +302,21 @@ SnoopTCP::PCB::mh_ack(Packet *p, const click_tcp *tcph, int datalen)
   // if server connection is dead, do nothing
   if (!_s_exists)
     return p;
-  
+
   unsigned ack = ntohl(tcph->th_ack);
   if (SEQ_GT(ack, _mh_last_ack))
     // new ack
     mh_new_ack(ack);
-  
+
   else if (ack == _mh_last_ack && datalen == 0)
     // duplicate ack w/o data
     // (duplicate acks with data are not semantically "duplicate acks")
     p = mh_dup_ack(p, tcph, ack);
-  
+
   else if (SEQ_LT(ack, _mh_last_ack))
     // spurious ack: ignore
     return p;
-  
+
   _mh_last_win = ntohs(tcph->th_win);
   return p;
 }
@@ -343,7 +343,7 @@ SnoopTCP::find(unsigned s_ip, unsigned short s_port,
 	       unsigned int mh_ip, unsigned short mh_port, bool create)
 {
   IPFlowID q(s_ip, s_port, mh_ip, mh_port);
-  
+
   if (PCB **pcbp = _map.findp(q))
     return *pcbp;
   else if (create) {
@@ -363,11 +363,11 @@ SnoopTCP::handle_packet(int port, Packet *p)
     // ignore non-TCP traffic
     return p;
   }
-  
+
   const click_tcp *tcph = p->tcp_header();
   int header_len = (iph->ip_hl << 2) + (tcph->th_off << 2);
   int datalen = p->length() - header_len;
-  
+
   // get or create corresponding PCB
   // don't create a PCB for packets w/o data
   PCB *pcb;
@@ -380,7 +380,7 @@ SnoopTCP::handle_packet(int port, Packet *p)
   if (!pcb)
     // out of space, could not create PCB
     return p;
-  
+
   // SYN flag: initialize that side of the connection
   if (tcph->th_flags & TH_SYN) {
     DEBUG_CHATTER("SYN packet");
@@ -388,26 +388,26 @@ SnoopTCP::handle_packet(int port, Packet *p)
     pcb->initialize(port == 0, tcph, datalen);
     return p;
   }
-  
+
   // FIN or RST: kill that side of the connection
   if (tcph->th_flags & (TH_FIN | TH_RST)) {
     pcb->clear(port == 0);
     return p;
   }
-  
+
   if (port == 0) {
     if (tcph->th_flags & TH_ACK)
       pcb->s_ack(p, tcph, datalen);
     if (datalen > 0)
       p = pcb->s_data(p, tcph, datalen);
-    
+
   } else {
     if (tcph->th_flags & TH_ACK)
       p = pcb->mh_ack(p, tcph, datalen);
     if (datalen > 0)
       pcb->mh_data(p, tcph, datalen);
   }
-  
+
   return p;
 }
 
@@ -434,18 +434,18 @@ SnoopTCP::PCB::add_data(Packet *p, unsigned th_seq)
 {
   bool full = next_i(_head) == _tail;
   int entry = -1;
-  
+
   if (SEQ_GT(th_seq, _max)) {
     // New packet with higher seqno - common case
     if (full) {
       // skip if buffer is full
       DEBUG_CHATTER("buffer full");
-      return p;		
+      return p;
     }
     _max = th_seq;
     entry = _expected_ack = _head;
     _head = next_i(_head);
-    
+
   } else if (SEQ_LT(th_seq, _cache[_tail].seq)) {
     if (SEQ_LT(th_seq, _una)) {
       // already acked - don't cache
@@ -453,7 +453,7 @@ SnoopTCP::PCB::add_data(Packet *p, unsigned th_seq)
 		    th_seq, _una);
       return p;
     }
-    
+
     // new packet earlier than anything cached
     if (full) {
       // skip if buffer is full
@@ -462,11 +462,11 @@ SnoopTCP::PCB::add_data(Packet *p, unsigned th_seq)
     }
     _tail = prev_i(_tail);
     entry = _tail;
-    
+
   } else if (_tail == _head)
     // nothing has been cached and we got a spurious packet
     return p;
-  
+
   else
     // somewhere in the middle
     for (int i = _tail; i != _head; i = next_i(i)) {
@@ -482,7 +482,7 @@ SnoopTCP::PCB::add_data(Packet *p, unsigned th_seq)
 	_cache[i].sender_rxmit = 1;
 	//microtime(&(packet->snd_time));
 	return p;
-	
+
       } else if (SEQ_GT(_cache[i].seq, th_seq)) {
 	// insert new packet in the middle
 	if (full) {
@@ -494,12 +494,12 @@ SnoopTCP::PCB::add_data(Packet *p, unsigned th_seq)
 	  _cache[prev_i(j)] = _cache[j];
 	entry = i;
 	_tail = prev_i(_tail);
-	DEBUG_CHATTER("\tcache reorg; pkt %d, head %d, tail %d", 
+	DEBUG_CHATTER("\tcache reorg; pkt %d, head %d, tail %d",
 		      th_seq, _head, _tail);
 	break;
       }
     }
-  
+
   // Cache packet at `_cache[entry]'
   //microtime(&(packet->snd_time));
   assert(entry >= 0);
@@ -509,17 +509,17 @@ SnoopTCP::PCB::add_data(Packet *p, unsigned th_seq)
   _cache[entry].num_rxmit = 0;
   _cache[entry].sender_rxmit = 0;
   DEBUG_CHATTER("\t%d at %d\n", th_seq, entry);
-  
-  if (SEQ_LT(th_seq, _max)) { 
-    // out-of-order 
+
+  if (SEQ_LT(th_seq, _max)) {
+    // out-of-order
     DEBUG_CHATTER("\tpkt %x out of order, last %x\n", th_seq, _max);
     if (_tail == entry) {
       _cache[entry].sender_rxmit = 1;
       _cache[entry].num_rxmit = 0;
     }
     _expected_ack = _tail;
-  } 
-  
+  }
+
   return p;
 }
 #endif
@@ -530,10 +530,10 @@ SnoopTCP::PCB::add_ack(Packet *p, unsigned th_ack, int data_len,
 		       unsigned short win, SnoopTCP *snp)
 {
 
-  DEBUG_CHATTER("ack %d, expect %d, dacks %d, seen %d dups\tcached %d-%d", 
+  DEBUG_CHATTER("ack %d, expect %d, dacks %d, seen %d dups\tcached %d-%d",
 		th_ack, _expected_ack, _expected_dup_acks,
 		_dup_acks, _cache[_tail].seq, _cache[prev_i(_head)].seq);
-  
+
   if (SEQ_GT(th_ack, _una)) {
     // new ack
     DEBUG_CHATTER("new ack %d", th_ack);
@@ -548,7 +548,7 @@ SnoopTCP::PCB::add_ack(Packet *p, unsigned th_ack, int data_len,
     _dup_acks = 0;
     _last_win = win;
     return p;
-    
+
   } else if (SEQ_LT(th_ack, _una)) {
     // out-of-order ack; just forward it on
     DEBUG_CHATTER("spurious ack %d", th_ack);

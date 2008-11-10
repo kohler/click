@@ -18,18 +18,18 @@ CLICK_DECLS
  */
 
 class ErrorElement : public Element { public:
-  
+
     ErrorElement();
     ~ErrorElement();
-  
+
     const char *class_name() const		{ return "Error"; }
     const char *port_count() const		{ return "-/-"; }
     const char *processing() const		{ return AGNOSTIC; }
     const char *flow_code() const		{ return "x/y"; }
-  
+
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
-  
+
 };
 
 CLICK_ENDDECLS

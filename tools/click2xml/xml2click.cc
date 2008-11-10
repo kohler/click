@@ -111,17 +111,17 @@ static CxState
 do_element(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 {
     String landmark = xml_landmark(parser);
-    
+
     if (xstates.back() != CX_CONFIGURATION && xstates.back() != CX_COMPOUND) {
 	if (xstates.back() != CX_ERROR)
 	    errh->lerror(landmark, "<element> tag outside of <configuration>");
 	return CX_ERROR;
     }
-    
+
     CxElement e;
     e.xml_landmark = landmark;
     bool ok = true;
-    
+
     String file, line;
     for (const XML_Char **a = attrs; *a; a += 2)
 	if (strcmp(a[0], "name") == 0) {
@@ -147,7 +147,7 @@ do_element(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 	    if (!cp_integer(a[1], &e.noutputs))
 		errh->lerror(landmark, "'noutputs' attribute must be an integer");
 	}
-    
+
     if (file && line)
 	e.landmark = file + ":" + line;
     else if (file)
@@ -176,17 +176,17 @@ static CxState
 do_connection(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 {
     String landmark = xml_landmark(parser);
-    
+
     if (xstates.back() != CX_CONFIGURATION && xstates.back() != CX_COMPOUND) {
 	if (xstates.back() != CX_ERROR)
 	    errh->lerror(landmark, "<connection> tag meaningless outside of <configuration>");
 	return CX_ERROR;
     }
-    
+
     CxConnection e;
     e.xml_landmark = landmark;
     bool ok = true;
-    
+
     for (const XML_Char **a = attrs; *a; a += 2)
 	if (strcmp(a[0], "from") == 0)
 	    e.from = a[1];
@@ -204,7 +204,7 @@ do_connection(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 	errh->lerror(landmark, "connection lacks 'from' or 'to' attribute");
 	ok = false;
     }
-    
+
     if (ok)
 	xstack.back()->_connections.push_back(e);
     return CX_IN_EMPTY;
@@ -222,7 +222,7 @@ do_start_elementclass(XML_Parser parser, const XML_Char **attrs, ErrorHandler *e
     }
 
     CxConfig *nc = new CxConfig(xstack.back(), landmark);
-    
+
     String file, line;
     for (const XML_Char **a = attrs; *a; a += 2)
 	if (strcmp(a[0], "classname") == 0) {
@@ -248,7 +248,7 @@ do_start_elementclass(XML_Parser parser, const XML_Char **attrs, ErrorHandler *e
     else
 	class_id_map.set(nc->_id, classes.size());
     classes.push_back(nc);
-    
+
     xstack.push_back(nc);
     return CX_ELEMENTCLASS;
 }
@@ -257,7 +257,7 @@ static CxState
 do_synonym(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 {
     String landmark = xml_landmark(parser);
-    
+
     if (xstates.back() != CX_ELEMENTCLASS) {
 	if (xstates.back() != CX_ERROR)
 	    errh->lerror(landmark, "<synonym> tag outside of <elementclass>");
@@ -281,7 +281,7 @@ do_synonym(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 	cx->_prev_class_name = String();
     } else if (!cx->_prev_class_name && !cx->_prev_class_id)
 	errh->lerror(landmark, "synonym refers to no other class");
-    
+
     cx->_filled = true;
     cx->_is_synonym = true;
     return CX_IN_EMPTY;
@@ -291,7 +291,7 @@ static CxState
 do_start_compound(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 {
     String landmark = xml_landmark(parser);
-    
+
     if (xstates.back() != CX_ELEMENTCLASS) {
 	if (xstates.back() != CX_ERROR)
 	    errh->lerror(landmark, "<compound> tag outside of <elementclass>");
@@ -335,7 +335,7 @@ static CxState
 do_formal(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 {
     String landmark = xml_landmark(parser);
-    
+
     if (xstates.back() != CX_COMPOUND) {
 	if (xstates.back() != CX_ERROR)
 	    errh->lerror(landmark, "<formal> tag meaningless outside of <compound>");
@@ -383,7 +383,7 @@ start_element_handler(void *v, const XML_Char *name, const XML_Char **attrs)
     // handle XML namespaces
     if (strncmp(name, "http://www.lcdf.org/click/xml/|", 31) == 0)
 	name += 31;
-    
+
     if (strcmp(name, "configuration") == 0) {
 	String landmark = xml_landmark(parser);
 	if (xstack.size())
@@ -392,25 +392,25 @@ start_element_handler(void *v, const XML_Char *name, const XML_Char **attrs)
 	    xstack.push_back(new CxConfig(0, landmark));
 	    next_state = CX_CONFIGURATION;
 	}
-	
+
     } else if (strcmp(name, "element") == 0)
 	next_state = do_element(parser, attrs, xml_errh);
-	
+
     else if (strcmp(name, "connection") == 0)
 	next_state = do_connection(parser, attrs, xml_errh);
-	
+
     else if (strcmp(name, "elementclass") == 0)
 	next_state = do_start_elementclass(parser, attrs, xml_errh);
-	
+
     else if (strcmp(name, "synonym") == 0)
 	next_state = do_synonym(parser, attrs, xml_errh);
-	
+
     else if (strcmp(name, "compound") == 0)
 	next_state = do_start_compound(parser, attrs, xml_errh);
 
     else if (strcmp(name, "formal") == 0)
 	next_state = do_formal(parser, attrs, xml_errh);
-	
+
     else
 	next_state = xstates.back();
 
@@ -421,7 +421,7 @@ static void
 end_element_handler(void *v, const XML_Char *name)
 {
     XML_Parser parser = (XML_Parser)v;
-    
+
     if (strcmp(name, "elementclass") == 0) {
 	if (xstates.back() == CX_ELEMENTCLASS) {
 	    if (!xstack.back()->_filled)
@@ -458,7 +458,7 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
     if (_completing)
 	return errh->lerror(_xml_landmark, "circular definition of elementclass '%s'", readable_name().c_str());
     _completing = true;
-    
+
     ContextErrorHandler cerrh(errh, String("In definition of elementclass '") + _name + "' (id '" + _id + "'):", "  ", _xml_landmark);
     int before_nerrors = cerrh.nerrors();
 
@@ -473,7 +473,7 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 
     // get enclosing scope
     RouterT *enclosing_type = _enclosing->router(errh);
-    
+
     // check for synonym or empty
     if (!_filled)		// error already reported
 	return 0;
@@ -588,7 +588,7 @@ CxConfig::complete(ErrorHandler *errh)
 		if (e->noutputs >= 0 && et->noutputs() != e->noutputs)
 		    errh->lerror(et->landmark(), "'%s' output port count and 'noutputs' attribute disagree", e->name.c_str());
 	    }
-    
+
     return 0;
 }
 
@@ -598,7 +598,7 @@ process(const char *infile, bool file_is_expr, const char *outfile,
 	ErrorHandler *errh)
 {
     int before = errh->nerrors();
-    
+
     String contents;
     if (file_is_expr)
 	contents = infile;
@@ -607,7 +607,7 @@ process(const char *infile, bool file_is_expr, const char *outfile,
 	if (!contents && errh->nerrors() != before)
 	    return;
     }
-    
+
     XML_Parser parser = XML_ParserCreateNS(0, '|');
     XML_SetElementHandler(parser, start_element_handler, end_element_handler);
     XML_UseParserAsHandlerArg(parser);
@@ -616,7 +616,7 @@ process(const char *infile, bool file_is_expr, const char *outfile,
 
     xstates.clear();
     xstates.push_back(CX_NONE);
-    
+
     if (XML_Parse(parser, contents.data(), contents.length(), 1) == 0) {
 	xml_error(parser, "XML parse error: %s", XML_ErrorString(XML_GetErrorCode(parser)));
 	return;
@@ -636,7 +636,7 @@ process(const char *infile, bool file_is_expr, const char *outfile,
     // flatten router if appropriate
     if (errh->nerrors() == before && ::flatten)
 	xstack.back()->router(errh)->flatten(errh);
-    
+
     // if no errors, write output
     if (errh->nerrors() == before)
 	write_router_file(xstack.back()->router(errh), outfile, errh);
@@ -743,7 +743,7 @@ particular purpose.\n");
 	  case FLATTEN_OPT:
 	    flatten = !clp->negated;
 	    break;
-	    
+
 	  bad_option:
 	  case Clp_BadOption:
 	    short_usage();
@@ -758,6 +758,6 @@ particular purpose.\n");
 
   done:
     process(router_file, file_is_expr, output_file, errh);
-	
+
     exit(errh->nerrors() > 0 ? 1 : 0);
 }

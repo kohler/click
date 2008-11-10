@@ -20,7 +20,7 @@ CLICK_DECLS
 
 class BufferConverter : public Element {
   static const int packet_tx_delay = 5; // 5 ms tx delay for mtu purposes
-  
+
   static String data_read_handler(Element *e, void *);
   static int data_write_handler
     (const String &, Element *, void *, ErrorHandler *);
@@ -35,7 +35,7 @@ class BufferConverter : public Element {
 public:
   BufferConverter();
   ~BufferConverter();
-  
+
   const char *class_name() const	{ return "BufferConverter"; }
   const char *port_count() const	{ return "2/1"; }
   const char *processing() const	{ return "lh/h"; }

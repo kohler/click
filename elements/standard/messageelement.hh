@@ -34,10 +34,10 @@ Error
  */
 
 class MessageElement : public Element { public:
-  
+
     MessageElement();
     ~MessageElement();
-  
+
     const char *class_name() const		{ return "Message"; }
     int configure(Vector<String> &, ErrorHandler *);
 

@@ -209,13 +209,13 @@ class FromDump : public Element { public:
     Packet *pull(int);
 
     void set_active(bool);
-    
+
   private:
 
     enum { BUFFER_SIZE = 32768, SAMPLING_SHIFT = 28 };
 
     FromFile _ff;
-    
+
     Packet *_packet;
 
     bool _swapped : 1;
@@ -236,7 +236,7 @@ class FromDump : public Element { public:
     Timestamp _first_time;
     Timestamp _last_time;
     HandlerCall *_end_h;
-    
+
 #if HAVE_INT64_TYPES
     typedef uint64_t counter_t;
 #else
@@ -250,14 +250,14 @@ class FromDump : public Element { public:
 
     Timestamp _time_offset;
     off_t _packet_filepos;
-    
+
     bool read_packet(ErrorHandler *);
 
     void prepare_times(const Timestamp &);
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

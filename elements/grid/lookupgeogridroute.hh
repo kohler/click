@@ -6,7 +6,7 @@
  * LookupGeographicGridRoute(ETH, IP, GRIDROUTES, LOCINFO)
  *
  * =s Grid
- * =d 
+ * =d
  *
  * Forward packets geographically according to the tables accumulated
  * by the UpdateGridRoutes element, and the node's own position as
@@ -30,7 +30,7 @@
  * =a
  * LookupLocalGridRoute
  * GridGenericRouteTable
- * GridLocationInfo 
+ * GridLocationInfo
  * Paint
  * PaintSwitch
  */
@@ -57,7 +57,7 @@ class LookupGeographicGridRoute : public Element, public GridRouteActor {
   void *cast(const char *);
   const char *port_count() const		{ return "1/2"; }
   const char *processing() const		{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 

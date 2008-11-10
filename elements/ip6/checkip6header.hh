@@ -8,7 +8,7 @@ CLICK_DECLS
  * =c
  * CheckIP6Header([BADADDRS])
  * =s ip6
- * 
+ *
  * =d
  *
  * Expects IP6 packets as input. Checks that the packet's length is
@@ -32,23 +32,23 @@ class CheckIP6Header : public Element {
   bool _aligned;
 #endif
   int _drops;
-  
+
  public:
-  
+
   CheckIP6Header();
   ~CheckIP6Header();
-  
+
   const char *class_name() const		{ return "CheckIP6Header"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
 
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   int drops() const				{ return _drops; }
-  
- 
+
+
   void add_handlers();
-  
+
   Packet *simple_action(Packet *);
   void drop_it(Packet *);
 

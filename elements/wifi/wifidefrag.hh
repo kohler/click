@@ -15,7 +15,7 @@ WifiDefrag
 
 Reassembles 802.11 fragments.
 
-=d 
+=d
 
 This element reassembles 802.11 fragments and pushes the reassembled
 packet out when the last fragment is received. It does not affect
@@ -26,14 +26,14 @@ packet per SA.
 =a WifiDecap
  */
 class WifiDefrag : public Element { public:
-  
+
   WifiDefrag();
   ~WifiDefrag();
 
   const char *class_name() const	{ return "WifiDefrag"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
 

@@ -31,25 +31,25 @@ main(int argc, char **argv)
 {
   ErrorHandler *errh = new FileErrorHandler(stderr, "ipb: ");
   ErrorHandler::static_initialize(errh);
-  
+
   FileLexerSource *fp;
   if (argc < 2)
     fp = new FileLexerSource("<stdin>", stdin);
   else
     fp = new FileLexerSource(argv[1], 0);
-  
+
   Lexer *lex = new Lexer(errh);
   click_export_elements(lex);
   lex->element_types_permanent();
-  
+
   lex->reset(fp);
   while (lex->ystatement())
     /* do nothing */;
-  
+
   Router *router = lex->create_router();
   delete fp;
   lex->clear();
-  
+
   if (argc > 2) {
     for (int i = 0; i < 4; i++) {
       if (router->initialize(errh) >= 0)
@@ -67,7 +67,7 @@ main(int argc, char **argv)
 #if 0
   signal(SIGINT, catchint);
 #endif
-  
+
   if (router->initialize(errh) >= 0) {
     router->print_structure(errh);
     errh->message(router->flat_configuration_string());

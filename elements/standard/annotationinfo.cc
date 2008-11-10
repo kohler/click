@@ -36,7 +36,7 @@ int
 AnnotationInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int before = errh->nerrors();
-  
+
     for (int i = 0; i < conf.size(); i++) {
 	String str = conf[i];
 	String name_str = cp_pop_spacevec(str);
@@ -64,7 +64,7 @@ AnnotationInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	    NameInfo::define(NameInfo::T_ANNOTATION, this, name_str, &anno, 4);
 	}
     }
-    
+
     return (errh->nerrors() == before ? 0 : -1);
 }
 
@@ -104,7 +104,7 @@ AnnotationInfo::initialize(ErrorHandler *errh)
 		    errh->error("annotations '%s' and '%s' conflict", words[i].c_str(), words[j].c_str());
 	    }
     }
-    
+
     return (errh->nerrors() == before ? 0 : -1);
 }
 

@@ -18,7 +18,7 @@ Filter out wireless transmission feedback packets
 
 Filters out packets that were sent by this node, and
 received via transmit feedback.
-Sends these packets to output 1 if it is present, 
+Sends these packets to output 1 if it is present,
 otherwise it drops the packets.
 
 =a ExtraEncap, ExtraDecap
@@ -26,10 +26,10 @@ otherwise it drops the packets.
 
 
 class FilterTX : public Element { public:
-  
+
   FilterTX();
   ~FilterTX();
-  
+
   const char *class_name() const		{ return "FilterTX"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
@@ -38,11 +38,11 @@ class FilterTX : public Element { public:
   static String static_print_drops(Element *, void *);
   static String static_print_max_failures(Element *, void *);
   static int static_write_max_failures(const String &arg, Element *e,
-				void *, ErrorHandler *errh); 
+				void *, ErrorHandler *errh);
 
   static String static_print_allow_success(Element *, void *);
   static int static_write_allow_success(const String &arg, Element *e,
-				void *, ErrorHandler *errh); 
+				void *, ErrorHandler *errh);
   Packet *simple_action(Packet *);
 
   int _drops;

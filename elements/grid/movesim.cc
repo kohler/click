@@ -24,7 +24,7 @@
 #include <click/error.hh>
 CLICK_DECLS
 
-MovementSimulator::MovementSimulator() 
+MovementSimulator::MovementSimulator()
   : _event_timer(event_hook, this)
 {
   _events = new event_entry;
@@ -60,7 +60,7 @@ MovementSimulator::read_args(const Vector<String> &conf, ErrorHandler *errh)
     GridLocationInfo *li = (GridLocationInfo *)el->cast("GridLocationInfo");
     if (!li)
       return errh->error("element is not a GridLocationInfo in entry %d", i);
-    
+
     event_entry *new_entry;
     event_entry *prev;
     bool use_prev = find_entry(t, &prev);
@@ -96,13 +96,13 @@ MovementSimulator::initialize(ErrorHandler *)
   _event_timer.initialize(this);
   // just wait a little while before we kick things off simulated
   // motions
-  _event_timer.schedule_after_msec(300); 
+  _event_timer.schedule_after_msec(300);
   return 0;
 }
 
 
 void
-MovementSimulator::event_hook(Timer *, void *thunk) 
+MovementSimulator::event_hook(Timer *, void *thunk)
 {
   MovementSimulator *el = (MovementSimulator *) thunk;
   event_entry *next_event = el->_events->next;
@@ -112,11 +112,11 @@ MovementSimulator::event_hook(Timer *, void *thunk)
   }
   el->_events->next = next_event->next;
 
-  for (int i = 0; i < next_event->nodes.size(); i++) 
+  for (int i = 0; i < next_event->nodes.size(); i++)
     next_event->nodes[i].loc_el->set_new_dest(next_event->nodes[i].v_lat,
 					      next_event->nodes[i].v_lon);
-  
-  if (el->_events->next != el->_events) 
+
+  if (el->_events->next != el->_events)
     el->_event_timer.schedule_after_msec(el->_events->next->t - next_event->t);
   delete next_event;
 }

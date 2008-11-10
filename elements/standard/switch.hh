@@ -39,26 +39,26 @@ class Switch : public Element { public:
 
   Switch();
   ~Switch();
-  
+
   const char *class_name() const		{ return "Switch"; }
   const char *port_count() const		{ return "1/-"; }
   const char *processing() const		{ return PUSH; }
   void add_handlers();
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
-  
+
   void push(int, Packet *);
 
   int llrpc(unsigned, void *);
-  
+
  private:
 
   int _output;
 
   static String read_param(Element *, void *);
   static int write_param(const String &, Element *, void *, ErrorHandler *);
-  
+
 };
 
 CLICK_ENDDECLS

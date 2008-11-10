@@ -93,7 +93,7 @@ ToSimDevice::initialize(ErrorHandler *errh)
     ScheduleInfo::join_scheduler(this, &_task, errh);
     _signal = Notifier::upstream_empty_signal(this, 0, &_task);
   }
-  
+
   return 0;
 }
 

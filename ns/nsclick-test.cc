@@ -25,8 +25,8 @@ using namespace std;
 class Simulator {
 public:
   Simulator();
-  virtual ~Simulator(); 
-  
+  virtual ~Simulator();
+
   int nextevent();
   struct timeval gettime() { return cursimtime_; };
 
@@ -36,11 +36,11 @@ public:
     SimTime(long sec,long usec) { tv_sec = sec, tv_usec = usec; };
     SimTime(struct timeval tv) {tv_sec = tv.tv_sec,tv_usec = tv.tv_usec;};
 
-    bool operator<(const struct timeval& tv) const { 
+    bool operator<(const struct timeval& tv) const {
       return ((tv_sec < tv.tv_sec) ||
 	      ((tv_sec == tv.tv_sec) && (tv_usec < tv.tv_usec)));
     }
-    bool operator<=(const struct timeval& tv) const { 
+    bool operator<=(const struct timeval& tv) const {
       return ((tv_sec < tv.tv_sec) ||
 	      ((tv_sec == tv.tv_sec) && (tv_usec <= tv.tv_usec)));
     }
@@ -63,7 +63,7 @@ public:
   class SimEvent {
   public:
     SimEvent() {};
-    virtual ~SimEvent();  
+    virtual ~SimEvent();
     virtual int go(SimTime* when) = 0;
   };
 protected:
@@ -234,7 +234,7 @@ TestClickSimulator::PacketEvent::go(SimTime* when) {
   pinfo.fid =2;
   fprintf(stderr,"Dispatching send packet event: clickinst: %d ifid: %d time: %d %d pid %d fid %d\n",(int)simnode_,ifid_,(int)when->tv_sec,(int)when->tv_usec,pinfo.id,pinfo.fid);
   simclick_click_send(simnode_,ifid_,ptype_,data_,len_,&pinfo);
-  
+
   return result;
 }
 
@@ -283,7 +283,7 @@ int main(int,char**) {
     thesim.add_node(scripts[i]);
   }
 
-  // eth0 of the traffic source (node 0) goes on the same 
+  // eth0 of the traffic source (node 0) goes on the same
   // lan as eth0 of node 1
   thesim.add_lan_entry(0,1,1);
   thesim.add_lan_entry(1,1,1);
@@ -382,7 +382,7 @@ simclick_sim_command(simclick_node_t *simnode, int cmd, ...) {
       default:
 	r = -1;
 	break;
-	
+
     }
 
     va_end(val);

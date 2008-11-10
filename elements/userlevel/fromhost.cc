@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * fromhost.{cc,hh} -- receives packets to Linux through the 
+ * fromhost.{cc,hh} -- receives packets to Linux through the
  * TUN Universal TUN/TAP module
  * John Bicket
  *
@@ -57,7 +57,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     _mtu_out = DEFAULT_MTU;
 
     if (cp_va_kparse(conf, this, errh,
-		     "DEVNAME", cpkP+cpkM, cpString, &_dev_name, 
+		     "DEVNAME", cpkP+cpkM, cpString, &_dev_name,
 		     "DST", cpkP, cpIPPrefix, &_near, &_mask,
 		     "ETHER", 0, cpEthernetAddress, &_macaddr,
 		     "HEADROOM", 0, cpUnsigned, &_headroom,
@@ -87,7 +87,7 @@ FromHost::try_linux_universal(ErrorHandler *errh)
 	}
     } else
 	errh->warning("prop_open /dev/net/tun: %s", strerror(errno));
-    if (fd < 0)	
+    if (fd < 0)
 #endif
     fd = open("/dev/net/tun", O_RDWR | O_NONBLOCK);
     if (fd < 0) {
@@ -101,15 +101,15 @@ FromHost::try_linux_universal(ErrorHandler *errh)
     /* we want an ethertap-like interface */
     ifr.ifr_flags = IFF_TAP;
 
-    /* 
-     * setting ifr_name this allows us to select an aribitrary 
-     * interface name. 
+    /*
+     * setting ifr_name this allows us to select an aribitrary
+     * interface name.
      */
     strcpy(ifr.ifr_name, _dev_name.c_str());
 
     int err = ioctl(fd, TUNSETIFF, (void *)&ifr);
     if (err < 0) {
-	errh->warning("Linux universal tun failed for %s: %s", 
+	errh->warning("Linux universal tun failed for %s: %s",
 		      _dev_name.c_str(),
 		      strerror(errno));
 	close(fd);
@@ -132,12 +132,12 @@ FromHost::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *errh
 	if (system(tmp) != 0) {
 	    errh->error("%s: %s", tmp, strerror(errno));
 	}
-	
+
 	sprintf(tmp, "/sbin/ifconfig %s arp", _dev_name.c_str());
-	if (system(tmp) != 0) 
+	if (system(tmp) != 0)
 	    return errh->error("%s: couldn't set arp flags: %s", tmp, strerror(errno));
     }
-    
+
     if (near.s_addr) {
 	strcpy(tmp0, inet_ntoa(near));
 	strcpy(tmp1, inet_ntoa(mask));
@@ -146,7 +146,7 @@ FromHost::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *errh
 	    return errh->error("%s: `%s' failed\n(Perhaps Ethertap is in a kernel module that you haven't loaded yet?)", _dev_name.c_str(), tmp);
 	}
     }
-    
+
     // calculate maximum packet size needed to receive data from
     // tun/tap.
     _mtu_in = _mtu_out + 4;
@@ -158,7 +158,7 @@ FromHost::dealloc_tun()
 {
   if (_near) {
       String cmd = "/sbin/ifconfig " + _dev_name + " down";
-      if (system(cmd.c_str()) != 0) 
+      if (system(cmd.c_str()) != 0)
 	  click_chatter("%s: failed: %s", name().c_str(), cmd.c_str());
   }
 }
@@ -173,7 +173,7 @@ FromHost::initialize(ErrorHandler *errh)
 
     ScheduleInfo::join_scheduler(this, &_task, errh);
     _nonfull_signal = Notifier::downstream_full_signal(this, 0, &_task);
-    
+
     add_select(_fd, SELECT_READ);
     return 0;
 }
@@ -198,7 +198,7 @@ FromHost::selected(int fd)
 	click_chatter("out of memory!");
 	return;
     }
-    
+
     int cc = read(_fd, p->data(), _mtu_in);
     if (cc > 0) {
 	p->take(_mtu_in - cc);
@@ -228,7 +228,7 @@ FromHost::run_task(Task *)
 {
     if (!_nonfull_signal)
 	return false;
-    
+
     add_select(_fd, SELECT_READ);
     return true;
 
@@ -236,7 +236,7 @@ FromHost::run_task(Task *)
 
 enum {H_DEV_NAME, H_SIGNAL};
 
-String 
+String
 FromHost::read_param(Element *e, void *thunk)
 {
   FromHost *td = (FromHost *)e;

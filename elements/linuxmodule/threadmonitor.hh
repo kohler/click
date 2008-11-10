@@ -24,7 +24,7 @@ class ThreadMonitor : public Element { public:
 
     ThreadMonitor();
     ~ThreadMonitor();
-  
+
     const char *class_name() const	{ return "ThreadMonitor"; }
     int configure(Vector<String> &, ErrorHandler *);
 
@@ -36,7 +36,7 @@ class ThreadMonitor : public Element { public:
     Timer _timer;
     unsigned _interval;
     unsigned _thresh;
-    
+
 };
 
 #endif

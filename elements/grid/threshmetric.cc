@@ -18,7 +18,7 @@
 #include <click/error.hh>
 #include "elements/grid/threshmetric.hh"
 #include "elements/grid/linkstat.hh"
-CLICK_DECLS 
+CLICK_DECLS
 
 ThresholdMetric::ThresholdMetric()
   : _ls(0), _thresh(63), _twoway(false)
@@ -30,7 +30,7 @@ ThresholdMetric::~ThresholdMetric()
 }
 
 void *
-ThresholdMetric::cast(const char *n) 
+ThresholdMetric::cast(const char *n)
 {
   if (strcmp(n, "ThresholdMetric") == 0)
     return (ThresholdMetric *) this;
@@ -50,7 +50,7 @@ ThresholdMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 			 cpEnd);
   if (res < 0)
     return res;
-  if (_ls == 0) 
+  if (_ls == 0)
     errh->error("no LinkStat element specified");
   if (_ls->cast("LinkStat") == 0)
     return errh->error("LinkStat argument is wrong element type (should be LinkStat)");
@@ -65,13 +65,13 @@ ThresholdMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
 {
   if (m1.good() && m2.good())
     return m1.val() < m2.val();
-  else if (m2.good()) 
+  else if (m2.good())
     return false;
-  else 
+  else
     return true;
 }
 
-GridGenericMetric::metric_t 
+GridGenericMetric::metric_t
 ThresholdMetric::get_link_metric(const EtherAddress &e, bool data_sender) const
 {
   unsigned tau_fwd, tau_rev;
@@ -94,7 +94,7 @@ ThresholdMetric::get_link_metric(const EtherAddress &e, bool data_sender) const
     return _bad_metric;
 
   if (r_fwd >= _thresh && (!_twoway || r_rev >= _thresh))
-      return metric_t(1);      
+      return metric_t(1);
   else
     return _bad_metric;
 }
@@ -104,7 +104,7 @@ ThresholdMetric::append_metric(const metric_t &r, const metric_t &l) const
 {
   if (!r.good() || !l.good())
     return _bad_metric;
-  
+
   if (r.val() < 1)
     click_chatter("ThresholdMetric %s: append_metric WARNING: metric %u hops is too low for route metric",
 		  name().c_str(), r.val());

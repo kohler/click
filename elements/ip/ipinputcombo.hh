@@ -33,10 +33,10 @@ CheckIPHeader's versions.
 */
 
 class IPInputCombo : public Element {
-  
+
   atomic_uint32_t _drops;
   int _color;
-  
+
   Vector<IPAddress> _bad_src;
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   bool _aligned;
@@ -44,15 +44,15 @@ class IPInputCombo : public Element {
   Vector<IPAddress> _good_dst;
 
  public:
-  
+
   IPInputCombo();
   ~IPInputCombo();
-  
+
   const char *class_name() const		{ return "IPInputCombo"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
   const char *flags() const			{ return "A"; }
-  
+
   uint32_t drops() const			{ return _drops; }
   void add_handlers();
   int configure(Vector<String> &, ErrorHandler *);
@@ -60,7 +60,7 @@ class IPInputCombo : public Element {
   inline Packet *smaction(Packet *);
   void push(int, Packet *p);
   Packet *pull(int);
-  
+
 };
 
 CLICK_ENDDECLS

@@ -160,12 +160,12 @@ RFC2507c::make_compressed(int cid, Packet *p)
       return make_full(cid, p);
     }
     if(x)
-      flags |= (1 << 5);  
+      flags |= (1 << 5);
   }
 
   if(tcpp->th_flags & TH_PUSH)
     flags |= (1 << 4);
-    
+
   WritablePacket *q = Packet::make(p->length() - sizeof(click_ip)
 				   - sizeof(struct click_tcp) + 5 + flen);
   q->data()[0] = PT_COMPRESSED_TCP;
@@ -212,7 +212,7 @@ RFC2507c::simple_action(Packet *p)
   const click_tcp *tcpp = p->tcp_header();
   int cid;
   Packet *q = 0;
-  
+
   if(ipp->ip_hl != 5 ||
      ipp->ip_v != 4 ||
      (ipp->ip_off & htons(IP_OFFMASK | IP_MF)) != 0 ||

@@ -37,7 +37,7 @@ CLICK_DECLS
 class LinkStat;
 
 class E2ELossMetric : public GridGenericMetric {
-  
+
 public:
 
   E2ELossMetric();
@@ -56,7 +56,7 @@ public:
   bool metric_val_lt(const metric_t &, const metric_t &) const;
   metric_t get_link_metric(const EtherAddress &, bool) const;
   metric_t append_metric(const metric_t &, const metric_t &) const;
-  metric_t prepend_metric(const metric_t &r, const metric_t &l) const 
+  metric_t prepend_metric(const metric_t &r, const metric_t &l) const
   { return append_metric(r, l); }
 
   unsigned char scale_to_char(const metric_t &m) const { return (unsigned char) m.val(); }

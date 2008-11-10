@@ -37,7 +37,7 @@
 #elif defined(HAVE_NET_IF_TUN_H)
 # define KERNELTUN_NET 1
 #elif defined(__APPLE__)
-# define KERNELTUN_OSX 1 
+# define KERNELTUN_OSX 1
 // assume tun driver installed from http://chrisp.de/en/projects/tunnel.html
 // this driver doesn't produce or expect packets with an address family prepended
 #endif
@@ -105,7 +105,7 @@ KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
 	return -1;
 
     if (_gw) { // then it was set to non-zero by arg
-	// check net part matches 
+	// check net part matches
 	unsigned int g = _gw.in_addr().s_addr;
 	unsigned int m = _mask.in_addr().s_addr;
 	unsigned int n = _near.in_addr().s_addr;
@@ -180,7 +180,7 @@ KernelTun::alloc_tun(ErrorHandler *errh)
     int error, saved_error = 0;
     String saved_device, saved_message;
     StringAccum tried;
-    
+
 #if KERNELTUN_LINUX
     if ((error = try_linux_universal(errh)) >= 0)
 	return error;
@@ -210,7 +210,7 @@ KernelTun::alloc_tun(ErrorHandler *errh)
 #if defined(__NetBSD__) && !defined(TUNSIFHEAD)
     if (_type == NETBSD_TAP) {
 	// In NetBSD, two ways to create a tap:
-	// 1. open /dev/tap cloning interface. 
+	// 1. open /dev/tap cloning interface.
 	// 2. do ifconfig tapN create (SIOCIFCREATE), and then open(/dev/tapN).
 	// We use the cloning interface.
 	if ((error = try_tun(dev_prefix, errh)) >= 0) {
@@ -218,7 +218,7 @@ KernelTun::alloc_tun(ErrorHandler *errh)
 	    memset(&ifr, 0, sizeof(ifr));
 	    if (ioctl(_fd, TAPGIFNAME, &ifr) != 0)
 		return errh->error("TAPGIFNAME failed: %s", strerror(errno));
-	    _dev_name = ifr.ifr_name; 
+	    _dev_name = ifr.ifr_name;
 	    return error;
 	} else if (!saved_error || error != -ENOENT)
 	    saved_error = error, saved_device = dev_prefix, saved_message = String();
@@ -255,7 +255,7 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
     strncpy(ifr.ifr_name, _dev_name.c_str(), sizeof(ifr.ifr_name));
-#if defined(SIOCSIFADDR) && defined(SIOCSIFNETMASK) 
+#if defined(SIOCSIFADDR) && defined(SIOCSIFNETMASK)
     for (int trynum = 0; trynum < 2; trynum++) {
 	struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
 	sin->sin_family = AF_INET;
@@ -357,7 +357,7 @@ KernelTun::setup_tun(ErrorHandler *errh)
 	    return errh->error("TUNSIFINFO failed: %s", strerror(errno));
     }
 #endif
-    
+
 #if defined(TUNSIFHEAD) || defined(__FreeBSD__)
     // Each read/write prefixed with a 32-bit address family,
     // just as in OpenBSD.
@@ -366,7 +366,7 @@ KernelTun::setup_tun(ErrorHandler *errh)
 	if (ioctl(_fd, TUNSIFHEAD, &yes) != 0)
 	    return errh->error("TUNSIFHEAD failed: %s", strerror(errno));
     }
-#endif        
+#endif
 
     // set addresses and MTU
     if (updown(_near, _mask, errh) < 0)
@@ -402,7 +402,7 @@ KernelTun::setup_tun(ErrorHandler *errh)
 	_mtu_in = _mtu_out + 4; // + 0?
     else /* _type == LINUX_ETHERTAP */
 	_mtu_in = _mtu_out + 16;
-    
+
     return 0;
 }
 
@@ -448,7 +448,7 @@ KernelTun::selected(int fd)
 	click_chatter("out of memory!");
 	return;
     }
-    
+
     int cc = read(_fd, p->data(), _mtu_in);
     if (cc > 0) {
 	p->take(_mtu_in - cc);
@@ -522,7 +522,7 @@ KernelTun::push(int, Packet *p)
 {
     const click_ip *iph = 0;
     int check_length;
-    
+
     // sanity checks
     if (_tap) {
 	if (p->length() < sizeof(click_ether)) {
@@ -576,7 +576,7 @@ KernelTun::push(int, Packet *p)
 	if ((q = p->push(4)))
 	    *(uint32_t *)(q->data()) = ethertype;
 	p = q;
-    } else if (_type == BSD_TUN) { 
+    } else if (_type == BSD_TUN) {
 	uint32_t af = (iph->ip_v == 4 ? htonl(AF_INET) : htonl(AF_INET6));
 	if ((q = p->push(4)))
 	    *(uint32_t *)(q->data()) = af;
@@ -608,7 +608,7 @@ KernelTun::push(int, Packet *p)
 }
 
 String
-KernelTun::print_dev_name(Element *e, void *) 
+KernelTun::print_dev_name(Element *e, void *)
 {
     KernelTun *kt = (KernelTun *) e;
     return kt->_dev_name;

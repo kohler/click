@@ -83,7 +83,7 @@ ProgressBar::initialize(ErrorHandler *errh)
 	_status = ST_DEAD;
     else
 	_status = ST_FIRST;
-    
+
     _have_size = have_size;
     _timer.initialize(this);
     if (_active && _status != ST_DEAD)
@@ -134,7 +134,7 @@ getttywidth()
 	return 80;
 }
 
-static const char bar[] = 
+static const char bar[] =
 "************************************************************"
 "************************************************************"
 "************************************************************"
@@ -172,7 +172,7 @@ ProgressBar::run_timer(Timer *)
     // check _active
     if (!_active || _status == ST_DEAD)
 	return;
-    
+
     // get size on first time through
     if (_status == ST_FIRST || _status == ST_FIRSTDONE) {
 	if (!_have_size)
@@ -199,7 +199,7 @@ ProgressBar::run_timer(Timer *)
 	_timer.reschedule_at(_delay_time);
 	return;
     }
-    
+
     // get position
     double pos = 0;
     bool have_pos = get_value(_first_pos_h, _es.size(), &pos);
@@ -387,7 +387,7 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
 	  bool is_pos = ((intptr_t)thunk == H_POSHANDLER);
 	  int total = (is_pos ? pb->_first_pos_h + words.size() : pb->_es.size() - pb->_first_pos_h + words.size());
 	  int offset = (is_pos ? pb->_first_pos_h : 0);
-	  
+
 	  Vector<Element*> es(total, 0);
 	  Vector<const Handler*> hs(total, 0);
 
@@ -398,7 +398,7 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
 	  offset = (is_pos ? 0 : words.size() - pb->_first_pos_h);
 	  for (int i = (is_pos ? 0 : pb->_first_pos_h); i < (is_pos ? pb->_first_pos_h : pb->_es.size()); i++)
 	      es[i + offset] = pb->_es[i], hs[i + offset] = pb->_hs[i];
-	  
+
 	  es.swap(pb->_es);
 	  hs.swap(pb->_hs);
 	  if (!is_pos) {

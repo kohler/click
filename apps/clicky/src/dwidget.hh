@@ -38,14 +38,14 @@ enum {
     desplit_outputs = 0,
     desplit_inputs = 1
 };
-    
+
 struct dcontext {
-    
+
     crouter *cr;
     PangoLayout *pl;
     cairo_t *cairo;
 
-    unsigned generation;    
+    unsigned generation;
     int scale_step;
     double scale;
 
@@ -65,7 +65,7 @@ struct dcontext {
     }
 
     void set_font_description(const String &font);
-    
+
 };
 
 
@@ -82,7 +82,7 @@ class dwidget : public rectangle { public:
     }
 
     String unparse() const;
-    
+
     inline delt *cast_elt();
     inline const delt *cast_elt() const;
     inline dconn *cast_conn();
@@ -91,7 +91,7 @@ class dwidget : public rectangle { public:
     int z_index() const {
 	return _z_index;
     }
-    
+
     static bool z_index_less(const dwidget *a, const dwidget *b) {
 	return a->_z_index < b->_z_index;
     }
@@ -101,12 +101,12 @@ class dwidget : public rectangle { public:
     }
 
     inline void draw(dcontext &dcx);
-    
+
   private:
 
     int _type;
     int _z_index;
-    
+
 };
 
 
@@ -136,7 +136,7 @@ class dconn : public dwidget { public:
     bool change_count(unsigned new_count);
 
     bool visible() const;
-    
+
     bool layout();
     void draw(dcontext &dcx);
 
@@ -149,7 +149,7 @@ class dconn : public dwidget { public:
     Vector<point> _route;
 
     static inline int change_display(unsigned change);
-    
+
     friend class delt;
 
 };
@@ -192,7 +192,7 @@ class delt : public dwidget { public:
     delt *parent() const {
 	return _parent;
     }
-    
+
     int orientation() const;
     bool vertical() const;
     int display() const {
@@ -305,10 +305,10 @@ class delt : public dwidget { public:
     void create(RouterT *router, ProcessingT *processing,
 		HashTable<String, delt *> &collector, ScopeChain &chain,
 		int &z_index);
-    
+
     // gadgets
     void notify_read(wdiagram *d, handler_value *hv);
-    
+
     int find_gadget(wdiagram *d, double window_x, double window_y) const;
 
     void layout_main(dcontext &dcx);
@@ -338,7 +338,7 @@ class delt : public dwidget { public:
 			 HashTable<String, delt *> &collector,
 			 ScopeChain &chain, int &z_index);
     void create_connections(crouter *cr, int &z_index);
-    
+
   private:
 
     ElementT *_e;
@@ -356,7 +356,7 @@ class delt : public dwidget { public:
     double *_port_text_offsets;
     delt *_parent;
     delt *_split;
-    
+
     String _flat_name;
     String _flat_config;
     String _markup;
@@ -378,7 +378,7 @@ class delt : public dwidget { public:
 
     double _markup_width;
     double _markup_height;
-    
+
     double _contents_width;
     double _contents_height;
 
@@ -392,7 +392,7 @@ class delt : public dwidget { public:
 	    assert(f && t);
 	}
     };
-    
+
     delt(const delt &);
     delt &operator=(const delt &);
 
@@ -438,7 +438,7 @@ class delt : public dwidget { public:
     void draw_ports(dcontext &dcx);
     void draw_outline(dcontext &dcx);
     void draw_drop_shadow(dcontext &dcx);
-        
+
 };
 
 

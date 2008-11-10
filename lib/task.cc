@@ -148,7 +148,7 @@ Task::initialize(Router *router, bool schedule)
     // set _router last, since it is used to determine whether task is
     // initialized
     _router = router;
-    
+
 #if HAVE_STRIDE_SCHED
     set_tickets(DEFAULT_TICKETS);
 #endif
@@ -211,7 +211,7 @@ Task::cleanup()
 	    while (_pending_nextptr)
 		/* do nothing */;
 	}
-	
+
 	_router = 0;
 	_thread = 0;
     }
@@ -535,7 +535,7 @@ Task::process_pending(RouterThread *thread)
 
     if (other_thread)
 	other_thread->unlock_tasks();
-    
+
 #if CLICK_BSDMODULE
     splx(s);
 #endif

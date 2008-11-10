@@ -15,7 +15,7 @@ enum {
     hflag_rparam = 1 << 2,
     hflag_raw = 1 << 3,
     hflag_special = 1 << 4,
-    
+
     hflag_have_hvalue = 1 << 5,
     hflag_autorefresh = 1 << 6,
     hflag_notify_whandlers = 1 << 7,
@@ -32,7 +32,7 @@ enum {
     hflag_refresh = 1 << 17,
     hflag_deprecated = 1 << 18,
     hflag_uncommon = 1 << 19,
-    
+
     hflag_preferences = 1 << 20,
     hflag_outstanding = 1 << 21,
     hflag_dead = 1 << 22,
@@ -79,14 +79,14 @@ class handler_value { public:
     String handler_name() const {
 	return _hname.substring(_name_offset);
     }
-    
+
     const String &hparam() const {
 	return _hparam;
     }
     bool have_required_hparam() const {
 	return (_flags & (hflag_rparam | hflag_have_hvalue)) != hflag_rparam;
     }
-    
+
     const String &hvalue() const {
 	return _hvalue;
     }
@@ -154,7 +154,7 @@ class handler_value { public:
     }
 
     void refresh(crouter *cr, bool clear_outstanding = false);
-    
+
     gboolean on_autorefresh(crouter *cr, int period);
 
     void set_driver_flags(crouter *cr, int new_flags);
@@ -162,9 +162,9 @@ class handler_value { public:
     void set_flags(crouter *cr, int new_flags);
 
     static const String no_hvalue_string;
-    
+
   private:
-    
+
     String _hname;
     int _name_offset;
     String _hparam;
@@ -180,7 +180,7 @@ class handler_value { public:
     friend class handler_value_iterator;
 
     void create_autorefresh(crouter *cr);
-    
+
 };
 
 struct handler_value_iterator {
@@ -210,7 +210,7 @@ struct handler_value_iterator {
     friend class handler_values;
     friend bool operator==(handler_value_iterator, handler_value_iterator);
     friend bool operator!=(handler_value_iterator, handler_value_iterator);
-    
+
 };
 
 inline bool operator==(handler_value_iterator a, handler_value_iterator b) {
@@ -223,13 +223,13 @@ inline bool operator!=(handler_value_iterator a, handler_value_iterator b) {
 
 
 struct handler_values {
-    
+
     handler_values(crouter *cr);
 
     typedef handler_value_iterator iterator;
-    
+
     iterator begin(const String &ename);
-    
+
     inline iterator end() {
 	return iterator(0);
     }
@@ -249,7 +249,7 @@ struct handler_values {
 	} else
 	    return hard_find_placeholder(hname, flags, autorefresh_period);
     }
-    
+
     handler_value *find_force(const String &hname) {
 	return _hv.find_insert(hname).get();
     }
@@ -261,18 +261,18 @@ struct handler_values {
     void clear() {
 	_hv.clear();
     }
-    
+
     handler_value *set(const String &hname, const String &hparam, const String &hvalue, bool &changed);
-    
+
   private:
-    
+
     crouter *_cr;
     HashTable<handler_value> _hv;
     HashTable<String, int> _class_uflags;
 
     handler_value *hard_find_placeholder(const String &hname, int flags, int autorefresh_period);
     void set_handlers(const String &hname, const String &hparam, const String &hvalue);
-    
+
 };
 
 inline void handler_value::set_driver_flags(crouter *cr, int new_driver_flags)

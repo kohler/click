@@ -49,7 +49,7 @@ RoundRobinIPMapper::configure(Vector<String> &conf, ErrorHandler *errh)
     errh->warning("only one pattern given");
 
   int before = errh->nerrors();
-  
+
   for (int i = 0; i < conf.size(); i++) {
     IPRw::Pattern *p;
     int f, r;

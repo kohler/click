@@ -36,7 +36,7 @@ Returns or sets the DELAY parameter.
 =a BandwidthShaper, DelayUnqueue, SetTimestamp */
 
 class DelayShaper : public Element, public ActiveNotifier { public:
-  
+
     DelayShaper();
     ~DelayShaper();
 
@@ -63,7 +63,7 @@ class DelayShaper : public Element, public ActiveNotifier { public:
 
     static String read_param(Element *, void *);
     static int write_param(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

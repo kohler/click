@@ -17,7 +17,7 @@ CLICK_DECLS
  *
  * There are usually Queues both upstream and downstream
  * of Burster elements.
- * 
+ *
  * =n
  * The UNIX and Linux timers have granularity of about 10
  * milliseconds, so this Burster can only produce high packet
@@ -25,25 +25,25 @@ CLICK_DECLS
  */
 
 class Burster : public Element { public:
-  
+
   Burster();
   ~Burster();
-  
+
   const char *class_name() const                { return "Burster"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const       { return PULL_TO_PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   void run_timer(Timer *);
-  
+
  private:
-  
+
   int _npackets;
   Timer _timer;
   int _interval;
-  
+
 };
 
 CLICK_ENDDECLS

@@ -60,7 +60,7 @@ ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename,
 
     if (PAINT_ANNO(p) & 1)	// reverse _flowid
 	_flowid = _flowid.rev();
-    
+
     _have_first_seq[0] = _have_first_seq[1] = absolute_seq;
     _first_seq[0] = _first_seq[1] = 0;
 
@@ -78,7 +78,7 @@ ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename,
 	_tcp_windows = new uint16_t[NPKT];
     else
 	_tcp_windows = 0;
-    
+
     // sanity checks
     assert(_aggregate && (_ip_p == IP_PROTO_TCP || _ip_p == IP_PROTO_UDP));
 }
@@ -117,7 +117,7 @@ ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
     int pi = 0, ni = 0;
     const uint16_t *opt = reinterpret_cast<const uint16_t *>(_opt_info.data());
     const uint16_t *end_opt = opt + (_opt_info.length() / 2);
-    
+
     while (pi < _npkt || ni < _nnote)
 	if (ni >= _nnote || _note[ni].before_pkt > pi) {
 	    int pos;
@@ -145,7 +145,7 @@ ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
 	    if (_ip_p == IP_PROTO_TCP)
 		buf.c[pos++] = _pkt[pi].th_flags;
 	    buf.c[pos++] = _pkt[pi].direction;
-	    
+
 	    buf.u[0] = ntohl(pos);
 	    sa.append(&buf.c[0], pos);
 
@@ -174,7 +174,7 @@ int
 ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 {
     static StringAccum sa;
-    
+
     int fd;
     if (_filename == "-")
 	fd = STDOUT_FILENO;
@@ -190,7 +190,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
     // make a guess about how much data we'll need
     sa.clear();
     sa.reserve(_npkt * (_binary ? 28 : 40) + _note_text.length() + _nnote * 8 + _opt_info.length() + 16);
-    
+
     if (!_outputted) {
 	sa << "!IPSummaryDump 1.3\n!flowid "
 	   << _flowid.saddr() << ' ' << ntohs(_flowid.sport()) << ' '
@@ -235,7 +235,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 		sa << " payload_len";
 	}
 	sa << '\n';
-	
+
 	if (_have_first_seq[0] && _first_seq[0] && _ip_p == IP_PROTO_TCP)
 	    sa << "!firstseq > " << _first_seq[0] << '\n';
 	if (_have_first_seq[1] && _first_seq[1] && _ip_p == IP_PROTO_TCP)
@@ -252,7 +252,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 	int pi = 0, ni = 0;
 	const uint16_t *opt = reinterpret_cast<const uint16_t *>(_opt_info.data());
 	const uint16_t *end_opt = opt + (_opt_info.length() / 2);
-	
+
 	while (pi < _npkt || ni < _nnote)
 	    if (ni >= _nnote || _note[ni].before_pkt > pi) {
 		int direction = _pkt[pi].direction;
@@ -261,7 +261,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 
 		if (_ip_ids)
 		    sa << _ip_ids[pi] << ' ';
-		
+
 		if (_ip_p == IP_PROTO_TCP) {
 		    int flags = _pkt[pi].th_flags;
 		    if (flags == TH_ACK)
@@ -281,13 +281,13 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 
 		    if (_tcp_windows)
 			sa << ' ' << ntohs(_tcp_windows[pi]);
-		    
+
 		    if (opt < end_opt && opt[0] == pi) {
 			sa << ' ';
 			IPSummaryDump::unparse_tcp_opt(sa, reinterpret_cast<const uint8_t *>(opt + 2), opt[1], _tcp_opt);
 			opt += 2 + (opt[1] / 2);
 		    }
-		    
+
 		    sa << '\n';
 		} else
 		    sa << _pkt[pi].payload_len << '\n';
@@ -304,7 +304,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 
     _npkt = 0;
     _opt_info.clear();
-    
+
     _note_text.clear();
     _nnote = 0;
 
@@ -318,7 +318,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 	}
 	pos += written;
     }
-    
+
     if (fd != STDOUT_FILENO)
 	close(fd);
     _outputted = true;
@@ -340,7 +340,7 @@ ToIPFlowDumps::Flow::store_opt(const click_tcp *tcph, int direction)
     bool any = false;
     int original_len = _opt_info.length();
     char *data;
-    
+
     while (opt < end_opt)
 	switch (*opt) {
 	  case TCPOPT_EOL:
@@ -384,7 +384,7 @@ ToIPFlowDumps::Flow::store_opt(const click_tcp *tcph, int direction)
 	    if (!any && (data = _opt_info.extend(4)))
 		*(reinterpret_cast<uint16_t *>(data)) = _npkt;
 	    if ((data = _opt_info.extend(opt[1]))) {
-		// argh... must renumber sequence numbers in sack blocks 
+		// argh... must renumber sequence numbers in sack blocks
 		memcpy(data, opt, 2);
 		const uint8_t *end_sack_opt = opt + opt[1];
 		for (opt += 2, data += 2; opt < end_sack_opt; opt += 8, data += 8) {
@@ -419,7 +419,7 @@ ToIPFlowDumps::Flow::store_opt(const click_tcp *tcph, int direction)
 	*(reinterpret_cast<uint16_t *>(_opt_info.data() + original_len) + 1) = _opt_info.length() - original_len - 4;
     }
     return;
-    
+
   bad_opt:
     _opt_info.set_length(original_len);
 }
@@ -438,14 +438,14 @@ ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
 	    _packet_count++;
 	return add_note(sa.take_string(), errh);
     }
-    
+
     if (_npkt >= NPKT && output(errh) < 0)
 	return -1;
-    
+
     int direction = (PAINT_ANNO(p) & 1);
     const click_ip *iph = p->ip_header();
     assert(iph->ip_p == _ip_p);
-    
+
     _pkt[_npkt].timestamp = p->timestamp_anno() - _first_timestamp;
     _pkt[_npkt].direction = direction;
 
@@ -454,7 +454,7 @@ ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
 
     if (_ip_p == IP_PROTO_TCP) {
 	const click_tcp *tcph = p->tcp_header();
-	
+
 	tcp_seq_t s = ntohl(tcph->th_seq);
 	if (!_have_first_seq[direction]) {
 	    _first_seq[direction] = s;
@@ -467,7 +467,7 @@ ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
 	    _first_seq[!direction] = a;
 	    _have_first_seq[!direction] = true;
 	}
-	
+
 	_pkt[_npkt].th_seq = s - _first_seq[direction];
 	_pkt[_npkt].th_ack = a - _first_seq[!direction];
 	_pkt[_npkt].th_flags = tcph->th_flags;
@@ -482,14 +482,14 @@ ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
 
 	if (_tcp_windows)
 	    _tcp_windows[_npkt] = tcph->th_win;
-	
+
     } else
 	_pkt[_npkt].payload_len = ntohs(iph->ip_len) - sizeof(click_udp);
-    
+
     _npkt++;
     if (_packet_count < 0xFFFFFFFFU)
 	_packet_count++;
-    
+
     return 0;
 }
 
@@ -502,7 +502,7 @@ ToIPFlowDumps::Flow::add_note(const String &s, ErrorHandler *errh)
     _note[_nnote].before_pkt = _npkt;
     _note[_nnote].pos = _note_text.length();
     _note_text << s;
-    
+
     _nnote++;
     _note_count++;
 
@@ -534,7 +534,7 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
     Element *e = 0;
     bool absolute_time = false, absolute_seq = false, binary = false, all_tcp_opt = false, tcp_opt = false, tcp_window = false, ip_id = false, gzip = false;
     _mincount = 0;
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "FILEPATTERN", cpkP, cpFilename, &_filename_pattern,
 		     "OUTPUT_PATTERN", 0, cpFilename, &_filename_pattern,
@@ -555,7 +555,7 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 	_filename_pattern = "-";
     if (find(_filename_pattern, '%') == _filename_pattern.end())
 	errh->warning("OUTPUT_PATTERN has no %% escapes, so output files will get overwritten");
-    
+
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
 	return errh->error("%s is not an AggregateNotifier", e->name().c_str());
 
@@ -704,7 +704,7 @@ ToIPFlowDumps::expand_filename(const Packet *pkt, ErrorHandler *errh) const
     const char *data = _filename_pattern.data();
     int len = _filename_pattern.length();
     StringAccum sa;
-    
+
     for (int p = 0; p < len; p++)
 	if (data[p] == '%') {
 	    p++;
@@ -723,7 +723,7 @@ ToIPFlowDumps::expand_filename(const Packet *pkt, ErrorHandler *errh) const
 		for (p++; p < len && isdigit((unsigned char) data[p]); p++)
 		    precision = (precision * 10) + data[p] - '0';
 	    }
-	    
+
 	    StringAccum subsa;
 	    if (p >= len)
 		errh->error("bad filename pattern");
@@ -755,7 +755,7 @@ ToIPFlowDumps::expand_filename(const Packet *pkt, ErrorHandler *errh) const
 		subsa << '%';
 	    else
 		errh->error("bad filename pattern `%%%c'", data[p]);
-	    
+
 	    if (field_width >= 0 && subsa.length() < field_width)
 		for (int l = field_width - subsa.length(); l > 0; l--)
 		    sa << (zero_pad ? '0' : '_');
@@ -771,7 +771,7 @@ ToIPFlowDumps::find_aggregate(uint32_t agg, const Packet *p)
 {
     if (agg == 0)
 	return 0;
-    
+
     int bucket = (agg & (NFLOWMAP - 1));
     Flow *prev = 0, *f = _flowmap[bucket];
     while (f && f->aggregate() != agg) {
@@ -792,7 +792,7 @@ ToIPFlowDumps::find_aggregate(uint32_t agg, const Packet *p)
 	f->set_next(_flowmap[bucket]);
 	_flowmap[bucket] = f;
     }
-    
+
     return f;
 }
 

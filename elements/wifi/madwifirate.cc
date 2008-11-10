@@ -37,7 +37,7 @@ CLICK_DECLS
 MadwifiRate::MadwifiRate()
   : _stepup(0),
     _stepdown(0),
-    _offset(0), 
+    _offset(0),
     _timer(this),
     _packet_size_threshold(0)
 {
@@ -59,8 +59,8 @@ MadwifiRate::~MadwifiRate()
 {
 }
 
-int 
-MadwifiRate::initialize(ErrorHandler *) 
+int
+MadwifiRate::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
   _timer.schedule_now();
@@ -83,7 +83,7 @@ MadwifiRate::configure(Vector<String> &conf, ErrorHandler *errh)
   return ret;
 }
 
-void 
+void
 MadwifiRate::adjust_all()
 {
   Vector<EtherAddress> n;
@@ -98,8 +98,8 @@ MadwifiRate::adjust_all()
 
 }
 
-void 
-MadwifiRate::adjust(EtherAddress dst) 
+void
+MadwifiRate::adjust(EtherAddress dst)
 {
   DstInfo *nfo = _neighbors.findp(dst);
     bool stepup = false;
@@ -115,7 +115,7 @@ MadwifiRate::adjust(EtherAddress dst)
     stepdown = true;
 
   /* no error and less than 10% of packets need retry */
-  if (enough && nfo->_failures == 0 && 
+  if (enough && nfo->_failures == 0 &&
       nfo->_retries < (nfo->_successes * STEPUP_RETRY_THRESHOLD) / 100)
     stepup = true;
 
@@ -137,7 +137,7 @@ MadwifiRate::adjust(EtherAddress dst)
 		      this,
 		      nfo->_eth.unparse().c_str(),
 		      nfo->_rates[nfo->_current_index],
-		      nfo->_rates[min(nfo->_rates.size() - 1, 
+		      nfo->_rates[min(nfo->_rates.size() - 1,
 				      nfo->_current_index + 1)]);
       }
       nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
@@ -173,7 +173,7 @@ MadwifiRate::process_feedback(Packet *p_in)
   bool success = !(ceh->flags & WIFI_EXTRA_TX_FAIL);
   bool used_alt_rate = ceh->flags & WIFI_EXTRA_TX_USED_ALT_RATE;
 
-  if (dst.is_group() || !ceh->rate || 
+  if (dst.is_group() || !ceh->rate ||
       (success && p_in->length() < _packet_size_threshold)) {
     return;
   }
@@ -268,7 +268,7 @@ MadwifiRate::assign_rate(Packet *p_in)
   ceh->max_tries3 = (ndx - 3 >= 0) ? 2 : 0;
 
   return;
-  
+
 }
 
 
@@ -301,7 +301,7 @@ MadwifiRate::push(int port, Packet *p_in)
 
 
 String
-MadwifiRate::print_rates() 
+MadwifiRate::print_rates()
 {
     StringAccum sa;
   for (NIter iter = _neighbors.begin(); iter.live(); iter++) {
@@ -321,7 +321,7 @@ MadwifiRate::print_rates()
 }
 
 
-enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET, 
+enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET,
       H_OFFSET, H_ACTIVE, H_PERIOD,
       H_ALT_RATE};
 
@@ -346,15 +346,15 @@ MadwifiRate_read_param(Element *e, void *thunk)
   case H_RATES: {
     return td->print_rates();
   }
-  case H_ACTIVE: 
+  case H_ACTIVE:
     return String(td->_active) + "\n";
-  case H_PERIOD: 
+  case H_PERIOD:
     return String(td->_period) + "\n";
   default:
     return String();
   }
 }
-static int 
+static int
 MadwifiRate_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -363,60 +363,60 @@ MadwifiRate_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
   }
   case H_ALT_RATE: {
     bool alt_rate;
-    if (!cp_bool(s, &alt_rate)) 
+    if (!cp_bool(s, &alt_rate))
       return errh->error("alt_rate parameter must be boolean");
     f->_alt_rate = alt_rate;
     break;
   }
   case H_STEPUP: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("stepup parameter must be unsigned");
     f->_stepup = m;
     break;
   }
   case H_STEPDOWN: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("stepdown parameter must be unsigned");
     f->_stepdown = m;
     break;
   }
   case H_THRESHOLD: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("threshold parameter must be unsigned");
     f->_packet_size_threshold = m;
     break;
   }
   case H_OFFSET: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("offset parameter must be unsigned");
     f->_offset = m;
     break;
   }
   case H_PERIOD: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("period parameter must be unsigned");
     f->_period = m;
     break;
   }
-  case H_RESET: 
+  case H_RESET:
     f->_neighbors.clear();
     break;
 
  case H_ACTIVE: {
     bool active;
-    if (!cp_bool(s, &active)) 
+    if (!cp_bool(s, &active))
       return errh->error("active must be boolean");
     f->_active = active;
     break;

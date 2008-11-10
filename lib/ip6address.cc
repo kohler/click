@@ -90,10 +90,10 @@ IP6Address::mask_to_prefix_len() const
     return prefix + (prefix >= 0 ? word * 32 : 0);
 }
 
-bool 
+bool
 IP6Address::ether_address(EtherAddress &mac) const
 {
-    /* 
+    /*
      * embedded mac address look like this:
      * nnnn:nnnn:nnnn:nnnn:xxxx:xxFF:FExx:xxxx
      * where xx's are the mac address.
@@ -118,8 +118,8 @@ IP6Address::ip4_address(IPAddress &ip4) const
 	&& (_addr.s6_addr32[2] == 0 || _addr.s6_addr32[2] == htonl(0x0000FFFFU))) {
 	ip4 = IPAddress(_addr.s6_addr32[3]);
 	return true;
-    } else 
-	return false;  
+    } else
+	return false;
 }
 
 String
@@ -177,21 +177,21 @@ operator<<(StringAccum &sa, const IP6Address &a)
 }
 
 
-// those two  methods will calculate the checksum field of ICMP6 Message.  
+// those two  methods will calculate the checksum field of ICMP6 Message.
 
-// The checksum is the 16-bit one's complement 
+// The checksum is the 16-bit one's complement
 // of the one's complement sum of the entire ICMPv6 message starting with the
-// ICMPv6 message type field, prepended with a "pseudo-header" of IPv6 header 
-// fields, as specified in [IPv6, section 8.1]. The Next Header value used in 
-// the pseudo-header is 58 (i.e. 0x3a). (NOTE: the inclusion of a pseudo-header in the 
-// ICMPv6 checksum is a change from IPv4; see [RFC 2460] for the rationale 
-// for this change.) 
+// ICMPv6 message type field, prepended with a "pseudo-header" of IPv6 header
+// fields, as specified in [IPv6, section 8.1]. The Next Header value used in
+// the pseudo-header is 58 (i.e. 0x3a). (NOTE: the inclusion of a pseudo-header in the
+// ICMPv6 checksum is a change from IPv4; see [RFC 2460] for the rationale
+// for this change.)
 // A "pseudo-header" include src and dst address of ipv6 header, packet length,
-// protocal field (for ICMP, it is 58) field. Packet length is the 
-// payloadlength from the IPv6 header, minus the length of any extension 
-// header present between the IPv6 header and the upper-layer header. 
+// protocal field (for ICMP, it is 58) field. Packet length is the
+// payloadlength from the IPv6 header, minus the length of any extension
+// header present between the IPv6 header and the upper-layer header.
 
-// The following methods only differ at how it deal with ip6 address, i.e. add 32 bit 
+// The following methods only differ at how it deal with ip6 address, i.e. add 32 bit
 // a time or 16 bits a time.
 
 
@@ -203,24 +203,24 @@ in6_fast_cksum(const struct click_in6_addr *saddr,
                uint16_t ori_csum,
                const unsigned char *addr,
                uint16_t len2)
-{ 
+{
 	uint16_t ulen;
 	uint16_t uproto;
 	uint16_t answer = 0;
 	uint32_t csum =0;
 	uint32_t carry;
-	
-	
+
+
 	//get the sum of source and destination address
 	for (int i=0; i<4; i++) {
-	  
+
 	  csum += ntohl(saddr->s6_addr32[i]);
 	  carry = (csum < ntohl(saddr->s6_addr32[i]));
 	  csum += carry;
 	}
 
 	for (int i=0; i<4; i++) {
-	 
+
 	   csum += ntohl(daddr->s6_addr32[i]);
 	   carry = (csum < ntohl(daddr->s6_addr32[i]));
 	   csum += carry;
@@ -232,49 +232,49 @@ in6_fast_cksum(const struct click_in6_addr *saddr,
 
 	uproto = proto;
 	csum += uproto;
-	
+
 	//get the sum of the ICMP6 package
 	uint16_t nleft = ntohs(len2);
 	const uint16_t *w = (const uint16_t *)addr;
-	while (nleft > 1)  { 
+	while (nleft > 1)  {
 	    uint16_t w2=*w++;
-	    csum += ntohs(w2); 
+	    csum += ntohs(w2);
 	    nleft -=2;
 	 }
-  
-	 //mop up an odd byte, if necessary 
-	  if (nleft == 1) { 
+
+	 //mop up an odd byte, if necessary
+	  if (nleft == 1) {
 	    *(unsigned char *)(&answer) = *(const unsigned char *)w ;
-	    csum += ntohs(answer); 	 
-	  }  
-	  csum -= ntohs(ori_csum); //get rid of the effect of ori_csum in the calculation
-        
-	  // fold >=32-bit csum to 16-bits 
-	  while (csum>>16) {
-	    csum = (csum & 0xffff) + (csum >> 16); 
+	    csum += ntohs(answer);
 	  }
-	  
-	  answer = ~csum;          // truncate to 16 bits 
+	  csum -= ntohs(ori_csum); //get rid of the effect of ori_csum in the calculation
+
+	  // fold >=32-bit csum to 16-bits
+	  while (csum>>16) {
+	    csum = (csum & 0xffff) + (csum >> 16);
+	  }
+
+	  answer = ~csum;          // truncate to 16 bits
 	  return answer;
 }
 
 
 //This is the slow way for in6_cksum
-unsigned short 
+unsigned short
 in6_cksum(const struct click_in6_addr *saddr,
 	  const struct click_in6_addr *daddr,
-	  uint16_t len, 
+	  uint16_t len,
 	  uint8_t proto,
 	  uint16_t ori_csum,
 	  unsigned char *addr,
 	  uint16_t len2)
-{ 
+{
 	uint16_t ulen;
 	uint16_t uproto;
 	uint16_t answer = 0;
 	uint32_t csum =0;
-	
-	
+
+
 	//get the sum of source and destination address
 	for (int i=0; i<8; i++) {
 	  csum += ntohs(saddr->s6_addr16[i]);
@@ -290,29 +290,29 @@ in6_cksum(const struct click_in6_addr *saddr,
 
 	uproto = proto;
 	csum += uproto;
-	
+
 	//get the sum of the ICMP6 package
 	uint16_t nleft = ntohs(len2);
 	const uint16_t *w = (const uint16_t *)addr;
-	while (nleft > 1)  { 
+	while (nleft > 1)  {
 	    uint16_t w2=*w++;
-	    csum += ntohs(w2); 
+	    csum += ntohs(w2);
 	    nleft -=2;
 	 }
- 
-	 //mop up an odd byte, if necessary 
-	  if (nleft == 1) { 
+
+	 //mop up an odd byte, if necessary
+	  if (nleft == 1) {
 	    *(unsigned char *)(&answer) = *(const unsigned char *)w ;
-	    csum += ntohs(answer); 	 
-	  }  
-	  csum -= ntohs(ori_csum); //get rid of the effect of ori_csum in the calculation
-        
-	  // fold >=32-bit csum to 16-bits 
-	  while (csum>>16) {
-	    csum = (csum & 0xffff) + (csum >> 16); 
+	    csum += ntohs(answer);
 	  }
-	  
-	  answer = ~csum;          // truncate to 16 bits 
+	  csum -= ntohs(ori_csum); //get rid of the effect of ori_csum in the calculation
+
+	  // fold >=32-bit csum to 16-bits
+	  while (csum>>16) {
+	    csum = (csum & 0xffff) + (csum >> 16);
+	  }
+
+	  answer = ~csum;          // truncate to 16 bits
 	  return answer;
 }
 

@@ -88,7 +88,7 @@ AggregateIP::handle_packet(Packet *p)
 {
     if (!p->has_network_header())
 	return bad_packet(p);
-    
+
     const click_ip *iph = p->ip_header();
     int offset = p->length();
     switch (_f.proto()) {

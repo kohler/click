@@ -61,10 +61,10 @@ AvailableRates::parse_and_insert(String s, ErrorHandler *errh)
     default_rates = true;
     _default_rates.clear();
   } else {
-    if (!cp_ethernet_address(args[0], &e)) 
+    if (!cp_ethernet_address(args[0], &e))
       return errh->error("error param %s: must start with ethernet address", s.c_str());
   }
-  
+
   for (int x = 1; x< args.size(); x++) {
     int r;
     cp_integer(args[x], &r);
@@ -74,7 +74,7 @@ AvailableRates::parse_and_insert(String s, ErrorHandler *errh)
       rates.push_back(r);
     }
   }
-  
+
   if (default_rates) {
     return 0;
   }
@@ -100,7 +100,7 @@ AvailableRates::configure(Vector<String> &conf, ErrorHandler *errh)
   return res;
 }
 
-void 
+void
 AvailableRates::take_state(Element *e, ErrorHandler *)
 {
   AvailableRates *q = (AvailableRates *)e->cast("AvailableRates");
@@ -131,7 +131,7 @@ AvailableRates::lookup(EtherAddress eth)
 }
 
 int
-AvailableRates::insert(EtherAddress eth, Vector<int> rates) 
+AvailableRates::insert(EtherAddress eth, Vector<int> rates)
 {
   if (!(eth)) {
     if (_debug) {
@@ -198,7 +198,7 @@ AvailableRates_read_param(Element *e, void *thunk)
     return String();
   }
 }
-static int 
+static int
 AvailableRates_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -207,16 +207,16 @@ AvailableRates_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
   }
-  case H_INSERT: 
+  case H_INSERT:
     return f->parse_and_insert(in_s, errh);
   case H_REMOVE: {
     EtherAddress e;
-    if (!cp_ethernet_address(s, &e)) 
+    if (!cp_ethernet_address(s, &e))
       return errh->error("remove parameter must be ethernet address");
     f->_rtable.erase(e);
     break;
@@ -237,7 +237,7 @@ AvailableRates::add_handlers()
   add_write_handler("insert", AvailableRates_write_param, (void *) H_INSERT);
   add_write_handler("remove", AvailableRates_write_param, (void *) H_REMOVE);
 
-  
+
 }
 
 CLICK_ENDDECLS

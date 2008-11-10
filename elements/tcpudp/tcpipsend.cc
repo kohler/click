@@ -75,12 +75,12 @@ TCPIPSend::make_packet(unsigned int saddr, unsigned int daddr,
   if (q == 0) {
     click_chatter("in TCPIPSend: cannot make packet!");
     assert(0);
-  } 
+  }
   memset(q->data(), '\0', q->length());
   ip = (struct click_ip *) q->data();
   tcp = (struct click_tcp *) (ip + 1);
   q->set_ip_header(ip, sizeof(click_ip));
-  
+
   // IP fields
   ip->ip_v = 4;
   ip->ip_hl = 5;

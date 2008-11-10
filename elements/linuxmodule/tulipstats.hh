@@ -41,7 +41,7 @@
  * The C<counts> handler returns a lot of information. Here is a sample dump:
  *
  *   PC (polling stats count):               15031503
- *   
+ *
  *   EB0 (parity error):                     15031503
  *   EB1 (master abort):                     0
  *   EB2 (target abort):                     0
@@ -50,7 +50,7 @@
  *   EB5 (reserved):                         0
  *   EB6 (reserved):                         0
  *   EB7 (reserved):                         0
- *   
+ *
  *   TS0 (stopped):                          15031503
  *   TS1 (run, fetching xmit descrip):       0
  *   TS2 (run, waiting for eot):             0
@@ -59,7 +59,7 @@
  *   TS5 (run, setup packet):                0
  *   TS6 (susp, xmit fifo underflow):        0
  *   TS7 (run, closing xmit descrip):        0
- *   
+ *
  *   RS0 (stopped):                          15031503
  *   RS1 (run, fetch recv descrip):          0
  *   RS2 (run, checking for eor):            0
@@ -68,9 +68,9 @@
  *   RS5 (run, closing recv descrip):        0
  *   RS6 (run, flushing current frame):      0
  *   RS7 (run, queue recv frame):            0
- *   
+ *
  *   IC (intr count):                        0
- *   
+ *
  *   TI (transmit intr):                     0
  *   TPS (transmit process stopped):         0
  *   TU (transmit buffer unavailable):       0
@@ -88,12 +88,12 @@
  *   ERI (early receive intr):               0
  *   AIS (abnormal intr summary):            0
  *   NIS (normal intr summary):              0
- *   
+ *
  *   OCO (overflow ctr overflow):            0
  *   FOC (fifo overflow ctr):                0
  *   MFO (missed frame overflow):            0
  *   MFC (missed frame ctr):                 0
- *   
+ *
  *   TBZ (device xmit busy):                 0
  *   TXE (xmit errors):                      0
  *   TXA (xmit aborted):                     0
@@ -131,14 +131,14 @@
 #include "elements/linuxmodule/fromhost.hh"
 
 class TulipStats : public AnyTaskDevice { public:
-  
+
   TulipStats();
   ~TulipStats();
 
   static void static_initialize();
-  
+
   const char *class_name() const	{ return "TulipStats"; }
-  
+
   int configure_phase() const	{ return FromHost::TODEVICE_CONFIGURE_PHASE; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
@@ -146,9 +146,9 @@ class TulipStats : public AnyTaskDevice { public:
   void add_handlers();
 
   void reset_counts();
-  
+
   bool run_task(Task *);
-  
+
  private:
 
   unsigned long _nstats_polls;
@@ -171,15 +171,15 @@ class TulipStats : public AnyTaskDevice { public:
   unsigned long _base_tx_fifo_errors;
   unsigned long _base_tx_heartbeat_errors;
   unsigned long _base_tx_packets;
-  
+
   unsigned long _tbusy;
 
   Task _task;
-  
+
   void stats_poll();
   static void interrupt_notifier(net_device *, unsigned);
   static String read_counts(Element *, void *);
-  
+
 };
 
 #endif

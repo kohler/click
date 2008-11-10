@@ -24,7 +24,7 @@
  * Keyword:
  *
  * =over 8
- * 
+ *
  * =item USE_XY
  *
  * Boolean.  Defaults to false.  Use x,y coordinates in metres instead
@@ -43,12 +43,12 @@
 CLICK_DECLS
 
 class RadioSim : public Element {
-  
+
  public:
-  
+
   RadioSim();
   ~RadioSim();
-  
+
   const char *class_name() const		{ return "RadioSim"; }
   const char *port_count() const		{ return "-/-"; }
   const char *processing() const		{ return PULL_TO_PUSH; }
@@ -78,7 +78,7 @@ private:
 
   Vector<Node> _nodes;
   Task _task;
-  
+
   bool _use_xy;
 };
 

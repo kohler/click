@@ -8,7 +8,7 @@
  * =s Grid
  * Run DSDV-like local routing protocol
  *
- * =d 
+ * =d
  * Implements a DSDV-like loop-free routing protocol by originating
  * routing messages based on its routing tables, and processing
  * routing update messages from other nodes.  Maintains an immediate
@@ -16,8 +16,8 @@
  * removed TIMEOUT milliseconds after being installed.  PERIOD is the
  * milliseconds between route broadcasts, randomly offset by up to
  * JITTER milliseconds.  ETH and IP describe this node's Grid
- * addresses, and GW is the GridGatewayInfo element.  LinkTracker 
- * and LinkStat are LinkTracker and LinkStat elements for the interface 
+ * addresses, and GW is the GridGatewayInfo element.  LinkTracker
+ * and LinkStat are LinkTracker and LinkStat elements for the interface
  * to which this GridRouteTable element is connected.
  *
  * Routing message entries are marked with both a sequence number
@@ -49,7 +49,7 @@
  * =over 8
  *
  * =item MAX_HOPS
- * 
+ *
  * Integer.  The maximum number of hops for which a route should
  * propagate.  The default number of hops is 3.
  *
@@ -71,7 +71,7 @@
  * GridLogger element.  Object to log events to.
  *
  * =a
- * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, UpdateGridRoutes, 
+ * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, UpdateGridRoutes,
  * LinkStat, LinkTracker, GridGatewayInfo, GridLogger */
 
 #include <click/bighashmap.hh>
@@ -95,7 +95,7 @@ public:
   bool current_gateway(RouteEntry &entry);
   bool get_one_entry(const IPAddress &dest_ip, RouteEntry &entry);
   void get_all_entries(Vector<RouteEntry> &vec);
- 
+
 
 public:
 
@@ -107,7 +107,7 @@ public:
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return "h/h"; }
   const char *flow_code() const                 { return "x/y"; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
@@ -116,10 +116,10 @@ public:
   Packet *simple_action(Packet *);
 
   void add_handlers();
-  
+
 
 private:
-  /* 
+  /*
    * route table entry
    */
   class RTEntry {
@@ -136,7 +136,7 @@ private:
   public:
     unsigned char num_hops() const { check(); return _num_hops; }
 
-    void invalidate() { 
+    void invalidate() {
       check();
       assert(_num_hops > 0 && !(_seq_no & 1));
       _num_hops = 0; _seq_no++;
@@ -149,7 +149,7 @@ private:
     bool is_gateway;
 
   private:
-    unsigned int _seq_no; 
+    unsigned int _seq_no;
   public:
     unsigned int seq_no() const { check(); return _seq_no; }
     unsigned int ttl;  // msecs
@@ -162,19 +162,19 @@ private:
                             calling initialize_metric or
                             update_metric. */
 
-    RTEntry() : 
-      _init(false), _num_hops(0), loc_good(false), is_gateway(false), 
+    RTEntry() :
+      _init(false), _num_hops(0), loc_good(false), is_gateway(false),
       _seq_no(0), ttl(0), last_updated_jiffies(-1), metric_valid(false)
     { }
 
   public:
     RTEntry(IPAddress _dest_ip, IPAddress _next_hop_ip, EtherAddress _next_hop_eth,
-	    unsigned char num_hops, grid_location _loc, unsigned short _loc_err, 
-	    bool _loc_good, bool _is_gateway, unsigned int seq_no, unsigned int _ttl, 
+	    unsigned char num_hops, grid_location _loc, unsigned short _loc_err,
+	    bool _loc_good, bool _is_gateway, unsigned int seq_no, unsigned int _ttl,
 	    unsigned int _last_updated_jiffies) :
-      _init(true), dest_ip(_dest_ip), next_hop_ip(_next_hop_ip), 
-      next_hop_eth(_next_hop_eth), _num_hops(num_hops), loc(_loc), 
-      loc_err(_loc_err), loc_good(_loc_good), is_gateway(_is_gateway), 
+      _init(true), dest_ip(_dest_ip), next_hop_ip(_next_hop_ip),
+      next_hop_eth(_next_hop_eth), _num_hops(num_hops), loc(_loc),
+      loc_err(_loc_err), loc_good(_loc_good), is_gateway(_is_gateway),
       _seq_no(seq_no), ttl(_ttl),
       last_updated_jiffies(_last_updated_jiffies), metric_valid(false)
     { check(); }
@@ -182,22 +182,22 @@ private:
     /* constructor for 1-hop route entry, converting from net byte order */
     RTEntry(IPAddress ip, EtherAddress eth, grid_hdr *gh, grid_hello *hlo,
 	    unsigned int jiff) :
-      _init(true), dest_ip(ip), dest_eth(eth), next_hop_ip(ip), next_hop_eth(eth), _num_hops(1), 
+      _init(true), dest_ip(ip), dest_eth(eth), next_hop_ip(ip), next_hop_eth(eth), _num_hops(1),
       loc(gh->loc), loc_good(gh->loc_good), is_gateway(hlo->is_gateway),
       last_updated_jiffies(jiff), metric_valid(false)
-    { 
-      loc_err = ntohs(gh->loc_err); 
-      _seq_no = ntohl(hlo->seq_no); 
+    {
+      loc_err = ntohs(gh->loc_err);
+      _seq_no = ntohl(hlo->seq_no);
       ttl = ntohl(hlo->ttl);
       check();
     }
 
     /* constructor from grid_nbr_entry, converting from net byte order */
-    RTEntry(IPAddress ip, EtherAddress eth, grid_nbr_entry *nbr, 
+    RTEntry(IPAddress ip, EtherAddress eth, grid_nbr_entry *nbr,
 	    unsigned int jiff) :
       _init(true), dest_ip(nbr->ip), next_hop_ip(ip), next_hop_eth(eth),
-      _num_hops(nbr->num_hops ? nbr->num_hops + 1 : 0), loc(nbr->loc), loc_good(nbr->loc_good),  
-      is_gateway(nbr->is_gateway), last_updated_jiffies(jiff), 
+      _num_hops(nbr->num_hops ? nbr->num_hops + 1 : 0), loc(nbr->loc), loc_good(nbr->loc_good),
+      is_gateway(nbr->is_gateway), last_updated_jiffies(jiff),
       metric_valid(nbr->metric_valid)
     {
       loc_err = ntohs(nbr->loc_err);
@@ -206,12 +206,12 @@ private:
       metric = ntohl(nbr->metric);
       check();
     }
-    
+
     /* copy data from this into nb, converting to net byte order */
     void fill_in(grid_nbr_entry *nb, LinkStat *ls = 0);
     void check() const { assert(_init); assert((_num_hops > 0) != (_seq_no & 1)); }
-  }; 
- 
+  };
+
   typedef HashMap<IPAddress, RTEntry> RTable;
   typedef RTable::iterator RTIter;
 
@@ -265,10 +265,10 @@ private:
 
   /* expires routes; returns the expired routes */
   Vector<RTEntry> expire_routes();
-  
+
   /* runs to broadcast route advertisements and triggered updates */
   static void hello_hook(Timer *, void *);
-  
+
   /* send a route advertisement containing the entries in rte_info */
   void send_routing_update(Vector<RTEntry> &rtes_to_send, bool update_seq = true, bool check_ttls = true);
 
@@ -339,13 +339,13 @@ private:
 
   static String metric_type_to_string(MetricType t);
   static MetricType check_metric_type(const String &);
-  
+
   MetricType _metric_type;
 
   /* top and bottom of ranges for qual/sig pct */
   int _max_metric;
   int _min_metric;
-  
+
   static const unsigned int _bad_metric = 7777777;
 
   /* default ranges taken from experiments -- from approx 144 million received packets! */
@@ -356,12 +356,12 @@ private:
    * |        -100 |         -13 |     13.0719 |    -69.8756 |            0 |          130 |       3.6859 |       6.7074 |
    * +-------------+-------------+-------------+-------------+--------------+--------------+--------------+--------------+
    */
-  static const int _max_qual = 130; 
+  static const int _max_qual = 130;
   static const int _min_qual = 0;
-  static const int _max_sig = -13; 
+  static const int _max_sig = -13;
   static const int _min_sig = -100;
 
-    
+
   enum {
     EstByQual = 0,
     EstBySig,
@@ -374,8 +374,8 @@ private:
   bool _frozen;
 
   RouteEntry make_generic_rte(const RTEntry &rte) {
-    return RouteEntry(rte.dest_ip, rte.loc_good, rte.loc_err, rte.loc, 
-		      rte.next_hop_eth, rte.next_hop_ip, 
+    return RouteEntry(rte.dest_ip, rte.loc_good, rte.loc_err, rte.loc,
+		      rte.next_hop_eth, rte.next_hop_ip,
 		      0, // ignore interface number information
 		      rte.seq_no(), rte.num_hops());
   }

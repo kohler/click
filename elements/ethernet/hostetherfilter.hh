@@ -47,7 +47,7 @@ The ethernet header starts OFFSET bytes into the packet. Default OFFSET is 0.
 */
 
 class HostEtherFilter : public Element { public:
-  
+
   HostEtherFilter();
   ~HostEtherFilter();
 
@@ -58,7 +58,7 @@ class HostEtherFilter : public Element { public:
   int configure(Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
-  
+
  private:
 
   bool _drop_own : 1;
@@ -67,7 +67,7 @@ class HostEtherFilter : public Element { public:
   unsigned char _addr[6];
 
   inline Packet *drop(Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

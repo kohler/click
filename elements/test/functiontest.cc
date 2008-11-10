@@ -43,7 +43,7 @@ FunctionTest::initialize(ErrorHandler *errh)
     CHECK(ffs_msb(1U) == 32);
     CHECK(ffs_msb(0x80000000U) == 1);
     CHECK(ffs_msb(0x00010000U) == 16);
-    
+
     CHECK(ffs_lsb(0U) == 0);
     CHECK(ffs_lsb(1U) == 1);
     CHECK(ffs_lsb(0x80000000U) == 32);
@@ -79,7 +79,7 @@ FunctionTest::initialize(ErrorHandler *errh)
     CHECK(!glob_match("xx.o", "?.o"));
     CHECK(glob_match("x.o.d", "x*.?*.*"));
 #endif
-    
+
     errh->message("All tests pass!");
     return 0;
 }

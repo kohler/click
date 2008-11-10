@@ -111,7 +111,7 @@ int whandler::hinfo::create_preferences(whandler *wh)
     gtk_alignment_set_padding(GTK_ALIGNMENT(aligner), 0, 4, 2, 2);
     gtk_container_add(GTK_CONTAINER(wcontainer), aligner);
     g_object_set_data_full(G_OBJECT(aligner), "clicky_hname", g_strdup(hv->hname().c_str()), g_free);
-    
+
     // fill the dialog
     GtkWidget *mainbox = gtk_vbox_new(FALSE, 0);
     gtk_container_add(GTK_CONTAINER(aligner), mainbox);
@@ -170,7 +170,7 @@ int whandler::hinfo::create_display(whandler *wh)
 {
     int flags = hv->flags();
     assert(!(flags & hflag_preferences) && !wdata);
-    
+
     // create container
     if (wcontainer)
 	/* do not recreate */;
@@ -208,7 +208,7 @@ int whandler::hinfo::create_display(whandler *wh)
 	else if (wh->active())
 	    g_signal_connect(wdata, "clicked", G_CALLBACK(on_handler_action_apply_clicked), wh);
 	padding = 2;
-	
+
     } else if (flags & hflag_checkbox) {
 	wadd = gtk_event_box_new();
 	wdata = gtk_check_button_new_with_label(hv->handler_name().c_str());
@@ -223,7 +223,7 @@ int whandler::hinfo::create_display(whandler *wh)
 	gtk_container_add(GTK_CONTAINER(wadd), wdata);
 	gtk_widget_show(wdata);
 	// does nothing yet
-	
+
     } else if (flags & hflag_multiline) {
 	wadd = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(wadd), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
@@ -243,7 +243,7 @@ int whandler::hinfo::create_display(whandler *wh)
 	    g_signal_connect(wdata, "event", G_CALLBACK(on_handler_event), wh);
 	    g_signal_connect(buffer, "changed", G_CALLBACK(on_handler_text_buffer_changed), wh);
 	}
-	
+
     } else {
 	wadd = wdata = gtk_entry_new();
 	if (!hv->editable()) {
@@ -256,7 +256,7 @@ int whandler::hinfo::create_display(whandler *wh)
     }
 
     g_object_set_data_full(G_OBJECT(wcontainer), "clicky_hname", g_strdup(hv->hname().c_str()), g_free);
-    
+
     gtk_widget_show(wadd);
     if (flags & hflag_collapse)
 	gtk_container_add(GTK_CONTAINER(wcontainer), wadd);
@@ -284,13 +284,13 @@ void whandler::hinfo::create(whandler *wh, int new_flags, bool always_position)
 	wcontainer = wlabel = wdata = 0;
     } else
 	assert(wcontainer == 0 && wlabel == 0 && wdata == 0);
-    
+
     // set flags, potentially recalculate positions
     bool recalc = ((hv->flags() ^ new_flags) & (hflag_visible | hflag_preferences));
     hv->set_flags(wh->main(), new_flags);
     if (recalc || always_position)
 	wh->recalculate_positions();
-    
+
     // create the body
     int padding;
     if (hv->flags() & hflag_preferences)
@@ -299,7 +299,7 @@ void whandler::hinfo::create(whandler *wh, int new_flags, bool always_position)
 	padding = create_display(wh);
     else
 	return;
-    
+
     // add to the container
     if (!wcontainer->parent) {
 	gtk_box_pack_start(wh->handler_box(), wcontainer, FALSE, FALSE, padding);
@@ -345,7 +345,7 @@ void whandler::hinfo::display(whandler *wh, bool change_form)
 {
     if (!wdata || (hv->flags() & hflag_button))
 	return;
-    
+
     // Multiline data requires special handling
     StringAccum binary_data;
     Vector<int> positions;
@@ -375,7 +375,7 @@ void whandler::hinfo::display(whandler *wh, bool change_form)
 	} else
 	    create(wh, hv->flags() | hflag_multiline, false);
     }
-    
+
     // Set data
     if (positions.size()) {
 	assert(hv->flags() & hflag_multiline);
@@ -388,13 +388,13 @@ void whandler::hinfo::display(whandler *wh, bool change_form)
 	    gtk_text_buffer_apply_tag(b, wh->main()->binary_tag(), &i1, &i2);
 	}
 	gtk_text_buffer_get_end_iter(b, &i1);
-	gtk_text_buffer_place_cursor(b, &i1);	
+	gtk_text_buffer_place_cursor(b, &i1);
     } else if (hv->flags() & hflag_multiline) {
 	GtkTextBuffer *b = gtk_text_view_get_buffer(GTK_TEXT_VIEW(wdata));
 	gtk_text_buffer_set_text(b, hv->hvalue().data(), hv->hvalue().length());
 	GtkTextIter i1;
 	gtk_text_buffer_get_end_iter(b, &i1);
-	gtk_text_buffer_place_cursor(b, &i1);	
+	gtk_text_buffer_place_cursor(b, &i1);
     } else {
 	gtk_entry_set_text(GTK_ENTRY(wdata), hv->hvalue().c_str());
 	gtk_entry_set_position(GTK_ENTRY(wdata), -1);
@@ -437,7 +437,7 @@ void whandler::display(const String &ename, bool incremental)
 	 hiter != _hinfo.end(); ++hiter)
 	hiter->hv->set_flags(main(), hiter->hv->flags() & ~(hflag_preferences | hflag_notify_whandlers));
     _hinfo.clear();
-    
+
     hide_actions();
     _hpref_actions = 0;
 
@@ -468,9 +468,9 @@ void whandler::display(const String &ename, bool incremental)
 	    hv->set_flags(main(), hv->flags() | hflag_notify_whandlers);
 	    hv->refresh(main());
 	}
-	return;   
+	return;
     }
-    
+
     // parse handlers into _hinfo
     for (; hiter != main()->hvalues().end(); ++hiter)
 	_hinfo.push_back(hiter.operator->());
@@ -501,7 +501,7 @@ void whandler::display(const String &ename, bool incremental)
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
     _hpref_actions = GTK_BUTTON_BOX(bbox);
     on_preferences(onpref_initial);
-    gtk_box_pack_end(_handlerbox, bbox, FALSE, FALSE, 0);    
+    gtk_box_pack_end(_handlerbox, bbox, FALSE, FALSE, 0);
 
     GtkWidget *w = gtk_hseparator_new();
     gtk_box_pack_end(_handlerbox, w, FALSE, FALSE, 4);
@@ -534,7 +534,7 @@ void whandler::on_preferences(int action)
 		iter->hv->set_autorefresh_period(iter->_old_autorefresh_period);
 		iter->hv->set_flags(main(), iter->_old_flags);
 	    }
-    
+
     int clear = 0, set = 0;
     if (action == onpref_showpref)
 	set = hflag_preferences;
@@ -595,7 +595,7 @@ void whandler::show_actions(GtkWidget *near, const String &hname, bool changed)
     if ((hname == _actions_hname && (!changed || _actions_changed))
 	|| _updating)
 	return;
-    
+
     // find handler
     hinfo *hi = find_hinfo(hname);
     if (!hi || !hi->editable() || !active())
@@ -640,14 +640,14 @@ void whandler::show_actions(GtkWidget *near, const String &hname, bool changed)
 		gtk_entry_set_text(GTK_ENTRY(hi->wdata), "");
 	}
     }
-    
+
     // get monitor and widget coordinates
-    gtk_widget_realize(near);    
+    gtk_widget_realize(near);
     GdkScreen *screen = gdk_drawable_get_screen(near->window);
     gint monitor_num = gdk_screen_get_monitor_at_window(screen, near->window);
     GdkRectangle monitor;
     gdk_screen_get_monitor_geometry(screen, monitor_num, &monitor);
-    
+
     while (GTK_WIDGET_NO_WINDOW(near))
 	near = near->parent;
     gint near_x1, near_y1, near_x2, near_y2;
@@ -669,7 +669,7 @@ void whandler::show_actions(GtkWidget *near, const String &hname, bool changed)
 	x = 0;
     else
 	x = near_x2 - requisition.width;
-    
+
     if (near_y2 + requisition.height > gdk_screen_get_height(screen)) {
 	if (near_y1 - requisition.height < 0)
 	    y = 0;
@@ -689,11 +689,11 @@ void whandler::hide_actions(const String &hname, bool restore)
 	    gtk_widget_hide(_actions[0]);
 	if (_actions[1])
 	    gtk_widget_hide(_actions[1]);
-	
+
 	hinfo *hi = find_hinfo(_actions_hname);
 	if (!hi || !hi->editable() || !active())
 	    return;
-	
+
 	// remember checkbox state
 	handler_value *hv = hi->hv;
 	if ((hv->flags() & hflag_checkbox) && restore) {
@@ -721,7 +721,7 @@ void whandler::hide_actions(const String &hname, bool restore)
 		hi->hv->clear_hvalue();
 	    }
 	}
-	
+
 	_actions_hname = String();
 	_actions_changed = false;
     }
@@ -733,7 +733,7 @@ void whandler::apply_action(const String &action_for, bool activate)
 	hinfo *hi = find_hinfo(action_for);
 	if (!hi || !hi->editable())
 	    return;
-	
+
 	int which = (hi->writable() ? 0 : 1);
 	if (activate)
 	    g_signal_emit_by_name(G_OBJECT(_actions_apply[which]), "activate");
@@ -767,7 +767,7 @@ void whandler::apply_action(const String &action_for, bool activate)
 		hi->hv->refresh(main());
 	} else
 	    _rw->driver()->do_read(action_for, data, 0);
-	
+
 	hide_actions(action_for, false);
 	if (data_free)
 	    g_free(data_free);
@@ -788,7 +788,7 @@ static gboolean on_handler_event(GtkWidget *w, GdkEvent *event, gpointer user_da
 {
     whandler *wh = reinterpret_cast<whandler *>(user_data);
     const gchar *hname = whandler::widget_hname(w);
-    
+
     if ((event->type == GDK_FOCUS_CHANGE && !event->focus_change.in)
 	|| (event->type == GDK_KEY_PRESS && event->key.keyval == GDK_Escape))
 	wh->hide_actions(hname);
@@ -913,7 +913,7 @@ static void on_hpref_visible_toggled(GtkToggleButton *button, gpointer user_data
     const gchar *hname = whandler::widget_hname(GTK_WIDGET(button));
     gboolean on = gtk_toggle_button_get_active(button);
     wh->set_hinfo_flags(hname, hflag_visible, on ? hflag_visible : 0);
-    
+
     GtkWidget *widget = reinterpret_cast<GtkWidget *>(g_object_get_data(G_OBJECT(button), "clicky_hider"));
     if (on)
 	gtk_widget_show(widget);
@@ -935,7 +935,7 @@ static void on_hpref_autorefresh_toggled(GtkToggleButton *button, gpointer user_
     const gchar *hname = whandler::widget_hname(GTK_WIDGET(button));
     gboolean on = gtk_toggle_button_get_active(button);
     wh->set_hinfo_flags(hname, hflag_autorefresh, on ? hflag_autorefresh : 0);
-    
+
     GtkWidget *widget = reinterpret_cast<GtkWidget *>(g_object_get_data(G_OBJECT(button), "clicky_hider"));
     if (on)
 	gtk_widget_show(widget);

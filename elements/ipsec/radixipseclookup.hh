@@ -71,7 +71,7 @@ LinearIPLookup, SortedIPLookup, LinuxIPLookup
 */
 //Changed to use ipsec extensions
 class RadixIPsecLookup : public IPsecRouteTable { public:
-    
+
     RadixIPsecLookup();
     ~RadixIPsecLookup();
 
@@ -89,14 +89,14 @@ class RadixIPsecLookup : public IPsecRouteTable { public:
   private:
 
     class Radix;
-    
+
     // Simple routing table
     Vector<IPsecRoute> _v;
     int _vfree;
-    
+
     int32_t _default_key;
     Radix* _radix;
-    
+
 };
 
 
@@ -108,7 +108,7 @@ class RadixIPsecLookup::Radix { public:
 
     Radix* change(uint32_t addr, uint32_t naddr, int key, uint32_t key_priority);
     static int lookup(const Radix*, int, uint32_t addr);
-    
+
   private:
 
     int32_t _route_index;
@@ -125,7 +125,7 @@ class RadixIPsecLookup::Radix { public:
     ~Radix()			{ }
 
     friend class RadixIPsecLookup;
-    
+
 };
 
 inline int

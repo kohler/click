@@ -41,7 +41,7 @@ class IPRw : public Element { public:
 	CONFIGURE_PHASE_USER = CONFIGURE_PHASE_REWRITER + 1
     };
 
-    int configure_phase() const 	{ return CONFIGURE_PHASE_REWRITER; }
+    int configure_phase() const	{ return CONFIGURE_PHASE_REWRITER; }
 
     int parse_input_spec(const String&, InputSpec&, String, ErrorHandler*);
 
@@ -80,7 +80,7 @@ class IPRw::Mapping { public:
 
     const IPFlowID& flow_id() const	{ return _mapto; }
     Pattern* pattern() const		{ return _pat; }
-    int output() const 			{ return _output; }
+    int output() const			{ return _output; }
     bool is_primary() const		{ return !(_flags & F_REVERSE); }
     const Mapping* primary() const { return is_primary() ? this : _reverse; }
     Mapping* primary()		   { return is_primary() ? this : _reverse; }
@@ -146,7 +146,7 @@ class IPRw::Pattern { public:
     // It can be applied to a specific IPFlowID (<saddr/sport/daddr/dport>)
     // to obtain a new IPFlowID rewritten according to the Pattern.
     // Any Pattern component can be '-', which means that the corresponding
-    // IPFlowID component is left unchanged. 
+    // IPFlowID component is left unchanged.
 
     Pattern(const IPAddress&, int, const IPAddress&, int, bool is_napt, bool sequential, uint32_t variation);
     static int parse(const String&, Pattern**, Element*, ErrorHandler*);
@@ -157,7 +157,7 @@ class IPRw::Pattern { public:
     void unuse()		{ if (--_refcount <= 0) delete this; }
 
     int nmappings() const	{ return _nmappings; }
-  
+
     operator bool() const	{ return _saddr || _sport || _daddr || _dport; }
     IPAddress daddr() const	{ return _daddr; }
     bool allow_nat() const	{ return !_is_napt || _variation_top == 0; }
@@ -241,7 +241,7 @@ IPRw::Mapping::clear_free_tracked()
 
 inline bool
 IPRw::Mapping::used_since(uint32_t t) const
-{ 
+{
     return ((int32_t)(_used - t)) >= 0 || ((int32_t)(_reverse->_used - t)) >= 0;
 }
 

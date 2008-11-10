@@ -101,7 +101,7 @@ wmain::wmain()
     a->start_index = 0;
     a->end_index = G_MAXUINT;
     pango_attr_list_insert(_small_attr, a);
-    
+
     _small_bold_attr = pango_attr_list_new();
     a = pango_attr_scale_new(PANGO_SCALE_SMALL);
     a->start_index = 0;
@@ -111,12 +111,12 @@ wmain::wmain()
     a->start_index = 0;
     a->end_index = G_MAXUINT;
     pango_attr_list_insert(_small_bold_attr, a);
-    
+
     gtk_label_set_attributes(GTK_LABEL(lookup_widget(_window, "eview_label")), _bold_attr);
     gtk_label_set_attributes(GTK_LABEL(lookup_widget(_window, "eview_classinfo_ports")), _small_attr);
     gtk_label_set_attributes(GTK_LABEL(lookup_widget(_window, "eview_classinfo_processing")), _small_attr);
     gtk_label_set_attributes(GTK_LABEL(lookup_widget(_window, "eview_classinfo_flow")), _small_attr);
-    
+
     // text tags for configuration (order is important for overriding)
     (void) gtk_text_buffer_create_tag(_config_buffer, "comment", "foreground", "grey50", NULL);
     (void) gtk_text_buffer_create_tag(_config_buffer, "keyword", "foreground", "blue", NULL);
@@ -125,7 +125,7 @@ wmain::wmain()
     _config_error_highlight_tag = gtk_text_buffer_create_tag(_config_buffer, "error_current", "background", "red", "foreground", "white", "weight", PANGO_WEIGHT_BOLD, NULL);
     _error_hover_tag = gtk_text_buffer_create_tag(_error_buffer, "error_current", "underline", PANGO_UNDERLINE_SINGLE, "foreground", "red", NULL);
     _error_highlight_tag = gtk_text_buffer_create_tag(_error_buffer, "error_highlight", "foreground", "red", NULL);
-    
+
     _binary_tag_table = gtk_text_tag_table_new();
     _binary_tag = gtk_text_tag_new("binary");
     g_object_set(G_OBJECT(_binary_tag), "foreground", "white", "background", "black", (const char *) NULL);
@@ -137,7 +137,7 @@ wmain::wmain()
     dialogs_connect();
     config_changed_initialize(true, false);
     set_diagram_mode(true);
-    
+
     gtk_quit_add_destroy(1, GTK_OBJECT(_window));
     ++num_main_windows;
 }
@@ -174,13 +174,13 @@ class ClickyLexerTInfo : public LexerTInfo { public:
 	gtk_text_buffer_get_iter_at_offset(_buffer, &i2, pos2 - _config.begin());
 	gtk_text_buffer_apply_tag(_buffer, tag, &i1, &i2);
     }
-    
+
     void notify_comment(const char *pos1, const char *pos2) {
 	if (!_comment_tag)
 	    _comment_tag = gtk_text_tag_table_lookup(_tt, "comment");
 	apply_tag(pos1, pos2, _comment_tag);
     }
-    
+
     void notify_keyword(const String &, const char *pos1, const char *pos2) {
 	if (!_keyword_tag)
 	    _keyword_tag = gtk_text_tag_table_lookup(_tt, "keyword");
@@ -196,7 +196,7 @@ class ClickyLexerTInfo : public LexerTInfo { public:
 	    apply_tag(pos1, pos2, _error_tag);
 	}
     }
-    
+
 #if 0
     void add_item(const char *pos1, const String &s1, const char *pos2, const String &s2) {
 	::add_item(pos1 - _config.begin(), s1, pos2 - _config.begin(), s2);
@@ -255,7 +255,7 @@ class ClickyLexerTInfo : public LexerTInfo { public:
 void wmain::clear(bool alive)
 {
     crouter::clear(alive);
-    
+
     _error_endpos = 0;
     _savefile = String();
     _config_clean_errors = _config_clean_elements = true;
@@ -266,7 +266,7 @@ void wmain::clear(bool alive)
 
     _element_highlight = 0;
     _eview_name = String();
-    
+
     if (_config_changed_signal && alive)
 	g_signal_handler_disconnect(_config_buffer, _config_changed_signal);
     _config_changed_signal = 0;
@@ -364,7 +364,7 @@ void wmain::on_throbber_changed(bool show)
 	if (!throbber_loaded) {
 	    throbber_loaded = true;
 	    String throbber_file = clickpath_find_file("throbber.gif", "share/" PACKAGE, PACKAGE_DATA_DIR "/" PACKAGE);
-	    // support for running before installing 
+	    // support for running before installing
 	    if (!throbber_file && g_file_test("src/clicky", G_FILE_TEST_EXISTS))
 		throbber_file = clickpath_find_file("throbber.gif", "", "./images");
 	    if (throbber_file)
@@ -429,7 +429,7 @@ void wmain::on_handler_read(const String &hname, const String &hparam,
 	    while (x != hvalue.end() && !isspace((unsigned char) *x))
 		++x;
 	    String name = hvalue.substring(s, x);
-	    
+
 	    // first line is count of elements
 	    if (++line == 1 && !cp_integer(name, &nelements))
 		/* syntax error */;
@@ -499,11 +499,11 @@ void wmain::element_show(String ename, int expand, bool incremental)
     if (_eview_name == ename && incremental)
 	/* do not change existing widgets, but continue to potentially
 	   expand pane below */;
-    
+
     else if (!r || !ename) {
 	element_unhighlight();
 	_eview_name = String();
-	
+
 	GtkLabel *l = GTK_LABEL(lookup_widget(_window, "eview_label"));
 	gtk_label_set_text(l, "Element");
 
@@ -518,7 +518,7 @@ void wmain::element_show(String ename, int expand, bool incremental)
 	gtk_label_set_text(GTK_LABEL(n), "");
 
 	incremental = false;
-	
+
     } else {
 	element_unhighlight();
 	_eview_name = ename;
@@ -546,7 +546,7 @@ void wmain::element_show(String ename, int expand, bool incremental)
 	n = lookup_widget(_window, "eview_classinfo_flow");
 	gtk_label_set_text(GTK_LABEL(n), element->flow_code().c_str());
 	ElementMap::pop_default();
-	
+
 	// clear handlers
 	n = lookup_widget(_window, "eview_refresh");
 	if (driver())
@@ -699,7 +699,7 @@ void wmain::fill_elements_tree_store(GtkTreeStore *store, RouterT *r)
     Vector<element_lister> v;
     fill_elements(r, "", (_elist_sort == elist_sort_class),
 		  VariableEnvironment(0), v);
-    
+
     if (_elist_sort == elist_sort_name)
 	std::sort(v.begin(), v.end(), ename_sorter);
     else if (_elist_sort == elist_sort_class)
@@ -762,7 +762,7 @@ void wmain::etree_fill() {
 			 G_CALLBACK(on_eview_refresh_clicked), this);
     } else
 	gtk_tree_store_clear(_elist_store);
-    
+
     if (router())
 	fill_elements_tree_store(_elist_store, router());
 
@@ -822,7 +822,7 @@ bool wmain::error_view_motion_offsets(int off1, int off2, int eindex)
 bool wmain::error_view_motion_position(gint x, gint y)
 {
     gtk_text_view_window_to_buffer_coords(GTK_TEXT_VIEW(_error_view), GTK_TEXT_WINDOW_WIDGET, x, y, &x, &y);
-    
+
     GtkTextIter i;
     gtk_text_view_get_iter_at_location(GTK_TEXT_VIEW(_error_view), &i, x, y);
     GatherErrorHandler *gerrh = error_handler();
@@ -833,7 +833,7 @@ bool wmain::error_view_motion_position(gint x, gint y)
 	message->errpos1 = message->errpos2 = 0;
     if (message != gerrh->end() && message->errpos1 == 0 && message->errpos2 == 0) {
 	const char *next;
-	unsigned lineno; 
+	unsigned lineno;
 	if (message->message.length() > 8
 	    && memcmp(message->message.data(), "config:", 7) == 0
 	    && (next = cp_integer(message->message.begin() + 7, message->message.end(), 10, &lineno)) < message->message.end()
@@ -926,7 +926,7 @@ void wmain::on_error(bool replace, const String &dialog)
 	gtk_text_buffer_set_text(_error_buffer, "", 0);
 	return;
     }
-    
+
     // set up window
     gtk_widget_show(lookup_widget(_window, "errorviewbox"));
     gtk_widget_hide(lookup_widget(_window, "elementtreelabel"));
@@ -942,7 +942,7 @@ void wmain::on_error(bool replace, const String &dialog)
     gtk_expander_set_expanded(GTK_EXPANDER(treeexpander), GTK_WIDGET_VISIBLE(treewindow));
     if ((!gerrh->nerrors() || !replace) && GTK_WIDGET_VISIBLE(treewindow))
 	gtk_paned_set_position(pane, GTK_WIDGET(pane)->allocation.height / 3);
-    
+
     // strip filename errors from error list
     if (replace) {
 	_error_endpos = 0;
@@ -996,7 +996,7 @@ static void error_expanders_callback(GObject *object, GParamSpec *, gpointer)
 
     if (!gtk_expander_get_expanded(listex) && !gtk_expander_get_expanded(errorex))
 	gtk_expander_set_expanded(e == listex ? errorex : listex, TRUE);
-    
+
     const char *child_name = (e == listex ? "elementtreewindow" : "errorviewwindow");
     GtkPaned *pane = GTK_PANED(lookup_widget(GTK_WIDGET(e), "errorpane"));
     if (gtk_expander_get_expanded(e)) {

@@ -73,7 +73,7 @@ class FullNoteQueue : public NotifierQueue { public:
 
     int configure(Vector<String> &conf, ErrorHandler *);
     int live_reconfigure(Vector<String> &conf, ErrorHandler *errh);
-    
+
     void push(int port, Packet *p);
     Packet *pull(int port);
 
@@ -87,7 +87,7 @@ class FullNoteQueue : public NotifierQueue { public:
     inline Packet *pull_failure();
 
     static int write_handler(const String&, Element*, void*, ErrorHandler*);
-    
+
 };
 
 inline void
@@ -101,7 +101,7 @@ FullNoteQueue::push_success(int h, int t, int nt, Packet *p)
     if (s > _highwater_length)
 	_highwater_length = s;
 
-    _empty_note.wake(); 
+    _empty_note.wake();
 
     if (s == capacity()) {
 	_full_note.sleep();

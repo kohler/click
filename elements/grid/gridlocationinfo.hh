@@ -37,7 +37,7 @@ CLICK_DECLS
  *
  * If the optional move parameter is 2, the node will accept external
  * ``set_new_dest'' directives for setting its speed etc.
- * 
+ *
  *
  * =item LOC_GOOD
  *
@@ -56,7 +56,7 @@ CLICK_DECLS
  * String.  A symbolic name used to identify this node's location,
  * e.g. "ne43-521b", or "Robert's office".
  *
- * =h loc read/write 
+ * =h loc read/write
  *
  * When reading, returns the element's location information, in this
  * format: ``lat, lon, height (err=<err-radius> good=<good?> seq=<seq>)''.
@@ -77,7 +77,7 @@ CLICK_DECLS
  * FixSrcLoc, GridLocationInfo2 */
 
 class GridLocationInfo : public GridGenericLocInfo {
-  
+
 public:
   GridLocationInfo();
   ~GridLocationInfo();

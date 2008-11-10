@@ -174,7 +174,7 @@ class FromDAGDump : public Element { public:
     Packet *pull(int);
 
     void set_active(bool);
-    
+
   private:
 
     struct DAGPosCell {
@@ -214,7 +214,7 @@ class FromDAGDump : public Element { public:
 	enum { TYPE_LEGACY = 0, TYPE_HDLC_POS = 1, TYPE_ETH = 2, TYPE_ATM = 3,
 	       TYPE_AAL5 = 4, TYPE_MAX = TYPE_AAL5 };
     };
-    
+
     static const uint32_t BUFFER_SIZE = 32768;
     static const int SAMPLING_SHIFT = 28;
     static const int dagtype2linktype[];
@@ -240,7 +240,7 @@ class FromDAGDump : public Element { public:
     Timestamp _first_time;
     Timestamp _last_time;
     HandlerCall *_end_h;
-    
+
     Task _task;
 
     Timestamp _time_offset;
@@ -252,7 +252,7 @@ class FromDAGDump : public Element { public:
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

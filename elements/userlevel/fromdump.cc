@@ -118,7 +118,7 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
     // check times
     _have_first_time = _have_last_time = true;
     _first_time_relative = _last_time_relative = _last_time_interval = false;
-    
+
     if ((bool) first_time + (bool) first_time_off > 1)
 	return errh->error("'START' and 'START_AFTER' are mutually exclusive");
     else if (first_time)
@@ -127,7 +127,7 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	_first_time = first_time_off, _first_time_relative = true;
     else
 	_have_first_time = false, _first_time_relative = true;
-    
+
     if ((bool) last_time + (bool) last_time_off + (bool) interval > 1)
 	return errh->error("'END', 'END_AFTER', and 'INTERVAL' are mutually exclusive");
     else if (last_time)
@@ -201,7 +201,7 @@ FromDump::initialize(ErrorHandler *errh)
     // make sure notifier is initialized
     if (!output_is_push(0))
 	_notifier.initialize(Notifier::EMPTY_NOTIFIER, router());
-    
+
     // check handler call, initialize Task
     if (_end_h && _end_h->initialize_write(this, errh) < 0)
 	return -1;
@@ -212,11 +212,11 @@ FromDump::initialize(ErrorHandler *errh)
     // skip if hotswapping
     if (hotswap_element())
 	return 0;
-    
+
     // open file
     if (_ff.initialize(errh) < 0)
 	return -1;
-    
+
     // check magic number
     fake_pcap_file_header swapped_fh;
     const fake_pcap_file_header *fh = (const fake_pcap_file_header *)_ff.get_aligned(sizeof(fake_pcap_file_header), &swapped_fh);
@@ -271,7 +271,7 @@ FromDump::take_state(Element *e, ErrorHandler *errh)
     _swapped = o->_swapped;
     _extra_pkthdr_crap = o->_extra_pkthdr_crap;
     _minor_version = o->_minor_version;
-    
+
     _linktype = o->_linktype;
     if (_linktype == FAKE_DLT_RAW)
 	_force_ip = true;
@@ -385,14 +385,14 @@ FromDump::read_packet(ErrorHandler *errh)
 	// retry _last_time in case someone changed it
 	goto check_times;
     }
-    
+
     // checking sampling probability
     if (_sampling_prob < (1 << SAMPLING_SHIFT)
 	&& (click_random() & ((1<<SAMPLING_SHIFT)-1)) >= _sampling_prob) {
 	_ff.shift_pos(caplen + skiplen);
 	return true;
     }
-    
+
     // create packet
     p = _ff.get_packet(caplen, ts_ptr->sec(), ts_ptr->subsec(), errh);
     if (!p)
@@ -415,7 +415,7 @@ FromDump::run_timer(Timer *)
 	    _notifier.wake();
     }
 }
-	
+
 bool
 FromDump::run_task(Task *)
 {
@@ -447,7 +447,7 @@ FromDump::run_task(Task *)
     }
     if (!_packet && ++retry_count < 16)
 	goto again;
-    
+
     _task.fast_reschedule();
     if (_packet) {
 	output(0).push(_packet);

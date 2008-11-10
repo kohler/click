@@ -20,14 +20,14 @@ informatino such as rssi, noise, bitrate, etc.
 */
 
 class AthdescDecap : public Element { public:
-  
+
   AthdescDecap();
   ~AthdescDecap();
 
   const char *class_name() const	{ return "AthdescDecap"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
 

@@ -61,7 +61,7 @@ SortedIPLookup::sort_table()
     // topological sort the entries
     if (_t.size() == 0)
 	return;
-    
+
     // First, count dependencies.
     Vector<int> dep(_t.size(), 0);
     int nunreal = 0;

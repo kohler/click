@@ -27,7 +27,7 @@ CLICK_DECLS
  * =over 8
  *
  * =item DEBUG
- * 
+ *
  * Boolean.  If true, print out debug messages.
  *
  * =back
@@ -70,15 +70,15 @@ extern "C" {
 #endif
 
 class ToDevice : public Element { public:
-  
+
   ToDevice();
   ~ToDevice();
-  
+
   const char *class_name() const		{ return "ToDevice"; }
   const char *port_count() const		{ return "1/0-2"; }
   const char *processing() const		{ return "l/h"; }
   const char *flags() const			{ return "S2"; }
-  
+
   int configure_phase() const { return KernelFilter::CONFIGURE_PHASE_TODEVICE; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
@@ -101,7 +101,7 @@ private:
   int _fd;
   bool _my_fd;
   NotifierSignal _signal;
-  
+
 
   Packet *_q;
 public:

@@ -86,12 +86,12 @@ These defaults are not available on all platforms.
 PortInfo */
 
 class AddressInfo : public Element { public:
-  
+
   AddressInfo();
   ~AddressInfo();
-  
+
   const char *class_name() const	{ return "AddressInfo"; }
-  
+
   int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
   int configure(Vector<String> &, ErrorHandler *);
 

@@ -47,7 +47,7 @@ TCPConn::initialize(ErrorHandler *errh)
 {
   CastElementFilter filter("TCPDemux");
   Vector<Element*> tcpdemuxes;
-  
+
   if (router()->upstream_elements(this, 0, &filter, tcpdemuxes) < 0)
     return errh->error("flow-based router context failure");
   if (tcpdemuxes.size() < 1)
@@ -146,10 +146,10 @@ TCPConn::oput(Packet *p)
   } else
     return 0;
 }
-  
+
 bool
 TCPConn::connect_handler(IPFlowID f)
-{ 
+{
   assert(!_active);
   if (_tcpdemux->add_flow(f.saddr(), f.sport(), f.daddr(), f.dport(), 0)) {
     _active = true;
@@ -188,11 +188,11 @@ TCPConn::send_syn()
   if (q == 0) {
     click_chatter("TCPConn: cannot make packet");
     return;
-  } 
+  }
   memset(q->data(), '\0', q->length());
   ip = (struct click_ip *) q->data();
   tcp = (struct click_tcp *) (ip + 1);
-  
+
   ip->ip_v = 4;
   ip->ip_hl = 5;
   ip->ip_tos = 0x10;
@@ -223,7 +223,7 @@ TCPConn::send_syn()
 
 void
 TCPConn::add_handlers()
-{ 
+{
   add_write_handler("ctrl", ctrl_write_handler, 0);
   add_write_handler("reset", reset_write_handler, 0, Handler::BUTTON);
 }
@@ -239,7 +239,7 @@ TCPConn::reset_write_handler
 int
 TCPConn::ctrl_write_handler
 (const String &s, Element *e, void *, ErrorHandler *errh)
-{ 
+{
   if ((reinterpret_cast<TCPConn*>(e))->_active)
     return errh->error("TCPConn already active");
 
@@ -248,10 +248,10 @@ TCPConn::ctrl_write_handler
   IPAddress addr0, addr1;
   uint16_t port0 = 0, port1 = 0;
 
-  if(cp_va_space_kparse(s, e, errh, 
+  if(cp_va_space_kparse(s, e, errh,
 			"ACTION", cpkP+cpkM, cpString, &action,
 			"SRC", cpkP+cpkM, cpString, &str_addr0,
-			"SPORT", cpkP+cpkM, cpTCPPort, &port0, 
+			"SPORT", cpkP+cpkM, cpTCPPort, &port0,
 			"DST", cpkP, cpString, &str_addr1,
 			"DPORT", cpkP, cpTCPPort, &port1,
 			cpEnd) < 0)

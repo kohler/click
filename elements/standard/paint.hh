@@ -26,7 +26,7 @@ Get/set the color to paint.
 =a PaintTee */
 
 class Paint : public Element { public:
-  
+
     Paint();
     ~Paint();
 
@@ -44,7 +44,7 @@ class Paint : public Element { public:
 
     uint8_t _anno;
     uint8_t _color;
-  
+
 };
 
 CLICK_ENDDECLS

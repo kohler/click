@@ -19,7 +19,7 @@ public:
   explicit QVec(int capacity) : Base(capacity) { }
 
   T &front() { return at(0); }
-  
+
   void push_front(const T &);
   void pop_front();
 };

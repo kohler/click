@@ -13,7 +13,7 @@ CLICK_DECLS
  * =c
  * LinkTable(IP Address, [STALE timeout])
  * =s Wifi
- * Keeps a Link state database and calculates Weighted Shortest Path 
+ * Keeps a Link state database and calculates Weighted Shortest Path
  * for other elements
  * =d
  * Runs dijkstra's algorithm occasionally.
@@ -54,7 +54,7 @@ class IPPair {
 
 
 class LinkTable: public Element{
-public: 
+public:
 
   /* generic click-mandated stuff*/
   LinkTable();
@@ -77,9 +77,9 @@ public:
 
   /* other public functions */
   String route_to_string(Path p);
-  bool update_link(IPAddress from, IPAddress to, 
+  bool update_link(IPAddress from, IPAddress to,
 		   uint32_t seq, uint32_t age, uint32_t metric);
-  bool update_both_links(IPAddress a, IPAddress b, 
+  bool update_both_links(IPAddress a, IPAddress b,
 			 uint32_t seq, uint32_t age, uint32_t metric) {
     if (update_link(a,b,seq,age, metric)) {
       return update_link(b,a,seq,age, metric);
@@ -122,11 +122,11 @@ public:
 
   typedef HashMap<IPAddress, IPAddress> IPTable;
   typedef IPTable::const_iterator IPIter;
-  
+
   IPTable _blacklist;
-  
+
   Timestamp dijkstra_time;
-private: 
+private:
   class LinkInfo {
   public:
     IPAddress _from;
@@ -135,16 +135,16 @@ private:
     uint32_t _seq;
     uint32_t _age;
     Timestamp _last_updated;
-    LinkInfo() { 
-      _from = IPAddress(); 
-      _to = IPAddress(); 
-      _metric = 0; 
+    LinkInfo() {
+      _from = IPAddress();
+      _to = IPAddress();
+      _metric = 0;
       _seq = 0;
       _age = 0;
     }
-    
-    LinkInfo(IPAddress from, IPAddress to, 
-	     uint32_t seq, uint32_t age, unsigned metric) { 
+
+    LinkInfo(IPAddress from, IPAddress to,
+	     uint32_t seq, uint32_t age, unsigned metric) {
       _from = from;
       _to = to;
       _metric = metric;
@@ -153,11 +153,11 @@ private:
       _last_updated.set_now();
     }
 
-    LinkInfo(const LinkInfo &p) : 
-      _from(p._from), _to(p._to), 
-      _metric(p._metric), _seq(p._seq), 
+    LinkInfo(const LinkInfo &p) :
+      _from(p._from), _to(p._to),
+      _metric(p._metric), _seq(p._seq),
       _age(p._age),
-      _last_updated(p._last_updated) 
+      _last_updated(p._last_updated)
     { }
 
     uint32_t age() {
@@ -168,12 +168,12 @@ private:
       if (seq <= _seq) {
 	return;
       }
-      _metric = metric; 
+      _metric = metric;
       _seq = seq;
       _age = age;
-      _last_updated.set_now(); 
+      _last_updated.set_now();
     }
-    
+
   };
 
   class HostInfo {
@@ -181,44 +181,44 @@ private:
     IPAddress _ip;
     uint32_t _metric_from_me;
     uint32_t _metric_to_me;
-    
+
     IPAddress _prev_from_me;
     IPAddress _prev_to_me;
 
     bool _marked_from_me;
     bool _marked_to_me;
 
-    HostInfo(IPAddress p) { 
-      _ip = p; 
-      _metric_from_me = 0; 
-      _metric_to_me = 0; 
-      _prev_from_me = IPAddress(); 
-      _prev_to_me = IPAddress(); 
-      _marked_from_me = false; 
-      _marked_to_me = false; 
+    HostInfo(IPAddress p) {
+      _ip = p;
+      _metric_from_me = 0;
+      _metric_to_me = 0;
+      _prev_from_me = IPAddress();
+      _prev_to_me = IPAddress();
+      _marked_from_me = false;
+      _marked_to_me = false;
     }
-    HostInfo() { 
+    HostInfo() {
       HostInfo(IPAddress());
     }
 
-    HostInfo(const HostInfo &p) : 
-      _ip(p._ip), 
-      _metric_from_me(p._metric_from_me), 
-      _metric_to_me(p._metric_to_me), 
-      _prev_from_me(p._prev_from_me), 
-      _prev_to_me(p._prev_to_me), 
-      _marked_from_me(p._marked_from_me), 
+    HostInfo(const HostInfo &p) :
+      _ip(p._ip),
+      _metric_from_me(p._metric_from_me),
+      _metric_to_me(p._metric_to_me),
+      _prev_from_me(p._prev_from_me),
+      _prev_to_me(p._prev_to_me),
+      _marked_from_me(p._marked_from_me),
       _marked_to_me(p._marked_to_me)
     { }
-    
-    void clear(bool from_me) { 
+
+    void clear(bool from_me) {
       if (from_me ) {
-	_prev_from_me = IPAddress(); 
-	_metric_from_me = 0; 
+	_prev_from_me = IPAddress();
+	_metric_from_me = 0;
 	_marked_from_me = false;
       } else {
-	_prev_to_me = IPAddress(); 
-	_metric_to_me = 0; 
+	_prev_to_me = IPAddress();
+	_metric_to_me = 0;
 	_marked_to_me = false;
       }
     }
@@ -227,7 +227,7 @@ private:
 
   typedef HashMap<IPAddress, HostInfo> HTable;
   typedef HTable::const_iterator HTIter;
-  
+
 
   typedef HashMap<IPPair, LinkInfo> LTable;
   typedef LTable::const_iterator LTIter;
@@ -240,7 +240,7 @@ private:
   Timestamp _stale_timeout;
   Timer _timer;
 };
-  
+
 
 
 CLICK_ENDDECLS

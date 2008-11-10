@@ -45,14 +45,14 @@ CLICK_DECLS
  periodic timer, reschedule the timer as appropriate.
 
  <h3>Examples</h3>
- 
+
  This example element code, based on TimedSource, will print a message every
  5 seconds:
 
  @code
  #include <click/element.hh>
  #include <click/timer.hh>
- 
+
  class PeriodicPrinter : public Element { public:
      PeriodicPrinter();
      const char *class_name() const { return "PeriodicPrinter"; }
@@ -118,12 +118,12 @@ CLICK_DECLS
          // This is the same as:
 	 // _timer.schedule_at(Timestamp::now() + Timestamp::make_sec(5));
  }
- @endcode 
+ @endcode
 
  The schedule_after_sec() function sets the timer to fire an interval after
  the <em>current system time</em>, not the previous expiry.  As a result, the
  timer drifts:
- 
+
  <pre>
  pp: 1204658494.374277: timer fired with expiry 1204658494.374256!
  pp: 1204658499.374575: timer fired with expiry 1204658499.374478!
@@ -141,7 +141,7 @@ CLICK_DECLS
  will never fall more than a second or two behind system time.
 
  <h3>Notes</h3>
- 
+
  Elements desiring extremely frequent access to the CPU, up to tens of
  thousands of times a second, should use a Task object rather than a Timer.
  However, Tasks essentially busy-wait, taking up all available CPU.  There is
@@ -155,7 +155,7 @@ CLICK_DECLS
  Timer is set to go off a bit before the true expiration time (see
  Timer::adjustment()), after which the Task polls the CPU until the actual
  expiration time arrives.
- 
+
  Since Click is cooperatively scheduled, any timer callback should run for
  just a short period of time.  Very long callbacks can inappropriately delay
  other timers and periodic events.

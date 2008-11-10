@@ -91,7 +91,7 @@ static const Clp_Option options[] = {
 };
 
 static const char *program_name;
-#if FOR_LINUXMODULE 
+#if FOR_LINUXMODULE
 static bool output_map;
 #endif
 
@@ -146,7 +146,7 @@ prepare_tmpdir(ErrorHandler *errh)
 {
   ContextErrorHandler cerrh(errh, "While preparing to compile packages:");
   BailErrorHandler berrh(&cerrh);
-  
+
   // change to temporary directory
   tmpdir = click_mktmpdir(&berrh);
   assert(tmpdir);
@@ -180,7 +180,7 @@ compile_archive_packages(RouterT *r, HashTable<String, int> &packages,
     // found source file, so compile it
     errh->message("Compiling package %s from config archive", req.c_str());
     String result_filename = click_compile_archive_file(r->archive(), source_ae, req, COMPILETARGET, "", tmpdir_populated, errh);
-    
+
     // grab object file and add to archive
     if (result_filename) {
 	ArchiveElement obj_ae = init_archive_element(req + OBJSUFFIX, 0600);
@@ -220,7 +220,7 @@ install_required_packages(RouterT *r, HashTable<String, int> &packages,
 {
   // check for uncompiled archive packages and try to compile them
   compile_archive_packages(r, packages, errh);
-  
+
   Vector<String> requirements = r->requirements();
 
   // go over requirements
@@ -232,13 +232,13 @@ install_required_packages(RouterT *r, HashTable<String, int> &packages,
     if (obj_aei >= 0 && packages[req] < 0) {
       // install archived objects. mark them with leading underscores.
       // may require renaming to avoid clashes in 'insmod'
-      
+
       // choose module name
       String insmod_name = req + OBJSUFFIX;
 
       if (verbose)
 	errh->message("Installing package %s (%s" OBJSUFFIX " from config archive)", insmod_name.c_str(), req.c_str());
-      
+
       // install module
       if (!tmpdir)
 	prepare_tmpdir(errh);
@@ -251,7 +251,7 @@ install_required_packages(RouterT *r, HashTable<String, int> &packages,
       fclose(f);
 
       install_module(tmpnam, String(), errh);
-      
+
       // cleanup
       packages.set(req, 1);
       active_modules.set(insmod_name, 1);
@@ -275,13 +275,13 @@ install_required_packages(RouterT *r, HashTable<String, int> &packages,
 
       packages.set(req, 1);
       active_modules.set(filename, 1);
-      
+
     } else {
       // package already loaded; note in 'active_modules' that we still need
       // it
       if (verbose)
 	errh->message("Not installing package %s, version already exists", req.c_str());
-	
+
       String filename = req;
       if (active_modules[filename] < 0)
 	filename = req + OBJSUFFIX;
@@ -321,16 +321,16 @@ main(int argc, char **argv)
   gid_t gid = 0;
   int cpu = -1;
 #endif
-  
+
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case HELP_OPT:
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("click-install (Click) %s\n", CLICK_VERSION);
       printf("Click packages in %s, binaries in %s\n", CLICK_LIBDIR, CLICK_BINDIR);
@@ -346,7 +346,7 @@ particular purpose.\n");
      case CLICKPATH_OPT:
       set_clickpath(clp->vstr);
       break;
-      
+
      case ROUTER_OPT:
      case EXPRESSION_OPT:
      router_file:
@@ -431,7 +431,7 @@ particular purpose.\n");
 
      case CPU_OPT:
       cpu = clp->val.i;
-      break; 
+      break;
 #endif
 
      case UNINSTALL_OPT:
@@ -445,24 +445,24 @@ particular purpose.\n");
      case VERBOSE_OPT:
       verbose = !clp->negated;
       break;
-      
+
      bad_option:
      case Clp_BadOption:
       short_usage();
       exit(1);
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
     }
   }
-  
+
  done:
   // check options
   if (hotswap && uninstall)
     errh->warning("'--hotswap' and '--uninstall' are mutually exclusive");
-  
+
   RouterT *r = read_router(router_file, file_is_expr, nop_errh);
   if (r)
     r->flatten(nop_errh, true);
@@ -471,11 +471,11 @@ particular purpose.\n");
 
   // pathnames of important Click files
   String clickfs_packages = clickfs_prefix + String("/packages");
-  
+
   // uninstall Click if requested
   if (uninstall)
     unload_click(errh);
-  
+
   // install Click module if required
   if (access(clickfs_packages.c_str(), F_OK) < 0) {
 #if FOR_LINUXMODULE
@@ -494,8 +494,8 @@ particular purpose.\n");
       install_module(proclikefs_o, String(), errh);
     }
 #endif
-    
-    // find loadable module 
+
+    // find loadable module
 #if FOR_BSDMODULE || (FOR_LINUXMODULE && HAVE_LINUXMODULE_2_6)
     String click_o =
       clickpath_find_file("click.ko", "lib", CLICK_LIBDIR, errh);
@@ -532,7 +532,7 @@ particular purpose.\n");
       if (mkdir(clickfs_dir.c_str(), 0777) < 0)
 	errh->fatal("cannot make directory %s: %s", clickfs_dir.c_str(), strerror(errno));
     }
-    
+
     // mount Click file system
     if (verbose)
       errh->message("Mounting Click module at %s", clickfs_dir.c_str());
@@ -563,7 +563,7 @@ particular purpose.\n");
   String clickfs_hotconfig = clickfs_prefix + String("/hotconfig");
   String clickfs_errors = clickfs_prefix + String("/errors");
   String clickfs_priority = clickfs_prefix + String("/priority");
-  
+
   // find current packages
   HashTable<String, int> active_modules(-1);
   HashTable<String, int> packages(-1);
@@ -638,7 +638,7 @@ particular purpose.\n");
 
   // remove unused packages
   remove_unneeded_packages(active_modules, packages, errh);
-  
+
   if (verbose)
     errh->message("Done");
   exit(exit_status);

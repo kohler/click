@@ -140,7 +140,7 @@ TulipStats::initialize(ErrorHandler *errh)
 
   if (tulip_stats_map.insert(this) < 0)
     return errh->error("cannot use TulipStats for device '%s'", _devname.c_str());
-  
+
   ScheduleInfo::join_scheduler(this, &_task, errh);
 
   tulip_stats_active++;
@@ -150,9 +150,9 @@ TulipStats::initialize(ErrorHandler *errh)
 #endif
 
   _dev_stats = _dev->get_stats(_dev);
-  
+
   reset_counts();
-  
+
   return 0;
 }
 
@@ -174,10 +174,10 @@ void
 TulipStats::stats_poll()
 {
   _nstats_polls++;
-  
+
   long ioaddr = _dev->base_addr;
   unsigned csr5 = inl(ioaddr + CSR5);
-  
+
   unsigned eb = (csr5 >> 23) & 7;
   unsigned ts = (csr5 >> 20) & 7;
   unsigned rs = (csr5 >> 17) & 7;

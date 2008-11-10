@@ -90,7 +90,7 @@ FromSimDevice::initialize(ErrorHandler *errh)
 
   // Request that we get packets sent to us from the simulator
   myrouter->sim_listen(_fd,eindex());
-  
+
   return 0;
 }
 
@@ -117,8 +117,8 @@ FromSimDevice::set_annotations(Packet *p,int ptype)
     // check if multicast
     // ! mcast => ! bcast
     if (!(p->data()[0] & 1))
-      return; 
-  
+      return;
+
     // check for bcast
     if (memcmp(bcast_addr, p->data(), 6) == 0)
       p->set_packet_type_anno(Packet::BROADCAST);

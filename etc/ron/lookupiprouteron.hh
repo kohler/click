@@ -5,16 +5,16 @@
  * =c
  * LookupIPRouteRON([N])
  * =s IP, classification
- * Path selecting RON routing table. 
+ * Path selecting RON routing table.
  * =d
- * Input: 
+ * Input:
  * Forward IP packets(no ether header) on port 0.
  * Expects a destination IP address annotation with each packet.
  * Probes outgoing paths for unknown destinations. Selects path
  * with loweset latency for the new path. Emits packets on chosen port.
  *
  * Reverse IP packets(no ether header) on ports 1 -> N.
- * Reply packets from path I are pushed onto input port I. 
+ * Reply packets from path I are pushed onto input port I.
  *
  * Output:
  * Forward path packets are output on the ports connected to the chosen path.
@@ -62,8 +62,8 @@ public:
 
 
 
-  
-  // In POLICY_PROBE3_UNPROBED_LOCAL, one least recently probed path, the path 
+
+  // In POLICY_PROBE3_UNPROBED_LOCAL, one least recently probed path, the path
   // with the shortest rtt, and the local path are chosen to be probed.
   static const int POLICY_PROBE3_UNPROBED_LOCAL = 5;
 
@@ -76,11 +76,11 @@ public:
 
   LookupIPRouteRON();
   ~LookupIPRouteRON();
-  
+
   const char *class_name() const		{ return "LookupIPRouteRON"; }
   const char *port_count() const		{ return "2-/="; }
   const char *processing() const		{ return PUSH; }
-  
+
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
@@ -108,7 +108,7 @@ protected:
   void push_reverse_synack(unsigned inport, Packet *p);
   void push_reverse_fin(Packet *p);
   void push_reverse_rst(Packet *p);
-  void push_reverse_normal(Packet *p);  
+  void push_reverse_normal(Packet *p);
 
   void duplicate_pkt(Packet *p);
   void send_rst(Packet *p, FlowTableEntry *match, int outport);
@@ -129,7 +129,7 @@ private:
   */
 
   static void expire_hook(Timer*, void *thunk);
-  
+
 };
 
 class LookupIPRouteRON::FlowTableEntry {
@@ -148,7 +148,7 @@ public:
   int policy;
   int probed_ports[32];
   long first_syn_sec, first_syn_usec;
-  
+
 
   FlowTableEntry() {valid = 1; all_answered = 1;}
 
@@ -156,16 +156,16 @@ public:
 				       < click_jiffies());}
   bool is_pending() const    { return (outstanding_syns > 0);}
   bool is_valid() const      { return (valid); }
-  bool is_active() const     { return ((forw_alive || rev_alive) && 
+  bool is_active() const     { return ((forw_alive || rev_alive) &&
 				       !is_pending() ); }
   void saw_first_syn();
-  
+
   unsigned get_age() {
-    if (all_answered && is_active()) return 0; 
+    if (all_answered && is_active()) return 0;
     else return click_jiffies() - oldest_unanswered;
   }
 
-  void invalidate()          {valid = 0;}  
+  void invalidate()          {valid = 0;}
     // an entry is invalid if it cannot be used even if it's recent.
     // for example, if the port went down, the mapping would become invalid
 
@@ -194,26 +194,26 @@ public:
   LookupIPRouteRON::FlowTableEntry *
   lookup(IPAddress src, IPAddress dst,
 	 unsigned short sport, unsigned short dport);
-  
-  // retuns a pointer to the added FlowTableEntry    
+
+  // retuns a pointer to the added FlowTableEntry
   //   outgoing_port is intialized to zero
   //   forw_alive, rev_alive are initialized to TRUE
   //   outstanding_syns is initialized to zero.
   LookupIPRouteRON::FlowTableEntry*
-  add(IPAddress src, IPAddress dst, 
-      unsigned short sport, unsigned short dport, 
+  add(IPAddress src, IPAddress dst,
+      unsigned short sport, unsigned short dport,
       unsigned probe_time, unsigned syn_seq);
 
-  void del(IPAddress src, IPAddress dst, 
+  void del(IPAddress src, IPAddress dst,
 	   unsigned short sport, unsigned short dport);
   //void clear()  { _v.clear(); }
   void print();
 
 private:
-  
+
   FlowTableEntry *_last_entry;
   Vector<FlowTableEntry> _v;
-};    
+};
 
 class LookupIPRouteRON::DstTableEntry {
 
@@ -230,16 +230,16 @@ public:
   unsigned outgoing_port;
   unsigned probe_time;
   struct ProbeInfo *probes; // more recent probes are closer to the front
-  
+
   void add_probe_info(int port, long rtt_sec, long rtt_usec);
 
   // returns a port to probe. last recently used, excludes not1, not2 if greater than zero
-  int  choose_least_recent_port(int noutputs, int not1, int not2); 
+  int  choose_least_recent_port(int noutputs, int not1, int not2);
   int  choose_fastest_port();
   void save_rtt(int port, long sec, long usec);
   void sent_probe(int port);
 
-  void invalidate()           { outgoing_port = 0;}  
+  void invalidate()           { outgoing_port = 0;}
   //unsigned get_age()          { return click_jiffies() - probe_time; }
 
   bool is_valid()             { return outgoing_port != 0; }

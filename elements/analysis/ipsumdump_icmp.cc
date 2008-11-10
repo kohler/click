@@ -43,7 +43,7 @@ static bool icmp_extract(PacketDesc& d, const FieldWriter *f)
 {
     int transport_length = d.p->transport_length();
     switch (f->user_data) {
-	
+
 #define CHECK(l) do { if (!d.icmph || transport_length < (l)) return field_missing(d, IP_PROTO_ICMP, (l)); } while (0)
 
       case T_ICMP_TYPE:
@@ -75,7 +75,7 @@ static bool icmp_extract(PacketDesc& d, const FieldWriter *f)
 	CHECK(8);
 	d.v = ntohs(reinterpret_cast<const click_icmp_sequenced *>(d.icmph)->icmp_sequence);
 	return true;
-	
+
       case T_ICMP_NEXTMTU:
 	CHECK(2);
 	if (d.icmph->icmp_type != ICMP_UNREACH
@@ -84,7 +84,7 @@ static bool icmp_extract(PacketDesc& d, const FieldWriter *f)
 	CHECK(8);
 	d.v = ntohs(reinterpret_cast<const click_icmp_needfrag *>(d.icmph)->icmp_nextmtu);
 	return true;
-	
+
 #undef CHECK
 
       default:

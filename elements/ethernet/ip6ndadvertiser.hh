@@ -10,12 +10,12 @@ CLICK_DECLS
  * =c
  * IP6NDAdvertiser(IP61 MASK1 ETH1, IP62 MASK2 ETH2, ...)
  * =s ip6
- * 
+ *
  * =d
  * Input should be Neighbor Solitation Message, which includes
- * the ethernet header, ip6 header and message itself. The Neighbor  
- * Solitation Message query about the link layer address of an IPv6 
- * target address. If the IP6NDAdvertiser knows the answer, it 
+ * the ethernet header, ip6 header and message itself. The Neighbor
+ * Solitation Message query about the link layer address of an IPv6
+ * target address. If the IP6NDAdvertiser knows the answer, it
  * forwards an Neighbor Advertisement Message.
  * if we know the answer.
  * Could be used for proxy ARP as well as producing
@@ -37,10 +37,10 @@ CLICK_DECLS
  */
 
 class IP6NDAdvertiser : public Element { public:
-  
+
   IP6NDAdvertiser();
   ~IP6NDAdvertiser();
-  
+
   const char *class_name() const		{ return "IP6NDAdvertiser"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
@@ -48,7 +48,7 @@ class IP6NDAdvertiser : public Element { public:
 
   Packet *simple_action(Packet *);
 
-  //response to multicast and unicast Neighbor Solitation message 
+  //response to multicast and unicast Neighbor Solitation message
   // which is querying the ethernet address of the targest IP6 address
   Packet *make_response(unsigned char dha[6], unsigned char sha[6],
                         unsigned char dpa[16], unsigned char spa[16],
@@ -71,7 +71,7 @@ class IP6NDAdvertiser : public Element { public:
     EtherAddress ena;
   };
   Vector<Entry> _v;
-  
+
   void add_map(const IP6Address &dst, const IP6Address &mask, const EtherAddress &);
 
 };

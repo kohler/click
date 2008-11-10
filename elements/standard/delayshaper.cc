@@ -77,7 +77,7 @@ DelayShaper::pull(int)
 	    _p->timestamp_anno().set_now();
 	_p->timestamp_anno() += _delay;
     }
-    
+
     if (_p) {
 	Timestamp now = Timestamp::now();
 	if (_p->timestamp_anno() <= now) {

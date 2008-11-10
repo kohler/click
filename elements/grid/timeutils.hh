@@ -31,4 +31,4 @@ ntoh(const timeval &tv) {
 }
 
 CLICK_ENDDECLS
-#endif 
+#endif

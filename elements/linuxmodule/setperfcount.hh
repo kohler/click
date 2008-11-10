@@ -22,27 +22,27 @@
  * C<DCU_MISS_OUTSTANDING>, C<IFU_FETCH>, C<IFU_FETCH_MISS>, C<IFU_MEM_STALL>,
  * C<INST_RETIRED>, C<L2_IFETCH>, C<L2_LD>, C<L2_LINES_IN>, C<L2_LINES_OUT>,
  * C<L2_LINES_OUTM>, and C<L2_RQSTS>.
- * 
+ *
  * =a PerfCountAccum, SetCycleCount, CycleCountAccum */
 
 class SetPerfCount : public PerfCountUser { public:
-  
+
   SetPerfCount();
   ~SetPerfCount();
-  
+
   const char *class_name() const		{ return "SetPerfCount"; }
   void *cast(const char *);
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
 
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   inline void smaction(Packet *);
   void push(int, Packet *p);
   Packet *pull(int);
 
  private:
-  
+
   int _which;
 
 };

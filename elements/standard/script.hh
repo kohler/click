@@ -369,7 +369,7 @@ class Script : public Element { public:
     Vector<int> _args;
     Vector<int> _args2;
     Vector<String> _args3;
-    
+
     Vector<String> _vars;
     String _run_handler_name;
     String _run_args;
@@ -391,7 +391,7 @@ class Script : public Element { public:
 	ErrorHandler *errh;
 	bool expand(const String &, int vartype, int quote, StringAccum &) const;
     };
-    
+
     void add_insn(int, int, int = 0, const String & = String());
     int step(int nsteps, int step_type, int njumps, ErrorHandler *errh);
     int complete_step(String *retval);

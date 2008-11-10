@@ -28,7 +28,7 @@
 #include "timeutils.hh"
 CLICK_DECLS
 
-GridProbeReplyReceiver::GridProbeReplyReceiver() 
+GridProbeReplyReceiver::GridProbeReplyReceiver()
 {
 }
 
@@ -92,10 +92,10 @@ GridProbeReplyReceiver::simple_action(Packet *p)
 	   (unsigned int) ntohl(rr->route_action),
 	   (unsigned int) ntohl(rr->data1),
 	   (unsigned int) ntohl(rr->data2));
-  
+
   _repl_errh->message(buf);
   p->kill();
-  return 0;   
+  return 0;
 }
 
 CLICK_ENDDECLS

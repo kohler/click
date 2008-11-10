@@ -123,7 +123,7 @@ fake_pcap_force_ip(Packet *&p, int dlt)
     const click_ip *iph = 0;
     const uint8_t *data = p->data();
     const uint8_t *end_data = p->end_data();
-    
+
     switch (dlt) {
 
       case FAKE_DLT_RAW:
@@ -162,7 +162,7 @@ fake_pcap_force_ip(Packet *&p, int dlt)
       case FAKE_DLT_SUNATM:
 	data += 4;
 	goto rfc1483;
-	
+
       rfc1483:
       case FAKE_DLT_ATM_RFC1483: {
 	  const click_rfc1483* rh = reinterpret_cast<const click_rfc1483*>(data);
@@ -275,7 +275,7 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	  }
 	  break;
       }
-	
+
       case FAKE_DLT_NULL: {
 	  if (data + 4 > end_data)
 	      break;
@@ -312,7 +312,7 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	    return false;
     }
 #endif
-    
+
     if (iph->ip_v == 4) {
 	if (iph->ip_hl >= 5
 	    && reinterpret_cast<const uint8_t*>(iph) + (iph->ip_hl << 2) <= end_data) {

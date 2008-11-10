@@ -37,7 +37,7 @@ SetCRC32::simple_action(Packet *p)
 
   WritablePacket *q = p->put(4);
   memcpy(q->data() + len, &crc, 4);
-  
+
   return(q);
 }
 

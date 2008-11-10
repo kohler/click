@@ -152,7 +152,7 @@ class FromNetFlowSummaryDump : public Element { public:
     FromFile _ff;
 
     Vector<int> _contents;
-    
+
     bool _stop : 1;
     bool _format_complaint : 1;
     bool _timing;
@@ -178,7 +178,7 @@ class FromNetFlowSummaryDump : public Element { public:
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

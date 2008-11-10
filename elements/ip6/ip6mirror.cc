@@ -35,12 +35,12 @@ IP6Mirror::simple_action(Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
   // new checksum is same as old checksum
-  
+
   click_ip6 *iph = p->ip6_header();
   struct click_in6_addr tmpa = iph->ip6_src;
   iph->ip6_src = iph->ip6_dst;
   iph->ip6_dst = tmpa;
-  
+
   // may mirror ports as well
   if ((iph->ip6_nxt == IP_PROTO_TCP || iph->ip6_nxt == IP_PROTO_UDP) &&  p->length() >= (uint32_t)(p->transport_header_offset() + 8)) {
     click_udp *udph = reinterpret_cast<click_udp *>(p->transport_header());
@@ -48,7 +48,7 @@ IP6Mirror::simple_action(Packet *p_in)
     udph->uh_sport = udph->uh_dport;
     udph->uh_dport = tmpp;
   }
-  
+
   return p;
 }
 

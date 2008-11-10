@@ -28,16 +28,16 @@
  *
  * =h reset_counts write-only
  * Resets C<count> and C<accum> counters to zero when written.
- * 
+ *
  * =a SetPerfCount, SetCycleCount, CycleCountAccum */
 
 #include "elements/linuxmodule/perfcountuser.hh"
 
 class PerfCountAccum : public PerfCountUser { public:
-  
+
   PerfCountAccum();
   ~PerfCountAccum();
-  
+
   const char *class_name() const		{ return "PerfCountAccum"; }
   void *cast(const char *);
   const char *port_count() const		{ return PORTS_1_1; }
@@ -46,20 +46,20 @@ class PerfCountAccum : public PerfCountUser { public:
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
-  
+
   inline void smaction(Packet *);
   void push(int, Packet *p);
   Packet *pull(int);
 
  private:
-  
+
   int _which;
   uint64_t _accum;
   uint64_t _count;
 
   static String read_handler(Element *, void *);
   static int reset_handler(const String &, Element *, void *, ErrorHandler *);
-  
+
 };
 
 #endif

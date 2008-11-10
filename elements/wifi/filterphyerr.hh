@@ -16,7 +16,7 @@ Filters packets that failed the 802.11 CRC check.
 
 =d
 Filters out packets that have the phy err annotation set
-in the wifi_extra_header, and sends these packets to output 1 
+in the wifi_extra_header, and sends these packets to output 1
 if it is present.
 
 =a ExtraDecap, ExtraEncap
@@ -24,16 +24,16 @@ if it is present.
 
 
 class FilterPhyErr : public Element { public:
-  
+
   FilterPhyErr();
   ~FilterPhyErr();
-  
+
   const char *class_name() const		{ return "FilterPhyErr"; }
   const char *port_count() const		{ return "1/1-3"; }
   const char *processing() const		{ return PROCESSING_A_AH; }
 
   void add_handlers();
-  Packet *simple_action(Packet *);  
+  Packet *simple_action(Packet *);
 
 
   int _drops;

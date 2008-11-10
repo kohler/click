@@ -40,7 +40,7 @@ compile_pattern(const String &pattern0)
 				      "%=", "^=", "&=", "~=", "==", "!=",
 				      "&&", "||",
 				      ">=", "<=", "::", "<<", ">>", ".*", 0 };
-  
+
   StringAccum sa;
   const char *s = pattern0.data();
   const char *end_s = s + pattern0.length();
@@ -54,17 +54,17 @@ compile_pattern(const String &pattern0)
       sa << ' ';
       while (s < end_s && isspace((unsigned char) *s))
 	s++;
-      
+
     } else if (isalnum((unsigned char) *s) || *s == '_') {
       while (s < end_s && (isalnum((unsigned char) *s) || *s == '_'))
 	sa << *s++;
       sa << ' ';
-      
+
     } else if (*s == '#') {
       assert(s < end_s - 1 && isdigit((unsigned char) s[1]));
       sa << s[0] << s[1];
       s += 2;
-      
+
     } else {
       const char *token = 0;
       if (s < end_s - 2)
@@ -189,7 +189,7 @@ CxxFunction::replace_expr(const String &pattern, const String &replacement)
     return false;
 
   //fprintf(stderr, ":::::: %s\n", _body.c_str());
-  
+
   StringAccum sa, clean_sa;
   const char *s = replacement.data();
   const char *end_s = s + replacement.length();
@@ -254,7 +254,7 @@ CxxClass::reach(int findex, Vector<int> &reached)
   if (reached[findex])
     return _should_rewrite[findex];
   reached[findex] = true;
-  
+
   // return true if reachable and rewritable
   const String &clean_body = _functions[findex].clean_body();
   const char *s = clean_body.data();
@@ -263,7 +263,7 @@ CxxClass::reach(int findex, Vector<int> &reached)
   bool should_rewrite = _has_push[findex] || _has_pull[findex];
 
   while (p < len) {
-    
+
     // look for a function call
     while (p < len && s[p] != '(')
       p++;
@@ -314,7 +314,7 @@ CxxClass::reach(int findex, Vector<int> &reached)
 	break;
       }
   }
-  
+
   _should_rewrite[findex] = should_rewrite;
   return should_rewrite;
 }
@@ -325,7 +325,7 @@ CxxClass::find_should_rewrite()
   _has_push.assign(nfunctions(), 0);
   _has_pull.assign(nfunctions(), 0);
   _should_rewrite.assign(nfunctions(), 0);
-  
+
   if (_fn_map.get("never_devirtualize") >= 0)
     return false;
 
@@ -358,7 +358,7 @@ CxxClass::find_should_rewrite()
 	_should_rewrite[i] = any = true;
     }
   }
-  
+
   return any;
 }
 
@@ -439,7 +439,7 @@ remove_crap(const String &original_text)
   char *o = new_text.extend(original_text.length());
 
   char *if0_o_ptr = 0;
-  
+
   while (s < end_s) {
     // read one line
 
@@ -501,7 +501,7 @@ remove_crap(const String &original_text)
 	  *o++ = ' ';
 	  s += 2;
 	}
-	
+
       } else if (s < end_s - 1 && *s == '/' && s[1] == '/') {
 	// slash-slash comment
 	*o++ = ' ';
@@ -509,7 +509,7 @@ remove_crap(const String &original_text)
 	s += 2;
 	while (s < end_s && *s != '\n' && *s != '\r')
 	  *o++ = ' ', s++;
-	
+
       } else if (*s == '\"' || *s == '\'') {
 	// literal
 	// XXX I am not sure why the closing quote,
@@ -523,7 +523,7 @@ remove_crap(const String &original_text)
 	}
 	if (s < end_s)
 	  *o++ = '$', s++;
-	
+
       } else if (*s != '\n' && *s != '\r')
 	// random other character, fine
 	*o++ = *s++;
@@ -707,7 +707,7 @@ CxxInfo::parse_class(const String &text, int p, const String &original,
   // parse clean_text
   const char *s = text.data();
   int len = text.length();
-  
+
   while (1) {
 
     // find first batch
@@ -738,7 +738,7 @@ CxxInfo::parse_class(const String &text, int p, const String &original,
 	p = skip_balanced_braces(text, p);
     } else if (s[p] == '(')
       p = parse_function_definition(text, p1, p, original, cxx_class);
-    
+
   }
 }
 
@@ -765,7 +765,7 @@ CxxInfo::parse_file(const String &original_text, bool header,
       if (p < len && s[p] == ';') {
 	// mop up stray semicolons
 	p++;
-	
+
       } else if (p + 7 < len && memcmp(s + p, "extern", 6) == 0
 		 && isspace((unsigned char) s[p+6])) {
 	// include 'extern ["C"] { -HEADERS- }'
@@ -779,7 +779,7 @@ CxxInfo::parse_file(const String &original_text, bool header,
 	if (p1 >= len || s[p1] != '}')
 	  break;
 	p = p1 + 1;
-	
+
       } else if (p + 5 < len && memcmp(s + p, "enum", 4) == 0
 		 && isspace((unsigned char) s[p+4])) {
 	// include 'enum [IDENTIFIER] { ... }'
@@ -799,18 +799,18 @@ CxxInfo::parse_file(const String &original_text, bool header,
 	if (p1 >= len)
 	  break;
 	p = p1 + 1;
-	
+
       } else if (p + 8 < len && memcmp(s + p, "typedef", 7) == 0
 		 && isspace((unsigned char) s[p+7])) {
 	// include typedefs
 	for (p += 8; p < len && s[p] != ';'; p++)
 	  /* nada */;
-	
+
       } else if (p + 9 < len && memcmp(s + p, "CLICK_CXX", 9) == 0) {
 	// include 'CLICK_CXX' (used in <click/cxxprotect.h>)
 	for (p += 9; p < len && (isalnum((unsigned char) s[p]) || s[p] == '_'); p++)
 	  /* nada */;
-	
+
       } else
 	break;
     }

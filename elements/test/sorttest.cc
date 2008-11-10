@@ -641,7 +641,7 @@ SortTest::configure(Vector<String> &conf, ErrorHandler *errh)
 #endif
 				     cpEnd) < 0)
 	return -1;
-    
+
 #if CLICK_USERLEVEL
     if (filename) {
 	FromFile ff;
@@ -678,7 +678,7 @@ SortTest::configure(Vector<String> &conf, ErrorHandler *errh)
 	for (int i = 0; i < s; i++)
 	    _permute.push_back(i);
     }
-    
+
     return 0;
 }
 
@@ -701,7 +701,7 @@ SortTest::initialize_vec(ErrorHandler *)
 	    compar = (_reverse ? string_permute_rev_compar : string_permute_compar);
 	else
 	    compar = (_reverse ? string_rev_compar : string_compar);
-	
+
 #if CLICK_USERLEVEL
 	if (_stdc)
 	    qsort(begin, n, size, compar);
@@ -724,7 +724,7 @@ SortTest::initialize_vec(ErrorHandler *)
 	    compar = (_reverse ? size_t_permute_rev_compar : size_t_permute_compar);
 	else
 	    compar = (_reverse ? size_t_rev_compar : size_t_compar);
-	
+
 #if CLICK_USERLEVEL
 	if (_stdc)
 	    qsort(begin, n, size, compar);
@@ -750,7 +750,7 @@ SortTest::initialize(ErrorHandler *errh)
 {
     if (_strvec.size() || _sizevec.size())
 	return initialize_vec(errh);
-    
+
     size_t nclasses = sizeof(classes) / sizeof(classes[0]);
 
     click_random_srandom();

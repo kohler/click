@@ -51,16 +51,16 @@ class Specializer { public:
 
   int nspecials() const				{ return _specials.size(); }
   const SpecializedClass &special(int i) const	{ return _specials[i]; }
-  
+
     void output(StringAccum& out_header, StringAccum& out_source );
     void output_package(const String &package_name, const String &suffix, StringAccum &, ErrorHandler*);
     void output_new_elementmap(const ElementMap &, ElementMap &, const String &,
 			       const String &requirements) const;
-  
+
  private:
 
   enum { SPCE_NOT_DONE = -2, SPCE_NOT_SPECIAL = -1 };
-  
+
   RouterT *_router;
   int _nelements;
   Vector<int> _ninputs;
@@ -77,7 +77,7 @@ class Specializer { public:
   CxxInfo _cxxinfo;
 
   const String &enew_cxx_type(int) const;
-  
+
   void parse_source_file(ElementTypeInfo &, bool, String *);
   void read_source(ElementTypeInfo &, ErrorHandler *);
   void check_specialize(int, ErrorHandler *);

@@ -19,16 +19,16 @@ CLICK_DECLS
  */
 
 class RandomSwitch : public Element { public:
-  
+
     RandomSwitch();
     ~RandomSwitch();
 
     const char *class_name() const	{ return "RandomSwitch"; }
     const char *port_count() const	{ return "1/1-"; }
     const char *processing() const	{ return PUSH; }
-  
+
     void push(int, Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

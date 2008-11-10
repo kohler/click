@@ -140,11 +140,11 @@ hotswap_config(const String &s)
 	return -EINVAL;
 
     // XXX should we lock the kernel?
-  
+
     // register hotswap router on new router
     if (click_router && click_router->initialized())
 	router->set_hotswap_router(click_router);
-  
+
     if (click_logged_errh->nerrors() == before_errors
 	&& router->initialize(click_logged_errh) >= 0) {
 	router->activate(click_logged_errh);
@@ -152,7 +152,7 @@ hotswap_config(const String &s)
 	install_router(s, router);
     } else
 	delete router;
-  
+
   return 0;
 }
 
@@ -174,13 +174,13 @@ void
 click_init_config()
 {
     lexer = new Lexer;
-  
+
     Router::add_read_handler(0, "classes", read_classes, 0);
     Router::add_write_handler(0, "config", write_config, 0);
     Router::add_write_handler(0, "hotconfig", write_config, (void *)1);
     Router::set_handler_flags(0, "config", HANDLER_REREAD | HANDLER_WRITE_UNLIMITED | Handler::RAW);
     Router::set_handler_flags(0, "hotconfig", HANDLER_WRITE_UNLIMITED | Handler::RAW);
-  
+
     click_config_generation = 1;
     current_config = new String;
 

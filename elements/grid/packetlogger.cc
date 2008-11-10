@@ -40,7 +40,7 @@ PacketLogger::simple_action(Packet *p_in)
     d.timestamp = p_in->timestamp_anno();
     memcpy(d.src_mac, e->ether_shost, 6);
 
-//    click_chatter("%x %x %x %x %x %x", 
+//    click_chatter("%x %x %x %x %x %x",
 //		  e->ether_shost[0],
 //		  e->ether_shost[1],
 //		  e->ether_shost[2],
@@ -48,7 +48,7 @@ PacketLogger::simple_action(Packet *p_in)
 //		  e->ether_shost[4],
 //		  e->ether_shost[5]);
 //
-//    click_chatter("%x %x %x %x %x %x", 
+//    click_chatter("%x %x %x %x %x %x",
 //		  d.src_mac[0],
 //		  d.src_mac[1],
 //		  d.src_mac[2],
@@ -57,7 +57,7 @@ PacketLogger::simple_action(Packet *p_in)
 //		  d.src_mac[5]);
 
     memcpy(d.bytes, p_in->data() + sizeof(click_ether), NBYTES);
-    
+
     _p.push_back(d);
   }
   return p_in;
@@ -95,7 +95,7 @@ PacketLogger::print_log(Element *e, void *)
     for (unsigned i = 0; i < 6; i++) {
       sprintf(buf + pos, "%02x", d.src_mac[i]);
       pos += 2;
-      if (i != 5) buf[pos++] = ':'; 
+      if (i != 5) buf[pos++] = ':';
     }
     buf[pos++] = ' ';
     buf[pos++] = '|';

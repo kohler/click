@@ -55,7 +55,7 @@ SchedOrderTest::configure(Vector<String>& conf, ErrorHandler* errh)
     SchedOrderTest* sot = (SchedOrderTest*) main;
     if (sot->_bufsiz < _bufsiz)
 	sot->_bufsiz = _bufsiz;
-    
+
     return 0;
 }
 

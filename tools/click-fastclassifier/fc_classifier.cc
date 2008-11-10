@@ -32,7 +32,7 @@ write_checked_body(const Classifier_Program &c, StringAccum &source)
 
   for (int i = 0; i < c.program.size(); i++) {
     const Classifier_Insn &e = c.program[i];
-    
+
     int want_l = e.offset + 4;
     if (!e.mask.c[3]) {
       want_l--;
@@ -42,15 +42,15 @@ write_checked_body(const Classifier_Program &c, StringAccum &source)
 	  want_l--;
       }
     }
-    
+
     bool switched = (e.yes == i + 1);
     int branch1 = (switched ? e.no : e.yes);
     int branch2 = (switched ? e.yes : e.no);
-    
+
     source << " lstep_" << i << ":\n";
-    
+
     int offset = (e.offset + align_off)/4;
-    
+
     if (want_l >= c.safe_length) {
       branch2 = e.no;
       goto output_branch2;
@@ -68,7 +68,7 @@ write_checked_body(const Classifier_Program &c, StringAccum &source)
       source << " {\n    output(" << -branch1 << ").push(p);\n    return;\n  }\n";
     else
       source << "\n    goto lstep_" << branch1 << ";\n";
-    
+
    output_branch2:
     if (branch2 <= -c.noutputs)
       source << "  p->kill();\n  return;\n";
@@ -88,14 +88,14 @@ write_unchecked_body(const Classifier_Program &c, StringAccum &source)
 
   for (int i = 0; i < c.program.size(); i++) {
     const Classifier_Insn &e = c.program[i];
-    
+
     bool switched = (e.yes == i + 1);
     int branch1 = (switched ? e.no : e.yes);
     int branch2 = (switched ? e.yes : e.no);
     source << " step_" << i << ":\n";
 
     int offset = (e.offset + align_off)/4;
-    
+
     if (switched)
       source << "  if ((data[" << offset << "] & " << e.mask.u
 	     << "U) != " << e.value.u << "U)";

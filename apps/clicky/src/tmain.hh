@@ -4,14 +4,14 @@
 namespace clicky {
 
 class tmain : public crouter { public:
-    
+
     tmain();
     ~tmain();
 
     // not really public
     void on_config_changed(bool replace, LexerTInfo *linfo);
     void on_error(bool replace, const String &dialog);
-    
+
 };
 
 }

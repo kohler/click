@@ -15,7 +15,7 @@ CLICK_DECLS
  * is measured in bytes per second using an exponential weighted moving
  * average.  (The related Meter element measures rates in packets per
  * second.)
- * 
+ *
  * The configuration string consists of one or more RATE arguments.  Each
  * RATE is a bandwidth, such as "384 kbps".  Earlier
  * rates in the list must be less than later rates. A Meter with I<n> rate
@@ -47,23 +47,23 @@ class BandwidthMeter : public Element { protected:
   static String read_rate_handler(Element *, void *);
 
  public:
-  
+
   BandwidthMeter();
   ~BandwidthMeter();
-  
+
   const char *class_name() const		{ return "BandwidthMeter"; }
   const char *port_count() const		{ return "1/2-"; }
   const char *processing() const		{ return PUSH; }
-  
+
   unsigned scaled_rate() const		{ return _rate.scaled_average(); }
   unsigned rate_scale() const		{ return _rate.scale(); }
   unsigned rate_freq() const		{ return _rate.epoch_frequency(); }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   void add_handlers();
-  
+
   void push(int port, Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

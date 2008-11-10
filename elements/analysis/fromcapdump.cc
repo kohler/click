@@ -61,7 +61,7 @@ FromCapDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool stop = false, active = true, zero = true, checksum = false;
     _sampling_prob = (1 << SAMPLING_SHIFT);
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "FILENAME", cpkP+cpkM, cpFilename, &_ff.filename(),
 		     "STOP", 0, cpBool, &stop,
@@ -92,10 +92,10 @@ FromCapDump::initialize(ErrorHandler *errh)
     // make sure notifier is initialized
     if (!output_is_push(0))
 	_notifier.initialize(Notifier::EMPTY_NOTIFIER, router());
-    
+
     if (_ff.initialize(errh) < 0)
 	return -1;
-    
+
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
     return 0;
@@ -138,7 +138,7 @@ static void
 set_checksums(WritablePacket *q, click_ip *iph)
 {
     assert(iph == q->ip_header());
-    
+
     iph->ip_sum = 0;
     iph->ip_sum = click_in_cksum((uint8_t *)iph, iph->ip_hl << 2);
 
@@ -167,9 +167,9 @@ FromCapDump::read_packet(ErrorHandler *errh)
     iph->ip_off = 0;
     click_tcp *tcph = q->tcp_header();
     tcph->th_win = htons(65535);
-    
+
     String line;
-    
+
     while (1) {
 
 	if (_ff.read_line(line, errh, true) <= 0) {
@@ -198,7 +198,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	    }
 	    continue;
 	}
-	
+
 	char packet_type = data[0];
 	tcph->th_flags = (data[0] == 'S' ? TH_SYN : 0);
 	data = cp_skip_space(data + 4, end);
@@ -253,22 +253,22 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	    *(reinterpret_cast<uint32_t *>(opt)) = htonl(packno2seqno(u1));
 	    *(reinterpret_cast<uint32_t *>(opt + 4)) = htonl(packno2seqno(u1 + 1));
 	    goto parse_annotations;
-	    
+
 	} else if (data + 2 < end && data[0] == 'F' && data[1] == 'I'
 		   && data[2] == 'N') {
 	    tcph->th_flags |= TH_FIN;
 	    next = data + 3;
 	    goto parse_annotations;
-	    
+
 	} else if (data + 1 < end && data[0] == 'F' && data[1] == 'R') {
 	    next = data + 2;
 	    goto parse_annotations;
-	    
+
 	} else if (data + 2 < end && data[0] == 'R' && data[1] == 'T'
 		   && data[2] == 'O') {
 	    next = data + 3;
 	    goto parse_annotations;
-	    
+
 	} else if (data + 4 < end && data[0] == 'S' && data[1] == 'A'
 		   && data[2] == 'C' && data[3] == 'K' && data[4] == ':') {
 	    q = q->put(40);
@@ -277,7 +277,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	    *opt++ = TCPOPT_NOP;
 	    *opt++ = TCPOPT_SACK;
 	    opt++;
-	    
+
 	    data += 4;
 	    while (data < end && *data == ':') {
 		next = cp_integer(data + 1, end, 10, &u1);
@@ -294,20 +294,20 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	    q->take(q->end_data() - opt);
 	    next = data;
 	    goto parse_annotations;
-	    
+
 	} else if (data + 7 < end && data[0] == 'S' && data[1] == 'A'
 		   && data[2] == 'C' && data[3] == 'K' && data[4] == '_'
 		   && data[5] == 'N' && data[6] == 'E' && data[7] == 'W') {
 	    next = data + 8;
 	    goto parse_annotations;
-	    
+
 	} else if (data + 9 < end && data[0] == 'S' && data[1] == 'A'
 		   && data[2] == 'C' && data[3] == 'K' && data[4] == '_'
 		   && data[5] == 'R' && data[6] == 'E' && data[7] == 'X'
 		   && data[8] == 'M' && data[9] == 'T') {
 	    next = data + 10;
 	    goto parse_annotations;
-	    
+
 	} else if (data + 2 < end && data[0] == 'T' && data[1] == 'I'
 		   && data[2] == 'M') {
 	    next = data + 3;
@@ -333,9 +333,9 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	}
 	SET_PACKET_NUMBER_ANNO(q, uniqno);
 	SET_SEQUENCE_NUMBER_ANNO(q, seqno);
-	
+
 	tcph->th_off = (q->end_data() - q->transport_header()) >> 2;
-	
+
 	// set IP length
 	iph->ip_len = ntohs(q->length() + payload_len);
 	SET_EXTRA_LENGTH_ANNO(q, payload_len);
@@ -351,7 +351,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	// set checksum
 	if (_checksum)
 	    set_checksums(q, iph);
-	
+
 	return q;
     }
 

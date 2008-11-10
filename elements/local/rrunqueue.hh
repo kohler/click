@@ -19,18 +19,18 @@ CLICK_DECLS
  */
 
 class RoundRobinUnqueue : public Element { public:
-  
+
   RoundRobinUnqueue();
   ~RoundRobinUnqueue();
 
   const char *class_name() const	{ return "RoundRobinUnqueue"; }
   const char *port_count() const	{ return "-/-"; }
   const char *processing() const	{ return PULL_TO_PUSH; }
- 
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
-  
+
   bool run_task(Task *);
 
   static String read_param(Element *e, void *);

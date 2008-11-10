@@ -29,25 +29,25 @@
 CLICK_DECLS
 
 class SendGridHello : public Element {
-  
+
 public:
-  
+
   SendGridHello();
   ~SendGridHello();
-  
+
   const char *class_name() const		{ return "SendGridHello"; }
   const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  
+
   Packet *make_hello();
-  
+
   void run_timer(Timer *);
-  
+
 private:
-  
+
   EtherAddress _from_eth;
   IPAddress _from_ip;
   int _period;

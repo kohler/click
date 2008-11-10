@@ -79,17 +79,17 @@ SimpleQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 	return 0;
     int new_capacity = _capacity;
     _capacity = old_capacity;
-  
+
     Packet **new_q = (Packet **) CLICK_LALLOC(sizeof(Packet *) * (new_capacity + 1));
     if (new_q == 0)
 	return errh->error("out of memory");
-  
+
     int i, j;
     for (i = _head, j = 0; i != _tail && j != new_capacity; i = next_i(i))
 	new_q[j++] = _q[i];
     for (; i != _tail; i = next_i(i))
 	_q[i]->kill();
-  
+
     CLICK_LFREE(_q, sizeof(Packet *) * (_capacity + 1));
     _q = new_q;
     _head = 0;
@@ -104,7 +104,7 @@ SimpleQueue::take_state(Element *e, ErrorHandler *errh)
     SimpleQueue *q = (SimpleQueue *)e->cast("SimpleQueue");
     if (!q)
 	return;
-  
+
     if (_tail != _head || _head != 0) {
 	errh->error("already have packets enqueued, can't take state");
 	return;
@@ -146,7 +146,7 @@ SimpleQueue::push(int, Packet *p)
     // If you change this code, also change NotifierQueue::push()
     // and FullNoteQueue::push().
     int h = _head, t = _tail, nt = next_i(t);
-  
+
     // should this stuff be in SimpleQueue::enq?
     if (nt != h) {
 	_q[t] = p;
@@ -156,7 +156,7 @@ SimpleQueue::push(int, Packet *p)
 	int s = size(h, nt);
 	if (s > _highwater_length)
 	    _highwater_length = s;
-    
+
     } else {
 	// if (!(_drops % 100))
 	if (_drops == 0)
@@ -180,7 +180,7 @@ SimpleQueue::yank(bool (filter)(const Packet *, void *), void *thunk)
     // a vector.  caller is responsible for managing the yank()-ed
     // packets from now on, i.e. deallocating them.
     Vector<Packet *> v;
-  
+
     int next_slot = _head;
     for (int i = _head; i != _tail; i = next_i(i)) {
 	if (filter(_q[i], thunk))

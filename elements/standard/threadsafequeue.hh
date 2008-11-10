@@ -60,7 +60,7 @@ class ThreadSafeQueue : public FullNoteQueue { public:
     void *cast(const char *);
 
     int live_reconfigure(Vector<String> &conf, ErrorHandler *errh);
-    
+
     void push(int port, Packet *);
     Packet *pull(int port);
 
@@ -68,7 +68,7 @@ class ThreadSafeQueue : public FullNoteQueue { public:
 
     atomic_uint32_t _xhead;
     atomic_uint32_t _xtail;
-    
+
 };
 
 CLICK_ENDDECLS

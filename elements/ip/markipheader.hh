@@ -22,18 +22,18 @@ CLICK_DECLS
 class MarkIPHeader : public Element {
 
   int _offset;
-  
+
  public:
-  
+
   MarkIPHeader();
   ~MarkIPHeader();
-  
+
   const char *class_name() const		{ return "MarkIPHeader"; }
   const char *port_count() const		{ return PORTS_1_1; }
   int configure(Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

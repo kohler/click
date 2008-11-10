@@ -37,7 +37,7 @@ PacketStore::configure(Vector<String> &, ErrorHandler *)
 	return 0;
 }
 
-int 
+int
 PacketStore::initialize(ErrorHandler *errh)
 {
 	ScheduleInfo::initialize_task(this, &_task, errh);
@@ -92,7 +92,7 @@ read_param(Element *e, void *thunk)
 	}
 }
 
-static int 
+static int
 write_param(const String &in_s, Element *e, void *vparam,
 	    ErrorHandler *errh)
 {

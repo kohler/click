@@ -69,7 +69,7 @@ PrintGrid::encap_to_string(const grid_nbr_encap *nb) const
       line += buf;
       line += "dst_loc_err=" + String(ntohs(nb->dst_loc_err)) + " ";
     }
-    else 
+    else
       line += "bad-dst-loc";
 #else
     line += "bad-dst-loc";
@@ -83,7 +83,7 @@ PrintGrid::simple_action(Packet *p)
 {
   click_ether *eh = (click_ether *) p->data();
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID && ntohs(eh->ether_type) != LinkStat::ETHERTYPE_LINKSTAT) {
-    click_chatter("PrintGrid %s%s%s : not a Grid packet", 
+    click_chatter("PrintGrid %s%s%s : not a Grid packet",
 		  name().c_str(),
 		  _label.c_str()[0] ? " " : "",
 		  _label.c_str());
@@ -126,7 +126,7 @@ PrintGrid::simple_action(Packet *p)
 	line << "bad-loc ";
     line << "loc_seq_no=" << ntohl(gh->loc_seq_no) << " ";
   }
-  
+
   // packet transmitter info
   line << "tx_ip=" << IPAddress(gh->tx_ip) << " ";
   if (_verbose) {
@@ -172,14 +172,14 @@ PrintGrid::simple_action(Packet *p)
 	 << "seq_no=" << ntohl(lq->seq_no);
     break;
 
-  case grid_hdr::GRID_ROUTE_PROBE: 
+  case grid_hdr::GRID_ROUTE_PROBE:
     nb = (grid_nbr_encap *) (gh + 1);
     line << encap_to_string(nb);
     rp = (grid_route_probe *) (nb + 1);
     line << " nonce=" << ntohl(rp->nonce);
     break;
 
-  case grid_hdr::GRID_ROUTE_REPLY: 
+  case grid_hdr::GRID_ROUTE_REPLY:
     nb = (grid_nbr_encap *) (gh + 1);
     line << encap_to_string(nb);
     rr = (grid_route_reply *) (nb + 1);
@@ -202,7 +202,7 @@ PrintGrid::simple_action(Packet *p)
   default:
     line << "Unknown grid header type " << (int) gh->type;
   }
-  
+
   click_chatter("%s", line.c_str());
 
   return p;
@@ -230,14 +230,14 @@ PrintGrid::print_ether_linkstat(Packet *p) const
   if (_print_eth) {
     click_ether *eh = (click_ether *) p->data();
     char buf[100];
-    snprintf(buf, sizeof(buf), "%s %s %04hx ", 
+    snprintf(buf, sizeof(buf), "%s %s %04hx ",
 	     EtherAddress(eh->ether_shost).unparse().c_str(), EtherAddress(eh->ether_dhost).unparse().c_str(),
 	     ntohs(eh->ether_type));
     line << buf;
   }
 
   line << ": ETHER_LINK_PROBE ";
-  
+
   LinkStat::link_probe lp(p->data() + sizeof(click_ether));
   if (LinkStat::link_probe::calc_cksum(p->data() + sizeof(click_ether)) != 0) {
     line << "Bad checksum";
@@ -247,7 +247,7 @@ PrintGrid::print_ether_linkstat(Packet *p) const
 
   line << "psz=" << lp.psz << " num_links=" << lp.num_links;
 
-  if (p->length() < lp.psz) 
+  if (p->length() < lp.psz)
     line << " (short packet) ";
 
   unsigned int max_entries = (p->length() - sizeof(click_ether) - LinkStat::link_probe::size) / LinkStat::link_entry::size;
@@ -261,7 +261,7 @@ PrintGrid::print_ether_linkstat(Packet *p) const
     const unsigned char *d = p->data() + sizeof(click_ether) + LinkStat::link_probe::size;
     for (unsigned i = 0; i < num_entries; i++, d += LinkStat::link_entry::size) {
       LinkStat::link_entry le(d);
-      line << "\n\t" << le.eth << " num_rx=" << le.num_rx;    
+      line << "\n\t" << le.eth << " num_rx=" << le.num_rx;
     }
   }
 

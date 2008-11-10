@@ -110,29 +110,29 @@ class CheckIPHeader : public Element { public:
 
   static void static_initialize();
   static void static_cleanup();
-  
+
   const char *class_name() const		{ return "CheckIPHeader"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
   const char *flags() const			{ return "A"; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   void add_handlers();
 
   Packet *simple_action(Packet *);
 
  private:
-  
+
   unsigned _offset;
-  
+
   Vector<IPAddress> _bad_src;	// array of illegal IP src addresses
-  
+
   bool _checksum;
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   bool _aligned;
 #endif
   bool _verbose;
-  
+
   Vector<IPAddress> _good_dst;	// array of IP dst addrs for which _bad_src
 				// does not apply
 
@@ -149,12 +149,12 @@ class CheckIPHeader : public Element { public:
     NREASONS
   };
   static const char * const reason_texts[NREASONS];
-  
+
   Packet *drop(Reason, Packet *);
   static String read_handler(Element *, void *);
 
   friend class CheckIPHeader2;
-  
+
 };
 
 CLICK_ENDDECLS

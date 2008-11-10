@@ -31,7 +31,7 @@ PrioSched::~PrioSched()
 {
 }
 
-int 
+int
 PrioSched::initialize(ErrorHandler *errh)
 {
     if (!(_signals = new NotifierSignal[ninputs()]))

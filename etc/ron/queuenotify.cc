@@ -39,12 +39,12 @@ QueueNotify::cast(const char *n)
 }
 
 
-void 
+void
 QueueNotify::subscribe_notification(NotifiedElement *e) {
   _subscribers.push_back(e);
 }
 
-void 
+void
 QueueNotify::notify_subscribers(int signal) {
   int i;
   for(i=0; i<_subscribers.size(); i++) {

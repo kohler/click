@@ -61,7 +61,7 @@ bool
 DelayUnqueue::run_task(Task *)
 {
     bool worked = false;
-  
+
   retry:
     // read a packet
     if (!_p && (_p = input(0).pull())) {
@@ -69,7 +69,7 @@ DelayUnqueue::run_task(Task *)
 	    _p->timestamp_anno().set_now();
 	_p->timestamp_anno() += _delay;
     }
-  
+
     if (_p) {
 	Timestamp now = Timestamp::now();
 	if (_p->timestamp_anno() <= now) {

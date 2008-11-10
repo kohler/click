@@ -89,17 +89,17 @@ Makes the element active or inactive.
 RatedSource, PokeHandlers */
 
 class InfiniteSource : public Element, public ActiveNotifier { public:
-  
+
   InfiniteSource();
   ~InfiniteSource();
-  
+
   const char *class_name() const		{ return "InfiniteSource"; }
   void *cast(const char *);
   const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return AGNOSTIC; }
   const char *flags() const			{ return "S1"; }
   void add_handlers();
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
@@ -111,7 +111,7 @@ class InfiniteSource : public Element, public ActiveNotifier { public:
  protected:
 
   void setup_packet();
-  
+
   Packet *_packet;
   int _burstsize;
   int _limit;
@@ -122,7 +122,7 @@ class InfiniteSource : public Element, public ActiveNotifier { public:
   Task _task;
   String _data;
   NotifierSignal _nonfull_signal;
-  
+
   static String read_param(Element *, void *);
   static int change_param(const String &, Element *, void *, ErrorHandler *);
 

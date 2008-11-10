@@ -18,10 +18,10 @@ AutoRateFallback([, I<KEYWORDS>])
 
 ARF wireless bit-rate selection algorithm
 
-=d 
+=d
 
 AutoRateFallback is based on the algorithm presented in
-"WaveLAN-II: A High-Performance Wireless LAN for the 
+"WaveLAN-II: A High-Performance Wireless LAN for the
 Unliscensed Band" by Ad Kamerman and Leo Monteban
 Automatically determine the txrate for a give ethernet address.
 
@@ -30,15 +30,15 @@ Automatically determine the txrate for a give ethernet address.
 
 
 class AutoRateFallback : public Element { public:
-  
+
   AutoRateFallback();
   ~AutoRateFallback();
-  
+
   const char *class_name() const		{ return "AutoRateFallback"; }
   const char *port_count() const		{ return "2/0-2"; }
   const char *processing() const		{ return "ah/a"; }
   const char *flow_code() const			{ return "#/#"; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
 
@@ -51,7 +51,7 @@ class AutoRateFallback : public Element { public:
   static String static_print_stats(Element *e, void *);
   String print_rates();
 
-  
+
   EtherAddress _bcast;
   void assign_rate(Packet *);
 
@@ -65,21 +65,21 @@ class AutoRateFallback : public Element { public:
 
   struct DstInfo {
   public:
-    
+
     EtherAddress _eth;
     Vector<int> _rates;
-    
-    
+
+
     int _current_index;
     int _successes;
 
     int _stepup;
     bool _wentup;
 
-    DstInfo() { 
+    DstInfo() {
     }
 
-    DstInfo(EtherAddress eth) { 
+    DstInfo(EtherAddress eth) {
       _eth = eth;
     }
 
@@ -96,7 +96,7 @@ class AutoRateFallback : public Element { public:
 
     int pick_rate() {
       if (_rates.size() == 0) {
-	click_chatter("no rates to pick from for %s\n", 
+	click_chatter("no rates to pick from for %s\n",
 		      _eth.unparse().c_str());
 	return 2;
       }
@@ -109,15 +109,15 @@ class AutoRateFallback : public Element { public:
 
     int pick_alt_rate() {
       if (_rates.size() == 0) {
-	click_chatter("no rates to pick from for %s\n", 
+	click_chatter("no rates to pick from for %s\n",
 		      _eth.unparse().c_str());
 	return 2;
       }
       return _rates[max(_current_index - 1, 0)];
     }
   };
-  
-  
+
+
   typedef HashMap<EtherAddress, DstInfo> NeighborTable;
   typedef NeighborTable::const_iterator NIter;
 

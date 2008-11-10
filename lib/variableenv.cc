@@ -29,16 +29,16 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 {
     if (!config || find(config, '$') == config.end())
 	return config;
-  
+
     const char *s = config.begin();
     const char *end = config.end();
     const char *uninterpolated = s;
     int quote = 0;
     StringAccum output;
-    
+
     for (; s < end; s++)
 	switch (*s) {
-	    
+
 	case '\\':
 	    if (s + 1 < end && quote == '\"')
 		s++;
@@ -73,7 +73,7 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 		if (s == end)
 		    goto done;
 		vname = config.substring(cstart, s++);
-		
+
 	    } else if (s[1] == '(') {
 		int level = 1, nquote = 0;
 		vtype = '(';
@@ -108,7 +108,7 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 		if (s == cstart || s[-1] != ')')
 		    goto done;
 		vname = config.substring(cstart, s - 1);
-		
+
 	    } else if (isalnum((unsigned char) s[1]) || s[1] == '_') {
 		vtype = 'a';
 		s++;
@@ -121,7 +121,7 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 		s++;
 		vname = config.substring(s, s + 1);
 		s++;
-		
+
 	    } else
 		break;
 

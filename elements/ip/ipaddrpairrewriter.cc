@@ -31,7 +31,7 @@ IPAddrPairRewriter::IPAddrPairMapping::apply(WritablePacket *p)
 {
     assert(p->has_network_header());
     click_ip *iph = p->ip_header();
-  
+
     // IP header
     iph->ip_src = _mapto.saddr();
     iph->ip_dst = _mapto.daddr();
@@ -41,7 +41,7 @@ IPAddrPairRewriter::IPAddrPairMapping::apply(WritablePacket *p)
     uint32_t sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
     sum = (sum & 0xFFFF) + (sum >> 16);
     iph->ip_sum = ~(sum + (sum >> 16));
-  
+
     mark_used();
 }
 
@@ -158,7 +158,7 @@ IPAddrPairRewriter::push(int port, Packet *p_in)
 {
     WritablePacket *p = p_in->uniqueify();
     click_ip *iph = p->ip_header();
-  
+
     IPFlowID flow(iph->ip_src, 0, iph->ip_dst, 0);
     IPAddrPairMapping *m = static_cast<IPAddrPairMapping *>(_map.get(flow));
 
@@ -186,14 +186,14 @@ IPAddrPairRewriter::push(int port, Packet *p_in)
 	      m = static_cast<IPAddrPairMapping*>(is.u.mapper->get_map(this, 0, flow, p));
 	      break;
 	  }
-     
+
 	}
 	if (!m) {
 	    p->kill();
 	    return;
 	}
     }
-  
+
     m->apply(p);
     output(m->output()).push(p);
 }
@@ -203,7 +203,7 @@ String
 IPAddrPairRewriter::dump_mappings_handler(Element *e, void *)
 {
     IPAddrPairRewriter *rw = (IPAddrPairRewriter *)e;
-  
+
     StringAccum sa;
     for (Map::iterator iter = rw->_map.begin(); iter.live(); iter++) {
 	Mapping *m = iter.value();

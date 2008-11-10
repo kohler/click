@@ -2,9 +2,9 @@
 /*
  * ratedsplitter.{cc,hh} -- split packets at a given rate.
  * Benjie Chen, Eddie Kohler
- * 
+ *
  * Copyright (c) 2000 Mazu Networks, Inc.
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, subject to the conditions
@@ -36,8 +36,8 @@ RatedSplitter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     uint32_t r;
     CpVaParseCmd cmd = (is_bandwidth() ? cpBandwidth : cpUnsigned);
-    if (cp_va_kparse(conf, this, errh, 
-		     "RATE", cpkP+cpkM, cmd, &r, cpEnd) < 0) 
+    if (cp_va_kparse(conf, this, errh,
+		     "RATE", cpkP+cpkM, cmd, &r, cpEnd) < 0)
 	return -1;
     _rate.set_rate(r, errh);
     return 0;

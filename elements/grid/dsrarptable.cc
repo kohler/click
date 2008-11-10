@@ -49,7 +49,7 @@ int
 DSRArpTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned int etht = 0x0800;
-  if (cp_va_kparse(conf, this, errh, 
+  if (cp_va_kparse(conf, this, errh,
 		   "IP", cpkP+cpkM, cpIPAddress, &_me,
 		   "ETH", cpkP+cpkM, cpEthernetAddress, &_me_ether,
 		   "ETHERTYPE", 0, cpUnsigned, &etht,
@@ -83,24 +83,24 @@ DSRArpTable::pull(int port)
     click_chatter("DSRArpTable::pull(%d):  could not push space for ethernet header\n", port);
     return NULL;
   }
-  
+
   click_ether *ether = (click_ether *)(q->data());
-    
+
   IPAddress dst_addr(q->dst_ip_anno());
   EtherAddress dst_ether = lookup_ip(dst_addr);
-    
+
   if (! dst_ether) {
-    click_chatter ("DSRArpTable::push:  missing ARP table entry!  src: %s/%s dst: %s/%s\n", 
-		   _me.unparse().c_str(), _me_ether.unparse().c_str(), 
+    click_chatter ("DSRArpTable::push:  missing ARP table entry!  src: %s/%s dst: %s/%s\n",
+		   _me.unparse().c_str(), _me_ether.unparse().c_str(),
 		   dst_addr.unparse().c_str(), dst_ether.unparse().c_str());
     q->kill();
     return NULL;
   }
-    
+
   memcpy(&ether->ether_shost, &_me_ether, 6);
   memcpy(&ether->ether_dhost, dst_ether.data(), 6);
   ether->ether_type = htons(_etht);
-    
+
   return q;
 }
 
@@ -109,10 +109,10 @@ DSRArpTable::push(int port, Packet *p_in)
 {
   // packets from which we want to extract MAC addresses
 
-  assert(port == 2); 
-  
+  assert(port == 2);
+
   const click_ip *iph = (const click_ip*)(p_in->data() + sizeof(click_ether));
-  
+
   if (iph->ip_p != IP_PROTO_DSR) {
     DEBUG_CHATTER ("DSRArpTable::push:  non-DSR packet passing through DSRArpTable\n");
     output(2).push(p_in);
@@ -125,11 +125,11 @@ DSRArpTable::push(int port, Packet *p_in)
 
   EtherAddress e = lookup_ip(ip);
   if (!e) {
-    DEBUG_CHATTER("DSRArpTable::push:  adding ARP table entry for IP: %s; MAC: %s", 
+    DEBUG_CHATTER("DSRArpTable::push:  adding ARP table entry for IP: %s; MAC: %s",
 		  ip.unparse().c_str(), mac.unparse().c_str());
     add_entry(ip, mac);
   } else if (e != mac) {
-    click_chatter("DSRArpTable::push:  existing entry for %s has different MAC!  %s, not %s", 
+    click_chatter("DSRArpTable::push:  existing entry for %s has different MAC!  %s, not %s",
 		  ip.unparse().c_str(), e.unparse().c_str(), mac.unparse().c_str());
     delete_entry(ip);
     add_entry(ip, mac);
@@ -161,15 +161,15 @@ DSRArpTable::last_hop_ip(Packet *p)
 
   click_dsr_option *dsr_option = (click_dsr_option *)((char *)dsr +
 						      sizeof(click_dsr));
-  
+
 //   click_chatter("last_hop_ip: dsr len is %d; first type is %x\n",
-// 		dsr_len, dsr_option->dsr_type);
-  
+//		dsr_len, dsr_option->dsr_type);
+
   if (dsr_option->dsr_type == DSR_TYPE_RREQ) {
 
     const click_dsr_rreq *dsr_rreq = (click_dsr_rreq *)dsr_option;
     const unsigned int num_addr = dsr_rreq->num_addrs();
-    
+
     if (num_addr == 0) { // this route request is on its first hop
       IPAddress src_addr(ip->ip_src.s_addr);
       return (src_addr);
@@ -181,15 +181,15 @@ DSRArpTable::last_hop_ip(Packet *p)
     }
 
   } else if (dsr_option->dsr_type == DSR_TYPE_RREP) {
-    
+
     // if this is a route reply, then we expect a source route option
     // immediately following -- move the dsr_option pointer down to
     // the next header and handle as a normal source-routed packet.
     // if there is no source route option following, then this must be
     // a one-hop reply.
-    
+
     const click_dsr_rrep *dsr_rrep = (click_dsr_rrep *)dsr_option;
-    
+
     //    DEBUG_CHATTER(" * extracting IP from route reply; num_addr is %d\n", num_addr);
 
     if (dsr_rrep->length() == dsr_len) {
@@ -198,25 +198,25 @@ DSRArpTable::last_hop_ip(Packet *p)
       return (src_addr);
     } else {
       dsr_option = (click_dsr_option *)(dsr_rrep->next_option());
-      
+
       if (dsr_option->dsr_type != DSR_TYPE_SOURCE_ROUTE) {
-	DEBUG_CHATTER(" * DSRArpTable::last_hop: source route option did not follow route reply option (%x)\n", 
+	DEBUG_CHATTER(" * DSRArpTable::last_hop: source route option did not follow route reply option (%x)\n",
 		      dsr_option->dsr_type);
-	
+
 	IPAddress zeros;
 	return zeros;
       }
     }
 
   } else if (dsr_option->dsr_type == DSR_TYPE_RERR) {
-    
+
     // if this is a route error, then we expect a source route option
     // immediately following -- handle as we did with RREP.  if there
     // is no source route option following, then this must be a
     // one-hop reply.
     //
     // XXX we might have multiple RERRs.
-    
+
     const click_dsr_rerr *dsr_rerr = (click_dsr_rerr *)dsr_option;
 
     if (dsr_rerr->length() == dsr_len) {
@@ -225,31 +225,31 @@ DSRArpTable::last_hop_ip(Packet *p)
       return (src_addr);
     } else {
       dsr_option = (click_dsr_option *)(dsr_rerr->next_option());
-      
+
       if (dsr_option->dsr_type != DSR_TYPE_SOURCE_ROUTE) {
-	DEBUG_CHATTER(" * DSRArpTable::last_hop: source route option did not follow route error option (%x)\n", 
+	DEBUG_CHATTER(" * DSRArpTable::last_hop: source route option did not follow route error option (%x)\n",
 		      dsr_option->dsr_type);
-	
+
 	IPAddress zeros;
 	return zeros;
       }
     }
   }
-  
+
   if (dsr_option->dsr_type == DSR_TYPE_SOURCE_ROUTE) {
     // either this is a normal source-routed packet, or a RREP or RERR
     // with a source route header
 
     click_dsr_source *dsr_source = (click_dsr_source *)(dsr_option);
     assert(dsr_source->dsr_type == DSR_TYPE_SOURCE_ROUTE);
-    
+
     unsigned char segments = dsr_source->dsr_segsleft;
     unsigned char source_hops = dsr_source->num_addrs();
-    
+
     assert(segments <= source_hops);
-    
+
     int index = source_hops - segments;
-    
+
     if (index == 0) { // this is the first hop
       IPAddress src(ip->ip_src.s_addr);
       return src;
@@ -262,7 +262,7 @@ DSRArpTable::last_hop_ip(Packet *p)
   return IPAddress();
 }
 
-void 
+void
 DSRArpTable::add_entry(IPAddress ip, EtherAddress eth)
 {
   EtherAddress *e =_ip_map.findp(ip);
@@ -270,7 +270,7 @@ DSRArpTable::add_entry(IPAddress ip, EtherAddress eth)
   _ip_map.insert(ip, eth);
 }
 
-void 
+void
 DSRArpTable::delete_entry(IPAddress ip)
 {
   EtherAddress *e =_ip_map.findp(ip);
@@ -278,7 +278,7 @@ DSRArpTable::delete_entry(IPAddress ip)
   _ip_map.remove(ip);
 }
 
-EtherAddress 
+EtherAddress
 DSRArpTable::lookup_ip(IPAddress ip)
 {
   IPAddress bcast_ip("255.255.255.255");
@@ -287,7 +287,7 @@ DSRArpTable::lookup_ip(IPAddress ip)
     EtherAddress bcast_eth((unsigned char *)("\xff\xff\xff\xff\xff\xff"));
     return bcast_eth;
   }
-  
+
   return (_ip_map.find(ip));
 }
 

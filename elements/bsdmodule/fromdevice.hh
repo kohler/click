@@ -71,7 +71,7 @@ which can be used for better performance and stability).
 
 
 class FromDevice : public AnyDevice, public Storage { public:
-    
+
     FromDevice();
     ~FromDevice();
 
@@ -86,7 +86,7 @@ class FromDevice : public AnyDevice, public Storage { public:
     void add_handlers();
 
     void change_device(struct if_net *);
-    
+
     int get_inq_drops();	// get some performance stats
 
     bool run_task(Task *);

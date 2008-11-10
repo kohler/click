@@ -82,7 +82,7 @@ ICMPError::unicast(struct in_addr aa) const
   /* limited broadcast */
   if(ha == 0xffffffff)
     return(0);
-  
+
   /* Class D multicast */
   if((ha & 0xf0000000u) == 0xe0000000u)
     return(0);
@@ -90,7 +90,7 @@ ICMPError::unicast(struct in_addr aa) const
   /* limited broadcast */
   if (find(_bad_addrs.begin(), _bad_addrs.end(), IPAddress(a)) < _bad_addrs.end())
     return 0;
-  
+
   return(1);
 }
 
@@ -228,7 +228,7 @@ ICMPError::simple_action(Packet *p)
   nip->ip_sum = 0;
   nip->ip_src = _src_ip.in_addr();
   nip->ip_dst = ipp->ip_src;
-  
+
   // include reversed source route if appropriate 4.3.2.6
   if (source_route) {
     uint8_t *o = q->data() + sizeof(click_ip);

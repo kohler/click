@@ -18,7 +18,7 @@ CLICK_DECLS
  * packet count and packet rate using a strict average.
  *
  * The rate covers only the time between the first and
- * most recent packets. 
+ * most recent packets.
  *
  * IGNORE, by default, is 0. If it is greater than 0,
  * the first IGNORE number of seconds are ignored in
@@ -44,7 +44,7 @@ class AverageCounter : public Element { public:
 
     AverageCounter();
     ~AverageCounter();
-  
+
     const char *class_name() const		{ return "AverageCounter"; }
     const char *port_count() const		{ return PORTS_1_1; }
     const char *processing() const		{ return AGNOSTIC; }
@@ -56,14 +56,14 @@ class AverageCounter : public Element { public:
     uint32_t last() const			{ return _last; }
     uint32_t ignore() const			{ return _ignore; }
     void reset();
-  
+
     int initialize(ErrorHandler *);
     void add_handlers();
-  
+
     Packet *simple_action(Packet *);
 
   private:
-  
+
     atomic_uint32_t _count;
     atomic_uint32_t _byte_count;
     atomic_uint32_t _first;

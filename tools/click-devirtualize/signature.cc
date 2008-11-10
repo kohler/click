@@ -84,7 +84,7 @@ Signatures::check_port_numbers(int eid, const ProcessingT &pt)
   // check for no interesting connections
   if (new_ports.size() == 0)
     return;
-  
+
   // add new node to list
   if (_sigs[old_sigid]._connections.size() == 0) {
     // set new from old
@@ -104,7 +104,7 @@ Signatures::check_port_numbers(int eid, const ProcessingT &pt)
     prev = trav;
     trav = _sigs[trav]._next;
   }
-  
+
   // if not found, append
   _sigs.push_back(SignatureNode(eid));
   SignatureNode &new_node = _sigs.back();
@@ -194,12 +194,12 @@ Signatures::analyze(ElementMap &em)
 {
   int ne = _router->nelements();
   ProcessingT pt(const_cast<RouterT *>(_router), &em);
-  
+
   create_phase_0(pt);
 
   for (int i = 0; i < ne; i++)
     check_port_numbers(i, pt);
-  
+
   int phase = 0;
   bool alive = true;
   Vector<int> new_sigid = _sigid;

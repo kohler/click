@@ -70,8 +70,8 @@ IPsecAuthSHA1::simple_action(Packet *p)
     u_char *ah = ((u_char*)q->data())+q->length()-12;
     memmove(ah, digest, 12);
     return q;
-  } 
-  
+  }
+
   else {
     const u_char *ah = p->data()+p->length()-12;
     unsigned char digest [SHA_DIGEST_LEN];
@@ -80,13 +80,13 @@ IPsecAuthSHA1::simple_action(Packet *p)
     SHA1_update (&ctx, (u_char*) p->data(), p->length()-12);
     SHA1_final (digest, &ctx);
     if (memcmp(ah, digest, 12)) {
-      if (_drops == 0) 
+      if (_drops == 0)
 	click_chatter("Invalid SHA1 authentication digest");
       _drops++;
       if (noutputs() > 1)
 	output(1).push(p);
-      else 
-	p->kill(); 
+      else
+	p->kill();
       return 0;
     }
     p->take(12);

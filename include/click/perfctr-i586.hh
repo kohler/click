@@ -5,8 +5,8 @@
 #include <asm/msr.h>
 #endif
 
-#define DCU_MISS_OUTSTANDING 	0x48
-#define INST_RETIRED 		0xC0
+#define DCU_MISS_OUTSTANDING	0x48
+#define INST_RETIRED		0xC0
 #define IFU_FETCH		0x80
 #define IFU_FETCH_MISS		0x81
 #define IFU_MEM_STALL		0x86

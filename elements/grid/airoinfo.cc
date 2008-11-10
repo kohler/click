@@ -86,9 +86,9 @@ AiroInfo::initialize(ErrorHandler *errh)
 #endif
 
   _fd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (_fd < 0) 
+  if (_fd < 0)
     return errh->error("Unable to open socket to %s device", _ifr.ifr_name);
-  
+
   return 0;
 }
 
@@ -99,11 +99,11 @@ AiroInfo::get_signal_info(const EtherAddress &e, int &dbm, int &quality)
 {
   struct an_req areq;
   memset(&areq, 0, sizeof(areq));
-  
+
   areq.an_len = AN_MAX_DATALEN;
   areq.an_type = AN_RID_READ_CACHE;
-  
-  
+
+
   /* due to AN_MAX_DATALEN = 512 16-bit vals, we could only ever get
      ~56 entries from the card's cache.  however, since the current
      driver mod has only 30 entries, that's cool... but this could be
@@ -111,11 +111,11 @@ AiroInfo::get_signal_info(const EtherAddress &e, int &dbm, int &quality)
   _ifr.ifr_data = (char *) &areq;
   int res = ioctl(_fd, SIOCGAIRONET, &_ifr);
   if (res == -1) {
-    click_chatter("AiroInfo: ioctl(SIOCGAIRONET) error when reading signal cache: %s\n", 
+    click_chatter("AiroInfo: ioctl(SIOCGAIRONET) error when reading signal cache: %s\n",
 		  strerror(errno));
     return false;
   }
-  
+
   int *num_entries = (int *) &areq.an_val;
   char *p = (char *) &areq.an_val;
   p += sizeof(int);
@@ -136,18 +136,18 @@ AiroInfo::get_tx_stats(const EtherAddress &e, int &num_successful, int &num_fail
 {
   struct an_req areq;
   memset(&areq, 0, sizeof(areq));
-  
+
   areq.an_len = AN_MAX_DATALEN;
   areq.an_type = AN_RID_READ_LLFAIL;
-  
+
   _ifr.ifr_data = (char *) &areq;
   int res = ioctl(_fd, SIOCGAIRONET, &_ifr);
   if (res == -1) {
-    click_chatter("AiroInfo: ioctl(SIOCGAIRONET) error when reading tx stats cache: %s\n", 
+    click_chatter("AiroInfo: ioctl(SIOCGAIRONET) error when reading tx stats cache: %s\n",
 		  strerror(errno));
     return false;
   }
-  
+
   int *num_entries = (int *) &areq.an_val;
   char *p = (char *) &areq.an_val;
   p += sizeof(int);
@@ -170,15 +170,15 @@ AiroInfo::get_noise(int &max_over_sec, int &avg_over_minute, int &max_over_minut
 
   areq.an_len = AN_MAX_DATALEN;
   areq.an_type = AN_RID_STATUS;
-  
+
   _ifr.ifr_data = (char *) &areq;
   int res = ioctl(_fd, SIOCGAIRONET, &_ifr);
   if (res == -1) {
-    click_chatter("AiroInfo: ioctl(SIOCGAIRONET) error when reading noise from status struct: %s\n", 
+    click_chatter("AiroInfo: ioctl(SIOCGAIRONET) error when reading noise from status struct: %s\n",
 		  strerror(errno));
     return false;
   }
-  
+
   // noise info from Marco Molteni (molter@tin.it)
   // u_int8_t                an_noise_prev_sec_pc;   /* 0x7A */
   // u_int8_t                an_noise_prev_sec_db;   /* 0x7B */
@@ -212,7 +212,7 @@ AiroInfo::get_signal_info(const EtherAddress &e, int &dbm, int &quality)
   _ifr.u.data.flags = 0;
   int res = ioctl(_fd, SIOCGIWSPY, &_ifr);
   if (res == -1) {
-    click_chatter("AiroInfo: ioctl(SIOCGIWSPY) error when reading signal info: %s\n", 
+    click_chatter("AiroInfo: ioctl(SIOCGIWSPY) error when reading signal info: %s\n",
 		  strerror(errno));
     return false;
   }
@@ -260,10 +260,10 @@ AiroInfo::get_noise(int &max_over_sec, int &avg_over_minute, int &max_over_minut
   airo_cmd.data = buf;
   airo_cmd.len = sizeof(buf);
   _ifr2.ifr_data = (char *) &airo_cmd;
-  
+
   int res = ioctl(_fd, AIROIOCTL, &_ifr2);
   if (res == -1) {
-    click_chatter("AiroInfo: ioctl(AIROIOCTL) error when reading noise info: %s\n", 
+    click_chatter("AiroInfo: ioctl(AIROIOCTL) error when reading noise info: %s\n",
 		  strerror(errno));
     return false;
   }
@@ -310,7 +310,7 @@ AiroInfo::clear_tx_stats()
   memset(&areq, 0, sizeof(areq));
   areq.an_len = 0;
   areq.an_type = AN_RID_ZERO_LLFAIL;
-  
+
   _ifr.ifr_data = (char *) &areq;
   int res = ioctl(_fd, SIOCGAIRONET, &_ifr);
   if (res == -1) {

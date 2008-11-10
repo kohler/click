@@ -101,7 +101,7 @@ Counter::simple_action(Packet *p)
     if (_byte_trigger_h)
       (void) _byte_trigger_h->call_write();
   }
-  
+
   return p;
 }
 
@@ -202,7 +202,7 @@ Counter::llrpc(unsigned command, void *data)
       return -EINVAL;
     *val = (*val == 0 ? _count : _byte_count);
     return 0;
-    
+
   } else if (command == CLICK_LLRPC_GET_COUNTS) {
     click_llrpc_counts_st *user_cs = (click_llrpc_counts_st *)data;
     click_llrpc_counts_st cs;
@@ -218,7 +218,7 @@ Counter::llrpc(unsigned command, void *data)
 	return -EINVAL;
     }
     return CLICK_LLRPC_PUT_DATA(&user_cs->values, &cs.values, sizeof(cs.values));
-    
+
   } else
     return Element::llrpc(command, data);
 }

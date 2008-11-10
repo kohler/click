@@ -29,7 +29,7 @@
 CLICK_DECLS
 
 IPRewriter::IPRewriter()
-  : _tcp_map(0), _udp_map(0), _tcp_done(0), 
+  : _tcp_map(0), _udp_map(0), _tcp_done(0),
     _tcp_done_tail(0),
     _tcp_done_gc_timer(tcp_done_gc_hook, this),
     _tcp_gc_timer(tcp_gc_hook, this),
@@ -57,7 +57,7 @@ int
 IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int before = errh->nerrors();
-  
+
   // numbers in seconds
   _tcp_timeout_jiffies = 86400;		// 24 hours
   _tcp_done_timeout_jiffies = 30;	// 30 seconds
@@ -67,7 +67,7 @@ IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
   _udp_gc_interval = 10;		// 10 seconds
   _tcp_done_gc_incr = false;
   _dst_anno = true;
-  
+
   if (cp_va_kparse_remove_keywords
       (conf, this, errh,
        "REAP_TCP", 0, cpSeconds, &_tcp_gc_interval,
@@ -80,10 +80,10 @@ IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
        "DST_ANNO", 0, cpBool, &_dst_anno,
        cpEnd) < 0)
     return -1;
-  
+
   if (conf.size() != ninputs())
       return errh->error("need %d arguments, one per input port", ninputs());
-  
+
   for (int i = 0; i < conf.size(); i++) {
     InputSpec is;
     if (parse_input_spec(conf[i], is, "input spec " + String(i), errh) >= 0)
@@ -94,7 +94,7 @@ IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
   _tcp_timeout_jiffies *= CLICK_HZ;
   _tcp_done_timeout_jiffies *= CLICK_HZ;
   _udp_timeout_jiffies *= CLICK_HZ;
-  
+
   return (errh->nerrors() == before ? 0 : -1);
 }
 
@@ -158,7 +158,7 @@ IPRewriter::take_state(Element *e, ErrorHandler *errh)
 	q = _all_patterns[j];
     pattern_map.push_back(q);
   }
-  
+
   take_state_map(_tcp_map, &_tcp_done, &_tcp_done_tail, rw->_all_patterns, pattern_map);
   take_state_map(_udp_map, 0, 0, rw->_all_patterns, pattern_map);
   Mapping *m = _tcp_done;
@@ -201,7 +201,7 @@ IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
 #elif IPRW_SPINLOCKS
   if (rw->_spinlock.attempt()) {
 #endif
-  rw->clean_map_free_tracked 
+  rw->clean_map_free_tracked
     (rw->_tcp_map, rw->_tcp_done, rw->_tcp_done_tail,
      click_jiffies() - rw->_tcp_done_timeout_jiffies);
 #if IPRW_RWLOCKS
@@ -240,10 +240,10 @@ IPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
 			  int fport, int rport)
 {
   assert(fport >= 0 && fport < noutputs() && rport >= 0 && rport < noutputs());
-  
+
   if (ip_p != IP_PROTO_TCP && ip_p != IP_PROTO_UDP)
     return 0;
-  
+
   Mapping *forward = new Mapping(_dst_anno);
   Mapping *reverse = new Mapping(_dst_anno);
 
@@ -273,7 +273,7 @@ IPRewriter::push(int port, Packet *p_in)
   WritablePacket *p = p_in->uniqueify();
   if (!p)
       return;
-  
+
   click_ip *iph = p->ip_header();
 #if IPRW_RWLOCKS
   bool has_lock = false;
@@ -289,7 +289,7 @@ IPRewriter::push(int port, Packet *p_in)
       p->kill();
     return;
   }
- 
+
 #if IPRW_RWLOCKS
   _rwlock.acquire_read();
 #elif IPRW_SPINLOCKS
@@ -301,7 +301,7 @@ IPRewriter::push(int port, Packet *p_in)
 #if IPRW_RWLOCKS
   _rwlock.release_read();
 #endif
-  
+
   if (!m) {			// create new mapping
     const InputSpec &is = _input_specs[port];
 #if IPRW_RWLOCKS
@@ -336,7 +336,7 @@ IPRewriter::push(int port, Packet *p_in)
        m = is.u.mapper->get_map(this, ip_p, flow, p);
        break;
      }
-      
+
     }
     if (!m) {
 #if IPRW_RWLOCKS
@@ -355,16 +355,16 @@ IPRewriter::push(int port, Packet *p_in)
   if (ip_p == IP_PROTO_TCP) {
     click_tcp *tcph = p->tcp_header();
     if (tcph->th_flags & (TH_SYN | TH_FIN | TH_RST)) {
-      
+
 #if IPRW_RWLOCKS
       if (!has_lock) {
         _rwlock.acquire_write();
         has_lock = true;
       }
 #endif
-      
+
       if (_tcp_done_gc_incr && (tcph->th_flags & TH_SYN))
-        incr_clean_map_free_tracked 
+        incr_clean_map_free_tracked
 	  (_tcp_map, _tcp_done, _tcp_done_tail, click_jiffies() - _tcp_done_timeout_jiffies);
 
       // add to list for dropping TCP connections faster
@@ -373,7 +373,7 @@ IPRewriter::push(int port, Packet *p_in)
 	m->add_to_free_tracked_tail(_tcp_done, _tcp_done_tail);
     }
   }
-  
+
 #if IPRW_RWLOCKS
   if (has_lock) {
     _rwlock.release_write();
@@ -391,7 +391,7 @@ IPRewriter::dump_mappings_handler(Element *e, void *thunk)
 {
   IPRewriter *rw = (IPRewriter *)e;
   Map *map = (thunk ? &rw->_udp_map : &rw->_tcp_map);
-  
+
 #if IPRW_SPINLOCKS
   rw->_spinlock.acquire();
 #endif
@@ -411,7 +411,7 @@ String
 IPRewriter::dump_tcp_done_mappings_handler(Element *e, void *)
 {
   IPRewriter *rw = (IPRewriter *)e;
-  
+
 #if IPRW_SPINLOCKS
   rw->_spinlock.acquire();
 #endif
@@ -491,7 +491,7 @@ IPRewriter::llrpc(unsigned command, void *data)
     _spinlock.release();
 #endif
     return 0;
-    
+
   } else if (command == CLICK_LLRPC_IPREWRITER_MAP_UDP) {
 
     // Data	: unsigned saddr, daddr; unsigned short sport, dport
@@ -516,7 +516,7 @@ IPRewriter::llrpc(unsigned command, void *data)
     _spinlock.release();
 #endif
     return 0;
-    
+
   } else
     return Element::llrpc(command, data);
 }

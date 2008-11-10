@@ -86,7 +86,7 @@ FastUDPSource::incr_ports()
     make_checksum(udp);
 }
 
-int 
+int
 FastUDPSource::initialize(ErrorHandler *)
 {
     // Create an mbuf with an mbuf cluster so copies are quick
@@ -269,7 +269,7 @@ FastUDPSource_active_write_handler
 {
     FastUDPSource *c = (FastUDPSource *)e;
     bool active;
-    if (!cp_bool(s, &active)) 
+    if (!cp_bool(s, &active))
 	return errh->error("active parameter must be boolean");
     c->_active = active;
     if (active)

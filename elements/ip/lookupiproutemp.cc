@@ -46,7 +46,7 @@ LookupIPRouteMP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int maxout = -1;
   _t.clear();
-  
+
   int before = errh->nerrors();
   for (int i = 0; i < conf.size(); i++) {
     uint32_t dst, mask, gw = 0;
@@ -55,7 +55,7 @@ LookupIPRouteMP::configure(Vector<String> &conf, ErrorHandler *errh)
 
     Vector<String> words;
     cp_spacevec(conf[i], words);
-    
+
     if ((words.size() == 2 || words.size() == 3)
 	&& cp_ip_prefix(words[0], (unsigned char *)&dst, (unsigned char *)&mask, true, this) // allow base IP addresses
 	&& cp_integer(words.back(), &output_num)) {
@@ -85,7 +85,7 @@ LookupIPRouteMP::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 LookupIPRouteMP::initialize(ErrorHandler *)
 {
-  click_chatter("LookupIPRouteMP alignment: %p, %p", 
+  click_chatter("LookupIPRouteMP alignment: %p, %p",
                 &(_cache[0]._last_addr_1), &(_cache[1]._last_addr_1));
   for (int i=0; i<_cache_buckets; i++) {
     _cache[i]._last_addr_1 = IPAddress();
@@ -113,15 +113,15 @@ LookupIPRouteMP::push(int, Packet *p)
 	p->set_dst_ip_anno(e->_last_gw_1);
       output(e->_last_output_1).push(p);
       return;
-    } 
+    }
     else if (a == e->_last_addr_2) {
       if (e->_last_gw_2)
 	p->set_dst_ip_anno(e->_last_gw_2);
       output(e->_last_output_2).push(p);
       return;
-    } 
+    }
   }
-  
+
   if (_t.lookup(a, gw, ifi)) {
     e->_last_addr_2 = e->_last_addr_1;
     e->_last_gw_2 = e->_last_gw_1;

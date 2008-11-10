@@ -27,7 +27,7 @@ class FromHandler : public Element { public:
 
   private:
     bool get_packet();
-    bool _active;    
+    bool _active;
     Task _task;
     String _handler;
     Timestamp _start;

@@ -23,7 +23,7 @@ CLICK_DECLS
  * =n
  *
  * The Fix IP Source annotation is stored as user annotation 3.
- * 
+ *
  * =a ICMPError */
 
 class FixIPSrc : public Element {
@@ -32,7 +32,7 @@ class FixIPSrc : public Element {
 public:
   FixIPSrc();
   ~FixIPSrc();
-  
+
   const char *class_name() const		{ return "FixIPSrc"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
@@ -40,7 +40,7 @@ public:
 
   WritablePacket *fix_it(Packet *);
   Packet *simple_action(Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

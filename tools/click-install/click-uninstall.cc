@@ -88,7 +88,7 @@ main(int argc, char **argv)
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case VERBOSE_OPT:
       verbose = !clp->negated;
       break;
@@ -97,7 +97,7 @@ main(int argc, char **argv)
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("click-uninstall (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2000 Massachusetts Institute of Technology\n\
@@ -108,19 +108,19 @@ There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
-      
+
      case Clp_NotOption:
      case Clp_BadOption:
       short_usage();
       exit(1);
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
     }
   }
-  
+
  done:
   return (unload_click(errh) >= 0 ? 0 : 1);
 }

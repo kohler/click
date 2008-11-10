@@ -46,7 +46,7 @@ class PaintTee : public Element { public:
 
     uint8_t _anno;
     uint8_t _color;
-  
+
 };
 
 CLICK_ENDDECLS

@@ -8,9 +8,9 @@ CLICK_DECLS
  * =c
  * GetIP6Address(OFFSET)
  * =s ip6
- * 
+ *
  * =d
- * Copies 16 bytes from the packet , starting at OFFSET, to the destination IP6 
+ * Copies 16 bytes from the packet , starting at OFFSET, to the destination IP6
  * address annotation.  The offset is usually 24, to fetch the dst address from
  * an IP6 packet (w/o ether header).
  *
@@ -23,22 +23,22 @@ CLICK_DECLS
 
 
 class GetIP6Address : public Element {
-  
+
   int _offset;
-  
+
  public:
-  
+
   GetIP6Address();
   ~GetIP6Address();
-  
+
   const char *class_name() const	{ return "GetIP6Address"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   Packet *simple_action(Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

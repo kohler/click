@@ -40,7 +40,7 @@ SetTXPower::configure(Vector<String> &conf, ErrorHandler *errh)
   _power = 0;
 
   if (cp_va_kparse(conf, this, errh,
-		   "POWER", cpkP, cpUnsigned, &_power, 
+		   "POWER", cpkP, cpUnsigned, &_power,
 		   cpEnd) < 0) {
     return -1;
   }
@@ -74,7 +74,7 @@ SetTXPower_read_param(Element *e, void *thunk)
     return String();
   }
 }
-static int 
+static int
 SetTXPower_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -83,11 +83,11 @@ SetTXPower_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_POWER: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("power parameter must be unsigned");
     f->_power = m;
     break;
-  
+
   }
   }
   return 0;

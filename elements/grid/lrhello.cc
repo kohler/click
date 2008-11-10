@@ -101,7 +101,7 @@ SendGridLRHello::make_hello()
   if (_nbr) {
     _nbr->get_rtes(&nbrs);
     // don't count nbrs that are too many hops away
-    for (int i = 0; i < nbrs.size(); i++) 
+    for (int i = 0; i < nbrs.size(); i++)
       if (nbrs[i].num_hops <= _hops)
 	num_nbrs++;
     psz += sizeof(grid_nbr_entry) * num_nbrs;
@@ -111,7 +111,7 @@ SendGridLRHello::make_hello()
   if (p == 0) {
     click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
-  } 
+  }
   ASSERT_4ALIGNED(p->data());
   p->pull(2);
   memset(p->data(), 0, p->length());

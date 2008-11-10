@@ -26,10 +26,10 @@ How many packets had the WIFI_EXTRA_TX_FAIL flag set.
 
 
 class FilterFailures : public Element { public:
-  
+
   FilterFailures();
   ~FilterFailures();
-  
+
   const char *class_name() const		{ return "FilterFailures"; }
   const char *port_count() const		{ return "1/1-3"; }
   const char *processing() const		{ return PROCESSING_A_AH; }

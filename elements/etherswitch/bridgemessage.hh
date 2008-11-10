@@ -19,7 +19,7 @@ public:
   void to_wire(wire* msg) const;
   static void fill_tcm(wire* msg);
 
-  
+
   bool expire(const Timestamp& cutoff);	// Possibly expire, based on timestamp
   void expire();		// Set fields to worst values
 

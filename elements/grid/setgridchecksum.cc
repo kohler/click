@@ -40,7 +40,7 @@ SetGridChecksum::simple_action(Packet *xp)
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   unsigned plen = p->length();
   unsigned int tlen = ntohs(gh->total_len);
-  
+
   if (!gh || plen < sizeof(grid_hdr) + sizeof(click_ether))
     goto bad;
 

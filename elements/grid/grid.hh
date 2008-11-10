@@ -29,7 +29,7 @@ public:
 
 #ifdef CLICK_USERLEVEL
   // lat, lon in degrees, height in metres
-  grid_location(double lat, double lon, double h = 0) 
+  grid_location(double lat, double lon, double h = 0)
   { set(lat, lon, h); }
 
   // Latitude in degrees.
@@ -49,7 +49,7 @@ public:
 
   // What is the distance between l1 and l2 in meters?
   // (definition in gridlocationinfo.cc)
-  static double calc_range(const grid_location &l1, const grid_location &l2);    
+  static double calc_range(const grid_location &l1, const grid_location &l2);
 
   String s() const {
     char buf[255];
@@ -114,7 +114,7 @@ private:
 // regions for geocast
 struct grid_region {
 public:
-  grid_region(const grid_location &c, unsigned long r) 
+  grid_region(const grid_location &c, unsigned long r)
     : _center(c) { _radius = htonl(r); }
 
   grid_region() : _radius(0) { }
@@ -123,7 +123,7 @@ public:
   const grid_location &center() const { return _center; }
 
 #ifdef CLICK_USERLEVEL
-  bool contains(const grid_location &l) 
+  bool contains(const grid_location &l)
   { return grid_location::calc_range(l, _center) <= _radius; }
 #endif
 
@@ -151,7 +151,7 @@ struct grid_hdr {
 	GRID_LR_HELLO = 2,	// followed by grid_hello and grid_nbr_entries
 	GRID_NBR_ENCAP = 3,	// followed by grid_nbr_encap
 	GRID_LOC_QUERY = 4,	// followed by grid_loc_query
-	GRID_LOC_REPLY = 5,	// followed by grid_nbr_encap 
+	GRID_LOC_REPLY = 5,	// followed by grid_nbr_encap
 	GRID_ROUTE_PROBE = 6,	// followed by grid_nbr_encap and grid_route_probe
 	GRID_ROUTE_REPLY = 7,	// followed by grid_nbr_encap and grid_route_reply
 	GRID_GEOCAST = 8,	// followed by grid_geocast
@@ -176,20 +176,20 @@ struct grid_hdr {
    * handles a packet that will be sent back our
    * (e.g. FloodingLocQuerier, routing elements) should set the tx_ip
    * field.  The other location info is typically handled by the
-   * FixSrcLoc element.  
+   * FixSrcLoc element.
    */
 
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
 
-    uint32_t ip;			// Sender's IP address. 
+    uint32_t ip;			// Sender's IP address.
     struct grid_location loc;		// Sender's location, set by FixSrcLoc.
-    uint16_t loc_err;			// Error radius of position, in metres.  
-    uint8_t /*bool*/ loc_good;		// If false, don't believe loc  
+    uint16_t loc_err;			// Error radius of position, in metres.
+    uint8_t /*bool*/ loc_good;		// If false, don't believe loc
     uint8_t pad3;			// assume bool is char aligned
-    uint32_t loc_seq_no;  
+    uint32_t loc_seq_no;
 
-    uint32_t tx_ip;			// Transmitter 
+    uint32_t tx_ip;			// Transmitter
     struct grid_location tx_loc;
     uint16_t tx_loc_err;
     uint8_t /*bool*/ tx_loc_good;
@@ -206,15 +206,15 @@ struct grid_hdr {
                             // Why do we need total_len? What about byte order? -- for cksum.  network order.
     uint16_t cksum;     // Over the whole packet, starting at grid_hdr.
 
-  grid_hdr() : hdr_len(sizeof(grid_hdr)), cksum(0) 
+  grid_hdr() : hdr_len(sizeof(grid_hdr)), cksum(0)
   { total_len = htons(sizeof(grid_hdr)); assert(total_len % 4 == 0); }
 
     static String type_string(uint8_t type);
 
-    static uint32_t get_pad_bytes(struct grid_hdr &gh) 
+    static uint32_t get_pad_bytes(struct grid_hdr &gh)
     { return (gh.pad1 << 24) | (gh.pad2 << 16) | (gh.pad3 << 8) | gh.pad4; }
-  
-    static void set_pad_bytes(struct grid_hdr &gh, uint32_t v) 
+
+    static void set_pad_bytes(struct grid_hdr &gh, uint32_t v)
     { gh.pad1 = (v >> 24); gh.pad2 = (v >> 16) & 0xff; gh.pad3 = (v >> 8) & 0xff; gh.pad4 = v & 0xff; }
 };
 
@@ -222,9 +222,9 @@ struct grid_nbr_entry {
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
 
-    uint32_t ip; 
+    uint32_t ip;
     uint32_t next_hop_ip;
-    uint8_t num_hops; 
+    uint8_t num_hops;
   /* 0 for num_hops indicate that this dest. is unreachable.  if so,
      loc fields are meaningless */
 
@@ -243,9 +243,9 @@ struct grid_nbr_entry {
 
 #ifndef SMALL_GRID_HEADERS
   /* ping-pong stats, valid only for 1-hop nbrs */
-  /* 
+  /*
    * in our route advertisement packet these stats reflect _our_
-   * measurements of packets sent by this neighbor.  
+   * measurements of packets sent by this neighbor.
    */
     int32_t link_qual;
     int32_t link_sig;
@@ -256,7 +256,7 @@ struct grid_nbr_entry {
     struct timeval last_bcast;
 #endif
 
-    grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0, 0), seq_no(0) 
+    grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0, 0), seq_no(0)
     { assert(sizeof(grid_nbr_entry) % 4 == 0); }
 
     grid_nbr_entry(uint32_t _ip, uint32_t _nhip, uint8_t h, uint32_t s)
@@ -281,7 +281,7 @@ struct grid_hello {
   // for GRID_LR_HELLO packets, followed by num_nbrs grid_nbr_entry
   // structs.
 
-  grid_hello() : num_nbrs(0), nbr_entry_sz(sizeof(grid_nbr_entry)) 
+  grid_hello() : num_nbrs(0), nbr_entry_sz(sizeof(grid_nbr_entry))
   { assert(sizeof(grid_hello) % 4 == 0); }
 
     enum {
@@ -310,8 +310,8 @@ struct grid_nbr_encap {
 
 #ifndef SMALL_GRID_HEADERS
     int32_t link_qual;
-    int32_t link_sig;           
-    struct timeval measurement_time;  
+    int32_t link_sig;
+    struct timeval measurement_time;
 
     uint8_t num_rx;
     uint8_t num_expected;
@@ -386,7 +386,7 @@ grid_hdr::type_string(uint8_t type)
   case GRID_ROUTE_REPLY: return String("GRID_ROUTE_REPLY"); break;
   case GRID_GEOCAST: return String("GRID_GEOCAST"); break;
   case GRID_LINK_PROBE: return String("GRID_LINK_PROBE"); break;
-  default: 
+  default:
     {
       char buf[100];
       snprintf(buf, sizeof(buf), "Unknown-type 0x%02x", (unsigned) type);

@@ -102,7 +102,7 @@ AnyDeviceMap::insert(AnyDevice *d)
 {
     // lock whole kernel when manipulating device map
     lock_kernel();
-    
+
     int ifi = d->ifindex();
     AnyDevice **head;
     if (ifi < 0)
@@ -121,7 +121,7 @@ void
 AnyDeviceMap::remove(AnyDevice *d)
 {
     lock_kernel();
-    
+
     int ifi = d->ifindex();
     AnyDevice **head = (ifi >= 0 ? &_map[ifi % MAP_SIZE] : &_unknown_map);
     AnyDevice *prev = 0;

@@ -54,7 +54,7 @@ TimeFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	return -1;
 
     _first_relative = _first_init_relative = _last_relative = _last_init_relative = _last_interval = false;
-    
+
     if ((bool) first + (bool) first_delta + (bool) first_init > 1)
 	return errh->error("'START', 'START_AFTER', and 'START_AFTER_INIT' are mutually exclusive");
     else if (first)
@@ -63,7 +63,7 @@ TimeFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	_first = first_init, _first_init_relative = true;
     else
 	_first = first_delta, _first_relative = true;
-    
+
     if ((bool) last + (bool) last_delta + (bool) last_init + (bool) interval > 1)
 	return errh->error("'END', 'END_AFTER', 'END_AFTER_INIT', and 'INTERVAL'\nare mutually exclusive");
     else if (last)
@@ -81,7 +81,7 @@ TimeFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("'END_CALL' and 'STOP' are mutually exclusive");
     else if (stop)
 	_last_h = new HandlerCall("stop true");
-    
+
     _ready = false;
     return 0;
 }

@@ -90,8 +90,8 @@ ForceTCP::simple_action(Packet *p_in)
 
   if(_dport > 0){
     th->th_dport = htons(_dport);
-  } 
-  else if (_random) { 
+  }
+  else if (_random) {
 #if 1
     if((_count & 7) < 2){
       th->th_dport = htons(80);

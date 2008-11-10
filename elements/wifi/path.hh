@@ -35,7 +35,7 @@ operator!=(const Path &p1, const Path &p2)
   return (!(p1 == p2));
 }
 
-inline String path_to_string(const Path &p) 
+inline String path_to_string(const Path &p)
 {
   StringAccum sa;
   for(int x = 0; x < p.size(); x++) {
@@ -48,7 +48,7 @@ inline String path_to_string(const Path &p)
 }
 
 
-inline Path reverse_path (const Path &p) 
+inline Path reverse_path (const Path &p)
 {
   Path rev;
   for (int x = p.size() - 1; x >= 0; x--) {

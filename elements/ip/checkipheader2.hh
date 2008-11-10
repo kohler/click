@@ -20,7 +20,7 @@ default check packets' IP checksums.
 =a CheckIPHeader, StripIPHeader, MarkIPHeader */
 
 class CheckIPHeader2 : public CheckIPHeader { public:
-  
+
   CheckIPHeader2();
   ~CheckIPHeader2();
 

@@ -9,7 +9,7 @@ class DevirtualizeInfo : public Element {
 
   DevirtualizeInfo();
   ~DevirtualizeInfo();
-  
+
   const char *class_name() const	{ return "DevirtualizeInfo"; }
   int configure(Vector<String> &, ErrorHandler *);
 

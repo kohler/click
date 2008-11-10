@@ -42,7 +42,7 @@ RXStats::simple_action(Packet *p_in)
   click_ether *eh = (click_ether *) p_in->data();
   EtherAddress src = EtherAddress(eh->ether_shost);
   struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p_in);
-    
+
   DstInfo *nfo = _neighbors.findp(src);
   if (!nfo) {
     DstInfo foo = DstInfo(src);
@@ -71,7 +71,7 @@ RXStats_read_param(Element *e, void *thunk)
   switch ((uintptr_t) thunk) {
   case H_STATS: {
     Timestamp now = Timestamp::now();
-    
+
     StringAccum sa;
     for (RXStats::NIter iter = td->_neighbors.begin(); iter.live(); iter++) {
       RXStats::DstInfo n = iter.value();
@@ -99,10 +99,10 @@ RXStats_read_param(Element *e, void *thunk)
   default:
     return String();
   }
-  
-}  
 
-static int 
+}
+
+static int
 RXStats_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *)
 {
@@ -113,7 +113,7 @@ RXStats_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
-	  
+
 void
 RXStats::add_handlers()
 {

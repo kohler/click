@@ -56,7 +56,7 @@ IPReassembler destroys its input packets' "next packet" annotations.
 =a IPFragmenter */
 
 class IPReassembler : public Element { public:
-  
+
     IPReassembler();
     ~IPReassembler();
 
@@ -69,7 +69,7 @@ class IPReassembler : public Element { public:
     void cleanup(CleanupStage);
 
     int check(ErrorHandler * = 0);
-    
+
     Packet *simple_action(Packet *);
 
     struct ChunkLink {
@@ -94,7 +94,7 @@ class IPReassembler : public Element { public:
 
     static inline int bucketno(const click_ip *);
     static inline bool same_segment(const click_ip *, const click_ip *);
-    
+
     WritablePacket *find_queue(Packet *, WritablePacket ***);
     void make_queue(Packet *, WritablePacket **);
     static ChunkLink *next_chunk(WritablePacket *, ChunkLink *);

@@ -152,7 +152,7 @@ parse_attribute_value(String *result,
 	errh->error("XML parse error: missing attribute value");
 	return s;
     }
-    
+
     char quote = *s;
     const char *first = s + 1;
     StringAccum sa;
@@ -160,7 +160,7 @@ parse_attribute_value(String *result,
 	if (*s == '&') {
 	    // dump on normal text
 	    sa.append(first, s - first);
-	    
+
 	    if (s + 3 < ends && s[1] == '#' && s[2] == 'x') {
 		// hex character reference
 		int c = 0;
@@ -214,7 +214,7 @@ parse_xml_attrs(HashTable<String, String> &attrs,
     while (s < ends) {
 	while (s < ends && isspace((unsigned char) *s))
 	    s++;
-	
+
 	if (s >= ends)
 	    return s;
 	else if (*s == '/') {
@@ -263,7 +263,7 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
     entities.set("gt", ">");
     entities.set("quot", "\"");
     entities.set("apos", "'");
-    
+
     const char *s = str.data();
     const char *ends = s + str.length();
     bool in_elementmap = false;
@@ -310,7 +310,7 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 	    }
 	    if (closed)
 		in_elementmap = false;
-	    
+
 	} else if (s + 5 < ends && memcmp(s, "entry", 5) == 0
 		   && (isspace((unsigned char) s[5]) || s[5] == '>' || s[5] == '/')
 		   && !closed && in_elementmap) {
@@ -339,7 +339,7 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 	    String name(name_start, s - name_start), value;
 	    s = parse_attribute_value(&value, s, ends, entities, errh);
 	    entities.set(name, value);
-	    
+
 	} else if (s + 8 < ends && memcmp(s, "![CDATA[", 8) == 0) {
 	    // skip CDATA section
 	    for (s += 8; s < ends; s++)

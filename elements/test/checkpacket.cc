@@ -37,7 +37,7 @@ CheckPacket::configure(Vector<String> &conf, ErrorHandler *errh)
     _data_offset = 0;
     String alignment;
     int length_eq = -1, length_ge = -1, length_le = -1;
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "DATA", 0, cpString, &_data,
 		     "DATA_OFFSET", 0, cpInteger, &_data_offset,
@@ -108,7 +108,7 @@ CheckPacket::simple_action(Packet *p)
 	if (alignment != _alignment_offset)
 	    errh->error("%s: bad alignment (%d/%d, expected %d/%d)", declaration().c_str(), _alignment_chunk, alignment, _alignment_chunk, _alignment_offset);
     }
-    
+
     return 0;
 }
 

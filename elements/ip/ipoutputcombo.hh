@@ -41,26 +41,26 @@ CLICK_DECLS
  * IPFragmenter, IPInputCombo */
 
 class IPOutputCombo : public Element {
-  
+
  public:
-  
+
   IPOutputCombo();
   ~IPOutputCombo();
-  
+
   const char *class_name() const		{ return "IPOutputCombo"; }
   const char *port_count() const		{ return "1/5"; }
   const char *processing() const		{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
 
   void push(int, Packet *);
-  
+
  private:
 
   int _color;			// PaintTee
   struct in_addr _my_ip;	// IPGWOptions, FixIPSrc
   unsigned _mtu;		// Fragmenter
-  
+
 };
 
 CLICK_ENDDECLS

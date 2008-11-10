@@ -174,7 +174,7 @@ class IPRewriter : public IPRw { public:
 
   IPRewriter();
   ~IPRewriter();
-  
+
   const char *class_name() const		{ return "IPRewriter"; }
   void *cast(const char *);
   const char *port_count() const		{ return "1-/1-256"; }
@@ -184,18 +184,18 @@ class IPRewriter : public IPRw { public:
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
   void take_state(Element *, ErrorHandler *);
-  
+
   int notify_pattern(Pattern *, ErrorHandler *);
   Mapping *apply_pattern(Pattern *, int ip_p, const IPFlowID &, int, int);
   Mapping *get_mapping(int, const IPFlowID &) const;
-  
+
   void push(int, Packet *);
 
   void add_handlers();
   int llrpc(unsigned, void *);
 
  private:
-  
+
   Map _tcp_map;
   Map _udp_map;
   Mapping *_tcp_done;
@@ -223,7 +223,7 @@ class IPRewriter : public IPRw { public:
 #endif
 
   int _nmapping_failures;
-  
+
   static void tcp_gc_hook(Timer *, void *);
   static void udp_gc_hook(Timer *, void *);
   static void tcp_done_gc_hook(Timer *, void *);
@@ -232,7 +232,7 @@ class IPRewriter : public IPRw { public:
   static String dump_tcp_done_mappings_handler(Element *, void *);
   static String dump_nmappings_handler(Element *, void *);
   static String dump_patterns_handler(Element *, void *);
- 
+
 };
 
 

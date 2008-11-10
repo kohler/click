@@ -114,22 +114,22 @@ WepEncap::simple_action(Packet *p_in)
 
   memcpy(ivp, &iv, 3);
   ivp[3] = _keyid;
-	
+
 
   u_int8_t rc4key[WIFI_WEP_IVLEN + WIFI_KEYBUF_SIZE];
   u_int8_t crcbuf[WIFI_WEP_CRCLEN];
   u_int8_t *icv;
   u_int32_t crc;
 
-  
+
   memcpy(rc4key, p->data() + sizeof(click_wifi), WIFI_WEP_IVLEN);
   memcpy(rc4key + WIFI_WEP_IVLEN, _key.data(), _key.length());
   rc4_init(&_rc4, rc4key, WIFI_WEP_IVLEN + _key.length());
-  
+
   /* calculate CRC over unencrypted data */
   crc = rfc_2083_crc_update(~0,
 		   (p->data() + sizeof(click_wifi) + WIFI_WEP_HEADERSIZE),
-		   p->length() - (sizeof(click_wifi) + WIFI_WEP_HEADERSIZE)); 
+		   p->length() - (sizeof(click_wifi) + WIFI_WEP_HEADERSIZE));
 
   /* encrypt data */
   rc4_crypt_skip(&_rc4,
@@ -144,13 +144,13 @@ WepEncap::simple_action(Packet *p_in)
   rc4_crypt_skip(&_rc4, crcbuf, icv, WIFI_WEP_CRCLEN, 0);
 
   return p;
-	  
+
 }
 
 
 enum {H_DEBUG, H_ACTIVE, H_KEY, H_KEYID};
 
-static String 
+static String
 read_param(Element *e, void *thunk)
 {
   WepEncap *td = (WepEncap *)e;
@@ -163,7 +163,7 @@ read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -172,28 +172,28 @@ write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
   }
   case H_ACTIVE: {    //debug
     bool active;
-    if (!cp_bool(s, &active)) 
+    if (!cp_bool(s, &active))
       return errh->error("active parameter must be boolean");
     f->_active = active;
     break;
   }
   case H_KEYID: {
     unsigned m;
-    if (!cp_unsigned(s, &m)) 
+    if (!cp_unsigned(s, &m))
       return errh->error("keyid parameter must be unsigned");
     f->_keyid = m;
     break;
   }
   case H_KEY: {
     String m;
-    if (!cp_string(s, &m)) 
+    if (!cp_string(s, &m))
       return errh->error("key parameter must be unsigned");
     f->_key = m;
     break;
@@ -201,7 +201,7 @@ write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 WepEncap::add_handlers()
 {

@@ -25,10 +25,10 @@ CLICK_DECLS
  * Resets every port to active. */
 
 class Suppressor : public Element { public:
-  
+
   Suppressor();
   ~Suppressor();
-  
+
   const char *class_name() const		{ return "Suppressor"; }
   const char *port_count() const		{ return "-/="; }
   const char *processing() const		{ return AGNOSTIC; }
@@ -36,10 +36,10 @@ class Suppressor : public Element { public:
 
   int configure(Vector<String> &conf, ErrorHandler *errh);
   void add_handlers();
-  
+
   void push(int port, Packet *p);
   Packet *pull(int port);
-  
+
   bool suppressed(int output) const { return _suppressed[output]; }
   void suppress(int output) { _suppressed[output] = true; }
   void allow(int output)    { _suppressed[output] = false; }
@@ -49,7 +49,7 @@ class Suppressor : public Element { public:
   private:
 
     Bitvector _suppressed;
-    
+
 };
 
 CLICK_ENDDECLS

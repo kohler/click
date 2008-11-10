@@ -37,7 +37,7 @@ class QueueThreadTest1 : public Element { public:
   private:
 
     pthread_t _push_thread;
-    
+
 };
 
 
@@ -75,7 +75,7 @@ class QueueThreadTest2 : public Element { public:
     uint32_t _next;
     uint32_t _last_msg;
     NotifierSignal _signal;
-    
+
 };
 
 CLICK_ENDDECLS

@@ -112,7 +112,7 @@ class AggregatePacketCounter : public Element { public:
 #else
     typedef int64_t packetctr_t;
 #endif
-    
+
     class Flow { public:
 
 	Flow(uint32_t aggregate, int columns);
@@ -124,26 +124,26 @@ class AggregatePacketCounter : public Element { public:
 	packetctr_t column_count(int column) const;
 	void received(Vector<uint32_t> &, const AggregatePacketCounter *) const;
 	void undelivered(Vector<uint32_t> &, const AggregatePacketCounter *) const;
-	
+
 	void add(uint32_t packetno, int column);
-	
+
       private:
 
 	uint32_t _aggregate;
 	Flow *_next;
 
 	Vector<uint32_t> *_counts;
-	
+
     };
-    
+
     enum { FLOWMAP_BITS = 10, NFLOWMAP = 1 << FLOWMAP_BITS };
     Flow *_flowmap[NFLOWMAP];
-    
+
     uint32_t _total_flows;
     packetctr_t _total_packets;
 
     int _anno;
-    
+
     Flow *find_flow(uint32_t aggregate);
     void end_flow(Flow *, ErrorHandler *);
     inline void smaction(int, Packet *);
@@ -153,7 +153,7 @@ class AggregatePacketCounter : public Element { public:
     String flow_handler(uint32_t aggregate, FlowFunc func);
     static int thing_read_handler(int, String&, Element*, const Handler*, ErrorHandler*);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

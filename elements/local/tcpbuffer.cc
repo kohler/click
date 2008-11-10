@@ -35,7 +35,7 @@ int
 TCPBuffer::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _skip = false;
-  return cp_va_kparse(conf, this, errh, 
+  return cp_va_kparse(conf, this, errh,
 		      "SKIP", cpkP, cpBool, &_skip, cpEnd);
 }
 

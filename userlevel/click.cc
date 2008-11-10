@@ -237,7 +237,7 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
 	    call_read_handler(router->root_element(), handlers[i], print_names, errh);
 	    continue;
 	}
-    
+
 	String element_name = handlers[i].substring(handlers[i].begin(), dot);
 	String handler_name = handlers[i].substring(dot + 1, handlers[i].end());
 
@@ -309,7 +309,7 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
   // register hotswap router on new router
   if (hotswap && router && router->initialized())
     r->set_hotswap_router(router);
-  
+
   if (errh->nerrors() > 0 || r->initialize(errh) < 0) {
     delete r;
     return 0;
@@ -377,7 +377,7 @@ main(int argc, char **argv)
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case ROUTER_OPT:
      case EXPRESSION_OPT:
      router_file:
@@ -398,7 +398,7 @@ main(int argc, char **argv)
 	  } else if (!isalnum((unsigned char) *s) && *s != '_')
 	      break;
       goto router_file;
-      
+
      case OUTPUT_OPT:
       if (output_file) {
 	errh->error("output file specified twice");
@@ -406,7 +406,7 @@ main(int argc, char **argv)
       }
       output_file = clp->vstr;
       break;
-     
+
      case HANDLER_OPT:
       handlers.push_back(clp->vstr);
       break;
@@ -418,7 +418,7 @@ main(int argc, char **argv)
       }
       exit_handler = clp->vstr;
       break;
-      
+
      case PORT_OPT:
       cs_ports.push_back(clp->val.i);
       break;
@@ -430,7 +430,7 @@ main(int argc, char **argv)
      case ALLOW_RECONFIG_OPT:
       allow_reconfigure = !clp->negated;
       break;
-      
+
      case QUIT_OPT:
       quit_immediately = true;
       break;
@@ -458,12 +458,12 @@ main(int argc, char **argv)
      case CLICKPATH_OPT:
       set_clickpath(clp->vstr);
       break;
-      
+
      case HELP_OPT:
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("click (Click) %s\n", CLICK_VERSION);
       printf("Copyright (C) 1999-2001 Massachusetts Institute of Technology\n\
@@ -474,20 +474,20 @@ There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
-      
+
      bad_option:
      case Clp_BadOption:
       short_usage();
       exit(1);
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
     }
    next_argument: ;
   }
-  
+
  done:
   // provide hotconfig handler if asked
   if (allow_reconfigure)

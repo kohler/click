@@ -84,7 +84,7 @@ FastTCPFlows::change_ports(int flow)
 {
   unsigned short sport = (click_random() >> 2) % 0xFFFF;
   unsigned short dport = (click_random() >> 2) % 0xFFFF;
-  click_ip *ip = 
+  click_ip *ip =
     reinterpret_cast<click_ip *>(_flows[flow].syn_packet->data()+14);
   click_tcp *tcp = reinterpret_cast<click_tcp *>(ip + 1);
   tcp->th_sport = sport;
@@ -94,7 +94,7 @@ FastTCPFlows::change_ports(int flow)
   unsigned csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
   tcp->th_sum = csum_tcpudp_magic
     (_sipaddr.s_addr, _dipaddr.s_addr, len, IP_PROTO_TCP, csum);
-  
+
   ip = reinterpret_cast<click_ip *>(_flows[flow].data_packet->data()+14);
   tcp = reinterpret_cast<click_tcp *>(ip + 1);
   tcp->th_sport = sport;
@@ -104,7 +104,7 @@ FastTCPFlows::change_ports(int flow)
   csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
   tcp->th_sum = csum_tcpudp_magic
     (_sipaddr.s_addr, _dipaddr.s_addr, len, IP_PROTO_TCP, csum);
-  
+
   ip = reinterpret_cast<click_ip *>(_flows[flow].fin_packet->data()+14);
   tcp = reinterpret_cast<click_tcp *>(ip + 1);
   tcp->th_sport = sport;
@@ -151,9 +151,9 @@ FastTCPFlows::get_packet()
     }
   }
 }
-  
 
-int 
+
+int
 FastTCPFlows::initialize(ErrorHandler *)
 {
   _count = 0;
@@ -163,11 +163,11 @@ FastTCPFlows::initialize(ErrorHandler *)
   for (int i=0; i<_nflows; i++) {
     unsigned short sport = (click_random() >> 2) % 0xFFFF;
     unsigned short dport = (click_random() >> 2) % 0xFFFF;
-   
+
     // SYN packet
     _flows[i].syn_packet = Packet::make(_len);
     memcpy(_flows[i].syn_packet->data(), &_ethh, 14);
-    click_ip *ip = 
+    click_ip *ip =
       reinterpret_cast<click_ip *>(_flows[i].syn_packet->data()+14);
     click_tcp *tcp = reinterpret_cast<click_tcp *>(ip + 1);
     // set up IP header
@@ -199,7 +199,7 @@ FastTCPFlows::initialize(ErrorHandler *)
     unsigned csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
     tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
 				    len, IP_PROTO_TCP, csum);
-    
+
     // DATA packet with PUSH and ACK
     _flows[i].data_packet = Packet::make(_len);
     memcpy(_flows[i].data_packet->data(), &_ethh, 14);
@@ -234,7 +234,7 @@ FastTCPFlows::initialize(ErrorHandler *)
     csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
     tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
 				    len, IP_PROTO_TCP, csum);
-  
+
     // FIN packet
     _flows[i].fin_packet = Packet::make(_len);
     memcpy(_flows[i].fin_packet->data(), &_ethh, 14);
@@ -269,7 +269,7 @@ FastTCPFlows::initialize(ErrorHandler *)
     csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
     tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
 				    len, IP_PROTO_TCP, csum);
-    
+
     _flows[i].flow_count = 0;
   }
   _last_flow = 0;
@@ -391,7 +391,7 @@ FastTCPFlows_active_write_handler
 {
   FastTCPFlows *c = (FastTCPFlows *)e;
   bool active;
-  if (!cp_bool(s, &active)) 
+  if (!cp_bool(s, &active))
     return errh->error("active parameter must be boolean");
   c->_active = active;
   if (active) c->reset();

@@ -75,7 +75,7 @@ PrintAiro::configure(Vector<String> &conf, ErrorHandler* errh)
 		   "VERBOSE", 0, cpBool, &verbose,
 		   cpEnd) < 0)
     return -1;
-  
+
   _label = label;
   _timestamp = timestamp;
   _quiet = quiet;
@@ -86,12 +86,12 @@ PrintAiro::configure(Vector<String> &conf, ErrorHandler* errh)
 static char bits[9];
 
 static char *
-bit_string(u_int8_t b) 
+bit_string(u_int8_t b)
 {
   bits[8] = 0;
   for (int i = 0; i < 8; i++) {
     int mask = 1 << i;
-    if (mask & b) 
+    if (mask & b)
       bits[i] = '1';
     else
       bits[i] = '.';
@@ -119,12 +119,12 @@ PrintAiro::simple_action(Packet *p)
   static u_int8_t buf[2048];
   u_int16_t fc1 = frame->an_frame_ctl >> 8;
   int ieee80211_header_len = 24;
-  if ((fc1 & IEEE80211_FC1_DIR_TODS) && 
+  if ((fc1 & IEEE80211_FC1_DIR_TODS) &&
       (fc1 & IEEE80211_FC1_DIR_FROMDS))
     ieee80211_header_len += 6; // there is a 4th MAC address in frame
   unsigned int len = frame->an_rx_payload_len + ieee80211_header_len;
   if (len > sizeof(buf)) {
-    click_chatter("%s: Frame too big to copy into buffer (%d > %d)\n", 
+    click_chatter("%s: Frame too big to copy into buffer (%d > %d)\n",
 		  name().c_str(), len, sizeof(buf));
     return 0;
   }
@@ -132,7 +132,7 @@ PrintAiro::simple_action(Packet *p)
   memcpy(buf, &frame->an_frame_ctl, ieee80211_header_len);
 
   // mind the gap!
-  memcpy(buf + ieee80211_header_len, 
+  memcpy(buf + ieee80211_header_len,
 	 ((u_int8_t *) frame) + sizeof(struct an_rxframe) + frame->an_gaplen,
 	 frame->an_rx_payload_len);
 
@@ -150,11 +150,11 @@ PrintAiro::simple_action(Packet *p)
       int r = frame->an_rx_rate / 2;
       bool print5 = (r * 2 < frame->an_rx_rate);
       char info[1024];
-      snprintf(info, sizeof(info), "%s%4d | RSSI: %d  Rate: %d%s Mbps   Chan: %d", 
+      snprintf(info, sizeof(info), "%s%4d | RSSI: %d  Rate: %d%s Mbps   Chan: %d",
 	       sa.c_str(), p->length(), (int) frame->an_rx_signal_strength,
 	       r, print5 ? ".5" : "", (int) frame->an_rx_chan);
       click_chatter("%s", info);
-      
+
       if (_verbose) {
 	int plcp_rate = 0;
 	switch (frame->an_plcp_hdr[0]) {
@@ -166,14 +166,14 @@ PrintAiro::simple_action(Packet *p)
 	}
 	if (plcp_rate > 0 && plcp_rate != frame->an_rx_rate)
 	  click_chatter("\tWarning: PLCP signal rate does not match rate provided by adapter!");
-	
+
 	u_int8_t svc = frame->an_plcp_hdr[1];
 	click_chatter("\tPLCP.Service: locked_clocks=%d modulation=%s length_extension=%d (%s)\n",
 	       svc & 4 ? 1 : 0, svc & 8 ? "PBCC" : "CCK", svc & 128 ? 1 : 0, bit_string(svc));
-	
+
 	int len_usecs = (frame->an_plcp_hdr[3] << 8) | frame->an_plcp_hdr[2];
 	click_chatter("\tPLCP.Length: %d microseconds\n", len_usecs);
-	
+
 #ifdef CLICK_USERLEVEL
 	int len_octets; // see 802.11b sec 18.2.3.5
 	switch (frame->an_rx_rate) {
@@ -209,7 +209,7 @@ PrintAiro::simple_action(Packet *p)
     }
   }
 
-  // spit out the 802.11 frame 
+  // spit out the 802.11 frame
   // XXX alternative: instead of making new buffer, copy data over in current packet
   // XXX or, pass airo packet out 0, and push 802.11 packet to 1.
   p->kill();

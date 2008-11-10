@@ -15,7 +15,7 @@ Send 802.11 beacons.
 
 =d
 
-Keyword arguments are: 
+Keyword arguments are:
 
 =over 8
 
@@ -38,14 +38,14 @@ How often beacon packets are sent, in milliseconds.
 */
 
 class BeaconSource : public Element { public:
-  
+
   BeaconSource();
   ~BeaconSource();
 
   const char *class_name() const	{ return "BeaconSource"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
   void add_handlers();
@@ -62,7 +62,7 @@ class BeaconSource : public Element { public:
 
   EtherAddress _bcast;
   String scan_string();
-  
+
   class WirelessInfo *_winfo;
   class AvailableRates *_rtable;
 

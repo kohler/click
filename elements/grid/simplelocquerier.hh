@@ -14,7 +14,7 @@
  * Expects GRID_NBR_ENCAP packet with MAC headers as input, which will
  * be output with the destination location filled in to match the
  * header's destination address.
- * 
+ *
  * =a FloodingLocQuerier
  */
 
@@ -26,27 +26,27 @@ CLICK_DECLS
 
 class SimpleLocQuerier : public Element {
  public:
-  
+
   SimpleLocQuerier();
   ~SimpleLocQuerier();
-  
+
   const char *class_name() const		{ return "SimpleLocQuerier"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PUSH; }
   void add_handlers();
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  
+
   void push(int port, Packet *);
-  
+
 
  private:
   typedef HashMap<IPAddress, grid_location> locmap;
   locmap _locs;
 
   void send_query_for(const IPAddress &);
-  
+
   static String read_table(Element *, void *);
   static int add_entry(const String &arg, Element *element, void *, ErrorHandler *errh);
 };

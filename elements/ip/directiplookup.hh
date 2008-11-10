@@ -113,7 +113,7 @@ class DirectIPLookup : public IPRouteTable { public:
 	PREF_HASHSIZE = 64 * 1024, // must be a power of 2!
 	DISCARD_PORT = -1
     };
-    
+
     struct CleartextEntry {
 	int ll_next;
 	int ll_prev;
@@ -166,7 +166,7 @@ class DirectIPLookup : public IPRouteTable { public:
 
 	int initialize();
 	void cleanup();
-	
+
 	static inline uint32_t prefix_hash(uint32_t, uint32_t);
 
 	int find_entry(uint32_t, uint32_t) const;
@@ -178,7 +178,7 @@ class DirectIPLookup : public IPRouteTable { public:
 	int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
 	int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
 	void flush();
-	
+
     };
 
   protected:
@@ -186,7 +186,7 @@ class DirectIPLookup : public IPRouteTable { public:
     Table _t;
 
     friend class RangeIPLookup;
-    
+
 };
 
 CLICK_ENDDECLS

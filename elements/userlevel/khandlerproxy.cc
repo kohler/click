@@ -203,7 +203,7 @@ KernelHandlerProxy::handler_hook(int op, String& str, Element* e, const Handler*
 	    khp->complain_about_open(0, hname, err);
 	}
 	return -err;
-	
+
     } else if (op == Handler::OP_WRITE) {
 	int fd = open(fn.c_str(), O_WRONLY | O_TRUNC);
 	if (fd < 0)
@@ -230,7 +230,7 @@ KernelHandlerProxy::handler_hook(int op, String& str, Element* e, const Handler*
 	    return -err;
 	} else
 	    return 0;
-	
+
     } else
 	return errh->error("odd operation");
 }
@@ -241,11 +241,11 @@ KernelHandlerProxy::llrpc(unsigned command, void *data)
   if (command == CLICK_LLRPC_PROXY) {
     click_llrpc_proxy_st* proxy = static_cast<click_llrpc_proxy_st*>(data);
     const Handler* h = static_cast<Handler*>(proxy->proxied_handler);
-    
+
     String fn = handler_name_to_file_name(h->name());
     int fd = open(fn.c_str(), O_RDONLY);
     int err = errno;
-    
+
     if (fd < 0) {
       if (_verbose)
 	complain_about_open(ErrorHandler::default_handler(), h->name(), err);
@@ -259,7 +259,7 @@ KernelHandlerProxy::llrpc(unsigned command, void *data)
 
     close(fd);
     return (retval >= 0 ? retval : -err);
-    
+
   } else
     return Element::llrpc(command, data);
 }

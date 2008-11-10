@@ -1,4 +1,4 @@
-/* 
+/*
  * csclient.cc
  * Douglas S. J. De Couto
  */
@@ -33,15 +33,15 @@ ControlSocketClient::configure(unsigned int host_ip, unsigned short port)
 {
   if (_init)
     return reinit_err;
-  
+
   _host = host_ip;
   _port = port;
-  
+
   _fd = socket(PF_INET, SOCK_STREAM, 0);
-  if (_fd < 0) 
+  if (_fd < 0)
     return sys_err;
-  
-  /* 
+
+  /*
    * connect to remote ControlSocket
    */
   struct sockaddr_in sa;
@@ -49,16 +49,16 @@ ControlSocketClient::configure(unsigned int host_ip, unsigned short port)
   sa.sin_family = AF_INET;
   sa.sin_addr.s_addr = _host;
   sa.sin_port = htons(port);
-  
+
   char namebuf[32];
-  snprintf(namebuf, 32, "%u.%u.%u.%u:%hu", 
+  snprintf(namebuf, 32, "%u.%u.%u.%u:%hu",
 	   (_host & 0xff) >> 0,
 	   (_host & 0xff00) >> 8,
 	   (_host & 0xff0000) >> 16,
 	   (_host & 0xff000000) >> 24,
 	   port);
   _name = namebuf;
-  
+
   int res = connect(_fd, (struct sockaddr *)  &sa, sizeof(sa));
   if (res < 0) {
     int save_errno = errno;
@@ -66,11 +66,11 @@ ControlSocketClient::configure(unsigned int host_ip, unsigned short port)
     errno = save_errno;
     return sys_err;
   }
-  
+
   int major, minor;
   unsigned int slash, dot;
 
-  /* 
+  /*
    * check that we get the expected banner
    */
   string buf;
@@ -81,14 +81,14 @@ ControlSocketClient::configure(unsigned int host_ip, unsigned short port)
     errno = save_errno;
     return err;
   }
-  
+
   slash = buf.find('/');
   dot = (slash != string::npos ? buf.find('.', slash + 1) : string::npos);
   if (slash == string::npos || dot == string::npos) {
     ::close(_fd);
     return click_err; /* bad format */
   }
-  
+
   /*
    * check ControlSocket protocol version
    */
@@ -96,7 +96,7 @@ ControlSocketClient::configure(unsigned int host_ip, unsigned short port)
   minor = atoi(buf.substr(dot + 1, buf.size() - dot - 1).c_str());
   if (major != PROTOCOL_MAJOR_VERSION ||
       minor < PROTOCOL_MINOR_VERSION) {
-    ::close(_fd); 
+    ::close(_fd);
     return click_err; /* wrong version */
   }
 
@@ -125,9 +125,9 @@ ControlSocketClient::readline(string &buf)
 
 #define MAX_LINE_SZ 1024 /* arbitrary... to prevent weirdness */
 
-  /* 
+  /*
    * keep calling read() to get one character at a time, until we get
-   * a line.  not very ``efficient'', but who cares?  
+   * a line.  not very ``efficient'', but who cares?
    */
   char c = 0;
   buf.resize(0);
@@ -140,7 +140,7 @@ ControlSocketClient::readline(string &buf)
     buf += c;
     if (buf.size() > MAX_LINE_SZ)
       return click_err;
-  } 
+  }
   while (c != '\n');
 
   return no_err;
@@ -172,11 +172,11 @@ ControlSocketClient::err_t
 ControlSocketClient::read(string el, string handler, string &response)
 {
   check_init();
-  
+
   if (el.size() > 0)
     handler = el + "." + handler;
   string cmd = "READ " + handler + "\n";
-  
+
   int res = ::write(_fd, cmd.c_str(), cmd.size());
   if (res < 0)
     return sys_err;
@@ -194,11 +194,11 @@ ControlSocketClient::read(string el, string handler, string &response)
     cmd_resp += line;
   }
   while (line[3] == '-');
-    
+
   int code = get_resp_code(line);
-  if (code != CODE_OK && code != CODE_OK_WARN) 
+  if (code != CODE_OK && code != CODE_OK_WARN)
     return handle_err_code(code);
-  
+
   res = readline(line);
   if (res < 0)
     return click_err;
@@ -209,7 +209,7 @@ ControlSocketClient::read(string el, string handler, string &response)
   response.resize(0);
   if (num == 0)
     return no_err;
-  
+
   char *buf = new char[num];
   int num_read = 0;
   while (num_read < num) {
@@ -250,7 +250,7 @@ ControlSocketClient::err_t
 ControlSocketClient::write(string el, string handler, const char *buf, int bufsz)
 {
   check_init();
-  
+
   if (el.size() > 0)
     handler = el + "." + handler;
   char cbuf[10];
@@ -262,7 +262,7 @@ ControlSocketClient::write(string el, string handler, const char *buf, int bufsz
     return sys_err;
   if ((size_t) res != cmd.size())
     return sys_err;
-  
+
   res = ::write(_fd, buf, bufsz);
   if (res < 0)
     return sys_err;
@@ -282,12 +282,12 @@ ControlSocketClient::write(string el, string handler, const char *buf, int bufsz
   while (line[3] == '-');
 
   int code = get_resp_code(line);
-  if (code != CODE_OK && code != CODE_OK_WARN) 
+  if (code != CODE_OK && code != CODE_OK_WARN)
     {
       cout << "CCCC " << code << endl;
     return handle_err_code(code);
     }
-  
+
   return no_err;
 }
 
@@ -316,7 +316,7 @@ ControlSocketClient::handle_err_code(int code)
 
 
 
-vector<string> 
+vector<string>
 ControlSocketClient::split(string s, size_t offset, char terminator)
 {
   vector<string> v;
@@ -334,24 +334,24 @@ ControlSocketClient::split(string s, size_t offset, char terminator)
 }
 
 
-ControlSocketClient::err_t 
+ControlSocketClient::err_t
 ControlSocketClient::get_config_el_names(vector<string> &els)
 {
   string resp;
   err_t err = read("", "list", resp);
   if (err != no_err)
     return err;
-  
+
   /* parse how many els */
   int i = resp.find('\n');
   int num = atoi(resp.substr(0, i).c_str());
-  
-  
+
+
   els = split(resp, i + 1, '\n');
   if (els.size() != (size_t) num)
     return handler_bad_format;
 
-  return no_err;  
+  return no_err;
 }
 
 
@@ -368,7 +368,7 @@ ControlSocketClient::get_string_vec(string el, string h, vector<string> &v)
 }
 
 
-ControlSocketClient::err_t 
+ControlSocketClient::err_t
 ControlSocketClient::get_el_handlers(string el, vector<handler_info_t> &handlers)
 {
   vector<handler_info_t> v;
@@ -408,15 +408,15 @@ ControlSocketClient::get_el_handlers(string el, vector<handler_info_t> &handlers
 }
 
 
-ControlSocketClient::err_t 
+ControlSocketClient::err_t
 ControlSocketClient::check_handler(string el, string h, bool is_write, bool &exists)
 {
   check_init();
-  
+
   if (el.size() > 0)
     h = el + "." + h;
   string cmd = (is_write ? "CHECKWRITE " : "CHECKREAD ") + h + "\n";
-  
+
   int res = ::write(_fd, cmd.c_str(), cmd.size());
   if (res < 0)
     return sys_err;
@@ -434,7 +434,7 @@ ControlSocketClient::check_handler(string el, string h, bool is_write, bool &exi
     cmd_resp += line;
   }
   while (line[3] == '-');
-    
+
   int code = get_resp_code(line);
   switch (code) {
   case CODE_OK:
@@ -459,19 +459,19 @@ ControlSocketClient::check_handler(string el, string h, bool is_write, bool &exi
 
 
 
-ControlSocketClient::err_t 
+ControlSocketClient::err_t
 ControlSocketClient::check_handler_workaround(string el, string h, bool is_write, bool &exists)
 {
-  /* 
+  /*
    * If talking to an old ControlSocket, try the "handlers" handler
-   * instead. 
+   * instead.
    */
 
   vector<handler_info_t> v;
   err_t err = get_el_handlers(el, v);
   if (err != no_err)
     return err;
-  
+
   for (vector<handler_info_t>::iterator i = v.begin(); i != v.end(); i++) {
     if (i->handler_name == h) {
       if (is_write && i->can_write ||
@@ -499,7 +499,7 @@ ControlSocketClient::trim(string s)
 
   if (start >= end)
     return "";
-  
+
   return s.substr(start, end - start);
 }
 
@@ -520,13 +520,13 @@ main(int argc, char **argv)
     ip = inet_addr(argv[1]);
   else
     ip = inet_addr("127.0.0.1");
-  
+
   if (argc > 2)
     port = (unsigned short) atoi(argv[2]);
 
   typedef ControlSocketClient csc_t;
   csc_t cs;
-  
+
   typedef csc_t::err_t err_t;
   err_t err = cs.configure(ip, port);
   ok(err);
@@ -537,32 +537,32 @@ main(int argc, char **argv)
   err = cs.get_router_version(s);
   ok(err);
   cout << "Router version: ``" << s << "''" << endl;
-  
+
   vector<string> vs;
   err = cs.get_config_el_names(vs);
   ok(err);
   cout << "Elements:" << endl;
   for (size_t i = 0; i < vs.size(); i++)
     cout << i << " ``" << vs[i] << "''" << endl;
-   
+
   err = cs.get_router_classes(vs);
   ok(err);
   cout << "Classes:" << endl;
   for (size_t i = 0; i < vs.size(); i++)
     cout << i << " ``" << vs[i] << "''" << endl;
-   
+
   err = cs.get_router_packages(vs);
   ok(err);
   cout << "Packages:" << endl;
   for (size_t i = 0; i < vs.size(); i++)
     cout << i << " ``" << vs[i] << "''" << endl;
-   
+
   err = cs.get_config_reqs(vs);
   ok(err);
   cout << "Configuration requirements:" << endl;
   for (size_t i = 0; i < vs.size(); i++)
     cout << i << " ``" << vs[i] << "''" << endl;
-   
+
   err = cs.get_router_config(s);
   ok(err);
   cout << endl;
@@ -591,14 +591,14 @@ main(int argc, char **argv)
   string el = vs[0];
   err = cs.get_el_handlers(el, vhi);
 
-  for (size_t i = 0; i < vhi.size(); i++) 
-    cout << vhi[i].element_name << "." << vhi[i].handler_name << "\t" 
-	 << (vhi[i].can_read ? "r" : "") 
-	 << (vhi[i].can_write ? "w" : "") 
+  for (size_t i = 0; i < vhi.size(); i++)
+    cout << vhi[i].element_name << "." << vhi[i].handler_name << "\t"
+	 << (vhi[i].can_read ? "r" : "")
+	 << (vhi[i].can_write ? "w" : "")
 	 << endl;
 
   cout << endl;
-  
+
   cout << "Check Handler test: " << endl;
   for (size_t i = 0; i < vhi.size(); i++) {
     cout << vhi[i].element_name << "." << vhi[i].handler_name << '\t';
@@ -619,12 +619,12 @@ main(int argc, char **argv)
 
   cout << endl;
   cout << "Read/Write handler test: ";
-  string data = "1234567891abcdefghij"; 
-  /* 
+  string data = "1234567891abcdefghij";
+  /*
    * NB: to place spaces in this handler's data requires that the
    * string be quoted; however, the handler's read function won't
    * return the quotes around the string so the read value doesn't
-   * exactly match the write value.  to avoid, we don't use spaces....  
+   * exactly match the write value.  to avoid, we don't use spaces....
    */
   err = cs.write("InfiniteSource@1", "data", data);
   ok(err);
@@ -638,10 +638,10 @@ main(int argc, char **argv)
     cout << "pass";
   cout << endl;
 
-  cout << endl 
+  cout << endl
        << endl
        << "********** Tests complete **********" << endl;
-  
+
   return 0;
 }
 #endif;

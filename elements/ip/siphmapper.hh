@@ -14,7 +14,7 @@ CLICK_DECLS
  * Source IP Hash mapper for IPRewriter(n)
  * =d
  *
- * Works in tandem with IPRewriter to provide source IP-based rewriting. 
+ * Works in tandem with IPRewriter to provide source IP-based rewriting.
  * This is useful, for example, in load-balancing applications. Implements the
  * IPMapper interface.
  *
@@ -23,7 +23,7 @@ CLICK_DECLS
  * if nodes are added or removed.
  *
  *
- * =a IPRewriter, TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper 
+ * =a IPRewriter, TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper
  */
 
 //
@@ -57,7 +57,7 @@ public:
     int s,d;
     d = n;
     s = d >> 1;
-    
+
     int to = 0;
     while (s > 0 && to < sz) {
       for (int x = s; x < n && to < sz; x += d) {
@@ -80,7 +80,7 @@ public:
     for (int i = 0; i < p; i++) r = r << 1;
     return r;
   }
-  
+
   ~jvtree_t () { delete [] tree; }
 
 
@@ -93,7 +93,7 @@ public:
     while (i < num) {
       curr = tree + i;
       tkv = curr->*key;
-      if (k == tkv) { 
+      if (k == tkv) {
 	return curr;
       } else if (k > tkv) {
 	i = 2*i + 2;
@@ -125,13 +125,13 @@ public:
 template<class K>
 class chash_t {
 public:
-  chash_t (size_t ns, unsigned short *ids, size_t nn, int seed = 0x1) 
+  chash_t (size_t ns, unsigned short *ids, size_t nn, int seed = 0x1)
     : num_servers (ns), num_nodes (nn)
   {
     click_srandom(seed);
 
     int max_servers = -1;
-    for (size_t i = 0; i < num_servers; i++) 
+    for (size_t i = 0; i < num_servers; i++)
       if (ids[i] > max_servers)
 	max_servers = ids[i];
     max_servers++;
@@ -163,7 +163,7 @@ public:
       }
     }
     tree = new jvtree_t<chash_node_t<K>, K, &chash_node_t<K>::key> (n, in);
-    
+
     delete [] in;
     delete [] servmap;
   }
@@ -189,11 +189,11 @@ class SourceIPHashMapper : public Element, public IPMapper { public:
 
   const char *class_name() const	{ return "SourceIPHashMapper"; }
   void *cast(const char *);
-  
+
   int configure_phase() const		{ return IPRw::CONFIGURE_PHASE_MAPPER;}
   int configure(Vector<String> &, ErrorHandler *);
   void cleanup(CleanupStage);
-  
+
   void notify_rewriter(IPRw *, ErrorHandler *);
   IPRw::Mapping *get_map(IPRw *, int ip_p, const IPFlowID &, Packet *);
 

@@ -20,14 +20,14 @@ Copies the wifi_extra_header from Packet::anno() and pushes it onto the packet.
 */
 
 class ExtraEncap : public Element { public:
-  
+
   ExtraEncap();
   ~ExtraEncap();
 
   const char *class_name() const	{ return "ExtraEncap"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
 

@@ -67,7 +67,7 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   bool print_aggregate = false;
   bool bcontents;
   String channel;
-  
+
   if (cp_va_kparse(conf, this, errh,
 		   "LABEL", cpkP, cpString, &_label,
 		   "CONTENTS", 0, cpWord, &contents,
@@ -116,7 +116,7 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("specify at most one of PAYLOAD and CONTENTS");
   else if (payloadv > 0)
     _contents = payloadv, _payload = true;
-  
+
   _print_id = print_id;
   _print_timestamp = print_time;
   _print_paint = print_paint;
@@ -169,7 +169,7 @@ IPPrint::tcp_line(StringAccum &sa, const Packet *p, int transport_length) const
 
     sa << IPAddress(iph->ip_src) << '.' << ntohs(tcph->th_sport) << " > "
        << IPAddress(iph->ip_dst) << '.' << ntohs(tcph->th_dport) << ": ";
-    
+
     if (transport_length < 14)
 	goto truncated_tcp;
 
@@ -185,7 +185,7 @@ IPPrint::tcp_line(StringAccum &sa, const Packet *p, int transport_length) const
 	sa << 'P';
     if (!(tcph->th_flags & (TH_SYN | TH_FIN | TH_RST | TH_PUSH)))
 	sa << '.';
-    
+
     seq = ntohl(tcph->th_seq);
     sa << ' ' << seq << ':' << (seq + seqlen)
        << '(' << seqlen << ',' << p->length() << ',' << ip_len << ')';
@@ -194,7 +194,7 @@ IPPrint::tcp_line(StringAccum &sa, const Packet *p, int transport_length) const
 
     if (transport_length < 16)
 	goto truncated_tcp;
-    
+
     sa << " win " << ntohs(tcph->th_win);
     return;
 
@@ -249,7 +249,7 @@ IPPrint::icmp_line(StringAccum &sa, const Packet *p, int transport_length) const
 	goto truncated_icmp;
 
     switch (icmph->icmp_type) {
-	
+
       case ICMP_ECHOREPLY:
 	sa << "icmp echo-reply ";
 	goto icmp_echo;
@@ -264,19 +264,19 @@ IPPrint::icmp_line(StringAccum &sa, const Packet *p, int transport_length) const
 	    sa << '(' << swapit(seqh->icmp_identifier) << ", " << swapit(seqh->icmp_sequence) << ')';
 	    break;
 	}
-	
+
       case ICMP_UNREACH: {
 	  String code = NameInfo::revquery_int(NameInfo::T_ICMP_CODE + icmph->icmp_type, this, icmph->icmp_code);
 	  if (!code)
 	      code = "code " + String((int) icmph->icmp_code);
-	  
+
 	  const click_ip *eiph = reinterpret_cast<const click_ip *>(icmph + 1);
 	  int eiph_len = transport_length - sizeof(click_icmp);
 	  if (eiph_len < (int) sizeof(click_ip)) {
 	      sa << "icmp unreachable " << code << ' ';
 	      goto truncated_icmp;
 	  }
-	  
+
 	  const click_udp *eudph = reinterpret_cast<const click_udp *>(reinterpret_cast<const uint8_t *>(eiph) + (eiph->ip_hl << 2));
 	  int eudph_len = eiph_len - (eiph->ip_hl << 2);
 
@@ -391,10 +391,10 @@ IPPrint::simple_action(Packet *p)
 	    else if (bytes < 0 || (int) (p->end_data() - data) < bytes)
 		bytes = p->end_data() - data;
 	    int amt = 3*bytes + (bytes/4+1) + 3*(bytes/24+1) + 1;
-	    
+
 	    char *buf = sa.reserve(amt);
 	    char *orig_buf = buf;
-	    
+
 	    if (buf && _contents == 1) {
 		for (int i = 0; i < bytes; i++, data++) {
 		    if ((i % 24) == 0) {

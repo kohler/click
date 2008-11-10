@@ -39,9 +39,9 @@ static bool tcp_extract(PacketDesc& d, const FieldWriter *f)
 {
     int transport_length = d.p->transport_length();
     switch (f->user_data) {
-	
+
 #define CHECK(l) do { if (!d.tcph || transport_length < (l)) return field_missing(d, IP_PROTO_TCP, (l)); } while (0)
-	
+
       case T_TCP_SEQ:
 	CHECK(8);
 	d.v = ntohl(d.tcph->th_seq);
@@ -93,7 +93,7 @@ static bool tcp_extract(PacketDesc& d, const FieldWriter *f)
 	    d.vptr[1] = d.vptr[0] + (d.tcph->th_off << 2) - sizeof(click_tcp);
 	}
 	return true;
-	
+
 #undef CHECK
 
       default:
@@ -247,7 +247,7 @@ static void tcp_outb(const PacketDesc& d, bool ok, const FieldWriter *f)
 	    unparse_tcp_opt_binary(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_TCPOPT_SACK);
 	break;
     }
-}    
+}
 
 static const uint8_t* tcp_inb(PacketOdesc& d, const uint8_t* s, const uint8_t* ends, const FieldReader *f)
 {
@@ -263,7 +263,7 @@ static const uint8_t* tcp_inb(PacketOdesc& d, const uint8_t* s, const uint8_t* e
 	break;
     }
     return ends;
-}    
+}
 
 
 static int tcp_opt_mask_mapping[] = {
@@ -279,7 +279,7 @@ void unparse_tcp_opt(StringAccum& sa, const uint8_t* opt, int opt_len, int mask)
     int initial_sa_len = sa.length();
     const uint8_t *end_opt = opt + opt_len;
     const char *sep = "";
-    
+
     while (opt < end_opt)
 	switch (*opt) {
 	  case TCPOPT_EOL:
@@ -392,7 +392,7 @@ void unparse_tcp_opt_binary(StringAccum& sa, const uint8_t* opt, int opt_len, in
     const uint8_t *end_opt = opt + opt_len;
     int initial_sa_len = sa.length();
     sa.append('\0');
-    
+
     while (opt < end_opt) {
 	// one-byte options
 	if (*opt == TCPOPT_EOL) {
@@ -405,7 +405,7 @@ void unparse_tcp_opt_binary(StringAccum& sa, const uint8_t* opt, int opt_len, in
 	    opt++;
 	    continue;
 	}
-	
+
 	// quit copying options if you encounter something obviously invalid
 	if (opt[1] < 2 || opt + opt[1] > end_opt)
 	    break;

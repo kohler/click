@@ -18,10 +18,10 @@ CLICK_DECLS
  */
 
 class RandomSource : public Element { public:
-  
+
   RandomSource();
-  ~RandomSource(); 
- 
+  ~RandomSource();
+
   const char *class_name() const		{ return "RandomSource"; }
   const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return AGNOSTIC; }
@@ -33,10 +33,10 @@ class RandomSource : public Element { public:
   bool run_task(Task *);
 
  protected:
-  
+
   int _length;
   Task _task;
-  
+
   Packet *make_packet();
 
 };

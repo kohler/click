@@ -62,7 +62,7 @@ SetPacketType::unparse_type(int p)
       default:			return "??";
     }
 }
-	
+
 int
 SetPacketType::configure(Vector<String> &conf, ErrorHandler *errh)
 {

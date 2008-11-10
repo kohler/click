@@ -91,12 +91,12 @@ class TimeFilter : public Element { public:
     void add_handlers();
 
     Packet *simple_action(Packet *);
-    
+
   private:
 
     Timestamp _first;
     Timestamp _last;
-    
+
     bool _ready : 1;
     bool _first_relative : 1;
     bool _first_init_relative : 1;

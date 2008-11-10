@@ -15,10 +15,10 @@ class ElementMap { public:
     static ElementMap* default_map()		{ return the_element_map; }
     static void push_default(ElementMap*);
     static void pop_default();
-    
+
     void use()					{ _use_count++; }
     void unuse()				{ _use_count--; }
-    
+
     int size() const				{ return _e.size(); }
     bool empty() const				{ return _e.size() == 1; }
     int32_t version() const			{ return _version; }
@@ -35,7 +35,7 @@ class ElementMap { public:
     const String& package(const Traits&) const;
     const String& package(const String&) const;
     String documentation_url(const Traits&) const;
-    
+
     class TraitsIterator;
     TraitsIterator begin_elements() const;
 
@@ -71,7 +71,7 @@ class ElementMap { public:
 	String dochref;
 	int driver_mask;
     };
-    
+
     Vector<Traits> _e;
     HashTable<String, int> _name_map;
 
@@ -110,7 +110,7 @@ class ElementMap::TraitsIterator { public:
     const ElementMap* _emap;
     int _index;
     bool _elements_only;
-    
+
 };
 
 

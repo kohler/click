@@ -14,7 +14,7 @@ DupPath::~DupPath()
 {
 }
 
-int 
+int
 DupPath::initialize(ErrorHandler *errh)
 {
   if (!(_q._q = new Packet*[129]))

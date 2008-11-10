@@ -97,7 +97,7 @@ Router::~Router()
     // unuse the hotswap router
     if (_hotswap_router)
 	_hotswap_router->unuse();
-  
+
     // Delete the ArenaFactory, which detaches the Arenas
     delete _arena_factory;
 
@@ -113,7 +113,7 @@ Router::~Router()
 	for (int i = _elements.size() - 1; i >= 0; i--)
 	    _elements[i]->cleanup(Element::CLEANUP_NO_ROUTER);
     }
-  
+
     // Delete elements in reverse configuration order
     if (_element_configure_order.size())
 	for (int ord = _elements.size() - 1; ord >= 0; ord--)
@@ -121,7 +121,7 @@ Router::~Router()
     else
 	for (int i = 0; i < _elements.size(); i++)
 	    delete _elements[i];
-    
+
     delete _root_element;
 
 #if CLICK_LINUXMODULE
@@ -134,7 +134,7 @@ Router::~Router()
 # endif
     }
 #endif
-    
+
     for (int i = 0; i < _nhandlers_bufs; i += HANDLER_BUFSIZ)
 	delete[] _handler_bufs[i / HANDLER_BUFSIZ];
     delete[] _handler_bufs;
@@ -324,7 +324,7 @@ Router::elandmark(int eindex) const
 }
 
 
-// CREATION 
+// CREATION
 
 #if CLICK_LINUXMODULE
 int
@@ -345,7 +345,7 @@ Router::add_module_ref(struct module *module)
     return 0;
 }
 #endif
-    
+
 int
 Router::add_element(Element *e, const String &ename, const String &conf, const String &landmark)
 {
@@ -371,7 +371,7 @@ Router::add_connection(int from_idx, int from_port, int to_idx, int to_port)
 	return -1;
 
     Connection c(from_idx, from_port, to_idx, to_port);
-    
+
     // check for continuing sorted order
     if (_conn_sorted && _conn.size() && c < _conn.back())
 	_conn_sorted = false;
@@ -628,7 +628,7 @@ Router::check_push_and_pull(ErrorHandler *errh)
 {
     if (!errh)
 	errh = ErrorHandler::default_handler();
-  
+
     // set up processing vectors
     Vector<int> input_pers(ngports(false), 0);
     Vector<int> output_pers(ngports(true), 0);
@@ -651,13 +651,13 @@ Router::check_push_and_pull(ErrorHandler *errh)
 			conn.push_back(Connection(ei, j, ei, port));
 	    }
     }
-    
+
     int before = errh->nerrors();
     Connection *first_agnostic = conn.begin() + _conn.size();
-  
+
     // spread personalities
     while (true) {
-    
+
 	bool changed = false;
 	for (Connection *cp = conn.begin(); cp != conn.end(); ++cp) {
 	    if ((*cp)[1].idx < 0)
@@ -687,14 +687,14 @@ Router::check_push_and_pull(ErrorHandler *errh)
 		    (*cp)[1].idx = -1;
 		}
 		break;
-	
+
 	    }
 	}
-    
+
 	if (!changed)
 	    break;
     }
-  
+
     if (errh->nerrors() != before)
 	return -1;
 
@@ -814,7 +814,7 @@ Router::global_port_flow(bool forward, Element* first_element, int first_port,
 	return -1;
 
     sort_connections();
-    
+
     results.clear();
     Bitvector result_bv(ngports(!forward), false), scratch;
 
@@ -1078,7 +1078,7 @@ Router::initialize(ErrorHandler *errh)
 #if CLICK_DMALLOC
     CLICK_DMALLOC_REG("iXXX");
 #endif
-  
+
     // If there were errors, uninitialize any elements that we initialized
     // successfully and return -1 (error). Otherwise, we're all set!
     if (all_ok) {
@@ -1099,10 +1099,10 @@ Router::initialize(ErrorHandler *errh)
 	    int i = _element_configure_order[ord];
 	    _elements[i]->cleanup((Element::CleanupStage) element_stage[i]);
 	}
-    
+
 	// Remove element-specific handlers
 	initialize_handlers(true, false);
-    
+
 	_runcount = 0;
 	return -1;
     }
@@ -1113,12 +1113,12 @@ Router::activate(bool foreground, ErrorHandler *errh)
 {
     if (_state != ROUTER_LIVE || _running != RUNNING_PREPARING)
 	return;
-  
+
     // Take state if appropriate
     if (_hotswap_router && _hotswap_router->_state == ROUTER_LIVE) {
 	// Unschedule tasks and timers
 	master()->kill_router(_hotswap_router);
-      
+
 	for (int i = 0; i < _elements.size(); i++) {
 	    Element *e = _elements[_element_configure_order[i]];
 	    if (Element *other = e->hotswap_element()) {
@@ -1304,7 +1304,7 @@ Router::store_local_handler(int eindex, Handler &to_store, int type)
 	to_store.combine(*old_h, type);
 	old_h->_use_count--;
     }
-  
+
     // find the offset in _name_handlers
     int name_index;
     {
@@ -1411,7 +1411,7 @@ Router::store_global_handler(Handler &h, int type)
 	    globalh[i]._use_count = 1;
 	    return;
 	}
-  
+
     if (nglobalh >= globalh_cap) {
 	int n = (globalh_cap ? 2 * globalh_cap : 4);
 	Handler *hs = new Handler[n];
@@ -1835,7 +1835,7 @@ Router::unparse_requirements(StringAccum &sa, const String &indent) const
  */
 void
 Router::unparse_declarations(StringAccum &sa, const String &indent) const
-{  
+{
   // element classes
   Vector<String> conf;
   for (int i = 0; i < nelements(); i++) {
@@ -1845,7 +1845,7 @@ Router::unparse_declarations(StringAccum &sa, const String &indent) const
       sa << "(" << conf << ")";
     sa << ";\n";
   }
-  
+
   if (nelements() > 0)
     sa << "\n";
 }
@@ -1855,7 +1855,7 @@ Router::unparse_declarations(StringAccum &sa, const String &indent) const
  * Appends this router's connections to @a sa in parseable format. */
 void
 Router::unparse_connections(StringAccum &sa, const String &indent) const
-{  
+{
   int nc = _conn.size();
   Vector<int> next(nc, -1);
   Bitvector startchain(nc, true);
@@ -1899,7 +1899,7 @@ Router::unparse_connections(StringAccum &sa, const String &indent) const
 	used[d] = true;
 	d = next[d];
       }
-      
+
       sa << ";\n";
     }
 

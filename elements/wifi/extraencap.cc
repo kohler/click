@@ -58,7 +58,7 @@ ExtraEncap::simple_action(Packet *p)
   p_out = p_out->push(sizeof(click_wifi_extra));
   if (p_out) {
 	  click_wifi_extra *eh = (click_wifi_extra *) p_out->data();
-	  
+
 	  memset(eh, 0, sizeof(click_wifi_extra));
 	  memcpy(p_out->data(), WIFI_EXTRA_ANNO(p_out), sizeof(click_wifi_extra));
 	  eh->magic = WIFI_EXTRA_MAGIC;
@@ -69,7 +69,7 @@ ExtraEncap::simple_action(Packet *p)
 
 enum {H_DEBUG};
 
-static String 
+static String
 ExtraEncap_read_param(Element *e, void *thunk)
 {
   ExtraEncap *td = (ExtraEncap *)e;
@@ -80,7 +80,7 @@ ExtraEncap_read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 ExtraEncap_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -89,7 +89,7 @@ ExtraEncap_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -97,7 +97,7 @@ ExtraEncap_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 ExtraEncap::add_handlers()
 {

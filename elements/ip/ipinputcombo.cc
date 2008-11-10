@@ -58,7 +58,7 @@ IPInputCombo::configure(Vector<String> &conf, ErrorHandler *errh)
       errh->message("(Try passing the configuration through `click-align'.)");
   }
 #endif
-  
+
   return 0;
 }
 
@@ -75,17 +75,17 @@ IPInputCombo::smaction(Packet *p)
   /* CheckIPHeader */
   const click_ip *ip = reinterpret_cast<const click_ip *>(p->data());
   unsigned hlen, len;
-  
+
   if(p->length() < sizeof(click_ip))
     goto bad;
-  
+
   if(ip->ip_v != 4)
     goto bad;
-  
+
   hlen = ip->ip_hl << 2;
   if (hlen < sizeof(click_ip))
     goto bad;
-  
+
   len = ntohs(ip->ip_len);
   if (len > p->length() || len < hlen)
     goto bad;
@@ -125,12 +125,12 @@ IPInputCombo::smaction(Packet *p)
   // shorten packet according to IP length field -- 7/28/2000
   if (p->length() > len)
     p->take(p->length() - len);
-  
+
   // set destination IP address annotation
   p->set_dst_ip_anno(ip->ip_dst);
 
   return(p);
-  
+
  bad:
   if(_drops == 0)
     click_chatter("IP checksum failed");

@@ -27,9 +27,9 @@
 #include "grid.hh"
 CLICK_DECLS
 
-GridProbeHandler::GridProbeHandler() : 
-  _gf_cb_id(-1), _fq_cb_id(-1), _lr_cb_id(-1), 
-  _lr_el(0), _gf_el(0), _fq_el(0), 
+GridProbeHandler::GridProbeHandler() :
+  _gf_cb_id(-1), _fq_cb_id(-1), _lr_cb_id(-1),
+  _lr_el(0), _gf_el(0), _fq_el(0),
   _cached_reply_pkt(0)
 {
 }
@@ -53,23 +53,23 @@ GridProbeHandler::initialize(ErrorHandler *errh)
     _fq_el = 0;
   }
 
-  if (_lr_el) 
+  if (_lr_el)
     _lr_cb_id = _lr_el->add_callback(this);
   if (_gf_el)
     _gf_cb_id = _gf_el->add_callback(this);
   if (_fq_el)
     _fq_cb_id = _fq_el->add_callback(this);
 
-  if (_lr_cb_id < 0) 
+  if (_lr_cb_id < 0)
     errh->warning("%s: unable to install local routing action callback, probe replies will not contain all info",
 		  name().c_str());
-  if (_gf_cb_id < 0) 
+  if (_gf_cb_id < 0)
     errh->warning("%s: unable to install geographic forwarding action callback, probe replies will not contain all info",
 		  name().c_str());
-  if (_fq_cb_id < 0) 
+  if (_fq_cb_id < 0)
     errh->warning("%s: unable to install loc query action callback, probe replies will not contain all info",
 		  name().c_str());
-  
+
   return 0;
 }
 
@@ -115,7 +115,7 @@ GridProbeHandler::push(int port, Packet *p)
   grid_route_reply *rr;
   WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*gh2) + sizeof(*nb2) + sizeof(*rr) + 2);
   q->pull(2);
-  
+
   q->set_timestamp_anno(Timestamp::now());
 
   memset(q->data(), 0, q->length());
@@ -150,10 +150,10 @@ GridProbeHandler::push(int port, Packet *p)
     _cached_reply_pkt->kill();
     _cached_reply_pkt = 0;
   }
-  
+
   /* before figuring out what to do with the cached reply, check to
      see if the callback stuff is set up okay */
-  if (_lr_el && _gf_el && _fq_el 
+  if (_lr_el && _gf_el && _fq_el
       && _lr_cb_id > -1 && _gf_cb_id > -1 && _fq_cb_id > -1) {
     /* yes, the callbacks are cool */
     if (_ip != nb->dst_ip) {
@@ -170,7 +170,7 @@ GridProbeHandler::push(int port, Packet *p)
       rr->route_action = htonl(ProbeFinished);
       _cached_reply_pkt = 0;
       output(1).push(q);
-    }  
+    }
   }
   else {
     /* the route action callbacks are f-ed up, so just send the reply
@@ -179,12 +179,12 @@ GridProbeHandler::push(int port, Packet *p)
     _cached_reply_pkt = 0;
     output(1).push(q);
   }
-  
+
 
   /* pass through probe if we aren't the destination */
-  if (_ip != nb->dst_ip) 
+  if (_ip != nb->dst_ip)
     output(0).push(p);
-  else 
+  else
     p->kill();
 }
 
@@ -203,9 +203,9 @@ GridProbeHandler::route_cb(int id, unsigned int dest_ip, Action a, unsigned int 
   if (!_cached_reply_pkt) {
     click_chatter("GridProbeHandler: error!!! route action callback invoked, but there is no probe reply cached\n");
     return;
-  }  
+  }
 
-  grid_route_reply *rr = (grid_route_reply *) (_cached_reply_pkt->data() + sizeof(click_ether) 
+  grid_route_reply *rr = (grid_route_reply *) (_cached_reply_pkt->data() + sizeof(click_ether)
 					      + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
   if (rr->probe_dest != dest_ip) {
     click_chatter("GridProbeHandler: error!!! route action callback probe dest arg does not match cached reply\n");

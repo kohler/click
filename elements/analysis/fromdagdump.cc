@@ -90,7 +90,7 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
     // check times
     _have_first_time = _have_last_time = true;
     _first_time_relative = _last_time_relative = _last_time_interval = false;
-    
+
     if ((bool) first_time + (bool) first_time_off > 1)
 	return errh->error("'START' and 'START_AFTER' are mutually exclusive");
     else if ((bool) first_time)
@@ -99,7 +99,7 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	_first_time = first_time_off, _first_time_relative = true;
     else
 	_have_first_time = false, _first_time_relative = true;
-    
+
     if ((bool) last_time + (bool) last_time_off + (bool) interval > 1)
 	return errh->error("'END', 'END_AFTER', and 'INTERVAL' are mutually exclusive");
     else if ((bool) last_time)
@@ -145,7 +145,7 @@ FromDAGDump::initialize(ErrorHandler *errh)
 {
     if (_ff.initialize(errh) < 0)
 	return -1;
-    
+
     // if forcing IP packets, check we're not running TIMING
     if (_force_ip && _timing)
 	return errh->error("FORCE_IP and TIMING options are incompatible");
@@ -153,7 +153,7 @@ FromDAGDump::initialize(ErrorHandler *errh)
     // check handler call
     if (_end_h && _end_h->initialize_write(this, errh) < 0)
 	return -1;
-    
+
     // try reading a packet
     if (read_packet(errh))
 	_time_offset = Timestamp::now() - _packet->timestamp_anno();
@@ -242,7 +242,7 @@ FromDAGDump::read_packet(ErrorHandler *errh)
     // quit if we sampled or force_ip failed, but we are no longer active
     if (!more)
 	return false;
-    
+
     // we may need to read bits of the file
     cell = reinterpret_cast<const DAGCell *>(_ff.get_aligned(DAGCell::HEADER_SIZE, &static_cell, errh));
     if (!cell)
@@ -267,7 +267,7 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	// retry _last_time in case someone changed it
 	goto check_times;
     }
-    
+
     // checking sampling probability
     if (_sampling_prob < (1 << SAMPLING_SHIFT)
 	&& (click_random() & ((1<<SAMPLING_SHIFT)-1)) >= _sampling_prob)
@@ -279,14 +279,14 @@ FromDAGDump::read_packet(ErrorHandler *errh)
       use_base_linktype:
 	_linktype = _base_linktype;
 	switch (_base_linktype) {
-	    
+
 	  cell:
 	  case FAKE_DLT_ATM_RFC1483:
 	  case FAKE_DLT_PPP:
 	  case FAKE_DLT_PPP_HDLC:
 	    p = _ff.get_packet(DAGCell::CELL_SIZE - DAGCell::HEADER_SIZE, tv.sec(), tv.subsec(), errh);
 	    break;
-	    
+
 	  case FAKE_DLT_C_HDLC:
 	    wire_length = htons(*(reinterpret_cast<const uint16_t*>(cell) + 5));
 	    goto cell;
@@ -298,12 +298,12 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	  case FAKE_DLT_SUNATM:
 	    p = _ff.get_packet_from_data(reinterpret_cast<const uint8_t*>(cell) + 12, 4, DAGCell::CELL_SIZE - 12, tv.sec(), tv.subsec(), errh);
 	    break;
-	    
+
 	  case FAKE_DLT_EN10MB:
 	    wire_length = htons(*(reinterpret_cast<const uint16_t*>(cell) + 4));
 	    p = _ff.get_packet_from_data(reinterpret_cast<const uint8_t*>(cell) + 10, 6, DAGCell::CELL_SIZE - 10, tv.sec(), tv.subsec(), errh);
 	    break;
-	    
+
 	  default:
 	    p = _ff.get_packet_from_data(reinterpret_cast<const uint8_t*>(cell) + 8, 8, DAGCell::CELL_SIZE - 8, tv.sec(), tv.subsec(), errh);
 	    break;
@@ -340,7 +340,7 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	    return false;
 	p = _ff.get_packet(read_length - DAGCell::HEADER_SIZE, tv.sec(), tv.subsec(), errh);
     }
-    
+
     // check packet
     if (!p)
 	return false;

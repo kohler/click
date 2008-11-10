@@ -83,21 +83,21 @@ Returns or sets the DST parameter.
 =a UDPIPEncap, StripIPHeader */
 
 class IPEncap : public Element { public:
-  
+
   IPEncap();
   ~IPEncap();
-  
+
   const char *class_name() const		{ return "IPEncap"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   int initialize(ErrorHandler *);
   void add_handlers();
 
   Packet *simple_action(Packet *);
-  
+
  private:
 
   click_ip _iph;
@@ -105,7 +105,7 @@ class IPEncap : public Element { public:
 
   inline void update_cksum(click_ip *, int) const;
   static String read_handler(Element *, void *);
-  
+
 };
 
 CLICK_ENDDECLS

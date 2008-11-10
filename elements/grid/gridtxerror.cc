@@ -1,5 +1,5 @@
 /*
- * gridtxerror.{cc,hh} -- log Grid packets that weren't sent successfully 
+ * gridtxerror.{cc,hh} -- log Grid packets that weren't sent successfully
  * Douglas S. J. De Couto
  *
  *
@@ -25,12 +25,12 @@
 
 CLICK_DECLS
 
-GridTxError::GridTxError() 
+GridTxError::GridTxError()
   : _log(0)
 {
 }
 
-GridTxError::~GridTxError() 
+GridTxError::~GridTxError()
 {
 }
 
@@ -52,7 +52,7 @@ GridTxError::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-GridTxError::push(int, Packet *p) 
+GridTxError::push(int, Packet *p)
 {
   /* log the error */
   if (_log)

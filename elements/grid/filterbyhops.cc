@@ -45,7 +45,7 @@ FilterByGridHops::configure(Vector<String> &conf, ErrorHandler *errh)
   if (res < 0)
     return res;
 
-  
+
   if (mh < 0)
     return errh->error("max_hops must be positive");
   _max_hops = mh;

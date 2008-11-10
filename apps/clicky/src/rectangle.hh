@@ -23,7 +23,7 @@ struct point {
     bool operator!() const {
 	return !_x && !_y;
     }
-    
+
     double x() const {
 	return _x;
     }
@@ -39,11 +39,11 @@ struct point {
     double squared_length() const {
 	return _x*_x + _y*_y;
     }
-    
+
     double angle() const {
 	return atan2(_y, _x);
     }
-    
+
     void shift(double dx, double dy) {
 	_x += dx;
 	_y += dy;
@@ -97,7 +97,7 @@ struct point {
 	x.rotate(angle);
 	return x;
     }
-    
+
     static inline bool close(const point &a, const point &b, double d);
 };
 
@@ -113,10 +113,10 @@ struct rectangle {
 	side_bottom = 2,
 	side_left = 3
     };
-    
+
     rectangle() {
     }
-    
+
     rectangle(double x, double y, double width, double height)
 	: _x(x), _y(y), _width(width), _height(height) {
     }
@@ -162,12 +162,12 @@ struct rectangle {
 	assert(s >= side_top && s <= side_left);
 	return !(s & side_right);
     }
-    
+
     static bool side_greater(int s) {
 	assert(s >= side_top && s <= side_left);
 	return (s + (s >> 1)) & 1;
     }
-    
+
     double side(int s) const {
 	double p = (&_x)[side_vertical(s)];
 	if (side_greater(s))
@@ -191,7 +191,7 @@ struct rectangle {
     point origin() const {
 	return point(_x, _y);
     }
-    
+
     typedef point (rectangle::*unspecified_bool_type)() const;
 
     operator unspecified_bool_type() const {
@@ -236,7 +236,7 @@ struct rectangle {
 	_width = width;
 	_height = height;
     }
-    
+
     void shift(double dx, double dy) {
 	_x += dx;
 	_y += dy;
@@ -266,7 +266,7 @@ struct rectangle {
 	_width *= s;
 	_height *= s;
     }
-    
+
     bool contains(double x, double y) const {
 	return (x >= _x && x <= _x + _width && y >= _y && y <= _y + _height);
     }
@@ -291,7 +291,7 @@ struct rectangle {
     double area() const {
 	return _width * _height;
     }
-    
+
     rectangle &operator|=(const rectangle &o) {
 	if (!*this)
 	    *this = o;

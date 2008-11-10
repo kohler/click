@@ -87,7 +87,7 @@ SendGridHello::make_hello()
   if (p == 0) {
     click_chatter("in %s: cannot make packet!", name().c_str());
     assert(0);
-  } 
+  }
   ASSERT_4ALIGNED(p->data());
   p->pull(2);
   memset(p->data(), 0, p->length());

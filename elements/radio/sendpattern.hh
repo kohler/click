@@ -14,22 +14,22 @@ CLICK_DECLS
  */
 
 class SendPattern : public Element {
-  
+
   int _len;
-    
+
  public:
-  
+
   SendPattern();
   ~SendPattern();
-  
+
   const char *class_name() const		{ return "SendPattern"; }
   const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return PULL; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
 
   Packet *pull(int);
-  
+
 };
 
 CLICK_ENDDECLS

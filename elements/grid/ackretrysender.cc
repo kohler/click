@@ -27,10 +27,10 @@
 #include "ackresponder.hh"
 CLICK_DECLS
 
-ACKRetrySender::ACKRetrySender() 
-  : _timeout(0), _max_tries(0), 
+ACKRetrySender::ACKRetrySender()
+  : _timeout(0), _max_tries(0),
     _num_tries(0), _history_length(500),
-    _waiting_packet(0), _verbose(true), 
+    _waiting_packet(0), _verbose(true),
     _timer(this), _task(this)
 {
 }
@@ -62,7 +62,7 @@ ACKRetrySender::push(int port, Packet *p)
 
   // was this response for the packet we have?
   click_ether *e_waiting = (click_ether *) _waiting_packet->data();
-  if (memcmp(e_ack->ether_shost, e_waiting->ether_dhost, 6) || 
+  if (memcmp(e_ack->ether_shost, e_waiting->ether_dhost, 6) ||
       memcmp(e_ack->ether_dhost, e_waiting->ether_shost, 6)) {
     // no, it wasn't for our packet...
     if (_verbose)
@@ -70,7 +70,7 @@ ACKRetrySender::push(int port, Packet *p)
     p->kill();
     return;
   }
-  
+
   // ahhh, ACK was for us.
   _history.push_back(tx_result_t(_waiting_packet->timestamp_anno(),
 				 _num_tries, true));
@@ -79,7 +79,7 @@ ACKRetrySender::push(int port, Packet *p)
   _waiting_packet->kill();
   _waiting_packet = 0;
   _num_tries = 0;
-  _timer.unschedule();  
+  _timer.unschedule();
   p->kill();
 
   check();
@@ -94,7 +94,7 @@ ACKRetrySender::run_task(Task *)
 
   if (_waiting_packet)
     return true;
-  
+
   Packet *p = input(0).pull();
   if (!p)
     return true;
@@ -124,7 +124,7 @@ ACKRetrySender::configure(Vector<String> &conf, ErrorHandler *errh)
 			 "VERBOSE", 0, cpBool, &_verbose,
 			 "HISTORY_LEN", 0, cpUnsigned, &_history_length,
 			 cpEnd);
-  
+
   if (res < 0)
     return res;
 
@@ -137,11 +137,11 @@ ACKRetrySender::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-ACKRetrySender::initialize(ErrorHandler *errh) 
+ACKRetrySender::initialize(ErrorHandler *errh)
 {
   _timer.initialize(this);
   ScheduleInfo::join_scheduler(this, &_task, errh);
-  
+
   check();
   return 0;
 }
@@ -152,7 +152,7 @@ ACKRetrySender::run_timer(Timer *)
   assert(_waiting_packet && !_timer.scheduled());
 
   Packet *p = _waiting_packet;
-  
+
   if (_num_tries >= _max_tries) {
     _history.push_back(tx_result_t(p->timestamp_anno(), _num_tries, false));
     while (_history.size() > (int) _history_length)
@@ -178,10 +178,10 @@ ACKRetrySender::check()
 {
   // check() should be called *before* most pushes() from element
   // functions, as each push may call back into the element.
-  
+
   // if there is a packet waiting, the timeout timer should be running
   assert(_waiting_packet ? _timer.scheduled() : !_timer.scheduled());
-  
+
   // no packet has been sent more than the max number of times
   assert(_num_tries <= _max_tries);
 
@@ -198,19 +198,19 @@ ACKRetrySender::add_handlers()
 }
 
 String
-ACKRetrySender::print_history(Element *e, void *) 
+ACKRetrySender::print_history(Element *e, void *)
 {
   ACKRetrySender *a = (ACKRetrySender *) e;
   StringAccum s;
-  for (ACKRetrySender::HistQ::const_iterator i = a->_history.begin(); 
+  for (ACKRetrySender::HistQ::const_iterator i = a->_history.begin();
        i != a->_history.end(); i++)
-    s << i->pkt_time << "\t" << i->num_tx << "\t" 
+    s << i->pkt_time << "\t" << i->num_tx << "\t"
       << (i->success ? "succ" : "fail") << "\n";
   return s.take_string();
 }
 
 String
-ACKRetrySender::print_summary(Element *e, void *) 
+ACKRetrySender::print_summary(Element *e, void *)
 {
   ACKRetrySender *a = (ACKRetrySender *) e;
   unsigned num_succ = 0;
@@ -220,7 +220,7 @@ ACKRetrySender::print_summary(Element *e, void *)
   unsigned min_tx = 0;
   int n = a->_history.size();
 
-  for (ACKRetrySender::HistQ::const_iterator i = a->_history.begin(); 
+  for (ACKRetrySender::HistQ::const_iterator i = a->_history.begin();
        i != a->_history.end(); i++) {
     if (sum_tx == 0)
       max_tx = min_tx = i->num_tx;
@@ -238,7 +238,7 @@ ACKRetrySender::print_summary(Element *e, void *)
   unsigned txc = 0;
   if (n > 0)
     txc = (1000 * sum_tx) / n;
- 
+
   StringAccum s;
   s << "packets: " << n << "\n"
     << "success: " << num_succ << "\n"

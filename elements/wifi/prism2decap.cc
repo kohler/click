@@ -72,7 +72,7 @@ Prism2Decap::simple_action(Packet *p)
 
 enum {H_DEBUG};
 
-static String 
+static String
 Prism2Decap_read_param(Element *e, void *thunk)
 {
   Prism2Decap *td = (Prism2Decap *)e;
@@ -83,7 +83,7 @@ Prism2Decap_read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 Prism2Decap_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -92,7 +92,7 @@ Prism2Decap_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -100,7 +100,7 @@ Prism2Decap_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 Prism2Decap::add_handlers()
 {

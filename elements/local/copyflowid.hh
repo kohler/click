@@ -29,7 +29,7 @@ private:
 public:
   CopyFlowID();
   ~CopyFlowID();
-  
+
   const char *class_name() const	{ return "CopyFlowID"; }
   const char *port_count() const	{ return "2/2"; }
   const char *processing() const	{ return AGNOSTIC; }

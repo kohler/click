@@ -49,7 +49,7 @@ LinearIPLookup::check() const
 {
     bool ok = true;
     //click_chatter("%s\n", ((LinearIPLookup*)this)->dump_routes().c_str());
-    
+
     // 'next' pointers are correct
     for (int i = 0; i < _t.size(); i++) {
 	if (!_t[i].real())
@@ -89,7 +89,7 @@ LinearIPLookup::check() const
 	ok = false;
     }
 #endif
-    
+
     return ok;
 }
 
@@ -139,7 +139,7 @@ LinearIPLookup::add_route(const IPRoute &r, bool allow_replace, IPRoute* replace
 #ifdef IP_RT_CACHE2
     _last_addr2 = IPAddress();
 #endif
-    
+
     check();
     return 0;
 }
@@ -162,7 +162,7 @@ LinearIPLookup::remove_route(const IPRoute& route, IPRoute* old_route, ErrorHand
 		int r = add_route(zero, false, 0, errh);
 		assert(r >= 0);
 	    }
-	    
+
 	    // get rid of caches
 	    _last_addr = IPAddress();
 #ifdef IP_RT_CACHE2

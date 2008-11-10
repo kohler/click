@@ -24,8 +24,8 @@ FilterTX::simple_action(Packet *p)
 {
     struct click_wifi_extra *ceha = WIFI_EXTRA_ANNO(p);
     struct click_wifi_extra *cehp = (struct click_wifi_extra *) p->data();
-  
-  
+
+
   if ((ceha->magic == WIFI_EXTRA_MAGIC && ceha->flags & WIFI_EXTRA_TX) ||
       (cehp->magic == WIFI_EXTRA_MAGIC && cehp->flags & WIFI_EXTRA_TX)) {
     if (noutputs() == 2) {
@@ -35,7 +35,7 @@ FilterTX::simple_action(Packet *p)
     }
     return 0;
   }
-  
+
   return p;
 }
 
@@ -47,7 +47,7 @@ FilterTX_read_param(Element *e, void *thunk)
 {
   FilterTX *td = (FilterTX *)e;
   switch ((uintptr_t) thunk) {
-  case H_DROPS: 
+  case H_DROPS:
     return String(td->_drops) + "\n";
   default:
     return String();

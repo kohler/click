@@ -102,14 +102,14 @@ RouterT::check() const
 	}
     }
     // note that nt_found might not equal nt, because of anonymous classes
-    
+
     // check element types
     HashTable<ElementClassT *, int> type_map(-1);
     for (int i = 0; i < nt; i++) {
 	assert(type_map[_declared_types[i].type] < 0);
 	type_map.set(_declared_types[i].type, i);
     }
-    
+
     // check element names
     for (StringMap::const_iterator iter = _element_name_map.begin(); iter.live(); iter++) {
 	String key = iter.key();
@@ -144,7 +144,7 @@ RouterT::check() const
 	if (_elements[i]->live()) {
 	    int ninputs = 0, noutputs = 0;
 	    const ElementT *e = element(i);
-	    
+
 	    int j = _first_conn[i][end_from];
 	    while (j >= 0) {
 		assert(j < _conn.size());
@@ -153,7 +153,7 @@ RouterT::check() const
 		    noutputs = _conn[j].from().port + 1;
 		j = _conn[j].next_from();
 	    }
-	    
+
 	    j = _first_conn[i][end_to];
 	    while (j >= 0) {
 		assert(j < _conn.size());
@@ -162,7 +162,7 @@ RouterT::check() const
 		    ninputs = _conn[j].to().port + 1;
 		j = _conn[j].next_to();
 	    }
-	    
+
 	    assert(ninputs == e->ninputs() && noutputs == e->noutputs());
 	}
 
@@ -292,7 +292,7 @@ void
 RouterT::add_declared_type(ElementClassT *ec, bool anonymous)
 {
     assert(ec);
-    if (anonymous || !ec->name()) 
+    if (anonymous || !ec->name())
 	_declared_types.push_back(ElementType(ec, _scope_cookie, -1));
     else if (locally_declared_type(ec->name()) != ec) {
 	int prev = _declared_type_map[ec->name()];
@@ -377,7 +377,7 @@ RouterT::add_connection(const PortT &hfrom, const PortT &hto,
 	i = _conn.size();
 	_conn.push_back(ConnectionT(hfrom, hto, landmark, first_from[end_from], first_to[end_to]));
     }
-    
+
     first_from[end_from] = first_to[end_to] = i;
 
     // maintain port counts
@@ -857,7 +857,7 @@ RouterT::free_element(ElementT *e)
 {
     assert(e->router() == this);
     int ei = e->eindex();
-    
+
     // first, remove bad connections from other elements' connection lists
     Vector<int> bad_from, bad_to;
     for (int c = _first_conn[ei][end_from]; c >= 0; c = _conn[c].next_from())
@@ -982,7 +982,7 @@ RouterT::expand_tunnel(Vector<PortT> *port_expansions,
 
     const PortT &me = ports[which];
     ElementT *other_elt = (is_output ? me.element->tunnel_input() : me.element->tunnel_output());
-    
+
     // find connections from tunnel input
     Vector<PortT> connections;
     if (is_output)
@@ -1090,7 +1090,7 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 	for (int j = 0; j < v.size(); j++)
 	    add_connection(v[j], safe_ht, landmark);
     }
-    
+
     // kill elements with tunnel type
     // but don't kill floating tunnels (like input & output)
     for (int i = 0; i < nelements; i++)
@@ -1117,7 +1117,7 @@ RouterT::remove_compound_elements(ErrorHandler *errh, bool expand_vars)
 	    ve.define(_scope.name(i), cp_expand(_scope.value(i), ve), true);
 	else
 	    ve.define(_scope.name(i), String("$") + _scope.name(i), true);
-	 
+
     for (int i = 0; i < nelements; i++)
 	if (_elements[i]->live()) // allow deleted elements
 	    ElementClassT::expand_element(_elements[i], this, String(), ve, errh);

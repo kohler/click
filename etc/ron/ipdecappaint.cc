@@ -50,7 +50,7 @@ IPDecapPaint::simple_action(Packet *p)
 
   // pull off first header and annotation byte
   p->pull( (int)p->ip_header_offset() + p->ip_header_length() + 1);
-  
+
   return p;
 }
 static String

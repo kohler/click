@@ -61,8 +61,8 @@ CompareBlock::push(int, Packet *p)
 
 // HANDLERS
 int
-CompareBlock::fwd_weight_write_handler(const String &conf, Element *e, 
-    				       void *, ErrorHandler *errh)
+CompareBlock::fwd_weight_write_handler(const String &conf, Element *e,
+				       void *, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
@@ -80,8 +80,8 @@ CompareBlock::fwd_weight_write_handler(const String &conf, Element *e,
 }
 
 int
-CompareBlock::rev_weight_write_handler(const String &conf, Element *e, 
-    				       void *, ErrorHandler *errh)
+CompareBlock::rev_weight_write_handler(const String &conf, Element *e,
+				       void *, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
@@ -99,8 +99,8 @@ CompareBlock::rev_weight_write_handler(const String &conf, Element *e,
 }
 
 int
-CompareBlock::thresh_write_handler(const String &conf, Element *e, 
-    				   void *, ErrorHandler *errh)
+CompareBlock::thresh_write_handler(const String &conf, Element *e,
+				   void *, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);

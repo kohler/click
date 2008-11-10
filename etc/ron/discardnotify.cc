@@ -23,7 +23,7 @@
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 
-DiscardNotify::DiscardNotify() : 
+DiscardNotify::DiscardNotify() :
   Discard()
 {
 }
@@ -39,14 +39,14 @@ DiscardNotify::initialize(ErrorHandler *errh)
   int ok, i;
   Vector<Element *> upstream_queues;
   CastElementFilter filter("QueueNotify");
-  
+
   Discard::initialize(errh);
   _data_ready = false;
-  
+
   ok = router()->upstream_elements(this, 0, &filter, upstream_queues);
-  if (ok < 0) 
+  if (ok < 0)
     return errh->error("could not find upstream notify queues");
-  
+
   for(i=0; i<upstream_queues.size(); i++) {
     ((QueueNotify*) upstream_queues[i])->subscribe_notification(this);
   }
@@ -54,10 +54,10 @@ DiscardNotify::initialize(ErrorHandler *errh)
   return 0;
 }
 
-void 
+void
 DiscardNotify::notify(int signal)
-{  
-  if (signal == QueueNotify::NODATA) 
+{
+  if (signal == QueueNotify::NODATA)
     _data_ready = false;
   else if (signal == QueueNotify::DATAREADY){
     _data_ready = true;
@@ -72,7 +72,7 @@ DiscardNotify::run_task(Task *)
   Packet *p = input(0).pull();
   if (p)
     p->kill();
-  
+
   if (_data_ready)
     _task.fast_reschedule();
   return p != 0;

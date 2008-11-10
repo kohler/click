@@ -6,7 +6,7 @@
  * IncrementSeqNo([I<KEYWORDS>])
  *
  * =s Grid
- * =d 
+ * =d
  *
  * Store a 32-bit unsigned integer sequence number in packets, at a
  * specified offset.  The number is incremented with each packet that
@@ -36,7 +36,7 @@
  *
  * The next sequence number that will be written into a packet.
  *
- * =a 
+ * =a
  * InfiniteSource */
 
 #include <click/element.hh>
@@ -52,14 +52,14 @@ class IncrementSeqNo : public Element  {
   const char *class_name() const		{ return "IncrementSeqNo"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   void add_handlers();
 
   bool can_live_reconfigure() const		{ return true; }
-  
+
   Packet *simple_action(Packet *);
 
 private:

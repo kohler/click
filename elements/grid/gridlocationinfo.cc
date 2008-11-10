@@ -60,7 +60,7 @@ GridLocationInfo::logging_hook(Timer *, void *thunk) {
   // extended logging
   GridLocationInfo *l = (GridLocationInfo *) thunk;
   grid_location loc = l->get_current_location();
-  
+
   const int BUFSZ = 255;
   char buf[BUFSZ];
   int res = snprintf(buf, BUFSZ, "loc %s\n\n", loc.s().c_str());
@@ -96,7 +96,7 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
     return res;
 
   double lat = ((double) lat_int) / 1e5;
-  double lon = ((double) lon_int) / 1e5; 
+  double lon = ((double) lon_int) / 1e5;
   double h = ((double) h_int) / 1e3;
   if (lat > 90 || lat < -90)
     return errh->error("%s: latitude must be between +/- 90 degrees", name().c_str());
@@ -122,7 +122,7 @@ GridLocationInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _logging_timer.initialize(this);
   _logging_timer.schedule_after_msec(100);
-  
+
   return res;
 }
 
@@ -156,7 +156,7 @@ double
 GridLocationInfo::uniform()
 {
   double x;
-        
+
   x = (double)click_random() / 0x7fffffff;
   return(x);
 }
@@ -208,7 +208,7 @@ loc_read_handler(Element *f, void *)
 {
   GridLocationInfo *l = (GridLocationInfo *) f;
   grid_location loc = l->get_current_location();
-  
+
   const int BUFSZ = 255;
   char buf[BUFSZ];
   int res = snprintf(buf, BUFSZ, "%s (err=%hu good=%s seq=%u)\n", loc.s().c_str(),
@@ -217,7 +217,7 @@ loc_read_handler(Element *f, void *)
     click_chatter("GridLocationInfo read handler buffer too small");
     return String("");
   }
-  return String(buf);  
+  return String(buf);
 }
 
 
@@ -270,7 +270,7 @@ GridLocationInfo::set_new_dest(double v_lat, double v_lon)
   }
 
   double t = now();
-  
+
   _lat0 = xlat();
   _lon0 = xlon();
   _t0 = t;
@@ -279,11 +279,11 @@ GridLocationInfo::set_new_dest(double v_lat, double v_lon)
 }
 
 
-double 
+double
 grid_location::calc_range(const grid_location &l1, const grid_location &l2)
 {
   /* Assumes all angles are valid latitude or longitudes */
-  
+
   /*
    * Calculates distance between two 3-D locations by pretending the
    * curved surface of the earth is actually a flat plane.  We can
@@ -293,7 +293,7 @@ grid_location::calc_range(const grid_location &l1, const grid_location &l2)
    * bottom of a right triangle whose vertical side is the
    * difference in the heights of the two points.  This ought to be
    * pretty much accurate when points are close enough enough
-   * together when their heights are important.  
+   * together when their heights are important.
    */
 
   // convert degrees to radians
@@ -301,7 +301,7 @@ grid_location::calc_range(const grid_location &l1, const grid_location &l2)
   double l1_lon = l1.lon() * GRID_RAD_PER_DEG;
   double l2_lat = l2.lat() * GRID_RAD_PER_DEG;
   double l2_lon = l2.lon() * GRID_RAD_PER_DEG;
-  
+
   double diff_lon;
   if (sign(l1_lon) == sign(l2_lon))
     diff_lon = fabs(l1_lon - l2_lon);
@@ -311,12 +311,12 @@ grid_location::calc_range(const grid_location &l1, const grid_location &l2)
     else
       diff_lon = l1_lon - l2_lon;
   }
-  
+
   double sin_term = sin(l1_lat) * sin(l2_lat);
   double cos_term = cos(l1_lat) * cos(l2_lat);
   double cos_dl = cos(diff_lon);
-  double cos_g_c = sin_term + cos_term*cos_dl; 
-  
+  double cos_g_c = sin_term + cos_term*cos_dl;
+
   // linux precision issues?
 #define EPSILON 1.0e-7
   if ((cos_g_c + 1.0 <= EPSILON) ||
@@ -338,7 +338,7 @@ grid_location::calc_range(const grid_location &l1, const grid_location &l2)
     return -1; // bogus angles
   }
   double g_c_dist = acos(cos_g_c) * GRID_EARTH_RADIUS;
-  
+
   double dh = fabs(l1.h() - l2.h());
   double r_squared = dh*dh + g_c_dist*g_c_dist;
   return sqrt(r_squared);

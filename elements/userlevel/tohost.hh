@@ -22,7 +22,7 @@ CLICK_DECLS
  *
  * Hands packets to the ordinary Linux protocol stack.
  * Expects packets with Ethernet headers.
- * 
+ *
  * You should probably give Linux IP packets addressed to
  * the local machine (including broadcasts), and a copy
  * of each ARP reply.
@@ -41,14 +41,14 @@ CLICK_DECLS
  * =a
  *
  * FromHost.u, FromHost
- * 
+ *
  */
 
 class ToHost : public Element { public:
-  
+
     ToHost();
     ~ToHost();
-  
+
     const char *class_name() const	{ return "ToHost"; }
     const char *port_count() const	{ return PORTS_1_0; }
     const char *processing() const	{ return PUSH; }
@@ -65,7 +65,7 @@ class ToHost : public Element { public:
 
     int _fd;
     String _dev_name;
-    
+
 };
 
 CLICK_ENDDECLS

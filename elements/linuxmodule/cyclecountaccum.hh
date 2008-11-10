@@ -44,10 +44,10 @@ Resets C<count>, C<cycles>, and C<zero_count> counters to zero when written.
 #include <click/element.hh>
 
 class CycleCountAccum : public Element { public:
-  
+
     CycleCountAccum();
     ~CycleCountAccum();
-  
+
     const char *class_name() const	{ return "CycleCountAccum"; }
     const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return AGNOSTIC; }
@@ -59,14 +59,14 @@ class CycleCountAccum : public Element { public:
     Packet *pull(int);
 
   private:
-  
+
     uint64_t _accum;
     uint64_t _count;
     uint64_t _zero_count;
 
     static String read_handler(Element *, void *);
     static int reset_handler(const String &, Element*, void*, ErrorHandler*);
-  
+
 };
 
 #endif

@@ -77,7 +77,7 @@ RadixIPLookup::Radix::change(uint32_t addr, uint32_t naddr, int key, uint32_t ke
 	    if (_children[i1].child)
 		return _children[i1].child->change(addr, naddr, key, key_priority);
 	}
-	
+
 	while (i1 < i2) {
 	    if (_children[i1].key_priority <= key_priority) {
 		if ((_children[i1].key >= 0) != (key >= 0))
@@ -88,7 +88,7 @@ RadixIPLookup::Radix::change(uint32_t addr, uint32_t naddr, int key, uint32_t ke
 	    i1++;
 	}
     }
-    
+
     return this;
 }
 
@@ -148,7 +148,7 @@ RadixIPLookup::add_route(const IPRoute& route, bool set, IPRoute* old_route, Err
 	_default_key = found;
 	pprev = &_default_key;
     }
-    
+
     for (int32_t j = *pprev; j >= 0; j = *pprev)
 	if (route.addr == _v[j].addr && route.mask == _v[j].mask) {
 	    int r;

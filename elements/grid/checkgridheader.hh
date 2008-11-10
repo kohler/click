@@ -21,18 +21,18 @@ CLICK_DECLS
 class CheckGridHeader : public Element {
 
   int _drops;
-  
+
  public:
-  
+
   CheckGridHeader();
   ~CheckGridHeader();
-  
+
   const char *class_name() const		{ return "CheckGridHeader"; }
   const char *port_count() const		{ return "1/1-2"; }
   const char *processing() const		{ return PROCESSING_A_AH; }
-  
+
   int drops() const				{ return _drops; }
-  
+
   void add_handlers();
 
   Packet *simple_action(Packet *);

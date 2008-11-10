@@ -100,10 +100,10 @@ packets, not IP-in-Ethernet packets.
 FromDevice.u, ToDevice.u, KernelTap, ifconfig(8) */
 
 class KernelTun : public Element { public:
-  
+
     KernelTun();
     ~KernelTun();
-  
+
     const char *class_name() const	{ return "KernelTun"; }
     const char *port_count() const	{ return "0-1/1-2"; }
     const char *processing() const	{ return "a/h"; }
@@ -141,7 +141,7 @@ class KernelTun : public Element { public:
     unsigned _headroom;
     Task _task;
     NotifierSignal _signal;
-    
+
     bool _ignore_q_errs;
     bool _printed_write_err;
     bool _printed_read_err;
@@ -158,7 +158,7 @@ class KernelTun : public Element { public:
     int updown(IPAddress, IPAddress, ErrorHandler *);
 
     friend class KernelTap;
-    
+
 };
 
 CLICK_ENDDECLS

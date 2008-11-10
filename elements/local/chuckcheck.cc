@@ -68,7 +68,7 @@ String
 ChuckCheck::read_handler(Element *e, void *)
 {
     // XXX multiprocessors
-    
+
     ChuckCheck *cc = (ChuckCheck *)e;
     String str = String::make_garbage((1 + BUCKETS*4) * sizeof(unsigned));
     if (!str)

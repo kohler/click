@@ -105,23 +105,23 @@ Resets counters to zero when written.
 #include <click/notifier.hh>
 
 class ToDevice : public AnyTaskDevice { public:
-  
+
   ToDevice();
   ~ToDevice();
 
   static void static_initialize();
   static void static_cleanup();
-  
+
   const char *class_name() const	{ return "ToDevice"; }
   const char *port_count() const	{ return PORTS_1_0; }
   const char *processing() const	{ return PULL; }
-  
+
   int configure_phase() const		{ return CONFIGURE_PHASE_TODEVICE; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
   void add_handlers();
-  
+
   bool run_task(Task *);
 
   void reset_counts();
@@ -142,7 +142,7 @@ class ToDevice : public AnyTaskDevice { public:
   uint64_t _perfcnt2_clean;
   uint64_t _perfcnt2_freeskb;
   uint64_t _perfcnt2_queue;
-  uint32_t _activations; 
+  uint32_t _activations;
 #endif
   uint32_t _runs;
   uint32_t _pulls;
@@ -160,16 +160,16 @@ class ToDevice : public AnyTaskDevice { public:
 #else
   bool polling() const			{ return false; }
 #endif
-  
+
  private:
 
   unsigned _burst;
   int _dev_idle;
   NotifierSignal _signal;
   bool _no_pad;
-  
+
   int queue_packet(Packet *p);
-  
+
 };
 
 #endif

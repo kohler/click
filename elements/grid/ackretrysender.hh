@@ -24,7 +24,7 @@ CLICK_DECLS
  * expires, the packet is resent.  If the packet has been resent too
  * many times, it is pushed to output 1.  If output 1 is not
  * connected, it is dropped.
- * 
+ *
  * Keyword arguments are:
  *
  * =over 8
@@ -60,7 +60,7 @@ CLICK_DECLS
  * =h clear write-only
  * Clear out packet retry history.
  *
- * =a 
+ * =a
  * ACKResponder, ACKRetrySender2, ACKResponder2 */
 
 class ACKRetrySender : public Element {
@@ -89,7 +89,7 @@ private:
   unsigned int _history_length;
 
   struct tx_result_t {
-    tx_result_t(const Timestamp &t, unsigned n, bool s) 
+    tx_result_t(const Timestamp &t, unsigned n, bool s)
       : pkt_time(t), num_tx(n), success(s) { }
     Timestamp pkt_time;
     unsigned num_tx;

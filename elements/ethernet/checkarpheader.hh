@@ -66,22 +66,22 @@ class CheckARPHeader : public Element { public:
 
   CheckARPHeader();
   ~CheckARPHeader();
-  
+
     const char *class_name() const		{ return "CheckARPHeader"; }
     const char *port_count() const		{ return PORTS_1_1X2; }
     const char *processing() const		{ return PROCESSING_A_AH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   void add_handlers();
 
   Packet *simple_action(Packet *);
 
  private:
-  
+
   unsigned _offset;
-  
+
   bool _verbose : 1;
- 
+
   atomic_uint32_t _drops;
   atomic_uint32_t *_reason_drops;
 

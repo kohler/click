@@ -48,14 +48,14 @@ class RecycledSkbBucket { public:
   struct sk_buff *deq();
 
  private:
-  
+
   int _head;
   int _tail;
   struct sk_buff *_skbs[SIZE];
 
   static int next_i(int i)	{ return (i == SIZE - 1 ? 0 : i + 1); }
   friend class RecycledSkbPool;
-  
+
 };
 
 class RecycledSkbPool { public:
@@ -89,20 +89,20 @@ class RecycledSkbPool { public:
 #else
   int _pad[5];
 #endif
-  
+
   inline void lock();
   inline void unlock();
 
   struct sk_buff *allocate(unsigned headroom, unsigned size, int, int *);
   void recycle(struct sk_buff *);
 
-#if __MTCLICK__ 
+#if __MTCLICK__
   static int find_producer(int, int);
 #endif
-  
+
   friend struct sk_buff *skbmgr_allocate_skbs(unsigned, unsigned, int *);
   friend void skbmgr_recycle_skbs(struct sk_buff *);
-  
+
 };
 
 void
@@ -350,7 +350,7 @@ RecycledSkbPool::allocate(unsigned headroom, unsigned size, int want, int *store
     _allocated++;
 #endif
     if (!skb) {
-      printk("<1>oops, kernel could not allocate memory for skbuff\n"); 
+      printk("<1>oops, kernel could not allocate memory for skbuff\n");
       break;
     }
     skb_reserve(skb, headroom);

@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * pad.{cc,hh} -- 
+ * pad.{cc,hh} --
  * Eddie Kohler
  *
  * Copyright (c) 2004 Regents of the University of California

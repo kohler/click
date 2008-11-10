@@ -41,7 +41,7 @@ PingPong::configure(Vector<String> &conf, ErrorHandler *errh)
 			 cpEnd);
   if (res < 0)
     return res;
-  
+
   return res;
 }
 
@@ -61,9 +61,9 @@ PingPong::simple_action(Packet *p)
   grid_hdr *gh = (grid_hdr *) (eh + 1);
 
   switch (gh->type) {
-  case grid_hdr::GRID_NBR_ENCAP: 
+  case grid_hdr::GRID_NBR_ENCAP:
   case grid_hdr::GRID_LOC_REPLY:
-  case grid_hdr::GRID_ROUTE_PROBE: 
+  case grid_hdr::GRID_ROUTE_PROBE:
   case grid_hdr::GRID_ROUTE_REPLY: {
 #ifndef SMALL_GRID_HEADERS
     grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
@@ -78,12 +78,12 @@ PingPong::simple_action(Packet *p)
       nb->link_qual = htonl(s->qual);
       nb->link_sig = htonl(s->sig);
       nb->measurement_time.tv_sec = htonl(s->when.tv_sec);
-      nb->measurement_time.tv_usec = htonl(s->when.tv_usec);      
+      nb->measurement_time.tv_usec = htonl(s->when.tv_usec);
     }
     else
       click_chatter("PingPong: error!  unable to get signal strength or quality info for one-hop neighbor %s\n",
 		    IPAddress(nb->dst_ip).unparse().c_str());
-    
+
     nb->num_rx = 0;
     nb->num_expected = 0;
     nb->last_bcast.tv_sec = nb->last_bcast.tv_usec = 0;
@@ -107,7 +107,7 @@ PingPong::simple_action(Packet *p)
   default:
     ;
   }
-  
+
   return p;
 }
 

@@ -8,7 +8,7 @@
  *
  * =s counters
  * measures round trip cycles on a push or pull path
- * 
+ *
  * =d
  *
  * Measures the number of CPU cycles it takes for a push or pull to come back
@@ -28,10 +28,10 @@
  */
 
 class RTCycles : public Element { public:
-  
+
   RTCycles();
   ~RTCycles();
-  
+
   const char *class_name() const	{ return "RoundTripCycleCount"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
@@ -39,10 +39,10 @@ class RTCycles : public Element { public:
   void push(int, Packet *p);
   Packet *pull(int);
   void add_handlers();
-  
+
     click_cycles_t _accum;
     click_cycles_t _npackets;
-  
+
 };
 
 #endif

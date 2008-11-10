@@ -46,25 +46,25 @@ The same as ACTIVE keyword.
 */
 
 class Unqueue : public Element { public:
-  
+
   Unqueue();
   ~Unqueue();
-  
+
   const char *class_name() const		{ return "Unqueue"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PULL_TO_PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
-  
+
   bool run_task(Task *);
 
   static String read_param(Element *e, void *);
   static int write_param(const String &, Element *, void *, ErrorHandler *);
 
  private:
-  
+
   bool _active;
   int32_t _burst;
   unsigned _count;

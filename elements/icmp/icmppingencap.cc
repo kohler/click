@@ -58,7 +58,7 @@ ICMPPingEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 	    errh->message("(Try passing the configuration through `click-align'.)");
     }
 #endif
-    
+
     return 0;
 }
 

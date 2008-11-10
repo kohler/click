@@ -454,7 +454,7 @@ HashTableTest::initialize(ErrorHandler *errh)
 
     h.erase("Foo");
     h.erase("Anne Fuckfuckabeth Fuckfield");
-    
+
     CHECK(h.size() == 3);
     CHECK(MAP_VALUE(h, "bar") == 2);
     CHECK(MAP_VALUE(h, "facker") == 3);
@@ -481,7 +481,7 @@ HashTableTest::initialize(ErrorHandler *errh)
 
 #if CLICK_USERLEVEL
     MAP_S2I map;
-    
+
     struct rusage ru0, ru1;
     Timestamp ts0, ts1;
     if (getrusage(RUSAGE_SELF, &ru0) < 0)
@@ -540,7 +540,7 @@ HashTableTest::initialize(ErrorHandler *errh)
 	CHECK(htx["Hello"] == 1);
 	CHECK(htx["Goodbye"] == 2);
     }
-    
+
     errh->message("All tests pass!");
     return 0;
 }

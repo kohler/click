@@ -20,10 +20,10 @@ CLICK_DECLS
  *
  * GridProxy tracks the last gateway a host sent an ip packet
  * through and when it receives packets for that host, it sends
- * then to the gateway it was last heard through using an 
+ * then to the gateway it was last heard through using an
  * ipip tunnel.
  */
-class GridProxy : public Element { 
+class GridProxy : public Element {
 
   class DstInfo {
   public:
@@ -40,16 +40,16 @@ class GridProxy : public Element {
   };
   typedef HashMap<IPAddress, DstInfo> ProxyMap;
   ProxyMap _map;
-  
+
   click_ip _iph;
   uatomic32_t _id;
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   bool _aligned;
 #endif
-  
+
   void reverse_mapping(Packet *p_in);
   void forward_mapping(Packet *p_in);
-  
+
 
 public:
     GridProxy();
@@ -66,11 +66,11 @@ public:
     void cleanup(CleanupStage);
 
     void push(int, Packet *);
-  
+
   static String static_print_stats(Element *e, void *);
   String print_stats();
 
-    
+
 };
 
 CLICK_ENDDECLS

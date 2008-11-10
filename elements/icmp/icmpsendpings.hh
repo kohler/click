@@ -114,10 +114,10 @@ available if ICMPPingSource had an input.
 ICMPPingEncap, ICMPPingResponder, ICMPPingRewriter */
 
 class ICMPPingSource : public Element { public:
-  
+
     ICMPPingSource();
     ~ICMPPingSource();
-  
+
     const char *class_name() const		{ return "ICMPPingSource"; }
     const char *port_count() const		{ return "0-1/1"; }
     const char *processing() const		{ return "h/a"; }
@@ -125,13 +125,13 @@ class ICMPPingSource : public Element { public:
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
     void add_handlers();
-  
+
     void run_timer(Timer *);
     void push(int, Packet *);
     Packet* pull(int);
-  
+
   private:
-  
+
     struct in_addr _src;
     struct in_addr _dst;
     int _count;
@@ -162,7 +162,7 @@ class ICMPPingSource : public Element { public:
     Packet* make_packet();
     static String read_handler(Element*, void*);
     static int write_handler(const String&, Element*, void*, ErrorHandler*);
-    
+
 };
 
 CLICK_ENDDECLS

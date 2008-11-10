@@ -47,7 +47,7 @@ UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     bool use_dst_anno = (conf.size() >= 3 && conf[2] == "DST_ANNO");
     if (use_dst_anno)
 	conf[2] = "0.0.0.0";
-  
+
     if (cp_va_kparse(conf, this, errh,
 		     "SRC", cpkP+cpkM, cpIPAddress, &_saddr,
 		     "SPORT", cpkP+cpkM, cpUDPPort, &_sport,
@@ -73,7 +73,7 @@ UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 	_checked_aligned = true;
     }
 #endif
-  
+
     return 0;
 }
 
@@ -112,7 +112,7 @@ UDPIPEncap::simple_action(Packet *p_in)
 #else
   ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 #endif
-  
+
   p->set_ip_header(ip, sizeof(click_ip));
 
   // set up UDP header
@@ -125,7 +125,7 @@ UDPIPEncap::simple_action(Packet *p_in)
     unsigned csum = click_in_cksum((unsigned char *)udp, len);
     udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
   }
-  
+
   return p;
 }
 

@@ -52,14 +52,14 @@ true.
 =a CheckIPHeader, CheckUDPHeader, CheckICMPHeader, MarkIPHeader */
 
 class CheckTCPHeader : public Element { public:
-  
+
   CheckTCPHeader();
   ~CheckTCPHeader();
-  
+
   const char *class_name() const		{ return "CheckTCPHeader"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   void add_handlers();
 
@@ -69,7 +69,7 @@ class CheckTCPHeader : public Element { public:
      Packet *pull(int); */
 
  private:
-  
+
   bool _verbose : 1;
   atomic_uint32_t _drops;
   atomic_uint32_t *_reason_drops;
@@ -81,10 +81,10 @@ class CheckTCPHeader : public Element { public:
     NREASONS
   };
   static const char *reason_texts[NREASONS];
-  
+
   Packet *drop(Reason, Packet *);
   static String read_handler(Element *, void *);
-  
+
 };
 
 CLICK_ENDDECLS

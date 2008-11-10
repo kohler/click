@@ -77,7 +77,7 @@ static ClickProvision *
 find_provision(const CLICK_NAME(String) &name, int add)
 {
     ClickProvision *pf = 0;
-    
+
     for (int i = 0; i < nprovisions; i++)
 	if (provisions[i].name == name)
 	    return &provisions[i];
@@ -221,7 +221,7 @@ click_compile_archive_file(const Vector<ArchiveElement> &archive, int ai,
 	package_file += ".ko";
     else if (target == "bsdmodule")
 	package_file += ".bo";
-  
+
     ContextErrorHandler cerrh
 	(errh, "While compiling package '" + package_file + "':");
 
@@ -244,7 +244,7 @@ click_compile_archive_file(const Vector<ArchiveElement> &archive, int ai,
     StringAccum compile_command;
     compile_command << *click_buildtool_prog << " makepackage " << extra_flags
 		    << " -C " << *tmpdir << " -t " << target;
-    
+
     // check for compile flags
     const char *ss = ae.data.begin();
     const char *send = ae.data.end();
@@ -307,7 +307,7 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     String suffix = ".uo", cxx_suffix = ".u.cc", target = "userlevel";
 #endif
     String package;
-  
+
     // check archive
     int ai = -1;
     if (archive && (ai = ArchiveElement::arindex(*archive, name + suffix)) >= 0) {
@@ -419,7 +419,7 @@ read_handler(Element *, void *thunk)
       default:
 	return "<error>\n";
     }
-    
+
     StringAccum sa;
     for (int i = 0; i < v.size(); i++)
 	sa << v[i] << '\n';
@@ -449,16 +449,16 @@ click_static_cleanup()
 {
     delete _click_lexer;
     _click_lexer = 0;
-    
+
     click_unexport_elements();
-    
+
     Router::static_cleanup();
     ErrorHandler::static_cleanup();
     cp_va_static_cleanup();
     NameInfo::static_cleanup();
     HashMap_ArenaFactory::static_cleanup();
 
-# ifdef HAVE_DYNAMIC_LINKING    
+# ifdef HAVE_DYNAMIC_LINKING
     delete tmpdir;
     delete click_buildtool_prog;
     tmpdir = click_buildtool_prog = 0;
@@ -513,7 +513,7 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
 	    delete router;
 	    return 0;
 	}
-    
+
     return router;
 }
 

@@ -35,7 +35,7 @@
 #include <clicknet/ip.h>
 
 class IPEncapPaint : public Element {
-  
+
   int _color; // color annotation
   int _ip_p; // IP protocol number field.
   struct in_addr _ip_src;
@@ -46,10 +46,10 @@ class IPEncapPaint : public Element {
   short _id;
 
  public:
-  
+
   IPEncapPaint();
   ~IPEncapPaint();
-  
+
   const char *class_name() const		{ return "IPEncapPaint"; }
   const char *port_count() const		{ return "1/1"; }
   const char *processing() const		{ return AGNOSTIC; }
@@ -59,7 +59,7 @@ class IPEncapPaint : public Element {
 
   Packet *simple_action(Packet *);
 
-  
+
 };
 
 #endif

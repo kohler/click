@@ -23,10 +23,10 @@ CLICK_DECLS
  */
 
 class PrioSched : public Element { public:
-  
+
     PrioSched();
     ~PrioSched();
-  
+
     const char *class_name() const	{ return "PrioSched"; }
     const char *port_count() const	{ return "-/1"; }
     const char *processing() const	{ return PULL; }
@@ -34,13 +34,13 @@ class PrioSched : public Element { public:
 
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
-  
+
     Packet *pull(int port);
 
   private:
-    
+
     NotifierSignal *_signals;
-  
+
 };
 
 CLICK_ENDDECLS

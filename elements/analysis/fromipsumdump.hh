@@ -162,7 +162,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     bool run_task(Task *);
     Packet *pull(int);
     void run_timer(Timer *timer);
-    
+
   private:
 
     enum { SAMPLING_SHIFT = 28 };
@@ -201,7 +201,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     IPFlowID _given_flowid;
 
     int read_binary(String &, ErrorHandler *);
-    
+
     static int sort_fields_compare(const void *, const void *, void *);
     void bang_data(const String &, ErrorHandler *);
     void bang_flowid(const String &, ErrorHandler *);
@@ -214,7 +214,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

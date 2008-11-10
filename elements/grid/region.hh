@@ -45,7 +45,7 @@ public:
   String s();
 
 private:
- 
+
   double _x;
   double _y;
   // empty region implied by negative height or width (_h, _w)

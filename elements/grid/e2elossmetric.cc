@@ -18,7 +18,7 @@
 #include <click/error.hh>
 #include "elements/grid/e2elossmetric.hh"
 #include "elements/grid/linkstat.hh"
-CLICK_DECLS 
+CLICK_DECLS
 
 E2ELossMetric::E2ELossMetric()
   : _ls(0), _twoway(false)
@@ -30,7 +30,7 @@ E2ELossMetric::~E2ELossMetric()
 }
 
 void *
-E2ELossMetric::cast(const char *n) 
+E2ELossMetric::cast(const char *n)
 {
   if (strcmp(n, "E2ELossMetric") == 0)
     return (E2ELossMetric *) this;
@@ -49,7 +49,7 @@ E2ELossMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 			 cpEnd);
   if (res < 0)
     return res;
-  if (_ls == 0) 
+  if (_ls == 0)
     errh->error("no LinkStat element specified");
   if (_ls->cast("LinkStat") == 0)
     return errh->error("LinkStat argument is wrong element type (should be LinkStat)");
@@ -63,7 +63,7 @@ E2ELossMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
   return m1.val() > m2.val();
 }
 
-GridGenericMetric::metric_t 
+GridGenericMetric::metric_t
 E2ELossMetric::get_link_metric(const EtherAddress &e, bool data_sender) const
 {
   unsigned tau_fwd, tau_rev;
@@ -98,7 +98,7 @@ E2ELossMetric::get_link_metric(const EtherAddress &e, bool data_sender) const
 
   assert(val <= 100);
 
-  return metric_t(val);      
+  return metric_t(val);
 }
 
 GridGenericMetric::metric_t
@@ -106,7 +106,7 @@ E2ELossMetric::append_metric(const metric_t &r, const metric_t &l) const
 {
   if (!r.good() || !l.good())
     return _bad_metric;
-  
+
   if (r.val() > 100)
     click_chatter("E2ELossMetric %s: append_metric WARNING: metric %u%% transmissions is too large for route metric",
 		  name().c_str(), r.val());

@@ -5,7 +5,7 @@
  * =c
  * LinkStat([I<KEYWORDS>])
  * =s Grid
- * Track broadcast loss rates. 
+ * Track broadcast loss rates.
  *
  * =d
  *
@@ -13,7 +13,7 @@
  * (not neccessarily sequential) sequence numbers of link probes from
  * each host, and calculates loss rates over the last TAU milliseconds
  * for each host.  If the output is connected, sends probe
- * packets every PERIOD milliseconds.  The source Ethernet 
+ * packets every PERIOD milliseconds.  The source Ethernet
  * address ETH must be specified if the second output is
  * connected.
  *
@@ -69,12 +69,12 @@ class LinkStat : public Element {
 public:
 
   // build & extract network byte order values
-  static unsigned uint_at(const unsigned char *c) 
+  static unsigned uint_at(const unsigned char *c)
   { return (c[0] << 24) | (c[1] << 16) | (c[2] << 8) | c[3]; }
-  
-  static unsigned ushort_at(const unsigned char *c) 
+
+  static unsigned ushort_at(const unsigned char *c)
   { return (c[0] << 8) | c[1]; }
-  
+
   static void write_uint_at(unsigned char *c, unsigned u) {
     c[0] = (u >> 24) & 0xff; c[1] = (u >> 16) & 0xff;
     c[2] = (u >>  8) & 0xff; c[3] = u & 0xff;
@@ -90,7 +90,7 @@ public:
   // the ethernet header.  num_links link_entries follow the
   // link_probe header.
 
-#define FUCKED_GCC_2_96  
+#define FUCKED_GCC_2_96
 #ifdef FUCKED_GCC_2_96
   enum {
     ETHERTYPE_LINKSTAT = 0x7ffe,
@@ -100,7 +100,7 @@ public:
   static const unsigned short ETHERTYPE_LINKSTAT = 0x7ffe;
   static const unsigned short ETHERTYPE_LINKSTAT2 = 0x7ffd;
 #endif
-  
+
   struct link_probe {
     static const int size = 20;
     static const int cksum_offset = 16;
@@ -113,20 +113,20 @@ public:
     unsigned short psz;       // total packet size, including eth hdr
 
     link_probe() : seq_no(0), period(0), num_links(0), tau(0), cksum(0), psz(0) { }
-    link_probe(unsigned s, unsigned p, unsigned n, unsigned t, unsigned short sz) 
+    link_probe(unsigned s, unsigned p, unsigned n, unsigned t, unsigned short sz)
       : seq_no(s), period(p), num_links(n), tau(t), cksum(0), psz(sz) { }
 
     // build link probe from wire format packet data
     link_probe(const unsigned char *);
 
     // write probe in wire format, return number of bytes written
-    int write(unsigned char *) const; 
+    int write(unsigned char *) const;
 
     // update cksum of packet data whose link_probe starts at D
     static void update_cksum(unsigned char *d);
     static unsigned short calc_cksum(const unsigned char *d);
   };
-  
+
   struct link_entry {
     static const int size = 8;
 
@@ -152,8 +152,8 @@ private:
 
   // record probes received from other hosts
   struct probe_t {
-    Timestamp when;  
-    unsigned seq_no;  
+    Timestamp when;
+    unsigned seq_no;
     probe_t(const Timestamp &t, unsigned int s) : when(t), seq_no(s) { }
   };
 
@@ -175,9 +175,9 @@ private:
     Timestamp received_at;
     unsigned  tau;
     outgoing_link_entry_t() { memset(this, 0, sizeof(*this)); }
-    outgoing_link_entry_t(const link_entry &l, const Timestamp &now, unsigned int t) 
+    outgoing_link_entry_t(const link_entry &l, const Timestamp &now, unsigned int t)
       : link_entry(l), received_at(now), tau(t) { }
-    outgoing_link_entry_t(const unsigned char *d, const Timestamp &now, unsigned int t) 
+    outgoing_link_entry_t(const unsigned char *d, const Timestamp &now, unsigned int t)
       : link_entry(d), received_at(now), tau(t) { }
   };
 
@@ -192,7 +192,7 @@ private:
   // _tau msecs.
   unsigned int count_rx(const EtherAddress &);
   unsigned int count_rx(const probe_list_t *);
-  
+
   // handlers
   static String read_window(Element *, void *);
   static String read_period(Element *, void *);
@@ -200,7 +200,7 @@ private:
   static int write_window(const String &, Element *, void *, ErrorHandler *);
   static int write_period(const String &, Element *, void *, ErrorHandler *);
   static int write_tau(const String &, Element *, void *, ErrorHandler *);
-  
+
   void add_bcast_stat(const EtherAddress &, const link_probe &);
 
   static void static_send_hook(Timer *, void *e) { ((LinkStat *) e)->send_hook(); }
@@ -218,7 +218,7 @@ private:
   // Get forward delivery rate R from this node to node ETH over
   // period TAU milliseconds, as recorded at time T.  R is a
   // percentage (0-100).  Return true iff we have data.
-  bool get_forward_rate(const EtherAddress &eth, unsigned int *r, unsigned int *tau, 
+  bool get_forward_rate(const EtherAddress &eth, unsigned int *r, unsigned int *tau,
 			Timestamp *t);
 
   // Get reverse delivery rate R from node ETH to this node over
@@ -230,12 +230,12 @@ private:
 
   LinkStat();
   ~LinkStat();
-  
+
   const char *class_name() const		{ return "LinkStat"; }
   const char *port_count() const		{ return "1/0-1"; }
   const char *processing() const		{ return PUSH; }
   const char *flow_code() const                 { return "x/y"; }
-  
+
   void add_handlers();
 
   int configure(Vector<String> &, ErrorHandler *);

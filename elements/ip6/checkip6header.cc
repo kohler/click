@@ -42,11 +42,11 @@ CheckIP6Header::~CheckIP6Header()
 int
 CheckIP6Header::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  
+
   if (conf.size() > 1)
     return errh->error("too many arguments to `CheckIP6Header([ADDRS])'");
- 
- Vector<String> ips; 
+
+ Vector<String> ips;
  // ips.push_back("0::0"); // this address is only bad if we are a router
  ips.push_back("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"); // bad IP6 address
 
@@ -55,7 +55,7 @@ CheckIP6Header::configure(Vector<String> &conf, ErrorHandler *errh)
     cp_spacevec(conf[0], words);
     IP6Address a;
     for (int j = 0; j < words.size(); j++) {
-      if (!cp_ip6_address(words[j], (unsigned char *)&a)) { 
+      if (!cp_ip6_address(words[j], (unsigned char *)&a)) {
 	return errh->error("expects IP6ADDRESS -a ");
       }
       for (int j = 0; j < ips.size(); j++) {
@@ -67,10 +67,10 @@ CheckIP6Header::configure(Vector<String> &conf, ErrorHandler *errh)
      repeat: ;
     }
   }
-  
+
   _n_bad_src = ips.size();
   _bad_src = new IP6Address [_n_bad_src];
-  
+
   for (int i = 0; i<_n_bad_src; i++) {
     _bad_src[i]= IP6Address(ips[i]);
   }
@@ -78,16 +78,16 @@ CheckIP6Header::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-void 
+void
 CheckIP6Header::drop_it(Packet *p)
 {
   if (_drops == 0)
     click_chatter("IP6 header check failed");
   _drops++;
-  
-  if (noutputs() == 2) 
+
+  if (noutputs() == 2)
     output(1).push(p);
-  else 
+  else
     p->kill();
 }
 
@@ -96,11 +96,11 @@ CheckIP6Header::simple_action(Packet *p)
 {
   const click_ip6 *ip = reinterpret_cast <const click_ip6 *>( p->data());
   struct IP6Address src;
-  
+
   // check if the packet is smaller than ip6 header
   if(p->length() < sizeof(click_ip6))
     goto bad;
-  
+
  // check version
   if(ip->ip6_v != 6)
     goto bad;
@@ -115,7 +115,7 @@ CheckIP6Header::simple_action(Packet *p)
    * broadcast addresses known to this router.
    */
    src=ip->ip6_src;
-   for(int i = 0; i < _n_bad_src; i++) {  
+   for(int i = 0; i < _n_bad_src; i++) {
      if(src == _bad_src[i])
        goto bad;
    }
@@ -123,17 +123,17 @@ CheckIP6Header::simple_action(Packet *p)
   /*
    * discard illegal destinations.
    * We will do this in the IP6 routing table.
-   * 
-   * 
+   *
+   *
    */
 
   p->set_ip6_header(ip);
 
-  // shorten packet according to IP6 payload length field 
-  if(ntohs(ip->ip6_plen) < (p->length()-40)) 
-    p->take(p->length() - 40 - ip->ip6_plen); 
+  // shorten packet according to IP6 payload length field
+  if(ntohs(ip->ip6_plen) < (p->length()-40))
+    p->take(p->length() - 40 - ip->ip6_plen);
   return(p);
-  
+
  bad:
   drop_it(p);
   return 0;

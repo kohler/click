@@ -35,12 +35,12 @@ IPMirror::simple_action(Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
   // new checksum is same as old checksum
-  
+
   click_ip *iph = p->ip_header();
   struct in_addr tmpa = iph->ip_src;
   iph->ip_src = iph->ip_dst;
   iph->ip_dst = tmpa;
-  
+
   // may mirror ports as well
   if ((iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP) && IP_FIRSTFRAG(iph) && (int)p->length() >= p->transport_header_offset() + 8) {
     click_udp *udph = p->udp_header();
@@ -54,7 +54,7 @@ IPMirror::simple_action(Packet *p_in)
       tcph->th_ack = seqn;
     }
   }
-  
+
   return p;
 }
 

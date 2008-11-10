@@ -68,10 +68,10 @@ EtherCount_read_param(Element *e, void *thunk)
   default:
     return String();
   }
-  
-}  
 
-static int 
+}
+
+static int
 EtherCount_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *)
 {
@@ -82,7 +82,7 @@ EtherCount_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
-	  
+
 void
 EtherCount::add_handlers()
 {

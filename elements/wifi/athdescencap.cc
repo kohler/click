@@ -57,22 +57,22 @@ AthdescEncap::simple_action(Packet *p)
 
   struct ar5212_desc *desc  = (struct ar5212_desc *) (p_out->data() + 8);
   click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p_out);
-  
+
   memset((void *)p_out->data(), 0, ATHDESC_HEADER_SIZE);
-  
+
   desc->xmit_power = ceh->power;
   desc->xmit_rate0 = dot11_to_ratecode(ceh->rate);
   if (ceh->max_tries > 0) {
     desc->xmit_tries0 = ceh->max_tries - 1;
   }
-  
+
   return p_out;
 }
 
 
 enum {H_DEBUG};
 
-static String 
+static String
 AthdescEncap_read_param(Element *e, void *thunk)
 {
   AthdescEncap *td = (AthdescEncap *)e;
@@ -83,7 +83,7 @@ AthdescEncap_read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 AthdescEncap_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -92,7 +92,7 @@ AthdescEncap_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -100,7 +100,7 @@ AthdescEncap_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 AthdescEncap::add_handlers()
 {

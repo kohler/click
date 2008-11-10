@@ -8,7 +8,7 @@ CLICK_DECLS
  * =c
  * ICMP6Error(IP6ADDR, TYPE, CODE)
  * =s ip6
- * 
+ *
  * =d
  * need to rewrite the following comments.
  * Generate an ICMP6 error or redirect packet, with specified TYPE and CODE,
@@ -53,7 +53,7 @@ class ICMP6Error : public Element {
 public:
   ICMP6Error();
   ~ICMP6Error();
-  
+
   const char *class_name() const		{ return "ICMP6Error"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
@@ -61,7 +61,7 @@ public:
   int initialize(ErrorHandler *errh);
 
   Packet *simple_action(Packet *);
-  
+
 private:
 
   IP6Address _src_ip;
@@ -73,7 +73,7 @@ private:
   bool unicast(const IP6Address &aa);
   bool valid_source(const IP6Address &aa);
   bool has_route_opt(const click_ip6 *ip);
-  
+
 };
 
 CLICK_ENDDECLS

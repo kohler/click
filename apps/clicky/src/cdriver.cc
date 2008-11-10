@@ -99,7 +99,7 @@ GIOChannel *csocket_cdriver::start_connect(IPAddress addr, uint16_t port, bool *
     // attach file descriptor
     GIOChannel *socket = g_io_channel_unix_new(fd);
     g_io_channel_set_encoding(socket, NULL, NULL);
-    
+
     // connect to port
     struct sockaddr_in sa;
     sa.sin_family = AF_INET;
@@ -183,7 +183,7 @@ gboolean csocket_cdriver::csocket_event(GIOCondition)
     _csocket_watch = (guint) -1;
     GatherErrorHandler *gerrh = _cr->error_handler();
     int gerrh_pos = gerrh->size();
-    
+
     if (_csocket_state == csocket_connecting) {
 	int r = do_fd_connected(fd, gerrh);
 	if (r < 0)
@@ -214,7 +214,7 @@ gboolean csocket_cdriver::csocket_event(GIOCondition)
 		gerrh->message("(Expected a greeting of 'Click::ControlSocket/1.x'; got '%s'.)", str);
 		return kill_with_dialog(gerrh, gerrh_pos, 0);
 	    }
-	    
+
 	    _csocket_state = csocket_connected;
 	    g_io_channel_set_buffered(_csocket, FALSE);
 	    do_read("config", String(), 0);

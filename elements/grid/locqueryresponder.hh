@@ -7,7 +7,7 @@
  * =s Grid
  * generates responses to Grid Location queries
  * =d
- * 
+ *
  * E and I are this node's ethernet and IP addresses, respectively.
  * Input should be Grid location query packets destined for us,
  * including the MAC header.  Produces a GRID_LOC_REPLY packet with
@@ -33,7 +33,7 @@ class LocQueryResponder : public Element {
  public:
   LocQueryResponder();
   ~LocQueryResponder();
-  
+
   const char *class_name() const		{ return "LocQueryResponder"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
@@ -41,7 +41,7 @@ class LocQueryResponder : public Element {
   int initialize(ErrorHandler *);
 
   Packet *simple_action(Packet *);
-  
+
 
 private:
   IPAddress _ip;

@@ -71,9 +71,9 @@ ICMPRewriter::rewrite_packet(WritablePacket *p, click_ip *embedded_iph,
   click_icmp *icmph = p->icmp_header();
 
   // XXX incremental checksums?
-  
+
   IPFlowID new_flow = mapping->flow_id().rev();
-  
+
   // change IP header destination if appropriate
   if (IPAddress(iph->ip_dst) == flow.saddr()) {
     unsigned hlen = iph->ip_hl << 2;
@@ -83,7 +83,7 @@ ICMPRewriter::rewrite_packet(WritablePacket *p, click_ip *embedded_iph,
     if (_dst_anno)
       p->set_dst_ip_anno(new_flow.saddr());
   }
-  
+
   // don't bother patching embedded IP or UDP checksums
   embedded_iph->ip_src = new_flow.saddr();
   embedded_iph->ip_dst = new_flow.daddr();
@@ -104,9 +104,9 @@ ICMPRewriter::rewrite_ping_packet(WritablePacket *p, click_ip *embedded_iph,
   click_icmp *icmph = p->icmp_header();
 
   // XXX incremental checksums?
-  
+
   IPFlowID new_flow = mapping->flow_id().rev();
-  
+
   // change IP header destination if appropriate
   if (IPAddress(iph->ip_dst) == flow.saddr()) {
     unsigned hlen = iph->ip_hl << 2;
@@ -116,7 +116,7 @@ ICMPRewriter::rewrite_ping_packet(WritablePacket *p, click_ip *embedded_iph,
     if (_dst_anno)
       p->set_dst_ip_anno(new_flow.saddr());
   }
-  
+
   // don't bother patching embedded ICMP checksum
   embedded_iph->ip_src = new_flow.saddr();
   embedded_iph->ip_dst = new_flow.daddr();
@@ -137,7 +137,7 @@ ICMPRewriter::simple_action(Packet *p_in)
     p->kill();
     return 0;
   }
-  
+
   click_icmp *icmph = p->icmp_header();
   switch (icmph->icmp_type) {
 
@@ -161,24 +161,24 @@ ICMPRewriter::simple_action(Packet *p_in)
        // create flow ID
        click_udp *embedded_udph = reinterpret_cast<click_udp *>(reinterpret_cast<unsigned char *>(embedded_iph) + hlen);
        IPFlowID flow(embedded_iph->ip_src, embedded_udph->uh_sport, embedded_iph->ip_dst, embedded_udph->uh_dport);
-     
+
        IPRw::Mapping *mapping = 0;
        for (int i = 0; i < _maps.size() && !mapping; i++)
 	 mapping = _maps[i]->get_mapping(embedded_p, flow.rev());
        if (!mapping)
 	 goto unmapped;
-     
+
        rewrite_packet(p, embedded_iph, embedded_udph, flow, mapping);
-       
+
      } else if (embedded_p == IP_PROTO_ICMP) {
        // ICMP
        click_icmp_sequenced *embedded_icmph = reinterpret_cast<click_icmp_sequenced *>(reinterpret_cast<unsigned char *>(embedded_iph) + hlen);
-       
+
        int embedded_type = embedded_icmph->icmp_type;
        if (embedded_type != ICMP_ECHO && embedded_type != ICMP_ECHOREPLY)
 	 goto unmapped;
        bool ask_for_request = (embedded_type != ICMP_ECHO);
-       
+
        IPFlowID flow(embedded_iph->ip_src, embedded_icmph->icmp_identifier, embedded_iph->ip_dst, embedded_icmph->icmp_identifier);
 
        ICMPPingRewriter::Mapping *mapping = 0;
@@ -188,10 +188,10 @@ ICMPRewriter::simple_action(Packet *p_in)
 	 goto unmapped;
 
        rewrite_ping_packet(p, embedded_iph, embedded_icmph, flow, mapping);
-       
+
      } else
        goto unmapped;
-       
+
      return p;
    }
 

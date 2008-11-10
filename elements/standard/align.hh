@@ -28,22 +28,22 @@ class Align : public Element {
 
   int _offset;
   int _mask;
-  
+
  public:
-  
+
   Align();
   ~Align();
-  
+
   const char *class_name() const		{ return "Align"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
 
   Packet *smaction(Packet *);
   void push(int, Packet *);
   Packet *pull(int);
-  
+
 };
 
 CLICK_ENDDECLS

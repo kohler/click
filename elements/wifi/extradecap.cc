@@ -62,7 +62,7 @@ ExtraDecap::simple_action(Packet *p)
 
 enum {H_DEBUG};
 
-static String 
+static String
 ExtraDecap_read_param(Element *e, void *thunk)
 {
   ExtraDecap *td = (ExtraDecap *)e;
@@ -73,7 +73,7 @@ ExtraDecap_read_param(Element *e, void *thunk)
       return String();
     }
 }
-static int 
+static int
 ExtraDecap_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -82,7 +82,7 @@ ExtraDecap_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -90,7 +90,7 @@ ExtraDecap_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 ExtraDecap::add_handlers()
 {

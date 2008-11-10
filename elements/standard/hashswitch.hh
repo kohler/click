@@ -16,7 +16,7 @@ CLICK_DECLS
  * =e
  * This element expects IP packets and chooses the output
  * based on a hash of the IP destination address:
- * 
+ *
  *   HashSwitch(16, 4)
  * =a
  * Switch, RoundRobinSwitch, StrideSwitch, RandomSwitch
@@ -26,20 +26,20 @@ class HashSwitch : public Element {
 
   int _offset;
   int _length;
-  
+
  public:
-  
+
   HashSwitch();
   ~HashSwitch();
-  
+
   const char *class_name() const		{ return "HashSwitch"; }
   const char *port_count() const		{ return "1/1-"; }
   const char *processing() const		{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   void push(int port, Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

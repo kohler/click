@@ -58,7 +58,7 @@ class SetTimestampDelta : public Element { public:
     void add_handlers();
 
     Packet *simple_action(Packet *);
-    
+
   private:
 
     int _type;
@@ -66,7 +66,7 @@ class SetTimestampDelta : public Element { public:
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler*);
-    
+
 };
 
 CLICK_ENDDECLS

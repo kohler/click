@@ -103,17 +103,17 @@ Vector<void*>::reserve(size_type want)
     want = (_capacity > 0 ? _capacity * 2 : 4);
   if (want <= _capacity)
     return true;
-  
+
   void** new_l = (void **) CLICK_LALLOC(sizeof(void *) * want);
   if (!new_l)
     return false;
 #ifdef VALGRIND_MAKE_MEM_NOACCESS
   VALGRIND_MAKE_MEM_NOACCESS(new_l + _n, (want - _n) * sizeof(void *));
 #endif
-  
+
   memcpy(new_l, _l, sizeof(void*) * _n);
   CLICK_LFREE(_l, sizeof(void *) * _capacity);
-  
+
   _l = new_l;
   _capacity = want;
   return true;
@@ -141,11 +141,11 @@ Vector<void*>::swap(Vector<void*> &x)
     void **l = _l;
     _l = x._l;
     x._l = l;
-    
+
     size_type n = _n;
     _n = x._n;
     x._n = n;
-    
+
     size_type cap = _capacity;
     _capacity = x._capacity;
     x._capacity = cap;

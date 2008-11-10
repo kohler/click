@@ -70,7 +70,7 @@ class ComparePackets : public Element { public:
     NotifierSignal _signal[2];
 
     bool _timestamp : 1;
-    
+
     uint32_t _ndiff;
     enum { D_LEN, D_DATA, D_TIMESTAMP, D_NETOFF, D_NETLEN, D_NETHDR,
 	   D_MORE_PACKETS_0, D_MORE_PACKETS_1, D_LAST };

@@ -96,7 +96,7 @@ html_unquote(const char *x, const char *end)
 	html_entities.set("&lt", "<");
 	html_entities.set("&gt", ">");
     }
-    
+
     StringAccum sa;
     while (x < end) {
 	if (*x == '&') {
@@ -138,7 +138,7 @@ process_tag(const char *x, String &tag, HashTable<String, String> &attrs,
 	x++;
     tag = String(tag_start, x - tag_start).lower();
     ended = false;
-    
+
     // process attributes
     while (1) {
 	while (isspace((unsigned char) *x))
@@ -174,7 +174,7 @@ process_tag(const char *x, String &tag, HashTable<String, String> &attrs,
 	    /* nada */;
 	const char *value_start;
 	bool bump;
-	
+
 	if (*x == '\'') {
 	    value_start = x + 1;
 	    for (x++; *x && *x != '\''; x++)
@@ -211,7 +211,7 @@ output_template_until_tag(const char *templ, StringAccum &sa,
     tag = String();
     attrs.clear();
     bool ended;
-    
+
     const char *x = templ;
     while (*x) {
 	if (x[0] == '<' && x[1] == '~') {

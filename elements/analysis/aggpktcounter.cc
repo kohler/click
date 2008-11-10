@@ -99,7 +99,7 @@ AggregatePacketCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
     String anno = String::make_stable("PACKET_NUMBER");
-    
+
     if (cp_va_kparse(conf, this, errh,
 		     "NOTIFIER", 0, cpElement, &e,
 		     "ANNO", 0, cpWord, &anno,
@@ -157,7 +157,7 @@ AggregatePacketCounter::find_flow(uint32_t agg)
 {
     if (agg == 0)
 	return 0;
-    
+
     int bucket = (agg & (NFLOWMAP - 1));
     Flow *prev = 0, *f = _flowmap[bucket];
     while (f && f->aggregate() != agg) {
@@ -178,7 +178,7 @@ AggregatePacketCounter::find_flow(uint32_t agg)
 	f->set_next(_flowmap[bucket]);
 	_flowmap[bucket] = f;
     }
-    
+
     return f;
 }
 

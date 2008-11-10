@@ -34,14 +34,14 @@ class cdiagram : public rectangle { public:
     static void export_pdf(const char *filename, crouter *cr,
 			   point page_size, point margin, double scale,
 			   bool multipage);
-    
+
     void export_pdf(const char *filename, bool eps,
 		    crouter *cr, unsigned generation,
 		    point page_size, point margin, double scale,
 		    bool multipage);
-    
+
   private:
-    
+
     delt *_relt;
     rect_search<dwidget> _rects;
     HashTable<String, delt *> _elt_map;
@@ -56,7 +56,7 @@ class wdiagram { public:
     wmain *main() const {
 	return _rw;
     }
-    
+
     delt *elt(const String &ename) const {
 	return (_cdiagram ? _cdiagram->elt(ename) : 0);
     }
@@ -76,7 +76,7 @@ class wdiagram { public:
     bool visible() const {
 	return GTK_WIDGET_VISIBLE(_widget);
     }
-    
+
     inline void redraw();
     inline void redraw(rectangle r);
 
@@ -96,9 +96,9 @@ class wdiagram { public:
     rectangle canvas_to_window(const rectangle &r) const;
 
     void export_diagram(const char *filename, bool eps);
-    
+
     enum { c_element = 0, c_main = 9, c_hand = 10, ncursors = 11 };
-    
+
   private:
 
     wmain *_rw;
@@ -111,7 +111,7 @@ class wdiagram { public:
     int _scale_step;
     double _scale;
     double _penumbra;
-    
+
     int _origin_x;
     int _origin_y;
 
@@ -131,7 +131,7 @@ class wdiagram { public:
 	drag_hand_start,
 	drag_hand_dragging
     };
-    
+
     rectangle _dragr;
     int _drag_state;
 
@@ -156,9 +156,9 @@ class wdiagram { public:
 
     void notify_active_ports(String value);
     void notify_active_port_stats(String value);
-    
+
     friend class delt;
-    
+
 };
 
 

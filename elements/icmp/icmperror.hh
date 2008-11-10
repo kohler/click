@@ -78,7 +78,7 @@ CLICK_DECLS
  * =a DecIPTTL, FixIPSrc, IPGWOptions */
 
 class ICMPError : public Element { public:
-    
+
     ICMPError();
     ~ICMPError();
 
@@ -88,7 +88,7 @@ class ICMPError : public Element { public:
     int configure(Vector<String> &, ErrorHandler *);
 
     Packet *simple_action(Packet *);
-  
+
   private:
 
     IPAddress _src_ip;
@@ -102,7 +102,7 @@ class ICMPError : public Element { public:
     bool unicast(struct in_addr) const;
     bool valid_source(struct in_addr) const;
     static const uint8_t *valid_source_route(const click_ip *ip);
-  
+
 };
 
 CLICK_ENDDECLS

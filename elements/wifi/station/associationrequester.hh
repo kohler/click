@@ -14,7 +14,7 @@ AssociationRequester
 Sends 802.11 association requests when poked.
 
 
-=d 
+=d
 
 =h bssid read/write
 The bssid to associate to
@@ -38,14 +38,14 @@ Sends an association request based on values of the handlers.
 =a BeaconScanner */
 
 class AssociationRequester : public Element { public:
-  
+
   AssociationRequester();
   ~AssociationRequester();
 
   const char *class_name() const	{ return "AssociationRequester"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
 

@@ -62,7 +62,7 @@ GridEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   _nb.dst_loc_good = false;
 #endif
   _nb.hops_travelled = 0;
-  
+
   return 0;
 }
 
@@ -77,7 +77,7 @@ GridEncap::simple_action(Packet *p_in)
 {
   int extra = sizeof(_eh) + sizeof(_gh) + sizeof(_nb);
   WritablePacket *p = p_in->push(extra);
-  if (!p) 
+  if (!p)
     return 0;
 
   _gh.total_len = htons(p->length() - sizeof(_eh));
@@ -86,7 +86,7 @@ GridEncap::simple_action(Packet *p_in)
   memcpy(p->data(), &_eh, sizeof(_eh));
   memcpy(p->data() + sizeof(_eh), &_gh, sizeof(_gh));
   memcpy(p->data() + sizeof(_eh) + sizeof(_gh), &_nb, sizeof(_nb));
-  
+
   return p;
 }
 

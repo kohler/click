@@ -12,7 +12,7 @@ CLICK_DECLS
  * =s ipsec
  * removes IPSec encapsulation
  * =d
- * 
+ *
  * Removes ESP header added by IPsecESPEncap. see RFC 2406. Does not perform
  * the optional anti-replay attack checks.
  *
@@ -23,13 +23,13 @@ class IPsecESPUnencap : public Element {
 public:
   IPsecESPUnencap();
   ~IPsecESPUnencap();
-  
+
   const char *class_name() const	{ return "IPsecESPUnencap"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int checkreplaywindow(SADataTuple * sa_data,unsigned long seq);
-  
+
   Packet *simple_action(Packet *);
 };
 

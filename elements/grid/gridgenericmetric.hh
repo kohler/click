@@ -11,9 +11,9 @@ class EtherAddress;
 class GridGenericMetric : public Element {
 
 public:
-  
+
   GridGenericMetric() { }
-  
+
   virtual ~GridGenericMetric() { }
 
   // either a link *or* route metric
@@ -25,7 +25,7 @@ public:
     metric_t(unsigned v, bool g = true) : _good(g), _val(v) { }
 
     unsigned val()  const { return _val;  }
-    bool     good() const { return _good; } 
+    bool     good() const { return _good; }
   };
 
   // Return true iff M1's metric value is `less than' M2's metric
@@ -56,7 +56,7 @@ public:
   // Most route metrics are commutative.  In this case, they can
   // implement prepend_metric by calling append_metric, since they
   // don't care in which order link metrics are combined.
-  
+
   // XXX I may be excessively zealous here.  Can you think of any
   // non-commutative route metric computation?  What about a
   // non-commutative route metric computation that can be done

@@ -60,16 +60,16 @@ class FromSimDevice : public Element {
 
   FromSimDevice();
   ~FromSimDevice();
-  
+
   const char *class_name() const	{ return "FromSimDevice"; }
   const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PUSH; }
-  
+
   int configure_phase() const		{ return CONFIGURE_PHASE_DEFAULT; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
-  
+
   String ifname() const			{ return _ifname; }
   int fd() const			{ return _fd; }
   int incoming_packet(int ifid,int ptype,const unsigned char* data,int len,

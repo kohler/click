@@ -93,7 +93,7 @@ ProcessingT::create(const String &compound_pcode, bool resolve_agnostics,
 {
     LocalErrorHandler lerrh(errh);
     ElementMap::push_default(_element_map);
-    
+
     // create pidx and elt arrays, warn about dead elements
     create_pidx(&lerrh);
     initial_processing(compound_pcode, &lerrh);
@@ -329,14 +329,14 @@ ProcessingT::check_processing(ErrorHandler *errh)
 	    int pt = _processing[end_to][offt];
 
 	    switch (pt & 7) {
-	
+
 	      case pagnostic:
 		if (pf != pagnostic) {
 		    _processing[end_to][offt] = pagnostic | (pf & 3);
 		    changed = true;
 		}
 		break;
-	
+
 	      case ppush:
 	      case ppull:
 	      case ppush + pagnostic:
@@ -352,7 +352,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 
 	      default:
 		assert(0);
-	
+
 	    }
 	}
 
@@ -406,10 +406,10 @@ ProcessingT::check_nports(const ElementT *e, const int *input_used, const int *o
 
     if (s == ends)		// no information about element; assume OK
 	return;
-    
+
     if (notify_nports_pair(s, ends, ninlo, ninhi) < 0)
 	goto parse_error;
-    
+
     if (s == ends)
 	s = s_in;
     else if (*s == '/')
@@ -599,7 +599,7 @@ ProcessingT::decorated_processing_code(const ElementT *e) const
 	else if (pin == ppush && pout == ppull)
 	    return dpcode_push_to_pull;
     }
-    
+
     // no optimization possible; just return the whole code
   create_code:
     StringAccum sa;
@@ -747,7 +747,7 @@ ProcessingT::debug_print_pidxes(const Bitvector &ports, bool isoutput,
 	    debug_errh->message("%s", sa.c_str());
     }
 }
-    
+
 void
 ProcessingT::follow_connections(const Bitvector &source, bool source_isoutput,
 				Bitvector &sink) const
@@ -836,7 +836,7 @@ ProcessingT::compound_processing_code() const
     ElementT *input = _router->element("input");
     ElementT *output = _router->element("output");
     assert(input && output && input->tunnel() && output->tunnel());
-    
+
     // read input and output codes
     StringAccum icode, ocode;
     for (int i = 0; i < input->noutputs(); i++) {
@@ -857,7 +857,7 @@ ProcessingT::compound_processing_code() const
 	icode << 'a';
     if (!ocode.length())
 	ocode << 'a';
-    
+
     icode << '/' << ocode;
     return icode.take_string();
 }
@@ -896,7 +896,7 @@ ProcessingT::compound_flow_code(ErrorHandler *errh) const
     const char *cur_code = "xyzabcdefghijklmnopqrstuvwXYZABCDEFGHIJKLMNOPQRSTUVW0123456789_";
     codeid.push_back(*cur_code++);
     for (int i = 1; i < ninputs; i++) {
-	
+
 	// look for flow codes common among all outputs with this code, and
 	// flow codes present in any output without this code
 	Bitvector common(ninputs, true);
@@ -921,7 +921,7 @@ ProcessingT::compound_flow_code(ErrorHandler *errh) const
 	    }
 	assert(*cur_code);
 	codeid.push_back(*cur_code++);
-	
+
       found: ;
     }
 

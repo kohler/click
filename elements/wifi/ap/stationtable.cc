@@ -33,7 +33,7 @@ StationTable::~StationTable()
 {
 }
 
-void 
+void
 StationTable::take_state(Element *e, ErrorHandler *)
 {
   StationTable *q = (StationTable *)e->cast("StationTable");
@@ -45,7 +45,7 @@ StationTable::take_state(Element *e, ErrorHandler *)
 
 enum {H_DEBUG};
 
-static String 
+static String
 StationTable_read_param(Element *e, void *thunk)
 {
   StationTable *td = (StationTable *)e;
@@ -56,7 +56,7 @@ StationTable_read_param(Element *e, void *thunk)
     return String();
   }
 }
-static int 
+static int
 StationTable_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -65,7 +65,7 @@ StationTable_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;

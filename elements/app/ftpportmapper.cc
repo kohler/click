@@ -63,7 +63,7 @@ FTPPortMapper::configure(Vector<String> &conf, ErrorHandler *errh)
   _pattern->use();
   if (_data_rewriter->notify_pattern(_pattern, errh) < 0)
     return -1;
-  
+
   if (_forward_port >= _data_rewriter->noutputs()
       || _reverse_port >= _data_rewriter->noutputs())
     return errh->error("port out of range for `%s'", _data_rewriter->declaration().c_str());
@@ -112,7 +112,7 @@ FTPPortMapper::simple_action(Packet *p)
       || (data[3] != 'T' && data[3] != 't')
       || data[4] != ' ')
     return p;
-  
+
   // parse the PORT command
   unsigned pos = 5;
   while (pos < len && data[pos] == ' ')
@@ -213,7 +213,7 @@ FTPPortMapper::simple_action(Packet *p)
   unsigned wp_tcp_len = wp->length() - wp->transport_header_offset();
   unsigned csum = click_in_cksum((unsigned char *)wp_tcph, wp_tcp_len);
   wp_tcph->th_sum = click_in_cksum_pseudohdr(csum, wp_iph, wp_tcp_len);
-  
+
   return wp;
 }
 

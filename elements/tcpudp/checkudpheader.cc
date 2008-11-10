@@ -49,17 +49,17 @@ CheckUDPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   bool verbose = false;
   bool details = false;
-  
+
   if (cp_va_kparse(conf, this, errh,
 		   "VERBOSE", 0, cpBool, &verbose,
 		   "DETAILS", 0, cpBool, &details,
 		   cpEnd) < 0)
     return -1;
-  
+
   _verbose = verbose;
   if (details)
     _reason_drops = new atomic_uint32_t[NREASONS];
-  
+
   return 0;
 }
 
@@ -72,7 +72,7 @@ CheckUDPHeader::drop(Reason reason, Packet *p)
 
   if (_reason_drops)
     _reason_drops[reason]++;
-  
+
   if (noutputs() == 2)
     output(1).push(p);
   else
@@ -87,7 +87,7 @@ CheckUDPHeader::simple_action(Packet *p)
   const click_ip *iph = p->ip_header();
   const click_udp *udph = p->udp_header();
   unsigned len, iph_len;
-  
+
   if (!p->has_network_header() || iph->ip_p != IP_PROTO_UDP)
     return drop(NOT_UDP, p);
 

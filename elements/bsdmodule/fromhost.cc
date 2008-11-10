@@ -83,7 +83,7 @@ FromHost::cleanup(CleanupStage)
 {
     if (!_inq)
 	return;
-    
+
     // Flush the receive queue.
     int s = splimp();
     struct ifqueue *q = _inq ;
@@ -113,13 +113,13 @@ FromHost::run_task(Task *)
         if (m == NULL) {
 	    return npq > 0;
 	}
-    
+
         // Got an mbuf, including the MAC header. Make it a real Packet.
         Packet *p = Packet::make(m);
         output(0).push(p);
         npq++;
     }
-#if CLICK_DEVICE_ADJUST_TICKETS 
+#if CLICK_DEVICE_ADJUST_TICKETS
     adjust_tickets(npq);
 #endif
     _task.fast_reschedule();

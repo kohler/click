@@ -26,9 +26,9 @@
 #include "ackretrysender2.hh"
 CLICK_DECLS
 
-ACKRetrySender2::ACKRetrySender2() 
-  : _timeout(0), _max_tries(0), 
-    _num_tries(0), _history_length(500), _waiting_packet(0), 
+ACKRetrySender2::ACKRetrySender2()
+  : _timeout(0), _max_tries(0),
+    _num_tries(0), _history_length(500), _waiting_packet(0),
     _verbose (true), _timer(this), _task(this),
     sum_tx(0), num_pkts(0), num_fail(0),
     max_txc(0), min_txc(0)
@@ -63,13 +63,13 @@ ACKRetrySender2::push(int port, Packet *p)
     p->kill();
     return;
   }
-  
+
   // ahhh, ACK was for us.
   add_stat(_waiting_packet->timestamp_anno(), _num_tries, true);
   _waiting_packet->kill();
   _waiting_packet = 0;
   _num_tries = 0;
-  _timer.unschedule();  
+  _timer.unschedule();
   p->kill();
 
   check();
@@ -84,7 +84,7 @@ ACKRetrySender2::run_task(Task *)
 
   if (_waiting_packet)
     return true;
-  
+
   Packet *p_in = input(0).pull();
   if (!p_in)
     return true;
@@ -122,7 +122,7 @@ ACKRetrySender2::configure(Vector<String> &conf, ErrorHandler *errh)
 			 "VERBOSE", 0, cpBool, &_verbose,
 			 "HISTORY_LEN", 0, cpUnsigned, &_history_length,
 			 cpEnd);
-  
+
   if (res < 0)
     return res;
 
@@ -130,18 +130,18 @@ ACKRetrySender2::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("TIMEOUT must be > 0");
   if (_max_tries == 0)
     return errh->error("MAX_TRIES must be > 0");
-  if (!_ip) 
+  if (!_ip)
     return errh->error("IP must be specified");
 
   return 0;
 }
 
 int
-ACKRetrySender2::initialize(ErrorHandler *errh) 
+ACKRetrySender2::initialize(ErrorHandler *errh)
 {
   _timer.initialize(this);
   ScheduleInfo::join_scheduler(this, &_task, errh);
-  
+
   check();
   return 0;
 }
@@ -152,7 +152,7 @@ ACKRetrySender2::run_timer(Timer *)
   assert(_waiting_packet && !_timer.scheduled());
 
   Packet *p = _waiting_packet;
-  
+
   if (_num_tries >= _max_tries) {
     add_stat(p->timestamp_anno(), _num_tries, false);
     _waiting_packet->kill();
@@ -176,10 +176,10 @@ ACKRetrySender2::check()
 {
   // check() should be called *before* most pushes() from element
   // functions, as each push may call back into the element.
-  
+
   // if there is a packet waiting, the timeout timer should be running
   assert(_waiting_packet ? _timer.scheduled() : !_timer.scheduled());
-  
+
   // no packet has been sent more than the max number of times
   assert(_num_tries <= _max_tries);
 
@@ -196,26 +196,26 @@ ACKRetrySender2::add_handlers()
 }
 
 String
-ACKRetrySender2::print_history(Element *e, void *) 
+ACKRetrySender2::print_history(Element *e, void *)
 {
   ACKRetrySender2 *a = (ACKRetrySender2 *) e;
   StringAccum s;
-  for (ACKRetrySender2::HistQ::const_iterator i = a->_history.begin(); 
+  for (ACKRetrySender2::HistQ::const_iterator i = a->_history.begin();
        i != a->_history.end(); i++)
-    s << i->pkt_time << "\t" << i->num_tx << "\t" 
+    s << i->pkt_time << "\t" << i->num_tx << "\t"
       << (i->success ? "succ" : "fail") << "\n";
   return s.take_string();
 }
 
 String
-ACKRetrySender2::print_summary(Element *e, void *) 
+ACKRetrySender2::print_summary(Element *e, void *)
 {
   ACKRetrySender2 *a = (ACKRetrySender2 *) e;
 
   unsigned txc = 0; // scale by 1000 to get fraction
   if (a->num_pkts > 0)
     txc = (1000 * a->sum_tx) / a->num_pkts;
- 
+
   StringAccum s;
   s << "packets: " << a->num_pkts << "\n"
     << "success: " << a->num_pkts - a->num_fail << "\n"
@@ -247,13 +247,13 @@ ACKRetrySender2::reset_stats(const String &, Element *e, void *, ErrorHandler *)
 }
 
 void
-ACKRetrySender2::add_stat(const Timestamp &t, unsigned num_tx, bool succ) 
+ACKRetrySender2::add_stat(const Timestamp &t, unsigned num_tx, bool succ)
 {
   _history.push_back(tx_result_t(t, num_tx, succ));
   while (_history.size() > (int) _history_length)
     _history.pop_front();
-  
-  if (num_pkts == 0) 
+
+  if (num_pkts == 0)
     max_txc = min_txc = num_tx;
   else {
     max_txc = (max_txc < num_tx) ? num_tx : max_txc;
@@ -262,7 +262,7 @@ ACKRetrySender2::add_stat(const Timestamp &t, unsigned num_tx, bool succ)
 
   num_pkts++;
   sum_tx += num_tx;
-  if (!succ) 
+  if (!succ)
     num_fail++;
 }
 

@@ -56,13 +56,13 @@ RoundRobinUnqueue::run_task(Task *)
 {
   int tries = 0;
   Packet *p_next = input(_next).pull();
-  
+
   while (p_next) {
     Packet *p = p_next;
     tries++;
     if (tries < _burst || _burst == 0) {
       p_next = input(_next).pull();
-    } else 
+    } else
       p_next = 0;
 #ifdef CLICK_LINUXMODULE
 #if __i386__ && HAVE_INTEL_CPU
@@ -76,10 +76,10 @@ RoundRobinUnqueue::run_task(Task *)
     output(_next).push(p);
     _packets++;
   }
- 
-  if (_next == noutputs()-1) 
+
+  if (_next == noutputs()-1)
     _next = 0;
-  else 
+  else
     _next++;
   _task.fast_reschedule();
   return true;

@@ -118,7 +118,7 @@ FromDevice::initialize(ErrorHandler *errh)
 {
     if (AnyDevice::initialize_keywords(errh) < 0)
 	return -1;
-    
+
     // check for duplicate readers
     if (ifindex() >= 0) {
 	void *&used = router()->force_attachment("device_reader_" + String(ifindex()));
@@ -148,7 +148,7 @@ FromDevice::initialize(ErrorHandler *errh)
 
     // set true queue size (now we can start receiving packets)
     _capacity = QSIZE;
-    
+
     return 0;
 }
 
@@ -162,7 +162,7 @@ FromDevice::cleanup(CleanupStage stage)
 	    unregister_net_in(&packet_notifier);
 #endif
     }
-    
+
     clear_device(&from_device_map);
 
     if (stage >= CLEANUP_INITIALIZED)
@@ -248,7 +248,7 @@ FromDevice::got_skb(struct sk_buff *skb)
 {
     if (!_active)
 	return 0;		// 0 means not handled
-    
+
     unsigned next = next_i(_tail);
 
     if (next != _head) { /* ours */
@@ -273,7 +273,7 @@ FromDevice::got_skb(struct sk_buff *skb)
 	_schinfo[_tail].enq_epoch = rt->driver_epoch();
 	_schinfo[_tail].enq_task_epoch = rt->driver_task_epoch();
 #endif
-	
+
 	_tail = next;
 	_task.reschedule();
 
@@ -285,7 +285,7 @@ FromDevice::got_skb(struct sk_buff *skb)
 	/* queue full, drop */
 	kfree_skb(skb);
 	_drops++;
-	
+
     } else // not yet initialized
 	return 0;
 
@@ -312,8 +312,8 @@ FromDevice::emission_report(int idx)
 	sa << " woke";
     if (_schinfo[idx].enq_task_scheduled)
 	sa << " tasksched";
-    
-    click_chatter("%s packet: %s", name().c_str(), sa.c_str()); 
+
+    click_chatter("%s packet: %s", name().c_str(), sa.c_str());
 }
 #endif
 

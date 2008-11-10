@@ -83,7 +83,7 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 			"HEADROOM", 0, cpUnsigned, &_headroom,
 			cpEnd) < 0)
 	return -1;
-    
+
 #if HAVE_LINUX_POLLING
     if (find_device(&poll_device_map, errh) < 0)
 	return -1;
@@ -104,7 +104,7 @@ PollDevice::initialize(ErrorHandler *errh)
 {
     if (AnyDevice::initialize_keywords(errh) < 0)
 	return -1;
-    
+
 #if HAVE_LINUX_POLLING
     // check for duplicate readers
     if (ifindex() >= 0) {
@@ -135,7 +135,7 @@ you include a ToDevice for the same device. Try adding\n\
 #endif
 
     reset_counts();
-    
+
 #else
     errh->warning("can't get packets: not compiled with polling extensions");
 #endif
@@ -204,11 +204,11 @@ PollDevice::run_task(Task *)
 
 # if CLICK_DEVICE_STATS
   if (got > 0 || _activations > 0) {
-    GET_STATS_RESET(low00, low10, time_now, 
+    GET_STATS_RESET(low00, low10, time_now,
 		    _perfcnt1_poll, _perfcnt2_poll, _time_poll);
-    if (got == 0) 
+    if (got == 0)
       _empty_polls++;
-    else 
+    else
       _activations++;
   }
 # endif
@@ -230,15 +230,15 @@ PollDevice::run_task(Task *)
 
 # if CLICK_DEVICE_STATS
     if (_activations > 0)
-      GET_STATS_RESET(low00, low10, time_now, 
+      GET_STATS_RESET(low00, low10, time_now,
 	              _perfcnt1_allocskb, _perfcnt2_allocskb, _time_allocskb);
 # endif
 
     nskbs = _dev->rx_refill(_dev, &new_skbs);
 
 # if CLICK_DEVICE_STATS
-    if (_activations > 0) 
-      GET_STATS_RESET(low00, low10, time_now, 
+    if (_activations > 0)
+      GET_STATS_RESET(low00, low10, time_now,
 	              _perfcnt1_refill, _perfcnt2_refill, _time_refill);
 # endif
 
@@ -253,7 +253,7 @@ PollDevice::run_task(Task *)
     skb = skb_list;
     skb_list = skb_list->next;
     skb->next = NULL;
- 
+
     if (skb_list) {
       // prefetch annotation area, and first 2 cache
       // lines that contain ethernet and ip headers.
@@ -269,8 +269,8 @@ PollDevice::run_task(Task *)
     if (skb->pkt_type == PACKET_HOST)
       skb->pkt_type |= PACKET_CLEAN;
 
-    Packet *p = Packet::make(skb); 
-   
+    Packet *p = Packet::make(skb);
+
 # ifndef CLICK_WARP9
     if (timestamp())
 	p->timestamp_anno().set_now();
@@ -288,7 +288,7 @@ PollDevice::run_task(Task *)
 
 # if CLICK_DEVICE_STATS
   if (_activations > 0) {
-    GET_STATS_RESET(low00, low10, time_now, 
+    GET_STATS_RESET(low00, low10, time_now,
 	            _perfcnt1_pushing, _perfcnt2_pushing, _push_cycles);
 #  if _DEV_OVRN_STATS_
     if ((_activations % 1024) == 0)
@@ -313,7 +313,7 @@ PollDevice::change_device(net_device *dev)
 
     if (dev_change) {
 	_task.strong_unschedule();
-    
+
 	if (dev && (!dev->poll_on || dev->polling < 0)) {
 	    click_chatter("%s: device '%s' does not support polling", declaration().c_str(), _devname.c_str());
 	    dev = 0;

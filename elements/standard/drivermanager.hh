@@ -60,7 +60,7 @@ following two scripts:
 
   (1)  s::Script(wait 1s, print "before", pause, print "after");
        Script(wait 0.5s, write s.step)
-  
+
   (2)  DriverManager(wait 1s, print "before", pause, print "after");
        Script(wait 0.5s, write stop)
 

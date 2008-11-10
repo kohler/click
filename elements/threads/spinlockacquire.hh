@@ -25,7 +25,7 @@ class SpinlockAcquire : public Element { public:
 
     int configure(Vector<String> &, ErrorHandler *);
 
-    Packet *simple_action(Packet *p)  	{ _lock->acquire(); return p; }
+    Packet *simple_action(Packet *p)	{ _lock->acquire(); return p; }
 
   private:
 

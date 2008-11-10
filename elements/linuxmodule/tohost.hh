@@ -98,7 +98,7 @@
  * SetPacketType, InfiniteSource */
 
 class ToHost : public AnyDevice { public:
-  
+
     ToHost();
     ~ToHost();
 
@@ -127,7 +127,7 @@ class ToHost : public AnyDevice { public:
     static String read_handler(Element *, void *);
 
     friend class ToHostSniffers;
-    
+
 };
 
 #endif

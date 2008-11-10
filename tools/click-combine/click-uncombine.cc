@@ -108,7 +108,7 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
       errh->error("RouterLink '%s' has strange configuration", link_name.c_str());
       continue;
     }
-    
+
     // check if this RouterLink involves the interesting component
     bool interesting = false, bad = false, subcomponent = false;
     for (int j = 0; !bad && j < words.size(); j += 2) {
@@ -156,10 +156,10 @@ static void
 mark_component(RouterT *r, String compname, Vector<int> &live)
 {
   assert(compname.back() == '/');
-  
+
   int nh = r->nconnections();
   const Vector<ConnectionT> &conn = r->connections();
-  
+
   // mark endpoints
   for (int i = 0; i < component_endpoints.size(); i++)
     live[component_endpoints[i]->eindex()] = 1;
@@ -235,7 +235,7 @@ remove_toplevel_component(String component, RouterT *r, const char *filename,
   component += "/";
   Vector<int> live(r->nelements(), 0);
   mark_component(r, component, live);
-  
+
   // remove everything not part of the component
   for (RouterT::iterator e = r->begin_elements(); e; e++)
     if (e->live() && !live[e->eindex()])
@@ -254,9 +254,9 @@ remove_toplevel_component(String component, RouterT *r, const char *filename,
 
   // fix nested RouterLinks
   frob_nested_routerlinks(r, component);
-  
+
   // exit if there have been errors
-  r->flatten(errh);  
+  r->flatten(errh);
   if (errh->nerrors() != 0)
     exit(1);
 
@@ -296,12 +296,12 @@ main(int argc, char **argv)
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case HELP_OPT:
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("click-uncombine (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2000 Massachusetts Institute of Technology\n\
@@ -310,7 +310,7 @@ There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
-      
+
      case ROUTER_OPT:
       if (router_file) {
 	p_errh->error("combined router specified twice");
@@ -345,19 +345,19 @@ particular purpose.\n");
       else
 	router_file = clp->vstr;
       break;
-      
+
      bad_option:
      case Clp_BadOption:
       short_usage();
       exit(1);
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
     }
   }
-  
+
  done:
   RouterT *r = read_router_file(router_file, errh);
   if (r)
@@ -372,7 +372,7 @@ particular purpose.\n");
     errh->fatal("%s: not created by 'click-combine' (no 'componentmap')", router_file);
   else if (!component)
     p_errh->fatal("no component specified");
-  
+
   // walk down one slash at a time
   String prefix;
   while (component) {
@@ -382,7 +382,7 @@ particular purpose.\n");
     component = suffix;
     prefix += component + "/";
   }
-  
+
   // open output file
   FILE *outf = stdout;
   if (output_file && strcmp(output_file, "-") != 0) {

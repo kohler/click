@@ -47,7 +47,7 @@ class AdaptiveRED : public RED { public:
     static const int ADAPTIVE_INTERVAL = 500;
     static const uint32_t ONE_HUNDREDTH = 655;
     static const uint32_t NINE_TENTHS = 58982;
-    
+
 };
 
 CLICK_ENDDECLS

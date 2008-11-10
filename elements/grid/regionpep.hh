@@ -21,30 +21,30 @@
 CLICK_DECLS
 
 class EstimateRouterRegion : public GridLocationInfo {
-  
+
 public:
-  
+
   EstimateRouterRegion();
   ~EstimateRouterRegion();
-  
+
   const char *class_name() const		{ return "EstimateRouterRegion"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   virtual void *cast(const char *);
   void run_timer(Timer *);
   void add_handlers();
   Packet *simple_action(Packet *p);
-  
+
   grid_location get_current_location(void);
   String s();
 
   bool _debug;
-  
+
 private:
-  
+
   IPAddress _my_ip;
   Timer _timer;
 
@@ -68,7 +68,7 @@ private:
   void externalize(pep_rgn_fix *);
   void internalize(pep_rgn_fix *);
   Packet *make_PEP();
-  double radio_range(grid_location); 
+  double radio_range(grid_location);
 };
 
 CLICK_ENDDECLS

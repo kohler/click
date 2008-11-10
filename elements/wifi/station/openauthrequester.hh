@@ -13,7 +13,7 @@ OpenAuthRequeser
 
 Sends 802.11 open authentication requests when poked.
 
-=d 
+=d
 
 =h bssid read/write
 The bssid to associate to
@@ -37,14 +37,14 @@ Sends an authentication request based on values of the handlers.
 =a BeaconScanner */
 
 class OpenAuthRequester : public Element { public:
-  
+
   OpenAuthRequester();
   ~OpenAuthRequester();
 
   const char *class_name() const	{ return "OpenAuthRequester"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PUSH; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
   void add_handlers();

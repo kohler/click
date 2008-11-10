@@ -17,7 +17,7 @@ class AdjacencyMatrix {
   AdjacencyMatrix &operator=(const AdjacencyMatrix &);
 
   void init_pattern() const;
-  
+
  public:
 
   AdjacencyMatrix(RouterT *);
@@ -30,7 +30,7 @@ class AdjacencyMatrix {
   bool connection_exists(int i, int j) const;
 
   bool next_subgraph_isomorphism(const AdjacencyMatrix *, Vector<ElementT *> &) const;
-  
+
 };
 
 bool check_subgraph_isomorphism(const RouterT *, const RouterT *, const Vector<ElementT *> &);

@@ -227,12 +227,12 @@ DynamicNameDB::sort()
 {
     if (_sorted == 100 || _names.size() == 0)
 	return;
-    
+
     Vector<int> permutation(_names.size(), 0);
     for (int i = 0; i < _names.size(); i++)
 	permutation[i] = i;
     click_qsort(permutation.begin(), permutation.size(), sizeof(int), namelist_sort_compar, _names.begin());
-    
+
     Vector<String> new_names(_names.size(), String());
     StringAccum new_values(_values.length());
     new_values.extend(_values.length());
@@ -372,7 +372,7 @@ NameInfo::namedb(uint32_t type, size_t vsize, const String &prefix, NameDB *inst
 	assert(closest->_value_size == vsize);
 	return closest;
     }
-    
+
     // prefix not found
     if (install == install_dynamic_sentinel())
 	install = new DynamicNameDB(type, prefix, vsize);
@@ -449,7 +449,7 @@ NameInfo::uninstalldb(NameDB *db)
 {
     if (!db->_installed)
 	return;
-    
+
     // This is an uncommon operation, so don't worry about its performance.
     NameInfo *ni = db->_installed;
     int m;
@@ -576,7 +576,7 @@ NameInfo::checkdb(NameDB *db, NameDB *parent, ErrorHandler *errh)
 	    goto found_in_namedbs;
     perrh.error("not in _namedbs");
   found_in_namedbs:
-    
+
     // check parent relationships
     if (db->_context_parent != parent)
 	perrh.error("bad parent (%p/%p)", db->_context_parent, parent);
@@ -589,7 +589,7 @@ NameInfo::checkdb(NameDB *db, NameDB *parent, ErrorHandler *errh)
 	perrh.error("parent DB[%x %s %p] has different type", parent->_type, parent->_context.c_str(), parent);
     if (parent && parent->_value_size != db->_value_size)
 	perrh.error("parent DB[%x %s %p] has different value size (%u/%u)", parent->_type, parent->_context.c_str(), parent, parent->_value_size, db->_value_size);
-    
+
     // check sibling relationships
     for (NameDB* sib = db->_context_sibling; sib; sib = sib->_context_sibling) {
 	int l1 = db->_context.length(), l2 = sib->_context.length();
@@ -601,7 +601,7 @@ NameInfo::checkdb(NameDB *db, NameDB *parent, ErrorHandler *errh)
 	if (sib->_value_size != db->_value_size)
 	    perrh.error("sibling DB[%x %s %p] has different value size (%u/%u)", sib->_type, sib->_context.c_str(), sib, sib->_value_size, db->_value_size);
     }
-    
+
     // check db itself
     db->check(&perrh);
 

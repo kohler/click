@@ -56,7 +56,7 @@ WifiFragment::push(int port, Packet *p)
 
   click_wifi *w = (click_wifi *) p->data();
   uint16_t seq = le16_to_cpu(*(u_int16_t *)w->i_seq) >> WIFI_SEQ_SEQ_SHIFT;
-  if (!_max_length || 
+  if (!_max_length ||
       p->length() <= sizeof(click_wifi) + _max_length) {
     if (_debug) {
       click_chatter("%{element}: no modificatoin\n",
@@ -64,8 +64,8 @@ WifiFragment::push(int port, Packet *p)
     }
     output(port).push(p);
     return;
-  } 
-  
+  }
+
   int num_frags = (p->length() - sizeof(click_wifi))  / _max_length;
   int last_len = (p->length() - sizeof(click_wifi))  % _max_length;
   if (last_len) {
@@ -90,8 +90,8 @@ WifiFragment::push(int port, Packet *p)
     Packet *p_out = Packet::make(sizeof(click_wifi) + frag_len);
     memcpy((void *) p_out->data(), p->data(), sizeof(click_wifi));
 
-    memcpy((void *) (p_out->data() + sizeof(click_wifi)), 
-	   p->data() + sizeof(click_wifi) + frag*_max_length, 
+    memcpy((void *) (p_out->data() + sizeof(click_wifi)),
+	   p->data() + sizeof(click_wifi) + frag*_max_length,
 	   frag_len);
     click_wifi *w_o = (click_wifi *) p_out->data();
     uint16_t seq_o = (seq << WIFI_SEQ_SEQ_SHIFT) | (((u_int8_t) frag) & WIFI_SEQ_FRAG_MASK);
@@ -99,7 +99,7 @@ WifiFragment::push(int port, Packet *p)
     if (frag != num_frags - 1) {
       w_o->i_fc[1] |= WIFI_FC1_MORE_FRAG;
     }
-				  
+
     output(port).push(p_out);
   }
   p->kill();
@@ -110,7 +110,7 @@ WifiFragment::push(int port, Packet *p)
 
 enum {H_DEBUG, };
 
-String 
+String
 WifiFragment::read_param(Element *e, void *thunk)
 {
   WifiFragment *td = (WifiFragment *)e;
@@ -121,7 +121,7 @@ WifiFragment::read_param(Element *e, void *thunk)
       return String();
     }
 }
-int 
+int
 WifiFragment::write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -130,7 +130,7 @@ WifiFragment::write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -138,7 +138,7 @@ WifiFragment::write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 WifiFragment::add_handlers()
 {

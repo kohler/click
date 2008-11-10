@@ -37,7 +37,7 @@ int
 RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int length;
-  
+
   if (cp_va_kparse(conf, this, errh,
 		   "LENGTH", cpkP+cpkM, cpInteger, &length,
 		   cpEnd) < 0)
@@ -51,7 +51,7 @@ RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 RandomSource::initialize(ErrorHandler *errh)
 {
-    if (output_is_push(0)) 
+    if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, errh);
     return 0;
 }
@@ -90,7 +90,7 @@ RandomSource::pull(int)
 void
 RandomSource::add_handlers()
 {
-  if (output_is_push(0)) 
+  if (output_is_push(0))
     add_task_handlers(&_task);
 }
 

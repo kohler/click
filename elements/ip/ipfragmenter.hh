@@ -54,15 +54,15 @@ class IPFragmenter : public Element { public:
 
   IPFragmenter();
   ~IPFragmenter();
-  
+
   const char *class_name() const		{ return "IPFragmenter"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PUSH; }
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   uint32_t drops() const			{ return _drops; }
   uint32_t fragments() const			{ return _fragments; }
-  
+
   void add_handlers();
 
   void push(int, Packet *);
@@ -77,7 +77,7 @@ class IPFragmenter : public Element { public:
 
   void fragment(Packet *);
   int optcopy(const click_ip *ip1, click_ip *ip2);
-  
+
 };
 
 CLICK_ENDDECLS

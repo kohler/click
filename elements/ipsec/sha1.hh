@@ -11,12 +11,12 @@ CLICK_DECLS
  * =s ipsec
  * verify SHA1 authentication digest.
  * =d
- * 
+ *
  * If first argument is 0, computes SHA1 authentication digest for ESP packet
  * per RFC 2404, 2406. If first argument is 1, verify SHA1 digest and remove
  * authentication bits.
- * 
- * =a IPsecESPEncap, IPsecDES, IPsecAES 
+ *
+ * =a IPsecESPEncap, IPsecDES, IPsecAES
  */
 
 class IPsecAuthSHA1 : public Element {
@@ -24,19 +24,19 @@ class IPsecAuthSHA1 : public Element {
 public:
   IPsecAuthSHA1();
   ~IPsecAuthSHA1();
-  
+
   const char *class_name() const	{ return "IPsecAuthSHA1"; }
   const char *port_count() const	{ return "1/-"; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   Packet *simple_action(Packet *);
   void add_handlers();
-  
+
   static String drop_handler(Element *e, void *thunk);
-  
+
 private:
 
   int _op;

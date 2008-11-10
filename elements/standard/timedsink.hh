@@ -18,18 +18,18 @@ CLICK_DECLS
  */
 
 class TimedSink : public Element { public:
-  
+
   TimedSink();
   ~TimedSink();
-  
+
   const char *class_name() const		{ return "TimedSink"; }
   const char *port_count() const		{ return PORTS_1_0; }
   const char *processing() const		{ return PULL; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
-  
+
   void run_timer(Timer *);
 
   private:
@@ -39,7 +39,7 @@ class TimedSink : public Element { public:
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

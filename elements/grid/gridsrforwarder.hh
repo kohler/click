@@ -18,9 +18,9 @@ public:
   const char *flow_code() const { return "x/x"; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  
+
   void push(int port, Packet *);
-  
+
 private:
   IPAddress _ip;
 

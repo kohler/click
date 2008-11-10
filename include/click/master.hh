@@ -269,7 +269,7 @@ Master::lock_timers()
 {
 #if CLICK_LINUXMODULE
     if (current != _timer_task)
-    	spin_lock(&_timer_lock);
+	spin_lock(&_timer_lock);
 #elif HAVE_MULTITHREAD
     _timer_lock.acquire();
 #endif

@@ -93,7 +93,7 @@ ToHost::initialize(ErrorHandler *errh)
 {
     if (AnyDevice::initialize_keywords(errh) < 0)
 	return -1;
-    
+
     // Avoid warnings about "device down" with FromHost devices -- FromHost
     // brings up its device during initialize().
     int r;
@@ -134,7 +134,7 @@ void
 ToHost::push(int port, Packet *p)
 {
     struct sk_buff *skb = p->skb();
-  
+
     // set device if specified
     if (_dev)
 	skb->dev = _dev;
@@ -156,7 +156,7 @@ ToHost::push(int port, Packet *p)
 #else
     skb->mac.raw = skb->data;
 #endif
-    
+
     // set skb->protocol
     if (_type == ARPHRD_NONE)
 	skb->protocol = __constant_htons(ETH_P_IP);

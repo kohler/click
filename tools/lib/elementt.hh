@@ -5,7 +5,7 @@
 #include "landmarkt.hh"
 
 struct ElementT {
-    
+
     int flags;
 
     ElementT();
@@ -14,7 +14,7 @@ struct ElementT {
 
     RouterT *router() const		{ return _owner; }
     int eindex() const			{ return _eindex; }
-    
+
     bool live() const			{ return _type; }
     bool dead() const			{ return !_type; }
     void full_kill();
@@ -23,17 +23,17 @@ struct ElementT {
     const String &name() const		{ return _name; }
     const char *name_c_str() const	{ return _name.c_str(); }
     bool anonymous() const		{ return _name && _name[0] == ';'; }
-    
+
     ElementClassT *type() const		{ return _type; }
     ElementClassT *resolve(const VariableEnvironment &env,
 			   VariableEnvironment *new_env,
 			   ErrorHandler *errh = 0) const;
     ElementClassT *resolved_type(const VariableEnvironment &env, ErrorHandler *errh = 0) const;
-    
+
     String type_name() const		{ return _type->name(); }
     String printable_type_name() const	{ return _type->printable_name(); }
     const char *type_name_c_str() const	{ return _type->printable_name_c_str(); }
-    
+
     void set_type(ElementClassT *);
     inline RouterT *resolved_router(const VariableEnvironment &env, ErrorHandler *errh = 0) const;
 
@@ -57,7 +57,7 @@ struct ElementT {
     int nports(bool isoutput) const	{ return isoutput ? _noutputs : _ninputs; }
     int ninputs() const			{ return _ninputs; }
     int noutputs() const		{ return _noutputs; }
-    
+
     inline String declaration() const;
     inline String reverse_declaration() const;
 
@@ -67,7 +67,7 @@ struct ElementT {
 
     static bool name_ok(const String &, bool allow_anon_names = false);
     static void redeclaration_error(ErrorHandler *, const char *type, String name, const String &landmark, const String &old_landmark);
-    
+
   private:
 
     int _eindex;
@@ -110,11 +110,11 @@ struct ElementT {
     }
 
     friend class RouterT;
-    
+
 };
 
 struct PortT {
-  
+
     ElementT *element;
     int port;
 
@@ -128,13 +128,13 @@ struct PortT {
     operator unspecified_bool_type() const {
 	return element != 0 ? &PortT::live : 0;
     }
-    
+
     bool live() const			{ return element != 0; }
     bool dead() const			{ return element == 0; }
     RouterT *router() const		{ return (element ? element->router() : 0); }
 
     int eindex() const			{ return (element ? element->eindex() : -1); }
-    
+
     int index_in(const Vector<PortT> &, int start = 0) const;
     int force_index_in(Vector<PortT> &, int start = 0) const;
 
@@ -145,7 +145,7 @@ struct PortT {
     String unparse_output() const {
 	return unparse(false);
     }
-    
+
     static void sort(Vector<PortT> &);
 
 };
@@ -178,7 +178,7 @@ class ConnectionT { public:
     int port(bool isoutput) const {
 	return _end[isoutput].port;
     }
-    
+
     const PortT &from() const		{ return end(end_from); }
     const PortT &to() const		{ return end(end_to); }
     ElementT *from_element() const	{ return element(end_from); }
@@ -196,7 +196,7 @@ class ConnectionT { public:
     }
     int next_from() const		{ return next(end_from); }
     int next_to() const			{ return next(end_to); }
-    
+
     String unparse() const;
     String unparse_end(bool isoutput) const {
 	return end(isoutput).unparse(isoutput);
@@ -209,7 +209,7 @@ class ConnectionT { public:
     int _next[2];
 
     friend class RouterT;
-    
+
 };
 
 

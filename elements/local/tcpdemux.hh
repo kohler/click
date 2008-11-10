@@ -14,7 +14,7 @@ CLICK_DECLS
  * demultiplexes TCP flows
  * =d
  *
- * for now, 
+ * for now,
  *
  * output 0 = SYN
  * output 1 = FIN | RST
@@ -31,7 +31,7 @@ private:
 public:
   TCPDemux();
   ~TCPDemux();
-  
+
   const char *class_name() const		{ return "TCPDemux"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PUSH; }
@@ -42,11 +42,11 @@ public:
 
   // add new flow to flow table; returns false if key already exists, true
   // otherwise. entry is not added to table in the former case
-  bool add_flow(IPAddress sa, unsigned short sp, 
+  bool add_flow(IPAddress sa, unsigned short sp,
                 IPAddress da, unsigned short dp, unsigned port);
 
   // remove flow from table; returns true if removed an entry, false otherwise
-  bool remove_flow(IPAddress sa, unsigned short sp, 
+  bool remove_flow(IPAddress sa, unsigned short sp,
                    IPAddress da, unsigned short dp);
 };
 

@@ -390,7 +390,7 @@ clickfs_fsync_body(struct clickfs_dirent *cde)
 
     if (cde->type == CLICKFS_DIRENT_HANDLE) {
 	const Handler *h = clickfs_int_get_handler(cde);
- 
+
 	if (cde->data.handle.rbuf == NULL && cde->data.handle.wbuf == NULL) {
 	    // empty write, prepare something.
 	    cde->data.handle.wbuf = new String("");
@@ -456,7 +456,7 @@ clickfs_readlink(struct vop_readlink_args *ap)
 
 int
 clickfs_fsync(struct vop_fsync_args *ap)
-{   
+{
     struct vnode *vp = ap->a_vp;
     struct clickfs_dirent *cde = VTOCDE(vp);
 

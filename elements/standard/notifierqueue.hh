@@ -76,14 +76,14 @@ class NotifierQueue : public SimpleQueue { public:
     void *cast(const char *);
 
     int configure(Vector<String> &conf, ErrorHandler *);
-    
+
     void push(int port, Packet *);
     Packet *pull(int port);
 
 #if NOTIFIERQUEUE_DEBUG
     void add_handlers();
 #endif
- 
+
   protected:
 
     enum { SLEEPINESS_TRIGGER = 9 };
@@ -97,7 +97,7 @@ class NotifierQueue : public SimpleQueue { public:
 #if NOTIFIERQUEUE_DEBUG
     static String read_handler(Element *, void *);
 #endif
-    
+
 };
 
 CLICK_ENDDECLS

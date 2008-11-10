@@ -30,7 +30,7 @@ CLICK_DECLS
 
 LinkTester::LinkTester() :
   _start_time(-1),
-  _timer(static_timer_hook, this), 
+  _timer(static_timer_hook, this),
   _curr_state(WAITING_TO_START),
   _iterations_done(0),
   _num_iters(1),
@@ -145,7 +145,7 @@ LinkTester::timer_hook()
   }
 }
 
-void 
+void
 LinkTester::handle_timer_waiting(const Timestamp &tv)
 {
   assert(_curr_state == WAITING_TO_START);
@@ -165,13 +165,13 @@ LinkTester::handle_timer_waiting(const Timestamp &tv)
     _curr_state = LISTENING;
     int listen_for = calc_listen_time() + calc_pad_time();
     _next_time = _start_time_tv + Timestamp::make_msec(listen_for);
-    
+
     assert(_next_time > tv);
     _timer.schedule_at(_next_time);
   }
 }
 
-void 
+void
 LinkTester::handle_timer_listening(const Timestamp &tv)
 {
   assert(_curr_state == LISTENING);
@@ -190,19 +190,19 @@ LinkTester::handle_timer_listening(const Timestamp &tv)
   handle_timer_bcast(tv);
 }
 
-void 
+void
 LinkTester::handle_timer_bcast(const Timestamp &tv)
 {
   assert(_curr_state == BCAST_1 || _curr_state == BCAST_2);
-  send_broadcast_packet((unsigned short) _bcast_packet_size, tv, 
-			_curr_state == BCAST_1, _bcast_packets_sent, 
+  send_broadcast_packet((unsigned short) _bcast_packet_size, tv,
+			_curr_state == BCAST_1, _bcast_packets_sent,
 			_iterations_done);
   _bcast_packets_sent++;
 
   // when would we like to send the next bcast packet?
   unsigned int delta = draw_random_msecs(_bcast_lambda);
   Timestamp new_next_time = _next_time + Timestamp::make_msec(delta);
-  
+
   // is there enough time left to send the next packet?
   if (new_next_time <= last_bcast_time(_iterations_done,
 				       _curr_state == BCAST_1)) {
@@ -229,7 +229,7 @@ LinkTester::handle_timer_bcast(const Timestamp &tv)
       else {
 	_iterations_done++;
 	if (_iterations_done >= _num_iters) {
-	  finish_experiment();	  
+	  finish_experiment();
 	  return;
 	}
 	else {
@@ -242,10 +242,10 @@ LinkTester::handle_timer_bcast(const Timestamp &tv)
 
   assert(_next_time > tv);
   _timer.schedule_at(_next_time);
-  return;    
+  return;
 }
- 
-void 
+
+void
 LinkTester::handle_timer_unicast(const Timestamp &tv)
 {
   assert(_curr_state == UNICAST);
@@ -270,9 +270,9 @@ LinkTester::handle_timer_unicast(const Timestamp &tv)
 }
 
 unsigned int
-LinkTester::calc_listen_time() 
+LinkTester::calc_listen_time()
 {
-  return calc_bcast_time() + calc_pad_time() + calc_unicast_time() 
+  return calc_bcast_time() + calc_pad_time() + calc_unicast_time()
     + calc_pad_time() + calc_bcast_time();
 }
 
@@ -344,7 +344,7 @@ LinkTester::send_unicast_packet(const Timestamp &tv,
 
   unsigned int data_sz = _packet_size - sizeof(click_ether) - sizeof(payload_t);
   if (data_sz > 0)
-    memcpy(p->data() + sizeof(click_ether) + sizeof(payload_t), 
+    memcpy(p->data() + sizeof(click_ether) + sizeof(payload_t),
 	   _data_buf, data_sz);
   output(0).push(p);
 }
@@ -356,7 +356,7 @@ LinkTester::send_broadcast_packet(unsigned short psz, const Timestamp &tv,
   assert(psz >= sizeof(click_ether) + sizeof(payload_t));
   WritablePacket *p = Packet::make(psz);
   click_ether *eh = (click_ether *) (p->data());
-  
+
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   memcpy(eh->ether_dhost, bcast_addr, 6);
   memcpy(eh->ether_shost, _src_eth.data(), 6);
@@ -373,13 +373,13 @@ LinkTester::send_broadcast_packet(unsigned short psz, const Timestamp &tv,
 
   unsigned int data_sz = psz - sizeof(click_ether) - sizeof(payload_t);
   if (data_sz > 0)
-    memcpy(p->data() + sizeof(click_ether) + sizeof(payload_t), 
+    memcpy(p->data() + sizeof(click_ether) + sizeof(payload_t),
 	   _data_buf, data_sz);
   output(0).push(p);
 }
 
 void
-LinkTester::finish_experiment() 
+LinkTester::finish_experiment()
 {
   click_chatter("DONE\n");
   router()->please_stop_driver();
@@ -391,12 +391,12 @@ LinkTester::init_random()
   int fd = open("/dev/urandom", O_RDONLY);
   if (fd == -1)
     return false;
-  
+
   unsigned long seed;
   int err = read(fd, &seed, sizeof(seed));
   if (err != sizeof(seed))
     return false;
-  
+
   close(fd);
   click_srandom(seed);
   return true;

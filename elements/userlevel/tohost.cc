@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * tohost.{cc,hh} -- element sends packets to Linux through the 
+ * tohost.{cc,hh} -- element sends packets to Linux through the
  * TUN Universal TUN/TAP module
  * John Bicket
  *
@@ -51,7 +51,7 @@ int
 ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     return cp_va_kparse(conf, this, errh,
-			"DEVNAME", cpkP+cpkM, cpString, &_dev_name, 
+			"DEVNAME", cpkP+cpkM, cpString, &_dev_name,
 			cpEnd);
 }
 
@@ -62,14 +62,14 @@ ToHost::initialize(ErrorHandler *errh)
     for (int ei = 0; ei < router()->nelements() && _fd < 0; ei++) {
 	Element *e = router()->element(ei);
 	FromHost *s = (FromHost *)e->cast("FromHost");
-	if (s && 
-	    s->dev_name() == _dev_name && 
+	if (s &&
+	    s->dev_name() == _dev_name &&
 	    s->fd() > 0) {
 	    _fd = s->fd();
 	    return 0;
 	}
     }
-    
+
     return errh->error("ToHost(%s) requires an initialized FromHost with the same dev_name",
 		       _dev_name.c_str());
 }
@@ -103,7 +103,7 @@ ToHost::push(int, Packet *p)
 
 enum {H_DEV_NAME};
 
-static String 
+static String
 ToHost_read_param(Element *e, void *thunk)
 {
   ToHost *td = (ToHost *)e;

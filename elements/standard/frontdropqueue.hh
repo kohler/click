@@ -48,18 +48,18 @@ When written, drops all packets in the Queue.
 */
 
 class FrontDropQueue : public NotifierQueue { public:
-  
+
   FrontDropQueue();
   ~FrontDropQueue();
-  
+
   const char *class_name() const		{ return "FrontDropQueue"; }
   void *cast(const char *);
-  
+
   int live_reconfigure(Vector<String> &, ErrorHandler *);
   void take_state(Element *, ErrorHandler *);
-  
+
   void push(int port, Packet *);
-  
+
 };
 
 CLICK_ENDDECLS

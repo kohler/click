@@ -79,7 +79,7 @@ ToDevice::static_cleanup()
 }
 
 inline void
-ToDevice::tx_wake_queue(net_device *dev) 
+ToDevice::tx_wake_queue(net_device *dev)
 {
     //click_chatter("%{element}::%s for dev %s\n", this, __func__, dev->name);
     _task.reschedule();
@@ -88,7 +88,7 @@ ToDevice::tx_wake_queue(net_device *dev)
 #if HAVE_CLICK_KERNEL_TX_NOTIFY
 extern "C" {
 static int
-tx_notifier_hook(struct notifier_block *nb, unsigned long val, void *v) 
+tx_notifier_hook(struct notifier_block *nb, unsigned long val, void *v)
 {
     struct net_device *dev = (struct net_device *)v;
     if (!dev)
@@ -96,7 +96,7 @@ tx_notifier_hook(struct notifier_block *nb, unsigned long val, void *v)
     to_device_map.lock(false);
     AnyDevice *es[8];
     int nes = to_device_map.lookup_all(dev, true, es, 8);
-    for (int i = 0; i < nes; i++) 
+    for (int i = 0; i < nes; i++)
 	((ToDevice *)(es[i]))->tx_wake_queue(dev);
     to_device_map.unlock(false);
     return 0;
@@ -133,7 +133,7 @@ ToDevice::initialize(ErrorHandler *errh)
 {
     if (AnyDevice::initialize_keywords(errh) < 0)
 	return -1;
-    
+
 #ifndef HAVE_CLICK_KERNEL
     errh->warning("not compiled for a Click kernel");
 #endif
@@ -171,7 +171,7 @@ void
 ToDevice::reset_counts()
 {
   _npackets = 0;
-  
+
   _busy_returns = 0;
   _too_short = 0;
   _runs = 0;
@@ -252,7 +252,7 @@ ToDevice::run_task(Task *)
     uint64_t time_now;
     SET_STATS(low00, low10, time_now);
 #endif
-    
+
 #if HAVE_LINUX_POLLING
     bool is_polling = (_dev->polling > 0);
     struct sk_buff *clean_skbs;
@@ -261,7 +261,7 @@ ToDevice::run_task(Task *)
     else
 	clean_skbs = 0;
 #endif
-  
+
     /* try to send from click */
     while (sent < _burst && (busy = netif_queue_stopped(_dev)) == 0) {
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
@@ -279,12 +279,12 @@ ToDevice::run_task(Task *)
 	_pull_cycles += click_get_cycles() - before_pull_cycles - CLICK_CYCLE_COMPENSATION;
 #endif
 
-	GET_STATS_RESET(low00, low10, time_now, 
+	GET_STATS_RESET(low00, low10, time_now,
 			_perfcnt1_pull, _perfcnt2_pull, _pull_cycles);
 
 	busy = queue_packet(p);
 
-	GET_STATS_RESET(low00, low10, time_now, 
+	GET_STATS_RESET(low00, low10, time_now,
 			_perfcnt1_queue, _perfcnt2_queue, _time_queue);
 
 	if (busy)
@@ -346,10 +346,10 @@ ToDevice::run_task(Task *)
     // we didn't just send any packets
 #if HAVE_CLICK_KERNEL_TX_NOTIFY
     bool reschedule = (!busy && (sent > 0 || _signal.active()));
-#else 
+#else
     bool reschedule = (busy || sent > 0 || _signal.active());
 #endif
-    
+
 #if HAVE_LINUX_POLLING
     if (is_polling) {
 	// 8.Dec.07: Do not recycle skbs until after unlocking the device, to
@@ -357,13 +357,13 @@ ToDevice::run_task(Task *)
 	if (clean_skbs) {
 # if CLICK_DEVICE_STATS
 	    if (_activations > 1)
-		GET_STATS_RESET(low00, low10, time_now, 
+		GET_STATS_RESET(low00, low10, time_now,
 				_perfcnt1_clean, _perfcnt2_clean, _time_clean);
 # endif
 	    skbmgr_recycle_skbs(clean_skbs);
 # if CLICK_DEVICE_STATS
 	    if (_activations > 1)
-		GET_STATS_RESET(low00, low10, time_now, 
+		GET_STATS_RESET(low00, low10, time_now,
 				_perfcnt1_freeskb, _perfcnt2_freeskb, _time_freeskb);
 # endif
 	}
@@ -383,7 +383,7 @@ ToDevice::run_task(Task *)
     // carrier; instead, rely on Linux's notifer_hook to wake us up again.
     if (busy && sent == 0 && !netif_carrier_ok(_dev))
 	reschedule = false;
-    
+
     if (reschedule)
 	_task.fast_reschedule();
     return sent > 0;
@@ -393,7 +393,7 @@ int
 ToDevice::queue_packet(Packet *p)
 {
     struct sk_buff *skb1 = p->skb();
-  
+
     /*
      * Ensure minimum ethernet packet size (14 hdr + 46 data).
      * I can't figure out where Linux does this, so I don't
@@ -418,7 +418,7 @@ ToDevice::queue_packet(Packet *p)
     // set the device annotation;
     // apparently some devices in Linux 2.6 require it
     skb1->dev = _dev;
-    
+
     int ret;
 #if HAVE_LINUX_POLLING
     if (_dev->polling > 0)
@@ -444,7 +444,7 @@ ToDevice::change_device(net_device *dev)
 
     if (dev_change)
 	_task.strong_unschedule();
-    
+
     set_device(dev, &to_device_map, true);
 
     if (dev_change && _dev)

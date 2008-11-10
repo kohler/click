@@ -97,12 +97,12 @@ main(int argc, char *argv[])
 
     // local styles
     String gtkrc_file = clickpath_find_file("clicky.gtkrc", "share/" PACKAGE, PACKAGE_DATA_DIR "/" PACKAGE);
-    // support for running before installing 
+    // support for running before installing
     if (!gtkrc_file && g_file_test("src/clicky", G_FILE_TEST_EXISTS))
 	gtkrc_file = clickpath_find_file("clicky.gtkrc", "", ".");
     if (gtkrc_file)
 	gtk_rc_add_default_file(gtkrc_file.c_str());
-    
+
     gtk_set_locale();
     bool have_gui = gtk_init_check(&argc, &argv);
     add_pixmap_directory(PACKAGE_DATA_DIR "/" PACKAGE "/pixmaps");
@@ -111,7 +111,7 @@ main(int argc, char *argv[])
     Clp_Parser *clp =
 	Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
     program_name = Clp_ProgramName(clp);
-    
+
     String css_text;
     Vector<String> wfiles;
     Vector<int> wtypes;
@@ -119,11 +119,11 @@ main(int argc, char *argv[])
     String pdf_file = "-";
     double pdf_scale = 2.5;
     bool pdf_multipage = false;
-    
+
     while (1) {
 	int opt = Clp_Next(clp);
 	switch (opt) {
-	    
+
 	  case VERSION_OPT:
 	    printf("clicky (Click) %s\n", CLICK_VERSION);
 	    printf("Copyright (c) 2008 Regents of the University of California\n\
@@ -193,17 +193,17 @@ particular purpose.\n");
 	    wfiles.push_back(clp->vstr);
 	    wtypes.push_back(2);
 	    break;
-      
+
 	  case Clp_BadOption:
 	    exit(1);
 	    break;
-      
+
 	  case Clp_Done:
 	    goto done;
-	    
+
 	}
     }
-  
+
   done:
     // check exit conditions
     if (!do_pdf && !have_gui) {
@@ -226,7 +226,7 @@ particular purpose.\n");
     uint16_t port;
     clicky::crouter *cr = 0;
     clicky::wmain *wm = 0;
-    
+
     for (int i = 0; i < wfiles.size(); i++) {
 	if (!do_pdf)
 	    cr = wm = new clicky::wmain;
@@ -238,7 +238,7 @@ particular purpose.\n");
 	GatherErrorHandler *gerrh = cr->error_handler();
 	cr->set_landmark(wtypes[i] == 1 ? "config" : wfiles[i]);
 	cr->set_ccss_text(css_text);
-	
+
 	if (wtypes[i] == 1)
 	    cr->set_config(wfiles[i], true);
 	else if (wtypes[i] == 2
@@ -263,7 +263,7 @@ particular purpose.\n");
 	    if (wm)
 		wm->set_save_file(wfiles[i], (bool) s);
 	}
-	
+
 	if (wm)
 	    wm->show();
     }

@@ -66,7 +66,7 @@ Unqueue2::run_task(Task *)
     Storage *s = (Storage*)_queue_elements[i]->cast("Storage");
     if (s) {
       int size = s->capacity()-s->size();
-      if (burst < 0 || size < burst) 
+      if (burst < 0 || size < burst)
 	burst = size;
     }
   }
@@ -78,14 +78,14 @@ Unqueue2::run_task(Task *)
 
   int sent = 0;
   Packet *p_next = input(0).pull();
-  
+
   while (p_next) {
     Packet *p = p_next;
     sent++;
     if (sent < burst || burst == 0) {
       p_next = input(0).pull();
     }
-    else 
+    else
       p_next = 0;
 #ifdef CLICK_LINUXMODULE
 #if __i386__ && HAVE_INTEL_CPU
@@ -99,7 +99,7 @@ Unqueue2::run_task(Task *)
     output(0).push(p);
     _packets++;
   }
-  
+
   _task.fast_reschedule();
   return sent > 0;
 }

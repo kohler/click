@@ -57,7 +57,7 @@ BandwidthMeter::configure(Vector<String> &conf, ErrorHandler *errh)
       return errh->error("rate %d too large (max %u)", i+1, max_value);
     vals[i] = (vals[i]<<_rate.scale()) / _rate.epoch_frequency();
   }
-  
+
   if (vals.size() == 1) {
     _meter1 = vals[0];
     _nmeters = 1;

@@ -13,7 +13,7 @@ CLICK_DECLS
 class GridGenericRouteTable : public Element {
 
 public:
-  
+
   GridGenericRouteTable() { }
 
   struct RouteEntry {
@@ -23,11 +23,11 @@ public:
     class grid_location  dest_loc;     // location of dest, as contained in its route ads
     bool                 loc_good;     // is location any good?
     unsigned short       loc_err;      // error in metres
-    
+
     class EtherAddress   next_hop_eth; // hardware address of next hop
     class IPAddress      next_hop_ip;  // IP address of next hop
-    unsigned char        next_hop_interface; // interface of next hop 
-    
+    unsigned char        next_hop_interface; // interface of next hop
+
   protected:
     unsigned int         _seq_no;
     unsigned char        _num_hops;
@@ -37,13 +37,13 @@ public:
     bool                 good()     const { return _num_hops != 0; }
     bool                 broken()   const { return !good(); }
 
-    RouteEntry(const IPAddress &dst, 
-	       bool lg, unsigned short le, const grid_location &l, 
+    RouteEntry(const IPAddress &dst,
+	       bool lg, unsigned short le, const grid_location &l,
 	       const EtherAddress &nhe, const IPAddress &nhi, unsigned char interface,
 	       unsigned int sn, unsigned char nh) :
-      dest_ip(dst), dest_loc(l), loc_good(lg), loc_err(le), 
+      dest_ip(dst), dest_loc(l), loc_good(lg), loc_err(le),
       next_hop_eth(nhe), next_hop_ip(nhi), next_hop_interface(interface),
-      _seq_no(sn), _num_hops(nh) 
+      _seq_no(sn), _num_hops(nh)
     { }
 
     RouteEntry() : loc_good(false), loc_err(0), next_hop_interface(0), _seq_no(0), _num_hops(0) { }
@@ -67,7 +67,7 @@ public:
   virtual unsigned get_number_direct_neigbors() {
     Vector<RouteEntry> v;
     get_all_entries(v);
-    
+
     // assume all direct neighbors are one-hop neighbors
     int num_nbrs = 0;
     for (int i = 0; i < v.size(); i++)
@@ -75,7 +75,7 @@ public:
 	num_nbrs++;
     return num_nbrs;
   }
-  
+
   virtual ~GridGenericRouteTable() { }
 };
 

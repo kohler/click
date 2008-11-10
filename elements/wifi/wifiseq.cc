@@ -90,7 +90,7 @@ WifiSeq::simple_action(Packet *p_in) {
 
 enum {H_DEBUG, H_SEQ, H_OFFSET, H_BYTES, H_SHIFT, H_RESET};
 
-String 
+String
 WifiSeq::read_param(Element *e, void *thunk)
 {
   WifiSeq *td = (WifiSeq *)e;
@@ -110,7 +110,7 @@ WifiSeq::read_param(Element *e, void *thunk)
   }
 }
 
-int 
+int
 WifiSeq::write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -119,7 +119,7 @@ WifiSeq::write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -127,7 +127,7 @@ WifiSeq::write_param(const String &in_s, Element *e, void *vparam,
 
   case H_SEQ: {    //debug
     u_int32_t seq;
-    if (!cp_unsigned(s, &seq)) 
+    if (!cp_unsigned(s, &seq))
       return errh->error("seq parameter must be unsigned");
     f->_seq = seq;
     break;
@@ -136,7 +136,7 @@ WifiSeq::write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 WifiSeq::add_handlers()
 {

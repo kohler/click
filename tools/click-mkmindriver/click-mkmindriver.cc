@@ -123,17 +123,17 @@ class Mindriver { public:
     void provide(const String&, ErrorHandler*);
     void require(const String&, ErrorHandler*);
     void add_source_file(const String&, ErrorHandler*);
-    
+
     void add_router_requirements(RouterT*, const ElementMap&, ErrorHandler*);
     bool add_traits(const Traits&, const ElementMap&, ErrorHandler*);
     bool resolve_requirement(const String& requirement, const ElementMap& emap, ErrorHandler* errh, bool complain = true);
     void print_elements_conf(FILE*, String package, const ElementMap&, const String &top_srcdir);
-    
+
     HashTable<String, int> _provisions;
     HashTable<String, int> _requirements;
     HashTable<String, int> _source_files;
     int _nrequirements;
-    
+
 };
 
 Mindriver::Mindriver()
@@ -259,7 +259,7 @@ bool
 Mindriver::resolve_requirement(const String& requirement, const ElementMap& emap, ErrorHandler* errh, bool complain)
 {
     LandmarkErrorHandler lerrh(errh, "resolving " + requirement);
-    
+
     if (_provisions.get(requirement) > 0)
 	return true;
 
@@ -268,7 +268,7 @@ Mindriver::resolve_requirement(const String& requirement, const ElementMap& emap
 	add_traits(emap.traits_at(try_name_emapi), emap, &lerrh);
 	return true;
     }
-  
+
     for (int i = 1; i < emap.size(); i++)
 	if (emap.traits_at(i).provides(requirement)) {
 	    add_traits(emap.traits_at(i), emap, &lerrh);
@@ -375,7 +375,7 @@ analyze_makefile(const String &directory, ErrorHandler *errh)
 	errh->error("%s lacks magic string\n(Does this directory have a Makefile for Click's %s driver?)", fn.c_str(), Driver::name(driver));
 	return String();
     }
-    
+
     int top_srcdir_pos = text.find_left("\ntop_srcdir := ");
     if (top_srcdir_pos < 0) {
 	errh->error("%s lacks top_srcdir variable", fn.c_str());
@@ -410,11 +410,11 @@ main(int argc, char **argv)
     bool extras = true;
 
     Mindriver md;
-  
+
     while (1) {
 	int opt = Clp_Next(clp);
 	switch (opt) {
-      
+
 	  case HELP_OPT:
 	    usage();
 	    exit(0);
@@ -430,7 +430,7 @@ There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
 	    exit(0);
 	    break;
-      
+
 	  case CLICKPATH_OPT:
 	    set_clickpath(clp->vstr);
 	    break;
@@ -438,7 +438,7 @@ particular purpose.\n");
 	  case KERNEL_OPT:
 	    driver = Driver::LINUXMODULE;
 	    break;
-      
+
 	  case USERLEVEL_OPT:
 	    driver = Driver::USERLEVEL;
 	    break;
@@ -460,7 +460,7 @@ particular purpose.\n");
 	case CHECK_OPT:
 	    check = !clp->negated;
 	    break;
-	    
+
 	  case ELEMENT_OPT: {
 	      Vector<String> elements;
 	      cp_spacevec(clp->vstr, elements);
@@ -474,7 +474,7 @@ particular purpose.\n");
 
 	  case EXTRAS_OPT:
 	    extras = !clp->negated;
-	    break; 
+	    break;
 
 	  case VERBOSE_OPT:
 	    verbose = !clp->negated;
@@ -498,13 +498,13 @@ particular purpose.\n");
 	    short_usage();
 	    exit(1);
 	    break;
-      
+
 	  case Clp_Done:
 	    goto done;
-      
+
 	}
     }
-  
+
   done:
     if (driver < 0)
 	driver = Driver::USERLEVEL;
@@ -514,11 +514,11 @@ particular purpose.\n");
 	md.require("Align", errh);
 	md.require("IPNameInfo", errh);
     }
-    
+
     ElementMap default_emap;
     if (!default_emap.parse_default_file(CLICK_DATADIR, errh))
 	default_emap.report_file_not_found(CLICK_DATADIR, false, errh);
-  
+
     for (int i = 0; i < router_filenames.size(); i++)
 	handle_router(md, router_filenames[i], default_emap, errh);
 
@@ -536,11 +536,11 @@ particular purpose.\n");
 	if (driver == Driver::USERLEVEL)
 	    md.require("ControlSocket", &lerrh);
     }
-  
+
     // add initial provisions
     default_emap.set_driver(driver);
     md.provide(Driver::requirement(driver), errh);
-    
+
     // all default provisions are stored in elementmap index 0
     md.add_traits(default_emap.traits_at(0), default_emap, errh);
 

@@ -21,18 +21,18 @@ CLICK_DECLS
 class SetIP6DSCP : public Element {
 
   uint32_t _dscp;
-  
+
  public:
-  
+
   SetIP6DSCP();
   ~SetIP6DSCP();
-  
+
   const char *class_name() const	{ return "SetIP6DSCP"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
 
   uint8_t dscp() const			{ return _dscp >> IP6_DSCP_SHIFT; }
-  
+
   int configure(const Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
   void add_handlers();
@@ -40,7 +40,7 @@ class SetIP6DSCP : public Element {
   inline Packet *smaction(Packet *);
   void push(int, Packet *p);
   Packet *pull(int);
-  
+
 };
 
 CLICK_ENDDECLS

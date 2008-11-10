@@ -53,17 +53,17 @@ struct RouterAlign {
   int iindex_port(int) const;
   int oindex_eindex(int) const;
   int oindex_port(int) const;
-  
+
   bool have_input();
   void have_output();
-  
+
   void want_input();
   bool want_output();
 
   void adjust();
-  
+
   void print(FILE *);
-  
+
 };
 
 RouterAlign::RouterAlign(RouterT *r, ErrorHandler *errh)
@@ -358,7 +358,7 @@ main(int argc, char **argv)
   const char *router_file = 0;
   bool file_is_expr = false;
   const char *output_file = 0;
-  
+
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
@@ -367,7 +367,7 @@ main(int argc, char **argv)
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("click-align (Click) %s\n", CLICK_VERSION);
       printf("Copyright (C) 1999-2000 Massachusetts Institute of Technology\n\
@@ -377,7 +377,7 @@ There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
-      
+
      case ROUTER_OPT:
      case EXPRESSION_OPT:
      router_file:
@@ -411,19 +411,19 @@ particular purpose.\n");
       }
       output_file = clp->vstr;
       break;
-      
+
      bad_option:
      case Clp_BadOption:
       short_usage();
       exit(1);
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
     }
   }
-  
+
   done:
     // read router
     ElementClassT::set_base_type_factory(class_factory);
@@ -486,7 +486,7 @@ particular purpose.\n");
 	do {
 	    ral.have_output();
 	} while (ral.have_input());
-    
+
 	// calculate desired alignment
 	RouterAlign want_ral(router, errh);
 	do {
@@ -551,7 +551,7 @@ particular purpose.\n");
 	do {
 	    ral.have_output();
 	} while (ral.have_input());
-    
+
 	// calculate adjusted alignment
 	RouterAlign want_ral(ral);
 	want_ral.adjust();
@@ -583,7 +583,7 @@ particular purpose.\n");
 	} while (ral.have_input());
 
 	bool changed = false;
-    
+
 	// skip redundant Aligns
 	for (RouterT::conn_iterator ci = router->begin_connections();
 	     ci != router->end_connections(); ++ci)
@@ -602,7 +602,7 @@ particular purpose.\n");
 
 	if (!changed)
 	    break;
-    
+
 	router->remove_duplicate_connections();
     }
 
@@ -626,7 +626,7 @@ particular purpose.\n");
 	} while (again);
 	router->remove_dead_elements();
     }
-    
+
     // make the AlignmentInfo element
     {
 	RouterAlign ral(router, errh);
@@ -660,7 +660,7 @@ particular purpose.\n");
   // warn if added aligns
   if (num_aligns_added > 0)
     errh->warning((num_aligns_added > 1 ? "added %d Align elements" : "added %d Align element"), num_aligns_added);
-  
+
   // write result
   if (write_router_file(router, output_file, errh) < 0)
     exit(1);

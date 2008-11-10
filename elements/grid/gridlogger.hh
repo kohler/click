@@ -21,8 +21,8 @@ CLICK_DECLS
  * =s Grid
  * Log Grid-related events.
  *
- * =d 
- * 
+ * =d
+ *
  * This element provides methods which other Grid components can call
  * to log significant protocol events.
  *
@@ -63,7 +63,7 @@ CLICK_DECLS
  */
 
 class GridLogger : public GridGenericLogger {
-  
+
   enum state_t {
     WAITING,
     RECV_AD,
@@ -75,7 +75,7 @@ class GridLogger : public GridGenericLogger {
   int _fd;
   String _fn;
   bool _log_full_ip;
-  
+
   unsigned char _buf[1024];
   size_t _bufptr; // index of next byte available in buf
 
@@ -158,12 +158,12 @@ class GridLogger : public GridGenericLogger {
       ; /* nothing */
     }
   }
-   
+
   void log_special_pkt(struct click_ip *ip) {
     bool special = false;
     if (ip->ip_p == IP_PROTO_UDP) {
       struct click_udp *udp = (struct click_udp *) (ip + 1);
-      if (udp->uh_dport == htons(8021)) { 
+      if (udp->uh_dport == htons(8021)) {
 	// ahh, it's an experiment packet, get the seqno
 	special = true;
 	unsigned char *data = (unsigned char *) (udp + 1);
@@ -195,7 +195,7 @@ public:
 
   bool open_log(const String &);
   void close_log();
-  bool log_is_open() { return _fd >= 0; } 
+  bool log_is_open() { return _fd >= 0; }
 
 private:
   // these must be distinct from the inherited reason_t values
@@ -217,8 +217,8 @@ private:
 
 public:
 
-  void log_sent_advertisement(unsigned seq_no, const Timestamp &when) { 
-    if (!check_state(WAITING)) 
+  void log_sent_advertisement(unsigned seq_no, const Timestamp &when) {
+    if (!check_state(WAITING))
       return;
     if (!check_space(1 + sizeof(seq_no) + sizeof(when)))
       return;
@@ -229,7 +229,7 @@ public:
   }
 
   void log_start_recv_advertisement(unsigned seq_no, unsigned ip, const Timestamp &when) {
-    if (!check_state(WAITING)) 
+    if (!check_state(WAITING))
       return;
     _state = RECV_AD;
     add_one_byte(BEGIN_RECV_CODE);
@@ -237,9 +237,9 @@ public:
     add_long(seq_no);
     add_timeval(when.timeval());
   }
-  
+
   void log_added_route(reason_t why, const GridGenericRouteTable::RouteEntry &r) {
-    if (!check_state(RECV_AD)) 
+    if (!check_state(RECV_AD))
       return;
     add_one_byte(RECV_ADD_ROUTE_CODE);
     add_one_byte(why);
@@ -250,7 +250,7 @@ public:
   }
 
   void log_added_route(reason_t why, const GridGenericRouteTable::RouteEntry &r, const unsigned extra) {
-    if (!check_state(RECV_AD)) 
+    if (!check_state(RECV_AD))
       return;
     add_one_byte(RECV_ADD_ROUTE_CODE_EXTRA);
     add_one_byte(why);
@@ -277,14 +277,14 @@ public:
   }
 
   void log_triggered_route(unsigned ip) {
-    if (!check_state(RECV_AD)) 
+    if (!check_state(RECV_AD))
       return;
     add_one_byte(RECV_TRIGGER_ROUTE_CODE);
     add_ip(ip);
   }
 
   void log_end_recv_advertisement() {
-    if (!check_state(RECV_AD)) 
+    if (!check_state(RECV_AD))
       return;
     _state = WAITING;
     add_one_byte(END_RECV_CODE);
@@ -292,7 +292,7 @@ public:
   }
 
   void log_start_expire_handler(const Timestamp &when) {
-    if (!check_state(WAITING)) 
+    if (!check_state(WAITING))
       return;
     _state = EXPIRE_HANDLER;
     add_one_byte(BEGIN_EXPIRE_CODE);
@@ -300,7 +300,7 @@ public:
   }
 
   void log_end_expire_handler() {
-    if (!check_state(EXPIRE_HANDLER)) 
+    if (!check_state(EXPIRE_HANDLER))
       return;
     _state = WAITING;
     add_one_byte(END_EXPIRE_CODE);
@@ -329,10 +329,10 @@ public:
 
   // assumes Grid packet
   void log_tx_err(const Packet *p, int err, const Timestamp &when) {
-    if (!check_state(WAITING)) 
+    if (!check_state(WAITING))
       return;
     struct click_ether *eh = (click_ether *) (p->data());
-     if (eh->ether_type != htons(ETHERTYPE_GRID)) 
+     if (eh->ether_type != htons(ETHERTYPE_GRID))
       return;
     add_one_byte(TX_ERR_CODE);
     add_timeval(when.timeval());
@@ -345,7 +345,7 @@ public:
     if (!check_state(WAITING))
       return;
     struct click_ether *eh = (click_ether *) (p->data());
-    if (eh->ether_type != htons(ETHERTYPE_GRID)) 
+    if (eh->ether_type != htons(ETHERTYPE_GRID))
       return;
     add_one_byte(NO_ROUTE_CODE);
     add_timeval(when.timeval());

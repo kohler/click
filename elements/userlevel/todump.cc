@@ -52,7 +52,7 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
 #if CLICK_NS
     bool per_node = false;
 #endif
-  
+
     if (cp_va_kparse(conf, this, errh,
 		     "FILENAME", cpkP+cpkM, cpFilename, &_filename,
 		     "SNAPLEN", cpkP, cpUnsigned, &_snaplen,
@@ -198,7 +198,7 @@ void
 ToDump::write_packet(Packet *p)
 {
     struct fake_pcap_pkthdr ph;
-  
+
     const Timestamp& ts = p->timestamp_anno();
     if (!ts) {
 	Timestamp now = Timestamp::now();

@@ -20,14 +20,14 @@ informatino such as rssi, noise, bitrate, etc.
 */
 
 class ExtraDecap : public Element { public:
-  
+
   ExtraDecap();
   ~ExtraDecap();
 
   const char *class_name() const	{ return "ExtraDecap"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
 

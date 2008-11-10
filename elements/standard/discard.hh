@@ -31,17 +31,17 @@ Resets "count" to 0.
 =a Queue */
 
 class Discard : public Element { public:
-  
+
   Discard();
   ~Discard();
-  
+
   const char *class_name() const		{ return "Discard"; }
   const char *port_count() const		{ return PORTS_1_0; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int initialize(ErrorHandler *);
   void add_handlers();
-  
+
   void push(int, Packet *);
   bool run_task(Task *);
 
@@ -59,7 +59,7 @@ class Discard : public Element { public:
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    
+
 };
 
 CLICK_ENDDECLS

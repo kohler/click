@@ -14,7 +14,7 @@ CLICK_DECLS
  * =s Grid
  * Receives Grid route probe replies
  * =d
- * 
+ *
  * When a Grid probe reply is received on its inputs, prints a message
  * to the Click chatter channel specified by C<CHANNEL>.  An example
  * message is:
@@ -34,7 +34,7 @@ class GridProbeReplyReceiver : public Element {
  public:
   GridProbeReplyReceiver();
   ~GridProbeReplyReceiver();
-  
+
   const char *class_name() const		{ return "GridProbeReplyReceiver"; }
   const char *port_count() const		{ return PORTS_1_0; }
   const char *processing() const		{ return AGNOSTIC; }

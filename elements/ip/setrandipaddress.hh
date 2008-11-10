@@ -19,23 +19,23 @@ CLICK_DECLS
  */
 
 class SetRandIPAddress : public Element {
-  
+
   IPAddress _ip;
   IPAddress _mask;
   int _max;
   IPAddress *_addrs;
-  
+
  public:
-  
+
   SetRandIPAddress();
   ~SetRandIPAddress();
-  
+
   const char *class_name() const	{ return "SetRandIPAddress"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
-  
+
   Packet *simple_action(Packet *);
   IPAddress pick();
 };

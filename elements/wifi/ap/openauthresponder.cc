@@ -61,7 +61,7 @@ OpenAuthResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 OpenAuthResponder::push(int, Packet *p)
 {
-  
+
   uint8_t dir;
   uint8_t type;
   uint8_t subtype;
@@ -74,7 +74,7 @@ OpenAuthResponder::push(int, Packet *p)
 
     p->kill();
     return;
-	      
+
   }
   struct click_wifi *w = (struct click_wifi *) p->data();
 
@@ -98,7 +98,7 @@ OpenAuthResponder::push(int, Packet *p)
   }
 
   uint8_t *ptr;
-  
+
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
 
@@ -134,13 +134,13 @@ OpenAuthResponder::push(int, Packet *p)
 
   if (_debug) {
     click_chatter("%{element}: auth %d seq %d status %d\n",
-		  this, 
+		  this,
 		  algo,
 		  seq,
 		  status);
   }
   send_auth_response(src, 2, WIFI_STATUS_SUCCESS);
-  
+
   p->kill();
   return;
 }
@@ -148,12 +148,12 @@ void
 OpenAuthResponder::send_auth_response(EtherAddress dst, uint16_t seq, uint16_t status)
 {
 
-  int len = sizeof (struct click_wifi) + 
+  int len = sizeof (struct click_wifi) +
     2 +                  /* alg */
     2 +                  /* seq */
     2 +                  /* status */
     0;
-    
+
   WritablePacket *p = Packet::make(len);
 
   if (p == 0)
@@ -168,12 +168,12 @@ OpenAuthResponder::send_auth_response(EtherAddress dst, uint16_t seq, uint16_t s
   memcpy(w->i_addr2, _winfo->_bssid.data(), 6);
   memcpy(w->i_addr3, _winfo->_bssid.data(), 6);
 
-  
+
   *(uint16_t *) w->i_dur = 0;
   *(uint16_t *) w->i_seq = 0;
 
   uint8_t *ptr;
-  
+
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
   *(uint16_t *)ptr = cpu_to_le16(WIFI_AUTH_ALG_OPEN);
@@ -191,7 +191,7 @@ OpenAuthResponder::send_auth_response(EtherAddress dst, uint16_t seq, uint16_t s
 
 enum {H_DEBUG};
 
-static String 
+static String
 OpenAuthResponder_read_param(Element *e, void *thunk)
 {
   OpenAuthResponder *td = (OpenAuthResponder *)e;
@@ -202,7 +202,7 @@ OpenAuthResponder_read_param(Element *e, void *thunk)
     return String();
   }
 }
-static int 
+static int
 OpenAuthResponder_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -211,7 +211,7 @@ OpenAuthResponder_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -219,7 +219,7 @@ OpenAuthResponder_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 OpenAuthResponder::add_handlers()
 {

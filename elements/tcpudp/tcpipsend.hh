@@ -26,11 +26,11 @@ class TCPIPSend : public Element {
 public:
   TCPIPSend();
   ~TCPIPSend();
-  
+
   const char *class_name() const	{ return "TCPIPSend"; }
   const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PUSH; }
-  
+
 private:
   void add_handlers();
   static int send_write_handler

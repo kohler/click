@@ -147,7 +147,7 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
     if (c->name())
 	fprintf(f, "classname=\"%s\" ", c->name().c_str());
     print_class_reference(f, c, "");
-    
+
     if (SynonymElementClassT *synonym = c->cast_synonym()) {
 	fprintf(f, ">\n%s  <synonym ", indent.c_str());
 	print_class_reference(f, synonym->synonym_of(), "");
@@ -172,10 +172,10 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 	    fprintf(f, "/>\n");
 	}
 	generate_router(compound->cast_router(), f, new_indent, errh);
-	
+
 	fprintf(f, "%s  </compound>\n", indent.c_str());
     }
-    
+
     fprintf(f, "%s</elementclass>\n", indent.c_str());
 }
 
@@ -188,7 +188,7 @@ generate_router(RouterT *r, FILE *f, String indent, ErrorHandler *errh)
     r->collect_locally_declared_types(declared_types);
     for (int i = 0; i < declared_types.size(); i++)
 	generate_type(declared_types[i], f, indent, errh);
-    
+
     for (RouterT::iterator e = r->begin_elements(); e; e++)
 	if (!e->tunnel()) {
 	    fprintf(f, "%s<element name=\"%s\" ", indent.c_str(), e->name_c_str());
@@ -264,9 +264,9 @@ process(const char *infile, bool file_is_expr, bool flatten,
 <configuration xmlns=\"http://www.lcdf.org/click/xml/\">\n");
     generate_router(r, outf, "", errh);
     fprintf(outf, "</configuration>\n");
-    
+
     ElementMap::pop_default();
-    
+
     // close files, return
     if (outf != stdout)
 	fclose(outf);
@@ -379,7 +379,7 @@ particular purpose.\n");
 	  case FLATTEN_OPT:
 	    flatten = !clp->negated;
 	    break;
-	    
+
 	  bad_option:
 	  case Clp_BadOption:
 	    short_usage();
@@ -394,6 +394,6 @@ particular purpose.\n");
 
   done:
     process(router_file, file_is_expr, flatten, output_file, errh);
-	
+
     exit(errh->nerrors() > 0 ? 1 : 0);
 }

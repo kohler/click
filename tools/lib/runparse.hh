@@ -15,7 +15,7 @@ class RouterUnparserT { public:
     };
 
   private:
-    
+
     HashTable<int, int> _tuid_map;
     Vector<ElementClassT *> _types;
 
@@ -25,7 +25,7 @@ class RouterUnparserT { public:
     HashTable<Pair<ElementClassT *, ElementClassT *>, int> _relation;
 
     ErrorHandler *_errh;
-    
+
 };
 
 #endif

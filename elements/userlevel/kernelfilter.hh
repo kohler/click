@@ -44,7 +44,7 @@ elements like FromDevice.u.
 FromDevice.u, ToDevice.u, KernelTap, ifconfig(8) */
 
 class KernelFilter : public Element { public:
-  
+
     enum ConfigurePhase {
 	CONFIGURE_PHASE_FROMDEVICE = CONFIGURE_PHASE_PRIVILEGED - 1,
 	CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMDEVICE + 1,
@@ -53,7 +53,7 @@ class KernelFilter : public Element { public:
 
     KernelFilter();
     ~KernelFilter();
-  
+
     const char *class_name() const	{ return "KernelFilter"; }
     const char *port_count() const	{ return PORTS_0_0; }
     int configure_phase() const		{ return CONFIGURE_PHASE_KERNELFILTER; }
@@ -68,7 +68,7 @@ class KernelFilter : public Element { public:
   private:
 
     Vector<String> _drop_devices;
-    
+
 };
 
 CLICK_ENDDECLS

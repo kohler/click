@@ -33,7 +33,7 @@ UnstripIPHeader::simple_action(Packet *p)
 {
     assert(p->network_header());
     ptrdiff_t offset = p->network_header() - p->data();
-    if (offset < 0) 
+    if (offset < 0)
 	p = p->push(-offset);	// should never create a new packet
     return p;
 }

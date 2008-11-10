@@ -70,7 +70,7 @@ LookupLocalGridRoute2::initialize(ErrorHandler *errh)
     return errh->error("%s: GridRouteTable argument %s has the wrong type",
 		       name().c_str(),
 		       _rtes->name().c_str());
-  } 
+  }
 #if 0
   else if (_rtes == 0) {
     return errh->error("%s: no GridRouteTable element given",
@@ -99,7 +99,7 @@ LookupLocalGridRoute2::simple_action(Packet *packet)
     packet->kill();
     return 0;
   }
-  
+
   grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
   switch (gh->type) {
   case grid_hdr::GRID_NBR_ENCAP:
@@ -109,7 +109,7 @@ LookupLocalGridRoute2::simple_action(Packet *packet)
       return forward_grid_packet(packet, packet->dst_ip_anno());
       break;
   default:
-    click_chatter("LookupLocalGridRoute2 %s: received unexpected Grid packet type (%s), dropping", 
+    click_chatter("LookupLocalGridRoute2 %s: received unexpected Grid packet type (%s), dropping",
 		  name().c_str(), grid_hdr::type_string(gh->type).c_str());
     notify_route_cbs(packet, packet->dst_ip_anno(), GRCB::Drop, GRCB::UnknownType, 0);
     packet->kill();
@@ -136,7 +136,7 @@ LookupLocalGridRoute2::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     struct click_ether *eh = (click_ether *) packet->data();
     memcpy(eh->ether_dhost, rte.next_hop_eth.data(), 6);
     memcpy(eh->ether_shost, _eth.data(), 6);
-    
+
     struct grid_hdr *gh = (grid_hdr *) (eh + 1);
     gh->tx_ip = _ip.addr();
 

@@ -8,13 +8,13 @@ CLICK_DECLS
 
 /*
  * =c
- * 
+ *
  * PacketLogger(ETHERTYPE ethertype)
- * 
+ *
  * =s Grid
- * 
+ *
  * Log packets for later dumping/analysis.
- * 
+ *
  * =d
  * expects packets with ethernet headers.  records timestamp, source
  * MAC address, and the first few bytes of every packet to pass through.
@@ -28,14 +28,14 @@ CLICK_DECLS
  */
 
 class PacketLogger : public Element { public:
-  
+
   PacketLogger();
   ~PacketLogger();
-  
+
   const char *class_name() const		{ return "PacketLogger"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
 
@@ -51,12 +51,12 @@ class PacketLogger : public Element { public:
     uint8_t src_mac[6];
     uint8_t bytes[NBYTES];
   };
-  
+
  private:
-  
+
   uint16_t _et;
   unsigned int _nb;
-  
+
   DEQueue<log_entry> _p;
 
 };

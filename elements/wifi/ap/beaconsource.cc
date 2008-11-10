@@ -63,7 +63,7 @@ BeaconSource::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
 
 
-  if (!_rtable || _rtable->cast("AvailableRates") == 0) 
+  if (!_rtable || _rtable->cast("AvailableRates") == 0)
     return errh->error("AvailableRates element is not provided or not a AvailableRates");
 
   if (!_winfo || _winfo->cast("WirelessInfo") == 0)
@@ -85,7 +85,7 @@ BeaconSource::initialize (ErrorHandler *)
 }
 
 void
-BeaconSource::run_timer(Timer *) 
+BeaconSource::run_timer(Timer *)
 {
   send_beacon(_bcast, false);
   _timer.schedule_after_msec(_winfo->_interval);
@@ -101,7 +101,7 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
   /* order elements by standard
    * needed by sloppy 802.11b driver implementations
    * to be able to connect to 802.11g APs */
-  int max_len = sizeof (struct click_wifi) + 
+  int max_len = sizeof (struct click_wifi) +
     8 +                  /* timestamp */
     2 +                  /* beacon interval */
     2 +                  /* cap_info */
@@ -112,7 +112,7 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
     /* 802.11g Information fields */
     2 + WIFI_RATES_MAXSIZE +  /* xrates */
     0;
-    
+
 
   WritablePacket *p = Packet::make(max_len);
 
@@ -138,7 +138,7 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
   *(uint16_t *) w->i_seq = 0;
 
   uint8_t *ptr;
-  
+
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
   int actual_length = sizeof (struct click_wifi);
 
@@ -147,7 +147,7 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
   memset(ptr, 0, 8);
   ptr += 8;
   actual_length += 8;
-  
+
   uint16_t beacon_int = (uint16_t) _winfo->_interval;
   *(uint16_t *)ptr = cpu_to_le16(beacon_int);
   ptr += 2;
@@ -171,11 +171,11 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
   ptr[1] = min(WIFI_RATE_SIZE, rates.size());
   for (int x = 0; x < min (WIFI_RATE_SIZE, rates.size()); x++) {
     ptr[2 + x] = (uint8_t) rates[x];
-    
+
     if (rates[x] == 2) {
       ptr [2 + x] |= WIFI_RATE_BASIC;
     }
-    
+
   }
   ptr += 2 + min(WIFI_RATE_SIZE, rates.size());
   actual_length += 2 + min(WIFI_RATE_SIZE, rates.size());
@@ -209,11 +209,11 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
     ptr[1] = num_xrates;
     for (int x = 0; x < num_xrates; x++) {
       ptr[2 + x] = (uint8_t) rates[x + WIFI_RATE_SIZE];
-      
+
       if (rates[x + WIFI_RATE_SIZE] == 2) {
 	ptr [2 + x] |= WIFI_RATE_BASIC;
       }
-      
+
     }
     ptr += 2 + num_xrates;
     actual_length += 2 + num_xrates;
@@ -241,7 +241,7 @@ BeaconSource::push(int, Packet *p)
 
     p->kill();
     return;
-	      
+
   }
   struct click_wifi *w = (struct click_wifi *) p->data();
 
@@ -265,7 +265,7 @@ BeaconSource::push(int, Packet *p)
   }
 
   uint8_t *ptr;
-  
+
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
   uint8_t *end  = (uint8_t *) p->data() + p->length();
@@ -311,7 +311,7 @@ BeaconSource::push(int, Packet *p)
     p->kill();
     return;
   }
-  
+
   EtherAddress src = EtherAddress(w->i_addr2);
 
   sa << "ProbeReq: " << src << " ssid " << ssid << " ";
@@ -320,7 +320,7 @@ BeaconSource::push(int, Packet *p)
   if (rates_l) {
     for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
       uint8_t rate = rates_l[x + 2];
-      
+
       if (rate & WIFI_RATE_BASIC) {
 	sa << " * " << (int) (rate ^ WIFI_RATE_BASIC);
       } else {
@@ -336,14 +336,14 @@ BeaconSource::push(int, Packet *p)
 		  sa.take_string().c_str());
   }
   send_beacon(src, true);
-  
+
   p->kill();
   return;
 }
 
 enum {H_DEBUG};
 
-static String 
+static String
 BeaconSource_read_param(Element *e, void *thunk)
 {
   BeaconSource *td = (BeaconSource *)e;
@@ -354,7 +354,7 @@ BeaconSource_read_param(Element *e, void *thunk)
     return String();
   }
 }
-static int 
+static int
 BeaconSource_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
@@ -363,7 +363,7 @@ BeaconSource_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug)) 
+    if (!cp_bool(s, &debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -371,7 +371,7 @@ BeaconSource_write_param(const String &in_s, Element *e, void *vparam,
   }
   return 0;
 }
- 
+
 void
 BeaconSource::add_handlers()
 {
@@ -382,4 +382,4 @@ BeaconSource::add_handlers()
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(BeaconSource)
-  
+

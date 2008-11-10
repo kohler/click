@@ -278,11 +278,11 @@ Classifier::DominatorOptimizer::calculate_dom(int state)
   assert(_domlist_start.size() == state + 1);
   assert(_dom_start.size() - 1 == _domlist_start.back());
   assert(_dom.size() == _dom_start.back());
-  
+
   // find predecessors
   Vector<int> predecessors;
   find_predecessors(state, predecessors);
-  
+
   // if no predecessors, kill this expr
   if (predecessors.size() == 0) {
     if (state > 0)
@@ -300,7 +300,7 @@ Classifier::DominatorOptimizer::calculate_dom(int state)
   Vector<int> pdom, pdom_end;
   for (int i = 0; i < predecessors.size(); i++) {
     int p = predecessors[i], s = stateno(p);
-    
+
     // if both branches point at same place, remove predecessor state from
     // tree
     if (i > 0 && stateno(predecessors[i-1]) == s) {
@@ -360,10 +360,10 @@ Classifier::DominatorOptimizer::intersect_lists(const Vector<int> &in, const Vec
       out.push_back(in[i]);
   } else {
     Vector<int> pos(start);
-    
+
     // Be careful about lists that end with something <= 0.
     int x = -1;			// 'x' describes the intersection path.
-    
+
     while (1) {
       int p = pos1, k = 0;
       // Search for an 'x' that is on all of V1...Vk. We step through V1...Vk
@@ -442,7 +442,7 @@ void
 Classifier::DominatorOptimizer::shift_branch(int brno)
 {
   // shift a branch by examining its dominators
-  
+
   int s = stateno(brno);
   int32_t &to_state = expr(s).j[br(brno)];
   if (to_state <= 0)
@@ -574,7 +574,7 @@ Classifier::bubble_sort_and_exprs(int sort_stopper)
 {
     Vector<int> inbranch;
     count_inbranches(inbranch);
-    
+
     // do bubblesort
     for (int i = 0; i < _exprs.size(); i++) {
 	Expr &e1 = _exprs[i];
@@ -604,7 +604,7 @@ Classifier::optimize_exprs(ErrorHandler *errh, int sort_stopper)
 {
   // sort 'and' expressions
   bubble_sort_and_exprs(sort_stopper);
-  
+
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
 
   // optimize using dominators
@@ -618,7 +618,7 @@ Classifier::optimize_exprs(ErrorHandler *errh, int sort_stopper)
   }
 
   //{ String sxx = program_string(this, 0); click_chatter("%s", sxx.c_str()); }
-  
+
   // Check for case where all patterns have conflicts: _exprs will be empty
   // but _output_everything will still be < 0. We require that, when _exprs
   // is empty, _output_everything is >= 0.
@@ -813,7 +813,7 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     if (conf.size() != noutputs())
 	return errh->error("need %d arguments, one per output port", noutputs());
-  
+
   int before = errh->nerrors();
 
   // set align offset
@@ -829,11 +829,11 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
       _align_offset = 0;
     }
   }
-  
+
   Vector<int> tree;
   init_expr_subtree(tree);
   start_expr_subtree(tree);
-  
+
   for (int slot = 0; slot < conf.size(); slot++) {
     int i = 0;
     int len = conf[slot].length();
@@ -847,15 +847,15 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
     if (s[0] == '-' && len == 1)
       // slot accepting everything
       i = 1;
-    
+
     while (i < len) {
-      
+
       while (i < len && isspace((unsigned char) s[i]))
 	i++;
       if (i >= len) break;
 
       start_expr_subtree(tree);
-      
+
       // negated?
       bool negated = false;
       if (s[i] == '!') {
@@ -864,7 +864,7 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
 	while (i < len && isspace((unsigned char) s[i]))
 	  i++;
       }
-      
+
       if (i >= len || !isdigit((unsigned char) s[i]))
 	return errh->error("pattern %d: expected a digit", slot);
 
@@ -875,7 +875,7 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
 	offset += s[i] - '0';
 	i++;
       }
-      
+
       if (i >= len || s[i] != '/')
 	return errh->error("pattern %d: expected '/'", slot);
       i++;
@@ -996,7 +996,7 @@ Classifier::compress_exprs(Vector<uint32_t> &prog, bool perform_binary_search,
 			   unsigned min_binary_search) const
 {
   // Compress the program into "prog."
-  
+
   // The compressed program groups related Exprs together and sorts large
   // sequences of common primitives ("port 80 or port 90 or port 92 or ..."),
   // allowing the use of binary search.
@@ -1021,11 +1021,11 @@ Classifier::compress_exprs(Vector<uint32_t> &prog, bool perform_binary_search,
   // value is <= 0, it is the negative of the relevant IPFilter output port.
   // A positive 'jump' value equals the number of 32-bit words to move the
   // instruction pointer.
-  
+
   // It often helps to do another bubblesort for things like ports.
 
   assert(prog.size() == 0);
-  
+
   Vector<int> wanted(_exprs.size() + 1, 0);
   wanted[0] = 1;
   for (const Expr *ex = _exprs.begin(); ex < _exprs.end(); ex++)
@@ -1060,7 +1060,7 @@ Classifier::compress_exprs(Vector<uint32_t> &prog, bool perform_binary_search,
 	  click_qsort(&prog[off+4], prog[off] >> 16);
   }
   offsets.push_back(prog.size());
-  
+
   for (int i = 0; i < _exprs.size(); i++)
       if (offsets[i] < prog.size() && offsets[i] < offsets[i+1]) {
 	  int off = offsets[i];
@@ -1083,17 +1083,17 @@ Classifier::length_checked_push(Packet *p)
   Expr *ex = &_exprs[0];	// avoid bounds checking
   int pos = 0;
   uint32_t data;
-  
+
   do {
     if (ex[pos].offset+UBYTES > packet_length)
       goto check_length;
-    
+
    length_ok:
     data = *(const uint32_t *)(packet_data + ex[pos].offset);
     data &= ex[pos].mask.u;
     pos = ex[pos].j[data == ex[pos].value.u];
     continue;
-    
+
    check_length:
     if (ex[pos].offset < packet_length) {
       unsigned available = packet_length - ex[pos].offset;
@@ -1104,7 +1104,7 @@ Classifier::length_checked_push(Packet *p)
     }
     pos = ex[pos].no();
   } while (pos > 0);
-  
+
   checked_output_push(-pos, p);
 }
 
@@ -1114,7 +1114,7 @@ Classifier::push(int, Packet *p)
   const unsigned char *packet_data = p->data() - _align_offset;
   Expr *ex = &_exprs[0];	// avoid bounds checking
   int pos = 0;
-  
+
   if (_output_everything >= 0) {
     // must use checked_output_push because the output number might be
     // out of range
@@ -1125,13 +1125,13 @@ Classifier::push(int, Packet *p)
     length_checked_push(p);
     return;
   }
-  
+
   do {
       uint32_t data = *((const uint32_t *)(packet_data + ex[pos].offset));
       data &= ex[pos].mask.u;
       pos = ex[pos].j[data == ex[pos].value.u];
   } while (pos > 0);
-  
+
  found:
   checked_output_push(-pos, p);
 }

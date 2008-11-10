@@ -95,7 +95,7 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(cp_integer("-9223372036854775808", &ll) == true && ll == (long long) 0x8000000000000000ULL);
     CHECK(cp_integer("18446744073709551616", &ull) == true && ull == 0xFFFFFFFFFFFFFFFFULL && cp_errno == CPE_OVERFLOW);
 #endif
-    
+
     CHECK(cp_real2("-0.5", 1, &i32) == true && i32 == -1);
     CHECK(cp_seconds_as("3600", 0, &u32) == true && u32 == 3600);
     CHECK(cp_seconds_as("3600s", 0, &u32) == true && u32 == 3600);
