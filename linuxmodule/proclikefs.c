@@ -127,21 +127,21 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
     struct proclikefs_file_system *newfs = 0;
     struct list_head *next;
     int newfs_is_new = 0;
-    
+
     if (!name)
 	return 0;
-    
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     if (!try_module_get(THIS_MODULE)) {
 	printk("<1>proclikefs: error using module\n");
 	return 0;
     }
-#else 
+#else
     MOD_INC_USE_COUNT;
 #endif
 
     spin_lock(&fslist_lock);
-    
+
     for (next = fs_list.next; next != &fs_list; next = next->next) {
 	newfs = list_entry(next, struct proclikefs_file_system, fs_list);
 	if (strcmp(name, newfs->name) == 0) {
@@ -219,7 +219,7 @@ proclikefs_reinitialize_supers(struct proclikefs_file_system *pfs,
     }
     spin_unlock(&sb_lock);
 #else
-    for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks); 
+    for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks);
 	 sb = sb_entry(sb->s_list.next))
 	if (sb->s_type == &pfs->fs)
 	    (*reread_super)(sb);
@@ -262,7 +262,7 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
     /* Develop a linked list corresponding to depth-first search, through
        the d_fsdata fields. */
     /* XXX locking? */
-    
+
     DEBUG("killing dentries");
     dentry_tree = sb->s_root;
     if (dentry_tree) {
@@ -361,7 +361,7 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
     }
     spin_unlock(&sb_lock);
 #else
-    for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks); 
+    for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks);
 	 sb = sb_entry(sb->s_list.next)) {
 	if (sb->s_type != &pfs->fs)
 	    continue;
@@ -389,7 +389,7 @@ proclikefs_read_super(struct super_block *sb)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     if (!try_module_get(THIS_MODULE))
 	printk("<1>proclikefs: error using module\n");
-#else 
+#else
     MOD_INC_USE_COUNT;
 #endif
 }
@@ -405,7 +405,7 @@ proclikefs_put_super(struct super_block *sb)
     if (!pfs->live && atomic_read(&pfs->nsuper) == 0) {
 	struct proclikefs_file_operations *pfo;
 	struct proclikefs_inode_operations *pio;
-	
+
 	list_del(&pfs->fs_list);
 	unregister_filesystem(&pfs->fs);
 	while ((pfo = pfs->pfs_pfo)) {
@@ -425,7 +425,7 @@ struct file_operations *
 proclikefs_new_file_operations(struct proclikefs_file_system *pfs)
 {
     struct proclikefs_file_operations *pfo = kmalloc(sizeof(struct proclikefs_file_operations), GFP_ATOMIC);
-    
+
     if (pfo) {
 	spin_lock(&fslist_lock);
 	pfo->pfo_next = pfs->pfs_pfo;
@@ -440,7 +440,7 @@ struct inode_operations *
 proclikefs_new_inode_operations(struct proclikefs_file_system *pfs)
 {
     struct proclikefs_inode_operations *pio = kmalloc(sizeof(struct proclikefs_inode_operations), GFP_ATOMIC);
-    
+
     if (pio) {
 	spin_lock(&fslist_lock);
 	pio->pio_next = pfs->pfs_pio;
@@ -475,7 +475,7 @@ cleanup_module(void)
 	struct proclikefs_file_system *pfs = list_entry(next, struct proclikefs_file_system, fs_list);
 	next = next->next;
 	if (pfs->live || atomic_read(&pfs->nsuper) != 0)
-	    printk("<1>proclikefs: unregistering active FS %s, prepare to die\n", pfs->name);	    
+	    printk("<1>proclikefs: unregistering active FS %s, prepare to die\n", pfs->name);
 	unregister_filesystem(&pfs->fs);
 	kfree(pfs);
     }
