@@ -224,7 +224,7 @@ CLPTest::initialize(ErrorHandler *errh)
     CHECK(Clp_Next(clp) == 3);
     CHECK(Clp_Next(clp) == 4);
     CHECK(Clp_Next(clp) == Clp_Done);
-    
+
     // Test 4
     Clp_SetOptions(clp, nelem(options_x4), options_x4);
     Clp_SetArguments(clp, nelem(args_x4), args_x4);
@@ -236,7 +236,7 @@ CLPTest::initialize(ErrorHandler *errh)
     CHECK(Clp_Next(clp) == Clp_BadOption);
     CHECK(sa.take_string() == "unrecognized option \342\200\230-b\342\200\231\n");
     CHECK(Clp_Next(clp) == Clp_Done);
-    
+
     // Test 4b
     Clp_SetOptionChar(clp, '-', Clp_Long | Clp_Short);
     Clp_SetArguments(clp, nelem(args_x4), args_x4);
@@ -246,7 +246,7 @@ CLPTest::initialize(ErrorHandler *errh)
     CHECK(Clp_Next(clp) == 1);
     CHECK(Clp_Next(clp) == 1);
     CHECK(Clp_Next(clp) == Clp_Done);
-    
+
     // Test 5
     Clp_SetOptionChar(clp, '-', Clp_Short);
     Clp_SetOptions(clp, nelem(options_x5), options_x5);
@@ -273,7 +273,7 @@ CLPTest::initialize(ErrorHandler *errh)
     CHECK(Clp_Next(clp) == Clp_BadOption);
     CHECK(sa.take_string() == "unrecognized option \342\200\230-c\342\200\231\n");
     CHECK(Clp_Next(clp) == Clp_Done);
-    
+
     // Test 6
     Clp_SetOptionChar(clp, '+', Clp_LongNegated);
     Clp_SetOptions(clp, nelem(options_x6), options_x6);
@@ -282,7 +282,7 @@ CLPTest::initialize(ErrorHandler *errh)
     CHECK(Clp_Next(clp) == 1 && !clp->negated && clp->have_val && clp->val.i == 1);
     CHECK(Clp_Next(clp) == 1 && clp->negated && !clp->have_val);
     CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "\342\200\230--no-art\342\200\231 can't take an argument\n");
+    CHECK(sa.take_string() == "\342\200\230--no-art\342\200\231 can\342\200\231t take an argument\n");
     CHECK(Clp_Next(clp) == 1 && clp->negated && !clp->have_val);
     CHECK(Clp_Next(clp) == 1 && clp->negated && !clp->have_val);
     CHECK(Clp_Next(clp) == 2 && !clp->negated && clp->have_val && clp->val.i == 2);
@@ -291,7 +291,7 @@ CLPTest::initialize(ErrorHandler *errh)
     CHECK(Clp_Next(clp) == Clp_BadOption);
     CHECK(sa.take_string() == "unrecognized option \342\200\230--no-b\342\200\231\n");
     CHECK(Clp_Next(clp) == Clp_Done);
-    
+
     // Test 7
     Clp_SetOptions(clp, nelem(options_x7), options_x7);
     Clp_SetArguments(clp, nelem(args_x7), args_x7);
@@ -307,7 +307,7 @@ CLPTest::initialize(ErrorHandler *errh)
     CHECK(sa.take_string() == "\342\200\230--art\342\200\231 requires a non-option argument\n");
     CHECK(Clp_Next(clp) == 3);
     CHECK(Clp_Next(clp) == Clp_Done);
-    
+
     // Test 8
     Clp_AddStringListType(clp, Clp_ValAnimal, Clp_AllowNumbers,
 			  "cat", 1, "cattle", 2, "dog", 3, (const char *) 0);
