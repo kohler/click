@@ -103,7 +103,7 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
   _verbose = verbose;
   _retry_warnings = retry_warnings;
   _localhost = localhost;
-  
+
   socktype = socktype.upper();
   if (socktype == "TCP") {
     _tcp_socket = true;
@@ -125,7 +125,7 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 
   } else
     return errh->error("unknown socket type '%s'", socktype.c_str());
-  
+
   return 0;
 }
 
@@ -191,7 +191,7 @@ ControlSocket::initialize_socket(ErrorHandler *errh)
   // start listening
   if (listen(_socket_fd, 2) < 0)
     return initialize_socket_error(errh, "listen");
-  
+
   // nonblocking I/O and close-on-exec for the socket
   fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
   fcntl(_socket_fd, F_SETFD, FD_CLOEXEC);
@@ -220,7 +220,7 @@ ControlSocket::initialize(ErrorHandler *errh)
   // check for a full proxy
   if (_proxy)
     _full_proxy = static_cast<HandlerProxy *>(_proxy->cast("HandlerProxy"));
-  
+
   // ask the proxy to send us errors
   if (_full_proxy)
     _full_proxy->add_error_receiver(proxy_error_function, this);
@@ -311,17 +311,17 @@ ControlSocket::transfer_messages(int fd, int default_code, const String &msg,
   if (code == CSERR_OK)
     code = default_code;
   const Vector<String> &messages = errh->messages();
-  
+
   if (msg) {
     if (messages.size() > 0)
       message(fd, code, msg + ":", true);
     else
       message(fd, code, msg, false);
   }
-  
+
   for (int i = 0; i < messages.size(); i++)
     message(fd, code, messages[i], i < messages.size() - 1);
-  
+
   return ANY_ERR;
 }
 
@@ -356,9 +356,9 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
     ControlSocketErrorHandler errh;
     _proxied_handler = proxied_handler_name(canonical_name);
     _proxied_errh = &errh;
-    
+
     const Handler* h = Router::handler(_proxy, _proxied_handler);
-    
+
     if (errh.nerrors() > 0) {
       transfer_messages(fd, CSERR_NO_SUCH_HANDLER, String(), &errh);
       return 0;
@@ -375,7 +375,7 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
   Element *e;
   const char *dot = find(canonical_name, '.');
   String hname;
-  
+
   if (dot != canonical_name.end()) {
     String ename = canonical_name.substring(canonical_name.begin(), dot);
     e = router()->find(ename);
@@ -419,13 +419,13 @@ ControlSocket::read_command(int fd, const String &handlername, String param)
   ControlSocketErrorHandler errh;
   _proxied_handler = h->name();
   _proxied_errh = &errh;
-  
+
   String data = h->call_read(e, param, &errh);
 
   // did we get an error message?
   if (errh.nerrors() > 0)
     return transfer_messages(fd, CSERR_UNSPECIFIED, "Read handler '" + handlername + "' error", &errh);
-  
+
   message(fd, CSERR_OK, "Read handler '" + handlername + "' OK");
   _out_texts[fd] += "DATA " + String(data.length()) + "\r\n";
   _out_texts[fd] += data;
@@ -449,9 +449,9 @@ ControlSocket::write_command(int fd, const String &handlername, String data)
   if (data.length() > LARGEST_HANDLER_WRITE)
     return message(fd, CSERR_DATA_TOO_BIG, "Data too large for write handler '" + handlername + "'");
 #endif
-  
+
   ControlSocketErrorHandler errh;
-  
+
   // call handler
   int result = h->call_write(data, e, &errh);
 
@@ -519,7 +519,7 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
     return message(fd, CSERR_SYNTAX, "Syntax error in LLRPC name '" + llrpcname + "'");
   // transform net LLRPC id into host LLRPC id
   command = CLICK_LLRPC_NTOH(command);
-  
+
   Element *e;
   const Handler* h = parse_handler(fd, llrpcname.substring(llrpcname.begin(), octothorp) + ".name", &e);
   if (!h)
@@ -542,7 +542,7 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
   ControlSocketErrorHandler errh;
   _proxied_handler = llrpcname;
   _proxied_errh = &errh;
-  
+
   int retval;
   if (_proxy) {
     struct click_llrpc_proxy_st pst;
@@ -552,7 +552,7 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
     retval = _proxy->llrpc(CLICK_LLRPC_PROXY, &pst);
   } else
     retval = e->llrpc(command, data.mutable_data());
-  
+
   // did we get an error message?
   String msg;
   if (retval < 0)
@@ -700,7 +700,7 @@ ControlSocket::parse_command(int fd, const String &line)
     message(fd, CSERR_OK, "LLRPC elt#number [len]  call LLRPC, pass len data bytes, return DATA", true);
     message(fd, CSERR_OK, "QUIT                    close connection");
     return 0;
-    
+
   } else
     return message(fd, CSERR_UNIMPLEMENTED, "Command '" + command + "' unimplemented");
 }
@@ -759,7 +759,7 @@ ControlSocket::selected(int fd)
 	fcntl(new_fd, F_SETFL, O_NONBLOCK);
 	fcntl(new_fd, F_SETFD, FD_CLOEXEC);
 	add_select(new_fd, SELECT_READ | SELECT_WRITE);
-	
+
 	while (new_fd >= _in_texts.size()) {
 	    _in_texts.push_back(String());
 	    _out_texts.push_back(String());
@@ -786,7 +786,7 @@ ControlSocket::selected(int fd)
 	else if (r == 0 || (r < 0 && errno != EAGAIN && errno != EINTR))
 	    _flags[fd] |= READ_CLOSED;
     }
-  
+
     // parse commands
     // 16.Jun.2004: process only one command each time through
     bool blocked = false;
@@ -804,7 +804,7 @@ ControlSocket::selected(int fd)
 		pos += 2;
 	    else if (pos < len)	// '\r' or '\n' alone
 		pos++;
-    
+
 	    // grab string
 	    String old_text = _in_texts[fd];
 	    String line = old_text.substring(0, pos);
