@@ -913,7 +913,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 		else if (width_flag == 0 || width_flag == 'l')
 		    ival = (unsigned long) ival;
 		pf << CLICK_INTMAX_CVT << *pct;
-		result << ErrorHandler::format(pf.c_str(), ival);
+		result << ErrorHandler::xformat(pf.c_str(), ival);
 	    } else if (pct < end && (*pct == 'd' || *pct == 'i')) {
 		click_intmax_t ival;
 		if (!cp_integer(cp_pop_spacevec(str), &ival))
@@ -923,16 +923,16 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 		else if (width_flag == 0 || width_flag == 'l')
 		    ival = (long) ival;
 		pf << CLICK_INTMAX_CVT << *pct;
-		result << ErrorHandler::format(pf.c_str(), ival);
+		result << ErrorHandler::xformat(pf.c_str(), ival);
 	    } else if (pct < end && *pct == '%') {
 		pf << '%';
-		result << ErrorHandler::format(pf.c_str());
+		result << ErrorHandler::xformat(pf.c_str());
 	    } else if (pct < end && *pct == 's') {
 		String s;
 		if (!cp_string(cp_pop_spacevec(str), &s))
 		    return errh->error("syntax error");
 		pf << *pct;
-		result << ErrorHandler::format(pf.c_str(), s.c_str());
+		result << ErrorHandler::xformat(pf.c_str(), s.c_str());
 	    } else
 		return errh->error("syntax error");
 	    s = pct + 1;

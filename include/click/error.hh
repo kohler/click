@@ -2,7 +2,6 @@
 #ifndef CLICK_ERROR_HH
 #define CLICK_ERROR_HH
 #include <click/string.hh>
-#include <click/pair.hh>
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 # include <stdio.h>
 #endif
@@ -24,7 +23,7 @@
 CLICK_DECLS
 
 /** @class ErrorHandler
- * @brief Base class for error reporting.
+ * @brief Error reporting class.
  *
  * Click elements report errors through ErrorHandler objects, which represent
  * error collectors and printers.  ErrorHandlers are passed to configure() and
@@ -58,15 +57,31 @@ CLICK_DECLS
  * el_critical == 2), and a @em landmark annotation, which specifies where the
  * error took place (here, "x.click:1"):
  *
- * <tt>"&lt;2&gt;{l:x.click:1}syntax error"</tt>
+ * <tt>"<2>{l:x.click:1}syntax error"</tt>
  *
- * Users can add other arbitrary annotations, which can be useful to pass
- * error metadata.  A pair of braces ends the annotation area.  This example
- * has one user annotation <tt>eoc</tt>, and a message area that would be
- * mistaken for an annotation except for the <tt>{}</tt>:
+ * Click's default ErrorHandlers understand the level and landmark
+ * annotations.  Users can add other arbitrary annotations, which can be
+ * useful to pass error metadata.  A pair of braces ends the annotation area.
+ * This example has one user annotation <tt>eoc</tt>, and a message area that
+ * would be mistaken for an annotation were it not for the <tt>{}</tt>:
  *
- * <tt>"&lt;2&gt;{l:x.click:1}{eoc:520}{}{not:an annotation}"</tt>
- */
+ * <tt>"<2>{l:x.click:1}{eoc:520}{}{not:an annotation}"</tt>
+ *
+ * <h3>Stacking handlers</h3>
+ *
+ * Some ErrorHandlers stack on top of others, adding useful functionality like
+ * automatic context description and prefixing.  For example,
+ * ContextErrorHandler can be used to print messages like "In function
+ * 'xxx':".
+ * @code
+ * FileErrorHandler errh1(stderr);
+ * ContextErrorHandler errh2(&errh1, "While counting to 2:", "  ");
+ * errh2.error("An error occurred.");
+ * errh2.error("Another error occurred.");
+ *     // prints "While counting to 2:\n"
+ *     //        "  An error occurred.\n"
+ *     //        "  Another error occurred.\n"
+ * @endcode */
 class ErrorHandler { public:
 
     /** @brief Error level constants.
@@ -76,16 +91,18 @@ class ErrorHandler { public:
      * level, the Click process's exit status is the absolute value of the
      * error level. */
     enum Level {
-	el_abort = -999,
-	el_fatal = -1,
-	el_emergency = 0,
-	el_alert = 1,
-	el_critical = 2,
-	el_error = 3,
-	el_warning = 4,
-	el_notice = 5,
-	el_info = 6,
-	el_debug = 7
+	el_abort = -999,	///< Error level that triggers abort().
+	el_fatal = -1,		///< Fatal exit error level.
+				///  Exit status equals -(level).
+	el_emergency = 0,	///< Emergency error level: system is unusable.
+	el_alert = 1,		///< Alert error level: action must be taken.
+	el_critical = 2,	///< Error level for critical conditions.
+	el_error = 3,		///< Error level for normal error conditions.
+	el_warning = 4,		///< Error level for warning conditions.
+	el_notice = 5,		///< Error level for normal, but significant
+				///  conditions.
+	el_info = 6,		///< Error level for informational messages.
+	el_debug = 7		///< Error level for debug messages.
     };
 
     /** @brief Error level indicators. */
@@ -102,7 +119,8 @@ class ErrorHandler { public:
 	e_debug[];
 
     /** @brief Construct an ErrorHandler. */
-    ErrorHandler() {
+    ErrorHandler()
+	: _nerrors(0), _nwarnings(0) {
     }
 
     virtual ~ErrorHandler() {
@@ -244,6 +262,40 @@ class ErrorHandler { public:
     }
 
 
+    /** @brief Return the number of errors reported via this handler.
+     *
+     * An error is any message that contains at least one line with error
+     * level 3 (#el_error) or below.
+     *
+     * @note The error count will also contain errors reported via stacked
+     * handlers.  For instance:
+     * @code
+     * SilentErrorHandler errh1;
+     * PrefixErrorHandler errh2(&errh1, "");
+     * assert(errh1.nerrors() == 0);
+     * errh2.error("blah");
+     * assert(errh1.nerrors() == 1);
+     * @endcode
+     *
+     * @sa nwarnings, reset_counts */
+    int nerrors() const {
+	return _nerrors;
+    }
+
+    /** @brief Return the number of warnings reported via this handler.
+     *
+     * A warning is any message that contains at least one line with error
+     * level 4 (#el_warning), and no line with a lower level. */
+    int nwarnings() const {
+	return _nwarnings;
+    }
+
+    /** @brief Reset the nwarnings() and nerrors() counts to zero. */
+    void reset_counts() {
+	_nwarnings = _nerrors = 0;
+    }
+
+
     /** @brief Format an error string.
      * @param fmt printf-like format string
      * @return formatted error string
@@ -289,11 +341,31 @@ class ErrorHandler { public:
      *
      * <tr><td><tt>\%\%</tt></td><td>Format a literal \% character.</td></tr>
      *
+     * <tr><td><tt>\%\<</tt></td><td>Format a left quote string.  Usually
+     * prints a single quote.</td></tr>
+     *
+     * <tr><td><tt>\%\></tt></td><td>Format a right quote string.  Usually
+     * prints a single quote.</td></tr>
+     *
+     * <tr><td><tt>\%,</tt></td><td>Format an apostrophe string.  Usually
+     * prints a single quote.</td></tr>
+     *
      * </table> */
-    static String format(const char *fmt, ...);
+    static String xformat(const char *fmt, ...);
     /** @overload */
-    static String format(const char *fmt, va_list val);
+    static String xformat(const char *fmt, va_list val);
 
+
+    /** @brief Format an error string.
+     * @param fmt format string
+     * @param val argument list
+     *
+     * @warning ErrorHandler users don't need to call this function directly;
+     * it is called implicitly by the error()/xmessage() functions.
+     *
+     * This virtual function is called to format an error message.  The
+     * default implementation returns the result of xformat(@a fmt, @a val). */
+    virtual String format(const char *fmt, va_list val);
 
     /** @brief Decorate an error message.
      * @param str error message, possibly with annotations
@@ -348,20 +420,16 @@ class ErrorHandler { public:
      *
      * After calling emit() for the lines of an error message, ErrorHandler
      * calls account(), passing the minimum (worst) error level of any message
-     * line (or 1000 if no line had a level).  For instance, the
-     * BaseErrorHandler::account() implementation updates the nwarnings() and
-     * nerrors() counts.  Some other ErrorHandlers override account() to, for
-     * example, exit on el_fatal level or below. */
-    virtual void account(int level);
-
-
-    /** @brief Return the number of warnings reported so far. */
-    virtual int nwarnings() const = 0;
-    /** @brief Return the number of errors reported so far. */
-    virtual int nerrors() const = 0;
-    /** @brief Reset the nwarnings() and nerrors() counts to zero. */
-    virtual void reset_counts() = 0;
-
+     * line (or 1000 if no line had a level).  The default implementation
+     * updates the nwarnings() and nerrors() counts.  Some other ErrorHandlers
+     * add account() behavior that, for example, exits after printing messages
+     * at el_fatal level or below. */
+    virtual void account(int level) {
+	if (level <= el_error)
+	    ++_nerrors;
+	else if (level == el_warning)
+	    ++_nwarnings;
+    }
 
 
     /** @brief Create an error annotation.
@@ -471,6 +539,9 @@ class ErrorHandler { public:
 
   private:
 
+    int _nerrors;
+    int _nwarnings;
+
     static ErrorHandler *the_default_handler;
     static ErrorHandler *the_silent_handler;
 
@@ -482,47 +553,64 @@ class ErrorHandler { public:
 };
 
 
-class BaseErrorHandler : public ErrorHandler { public:
-
-    BaseErrorHandler()
-	: _nwarnings(0), _nerrors(0) {
-    }
-
-    int nwarnings() const {
-	return _nwarnings;
-    }
-    int nerrors() const {
-	return _nerrors;
-    }
-    void reset_counts() {
-	_nwarnings = _nerrors = 0;
-    }
-
-    void account(int level) {
-	if (level <= el_error)
-	    ++_nerrors;
-	else if (level == el_warning)
-	    ++_nwarnings;
-    }
-
-  private:
-
-    int _nwarnings;
-    int _nerrors;
-
-};
-
-class SilentErrorHandler : public BaseErrorHandler { public:
+/** @class SilentErrorHandler
+ * @brief An ErrorHandler that does not report messages.
+ *
+ * Use SilentErrorHandler when an ErrorHandler object is required, but error
+ * messages should not be printed. */
+class SilentErrorHandler : public ErrorHandler { public:
 
     SilentErrorHandler() {
     }
 
 };
 
-#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
-class FileErrorHandler : public BaseErrorHandler { public:
 
-    FileErrorHandler(FILE *, const String & = String());
+/** @class ErrorVeneer
+ * @brief Base class for ErrorHandlers that forward messages.
+ *
+ * ErrorHandlers can stack.  Stacking ErrorHandlers simplify modify a message
+ * and then pass the result to a base ErrorHandler, which does the actual
+ * printing.  The ErrorVeneer base class simplifies the implementation of
+ * stacking ErrorHandlers.  It provides versions of ErrorHandler's format(),
+ * decorate(), emit(), and account() methods that forward to the underlying
+ * handler. */
+class ErrorVeneer : public ErrorHandler { public:
+
+    /** @brief Construct an ErrorVeneer.
+     * @param errh base ErrorHandler
+     *
+     * If @a errh is 0, then the ErrorVeneer acts like a
+     * SilentErrorHandler. */
+    ErrorVeneer(ErrorHandler *errh)
+	: _errh(errh) {
+    }
+
+    String format(const char *fmt, va_list val);
+    String decorate(const String &str);
+    void *emit(const String &str, void *user_data, bool more);
+    void account(int level);
+
+  private:
+
+    ErrorHandler *_errh;
+
+};
+
+
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+/** @class FileErrorHandler
+ * @brief An ErrorHandler that prints error messages to a given file.
+ *
+ * FileErrorHandler is the typical base ErrorHandler used at user level.  It
+ * prints messages to a file passed in to the constructor, and calls exit() or
+ * abort() based on the error level. */
+class FileErrorHandler : public ErrorHandler { public:
+
+    /** @brief Construct a FileErrorHandler.
+     * @param f file to print errors
+     * @param prefix string to prefix every error line */
+    FileErrorHandler(FILE *f, const String &prefix = String());
 
     void *emit(const String &str, void *user_data, bool more);
     void account(int level);
@@ -535,41 +623,55 @@ class FileErrorHandler : public BaseErrorHandler { public:
 };
 #endif
 
-class LocalErrorHandler : public BaseErrorHandler { public:
 
-    LocalErrorHandler(ErrorHandler *errh)	: _errh(errh) { }
+/** @class LocalErrorHandler
+ * @brief A convenience stackable ErrorHandler.
+ *
+ * It's often convenient to pass a null ErrorHandler pointer when errors
+ * should not be printed.  The LocalErrorHandler class simplifies dealing with
+ * ErrorHandler pointers that may or may not be null.  LocalErrorHandler is a
+ * transparent layer on the base handler; but if the base handler is null, it
+ * acts like a SilentErrorHandler.  For example:
+ * @code
+ * void f(ErrorHandler *errh) {   // errh might or might not be null
+ *     LocalErrorHandler lerrh(errh);
+ *     ... lerrh.message("message") ...
+ * }
+ * @endcode */
+class LocalErrorHandler : public ErrorVeneer { public:
 
-    String decorate(const String &str);
-    void *emit(const String &str, void *user_data, bool more);
-    void account(int level);
-
-  private:
-
-    ErrorHandler *_errh;
-
-};
-
-class ErrorVeneer : public ErrorHandler { public:
-
-    ErrorVeneer(ErrorHandler *errh)	: _errh(errh) { }
-
-    int nwarnings() const;
-    int nerrors() const;
-    void reset_counts();
-
-    String decorate(const String &str);
-    void *emit(const String &str, void *user_data, bool more);
-    void account(int level);
-
-  protected:
-
-    ErrorHandler *_errh;
+    /** @brief Construct a LocalErrorHandler. */
+    LocalErrorHandler(ErrorHandler *errh)
+	: ErrorVeneer(errh) {
+    }
 
 };
 
+
+/** @class ContextErrorHandler
+ * @brief A stackable ErrorHandler that prints context lines.
+ *
+ * The stackable ContextErrorHandler adds context to the first error
+ * message printed, and optionally indents error messages.  For example:
+ * @code
+ * FileErrorHandler errh1(stderr);
+ * ContextErrorHandler errh2(&errh1, "While counting to 2:", "  ");
+ * errh2.error("An error occurred.");
+ * errh2.error("Another error occurred.");
+ *     // prints "While counting to 2:\n"
+ *     //        "  An error occurred.\n"
+ *     //        "  Another error occurred.\n"
+ * @endcode */
 class ContextErrorHandler : public ErrorVeneer { public:
 
-    ContextErrorHandler(ErrorHandler *, const String &context, const String &indent = String::make_stable("  ", 2), const String &context_landmark = String());
+    /** @brief Construct a ContextErrorHandler.
+     * @param errh base ErrorHandler
+     * @param context context lines
+     * @param indent string to indent errors
+     * @param context_landmark landmark used for context lines */
+    ContextErrorHandler(ErrorHandler *errh, const String &context,
+			const String &indent = String::make_stable("  ", 2),
+			const String &context_landmark = String());
 
     String decorate(const String &str);
 
@@ -581,8 +683,25 @@ class ContextErrorHandler : public ErrorVeneer { public:
 
 };
 
+
+/** @class PrefixErrorHandler
+ * @brief A stackable ErrorHandler that adds a prefix to error messages.
+ *
+ * The stackable ContextErrorHandler adds a prefix to every error line
+ * printed.  For example:
+ * @code
+ * FileErrorHandler errh1(stderr);
+ * PrefixErrorHandler errh2(&errh1, "Blah--");
+ * errh2.error("An error occurred.");
+ * errh2.error("Another error occurred.");
+ *     // prints "Blah--An error occurred.\n"
+ *     //        "Blah--Another error occurred.\n"
+ * @endcode */
 class PrefixErrorHandler : public ErrorVeneer { public:
 
+    /** @brief Construct a PrefixErrorHandler.
+     * @param errh base ErrorHandler
+     * @param prefix string to prefix to error lines */
     PrefixErrorHandler(ErrorHandler *errh, const String &prefix);
 
     String decorate(const String &str);
@@ -593,10 +712,30 @@ class PrefixErrorHandler : public ErrorVeneer { public:
 
 };
 
+
+/** @class LandmarkErrorHandler
+ * @brief A stackable ErrorHandler that adds a default landmark to error
+ * messages.
+ *
+ * The stackable ContextErrorHandler adds a default landmark to every error
+ * line printed.  Error lines' own landmarks are preserved when they exist.
+ * For example:
+ * @code
+ * FileErrorHandler errh1(stderr);
+ * LandmarkErrorHandler errh2(&errh1, "file:1");
+ * errh2.error("An error occurred.");
+ * errh2.lerror("file:2", "Another error occurred.");
+ *     // prints "file:1: An error occurred.\n"
+ *     //        "file:2: Another error occurred.\n"
+ * @endcode */
 class LandmarkErrorHandler : public ErrorVeneer { public:
 
-    LandmarkErrorHandler(ErrorHandler *err, const String &landmark);
+    /** @brief Construct a LandmarkErrorHandler.
+     * @param errh base ErrorHandler
+     * @param landmark default landmark */
+    LandmarkErrorHandler(ErrorHandler *errh, const String &landmark);
 
+    /** @brief Set the default landmark applied to error messages. */
     void set_landmark(const String &landmark) {
 	_landmark = make_landmark_anno(landmark);
     }
@@ -609,9 +748,21 @@ class LandmarkErrorHandler : public ErrorVeneer { public:
 
 };
 
+
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+/** @class BailErrorHandler
+ * @brief A stackable ErrorHandler that exits when errors occur.
+ *
+ * The stackable BailErrorHandler, available only at user level, causes the
+ * Click process to exit if an error worse than a configurable level occurs. */
 class BailErrorHandler : public ErrorVeneer { public:
 
+    /** @brief Construct a BailErrorHandler.
+     * @param errh base ErrorHandler
+     * @param level error level that causes premature exit
+     *
+     * An error message with level less than or equal to @a el_error will
+     * cause the process to exit with status 1. */
     BailErrorHandler(ErrorHandler *errh, int level = el_error);
 
     void account(int level);

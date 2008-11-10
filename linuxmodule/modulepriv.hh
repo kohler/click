@@ -31,7 +31,7 @@ CLICK_CXX_UNPROTECT
 #define HANDLER_WRITE_UNLIMITED		(Handler::DRIVER_FLAG_0 << 4)
 struct click_handler_direct_info;
 
-class KernelErrorHandler : public BaseErrorHandler { public:
+class KernelErrorHandler : public ErrorHandler { public:
 
     KernelErrorHandler()
 	: _head(0), _tail(0), _wrapped(false) {

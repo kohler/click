@@ -3,7 +3,7 @@
 #include <click/error.hh>
 CLICK_DECLS
 
-class KernelErrorHandler : public BaseErrorHandler { public:
+class KernelErrorHandler : public ErrorHandler { public:
 
     KernelErrorHandler() { }
 

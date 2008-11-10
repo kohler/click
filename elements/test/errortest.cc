@@ -24,7 +24,7 @@
 CLICK_DECLS
 
 namespace {
-class ErrorTestHandler : public BaseErrorHandler { public:
+class ErrorTestHandler : public ErrorHandler { public:
     ErrorTestHandler() { }
     void *emit(const String &str, void *, bool) {
 	_text = str;

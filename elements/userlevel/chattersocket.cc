@@ -42,7 +42,6 @@ struct ChatterSocketErrorHandler : public ErrorVeneer {
 	: ErrorVeneer(errh) {
     }
 
-    ErrorHandler *base_errh() const	{ return _errh; }
     int nchatter_sockets() const	{ return _chatter_sockets.size(); }
 
     void add_chatter_socket(ChatterSocket *);
@@ -75,7 +74,7 @@ ChatterSocketErrorHandler::remove_chatter_socket(ChatterSocket *cs)
 void *
 ChatterSocketErrorHandler::emit(const String &str, void *user_data, bool more)
 {
-    user_data = _errh->emit(str, user_data, more);
+    user_data = ErrorVeneer::emit(str, user_data, more);
 
     String landmark;
     const char *s = parse_anno(str, str.begin(), str.end(),

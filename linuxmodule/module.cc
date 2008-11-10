@@ -203,7 +203,7 @@ KernelErrorHandler::emit(const String &str, void *, bool)
 void
 KernelErrorHandler::account(int level)
 {
-    BaseErrorHandler::account(level);
+    ErrorHandler::account(level);
     if (level <= el_fatal)
 	panic("kclick");
 }

@@ -30,7 +30,7 @@ CLICK_CXX_UNPROTECT
 
 CLICK_DECLS
 
-class KernelErrorHandler : public BaseErrorHandler { public:
+class KernelErrorHandler : public ErrorHandler { public:
 
     KernelErrorHandler()		: _pos(0), _generation(0) { }
     void *emit(const String &str, void *user_data, bool more);

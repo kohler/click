@@ -5,7 +5,7 @@
 #include <click/pair.hh>
 #include <click/vector.hh>
 
-class GatherErrorHandler : public BaseErrorHandler { public:
+class GatherErrorHandler : public ErrorHandler { public:
 
     GatherErrorHandler();
 

@@ -509,7 +509,7 @@ unlock_threads()
 
 
 namespace {
-class ClickfsHandlerErrorHandler : public BaseErrorHandler { public:
+class ClickfsHandlerErrorHandler : public ErrorHandler { public:
     ClickfsHandlerErrorHandler() {
     }
     void *emit(const String &str, void *, bool) {

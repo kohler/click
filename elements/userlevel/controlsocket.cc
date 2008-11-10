@@ -35,7 +35,7 @@ CLICK_DECLS
 
 const char ControlSocket::protocol_version[] = "1.3";
 
-struct ControlSocketErrorHandler : public BaseErrorHandler { public:
+struct ControlSocketErrorHandler : public ErrorHandler { public:
 
     ControlSocketErrorHandler() {
 	_error_code = ControlSocket::CSERR_OK;

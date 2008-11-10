@@ -358,7 +358,7 @@ do_number_flags(char *pos, char *after_last, int base, int flags,
 }
 
 String
-ErrorHandler::format(const char *s, va_list val)
+ErrorHandler::xformat(const char *s, va_list val)
 {
     StringAccum msg;
 
@@ -496,7 +496,10 @@ ErrorHandler::format(const char *s, va_list val)
 	    break;
 	}
 
-	case '%': {
+	case '%':
+	case '<':
+	case '>':
+	case ',': {
 	    numbuf[0] = '%';
 	    s1 = numbuf;
 	    s2 = s1 + 1;
@@ -659,11 +662,11 @@ ErrorHandler::format(const char *s, va_list val)
 }
 
 String
-ErrorHandler::format(const char *fmt, ...)
+ErrorHandler::xformat(const char *fmt, ...)
 {
     va_list val;
     va_start(val, fmt);
-    String s = format(fmt, val);
+    String s = xformat(fmt, val);
     va_end(val);
     return s;
 }
@@ -796,20 +799,21 @@ ErrorHandler::xmessage(const String &str)
 }
 
 String
+ErrorHandler::format(const char *fmt, va_list val)
+{
+    return xformat(fmt, val);
+}
+
+String
 ErrorHandler::decorate(const String &str)
 {
     return str;
 }
 
 void *
-ErrorHandler::emit(const String &, void *, bool)
+ErrorHandler::emit(const String &, void *user_data, bool)
 {
-    return 0;
-}
-
-void
-ErrorHandler::account(int)
-{
+    return user_data;
 }
 
 
@@ -839,7 +843,7 @@ FileErrorHandler::emit(const String &str, void *, bool)
 void
 FileErrorHandler::account(int level)
 {
-    BaseErrorHandler::account(level);
+    ErrorHandler::account(level);
     if (level <= el_abort)
 	abort();
     else if (level <= el_fatal)
@@ -976,49 +980,17 @@ ErrorHandler::set_default_handler(ErrorHandler *errh)
 // ERROR VENEER
 //
 
-int
-ErrorVeneer::nwarnings() const
+String
+ErrorVeneer::format(const char *fmt, va_list val)
 {
-    return _errh->nwarnings();
-}
-
-int
-ErrorVeneer::nerrors() const
-{
-    return _errh->nerrors();
-}
-
-void
-ErrorVeneer::reset_counts()
-{
-    _errh->reset_counts();
+    if (_errh)
+	return _errh->format(fmt, val);
+    else
+	return ErrorHandler::format(fmt, val);
 }
 
 String
 ErrorVeneer::decorate(const String &str)
-{
-    return _errh->decorate(str);
-}
-
-void *
-ErrorVeneer::emit(const String &str, void *user_data, bool more)
-{
-    return _errh->emit(str, user_data, more);
-}
-
-void
-ErrorVeneer::account(int level)
-{
-    _errh->account(level);
-}
-
-
-//
-// LOCAL ERROR HANDLER
-//
-
-String
-LocalErrorHandler::decorate(const String &str)
 {
     if (_errh)
 	return _errh->decorate(str);
@@ -1027,17 +999,18 @@ LocalErrorHandler::decorate(const String &str)
 }
 
 void *
-LocalErrorHandler::emit(const String &str, void *user_data, bool more)
+ErrorVeneer::emit(const String &str, void *user_data, bool more)
 {
     if (_errh)
-	user_data = _errh->emit(str, user_data, more);
-    return user_data;
+	return _errh->emit(str, user_data, more);
+    else
+	return ErrorHandler::emit(str, user_data, more);
 }
 
 void
-LocalErrorHandler::account(int level)
+ErrorVeneer::account(int level)
 {
-    BaseErrorHandler::account(level);
+    ErrorHandler::account(level);
     if (_errh)
 	_errh->account(level);
 }
@@ -1062,19 +1035,17 @@ ContextErrorHandler::decorate(const String &str)
 {
     String cstr;
     if (_context) {
-	String cl = _context_landmark;
-	if (!cl)
-	    (void) parse_anno(str, str.begin(), str.end(),
-			      "l", &cl, (const char *) 0);
-	cl = String::make_stable(e_info, 3) + cl;
-	cstr = combine_anno(_context, cl);
+	const char *str_endanno = parse_anno(str, str.begin(), str.end(),
+					     (const char *) 0);
+	cstr = combine_anno(combine_anno(_context, _context_landmark),
+			    str.substring(str.begin(), str_endanno));
 	if (cstr && cstr.back() != '\n')
 	    cstr += '\n';
 	_context = String();
     }
 
     cstr += combine_anno(str, _context_landmark + _indent);
-    return _errh->decorate(cstr);
+    return ErrorVeneer::decorate(cstr);
 }
 
 
@@ -1091,7 +1062,7 @@ PrefixErrorHandler::PrefixErrorHandler(ErrorHandler *errh,
 String
 PrefixErrorHandler::decorate(const String &str)
 {
-    return _errh->decorate(combine_anno(str, _prefix));
+    return ErrorVeneer::decorate(combine_anno(str, _prefix));
 }
 
 
@@ -1107,7 +1078,7 @@ LandmarkErrorHandler::LandmarkErrorHandler(ErrorHandler *errh, const String &lan
 String
 LandmarkErrorHandler::decorate(const String &str)
 {
-    return _errh->decorate(combine_anno(str, _landmark));
+    return ErrorVeneer::decorate(combine_anno(str, _landmark));
 }
 
 
