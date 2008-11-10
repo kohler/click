@@ -177,7 +177,7 @@ KernelHandlerProxy::check_handler(const String &hname, bool write, ErrorHandler 
   struct stat buf;
   stat(fn.c_str(), &buf);
   if (S_ISDIR(buf.st_mode)) {
-    errh->error("{ec:%d}No handler named '%#s'", CSERR_NO_SUCH_HANDLER, hname.printable().c_str());
+    errh->error("{cserr:%d}No handler named '%#s'", CSERR_NO_SUCH_HANDLER, hname.printable().c_str());
     return 0;
   } else {
     errh->message("%s handler '%s' OK", (write ? "Write" : "Read"), hname.printable().c_str());
