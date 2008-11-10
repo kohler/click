@@ -65,7 +65,7 @@ Unqueue::run_task(Task *)
 	return false;
 
     int worked = 0;
-    while (worked < _burst) {
+    while (worked < _burst && _active) {
 	if (Packet *p = input(0).pull()) {
 	    worked++;
 	    output(0).push(p);
@@ -74,7 +74,7 @@ Unqueue::run_task(Task *)
 	else
 	    break;
     }
-    
+
     _task.fast_reschedule();
   out:
     _count += worked;
