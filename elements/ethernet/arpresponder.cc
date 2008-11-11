@@ -180,9 +180,6 @@ ARPResponder::simple_action(Packet *p)
 	if (lookup(ipa, ena)) {
 	    q = make_response(ea->arp_sha, ea->arp_spa, ena.data(), ea->arp_tpa, p);
 	}
-    } else {
-	struct in_addr ina;
-	memcpy(&ina, &ea->arp_tpa, 4);
     }
 
     p->kill();
