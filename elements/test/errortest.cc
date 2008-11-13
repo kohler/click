@@ -20,6 +20,7 @@
 #include "errortest.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/straccum.hh>
 #include <click/etheraddress.hh>
 CLICK_DECLS
 
@@ -27,13 +28,15 @@ namespace {
 class ErrorTestHandler : public ErrorHandler { public:
     ErrorTestHandler() { }
     void *emit(const String &str, void *, bool) {
-	_text = str;
+	_text << str << '\n';
 	return 0;
     }
     bool check(const String &text) {
-	return (_text == text);
+	bool same = text.equals(_text.begin(), _text.length());
+	_text.clear();
+	return same;
     }
-    String _text;
+    StringAccum _text;
 };
 }
 
@@ -56,7 +59,40 @@ ErrorTest::initialize(ErrorHandler *init_errh)
     EtherAddress etha;
     cp_ethernet_address("0:1:3:5:A:B", &etha);
     errh.error("IP %{ip_ptr} %% ETH %{ether_ptr}", &ipa, &etha);
-    CHECK("<3>IP 1.0.2.3 % ETH 00-01-03-05-0A-0B");
+    CHECK("<3>IP 1.0.2.3 % ETH 00-01-03-05-0A-0B\n");
+
+    {
+	ContextErrorHandler cerrh(&errh, "Context:");
+	cerrh.error("Testing context 1");
+	CHECK("<3>{context:context}Context:\n<3>  Testing context 1\n");
+	cerrh.error("Testing context 2");
+	CHECK("<3>  Testing context 2\n");
+    }
+
+    {
+	PrefixErrorHandler perrh(&errh, "{context:no}");
+	ContextErrorHandler cerrh(&perrh, "Context:");
+	cerrh.error("Testing context 1");
+	CHECK("{context:no}<3>Testing context 1\n");
+	cerrh.error("Testing context 2");
+	CHECK("{context:no}<3>Testing context 2\n");
+    }
+
+    {
+	ContextErrorHandler cerrh(&errh, "Context:");
+	cerrh.error("{context:no}Testing context 1");
+	CHECK("<3>{context:no}Testing context 1\n");
+	cerrh.error("Testing context 2");
+	CHECK("<3>{context:context}Context:\n<3>  Testing context 2\n");
+    }
+
+    {
+	ContextErrorHandler cerrh(&errh, "Context:");
+	cerrh.error("{context:nocontext}Testing context 1");
+	CHECK("<3>{context:nocontext}  Testing context 1\n");
+	cerrh.error("{context:noindent}Testing context 2");
+	CHECK("<3>{context:context}Context:\n<3>{context:noindent}Testing context 2\n");
+    }
 
     init_errh->message("All tests pass!");
     return 0;

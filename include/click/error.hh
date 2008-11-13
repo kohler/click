@@ -322,7 +322,9 @@ class ErrorHandler { public:
      *
      * <tr><td><tt>\%s</tt></td><td>Format a C string (<tt>const char *</tt>).
      * The alternate form <tt>\%\#s</tt> calls String::printable() on the
-     * input string.</td></tr>
+     * input string.  Both <tt>\%\#s</tt> and the alternate form <tt>\%'s</tt>
+     * ensure that no part of the string is mistaken for an error
+     * annotation.</td></tr>
      *
      * <tr><td><tt>\%c</tt></td><td>Format a character.  Prints a C-like
      * escape if the input character isn't printable ASCII.</td></tr>
@@ -500,6 +502,23 @@ class ErrorHandler { public:
     static const char *parse_anno(const String &str,
 		const char *begin, const char *end, ...) ERRH_SENTINEL;
 
+    /** @brief Skip a string's error annotations.
+     * @param begin pointer to start of string
+     * @param end pointer one past end of string
+     * @return pointer to first character after annotation area
+     * @post @a begin <= returned value <= @a end
+     *
+     * Use this function to skip an error line's annotation area.  The error
+     * line is defined as a pair of iterators. */
+    static const char *skip_anno(const char *begin, const char *end) {
+	String name, value;
+	const char *x = begin;
+	do {
+	    x = skip_anno(String(), x, end, &name, &value, false);
+	} while (name);
+	return x;
+    }
+
 
     /** @brief Return a landmark annotation equal to @a x.
      * @param x landmark
@@ -532,7 +551,7 @@ class ErrorHandler { public:
     enum ConversionFlags {
 	f_zero_pad = 1, f_plus_positive = 2, f_space_positive = 4,
 	f_left_just = 8, f_alternate_form = 16, f_uppercase = 32,
-	f_signed = 64, f_negative = 128
+	f_signed = 64, f_negative = 128, f_singlequote = 256
     };
     static Conversion *add_conversion(const String &name, ConversionFunction func);
     static int remove_conversion(Conversion *conversion);
@@ -652,7 +671,8 @@ class LocalErrorHandler : public ErrorVeneer { public:
  * @brief A stackable ErrorHandler that prints context lines.
  *
  * The stackable ContextErrorHandler adds context to the first error
- * message printed, and optionally indents error messages.  For example:
+ * message printed, and optionally indent error messages so that they appear
+ * grouped underneath the context.
  * @code
  * FileErrorHandler errh1(stderr);
  * ContextErrorHandler errh2(&errh1, "While counting to 2:", "  ");
@@ -661,14 +681,42 @@ class LocalErrorHandler : public ErrorVeneer { public:
  *     // prints "While counting to 2:\n"
  *     //        "  An error occurred.\n"
  *     //        "  Another error occurred.\n"
- * @endcode */
+ * @endcode
+ *
+ * To prevent ContextErrorHandler from indenting or printing context for a
+ * message, add a "{context:no}" annotation to the message's first line.  To
+ * turn off the indent but keep the context, add a "{context:noindent}"
+ * annotation.
+ * @code
+ * FileErrorHandler errh1(stderr);
+ * ContextErrorHandler errh2(&errh1, "While counting to 2:", "  ");
+ * errh2.error("{context:no}An error occurred.");
+ * errh2.error("Another error occurred.");
+ *     // prints "An error occurred.\n"
+ *     //        "While counting to 2:\n"
+ *     //        "  Another error occurred.\n"
+ *
+ * FileErrorHandler errh1(stderr);
+ * PrefixErrorHandler noctx_errh(stderr, "{context:no}");
+ * ContextErrorHandler errh2(&errh1, "While counting to 2:", "  ");
+ * errh2.error("An error occurred.");
+ * errh2.error("Another error occurred.");
+ *     // prints "An error occurred.\n"
+ *     //        "Another error occurred.\n"
+ * @endcode
+ *
+ * ContextErrorHandler adds the "{context:context}" annotation to context
+ * lines. */
 class ContextErrorHandler : public ErrorVeneer { public:
 
     /** @brief Construct a ContextErrorHandler.
      * @param errh base ErrorHandler
      * @param context context lines
      * @param indent string to indent errors
-     * @param context_landmark landmark used for context lines */
+     * @param context_landmark landmark used for context lines
+     *
+     * A nonempty @a context_landmark is used as the landmark for the context,
+     * as well as the default landmark for error messages themselves. */
     ContextErrorHandler(ErrorHandler *errh, const String &context,
 			const String &indent = String::make_stable("  ", 2),
 			const String &context_landmark = String());

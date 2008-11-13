@@ -132,41 +132,54 @@ ErrorHandler::skip_anno(const String &str, const char *begin, const char *end,
 	const char *x = parse_level(s + 1, end, 0);
 	if (x != s + 1 && x != end && *x == '>') {
 	    name = String::make_stable("<>", 2);
-	    value = str.substring(begin + 1, x);
+	    if (likely(str))
+		value = str.substring(begin + 1, x);
 	    begin = x + 1;
 	}
 
     } else if (s + 2 <= end && *s == '{' && s[1] == '}')
 	begin = s + 2;
 
-    else if (s + 3 <= end && *s == '{') {
+    else if (s + 3 <= end && *s == '{' && str) {
 	for (++s; s != end && isalnum((unsigned char) *s); ++s)
 	    /* nada */;
-	if (s != end && s != begin + 1) {
-	    if (*s == '}') {
-		name = str.substring(begin + 1, s);
-		begin = s + 1;
-	    } else if (*s == ':') {
-		const char *x, *last = s + 1;
-		StringAccum sa;
-		for (x = s + 1; x != end && *x != '\n' && *x != '}'; ++x)
-		    if (*x == '\\' && x + 1 != end && x[1] != '\n') {
-			if (!raw) {
-			    sa.append(last, x);
-			    sa << (x[1] == 'n' ? '\n' : x[1]);
-			    last = x + 2;
-			}
-			++x;
-		    }
-		if (x != end && *x == '}') {
-		    name = str.substring(begin + 1, s);
-		    if (sa) {
+	if (s == end || s == begin + 1 || (*s != '}' && *s != ':'))
+	    /* not an annotation */;
+	else if (*s == '}' && likely(str)) {
+	    name = str.substring(begin + 1, s);
+	    begin = s + 1;
+	} else if (*s == '}') {
+	    name = String::make_stable("{}", 2);
+	    begin = s + 1;
+	} else if (likely(str)) {
+	    const char *x, *last = s + 1;
+	    StringAccum sa;
+	    for (x = s + 1; x != end && *x != '\n' && *x != '}'; ++x)
+		if (*x == '\\' && x + 1 != end && x[1] != '\n') {
+		    if (!raw) {
 			sa.append(last, x);
-			value = sa.take_string();
-		    } else
-			value = str.substring(s + 1, x);
-		    begin = x + 1;
+			sa << (x[1] == 'n' ? '\n' : x[1]);
+			last = x + 2;
+		    }
+		    ++x;
 		}
+	    if (x != end && *x == '}') {
+		name = str.substring(begin + 1, s);
+		if (sa) {
+		    sa.append(last, x);
+		    value = sa.take_string();
+		} else
+		    value = str.substring(s + 1, x);
+		begin = x + 1;
+	    }
+	} else {
+	    const char *x;
+	    for (x = s + 1; x != end && *x != '\n' && *x != '}'; ++x)
+		if (*x == '\\' && x + 1 != end && x[1] != '\n')
+		    ++x;
+	    if (x != end && *x == '}') {
+		name = String::make_stable("{}", 2);
+		begin = x + 1;
 	    }
 	}
     }
@@ -365,7 +378,7 @@ ErrorHandler::xformat(const char *s, va_list val)
     char numbuf[NUMBUF_SIZE];	// for numerics
     numbuf[NUMBUF_SIZE-1] = 0;
 
-    String placeholder;		// to ensure temporaries aren't destroyed
+    String strstore;		// to ensure temporaries aren't destroyed
 
     // declare and initialize these here to make gcc shut up about possible
     // use before initialization
@@ -396,6 +409,7 @@ ErrorHandler::xformat(const char *s, va_list val)
 	case '-': flags |= f_left_just; goto flags;
 	case ' ': flags |= f_space_positive; goto flags;
 	case '+': flags |= f_plus_positive; goto flags;
+	case '\'': flags |= f_singlequote; goto flags;
 	}
 
 	// parse field width
@@ -461,13 +475,52 @@ ErrorHandler::xformat(const char *s, va_list val)
 	    s1 = va_arg(val, const char *);
 	    if (!s1)
 		s1 = "(null)";
+
+	    // transform string, fetch length
+	    int len;
 	    if (flags & f_alternate_form) {
-		placeholder = String(s1).printable();
-		s1 = placeholder.c_str();
+		strstore = String(s1).printable();
+		len = strstore.length();
+	    } else
+		len = strlen(s1);
+
+	    // adjust length for precision
+	    if (precision >= 0 && precision < len)
+		len = precision;
+
+	    // quote characters that look like annotations, readjusting length
+	    if (flags & (f_singlequote | f_alternate_form)) {
+		if (!(flags & f_alternate_form))
+		    strstore = String(s1, len);
+
+		// check first line, considering trailing part of 'msg'
+		const char *mbegin = msg.end();
+		while (mbegin != msg.begin() && mbegin[-1] != '\n')
+		    --mbegin;
+		if (skip_anno(strstore.begin(), strstore.end()) != strstore.begin()
+		    && skip_anno(mbegin, msg.end()) == msg.end()) {
+		    strstore = String::make_stable("{}", 2) + strstore;
+		    len += 2;
+		}
+
+		// check subsequent lines
+		const char *s = find(strstore.begin(), strstore.end(), '\n');
+		while (s != strstore.end() && s + 1 != strstore.end()) {
+		    size_t nextpos = (s + 1) - strstore.begin();
+		    if (skip_anno(s + 1, strstore.end()) != s + 1) {
+			strstore = strstore.substring(strstore.begin(), s + 1)
+			    + String::make_stable("{}", 2)
+			    + strstore.substring(s + 1, strstore.end());
+			len += 2;
+		    }
+		    s = find(strstore.begin() + nextpos, strstore.end(), '\n');
+		}
 	    }
-	    for (s2 = s1; *s2 && precision != 0; s2++)
-		if (precision > 0)
-		    precision--;
+
+	    // obtain begin and end pointers
+	    if (flags & (f_singlequote | f_alternate_form))
+		s1 = strstore.begin();
+	    s2 = s1 + len;
 	    break;
 	}
 
@@ -628,9 +681,9 @@ ErrorHandler::xformat(const char *s, va_list val)
 	    s = rbrace + 1;
 	    for (Conversion *item = error_items; item; item = item->next)
 		if (item->name == name) {
-		    placeholder = item->hook(flags, VA_LIST_REF(val));
-		    s1 = placeholder.data();
-		    s2 = s1 + placeholder.length();
+		    strstore = item->hook(flags, VA_LIST_REF(val));
+		    s1 = strstore.begin();
+		    s2 = strstore.end();
 		    goto got_result;
 		}
 	    goto error;
@@ -1028,24 +1081,35 @@ ContextErrorHandler::ContextErrorHandler(ErrorHandler *errh,
 {
     if (context_landmark)
 	_context_landmark = make_landmark_anno(context_landmark);
+    if (context)
+	_context = combine_anno(_context, String::make_stable("{context:context}", 17));
 }
 
 String
 ContextErrorHandler::decorate(const String &str)
 {
-    String cstr;
-    if (_context) {
-	const char *str_endanno = parse_anno(str, str.begin(), str.end(),
-					     (const char *) 0);
-	cstr = combine_anno(combine_anno(_context, _context_landmark),
-			    str.substring(str.begin(), str_endanno));
-	if (cstr && cstr.back() != '\n')
-	    cstr += '\n';
-	_context = String();
-    }
+    String cstr = ErrorVeneer::decorate(str), context_anno;
+    const char *cstr_endanno = parse_anno(cstr, cstr.begin(), cstr.end(),
+					  "context", &context_anno,
+					  (const char *) 0);
+    if (context_anno.equals("no", 2))
+	return cstr;
 
-    cstr += combine_anno(str, _context_landmark + _indent);
-    return ErrorVeneer::decorate(cstr);
+    String icstr;
+    if (context_anno.equals("noindent", 8))
+	icstr = combine_anno(cstr, _context_landmark);
+    else
+	icstr = combine_anno(cstr, _context_landmark + _indent);
+
+    if (_context && !context_anno.equals("nocontext", 9)) {
+	String astr = combine_anno(combine_anno(_context, _context_landmark),
+				   cstr.substring(cstr.begin(), cstr_endanno));
+	if (astr && astr.back() != '\n')
+	    astr += '\n';
+	_context = String();
+	return ErrorVeneer::decorate(astr) + icstr;
+    } else
+	return icstr;
 }
 
 
