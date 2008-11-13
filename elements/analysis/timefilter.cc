@@ -130,11 +130,11 @@ TimeFilter::simple_action(Packet *p)
     if (unlikely(tv < _first))
 	return kill(p);
     else {
-	if (unlikely(tv < _last) && _last_h && _last_h_ready) {
+	if (!likely(tv < _last) && _last_h && _last_h_ready) {
 	    _last_h_ready = false;
 	    (void) _last_h->call_write();
 	}
-	if (unlikely(tv < _last))
+	if (!likely(tv < _last))
 	    return kill(p);
 	else
 	    return p;
