@@ -46,7 +46,7 @@ public:
 
   const char *class_name() const		{ return "LookupIP6Route"; }
   const char *port_count() const		{ return "1/-"; }
-  const char *processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return PUSH; }
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
