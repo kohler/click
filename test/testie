@@ -900,7 +900,8 @@ sub execute_test ($$$) {
 	%expanded = ("stdout" => 1, "stderr" => 1);
 	push @show, ["stdout", $f->[1]], ["stderr", $f->[1]];
 	while (($k, $v) = each %$tt) {
-	    next if $k !~ /\A[exv]:(.*)\Z/ || exists $expanded{$1};
+	    next if $k !~ /\A[exv]:(.*)\Z/ || exists $expanded{$1}
+		|| $k =~ /:firstline\Z/;
 	    $expanded{$1} = 1;
 	    push @shownit, [$1, $f->[1]];
 	}
