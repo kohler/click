@@ -177,6 +177,7 @@ class Element { public:
     void add_data_handlers(const String &name, int flags, String *data);
     void add_data_handlers(const String &name, int flags, IPAddress *data);
     void add_data_handlers(const String &name, int flags, EtherAddress *data);
+    void add_data_handlers(const String &name, int flags, Timestamp *data);
 
     static String read_positional_handler(Element*, void*);
     static String read_keyword_handler(Element*, void*);

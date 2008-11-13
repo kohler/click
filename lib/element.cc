@@ -2252,6 +2252,23 @@ ether_address_write_data_handler(const String &str, Element *element, void *user
 	return errh->error("expected Ethernet address");
 }
 
+static String
+timestamp_read_data_handler(Element *element, void *user_data)
+{
+    Timestamp *ptr = reinterpret_cast<Timestamp *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    return ptr->unparse();
+}
+
+static int
+timestamp_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *errh)
+{
+    Timestamp *ptr = reinterpret_cast<Timestamp *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    if (cp_time(str, ptr))
+	return 0;
+    else
+	return errh->error("expected timestamp");
+}
+
 void
 Element::add_data_handlers(const String &name, int flags, ReadHandlerCallback read_callback, WriteHandlerCallback write_callback, void *data)
 {
@@ -2377,6 +2394,13 @@ void
 Element::add_data_handlers(const String &name, int flags, EtherAddress *data)
 {
     add_data_handlers(name, flags, ether_address_read_data_handler, ether_address_write_data_handler, data);
+}
+
+/** @overload */
+void
+Element::add_data_handlers(const String &name, int flags, Timestamp *data)
+{
+    add_data_handlers(name, flags, timestamp_read_data_handler, timestamp_write_data_handler, data);
 }
 
 
