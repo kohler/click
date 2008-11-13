@@ -56,7 +56,7 @@ TimeFilter::configure(Vector<String> &conf, ErrorHandler *errh)
     _first_relative = _first_init_relative = _last_relative = _last_init_relative = _last_interval = false;
 
     if ((bool) first + (bool) first_delta + (bool) first_init > 1)
-	return errh->error("'START', 'START_AFTER', and 'START_AFTER_INIT' are mutually exclusive");
+	return errh->error("START, START_AFTER, and START_AFTER_INIT are mutually exclusive");
     else if (first)
 	_first = first;
     else if (first_init)
@@ -65,7 +65,7 @@ TimeFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	_first = first_delta, _first_relative = true;
 
     if ((bool) last + (bool) last_delta + (bool) last_init + (bool) interval > 1)
-	return errh->error("'END', 'END_AFTER', 'END_AFTER_INIT', and 'INTERVAL'\nare mutually exclusive");
+	return errh->error("END, END_AFTER, END_AFTER_INIT, and INTERVAL are mutually exclusive");
     else if (last)
 	_last = last;
     else if (last_delta)
@@ -75,10 +75,10 @@ TimeFilter::configure(Vector<String> &conf, ErrorHandler *errh)
     else if (interval)
 	_last = interval, _last_interval = true;
     else
-	_last.set_sec(0x7FFFFFFF);
+	_last.set_sec(Timestamp::max_seconds);
 
     if (_last_h && stop)
-	return errh->error("'END_CALL' and 'STOP' are mutually exclusive");
+	return errh->error("END_CALL and STOP are mutually exclusive");
     else if (stop)
 	_last_h = new HandlerCall("stop true");
 
@@ -131,8 +131,13 @@ TimeFilter::simple_action(Packet *p)
 	return kill(p);
     else {
 	if (!likely(tv < _last) && _last_h && _last_h_ready) {
-	    _last_h_ready = false;
-	    (void) _last_h->call_write();
+	    Timestamp prev_last;
+	    do {
+		prev_last = _last;
+		_last_h_ready = false;
+		(void) _last_h->call_write();
+	    } while (!(tv < _last) && _last_h && _last_h_ready
+		     && _last > prev_last);
 	}
 	if (!likely(tv < _last))
 	    return kill(p);
@@ -142,33 +147,53 @@ TimeFilter::simple_action(Packet *p)
 }
 
 
-enum { H_EXTEND_INTERVAL };
-
-int
-TimeFilter::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandler *errh)
+String
+TimeFilter::read_handler(Element *e, void *)
 {
     TimeFilter *tf = static_cast<TimeFilter *>(e);
-    String s = cp_uncomment(s_in);
+    return (tf->_last - tf->_first).unparse();
+}
+
+int
+TimeFilter::write_handler(const String &s, Element *e, void *thunk, ErrorHandler *errh)
+{
+    Timestamp t;
+    if (!cp_time(s, &t))
+	return errh->error("expected time");
+    TimeFilter *tf = static_cast<TimeFilter *>(e);
     switch ((intptr_t)thunk) {
-      case H_EXTEND_INTERVAL: {
-	  Timestamp t;
-	  if (cp_time(s, &t)) {
-	      tf->_last += t;
-	      if (tf->_last_h)
-		  tf->_last_h_ready = true;
-	      return 0;
-	  } else
-	      return errh->error("'extend_interval' takes a time interval");
-      }
-      default:
-	return -EINVAL;
+    case h_start:
+	if (!tf->_ready)
+	    tf->first_packet(t);
+	tf->_first = t;
+	break;
+    case h_end:
+	tf->_last = t;
+	tf->_last_relative = tf->_last_init_relative = tf->_last_interval = false;
+	tf->_last_h_ready = true;
+	break;
+    case h_interval:
+	tf->_last = tf->_first + t;
+	tf->_last_h_ready = true;
+	break;
+    case h_extend_interval:
+	tf->_last += t;
+	tf->_last_h_ready = true;
+	break;
     }
+    return 0;
 }
 
 void
 TimeFilter::add_handlers()
 {
-    add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
+    add_data_handlers("start", Handler::OP_READ, &_first);
+    add_data_handlers("end", Handler::OP_READ, &_last);
+    add_write_handler("start", write_handler, h_start);
+    add_write_handler("end", write_handler, h_end);
+    add_read_handler("interval", read_handler, h_interval);
+    add_write_handler("end", write_handler, h_interval);
+    add_write_handler("extend_interval", write_handler, h_extend_interval);
 }
 
 CLICK_ENDDECLS

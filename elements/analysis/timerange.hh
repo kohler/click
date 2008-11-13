@@ -75,6 +75,9 @@ class TimeRange : public Element { public:
 
     bool _simple;
 
+    enum {
+	h_range, h_interval, h_reset
+    };
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler*);
 

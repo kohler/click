@@ -63,20 +63,12 @@ TimeRange::read_handler(Element *e, void *thunk)
     TimeRange *tr = static_cast<TimeRange *>(e);
     StringAccum sa;
     switch ((intptr_t)thunk) {
-      case 0:
-	sa << tr->_first;
-	break;
-      case 1:
-	sa << tr->_last;
-	break;
-      case 2:
+    case h_range:
 	sa << tr->_first << ' ' << tr->_last;
 	break;
-      case 3:
+    case h_interval:
 	sa << (tr->_last - tr->_first);
 	break;
-      default:
-	sa << "<error>";
     }
     return sa.take_string();
 }
@@ -92,11 +84,11 @@ TimeRange::write_handler(const String &, Element *e, void *, ErrorHandler *)
 void
 TimeRange::add_handlers()
 {
-    add_read_handler("first", read_handler, (void *)0);
-    add_read_handler("last", read_handler, (void *)1);
-    add_read_handler("range", read_handler, (void *)2);
-    add_read_handler("interval", read_handler, (void *)3);
-    add_write_handler("reset", write_handler, (void *)0, Handler::BUTTON);
+    add_data_handlers("first", Handler::OP_READ, &_first);
+    add_data_handlers("last", Handler::OP_READ, &_last);
+    add_read_handler("range", read_handler, h_range);
+    add_read_handler("interval", read_handler, h_interval);
+    add_write_handler("reset", write_handler, h_reset, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS
