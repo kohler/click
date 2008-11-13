@@ -472,7 +472,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     if (!nfields) {	// bad format
 	if (!_format_complaint) {
 	    // don't complain if the line was all blank
-	    if (binary || (int) strspn(line.data(), " \t\n\r") != line.length()) {
+	    if (binary || !cp_is_space(line)) {
 		if (_fields.size() == 0)
 		    _ff.error(errh, "no '!data' provided");
 		else
@@ -759,6 +759,6 @@ FromIPSummaryDump::add_handlers()
 	add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(userlevel FromFile IPSummaryDumpInfo ToIPSummaryDump)
+ELEMENT_REQUIRES(userlevel FromFile IPSummaryDumpInfo)
 EXPORT_ELEMENT(FromIPSummaryDump)
 CLICK_ENDDECLS
