@@ -125,18 +125,19 @@ Packet *
 TimeFilter::simple_action(Packet *p)
 {
     const Timestamp& tv = p->timestamp_anno();
-    if (!_ready)
+    if (unlikely(!_ready))
 	first_packet(tv);
-    if (tv < _first)
+    if (unlikely(tv < _first))
 	return kill(p);
-    else if (tv < _last)
-	return p;
     else {
-	if (_last_h && _last_h_ready) {
+	if (unlikely(tv < _last) && _last_h && _last_h_ready) {
 	    _last_h_ready = false;
 	    (void) _last_h->call_write();
 	}
-	return kill(p);
+	if (unlikely(tv < _last))
+	    return kill(p);
+	else
+	    return p;
     }
 }
 
