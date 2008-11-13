@@ -549,11 +549,17 @@ ErrorHandler::xformat(const char *s, va_list val)
 	    break;
 	}
 
-	case '%':
+	case '%': {
+	    numbuf[0] = '%';
+	    s1 = numbuf;
+	    s2 = s1 + 1;
+	    break;
+	}
+
 	case '<':
 	case '>':
 	case ',': {
-	    numbuf[0] = '%';
+	    numbuf[0] = '\'';
 	    s1 = numbuf;
 	    s2 = s1 + 1;
 	    break;
