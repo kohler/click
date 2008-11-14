@@ -490,7 +490,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	if (d.make_ip(0))
 	    d.make_transp();	// may fail
 
-    if (d.p && d.is_ip) {
+    if (d.p && d.is_ip && d.p->ip_header()) {
 	// set IP length
 	if (!d.p->ip_header()->ip_len) {
 	    int len = d.p->network_length() + EXTRA_LENGTH_ANNO(d.p);
