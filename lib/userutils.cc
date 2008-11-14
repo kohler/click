@@ -281,17 +281,21 @@ shell_quote(const String &str, bool quote_tilde)
 String
 shell_command_output_string(String cmdline, const String &input, ErrorHandler *errh)
 {
-  FILE *f = tmpfile();
-  if (!f)
-    errh->fatal("cannot create temporary file: %s", strerror(errno));
-  fwrite(input.data(), 1, input.length(), f);
-  fflush(f);
-  rewind(f);
+    FILE *f = tmpfile();
+    if (!f) {
+	errh->fatal("cannot create temporary file: %s", strerror(errno));
+	return String();
+    }
+    fwrite(input.data(), 1, input.length(), f);
+    fflush(f);
+    rewind(f);
 
-  String new_cmdline = cmdline + " 0<&" + String(fileno(f));
-  FILE *p = popen(new_cmdline.c_str(), "r");
-  if (!p)
-    errh->fatal("'%s': %s", cmdline.c_str(), strerror(errno));
+    String new_cmdline = cmdline + " 0<&" + String(fileno(f));
+    FILE *p = popen(new_cmdline.c_str(), "r");
+    if (!p) {
+	errh->fatal("'%s': %s", cmdline.c_str(), strerror(errno));
+	return String();
+    }
 
   StringAccum sa;
   while (!feof(p)) {
