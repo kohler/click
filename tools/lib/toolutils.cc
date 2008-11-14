@@ -59,18 +59,17 @@ RouterT *
 read_router_string(String text, const String &landmark, bool empty_ok,
 		   ErrorHandler *errh)
 {
-  // check for archive
-  Vector<ArchiveElement> archive;
-  if (text.length() && text[0] == '!') {
-    ArchiveElement::parse(text, archive, errh);
-    int found = ArchiveElement::arindex(archive, "config");
-    if (found >= 0)
-      text = archive[found].data;
-    else {
-      errh->lerror(landmark, "archive has no 'config' section");
-      text = String();
+    // check for archive
+    Vector<ArchiveElement> archive;
+    if (text.length() && text[0] == '!') {
+	ArchiveElement::parse(text, archive, errh);
+	if (ArchiveElement *ae = ArchiveElement::find(archive, "config"))
+	    text = ae->data;
+	else {
+	    errh->lerror(landmark, "archive has no %<config%> section");
+	    text = String();
+	}
     }
-  }
 
   // read router
   if (!text.length() && !empty_ok)

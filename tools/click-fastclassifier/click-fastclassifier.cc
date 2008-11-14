@@ -679,14 +679,14 @@ compile_classifiers(RouterT *r, const String &package_name,
 	bool tmpdir_populated = false;
 
 	if (compile_drivers & (1 << Driver::LINUXMODULE))
-	    if (String fn = click_compile_archive_file(r->archive(), source_ae, package_name, "linuxmodule", "", tmpdir_populated, &berrh)) {
+	    if (String fn = click_compile_archive_file(r->archive(), &r->archive()[source_ae], package_name, "linuxmodule", "", tmpdir_populated, &berrh)) {
 		ArchiveElement ae = init_archive_element(package_name + ".ko", 0600);
 		ae.data = file_string(fn, errh);
 		r->add_archive(ae);
 	    }
 
 	if (compile_drivers & (1 << Driver::USERLEVEL))
-	    if (String fn = click_compile_archive_file(r->archive(), source_ae, package_name, "userlevel", "", tmpdir_populated, &berrh)) {
+	    if (String fn = click_compile_archive_file(r->archive(), &r->archive()[source_ae], package_name, "userlevel", "", tmpdir_populated, &berrh)) {
 		ArchiveElement ae = init_archive_element(package_name + ".uo", 0600);
 		ae.data = file_string(fn, errh);
 		r->add_archive(ae);

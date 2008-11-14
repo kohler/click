@@ -511,11 +511,10 @@ pretty_read_router(const char *filename, bool file_is_expr,
     Vector<ArchiveElement> archive;
     if (config.length() && config[0] == '!') {
 	ArchiveElement::parse(config, archive, errh);
-	int found = ArchiveElement::arindex(archive, "config");
-	if (found >= 0)
-	    config = archive[found].data;
+	if (ArchiveElement *ae = ArchiveElement::find(archive, "config"))
+	    config = ae->data;
 	else {
-	    errh->error("%s: archive has no 'config' section", filename);
+	    errh->error("%s: archive has no %<config%> section", filename);
 	    config = String();
 	}
     }

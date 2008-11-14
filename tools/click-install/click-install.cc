@@ -179,7 +179,7 @@ compile_archive_packages(RouterT *r, HashTable<String, int> &packages,
 
     // found source file, so compile it
     errh->message("Compiling package %s from config archive", req.c_str());
-    String result_filename = click_compile_archive_file(r->archive(), source_ae, req, COMPILETARGET, "", tmpdir_populated, errh);
+    String result_filename = click_compile_archive_file(r->archive(), &r->archive()[source_ae], req, COMPILETARGET, "", tmpdir_populated, errh);
 
     // grab object file and add to archive
     if (result_filename) {

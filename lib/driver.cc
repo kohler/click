@@ -197,7 +197,8 @@ check_tmpdir(const Vector<ArchiveElement> &archive, bool populate_tmpdir,
 }
 
 String
-click_compile_archive_file(const Vector<ArchiveElement> &archive, int ai,
+click_compile_archive_file(const Vector<ArchiveElement> &archive,
+			   const ArchiveElement *ae,
 			   String package,
 			   const String &target, const String &extra_flags,
 			   bool &tmpdir_populated, ErrorHandler *errh)
@@ -223,11 +224,10 @@ click_compile_archive_file(const Vector<ArchiveElement> &archive, int ai,
 	package_file += ".bo";
 
     ContextErrorHandler cerrh
-	(errh, "While compiling package '" + package_file + "':");
+	(errh, "While compiling package %<" + package_file + "%>:");
 
     // write .cc file
-    const ArchiveElement &ae = archive[ai];
-    String filename = ae.name;
+    String filename = ae->name;
     int rightdot = filename.find_right('.');
     if (rightdot >= 0 && filename.substring(0, rightdot) == package)
 	filename = package + "_" + filename.substring(rightdot);
@@ -237,7 +237,7 @@ click_compile_archive_file(const Vector<ArchiveElement> &archive, int ai,
 	cerrh.error("%s: %s", filepath.c_str(), strerror(errno));
 	return String();
     }
-    fwrite(ae.data.data(), 1, ae.data.length(), f);
+    fwrite(ae->data.data(), 1, ae->data.length(), f);
     fclose(f);
 
     // prepare click-buildtool makepackage
@@ -246,8 +246,8 @@ click_compile_archive_file(const Vector<ArchiveElement> &archive, int ai,
 		    << " -C " << *tmpdir << " -t " << target;
 
     // check for compile flags
-    const char *ss = ae.data.begin();
-    const char *send = ae.data.end();
+    const char *ss = ae->data.begin();
+    const char *send = ae->data.end();
     for (int i = 0; i < 5 && ss < send; i++) {
 	// grab first line
 	const char *eb = ss;
@@ -269,7 +269,7 @@ click_compile_archive_file(const Vector<ArchiveElement> &archive, int ai,
 	    for (const char *x = eb + 18; x < el - 2; x++)
 		if (*x == '\'' || *x == '\"' || *x == ';' || *x == '|' || *x == '>' || *x == '<' || *x == '&' || *x == '*')
 		    goto bad_click_compile;
-	    compile_command << ' ' << ae.data.substring(eb + 18, el - 2);
+	    compile_command << ' ' << ae->data.substring(eb + 18, el - 2);
 	  bad_click_compile: ;
 	}
     }
@@ -279,11 +279,11 @@ click_compile_archive_file(const Vector<ArchiveElement> &archive, int ai,
     errh->message("%s", compile_command.c_str());
     int compile_retval = system(compile_command.c_str());
     if (compile_retval == 127)
-	cerrh.error("could not run '%s'", compile_command.c_str());
+	cerrh.error("could not run %<%s%>", compile_command.c_str());
     else if (compile_retval < 0)
-	cerrh.error("could not run '%s': %s", compile_command.c_str(), strerror(errno));
+	cerrh.error("could not run %<%s%>: %s", compile_command.c_str(), strerror(errno));
     else if (compile_retval != 0)
-	cerrh.error("'%s' failed", compile_command.c_str());
+	cerrh.error("%<%s%> failed", compile_command.c_str());
     else
 	return *tmpdir + package_file;
 
@@ -298,7 +298,7 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     if (!p || p->loaded)
 	return;
 
-    ContextErrorHandler cerrh(errh, "While loading package '" + name + "':");
+    ContextErrorHandler cerrh(errh, "While loading package %<" + name + "%>:");
     bool tmpdir_populated = false;
 
 #ifdef CLICK_TOOL
@@ -309,31 +309,30 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     String package;
 
     // check archive
-    int ai = -1;
-    if (archive && (ai = ArchiveElement::arindex(*archive, name + suffix)) >= 0) {
+    const ArchiveElement *ae;
+    if (archive && (ae = ArchiveElement::find(*archive, name + suffix))) {
 	if (!check_tmpdir(*archive, false, tmpdir_populated, &cerrh))
 	    return;
 	package = *tmpdir + "/" + name + suffix;
 	FILE *f = fopen(package.c_str(), "wb");
 	if (!f) {
-	    cerrh.error("cannot open '%s': %s", package.c_str(), strerror(errno));
+	    cerrh.error("cannot open %<%s%>: %s", package.c_str(), strerror(errno));
 	    package = String();
 	} else {
-	    const ArchiveElement &ae = archive->at(ai);
-	    fwrite(ae.data.data(), 1, ae.data.length(), f);
+	    fwrite(ae->data.data(), 1, ae->data.length(), f);
 	    fclose(f);
 	}
-    } else if (archive && (ai = ArchiveElement::arindex(*archive, name + cxx_suffix)) >= 0)
-	package = click_compile_archive_file(*archive, ai, name, target, "-q", tmpdir_populated, &cerrh);
-    else if (archive && (ai = ArchiveElement::arindex(*archive, name + ".cc")) >= 0)
-	package = click_compile_archive_file(*archive, ai, name, target, "-q", tmpdir_populated, &cerrh);
+    } else if (archive && (ae = ArchiveElement::find(*archive, name + cxx_suffix)))
+	package = click_compile_archive_file(*archive, ae, name, target, "-q", tmpdir_populated, &cerrh);
+    else if (archive && (ae = ArchiveElement::find(*archive, name + ".cc")))
+	package = click_compile_archive_file(*archive, ae, name, target, "-q", tmpdir_populated, &cerrh);
     else {
 	// search path
 	package = clickpath_find_file(name + suffix, "lib", CLICK_LIBDIR);
 	if (!package)
 	    package = clickpath_find_file(name + ".o", "lib", CLICK_LIBDIR);
 	if (!package)
-	    cerrh.error("can't find required package '%s%s'\nin CLICKPATH or '%s'", name.c_str(), suffix.c_str(), CLICK_LIBDIR);
+	    cerrh.error("can't find required package %<%s%s%>\nin CLICKPATH or %<%s%>", name.c_str(), suffix.c_str(), CLICK_LIBDIR);
     }
 
     p->loaded = true;
@@ -368,7 +367,7 @@ RequireLexerExtra::require(String name, ErrorHandler *errh)
 	clickdl_load_requirement(name, _archive, errh);
 # endif
     if (!click_has_provision(name.c_str()))
-	errh->error("requirement '%s' not available", name.c_str());
+	errh->error("requirement %<%s%> not available", name.c_str());
 }
 
 }
@@ -489,11 +488,10 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
     Vector<ArchiveElement> archive;
     if (config_str.length() != 0 && config_str[0] == '!') {
 	ArchiveElement::parse(config_str, archive, errh);
-	int i = ArchiveElement::arindex(archive, "config");
-	if (i >= 0)
-	    config_str = archive[i].data;
+	if (ArchiveElement *ae = ArchiveElement::find(archive, "config"))
+	    config_str = ae->data;
 	else {
-	    errh->error("%s: archive has no 'config' section", filename.c_str());
+	    errh->error("%s: archive has no %<config%> section", filename.c_str());
 	    return 0;
 	}
     }

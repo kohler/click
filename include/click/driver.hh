@@ -19,7 +19,8 @@ void click_static_cleanup();
 Lexer *click_lexer();
 Router *click_read_router(String filename, bool is_expr, ErrorHandler * = 0, bool initialize = true, Master * = 0);
 
-String click_compile_archive_file(const Vector<ArchiveElement> &archive, int ai,
+String click_compile_archive_file(const Vector<ArchiveElement> &ar,
+		const ArchiveElement *ae,
 		String package, const String &target, const String &extra_flags,
 		bool &tmpdir_populated, ErrorHandler *errh);
 
@@ -31,7 +32,8 @@ class ArchiveElement;
 
 void click_static_initialize();
 
-String click_compile_archive_file(const Vector<ArchiveElement> &archive, int ai,
+String click_compile_archive_file(const Vector<ArchiveElement> &archive,
+		const ArchiveElement *ae,
 		String package, const String &target, const String &extra_flags,
 		bool &tmpdir_populated, ErrorHandler *errh);
 

@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/archive.hh" -*-
+// -*- related-file-name: "../include/click/archive.hh" -*-
 /*
  * archive.{cc,hh} -- deal with `ar' files
  * Eddie Kohler
@@ -45,192 +45,172 @@
 
 CLICK_DECLS
 
-static int
+static inline int
 read_uint(const char *data, int max_len,
 	  const char *type, ErrorHandler *errh, int base = 10)
 {
-  char buf[17];
-  char *end;
-
-  assert(max_len <= 16);
-  memcpy(buf, data, max_len);
-  buf[max_len] = 0;
-
-  int result = strtol(buf, &end, base);
-  if (end == buf)
-    result = -1;
-  if (*end && !isspace((unsigned char) *end))
-    errh->warning("bad %s in archive", type);
-  return result;
+    int x;
+    const char *end = cp_integer(data, data + max_len, base, &x);
+    if (end == data || (end < data + max_len && !isspace((unsigned char) *end))) {
+	x = -1;
+	errh->warning("bad %s in archive", type);
+    }
+    return x;
 }
 
 int
-ArchiveElement::parse(const String &s, Vector<ArchiveElement> &v,
+ArchiveElement::parse(const String &str, Vector<ArchiveElement> &ar,
 		      ErrorHandler *errh)
 {
-  if (!errh)
-    errh = ErrorHandler::silent_handler();
+    LocalErrorHandler lerrh(errh);
+    ar.clear();
 
-  if (s.length() <= 8 || memcmp(s.data(), "!<arch>\n", 8) != 0)
-    return errh->error("not an archive");
+    if (str.length() <= 8 || memcmp(str.data(), "!<arch>\n", 8) != 0)
+	return lerrh.error("not an archive");
 
-  const char *data = s.data();
-  int len = s.length();
-  int p = 8;
+    ArchiveElement longname_ae;
 
-  ArchiveElement longname_ae;
+    const char *s = str.begin() + 8, *begin_data;
 
-  // loop over sections
-  while (p+60 <= len) {
+    // loop over sections
+    while ((begin_data = s + 60) <= str.end()) {
+	// check magic number
+	if (s[58] != '`' || s[59] != '\n')
+	    return lerrh.error("bad archive: missing header magic number");
 
-    // check magic number
-    if (data[p+58] != '`' || data[p+59] != '\n')
-      return errh->error("bad archive: missing header magic number");
+	int size;
 
-    int size;
+	if (s[0] == '/' && s[1] == '/' && isspace((unsigned char) s[2])) {
+	    // GNUlike long name section
+	    if (longname_ae.data)
+		lerrh.error("two long name sections in archive");
+	    size = read_uint(s + 48, 10, "size", &lerrh);
+	    if (size < 0 || begin_data + size > str.end())
+		return lerrh.error("truncated archive");
+	    longname_ae.data = str.substring(begin_data, begin_data + size);
 
-    if (data[p+0] == '/' && data[p+1] == '/' && isspace((unsigned char) data[p+2])) {
-      // GNUlike long name section
-      if (longname_ae.data)
-	errh->error("two long name sections in archive");
+	} else {
+	    ArchiveElement ae;
 
-      size = read_uint(data+p+48, 10, "size", errh);
-      if (size < 0 || p+60+size > len)
-	return errh->error("truncated archive");
+	    // read name
+	    int bsd_longname = 0;
+	    if (s[0] == '/' && s[1] >= '0' && s[1] <= '9') {
+		int offset = read_uint(s + 1, 15, "long name", &lerrh);
+		if (!longname_ae.data || offset < 0
+		    || offset >= longname_ae.data.length())
+		    lerrh.error("bad long name in archive");
+		else {
+		    const char *ndata = longname_ae.data.begin() + offset;
+		    const char *nend = ndata;
+		    while (nend < longname_ae.data.end() && *nend != '/'
+			   && !isspace((unsigned char) *nend))
+			++nend;
+		    ae.name = longname_ae.data.substring(ndata, nend);
+		}
+	    } else if (s[0] == '#' && s[1] == '1' && s[2] == '/'
+		       && s[3] >= '0' && s[3] <= '9') {
+		bsd_longname = read_uint(s + 3, 13, "long name", &lerrh);
+	    } else {
+		const char *x = s;
+		while (x < s + 16 && *x != '/' && !isspace((unsigned char) *x))
+		    ++x;
+		ae.name = str.substring(s, x);
+	    }
 
-      longname_ae.data = s.substring(p+60, size);
+	    // read date, uid, gid, mode, size
+	    ae.date = read_uint(s + 16, 12, "date", &lerrh);
+	    ae.uid = read_uint(s + 28, 6, "uid", &lerrh);
+	    ae.gid = read_uint(s + 34, 6, "gid", &lerrh);
+	    ae.mode = read_uint(s + 40, 8, "mode", &lerrh, 8);
+	    size = read_uint(s + 48, 10, "size", &lerrh);
+	    const char *end_data = begin_data + size;
+	    if (size < 0 || end_data > str.end())
+		return lerrh.error("truncated archive, %d bytes short", (int) (end_data - str.end()));
 
-    } else {
+	    // set data
+	    if (bsd_longname > 0) {
+		if (size < bsd_longname)
+		    return lerrh.error("bad long name in archive");
+		ae.name = str.substring(begin_data, begin_data + bsd_longname);
+		ae.data = str.substring(begin_data + bsd_longname, end_data);
+	    } else
+		ae.data = str.substring(begin_data, end_data);
 
-      ArchiveElement ae;
-
-      // read name
-      int bsd_longname = 0;
-      int j;
-      if (data[p] == '/' && data[p+1] >= '0' && data[p+1] <= '9') {
-	int offset = read_uint(data+p+1, 15, "long name", errh);
-	if (!longname_ae.data || offset < 0 || offset >= longname_ae.data.length())
-	  errh->error("bad long name in archive");
-	else {
-	  const char *ndata = longname_ae.data.data();
-	  int nlen = longname_ae.data.length();
-	  for (j = offset; j < nlen && ndata[j] != '/' && !isspace((unsigned char) ndata[j]);
-	       j++)
-	    /* nada */;
-	  ae.name = longname_ae.data.substring(offset, j - offset);
+	    // append archive element
+	    ar.push_back(ae);
 	}
-      } else if (data[p+0] == '#' && data[p+1] == '1' && data[p+2] == '/'
-		 && data[p+3] >= '0' && data[p+3] <= '9') {
-	bsd_longname = read_uint(data+p+3, 13, "long name", errh);
-      } else {
-	for (j = 0; j < 16 && data[p+j] != '/' && !isspace((unsigned char) data[p+j]); j++)
-	  /* nada */;
-	ae.name = s.substring(p, j);
-      }
 
-      // read date, uid, gid, mode, size
-      ae.date = read_uint(data+p+16, 12, "date", errh);
-      ae.uid = read_uint(data+p+28, 6, "uid", errh);
-      ae.gid = read_uint(data+p+34, 6, "gid", errh);
-      ae.mode = read_uint(data+p+40, 8, "mode", errh, 8);
-      size = read_uint(data+p+48, 10, "size", errh);
-      if (size < 0 || p+60+size > len)
-	return errh->error("truncated archive, %d bytes short", p+60+size - len);
-
-      // set data
-      if (bsd_longname > 0) {
-	if (size < bsd_longname)
-	  return errh->error("bad long name in archive");
-	ae.name = s.substring(p+60, bsd_longname);
-	ae.data = s.substring(p+60+bsd_longname, size - bsd_longname);
-      } else
-	ae.data = s.substring(p+60, size);
-
-      // append archive element
-      v.push_back(ae);
+	s = begin_data + size;
+	if (size % 2 == 1)	// objects in archive are even # of bytes
+	    ++s;
     }
 
-    p += 60 + size;
-    if (size % 2 == 1)		// objects in archive are even # of bytes
-      p++;
-  }
-
-  if (p != len)
-    return errh->error("truncated archive");
-  else
-    return 0;
+    if (s != str.end())
+	return lerrh.error("truncated archive");
+    else
+	return 0;
 }
 
 String
-ArchiveElement::unparse(const Vector<ArchiveElement> &v, ErrorHandler *errh)
+ArchiveElement::unparse(const Vector<ArchiveElement> &ar, ErrorHandler *errh)
 {
-  if (!errh)
-    errh = ErrorHandler::silent_handler();
+    LocalErrorHandler lerrh(errh);
 
-  StringAccum sa;
-  int want_size = 8;
-  sa << "!<arch>\n";
-  for (int i = 0; i < v.size(); i++) {
-    const ArchiveElement &ae = v[i];
-    if (ae.dead())
-      continue;
+    StringAccum sa;
+    int want_size = 8;
+    sa << "!<arch>\n";
+    for (const ArchiveElement *ae = ar.begin(); ae != ar.end(); ++ae) {
+	if (!ae->live())
+	    continue;
 
-    // check name
-    const char *ndata = ae.name.data();
-    int nlen = ae.name.length();
-    bool must_longname = false;
-    for (int i = 0; i < nlen; i++)
-      if (ndata[i] == '/') {
-	errh->error("archive element name `%s' contains slash", ae.name.c_str());
-	nlen = i;
-	break;
-      } else if (isspace((unsigned char) ndata[i]))
-	must_longname = true;
+	// check name
+	const char *ndata = ae->name.data();
+	int nlen = ae->name.length();
+	bool must_longname = false;
+	for (int i = 0; i < nlen; i++)
+	    if (ndata[i] == '/') {
+		lerrh.error("archive element name %<%s%> contains slash",
+			    ae->name.c_str());
+		nlen = i;
+		break;
+	    } else if (isspace((unsigned char) ndata[i]))
+		must_longname = true;
 
-    // write name, or nameish thing
-    if ((nlen >= 3 && ndata[0] == '#' && ndata[1] == '1' && ndata[2] == '/')
-	|| must_longname || nlen > 14) {
-      if (char *x = sa.extend(16, 1))
-	sprintf(x, "#1/%-13u", (unsigned)nlen);
-      must_longname = true;
-    } else
-      if (char *x = sa.extend(16, 1))
-	sprintf(x, "%-16.*s", nlen, ndata);
+	// write name, or nameish thing
+	if ((nlen >= 3 && ndata[0] == '#' && ndata[1] == '1' && ndata[2] == '/')
+	    || must_longname || nlen > 14) {
+	    if (char *x = sa.extend(16, 1))
+		sprintf(x, "#1/%-13u", (unsigned)nlen);
+	    must_longname = true;
+	} else
+	    if (char *x = sa.extend(16, 1))
+		sprintf(x, "%-16.*s", nlen, ndata);
 
-    // write other data
-    int wrote_size = ae.data.length() + (must_longname ? nlen : 0);
-    if (char *x = sa.extend(12 + 6 + 6 + 8 + 10 + 2, 1))
-      sprintf(x, "%-12u%-6u%-6u%-8o%-10u`\n", (unsigned)ae.date,
-	      (unsigned)ae.uid, (unsigned)ae.gid, (unsigned)ae.mode,
-	      (unsigned)wrote_size);
+	// write other data
+	int wrote_size = ae->data.length() + (must_longname ? nlen : 0);
+	if (char *x = sa.extend(12 + 6 + 6 + 8 + 10 + 2, 1))
+	    sprintf(x, "%-12u%-6u%-6u%-8o%-10u`\n", (unsigned) ae->date,
+		    (unsigned) ae->uid, (unsigned) ae->gid, (unsigned) ae->mode,
+		    (unsigned) wrote_size);
 
-    if (must_longname)
-      sa.append(ndata, nlen);
-    sa << ae.data;
+	if (must_longname)
+	    sa.append(ndata, nlen);
+	sa << ae->data;
 
-    want_size += 60 + wrote_size;
-    if (wrote_size % 2 == 1) {
-      // extend by an extra newline to keep object lengths even
-      sa << '\n';
-      want_size++;
+	want_size += 60 + wrote_size;
+	if (wrote_size % 2 == 1) {
+	    // extend by an extra newline to keep object lengths even
+	    sa << '\n';
+	    want_size++;
+	}
     }
-  }
 
-  // check for memory errors
-  if (want_size != sa.length()) {
-    errh->error("out of memory");
-    return String();
-  } else
-    return sa.take_string();
-}
-
-int
-ArchiveElement::arindex(const Vector<ArchiveElement> &archive, const String &what)
-{
-  for (int i = 0; i < archive.size(); i++)
-    if (archive.at(i).name == what)
-      return i;
-  return -1;
+    // check for memory errors
+    if (want_size != sa.length()) {
+	lerrh.error("out of memory");
+	return String::make_out_of_memory();
+    } else
+	return sa.take_string();
 }
 
 CLICK_ENDDECLS
