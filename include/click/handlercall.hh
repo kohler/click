@@ -3,6 +3,7 @@
 #define CLICK_HANDLERCALL_HH
 #include <click/router.hh>
 CLICK_DECLS
+class VariableExpander;
 
 /** @brief  Convenience class for calling handlers.
  *
@@ -277,6 +278,17 @@ class HandlerCall { public:
      *  there, whether from HandlerCall or the handler itself. */
     inline int call_write(ErrorHandler *errh = 0) const;
 
+    /** @brief  Call a write handler, expanding its argument.
+     *  @param  scope  variable scope
+     *  @param  errh  optional error handler
+     *  @return  Write handler result.
+     *
+     *  The write value is expanded in @a scope before the handler is called.
+     *  Fails and returns -EINVAL if this HandlerCall is invalid or not a
+     *  write handler.  If @a errh is nonnull, then any errors are reported
+     *  there, whether from HandlerCall or the handler itself. */
+    inline int call_write(const VariableExpander &scope, ErrorHandler *errh = 0) const;
+
     /** @brief  Call a write handler with an additional value.
      *  @param  value_ext  write value extension
      *  @param  errh       optional error handler
@@ -492,6 +504,14 @@ inline int
 HandlerCall::call_write(ErrorHandler *errh) const
 {
     return _h->call_write(_value, _e, errh);
+}
+
+String cp_expand(const String &str, const VariableExpander &env, bool expand_quote);
+
+inline int
+HandlerCall::call_write(const VariableExpander &scope, ErrorHandler *errh) const
+{
+    return _h->call_write(cp_expand(_value, scope, false), _e, errh);
 }
 
 inline int
