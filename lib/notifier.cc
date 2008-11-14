@@ -332,8 +332,9 @@ ActiveNotifier::listener_change(void *what, int where, bool add)
 
     if (!(ntos = new task_or_signal_t[n + 2 + add])) {
       memory_error:
+	delete[] ntos;
 	click_chatter("out of memory in Notifier!");
-	return -1;
+	return -ENOMEM;
     }
 
     otos = ntos;
