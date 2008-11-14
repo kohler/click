@@ -1238,13 +1238,11 @@ Lexer::ydeclaration(const String &first_element)
 bool
 Lexer::yconnection()
 {
-  int element1 = -1;
-  int port1;
-  Lexeme t;
+    int element1 = -1, port1 = -1;
+    Lexeme t;
 
-  while (true) {
-    int element2;
-    int port2 = -1;
+    while (true) {
+	int element2, port2 = -1;
 
     // get element
     yport(port2);
