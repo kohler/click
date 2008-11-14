@@ -428,7 +428,7 @@ NameInfo::installdb(NameDB *db, const Element *prefix)
 {
     NameInfo *ni = (prefix ? prefix->router()->force_name_info() : the_name_info);
     NameDB *curdb = ni->namedb(db->type(), db->value_size(), db->context(), db);
-    if (curdb != db) {
+    if (curdb && curdb != db) {
 	assert(!curdb->_context_child || curdb->_context_child->context().length() > db->context().length());
 	assert(!db->_installed);
 	db->_installed = ni;
