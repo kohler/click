@@ -447,14 +447,14 @@ compare_options(Clp_Parser *clp, const Clp_Option *o1, Clp_InternOption *io1,
  * first argument returned by Clp_Next() will be the second argument in @a
  * argv.  Note that this behavior differs from Clp_SetArguments.</li>
  * <li>UTF-8 support is on iff the <tt>LANG</tt> environment variable contains
- * one of the substrings "UTF-8", "UTF8", or "utf8".</li>
+ * one of the substrings "UTF-8", "UTF8", or "utf8".  Override this with
+ * Clp_SetUTF8().</li>
  * <li>The Clp_ValString, Clp_ValStringNotOption, Clp_ValInt, Clp_ValUnsigned,
  * Clp_ValBool, and Clp_ValDouble types are installed.</li>
  * <li>Errors are reported to standard error.</li>
  * </ul>
  *
- * To override these characteristics, either call functions like
- * Clp_SetUTF8(), or create your Clp_Parser with no arguments or options
+ * You may also create a Clp_Parser with no arguments or options
  * (<tt>Clp_NewParser(0, 0, 0, 0)</tt>) and set the arguments and options
  * later.
  *
@@ -470,7 +470,9 @@ Clp_NewParser(int argc, const char * const *argv, int nopt, const Clp_Option *op
     Clp_Parser *clp = (Clp_Parser *)malloc(sizeof(Clp_Parser));
     Clp_Internal *cli = (Clp_Internal *)malloc(sizeof(Clp_Internal));
     Clp_InternOption *iopt = (Clp_InternOption *)malloc(sizeof(Clp_InternOption) * nopt);
-    if (!clp || !cli || !iopt)
+    if (cli)
+	cli->valtype = (Clp_ValType *)malloc(sizeof(Clp_ValType) * Clp_InitialValType);
+    if (!clp || !cli || !iopt || !cli->valtype)
 	goto failed;
 
     clp->negated = 0;
@@ -507,11 +509,7 @@ Clp_NewParser(int argc, const char * const *argv, int nopt, const Clp_Option *op
     cli->long1pos = cli->long1neg = 0;
 
     /* Add default type parsers */
-    cli->valtype = (Clp_ValType *)malloc(sizeof(Clp_ValType) * Clp_InitialValType);
-    if (!cli->valtype)
-	goto failed;
     cli->nvaltype = 0;
-
     Clp_AddType(clp, Clp_ValString, 0, parse_string, 0);
     Clp_AddType(clp, Clp_ValStringNotOption, Clp_DisallowOptions, parse_string, 0);
     Clp_AddType(clp, Clp_ValInt, 0, parse_int, 0);
