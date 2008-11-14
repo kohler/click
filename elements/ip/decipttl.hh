@@ -31,23 +31,20 @@ CLICK_DECLS
 
 class DecIPTTL : public Element { public:
 
-  DecIPTTL();
-  ~DecIPTTL();
+    DecIPTTL();
+    ~DecIPTTL();
 
-  const char *class_name() const		{ return "DecIPTTL"; }
-  const char *port_count() const		{ return PORTS_1_1X2; }
-  const char *processing() const		{ return PROCESSING_A_AH; }
+    const char *class_name() const		{ return "DecIPTTL"; }
+    const char *port_count() const		{ return PORTS_1_1X2; }
+    const char *processing() const		{ return PROCESSING_A_AH; }
 
-  uint32_t drops()				{ return _drops; }
+    void add_handlers();
 
-  void add_handlers();
+    Packet *simple_action(Packet *);
 
-  Packet *simple_action(Packet *);
-  void drop_it(Packet *);
+  private:
 
- private:
-
-  atomic_uint32_t _drops;
+    atomic_uint32_t _drops;
 
 };
 

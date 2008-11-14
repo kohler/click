@@ -23,49 +23,42 @@ CLICK_DECLS
 
 DecIPTTL::DecIPTTL()
 {
-  _drops = 0;
+    _drops = 0;
 }
 
 DecIPTTL::~DecIPTTL()
 {
 }
 
-void
-DecIPTTL::drop_it(Packet *p)
-{
-  _drops++;
-  if (noutputs() == 2)
-    output(1).push(p);
-  else
-    p->kill();
-}
-
 Packet *
-DecIPTTL::simple_action(Packet *p_in)
+DecIPTTL::simple_action(Packet *p)
 {
-  assert(p_in->has_network_header());
-  const click_ip *ip_in = p_in->ip_header();
+    WritablePacket *q = p->uniqueify();
+    if (!q)
+	return 0;
 
-  if (ip_in->ip_ttl <= 1) {
-    drop_it(p_in);
-    return 0;
-  } else {
-    WritablePacket *p = p_in->uniqueify();
-    click_ip *ip = p->ip_header();
-    ip->ip_ttl--;
+    assert(q->has_network_header());
+    click_ip *ip = q->ip_header();
+    if (unlikely(ip->ip_ttl <= 1)) {
+	++_drops;
+	checked_output_push(1, q);
+	return 0;
 
-    // 19.Aug.1999 - incrementally update IP checksum as suggested by SOSP
-    // reviewers, according to RFC1141, as updated by RFC1624.
-    // new_sum = ~(~old_sum + ~old_halfword + new_halfword)
-    //         = ~(~old_sum + ~old_halfword + (old_halfword - 0x0100))
-    //         = ~(~old_sum + ~old_halfword + old_halfword + ~0x0100)
-    //         = ~(~old_sum + ~0 + ~0x0100)
-    //         = ~(~old_sum + 0xFEFF)
-    unsigned long sum = (~ntohs(ip->ip_sum) & 0xFFFF) + 0xFEFF;
-    ip->ip_sum = ~htons(sum + (sum >> 16));
+    } else {
+	--ip->ip_ttl;
 
-    return p;
-  }
+	// 19.Aug.1999 - incrementally update IP checksum as suggested by SOSP
+	// reviewers, according to RFC1141, as updated by RFC1624.
+	// new_sum = ~(~old_sum + ~old_halfword + new_halfword)
+	//         = ~(~old_sum + ~old_halfword + (old_halfword - 0x0100))
+	//         = ~(~old_sum + ~old_halfword + old_halfword + ~0x0100)
+	//         = ~(~old_sum + ~0 + ~0x0100)
+	//         = ~(~old_sum + 0xFEFF)
+	unsigned long sum = (~ntohs(ip->ip_sum) & 0xFFFF) + 0xFEFF;
+	ip->ip_sum = ~htons(sum + (sum >> 16));
+
+	return q;
+    }
 }
 
 void
