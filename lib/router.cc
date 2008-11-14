@@ -219,7 +219,7 @@ Router::find(const String &name, String context, ErrorHandler *errh) const
     }
 
     if (errh)
-	errh->error("no element named '%s'", name.c_str());
+	errh->error("no element named %<%s%>", name.c_str());
     return 0;
 }
 
@@ -437,9 +437,9 @@ Router::check_hookup_elements(ErrorHandler *errh)
 	for (int p = 0; p < 2; ++p) {
 	    if ((*cp)[p].idx < 0 || (*cp)[p].idx >= nelements()
 		|| !_elements[(*cp)[p].idx])
-		errh->error("bad element number '%d'", (*cp)[p].idx);
+		errh->error("bad element number %<%d%>", (*cp)[p].idx);
 	    if ((*cp)[p].port < 0)
-		errh->error("bad port number '%d'", (*cp)[p].port);
+		errh->error("bad port number %<%d%>", (*cp)[p].port);
 	}
 	if (errh->nerrors() != before)
 	    cp = remove_connection(cp);
@@ -472,7 +472,7 @@ Router::check_hookup_range(ErrorHandler *errh)
 	int before = errh->nerrors();
 	for (int p = 0; p < 2; ++p)
 	    if ((*cp)[p].port >= _elements[(*cp)[p].idx]->nports(p))
-		hookup_error((*cp)[p], p, "'%{element}' has no %s %d", errh);
+		hookup_error((*cp)[p], p, "%<%{element}%> has no %s %d", errh);
 	if (errh->nerrors() != before)
 	    cp = remove_connection(cp);
 	else
@@ -498,7 +498,7 @@ Router::check_hookup_completeness(ErrorHandler *errh)
 		if (likely(last != _conn[ci][p]))
 		    last = _conn[ci][p];
 		else if (_elements[last.idx]->port_active(p, last.port))
-		    hookup_error(last, p, "illegal reuse of '%{element}' %s %d", errh, true);
+		    hookup_error(last, p, "illegal reuse of %<%{element}%> %s %d", errh, true);
 	    }
 	}
 
@@ -518,7 +518,7 @@ Router::check_hookup_completeness(ErrorHandler *errh)
 		++cix;
 	    } else {
 		if (unlikely(conn != all))
-		    hookup_error(all, p, "'%{element}' %s %d unused", errh);
+		    hookup_error(all, p, "%<%{element}%> %s %d unused", errh);
 		++all.port;
 	    }
     }
@@ -614,11 +614,11 @@ Router::processing_error(const Connection &c, bool aggie,
     const char *type1 = (processing_from == Element::VPUSH ? "push" : "pull");
     const char *type2 = (processing_from == Element::VPUSH ? "pull" : "push");
     if (!aggie)
-	errh->error("'%{element}' %s output %d connected to '%{element}' %s input %d",
+	errh->error("%<%{element}%> %s output %d connected to %<%{element}%> %s input %d",
 		    _elements[c[1].idx], type1, c[1].port,
 		    _elements[c[0].idx], type2, c[0].port);
     else
-	errh->error("agnostic '%{element}' in mixed context: %s input %d, %s output %d",
+	errh->error("agnostic %<%{element}%> in mixed context: %s input %d, %s output %d",
 		    _elements[c[1].idx], type2, c[0].port, type1, c[1].port);
     return -1;
 }
@@ -1193,18 +1193,17 @@ Handler::compatible(const Handler &x) const
 String
 Handler::call_read(Element* e, const String& param, ErrorHandler* errh) const
 {
-    if (!errh)
-	errh = ErrorHandler::silent_handler();
+    LocalErrorHandler lerrh(errh);
     if (param && !(_flags & READ_PARAM))
-	errh->error("read handler '%s' does not take parameters", unparse_name(e).c_str());
+	lerrh.error("read handler %<%s%> does not take parameters", unparse_name(e).c_str());
     else if ((_flags & (COMPREHENSIVE | OP_READ)) == OP_READ)
 	return _hook.rw.r(e, _thunk1);
     else if (_flags & OP_READ) {
 	String s(param);
-	if (_hook.h(OP_READ, s, e, this, errh) >= 0)
+	if (_hook.h(OP_READ, s, e, this, &lerrh) >= 0)
 	    return s;
     } else
-	errh->error("'%s' not a read handler", unparse_name(e).c_str());
+	lerrh.error("%<%s%> not a read handler", unparse_name(e).c_str());
     // error cases get here
     return String();
 }
@@ -1212,15 +1211,14 @@ Handler::call_read(Element* e, const String& param, ErrorHandler* errh) const
 int
 Handler::call_write(const String& value, Element* e, ErrorHandler* errh) const
 {
-    if (!errh)
-	errh = ErrorHandler::silent_handler();
+    LocalErrorHandler lerrh(errh);
     String value_copy(value);
     if ((_flags & (COMPREHENSIVE | OP_WRITE)) == OP_WRITE)
-	return _hook.rw.w(value_copy, e, _thunk2, errh);
+	return _hook.rw.w(value_copy, e, _thunk2, &lerrh);
     else if (_flags & OP_WRITE)
-	return _hook.h(OP_WRITE, value_copy, e, this, errh);
+	return _hook.h(OP_WRITE, value_copy, e, this, &lerrh);
     else {
-	errh->error("'%s' not a write handler", unparse_name(e).c_str());
+	lerrh.error("%<%s%> not a write handler", unparse_name(e).c_str());
 	return -EACCES;
     }
 }

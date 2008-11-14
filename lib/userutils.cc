@@ -293,7 +293,7 @@ shell_command_output_string(String cmdline, const String &input, ErrorHandler *e
     String new_cmdline = cmdline + " 0<&" + String(fileno(f));
     FILE *p = popen(new_cmdline.c_str(), "r");
     if (!p) {
-	errh->fatal("'%s': %s", cmdline.c_str(), strerror(errno));
+	errh->fatal("%<%s%>: %s", cmdline.c_str(), strerror(errno));
 	return String();
     }
 
@@ -307,7 +307,7 @@ shell_command_output_string(String cmdline, const String &input, ErrorHandler *e
       break;
   }
   if (!feof(p))
-    errh->warning("'%s' output too long, truncated", cmdline.c_str());
+    errh->warning("%<%s%> output too long, truncated", cmdline.c_str());
 
   fclose(f);
   pclose(p);
@@ -562,13 +562,13 @@ clickpath_find_file(const String &filename, const char *subdir,
     if (!fns.size() && errh) {
 	if (default_path) {
 	    // CLICKPATH set, left no opportunity to use default path
-	    errh->fatal("cannot find file '%s'\nin CLICKPATH '%s'", filename.c_str(), path);
+	    errh->fatal("cannot find file %<%s%>\nin CLICKPATH %<%s%>", filename.c_str(), path);
 	} else if (!path) {
 	    // CLICKPATH not set
-	    errh->fatal("cannot find file '%s'\nin install directory '%s'\n(Try setting the CLICKPATH environment variable.)", filename.c_str(), was_default_path.c_str());
+	    errh->fatal("cannot find file %<%s%>\nin install directory %<%s%>\n(Try setting the CLICKPATH environment variable.)", filename.c_str(), was_default_path.c_str());
 	} else {
 	    // CLICKPATH set, left opportunity to use default pathb
-	    errh->fatal("cannot find file '%s'\nin CLICKPATH or '%s'", filename.c_str(), was_default_path.c_str());
+	    errh->fatal("cannot find file %<%s%>\nin CLICKPATH or %<%s%>", filename.c_str(), was_default_path.c_str());
 	}
     }
 
@@ -717,7 +717,7 @@ open_uncompress_pipe(const String &filename, const unsigned char *buf, int len, 
     if (FILE *p = popen(cmd.c_str(), "r"))
 	return p;
     else {
-	errh->error("'%s': %s", cmd.c_str(), strerror(errno));
+	errh->error("%<%s%>: %s", cmd.c_str(), strerror(errno));
 	return 0;
     }
 }
@@ -763,7 +763,7 @@ open_compress_pipe(const String &filename, ErrorHandler *errh)
     if (FILE *p = popen(cmd.c_str(), "w"))
 	return p;
     else {
-	errh->error("'%s': %s", cmd.c_str(), strerror(errno));
+	errh->error("%<%s%>: %s", cmd.c_str(), strerror(errno));
 	return 0;
     }
 }
@@ -789,10 +789,10 @@ clickdl_load_package(String package, ErrorHandler *errh)
     return errh->error("package %s", dlerror());
   void *init_sym = dlsym(handle, "init_module");
   if (!init_sym)
-    return errh->error("package '%s' has no 'init_module'", package.c_str());
+    return errh->error("package %<%s%> has no %<init_module%>", package.c_str());
   init_module_func init_func = (init_module_func)init_sym;
   if ((*init_func)() != 0)
-    return errh->error("error initializing package '%s'", package.c_str());
+    return errh->error("error initializing package %<%s%>", package.c_str());
   return 0;
 }
 
