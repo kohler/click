@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/lexer.hh" -*-
+// -*- related-file-name: "../include/click/lexer.hh" -*-
 /*
  * lexer.{cc,hh} -- parses Click language files, produces Router objects
  * Eddie Kohler
@@ -752,32 +752,32 @@ Lexer::lex_config()
 String
 Lexer::lexeme_string(int kind)
 {
-  char buf[12];
-  if (kind == lexIdent)
-    return "identifier";
-  else if (kind == lexVariable)
-    return "variable";
-  else if (kind == lexArrow)
-    return "'->'";
-  else if (kind == lex2Colon)
-    return "'::'";
-  else if (kind == lex2Bar)
-    return "'||'";
-  else if (kind == lex3Dot)
-    return "'...'";
-  else if (kind == lexElementclass)
-    return "'elementclass'";
-  else if (kind == lexRequire)
-    return "'require'";
-  else if (kind == lexDefine)
-    return "'define'";
-  else if (kind >= 32 && kind < 127) {
-    sprintf(buf, "'%c'", kind);
-    return buf;
-  } else {
-    sprintf(buf, "'\\%03d'", kind);
-    return buf;
-  }
+    char buf[14];
+    if (kind == lexIdent)
+	return String::make_stable("identifier", 10);
+    else if (kind == lexVariable)
+	return String::make_stable("variable", 8);
+    else if (kind == lexArrow)
+	return String::make_stable("'->'", 4);
+    else if (kind == lex2Colon)
+	return String::make_stable("'::'", 4);
+    else if (kind == lex2Bar)
+	return String::make_stable("'||'", 4);
+    else if (kind == lex3Dot)
+	return String::make_stable("'...'", 5);
+    else if (kind == lexElementclass)
+	return String::make_stable("'elementclass'", 14);
+    else if (kind == lexRequire)
+	return String::make_stable("'require'", 9);
+    else if (kind == lexDefine)
+	return String::make_stable("'define'", 8);
+    else if (kind >= 32 && kind < 127) {
+	sprintf(buf, "'%c'", kind);
+	return buf;
+    } else {
+	sprintf(buf, "'\\%03d'", kind);
+	return buf;
+    }
 }
 
 
