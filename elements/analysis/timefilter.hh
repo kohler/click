@@ -66,7 +66,8 @@ false.
 =item END_CALL
 
 Specifies a write handler to call when the first packet after END is seen.
-STOP and END_CALL are mutually exclusive.
+The variable "$t" in the write handler argument is expanded to the packet's
+timestamp.  STOP and END_CALL are mutually exclusive.
 
 =back
 

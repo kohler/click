@@ -1,0 +1,33 @@
+%script
+
+click CONFIG
+
+%file CONFIG
+FromIPSummaryDump(F, STOP true)
+	-> t::TimeFilter(0, 1, END_CALL s.run $t)
+	-> c::Counter
+	-> Discard
+
+DriverManager(pause, print >C c.count, stop)
+
+s::Script(TYPE PASSIVE,
+	init x 0,
+	goto exit $(gt $x 1),
+	set x $(add $x 1),
+	print $1,
+	write t.extend_interval 1)
+
+%file F
+!data timestamp
+0.1
+0.2
+1.0
+1.2
+5.5
+
+%expect C
+4
+
+%expect stdout
+1.0{{0*}}
+5.5{{0*}}

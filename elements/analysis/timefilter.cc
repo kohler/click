@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/handlercall.hh>
+#include <click/variableenv.hh>
 CLICK_DECLS
 
 TimeFilter::TimeFilter()
@@ -41,8 +42,8 @@ TimeFilter::configure(Vector<String> &conf, ErrorHandler *errh)
     bool stop = false;
 
     if (cp_va_kparse(conf, this, errh,
-		     "START", 0, cpTimestamp, &first,
-		     "END", 0, cpTimestamp, &last,
+		     "START", cpkP, cpTimestamp, &first,
+		     "END", cpkP, cpTimestamp, &last,
 		     "START_DELAY", 0, cpTimestamp, &first_init,
 		     "END_DELAY", 0, cpTimestamp, &last_init,
 		     "START_AFTER", 0, cpTimestamp, &first_delta,
@@ -131,11 +132,13 @@ TimeFilter::simple_action(Packet *p)
 	return kill(p);
     else {
 	if (!likely(tv < _last) && _last_h && _last_h_ready) {
+	    VariableEnvironment scope(0);
+	    scope.define(String::make_stable("t", 1), tv.unparse(), true);
 	    Timestamp prev_last;
 	    do {
 		prev_last = _last;
 		_last_h_ready = false;
-		(void) _last_h->call_write();
+		(void) _last_h->call_write(scope);
 	    } while (!(tv < _last) && _last_h && _last_h_ready
 		     && _last > prev_last);
 	}
