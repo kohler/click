@@ -37,7 +37,10 @@ class HashMap_Arena { public:
     uint32_t _refcount;
     bool _detached;
 
+    HashMap_Arena(const HashMap_Arena &);
     ~HashMap_Arena();
+    HashMap_Arena &operator=(const HashMap_Arena &);
+
     void *hard_alloc();
 
     friend class Link;		// shut up, compiler
