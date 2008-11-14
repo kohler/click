@@ -20,8 +20,9 @@ CLICK_DECLS
  * Input should be ARP request packets, including the Ethernet header.
  * Forwards an ARP reply if we know the answer -- that is, if one of the
  * IPPREFIX arguments matches the requested IP address, then it outputs an ARP
- * reply giving the corresponding ETH address. Could be used for proxy ARP as
- * well as producing replies for a host's own address.
+ * reply giving the corresponding ETH address, otherwise the ARP request
+ * packet is pushed out of output 1 (if it exists). Could be used for proxy
+ * ARP as well as producing replies for a host's own address.
  *
  * The IP/MASK arguments are IP network addresses (IP address/netmask pairs).
  * The netmask can be specified in CIDR form (`C<18.26.7.0/24>') or dotted
@@ -60,8 +61,8 @@ class ARPResponder : public Element { public:
   ~ARPResponder();
 
   const char *class_name() const		{ return "ARPResponder"; }
-  const char *port_count() const		{ return PORTS_1_1; }
-  const char *processing() const		{ return AGNOSTIC; }
+  const char *port_count() const		{ return PORTS_1_1X2; }
+  const char *processing() const		{ return PROCESSING_A_AH; }
 
   int configure(Vector<String> &, ErrorHandler *);
   int live_reconfigure(Vector<String> &, ErrorHandler *);
@@ -71,8 +72,11 @@ class ARPResponder : public Element { public:
 
   Packet *simple_action(Packet *);
 
-  Packet *make_response(unsigned char tha[6], unsigned char tpa[4],
-                        unsigned char sha[6], unsigned char spa[4], Packet *);
+    static Packet *make_response(const uint8_t target_eth[6],
+				 const uint8_t target_ip[4],
+				 const uint8_t src_eth[6],
+				 const uint8_t src_ip[4],
+				 Packet *p = 0);
 
   bool lookup(IPAddress, EtherAddress &) const;
 

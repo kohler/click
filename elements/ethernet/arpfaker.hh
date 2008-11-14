@@ -46,9 +46,6 @@ public:
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
-  Packet *make_response(unsigned char tha[6], unsigned char tpa[4],
-                        unsigned char sha[6], unsigned char spa[4]);
-
   void run_timer(Timer *);
 
 private:

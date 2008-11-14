@@ -105,10 +105,10 @@ ARPResponder::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 
 
 Packet *
-ARPResponder::make_response(u_char tha[6], /* him */
-                            u_char tpa[4],
-                            u_char sha[6], /* me */
-                            u_char spa[4],
+ARPResponder::make_response(const uint8_t target_eth[6], /* them */
+                            const uint8_t target_ip[4],
+                            const uint8_t src_eth[6], /* me */
+                            const uint8_t src_ip[4],
 			    Packet *p /* only used for annotations */)
 {
     WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
@@ -119,14 +119,13 @@ ARPResponder::make_response(u_char tha[6], /* him */
 
     // in case of FromLinux, set the device annotation: want to make it seem
     // that ARP response came from the device that the query arrived on
-    q->set_device_anno(p->device_anno());
-
-    memset(q->data(), '\0', q->length());
+    if (p)
+	q->set_device_anno(p->device_anno());
 
     click_ether *e = (click_ether *) q->data();
     q->set_ether_header(e);
-    memcpy(e->ether_dhost, tha, 6);
-    memcpy(e->ether_shost, sha, 6);
+    memcpy(e->ether_dhost, target_eth, 6);
+    memcpy(e->ether_shost, src_eth, 6);
     e->ether_type = htons(ETHERTYPE_ARP);
 
     click_ether_arp *ea = (click_ether_arp *) (e + 1);
@@ -135,10 +134,10 @@ ARPResponder::make_response(u_char tha[6], /* him */
     ea->ea_hdr.ar_hln = 6;
     ea->ea_hdr.ar_pln = 4;
     ea->ea_hdr.ar_op = htons(ARPOP_REPLY);
-    memcpy(ea->arp_tha, tha, 6);
-    memcpy(ea->arp_tpa, tpa, 4);
-    memcpy(ea->arp_sha, sha, 6);
-    memcpy(ea->arp_spa, spa, 4);
+    memcpy(ea->arp_sha, src_eth, 6);
+    memcpy(ea->arp_spa, src_ip, 4);
+    memcpy(ea->arp_tha, target_eth, 6);
+    memcpy(ea->arp_tpa, target_ip, 4);
 
     return q;
 }
@@ -182,8 +181,11 @@ ARPResponder::simple_action(Packet *p)
 	}
     }
 
-    p->kill();
-    return(q);
+    if (q)
+	p->kill();
+    else
+	checked_output_push(1, p);
+    return q;
 }
 
 String
