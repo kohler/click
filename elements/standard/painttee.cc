@@ -36,7 +36,7 @@ PaintTee::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int anno = PAINT_ANNO_OFFSET;
     if (cp_va_kparse(conf, this, errh,
-		     "COLOR", cpkP+cpkM, cpUnsigned, &_color,
+		     "COLOR", cpkP+cpkM, cpByte, &_color,
 		     "ANNO", cpkP, cpAnno, 1, &anno,
 		     cpEnd) < 0)
 	return -1;
