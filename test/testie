@@ -97,7 +97,7 @@ sub _shell_split (\@$\@$$;$) {
     my($sq, $dq, $bq, $nl, $hh, $lb, $rb) = (-2, -2, -2, -2, -2, -2, -2);
     my($first, $pos) = (0, 0);
     $lineno -= ($text =~ tr/\n//);
-    
+
     while ($pos < length $text) {
 	$sq = ::index2($text, "\'", $pos) if $sq < $pos;
 	$dq = ::index2($text, "\"", $pos) if $dq < $pos;
@@ -106,7 +106,7 @@ sub _shell_split (\@$\@$$;$) {
 	$hh = ::index2($text, "#", $pos) if $hh < $pos;
 	$lb = ::index2($text, "{", $pos) if $lb < $pos;
 	$rb = ::index2($text, "}", $pos) if $rb < $pos;
-	
+
 	if ($qf == 1) {
 	    $qf = 0 if $sq < length $text;
 	    $out .= substr($text, $pos, $sq + 1 - $pos);
@@ -122,7 +122,7 @@ sub _shell_split (\@$\@$$;$) {
 	# find minimum
 	my($min) = ::min($sq, $dq, $bq, $nl, $hh, $lb, $rb);
 	$out .= $rewrite_sub->(substr($text, $pos, $min - $pos), 0) . substr($text, $min, 1);
-	
+
 	if ($sq == $min) {
 	    $qf = 1;
 	    $pos = $sq + 1;
@@ -157,7 +157,7 @@ sub _shell_split (\@$\@$$;$) {
 	push @$arr, $out;
 	push @$lineno_arr, "$fn:$lineno";
     }
-    
+
     if ($qf == 1) {
 	"unmatched single quote";
     } elsif ($qf == 2) {
@@ -189,11 +189,11 @@ sub _read_text_into ($$) {
 
 sub _read_script_section ($$$) {
     my($tt, $args, $script_type) = @_;
-    
+
     my($lineno_type, $quiet_type) = ($script_type . '_lineno', $script_type . '_quietline');
     $tt->{$lineno_type} = [] if !exists $tt->{$lineno_type};
     $tt->{$quiet_type} = {} if !exists $tt->{$quiet_type};
-    
+
     my($quiet);
     if ($script_type eq 'require' & $args eq '-q') {
 	$quiet = 1;
@@ -214,12 +214,12 @@ sub _read_script_section ($$$) {
 sub braces_to_regex ($$) {
     my($x, $mode) = @_;
     my($re, $message) = ("", undef);
-    while ($x =~ /\A(.*?)\{\{(.*?)\}\}(.*)\Z/) {
+    while ($x =~ /\A(.*?)\{\{(.*?)\}\}(.*)\z/) {
 	my($before, $middle, $after) = ($1, $2, $3);
 	if ($middle =~ /\A\?/) {
-	    $before =~ s/\s+\Z//;
+	    $before =~ s/\s+\z//;
 	    $middle =~ s/\A\?\s+//;
-	    $middle =~ s/\s+\Z//;
+	    $middle =~ s/\s+\z//;
 	    $after =~ s/\A\s+//;
 	    $message = (defined($message) ? $message . " " . $middle : $middle);
 	    $x = $before . $after;
@@ -244,20 +244,24 @@ sub _read_file_section ($$$$) {
     die if $secname ne 'file' && $secname ne 'expect' && $secname ne 'expectv' && $secname ne 'expectx' && $secname ne 'ignore' && $secname ne 'ignorex' && $secname ne 'ignorev';
 
     # check for alternates and length
-    my($alternate, $delfirst, $regex_opts, $length) = (0, 0, '', undef);
+    my($alternate, $delfirst, $whitespace, $regex_opts, $length)
+	= (0, 0, 0, '', undef);
     while (@args) {
-	if ($args[0] eq '-a') {
+	if ($args[0] =~ /\A-a/) {
 	    $alternate = 1;
-	} elsif ($args[0] eq '-d') {
+	} elsif ($args[0] =~ /\A-d/) {
 	    $delfirst = 1;
-	} elsif ($args[0] eq '-i') {
+	} elsif ($args[0] =~ /\A-i/) {
 	    $regex_opts .= "(?i)";
-	} elsif ($args[0] =~ /^\+(\d+)$/) {
+	} elsif ($args[0] =~ /\A-w/) {
+	    $whitespace = 1;
+	} elsif ($args[0] =~ /\A\+(\d+)\z/) {
 	    $length = $1;
 	} else {
 	    last;
 	}
-	shift @args;
+	$args[0] = "-$1" if $args[0] =~ /\A-.(.*)\z/;
+	shift @args if $args[0] !~ /\A-./;
     }
 
     # make sure there are filerefs
@@ -267,13 +271,17 @@ sub _read_file_section ($$$$) {
 	push @args, "all" if $secname eq 'ignore' || $secname eq 'ignorev' || $secname eq 'ignorex';
     }
 
-    # complain about '%file -a'
+    # complain about '%file -aiw'
     if (($secname eq 'file' || $secname eq 'ignore' || $secname eq 'ignorev' || $secname eq 'ignorex') && $alternate) {
-	$tt->file_err("'\%file -a' is illegal");
-    } elsif (($secname eq 'file' || $secname eq 'expectv') && $regex_opts) {
-	$tt->file_err("'\%file -i' is illegal");
+	$tt->file_err("'\%$secname -a' is illegal");
     }
-    
+    if (($secname eq 'file' || $secname eq 'expectv') && $regex_opts) {
+	$tt->file_err("'\%$secname -i' is illegal");
+    }
+    if (($secname eq 'file' || $secname eq 'expectv') && $whitespace) {
+	$tt->file_err("'\%$secname -w' is illegal");
+    }
+
     # read contents
     my($seclineno) = $tt->{"_line"};
     my($firstline) = $tt->{"_file"} . ":" . ($seclineno + 1);
@@ -311,7 +319,7 @@ sub _read_file_section ($$$$) {
     } elsif ($regex_opts) {
 	$file_data =~ s{^(?=.)}{$regex_opts}mg;
     }
-    
+
     # stick contents where appropriate
     my($fn);
     foreach $fn (@args) {
@@ -322,9 +330,9 @@ sub _read_file_section ($$$$) {
 	}
 
 	my($hashkey) = $prefix . ":" . $fn;
-	if (!($fn =~ m,\A[-A-Za-z_0-9.]+\Z,
-	      || ($fn =~ m,\A[-A-Za-z_0-9./]+\Z,
-		  && $fn !~ m,(\A\.\./|/\.\./|/\.\.\Z|\A/|//|/\Z),))) {
+	if (!($fn =~ m,\A[-A-Za-z_0-9.]+\z,
+	      || ($fn =~ m,\A[-A-Za-z_0-9./]+\z,
+		  && $fn !~ m,(\A\.\./|/\.\./|/\.\.\z|\A/|//|/\z),))) {
 	    $tt->file_err("bad filename '\%$secname $fn'", $seclineno);
 	    next;
 	} elsif (!exists($tt->{$hashkey})) {
@@ -335,8 +343,10 @@ sub _read_file_section ($$$$) {
 	}
 
 	push @{$tt->{$hashkey}}, $file_data;
+	my($num) = @{$tt->{$hashkey}} - 1;
 	$tt->{"F:$fn"} = 1;
-	$tt->{"$hashkey:firstline"} = $firstline;
+	$tt->{"firstline:$hashkey:$num"} = $firstline;
+	$tt->{"whitespace:$hashkey:$num"} = 1 if $whitespace;
     }
 }
 
@@ -361,7 +371,7 @@ sub parse ($) {
     foreach $k (@deletes) {
 	delete $tt->{$k};
     }
-    
+
     while (defined($t = $tt->_get(1))) {
 	if ($t =~ /^%\s*(\w+)\s*(.*?)\s*$/) {
 	    my($command) = lc($1);
@@ -402,7 +412,7 @@ sub parse ($) {
 	    } elsif ($command eq 'include') {
 		if ($args !~ /^\//) {
 		    my($oldfn) = $tt->{"_file"};
-		    $oldfn =~ s/(\A|\/)[^\/]+\Z/$1/;
+		    $oldfn =~ s/(\A|\/)[^\/]+\z/$1/;
 		    $args = $oldfn . $args;
 		}
 		if (open(INCLUDE, "<", $args)) {
@@ -445,7 +455,7 @@ sub read (*;$) {
 
     $tt = bless { "err" => 0, "_data" => [[$fn, 0]] }, Testie;
     push @{$tt->{"_data"}}, $t while defined($t = <$fh>);
-    
+
     $tt->parse();
     $tt;
 }
@@ -466,11 +476,11 @@ sub save_files ($&) {
 
     # create implied subdirectories
     foreach $fn (keys %$tt) {
-	next if $fn !~ m,\AF:(.*)/([^/]*)\Z,;
+	next if $fn !~ m,\AF:(.*)/([^/]*)\z,;
 	$dirn = $1;
 	while (!-d $fileref_subr->($dirn)) {
 	    $fn = $dirn;
-	    $fn = $1 while ($fn =~ m,\A(.*)/([^/]*)\Z,
+	    $fn = $1 while ($fn =~ m,\A(.*)/([^/]*)\z,
 			    && !-d $fileref_subr->($1));
 	    $actual = $fileref_subr->($fn);
 	    mkdir $actual || die "$actual: $!\n";
@@ -498,7 +508,7 @@ sub script_text ($&$) {
 	$subbody .= "\$t =~ s/(^|[^\\\\])\\\$$var\\b/\${1}$val/g;\n";
 	$subbody .= "\$t =~ s/(^|[^\\\\])\\\${$var}\\b/\${1}$val/g;\n";
     }
-    
+
     my($code) = eval("sub { my(\$t) = \@_; $subbody\$t; }");
 
     my($t) = '';
@@ -536,13 +546,13 @@ EOD;
 sub output_error ($$$$) {
     my($tt, $fileref_subr, $script_type, $verbose) = @_;
     my($fp) = $tt->{'errprefix'};
-    
+
     if (!open(ERR, "<", $fileref_subr->('stderr'))) {
 	print STDERR $fp, $!, "\n";
 	$::internal_errors++;
 	return;
     }
-    
+
     my($errortext, $t, $lineno, $failure) = ('');
     while ($t = <ERR>) {
 	if ($t =~ /^testie_lineno:(.*)$/) {
@@ -556,7 +566,7 @@ sub output_error ($$$$) {
     }
     close ERR;
     $lineno = $fp if !defined($lineno);
-    $lineno =~ s/: *\Z//;
+    $lineno =~ s/: *\z//;
 
     my($failure_text);
     if (!defined($failure)) {
@@ -573,8 +583,8 @@ sub output_error ($$$$) {
 	$::errors++;
     }
 
-    $errortext =~ s/\s*\Z//;
-    
+    $errortext =~ s/\s*\z//;
+
     my($cmd) = $tt->command_at($lineno, $script_type);
 
     # exit early if quiet
@@ -616,13 +626,13 @@ sub _output_expectation_error ($$$) {
 
     # fix subtest description
     if (defined($etrack->{"subtest"})) {
-	$fp =~ s/: \Z/ /;
+	$fp =~ s/: \z/ /;
 	$fp .= "subtest " . $etrack->{"subtest"} . ": ";
     }
     if (defined($etrack->{"expectedline"})) {
 	$fp = $etrack->{"expectedline"} . ": ";
     }
-    
+
     # output message
     if ($efn eq 'stdout') {
 	print STDERR $fp, "standard output has unexpected value starting at line " . $etrack->{"textline"} . "\n";
@@ -634,11 +644,11 @@ sub _output_expectation_error ($$$) {
 
     # output expected and text data if possible
     $etrack->{"expected"} = "<end of file>" if $etrack->{"expected"} eq "\376";
-    $etrack->{"expected"} =~ s/\r?\n?\Z//;
+    $etrack->{"expected"} =~ s/\r?\n?\z//;
     $etrack->{"text"} = "<end of file>" if $etrack->{"text"} eq "\376";
-    $etrack->{"text"} =~ s/\r?\n?\Z//;
-    if ($etrack->{"expected"} =~ /\A[\t\040-\176]*\Z/
-	&& $etrack->{"text"} =~ /\A[\t\040-\176]*\Z/) {
+    $etrack->{"text"} =~ s/\r?\n?\z//;
+    if ($etrack->{"expected"} =~ /\A[\t\040-\176]*\z/
+	&& $etrack->{"text"} =~ /\A[\t\040-\176]*\z/) {
 	$etrack->{"expected"} =~ s/\s*\{\{\?.*?\}\}\s*//g if $etrack->{"mode"} != 0;
 	print STDERR $fp, $efn, ":", $etrack->{"textline"}, ": expected '", $etrack->{"expected"}, "'\n",
 		$fp, $efn, ":", $etrack->{"textline"}, ": but got  '", $etrack->{"text"}, "'\n";
@@ -654,6 +664,7 @@ sub _output_expectation_error ($$$) {
 sub _check_one_typed_expect ($$$$$) {
     my($tt, $raw_text, $fn, $ignores, $etrack) = @_;
     my($mode) = ($fn =~ /^v/ ? 0 : ($fn =~ /^e/ ? 1 : 2));
+    my($expnum) = 0;
 
     foreach my $exp (@{$tt->{$fn}}) {
 	my($text) = $raw_text;
@@ -663,13 +674,23 @@ sub _check_one_typed_expect ($$$$$) {
 
 	# check that files really disagree (in later modes)
 	if ($mode > 0) {
-	    # ignore differences in amounts of whitespace
-	    $text =~ s/\s+\n/\n/g;
-	    $text =~ s/\n\n+\Z/\n/;
+	    # ignore differences in amounts of vertical whitespace
+	    $text =~ s/[ \f\r\t\013]+\n/\n/g;
+	    $text =~ s/\n\n+\z/\n/;
 	    $text =~ s/\A\n//;
-	    $exp =~ s/\s+\n/\n/g;
-	    $exp =~ s/\n\n\n+/\n\n/g;
-	    $exp =~ s/\n\n+\Z/\n/;
+	    $exp =~ s/[ \f\r\t\013]+\n/\n/g;
+	    $exp =~ s/\n\n+\z/\n/;
+
+	    # regularize whitespace if we should
+	    if ($tt->{"whitespace:$fn:$expnum"}) {
+		$text =~ s/[ \f\r\t\013]+/ /g;
+		$text =~ s/\A //;
+		$text =~ s/\n /\n/g;
+		$exp =~ s/[ \f\r\t\013]+/ /g;
+		$exp =~ s/\A //;
+		$exp =~ s/\n /\n/g;
+	    }
+
 	    return 0 if $text eq $exp;
 
 	    # ignore explicitly ignored text
@@ -681,16 +702,10 @@ sub _check_one_typed_expect ($$$$$) {
 	my(@el) = (split(/\n/, $exp), "\376");
 	my($tp, $ep, $subtest, $message) = (0, 0, undef, undef);
 	while ($tp < @tl && $ep < @el) {
-	    
-	    # a single blank line in $exp matches multiple blank lines
-	    # in $text
-	    if ($el[$ep] eq '' && $tl[$tp] eq '' && $mode > 0) {
-		$tp++ while $tl[$tp] eq '' || $tl[$tp] eq "\377";
-		$tp--;
-	    }
 
-	    # skip ignored lines
-	    $tp++ while $tl[$tp] eq "\377";
+	    # skip blank lines and ignored lines
+	    ++$ep while $el[$ep] eq '' && $mode > 0;
+	    ++$tp while ($tl[$tp] eq '' && $mode > 0) || $tl[$tp] eq "\377";
 
 	    # process testie_subtest
 	    if (length($tl[$tp]) > 15 && substr($tl[$tp], 0, 15) eq "testie_subtest ") {
@@ -703,13 +718,13 @@ sub _check_one_typed_expect ($$$$$) {
 	    if ($mode != 0 && $el[$ep] =~ /\{\{/) {
 		my($re);
 		($re, $message) = braces_to_regex($el[$ep], $mode);
-		last if $tl[$tp] !~ m/\A$re\Z/;
+		last if $tl[$tp] !~ m/\A$re\z/;
 	    } elsif ($mode == 2) {
-		last if $tl[$tp] !~ m/\A$el[$ep]\Z/;
+		last if $tl[$tp] !~ m/\A$el[$ep]\z/;
 	    } elsif ($tl[$tp] ne $el[$ep]) {
 		last;
 	    }
-	    
+
 	    $tp++, $ep++;
 	}
 	return 0 if $tp >= @tl || $ep >= @el;
@@ -718,8 +733,8 @@ sub _check_one_typed_expect ($$$$$) {
 	    $etrack->{"text"} = $tl[$tp];
 	    $etrack->{"expected"} = $el[$ep];
 	    $etrack->{"textline"} = $tp + 1;
-	    if (defined($tt->{"$fn:firstline"})
-		&& $tt->{"$fn:firstline"} =~ /^(.*):(\d+)$/) {
+	    if (defined($tt->{"firstline:$fn:$expnum"})
+		&& $tt->{"firstline:$fn:$expnum"} =~ /^(.*):(\d+)$/) {
 		$etrack->{"expectedline"} = $1 . ":" . ($2 + $ep);
 	    } else {
 		$etrack->{"expectedline"} = undef;
@@ -728,6 +743,8 @@ sub _check_one_typed_expect ($$$$$) {
 	    $etrack->{"subtest"} = $subtest;
 	    $etrack->{"message"} = $message;
 	}
+
+	++$expnum;
     }
 
     return -1;
@@ -757,7 +774,7 @@ sub _check_one_expect ($$$) {
     if ($ignores ne '') {
 	$ignores =~ s{^([ \t]*\S[^\n]*)}{\$text =~ s<^$1\[ \\t\]*\$><\\377>mg;\n}mg;
     }
-    
+
     # now compare alternates
     foreach my $fn ("v:$efn", "e:$efn", "x:$efn") {
 	return 0 if _check_one_typed_expect($tt, $raw_text, $fn, $ignores, $etrack) >= 0;
@@ -766,7 +783,7 @@ sub _check_one_expect ($$$) {
     # if we get here, none of the attempts matched
     _output_expectation_error($fp, $efn, $etrack);
 }
-    
+
 
 sub check_expects ($$) {
     my($tt, $fileref_subr) = @_;
@@ -885,7 +902,7 @@ sub execute_test ($$$) {
 
     # exit if expand mode
     return 0 if ($expand_mode);
-    
+
     # run the script
     my($actual_stdin) = ($tt->have_file('stdin') ? script_fn_to_fn('stdin') : "/dev/null");
     my($actual_stdout) = ($show_stdout || $tt->have_file('stdout') ? script_fn_to_fn('stdout') : "/dev/null");
@@ -900,8 +917,7 @@ sub execute_test ($$$) {
 	%expanded = ("stdout" => 1, "stderr" => 1);
 	push @show, ["stdout", $f->[1]], ["stderr", $f->[1]];
 	while (($k, $v) = each %$tt) {
-	    next if $k !~ /\A[exv]:(.*)\Z/ || exists $expanded{$1}
-		|| $k =~ /:firstline\Z/;
+	    next if $k !~ /\A[exv]:(.*)\z/ || exists $expanded{$1};
 	    $expanded{$1} = 1;
 	    push @shownit, [$1, $f->[1]];
 	}
@@ -979,7 +995,7 @@ sub run_test (;$$) {
 
     my($result, $suffix) = (0, '');
     $tt = Testie::read(IN, $display_fn);
-    
+
     while (1) {
 	my($this_result) = execute_test($tt, $display_fn . $suffix, $verbose);
 	$result = $this_result if $this_result;
@@ -1326,7 +1342,7 @@ up to the next section. The C<-d> flag tells testie to delete the
 first character of each line in the section; this makes it possible to
 include files that have lines that start with %.
 
-=item %expectv [-a] [-d] [+LENGTH] FILENAME...
+=item %expectv [-ad] [+LENGTH] FILENAME...
 
 An expected output file for the script. FILENAME can be 'stdout', for
 standard output. If LENGTH is provided, the file data consists of the
@@ -1341,22 +1357,20 @@ compare the script's output file with each provided alternate; the test
 succeeds if any of the alternates match. The C<-d> flag behaves as in
 %file.
 
-=item %expect [-a] [-d] [-i] [+LENGTH] FILENAME...
+=item %expect [-adiw] [+LENGTH] FILENAME...
 
 An expected output file for the script. Arguments are as for %expectv.
 
 Testie will run the script, then compare the file generated by script
 with the provided data. The files are compared line-by-line. Testie
-ignores trailing whitespace on each line and in the files at large. It also
+ignores blank lines and trailing whitespace on each line. It also
 ignores lines in the script output that match %ignore patterns (see below).
-Blank lines in the %expect data match one or more blank lines in the
-output. %expect lines can contain Perl regular expressions, enclosed by two
+%expect lines can contain Perl regular expressions, enclosed by two
 sets of braces; so the %expect line
 
     foo{{(bar)?}}
 
-matches either 'foo' or 'foobar'. The C<-i> flag makes any regular
-expressions case-insensitive.
+matches either 'foo' or 'foobar'.
 
 Document an %expect line with "{{?comment}}" blocks.  For example:
 
@@ -1366,7 +1380,12 @@ Testie ignores whitespace before and after the "{{?comment}}" block, and if
 the actual output differs from this expected line, it prints the comment in
 addition to the line differences.
 
-=item %expectx [-a] [-d] [-i] [+LENGTH] FILENAME...
+The C<-a> and C<-d> flags may also be used for %expect sections. Also, the
+C<-i> flag makes any regular expressions case-insensitive (text outside of
+regular expressions must match case), and the C<-w> flag ignores any
+differences in amount of whitespace within a line.
+
+=item %expectx [-adiw] [+LENGTH] FILENAME...
 
 %expectx is just like %expect, except that every line is treated as a
 regular expression.  The input is parsed for "{{?comment}}" blocks, but
@@ -1377,15 +1396,15 @@ rules.
 
 Same as '%file stdin [ARGS]'.
 
-=item %stdout [-a] [-d] [-i] [+LENGTH]
+=item %stdout [-adiw] [+LENGTH]
 
 Same as '%expect stdout'.
 
-=item %stderr [-a] [-d] [-i] [+LENGTH]
+=item %stderr [-adiw] [+LENGTH]
 
 Same as '%expect stderr'.
 
-=item %ignorex [-d] [-i] [+LENGTH] [FILENAME]
+=item %ignorex [-di] [+LENGTH] [FILENAME]
 
 Each line in the %ignorex section is a Perl regular expression.  Lines in
 the supplied FILENAME that match any of those regular expressions will not
