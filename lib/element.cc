@@ -129,8 +129,7 @@ class MyNothingElement : public Element { public:
   of the element's class name.
 
   Although this element definition is complete, Click's compilation process
-  requires that a real element come with a bit more boilerplate.  In
-  particular, both a header file and a source file are required.  Here's a
+  requires that a real element come with a bit more boilerplate.  Here's a
   possible definition of our nothing element, including all boilerplate:
 
 @code
@@ -225,7 +224,7 @@ class MyNullElement : public Element { public:
     There is no harm in verifying these invariants with assertions, since
     bogus element code can violate them (by passing a bad value for
     <tt>port</tt> or <tt>p</tt>, for example), but such errors are rare in
-    practice.  The elements that we write mostly assume that the invariants
+    practice.  Our elements mostly assume that the invariants
     hold.</li>
   </ul>
 
@@ -508,10 +507,10 @@ Element::cast(const char *name)
  * @param name name of the type being cast to
  *
  * Click calls this function to see whether a port corresponds to an object of
- * a given type, identified by @a name.  The function should return a pointer
- * to the named object, or a null pointer if this element doesn't have that
- * type.  @a name can name an element class or another type of interface, such
- * as @c "Storage" or Notifier::EMPTY_NOTIFIER.
+ * the type called @a name.  The function should return a pointer to the named
+ * object, or a null pointer if this port doesn't have that type.  @a name can
+ * name an element class or another type of interface, such as @c "Storage" or
+ * Notifier::EMPTY_NOTIFIER.
  *
  * The default implementation returns the result of cast(), ignoring the @a
  * isoutput and @a port arguments.
@@ -664,7 +663,7 @@ Element::set_nports(int new_ninputs, int new_noutputs)
  * output port than there are input ports.</dd>
  * </dl>
  *
- * These ranges help Click determine whether a configuration uses too few or
+ * Port counts are used to determine whether a configuration uses too few or
  * too many ports, and lead to errors such as "'e' has no input 3" and "'e'
  * input 3 unused".
  *
@@ -803,10 +802,10 @@ Element::connect_port(bool isoutput, int port, Element* e, int e_port)
  *
  * An element class overrides this virtual function to return a C string
  * describing how packets flow within the element.  That is, can packets that
- * arrive on input port X be emitted on output port Y, for all X and Y?  This
- * information helps Click answer questions such as "What Queues are
- * downstream of this element?" and "Should this agnostic port be push or
- * pull?".  See below for more.
+ * arrive on input port X be emitted on output port Y?  This information helps
+ * Click answer questions such as "What Queues are downstream of this
+ * element?" and "Should this agnostic port be push or pull?".  See below for
+ * more.
  *
  * A flow code string consists of an input specification and an output
  * specification, separated by a slash.  Each specification is a sequence of
@@ -885,9 +884,8 @@ Element::connect_port(bool isoutput, int port, Element* e, int e_port)
  *
  * <h3>Determining an element's flow code</h3>
  *
- * What does it mean for a packet to travel from one port to another?  To pick
- * the right flow code for an element, consider how a flow code would affect a
- * simple router.
+ * To pick the right flow code for an element, consider how a flow code would
+ * affect a simple router.
  *
  * Given an element @e E with input port @e M and output port @e N, imagine
  * this simple configuration (or a similar configuration):
@@ -2483,8 +2481,8 @@ Element::read_positional_handler(Element *element, void *user_data)
 /** @brief Standard read handler returning a keyword argument.
  *
  * Use this function to define a handler that returns one of an element's
- * keyword configuration arguments.  The @a thunk argument is a C string that
- * specifies which one.  For instance, to add a "data" read handler that
+ * keyword configuration arguments.  The @a user_data argument is a C string
+ * that specifies which one.  For instance, to add a "data" read handler that
  * returns the element's "DATA" keyword argument:
  *
  * @code
@@ -2501,7 +2499,7 @@ Element::read_positional_handler(Element *element, void *user_data)
  * missing:
  *
  * @code
- * add_write_handler("data", reconfigure_keyword_handler, "0 DATA");
+ * add_write_handler("data", reconfigure_keyword_handler, (void *) "0 DATA");
  * @endcode
  *
  * @sa configuration: used to obtain the element's current configuration.
@@ -2518,26 +2516,26 @@ Element::read_keyword_handler(Element *element, void *user_data)
 /** @brief Standard write handler for reconfiguring an element by changing one
  * of its positional arguments.
  *
+ * @warning
+ * Prefer reconfigure_keyword_handler() to reconfigure_positional_handler().
+ *
  * Use this function to define a handler that, when written, reconfigures an
- * element by changing one of its positional arguments.  The @a thunk argument
- * is a typecast integer that specifies which one.  For typecast integer that
- * specifies which one.  For instance, to add "first", "second", and "third"
- * write handlers that change the element's first three configuration
- * arguments:
+ * element by changing one of its positional arguments.  The @a user_data
+ * argument is a typecast integer that specifies which one.  For typecast
+ * integer that specifies which one.  For instance, to add "first", "second",
+ * and "third" write handlers that change the element's first three
+ * configuration arguments:
  *
  * @code
- * add_write_handler("first", reconfigure_positional_handler, (void *) 0);
- * add_write_handler("second", reconfigure_positional_handler, (void *) 1);
- * add_write_handler("third", reconfigure_positional_handler, (void *) 2);
+ * add_write_handler("first", reconfigure_positional_handler, 0);
+ * add_write_handler("second", reconfigure_positional_handler, 1);
+ * add_write_handler("third", reconfigure_positional_handler, 2);
  * @endcode
  *
  * When one of these handlers is written, Click will call the element's
  * configuration() method to obtain the element's current configuration,
  * change the relevant argument, and call live_reconfigure() to reconfigure
  * the element.
- *
- * @warning
- * Prefer reconfigure_keyword_handler() to reconfigure_positional_handler().
  *
  * @sa configuration: used to obtain the element's current configuration.
  * @sa live_reconfigure: used to reconfigure the element.
@@ -2601,17 +2599,17 @@ Element::reconfigure_keyword_handler(const String &arg, Element *e,
  * user-level programs and a Click kernel module, although they're also
  * available in user-level Click.  Rather than open a file, write ASCII data
  * to the file, and close it, as for handlers, the user-level program calls @c
- * ioctl() on an open file; Click intercepts the @c ioctl and calls the
+ * ioctl() on an open file.  Click intercepts the @c ioctl and calls the
  * llrpc() method, passing it the @c ioctl number and the associated @a data
  * pointer.  The llrpc() method should read and write @a data as appropriate.
  * @a data may be either a kernel pointer (i.e., directly accessible) or a
  * user pointer (i.e., requires special macros to access), depending on the
  * LLRPC number; see <click/llrpc.h> for more.
  *
- * The return value is returned to the user in @c errno.  Overriding
- * implementations should handle @a commands they understand as appropriate,
- * and call their parents' llrpc() method to handle any other commands.  The
- * default implementation simply returns @c -EINVAL.
+ * A negative return value is interpreted as an error and returned to the user
+ * in @c errno.  Overriding implementations should handle @a commands they
+ * understand as appropriate, and call their parents' llrpc() method to handle
+ * any other commands.  The default implementation simply returns @c -EINVAL.
  *
  * Click elements should never call each other's llrpc() methods directly; use
  * local_llrpc() instead.
