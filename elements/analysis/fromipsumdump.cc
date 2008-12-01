@@ -530,6 +530,10 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    SET_EXTRA_LENGTH_ANNO(d.p, d.ip_len - ip_len);
     }
 
+    // set extra length annotation (post-other length adjustments)
+    if (d.ip_len > d.p->length())
+	SET_EXTRA_LENGTH_ANNO(d.p, d.ip_len - d.p->length());
+
     return d.p;
 }
 

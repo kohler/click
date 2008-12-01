@@ -404,13 +404,12 @@ void ip_prepare(PacketDesc& d, const FieldWriter *)
 
     // Adjust extra length, since we calculate lengths here based on ip_len.
     if (d.iph && EXTRA_LENGTH_ANNO(p) > 0) {
-	int32_t full_len = p->length() + EXTRA_LENGTH_ANNO(p);
-	if (ntohs(d.iph->ip_len) + 8 >= full_len - p->network_header_offset())
+	uint32_t full_len = p->length() + EXTRA_LENGTH_ANNO(p);
+	uint32_t ip_len = ntohs(d.iph->ip_len);
+	if (ip_len + 8 >= full_len - p->network_header_offset())
 	    SET_EXTRA_LENGTH_ANNO(p, 0);
-	else {
-	    full_len = full_len - ntohs(d.iph->ip_len);
-	    SET_EXTRA_LENGTH_ANNO(p, full_len);
-	}
+	else
+	    SET_EXTRA_LENGTH_ANNO(p, full_len - ip_len);
     }
 }
 

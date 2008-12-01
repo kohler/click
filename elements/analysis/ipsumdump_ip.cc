@@ -94,9 +94,11 @@ static bool ip_extract(PacketDesc& d, const FieldWriter *f)
 	return true;
       case T_IP_LEN:
 	if (d.iph)
-	    d.v = ntohs(d.iph->ip_len) + (d.force_extra_length ? EXTRA_LENGTH_ANNO(d.p) : 0);
+	    d.v = ntohs(d.iph->ip_len);
 	else
-	    d.v = d.p->length() + EXTRA_LENGTH_ANNO(d.p);
+	    d.v = d.p->length();
+	if (d.force_extra_length)
+	    d.v += EXTRA_LENGTH_ANNO(d.p);
 	return true;
       case T_IP_HL:
 	CHECK(1);

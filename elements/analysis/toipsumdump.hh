@@ -153,6 +153,10 @@ whose data plus extra length annotation is less than their IP length.
 B<Tcpdump> prints 'C<truncated-ip - N bytes missing>' for such packets.
 Actual packet output immediately follows the 'C<!bad>' line.  Default is true.
 
+=item EXTRA_LENGTH
+
+Boolean.  If false, then ignore extra length annotations.  Defaults to true.
+
 =back
 
 =e
@@ -371,6 +375,7 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     bool _active : 1;
     bool _binary : 1;
     bool _header : 1;
+    bool _extra_length : 1;
     int32_t _binary_size;
     uint32_t _output_count;
     Task _task;
@@ -381,7 +386,7 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
     String _banner;
 
-    bool summary(Packet* p, StringAccum& sa, StringAccum* bad_sa, bool force_extra_length) const;
+    bool summary(Packet* p, StringAccum& sa, StringAccum* bad_sa) const;
     void write_packet(Packet* p, int multipacket);
     static int flush_handler(const String &, Element *, void *, ErrorHandler *);
 
