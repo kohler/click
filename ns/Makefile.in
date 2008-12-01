@@ -89,10 +89,10 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
 ifndef MINDRIVER
 ELEMENTSCONF = elements
-INSTALLLIBS = libnsclick.so
+INSTALLLIBS = libnsclick.@SOSUFFIX@
 else
 ELEMENTSCONF = elements_$(MINDRIVER)
-INSTALLLIBS = libns$(MINDRIVER)click.so
+INSTALLLIBS = libns$(MINDRIVER)click.@SOSUFFIX@
 endif
 
 all: $(INSTALLLIBS)
@@ -103,6 +103,8 @@ endif
 
 libnsclick.so: Makefile $(LIBOBJS) $(OBJS)
 	$(CXXLINK) -shared $(LIBOBJS) $(OBJS)
+libnsclick.dylib: Makefile $(LIBOBJS) $(OBJS)
+	$(CXXLINK) -dynamiclib $(LIBOBJS) $(OBJS)
 libnsclick.a: Makefile $(LIBOBJS) $(OBJS)
 	$(AR_CREATE) libnsclick.a $(LIBOBJS) $(OBJS)
 	$(RANLIB) libnsclick.a
@@ -130,15 +132,15 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: libnsclick.so
+install: $(INSTALLLIBS)
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
-	$(INSTALL) libnsclick.so $(DESTDIR)$(libdir)/libnsclick.so
+	for i in $(INSTALLLIBS); do $(INSTALL) $$i $(DESTDIR)$(libdir)/$$i; done
 uninstall:
-	/bin/rm -f $(DESTDIR)$(libdir)/libnsclick.so
+	for i in $(INSTALLLIBS); do rm -f $(DESTDIR)$(libdir)/$$i; done
 
 clean:
 	rm -f *.d *.o $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc elements.conf libnsclick.a \
-	libnsclick.so
+	$(INSTALLLIBS)
 distclean: clean
 	-rm -f Makefile
 
