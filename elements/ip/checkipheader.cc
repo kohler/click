@@ -42,33 +42,29 @@ const char * const CheckIPHeader::reason_texts[NREASONS] = {
 static void
 ipaddr_list_parse(cp_value *v, const String &arg, ErrorHandler *errh, const char *argname, Element *context)
 {
-  Vector<String> words;
-  cp_spacevec(arg, words);
+    Vector<String> words;
+    cp_spacevec(arg, words);
+    if (v->argtype->user_data == IPADDR_LIST_BADSRC_OLD) {
+	words.push_back(String::make_stable("0.0.0.0", 7));
+	words.push_back(String::make_stable("255.255.255.255", 15));
+    }
 
-  StringAccum sa;
-  IPAddress addr[2];
-
-  if (v->argtype->user_data == IPADDR_LIST_INTERFACES) {
-    for (int i = 0; i < words.size(); i++)
-      if (cp_ip_prefix(words[i], &addr[0], &addr[1], true, context))
-	memcpy(sa.extend(8), &addr[0], 8);
-      else {
-	errh->error("%s takes list of IP prefixes", argname);
+    bool addresses = (v->argtype->user_data != IPADDR_LIST_INTERFACES);
+    String str = String::make_garbage((addresses ? 4 : 8) * words.size());
+    if (str.out_of_memory()) {
+	errh->error("out of memory!");
 	return;
-      }
-  } else {
-    for (int i = 0; i < words.size(); i++)
-      if (cp_ip_address(words[i], &addr[0], context))
-	memcpy(sa.extend(4), &addr[0], 4);
-      else {
-	errh->error("%s takes list of IP addresses [%s]", argname, words[i].c_str());
-	return;
-      }
-    if (v->argtype->user_data == IPADDR_LIST_BADSRC_OLD)
-      memcpy(sa.extend(8), "\x00\x00\x00\x00\xFF\xFF\xFF\xFF", 8);
-  }
+    }
+    unsigned char *data = (unsigned char *) str.mutable_data();
 
-  v->v_string = sa.take_string();
+    for (int i = 0; i < words.size(); i++)
+	if (addresses ? !cp_ip_address(words[i], &data[i*4], context)
+	    : !cp_ip_prefix(words[i], &data[i*8], &data[i*8+4], true, context)) {
+	    errh->error("%s takes list of IP %s", argname, addresses ? "addresses" : "prefixes");
+	    return;
+	}
+
+    v->v_string = str;
 }
 
 static void
