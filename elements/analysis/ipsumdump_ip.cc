@@ -194,7 +194,7 @@ static void ip_inject(PacketOdesc& d, const FieldReader *f)
 	iph->ip_hl = d.v >> 2;
 	break;
     case T_IP_LEN:
-	iph->ip_len = htons(d.v);
+	d.ip_len = d.v;
 	break;
     }
 }
