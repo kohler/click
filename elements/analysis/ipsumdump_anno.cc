@@ -178,7 +178,7 @@ static void utimestamp_outb(const PacketDesc& d, bool, const FieldWriter *)
 
 static const uint8_t *utimestamp_inb(PacketOdesc& d, const uint8_t* s, const uint8_t *ends, const FieldReader *)
 {
-    if (s + 7 <= ends)
+    if (s + 7 >= ends)
 	return ends;
     d.u32[0] = GET4(s);
     d.u32[1] = GET4(s + 4) * 1000;

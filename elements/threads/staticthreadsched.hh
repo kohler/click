@@ -1,6 +1,9 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef STATICTHREADSCHED_HH
 #define STATICTHREADSCHED_HH
+#include <click/element.hh>
+#include <click/standard/threadsched.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -14,9 +17,6 @@
  * =a
  * ThreadMonitor, BalancedThreadSched
  */
-
-#include <click/element.hh>
-#include <click/standard/threadsched.hh>
 
 class StaticThreadSched : public Element, public ThreadSched { public:
 
@@ -36,4 +36,5 @@ class StaticThreadSched : public Element, public ThreadSched { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

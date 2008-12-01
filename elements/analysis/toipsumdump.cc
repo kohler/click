@@ -50,6 +50,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool multipacket = false;
     bool binary = false;
     bool header = true;
+    bool extra_length = true;
 
     if (cp_va_kparse(conf, this, errh,
 		     "FILENAME", cpkP+cpkM, cpFilename, &_filename,
@@ -61,6 +62,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "MULTIPACKET", 0, cpBool, &multipacket,
 		     "BAD_PACKETS", 0, cpBool, &bad_packets,
 		     "CAREFUL_TRUNC", 0, cpBool, &careful_trunc,
+		     "EXTRA_LENGTH", 0, cpBool, &extra_length,
 		     "BINARY", 0, cpBool, &binary,
 		     cpEnd) < 0)
 	return -1;
@@ -106,6 +108,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _multipacket = multipacket;
     _binary = binary;
     _header = header;
+    _extra_length = extra_length;
 
     return (before == errh->nerrors() ? 0 : -1);
 }
@@ -178,9 +181,9 @@ ToIPSummaryDump::cleanup(CleanupStage)
 }
 
 bool
-ToIPSummaryDump::summary(Packet* p, StringAccum& sa, StringAccum* bad_sa, bool force_extra_length) const
+ToIPSummaryDump::summary(Packet* p, StringAccum& sa, StringAccum* bad_sa) const
 {
-    IPSummaryDump::PacketDesc d(this, p, &sa, bad_sa, _careful_trunc, force_extra_length);
+    IPSummaryDump::PacketDesc d(this, p, &sa, bad_sa, _careful_trunc, _extra_length);
 
     for (int i = 0; i < _prepare_fields.size(); i++)
 	_prepare_fields[i]->prepare(d, _prepare_fields[i]);
@@ -214,8 +217,9 @@ ToIPSummaryDump::write_packet(Packet* p, int multipacket)
 {
     if (multipacket > 0 && EXTRA_PACKETS_ANNO(p) > 0) {
 	uint32_t count = 1 + EXTRA_PACKETS_ANNO(p);
-	uint32_t total_len = p->length() + EXTRA_LENGTH_ANNO(p);
-	uint32_t len = p->length();
+	uint32_t total_len = p->length(), len = p->length();
+	if (_extra_length)
+	    total_len += EXTRA_LENGTH_ANNO(p);
 	if (total_len < count * len)
 	    total_len = count * len;
 
@@ -244,7 +248,7 @@ ToIPSummaryDump::write_packet(Packet* p, int multipacket)
 	_sa.clear();
 	_bad_sa.clear();
 
-	summary(p, _sa, (_bad_packets ? &_bad_sa : 0), (multipacket < 0 || EXTRA_PACKETS_ANNO(p) > 0));
+	summary(p, _sa, (_bad_packets ? &_bad_sa : 0));
 
 	if (_bad_packets && _bad_sa)
 	    write_line(_bad_sa.take_string());

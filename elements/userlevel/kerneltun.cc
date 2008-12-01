@@ -60,6 +60,10 @@
 # include <sys/sysctl.h>
 #endif
 
+#if defined(__FreeBSD__)
+# include <net/ethernet.h>
+#endif
+
 CLICK_DECLS
 
 KernelTun::KernelTun()
@@ -299,11 +303,18 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
 	    errh->warning("could not set interface Ethernet address: %s", strerror(errno));
     } else if (_macaddr)
 	errh->warning("could not set interface Ethernet address: no support for /dev/tun");
-#elif !defined(__FreeBSD__)
+#elif defined(__FreeBSD__)
+    if (_macaddr && _tap) {
+	ifr.ifr_addr.sa_len = ETHER_ADDR_LEN;
+	ifr.ifr_addr.sa_family = AF_LINK;
+	memcpy(ifr.ifr_addr.sa_data, _macaddr.data(), ETHER_ADDR_LEN);
+	if (ioctl(s, SIOCSIFLLADDR, &ifr) != 0)
+	    errh->warning("could not set interface Ethernet address: %s", strerror(errno));
+    } else if (_macaddr)
+	errh->warning("could not set interface Ethernet address: no support for /dev/tun");
+#else
     if (_macaddr)
 	errh->warning("could not set interface Ethernet address: no support");
-#else
-    /* safe to ignore _macaddr on FreeBSD */
 #endif
 #if defined(SIOCSIFMTU)
     if (_mtu_out != DEFAULT_MTU) {

@@ -47,6 +47,11 @@ Boolean. Determines whether to print each packet's user annotation bytes.  Defau
 Boolean; available only in the Linux kernel module. Determines whether to
 print the current CPU ID for every packet. Default is false.
 
+=item HEADROOM
+
+Boolean.  Determines whether to print each packet's headroom and tailroom, in
+the format "(h[headroom] t[tailroom])".  Defaut is false.
+
 =item ACTIVE
 
 Boolean. If false, don't print messages. Default is true.
@@ -82,6 +87,7 @@ class Print : public Element { public:
     int _bytes;		// How many bytes of a packet to print
     bool _active;
     bool _timestamp : 1;
+    bool _headroom : 1;
 #ifdef CLICK_LINUXMODULE
     bool _cpu : 1;
 #endif

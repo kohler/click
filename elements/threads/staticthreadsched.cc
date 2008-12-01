@@ -1,4 +1,19 @@
-// -*- c-basic-offset: 4 -*-
+/*
+ * staticthreadsched.{cc,hh} -- element statically assigns tasks to threads
+ * Eddie Kohler
+ *
+ * Copyright (c) 2004-2008 Regents of the University of California
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, subject to the conditions
+ * listed in the Click LICENSE file. These conditions include: you must
+ * preserve this copyright notice, and you cannot mention the copyright
+ * holders in advertising related to the Software without their permission.
+ * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
+ * notice is a summary of the Click LICENSE file; the license in that file is
+ * legally binding.
+ */
 #include <click/config.h>
 #include "staticthreadsched.hh"
 #include <click/task.hh>
@@ -6,6 +21,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 StaticThreadSched::StaticThreadSched()
     : _next_thread_sched(0)
@@ -54,4 +70,5 @@ StaticThreadSched::initial_home_thread_id(Task *task, bool scheduled)
 	return THREAD_UNKNOWN;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(StaticThreadSched)

@@ -103,8 +103,7 @@ static void payload_inject(PacketOdesc &d, const FieldReader *f)
 	break;
     }
     case T_PAYLOAD_LEN:
-	if (d.p->length() - off < d.v)
-	    SET_EXTRA_LENGTH_ANNO(d.p, d.v - (d.p->length() - off));
+	d.ip_len = off + d.v;
 	break;
     }
 }

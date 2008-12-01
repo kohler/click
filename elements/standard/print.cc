@@ -46,7 +46,7 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
 #ifdef CLICK_LINUXMODULE
   bool print_cpu = false;
 #endif
-  bool print_anno = false, bcontents;
+  bool print_anno = false, headroom = false, bcontents;
   _active = true;
   String label, contents = "HEX";
   unsigned bytes = 24;
@@ -60,6 +60,7 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
 		   "TIMESTAMP", 0, cpBool, &timestamp,
 		   "PRINTANNO", 0, cpBool, &print_anno,
 		   "ACTIVE", 0, cpBool, &_active,
+		   "HEADROOM", 0, cpBool, &headroom,
 #ifdef CLICK_LINUXMODULE
 		   "CPU", 0, cpBool, &print_cpu,
 #endif
@@ -80,6 +81,7 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
   _label = label;
   _bytes = bytes;
   _timestamp = timestamp;
+  _headroom = headroom;
   _print_anno = print_anno;
 #ifdef CLICK_LINUXMODULE
   _cpu = print_cpu;
@@ -100,6 +102,7 @@ Print::simple_action(Packet *p)
 		   + 6		// (processor)
 		   + 28		// timestamp:
 		   + 9		// length |
+		   + (_headroom ? 17 : 0) // (h[headroom] t[tailroom])
 		   + Packet::anno_size*2 + 3 // annotations |
 		   + 3 * bytes);
     if (sa.out_of_memory()) {
@@ -129,6 +132,12 @@ Print::simple_action(Packet *p)
     int len;
     len = sprintf(sa.reserve(11), "%s%4d", sep, p->length());
     sa.adjust_length(len);
+
+    // headroom and tailroom
+    if (_headroom) {
+	len = sprintf(sa.reserve(16), " (h%d t%d)", p->headroom(), p->tailroom());
+	sa.adjust_length(len);
+    }
 
     if (_print_anno) {
 	sa << " | ";

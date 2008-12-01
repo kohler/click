@@ -492,38 +492,47 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 
     if (d.p && d.is_ip && d.p->ip_header()) {
 	// set IP length
+	uint32_t ip_len;
 	if (!d.p->ip_header()->ip_len) {
-	    int len = d.p->network_length() + EXTRA_LENGTH_ANNO(d.p);
-	    if (len > 0xFFFF)
-		len = 0xFFFF;
-	    d.p->ip_header()->ip_len = htons(len);
-	}
+	    ip_len = (d.ip_len <= 0xFFFF ? d.ip_len : 0xFFFF);
+	    if (!ip_len)
+		ip_len = d.p->network_length();
+	    d.p->ip_header()->ip_len = htons(ip_len);
+	} else
+	    ip_len = ntohs(d.p->ip_header()->ip_len);
 
 	// set UDP length
 	if (d.p->ip_header()->ip_p == IP_PROTO_UDP
 	    && IP_FIRSTFRAG(d.p->ip_header())
 	    && !d.p->udp_header()->uh_ulen) {
-	    int len = htons(d.p->ip_header()->ip_len) - d.p->network_header_length();
+	    int len = ip_len - d.p->network_header_length();
 	    d.p->udp_header()->uh_ulen = htons(len);
 	}
-
-	// set extra length annotation (post-IP length adjustment)
-	SET_EXTRA_LENGTH_ANNO(d.p, ntohs(d.p->ip_header()->ip_len) - d.p->length());
 
 	// set destination IP address annotation
 	d.p->set_dst_ip_anno(d.p->ip_header()->ip_dst);
 
 	// set checksum
 	if (_checksum) {
-	    uint32_t xlen = EXTRA_LENGTH_ANNO(d.p);
+	    uint32_t xlen = 0;
+	    if (ip_len > (uint32_t) d.p->network_length())
+		xlen = ip_len - d.p->network_length();
 	    if (!xlen || (d.p = d.p->put(xlen))) {
 		if (xlen && _zero)
 		    memset(d.p->end_data() - xlen, 0, xlen);
-		SET_EXTRA_LENGTH_ANNO(d.p, 0);
+		SET_EXTRA_LENGTH_ANNO(d.p, EXTRA_LENGTH_ANNO(d.p) - xlen);
 		set_checksums(d.p, d.p->ip_header());
 	    }
 	}
+
+	// set extra length annotation (post-other length adjustments)
+	if (d.ip_len > ip_len)
+	    SET_EXTRA_LENGTH_ANNO(d.p, d.ip_len - ip_len);
     }
+
+    // set extra length annotation (post-other length adjustments)
+    if (d.ip_len > d.p->length())
+	SET_EXTRA_LENGTH_ANNO(d.p, d.ip_len - d.p->length());
 
     return d.p;
 }

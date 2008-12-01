@@ -204,13 +204,16 @@ AC_DEFUN([CLICK_CHECK_DYNAMIC_LINKING], [
 
     AC_MSG_CHECKING(compiler flags for building loadable modules)
     LDMODULEFLAGS=-shared
+    SOSUFFIX=so
     if test "x$ac_have_dynamic_linking" = xyes; then
 	if echo "$ac_cv_target" | grep apple-darwin >/dev/null 2>&1; then
-	    LDMODULEFLAGS='-bundle -flat_namespace -undefined suppress'
+	    LDMODULEFLAGS='-dynamiclib -flat_namespace -undefined suppress'
+	    SOSUFFIX=dylib
 	fi
     fi
     AC_MSG_RESULT($LDMODULEFLAGS)
     AC_SUBST(LDMODULEFLAGS)
+    AC_SUBST(SOSUFFIX)
 ])
 
 
