@@ -318,7 +318,7 @@ const uint8_t *inb(PacketOdesc& d, const uint8_t *s, const uint8_t *end, const F
 	d.v = GET4(s);
 	return s + 4;
     case B_6PTR:
-	if (s + 6 >= end)
+	if (s + 5 >= end)
 	    goto bad;
 	memcpy(d.u8, s, 6);
 	return s + 6;
