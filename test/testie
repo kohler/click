@@ -911,21 +911,25 @@ sub execute_test ($$$) {
     $any_tests_done = 1;
 
     # expand "--show-alls"
+    my(@xshow);
     foreach $f (@show) {
-	next if $f->[0] ne "*";
-	my(%expanded, @shownit, $k, $v);
-	%expanded = ("stdout" => 1, "stderr" => 1);
-	push @show, ["stdout", $f->[1]], ["stderr", $f->[1]];
-	while (($k, $v) = each %$tt) {
-	    next if $k !~ /\A[exv]:(.*)\z/ || exists $expanded{$1};
-	    $expanded{$1} = 1;
-	    push @shownit, [$1, $f->[1]];
+	if ($f->[0] eq "*") {
+	    my(%expanded, @shownit, $k, $v);
+	    %expanded = ("stdout" => 1, "stderr" => 1);
+	    push @xshow, ["stdout", $f->[1]], ["stderr", $f->[1]];
+	    while (($k, $v) = each %$tt) {
+		next if $k !~ /\A[exv]:(.*)\z/ || exists $expanded{$1};
+		$expanded{$1} = 1;
+		push @shownit, [$1, $f->[1]];
+	    }
+	    push @xshow, sort { $a->[0] cmp $b->[0] } @shownit;
+	} else {
+	    push @xshow, $f;
 	}
-	push @show, sort { $a->[0] cmp $b->[0] } @shownit;
     }
 
     # echo files
-    foreach $f (@show) {
+    foreach $f (@xshow) {
 	$efn = $f->[0];
 	if (-r out_script_fn_to_fn($efn)) {
 	    print "$fn: ", $efn, "\n", "=" x 79, "\n";
@@ -1129,7 +1133,8 @@ while (@ARGV) {
 	$dir = ".";
     } elsif (argcmp($_, '--help', 1)) {
 	help;
-    } elsif (argcmp($_, '--preserve-temporaries', 1)) {
+    } elsif (argcmp($_, '--preserve-temporaries', 1)
+	     || argcmp($_, '--preserve-temps', 1)) {
 	$preserve_temporaries = 1;
     } elsif (/^-s$/ || argcmp($_, '--show', 2)) {
 	usage if @ARGV == 0;
