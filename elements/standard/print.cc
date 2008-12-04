@@ -154,9 +154,10 @@ Print::simple_action(Packet *p)
 	const unsigned char *data = p->data();
 	if (_contents == 1) {
 	    for (int i = 0; i < bytes; i++, data++) {
+		if (i && (i % 4) == 0)
+		    *buf++ = ' ';
 		sprintf(buf, "%02x", *data & 0xff);
 		buf += 2;
-		if ((i % 4) == 3) *buf++ = ' ';
 	    }
 	} else if (_contents == 2) {
 	    for (int i = 0; i < bytes; i++, data++) {
