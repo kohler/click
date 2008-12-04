@@ -508,7 +508,7 @@ AggregateIPFlows::handle_packet(Packet *p)
     FlowInfo *finfo;
     if (IP_FIRSTFRAG(iph)) {
 	const uint8_t *udp_ptr = reinterpret_cast<const uint8_t *>(iph) + (iph->ip_hl << 2);
-	if ((udp_ptr + sizeof(click_udp)) - p->data() > (int) p->length())
+	if (udp_ptr + 4 > p->end_data())
 	    // packet not big enough
 	    return ACT_DROP;
 
