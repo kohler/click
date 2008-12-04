@@ -487,15 +487,22 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 
     // set source and destination ports even if no transport info on packet
     if (d.p && d.default_ip_flowid)
-	if (d.make_ip(0))
-	    d.make_transp();	// may fail
+	(void) d.make_ip(0);	// may fail
+
+    // set up transport header if necessary
+    if (d.p && d.is_ip)
+	(void) d.make_transp();
 
     if (d.p && d.is_ip && d.p->ip_header()) {
 	// set IP length
 	uint32_t ip_len;
 	if (!d.p->ip_header()->ip_len) {
-	    ip_len = (d.ip_len <= 0xFFFF ? d.ip_len : 0xFFFF);
-	    if (!ip_len)
+	    ip_len = d.want_len;
+	    if (ip_len >= (uint32_t) d.p->network_header_offset())
+		ip_len -= d.p->network_header_offset();
+	    if (ip_len > 0xFFFF)
+		ip_len = 0xFFFF;
+	    else if (ip_len == 0)
 		ip_len = d.p->network_length();
 	    d.p->ip_header()->ip_len = htons(ip_len);
 	} else
@@ -524,15 +531,11 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		set_checksums(d.p, d.p->ip_header());
 	    }
 	}
-
-	// set extra length annotation (post-other length adjustments)
-	if (d.ip_len > ip_len)
-	    SET_EXTRA_LENGTH_ANNO(d.p, d.ip_len - ip_len);
     }
 
     // set extra length annotation (post-other length adjustments)
-    if (d.p && d.ip_len > d.p->length())
-	SET_EXTRA_LENGTH_ANNO(d.p, d.ip_len - d.p->length());
+    if (d.p && d.want_len > d.p->length())
+	SET_EXTRA_LENGTH_ANNO(d.p, d.want_len - d.p->length());
 
     return d.p;
 }

@@ -60,7 +60,7 @@ struct PacketOdesc {
     int default_ip_p;
     const IPFlowID *default_ip_flowid;
     int minor_version;
-    uint32_t ip_len;
+    uint32_t want_len;
 
     inline PacketOdesc(const Element *e, WritablePacket *p, int default_ip_p, const IPFlowID *default_ip_flowid, int minor_version);
     void clear_values()			{ vptr[0] = vptr[1] = 0; }
@@ -199,13 +199,14 @@ inline PacketDesc::PacketDesc(const Element *e_, Packet* p_, StringAccum* sa_, S
 inline PacketOdesc::PacketOdesc(const Element *e_, WritablePacket* p_, int default_ip_p_, const IPFlowID *default_ip_flowid_, int minor_version_)
     : p(p_), is_ip(true), have_icmp_type(false), have_icmp_code(false),
       e(e_), default_ip_p(default_ip_p_), default_ip_flowid(default_ip_flowid_),
-      minor_version(minor_version_), ip_len(0)
+      minor_version(minor_version_), want_len(0)
 {
 }
 
 inline bool PacketOdesc::make_ip(int ip_p)
 {
-    if ((!is_ip || !p->has_network_header() || p->network_length() < (int) sizeof(click_ip))
+    if ((!is_ip || !p->has_network_header()
+	 || p->network_length() < (int) sizeof(click_ip))
 	&& !hard_make_ip())
 	return false;
     return !ip_p || !p->ip_header()->ip_p || p->ip_header()->ip_p == ip_p;

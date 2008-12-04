@@ -81,6 +81,51 @@ static bool payload_extract(PacketDesc &d, const FieldWriter *f)
     }
 }
 
+static void account_payload_len(PacketOdesc &d, int32_t &off, uint32_t plen)
+{
+    if (!d.is_ip || (d.p->ip_header()->ip_len == 0 && d.want_len == 0))
+	d.want_len = off + plen;
+    else {
+	click_ip *iph = d.p->ip_header();
+	uint32_t ip_len = (iph->ip_len ? ntohs(iph->ip_len) : d.want_len)
+	    + d.p->network_header_offset();
+
+	if (ip_len > off + plen) {
+	    int delta = ip_len - (off + plen);
+	    click_tcp *tcph = d.p->tcp_header();
+
+	    if (IP_FIRSTFRAG(iph) && iph->ip_p == IP_PROTO_TCP
+		&& tcph->th_off == (sizeof(click_tcp) >> 2)) {
+		int th_delta = delta - (delta & 3);
+		if (th_delta + sizeof(click_tcp) > (15 << 2))
+		    th_delta = (15 << 2) - sizeof(click_tcp);
+		if (!(d.p = d.p->put(th_delta)))
+		    return;
+		iph = d.p->ip_header(); // may have shifted
+		unsigned char *tx = d.p->transport_header() + sizeof(click_tcp);
+		memmove(tx + th_delta, tx, d.p->end_data() - (tx + th_delta));
+		memset(tx, TCPOPT_EOL, th_delta);
+		d.p->tcp_header()->th_off = (sizeof(click_tcp) + th_delta) >> 2;
+		delta -= th_delta;
+	    }
+
+	    if (iph->ip_hl == (sizeof(click_ip) >> 2) && delta > 0) {
+		int ip_delta = delta - (delta & 3);
+		if (ip_delta + sizeof(click_ip) > (15 << 2))
+		    ip_delta = (15 << 2) - sizeof(click_ip);
+		if (!(d.p = d.p->put(ip_delta)))
+		    return;
+		iph = d.p->ip_header(); // may have shifted
+		unsigned char *nx = d.p->network_header() + sizeof(click_ip);
+		memmove(nx + ip_delta, nx, d.p->end_data() - (nx + ip_delta));
+		memset(nx, IPOPT_EOL, ip_delta);
+		iph->ip_hl = (sizeof(click_ip) + ip_delta) >> 2;
+		d.p->set_ip_header(iph, sizeof(click_ip) + ip_delta);
+	    }
+	}
+    }
+}
+
 static void payload_inject(PacketOdesc &d, const FieldReader *f)
 {
     if (d.make_ip(0))		// add default IPFlowID and protocol if nec.
@@ -96,14 +141,15 @@ static void payload_inject(PacketOdesc &d, const FieldReader *f)
 	if (!d.vptr[0] || d.vptr[0] == d.vptr[1])
 	    return;
 	uint32_t plen = d.vptr[1] - d.vptr[0];
-	if (d.p->length() - off < plen
-	    && !(d.p = d.p->put(plen - (d.p->length() - off))))
+	account_payload_len(d, off, plen);
+	if (!d.p || (d.p->length() - off < plen
+		     && !(d.p = d.p->put(plen - (d.p->length() - off)))))
 	    return;
 	memcpy(d.p->data() + off, d.vptr[0], plen);
 	break;
     }
     case T_PAYLOAD_LEN:
-	d.ip_len = off + d.v;
+	account_payload_len(d, off, d.v);
 	break;
     }
 }

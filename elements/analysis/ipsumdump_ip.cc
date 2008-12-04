@@ -196,7 +196,7 @@ static void ip_inject(PacketOdesc& d, const FieldReader *f)
 	iph->ip_hl = d.v >> 2;
 	break;
     case T_IP_LEN:
-	d.ip_len = d.v;
+	d.want_len = d.p->network_header_offset() + d.v;
 	break;
     }
 }

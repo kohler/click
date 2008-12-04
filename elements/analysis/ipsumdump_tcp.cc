@@ -107,12 +107,6 @@ static void tcp_inject(PacketOdesc& d, const FieldReader *f)
 {
     if (!d.make_ip(IP_PROTO_TCP) || !d.make_transp())
 	return;
-    if (d.p->transport_length() < (int) sizeof(click_tcp)) {
-	if (!(d.p = d.p->put(sizeof(click_tcp) - d.p->transport_length())))
-	    return;
-	click_tcp *tcph = d.p->tcp_header();
-	tcph->th_off = sizeof(click_tcp) >> 2;
-    }
 
     click_tcp *tcph = d.p->tcp_header();
     switch (f->user_data) {

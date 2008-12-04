@@ -428,6 +428,7 @@ bool PacketOdesc::hard_make_ip()
 	iph->ip_v = 4;
 	iph->ip_hl = sizeof(click_ip) >> 2;
 	iph->ip_p = default_ip_p;
+	iph->ip_len = 0;
 	iph->ip_off = 0;
 	iph->ip_ttl = 100;
 	if (default_ip_flowid) {
@@ -461,7 +462,9 @@ bool PacketOdesc::hard_make_transp()
 	    return true;
 	}
 
-	if (p->transport_length() < len) {
+	if (p->transport_length() < len
+	    && (want_len == 0
+		|| want_len >= p->transport_header_offset() + len)) {
 	    if (!(p = p->put(len - p->transport_length())))
 		return false;
 	    if (p->ip_header()->ip_p == IP_PROTO_TCP)
