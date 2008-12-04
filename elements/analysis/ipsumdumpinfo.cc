@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2002 International Computer Science Institute
  * Copyright (c) 2004 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -455,25 +456,26 @@ bool PacketOdesc::hard_make_transp()
 	case IP_PROTO_DCCP:
 	    len = 12;
 	    break;
-	case 0:
-	    len = 8;
-	    break;
 	default:
 	    return true;
 	}
+	if (want_len > 0
+	    && want_len < (uint32_t) p->transport_header_offset() + len)
+	    len = want_len - p->transport_header_offset();
 
-	if (p->transport_length() < len
-	    && (want_len == 0
-		|| want_len >= p->transport_header_offset() + len)) {
-	    if (!(p = p->put(len - p->transport_length())))
+	if (p->transport_length() < len) {
+	    int xlen = (len < 4 ? 4 : len);
+	    if (!(p = p->put(xlen - p->transport_length())))
 		return false;
-	    if (p->ip_header()->ip_p == IP_PROTO_TCP)
+	    if (p->ip_header()->ip_p == IP_PROTO_TCP && len >= 13)
 		p->tcp_header()->th_off = sizeof(click_tcp) >> 2;
 	    if (default_ip_flowid) {
 		click_udp *udph = p->udp_header();
 		udph->uh_sport = default_ip_flowid->sport();
 		udph->uh_dport = default_ip_flowid->dport();
 	    }
+	    if (xlen > len)
+		p->take(xlen - len);
 	}
     }
 
