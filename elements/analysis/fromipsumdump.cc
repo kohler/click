@@ -166,7 +166,11 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
 	(void) _ff.read_line(line, errh, true); // throw away line
     } else {
 	// parse line again, warn if this doesn't look like a dump
-	if (line.substring(0, 8) != "!creator" && line.substring(0, 5) != "!data" && line.substring(0, 9) != "!contents") {
+	if (!line.substring(0, 8).equals("!creator", 8)
+	    && !line.substring(0, 5).equals("!data", 5)
+	    && !line.substring(0, 9).equals("!contents", 9)
+	    && !line.substring(0, 6).equals("!proto", 6)
+	    && !line.substring(0, 7).equals("!flowid", 7)) {
 	    if (!_fields.size() /* don't warn on DEFAULT_CONTENTS */)
 		_ff.warning(errh, "missing banner line; is this an IP summary dump?");
 	}
@@ -235,13 +239,35 @@ FromIPSummaryDump::bang_data(const String &line, ErrorHandler *errh)
 }
 
 void
+FromIPSummaryDump::bang_proto(const String &line, const char *type,
+			      ErrorHandler *errh)
+{
+    Vector<String> words;
+    cp_spacevec(line, words);
+    int proto;
+
+    if (words.size() != 2)
+	_ff.error(errh, "bad %s", type);
+    else if (cp_integer(words[1], &proto) && proto < 256)
+	_default_proto = proto;
+    else if (words[1] == "T")
+	_default_proto = IP_PROTO_TCP;
+    else if (words[1] == "U")
+	_default_proto = IP_PROTO_UDP;
+    else if (words[1] == "I")
+	_default_proto = IP_PROTO_ICMP;
+    else
+	_ff.error(errh, "bad protocol in %s", type);
+}
+
+void
 FromIPSummaryDump::bang_flowid(const String &line, ErrorHandler *errh)
 {
     Vector<String> words;
     cp_spacevec(line, words);
 
     IPAddress src, dst;
-    uint32_t sport = 0, dport = 0, proto = 0;
+    uint32_t sport = 0, dport = 0;
     if (words.size() < 5
 	|| (!cp_ip_address(words[1], &src) && words[1] != "-")
 	|| (!cp_integer(words[2], &sport) && words[2] != "-")
@@ -251,18 +277,8 @@ FromIPSummaryDump::bang_flowid(const String &line, ErrorHandler *errh)
 	_ff.error(errh, "bad !flowid specification");
 	_have_flowid = false;
     } else {
-	if (words.size() >= 6) {
-	    if (cp_integer(words[5], &proto) && proto < 256)
-		_default_proto = proto;
-	    else if (words[5] == "T")
-		_default_proto = IP_PROTO_TCP;
-	    else if (words[5] == "U")
-		_default_proto = IP_PROTO_UDP;
-	    else if (words[5] == "I")
-		_default_proto = IP_PROTO_ICMP;
-	    else
-		_ff.error(errh, "bad protocol in !flowid");
-	}
+	if (words.size() >= 6)
+	    bang_proto(String::make_stable("! ", 2) + words[5], "!flowid", errh);
 	_given_flowid = IPFlowID(src, htons(sport), dst, htons(dport));
 	_have_flowid = true;
     }
@@ -354,6 +370,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		bang_data(line, errh);
 	    else if (data + 8 <= end && memcmp(data, "!flowid", 7) == 0 && isspace((unsigned char) data[7]))
 		bang_flowid(line, errh);
+	    else if (data + 7 <= end && memcmp(data, "!proto", 6) == 0 && isspace((unsigned char) data[6]))
+		bang_proto(line, "!proto", errh);
 	    else if (data + 11 <= end && memcmp(data, "!aggregate", 10) == 0 && isspace((unsigned char) data[10]))
 		bang_aggregate(line, errh);
 	    else if (data + 8 <= end && memcmp(data, "!binary", 7) == 0 && isspace((unsigned char) data[7]))

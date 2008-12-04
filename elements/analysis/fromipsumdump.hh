@@ -204,6 +204,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
     static int sort_fields_compare(const void *, const void *, void *);
     void bang_data(const String &, ErrorHandler *);
+    void bang_proto(const String &line, const char *type, ErrorHandler *errh);
     void bang_flowid(const String &, ErrorHandler *);
     void bang_aggregate(const String &, ErrorHandler *);
     void bang_binary(const String &, ErrorHandler *);
