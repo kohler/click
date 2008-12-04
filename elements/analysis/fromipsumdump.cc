@@ -490,7 +490,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	(void) d.make_ip(0);	// may fail
 
     // set up transport header if necessary
-    if (d.p && d.is_ip)
+    if (d.p && d.is_ip && d.p->ip_header())
 	(void) d.make_transp();
 
     if (d.p && d.is_ip && d.p->ip_header()) {
