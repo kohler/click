@@ -1002,33 +1002,35 @@ if test $ac_have_linux_kernel = y; then
 	:
     elif test $LINUXMODULE_2_6 = 1; then
 	AC_MSG_CHECKING([for Linux 2.6 compilation flags])
-	echo "include ${linux_srcdir}Makefile
-fwablongie:
-	@echo \$(KBUILD_CFLAGS) \$(CFLAGS)" >conftest.mk
-	make -I $linux_builddir -C "${linux_srcdir}" M="`pwd`" $linux_makeargs -f "`pwd`/conftest.mk" --no-print-directory fwablongie >conftest.dat
-	if test $? != 0; then
+	make -C $linux_builddir M="`pwd`" $linux_makeargs --no-print-directory -p nonexistent.o >conftest.dat 2>&1
+	for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS; do
+	    eval l$v='"'"`grep ^$v' *:*=' conftest.dat | sed s/^$v' *:*= *//'`"'"'
+	done
+	if test -z "$lKBUILD_CPPFLAGS$lKBUILD_CFLAGS$lCPPFLAGS$lCFLAGS"; then
 	    AC_MSG_RESULT([not found])
 	    AC_MSG_ERROR([
 ==============================================
 
 Can't find Linux 2.6 compilation flags.
 
-==============================================])
+==============================================])dnl '
 	fi
-	LINUX_CFLAGS="`sed -e s,-Iinclude,-I${linux_srcdir}include,g \
-	    -e 's, include/, $linux_builddir/include,g' \
+	echo "$lCPPFLAGS $lCFLAGS $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
+	LINUX_CFLAGS="`sed -e s,-Iinclude,-I$linux_builddir/include,g \
+	    -e s,-Iinclude2,-I$linux_builddir/include2,g \
+	    -e 's, include/, '$linux_builddir/include/,g \
 	    -e s,-Wno-pointer-sign,,g \
 	    -e s,-fno-unit-at-a-time,,g \
 	    -e s,-Wstrict-prototypes,,g \
 	    -e s,-Wdeclaration-after-statement,,g \
 	    -e s,-fno-common,,g \
 	    -e s,-Werror-implicit-function-declaration,,g \
-	    -e 's,-W[^ ]*,,g' < conftest.dat`"
+	    -e 's,-W[^ ]*,,g' <conftest.dat`"
 	AC_MSG_RESULT($LINUX_CFLAGS)
     fi
 
 
-    CPPFLAGS="$save_cppflags -D__KERNEL__ -I${linux_srcdir}include $LINUX_CFLAGS"
+    CPPFLAGS="$save_cppflags $LINUX_CFLAGS"
 
 
     # CLICK_LINUXMODULE_PROLOGUE()

@@ -16315,11 +16315,11 @@ if test $ac_have_linux_kernel = y; then
     elif test $LINUXMODULE_2_6 = 1; then
 	{ echo "$as_me:$LINENO: checking for Linux 2.6 compilation flags" >&5
 echo $ECHO_N "checking for Linux 2.6 compilation flags... $ECHO_C" >&6; }
-	echo "include ${linux_srcdir}Makefile
-fwablongie:
-	@echo \$(KBUILD_CFLAGS) \$(CFLAGS)" >conftest.mk
-	make -I $linux_builddir -C "${linux_srcdir}" M="`pwd`" $linux_makeargs -f "`pwd`/conftest.mk" --no-print-directory fwablongie >conftest.dat
-	if test $? != 0; then
+	make -C $linux_builddir M="`pwd`" $linux_makeargs --no-print-directory -p nonexistent.o >conftest.dat 2>&1
+	for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS; do
+	    eval l$v='"'"`grep ^$v' *:*=' conftest.dat | sed s/^$v' *:*= *//'`"'"'
+	done
+	if test -z "$lKBUILD_CPPFLAGS$lKBUILD_CFLAGS$lCPPFLAGS$lCFLAGS"; then
 	    { echo "$as_me:$LINENO: result: not found" >&5
 echo "${ECHO_T}not found" >&6; }
 	    { { echo "$as_me:$LINENO: error:
@@ -16334,23 +16334,24 @@ echo "$as_me: error:
 Can't find Linux 2.6 compilation flags.
 
 ==============================================" >&2;}
-   { (exit 1); exit 1; }; }
-	fi
-	LINUX_CFLAGS="`sed -e s,-Iinclude,-I${linux_srcdir}include,g \
-	    -e 's, include/, $linux_builddir/include,g' \
+   { (exit 1); exit 1; }; }	fi
+	echo "$lCPPFLAGS $lCFLAGS $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
+	LINUX_CFLAGS="`sed -e s,-Iinclude,-I$linux_builddir/include,g \
+	    -e s,-Iinclude2,-I$linux_builddir/include2,g \
+	    -e 's, include/, '$linux_builddir/include/,g \
 	    -e s,-Wno-pointer-sign,,g \
 	    -e s,-fno-unit-at-a-time,,g \
 	    -e s,-Wstrict-prototypes,,g \
 	    -e s,-Wdeclaration-after-statement,,g \
 	    -e s,-fno-common,,g \
 	    -e s,-Werror-implicit-function-declaration,,g \
-	    -e 's,-W^ *,,g' < conftest.dat`"
+	    -e 's,-W^ *,,g' <conftest.dat`"
 	{ echo "$as_me:$LINENO: result: $LINUX_CFLAGS" >&5
 echo "${ECHO_T}$LINUX_CFLAGS" >&6; }
     fi
 
 
-    CPPFLAGS="$save_cppflags -D__KERNEL__ -I${linux_srcdir}include $LINUX_CFLAGS"
+    CPPFLAGS="$save_cppflags $LINUX_CFLAGS"
 
 
     # CLICK_LINUXMODULE_PROLOGUE()

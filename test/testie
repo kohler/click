@@ -1038,7 +1038,7 @@ Options:
   --show-all                 Show contents of all TESTIEFILEs on completion.
   --show-all-raw             Like --show-all, but include ignored lines.
   --preserve-temporaries     Preserve temporary files.
-  -e, --expand               Expand test files into current directory.  
+  -e, --expand               Expand test files into current directory.
   -v, --version              Print version information and exit.
   --help                     Print this message and exit.
 
