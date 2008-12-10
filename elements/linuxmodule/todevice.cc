@@ -93,12 +93,13 @@ tx_notifier_hook(struct notifier_block *nb, unsigned long val, void *v)
     struct net_device *dev = (struct net_device *)v;
     if (!dev)
 	return 0;
-    to_device_map.lock(false);
+    unsigned long lock_flags;
+    to_device_map.lock(false, lock_flags);
     AnyDevice *es[8];
     int nes = to_device_map.lookup_all(dev, true, es, 8);
     for (int i = 0; i < nes; i++)
 	((ToDevice *)(es[i]))->tx_wake_queue(dev);
-    to_device_map.unlock(false);
+    to_device_map.unlock(false, lock_flags);
     return 0;
 }
 }
@@ -464,12 +465,13 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
     if (flags == NETDEV_DOWN || flags == NETDEV_UP || flags == NETDEV_CHANGE) {
 	bool exists = (flags != NETDEV_UP);
 	net_device *dev = (net_device *)v;
-	to_device_map.lock(true);
+	unsigned long lock_flags;
+	to_device_map.lock(true, lock_flags);
 	AnyDevice *es[8];
 	int nes = to_device_map.lookup_all(dev, exists, es, 8);
 	for (int i = 0; i < nes; i++)
 	    ((ToDevice *)(es[i]))->change_device(flags == NETDEV_DOWN ? 0 : dev);
-	to_device_map.unlock(true);
+	to_device_map.unlock(true, lock_flags);
     }
     return 0;
 }

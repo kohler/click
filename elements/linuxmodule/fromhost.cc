@@ -257,11 +257,12 @@ FromHost::cleanup(CleanupStage)
 
     if (_dev) {
 	dev_put(_dev);
-	fromlinux_map.lock(false);
+	unsigned long lock_flags;
+	fromlinux_map.lock(false, lock_flags);
 	if (fromlinux_map.lookup(_dev, 0))
 	    // do not free device if it is in use
 	    _dev = 0;
-	fromlinux_map.unlock(false);
+	fromlinux_map.unlock(false, lock_flags);
 	if (_dev) {
 	    if (_dev->flags & IFF_UP)
 		dev_updown(_dev, -1, 0);
@@ -324,18 +325,19 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
          Click Task takes the packet off the queue. We could have implemented
          a larger queue, but why bother? Linux already maintains a queue for
          the device. */
-    fromlinux_map.lock(false);
+    unsigned long lock_flags;
+    fromlinux_map.lock(false, lock_flags);
     if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0))
 	if (!fl->_queue) {
 	    fl->_queue = Packet::make(skb);
 	    fl->_stats.tx_packets++;
 	    fl->_stats.tx_bytes += fl->_queue->length();
 	    fl->_task.reschedule();
-	    fromlinux_map.unlock(false);
+	    fromlinux_map.unlock(false, lock_flags);
 	    netif_stop_queue(dev);
 	    return 0;
 	}
-    fromlinux_map.unlock(false);
+    fromlinux_map.unlock(false, lock_flags);
     return -1;
 }
 
@@ -343,10 +345,11 @@ static net_device_stats *
 fl_stats(net_device *dev)
 {
     net_device_stats *stats = 0;
-    fromlinux_map.lock(false);
+    unsigned long lock_flags;
+    fromlinux_map.lock(false, lock_flags);
     if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0))
 	stats = fl->stats();
-    fromlinux_map.unlock(false);
+    fromlinux_map.unlock(false, lock_flags);
     return stats;
 }
 

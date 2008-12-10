@@ -230,8 +230,9 @@ void
 AnyDeviceMap::insert(AnyDevice *d, bool locked)
 {
     // lock when manipulating device map
+    unsigned long lock_flags;
     if (!locked)
-	lock(true);
+	lock(true, lock_flags);
 
     // put new devices last on list
     int ifi = d->ifindex();
@@ -246,14 +247,15 @@ AnyDeviceMap::insert(AnyDevice *d, bool locked)
 
     d->_in_map = true;
     if (!locked)
-	unlock(true);
+	unlock(true, lock_flags);
 }
 
 void
 AnyDeviceMap::remove(AnyDevice *d, bool locked)
 {
+    unsigned long lock_flags;
     if (!locked)
-	lock(true);
+	lock(true, lock_flags);
     int ifi = d->ifindex();
     AnyDevice **pprev = (ifi >= 0 ? &_map[ifi % MAP_SIZE] : &_unknown_map);
     AnyDevice *trav = *pprev;
@@ -265,7 +267,7 @@ AnyDeviceMap::remove(AnyDevice *d, bool locked)
 	*pprev = d->_next;
     d->_in_map = false;
     if (!locked)
-	unlock(true);
+	unlock(true, lock_flags);
 }
 
 AnyDevice *

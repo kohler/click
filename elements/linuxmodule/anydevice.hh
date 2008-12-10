@@ -175,8 +175,8 @@ AnyTaskDevice::adjust_tickets(int work)
 class AnyDeviceMap { public:
 
     void initialize();
-    inline void lock(bool write);
-    inline void unlock(bool write);
+    inline void lock(bool write, unsigned long &flags);
+    inline void unlock(bool write, unsigned long flags);
     inline AnyDevice *lookup(net_device *, AnyDevice *) const;
     AnyDevice *lookup_unknown(net_device *, AnyDevice *) const;
     int lookup_all(net_device *, bool known, AnyDevice **dev_store, int ndev) const;
@@ -193,21 +193,21 @@ class AnyDeviceMap { public:
 };
 
 inline void
-AnyDeviceMap::lock(bool write)
+AnyDeviceMap::lock(bool write, unsigned long &flags)
 {
     if (write)
-	write_lock_bh(&_lock);
+	write_lock_irqsave(&_lock, flags);
     else
-	read_lock_bh(&_lock);
+	read_lock_irqsave(&_lock, flags);
 }
 
 inline void
-AnyDeviceMap::unlock(bool write)
+AnyDeviceMap::unlock(bool write, unsigned long flags)
 {
     if (write)
-	write_unlock_bh(&_lock);
+	write_unlock_irqrestore(&_lock, flags);
     else
-	read_unlock_bh(&_lock);
+	read_unlock_irqrestore(&_lock, flags);
 }
 
 inline AnyDevice *

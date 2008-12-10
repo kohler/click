@@ -210,10 +210,11 @@ packet_notifier_hook(struct notifier_block *nb, unsigned long backlog_len, void 
     struct sk_buff *skb = (struct sk_buff *)v;
     int stolen = 0;
     FromDevice *fd = 0;
-    from_device_map.lock(false);
+    unsigned long lock_flags;
+    from_device_map.lock(false, lock_flags);
     while (stolen == 0 && (fd = (FromDevice *)from_device_map.lookup(skb->dev, fd)))
 	stolen = fd->got_skb(skb);
-    from_device_map.unlock(false);
+    from_device_map.unlock(false, lock_flags);
     return (stolen ? NOTIFY_STOP_MASK : 0);
 }
 #endif
@@ -228,12 +229,13 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
     if (flags == NETDEV_DOWN || flags == NETDEV_UP || flags == NETDEV_CHANGE) {
 	bool exists = (flags != NETDEV_UP);
 	net_device* dev = (net_device*)v;
-	from_device_map.lock(true);
+	unsigned long lock_flags;
+	from_device_map.lock(true, lock_flags);
 	AnyDevice *es[8];
 	int nes = from_device_map.lookup_all(dev, exists, es, 8);
 	for (int i = 0; i < nes; i++)
 	    ((FromDevice*)(es[i]))->set_device(flags == NETDEV_DOWN ? 0 : dev, &from_device_map, true);
-	from_device_map.unlock(true);
+	from_device_map.unlock(true, lock_flags);
     }
     return 0;
 }

@@ -179,10 +179,11 @@ PollDevice::cleanup(CleanupStage)
     // other users
     clear_device(&poll_device_map);
 
-    poll_device_map.lock(false);
+    unsigned long lock_flags;
+    poll_device_map.lock(false, lock_flags);
     if (had_dev && had_dev->polling > 0 && !poll_device_map.lookup(had_dev, 0))
 	had_dev->poll_off(had_dev);
-    poll_device_map.unlock(false);
+    poll_device_map.unlock(false, lock_flags);
 #endif
 }
 
@@ -348,12 +349,13 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
     if (flags == NETDEV_DOWN || flags == NETDEV_UP || flags == NETDEV_CHANGE) {
 	bool exists = (flags != NETDEV_UP);
 	net_device *dev = (net_device *)v;
-	poll_device_map.lock(true);
+	unsigned long lock_flags;
+	poll_device_map.lock(true, lock_flags);
 	AnyDevice *es[8];
 	int nes = poll_device_map.lookup_all(dev, exists, es, 8);
 	for (int i = 0; i < nes; i++)
 	    ((PollDevice *)(es[i]))->change_device(flags == NETDEV_DOWN ? 0 : dev);
-	poll_device_map.unlock(true);
+	poll_device_map.unlock(true, lock_flags);
     }
     return 0;
 }
