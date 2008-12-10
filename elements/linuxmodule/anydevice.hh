@@ -189,6 +189,7 @@ class AnyDeviceMap { public:
     AnyDevice *_unknown_map;
     AnyDevice *_map[MAP_SIZE];
     rwlock_t _lock;
+    unsigned long _lock_flags;
 
 };
 
@@ -196,7 +197,7 @@ inline void
 AnyDeviceMap::lock(bool write)
 {
     if (write)
-	write_lock_bh(&_lock);
+	write_lock_irqsave(&_lock, _lock_flags);
     else
 	read_lock(&_lock);
 }
@@ -205,14 +206,14 @@ inline void
 AnyDeviceMap::unlock(bool write)
 {
     if (write)
-	write_unlock_bh(&_lock);
+	write_unlock_irqrestore(&_lock, _lock_flags);
     else
 	read_unlock(&_lock);
 }
 
 inline AnyDevice *
 AnyDeviceMap::lookup(net_device *dev, AnyDevice *last) const
-    // must be called between AnyDeviceMap::lookup_lock() ... lookup_unlock()
+    // must be called between AnyDeviceMap::lock() ... unlock()
 {
     if (!dev)
 	return 0;
