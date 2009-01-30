@@ -128,14 +128,16 @@ write_assert_stop(const String &s, Element *, void *, ErrorHandler *errh)
 void
 KernelErrorHandler::buffer_store(uint32_t head, const char *begin, const char *end)
 {
-    uint32_t head_pos = head & (logbuf_siz - 1);
-    uint32_t tail_pos = ((head + end - begin - 1) & (logbuf_siz - 1)) + 1;
-    if (head_pos < tail_pos)
-	memcpy(_logbuf + head_pos, begin, end - begin);
-    else {
-	uint32_t first = logbuf_siz - head_pos;
-	memcpy(_logbuf + head_pos, begin, first);
-	memcpy(_logbuf, begin + first, (end - begin) - first);
+    if (begin != end) {
+	uint32_t head_pos = head & (logbuf_siz - 1);
+	uint32_t tail_pos = ((head + end - begin - 1) & (logbuf_siz - 1)) + 1;
+	if (head_pos < tail_pos)
+	    memcpy(_logbuf + head_pos, begin, end - begin);
+	else {
+	    uint32_t first = logbuf_siz - head_pos;
+	    memcpy(_logbuf + head_pos, begin, first);
+	    memcpy(_logbuf, begin + first, (end - begin) - first);
+	}
     }
 }
 
