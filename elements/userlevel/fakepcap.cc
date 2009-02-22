@@ -201,14 +201,13 @@ fake_pcap_force_ip(Packet *&p, int dlt)
       }
 
       case FAKE_DLT_LINUX_SLL: {
-	  CLICK_SIZE_PACKED_STRUCTURE(
-	  struct click_linux_sll {,
+	  struct click_linux_sll {
 	      uint16_t sll_pkttype;
 	      uint16_t sll_hatype;
 	      uint16_t sll_halen;
 	      uint8_t sll_addr[8];
 	      uint16_t sll_protocol;
-	  });
+	  } CLICK_SIZE_PACKED_ATTRIBUTE;
 	  const click_linux_sll* sllh = reinterpret_cast<const click_linux_sll*>(data);
 	  if (data + sizeof(click_linux_sll) <= end_data &&
 	      IP_ETHERTYPE(sllh->sll_protocol))

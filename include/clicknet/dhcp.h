@@ -1,8 +1,7 @@
 #ifndef CLICKNET_DHCP_H
 #define CLICKNET_DHCP_H
 
-CLICK_SIZE_PACKED_STRUCTURE(
-struct click_dhcp {,
+struct click_dhcp {
 	uint8_t  op;           /* message type */
 	uint8_t  htype;        /* hardware address type */
 	uint8_t  hlen;         /* hardware address length */
@@ -19,7 +18,7 @@ struct click_dhcp {,
 	uint8_t  file[128];    /* boot file name, null terminated string */
 	uint32_t magic;        /* magic cookie */
 	uint8_t  options[312]; /* message options */
-});
+} CLICK_SIZE_PACKED_ATTRIBUTE;
 
 
 #define ETH_10MB	1 /* htype */

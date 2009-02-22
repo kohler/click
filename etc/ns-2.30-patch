@@ -1229,7 +1229,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.30-pure/classifier/classifier
 diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.30-pure/classifier/packet_anno.h ns-2.30/classifier/packet_anno.h
 --- ns-2.30-pure/classifier/packet_anno.h	1969-12-31 16:00:00.000000000 -0800
 +++ ns-2.30/classifier/packet_anno.h	2007-09-11 21:04:07.000000000 -0700
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,17 @@
 +#ifndef PACKET_ANNO_H
 +#define PACKET_ANNO_H
 +
@@ -1237,9 +1237,11 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.30-pure/classifier/packet_ann
 +#ifdef __GNUC__
 +#define CLICK_PACKED_STRUCTURE(open, close) open close __attribute__((packed))
 +#define CLICK_SIZE_PACKED_STRUCTURE(open, close) open close __attribute__((packed))
++#define CLICK_SIZE_PACKED_ATTRIBUTE __attribute__((packed))
 +#else
 +#define CLICK_PACKED_STRUCTURE(open, close) _Cannot_pack_structure__Use_GCC
 +#define CLICK_SIZE_PACKED_STRUCTURE(open, close) open close
++#define CLICK_SIZE_PACKED_ATTRIBUTE
 +#endif
 +
 +#include <clicknet/wifi.h>

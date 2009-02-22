@@ -27,8 +27,7 @@ enum {
 
 
 
-CLICK_SIZE_PACKED_STRUCTURE(
-struct click_wifi_extra {,
+struct click_wifi_extra {
   uint32_t magic;
   uint32_t flags;
 
@@ -50,7 +49,7 @@ struct click_wifi_extra {,
   uint8_t virt_col;
   uint8_t retries;
   uint16_t len;
-});
+} CLICK_SIZE_PACKED_ATTRIBUTE;
 
 
 /*
@@ -58,15 +57,14 @@ struct click_wifi_extra {,
  */
 #define WIFI_ADDR_LEN 6
 
-CLICK_SIZE_PACKED_STRUCTURE(
-struct click_wifi {,
+struct click_wifi {
 	uint8_t		i_fc[2];
 	uint8_t		i_dur[2];
 	uint8_t		i_addr1[WIFI_ADDR_LEN];
 	uint8_t		i_addr2[WIFI_ADDR_LEN];
 	uint8_t		i_addr3[WIFI_ADDR_LEN];
 	uint8_t		i_seq[2];
-});
+} CLICK_SIZE_PACKED_ATTRIBUTE;
 
 #define	WIFI_FC0_VERSION_MASK		0x03
 #define	WIFI_FC0_VERSION_0		0x00

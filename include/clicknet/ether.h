@@ -14,12 +14,11 @@
  * Also see the relevant IEEE 802 standards.
  */
 
-CLICK_SIZE_PACKED_STRUCTURE(
-struct click_ether {,
+struct click_ether {
     uint8_t	ether_dhost[6];		/* 0-5   Ethernet destination address */
     uint8_t	ether_shost[6];		/* 6-11  Ethernet source address      */
     uint16_t	ether_type;		/* 12-13 Ethernet protocol	      */
-});
+} CLICK_SIZE_PACKED_ATTRIBUTE;
 
 #define ETHERTYPE_IP		0x0800
 #define ETHERTYPE_ARP		0x0806
@@ -61,14 +60,13 @@ struct click_ether_arp {
 
 /* Ethernet with VLAN (802.1q) */
 
-CLICK_SIZE_PACKED_STRUCTURE(
-struct click_ether_vlan {,
+struct click_ether_vlan {
     uint8_t     ether_dhost[6];		/* 0-5   Ethernet source address      */
     uint8_t     ether_shost[6];		/* 6-11  Ethernet destination address */
     uint16_t    ether_vlan_proto;	/* 12-13 == ETHERTYPE_8021Q	      */
     uint16_t    ether_vlan_tci;		/* 14-15 tag control information      */
     uint16_t    ether_vlan_encap_proto;	/* 16-17 Ethernet protocol	      */
-});
+} CLICK_SIZE_PACKED_ATTRIBUTE;
 
 
 /* Ethernet MAC control (802.3) */

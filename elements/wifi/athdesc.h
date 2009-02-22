@@ -2,8 +2,7 @@
 #define _ATHDESC_H_
 
 #define ATHDESC_HEADER_SIZE 32
-CLICK_SIZE_PACKED_STRUCTURE(
-struct ar5212_rx_status {,
+struct ar5212_rx_status {
 	u_int32_t data_len:12;
 	u_int32_t more:1;
 	u_int32_t decomperr:2;
@@ -17,10 +16,9 @@ struct ar5212_rx_status {,
 	u_int32_t crcerr:1;
 	u_int32_t decryptcrc:1;
 
-});
+} CLICK_SIZE_PACKED_ATTRIBUTE;
 
-CLICK_SIZE_PACKED_STRUCTURE(
-struct ar5212_desc {,
+struct ar5212_desc {
 	/*
 	 * tx_control_0
 	 */
@@ -90,7 +88,7 @@ struct ar5212_desc {,
 	u_int32_t	comp_success:1;
 	u_int32_t	xmit_antenna:1;
 	u_int32_t	reserved_25_31_x:7;
-});
+} CLICK_SIZE_PACKED_ATTRIBUTE;
 
 
 
