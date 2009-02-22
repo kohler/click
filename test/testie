@@ -5,7 +5,7 @@ use bytes;
 require 5.006;
 
 ($attempts, $internal_errors, $errors, $require_errors) = (0, 0, 0, 0);
-($preserve_temporaries, $expand_mode) = (0, 0);
+($preserve_temporaries, $expand_mode, $cr_text) = (0, 0, "");
 ($running_pid) = (0);
 %require_error_commands = ();
 
@@ -86,7 +86,8 @@ sub file_err ($$;$) {
     my($tt, $text, $lineno) = @_;
     $text .= "\n" if $text !~ /\n$/s;
     $lineno = $tt->{"_line"} if !defined($lineno);
-    print STDERR $tt->{"_file"}, ":", $lineno, ': ', $text;
+    print STDERR $::cr_text, $tt->{"_file"}, ":", $lineno, ': ', $text;
+    $::cr_text = "";
     $tt->{'err'}++;
 }
 
@@ -303,14 +304,18 @@ sub _read_file_section ($$$$) {
     }
 
     # modify contents based on flags
-    $alternate = 1 if $secname eq 'ignore' || $secname eq 'ignorex' || $secname eq 'ignorev'; # 'ignore' always behaves like -a
+    $alternate = 1 if $secname eq 'ignore' || $secname eq 'ignorev' || $secname eq 'ignorex'; # 'ignore' always behaves like -a
     if ($delfirst) {
 	$file_data =~ s{^.}{}mg;
     }
-    if ($secname eq 'ignorev') {
-	$file_data =~ s{^(.+)}{quotemeta($1)}meg;
-    } elsif ($secname eq 'ignore') {
+    if (($secname eq 'ignore' || $secname eq 'ignorev' || $secname eq 'ignorex')
+	&& $whitespace) {
+	$file_data =~ tr/ \f\r\t\013//d;
+    }
+    if ($secname eq 'ignore') {
 	$file_data =~ s{^(.+)}{braces_to_regex($1, 1)}meg;
+    } elsif ($secname eq 'ignorev') {
+	$file_data =~ s{^(.+)}{quotemeta($1)}meg;
     } elsif ($secname eq 'ignorex') {
 	$file_data =~ s[\s*\{\{\?.*?\}\}\s*][]mg;
     }
@@ -405,10 +410,10 @@ sub parse ($) {
 		$tt->_read_file_section($args, 'expectv', 'v');
 	    } elsif ($command eq 'ignore') {
 		$tt->_read_file_section($args, 'ignore', 'i');
-	    } elsif ($command eq 'ignorex') {
-		$tt->_read_file_section($args, 'ignorex', 'i');
 	    } elsif ($command eq 'ignorev') {
 		$tt->_read_file_section($args, 'ignorev', 'i');
+	    } elsif ($command eq 'ignorex') {
+		$tt->_read_file_section($args, 'ignorex', 'i');
 	    } elsif ($command eq 'include') {
 		if ($args !~ /^\//) {
 		    my($oldfn) = $tt->{"_file"};
@@ -548,7 +553,8 @@ sub output_error ($$$$) {
     my($fp) = $tt->{'errprefix'};
 
     if (!open(ERR, "<", $fileref_subr->('stderr'))) {
-	print STDERR $fp, $!, "\n";
+	print STDERR $::cr_text, $fp, $!, "\n";
+	$::cr_text = "";
 	$::internal_errors++;
 	return;
     }
@@ -588,18 +594,20 @@ sub output_error ($$$$) {
     my($cmd) = $tt->command_at($lineno, $script_type);
 
     # exit early if quiet
-    return 1 if $tt->{$script_type . '_quietline'}->{$lineno} && !$verbose;
+    return 1 if $tt->{$script_type . '_quietline'}->{$lineno} && $verbose <= 0;
 
     if ($errortext =~ /^testie_error:/) {
 	while ($errortext =~ /^testie_error:([^\n]*)/g) {
-	    print STDERR $lineno, ": ", $1, "\n";
+	    print STDERR $::cr_text, $lineno, ": ", $1, "\n";
+	    $::cr_text = "";
 	}
 	$errortext =~ s/^testie_error:([^\n]*)//g;
 	$errortext =~ s/\s*//;
 	print STDERR $lineno, ": (There were other errors as well.)\n"
 	    if $errortext ne '';
     } elsif (!defined($cmd)) {
-	print STDERR $lineno, ": $failure_text at undefined point in script\n";
+	print STDERR $::cr_text, $lineno, ": $failure_text at undefined point in script\n";
+	$::cr_text = "";
     } else {
 	$cmd =~ s/^\s*|\s*$//g;
 	$cmd =~ s/([\000-\037])/'^' . chr(ord($1) + ord('@'))/eg;
@@ -608,13 +616,14 @@ sub output_error ($$$$) {
 	    $cmd = substr($cmd, 0, 40) . "...";
 	}
 	# if nonverbose requirement, remember command, don't print error
-	if (defined($script_type) && $script_type eq 'require' && !$verbose) {
+	if (defined($script_type) && $script_type eq 'require' && $verbose <= 0) {
 	    $::require_error_commands{$cmd} = 1;
 	} else {
-	    print STDERR $lineno, ": $failure_text at '$cmd'\n";
+	    print STDERR $::cr_text, $lineno, ": $failure_text at '$cmd'\n";
 	    while ($errortext =~ /([^\n]*)/g) {
 		print STDERR $lineno, ":   $1\n" if $1 ne '';
 	    }
+	    $::cr_text = "";
 	}
     }
 
@@ -635,12 +644,13 @@ sub _output_expectation_error ($$$) {
 
     # output message
     if ($efn eq 'stdout') {
-	print STDERR $fp, "standard output has unexpected value starting at line " . $etrack->{"textline"} . "\n";
+	print STDERR $::cr_text, $fp, "standard output has unexpected value starting at line " . $etrack->{"textline"} . "\n";
     } elsif ($efn eq 'stderr') {
-	print STDERR $fp, "standard error has unexpected value starting at line " . $etrack->{"textline"} . "\n";
+	print STDERR $::cr_text, $fp, "standard error has unexpected value starting at line " . $etrack->{"textline"} . "\n";
     } else {
-	print STDERR $fp, "file $efn has unexpected value starting at line " . $etrack->{"textline"} . "\n";
+	print STDERR $::cr_text, $fp, "file $efn has unexpected value starting at line " . $etrack->{"textline"} . "\n";
     }
+    $::cr_text = "";
 
     # output expected and text data if possible
     $etrack->{"expected"} = "<end of file>" if $etrack->{"expected"} eq "\376";
@@ -668,6 +678,7 @@ sub _check_one_typed_expect ($$$$$) {
 
     foreach my $exp (@{$tt->{$fn}}) {
 	my($text) = $raw_text;
+	my($whitespace) = $tt->{"whitespace:$fn:$expnum"};
 
 	# escape in common case
 	return 0 if $text eq $exp;
@@ -681,20 +692,10 @@ sub _check_one_typed_expect ($$$$$) {
 	    $exp =~ s/[ \f\r\t\013]+\n/\n/g;
 	    $exp =~ s/\n\n+\z/\n/;
 
-	    # regularize whitespace if we should
-	    if ($tt->{"whitespace:$fn:$expnum"}) {
-		$text =~ s/[ \f\r\t\013]+/ /g;
-		$text =~ s/\A //;
-		$text =~ s/\n /\n/g;
-		$exp =~ s/[ \f\r\t\013]+/ /g;
-		$exp =~ s/\A //;
-		$exp =~ s/\n /\n/g;
-	    }
-
 	    return 0 if $text eq $exp;
 
 	    # ignore explicitly ignored text
-	    eval($ignores) if $ignores ne '';
+	    $text = $ignores->($text) if $ignores;
 	}
 
 	# line-by-line comparison
@@ -715,13 +716,18 @@ sub _check_one_typed_expect ($$$$$) {
 	    }
 
 	    # compare lines
-	    if ($mode != 0 && $el[$ep] =~ /\{\{/) {
+	    my($tt, $et) = ($tl[$tp], $el[$ep]);
+	    if ($whitespace) {
+		$tt =~ tr/ \f\r\t\013//d;
+		$et =~ tr/ \f\r\t\013//d;
+	    }
+	    if ($mode != 0 && $et =~ /\{\{/) {
 		my($re);
-		($re, $message) = braces_to_regex($el[$ep], $mode);
-		last if $tl[$tp] !~ m/\A$re\z/;
+		($re, $message) = braces_to_regex($et, $mode);
+		last if $tt !~ m/\A$re\z/;
 	    } elsif ($mode == 2) {
-		last if $tl[$tp] !~ m/\A$el[$ep]\z/;
-	    } elsif ($tl[$tp] ne $el[$ep]) {
+		last if $tt !~ m/\A$et\z/;
+	    } elsif ($tt ne $et) {
 		last;
 	    }
 
@@ -750,6 +756,38 @@ sub _check_one_typed_expect ($$$$$) {
     return -1;
 }
 
+sub _create_ignores ($$) {
+    my($tt, $efn) = @_;
+    my($ignores, $wignores, $body) = ("", "");
+
+    foreach my $fn ($efn, "all") {
+	next if !exists($tt->{"i:$fn"});
+	for (my $expnum = 0; $expnum < @{$tt->{"i:$fn"}}; ++$expnum) {
+	    if ($tt->{"whitespace:i:$fn:$expnum"}) {
+		$wignores .= $tt->{"i:$fn"}->[$expnum] . "\n";
+	    } else {
+		$ignores .= $tt->{"i:$fn"}->[$expnum] . "\n";
+	    }
+	}
+    }
+    # ignore testie messages
+    $ignores .= "testie_lineno:.*\ntestie_error:.*\n" if $efn eq "stderr";
+
+    if ($ignores eq "" && $wignores eq "") {
+	return undef;
+    } elsif ($wignores eq "") {
+	$ignores =~ s{^([ \t]*\S[^\n]*)}{\$t =~ s\376^$1\[ \\t\]*\$\376\\377\376mg;}mg;
+	$body = "sub (\$) { my(\$t) = \@_; $ignores \$t; }\n";
+    } else {
+	$ignores =~ s{^([ \t]*\S[^\n]*)}{s\376\\A$1\[ \\t\]*\\z\376\\377\376;}mg;
+	$wignores =~ s{^(\S[^\n]*)}{\$_ = "\\377" if \$x =~ m\376\\A$1\\z\376;}mg;
+	$body = "sub (\$) { my(\$t) = \@_; my(\$x); join(\"\\n\", map { "
+	    . "\$x = \$_; \$x =~ tr/ \\f\\r\\t\\013//d;\n$ignores$wignores "
+	    . "\"\$_\\n\" } split /\\n/, \"\$t\\n\"); }\n";
+    }
+    return eval($body);
+}
+
 sub _check_one_expect ($$$) {
     my($tt, $fileref_subr, $efn) = @_;
     my($fp) = $tt->{'errprefix'};
@@ -757,8 +795,9 @@ sub _check_one_expect ($$$) {
 
     # read file text
     if (!open(IN, "<", $fileref_subr->($efn))) {
-	print STDERR $fp, $efn, ": ", $!, "\n";
+	print STDERR $::cr_text, $fp, $efn, ": ", $!, "\n";
 	$::errors++;
+	$::cr_text = "";
 	return 0;
     }
     my($raw_text) = <IN>;
@@ -766,14 +805,7 @@ sub _check_one_expect ($$$) {
     close IN;
 
     # prepare $ignores
-    my($ignores) = '';
-    $ignores .= join("\n", @{$tt->{"i:$efn"}}) . "\n" if exists($tt->{"i:$efn"});
-    $ignores .= join("\n", @{$tt->{"i:all"}}) . "\n" if exists($tt->{"i:all"});
-    # ignore testie messages
-    $ignores .= "testie_lineno:.*\ntestie_error:.*\n" if $efn eq 'stderr';
-    if ($ignores ne '') {
-	$ignores =~ s{^([ \t]*\S[^\n]*)}{\$text =~ s<^$1\[ \\t\]*\$><\\377>mg;\n}mg;
-    }
+    my($ignores) = _create_ignores($tt, $efn);
 
     # now compare alternates
     foreach my $fn ("v:$efn", "e:$efn", "x:$efn") {
@@ -848,8 +880,8 @@ sub _shell ($$$$$) {
     }
 }
 
-sub execute_test ($$$) {
-    my($tt, $fn, $verbose) = @_;
+sub execute_test ($$$$) {
+    my($tt, $fn, $verbose, $multiprint) = @_;
     my($f);
 
     # count attempt
@@ -871,9 +903,16 @@ sub execute_test ($$$) {
 	$tt->{'errprefix'} = "  ";
     }
 
-    # note that we're running the test in verbose mode
+    # maybe note that we're running the test
     if ($verbose == 1) {
 	print STDERR $tt->{'errprefix'}, "Running...\n";
+    } elsif ($verbose == 0 && $multiprint && -t STDERR) {
+	my($cr_out) = "[" . $tt->{"errprefix"};
+	$cr_out =~ s/:\s+\z//;
+	$cr_out = "[..." . substr($cr_out, -73) if length($cr_out) > 76;
+	$cr_out .= "] ";
+	print STDERR $::cr_text, $cr_out;
+	$::cr_text = "\r" . (" " x length($cr_out)) . "\r";
     }
 
     # check requirements
@@ -938,16 +977,8 @@ sub execute_test ($$$) {
 	    my($text) = <X>;
 	    close(X);
 	    if ($f->[1] && defined($text)) {
-		my($ignores) = '';
-		$ignores .= join("\n", @{$tt->{"i:$efn"}}) . "\n" if exists($tt->{"i:$efn"});
-		$ignores .= join("\n", @{$tt->{"i:all"}}) . "\n" if exists($tt->{"i:all"});
-		# ignore testie messages
-		$ignores .= "testie_lineno:.*\ntestie_error:.*\n" if $efn eq 'stderr';
-		if ($ignores ne '') {
-		    $ignores =~ s/([!\#<>])/\\$1/g;
-		    $ignores =~ s{^([ \t]*\S[^\n]*)}{\$text =~ s<^$1\[ \\t\]*\$\n?><>mg;\n}mg;
-		    eval $ignores;
-		}
+		my($ignores) = _create_ignores($tt, $efn);
+		$text = $ignores->($text) if $ignores;
 	    }
 	    print $text if defined $text;
 	    print "=" x 79, "\n";
@@ -967,30 +998,33 @@ sub execute_test ($$$) {
 	return $exitval;
     }
 
-    if ($verbose && !$tt->empty && $old_errors == $::errors) {
+    if ($verbose > 0 && !$tt->empty && $old_errors == $::errors) {
 	print STDERR $tt->{'errprefix'}, "Success!\n";
     }
 
     0;
 }
 
-sub run_test (;$$) {
-    my($fn, $verbose) = @_;
+sub run_test (;$$$) {
+    my($fn, $verbose, $multiprint) = @_;
 
     # read the testie
     my($tt, $display_fn, $close_in);
     if (!defined($fn) || $fn eq '-') {
 	if (!open(IN, "<&=STDIN")) {
-	    print STDERR "<stdin>: $!\n";
+	    print STDERR $::cr_text, "<stdin>: $!\n";
+	    $::cr_text = "";
 	    return -1;
 	}
 	$display_fn = "<stdin>";
     } elsif (-d $fn) {
-	print STDERR "$fn: is a directory\n";
+	print STDERR $::cr_text, $fn, ": is a directory\n";
+	$::cr_text = "";
 	return -1;
     } else {
 	if (!open(IN, "<", $fn)) {
-	    print STDERR "$fn: $!\n";
+	    print STDERR $::cr_text, $fn, ": $!\n";
+	    $::cr_text = "";
 	    return -1;
 	}
 	$display_fn = $fn;
@@ -1001,7 +1035,7 @@ sub run_test (;$$) {
     $tt = Testie::read(IN, $display_fn);
 
     while (1) {
-	my($this_result) = execute_test($tt, $display_fn . $suffix, $verbose);
+	my($this_result) = execute_test($tt, $display_fn . $suffix, $verbose, $multiprint);
 	$result = $this_result if $this_result;
 	last if !exists $tt->{'continue'};
 	if (!($suffix =~ s/^<(\d+)>$/"<" . ($1+1) . ">"/e)) {
@@ -1123,6 +1157,8 @@ while (@ARGV) {
 	}
     } elsif (/^-v$/ || argcmp($_, '--version', 4)) {
 	print_version;
+    } elsif (/^-q$/ || argcmp($_, '--quiet', 1)) {
+	$verbose = -1;
     } elsif (/^-V$/ || argcmp($_, '--verbose', 4)) {
 	$verbose = 1;
     } elsif (/^-VV$/ || argcmp($_, '--superverbose', 2)) {
@@ -1172,14 +1208,15 @@ foreach my $test (@tests) {
     if (!$expand_mode) {
 	$dir = "testie$$" . ($testnumber ? "-$testnumber" : "");
 	if (-d $dir) {
-	    print STDERR "warning: $dir directory exists; removing it\n";
+	    print STDERR $::cr_text, "warning: $dir directory exists; removing it\n";
+	    $::cr_text = "";
 	    system("/bin/rm -rf $dir");
 	    -d $dir && die "cannot remove $dir directory: $!\n";
 	}
 	mkdir $dir || die "cannot create $dir directory: $!\n";
     }
 
-    run_test($test, $verbose);
+    run_test($test, $verbose, @tests > 1);
 
     system("/bin/rm -rf $dir") if !$preserve_temporaries;
     undef $dir;
@@ -1189,8 +1226,15 @@ foreach my $test (@tests) {
 # Print messages about failed requirements
 @require_error_commands = sort { $a cmp $b } keys %require_error_commands;
 if (@require_error_commands) {
-    print STDERR "testie: requirement failures blocked ", $require_errors, ($require_errors > 1 ? " tests" : " test"), ", use '-V' for details\n";
+    print STDERR $::cr_text, "testie: requirement failures blocked ", $require_errors, ($require_errors > 1 ? " tests" : " test"), ", use '-V' for details\n";
     print STDERR "testie: (", (@require_error_commands > 1 ? "commands" : "command"), " '", join("', '", @require_error_commands), "')\n";
+    $::cr_text = "";
+}
+
+print STDERR $::cr_text;
+if ($verbose == 0 && $attempts > 0 && $errors == 0 && @tests > 1
+    && $require_errors < $attempts) {
+    print STDERR "testie: All tests pass!\n";
 }
 
 if ($internal_errors > 0) {
@@ -1249,6 +1293,10 @@ unsuccessful tests.
 
 Like --verbose, but use a slightly different format, and additionally print
 every test's %desc section before the test results.
+
+=item -q, --quiet
+
+Don't print information to the terminal while running multiple tests.
 
 =item -v, --version
 
