@@ -450,7 +450,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	    String arg = (insn == INSN_READ ? _args3[ipos] : cp_unquote(_args3[ipos]));
 	    HandlerCall hc(cp_expand(arg, expander));
 	    if (hc.initialize_read(this, errh) >= 0) {
-		ContextErrorHandler c_errh(errh, "While calling '" + hc.unparse() + "':");
+		ContextErrorHandler c_errh(errh, "While calling %<%s%>:", hc.unparse().c_str());
 		String result = hc.call_read(&c_errh);
 		ErrorHandler *d_errh = ErrorHandler::default_handler();
 		d_errh->message("%s:\n%s\n", hc.handler()->unparse_name(hc.element()).c_str(), result.c_str());
@@ -463,7 +463,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	    String arg = (insn == INSN_WRITE ? _args3[ipos] : cp_unquote(_args3[ipos]));
 	    HandlerCall hc(cp_expand(arg, expander));
 	    if (hc.initialize_write(this, errh) >= 0) {
-		ContextErrorHandler c_errh(errh, "While calling '" + hc.unparse() + "':");
+		ContextErrorHandler c_errh(errh, "While calling %<%s%>:", hc.unparse().c_str());
 		_write_status = hc.call_write(&c_errh);
 	    }
 	    break;
@@ -580,7 +580,7 @@ Script::run_timer(Timer *)
     // called when a timer expires
     assert(_insns[_insn_pos] == INSN_WAIT_TIME || _insns[_insn_pos] == INSN_INITIAL);
     ErrorHandler *errh = ErrorHandler::default_handler();
-    ContextErrorHandler cerrh(errh, "While executing '" + declaration() + "':");
+    ContextErrorHandler cerrh(errh, "While executing %<%{element}%>:", this);
     step(1, STEP_TIMER, 0, &cerrh);
     complete_step(0);
 }

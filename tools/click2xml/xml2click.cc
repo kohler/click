@@ -459,7 +459,8 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 	return errh->lerror(_xml_landmark, "circular definition of elementclass '%s'", readable_name().c_str());
     _completing = true;
 
-    ContextErrorHandler cerrh(errh, String("In definition of elementclass '") + _name + "' (id '" + _id + "'):", "  ", _xml_landmark);
+    ContextErrorHandler cerrh(errh, "In definition of elementclass %<%s%> (id %<%s%>):", _name.c_str(), _id.c_str());
+    cerrh.set_context_landmark(_xml_landmark);
     int before_nerrors = cerrh.nerrors();
 
     // get previous class

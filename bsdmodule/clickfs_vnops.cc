@@ -399,10 +399,12 @@ clickfs_fsync_body(struct clickfs_dirent *cde)
 	    retval = EINVAL;
 	else if (cde->data.handle.wbuf != NULL) {
 	    Element *e = clickfs_int_get_element(cde);
-	    String context_string = "In write handler `" + h->name() + "'";
+	    const char *fmt;
 	    if (e)
-		context_string += String(" for `") + e->declaration() + "'";
-	    ContextErrorHandler cerrh(click_logged_errh, context_string + ":");
+		fmt = "In write handler %<%s%> for %<%{element}%>:";
+	    else
+		fmt = "In write handler %<%s%>:";
+	    ContextErrorHandler cerrh(click_logged_errh, fmt, h->name().c_str(), e);
 
 	    retval = h->call_write(*cde->data.handle.wbuf, e, true, &cerrh);
 	    retval = (retval >= 0 ? 0 : -retval);

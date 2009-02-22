@@ -94,6 +94,14 @@ ErrorTest::initialize(ErrorHandler *init_errh)
 	CHECK("<3>{context:context}Context:\n<3>{context:noindent}Testing context 2\n");
     }
 
+    {
+	ContextErrorHandler cerrh(&errh, "Context %<foo%>:");
+	cerrh.error("Testing context 1");
+	CHECK("<3>{context:context}Context 'foo':\n<3>  Testing context 1\n");
+	cerrh.error("Testing context 2");
+	CHECK("<3>  Testing context 2\n");
+    }
+
     init_errh->message("All tests pass!");
     return 0;
 }

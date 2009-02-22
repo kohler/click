@@ -954,7 +954,7 @@ RouterT::expand_into(RouterT *tor, const String &prefix, VariableEnvironment &en
 	const ArchiveElement &ae = _archive[i];
 	if (ae.live() && ae.name != "config") {
 	    if (tor->archive_index(ae.name) >= 0)
-		errh->error("expansion confict: two archive elements named '%s'", ae.name.c_str());
+		errh->error("expansion confict: two archive elements named %<%s%>", ae.name.c_str());
 	    else
 		tor->add_archive(ae);
 	}
@@ -997,16 +997,16 @@ RouterT::expand_tunnel(Vector<PortT> *port_expansions,
 	String in_name = in_elt->name();
 	String out_name = out_elt->name();
 	if (in_name + "/input" == out_name) {
-	    const char *message = (is_output ? "'%s' input %d unused"
-				   : "'%s' has no input %d");
+	    const char *message = (is_output ? "%<%s%> input %d unused"
+				   : "%<%s%> has no input %d");
 	    errh->lerror(in_elt->landmark(), message, in_name.c_str(), me.port);
 	} else if (in_name == out_name + "/output") {
-	    const char *message = (is_output ? "'%s' has no output %d"
-				   : "'%s' output %d unused");
+	    const char *message = (is_output ? "%<%s%> has no output %d"
+				   : "%<%s%> output %d unused");
 	    errh->lerror(out_elt->landmark(), message, out_name.c_str(), me.port);
 	} else {
 	    errh->lerror(other_elt->landmark(),
-			 "tunnel '%s -> %s' %s %d unused",
+			 "tunnel %<%s -> %s%> %s %d unused",
 			 in_name.c_str(), out_name.c_str(),
 			 (is_output ? "input" : "output"), me.port);
 	}
@@ -1187,7 +1187,7 @@ RouterT::finish_type(ErrorHandler *errh)
     if (ElementT *einput = element("input")) {
 	_ninputs = einput->noutputs();
 	if (einput->ninputs())
-	    lerrh.lerror(_type_landmark.str(), "'%s' pseudoelement 'input' may only be used as output", printable_name_c_str());
+	    lerrh.lerror(_type_landmark.str(), "%<%s%> pseudoelement %<input%> may only be used as output", printable_name_c_str());
 
 	if (_ninputs) {
 	    Vector<int> used;
@@ -1195,7 +1195,7 @@ RouterT::finish_type(ErrorHandler *errh)
 	    assert(used.size() == _ninputs);
 	    for (int i = 0; i < _ninputs; i++)
 		if (used[i] == -1)
-		    lerrh.lerror(_type_landmark.str(), "compound element '%s' input %d unused", printable_name_c_str(), i);
+		    lerrh.lerror(_type_landmark.str(), "compound element %<%s%> input %d unused", printable_name_c_str(), i);
 	}
     } else
 	_ninputs = 0;
@@ -1203,7 +1203,7 @@ RouterT::finish_type(ErrorHandler *errh)
     if (ElementT *eoutput = element("output")) {
 	_noutputs = eoutput->ninputs();
 	if (eoutput->noutputs())
-	    lerrh.lerror(_type_landmark.str(), "'%s' pseudoelement 'output' may only be used as input", printable_name_c_str());
+	    lerrh.lerror(_type_landmark.str(), "%<%s%> pseudoelement %<output%> may only be used as input", printable_name_c_str());
 
 	if (_noutputs) {
 	    Vector<int> used;
@@ -1211,7 +1211,7 @@ RouterT::finish_type(ErrorHandler *errh)
 	    assert(used.size() == _noutputs);
 	    for (int i = 0; i < _noutputs; i++)
 		if (used[i] == -1)
-		    lerrh.lerror(_type_landmark.str(), "compound element '%s' output %d unused", printable_name_c_str(), i);
+		    lerrh.lerror(_type_landmark.str(), "compound element %<%s%> output %d unused", printable_name_c_str(), i);
 	}
     } else
 	_noutputs = 0;
@@ -1278,8 +1278,8 @@ RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *
     }
 
     if (nct != 1 || !closest) {
-	errh->lerror(landmark.decorated_str(), "no match for '%s'", ElementClassT::unparse_signature(name(), 0, args.size(), ninputs, noutputs).c_str());
-	ContextErrorHandler cerrh(errh, "candidates are:", "  ");
+	errh->lerror(landmark.decorated_str(), "no match for %<%s%>", ElementClassT::unparse_signature(name(), 0, args.size(), ninputs, noutputs).c_str());
+	ContextErrorHandler cerrh(errh, "candidates are:");
 	for (r = this; r; r = (r->_overload_type ? r->_overload_type->cast_router() : 0))
 	    cerrh.lmessage(r->decorated_landmark(), "%s", r->unparse_signature().c_str());
     }
@@ -1327,7 +1327,7 @@ RouterT::complex_expand_element(
 	}
 	if (errh)
 	    errh->lerror(compound->landmark(),
-			 "too %s arguments to compound element '%s(%s)'",
+			 "too %s arguments to compound element %<%s(%s)%>",
 			 whoops, printable_name_c_str(), signature.c_str());
     }
 

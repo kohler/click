@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
+ * Copyright (c) 2009 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -185,7 +186,7 @@ RouterUnparseT::relate_types()
     for (Vector<ElementClassT *>::iterator i = _types.begin(); i != _types.end(); i++)
 	if (RouterT *r = i->cast_router())
 	    if (r->previous() && apply_relation(c, c->previous(), X_GEQ))
-		_errh->lerror(c->landmark(), "circular type relationship involving '%s'", c->printable_name_c_str());
+		_errh->lerror(c->landmark(), "circular type relationship involving %<%s%>", c->printable_name_c_str());
 }
 
 #else

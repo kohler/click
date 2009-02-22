@@ -919,16 +919,30 @@ Router::upstream_elements(Element *e, int port, ElementFilter *filter, Vector<El
 
 // INITIALIZATION
 
-String
-Router::context_message(int element_no, const char* message) const
-{
-    Element* e = _elements[element_no];
-    StringAccum sa;
-    if (e->landmark())
-	sa << e->landmark() << ": ";
-    sa << message << " '" << e->declaration() << "':";
-    return sa.take_string();
-}
+class Router::RouterContextErrh : public ContextErrorHandler { public:
+
+    RouterContextErrh(ErrorHandler *errh, const char *message, Element *e)
+	: ContextErrorHandler(errh, ""), _message(message), _element(e) {
+    }
+
+    String decorate(const String &str) {
+	if (!context_printed()) {
+	    StringAccum sa;
+	    sa << _message << " %<%{element}%>:";
+	    String str = format(sa.c_str(), _element);
+	    if (_element->landmark())
+		str = combine_anno(str, make_landmark_anno(_element->landmark()));
+	    set_context(str);
+	}
+	return ContextErrorHandler::decorate(str);
+    }
+
+  private:
+
+    const char *_message;
+    Element *_element;
+
+};
 
 static int
 configure_order_compar(const void *athunk, const void *bthunk, void *copthunk)
@@ -1025,8 +1039,7 @@ Router::initialize(ErrorHandler *errh)
 	    sprintf(dmalloc_buf, "c%d  ", i);
 	    CLICK_DMALLOC_REG(dmalloc_buf);
 #endif
-	    ContextErrorHandler cerrh
-		(errh, context_message(i, "While configuring"));
+	    RouterContextErrh cerrh(errh, "While configuring", element(i));
 	    int before = cerrh.nerrors(), r;
 	    conf.clear();
 	    cp_argvec(_element_configurations[i], conf);
@@ -1059,8 +1072,7 @@ Router::initialize(ErrorHandler *errh)
 	    sprintf(dmalloc_buf, "i%d  ", i);
 	    CLICK_DMALLOC_REG(dmalloc_buf);
 #endif
-	    ContextErrorHandler cerrh
-		(errh, context_message(i, "While initializing"));
+	    RouterContextErrh cerrh(errh, "While initializing", element(i));
 	    int before = cerrh.nerrors();
 	    if (_elements[i]->initialize(&cerrh) >= 0)
 		element_stage[i] = Element::CLEANUP_INITIALIZED;
@@ -1122,8 +1134,7 @@ Router::activate(bool foreground, ErrorHandler *errh)
 	for (int i = 0; i < _elements.size(); i++) {
 	    Element *e = _elements[_element_configure_order[i]];
 	    if (Element *other = e->hotswap_element()) {
-		ContextErrorHandler cerrh
-		    (errh, context_message(i, "While hot-swapping state into"));
+		RouterContextErrh cerrh(errh, "While hot-swapping state into", element(i));
 		e->take_state(other, &cerrh);
 	    }
 	}

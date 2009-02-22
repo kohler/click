@@ -6,7 +6,7 @@
  * Copyright (c) 2000 Massachusetts Institute of Technology
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2007 Regents of the University of California
- * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2008-2009 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -223,7 +223,7 @@ ProcessingT::initial_processing_for(int ei, const String &compound_pcode, ErrorH
 	int &class_warning = _class_warnings[etype];
 	if (!e->tunnel() && !(class_warning & classwarn_unknown)) {
 	    class_warning |= classwarn_unknown;
-	    errh->lwarning(e->decorated_landmark(), "unknown element class '%s'", etype->printable_name_c_str());
+	    errh->lwarning(e->decorated_landmark(), "unknown element class %<%s%>", etype->printable_name_c_str());
 	}
 	return;
     }
@@ -241,7 +241,7 @@ ProcessingT::initial_processing_for(int ei, const String &compound_pcode, ErrorH
 	    int &cwarn = _class_warnings[etype];
 	    if (!(cwarn & classwarn_pcode)) {
 		// "String(pc).c_str()" so pcpos remains valid
-		errh->lerror(e->landmark(), "syntax error in processing code '%s' for '%s'", String(pc).c_str(), etype->printable_name_c_str());
+		errh->lerror(e->landmark(), "syntax error in processing code %<%s%> for %<%s%>", String(pc).c_str(), etype->printable_name_c_str());
 		cwarn |= classwarn_pcode;
 	    }
 	    val = pagnostic;
@@ -257,7 +257,7 @@ ProcessingT::initial_processing_for(int ei, const String &compound_pcode, ErrorH
 	    int &cwarn = _class_warnings[etype];
 	    if (!(cwarn & classwarn_pcode)) {
 		// "String(pc).c_str()" so pcpos remains valid
-		errh->lerror(e->landmark(), "syntax error in processing code '%s' for '%s'", String(pc).c_str(), etype->printable_name_c_str());
+		errh->lerror(e->landmark(), "syntax error in processing code %<%s%> for %<%s%>", String(pc).c_str(), etype->printable_name_c_str());
 		cwarn |= classwarn_pcode;
 	    }
 	    val = pagnostic;
@@ -284,12 +284,12 @@ ProcessingT::processing_error(const ConnectionT &conn, int processing_from,
   const char *type2 = (processing_from & ppush ? "pull" : "push");
   if (conn.landmark() == "<agnostic>")
     errh->lerror(conn.from_element()->decorated_landmark(),
-		 "agnostic '%s' in mixed context: %s input %d, %s output %d",
+		 "agnostic %<%s%> in mixed context: %s input %d, %s output %d",
 		 conn.from_element()->name_c_str(), type2, conn.to_port(),
 		 type1, conn.from_port());
   else
     errh->lerror(conn.decorated_landmark(),
-		 "'%s' %s output %d connected to '%s' %s input %d",
+		 "%<%s%> %s output %d connected to %<%s%> %s input %d",
 		 conn.from_element()->name_c_str(), type1, conn.from_port(),
 		 conn.to_element()->name_c_str(), type2, conn.to_port());
   _processing[end_to][input_pidx(conn)] |= perror;
@@ -431,15 +431,15 @@ ProcessingT::check_nports(const ElementT *e, const int *input_used, const int *o
 
     ninputs = e->ninputs();
     if (ninputs < ninlo) {
-	errh->lerror(e->decorated_landmark(), "too few inputs for '%s', %s%d required", e->name_c_str(), (ninlo == ninhi ? "" : "at least "), ninlo);
+	errh->lerror(e->decorated_landmark(), "too few inputs for %<%s%>, %s%d required", e->name_c_str(), (ninlo == ninhi ? "" : "at least "), ninlo);
 	ninputs = ninlo;
     } else if (ninputs > ninhi) {
 	const Vector<ConnectionT> &conn = _router->connections();
-	errh->lerror(e->decorated_landmark(), "too many inputs for '%s', %s%d allowed", e->name_c_str(), (ninlo == ninhi ? "" : "at most "), ninhi);
+	errh->lerror(e->decorated_landmark(), "too many inputs for %<%s%>, %s%d allowed", e->name_c_str(), (ninlo == ninhi ? "" : "at most "), ninhi);
 	for (int i = ninhi; i < e->ninputs(); i++)
 	    if (input_used[i] >= 0)
 		errh->lmessage(conn[input_used[i]].decorated_landmark(),
-			       "  '%s' input %d used here", e->name_c_str(), i);
+			       "  %<%s%> input %d used here", e->name_c_str(), i);
 	ninputs = ninhi;
     }
 
@@ -449,20 +449,20 @@ ProcessingT::check_nports(const ElementT *e, const int *input_used, const int *o
 	    equalmsg << " with " << ninputs << " input" << (ninputs == 1 ? "" : "s");
     }
     if (e->noutputs() < noutlo)
-	errh->lerror(e->decorated_landmark(), "too few outputs for '%s'%s, %s%d required", e->name_c_str(), equalmsg.c_str(), (noutlo == nouthi ? "" : "at least "), noutlo);
+	errh->lerror(e->decorated_landmark(), "too few outputs for %<%s%>%s, %s%d required", e->name_c_str(), equalmsg.c_str(), (noutlo == nouthi ? "" : "at least "), noutlo);
     else if (e->noutputs() > nouthi) {
 	const Vector<ConnectionT> &conn = _router->connections();
-	errh->lerror(e->decorated_landmark(), "too many outputs for '%s'%s, %s%d allowed", e->name_c_str(), equalmsg.c_str(), (noutlo == nouthi ? "" : "at most "), nouthi);
+	errh->lerror(e->decorated_landmark(), "too many outputs for %<%s%>%s, %s%d allowed", e->name_c_str(), equalmsg.c_str(), (noutlo == nouthi ? "" : "at most "), nouthi);
 	for (int i = nouthi; i < e->noutputs(); i++)
 	    if (output_used[i] >= 0)
 		errh->lmessage(conn[output_used[i]].decorated_landmark(),
-			       "  '%s' output %d used here", e->name_c_str(), i);
+			       "  %<%s%> output %d used here", e->name_c_str(), i);
     }
 
     return;
 
   parse_error:
-    errh->lerror(e->decorated_landmark(), "syntax error in port count code for '%s'", e->type()->printable_name_c_str());
+    errh->lerror(e->decorated_landmark(), "syntax error in port count code for %<%s%>", e->type()->printable_name_c_str());
 }
 
 void
@@ -482,10 +482,10 @@ ProcessingT::check_connections(ErrorHandler *errh)
 
 	if ((_processing[end_from][fp] & ppush) && output_used[fp] >= 0) {
 	    errh->lerror(conn[c].decorated_landmark(),
-			 "illegal reuse of '%s' push output %d",
+			 "illegal reuse of %<%s%> push output %d",
 			 hf.element->name_c_str(), hf.port);
 	    errh->lmessage(conn[output_used[fp]].decorated_landmark(),
-			   "  '%s' output %d previously used here",
+			   "  %<%s%> output %d previously used here",
 			   hf.element->name_c_str(), hf.port);
 	    _processing[end_from][fp] |= perror;
 	} else
@@ -493,10 +493,10 @@ ProcessingT::check_connections(ErrorHandler *errh)
 
 	if ((_processing[end_to][tp] & ppull) && input_used[tp] >= 0) {
 	    errh->lerror(conn[c].decorated_landmark(),
-			 "illegal reuse of '%s' pull input %d",
+			 "illegal reuse of %<%s%> pull input %d",
 			 ht.element->name_c_str(), ht.port);
 	    errh->lmessage(conn[input_used[tp]].decorated_landmark(),
-			   "  '%s' input %d previously used here",
+			   "  %<%s%> input %d previously used here",
 			   ht.element->name_c_str(), ht.port);
 	    _processing[end_to][tp] |= perror;
 	} else
@@ -513,14 +513,14 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	for (int i = 0; i < e->ninputs(); i++)
 	    if (input_used[ipdx + i] < 0) {
 		errh->lerror(e->decorated_landmark(),
-			     "'%s' %s input %d not connected",
+			     "%<%s%> %s input %d not connected",
 			     e->name_c_str(), processing_name(_processing[end_to][ipdx + i]), i);
 		_processing[end_to][ipdx + i] |= perror;
 	    }
 	for (int i = 0; i < e->noutputs(); i++)
 	    if (output_used[opdx + i] < 0) {
 		errh->lerror(e->decorated_landmark(),
-			     "'%s' %s output %d not connected",
+			     "%<%s%> %s output %d not connected",
 			     e->name_c_str(), processing_name(_processing[end_from][opdx + i]), i);
 		_processing[end_from][opdx + i] |= perror;
 	    }
@@ -661,13 +661,13 @@ next_flow_code(const char *&p, const char *last,
 	    else if (*p == '#')
 		code[port + 128] = true;
 	    else if (errh)
-		errh->error("flow code: invalid character '%c'", *p);
+		errh->error("flow code: invalid character %<%c%>", *p);
 	}
 	if (negated)
 	    code.negate();
 	if (p == last) {
 	    if (errh)
-		errh->error("flow code: missing ']'");
+		errh->error("flow code: missing %<]%>");
 	    p--;		// don't skip over final '\0'
 	}
     } else if ((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z'))
@@ -676,7 +676,7 @@ next_flow_code(const char *&p, const char *last,
 	code[port + 128] = true;
     else {
 	if (errh)
-	    errh->error("flow code: invalid character '%c'", *p);
+	    errh->error("flow code: invalid character %<%c%>", *p);
 	p++;
 	return -1;
     }
@@ -704,7 +704,7 @@ ProcessingT::code_flow(const String &flow_code, int port, bool isoutput,
 	fbegin[end_from] = fbegin[end_to];
 	fend[end_to] = fend[end_from] = flow_code.end();
     } else if (slash + 1 == flow_code.end() || slash[1] == '/')
-	return (errh ? errh->error("flow code: bad '/'") : -1);
+	return (errh ? errh->error("flow code: bad %</%>") : -1);
     else {
 	fend[end_to] = slash;
 	fbegin[end_from] = slash + 1;

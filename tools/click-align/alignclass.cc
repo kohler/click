@@ -4,6 +4,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2007 Regents of the University of California
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -206,7 +207,7 @@ StripAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
     Vector<String> args;
     cp_argvec(e->configuration(), args);
     unsigned nbytes;
-    ContextErrorHandler cerrh(errh, "While analyzing alignment for '" + e->declaration() + "':");
+    ContextErrorHandler cerrh(errh, "While analyzing alignment for %<%s%>:", e->declaration().c_str());
     if (cp_va_kparse(args, &cerrh,
 		     "LENGTH", cpkP+cpkM, cpUnsigned, &nbytes,
 		     cpEnd) < 0)
@@ -243,7 +244,7 @@ Aligner *
 AlignAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
 {
   int offset, modulus;
-  ContextErrorHandler cerrh(errh, "While analyzing alignment for '" + e->declaration() + "':");
+  ContextErrorHandler cerrh(errh, "While analyzing alignment for %<%s%>:", e->declaration().c_str());
   if (cp_va_kparse(e->configuration(), &cerrh,
 		   "MODULUS", cpkP+cpkM, cpUnsigned, &modulus,
 		   "OFFSET", cpkP+cpkM, cpUnsigned, &offset,

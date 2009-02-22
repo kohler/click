@@ -6,7 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
- * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2008-2009 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -237,7 +237,7 @@ parse_xml_attrs(HashTable<String, String> &attrs,
 	while (s < ends && isspace((unsigned char) *s))
 	    s++;
 	if (s >= ends || *s != '=') {
-	    errh->error("XML parse error: missing '='");
+	    errh->error("XML parse error: missing %<=%>");
 	    return s;
 	}
 	s++;
@@ -513,7 +513,7 @@ ElementMap::collect_indexes(const RouterT *router, Vector<int> &indexes,
 	    if (t > 0)
 		indexes.push_back(t);
 	    else if (errh)
-		errh->error("unknown element class '%s'", i.key()->printable_name_c_str());
+		errh->error("unknown element class %<%s%>", i.key()->printable_name_c_str());
 	}
 }
 
@@ -692,18 +692,18 @@ ElementMap::report_file_not_found(String default_path, bool found_default,
 				  ErrorHandler *errh)
 {
     if (!found_default)
-	errh->message("(The 'elementmap.xml' file stores information about available elements,\nand is required for correct operation.  'make install' should install it.");
+	errh->message("(The %<elementmap.xml%> file stores information about available elements,\nand is required for correct operation.  %<make install%> should install it.");
     else
 	errh->message("(You may get unknown element class errors.");
 
     const char *path = clickpath();
     bool allows_default = path_allows_default_path(path);
     if (!allows_default)
-	errh->message("Searched in CLICKPATH '%s'.)", path);
+	errh->message("Searched in CLICKPATH %<%s%>.)", path);
     else if (!path)
-	errh->message("Searched in install directory '%s'.)", default_path.c_str());
+	errh->message("Searched in install directory %<%s%>.)", default_path.c_str());
     else
-	errh->message("Searched in CLICKPATH and '%s'.)", default_path.c_str());
+	errh->message("Searched in CLICKPATH and %<%s%>.)", default_path.c_str());
 }
 
 

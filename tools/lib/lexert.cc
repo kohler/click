@@ -476,7 +476,7 @@ LexerT::landmark() const
 void
 LexerT::vlerror(const char *pos1, const char *pos2, const String &lm, const char *fmt, va_list val)
 {
-    String text = _errh->format(fmt, val);
+    String text = _errh->vformat(fmt, val);
     _lexinfo->notify_error(text, pos1, pos2);
     _errh->xmessage(lm, ErrorHandler::e_error, text);
 }
@@ -527,7 +527,7 @@ LexerT::force_element_type(const Lexeme &t)
 	type = _base_type_map.get(name);
     if (!type) {
 	if (_router->eindex(name) >= 0)
-	    lerror(t, "'%s' was previously used as an element name", name.c_str());
+	    lerror(t, "%<%s%> was previously used as an element name", name.c_str());
 	type = ElementClassT::base_type(name);
 	_base_type_map.set(name, type);
     }
@@ -556,7 +556,7 @@ LexerT::make_element(String name, const Lexeme &location, const char *decl_pos2,
 	    if (!isdigit((unsigned char) name[i]))
 		ok = true;
 	if (!ok) {
-	    lerror(location, "element name '%s' has all-digit component", name.c_str());
+	    lerror(location, "element name %<%s%> has all-digit component", name.c_str());
 	    break;
 	}
     }
@@ -703,7 +703,7 @@ LexerT::ydeclaration(const Lexeme &first_element)
 	else if (tsep.is(lex2Colon))
 	    break;
 	else {
-	    lerror(tsep, "syntax error: expected '::' or ','");
+	    lerror(tsep, "syntax error: expected %<::%> or %<,%>");
 	    unlex(tsep);
 	    return;
 	}
@@ -735,7 +735,7 @@ LexerT::ydeclaration(const Lexeme &first_element)
 	if (ElementT *old_e = _router->element(name))
 	    ElementT::redeclaration_error(_errh, "element", name, landmark(), old_e->landmark());
 	else if (_router->declared_type(name) || _base_type_map.get(name))
-	    lerror(decls[i], "class '%s' used as element name", name.c_str());
+	    lerror(decls[i], "class %<%s%> used as element name", name.c_str());
 	else
 	    make_element(name, decls[i], decl_pos2, etype, configuration.string());
     }
@@ -778,9 +778,9 @@ LexerT::yconnection()
 	  case lex2Colon:
 	    if (router()->element(element2)->anonymous())
 		// type used as name
-		lerror(t, "class '%s' used as element name", router()->etype_name(element2).c_str());
+		lerror(t, "class %<%s%> used as element name", router()->etype_name(element2).c_str());
 	    else
-		lerror(t, "syntax error before '%s'", t.string().c_str());
+		lerror(t, "syntax error before %<%s%>", t.string().c_str());
 	    goto relex;
 
 	  case lexArrow:
@@ -807,7 +807,7 @@ LexerT::yconnection()
 	    return true;
 
 	  default:
-	    lerror(t, "syntax error near '%#s'", t.string().c_str());
+	    lerror(t, "syntax error near %<%#s%>", t.string().c_str());
 	    if (t.kind() >= lexIdent)	// save meaningful tokens
 		unlex(t);
 	    return true;
@@ -830,7 +830,7 @@ LexerT::yelementclass(const char *pos1)
     } else {
 	String n = tname.string();
 	if (_router->eindex(n) >= 0)
-	    lerror(tname, "'%s' already used as an element name", n.c_str());
+	    lerror(tname, "%<%s%> already used as an element name", n.c_str());
 	else
 	    eclass_name = n;
     }
@@ -848,25 +848,25 @@ LexerT::yelementclass(const char *pos1)
 	}
 
     } else
-	lerror(tnext, "syntax error near '%#s'", tnext.string().c_str());
+	lerror(tnext, "syntax error near %<%#s%>", tnext.string().c_str());
 }
 
 void
 LexerT::ydefine(RouterT *r, const String &fname, const String &ftype, bool isformal, const Lexeme &t, bool &scope_order_error)
 {
     if (!r->define(fname, ftype, isformal))
-	lerror(t, "parameter '$%s' multiply defined", fname.c_str());
+	lerror(t, "parameter %<$%s%> multiply defined", fname.c_str());
     else if (isformal) {
 	if (ftype)
 	    for (int i = 0; i < r->scope().size() - 1; i++)
 		if (r->scope().value(i) == ftype) {
-		    lerror(t, "repeated keyword parameter '%s' in compound element", ftype.c_str());
+		    lerror(t, "repeated keyword parameter %<%s%> in compound element", ftype.c_str());
 		    break;
 		}
 	if (!scope_order_error && r->nformals() > 1
 	    && ((!ftype && r->scope().value(r->nformals() - 2))
 		|| r->scope().value(r->nformals() - 2) == "__REST__")) {
-	    lerror(t, "compound element parameters out of order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
+	    lerror(t, "compound element parameters out of order\n(The correct order is %<[positional], [keywords], [__REST__]%>.)");
 	    scope_order_error = true;
 	}
     }
@@ -912,7 +912,7 @@ LexerT::ycompound_arguments(RouterT *comptype)
     if (tsep.is('|'))
       break;
     else if (!tsep.is(',')) {
-      lerror(tsep, "expected ',' or '|'");
+      lerror(tsep, "expected %<,%> or %<|%>");
       unlex(tsep);
       break;
     }
@@ -951,7 +951,7 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 
 	    dots = lex();
 	    if (!first || !dots.is('}'))
-		lerror(dots.pos1(), dots.pos2(), "'...' should occur last, after one or more compounds");
+		lerror(dots.pos1(), dots.pos2(), "%<...%> should occur last, after one or more compounds");
 	    if (dots.is('}') && first)
 		break;
 	}
@@ -1040,11 +1040,11 @@ LexerT::yvar()
 		    for (s++; s != var.end() && (isalnum((unsigned char) *s) || *s == '_'); s++)
 			/* nada */;
 		if (var.length() < 2 || s != var.end())
-		    lerror(vars, "bad 'var' declaration: not a variable");
+		    lerror(vars, "bad %<var%> declaration: not a variable");
 		else {
 		    var = var.substring(1);
 		    if (!_router->define(var, args[i], false))
-			lerror(vars, "parameter '%s' multiply defined", var.c_str());
+			lerror(vars, "parameter %<%s%> multiply defined", var.c_str());
 		}
 	    }
     }
@@ -1087,12 +1087,12 @@ LexerT::ystatement(bool nested)
 
    case lexEOF:
     if (nested)
-      lerror(t, "expected '}'");
+      lerror(t, "expected %<}%>");
     return false;
 
    default:
    syntax_error:
-    lerror(t, "syntax error near '%#s'", t.string().c_str());
+    lerror(t, "syntax error near %<%#s%>", t.string().c_str());
     return true;
 
   }

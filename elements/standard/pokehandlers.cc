@@ -71,12 +71,12 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
 	    /* ignore empty arguments */;
 	else if (word == "quit" || word == "stop") {
 	    if (i < conf.size() - 1 || text)
-		errh->warning("arguments after '%s' directive ignored", word.c_str());
+		errh->warning("arguments after %<%s%> directive ignored", word.c_str());
 	    add(STOP_MARKER, "", "", next_timeout);
 	    break;
 	} else if (word == "loop") {
 	    if (i < conf.size() - 1 || text)
-		errh->warning("arguments after 'loop' directive ignored");
+		errh->warning("arguments after %<loop%> directive ignored");
 	    add(LOOP_MARKER, "", "", next_timeout);
 	    break;
 	} else if (word == "pause") {
@@ -97,11 +97,11 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
 	    if (cp_seconds_as_milli(text, &timeout))
 		next_timeout += timeout;
 	    else
-		errh->error("missing time in 'wait TIME'");
+		errh->error("missing time in %<wait TIME%>");
 	} else if (cp_seconds_as_milli(word, &timeout) && !text)
 	    next_timeout += timeout;
 	else
-	    errh->error("unknown directive '%#s'", word.c_str());
+	    errh->error("unknown directive %<%#s%>", word.c_str());
     }
 
     if (_timer.initialized()) {
@@ -187,7 +187,7 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
 	const Handler *h = Router::handler(he, hname);
 	int before = perrh.nerrors();
 	if (!h)
-	    perrh.error("no handler '%s'", Handler::unparse_name(he, hname).c_str());
+	    perrh.error("no handler %<%s%>", Handler::unparse_name(he, hname).c_str());
 	else if (poke->_h_value[hpos].data() == READ_MARKER) {
 	    String value = h->call_read(he, &perrh);
 	    if (perrh.nerrors() == before)
@@ -195,10 +195,10 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
 	} else {
 	    if (h->writable()) {
 		ContextErrorHandler cerrh
-		    (errh, "In write handler '" + h->unparse_name(he) + "':");
+		    (errh, "In write handler %<%s%>:", h->unparse_name(he).c_str());
 		h->call_write(poke->_h_value[hpos], he, &cerrh);
 	    } else
-		perrh.error("no write handler '%s'", h->unparse_name(he).c_str());
+		perrh.error("no write handler %<%s%>", h->unparse_name(he).c_str());
 	}
 	hpos++;
     } while (hpos < poke->_h_timeout.size() && poke->_h_timeout[hpos] == 0);

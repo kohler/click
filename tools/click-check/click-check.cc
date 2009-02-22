@@ -120,7 +120,7 @@ check_once(const RouterT *r, const char *filename,
   full_elementmap.set_driver(driver);
   ErrorHandler *errh = full_errh;
   if (print_context)
-    errh = new ContextErrorHandler(errh, "While checking configuration for " + String(driver_name) + " driver:");
+      errh = new ContextErrorHandler(errh, "While checking configuration for %s driver:", driver_name);
   int before = errh->nerrors();
   int before_warnings = errh->nwarnings();
 

@@ -45,8 +45,8 @@ redeclaration_error(ErrorHandler *errh, const char *what, String name, const Str
   if (!what)
     what = "";
   const char *sp = (strlen(what) ? " " : "");
-  errh->lerror(landmark, "redeclaration of %s%s'%s'", what, sp, name.c_str());
-  errh->lerror(old_landmark, "'%s' previously declared here", name.c_str());
+  errh->lerror(landmark, "redeclaration of %s%s%<%s%>", what, sp, name.c_str());
+  errh->lerror(old_landmark, "%<%s%> previously declared here", name.c_str());
 }
 
 //
@@ -190,19 +190,19 @@ Lexer::Compound::define(const String &name, const String &value, bool isformal, 
 {
   assert(!isformal || _nformals == _scope.size());
   if (!_scope.define(name, value, false))
-    l->lerror("parameter '$%s' multiply defined", name.c_str());
+    l->lerror("parameter %<$%s%> multiply defined", name.c_str());
   else if (isformal) {
     _nformals = _scope.size();
     if (value)
       for (int i = 0; i < _scope.size() - 1; i++)
 	if (_scope.value(i) == value) {
-	  l->lerror("repeated keyword parameter '%s' in compound element", value.c_str());
+	  l->lerror("repeated keyword parameter %<%s%> in compound element", value.c_str());
 	  break;
 	}
     if (!_scope_order_error && _nformals > 1
 	&& ((!value && _scope.value(_nformals - 2))
 	    || _scope.value(_nformals - 2) == "__REST__")) {
-      l->lerror("compound element parameters out of order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
+      l->lerror("compound element parameters out of order\n(The correct order is %<[positional], [keywords], [__REST__]%>.)");
       _scope_order_error = true;
     }
   }
@@ -251,17 +251,17 @@ Lexer::Compound::finish(Lexer *lexer, ErrorHandler *errh)
   // store information
   _ninputs = from_in.size();
   if (to_in)
-    errh->lerror(_landmark, "'%s' pseudoelement 'input' may only be used as output", printable_name_c_str());
+    errh->lerror(_landmark, "%<%s%> pseudoelement %<input%> may only be used as output", printable_name_c_str());
   for (int i = 0; i < from_in.size(); i++)
     if (!from_in[i])
-      errh->lerror(_landmark, "compound element '%s' input %d unused", printable_name_c_str(), i);
+      errh->lerror(_landmark, "compound element %<%s%> input %d unused", printable_name_c_str(), i);
 
   _noutputs = to_out.size();
   if (from_out)
-    errh->lerror(_landmark, "'%s' pseudoelement 'output' may only be used as input", printable_name_c_str());
+    errh->lerror(_landmark, "%<%s%> pseudoelement %<output%> may only be used as input", printable_name_c_str());
   for (int i = 0; i < to_out.size(); i++)
     if (!to_out[i])
-      errh->lerror(_landmark, "compound element '%s' output %d unused", printable_name_c_str(), i);
+      errh->lerror(_landmark, "compound element %<%s%> output %d unused", printable_name_c_str(), i);
 
   // deanonymize element names
   for (int i = 0; i < _elements.size(); i++)
@@ -311,8 +311,8 @@ Lexer::Compound::resolve(Lexer *lexer, int etype, int ninputs, int noutputs, Vec
   }
 
   if (nct != 1 || closest_etype < 0) {
-    errh->lerror(landmark, "no match for '%s'", signature(name(), 0, args.size(), ninputs, noutputs).c_str());
-    ContextErrorHandler cerrh(errh, "candidates are:", "  ");
+    errh->lerror(landmark, "no match for %<%s%>", signature(name(), 0, args.size(), ninputs, noutputs).c_str());
+    ContextErrorHandler cerrh(errh, "candidates are:");
     for (ct = this; ct; ct = ct->overload_compound(lexer))
       cerrh.lmessage(ct->landmark(), "%s", ct->signature().c_str());
   }
@@ -388,7 +388,7 @@ Lexer::Compound::expand_into(Lexer *lexer, int which, VariableEnvironment &ve)
       eidx_map.push_back(-1);
     } else {
       if (lexer->_element_type_map[cname] >= 0)
-	errh->lerror(lexer->element_landmark(which), "'%s' is an element class", cname.c_str());
+	errh->lerror(lexer->element_landmark(which), "%<%s%> is an element class", cname.c_str());
       eidx = lexer->get_element(cname, _elements[i], cp_expand(_element_configurations[i], ve), _element_landmarks[i]);
       eidx_map.push_back(eidx);
     }
@@ -892,7 +892,7 @@ Lexer::force_element_type(String name, bool report_error)
   if (ftid >= 0)
     return ftid;
   if (report_error)
-    lerror("unknown element class '%s'", name.c_str());
+    lerror("unknown element class %<%s%>", name.c_str());
   return ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
 }
 
@@ -1020,7 +1020,7 @@ Lexer::get_element(String name, int etype, const String &conf, const String &lm)
       if (!isdigit((unsigned char) name[i]))
 	ok = true;
     if (!ok) {
-      lerror("element name '%s' has all-digit component", name.c_str());
+      lerror("element name %<%s%> has all-digit component", name.c_str());
       break;
     }
   }
@@ -1161,7 +1161,7 @@ Lexer::yelement(int &element, bool comma_ok)
     if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok))
       ydeclaration(name);
     if ((element = _element_map[name]) < 0) {
-      lerror("undeclared element '%s', assuming element class", name.c_str());
+      lerror("undeclared element %<%s%>, assuming element class", name.c_str());
       etype = force_element_type(name, false);
       element = get_element(anon_element_name(name), etype, configuration, lm);
     }
@@ -1195,7 +1195,7 @@ Lexer::ydeclaration(const String &first_element)
     else if (tsep.is(lex2Colon))
       break;
     else {
-      lerror("syntax error: expected '::' or ','");
+      lerror("syntax error: expected %<::%> or %<,%>");
       unlex(tsep);
       return;
     }
@@ -1225,11 +1225,11 @@ Lexer::ydeclaration(const String &first_element)
     String name = decls[i];
     if (_element_map[name] >= 0) {
       int e = _element_map[name];
-      lerror("redeclaration of element '%s'", name.c_str());
+      lerror("redeclaration of element %<%s%>", name.c_str());
       if (_c->_elements[e] != TUNNEL_TYPE)
-	_errh->lerror(_c->_element_landmarks[e], "element '%s' previously declared here", name.c_str());
+	_errh->lerror(_c->_element_landmarks[e], "element %<%s%> previously declared here", name.c_str());
     } else if (_element_type_map[name] >= 0)
-      lerror("'%s' is an element class", name.c_str());
+      lerror("%<%s%> is an element class", name.c_str());
     else
       get_element(name, etype, configuration, lm);
   }
@@ -1265,7 +1265,7 @@ Lexer::yconnection()
 
      case ',':
      case lex2Colon:
-      lerror("syntax error before '%#s'", t.string().c_str());
+      lerror("syntax error before %<%#s%>", t.string().c_str());
       goto relex;
 
      case lexArrow:
@@ -1292,7 +1292,7 @@ Lexer::yconnection()
       return true;
 
      default:
-      lerror("syntax error near '%#s'", t.string().c_str());
+      lerror("syntax error near %<%#s%>", t.string().c_str());
       if (t.kind() >= lexIdent)	// save meaningful tokens
 	unlex(t);
       return true;
@@ -1326,7 +1326,7 @@ Lexer::yelementclass()
     ADD_ELEMENT_TYPE(name, _element_types[t].factory, _element_types[t].thunk, true);
 
   } else {
-    lerror("syntax error near '%#s'", tnext.string().c_str());
+    lerror("syntax error near %<%#s%>", tnext.string().c_str());
     ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
   }
 }
@@ -1370,7 +1370,7 @@ Lexer::ycompound_arguments(Compound *comptype)
     if (tsep.is('|'))
       break;
     else if (!tsep.is(',')) {
-      lerror("expected ',' or '|'");
+      lerror("expected %<,%> or %<|%>");
       unlex(tsep);
       break;
     }
@@ -1393,14 +1393,14 @@ Lexer::ycompound(String name)
     if (dots.is(lex3Dot)) {
       // '...' marks an extension type
       if (_element_type_map[name] < 0) {
-	lerror("cannot extend unknown element class '%s'", name.c_str());
+	lerror("cannot extend unknown element class %<%s%>", name.c_str());
 	ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
       }
       extension = _element_type_map[name];
 
       dots = lex();
       if (!first || !dots.is('}'))
-	lerror("'...' should occur last, after one or more compounds");
+	lerror("%<...%> should occur last, after one or more compounds");
       if (dots.is('}') && first)
 	break;
     }
@@ -1493,7 +1493,7 @@ Lexer::yvar()
 	  for (s++; s != var.end() && (isalnum((unsigned char) *s) || *s == '_'); s++)
 	    /* nada */;
 	if (var.length() < 2 || s != var.end())
-	  lerror("bad 'var' declaration: not a variable");
+	  lerror("bad %<var%> declaration: not a variable");
 	else {
 	  var = var.substring(1);
 	  _c->define(var, args[i], false, this);
@@ -1539,12 +1539,12 @@ Lexer::ystatement(bool nested)
 
    case lexEOF:
     if (nested)
-      lerror("expected '}'");
+      lerror("expected %<}%>");
     return false;
 
    default:
    syntax_error:
-    lerror("syntax error near '%#s'", t.string().c_str());
+    lerror("syntax error near %<%#s%>", t.string().c_str());
     return true;
 
   }
@@ -1642,7 +1642,7 @@ Lexer::create_router(Master *master)
       router_id.push_back(-1);
 #if CLICK_LINUXMODULE
     else if (_element_types[etype].module && router->add_module_ref(_element_types[etype].module) < 0) {
-      _errh->lerror(_c->_element_landmarks[i], "module for element type '%s' unloaded", _element_types[etype].name.c_str());
+      _errh->lerror(_c->_element_landmarks[i], "module for element type %<%s%> unloaded", _element_types[etype].name.c_str());
       router_id.push_back(-1);
     }
 #endif
@@ -1650,7 +1650,7 @@ Lexer::create_router(Master *master)
       int ei = router->add_element(e, _c->_element_names[i], _c->_element_configurations[i], _c->_element_landmarks[i]);
       router_id.push_back(ei);
     } else {
-      _errh->lerror(_c->_element_landmarks[i], "failed to create element '%s'", _c->_element_names[i].c_str());
+      _errh->lerror(_c->_element_landmarks[i], "failed to create element %<%s%>", _c->_element_names[i].c_str());
       router_id.push_back(-1);
     }
   }
@@ -1775,18 +1775,18 @@ Lexer::TunnelEnd::expand(Lexer *lexer, Vector<Router::Port> &into)
       String in_name = lexer->element_name(inh.idx);
       String out_name = lexer->element_name(outh.idx);
       if (in_name + "/input" == out_name) {
-	const char *message = (_isoutput ? "'%s' input %d unused"
-			       : "'%s' has no input %d");
+	const char *message = (_isoutput ? "%<%s%> input %d unused"
+			       : "%<%s%> has no input %d");
 	lexer->errh()->lerror(lexer->element_landmark(inh.idx), message,
 			      in_name.c_str(), inh.port);
       } else if (in_name == out_name + "/output") {
-	const char *message = (_isoutput ? "'%s' has no output %d"
-			       : "'%s' output %d unused");
+	const char *message = (_isoutput ? "%<%s%> has no output %d"
+			       : "%<%s%> output %d unused");
 	lexer->errh()->lerror(lexer->element_landmark(outh.idx), message,
 			      out_name.c_str(), outh.port);
       } else {
 	lexer->errh()->lerror(lexer->element_landmark(_other->_port.idx),
-			      "tunnel '%s -> %s' %s %d unused",
+			      "tunnel %<%s -> %s%> %s %d unused",
 			      in_name.c_str(), out_name.c_str(),
 			      (_isoutput ? "input" : "output"), _port.idx);
       }
@@ -1811,7 +1811,7 @@ Lexer::expand_connection(const Port &this_end, bool is_out, Vector<Port> &into)
     dp->expand(this, into);
   else if (find_tunnel(this_end, !is_out, false))
     _errh->lerror(_c->_element_landmarks[this_end.idx],
-		  (is_out ? "'%s' used as output" : "'%s' used as input"),
+		  (is_out ? "%<%s%> used as output" : "%<%s%> used as input"),
 		  element_name(this_end.idx).c_str());
 }
 

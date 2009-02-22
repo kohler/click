@@ -206,6 +206,8 @@ class Router { public:
 
   private:
 
+    class RouterContextErrh;
+
     enum {
 	ROUTER_NEW, ROUTER_PRECONFIGURE, ROUTER_PREINITIALIZE,
 	ROUTER_LIVE, ROUTER_DEAD		// order is important
@@ -306,7 +308,6 @@ class Router { public:
     }
     inline int gport(bool isoutput, const Port &port) const;
 
-    String context_message(int element_no, const char*) const;
     int element_lerror(ErrorHandler*, Element*, const char*, ...) const;
 
     // private handler methods

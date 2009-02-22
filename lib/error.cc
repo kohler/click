@@ -5,6 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2001-2008 Eddie Kohler
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -27,6 +28,10 @@
 #include <click/etheraddress.hh>
 #include <click/timestamp.hh>
 #include <click/confparse.hh>
+#include <click/algorithm.hh>
+#if CLICK_USERLEVEL || CLICK_TOOL
+# include <unistd.h>
+#endif
 CLICK_DECLS
 
 /** @file error.hh
@@ -318,7 +323,7 @@ static char *
 do_number(unsigned long num, char *after_last, int base, int flags)
 {
     const char *digits =
-	((flags & ErrH::f_uppercase) ? "0123456789ABCDEF" : "0123456789abcdef");
+	((flags & ErrH::cf_uppercase) ? "0123456789ABCDEF" : "0123456789abcdef");
     char *pos = after_last;
     while (num) {
 	*--pos = digits[num % base];
@@ -333,45 +338,45 @@ static char *
 do_number_flags(char *pos, char *after_last, int base, int flags,
 		int precision, int field_width)
 {
-    // remove f_alternate_form for zero results in base 16
-    if ((flags & ErrH::f_alternate_form) && base == 16 && *pos == '0')
-	flags &= ~ErrH::f_alternate_form;
+    // remove cf_alternate_form for zero results in base 16
+    if ((flags & ErrH::cf_alternate_form) && base == 16 && *pos == '0')
+	flags &= ~ErrH::cf_alternate_form;
 
     // account for zero padding
     if (precision >= 0)
 	while (after_last - pos < precision)
 	    *--pos = '0';
-    else if (flags & ErrH::f_zero_pad) {
-	if ((flags & ErrH::f_alternate_form) && base == 16)
+    else if (flags & ErrH::cf_zero_pad) {
+	if ((flags & ErrH::cf_alternate_form) && base == 16)
 	    field_width -= 2;
-	if ((flags & ErrH::f_negative)
-	    || (flags & (ErrH::f_plus_positive | ErrH::f_space_positive)))
+	if ((flags & ErrH::cf_negative)
+	    || (flags & (ErrH::cf_plus_positive | ErrH::cf_space_positive)))
 	    field_width--;
 	while (after_last - pos < field_width)
 	    *--pos = '0';
     }
 
     // alternate forms
-    if ((flags & ErrH::f_alternate_form) && base == 8 && pos[1] != '0')
+    if ((flags & ErrH::cf_alternate_form) && base == 8 && pos[1] != '0')
 	*--pos = '0';
-    else if ((flags & ErrH::f_alternate_form) && base == 16) {
-	*--pos = ((flags & ErrH::f_uppercase) ? 'X' : 'x');
+    else if ((flags & ErrH::cf_alternate_form) && base == 16) {
+	*--pos = ((flags & ErrH::cf_uppercase) ? 'X' : 'x');
 	*--pos = '0';
     }
 
     // sign
-    if (flags & ErrH::f_negative)
+    if (flags & ErrH::cf_negative)
 	*--pos = '-';
-    else if (flags & ErrH::f_plus_positive)
+    else if (flags & ErrH::cf_plus_positive)
 	*--pos = '+';
-    else if (flags & ErrH::f_space_positive)
+    else if (flags & ErrH::cf_space_positive)
 	*--pos = ' ';
 
     return pos;
 }
 
 String
-ErrorHandler::xformat(const char *s, va_list val)
+ErrorHandler::vxformat(int default_flags, const char *s, va_list val)
 {
     StringAccum msg;
 
@@ -401,15 +406,16 @@ ErrorHandler::xformat(const char *s, va_list val)
 	}
 
 	// parse flags
-	flags = 0;
+	flags = default_flags;
     flags:
 	switch (*++s) {
-	case '#': flags |= f_alternate_form; goto flags;
-	case '0': flags |= f_zero_pad; goto flags;
-	case '-': flags |= f_left_just; goto flags;
-	case ' ': flags |= f_space_positive; goto flags;
-	case '+': flags |= f_plus_positive; goto flags;
-	case '\'': flags |= f_singlequote; goto flags;
+	case '#': flags |= cf_alternate_form; goto flags;
+	case '0': flags |= cf_zero_pad; goto flags;
+	case '-': flags |= cf_left_just; goto flags;
+	case ' ': flags |= cf_space_positive; goto flags;
+	case '+': flags |= cf_plus_positive; goto flags;
+	case '\'': flags |= cf_singlequote; goto flags;
+	case '_': flags &= ~cf_utf8; goto flags;
 	}
 
 	// parse field width
@@ -418,7 +424,7 @@ ErrorHandler::xformat(const char *s, va_list val)
 	    field_width = va_arg(val, int);
 	    if (field_width < 0) {
 		field_width = -field_width;
-		flags |= f_left_just;
+		flags |= cf_left_just;
 	    }
 	    s++;
 	} else if (*s >= '0' && *s <= '9')
@@ -478,7 +484,7 @@ ErrorHandler::xformat(const char *s, va_list val)
 
 	    // transform string, fetch length
 	    int len;
-	    if (flags & f_alternate_form) {
+	    if (flags & cf_alternate_form) {
 		strstore = String(s1).printable();
 		len = strstore.length();
 	    } else
@@ -489,8 +495,8 @@ ErrorHandler::xformat(const char *s, va_list val)
 		len = precision;
 
 	    // quote characters that look like annotations, readjusting length
-	    if (flags & (f_singlequote | f_alternate_form)) {
-		if (!(flags & f_alternate_form))
+	    if (flags & (cf_singlequote | cf_alternate_form)) {
+		if (!(flags & cf_alternate_form))
 		    strstore = String(s1, len);
 
 		// check first line, considering trailing part of 'msg'
@@ -518,7 +524,7 @@ ErrorHandler::xformat(const char *s, va_list val)
 	    }
 
 	    // obtain begin and end pointers
-	    if (flags & (f_singlequote | f_alternate_form))
+	    if (flags & (cf_singlequote | cf_alternate_form))
 		s1 = strstore.begin();
 	    s2 = s1 + len;
 	    break;
@@ -557,17 +563,19 @@ ErrorHandler::xformat(const char *s, va_list val)
 	}
 
 	case '<':
-	case '>':
-	case ',': {
-	    numbuf[0] = '\'';
-	    s1 = numbuf;
-	    s2 = s1 + 1;
+	    s1 = (flags & cf_utf8 ? "\342\200\230" : "\'");
+	    s2 = s1 + strlen(s1);
 	    break;
-	}
+
+	case '>':
+	case ',':
+	    s1 = (flags & cf_utf8 ? "\342\200\231" : "\'");
+	    s2 = s1 + strlen(s1);
+	    break;
 
 	case 'd':
 	case 'i':
-	    flags |= f_signed;
+	    flags |= cf_signed;
 	case 'u':
 	number: {
 	    // protect numbuf from overflow
@@ -583,14 +591,14 @@ ErrorHandler::xformat(const char *s, va_list val)
 	    case 'H':
 	    case -8:
 		num = (unsigned char) va_arg(val, int);
-		if ((flags & f_signed) && (signed char) num < 0)
-		    num = -(signed char) num, flags |= f_negative;
+		if ((flags & cf_signed) && (signed char) num < 0)
+		    num = -(signed char) num, flags |= cf_negative;
 		break;
 	    case 'h':
 	    case -16:
 		num = (unsigned short) va_arg(val, int);
-		if ((flags & f_signed) && (short) num < 0)
-		    num = -(short) num, flags |= f_negative;
+		if ((flags & cf_signed) && (short) num < 0)
+		    num = -(short) num, flags |= cf_negative;
 		break;
 	    case 0:
 	    case -32:
@@ -601,8 +609,8 @@ ErrorHandler::xformat(const char *s, va_list val)
 	    case 'z':
 #endif
 		num = va_arg(val, unsigned);
-		if ((flags & f_signed) && (int) num < 0)
-		    num = -(int) num, flags |= f_negative;
+		if ((flags & cf_signed) && (int) num < 0)
+		    num = -(int) num, flags |= cf_negative;
 		break;
 #if HAVE_INT64_TYPES
 # if SIZEOF_LONG == 8
@@ -616,10 +624,10 @@ ErrorHandler::xformat(const char *s, va_list val)
 # endif
 	    case -64: {
 		uint64_t qnum = va_arg(val, uint64_t);
-		if ((flags & f_signed) && (int64_t)qnum < 0)
-		    qnum = -(int64_t) qnum, flags |= f_negative;
+		if ((flags & cf_signed) && (int64_t)qnum < 0)
+		    qnum = -(int64_t) qnum, flags |= cf_negative;
 		StringAccum sa;
-		sa.append_numeric(static_cast<String::uint_large_t>(qnum), base, (flags & f_uppercase));
+		sa.append_numeric(static_cast<String::uint_large_t>(qnum), base, (flags & cf_uppercase));
 		s1 = s2 - sa.length();
 		memcpy(const_cast<char*>(s1), sa.data(), s2 - s1);
 		goto got_number;
@@ -643,7 +651,7 @@ ErrorHandler::xformat(const char *s, va_list val)
 	    goto number;
 
 	case 'X':
-	    flags |= f_uppercase;
+	    flags |= cf_uppercase;
 	case 'x':
 	    base = 16;
 	    goto number;
@@ -652,7 +660,7 @@ ErrorHandler::xformat(const char *s, va_list val)
 	    void *v = va_arg(val, void *);
 	    s2 = numbuf + NUMBUF_SIZE;
 	    s1 = do_number((unsigned long)v, (char *)s2, 16, flags);
-	    s1 = do_number_flags((char *)s1, (char *)s2, 16, flags | f_alternate_form,
+	    s1 = do_number_flags((char *)s1, (char *)s2, 16, flags | cf_alternate_form,
 				 precision, field_width);
 	    break;
 	}
@@ -662,7 +670,7 @@ ErrorHandler::xformat(const char *s, va_list val)
 	case 'E': case 'F': case 'G': {
 	    char format[80], *f = format, new_numbuf[NUMBUF_SIZE];
 	    *f++ = '%';
-	    if (flags & f_alternate_form)
+	    if (flags & cf_alternate_form)
 		*f++ = '#';
 	    if (precision >= 0)
 		f += sprintf(f, ".%d", precision);
@@ -674,7 +682,7 @@ ErrorHandler::xformat(const char *s, va_list val)
 	    s2 = numbuf + NUMBUF_SIZE;
 	    s1 = s2 - len;
 	    memcpy((char *)s1, new_numbuf, len); // note: no terminating \0
-	    s1 = do_number_flags((char *)s1, (char *)s2, 10, flags & ~f_alternate_form, -1, field_width);
+	    s1 = do_number_flags((char *)s1, (char *)s2, 10, flags & ~cf_alternate_form, -1, field_width);
 	    break;
 	}
 #endif
@@ -708,12 +716,12 @@ ErrorHandler::xformat(const char *s, va_list val)
 	if (slen > field_width)
 	    field_width = slen;
 	char *dest = msg.extend(field_width);
-	if (flags & f_left_just) {
+	if (flags & cf_left_just) {
 	    memcpy(dest, s1, slen);
 	    memset(dest + slen, ' ', field_width - slen);
 	} else {
 	    memcpy(dest + field_width - slen, s1, slen);
-	    memset(dest, (flags & f_zero_pad ? '0' : ' '), field_width - slen);
+	    memset(dest, (flags & cf_zero_pad ? '0' : ' '), field_width - slen);
 	}
     }
 
@@ -721,11 +729,31 @@ ErrorHandler::xformat(const char *s, va_list val)
 }
 
 String
+ErrorHandler::xformat(int default_flags, const char *fmt, ...)
+{
+    va_list val;
+    va_start(val, fmt);
+    String s = vxformat(default_flags, fmt, val);
+    va_end(val);
+    return s;
+}
+
+String
 ErrorHandler::xformat(const char *fmt, ...)
 {
     va_list val;
     va_start(val, fmt);
-    String s = xformat(fmt, val);
+    String s = vxformat(0, fmt, val);
+    va_end(val);
+    return s;
+}
+
+String
+ErrorHandler::format(const char *fmt, ...)
+{
+    va_list val;
+    va_start(val, fmt);
+    String s = vformat(fmt, val);
     va_end(val);
     return s;
 }
@@ -858,9 +886,9 @@ ErrorHandler::xmessage(const String &str)
 }
 
 String
-ErrorHandler::format(const char *fmt, va_list val)
+ErrorHandler::vformat(const char *fmt, va_list val)
 {
-    return xformat(fmt, val);
+    return vxformat(0, fmt, val);
 }
 
 String
@@ -882,8 +910,20 @@ ErrorHandler::emit(const String &, void *user_data, bool)
 //
 
 FileErrorHandler::FileErrorHandler(FILE *f, const String &context)
-    : _f(f), _context(context)
+    : _f(f), _context(context), _default_flags(0)
 {
+    if (isatty(fileno(_f))) {
+	char *s = getenv("LANG");
+	if (s && (strstr(s, "UTF-8") != 0 || strstr(s, "UTF8") != 0
+		  || strstr(s, "utf8") != 0))
+	    _default_flags |= cf_utf8;
+    }
+}
+
+String
+FileErrorHandler::vformat(const char *fmt, va_list val)
+{
+    return vxformat(_default_flags, fmt, val);
 }
 
 void *
@@ -895,7 +935,7 @@ FileErrorHandler::emit(const String &str, void *, bool)
     StringAccum sa;
     sa << _context << clean_landmark(landmark, true)
        << str.substring(s, str.end()) << '\n';
-    fwrite(sa.begin(), 1, sa.length(), _f);
+    (void) fwrite(sa.begin(), 1, sa.length(), _f);
     return 0;
 }
 
@@ -1040,12 +1080,12 @@ ErrorHandler::set_default_handler(ErrorHandler *errh)
 //
 
 String
-ErrorVeneer::format(const char *fmt, va_list val)
+ErrorVeneer::vformat(const char *fmt, va_list val)
 {
     if (_errh)
-	return _errh->format(fmt, val);
+	return _errh->vformat(fmt, val);
     else
-	return ErrorHandler::format(fmt, val);
+	return ErrorHandler::vformat(fmt, val);
 }
 
 String
@@ -1079,15 +1119,16 @@ ErrorVeneer::account(int level)
 // CONTEXT ERROR HANDLER
 //
 
-ContextErrorHandler::ContextErrorHandler(ErrorHandler *errh,
-					 const String &context,
-					 const String &indent,
-					 const String &context_landmark)
-    : ErrorVeneer(errh), _context(context), _indent(indent)
+ContextErrorHandler::ContextErrorHandler(ErrorHandler *errh, const char *fmt,
+					 ...)
+    : ErrorVeneer(errh), _indent(String::make_stable("  ", 2)),
+      _context_printed(false)
 {
-    if (context_landmark)
-	_context_landmark = make_landmark_anno(context_landmark);
-    if (context)
+    va_list val;
+    va_start(val, fmt);
+    _context = ErrorVeneer::vformat(fmt, val);
+    va_end(val);
+    if (_context)
 	_context = combine_anno(_context, String::make_stable("{context:context}", 17));
 }
 
@@ -1107,12 +1148,12 @@ ContextErrorHandler::decorate(const String &str)
     else
 	icstr = combine_anno(cstr, _context_landmark + _indent);
 
-    if (_context && !context_anno.equals("nocontext", 9)) {
+    if (!_context_printed && !context_anno.equals("nocontext", 9)) {
 	String astr = combine_anno(combine_anno(_context, _context_landmark),
 				   cstr.substring(cstr.begin(), cstr_endanno));
 	if (astr && astr.back() != '\n')
 	    astr += '\n';
-	_context = String();
+	_context_printed = true;
 	return ErrorVeneer::decorate(astr) + icstr;
     } else
 	return icstr;

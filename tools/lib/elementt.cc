@@ -7,6 +7,7 @@
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2007 Regents of the University of California
+ * Copyright (c) 2009 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -141,8 +142,8 @@ ElementT::redeclaration_error(ErrorHandler *errh, const char *what, String name,
     if (!what)
 	what = "";
     const char *sp = (strlen(what) ? " " : "");
-    errh->lerror(landmark, "redeclaration of %s%s'%s'", what, sp, name.c_str());
-    errh->lerror(old_landmark, "'%s' previously declared here", name.c_str());
+    errh->lerror(landmark, "redeclaration of %s%s%<%s%>", what, sp, name.c_str());
+    errh->lerror(old_landmark, "%<%s%> previously declared here", name.c_str());
 }
 
 ElementClassT *

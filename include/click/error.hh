@@ -75,7 +75,7 @@ CLICK_DECLS
  * 'xxx':".
  * @code
  * FileErrorHandler errh1(stderr);
- * ContextErrorHandler errh2(&errh1, "While counting to 2:", "  ");
+ * ContextErrorHandler errh2(&errh1, "While counting to 2:");
  * errh2.error("An error occurred.");
  * errh2.error("Another error occurred.");
  *     // prints "While counting to 2:\n"
@@ -232,9 +232,9 @@ class ErrorHandler { public:
      * @param fmt error message format
      * @param val format arguments
      *
-     * Shorthand for xmessage(@a anno, format(@a fmt, @a val)). */
+     * Shorthand for xmessage(@a anno, vformat(@a fmt, @a val)). */
     int xmessage(const String &anno, const char *fmt, va_list val) {
-	return xmessage(anno, format(fmt, val));
+	return xmessage(anno, vformat(fmt, val));
     }
     /** @brief Print an error message, adding landmark and other annotations.
      * @param landmark landmark annotation
@@ -254,11 +254,11 @@ class ErrorHandler { public:
      * @param fmt error message format
      * @param val format arguments
      *
-     * Shorthand for xmessage(@a landmark, @a anno, format(@a fmt, @a
+     * Shorthand for xmessage(@a landmark, @a anno, vformat(@a fmt, @a
      * val)). */
     int xmessage(const String &landmark, const String &anno,
 		 const char *fmt, va_list val) {
-	return xmessage(landmark, anno, format(fmt, val));
+	return xmessage(landmark, anno, vformat(fmt, val));
     }
 
 
@@ -297,6 +297,7 @@ class ErrorHandler { public:
 
 
     /** @brief Format an error string.
+     * @param default_flags default ConversionFlags
      * @param fmt printf-like format string
      * @return formatted error string
      *
@@ -353,9 +354,15 @@ class ErrorHandler { public:
      * prints a single quote.</td></tr>
      *
      * </table> */
+    static String xformat(int default_flags, const char *fmt, ...);
+    /** @overload */
+    static String vxformat(int default_flags, const char *fmt, va_list val);
+    /** @overload */
     static String xformat(const char *fmt, ...);
     /** @overload */
-    static String xformat(const char *fmt, va_list val);
+    static String vxformat(const char *fmt, va_list val) {
+	return vxformat(0, fmt, val);
+    }
 
 
     /** @brief Format an error string.
@@ -366,8 +373,18 @@ class ErrorHandler { public:
      * it is called implicitly by the error()/xmessage() functions.
      *
      * This virtual function is called to format an error message.  The
-     * default implementation returns the result of xformat(@a fmt, @a val). */
-    virtual String format(const char *fmt, va_list val);
+     * default implementation returns the result of vxformat(@a fmt, @a val). */
+    virtual String vformat(const char *fmt, va_list val);
+
+    /** @brief Format an error string.
+     * @param fmt format string
+     *
+     * @warning ErrorHandler users don't usually need to call this function
+     * directly.
+     *
+     * This is a convenience function that calls vformat(const char *fmt,
+     * va_list val) for a va_list taken from the ellipsis arguments. */
+    String format(const char *fmt, ...);
 
     /** @brief Decorate an error message.
      * @param str error message, possibly with annotations
@@ -549,9 +566,16 @@ class ErrorHandler { public:
     struct Conversion;
     typedef String (*ConversionFunction)(int flags, VA_LIST_REF_T);
     enum ConversionFlags {
-	f_zero_pad = 1, f_plus_positive = 2, f_space_positive = 4,
-	f_left_just = 8, f_alternate_form = 16, f_uppercase = 32,
-	f_signed = 64, f_negative = 128, f_singlequote = 256
+	cf_zero_pad = 1,	///< Set for conversions using the '0' flag.
+	cf_plus_positive = 2,	///< Set for conversions using the '+' flag.
+	cf_space_positive = 4,	///< Set for conversions using the ' ' flag.
+	cf_left_just = 8,	///< Set for conversions using the '-' flag.
+	cf_alternate_form = 16,	///< Set for conversions using the '#' flag.
+	cf_singlequote = 32,	///< Set for conversions using the '\'' flag.
+	cf_uppercase = 64,	///< Set for 'X' conversions (not 'x').
+	cf_signed = 128,	///< Set for conversions of signed numbers.
+	cf_negative = 256,	///< Set for conversions of negative numbers.
+	cf_utf8 = 1024		///< Set to use UTF-8 characters on output.
     };
     static Conversion *add_conversion(const String &name, ConversionFunction func);
     static int remove_conversion(Conversion *conversion);
@@ -605,7 +629,7 @@ class ErrorVeneer : public ErrorHandler { public:
 	: _errh(errh) {
     }
 
-    String format(const char *fmt, va_list val);
+    String vformat(const char *fmt, va_list val);
     String decorate(const String &str);
     void *emit(const String &str, void *user_data, bool more);
     void account(int level);
@@ -631,6 +655,11 @@ class FileErrorHandler : public ErrorHandler { public:
      * @param prefix string to prefix every error line */
     FileErrorHandler(FILE *f, const String &prefix = String());
 
+    void set_default_flags(int default_flags) {
+	_default_flags = default_flags;
+    }
+
+    String vformat(const char *fmt, va_list val);
     void *emit(const String &str, void *user_data, bool more);
     void account(int level);
 
@@ -638,6 +667,7 @@ class FileErrorHandler : public ErrorHandler { public:
 
     FILE *_f;
     String _context;
+    int _default_flags;
 
 };
 #endif
@@ -675,7 +705,7 @@ class LocalErrorHandler : public ErrorVeneer { public:
  * grouped underneath the context.
  * @code
  * FileErrorHandler errh1(stderr);
- * ContextErrorHandler errh2(&errh1, "While counting to 2:", "  ");
+ * ContextErrorHandler errh2(&errh1, "While counting to 2:");
  * errh2.error("An error occurred.");
  * errh2.error("Another error occurred.");
  *     // prints "While counting to 2:\n"
@@ -689,7 +719,7 @@ class LocalErrorHandler : public ErrorVeneer { public:
  * annotation.
  * @code
  * FileErrorHandler errh1(stderr);
- * ContextErrorHandler errh2(&errh1, "While counting to 2:", "  ");
+ * ContextErrorHandler errh2(&errh1, "While counting to 2:");
  * errh2.error("{context:no}An error occurred.");
  * errh2.error("Another error occurred.");
  *     // prints "An error occurred.\n"
@@ -698,7 +728,7 @@ class LocalErrorHandler : public ErrorVeneer { public:
  *
  * FileErrorHandler errh1(stderr);
  * PrefixErrorHandler noctx_errh(stderr, "{context:no}");
- * ContextErrorHandler errh2(&errh1, "While counting to 2:", "  ");
+ * ContextErrorHandler errh2(&errh1, "While counting to 2:");
  * errh2.error("An error occurred.");
  * errh2.error("Another error occurred.");
  *     // prints "An error occurred.\n"
@@ -711,15 +741,47 @@ class ContextErrorHandler : public ErrorVeneer { public:
 
     /** @brief Construct a ContextErrorHandler.
      * @param errh base ErrorHandler
-     * @param context context lines
-     * @param indent string to indent errors
-     * @param context_landmark landmark used for context lines
+     * @param fmt format for context lines
      *
-     * A nonempty @a context_landmark is used as the landmark for the context,
-     * as well as the default landmark for error messages themselves. */
-    ContextErrorHandler(ErrorHandler *errh, const String &context,
-			const String &indent = String::make_stable("  ", 2),
-			const String &context_landmark = String());
+     * The context message is formed by @a errh->format() using @a fmt and
+     * any additional arguments. */
+    ContextErrorHandler(ErrorHandler *errh, const char *fmt, ...);
+
+    /** @brief Return true iff the context has already been printed. */
+    bool context_printed() const {
+	return _context_printed;
+    }
+
+    /** @brief Set whether the context has been printed. */
+    void set_context_printed(bool x) {
+	_context_printed = x;
+    }
+
+    /** @brief Set the context string to @a str. */
+    void set_context(const String &str) {
+	_context = str;
+    }
+
+    /** @brief Set the indent string to @a str.
+     *
+     * The indent string is prepended to all non-context messages.  It can
+     * contain landmarks as well as non-landmark text.  The default indent
+     * string is "  " (two spaces). */
+    void set_indent(const String &str) {
+	_indent = str;
+    }
+
+    /** @brief Set the context landmark to @a str.
+     *
+     * The context landmark is used to decorate the context, and also applied
+     * to any error messages that lack landmarks of their own.  The default
+     * context landmark is empty.
+     *
+     * @note The input @a str is passed to
+     * ErrorHandler::make_landmark_anno(). */
+    void set_context_landmark(const String &str) {
+	_context_landmark = make_landmark_anno(str);
+    }
 
     String decorate(const String &str);
 
@@ -728,6 +790,7 @@ class ContextErrorHandler : public ErrorVeneer { public:
     String _context;
     String _indent;
     String _context_landmark;
+    bool _context_printed;
 
 };
 

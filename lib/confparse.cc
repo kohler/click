@@ -3255,13 +3255,13 @@ default_parsefunc(cp_value *v, const String &arg,
 
 #ifndef CLICK_TOOL
    case cpiElement: {
-     ContextErrorHandler cerrh(errh, String(argname) + ":");
+     ContextErrorHandler cerrh(errh, "%s:", argname);
      v->v.element = cp_element(arg, context, &cerrh);
      break;
    }
 
    case cpiHandlerName: {
-     ContextErrorHandler cerrh(errh, String(argname) + ":");
+     ContextErrorHandler cerrh(errh, "%s:", argname);
      cp_handler_name(arg, &v->v.element, &v->v2_string, context, &cerrh);
      break;
    }
@@ -3277,7 +3277,7 @@ default_parsefunc(cp_value *v, const String &arg,
     goto handler_call;
 
    handler_call: {
-     ContextErrorHandler cerrh(errh, String(argname) + ":");
+     ContextErrorHandler cerrh(errh, "%s:", argname);
      HandlerCall garbage(arg);
      garbage.initialize(underflower, context, &cerrh);
      break;

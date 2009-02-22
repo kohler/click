@@ -4,6 +4,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2009 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -46,7 +47,7 @@ click_maybe_define(const char *arg, ErrorHandler *errh)
 	if (*s == '=' && s > arg) {
 	    if (!global_scope.define(String(arg, s), s + 1, true)) {
 		if (errh)
-		    errh->error("parameter '%.*s' multiply defined", s - arg, arg);
+		    errh->error("parameter %<%.*s%> multiply defined", s - arg, arg);
 		return -1;
 	    } else
 		return 1;
