@@ -37,6 +37,11 @@ CLICK_DECLS
 String
 EtherAddress::unparse_dash() const
 {
+    static_assert(sizeof(EtherAddress) == 6);
+#if __GNUC__
+    static_assert(__alignof__(EtherAddress) <= 2);
+#endif
+
     String str = String::make_garbage(17);
     // NB: mutable_c_str() creates space for the terminating null character
     if (char *x = str.mutable_c_str()) {

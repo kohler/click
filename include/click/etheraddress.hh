@@ -118,7 +118,7 @@ class EtherAddress { public:
 	_data[0] = _data[1] = _data[2] = m;
     }
 
-};
+} CLICK_SIZE_PACKED_ATTRIBUTE;
 
 inline EtherAddress EtherAddress::broadcast() {
     return make_broadcast();
