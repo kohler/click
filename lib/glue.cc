@@ -541,16 +541,24 @@ click_qsort(void *base, size_t n, size_t size,
 	    }
 	    pm = cq_med3(p1, pm, p2, compar, thunk);
 	}
+
+	// 2009.Jan.21: A tiny change makes the sort complete even with a
+	// bogus comparator, such as "return 1;".  Guarantee that "a" holds
+	// the pivot.  This means we don't need to compare "a" against the
+	// pivot explicitly.  (See initialization of "pa = pb = a + size".)
+	// Subdivisions will thus never include the pivot, even if "cmp(pivot,
+	// pivot)" returns nonzero.  We will thus never run indefinitely.
 	cq_word_t pivottmp;
 	char *pivot;
 	if (swaptype)
-	    pivot = a, cq_swap(pivot, pm);
+	    pivot = a;
 	else
 	    pivot = (char *) &pivottmp, pivottmp = *(cq_word_t *) pm;
+	cq_swap(a, pm);
 
 	// partition
 	char *pa, *pb, *pc, *pd;
-	pa = pb = a;
+	pa = pb = a + size;
 	pc = pd = a + (n - 1) * size;
 	int r;
 	while (1) {
