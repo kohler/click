@@ -147,9 +147,16 @@
 
 /* Define ARCH_IS_BIG_ENDIAN based on CLICK_BYTE_ORDER. */
 #if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
-#define ARCH_IS_BIG_ENDIAN	1
+# define ARCH_IS_BIG_ENDIAN	1
 #elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
-#define ARCH_IS_BIG_ENDIAN	0
+# define ARCH_IS_BIG_ENDIAN	0
+#endif
+
+/* Define macro for htons() on constants (allows htons() in switch cases). */
+#if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
+# define click_constant_htons(x)	(x)
+#elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
+# define click_constant_htons(x)	((((x) >> 8) & 255) | (((x) & 255) << 8))
 #endif
 
 /* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_PROVIDES, ELEMENT_HEADER,
