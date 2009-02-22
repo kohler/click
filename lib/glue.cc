@@ -383,9 +383,9 @@ uint32_t click_random_seed = 152;
 void
 click_random_srandom()
 {
-    static const int bufsiz = 16;
+    static const int bufsiz = 64;
     union {
-	uint8_t c[bufsiz];
+	char c[bufsiz];
 	uint32_t u32[bufsiz / 4];
     } buf;
     int pos = 0;
@@ -393,7 +393,7 @@ click_random_srandom()
     ((Timestamp *) (buf.c + pos))->set_now();
     pos += sizeof(Timestamp);
 
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL
 # ifdef O_NONBLOCK
     int fd = open("/dev/random", O_RDONLY | O_NONBLOCK);
 # elif defined(O_NDELAY)
