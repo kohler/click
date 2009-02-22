@@ -65,7 +65,7 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
     int next_timeout = 0;
     for (int i = 0; i < conf.size(); i++) {
 	String text = conf[i];
-	String word = cp_pop_spacevec(text);
+	String word = cp_shift_spacevec(text);
 
 	if (!word)
 	    /* ignore empty arguments */;
@@ -88,7 +88,7 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
 		next_timeout = 0;
 	    }
 	} else if (word == "write") {
-	    word = cp_pop_spacevec(text);
+	    word = cp_shift_spacevec(text);
 	    if (cp_handler_name(word, &e, &hname, this, errh)) {
 		add(e, hname, text, next_timeout);
 		next_timeout = 0;

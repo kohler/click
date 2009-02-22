@@ -975,7 +975,7 @@ bool delt::reccss(crouter *cr, int change, int *z_index_ptr)
 	&& _visible) {
 	ddecor::free_list(_decor);
 	String s = _des->decorations;
-	while (String dname = cp_pop_spacevec(s))
+	while (String dname = cp_shift_spacevec(s))
 	    if (String dtype = cr->ccss()->vstring("style", dname, cr, this)) {
 		if (dtype == "fullness")
 		    _decor = new dfullness_decor(dname, cr, this, _decor);

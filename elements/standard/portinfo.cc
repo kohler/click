@@ -41,12 +41,12 @@ PortInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 
     for (int i = 0; i < conf.size(); i++) {
 	String str = conf[i];
-	String name_str = cp_pop_spacevec(str);
+	String name_str = cp_shift_spacevec(str);
 	if (!name_str		// allow empty arguments
 	    || name_str[0] == '#') // allow comments
 	    continue;
 
-	String port_str = cp_pop_spacevec(str);
+	String port_str = cp_shift_spacevec(str);
 	uint32_t port;
 	int32_t proto = IP_PROTO_TCP_OR_UDP;
 	const char *slash = cp_integer(port_str.begin(), port_str.end(), 0, &port);
@@ -70,7 +70,7 @@ PortInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 		NameInfo::define(NameInfo::T_UDP_PORT, this, name_str, &port, 4);
 	    } else
 		NameInfo::define(NameInfo::T_IP_PORT + proto, this, name_str, &port, 4);
-	    name_str = cp_pop_spacevec(str);
+	    name_str = cp_shift_spacevec(str);
 	} while (name_str && name_str[0] != '#');
     }
 

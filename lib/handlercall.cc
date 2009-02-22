@@ -41,7 +41,7 @@ HandlerCall::initialize(int flags, const Element* context, ErrorHandler* errh)
 
     if (!initialized()) {
 	// parse handler name
-	if (!cp_handler_name(cp_pop_spacevec(value), &e, &hname, context, errh))
+	if (!cp_handler_name(cp_shift_spacevec(value), &e, &hname, context, errh))
 	    return -EINVAL;
 	// local handler reference
 	if (e->eindex() == -1 && _value[0] != '.' && Router::handler(context, hname))

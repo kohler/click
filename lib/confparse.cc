@@ -779,7 +779,7 @@ cp_spacevec(const String &str, Vector<String> &conf)
   if (str.length() == 0)
     return;
 
-  // collect arguments with cp_pop_spacevec
+  // collect arguments like cp_shift_spacevec
   const char *s = str.data();
   const char *end = str.end();
   while ((s = cp_skip_comment_space(s, end)) < end) {
@@ -789,16 +789,8 @@ cp_spacevec(const String &str, Vector<String> &conf)
   }
 }
 
-/// @brief  Remove and return the first space-separated argument from @a str.
-/// @param[in,out]  str  space-separated configuration string
-///
-/// The first space-separated argument in the configuration string is removed
-/// and returned.  The returned argument is passed through cp_uncomment().
-/// @a str is set to the remaining portion of the string, with any preceding
-/// space removed.  If the input string is all spaces and comments, then both
-/// the returned string and @a str will be empty.
 String
-cp_pop_spacevec(String &str)
+cp_shift_spacevec(String &str)
 {
   const char *item = cp_skip_comment_space(str.begin(), str.end());
   const char *item_end = skip_spacevec_item(item, str.end());
@@ -2513,15 +2505,24 @@ cp_tcpudp_port(const String &str, int proto, uint16_t *result
  * argument.
  */
 Element *
-cp_element(const String &str, const Element *context, ErrorHandler *errh)
+cp_element(const String &str, const Element *context, ErrorHandler *errh,
+	   const char *argname)
 {
-  String name;
-  if (!cp_string(str, &name)) {
-    if (errh)
-      errh->error("bad name format");
-    return 0;
-  } else
-    return context->router()->find(name, context, errh);
+    String name;
+    if (!cp_string(str, &name)) {
+	if (errh && argname)
+	    errh->error("type mismatch: %s requires element name", argname);
+	else if (errh)
+	    errh->error("type mismatch: requires element name");
+	return 0;
+    }
+
+    Element *e = context->router()->find(name, context);
+    if (!e && errh && argname)
+	errh->error("%s does not name an element", argname);
+    else if (!e && errh)
+	errh->error("%<%s%> does not name an element", name.c_str());
+    return e;
 }
 
 /** @brief Parse an element reference from @a str.
@@ -2540,15 +2541,10 @@ cp_element(const String &str, const Element *context, ErrorHandler *errh)
  * argument.
  */
 Element *
-cp_element(const String &str, Router *router, ErrorHandler *errh)
+cp_element(const String &str, Router *router, ErrorHandler *errh,
+	   const char *argname)
 {
-  String name;
-  if (!cp_string(str, &name)) {
-    if (errh)
-      errh->error("bad name format");
-    return 0;
-  } else
-    return router->find(name, errh);
+    return cp_element(str, router->root_element(), errh, argname);
 }
 
 /** @brief Parse a handler name from @a str.
@@ -2817,6 +2813,7 @@ const CpVaParseCmd
   cpUnsignedShort	= "u_short",
   cpInteger		= "int",
   cpUnsigned		= "u_int",
+  cpSize		= "size_t",
   cpNamedInteger	= "named_int",
   cpInteger64		= "long_long",
   cpUnsigned64		= "u_long_long",
@@ -2841,6 +2838,7 @@ const CpVaParseCmd
   cpTCPPort		= "tcp_port",
   cpUDPPort		= "udp_port",
   cpElement		= "element",
+  cpElementCast		= "element_cast",
   cpHandlerName		= "handler_name",
   cpHandler		= "handler",
   cpHandlerCallRead	= "handler_call_read",
@@ -2877,6 +2875,7 @@ enum {
   cpiUnsignedShort,
   cpiInteger,
   cpiUnsigned,
+  cpiSize,
   cpiNamedInteger,
   cpiInteger64,
   cpiUnsigned64,
@@ -2900,6 +2899,7 @@ enum {
   cpiTCPPort,
   cpiUDPPort,
   cpiElement,
+  cpiElementCast,
   cpiHandlerName,
   cpiHandlerCallRead,
   cpiHandlerCallWrite,
@@ -3041,7 +3041,7 @@ default_parsefunc(cp_value *v, const String &arg,
 
     case cpiNamedInteger:
 #ifndef CLICK_TOOL
-      if (NameInfo::query(v->extra, context, arg, &v->v.i, 4))
+      if (NameInfo::query(v->extra.i, context, arg, &v->v.i, 4))
 	  break;
 #endif
       goto handle_int32_t;
@@ -3050,7 +3050,7 @@ default_parsefunc(cp_value *v, const String &arg,
     if (!cp_integer(arg, &v->v.i))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s too large; max %d", argname, v->v.i);
+      errh->error("%s too large, max %d", argname, v->v.i);
     else if (v->v.i < underflower)
       errh->error("%s must be >= %d", argname, underflower);
     else if (v->v.i > (int)overflower)
@@ -3061,7 +3061,7 @@ default_parsefunc(cp_value *v, const String &arg,
     if (!cp_integer(arg, &v->v.u))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s too large; max %u", argname, v->v.u);
+      errh->error("%s too large, max %u", argname, v->v.u);
     else if (v->v.u > overflower)
       errh->error("%s must be <= %u", argname, overflower);
     break;
@@ -3071,32 +3071,39 @@ default_parsefunc(cp_value *v, const String &arg,
     if (!cp_integer(arg, &v->v.i64))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s too large; max %^64d", argname, v->v.i64);
+      errh->error("%s too large, max %^64d", argname, v->v.i64);
     break;
 
    case cpiUnsigned64:
     if (!cp_integer(arg, &v->v.u64))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s too large; max %^64u", argname, v->v.u64);
+      errh->error("%s too large, max %^64u", argname, v->v.u64);
     break;
 #endif
 
+  case cpiSize:
+      if (!cp_integer(arg, &v->v.size))
+	  goto type_mismatch;
+      else if (cp_errno == CPE_OVERFLOW)
+	  errh->error("%s too large, max %zu", argname, v->v.size);
+      break;
+
    case cpiReal10:
-    if (!cp_real10(arg, v->extra, &v->v.i))
+    if (!cp_real10(arg, v->extra.i, &v->v.i))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_real10(v->v.i, v->extra);
-      errh->error("%s too large; max %s", argname, m.c_str());
+      String m = cp_unparse_real10(v->v.i, v->extra.i);
+      errh->error("%s too large, max %s", argname, m.c_str());
     }
     break;
 
    case cpiUnsignedReal10:
-    if (!cp_real10(arg, v->extra, &v->v.u))
+    if (!cp_real10(arg, v->extra.i, &v->v.u))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_real10(v->v.u, v->extra);
-      errh->error("%s too large; max %s", argname, m.c_str());
+      String m = cp_unparse_real10(v->v.u, v->extra.i);
+      errh->error("%s too large, max %s", argname, m.c_str());
     }
     break;
 
@@ -3113,7 +3120,7 @@ default_parsefunc(cp_value *v, const String &arg,
     if (!cp_seconds_as(arg, 0, &v->v.u))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s too large; max %u", argname, v->v.u);
+      errh->error("%s too large, max %u", argname, v->v.u);
     break;
 
    case cpiSecondsAsMilli:
@@ -3121,7 +3128,7 @@ default_parsefunc(cp_value *v, const String &arg,
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_milliseconds(v->v.u);
-      errh->error("%s too large; max %s", argname, m.c_str());
+      errh->error("%s too large, max %s", argname, m.c_str());
     }
     break;
 
@@ -3130,7 +3137,7 @@ default_parsefunc(cp_value *v, const String &arg,
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_microseconds(v->v.u);
-      errh->error("%s too large; max %s", argname, m.c_str());
+      errh->error("%s too large, max %s", argname, m.c_str());
     }
     break;
 
@@ -3171,28 +3178,28 @@ default_parsefunc(cp_value *v, const String &arg,
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_bandwidth(v->v.u);
-      errh->error("%s too large; max %s", argname, m.c_str());
+      errh->error("%s too large, max %s", argname, m.c_str());
     } else if (cp_errno == CPE_NOUNITS)
       errh->warning("no units on bandwidth %s, assuming Bps", argname);
     break;
 
    case cpiReal2:
-    if (!cp_real2(arg, v->extra, &v->v.i)) {
-      // CPE_INVALID would indicate a bad 'v->extra'
+    if (!cp_real2(arg, v->extra.i, &v->v.i)) {
+      // CPE_INVALID would indicate a bad 'v->extra.i'
       goto type_mismatch;
     } else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_real2(v->v.i, v->extra);
-      errh->error("%s too large; max %s", argname, m.c_str());
+      String m = cp_unparse_real2(v->v.i, v->extra.i);
+      errh->error("%s too large, max %s", argname, m.c_str());
     }
     break;
 
    case cpiUnsignedReal2:
-    if (!cp_real2(arg, v->extra, &v->v.u)) {
-      // CPE_INVALID would indicate a bad 'v->extra'
+    if (!cp_real2(arg, v->extra.i, &v->v.u)) {
+      // CPE_INVALID would indicate a bad 'v->extra.i'
       goto type_mismatch;
     } else if (cp_errno == CPE_OVERFLOW) {
-      String m  = cp_unparse_real2(v->v.u, v->extra);
-      errh->error("%s too large; max %s", argname, m.c_str());
+      String m  = cp_unparse_real2(v->v.u, v->extra.i);
+      errh->error("%s too large, max %s", argname, m.c_str());
     }
     break;
 
@@ -3254,11 +3261,17 @@ default_parsefunc(cp_value *v, const String &arg,
 #endif
 
 #ifndef CLICK_TOOL
-   case cpiElement: {
-     ContextErrorHandler cerrh(errh, "%s:", argname);
-     v->v.element = cp_element(arg, context, &cerrh);
-     break;
-   }
+  case cpiElement:
+      v->v.element = cp_element(arg, context, errh, argname);
+      break;
+
+  case cpiElementCast: {
+      Element *e = cp_element(arg, context, errh, argname);
+      v->v.p = 0;
+      if (e && !(v->v.p = e->cast(v->extra.c_str)))
+	  errh->error("%s type mismatch, expected %s", argname, v->extra.c_str);
+      break;
+  }
 
    case cpiHandlerName: {
      ContextErrorHandler cerrh(errh, "%s:", argname);
@@ -3298,7 +3311,7 @@ default_parsefunc(cp_value *v, const String &arg,
 
 #if !CLICK_TOOL
     case cpiAnno:
-      if (!cp_anno(arg, v->extra, &v->v.i  CP_PASS_CONTEXT))
+      if (!cp_anno(arg, v->extra.i, &v->v.i  CP_PASS_CONTEXT))
 	  goto type_mismatch;
       break;
 #endif
@@ -3387,6 +3400,12 @@ default_storefunc(cp_value *v  CP_CONTEXT)
      break;
    }
 #endif
+
+  case cpiSize: {
+      size_t *sizestore = (size_t *) v->store;
+      *sizestore = *((size_t *) v->v.size);
+      break;
+  }
 
 #if CLICK_USERLEVEL || CLICK_TOOL
    case cpiFileOffset: {
@@ -3500,6 +3519,12 @@ default_storefunc(cp_value *v  CP_CONTEXT)
      break;
    }
 
+  case cpiElementCast: {
+      void **caststore = (void **) v->store;
+      *caststore = v->v.p;
+      break;
+  }
+
    case cpiHandlerName: {
      Element **elementstore = (Element **)v->store;
      String *hnamestore = (String *)v->store2;
@@ -3566,7 +3591,7 @@ stringlist_parsefunc(cp_value *v, const String &arg,
 	if (!cp_integer(arg, &v->v.i))
 	    errh->error("%s has type %s", argname, argtype->description);
 	else if (cp_errno == CPE_OVERFLOW)
-	    errh->error("%s too large; max %d", argname, v->v.i);
+	    errh->error("%s too large, max %d", argname, v->v.i);
     } else
 	errh->error("%s has type %s", argname, argtype->description);
 }
@@ -3782,7 +3807,11 @@ CpVaHelper::develop_values(va_list val, ErrorHandler *errh)
     // store stuff in v
     v->description = va_arg(val, const char *); // NB deprecated
     if (argtype->flags & cpArgExtraInt)
-      v->extra = va_arg(val, int);
+	v->extra.i = va_arg(val, int);
+    else if (argtype->flags & cpArgExtraCStr) {
+	if (!(v->extra.c_str = va_arg(val, const char *)))
+	    return errh->error("missing extra parameter");
+    }
     if (confirm_keywords) {
 	v->store_confirm = va_arg(val, bool *);
 	*v->store_confirm = false;
@@ -3843,7 +3872,7 @@ CpVaHelper::develop_kvalues(va_list val, ErrorHandler *errh)
     const char *command_name = va_arg(val, const char *);
     const cp_argtype *argtype = cp_find_argtype(command_name);
     if (!argtype)
-      return errh->error("unknown argument type '%s'!", command_name);
+      return errh->error("unknown argument type %<%s%>!", command_name);
     v->argtype = argtype;
     v->v.i = (flags & (cpkMandatory | cpkDeprecated));
 
@@ -3857,7 +3886,11 @@ CpVaHelper::develop_kvalues(va_list val, ErrorHandler *errh)
     // store stuff in v
     v->description = "?"; // NB deprecated
     if (argtype->flags & cpArgExtraInt)
-      v->extra = va_arg(val, int);
+	v->extra.i = va_arg(val, int);
+    else if (argtype->flags & cpArgExtraCStr) {
+	if (!(v->extra.c_str = va_arg(val, const char *)))
+	    return errh->error("missing extra parameter");
+    }
     v->store = va_arg(val, void *);
     if (argtype->flags & cpArgStore2)
       v->store2 = va_arg(val, void *);
@@ -4784,6 +4817,7 @@ cp_va_static_initialize()
     cp_register_argtype(cpUnsignedShort, "unsigned short", 0, default_parsefunc, default_storefunc, cpiUnsignedShort);
     cp_register_argtype(cpInteger, "int", 0, default_parsefunc, default_storefunc, cpiInteger);
     cp_register_argtype(cpUnsigned, "unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned);
+    cp_register_argtype(cpSize, "size_t", 0, default_parsefunc, default_storefunc, cpiSize);
     cp_register_argtype(cpNamedInteger, "named int", cpArgExtraInt, default_parsefunc, default_storefunc, cpiNamedInteger);
 #if HAVE_INT64_TYPES
     cp_register_argtype(cpInteger64, "64-bit int", 0, default_parsefunc, default_storefunc, cpiInteger64);
@@ -4811,6 +4845,7 @@ cp_va_static_initialize()
     cp_register_argtype(cpUDPPort, "UDP port", 0, default_parsefunc, default_storefunc, cpiUDPPort);
 #if !CLICK_TOOL
     cp_register_argtype(cpElement, "element name", 0, default_parsefunc, default_storefunc, cpiElement);
+    cp_register_argtype(cpElementCast, "cast element name", cpArgExtraCStr, default_parsefunc, default_storefunc, cpiElementCast);
     cp_register_argtype(cpHandlerName, "handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiHandlerName);
     cp_register_argtype(cpHandlerCallRead, "read handler name", 0, default_parsefunc, default_storefunc, cpiHandlerCallRead);
     cp_register_argtype(cpHandlerCallWrite, "write handler name and value", 0, default_parsefunc, default_storefunc, cpiHandlerCallWrite);

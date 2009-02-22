@@ -35,8 +35,8 @@ int
 FlowInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     for (String *it = conf.begin(); it != conf.end(); ++it) {
-	String name = cp_pop_spacevec(*it);
-	String code = cp_pop_spacevec(*it);
+	String name = cp_shift_spacevec(*it);
+	String code = cp_shift_spacevec(*it);
 	Element *e;
 	if (!name || !code || *it)
 	    errh->error("expected 'ELEMENT CODE'");

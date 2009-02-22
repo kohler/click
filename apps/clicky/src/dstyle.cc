@@ -1805,7 +1805,7 @@ static int parse_autorefresh(String str, const char *medium, int *period)
 {
     int on = -1;
     double d;
-    while (String x = cp_pop_spacevec(str))
+    while (String x = cp_shift_spacevec(str))
 	if (x.equals("on", 2) || (medium && x.equals("both", 4)))
 	    on = (medium ? 2 : 1);
 	else if (x.equals("off", 3))
@@ -1982,7 +1982,7 @@ ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, crouter *cr,
 	    sty->type = dactivity_rate;
 	    s = s.substring(4);
 	    sty->rate_period = 1;
-	    (void) cp_seconds(cp_pop_spacevec(s), &sty->rate_period);
+	    (void) cp_seconds(cp_shift_spacevec(s), &sty->rate_period);
 	    sty->rate_period = std::max(sty->rate_period, 0.01);
 	} else
 	    sty->type = dactivity_absolute;
@@ -2007,7 +2007,7 @@ ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, crouter *cr,
 	    sty->colors.resize(sty->colors.size() + 5);
 	    sty->colors[x] = -1;
 	    if (*vsp && isdigit((unsigned char) (*vsp)[0])) {
-		if (!cp_relative(cp_pop_spacevec(*vsp), &sty->colors[x])
+		if (!cp_relative(cp_shift_spacevec(*vsp), &sty->colors[x])
 		    || sty->colors[x] < 0 || sty->colors[x] > 1)
 		    sty->colors[x] = -1;
 	    }

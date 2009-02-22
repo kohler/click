@@ -109,7 +109,7 @@ int
 IP6RouteTable::ctrl_handler(const String &conf_in, Element *e, void *thunk, ErrorHandler *errh)
 {
     String conf = conf_in;
-    String first_word = cp_pop_spacevec(conf);
+    String first_word = cp_shift_spacevec(conf);
     if (first_word == "add")
 	return add_route_handler(conf, e, thunk, errh);
     else if (first_word == "remove")

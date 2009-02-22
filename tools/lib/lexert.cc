@@ -1034,7 +1034,7 @@ LexerT::yvar()
 	cp_argvec(vars.string(), args);
 	for (int i = 0; i < args.size(); i++)
 	    if (args[i]) {
-		String var = cp_pop_spacevec(args[i]);
+		String var = cp_shift_spacevec(args[i]);
 		const char *s = var.begin();
 		if (s != var.end() && *s == '$')
 		    for (s++; s != var.end() && (isalnum((unsigned char) *s) || *s == '_'); s++)

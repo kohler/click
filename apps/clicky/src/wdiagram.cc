@@ -478,8 +478,8 @@ void wdiagram::notify_active_ports(String value)
 	String line = value.substring(value.begin(), nl);
 	value = value.substring(nl, value.end());
 
-	String enamestr = cp_pop_spacevec(line);
-	String portstr = cp_pop_spacevec(line);
+	String enamestr = cp_shift_spacevec(line);
+	String portstr = cp_shift_spacevec(line);
 	ScopeChain chain(_rw->router());
 
 	ElementT *element;
@@ -561,7 +561,7 @@ void wdiagram::notify_active_port_stats(String value)
 	value = value.substring(nl, value.end());
 
 	unsigned value;
-	if (cp_integer(cp_pop_spacevec(line), &value)
+	if (cp_integer(cp_shift_spacevec(line), &value)
 	    && lineno < _active_nports)
 	    counts.push_back(value);
 

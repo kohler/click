@@ -112,8 +112,8 @@ ProcessingT::parse_flow_info(ElementT *e, ErrorHandler *)
     Vector<String> conf;
     cp_argvec(cp_expand(e->configuration(), _scope), conf);
     for (String *it = conf.begin(); it != conf.end(); ++it) {
-	String name = cp_pop_spacevec(*it);
-	String value = cp_pop_spacevec(*it);
+	String name = cp_shift_spacevec(*it);
+	String value = cp_shift_spacevec(*it);
 	if (name && value && !*it)
 	    _flow_overrides.set(name, value);
     }

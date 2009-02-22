@@ -92,7 +92,7 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 	_call_nnz = stop_nnz;
 	_call_nnz_h = new HandlerCall(name() + ".stop");
     } else if (call_nnz) {
-	if (!cp_integer(cp_pop_spacevec(call_nnz), &_call_nnz))
+	if (!cp_integer(cp_shift_spacevec(call_nnz), &_call_nnz))
 	    return errh->error("'AGGREGATE_CALL' first word should be unsigned (number of aggregates)");
 	_call_nnz_h = new HandlerCall(call_nnz);
     }
@@ -106,7 +106,7 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 	_call_count = stop_count;
 	_call_count_h = new HandlerCall(name() + ".stop");
     } else if (call_count) {
-	if (!cp_integer(cp_pop_spacevec(call_count), &_call_count))
+	if (!cp_integer(cp_shift_spacevec(call_count), &_call_count))
 	    return errh->error("'COUNT_CALL' first word should be unsigned (count)");
 	_call_count_h = new HandlerCall(call_count);
     }
@@ -496,7 +496,7 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
       case AC_AGGREGATE_CALL: {
 	  uint32_t new_nnz = (uint32_t)(-1);
 	  if (s) {
-	      if (!cp_integer(cp_pop_spacevec(s), &new_nnz))
+	      if (!cp_integer(cp_shift_spacevec(s), &new_nnz))
 		  return errh->error("argument to 'aggregate_call' should be 'N HANDLER [VALUE]'");
 	      else if (HandlerCall::reset_write(ac->_call_nnz_h, s, ac, errh) < 0)
 		  return -1;
@@ -507,7 +507,7 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
       case AC_COUNT_CALL: {
 	  uint64_t new_count = (uint64_t)(-1);
 	  if (s) {
-	      if (!cp_integer(cp_pop_spacevec(s), &new_count))
+	      if (!cp_integer(cp_shift_spacevec(s), &new_count))
 		  return errh->error("argument to 'count_call' should be 'N HANDLER [VALUE]'");
 	      else if (HandlerCall::reset_write(ac->_call_count_h, s, ac, errh) < 0)
 		  return -1;

@@ -159,7 +159,7 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 
     int before = errh->nerrors();
 
-    String type_word = cp_pop_spacevec(type_arg);
+    String type_word = cp_shift_spacevec(type_arg);
     if (type_word == "ACTIVE" && !type_arg)
 	_type = TYPE_ACTIVE;
     else if (type_word == "PASSIVE" && !type_arg)
@@ -172,7 +172,7 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
     else if (type_word == "SIGNAL") {
 	_type = TYPE_SIGNAL;
 	int32_t signo;
-	while ((type_word = cp_pop_spacevec(type_arg))
+	while ((type_word = cp_shift_spacevec(type_arg))
 	       && NameInfo::query_int(NameInfo::T_SIGNO, this, type_word, &signo)
 	       && signo >= 0 && signo < 32)
 	    _signos.push_back(signo);
@@ -194,7 +194,7 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
     }
 
     for (int i = 0; i < conf.size(); i++) {
-	String insn_name = cp_pop_spacevec(conf[i]);
+	String insn_name = cp_shift_spacevec(conf[i]);
 	int32_t insn;
 	if (!insn_name)		// ignore as benign
 	    continue;
@@ -239,7 +239,7 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	case insn_initq:
 	case INSN_SET:
 	case insn_setq: {
-	    String word = cp_pop_spacevec(conf[i]);
+	    String word = cp_shift_spacevec(conf[i]);
 	    if (!word
 		|| ((insn == INSN_SET || insn == insn_setq) && !conf[i]))
 		goto syntax_error;
@@ -258,7 +258,7 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	    break;
 
 	case INSN_LABEL: {
-	    String word = cp_pop_spacevec(conf[i]);
+	    String word = cp_shift_spacevec(conf[i]);
 	    if (!word || conf[i])
 		goto syntax_error;
 	    add_insn(insn, 0, 0, word);
@@ -289,7 +289,7 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
     // fix the gotos
     for (int i = 0; i < _insns.size(); i++)
 	if (_insns[i] == INSN_GOTO && _args3[i]) {
-	    String word = cp_pop_spacevec(_args3[i]);
+	    String word = cp_shift_spacevec(_args3[i]);
 	    if ((_args[i] = find_label(word)) >= _insns.size())
 		errh->error("no such label '%s'", word.c_str());
 	}
@@ -412,7 +412,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	    if (text.length() && text[0] == '>') {
 		bool append = (text.length() > 1 && text[1] == '>');
 		text = text.substring(1 + append);
-		String filename = cp_pop_spacevec(text);
+		String filename = cp_shift_spacevec(text);
 		if (filename && filename != "-"
 		    && !(f = fopen(filename.c_str(), append ? "ab" : "wb"))) {
 		    errh->error("%s: %s", filename.c_str(), strerror(errno));
@@ -613,14 +613,14 @@ Script::Expander::expand(const String &vname, int vartype, int quote, StringAccu
 	&& cp_integer(vname, &x)) {
 	String arg, run_args = script->_run_args;
 	for (; x > 0; --x)
-	    arg = cp_pop_spacevec(run_args);
+	    arg = cp_shift_spacevec(run_args);
 	sa << cp_expand_in_quotes(arg, quote);
 	return true;
     }
 
     if (vname.length() == 1 && vname[0] == '#') {
 	String run_args = script->_run_args;
-	for (x = 0; cp_pop_spacevec(run_args); )
+	for (x = 0; cp_shift_spacevec(run_args); )
 	    ++x;
 	sa << cp_expand_in_quotes(String(x), quote);
 	return true;
@@ -718,7 +718,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
     switch (what) {
 
     case AR_FIRST:
-	str = cp_pop_spacevec(str);
+	str = cp_shift_spacevec(str);
 	return 0;
 
     case AR_ADD:
@@ -733,7 +733,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	bool use_daccum = (what == AR_DIV || what == AR_IDIV);
 #endif
 	while (1) {
-	    String word = cp_pop_spacevec(str);
+	    String word = cp_shift_spacevec(str);
 	    if (!word && cp_is_space(str))
 		break;
 #if CLICK_USERLEVEL
@@ -801,7 +801,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
     case AR_LE:
     case AR_NE:
     case AR_GE: {
-	String astr = cp_pop_spacevec(str), bstr = cp_pop_spacevec(str);
+	String astr = cp_shift_spacevec(str), bstr = cp_shift_spacevec(str);
 	click_intmax_t a, b;
 	int comparison;
 	if (str || !astr || !bstr)
@@ -844,7 +844,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	bool zero = (what == ar_and), current_value = zero;
 	while (current_value == zero && str) {
 	    bool x;
-	    if (!cp_bool(cp_pop_spacevec(str), &x))
+	    if (!cp_bool(cp_shift_spacevec(str), &x))
 		return errh->error("syntax error");
 	    current_value = (what == ar_and ? current_value && x : current_value || x);
 	}
@@ -857,7 +857,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	return 0;
 
     case AR_SPRINTF: {
-	String format = cp_unquote(cp_pop_spacevec(str));
+	String format = cp_unquote(cp_shift_spacevec(str));
 	const char *s = format.begin(), *pct, *end = format.end();
 	StringAccum result;
 	while ((pct = find(s, end, '%')) < end) {
@@ -871,7 +871,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	    // field width
 	    int fw;
 	    if (pct < end && *pct == '*') {
-		if (!cp_integer(cp_pop_spacevec(str), &fw))
+		if (!cp_integer(cp_shift_spacevec(str), &fw))
 		    return errh->error("syntax error");
 		pf << fw;
 	    } else
@@ -881,7 +881,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	    if (pct < end && *pct == '.') {
 		pct++;
 		if (pct < end && *pct == '*') {
-		    if (!cp_integer(cp_pop_spacevec(str), &fw) || fw < 0)
+		    if (!cp_integer(cp_shift_spacevec(str), &fw) || fw < 0)
 			return errh->error("syntax error");
 		    pf << '.' << fw;
 		} else if (pct < end && *pct >= '0' && *pct <= '9') {
@@ -905,7 +905,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	    // conversion
 	    if (pct < end && (*pct == 'o' || *pct == 'x' || *pct == 'X' || *pct == 'u')) {
 		click_uintmax_t ival;
-		String x = cp_pop_spacevec(str);
+		String x = cp_shift_spacevec(str);
 		if (!cp_integer(x, &ival))
 		    return errh->error("syntax error");
 		if (width_flag == 'h')
@@ -916,7 +916,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 		result << ErrorHandler::xformat(pf.c_str(), ival);
 	    } else if (pct < end && (*pct == 'd' || *pct == 'i')) {
 		click_intmax_t ival;
-		if (!cp_integer(cp_pop_spacevec(str), &ival))
+		if (!cp_integer(cp_shift_spacevec(str), &ival))
 		    return errh->error("syntax error");
 		if (width_flag == 'h')
 		    ival = (short) ival;
@@ -929,7 +929,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 		result << ErrorHandler::xformat(pf.c_str());
 	    } else if (pct < end && *pct == 's') {
 		String s;
-		if (!cp_string(cp_pop_spacevec(str), &s))
+		if (!cp_string(cp_shift_spacevec(str), &s))
 		    return errh->error("syntax error");
 		pf << *pct;
 		result << ErrorHandler::xformat(pf.c_str(), s.c_str());

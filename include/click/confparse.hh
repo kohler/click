@@ -55,9 +55,19 @@ void cp_argvec(const String& str, Vector<String>& conf);
 String cp_unargvec(const Vector<String>& conf);
 
 void cp_spacevec(const String& str, Vector<String>& conf);
-String cp_pop_spacevec(String& str);
-String cp_unspacevec(const String* begin, const String* end);
-inline String cp_unspacevec(const Vector<String>& conf);
+
+/// @brief  Remove and return the first space-separated argument from @a str.
+/// @param[in,out]  str  space-separated configuration string
+///
+/// The first space-separated argument in the configuration string is removed
+/// and returned.  The returned argument is passed through cp_uncomment().  @a
+/// str is set to the remaining portion of the string, with any preceding
+/// spaces and comments removed.  If the input string is all spaces and
+/// comments, then both the returned string and @a str will be empty.
+String cp_shift_spacevec(String &str);
+
+String cp_unspacevec(const String *begin, const String *end);
+inline String cp_unspacevec(const Vector<String> &conf);
 //@}
 
 /// @name Direct Parsing Functions
@@ -180,8 +190,8 @@ bool cp_ethernet_address(const String& str, unsigned char* result  CP_OPT_CONTEX
 bool cp_tcpudp_port(const String& str, int proto, uint16_t* result  CP_OPT_CONTEXT);
 
 #if !CLICK_TOOL
-Element *cp_element(const String& str, const Element* context, ErrorHandler* errh=0);
-Element *cp_element(const String& str, Router* router, ErrorHandler* errh=0);
+Element *cp_element(const String &str, const Element *context, ErrorHandler *errh = 0, const char *argname = 0);
+Element *cp_element(const String &str, Router *router, ErrorHandler *errh = 0, const char *argname = 0);
 bool cp_handler_name(const String& str, Element** result_element, String* result_hname, const Element* context, ErrorHandler* errh=0);
 bool cp_handler(const String& str, int flags, Element** result_element, const Handler** result_handler, const Element* context, ErrorHandler* errh=0);
 #endif
@@ -245,6 +255,7 @@ extern const CpVaParseCmd
     cpUnsignedShort,	///< Result storage unsigned short*, parsed by cp_integer().
     cpInteger,		///< Result storage int32_t*, parsed by cp_integer().
     cpUnsigned,		///< Result storage uint32_t*, parsed by cp_integer().
+    cpSize,		///< Result storage size_t*, parsed by cp_integer().
     cpNamedInteger,	///< Parse parameter uint32_t nameinfo_type, result storage int32_t*, parsed by NameInfo::query_int.
 #if HAVE_INT64_TYPES
     cpInteger64,	///< Result storage int64_t*, parsed by cp_integer().
@@ -271,6 +282,7 @@ extern const CpVaParseCmd
     cpTCPPort,		///< Result storage uint16_t*, parsed by cp_tcpudp_port().
     cpUDPPort,		///< Result storage uint16_t*, parsed by cp_tcpudp_port().
     cpElement,		///< Result storage Element**, parsed by cp_element().
+    cpElementCast,	///< Parse parameter const char*, result storage void**, parsed by cp_element() and Element::cast().
     cpHandlerName,	///< Result storage Element** and String*, parsed by cp_handler_name().
     cpHandlerCallRead,	///< Result storage HandlerCall*, parsed by HandlerCall.
     cpHandlerCallWrite,	///< Result storage HandlerCall*, parsed by HandlerCall.
@@ -367,7 +379,11 @@ struct cp_value {
     const cp_argtype* argtype;
     const char* keyword;
     const char* description CLICK_CONFPARSE_DEPRECATED;
-    int extra;
+    union {
+	int i;
+	const char *c_str;
+	void *p;
+    } extra;
     void* store;
     void* store2;
     bool* store_confirm;
@@ -380,20 +396,25 @@ struct cp_value {
 	int64_t i64;
 	uint64_t u64;
 #endif
+	size_t size;
 #if HAVE_FLOAT_TYPES
 	double d;
 #endif
 	unsigned char address[16];
 	int is[4];
 #ifndef CLICK_TOOL
-	Element* element;
+	Element *element;
 #endif
+	void *p;
     } v, v2;
     String v_string;
     String v2_string;
 };
 
-enum { cpArgNormal = 0, cpArgStore2 = 1, cpArgExtraInt = 2, cpArgAllowNumbers = 4 };
+enum {
+    cpArgNormal = 0, cpArgStore2 = 1, cpArgExtraInt = 2,
+    cpArgExtraCStr = 4, cpArgAllowNumbers = 8
+};
 int cp_register_argtype(const char* name, const char* description, int flags,
 			cp_parsefunc parsefunc, cp_storefunc storefunc,
 			void* user_data = 0);
@@ -688,6 +709,15 @@ inline int cp_register_argtype(const char* name, const char* description, int fl
 			       user_data);
 }
 #endif
+
+inline String cp_pop_spacevec(String &str) CLICK_DEPRECATED;
+
+/// @brief  Remove and return the first space-separated argument from @a str.
+/// @param[in,out]  str  space-separated configuration string
+/// @deprecated This is a deprecated synonym for cp_shift_spacevec().
+inline String cp_pop_spacevec(String &str) {
+    return cp_shift_spacevec(str);
+}
 
 #undef CP_VA_ARGS_REST
 #undef CP_OPT_CONTEXT

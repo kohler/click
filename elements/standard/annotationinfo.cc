@@ -39,14 +39,14 @@ AnnotationInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 
     for (int i = 0; i < conf.size(); i++) {
 	String str = conf[i];
-	String name_str = cp_pop_spacevec(str);
+	String name_str = cp_shift_spacevec(str);
 	if (!name_str		// allow empty arguments
 	    || name_str[0] == '#' // allow comments
 	    || name_str.equals("CHECK_OVERLAP", 13)) // check in initialize()
 	    continue;
 
-	String offset_str = cp_pop_spacevec(str);
-	String size_str = cp_pop_spacevec(str);
+	String offset_str = cp_shift_spacevec(str);
+	String size_str = cp_shift_spacevec(str);
 
 	int offset, size = 0;
 	if (!cp_is_word(name_str) || cp_anno(name_str, 0, &offset, 0))

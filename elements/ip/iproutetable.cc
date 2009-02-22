@@ -32,11 +32,11 @@ bool
 cp_ip_route(String s, IPRoute *r_store, bool remove_route, Element *context)
 {
     IPRoute r;
-    if (!cp_ip_prefix(cp_pop_spacevec(s), &r.addr, &r.mask, true, context))
+    if (!cp_ip_prefix(cp_shift_spacevec(s), &r.addr, &r.mask, true, context))
 	return false;
     r.addr &= r.mask;
 
-    String word = cp_pop_spacevec(s);
+    String word = cp_shift_spacevec(s);
     if (word == "-")
 	/* null gateway; do nothing */;
     else if (cp_ip_address(word, &r.gw, context))
@@ -44,10 +44,10 @@ cp_ip_route(String s, IPRoute *r_store, bool remove_route, Element *context)
     else
 	goto two_words;
 
-    word = cp_pop_spacevec(s);
+    word = cp_shift_spacevec(s);
   two_words:
     if (cp_integer(word, &r.port) || (!word && remove_route))
-	if (!cp_pop_spacevec(s)) { // nothing left
+	if (!cp_shift_spacevec(s)) { // nothing left
 	    *r_store = r;
 	    return true;
 	}
@@ -231,7 +231,7 @@ IPRouteTable::ctrl_handler(const String &conf_in, Element *e, void *, ErrorHandl
 	const char* nl = find(s, end, '\n');
 	String line = conf.substring(s, nl);
 
-	String first_word = cp_pop_spacevec(line);
+	String first_word = cp_shift_spacevec(line);
 	int command;
 	if (first_word == "add")
 	    command = CMD_ADD;
