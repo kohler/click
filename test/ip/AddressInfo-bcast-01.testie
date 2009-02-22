@@ -1,0 +1,20 @@
+%info
+Tests AddressInfo's "NAME:bcast" functionality.
+
+%script
+click -q -h rt.table -e 'AddressInfo(foo 1.2.3.4/20);
+
+rt::LinearIPLookup(
+	foo 0,
+	foo:ipnet 1,
+	foo:bcast 2);
+
+Idle -> rt;
+rt[0] -> Discard;
+rt[1] -> Discard;
+rt[2] -> Discard;'
+
+%expect -w stdout
+1.2.3.4/32              -               0
+1.2.0.0/20              -               1
+1.2.15.255/32           -               2

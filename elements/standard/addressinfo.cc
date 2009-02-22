@@ -263,11 +263,23 @@ bool
 AddressInfo::query_ip(String s, unsigned char *store, const Element *e)
 {
     int colon = s.find_right(':');
-    if (colon >= 0 && s.substring(colon).lower() != ":ip"
-	&& s.substring(colon).lower() != ":ip4")
-	return false;
-    else if (colon >= 0)
+    if (colon >= 0) {
+	String typestr = s.substring(colon).lower();
 	s = s.substring(0, colon);
+	if (typestr.equals(":ip", 3) || typestr.equals(":ip4", 4))
+	    /* do nothing */;
+	else if (typestr.equals(":bcast", 6)) {
+	    // ":bcast" type only supported for NameDB at the moment
+	    uint32_t addr[2];
+	    if (NameInfo::query(NameInfo::T_IP_PREFIX, e, s, &addr[0], 8)) {
+		addr[0] |= ~addr[1];
+		memcpy(store, addr, 4);
+		return true;
+	    } else
+		return false;
+	} else
+	    return false;
+    }
 
     if (NameInfo::query(NameInfo::T_IP_ADDR, e, s, store, 4))
 	return true;
@@ -315,11 +327,13 @@ AddressInfo::query_ip_prefix(String s, unsigned char *store,
 			     unsigned char *mask_store, const Element *e)
 {
     int colon = s.find_right(':');
-    if (colon >= 0 && s.substring(colon).lower() != ":ipnet"
-	&& s.substring(colon).lower() != ":ip4net")
-	return false;
-    else if (colon >= 0)
+    if (colon >= 0) {
+	String typestr = s.substring(colon).lower();
 	s = s.substring(0, colon);
+	if (!(typestr.equals(":net", 4) || typestr.equals(":ipnet", 6)
+	      || typestr.equals(":ip4net", 7)))
+	    return false;
+    }
 
     uint8_t data[8];
     if (NameInfo::query(NameInfo::T_IP_PREFIX, e, s, &data[0], 8)) {

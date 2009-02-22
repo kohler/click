@@ -60,6 +60,10 @@ C<NAME:ipnet> is always an IPv4 network address (IPv4 address prefix),
 C<NAME:ip6> is always an IPv6 address, C<NAME:ip6net> is always an IPv6
 network address, and C<NAME:eth> is always an Ethernet address.
 
+If C<NAME:ipnet> is a valid IPv4 network address, then C<NAME:bcast> is a
+valid IPv4 address equaling the broadcast address for that network.  This is
+obtained by setting all the host bits in the address prefix to 1.
+
 =head1 DEFAULT ADDRESSES
 
 If you do not define an address for a given name, AddressInfo will use the
