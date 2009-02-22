@@ -534,7 +534,7 @@ particular purpose.\n");
     if (allow_reconfigure) {
       hotswap_thunk_router = new Router("", router->master());
       hotswap_thunk_router->initialize(errh);
-      hotswap_task.initialize(hotswap_thunk_router, false);
+      hotswap_task.initialize(hotswap_thunk_router->root_element(), false);
       hotswap_thunk_router->activate(false, errh);
     }
 #if HAVE_MULTITHREAD
@@ -591,7 +591,5 @@ particular purpose.\n");
   delete master;
   click_static_cleanup();
   Clp_DeleteParser(clp);
-  exit(exit_value);
-  // Will leave String objects allocated because of 'handlers' and
-  // 'exit_handler' above
+  return exit_value;
 }
