@@ -51,7 +51,7 @@ IPFlowRawSockets::Flow::Flow(const Packet *p)
       _wd(-1), _rd(-1), _pcap(0)
 {
     if (PAINT_ANNO(p) & 1)	// reverse _flowid
-	_flowid = _flowid.rev();
+	_flowid = _flowid.reverse();
 
     // sanity checks
     assert(_aggregate && (_ip_p == IP_PROTO_TCP || _ip_p == IP_PROTO_UDP));

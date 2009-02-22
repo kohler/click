@@ -175,7 +175,7 @@ String
 TCPRewriter::TCPMapping::s() const
 {
   StringAccum sa;
-  sa << reverse()->flow_id().rev().s() << " => " << flow_id().s()
+  sa << reverse()->flow_id().reverse() << " => " << flow_id()
      << " seq " << (_delta > 0 ? "+" : "") << _delta
      << " [" + String(output()) + "]";
   return sa.take_string();
@@ -335,7 +335,7 @@ TCPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
     else if (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse, _tcp_map))
       goto failure;
 
-    IPFlowID reverse_flow = forward->flow_id().rev();
+    IPFlowID reverse_flow = forward->flow_id().reverse();
     _tcp_map.set(flow, forward);
     _tcp_map.set(reverse_flow, reverse);
     return forward;

@@ -72,7 +72,7 @@ ICMPRewriter::rewrite_packet(WritablePacket *p, click_ip *embedded_iph,
 
   // XXX incremental checksums?
 
-  IPFlowID new_flow = mapping->flow_id().rev();
+  IPFlowID new_flow = mapping->flow_id().reverse();
 
   // change IP header destination if appropriate
   if (IPAddress(iph->ip_dst) == flow.saddr()) {
@@ -105,7 +105,7 @@ ICMPRewriter::rewrite_ping_packet(WritablePacket *p, click_ip *embedded_iph,
 
   // XXX incremental checksums?
 
-  IPFlowID new_flow = mapping->flow_id().rev();
+  IPFlowID new_flow = mapping->flow_id().reverse();
 
   // change IP header destination if appropriate
   if (IPAddress(iph->ip_dst) == flow.saddr()) {
@@ -164,7 +164,7 @@ ICMPRewriter::simple_action(Packet *p_in)
 
        IPRw::Mapping *mapping = 0;
        for (int i = 0; i < _maps.size() && !mapping; i++)
-	 mapping = _maps[i]->get_mapping(embedded_p, flow.rev());
+	 mapping = _maps[i]->get_mapping(embedded_p, flow.reverse());
        if (!mapping)
 	 goto unmapped;
 
@@ -183,7 +183,7 @@ ICMPRewriter::simple_action(Packet *p_in)
 
        ICMPPingRewriter::Mapping *mapping = 0;
        for (int i = 0; i < _ping_maps.size() && !mapping; i++)
-	 mapping = _ping_maps[i]->get_mapping(ask_for_request, flow.rev());
+	 mapping = _ping_maps[i]->get_mapping(ask_for_request, flow.reverse());
        if (!mapping)
 	 goto unmapped;
 

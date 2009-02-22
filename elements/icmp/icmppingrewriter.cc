@@ -151,7 +151,7 @@ ICMPPingRewriter::Mapping::make_pair(const IPFlowID &inf, const IPFlowID &outf,
 				 Mapping *in_map, Mapping *out_map)
 {
   in_map->initialize(inf, outf, false, out_map);
-  out_map->initialize(outf.rev(), inf.rev(), true, in_map);
+  out_map->initialize(outf.reverse(), inf.reverse(), true, in_map);
 }
 
 void
@@ -196,7 +196,7 @@ String
 ICMPPingRewriter::Mapping::s() const
 {
   StringAccum sa;
-  IPFlowID src_flow = reverse()->flow_id().rev();
+  IPFlowID src_flow = reverse()->flow_id().reverse();
   sa << "(" << src_flow.saddr() << ", " << src_flow.daddr() << ", "
      << ntohs(src_flow.sport()) << ") => (" << _mapto.saddr() << ", "
      << _mapto.daddr() << ", " << ntohs(_mapto.sport()) << ")";
@@ -217,8 +217,8 @@ ICMPPingRewriter::run_timer(Timer *)
   }
 
   for (int i = 0; i < to_free.size(); i++) {
-    _request_map.erase(to_free[i]->reverse()->flow_id().rev());
-    _reply_map.erase(to_free[i]->flow_id().rev());
+    _request_map.erase(to_free[i]->reverse()->flow_id().reverse());
+    _reply_map.erase(to_free[i]->flow_id().reverse());
     delete to_free[i]->reverse();
     delete to_free[i];
   }
@@ -242,7 +242,7 @@ ICMPPingRewriter::apply_pattern(const IPFlowID &flow)
     _identifier++;
 
     _request_map.set(flow, forward);
-    _reply_map.set(new_flow.rev(), reverse);
+    _reply_map.set(new_flow.reverse(), reverse);
     return forward;
   }
 

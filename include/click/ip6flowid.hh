@@ -25,7 +25,8 @@ class IP6FlowID { public:
   void set_sport(uint16_t p)		{ _sport = p; }
   void set_dport(uint16_t p)		{ _dport = p; }
 
-  inline IP6FlowID rev() const;
+  inline IP6FlowID reverse() const;
+  inline IP6FlowID rev() const CLICK_DEPRECATED;
 
   inline hashcode_t hashcode() const;
 
@@ -63,9 +64,15 @@ IP6FlowID::operator unspecified_bool_type() const
 }
 
 inline IP6FlowID
-IP6FlowID::rev() const
+IP6FlowID::reverse() const
 {
   return IP6FlowID(_daddr, _dport, _saddr, _sport);
+}
+
+inline IP6FlowID
+IP6FlowID::rev() const
+{
+  return reverse();
 }
 
 

@@ -87,7 +87,7 @@ IPRw::Mapping::make_pair(int ip_p, const IPFlowID &inf, const IPFlowID &outf,
 			 Mapping *in_map, Mapping *out_map)
 {
     in_map->initialize(ip_p, inf, outf, foutput, 0, out_map);
-    out_map->initialize(ip_p, outf.rev(), inf.rev(), routput, F_REVERSE, in_map);
+    out_map->initialize(ip_p, outf.reverse(), inf.reverse(), routput, F_REVERSE, in_map);
 }
 
 void
@@ -142,7 +142,9 @@ IPRw::Mapping::apply(WritablePacket *p)
 String
 IPRw::Mapping::unparse() const
 {
-    return reverse()->flow_id().rev().unparse() + " => " + flow_id().unparse() + " [" + String(output()) + "]";
+    StringAccum sa;
+    sa << reverse()->flow_id().reverse() << " => " << flow_id() << " [" << output() << "]";
+    return sa.take_string();
 }
 
 //
@@ -353,7 +355,7 @@ IPRw::Pattern::create_mapping(int ip_p, const IPFlowID& in,
 	uint32_t val = (_sequential ? _next_variation : click_random() & _variation_mask);
 	uint32_t step = (_sequential ? 1 : click_random() | 1);
 	uint32_t base = (_is_napt ? ntohs(_sport) : ntohl(_saddr.addr()));
-	IPFlowID lookup = out.rev();
+	IPFlowID lookup = out.reverse();
 	for (uint32_t count = 0; count <= _variation_mask; count++, val = (val + step) & _variation_mask)
 	    if (val <= _variation_top) {
 		if (_is_napt)
@@ -536,12 +538,12 @@ inline IPRw::Mapping *
 IPRw::Mapping::free_from_list(Map &map, bool notify)
 {
     // see also clear_map below
-    //click_chatter("kill %s", reverse()->flow_id().rev().s().c_str());
+    //click_chatter("kill %s", reverse()->flow_id().reverse().unparse().c_str());
     Mapping *next = _free_next;
     if (notify && _pat)
 	_pat->mapping_freed(primary());
-    map.erase(reverse()->flow_id().rev());
-    map.erase(flow_id().rev());
+    map.erase(reverse()->flow_id().reverse());
+    map.erase(flow_id().reverse());
     delete reverse();
     delete this;
     return next;

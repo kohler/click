@@ -51,7 +51,7 @@ IPAddrRewriter::IPAddrMapping::apply(WritablePacket *p)
 String
 IPAddrRewriter::IPAddrMapping::unparse() const
 {
-    IPFlowID rev_rev = reverse()->flow_id().rev();
+    IPFlowID rev_rev = reverse()->flow_id().reverse();
     StringAccum sa;
     if (is_primary())
 	sa << '(' << rev_rev.saddr() << ", -) => (" << flow_id().saddr() << ", -) [";
@@ -149,7 +149,7 @@ IPAddrRewriter::apply_pattern(Pattern *pattern, int,
 	else if (!pattern->create_mapping(0, flow, fport, rport, forward, reverse, _map))
 	    goto failure;
 
-	IPFlowID reverse_flow = forward->flow_id().rev();
+	IPFlowID reverse_flow = forward->flow_id().reverse();
 	_map.set(flow, forward);
 	_map.set(reverse_flow, reverse);
 	return forward;

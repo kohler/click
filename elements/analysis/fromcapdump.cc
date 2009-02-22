@@ -193,7 +193,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
 		|| (data[0] == 'S' && data[1] == 'N' && data[2] == 'D')) {
 		if (_flowid_is_rcv != (data[0] == 'R')) {
 		    _flowid_is_rcv = !_flowid_is_rcv;
-		    _flowid = _flowid.rev();
+		    _flowid = _flowid.reverse();
 		}
 	    }
 	    continue;
@@ -341,7 +341,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	SET_EXTRA_LENGTH_ANNO(q, payload_len);
 
 	// set data from flow ID
-	IPFlowID flowid = (PAINT_ANNO(q) & 1 ? _flowid.rev() : _flowid);
+	IPFlowID flowid = (PAINT_ANNO(q) & 1 ? _flowid.reverse() : _flowid);
 	iph->ip_src = flowid.saddr();
 	iph->ip_dst = flowid.daddr();
 	tcph->th_sport = flowid.sport();

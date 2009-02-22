@@ -59,7 +59,7 @@ ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename,
     }
 
     if (PAINT_ANNO(p) & 1)	// reverse _flowid
-	_flowid = _flowid.rev();
+	_flowid = _flowid.reverse();
 
     _have_first_seq[0] = _have_first_seq[1] = absolute_seq;
     _first_seq[0] = _first_seq[1] = 0;

@@ -48,25 +48,25 @@ TCPDemux::find_flow(Packet *p)
 
   // match (sa,sp,da,dp)
   IPFlowID fid(p);
-  int *iptr = _flows.findp(fid.rev());
+  int *iptr = _flows.findp(fid.reverse());
   if (iptr)
     return *iptr;
 
   // match (0,0,da,dp)
   fid = IPFlowID(0, 0, iph->ip_dst, tcph->th_dport);
-  iptr = _flows.findp(fid.rev());
+  iptr = _flows.findp(fid.reverse());
   if (iptr)
     return *iptr;
 
   // match (0,0,0,dp)
   fid = IPFlowID(0, 0, 0, tcph->th_dport);
-  iptr = _flows.findp(fid.rev());
+  iptr = _flows.findp(fid.reverse());
   if (iptr)
     return *iptr;
 
   // match (0,0,da,0)
   fid = IPFlowID(0, 0, iph->ip_dst, 0);
-  iptr = _flows.findp(fid.rev());
+  iptr = _flows.findp(fid.reverse());
   if (iptr)
     return *iptr;
 
