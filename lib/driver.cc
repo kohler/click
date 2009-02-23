@@ -309,7 +309,7 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     String package;
 
     // check archive
-    const ArchiveElement *ae;
+    const ArchiveElement *ae = 0;
     if (archive && (ae = ArchiveElement::find(*archive, name + suffix))) {
 	if (!check_tmpdir(*archive, false, tmpdir_populated, &cerrh))
 	    return;
