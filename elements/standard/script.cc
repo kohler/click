@@ -814,6 +814,35 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	return 0;
     }
 
+    case ar_mod:
+    case ar_rem: {
+	String astr = cp_shift_spacevec(str), bstr = cp_shift_spacevec(str);
+	click_intmax_t a, b;
+	if (str || !astr || !bstr)
+	    goto expected_two_numbers;
+	if (!cp_integer(astr, &a) || !cp_integer(bstr, &b)) {
+#if CLICK_USERLEVEL
+	    double da, db;
+	    if (what == ar_mod || !cp_double(astr, &da) || !cp_double(bstr, &db))
+		goto expected_two_numbers;
+	    str = String(fmod(da, db));
+	    return 0;
+#else
+	    goto expected_two_numbers;
+#endif
+	} else {
+#if CLICK_LINUXMODULE
+	    if ((int32_t) a != a || (int32_t) b != b)
+		errh->warning("int64 divide truncated");
+	    a = (int32_t) a % (int32_t) b;
+#else
+	    a %= b;
+#endif
+	    str = String(a);
+	    return 0;
+	}
+    }
+
     case AR_LT:
     case AR_EQ:
     case AR_GT:
@@ -824,7 +853,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	click_intmax_t a, b;
 	int comparison;
 	if (str || !astr || !bstr)
-	    goto compare_syntax;
+	    goto expected_two_numbers;
 #if CLICK_USERLEVEL
 	if (!cp_integer(astr, &a) || !cp_integer(bstr, &b)) {
 	    double da, db;
@@ -842,8 +871,6 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	str = cp_unparse_bool(what == comparison
 			      || (what >= AR_GE && what != comparison + 3));
 	return 0;
-    compare_syntax:
-	return errh->error("expected two numbers");
     compare_strings:
 	a = String::compare(cp_unquote(astr), cp_unquote(bstr));
 	comparison = (a < 0 ? AR_LT : (a == 0 ? AR_EQ : AR_GT));
@@ -1008,6 +1035,23 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
     }
 #endif
 
+    case ar_readable:
+    case ar_writable: {
+	Element *el;
+	const Handler *h;
+	int f = (what == ar_readable ? Handler::OP_READ : Handler::OP_WRITE);
+	while (String hname = cp_shift_spacevec(str))
+	    if (!cp_handler(hname, f, &el, &h, e)) {
+		str = String(false);
+		return 0;
+	    }
+	str = String(true);
+	return 0;
+    }
+
+    expected_two_numbers:
+	return errh->error("expected two numbers");
+
     }
 
     return -1;
@@ -1032,6 +1076,8 @@ Script::add_handlers()
     set_handler("mul", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_MUL, 0);
     set_handler("div", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_DIV, 0);
     set_handler("idiv", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_IDIV, 0);
+    set_handler("mod", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_mod, 0);
+    set_handler("rem", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_rem, 0);
     set_handler("eq", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_EQ, 0);
     set_handler("ne", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_NE, 0);
     set_handler("gt", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_GT, 0);
@@ -1045,7 +1091,10 @@ Script::add_handlers()
     set_handler("and", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_and, 0);
     set_handler("or", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_or, 0);
     set_handler("if", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_if, 0);
+    set_handler("in", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_in, 0);
     set_handler("now", Handler::OP_READ, arithmetic_handler, ar_now, 0);
+    set_handler("readable", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_readable, 0);
+    set_handler("writable", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_writable, 0);
 #if CLICK_USERLEVEL
     set_handler("cat", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, arithmetic_handler, ar_cat, 0);
 #endif

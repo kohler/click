@@ -299,12 +299,19 @@ integer and returns that, whereas the 'C<div>' handler returns a
 floating-point number; in the kernel, 'C<idiv>' and 'C<div>' both perform
 integer division.
 
+=h mod, rem "read with parameters"
+
+Returns the remainder of two space-separated numbers; for example, 'C<mod 7 3>'
+returns "C<1>".  'C<mod>' expects integer operands and returns the integer
+modulus.  At user level, 'C<rem>' implements floating-point remainder; in the
+kernel, it is the same as 'C<mod>'.
+
 =h eq, ne, lt, gt, le, ge "read with parameters"
 
 Compares two parameters and returns the result.  For example, 'C<eq 10 0xA>'
 returns "C<true>", and 'C<le 9 8>' returns "C<false>".  If either parameter
 cannot be interpreted as a number, performs a string comparison in bytewise
-lexicographic order.  For example, 'C<eq 10x 10x>' return "C<true>".
+lexicographic order.  For example, 'C<eq 10x 10x>' returns "C<true>".
 
 =h not "read with parameters"
 
@@ -322,6 +329,12 @@ Expects three space-separated parameters, the first a Boolean.  Returns the
 second parameter if the Boolean is true, or the third parameter if the Boolean
 is false.
 
+=h in "read with parameters"
+
+Returns true if the first space-separated argument equals any of the other
+arguments, using string comparison.  For example, 'C<in foo bar foo>'
+returns "C<true>".
+
 =h sprintf "read with parameters"
 
 Parses its parameters as a space-separated list of arguments.  The first
@@ -333,6 +346,11 @@ accordingly.  For example, 'C<sprintf "%05x" 127>' returns "C<0007F>".
 Given zero arguments, returns a random integer between 0 and RAND_MAX.  Given
 one argument N, returns a random integer between 0 and N-1.  Given two
 arguments N1 and N2, returns a random integer between N1 and N2.
+
+=h readable, writable "read with parameters"
+
+Parses its parameters as a space-separated list of handler names.  Returns
+true if all the named handlers exist and are readable (or writable).
 
 =h now r
 
@@ -416,10 +434,10 @@ class Script : public Element { public:
 
     enum {
 	ST_STEP = 0, ST_RUN, ST_GOTO,
-	AR_ADD = 0, AR_SUB, AR_MUL, AR_DIV, AR_IDIV,
+	AR_ADD = 0, AR_SUB, AR_MUL, AR_DIV, AR_IDIV, ar_mod, ar_rem,
 	AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
 	AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat,
-	ar_and, ar_or, ar_now, ar_if
+	ar_and, ar_or, ar_now, ar_if, ar_in, ar_readable, ar_writable
     };
 
     void add_insn(int, int, int = 0, const String & = String());
