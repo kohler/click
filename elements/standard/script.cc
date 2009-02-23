@@ -100,7 +100,7 @@ Script::static_cleanup()
 }
 
 Script::Script()
-    : _type(TYPE_ACTIVE), _write_status(0), _timer(this), _cur_steps(0)
+    : _type(type_active), _write_status(0), _timer(this), _cur_steps(0)
 {
 }
 
@@ -139,12 +139,18 @@ Script::find_label(const String &label) const
 }
 
 int
-Script::find_variable(const String &varname) const
+Script::find_variable(const String &name, bool add)
 {
-    for (int i = 0; i < _vars.size(); i += 2)
-	if (_vars[i] == varname)
-	    return i;
-    return _vars.size();
+    int i;
+    for (i = 0; i < _vars.size(); i += 2)
+	if (_vars[i] == name)
+	    goto found;
+    if (add) {
+	_vars.push_back(name);
+	_vars.push_back(String());
+    }
+ found:
+    return i;
 }
 
 int
@@ -161,16 +167,18 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 
     String type_word = cp_shift_spacevec(type_arg);
     if (type_word == "ACTIVE" && !type_arg)
-	_type = TYPE_ACTIVE;
+	_type = type_active;
     else if (type_word == "PASSIVE" && !type_arg)
-	_type = TYPE_PASSIVE;
+	_type = type_passive;
+    else if ((type_word == "PACKET" || type_word == "PUSH") && !type_arg)
+	_type = type_push;
     else if (type_word == "PROXY" && !type_arg)
 	_type = type_proxy;
     else if (type_word == "DRIVER" && !type_arg)
-	_type = TYPE_DRIVER;
+	_type = type_driver;
 #if CLICK_USERLEVEL
     else if (type_word == "SIGNAL") {
-	_type = TYPE_SIGNAL;
+	_type = type_signal;
 	int32_t signo;
 	while ((type_word = cp_shift_spacevec(type_arg))
 	       && NameInfo::query_int(NameInfo::T_SIGNO, this, type_word, &signo)
@@ -181,17 +189,18 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
     }
 #endif
     else if (type_word)
-#if CLICK_USERLEVEL
-	return errh->error("bad TYPE; expected 'ACTIVE', 'PASSIVE', 'DRIVER', 'SIGNAL'");
-#else
-	return errh->error("bad TYPE; expected 'ACTIVE', 'PASSIVE', 'DRIVER'");
-#endif
+	return errh->error("bad TYPE");
 
-    if (_type == TYPE_DRIVER) {
+    if (_type == type_driver) {
 	if (router()->attachment("Script"))
-	    return errh->error("router has more than one Script element");
+	    return errh->error("router has more than one driver script");
 	router()->set_attachment("Script", this);
     }
+
+    if (_type == type_push && ninputs() == 0)
+	return errh->error("PACKET script must have inputs");
+    else if (_type != type_push && (ninputs() || noutputs()))
+	return errh->error("ports allowed only on PACKET scripts");
 
     for (int i = 0; i < conf.size(); i++) {
 	String insn_name = cp_shift_spacevec(conf[i]);
@@ -243,12 +252,7 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	    if (!word
 		|| ((insn == INSN_SET || insn == insn_setq) && !conf[i]))
 		goto syntax_error;
-	    int x = find_variable(word);
-	    if (x == _vars.size()) {
-		_vars.push_back(word);
-		_vars.push_back(String());
-	    }
-	    add_insn(insn, x, 0, conf[i]);
+	    add_insn(insn, find_variable(word, true), 0, conf[i]);
 	    break;
 	}
 
@@ -294,9 +298,9 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 		errh->error("no such label '%s'", word.c_str());
 	}
 
-    if (_insns.size() == 0 && _type == TYPE_DRIVER)
+    if (_insns.size() == 0 && _type == type_driver)
 	add_insn(INSN_WAIT_STEP, 1, 0);
-    add_insn(_type == TYPE_DRIVER ? INSN_STOP : INSN_END, 0);
+    add_insn(_type == type_driver ? INSN_STOP : INSN_END, 0);
 
     return (errh->nerrors() == before ? 0 : -1);
 }
@@ -319,7 +323,8 @@ Script::initialize(ErrorHandler *errh)
 
     int insn = _insns[_insn_pos];
     assert(insn <= INSN_WAIT_TIME);
-    if (_type == TYPE_SIGNAL || _type == TYPE_PASSIVE || _type == type_proxy)
+    if (_type == type_signal || _type == type_passive || _type == type_push
+	|| _type == type_proxy)
 	/* passive, do nothing */;
     else if (insn == INSN_WAIT_TIME) {
 	Timestamp ts;
@@ -329,7 +334,7 @@ Script::initialize(ErrorHandler *errh)
 	    errh->error("syntax error at 'wait'");
     } else if (insn == INSN_INITIAL) {
 	// get rid of the initial runcount so we get called right away
-	if (_type == TYPE_DRIVER)
+	if (_type == type_driver)
 	    router()->adjust_runcount(-1);
 	else
 	    _timer.schedule_now();
@@ -337,7 +342,7 @@ Script::initialize(ErrorHandler *errh)
     }
 
 #if CLICK_USERLEVEL
-    if (_type == TYPE_SIGNAL)
+    if (_type == type_signal)
 	for (int i = 0; i < _signos.size(); i++)
 	    master()->add_signal_handler(_signos[i], router(), name() + ".run");
 #endif
@@ -553,7 +558,7 @@ Script::complete_step(String *retval)
     }
 
 #if CLICK_USERLEVEL
-    if (last_insn == INSN_END && _type == TYPE_SIGNAL)
+    if (last_insn == INSN_END && _type == type_signal)
 	for (int i = 0; i < _signos.size(); i++)
 	    master()->add_signal_handler(_signos[i], router(), name() + ".run");
 #endif
@@ -561,9 +566,11 @@ Script::complete_step(String *retval)
     if (retval) {
 	int x;
 	*retval = String();
-	if (last_insn == INSN_RETURN || last_insn == insn_returnq)
-	    if ((x = find_variable("_")) < _vars.size())
+	if (last_insn == INSN_RETURN || last_insn == insn_returnq) {
+	    if ((x = find_variable(String::make_stable("_", 1), false)) < _vars.size())
 		*retval = _vars[x + 1];
+	} else if (last_insn == INSN_END && _type == type_push)
+	    *retval = String::make_stable("0", 1);
     }
 
     if (last_insn == insn_error || last_insn == insn_errorq)
@@ -585,10 +592,30 @@ Script::run_timer(Timer *)
     complete_step(0);
 }
 
+void
+Script::push(int port, Packet *p)
+{
+    ErrorHandler *errh = ErrorHandler::default_handler();
+    ContextErrorHandler cerrh(errh, "While executing %<%{element}%>:", this);
+
+    // This is slow, but it probably doesn't need to be fast.
+    int i = find_variable(String::make_stable("input", 5), true);
+    _vars[i + 1] = String(port);
+
+    _insn_pos = 0;
+    step(0, STEP_JUMP, 0, &cerrh);
+    String out;
+    complete_step(&out);
+
+    port = -1;
+    (void) cp_integer(out, &port);
+    checked_output_push(port, p);
+}
+
 bool
 Script::Expander::expand(const String &vname, int vartype, int quote, StringAccum &sa) const
 {
-    int x = script->find_variable(vname);
+    int x = script->find_variable(vname, false);
     if (x < script->_vars.size()) {
 	sa << cp_expand_in_quotes(script->_vars[x + 1], quote);
 	return true;

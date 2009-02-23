@@ -29,7 +29,7 @@ CLICK_DECLS
 
 DriverManager::DriverManager()
 {
-    _type = TYPE_DRIVER;
+    _type = type_driver;
 }
 
 CLICK_ENDDECLS
