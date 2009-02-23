@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2009 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -18,58 +19,26 @@
 
 #include <click/config.h>
 #include "burster.hh"
-#include <click/confparse.hh>
-#include <click/error.hh>
 CLICK_DECLS
 
 Burster::Burster()
-  : _npackets(8), _timer(this)
 {
+    _burst = 8;
 }
 
 Burster::~Burster()
 {
 }
 
-int
-Burster::configure(Vector<String> &conf, ErrorHandler *errh)
+void *
+Burster::cast(const char *name)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "INTERVAL", cpkP+cpkM, cpSecondsAsMilli, &_interval,
-		   "BURST", cpkP, cpUnsigned, &_npackets,
-		   cpEnd) < 0)
-    return -1;
-  if (_npackets <= 0)
-    return errh->error("max packets per interval must be > 0");
-  return 0;
-}
-
-int
-Burster::initialize(ErrorHandler *)
-{
-  _timer.initialize(this);
-  _timer.schedule_after_msec(_interval);
-  return 0;
-}
-
-void
-Burster::run_timer(Timer *)
-{
-  // don't run if the timer is scheduled (an upstream queue went empty but we
-  // don't care)
-  if (_timer.scheduled())
-    return;
-
-  for (int i = 0; i < _npackets; i++) {
-    Packet *p = input(0).pull();
-    if (!p)
-      break;
-    output(0).push(p);
-  }
-
-  // reset timer
-  _timer.reschedule_after_msec(_interval);
+    if (strcmp(name, "TimedUnqueue") == 0)
+	return (TimedUnqueue *) this;
+    else
+	return Element::cast(name);
 }
 
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(TimedUnqueue)
 EXPORT_ELEMENT(Burster)
