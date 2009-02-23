@@ -17,9 +17,13 @@ CLICK_DECLS
  * Pulls packets at the given RATE in packets per second, and pushes them out
  * its single output.
  *
+ * RatedUnqueue will use a lot of CPU if given a low RATE.  This is because it
+ * maintains the RATE by constantly rescheduling itself until it's time for a
+ * packet to be emitted.  TimedUnqueue is often a better choice for low RATEs.
+ *
  * =h rate read/write
  *
- * =a BandwidthRatedUnqueue, Unqueue, Shaper, RatedSplitter */
+ * =a BandwidthRatedUnqueue, Unqueue, TimedUnqueue, Shaper, RatedSplitter */
 
 class RatedUnqueue : public Element { public:
 
@@ -42,6 +46,7 @@ class RatedUnqueue : public Element { public:
 
     GapRate _rate;
     Task _task;
+    enum { use_signal = 1 };
     NotifierSignal _signal;
 
     static String read_handler(Element *, void *);

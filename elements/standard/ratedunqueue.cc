@@ -56,7 +56,6 @@ RatedUnqueue::initialize(ErrorHandler *errh)
 bool
 RatedUnqueue::run_task(Task *)
 {
-#if 1    // listening for notifications
     bool worked = false;
     if (_rate.need_update(Timestamp::now())) {
 	//_rate.update();  // uncomment this if you want it to run periodically
@@ -65,24 +64,11 @@ RatedUnqueue::run_task(Task *)
 	    output(0).push(p);
 	    worked = true;
 	} else  // no Packet available
-	    if (!_signal)
+	    if (use_signal && !_signal)
 		return false;		// without rescheduling
     }
     _task.fast_reschedule();
     return worked;
-
-#else   // no notification
-    bool worked = false;
-    if (_rate.need_update(Timestamp::now())) {
-	if (Packet *p = input(0).pull()) {
-	    _rate.update();
-	    output(0).push(p);
-	    worked = true;
-	}
-    }
-    _task.fast_reschedule();
-    return worked;
-#endif
 }
 
 
