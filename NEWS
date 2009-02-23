@@ -1,5 +1,138 @@
 Click NEWS
 
+Version 1.7.0
+
+* Drivers
+
+** Support Linux 2.6.24.7.  Major thanks to Joonwoo Park and
+   NemeanNetworks, and Adam Greenhalgh.
+
+** Many soft lockup fixes to the kernel driver, for both multithreading and
+   uniprocessor scenarios.  Problems reported especially by Joonwoo Park
+   and Kevin Springborn.
+
+** Add support for user-level multithreading.
+
+** Improve atomic operations and multithreading support for notifiers.
+
+** ThreadSafeQueue is a completely thread-safe queue, allowing multiple
+   simultaneous pushers and/or pullers.
+
+** Linux kernel device elements support carrier check.
+
+** Major improvements in parsing and initialization time for large
+   configurations.
+
+** The Timestamp class supports any timestamp layout used by Linux,
+   including various types of 64-bit scalar values.
+ 
+** Linuxmodule Click file system: Prefer element names to handler names --
+   "/click/ELEMENTNAME" always matches an element of that name.  To
+   reliably find a handler, use "/click/ELEMENTNAME/.h/HANDLERNAME".
+   Similarly for global handlers.
+
+* GUI
+
+* Elements
+
+** New AnnotationInfo element adds support for named packet annotations.
+   Use this support in other elements, such as Paint, which now allows
+   users to name which annotation to paint.  Required refactoring of Packet
+   annotation area.
+
+** ControlSocket: add READDATA, READUNTIL, and WRITEUNTIL commands, add
+   LOCALHOST keyword argument, fix LLRPC support.
+
+** Script: support "goto label CONDITION", add printn, error, returnq,
+   setq, and initq commands, add PROXY and PACKET types, add many handlers.
+
+** Queue: add second output for rejected packets.
+
+** IPSummaryDump elements: support ICMP, FromIPSummaryDump supports more
+   data types, fix MD5 checksums.
+
+** Add handlers to Counter, TimedSink, others.
+
+** New elements, including ARPTable, EtherPauseSource, FlowInfo,
+   KernelFilter, StoreEtherAddress, TimedUnqueue, TruncateIPPayload.
+
+** Bug fixes and other improvements to click-align, click-devirtualize,
+   ARPFaker, ARPQuerier, ARPResponder, AddressInfo, AggregateIPFlows,
+   AnyDevice, CheckIPHeader, DirectIPLookup, FromDevice, FromHost,
+   FromUserDevice, IPFilter, IPPrint, IPReassembler, IPRouteTable,
+   KernelTun, Print, ProgressBar, Queue, RadixIPLookup, SpinlockInfo,
+   StoreIPAddress, StrideSched, StrideSwitch, Suppressor, TimeFilter,
+   TimeRange, ToDevice, ToHost, ToUserDevice, and others.
+
+* Internals
+
+** New HashTable template is preferred over HashMap.  It is documented.
+
+** Improve Timer scheduling precision by dynamically adjusting the expiry
+   time.  Improve Timer fairness as well; a Timer cannot starve Task
+   processing or other Timers.
+
+** New cp_va_kparse functions replace cp_va_parse.  The cp_va_kparse
+   functions assign a keyword to *every* argument, facilitating better
+   error messages.
+
+** Element::add_data_handlers() is an easy way to provide handler access to
+   element data members.  Element::read/reconfigure_keyword_handler can
+   handle optionaly-positional handlers.
+
+** New Handler class features handler flags that act as hints to GUI
+   displays.
+
+** New List template for doubly-linked lists.
+
+** New Bigint template for simple multiple-precision integer arithmetic.
+   Code derived from GNU MP.
+
+** Timestamp refactoring required by newer Linux drivers.
+
+** The number of supported Notifiers is possibly infinite.  Additionally,
+   Notifiers better support combinations of large numbers of basic signals,
+   so a RoundRobinSched downstream of more than 32 Queues won't pin the
+   CPU.
+
+** testie regression test framework improvements.
+
+** 64-bit platform fixes.
+
+** Improved error message subsystem (documented in error.hh/error.cc).
+
+** Improved sort function is faster and robust to bad comparators.
+
+** Use click_random() for random numbers.
+
+** UTF-8 support in command line arguments and ErrorHandler.
+
+** "./configure --enable-valgrind" turns on extra support for memory
+   debugging with Valgrind.
+
+** Remove the "connectiontunnel" primitive.
+
+** Much documentation, including to Task, Timer, NameDB, NameInfo,
+   ErrorHandler, CLP.
+
+** Other bug fixes, including to String and StringAccum.
+
+* Special thanks to Joonwoo Park, Cliff Frey, Roman Chertov, Kevin
+  Springborn, and Adam Greenhalgh for their extraordinary contributions.
+
+* Thanks to Alexander Afanasyev, Damien Ancelin, Lorenzo Bianconi, Bart
+  Braem, Lars Bro, Marco Canini, Remi Clavier, Beyers Cronje, Lionel
+  Debroux, Giovanni Di Stasi, Norbert Egi, Megan Leigh Elmore, Ulf Hermann,
+  Bob Keyes, Brian Kim, Klocwork for code analysis, Nikola Knežević,
+  Hashimoto Kouki, John Russell Lane, Jinyang Li, Mustafa Mohammad, Jim
+  Mott-Smith, Tom Parker, Vern Paxson, Matthias Petschick, Stephen Pink,
+  Pavlin Radoslavov, Manuel Requena, Barret Rhoden, Roberto Riggio, Robert
+  Ross, Javier Sánchez, Harald Schiöberg, Robert Sombrutzki, Seiichi
+  Tatsukawa, Neil Viberg, Vivek Vijayan, Michael Voorhaen, Nicholas Weaver,
+  Marco Wenzel, Christopher White, Pieter Wuytens, Xiao Yu, and anyone else
+  we inadvertently left off the list.
+
+
 Version 1.6.0   18.Sep.2007
 
 * Drivers
