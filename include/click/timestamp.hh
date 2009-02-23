@@ -770,12 +770,14 @@ Timestamp::make_jiffies(click_jiffies_t jiffies)
     return t;
 # else
 #  if CLICK_HZ == 100 || CLICK_HZ == 1000 || CLICK_HZ == 10000 || CLICK_HZ == 100000 || CLICK_HZ == 1000000
-    uint32_t subsec = (jiffies * (subsec_per_sec / CLICK_HZ)) % subsec_per_sec;
-    return Timestamp(jiffies / (subsec_per_sec / CLICK_HZ), subsec);
+    uint32_t sec = jiffies / CLICK_HZ;
+    uint32_t subsec = (jiffies - sec * CLICK_HZ) * (subsec_per_sec / CLICK_HZ);
+    return Timestamp(sec, subsec);
 #  else
     // Not very precise when CLICK_HZ doesn't evenly divide subsec_per_sec.
-    uint32_t subsec = (jiffies * (subsec_per_sec / CLICK_HZ)) % subsec_per_sec;
-    return Timestamp(jiffies / (subsec_per_sec / CLICK_HZ), subsec);
+    uint32_t sec = jiffies / CLICK_HZ;
+    uint32_t subsec = (jiffies - sec * CLICK_HZ) * (subsec_per_sec / CLICK_HZ);
+    return Timestamp(sec, subsec);
 #  endif
 # endif
 }
