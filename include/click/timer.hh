@@ -185,6 +185,12 @@ class Timer { public:
      * The timer's expiration time is not modified. */
     void unschedule();
 
+    /** @brief Unschedule the timer and reset its expiration time. */
+    inline void clear() {
+	unschedule();
+	_expiry = Timestamp();
+    }
+
 
     /** @brief Return an adjustment interval useful for precise timers.
      *
