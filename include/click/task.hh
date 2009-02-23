@@ -85,11 +85,10 @@ class Task { public:
 	return _thunk;
     }
 
-    /** @brief Return the task's associated element, if any.
-     *
-     * Returns null if the task was not constructed with the Task(Element *)
-     * constructor. */
-    inline Element *element() const;
+    /** @brief Return the task's owning element. */
+    inline Element *element() const {
+	return _owner;
+    }
 
 
     /** @brief Return true iff the task has been initialize()d. */
@@ -118,14 +117,40 @@ class Task { public:
 
     /** @brief Return the router to which this task belongs. */
     inline Router *router() const {
-	return _router;
+	return _owner->router();
     }
 
     /** @brief Return the master where this task will be scheduled. */
     Master *master() const;
 
+
+    /** @brief Initialize the Task, and optionally schedule it.
+     * @param owner specifies the element owning the Task
+     * @param schedule if true, the Task will be scheduled immediately
+     *
+     * This function must be called on every Task before it is used.  The
+     * corresponding router's ThreadSched, if any, is used to determine the
+     * task's initial thread assignment.  The task initially has the default
+     * number of tickets, and is scheduled iff @a schedule is true.
+     *
+     * An assertion will fail if a Task is initialized twice.
+     *
+     * Most elements call ScheduleInfo::initialize_task() to initialize a Task
+     * object.  The ScheduleInfo method additionally sets the task's
+     * scheduling parameters, such as ticket count and thread preference,
+     * based on a router's ScheduleInfo.  ScheduleInfo::initialize_task()
+     * calls Task::initialize(). */
+    void initialize(Element *owner, bool scheduled);
+
+    /** @brief Initialize the Task, and optionally schedule it.
+     * @param router specifies the router owning the Task
+     * @param schedule if true, the Task will be scheduled immediately
+     *
+     * This function is shorthand for @link Task::initialize(Element *, bool)
+     * Task::initialize@endlink(@a router ->@link Router::root_element
+     * root_element@endlink(), @a scheduled).  However, it is better to
+     * explicitly associate tasks with real elements. */
     void initialize(Router *router, bool scheduled);
-    void initialize(Element *e, bool scheduled);
 
 
     inline bool scheduled() const;
@@ -201,10 +226,10 @@ class Task { public:
     unsigned _cycle_runs;
 #endif
 
-    RouterThread* _thread;
+    RouterThread *_thread;
     int _home_thread_id;
 
-    Router* _router;
+    Element *_owner;
 
     volatile uintptr_t _pending_nextptr;
 
@@ -257,7 +282,7 @@ Task::Task(TaskCallback f, void *user_data)
       _cycle_runs(0),
 #endif
       _thread(0), _home_thread_id(-1),
-      _router(0), _pending_nextptr(0)
+      _owner(0), _pending_nextptr(0)
 {
 }
 
@@ -280,14 +305,14 @@ Task::Task(Element* e)
       _cycle_runs(0),
 #endif
       _thread(0), _home_thread_id(-1),
-      _router(0), _pending_nextptr(0)
+      _owner(0), _pending_nextptr(0)
 {
 }
 
 inline bool
 Task::initialized() const
 {
-    return _router != 0;
+    return _owner != 0;
 }
 
 /** @brief Return true iff the task is currently scheduled to run.
@@ -324,12 +349,6 @@ Task::thunk() const
     return _thunk;
 }
 /** @endcond never */
-
-inline Element *
-Task::element()	const
-{
-    return _hook ? 0 : reinterpret_cast<Element*>(_thunk);
-}
 
 inline int
 Task::home_thread_id() const

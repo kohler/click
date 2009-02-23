@@ -6,7 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2002 International Computer Science Institute
  * Copyright (c) 2004-2007 Regents of the University of California
- * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2008-2009 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -90,7 +90,7 @@ CLICK_DECLS
 // - Changes to _thread are protected by _thread->lock.
 // - Resetting _should_be_scheduled to 0 is protected by _thread->lock.
 // - Changes to _home_thread_id are protected by
-//   _router->master()->task_lock.
+//   router()->master()->task_lock.
 
 bool
 Task::error_hook(Task *, void *)
@@ -117,27 +117,12 @@ Task::master() const
     return _thread->master();
 }
 
-/** @brief Initialize the Task, and optionally schedule it.
- * @param router the router containing this Task
- * @param schedule if true, the Task will be scheduled immediately
- *
- * This function must be called on every Task before it is used.  The @a
- * router's ThreadSched, if any, is used to determine the task's initial
- * thread assignment.  The task initially has the default number of tickets,
- * and is scheduled iff @a schedule is true.
- *
- * An assertion will fail if a Task is initialized twice.
- *
- * Most elements call ScheduleInfo::initialize_task() to initialize a Task
- * object.  The ScheduleInfo method additionally sets the task's scheduling
- * parameters, such as ticket count and thread preference, based on a router's
- * ScheduleInfo.  ScheduleInfo::initialize_task() calls Task::initialize().
- */
 void
-Task::initialize(Router *router, bool schedule)
+Task::initialize(Element *owner, bool schedule)
 {
-    assert(!initialized() && !scheduled());
+    assert(owner && !initialized() && !scheduled());
 
+    Router *router = owner->router();
     _home_thread_id = router->initial_home_thread_id(this, schedule);
     if (_home_thread_id == ThreadSched::THREAD_UNKNOWN)
 	_home_thread_id = 0;
@@ -145,9 +130,9 @@ Task::initialize(Router *router, bool schedule)
     // range
     _thread = router->master()->thread(_home_thread_id);
 
-    // set _router last, since it is used to determine whether task is
+    // set _owner last, since it is used to determine whether task is
     // initialized
-    _router = router;
+    _owner = owner;
 
 #if HAVE_STRIDE_SCHED
     set_tickets(DEFAULT_TICKETS);
@@ -158,16 +143,10 @@ Task::initialize(Router *router, bool schedule)
 	add_pending();
 }
 
-/** @brief Initialize the Task, and optionally schedule it.
- * @param e specifies the router containing the Task
- * @param schedule if true, the Task will be scheduled immediately
- *
- * This method is shorthand for @link Task::initialize(Router *, bool) initialize@endlink(@a e ->@link Element::router router@endlink(), bool).
- */
 void
-Task::initialize(Element *e, bool schedule)
+Task::initialize(Router *router, bool schedule)
 {
-    initialize(e->router(), schedule);
+    initialize(router->root_element(), schedule);
 }
 
 void
@@ -185,7 +164,7 @@ Task::cleanup()
 	if (_pending_nextptr) {
 	    // Perhaps the task is enqueued on the current pending collection.
 	    // If so, remove it.
-	    Master *m = _router->master();
+	    Master *m = _owner->master();
 	    SpinlockIRQ::flags_t flags = m->_master_task_lock.acquire();
 	    if (_pending_nextptr) {
 		volatile uintptr_t *tptr = &m->_pending_head;
@@ -212,7 +191,7 @@ Task::cleanup()
 		/* do nothing */;
 	}
 
-	_router = 0;
+	_owner = 0;
 	_thread = 0;
     }
 }
@@ -244,9 +223,10 @@ Task::attempt_lock_tasks()
 void
 Task::add_pending()
 {
-    Master *m = _router->master();
+    Router *router = _owner->router();
+    Master *m = router->master();
     SpinlockIRQ::flags_t flags = m->_master_task_lock.acquire();
-    if (_router->_running >= Router::RUNNING_PREPARING
+    if (router->_running >= Router::RUNNING_PREPARING
 	&& !_pending_nextptr) {
 	*m->_pending_tail = reinterpret_cast<uintptr_t>(this);
 	m->_pending_tail = &_pending_nextptr;
@@ -339,7 +319,8 @@ Task::true_reschedule()
 	goto pending;
 #endif
     else if (attempt_lock_tasks()) {
-	if (_router->_running >= Router::RUNNING_BACKGROUND) {
+	Router *router = _owner->router();
+	if (router->_running >= Router::RUNNING_BACKGROUND) {
 	    if (!scheduled() && _should_be_scheduled) {
 		fast_schedule();
 		_thread->wake();
@@ -383,8 +364,9 @@ Task::strong_unschedule()
 #endif
     else if (attempt_lock_tasks()) {
 	fast_unschedule(false);
+	Master *m = _owner->master();
 	RouterThread *old_thread = _thread;
-	_thread = _router->master()->thread(RouterThread::THREAD_STRONG_UNSCHEDULE);
+	_thread = m->thread(RouterThread::THREAD_STRONG_UNSCHEDULE);
 	old_thread->unlock_tasks();
 	done = true;
     }
@@ -424,7 +406,7 @@ Task::strong_reschedule()
 	RouterThread *old_thread = _thread;
 	if (old_thread->thread_id() == RouterThread::THREAD_STRONG_UNSCHEDULE) {
 	    fast_unschedule(true);
-	    _thread = _router->master()->thread(_home_thread_id);
+	    _thread = _owner->master()->thread(_home_thread_id);
 	} else if (old_thread->thread_id() == _home_thread_id) {
 	    _should_be_scheduled = true;
 	    fast_reschedule();
@@ -474,7 +456,7 @@ Task::move_thread(int thread_id)
 	    && !_should_be_strong_unscheduled) {
 	    if (scheduled())
 		fast_unschedule(true);
-	    _thread = _router->master()->thread(_home_thread_id);
+	    _thread = _owner->master()->thread(_home_thread_id);
 	    old_thread->unlock_tasks();
 	    if (_should_be_scheduled)
 		add_pending();
@@ -493,8 +475,8 @@ void
 Task::process_pending(RouterThread *thread)
 {
     // Must be called with thread->lock held.
-    // May be called in the process of destroying _router, so must check
-    // _router->_running when necessary.  (Not necessary for add_pending()
+    // May be called in the process of destroying router(), so must check
+    // router()->_running when necessary.  (Not necessary for add_pending()
     // since that function does it already.)
 
 #if CLICK_BSDMODULE
@@ -523,8 +505,8 @@ Task::process_pending(RouterThread *thread)
 	if (_thread->thread_id() != want_thread_id) {
 	    if (scheduled())
 		fast_unschedule(true);
-	    _thread = _router->master()->thread(want_thread_id);
-	} else if (_should_be_scheduled && _router->running()) {
+	    _thread = _owner->master()->thread(want_thread_id);
+	} else if (_should_be_scheduled && _owner->router()->running()) {
 	    if (!scheduled())
 		fast_schedule();
 	}

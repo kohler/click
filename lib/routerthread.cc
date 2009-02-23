@@ -630,7 +630,7 @@ RouterThread::unschedule_router_tasks(Router* r)
 #if HAVE_TASK_HEAP
     Task* t;
     for (Task** tp = _task_heap.end(); tp > _task_heap.begin(); )
-	if ((t = *--tp, t->_router == r)) {
+	if ((t = *--tp, t->router() == r)) {
 	    task_reheapify_from(tp - _task_heap.begin(), _task_heap.back());
 	    // must clear _schedpos AFTER task_reheapify_from
 	    t->_schedpos = -1;
@@ -643,7 +643,7 @@ RouterThread::unschedule_router_tasks(Router* r)
     Task* prev = this;
     Task* t;
     for (t = prev->_next; t != this; t = t->_next)
-	if (t->_router == r)
+	if (t->router() == r)
 	    t->_prev = 0;
 	else {
 	    prev->_next = t;
