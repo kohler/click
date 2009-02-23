@@ -304,6 +304,12 @@ returns its negation.
 Useful for true/false operations.  Parses all parameters as Booleans and
 returns their conjunction or disjunction, respectively.
 
+=h if "read with parameters"
+
+Expects three space-separated parameters, the first a Boolean.  Returns the
+second parameter if the Boolean is true, or the third parameter if the Boolean
+is false.
+
 =h sprintf "read with parameters"
 
 Parses its parameters as a space-separated list of arguments.  The first
@@ -390,6 +396,14 @@ class Script : public Element { public:
 	Script *script;
 	ErrorHandler *errh;
 	bool expand(const String &, int vartype, int quote, StringAccum &) const;
+    };
+
+    enum {
+	ST_STEP = 0, ST_RUN, ST_GOTO,
+	AR_ADD = 0, AR_SUB, AR_MUL, AR_DIV, AR_IDIV,
+	AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
+	AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat,
+	ar_and, ar_or, ar_now, ar_if
     };
 
     void add_insn(int, int, int = 0, const String & = String());
