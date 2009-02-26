@@ -54,7 +54,7 @@ static int rt_el_present(struct ieee80211_radiotap_header *th, u_int32_t element
 {
 	if (element > NUM_RADIOTAP_ELEMENTS)
 		return 0;
-	return th->it_present & (1 << element);
+	return le32_to_cpu(th->it_present) & (1 << element);
 }
 
 static int rt_check_header(struct ieee80211_radiotap_header *th, int len)
@@ -65,7 +65,7 @@ static int rt_check_header(struct ieee80211_radiotap_header *th, int len)
 		return 0;
 	}
 
-	if (th->it_len < sizeof(struct ieee80211_radiotap_header)) {
+	if (le16_to_cpu(th->it_len) < sizeof(struct ieee80211_radiotap_header)) {
 		return 0;
 	}
 
@@ -74,11 +74,11 @@ static int rt_check_header(struct ieee80211_radiotap_header *th, int len)
 		    bytes += radiotap_elem_to_bytes[x];
 	}
 
-	if (th->it_len < sizeof(struct ieee80211_radiotap_header) + bytes) {
+	if (le16_to_cpu(th->it_len) < sizeof(struct ieee80211_radiotap_header) + bytes) {
 		return 0;
 	}
 
-	if (th->it_len > len) {
+	if (le16_to_cpu(th->it_len) > len) {
 		return 0;
 	}
 
@@ -141,13 +141,13 @@ RadiotapDecap::simple_action(Packet *p)
 			ceh->silence = *((u_int8_t *) rt_el_offset(th, IEEE80211_RADIOTAP_DB_ANTNOISE));
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_RX_FLAGS)) {
-			u_int16_t flags = *((u_int16_t *) rt_el_offset(th, IEEE80211_RADIOTAP_RX_FLAGS));
+			u_int16_t flags = le16_to_cpu(*((u_int16_t *) rt_el_offset(th, IEEE80211_RADIOTAP_RX_FLAGS)));
 			if (flags & IEEE80211_RADIOTAP_F_RX_BADFCS)
 				ceh->flags |= WIFI_EXTRA_RX_ERR;
 		}
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_TX_FLAGS)) {
-			u_int16_t flags = *((u_int16_t *) rt_el_offset(th, IEEE80211_RADIOTAP_TX_FLAGS));
+			u_int16_t flags = le16_to_cpu(*((u_int16_t *) rt_el_offset(th, IEEE80211_RADIOTAP_TX_FLAGS)));
 			ceh->flags |= WIFI_EXTRA_TX;
 			if (flags & IEEE80211_RADIOTAP_F_TX_FAIL)
 				ceh->flags |= WIFI_EXTRA_TX_FAIL;
