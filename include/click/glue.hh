@@ -187,8 +187,9 @@ CLICK_ENDDECLS
  * In particular, objects like Bitvector that maintain pointers into their own
  * representations are not safe to sort with click_qsort().  Conservatively,
  * it is safe to sort fundamental data types (like int and pointers), plain
- * old data types, and simple objects.  It is also safe to sort String,
- * StringAccum, and Vector objects.
+ * old data types, and simple objects.  It is also safe to sort String and
+ * StringAccum objects, and to sort Vector objects that contain objects
+ * that are safe to sort themselves.
  *
  * @note The implementation is based closely on "Engineering a Sort Function,"
  * Jon L. Bentley and M. Douglas McIlroy, <em>Software---Practice &
@@ -197,7 +198,7 @@ CLICK_ENDDECLS
  * so it will not exhaust stack space in the kernel. */
 int click_qsort(void *base, size_t n, size_t size,
 		int (*compar)(const void *a, const void *b, void *user_data),
-		void *user_data);
+		void *user_data = 0);
 
 /** @brief Sort array of elements according to @a compar.
  * @param base pointer to array of elements
@@ -205,16 +206,16 @@ int click_qsort(void *base, size_t n, size_t size,
  * @param size size of an element
  * @param compar comparison function
  *
- * Sorts an array of elements.  The comparison function is called as "@a
- * param(@i a, @i b)", where @i a and @i b are pointers into the array
- * starting at @a base. */
+ * @deprecated Prefer the variant where @a compar takes an extra void
+ * *user_data argument.  This variant depends on a nonstandard function
+ * pointer cast. */
 int click_qsort(void *base, size_t n, size_t size,
-		int (*compar)(const void *, const void *));
+		int (*compar)(const void *a, const void *b)) CLICK_DEPRECATED;
 
 /** @brief Generic comparison function useful for click_qsort.
  *
  * Compares @a a and @a b using operator<(). */
-template <typename T> int click_compare(const void *a, const void *b)
+template <typename T> int click_compare(const void *a, const void *b, void *)
 {
     const T *ta = static_cast<const T *>(a);
     const T *tb = static_cast<const T *>(b);

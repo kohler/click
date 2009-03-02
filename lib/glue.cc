@@ -617,7 +617,6 @@ click_qsort(void *base, size_t n, size_t size,
 int
 click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *))
 {
-    // XXX fix cast
     int (*compar2)(const void *, const void *, void *);
     compar2 = reinterpret_cast<int (*)(const void *, const void *, void *)>(compar);
     return click_qsort(base, n, size, compar2, 0);
