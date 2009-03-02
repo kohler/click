@@ -391,7 +391,7 @@ LinkTable::print_links()
   return sa.take_string();
 }
 
-static int ipaddr_sorter(const void *va, const void *vb) {
+static int ipaddr_sorter(const void *va, const void *vb, void *) {
     IPAddress *a = (IPAddress *)va, *b = (IPAddress *)vb;
     if (a->addr() == b->addr()) {
 	return 0;
