@@ -553,28 +553,28 @@ static const char * const sorted_classes[] = {
 static Vector<String> *strvec;
 static Vector<size_t> *sizevec;
 
-static int compar(const void *xa, const void *xb)
+static int compar(const void *xa, const void *xb, void *)
 {
     const char *a = * (const char **) xa;
     const char *b = * (const char **) xb;
     return strcmp(a, b);
 }
 
-static int string_compar(const void *xa, const void *xb)
+static int string_compar(const void *xa, const void *xb, void *)
 {
     const String *a = (const String *) xa;
     const String *b = (const String *) xb;
     return String::compare(*a, *b);
 }
 
-static int size_t_compar(const void *xa, const void *xb)
+static int size_t_compar(const void *xa, const void *xb, void *)
 {
     const size_t *a = (const size_t *) xa;
     const size_t *b = (const size_t *) xb;
     return (*a > *b ? 1 : (*a == *b ? 0 : -1));
 }
 
-static int string_permute_compar(const void *xa, const void *xb)
+static int string_permute_compar(const void *xa, const void *xb, void *)
 {
     const int *a = (const int *) xa;
     const int *b = (const int *) xb;
@@ -582,7 +582,7 @@ static int string_permute_compar(const void *xa, const void *xb)
     return (diff ? diff : *a - *b);
 }
 
-static int size_t_permute_compar(const void *xa, const void *xb)
+static int size_t_permute_compar(const void *xa, const void *xb, void *)
 {
     const int *a = (const int *) xa;
     const int *b = (const int *) xb;
@@ -590,21 +590,21 @@ static int size_t_permute_compar(const void *xa, const void *xb)
     return (diff < 0 ? -1 : (diff == 0 ? *a - *b : 1));
 }
 
-static int string_rev_compar(const void *xa, const void *xb)
+static int string_rev_compar(const void *xa, const void *xb, void *)
 {
     const String *a = (const String *) xa;
     const String *b = (const String *) xb;
     return String::compare(*b, *a);
 }
 
-static int size_t_rev_compar(const void *xa, const void *xb)
+static int size_t_rev_compar(const void *xa, const void *xb, void *)
 {
     const size_t *a = (const size_t *) xa;
     const size_t *b = (const size_t *) xb;
     return (*b > *a ? 1 : (*a == *b ? 0 : -1));
 }
 
-static int string_permute_rev_compar(const void *xa, const void *xb)
+static int string_permute_rev_compar(const void *xa, const void *xb, void *)
 {
     const int *a = (const int *) xa;
     const int *b = (const int *) xb;
@@ -612,14 +612,13 @@ static int string_permute_rev_compar(const void *xa, const void *xb)
     return (diff ? diff : *a - *b);
 }
 
-static int size_t_permute_rev_compar(const void *xa, const void *xb)
+static int size_t_permute_rev_compar(const void *xa, const void *xb, void *)
 {
     const int *a = (const int *) xa;
     const int *b = (const int *) xb;
     ssize_t diff = (*sizevec)[*b] - (*sizevec)[*a];
     return (diff < 0 ? -1 : (diff == 0 ? *a - *b : 1));
 }
-
 
 int
 SortTest::configure(Vector<String> &conf, ErrorHandler *errh)
@@ -694,7 +693,7 @@ SortTest::initialize_vec(ErrorHandler *)
     else
 	begin = _sizevec.begin(), n = _sizevec.size(), size = sizeof(size_t);
 
-    int (*compar)(const void *, const void *);
+    int (*compar)(const void *, const void *, void *);
     if (_strvec.size()) {
 	strvec = &_strvec;
 	if (_permute.size())
@@ -704,7 +703,7 @@ SortTest::initialize_vec(ErrorHandler *)
 
 #if CLICK_USERLEVEL
 	if (_stdc)
-	    qsort(begin, n, size, compar);
+	    qsort(begin, n, size, (int (*)(const void *, const void *)) compar);
 	else
 #endif
 	click_qsort(begin, n, size, compar);
@@ -727,7 +726,7 @@ SortTest::initialize_vec(ErrorHandler *)
 
 #if CLICK_USERLEVEL
 	if (_stdc)
-	    qsort(begin, n, size, compar);
+	    qsort(begin, n, size, (int (*)(const void *, const void *)) compar);
 	else
 #endif
 	click_qsort(begin, n, size, compar);

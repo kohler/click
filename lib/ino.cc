@@ -67,7 +67,7 @@ ClickIno::grow(int min_size)
 
 
 static int
-entry_compar(const void *v1, const void *v2)
+entry_compar(const void *v1, const void *v2, void *)
 {
     const ClickIno::Entry *a = reinterpret_cast<const ClickIno::Entry *>(v1);
     const ClickIno::Entry *b = reinterpret_cast<const ClickIno::Entry *>(v2);

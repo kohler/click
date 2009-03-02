@@ -31,7 +31,7 @@ CLICK_DECLS
 // hash table.  Is balanced, but static.
 //
 template<class C, class K, K C::*key> int
-jvcomp (const void *a, const void *b)
+jvcomp (const void *a, const void *b, void *)
 {
   const C *ca = static_cast<const C *> (a);
   const C *cb = static_cast<const C *> (b);

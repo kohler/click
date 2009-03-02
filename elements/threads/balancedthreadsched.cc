@@ -63,13 +63,13 @@ BalancedThreadSched::initialize(ErrorHandler *)
     return 0;
 }
 
-static int task_increasing_sorter(const void *va, const void *vb) {
+static int task_increasing_sorter(const void *va, const void *vb, void *) {
     Task **a = (Task **)va, **b = (Task **)vb;
     int ca = (*a)->cycles(), cb = (*b)->cycles();
     return (ca < cb ? -1 : (cb < ca ? 1 : 0));
 }
 
-static int task_decreasing_sorter(const void *va, const void *vb) {
+static int task_decreasing_sorter(const void *va, const void *vb, void *) {
     Task **a = (Task **)va, **b = (Task **)vb;
     int ca = (*a)->cycles(), cb = (*b)->cycles();
     return (ca < cb ? 1 : (cb < ca ? -1 : 0));
