@@ -180,7 +180,9 @@ ARPQuerier::take_state(Element *e, ErrorHandler *errh)
 void
 ARPQuerier::send_query_for(Packet *p)
 {
-    WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
+    static_assert(Packet::default_headroom >= sizeof(click_ether));
+    WritablePacket *q = Packet::make(Packet::default_headroom - sizeof(click_ether),
+				     NULL, sizeof(click_ether) + sizeof(click_ether_arp), 0);
     if (!q) {
 	click_chatter("in arp querier: cannot make packet!");
 	return;
@@ -239,7 +241,7 @@ ARPQuerier::handle_ip(Packet *p, bool response)
 	q->ether_header()->ether_type = htons(ETHERTYPE_IP);
 
     IPAddress dst_ip = q->dst_ip_anno();
-    EtherAddress *dst_eth = reinterpret_cast<EtherAddress *>(&q->ether_header()->ether_dhost);
+    EtherAddress *dst_eth = reinterpret_cast<EtherAddress *>(q->ether_header()->ether_dhost);
     int r;
 
     // Easy case: requires only read lock
@@ -251,6 +253,18 @@ ARPQuerier::handle_ip(Packet *p, bool response)
     } else if (dst_ip.addr() == 0xFFFFFFFFU || dst_ip == _my_bcast_ip) {
 	// Check special IP addresses
 	*dst_eth = EtherAddress::make_broadcast();
+	memcpy(&q->ether_header()->ether_shost, _my_en.data(), 6);
+	output(0).push(q);
+	r = 0;
+    } else if (dst_ip.is_multicast()) {
+	uint8_t *dst_addr = q->ether_header()->ether_dhost;
+	dst_addr[0] = 0x01;
+	dst_addr[1] = 0x00;
+	dst_addr[2] = 0x5E;
+	uint32_t addr = ntohl(dst_ip.addr());
+	dst_addr[3] = (addr >> 16) & 0x7F;
+	dst_addr[4] = addr >> 8;
+	dst_addr[5] = addr;
 	memcpy(&q->ether_header()->ether_shost, _my_en.data(), 6);
 	output(0).push(q);
 	r = 0;
@@ -360,7 +374,7 @@ ARPQuerier::add_handlers()
     add_data_handlers("queries", Handler::OP_READ, &_arp_queries);
     add_data_handlers("responses", Handler::OP_READ, &_arp_responses);
     add_data_handlers("drops", Handler::OP_READ, &_drops);
-    add_data_handlers("broadcast", Handler::OP_READ, &_my_bcast_ip);
+    add_data_handlers("broadcast", Handler::OP_READ | Handler::OP_WRITE, &_my_bcast_ip);
     add_data_handlers("ipaddr", Handler::OP_READ | Handler::OP_WRITE, &_my_ip);
     add_write_handler("insert", write_handler, h_insert);
     add_write_handler("delete", write_handler, h_delete);

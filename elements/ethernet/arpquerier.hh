@@ -40,10 +40,12 @@ The ARP reply packets on input 1 should include the Ethernet header.
 ARPQuerier may have one or two outputs. If it has two, then ARP queries
 are sent to the second output.
 
-ARPQuerier will not send queries for packets addressed to 0.0.0.0,
-255.255.255.255, or, if specified, any BROADCAST address.  Packets addressed
-to 0.0.0.0 are dropped; packets for broadcast addresses are forwarded with
-destination Ethernet address FF:FF:FF:FF:FF:FF.
+ARPQuerier implements special behavior for 0.0.0.0, 255.255.255.255, multicast
+addresses, and, if specified, any BROADCAST address.  Packets addressed to
+0.0.0.0 are dropped.  Packets for broadcast addresses are forwarded with
+destination Ethernet address FF-FF-FF-FF-FF-FF.  Multicast IP addresses are
+forwarded to 01-00-5E-xx-yy-zz, where xx-yy-zz are the lower 23 bits of the
+multicast IP address, as specified in RFC1112.
 
 Keyword arguments are:
 
@@ -74,7 +76,7 @@ Time in seconds.  Amount of time before an ARP entry expires.  Defaults to
 =item BROADCAST
 
 IP address.  Local broadcast IP address.  Packets sent to this address will be
-forwarded to Ethernet address FF:FF:FF:FF:FF:FF.  Defaults to the local
+forwarded to Ethernet address FF-FF-FF-FF-FF-FF.  Defaults to the local
 broadcast address that can be extracted from the IP address's corresponding
 prefix, if any.
 
