@@ -515,7 +515,7 @@ particular purpose.\n");
     if (f) {
       Element *root = router->root_element();
       String s = Router::handler(root, "flatconfig")->call_read(root);
-      fwrite(s.data(), 1, s.length(), f);
+      ignore_result(fwrite(s.data(), 1, s.length(), f));
       if (f != stdout)
 	fclose(f);
     }
