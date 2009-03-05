@@ -125,6 +125,7 @@ lib/exportstub.cc:libsrc/exportstub.cc
 lib/gaprate.cc:libsrc/gaprate.cc
 lib/glue.cc:libsrc/glue.cc
 lib/handlercall.cc:libsrc/handlercall.cc
+lib/hashallocator.cc:libsrc/hashallocator.cc
 lib/in_cksum.c:libsrc/in_cksum.c
 lib/integers.cc:libsrc/integers.cc
 lib/ipaddress.cc:libsrc/ipaddress.cc

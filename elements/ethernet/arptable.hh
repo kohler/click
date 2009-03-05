@@ -169,7 +169,7 @@ class ARPTable : public Element { public:
     uint32_t _packet_capacity;
     uint32_t _expire_jiffies;
     atomic_uint32_t _drops;
-    HashAllocator<sizeof(ARPEntry)> _alloc;
+    SizedHashAllocator<sizeof(ARPEntry)> _alloc;
     Timer _expire_timer;
 
     ARPEntry *ensure(IPAddress ip);

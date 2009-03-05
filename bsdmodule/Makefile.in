@@ -63,7 +63,7 @@ INSTALLOBJS = click.ko
 endif
 
 GENERIC_OBJS = string.o straccum.o nameinfo.o \
-	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
+	bitvector.o vectorv.o templatei.o bighashmap_arena.o hashallocator.o \
 	ipaddress.o ipflowid.o etheraddress.o \
 	packet.o in_cksum.o \
 	error.o timestamp.o glue.o task.o timer.o atomic.o gaprate.o \

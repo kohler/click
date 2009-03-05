@@ -420,6 +420,7 @@ exportstub.cc
 gaprate.cc
 glue.cc
 handlercall.cc
+hashallocator.cc
 in_cksum.c
 ino.cc
 integers.cc
