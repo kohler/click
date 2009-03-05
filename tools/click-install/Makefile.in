@@ -30,9 +30,11 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 ifeq ($(V),1)
 ccompile = $(COMPILE) $(1)
 cxxcompile = $(CXXCOMPILE) $(1)
+cxxlink = $(CXXLINK) $(1)
 else
 ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
 cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
+cxxlink = @/bin/echo ' ' $(2) $@ && $(CXXLINK) $(1)
 endif
 
 .SUFFIXES:
@@ -76,10 +78,10 @@ $(LIBCLICKTOOL):
 	@cd ../lib; $(MAKE) $(LIBCLICKTOOL)
 
 click-install: Makefile $(OBJS) ../lib/$(LIBCLICKTOOL)
-	$(CXXLINK) -rdynamic $(OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS)
+	$(call cxxlink,-rdynamic $(OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
 
 click-uninstall: Makefile $(UN_OBJS) ../lib/$(LIBCLICKTOOL)
-	$(CXXLINK) -rdynamic $(UN_OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS)
+	$(call cxxlink,-rdynamic $(UN_OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \

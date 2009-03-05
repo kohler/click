@@ -27,9 +27,13 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 ifeq ($(V),1)
 ccompile = $(COMPILE) $(1)
 cxxcompile = $(CXXCOMPILE) $(1)
+cxxlink = $(CXXLINK) $(1)
+verbose_cmd = $(1)
 else
 ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
 cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
+cxxlink = @/bin/echo ' ' $(2) $@ && $(CXXLINK) $(1)
+verbose_cmd = @/bin/echo ' ' $(2) && $(1)
 endif
 
 .SUFFIXES:
@@ -103,11 +107,11 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 $(DRIVER): Makefile libclick.a $(OBJS)
-	$(CXXLINK) -rdynamic $(OBJS) libclick.a $(LIBS)
+	$(call cxxlink,-rdynamic $(OBJS) libclick.a $(LIBS),LINK)
 
 libclick.a: Makefile $(LIBOBJS)
-	$(AR_CREATE) libclick.a $(LIBOBJS)
-	$(RANLIB) libclick.a
+	$(call verbose_cmd,$(AR_CREATE) libclick.a $(LIBOBJS),AR libclick.a)
+	$(call verbose_cmd,$(RANLIB) libclick.a,RANLIB libclick.a)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \

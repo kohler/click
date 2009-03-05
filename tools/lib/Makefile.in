@@ -34,11 +34,13 @@ ccompile = $(COMPILE) $(1)
 build_ccompile = $(BUILD_COMPILE) $(1)
 cxxcompile = $(CXXCOMPILE) $(1)
 build_cxxcompile = $(BUILD_CXXCOMPILE) $(1)
+verbose_cmd = $(1)
 else
 ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
 build_ccompile = @/bin/echo ' ' $(2) $< && $(BUILD_COMPILE) $(1)
 cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
 build_cxxcompile = @/bin/echo ' ' $(2) $< && $(BUILD_CXXCOMPILE) $(1)
+verbose_cmd = @/bin/echo ' ' $(2) && $(1)
 endif
 
 .SUFFIXES:
@@ -101,11 +103,11 @@ all: libclicktool.a
 endif
 
 libclicktool.a: Makefile $(OBJS)
-	$(AR_CREATE) libclicktool.a $(OBJS)
-	$(RANLIB) libclicktool.a
+	$(call verbose_cmd,$(AR_CREATE) libclicktool.a $(OBJS),AR $@)
+	$(call verbose_cmd,$(RANLIB) libclicktool.a,RANLIB $@)
 libclicktool_build.a: Makefile $(BUILDOBJS)
-	$(BUILD_AR_CREATE) libclicktool_build.a $(BUILDOBJS)
-	$(BUILD_RANLIB) libclicktool_build.a
+	$(call verbose_cmd,$(BUILD_AR_CREATE) libclicktool_build.a $(BUILDOBJS),AR $@)
+	$(call verbose_cmd,$(BUILD_RANLIB) libclicktool_build.a,RANLIB $@)
 
 Makefile: $(srcdir)/Makefile.in
 	cd $(top_builddir) \
