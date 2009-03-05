@@ -106,69 +106,79 @@ Resets counters to zero when written.
 
 class ToDevice : public AnyTaskDevice { public:
 
-  ToDevice();
-  ~ToDevice();
+    ToDevice();
+    ~ToDevice();
 
-  static void static_initialize();
-  static void static_cleanup();
+    static void static_initialize();
+    static void static_cleanup();
 
-  const char *class_name() const	{ return "ToDevice"; }
-  const char *port_count() const	{ return PORTS_1_0; }
-  const char *processing() const	{ return PULL; }
+    const char *class_name() const	{ return "ToDevice"; }
+    const char *port_count() const	{ return PORTS_1_0; }
+    const char *processing() const	{ return PULL; }
 
-  int configure_phase() const		{ return CONFIGURE_PHASE_TODEVICE; }
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  void add_handlers();
+    int configure_phase() const		{ return CONFIGURE_PHASE_TODEVICE; }
+    int configure(Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void cleanup(CleanupStage);
+    void add_handlers();
 
-  bool run_task(Task *);
+    bool run_task(Task *);
 
-  void reset_counts();
-  inline void tx_wake_queue(net_device *);
-  bool tx_intr();
-  void change_device(net_device *);
-
-#if CLICK_DEVICE_STATS
-  // Statistics.
-  uint64_t _time_clean;
-  uint64_t _time_freeskb;
-  uint64_t _time_queue;
-  uint64_t _perfcnt1_pull;
-  uint64_t _perfcnt1_clean;
-  uint64_t _perfcnt1_freeskb;
-  uint64_t _perfcnt1_queue;
-  uint64_t _perfcnt2_pull;
-  uint64_t _perfcnt2_clean;
-  uint64_t _perfcnt2_freeskb;
-  uint64_t _perfcnt2_queue;
-  uint32_t _activations;
-#endif
-  uint32_t _runs;
-  uint32_t _pulls;
-  uint32_t _npackets;
-#if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-  click_cycles_t _pull_cycles;
-#endif
-  uint32_t _rejected;
-  uint32_t _hard_start;
-  uint32_t _busy_returns;
-  uint32_t _too_short;
+    void reset_counts();
+    inline void tx_wake_queue(net_device *);
+    bool tx_intr();
+    void change_device(net_device *);
 
 #if HAVE_LINUX_POLLING
-  bool polling() const			{ return _dev && _dev->polling > 0; }
+    bool polling() const			{ return _dev && _dev->polling > 0; }
 #else
-  bool polling() const			{ return false; }
+    bool polling() const			{ return false; }
 #endif
 
  private:
 
-  unsigned _burst;
-  int _dev_idle;
-  NotifierSignal _signal;
-  bool _no_pad;
+    enum {
+	queue_timeout = CLICK_HZ / 4
+    };
 
-  int queue_packet(Packet *p);
+    Packet *_q;
+    click_jiffies_t _q_expiry_j;
+    unsigned _burst;
+    int _dev_idle;
+    NotifierSignal _signal;
+    bool _no_pad;
+
+#if CLICK_DEVICE_STATS
+    // Statistics.
+    uint64_t _time_clean;
+    uint64_t _time_freeskb;
+    uint64_t _time_queue;
+    uint64_t _perfcnt1_pull;
+    uint64_t _perfcnt1_clean;
+    uint64_t _perfcnt1_freeskb;
+    uint64_t _perfcnt1_queue;
+    uint64_t _perfcnt2_pull;
+    uint64_t _perfcnt2_clean;
+    uint64_t _perfcnt2_freeskb;
+    uint64_t _perfcnt2_queue;
+    uint32_t _activations;
+#endif
+    uint32_t _runs;
+    uint32_t _pulls;
+    uint32_t _npackets;
+#if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
+    click_cycles_t _pull_cycles;
+#endif
+    uint32_t _drops;
+    uint32_t _holds;
+    uint32_t _hard_start;
+    uint32_t _busy_returns;
+    uint32_t _too_short;
+
+    int queue_packet(Packet *p);
+
+    static String read_calls(Element *e, void *user_data);
+    static int write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh);
 
 };
 

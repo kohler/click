@@ -106,7 +106,7 @@ tx_notifier_hook(struct notifier_block *nb, unsigned long val, void *v)
 #endif
 
 ToDevice::ToDevice()
-    : _dev_idle(0), _rejected(0), _hard_start(0), _no_pad(false)
+    : _q(0), _no_pad(false)
 {
 }
 
@@ -174,8 +174,12 @@ ToDevice::reset_counts()
   _npackets = 0;
 
   _busy_returns = 0;
+  _dev_idle = 0;
+  _hard_start = 0;
   _too_short = 0;
   _runs = 0;
+  _drops = 0;
+  _holds = 0;
   _pulls = 0;
 #if CLICK_DEVICE_STATS
   _activations = 0;
@@ -206,6 +210,8 @@ ToDevice::cleanup(CleanupStage stage)
 	    unregister_net_tx(&tx_notifier);
     }
 #endif
+    if (_q)
+	_q->kill();
     clear_device(&to_device_map);
 }
 
@@ -271,11 +277,18 @@ ToDevice::run_task(Task *)
 
 	_pulls++;
 
-	Packet *p = input(0).pull();
-	if (!p)
+	Packet *p;
+	if ((p = _q)) {
+	    _q = 0;
+	    if (click_jiffies_less(_q_expiry_j, click_jiffies())) {
+		p->kill();
+		_drops++;
+		p = 0;
+	    }
+	}
+	if (!p && !(p = input(0).pull()))
 	    break;
 
-	_npackets++;
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
 	_pull_cycles += click_get_cycles() - before_pull_cycles - CLICK_CYCLE_COMPENSATION;
 #endif
@@ -431,10 +444,12 @@ ToDevice::queue_packet(Packet *p)
 	    _hard_start++;
 	}
     if (ret != 0) {
-	if (++_rejected == 1)
-	    printk("<1>ToDevice %s rejected a packet!\n", _dev->name);
-	kfree_skb(skb1);
-    }
+        _q = p;
+	_q_expiry_j = click_jiffies() + queue_timeout;
+        if (++_holds == 1)
+            printk("<1>ToDevice %s is full, packet delayed\n", _dev->name);
+    } else
+        _npackets++;
     return ret;
 }
 
@@ -477,12 +492,13 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 }
 }
 
-static String
-ToDevice_read_calls(Element *f, void *)
+String
+ToDevice::read_calls(Element *e, void *)
 {
-    ToDevice *td = (ToDevice *)f;
+    ToDevice *td = (ToDevice *)e;
     return
-	String(td->_rejected) + " packets rejected\n" +
+	String(td->_holds) + " packets held\n" +
+	String(td->_drops) + " packets dropped\n" +
 	String(td->_hard_start) + " hard start xmit\n" +
 	String(td->_busy_returns) + " device busy returns\n" +
 	String(td->_npackets) + " packets sent\n" +
@@ -508,56 +524,30 @@ ToDevice_read_calls(Element *f, void *)
 	;
 }
 
-enum { H_COUNT, H_DROPS, H_PULL_CYCLES, H_TIME_QUEUE, H_TIME_CLEAN };
-
-static String
-ToDevice_read_stats(Element *e, void *thunk)
+int
+ToDevice::write_handler(const String &, Element *e, void *, ErrorHandler *)
 {
     ToDevice *td = (ToDevice *)e;
-    switch ((uintptr_t) thunk) {
-      case H_COUNT:
-	return String(td->_npackets);
-      case H_DROPS:
-	return String(td->_rejected);
-#if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-      case H_PULL_CYCLES:
-	return String(td->_pull_cycles);
-#endif
-#if CLICK_DEVICE_STATS
-      case H_TIME_QUEUE:
-	return String(td->_time_queue);
-      case H_TIME_CLEAN:
-	return String(td->_time_clean);
-#endif
-      default:
-	return String();
-    }
-}
-
-static int
-ToDevice_write_stats(const String &, Element *e, void *, ErrorHandler *)
-{
-  ToDevice *td = (ToDevice *)e;
-  td->reset_counts();
-  return 0;
+    td->reset_counts();
+    return 0;
 }
 
 void
 ToDevice::add_handlers()
 {
-    add_read_handler("calls", ToDevice_read_calls, 0);
-    add_read_handler("count", ToDevice_read_stats, (void *)H_COUNT);
-    add_read_handler("drops", ToDevice_read_stats, (void *)H_DROPS);
-    // XXX deprecated
-    add_read_handler("packets", ToDevice_read_stats, (void *)H_COUNT);
+    add_read_handler("calls", read_calls, 0);
+    add_data_handlers("count", Handler::OP_READ, &_npackets);
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
+    add_data_handlers("holds", Handler::OP_READ, &_holds);
+    add_read_handler("packets", Handler::OP_READ | Handler::DEPRECATED, &_npackets);
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-    add_read_handler("pull_cycles", ToDevice_read_stats, (void *)H_PULL_CYCLES);
+    add_read_handler("pull_cycles", Handler::OP_READ, &_pull_cycles);
 #endif
 #if CLICK_DEVICE_STATS
-    add_read_handler("enqueue_cycles", ToDevice_read_stats, (void *)H_TIME_QUEUE);
-    add_read_handler("clean_dma_cycles", ToDevice_read_stats, (void *)H_TIME_CLEAN);
+    add_read_handler("enqueue_cycles", Handler::OP_READ, &_time_queue);
+    add_read_handler("clean_dma_cycles", Handler::OP_READ, &_time_clean);
 #endif
-    add_write_handler("reset_counts", ToDevice_write_stats, 0, Handler::BUTTON);
+    add_write_handler("reset_counts", write_handler, 0, Handler::BUTTON);
     add_task_handlers(&_task);
 }
 
