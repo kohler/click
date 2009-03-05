@@ -89,6 +89,10 @@ AnyDevice::initialize_keywords(ErrorHandler *errh)
     if ((_up_call && _up_call->initialize_write(this, errh) < 0)
 	|| (_down_call && _down_call->initialize_write(this, errh) < 0))
 	return -1;
+    if (_up_call && _carrier_ok)
+	_up_call->call_write(errh);
+    else if (_down_call && !_carrier_ok)
+	_down_call->call_write(errh);
     return 0;
 }
 
