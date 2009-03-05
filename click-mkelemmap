@@ -386,8 +386,9 @@ Options:
   -r, --provide PROV      Record provisions PROV in output.
   -t, --drivers DRIVERS   Record drivers DRIVERS in output.
       --dochref DOCSTR    Record documentation URL pattern DOCSTR in output.
-  -p, --prefix PFX        Remove PFX from filenames in output.
-  -I, --include DIR       Look for header files in DIR.
+  -p, --prefix PFX        Sources start at PFX.  Add PFX to includes and remove
+                          PFX from filenames in output.
+  -I, --include DIR       Look for header files in PFX/DIR.
   -s, --sourcedir DIR     Record DIR as source directory in output.
   -h, --help              Print this message and exit.
 
@@ -427,12 +428,12 @@ while (@ARGV) {
 	die "not enough arguments" if !@ARGV;
 	push @drivers, split(/\s+/, shift @ARGV);
     } elsif (long_option_match($_, '--include', 3) && /^[^=]*=(.*)$/) {
-	push @includes, $prefix . $1;
+	push @includes, $1;
     } elsif (/^-I$/ || long_option_match($_, '--include', 3)) {
 	die "not enough arguments" if !@ARGV;
-	push @includes, $prefix . shift @ARGV;
+	push @includes, shift @ARGV;
     } elsif (/^-I(.+)$/) {
-	push @includes, $prefix . $1;
+	push @includes, $1;
     } elsif (long_option_match($_, '--sourcedir', 3) && /^[^=]*=(.*)$/) {
 	$sourcedir = xml_quote($1);
     } elsif (/^-s$/ || long_option_match($_, '--sourcedir', 3)) {
@@ -461,7 +462,11 @@ while (@ARGV) {
     }
 }
 push @files, read_files_from("-") if !$any_files;
-push @includes, ($prefix eq '' ? "." : $prefix);
+if ($prefix eq "" || $prefix eq "." || $prefix eq "./") {
+    unshift @includes, ".";
+} else {
+    @includes = (".", $prefix, map { m|^/| ? $_ : "$prefix$_" } @includes);
+}
 
 foreach $fn (@files) {
     process_file($fn);
