@@ -30,8 +30,8 @@ class IP6Address { public:
 
   unsigned char *data()			{ return &_addr.s6_addr[0]; }
   const unsigned char *data() const	{ return &_addr.s6_addr[0]; }
-  unsigned *data32()			{ return &_addr.s6_addr32[0]; }
-  const unsigned *data32() const	{ return &_addr.s6_addr32[0]; }
+  uint32_t *data32()			{ return &_addr.s6_addr32[0]; }
+  const uint32_t *data32() const	{ return &_addr.s6_addr32[0]; }
 
     inline uint32_t hashcode() const;
 
@@ -71,21 +71,21 @@ class IP6Address { public:
 inline
 IP6Address::operator unspecified_bool_type() const
 {
-  const unsigned *ai = data32();
+  const uint32_t *ai = data32();
   return ai[0] || ai[1] || ai[2] || ai[3] ? &IP6Address::hashcode : 0;
 }
 
 inline bool
 operator==(const IP6Address &a, const IP6Address &b)
 {
-  const unsigned *ai = a.data32(), *bi = b.data32();
+  const uint32_t *ai = a.data32(), *bi = b.data32();
   return ai[0] == bi[0] && ai[1] == bi[1] && ai[2] == bi[2] && ai[3] == bi[3];
 }
 
 inline bool
 operator!=(const IP6Address &a, const IP6Address &b)
 {
-  const unsigned *ai = a.data32(), *bi = b.data32();
+  const uint32_t *ai = a.data32(), *bi = b.data32();
   return ai[0] != bi[0] || ai[1] != bi[1] || ai[2] != bi[2] || ai[3] != bi[3];
 }
 
@@ -95,7 +95,7 @@ StringAccum &operator<<(StringAccum &, const IP6Address &);
 inline bool
 IP6Address::matches_prefix(const IP6Address &addr, const IP6Address &mask) const
 {
-  const unsigned *xi = data32(), *ai = addr.data32(), *mi = mask.data32();
+  const uint32_t *xi = data32(), *ai = addr.data32(), *mi = mask.data32();
   return ((xi[0] ^ ai[0]) & mi[0]) == 0
     && ((xi[1] ^ ai[1]) & mi[1]) == 0
     && ((xi[2] ^ ai[2]) & mi[2]) == 0
@@ -105,7 +105,7 @@ IP6Address::matches_prefix(const IP6Address &addr, const IP6Address &mask) const
 inline bool
 IP6Address::mask_as_specific(const IP6Address &mask) const
 {
-  const unsigned *xi = data32(), *mi = mask.data32();
+  const uint32_t *xi = data32(), *mi = mask.data32();
   return ((xi[0] & mi[0]) == mi[0] && (xi[1] & mi[1]) == mi[1]
 	  && (xi[2] & mi[2]) == mi[2] && (xi[3] & mi[3]) == mi[3]);
 }
@@ -113,8 +113,8 @@ IP6Address::mask_as_specific(const IP6Address &mask) const
 inline IP6Address &
 IP6Address::operator&=(const IP6Address &b)
 {
-  unsigned *ai = data32();
-  const unsigned *bi = b.data32();
+  uint32_t *ai = data32();
+  const uint32_t *bi = b.data32();
   ai[0] &= bi[0]; ai[1] &= bi[1]; ai[2] &= bi[2]; ai[3] &= bi[3];
   return *this;
 }
@@ -122,8 +122,8 @@ IP6Address::operator&=(const IP6Address &b)
 inline IP6Address &
 IP6Address::operator&=(const click_in6_addr &b)
 {
-  unsigned *ai = data32();
-  const unsigned *bi = b.s6_addr32;
+  uint32_t *ai = data32();
+  const uint32_t *bi = b.s6_addr32;
   ai[0] &= bi[0]; ai[1] &= bi[1]; ai[2] &= bi[2]; ai[3] &= bi[3];
   return *this;
 }
@@ -131,8 +131,8 @@ IP6Address::operator&=(const click_in6_addr &b)
 inline IP6Address &
 IP6Address::operator|=(const IP6Address &b)
 {
-  unsigned *ai = data32();
-  const unsigned *bi = b.data32();
+  uint32_t *ai = data32();
+  const uint32_t *bi = b.data32();
   ai[0] |= bi[0]; ai[1] |= bi[1]; ai[2] |= bi[2]; ai[3] |= bi[3];
   return *this;
 }
@@ -140,8 +140,8 @@ IP6Address::operator|=(const IP6Address &b)
 inline IP6Address &
 IP6Address::operator|=(const click_in6_addr &b)
 {
-  unsigned *ai = data32();
-  const unsigned *bi = b.s6_addr32;
+  uint32_t *ai = data32();
+  const uint32_t *bi = b.s6_addr32;
   ai[0] |= bi[0]; ai[1] |= bi[1]; ai[2] |= bi[2]; ai[3] |= bi[3];
   return *this;
 }
@@ -149,31 +149,35 @@ IP6Address::operator|=(const click_in6_addr &b)
 inline IP6Address
 operator&(const IP6Address &a, const IP6Address &b)
 {
-  const unsigned *ai = a.data32(), *bi = b.data32();
+  const uint32_t *ai = a.data32(), *bi = b.data32();
   IP6Address result;
-  unsigned *ri = result.data32();
-  ri[0] = ai[0] & bi[0]; ri[1] = ai[1] & bi[1];
-  ri[2] = ai[2] & bi[2]; ri[3] = ai[3] & bi[3];
+  uint32_t *ri = result.data32();
+  ri[0] = ai[0] & bi[0];
+  ri[1] = ai[1] & bi[1];
+  ri[2] = ai[2] & bi[2];
+  ri[3] = ai[3] & bi[3];
   return result;
 }
 
 inline IP6Address
 operator|(const IP6Address &a, const IP6Address &b)
 {
-  const unsigned *ai = a.data32(), *bi = b.data32();
+  const uint32_t *ai = a.data32(), *bi = b.data32();
   IP6Address result;
-  unsigned *ri = result.data32();
-  ri[0] = ai[0] | bi[0]; ri[1] = ai[1] | bi[1];
-  ri[2] = ai[2] | bi[2]; ri[3] = ai[3] | bi[3];
+  uint32_t *ri = result.data32();
+  ri[0] = ai[0] | bi[0];
+  ri[1] = ai[1] | bi[1];
+  ri[2] = ai[2] | bi[2];
+  ri[3] = ai[3] | bi[3];
   return result;
 }
 
 inline IP6Address
 operator~(const IP6Address &a)
 {
-  const unsigned *ai = a.data32();
+  const uint32_t *ai = a.data32();
   IP6Address result;
-  unsigned *ri = result.data32();
+  uint32_t *ri = result.data32();
   ri[0] = ~ai[0]; ri[1] = ~ai[1]; ri[2] = ~ai[2]; ri[3] = ~ai[3];
   return result;
 }
