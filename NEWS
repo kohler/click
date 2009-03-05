@@ -2,6 +2,19 @@ Click NEWS
 
 Version 1.7.0
 
+* Clicky GUI
+
+** Include clicky, a new Click GUI using the GTK+ toolkit.  To compile,
+   install the GTK+ development package for your OS, then install Click.
+   Finally, "cd apps/clicky; autoreconf -i; ./configure
+   --prefix=CLICKPREFIX; make install".  Clicky is capable of interacting
+   live with Click routers, either in the kernel or using the ControlSocket
+   protocol for user-level configurations.  It displays a configuration as
+   text, highlights configuration errors, and displays handlers.  It can
+   also display an automatically-created configuration diagram.  A powerful
+   Cascading Style Sheets-like language can be used to control the diagram.
+   For instance, elements on the diagram can display live counter values.
+
 * Drivers
 
 ** Support Linux 2.6.24.7.  Major thanks to Joonwoo Park and
@@ -30,8 +43,6 @@ Version 1.7.0
    "/click/ELEMENTNAME" always matches an element of that name.  To
    reliably find a handler, use "/click/ELEMENTNAME/.h/HANDLERNAME".
    Similarly for global handlers.
-
-* GUI
 
 * Elements
 
@@ -120,17 +131,17 @@ Version 1.7.0
 * Special thanks to Joonwoo Park, Cliff Frey, Roman Chertov, Kevin
   Springborn, and Adam Greenhalgh for their extraordinary contributions.
 
-* Thanks to Alexander Afanasyev, Damien Ancelin, Lorenzo Bianconi, Bart
-  Braem, Lars Bro, Marco Canini, Remi Clavier, Beyers Cronje, Lionel
-  Debroux, Giovanni Di Stasi, Norbert Egi, Megan Leigh Elmore, Ulf Hermann,
-  Bob Keyes, Brian Kim, Klocwork for code analysis, Nikola Knežević,
-  Hashimoto Kouki, John Russell Lane, Jinyang Li, Mustafa Mohammad, Jim
-  Mott-Smith, Tom Parker, Vern Paxson, Matthias Petschick, Stephen Pink,
-  Pavlin Radoslavov, Manuel Requena, Barret Rhoden, Roberto Riggio, Robert
-  Ross, Javier Sánchez, Harald Schiöberg, Robert Sombrutzki, Seiichi
-  Tatsukawa, Neil Viberg, Vivek Vijayan, Michael Voorhaen, Nicholas Weaver,
-  Marco Wenzel, Christopher White, Pieter Wuytens, Xiao Yu, and anyone else
-  we inadvertently left off the list.
+* Thanks to Alexander Afanasyev, Damien Ancelin, Johan Bergs, Lorenzo
+  Bianconi, Bart Braem, Lars Bro, Marco Canini, Remi Clavier, Beyers
+  Cronje, Lionel Debroux, Giovanni Di Stasi, Norbert Egi, Megan Leigh
+  Elmore, Ulf Hermann, Bob Keyes, Brian Kim, Klocwork for code analysis,
+  Nikola Knežević, Hashimoto Kouki, John Russell Lane, Jinyang Li, Mustafa
+  Mohammad, Jim Mott-Smith, Tom Parker, Vern Paxson, Matthias Petschick,
+  Stephen Pink, Pavlin Radoslavov, Manuel Requena, Barret Rhoden, Roberto
+  Riggio, Robert Ross, Javier Sánchez, Harald Schiöberg, Robert Sombrutzki,
+  Seiichi Tatsukawa, Neil Viberg, Vivek Vijayan, Michael Voorhaen, Nicholas
+  Weaver, Marco Wenzel, Christopher White, Pieter Wuytens, Xiao Yu, and
+  anyone else we inadvertently left off the list.
 
 
 Version 1.6.0   18.Sep.2007

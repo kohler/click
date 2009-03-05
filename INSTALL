@@ -237,6 +237,20 @@ which begin with "tokernel", "discard", "fromkernel", and so forth.
 Please note that the NS patch no longer requires libnet.
 
 
+CLICKY GUI
+----------
+
+    To install the Clicky GUI, start by installing Click itself.  Then make
+sure your system has the necessary libraries and packages installed.  On a
+Debian or Ubuntu system, this will include automake1.10, autoconf, and
+libgtk2-dev.  Then:
+
+	cd apps/clicky
+	autoreconf -i
+	./configure [--prefix=PREFIX] --with-click=CLICKPREFIX
+	make install
+
+
 PORTABILITY
 -----------
 
