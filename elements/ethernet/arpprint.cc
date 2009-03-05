@@ -192,7 +192,7 @@ ARPPrint::simple_action(Packet *p)
 #if CLICK_USERLEVEL
     if (_outfile) {
 	sa << '\n';
-	fwrite(sa.data(), 1, sa.length(), _outfile);
+	ignore_result(fwrite(sa.data(), 1, sa.length(), _outfile));
     } else
 #endif
 	_errh->message("%s", sa.c_str());

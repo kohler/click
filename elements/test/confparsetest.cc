@@ -141,6 +141,18 @@ ConfParseTest::initialize(ErrorHandler *errh)
 		  && a.data32()[0] == 0x00000000 && a.data32()[1] == 0x00000000
 		  && a.data32()[2] == 0x00000000
 		  && a.data32()[3] == a4.addr());
+	CHECK(cp_ip6_address("ffff:ffff:ffff:ffff:ffff:ffff::", &a, this) == true
+	      && a.data32()[0] == 0xFFFFFFFF
+	      && a.data32()[1] == 0xFFFFFFFF
+	      && a.data32()[2] == 0xFFFFFFFF
+	      && a.data32()[3] == 0);
+	CHECK(a.mask_to_prefix_len() == 96);
+	CHECK(cp_ip6_address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", &a, this) == true
+	      && a.data32()[0] == 0xFFFFFFFF
+	      && a.data32()[1] == 0xFFFFFFFF
+	      && a.data32()[2] == 0xFFFFFFFF
+	      && a.data32()[3] == 0xFFFFFFFF);
+	CHECK(a.mask_to_prefix_len() == 128);
     }
 #endif
 

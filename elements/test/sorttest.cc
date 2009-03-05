@@ -711,10 +711,10 @@ SortTest::initialize_vec(ErrorHandler *)
 #if CLICK_USERLEVEL
 	if (_output && _permute.size())
 	    for (int *a = _permute.begin(); a != _permute.end(); a++)
-		fwrite(_strvec[*a].data(), _strvec[*a].length(), 1, stdout);
+		ignore_result(fwrite(_strvec[*a].data(), _strvec[*a].length(), 1, stdout));
 	else if (_output)
 	    for (String *a = _strvec.begin(); a != _strvec.end(); a++)
-		fwrite(a->data(), a->length(), 1, stdout);
+		ignore_result(fwrite(a->data(), a->length(), 1, stdout));
 #endif
     }
     if (_sizevec.size()) {

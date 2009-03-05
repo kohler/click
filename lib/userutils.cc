@@ -286,7 +286,7 @@ shell_command_output_string(String cmdline, const String &input, ErrorHandler *e
 	errh->fatal("cannot create temporary file: %s", strerror(errno));
 	return String();
     }
-    fwrite(input.data(), 1, input.length(), f);
+    ignore_result(fwrite(input.data(), 1, input.length(), f));
     fflush(f);
     rewind(f);
 

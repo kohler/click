@@ -227,7 +227,7 @@ particular purpose.\n");
 
    case CONFIG_OPT: {
      String s = router->configuration_string();
-     fwrite(s.data(), 1, s.length(), out);
+     ignore_result(fwrite(s.data(), 1, s.length(), out));
      break;
    }
 

@@ -982,11 +982,11 @@ particular purpose.\n");
     }
     const ArchiveElement &aeh = r->archive(package_name + ".hh");
     const ArchiveElement &aec = r->archive(package_name + ".cc");
-    fwrite(aeh.data.data(), 1, aeh.data.length(), outf);
-    fwrite(aec.data.data(), 1, aec.data.length(), outf);
+    ignore_result(fwrite(aeh.data.data(), 1, aeh.data.length(), outf));
+    ignore_result(fwrite(aec.data.data(), 1, aec.data.length(), outf));
   } else if (config_only) {
     String config = r->configuration_string();
-    fwrite(config.data(), 1, config.length(), outf);
+    ignore_result(fwrite(config.data(), 1, config.length(), outf));
   } else
     write_router_file(r, outf, errh);
 

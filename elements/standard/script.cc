@@ -439,7 +439,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 		result += "\n";
 
 #if CLICK_USERLEVEL || CLICK_TOOL
-	    fwrite(result.data(), 1, result.length(), f);
+	    ignore_result(fwrite(result.data(), 1, result.length(), f));
 	    if (f == stdout)
 		fflush(f);
 	    else

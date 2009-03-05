@@ -155,7 +155,7 @@ write_router_file(RouterT *r, FILE *f, ErrorHandler *errh)
       config_str = ArchiveElement::unparse(narchive, errh);
   }
 
-  fwrite(config_str.data(), 1, config_str.length(), f);
+  ignore_result(fwrite(config_str.data(), 1, config_str.length(), f));
 }
 
 int

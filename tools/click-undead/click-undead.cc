@@ -714,7 +714,7 @@ particular purpose.\n");
 
   if (config_only) {
     String config = r->configuration_string();
-    fwrite(config.data(), 1, config.length(), outf);
+    ignore_result(fwrite(config.data(), 1, config.length(), outf));
   } else
     write_router_file(r, outf, default_errh);
 

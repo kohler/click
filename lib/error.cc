@@ -935,7 +935,7 @@ FileErrorHandler::emit(const String &str, void *, bool)
     StringAccum sa;
     sa << _context << clean_landmark(landmark, true)
        << str.substring(s, str.end()) << '\n';
-    (void) fwrite(sa.begin(), 1, sa.length(), _f);
+    ignore_result(fwrite(sa.begin(), 1, sa.length(), _f));
     return 0;
 }
 

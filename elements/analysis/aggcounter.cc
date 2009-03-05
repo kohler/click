@@ -340,7 +340,7 @@ write_batch(FILE *f, AggregateCounter::WriteFormat format,
 	    uint32_t *buffer, int pos, double count, ErrorHandler *)
 {
     if (format == AggregateCounter::WR_BINARY)
-	fwrite(buffer, sizeof(uint32_t), pos, f);
+	ignore_result(fwrite(buffer, sizeof(uint32_t), pos, f));
     else if (format == AggregateCounter::WR_TEXT_IP)
 	for (int i = 0; i < pos; i += 2)
 	    fprintf(f, "%d.%d.%d.%d %u\n", (buffer[i] >> 24) & 255, (buffer[i] >> 16) & 255, (buffer[i] >> 8) & 255, buffer[i] & 255, buffer[i+1]);
@@ -385,7 +385,7 @@ AggregateCounter::write_file(String where, WriteFormat format,
 	return errh->error("%s: %s", where.c_str(), strerror(errno));
 
     fprintf(f, "!IPAggregate 1.0\n");
-    fwrite(_output_banner.data(), 1, _output_banner.length(), f);
+    ignore_result(fwrite(_output_banner.data(), 1, _output_banner.length(), f));
     if (_output_banner.length() && _output_banner.back() != '\n')
 	fputc('\n', f);
     fprintf(f, "!num_nonzero %u\n", _num_nonzero);

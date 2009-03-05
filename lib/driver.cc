@@ -186,7 +186,7 @@ check_tmpdir(const Vector<ArchiveElement> &archive, bool populate_tmpdir,
 		if (!f)
 		    errh->warning("%s: %s", filename.c_str(), strerror(errno));
 		else {
-		    fwrite(ae.data.data(), 1, ae.data.length(), f);
+		    ignore_result(fwrite(ae.data.data(), 1, ae.data.length(), f));
 		    fclose(f);
 		}
 	    }
@@ -237,7 +237,7 @@ click_compile_archive_file(const Vector<ArchiveElement> &archive,
 	cerrh.error("%s: %s", filepath.c_str(), strerror(errno));
 	return String();
     }
-    fwrite(ae->data.data(), 1, ae->data.length(), f);
+    ignore_result(fwrite(ae->data.data(), 1, ae->data.length(), f));
     fclose(f);
 
     // prepare click-buildtool makepackage
@@ -319,7 +319,7 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
 	    cerrh.error("cannot open %<%s%>: %s", package.c_str(), strerror(errno));
 	    package = String();
 	} else {
-	    fwrite(ae->data.data(), 1, ae->data.length(), f);
+	    ignore_result(fwrite(ae->data.data(), 1, ae->data.length(), f));
 	    fclose(f);
 	}
     } else if (archive && (ae = ArchiveElement::find(*archive, name + cxx_suffix)))

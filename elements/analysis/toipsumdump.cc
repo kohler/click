@@ -167,7 +167,7 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
 
     // print output
     if (_header)
-	fwrite(sa.data(), 1, sa.length(), _f);
+	ignore_result(fwrite(sa.data(), 1, sa.length(), _f));
 
     return 0;
 }
@@ -252,7 +252,7 @@ ToIPSummaryDump::write_packet(Packet* p, int multipacket)
 
 	if (_bad_packets && _bad_sa)
 	    write_line(_bad_sa.take_string());
-	fwrite(_sa.data(), 1, _sa.length(), _f);
+	ignore_result(fwrite(_sa.data(), 1, _sa.length(), _f));
 
 	_output_count++;
     }
@@ -290,9 +290,9 @@ ToIPSummaryDump::write_line(const String& s)
 	assert(s.back() == '\n');
 	if (_binary) {
 	    uint32_t marker = htonl(s.length() | 0x80000000U);
-	    fwrite(&marker, 4, 1, _f);
+	    ignore_result(fwrite(&marker, 4, 1, _f));
 	}
-	fwrite(s.data(), 1, s.length(), _f);
+	ignore_result(fwrite(s.data(), 1, s.length(), _f));
     }
 }
 
@@ -303,10 +303,10 @@ ToIPSummaryDump::add_note(const String &s)
 	int extra = 1 + (s.back() == '\n' ? 0 : 1);
 	if (_binary) {
 	    uint32_t marker = htonl((s.length() + extra) | 0x80000000U);
-	    fwrite(&marker, 4, 1, _f);
+	    ignore_result(fwrite(&marker, 4, 1, _f));
 	}
 	fputc('#', _f);
-	fwrite(s.data(), 1, s.length(), _f);
+	ignore_result(fwrite(s.data(), 1, s.length(), _f));
 	if (extra > 1)
 	    fputc('\n', _f);
     }

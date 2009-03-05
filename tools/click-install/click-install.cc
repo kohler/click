@@ -247,7 +247,7 @@ install_required_packages(RouterT *r, HashTable<String, int> &packages,
       FILE *f = fopen(tmpnam.c_str(), "w");
       if (!f)
 	errh->fatal("%s: %s", tmpnam.c_str(), strerror(errno));
-      fwrite(ae.data.data(), 1, ae.data.length(), f);
+      ignore_result(fwrite(ae.data.data(), 1, ae.data.length(), f));
       fclose(f);
 
       install_module(tmpnam, String(), errh);
@@ -624,7 +624,7 @@ particular purpose.\n");
 	(void) select(0, 0, 0, 0, &wait);
 	ssize_t got = read(fd, buf, 1024);
 	if (got > 0)
-	  fwrite(buf, 1, got, stderr);
+	  ignore_result(fwrite(buf, 1, got, stderr));
 	else if (got == 0)
 	  break;
 	else if (errno != EINTR && errno != EAGAIN) {

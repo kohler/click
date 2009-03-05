@@ -457,10 +457,10 @@ particular purpose.\n");
 
   // output source code if required
   if (source_only) {
-    fwrite(header.data(), 1, header.length(), outf);
-    fwrite(source.data(), 1, source.length(), outf);
-    fclose(outf);
-    exit(0);
+      ignore_result(fwrite(header.data(), 1, header.length(), outf));
+      ignore_result(fwrite(source.data(), 1, source.length(), outf));
+      fclose(outf);
+      exit(0);
   }
 
   // add source to archive
@@ -525,7 +525,7 @@ particular purpose.\n");
   // write configuration
   if (config_only) {
     String s = router->configuration_string();
-    fwrite(s.data(), 1, s.length(), outf);
+    ignore_result(fwrite(s.data(), 1, s.length(), outf));
   } else
     write_router_file(router, outf, errh);
   exit(0);
