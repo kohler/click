@@ -716,18 +716,18 @@ sub _check_one_typed_expect ($$$$$) {
 	    }
 
 	    # compare lines
-	    my($tt, $et) = ($tl[$tp], $el[$ep]);
+	    my($tline, $eline) = ($tl[$tp], $el[$ep]);
 	    if ($whitespace) {
-		$tt =~ tr/ \f\r\t\013//d;
-		$et =~ tr/ \f\r\t\013//d;
+		$tline =~ tr/ \f\r\t\013//d;
+		$eline =~ tr/ \f\r\t\013//d;
 	    }
-	    if ($mode != 0 && $et =~ /\{\{/) {
+	    if ($mode != 0 && $eline =~ /\{\{/) {
 		my($re);
-		($re, $message) = braces_to_regex($et, $mode);
-		last if $tt !~ m/\A$re\z/;
+		($re, $message) = braces_to_regex($eline, $mode);
+		last if $tline !~ m/\A$re\z/;
 	    } elsif ($mode == 2) {
-		last if $tt !~ m/\A$et\z/;
-	    } elsif ($tt ne $et) {
+		last if $tline !~ m/\A$eline\z/;
+	    } elsif ($tline ne $eline) {
 		last;
 	    }
 
@@ -977,8 +977,11 @@ sub execute_test ($$$$) {
 	    my($text) = <X>;
 	    close(X);
 	    if ($f->[1] && defined($text)) {
-		my($ignores) = _create_ignores($tt, $efn);
-		$text = $ignores->($text) if $ignores;
+		my($ignores) = Testie::_create_ignores($tt, $efn);
+		if ($ignores) {
+		    $text = $ignores->($text);
+		    $text =~ s/^\377\n//mg;
+		}
 	    }
 	    print $text if defined $text;
 	    print "=" x 79, "\n";
