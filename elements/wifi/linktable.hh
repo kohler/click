@@ -126,7 +126,7 @@ public:
   IPTable _blacklist;
 
   Timestamp dijkstra_time;
-private:
+protected:
   class LinkInfo {
   public:
     IPAddress _from;
