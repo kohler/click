@@ -77,13 +77,13 @@ IP6Address::mask_to_prefix_len() const
     int word = 0;
     while (word < 4 && _addr.s6_addr32[word] == 0xFFFFFFFFU)
 	word++;
+    if (word == 4)
+	return 128;
 
     // check that suffix is zeros
-    int zero_word = word + 1;
-    while (zero_word < 4 && _addr.s6_addr32[zero_word] == 0)
-	zero_word++;
-    if (zero_word < 4)
-	return -1;
+    for (int zero_word = word + 1; zero_word < 4; ++zero_word)
+	if (_addr.s6_addr32[zero_word] != 0)
+	    return -1;
 
     // check swing word
     int prefix = IPAddress(_addr.s6_addr32[word]).mask_to_prefix_len();
