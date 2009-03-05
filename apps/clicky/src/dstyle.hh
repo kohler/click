@@ -95,6 +95,7 @@ struct delt_style : public enable_ref_ptr {
     String text;
     String font;
     int display;
+    int port_split;
     String flow_split;
     String decorations;
 };
@@ -422,6 +423,7 @@ class dcss { public:
     void parse_shadow(const String &str, const char *s, const char *send);
     void parse_background(const String &str, const char *s, const char *send);
     void parse_box(const String &str, const char *s, const char *send, const String &prefix);
+    void parse_split(const String &str, const char *s, const char *send);
 
     friend class dcss_set;
 

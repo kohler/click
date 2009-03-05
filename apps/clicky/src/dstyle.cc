@@ -202,7 +202,9 @@ static dcss_propmatch elt_pm[] = {
     { "decorations", 0 },
     { "queue-stripe-style", 0 },
     { "queue-stripe-width", 0 },
-    { "queue-stripe-color", 0 }
+    { "queue-stripe-color", 0 },
+    { "port-split", 0 },
+    { "flow-split", 0 }
 };
 
 static dcss_propmatch elt_size_pm[] = {
@@ -1111,6 +1113,8 @@ const char *dcss::parse(const String &str, const String &media, const char *s)
 	    parse_box(str, v, v_ew0, "port-margin");
 	else if (n + 7 == n_end && memcmp(n, "padding", 7) == 0)
 	    parse_box(str, v, v_ew0, "padding");
+	else if (n + 5 == n_end && memcmp(n, "split", 5) == 0)
+	    parse_split(str, v, v_ew0);
 	else
 	    add(str.substring(n, n_end), str.substring(v, v_ew0));
 
@@ -1206,6 +1210,33 @@ void dcss::parse_background(const String &str, const char *s, const char *send)
 
 	if (cp_color(str.substring(n, s), &d, &d, &d, &d))
 	    add("background-color", str.substring(n, s));
+    }
+}
+
+void dcss::parse_split(const String &str, const char *s, const char *send)
+{
+    while (s != send) {
+	s = cp_skip_comment_space(s, send);
+	const char *n = s;
+	while (s != send && !isspace((unsigned char) *s)
+	       && (*s != '/' || s + 1 == send || (s[1] != '/' && s[1] != '*')))
+	    if (*s == '(') {
+		for (++s; s != send && *s != ')'; ++s)
+		    /* */;
+		if (s != send)
+		    ++s;
+	    } else
+		++s;
+
+	if (s == n + 4 && memcmp(n, "none", 4) == 0) {
+	    add("port-split", str.substring(n, s));
+	    add("flow-split", str.substring(n, s));
+	} else if (s > n + 4 && memcmp(n, "flow(", 5) == 0)
+	    add("flow-split", str.substring(n, s));
+	else if ((s == n + 4 && memcmp(n, "both", 4) == 0)
+		 || (s == n + 6 && memcmp(n, "inputs", 6) == 0)
+		 || (s == n + 7 && memcmp(n, "outputs", 7) == 0))
+	    add("port-split", str.substring(n, s));
     }
 }
 
@@ -1730,12 +1761,7 @@ ref_ptr<delt_style> dcss_set::elt_style(crouter *cr, const delt *e, int *sensiti
 	    sty->display = dedisp_none;
 	else if (s.equals("closed", 6))
 	    sty->display = dedisp_closed;
-	else if (s.equals("vertical-split", 14))
-	    sty->display = dedisp_vsplit;
-	else if (s.starts_with("flow-split(", 11) && s.back() == ')') {
-	    if ((sty->flow_split = parse_flow_split(s.begin() + 11, s.end() - 1)))
-		sty->display = dedisp_fsplit;
-	} else if (s.equals("passthrough", 11))
+	else if (s.equals("passthrough", 11))
 	    sty->display = dedisp_passthrough;
 	else if (s.equals("expanded", 8))
 	    sty->display = dedisp_expanded;
@@ -1744,6 +1770,16 @@ ref_ptr<delt_style> dcss_set::elt_style(crouter *cr, const delt *e, int *sensiti
 	sty->queue_stripe_style = elt_pm[13].vborder_style("queue-stripe-style");
 	sty->queue_stripe_width = elt_pm[14].vpixel("queue-stripe-width", cr, e);
 	elt_pm[15].vcolor(sty->queue_stripe_color, "queue-stripe-color");
+	s = elt_pm[16].vstring("port-split");
+	sty->port_split = dpdisp_none;
+	if (s.equals("inputs", 6))
+	    sty->port_split = dpdisp_inputs;
+	else if (s.equals("outputs", 7))
+	    sty->port_split = dpdisp_outputs;
+	else if (s.equals("both", 4))
+	    sty->port_split = dpdisp_both;
+	s = elt_pm[17].vstring("flow-split");
+	sty->flow_split = parse_flow_split(s.begin(), s.end());
 
 	style_cache = ref_ptr<delt_style>(sty);
     }

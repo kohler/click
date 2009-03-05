@@ -143,7 +143,7 @@ class wdiagram { public:
     void layout();
 
     void expose(const delt *e, rectangle *expose_rect);
-    void highlight(delt *e, uint8_t htype, rectangle *expose_rect = 0,
+    void highlight(delt *e, uint8_t htype,
 		   bool scroll_to = false, bool all_splits = false);
 
     void set_cursor(delt *e, double x, double y, int state);
@@ -171,8 +171,9 @@ inline void wdiagram::redraw(rectangle r)
 {
     r.expand(_penumbra);
     r.scale(_scale);
+    r.shift(-_horiz_adjust->value - _origin_x, -_vert_adjust->value - _origin_y);
     r.integer_align();
-    gtk_widget_queue_draw_area(_widget, (gint) (r.x() - _horiz_adjust->value - _origin_x), (gint) (r.y() - _vert_adjust->value - _origin_y), (gint) r.width(), (gint) r.height());
+    gtk_widget_queue_draw_area(_widget, (gint) r.x(), (gint) r.y(), (gint) r.width(), (gint) r.height());
 }
 
 inline point wdiagram::window_to_canvas(double x, double y) const

@@ -33,12 +33,11 @@ cdiagram::cdiagram(crouter *cr, PangoLayout *pl, unsigned generation)
     : _relt(new delt)
 {
     if (cr->router()) {
-	Vector<ElementT *> path;
-	int z_index = 0;
 	ScopeChain chain(cr->router());
 	_relt->create_elements(cr, cr->router(), cr->processing(),
-			       _elt_map, chain, z_index);
-	_relt->create_connections(cr, z_index);
+			       &_elt_map, chain);
+	_relt->assign_z_indexes(0);
+	_relt->create_connections(cr);
 
 	dcontext dcx(cr, pl, 0, generation, 0, 1);
 	ElementMap::push_default(cr->element_map());
@@ -94,7 +93,7 @@ static cairo_status_t cairo_surface_ignore_write(void *, const unsigned char *, 
 
 static cairo_status_t cairo_surface_stdout_write(void *, const unsigned char *str, unsigned len)
 {
-    fwrite(str, 1, len, stdout);
+    ignore_result(fwrite(str, 1, len, stdout));
     return CAIRO_STATUS_SUCCESS;
 }
 }
@@ -263,7 +262,7 @@ void wdiagram::element_show(const String &ename, bool scroll_to)
 	    while (!e->root() && !e->visible())
 		e = e->parent();
 	    if (!e->root() && (!e->highlighted(dhlt_click) || scroll_to))
-		highlight(e, dhlt_click, 0, scroll_to, true);
+		highlight(e, dhlt_click, scroll_to, true);
 	}
 }
 
@@ -338,7 +337,7 @@ void wdiagram::router_create(bool incremental, bool always)
 {
     if (!incremental) {
 	for (int i = 0; i < 3; ++i)
-	    highlight(0, i, 0);
+	    highlight(0, i);
 	delete _cdiagram;
 	_cdiagram = 0;
     }
@@ -604,17 +603,9 @@ void wdiagram::expose(const delt *e, rectangle *expose_rect)
 	redraw(*e);
     else
 	*expose_rect |= *e;
-#if 0
-    for (delt *o = visible_split(); o && o != this; o = o->_split) {
-	if (!expose_rect)
-	    d->redraw(*o);
-	else
-	    *expose_rect |= *o;
-    }
-#endif
 }
 
-void wdiagram::highlight(delt *e, uint8_t htype, rectangle *expose_rect,
+void wdiagram::highlight(delt *e, uint8_t htype,
 			 bool scroll_to, bool all_split)
 {
     assert(htype <= dhlt_pressed);
@@ -624,19 +615,19 @@ void wdiagram::highlight(delt *e, uint8_t htype, rectangle *expose_rect,
 	    delt *e = _highlight[htype].front();
 	    _highlight[htype].pop_front();
 	    e->unhighlight(htype);
-	    expose(e, expose_rect);
+	    expose(e, 0);
 	}
 	return;
     }
 
     std::list<delt *>::iterator iter = _highlight[htype].begin();
     if (!e->highlighted(htype) || (++iter, iter != _highlight[htype].end())) {
-	highlight(0, htype, expose_rect, false);
+	highlight(0, htype, false);
 	delt *ee = e;
 	do {
 	    _highlight[htype].push_front(ee);
 	    ee->highlight(htype);
-	    expose(ee, expose_rect);
+	    expose(ee, 0);
 	} while (all_split ? (ee = ee->next_split(e)) : 0);
     }
 
@@ -646,7 +637,7 @@ void wdiagram::highlight(delt *e, uint8_t htype, rectangle *expose_rect,
 	ex.expand(e->shadow(scale(), 0), e->shadow(scale(), 1),
 		  e->shadow(scale(), 2), e->shadow(scale(), 3));
 	ex = canvas_to_window(ex);
-	for (delt *o = e->visible_split(); all_split && o && o != e; o = o->split()) {
+	for (delt *o = e->next_split(e); all_split && o; o = o->next_split(e)) {
 	    rectangle ox = *o;
 	    ox.expand(o->shadow(scale(), 0), o->shadow(scale(), 1),
 		      o->shadow(scale(), 2), o->shadow(scale(), 3));
@@ -801,7 +792,7 @@ gboolean wdiagram::on_event(GdkEvent *event)
 	point p = window_to_canvas(event->motion.x, event->motion.y);
 	if (!(event->motion.state & GDK_BUTTON1_MASK)) {
 	    delt *e = _cdiagram->point_elt(p);
-	    highlight(e, dhlt_hover, 0, false, true);
+	    highlight(e, dhlt_hover, false, false);
 	    set_cursor(e, event->motion.x, event->motion.y, event->motion.state);
 	} else if (_drag_state == drag_start || _drag_state == drag_dragging)
 	    on_drag_motion(p);
@@ -831,7 +822,7 @@ gboolean wdiagram::on_event(GdkEvent *event)
 
 	if (!(event->button.state & GDK_SHIFT_MASK)) {
 	    if (e && !e->highlighted(dhlt_click))
-		highlight(e, dhlt_click, 0, false, false);
+		highlight(e, dhlt_click, false, true);
 	    if (e)
 		_rw->element_show(e->flat_name(), 0, true);
 	} else if (e && e->highlighted(dhlt_click)) {
@@ -844,7 +835,7 @@ gboolean wdiagram::on_event(GdkEvent *event)
 	    _highlight[dhlt_click].push_front(e);
 	}
 
-	highlight(e, dhlt_pressed, 0, false, false);
+	highlight(e, dhlt_pressed, false, false);
 	set_cursor(e, event->button.x, event->button.y, event->button.state);
 
     } else if ((event->type == GDK_BUTTON_RELEASE && event->button.button == 1)
@@ -854,11 +845,11 @@ gboolean wdiagram::on_event(GdkEvent *event)
 	else if (_drag_state == drag_rect_dragging)
 	    on_drag_rect_complete();
 	_drag_state = drag_none;
-	highlight(0, dhlt_pressed, 0, false, false);
+	highlight(0, dhlt_pressed, false, false);
 
     } else if (event->type == GDK_2BUTTON_PRESS && event->button.button == 1) {
 	delt *e = _cdiagram->point_elt(window_to_canvas(event->button.x, event->button.y));
-	highlight(e, dhlt_click, 0, true, false);
+	highlight(e, dhlt_click, true, true);
 	if (e) {
 	    _rw->element_show(e->flat_name(), 1, true);
 	    _drag_state = drag_start;

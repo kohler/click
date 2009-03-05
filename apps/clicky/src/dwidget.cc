@@ -72,12 +72,11 @@ String dwidget::unparse() const
 
 delt *delt::create(ElementT *e, delt *parent,
 		   crouter *cr, ProcessingT *processing,
-		   HashTable<String, delt *> &collector,
-		   ScopeChain &chain, int &z_index)
+		   HashTable<String, delt *> *collector,
+		   ScopeChain &chain)
 {
     // see also create_split()
-    delt *de = new delt(parent, z_index);
-    z_index++;
+    delt *de = new delt(parent, parent->z_index() + 2);
 
     de->_e = e;
     de->_processing_code = processing->decorated_processing_code(e);
@@ -85,10 +84,12 @@ delt *delt::create(ElementT *e, delt *parent,
 
     de->_flat_name = chain.flat_name(e->name());
     de->_flat_config = chain.resolved_config(e->config());
-    collector[de->_flat_name] = de;
+    if (collector)
+	(*collector)[de->_flat_name] = de;
 
     ElementClassT *resolved_type = chain.resolved_type(e);
     de->_primitive = resolved_type->primitive();
+    de->_resolved_router = resolved_type->cast_router();
 
     // initial styles
     int x;
@@ -97,48 +98,51 @@ delt *delt::create(ElementT *e, delt *parent,
     de->_des = cr->ccss()->elt_style(cr, de, &x);
     de->_des_sensitivity = x;
 
-    if (resolved_type->cast_router()) {
-	chain.enter_element(e);
-	ProcessingT subprocessing(*processing, e);
-	de->create_elements(cr, subprocessing.router(), &subprocessing,
-			    collector, chain, z_index);
-	chain.pop_element();
-    }
-
     return de;
 }
 
-delt *delt::create_split(int split_type, int *z_index_ptr)
+delt *delt::create_split(crouter *cr, int split_type)
 {
-    int z_index;
-    if (z_index_ptr) {
-	z_index = *z_index_ptr;
-	(*z_index_ptr)++;
-    } else
-	z_index = this->z_index();
-
-    delt *se = new delt(_parent, z_index);
+    delt *se = new delt(_parent, z_index() + 2);
 
     se->_e = _e;
-    se->_resolved_router = _resolved_router;
     se->_processing_code = _processing_code;
     se->_flow_code = _flow_code;
+
     se->_flat_name = _flat_name;
     se->_flat_config = _flat_config;
+
+    se->_primitive = _primitive;
+    se->_resolved_router = _resolved_router;
+
+    // initial styles
+    int x;
+    se->_dess = cr->ccss()->elt_size_style(cr, se, &x);
+    se->_dess_sensitivity = x;
+    se->_des = cr->ccss()->elt_style(cr, se, &x);
+    se->_des_sensitivity = x;
 
     se->_split_type = split_type;
     if (!_split)
 	_split = this;
     se->_split = _split;
+    se->_flow_split = _flow_split;
+    se->_port_split = _port_split;
+    se->_split_copy = true;
     _split = se;
 
-    _parent->_elt.push_back(se);
     return se;
 }
 
 delt::~delt()
 {
     ddecor::free_list(_decor);
+    while (_split && _split != this) {
+	delt *s = _split;
+	_split = s->_split;
+	s->_split = 0;
+	delete s;
+    }
     while (_elt.size()) {
 	delete _elt.back();
 	_elt.pop_back();
@@ -154,28 +158,45 @@ delt::~delt()
 
 void delt::create_elements(crouter *cr, RouterT *router,
 			   ProcessingT *processing,
-			   HashTable<String, delt *> &collector,
-			   ScopeChain &chain, int &z_index)
+			   HashTable<String, delt *> *collector,
+			   ScopeChain &chain)
 {
-    assert(!_resolved_router && _elt.size() == 0);
+    assert(!_resolved_router || _resolved_router == router);
+    assert(_elt.size() == 0);
     _resolved_router = router;
 
     // create elements (_elt[i]->eindex() == i)
-    // make sure first nelements() slots are occupied
     _elt.resize(router->nelements(), 0);
-    for (int i = 0; i < router->nelements(); ++i) {
-	delt *e = delt::create(router->element(i), this,
-			       cr, processing, collector, chain, z_index);
-	// Can't combine with previous statement in case _elt changes!
-	_elt[i] = e;
-    }
+    for (int i = 0; i < router->nelements(); ++i)
+	_elt[i] = delt::create(router->element(i), this,
+			       cr, processing, collector, chain);
 
-    // style children
-    for (int i = 0; i < _resolved_router->nelements(); ++i)
-	_elt[i]->reccss(cr, dsense_always, &z_index);
+    // style elements
+    for (int i = 0; i < router->nelements(); ++i)
+	_elt[i]->reccss(cr, dsense_always);
+
+    // create sub-elements for open or expanded compounds
+    for (iterator e = begin_contents(); e; ++e)
+	if (e->_resolved_router
+	    && (e->_display == dedisp_open || e->_display == dedisp_expanded)) {
+	    chain.enter_element(e->_e);
+	    ProcessingT subprocessing(*processing, e->_e);
+	    e->create_elements(cr, subprocessing.router(), &subprocessing,
+			       collector, chain);
+	    chain.pop_element();
+	}
 }
 
-void delt::create_connections(std::vector<delt_conn> &cc, crouter *cr, int &z_index) const
+int delt::assign_z_indexes(int z)
+{
+    set_z_index(z);
+    z += 2;
+    for (iterator e = begin_contents(); e; ++e)
+	z = e->assign_z_indexes(z);
+    return z;
+}
+
+void delt::create_connections(std::vector<delt_conn> &cc, crouter *cr) const
 {
     bool input_output = (root() || _des->display != dedisp_expanded);
 
@@ -187,15 +208,15 @@ void delt::create_connections(std::vector<delt_conn> &cc, crouter *cr, int &z_in
 				   _elt[it->to_eindex()], it->to_port()));
 
     // add expanded child connections
-    for (std::vector<delt *>::const_iterator it = _elt.begin();
-	 it != _elt.end(); ++it)
-	if ((*it)->_elt.size() && (*it)->_display == dedisp_expanded)
-	    (*it)->create_connections(cc, cr, z_index);
-	else if ((*it)->_elt.size() && (*it)->_display == dedisp_open)
-	    (*it)->create_connections(cr, z_index);
+    for (iterator e = begin_contents(); e; ++e) {
+	if (e->_elt.size() && e->_display == dedisp_expanded)
+	    e->create_connections(cc, cr);
+	else if (e->_elt.size() && e->_display == dedisp_open)
+	    e->create_connections(cr);
+    }
 }
 
-void delt::create_connections(crouter *cr, int &z_index)
+void delt::create_connections(crouter *cr)
 {
     for (std::vector<dconn *>::iterator it = _conn.begin();
 	 it != _conn.end(); ++it)
@@ -207,7 +228,7 @@ void delt::create_connections(crouter *cr, int &z_index)
 
     // create initial connections
     std::vector<delt_conn> cc;
-    create_connections(cc, cr, z_index);
+    create_connections(cc, cr);
 
     // expand connections
     Bitvector bv;
@@ -277,8 +298,8 @@ void delt::create_connections(crouter *cr, int &z_index)
 	    || !dedisp_visible(c.to->display()))
 	    continue;
 
-	_conn.push_back(new dconn(c.from, c.from_port, c.to, c.to_port, z_index));
-	z_index++;
+	if (dconn *conn = dconn::make(c.from, c.from_port, c.to, c.to_port))
+	    _conn.push_back(conn);
     }
 }
 
@@ -291,189 +312,6 @@ String delt::display_name() const
 	return p->display_name() + "/" + name();
     else
 	return name();
-}
-
-
-/*****
- *
- * SCC layout
- *
- */
-
-class delt::layoutelt : public rectangle { public:
-    int scc;
-    std::vector<int> scc_contents;
-
-    bool visited;
-    int active;
-
-    int posrel;
-    int compact_prev;
-    int compact_next;
-
-    rectangle rgroup;
-
-    layoutelt(int n, double width, double height)
-	: rectangle(0, 0, width, height), scc(n), visited(false), active(-1),
-	  posrel(n), compact_prev(-1), compact_next(-1),
-	  rgroup(0, 0, width, height) {
-    }
-};
-
-void delt::layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, const Bitvector &connlive, int scc)
-{
-    const std::vector<int> &scc_contents = layinfo[scc].scc_contents;
-
-    // find compact connections
-    for (std::vector<int>::const_iterator iter = scc_contents.begin();
-	 iter != scc_contents.end(); ++iter) {
-	ElementT *x = router->element(*iter);
-	int c;
-	if (x->ninputs() != 1
-	    || (c = router->find_connection_id_to(PortT(x, 0))) < 0
-	    || !connlive[c])
-	    continue;
-	const PortT &out = router->connection(c).from();
-	if (router->find_connection_id_from(out) < 0
-	    || out.port != 0
-	    || out.element->noutputs() > 2)
-	    continue;
-	if (out.element->noutputs() == 2) {
-	    const String &pc = out.element->type()->processing_code();
-	    if (pc != "a/ah" && pc != "l/lh")
-		continue;
-	    // check that x[1] has <= 1 connection (!= 1 should not happen,
-	    // but erroneous configurations could easily make it)
-	    if (router->find_connection_id_from(PortT(out.element, 1)) == -2)
-		continue;
-	}
-
-	// actually position
-	int partner = out.eindex();
-	layinfo[*iter].posrel = layinfo[partner].posrel;
-	layinfo[*iter]._x = layinfo[partner].center_x() - layinfo[*iter].width()/2;
-	if (out.element->noutputs() == 2)
-	    layinfo[*iter]._y = layinfo[partner].y2() + 10;
-	else
-	    layinfo[*iter]._y = layinfo[partner].y2() + 4;
-	layinfo[layinfo[*iter].posrel].rgroup |= layinfo[*iter];
-	layinfo[partner].compact_next = *iter;
-	layinfo[*iter].compact_prev = partner;
-    }
-
-    // lay out compact connections
-    for (std::vector<int>::const_iterator iter = scc_contents.begin();
-	 iter != scc_contents.end(); ++iter)
-	while (layinfo[layinfo[*iter].posrel].posrel != layinfo[*iter].posrel) {
-	    int g = layinfo[*iter].posrel, g2 = layinfo[g].posrel;
-	    layinfo[*iter].shift(layinfo[g].x(), layinfo[g].y());
-	    layinfo[g].rgroup |= layinfo[*iter];
-	    layinfo[*iter].posrel = g2;
-	}
-
-    //
-    // print SCCs
-#if 0
-    for (std::vector<int>::const_iterator iter = scc_contents.begin();
-	 iter != scc_contents.end(); ++iter)
-	if (layinfo[*iter].posrel == *iter) {
-	    fprintf(stderr, "COMPACT %d :", *iter);
-	    for (std::vector<int>::const_iterator iterx = scc_contents.begin(); iterx != scc_contents.end(); ++iterx)
-		if (layinfo[*iterx].posrel == *iter)
-		    fprintf(stderr, " %s", router->ename(*iterx).c_str());
-	    fprintf(stderr, "\n");
-	}
-#endif
-}
-
-void delt::position_contents_scc(RouterT *router)
-{
-    // initialize DFS
-    Bitvector connlive(router->nconnections(), true);
-    std::vector<layoutelt> layinfo;
-    for (int i = 0; i < router->nelements(); i++)
-	layinfo.push_back(layoutelt(i, _elt[i]->width(), _elt[i]->height()));
-
-    // DFS to find strongly connected components and break cycles
-    std::vector<int> connpath, eltpath, connpos;
-    Vector<int> conns;
-
-    for (int i = 0; i < router->nelements(); ++i) {
-	if (layinfo[i].visited)
-	    continue;
-	assert(connpath.size() == 0 && eltpath.size() == 0 && connpos.size() == 0);
-	eltpath.push_back(i);
-	connpath.push_back(-1);
-	connpos.push_back(-1);
-	layinfo[i].active = 0;
-	assert(layinfo[i].scc == i);
-	int cur_scc = i;
-
-	// loop over connections
-	while (connpos.size()) {
-	    router->find_connections_from(router->element(eltpath.back()), conns);
-
-	  more_connections:
-	    // skip dead connections
-	    assert(connpos.back() < conns.size());
-	    do {
-		++connpos.back();
-	    } while (connpos.back() < conns.size() && !connlive[conns[connpos.back()]]);
-
-	    // no more connections: backtrack
-	    if (connpos.back() == conns.size()) {
-		layinfo[eltpath.back()].active = -1;
-		layinfo[eltpath.back()].visited = true;
-		layinfo[eltpath.back()].scc = cur_scc;
-		connpos.pop_back();
-		eltpath.pop_back();
-		connpath.pop_back();
-		continue;
-	    }
-
-	    // live connection
-	    int to_eindex = router->connection(conns[connpos.back()]).to_eindex();
-
-	    // break cycle
-	    if (layinfo[to_eindex].active >= 0) {
-		// example eltpath:    0  1  2
-		// example connpath: -1 c# c#: split last
-		std::vector<int>::iterator cycle_begin = eltpath.begin() + layinfo[to_eindex].active;
-		std::vector<int>::iterator eltpath_max = std::max_element(cycle_begin, eltpath.end());
-		int killconn;
-		if (eltpath_max + 1 != eltpath.end())
-		    killconn = connpath[eltpath_max - eltpath.begin() + 1];
-		else
-		    killconn = conns[connpos.back()];
-		connlive[killconn] = false;
-		goto more_connections;
-	    }
-
-	    // connect components
-	    if (layinfo[to_eindex].visited) {
-		cur_scc = MIN(cur_scc, layinfo[to_eindex].scc);
-		goto more_connections;
-	    } else {
-		layinfo[to_eindex].active = eltpath.size();
-		connpath.push_back(conns[connpos.back()]);
-		eltpath.push_back(to_eindex);
-		connpos.push_back(-1);
-		continue;
-	    }
-	}
-    }
-
-    // assign SCCs
-    for (int i = 0; i < router->nelements(); ++i) {
-	assert(layinfo[i].scc <= i);
-	layinfo[i].scc = layinfo[layinfo[i].scc].scc;
-	layinfo[layinfo[i].scc].scc_contents.push_back(i);
-    }
-
-    // lay out SCCs
-    for (int i = 0; i < router->nelements(); ++i)
-	if (layinfo[i].scc == i)
-	    layout_one_scc(router, layinfo, connlive, i);
 }
 
 
@@ -634,15 +472,22 @@ const char *delt::parse_connection_dot(delt *e1, const HashTable<int, delt *> &z
     return s;
 }
 
-char flow_split_char(const String &str, int port, bool isoutput)
+int delt::flow_split_char(bool isoutput, int port) const
 {
-    const char *s = str.begin(), *end = str.end(), *slash = find(s, end, '/');
-    assert(s < slash && slash < end);
-    if (isoutput)
-	s = slash + 1;
-    else
-	end = slash;
-    return s[std::min(port, end - s - 1)];
+    int c = 0;
+    if (_flow_split) {
+	const char *s = _des->flow_split.begin(), *end = _des->flow_split.end();
+	const char *slash = find(s, end, '/');
+	assert(s < slash && slash < end);
+	if (isoutput)
+	    s = slash + 1;
+	else
+	    end = slash;
+	c = (unsigned char) s[std::min(port, end - s - 1)] << 1;
+    }
+    if (_port_split && !isoutput)
+	c += desplit_inputs;
+    return c;
 }
 
 static void ports_dot(StringAccum &sa, int nports, char c)
@@ -658,8 +503,7 @@ void delt::unparse_contents_dot(StringAccum &sa, crouter *cr, HashTable<int, del
     double txsep = gdess->margin[1] + gdess->margin[3];
     double tysep = gdess->margin[0] + gdess->margin[2];
 
-    for (std::vector<delt *>::size_type i = 0; i < _elt.size(); ++i) {
-	delt *e = _elt[i];
+    for (iterator e = begin_contents(); e; ++e) {
 	if (e->display() == dedisp_expanded) {
 	    e->unparse_contents_dot(sa, cr, z_index_lookup);
 	    continue;
@@ -668,7 +512,7 @@ void delt::unparse_contents_dot(StringAccum &sa, crouter *cr, HashTable<int, del
 
 	sa << "n" << e->z_index();
 	assert(z_index_lookup.get(e->z_index()) == 0);
-	z_index_lookup[e->z_index()] = e;
+	z_index_lookup[e->z_index()] = e.operator->();
 
 	double w = e->width() + (e->_dess->margin[1] + e->_dess->margin[3] - txsep);
 	double h = e->height() + (e->_dess->margin[0] + e->_dess->margin[2] - tysep);
@@ -685,34 +529,35 @@ void delt::unparse_contents_dot(StringAccum &sa, crouter *cr, HashTable<int, del
 
 void delt::create_bbox_contents(double bbox[4], double mbbox[4], bool include_compound_ports) const
 {
-    for (std::vector<delt *>::const_iterator n = _elt.begin();
-	 n != _elt.end(); ++n)
-	if ((*n)->display() == dedisp_expanded)
-	    (*n)->create_bbox_contents(bbox, mbbox, false);
-	else if ((*n)->visible()
-		 || (!root() && include_compound_ports && n < _elt.begin() + 2)) {
-	    const double *m = (*n)->_dess->margin;
-	    bbox[0] = std::min(bbox[0], (*n)->_y);
-	    bbox[1] = std::max(bbox[1], (*n)->_x + (*n)->_width);
-	    bbox[2] = std::max(bbox[2], (*n)->_y + (*n)->_height);
-	    bbox[3] = std::min(bbox[3], (*n)->_x);
-	    mbbox[0] = std::min(mbbox[0], (*n)->_y - m[0]);
-	    mbbox[1] = std::max(mbbox[1], (*n)->_x + (*n)->_width + m[1]);
-	    mbbox[2] = std::max(mbbox[2], (*n)->_y + (*n)->_height + m[2]);
-	    mbbox[3] = std::min(mbbox[3], (*n)->_x - m[3]);
+    size_t n = 0;
+    for (iterator e = begin_contents(); e; ++e, ++n) {
+	if (e->display() == dedisp_expanded)
+	    e->create_bbox_contents(bbox, mbbox, false);
+	else if (e->visible()
+		 || (!root() && include_compound_ports && n < 2)) {
+	    const double *m = e->_dess->margin;
+	    bbox[0] = std::min(bbox[0], e->_y);
+	    bbox[1] = std::max(bbox[1], e->_x + e->_width);
+	    bbox[2] = std::max(bbox[2], e->_y + e->_height);
+	    bbox[3] = std::min(bbox[3], e->_x);
+	    mbbox[0] = std::min(mbbox[0], e->_y - m[0]);
+	    mbbox[1] = std::max(mbbox[1], e->_x + e->_width + m[1]);
+	    mbbox[2] = std::max(mbbox[2], e->_y + e->_height + m[2]);
+	    mbbox[3] = std::min(mbbox[3], e->_x - m[3]);
 	}
+    }
 }
 
 void delt::shift_contents(double dx, double dy) const
 {
-    for (std::vector<delt *>::const_iterator n = _elt.begin();
-	 n != _elt.end(); ++n)
-	if ((*n)->display() == dedisp_expanded)
-	    (*n)->shift_contents(dx, dy);
-	else if ((*n)->visible()) {
-	    (*n)->_x += dx;
-	    (*n)->_y += dy;
+    for (iterator e = begin_contents(); e; ++e) {
+	if (e->display() == dedisp_expanded)
+	    e->shift_contents(dx, dy);
+	else if (e->visible()) {
+	    e->_x += dx;
+	    e->_y += dy;
 	}
+    }
 }
 
 void delt::position_contents_dot(crouter *cr, ErrorHandler *errh)
@@ -736,7 +581,7 @@ void delt::position_contents_dot(crouter *cr, ErrorHandler *errh)
 
     if (!root()) {
 	delt *ein = _elt[0], *eout = _elt[1];
-	assert(_elt.size() >= 2 && ein->name() == "input" && !ein->visible()
+	assert(ein && eout && ein->name() == "input" && !ein->visible()
 	       && eout->name() == "output" && !eout->visible());
 	if (_e->ninputs()) {
 	    z_index_lookup[ein->z_index()] = ein;
@@ -782,7 +627,9 @@ void delt::position_contents_dot(crouter *cr, ErrorHandler *errh)
     //fprintf(stderr, "%s\n", sa.c_str());
     String result;
     {
-	StringAccum outsa(shell_command_output_string("dot", sa.take_string(), errh));
+	// run through dot twice, as it gives different/better results if you do this
+	String dot1_res = shell_command_output_string("dot", sa.take_string(), errh);
+	StringAccum outsa(shell_command_output_string("dot", dot1_res, errh));
 	char *outs = outsa.begin(), *outend = outsa.end();
 	for (char *s = outsa.begin(); s != outend; )
 	    if (*s == '\\' && s + 1 < outend && s[1] == '\n')
@@ -797,6 +644,7 @@ void delt::position_contents_dot(crouter *cr, ErrorHandler *errh)
 	result = outsa.take_string();
     }
     //fprintf(stderr, "%s\n", result.c_str());
+    //shell_command_output_string("cat > /tmp/x.dot", result, errh);
     //shell_command_output_string("dot -Tps > /tmp/x.ps", result, errh);
 
     const char *end = result.end();
@@ -916,10 +764,11 @@ void delt::position_contents_dot(crouter *cr, ErrorHandler *errh)
  *
  */
 
-bool delt::reccss(crouter *cr, int change, int *z_index_ptr)
+bool delt::reccss(crouter *cr, int change)
 {
     int x;
     bool redraw = false;
+    bool resplit = false;
     ref_ptr<delt_size_style> old_dess = _dess;
     ref_ptr<delt_style> old_des = _des;
     String old_markup = _markup;
@@ -952,8 +801,10 @@ bool delt::reccss(crouter *cr, int change, int *z_index_ptr)
 
     if ((change & dsense_always) || _des != old_des) {
 	_display = _des->display;
-	if (_split_type == desplit_inputs && _display != dedisp_vsplit)
-	    _display = dedisp_none;
+	if (_port_split != _des->port_split
+	    || _flow_split != (bool) _des->flow_split
+	    || (_flow_split && old_des && old_des->flow_split != _des->flow_split))
+	    resplit = true;
 	if (_display == dedisp_expanded && primitive())
 	    _display = dedisp_open;
 	if (dedisp_visible(_display)
@@ -984,32 +835,74 @@ bool delt::reccss(crouter *cr, int change, int *z_index_ptr)
 	    }
     }
 
-    if (_display == dedisp_vsplit && !_split) {
-	delt *se = create_split(desplit_inputs, z_index_ptr);
-	se->reccss(cr, dsense_always);
-	redraw = true;
-    } else if (_display == dedisp_fsplit && !_split) {
-	Bitvector map(256);
-	assert(!_split_type);
-	int portno = 0, max_ports = ninputs();
-	for (const char *s = _des->flow_split.begin(); s != _des->flow_split.end(); ++s)
-	    if (*s == '/')
-		portno = 0, max_ports = noutputs();
-	    else if (portno++ >= max_ports)
-		/* do nothing */;
-	    else if (!map[(unsigned char) *s]) {
-		map[(unsigned char) *s] = true;
+    // handle split changes
+    if (resplit && !_split_copy && _visible) {
+	// kill old split status
+	while (_split && _split != this) {
+	    delt *s = _split;
+	    _split = s->_split;
+	    s->_split = 0;
+	    delete s;
+	}
+	_split_type = 0;
+	_port_split = _des->port_split;
+	_flow_split = (bool) _des->flow_split;
+
+	if (_flow_split) {
+	    // collect split characters
+	    Bitvector inputs(256), outputs(256), *current = &inputs;
+	    Vector<int> split_chars;
+	    int portno = 0, max_ports = ninputs();
+	    for (const char *s = _des->flow_split.begin();
+		 s != _des->flow_split.end(); ++s)
+		if (*s == '/')
+		    portno = 0, max_ports = noutputs(), current = &outputs;
+		else if (portno++ >= max_ports)
+		    /* do nothing */;
+		else if (!(*current)[(unsigned char) *s]) {
+		    if (!inputs[(unsigned char) *s])
+			split_chars.push_back(((unsigned char) *s) << 1);
+		    (*current)[(unsigned char) *s] = true;
+		}
+
+	    // potentially split vertically as well as by flow
+	    if (_port_split) {
+		// create input and output versions
+		int n = split_chars.size();
+		for (int i = 0; i < n; ++i)
+		    split_chars.push_back(split_chars[i] + desplit_inputs);
+		// remove meaningless combinations
+		for (int i = 0; i < split_chars.size(); ++i)
+		    if (split_chars[i] & desplit_inputs
+			? (_port_split == dpdisp_outputs
+			   || !inputs[split_chars[i] >> 1])
+			: (_port_split == dpdisp_inputs
+			   || !outputs[split_chars[i] >> 1])) {
+			split_chars[i] = split_chars.back();
+			split_chars.pop_back();
+			--i;
+		    }
+	    }
+
+	    // create splits for collected characters
+	    for (int *scit = split_chars.begin();
+		 scit != split_chars.end(); ++scit) {
 		if (!_split_type)
-		    _split_type = (unsigned char) *s;
+		    _split_type = *scit;
 		else {
-		    delt *se = create_split((unsigned char) *s, z_index_ptr);
+		    delt *se = create_split(cr, *scit);
 		    se->reccss(cr, dsense_always);
 		    redraw = true;
 		}
 	    }
-	if (!_split) {		// flowsplit didn't actually split anything
-	    _split_type = 0;
-	    _display = dedisp_closed;
+
+	} else if (_port_split == dpdisp_inputs)
+	    _split_type = desplit_inputs;
+
+	else if (_port_split == dpdisp_both) {
+	    delt *se = create_split(cr, desplit_inputs);
+	    se->reccss(cr, dsense_always);
+	    redraw = true;
 	}
     }
 
@@ -1026,8 +919,8 @@ bool delt::reccss(crouter *cr, int change, int *z_index_ptr)
 
 void delt::layout_contents(dcontext &dcx)
 {
-    for (size_t i = 0; i != _elt.size(); ++i)
-	_elt[i]->layout(dcx);
+    for (iterator e = begin_contents(); e; ++e)
+	e->layout(dcx);
 
     if (root() || _display == dedisp_open)
 	position_contents_dot(dcx.cr, dcx.cr->error_handler());
@@ -1050,7 +943,7 @@ void delt::layout_ports(dcontext &dcx)
 	ref_ptr<dport_style> dps = dcs->port_style(dcx.cr, this, isoutput, 0, 0);
 	_ports_length[isoutput] = 2 * dps->edge_padding;
 	if (!_e->nports(isoutput)
-	    || (_display == dedisp_vsplit && isoutput == (_split_type != 0)))
+	    || (_port_split && isoutput == (_split_type & desplit_inputs)))
 	    continue;
 	if (_e->nports(isoutput) > 1)
 	    _portoff[isoutput] = new double[_e->nports(isoutput) + 1];
@@ -1205,6 +1098,24 @@ String delt::parse_markup(const String &text, crouter *cr,
 	    last = s + 1;
 	}
     sa.append(last, send);
+
+    // Trim empty markup
+    for (char *lt = find(sa.begin(), sa.end(), '<'); lt != sa.end(); ) {
+	char *gt = find(lt + 1, sa.end(), '>');
+	char *after = gt + 3 + (gt - lt);
+	if (after <= sa.end()
+	    && gt[1] == '<' && gt[2] == '/'
+	    && memcmp(gt + 3, lt + 1, gt - lt) == 0) {
+	    memmove(lt, after, sa.end() - after);
+	    sa.pop_back(after - lt);
+	    lt = find(lt, sa.end(), '<');
+	} else
+	    lt = find(gt, sa.end(), '<');
+    }
+    // Trim terminating newlines
+    while (sa.length() && sa.back() == '\n')
+	sa.pop_back();
+
     return sa.take_string();
 }
 
@@ -1294,21 +1205,22 @@ void delt::layout_compound_ports_copy(delt *compound, bool isoutput)
 
 void delt::layout_compound_ports(crouter *cr)
 {
-    assert(_elt.size() >= 2 && _elt[0]->name() == "input" && _elt[1]->name() == "output" && !_elt[0]->visible() && !_elt[1]->visible());
+    delt *ein = _elt[0], *eout = _elt[1];
+    assert(ein && eout && ein->name() == "input" && !ein->visible() && eout->name() == "output" && !eout->visible());
 
-    _elt[0]->_x = _x;
-    _elt[0]->_y = _y - 10;
-    _elt[0]->_width = _width;
+    ein->_x = _x;
+    ein->_y = _y - 10;
+    ein->_width = _width;
     ref_ptr<dport_style> dps = cr->ccss()->port_style(cr, this, false, 0, 0);
-    _elt[0]->_height = 10 + dps->width;
-    _elt[0]->layout_compound_ports_copy(this, false);
+    ein->_height = 10 + dps->width;
+    ein->layout_compound_ports_copy(this, false);
 
-    _elt[1]->_x = _x;
+    eout->_x = _x;
     dps = cr->ccss()->port_style(cr, this, true, 0, 0);
-    _elt[1]->_y = _y + _height - dps->width;
-    _elt[1]->_width = _width;
-    _elt[1]->_height = 10;
-    _elt[1]->layout_compound_ports_copy(this, true);
+    eout->_y = _y + _height - dps->width;
+    eout->_width = _width;
+    eout->_height = 10;
+    eout->layout_compound_ports_copy(this, true);
 }
 
 void delt::layout_complete(dcontext &dcx, double dx, double dy)
@@ -1318,17 +1230,16 @@ void delt::layout_complete(dcontext &dcx, double dx, double dy)
 	dy += _markup_height + _dess->padding[0];
     }
 
-    for (std::vector<delt *>::iterator ci = _elt.begin();
-	 ci != _elt.end(); ++ci) {
+    for (iterator e = begin_contents(); e; ++e) {
 	double unadjusted_x = dx, unadjusted_y = dy;
-	if ((*ci)->visible()) {
-	    unadjusted_x += (*ci)->_x;
-	    unadjusted_y += (*ci)->_y;
-	    (*ci)->_x = floor(unadjusted_x);
-	    (*ci)->_y = floor(unadjusted_y);
+	if (e->visible()) {
+	    unadjusted_x += e->_x;
+	    unadjusted_y += e->_y;
+	    e->_x = floor(unadjusted_x);
+	    e->_y = floor(unadjusted_y);
 	}
-	if ((*ci)->_elt.size() && dedisp_children_visible((*ci)->_display))
-	    (*ci)->layout_complete(dcx, unadjusted_x, unadjusted_y);
+	if (e->_elt.size() && dedisp_children_visible(e->_display))
+	    e->layout_complete(dcx, unadjusted_x, unadjusted_y);
     }
 
     if (dedisp_visible(_display) && _elt.size())
@@ -1357,9 +1268,8 @@ void delt::insert_all(rect_search<dwidget> &rects)
     if (visible())
 	rects.insert(this);
     if (dedisp_children_visible(_display)) {
-	for (std::vector<delt *>::iterator ci = _elt.begin();
-	     ci != _elt.end(); ++ci)
-	    (*ci)->insert_all(rects);
+	for (iterator e = begin_contents(); e; ++e)
+	    e->insert_all(rects);
 	for (std::vector<dconn *>::iterator ci = _conn.begin();
 	     ci != _conn.end(); ++ci)
 	    if ((*ci)->visible())
@@ -1422,9 +1332,8 @@ void delt::union_bounds(rectangle &r, bool self) const
     if (self && visible())
 	r |= *this;
     if (dedisp_children_visible(_display)) {
-	for (std::vector<delt *>::const_iterator it = _elt.begin();
-	     it != _elt.end(); ++it)
-	    (*it)->union_bounds(r, true);
+	for (iterator e = begin_contents(); e; ++e)
+	    e->union_bounds(r, true);
 	for (std::vector<dconn *>::const_iterator ci = _conn.begin();
 	     ci != _conn.end(); ++ci)
 	    if ((*ci)->visible())
@@ -1451,8 +1360,9 @@ void delt::remove(rect_search<dwidget> &rects, rectangle &bounds)
 	}
 
     if (_parent && _elt.size() && _display == dedisp_open) {
-	_elt[0]->remove(rects, bounds);
-	_elt[1]->remove(rects, bounds);
+	delt *ein = _elt[0], *eout = _elt[1];
+	ein->remove(rects, bounds);
+	eout->remove(rects, bounds);
     }
 }
 
@@ -1478,8 +1388,9 @@ void delt::insert(rect_search<dwidget> &rects, crouter *cr,
 
     if (_parent && _elt.size() && _display == dedisp_open) {
 	layout_compound_ports(cr);
-	_elt[0]->insert(rects, cr, bounds);
-	_elt[1]->insert(rects, cr, bounds);
+	delt *ein = _elt[0], *eout = _elt[1];
+	ein->insert(rects, cr, bounds);
+	eout->insert(rects, cr, bounds);
     }
 }
 
@@ -1512,22 +1423,12 @@ double delt::hard_port_position(bool isoutput, int port,
 		 / _portoff[isoutput][_e->nports(isoutput)];
 }
 
-delt *delt::find_flow_split(bool isoutput, int port)
-{
-    int c = flow_split_char(_des->flow_split, port, isoutput);
-    return find_split(c);
-}
-
 point delt::input_position(int port, dport_style *dps, bool here) const
 {
-    if (_display == dedisp_vsplit && _split && _split->visible()
-	&& _split_type != desplit_inputs && !here)
+    if (_flow_split && !here)
+	return find_flow_split(false, port)->input_position(port, dps, true);
+    else if (_port_split && !(_split_type & desplit_inputs) && _split && !here)
 	return _split->input_position(port, 0, true);
-    if (_display == dedisp_fsplit && _split && !here) {
-	int c = flow_split_char(_des->flow_split, port, false);
-	if (_split_type != c)
-	    return find_split(c)->input_position(port, dps, true);
-    }
 
     double off = port_position(false, port, side_length(_des->orientation ^ 1));
 
@@ -1547,14 +1448,10 @@ point delt::input_position(int port, dport_style *dps, bool here) const
 
 point delt::output_position(int port, dport_style *dps, bool here) const
 {
-    if (_display == dedisp_vsplit && _split && _split->visible()
-	&& _split_type == desplit_inputs && !here)
+    if (_flow_split && !here)
+	return find_flow_split(true, port)->output_position(port, dps, true);
+    else if (_port_split && (_split_type & desplit_inputs) && _split && !here)
 	return _split->output_position(port, 0, true);
-    if (_display == dedisp_fsplit && _split && !here) {
-	int c = flow_split_char(_des->flow_split, port, true);
-	if (_split_type != c)
-	    return find_split(c)->output_position(port, dps, true);
-    }
 
     double off = port_position(true, port, side_length(_des->orientation ^ 1));
 
@@ -1695,25 +1592,25 @@ void delt::draw_ports(dcontext &dcx)
     int pcode;
     ref_ptr<dport_style> dps;
 
-    if (_display != dedisp_vsplit || _split_type == desplit_inputs)
+    if (!_port_split || (_split_type & desplit_inputs))
 	for (int i = 0; i < _e->ninputs(); i++) {
 	    pcpos = ProcessingT::processing_code_next
 		(pcpos, _processing_code.end(), pcode);
 	    dps = dcx.cr->ccss()->port_style(dcx.cr, this, false, i, pcode);
 	    if (dps->display & dpdisp_inputs) {
-		double opacity = (_display == dedisp_fsplit && flow_split_char(_des->flow_split, i, false) != _split_type ? 0.25 : 1);
+		double opacity = (flow_split_char(false, i) != _split_type ? 0.25 : 1);
 		draw_port(dcx, dps.get(), input_position(i, dps.get(), true),
 			  i, false, opacity);
 	    }
 	}
     pcpos = ProcessingT::processing_code_output(_processing_code.begin(), _processing_code.end(), pcpos);
-    if (_display != dedisp_vsplit || _split_type != desplit_inputs)
+    if (!_port_split || !(_split_type & desplit_inputs))
 	for (int i = 0; i < _e->noutputs(); i++) {
 	    pcpos = ProcessingT::processing_code_next
 		(pcpos, _processing_code.end(), pcode);
 	    dps = dcx.cr->ccss()->port_style(dcx.cr, this, true, i, pcode);
 	    if (dps->display & dpdisp_outputs) {
-		double opacity = (_display == dedisp_fsplit && flow_split_char(_des->flow_split, i, true) != _split_type ? 0.25 : 1);
+		double opacity = (flow_split_char(true, i) != _split_type ? 0.25 : 1);
 		draw_port(dcx, dps.get(), output_position(i, dps.get(), true),
 			  i, true, opacity);
 	    }
@@ -1721,8 +1618,18 @@ void delt::draw_ports(dcontext &dcx)
 }
 
 static void cairo_jagged_edge(cairo_t *cr, double x0, double y0,
-			      double x1, double y1, int spo)
+			      double x1, double y1, int spo, double bwd)
 {
+    // adjust for border width so fill & stroke have same jags
+    if (bwd) {
+	if (spo & 1 ? y1 < y0 : x1 < x0)
+	    bwd = -bwd;
+	if (spo & 1)
+	    y0 -= bwd, y1 += bwd;
+	else
+	    x0 -= bwd, x1 += bwd;
+    }
+
     int n = (int) ceil(fabs(spo & 1 ? y1 - y0 : x1 - x0) / 20);
     double delta = (spo & 1 ? y1 - y0 : x1 - x0) / (2 * n);
     double shift = (rectangle::side_greater(spo) ? -5 : 5);
@@ -1751,21 +1658,21 @@ void delt::draw_background(dcontext &dcx)
     if (_des->background_color[3]) {
 	const double *color = _des->background_color;
 	cairo_set_source_rgba(dcx, color[0], color[1], color[2], color[3]);
-	if (_display != dedisp_vsplit) {
+	if (!_port_split) {
 	    cairo_move_to(dcx, pos[3], pos[0]);
 	    cairo_line_to(dcx, pos[1], pos[0]);
 	    cairo_line_to(dcx, pos[1], pos[2]);
 	    cairo_line_to(dcx, pos[3], pos[2]);
 	} else {
 	    int spo = _des->orientation;
-	    if (_split_type == desplit_inputs)
+	    if (_split_type & desplit_inputs)
 		spo = (spo + 2) & 3;
 	    cairo_move_to(dcx, pos[((spo + 3) & 2) + 1], pos[spo & 2]);
 	    cairo_line_to(dcx, pos[((spo + 2) & 2) + 1], pos[(spo + 3) & 2]);
 	    cairo_line_to(dcx, pos[((spo + 1) & 2) + 1], pos[(spo + 2) & 2]);
 	    cairo_line_to(dcx, pos[(spo & 2) + 1], pos[(spo + 1) & 2]);
 	    cairo_jagged_edge(dcx, pos[(spo & 2) + 1], pos[(spo + 1) & 2],
-			      pos[((spo + 3) & 2) + 1], pos[spo & 2], spo);
+			      pos[((spo + 3) & 2) + 1], pos[spo & 2], spo, bwd);
 	}
 	cairo_close_path(dcx);
 	cairo_fill(dcx);
@@ -1893,9 +1800,9 @@ void delt::draw_drop_shadow(dcontext &dcx)
 {
     double shift = (_highlight & (1 << dhlt_pressed)) ? 1 : 0;
     int spo = -1;
-    if (_display == dedisp_vsplit) {
+    if (_port_split) {
 	spo = _des->orientation;
-	if (_split_type == desplit_inputs)
+	if (_split_type & desplit_inputs)
 	    spo = (spo + 2) & 3;
     }
     double sw = _des->shadow_width;
@@ -1916,10 +1823,10 @@ void delt::draw_drop_shadow(dcontext &dcx)
 	double x1 = _x + _width, y1 = _y;
 	cairo_move_to(dcx, x0, y0);
 	if (spo == 2)
-	    cairo_jagged_edge(dcx, x0, y0, x1, y0, spo);
+	    cairo_jagged_edge(dcx, x0, y0, x1, y0, spo, 0);
 	cairo_line_to(dcx, x1, y0);
 	if (spo == 1)
-	    cairo_jagged_edge(dcx, x1, y0, x1, y1, spo);
+	    cairo_jagged_edge(dcx, x1, y0, x1, y1, spo, 0);
 	cairo_line_to(dcx, x1, y1);
 	cairo_line_to(dcx, x1 + sw, y1);
 	cairo_line_to(dcx, x1 + sw, y0 + sw);
@@ -1934,10 +1841,10 @@ void delt::draw_drop_shadow(dcontext &dcx)
 	y1 += sw - shift;
 	cairo_move_to(dcx, x0, y0);
 	if (spo == 2)
-	    cairo_jagged_edge(dcx, x0, y0, x1, y0, spo);
+	    cairo_jagged_edge(dcx, x0, y0, x1, y0, spo, 0);
 	cairo_line_to(dcx, x1, y0);
 	if (spo == 1)
-	    cairo_jagged_edge(dcx, x1, y0, x1, y1, spo);
+	    cairo_jagged_edge(dcx, x1, y0, x1, y1, spo, 0);
 	cairo_line_to(dcx, x1, y1);
 	double delta = sw + 5;
 	cairo_line_to(dcx, x1 - delta, y1);
@@ -1986,9 +1893,9 @@ void delt::draw_outline(dcontext &dcx)
 	pos[1] = _x + _width - bwd;
 	pos[2] = _y + _height - bwd;
 	int o = _des->orientation, open = (_des->style == destyle_queue);
-	if (_display == dedisp_vsplit) {
-	    open = (open && _split_type == desplit_inputs ? 2 : 1);
-	    o = (_split_type == desplit_inputs ? (o + 2) & 3 : o);
+	if (_port_split) {
+	    open = (open && (_split_type & desplit_inputs) ? 2 : 1);
+	    o = (_split_type & desplit_inputs ? (o + 2) & 3 : o);
 	}
 	if (open)
 	    pos[o] = side(o);
@@ -2005,13 +1912,13 @@ void delt::draw_outline(dcontext &dcx)
 	    cairo_close_path(dcx);
 	cairo_stroke(dcx);
 
-	if (_display == dedisp_vsplit) {
+	if (_port_split) {
 	    const double *color = _des->border_color;
 	    cairo_set_source_rgba(dcx, color[0], color[1], color[2], color[3] * 0.25);
 	    cairo_set_line_width(dcx, 0.5);
 	    cairo_move_to(dcx, pos[(o & 2) + 1], pos[(o + 1) & 2]);
 	    cairo_jagged_edge(dcx, pos[(o & 2) + 1], pos[(o + 1) & 2],
-			      pos[((o + 3) & 2) + 1], pos[o & 2], o);
+			      pos[((o + 3) & 2) + 1], pos[o & 2], o, bwd);
 	    cairo_line_to(dcx, pos[((o + 3) & 2) + 1], pos[o & 2]);
 	    cairo_stroke(dcx);
 	}
@@ -2135,9 +2042,8 @@ void delt::drag_prepare()
 {
     if (_visible) {
 	_xrect = *this;
-	for (std::vector<delt *>::iterator ei = _elt.begin();
-	     ei != _elt.end(); ++ei)
-	    (*ei)->drag_prepare();
+	for (iterator e = begin_contents(); e; ++e)
+	    e->drag_prepare();
     }
 }
 
@@ -2150,9 +2056,8 @@ void delt::drag_shift(wdiagram *d, const point &delta)
 	_y = _xrect._y + delta.y();
 	insert(d->rects(), d->main(), bounds);
 	d->redraw(bounds);
-	for (std::vector<delt *>::iterator ei = _elt.begin();
-	     ei != _elt.end(); ++ei)
-	    (*ei)->drag_shift(d, delta);
+	for (iterator e = begin_contents(); e; ++e)
+	    e->drag_shift(d, delta);
     }
 }
 
@@ -2217,11 +2122,10 @@ handler_value *delt::handler_interest(crouter *cr, const String &hname,
 
 void delt::notify_read(wdiagram *d, handler_value *hv)
 {
-    ddecor::notify_list(_decor, d->main(), this, hv);
-    if (reccss(d->main(), dsense_handler)) {
-	d->redraw(*this);
-	if (_split && _split->visible())
-	    d->redraw(*_split);
+    for (delt *e = this; e; e = e->next_split(this)) {
+	ddecor::notify_list(e->_decor, d->main(), e, hv);
+	if (e->reccss(d->main(), dsense_handler))
+	    d->redraw(*e);
     }
 }
 

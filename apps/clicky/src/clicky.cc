@@ -257,6 +257,13 @@ particular purpose.\n");
 	    (void) new clicky::clickfs_cdriver(cr, "/click/");
 	} else {
 	    String s = file_string(wfiles[i], cr->error_handler());
+	    if (compressed_data((const unsigned char *) s.begin(), s.length())
+		&& wfiles[i] != "-" && wfiles[i] != "") {
+		if (FILE *f = open_uncompress_pipe(wfiles[i], (const unsigned char *) s.begin(), s.length(), cr->error_handler())) {
+		    s = file_string(f, cr->error_handler());
+		    pclose(f);
+		}
+	    }
 	    if (!s && gerrh->nerrors())
 		cr->on_error(true, gerrh->message_string(gerrh->begin(), gerrh->end()));
 	    cr->set_config(s, true);

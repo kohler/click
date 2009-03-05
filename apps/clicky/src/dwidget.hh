@@ -7,6 +7,7 @@
 #include "ref.hh"
 #include <click/integers.hh>
 #include <clicktool/elementt.hh>
+#include <clicktool/routert.hh>
 class Bitvector;
 class ProcessingT;
 class ScopeChain;
@@ -27,8 +28,6 @@ enum {
     dedisp_none = 0,
     dedisp_open = 1,
     dedisp_closed = 2,
-    dedisp_vsplit = 3,
-    dedisp_fsplit = 4,
     dedisp_passthrough = -1,
     dedisp_expanded = -2,
     dedisp_placeholder = -99
@@ -73,7 +72,7 @@ enum { dw_elt = 0, dw_conn = 1 };
 
 class dwidget : public rectangle { public:
 
-    dwidget(int type, int z_index)
+    dwidget(int type, int z_index = 0)
 	: _type(type), _z_index(z_index) {
     }
 
@@ -90,6 +89,9 @@ class dwidget : public rectangle { public:
 
     int z_index() const {
 	return _z_index;
+    }
+    void set_z_index(int z_index) {
+	_z_index = z_index;
     }
 
     static bool z_index_less(const dwidget *a, const dwidget *b) {
@@ -112,7 +114,8 @@ class dwidget : public rectangle { public:
 
 class dconn : public dwidget { public:
 
-    inline dconn(delt *fe, int fp, delt *te, int tp, int z_index);
+    inline dconn(delt *fe, int fp, delt *te, int tp);
+    static inline dconn *make(delt *fe, int fp, delt *te, int tp);
 
     delt *elt(bool isoutput) const {
 	return _elt[isoutput];
@@ -170,14 +173,13 @@ enum {
 
 class delt : public dwidget { public:
 
-    class layoutelt;
-
     delt(delt *parent = 0, int z_index = 0)
 	: dwidget(dw_elt, z_index), _e(0), _resolved_router(0),
 	  _decor(0), _generation(0),
 	  _port_text_offsets(0), _parent(parent), _split(0),
 	  _visible(false), _display(dedisp_placeholder),
-	  _aligned(true), _primitive(false), _split_type(0),
+	  _aligned(true), _primitive(false), _split_copy(false), _port_split(0),
+	  _flow_split(false), _split_type(0),
 	  _des_sensitivity(0), _dess_sensitivity(0), _dps_sensitivity(0),
 	  _markup_sensitivity(0),
 	  _highlight(0), _drawn_highlight(0),
@@ -207,11 +209,8 @@ class delt : public dwidget { public:
     char split_type() const {
 	return _split_type;
     }
-    delt *visible_split() const {
-	return _split && _split->visible() ? _split : 0;
-    }
     delt *next_split(delt *base) const {
-	return _split && _split->visible() && _split != base ? _split : 0;
+	return _split != base ? _split : 0;
     }
     delt *find_split(int split_type) {
 	delt *d = this;
@@ -232,9 +231,9 @@ class delt : public dwidget { public:
 	return 0;
     }
     inline delt *find_port_container(bool isoutput, int port) {
-	if (display() == dedisp_fsplit)
+	if (_flow_split)
 	    return find_flow_split(isoutput, port);
-	else if (display() == dedisp_vsplit)
+	else if (_port_split)
 	    return find_split(isoutput ? desplit_outputs : desplit_inputs);
 	else
 	    return this;
@@ -273,7 +272,7 @@ class delt : public dwidget { public:
 	return _primitive;
     }
     bool passthrough() const {
-	return _elt.size() == 2;
+	return _resolved_router && _resolved_router->nelements() == 2;
     }
 
     double contents_width() const {
@@ -303,8 +302,7 @@ class delt : public dwidget { public:
 
     // creating
     void create(RouterT *router, ProcessingT *processing,
-		HashTable<String, delt *> &collector, ScopeChain &chain,
-		int &z_index);
+		HashTable<String, delt *> &collector, ScopeChain &chain);
 
     // gadgets
     void notify_read(wdiagram *d, handler_value *hv);
@@ -334,10 +332,61 @@ class delt : public dwidget { public:
     handler_value *handler_interest(crouter *cr, const String &hname,
 				    bool autorefresh = false, int autorefresh_period = 0, bool always = false);
 
+    void fill(crouter *cr, const String &name, int z_index,
+	      HashTable<String, delt *> &collector);
     void create_elements(crouter *cr, RouterT *router, ProcessingT *processing,
-			 HashTable<String, delt *> &collector,
-			 ScopeChain &chain, int &z_index);
-    void create_connections(crouter *cr, int &z_index);
+			 HashTable<String, delt *> *collector,
+			 ScopeChain &chain);
+    void create_connections(crouter *cr);
+    int assign_z_indexes(int z);
+
+    // element contents
+    class iterator {
+	iterator()
+	    : _e(0), _ep(), _parent(0) {
+	}
+	typedef delt *(iterator::*unspecified_bool_type)() const;
+	operator unspecified_bool_type() const {
+	    return _e ? &iterator::operator-> : 0;
+	}
+	bool operator!() const {
+	    return !_e;
+	}
+	delt *operator->() const {
+	    return _e;
+	}
+	delt &operator*() const {
+	    return *_e;
+	}
+	void operator++() {
+	    assert(_e);
+	    if (!(_e = _e->next_split(*_ep)))
+		if (++_ep != _parent->_elt.end())
+		    _e = *_ep;
+	}
+	bool operator==(const iterator &x) const {
+	    return _e == x._e;
+	}
+	bool operator!=(const iterator &x) const {
+	    return _e != x._e;
+	}
+      private:
+	delt *_e;
+	std::vector<delt *>::const_iterator _ep;
+	const delt *_parent;
+
+	iterator(const delt *parent)
+	    : _ep(parent->_elt.begin()), _parent(parent) {
+	    _e = (_ep != parent->_elt.end() ? *_ep : 0);
+	}
+	friend class delt;
+    };
+    iterator begin_contents() const {
+	return iterator(this);
+    }
+    iterator end_contents() const {
+	return iterator();
+    }
 
   private:
 
@@ -365,7 +414,10 @@ class delt : public dwidget { public:
     int8_t _display;
     bool _aligned : 1;
     bool _primitive : 1;
-    int8_t _split_type;
+    bool _split_copy : 1;
+    unsigned _port_split : 2;
+    bool _flow_split : 1;
+    uint8_t _split_type;
     unsigned _des_sensitivity : 2;
     unsigned _dess_sensitivity : 2;
     unsigned _dps_sensitivity : 2;
@@ -398,21 +450,25 @@ class delt : public dwidget { public:
 
     static delt *create(ElementT *e, delt *parent,
 			crouter *cr, ProcessingT *processing,
-			HashTable<String, delt *> &collector,
-			ScopeChain &chain, int &z_index);
-    delt *create_split(int split_type, int *z_index_ptr);
-    void create_connections(std::vector<delt_conn> &cc, crouter *cr, int &z_index) const;
+			HashTable<String, delt *> *collector,
+			ScopeChain &chain);
+    delt *create_split(crouter *cr, int split_type);
+    void create_connections(std::vector<delt_conn> &cc, crouter *cr) const;
 
-    void layout_one_scc(RouterT *router, std::vector<layoutelt> &layinfo, const Bitvector &connlive, int scc);
-    void position_contents_scc(RouterT *);
     void unparse_contents_dot(StringAccum &sa, crouter *cr, HashTable<int, delt *> &z_index_lookup) const;
     void position_contents_dot(crouter *cr, ErrorHandler *errh);
     const char *parse_connection_dot(delt *e1, const HashTable<int, delt *> &z_index_lookup, const char *s, const char *end);
     void create_bbox_contents(double bbox[4], double mbbox[4], bool include_compound_ports) const;
     void shift_contents(double dx, double dy) const;
-    delt *find_flow_split(bool isoutput, int port);
+    int flow_split_char(bool isoutput, int port) const;
+    delt *find_flow_split(bool isoutput, int port) {
+	return find_split(flow_split_char(isoutput, port));
+    }
+    const delt *find_flow_split(bool isoutput, int port) const {
+	return find_split(flow_split_char(isoutput, port));
+    }
 
-    bool reccss(crouter *cr, int change, int *z_index_ptr = 0);
+    bool reccss(crouter *cr, int change);
     void layout_contents(dcontext &dcx);
     void layout_ports(dcontext &dcx);
     void layout(dcontext &dcx);
@@ -484,16 +540,26 @@ inline double delt::port_position(bool isoutput, int port,
 	return hard_port_position(isoutput, port, side_length);
 }
 
-inline dconn::dconn(delt *fe, int fp, delt *te, int tp, int z_index)
-    : dwidget(dw_conn, z_index), _count_last(~0U), _count_change(~0U)
+inline dconn::dconn(delt *fe, int fp, delt *te, int tp)
+    : dwidget(dw_conn, std::max(fe->z_index(), te->z_index()) + 1),
+      _count_last(~0U), _count_change(~0U)
 {
     assert(fe->display() != dedisp_placeholder
 	   && te->display() != dedisp_placeholder);
-    _elt[1] = fe->find_port_container(true, fp);
-    _elt[0] = te->find_port_container(false, tp);
+    _elt[1] = fe;
+    _elt[0] = te;
     assert(_elt[0] && _elt[1]);
     _port[1] = fp;
     _port[0] = tp;
+}
+
+inline dconn *dconn::make(delt *fe, int fp, delt *te, int tp)
+{
+    if ((fe = fe->find_port_container(true, fp))
+	&& (te = te->find_port_container(false, tp)))
+	return new dconn(fe, fp, te, tp);
+    else
+	return 0;
 }
 
 inline int dconn::change_display(unsigned change)
