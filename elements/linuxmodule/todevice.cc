@@ -539,7 +539,7 @@ ToDevice::add_handlers()
     add_data_handlers("count", Handler::OP_READ, &_npackets);
     add_data_handlers("drops", Handler::OP_READ, &_drops);
     add_data_handlers("holds", Handler::OP_READ, &_holds);
-    add_read_handler("packets", Handler::OP_READ | Handler::DEPRECATED, &_npackets);
+    add_data_handlers("packets", Handler::OP_READ | Handler::DEPRECATED, &_npackets);
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
     add_read_handler("pull_cycles", Handler::OP_READ, &_pull_cycles);
 #endif
