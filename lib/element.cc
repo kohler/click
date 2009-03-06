@@ -965,13 +965,13 @@ next_flow_code(const char*& p, int port, Bitvector& code, ErrorHandler* errh, co
 	    else if (*p == '#')
 		code[port + 128] = true;
 	    else if (errh)
-		errh->error("'%{element}' flow code: invalid character '%c'", e, *p);
+		errh->error("%<%{element}%> flow code: invalid character %<%c%>", e, *p);
 	}
 	if (negated)
 	    code.negate();
 	if (!*p) {
 	    if (errh)
-		errh->error("'%{element}' flow code: missing ']'", e);
+		errh->error("%<%{element}%> flow code: missing %<]%>", e);
 	    p--;			// don't skip over final '\0'
 	}
     } else if ((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z'))
@@ -980,7 +980,7 @@ next_flow_code(const char*& p, int port, Bitvector& code, ErrorHandler* errh, co
 	code[port + 128] = true;
     else {
 	if (errh)
-	    errh->error("'%{element}' flow code: invalid character '%c'", e, *p);
+	    errh->error("%<%{element}%> flow code: invalid character %<%c%>", e, *p);
 	p++;
 	return -1;
     }
@@ -1036,7 +1036,7 @@ Element::port_flow(bool isoutput, int p, Bitvector* travels) const
     const char* f_out = strchr(f, '/');
     f_out = (f_out ? f_out + 1 : f_in);
     if (*f_out == '\0' || *f_out == '/') {
-	errh->error("'%{element}' flow code: missing or bad '/'", this);
+	errh->error("%<%{element}%> flow code: missing or bad %</%>", this);
 	return;
     }
 
@@ -2032,7 +2032,7 @@ write_task_tickets(const String &s, Element *e, void *thunk, ErrorHandler *errh)
   Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
   int tix;
   if (!cp_integer(s, &tix))
-    return errh->error("'tickets' takes an integer between 1 and %d", Task::MAX_TICKETS);
+    return errh->error("%<tickets%> takes an integer between 1 and %d", Task::MAX_TICKETS);
   if (tix < 1) {
     errh->warning("tickets pinned at 1");
     tix = 1;
