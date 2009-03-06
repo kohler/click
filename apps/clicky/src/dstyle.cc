@@ -625,14 +625,18 @@ bool dcss_selector::match(crouter *cr, const delt *e, int *sensitivity) const
 	} else if ((s = find(*k, '=')) != k->end()) {
 	    if (!cr->driver() || !e->flat_name() || !e->primitive())
 		return false;
-	    handler_value *hv = cr->hvalues().find_placeholder(e->flat_name() + "." + k->substring(k->begin(), s), hflag_notify_delt);
+	    const char *hend = s;
+	    if (hend > k->begin() && hend[-1] == '!')
+		--hend;
+	    handler_value *hv = cr->hvalues().find_placeholder(e->flat_name() + "." + k->substring(k->begin(), hend), hflag_notify_delt);
 	    if (!hv)
 		return false;
 	    // XXX fix this
 	    if (!hv->have_hvalue()) {
 		hv->refresh(cr);
 		answer = false;
-	    } else if (hv->hvalue() != k->substring(s + 1, k->end()))
+	    } else if ((hv->hvalue() == k->substring(s + 1, k->end()))
+		       == (*hend == '!'))
 		answer = false;
 	    senses |= dsense_handler;
 	} else
