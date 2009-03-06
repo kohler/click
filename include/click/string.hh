@@ -5,21 +5,6 @@
 #include <click/atomic.hh>
 CLICK_DECLS
 
-/** @cond never */
-struct __StringMemo {
-    volatile uint32_t refcount;
-    uint32_t capacity;
-    volatile uint32_t dirty;
-    char *real_data;
-};
-
-struct __StringRep {
-    const char *data;
-    int length;
-    __StringMemo *memo;
-};
-/** @endcond never */
-
 class String { public:
 
     /** @brief Initialize the String implementation.
@@ -613,9 +598,24 @@ class String { public:
 
   private:
 
-    mutable __StringRep _r;	// mutable for c_str()
+    /** @cond never */
+    struct memo_t {
+	volatile uint32_t refcount;
+	uint32_t capacity;
+	volatile uint32_t dirty;
+	char *real_data;
+    };
 
-    inline String(const char *data, int length, __StringMemo *memo) {
+    struct rep_t {
+	const char *data;
+	int length;
+	memo_t *memo;
+    };
+    /** @endcond never */
+
+    mutable rep_t _r;		// mutable for c_str()
+
+    inline String(const char *data, int length, memo_t *memo) {
 	_r.data = data;
 	_r.length = length;
 	_r.memo = memo;
@@ -636,20 +636,21 @@ class String { public:
 
     void assign(const char *cstr, int len, bool need_deref);
     void assign_out_of_memory();
-    static __StringMemo *create_memo(char *data, int dirty, int capacity);
-    static void delete_memo(__StringMemo *memo);
+    static memo_t *create_memo(char *data, int dirty, int capacity);
+    static void delete_memo(memo_t *memo);
 
     static const char null_string_data;
     static const char oom_string_data;
     static const char bool_data[11];
-    static __StringMemo null_memo;
-    static __StringMemo permanent_memo;
-    static __StringMemo oom_memo;
-    static const __StringRep null_string_rep;
-    static const __StringRep oom_string_rep;
+    static memo_t null_memo;
+    static memo_t permanent_memo;
+    static memo_t oom_memo;
+    static const rep_t null_string_rep;
+    static const rep_t oom_string_rep;
 
     static String make_claim(char *, int, int); // claim memory
 
+    friend class rep_t;
     friend class StringAccum;
 
 };

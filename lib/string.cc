@@ -5,7 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2004-2007 Regents of the University of California
- * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2008-2009 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -69,29 +69,29 @@ const char String::null_string_data = 0;
 const char String::oom_string_data = 0;
 const char String::bool_data[] = "true\0false";
 
-__StringMemo String::null_memo = {
+String::memo_t String::null_memo = {
     2, 0, 0, const_cast<char *>(&null_string_data)
 };
-__StringMemo String::permanent_memo = {
+String::memo_t String::permanent_memo = {
     1, 0, 0, const_cast<char *>(&null_string_data)
 };
-__StringMemo String::oom_memo = {
+String::memo_t String::oom_memo = {
     2, 0, 0, const_cast<char *>(&oom_string_data)
 };
 
-const __StringRep String::null_string_rep = {
+const String::rep_t String::null_string_rep = {
     &null_string_data, 0, &null_memo
 };
-const __StringRep String::oom_string_rep = {
+const String::rep_t String::oom_string_rep = {
     &oom_string_data, 0, &oom_memo
 };
 
 /** @cond never */
-__StringMemo *
+String::memo_t *
 String::create_memo(char *data, int dirty, int capacity)
 {
     assert(capacity >= dirty);
-    __StringMemo *memo = new __StringMemo;
+    memo_t *memo = new memo_t;
     if (memo) {
 	if (data)
 	    memo->real_data = data;
@@ -107,7 +107,7 @@ String::create_memo(char *data, int dirty, int capacity)
 }
 
 void
-String::delete_memo(__StringMemo *memo)
+String::delete_memo(memo_t *memo)
 {
     if (memo->capacity) {
 	assert(memo->capacity >= memo->dirty);
@@ -194,7 +194,7 @@ String
 String::make_claim(char *str, int len, int capacity)
 {
   assert(str && len > 0 && capacity >= len);
-  if (__StringMemo *new_memo = create_memo(str, len, capacity))
+  if (memo_t *new_memo = create_memo(str, len, capacity))
     return String(str, len, new_memo);
   else
     return String(&oom_string_data, 0, &oom_memo);
@@ -319,7 +319,7 @@ String::append_garbage(int len)
 	new_capacity -= 32;
 #endif
 
-    __StringMemo *new_memo = create_memo(0, _r.length + len, new_capacity);
+    memo_t *new_memo = create_memo(0, _r.length + len, new_capacity);
     if (!new_memo) {
 	assign_out_of_memory();
 	return 0;
