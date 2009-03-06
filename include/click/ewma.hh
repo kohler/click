@@ -94,7 +94,7 @@ class DirectEWMAX : public P { public:
     /** @brief  Return the current moving average.
      *  @note   The returned value is unscaled. */
     value_type unscaled_average() const {
-	return (_avg + P::compensation()) >> P::scale();
+	return (_avg + (P::scaled_one() >> 1)) >> P::scale();
     }
 
     /** @brief  Reset the EWMA to value 0. */
@@ -222,6 +222,11 @@ class FixedEWMAXParameters { public:
 	return SCALE;
     }
 
+    /** @brief  Return this EWMA's scaled value for one. */
+    static value_type scaled_one() {
+	return (value_type) 1 << SCALE;
+    }
+
     /** @brief  Returns this EWMA's compensation.
      *  @return  1 << (stability_shift() - 1) */
     static unsigned compensation() {
@@ -284,6 +289,11 @@ class StabilityEWMAXParameters { public:
      *  @return  the 1st template parameter */
     static unsigned scale() {
 	return SCALE;
+    }
+
+    /** @brief  Return this EWMA's scaled value for one. */
+    static value_type scaled_one() {
+	return (value_type) 1 << SCALE;
     }
 
     /** @brief  Returns this EWMA's compensation.
