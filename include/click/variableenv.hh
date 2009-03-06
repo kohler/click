@@ -42,10 +42,7 @@ class VariableEnvironment : public VariableExpander { public:
 
 };
 
-String cp_expand(const String &str, const VariableExpander &env, bool expand_quote);
-inline String cp_expand(const String &str, const VariableExpander &env) {
-    return cp_expand(str, env, false);
-}
+String cp_expand(const String &str, const VariableExpander &env, bool expand_quote = false);
 String cp_expand_in_quotes(const String &str, int quote);
 
 CLICK_ENDDECLS
