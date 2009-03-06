@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
+ * Copyright (c) 2009 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,6 +24,7 @@
 #include "fromhost.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/straccum.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <clicknet/ip6.h>
 
@@ -51,7 +53,6 @@ static int fl_close(net_device *);
 static net_device_stats *fl_stats(net_device *);
 static void fl_wakeup(Timer *, void *);
 
-static int from_linux_count;
 static AnyDeviceMap fromlinux_map;
 
 void
@@ -62,13 +63,27 @@ FromHost::static_initialize()
 
 FromHost::FromHost()
     : _macaddr((const unsigned char *)"\000\001\002\003\004\005"),
-      _task(this), _wakeup_timer(fl_wakeup, this), _queue(0)
+      _task(this), _wakeup_timer(fl_wakeup, this),
+      _drops(0), _ninvalid(0)
 {
+    _head = _tail = 0;
+    _capacity = 100;
+    _q.lgq = 0;
     memset(&_stats, 0, sizeof(_stats));
 }
 
 FromHost::~FromHost()
 {
+}
+
+void *FromHost::cast(const char *name)
+{
+    if (strcmp(name, "Storage") == 0)
+	return (Storage *)this;
+    else if (strcmp(name, "FromHost") == 0)
+	return (Element *)this;
+    else
+	return 0;
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
@@ -106,6 +121,8 @@ FromHost::new_device(const char *name)
     dev->stop = fl_close;
     dev->hard_start_xmit = fl_tx;
     dev->get_stats = fl_stats;
+    dev->mtu = _mtu;
+    dev->tx_queue_len = 0;
     return dev;
 }
 
@@ -113,11 +130,19 @@ int
 FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String type;
+    int mtu = 1500;
+    _destaddr = IPAddress();
+    _destmask = IPAddress();
+    _clear_anno = true;
+
     if (cp_va_kparse(conf, this, errh,
 		     "DEVNAME", cpkP+cpkM, cpString, &_devname,
-		     "PREFIX", cpkP+cpkM, cpIPPrefix, &_destaddr, &_destmask,
+		     "PREFIX", cpkP, cpIPPrefix, &_destaddr, &_destmask,
 		     "TYPE", 0, cpWord, &type,
 		     "ETHER", 0, cpEthernetAddress, &_macaddr,
+		     "MTU", 0, cpUnsigned, &mtu,
+		     "CAPACITY", 0, cpUnsigned, &_capacity,
+		     "CLEAR_ANNO", 0, cpBool, &_clear_anno,
 		     cpEnd) < 0)
 	return -1;
 
@@ -129,6 +154,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("duplicate FromHost for device '%s'", _devname.c_str());
     used = this;
 
+    _mtu = mtu;
     // check for existing device
     _dev = AnyDevice::get_by_name(_devname.c_str());
     if (_dev) {
@@ -147,6 +173,13 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 	_macaddr = EtherAddress();
     else if (type != "ETHER" && type != "")
 	return errh->error("bad TYPE");
+
+    // set up queue
+    if (_capacity < 1)
+	_capacity = 1;
+    if (_capacity > smq_size)
+	if (!(_q.lgq = new Packet *[_capacity + 1]))
+	    return errh->error("out of memory!");
 
     // if not found, create new device
     int res;
@@ -197,14 +230,16 @@ FromHost::set_device_addresses(ErrorHandler *errh)
 	    errh->error("error %d setting hardware address for device '%s'", res, _devname.c_str());
     }
 
-    sin->sin_family = AF_INET;
-    sin->sin_addr = _destaddr;
-    if (res >= 0 && (res = devinet_ioctl(SIOCSIFADDR, &ifr)) < 0)
-	errh->error("error %d setting address for device '%s'", res, _devname.c_str());
+    if (_destaddr) {
+        sin->sin_family = AF_INET;
+        sin->sin_addr = _destaddr;
+        if (res >= 0 && (res = devinet_ioctl(SIOCSIFADDR, &ifr)) < 0)
+            errh->error("error %d setting address for device '%s'", res, _devname.c_str());
 
-    sin->sin_addr = _destmask;
-    if (res >= 0 && (res = devinet_ioctl(SIOCSIFNETMASK, &ifr)) < 0)
-	errh->error("error %d setting netmask for device '%s'", res, _devname.c_str());
+        sin->sin_addr = _destmask;
+        if (res >= 0 && (res = devinet_ioctl(SIOCSIFNETMASK, &ifr)) < 0)
+            errh->error("error %d setting netmask for device '%s'", res, _devname.c_str());
+    }
 
     set_fs(oldfs);
     return res;
@@ -250,10 +285,16 @@ FromHost::cleanup(CleanupStage)
 {
     fromlinux_map.remove(this, false);
 
-    if (_queue) {
-	_queue->kill();
-	_queue = 0;
+    Packet **q = (_capacity <= smq_size ? _q.smq : _q.lgq);
+    while (_head != _tail) {
+	Packet *p = q[_head];
+	p->kill();
+	_head = next_i(_head);
     }
+    if (_capacity > smq_size)
+	delete[] _q.lgq;
+    _capacity = 1;
+    _head = _tail = 0;
 
     if (_dev) {
 	dev_put(_dev);
@@ -320,23 +361,36 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
          and during the bottom-half FromHost emitted a packet into Click,
          DISASTER -- we assume that, when running single-threaded, at most one
          Click thread is active at a time; so there were race conditions,
-         particularly with the task list. The solution is a single-packet-long
-         queue in FromHost. fl_tx puts a packet onto the queue, a regular
-         Click Task takes the packet off the queue. We could have implemented
-         a larger queue, but why bother? Linux already maintains a queue for
-         the device. */
+         particularly with the task list. The solution is a queue in
+         FromHost. fl_tx puts a packet onto the queue, a regular Click Task
+         takes the packet off the queue. */
     unsigned long lock_flags;
     fromlinux_map.lock(false, lock_flags);
-    if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0))
-	if (!fl->_queue) {
-	    fl->_queue = Packet::make(skb);
+    if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0)) {
+	int next = fl->next_i(fl->_tail);
+	if (likely(next != fl->_head)) {
+	    Packet **q = (fl->_capacity <= smq_size ? fl->_q.smq : fl->_q.lgq);
+	    Packet *p = Packet::make(skb);
+	    p->set_timestamp_anno(Timestamp::now());
+	    if (fl->_clear_anno)
+		p->clear_annotations(false);
 	    fl->_stats.tx_packets++;
-	    fl->_stats.tx_bytes += fl->_queue->length();
+	    fl->_stats.tx_bytes += p->length();
 	    fl->_task.reschedule();
-	    fromlinux_map.unlock(false, lock_flags);
-	    netif_stop_queue(dev);
-	    return 0;
+	    q[fl->_tail] = p;
+	    fl->_tail = next;
+	    // if (fl->size() == fl->capacity())
+	    //    netif_stop_queue(dev);
+	} else {
+	    // Linux gets very unhappy if you try to stop a "virtual" queue.
+	    // So just drop the packet on the floor, which is what it would
+	    // have done.
+	    kfree_skb(skb);
+	    fl->_drops++;
 	}
+	fromlinux_map.unlock(false, lock_flags);
+	return 0;
+    }
     fromlinux_map.unlock(false, lock_flags);
     return -1;
 }
@@ -358,15 +412,19 @@ FromHost::run_task(Task *)
 {
     if (!_nonfull_signal)
 	return false;
-    else if (Packet *p = _queue) {
-	_queue = 0;
-	netif_wake_queue(_dev);
+
+    if (likely(!empty())) {
+	Packet **q = (_capacity <= smq_size ? _q.smq : _q.lgq);
+	Packet *p = q[_head];
+	_head = next_i(_head);
+	// netif_wake_queue(_dev);
 
 	// Convenience for TYPE IP: set the IP header and destination address.
 	if (_dev->type == ARPHRD_NONE && p->length() >= 1) {
 	    const click_ip *iph = (const click_ip *) p->data();
 	    if (iph->ip_v == 4) {
 		if (iph->ip_hl >= 5
+		    && ntohs(iph->ip_len) >= (iph->ip_hl << 2)
 		    && reinterpret_cast<const uint8_t *>(iph) + (iph->ip_hl << 2) <= p->end_data()) {
 		    p->set_ip_header(iph, iph->ip_hl << 2);
 		    p->set_dst_ip_anno(iph->ip_dst);
@@ -377,18 +435,38 @@ FromHost::run_task(Task *)
 		    p->set_ip6_header(reinterpret_cast<const click_ip6 *>(iph));
 		else
 		    goto bad;
-	    } else
-		goto bad;
+	    } else {
+	      bad:
+	        _ninvalid++;
+		checked_output_push(1, p);
+		goto done;
+	    }
 	}
 
 	output(0).push(p);
-	return true;
 
-      bad:
-	checked_output_push(1, p);
+      done:
+	if (!empty())
+	    _task.fast_reschedule();
 	return true;
     } else
 	return false;
+}
+
+String
+FromHost::read_handler(Element *e, void *)
+{
+    FromHost *fh = (FromHost *) e;
+    return String(fh->size());
+}
+
+void
+FromHost::add_handlers()
+{
+    add_task_handlers(&_task);
+    add_read_handler("length", read_handler, h_length);
+    add_data_handlers("capacity", Handler::OP_READ, &_capacity);
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)

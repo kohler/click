@@ -9,7 +9,7 @@
 /*
 =c
 
-FromHost(DEVNAME, PREFIX [, I<KEYWORDS>])
+FromHost(DEVNAME [, PREFIX, I<KEYWORDS>])
 
 =s comm
 
@@ -23,10 +23,10 @@ output packets have Ethernet headers; only the protocol field is interesting.
 For TYPE IP, output packets are IP packets.  TYPE ETHER is the default,
 although TYPE IP is probably more useful.
 
-Installs a fake interface called DEVNAME, and changes the routing table so
-that every packet destined for PREFIX = ADDR/MASK is sent through that
-interface.  The packet then leaves on output 0. The device's native address is
-ADDR.
+Installs a fake interface called DEVNAME.  If PREFIX is given, changes the
+routing table so that every packet destined for PREFIX = ADDR/MASK is sent
+through that interface.  The packet then leaves on output 0. The device's
+native address is ADDR.
 
 After the fake device is created, the effect of bringing up the interface
 and changing the routing table is analogous to:
@@ -45,10 +45,33 @@ Keyword arguments are:
 Specifies the device type.  Valid options are C<ETHER> and C<IP>.  Currently
 defaults to C<ETHER> with a warning.
 
+=item PREFIX
+
+Specifies the fake device's IP address and netmask.
+
 =item ETHER
 
 Ethernet address. Specifies the fake device's Ethernet address. Default is
 00-01-02-03-04-05.
+
+=item MTU
+
+Integer.  The maximum transmission unit reported to Linux for the device.
+Defaults to 1500.
+
+=item CAPACITY
+
+Unsigned.  Maximum length of the internal queue that collects packets from
+Linux.  Defaults to 100.  If this queue overflows, packets will be silently
+dropped.
+
+=item CLEAR_ANNO
+
+Boolean.  Sets whether or not to clear the user annotation area on packets
+received from Linux.  This consists of the user annotations.
+If false, this area is left as it was received from Linux.
+(Note that the packet type, device, and header annotations are left as is.)
+Defaults to true.
 
 =back
 
@@ -73,6 +96,18 @@ idiom:
 
   FromHost(fake0, 192.0.0.1/8) -> ...;
 
+=h length r
+
+Return the current length of the internal queue.
+
+=h capacity r
+
+Return the maximum length of the internal queue (the CAPACITY argument).
+
+=h drops r
+
+Return the number of packets dropped off the internal queue so far.
+
 =a ToHost, FromDevice, PollDevice, ToDevice */
 
 #include <click/cxxprotect.h>
@@ -81,11 +116,12 @@ CLICK_CXX_PROTECT
 #include <linux/route.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
+#include <click/standard/storage.hh>
 
 #include "elements/linuxmodule/anydevice.hh"
 class EtherAddress;
 
-class FromHost : public AnyDevice { public:
+class FromHost : public AnyDevice, public Storage { public:
 
     FromHost();
     ~FromHost();
@@ -95,12 +131,14 @@ class FromHost : public AnyDevice { public:
     const char *class_name() const	{ return "FromHost"; }
     const char *port_count() const	{ return "0/1-2"; }
     const char *processing() const	{ return PUSH; }
+    void *cast(const char *name);
 
     net_device_stats *stats()		{ return &_stats; }
 
     int configure_phase() const		{ return CONFIGURE_PHASE_FROMHOST; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
+    void add_handlers();
     void cleanup(CleanupStage);
 
     int set_device_addresses(ErrorHandler *);
@@ -117,11 +155,22 @@ class FromHost : public AnyDevice { public:
     Task _task;
     Timer _wakeup_timer;
 
-    Packet *_queue;		// to prevent race conditions
+    enum { smq_size = 4 };
+    union {
+	Packet *smq[smq_size + 1];
+	Packet **lgq;
+    } _q;
     NotifierSignal _nonfull_signal;
+
+    int _mtu;
+    unsigned _drops;
+    unsigned _ninvalid;
 
     net_device *new_device(const char *);
     static int fl_tx(struct sk_buff *, net_device *);
+
+    enum { h_length };
+    static String read_handler(Element *e, void *thunk);
 
 };
 

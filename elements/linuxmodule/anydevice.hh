@@ -112,6 +112,7 @@ class AnyDevice : public Element { public:
 
     bool _promisc;
     bool _timestamp;
+    bool _clear_anno;
     bool _in_map : 1;
     bool _quiet : 1;
     bool _allow_nonexistent : 1;
