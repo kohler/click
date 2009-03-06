@@ -1,10 +1,7 @@
 // -*- c-basic-offset: 4; related-file-name: "../../lib/master.cc" -*-
 #ifndef CLICK_MASTER_HH
 #define CLICK_MASTER_HH
-#include <click/vector.hh>
-#include <click/timer.hh>
-#include <click/task.hh>
-#include <click/sync.hh>
+#include <click/router.hh>
 #include <click/atomic.hh>
 #if CLICK_USERLEVEL
 # include <unistd.h>
@@ -296,6 +293,12 @@ Master::unlock_timers()
 #elif HAVE_MULTITHREAD
     _timer_lock.release();
 #endif
+}
+
+inline Master *
+Element::master() const
+{
+    return _router->master();
 }
 
 CLICK_ENDDECLS

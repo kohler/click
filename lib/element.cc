@@ -527,13 +527,6 @@ Element::port_cast(bool isoutput, int port, const char *name)
     return cast(name);
 }
 
-/** @brief Return the element's master. */
-Master *
-Element::master() const
-{
-    return _router->master();
-}
-
 /** @brief Return the element's name.
  *
  * This is the name used to declare the element in the router configuration,

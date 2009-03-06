@@ -112,7 +112,9 @@ class Element { public:
     inline Router *router() const;
     inline int eindex() const;
     inline int eindex(Router *r) const;
-    Master *master() const;
+
+    /** @brief Return the element's master. */
+    inline Master *master() const;
 
     inline void attach_router(Router *r, int eindex) {
 	assert(!_router);
