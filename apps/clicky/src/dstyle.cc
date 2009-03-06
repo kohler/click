@@ -712,6 +712,9 @@ bool dcss_selector::match(const handler_value *hv) const
 	} else if (k->equals("expensive", 9)) {
 	    if (!(hv->flags() & hflag_expensive))
 		return false;
+	} else if (k->equals("deprecated", 10)) {
+	    if (!(hv->flags() & hflag_deprecated))
+		return false;
 	}
     return true;
 }
