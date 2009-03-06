@@ -425,10 +425,10 @@ Element::Element()
 Element::~Element()
 {
     nelements_allocated--;
-    if (_ports[1] != _inline_ports && _ports[1] != _inline_ports + _nports[0])
-	delete[] _ports[1];
-    if (_ports[0] != _inline_ports)
+    if (_ports[0] < _inline_ports || _ports[0] >= _inline_ports + INLINE_PORTS)
 	delete[] _ports[0];
+    if (_ports[1] < _inline_ports || _ports[1] >= _inline_ports + INLINE_PORTS)
+	delete[] _ports[1];
 }
 
 // CHARACTERISTICS
@@ -591,32 +591,33 @@ Element::set_nports(int new_ninputs, int new_noutputs)
 
     // decide if inputs & outputs were inlined
     bool old_in_inline =
-	(_ports[0] == _inline_ports);
+	(_ports[0] >= _inline_ports && _ports[0] < _inline_ports + INLINE_PORTS);
     bool old_out_inline =
-	(_ports[1] == _inline_ports || _ports[1] == _inline_ports + _nports[0]);
+	(_ports[1] >= _inline_ports && _ports[1] < _inline_ports + INLINE_PORTS);
+    bool prefer_pull = (processing() == PULL);
 
     // decide if inputs & outputs should be inlined
     bool new_in_inline =
 	(new_ninputs == 0
 	 || new_ninputs + new_noutputs <= INLINE_PORTS
 	 || (new_ninputs <= INLINE_PORTS && new_noutputs > INLINE_PORTS)
-	 || (new_ninputs <= INLINE_PORTS && new_ninputs > new_noutputs
-	     && processing() == PULL));
+	 || (new_ninputs <= INLINE_PORTS && prefer_pull));
     bool new_out_inline =
 	(new_noutputs == 0
 	 || new_ninputs + new_noutputs <= INLINE_PORTS
 	 || (new_noutputs <= INLINE_PORTS && !new_in_inline));
 
     // create new port arrays
-    Port *new_inputs =
-	(new_in_inline ? _inline_ports : new Port[new_ninputs]);
-    if (!new_inputs)		// out of memory -- return
+    Port *new_inputs;
+    if (new_in_inline)
+	new_inputs = _inline_ports + (!new_out_inline || prefer_pull ? 0 : new_noutputs);
+    else if (!(new_inputs = new Port[new_ninputs]))
 	return -ENOMEM;
 
-    Port *new_outputs =
-	(new_out_inline ? _inline_ports + (new_in_inline ? new_ninputs : 0)
-	 : new Port[new_noutputs]);
-    if (!new_outputs) {		// out of memory -- return
+    Port *new_outputs;
+    if (new_out_inline)
+	new_outputs = _inline_ports + (!new_in_inline || !prefer_pull ? 0 : new_ninputs);
+    else if (!(new_outputs = new Port[new_noutputs])) {
 	if (!new_in_inline)
 	    delete[] new_inputs;
 	return -ENOMEM;
