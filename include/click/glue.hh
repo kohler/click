@@ -289,7 +289,7 @@ typedef struct device net_device;
 
 // COMPILE-TIME ASSERTION CHECKING
 
-#define static_assert(c) switch (c) case 0: case (c):
+#define static_assert(x) switch (x) case 0: case !!(x):
 
 
 // PROCESSOR IDENTITIES
