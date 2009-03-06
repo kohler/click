@@ -492,13 +492,44 @@ static String ccss_pop_commavec(String &str)
  *
  */
 
-inline bool int_match_string(const char *begin, const char *end, int i)
+inline bool comparison_char(char c)
 {
-    if (i >= 0 && i <= 9)
-	return begin + 1 == end && begin[0] == i + '0';
-    else {
-	int j;
-	return cp_integer(begin, end, 10, &j) && j == i;
+    return c == '=' || c == '!' || c == '>' || c == '<';
+}
+
+inline bool int_match_string(const char *begin, const char *end, int x)
+{
+    int comparator = *begin++;
+    if (begin < end && *begin == '=') {
+	if (comparator == '>')
+	    comparator = 'G';
+	else if (comparator == '<')
+	    comparator = 'L';
+	++begin;
+    } else if (comparator == '!')
+	return false;
+
+    int i;
+    if (begin + 1 == end)
+	i = *begin - '0';
+    else if (!cp_integer(begin, end, 10, &i))
+	return false;
+
+    switch (comparator) {
+    case '=':
+	return x == i;
+    case '!':
+	return x != i;
+    case '>':
+	return x > i;
+    case '<':
+	return x < i;
+    case 'G':
+	return x >= i;
+    case 'L':
+	return x <= i;
+    default:
+	return false;
     }
 }
 
@@ -520,13 +551,15 @@ bool dcss_selector::match(crouter *cr, const delt *e, int *sensitivity) const
 
     const char *s;
     for (const String *k = _klasses.begin(); k != _klasses.end(); ++k)
-	if (k->starts_with("in=", 3)) {
+	if (k->starts_with("in", 2) && k->length() > 2
+	    && comparison_char((*k)[2])) {
 	    if (e->fake()
-		|| !int_match_string(k->begin() + 3, k->end(), e->ninputs()))
+		|| !int_match_string(k->begin() + 2, k->end(), e->ninputs()))
 		return false;
-	} else if (k->starts_with("out=", 4)) {
+	} else if (k->starts_with("out", 3) && k->length() > 3
+		   && comparison_char((*k)[3])) {
 	    if (e->fake()
-		|| !int_match_string(k->begin() + 4, k->end(), e->noutputs()))
+		|| !int_match_string(k->begin() + 3, k->end(), e->noutputs()))
 		return false;
 	} else if (k->equals("primitive", 9)) {
 	    if (e->fake() || !e->primitive())
