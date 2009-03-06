@@ -46,7 +46,7 @@ FrontDropQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
   int old_capacity = _capacity;
   if (configure(conf, errh) < 0)
     return -1;
-  if (_capacity == old_capacity)
+  if (_capacity == old_capacity || !_q)
     return 0;
   int new_capacity = _capacity;
   _capacity = old_capacity;

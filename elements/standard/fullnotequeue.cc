@@ -51,7 +51,7 @@ int
 FullNoteQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
     int r = NotifierQueue::live_reconfigure(conf, errh);
-    if (r >= 0 && size() < capacity())
+    if (r >= 0 && size() < capacity() && _q)
 	_full_note.wake();
     return r;
 }
