@@ -145,7 +145,8 @@ size_t click_dmalloc_maxmem = 0;
 #if CLICK_LINUXMODULE || CLICK_BSDMODULE
 
 # if CLICK_LINUXMODULE
-#  define CLICK_ALLOC(size)	kmalloc((size), GFP_ATOMIC)
+struct task_struct *clickfs_task;
+#  define CLICK_ALLOC(size)	kmalloc((size), (current == clickfs_task ? GFP_KERNEL : GFP_ATOMIC))
 #  define CLICK_FREE(ptr)	kfree((ptr))
 # else
 #  define CLICK_ALLOC(size)	malloc((size), M_TEMP, M_WAITOK)
@@ -342,7 +343,11 @@ click_lalloc(size_t size)
 {
     void *v;
     click_dmalloc_totalnew++;
-    if ((v = ((size > CLICK_LALLOC_MAX_SMALL) ? vmalloc(size) : kmalloc(size, GFP_ATOMIC)))) {
+    if (size > CLICK_LALLOC_MAX_SMALL)
+	v = vmalloc(size);
+    else
+	v = CLICK_ALLOC(size);
+    if (v) {
 	click_dmalloc_curnew++;
 # if CLICK_DMALLOC
 	click_dmalloc_curmem += size;

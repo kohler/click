@@ -65,6 +65,8 @@ static int clickfs_ready;
 
 /*************************** Config locking *********************************/
 
+extern struct task_struct *clickfs_task;
+
 static inline void
 lock_config(const char *file, int line, int iswrite)
 {
@@ -101,12 +103,14 @@ lock_config(const char *file, int line, int iswrite)
     __set_current_state(TASK_RUNNING);
     remove_wait_queue(&clickfs_waitq, &wait);
 #endif
+    clickfs_task = current;
 }
 
 static inline void
 unlock_config_read()
 {
     assert(atomic_read(&clickfs_read_count) > 0);
+    clickfs_task = 0;
     atomic_dec(&clickfs_read_count);
     wake_up(&clickfs_waitq);
 }
@@ -115,6 +119,7 @@ static inline void
 unlock_config_write(const char *file, int line)
 {
     assert(atomic_read(&clickfs_read_count) == -1);
+    clickfs_task = 0;
     atomic_inc(&clickfs_read_count);
     wake_up_all(&clickfs_waitq);
 }
