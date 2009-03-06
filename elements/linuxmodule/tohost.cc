@@ -134,6 +134,8 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 void
 ToHost::push(int port, Packet *p)
 {
+    p->clear_annotations(false);
+
     struct sk_buff *skb = p->skb();
 
     // set device if specified
