@@ -9,36 +9,36 @@ class StringAccum;
 
 class IPAddress { public:
 
-    /** @brief Constructs an IPAddress equal to 0.0.0.0. */
+    /** @brief Construct an IPAddress equal to 0.0.0.0. */
     inline IPAddress()
 	: _addr(0) {
     }
 
-    /** @brief Constructs an IPAddress from an integer in network byte order.
+    /** @brief Construct an IPAddress from an integer in network byte order.
      * @param a the address, in network byte order */
     inline IPAddress(unsigned int a)
 	: _addr(a) {
     }
 
-    /** @brief Constructs an IPAddress from an integer in network byte order.
+    /** @brief Construct an IPAddress from an integer in network byte order.
      * @param a the address, in network byte order */
     explicit inline IPAddress(int a)
 	: _addr(a) {
     }
 
-    /** @brief Constructs an IPAddress from an integer in network byte order.
+    /** @brief Construct an IPAddress from an integer in network byte order.
      * @param a the address, in network byte order */
     explicit inline IPAddress(unsigned long a)
 	: _addr(a) {
     }
 
-    /** @brief Constructs an IPAddress from an integer in network byte order.
+    /** @brief Construct an IPAddress from an integer in network byte order.
      * @param a the address, in network byte order */
     explicit inline IPAddress(long a)
 	: _addr(a) {
     }
 
-    /** @brief Constructs an IPAddress from a struct in_addr.
+    /** @brief Construct an IPAddress from a struct in_addr.
      * @param ina the address */
     inline IPAddress(struct in_addr ina)
 	: _addr(ina.s_addr) {
@@ -64,7 +64,7 @@ class IPAddress { public:
 
 
     typedef uint32_t (IPAddress::*unspecified_bool_type)() const;
-    /** @brief Returns true iff the address is not 0.0.0.0. */
+    /** @brief Return true iff the address is not 0.0.0.0. */
     inline operator unspecified_bool_type() const {
 	return _addr != 0 ? &IPAddress::addr : 0;
     }
@@ -120,14 +120,14 @@ class IPAddress { public:
 };
 
 
-/** @brief Returns the address as a uint32_t in network byte order. */
+/** @brief Return the address as a uint32_t in network byte order. */
 inline
 IPAddress::operator uint32_t() const
 {
     return _addr;
 }
 
-/** @brief Returns the address as a uint32_t in network byte order. */
+/** @brief Return the address as a uint32_t in network byte order. */
 inline uint32_t
 IPAddress::addr() const
 {
@@ -135,7 +135,7 @@ IPAddress::addr() const
 }
 
 /** @relates IPAddress
-    @brief Compares two IPAddress objects for equality. */
+    @brief Compare two IPAddress objects for equality. */
 inline bool
 operator==(IPAddress a, IPAddress b)
 {
@@ -143,7 +143,7 @@ operator==(IPAddress a, IPAddress b)
 }
 
 /** @relates IPAddress
-    @brief Compares an IPAddress with a network-byte-order address value for
+    @brief Compare an IPAddress with a network-byte-order address value for
     equality.
     @param a an address
     @param b an address value in network byte order */
@@ -154,7 +154,7 @@ operator==(IPAddress a, uint32_t b)
 }
 
 /** @relates IPAddress
-    @brief Compares two IPAddress objects for inequality. */
+    @brief Compare two IPAddress objects for inequality. */
 inline bool
 operator!=(IPAddress a, IPAddress b)
 {
@@ -162,7 +162,7 @@ operator!=(IPAddress a, IPAddress b)
 }
 
 /** @relates IPAddress
-    @brief Compares an IPAddress with a network-byte-order address value for
+    @brief Compare an IPAddress with a network-byte-order address value for
     inequality.
     @param a an address
     @param b an address value in network byte order */
@@ -172,7 +172,7 @@ operator!=(IPAddress a, uint32_t b)
     return a.addr() != b;
 }
 
-/** @brief Returns a pointer to the address data.
+/** @brief Return a pointer to the address data.
 
     Since the address is stored in network byte order, data()[0] is the top 8
     bits of the address, data()[1] the next 8 bits, and so forth. */
@@ -182,7 +182,7 @@ IPAddress::data() const
     return reinterpret_cast<const unsigned char*>(&_addr);
 }
 
-/** @brief Returns a pointer to the address data.
+/** @brief Return a pointer to the address data.
 
     Since the address is stored in network byte order, data()[0] is the top 8
     bits of the address, data()[1] the next 8 bits, and so forth. */
@@ -192,7 +192,7 @@ IPAddress::data()
     return reinterpret_cast<unsigned char*>(&_addr);
 }
 
-/** @brief Returns a struct in_addr corresponding to the address. */
+/** @brief Return a struct in_addr corresponding to the address. */
 inline struct in_addr
 IPAddress::in_addr() const
 {
@@ -201,7 +201,7 @@ IPAddress::in_addr() const
     return ia;
 }
 
-/** @brief Returns a struct in_addr corresponding to the address. */
+/** @brief Return a struct in_addr corresponding to the address. */
 inline
 IPAddress::operator struct in_addr() const
 {
@@ -210,7 +210,7 @@ IPAddress::operator struct in_addr() const
 
 StringAccum& operator<<(StringAccum&, IPAddress);
 
-/** @brief Returns true iff this address matches the address prefix
+/** @brief Return true iff this address matches the address prefix
     @a addr/@a mask.
     @param addr prefix address
     @param mask prefix mask
@@ -223,7 +223,7 @@ IPAddress::matches_prefix(IPAddress addr, IPAddress mask) const
     return ((this->addr() ^ addr.addr()) & mask.addr()) == 0;
 }
 
-/** @brief Returns true iff this address, considered as a prefix mask, is at
+/** @brief Return true iff this address, considered as a prefix mask, is at
     least as specific as @a mask.
     @param mask prefix mask
 
@@ -238,7 +238,7 @@ IPAddress::mask_as_specific(IPAddress mask) const
     return (addr() & mask.addr()) == mask.addr();
 }
 
-/** @brief Returns true iff this prefix mask is more specific than @a mask.
+/** @brief Return true iff this prefix mask is more specific than @a mask.
     @param mask prefix mask
 
     Both this address and @a mask must be prefix masks -- i.e.,
@@ -253,7 +253,7 @@ IPAddress::mask_more_specific(IPAddress mask) const
 }
 
 /** @relates IPAddress
-    @brief Calculates the IPAddress representing the bitwise-and of @a a and
+    @brief Calculate the IPAddress representing the bitwise-and of @a a and
     @a b. */
 inline IPAddress
 operator&(IPAddress a, IPAddress b)
@@ -270,7 +270,7 @@ IPAddress::operator&=(IPAddress a)
 }
 
 /** @relates IPAddress
-    @brief Calculates the IPAddress representing the bitwise-or of @a a and
+    @brief Calculate the IPAddress representing the bitwise-or of @a a and
     @a b. */
 inline IPAddress
 operator|(IPAddress a, IPAddress b)
@@ -287,7 +287,7 @@ IPAddress::operator|=(IPAddress a)
 }
 
 /** @relates IPAddress
-    @brief Calculates the IPAddress representing the bitwise-xor of @a a and
+    @brief Calculate the IPAddress representing the bitwise-xor of @a a and
     @a b. */
 inline IPAddress
 operator^(IPAddress a, IPAddress b)
@@ -304,7 +304,7 @@ IPAddress::operator^=(IPAddress a)
 }
 
 /** @relates IPAddress
-    @brief Calculates the IPAddress representing the bitwise complement
+    @brief Calculate the IPAddress representing the bitwise complement
     of @a a. */
 inline IPAddress
 operator~(IPAddress a)
@@ -323,7 +323,7 @@ IPAddress::hashcode() const
     return addr();
 }
 
-/** @brief Unparses this address into a dotted-quad format String.
+/** @brief Unparse this address into a dotted-quad format String.
     @deprecated The unparse() function should be preferred to this cast.
     @sa unparse */
 inline
@@ -332,7 +332,7 @@ IPAddress::operator String() const
     return unparse();
 }
 
-/** @brief Unparses this address into a dotted-quad format String.
+/** @brief Unparse this address into a dotted-quad format String.
     @deprecated The unparse() function should be preferred to s().
     @sa unparse */
 inline String

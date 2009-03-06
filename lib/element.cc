@@ -1010,6 +1010,9 @@ next_flow_code(const char*& p, int port, Bitvector& code, ErrorHandler* errh, co
  *  - port_flow(false, 1, travels) returns [false, false, true, false]
  *  - port_flow(true, 0, travels) returns [true, false]
  *
+ * Uses an element's overridden flow code when one is supplied;
+ * see Router::flow_code_override().
+ *
  * @sa flow_code
  */
 void

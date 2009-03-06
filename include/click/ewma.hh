@@ -75,29 +75,29 @@ class DirectEWMAX : public P { public:
 
     typedef typename P::value_type value_type;
 
-    /** @brief  Create a EWMA with initial average 0. */
+    /** @brief Construct a EWMA with initial average 0. */
     DirectEWMAX()
 	: _avg(0) {
     }
 
-    /** @brief  Create a EWMA with initial scaled average @a scaled_value. */
+    /** @brief Construct a EWMA with initial scaled average @a scaled_value. */
     DirectEWMAX(value_type scaled_value)
 	: _avg(scaled_value) {
     }
 
-    /** @brief  Return the current scaled moving average.
-     *  @note   The returned value has scale() bits of fraction. */
+    /** @brief Return the current scaled moving average.
+     *  @note The returned value has scale() bits of fraction. */
     value_type scaled_average() const {
 	return _avg;
     }
 
-    /** @brief  Return the current moving average.
-     *  @note   The returned value is unscaled. */
+    /** @brief Return the current moving average, rounded up.
+     *  @note The returned value is unscaled (has zero bits of fraction). */
     value_type unscaled_average() const {
 	return (_avg + (P::scaled_one() >> 1)) >> P::scale();
     }
 
-    /** @brief  Reset the EWMA to value 0. */
+    /** @brief Reset the EWMA to value 0. */
     void clear() {
 	_avg = 0;
     }
@@ -108,15 +108,15 @@ class DirectEWMAX : public P { public:
     }
 
     /** @brief  Update the moving average with a new observation.
-     *  @param  value  the observation (unscaled) */
-    inline void update(value_type value);
+     *  @param  x  the observation (unscaled) */
+    inline void update(value_type x);
 
     /** @brief  Update the moving average with @a n identical observations.
-     *  @param  value  the observation (unscaled)
-     *  @param  n      number of observations
-     *  @note   This may be faster than calling update(@a value) @a n
+     *  @param  x  the observation (unscaled)
+     *  @param  n  number of observations
+     *  @note   This may be faster than calling update(@a x) @a n
      *  times. */
-    void update_n(value_type value, unsigned n);
+    void update_n(value_type x, unsigned n);
 
     /** @brief  Unparse the current average into a String.
      *  @note   The returned value is unscaled, but may contain a fractional
@@ -124,9 +124,9 @@ class DirectEWMAX : public P { public:
     String unparse() const;
 
     /** @brief  Update the moving average with a new observation (deprecated).
-     *  @param  value  the observation (unscaled)
+     *  @param  x  the observation (unscaled)
      *  @deprecated  Use update() instead. */
-    inline void update_with(value_type value) CLICK_DEPRECATED;
+    inline void update_with(value_type x) CLICK_DEPRECATED;
 
   private:
 
@@ -136,41 +136,41 @@ class DirectEWMAX : public P { public:
 
 template <typename P>
 inline void
-DirectEWMAX<P>::update(value_type val)
+DirectEWMAX<P>::update(value_type x)
 {
-    value_type val_scaled = (val << P::scale()) + P::compensation();
+    value_type x_scaled = (x << P::scale()) + P::compensation();
     unsigned stability = P::stability_shift();
 #if HAVE_ARITHMETIC_RIGHT_SHIFT
-    _avg += static_cast<typename P::signed_value_type>(val_scaled - _avg) >> stability;
+    _avg += static_cast<typename P::signed_value_type>(x_scaled - _avg) >> stability;
 #else
-    if (val_scaled < _avg)
-	_avg -= (_avg - val_scaled) >> stability;
+    if (x_scaled < _avg)
+	_avg -= (_avg - x_scaled) >> stability;
     else
-	_avg += (val_scaled - _avg) >> stability;
+	_avg += (x_scaled - _avg) >> stability;
 #endif
 }
 
 template <typename P>
 void
-DirectEWMAX<P>::update_n(value_type value, unsigned n)
+DirectEWMAX<P>::update_n(value_type x, unsigned n)
 {
     // XXX use table lookup
-    value_type val_scaled = value << P::scale();
+    value_type x_scaled = x << P::scale();
     if (n >= 100)
-	_avg = val_scaled;
+	_avg = x_scaled;
     else {
-	val_scaled += P::compensation();
+	x_scaled += P::compensation();
 	unsigned stability = P::stability_shift();
 #if HAVE_ARITHMETIC_RIGHT_SHIFT
 	for (; n > 0; n--)
-	    _avg += static_cast<typename P::signed_value_type>(val_scaled - _avg) >> stability;
+	    _avg += static_cast<typename P::signed_value_type>(x_scaled - _avg) >> stability;
 #else
-	if (val_scaled < _avg)
+	if (x_scaled < _avg)
 	    for (; n > 0; n--)
-		_avg -= (_avg - val_scaled) >> stability;
+		_avg -= (_avg - x_scaled) >> stability;
 	else
 	    for (; n > 0; n--)
-		_avg += (val_scaled - _avg) >> stability;
+		_avg += (x_scaled - _avg) >> stability;
 #endif
     }
 }
@@ -184,9 +184,9 @@ DirectEWMAX<P>::unparse() const
 
 template <typename P>
 inline void
-DirectEWMAX<P>::update_with(value_type value)
+DirectEWMAX<P>::update_with(value_type x)
 {
-    update(value);
+    update(x);
 }
 
 /** @class FixedEWMAXParameters include/click/ewma.hh <click/ewma.hh>
@@ -215,15 +215,16 @@ class FixedEWMAXParameters { public:
     typedef T value_type;
     typedef U signed_value_type;
 
-    /** @brief  Returns this EWMA's stability shift.
+    /** @brief  Return this EWMA's stability shift.
      *  @return  the 1st template parameter */
     static unsigned stability_shift() {
 	return STABILITY;
     }
 
-    /** @brief  Returns this EWMA's scaling factor (bits of fraction).
+    /** @brief  Return this EWMA's scaling factor (bits of fraction).
      *  @return  the 2nd template parameter */
     static unsigned scale() {
+	static_assert(SCALE < sizeof(T) * 8);
 	return SCALE;
     }
 
@@ -232,7 +233,7 @@ class FixedEWMAXParameters { public:
 	return (value_type) 1 << SCALE;
     }
 
-    /** @brief  Returns this EWMA's compensation.
+    /** @brief  Return this EWMA's compensation.
      *  @return  1 << (stability_shift() - 1) */
     static unsigned compensation() {
 	return 1 << (STABILITY - 1);
@@ -272,7 +273,7 @@ class StabilityEWMAXParameters { public:
     typedef T value_type;
     typedef U signed_value_type;
 
-    /** @brief  Create a StabilityEWMAXParameters with initial alpha 1/16. */
+    /** @brief  Construct a StabilityEWMAXParameters with initial alpha 1/16. */
     StabilityEWMAXParameters()
 	: _stability(4) {
     }
@@ -290,7 +291,7 @@ class StabilityEWMAXParameters { public:
 	_stability = stability_shift;
     }
 
-    /** @brief  Returns this EWMA's scaling factor (bits of fraction).
+    /** @brief  Return this EWMA's scaling factor (bits of fraction).
      *  @return  the 1st template parameter */
     static unsigned scale() {
 	return SCALE;
@@ -301,7 +302,7 @@ class StabilityEWMAXParameters { public:
 	return (value_type) 1 << SCALE;
     }
 
-    /** @brief  Returns this EWMA's compensation.
+    /** @brief  Return this EWMA's compensation.
      *  @return  1 << (stability_shift() - 1) */
     unsigned compensation() const {
 	return 1 << (stability_shift() - 1);
@@ -319,7 +320,7 @@ class StabilityEWMAXParameters { public:
  *  @brief  An exponentially weighted moving average used to measure a rate.
  *
  *  The RateEWMAX template class represents an exponentially weighted moving
- *  average that measures a <em>rate</em>: a value that changes over time.
+ *  average that measures a <em>rate</em>: a count of events per unit time.
  *  The average starts out with value 0.
  *
  *  RateEWMAX adds to DirectEWMAX a concept of epochs, which are periods of
@@ -364,9 +365,9 @@ class StabilityEWMAXParameters { public:
  *  Since RateEWMAX inherits from an object of type P, these members are
  *  also directly available to callers.
  *
- *  The RateEWMAXParameters type is a good template argument for DirectEWMAX.
+ *  The RateEWMAXParameters type is a good template argument for RateEWMAX.
  *
- *  @sa RateEWMAX
+ *  @sa DirectEWMAX
  */
 template <typename P>
 class RateEWMAX : public P { public:

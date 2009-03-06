@@ -182,6 +182,8 @@ CLICK_ENDDECLS
  * elements in the @a param array have been reordered into strictly increasing
  * order.  The function always returns 0.
  *
+ * Click_qsort() is not a stable sort.
+ *
  * @warning click_qsort() shuffles elements by swapping memory, rather than by
  * calling copy constructors or swap().  It is thus not safe for all types.
  * In particular, objects like Bitvector that maintain pointers into their own
