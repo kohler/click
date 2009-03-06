@@ -171,20 +171,20 @@ CLICK_DECLS
  after its nominal expiration time.
 */
 
-static void
-empty_hook(Timer *, void *)
+void
+Timer::empty_hook(Timer *, void *)
 {
 }
 
-static void
-element_hook(Timer *timer, void *thunk)
+void
+Timer::element_hook(Timer *timer, void *thunk)
 {
     Element* e = static_cast<Element *>(thunk);
     e->run_timer(timer);
 }
 
-static void
-task_hook(Timer *, void *thunk)
+void
+Timer::task_hook(Timer *, void *thunk)
 {
     Task* task = static_cast<Task *>(thunk);
     task->reschedule();
@@ -192,43 +192,37 @@ task_hook(Timer *, void *thunk)
 
 
 Timer::Timer()
-    : _schedpos(-1), _hook(empty_hook), _thunk(0), _router(0)
+    : _schedpos(-1), _hook(empty_hook), _thunk(0), _owner(0)
 {
 }
 
 Timer::Timer(TimerCallback f, void *user_data)
-    : _schedpos(-1), _hook(f), _thunk(user_data), _router(0)
+    : _schedpos(-1), _hook(f), _thunk(user_data), _owner(0)
 {
 }
 
 Timer::Timer(Element* element)
-    : _schedpos(-1), _hook(element_hook), _thunk(element), _router(0)
+    : _schedpos(-1), _hook(element_hook), _thunk(element), _owner(0)
 {
 }
 
 Timer::Timer(Task* task)
-    : _schedpos(-1), _hook(task_hook), _thunk(task), _router(0)
+    : _schedpos(-1), _hook(task_hook), _thunk(task), _owner(0)
 {
 }
 
-void Timer::assign(Element* element)
+void
+Timer::initialize(Router *router)
 {
-    _hook = element_hook;
-    _thunk = element;
-}
-
-void Timer::assign(Task* task)
-{
-    _hook = task_hook;
-    _thunk = task;
+    initialize(router->root_element());
 }
 
 void
 Timer::schedule_at(const Timestamp& when)
 {
     // acquire lock, unschedule
-    assert(_router && initialized());
-    Master* master = _router->master();
+    assert(_owner && initialized());
+    Master* master = _owner->master();
     master->lock_timers();
 
     // set expiration timer
@@ -260,7 +254,7 @@ Timer::unschedule()
 {
     if (!scheduled())
 	return;
-    Master* master = _router->master();
+    Master* master = _owner->master();
     master->lock_timers();
     if (scheduled()) {
 	master->timer_reheapify_from(_schedpos, master->_timer_heap.back(), true);

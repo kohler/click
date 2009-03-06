@@ -252,10 +252,10 @@ Master::kill_router(Router *router)
 	lock_timers();
 	Timer* t;
 	for (Timer** tp = _timer_heap.end(); tp > _timer_heap.begin(); )
-	    if ((t = *--tp, t->_router == router)) {
+	    if ((t = *--tp, t->router() == router)) {
 		timer_reheapify_from(tp - _timer_heap.begin(), _timer_heap.back(), true);
 		// must clear _schedpos AFTER timer_reheapify_from()
-		t->_router = 0;
+		t->_owner = 0;
 		t->_schedpos = -1;
 		// recheck this slot; have moved a timer there
 		_timer_heap.pop_back();
@@ -457,6 +457,21 @@ Master::timer_reheapify_from(int pos, Timer* t, bool will_delete)
 	_timer_expiry = Timestamp();
 }
 
+inline void
+Master::run_one_timer(Timer *t)
+{
+#if CLICK_STATS >= 2
+    click_cycles_t start_cycles = click_get_cycles();
+#endif
+
+    t->_hook(t, t->_thunk);
+
+#if CLICK_STATS >= 2
+    t->_owner->_timer_cycles += click_get_cycles() - start_cycles;
+    t->_owner->_timer_calls++;
+#endif
+}
+
 void
 Master::run_timers()
 {
@@ -489,7 +504,8 @@ Master::run_timers()
 		// must reset _schedpos AFTER timer_reheapify_from()
 		t->_schedpos = -1;
 		_timer_heap.pop_back();
-		t->_hook(t, t->_thunk);
+
+		run_one_timer(t);
 	    } while (_timer_heap.size() > 0 && !_stopper
 		     && (t = _timer_heap.at_u(0), t->_expiry <= _timer_check)
 		     && --max_timers >= 0);
@@ -506,13 +522,14 @@ Master::run_timers()
 		    timer_reheapify_from(0, _timer_heap.back(), true);
 		    t->_schedpos = -1;
 		    _timer_heap.pop_back();
+
 		    v.push_back(t);
 		} while (_timer_heap.size() > 0
 			 && (t = _timer_heap.at_u(0), t->_expiry <= _timer_check));
 
 		Vector<Timer*>::iterator i = v.begin();
 		for (; !_stopper && i != v.end(); ++i)
-		    (*i)->_hook(*i, (*i)->_thunk);
+		    run_one_timer(*i);
 
 		// reschedule unrun timers if stopped early
 		for (; i != v.end(); ++i)

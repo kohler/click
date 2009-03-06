@@ -554,6 +554,9 @@ Task::reschedule()
 inline void
 Task::fire()
 {
+#if CLICK_STATS >= 2
+    click_cycles_t start_cycles = click_get_cycles();
+#endif
 #if HAVE_MULTITHREAD
     _cycle_runs++;
 #endif
@@ -568,6 +571,10 @@ Task::fire()
 	(void) ((Element*)_thunk)->run_task(this);
     else
 	(void) _hook(this, _thunk);
+#endif
+#if CLICK_STATS >= 2
+    ++_owner->_task_calls;
+    _owner->_task_cycles += click_get_cycles() - start_cycles;
 #endif
 }
 

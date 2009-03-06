@@ -123,6 +123,7 @@ class Master { public:
     bool attempt_lock_timers();
     void unlock_timers();
     void timer_reheapify_from(int, Timer*, bool will_delete);
+    inline void run_one_timer(Timer *);
 
 #if CLICK_USERLEVEL
     // SELECT

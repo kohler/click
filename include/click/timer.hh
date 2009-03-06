@@ -11,7 +11,7 @@ class Router;
 class Timer;
 class Task;
 
-typedef void (*TimerCallback)(Timer *, void *);
+typedef void (*TimerCallback)(Timer *timer, void *user_data);
 typedef TimerCallback TimerHook CLICK_DEPRECATED;
 
 class Timer { public:
@@ -52,16 +52,22 @@ class Timer { public:
     /** @brief Change the Timer to call @a element ->@link
      * Element::run_timer() run_timer@endlink(this) when fired.
      * @param element the element */
-    void assign(Element *element);
+    void assign(Element *element) {
+	_hook = element_hook;
+	_thunk = element;
+    }
 
     /** @brief Change the Timer to schedule @a task when fired.
      * @param task the task */
-    void assign(Task *task);
+    void assign(Task *task) {
+	_hook = task_hook;
+	_thunk = task;
+    }
 
 
     /** @brief Return true iff the Timer has been initialized. */
     inline bool initialized() const {
-	return _router != 0;
+	return _owner != 0;
     }
 
     /** @brief Return true iff the Timer is currently scheduled. */
@@ -78,26 +84,35 @@ class Timer { public:
 	return _expiry;
     }
 
+    /** @brief Return the Timer's associated Router. */
+    inline Router *router() const {
+	return _owner->router();
+    }
+
 
     /** @brief Initialize the timer.
-     * @param router the containing router
+     * @param owner the owner element
      *
      * Before a timer can be used, it must be attached to a containing router.
      * When that router is destroyed, the timer is automatically
      * unscheduled.  It is safe to initialize the timer multiple times
-     * on the same router. */
-    inline void initialize(Router *router) {
-	assert(!initialized() || _router == router);
-	_router = router;
+     * on the same router.
+     *
+     * If Click is compiled with statistics support, time spent in this
+     * Timer will be charged to the @a owner element. */
+    inline void initialize(Element *owner) {
+	assert(!initialized() || _owner->router() == owner->router());
+	_owner = owner;
     }
 
     /** @brief Initialize the timer.
-     * @param element identifies the containing router
+     * @param router the owner router
      *
-     * @sa initialize(Router *router) */
-    inline void initialize(Element *element) {
-	initialize(element->router());
-    }
+     * This function is shorthand for @link Timer::initialize(Element *)
+     * Timer::initialize@endlink(@a router ->@link Router::root_element
+     * root_element@endlink()).  However, it is better to
+     * explicitly associate timers with real elements. */
+    void initialize(Router *router);
 
 
     /** @brief Schedule the timer to fire at @a when.
@@ -239,10 +254,14 @@ class Timer { public:
     Timestamp _expiry;
     TimerCallback _hook;
     void *_thunk;
-    Router *_router;
+    Element *_owner;
 
-    Timer(const Timer &);
-    Timer &operator=(const Timer &);
+    Timer(const Timer &x);
+    Timer &operator=(const Timer &x);
+
+    static void empty_hook(Timer *t, void *user_data);
+    static void element_hook(Timer *t, void *user_data);
+    static void task_hook(Timer *t, void *user_data);
 
     friend class Master;
 

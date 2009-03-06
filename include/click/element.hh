@@ -189,13 +189,6 @@ class Element { public:
     virtual int llrpc(unsigned command, void* arg);
     int local_llrpc(unsigned command, void* arg);
 
-#if CLICK_STATS >= 2
-    // STATISTICS
-    int _calls; // Push and pull calls into this element.
-    uint64_t _self_cycles;  // Cycles spent in self and children.
-    uint64_t _child_cycles; // Cycles spent in children.
-#endif
-
     class Port { public:
 
 	inline bool active() const;
@@ -222,7 +215,7 @@ class Element { public:
 #endif
 
 	inline Port();
-	inline Port(Element*, Element*, int);
+	inline void assign(Element *owner, Element *e, int port, bool isoutput);
 
 	friend class Element;
 
@@ -246,6 +239,26 @@ class Element { public:
     Router* _router;
     int _eindex;
 
+#if CLICK_STATS >= 2
+    // STATISTICS
+    unsigned _calls;		// Push and pull calls into this element.
+    click_cycles_t _self_cycles;	// Cycles spent in self and children.
+    click_cycles_t _child_cycles;	// Cycles spent in children.
+
+    unsigned _task_calls;	// Calls to tasks owned by this element.
+    click_cycles_t _task_cycles;	// Cycles spent in self from tasks.
+
+    unsigned _timer_calls;	// Calls to timers owned by this element.
+    click_cycles_t _timer_cycles;	// Cycles spent in self from timers.
+
+    inline void reset_cycles() {
+	_calls = _task_calls = _timer_calls = 0;
+	_self_cycles = _child_cycles = _task_cycles = _timer_cycles = 0;
+    }
+    static String read_cycles_handler(Element *, void *);
+    static int write_cycles_handler(const String &, Element *, void *, ErrorHandler *);
+#endif
+
     Element(const Element &);
     Element &operator=(const Element &);
 
@@ -264,6 +277,10 @@ class Element { public:
     void add_data_handlers(const String &name, int flags, ReadHandlerCallback read_hook, WriteHandlerCallback write_hook, void *data);
 
     friend class Router;
+#if CLICK_STATS >= 2
+    friend class Task;
+    friend class Master;
+#endif
 
 };
 
@@ -463,24 +480,27 @@ Element::input_is_push(int port) const
 }
 
 #if CLICK_STATS >= 2
-# define PORT_CTOR_INIT(o) , _packets(0), _owner(o)
+# define PORT_ASSIGN(o) _packets = 0; _owner = (o)
 #elif CLICK_STATS >= 1
-# define PORT_CTOR_INIT(o) , _packets(0)
+# define PORT_ASSIGN(o) _packets = 0; (void) (o)
 #else
-# define PORT_CTOR_INIT(o)
+# define PORT_ASSIGN(o) (void) (o)
 #endif
 
 inline
 Element::Port::Port()
-    : _e(0), _port(-2) PORT_CTOR_INIT(0)
+    : _e(0), _port(-2)
 {
+    PORT_ASSIGN(0);
 }
 
-inline
-Element::Port::Port(Element* owner, Element* e, int p)
-    : _e(e), _port(p) PORT_CTOR_INIT(owner)
+inline void
+Element::Port::assign(Element *owner, Element *e, int port, bool isoutput)
 {
-    (void) owner;
+    PORT_ASSIGN(owner);
+    _e = e;
+    _port = port;
+    (void) isoutput;
 }
 
 /** @brief Returns whether this port is active (a push output or a pull input).
@@ -535,17 +555,16 @@ Element::Port::port() const
 inline void
 Element::Port::push(Packet* p) const
 {
-    assert(_e);
+    assert(_e && p);
 #if CLICK_STATS >= 1
-    _packets++;
+    ++_packets;
 #endif
 #if CLICK_STATS >= 2
-    _e->input(_port)._packets++;
-    uint64_t c0 = click_get_cycles();
+    ++_e->input(_port)._packets;
+    click_cycles_t c0 = click_get_cycles();
     _e->push(_port, p);
-    uint64_t c1 = click_get_cycles();
-    uint64_t x = c1 - c0;
-    _e->_calls += 1;
+    click_cycles_t x = click_get_cycles() - c0;
+    ++_e->_calls;
     _e->_self_cycles += x;
     _owner->_child_cycles += x;
 #else
@@ -574,20 +593,20 @@ Element::Port::pull() const
 {
     assert(_e);
 #if CLICK_STATS >= 2
-    _e->output(_port)._packets++;
-    uint64_t c0 = click_get_cycles();
+    click_cycles_t c0 = click_get_cycles();
     Packet *p = _e->pull(_port);
-    uint64_t c1 = click_get_cycles();
-    uint64_t x = c1 - c0;
-    _e->_calls += 1;
+    click_cycles_t x = click_get_cycles() - c0;
+    ++_e->_calls;
     _e->_self_cycles += x;
     _owner->_child_cycles += x;
+    if (p)
+	++_e->output(_port)._packets;
 #else
-    Packet* p = _e->pull(_port);
+    Packet *p = _e->pull(_port);
 #endif
 #if CLICK_STATS >= 1
     if (p)
-	_packets++;
+	++_packets;
 #endif
     return p;
 }
@@ -613,6 +632,6 @@ Element::checked_output_push(int port, Packet* p) const
 	p->kill();
 }
 
-#undef CONNECTION_CTOR_INIT
+#undef PORT_ASSIGN
 CLICK_ENDDECLS
 #endif

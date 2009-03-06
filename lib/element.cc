@@ -57,12 +57,6 @@ const char Element::COMPLETE_FLOW[] = "x/x";
 
 int Element::nelements_allocated = 0;
 
-#if CLICK_STATS >= 2
-# define ELEMENT_CTOR_STATS _calls(0), _self_cycles(0), _child_cycles(0),
-#else
-# define ELEMENT_CTOR_STATS
-#endif
-
 /** @mainpage Click
  *  @section  Introduction
  *
@@ -415,11 +409,15 @@ void BetterIPCounter3::push(int port, Packet *p) {
 
 /** @brief Construct an Element. */
 Element::Element()
-    : ELEMENT_CTOR_STATS _router(0), _eindex(-1)
+    : _router(0), _eindex(-1)
 {
     nelements_allocated++;
     _ports[0] = _ports[1] = &_inline_ports[0];
     _nports[0] = _nports[1] = 0;
+
+#if CLICK_STATS >= 2
+    reset_cycles();
+#endif
 }
 
 Element::~Element()
@@ -768,13 +766,13 @@ Element::initialize_ports(const int *in_v, const int *out_v)
     for (int i = 0; i < ninputs(); i++) {
 	// allowed iff in_v[i] == VPULL
 	int port = (in_v[i] == VPULL ? 0 : -1);
-	_ports[0][i] = Port(this, 0, port);
+	_ports[0][i].assign(this, 0, port, false);
     }
 
     for (int o = 0; o < noutputs(); o++) {
 	// allowed iff out_v[o] != VPULL
 	int port = (out_v[o] == VPULL ? -1 : 0);
-	_ports[1][o] = Port(this, 0, port);
+	_ports[1][o].assign(this, 0, port, true);
     }
 }
 
@@ -782,7 +780,7 @@ int
 Element::connect_port(bool isoutput, int port, Element* e, int e_port)
 {
     if (port_active(isoutput, port)) {
-	_ports[isoutput][port] = Port(this, e, e_port);
+	_ports[isoutput][port].assign(this, e, e_port, isoutput);
 	return 0;
     } else
 	return -1;
@@ -1987,12 +1985,25 @@ read_ocounts_handler(Element *f, void *)
  * cycles spent in this element and elements it pulls or pushes.
  * cycles spent in the elements this one pulls and pushes.
  */
-static String
-read_cycles_handler(Element *f, void *)
+String
+Element::read_cycles_handler(Element *e, void *)
 {
-  return(String(f->_calls) + "\n" +
-         String(f->_self_cycles) + "\n" +
-         String(f->_child_cycles));
+    StringAccum sa;
+    if (e->_calls)
+	sa << e->_calls << ' ' << e->_self_cycles << ' '
+	   << e->_child_cycles << '\n';
+    if (e->_task_calls)
+	sa << "tasks " << e->_task_calls << ' ' << e->_task_cycles << "\n";
+    if (e->_timer_calls)
+	sa << "timers " << e->_timer_calls << ' ' << e->_timer_cycles << "\n";
+    return sa.take_string();
+}
+
+int
+Element::write_cycles_handler(const String &, Element *e, void *, ErrorHandler *)
+{
+    e->reset_cycles();
+    return 0;
 }
 #endif
 
@@ -2011,6 +2022,7 @@ Element::add_default_handlers(bool allow_write_config)
   add_read_handler("ocounts", read_ocounts_handler, 0);
 # if CLICK_STATS >= 2
   add_read_handler("cycles", read_cycles_handler, 0);
+  add_write_handler("cycles", write_cycles_handler, 0);
 # endif
 #endif
 }

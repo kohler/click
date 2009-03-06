@@ -146,7 +146,7 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
     // make sure notifier is initialized
     if (!output_is_push(0))
 	_notifier.initialize(Notifier::EMPTY_NOTIFIER, router());
-    _timer.initialize(router());
+    _timer.initialize(this);
 
     if (_ff.initialize(errh) < 0)
 	return -1;
