@@ -45,33 +45,65 @@ inline uint64_t ntohq(uint64_t x) {
  * @return 0 if @a x = 0; otherwise the index of first bit set, where the
  * most significant bit is numbered 1.
  */
-inline int ffs_msb(uint32_t x) {
+inline int ffs_msb(unsigned x) {
     return (x ? __builtin_clz(x) + 1 : 0);
 }
 #else
-# define NEED_FFS_MSB_UINT32_T 1
-int ffs_msb(uint32_t);
+# define NEED_FFS_MSB_UNSIGNED 1
+/** @overload */
+int ffs_msb(unsigned x);
 #endif
 
-#ifdef HAVE_INT64_TYPES
-# if HAVE___BUILTIN_CLZLL && SIZEOF_LONG_LONG == 8 && !HAVE_NO_INTEGER_BUILTINS
+#if HAVE___BUILTIN_CLZL && !HAVE_NO_INTEGER_BUILTINS
 /** @overload */
-inline int ffs_msb(uint64_t x) {
-    return (x ? __builtin_clzll(x) + 1 : 0);
-}
-# elif HAVE___BUILTIN_CLZL && SIZEOF_LONG == 8 && !HAVE_NO_INTEGER_BUILTINS
-inline int ffs_msb(uint64_t x) {
+inline int ffs_msb(unsigned long x) {
     return (x ? __builtin_clzl(x) + 1 : 0);
 }
-# elif HAVE___BUILTIN_CLZ && SIZEOF_INT == 8 && !HAVE_NO_INTEGER_BUILTINS
+#elif SIZEOF_INT == SIZEOF_LONG
+/** @overload */
+inline int ffs_msb(unsigned long x) {
+    return ffs_msb(static_cast<unsigned>(x));
+}
+#else
+# define NEED_FFS_MSB_UNSIGNED_LONG 1
+/** @overload */
+int ffs_msb(unsigned long x);
+#endif
+
+#if HAVE_LONG_LONG && HAVE___BUILTIN_CLZLL && !HAVE_NO_INTEGER_BUILTINS
+/** @overload */
+inline int ffs_msb(unsigned long long x) {
+    return (x ? __builtin_clzll(x) + 1 : 0);
+}
+#elif HAVE_LONG_LONG && SIZEOF_LONG == SIZEOF_LONG_LONG
+/** @overload */
+inline int ffs_msb(unsigned long long x) {
+    return ffs_msb(static_cast<unsigned long>(x));
+}
+#elif HAVE_LONG_LONG
+# define NEED_FFS_MSB_UNSIGNED_LONG_LONG 1
+/** @overload */
+int ffs_msb(unsigned long long x);
+#endif
+
+#if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
+# if SIZEOF_LONG >= 8
+/** @overload */
 inline int ffs_msb(uint64_t x) {
-    return (x ? __builtin_clz(x) + 1 : 0);
+    return ffs_msb(static_cast<unsigned long>(x));
+}
+# elif HAVE_LONG_LONG && SIZEOF_LONG_LONG >= 8
+/** @overload */
+inline int ffs_msb(uint64_t x) {
+    return ffs_msb(static_cast<unsigned long long>(x));
 }
 # else
 #  define NEED_FFS_MSB_UINT64_T 1
-int ffs_msb(uint64_t);
+/** @overload */
+int ffs_msb(uint64_t x);
 # endif
 #endif
+
 
 // LSB is bit #1
 #if HAVE___BUILTIN_FFS && !HAVE_NO_INTEGER_BUILTINS
@@ -79,37 +111,70 @@ int ffs_msb(uint64_t);
  * @return 0 if @a x = 0; otherwise the index of first bit set, where the
  * least significant bit is numbered 1.
  */
-inline int ffs_lsb(uint32_t x) {
+inline int ffs_lsb(unsigned x) {
     return __builtin_ffs(x);
 }
 #elif HAVE_FFS && !HAVE_NO_INTEGER_BUILTINS
-inline int ffs_lsb(uint32_t x) {
+/** overload */
+inline int ffs_lsb(unsigned x) {
     return ffs(x);
 }
 #else
-# define NEED_FFS_LSB_UINT32_T 1
-int ffs_lsb(uint32_t);
+# define NEED_FFS_LSB_UNSIGNED 1
+/** @overload */
+int ffs_lsb(unsigned x);
 #endif
 
-#ifdef HAVE_INT64_TYPES
-# if HAVE___BUILTIN_FFSLL && SIZEOF_LONG_LONG == 8 && !HAVE_NO_INTEGER_BUILTINS
+#if HAVE___BUILTIN_FFSL && !HAVE_NO_INTEGER_BUILTINS
 /** @overload */
-inline int ffs_lsb(uint64_t x) {
-    return __builtin_ffsll(x);
-}
-# elif HAVE___BUILTIN_FFSL && SIZEOF_LONG == 8 && !HAVE_NO_INTEGER_BUILTINS
-inline int ffs_lsb(uint64_t x) {
+inline int ffs_lsb(unsigned long x) {
     return __builtin_ffsl(x);
 }
-# elif HAVE___BUILTIN_FFS && SIZEOF_INT == 8 && !HAVE_NO_INTEGER_BUILTINS
+#elif SIZEOF_INT == SIZEOF_LONG
+/** @overload */
+inline int ffs_lsb(unsigned long x) {
+    return ffs_lsb(static_cast<unsigned>(x));
+}
+#else
+# define NEED_FFS_LSB_UNSIGNED_LONG 1
+/** @overload */
+int ffs_lsb(unsigned long x);
+#endif
+
+#if HAVE_LONG_LONG && HAVE___BUILTIN_FFSLL && !HAVE_NO_INTEGER_BUILTINS
+/** @overload */
+inline int ffs_lsb(unsigned long long x) {
+    return __builtin_ffsll(x);
+}
+#elif HAVE_LONG_LONG && SIZEOF_LONG == SIZEOF_LONG_LONG
+/** @overload */
+inline int ffs_lsb(unsigned long long x) {
+    return ffs_lsb(static_cast<unsigned long>(x));
+}
+#elif HAVE_LONG_LONG
+# define NEED_FFS_LSB_UNSIGNED_LONG_LONG 1
+/** @overload */
+int ffs_lsb(unsigned long long x);
+#endif
+
+#if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
+# if SIZEOF_LONG >= 8
+/** @overload */
 inline int ffs_lsb(uint64_t x) {
-    return __builtin_ffs(x);
+    return ffs_lsb(static_cast<unsigned long>(x));
+}
+# elif HAVE_LONG_LONG && SIZEOF_LONG_LONG >= 8
+/** @overload */
+inline int ffs_lsb(uint64_t x) {
+    return ffs_lsb(static_cast<unsigned long long>(x));
 }
 # else
 #  define NEED_FFS_LSB_UINT64_T 1
-int ffs_lsb(uint64_t);
+/** @overload */
+int ffs_lsb(uint64_t x);
 # endif
 #endif
+
 
 /** @brief Return the integer approximation of @a x's square root.
  * @return The integer @a y where @a y*@a y <= @a x, but
