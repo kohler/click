@@ -87,7 +87,7 @@ struct delt_style : public enable_ref_ptr {
     int shadow_style;
     double shadow_width;
     double shadow_color[4];
-    bool orientation;
+    int orientation;
     double queue_stripe_color[4];
     int queue_stripe_style;
     double queue_stripe_width;
