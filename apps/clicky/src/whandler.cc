@@ -144,7 +144,7 @@ int whandler::hinfo::create_preferences(whandler *wh)
 
 	autorefresh_period = gtk_hbox_new(FALSE, 0);
 	g_object_set_data(G_OBJECT(w), "clicky_hider", autorefresh_period);
-	GtkAdjustment *adj = (GtkAdjustment *) gtk_adjustment_new(hv->autorefresh_period() / 1000., 0.01, 60, 0.01, 0.5, 0.5);
+	GtkAdjustment *adj = (GtkAdjustment *) gtk_adjustment_new(hv->autorefresh_period() / 1000., 0.01, 60, 0.01, 0.5, 0);
 	GtkWidget *spin = gtk_spin_button_new(adj, 0.01, 3);
 	gtk_box_pack_start(GTK_BOX(autorefresh_period), spin, FALSE, FALSE, 0);
 	g_signal_connect(spin, "value-changed", G_CALLBACK(on_hpref_autorefresh_value_changed), wh);
