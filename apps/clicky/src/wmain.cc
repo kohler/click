@@ -44,7 +44,7 @@ static void destroy(gpointer data) {
 }
 }
 
-wmain::wmain()
+wmain::wmain(bool show_toolbar, bool show_list, gint width, gint height)
     : _window(create_mainw()),
       _config_clean_errors(true), _config_clean_elements(true),
       _error_hover_tag(0), _error_highlight_tag(0),
@@ -56,6 +56,12 @@ wmain::wmain()
       _config_changed_signal(0), _binary_tag(0)
 {
     g_object_set_data_full(G_OBJECT(_window), "wmain", this, destroy);
+    if (width != -1 || height != -1)
+	gtk_window_set_default_size(GTK_WINDOW(_window), width, height);
+
+    // settings
+    set_show_toolbar(show_toolbar);
+    set_show_list(show_list);
 
     // look up widgets
     _config_view = lookup_widget(_window, "configview");
@@ -392,6 +398,17 @@ void wmain::show()
     gtk_widget_show(_window);
 }
 
+void wmain::set_show_toolbar(bool show_toolbar)
+{
+    _show_toolbar = show_toolbar;
+    GtkWidget *toolbar = lookup_widget(_window, "toolbar1");
+    if (_show_toolbar)
+	gtk_widget_show(toolbar);
+    else
+	gtk_widget_hide(toolbar);
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(lookup_widget(_window, "menu_view_toolbar")), _show_toolbar);
+}
+
 
 /*****
  *
@@ -475,6 +492,17 @@ void wmain::on_handler_check_write(const String &hname,
  * element list
  *
  */
+
+void wmain::set_show_list(bool show_list)
+{
+    _show_list = show_list;
+    GtkWidget *errorpane = lookup_widget(_window, "errorpane");
+    if (_show_list)
+	gtk_widget_show(errorpane);
+    else
+	gtk_widget_hide(errorpane);
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(lookup_widget(_window, "menu_view_list")), _show_list);
+}
 
 void wmain::element_unhighlight()
 {
@@ -935,6 +963,8 @@ void wmain::on_error(bool replace, const String &dialog)
     GtkPaned *pane = GTK_PANED(lookup_widget(_window, "errorpane"));
     GtkWidget *treewindow = lookup_widget(_window, "elementtreewindow");
     if (gerrh->nerrors() && replace) {
+	if (!_show_list)
+	    set_show_list(true);
 	gtk_widget_hide(treewindow);
 	gtk_widget_hide(lookup_widget(_window, "elementtreesort"));
 	gtk_paned_set_position(pane, 2147483647);

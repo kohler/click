@@ -8,7 +8,7 @@ class wdiagram;
 
 class wmain : public crouter { public:
 
-    wmain();
+    wmain(bool show_toolbar, bool show_list, gint width = -1, gint height = -1);
     ~wmain();
 
     void clear(bool alive);
@@ -22,6 +22,16 @@ class wmain : public crouter { public:
     whandler *handlers() const {
 	return _handlers;
     }
+
+    bool show_list() const {
+	return _show_list;
+    }
+    void set_show_list(bool show_list);
+
+    bool show_toolbar() const {
+	return _show_toolbar;
+    }
+    void set_show_toolbar(bool show_toolbar);
 
     // GTK properties
     GtkWindow *window() const {
@@ -105,6 +115,7 @@ class wmain : public crouter { public:
 
     // UI features
     GtkWidget *_window;
+    bool _show_toolbar;
 
     PangoAttrList *_small_attr;
     PangoAttrList *_bold_attr;
@@ -127,6 +138,7 @@ class wmain : public crouter { public:
     gdouble _error_highlight_y;
     guint _error_scroller;
 
+    bool _show_list;
     GtkTreeView *_elist_view;
     GtkTreeStore *_elist_store;
     int _elist_sort;

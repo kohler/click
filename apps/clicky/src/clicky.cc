@@ -40,11 +40,21 @@ extern "C" {
 #define PDF_OPT 309
 #define PDF_SCALE_OPT 310
 #define PDF_MULTIPAGE_OPT 311
+#define LIST_OPT 312
+#define NO_LIST_OPT 313
+#define TOOLBAR_OPT 314
+#define NO_TOOLBAR_OPT 315
+#define GEOMETRY_OPT 316
 
 static const Clp_Option options[] = {
     { "version", 0, VERSION_OPT, 0, 0 },
     { "style", 's', STYLE_OPT, Clp_ValString, Clp_Negate|Clp_PreferredMatch },
-    { "style-expr", 0, STYLE_EXPR_OPT, Clp_ValString, 0 },
+    { "style-expr", 'S', STYLE_EXPR_OPT, Clp_ValString, 0 },
+    { "list", 0, LIST_OPT, 0, Clp_Negate },
+    { 0, 'L', NO_LIST_OPT, 0, Clp_Negate },
+    { "toolbar", 0, TOOLBAR_OPT, 0, Clp_Negate },
+    { 0, 'T', NO_TOOLBAR_OPT, 0, Clp_Negate },
+    { "geometry", 'g', GEOMETRY_OPT, Clp_ValString, 0 },
     { "file", 'f', FILE_OPT, Clp_ValString, 0 },
     { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
     { "port", 'p', PORT_OPT, Clp_ValString, 0 },
@@ -71,10 +81,12 @@ Options:\n\
   -p, --port [HOST:]PORT       Connect to HOST:PORT for configuration.\n\
   -k, --kernel                 Read configuration from kernel.\n\
   -s, --style FILE             Add CCSS style information from FILE.\n\
-      --style-expr STYLE       Add STYLE as CCSS style information.\n\
+  -S, --style-expr STYLE       Add STYLE as CCSS style information.\n\
       --pdf[=FILE]             Output diagram to FILE (default stdout).\n\
       --pdf-multipage          Output diagram on multiple letter pages.\n\
       --pdf-scale=SCALE        Scale output diagram by SCALE (default 1).\n\
+  -T, --no-toolbar             Hide toolbar on startup.\n\
+  -L, --no-list                Hide element list on startup.\n\
   -C, --clickpath PATH         Use PATH for CLICKPATH.\n\
       --help                   Print this message and exit.\n\
   -v, --version                Print version number and exit.\n\
@@ -119,6 +131,8 @@ main(int argc, char *argv[])
     String pdf_file = "-";
     double pdf_scale = 2.5;
     bool pdf_multipage = false;
+    bool show_toolbar = true, show_list = true;
+    gint width = -1, height = -1;
 
     while (1) {
 	int opt = Clp_Next(clp);
@@ -184,6 +198,34 @@ particular purpose.\n");
 	    pdf_multipage = !clp->negated;
 	    break;
 
+	case LIST_OPT:
+	    show_list = !clp->negated;
+	    break;
+
+	case NO_LIST_OPT:
+	    show_list = clp->negated;
+	    break;
+
+	case TOOLBAR_OPT:
+	    show_toolbar = !clp->negated;
+	    break;
+
+	case NO_TOOLBAR_OPT:
+	    show_toolbar = clp->negated;
+	    break;
+
+	case GEOMETRY_OPT: {
+	    const char *s = clp->vstr, *end = s + strlen(s);
+	    if ((s = cp_integer(s, end, 10, &width)) != clp->vstr
+		&& s + 1 < end && *s == 'x'
+		&& cp_integer(s + 1, end, 10, &height) == end)
+		break;
+	    else {
+		usage();
+		exit(1);
+	    }
+	}
+
 	  case HELP_OPT:
 	    usage();
 	    exit(0);
@@ -194,7 +236,8 @@ particular purpose.\n");
 	    wtypes.push_back(2);
 	    break;
 
-	  case Clp_BadOption:
+	case Clp_BadOption:
+	    usage();
 	    exit(1);
 	    break;
 
@@ -217,7 +260,7 @@ particular purpose.\n");
 
     // create GUIs
     if (wfiles.size() == 0) {
-	clicky::wmain *rw = new clicky::wmain;
+	clicky::wmain *rw = new clicky::wmain(show_toolbar, show_list, width, height);
 	rw->set_ccss_text(css_text);
 	rw->show();
     }
@@ -229,7 +272,7 @@ particular purpose.\n");
 
     for (int i = 0; i < wfiles.size(); i++) {
 	if (!do_pdf)
-	    cr = wm = new clicky::wmain;
+	    cr = wm = new clicky::wmain(show_toolbar, show_list, width, height);
 	else {
 	    cr = new clicky::tmain;
 	    wm = 0;

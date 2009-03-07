@@ -20,8 +20,9 @@ namespace clicky {
 extern "C" {
 static void on_new_window_activate(GtkMenuItem *, gpointer user_data)
 {
-    wmain *rw = new wmain;
-    rw->set_ccss_text(reinterpret_cast<wmain *>(user_data)->ccss_text());
+    wmain *old_wm = reinterpret_cast<wmain *>(user_data);
+    wmain *rw = new wmain(old_wm->show_toolbar(), old_wm->show_list());
+    rw->set_ccss_text(old_wm->ccss_text());
     rw->show();
 }
 
@@ -68,6 +69,18 @@ static void on_check_activate(GtkMenuItem *, gpointer user_data)
 static void on_install_activate(GtkMenuItem *, gpointer user_data)
 {
     reinterpret_cast<wmain *>(user_data)->config_check(true);
+}
+
+static void on_view_toolbar_toggled(GtkCheckMenuItem *check, gpointer user_data)
+{
+    wmain *rw = reinterpret_cast<wmain *>(user_data);
+    rw->set_show_toolbar(check->active);
+}
+
+static void on_view_list_toggled(GtkCheckMenuItem *check, gpointer user_data)
+{
+    wmain *rw = reinterpret_cast<wmain *>(user_data);
+    rw->set_show_list(check->active);
 }
 
 static void on_view_element_toggled(GtkCheckMenuItem *check, gpointer user_data)
@@ -162,6 +175,10 @@ void wmain::dialogs_connect()
 		     G_CALLBACK(on_save_activate), this);
     g_signal_connect(lookup_widget(_window, "menu_quit"), "activate",
 		     G_CALLBACK(on_quit_activate), this);
+    g_signal_connect(lookup_widget(_window, "menu_view_toolbar"), "toggled",
+		     G_CALLBACK(on_view_toolbar_toggled), this);
+    g_signal_connect(lookup_widget(_window, "menu_view_list"), "toggled",
+		     G_CALLBACK(on_view_list_toggled), this);
     g_signal_connect(lookup_widget(_window, "menu_view_element"), "toggled",
 		     G_CALLBACK(on_view_element_toggled), this);
     g_signal_connect(lookup_widget(_window, "menu_view_configuration"), "toggled",
@@ -230,7 +247,7 @@ void wmain::on_open_file()
 		rw = this;
 		rw->clear(true);
 	    } else
-		rw = new wmain;
+		rw = new wmain(_show_toolbar, _show_list);
 	    rw->set_landmark(filename);
 	    rw->set_config(s, true);
 	    rw->set_save_file(filename, true);
@@ -348,7 +365,7 @@ void wmain::on_open_socket()
 	    rw = this;
 	    rw->clear(true);
 	} else
-	    rw = new wmain;
+	    rw = new wmain(_show_toolbar, _show_list);
 	rw->set_landmark(String(hosts) + ":" + String(ports));
 	(void) new csocket_cdriver(rw, socket, helper.ready);
 	rw->set_ccss_text(ccss_text());
@@ -374,7 +391,7 @@ void wmain::on_open_kernel()
 	    rw = this;
 	    rw->clear(true);
 	} else
-	    rw = new wmain;
+	    rw = new wmain(_show_toolbar, _show_list);
 	rw->set_landmark(prefix);
 	(void) new clickfs_cdriver(rw, prefix);
 	rw->set_ccss_text(ccss_text());
