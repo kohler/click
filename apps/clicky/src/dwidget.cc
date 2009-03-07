@@ -1508,7 +1508,7 @@ void delt::draw_port(dcontext &dcx, dport_style *dps, point p,
     cairo_translate(dcx, p.x(), p.y());
     int port_orientation = _des->orientation ^ (isoutput ? 2 : 0);
     if (port_orientation & 1)
-	cairo_rotate(dcx, port_orientation * M_PI_2);
+	cairo_rotate(dcx, M_PI_2);
 
     double l = dps->length * _dess->scale;
     double w = dps->width * _dess->scale;
