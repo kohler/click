@@ -1579,7 +1579,7 @@ void delt::draw_port(dcontext &dcx, dport_style *dps, point p,
 	pango_layout_set_markup(dcx, markup.data(), markup.length());
 	PangoRectangle rect;
 	pango_layout_get_pixel_extents(dcx, NULL, &rect);
-	cairo_move_to(dcx, -rect.width / 2, w + (port_orientation & 2 ? -rect.height - 1 : rect.height + 1));
+	cairo_move_to(dcx, -rect.width / 2, w + (port_orientation & 2 ? -rect.height - 1 : 1));
 	pango_cairo_show_layout(dcx, dcx);
     }
 
