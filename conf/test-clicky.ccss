@@ -1,0 +1,17 @@
+// test3.ccss
+
+// This Clicky Cascading Style Sheets file is designed to go with
+// test3.click, and shows off how Clicky works with live configurations.
+
+Queue {
+	decorations: fullness;
+}
+
+Counter {
+	text: "%n\n<b>%{count}</b>\n<small>%c</small>";
+}
+
+Counter handler#count {
+	autorefresh: 100ms;
+}
+
