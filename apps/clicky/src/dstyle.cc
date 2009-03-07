@@ -696,7 +696,7 @@ bool dcss_selector::match_port(bool isoutput, int port, int processing) const
 
 bool dcss_selector::match(const handler_value *hv) const
 {
-    if (!_type.equals("~handler~", 9))
+    if (!_type.equals("handler", 7))
 	return false;
     if (_name && _name != hv->handler_name())
 	if (!_name_glob || !glob_match(hv->handler_name(), _name))
@@ -799,7 +799,7 @@ const char *dcss_selector::parse(const String &str, const char *s)
 	    ++s;
 	}
 	if (s == n && start == '#' && *s == '#' && !_name && !_type) {
-	    _type = String::make_stable("~handler~", 9);
+	    _type = String::make_stable("handler", 7);
 	    s = ++n;
 	    goto retry;
 	} else if (s == n && start) {
@@ -1892,7 +1892,7 @@ static int parse_autorefresh(String str, const char *medium, int *period)
 	    on = (medium ? 2 : 1);
 	else if (x.equals("off", 3))
 	    on = 0;
-	else if (x.equals(medium, -1))
+	else if (medium && x.equals(medium, -1))
 	    on = 1;
 	else if (cp_seconds(x, &d) && d >= 0) {
 	    if (on < 0)
@@ -1910,7 +1910,7 @@ void dcss_set::collect_handler_styles(crouter *cr, const handler_value *hv,
 				      bool &generic) const
 {
     for (dcss * const *sp = _s.begin() + 2; sp != _s.end(); ++sp)
-	if ((*sp)->type()[0] == '~')
+	if ((*sp)->type()[0] == 'h')
 	    for (dcss *s = *sp; s; s = s->_next)
 		if (s->selector().match(hv) && s->match_context(cr, e)) {
 		    if (!s->selector().generic_handler() || s->has_context())
