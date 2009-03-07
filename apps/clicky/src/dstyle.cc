@@ -497,7 +497,8 @@ inline bool comparison_char(char c)
     return c == '=' || c == '!' || c == '>' || c == '<';
 }
 
-inline bool int_match_string(const char *begin, const char *end, int x)
+inline bool int_match_string(const char *begin, const char *end, int x,
+			     bool require_comparator = true)
 {
     int comparator = *begin++;
     if (begin < end && *begin == '=') {
@@ -508,6 +509,10 @@ inline bool int_match_string(const char *begin, const char *end, int x)
 	++begin;
     } else if (comparator == '!')
 	return false;
+    else if (!require_comparator && isdigit((unsigned char) comparator)) {
+	comparator = '=';
+	--begin;
+    }
 
     int i;
     if (begin + 1 == end)
@@ -683,7 +688,7 @@ bool dcss_selector::match_port(bool isoutput, int port, int processing) const
 	    return false;
 
     if (_name && port >= 0
-	&& !int_match_string(_name.begin(), _name.end(), port))
+	&& !int_match_string(_name.begin(), _name.end(), port, false))
 	return false;
 
     return true;
