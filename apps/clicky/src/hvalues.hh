@@ -268,7 +268,6 @@ struct handler_values {
 
     crouter *_cr;
     HashTable<handler_value> _hv;
-    HashTable<String, int> _class_uflags;
 
     handler_value *hard_find_placeholder(const String &hname, int flags, int autorefresh_period);
     void set_handlers(const String &hname, const String &hparam, const String &hvalue);

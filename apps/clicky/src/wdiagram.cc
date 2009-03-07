@@ -540,7 +540,9 @@ void wdiagram::notify_active_ports(String value)
 
     // inquire into port statistics
     handler_value *pstats = _rw->hvalues().find_placeholder("active_port_stats", hflag_r | hflag_notify_delt, 3000);
-    if (_active_offsets.size()) {
+    if (!pstats)
+	/* we may be in the middle of a reconfigure */;
+    else if (_active_offsets.size()) {
 	pstats->set_flags(_rw, pstats->flags() | hflag_autorefresh);
 	pstats->refresh(_rw);
     } else
