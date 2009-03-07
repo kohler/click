@@ -565,6 +565,11 @@ void delt::position_contents_dot(crouter *cr, ErrorHandler *errh)
     if (_contents_width)
 	sa << "size=\"" << (_contents_width / 100) << "," << (_contents_height / 100) << "\";\n"
 	   << "ratio=compress;\n";
+    switch (gdess->orientation) {
+    case 1: sa << "rankdir=RL;\n"; break;
+    case 2: sa << "rankdir=BT;\n"; break;
+    case 3: sa << "rankdir=LR;\n"; break;
+    }
 
     HashTable<int, delt *> z_index_lookup;
 
