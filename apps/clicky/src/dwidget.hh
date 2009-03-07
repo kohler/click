@@ -402,6 +402,7 @@ class delt : public dwidget { public:
     unsigned _generation;
     double *_portoff[2];
     double _ports_length[2];
+    double _ports_width[2];
     double *_port_text_offsets;
     delt *_parent;
     delt *_split;

@@ -96,7 +96,7 @@ port.agnostic.error, port.push.agnostic.error, port.pull.agnostic.error {\n\
     background: rgb(100%, 100%, 87%);\n\
     color: black;\n\
     border: 1px solid black;\n\
-    padding: 8px 12px;\n\
+    padding: 2.5px 12px;\n\
     margin: 20px 14px;\n\
     shadow: drop rgba(50%, 50%, 45%, 50%) 3px;\n\
     orientation: vertical;\n\
@@ -114,6 +114,12 @@ port.agnostic.error, port.push.agnostic.error, port.pull.agnostic.error {\n\
 	port-font: Times 6;\n\
     }\n\
     /* @media screen { font: URW Palladio L italic 20; } */\n\
+}\n\
+*[in=0] {\n\
+    padding-top: 8px;\n\
+}\n\
+*[out=0] {\n\
+    padding-bottom: 8px;\n\
 }\n\
 *.anonymous {\n\
     text: \"%n\";\n\
@@ -1794,7 +1800,7 @@ ref_ptr<delt_style> dcss_set::elt_style(crouter *cr, const delt *e, int *sensiti
 	String s = elt_pm[7].vstring("orientation");
 	sty->orientation = 0;
 	if (s.find_left("horizontal") >= 0)
-	    sty->orientation = (sty->orientation + 3) & 3;
+	    sty->orientation = 3;
 	if (s.find_left("reverse") >= 0)
 	    sty->orientation ^= 2;
 	s = elt_pm[8].vstring("style");

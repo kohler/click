@@ -942,6 +942,7 @@ void delt::layout_ports(dcontext &dcx)
     for (int isoutput = 0; isoutput < 2; ++isoutput) {
 	ref_ptr<dport_style> dps = dcs->port_style(dcx.cr, this, isoutput, 0, 0);
 	_ports_length[isoutput] = 2 * dps->edge_padding;
+	_ports_width[isoutput] = 0;
 	if (!_e->nports(isoutput)
 	    || (_port_split && isoutput == (_split_type & desplit_inputs)))
 	    continue;
@@ -952,6 +953,7 @@ void delt::layout_ports(dcontext &dcx)
 	for (int p = 0; p < _e->nports(isoutput); ++p, ++poff) {
 	    if (p)
 		dps = dcs->port_style(dcx.cr, this, isoutput, p, 0);
+
 	    double l;
 	    if (dps->shape == dpshape_triangle)
 		l = dps->length - 2;
@@ -969,6 +971,7 @@ void delt::layout_ports(dcontext &dcx)
 		text_offset = std::max(text_offset, (double) rect.height + 1);
 	    }
 	    _ports_length[isoutput] += l;
+
 	    double old_tm = tm;
 	    tm += dps->margin[_des->orientation] + l / 2;
 	    if (_e->nports(isoutput) > 1)
@@ -976,6 +979,11 @@ void delt::layout_ports(dcontext &dcx)
 	    tm += dps->margin[_des->orientation ^ 2] + l / 2;
 	    if (old_tm + 0.1 > tm)
 		tm = old_tm + 0.1;
+
+	    double w = dps->width;
+	    if (dps->shape == dpshape_triangle)
+		w -= 1.5;
+	    _ports_width[isoutput] = std::max(_ports_width[isoutput], w);
 	}
 	if (_e->nports(isoutput) > 1)
 	    _portoff[isoutput][_e->nports(isoutput)] = tm + dps->edge_padding;
@@ -1161,6 +1169,13 @@ void delt::layout(dcontext &dcx)
 	if (_contents_height)
 	    xheight += _contents_height;
     }
+    if (!_contents_height) {
+	// Open displays already have their port widths accounted for
+	if (side_vertical(_des->orientation))
+	    xheight += _ports_width[0] + _ports_width[1];
+	else
+	    xwidth += _ports_width[0] + _ports_width[1];
+    }
     if (_port_text_offsets && side_vertical(_des->orientation))
 	xheight += _port_text_offsets[0] + _port_text_offsets[1];
     else if (_port_text_offsets)
@@ -1195,6 +1210,7 @@ void delt::layout_compound_ports_copy(delt *compound, bool isoutput)
     delete[] _portoff[!isoutput];
     _portoff[!isoutput] = 0;
     _ports_length[!isoutput] = compound->_ports_length[isoutput];
+    _ports_width[!isoutput] = compound->_ports_width[isoutput];
     if (compound->_portoff[isoutput]) {
 	assert(_e->nports(!isoutput) == compound->_e->nports(isoutput));
 	int n = _e->nports(!isoutput);
@@ -1208,19 +1224,28 @@ void delt::layout_compound_ports(crouter *cr)
     delt *ein = _elt[0], *eout = _elt[1];
     assert(ein && eout && ein->name() == "input" && !ein->visible() && eout->name() == "output" && !eout->visible());
 
-    ein->_x = _x;
-    ein->_y = _y - 10;
-    ein->_width = _width;
-    ref_ptr<dport_style> dps = cr->ccss()->port_style(cr, this, false, 0, 0);
-    ein->_height = 10 + dps->width;
     ein->layout_compound_ports_copy(this, false);
-
-    eout->_x = _x;
-    dps = cr->ccss()->port_style(cr, this, true, 0, 0);
-    eout->_y = _y + _height - dps->width;
-    eout->_width = _width;
-    eout->_height = 10;
     eout->layout_compound_ports_copy(this, true);
+
+    ref_ptr<dport_style> dps = cr->ccss()->port_style(cr, this, false, 0, 0);
+    double in_width = std::max(ein->_ports_width[1], dps->width);
+    dps = cr->ccss()->port_style(cr, this, true, 0, 0);
+    double out_width = std::max(eout->_ports_width[0], dps->width);
+
+    double sides[4];
+    int o = _des->orientation;
+    sides[o] = sides[o ^ 2] = side(o);
+    sides[o ^ 2] += (side_greater(o) ? -1 : 1) * in_width;
+    sides[o ^ 1] = side(o ^ 1);
+    sides[o ^ 3] = side(o ^ 3);
+    ein->assign(sides[3], sides[0], sides[1] - sides[3], sides[2] - sides[0]);
+
+    sides[o] = sides[o ^ 2] = side(o ^ 2);
+    sides[o] += (side_greater(o) ? 1 : -1) * out_width;
+    eout->assign(sides[3], sides[0], sides[1] - sides[3], sides[2] - sides[0]);
+
+    // should probably ensure this another way...
+    ein->_des = eout->_des = _des;
 }
 
 void delt::layout_complete(dcontext &dcx, double dx, double dy)
@@ -1729,6 +1754,8 @@ void delt::draw_text(dcontext &dcx)
 
     double space[4];
     space[0] = space[1] = space[2] = space[3] = _dess->border_width;
+    space[_des->orientation] += _ports_width[0] + _dess->padding[_des->orientation];
+    space[_des->orientation ^ 2] += _ports_width[1] + _dess->padding[_des->orientation ^ 2];
     if (_port_text_offsets) {
 	space[_des->orientation] += _port_text_offsets[0];
 	space[_des->orientation ^ 2] += _port_text_offsets[1];
@@ -1738,7 +1765,7 @@ void delt::draw_text(dcontext &dcx)
     double aheight = _height - space[0] - space[2];
 
     if (awidth < _markup_width
-	&& aheight > _markup_width
+	&& aheight >= _markup_width
 	&& !_elt.size()) {
 	// vertical layout
 	saved = true;
