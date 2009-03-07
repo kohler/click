@@ -3,8 +3,6 @@
 #endif
 #include <click/config.h>
 #include "ddecor.hh"
-#include "dstyle.hh"
-#include "ddecor.hh"
 #include "crouter.hh"
 #include <click/confparse.hh>
 #include <click/timestamp.hh>

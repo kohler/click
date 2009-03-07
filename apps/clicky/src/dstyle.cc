@@ -2,8 +2,8 @@
 # include <config.h>
 #endif
 #include <click/config.h>
-#include "dwidget.hh"
 #include "dstyle.hh"
+#include "dwidget.hh"
 #include "wdiagram.hh"
 #include "hvalues.hh"
 #include <click/userutils.hh>
@@ -200,7 +200,6 @@ static dcss_propmatch elt_pm[] = {
     { "shadow-style", 0 },
     { "shadow-width", 0 },
     { "shadow-color", 0 },
-    { "orientation", 0 },
     { "style", 0 },
     { "text", 0 },
     { "display", 0 },
@@ -227,7 +226,8 @@ static dcss_propmatch elt_size_pm[] = {
     { "margin-bottom", 0 },
     { "margin-left", 0 },
     { "queue-stripe-spacing", 0 },
-    { "scale", 0 }
+    { "scale", 0 },
+    { "orientation", 0 }
 };
 
 static dcss_propmatch handler_pm[] = {
@@ -1797,16 +1797,10 @@ ref_ptr<delt_style> dcss_set::elt_style(crouter *cr, const delt *e, int *sensiti
 	elt_pm[6].vcolor(sty->shadow_color, "shadow-color");
 	if (sty->shadow_color[3] == 0 || sty->shadow_width <= 0)
 	    sty->shadow_style = dshadow_none;
-	String s = elt_pm[7].vstring("orientation");
-	sty->orientation = 0;
-	if (s.find_left("horizontal") >= 0)
-	    sty->orientation = 3;
-	if (s.find_left("reverse") >= 0)
-	    sty->orientation ^= 2;
-	s = elt_pm[8].vstring("style");
+	String s = elt_pm[7].vstring("style");
 	sty->style = (s.equals("queue", 5) ? destyle_queue : destyle_normal);
-	sty->text = cp_unquote(elt_pm[9].vstring("text"));
-	s = elt_pm[10].vstring("display");
+	sty->text = cp_unquote(elt_pm[8].vstring("text"));
+	s = elt_pm[9].vstring("display");
 	sty->display = dedisp_open;
 	if (s.equals("none", 4))
 	    sty->display = dedisp_none;
@@ -1816,12 +1810,12 @@ ref_ptr<delt_style> dcss_set::elt_style(crouter *cr, const delt *e, int *sensiti
 	    sty->display = dedisp_passthrough;
 	else if (s.equals("expanded", 8))
 	    sty->display = dedisp_expanded;
-	sty->font = elt_pm[11].vstring("font");
-	sty->decorations = elt_pm[12].vstring("decorations");
-	sty->queue_stripe_style = elt_pm[13].vborder_style("queue-stripe-style");
-	sty->queue_stripe_width = elt_pm[14].vpixel("queue-stripe-width", cr, e);
-	elt_pm[15].vcolor(sty->queue_stripe_color, "queue-stripe-color");
-	s = elt_pm[16].vstring("port-split");
+	sty->font = elt_pm[10].vstring("font");
+	sty->decorations = elt_pm[11].vstring("decorations");
+	sty->queue_stripe_style = elt_pm[12].vborder_style("queue-stripe-style");
+	sty->queue_stripe_width = elt_pm[13].vpixel("queue-stripe-width", cr, e);
+	elt_pm[14].vcolor(sty->queue_stripe_color, "queue-stripe-color");
+	s = elt_pm[15].vstring("port-split");
 	sty->port_split = dpdisp_none;
 	if (s.equals("inputs", 6))
 	    sty->port_split = dpdisp_inputs;
@@ -1829,7 +1823,7 @@ ref_ptr<delt_style> dcss_set::elt_style(crouter *cr, const delt *e, int *sensiti
 	    sty->port_split = dpdisp_outputs;
 	else if (s.equals("both", 4))
 	    sty->port_split = dpdisp_both;
-	s = elt_pm[17].vstring("flow-split");
+	s = elt_pm[16].vstring("flow-split");
 	sty->flow_split = parse_flow_split(s.begin(), s.end());
 
 	style_cache = ref_ptr<delt_style>(sty);
@@ -1876,6 +1870,12 @@ ref_ptr<delt_size_style> dcss_set::elt_size_style(crouter *cr, const delt *e, in
 	sty->margin[2] = elt_size_pm[10].vpixel("margin-bottom", cr, e) * scale;
 	sty->margin[3] = elt_size_pm[11].vpixel("margin-left", cr, e) * scale;
 	sty->queue_stripe_spacing = elt_size_pm[12].vpixel("queue-stripe-spacing", cr, e) * scale;
+	String s = elt_size_pm[14].vstring("orientation");
+	sty->orientation = 0;
+	if (s.find_left("horizontal") >= 0)
+	    sty->orientation = 3;
+	if (s.find_left("reverse") >= 0)
+	    sty->orientation ^= 2;
 
 	style_cache = ref_ptr<delt_size_style>(sty);
     }

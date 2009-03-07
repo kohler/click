@@ -15,7 +15,6 @@
 #include "dwidget.hh"
 #include "crouter.hh"
 #include "whandler.hh"
-#include "dstyle.hh"
 #include "scopechain.hh"
 extern "C" {
 #include "support.h"

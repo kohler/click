@@ -3,7 +3,6 @@
 #endif
 #include <click/config.h>
 #include "dwidget.hh"
-#include "dstyle.hh"
 #include "wdiagram.hh"
 #include "ddecor.hh"
 #include <click/userutils.hh>
@@ -320,16 +319,6 @@ String delt::display_name() const
  * Layout
  *
  */
-
-int delt::orientation() const
-{
-    return _des->orientation;
-}
-
-bool delt::vertical() const
-{
-    return side_vertical(_des->orientation);
-}
 
 double delt::shadow(double scale, int side) const
 {
@@ -973,10 +962,10 @@ void delt::layout_ports(dcontext &dcx)
 	    _ports_length[isoutput] += l;
 
 	    double old_tm = tm;
-	    tm += dps->margin[_des->orientation] + l / 2;
+	    tm += dps->margin[orientation()] + l / 2;
 	    if (_e->nports(isoutput) > 1)
 		_portoff[isoutput][p] = tm;
-	    tm += dps->margin[_des->orientation ^ 2] + l / 2;
+	    tm += dps->margin[orientation() ^ 2] + l / 2;
 	    if (old_tm + 0.1 > tm)
 		tm = old_tm + 0.1;
 
@@ -1160,7 +1149,7 @@ void delt::layout(dcontext &dcx)
     double xwidth, xheight;
 
     if (_des->style == destyle_queue
-	&& _contents_height == 0 && side_vertical(_des->orientation)) {
+	&& _contents_height == 0 && side_vertical(orientation())) {
 	xwidth = _markup_height;
 	xheight = _markup_width + _dess->padding[0] + _dess->padding[2];
     } else {
@@ -1171,12 +1160,12 @@ void delt::layout(dcontext &dcx)
     }
     if (!_contents_height) {
 	// Open displays already have their port widths accounted for
-	if (side_vertical(_des->orientation))
+	if (side_vertical(orientation()))
 	    xheight += _ports_width[0] + _ports_width[1];
 	else
 	    xwidth += _ports_width[0] + _ports_width[1];
     }
-    if (_port_text_offsets && side_vertical(_des->orientation))
+    if (_port_text_offsets && side_vertical(orientation()))
 	xheight += _port_text_offsets[0] + _port_text_offsets[1];
     else if (_port_text_offsets)
 	xwidth += _port_text_offsets[0] + _port_text_offsets[1];
@@ -1186,7 +1175,7 @@ void delt::layout(dcontext &dcx)
     // analyze port positions
     double xportlen = MAX(_ports_length[0], _ports_length[1]) * _dess->scale;
 
-    if (_des->orientation == 0)
+    if (orientation() == 0)
 	_width = ceil(MAX(xwidth + _dess->padding[1] + _dess->padding[3],
 			  xportlen));
     else {
@@ -1233,7 +1222,7 @@ void delt::layout_compound_ports(crouter *cr)
     double out_width = std::max(eout->_ports_width[0], dps->width);
 
     double sides[4];
-    int o = _des->orientation;
+    int o = orientation();
     sides[o] = sides[o ^ 2] = side(o);
     sides[o ^ 2] += (side_greater(o) ? -1 : 1) * in_width;
     sides[o ^ 1] = side(o ^ 1);
@@ -1455,17 +1444,17 @@ point delt::input_position(int port, dport_style *dps, bool here) const
     else if (_port_split && !(_split_type & desplit_inputs) && _split && !here)
 	return _split->input_position(port, 0, true);
 
-    double off = port_position(false, port, side_length(_des->orientation ^ 1));
+    double off = port_position(false, port, side_length(orientation() ^ 1));
 
-    double pos = side(_des->orientation);
+    double pos = side(orientation());
     if (dps) {
 	double dd = (_des->style == destyle_queue ? 0 : _dess->border_width);
 	if (dps->shape == dpshape_triangle)
 	    dd = std::max(dd - dps->border_width / 2, dps->border_width / 2);
-	pos += (side_greater(_des->orientation ^ 2) ? dd : -dd);
+	pos += (side_greater(orientation() ^ 2) ? dd : -dd);
     }
 
-    if (side_horizontal(_des->orientation))
+    if (side_horizontal(orientation()))
 	return point(pos, _y + off);
     else
 	return point(_x + off, pos);
@@ -1478,17 +1467,17 @@ point delt::output_position(int port, dport_style *dps, bool here) const
     else if (_port_split && (_split_type & desplit_inputs) && _split && !here)
 	return _split->output_position(port, 0, true);
 
-    double off = port_position(true, port, side_length(_des->orientation ^ 1));
+    double off = port_position(true, port, side_length(orientation() ^ 1));
 
-    double pos = side(_des->orientation ^ 2);
+    double pos = side(orientation() ^ 2);
     if (dps) {
 	double dd = _dess->border_width;
 	if (dps->shape == dpshape_triangle)
 	    dd = std::max(dd - dps->border_width / 2, dps->border_width / 2);
-	pos += (side_greater(_des->orientation ^ 2) ? -dd : dd);
+	pos += (side_greater(orientation() ^ 2) ? -dd : dd);
     }
 
-    if (side_horizontal(_des->orientation))
+    if (side_horizontal(orientation()))
 	return point(pos, _y + off);
     else
 	return point(_x + off, pos);
@@ -1522,7 +1511,7 @@ void delt::draw_port(dcontext &dcx, dport_style *dps, point p,
     // align position
     if (dcx.scale_step == 0 && _aligned) {
 	double dd = (dps->shape == dpshape_triangle ? 0.5 : 0);
-	if (side_vertical(_des->orientation))
+	if (side_vertical(orientation()))
 	    p._x = round(p._x - dd) + dd;
 	else
 	    p._y = round(p._y - dd) + dd;
@@ -1531,7 +1520,7 @@ void delt::draw_port(dcontext &dcx, dport_style *dps, point p,
     cairo_matrix_t original_matrix;
     cairo_get_matrix(dcx, &original_matrix);
     cairo_translate(dcx, p.x(), p.y());
-    int port_orientation = _des->orientation ^ (isoutput ? 2 : 0);
+    int port_orientation = orientation() ^ (isoutput ? 2 : 0);
     if (port_orientation & 1)
 	cairo_rotate(dcx, M_PI_2);
 
@@ -1677,7 +1666,7 @@ void delt::draw_background(dcontext &dcx)
     pos[1] = _x + _width - bwd;
     pos[2] = _y + _height - bwd;
     if (_des->style == destyle_queue)
-	pos[_des->orientation] = side(_des->orientation);
+	pos[orientation()] = side(orientation());
 
     // background
     if (_des->background_color[3]) {
@@ -1689,7 +1678,7 @@ void delt::draw_background(dcontext &dcx)
 	    cairo_line_to(dcx, pos[1], pos[2]);
 	    cairo_line_to(dcx, pos[3], pos[2]);
 	} else {
-	    int spo = _des->orientation;
+	    int spo = orientation();
 	    if (_split_type & desplit_inputs)
 		spo = (spo + 2) & 3;
 	    cairo_move_to(dcx, pos[((spo + 3) & 2) + 1], pos[spo & 2]);
@@ -1709,7 +1698,7 @@ void delt::draw_background(dcontext &dcx)
     // queue lines
     if (_des->style == destyle_queue) {
 	cairo_set_border(dcx, _des->queue_stripe_color, _des->queue_stripe_style, _des->queue_stripe_width);
-	int o = _des->orientation;
+	int o = orientation();
 	double qls = _dess->queue_stripe_spacing;
 	int num_lines = (int) ((side_length(o) - std::max(2.0, _dess->padding[o])) / qls);
 	double xpos = pos[(o + 2) & 3] + 0.5;
@@ -1754,11 +1743,11 @@ void delt::draw_text(dcontext &dcx)
 
     double space[4];
     space[0] = space[1] = space[2] = space[3] = _dess->border_width;
-    space[_des->orientation] += _ports_width[0] + _dess->padding[_des->orientation];
-    space[_des->orientation ^ 2] += _ports_width[1] + _dess->padding[_des->orientation ^ 2];
+    space[orientation()] += _ports_width[0] + _dess->padding[orientation()];
+    space[orientation() ^ 2] += _ports_width[1] + _dess->padding[orientation() ^ 2];
     if (_port_text_offsets) {
-	space[_des->orientation] += _port_text_offsets[0];
-	space[_des->orientation ^ 2] += _port_text_offsets[1];
+	space[orientation()] += _port_text_offsets[0];
+	space[orientation() ^ 2] += _port_text_offsets[1];
     }
     bool saved = false;
     double awidth = _width - space[1] - space[3];
@@ -1828,7 +1817,7 @@ void delt::draw_drop_shadow(dcontext &dcx)
     double shift = (_highlight & (1 << dhlt_pressed)) ? 1 : 0;
     int spo = -1;
     if (_port_split) {
-	spo = _des->orientation;
+	spo = orientation();
 	if (_split_type & desplit_inputs)
 	    spo = (spo + 2) & 3;
     }
@@ -1919,7 +1908,7 @@ void delt::draw_outline(dcontext &dcx)
 	pos[0] = _y + bwd;
 	pos[1] = _x + _width - bwd;
 	pos[2] = _y + _height - bwd;
-	int o = _des->orientation, open = (_des->style == destyle_queue);
+	int o = orientation(), open = (_des->style == destyle_queue);
 	if (_port_split) {
 	    open = (open && (_split_type & desplit_inputs) ? 2 : 1);
 	    o = (_split_type & desplit_inputs ? (o + 2) & 3 : o);
@@ -1927,7 +1916,7 @@ void delt::draw_outline(dcontext &dcx)
 	if (open)
 	    pos[o] = side(o);
 	if (_des->style == destyle_queue)
-	    pos[_des->orientation] = side(_des->orientation);
+	    pos[orientation()] = side(orientation());
 	cairo_move_to(dcx, pos[((o + 3) & 2) + 1], pos[o & 2]);
 	cairo_line_to(dcx, pos[((o + 2) & 2) + 1], pos[(o + 3) & 2]);
 	if (open == 2)

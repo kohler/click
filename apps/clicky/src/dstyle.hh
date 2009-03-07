@@ -4,13 +4,23 @@
 #include <click/hashtable.hh>
 #include <click/vector.hh>
 #include "permstr.hh"
-#include "dwidget.hh"
 #include "ref.hh"
 #include <string.h>
+class ErrorHandler;
 namespace clicky {
 class dcss_set;
 class delt;
 class crouter;
+class handler_value;
+
+enum {
+    dedisp_none = 0,
+    dedisp_open = 1,
+    dedisp_closed = 2,
+    dedisp_passthrough = -1,
+    dedisp_expanded = -2,
+    dedisp_placeholder = -99
+};
 
 enum {
     dpshape_rectangle = 0,
@@ -77,6 +87,7 @@ struct delt_size_style : public enable_ref_ptr {
     double height_step;
     double scale;
     double queue_stripe_spacing;
+    int orientation;
 };
 
 struct delt_style : public enable_ref_ptr {
@@ -87,7 +98,6 @@ struct delt_style : public enable_ref_ptr {
     int shadow_style;
     double shadow_width;
     double shadow_color[4];
-    int orientation;
     double queue_stripe_color[4];
     int queue_stripe_style;
     double queue_stripe_width;
@@ -334,10 +344,7 @@ struct dcss_propmatch {
 	assert(name == n);
 	return property->vpixel(relative_to);
     }
-    double vpixel(const char *n, crouter *cr, const delt *relative_elt) const {
-	assert(name == n);
-	return property->vpixel(cr, name, relative_elt->parent());
-    }
+    inline double vpixel(const char *n, crouter *cr, const delt *relative_elt) const;
     double vpixel(const char *n, crouter *cr, PermString relative_name,
 		  const delt *relative_elt) const {
 	assert(name == n);

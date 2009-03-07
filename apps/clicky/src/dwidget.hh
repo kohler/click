@@ -5,6 +5,7 @@
 #include "rectangle.hh"
 #include "rectsearch.hh"
 #include "ref.hh"
+#include "dstyle.hh"
 #include <click/integers.hh>
 #include <clicktool/elementt.hh>
 #include <clicktool/routert.hh>
@@ -23,15 +24,6 @@ class dport_style;
 class dqueue_style;
 class ddecor;
 class crouter;
-
-enum {
-    dedisp_none = 0,
-    dedisp_open = 1,
-    dedisp_closed = 2,
-    dedisp_passthrough = -1,
-    dedisp_expanded = -2,
-    dedisp_placeholder = -99
-};
 
 enum {
     desplit_outputs = 0,
@@ -195,8 +187,12 @@ class delt : public dwidget { public:
 	return _parent;
     }
 
-    int orientation() const;
-    bool vertical() const;
+    int orientation() const {
+	return _dess->orientation;
+    }
+    bool vertical() const {
+	return side_vertical(orientation());
+    }
     int display() const {
 	return _display;
     }
@@ -571,6 +567,13 @@ inline int dconn::change_display(unsigned change)
 	return 0;
     else
 	return sizeof(unsigned) * 8 - ffs_msb(change);
+}
+
+inline double dcss_propmatch::vpixel(const char *n, crouter *cr,
+				     const delt *relative_elt) const
+{
+    assert(name == n);
+    return property->vpixel(cr, name, relative_elt->parent());
 }
 
 }
