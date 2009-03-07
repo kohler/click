@@ -96,7 +96,7 @@ port.agnostic.error, port.push.agnostic.error, port.pull.agnostic.error {\n\
     background: rgb(100%, 100%, 87%);\n\
     color: black;\n\
     border: 1px solid black;\n\
-    padding: 2.5px 12px;\n\
+    padding: 8px 12px;\n\
     margin: 20px 14px;\n\
     shadow: drop rgba(50%, 50%, 45%, 50%) 3px;\n\
     orientation: vertical;\n\
@@ -114,12 +114,6 @@ port.agnostic.error, port.push.agnostic.error, port.pull.agnostic.error {\n\
 	port-font: Times 6;\n\
     }\n\
     /* @media screen { font: URW Palladio L italic 20; } */\n\
-}\n\
-*[in=0] {\n\
-    padding-top: 8px;\n\
-}\n\
-*[out=0] {\n\
-    padding-bottom: 8px;\n\
 }\n\
 *.anonymous {\n\
     text: \"%n\";\n\
@@ -146,8 +140,7 @@ port.agnostic.error, port.push.agnostic.error, port.pull.agnostic.error {\n\
 }\n\
 }\n\
 *Queue {\n\
-    min-width: 17.6px;\n\
-    min-height: 49.6px;\n\
+    min-length: 49.6px;\n\
     style: queue;\n\
 }\n\
 fullness {\n\
@@ -227,7 +220,8 @@ static dcss_propmatch elt_size_pm[] = {
     { "margin-left", 0 },
     { "queue-stripe-spacing", 0 },
     { "scale", 0 },
-    { "orientation", 0 }
+    { "orientation", 0 },
+    { "min-length", 0 }
 };
 
 static dcss_propmatch handler_pm[] = {
@@ -1864,6 +1858,7 @@ ref_ptr<delt_size_style> dcss_set::elt_size_style(crouter *cr, const delt *e, in
 	sty->padding[3] = elt_size_pm[4].vpixel("padding-left", cr, e) * scale;
 	sty->min_width = elt_size_pm[5].vpixel("min-width", cr, e) * scale;
 	sty->min_height = elt_size_pm[6].vpixel("min-height", cr, e) * scale;
+	sty->min_length = elt_size_pm[15].vpixel("min-length", cr, e) * scale;
 	sty->height_step = elt_size_pm[7].vpixel("height-step", cr, e) * scale;
 	sty->margin[0] = elt_size_pm[8].vpixel("margin-top", cr, e) * scale;
 	sty->margin[1] = elt_size_pm[9].vpixel("margin-right", cr, e) * scale;

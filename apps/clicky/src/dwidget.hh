@@ -168,7 +168,7 @@ class delt : public dwidget { public:
     delt(delt *parent = 0, int z_index = 0)
 	: dwidget(dw_elt, z_index), _e(0), _resolved_router(0),
 	  _decor(0), _generation(0),
-	  _port_text_offsets(0), _parent(parent), _split(0),
+	  _parent(parent), _split(0),
 	  _visible(false), _display(dedisp_placeholder),
 	  _aligned(true), _primitive(false), _split_copy(false), _port_split(0),
 	  _flow_split(false), _split_type(0),
@@ -192,6 +192,9 @@ class delt : public dwidget { public:
     }
     bool vertical() const {
 	return side_vertical(orientation());
+    }
+    bool horizontal() const {
+	return side_horizontal(orientation());
     }
     int display() const {
 	return _display;
@@ -399,7 +402,6 @@ class delt : public dwidget { public:
     double *_portoff[2];
     double _ports_length[2];
     double _ports_width[2];
-    double *_port_text_offsets;
     delt *_parent;
     delt *_split;
 

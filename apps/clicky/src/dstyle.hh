@@ -84,6 +84,7 @@ struct delt_size_style : public enable_ref_ptr {
     double margin[4];
     double min_width;
     double min_height;
+    double min_length;
     double height_step;
     double scale;
     double queue_stripe_spacing;

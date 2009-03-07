@@ -152,7 +152,6 @@ delt::~delt()
     }
     delete[] _portoff[0];
     delete[] _portoff[1];
-    delete[] _port_text_offsets;
 }
 
 void delt::create_elements(crouter *cr, RouterT *router,
@@ -927,9 +926,7 @@ void delt::layout_ports(dcontext &dcx)
     // XXX layout_ports
     delete[] _portoff[0];
     delete[] _portoff[1];
-    delete[] _port_text_offsets;
     _portoff[0] = _portoff[1] = 0;
-    _port_text_offsets = 0;
     dcss_set *dcs = dcx.cr->ccss();
     int poff = 0;
 
@@ -942,7 +939,6 @@ void delt::layout_ports(dcontext &dcx)
 	    continue;
 	if (_e->nports(isoutput) > 1)
 	    _portoff[isoutput] = new double[_e->nports(isoutput) + 1];
-	double text_offset = 0;
 	double tm = dps->edge_padding;
 	for (int p = 0; p < _e->nports(isoutput); ++p, ++poff) {
 	    if (p)
@@ -953,6 +949,11 @@ void delt::layout_ports(dcontext &dcx)
 		l = dps->length - 2;
 	    else
 		l = dps->length + 4;
+
+	    double w = dps->width;
+	    if (dps->shape == dpshape_triangle)
+		w -= 1.5;
+
 	    if (dps->text) {
 		String markup = parse_markup(dps->text, dcx.cr, p, 0);
 		if (dcx.pl_font != dps->font)
@@ -962,8 +963,9 @@ void delt::layout_ports(dcontext &dcx)
 		PangoRectangle rect;
 		pango_layout_get_pixel_extents(dcx, NULL, &rect);
 		l = std::max(l, (double) rect.width + 2);
-		text_offset = std::max(text_offset, (double) rect.height + 1);
+		w += (double) rect.height + 1;
 	    }
+
 	    _ports_length[isoutput] += l;
 
 	    double old_tm = tm;
@@ -974,19 +976,10 @@ void delt::layout_ports(dcontext &dcx)
 	    if (old_tm + 0.1 > tm)
 		tm = old_tm + 0.1;
 
-	    double w = dps->width;
-	    if (dps->shape == dpshape_triangle)
-		w -= 1.5;
-	    _ports_width[isoutput] = std::max(_ports_width[isoutput], w);
+	    _ports_width[isoutput] = MAX(_ports_width[isoutput], w);
 	}
 	if (_e->nports(isoutput) > 1)
 	    _portoff[isoutput][_e->nports(isoutput)] = tm + dps->edge_padding;
-	if (text_offset && !_port_text_offsets) {
-	    _port_text_offsets = new double[2];
-	    _port_text_offsets[0] = _port_text_offsets[1] = 0;
-	}
-	if (text_offset)
-	    _port_text_offsets[isoutput] = text_offset;
     }
 }
 
@@ -1152,39 +1145,39 @@ void delt::layout(dcontext &dcx)
 
     // get element width and height
     double xwidth, xheight;
-
     if (_des->style == destyle_queue
 	&& _contents_height == 0 && side_vertical(orientation())) {
 	xwidth = _markup_height;
-	xheight = _markup_width + _dess->padding[0] + _dess->padding[2];
+	xheight = _markup_width;
     } else {
 	xwidth = MAX(_markup_width, _contents_width);
-	xheight = _markup_height + _dess->padding[0] + _dess->padding[2];
+	xheight = _markup_height;
 	if (_contents_height)
 	    xheight += _contents_height;
     }
-    if (!_contents_height) {
-	// Open displays already have their port widths accounted for
-	if (side_vertical(orientation()))
-	    xheight += _ports_width[0] + _ports_width[1];
-	else
-	    xwidth += _ports_width[0] + _ports_width[1];
+
+    double xpad[4];
+    static_assert(sizeof(_dess->padding) == sizeof(xpad));
+    memcpy(xpad, _dess->padding, sizeof(xpad));
+    if (!_contents_height) {	// Open displays already account for port widths
+	xpad[orientation()] = MAX(xpad[orientation()], _ports_width[0]);
+	xpad[orientation() ^ 2] = MAX(xpad[orientation() ^ 2], _ports_width[1]);
     }
-    if (_port_text_offsets && side_vertical(orientation()))
-	xheight += _port_text_offsets[0] + _port_text_offsets[1];
-    else if (_port_text_offsets)
-	xwidth += _port_text_offsets[0] + _port_text_offsets[1];
-    xwidth = MAX(xwidth, _dess->min_width);
-    xheight = MAX(xheight, _dess->min_height);
+
+    xwidth = MAX(xwidth + xpad[1] + xpad[3], _dess->min_width);
+    xheight = MAX(xheight + xpad[0] + xpad[2], _dess->min_height);
+    if (side_vertical(orientation()))
+	xheight = MAX(xheight, _dess->min_length);
+    else
+	xwidth = MAX(xwidth, _dess->min_length);
 
     // analyze port positions
     double xportlen = MAX(_ports_length[0], _ports_length[1]) * _dess->scale;
 
     if (orientation() == 0)
-	_width = ceil(MAX(xwidth + _dess->padding[1] + _dess->padding[3],
-			  xportlen));
+	_width = ceil(MAX(xwidth, xportlen));
     else {
-	_width = ceil(xwidth + _dess->padding[1] + _dess->padding[3]);
+	_width = ceil(xwidth);
 	xheight = MAX(xheight, xportlen);
     }
 
@@ -1748,12 +1741,8 @@ void delt::draw_text(dcontext &dcx)
 
     double space[4];
     space[0] = space[1] = space[2] = space[3] = _dess->border_width;
-    space[orientation()] += _ports_width[0] + _dess->padding[orientation()];
-    space[orientation() ^ 2] += _ports_width[1] + _dess->padding[orientation() ^ 2];
-    if (_port_text_offsets) {
-	space[orientation()] += _port_text_offsets[0];
-	space[orientation() ^ 2] += _port_text_offsets[1];
-    }
+    space[orientation()] += MAX(_ports_width[0], _dess->padding[orientation()]);
+    space[orientation() ^ 2] += MAX(_ports_width[1], _dess->padding[orientation() ^ 2]);
     bool saved = false;
     double awidth = _width - space[1] - space[3];
     double aheight = _height - space[0] - space[2];
