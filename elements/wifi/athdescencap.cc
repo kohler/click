@@ -62,8 +62,28 @@ AthdescEncap::simple_action(Packet *p)
 
   desc->xmit_power = ceh->power;
   desc->xmit_rate0 = dot11_to_ratecode(ceh->rate);
+
+  if (ceh->rate1 > 0) {
+    desc->xmit_rate1 = dot11_to_ratecode(ceh->rate1);
+  }
+  if (ceh->rate2 > 0) {
+    desc->xmit_rate2 = dot11_to_ratecode(ceh->rate2);
+  }
+  if (ceh->rate3 > 0) {
+    desc->xmit_rate3 = dot11_to_ratecode(ceh->rate3);
+  }
+
   if (ceh->max_tries > 0) {
-    desc->xmit_tries0 = ceh->max_tries - 1;
+    desc->xmit_tries0 = ceh->max_tries;
+  }
+  if (ceh->max_tries1 > 0) {
+    desc->xmit_tries1 = ceh->max_tries1;
+  }
+  if (ceh->max_tries2 > 0) {
+    desc->xmit_tries2 = ceh->max_tries2;
+  }
+  if (ceh->max_tries3 > 0) {
+    desc->xmit_tries3 = ceh->max_tries3;
   }
 
   return p_out;
