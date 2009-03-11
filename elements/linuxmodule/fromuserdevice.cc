@@ -79,6 +79,7 @@ FromUserDevice::FromUserDevice()
     _failed_count = 0;
     _exit = false;
     _max = 0;
+    _headroom = Packet::default_headroom;
 }
 
 FromUserDevice::~FromUserDevice()
@@ -163,7 +164,7 @@ ssize_t FromUserDevice::dev_write (struct file *filp, const char *buf,
     }
 
     // we should make a copy_from_user here and not while we hold the spinlock
-    p = WritablePacket::make(count);
+    p = WritablePacket::make(elem->_headroom, 0, count, 0);
     err = copy_from_user((char*)p->data(), buf, count);
     if (err != 0)
     {
@@ -230,6 +231,7 @@ int FromUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_kparse(conf, this, errh,
 		     "DEV_MINOR", cpkP+cpkM, cpUnsigned, &_dev_minor,
 		     "CAPACITY", 0, cpUnsigned, &_capacity,
+                     "HEADROOM", 0, cpUnsigned, &_headroom,
 		     cpEnd) < 0)
         return -1;
 

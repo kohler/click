@@ -18,7 +18,7 @@ CLICK_CXX_UNPROTECT
 
 /*
 =c
-FromUserDevice(DEV_MINOR, [<keywords> CAPACITY])
+FromUserDevice(DEV_MINOR, [<keywords> CAPACITY, HEADROOM])
 
 =s netdevices
 Reads packets from the device's ring buffer and injects them into Click
@@ -32,6 +32,11 @@ Keyword arguments are:
 
 =item CAPACITY
 Unsigned integer.  Sets the CAPACITY of the internal ring buffer that stores the packets.
+
+=item HEADROOM
+
+Unsigned integer.  Sets the headroom on packets.  Defaults to the
+default headroom.
 
 =back
 
@@ -84,6 +89,7 @@ private:
     ulong            _r_slot; // where we read from
     ulong            _w_slot; // where we write to
     ulong            _capacity;
+    ulong            _headroom;
     spinlock_t       _lock;
     ulong            _write_count;
     ulong            _drop_count;
