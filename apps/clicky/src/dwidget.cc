@@ -471,7 +471,7 @@ int delt::flow_split_char(bool isoutput, int port) const
 	    s = slash + 1;
 	else
 	    end = slash;
-	c = (unsigned char) s[std::min(port, end - s - 1)] << 1;
+	c = (unsigned char) s[std::min(port, (int) (end - s - 1))] << 1;
     }
     if (_port_split && !isoutput)
 	c += desplit_inputs;
