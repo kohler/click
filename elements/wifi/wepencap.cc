@@ -102,7 +102,8 @@ WepEncap::simple_action(Packet *p_in)
   }
   w->i_fc[1] |= WIFI_FC1_WEP;
 
-  p->push(WIFI_WEP_HEADERSIZE);
+  if (!(p = p->push(WIFI_WEP_HEADERSIZE)))
+    return 0;
   memmove((void *) p->data(), p->data() + WIFI_WEP_HEADERSIZE, sizeof(click_wifi));
   u_int8_t *ivp = p->data() + sizeof(click_wifi);
   u_int32_t iv = click_random()  & 0xffffff;

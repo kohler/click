@@ -120,8 +120,8 @@ WifiDefrag::simple_action(Packet *p)
     uint32_t len = nfo->p->length();
 
     p->pull(sizeof(click_wifi));
-    nfo->p->put(p->length());
-    memcpy((void *) (nfo->p->data() + len), p->data(), p->length());
+    if ((nfo->p = nfo->p->put(p->length())))
+	memcpy((void *) (nfo->p->data() + len), p->data(), p->length());
     p->kill();
   }
 
