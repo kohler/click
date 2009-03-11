@@ -40,6 +40,27 @@ active. Thus, for example, KernelHandlerProxy can report that a handler exists
 even when no corresponding element exists in the kernel configuration. Any
 error will be reported when the handler is actually called.
 
+=e
+
+Click configuration:
+
+  proxy :: KernelHandlerProxy
+  ControlSocket(TCP, 8800, PROXY proxy, LOCALHOST true)
+
+Interaction example:
+
+  % click-install -e 'x :: Idle'
+  % telnet localhost 8800
+  Trying 127.0.0.1...
+  Connected to localhost.
+  Escape character is '^]'.
+  Click::ControlSocket/1.3
+  READ list
+  200 Read handler 'list' OK
+  DATA 4
+  1
+  x
+
 =a
 
 SocketHandlerProxy
