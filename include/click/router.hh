@@ -83,7 +83,8 @@ class Router { public:
 
     inline ThreadSched* thread_sched() const;
     inline void set_thread_sched(ThreadSched* scheduler);
-    inline int initial_home_thread_id(Task* task, bool scheduled) const;
+    inline int initial_home_thread_id(Element *owner, Task *task,
+				      bool scheduled) const;
 
     /** @cond never */
     // Needs to be public for NameInfo, but not useful outside
@@ -433,12 +434,12 @@ Router::set_thread_sched(ThreadSched* ts)
 }
 
 inline int
-Router::initial_home_thread_id(Task* t, bool scheduled) const
+Router::initial_home_thread_id(Element *owner, Task *t, bool scheduled) const
 {
     if (!_thread_sched)
 	return ThreadSched::THREAD_UNKNOWN;
     else
-	return _thread_sched->initial_home_thread_id(t, scheduled);
+	return _thread_sched->initial_home_thread_id(owner, t, scheduled);
 }
 
 /** @cond never */

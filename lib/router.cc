@@ -1804,7 +1804,7 @@ Router::notifier_signal_name(const atomic_uint32_t *signal) const
 }
 
 int
-ThreadSched::initial_home_thread_id(Task *, bool)
+ThreadSched::initial_home_thread_id(Element *, Task *, bool)
 {
     return 0;
 }

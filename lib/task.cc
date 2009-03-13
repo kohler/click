@@ -123,7 +123,7 @@ Task::initialize(Element *owner, bool schedule)
     assert(owner && !initialized() && !scheduled());
 
     Router *router = owner->router();
-    _home_thread_id = router->initial_home_thread_id(this, schedule);
+    _home_thread_id = router->initial_home_thread_id(owner, this, schedule);
     if (_home_thread_id == ThreadSched::THREAD_UNKNOWN)
 	_home_thread_id = 0;
     // Master::thread() returns the quiescent thread if its argument is out of

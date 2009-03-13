@@ -11,7 +11,7 @@ class ThreadSched { public:
     ThreadSched()			{ }
     virtual ~ThreadSched()		{ }
 
-    virtual int initial_home_thread_id(Task *, bool);
+    virtual int initial_home_thread_id(Element *owner, Task *t, bool scheduled);
 
 };
 
