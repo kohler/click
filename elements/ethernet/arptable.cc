@@ -288,19 +288,19 @@ ARPTable::write_handler(const String &str, Element *e, void *user_data, ErrorHan
       case h_insert: {
 	  IPAddress ip;
 	  EtherAddress eth;
-	  if (!cp_va_space_kparse(str, arpt, errh,
-				  "IP", cpkP+cpkM, cpIPAddress, &ip,
-				  "ETH", cpkP+cpkM, cpEtherAddress, &eth,
-				  cpEnd) < 0)
+	  if (cp_va_space_kparse(str, arpt, errh,
+				 "IP", cpkP+cpkM, cpIPAddress, &ip,
+				 "ETH", cpkP+cpkM, cpEtherAddress, &eth,
+				 cpEnd) < 0)
 	      return -1;
 	  arpt->insert(ip, eth);
 	  return 0;
       }
       case h_delete: {
 	  IPAddress ip;
-	  if (!cp_va_space_kparse(str, arpt, errh,
-				  "IP", cpkP+cpkM, cpIPAddress, &ip,
-				  cpEnd) < 0)
+	  if (cp_va_space_kparse(str, arpt, errh,
+				 "IP", cpkP+cpkM, cpIPAddress, &ip,
+				 cpEnd) < 0)
 	      return -1;
 	  arpt->insert(ip, EtherAddress::make_broadcast()); // XXX?
 	  return 0;
