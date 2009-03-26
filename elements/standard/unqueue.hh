@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
 =c
 
-Unqueue([BURST, I<KEYWORDS>])
+Unqueue([I<keywords> ACTIVE, LIMIT, BURST])
 
 =s shaping
 
@@ -32,44 +32,65 @@ is to set ACTIVE to false in the configuration, and later
 change it to true with a handler from DriverManager element.
 The default value is true.
 
+=item LIMIT
+
+If positive, then at most LIMIT packets are pulled.  The default is -1, which
+means there is no limit.
+
 =back
 
 =h count read-only
 
 Returns the count of packets that have passed through Unqueue.
 
+=h reset write-only
+
+Resets the count to 0.  This may reschedule the Unqueue to pull LIMIT more
+packets.
+
 =h active read/write
 
-The same as ACTIVE keyword.
+Same as the ACTIVE keyword.
+
+=h limit read/write
+
+Same as the LIMIT keyword.
+
+=h burst read/write
+
+Same as the BURST keyword.
 
 =a RatedUnqueue, BandwidthRatedUnqueue
 */
 
 class Unqueue : public Element { public:
 
-  Unqueue();
-  ~Unqueue();
+    Unqueue();
+    ~Unqueue();
 
-  const char *class_name() const		{ return "Unqueue"; }
-  const char *port_count() const		{ return PORTS_1_1; }
-  const char *processing() const		{ return PULL_TO_PUSH; }
+    const char *class_name() const		{ return "Unqueue"; }
+    const char *port_count() const		{ return PORTS_1_1; }
+    const char *processing() const		{ return PULL_TO_PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void add_handlers();
 
-  bool run_task(Task *);
+    bool run_task(Task *);
 
-  static String read_param(Element *e, void *);
-  static int write_param(const String &, Element *, void *, ErrorHandler *);
+  private:
 
- private:
+    bool _active;
+    int32_t _burst;
+    int32_t _limit;
+    uint32_t _count;
+    Task _task;
+    NotifierSignal _signal;
 
-  bool _active;
-  int32_t _burst;
-  unsigned _count;
-  Task _task;
-  NotifierSignal _signal;
+    enum {
+	h_active, h_reset, h_burst, h_limit
+    };
+    static int write_param(const String &, Element *, void *, ErrorHandler *);
 
 };
 

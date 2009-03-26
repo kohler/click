@@ -38,10 +38,12 @@ int
 Unqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 1;
+    _limit = -1;
     _active = true;
     return cp_va_kparse(conf, this, errh,
 			"BURST", cpkP, cpInteger, &_burst,
 			"ACTIVE", 0, cpBool, &_active,
+			"LIMIT", 0, cpInteger, &_limit,
 			cpEnd);
 }
 
@@ -64,10 +66,16 @@ Unqueue::run_task(Task *)
     if (!_active)
 	return false;
 
-    int worked = 0;
-    while (worked < _burst && _active) {
+    int worked = 0, limit = _burst;
+    if (_limit >= 0 && _count + limit < (uint32_t) _limit) {
+	limit = _limit - _count;
+	if (limit <= 0)
+	    return false;
+    }
+
+    while (worked < limit && _active) {
 	if (Packet *p = input(0).pull()) {
-	    worked++;
+	    ++worked;
 	    output(0).push(p);
 	} else if (!_signal)
 	    goto out;
@@ -93,12 +101,31 @@ Unqueue::run_task(Task *)
 #endif
 
 int
-Unqueue::write_param(const String &conf, Element *e, void *, ErrorHandler *errh)
+Unqueue::write_param(const String &conf, Element *e, void *user_data,
+		     ErrorHandler *errh)
 {
-    Unqueue *u = (Unqueue *)e;
-    if (!cp_bool(conf, &u->_active))
-	return errh->error("active parameter must be boolean");
-    if (u->_active && !u->_task.scheduled())
+    Unqueue *u = static_cast<Unqueue *>(e);
+    switch (reinterpret_cast<intptr_t>(user_data)) {
+    case h_active:
+	if (!cp_bool(conf, &u->_active))
+	    return errh->error("syntax error");
+	break;
+    case h_reset:
+	u->_count = 0;
+	break;
+    case h_limit:
+	if (!cp_integer(conf, &u->_limit))
+	    return errh->error("syntax error");
+	break;
+    case h_burst:
+	if (!cp_integer(conf, &u->_burst))
+	    return errh->error("syntax error");
+	if (u->_burst < 0)
+	    u->_burst = 0x7FFFFFFF;
+	break;
+    }
+    if (u->_active && !u->_task.scheduled()
+	&& (u->_limit < 0 || u->_count < (uint32_t) u->_limit))
 	u->_task.reschedule();
     return 0;
 }
@@ -106,9 +133,15 @@ Unqueue::write_param(const String &conf, Element *e, void *, ErrorHandler *errh)
 void
 Unqueue::add_handlers()
 {
-    add_data_handlers("count", Handler::OP_READ, &_count);
     add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
-    add_write_handler("active", write_param);
+    add_data_handlers("count", Handler::OP_READ, &_count);
+    add_data_handlers("burst", Handler::OP_READ, &_burst);
+    add_data_handlers("limit", Handler::OP_READ, &_limit);
+    add_write_handler("active", write_param, h_active);
+    add_write_handler("reset", write_param, h_reset, Handler::BUTTON);
+    add_write_handler("reset_counts", write_param, h_reset, Handler::BUTTON | Handler::UNCOMMON);
+    add_write_handler("burst", write_param, h_burst);
+    add_write_handler("limit", write_param, h_limit);
     add_task_handlers(&_task);
 }
 
