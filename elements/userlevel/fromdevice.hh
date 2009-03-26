@@ -141,7 +141,7 @@ class FromDevice : public Element { public:
     ~FromDevice();
 
     const char *class_name() const	{ return "FromDevice"; }
-    const char *port_count() const	{ return PORTS_0_1; }
+    const char *port_count() const	{ return "0/1-2"; }
     const char *processing() const	{ return PUSH; }
 
     int configure_phase() const		{ return KernelFilter::CONFIGURE_PHASE_FROMDEVICE; }

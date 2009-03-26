@@ -355,7 +355,7 @@ FromDevice_get_packet(u_char* clientdata,
     if (!fd->_force_ip || fake_pcap_force_ip(p, fd->_datalink))
 	fd->output(0).push(p);
     else
-	p->kill();
+	fd->checked_output_push(1, p);
 }
 }
 CLICK_DECLS
@@ -392,7 +392,7 @@ FromDevice::selected(int)
 	    if (!_force_ip || fake_pcap_force_ip(p, _datalink))
 		output(0).push(p);
 	    else
-		p->kill();
+		checked_output_push(1, p);
 	} else {
 	    p->kill();
 	    if (len <= 0 && errno != EAGAIN)
