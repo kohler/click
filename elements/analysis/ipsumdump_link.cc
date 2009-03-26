@@ -34,7 +34,7 @@ static bool link_extract(PacketDesc& d, const FieldWriter *f)
 {
     const unsigned char *mac;
     if (!d.p->has_mac_header()) {
-	if (d.p->has_network_header() && d.p->data() < d.p->network_header())
+	if (!d.p->has_network_header() || d.p->data() < d.p->network_header())
 	    mac = d.p->data();
 	else
 	    mac = 0;
