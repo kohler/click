@@ -343,7 +343,7 @@ $bad_files"
 	outscriptlet='i, "\t", header[i], "\t", ex'
     fi
 
-    $egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^ELEMENT_LIBS|^class|^[ 	]*const *char *\* *class_name|^[ 	]*static *void *static_[ic]|^}' $files $header_files /dev/null 2>/dev/null | $awk -F: 'BEGIN {
+    $egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^ELEMENT_LIBS|^class|^[ 	]*const[ 	]*char[ 	]*\*[ 	]*class_name|^[ 	]*static[ 	]*void[ 	]*static_[ic]|^}' $files $header_files /dev/null 2>/dev/null | $awk -F: 'BEGIN {
   OFS = ""; cur_class = ""; line_warned = 0; nexports = 0
 }
 /:class[ 	]/ {
@@ -395,7 +395,7 @@ $bad_files"
   libs[$1] = $2
   next
 }
-/class_name.*return[ 	]"/ {
+/class_name.*return[ 	]*"/ {
   sub(/.*return[ 	]*"/, "", $0);
   sub(/".*/, "", $0);
   class_name[cur_class] = $0
