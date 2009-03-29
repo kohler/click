@@ -27,6 +27,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
+#include <clicknet/icmp.h>
 CLICK_DECLS
 
 static Vector<const void *> *writers;
@@ -452,6 +453,9 @@ bool PacketOdesc::hard_make_transp()
 	    break;
 	case IP_PROTO_DCCP:
 	    len = 12;
+	    break;
+	case IP_PROTO_ICMP:
+	    len = sizeof(click_icmp);
 	    break;
 	default:
 	    return true;

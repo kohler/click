@@ -330,6 +330,10 @@ set_checksums(WritablePacket *q, click_ip *iph)
 	udph->uh_sum = 0;
 	unsigned csum = click_in_cksum((uint8_t *)udph, q->transport_length());
 	udph->uh_sum = click_in_cksum_pseudohdr(csum, iph, q->transport_length());
+    } else if (iph->ip_p == IP_PROTO_ICMP) {
+	click_icmp *icmph = q->icmp_header();
+	icmph->icmp_cksum = 0;
+	icmph->icmp_cksum = click_in_cksum((const uint8_t *) icmph, q->transport_length());
     }
 }
 
