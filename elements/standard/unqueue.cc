@@ -67,7 +67,7 @@ Unqueue::run_task(Task *)
 	return false;
 
     int worked = 0, limit = _burst;
-    if (_limit >= 0 && _count + limit < (uint32_t) _limit) {
+    if (_limit >= 0 && _count + limit >= (uint32_t) _limit) {
 	limit = _limit - _count;
 	if (limit <= 0)
 	    return false;
