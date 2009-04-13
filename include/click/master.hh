@@ -253,10 +253,10 @@ Master::unpause()
 inline Timestamp
 Master::next_timer_expiry_adjusted() const
 {
-    if (_timer_stride >= 8)
-	return _timer_expiry;
     Timestamp e = _timer_expiry;
-    if (_timer_stride >= 4)
+    if (_timer_stride >= 8 || e.sec() == 0)
+	/* do nothing */;
+    else if (_timer_stride >= 4)
 	e -= Timer::adjustment();
     else
 	e -= Timer::adjustment() + Timer::adjustment();
