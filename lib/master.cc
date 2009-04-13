@@ -529,13 +529,17 @@ Master::run_timers()
 
 		Vector<Timer*>::iterator i = _timer_runchunk.begin();
 		for (; !_stopper && i != _timer_runchunk.end(); ++i)
-		    if (*i)
+		    if (*i) {
+			(*i)->_schedpos1 = 0;
 			run_one_timer(*i);
+		    }
 
 		// reschedule unrun timers if stopped early
 		for (; i != _timer_runchunk.end(); ++i)
-		    if (*i)
+		    if (*i) {
+			(*i)->_schedpos1 = 0;
 			(*i)->schedule_at((*i)->_expiry);
+		    }
 		_timer_runchunk.clear();
 	    }
 	}
