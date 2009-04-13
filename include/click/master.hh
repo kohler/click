@@ -109,7 +109,8 @@ class Master { public:
     unsigned _max_timer_stride;
     unsigned _timer_stride;
     unsigned _timer_count;
-    Vector<Timer*> _timer_heap;
+    Vector<Timer *> _timer_heap;
+    Vector<Timer *> _timer_runchunk;
 #if CLICK_LINUXMODULE
     spinlock_t _timer_lock;
     struct task_struct *_timer_task;

@@ -192,22 +192,22 @@ Timer::task_hook(Timer *, void *thunk)
 
 
 Timer::Timer()
-    : _schedpos(-1), _hook(empty_hook), _thunk(0), _owner(0)
+    : _schedpos1(0), _hook(empty_hook), _thunk(0), _owner(0)
 {
 }
 
 Timer::Timer(TimerCallback f, void *user_data)
-    : _schedpos(-1), _hook(f), _thunk(user_data), _owner(0)
+    : _schedpos1(0), _hook(f), _thunk(user_data), _owner(0)
 {
 }
 
 Timer::Timer(Element* element)
-    : _schedpos(-1), _hook(element_hook), _thunk(element), _owner(0)
+    : _schedpos1(0), _hook(element_hook), _thunk(element), _owner(0)
 {
 }
 
 Timer::Timer(Task* task)
-    : _schedpos(-1), _hook(task_hook), _thunk(task), _owner(0)
+    : _schedpos1(0), _hook(task_hook), _thunk(task), _owner(0)
 {
 }
 
@@ -229,14 +229,18 @@ Timer::schedule_at(const Timestamp& when)
     _expiry = when;
 
     // manipulate list; this is essentially a "decrease-key" operation
-    if (!scheduled()) {
-	_schedpos = master->_timer_heap.size();
+    // any reschedule removes a timer from the runchunk (XXX -- even backwards
+    // reschedulings)
+    if (_schedpos1 <= 0) {
+	if (_schedpos1 < 0)
+	    master->_timer_runchunk[-_schedpos1 - 1] = 0;
+	_schedpos1 = master->_timer_heap.size() + 1;
 	master->_timer_heap.push_back(0);
     }
-    master->timer_reheapify_from(_schedpos, this, false);
+    master->timer_reheapify_from(_schedpos1 - 1, this, false);
 
     // if we changed the timeout, wake up the first thread
-    if (_schedpos == 0)
+    if (_schedpos1 == 1)
 	master->_threads[2]->wake();
 
     // done
@@ -256,11 +260,12 @@ Timer::unschedule()
 	return;
     Master* master = _owner->master();
     master->lock_timers();
-    if (scheduled()) {
-	master->timer_reheapify_from(_schedpos, master->_timer_heap.back(), true);
-	_schedpos = -1;
+    if (_schedpos1 > 0) {
+	master->timer_reheapify_from(_schedpos1 - 1, master->_timer_heap.back(), true);
 	master->_timer_heap.pop_back();
-    }
+    } else if (_schedpos1 < 0)
+	master->_timer_runchunk[-_schedpos1 - 1] = 0;
+    _schedpos1 = 0;
     master->unlock_timers();
 }
 

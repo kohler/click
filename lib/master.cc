@@ -250,13 +250,14 @@ Master::kill_router(Router *router)
     // Remove timers
     {
 	lock_timers();
+	assert(!_timer_runchunk.size());
 	Timer* t;
 	for (Timer** tp = _timer_heap.end(); tp > _timer_heap.begin(); )
 	    if ((t = *--tp, t->router() == router)) {
-		timer_reheapify_from(tp - _timer_heap.begin(), _timer_heap.back(), true);
+		timer_reheapify_from(t->_schedpos1 - 1, _timer_heap.back(), true);
 		// must clear _schedpos AFTER timer_reheapify_from()
 		t->_owner = 0;
-		t->_schedpos = -1;
+		t->_schedpos1 = 0;
 		// recheck this slot; have moved a timer there
 		_timer_heap.pop_back();
 		if (tp < _timer_heap.end())
@@ -430,7 +431,7 @@ Master::timer_reheapify_from(int pos, Timer* t, bool will_delete)
     while (pos > 0
 	   && (npos = (pos-1) >> 1, tbegin[npos]->_expiry > t->_expiry)) {
 	tbegin[pos] = tbegin[npos];
-	tbegin[npos]->_schedpos = pos;
+	tbegin[npos]->_schedpos1 = pos + 1;
 	pos = npos;
     }
 
@@ -442,7 +443,7 @@ Master::timer_reheapify_from(int pos, Timer* t, bool will_delete)
 	if (tp + 1 < tend && tp[1]->_expiry <= smallest->_expiry)
 	    smallest = tp[1], tp++;
 
-	smallest->_schedpos = pos;
+	smallest->_schedpos1 = pos + 1;
 	tbegin[pos] = smallest;
 
 	if (smallest == t)
@@ -502,7 +503,7 @@ Master::run_timers()
 	    do {
 		timer_reheapify_from(0, _timer_heap.back(), true);
 		// must reset _schedpos AFTER timer_reheapify_from()
-		t->_schedpos = -1;
+		t->_schedpos1 = 0;
 		_timer_heap.pop_back();
 
 		run_one_timer(t);
@@ -516,24 +517,26 @@ Master::run_timers()
 	    // but in the meantime other timers could starve.  We detect this
 	    // case and run ALL expired timers, reducing possible damage.
 	    if (max_timers < 0 && !_stopper) {
-		Vector<Timer*> v;
-		v.reserve(32);
+		_timer_runchunk.reserve(32);
 		do {
 		    timer_reheapify_from(0, _timer_heap.back(), true);
-		    t->_schedpos = -1;
+		    t->_schedpos1 = -_timer_runchunk.size() - 1;
 		    _timer_heap.pop_back();
 
-		    v.push_back(t);
+		    _timer_runchunk.push_back(t);
 		} while (_timer_heap.size() > 0
 			 && (t = _timer_heap.at_u(0), t->_expiry <= _timer_check));
 
-		Vector<Timer*>::iterator i = v.begin();
-		for (; !_stopper && i != v.end(); ++i)
-		    run_one_timer(*i);
+		Vector<Timer*>::iterator i = _timer_runchunk.begin();
+		for (; !_stopper && i != _timer_runchunk.end(); ++i)
+		    if (*i)
+			run_one_timer(*i);
 
 		// reschedule unrun timers if stopped early
-		for (; i != v.end(); ++i)
-		    (*i)->schedule_at((*i)->_expiry);
+		for (; i != _timer_runchunk.end(); ++i)
+		    if (*i)
+			(*i)->schedule_at((*i)->_expiry);
+		_timer_runchunk.clear();
 	    }
 	}
 

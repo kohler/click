@@ -72,7 +72,7 @@ class Timer { public:
 
     /** @brief Return true iff the Timer is currently scheduled. */
     inline bool scheduled() const {
-	return _schedpos >= 0;
+	return _schedpos1 != 0;
     }
 
     /** @brief Return the Timer's current expiration time.
@@ -250,7 +250,7 @@ class Timer { public:
 
   private:
 
-    int _schedpos;
+    int _schedpos1;
     Timestamp _expiry;
     TimerCallback _hook;
     void *_thunk;
