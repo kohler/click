@@ -139,9 +139,10 @@ class NameInfo { public:
      * The value is stored in @a value_store.  The installed databases must
      * have a value size of 4.
      *
-     * If the name lookup fails and @a name unparses into a 32-bit integer
-     * value (for example, "30"), the result is set to the corresponding
-     * integer.
+     * If no matching name is found, query_int checks whether @a name unparses
+     * into a 32-bit integer value (for example, "30").  If so, *@a
+     * value_store is set to the corresponding integer and true is returned.
+     * Otherwise, false is returned.
      */
     static bool query_int(uint32_t type, const Element *context,
 			  const String &name, int32_t *value_store);
