@@ -244,11 +244,12 @@ FromIPSummaryDump::bang_proto(const String &line, const char *type,
 {
     Vector<String> words;
     cp_spacevec(line, words);
-    int proto;
+    int32_t proto;
 
     if (words.size() != 2)
 	_ff.error(errh, "bad %s", type);
-    else if (cp_integer(words[1], &proto) && proto < 256)
+    else if (NameInfo::query_int(NameInfo::T_IP_PROTO, this, words[1], &proto)
+	     && proto < 256)
 	_default_proto = proto;
     else if (words[1] == "T")
 	_default_proto = IP_PROTO_TCP;
