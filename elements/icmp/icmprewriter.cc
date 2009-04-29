@@ -1,4 +1,3 @@
-/* -*- c-basic-offset: 2 -*- */
 /*
  * icmprewriter.{cc,hh} -- rewrites ICMP non-echoes and non-replies
  * Eddie Kohler
@@ -62,37 +61,66 @@ ICMPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
+static void
+update_in_cksum(uint16_t *csum, const uint16_t *old_hw, const uint16_t *new_hw,
+		int nhw)
+{
+    for (; nhw > 0; --nhw, ++old_hw, ++new_hw)
+	click_update_in_cksum(csum, *old_hw, *new_hw);
+}
+
 void
 ICMPRewriter::rewrite_packet(WritablePacket *p, click_ip *embedded_iph,
 			     click_udp *embedded_udph, const IPFlowID &flow,
 			     IPRw::Mapping *mapping)
 {
-  click_ip *iph = p->ip_header();
-  click_icmp *icmph = p->icmp_header();
+    click_ip *iph = p->ip_header();
+    click_icmp *icmph = p->icmp_header();
 
-  // XXX incremental checksums?
+    uint16_t old_hw[8], new_hw[8];
+    uint16_t *embedded_csum = 0;
+    if (embedded_iph->ip_p == IP_PROTO_UDP
+	&& reinterpret_cast<uint8_t *>(embedded_udph + 1) <= p->end_data()
+	&& embedded_udph->uh_sum)
+	embedded_csum = &embedded_udph->uh_sum;
+    else if (embedded_iph->ip_p == IP_PROTO_TCP
+	     && reinterpret_cast<uint8_t *>(embedded_udph) + 18 <= p->end_data())
+	embedded_csum = reinterpret_cast<uint16_t *>(embedded_udph) + 8;
 
-  IPFlowID new_flow = mapping->flow_id().reverse();
+    IPFlowID new_flow = mapping->flow_id().reverse();
 
-  // change IP header destination if appropriate
-  if (IPAddress(iph->ip_dst) == flow.saddr()) {
-    unsigned hlen = iph->ip_hl << 2;
-    iph->ip_dst = new_flow.saddr();
-    iph->ip_sum = 0;
-    iph->ip_sum = click_in_cksum((unsigned char *)iph, hlen);
-    if (_dst_anno)
-      p->set_dst_ip_anno(new_flow.saddr());
-  }
+    // change IP header destination if appropriate
+    if (IPAddress(iph->ip_dst) == flow.saddr()) {
+	memcpy(old_hw, &iph->ip_dst, 4);
+	iph->ip_dst = new_flow.saddr();
+	update_in_cksum(&iph->ip_sum, old_hw, reinterpret_cast<const uint16_t *>(&iph->ip_dst), 2);
+	if (_dst_anno)
+	    p->set_dst_ip_anno(new_flow.saddr());
+    }
 
-  // don't bother patching embedded IP or UDP checksums
-  embedded_iph->ip_src = new_flow.saddr();
-  embedded_iph->ip_dst = new_flow.daddr();
-  embedded_udph->uh_sport = new_flow.sport();
-  embedded_udph->uh_dport = new_flow.dport();
+    // change embedded IP and TCP/UDP headers
+    memcpy(old_hw, &embedded_iph->ip_src, 8);
+    memcpy(old_hw + 4, &embedded_udph->uh_sport, 4);
+    embedded_iph->ip_src = new_flow.saddr();
+    embedded_iph->ip_dst = new_flow.daddr();
+    embedded_udph->uh_sport = new_flow.sport();
+    embedded_udph->uh_dport = new_flow.dport();
+    memcpy(new_hw, &embedded_iph->ip_src, 8);
+    memcpy(new_hw + 4, &embedded_udph->uh_sport, 4);
 
-  // but must patch ICMP checksum
-  icmph->icmp_cksum = 0;
-  icmph->icmp_cksum = click_in_cksum((unsigned char *)icmph, p->length() - p->transport_header_offset());
+    // patch embedded TCP/UDP checksum, if it exists
+    if (embedded_csum) {
+	old_hw[7] = *embedded_csum;
+	update_in_cksum(embedded_csum, old_hw, new_hw, 6);
+	new_hw[7] = *embedded_csum;
+    }
+    // patch embedded IP checksum
+    old_hw[6] = embedded_iph->ip_sum;
+    update_in_cksum(&embedded_iph->ip_sum, old_hw, new_hw, 4);
+    new_hw[6] = embedded_iph->ip_sum;
+
+    // patch outer ICMP checksum
+    update_in_cksum(&icmph->icmp_cksum, old_hw, new_hw, 7 + (embedded_csum ? 1 : 0));
 }
 
 void
@@ -100,31 +128,39 @@ ICMPRewriter::rewrite_ping_packet(WritablePacket *p, click_ip *embedded_iph,
 				  click_icmp_echo *embedded_icmph, const IPFlowID &flow,
 				  ICMPPingRewriter::Mapping *mapping)
 {
-  click_ip *iph = p->ip_header();
-  click_icmp *icmph = p->icmp_header();
+    click_ip *iph = p->ip_header();
+    click_icmp *icmph = p->icmp_header();
 
-  // XXX incremental checksums?
+    uint16_t old_hw[7], new_hw[7];
 
-  IPFlowID new_flow = mapping->flow_id().reverse();
+    IPFlowID new_flow = mapping->flow_id().reverse();
 
-  // change IP header destination if appropriate
-  if (IPAddress(iph->ip_dst) == flow.saddr()) {
-    unsigned hlen = iph->ip_hl << 2;
-    iph->ip_dst = new_flow.saddr();
-    iph->ip_sum = 0;
-    iph->ip_sum = click_in_cksum((unsigned char *)iph, hlen);
-    if (_dst_anno)
-      p->set_dst_ip_anno(new_flow.saddr());
-  }
+    // change IP header destination if appropriate
+    if (IPAddress(iph->ip_dst) == flow.saddr()) {
+	memcpy(old_hw, &iph->ip_dst, 4);
+	iph->ip_dst = new_flow.saddr();
+	update_in_cksum(&iph->ip_sum, old_hw, reinterpret_cast<const uint16_t *>(&iph->ip_dst), 2);
+	if (_dst_anno)
+	    p->set_dst_ip_anno(new_flow.saddr());
+    }
 
-  // don't bother patching embedded ICMP checksum
-  embedded_iph->ip_src = new_flow.saddr();
-  embedded_iph->ip_dst = new_flow.daddr();
-  embedded_icmph->icmp_identifier = new_flow.sport();
+    // change embedded IP and ICMP headers
+    memcpy(old_hw, &embedded_iph->ip_src, 8);
+    memcpy(old_hw + 4, &embedded_icmph->icmp_cksum, 4);
+    embedded_iph->ip_src = new_flow.saddr();
+    embedded_iph->ip_dst = new_flow.daddr();
+    embedded_icmph->icmp_identifier = new_flow.sport();
+    click_update_in_cksum(&embedded_icmph->icmp_cksum, old_hw[5], new_flow.sport());
+    memcpy(new_hw, &embedded_iph->ip_src, 8);
+    memcpy(new_hw + 4, &embedded_icmph->icmp_cksum, 4);
 
-  // but must patch ICMP checksum
-  icmph->icmp_cksum = 0;
-  icmph->icmp_cksum = click_in_cksum((unsigned char *)icmph, p->length() - p->transport_header_offset());
+    // patch embedded IP checksum
+    old_hw[6] = embedded_iph->ip_sum;
+    update_in_cksum(&embedded_iph->ip_sum, old_hw, new_hw, 4);
+    new_hw[6] = embedded_iph->ip_sum;
+
+    // patch outer ICMP checksum
+    update_in_cksum(&icmph->icmp_cksum, old_hw, new_hw, 7);
 }
 
 Packet *
