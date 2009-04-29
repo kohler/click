@@ -52,7 +52,7 @@ struct click_icmp_redirect {
 };
 
 /* Timestamp and TimestampReply header: ICMP_TSTAMP and ICMP_TSTAMPREPLY */
-struct click_icmp_tstamp { 
+struct click_icmp_tstamp {
     uint8_t	icmp_type;		/* 0     ICMP type (see below)	     */
     uint8_t	icmp_code;		/* 1     ICMP code (see below)	     */
     uint16_t	icmp_cksum;		/* 2-3   checksum		     */
@@ -64,7 +64,7 @@ struct click_icmp_tstamp {
 };
 
 /* Path MTU Discovery header: ICMP_UNREACH_NEEDFRAG */
-struct click_icmp_needfrag { 
+struct click_icmp_needfrag {
     uint8_t	icmp_type;		/* 0     ICMP_UNREACH (see below)    */
     uint8_t	icmp_code;		/* 1     ICMP_UNREACH_NEEDFRAG	     */
     uint16_t	icmp_cksum;		/* 2-3   checksum		     */
