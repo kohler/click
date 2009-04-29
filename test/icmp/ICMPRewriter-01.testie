@@ -1,24 +1,44 @@
 %script
 
 # read from a hand-written IPSummaryDump file; check headers, emit to a dump
-click -e "
-FromIPSummaryDump(IN1, STOP true, ZERO true)
-	-> IPPrint(a)
+$VALGRIND click -e "
+elementclass TPrint { \$x |
+	input -> t :: Tee -> IPPrint(\$x, TIMESTAMP false) -> output;
+	t[1] -> outer_ip::CheckIPHeader(0) -> outer_icmp::CheckICMPHeader
+		-> Strip(28)
+		-> inner_ip::CheckIPHeader(0)
+		-> {
+			input -> c::IPClassifier(tcp, udp)
+			-> inner_tcp::CheckTCPHeader -> output;
+			c[1] -> inner_udp::CheckUDPHeader -> output;
+		} -> IPPrint("\${x}~", TIMESTAMP false) -> Discard;
+}
+FromIPSummaryDump(IN1, STOP true, ZERO true, CHECKSUM true)
+	-> IPPrint(a, TIMESTAMP false)
 	-> ip :: IPRewriter(pattern 21.0.0.1 1024-65535# - - 0 0)
-	-> IPPrint(b)
+	-> IPPrint(b, TIMESTAMP false)
 	-> ICMPError(19.19.19.19, timeexceeded)
-	-> IPPrint(c)
+	-> TPrint(c)
 	-> ICMPRewriter(ip)
-	-> IPPrint(d)
+	-> TPrint(d)
 	-> Discard
 "
 
 %file IN1
 !data src sport dst dport proto ip_ttl
 18.26.4.44 20 10.0.0.8 80 T 0
+18.26.4.44 20 10.0.0.8 80 U 0
 
 %expect stderr
-a: 0.000000: 18.26.4.44.20 > 10.0.0.8.80: . {{.*}}
-b: 0.000000: 21.0.0.1.1024 > 10.0.0.8.80: . {{.*}}
-c: {{[\d.]*}}: 19.19.19.19 > 21.0.0.1: icmp{{.*}}
-d: {{[\d.]*}}: 19.19.19.19 > 18.26.4.44: icmp{{.*}}
+a: 18.26.4.44.20 > 10.0.0.8.80: . 0:0(0,40,40) win 0
+b: 21.0.0.1.1024 > 10.0.0.8.80: . 0:0(0,40,40) win 0
+c: 19.19.19.19 > 21.0.0.1: icmp timeexceeded transit
+d: 19.19.19.19 > 18.26.4.44: icmp timeexceeded transit
+d~: 18.26.4.44.20 > 10.0.0.8.80: . 0:0(0,40,40) win 0
+c~: 21.0.0.1.1024 > 10.0.0.8.80: . 0:0(0,40,40) win 0
+a: 18.26.4.44.20 > 10.0.0.8.80: udp 8
+b: 21.0.0.1.1025 > 10.0.0.8.80: udp 8
+c: 19.19.19.19 > 21.0.0.1: icmp timeexceeded transit
+d: 19.19.19.19 > 18.26.4.44: icmp timeexceeded transit
+d~: 18.26.4.44.20 > 10.0.0.8.80: udp 8
+c~: 21.0.0.1.1025 > 10.0.0.8.80: udp 8
