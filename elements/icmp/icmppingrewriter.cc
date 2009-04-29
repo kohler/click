@@ -43,6 +43,7 @@ ICMPPingRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _dst_anno = true;
   String srcarg, dstarg;
+  _identifier = 0;
 
   if (cp_va_kparse(conf, this, errh,
 		   "SRC", cpkP+cpkM, cpArgument, &srcarg,
