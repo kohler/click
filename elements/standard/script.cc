@@ -424,6 +424,11 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 		    break;
 		}
 	    }
+#else
+	    if (text.length() && text[0] == '>') {
+		errh->error("file redirection not supported here");
+		(void) cp_shift_spacevec(text);
+	    }
 #endif
 
 	    int before = errh->nerrors();
