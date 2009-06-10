@@ -290,7 +290,7 @@ shell_command_output_string(String cmdline, const String &input, ErrorHandler *e
     fflush(f);
     rewind(f);
 
-    String new_cmdline = cmdline + " 0<&" + String(fileno(f));
+    String new_cmdline = cmdline + " <&" + String(fileno(f));
     FILE *p = popen(new_cmdline.c_str(), "r");
     if (!p) {
 	errh->fatal("%<%s%>: %s", cmdline.c_str(), strerror(errno));
