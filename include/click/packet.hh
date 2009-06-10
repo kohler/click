@@ -584,7 +584,7 @@ class Packet { public:
 	USER_ANNO_U16_SIZE = USER_ANNO_SIZE / 2,
 	USER_ANNO_U32_SIZE = USER_ANNO_SIZE / 4,
 	USER_ANNO_U64_SIZE = USER_ANNO_SIZE / 8
-    } CLICK_DEPRECATED;
+    } CLICK_DEPRECATED_ENUM;
     inline const unsigned char *buffer_data() const CLICK_DEPRECATED;
     inline void *addr_anno() CLICK_DEPRECATED;
     inline const void *addr_anno() const CLICK_DEPRECATED;

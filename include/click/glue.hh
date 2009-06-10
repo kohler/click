@@ -227,7 +227,7 @@ template <typename T> int click_compare(const void *a, const void *b, void *)
 /** @brief Sort array of elements using operator<(). */
 template <typename T> int click_qsort(T *base, size_t n)
 {
-    return click_qsort(base, n, sizeof(T), &click_compare<T>);
+    return click_qsort(base, n, sizeof(T), (int (*)(const void *, const void *, void *)) &click_compare<T>);
 }
 
 

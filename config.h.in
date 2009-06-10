@@ -138,6 +138,13 @@
 # define CLICK_DEPRECATED __attribute__((deprecated))
 #endif
 
+/* Define macro for deprecated enumerations. */
+#if __GNUC__ < 3 || (__GNUC__ == 3 && __GNUC_MINOR__ < 4)
+# define CLICK_DEPRECATED_ENUM /* nothing */
+#else
+# define CLICK_DEPRECATED_ENUM __attribute__((deprecated))
+#endif
+
 /* Define macro for functions whose results should not be ignored. */
 #if __GNUC__ < 3 || (__GNUC__ == 3 && __GNUC_MINOR__ < 4)
 # define CLICK_WARN_UNUSED_RESULT /* nothing */
