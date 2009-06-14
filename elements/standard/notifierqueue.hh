@@ -65,7 +65,8 @@ When written, resets the C<drops> and C<highwater_length> counters.
 
 When written, drops all packets in the queue.
 
-=a Queue, SimpleQueue, MixedQueue, FrontDropQueue, ThreadSafeQueue */
+=a Queue, QuickNoteQueue, SimpleQueue, MixedQueue, FrontDropQueue,
+ThreadSafeQueue */
 
 class NotifierQueue : public SimpleQueue { public:
 

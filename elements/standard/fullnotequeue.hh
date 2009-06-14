@@ -24,9 +24,10 @@ Queue notifies interested parties when it becomes empty and when a
 formerly-empty queue receives a packet.  The empty notification takes place
 some time after the queue goes empty, to prevent thrashing for queues that
 hover around 1 or 2 packets long.  This behavior is the same as that of
-NotifierQueue.  Queue additionally notifies interested parties that it is
-non-full, and when a formerly-full queue gains some free space.  In all
-respects but notification, Queue behaves exactly like SimpleQueue.
+NotifierQueue.  (See QuickNoteQueue for an alternative.)  Queue additionally
+notifies interested parties that it is non-full, and when a formerly-full
+queue gains some free space.  In all respects but notification, Queue behaves
+exactly like SimpleQueue.
 
 You may also use the old element name "FullNoteQueue".
 
@@ -61,7 +62,8 @@ When written, resets the C<drops> and C<highwater_length> counters.
 
 When written, drops all packets in the queue.
 
-=a ThreadSafeQueue, SimpleQueue, NotifierQueue, MixedQueue, FrontDropQueue */
+=a ThreadSafeQueue, QuickNoteQueue, SimpleQueue, NotifierQueue, MixedQueue,
+FrontDropQueue */
 
 class FullNoteQueue : public NotifierQueue { public:
 
