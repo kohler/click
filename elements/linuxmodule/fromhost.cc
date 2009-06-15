@@ -47,11 +47,17 @@ CLICK_CXX_UNPROTECT
 #else
 # define netdev_ioctl(cmd, arg)	dev_ioctl((cmd), (arg))
 #endif
+#ifndef NETDEV_TX_OK
+# define NETDEV_TX_OK		0
+# define NETDEV_TX_BUSY		1
+#endif
 
+extern "C" {
 static int fl_open(net_device *);
 static int fl_close(net_device *);
 static net_device_stats *fl_stats(net_device *);
 static void fl_wakeup(Timer *, void *);
+}
 
 static AnyDeviceMap fromlinux_map;
 
@@ -201,17 +207,6 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
-#if 0 /* Why was this code here? */
-static void
-dev_locks(int up)
-{
-    if (up > 0)
-	rtnl_lock();
-    else
-	rtnl_unlock();
-}
-#endif
-
 int
 FromHost::set_device_addresses(ErrorHandler *errh)
 {
@@ -318,6 +313,25 @@ FromHost::cleanup(CleanupStage)
     }
 }
 
+/*
+ * Device callbacks
+ */
+
+extern "C" {
+static int
+fl_open(net_device *dev)
+{
+    netif_start_queue(dev);
+    return 0;
+}
+
+static int
+fl_close(net_device *dev)
+{
+    netif_stop_queue(dev);
+    return 0;
+}
+
 static void
 fl_wakeup(Timer *, void *thunk)
 {
@@ -333,22 +347,17 @@ fl_wakeup(Timer *, void *thunk)
     dev_updown(dev, 1, &errh);
 }
 
-/*
- * Device callbacks
- */
-
-static int
-fl_open(net_device *dev)
+static net_device_stats *
+fl_stats(net_device *dev)
 {
-    netif_start_queue(dev);
-    return 0;
+    net_device_stats *stats = 0;
+    unsigned long lock_flags;
+    fromlinux_map.lock(false, lock_flags);
+    if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0))
+	stats = fl->stats();
+    fromlinux_map.unlock(false, lock_flags);
+    return stats;
 }
-
-static int
-fl_close(net_device *dev)
-{
-    netif_stop_queue(dev);
-    return 0;
 }
 
 int
@@ -367,6 +376,7 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
     unsigned long lock_flags;
     fromlinux_map.lock(false, lock_flags);
     if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0)) {
+	int r = NETDEV_TX_OK;
 	int next = fl->next_i(fl->_tail);
 	if (likely(next != fl->_head)) {
 	    Packet **q = (fl->_capacity <= smq_size ? fl->_q.smq : fl->_q.lgq);
@@ -379,32 +389,15 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
 	    fl->_task.reschedule();
 	    q[fl->_tail] = p;
 	    fl->_tail = next;
-	    // if (fl->size() == fl->capacity())
-	    //    netif_stop_queue(dev);
 	} else {
-	    // Linux gets very unhappy if you try to stop a "virtual" queue.
-	    // So just drop the packet on the floor, which is what it would
-	    // have done.
-	    kfree_skb(skb);
+	    r = NETDEV_TX_BUSY;	// Linux will free the packet.
 	    fl->_drops++;
 	}
 	fromlinux_map.unlock(false, lock_flags);
-	return 0;
+	return r;
     }
     fromlinux_map.unlock(false, lock_flags);
     return -1;
-}
-
-static net_device_stats *
-fl_stats(net_device *dev)
-{
-    net_device_stats *stats = 0;
-    unsigned long lock_flags;
-    fromlinux_map.lock(false, lock_flags);
-    if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0))
-	stats = fl->stats();
-    fromlinux_map.unlock(false, lock_flags);
-    return stats;
 }
 
 bool
@@ -417,7 +410,6 @@ FromHost::run_task(Task *)
 	Packet **q = (_capacity <= smq_size ? _q.smq : _q.lgq);
 	Packet *p = q[_head];
 	_head = next_i(_head);
-	// netif_wake_queue(_dev);
 
 	// Convenience for TYPE IP: set the IP header and destination address.
 	if (_dev->type == ARPHRD_NONE && p->length() >= 1) {
