@@ -317,11 +317,11 @@ typedef uint8_t *	wifi_mgt_auth_t;
 #define	WIFI_MICBUF_SIZE	(8+8)	/* space for both tx+rx keys */
 
 
-#ifndef MAX
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#ifndef WIFI_MAX
+#define WIFI_MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
-#ifndef MIN
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#ifndef WIFI_MIN
+#define WIFI_MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 

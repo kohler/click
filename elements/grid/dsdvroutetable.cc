@@ -42,8 +42,8 @@ CLICK_DECLS
 
 #define FULL_DUMP_ON_TRIG_UPDATE 0
 
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
+#define GRID_MAX(a, b) ((a) > (b) ? (a) : (b))
+#define GRID_MIN(a, b) ((a) < (b) ? (a) : (b))
 
 #define dsdv_assert(e) ((e) ? (void) 0 : dsdv_assert_(__FILE__, __LINE__, #e))
 
@@ -373,7 +373,7 @@ DSDVRouteTable::insert_route(const RTEntry &r, const GridGenericLogger::reason_t
     HookPair *hp = new HookPair(this, r.dest_ip);
     Timer *t = new Timer(static_expire_hook, (void *) hp);
     t->initialize(this);
-    t->schedule_after_msec(min(r.ttl, _timeout));
+    t->schedule_after_msec(GRID_MIN(r.ttl, _timeout));
 
     _expire_timers.insert(r.dest_ip, t);
     _expire_hooks.insert(r.dest_ip, hp);
@@ -1558,7 +1558,7 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb) const
 
   unsigned int jiff = dsdv_jiffies();
   unsigned int ttl_decrement = jiff_to_msec(good() ? jiff - last_updated_jiffies : jiff - last_expired_jiffies);
-  nb->ttl = htonl(decr_ttl(ttl, max(ttl_decrement, (unsigned int) grid_hello::MIN_TTL_DECREMENT)));
+  nb->ttl = htonl(decr_ttl(ttl, GRID_MAX(ttl_decrement, (unsigned int) grid_hello::MIN_TTL_DECREMENT)));
 
   /* ping-pong link stats back to sender */
 #ifndef SMALL_GRID_HEADERS

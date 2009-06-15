@@ -7,9 +7,6 @@
 #include <click/glue.hh>
 CLICK_DECLS
 
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
-
 /*
 =c
 AutoRateFallback([, I<KEYWORDS>])
@@ -113,7 +110,7 @@ class AutoRateFallback : public Element { public:
 		      _eth.unparse().c_str());
 	return 2;
       }
-      return _rates[max(_current_index - 1, 0)];
+      return _rates[_current_index <= 0 ? 0 : _current_index - 1];
     }
   };
 

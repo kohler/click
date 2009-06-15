@@ -23,7 +23,7 @@ calc_backoff(int rate, int t)
 
 	/* there is backoff, even for the first packet */
 	for (int x = 0; x < t; x++) {
-		cw = MIN(WIFI_CW_MAX, (cw + 1) * 2);
+		cw = WIFI_MIN(WIFI_CW_MAX, (cw + 1) * 2);
 	}
 	return t_slot * cw / 2;
 }

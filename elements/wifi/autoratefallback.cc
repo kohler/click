@@ -28,10 +28,6 @@
 
 CLICK_DECLS
 
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
-
-
 AutoRateFallback::AutoRateFallback()
   : _stepup(10),
     _stepdown(1),
@@ -112,7 +108,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
     if (down > 0) {
       down--;
     }
-    int next_index = max(0, nfo->_current_index - down);
+    int next_index = WIFI_MAX(0, nfo->_current_index - down);
     if (_debug) {
       click_chatter("%{element} stepping down for %s from %d to %d\n",
 		    this,
@@ -155,10 +151,10 @@ AutoRateFallback::process_feedback(Packet *p_in)
 		    this,
 		    nfo->_eth.unparse().c_str(),
 		    nfo->_rates[nfo->_current_index],
-		    nfo->_rates[min(nfo->_rates.size() - 1,
-				    nfo->_current_index + 1)]);
+		    nfo->_rates[WIFI_MIN(nfo->_rates.size() - 1,
+					 nfo->_current_index + 1)]);
     }
-    nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
+    nfo->_current_index = WIFI_MIN(nfo->_current_index + 1, nfo->_rates.size() - 1);
     nfo->_successes = 0;
     nfo->_wentup = true;
   }
@@ -212,9 +208,9 @@ AutoRateFallback::assign_rate(Packet *p_in)
 
   int ndx = nfo->_current_index;
   eh->rate = nfo->_rates[ndx];
-  eh->rate1 = (ndx - 1 >= 0) ? nfo->_rates[max(ndx - 1, 0)] : 0;
-  eh->rate2 = (ndx - 2 >= 0) ? nfo->_rates[max(ndx - 2, 0)] : 0;
-  eh->rate3 = (ndx - 3 >= 0) ? nfo->_rates[max(ndx - 3, 0)] : 0;
+  eh->rate1 = (ndx - 1 >= 0) ? nfo->_rates[WIFI_MAX(ndx - 1, 0)] : 0;
+  eh->rate2 = (ndx - 2 >= 0) ? nfo->_rates[WIFI_MAX(ndx - 2, 0)] : 0;
+  eh->rate3 = (ndx - 3 >= 0) ? nfo->_rates[WIFI_MAX(ndx - 3, 0)] : 0;
 
   eh->max_tries = 4;
   eh->max_tries1 = (ndx - 1 >= 0) ? 2 : 0;

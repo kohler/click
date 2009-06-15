@@ -29,14 +29,7 @@
 #include <elements/wifi/availablerates.hh>
 #include <elements/wifi/wirelessinfo.hh>
 #include "beaconscanner.hh"
-
-
 CLICK_DECLS
-
-
-#define min(x,y)      ((x)<(y) ? (x) : (y))
-#define max(x,y)      ((x)>(y) ? (x) : (y))
-
 
 BeaconScanner::BeaconScanner()
   : _rtable(0),
@@ -164,7 +157,7 @@ BeaconScanner::simple_action(Packet *p)
   }
   String ssid = "";
   if (ssid_l && ssid_l[1]) {
-    ssid = String((char *) ssid_l + 2, min((int)ssid_l[1], WIFI_NWID_MAXSIZE));
+    ssid = String((char *) ssid_l + 2, WIFI_MIN((int)ssid_l[1], WIFI_NWID_MAXSIZE));
   }
 
   EtherAddress bssid = EtherAddress(w->i_addr3);
@@ -193,7 +186,7 @@ BeaconScanner::simple_action(Packet *p)
   Vector<int> all_rates;
   ap->_last_rx.set_now();
   if (rates_l) {
-    for (int x = 0; x < min((int)rates_l[1], WIFI_RATE_SIZE); x++) {
+    for (int x = 0; x < WIFI_MIN((int)rates_l[1], WIFI_RATE_SIZE); x++) {
       uint8_t rate = rates_l[x + 2];
 
       if (rate & WIFI_RATE_BASIC) {
@@ -207,7 +200,7 @@ BeaconScanner::simple_action(Packet *p)
 
 
   if (xrates_l) {
-    for (int x = 0; x < min((int)xrates_l[1], WIFI_RATE_SIZE); x++) {
+    for (int x = 0; x < WIFI_MIN((int)xrates_l[1], WIFI_RATE_SIZE); x++) {
       uint8_t rate = xrates_l[x + 2];
 
       if (rate & WIFI_RATE_BASIC) {

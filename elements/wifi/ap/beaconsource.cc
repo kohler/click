@@ -31,12 +31,7 @@
 #include "beaconsource.hh"
 #include <elements/wifi/availablerates.hh>
 #include <elements/wifi/wirelessinfo.hh>
-
 CLICK_DECLS
-
-
-#define min(x,y)      ((x)<(y) ? (x) : (y))
-#define max(x,y)      ((x)>(y) ? (x) : (y))
 
 BeaconSource::BeaconSource()
   : _timer(this),
@@ -168,8 +163,8 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
 
   /* rates */
   ptr[0] = WIFI_ELEMID_RATES;
-  ptr[1] = min(WIFI_RATE_SIZE, rates.size());
-  for (int x = 0; x < min (WIFI_RATE_SIZE, rates.size()); x++) {
+  ptr[1] = WIFI_MIN(WIFI_RATE_SIZE, rates.size());
+  for (int x = 0; x < WIFI_MIN(WIFI_RATE_SIZE, rates.size()); x++) {
     ptr[2 + x] = (uint8_t) rates[x];
 
     if (rates[x] == 2) {
@@ -177,8 +172,8 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
     }
 
   }
-  ptr += 2 + min(WIFI_RATE_SIZE, rates.size());
-  actual_length += 2 + min(WIFI_RATE_SIZE, rates.size());
+  ptr += 2 + WIFI_MIN(WIFI_RATE_SIZE, rates.size());
+  actual_length += 2 + WIFI_MIN(WIFI_RATE_SIZE, rates.size());
 
 
   /* channel */
@@ -296,7 +291,7 @@ BeaconSource::push(int, Packet *p)
   StringAccum sa;
   String ssid = "";
   if (ssid_l && ssid_l[1]) {
-    ssid = String((char *) ssid_l + 2, min((int)ssid_l[1], WIFI_NWID_MAXSIZE));
+    ssid = String((char *) ssid_l + 2, WIFI_MIN((int)ssid_l[1], WIFI_NWID_MAXSIZE));
   }
 
 
@@ -318,7 +313,7 @@ BeaconSource::push(int, Packet *p)
 
   sa << "rates {";
   if (rates_l) {
-    for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
+    for (int x = 0; x < WIFI_MIN((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
       uint8_t rate = rates_l[x + 2];
 
       if (rate & WIFI_RATE_BASIC) {

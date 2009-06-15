@@ -25,11 +25,7 @@
 #include <clicknet/wifi.h>
 #include <elements/wifi/availablerates.hh>
 #include "madwifirate.hh"
-
 CLICK_DECLS
-
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
 
 #define CREDITS_FOR_RAISE 10
 #define STEPUP_RETRY_THRESHOLD 10
@@ -120,14 +116,14 @@ MadwifiRate::adjust(EtherAddress dst)
     stepup = true;
 
   if (stepdown) {
-    if (_debug && max(nfo->_current_index - 1, 0) != nfo->_current_index) {
+    if (_debug && WIFI_MAX(nfo->_current_index - 1, 0) != nfo->_current_index) {
       click_chatter("%{element} stepping down for %s from %d to %d\n",
 		    this,
 		    nfo->_eth.unparse().c_str(),
 		    nfo->_rates[nfo->_current_index],
-		    nfo->_rates[max(0, nfo->_current_index - 1)]);
+		    nfo->_rates[WIFI_MAX(0, nfo->_current_index - 1)]);
     }
-    nfo->_current_index = max(nfo->_current_index - 1, 0);
+    nfo->_current_index = WIFI_MAX(nfo->_current_index - 1, 0);
     nfo->_credits = 0;
   } else if (stepup) {
     nfo->_credits++;
@@ -137,10 +133,10 @@ MadwifiRate::adjust(EtherAddress dst)
 		      this,
 		      nfo->_eth.unparse().c_str(),
 		      nfo->_rates[nfo->_current_index],
-		      nfo->_rates[min(nfo->_rates.size() - 1,
-				      nfo->_current_index + 1)]);
+		      nfo->_rates[WIFI_MIN(nfo->_rates.size() - 1,
+					   nfo->_current_index + 1)]);
       }
-      nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
+      nfo->_current_index = WIFI_MIN(nfo->_current_index + 1, nfo->_rates.size() - 1);
       nfo->_credits = 0;
     }
   } else {
@@ -244,7 +240,7 @@ MadwifiRate::assign_rate(Packet *p_in)
     /* initial to 24 in g/a, 11 in b */
     int ndx = nfo->rate_index(48);
     ndx = ndx > 0 ? ndx : nfo->rate_index(22);
-    ndx = max(ndx, 0);
+    ndx = WIFI_MAX(ndx, 0);
     nfo->_current_index = ndx;
     nfo->_credits = 0;
     if (_debug) {
@@ -258,9 +254,9 @@ MadwifiRate::assign_rate(Packet *p_in)
   ceh->magic = WIFI_EXTRA_MAGIC;
   int ndx = nfo->_current_index;
   ceh->rate = nfo->_rates[ndx];
-  ceh->rate1 = (ndx - 1 >= 0) ? nfo->_rates[max(ndx - 1, 0)] : 0;
-  ceh->rate2 = (ndx - 2 >= 0) ? nfo->_rates[max(ndx - 2, 0)] : 0;
-  ceh->rate3 = (ndx - 3 >= 0) ? nfo->_rates[max(ndx - 3, 0)] : 0;
+  ceh->rate1 = (ndx - 1 >= 0) ? nfo->_rates[WIFI_MAX(ndx - 1, 0)] : 0;
+  ceh->rate2 = (ndx - 2 >= 0) ? nfo->_rates[WIFI_MAX(ndx - 2, 0)] : 0;
+  ceh->rate3 = (ndx - 3 >= 0) ? nfo->_rates[WIFI_MAX(ndx - 3, 0)] : 0;
 
   ceh->max_tries = 4;
   ceh->max_tries1 = (ndx - 1 >= 0) ? 2 : 0;

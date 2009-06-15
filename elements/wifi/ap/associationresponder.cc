@@ -32,9 +32,6 @@
 #include <elements/wifi/wirelessinfo.hh>
 CLICK_DECLS
 
-#define min(x,y)      ((x)<(y) ? (x) : (y))
-#define max(x,y)      ((x)>(y) ? (x) : (y))
-
 AssociationResponder::AssociationResponder()
   : _associd(0),
     _rtable(0),
@@ -144,7 +141,7 @@ AssociationResponder::recv_association_request(Packet *p)
   Vector<int> rates;
   Vector<int> all_rates;
   if (rates_l) {
-    for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
+    for (int x = 0; x < WIFI_MIN((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
       uint8_t rate = rates_l[x + 2];
 
       if (rate & WIFI_RATE_BASIC) {
@@ -160,7 +157,7 @@ AssociationResponder::recv_association_request(Packet *p)
   String ssid;
   String my_ssid = _winfo ? _winfo->_ssid : "";
   if (ssid_l && ssid_l[1]) {
-    ssid = String((char *) ssid_l + 2, min((int)ssid_l[1], WIFI_NWID_MAXSIZE));
+    ssid = String((char *) ssid_l + 2, WIFI_MIN((int)ssid_l[1], WIFI_NWID_MAXSIZE));
   } else {
     /* there was no element or it has zero length */
     ssid = "";
@@ -297,8 +294,8 @@ AssociationResponder::send_association_response(EtherAddress dst, uint16_t statu
 
   /* rates */
   ptr[0] = WIFI_ELEMID_RATES;
-  ptr[1] = min(WIFI_RATE_SIZE, rates.size());
-  for (int x = 0; x < min (WIFI_RATE_SIZE, rates.size()); x++) {
+  ptr[1] = WIFI_MIN(WIFI_RATE_SIZE, rates.size());
+  for (int x = 0; x < WIFI_MIN(WIFI_RATE_SIZE, rates.size()); x++) {
     ptr[2 + x] = (uint8_t) rates[x];
 
     if (rates[x] == 2) {
@@ -306,8 +303,8 @@ AssociationResponder::send_association_response(EtherAddress dst, uint16_t statu
     }
 
   }
-  ptr += 2 + min(WIFI_RATE_SIZE, rates.size());
-  actual_length += 2 + min(WIFI_RATE_SIZE, rates.size());
+  ptr += 2 + WIFI_MIN(WIFI_RATE_SIZE, rates.size());
+  actual_length += 2 + WIFI_MIN(WIFI_RATE_SIZE, rates.size());
 
 
   int num_xrates = rates.size() - WIFI_RATE_SIZE;

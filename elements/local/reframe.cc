@@ -22,7 +22,7 @@
 
 CLICK_DECLS
 
-#define min(a, b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define alignto(m, n) (((m)+(n)-1)/(n)*(n))
 
 Reframe::Reframe()
@@ -99,8 +99,8 @@ Reframe::reframe(void)
 	     p && (int) _header->length() < (_foff + _flen);
 	     p = p->next()) {
 	  memcpy(_header->end_data(), p->data(),
-		 min(p->length(), _foff + _flen - _header->length()));
-	  _header->put(min(p->length(), _foff + _flen - _header->length()));
+		 MIN(p->length(), _foff + _flen - _header->length()));
+	  _header->put(MIN(p->length(), _foff + _flen - _header->length()));
 	}
       }
 

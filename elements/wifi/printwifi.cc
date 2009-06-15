@@ -27,10 +27,6 @@
 #include "printwifi.hh"
 CLICK_DECLS
 
-
-#define min(x,y)      ((x)<(y) ? (x) : (y))
-#define max(x,y)      ((x)>(y) ? (x) : (y))
-
 PrintWifi::PrintWifi()
     : _print_anno(false),
       _print_checksum(false)
@@ -115,7 +111,7 @@ String unparse_beacon(Packet *p) {
 
   String ssid = "";
   if (ssid_l && ssid_l[1]) {
-    ssid = String((char *) ssid_l + 2, min((int)ssid_l[1], WIFI_NWID_MAXSIZE));
+    ssid = String((char *) ssid_l + 2, WIFI_MIN((int)ssid_l[1], WIFI_NWID_MAXSIZE));
   }
 
   if (ssid == "") {
@@ -131,7 +127,7 @@ String unparse_beacon(Packet *p) {
   Vector<int> basic_rates;
   Vector<int> rates;
   if (rates_l) {
-    for (int x = 0; x < min((int)rates_l[1], WIFI_RATE_SIZE); x++) {
+    for (int x = 0; x < WIFI_MIN((int)rates_l[1], WIFI_RATE_SIZE); x++) {
       uint8_t rate = rates_l[x + 2];
 
       if (rate & WIFI_RATE_BASIC) {
@@ -144,7 +140,7 @@ String unparse_beacon(Packet *p) {
 
 
   if (xrates_l) {
-    for (int x = 0; x < min((int)xrates_l[1], WIFI_RATE_SIZE); x++) {
+    for (int x = 0; x < WIFI_MIN((int)xrates_l[1], WIFI_RATE_SIZE); x++) {
       uint8_t rate = xrates_l[x + 2];
 
       if (rate & WIFI_RATE_BASIC) {
@@ -265,12 +261,12 @@ String get_ssid(u_int8_t *ptr) {
   if (ptr[0] != WIFI_ELEMID_SSID) {
     return "(invalid ssid)";
   }
-  return String((char *) ptr + 2, min((int)ptr[1], WIFI_NWID_MAXSIZE));
+  return String((char *) ptr + 2, WIFI_MIN((int)ptr[1], WIFI_NWID_MAXSIZE));
 }
 
 Vector<int> get_rates(u_int8_t *ptr) {
   Vector<int> rates;
-  for (int x = 0; x < min((int)ptr[1], WIFI_RATES_MAXSIZE); x++) {
+  for (int x = 0; x < WIFI_MIN((int)ptr[1], WIFI_RATES_MAXSIZE); x++) {
     uint8_t rate = ptr[x + 2];
     rates.push_back(rate);
   }

@@ -31,10 +31,6 @@
 #include <elements/wifi/availablerates.hh>
 CLICK_DECLS
 
-
-#define min(x,y)      ((x)<(y) ? (x) : (y))
-#define max(x,y)      ((x)>(y) ? (x) : (y))
-
 ProbeResponder::ProbeResponder()
   : _rtable(0)
 {
@@ -144,7 +140,7 @@ ProbeResponder::push(int, Packet *p)
   StringAccum sa;
   String ssid = "";
   if (ssid_l && ssid_l[1]) {
-    ssid = String((char *) ssid_l + 2, min((int)ssid_l[1], WIFI_NWID_MAXSIZE));
+    ssid = String((char *) ssid_l + 2, WIFI_MIN((int)ssid_l[1], WIFI_NWID_MAXSIZE));
   }
 
 
@@ -166,7 +162,7 @@ ProbeResponder::push(int, Packet *p)
 
   sa << "rates {";
   if (rates_l) {
-    for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
+    for (int x = 0; x < WIFI_MIN((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
       uint8_t rate = rates_l[x + 2];
 
       if (rate & WIFI_RATE_BASIC) {
@@ -198,7 +194,7 @@ ProbeResponder::send_probe_response(EtherAddress dst)
     2 +                  /* beacon interval */
     2 +                  /* cap_info */
     2 + _ssid.length() + /* ssid */
-    2 + min(WIFI_RATES_MAXSIZE, rates.size()) +  /* rates */
+    2 + WIFI_MIN(WIFI_RATES_MAXSIZE, rates.size()) +  /* rates */
     2 + 1 +              /* ds parms */
     2 + 4 +              /* tim */
     0;
@@ -247,8 +243,8 @@ ProbeResponder::send_probe_response(EtherAddress dst)
 
   /* rates */
   ptr[0] = WIFI_ELEMID_RATES;
-  ptr[1] = min(WIFI_RATES_MAXSIZE, rates.size());
-  for (int x = 0; x < min (WIFI_RATES_MAXSIZE, rates.size()); x++) {
+  ptr[1] = WIFI_MIN(WIFI_RATES_MAXSIZE, rates.size());
+  for (int x = 0; x < WIFI_MIN(WIFI_RATES_MAXSIZE, rates.size()); x++) {
     ptr[2 + x] = (uint8_t) rates[x];
 
     if (rates[x] == 2) {

@@ -29,14 +29,7 @@
 #include <elements/wifi/availablerates.hh>
 #include <elements/wifi/wirelessinfo.hh>
 #include "beacontracker.hh"
-
-
 CLICK_DECLS
-
-
-#define min(x,y)      ((x)<(y) ? (x) : (y))
-#define max(x,y)      ((x)>(y) ? (x) : (y))
-
 
 BeaconTracker::BeaconTracker()
   : _winfo(0)
@@ -172,7 +165,7 @@ read_param(Element *e, void *thunk)
       Timestamp now = Timestamp::now();
       td->trim();
       Timestamp diff = now - td->_start;
-      int expected = min(diff.msecval(), td->_track);
+      int expected = WIFI_MIN(diff.msecval(), td->_track);
       int count = td->_beacons.size();
       int p = expected ? count*100/expected : 0;
       return String(p) + "\n";

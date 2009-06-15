@@ -49,7 +49,7 @@ PacketStore::simple_action(Packet *p_in)
 {
 	store s;
 	s.timestamp = p_in->timestamp_anno();
-	s.len = MIN(p_in->length(), 80);
+	s.len = WIFI_MIN(p_in->length(), 80);
 	memcpy(s.data, p_in->data(), s.len);
 	_packets.push_back(s);
 	return p_in;
