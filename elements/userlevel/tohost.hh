@@ -12,7 +12,7 @@ CLICK_DECLS
  *
  * =c
  *
- * ToHost([DEVNAME])
+ * ToHost(DEVNAME)
  *
  * =s comm
  *
@@ -59,11 +59,11 @@ class ToHost : public Element { public:
     void add_handlers();
 
     void push(int port, Packet *);
-    String dev_name() { return _dev_name; }
 
   private:
 
     int _fd;
+    int _drops;
     String _dev_name;
 
 };

@@ -124,8 +124,6 @@ class ToHost : public AnyDevice { public:
     int _drops;
     int _type;
 
-    static String read_handler(Element *, void *);
-
     friend class ToHostSniffers;
 
 };

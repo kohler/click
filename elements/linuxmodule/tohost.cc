@@ -236,17 +236,10 @@ ToHost::push(int port, Packet *p)
 #endif
 }
 
-String
-ToHost::read_handler(Element *e, void *)
-{
-    ToHost *th = static_cast<ToHost *>(e);
-    return String(th->_drops);
-}
-
 void
 ToHost::add_handlers()
 {
-    add_read_handler("drops", read_handler, 0);
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
 }
 
 ELEMENT_REQUIRES(linuxmodule AnyDevice)

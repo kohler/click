@@ -39,7 +39,7 @@
 CLICK_DECLS
 
 ToHost::ToHost()
-  : _fd(-1)
+    : _fd(-1), _drops(0)
 {
 }
 
@@ -93,6 +93,7 @@ ToHost::push(int, Packet *p)
 	static bool _printed_write_err = false;
 	if (w != (int) q->length() && (errno != ENOBUFS || !_printed_write_err)) {
 	    _printed_write_err = true;
+	    ++_drops;
 	    click_chatter("ToHost(%s): write failed: %s", _dev_name.c_str(), strerror(errno));
 	}
 	q->kill();
@@ -100,27 +101,11 @@ ToHost::push(int, Packet *p)
 	click_chatter("%{element}: out of memory", this);
 }
 
-
-enum {H_DEV_NAME};
-
-static String
-ToHost_read_param(Element *e, void *thunk)
-{
-  ToHost *td = (ToHost *)e;
-    switch ((uintptr_t) thunk) {
-    case H_DEV_NAME:
-	return td->dev_name();
-    default:
-	return "";
-    }
-}
-
-
-
 void
 ToHost::add_handlers()
 {
-  add_read_handler("dev_name", ToHost_read_param, (void *) H_DEV_NAME);
+    add_data_handlers("dev_name", Handler::OP_READ, &_dev_name);
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
 }
 
 CLICK_ENDDECLS

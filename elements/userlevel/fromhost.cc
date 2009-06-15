@@ -234,27 +234,18 @@ FromHost::run_task(Task *)
 
 }
 
-enum {H_DEV_NAME, H_SIGNAL};
-
 String
-FromHost::read_param(Element *e, void *thunk)
+FromHost::read_param(Element *e, void *)
 {
-  FromHost *td = (FromHost *)e;
-    switch ((uintptr_t) thunk) {
-    case H_DEV_NAME: return td->dev_name();
-    case H_SIGNAL: return String(td->_nonfull_signal.active());
-    default:
-	return "";
-    }
+    FromHost *fh = static_cast<FromHost *>(e);
+    return String(fh->_nonfull_signal.active());
 }
-
-
 
 void
 FromHost::add_handlers()
 {
-  add_read_handler("dev_name", read_param, (void *) H_DEV_NAME);
-  add_read_handler("signal", read_param, (void *) H_SIGNAL);
+    add_data_handlers("dev_name", Handler::OP_READ, &_dev_name);
+    add_read_handler("signal", read_param, 0);
 }
 
 CLICK_ENDDECLS
