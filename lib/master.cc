@@ -254,15 +254,12 @@ Master::kill_router(Router *router)
 	Timer* t;
 	for (Timer** tp = _timer_heap.end(); tp > _timer_heap.begin(); )
 	    if ((t = *--tp, t->router() == router)) {
-		timer_reheapify_from(t->_schedpos1 - 1, _timer_heap.back(), true);
-		// must clear _schedpos AFTER timer_reheapify_from()
+		remove_heap(_timer_heap.begin(), _timer_heap.end(), tp, timer_less(), timer_place(_timer_heap.begin()));
+		_timer_heap.pop_back();
 		t->_owner = 0;
 		t->_schedpos1 = 0;
-		// recheck this slot; have moved a timer there
-		_timer_heap.pop_back();
-		if (tp < _timer_heap.end())
-		    tp++;
 	    }
+	set_timer_expiry();
 	unlock_timers();
     }
 
@@ -411,51 +408,16 @@ Master::set_max_timer_stride(unsigned timer_stride)
 }
 
 void
-Master::timer_reheapify_from(int pos, Timer* t, bool will_delete)
+Master::check_timer_expiry(Timer *t)
 {
-    // MUST be called with timer lock held
-    Timer** tbegin = _timer_heap.begin();
-    Timer** tend = _timer_heap.end();
-    int npos;
-
     // do not schedule timers for too far in the past
-    if (!will_delete
-	&& t->_expiry.sec() + Timer::behind_sec < _timer_check.sec()) {
+    if (t->_expiry.sec() + Timer::behind_sec < _timer_check.sec()) {
 	if (_timer_check_reports > 0) {
 	    --_timer_check_reports;
 	    click_chatter("timer %p outdated expiry %{timestamp} updated to %{timestamp}", t, &t->_expiry, &_timer_check, &t->_expiry);
 	}
 	t->_expiry = _timer_check;
     }
-
-    while (pos > 0
-	   && (npos = (pos-1) >> 1, tbegin[npos]->_expiry > t->_expiry)) {
-	tbegin[pos] = tbegin[npos];
-	tbegin[npos]->_schedpos1 = pos + 1;
-	pos = npos;
-    }
-
-    while (1) {
-	Timer* smallest = t;
-	Timer** tp = tbegin + 2*pos + 1;
-	if (tp < tend && tp[0]->_expiry <= smallest->_expiry)
-	    smallest = tp[0];
-	if (tp + 1 < tend && tp[1]->_expiry <= smallest->_expiry)
-	    smallest = tp[1], tp++;
-
-	smallest->_schedpos1 = pos + 1;
-	tbegin[pos] = smallest;
-
-	if (smallest == t)
-	    break;
-
-	pos = tp - tbegin;
-    }
-
-    if (tbegin + 1 < tend || !will_delete)
-	_timer_expiry = tbegin[0]->_expiry;
-    else
-	_timer_expiry = Timestamp();
 }
 
 inline void
@@ -501,10 +463,10 @@ Master::run_timers()
 	    // actually run timers
 	    int max_timers = 64;
 	    do {
-		timer_reheapify_from(0, _timer_heap.back(), true);
-		// must reset _schedpos AFTER timer_reheapify_from()
-		t->_schedpos1 = 0;
+		pop_heap(_timer_heap.begin(), _timer_heap.end(), timer_less(), timer_place(_timer_heap.begin()));
 		_timer_heap.pop_back();
+		set_timer_expiry();
+		t->_schedpos1 = 0;
 
 		run_one_timer(t);
 	    } while (_timer_heap.size() > 0 && !_stopper
@@ -519,13 +481,14 @@ Master::run_timers()
 	    if (max_timers < 0 && !_stopper) {
 		_timer_runchunk.reserve(32);
 		do {
-		    timer_reheapify_from(0, _timer_heap.back(), true);
-		    t->_schedpos1 = -_timer_runchunk.size() - 1;
+		    pop_heap(_timer_heap.begin(), _timer_heap.end(), timer_less(), timer_place(_timer_heap.begin()));
 		    _timer_heap.pop_back();
+		    t->_schedpos1 = -_timer_runchunk.size() - 1;
 
 		    _timer_runchunk.push_back(t);
 		} while (_timer_heap.size() > 0
 			 && (t = _timer_heap.at_u(0), t->_expiry <= _timer_check));
+		set_timer_expiry();
 
 		Vector<Timer*>::iterator i = _timer_runchunk.begin();
 		for (; !_stopper && i != _timer_runchunk.end(); ++i)
@@ -1135,5 +1098,4 @@ Master::info() const
 }
 
 #endif
-
 CLICK_ENDDECLS

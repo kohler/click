@@ -231,13 +231,19 @@ Timer::schedule_at(const Timestamp& when)
     // manipulate list; this is essentially a "decrease-key" operation
     // any reschedule removes a timer from the runchunk (XXX -- even backwards
     // reschedulings)
+    int old_schedpos1 = _schedpos1;
     if (_schedpos1 <= 0) {
 	if (_schedpos1 < 0)
 	    master->_timer_runchunk[-_schedpos1 - 1] = 0;
 	_schedpos1 = master->_timer_heap.size() + 1;
-	master->_timer_heap.push_back(0);
+	master->_timer_heap.push_back(this);
     }
-    master->timer_reheapify_from(_schedpos1 - 1, this, false);
+    master->check_timer_expiry(this);
+    change_heap(master->_timer_heap.begin(), master->_timer_heap.end(),
+		master->_timer_heap.begin() + _schedpos1 - 1,
+		Master::timer_less(), Master::timer_place(master->_timer_heap.begin()));
+    if (old_schedpos1 == 1 || _schedpos1 == 1)
+	master->set_timer_expiry();
 
     // if we changed the timeout, wake up the first thread
     if (_schedpos1 == 1)
@@ -260,9 +266,14 @@ Timer::unschedule()
 	return;
     Master* master = _owner->master();
     master->lock_timers();
+    int old_schedpos1 = _schedpos1;
     if (_schedpos1 > 0) {
-	master->timer_reheapify_from(_schedpos1 - 1, master->_timer_heap.back(), true);
+	remove_heap(master->_timer_heap.begin(), master->_timer_heap.end(),
+		    master->_timer_heap.begin() + _schedpos1 - 1,
+		    Master::timer_less(), Master::timer_place(master->_timer_heap.begin()));
 	master->_timer_heap.pop_back();
+	if (old_schedpos1 == 1)
+	    master->set_timer_expiry();
     } else if (_schedpos1 < 0)
 	master->_timer_runchunk[-_schedpos1 - 1] = 0;
     _schedpos1 = 0;
