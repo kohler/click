@@ -1040,5 +1040,20 @@ inline bool operator!=(const HashTable_const_iterator<T> &a, const HashTable_con
     return a.get() != b.get();
 }
 
+
+template <typename K, typename V>
+inline void swap(HashTable<K, V> &a, HashTable<K, V> &b)
+{
+    a.swap(b);
+}
+
+template <typename K, typename V>
+inline void clear_by_swap(HashTable<K, V> &x)
+{
+    // specialization avoids losing x's default value
+    HashTable<K, V> tmp(x.default_value());
+    x.swap(tmp);
+}
+
 CLICK_ENDDECLS
 #endif

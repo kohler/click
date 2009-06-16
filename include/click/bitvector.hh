@@ -416,5 +416,10 @@ Bitvector::operator-(const Bitvector &o) const
     return *this & ~o;
 }
 
+inline void swap(Bitvector &a, Bitvector &b)
+{
+    a.swap(b);
+}
+
 CLICK_ENDDECLS
 #endif

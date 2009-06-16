@@ -142,6 +142,12 @@ DEQueue<T>::pop_back()
     _l[_tail].~T();
 }
 
+template <typename T>
+inline void swap(DEQueue<T> &a, DEQueue<T> &b)
+{
+    a.swap(b);
+}
+
 CLICK_ENDDECLS
 #include <click/dequeue.cc>
 #endif

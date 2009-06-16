@@ -131,6 +131,12 @@ Vector<T>::pop_front()
   erase(begin());
 }
 
+template <typename T>
+inline void swap(Vector<T> &a, Vector<T> &b)
+{
+    a.swap(b);
+}
+
 
 template <>
 class Vector<void*> { public:
