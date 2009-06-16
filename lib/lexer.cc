@@ -387,7 +387,7 @@ Lexer::Compound::expand_into(Lexer *lexer, int which, VariableEnvironment &ve)
       redeclaration_error(errh, "element", cname, lexer->element_landmark(which), lexer->element_landmark(eidx));
       eidx_map.push_back(-1);
     } else {
-      if (lexer->_element_type_map[cname] >= 0)
+      if (lexer->element_type(cname) >= 0)
 	errh->lerror(lexer->element_landmark(which), "%<%s%> is an element class", cname.c_str());
       eidx = lexer->get_element(cname, _elements[i], cp_expand(_element_configurations[i], ve), _element_landmarks[i]);
       eidx_map.push_back(eidx);
@@ -880,15 +880,9 @@ Lexer::add_element_type(const String &name, ElementFactory factory, uintptr_t th
 }
 
 int
-Lexer::element_type(const String &s) const
-{
-  return _element_type_map[s];
-}
-
-int
 Lexer::force_element_type(String name, bool report_error)
 {
-  int ftid = _element_type_map[name];
+  int ftid = element_type(name);
   if (ftid >= 0)
     return ftid;
   if (report_error)
@@ -935,7 +929,7 @@ Lexer::remove_element_type(int removed, int *prev_hint)
 
   // fix up element type name map
   const String &name = _element_types[removed].name;
-  if (name && _element_type_map[name] == removed) {
+  if (name && element_type(name) == removed) {
     int trav;
     for (trav = _element_types[removed].next & ET_TMASK;
 	 trav != ET_NULL && _element_types[trav].name != name;
@@ -1228,7 +1222,7 @@ Lexer::ydeclaration(const String &first_element)
       lerror("redeclaration of element %<%s%>", name.c_str());
       if (_c->_elements[e] != TUNNEL_TYPE)
 	_errh->lerror(_c->_element_landmarks[e], "element %<%s%> previously declared here", name.c_str());
-    } else if (_element_type_map[name] >= 0)
+    } else if (element_type(name) >= 0)
       lerror("%<%s%> is an element class", name.c_str());
     else
       get_element(name, etype, configuration, lm);
@@ -1392,11 +1386,11 @@ Lexer::ycompound(String name)
     Lexeme dots = lex();
     if (dots.is(lex3Dot)) {
       // '...' marks an extension type
-      if (_element_type_map[name] < 0) {
+      if (element_type(name) < 0) {
 	lerror("cannot extend unknown element class %<%s%>", name.c_str());
 	ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
       }
-      extension = _element_type_map[name];
+      extension = element_type(name);
 
       dots = lex();
       if (!first || !dots.is('}'))
