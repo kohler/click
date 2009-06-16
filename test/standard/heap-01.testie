@@ -1,0 +1,12 @@
+%info
+Tests heap algorithms with the HeapTest element.
+
+%require
+click-buildtool provides HeapTest
+
+%script
+click -qe HeapTest
+
+%expect stderr
+config:1:{{.*}}
+  All tests pass!
