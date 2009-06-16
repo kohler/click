@@ -315,9 +315,10 @@ class HashTable_const_iterator { public:
 	    return 0;
     }
 
-    /** @brief Return a pointer to the element, null if *this == end(). */
+    /** @brief Return a pointer to the element.
+     * @pre *this != end() */
     const T *operator->() const {
-	return get();
+	return &_rep.get()->v;
     }
 
     /** @brief Return a reference to the element.
@@ -399,7 +400,8 @@ class HashTable_iterator : public HashTable_const_iterator<T> { public:
 	return const_cast<T *>(inherited::get());
     }
 
-    /** @brief Return a pointer to the element, null if *this == end(). */
+    /** @brief Return a pointer to the element.
+     * @pre *this != end() */
     inline T *operator->() const {
 	return const_cast<T *>(inherited::operator->());
     }
@@ -437,9 +439,10 @@ class HashTable_const_iterator<Pair<K, V> > { public:
 	    return 0;
     }
 
-    /** @brief Return a pointer to the element, null if *this == end(). */
+    /** @brief Return a pointer to the element.
+     * @pre *this != end() */
     const Pair<K, V> *operator->() const {
-	return get();
+	return &_rep.get()->v;
     }
 
     /** @brief Return a reference to the element.
@@ -449,15 +452,17 @@ class HashTable_const_iterator<Pair<K, V> > { public:
     }
 
     /** @brief Return a reference to the element's key.
-     * @return get()->first */
+     * @pre *this != end()
+     * @return operator*().first */
     const K &key() const {
-	return get()->first;
+	return operator*().first;
     }
 
     /** @brief Return a reference to the element's value.
-     * @return get()->second */
+     * @pre *this != end()
+     * @return operator*().second */
     const V &value() const {
-	return get()->second;
+	return operator*().second;
     }
 
     /** @brief Return true iff *this != end(). */
@@ -512,7 +517,7 @@ class HashTable_iterator<Pair<K, V> > : public HashTable_const_iterator<Pair<K, 
 
     /** @brief Return a pointer to the element, null if *this == end(). */
     inline Pair<K, V> *operator->() const {
-	return get();
+	return const_cast<Pair<K, V> *>(inherited::operator->());
     }
 
     /** @brief Return a reference to the element.
@@ -522,9 +527,10 @@ class HashTable_iterator<Pair<K, V> > : public HashTable_const_iterator<Pair<K, 
     }
 
     /** @brief Return a mutable reference to the element's value.
-     * @return get()->second */
+     * @pre *this != end()
+     * @return operator*().second */
     V &value() const {
-	return get()->second;
+	return operator*().second;
     }
 
   private:
