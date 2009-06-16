@@ -85,6 +85,8 @@ struct click_ip {
 #define IP_PROTO_MFENSP		31
 #define IP_PROTO_MERIT		32
 #define IP_PROTO_DCCP		33
+#define IP_PROTO_RSVP		46
+#define IP_PROTO_GRE		47
 #define IP_PROTO_ICMP6          58
 #define IP_PROTO_CFTP		62
 #define IP_PROTO_SATNET		64
@@ -121,7 +123,12 @@ struct click_ip {
 /* checksum functions */
 
 #if !CLICK_LINUXMODULE
-uint16_t click_in_cksum(const unsigned char *addr, int len);
+/** @brief Calculate an Internet checksum over a data range.
+ * @param x data to checksum
+ * @param len number of bytes to checksum
+ *
+ * @a x must be two-byte aligned. */
+uint16_t click_in_cksum(const unsigned char *x, int len);
 uint16_t click_in_cksum_pseudohdr_raw(uint32_t csum, uint32_t src, uint32_t dst, int proto, int packet_len);
 #else
 # define click_in_cksum(addr, len) \
@@ -130,18 +137,41 @@ uint16_t click_in_cksum_pseudohdr_raw(uint32_t csum, uint32_t src, uint32_t dst,
 		csum_tcpudp_magic((src), (dst), (transport_len), (proto), ~(csum) & 0xFFFF)
 #endif
 uint16_t click_in_cksum_pseudohdr_hard(uint32_t csum, const struct click_ip *iph, int packet_len);
+void click_update_zero_in_cksum_hard(uint16_t *csum, const unsigned char *addr, int len);
 
-/* use if you're not sure whether there are source routing options */
+/** @brief Adjust an Internet checksum according to a pseudoheader.
+ * @param data_csum initial checksum (may be a 16-bit checksum)
+ * @param iph IP header from which to extract pseudoheader information
+ * @param transport_len length of transport header
+ *
+ * This function correctly handles Internet headers that contain source
+ * routing options.  The final destination from the source routing option is
+ * used to compute the pseudoheader checksum.  */
 static inline uint16_t
-click_in_cksum_pseudohdr(uint32_t csum, const struct click_ip *iph,
+click_in_cksum_pseudohdr(uint32_t data_csum, const struct click_ip *iph,
 			 int transport_len)
 {
     if (iph->ip_hl == 5)
-	return click_in_cksum_pseudohdr_raw(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, iph->ip_p, transport_len);
+	return click_in_cksum_pseudohdr_raw(data_csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, iph->ip_p, transport_len);
     else
-	return click_in_cksum_pseudohdr_hard(csum, iph, transport_len);
+	return click_in_cksum_pseudohdr_hard(data_csum, iph, transport_len);
 }
 
+/** @brief Incrementally adjust an Internet checksum.
+ * @param[in, out] csum points to checksum
+ * @param old_hw old halfword
+ * @param new_hw new halfword
+ *
+ * The checksum stored in *@a csum is updated to account for a change of @a
+ * old_hw to @a new_hw.
+ *
+ * Because of the vagaries of one's-complement arithmetic, this function will
+ * never produce a new checksum of ~+0 = 0xFFFF.  This is usually OK, since
+ * IP, TCP, and UDP checksums will never have this value.  (Only all-zero data
+ * can checksum to ~+0, but IP, TCP, and UDP checksums always cover at least
+ * one non-zero byte.)  If you are checksumming data that is potentially all
+ * zero, then call click_update_zero_in_cksum() after calling
+ * click_update_in_cksum(). */
 static inline void
 click_update_in_cksum(uint16_t *csum, uint16_t old_hw, uint16_t new_hw)
 {
@@ -150,6 +180,22 @@ click_update_in_cksum(uint16_t *csum, uint16_t old_hw, uint16_t new_hw)
     uint32_t sum = (~*csum & 0xFFFF) + (~old_hw & 0xFFFF) + new_hw;
     sum = (sum & 0xFFFF) + (sum >> 16);
     *csum = ~(sum + (sum >> 16));
+}
+
+/** @brief Potentially fix a zero-valued Internet checksum.
+ * @param[in, out] csum points to checksum
+ * @param x data to checksum
+ * @param len number of bytes to checksum
+ *
+ * If all the data bytes in [x, x+len) are zero, then its checksum should be
+ * ~+0 = 0xFFFF, but click_update_in_cksum may have set the checksum to ~-0 =
+ * 0x0000.  This function checks for such a case and sets the checksum
+ * correctly. */
+static inline void
+click_update_zero_in_cksum(uint16_t *csum, const unsigned char *x, int len)
+{
+    if (*csum == 0)
+	click_update_zero_in_cksum_hard(csum, x, len);
 }
 
 CLICK_CXX_UNPROTECT

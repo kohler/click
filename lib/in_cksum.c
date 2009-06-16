@@ -1,7 +1,7 @@
 /* -*- c-basic-offset: 4 -*-
  *
  * in_cksum.c -- Internet checksum
- * borrowed, with bug fixes, from one of the BSDs
+ * parts borrowed, with bug fixes, from one of the BSDs
  */
 
 #include <click/config.h>
@@ -24,7 +24,7 @@ click_in_cksum(const unsigned char *addr, int len)
     const uint16_t *w = (const uint16_t *)addr;
     uint32_t sum = 0;
     uint16_t answer = 0;
-    
+
     /*
      * Our algorithm is simple, using a 32 bit accumulator (sum), we add
      * sequential 16 bit words to it, and at the end, fold back all the
@@ -34,18 +34,18 @@ click_in_cksum(const unsigned char *addr, int len)
 	sum += *w++;
 	nleft -= 2;
     }
-  
+
     /* mop up an odd byte, if necessary */
     if (nleft == 1) {
 	*(unsigned char *)(&answer) = *(const unsigned char *)w ;
 	sum += answer;
     }
-  
+
     /* add back carry outs from top 16 bits to low 16 bits */
     sum = (sum & 0xffff) + (sum >> 16);
     sum += (sum >> 16);
     /* guaranteed now that the lower 16 bits of sum are correct */
-  
+
     answer = ~sum;              /* truncate to 16 bits */
     return answer;
 }
@@ -106,6 +106,16 @@ click_in_cksum_pseudohdr_hard(uint32_t csum, const struct click_ip *iph, int pac
 
 	opt += opt[1];
     }
-    
+
     return click_in_cksum_pseudohdr_raw(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, iph->ip_p, packet_len);
+}
+
+void
+click_update_zero_in_cksum_hard(uint16_t *csum, const unsigned char *x, int len)
+{
+    for (; len > 0; --len, ++x)
+	if (*x)
+	    return;
+    // if we get here, all bytes were zero, so the checksum is ~0
+    *csum = ~0;
 }
