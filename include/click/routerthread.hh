@@ -124,7 +124,7 @@ class RouterThread
     bool _greedy;
 #endif
 
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
     enum { C_CLICK, C_KERNEL, NCLIENTS };
     struct Client {			// top-level stride clients
 	unsigned pass;
@@ -160,7 +160,7 @@ class RouterThread
     inline void driver_unlock_tasks();
     inline void run_tasks(int ntasks);
     inline void run_os();
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
     void client_set_tickets(int client, int tickets);
     inline void client_update_pass(int client, const Timestamp &before, const Timestamp &after);
     inline void check_restride(Timestamp &before, const Timestamp &now, int &restride_iter);

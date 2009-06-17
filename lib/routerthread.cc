@@ -44,7 +44,7 @@ CLICK_DECLS
 
 #define PROFILE_ELEMENT		20
 
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
 # define DRIVER_TOTAL_TICKETS	128	/* # tickets shared between clients */
 # define DRIVER_GLOBAL_STRIDE	(Task::STRIDE1 / DRIVER_TOTAL_TICKETS)
 # define DRIVER_QUANTUM		8	/* microseconds per stride */
@@ -89,7 +89,7 @@ RouterThread::RouterThread(Master *m, int id)
 #endif
     _task_blocker = 0;
     _task_blocker_waiting = 0;
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
     _max_click_share = 80 * Task::MAX_UTILIZATION / 100;
     _min_click_share = Task::MAX_UTILIZATION / 200;
     _cur_click_share = 0;	// because we aren't yet running
@@ -171,7 +171,7 @@ RouterThread::driver_unlock_tasks()
 /* Adaptive scheduler         */
 /******************************/
 
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
 
 void
 RouterThread::set_cpu_share(unsigned min_frac, unsigned max_frac)
@@ -476,7 +476,7 @@ RouterThread::driver()
 
     driver_lock_tasks();
 
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
     int restride_iter = 0;
     Timestamp t_before = Timestamp::uninitialized_t();
     Timestamp restride_t_before = Timestamp::uninitialized_t();
@@ -505,16 +505,19 @@ RouterThread::driver()
 	_master->run_signals();
 #endif
 
-#if !(HAVE_ADAPTIVE_SCHEDULER||BSD_NETISRSCHED)
+#if !(HAVE_ADAPTIVE_SCHEDULER || BSD_NETISRSCHED)
 	if ((iter % _iters_per_os) == 0)
 	    run_os();
 #endif
 
-#ifdef BSD_NETISRSCHED
-	if ((iter % _master->timer_stride()) == 0 || _oticks != ticks) {
-	    _oticks = ticks;
+#if BSD_NETISRSCHED
+	bool run_timers = (iter % _master->timer_stride()) == 0 || _oticks != ticks;
 #else
-	if ((iter % _master->timer_stride()) == 0) {
+	bool run_timers = (iter % _master->timer_stride()) == 0;
+#endif
+	if (run_timers) {
+#if BSD_NETISRSCHED
+	    _oticks = ticks;
 #endif
 	    _master->run_timers();
 #if CLICK_NS
@@ -532,7 +535,7 @@ RouterThread::driver()
     if (_any_pending)
 	_master->process_pending(this);
 
-#ifndef HAVE_ADAPTIVE_SCHEDULER
+#if !HAVE_ADAPTIVE_SCHEDULER
     // run a bunch of tasks
 # if CLICK_BSDMODULE && !BSD_NETISRSCHED
     int s = splimp();
@@ -576,7 +579,7 @@ RouterThread::driver()
   finish_driver:
     driver_unlock_tasks();
 
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
     _cur_click_share = 0;
 #endif
 #if CLICK_LINUXMODULE

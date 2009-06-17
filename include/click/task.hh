@@ -177,7 +177,7 @@ class Task { public:
 
     inline void fire();
 
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
     inline unsigned runs() const;
     inline unsigned work_done() const;
     inline unsigned utilization() const;
@@ -217,7 +217,7 @@ class Task { public:
     TaskCallback _hook;
     void* _thunk;
 
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
     unsigned _runs;
     unsigned _work_done;
 #endif
@@ -560,7 +560,7 @@ Task::fire()
 #if HAVE_MULTITHREAD
     _cycle_runs++;
 #endif
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
     _runs++;
     if (!_hook)
 	_work_done += ((Element*)_thunk)->run_task(this);
@@ -578,7 +578,7 @@ Task::fire()
 #endif
 }
 
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
 inline unsigned
 Task::runs() const
 {

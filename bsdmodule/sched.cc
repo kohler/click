@@ -53,7 +53,7 @@ struct callout_handle click_timer_h;
 int click_thread_priority = PRIO_PROCESS;
 static Vector<int> *click_thread_pids;
 
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
 static unsigned min_click_frac = 5, max_click_frac = 800;
 #endif
 
@@ -62,7 +62,7 @@ click_sched(void *thunk)
 {
   curproc->p_nice = click_thread_priority;
   RouterThread *rt = (RouterThread *)thunk;
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
   rt->set_cpu_share(min_click_frac, max_click_frac);
 #endif
 
@@ -172,7 +172,7 @@ read_master_info(Element *, void *)
 #endif
 
 
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
 
 static String
 read_cpu_share(Element *, void *thunk)
@@ -361,7 +361,7 @@ click_init_sched(ErrorHandler *errh)
   Router::add_read_handler(0, "priority", read_priority, 0);
   Router::add_write_handler(0, "priority", write_priority, 0);
 #endif //BSD_NETISRSCHED
-#ifdef HAVE_ADAPTIVE_SCHEDULER
+#if HAVE_ADAPTIVE_SCHEDULER
   static_assert(Task::MAX_UTILIZATION == 1000);
   Router::add_read_handler(0, "min_cpu_share", read_cpu_share, 0);
   Router::add_write_handler(0, "min_cpu_share", write_cpu_share, 0);
