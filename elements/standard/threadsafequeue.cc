@@ -88,5 +88,5 @@ ThreadSafeQueue::pull(int)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(FullNoteQueue multithread)
+ELEMENT_REQUIRES(FullNoteQueue)
 EXPORT_ELEMENT(ThreadSafeQueue)
