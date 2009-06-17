@@ -165,9 +165,13 @@ class Master { public:
     int _max_select_fd;
 # endif /* HAVE_POLL_H */
     Vector<struct pollfd> _pollfds;
-    Vector<Element*> _read_poll_elements;
-    Vector<Element*> _write_poll_elements;
+    Vector<Element *> _read_elements;
+    Vector<Element *> _write_elements;
+    Vector<int> _fd_to_pollfd;
     Spinlock _select_lock;
+# if HAVE_MULTITHREAD
+    click_processor_t _selecting_processor;
+# endif
     void remove_pollfd(int pi, int event);
 # if HAVE_SYS_EVENT_H && HAVE_KQUEUE
     void run_selects_kqueue(bool);

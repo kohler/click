@@ -374,6 +374,7 @@ RouterThread::wake()
     if (task)
 	wake_up_process(task);
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
+    // see also Master::add_select()
     click_processor_t tid = _running_processor;
     if (tid != click_current_processor()
 	&& tid != click_invalid_processor())

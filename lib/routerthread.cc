@@ -511,7 +511,8 @@ RouterThread::driver()
 #endif
 
 #if BSD_NETISRSCHED
-	bool run_timers = (iter % _master->timer_stride()) == 0 || _oticks != ticks;
+	bool run_timers = (iter % _master->timer_stride()) == 0
+	    || _oticks != ticks;
 #else
 	bool run_timers = (iter % _master->timer_stride()) == 0;
 #endif
