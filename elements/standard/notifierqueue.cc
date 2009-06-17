@@ -80,7 +80,7 @@ NotifierQueue::pull(int)
 
     if (p)
 	_sleepiness = 0;
-    else if (++_sleepiness == SLEEPINESS_TRIGGER) {
+    else if (_sleepiness >= SLEEPINESS_TRIGGER) {
 	_empty_note.sleep();
 #if HAVE_MULTITHREAD
 	// Work around race condition between push() and pull().
@@ -89,7 +89,8 @@ NotifierQueue::pull(int)
 	if (size())
 	    _empty_note.wake();
 #endif
-    }
+    } else
+	++_sleepiness;
 
     return p;
 }

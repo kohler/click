@@ -141,7 +141,7 @@ FullNoteQueue::pull_success(int h, int, int nh)
 inline Packet *
 FullNoteQueue::pull_failure()
 {
-    if (++_sleepiness == SLEEPINESS_TRIGGER) {
+    if (_sleepiness >= SLEEPINESS_TRIGGER) {
         _empty_note.sleep();
 #if HAVE_MULTITHREAD
 	// Work around race condition between push() and pull().
@@ -150,7 +150,8 @@ FullNoteQueue::pull_failure()
 	if (size())
 	    _empty_note.wake();
 #endif
-    }
+    } else
+	++_sleepiness;
     return 0;
 }
 
