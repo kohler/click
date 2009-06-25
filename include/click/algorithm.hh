@@ -29,7 +29,7 @@ inline void ignore_result(T result)
  * The generic version constructs a temporary copy of @a a.  Some
  * specializations avoid this copy. */
 template <typename T>
-inline void swap(T &a, T &b)
+inline void click_swap(T &a, T &b)
 {
     T tmp(a);
     a = b;
@@ -44,7 +44,7 @@ template <typename T>
 inline void clear_by_swap(T &x)
 {
     T tmp;
-    swap(x, tmp);
+    click_swap(x, tmp);
 }
 
 
@@ -101,7 +101,7 @@ push_heap(iterator_type begin, iterator_type end, compare_type comp,
     size_t i = end - begin - 1, npos;
 
     while (i > 0 && (npos = (i-1)/2, comp(begin[i], begin[npos]))) {
-	swap(begin[i], begin[npos]);
+	click_swap(begin[i], begin[npos]);
 	place(begin + i);
 	i = npos;
     }
@@ -150,7 +150,7 @@ change_heap(iterator_type begin, iterator_type end, iterator_type element,
     size_t i = element - begin, size = end - begin, npos;
 
     while (i > 0 && (npos = (i-1)/2, comp(begin[i], begin[npos]))) {
-	swap(begin[i], begin[npos]);
+	click_swap(begin[i], begin[npos]);
 	place(begin + i);
 	i = npos;
     }
@@ -163,7 +163,7 @@ change_heap(iterator_type begin, iterator_type end, iterator_type element,
             smallest = trial + 1;
         if (smallest == i)
             break;
-	swap(begin[i], begin[smallest]);
+	click_swap(begin[i], begin[smallest]);
 	place(begin + i);
         i = smallest;
     }
@@ -213,7 +213,7 @@ remove_heap(iterator_type begin, iterator_type end, iterator_type element,
 {
     assert(begin <= element && element < end);
     if (element + 1 != end) {
-	swap(element[0], end[-1]);
+	click_swap(element[0], end[-1]);
 	place(element);
 	change_heap(begin, end - 1, element, comp, place);
     }

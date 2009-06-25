@@ -143,7 +143,7 @@ DEQueue<T>::pop_back()
 }
 
 template <typename T>
-inline void swap(DEQueue<T> &a, DEQueue<T> &b)
+inline void click_swap(DEQueue<T> &a, DEQueue<T> &b)
 {
     a.swap(b);
 }

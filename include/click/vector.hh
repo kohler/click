@@ -132,7 +132,7 @@ Vector<T>::pop_front()
 }
 
 template <typename T>
-inline void swap(Vector<T> &a, Vector<T> &b)
+inline void click_swap(Vector<T> &a, Vector<T> &b)
 {
     a.swap(b);
 }

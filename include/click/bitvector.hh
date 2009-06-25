@@ -416,7 +416,7 @@ Bitvector::operator-(const Bitvector &o) const
     return *this & ~o;
 }
 
-inline void swap(Bitvector &a, Bitvector &b)
+inline void click_swap(Bitvector &a, Bitvector &b)
 {
     a.swap(b);
 }

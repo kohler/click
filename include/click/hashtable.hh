@@ -1048,7 +1048,7 @@ inline bool operator!=(const HashTable_const_iterator<T> &a, const HashTable_con
 
 
 template <typename K, typename V>
-inline void swap(HashTable<K, V> &a, HashTable<K, V> &b)
+inline void click_swap(HashTable<K, V> &a, HashTable<K, V> &b)
 {
     a.swap(b);
 }

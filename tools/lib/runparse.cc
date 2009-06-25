@@ -158,7 +158,7 @@ RouterUnparseT::apply_relation(ElementClassT *a, ElementClassT *b, int new_relat
 {
     assert(new_relation >= X_LT && new_relation <= X_GT);
     if (a->uid() > b->uid()) {
-	swap(a, b);
+	click_swap(a, b);
 	new_relation = relation_negater[new_relation];
     }
 

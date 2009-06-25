@@ -603,7 +603,7 @@ operator<<(StringAccum &sa, const StringAccum &sb)
     return sa;
 }
 
-inline void swap(StringAccum &a, StringAccum &b)
+inline void click_swap(StringAccum &a, StringAccum &b)
 {
     a.swap(b);
 }
