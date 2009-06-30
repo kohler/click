@@ -42,20 +42,23 @@ static String dpcode_push_to_pull("h/l");
 
 ProcessingT::ProcessingT(bool resolve_agnostics, RouterT *router,
 			 ElementMap *emap, ErrorHandler *errh)
-    : _router(router), _element_map(emap), _scope(router->scope())
+    : _router(router), _element_map(emap), _scope(router->scope()),
+      _pidx_created(false)
 {
     create("", resolve_agnostics, errh);
 }
 
 ProcessingT::ProcessingT(RouterT *router, ElementMap *emap, ErrorHandler *errh)
-    : _router(router), _element_map(emap), _scope(router->scope())
+    : _router(router), _element_map(emap), _scope(router->scope()),
+      _pidx_created(false)
 {
     create("", true, errh);
 }
 
 ProcessingT::ProcessingT(const ProcessingT &processing, ElementT *element,
 			 ErrorHandler *errh)
-    : _element_map(processing._element_map), _scope(processing._scope)
+    : _element_map(processing._element_map), _scope(processing._scope),
+      _pidx_created(false)
 {
     assert(element->router() == processing._router);
     ElementClassT *t = element->resolve(processing._scope, &_scope, errh);
@@ -159,6 +162,9 @@ ProcessingT::create_pidx(ErrorHandler *errh)
 	    if (x->dead() && (x->ninputs() > 0 || x->noutputs() > 0))
 		errh->lwarning(x->decorated_landmark(), "dead element %s has live connections", x->name_c_str());
     }
+
+    // mark created
+    _pidx_created = true;
 }
 
 const char *
@@ -832,7 +838,7 @@ ProcessingT::compound_port_count_code() const
 String
 ProcessingT::compound_processing_code() const
 {
-    assert(_elt[end_to].size());
+    assert(_pidx_created);
     ElementT *input = _router->element("input");
     ElementT *output = _router->element("output");
     assert(input && output && input->tunnel() && output->tunnel());
@@ -865,7 +871,7 @@ ProcessingT::compound_processing_code() const
 String
 ProcessingT::compound_flow_code(ErrorHandler *errh) const
 {
-    assert(_elt[end_to].size());
+    assert(_pidx_created);
     ElementT *input = _router->element("input");
     ElementT *output = _router->element("output");
     assert(input && output && input->tunnel() && output->tunnel());

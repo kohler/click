@@ -178,6 +178,7 @@ class ProcessingT { public:
     Vector<int> _pidx[2];
     Vector<const ElementT *> _elt[2];
     Vector<int> _processing[2];
+    bool _pidx_created;
 
     enum { classwarn_unknown = 1, classwarn_pcode = 2 };
     HashTable<ElementClassT *, int> _class_warnings;
