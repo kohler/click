@@ -76,34 +76,7 @@ class QuickNoteQueue : public FullNoteQueue { public:
     // FullNoteQueue's push() suffices
     Packet *pull(int port);
 
-  protected:
-
-    inline Packet *pull_success(int h, int t, int nh);
-
 };
-
-inline Packet *
-QuickNoteQueue::pull_success(int h, int t, int nh)
-{
-    Packet *p = _q[h];
-    asm("" : : : "memory");
-    _head = nh;
-
-    _sleepiness = 0;
-    _full_note.wake();
-    if (nh == t) {
-	_empty_note.sleep();
-#if HAVE_MULTITHREAD
-	// Work around race condition between push() and pull().
-	// We might have just undone push()'s Notifier::wake() call.
-	// Easiest lock-free solution: check whether we should wake again!
-	if (size())
-	    _empty_note.wake();
-#endif
-    }
-
-    return p;
-}
 
 CLICK_ENDDECLS
 #endif

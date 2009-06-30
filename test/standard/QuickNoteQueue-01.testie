@@ -11,7 +11,7 @@ i :: InfiniteSource(LIMIT 1, ACTIVE false)
 	-> q :: QuickNoteQueue
 	-> d2 :: NotifierDebug
 	-> s :: PullSwitch
-	-> c :: Counter(COUNT_CALL 2 s.switch 0)
+	-> c :: Counter(COUNT_CALL 1 s.switch 1)
 	-> d :: Discard;
 Idle	-> [1] s;
 
@@ -27,7 +27,7 @@ DriverManager(print d1.signal, print d2.signal,
 
 %expect OUT
 full.0/1:1*
-empty.0/{{\d+}}:{{\d+}}*
+empty.0/{{\d+}}:0
 full.0/1:1*
 empty.0/{{\d+}}:0
 full.0/1:1*

@@ -40,13 +40,29 @@ QuickNoteQueue::cast(const char *n)
 Packet *
 QuickNoteQueue::pull(int)
 {
-    // Code taken from SimpleQueue::deq.
-    int h = _head, t = _tail, nh = next_i(h);
+    int h = _head, t = _tail;
+    Packet *p;
 
-    if (h != t)
-	return pull_success(h, t, nh);
-    else
-	return 0;
+    if (h != t) {
+	p = _q[h];
+	asm("" : : : "memory");
+	_head = h = next_i(h);
+	_full_note.wake();
+    } else
+	p = 0;
+
+    if (h == t) {
+	_empty_note.sleep();
+#if HAVE_MULTITHREAD
+	// Work around race condition between push() and pull().
+	// We might have just undone push()'s Notifier::wake() call.
+	// Easiest lock-free solution: check whether we should wake again!
+	if (size())
+	    _empty_note.wake();
+#endif
+    }
+
+    return p;
 }
 
 CLICK_ENDDECLS
