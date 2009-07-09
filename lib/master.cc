@@ -272,11 +272,11 @@ Master::kill_router(Router *router)
     for (int pi = 0; pi < _pollfds.size(); pi++) {
 	int fd = _pollfds[pi].fd;
 	// take components out of the arrays early
-	Element *read_element = _read_elements[fd];
-	Element *write_element = _write_elements[fd];
-	if (read_element && read_element->router() == router)
+	if (fd < _read_elements.size() && _read_elements[fd]
+	    && _read_elements[fd]->router() == router)
 	    remove_pollfd(pi, POLLIN);
-	if (write_element && write_element->router() == router)
+	if (fd < _write_elements.size() && _write_elements[fd]
+	    && _write_elements[fd]->router() == router)
 	    remove_pollfd(pi, POLLOUT);
 	if (pi < _pollfds.size() && _pollfds[pi].fd != fd)
 	    pi--;
