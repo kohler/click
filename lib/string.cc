@@ -68,6 +68,7 @@ CLICK_DECLS
 const char String::null_string_data = 0;
 const char String::oom_string_data = 0;
 const char String::bool_data[] = "true\0false";
+const char String::int_data[] = "0\0001\0002\0003\0004\0005\0006\0007\0008\0009";
 
 String::memo_t String::null_memo = {
     2, 0, 0, const_cast<char *>(&null_string_data)
@@ -118,75 +119,107 @@ String::delete_memo(memo_t *memo)
 /** @endcond never */
 
 
-String::String(int i)
+String::String(int x)
 {
-  char buf[128];
-  sprintf(buf, "%d", i);
-  assign(buf, -1, false);
+    if (x >= 0 && x < 10)
+	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+    else {
+	char buf[128];
+	sprintf(buf, "%d", x);
+	assign(buf, -1, false);
+    }
 }
 
-String::String(unsigned u)
+String::String(unsigned x)
 {
-  char buf[128];
-  sprintf(buf, "%u", u);
-  assign(buf, -1, false);
+    if (x < 10)
+	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+    else {
+	char buf[128];
+	sprintf(buf, "%u", x);
+	assign(buf, -1, false);
+    }
 }
 
-String::String(long i)
+String::String(long x)
 {
-  char buf[128];
-  sprintf(buf, "%ld", i);
-  assign(buf, -1, false);
+    if (x >= 0 && x < 10)
+	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+    else {
+	char buf[128];
+	sprintf(buf, "%ld", x);
+	assign(buf, -1, false);
+    }
 }
 
-String::String(unsigned long u)
+String::String(unsigned long x)
 {
-  char buf[128];
-  sprintf(buf, "%lu", u);
-  assign(buf, -1, false);
+    if (x < 10)
+	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+    else {
+	char buf[128];
+	sprintf(buf, "%lu", x);
+	assign(buf, -1, false);
+    }
 }
 
 // Implemented a [u]int64_t converter in StringAccum
 // (use the code even at user level to hunt out bugs)
 
 #if HAVE_LONG_LONG
-String::String(long long q)
+String::String(long long x)
 {
-  StringAccum sa;
-  sa << q;
-  assign(sa.take_string());
+    if (x >= 0 && x < 10)
+	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+    else {
+	StringAccum sa;
+	sa << x;
+	assign(sa.take_string());
+    }
 }
 
-String::String(unsigned long long q)
+String::String(unsigned long long x)
 {
-  StringAccum sa;
-  sa << q;
-  assign(sa.take_string());
+    if (x < 10)
+	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+    else {
+	StringAccum sa;
+	sa << x;
+	assign(sa.take_string());
+    }
 }
 #endif
 
 #if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
-String::String(int64_t q)
+String::String(int64_t x)
 {
-  StringAccum sa;
-  sa << q;
-  assign(sa.take_string());
+    if (x >= 0 && x < 10)
+	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+    else {
+	StringAccum sa;
+	sa << x;
+	assign(sa.take_string());
+    }
 }
 
-String::String(uint64_t q)
+String::String(uint64_t x)
 {
-  StringAccum sa;
-  sa << q;
-  assign(sa.take_string());
+    if (x < 10)
+	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+    else {
+	StringAccum sa;
+	sa << x;
+	assign(sa.take_string());
+    }
 }
 #endif
 
 #if HAVE_FLOAT_TYPES
-String::String(double d)
+String::String(double x)
 {
-  char buf[128];
-  int len = sprintf(buf, "%.12g", d);
-  assign(buf, len, false);
+    char buf[128];
+    int len = sprintf(buf, "%.12g", x);
+    assign(buf, len, false);
 }
 #endif
 

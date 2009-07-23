@@ -35,10 +35,7 @@ class String { public:
 
     /** @brief Construct an empty String (with length 0). */
     inline String() {
-	_r.data = null_memo.real_data;
-	_r.length = 0;
-	_r.memo = &null_memo;
-	atomic_uint32_t::inc(_r.memo->refcount);
+	assign_memo(null_memo.real_data, 0, &null_memo);
     }
 
     /** @brief Construct a copy of the String @a x. */
@@ -83,12 +80,9 @@ class String { public:
     }
 
     /** @brief Construct a String equal to "true" or "false" depending on the
-     * value of @a b. */
-    explicit inline String(bool b) {
-	_r.data = bool_data + (b ? 0 : 5);
-	_r.length = (b ? 4 : 5);
-	_r.memo = &permanent_memo;
-	atomic_uint32_t::inc(_r.memo->refcount);
+     * value of @a x. */
+    explicit inline String(bool x) {
+	assign_memo(bool_data + (x ? 0 : 5), x ? 4 : 5, &permanent_memo);
     }
 
     /** @brief Construct a String containing the single character @a c. */
@@ -615,18 +609,19 @@ class String { public:
 
     mutable rep_t _r;		// mutable for c_str()
 
-    inline String(const char *data, int length, memo_t *memo) {
+    inline void assign_memo(const char *data, int length, memo_t *memo) const {
 	_r.data = data;
 	_r.length = length;
 	_r.memo = memo;
 	atomic_uint32_t::inc(memo->refcount);
     }
 
+    inline String(const char *data, int length, memo_t *memo) {
+	assign_memo(data, length, memo);
+    }
+
     inline void assign(const String &x) const {
-	_r.data = x._r.data;
-	_r.length = x._r.length;
-	_r.memo = x._r.memo;
-	atomic_uint32_t::inc(_r.memo->refcount);
+	assign_memo(x._r.data, x._r.length, x._r.memo);
     }
 
     inline void deref() const {
@@ -642,6 +637,7 @@ class String { public:
     static const char null_string_data;
     static const char oom_string_data;
     static const char bool_data[11];
+    static const char int_data[20];
     static memo_t null_memo;
     static memo_t permanent_memo;
     static memo_t oom_memo;
