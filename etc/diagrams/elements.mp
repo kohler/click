@@ -169,9 +169,6 @@ vardef _elementit@#(expr label_str, ninputs, noutputs, personality, down_var, re
   elseif _x_ = pull_to_push: _x_ := push; fi;
   for _y_ = 0 upto noutputs-1: @#.outpers[_y_] = _x_; endfor;
   
-  @#.borderscale = defaultelementborderscale;
-  @#.portscale = defaultelementportscale;
-  
   elemdraw_@# = "drawboxes";
   sproc_@# := "sizeelement_";
   
@@ -281,6 +278,8 @@ enddef;
 def sizeelement_(suffix $) =
   if unknown $.dx: set_element_dx($); fi
   if unknown $.dy: set_element_dy($); fi
+  if unknown $.borderscale: $.borderscale = defaultelementborderscale; fi
+  if unknown $.portscale: $.portscale = defaultelementportscale; fi
 enddef;
 
 vardef fixelementsizeleft(text t) =
