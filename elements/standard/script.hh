@@ -197,9 +197,9 @@ arguments.
 
 =item C<PACKET>
 
-The script runs in response to a packet push event.  Within the script, the
-C<$input> variable equals the packet input port.  The script's return value
-is used as the output port number.
+The script runs in response to a packet push or pull event.  Within the
+script, the C<$input> variable equals the packet input port.  The script's
+return value is used as the output port number.
 
 =item C<PROXY>
 
@@ -323,6 +323,10 @@ returns its negation.
 Useful for true/false operations.  Parses all parameters as Booleans and
 returns their conjunction or disjunction, respectively.
 
+=h nand, nor "read with parameters"
+
+Like "not (and ...)" and "not (or ...)", respectively.
+
 =h if "read with parameters"
 
 Expects three space-separated parameters, the first a Boolean.  Returns the
@@ -376,12 +380,13 @@ class Script : public Element { public:
 
     const char *class_name() const	{ return "Script"; }
     const char *port_count() const	{ return "-/-"; }
-    const char *processing() const	{ return PUSH; }
+    const char *processing() const	{ return "ah/ah"; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void add_handlers();
 
     void push(int port, Packet *p);
+    Packet *pull(int port);
     void run_timer(Timer *);
 
     enum Insn {
@@ -437,7 +442,8 @@ class Script : public Element { public:
 	AR_ADD = 0, AR_SUB, AR_MUL, AR_DIV, AR_IDIV, ar_mod, ar_rem,
 	AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
 	AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat,
-	ar_and, ar_or, ar_now, ar_if, ar_in, ar_readable, ar_writable
+	ar_and, ar_or, ar_nand, ar_nor, ar_now, ar_if, ar_in,
+	ar_readable, ar_writable
     };
 
     void add_insn(int, int, int = 0, const String & = String());
