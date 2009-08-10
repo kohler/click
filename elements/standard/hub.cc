@@ -42,6 +42,8 @@ Hub::push(int port, Packet *p)
 	if (q)
 	    output(i).push(q);
     }
+    if (n == 0)
+	p->kill();
 }
 
 CLICK_ENDDECLS
