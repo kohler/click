@@ -572,7 +572,8 @@ Script::complete_step(String *retval)
 	int x;
 	*retval = String();
 	if (last_insn == INSN_RETURN || last_insn == insn_returnq) {
-	    if ((x = find_variable(String::make_stable("_", 1), false)) < _vars.size())
+	    x = find_variable(String::make_stable("_", 1), false);
+	    if (x < _vars.size())
 		*retval = _vars[x + 1];
 	} else if (last_insn == INSN_END && _type == type_push)
 	    *retval = String::make_stable("0", 1);
