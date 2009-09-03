@@ -890,7 +890,7 @@ Master::run_selects_select(bool more_tasks)
     fd_set read_mask = _read_select_fd_set;
     fd_set write_mask = _write_select_fd_set;
 
-# if HAD_MULTITHREAD
+# if HAVE_MULTITHREAD
     _selecting_processor = click_current_processor();
     _select_lock.release();
 # endif
@@ -899,7 +899,7 @@ Master::run_selects_select(bool more_tasks)
     int was_errno = errno;
     run_signals();
 
-# if HAD_MULTITHREAD
+# if HAVE_MULTITHREAD
     _selecting_processor = click_invalid_processor();
     _select_lock.acquire();
 # endif
@@ -942,7 +942,7 @@ Master::run_selects(bool more_tasks)
     if (!_select_lock.attempt())
 	return;
 
-#if CLICK_MULTITHREAD
+#if HAVE_MULTITHREAD
     if (_selecting_processor != click_invalid_processor()) {
 	// Another thread is blocked in select().  No point in this thread's
 	// also checking file descriptors, so block if there are no more tasks
