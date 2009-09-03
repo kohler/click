@@ -28,7 +28,7 @@ my(%flow_code_constants) =
 my(@source_file, @header_file, @click_name, @cxx_name, @doc_name,
    @parents, @port_count, @processing, @flow_code, @flags, @requirements,
    @element_methods, @element_libs, @provisions,
-   %click_name_to_id, %cxx_name_to_id);
+   %click_name_to_id, %cxx_name_to_id, $verbose);
 my(@includes) = ( );
 
 sub driver_mask ($) {
@@ -66,6 +66,7 @@ sub process_file ($) {
 	$headerfile = $headername;
     }
 
+    print STDERR "Reading $headerfile\n" if $verbose;
     my($text) = "";
     if ($headerfile =~ m|^/|) {
 	$text = filecontents($headerfile);
@@ -390,6 +391,7 @@ Options:
                           PFX from filenames in output.
   -I, --include DIR       Look for header files in PFX/DIR.
   -s, --sourcedir DIR     Record DIR as source directory in output.
+  -V, --verbose           Be more verbose.
   -h, --help              Print this message and exit.
 
 Report bugs to <click\@pdos.lcs.mit.edu>.
@@ -451,6 +453,8 @@ while (@ARGV) {
 	$dochref = shift @ARGV;
     } elsif (/^-h$/ || long_option_match($_, '--help', 3)) {
 	help();
+    } elsif (/^-V$/ || long_option_match($_, '--verbose', 3)) {
+	$verbose = 1;
     } elsif (/^-./) {
 	die "unknown option '$_'\n";
     } elsif (/^-$/) {
@@ -467,6 +471,7 @@ if ($prefix eq "" || $prefix eq "." || $prefix eq "./") {
 } else {
     @includes = (".", $prefix, map { m|^/| ? $_ : "$prefix$_" } @includes);
 }
+print STDERR "Includes: ", join(", ", @includes), "\n" if $verbose;
 
 foreach $fn (@files) {
     process_file($fn);
