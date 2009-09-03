@@ -47,7 +47,7 @@ class ClickIno { public:
     ino_t lookup(ino_t dir, const String &component);
 
     // readdir handles '..' (f_pos 0) and '.' (f_pos 1).
-    // It returns 0 for "filldir failed, have more", 1 for "out", <0 on error.
+    // It returns the number of things stored.
     typedef bool (*filldir_t)(const char *name, int name_len, ino_t ino, int dirtype, uint32_t f_pos, void *user_data);
     int readdir(ino_t dir, uint32_t &f_pos, filldir_t fd, void *user_data);
 

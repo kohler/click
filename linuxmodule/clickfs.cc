@@ -304,22 +304,29 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
     LOCK_CONFIG_READ();
 
     int error = inode_out_of_date(inode, -ENOENT);
+    int stored = 0;
+    if (error < 0)
+	goto done;
 
     // global '..'
     if (ino == INO_GLOBALDIR && f_pos == 0) {
-	if (my_filldir("..", 2, filp->f_dentry->d_parent->d_inode->i_ino, f_pos, DT_DIR, &mfd))
-	    f_pos++;
-	else
-	    error = -1;
+	if (!my_filldir("..", 2, filp->f_dentry->d_parent->d_inode->i_ino, f_pos, DT_DIR, &mfd))
+	    goto done;
+	f_pos++;
+	stored++;
     }
 
     // real entries
-    if (error >= 0)
-	error = click_ino.readdir(ino, f_pos, my_filldir, &mfd);
+    stored += click_ino.readdir(ino, f_pos, my_filldir, &mfd);
 
+  done:
     UNLOCK_CONFIG_READ();
     filp->f_pos = f_pos;
-    return (error == -1 ? 0 : error);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    return (error ? error : stored);
+#else
+    return error;
+#endif
 }
 
 } // extern "C"

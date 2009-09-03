@@ -80,6 +80,9 @@ ClickIno::true_prepare(Router *r, uint32_t generation)
     // config lock must be held!
 
     int nelem = (r ? r->nelements() : 0) + 1;
+    // Save some memory when replacing a large config with a small one
+    if (nelem < _nentries / 2 && _nentries > 256)
+	cleanup();
     if (grow(nelem) < 0)
 	return -ENOMEM;
 
@@ -319,10 +322,11 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 #define RD_UOFF		0x200000
 #define RD_NOFF		0x300000
 #define RD_XOFF		0x400000
-#define FILLDIR(a, b, c, d, e, f)  do { if (!filldir(a, b, c, d, e, f)) return 0; } while (0)
+#define FILLDIR(a, b, c, d, e, f)  do { if (!filldir(a, b, c, d, e, f)) return stored; else stored++; } while (0)
 
     int elementno = INO_ELEMENTNO(ino);
     int nelements = (_router ? _router->nelements() : 0);
+    int stored = 0;
 
     // ".." and "."
     if (f_pos == 0) {
@@ -401,7 +405,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
     }
 
     f_pos = RD_XOFF + 2;
-    return 1;
+    return stored;
 }
 
 #if INO_DEBUG
