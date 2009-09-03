@@ -430,7 +430,7 @@ Master::run_one_timer(Timer *t)
     click_cycles_t start_cycles = click_get_cycles();
 #endif
 
-    t->_hook(t, t->_thunk);
+    t->_hook.callback(t, t->_thunk);
 
 #if CLICK_STATS >= 2
     t->_owner->_timer_cycles += click_get_cycles() - start_cycles;

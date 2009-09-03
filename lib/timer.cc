@@ -192,23 +192,27 @@ Timer::task_hook(Timer *, void *thunk)
 
 
 Timer::Timer()
-    : _schedpos1(0), _hook(empty_hook), _thunk(0), _owner(0)
+    : _schedpos1(0), _thunk(0), _owner(0)
 {
+    _hook.callback = empty_hook;
 }
 
 Timer::Timer(TimerCallback f, void *user_data)
-    : _schedpos1(0), _hook(f), _thunk(user_data), _owner(0)
+    : _schedpos1(0), _thunk(user_data), _owner(0)
 {
+    _hook.callback = f;
 }
 
 Timer::Timer(Element* element)
-    : _schedpos1(0), _hook(element_hook), _thunk(element), _owner(0)
+    : _schedpos1(0), _thunk(element), _owner(0)
 {
+    _hook.callback = element_hook;
 }
 
 Timer::Timer(Task* task)
-    : _schedpos1(0), _hook(task_hook), _thunk(task), _owner(0)
+    : _schedpos1(0), _thunk(task), _owner(0)
 {
+    _hook.callback = task_hook;
 }
 
 void

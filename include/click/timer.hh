@@ -45,7 +45,7 @@ class Timer { public:
      * @param f callback function
      * @param user_data argument for callback function */
     inline void assign(TimerCallback f, void *user_data) {
-	_hook = f;
+	_hook.callback = f;
 	_thunk = user_data;
     }
 
@@ -53,14 +53,14 @@ class Timer { public:
      * Element::run_timer() run_timer@endlink(this) when fired.
      * @param element the element */
     void assign(Element *element) {
-	_hook = element_hook;
+	_hook.callback = element_hook;
 	_thunk = element;
     }
 
     /** @brief Change the Timer to schedule @a task when fired.
      * @param task the task */
     void assign(Task *task) {
-	_hook = task_hook;
+	_hook.callback = task_hook;
 	_thunk = task;
     }
 
@@ -252,7 +252,9 @@ class Timer { public:
 
     int _schedpos1;
     Timestamp _expiry;
-    TimerCallback _hook;
+    union {
+	TimerCallback callback;
+    } _hook;
     void *_thunk;
     Element *_owner;
 
