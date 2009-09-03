@@ -110,7 +110,7 @@ IPRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 		    r = r1;
 	    }
 	} else {
-	    errh->error("argument %d should be 'ADDR/MASK [GATEWAY] OUTPUT'", i+1);
+	    errh->error("argument %d should be %<ADDR/MASK [GATEWAY] OUTPUT%>", i+1);
 	    r = -EINVAL;
 	}
     }
@@ -172,7 +172,7 @@ IPRouteTable::run_command(int command, const String &str, Vector<IPRoute>* old_r
     if (!cp_ip_route(str, &route, command == CMD_REMOVE, this)
 	|| route.port < (command == CMD_REMOVE ? -1 : 0)
 	|| route.port >= noutputs())
-	return errh->error("expected 'ADDR/MASK [GATEWAY%s'", (command == CMD_REMOVE ? " OUTPUT]" : "] OUTPUT"));
+	return errh->error("expected %<ADDR/MASK [GATEWAY%s%>", (command == CMD_REMOVE ? " OUTPUT]" : "] OUTPUT"));
 
     int r, before = errh->nerrors();
     if (command == CMD_ADD)
@@ -194,11 +194,11 @@ IPRouteTable::run_command(int command, const String &str, Vector<IPRoute>* old_r
 
     // report common errors
     if (r == -EEXIST && errh->nerrors() == before)
-	errh->error("conflict with existing route '%s'", old_route.unparse().c_str());
+	errh->error("conflict with existing route %<%s%>", old_route.unparse().c_str());
     if (r == -ENOENT && errh->nerrors() == before)
-	errh->error("route '%s' not found", route.unparse().c_str());
+	errh->error("route %<%s%> not found", route.unparse().c_str());
     if (r == -ENOMEM && errh->nerrors() == before)
-	errh->error("no memory to store route '%s'", route.unparse().c_str());
+	errh->error("no memory to store route %<%s%>", route.unparse().c_str());
     return r;
 }
 
@@ -242,7 +242,7 @@ IPRouteTable::ctrl_handler(const String &conf_in, Element *e, void *, ErrorHandl
 	else if (!first_word)
 	    continue;
 	else {
-	    r = errh->error("bad command '%#s'", first_word.c_str());
+	    r = errh->error("bad command %<%#s%>", first_word.c_str());
 	    goto rollback;
 	}
 
@@ -288,7 +288,7 @@ IPRouteTable::lookup_handler(int, String& s, Element* e, const Handler*, ErrorHa
 	    s = String(port);
 	return 0;
     } else
-	return errh->error("expected IP address, not '%s'", s.c_str());
+	return errh->error("expected IP address");
 }
 
 void
