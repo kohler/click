@@ -144,8 +144,8 @@ Click.
 COPYRIGHT AND LICENSE
 ---------------------
 
-    Click is distributed under a version of the "MIT License", which is a
-BSD-like license. See the 'LICENSE' file for details.
+    Most of Click is distributed under a version of the "MIT License",
+which is a BSD-like license. See the 'LICENSE' file for details.
 
     Portions of the Click software are derived from the Linux kernel, and
 are thus distributed under the GNU General Public License, version 2. The
