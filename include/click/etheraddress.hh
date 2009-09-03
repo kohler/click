@@ -42,6 +42,14 @@ class EtherAddress { public:
 	return data()[0] & 1;
     }
 
+    /** @brief Return true iff this address is a "local" address.
+     *
+     * Local addresses have the next-to-lowest-order bit of the first byte set
+     * to 1. */
+    inline bool is_local() const {
+	return data()[0] & 2;
+    }
+
     /** @brief Return true iff this address is the broadcast address.
      *
      * The Ethernet broadcast address is FF-FF-FF-FF-FF-FF. */
