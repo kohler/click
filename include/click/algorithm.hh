@@ -93,9 +93,8 @@ struct less {
  *
  * @sa change_heap, pop_heap, remove_heap */
 template <typename iterator_type, typename compare_type, typename place_type>
-inline void
-push_heap(iterator_type begin, iterator_type end, compare_type comp,
-	  place_type place)
+inline void push_heap(iterator_type begin, iterator_type end,
+		      compare_type comp, place_type place)
 {
     assert(begin < end);
     size_t i = end - begin - 1, npos;
@@ -111,8 +110,8 @@ push_heap(iterator_type begin, iterator_type end, compare_type comp,
 
 /** @overload */
 template <typename iterator_type, typename compare_type>
-inline void
-push_heap(iterator_type begin, iterator_type end, compare_type comp)
+inline void push_heap(iterator_type begin, iterator_type end,
+		      compare_type comp)
 {
     push_heap(begin, end, comp, do_nothing<iterator_type>());
 }
@@ -142,9 +141,9 @@ push_heap(iterator_type begin, iterator_type end, compare_type comp)
  *
  * @sa push_heap, pop_heap, remove_heap */
 template <typename iterator_type, typename compare_type, typename place_type>
-iterator_type
-change_heap(iterator_type begin, iterator_type end, iterator_type element,
-	    compare_type comp, place_type place)
+iterator_type change_heap(iterator_type begin, iterator_type end,
+			  iterator_type element,
+			  compare_type comp, place_type place)
 {
     assert(begin <= element && element < end);
     size_t i = element - begin, size = end - begin, npos;
@@ -175,9 +174,8 @@ change_heap(iterator_type begin, iterator_type end, iterator_type element,
 
 /** @overload */
 template <typename iterator_type, typename compare_type>
-inline iterator_type
-change_heap(iterator_type begin, iterator_type end, iterator_type element,
-	    compare_type comp)
+inline iterator_type change_heap(iterator_type begin, iterator_type end,
+				 iterator_type element, compare_type comp)
 {
     return change_heap(begin, end, element, comp, do_nothing<iterator_type>());
 }
@@ -199,17 +197,18 @@ change_heap(iterator_type begin, iterator_type end, iterator_type element,
  *
  * The comparison function @a comp defines the heap order.
  *
- * The placement function @a place is called for each element that changes
- * place within the heap order; its argument is an iterator pointing at the
- * element that switched place.  @a place is useful when elements need to keep
- * track of their own positions in the heap order.  @a place defaults to
- * do_nothing<>().
+ * The placement function @a place is called for each actual element that
+ * changes place within the heap order; its argument is an iterator pointing
+ * at the element that switched place.  It is not called on @a element, which
+ * is no longer considered a member of the heap.  @a place is useful when
+ * elements need to keep track of their own positions in the heap order.  @a
+ * place defaults to do_nothing<>().
  *
  * @sa push_heap, change_heap, pop_heap */
 template <typename iterator_type, typename compare_type, typename place_type>
-inline void
-remove_heap(iterator_type begin, iterator_type end, iterator_type element,
-	    compare_type comp, place_type place)
+inline void remove_heap(iterator_type begin, iterator_type end,
+			iterator_type element,
+			compare_type comp, place_type place)
 {
     assert(begin <= element && element < end);
     if (element + 1 != end) {
@@ -221,9 +220,9 @@ remove_heap(iterator_type begin, iterator_type end, iterator_type element,
 
 /** @overload */
 template <typename iterator_type, typename compare_type>
-inline void
-remove_heap(iterator_type begin, iterator_type end, iterator_type element,
-	    compare_type comp)
+inline void remove_heap(iterator_type begin, iterator_type end,
+			iterator_type element,
+			compare_type comp)
 {
     remove_heap(begin, end, element, comp, do_nothing<iterator_type>());
 }
@@ -246,23 +245,23 @@ remove_heap(iterator_type begin, iterator_type end, iterator_type element,
  *
  * The placement function @a place is called for each element that changes
  * place within the heap order; its argument is an iterator pointing at the
- * element that switched place.  @a place is useful when elements need to keep
- * track of their own positions in the heap order.  @a place defaults to
- * do_nothing<>().
+ * element that switched place.  It is not called on the first element, which
+ * is no longer considered a member of the heap.  @a place is useful when
+ * elements need to keep track of their own positions in the heap order.  @a
+ * place defaults to do_nothing<>().
  *
  * @sa push_heap, change_heap, remove_heap */
 template <typename iterator_type, typename compare_type, typename place_type>
-inline void
-pop_heap(iterator_type begin, iterator_type end, compare_type comp,
-	 place_type place)
+inline void pop_heap(iterator_type begin, iterator_type end,
+		     compare_type comp, place_type place)
 {
     remove_heap(begin, end, begin, comp, place);
 }
 
 /** @overload */
 template <typename iterator_type, typename compare_type>
-inline void
-pop_heap(iterator_type begin, iterator_type end, compare_type comp)
+inline void pop_heap(iterator_type begin, iterator_type end,
+		     compare_type comp)
 {
     pop_heap(begin, end, comp, do_nothing<iterator_type>());
 }
