@@ -3,7 +3,7 @@
  * flowinfo.{cc,hh} -- element allows overriding flow codes
  * Eddie Kohler
  *
- * Copyright (c) 2008 Merai, Inc.
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -39,7 +39,7 @@ FlowInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	String code = cp_shift_spacevec(*it);
 	Element *e;
 	if (!name || !code || *it)
-	    errh->error("expected 'ELEMENT CODE'");
+	    errh->error("expected %<ELEMENT CODE%>");
 	else if ((e = cp_element(name, this, errh)))
 	    router()->set_flow_code_override(e->eindex(), code);
     }
