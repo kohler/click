@@ -192,6 +192,11 @@ class Timestamp { public:
     typedef seconds_type (Timestamp::*unspecified_bool_type)() const;
     inline operator unspecified_bool_type() const;
 
+    /** @brief Test if this Timestamp is negative (< Timestamp(0, 0)). */
+    inline bool is_negative() const {
+	return sec() < 0;
+    }
+
     inline seconds_type sec() const;
     inline uint32_t subsec() const;
     inline uint32_t msec() const;
