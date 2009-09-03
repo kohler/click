@@ -222,6 +222,11 @@ class Router { public:
 
     atomic_uint32_t _runcount;
 
+    volatile int _state;
+    bool _have_connections : 1;
+    bool _conn_sorted : 1;
+    volatile int _running;
+
     atomic_uint32_t _refcount;
 
     Vector<Element*> _elements;
@@ -237,11 +242,6 @@ class Router { public:
     Vector<int> _conn_output_sorter;
 
     Vector<String> _requirements;
-
-    volatile int _state;
-    bool _have_connections : 1;
-    bool _conn_sorted : 1;
-    volatile int _running;
 
     Vector<int> _ehandler_first_by_element;
     Vector<int> _ehandler_to_handler;
