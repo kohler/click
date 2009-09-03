@@ -184,40 +184,76 @@ click_strcmp(const String &a, const String &b)
     int raw_compare = 0;
 
     while (ad < ae && bd < be) {
-	if (isdigit((unsigned char) *ad) && isdigit((unsigned char) *bd)) {
-	    // compare the two numbers, but don't treat them as numbers in
-	    // case of overflow
-	    // first, skip initial '0's
+	if ((isdigit((unsigned char) *ad) || *ad == '.')
+	    && (isdigit((unsigned char) *bd) || *bd == '.')) {
+	    // compare the two numbers, but treat them as strings
+	    // (a decimal conversion might cause overflow)
+
+	    // check if both are negative (note that if we get here, entire
+	    // string prefixes are identical)
+	    bool negative = false;
+	    if (a.begin() < ad && ad[-1] == '-'
+		&& (a.begin() == ad - 1 || isspace((unsigned char) ad[-2])))
+		negative = true;
+
+	    // skip initial '0's, but remember any difference in length
 	    const char *iad = ad, *ibd = bd;
 	    while (ad < ae && *ad == '0')
 		++ad;
 	    while (bd < be && *bd == '0')
 		++bd;
 	    int longer_zeros = (ad - iad) - (bd - ibd);
-	    // walk over digits, remembering digit comparison
-	    int a_digit, b_digit, digit_compare = 0;
+
+	    // walk over digits, remembering first nonidentical digit comparison
+	    int digit_compare = 0;
+	    bool a_good, b_good;
 	    while (1) {
-		a_digit = ad < ae && isdigit((unsigned char) *ad);
-		b_digit = bd < be && isdigit((unsigned char) *bd);
-		if (!a_digit || !b_digit)
+		a_good = ad < ae && isdigit((unsigned char) *ad);
+		b_good = bd < be && isdigit((unsigned char) *bd);
+		if (!a_good || !b_good)
 		    break;
 		if (digit_compare == 0)
 		    digit_compare = *ad - *bd;
 		++ad;
 		++bd;
 	    }
-	    // if one number is longer, it must also be larger;
-	    // otherwise, digit comparisons take precedence, then zero counts
-	    if (a_digit != b_digit)
-		return a_digit - b_digit;
-	    else if (digit_compare)
-		return digit_compare;
-	    else if (longer_zeros)
+
+	    // if one number is longer, it must also be larger
+	    if (a_good != b_good)
+		return negative == a_good ? -1 : 1;
+	    // otherwise, digit comparisons take precedence
+	    if (digit_compare)
+		return negative == (digit_compare > 0) ? -1 : 1;
+
+	    // otherwise, integer parts are equal; check for fractions and
+	    // compare them digit by digit
+	    a_good = ad+1 < ae && *ad == '.' && isdigit((unsigned char) ad[1]);
+	    b_good = bd+1 < be && *bd == '.' && isdigit((unsigned char) bd[1]);
+	    if (a_good && b_good) {
+		// inside fractions, the earliest digit difference wins
+		++ad, ++bd;
+		do {
+		    if (*ad != *bd)
+			return negative == (*ad > *bd) ? -1 : 1;
+		    ++ad, ++bd;
+		    a_good = ad < ae && isdigit((unsigned char) *ad);
+		    b_good = bd < be && isdigit((unsigned char) *bd);
+		} while (a_good && b_good);
+		// then longer strings are greater; fallthru dtrt
+	    }
+	    if (a_good || b_good)
+		return negative == a_good ? -1 : 1;
+
+	    // as a last resort, the longer string of zeros is greater
+	    if (longer_zeros)
 		return longer_zeros;
+
+	    // if we get here, the numeric portions were byte-for-byte
+	    // identical; move on
 	} else if (isdigit((unsigned char) *ad))
-	    return (isalpha((unsigned char) *bd) ? -1 : 1);
+	    return isalpha((unsigned char) *bd) ? -1 : 1;
 	else if (isdigit((unsigned char) *bd))
-	    return (isalpha((unsigned char) *ad) ? 1 : -1);
+	    return isalpha((unsigned char) *ad) ? 1 : -1;
 	else {
 	    int alower = (unsigned char) tolower((unsigned char) *ad);
 	    int blower = (unsigned char) tolower((unsigned char) *bd);
