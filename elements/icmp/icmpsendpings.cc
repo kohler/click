@@ -185,7 +185,7 @@ ICMPPingSource::push(int, Packet *p)
 	if (!*send_ts)
 	    /* error */;
 	else {
-	    if (*send_ts < 0) {
+	    if (send_ts->is_negative()) {
 		_receiver->nduplicate++;
 		*send_ts = -*send_ts;
 	    }
