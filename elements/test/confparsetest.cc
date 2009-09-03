@@ -275,6 +275,7 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(click_strcmp(".2", "0.2") < 0);
     CHECK(click_strcmp("a-2", "a-23") < 0);
     CHECK(click_strcmp("a-2", "a-3") < 0);
+    CHECK(click_strcmp("a1.2", "a1a") > 0);
 #endif
 
     errh->message("All tests pass!");

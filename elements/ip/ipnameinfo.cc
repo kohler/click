@@ -38,6 +38,7 @@ CLICK_DECLS
 
 static const StaticNameDB::Entry ip_protos[] = {
     { "dccp", IP_PROTO_DCCP },
+    { "gre", IP_PROTO_GRE },
     { "icmp", IP_PROTO_ICMP },
     { "igmp", IP_PROTO_IGMP },
     { "ipip", IP_PROTO_IPIP },
@@ -128,6 +129,7 @@ static const StaticNameDB::Entry known_ports[] = {
     { "ntp", 123 },
     { "pop3", 110 },
     { "pop3s", 995 },
+    { "pptp", 1723 },
     { "rip", 520 },
     { "route", 520 },
     { "smtp", 25 },
