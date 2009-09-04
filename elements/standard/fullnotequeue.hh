@@ -120,7 +120,7 @@ FullNoteQueue::push_success(int h, int t, int nt, Packet *p)
 inline void
 FullNoteQueue::push_failure(Packet *p)
 {
-    if (_drops == 0)
+    if (_drops == 0 && _capacity > 0)
 	click_chatter("%{element}: overflow", this);
     _drops++;
     p->kill();

@@ -43,7 +43,7 @@ MixedQueue::push(int port, Packet *p)
     if (port == 0) {		// FIFO insert, drop new packet if full
 	int pindex = next_i(_tail);
 	if (pindex == _head) {
-	    if (_drops == 0)
+	    if (_drops == 0 && _capacity > 0)
 		click_chatter("%{element}: overflow", this);
 	    _drops++;
 	    checked_output_push(1, p);
@@ -54,7 +54,7 @@ MixedQueue::push(int port, Packet *p)
     } else {			// LIFO insert, drop old packet if full
 	int pindex = prev_i(_head);
 	if (pindex == _tail) {
-	    if (_drops == 0)
+	    if (_drops == 0 && _capacity > 0)
 		click_chatter("%{element}: overflow", this);
 	    _drops++;
 	    _tail = prev_i(_tail);
