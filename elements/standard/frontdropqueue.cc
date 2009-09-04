@@ -79,7 +79,7 @@ FrontDropQueue::take_state(Element *e, ErrorHandler *errh)
 	return;
 
     if (_tail != _head || _head != 0) {
-	errh->error("already have packets enqueued, can't take state");
+	errh->error("already have packets enqueued, can%,t take state");
 	return;
     }
 

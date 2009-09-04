@@ -79,7 +79,7 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	    // allow empty arguments
 	    continue;
 	if (parts.size() < 2)
-	    errh->error("expected %<NAME [ADDRS]%>, got %<%s%>", conf[i].c_str());
+	    errh->error("expected %<NAME [ADDRS]%>");
 
 	for (int j = 1; j < parts.size(); j++) {
 	    uint8_t d[24];

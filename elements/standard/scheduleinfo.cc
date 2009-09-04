@@ -50,7 +50,7 @@ ScheduleInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	if (parts.size() == 0)
 	    /* empty argument OK */;
 	else if (parts.size() != 2 || !cp_real2(parts[1], FRAC_BITS, &mt))
-	    errh->error("expected 'ELEMENTNAME PARAM', got '%s'", conf[i].c_str());
+	    errh->error("expected %<ELEMENTNAME PARAM%>");
 	else
 	    db->define(parts[0], &mt, 4);
     }

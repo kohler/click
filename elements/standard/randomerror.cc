@@ -134,7 +134,7 @@ RandomBitErrors::configure(Vector<String> &conf, ErrorHandler *errh)
   else if (kind_str == "clear")
     kind = 0;
   else
-    return errh->error("bad action '%s' (must be 'set', 'clear', or 'flip')",
+    return errh->error("bad action %<%s%> (must be %<set%>, %<clear%>, or %<flip%>)",
 		       kind_str.c_str());
 
   if (bit_error > 0x10000000)

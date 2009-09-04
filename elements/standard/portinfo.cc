@@ -60,7 +60,7 @@ PortInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	    else
 		continue;
 	} else if (slash == port_str.begin() || slash != port_str.end()) {
-	    errh->error("expected 'NAME PORT/PROTO', got '%s'", conf[i].c_str());
+	    errh->error("expected %<NAME PORT/PROTO%>");
 	    continue;
 	}
 

@@ -73,7 +73,7 @@ SetPacketType::configure(Vector<String> &conf, ErrorHandler *errh)
 	return -1;
     int ptype_val = parse_type(ptype.upper());
     if (ptype_val < 0)
-	return errh->error("unrecognized packet type '%s'", ptype.c_str());
+	return errh->error("unrecognized packet type %<%s%>", ptype.c_str());
     _ptype = (Packet::PacketType)ptype_val;
     return 0;
 }

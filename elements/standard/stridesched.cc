@@ -53,7 +53,7 @@ StrideSched::configure(Vector<String> &conf, ErrorHandler *errh)
 	    errh->error("argument %d (number of tickets) must be >= 0", i);
 	else {
 	    if (v > MAX_TICKETS) {
-		errh->warning("input %d's tickets reduced to %d", i, MAX_TICKETS);
+		errh->warning("input %d%,s tickets reduced to %d", i, MAX_TICKETS);
 		v = MAX_TICKETS;
 	    }
 	    _all[i].set_tickets(v);
@@ -129,7 +129,7 @@ StrideSched::set_tickets(int port, int tickets, ErrorHandler *errh)
     else if (tickets < 0)
 	return errh->error("number of tickets must be >= 0");
     else if (tickets > MAX_TICKETS) {
-	errh->warning("port %d's tickets reduced to %d", port, MAX_TICKETS);
+	errh->warning("port %d%,s tickets reduced to %d", port, MAX_TICKETS);
 	tickets = MAX_TICKETS;
     }
 

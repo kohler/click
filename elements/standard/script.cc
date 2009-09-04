@@ -331,7 +331,7 @@ Script::initialize(ErrorHandler *errh)
 	if (cp_time(cp_expand(_args3[_insn_pos], expander), &ts))
 	    _timer.schedule_after(ts);
 	else
-	    errh->error("syntax error at 'wait'");
+	    errh->error("syntax error at %<wait%>");
     } else if (insn == INSN_INITIAL) {
 	// get rid of the initial runcount so we get called right away
 	if (_type == type_driver)
@@ -394,7 +394,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 		    _timer.schedule_after(ts);
 		    _insn_pos--;
 		} else
-		    errh->error("syntax error at 'wait'");
+		    errh->error("syntax error at %<wait%>");
 		goto done;
 	    }
 	    _step_count++;
