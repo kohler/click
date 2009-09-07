@@ -114,7 +114,6 @@ static bool test_add(uint64_t a, uint64_t b, ErrorHandler *errh) {
 int
 BigintTest::initialize(ErrorHandler *errh)
 {
-    click_random_srandom();
     for (int i = 0; i < 3000; i++) {
 	uint32_t a = click_random() | (click_random() << 31);
 	uint32_t b = click_random() | (click_random() << 31);

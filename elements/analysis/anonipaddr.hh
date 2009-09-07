@@ -70,13 +70,6 @@ to each other. Here is the complete list:
       64-127     ...      64-127
      128-255     ...     128-255
 
-=item SEED
-
-Boolean. By default, AnonymizeIPAddr seeds the random number generator with
-with an approximation of random data, thus protecting the anonymized results
-from random-number guess attacks. Say 'SEED false' if you do not want it to
-do this. Default is true.
-
 =back
 
 =n

@@ -68,12 +68,12 @@ AnonymizeIPAddr::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _preserve_class = 0;
     String preserve_8;
-    bool seed = true;
+    bool seed_ignored;
 
     if (cp_va_kparse(conf, this, errh,
 		     "CLASS", 0, cpInteger, &_preserve_class,
 		     "PRESERVE_8", 0, cpArgument, &preserve_8,
-		     "SEED", 0, cpBool, &seed,
+		     "SEED", 0, cpBool, &seed_ignored,
 		     cpEnd) < 0)
 	return -1;
 
@@ -94,10 +94,6 @@ AnonymizeIPAddr::configure(Vector<String> &conf, ErrorHandler *errh)
 	    else
 		return errh->error("bad PRESERVE_8 argument `%s', should be integer between 0 and 255", words[i].c_str());
     }
-
-    // install seed if required
-    if (seed)
-	click_random_srandom();
 
     return 0;
 }

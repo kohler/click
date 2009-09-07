@@ -751,8 +751,6 @@ SortTest::initialize(ErrorHandler *errh)
 	return initialize_vec(errh);
 
     size_t nclasses = sizeof(classes) / sizeof(classes[0]);
-
-    click_random_srandom();
     click_qsort(classes, nclasses, sizeof(classes[0]), compar);
 
     for (int i = 0; i < 20; i++) {

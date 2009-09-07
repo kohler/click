@@ -1033,6 +1033,8 @@ Router::initialize(ErrorHandler *errh)
     // Configure all elements in configure order. Remember the ones that failed
     if (all_ok) {
 	Vector<String> conf;
+	// Set the random seed to a "truly random" value by default.
+	click_random_srandom();
 	for (int ord = 0; ord < _elements.size(); ord++) {
 	    int i = _element_configure_order[ord];
 #if CLICK_DMALLOC
