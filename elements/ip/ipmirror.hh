@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
 =c
 
-IPMirror
+IPMirror([DST_ANNO])
 
 =s ip
 
@@ -23,20 +23,27 @@ seq and ack numbers swapped.
 The IP and TCP or UDP checksums are not changed. They don't need to be; these
 swap operations do not affect checksums.
 
+By default the output packet's destination address annotation is set to the
+new destination address.  Pass "false" for the DST_ANNO argument to leave the
+annotation as is.  DST_ANNO defaults to true.
+
 */
 
-class IPMirror : public Element {
+class IPMirror : public Element { public:
 
- public:
+    IPMirror();
+    ~IPMirror();
 
-  IPMirror();
-  ~IPMirror();
+    const char *class_name() const		{ return "IPMirror"; }
+    const char *port_count() const		{ return PORTS_1_1; }
+    const char *processing() const		{ return AGNOSTIC; }
 
-  const char *class_name() const		{ return "IPMirror"; }
-  const char *port_count() const		{ return PORTS_1_1; }
-  const char *processing() const		{ return AGNOSTIC; }
+    int configure(Vector<String> &conf, ErrorHandler *errh);
+    Packet *simple_action(Packet *);
 
-  Packet *simple_action(Packet *);
+  private:
+
+    bool _dst_anno;
 
 };
 

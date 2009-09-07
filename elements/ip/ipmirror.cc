@@ -17,6 +17,7 @@
 
 #include <click/config.h>
 #include "ipmirror.hh"
+#include <click/confparse.hh>
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
 #include <clicknet/tcp.h>
@@ -30,6 +31,15 @@ IPMirror::~IPMirror()
 {
 }
 
+int
+IPMirror::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+    _dst_anno = true;
+    return cp_va_kparse(conf, this, errh,
+			"DST_ANNO", cpkP, cpBool, &_dst_anno,
+			cpEnd);
+}
+
 Packet *
 IPMirror::simple_action(Packet *p_in)
 {
@@ -40,6 +50,8 @@ IPMirror::simple_action(Packet *p_in)
   struct in_addr tmpa = iph->ip_src;
   iph->ip_src = iph->ip_dst;
   iph->ip_dst = tmpa;
+  if (_dst_anno)
+      p->set_dst_ip_anno(tmpa);
 
   // may mirror ports as well
   if ((iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP) && IP_FIRSTFRAG(iph) && (int)p->length() >= p->transport_header_offset() + 8) {
