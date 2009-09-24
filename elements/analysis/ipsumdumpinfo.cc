@@ -406,9 +406,11 @@ void ip_prepare(PacketDesc& d, const FieldWriter *)
 
     // Adjust extra length, since we calculate lengths here based on ip_len.
     if (d.iph && EXTRA_LENGTH_ANNO(p) > 0) {
-	uint32_t full_len = p->length() + EXTRA_LENGTH_ANNO(p);
-	uint32_t ip_len = p->network_header_offset() + ntohs(d.iph->ip_len);
-	SET_EXTRA_LENGTH_ANNO(p, full_len > ip_len ? full_len - ip_len : 0);
+	uint32_t full_len = p->network_length() + EXTRA_LENGTH_ANNO(p);
+	if (d.iph->ip_len != 0xFFFF || full_len <= 0xFFFF)
+	    SET_EXTRA_LENGTH_ANNO(p, 0);
+	else
+	    SET_EXTRA_LENGTH_ANNO(p, full_len - 0xFFFF);
     }
 }
 
