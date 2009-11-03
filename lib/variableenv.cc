@@ -69,7 +69,8 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 		vtype = '{';
 		s += 2;
 		for (cstart = s; s < end && *s != '}'; s++)
-		    /* nada */;
+		    if (*s == '$')
+			expand_vname = 1;
 		if (s == end)
 		    goto done;
 		vname = config.substring(cstart, s++);
@@ -142,7 +143,7 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 		if (expand_quote && quote == 0)
 		    output.pop_back(2);
 		if (expand_vname)
-		    output << '$' << '(' << vname << ')';
+		    output << beforedollar[0] << beforedollar[1] << vname << s[-1];
 		else
 		    uninterpolated = beforedollar;
 	    }
@@ -232,11 +233,41 @@ VariableEnvironment::expand(const String &var, int vartype, int quote,
 {
     String v(var);
     const char *minus = 0;
-    if (vartype == '{' && (minus = find(var, '-')) != var.end())
-	v = var.substring(var.begin(), minus);
+    int space_index = -1;
+
+    if (vartype == '{') {
+	const char *end = var.end();
+	const char *s = cp_skip_space(var.begin(), end);
+	const char *namebegin = s;
+	while (s < end && (isalnum((unsigned char) *s) || *s == '_'))
+	    ++s;
+	const char *nameend = s;
+	s = cp_skip_space(s, end);
+	if (s < end && *s == '[') {
+	    const char *nstart = cp_skip_space(s + 1, end);
+	    s = cp_integer(nstart, end, 0, &space_index);
+	    if (s > nstart && s < end && *s == ']')
+		s = cp_skip_space(s + 1, end);
+	    else
+		space_index = -1;
+	}
+	if (s < end && *s == '-')
+	    minus = s;
+	v = var.substring(namebegin, nameend);
+    }
+
     bool found;
     const String &val = value(v, found);
-    if (found) {
+
+    if (found && space_index >= 0) {
+	String word;
+	for (String valcopy(val);
+	     space_index >= 0 && (valcopy || word);
+	     --space_index)
+	    word = cp_shift_spacevec(valcopy);
+	output << cp_expand_in_quotes(word, quote);
+	return true;
+    } else if (found) {
 	output << cp_expand_in_quotes(val, quote);
 	return true;
     } else if (minus) {

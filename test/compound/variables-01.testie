@@ -1,0 +1,30 @@
+%info
+Test indexed variable expansion
+
+%script
+click -e '
+elementclass Foo {
+   $a | input -> Print("$a") -> Print("${a[0]}") -> Print("${a[2]}") -> Print("${a[3]}") -> output
+}
+elementclass Bar {
+   $a, $n | input -> Print("${a[$n]}") -> output
+}
+elementclass Baz {
+   $a | input -> Bar(${a[1]} ${a[0]}, ${a[2]}) -> output
+}
+InfiniteSource(DATA "", LIMIT 1, STOP true)
+  -> Foo(A B C)
+  -> Bar(D E F, 2)
+  -> Baz(G H 1)
+  -> Baz(I J 0)
+  -> Discard
+'
+
+%expect stderr
+A B C:    0
+A:    0
+C:    0
+   0
+F:    0
+G:    0
+J:    0
