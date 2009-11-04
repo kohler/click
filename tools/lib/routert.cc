@@ -40,7 +40,7 @@ RouterT::RouterT()
       _archive_map(-1),
       _declaration_scope(0), _scope_cookie(0),
       _scope(0),
-      _nformals(0), _ninputs(0), _noutputs(0), _scope_order_error(false),
+      _ninputs(0), _noutputs(0), _scope_order_error(false),
       _circularity_flag(false), _overload_type(0)
 {
 }
@@ -54,7 +54,7 @@ RouterT::RouterT(const String &name, const LandmarkT &landmark, RouterT *declara
       _archive_map(-1),
       _declaration_scope(declaration_scope), _scope_cookie(0),
       _scope(declaration_scope ? &declaration_scope->_scope : 0),
-      _nformals(0), _ninputs(0), _noutputs(0), _scope_order_error(false),
+      _ninputs(0), _noutputs(0), _scope_order_error(false),
       _circularity_flag(false), _overload_type(0), _type_landmark(landmark)
 {
     // borrow definitions from 'declaration'
@@ -1172,7 +1172,8 @@ const ElementTraits *
 RouterT::find_traits(ElementMap *emap) const
 {
     // Do not resolve agnostics to push, or the flow code will be wrong.
-    ProcessingT pt(false, const_cast<RouterT *>(this), emap);
+    SilentErrorHandler serrh;
+    ProcessingT pt(false, const_cast<RouterT *>(this), emap, &serrh);
     *(_traits.component(Traits::D_PORT_COUNT)) = pt.compound_port_count_code();
     *(_traits.component(Traits::D_PROCESSING)) = pt.compound_processing_code();
     *(_traits.component(Traits::D_FLOW_CODE)) = pt.compound_flow_code();
@@ -1234,7 +1235,7 @@ RouterT::set_overload_type(ElementClassT *t)
 inline int
 RouterT::assign_arguments(const Vector<String> &args, Vector<String> *values) const
 {
-    return cp_assign_arguments(args, _scope.values().begin(), _scope.values().begin() + _nformals, values);
+    return cp_assign_arguments(args, _formal_types.begin(), _formal_types.end(), values);
 }
 
 bool
@@ -1295,11 +1296,11 @@ RouterT::create_scope(const Vector<String> &args,
 {
     assert(&new_env != &env);
     new_env = VariableEnvironment(env.parent_of(_scope.depth()));
-    for (int i = 0; i < _nformals && i < args.size(); i++)
-	new_env.define(_scope.name(i), args[i], true);
-    for (int i = args.size(); i < _nformals; i++)
-	new_env.define(_scope.name(i), String(), true);
-    for (int i = _nformals; i < _scope.size(); i++)
+    for (int i = 0; i < _formals.size() && i < args.size(); i++)
+	new_env.define(_formals[i], args[i], true);
+    for (int i = args.size(); i < _formals.size(); i++)
+	new_env.define(_formals[i], String(), true);
+    for (int i = 0; i < _scope.size(); i++)
 	new_env.define(_scope.name(i), cp_expand(_scope.value(i), env), true);
 }
 
@@ -1317,7 +1318,7 @@ RouterT::complex_expand_element(
     _circularity_flag = true;
 
     // parse configuration string
-    int nargs = _nformals;
+    int nargs = _formals.size();
     if (args.size() != nargs) {
 	const char *whoops = (args.size() < nargs ? "few" : "many");
 	String signature;

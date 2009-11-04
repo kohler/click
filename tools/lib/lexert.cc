@@ -852,20 +852,20 @@ LexerT::yelementclass(const char *pos1)
 }
 
 void
-LexerT::ydefine(RouterT *r, const String &fname, const String &ftype, bool isformal, const Lexeme &t, bool &scope_order_error)
+LexerT::ydefine(RouterT *r, const String &fname, const String &ftype, const Lexeme &t, bool &scope_order_error)
 {
-    if (!r->define(fname, ftype, isformal))
+    if (!r->add_formal(fname, ftype))
 	lerror(t, "parameter %<$%s%> multiply defined", fname.c_str());
-    else if (isformal) {
+    else {
 	if (ftype)
-	    for (int i = 0; i < r->scope().size() - 1; i++)
-		if (r->scope().value(i) == ftype) {
+	    for (int i = 0; i < r->nformals() - 1; ++i)
+		if (r->formal_type(i) == ftype) {
 		    lerror(t, "repeated keyword parameter %<%s%> in compound element", ftype.c_str());
 		    break;
 		}
 	if (!scope_order_error && r->nformals() > 1
-	    && ((!ftype && r->scope().value(r->nformals() - 2))
-		|| r->scope().value(r->nformals() - 2) == "__REST__")) {
+	    && ((!ftype && r->formal_type(r->nformals() - 2))
+		|| r->formal_type(r->nformals() - 2) == "__REST__")) {
 	    lerror(t, "compound element parameters out of order\n(The correct order is %<[positional], [keywords], [__REST__]%>.)");
 	    scope_order_error = true;
 	}
@@ -906,7 +906,7 @@ LexerT::ycompound_arguments(RouterT *comptype)
       break;
     }
 
-    ydefine(comptype, varname, vartype, true, t1, scope_order_error);
+    ydefine(comptype, varname, vartype, t1, scope_order_error);
 
     const Lexeme &tsep = lex();
     if (tsep.is('|'))
@@ -1043,7 +1043,7 @@ LexerT::yvar()
 		    lerror(vars, "bad %<var%> declaration: not a variable");
 		else {
 		    var = var.substring(1);
-		    if (!_router->define(var, args[i], false))
+		    if (!_router->define(var, args[i]))
 			lerror(vars, "parameter %<%s%> multiply defined", var.c_str());
 		}
 	    }

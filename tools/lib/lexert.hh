@@ -136,7 +136,7 @@ class LexerT { public:
 
     ElementClassT *element_type(const Lexeme &) const;
     ElementClassT *force_element_type(const Lexeme &);
-    void ydefine(RouterT *, const String &name, const String &value, bool isformal, const Lexeme &, bool &scope_order_error);
+    void ydefine(RouterT *, const String &name, const String &value, const Lexeme &, bool &scope_order_error);
 
     LexerT(const LexerT &);
     LexerT &operator=(const LexerT &);

@@ -22,6 +22,7 @@ class VariableEnvironment : public VariableExpander { public:
     int depth() const			{ return _depth; }
     int size() const			{ return _names.size(); }
 
+    bool defines(const String &name) const;
     const String &name(int i) const	{ return _names[i]; }
     const Vector<String> &values() const { return _values; }
     const String &value(int i) const	{ return _values[i]; }

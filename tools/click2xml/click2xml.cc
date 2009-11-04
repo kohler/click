@@ -164,11 +164,11 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 
 	String new_indent = add_indent(indent, 4);
 	for (int i = 0; i < compound->nformals(); i++) {
-	    assert(compound->scope().name(i));
+	    assert(compound->formal_name(i));
 	    fprintf(f, "%s<formal number=\"%d\" name=\"%s\" ",
-		    new_indent.c_str(), i, compound->scope().name(i).c_str());
-	    if (compound->scope().value(i))
-		fprintf(f, "key=\"%s\" ", compound->scope().value(i).c_str());
+		    new_indent.c_str(), i, compound->formal_name(i).c_str());
+	    if (compound->formal_type(i))
+		fprintf(f, "key=\"%s\" ", compound->formal_type(i).c_str());
 	    fprintf(f, "/>\n");
 	}
 	generate_router(compound->cast_router(), f, new_indent, errh);

@@ -501,13 +501,13 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 	if (!_formals[i])
 	    cerrh.lerror(_xml_landmark, "definition missing for formal %d", i);
 	else if (_formals[i][0] != '$')
-	    cerrh.lerror(_xml_landmark, "formal %d ('%s') does not begin with '$'", i, _formals[i].c_str());
-	else if (_router->define(_formals[i], _formal_types[i], true) < 0)
-	    cerrh.lerror(_xml_landmark, "redeclaration of formal '%s'", _formals[i].c_str());
+	    cerrh.lerror(_xml_landmark, "formal %d (%<%s%>) does not begin with %<$%>", i, _formals[i].c_str());
+	else if (_router->add_formal(_formals[i], _formal_types[i]) < 0)
+	    cerrh.lerror(_xml_landmark, "redeclaration of formal %<%s%>", _formals[i].c_str());
 	else {
 	    if ((!_formal_types[i] && formal_state == 1)
 		|| (_formal_types[i] == "__REST__" && i != _formals.size() - 1))
-		cerrh.lerror(_xml_landmark, "formals out of order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
+		cerrh.lerror(_xml_landmark, "formals out of order\n(The correct order is %<[positional], [keywords], [__REST__]%>.)");
 	    if (_formal_types[i])
 		formal_state = 1;
 	}

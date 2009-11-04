@@ -199,9 +199,15 @@ class RouterT : public ElementClassT { public:
     bool primitive() const		{ return false; }
     bool overloaded() const;
 
-    int nformals() const		{ return _nformals; }
+    inline bool defines(const String &name) const;
+
+    int nformals() const		{ return _formals.size(); }
+    inline bool add_formal(const String &name, const String &type);
+    const String &formal_name(int i) const { return _formals[i]; }
+    const String &formal_type(int i) const { return _formal_types[i]; }
+
     const VariableEnvironment &scope() const { return _scope; }
-    inline bool define(const String &name, const String &value, bool isformal);
+    inline bool define(const String &name, const String &value);
     inline void redefine(const VariableEnvironment &);
     int ninputs() const			{ return _ninputs; }
     int noutputs() const		{ return _noutputs; }
@@ -267,7 +273,8 @@ class RouterT : public ElementClassT { public:
     int _scope_cookie;
 
     VariableEnvironment _scope;
-    int _nformals;
+    Vector<String> _formals;
+    Vector<String> _formal_types;
     int _ninputs;
     int _noutputs;
     bool _scope_order_error;
@@ -583,13 +590,30 @@ RouterT::insert_after(ElementT *e, const PortT &h)
 }
 
 inline bool
-RouterT::define(const String &name, const String &value, bool isformal)
+RouterT::defines(const String &name) const
 {
-    assert(!isformal || _nformals == _scope.size());
-    bool retval = _scope.define(name, value, false);
-    if (isformal)
-	_nformals = _scope.size();
-    return retval;
+    for (const String *f = _formals.begin(); f != _formals.end(); ++f)
+	if (*f == name)
+	    return true;
+    return _scope.defines(name);
+}
+
+inline bool
+RouterT::add_formal(const String &name, const String &type)
+{
+    if (defines(name))
+	return false;
+    _formals.push_back(name);
+    _formal_types.push_back(type);
+    return true;
+}
+
+inline bool
+RouterT::define(const String &name, const String &value)
+{
+    if (defines(name))
+	return false;
+    return _scope.define(name, value, false);
 }
 
 inline void

@@ -83,13 +83,13 @@ RouterT::unparse_declaration(StringAccum &sa, const String &indent, UnparseKind 
     }
 
     // print formals
-    for (int i = 0; i < _nformals; i++) {
+    for (int i = 0; i < _formals.size(); i++) {
 	sa << (i ? ", " : " ");
-	if (_scope.value(i))
-	    sa << _scope.value(i) << ' ';
-	sa << _scope.name(i);
+	if (_formal_types[i])
+	    sa << _formal_types[i] << ' ';
+	sa << _formals[i];
     }
-    if (_nformals)
+    if (_formals.size())
 	sa << " |";
     sa << "\n";
 
@@ -120,10 +120,11 @@ RouterT::unparse_requirements(StringAccum &sa, const String &indent) const
 void
 RouterT::unparse_defines(StringAccum &sa, const String &indent) const
 {
-    if (_scope.size() > _nformals) {
+    if (_scope.size()) {
 	sa << indent << "define(";
-	for (int i = _nformals; i < _scope.size(); i++) {
-	    if (i > _nformals) sa << ", ";
+	for (int i = 0; i < _scope.size(); i++) {
+	    if (i > 0)
+		sa << ", ";
 	    sa << '$' << _scope.name(i) << ' ' << _scope.value(i);
 	}
 	sa << ");\n\n";

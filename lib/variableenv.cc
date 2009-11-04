@@ -188,6 +188,15 @@ VariableEnvironment::parent_of(int depth) const
 }
 
 bool
+VariableEnvironment::defines(const String &name) const
+{
+    for (const String *s = _names.begin(); s != _names.end(); ++s)
+	if (*s == name)
+	    return true;
+    return false;
+}
+
+bool
 VariableEnvironment::define(const String &name, const String &value, bool override)
 {
     for (String *s = _names.begin(); s != _names.end(); s++)
