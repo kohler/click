@@ -31,7 +31,7 @@
 CLICK_DECLS
 
 ARPQuerier::ARPQuerier()
-    : _arpt(0), _my_arpt(false)
+    : _arpt(0), _my_arpt(false), _zero_warned(false)
 {
 }
 
@@ -55,7 +55,8 @@ ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     uint32_t capacity, entry_capacity;
     Timestamp timeout;
-    bool have_capacity, have_entry_capacity, have_timeout, have_broadcast;
+    bool have_capacity, have_entry_capacity, have_timeout, have_broadcast,
+	broadcast_poll = false;
     Element *arpt = 0;
     if (cp_va_kparse_remove_keywords(conf, this, errh,
 		"CAPACITY", cpkC, &have_capacity, cpUnsigned, &capacity,
@@ -63,6 +64,7 @@ ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 		"TIMEOUT", cpkC, &have_timeout, cpTimestamp, &timeout,
 		"BROADCAST", cpkC, &have_broadcast, cpIPAddress, &_my_bcast_ip,
 		"TABLE", 0, cpElement, &arpt,
+		"BROADCAST_POLL", 0, cpBool, &broadcast_poll,
 		cpEnd) < 0)
 	return -1;
 
@@ -94,6 +96,7 @@ ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 	if (_my_bcast_ip == _my_ip)
 	    _my_bcast_ip = 0xFFFFFFFFU;
     }
+    _broadcast_poll = broadcast_poll;
     return 0;
 }
 
@@ -178,8 +181,10 @@ ARPQuerier::take_state(Element *e, ErrorHandler *errh)
 }
 
 void
-ARPQuerier::send_query_for(Packet *p)
+ARPQuerier::send_query_for(Packet *p, bool ether_dhost_valid)
 {
+    // Uses p's IP and Ethernet headers.
+
     static_assert(Packet::default_headroom >= sizeof(click_ether));
     WritablePacket *q = Packet::make(Packet::default_headroom - sizeof(click_ether),
 				     NULL, sizeof(click_ether) + sizeof(click_ether_arp), 0);
@@ -190,7 +195,10 @@ ARPQuerier::send_query_for(Packet *p)
 
     click_ether *e = (click_ether *) q->data();
     q->set_ether_header(e);
-    memset(e->ether_dhost, 0xff, 6);
+    if (ether_dhost_valid && likely(!_broadcast_poll))
+	memcpy(e->ether_dhost, p->ether_header()->ether_dhost, 6);
+    else
+	memset(e->ether_dhost, 0xff, 6);
     memcpy(e->ether_shost, _my_en.data(), 6);
     e->ether_type = htons(ETHERTYPE_ARP);
 
@@ -248,14 +256,12 @@ ARPQuerier::handle_ip(Packet *p, bool response)
   retry_read_lock:
     r = _arpt->lookup(dst_ip, dst_eth, 60 * CLICK_HZ);
     if (r >= 0 && !dst_eth->is_broadcast()) {
-	memcpy(&q->ether_header()->ether_shost, _my_en.data(), 6);
-	output(0).push(q);
+	if (r > 0)
+	    send_query_for(q, true);
+	// ... and send packet below.
     } else if (dst_ip.addr() == 0xFFFFFFFFU || dst_ip == _my_bcast_ip) {
-	// Check special IP addresses
-	*dst_eth = EtherAddress::make_broadcast();
-	memcpy(&q->ether_header()->ether_shost, _my_en.data(), 6);
-	output(0).push(q);
-	r = 0;
+	memset(dst_eth, 0xff, 6);
+	// ... and send packet below.
     } else if (dst_ip.is_multicast()) {
 	uint8_t *dst_addr = q->ether_header()->ether_dhost;
 	dst_addr[0] = 0x01;
@@ -265,26 +271,32 @@ ARPQuerier::handle_ip(Packet *p, bool response)
 	dst_addr[3] = (addr >> 16) & 0x7F;
 	dst_addr[4] = addr >> 8;
 	dst_addr[5] = addr;
-	memcpy(&q->ether_header()->ether_shost, _my_en.data(), 6);
-	output(0).push(q);
-	r = 0;
-    } else if (!dst_ip) {
-	static bool zero_warned = false;
-	if (!zero_warned) {
-	    click_chatter("%s: would query for 0.0.0.0; missing dest IP addr annotation?", declaration().c_str());
-	    zero_warned = true;
-	}
-	++_drops;
-	q->kill();
-	r = 0;
+	// ... and send packet below.
     } else {
-	r = _arpt->append_query(dst_ip, q);
-	if (r == -EAGAIN)
-	    goto retry_read_lock;
+	// Zero or unknown address: do not send the packet.
+	if (!dst_ip) {
+	    if (!_zero_warned) {
+		click_chatter("%s: would query for 0.0.0.0; missing dest IP addr annotation?", declaration().c_str());
+		_zero_warned = true;
+	    }
+	    ++_drops;
+	    q->kill();
+	} else {
+	    r = _arpt->append_query(dst_ip, q);
+	    if (r == -EAGAIN)
+		goto retry_read_lock;
+	    if (r > 0)
+		send_query_for(q, false); // q is on the ARP entry's queue
+	    // Do not q->kill() since it is stored in some ARP entry.
+	}
+	return;
     }
 
-    if (r > 0)			// poll
-	send_query_for(q);
+    // It's time to emit the packet with our Ethernet address as source.  (Set
+    // the source address immediately before send in case the user changes the
+    // source address while packets are enqueued.)
+    memcpy(&q->ether_header()->ether_shost, _my_en.data(), 6);
+    output(0).push(q);
 }
 
 /*

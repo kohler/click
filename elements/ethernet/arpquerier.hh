@@ -80,6 +80,12 @@ forwarded to Ethernet address FF-FF-FF-FF-FF-FF.  Defaults to the local
 broadcast address that can be extracted from the IP address's corresponding
 prefix, if any.
 
+=item BROADCAST_POLL
+
+Boolean.  If true, then send ARP polls (where an entry is about to expire, but
+hasn't expired yet) broadcast.  The default is to send such polls unicast to
+the previous Ethernet address.  Defaults to false.
+
 =back
 
 =e
@@ -181,6 +187,7 @@ class ARPQuerier : public Element { public:
     EtherAddress _my_en;
     IPAddress _my_ip;
     IPAddress _my_bcast_ip;
+    int _broadcast_poll;
 
     // statistics
     atomic_uint32_t _arp_queries;
@@ -188,8 +195,9 @@ class ARPQuerier : public Element { public:
     atomic_uint32_t _arp_responses;
     atomic_uint32_t _broadcasts;
     bool _my_arpt;
+    bool _zero_warned;
 
-    void send_query_for(Packet *p);
+    void send_query_for(Packet *p, bool ether_dhost_valid);
 
     void handle_ip(Packet *p, bool response);
     void handle_response(Packet *p);
