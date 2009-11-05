@@ -68,6 +68,14 @@ Delete an entry from the table.  The string should consist of an IP address.
 
 Clear the table, deleting all entries.
 
+=h count r
+
+Return the number of entries in the table.
+
+=h length r
+
+Return the number of packets stored in the table.
+
 =a
 
 ARPQuerier
@@ -115,8 +123,15 @@ class ARPTable : public Element { public:
 	else
 	    _expire_jiffies = timeout.jiffies();
     }
+
     uint32_t drops() const {
 	return _drops;
+    }
+    uint32_t count() const {
+	return _entry_count;
+    }
+    uint32_t length() const {
+	return _packet_count;
     }
 
     void run_timer(Timer *);

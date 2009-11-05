@@ -223,6 +223,26 @@ ARPTable::append_query(IPAddress ip, Packet *p)
 	return -EAGAIN;
     }
 
+    // Since we're still trying to send to this address, keep the entry just
+    // this side of expiring.  This fixes a bug reported 5 Nov 2009 by Seiichi
+    // Tetsukawa, and verified via testie, where the slim() below could delete
+    // the "ae" ARPEntry when "ae" was the oldest entry in the system.
+    if (_expire_jiffies) {
+	click_jiffies_t live_jiffies_min = now - _expire_jiffies;
+	if (click_jiffies_less(ae->_live_jiffies, live_jiffies_min)) {
+	    ae->_live_jiffies = live_jiffies_min;
+	    // Now move "ae" to the right position in the list by walking
+	    // forward over other elements (potentially expensive?).
+	    ARPEntry *ae_next = ae->_age_link.next(), *next = ae_next;
+	    while (next && click_jiffies_less(next->_live_jiffies, ae->_live_jiffies))
+		next = next->_age_link.next();
+	    if (ae_next != next) {
+		_age.erase(ae);
+		_age.insert(next /* might be null */, ae);
+	    }
+	}
+    }
+
     ++_packet_count;
     if (_packet_capacity && _packet_count > _packet_capacity)
 	slim();
@@ -318,6 +338,8 @@ ARPTable::add_handlers()
 {
     add_read_handler("table", read_handler, h_table);
     add_data_handlers("drops", Handler::OP_READ, &_drops);
+    add_data_handlers("count", Handler::OP_READ, &_entry_count);
+    add_data_handlers("length", Handler::OP_READ, &_packet_count);
     add_write_handler("insert", write_handler, h_insert);
     add_write_handler("delete", write_handler, h_delete);
     add_write_handler("clear", write_handler, h_clear);

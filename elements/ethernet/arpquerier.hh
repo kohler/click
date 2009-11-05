@@ -100,34 +100,42 @@ their next packet annotations.
 
 ARPQuerier will send at most 10 queries a second for any IP address.
 
-=h ipaddr read/write
+=h ipaddr rw
 
 Returns or sets the ARPQuerier's source IP address.
 
-=h broadcast read-only
+=h broadcast r
 
 Returns the ARPQuerier's IP broadcast address.
 
-=h table read-only
+=h table r
 
 Returns a textual representation of the ARP table.  See ARPTable's table
 handler.
 
-=h stats read-only
+=h stats r
 
 Returns textual statistics (queries and drops).
 
-=h queries read-only
+=h queries r
 
 Returns the number of queries sent.
 
-=h responses read-only
+=h responses r
 
 Returns the number of responses received.
 
-=h drops read-only
+=h drops r
 
 Returns the number of packets dropped.
+
+=h count r
+
+Returns the number of entries in the ARP table.
+
+=h length r
+
+Returns the number of packets stored in the ARP table.
 
 =h insert w
 
@@ -192,7 +200,8 @@ class ARPQuerier : public Element { public:
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
 
-    enum { h_table, h_table_xml, h_stats, h_insert, h_delete, h_clear };
+    enum { h_table, h_table_xml, h_stats, h_insert, h_delete, h_clear,
+	   h_count, h_length };
 
 };
 

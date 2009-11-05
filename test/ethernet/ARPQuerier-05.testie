@@ -1,0 +1,37 @@
+%info
+Check ARPQuerier corruption.
+
+%script
+$VALGRIND click CONFIG
+
+%file CONFIG
+d::FromIPSummaryDump(DUMP, TIMING true, STOP true)
+	-> arpq::ARPQuerier(1.0.10.10, 2:1:0:a:a:f, TIMEOUT 0.1s,
+	   		    CAPACITY 1, ENTRY_CAPACITY 1)
+	-> ARPPrint(arpo)
+	-> Discard;
+Idle -> [1]arpq;
+
+DriverManager(pause, print arpq.count, print arpq.length, print arpq.table);
+
+%file DUMP
+!data timestamp ip_dst ip_tos
+0 1.0.0.1 1
+0.01 1.0.0.2 2
+0.015 1.0.0.3 3
+0.12 1.0.0.1 4
+0.15 1.0.0.1 5
+
+%expect stdout
+1
+1
+1.0.0.1 0 {{[-:F]+}} 0.0{{\d+}}
+
+%ignore stderr
+expensive{{.*}}
+
+%expect stderr
+arpo: 0.000000: arp who-has 1.0.0.1 tell 1.0.10.10
+arpo: 0.010000: arp who-has 1.0.0.2 tell 1.0.10.10
+arpo: 0.015000: arp who-has 1.0.0.3 tell 1.0.10.10
+arpo: 0.120000: arp who-has 1.0.0.1 tell 1.0.10.10

@@ -337,13 +337,17 @@ ARPQuerier::read_handler(Element *e, void *thunk)
 {
     ARPQuerier *q = (ARPQuerier *)e;
     switch (reinterpret_cast<uintptr_t>(thunk)) {
-      case h_table:
+    case h_table:
 	return q->_arpt->read_handler(q->_arpt, (void *) (uintptr_t) ARPTable::h_table);
-      case h_stats:
+    case h_stats:
 	return
 	    String(q->_drops.value() + q->_arpt->drops()) + " packets killed\n" +
 	    String(q->_arp_queries.value()) + " ARP queries sent\n";
-      default:
+    case h_count:
+	return String(q->_arpt->count());
+    case h_length:
+	return String(q->_arpt->length());
+    default:
 	return String();
     }
 }
@@ -371,6 +375,8 @@ ARPQuerier::add_handlers()
 {
     add_read_handler("table", read_handler, h_table);
     add_read_handler("stats", read_handler, h_stats);
+    add_read_handler("count", read_handler, h_count);
+    add_read_handler("length", read_handler, h_length);
     add_data_handlers("queries", Handler::OP_READ, &_arp_queries);
     add_data_handlers("responses", Handler::OP_READ, &_arp_responses);
     add_data_handlers("drops", Handler::OP_READ, &_drops);
