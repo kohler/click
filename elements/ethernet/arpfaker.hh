@@ -19,8 +19,8 @@ CLICK_DECLS
  * ARP header.
  *
  * =e
- * Sends ARP packets to 18.26.4.1 (with ether addr 0:e0:2b:b:1a:0)
- * claiming that 18.26.4.99's ethernet address is 00:a0:c9:9c:fd:9c.
+ * Sends ARP packets to 18.26.4.1 (with ether addr 00-E0-2B-0B-1A-00)
+ * claiming that 18.26.4.99's ethernet address is 00-A0-C9-9C-FD-9C.
  *
  *   ARPFaker(18.26.4.1, 0:e0:2b:b:1a:0, 18.26.4.99, 00:a0:c9:9c:fd:9c)
  *      -> ToDevice(eth0);

@@ -44,30 +44,30 @@ by OUTFILE instead of standard error.
 
 class ARPPrint : public Element { public:
 
-  ARPPrint();
-  ~ARPPrint();
+    ARPPrint();
+    ~ARPPrint();
 
     const char *class_name() const		{ return "ARPPrint"; }
     const char *port_count() const		{ return PORTS_1_1; }
     const char *processing() const		{ return AGNOSTIC; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
+    int configure(Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void cleanup(CleanupStage);
 
-  Packet *simple_action(Packet *);
+    Packet *simple_action(Packet *);
 
  private:
 
     String _label;
-    bool _print_timestamp : 1;
-    bool _print_ether : 1;
+    bool _print_timestamp;
+    bool _print_ether;
 
 #if CLICK_USERLEVEL
-  String _outfilename;
-  FILE *_outfile;
+    String _outfilename;
+    FILE *_outfile;
 #endif
-  ErrorHandler *_errh;
+    ErrorHandler *_errh;
 
 };
 

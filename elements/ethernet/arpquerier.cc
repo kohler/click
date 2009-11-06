@@ -4,7 +4,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2005 Regents of the University of California
- * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2008-2009 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -57,19 +57,19 @@ ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
     Timestamp timeout, poll_timeout(60);
     bool have_capacity, have_entry_capacity, have_timeout, have_broadcast,
 	broadcast_poll = false;
-    Element *arpt = 0;
+    _arpt = 0;
     if (cp_va_kparse_remove_keywords(conf, this, errh,
 		"CAPACITY", cpkC, &have_capacity, cpUnsigned, &capacity,
 		"ENTRY_CAPACITY", cpkC, &have_entry_capacity, cpUnsigned, &entry_capacity,
 		"TIMEOUT", cpkC, &have_timeout, cpTimestamp, &timeout,
 		"BROADCAST", cpkC, &have_broadcast, cpIPAddress, &_my_bcast_ip,
-		"TABLE", 0, cpElement, &arpt,
+		"TABLE", 0, cpElementCast, "ARPTable", &_arpt,
 		"POLL_TIMEOUT", 0, cpTimestamp, &poll_timeout,
 		"BROADCAST_POLL", 0, cpBool, &broadcast_poll,
 		cpEnd) < 0)
 	return -1;
 
-    if (!arpt) {
+    if (!_arpt) {
 	Vector<String> subconf;
 	if (have_capacity)
 	    subconf.push_back("CAPACITY " + String(capacity));
@@ -81,8 +81,7 @@ ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 	_arpt->attach_router(router(), -1);
 	_arpt->configure(subconf, errh);
 	_my_arpt = true;
-    } else if (!(_arpt = static_cast<ARPTable *>(arpt->cast("ARPTable"))))
-	return errh->error("bad TABLE");
+    }
 
     IPAddress my_mask;
     if (conf.size() == 1)
@@ -199,7 +198,7 @@ ARPQuerier::take_state(Element *e, ErrorHandler *errh)
 }
 
 void
-ARPQuerier::send_query_for(Packet *p, bool ether_dhost_valid)
+ARPQuerier::send_query_for(const Packet *p, bool ether_dhost_valid)
 {
     // Uses p's IP and Ethernet headers.
 
@@ -387,15 +386,15 @@ ARPQuerier::write_handler(const String &str, Element *e, void *thunk, ErrorHandl
 {
     ARPQuerier *q = (ARPQuerier *) e;
     switch (reinterpret_cast<uintptr_t>(thunk)) {
-      case h_insert:
+    case h_insert:
 	return q->_arpt->write_handler(str, q->_arpt, (void *) (uintptr_t) ARPTable::h_insert, errh);
-      case h_delete:
+    case h_delete:
 	return q->_arpt->write_handler(str, q->_arpt, (void *) (uintptr_t) ARPTable::h_delete, errh);
-      case h_clear:
+    case h_clear:
 	q->_arp_queries = q->_drops = q->_arp_responses = 0;
 	q->_arpt->clear();
 	return 0;
-      default:
+    default:
 	return -1;
     }
 }

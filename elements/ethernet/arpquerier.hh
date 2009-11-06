@@ -202,7 +202,7 @@ class ARPQuerier : public Element { public:
     bool _my_arpt;
     bool _zero_warned;
 
-    void send_query_for(Packet *p, bool ether_dhost_valid);
+    void send_query_for(const Packet *p, bool ether_dhost_valid);
 
     void handle_ip(Packet *p, bool response);
     void handle_response(Packet *p);

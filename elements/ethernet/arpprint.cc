@@ -52,9 +52,10 @@ CLICK_DECLS
 
 
 ARPPrint::ARPPrint()
+    : _label(), _print_timestamp(true), _print_ether(false)
 {
 #if CLICK_USERLEVEL
-  _outfile = 0;
+    _outfile = 0;
 #endif
 }
 
@@ -65,24 +66,20 @@ ARPPrint::~ARPPrint()
 int
 ARPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _label = "";
-  bool print_time = true, print_ether = false;
-  String channel;
+    String channel;
 
-  if (cp_va_kparse(conf, this, errh,
-		   "LABEL", cpkP, cpString, &_label,
-		   "TIMESTAMP", 0, cpBool, &print_time,
-		   "ETHER", 0, cpBool, &print_ether,
+    if (cp_va_kparse(conf, this, errh,
+		     "LABEL", cpkP, cpString, &_label,
+		     "TIMESTAMP", 0, cpBool, &_print_timestamp,
+		     "ETHER", 0, cpBool, &_print_ether,
 #if CLICK_USERLEVEL
-		   "OUTFILE", 0, cpFilename, &_outfilename,
+		     "OUTFILE", 0, cpFilename, &_outfilename,
 #endif
-		   cpEnd) < 0)
-    return -1;
+		     cpEnd) < 0)
+	return -1;
 
-  _print_timestamp = print_time;
-  _print_ether = print_ether;
-  _errh = router()->chatter_channel(channel);
-  return 0;
+    _errh = router()->chatter_channel(channel);
+    return 0;
 }
 
 int
