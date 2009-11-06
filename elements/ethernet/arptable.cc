@@ -288,11 +288,11 @@ ARPTable::read_handler(Element *e, void *user_data)
     StringAccum sa;
     click_jiffies_t now = click_jiffies();
     switch (reinterpret_cast<uintptr_t>(user_data)) {
-      case h_table:
-	for (Table::const_iterator it = arpt->_table.begin(); it; ++it) {
-	    int ok = it->unicast(now, arpt->_timeout_j);
-	    sa << it->_ip << ' ' << ok << ' ' << it->_eth << ' '
-	       << Timestamp::make_jiffies(now - it->_live_at_j) << '\n';
+    case h_table:
+	for (ARPEntry *ae = arpt->_age.front(); ae; ae = ae->_age_link.next()) {
+	    int ok = ae->unicast(now, arpt->_timeout_j);
+	    sa << ae->_ip << ' ' << ok << ' ' << ae->_eth << ' '
+	       << Timestamp::make_jiffies(now - ae->_live_at_j) << '\n';
 	}
 	break;
     }
