@@ -70,8 +70,12 @@ at a time.  Default is 0, which means unlimited.
 
 =item TIMEOUT
 
-Time in seconds.  Amount of time before an ARP entry expires.  Defaults to
-1 minute.
+Amount of time before an ARP entry expires.  Defaults to 5 minutes.
+
+=item POLL_TIMEOUT
+
+Amount of time after which ARPQuerier will start polling for renewal.  0 means
+don't poll.  Defaults to one minute.
 
 =item BROADCAST
 
@@ -82,9 +86,9 @@ prefix, if any.
 
 =item BROADCAST_POLL
 
-Boolean.  If true, then send ARP polls (where an entry is about to expire, but
-hasn't expired yet) broadcast.  The default is to send such polls unicast to
-the previous Ethernet address.  Defaults to false.
+Boolean.  If true, then send broadcast ARP polls (where an entry is about to
+expire, but hasn't expired yet).  The default is to send such polls unicast to
+the known Ethernet address.  Defaults to false.
 
 =back
 
@@ -187,6 +191,7 @@ class ARPQuerier : public Element { public:
     EtherAddress _my_en;
     IPAddress _my_ip;
     IPAddress _my_bcast_ip;
+    uint32_t _poll_timeout_j;
     int _broadcast_poll;
 
     // statistics

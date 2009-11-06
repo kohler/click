@@ -54,7 +54,7 @@ int
 ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     uint32_t capacity, entry_capacity;
-    Timestamp timeout;
+    Timestamp timeout, poll_timeout(60);
     bool have_capacity, have_entry_capacity, have_timeout, have_broadcast,
 	broadcast_poll = false;
     Element *arpt = 0;
@@ -64,6 +64,7 @@ ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 		"TIMEOUT", cpkC, &have_timeout, cpTimestamp, &timeout,
 		"BROADCAST", cpkC, &have_broadcast, cpIPAddress, &_my_bcast_ip,
 		"TABLE", 0, cpElement, &arpt,
+		"POLL_TIMEOUT", 0, cpTimestamp, &poll_timeout,
 		"BROADCAST_POLL", 0, cpBool, &broadcast_poll,
 		cpEnd) < 0)
 	return -1;
@@ -91,12 +92,19 @@ ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "ETH", cpkP+cpkM, cpEthernetAddress, &_my_en,
 		     cpEnd) < 0)
 	return -1;
+
     if (!have_broadcast) {
 	_my_bcast_ip = _my_ip | ~my_mask;
 	if (_my_bcast_ip == _my_ip)
 	    _my_bcast_ip = 0xFFFFFFFFU;
     }
+
     _broadcast_poll = broadcast_poll;
+    if ((uint32_t) poll_timeout.sec() >= (uint32_t) 0xFFFFFFFFU / CLICK_HZ)
+	_poll_timeout_j = 0;
+    else
+	_poll_timeout_j = poll_timeout.jiffies();
+
     return 0;
 }
 
@@ -254,7 +262,7 @@ ARPQuerier::handle_ip(Packet *p, bool response)
 
     // Easy case: requires only read lock
   retry_read_lock:
-    r = _arpt->lookup(dst_ip, dst_eth, 60 * CLICK_HZ);
+    r = _arpt->lookup(dst_ip, dst_eth, _poll_timeout_j);
     if (r >= 0 && !dst_eth->is_broadcast()) {
 	if (r > 0)
 	    send_query_for(q, true);
