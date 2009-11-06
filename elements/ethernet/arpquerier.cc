@@ -112,8 +112,9 @@ int
 ARPQuerier::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
     uint32_t capacity, entry_capacity;
-    Timestamp timeout;
-    bool have_capacity, have_entry_capacity, have_timeout, have_broadcast;
+    Timestamp timeout, poll_timeout(Timestamp::make_jiffies(_poll_timeout_j));
+    bool have_capacity, have_entry_capacity, have_timeout, have_broadcast,
+	broadcast_poll(_broadcast_poll);
     IPAddress my_bcast_ip;
 
     if (cp_va_kparse_remove_keywords(conf, this, errh,
@@ -122,6 +123,8 @@ ARPQuerier::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 		"TIMEOUT", cpkC, &have_timeout, cpTimestamp, &timeout,
 		"BROADCAST", cpkC, &have_broadcast, cpIPAddress, &my_bcast_ip,
 		"TABLE", 0, cpIgnore,
+		"POLL_TIMEOUT", 0, cpTimestamp, &poll_timeout,
+		"BROADCAST_POLL", 0, cpBool, &broadcast_poll,
 		cpEnd) < 0)
 	return -1;
 
@@ -152,6 +155,13 @@ ARPQuerier::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 	_arpt->set_entry_capacity(entry_capacity);
     if (_my_arpt && have_timeout)
 	_arpt->set_timeout(timeout);
+
+    _broadcast_poll = broadcast_poll;
+    if ((uint32_t) poll_timeout.sec() >= (uint32_t) 0xFFFFFFFFU / CLICK_HZ)
+	_poll_timeout_j = 0;
+    else
+	_poll_timeout_j = poll_timeout.jiffies();
+
     return 0;
 }
 
