@@ -66,12 +66,13 @@ int
 ARPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _label = "";
-  bool print_time = true;
+  bool print_time = true, print_ether = false;
   String channel;
 
   if (cp_va_kparse(conf, this, errh,
 		   "LABEL", cpkP, cpString, &_label,
 		   "TIMESTAMP", 0, cpBool, &print_time,
+		   "ETHER", 0, cpBool, &print_ether,
 #if CLICK_USERLEVEL
 		   "OUTFILE", 0, cpFilename, &_outfilename,
 #endif
@@ -79,6 +80,7 @@ ARPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
 
   _print_timestamp = print_time;
+  _print_ether = print_ether;
   _errh = router()->chatter_channel(channel);
   return 0;
 }
@@ -121,6 +123,17 @@ ARPPrint::simple_action(Packet *p)
 	sa << _label << ": ";
     if (_print_timestamp)
 	sa << p->timestamp_anno() << ": ";
+
+    if (_print_ether) {
+	const unsigned char *x = p->mac_header();
+	if (!x)
+	    x = p->data();
+	if (x + 14 <= p->network_header() && x + 14 <= p->end_data()) {
+	    const click_ether *ethh = reinterpret_cast<const click_ether *>(x);
+	    sa << EtherAddress(ethh->ether_shost) << " > "
+	       << EtherAddress(ethh->ether_dhost) << ": ";
+	}
+    }
 
     if (p->network_length() < (int) sizeof(click_arp))
 	sa << "truncated-arp (" << p->network_length() << ")";

@@ -28,6 +28,11 @@ Keyword arguments are:
 Boolean. Determines whether to print each packet's timestamp in seconds since
 1970. Default is true.
 
+=item ETHER
+
+Boolean.  Determines whether to print each packet's Ethernet addresses.
+Default is false.
+
 =item OUTFILE
 
 String. Only available at user level. PrintV<> information to the file specified
@@ -54,8 +59,9 @@ class ARPPrint : public Element { public:
 
  private:
 
-  String _label;
-  bool _print_timestamp : 1;
+    String _label;
+    bool _print_timestamp : 1;
+    bool _print_ether : 1;
 
 #if CLICK_USERLEVEL
   String _outfilename;
