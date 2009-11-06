@@ -1,0 +1,57 @@
+%info
+Check ARPQuerier BROADCAST_POLL.
+
+%script
+$VALGRIND click CONFIG
+sed "s/\/\/BROADCAST_POLL false/BROADCAST_POLL true/" < CONFIG > CONFIG2
+echo ================================== 1>&2
+$VALGRIND click CONFIG2
+
+%file CONFIG
+d::FromIPSummaryDump(DUMP, TIMING true, STOP true)
+	-> arpq::ARPQuerier(1.0.10.10, 2:1:0:a:a:f,
+			    TIMEOUT 0.1s, POLL_TIMEOUT 0.08s,
+			    //BROADCAST_POLL false,
+			    CAPACITY 1, ENTRY_CAPACITY 1)
+	-> IPPrint(arpo)
+	-> Discard;
+arpq[1]	-> ARPPrint(arpo, ETHER true)
+	-> ARPResponder(0/0 2:2:1:b:b:0)
+	-> ARPPrint(arpx)
+	-> [1]arpq;
+
+%file DUMP
+!data timestamp ip_dst sport
+0.00 1.0.0.1 1
+0.05 1.0.0.1 2
+0.08 1.0.0.1 3
+0.15 1.0.0.1 4
+0.16 1.0.0.1 5
+
+%expect stderr
+arpo: 0.000000: 02-01-00-0A-0A-0F > FF-FF-FF-FF-FF-FF: arp who-has 1.0.0.1 tell 1.0.10.10
+arpx: 0.000000: arp reply 1.0.0.1 is-at 02-02-01-0B-0B-00
+arpo: 0.000000: 0.0.0.0.1 > 1.0.0.1.0: . 0:0(0,54,40) win 0
+arpo: 0.050000: 0.0.0.0.2 > 1.0.0.1.0: . 0:0(0,54,40) win 0
+arpo: 0.080000: 02-01-00-0A-0A-0F > 02-02-01-0B-0B-00: arp who-has 1.0.0.1 tell 1.0.10.10
+arpx: 0.000000: arp reply 1.0.0.1 is-at 02-02-01-0B-0B-00
+arpo: 0.080000: 0.0.0.0.3 > 1.0.0.1.0: . 0:0(0,54,40) win 0
+arpo: 0.150000: 0.0.0.0.4 > 1.0.0.1.0: . 0:0(0,54,40) win 0
+arpo: 0.160000: 02-01-00-0A-0A-0F > 02-02-01-0B-0B-00: arp who-has 1.0.0.1 tell 1.0.10.10
+arpx: 0.000000: arp reply 1.0.0.1 is-at 02-02-01-0B-0B-00
+arpo: 0.160000: 0.0.0.0.5 > 1.0.0.1.0: . 0:0(0,54,40) win 0
+==================================
+arpo: 0.000000: 02-01-00-0A-0A-0F > FF-FF-FF-FF-FF-FF: arp who-has 1.0.0.1 tell 1.0.10.10
+arpx: 0.000000: arp reply 1.0.0.1 is-at 02-02-01-0B-0B-00
+arpo: 0.000000: 0.0.0.0.1 > 1.0.0.1.0: . 0:0(0,54,40) win 0
+arpo: 0.050000: 0.0.0.0.2 > 1.0.0.1.0: . 0:0(0,54,40) win 0
+arpo: 0.080000: 02-01-00-0A-0A-0F > FF-FF-FF-FF-FF-FF: arp who-has 1.0.0.1 tell 1.0.10.10
+arpx: 0.000000: arp reply 1.0.0.1 is-at 02-02-01-0B-0B-00
+arpo: 0.080000: 0.0.0.0.3 > 1.0.0.1.0: . 0:0(0,54,40) win 0
+arpo: 0.150000: 0.0.0.0.4 > 1.0.0.1.0: . 0:0(0,54,40) win 0
+arpo: 0.160000: 02-01-00-0A-0A-0F > FF-FF-FF-FF-FF-FF: arp who-has 1.0.0.1 tell 1.0.10.10
+arpx: 0.000000: arp reply 1.0.0.1 is-at 02-02-01-0B-0B-00
+arpo: 0.160000: 0.0.0.0.5 > 1.0.0.1.0: . 0:0(0,54,40) win 0
+
+%ignore stderr
+expensive{{.*}}
