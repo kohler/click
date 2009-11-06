@@ -31,8 +31,7 @@
 CLICK_DECLS
 
 ARPTable::ARPTable()
-    : _entry_capacity(0), _packet_capacity(2048),
-      _expire_jiffies(300 * CLICK_HZ), _expire_timer(this)
+    : _entry_capacity(0), _packet_capacity(2048), _expire_timer(this)
 {
     _entry_count = _packet_count = _drops = 0;
 }
@@ -52,9 +51,9 @@ ARPTable::configure(Vector<String> &conf, ErrorHandler *errh)
 		     cpEnd) < 0)
 	return -1;
     set_timeout(timeout);
-    if (_expire_jiffies) {
+    if (_timeout_j) {
 	_expire_timer.initialize(this);
-	_expire_timer.schedule_after_sec(_expire_jiffies / CLICK_HZ);
+	_expire_timer.schedule_after_sec(_timeout_j / CLICK_HZ);
     }
     return 0;
 }
@@ -112,7 +111,7 @@ ARPTable::slim()
 
     // Delete old entries.
     while ((ae = _age.front())
-	   && (ae->expired(now, _expire_jiffies)
+	   && (ae->expired(now, _timeout_j)
 	       || (_entry_capacity && _entry_count > _entry_capacity))) {
 	_table.erase(ae->_ip);
 	_age.pop_front();
@@ -150,8 +149,8 @@ ARPTable::run_timer(Timer *timer)
     _lock.acquire_write();
     slim();
     _lock.release_write();
-    if (_expire_jiffies)
-	timer->schedule_after_sec(_expire_jiffies / CLICK_HZ + 1);
+    if (_timeout_j)
+	timer->schedule_after_sec(_timeout_j / CLICK_HZ + 1);
 }
 
 ARPTable::ARPEntry *
@@ -171,8 +170,8 @@ ARPTable::ensure(IPAddress ip)
 	    slim();
 
 	ARPEntry *ae = new(x) ARPEntry(ip);
-	ae->_live_jiffies = click_jiffies();
-	ae->_poll_jiffies = ae->_live_jiffies - CLICK_HZ;
+	ae->_live_at_j = click_jiffies();
+	ae->_polled_at_j = ae->_live_at_j - CLICK_HZ;
 	_table.set(it, ae);
 
 	_age.push_back(ae);
@@ -190,8 +189,8 @@ ARPTable::insert(IPAddress ip, const EtherAddress &eth, Packet **head)
     ae->_eth = eth;
     ae->_unicast = !eth.is_broadcast();
 
-    ae->_live_jiffies = click_jiffies();
-    ae->_poll_jiffies = ae->_live_jiffies - CLICK_HZ;
+    ae->_live_at_j = click_jiffies();
+    ae->_polled_at_j = ae->_live_at_j - CLICK_HZ;
 
     if (ae->_age_link.next()) {
 	_age.erase(ae);
@@ -218,7 +217,7 @@ ARPTable::append_query(IPAddress ip, Packet *p)
 	return -ENOMEM;
 
     click_jiffies_t now = click_jiffies();
-    if (ae->unicast(now, _expire_jiffies)) {
+    if (ae->unicast(now, _timeout_j)) {
 	_lock.release_write();
 	return -EAGAIN;
     }
@@ -227,14 +226,14 @@ ARPTable::append_query(IPAddress ip, Packet *p)
     // this side of expiring.  This fixes a bug reported 5 Nov 2009 by Seiichi
     // Tetsukawa, and verified via testie, where the slim() below could delete
     // the "ae" ARPEntry when "ae" was the oldest entry in the system.
-    if (_expire_jiffies) {
-	click_jiffies_t live_jiffies_min = now - _expire_jiffies;
-	if (click_jiffies_less(ae->_live_jiffies, live_jiffies_min)) {
-	    ae->_live_jiffies = live_jiffies_min;
+    if (_timeout_j) {
+	click_jiffies_t live_at_j_min = now - _timeout_j;
+	if (click_jiffies_less(ae->_live_at_j, live_at_j_min)) {
+	    ae->_live_at_j = live_at_j_min;
 	    // Now move "ae" to the right position in the list by walking
 	    // forward over other elements (potentially expensive?).
 	    ARPEntry *ae_next = ae->_age_link.next(), *next = ae_next;
-	    while (next && click_jiffies_less(next->_live_jiffies, ae->_live_jiffies))
+	    while (next && click_jiffies_less(next->_live_at_j, ae->_live_at_j))
 		next = next->_age_link.next();
 	    if (ae_next != next) {
 		_age.erase(ae);
@@ -255,8 +254,8 @@ ARPTable::append_query(IPAddress ip, Packet *p)
     p->set_next(0);
 
     int r;
-    if (!click_jiffies_less(now, ae->_poll_jiffies + CLICK_HZ / 10)) {
-	ae->_poll_jiffies = now;
+    if (!click_jiffies_less(now, ae->_polled_at_j + CLICK_HZ / 10)) {
+	ae->_polled_at_j = now;
 	r = 1;
     } else
 	r = 0;
@@ -291,9 +290,9 @@ ARPTable::read_handler(Element *e, void *user_data)
     switch (reinterpret_cast<uintptr_t>(user_data)) {
       case h_table:
 	for (Table::const_iterator it = arpt->_table.begin(); it; ++it) {
-	    int ok = it->unicast(now, arpt->_expire_jiffies);
+	    int ok = it->unicast(now, arpt->_timeout_j);
 	    sa << it->_ip << ' ' << ok << ' ' << it->_eth << ' '
-	       << Timestamp::make_jiffies(now - it->_live_jiffies) << '\n';
+	       << Timestamp::make_jiffies(now - it->_live_at_j) << '\n';
 	}
 	break;
     }
