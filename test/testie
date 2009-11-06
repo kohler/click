@@ -390,7 +390,7 @@ sub parse ($) {
 		$tt->_read_text_into('info');
 	    } elsif ($command eq 'desc') {
 		$tt->file_err("arguments to '\%desc' ignored") if $args ne '';
-		$tt->_read_text_into('desc');
+		$tt->_read_text_into('info');
 	    } elsif ($command eq 'cut') {
 		$tt->_read_text_into('cut');
 	    } elsif ($command eq 'stdin' || $command eq 'input') {
@@ -892,12 +892,17 @@ sub execute_test ($$$$) {
     if ($verbose > 1) {
 	return 0 if $tt->empty;
 	print STDERR "\n" if $any_tests_done;
-	if ($tt->{'desc'}) {
-	    my($desc) = $tt->{'desc'};
+	if ($tt->{'info'}) {
+	    my($desc) = $tt->{'info'};
 	    $desc =~ s/^(.*?)\t/$1 . (' ' x (8 - (length($1) % 8)))/egm
 		while $desc =~ /\t/;
-	    $desc =~ s/^/  /;
-	    print STDERR $fn, " Description:\n", $desc;
+	    $desc =~ s/\r\n/\n/g;
+	    $desc =~ tr/\r/\n/;
+	    $desc =~ s/\A\n+//s;
+	    $desc =~ s/\n\n.*\z//s;
+	    $desc =~ s/^/  /mg;
+	    $desc .= "\n" if $desc !~ /\n\z/;
+	    print STDERR $fn, " Information:\n", $desc;
 	}
 	print STDERR $fn, " Results:\n";
 	$tt->{'errprefix'} = "  ";
@@ -1069,7 +1074,7 @@ Usage: testie [OPTIONS] [FILE]...
 Options:
   VARIABLE=VALUE             Variable settings for test script.
   -V, --verbose              Print information for successful tests.
-  -VV, --superverbose        Print %desc information for all tests.
+  -VV, --superverbose        Print initial \%info for all tests.
   -s, --show TESTIEFILE      Show contents of TESTIEFILE on completion.
   -S, --show-raw TESTIEFILE  Like --show, but include ignored lines.
   --show-all                 Show contents of all TESTIEFILEs on completion.
@@ -1295,7 +1300,7 @@ unsuccessful tests.
 =item -VV, --superverbose
 
 Like --verbose, but use a slightly different format, and additionally print
-every test's %desc section before the test results.
+every test's %info section before the test results.
 
 =item -q, --quiet
 
@@ -1375,14 +1380,10 @@ if a requirement fails.
 Testie runs the requirement script before creating any other test files.
 For example, contents of %file sections are not available.
 
-=item %desc
-
-A short description of the test.  In --superverbose mode, its contents are
-printed before the test results.
-
 =item %info
 
-This section is ignored. It is intended for information about the test.
+A short description of the test.  In --superverbose mode, the first
+paragraph of its contents is printed before the test results.
 
 =item %cut
 
