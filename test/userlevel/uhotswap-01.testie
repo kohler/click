@@ -4,8 +4,9 @@ usleep () {
    click -e "DriverManager(wait $1us)"
 }
 
-(usleep 10000 && nc localhost 41900 <CSIN >CSOUT) &
-click -R -p 41900 -e "Idle -> s :: Switch(0) -> Idle; s[1] -> Idle; DriverManager(wait 1s, stop)"
+(while [ ! -f PORT ]; do usleep 1; done && nc localhost `cat PORT` <CSIN >CSOUT) &
+click -R -p 41900+ -e "Idle -> s :: Switch(0) -> Idle; s[1] -> Idle;
+DriverManager(print >PORT click_driver@@ControlSocket.port, wait 1s, stop)"
 
 %file CSIN
 read s.config

@@ -7,7 +7,7 @@ msleep () {
 }
 
 (while [ ! -f PORT ]; do msleep 1; done && nc localhost `cat PORT` <CSIN >CSOUT) &
-click -e 'cs :: ControlSocket(tcp, 41930);
+click -e 'cs :: ControlSocket(tcp, 41930+);
 s :: Script(print >PORT $(cs.port),
 	    print "SCARY => $(cat SCARY)",
 	    wait 3s, stop)'
