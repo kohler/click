@@ -22,7 +22,7 @@
 #include <click/notifier.hh>
 #include <click/router.hh>
 #include <click/element.hh>
-#include <click/elemfilter.hh>
+#include <click/routervisitor.hh>
 #include <click/straccum.hh>
 #include <click/bitvector.hh>
 CLICK_DECLS
@@ -430,9 +430,10 @@ ActiveNotifier::listeners(Vector<Task*>& v) const
 
 namespace {
 
-class NotifierElementFilter : public ElementFilter { public:
-    NotifierElementFilter(const char* name);
-    bool check_match(Element *e, bool isoutput, int port);
+class NotifierRouterVisitor : public RouterVisitor { public:
+    NotifierRouterVisitor(const char* name);
+    bool visit(Element *e, bool isoutput, int port,
+	       Element *from_e, int from_port, int distance);
     Vector<Notifier*> _notifiers;
     NotifierSignal _signal;
     bool _pass2;
@@ -440,14 +441,15 @@ class NotifierElementFilter : public ElementFilter { public:
     const char* _name;
 };
 
-NotifierElementFilter::NotifierElementFilter(const char* name)
+NotifierRouterVisitor::NotifierRouterVisitor(const char* name)
     : _signal(NotifierSignal::idle_signal()),
       _pass2(false), _need_pass2(false), _name(name)
 {
 }
 
 bool
-NotifierElementFilter::check_match(Element* e, bool isoutput, int port)
+NotifierRouterVisitor::visit(Element* e, bool isoutput, int port,
+			     Element *, int, int)
 {
     if (Notifier* n = (Notifier*) (e->port_cast(isoutput, port, _name))) {
 	if (find(_notifiers.begin(), _notifiers.end(), n) == _notifiers.end())
@@ -458,26 +460,26 @@ NotifierElementFilter::check_match(Element* e, bool isoutput, int port)
 	Notifier::SearchOp search_op = n->search_op();
 	if (search_op == Notifier::SEARCH_CONTINUE_WAKE && !_pass2) {
 	    _need_pass2 = true;
-	    return true;
+	    return false;
 	} else
-	    return search_op == Notifier::SEARCH_STOP;
+	    return search_op != Notifier::SEARCH_STOP;
 
     } else if (port >= 0) {
 	Bitvector flow;
 	if (e->port_active(isoutput, port)) {
 	    // went from pull <-> push
 	    _signal = NotifierSignal::busy_signal();
-	    return true;
+	    return false;
 	} else if ((e->port_flow(isoutput, port, &flow), flow.zero())
 		   && e->flag_value('S') != 0) {
 	    // ran out of ports, but element might generate packets
 	    _signal = NotifierSignal::busy_signal();
-	    return true;
-	} else
 	    return false;
+	} else
+	    return true;
 
     } else
-	return false;
+	return true;
 }
 
 }
@@ -521,16 +523,15 @@ NotifierElementFilter::check_match(Element* e, bool isoutput, int port)
 NotifierSignal
 Notifier::upstream_empty_signal(Element* e, int port, Task* task, Notifier* dependent_notifier)
 {
-    NotifierElementFilter filter(EMPTY_NOTIFIER);
-    Vector<Element*> v;
-    int ok = e->router()->upstream_elements(e, port, &filter, v);
+    NotifierRouterVisitor filter(EMPTY_NOTIFIER);
+    int ok = e->router()->visit_upstream(e, port, &filter);
 
     NotifierSignal signal = filter._signal;
 
     // maybe run another pass
     if (ok >= 0 && signal != NotifierSignal() && filter._need_pass2) {
 	filter._pass2 = true;
-	ok = e->router()->upstream_elements(e, port, &filter, v);
+	ok = e->router()->visit_upstream(e, port, &filter);
     }
 
     // All bets are off if filter ran into a push output. That means there was
@@ -586,16 +587,15 @@ Notifier::upstream_empty_signal(Element* e, int port, Task* task, Notifier* depe
 NotifierSignal
 Notifier::downstream_full_signal(Element* e, int port, Task* task, Notifier* dependent_notifier)
 {
-    NotifierElementFilter filter(FULL_NOTIFIER);
-    Vector<Element*> v;
-    int ok = e->router()->downstream_elements(e, port, &filter, v);
+    NotifierRouterVisitor filter(FULL_NOTIFIER);
+    int ok = e->router()->visit_downstream(e, port, &filter);
 
     NotifierSignal signal = filter._signal;
 
     // maybe run another pass
     if (ok >= 0 && signal != NotifierSignal() && filter._need_pass2) {
 	filter._pass2 = true;
-	ok = e->router()->downstream_elements(e, port, &filter, v);
+	ok = e->router()->visit_downstream(e, port, &filter);
     }
 
     // All bets are off if filter ran into a pull input. That means there was
