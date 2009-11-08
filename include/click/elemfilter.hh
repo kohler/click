@@ -32,7 +32,7 @@ class ElementFilter { public:
      * @param es array of elements
      *
      * Calls check_match(e, false, -1) for each element of @a es, removing
-     * those elements that do not match (where check_match() returns false).
+     * those elements that do not match (i.e., check_match() returns false).
      */
     void filter(Vector<Element *> &es);
 

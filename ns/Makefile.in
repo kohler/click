@@ -56,7 +56,7 @@ GENERIC_OBJS = string.o straccum.o nameinfo.o \
 	packet.o \
 	error.o timestamp.o glue.o task.o timer.o atomic.o gaprate.o \
 	element.o \
-	confparse.o variableenv.o lexer.o elemfilter.o \
+	confparse.o variableenv.o lexer.o elemfilter.o routervisitor.o \
 	routerthread.o router.o master.o handlercall.o notifier.o \
 	integers.o md5.o crc32.o in_cksum.o iptable.o \
 	archive.o userutils.o driver.o \

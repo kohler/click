@@ -435,6 +435,7 @@ pair.hh
 perfctr-i586.hh
 router.hh
 routerthread.hh
+routervisitor.hh
 simclick.h
 skbmgr.hh
 standard
@@ -509,6 +510,7 @@ notifier.cc
 packet.cc
 router.cc
 routerthread.cc
+routervisitor.cc
 straccum.cc
 strerror.c
 string.cc

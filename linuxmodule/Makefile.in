@@ -20,7 +20,7 @@ LIB_CXX_OBJS = string.o straccum.o nameinfo.o \
 	packet.o \
 	error.o timestamp.o glue.o task.o timer.o atomic.o gaprate.o \
 	element.o \
-	confparse.o variableenv.o lexer.o elemfilter.o \
+	confparse.o variableenv.o lexer.o elemfilter.o routervisitor.o \
 	routerthread.o router.o master.o handlercall.o notifier.o \
 	integers.o iptable.o \
 	driver.o ino.o \

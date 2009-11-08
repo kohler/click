@@ -72,6 +72,7 @@ include/click/pair.hh
 include/click/perfctr-i586.hh
 include/click/router.hh
 include/click/routerthread.hh
+include/click/routervisitor.hh
 include/click/skbmgr.hh
 include/click/straccum.hh
 include/click/string.hh
@@ -142,6 +143,7 @@ lib/notifier.cc:libsrc/notifier.cc
 lib/packet.cc:libsrc/packet.cc
 lib/router.cc:libsrc/router.cc
 lib/routerthread.cc:libsrc/routerthread.cc
+lib/routervisitor.cc:libsrc/routervisitor.cc
 lib/straccum.cc:libsrc/straccum.cc
 lib/strerror.c:libsrc/strerror.c
 lib/string.cc:libsrc/string.cc

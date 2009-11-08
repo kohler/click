@@ -12,6 +12,7 @@
 CLICK_DECLS
 class Master;
 class ElementFilter;
+class RouterVisitor;
 class RouterThread;
 class HashMap_ArenaFactory;
 class NotifierSignal;
@@ -54,8 +55,11 @@ class Router { public:
     Element* find(const String& name, String context, ErrorHandler* errh = 0) const;
     Element* find(const String& name, const Element* context, ErrorHandler* errh = 0) const;
 
-    int downstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);
-    int upstream_elements(Element* e, int port, ElementFilter* filter, Vector<Element*>& result);
+    int visit_downstream(Element *e, int port, RouterVisitor *visitor) const;
+    int visit_upstream(Element *e, int port, RouterVisitor *visitor) const;
+
+    int downstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element*> &result);
+    int upstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element*> &result);
 
     inline const char *flow_code_override(int eindex) const;
     void set_flow_code_override(int eindex, const String &flow_code);
@@ -224,7 +228,7 @@ class Router { public:
 
     volatile int _state;
     bool _have_connections : 1;
-    bool _conn_sorted : 1;
+    mutable bool _conn_sorted : 1;
     volatile int _running;
 
     atomic_uint32_t _refcount;
@@ -238,8 +242,8 @@ class Router { public:
     Vector<int> _element_gport_offset[2];
     Vector<int> _element_configure_order;
 
-    Vector<Connection> _conn;
-    Vector<int> _conn_output_sorter;
+    mutable Vector<Connection> _conn;
+    mutable Vector<int> _conn_output_sorter;
 
     Vector<String> _requirements;
 
@@ -299,9 +303,8 @@ class Router { public:
     int check_push_and_pull(ErrorHandler*);
 
     void set_connections();
-    void sort_connections();
+    void sort_connections() const;
     int connindex_lower_bound(bool isoutput, const Port &port) const;
-    void port_list_elements(Vector<Port>&, Vector<Element*>&) const;
 
     void make_gports();
     inline int ngports(bool isout) const {
@@ -320,7 +323,7 @@ class Router { public:
     static void store_global_handler(Handler &h, int type);
     static inline void store_handler(const Element *element, Handler &h, int type);
 
-    int global_port_flow(bool forward, Element* first_element, int first_port, ElementFilter* stop_filter, Vector<Port> &results);
+    int visit_base(bool forward, Element* first_element, int first_port, RouterVisitor* visitor) const;
 
     // global handlers
     static String router_read_handler(Element*, void*);
@@ -524,6 +527,46 @@ inline Element *
 Router::find(const String& name, ErrorHandler *errh) const
 {
     return find(name, "", errh);
+}
+
+/** @brief Traverse the router configuration downstream of @a e[@a port].
+ * @param e element to start search
+ * @param port output port (or -1 to search all output ports)
+ * @param visitor RouterVisitor traversal object
+ * @return 0 on success, -1 in early router configuration stages
+ *
+ * Calls @a visitor->@link RouterVisitor::visit visit() @endlink on each
+ * reachable input port starting from the output port @a e[@a port].  Follows
+ * connections and traverses inside elements from port to port by
+ * Element::flow_code().  The visitor can stop a traversal path by returning
+ * false from visit().
+ *
+ * @sa visit_upstream()
+ */
+inline int
+Router::visit_downstream(Element *e, int port, RouterVisitor *visitor) const
+{
+    return visit_base(true, e, port, visitor);
+}
+
+/** @brief Traverse the router configuration upstream of [@a port]@a e.
+ * @param e element to start search
+ * @param port input port (or -1 to search all input ports)
+ * @param visitor RouterVisitor traversal object
+ * @return 0 on success, -1 in early router configuration stages
+ *
+ * Calls @a visitor->@link RouterVisitor::visit visit() @endlink on each
+ * reachable output port starting from the input port [@a port]@a e.  Follows
+ * connections and traverses inside elements from port to port by
+ * Element::flow_code().  The visitor can stop a traversal path by returning
+ * false from visit().
+ *
+ * @sa visit_downstream()
+ */
+inline int
+Router::visit_upstream(Element *e, int port, RouterVisitor *visitor) const
+{
+    return visit_base(false, e, port, visitor);
 }
 
 inline HashMap_ArenaFactory*

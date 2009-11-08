@@ -27,6 +27,7 @@
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/elemfilter.hh>
+#include <click/routervisitor.hh>
 #include <click/confparse.hh>
 #include <click/timer.hh>
 #include <click/master.hh>
@@ -547,7 +548,7 @@ conn_output_sorter_compar(const void *ap, const void *bp, void *user_data)
 }
 
 void
-Router::sort_connections()
+Router::sort_connections() const
 {
     if (!_conn_sorted) {
 	click_qsort(_conn.begin(), _conn.size());
@@ -594,15 +595,6 @@ inline int
 Router::gport(bool isoutput, const Port &h) const
 {
     return _element_gport_offset[isoutput][h.idx] + h.port;
-}
-
-void
-Router::port_list_elements(Vector<Port> &ports, Vector<Element*>& results) const
-{
-    click_qsort(ports.begin(), ports.size());
-    for (Port *pp = ports.begin(); pp != ports.end(); ++pp)
-	if (pp == ports.begin() || pp[-1].idx != pp->idx)
-	    results.push_back(_elements[pp->idx]);
 }
 
 // PROCESSING
@@ -807,15 +799,14 @@ Router::set_flow_code_override(int eindex, const String &flow_code)
 }
 
 int
-Router::global_port_flow(bool forward, Element* first_element, int first_port,
-			 ElementFilter* stop_filter, Vector<Port> &results)
+Router::visit_base(bool forward, Element *first_element, int first_port,
+		   RouterVisitor *visitor) const
 {
     if (!_have_connections || first_element->router() != this)
 	return -1;
 
     sort_connections();
 
-    results.clear();
     Bitvector result_bv(ngports(!forward), false), scratch;
 
     Vector<Port> sources;
@@ -825,8 +816,11 @@ Router::global_port_flow(bool forward, Element* first_element, int first_port,
     } else if (first_port < first_element->nports(forward))
 	sources.push_back(Port(first_element->eindex(), first_port));
 
-    while (true) {
-	int old_nresults = results.size();
+    Vector<Port> next_sources;
+    int distance = 1;
+
+    while (sources.size()) {
+	next_sources.clear();
 
 	for (Port *sp = sources.begin(); sp != sources.end(); ++sp)
 	    for (int cix = connindex_lower_bound(forward, *sp);
@@ -836,24 +830,47 @@ Router::global_port_flow(bool forward, Element* first_element, int first_port,
 		    break;
 		Port connpt = _conn[ci][!forward];
 		int conng = gport(!forward, connpt);
-		if (!result_bv[conng]) {
-		    results.push_back(connpt);
-		    result_bv[conng] = true;
-		}
-	    }
-
-	if (results.size() == old_nresults)
-	    return 0;
-
-	sources.clear();
-	for (Port *rp = results.begin() + old_nresults; rp != results.end(); ++rp)
-	    if (!stop_filter || !stop_filter->check_match(_elements[rp->idx], !forward, rp->port)) {
-		_elements[rp->idx]->port_flow(!forward, rp->port, &scratch);
+		if (result_bv[conng])
+		    continue;
+		result_bv[conng] = true;
+		if (!visitor->visit(_elements[connpt.idx], !forward, connpt.port,
+				    _elements[sp->idx], sp->port, distance))
+		    continue;
+		_elements[connpt.idx]->port_flow(!forward, connpt.port, &scratch);
 		for (int port = 0; port < scratch.size(); ++port)
 		    if (scratch[port])
-			sources.push_back(Port(rp->idx, port));
+			next_sources.push_back(Port(connpt.idx, port));
 	    }
+
+	sources.swap(next_sources);
+	++distance;
     }
+
+    return 0;
+}
+
+namespace {
+class ElementFilterRouterVisitor : public RouterVisitor { public:
+
+    ElementFilterRouterVisitor(ElementFilter *filter,
+			       Vector<Element *> &results)
+	: _filter(filter), _results(results) {
+	_results.clear();
+    }
+
+    bool visit(Element *e, bool isoutput, int port,
+	       Element *, int, int) {
+	if (find(_results.begin(), _results.end(), e) == _results.end())
+	    _results.push_back(e);
+	return _filter ? !_filter->check_match(e, isoutput, port) : true;
+    }
+
+  private:
+
+    ElementFilter *_filter;
+    Vector<Element *> &_results;
+
+};
 }
 
 /** @brief Search for elements downstream from @a e.
@@ -879,11 +896,8 @@ Router::global_port_flow(bool forward, Element* first_element, int first_port,
 int
 Router::downstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element *> &result)
 {
-    Vector<Port> result_ports;
-    if (global_port_flow(true, e, port, filter, result_ports) < 0)
-	return -1;
-    port_list_elements(result_ports, result);
-    return 0;
+    ElementFilterRouterVisitor visitor(filter, result);
+    return visit_base(true, e, port, &visitor);
 }
 
 /** @brief Search for elements upstream from @a e.
@@ -909,11 +923,8 @@ Router::downstream_elements(Element *e, int port, ElementFilter *filter, Vector<
 int
 Router::upstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element *> &result)
 {
-    Vector<Port> result_ports;
-    if (global_port_flow(false, e, port, filter, result_ports) < 0)
-	return -1;
-    port_list_elements(result_ports, result);
-    return 0;
+    ElementFilterRouterVisitor visitor(filter, result);
+    return visit_base(false, e, port, &visitor);
 }
 
 
