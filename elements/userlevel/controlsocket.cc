@@ -107,12 +107,20 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
   socktype = socktype.upper();
   if (socktype == "TCP") {
     _tcp_socket = true;
-    uint16_t portno;
     if (cp_va_kparse(conf, this, errh,
 		     "TYPE", cpkP+cpkM, cpIgnore,
-		     "PORT", cpkP+cpkM, cpTCPPort, &portno, cpEnd) < 0)
+		     "PORT", cpkP+cpkM, cpWord, &_unix_pathname, cpEnd) < 0)
       return -1;
-    _unix_pathname = String(portno);
+    uint16_t portno;
+    int portno_int;
+    if (cp_tcpudp_port(_unix_pathname, IP_PROTO_TCP, &portno, this))
+	_unix_pathname = String(portno);
+    else if (_unix_pathname && _unix_pathname.back() == '+'
+	     && cp_integer(_unix_pathname.substring(0, -1), 0, &portno_int)
+	     && portno_int > 0 && portno_int < 65536)
+	_unix_pathname = String(portno_int) + "+";
+    else
+	return errh->error("PORT requires TCP port");
 
   } else if (socktype == "UNIX") {
     _tcp_socket = false;
@@ -164,7 +172,7 @@ ControlSocket::initialize_socket(ErrorHandler *errh)
 
     // bind to port
     int portno;
-    (void) cp_integer(_unix_pathname, &portno);
+    (void) cp_integer(_unix_pathname.begin(), _unix_pathname.end(), 0, &portno);
     struct sockaddr_in sa;
     sa.sin_family = AF_INET;
     sa.sin_port = htons(portno);
@@ -172,8 +180,15 @@ ControlSocket::initialize_socket(ErrorHandler *errh)
 	sa.sin_addr = inet_makeaddr(127, 1);
     else
 	sa.sin_addr = inet_makeaddr(0, 0);
-    if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
-      return initialize_socket_error(errh, "bind");
+    int tries = 0;
+    while (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
+	if (tries > 10 || _unix_pathname.back() != '+' || portno >= 65534
+	    || (_retries >= 0 && hotswap_element()))
+	    return initialize_socket_error(errh, "bind");
+	++portno, ++tries;
+	sa.sin_port = htons(portno);
+    }
+    _unix_pathname = String(portno);
 
   } else {
     _socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -236,23 +251,30 @@ ControlSocket::initialize(ErrorHandler *errh)
     return -1;
 }
 
+Element *
+ControlSocket::hotswap_element() const
+{
+    if (Element *e = Element::hotswap_element())
+	if (ControlSocket *cs = (ControlSocket *)e->cast("ControlSocket"))
+	    if (cs->_tcp_socket == _tcp_socket
+		&& (cs->_unix_pathname == _unix_pathname
+		    || (_tcp_socket && _unix_pathname.back() == '+')))
+		return cs;
+    return 0;
+}
+
 void
 ControlSocket::take_state(Element *e, ErrorHandler *errh)
 {
-  ControlSocket *cs = (ControlSocket *)e->cast("ControlSocket");
-  if (!cs)
-    return;
+  ControlSocket *cs = (ControlSocket *) e->cast("ControlSocket");
 
   if (_socket_fd >= 0) {
     errh->error("already initialized, can't take state");
     return;
-  } else if (_tcp_socket != cs->_tcp_socket
-	     || _unix_pathname != cs->_unix_pathname) {
-    errh->error("incompatible ControlSockets");
-    return;
   }
 
   _socket_fd = cs->_socket_fd;
+  _unix_pathname = cs->_unix_pathname; // in case _unix_pathname == "41930+"
   cs->_socket_fd = -1;
   _in_texts.swap(cs->_in_texts);
   _out_texts.swap(cs->_out_texts);
