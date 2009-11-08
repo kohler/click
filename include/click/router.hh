@@ -58,8 +58,8 @@ class Router { public:
     int visit_downstream(Element *e, int port, RouterVisitor *visitor) const;
     int visit_upstream(Element *e, int port, RouterVisitor *visitor) const;
 
-    int downstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element*> &result);
-    int upstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element*> &result);
+    int downstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element*> &result) CLICK_DEPRECATED;
+    int upstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element*> &result) CLICK_DEPRECATED;
 
     inline const char *flow_code_override(int eindex) const;
     void set_flow_code_override(int eindex, const String &flow_code);

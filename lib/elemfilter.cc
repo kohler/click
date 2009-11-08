@@ -28,6 +28,8 @@ CLICK_DECLS
 /** @class ElementFilter
  * @brief Base class for filter predicates for elements and ports.
  *
+ * @deprecated This class is deprecated.  Use RouterVisitor instead.
+ *
  * ElementFilter objects are used to search the router configuration graph for
  * matching elements.  They are usually passed to the
  * Router::downstream_elements() and Router::upstream_elements() functions.
@@ -35,6 +37,8 @@ CLICK_DECLS
 
 /** @class CastElementFilter
  * @brief Cast-based filter predicate for elements.
+ *
+ * @deprecated This class is deprecated.  Use ElementCastTracker instead.
  *
  * This ElementFilter type matches elements that match a given cast type.
  * The constructor's string is passed to Element::cast(); the filter matches

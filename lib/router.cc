@@ -880,6 +880,8 @@ class ElementFilterRouterVisitor : public RouterVisitor { public:
  * @param result stores results
  * @return 0 on success, -1 in early router configuration stages
  *
+ * @deprecated This function is deprecated.  Use visit_downstream() instead.
+ *
  * This function searches the router configuration graph, starting from @a e's
  * output port @a port and proceeding downstream along element connections,
  * and inside elements from port to port by Element::flow_code(). All found
@@ -906,6 +908,8 @@ Router::downstream_elements(Element *e, int port, ElementFilter *filter, Vector<
  * @param filter ElementFilter naming elements that stop the search
  * @param result stores results
  * @return 0 on success, -1 in early router configuration stages
+ *
+ * @deprecated This function is deprecated.  Use visit_upstream() instead.
  *
  * This function searches the router configuration graph, starting from @a e's
  * input port @a port and proceeding upstream along element connections,
