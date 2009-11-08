@@ -20,7 +20,7 @@
 #include <click/config.h>
 #include "pi.hh"
 #include <click/standard/storage.hh>
-#include <click/elemfilter.hh>
+#include <click/routervisitor.hh>
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/confparse.hh>
@@ -141,16 +141,16 @@ PI::initialize(ErrorHandler *errh)
     _queue1 = 0;
 
     if (!_queue_elements.size()) {
-		CastElementFilter filter("Storage");
+	ElementCastTracker filter(router(), "Storage");
 
 	int ok;
 	if (output_is_push(0))
-	    ok = router()->downstream_elements(this, 0, &filter, _queue_elements);
+	    ok = router()->visit_downstream(this, 0, &filter);
 	else
-	    ok = router()->upstream_elements(this, 0, &filter, _queue_elements);
+	    ok = router()->visit_upstream(this, 0, &filter);
 	if (ok < 0)
 	    return errh->error("flow-based router context failure");
-	filter.filter(_queue_elements);
+	_queue_elements = filter.elements();
     }
 
     if (_queue_elements.size() == 0)

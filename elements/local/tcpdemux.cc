@@ -19,7 +19,6 @@
 #include <click/confparse.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
-#include <click/elemfilter.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 #include "tcpdemux.hh"

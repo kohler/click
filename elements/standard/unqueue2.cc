@@ -20,7 +20,7 @@
 #include <click/config.h>
 #include <click/error.hh>
 #include <click/router.hh>
-#include <click/elemfilter.hh>
+#include <click/routervisitor.hh>
 #include <click/standard/storage.hh>
 #include "unqueue2.hh"
 #include <click/confparse.hh>
@@ -48,10 +48,10 @@ Unqueue2::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 Unqueue2::initialize(ErrorHandler *errh)
 {
-  CastElementFilter filter("Storage");
-  if (router()->downstream_elements(this, 0, &filter, _queue_elements) < 0)
+  ElementCastTracker filter(router(), "Storage");
+  if (router()->visit_downstream(this, 0, &filter) < 0)
     return errh->error("flow-based router context failure");
-  filter.filter(_queue_elements);
+  _queue_elements = filter.elements();
   click_chatter("Unqueue2: found %d downstream queues", _queue_elements.size());
   _packets = 0;
   ScheduleInfo::initialize_task(this, &_task, errh);

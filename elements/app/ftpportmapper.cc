@@ -20,7 +20,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include <click/router.hh>
-#include <click/elemfilter.hh>
+#include <click/routervisitor.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
 CLICK_DECLS
@@ -74,18 +74,12 @@ FTPPortMapper::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 FTPPortMapper::initialize(ErrorHandler *errh)
 {
-  // make sure that _control_rewriter is downstream
-  CastElementFilter filter("TCPRewriter");
-  Vector<Element *> elts;
-  router()->downstream_elements(this, 0, &filter, elts);
-  filter.filter(elts);
-  for (int i = 0; i < elts.size(); i++)
-    if (elts[i] == _control_rewriter)
-      goto found_control_rewriter;
-  errh->warning("control packet rewriter `%s' is not downstream", _control_rewriter->declaration().c_str());
-
- found_control_rewriter:
-  return 0;
+    // make sure that _control_rewriter is downstream
+    ElementCastTracker filter(router(), "TCPRewriter");
+    router()->visit_downstream(this, 0, &filter);
+    if (!filter.contains(_control_rewriter))
+	errh->warning("control packet rewriter %<%s%> is not downstream", _control_rewriter->declaration().c_str());
+    return 0;
 }
 
 void

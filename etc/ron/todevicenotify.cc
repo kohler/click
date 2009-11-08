@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include <click/glue.hh>
 #include "todevicenotify.hh"
-#include <click/elemfilter.hh>
+#include <click/routervisitor.hh>
 #include <click/error.hh>
 #include <click/etheraddress.hh>
 #include <click/confparse.hh>
@@ -62,19 +62,18 @@ int
 ToDeviceNotify::initialize(ErrorHandler *errh)
 {
   int ok, i, ret;
-  Vector<Element *> upstream_queues;
-  CastElementFilter filter("QueueNotify");
 
   ret = ToDevice::initialize(errh);
   if (ret) return ret;
   _data_ready = false;
 
-  ok = router()->upstream_elements(this, 0, &filter, upstream_queues);
+  ElementCastTracker filter(router(), "QueueNotify");
+  ok = router()->visit_upstream(this, 0, &filter);
   if (ok < 0)
     return errh->error("could not find upstream notify queues");
 
-  for(i=0; i<upstream_queues.size(); i++) {
-    ((QueueNotify*) upstream_queues[i])->subscribe_notification(this);
+  for(i=0; i<filter.size(); i++) {
+    ((QueueNotify*) filter[i])->subscribe_notification(this);
   }
 
   return 0;

@@ -19,7 +19,7 @@
 #include <click/confparse.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
-#include <click/elemfilter.hh>
+#include <click/routervisitor.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 #include "tcpbuffer.hh"
@@ -47,22 +47,12 @@ TCPAck::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 TCPAck::initialize(ErrorHandler *errh)
 {
-  CastElementFilter filter("TCPBuffer");
-  Vector<Element*> tcpbuffers;
-
-  if (router()->downstream_elements(this, 0, &filter, tcpbuffers) < 0)
+  ElementCastTracker filter(router(), "TCPBuffer");
+  if (router()->visit_downstream(this, 0, &filter) < 0)
     return errh->error("flow-based router context failure");
-  if (tcpbuffers.size() < 1)
-    return errh->error
-      ("%d downstream elements found, expecting at least 1", tcpbuffers.size());
-
-  for(int i=0; i<tcpbuffers.size(); i++) {
-    _tcpbuffer = reinterpret_cast<TCPBuffer*>(tcpbuffers[i]->cast("TCPBuffer"));
-    if (_tcpbuffer)
-      break;
-  }
-  if (!_tcpbuffer)
-    return errh->error("no TCPBuffer element found!");
+  if (filter.size() < 1)
+      return errh->error("need at least 1 downstream TCPBuffer");
+  _tcpbuffer = reinterpret_cast<TCPBuffer *>(filter[0]->cast("TCPBuffer"));
 
   _synack = false;
   _needack = false;

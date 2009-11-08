@@ -18,6 +18,7 @@
 
 #include <click/config.h>
 #include <click/routervisitor.hh>
+#include <click/router.hh>
 CLICK_DECLS
 
 /** @file routervisitor.hh
@@ -28,6 +29,26 @@ bool
 RouterVisitor::visit(Element *, bool, int, Element *, int, int)
 {
     return true;
+}
+
+ElementTracker::ElementTracker(Router *router)
+    : _reached(router->nelements(), false)
+{
+}
+
+ElementCastTracker::ElementCastTracker(Router *router, const String &name)
+    : ElementTracker(router), _name(name)
+{
+}
+
+bool
+ElementCastTracker::visit(Element *e, bool, int, Element *, int, int)
+{
+    if (e->cast(_name.c_str())) {
+	insert(e);
+	return false;
+    } else
+	return true;
 }
 
 CLICK_ENDDECLS

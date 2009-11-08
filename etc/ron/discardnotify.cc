@@ -19,7 +19,7 @@
 #include "discardnotify.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
-#include <click/elemfilter.hh>
+#include <click/routervisitor.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 
@@ -37,18 +37,17 @@ int
 DiscardNotify::initialize(ErrorHandler *errh)
 {
   int ok, i;
-  Vector<Element *> upstream_queues;
-  CastElementFilter filter("QueueNotify");
 
   Discard::initialize(errh);
   _data_ready = false;
 
-  ok = router()->upstream_elements(this, 0, &filter, upstream_queues);
+  ElementCastTracker filter(router(), "QueueNotify");
+  ok = router()->upstream_elements(this, 0, &filter);
   if (ok < 0)
     return errh->error("could not find upstream notify queues");
 
-  for(i=0; i<upstream_queues.size(); i++) {
-    ((QueueNotify*) upstream_queues[i])->subscribe_notification(this);
+  for(i=0; i<filter.size(); i++) {
+    ((QueueNotify*) filter[i])->subscribe_notification(this);
   }
 
   return 0;

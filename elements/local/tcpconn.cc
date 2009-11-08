@@ -19,7 +19,7 @@
 #include <click/confparse.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
-#include <click/elemfilter.hh>
+#include <click/routervisitor.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 #include "tcpdemux.hh"
@@ -45,22 +45,12 @@ TCPConn::configure(Vector<String> &, ErrorHandler *)
 int
 TCPConn::initialize(ErrorHandler *errh)
 {
-  CastElementFilter filter("TCPDemux");
-  Vector<Element*> tcpdemuxes;
-
-  if (router()->upstream_elements(this, 0, &filter, tcpdemuxes) < 0)
+  ElementCastTracker filter(router(), "TCPDemux");
+  if (router()->visit_upstream(this, 0, &filter) < 0)
     return errh->error("flow-based router context failure");
-  if (tcpdemuxes.size() < 1)
-    return errh->error
-      ("%d upstream elements found, expecting at least 1", tcpdemuxes.size());
-
-  for(int i=0; i<tcpdemuxes.size(); i++) {
-    _tcpdemux = reinterpret_cast<TCPDemux*>(tcpdemuxes[i]->cast("TCPDemux"));
-    if (_tcpdemux)
-      break;
-  }
-  if (!_tcpdemux)
-    return errh->error("no TCPDemux element found!");
+  if (filter.size() < 1)
+      return errh->error("need at least 1 upstream TCPDemux");
+  _tcpdemux = reinterpret_cast<TCPDemux *>(filter[0]->cast("TCPDemux"));
   return 0;
 }
 
