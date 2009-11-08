@@ -1467,7 +1467,7 @@ Optional Features:
   --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)
   --enable-nsclick        enable NS simulator driver (EXPERIMENTAL)
   --enable-all-elements   include all provided element groups
-  --enable-analysis       include elements for network analysis
+  --disable-analysis      do not include elements for network analysis
   --disable-app           do not include application-level elements
   --disable-aqm           do not include active queue management elements
   --disable-ethernet      do not include Ethernet elements
@@ -1482,7 +1482,7 @@ Optional Features:
   --enable-simple         include simple versions of other elements
   --disable-standard      do not include standard elements
   --disable-tcpudp        do not include TCP and UDP elements
-  --enable-test           include regression test elements
+  --disable-test          do not include regression test elements
   --disable-threads       do not include thread management elements
   --enable-wifi           include wifi elements and support
   --enable-experimental   enable experimental elements in normal groups
@@ -6157,7 +6157,7 @@ element_groups=""
 if test "${enable_analysis+set}" = set; then
   enableval=$enable_analysis;
 else
-  enable_analysis=NO
+  enable_analysis=yes
 fi
 test "x$enable_all_elements" = xyes -a "x$enable_analysis" = xNO && enable_analysis=yes
 if test "x$enable_analysis" = xyes; then
@@ -6328,7 +6328,7 @@ fi
 if test "${enable_test+set}" = set; then
   enableval=$enable_test;
 else
-  enable_test=NO
+  enable_test=yes
 fi
 test "x$enable_all_elements" = xyes -a "x$enable_test" = xNO && enable_test=yes
 if test "x$enable_test" = xyes; then
