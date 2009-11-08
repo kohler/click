@@ -77,7 +77,7 @@ static const Clp_Option options[] = {
   { "handler", 'h', HANDLER_OPT, Clp_ValString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
-  { "port", 'p', PORT_OPT, Clp_ValInt, 0 },
+  { "port", 'p', PORT_OPT, Clp_ValString, 0 },
   { "quit", 'q', QUIT_OPT, 0, 0 },
 #if HAVE_MULTITHREAD
   { "threads", 0, THREADS_OPT, Clp_ValInt, 0 },
@@ -273,9 +273,18 @@ hotswap_hook(Task *, void *)
 // switching configurations
 
 static Vector<String> cs_unix_sockets;
-static Vector<int> cs_ports;
+static Vector<String> cs_ports;
 static bool warnings = true;
 static int nthreads = 1;
+
+static String
+click_driver_control_socket_name(int number)
+{
+    if (!number)
+	return "click_driver@@ControlSocket";
+    else
+	return "click_driver@@ControlSocket@" + String(number);
+}
 
 static Router *
 parse_configuration(const String &text, bool text_is_expr, bool hotswap,
@@ -289,9 +298,9 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
   // add new ControlSockets
   String retries = (hotswap ? ", RETRIES 1, RETRY_WARNINGS false" : "");
   for (int i = 0; i < cs_ports.size(); i++)
-    r->add_element(new ControlSocket, "click_driver@@ControlSocket@" + String(i), "tcp, " + String(cs_ports[i]) + retries, "click");
+    r->add_element(new ControlSocket, click_driver_control_socket_name(i), "tcp, " + cs_ports[i] + retries, "click");
   for (int i = 0; i < cs_unix_sockets.size(); i++)
-    r->add_element(new ControlSocket, "click_driver@@ControlSocket@" + String(i + cs_ports.size()), "unix, " + cp_quote(cs_unix_sockets[i]) + retries, "click");
+    r->add_element(new ControlSocket, click_driver_control_socket_name(i + cs_ports.size()), "unix, " + cp_quote(cs_unix_sockets[i]) + retries, "click");
 
   // catch signals (only need to do the first time)
   if (!hotswap) {
@@ -419,9 +428,22 @@ main(int argc, char **argv)
       exit_handler = clp->vstr;
       break;
 
-     case PORT_OPT:
-      cs_ports.push_back(clp->val.i);
+  case PORT_OPT: {
+      uint16_t portno;
+      int portno_int;
+      String vstr(clp->vstr);
+      if (cp_tcpudp_port(vstr, IP_PROTO_TCP, &portno))
+	  cs_ports.push_back(String(portno));
+      else if (vstr && vstr.back() == '+'
+	       && cp_integer(vstr.substring(0, -1), 0, &portno_int)
+	       && portno_int > 0 && portno_int < 65536)
+	  cs_ports.push_back(String(portno_int) + "+");
+      else {
+	  Clp_OptionError(clp, "%<%O%> expects a TCP port number, not %<%s%>", clp->vstr);
+	  goto bad_option;
+      }
       break;
+  }
 
      case UNIX_SOCKET_OPT:
       cs_unix_sockets.push_back(clp->vstr);
