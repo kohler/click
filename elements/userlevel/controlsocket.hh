@@ -204,6 +204,15 @@ ControlSocket is only available in user-level processes.
 
   ControlSocket(unix, /tmp/clicksocket);
 
+=h port r
+
+Returns the ControlSocket's port number.  Only available for TYPE TCP.
+
+=h filename r
+
+Returns the ControlSocket's UNIX socket filename.  Only available for TYPE
+UNIX.
+
 =a ChatterSocket, KernelHandlerProxy */
 
 class ControlSocket : public Element { public:
@@ -213,10 +222,11 @@ class ControlSocket : public Element { public:
 
   const char *class_name() const	{ return "ControlSocket"; }
 
-  int configure(Vector<String> &conf, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  void take_state(Element *, ErrorHandler *);
+    int configure(Vector<String> &conf, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void cleanup(CleanupStage);
+    void take_state(Element *, ErrorHandler *);
+    void add_handlers();
 
   void selected(int);
 
