@@ -106,6 +106,12 @@ class ElementTracker : public RouterVisitor { public:
 	}
     }
 
+    /** @brief Clear the set of matching elements. */
+    void clear() {
+	_reached.clear();
+	_elements.clear();
+    }
+
   private:
 
     Bitvector _reached;
