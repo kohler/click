@@ -36,11 +36,6 @@ ElementTracker::ElementTracker(Router *router)
 {
 }
 
-ElementCastTracker::ElementCastTracker(Router *router, const String &name)
-    : ElementTracker(router), _name(name)
-{
-}
-
 bool
 ElementCastTracker::visit(Element *e, bool, int, Element *, int, int)
 {
@@ -49,6 +44,15 @@ ElementCastTracker::visit(Element *e, bool, int, Element *, int, int)
 	return false;
     } else
 	return true;
+}
+
+bool
+ElementNeighborhoodTracker::visit(Element *e, bool, int,
+				  Element *, int, int distance)
+{
+    if (distance <= _diameter)
+	insert(e);
+    return distance < _diameter;
 }
 
 CLICK_ENDDECLS

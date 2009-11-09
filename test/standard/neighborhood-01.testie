@@ -1,0 +1,43 @@
+%info
+Tests ElementNeighborhood functionality with the NeighborhoodTest element.
+
+%require
+click-buildtool provides NeighborhoodTest
+
+%script
+click -e '
+d::Idle -> c::Null -> b::Null -> a::Null -> n::NeighborhoodTest;
+n -> x::Null -> y::Null -> z::Idle;
+a2::Idle -> [1]n;
+n[1] -> x2::Idle;
+
+Script(print $(n.upstream), print ==,
+	print $(n.downstream), print ==,
+	print $(n.upstream 2), print ==,
+	print $(n.upstream0 2), print ==,
+	print $(n.upstream1 2), print ==,
+	print $(n.downstream0), print ==,
+	print $(n.downstream1), print ==,
+	stop)
+'
+
+%expect stdout
+a
+a2
+==
+x
+x2
+==
+a
+a2
+b
+==
+a
+b
+==
+a2
+==
+x
+==
+x2
+==

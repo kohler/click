@@ -135,7 +135,9 @@ class ElementCastTracker : public ElementTracker { public:
     /** @brief Construct an ElementCastTracker.
      * @param router the router to be traversed
      * @param name the cast of interest */
-    ElementCastTracker(Router *router, const String &name);
+    ElementCastTracker(Router *router, const String &name)
+	: ElementTracker(router), _name(name) {
+    }
 
     bool visit(Element *e, bool isoutput, int port,
 	       Element *from_e, int from_port, int distance);
@@ -143,6 +145,41 @@ class ElementCastTracker : public ElementTracker { public:
   private:
 
     String _name;
+
+};
+
+/** @class ElementNeighborhoodTracker
+ * @brief Router configuration visitor that collects close-by elements.
+ *
+ * When passed to Router::visit_upstream() or Router::visit_downstream(),
+ * ElementNeighborhoodTracker collects the elements that are within a certain
+ * number of connections of the source element.  For instance, this code will
+ * find all the elements connected to [0]@a e:
+ * @code
+ * ElementNeighborhoodTracker tracker(e->router());
+ * e->router()->visit_upstream(e, 0, &tracker);
+ * tracker.elements();  // Vector<Element *> containing neighboring elements
+ * @endcode
+ *
+ * Supply the constructor's @a diameter argument to find a larger neighborhood
+ * than just the directly-connected elements.
+ */
+class ElementNeighborhoodTracker : public ElementTracker { public:
+
+    /** @brief Construct an ElementNeighborhoodTracker.
+     * @param router the router to be traversed
+     * @param diameter neighborhood diameter (maximum number of connections to
+     * traverse) */
+    ElementNeighborhoodTracker(Router *router, int diameter = 1)
+	: ElementTracker(router), _diameter(diameter) {
+    }
+
+    bool visit(Element *e, bool isoutput, int port,
+	       Element *from_e, int from_port, int distance);
+
+  private:
+
+    int _diameter;
 
 };
 
