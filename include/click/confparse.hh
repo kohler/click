@@ -392,10 +392,15 @@ struct cp_value {
     // set by parsefunc, used by storefunc:
     union {
 	bool b;
-	int32_t i;
-	uint32_t u;
+	int i;
+	unsigned u;
+	int16_t s16;
+	uint16_t u16;
+	int32_t s32;
+	uint32_t u32;
 #if HAVE_INT64_TYPES
-	int64_t i64;
+	int64_t s64;
+	int64_t i64 CLICK_DEPRECATED;
 	uint64_t u64;
 #endif
 	size_t size;

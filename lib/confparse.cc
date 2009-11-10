@@ -3041,37 +3041,37 @@ default_parsefunc(cp_value *v, const String &arg,
 
     case cpiNamedInteger:
 #ifndef CLICK_TOOL
-      if (NameInfo::query(v->extra.i, context, arg, &v->v.i, 4))
+      if (NameInfo::query(v->extra.i, context, arg, &v->v.s32, 4))
 	  break;
 #endif
       goto handle_int32_t;
 
    handle_signed:
-    if (!cp_integer(arg, &v->v.i))
+    if (!cp_integer(arg, &v->v.s32))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s too large, max %d", argname, v->v.i);
-    else if (v->v.i < underflower)
+      errh->error("%s too large, max %d", argname, v->v.s32);
+    else if (v->v.s32 < underflower)
       errh->error("%s must be >= %d", argname, underflower);
-    else if (v->v.i > (int)overflower)
+    else if (v->v.s32 > (int)overflower)
       errh->error("%s must be <= %u", argname, overflower);
     break;
 
    handle_unsigned:
-    if (!cp_integer(arg, &v->v.u))
+    if (!cp_integer(arg, &v->v.u32))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s too large, max %u", argname, v->v.u);
-    else if (v->v.u > overflower)
+      errh->error("%s too large, max %u", argname, v->v.u32);
+    else if (v->v.u32 > overflower)
       errh->error("%s must be <= %u", argname, overflower);
     break;
 
 #ifdef HAVE_INT64_TYPES
    case cpiInteger64:
-    if (!cp_integer(arg, &v->v.i64))
+    if (!cp_integer(arg, &v->v.s64))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s too large, max %^64d", argname, v->v.i64);
+      errh->error("%s too large, max %^64d", argname, v->v.s64);
     break;
 
    case cpiUnsigned64:
@@ -3090,19 +3090,19 @@ default_parsefunc(cp_value *v, const String &arg,
       break;
 
    case cpiReal10:
-    if (!cp_real10(arg, v->extra.i, &v->v.i))
+    if (!cp_real10(arg, v->extra.i, &v->v.s32))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_real10(v->v.i, v->extra.i);
+      String m = cp_unparse_real10(v->v.s32, v->extra.i);
       errh->error("%s too large, max %s", argname, m.c_str());
     }
     break;
 
    case cpiUnsignedReal10:
-    if (!cp_real10(arg, v->extra.i, &v->v.u))
+    if (!cp_real10(arg, v->extra.i, &v->v.u32))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_real10(v->v.u, v->extra.i);
+      String m = cp_unparse_real10(v->v.u32, v->extra.i);
       errh->error("%s too large, max %s", argname, m.c_str());
     }
     break;
@@ -3117,26 +3117,26 @@ default_parsefunc(cp_value *v, const String &arg,
 #endif
 
    case cpiSeconds:
-    if (!cp_seconds_as(arg, 0, &v->v.u))
+    if (!cp_seconds_as(arg, 0, &v->v.u32))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s too large, max %u", argname, v->v.u);
+      errh->error("%s too large, max %u", argname, v->v.u32);
     break;
 
    case cpiSecondsAsMilli:
-    if (!cp_seconds_as(arg, 3, &v->v.u))
+    if (!cp_seconds_as(arg, 3, &v->v.u32))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_milliseconds(v->v.u);
+      String m = cp_unparse_milliseconds(v->v.u32);
       errh->error("%s too large, max %s", argname, m.c_str());
     }
     break;
 
    case cpiSecondsAsMicro:
-    if (!cp_seconds_as(arg, 6, &v->v.u))
+    if (!cp_seconds_as(arg, 6, &v->v.u32))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_microseconds(v->v.u);
+      String m = cp_unparse_microseconds(v->v.u32);
       errh->error("%s too large, max %s", argname, m.c_str());
     }
     break;
@@ -3151,8 +3151,8 @@ default_parsefunc(cp_value *v, const String &arg,
      } else if (cp_errno == CPE_OVERFLOW)
        errh->error("%s too large", argname);
      else {
-       v->v.i = t.sec();
-       v->v2.i = t.subsec();
+       v->v.s32 = t.sec();
+       v->v2.s32 = t.subsec();
      }
      break;
    }
@@ -3167,38 +3167,38 @@ default_parsefunc(cp_value *v, const String &arg,
      } else if (cp_errno == CPE_OVERFLOW)
        errh->error("%s too large", argname);
      else {
-       v->v.i = tv.tv_sec;
-       v->v2.i = tv.tv_usec;
+       v->v.s32 = tv.tv_sec;
+       v->v2.s32 = tv.tv_usec;
      }
      break;
    }
 
    case cpiBandwidth:
-    if (!cp_bandwidth(arg, &v->v.u))
+    if (!cp_bandwidth(arg, &v->v.u32))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_bandwidth(v->v.u);
+      String m = cp_unparse_bandwidth(v->v.u32);
       errh->error("%s too large, max %s", argname, m.c_str());
     } else if (cp_errno == CPE_NOUNITS)
       errh->warning("no units on bandwidth %s, assuming Bps", argname);
     break;
 
    case cpiReal2:
-    if (!cp_real2(arg, v->extra.i, &v->v.i)) {
+    if (!cp_real2(arg, v->extra.i, &v->v.s32)) {
       // CPE_INVALID would indicate a bad 'v->extra.i'
       goto type_mismatch;
     } else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_real2(v->v.i, v->extra.i);
+      String m = cp_unparse_real2(v->v.s32, v->extra.i);
       errh->error("%s too large, max %s", argname, m.c_str());
     }
     break;
 
    case cpiUnsignedReal2:
-    if (!cp_real2(arg, v->extra.i, &v->v.u)) {
+    if (!cp_real2(arg, v->extra.i, &v->v.u32)) {
       // CPE_INVALID would indicate a bad 'v->extra.i'
       goto type_mismatch;
     } else if (cp_errno == CPE_OVERFLOW) {
-      String m  = cp_unparse_real2(v->v.u, v->extra.i);
+      String m  = cp_unparse_real2(v->v.u32, v->extra.i);
       errh->error("%s too large, max %s", argname, m.c_str());
     }
     break;
@@ -3244,12 +3244,12 @@ default_parsefunc(cp_value *v, const String &arg,
     break;
 
    case cpiTCPPort:
-    if (!cp_tcpudp_port(arg, IP_PROTO_TCP, (uint16_t *) v->v.address CP_PASS_CONTEXT))
+    if (!cp_tcpudp_port(arg, IP_PROTO_TCP, &v->v.u16 CP_PASS_CONTEXT))
       goto type_mismatch;
     break;
 
    case cpiUDPPort:
-    if (!cp_tcpudp_port(arg, IP_PROTO_UDP, (uint16_t *) v->v.address CP_PASS_CONTEXT))
+    if (!cp_tcpudp_port(arg, IP_PROTO_UDP, &v->v.u16 CP_PASS_CONTEXT))
       goto type_mismatch;
     break;
 
@@ -3311,7 +3311,7 @@ default_parsefunc(cp_value *v, const String &arg,
 
 #if !CLICK_TOOL
     case cpiAnno:
-      if (!cp_anno(arg, v->extra.i, &v->v.i  CP_PASS_CONTEXT))
+      if (!cp_anno(arg, v->extra.i, &v->v.s32  CP_PASS_CONTEXT))
 	  goto type_mismatch;
       break;
 #endif
@@ -3342,26 +3342,26 @@ default_storefunc(cp_value *v  CP_CONTEXT)
 
    case cpiByte: {
      uint8_t *ucstore = (uint8_t *)v->store;
-     *ucstore = v->v.i;
+     *ucstore = v->v.s32;
      break;
    }
 
    case cpiShort: {
      short *sstore = (short *)v->store;
-     *sstore = v->v.i;
+     *sstore = v->v.s32;
      break;
    }
 
    case cpiUnsignedShort: {
      unsigned short *usstore = (unsigned short *)v->store;
-     *usstore = v->v.u;
+     *usstore = v->v.u32;
      break;
    }
 
    case cpiTCPPort:
    case cpiUDPPort: {
      uint16_t *u16store = (uint16_t *)v->store;
-     *u16store = *((uint16_t *)v->v.address);
+     *u16store = v->v.u16;
      break;
    }
 
@@ -3375,7 +3375,7 @@ default_storefunc(cp_value *v  CP_CONTEXT)
    case cpiBandwidth:
    case cpiAnno: {
      int *istore = (int *)v->store;
-     *istore = v->v.i;
+     *istore = v->v.s32;
      break;
    }
 
@@ -3383,14 +3383,14 @@ default_storefunc(cp_value *v  CP_CONTEXT)
    case cpiUnsignedReal2:
    case cpiUnsignedReal10: {
      unsigned *ustore = (unsigned *)v->store;
-     *ustore = v->v.u;
+     *ustore = v->v.u32;
      break;
    }
 
 #if HAVE_INT64_TYPES
    case cpiInteger64: {
      int64_t *llstore = (int64_t *)v->store;
-     *llstore = v->v.i64;
+     *llstore = v->v.s64;
      break;
    }
 
@@ -3425,14 +3425,14 @@ default_storefunc(cp_value *v  CP_CONTEXT)
 
    case cpiTimestamp: {
      Timestamp *tstore = (Timestamp *)v->store;
-     *tstore = Timestamp(v->v.i, v->v2.i);
+     *tstore = Timestamp(v->v.s32, v->v2.s32);
      break;
    }
 
    case cpiTimeval: {
      struct timeval *tvstore = (struct timeval *)v->store;
-     tvstore->tv_sec = v->v.i;
-     tvstore->tv_usec = v->v2.i;
+     tvstore->tv_sec = v->v.s32;
+     tvstore->tv_usec = v->v2.s32;
      break;
    }
 
@@ -3582,16 +3582,16 @@ stringlist_parsefunc(cp_value *v, const String &arg,
 	String word;
 	if (cp_word(arg, &word))
 	    if (HashTable<String, int>::iterator it = m->find(word)) {
-		v->v.i = it.value();
+		v->v.s32 = it.value();
 		return;
 	    }
     }
 
     if (argtype->flags & cpArgAllowNumbers) {
-	if (!cp_integer(arg, &v->v.i))
+	if (!cp_integer(arg, &v->v.s32))
 	    errh->error("%s has type %s", argname, argtype->description);
 	else if (cp_errno == CPE_OVERFLOW)
-	    errh->error("%s too large, max %d", argname, v->v.i);
+	    errh->error("%s too large, max %d", argname, v->v.s32);
     } else
 	errh->error("%s has type %s", argname, argtype->description);
 }
@@ -3677,12 +3677,12 @@ static int
 handle_special_argtype_for_keyword(cp_value *val, const String &rest)
 {
   if (val->argtype->internal == cpiArguments) {
-    if (val->v.i & cpkSupplied) {
+    if (val->v.s32 & cpkSupplied) {
       uint32_t l = val->v_string.length();
       val->v2_string += String((const char *)&l, 4);
       val->v_string += rest;
     } else {
-      val->v.i |= cpkSupplied;
+      val->v.s32 |= cpkSupplied;
       val->v_string = rest;
       val->v2_string = String();
     }
@@ -3776,8 +3776,8 @@ CpVaHelper::develop_values(va_list val, ErrorHandler *errh)
     if (!argtype)
       return errh->error("unknown argument type '%s'!", command_name);
     v->argtype = argtype;
-    v->v.i = (mandatory_keywords || (nrequired < 0 && npositional < 0)
-	      ? cpkMandatory : 0);
+    v->v.s32 = (mandatory_keywords || (nrequired < 0 && npositional < 0)
+		? cpkMandatory : 0);
 
     // check for special commands
     if (argtype->internal == cpiOptional) {
@@ -3874,7 +3874,7 @@ CpVaHelper::develop_kvalues(va_list val, ErrorHandler *errh)
     if (!argtype)
       return errh->error("unknown argument type %<%s%>!", command_name);
     v->argtype = argtype;
-    v->v.i = (flags & (cpkMandatory | cpkDeprecated));
+    v->v.s32 = (flags & (cpkMandatory | cpkDeprecated));
 
     // check for special commands
     if (argtype->internal == cpiIgnore) {
@@ -3921,9 +3921,9 @@ CpVaHelper::assign_keyword_argument(const String &arg)
 	return handle_special_argtype_for_keyword(val, rest);
       else {
 	// do not report error if keyword used already
-	// if (cp_values[i].v.i & cpkSupplied)
+	// if (cp_values[i].v.s32 & cpkSupplied)
 	//   return kwDupKeyword;
-	val->v.i |= cpkSupplied;
+	val->v.s32 |= cpkSupplied;
 	val->v_string = rest;
 	return kwSuccess;
       }
@@ -4014,7 +4014,7 @@ CpVaHelper::assign_arguments(const Vector<String> &args, const char *argname, Er
     if (npositional_supplied < npositional) {
       (*cp_parameter_used)[i] = 1;
       cp_values[npositional_supplied].v_string = args[i];
-      cp_values[npositional_supplied].v.i |= cpkSupplied;
+      cp_values[npositional_supplied].v.s32 |= cpkSupplied;
     }
     npositional_supplied++;
   }
@@ -4026,14 +4026,14 @@ CpVaHelper::assign_arguments(const Vector<String> &args, const char *argname, Er
   // report missing mandatory keywords and uses of deprecated arguments
   int nmissing = 0;
   for (int i = 0; i < nvalues; i++)
-    if ((cp_values[i].v.i & (cpkMandatory | cpkSupplied)) == cpkMandatory) {
+    if ((cp_values[i].v.s32 & (cpkMandatory | cpkSupplied)) == cpkMandatory) {
       nmissing++;
       if (keyword_error_sa.length())
 	  keyword_error_sa << ", ";
       keyword_error_sa << value_name(i);
-    } else if ((cp_values[i].v.i & (cpkDeprecated | cpkSupplied)) == (cpkDeprecated | cpkSupplied)) {
+    } else if ((cp_values[i].v.s32 & (cpkDeprecated | cpkSupplied)) == (cpkDeprecated | cpkSupplied)) {
 	errh->warning("%s %s is deprecated", value_name(i), argname);
-    } else if (!(cp_values[i].v.i & cpkSupplied))
+    } else if (!(cp_values[i].v.s32 & cpkSupplied))
 	// clear 'argtype' on unused arguments
 	cp_values[i].argtype = 0;
 
@@ -4575,13 +4575,13 @@ cp_assign_arguments(const Vector<String> &argv, const String *param_begin, const
   for (arg = 0; arg < cpva.nvalues && param_begin[arg] == ""; arg++) {
     cp_values[arg].argtype = 0;
     cp_values[arg].keyword = 0;
-    cp_values[arg].v.i = cpkMandatory;
+    cp_values[arg].v.s32 = cpkMandatory;
   }
   cpva.nrequired = cpva.npositional = arg;
   for (; arg < cpva.nvalues; arg++) {
     cp_values[arg].argtype = 0;
     cp_values[arg].keyword = param_begin[arg].c_str();
-    cp_values[arg].v.i = cpkMandatory;	// mandatory keyword
+    cp_values[arg].v.s32 = cpkMandatory; // mandatory keyword
   }
 
   SilentErrorHandler serrh;
