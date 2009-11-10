@@ -87,10 +87,12 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 		    struct in_addr a, p;
 		} ip4;
 		unsigned char ether[6];
+#if HAVE_IP6
 		struct {
 		    struct click_in6_addr a;
 		    int p;
 		} ip6;
+#endif
 		char c[24];
 	    } x;
 	    if (cp_ip_address(parts[j], &x.ip4.a))
@@ -101,7 +103,7 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 		    NameInfo::define(NameInfo::T_IP_ADDR, this, parts[0], &x.ip4.a, 4);
 	    } else if (cp_ethernet_address(parts[j], x.ether))
 		NameInfo::define(NameInfo::T_ETHERNET_ADDR, this, parts[0], x.ether, 6);
-#ifdef HAVE_IP6
+#if HAVE_IP6
 	    else if (cp_ip6_address(parts[j], &x.ip6.a))
 		NameInfo::define(NameInfo::T_IP6_ADDR, this, parts[0], &x.ip6.a, 16);
 	    else if (cp_ip6_prefix(parts[j], reinterpret_cast<IP6Address *>(&x.ip6.a), &x.ip6.p, false)) {
