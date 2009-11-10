@@ -14,38 +14,40 @@ class IPAddress { public:
 	: _addr(0) {
     }
 
-    /** @brief Construct an IPAddress from an integer in network byte order.
-     * @param a the address, in network byte order */
-    inline IPAddress(unsigned int a)
-	: _addr(a) {
+    /** @brief Construct an IPAddress from an integer in network byte order. */
+    inline IPAddress(unsigned x)
+	: _addr(x) {
+    }
+    /** @overload */
+    explicit inline IPAddress(int x)
+	: _addr(x) {
+    }
+    /** @overload */
+    explicit inline IPAddress(unsigned long x)
+	: _addr(x) {
+    }
+    /** @overload */
+    explicit inline IPAddress(long x)
+	: _addr(x) {
     }
 
-    /** @brief Construct an IPAddress from an integer in network byte order.
-     * @param a the address, in network byte order */
-    explicit inline IPAddress(int a)
-	: _addr(a) {
+    /** @brief Construct an IPAddress from a struct in_addr. */
+    inline IPAddress(struct in_addr x)
+	: _addr(x.s_addr) {
     }
 
-    /** @brief Construct an IPAddress from an integer in network byte order.
-     * @param a the address, in network byte order */
-    explicit inline IPAddress(unsigned long a)
-	: _addr(a) {
-    }
+    /** @brief Construct an IPAddress from data.
+     * @param data the address data, in network byte order
+     *
+     * Bytes data[0]...data[3] are used to construct the address. */
+    explicit IPAddress(const unsigned char *data);
 
-    /** @brief Construct an IPAddress from an integer in network byte order.
-     * @param a the address, in network byte order */
-    explicit inline IPAddress(long a)
-	: _addr(a) {
-    }
-
-    /** @brief Construct an IPAddress from a struct in_addr.
-     * @param ina the address */
-    inline IPAddress(struct in_addr ina)
-	: _addr(ina.s_addr) {
-    }
-
-    explicit IPAddress(const unsigned char*);
-    explicit IPAddress(const String&);	// "18.26.4.99"
+    /** @brief Constructs an IPAddress from a human-readable dotted-quad
+     * representation.
+     *
+     * If @a x is not a valid dotted-quad address, then the IPAddress is
+     * initialized to 0.0.0.0. */
+    explicit IPAddress(const String &x);
 
     /** @brief Return an IPAddress equal to the prefix mask of length @a
      * prefix.

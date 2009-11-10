@@ -35,10 +35,6 @@ CLICK_DECLS
     operations like & and | and provides methods for unparsing IP addresses
     into ASCII dotted-quad form. */
 
-/** @brief Constructs an IPAddress from data.
-    @param data the address data, in network byte order
-
-    The bytes data[0]...data[3] are used to construct the address. */
 IPAddress::IPAddress(const unsigned char *data)
 {
 #ifdef HAVE_INDIFFERENT_ALIGNMENT
@@ -48,12 +44,6 @@ IPAddress::IPAddress(const unsigned char *data)
 #endif
 }
 
-/** @brief Constructs an IPAddress from a human-readable dotted-quad
-    representation.
-    @param str the unparsed address
-
-    If @a str is not a valid dotted-quad address, then the IPAddress is
-    initialized to 0.0.0.0. */
 IPAddress::IPAddress(const String &str)
 {
     if (!cp_ip_address(str, this))

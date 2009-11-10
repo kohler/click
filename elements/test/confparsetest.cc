@@ -171,6 +171,16 @@ ConfParseTest::initialize(ErrorHandler *errh)
 	      && a.data32()[2] == 0
 	      && a.data32()[3] == htonl(0x00008000));
 	CHECK(a.mask_to_prefix_len() == -1);
+	a = IP6Address::make_inverted_prefix(17);
+	CHECK(a.data32()[0] == htonl(0x00007FFF)
+	      && a.data32()[1] == 0xFFFFFFFF
+	      && a.data32()[2] == 0xFFFFFFFF
+	      && a.data32()[3] == 0xFFFFFFFF);
+	a = IP6Address::make_inverted_prefix(128);
+	CHECK(a.data32()[0] == 0
+	      && a.data32()[1] == 0
+	      && a.data32()[2] == 0
+	      && a.data32()[3] == 0);
     }
 #endif
 

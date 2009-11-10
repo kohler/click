@@ -24,50 +24,47 @@
 #include <click/confparse.hh>
 CLICK_DECLS
 
-IP6Address::IP6Address()
-{
-  static_assert(sizeof(struct click_ip6) == 40);
-  for (int i = 0; i < 4; i++)
-    _addr.s6_addr32[i] = 0;
-}
-
-IP6Address::IP6Address(const unsigned char *data)
-{
-  const unsigned *udata = reinterpret_cast<const unsigned *>(data);
-  for (int i = 0; i < 4; i++)
-    _addr.s6_addr32[i] = udata[i];
-}
-
-IP6Address::IP6Address(IPAddress ip)
-{
-  const unsigned char *udata = ip.data();
-  //  for (int i=0; i<10; i++)
-//      _addr.s6_addr[i] = 0;
-//    _addr.s6_addr[10]=0xff;
-//    _addr.s6_addr[11]=0xff;
-
-  for (int i=0; i<12; i++)
-      _addr.s6_addr[i] = 0;
-  for (int i=0; i<4; i++)
-    _addr.s6_addr[12+i] = udata[i];
-}
-
 IP6Address::IP6Address(const String &str)
 {
-  if (!cp_ip6_address(str, this))
-    for (int i = 0; i < 4; i++)
-      _addr.s6_addr32[i] = 0;
+    static_assert(sizeof(*this) == 16);
+    static_assert(sizeof(click_in6_addr) == 16);
+    static_assert(sizeof(struct click_ip6) == 40);
+    if (!cp_ip6_address(str, this))
+	memset(&_addr, 0, sizeof(_addr));
 }
 
 IP6Address
-IP6Address::make_prefix(int prefix)
+IP6Address::make_prefix(int prefix_len)
 {
-  assert(prefix >= 0 && prefix <= 128);
-  static const unsigned char data[] = { 0, 128, 192, 224, 240, 248, 252, 254, 255 };
-  IP6Address a;
-  for (int i = 0; i < 16 && prefix > 0; i++, prefix -= 8)
-    a._addr.s6_addr[i] = (prefix > 8 ? 255 : data[prefix]);
-  return a;
+    assert(prefix_len >= 0 && prefix_len <= 128);
+    IP6Address a = IP6Address::uninitialized_t();
+    int i;
+    for (i = 0; i < 4 && prefix_len >= 32; ++i, prefix_len -= 32)
+	a._addr.s6_addr32[i] = 0xFFFFFFFFU;
+    if (i < 4 && prefix_len > 0) {
+	a._addr.s6_addr32[i] = htonl(0xFFFFFFFFU << (32 - prefix_len));
+	++i;
+    }
+    for (; i < 4; ++i)
+	a._addr.s6_addr32[i] = 0;
+    return a;
+}
+
+IP6Address
+IP6Address::make_inverted_prefix(int prefix_len)
+{
+    assert(prefix_len >= 0 && prefix_len <= 128);
+    IP6Address a = IP6Address::uninitialized_t();
+    int i;
+    for (i = 0; i < 4 && prefix_len >= 32; ++i, prefix_len -= 32)
+	a._addr.s6_addr32[i] = 0;
+    if (i < 4 && prefix_len > 0) {
+	a._addr.s6_addr32[i] = htonl(0xFFFFFFFFU >> prefix_len);
+	++i;
+    }
+    for (; i < 4; ++i)
+	a._addr.s6_addr32[i] = 0xFFFFFFFFU;
+    return a;
 }
 
 int
