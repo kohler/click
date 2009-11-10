@@ -322,7 +322,7 @@ FromDump::read_packet(ErrorHandler *errh)
 {
     fake_pcap_pkthdr swapped_ph;
     const fake_pcap_pkthdr *ph;
-    const Timestamp *ts_ptr;
+    Timestamp ts = Timestamp::uninitialized_t();
     int len, caplen, skiplen = 0;
     Packet *p;
     assert(!_packet);
@@ -365,17 +365,17 @@ FromDump::read_packet(ErrorHandler *errh)
 
     // check times
   check_times:
-    ts_ptr = fake_bpf_timeval_union::make_timestamp(&ph->ts, &swapped_ph.ts);
+    ts = fake_bpf_timeval_union::make_timestamp(&ph->ts);
     if (!_have_any_times)
-	prepare_times(*ts_ptr);
+	prepare_times(ts);
     if (_have_first_time) {
-	if (*ts_ptr < _first_time) {
+	if (ts < _first_time) {
 	    _ff.shift_pos(caplen + skiplen);
 	    return true;
 	} else
 	    _have_first_time = false;
     }
-    if (_have_last_time && *ts_ptr >= _last_time) {
+    if (_have_last_time && ts >= _last_time) {
 	_have_last_time = false;
 	(void) _end_h->call_write(errh);
 	if (!_active) {
@@ -394,7 +394,7 @@ FromDump::read_packet(ErrorHandler *errh)
     }
 
     // create packet
-    p = _ff.get_packet(caplen, ts_ptr->sec(), ts_ptr->subsec(), errh);
+    p = _ff.get_packet(caplen, ts.sec(), ts.subsec(), errh);
     if (!p)
 	return false;
     SET_EXTRA_LENGTH_ANNO(p, len - caplen);

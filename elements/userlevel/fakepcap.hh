@@ -53,7 +53,7 @@ struct fake_bpf_timeval {
 union fake_bpf_timeval_union {
 	struct fake_bpf_timeval tv;
 	Timestamp::rep_t timestamp_rep;
-	inline static const Timestamp *make_timestamp(const fake_bpf_timeval_union *tv, fake_bpf_timeval_union *storage);
+	inline static Timestamp make_timestamp(const fake_bpf_timeval_union *x);
 };
 
 /*
@@ -95,16 +95,13 @@ fake_pcap_force_ip(WritablePacket*& p, int dlt)
     return fake_pcap_force_ip(reinterpret_cast<Packet*&>(p), dlt);
 }
 
-inline const Timestamp *
-fake_bpf_timeval_union::make_timestamp(const fake_bpf_timeval_union *tv, fake_bpf_timeval_union *ts_storage)
+inline Timestamp
+fake_bpf_timeval_union::make_timestamp(const fake_bpf_timeval_union *x)
 {
 #if TIMESTAMP_REP_BIG_ENDIAN && !TIMESTAMP_NANOSEC
-    (void) ts_storage;
-    return reinterpret_cast<const Timestamp *>(&tv->timestamp_rep);
+    return Timestamp(x->timestamp_rep);
 #else
-    Timestamp *ts = reinterpret_cast<Timestamp *>(&ts_storage->timestamp_rep);
-    ts->assign_usec(tv->tv.tv_sec, tv->tv.tv_usec);
-    return ts;
+    return Timestamp::make_usec(x->tv.tv_sec, x->tv.tv_usec);
 #endif
 }
 
