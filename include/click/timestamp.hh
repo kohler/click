@@ -388,9 +388,12 @@ class Timestamp { public:
 	return subsec * (nsec_per_sec / subsec_per_sec);
     }
 
-  private:
 
-    union {
+    /** @brief  Type of a Timestamp representation.
+     *
+     * This type is rarely useful for Timestamp users; we export it to avoid
+     * strict-aliasing warnings in unions. */
+    union rep_t {
 #if TIMESTAMP_REP_FLAT64 || TIMESTAMP_MATH_FLAT64
 	int64_t x;
 #endif
@@ -414,7 +417,11 @@ class Timestamp { public:
 	timeval tv;
 # endif
 #endif
-    } _t;
+    };
+
+  private:
+
+    rep_t _t;
 
     inline void add_fix() {
 #if TIMESTAMP_REP_FLAT64

@@ -52,7 +52,7 @@ struct fake_bpf_timeval {
 
 union fake_bpf_timeval_union {
 	struct fake_bpf_timeval tv;
-	char timestamp_storage[sizeof(Timestamp)];
+	Timestamp::rep_t timestamp_rep;
 	inline static const Timestamp *make_timestamp(const fake_bpf_timeval_union *tv, fake_bpf_timeval_union *storage);
 };
 
@@ -100,9 +100,9 @@ fake_bpf_timeval_union::make_timestamp(const fake_bpf_timeval_union *tv, fake_bp
 {
 #if TIMESTAMP_REP_BIG_ENDIAN && !TIMESTAMP_NANOSEC
     (void) ts_storage;
-    return reinterpret_cast<const Timestamp *>(tv->timestamp_storage);
+    return reinterpret_cast<const Timestamp *>(&tv->timestamp_rep);
 #else
-    Timestamp *ts = reinterpret_cast<Timestamp *>(ts_storage->timestamp_storage);
+    Timestamp *ts = reinterpret_cast<Timestamp *>(&ts_storage->timestamp_rep);
     ts->assign_usec(tv->tv.tv_sec, tv->tv.tv_usec);
     return ts;
 #endif
