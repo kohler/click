@@ -146,6 +146,8 @@ class Timestamp { public:
     struct uninitialized_t {
     };
 
+    union rep_t;
+
 
     /** @brief Construct a zero-valued Timestamp. */
     inline Timestamp() {
@@ -184,6 +186,12 @@ class Timestamp { public:
 #if HAVE_STRUCT_TIMESPEC
     inline Timestamp(const struct timespec &ts);
 #endif
+
+    /** @brief Construct a Timestamp from its internal representation. */
+    inline Timestamp(const rep_t &rep)
+	: _t(rep) {
+    }
+
     /** @brief Construct an uninitialized timestamp. */
     inline Timestamp(const uninitialized_t &unused) {
 	(void) unused;
