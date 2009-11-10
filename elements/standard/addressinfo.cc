@@ -82,22 +82,32 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	    errh->error("expected %<NAME [ADDRS]%>");
 
 	for (int j = 1; j < parts.size(); j++) {
-	    uint8_t d[24];
-	    if (cp_ip_address(parts[j], &d[0]))
-		NameInfo::define(NameInfo::T_IP_ADDR, this, parts[0], &d[0], 4);
-	    else if (cp_ip_prefix(parts[j], &d[0], &d[4], false)) {
-		NameInfo::define(NameInfo::T_IP_PREFIX, this, parts[0], &d[0], 8);
-		if (*(uint32_t*)(&d[0]) & ~*((uint32_t*)(&d[4])))
-		    NameInfo::define(NameInfo::T_IP_ADDR, this, parts[0], &d[0], 4);
-	    } else if (cp_ethernet_address(parts[j], &d[0]))
-		NameInfo::define(NameInfo::T_ETHERNET_ADDR, this, parts[0], &d[0], 6);
+	    union {
+		struct {
+		    struct in_addr a, p;
+		} ip4;
+		unsigned char ether[6];
+		struct {
+		    struct click_in6_addr a;
+		    int p;
+		} ip6;
+		char c[24];
+	    } x;
+	    if (cp_ip_address(parts[j], &x.ip4.a))
+		NameInfo::define(NameInfo::T_IP_ADDR, this, parts[0], &x.ip4.a, 4);
+	    else if (cp_ip_prefix(parts[j], reinterpret_cast<IPAddress *>(&x.ip4.a), reinterpret_cast<IPAddress *>(&x.ip4.p), false)) {
+		NameInfo::define(NameInfo::T_IP_PREFIX, this, parts[0], &x.ip4, 8);
+		if (x.ip4.a.s_addr & ~x.ip4.p.s_addr)
+		    NameInfo::define(NameInfo::T_IP_ADDR, this, parts[0], &x.ip4.a, 4);
+	    } else if (cp_ethernet_address(parts[j], x.ether))
+		NameInfo::define(NameInfo::T_ETHERNET_ADDR, this, parts[0], x.ether, 6);
 #ifdef HAVE_IP6
-	    else if (cp_ip6_address(parts[j], &d[0]))
-		NameInfo::define(NameInfo::T_IP6_ADDR, this, parts[0], &d[0], 16);
-	    else if (cp_ip6_prefix(parts[j], &d[0], (int *) &d[16], false)) {
-		NameInfo::define(NameInfo::T_IP6_PREFIX, this, parts[0], &d[0], 16 + sizeof(int));
-		if (*((IP6Address*) &d[0]) & ~IP6Address::make_prefix(*(int*) &d[16]))
-		    NameInfo::define(NameInfo::T_IP6_ADDR, this, parts[0], &d[0], 16);
+	    else if (cp_ip6_address(parts[j], &x.ip6.a))
+		NameInfo::define(NameInfo::T_IP6_ADDR, this, parts[0], &x.ip6.a, 16);
+	    else if (cp_ip6_prefix(parts[j], reinterpret_cast<IP6Address *>(&x.ip6.a), &x.ip6.p, false)) {
+		NameInfo::define(NameInfo::T_IP6_PREFIX, this, parts[0], &x.ip6, 16 + sizeof(int));
+		if (x.ip6.a & IP6Address::make_inverted_prefix(x.ip6.p))
+		    NameInfo::define(NameInfo::T_IP6_ADDR, this, parts[0], &x.ip6.a, 16);
 	    }
 #endif
 	    else
@@ -370,10 +380,13 @@ AddressInfo::query_ip6_prefix(String s, unsigned char *store,
     else if (colon >= 0)
 	s = s.substring(0, colon);
 
-    uint8_t data[16 + sizeof(int)];
-    if (NameInfo::query(NameInfo::T_IP6_PREFIX, e, s, data, 16 + sizeof(int))) {
-	memcpy(store, &data[0], 16);
-	*bits_store = *(int *) &data[16];
+    struct {
+	unsigned char c[16];
+	int p;
+    } data;
+    if (NameInfo::query(NameInfo::T_IP6_PREFIX, e, s, &data, sizeof(data))) {
+	memcpy(store, data.c, 16);
+	*bits_store = data.p;
 	return true;
     }
 
