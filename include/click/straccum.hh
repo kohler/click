@@ -151,7 +151,7 @@ class StringAccum { public:
      * @param i character index
      * @pre 0 <= @a i < length() */
     char operator[](int i) const {
-	assert(i>=0 && i<_len);
+	assert((unsigned) i < (unsigned) _len);
 	return static_cast<char>(_s[i]);
     }
 
@@ -159,7 +159,7 @@ class StringAccum { public:
      * @param i character index
      * @pre 0 <= @a i < length() */
     char &operator[](int i) {
-	assert(i>=0 && i<_len);
+	assert((unsigned) i < (unsigned) _len);
 	return reinterpret_cast<char &>(_s[i]);
     }
 
