@@ -256,30 +256,35 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
     int s = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (s < 0)
 	return errh->error("socket() failed: %s", strerror(errno));
-    struct ifreq ifr;
+    union {
+	struct ifreq ifr;
+	struct {
+	    char padding[offsetof(struct ifreq, ifr_addr)];
+	    struct sockaddr_in sin;
+	} sin;
+    } ifr;
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, _dev_name.c_str(), sizeof(ifr.ifr_name));
+    strncpy(ifr.ifr.ifr_name, _dev_name.c_str(), sizeof(ifr.ifr.ifr_name));
 #if defined(SIOCSIFADDR) && defined(SIOCSIFNETMASK)
     for (int trynum = 0; trynum < 2; trynum++) {
-	struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
-	sin->sin_family = AF_INET;
+	ifr.sin.sin.sin_family = AF_INET;
 # if HAVE_SOCKADDR_IN_SIN_LEN
-	sin->sin_len = sizeof(struct sockaddr_in);
+	ifr.sin.sin.sin_len = sizeof(struct sockaddr_in);
 # endif
-	sin->sin_port = 0;
+	ifr.sin.sin.sin_port = 0;
 	// Try setting the netmask twice.  On FreeBSD, we need to set the mask
 	// *before* we set the address, or there's nasty behavior where the
 	// tunnel cannot be assigned a different address.  (Or something like
 	// that, I forget now.)  But on Linux, you must set the mask *after*
 	// the address.
-	sin->sin_addr = mask;
+	ifr.sin.sin.sin_addr = mask;
 	if (ioctl(s, SIOCSIFNETMASK, &ifr) == 0)
 	    trynum++;
 	else if (trynum == 1) {
 	    errh->error("SIOCSIFNETMASK failed: %s", strerror(errno));
 	    goto out;
 	}
-	sin->sin_addr = addr;
+	ifr.sin.sin.sin_addr = addr;
 	if (trynum < 2 && ioctl(s, SIOCSIFADDR, &ifr) != 0) {
 	    errh->error("SIOCSIFADDR failed: %s", strerror(errno));
 	    goto out;
@@ -290,8 +295,8 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
 #endif
 #if defined(SIOCSIFHWADDR)
     if (_macaddr) {
-	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	memcpy(ifr.ifr_hwaddr.sa_data, _macaddr.data(), sizeof(_macaddr));
+	ifr.ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	memcpy(ifr.ifr.ifr_hwaddr.sa_data, _macaddr.data(), sizeof(_macaddr));
 	if (ioctl(s, SIOCSIFHWADDR, &ifr) != 0)
 	    errh->warning("could not set interface Ethernet address: %s", strerror(errno));
     }
@@ -305,9 +310,9 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
 	errh->warning("could not set interface Ethernet address: no support for /dev/tun");
 #elif defined(__FreeBSD__)
     if (_macaddr && _tap) {
-	ifr.ifr_addr.sa_len = ETHER_ADDR_LEN;
-	ifr.ifr_addr.sa_family = AF_LINK;
-	memcpy(ifr.ifr_addr.sa_data, _macaddr.data(), ETHER_ADDR_LEN);
+	ifr.ifr.ifr_addr.sa_len = ETHER_ADDR_LEN;
+	ifr.ifr.ifr_addr.sa_family = AF_LINK;
+	memcpy(ifr.ifr.ifr_addr.sa_data, _macaddr.data(), ETHER_ADDR_LEN);
 	if (ioctl(s, SIOCSIFLLADDR, &ifr) != 0)
 	    errh->warning("could not set interface Ethernet address: %s", strerror(errno));
     } else if (_macaddr)
@@ -318,7 +323,7 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
 #endif
 #if defined(SIOCSIFMTU)
     if (_mtu_out != DEFAULT_MTU) {
-	ifr.ifr_mtu = _mtu_out;
+	ifr.ifr.ifr_mtu = _mtu_out;
 	if (ioctl(s, SIOCSIFMTU, &ifr) != 0)
 	    errh->warning("could not set interface MTU: %s", strerror(errno));
     }
@@ -329,8 +334,8 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
 	goto out;
     }
     if (_tap)
-	ifr.ifr_flags = (addr ? ifr.ifr_flags & ~IFF_NOARP : ifr.ifr_flags | IFF_NOARP);
-    ifr.ifr_flags = (addr ? ifr.ifr_flags | IFF_UP | IFF_PROMISC : ifr.ifr_flags & ~IFF_UP & ~IFF_PROMISC);
+	ifr.ifr.ifr_flags = (addr ? ifr.ifr.ifr_flags & ~IFF_NOARP : ifr.ifr.ifr_flags | IFF_NOARP);
+    ifr.ifr.ifr_flags = (addr ? ifr.ifr.ifr_flags | IFF_UP | IFF_PROMISC : ifr.ifr.ifr_flags & ~IFF_UP & ~IFF_PROMISC);
     if (ioctl(s, SIOCSIFFLAGS, &ifr) != 0) {
 	errh->error("SIOCSIFFLAGS failed: %s", strerror(errno));
 	goto out;
