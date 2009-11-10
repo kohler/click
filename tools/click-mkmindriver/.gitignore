@@ -1,4 +1,5 @@
-Makefile
 *.d
-click-shrink
+*.o
+Makefile
 click-mkmindriver
+click-shrink

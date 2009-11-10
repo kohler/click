@@ -1,4 +1,5 @@
-Makefile
 *.d
+*.o
+Makefile
 click-combine
 click-uncombine

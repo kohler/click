@@ -1,3 +1,4 @@
-Makefile
 *.d
+*.o
+Makefile
 click-xform

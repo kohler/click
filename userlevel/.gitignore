@@ -1,7 +1,8 @@
-Makefile
 *.d
+*.o
+Makefile
 click
+elements.cc
 elements.conf
 elements.mk
-elements.cc
 libclick.a
