@@ -42,17 +42,21 @@ CheckIP6Header::~CheckIP6Header()
 int
 CheckIP6Header::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-
-  if (conf.size() > 1)
-    return errh->error("too many arguments to `CheckIP6Header([ADDRS])'");
-
+ String badaddrs = String::make_empty();
+ _offset = 0;
  Vector<String> ips;
  // ips.push_back("0::0"); // this address is only bad if we are a router
  ips.push_back("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"); // bad IP6 address
 
-  if (conf.size()) {
+  if (cp_va_kparse(conf, this, errh,
+		      "BADADDRS", cpkP, cpString, &badaddrs,
+		      "OFFSET", cpkP, cpUnsigned, &_offset,
+		      cpEnd) < 0)
+    return -1;
+
+  if (badaddrs) {
     Vector<String> words;
-    cp_spacevec(conf[0], words);
+    cp_spacevec(badaddrs, words);
     IP6Address a;
     for (int j = 0; j < words.size(); j++) {
       if (!cp_ip6_address(words[j], (unsigned char *)&a)) {
@@ -94,11 +98,13 @@ CheckIP6Header::drop_it(Packet *p)
 Packet *
 CheckIP6Header::simple_action(Packet *p)
 {
-  const click_ip6 *ip = reinterpret_cast <const click_ip6 *>( p->data());
+  const click_ip6 *ip = reinterpret_cast <const click_ip6 *>( p->data() + _offset);
+  unsigned plen = p->length() - _offset;
   struct IP6Address src;
 
   // check if the packet is smaller than ip6 header
-  if(p->length() < sizeof(click_ip6))
+  // cast to int so very large plen is interpreted as negative
+  if((int)plen < (int)sizeof(click_ip6))
     goto bad;
 
  // check version
@@ -106,7 +112,7 @@ CheckIP6Header::simple_action(Packet *p)
     goto bad;
 
   // check if the PayloadLength field is valid
-   if(ntohs(ip->ip6_plen) > (p->length()-40))
+   if(ntohs(ip->ip6_plen) > (plen-40))
      goto bad;
 
   /*
@@ -130,8 +136,8 @@ CheckIP6Header::simple_action(Packet *p)
   p->set_ip6_header(ip);
 
   // shorten packet according to IP6 payload length field
-  if(ntohs(ip->ip6_plen) < (p->length()-40))
-    p->take(p->length() - 40 - ip->ip6_plen);
+  if(ntohs(ip->ip6_plen) < (plen-40))
+    p->take(plen - 40 - ip->ip6_plen);
   return(p);
 
  bad:
