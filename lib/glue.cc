@@ -395,7 +395,8 @@ click_random_srandom()
     } buf;
     int pos = 0;
 
-    ((Timestamp *) (buf.c + pos))->set_now();
+    Timestamp ts = Timestamp::now();
+    memcpy(buf.c + pos, &ts, sizeof(Timestamp));
     pos += sizeof(Timestamp);
 
 #if CLICK_USERLEVEL
