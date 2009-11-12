@@ -1,6 +1,7 @@
 // -*- c-basic-offset: 4; related-file-name: "../../lib/integers.cc" -*-
 #ifndef CLICK_INTEGERS_HH
 #define CLICK_INTEGERS_HH
+#include <click/glue.hh>
 #if !HAVE___BUILTIN_FFS && HAVE_FFS && HAVE_STRINGS_H
 # include <strings.h>
 #endif
@@ -21,7 +22,7 @@ typedef long click_int_large_t;
 typedef unsigned long click_uint_large_t;
 #endif
 
-#ifdef HAVE_INT64_TYPES
+#if HAVE_INT64_TYPES
 
 /** @brief Return @a x translated from host to network byte order. */
 inline uint64_t htonq(uint64_t x) {
