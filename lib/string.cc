@@ -91,6 +91,7 @@ const String::rep_t String::oom_string_rep = {
 uint64_t String::live_memo_count;
 uint64_t String::memo_sizes[55];
 uint64_t String::live_memo_sizes[55];
+uint64_t String::live_memo_bytes[55];
 #endif
 
 /** @cond never */
@@ -113,6 +114,7 @@ String::create_memo(char *data, int dirty, int capacity)
 	int bucket = profile_memo_size_bucket(dirty, capacity);
 	++memo_sizes[bucket];
 	++live_memo_sizes[bucket];
+	live_memo_bytes[bucket] += capacity;
 	++live_memo_count;
 #endif
     }
@@ -125,7 +127,9 @@ String::delete_memo(memo_t *memo)
     assert(memo->capacity > 0 && memo->capacity >= memo->dirty);
     CLICK_LFREE(memo->real_data, memo->capacity);
 #if HAVE_STRING_PROFILING
-    --live_memo_sizes[profile_memo_size_bucket(memo->dirty, memo->capacity)];
+    int bucket = profile_memo_size_bucket(memo->dirty, memo->capacity);
+    --live_memo_sizes[bucket];
+    live_memo_bytes[bucket] -= memo->capacity;
     --live_memo_count;
 #endif
     delete memo;
@@ -136,26 +140,29 @@ String::delete_memo(memo_t *memo)
 void
 String::profile_report(StringAccum &sa)
 {
-    sa << "live_memos\t" << live_memo_count << '\n';
     for (int i = 0; i <= 16; ++i)
 	if (memo_sizes[i])
-	    sa << "memo_dirty_" << i << '\t' << live_memo_sizes[i] << '\t' << memo_sizes[i] << '\n';
+	    sa << "memo_dirty_" << i << '\t' << live_memo_sizes[i] << '\t' << memo_sizes[i] << '\t' << live_memo_bytes[i] << '\n';
     for (int i = 17; i < 25; ++i)
 	if (memo_sizes[i]) {
 	    uint32_t s = (i - 17) * 2 + 17;
-	    sa << "memo_cap_" << s << '_' << (s + 1) << '\t' << live_memo_sizes[i] << '\t' << memo_sizes[i] << '\n';
+	    sa << "memo_cap_" << s << '_' << (s + 1) << '\t' << live_memo_sizes[i] << '\t' << memo_sizes[i] << '\t' << live_memo_bytes[i] << '\n';
 	}
     for (int i = 25; i < 29; ++i)
 	if (memo_sizes[i]) {
 	    uint32_t s = (i - 25) * 8 + 33;
-	    sa << "memo_cap_" << s << '_' << (s + 7) << '\t' << live_memo_sizes[i] << '\t' << memo_sizes[i] << '\n';
+	    sa << "memo_cap_" << s << '_' << (s + 7) << '\t' << live_memo_sizes[i] << '\t' << memo_sizes[i] << '\t' << live_memo_bytes[i] << '\n';
 	}
     for (int i = 29; i < 55; ++i)
 	if (memo_sizes[i]) {
 	    uint32_t s1 = (1U << (i - 23)) + 1;
 	    uint32_t s2 = (s1 - 1) << 1;
-	    sa << "memo_cap_" << s1 << '_' << s2 << '\t' << live_memo_sizes[i] << '\t' << memo_sizes[i] << '\n';
+	    sa << "memo_cap_" << s1 << '_' << s2 << '\t' << live_memo_sizes[i] << '\t' << memo_sizes[i] << '\t' << live_memo_bytes[i] << '\n';
 	}
+    uint64_t all_live_sizes = 0, all_sizes = 0, all_live_bytes = 0;
+    for (int i = 0; i < 55; ++i)
+	all_live_sizes += live_memo_sizes[i], all_sizes += memo_sizes[i], all_live_bytes += live_memo_bytes[i];
+    sa << "memo_total\t" << all_live_sizes << '\t' << all_sizes << '\t' << all_live_bytes << '\n';
 }
 #endif
 

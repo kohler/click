@@ -622,6 +622,7 @@ class String { public:
     static uint64_t live_memo_count;
     static uint64_t memo_sizes[55];
     static uint64_t live_memo_sizes[55];
+    static uint64_t live_memo_bytes[55];
 
     static inline int profile_memo_size_bucket(uint32_t dirty, uint32_t capacity) {
 	if (capacity <= 16)
@@ -638,7 +639,9 @@ class String { public:
 	if (capacity <= 16 && new_dirty != old_dirty) {
 	    ++memo_sizes[new_dirty];
 	    ++live_memo_sizes[new_dirty];
+	    live_memo_bytes[new_dirty] += capacity;
 	    --live_memo_sizes[old_dirty];
+	    live_memo_bytes[old_dirty] -= capacity;
 	}
     }
 #endif
