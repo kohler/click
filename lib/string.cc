@@ -87,11 +87,17 @@ const String::rep_t String::oom_string_rep = {
     &oom_string_data, 0, &oom_memo
 };
 
+#if HAVE_STRING_PROFILING
+uint64_t String::live_memo_count;
+uint64_t String::memo_sizes[55];
+uint64_t String::live_memo_sizes[55];
+#endif
+
 /** @cond never */
 String::memo_t *
 String::create_memo(char *data, int dirty, int capacity)
 {
-    assert(capacity >= dirty);
+    assert(capacity > 0 && capacity >= dirty);
     memo_t *memo = new memo_t;
     if (memo) {
 	if (data)
@@ -103,6 +109,12 @@ String::create_memo(char *data, int dirty, int capacity)
 	memo->capacity = capacity;
 	memo->dirty = dirty;
 	memo->refcount = (data ? 0 : 1);
+#if HAVE_STRING_PROFILING
+	int bucket = profile_memo_size_bucket(dirty, capacity);
+	++memo_sizes[bucket];
+	++live_memo_sizes[bucket];
+	++live_memo_count;
+#endif
     }
     return memo;
 }
@@ -110,12 +122,43 @@ String::create_memo(char *data, int dirty, int capacity)
 void
 String::delete_memo(memo_t *memo)
 {
-    if (memo->capacity) {
-	assert(memo->capacity >= memo->dirty);
-	CLICK_LFREE(memo->real_data, memo->capacity);
-    }
+    assert(memo->capacity > 0 && memo->capacity >= memo->dirty);
+    CLICK_LFREE(memo->real_data, memo->capacity);
+#if HAVE_STRING_PROFILING
+    --live_memo_sizes[profile_memo_size_bucket(memo->dirty, memo->capacity)];
+    --live_memo_count;
+#endif
     delete memo;
 }
+
+
+#if HAVE_STRING_PROFILING
+void
+String::profile_report(StringAccum &sa)
+{
+    sa << "live_memos\t" << live_memo_count << '\n';
+    for (int i = 0; i <= 16; ++i)
+	if (memo_sizes[i])
+	    sa << "memo_dirty_" << i << '\t' << live_memo_sizes[i] << '\t' << memo_sizes[i] << '\n';
+    for (int i = 17; i < 25; ++i)
+	if (memo_sizes[i]) {
+	    uint32_t s = (i - 17) * 2 + 17;
+	    sa << "memo_cap_" << s << '_' << (s + 1) << '\t' << live_memo_sizes[i] << '\t' << memo_sizes[i] << '\n';
+	}
+    for (int i = 25; i < 29; ++i)
+	if (memo_sizes[i]) {
+	    uint32_t s = (i - 25) * 8 + 33;
+	    sa << "memo_cap_" << s << '_' << (s + 7) << '\t' << live_memo_sizes[i] << '\t' << memo_sizes[i] << '\n';
+	}
+    for (int i = 29; i < 55; ++i)
+	if (memo_sizes[i]) {
+	    uint32_t s1 = (1U << (i - 23)) + 1;
+	    uint32_t s2 = (s1 - 1) << 1;
+	    sa << "memo_cap_" << s1 << '_' << s2 << '\t' << live_memo_sizes[i] << '\t' << memo_sizes[i] << '\n';
+	}
+}
+#endif
+
 /** @endcond never */
 
 
@@ -226,19 +269,19 @@ String::String(double x)
 String
 String::make_claim(char *str, int len, int capacity)
 {
-  assert(str && len > 0 && capacity >= len);
-  if (memo_t *new_memo = create_memo(str, len, capacity))
-    return String(str, len, new_memo);
-  else
-    return String(&oom_string_data, 0, &oom_memo);
+    assert(str && len > 0 && capacity >= len);
+    if (memo_t *new_memo = create_memo(str, len, capacity))
+	return String(str, len, new_memo);
+    else
+	return String(&oom_string_data, 0, &oom_memo);
 }
 
 String
 String::make_stable(const char *s, int len)
 {
-  if (len < 0)
-    len = (s ? strlen(s) : 0);
-  return String(s, len, &permanent_memo);
+    if (len < 0)
+	len = (s ? strlen(s) : 0);
+    return String(s, len, &permanent_memo);
 }
 
 String
@@ -333,6 +376,9 @@ String::append_garbage(int len)
 	    && atomic_uint32_t::compare_and_swap(_r.memo->dirty, dirty, dirty + len)) {
 	    _r.length += len;
 	    assert(_r.memo->dirty < _r.memo->capacity);
+#if HAVE_STRING_PROFILING
+	    profile_update_memo_dirty(dirty, dirty + len, _r.memo->capacity);
+#endif
 	    return real_dirty;
 	}
     }
@@ -451,6 +497,9 @@ String::c_str() const
 	  // This case will never occur on special strings.
 	  char *real_data = const_cast<char *>(_r.data);
 	  real_data[_r.length] = '\0';
+#if HAVE_STRING_PROFILING
+	  profile_update_memo_dirty(dirty, dirty + 1, _r.memo->capacity);
+#endif
 	  return _r.data;
       }
 
@@ -471,6 +520,9 @@ String::c_str() const
   char *real_data = const_cast<char *>(_r.data);
   real_data[_r.length] = '\0';
   ++_r.memo->dirty;		// include '\0' in used portion of _memo
+#if HAVE_STRING_PROFILING
+  profile_update_memo_dirty(_r.memo->dirty - 1, _r.memo->dirty, _r.memo->capacity);
+#endif
   return _r.data;
 }
 

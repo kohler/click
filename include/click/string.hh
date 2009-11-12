@@ -3,7 +3,11 @@
 #define CLICK_STRING_HH
 #include <click/algorithm.hh>
 #include <click/atomic.hh>
+#if HAVE_STRING_PROFILING
+# include <click/integers.hh>
+#endif
 CLICK_DECLS
+class StringAccum;
 
 class String { public:
 
@@ -590,6 +594,11 @@ class String { public:
 	return &oom_string_data;
     }
 
+
+#if HAVE_STRING_PROFILING
+    static void profile_report(StringAccum &sa);
+#endif
+
   private:
 
     /** @cond never */
@@ -608,6 +617,31 @@ class String { public:
     /** @endcond never */
 
     mutable rep_t _r;		// mutable for c_str()
+
+#if HAVE_STRING_PROFILING
+    static uint64_t live_memo_count;
+    static uint64_t memo_sizes[55];
+    static uint64_t live_memo_sizes[55];
+
+    static inline int profile_memo_size_bucket(uint32_t dirty, uint32_t capacity) {
+	if (capacity <= 16)
+	    return dirty;
+	else if (capacity <= 32)
+	    return 17 + (capacity - 17) / 2;
+	else if (capacity <= 64)
+	    return 25 + (capacity - 33) / 8;
+	else
+	    return 29 + 26 - ffs_msb(capacity - 1);
+    }
+
+    static void profile_update_memo_dirty(uint32_t old_dirty, uint32_t new_dirty, uint32_t capacity) {
+	if (capacity <= 16 && new_dirty != old_dirty) {
+	    ++memo_sizes[new_dirty];
+	    ++live_memo_sizes[new_dirty];
+	    --live_memo_sizes[old_dirty];
+	}
+    }
+#endif
 
     inline void assign_memo(const char *data, int length, memo_t *memo) const {
 	_r.data = data;

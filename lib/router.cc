@@ -2045,7 +2045,7 @@ Router::element_ports_string(const Element *e) const
 // STATIC INITIALIZATION, DEFAULT GLOBAL HANDLERS
 
 enum { GH_VERSION, GH_CONFIG, GH_FLATCONFIG, GH_LIST, GH_REQUIREMENTS,
-       GH_DRIVER, GH_ACTIVE_PORTS, GH_ACTIVE_PORT_STATS };
+       GH_DRIVER, GH_ACTIVE_PORTS, GH_ACTIVE_PORT_STATS, GH_STRING_PROFILE };
 
 String
 Router::router_read_handler(Element *e, void *thunk)
@@ -2122,6 +2122,12 @@ Router::router_read_handler(Element *e, void *thunk)
 	break;
 #endif
 
+#if HAVE_STRING_PROFILING
+    case GH_STRING_PROFILE:
+	String::profile_report(sa);
+	break;
+#endif
+
     }
     return sa.take_string();
 }
@@ -2154,6 +2160,9 @@ Router::static_initialize()
 #if CLICK_STATS >= 1
 	add_read_handler(0, "active_ports", router_read_handler, (void *)GH_ACTIVE_PORTS);
 	add_read_handler(0, "active_port_stats", router_read_handler, (void *)GH_ACTIVE_PORT_STATS);
+#endif
+#if HAVE_STRING_PROFILING
+	add_read_handler(0, "string_profile", router_read_handler, (void *) GH_STRING_PROFILE);
 #endif
     }
 }
