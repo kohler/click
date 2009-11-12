@@ -1379,6 +1379,8 @@ Router::store_local_handler(int eindex, Handler &to_store, int type)
 	    else if (cmp > 0)
 		l = m + 1;
 	    else {
+		// discourage the storage of multiple copies of the same name
+		to_store._name = xhandler(*m)->_name;
 		l = m;
 		break;
 	    }
