@@ -164,7 +164,9 @@ class Lexer { public:
 
     String anon_element_name(const String &) const;
     String deanonymize_element_name(const String &, int);
-    int get_element(String, int, const String & = String(), const String & = String());
+    int get_element(String name, int etype,
+		    const String &configuration = String(),
+		    const String &filename = String(), unsigned lineno = 0);
     int lexical_scoping_in() const;
     void lexical_scoping_out(int);
     int remove_element_type(int, int *);

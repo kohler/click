@@ -106,7 +106,6 @@ class Element { public:
 
     // ELEMENT ROUTER CONNECTIONS
     String name() const;
-    String landmark() const;
     virtual String declaration() const;
 
     inline Router *router() const;
@@ -223,6 +222,7 @@ class Element { public:
 
     // DEPRECATED
     String id() const CLICK_DEPRECATED;
+    String landmark() const CLICK_DEPRECATED;
 
     virtual bool run_task() CLICK_ELEMENT_DEPRECATED;
     virtual void run_timer() CLICK_ELEMENT_DEPRECATED;

@@ -70,7 +70,7 @@ static int globalh_cap;
 Router::Router(const String &configuration, Master *master)
     : _master(0), _state(ROUTER_NEW),
       _have_connections(false), _conn_sorted(true),
-      _running(RUNNING_INACTIVE),
+      _running(RUNNING_INACTIVE), _last_landmarkid(0),
       _handler_bufs(0), _nhandlers_bufs(0), _free_handler(-1),
       _root_element(0),
       _configuration(configuration),
@@ -315,13 +315,33 @@ Router::set_econfiguration(int eindex, const String &conf)
  *  typical landmark has the form "file:linenumber", as in
  *  <tt>"file.click:30"</tt>.  Returns the empty string if @a eindex is out of
  *  range. */
-const String &
+String
 Router::elandmark(int eindex) const
 {
     if (eindex < 0 || eindex >= nelements())
 	return String::make_empty();
+
+    // binary search over landmarks
+    uint32_t x = _element_landmarkids[eindex];
+    uint32_t l = 0, r = _element_landmarks.size();
+    while (l < r) {
+	uint32_t m = l + ((r - l) >> 1);
+	uint32_t y = _element_landmarks[m].first_landmarkid;
+	if (x < y)
+	    r = m;
+	else
+	    l = m + 1;
+    }
+
+    const String &filename = _element_landmarks[r - 1].filename;
+    unsigned lineno = x - _element_landmarks[r - 1].first_landmarkid;
+
+    if (!lineno)
+	return filename;
+    else if (filename && (filename.back() == ':' || isspace((unsigned char) filename.back())))
+	return filename + String(lineno);
     else
-	return _element_landmarks[eindex];
+	return filename + String(':') + String(lineno);
 }
 
 
@@ -348,19 +368,34 @@ Router::add_module_ref(struct module *module)
 #endif
 
 int
-Router::add_element(Element *e, const String &ename, const String &conf, const String &landmark)
+Router::add_element(Element *e, const String &ename, const String &conf,
+		    const String &filename, unsigned lineno)
 {
     if (_state != ROUTER_NEW || !e || e->router())
 	return -1;
 
     _elements.push_back(e);
     _element_names.push_back(ename);
-    _element_landmarks.push_back(landmark);
     _element_configurations.push_back(conf);
-    int i = _elements.size() - 1;
-    e->attach_router(this, i);
+
+    uint32_t lmid;
+    if (_element_landmarks.size()
+	&& _element_landmarks.back().filename == filename)
+	lmid = _element_landmarks.back().first_landmarkid + lineno;
+    else {
+	element_landmark_t lm;
+	lm.first_landmarkid = _last_landmarkid;
+	lm.filename = filename;
+	_element_landmarks.push_back(lm);
+	lmid = _last_landmarkid + lineno;
+    }
+    _element_landmarkids.push_back(lmid);
+    if (lmid >= _last_landmarkid)
+	_last_landmarkid = lmid + 1;
 
     // router now owns the element
+    int i = _elements.size() - 1;
+    e->attach_router(this, i);
     return i;
 }
 
@@ -706,7 +741,7 @@ Router::element_lerror(ErrorHandler *errh, Element *e,
 {
     va_list val;
     va_start(val, format);
-    String l = ErrorHandler::make_landmark_anno(e->landmark());
+    String l = ErrorHandler::make_landmark_anno(elandmark(e->eindex()));
     errh->xmessage(ErrorHandler::e_error + l, format, val);
     va_end(val);
     return -1;
@@ -945,8 +980,8 @@ class Router::RouterContextErrh : public ContextErrorHandler { public:
 	    StringAccum sa;
 	    sa << _message << " %<%{element}%>:";
 	    String str = format(sa.c_str(), _element);
-	    if (_element->landmark())
-		str = combine_anno(str, make_landmark_anno(_element->landmark()));
+	    if (String s = _element->router()->elandmark(_element->eindex()))
+		str = combine_anno(str, make_landmark_anno(s));
 	    set_context(str);
 	}
 	return ContextErrorHandler::decorate(str);

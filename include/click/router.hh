@@ -47,7 +47,7 @@ class Router { public:
     static Element* element(const Router *router, int i);
 
     const String& ename(int i) const;
-    const String& elandmark(int i) const;
+    String elandmark(int i) const;
     const String& econfiguration(int i) const;
     void set_econfiguration(int i, const String& conf);
 
@@ -120,7 +120,7 @@ class Router { public:
 
     inline const Vector<String>& requirements() const;
     void add_requirement(const String& requirement);
-    int add_element(Element* e, const String& name, const String& conf, const String& landmark);
+    int add_element(Element *e, const String &name, const String &conf, const String &filename, unsigned lineno);
     int add_connection(int from_idx, int from_port, int to_idx, int to_port);
 #if CLICK_LINUXMODULE
     int add_module_ref(struct module* module);
@@ -236,7 +236,14 @@ class Router { public:
     Vector<Element*> _elements;
     Vector<String> _element_names;
     Vector<String> _element_configurations;
-    Vector<String> _element_landmarks;
+    Vector<uint32_t> _element_landmarkids;
+
+    struct element_landmark_t {
+	uint32_t first_landmarkid;
+	String filename;
+    };
+    Vector<element_landmark_t> _element_landmarks;
+    uint32_t _last_landmarkid;
 
     mutable Vector<int> _element_name_sorter;
     Vector<int> _element_gport_offset[2];

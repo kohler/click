@@ -298,9 +298,9 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
   // add new ControlSockets
   String retries = (hotswap ? ", RETRIES 1, RETRY_WARNINGS false" : "");
   for (int i = 0; i < cs_ports.size(); i++)
-    r->add_element(new ControlSocket, click_driver_control_socket_name(i), "tcp, " + cs_ports[i] + retries, "click");
+    r->add_element(new ControlSocket, click_driver_control_socket_name(i), "tcp, " + cs_ports[i] + retries, "click", 0);
   for (int i = 0; i < cs_unix_sockets.size(); i++)
-    r->add_element(new ControlSocket, click_driver_control_socket_name(i + cs_ports.size()), "unix, " + cp_quote(cs_unix_sockets[i]) + retries, "click");
+    r->add_element(new ControlSocket, click_driver_control_socket_name(i + cs_ports.size()), "unix, " + cp_quote(cs_unix_sockets[i]) + retries, "click", 0);
 
   // catch signals (only need to do the first time)
   if (!hotswap) {
