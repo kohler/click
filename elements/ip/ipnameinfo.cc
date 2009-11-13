@@ -217,6 +217,7 @@ ServicesNameDB::read_services()
     if (!text)
 	return;
 
+    Vector<String> names;
     const char *s = text.begin(), *end = text.end();
     while (s < end) {
 	const char *eol = s;
@@ -234,6 +235,7 @@ ServicesNameDB::read_services()
 	const char *bt, *et;
 	uint32_t pnum = 0;
 	uint32_t ptype;
+	int names_pos;
 	ServicesNameDB *db;
 	for (bt = en; bt < eol && isspace((unsigned char) *bt); bt++)
 	    /* nada */;
@@ -251,8 +253,6 @@ ServicesNameDB::read_services()
 	    if (!NameInfo::query_int(NameInfo::T_IP_PROTO, 0, text.substring(bt, et), &ptype))
 		goto skip_to_eol;
 	    ptype += NameInfo::T_IP_PORT;
-	    if (ptype != type())
-		goto skip_to_eol;
 	}
 
 	// find the database
@@ -264,16 +264,31 @@ ServicesNameDB::read_services()
 	// a series of assignments
 	if (!db->_db)
 	    db->_db = new DynamicNameDB(ptype, "", 4);
+
+	// collect names.  Names often equal the names from the previous line,
+	// so don't double-allocate strings for that case.
+	names_pos = 0;
 	do {
+	    if (names_pos < names.size()
+		&& !names[names_pos].equals(bn, en - bn))
+		names.erase(names.begin() + names_pos, names.end());
 	    // Don't use text.substring since that preserves a lot of garbage
 	    // from the file's comments and such.
-	    db->_db->define(String(bn, en), &pnum, 4);
+	    if (names_pos >= names.size())
+		names.push_back(String(bn, en));
+	    ++names_pos;
+
+	    // move to next name
 	    for (bn = et; bn < eol && isspace((unsigned char) *bn); bn++)
 		/* nada */;
 	    for (en = bn; en < eol && !isspace((unsigned char) *en); en++)
 		/* nada */;
 	    et = en;
 	} while (bn != en);
+
+	// actually make definitions
+	for (String *n = names.begin(); n != names.begin() + names_pos; ++n)
+	    db->_db->define(*n, &pnum, 4);
 
     skip_to_eol:
 	s = eol;
@@ -283,6 +298,13 @@ ServicesNameDB::read_services()
 	    s++;
     }
 #endif
+
+    // mark all relevant databases as read
+    ServicesNameDB *db = this;
+    do {
+	db->_read_db = true;
+	db = db->_next;
+    } while (db != this);
 }
 
 bool
@@ -295,10 +317,8 @@ ServicesNameDB::query(const String &name, void *value, size_t vsize)
     if (cp_integer(name, &crap))
 	return false;
 
-    if (!_read_db) {
+    if (!_read_db)
 	read_services();
-	_read_db = true;
-    }
 
     if (type() == NameInfo::T_IP_PROTO) {
 	if (!_db) {
