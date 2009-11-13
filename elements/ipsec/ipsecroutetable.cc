@@ -213,7 +213,7 @@ IPsecRouteTable::push(int, Packet *p)
 	   }
 	   SET_IPSEC_SPI_ANNO(p,(uint32_t)spi);
 	   //ISSUE: This is 32-bit architecture specific passing a pointer to next module through annotations!!
-	   SET_IPSEC_SA_DATA_REFERENCE_ANNO(p,(uint32_t)sa_data);
+	   SET_IPSEC_SA_DATA_REFERENCE_ANNO(p, (uintptr_t)sa_data);
 	   break;
 	 }
 	 case 0: {
@@ -234,7 +234,7 @@ IPsecRouteTable::push(int, Packet *p)
 	p->kill();
                 return;
            }
-	   SET_IPSEC_SA_DATA_REFERENCE_ANNO(p,(uint32_t)sa_data);
+	   SET_IPSEC_SA_DATA_REFERENCE_ANNO(p, (uintptr_t)sa_data);
 	   break;
 	 }
 	}; //end of switch
