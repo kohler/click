@@ -493,11 +493,15 @@ Lexer::end_parse(int cookie)
   _data = 0;
   _end = 0;
   _pos = 0;
-  _filename = "";
+  _filename = _original_filename = "";
   _lineno = 0;
   _lextra = 0;
   _tpos = 0;
   _tfull = 0;
+
+  // also free out Strings held in the _tcircle
+  for (int i = 0; i < TCIRCLE_SIZE; ++i)
+      _tcircle[i] = Lexeme();
 
   _anonymous_offset = 0;
 
@@ -944,7 +948,10 @@ Lexer::remove_element_type(int removed, int *prev_hint)
 	 trav != ET_NULL && _element_types[trav].name != name;
 	 trav = _element_types[trav].next & ET_TMASK)
       /* nada */;
-    _element_type_map.set(name, (trav == ET_NULL ? -1 : trav));
+    if (trav == ET_NULL)
+	_element_type_map.erase(name);
+    else
+	_element_type_map.set(name, trav);
   }
 
   // remove stuff
