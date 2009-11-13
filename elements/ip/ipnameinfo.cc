@@ -263,7 +263,9 @@ ServicesNameDB::read_services()
 	if (!db->_db)
 	    db->_db = new DynamicNameDB(ptype, "", 4);
 	do {
-	    db->_db->define(text.substring(bn, en), &pnum, 4);
+	    // Don't use text.substring since that preserves a lot of garbage
+	    // from the file's comments and such.
+	    db->_db->define(String(bn, en), &pnum, 4);
 	    for (bn = et; bn < eol && isspace((unsigned char) *bn); bn++)
 		/* nada */;
 	    for (en = bn; en < eol && !isspace((unsigned char) *en); en++)
