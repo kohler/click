@@ -566,6 +566,18 @@ class String { public:
 	return !_r.memo->capacity || _r.memo->refcount != 1;
     }
 
+    /** @brief Return a compact version of this String.
+     *
+     * The compact version shares no more than 256 bytes of data with any
+     * other non-stable String. */
+    inline String compact() const {
+	if (!_r.memo->capacity || _r.memo->refcount == 1
+	    || (uint32_t) _r.length + 256 >= _r.memo->capacity)
+	    return *this;
+	else
+	    return String(_r.data, _r.data + _r.length);
+    }
+
     /** @brief Ensure the string's data is unshared and return a mutable
      * pointer to it. */
     char *mutable_data();
