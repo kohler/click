@@ -23,8 +23,12 @@ enum Lexemes {
 
 class Lexeme { public:
 
-    Lexeme()				: _kind(lexEOF) { }
-    Lexeme(int k, const String &s)	: _kind(k), _s(s) { }
+    Lexeme()
+	: _kind(lexEOF) {
+    }
+    Lexeme(int k, const String &s, bool compact = false)
+	: _kind(k), _s(compact ? s.compact() : s) {
+    }
 
     int kind() const			{ return _kind; }
     bool is(int k) const		{ return _kind == k; }
@@ -104,6 +108,7 @@ class Lexer { public:
 
     // lexer
     String _big_string;
+    bool _compact_config;
 
     const char *_data;
     const char *_end;

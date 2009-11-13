@@ -1,0 +1,42 @@
+%info
+Test simple overloadings
+
+%script
+click -e '
+require(compact_config)
+elementclass Foo {
+   $a, $b | input -> Print(1) -> output
+|| $a, __REST__ $b | input -> Print(2) -> output
+|| $a, TWO $b, __REST__ $c | input -> Print(3) -> output
+}
+InfiniteSource(DATA "", LIMIT 1, STOP true)
+  -> Foo(A)
+  -> f::Foo(A, TWO B)
+elementclass Foo {
+   $a, $b | input -> Print(4) -> output
+|| ...
+}
+f -> Foo(A, B) -> Foo(A, B, C) -> Discard
+' -h config
+
+%expect stdout
+require(compact_config);
+
+InfiniteSource@1 :: InfiniteSource(DATA "", LIMIT 1, STOP true);
+Discard@6 :: Discard;
+Foo@2/Print@1 :: Print(2);
+f/Print@1 :: Print(1);
+Foo@4/Print@1 :: Print(4);
+Foo@5/Print@1 :: Print(2);
+
+InfiniteSource@1 -> Foo@2/Print@1
+    -> f/Print@1
+    -> Foo@4/Print@1
+    -> Foo@5/Print@1
+    -> Discard@6;
+
+%expect stderr
+2:    0
+1:    0
+4:    0
+2:    0

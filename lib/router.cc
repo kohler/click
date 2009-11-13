@@ -69,7 +69,7 @@ static int globalh_cap;
  *  object, but not initialized or activated. */
 Router::Router(const String &configuration, Master *master)
     : _master(0), _state(ROUTER_NEW),
-      _have_connections(false), _conn_sorted(true),
+      _have_connections(false), _conn_sorted(true), _have_configuration(true),
       _running(RUNNING_INACTIVE), _last_landmarkid(0),
       _handler_bufs(0), _nhandlers_bufs(0), _free_handler(-1),
       _root_element(0),
@@ -432,6 +432,10 @@ Router::add_requirement(const String &r)
 {
     assert(cp_is_word(r));
     _requirements.push_back(r);
+    if (r.equals("compact_config", 14)) {
+	_have_configuration = false;
+	_configuration = String();
+    }
 }
 
 
@@ -2080,6 +2084,20 @@ Router::element_ports_string(const Element *e) const
 
 
 // STATIC INITIALIZATION, DEFAULT GLOBAL HANDLERS
+
+/** @brief  Returns the router's initial configuration string.
+ *  @return The configuration string specified to the constructor. */
+String
+Router::configuration_string() const
+{
+    if (_have_configuration)
+	return _configuration;
+    else {
+	StringAccum sa;
+	unparse(sa);
+	return sa.take_string();
+    }
+}
 
 enum { GH_VERSION, GH_CONFIG, GH_FLATCONFIG, GH_LIST, GH_REQUIREMENTS,
        GH_DRIVER, GH_ACTIVE_PORTS, GH_ACTIVE_PORT_STATS, GH_STRING_PROFILE,

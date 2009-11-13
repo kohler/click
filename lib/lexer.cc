@@ -455,6 +455,7 @@ Lexer::begin_parse(const String &data, const String &filename,
 		   LexerExtra *lextra, ErrorHandler *errh)
 {
   _big_string = data;
+  _compact_config = false;
   _data = _pos = _big_string.begin();
   _end = _big_string.end();
 
@@ -692,7 +693,7 @@ Lexer::next_lexeme()
     else if (word.equals("define", 6))
       return Lexeme(lexDefine, word);
     else
-      return Lexeme(lexIdent, word);
+      return Lexeme(lexIdent, word, _compact_config);
   }
 
   // check for variable
@@ -702,7 +703,7 @@ Lexer::next_lexeme()
       s++;
     if (s + 1 > word_pos) {
       _pos = s;
-      return Lexeme(lexVariable, _big_string.substring(word_pos + 1, s));
+      return Lexeme(lexVariable, _big_string.substring(word_pos + 1, s), _compact_config);
     } else
       s--;
   }
@@ -759,7 +760,8 @@ Lexer::lex_config()
       s = skip_backslash_angle(s + 2) - 1;
 
   _pos = s;
-  return _big_string.substring(config_pos, s);
+  String r = _big_string.substring(config_pos, s);
+  return _compact_config ? r.compact() : r;
 }
 
 String
@@ -1488,7 +1490,11 @@ Lexer::yrequire()
       else if (words.size() > 1)
 	lerror("bad requirement: too many words");
       else {
-	if (_lextra) _lextra->require(word, _errh);
+	if (word.equals("compact_config", 14)) {
+	    _compact_config = true;
+	    word = word.compact();
+	} else if (_lextra)
+	    _lextra->require(word, _errh);
 	_requirements.push_back(word);
       }
     }

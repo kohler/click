@@ -97,7 +97,7 @@ class Router { public:
     /** @endcond never */
 
     // UNPARSING
-    inline const String& configuration_string() const;
+    String configuration_string() const;
     void unparse(StringAccum& sa, const String& indent = String()) const;
     void unparse_requirements(StringAccum& sa, const String& indent = String()) const;
     void unparse_declarations(StringAccum& sa, const String& indent = String()) const;
@@ -229,6 +229,7 @@ class Router { public:
     volatile int _state;
     bool _have_connections : 1;
     mutable bool _conn_sorted : 1;
+    bool _have_configuration : 1;
     volatile int _running;
 
     atomic_uint32_t _refcount;
@@ -491,14 +492,6 @@ inline void
 Router::please_stop_driver()
 {
     adjust_runcount(-1);
-}
-
-/** @brief  Returns the router's initial configuration string.
- *  @return The configuration string specified to the constructor. */
-inline const String&
-Router::configuration_string() const
-{
-    return _configuration;
 }
 
 /** @brief Returns the overriding flow code for element @a e, if any.
