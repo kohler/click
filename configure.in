@@ -384,6 +384,7 @@ AC_ARG_ENABLE(int64, [  --disable-int64         disable 64-bit integer support],
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(size_t)
+AC_CHECK_SIZEOF([void *])
 CLICK_CHECK_INTEGER_TYPES
 CLICK_CHECK_ALIGNMENT
 if test "x$enable_int64" = xyes; then
@@ -1013,7 +1014,8 @@ if test $ac_have_linux_kernel = y; then
 
 Can't find Linux 2.6 compilation flags.
 
-==============================================])dnl '
+==============================================])
+	    dnl ' fix syntax highlighting
 	fi
 	echo "$lCPPFLAGS $lCFLAGS $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
 	LINUX_CFLAGS="`sed -e 's,-Iinclude ',-I$linux_builddir/include' ,g' \

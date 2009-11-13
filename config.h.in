@@ -100,6 +100,9 @@
 /* The size of a `struct timeval', as computed by sizeof. */
 #undef SIZEOF_STRUCT_TIMEVAL
 
+/* The size of a `void *', as computed by sizeof. */
+#undef SIZEOF_VOID_P
+
 /* Define if you want to run multithreaded Click. */
 #undef __MTCLICK__
 #undef NUM_CLICK_CPUS
