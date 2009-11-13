@@ -596,7 +596,7 @@ class String { public:
 
 
 #if HAVE_STRING_PROFILING
-    static void profile_report(StringAccum &sa);
+    static void profile_report(StringAccum &sa, int examples = 0);
 #endif
 
   private:
@@ -607,6 +607,10 @@ class String { public:
 	uint32_t capacity;
 	volatile uint32_t dirty;
 	char *real_data;
+#if HAVE_STRING_PROFILING > 1
+	memo_t **pprev;
+	memo_t *next;
+#endif
     };
 
     struct rep_t {
@@ -623,6 +627,9 @@ class String { public:
     static uint64_t memo_sizes[55];
     static uint64_t live_memo_sizes[55];
     static uint64_t live_memo_bytes[55];
+# if HAVE_STRING_PROFILING > 1
+    static memo_t *live_memos[55];
+# endif
 
     static inline int profile_memo_size_bucket(uint32_t dirty, uint32_t capacity) {
 	if (capacity <= 16)
@@ -635,15 +642,27 @@ class String { public:
 	    return 29 + 26 - ffs_msb(capacity - 1);
     }
 
-    static void profile_update_memo_dirty(uint32_t old_dirty, uint32_t new_dirty, uint32_t capacity) {
+    static void profile_update_memo_dirty(memo_t *memo, uint32_t old_dirty, uint32_t new_dirty, uint32_t capacity) {
 	if (capacity <= 16 && new_dirty != old_dirty) {
 	    ++memo_sizes[new_dirty];
 	    ++live_memo_sizes[new_dirty];
 	    live_memo_bytes[new_dirty] += capacity;
 	    --live_memo_sizes[old_dirty];
 	    live_memo_bytes[old_dirty] -= capacity;
+# if HAVE_STRING_PROFILING > 1
+	    if ((*memo->pprev = memo->next))
+		memo->next->pprev = memo->pprev;
+	    memo->pprev = &live_memos[new_dirty];
+	    if ((memo->next = *memo->pprev))
+		memo->next->pprev = &memo->next;
+	    *memo->pprev = memo;
+# else
+	    (void) memo;
+# endif
 	}
     }
+
+    static void one_profile_report(StringAccum &sa, int i, int examples);
 #endif
 
     inline void assign_memo(const char *data, int length, memo_t *memo) const {

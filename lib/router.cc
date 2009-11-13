@@ -2082,7 +2082,8 @@ Router::element_ports_string(const Element *e) const
 // STATIC INITIALIZATION, DEFAULT GLOBAL HANDLERS
 
 enum { GH_VERSION, GH_CONFIG, GH_FLATCONFIG, GH_LIST, GH_REQUIREMENTS,
-       GH_DRIVER, GH_ACTIVE_PORTS, GH_ACTIVE_PORT_STATS, GH_STRING_PROFILE };
+       GH_DRIVER, GH_ACTIVE_PORTS, GH_ACTIVE_PORT_STATS, GH_STRING_PROFILE,
+       GH_STRING_PROFILE_LONG };
 
 String
 Router::router_read_handler(Element *e, void *thunk)
@@ -2163,6 +2164,10 @@ Router::router_read_handler(Element *e, void *thunk)
     case GH_STRING_PROFILE:
 	String::profile_report(sa);
 	break;
+
+    case GH_STRING_PROFILE_LONG:
+	String::profile_report(sa, 2);
+	break;
 #endif
 
     }
@@ -2200,6 +2205,9 @@ Router::static_initialize()
 #endif
 #if HAVE_STRING_PROFILING
 	add_read_handler(0, "string_profile", router_read_handler, (void *) GH_STRING_PROFILE);
+# if HAVE_STRING_PROFILING > 1
+	add_read_handler(0, "string_profile_long", router_read_handler, (void *) GH_STRING_PROFILE_LONG);
+# endif
 #endif
     }
 }
