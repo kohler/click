@@ -384,7 +384,7 @@ click_lexer()
 }
 
 extern "C" int
-click_add_element_type(const char *ename, Element *(*func)(uintptr_t), uintptr_t thunk)
+click_add_element_type(const String &ename, Element *(*func)(uintptr_t), uintptr_t thunk)
 {
     assert(ename);
     if (Lexer *l = click_lexer())

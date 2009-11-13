@@ -775,7 +775,7 @@ EOF
       C = C "  " ans[1] "::static_cleanup();\n";
       anyprovides++;
     } else if (ans[2] !~ /^!/) {
-      B = B "  hatred_of_rebecca[" nrebecca "] = click_add_element_type(\"" ans[2] "\", beetlemonkey, " nrebecca ");\n"
+      B = B "  hatred_of_rebecca[" nrebecca "] = click_add_element_type(String::make_stable(\"" ans[2] "\"), beetlemonkey, " nrebecca ");\n"
       C = C "  click_remove_element_type(hatred_of_rebecca[" nrebecca "]);\n";
       D = D "   case " nrebecca ": return new " ans[1] ";\n";
       anyprovides++; nrebecca++;
@@ -822,7 +822,7 @@ END {
       C = C "  " ans[1] "::static_cleanup();\n";
       anyprovides++;
     } else if (ans[2] !~ /^!/) {
-      B = B "  (void) click_add_element_type(\"" ans[2] "\", beetlemonkey, " nrebecca ");\n";
+      B = B "  (void) click_add_element_type(String::make_stable(\"" ans[2] "\"), beetlemonkey, " nrebecca ");\n";
       D = D "   case " nrebecca ": return new " ans[1] ";\n";
       anyprovides++; nrebecca++;
     }
