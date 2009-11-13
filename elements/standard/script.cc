@@ -450,7 +450,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	    else
 		fclose(f);
 #else
-	    click_chatter("{}%s", result.c_str());
+	    click_chatter("{}%.*s", result.length(), result.data());
 #endif
 	    break;
 	}
@@ -463,7 +463,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 		ContextErrorHandler c_errh(errh, "While calling %<%s%>:", hc.unparse().c_str());
 		String result = hc.call_read(&c_errh);
 		ErrorHandler *d_errh = ErrorHandler::default_handler();
-		d_errh->message("%s:\n%s\n", hc.handler()->unparse_name(hc.element()).c_str(), result.c_str());
+		d_errh->message("%s:\n%.*s\n", hc.handler()->unparse_name(hc.element()).c_str(), result.length(), result.data());
 	    }
 	    break;
 	}
@@ -518,7 +518,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	    if (insn == insn_errorq)
 		msg = cp_unquote(msg);
 	    if (msg)
-		errh->error("%s", msg.c_str());
+		errh->error("%.*s", msg.length(), msg.data());
 	    /* fallthru */
 	}
 	case INSN_END:
