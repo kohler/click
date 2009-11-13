@@ -384,11 +384,21 @@ click_lexer()
 }
 
 extern "C" int
-click_add_element_type(const String &ename, Element *(*func)(uintptr_t), uintptr_t thunk)
+click_add_element_type(const char *ename, Element *(*func)(uintptr_t), uintptr_t thunk)
 {
     assert(ename);
     if (Lexer *l = click_lexer())
 	return l->add_element_type(ename, func, thunk);
+    else
+	return -99;
+}
+
+extern "C" int
+click_add_element_type_stable(const char *ename, Element *(*func)(uintptr_t), uintptr_t thunk)
+{
+    assert(ename);
+    if (Lexer *l = click_lexer())
+	return l->add_element_type(String::make_stable(ename), func, thunk);
     else
 	return -99;
 }
