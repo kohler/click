@@ -239,11 +239,13 @@ ServicesNameDB::read_services()
 	    /* nada */;
 	for (et = bt; et < eol && isdigit((unsigned char) *et) && pnum < 65536; et++)
 	    pnum = 10*pnum + *et - '0';
-	if (et == bt || pnum >= 65536 || et >= eol || (*et != '/' && *et != ','))
+	if (et == bt || pnum >= (proto ? 256 : 65536))
 	    goto skip_to_eol;
 	if (proto)
 	    ptype = NameInfo::T_IP_PROTO;
 	else {
+	    if (et >= eol || (*et != '/' && *et != ','))
+		goto skip_to_eol;
 	    for (bt = et = et + 1; et < eol && !isspace((unsigned char) *et); et++)
 		/* nada */;
 	    if (!NameInfo::query_int(NameInfo::T_IP_PROTO, 0, text.substring(bt, et), &ptype))
