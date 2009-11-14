@@ -62,7 +62,7 @@ DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(top_srcdir)/tools/lib -I$(srcdir) @EXPAT_INCLUDES@
 LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@ @EXPAT_LIBS@ $(DL_LIBS)
+LIBS = @LIBS@ @POSIX_CLOCK_LIBS@ @EXPAT_LIBS@ $(DL_LIBS)
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
 CXXLD = $(CXX)
