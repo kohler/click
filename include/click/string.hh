@@ -39,7 +39,7 @@ class String { public:
 
     /** @brief Construct an empty String (with length 0). */
     inline String() {
-	assign_memo(null_memo.real_data, 0, &null_memo);
+	assign_memo(&null_data, 0, 0);
     }
 
     /** @brief Construct a copy of the String @a x. */
@@ -86,7 +86,7 @@ class String { public:
     /** @brief Construct a String equal to "true" or "false" depending on the
      * value of @a x. */
     explicit inline String(bool x) {
-	assign_memo(bool_data + (x ? 0 : 5), x ? 4 : 5, &permanent_memo);
+	assign_memo(bool_data + (x ? 0 : 5), x ? 4 : 5, 0);
     }
 
     /** @brief Construct a String containing the single character @a c. */
@@ -289,8 +289,7 @@ class String { public:
 	// stable). We are guaranteed, in these strings, that _data[_length]
 	// exists. Otherwise must check that _data[_length] exists.
 	const char *end_data = _r.data + _r.length;
-	if ((_r.memo->capacity
-	     && end_data >= _r.memo->real_data + _r.memo->dirty)
+	if ((_r.memo && end_data >= _r.memo->real_data + _r.memo->dirty)
 	    || *end_data != '\0') {
 	    if (char *x = const_cast<String *>(this)->append_garbage(1)) {
 		*x = '\0';
@@ -585,7 +584,7 @@ class String { public:
 
     /** @brief Return true iff the String's data is shared or immutable. */
     inline bool data_shared() const {
-	return !_r.memo->capacity || _r.memo->refcount != 1;
+	return !_r.memo || _r.memo->refcount != 1;
     }
 
     /** @brief Return a compact version of this String.
@@ -593,7 +592,7 @@ class String { public:
      * The compact version shares no more than 256 bytes of data with any
      * other non-stable String. */
     inline String compact() const {
-	if (!_r.memo->capacity || _r.memo->refcount == 1
+	if (!_r.memo || _r.memo->refcount == 1
 	    || (uint32_t) _r.length + 256 >= _r.memo->capacity)
 	    return *this;
 	else
@@ -612,7 +611,7 @@ class String { public:
 
     /** @brief Return true iff this is an out-of-memory string. */
     inline bool out_of_memory() const {
-	return _r.data == oom_memo.real_data;
+	return _r.data == &oom_data;
     }
 
     /** @brief Return a const reference to an out-of-memory String. */
@@ -625,7 +624,7 @@ class String { public:
      * The returned value may be dereferenced; it points to a null
      * character. */
     static inline const char *out_of_memory_data() {
-	return oom_memo.real_data;
+	return &oom_data;
     }
 
 
@@ -706,8 +705,8 @@ class String { public:
     inline void assign_memo(const char *data, int length, memo_t *memo) const {
 	_r.data = data;
 	_r.length = length;
-	_r.memo = memo;
-	atomic_uint32_t::inc(memo->refcount);
+	if ((_r.memo = memo))
+	    atomic_uint32_t::inc(memo->refcount);
     }
 
     inline String(const char *data, int length, memo_t *memo) {
@@ -719,7 +718,7 @@ class String { public:
     }
 
     inline void deref() const {
-	if (atomic_uint32_t::dec_and_test(_r.memo->refcount))
+	if (_r.memo && atomic_uint32_t::dec_and_test(_r.memo->refcount))
 	    delete_memo(_r.memo);
     }
 
@@ -728,11 +727,10 @@ class String { public:
     static memo_t *create_memo(char *space, int dirty, int capacity);
     static void delete_memo(memo_t *memo);
 
+    static const char null_data;
+    static const char oom_data;
     static const char bool_data[11];
     static const char int_data[20];
-    static memo_t null_memo;
-    static memo_t permanent_memo;
-    static memo_t oom_memo;
     static const rep_t null_string_rep;
     static const rep_t oom_string_rep;
 

@@ -65,6 +65,8 @@ CLICK_DECLS
  * returns an out-of-memory string.
  */
 
+const char String::null_data = '\0';
+const char String::oom_data = '\0';
 const char String::bool_data[] = "true\0false";
 const char String::int_data[] = "0\0001\0002\0003\0004\0005\0006\0007\0008\0009";
 
@@ -74,21 +76,11 @@ const char String::int_data[] = "0\0001\0002\0003\0004\0005\0006\0007\0008\0009"
 # define MEMO_INITIALIZER_TAIL
 #endif
 
-String::memo_t String::null_memo = {
-    2, 0, 0 MEMO_INITIALIZER_TAIL, { '\0' }
-};
-String::memo_t String::permanent_memo = {
-    1, 0, 0 MEMO_INITIALIZER_TAIL, { '\0' }
-};
-String::memo_t String::oom_memo = {
-    2, 0, 0 MEMO_INITIALIZER_TAIL, { '\0' }
-};
-
 const String::rep_t String::null_string_rep = {
-    null_memo.real_data, 0, &null_memo
+    &null_data, 0, 0
 };
 const String::rep_t String::oom_string_rep = {
-    oom_memo.real_data, 0, &oom_memo
+    &oom_data, 0, 0
 };
 
 #if HAVE_STRING_PROFILING
@@ -206,7 +198,7 @@ String::profile_report(StringAccum &sa, int examples)
 String::String(int x)
 {
     if (x >= 0 && x < 10)
-	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+	assign_memo(int_data + 2 * x, 1, 0);
     else {
 	char buf[128];
 	sprintf(buf, "%d", x);
@@ -217,7 +209,7 @@ String::String(int x)
 String::String(unsigned x)
 {
     if (x < 10)
-	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+	assign_memo(int_data + 2 * x, 1, 0);
     else {
 	char buf[128];
 	sprintf(buf, "%u", x);
@@ -228,7 +220,7 @@ String::String(unsigned x)
 String::String(long x)
 {
     if (x >= 0 && x < 10)
-	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+	assign_memo(int_data + 2 * x, 1, 0);
     else {
 	char buf[128];
 	sprintf(buf, "%ld", x);
@@ -239,7 +231,7 @@ String::String(long x)
 String::String(unsigned long x)
 {
     if (x < 10)
-	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+	assign_memo(int_data + 2 * x, 1, 0);
     else {
 	char buf[128];
 	sprintf(buf, "%lu", x);
@@ -254,7 +246,7 @@ String::String(unsigned long x)
 String::String(long long x)
 {
     if (x >= 0 && x < 10)
-	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+	assign_memo(int_data + 2 * x, 1, 0);
     else {
 	StringAccum sa;
 	sa << x;
@@ -265,7 +257,7 @@ String::String(long long x)
 String::String(unsigned long long x)
 {
     if (x < 10)
-	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+	assign_memo(int_data + 2 * x, 1, 0);
     else {
 	StringAccum sa;
 	sa << x;
@@ -278,7 +270,7 @@ String::String(unsigned long long x)
 String::String(int64_t x)
 {
     if (x >= 0 && x < 10)
-	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+	assign_memo(int_data + 2 * x, 1, 0);
     else {
 	StringAccum sa;
 	sa << x;
@@ -289,7 +281,7 @@ String::String(int64_t x)
 String::String(uint64_t x)
 {
     if (x < 10)
-	assign_memo(int_data + 2 * x, 1, &permanent_memo);
+	assign_memo(int_data + 2 * x, 1, 0);
     else {
 	StringAccum sa;
 	sa << x;
@@ -320,7 +312,7 @@ String::make_stable(const char *s, int len)
 {
     if (len < 0)
 	len = (s ? strlen(s) : 0);
-    return String(s, len, &permanent_memo);
+    return String(s, len, 0);
 }
 
 String
@@ -350,66 +342,67 @@ String::make_numeric(uint_large_t num, int base, bool uppercase)
 void
 String::assign_out_of_memory()
 {
-  if (_r.memo)
-    deref();
-  _r.memo = &oom_memo;
-  _r.data = _r.memo->real_data;
-  _r.length = 0;
-  atomic_uint32_t::inc(oom_memo.refcount);
+    if (_r.memo)
+	deref();
+    _r.memo = 0;
+    _r.data = &oom_data;
+    _r.length = 0;
 }
 
 void
 String::assign(const char *str, int len, bool need_deref)
 {
-  if (!str) {
-    assert(len <= 0);
-    len = 0;
-  } else if (len < 0)
-    len = strlen(str);
+    if (!str) {
+	assert(len <= 0);
+	len = 0;
+    } else if (len < 0)
+	len = strlen(str);
 
-  // need to start with dereference
-  if (need_deref) {
-      if (unlikely(str >= _r.memo->real_data
-		   && str + len <= _r.memo->real_data + _r.memo->capacity)) {
-	  // Be careful about "String s = ...; s = s.c_str();"
-	  _r.data = str;
-	  _r.length = len;
-	  return;
-      } else
-	  deref();
-  }
-
-  if (len == 0) {
-    _r.memo = (str == oom_memo.real_data ? &oom_memo : &null_memo);
-    atomic_uint32_t::inc(_r.memo->refcount);
-
-  } else {
-    // Make the memo a multiple of 16 characters and bigger than 'len'.
-    int memo_capacity = (len + 15 + MEMO_SPACE) & ~15;
-    _r.memo = create_memo(0, len, memo_capacity - MEMO_SPACE);
-    if (!_r.memo) {
-      assign_out_of_memory();
-      return;
+    // need to start with dereference
+    if (need_deref) {
+	if (unlikely(_r.memo
+		     && str >= _r.memo->real_data
+		     && str + len <= _r.memo->real_data + _r.memo->capacity)) {
+	    // Be careful about "String s = ...; s = s.c_str();"
+	    _r.data = str;
+	    _r.length = len;
+	    return;
+	} else
+	    deref();
     }
-    memcpy(_r.memo->real_data, str, len);
-  }
 
-  _r.data = _r.memo->real_data;
-  _r.length = len;
+    if (len == 0) {
+	_r.memo = 0;
+	_r.data = (str == &oom_data ? str : &null_data);
+
+    } else {
+	// Make the memo a multiple of 16 characters and bigger than 'len'.
+	int memo_capacity = (len + 15 + MEMO_SPACE) & ~15;
+	_r.memo = create_memo(0, len, memo_capacity - MEMO_SPACE);
+	if (!_r.memo) {
+	    assign_out_of_memory();
+	    return;
+	}
+	memcpy(_r.memo->real_data, str, len);
+	_r.data = _r.memo->real_data;
+    }
+
+    _r.length = len;
 }
 
 char *
 String::append_garbage(int len)
 {
     // Appending anything to "out of memory" leaves it as "out of memory"
-    if (len <= 0 || _r.memo == &oom_memo)
+    if (len <= 0 || _r.data == &oom_data)
 	return 0;
 
     // If we can, append into unused space. First, we check that there's
     // enough unused space for 'len' characters to fit; then, we check
     // that the unused space immediately follows the data in '*this'.
-    uint32_t dirty = _r.memo->dirty;
-    if (_r.memo->capacity > dirty + len) {
+    uint32_t dirty;
+    if (_r.memo
+	&& ((dirty = _r.memo->dirty), _r.memo->capacity > dirty + len)) {
 	char *real_dirty = _r.memo->real_data + dirty;
 	if (real_dirty == _r.data + _r.length
 	    && atomic_uint32_t::compare_and_swap(_r.memo->dirty, dirty, dirty + len)) {
@@ -467,13 +460,14 @@ String::append(const char *s, int len)
     } else if (len < 0)
 	len = strlen(s);
 
-    if (s == oom_memo.real_data)
+    if (s == &oom_data)
 	// Appending "out of memory" to a regular string makes it "out of
 	// memory"
 	assign_out_of_memory();
     else if (unlikely(len == 0))
 	/* do nothing */;
-    else if (likely(!(s >= _r.memo->real_data
+    else if (likely(!(_r.memo
+		      && s >= _r.memo->real_data
 		      && s + len <= _r.memo->real_data + _r.memo->capacity))) {
 	if (char *space = append_garbage(len))
 	    memcpy(space, s, len);
@@ -497,12 +491,12 @@ String::mutable_data()
 {
   // If _memo has a capacity (it's not one of the special strings) and it's
   // uniquely referenced, return _data right away.
-  if (_r.memo->capacity && _r.memo->refcount == 1)
+  if (_r.memo && _r.memo->refcount == 1)
     return const_cast<char *>(_r.data);
 
   // Otherwise, make a copy of it. Rely on: deref() doesn't change _data or
   // _length; and if _capacity == 0, then deref() doesn't free _real_data.
-  assert(!_r.memo->capacity || _r.memo->refcount > 1);
+  assert(!_r.memo || _r.memo->refcount > 1);
   deref();
   assign(_r.data, _r.length, false);
   return const_cast<char *>(_r.data);
@@ -794,7 +788,7 @@ String::equals(const char *s, int len) const
     else if (_r.data == s)
 	return true;
     else if (len == 0)
-	return (s != oom_memo.real_data && _r.memo != &oom_memo);
+	return (s != &oom_data && _r.data != &oom_data);
     else
 	return memcmp(_r.data, s, len) == 0;
 }
@@ -810,7 +804,7 @@ String::starts_with(const char *s, int len) const
     else if (_r.data == s)
 	return true;
     else if (len == 0)
-	return (s != oom_memo.real_data && _r.memo != &oom_memo);
+	return (s != &oom_data && _r.data != &oom_data);
     else
 	return memcmp(_r.data, s, len) == 0;
 }
@@ -822,9 +816,9 @@ String::compare(const char *s, int len) const
 	len = strlen(s);
     if (_r.data == s)
 	return _r.length - len;
-    else if (_r.memo == &oom_memo)
+    else if (_r.data == &oom_data)
 	return 1;
-    else if (s == oom_memo.real_data)
+    else if (s == &oom_data)
 	return -1;
     else if (_r.length == len)
 	return memcmp(_r.data, s, len);
