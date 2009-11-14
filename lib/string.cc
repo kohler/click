@@ -330,9 +330,9 @@ String::make_stable(const char *s, int len)
 String
 String::make_garbage(int len)
 {
-  String s;
-  s.append_garbage(len);
-  return s;
+    String s;
+    s.append_garbage(len);
+    return s;
 }
 
 String
@@ -514,59 +514,6 @@ String::mutable_c_str()
   (void) mutable_data();
   (void) c_str();
   return const_cast<char *>(_r.data);
-}
-
-const char *
-String::c_str() const
-{
-  // If _memo has no capacity, then this is one of the special strings (null
-  // or PermString). We are guaranteed, in these strings, that _data[_length]
-  // exists. We can return _data immediately if we have a '\0' in the right
-  // place.
-  if (!_r.memo->capacity && _r.data[_r.length] == '\0')
-    return _r.data;
-
-  // Otherwise, this invariant must hold (there's more real data in _memo than
-  // in our substring).
-  assert(!_r.memo->capacity
-	 || _r.memo->real_data + _r.memo->dirty >= _r.data + _r.length);
-
-  // Has the character after our substring been set?
-  uint32_t dirty = _r.memo->dirty;
-  if (_r.memo->real_data + dirty == _r.data + _r.length) {
-      if (_r.memo->capacity > dirty
-	  && atomic_uint32_t::compare_and_swap(_r.memo->dirty, dirty, dirty + 1)) {
-	  // Character after our substring has not been set. Change it to '\0'.
-	  // This case will never occur on special strings.
-	  char *real_data = const_cast<char *>(_r.data);
-	  real_data[_r.length] = '\0';
-#if HAVE_STRING_PROFILING
-	  profile_update_memo_dirty(_r.memo, dirty, dirty + 1, _r.memo->capacity);
-#endif
-	  return _r.data;
-      }
-
-  } else {
-    // Character after our substring has been set. OK to return _data if it is
-    // already '\0'.
-    if (_r.data[_r.length] == '\0')
-      return _r.data;
-  }
-
-  // If we get here, we must make a copy of our portion of the string.
-  {
-    String s(_r.data, _r.length);
-    deref();
-    assign(s);
-  }
-
-  char *real_data = const_cast<char *>(_r.data);
-  real_data[_r.length] = '\0';
-  ++_r.memo->dirty;		// include '\0' in used portion of _memo
-#if HAVE_STRING_PROFILING
-  profile_update_memo_dirty(_r.memo, _r.memo->dirty - 1, _r.memo->dirty, _r.memo->capacity);
-#endif
-  return _r.data;
 }
 
 String

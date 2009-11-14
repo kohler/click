@@ -146,17 +146,24 @@ class String { public:
      *
      * This function is suitable for static constant strings whose data is
      * known to stay around forever, such as C string constants.  If @a len @<
-     * 0, treats @a s as a null-terminated C string. */
+     * 0, treats @a s as a null-terminated C string.
+     *
+     * @warning The String implementation may access @a s[@a len], which
+     * should remain constant even though it's not part of the String. */
     static String make_stable(const char *s, int len = -1);
 
     /** @brief Return a String that directly references the character data in
      * [@a begin, @a end).
      * @param begin pointer to the first character in the character data
      * @param end pointer one beyond the last character in the character data
+     *  (but see the warning)
      *
      * This function is suitable for static constant strings whose data is
      * known to stay around forever, such as C string constants.  Returns an
-     * empty string if @a begin @>= @a end. */
+     * empty string if @a begin @>= @a end.
+     *
+     * @warning The String implementation may access *@a end, which should
+     * remain constant even though it's not part of the String. */
     static inline String make_stable(const char *begin, const char *end) {
 	if (begin < end)
 	    return String::make_stable(begin, end - begin);
@@ -276,7 +283,22 @@ class String { public:
      * this->length() doesn't change.  Returns a corresponding C string
      * pointer.  The returned pointer is semi-temporary; it will persist until
      * the string is destroyed or appended to. */
-    const char *c_str() const;
+    inline const char *c_str() const {
+	// We may already have a '\0' in the right place.  If _memo has no
+	// capacity, then this is one of the special strings (null or
+	// stable). We are guaranteed, in these strings, that _data[_length]
+	// exists. Otherwise must check that _data[_length] exists.
+	const char *end_data = _r.data + _r.length;
+	if ((_r.memo->capacity
+	     && end_data >= _r.memo->real_data + _r.memo->dirty)
+	    || *end_data != '\0') {
+	    if (char *x = const_cast<String *>(this)->append_garbage(1)) {
+		*x = '\0';
+		--_r.length;
+	    }
+	}
+	return _r.data;
+    }
 
 
     /** @brief Return a 32-bit hash function of the characters in [begin, end).
