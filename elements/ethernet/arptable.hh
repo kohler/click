@@ -186,8 +186,8 @@ class ARPTable : public Element { public:
     SizedHashAllocator<sizeof(ARPEntry)> _alloc;
     Timer _expire_timer;
 
-    ARPEntry *ensure(IPAddress ip);
-    void slim();
+    ARPEntry *ensure(IPAddress ip, click_jiffies_t now);
+    void slim(click_jiffies_t now);
 
 };
 

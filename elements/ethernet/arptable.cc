@@ -104,9 +104,8 @@ ARPTable::take_state(Element *e, ErrorHandler *errh)
 }
 
 void
-ARPTable::slim()
+ARPTable::slim(click_jiffies_t now)
 {
-    click_jiffies_t now = click_jiffies();
     ARPEntry *ae;
 
     // Delete old entries.
@@ -147,14 +146,14 @@ ARPTable::run_timer(Timer *timer)
     // Expire any old entries, and make sure there's room for at least one
     // packet.
     _lock.acquire_write();
-    slim();
+    slim(click_jiffies());
     _lock.release_write();
     if (_timeout_j)
 	timer->schedule_after_sec(_timeout_j / CLICK_HZ + 1);
 }
 
 ARPTable::ARPEntry *
-ARPTable::ensure(IPAddress ip)
+ARPTable::ensure(IPAddress ip, click_jiffies_t now)
 {
     _lock.acquire_write();
     Table::iterator it = _table.find(ip);
@@ -167,10 +166,10 @@ ARPTable::ensure(IPAddress ip)
 
 	++_entry_count;
 	if (_entry_capacity && _entry_count > _entry_capacity)
-	    slim();
+	    slim(now);
 
 	ARPEntry *ae = new(x) ARPEntry(ip);
-	ae->_live_at_j = click_jiffies();
+	ae->_live_at_j = now;
 	ae->_polled_at_j = ae->_live_at_j - CLICK_HZ;
 	_table.set(it, ae);
 
@@ -182,14 +181,15 @@ ARPTable::ensure(IPAddress ip)
 int
 ARPTable::insert(IPAddress ip, const EtherAddress &eth, Packet **head)
 {
-    ARPEntry *ae = ensure(ip);
+    click_jiffies_t now = click_jiffies();
+    ARPEntry *ae = ensure(ip, now);
     if (!ae)
 	return -ENOMEM;
 
     ae->_eth = eth;
     ae->_unicast = !eth.is_broadcast();
 
-    ae->_live_at_j = click_jiffies();
+    ae->_live_at_j = now;
     ae->_polled_at_j = ae->_live_at_j - CLICK_HZ;
 
     if (ae->_age_link.next()) {
@@ -212,11 +212,11 @@ ARPTable::insert(IPAddress ip, const EtherAddress &eth, Packet **head)
 int
 ARPTable::append_query(IPAddress ip, Packet *p)
 {
-    ARPEntry *ae = ensure(ip);
+    click_jiffies_t now = click_jiffies();
+    ARPEntry *ae = ensure(ip, now);
     if (!ae)
 	return -ENOMEM;
 
-    click_jiffies_t now = click_jiffies();
     if (ae->unicast(now, _timeout_j)) {
 	_lock.release_write();
 	return -EAGAIN;
@@ -244,7 +244,7 @@ ARPTable::append_query(IPAddress ip, Packet *p)
 
     ++_packet_count;
     if (_packet_capacity && _packet_count > _packet_capacity)
-	slim();
+	slim(now);
 
     if (ae->_tail)
 	ae->_tail->set_next(p);
