@@ -65,8 +65,6 @@ CLICK_DECLS
  * returns an out-of-memory string.
  */
 
-const char String::null_string_data = 0;
-const char String::oom_string_data = 0;
 const char String::bool_data[] = "true\0false";
 const char String::int_data[] = "0\0001\0002\0003\0004\0005\0006\0007\0008\0009";
 
@@ -77,20 +75,20 @@ const char String::int_data[] = "0\0001\0002\0003\0004\0005\0006\0007\0008\0009"
 #endif
 
 String::memo_t String::null_memo = {
-    2, 0, 0, const_cast<char *>(&null_string_data) MEMO_INITIALIZER_TAIL
+    2, 0, 0 MEMO_INITIALIZER_TAIL, { '\0' }
 };
 String::memo_t String::permanent_memo = {
-    1, 0, 0, const_cast<char *>(&null_string_data) MEMO_INITIALIZER_TAIL
+    1, 0, 0 MEMO_INITIALIZER_TAIL, { '\0' }
 };
 String::memo_t String::oom_memo = {
-    2, 0, 0, const_cast<char *>(&oom_string_data) MEMO_INITIALIZER_TAIL
+    2, 0, 0 MEMO_INITIALIZER_TAIL, { '\0' }
 };
 
 const String::rep_t String::null_string_rep = {
-    &null_string_data, 0, &null_memo
+    null_memo.real_data, 0, &null_memo
 };
 const String::rep_t String::oom_string_rep = {
-    &oom_string_data, 0, &oom_memo
+    oom_memo.real_data, 0, &oom_memo
 };
 
 #if HAVE_STRING_PROFILING
@@ -105,20 +103,18 @@ String::memo_t *String::live_memos[55];
 
 /** @cond never */
 String::memo_t *
-String::create_memo(char *data, int dirty, int capacity)
+String::create_memo(char *space, int dirty, int capacity)
 {
     assert(capacity > 0 && capacity >= dirty);
-    memo_t *memo = new memo_t;
+    memo_t *memo;
+    if (space)
+	memo = reinterpret_cast<memo_t *>(space);
+    else
+	memo = (memo_t *) CLICK_LALLOC(MEMO_SPACE + capacity);
     if (memo) {
-	if (data)
-	    memo->real_data = data;
-	else if (!(memo->real_data = (char *) CLICK_LALLOC(capacity))) {
-	    delete memo;
-	    return 0;
-	}
 	memo->capacity = capacity;
 	memo->dirty = dirty;
-	memo->refcount = (data ? 0 : 1);
+	memo->refcount = (space ? 0 : 1);
 #if HAVE_STRING_PROFILING
 	int bucket = profile_memo_size_bucket(dirty, capacity);
 	++memo_sizes[bucket];
@@ -139,8 +135,10 @@ String::create_memo(char *data, int dirty, int capacity)
 void
 String::delete_memo(memo_t *memo)
 {
-    assert(memo->capacity > 0 && memo->capacity >= memo->dirty);
-    CLICK_LFREE(memo->real_data, memo->capacity);
+    assert(memo->capacity > 0);
+    if (memo->capacity < memo->dirty)
+	click_chatter("%.*s %d %d\n", memo->capacity,memo->real_data, memo->dirty, memo->capacity);
+    assert(memo->capacity >= memo->dirty);
 #if HAVE_STRING_PROFILING
     int bucket = profile_memo_size_bucket(memo->dirty, memo->capacity);
     --live_memo_sizes[bucket];
@@ -151,7 +149,7 @@ String::delete_memo(memo_t *memo)
 	memo->next->pprev = memo->pprev;
 # endif
 #endif
-    delete memo;
+    CLICK_LFREE(memo, MEMO_SPACE + memo->capacity);
 }
 
 
@@ -313,10 +311,8 @@ String
 String::make_claim(char *str, int len, int capacity)
 {
     assert(str && len > 0 && capacity >= len);
-    if (memo_t *new_memo = create_memo(str, len, capacity))
-	return String(str, len, new_memo);
-    else
-	return String(&oom_string_data, 0, &oom_memo);
+    memo_t *new_memo = create_memo(str - MEMO_SPACE, len, capacity);
+    return String(str, len, new_memo);
 }
 
 String
@@ -384,13 +380,13 @@ String::assign(const char *str, int len, bool need_deref)
   }
 
   if (len == 0) {
-    _r.memo = (str == &oom_string_data ? &oom_memo : &null_memo);
+    _r.memo = (str == oom_memo.real_data ? &oom_memo : &null_memo);
     atomic_uint32_t::inc(_r.memo->refcount);
 
   } else {
-    // Make 'capacity' a multiple of 16 characters and bigger than 'len'.
-    int capacity = (len + 16) & ~15;
-    _r.memo = create_memo(0, len, capacity);
+    // Make the memo a multiple of 16 characters and bigger than 'len'.
+    int memo_capacity = (len + 15 + MEMO_SPACE) & ~15;
+    _r.memo = create_memo(0, len, memo_capacity - MEMO_SPACE);
     if (!_r.memo) {
       assign_out_of_memory();
       return;
@@ -426,22 +422,26 @@ String::append_garbage(int len)
 	}
     }
 
-    // Now we have to make new space. Make sure the new capacity is a
-    // multiple of 16 characters and that it is at least 16. But for large
-    // strings, allocate a power of 2, since power-of-2 sizes minimize waste
-    // in frequently-used allocators, like Linux kmalloc.
-    int new_capacity = (_r.length + len < 1024 ? (_r.length + 16) & ~15 : 1024);
-    while (new_capacity < _r.length + len)
-	new_capacity *= 2;
+    // Now we have to make new space. Make sure the memo is a multiple of 16
+    // bytes and that it is at least 16. But for large strings, allocate a
+    // power of 2, since power-of-2 sizes minimize waste in frequently-used
+    // allocators, like Linux kmalloc.
+    int want_memo_len = _r.length + len + MEMO_SPACE;
+    int memo_capacity;
+    if (want_memo_len <= 1024)
+	memo_capacity = (want_memo_len + 15) & ~15;
+    else
+	for (memo_capacity = 2048; memo_capacity < want_memo_len; )
+	    memo_capacity *= 2;
 
 #if CLICK_DMALLOC
     // Keep total allocation a power of 2 by leaving extra space for the
     // DMALLOC Chunk.
-    if (_r.length + len < new_capacity - 32)
-	new_capacity -= 32;
+    if (want_memo_len < memo_capacity - 32)
+	memo_capacity -= 32;
 #endif
 
-    memo_t *new_memo = create_memo(0, _r.length + len, new_capacity);
+    memo_t *new_memo = create_memo(0, _r.length + len, memo_capacity - MEMO_SPACE);
     if (!new_memo) {
 	assign_out_of_memory();
 	return 0;
@@ -467,7 +467,7 @@ String::append(const char *s, int len)
     } else if (len < 0)
 	len = strlen(s);
 
-    if (s == &oom_string_data)
+    if (s == oom_memo.real_data)
 	// Appending "out of memory" to a regular string makes it "out of
 	// memory"
 	assign_out_of_memory();
@@ -794,7 +794,7 @@ String::equals(const char *s, int len) const
     else if (_r.data == s)
 	return true;
     else if (len == 0)
-	return (s != &oom_string_data && _r.memo != &oom_memo);
+	return (s != oom_memo.real_data && _r.memo != &oom_memo);
     else
 	return memcmp(_r.data, s, len) == 0;
 }
@@ -810,7 +810,7 @@ String::starts_with(const char *s, int len) const
     else if (_r.data == s)
 	return true;
     else if (len == 0)
-	return (s != &oom_string_data && _r.memo != &oom_memo);
+	return (s != oom_memo.real_data && _r.memo != &oom_memo);
     else
 	return memcmp(_r.data, s, len) == 0;
 }
@@ -824,7 +824,7 @@ String::compare(const char *s, int len) const
 	return _r.length - len;
     else if (_r.memo == &oom_memo)
 	return 1;
-    else if (s == &oom_string_data)
+    else if (s == oom_memo.real_data)
 	return -1;
     else if (_r.length == len)
 	return memcmp(_r.data, s, len);

@@ -612,7 +612,7 @@ class String { public:
 
     /** @brief Return true iff this is an out-of-memory string. */
     inline bool out_of_memory() const {
-	return _r.data == &oom_string_data;
+	return _r.data == oom_memo.real_data;
     }
 
     /** @brief Return a const reference to an out-of-memory String. */
@@ -625,7 +625,7 @@ class String { public:
      * The returned value may be dereferenced; it points to a null
      * character. */
     static inline const char *out_of_memory_data() {
-	return &oom_string_data;
+	return oom_memo.real_data;
     }
 
 
@@ -640,11 +640,15 @@ class String { public:
 	volatile uint32_t refcount;
 	uint32_t capacity;
 	volatile uint32_t dirty;
-	char *real_data;
 #if HAVE_STRING_PROFILING > 1
 	memo_t **pprev;
 	memo_t *next;
 #endif
+	char real_data[1];	// but it is almost certainly more
+    };
+
+    enum {
+	MEMO_SPACE = offsetof(memo_t, real_data)
     };
 
     struct rep_t {
@@ -721,11 +725,9 @@ class String { public:
 
     void assign(const char *cstr, int len, bool need_deref);
     void assign_out_of_memory();
-    static memo_t *create_memo(char *data, int dirty, int capacity);
+    static memo_t *create_memo(char *space, int dirty, int capacity);
     static void delete_memo(memo_t *memo);
 
-    static const char null_string_data;
-    static const char oom_string_data;
     static const char bool_data[11];
     static const char int_data[20];
     static memo_t null_memo;

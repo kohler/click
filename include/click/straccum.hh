@@ -51,8 +51,8 @@ class StringAccum { public:
 
     /** @brief Destroy a StringAccum, freeing its memory. */
     ~StringAccum() {
-	if (_cap >= 0)
-	    CLICK_LFREE(_s, _cap);
+	if (_cap > 0)
+	    CLICK_LFREE(_s - MEMO_SPACE, _cap + MEMO_SPACE);
     }
 
 
@@ -374,6 +374,10 @@ class StringAccum { public:
 
   private:
 
+    enum {
+	MEMO_SPACE = String::MEMO_SPACE
+    };
+
     unsigned char *_s;
     int _len;
     int _cap;
@@ -437,12 +441,13 @@ StringAccum::StringAccum(int capacity)
     : _len(0)
 {
     assert(capacity >= 0);
-    if (capacity) {
-	_s = (unsigned char *) CLICK_LALLOC(capacity);
-	_cap = (_s ? capacity : -1);
+    if (capacity
+	&& (_s = (unsigned char *) CLICK_LALLOC(capacity + MEMO_SPACE))) {
+	_s += MEMO_SPACE;
+	_cap = capacity;
     } else {
 	_s = 0;
-	_cap = 0;
+	_cap = (capacity ? -1 : 0);
     }
 }
 
