@@ -66,7 +66,7 @@ class StoreIPAddress : public Element { public:
 
   private:
 
-    unsigned _offset;
+    int _offset;
     IPAddress _address;
     bool _use_address;
 

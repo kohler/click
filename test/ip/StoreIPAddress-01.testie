@@ -1,0 +1,26 @@
+%script
+click C
+
+%file C
+InfiniteSource(LIMIT 6, STOP true, DATA \<99999999 99999999 99999999 99999999 99999999>)
+-> MarkIPHeader(0)
+-> SetIPAddress(1.0.0.2)
+-> r :: RoundRobinSwitch
+-> Print(a)
+-> d :: Discard;
+r[1] -> StoreIPAddress(0) -> Print(b) -> d;
+r[2] -> StoreIPAddress(1.0.0.3, 4) -> Print(c) -> d;
+r[3] -> StoreIPAddress(src) -> Print(d) -> d;
+r[4] -> StoreIPAddress(dst) -> Print(e) -> d;
+r[5] -> StoreIPAddress(1.0.0.4, dst) -> Print(f) -> d;
+
+%expect stderr
+a:   20 | 99999999 99999999 99999999 99999999 99999999
+b:   20 | 01000002 99999999 99999999 99999999 99999999
+c:   20 | 99999999 01000003 99999999 99999999 99999999
+d:   20 | 99999999 99999999 9999cbca 01000002 99999999
+e:   20 | 99999999 99999999 9999cbca 99999999 01000002
+f:   20 | 99999999 99999999 9999cbc8 99999999 01000004
+
+%ignore
+expensive{{.*}}

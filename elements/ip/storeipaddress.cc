@@ -37,17 +37,26 @@ StoreIPAddress::~StoreIPAddress()
 int
 StoreIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (conf.size() < 1 || conf.size() > 2)
-	return errh->error("expected [IP address, ] byte offset");
-    _use_address = (conf.size() == 2);
-    if (_use_address && !cp_ip_address(conf[0], &_address))
-	return errh->error("first argument should be IP address");
-    if (conf.back().lower() == "src")
-	_offset = (unsigned) -12;
+    String offset;
+    int r;
+    _use_address = false;
+    if (conf.size() == 1)
+	r = cp_va_kparse(conf, this, errh,
+			 "OFFSET", cpkP+cpkM, cpWord, &offset,
+			 cpEnd);
+    else
+	r = cp_va_kparse(conf, this, errh,
+			 "ADDR", cpkP+cpkC+cpkM, &_use_address, cpIPAddress, &_address,
+			 "OFFSET", cpkP+cpkM, cpWord, &offset,
+			 cpEnd);
+    if (r < 0)
+	return r;
+    if (offset.lower() == "src")
+	_offset = -12;
     else if (conf.back().lower() == "dst")
-	_offset = (unsigned) -16;
-    else if (!cp_integer(conf.back(), &_offset))
-	return errh->error("last argument should be byte offset of IP address");
+	_offset = -16;
+    else if (!cp_integer(conf.back(), &_offset) || _offset < 0)
+	return errh->error("type mismatch: OFFSET requires integer");
     return 0;
 }
 
@@ -56,14 +65,14 @@ StoreIPAddress::simple_action(Packet *p)
 {
     // XXX error reporting?
     IPAddress ipa = (_use_address ? _address : p->dst_ip_anno());
-    if ((ipa || _use_address) && _offset + 4 <= p->length()) {
+    if ((ipa || _use_address) && (uint32_t) _offset + 4 <= p->length()) {
 	if (WritablePacket *q = p->uniqueify()) {
 	    memcpy(q->data() + _offset, &ipa, 4);
 	    return q;
 	} else
 	    return 0;
 
-    } else if (_offset >= (unsigned) -16 && p->has_network_header()
+    } else if (_offset >= -16 && p->has_network_header()
 	       && p->ip_header_length() >= sizeof(click_ip)) {
 	// special case: store IP address into IP header
 	// and update checksums incrementally
