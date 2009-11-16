@@ -160,7 +160,7 @@ RadiotapDecap::simple_action(Packet *p)
 		if (rt_el_present(th, IEEE80211_RADIOTAP_DATA_RETRIES))
 			ceh->retries = *((u_int8_t *) rt_el_offset(th, IEEE80211_RADIOTAP_DATA_RETRIES));
 
-		p->pull(th->it_len);
+		p->pull(le16_to_cpu(th->it_len));
 	}
 
   return p;
