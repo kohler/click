@@ -163,23 +163,23 @@ class Timestamp { public:
      * the @a sec parameter must be between @link Timestamp::min_seconds
      * min_seconds @endlink and @link Timestamp::max_seconds max_seconds
      * @endlink.  Errors are not necessarily checked. */
-    inline Timestamp(long sec, uint32_t subsec = 0) {
+    explicit inline Timestamp(long sec, uint32_t subsec = 0) {
 	assign(sec, subsec);
     }
     /** @overload */
-    inline Timestamp(int sec, uint32_t subsec = 0) {
+    explicit inline Timestamp(int sec, uint32_t subsec = 0) {
 	assign(sec, subsec);
     }
     /** @overload */
-    inline Timestamp(unsigned long sec, uint32_t subsec = 0) {
+    explicit inline Timestamp(unsigned long sec, uint32_t subsec = 0) {
 	assign(sec, subsec);
     }
     /** @overload */
-    inline Timestamp(unsigned sec, uint32_t subsec = 0) {
+    explicit inline Timestamp(unsigned sec, uint32_t subsec = 0) {
 	assign(sec, subsec);
     }
 #if HAVE_FLOAT_TYPES
-    inline Timestamp(double);
+    explicit inline Timestamp(double);
 #endif
 
     inline Timestamp(const struct timeval &tv);
@@ -855,6 +855,13 @@ operator<(const Timestamp &a, const Timestamp &b)
 #endif
 }
 
+/** @overload */
+inline bool
+operator<(const Timestamp &a, int b)
+{
+    return a < Timestamp(b);
+}
+
 /** @relates Timestamp
     @brief Compare two timestamps.
 
@@ -864,6 +871,13 @@ inline bool
 operator<=(const Timestamp &a, const Timestamp &b)
 {
     return !(b < a);
+}
+
+/** @overload */
+inline bool
+operator<=(const Timestamp &a, int b)
+{
+    return a <= Timestamp(b);
 }
 
 /** @relates Timestamp
@@ -877,6 +891,13 @@ operator>=(const Timestamp &a, const Timestamp &b)
     return !(a < b);
 }
 
+/** @overload */
+inline bool
+operator>=(const Timestamp &a, int b)
+{
+    return a >= Timestamp(b);
+}
+
 /** @relates Timestamp
     @brief Compare two timestamps.
 
@@ -886,6 +907,13 @@ inline bool
 operator>(const Timestamp &a, const Timestamp &b)
 {
     return b < a;
+}
+
+/** @overload */
+inline bool
+operator>(const Timestamp &a, int b)
+{
+    return a > Timestamp(b);
 }
 
 /** @brief Add @a b to @a a.
