@@ -165,6 +165,9 @@
 /* Define if you have the vsnprintf function. */
 #undef HAVE_VSNPRINTF
 
+/* The size of a `click_jiffies_t', as computed by sizeof. */
+#define SIZEOF_CLICK_JIFFIES_T SIZEOF_INT
+
 /* The size of a `off_t', as computed by sizeof. */
 #undef SIZEOF_OFF_T
 

@@ -92,6 +92,9 @@
 /* Define to 1 if Linux defines the type 'uintptr_t'. */
 #undef HAVE_UINTPTR_T_LINUXMODULE
 
+/* The size of a `click_jiffies_t', as computed by sizeof. */
+#define SIZEOF_CLICK_JIFFIES_T SIZEOF_LONG
+
 /* Define if fast checksum functions require correct alignment. */
 #ifndef __i386__
 # define FAST_CHECKSUM_ALIGNED 1

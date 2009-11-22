@@ -372,6 +372,7 @@ typedef long click_jiffies_difference_t;
 # define CLICK_JIFFIES_MONOTONIC	1
 # define CLICK_HZ			HZ
 # define click_jiffies_less(a, b)	((click_jiffies_difference_t) ((a) - (b)) < 0)
+# define HAS_LONG_CLICK_JIFFIES_T	1
 #elif CLICK_BSDMODULE
 # define click_gettimeofday(tvp)	(getmicrotime(tvp))
 typedef int click_jiffies_t;
@@ -388,6 +389,10 @@ click_jiffies_t click_jiffies();
 # define click_jiffies_less(a, b)	((click_jiffies_difference_t) ((a) - (b)) < 0)
 CLICK_ENDDECLS
 # define CLICK_HZ			1000
+#endif
+
+#if SIZEOF_CLICK_JIFFIES_T != (HAS_LONG_CLICK_JIFFIES_T ? SIZEOF_LONG : SIZEOF_INT)
+# error "SIZEOF_CLICK_JIFFIES_T declared incorrectly"
 #endif
 
 
