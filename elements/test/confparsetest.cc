@@ -187,6 +187,12 @@ ConfParseTest::initialize(ErrorHandler *errh)
     Timestamp t = Timestamp(0, 0) - Timestamp::make_msec(1001);
     CHECK(t.sec() == -2 && t.usec() == 999000);
     CHECK(t.unparse() == "-1.001000");
+#if CLICK_HZ == 1000		/* true at userlevel */
+    CHECK(t == Timestamp::make_jiffies((click_jiffies_difference_t) -1001));
+    CHECK(t < Timestamp::make_jiffies((click_jiffies_t) -1001));
+    CHECK(-t == Timestamp::make_jiffies((click_jiffies_t) 1001));
+    CHECK(-t == Timestamp::make_jiffies((click_jiffies_difference_t) 1001));
+#endif
     Timestamp t2 = Timestamp(-10, 0);
     CHECK(t2.sec() == -10 && t2.subsec() == 0);
     CHECK(t2.unparse() == "-10.000000");

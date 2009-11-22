@@ -260,8 +260,10 @@ class Timestamp { public:
     }
 
 #if !CLICK_TOOL
-    /** @brief Return a timestamp representing @a jiffies. */
+    /** @brief Return a timestamp representing an interval of @a jiffies. */
     static inline Timestamp make_jiffies(click_jiffies_t jiffies);
+    /** @overload */
+    static inline Timestamp make_jiffies(click_jiffies_difference_t jiffies);
     /** @brief Return the number of jiffies represented by this timestamp. */
     inline click_jiffies_t jiffies() const;
 #endif
@@ -762,7 +764,6 @@ Timestamp::timespec() const
 #endif
 
 #if !CLICK_TOOL
-/** @brief Returns this timestamp, converted to a jiffies value. */
 inline click_jiffies_t
 Timestamp::jiffies() const
 {
@@ -783,23 +784,32 @@ Timestamp::jiffies() const
 inline Timestamp
 Timestamp::make_jiffies(click_jiffies_t jiffies)
 {
-# if TIMESTAMP_REP_FLAT64
     // Not very precise when CLICK_HZ doesn't evenly divide subsec_per_sec.
     Timestamp t = Timestamp::uninitialized_t();
+# if TIMESTAMP_REP_FLAT64
     t._t.x = (int64_t) jiffies * (subsec_per_sec / CLICK_HZ);
-    return t;
 # else
-#  if CLICK_HZ == 100 || CLICK_HZ == 1000 || CLICK_HZ == 10000 || CLICK_HZ == 100000 || CLICK_HZ == 1000000
-    uint32_t sec = jiffies / CLICK_HZ;
-    uint32_t subsec = (jiffies - sec * CLICK_HZ) * (subsec_per_sec / CLICK_HZ);
-    return Timestamp(sec, subsec);
-#  else
-    // Not very precise when CLICK_HZ doesn't evenly divide subsec_per_sec.
-    uint32_t sec = jiffies / CLICK_HZ;
-    uint32_t subsec = (jiffies - sec * CLICK_HZ) * (subsec_per_sec / CLICK_HZ);
-    return Timestamp(sec, subsec);
-#  endif
+    t._t.sec = jiffies / CLICK_HZ;
+    t._t.subsec = (jiffies - t._t.sec * CLICK_HZ) * (subsec_per_sec / CLICK_HZ);
 # endif
+    return t;
+}
+
+inline Timestamp
+Timestamp::make_jiffies(click_jiffies_difference_t jiffies)
+{
+    // Not very precise when CLICK_HZ doesn't evenly divide subsec_per_sec.
+    Timestamp t = Timestamp::uninitialized_t();
+# if TIMESTAMP_REP_FLAT64
+    t._t.x = (int64_t) jiffies * (subsec_per_sec / CLICK_HZ);
+# else
+    if (jiffies < 0)
+	t._t.sec = -((-jiffies - 1) / CLICK_HZ) - 1;
+    else
+	t._t.sec = jiffies / CLICK_HZ;
+    t._t.subsec = (jiffies - t._t.sec * CLICK_HZ) * (subsec_per_sec / CLICK_HZ);
+# endif
+    return t;
 }
 #endif
 
