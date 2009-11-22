@@ -482,11 +482,11 @@ class Timestamp { public:
 #else
 	// This arithmetic is about twice as fast on my laptop as the
 	// alternative "div = a / b;
-	//		mod = a - (value_type) div * b;
-	//		if (mod < 0) div--, mod += b;",
+	//		rem = a - (value_type) div * b;
+	//		if (rem < 0) div--, rem += b;",
 	// and 3-4x faster than "div = a / b;
-	//			 mod = a % b;
-	//			 if (mod < 0) div--, mod += b;".
+	//			 rem = a % b;
+	//			 if (rem < 0) div--, rem += b;".
 	if (unlikely(a < 0))
 	    div = -((-a - 1) / b) - 1;
 	else
