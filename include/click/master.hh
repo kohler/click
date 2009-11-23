@@ -280,12 +280,18 @@ inline Timestamp
 Master::next_timer_expiry_adjusted() const
 {
     Timestamp e = _timer_expiry;
+#if CLICK_USERLEVEL
+    if (likely(!Timestamp::warp_jumping())) {
+#endif
     if (_timer_stride >= 8 || e.sec() == 0)
 	/* do nothing */;
     else if (_timer_stride >= 4)
 	e -= Timer::adjustment();
     else
 	e -= Timer::adjustment() + Timer::adjustment();
+#if CLICK_USERLEVEL
+    }
+#endif
     return e;
 }
 

@@ -742,8 +742,10 @@ Master::run_selects_kqueue(bool more_tasks)
 	Timestamp t = next_timer_expiry_adjusted();
 	if (t.sec() == 0)
 	    wait_ptr = 0;
+	else if (unlikely(Timestamp::warp_jumping()))
+	    Timestamp::warp_jump(t);
 	else if ((t -= Timestamp::now(), t.sec() >= 0))
-	    wait = t.timespec();
+	    wait = t.warp_real_delay().timespec();
     }
 # endif
 
@@ -807,7 +809,10 @@ Master::run_selects_poll(bool more_tasks)
 	Timestamp t = next_timer_expiry_adjusted();
 	if (t.sec() == 0)
 	    timeout = -1;
+	else if (unlikely(Timestamp::warp_jumping()))
+	    Timestamp::warp_jump(t);
 	else if ((t -= Timestamp::now(), t.sec() >= 0)) {
+	    t = t.warp_real_delay();
 	    if (t.sec() >= INT_MAX / 1000)
 		timeout = INT_MAX - 1000;
 	    else
@@ -882,8 +887,10 @@ Master::run_selects_select(bool more_tasks)
 	Timestamp t = next_timer_expiry_adjusted();
 	if (t.sec() == 0)
 	    wait_ptr = 0;
+	else if (unlikely(Timestamp::warp_jumping()))
+	    Timestamp::warp_jump(t);
 	else if ((t -= Timestamp::now(), t.sec() >= 0))
-	    wait = t.timeval();
+	    wait = t.warp_real_delay().timeval();
     }
 # endif /* CLICK_NS */
 
@@ -955,8 +962,10 @@ Master::run_selects(bool more_tasks)
 	    Timestamp t = next_timer_expiry_adjusted();
 	    if (t.sec() == 0)
 		wait_ptr = 0;
+	    else if (unlikely(Timestamp::warp_jumping()))
+		Timestamp::warp_jump(t);
 	    else if ((t -= Timestamp::now(), t.sec() >= 0))
-		wait = t.timeval();
+		wait = t.warp_real_delay().timeval();
 	    ignore_result(select(0, (fd_set *) 0, (fd_set *) 0, (fd_set *) 0,
 				 wait_ptr));
 	}

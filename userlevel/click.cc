@@ -7,7 +7,7 @@
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
  * Copyright (c) 2004-2006 Regents of the University of California
- * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2008-2009 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -68,26 +68,29 @@ CLICK_USING_DECLS
 #define ALLOW_RECONFIG_OPT	314
 #define EXIT_HANDLER_OPT	315
 #define THREADS_OPT		316
+#define SIMTIME_OPT		317
 
 static const Clp_Option options[] = {
-  { "allow-reconfigure", 'R', ALLOW_RECONFIG_OPT, 0, Clp_Negate },
-  { "clickpath", 'C', CLICKPATH_OPT, Clp_ValString, 0 },
-  { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
-  { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
-  { "handler", 'h', HANDLER_OPT, Clp_ValString, 0 },
-  { "help", 0, HELP_OPT, 0, 0 },
-  { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
-  { "port", 'p', PORT_OPT, Clp_ValString, 0 },
-  { "quit", 'q', QUIT_OPT, 0, 0 },
+    { "allow-reconfigure", 'R', ALLOW_RECONFIG_OPT, 0, Clp_Negate },
+    { "clickpath", 'C', CLICKPATH_OPT, Clp_ValString, 0 },
+    { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
+    { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
+    { "handler", 'h', HANDLER_OPT, Clp_ValString, 0 },
+    { "help", 0, HELP_OPT, 0, 0 },
+    { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
+    { "port", 'p', PORT_OPT, Clp_ValString, 0 },
+    { "quit", 'q', QUIT_OPT, 0, 0 },
+    { "simtime", 0, SIMTIME_OPT, Clp_ValDouble, Clp_Optional },
+    { "simulation-time", 0, SIMTIME_OPT, Clp_ValDouble, Clp_Optional },
 #if HAVE_MULTITHREAD
-  { "threads", 0, THREADS_OPT, Clp_ValInt, 0 },
+    { "threads", 0, THREADS_OPT, Clp_ValInt, 0 },
 #endif
-  { "time", 't', TIME_OPT, 0, 0 },
-  { "unix-socket", 'u', UNIX_SOCKET_OPT, Clp_ValString, 0 },
-  { "version", 'v', VERSION_OPT, 0, 0 },
-  { "warnings", 0, WARNINGS_OPT, 0, Clp_Negate },
-  { "exit-handler", 'x', EXIT_HANDLER_OPT, Clp_ValString, 0 },
-  { 0, 'w', NO_WARNINGS_OPT, 0, Clp_Negate },
+    { "time", 't', TIME_OPT, 0, 0 },
+    { "unix-socket", 'u', UNIX_SOCKET_OPT, Clp_ValString, 0 },
+    { "version", 'v', VERSION_OPT, 0, 0 },
+    { "warnings", 0, WARNINGS_OPT, 0, Clp_Negate },
+    { "exit-handler", 'x', EXIT_HANDLER_OPT, Clp_ValString, 0 },
+    { 0, 'w', NO_WARNINGS_OPT, 0, Clp_Negate },
 };
 
 static const char *program_name;
@@ -126,6 +129,7 @@ Options:\n\
   -q, --quit                    Do not run driver.\n\
   -t, --time                    Print information on how long driver took.\n\
   -w, --no-warnings             Do not print warnings.\n\
+      --simtime                 Run in simulation time.\n\
   -C, --clickpath PATH          Use PATH for CLICKPATH.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
@@ -340,6 +344,37 @@ hotconfig_handler(const String &text, Element *, void *, ErrorHandler *errh)
 }
 
 
+// timewarping
+
+static String
+timewarp_read_handler(Element *, void *)
+{
+    if (Timestamp::warp_class() == Timestamp::warp_simulation)
+	return "simulation";
+    else if (Timestamp::warp_class() == Timestamp::warp_nowait)
+	return "nowait";
+    else
+	return String(Timestamp::warp_speed());
+}
+
+static int
+timewarp_write_handler(const String &text, Element *, void *, ErrorHandler *errh)
+{
+    if (text == "nowait")
+	Timestamp::warp_set_class(Timestamp::warp_nowait);
+    else {
+	double factor;
+	if (!cp_double(text, &factor))
+	    return errh->error("expected double");
+	else if (factor <= 0)
+	    return errh->error("timefactor must be > 0");
+	Timestamp::warp_set_class(Timestamp::warp_linear);
+	Timestamp::warp_set_speed(factor);
+    }
+    return 0;
+}
+
+
 // main
 
 static void
@@ -477,6 +512,13 @@ main(int argc, char **argv)
       break;
 #endif
 
+    case SIMTIME_OPT: {
+	Timestamp::warp_set_class(Timestamp::warp_simulation);
+	Timestamp simbegin(clp->have_val ? clp->val.d : 1000000000);
+	Timestamp::warp_set_now(simbegin);
+	break;
+    }
+
      case CLICKPATH_OPT:
       set_clickpath(clp->vstr);
       break;
@@ -491,6 +533,7 @@ main(int argc, char **argv)
       printf("Copyright (C) 1999-2001 Massachusetts Institute of Technology\n\
 Copyright (C) 2001-2003 International Computer Science Institute\n\
 Copyright (C) 2004-2007 Regents of the University of California\n\
+Copyright (C) 2008-2009 Meraki, Inc.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -514,6 +557,9 @@ particular purpose.\n");
   // provide hotconfig handler if asked
   if (allow_reconfigure)
       Router::add_write_handler(0, "hotconfig", hotconfig_handler, 0, Handler::RAW | Handler::NONEXCLUSIVE);
+  Router::add_read_handler(0, "timewarp", timewarp_read_handler, 0);
+  if (Timestamp::warp_class() != Timestamp::warp_simulation)
+      Router::add_write_handler(0, "timewarp", timewarp_write_handler, 0);
 
   // parse configuration
   router = parse_configuration(router_file, file_is_expr, false, errh);

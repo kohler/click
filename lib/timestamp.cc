@@ -56,6 +56,93 @@ CLICK_DECLS
  */
 
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+Timestamp::warp_class_type Timestamp::_warp_class = Timestamp::warp_none;
+Timestamp Timestamp::_warp_flat_offset = Timestamp(0, 0);
+double Timestamp::_warp_speed = 1.0;
+double Timestamp::_warp_offset = 0.0;
+
+void
+Timestamp::warp(bool from_now)
+{
+    if (_warp_class == warp_simulation) {
+	*this = _warp_flat_offset;
+	if (from_now) {
+# if TIMESTAMP_MATH_FLAT64
+	    ++_warp_flat_offset._t.x;
+# else
+	    ++_warp_flat_offset._t.subsec;
+# endif
+	    _warp_flat_offset.add_fix();
+	}
+    } else if (_warp_speed == 1.0)
+	*this += _warp_flat_offset;
+    else
+	*this = Timestamp((doubleval() + _warp_offset) * _warp_speed);
+}
+
+void
+Timestamp::warp_set_class(warp_class_type w)
+{
+    if (w == warp_none) {
+	_warp_flat_offset.assign(0, 0);
+	_warp_speed = 1.0;
+	_warp_offset = 0.0;
+    }
+    _warp_class = w;
+}
+
+void
+Timestamp::warp_adjust(const Timestamp &t_raw, const Timestamp &t_warped)
+{
+    if (_warp_class == warp_simulation)
+	_warp_flat_offset = t_warped;
+    else if (_warp_class == warp_nowait)
+	_warp_flat_offset = t_warped - t_raw;
+    else if (t_warped == t_raw && _warp_speed == 1.0)
+	_warp_class = warp_none;
+    else if (_warp_speed == 1.0) {
+	_warp_class = warp_linear;
+	_warp_flat_offset = t_warped - t_raw;
+    } else
+	_warp_offset = t_warped.doubleval() / _warp_speed - t_raw.doubleval();
+}
+
+void
+Timestamp::warp_set_now(const Timestamp &t)
+{
+    Timestamp now_raw = Timestamp::uninitialized_t();
+    now_raw.assign_now(true);
+    warp_adjust(now_raw, t);
+}
+
+void
+Timestamp::warp_set_speed(double f)
+{
+    assert(f > 0);
+    Timestamp now_raw = Timestamp::uninitialized_t();
+    now_raw.assign_now(true);
+    Timestamp now_adj = now_raw.warped();
+    _warp_speed = f;
+    if (_warp_class < warp_nowait)
+	warp_adjust(now_raw, now_adj);
+}
+
+void
+Timestamp::warp_jump(const Timestamp &expiry)
+{
+    if (_warp_class == warp_simulation) {
+	if (_warp_flat_offset < expiry)
+	    _warp_flat_offset = expiry;
+    } else if (_warp_class == warp_nowait) {
+	Timestamp now_raw = Timestamp::uninitialized_t();
+	now_raw.assign_now(true);
+	if (now_raw.warped() < expiry)
+	    warp_adjust(now_raw, expiry);
+    }
+}
+#endif
+
+#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
 /** @brief Set this timestamp to a timeval obtained by calling ioctl.
     @param fd file descriptor
     @param ioctl_selector ioctl number

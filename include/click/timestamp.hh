@@ -441,6 +441,93 @@ class Timestamp { public:
 #endif
     };
 
+#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+    /** @name Timewarping */
+    //@{
+    enum warp_class_type {
+	warp_none = 0,		///< Run in real time (the default).
+	warp_linear = 1,	///< Run in speeded-up or slowed-down real time.
+	warp_nowait = 2,	///< Run in speeded-up or slowed-down real time,
+				//   but don't wait for timers.
+	warp_simulation = 3	///< Run in simulation time.
+    };
+
+
+    /** @brief Return the active timewarp class. */
+    static inline int warp_class() {
+	return _warp_class;
+    }
+
+    /** @brief Return the timewarp speed.
+     *
+     * Timewarp speeed measures how much faster Timestamp::now() appears to
+     * move compared with wall-clock time.  Only meaningful if warp_class() is
+     * #warp_linear or #warp_nowait. */
+    static inline double warp_speed() {
+	return _warp_speed;
+    }
+
+
+    /** @brief Set the timewarp class to @a w.
+     *
+     * The timewarp classes are as follows:
+     *
+     * <dl>
+     * <dt>#warp_none</dt>
+     * <dd>Click time corresponds to real time.  This is the default.
+     * warp_set_class(#warp_none) also resets the timewarp speed to 1.</dd>
+     *
+     * <dt>#warp_linear</dt>
+     * <dd>Click time is a speeded-up or slowed-down version of real time.
+     * The speedup factor is determined by warp_set_speed().</dd>
+     *
+     * <dt>#warp_nowait</dt>
+     * <dd>Like #warp_linear, but the Click driver never waits for a timer to
+     * expire.  Instead, time appears to "jump" ahead to the next expiration
+     * time.</dd>
+     *
+     * <dt>#warp_simulation</dt>
+     * <dd>Click time is completely divorced from real time.  Every call to
+     * Timestamp::now() appears to increase the current time by
+     * Timestamp::epsilon() and the Click driver never waits for a timer to
+     * expire.  This mode effectively turns Click into an event-driven
+     * simulator.</dd>
+     * </dl>
+     */
+    static void warp_set_class(warp_class_type w);
+
+    /** @brief Set the timewarp speed to @a s.
+     * @pre @a s \> 0
+     *
+     * If @a s \> 1, then time as measured by Timestamp::now() will appear to
+     * move a factor of @a s faster than real time: for instance, a Timer set
+     * using Timer::schedule_after_s(2) from now will fire after just 1 second
+     * of wall-clock time.
+     *
+     * May change warp_class() from #warp_none to #warp_linear. */
+    static void warp_set_speed(double s = 1.0);
+
+    /** @brief Shift time so that Timestamp::now() would return @a t.
+     *
+     * May change warp_class() from #warp_none to #warp_linear. */
+    static void warp_set_now(const Timestamp &t);
+
+
+    /** @brief Return the wall-clock time corresponding to a delay. */
+    inline Timestamp warp_real_delay() const;
+
+    /** @brief Return true iff time skips ahead around timer expirations. */
+    static inline bool warp_jumping() {
+	return _warp_class >= warp_nowait;
+    }
+
+    /** @brief Move Click time past a timer expiration.
+     *
+     * Does nothing if warp_jumping() is false or @a expiry is in the past. */
+    static void warp_jump(const Timestamp &expiry);
+    //@}
+#endif
+
   private:
 
     rep_t _t;
@@ -507,6 +594,24 @@ class Timestamp { public:
 #endif
     }
 
+    inline void assign_now(bool raw);
+
+#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+    static warp_class_type _warp_class;
+    static Timestamp _warp_flat_offset;
+    static double _warp_speed;
+    static double _warp_offset;
+
+    static inline void warp_adjust(const Timestamp &t_raw, const Timestamp &t_warped);
+    inline Timestamp warped() const {
+	Timestamp t = *this;
+	if (_warp_class)
+	    t.warp(false);
+	return t;
+    }
+    void warp(bool from_now);
+#endif
+
     friend inline bool operator==(const Timestamp &a, const Timestamp &b);
     friend inline bool operator<(const Timestamp &a, const Timestamp &b);
     friend inline Timestamp operator-(const Timestamp &b);
@@ -546,7 +651,7 @@ Timestamp::operator unspecified_bool_type() const
 }
 
 inline void
-Timestamp::assign_now()
+Timestamp::assign_now(bool raw)
 {
 #if TIMESTAMP_NANOSEC && (CLICK_LINUXMODULE || CLICK_BSDMODULE || HAVE_USE_CLOCK_GETTIME)
     // nanosecond precision
@@ -590,19 +695,33 @@ Timestamp::assign_now()
     assign(tv.tv_sec, usec_to_subsec(tv.tv_usec));
 # endif
 #endif
+
+    // timewarping
+#if CLICK_USERLEVEL
+    if (!raw && _warp_class)
+	warp(true);
+#else
+    (void) raw;
+#endif
+}
+
+inline void
+Timestamp::assign_now()
+{
+    assign_now(false);
 }
 
 inline void
 Timestamp::set_now()
 {
-    assign_now();
+    assign_now(false);
 }
 
 inline Timestamp
 Timestamp::now()
 {
     Timestamp t = Timestamp::uninitialized_t();
-    t.assign_now();
+    t.assign_now(false);
     return t;
 }
 
@@ -1090,6 +1209,17 @@ operator/(const Timestamp &a, const Timestamp &b)
 #endif /* HAVE_FLOAT_TYPES */
 
 StringAccum& operator<<(StringAccum&, const Timestamp&);
+
+#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+inline Timestamp
+Timestamp::warp_real_delay() const
+{
+    if (likely(!_warp_class) || _warp_speed == 1.0)
+	return *this;
+    else
+	return *this / _warp_speed;
+}
+#endif
 
 CLICK_ENDDECLS
 #endif
