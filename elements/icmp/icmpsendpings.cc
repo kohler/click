@@ -143,7 +143,7 @@ ICMPPingSource::make_packet()
 
     q->set_dst_ip_anno(IPAddress(_dst));
     q->set_ip_header(nip, sizeof(click_ip));
-    q->timestamp_anno().set_now();
+    q->timestamp_anno().assign_now();
 
     if (_receiver)
 	_receiver->send_timestamp[icp->icmp_sequence] = q->timestamp_anno();

@@ -38,16 +38,16 @@ CLICK_DECLS
  Timestamp class.  Timestamps may be added, subtracted, and compared using the
  usual operators.
 
- Timestamp measures time in seconds using a fixed-point representation, like
- "struct timeval" and "struct timespec".  Seconds and "subseconds", or
- fractions of a second, are stored in separate integers.  Timestamps have
- either microsecond or nanosecond precision, depending on how Click is
- configured.  Thus, one subsecond might equal either one microsecond or one
- nanosecond.  The subsec_per_sec enumeration constant equals the number of
- subseconds in a second; the timestamp's subsec() value should always lie
- between 0 and subsec_per_sec - 1.  (The <tt>--enable-nanotimestamp</tt>
- configuration option enables nanosecond-precision timestamps at user level;
- kernel modules always use microsecond-precision timestamps.)
+ Timestamp measures time in seconds, and provides access to seconds and
+ "subseconds", or fractions of a second.  Click can be configured with either
+ microsecond or nanosecond precision.  Thus, one subsecond might equal either
+ one microsecond or one nanosecond.  The subsec_per_sec enumeration constant
+ equals the number of subseconds in a second; the timestamp's subsec() value
+ should always lie between 0 and subsec_per_sec - 1.  (The
+ <tt>--enable-nanotimestamp</tt> configuration option enables
+ nanosecond-precision timestamps at user level; kernel modules use the
+ kernel's native timestamp precision, which in later versions of Linux is
+ nanosecond-precision.)
 
  A Timestamp with sec() < 0 is negative.  Note that subsec() is always
  nonnegative.  A Timestamp's value always equals (sec() + subsec() / (double)
@@ -139,7 +139,7 @@ operator<<(StringAccum &sa, const Timestamp& ts)
 
     Returns a string formatted like "10.000000", with at least six subsecond
     digits.  (Nanosecond-precision timestamps where the number of nanoseconds
-    is not evenly divisible by 1000 have nine subsecond digits.) */
+    is not evenly divisible by 1000 are given nine subsecond digits.) */
 String
 Timestamp::unparse() const
 {

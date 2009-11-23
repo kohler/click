@@ -93,7 +93,7 @@ public:
     BufferedPacket(Packet *p) {
       assert(p);
       _p=p;
-      _time_added.set_now();
+      _time_added.assign_now();
     }
     void check() const { assert(_p); }
   };
@@ -238,7 +238,7 @@ public:
       _times_issued = 1;
       _backoff_interval = DSR_RREQ_DELAY1;
 
-      _time_last_issued.set_now();
+      _time_last_issued.assign_now();
 
       check();
     }

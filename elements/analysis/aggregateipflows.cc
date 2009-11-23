@@ -481,7 +481,7 @@ AggregateIPFlows::handle_packet(Packet *p)
 	    click_chatter("%{element}: warning: packet received without timestamp", this);
 	    _timestamp_warning = true;
 	}
-	p->timestamp_anno().set_now();
+	p->timestamp_anno().assign_now();
     }
 
     // extract encapsulated ICMP header if appropriate

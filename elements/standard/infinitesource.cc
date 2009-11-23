@@ -110,7 +110,7 @@ InfiniteSource::run_task(Task *)
 	n = (_count > _limit ? 0 : _limit - _count);
     for (int i = 0; i < n; i++) {
 	Packet *p = _packet->clone();
-	p->timestamp_anno().set_now();
+	p->timestamp_anno().assign_now();
 	output(0).push(p);
     }
     _count += n;
@@ -137,7 +137,7 @@ InfiniteSource::pull(int)
     }
     _count++;
     Packet *p = _packet->clone();
-    p->timestamp_anno().set_now();
+    p->timestamp_anno().assign_now();
     return p;
 }
 

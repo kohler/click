@@ -130,7 +130,7 @@ AggregateIPAddrPair::simple_action(Packet *p)
 		    click_chatter("%{element}: warning: packet received without timestamp", this);
 		    _timestamp_warning = true;
 		}
-		p->timestamp_anno().set_now();
+		p->timestamp_anno().assign_now();
 	    }
 
 	    if (finfo->aggregate && SEC_OLDER(finfo->last_timestamp.sec(), p->timestamp_anno().sec() - _timeout)) {

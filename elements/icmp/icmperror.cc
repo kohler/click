@@ -277,7 +277,7 @@ ICMPError::simple_action(Packet *p)
   // set annotations
   q->set_dst_ip_anno(IPAddress(nip->ip_dst));
   SET_FIX_IP_SRC_ANNO(q, 1);
-  q->timestamp_anno().set_now();
+  q->timestamp_anno().assign_now();
 
  out:
   p->kill();

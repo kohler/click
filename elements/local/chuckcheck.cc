@@ -40,7 +40,7 @@ void
 ChuckCheck::count(Packet *p)
 {
     Stat &s = _info[_tail];
-    s.time.set_now();
+    s.time.assign_now();
     s.saddr = p->ip_header()->ip_src.s_addr;
     _tail = (_tail + 1) % BUCKETS;
     if (_tail == _head) {

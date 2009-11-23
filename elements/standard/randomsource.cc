@@ -68,7 +68,7 @@ RandomSource::make_packet()
     for( ; i < _length; i++)
 	*(d + i) = click_random();
 
-    p->timestamp_anno().set_now();
+    p->timestamp_anno().assign_now();
     return p;
 }
 

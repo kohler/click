@@ -208,7 +208,7 @@ FromHost::selected(int fd)
 	const click_ip *ip = reinterpret_cast<const click_ip *>(p->data() + sizeof(click_ether));
 	p->set_dst_ip_anno(IPAddress(ip->ip_dst));
 	p->set_ip_header(ip, ip->ip_hl << 2);
-	p->timestamp_anno().set_now();
+	p->timestamp_anno().assign_now();
 	output(0).push(p);
     } else {
 	p->kill();

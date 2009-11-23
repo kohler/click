@@ -184,7 +184,7 @@ BeaconScanner::simple_action(Packet *p)
   ap->_basic_rates.clear();
   ap->_rates.clear();
   Vector<int> all_rates;
-  ap->_last_rx.set_now();
+  ap->_last_rx.assign_now();
   if (rates_l) {
     for (int x = 0; x < WIFI_MIN((int)rates_l[1], WIFI_RATE_SIZE); x++) {
       uint8_t rate = rates_l[x + 2];

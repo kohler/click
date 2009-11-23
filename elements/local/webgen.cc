@@ -469,7 +469,7 @@ WebGen::CB::CB ()
   rexmit_next = NULL;
   rexmit_prev = NULL;
 
-  last_send.set_now();
+  last_send.assign_now();
 }
 
 void
@@ -537,7 +537,7 @@ WebGen::CB::rexmit_unlink ()
 void
 WebGen::CB::rexmit_update (CB *tail)
 {
-  last_send.set_now();
+  last_send.assign_now();
 
   rexmit_unlink ();
 

@@ -403,7 +403,7 @@ Socket::selected(int fd)
 
 	// set timestamp
 	if (_timestamp)
-	  _rq->timestamp_anno().set_now();
+	  _rq->timestamp_anno().assign_now();
 
 	// push packet
 	output(0).push(_rq);

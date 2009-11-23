@@ -74,7 +74,7 @@ DelayShaper::pull(int)
     // read a packet
     if (!_p && (_p = input(0).pull())) {
 	if (!_p->timestamp_anno().sec()) // get timestamp if not set
-	    _p->timestamp_anno().set_now();
+	    _p->timestamp_anno().assign_now();
 	_p->timestamp_anno() += _delay;
     }
 

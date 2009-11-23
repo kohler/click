@@ -324,6 +324,10 @@ class Timestamp { public:
 	return t;
     }
 
+    /** @brief Return a timestamp representing the current time.
+     *
+     * The current time is measured in seconds since January 1, 1970 GMT.
+     * @sa assign_now() */
     static inline Timestamp now();
     /** @brief Return the smallest nonzero timestamp, Timestamp(0, 1). */
     static inline Timestamp epsilon() {
@@ -360,7 +364,15 @@ class Timestamp { public:
      * @deprecated Use assign_nsec() instead. */
     inline void set_nsec(seconds_type sec, uint32_t nsec) CLICK_DEPRECATED;
 
-    inline void set_now();
+    /** @brief Set this timestamp to the current time.
+     *
+     * The current time is measured in seconds since January 1, 1970 GMT.
+     * Returns the most precise timestamp available.
+     * @sa now() */
+    inline void assign_now();
+    /** @brief Deprecated synonym for assign_now().
+     * @deprecated Use Timestamp::assign_now() instead. */
+    inline void set_now() CLICK_DEPRECATED;
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
     int set_timeval_ioctl(int fd, int ioctl_selector);
 #endif
@@ -533,13 +545,8 @@ Timestamp::operator unspecified_bool_type() const
 #endif
 }
 
-/** @brief Set this timestamp to the current time.
-
- The current time is measured in seconds since January 1, 1970 GMT.
- Returns the most precise timestamp available.
- @sa now() */
 inline void
-Timestamp::set_now()
+Timestamp::assign_now()
 {
 #if TIMESTAMP_NANOSEC && (CLICK_LINUXMODULE || CLICK_BSDMODULE || HAVE_USE_CLOCK_GETTIME)
     // nanosecond precision
@@ -585,15 +592,17 @@ Timestamp::set_now()
 #endif
 }
 
-/** @brief Return a timestamp representing the current time.
+inline void
+Timestamp::set_now()
+{
+    assign_now();
+}
 
- The current time is measured in seconds since January 1, 1970 GMT.
- @sa set_now() */
 inline Timestamp
 Timestamp::now()
 {
     Timestamp t = Timestamp::uninitialized_t();
-    t.set_now();
+    t.assign_now();
     return t;
 }
 

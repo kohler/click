@@ -150,7 +150,7 @@ protected:
       _metric = metric;
       _seq = seq;
       _age = age;
-      _last_updated.set_now();
+      _last_updated.assign_now();
     }
 
     LinkInfo(const LinkInfo &p) :
@@ -171,7 +171,7 @@ protected:
       _metric = metric;
       _seq = seq;
       _age = age;
-      _last_updated.set_now();
+      _last_updated.assign_now();
     }
 
   };

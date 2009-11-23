@@ -334,7 +334,7 @@ RouterThread::run_tasks(int ntasks)
 {
 #if CLICK_DEBUG_SCHEDULING
     _driver_task_epoch++;
-    _task_epoch_time[_driver_task_epoch % TASK_EPOCH_BUFSIZ].set_now();
+    _task_epoch_time[_driver_task_epoch % TASK_EPOCH_BUFSIZ].assign_now();
     if ((_driver_task_epoch % TASK_EPOCH_BUFSIZ) == 0)
 	_task_epoch_first = _driver_task_epoch;
 #endif
@@ -484,7 +484,7 @@ RouterThread::driver()
     client_set_tickets(C_CLICK, DRIVER_TOTAL_TICKETS / 2);
     client_set_tickets(C_KERNEL, DRIVER_TOTAL_TICKETS / 2);
     _cur_click_share = Task::MAX_UTILIZATION / 2;
-    restride_t_before.set_now();
+    restride_t_before.assign_now();
 #endif
 
     SET_STATE(S_RUNNING);
@@ -546,7 +546,7 @@ RouterThread::driver()
     splx(s);
 # endif
 #else /* HAVE_ADAPTIVE_SCHEDULER */
-    t_before.set_now();
+    t_before.assign_now();
     int client;
     if (PASS_GT(_clients[C_KERNEL].pass, _clients[C_CLICK].pass)) {
 	client = C_CLICK;
@@ -555,7 +555,7 @@ RouterThread::driver()
 	client = C_KERNEL;
 	run_os();
     }
-    t_now.set_now();
+    t_now.assign_now();
     client_update_pass(client, t_before, t_now);
     check_restride(restride_t_before, t_now, restride_iter);
 #endif

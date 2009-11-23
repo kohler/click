@@ -143,7 +143,7 @@ BeaconTracker::trim()
 void
 BeaconTracker::reset()
 {
-  _start.set_now();
+  _start.assign_now();
   _beacons.clear();
 }
 

@@ -508,7 +508,7 @@ KernelTun::selected(int fd)
 	}
 
 	if (ok) {
-	    p->timestamp_anno().set_now();
+	    p->timestamp_anno().assign_now();
 	    output(0).push(p);
 	} else
 	    checked_output_push(1, p);

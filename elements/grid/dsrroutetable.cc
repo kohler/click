@@ -1819,7 +1819,7 @@ DSRRouteTable::set_blacklist(IPAddress ip, int s)
   _blacklist.remove(ip);
   if (s != DSR_BLACKLIST_NOENTRY) {
     BlacklistEntry e;
-    e._time_updated.set_now();
+    e._time_updated.assign_now();
     e._status = s;
     _blacklist.insert(ip, e);
   }

@@ -274,7 +274,7 @@ PollDevice::run_task(Task *)
 
 # ifndef CLICK_WARP9
     if (timestamp())
-	p->timestamp_anno().set_now();
+	p->timestamp_anno().assign_now();
 # endif
 
     _npackets++;

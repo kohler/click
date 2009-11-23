@@ -80,7 +80,7 @@ TimedSource::run_timer(Timer *)
 	return;
     if (_limit < 0 || _count < _limit) {
 	Packet *p = _packet->clone();
-	p->timestamp_anno().set_now();
+	p->timestamp_anno().assign_now();
 	output(0).push(p);
 	_count++;
 	_timer.reschedule_after(_interval);

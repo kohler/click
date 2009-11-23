@@ -486,7 +486,7 @@ HashTableTest::initialize(ErrorHandler *errh)
     Timestamp ts0, ts1;
     if (getrusage(RUSAGE_SELF, &ru0) < 0)
 	return errh->error("rusage: %s", strerror(errno));
-    ts0.set_now();
+    ts0.assign_now();
 
     for (int i = 0; i < 100; i++) {
 	map.clear();
@@ -509,7 +509,7 @@ HashTableTest::initialize(ErrorHandler *errh)
 
     if (getrusage(RUSAGE_SELF, &ru1) < 0)
 	return errh->error("rusage: %s", strerror(errno));
-    ts1.set_now();
+    ts1.assign_now();
 
     Timestamp ru_delta = Timestamp(ru1.ru_utime) - Timestamp(ru0.ru_utime);
     ts1 -= ts0;

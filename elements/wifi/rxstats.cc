@@ -57,7 +57,7 @@ RXStats::simple_action(Packet *p_in)
   nfo->_packets++;
   nfo->_sum_signal += ceh->rssi;
   nfo->_sum_noise += ceh->silence;
-  nfo->_last_received.set_now();
+  nfo->_last_received.assign_now();
 
   return p_in;
 }

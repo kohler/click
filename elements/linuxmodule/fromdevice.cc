@@ -267,7 +267,7 @@ FromDevice::got_skb(struct sk_buff *skb)
 	_queue[_tail] = p; /* hand it to run_task */
 
 #if CLICK_DEBUG_SCHEDULING
-	_schinfo[_tail].enq_time.set_now();
+	_schinfo[_tail].enq_time.assign_now();
 	RouterThread *rt = _task.thread();
 	_schinfo[_tail].enq_state = rt->thread_state();
 	int enq_process_asleep = rt->sleeper() && rt->sleeper()->state != TASK_RUNNING;

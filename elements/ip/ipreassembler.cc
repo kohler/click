@@ -231,7 +231,7 @@ IPReassembler::simple_action(Packet *p)
     // reap if necessary
     int now = p->timestamp_anno().sec();
     if (!now) {
-	p->timestamp_anno().set_now();
+	p->timestamp_anno().assign_now();
 	now = p->timestamp_anno().sec();
     }
     if (now >= _reap_time)

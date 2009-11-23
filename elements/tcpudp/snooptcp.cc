@@ -202,7 +202,7 @@ SnoopTCP::PCB::s_data(Packet *p, const click_tcp *tcph, int datalen)
     _s_cache[entry].sender_rxmit = 1;
   else
     _s_cache[entry].sender_rxmit = 0;
-  _s_cache[entry].snd_time.set_now();
+  _s_cache[entry].snd_time.assign_now();
   DEBUG_CHATTER("\t%d at %d\n", seq, entry);
 
   // XXX if (!in_sequence) snoop_untimeout();
