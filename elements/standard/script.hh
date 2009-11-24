@@ -59,6 +59,11 @@ Initializes the script variable $VAR to TEXT.  The assignment happens exactly
 once, when the Script element is initialized.  Later the instruction has no
 effect.
 
+=item 'C<export> VAR [TEXT]', 'C<exportq> VAR [TEXT]'
+
+Like C<init>, but also makes the value of script variable VAR available via a
+read handler named VAR.
+
 =item 'C<print> [>FILE | >>FILE] [TEXT | HANDLER]'
 
 Prints text, or the result of calling a read handler, followed by a newline.
@@ -392,7 +397,8 @@ class Script : public Element { public:
     enum Insn {
 	INSN_INITIAL, INSN_WAIT_STEP, INSN_WAIT_TIME, // order required
 	INSN_PRINT, INSN_PRINTN, INSN_READ, INSN_READQ, INSN_WRITE, INSN_WRITEQ,
-	INSN_SET, insn_setq, INSN_INIT, insn_initq, INSN_SAVE, INSN_APPEND,
+	INSN_SET, insn_setq, insn_init, insn_initq, insn_export, insn_exportq,
+	INSN_SAVE, INSN_APPEND,
 	INSN_STOP, INSN_END, INSN_EXIT, INSN_LABEL, INSN_GOTO, INSN_RETURN,
 	insn_returnq, insn_error, insn_errorq,
 	INSN_WAIT_PSEUDO, INSN_LOOP_PSEUDO
@@ -443,7 +449,7 @@ class Script : public Element { public:
 	AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
 	AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat,
 	ar_and, ar_or, ar_nand, ar_nor, ar_now, ar_if, ar_in,
-	ar_readable, ar_writable
+	ar_readable, ar_writable, ar_readexport
     };
 
     void add_insn(int, int, int = 0, const String & = String());

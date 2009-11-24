@@ -39,8 +39,10 @@ static const StaticNameDB::Entry instruction_entries[] = {
     { "error", Script::insn_error },
     { "errorq", Script::insn_errorq },
     { "exit", Script::INSN_EXIT },
+    { "export", Script::insn_export },
+    { "exportq", Script::insn_exportq },
     { "goto", Script::INSN_GOTO },
-    { "init", Script::INSN_INIT },
+    { "init", Script::insn_init },
     { "initq", Script::insn_initq },
     { "label", Script::INSN_LABEL },
     { "loop", Script::INSN_LOOP_PSEUDO },
@@ -244,8 +246,10 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	case insn_returnq:
 	    conf[i] = "_ " + conf[i];
 	    /* fall through */
-	case INSN_INIT:
+	case insn_init:
 	case insn_initq:
+	case insn_export:
+	case insn_exportq:
 	case INSN_SET:
 	case insn_setq: {
 	    String word = cp_shift_spacevec(conf[i]);
@@ -316,9 +320,9 @@ Script::initialize(ErrorHandler *errh)
     expander.script = this;
     expander.errh = errh;
     for (int i = 0; i < _insns.size(); i++)
-	if (_insns[i] == INSN_INIT)
+	if (_insns[i] == insn_init || _insns[i] == insn_export)
 	    _vars[_args[i] + 1] = cp_expand(_args3[i], expander);
-	else if (_insns[i] == insn_initq)
+	else if (_insns[i] == insn_initq || _insns[i] == insn_exportq)
 	    _vars[_args[i] + 1] = cp_unquote(cp_expand(_args3[i], expander));
 
     int insn = _insns[_insn_pos];
@@ -1097,6 +1101,13 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	return 0;
     }
 
+    case ar_readexport: {
+	Script *scr = static_cast<Script *>(e);
+	int v = (intptr_t) h->user_data2();
+	str = scr->_vars[v + 1];
+	return 0;
+    }
+
     expected_two_numbers:
 	return errh->error("expected two numbers");
 
@@ -1150,6 +1161,9 @@ Script::add_handlers()
 #endif
     if (_type == type_proxy)
 	add_write_handler("*", star_write_handler, 0);
+    for (int i = 0; i < _insns.size(); ++i)
+	if (_insns[i] == insn_export || _insns[i] == insn_exportq)
+	    set_handler(_vars[_args[i]], Handler::OP_READ, arithmetic_handler, ar_readexport, _args[i]);
 }
 
 EXPORT_ELEMENT(Script)
