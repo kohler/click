@@ -149,11 +149,14 @@ Transfers control to the first instruction.
 
 End execution of this script.  In signal scripts, 'C<end>' causes the script
 to be reinstalled as a signal handler.  In packet scripts, 'C<end>' emits
-the packet on output 0.
+the packet on output 0.  An implicit 'C<end>' is executed if execution falls
+off the end of a script.
 
 =item 'C<exit>'
 
-End execution of this script.
+End execution of this script.  In signal scripts, 'C<exit>' will I<not>
+reinstall the script as a signal handler.  In packet scripts, 'C<exit>' will
+drop the packet.
 
 =item 'C<return> [VALUE]', 'C<returnq> [VALUE]'
 
