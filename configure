@@ -6023,7 +6023,7 @@ Can't find include/linux/skbuff.h in $linuxpath.
 Are you sure $linuxpath contains Linux kernel source?
 
 =========================================" "$LINENO" 5
-    fi
+	    fi
 
     linux_config=`find_linuxpath .config`
     if test -r "$linux_config"; then
@@ -6036,7 +6036,7 @@ Can't find .config in $linuxpath.
 Are you sure $linuxpath contains a Linux kernel build?
 
 =========================================" "$LINENO" 5
-    fi
+	    fi
 fi
 
 
@@ -6331,7 +6331,7 @@ $freebsd_srcdir/kern/vnode_if.src.  Are you sure $freebsd_srcdir
 and $freebsd_includedir contain FreeBSD kernel source?
 
 =========================================" "$LINENO" 5
-fi
+  fi
 
 
 
@@ -8504,7 +8504,7 @@ Can't find Linux System.map file $linux_system_map.
 (You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================" "$LINENO" 5
-    fi
+	    fi
 fi
 
 fi
@@ -8950,7 +8950,7 @@ Can't find Valgrind header file 'valgrind/memcheck.h'.
 Try again without '--enable-valgrind'.
 
 =========================================" "$LINENO" 5
-    fi
+	    fi
     $as_echo "#define HAVE_VALGRIND 1" >>confdefs.h
 
 fi
@@ -9298,7 +9298,7 @@ $as_echo "$as_me: WARNING:
 pcap.h and/or -lpcap not found; user-level driver can't steal packets.
 
 =========================================" >&2;}
-    fi
+	    fi
     DRIVERS="$DRIVERS userlevel"
     $as_echo "#define HAVE_USERLEVEL_DRIVER 1" >>confdefs.h
 
@@ -9464,8 +9464,8 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 	as_fn_error "
 =========================================
 
-You explicitly specified --with-proper, but I can't find the proper headers
-and/or libraries where you said they would be.  Run again supplying
+You explicitly specified --with-proper, but the proper headers and/or
+libraries are not where you said they would be.  Run again supplying
 --without-proper or --with-proper=PREFIX.
 
 =========================================" "$LINENO" 5
@@ -9561,9 +9561,9 @@ fi
 	as_fn_error "
 =========================================
 
-You explicitly specified --with-expat, but I can't find the expat headers
-and/or libraries where you said they would be.  Run again supplying
---without-expat or --with-expat=PREFIX.
+You explicitly specified --with-expat, but the expat headers and/or libraries
+are not where you said they would be.  Run again supplying --without-expat
+or --with-expat=PREFIX.
 
 =========================================" "$LINENO" 5
     fi
@@ -10384,7 +10384,7 @@ There are two common reasons for this error:
    for more detailed information on the error.
 
 =========================================" >&2;}
-    else
+	    else
 	as_fn_error "
 =========================================
 

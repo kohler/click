@@ -230,6 +230,7 @@ Can't find include/linux/skbuff.h in $linuxpath.
 Are you sure $linuxpath contains Linux kernel source?
 
 =========================================])
+	dnl ' fix syntax highlighting
     fi
 
     linux_config=`find_linuxpath .config`
@@ -243,6 +244,7 @@ Can't find .config in $linuxpath.
 Are you sure $linuxpath contains a Linux kernel build?
 
 =========================================])
+	dnl ' fix syntax highlighting
     fi
 fi
 
@@ -347,6 +349,7 @@ $freebsd_srcdir/kern/vnode_if.src.  Are you sure $freebsd_srcdir
 and $freebsd_includedir contain FreeBSD kernel source?
 
 =========================================])
+  dnl ' fix syntax highlighting
 fi
 
 AC_SUBST(freebsd_srcdir)
@@ -573,6 +576,7 @@ Can't find Linux System.map file $linux_system_map.
 (You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================])
+	dnl ' fix syntax highlighting
     fi
 fi
 
@@ -796,6 +800,7 @@ Can't find Valgrind header file 'valgrind/memcheck.h'.
 Try again without '--enable-valgrind'.
 
 =========================================])
+	dnl ' fix syntax highlighting
     fi
     AC_DEFINE(HAVE_VALGRIND)
 fi
@@ -867,6 +872,7 @@ if test "$enable_userlevel" = yes; then
 pcap.h and/or -lpcap not found; user-level driver can't steal packets.
 
 =========================================])
+	dnl ' fix syntax highlighting
     fi
     DRIVERS="$DRIVERS userlevel"
     AC_DEFINE(HAVE_USERLEVEL_DRIVER)
@@ -923,8 +929,8 @@ if test "$properprefix" != no; then
 	AC_MSG_ERROR([
 =========================================
 
-You explicitly specified --with-proper, but I can't find the proper headers
-and/or libraries where you said they would be.  Run again supplying
+You explicitly specified --with-proper, but the proper headers and/or
+libraries are not where you said they would be.  Run again supplying
 --without-proper or --with-proper=PREFIX.
 
 =========================================])
@@ -962,9 +968,9 @@ if test "$expatprefix" != no; then
 	AC_MSG_ERROR([
 =========================================
 
-You explicitly specified --with-expat, but I can't find the expat headers
-and/or libraries where you said they would be.  Run again supplying
---without-expat or --with-expat=PREFIX.
+You explicitly specified --with-expat, but the expat headers and/or libraries
+are not where you said they would be.  Run again supplying --without-expat
+or --with-expat=PREFIX.
 
 =========================================])
     fi
@@ -1223,6 +1229,7 @@ There are two common reasons for this error:
    for more detailed information on the error.
 
 =========================================])
+	dnl ' fix syntax highlighting
     else
 	AC_MSG_ERROR([
 =========================================
