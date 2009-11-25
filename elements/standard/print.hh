@@ -29,32 +29,33 @@ packet. Default is 24.
 
 =item CONTENTS
 
-Determines whether the packet data is printed. It may be `NONE' (do not print
+Determines whether the packet data is printed.  May be `NONE' (do not print
 packet data), `HEX' (print packet data in hexadecimal), or `ASCII' (print
-packet data in plaintext). Default is `HEX'.
+packet data in plaintext).  Default is `HEX'.
 
 =item TIMESTAMP
 
-Boolean. Determines whether to print each packet's timestamp in seconds since
-1970. Default is false.
+Boolean.  If true, prints each packet's timestamp in seconds since
+1970.  Default is false.
 
 =item PRINTANNO
 
-Boolean. Determines whether to print each packet's user annotation bytes.  Default is false.
+Boolean.  If true, prints each packet's user annotation bytes.  Default is
+false.
 
 =item CPU
 
-Boolean; available only in the Linux kernel module. Determines whether to
-print the current CPU ID for every packet. Default is false.
+Boolean; available only in the Linux kernel module.  If true, prints the
+current CPU ID for every packet.  Default is false.
 
 =item HEADROOM
 
-Boolean.  Determines whether to print each packet's headroom and tailroom, in
-the format "(h[headroom] t[tailroom])".  Defaut is false.
+Boolean.  If true, prints each packet's headroom and tailroom, in the format
+"(h[headroom] t[tailroom])".  Defaut is false.
 
 =item ACTIVE
 
-Boolean. If false, don't print messages. Default is true.
+Boolean.  If false, don't print messages.  Default is true.
 
 =back
 

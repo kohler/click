@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-Print([TAG, I<KEYWORDS>])
+PrintAiro([TAG, I<KEYWORDS>])
 
 =s debugging
 
