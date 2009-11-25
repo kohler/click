@@ -624,7 +624,7 @@ Master::add_select(int fd, Element *element, int mask)
 	if (_kqueue < 0)
 # endif
 	    if (!warned) {
-		click_chatter("Master::add_select(%d): fd > FD_SETSIZE", fd);
+		click_chatter("Master::add_select(%d): fd >= FD_SETSIZE", fd);
 		warned = 1;
 	    }
     }
@@ -775,16 +775,27 @@ Master::run_selects_kqueue(bool more_tasks)
 	perror("kevent");
     else if (n > 0)
 	for (struct kevent *p = &kev[0]; p < &kev[n]; p++) {
-	    Element *e = 0;
 	    int fd = (int) p->ident;
-	    if (p->filter == EVFILT_READ && fd < _read_elements.size()
-		&& _read_elements[fd])
-		e = _read_elements[fd];
-	    else if (p->filter == EVFILT_WRITE && fd < _write_elements.size()
-		     && _write_elements[fd])
-		e = _write_elements[fd];
+	    Element *read_elt, *write_elt;
+	    if (fd < _read_elements.size())
+		read_elt = _read_elements[fd];
+	    else
+		read_elt = 0;
+	    if (fd < _write_elements.size())
+		write_elt = _write_elements[fd];
+	    else
+		write_elt = 0;
+
+	    Element *e;
+	    if (p->filter == EVFILT_READ)
+		e = read_elt;
+	    else if (p->filter == EVFILT_WRITE)
+		e = write_elt;
+	    else
+		e = 0;
+
 	    if (e && (_selected_callnos[fd] != _selected_callno
-		      || _read_elements[fd] != _write_elements[fd])) {
+		      || read_elt != write_elt)) {
 		e->selected(fd);
 		_selected_callnos[fd] = _selected_callno;
 	    }
@@ -852,8 +863,15 @@ Master::run_selects_poll(bool more_tasks)
 		// vectors before calling out.
 
 		int fd = p->fd;
-		Element *read_elt = (p->revents & ~POLLOUT ? _read_elements[fd] : 0);
-		Element *write_elt = (p->revents & ~POLLIN ? _write_elements[fd] : 0);
+		Element *read_elt, *write_elt;
+		if ((p->events & POLLIN) && (p->revents & ~POLLOUT))
+		    read_elt = _read_elements[fd];
+		else
+		    read_elt = 0;
+		if ((p->events & POLLOUT) && (p->revents & ~POLLIN))
+		    write_elt = _write_elements[fd];
+		else
+		    write_elt = 0;
 
 		if (read_elt)
 		    read_elt->selected(fd);
@@ -915,7 +933,8 @@ Master::run_selects_select(bool more_tasks)
 	perror("select");
     else if (n > 0)
 	for (struct pollfd *p = _pollfds.begin(); p < _pollfds.end(); p++)
-	    if (p->fd > FD_SETSIZE || FD_ISSET(p->fd, &read_mask) || FD_ISSET(p->fd, &write_mask)) {
+	    if (p->fd >= FD_SETSIZE || FD_ISSET(p->fd, &read_mask)
+		|| FD_ISSET(p->fd, &write_mask)) {
 		int pi = p - _pollfds.begin();
 
 		// Beware: calling 'selected()' might call remove_select(),
@@ -923,8 +942,15 @@ Master::run_selects_select(bool more_tasks)
 		// vectors before calling out.
 
 		int fd = p->fd;
-		Element *read_elt = (fd > FD_SETSIZE || FD_ISSET(fd, &read_mask) ? _read_elements[fd] : 0);
-		Element *write_elt = (fd > FD_SETSIZE || FD_ISSET(fd, &write_mask) ? _write_elements[fd] : 0);
+		Element *read_elt, *write_elt;
+		if (fd < FD_SETSIZE ? FD_ISSET(fd, &read_mask) : fd < _read_elements.size())
+		    read_elt = _read_elements[fd];
+		else
+		    read_elt = 0;
+		if (fd < FD_SETSIZE ? FD_ISSET(fd, &write_mask) : fd < _write_elements.size())
+		    write_elt = _write_elements[fd];
+		else
+		    write_elt = 0;
 
 		if (read_elt)
 		    read_elt->selected(fd);
