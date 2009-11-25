@@ -114,7 +114,7 @@ class ARPTable : public Element { public:
 	_entry_capacity = entry_capacity;
     }
     Timestamp timeout() const {
-	return Timestamp::make_jiffies(_timeout_j);
+	return Timestamp::make_jiffies((click_jiffies_t) _timeout_j);
     }
     void set_timeout(const Timestamp &timeout) {
 	if ((uint32_t) timeout.sec() >= (uint32_t) 0xFFFFFFFFU / CLICK_HZ)

@@ -111,7 +111,7 @@ int
 ARPQuerier::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
     uint32_t capacity, entry_capacity;
-    Timestamp timeout, poll_timeout(Timestamp::make_jiffies(_poll_timeout_j));
+    Timestamp timeout, poll_timeout(Timestamp::make_jiffies((click_jiffies_t) _poll_timeout_j));
     bool have_capacity, have_entry_capacity, have_timeout, have_broadcast,
 	broadcast_poll(_broadcast_poll);
     IPAddress my_bcast_ip;
