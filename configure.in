@@ -915,6 +915,13 @@ if test "x$ac_cv_sockaddr_in_sin_len" = xyes; then
     AC_DEFINE([HAVE_SOCKADDR_IN_SIN_LEN], [1], [Define if 'struct sockaddr_in' has a 'sin_len' member.])
 fi
 
+AC_CACHE_CHECK([offset of ifr_addr in struct ifreq], [ac_cv_offsetof_ifr_addr_ifreq],
+    [AC_COMPUTE_INT([ac_cv_offsetof_ifr_addr_ifreq], [offsetof(struct ifreq, ifr_addr)], [#include <stddef.h>
+#include <net/if.h>
+], [ac_cv_offsetof_ifr_addr_ifreq=0])])
+AC_DEFINE_UNQUOTED([OFFSETOF_IFR_ADDR_IFREQ], $ac_cv_offsetof_ifr_addr_ifreq, [The offset of ifr_addr within `struct ifreq', as computed by offsetof.])
+dnl '` fix syntax highlighting
+
 
 dnl PlanetLab "Privileged Operations" library
 

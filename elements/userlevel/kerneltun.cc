@@ -256,35 +256,44 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
     int s = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (s < 0)
 	return errh->error("socket() failed: %s", strerror(errno));
+#if defined(OFFSETOF_IFR_ADDR_IFREQ) && OFFSETOF_IFR_ADDR_IFREQ
     union {
 	struct ifreq ifr;
 	struct {
-	    char padding[offsetof(struct ifreq, ifr_addr)];
+	    char padding[OFFSETOF_IFR_ADDR_IFREQ];
 	    struct sockaddr_in sin;
 	} sin;
     } ifr;
+# define CLICK_IFR_SIN ifr.sin.sin
+#else
+    /* This path though easier is illegal in strict aliasing. */
+    union {
+	struct ifreq ifr;
+    } ifr;
+# define CLICK_IFR_SIN reinterpret_cast<struct sockaddr_in &>(ifr.ifr.ifr_addr)
+#endif
     memset(&ifr, 0, sizeof(ifr));
     strncpy(ifr.ifr.ifr_name, _dev_name.c_str(), sizeof(ifr.ifr.ifr_name));
 #if defined(SIOCSIFADDR) && defined(SIOCSIFNETMASK)
     for (int trynum = 0; trynum < 2; trynum++) {
-	ifr.sin.sin.sin_family = AF_INET;
+	CLICK_IFR_SIN.sin_family = AF_INET;
 # if HAVE_SOCKADDR_IN_SIN_LEN
-	ifr.sin.sin.sin_len = sizeof(struct sockaddr_in);
+	CLICK_IFR_SIN.sin_len = sizeof(struct sockaddr_in);
 # endif
-	ifr.sin.sin.sin_port = 0;
+	CLICK_IFR_SIN.sin_port = 0;
 	// Try setting the netmask twice.  On FreeBSD, we need to set the mask
 	// *before* we set the address, or there's nasty behavior where the
 	// tunnel cannot be assigned a different address.  (Or something like
 	// that, I forget now.)  But on Linux, you must set the mask *after*
 	// the address.
-	ifr.sin.sin.sin_addr = mask;
+	CLICK_IFR_SIN.sin_addr = mask;
 	if (ioctl(s, SIOCSIFNETMASK, &ifr) == 0)
 	    trynum++;
 	else if (trynum == 1) {
 	    errh->error("SIOCSIFNETMASK failed: %s", strerror(errno));
 	    goto out;
 	}
-	ifr.sin.sin.sin_addr = addr;
+	CLICK_IFR_SIN.sin_addr = addr;
 	if (trynum < 2 && ioctl(s, SIOCSIFADDR, &ifr) != 0) {
 	    errh->error("SIOCSIFADDR failed: %s", strerror(errno));
 	    goto out;
@@ -346,6 +355,7 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
  out:
     close(s);
     return (errh->nerrors() == before ? 0 : -1);
+#undef CLICK_IFR_SIN
 }
 
 int

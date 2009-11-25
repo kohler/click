@@ -5,7 +5,7 @@
 #ifdef __linux__
 # define FROMDEVICE_LINUX 1
 #endif
-#ifdef HAVE_PCAP
+#if HAVE_PCAP
 # define FROMDEVICE_PCAP 1
 # include <click/task.hh>
 extern "C" {
