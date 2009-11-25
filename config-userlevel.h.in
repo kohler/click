@@ -153,6 +153,15 @@
 /* Define if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define if kqueue() should be used to wait for file descriptor events. */
+#undef HAVE_USE_KQUEUE
+
+/* Define if poll() should be used to wait for file descriptor events. */
+#undef HAVE_USE_POLL
+
+/* Define if select() should be used to wait for file descriptor events. */
+#undef HAVE_USE_SELECT
+
 /* Define if a Click user-level driver might run multiple threads. */
 #undef HAVE_USER_MULTITHREAD
 

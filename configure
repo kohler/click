@@ -726,6 +726,7 @@ ac_user_opts='
 enable_option_checking
 enable_userlevel
 enable_user_multithread
+enable_select
 enable_linuxmodule
 enable_multithread
 enable_warp9
@@ -1400,6 +1401,7 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-userlevel     disable user-level driver
     --enable-user-multithread support userlevel multithreading (EXPERIMENTAL)
+    --enable-select=[select|poll|kqueue] set select() mechanism
   --disable-linuxmodule   disable Linux kernel driver
     --enable-multithread[=N]  support kernel multithreading, N threads max
     --enable-warp9            reduce PollDevice functionality for speed
@@ -5819,6 +5821,41 @@ Can't find -lpthread and/or <pthread.h>, so I can't compile with
     LIBS="$SAVE_LIBS"
 fi
 
+# Check whether --enable-select was given.
+if test "${enable_select+set}" = set; then :
+  enableval=$enable_select; :
+else
+  enable_select=
+fi
+
+
+if test "$enable_select" = select; then
+
+$as_echo "#define HAVE_USE_SELECT 1" >>confdefs.h
+
+elif test "$enable_select" = poll; then
+
+$as_echo "#define HAVE_USE_POLL 1" >>confdefs.h
+
+elif test "$enable_select" = kqueue; then
+
+$as_echo "#define HAVE_USE_KQUEUE 1" >>confdefs.h
+
+elif test -n "$enable_select"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+=========================================
+
+Unexpected --enable-select type ignored.
+
+=========================================" >&5
+$as_echo "$as_me: WARNING:
+=========================================
+
+Unexpected --enable-select type ignored.
+
+=========================================" >&2;}
+fi
+
 
 
 # Check whether --enable-linuxmodule was given.
@@ -6898,7 +6935,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 6901 "configure"
+#line 6938 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER

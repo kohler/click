@@ -6,8 +6,13 @@
 #if CLICK_USERLEVEL
 # include <unistd.h>
 # include <signal.h>
-# if HAVE_POLL_H
+# if HAVE_POLL_H && !HAVE_USE_SELECT
 #  include <poll.h>
+# endif
+# if HAVE_SYS_EVENT_H && HAVE_KQUEUE && !HAVE_USE_SELECT && !HAVE_USE_POLL && !defined(HAVE_USE_KQUEUE)
+#  define HAVE_USE_KQUEUE 1
+# elif (!HAVE_SYS_EVENT_H || !HAVE_KQUEUE) && HAVE_USE_KQUEUE
+#  error "--enable-select=kqueue is not supported on this system"
 # endif
 #endif
 #if CLICK_NS
@@ -150,12 +155,25 @@ class Master { public:
 
 #if CLICK_USERLEVEL
     // SELECT
-# if HAVE_SYS_EVENT_H && HAVE_KQUEUE
-    int _kqueue;
-    int _selected_callno;
-    Vector<int> _selected_callnos;
+    struct ElementSelector {
+	Element *read;
+	Element *write;
+# if HAVE_USE_KQUEUE
+	unsigned callno;
 # endif
-# if !HAVE_POLL_H
+	ElementSelector()
+	    : read(0), write(0)
+# if HAVE_USE_KQUEUE
+	    , callno(0)
+# endif
+	{
+	}
+    };
+# if HAVE_USE_KQUEUE
+    int _kqueue;
+    unsigned _selected_callno;
+# endif
+# if !HAVE_POLL_H || HAVE_USE_SELECT
     struct pollfd {
 	int fd;
 	int events;
@@ -163,20 +181,19 @@ class Master { public:
     fd_set _read_select_fd_set;
     fd_set _write_select_fd_set;
     int _max_select_fd;
-# endif /* HAVE_POLL_H */
+# endif /* !HAVE_POLL_H || HAVE_USE_SELECT */
     Vector<struct pollfd> _pollfds;
-    Vector<Element *> _read_elements;
-    Vector<Element *> _write_elements;
+    Vector<ElementSelector> _element_selectors;
     Vector<int> _fd_to_pollfd;
     Spinlock _select_lock;
 # if HAVE_MULTITHREAD
     click_processor_t _selecting_processor;
 # endif
     void remove_pollfd(int pi, int event);
-# if HAVE_SYS_EVENT_H && HAVE_KQUEUE
+# if HAVE_USE_KQUEUE
     void run_selects_kqueue(bool);
 # endif
-# if HAVE_POLL_H
+# if HAVE_POLL_H && !HAVE_USE_SELECT
     void run_selects_poll(bool);
 # else
     void run_selects_select(bool);
