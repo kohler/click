@@ -2,13 +2,6 @@
 #ifndef CLICK_CONFIG_LINUXMODULE_H
 #define CLICK_CONFIG_LINUXMODULE_H
 
-/* Define stuff under a Linux module. */
-#ifndef __linux__
-# error "I must be compiled on a Linux machine"
-#endif
-#define __KERNEL__ 1
-#define MODULE 1
-
 /* Define if Click should use an adaptive scheduler to share the CPU(s) more
    fairly with the kernel. */
 #undef HAVE_ADAPTIVE_SCHEDULER
@@ -21,6 +14,9 @@
 
 /* Define if fast checksum functions available. */
 #define HAVE_FAST_CHECKSUM 1
+
+/* Define if you have the find_task_by_pid_ns function. */
+#undef HAVE_FIND_TASK_BY_PID_NS
 
 /* Define if 'int64_t' is typedefed to 'long' in linuxmodule. */
 #undef HAVE_INT64_IS_LONG_LINUXMODULE
@@ -44,6 +40,15 @@
 /* Define if your Linux kernel architecture defines atomic_set_mask. */
 #undef HAVE_LINUX_ATOMIC_SET_MASK
 
+/* Define if your Linux kernel has files_lock. */
+#undef HAVE_LINUX_FILES_LOCK
+
+/* Define if your Linux kernel has dev_ioctl. */
+#undef HAVE_LINUX_DEV_IOCTL
+
+/* Define if your Linux kernel has devinet_ioctl. */
+#undef HAVE_LINUX_DEVINET_IOCTL
+
 /* Define if you have the <linux/ktime.h> header file. */
 #undef HAVE_LINUX_KTIME_H
 
@@ -52,6 +57,9 @@
 
 /* Define if your Linux kernel has read_net_skbcount. */
 #undef HAVE_LINUX_READ_NET_SKBCOUNT
+
+/* Define if your Linux kernel has sb_lock. */
+#undef HAVE_LINUX_SB_LOCK
 
 /* Define if 'struct skb_shared_info' has a 'gso_size' member. */
 #undef HAVE_LINUX_SKB_SHINFO_GSO_SIZE
@@ -86,8 +94,17 @@
 /* Define if you have the net_enable_timestamp function. */
 #undef HAVE_NET_ENABLE_TIMESTAMP
 
+/* Define if you have the netdev_get_tx_queue function. */
+#undef HAVE_NETDEV_GET_TX_QUEUE
+
+/* Define if netif_receive_skb takes 3 arguments. */
+#undef HAVE_NETIF_RECEIVE_SKB_EXTENDED
+
 /* Define if you have the netif_tx_lock function. */
 #undef HAVE_NETIF_TX_LOCK
+
+/* Define if you have the skb_recycle function. */
+#undef HAVE_SKB_RECYCLE
 
 /* Define to 1 if Linux defines the type 'uintptr_t'. */
 #undef HAVE_UINTPTR_T_LINUXMODULE
@@ -95,35 +112,51 @@
 /* The size of a `click_jiffies_t', as computed by sizeof. */
 #define SIZEOF_CLICK_JIFFIES_T SIZEOF_LONG
 
-/* Define if fast checksum functions require correct alignment. */
-#ifndef __i386__
-# define FAST_CHECKSUM_ALIGNED 1
-#endif
-
-/* Include Linux configuration and type definitions. */
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
-#include <linux/version.h>
-#include <linux/types.h>
-typedef ptrdiff_t intptr_t;
-#if !HAVE_UINTPTR_T_LINUXMODULE
-typedef unsigned long uintptr_t;
-#endif
-
 /* Define HAVE_INT64_IS_LONG based on HAVE_INT64_IS_LONG_LINUXMODULE. */
 #ifdef HAVE_INT64_IS_LONG_LINUXMODULE
 # define HAVE_INT64_IS_LONG HAVE_INT64_IS_LONG_LINUXMODULE
 #endif
 
 /* Define HAVE_INT64_IS_LONG_LONG based on HAVE_INT64_IS_LONG_LONG_LINUXMODULE. */
-#if HAVE_LONG_LONG && defined(HAVE_INT64_IS_LONG_LONG_LINUXMODULE)
+#if defined(HAVE_LONG_LONG) && HAVE_LONG_LONG && defined(HAVE_INT64_IS_LONG_LONG_LINUXMODULE)
 # define HAVE_INT64_IS_LONG_LONG HAVE_INT64_IS_LONG_LONG_LINUXMODULE
 #endif
 
 /* Define HAVE_MULTITHREAD based on HAVE_LINUXMODULE_MULTITHREAD. */
 #ifdef HAVE_LINUXMODULE_MULTITHREAD
 # define HAVE_MULTITHREAD HAVE_LINUXMODULE_MULTITHREAD
+#endif
+
+/* Define if fast checksum functions require correct alignment. */
+#ifndef __i386__
+# define FAST_CHECKSUM_ALIGNED 1
+#endif
+
+/* Below here only for normal Click compiles. */
+#ifndef CLICK_CONFIG_LINUXMODULE_SYMBOLS_ONLY
+
+/* Define stuff under a Linux module. */
+#ifndef __linux__
+# error "I must be compiled on a Linux machine"
+#endif
+#define __KERNEL__ 1
+#define MODULE 1
+
+/* Include Linux configuration and type definitions. */
+#ifndef AUTOCONF_INCLUDED
+# include <linux/autoconf.h>
+#endif
+#include <linux/version.h>
+#ifdef __cplusplus
+# include <click/cxxprotect.h>
+# include <linux/types.h>
+# include <click/cxxunprotect.h>
+#else
+# include <linux/types.h>
+#endif
+typedef ptrdiff_t intptr_t;
+#if !HAVE_UINTPTR_T_LINUXMODULE
+typedef unsigned long uintptr_t;
 #endif
 
 /* Define KBUILD symbols. */
@@ -174,4 +207,5 @@ void click_assert_failed(const char *file, int line, const char *problem_text);
 # define HAVE_NO_INTEGER_BUILTINS 1
 #endif
 
+#endif /* CLICK_CONFIG_LINUXMODULE_SYMBOLS_ONLY */
 #endif /* CLICK_CONFIG_LINUXMODULE_H */

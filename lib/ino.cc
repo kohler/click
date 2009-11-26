@@ -24,6 +24,13 @@
 #if INO_DEBUG
 # include <click/straccum.hh>
 #endif
+#if CLICK_LINUXMODULE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+# include <linux/fs.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
+#endif
 CLICK_DECLS
 
 void

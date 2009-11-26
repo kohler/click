@@ -42,10 +42,20 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
-# define netdev_ioctl(cmd, arg)	dev_ioctl(&init_net, (cmd), (arg))
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+# if CONFIG_NET_NS
+#  define netdev_ioctl(dev, cmd, arg)	dev_ioctl((dev)->nd_net, (cmd), (arg))
+#  define inetdev_ioctl(dev, cmd, arg)	devinet_ioctl((dev)->nd_net, (cmd), (arg))
+# else
+#  define netdev_ioctl(dev, cmd, arg)	dev_ioctl(&init_net, (cmd), (arg))
+#  define inetdev_ioctl(dev, cmd, arg)	devinet_ioctl(&init_net, (cmd), (arg))
+# endif
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+# define netdev_ioctl(dev, cmd, arg)	dev_ioctl(&init_net, (cmd), (arg))
+# define inetdev_ioctl(dev, cmd, arg)	devinet_ioctl((cmd), (arg))
 #else
-# define netdev_ioctl(cmd, arg)	dev_ioctl((cmd), (arg))
+# define netdev_ioctl(dev, cmd, arg)	dev_ioctl((cmd), (arg))
+# define inetdev_ioctl(dev, cmd, arg)	devinet_ioctl((cmd), (arg))
 #endif
 #ifndef NETDEV_TX_OK
 # define NETDEV_TX_OK		0
@@ -215,28 +225,34 @@ FromHost::set_device_addresses(ErrorHandler *errh)
     strncpy(ifr.ifr_name, _dev->name, IFNAMSIZ);
     struct sockaddr_in *sin = (struct sockaddr_in *)&ifr.ifr_addr;
 
+#if HAVE_LINUX_DEV_IOCTL && HAVE_LINUX_DEVINET_IOCTL
     mm_segment_t oldfs = get_fs();
     set_fs(get_ds());
 
     if (_macaddr) {
 	ifr.ifr_hwaddr.sa_family = _dev->type;
 	memcpy(ifr.ifr_hwaddr.sa_data, _macaddr.data(), 6);
-	if ((res = netdev_ioctl(SIOCSIFHWADDR, &ifr)) < 0)
+	if ((res = netdev_ioctl(_dev, SIOCSIFHWADDR, &ifr)) < 0)
 	    errh->error("error %d setting hardware address for device '%s'", res, _devname.c_str());
     }
 
     if (_destaddr) {
         sin->sin_family = AF_INET;
         sin->sin_addr = _destaddr;
-        if (res >= 0 && (res = devinet_ioctl(SIOCSIFADDR, &ifr)) < 0)
+        if (res >= 0 && (res = inetdev_ioctl(_dev, SIOCSIFADDR, &ifr)) < 0)
             errh->error("error %d setting address for device '%s'", res, _devname.c_str());
 
         sin->sin_addr = _destmask;
-        if (res >= 0 && (res = devinet_ioctl(SIOCSIFNETMASK, &ifr)) < 0)
+        if (res >= 0 && (res = inetdev_ioctl(_dev, SIOCSIFNETMASK, &ifr)) < 0)
             errh->error("error %d setting netmask for device '%s'", res, _devname.c_str());
     }
 
     set_fs(oldfs);
+#else
+    if (_macaddr || _destaddr)
+	res = errh->error("cannot set addresses for FromHost devices on this kernel");
+#endif
+
     return res;
 }
 
@@ -248,15 +264,22 @@ dev_updown(net_device *dev, int up, ErrorHandler *errh)
     uint32_t flags = IFF_UP | IFF_RUNNING;
     int res;
 
+#if HAVE_LINUX_DEV_IOCTL
     mm_segment_t oldfs = get_fs();
     set_fs(get_ds());
 
-    (void) netdev_ioctl(SIOCGIFFLAGS, &ifr);
+    (void) netdev_ioctl(dev, SIOCGIFFLAGS, &ifr);
     ifr.ifr_flags = (up > 0 ? ifr.ifr_flags | flags : ifr.ifr_flags & ~flags);
-    if ((res = netdev_ioctl(SIOCSIFFLAGS, &ifr)) < 0 && errh)
+    if ((res = netdev_ioctl(dev, SIOCSIFFLAGS, &ifr)) < 0 && errh)
 	errh->error("error %d bringing %s device '%s'", res, (up > 0 ? "up" : "down"), dev->name);
 
     set_fs(oldfs);
+#else
+    if (errh)
+	errh->error("FromHost devices are not supported on this kernel");
+    res = -EINVAL;
+#endif
+
     return res;
 }
 

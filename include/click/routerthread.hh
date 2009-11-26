@@ -9,15 +9,13 @@ CLICK_CXX_PROTECT
 # include <linux/sched.h>
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
-#endif
-#if CLICK_BSDMODULE
+#elif CLICK_BSDMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 # include <sys/systm.h>
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
-#endif
-#if CLICK_USERLEVEL && HAVE_MULTITHREAD
+#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
 # include <signal.h>
 #endif
 

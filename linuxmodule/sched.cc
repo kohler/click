@@ -59,6 +59,10 @@ CLICK_CXX_UNPROTECT
 # define TASK_PRIO(t)	((t)->nice)
 #endif
 
+#if HAVE_FIND_TASK_BY_PID_NS
+# define find_task_by_pid(pid)	find_task_by_pid_ns(pid, &init_pid_ns)
+#endif
+
 #define SOFT_SPIN_LOCK(l)	do { /*MDEBUG("soft_lock %s", #l);*/ soft_spin_lock((l)); } while (0)
 #define SPIN_UNLOCK(l)		do { /*MDEBUG("unlock %s", #l);*/ spin_unlock((l)); } while (0)
 

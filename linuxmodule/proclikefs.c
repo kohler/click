@@ -40,6 +40,14 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # include <linux/namei.h>
 #endif
+#define CLICK_CONFIG_LINUXMODULE_SYMBOLS_ONLY 1
+#include <click/config-linuxmodule.h>
+#ifndef HAVE_LINUX_SB_LOCK
+# define HAVE_LINUX_SB_LOCK 0
+#endif
+#ifndef HAVE_LINUX_FILES_LOCK
+# define HAVE_LINUX_FILES_LOCK 0
+#endif
 
 #ifndef MOD_DEC_USE_COUNT
 # define MOD_DEC_USE_COUNT	module_put(THIS_MODULE)
@@ -76,7 +84,9 @@ struct proclikefs_file_system {
 static LIST_HEAD(fs_list);
 static spinlock_t fslist_lock;
 extern spinlock_t inode_lock;
+#if HAVE_LINUX_SB_LOCK
 extern spinlock_t sb_lock;
+#endif
 
 static struct super_operations proclikefs_null_super_operations;
 static struct inode_operations proclikefs_null_root_inode_operations;
@@ -209,7 +219,9 @@ proclikefs_reinitialize_supers(struct proclikefs_file_system *pfs,
     spin_lock(&fslist_lock);
     /* transfer superblocks */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+# if HAVE_LINUX_SB_LOCK
     spin_lock(&sb_lock);
+# endif
     for (p = pfs->fs.fs_supers.next; p != &pfs->fs.fs_supers; p = p->next) {
 	sb = list_entry(p, struct super_block, s_instances);
 	if (sb->s_type == &pfs->fs)
@@ -217,7 +229,9 @@ proclikefs_reinitialize_supers(struct proclikefs_file_system *pfs,
 	else
 	    printk("<1>proclikefs: confusion\n");
     }
+# if HAVE_LINUX_SB_LOCK
     spin_unlock(&sb_lock);
+# endif
 #else
     for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks);
 	 sb = sb_entry(sb->s_list.next))
@@ -235,19 +249,27 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
 
     DEBUG("killing files");
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
+# if HAVE_LINUX_FILES_LOCK
     file_list_lock();
+# endif
     list_for_each(p, &sb->s_files) {
 	struct file *filp = list_entry(p, struct file, f_u.fu_list);
 	filp->f_op = dummy;
     }
+# if HAVE_LINUX_FILES_LOCK
     file_list_unlock();
+# endif
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+# if HAVE_LINUX_FILES_LOCK
     file_list_lock();
+# endif
     for (p = sb->s_files.next; p != &sb->s_files; p = p->next) {
 	struct file *filp = list_entry(p, struct file, f_list);
 	filp->f_op = dummy;
     }
+# if HAVE_LINUX_FILES_LOCK
     file_list_unlock();
+# endif
 #else
     (void) dummy;
     (void) p;
@@ -354,12 +376,16 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
     /* clear out superblock operations */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
     DEBUG("clearing superblocks");
+# if HAVE_LINUX_SB_LOCK
     spin_lock(&sb_lock);
+# endif
     for (p = pfs->fs.fs_supers.next; p != &pfs->fs.fs_supers; p = p->next) {
 	sb = list_entry(p, struct super_block, s_instances);
 	proclikefs_kill_super(sb, &pfs->pfs_pfo->pfo_op);
     }
+# if HAVE_LINUX_SB_LOCK
     spin_unlock(&sb_lock);
+# endif
 #else
     for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks);
 	 sb = sb_entry(sb->s_list.next)) {
@@ -451,15 +477,19 @@ proclikefs_new_inode_operations(struct proclikefs_file_system *pfs)
     return &pio->pio_op;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
 void
 proclikefs_read_inode(struct inode *inode)
 {
 }
+#endif
 
 int
 init_module(void)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
     proclikefs_null_super_operations.read_inode = proclikefs_read_inode;
+#endif
     proclikefs_null_super_operations.put_super = proclikefs_put_super;
     proclikefs_null_root_inode_operations.lookup = proclikefs_null_root_lookup;
     spin_lock_init(&fslist_lock);

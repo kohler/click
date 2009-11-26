@@ -14,6 +14,7 @@ dnl legally binding.
 AC_INIT([click], [1.7.0rc1])
 AC_PREREQ(2.60)
 AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in)
+AC_CONFIG_SRCDIR(click-buildtool.in)
 
 CLICK_VERSION=$PACKAGE_VERSION
 
@@ -111,6 +112,15 @@ fi
 dnl linuxmodule driver and features
 
 AC_ARG_ENABLE(linuxmodule, [  --disable-linuxmodule   disable Linux kernel driver], :, [enable_linuxmodule=yes; enable_linuxmodule_default=yes])
+
+AC_ARG_ENABLE(fixincludes,
+  [[    --enable-fixincludes      automatically fix Linux includes]],
+  :, enable_fixincludes=no)
+LINUXMODULE_FIXINCLUDES=
+if test "$enable_fixincludes" = yes; then
+    LINUXMODULE_FIXINCLUDES=1
+fi
+AC_SUBST(LINUXMODULE_FIXINCLUDES)
 
 AC_ARG_ENABLE(multithread,
   [[    --enable-multithread[=N]  support kernel multithreading, N threads max]],
@@ -604,15 +614,16 @@ dnl Check for Linux 2.6
 if test $ac_have_linux_kernel = y; then
 
 AC_CACHE_CHECK([for Linux 2.6], [ac_cv_linux26],
-    [if grep '^PATCHLEVEL[ 	]*=[ 	]*6' `find_linuxpath Makefile` >/dev/null 2>&1; then ac_cv_linux26=1; else ac_cv_linux26=0; fi])
-LINUXMODULE_2_6=$ac_cv_linux26
+    [if grep '^PATCHLEVEL[ 	]*=[ 	]*6' `find_linuxpath Makefile` >/dev/null 2>&1; then ac_cv_linux26=yes; else ac_cv_linux26=no; fi])
+LINUXMODULE_2_6=0
+if test "$ac_cv_linux26" = yes; then LINUXMODULE_2_6=1; fi
 AC_SUBST(LINUXMODULE_2_6)
 if test $LINUXMODULE_2_6 = 1; then
     AC_DEFINE([HAVE_LINUXMODULE_2_6], [1], [Define if the Click linuxmodule is compiled for a 2.6 kernel.])
 fi
 
 AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
-[if grep register_net_in $linux_system_map >/dev/null 2>&1; then
+[if grep "register_net_in" $linux_system_map >/dev/null 2>&1; then
     ac_cv_click_kernel=yes
 else ac_cv_click_kernel=no; fi])
 if test $ac_cv_click_kernel = yes; then
@@ -620,7 +631,7 @@ if test $ac_cv_click_kernel = yes; then
 fi
 
 AC_CACHE_CHECK(for Click Linux kernel extensions for transmit notification, ac_cv_click_kernel_tx_notify,
-[if grep register_net_tx $linux_system_map >/dev/null 2>&1; then
+[if grep "register_net_tx" $linux_system_map >/dev/null 2>&1; then
     ac_cv_click_kernel_tx_notify=yes
 else ac_cv_click_kernel_tx_notify=no; fi])
 if test $ac_cv_click_kernel_tx_notify = yes; then
@@ -628,7 +639,7 @@ if test $ac_cv_click_kernel_tx_notify = yes; then
 fi
 
 AC_CACHE_CHECK(for read_net_skbcount kernel extension, ac_cv_linux_read_net_skbcount,
-[if grep read_net_skbcount $linux_system_map >/dev/null 2>&1; then
+[if grep "read_net_skbcount" $linux_system_map >/dev/null 2>&1; then
   ac_cv_linux_read_net_skbcount=yes
 else ac_cv_linux_read_net_skbcount=no; fi])
 if test $ac_cv_linux_read_net_skbcount = yes; then
@@ -651,20 +662,44 @@ if test $ac_cv_linux_tulip_intr_hook = yes; then
     AC_DEFINE(HAVE_LINUX_TULIP_INTERRUPT_HOOK)
 fi
 
+AC_CACHE_CHECK(for files_lock kernel symbol, ac_cv_linux_files_lock,
+[if grep "__ksymtab_files_lock" $linux_system_map >/dev/null 2>&1; then
+    ac_cv_linux_files_lock=yes
+else ac_cv_linux_files_lock=no; fi])
+if test $ac_cv_linux_files_lock = yes; then
+    AC_DEFINE(HAVE_LINUX_FILES_LOCK)
+fi
+
+AC_CACHE_CHECK(for sb_lock kernel symbol, ac_cv_linux_sb_lock,
+[if grep "__ksymtab_sb_lock" $linux_system_map >/dev/null 2>&1; then
+    ac_cv_linux_sb_lock=yes
+else ac_cv_linux_sb_lock=no; fi])
+if test $ac_cv_linux_sb_lock = yes; then
+    AC_DEFINE(HAVE_LINUX_SB_LOCK)
+fi
+
+AC_CACHE_CHECK(for dev_ioctl kernel symbol, ac_cv_linux_dev_ioctl,
+[if grep "__ksymtab_dev_ioctl" $linux_system_map >/dev/null 2>&1; then
+    ac_cv_linux_dev_ioctl=yes
+else ac_cv_linux_dev_ioctl=no; fi])
+if test $ac_cv_linux_dev_ioctl = yes; then
+    AC_DEFINE(HAVE_LINUX_DEV_IOCTL)
+fi
+
+AC_CACHE_CHECK(for devinet_ioctl kernel symbol, ac_cv_linux_devinet_ioctl,
+[if grep "__ksymtab_devinet_ioctl" $linux_system_map >/dev/null 2>&1; then
+    ac_cv_linux_devinet_ioctl=yes
+else ac_cv_linux_devinet_ioctl=no; fi])
+if test $ac_cv_linux_devinet_ioctl = yes; then
+    AC_DEFINE(HAVE_LINUX_DEVINET_IOCTL)
+fi
+
 AC_CACHE_CHECK(for <linux/ktime.h>, ac_cv_linux_ktime_h,
 [if grep ktime_t `find_linuxpath include/linux/ktime.h` >/dev/null 2>&1; then
   ac_cv_linux_ktime_h=yes
 else ac_cv_linux_ktime_h=no; fi])
 if test $ac_cv_linux_ktime_h = yes; then
     AC_DEFINE(HAVE_LINUX_KTIME_H)
-fi
-
-AC_CACHE_CHECK(for device polling kernel extension, ac_cv_linux_poll_extension,
-[if grep polling `find_linuxpath include/linux/netdevice.h` >/dev/null 2>&1; then
-  ac_cv_linux_poll_extension=yes
-else ac_cv_linux_poll_extension=no; fi])
-if test $ac_cv_linux_poll_extension = yes; then
-    AC_DEFINE(HAVE_LINUX_POLLING)
 fi
 
 AC_CACHE_CHECK(for atomic_set_mask, ac_cv_linux_atomic_set_mask,
@@ -1062,6 +1097,25 @@ Can't find Linux 2.6 compilation flags.
 	AC_MSG_RESULT($LINUX_CFLAGS)
     fi
 
+    LINUX_FIXINCLUDES_PROGRAM=
+    if test "$LINUXMODULE_FIXINCLUDES" = 1; then
+	AC_MSG_CHECKING([for C++-safe versions of Linux include files])
+	$srcdir/linuxmodule/fixincludes.pl -o "`pwd`/include/click-linuxmodule" $LINUX_CFLAGS >conftest.dat
+	if test $? != 0; then
+	    AC_MSG_RESULT(failed)
+	    AC_MSG_ERROR([
+==============================================
+
+fixincludes.pl execution failed.
+
+==============================================])
+	fi
+	LINUX_CFLAGS="`head -n 1 conftest.dat`"
+	LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
+	AC_MSG_RESULT($LINUX_CFLAGS)
+    fi
+    AC_SUBST(LINUX_FIXINCLUDES_PROGRAM)
+
 
     CPPFLAGS="$save_cppflags $LINUX_CFLAGS"
 
@@ -1072,48 +1126,27 @@ Can't find Linux 2.6 compilation flags.
 # define KBUILD_BASENAME	KBUILD_STR(click)
 # define KBUILD_MODNAME		KBUILD_STR(click)
 #endif
-#define new xxx_new
-#define this xxx_this
-#define delete xxx_delete
-#define class xxx_class
-#define virtual xxx_virtual
-#define typename xxx_typename
-#define private xxx_private
-#define protected xxx_protected
-#define public xxx_public
-#define namespace xxx_namespace
+#define new linux_new
+#define this linux_this
+#define delete linux_delete
+#define class linux_class
+#define virtual linux_virtual
+#define typename linux_typename
+#define private linux_private
+#define protected linux_protected
+#define public linux_public
+#define namespace linux_namespace
+#define false linux_false
+#define true linux_true
 #include <linux/autoconf.h>]])
 
 
     AC_CACHE_CHECK([for C++-includable kernel header files], [ac_cv_cxx_aware_system],
 	[AC_LANG_CPLUSPLUS
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
-#include <linux/signal.h>]], [[return 0]])], ac_cv_cxx_aware_system=yes, ac_cv_cxx_aware_system=no)
+#include <linux/signal.h>
+#include <linux/skbuff.h>]], [[return 0]])], ac_cv_cxx_aware_system=yes, ac_cv_cxx_aware_system=no)
 	])
-
-
-    dnl check whether -fpermissive is required
-    if test $ac_cv_cxx_aware_system = yes; then
-
-	AC_CACHE_CHECK([whether -fpermissive is required], [ac_cv_f_permissive],
-	    [AC_LANG_CPLUSPLUS
-	    AC_LINK_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
-#include <linux/skbuff.h>]], [[]])], ac_cv_f_permissive=no, ac_cv_f_permissive=yes)])
-
-	if test $ac_cv_f_permissive = yes; then
-	    CXX="$KERNEL_CXX -fpermissive"
-	    AC_CACHE_CHECK([whether -fpermissive is allowed], [ac_cv_f_permissive_ok],
-		[AC_LANG_CPLUSPLUS
-		AC_LINK_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
-#include <linux/skbuff.h>]], [[]])], ac_cv_f_permissive_ok=yes, ac_cv_f_permissive_ok=no)])
-
-	    if test $ac_cv_f_permissive_ok = no; then
-		ac_cv_cxx_aware_system=no
-	    else
-		KERNEL_CXX="$KERNEL_CXX -fpermissive"
-	    fi
-	fi
-    fi
 
 
     AC_CACHE_CHECK([whether long and int64_t are the same type in the Linux kernel],
@@ -1209,19 +1242,58 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
 	AC_DEFINE([HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID], [1], [Define if 'struct skb_shared_info' has an 'ip6_frag_id' member.])
     fi
 
+    AC_CACHE_CHECK([for device polling kernel extension], [ac_cv_linuxmodule_net_device_polling],
+	[AC_LANG_C
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/netdevice.h>]],
+[[extern struct net_device *d; d->polling = 0;]])],
+	[ac_cv_linuxmodule_net_device_polling=yes], [ac_cv_linuxmodule_net_device_polling=no])])
+    if test $ac_cv_linuxmodule_net_device_polling = yes; then
+	AC_DEFINE([HAVE_LINUX_POLLING], [1], [Define if your Linux kernel has polling extensions.])
+    fi
+
+    AC_CHECK_DECL(skb_recycle, [ac_cv_skb_recycle=yes], [ac_cv_skb_recycle=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>]])
+    if test $ac_cv_skb_recycle = yes; then
+	AC_DEFINE([HAVE_SKB_RECYCLE], [1], [Define if you have the skb_recycle function.])
+    fi
+
+    AC_CACHE_CHECK([whether netif_receive_skb has been extended], [ac_cv_linuxmodule_netif_receive_skb_extended],
+	[AC_LANG_C
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/netdevice.h>]],
+[[netif_receive_skb(0, 0, 0);]])],
+	[ac_cv_linuxmodule_netif_receive_skb_extended=yes], [ac_cv_linuxmodule_netif_receive_skb_extended=no])])
+    if test $ac_cv_linuxmodule_netif_receive_skb_extended = yes; then
+	AC_DEFINE([HAVE_NETIF_RECEIVE_SKB_EXTENDED], [1], [Define if netif_receive_skb takes 3 arguments.])
+    fi
+
     AC_LANG_C
     AC_CHECK_DECL(net_enable_timestamp, [ac_cv_net_enable_timestamp=yes], [ac_cv_net_enable_timestamp=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>]])
     if test $ac_cv_net_enable_timestamp = yes; then
-	AC_DEFINE([HAVE_NET_ENABLE_TIMESTAMP], [1], [Define if you have the 'net_enable_timestamp' function.])
+	AC_DEFINE([HAVE_NET_ENABLE_TIMESTAMP], [1], [Define if you have the net_enable_timestamp function.])
     fi
 
     AC_CHECK_DECL(netif_tx_lock, [ac_cv_netif_tx_lock=yes], [ac_cv_netif_tx_lock=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>]])
     if test $ac_cv_netif_tx_lock = yes; then
-	AC_DEFINE([HAVE_NETIF_TX_LOCK], [1], [Define if you have the 'netif_tx_lock' function.])
+	AC_DEFINE([HAVE_NETIF_TX_LOCK], [1], [Define if you have the netif_tx_lock function.])
+    fi
+
+    AC_CHECK_DECL(netdev_get_tx_queue, [ac_cv_netdev_get_tx_queue=yes], [ac_cv_netdev_get_tx_queue=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>
+#include <linux/netdevice.h>]])
+    if test $ac_cv_netdev_get_tx_queue = yes; then
+	AC_DEFINE([HAVE_NETDEV_GET_TX_QUEUE], [1], [Define if you have the netdev_get_tx_queue function.])
+    fi
+
+    AC_CHECK_DECL(find_task_by_pid_ns, [ac_cv_find_task_by_pid_ns=yes], [ac_cv_find_task_by_pid_ns=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/sched.h>]])
+    if test $ac_cv_find_task_by_pid_ns = yes; then
+	AC_DEFINE([HAVE_FIND_TASK_BY_PID_NS], [1], [Define if you have the find_task_by_pid_ns function.])
     fi
 
 

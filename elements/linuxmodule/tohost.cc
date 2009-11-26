@@ -150,8 +150,10 @@ ToHost::push(int port, Packet *p)
 	return;
     }
 
+#if PACKET_TYPE_MASK
     // remove PACKET_CLEAN bit -- packet is becoming dirty
     skb->pkt_type &= PACKET_TYPE_MASK;
+#endif
 
     // MAC header is the data pointer
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
@@ -193,18 +195,27 @@ ToHost::push(int port, Packet *p)
     int protocol = (_sniffers ? 0xFFFF : skb->protocol);
 
     // pass packet to Linux
-#ifdef HAVE_NETIF_RECEIVE_SKB	// from Linux headers
+#ifdef HAVE_NETIF_RECEIVE_SKB /* from Linux headers */
     struct net_device *dev = skb->dev;
     local_bh_disable();
     dev_hold(dev);
+
 # if HAVE___NETIF_RECEIVE_SKB
     int ret = __netif_receive_skb(skb, protocol, -1);
-# else
+# elif HAVE_NETIF_RECEIVE_SKB_EXTENDED /* from Click configure */
     netif_receive_skb(skb, protocol, -1);
+# else
+    /* XXX can't yet pass packets back to Linux */
+    if (++_drops == 1)
+	click_chatter("ToHost doesn't yet work on unpatched kernels");
+    kfree_skb(skb);
 # endif
+
     dev_put(dev);
     local_bh_enable();
-#else
+
+#else /* !HAVE_NETIF_RECEIVE_SKB */
+    /* This is only relevent for old kernel versions. */
     // be nice to libpcap
     if (skb->stamp.tv_sec == 0) {
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 18)
@@ -232,6 +243,9 @@ ToHost::push(int port, Packet *p)
     ptype_dispatch(skb, protocol);
     unlock_kernel();
 #  endif
+# else
+    ++_drops;
+    kfree_skb(skb);
 # endif
 #endif
 }

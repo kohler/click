@@ -1149,8 +1149,10 @@ Packet::set_device_anno(net_device *dev)
 inline Packet::PacketType
 Packet::packet_type_anno() const
 {
-#if CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE && PACKET_TYPE_MASK
     return (PacketType)(skb()->pkt_type & PACKET_TYPE_MASK);
+#elif CLICK_LINUXMODULE
+    return (PacketType)(skb()->pkt_type);
 #else
     return _pkt_type;
 #endif
@@ -1159,8 +1161,10 @@ Packet::packet_type_anno() const
 inline void
 Packet::set_packet_type_anno(PacketType p)
 {
-#if CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE && PACKET_TYPE_MASK
     skb()->pkt_type = (skb()->pkt_type & PACKET_CLEAN) | p;
+#elif CLICK_LINUXMODULE
+    skb()->pkt_type = p;
 #else
     _pkt_type = p;
 #endif

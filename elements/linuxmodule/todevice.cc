@@ -235,7 +235,16 @@ ToDevice::run_task(Task *)
     _runs++;
 
 #if LINUX_VERSION_CODE >= 0x020400
-# if HAVE_NETIF_TX_LOCK
+# if HAVE_NETDEV_GET_TX_QUEUE
+    struct netdev_queue *txq = netdev_get_tx_queue(_dev, 0);
+    int ok = spin_trylock_bh(&txq->_xmit_lock);
+    if (likely(ok))
+	txq->xmit_lock_owner = smp_processor_id();
+    else {
+	_task.fast_reschedule();
+	return false;
+    }
+# elif HAVE_NETIF_TX_LOCK
     int ok = spin_trylock_bh(&_dev->_xmit_lock);
     if (likely(ok))
 	_dev->xmit_lock_owner = smp_processor_id();
@@ -345,7 +354,9 @@ ToDevice::run_task(Task *)
 #endif
 
 #if LINUX_VERSION_CODE >= 0x020400
-# if HAVE_NETIF_TX_LOCK
+# if HAVE_NETDEV_GET_TX_QUEUE
+    __netif_tx_unlock_bh(txq);
+# elif HAVE_NETIF_TX_LOCK
     netif_tx_unlock_bh(_dev);
 # else
     _dev->xmit_lock_owner = -1;

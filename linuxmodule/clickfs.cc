@@ -72,7 +72,7 @@ lock_config(const char *file, int line, int iswrite)
 {
     wait_queue_t wait;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-# define private xxx_private
+# define private linux_private
     init_wait(&wait);
 # undef private
 #else

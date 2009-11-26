@@ -1,14 +1,16 @@
 #ifdef __cplusplus
-#define new		xxx_new
-#define this		xxx_this
-#define delete		xxx_delete
-#define class		xxx_class
-#define virtual		xxx_virtual
-#define typename	xxx_typename
-#define private		xxx_private
-#define protected	xxx_protected
-#define public		xxx_public
-#define namespace	xxx_namespace
+# define new		linux_new
+# define this		linux_this
+# define delete		linux_delete
+# define class		linux_class
+# define virtual	linux_virtual
+# define typename	linux_typename
+# define private	linux_private
+# define protected	linux_protected
+# define public		linux_public
+# define namespace	linux_namespace
+# define false		linux_false
+# define true		linux_true
 #endif
 
 #ifndef CLICK_CXX_PROTECT

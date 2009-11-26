@@ -309,7 +309,11 @@ Packet::make(uint32_t headroom, const void *data,
 	__skb_put(skb, length);	// leave space for data
 	if (data)
 	    memcpy(skb->data, data, length);
+# if PACKET_CLEAN
 	skb->pkt_type = HOST | PACKET_CLEAN;
+# else
+	skb->pkt_type = HOST;
+# endif
 	WritablePacket *q = reinterpret_cast<WritablePacket *>(skb);
 	q->clear_annotations();
 	return q;

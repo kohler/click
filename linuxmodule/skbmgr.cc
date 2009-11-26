@@ -281,12 +281,13 @@ RecycledSkbPool::recycle(struct sk_buff *skbs)
     struct sk_buff *skb = skbs;
     skbs = skbs->next;
 
+#if HAVE_SKB_RECYCLE
     // where should sk_buff go?
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
     unsigned char *skb_end = skb_end_pointer(skb);
-#else
+# else
     unsigned char *skb_end = skb->end;
-#endif
+# endif
     int bucket = size_to_lower_bucket(skb_end - skb->head);
 
     // try to put in that bucket
@@ -301,12 +302,13 @@ RecycledSkbPool::recycle(struct sk_buff *skbs)
 	  _buckets[bucket]._tail = next;
 	  skb = 0;
 	}
-#if DEBUG_SKBMGR
+# if DEBUG_SKBMGR
         _recycle_freed++;
-#endif
+# endif
       }
       unlock();
     }
+#endif
 
     // if not taken care of, then free it
     if (skb) {
