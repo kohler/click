@@ -67,7 +67,7 @@ Timestamp::warp(bool from_now)
     if (_warp_class == warp_simulation) {
 	*this = _warp_flat_offset;
 	if (from_now) {
-# if TIMESTAMP_MATH_FLAT64
+# if TIMESTAMP_REP_FLAT64 || TIMESTAMP_MATH_FLAT64
 	    ++_warp_flat_offset._t.x;
 # else
 	    ++_warp_flat_offset._t.subsec;
