@@ -56,7 +56,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,0755)
-%doc AUTHORS ChangeLog FAQ INSTALL LICENSE README
+%doc AUTHORS FAQ INSTALL LICENSE README
 %{_bindir}
 %{_datadir}/click
 %{_mandir}
