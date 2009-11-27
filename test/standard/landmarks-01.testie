@@ -1,0 +1,21 @@
+%info
+Tests landmarks for configuration errors.
+
+%script
+cpp A | click || true
+
+%file A
+
+x :: Idle;
+yy :: Idle;
+#include "B"
+y :: PushNull;
+x[1] -> y -> x;
+y -> [1]x;
+
+%file B
+x :: Idle;
+
+%expect stderr
+B:1: redeclaration of element 'x'
+A:2: element 'x' previously declared here
