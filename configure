@@ -9818,6 +9818,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/signal.h>
 #include <linux/skbuff.h>
 int
@@ -9865,6 +9866,7 @@ else
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/types.h>
 void f1(long) {
 }
@@ -9919,6 +9921,7 @@ else
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/types.h>
 void f1(long long) {
 }
@@ -9973,6 +9976,7 @@ else
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/types.h>
 
 int
@@ -10030,6 +10034,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/skbuff.h>
 int
 main ()
@@ -10085,6 +10090,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/skbuff.h>
 int
 main ()
@@ -10140,6 +10146,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/skbuff.h>
 int
 main ()
@@ -10195,6 +10202,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/skbuff.h>
 int
 main ()
@@ -10250,6 +10258,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/skbuff.h>
 int
 main ()
@@ -10305,6 +10314,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/skbuff.h>
 int
 main ()
@@ -10360,6 +10370,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/netdevice.h>
 int
 main ()
@@ -10402,6 +10413,7 @@ $as_echo "#define HAVE_LINUX_POLLING 1" >>confdefs.h
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <net/dst.h>
 "
 if test "x$ac_cv_have_decl_skb_dst_drop" = x""yes; then :
@@ -10434,6 +10446,7 @@ $as_echo "#define HAVE_SKB_DST_DROP 1" >>confdefs.h
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/skbuff.h>
 "
 if test "x$ac_cv_have_decl_skb_recycle" = x""yes; then :
@@ -10479,6 +10492,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/netdevice.h>
 int
 main ()
@@ -10527,6 +10541,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
 "
@@ -10560,6 +10575,7 @@ $as_echo "#define HAVE_NET_ENABLE_TIMESTAMP 1" >>confdefs.h
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
 "
@@ -10593,6 +10609,7 @@ $as_echo "#define HAVE_NETIF_TX_LOCK 1" >>confdefs.h
 #define false linux_false
 #define true linux_true
 #include <linux/autoconf.h>
+#include <asm/types.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
 "

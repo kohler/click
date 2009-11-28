@@ -1138,7 +1138,8 @@ fixincludes.pl execution failed.
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
-#include <linux/autoconf.h>]])
+#include <linux/autoconf.h>
+#include <asm/types.h>]])
 
 
     AC_CACHE_CHECK([for C++-includable kernel header files], [ac_cv_cxx_aware_system],

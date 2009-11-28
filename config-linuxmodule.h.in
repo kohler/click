@@ -149,9 +149,11 @@
 #include <linux/version.h>
 #ifdef __cplusplus
 # include <click/cxxprotect.h>
+# include <asm/types.h>
 # include <linux/types.h>
 # include <click/cxxunprotect.h>
 #else
+# include <asm/types.h>
 # include <linux/types.h>
 #endif
 typedef ptrdiff_t intptr_t;
