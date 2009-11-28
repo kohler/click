@@ -325,7 +325,11 @@ click_put_processor()
 {
 #if CLICK_LINUXMODULE
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#  ifdef put_cpu_no_resched
     put_cpu_no_resched();
+#  else
+    put_cpu();
+#  endif
 # endif
 #endif
 }

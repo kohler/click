@@ -86,7 +86,7 @@ CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make --linux26
 CLICKCC = @KERNEL_CC@
 CLICKCXX = @KERNEL_CXX@
 
-LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS)" \
+LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS) $(LINUXINCLUDE)" \
 	"$(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) $(CFLAGS_MODULE)" | sed \
 	-e s,-fno-unit-at-a-time,, -e s,-Wstrict-prototypes,, \
 	-e s,-Wdeclaration-after-statement,, \

@@ -1069,10 +1069,10 @@ if test $ac_have_linux_kernel = y; then
     elif test $LINUXMODULE_2_6 = 1; then
 	AC_MSG_CHECKING([for Linux 2.6 compilation flags])
 	make -C $linux_builddir M="`pwd`" $linux_makeargs --no-print-directory -p nonexistent.o >conftest.dat 2>&1
-	for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS; do
+	for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS LINUXINCLUDE; do
 	    eval l$v='"'"`grep ^$v' *:*=' conftest.dat | sed s/^$v' *:*= *//'`"'"'
 	done
-	if test -z "$lKBUILD_CPPFLAGS$lKBUILD_CFLAGS$lCPPFLAGS$lCFLAGS"; then
+	if test -z "$lKBUILD_CPPFLAGS$lKBUILD_CFLAGS$lCPPFLAGS$lCFLAGS$lLINUXINCLUDE"; then
 	    AC_MSG_RESULT([not found])
 	    AC_MSG_ERROR([
 ==============================================
@@ -1082,7 +1082,7 @@ Can't find Linux 2.6 compilation flags.
 ==============================================])
 	    dnl ' fix syntax highlighting
 	fi
-	echo "$lCPPFLAGS $lCFLAGS $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
+	echo "$lCPPFLAGS $lCFLAGS $lLINUXINCLUDE $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
 	LINUX_CFLAGS="`sed -e 's,-Iinclude ',-I$linux_builddir/include' ,g' \
 	    -e 's,-Iinclude2 ',-I$linux_builddir/include2' ,g' \
 	    -e 's, include/, '$linux_builddir/include/,g \
@@ -1252,6 +1252,12 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
 	AC_DEFINE([HAVE_LINUX_POLLING], [1], [Define if your Linux kernel has polling extensions.])
     fi
 
+    AC_CHECK_DECL(skb_dst_drop, [ac_cv_skb_dst_drop=yes], [ac_cv_skb_dst_drop=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <net/dst.h>]])
+    if test $ac_cv_skb_dst_drop = yes; then
+	AC_DEFINE([HAVE_SKB_DST_DROP], [1], [Define if you have the skb_dst_drop function.])
+    fi
+
     AC_CHECK_DECL(skb_recycle, [ac_cv_skb_recycle=yes], [ac_cv_skb_recycle=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]])
     if test $ac_cv_skb_recycle = yes; then
@@ -1288,12 +1294,6 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
 #include <linux/netdevice.h>]])
     if test $ac_cv_netdev_get_tx_queue = yes; then
 	AC_DEFINE([HAVE_NETDEV_GET_TX_QUEUE], [1], [Define if you have the netdev_get_tx_queue function.])
-    fi
-
-    AC_CHECK_DECL(find_task_by_pid_ns, [ac_cv_find_task_by_pid_ns=yes], [ac_cv_find_task_by_pid_ns=no], [CLICK_LINUXMODULE_PROLOGUE()[
-#include <linux/sched.h>]])
-    if test $ac_cv_find_task_by_pid_ns = yes; then
-	AC_DEFINE([HAVE_FIND_TASK_BY_PID_NS], [1], [Define if you have the find_task_by_pid_ns function.])
     fi
 
 

@@ -78,6 +78,17 @@ sub expand_initializer ($$) {
     return $r;
 }
 
+sub expand_array_initializer ($$$) {
+    my($var, $size, $val) = @_;
+    my(@sizes) = (4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048);
+    my($text) = "";
+    foreach my $s (@sizes) {
+	$text .= ($s == $sizes[0] ? "#if" : "#elif") . " $size == $s\n"
+	    . "#define $var {{" . join(",", ($val) x $s) . "}}\n";
+    }
+    return $text . "#else\n#error \"fixincludes.pl needs updating\"\n#endif\n";
+}
+
 sub one_includeroot ($$) {
     my($includeroot, $outputroot) = @_;
     my(@dirs, $d, $dd, $f);
@@ -109,7 +120,17 @@ sub one_includeroot ($$) {
 
 	    # Fix include files for C++ compatibility.
 
-	    # First obscure comments and things that would confuse parsing.
+	    # The ".smp_locks" ASM alternatives section interacts badly
+	    # with C++ style weak linkage.  The .smp_locks section refers
+	    # to the globally-linked versions of templated inline functions
+	    # like Vector<String>::~Vector().  The weakly-linked sections
+	    # are dropped, and then the linker dies, because .smp_locks
+	    # references them.  Too bad, but the simplest fix is to get rid
+	    # of the alternatives.  Since this is in strings, must
+	    # implement before string obfuscation
+	    s{\.section\s+\.smp_locks.*?\.previous(?:\\n)?}{}sg;
+
+	    # Obscure comments and things that would confuse parsing.
 
 	    # DO NOT do preprocessor directives; we need to fix their
 	    # definitions
@@ -132,9 +153,10 @@ sub one_includeroot ($$) {
 	    # colon-colon
 	    s{:(?=:)}{: }g;
 
-	    # "extern asmlinkage"
+	    # "extern asmlinkage" and other declaration weirdness
 	    s{\bextern\s+asmlinkage\b}{asmlinkage}g;
 	    s{\bextern\s+void\s+asmlinkage\b}{asmlinkage void}g;
+	    s&^notrace\s*((?:static)?\s*inline[^;]*)\{&$1 notrace;\n$1\{&mg;
 
 	    # advanced C initializers
 	    s{([\{,]\s*)\.\s*([a-zA-Z_]\w*)\s*=}{$1$2: }g;
@@ -145,8 +167,13 @@ sub one_includeroot ($$) {
 	    s{(return|=)\s*\((\w+)\)\s*(\{[^\{\}]*\{[^\{\}]*\}[^\{\}]*\})}{$1 \(\{ $2 __magic_$2__ = $3; __magic_$2__; \}\)}g;
 	    s{\(struct\s+(\w+)\)\s*(__.*\(.*?\));}{\(\{ struct $1 __magic_$1__ = $2; __magic_$1__; \}\);}g;
 
-	    # "new"
+	    # "new" and other keywords
 	    s{\bnew\b}{new_value}g;
+	    s{\band\b}{and_value}g;
+	    s{\bswap\b}{linux_swap}g;
+
+	    # "sizeof" isn't nice to the preprocessor
+	    s{sizeof(?:\s+(?:unsigned\s+)?long|\s*\(\s*(?:unsigned\s+)?long\s*\))}{(BITS_PER_LONG/8 /*=BITS_PER_BYTE*/)}g;
 
 	    # casts
 	    s{((?:const )?(?:volatile )?)type \*(\w+) = (\w+)\s*;}{$1type \*$2 = ($1type \*) $3;}g;
@@ -167,6 +194,9 @@ sub one_includeroot ($$) {
 	    }
 	    if ($d eq "types.h") {
 		s{(typedef.*bool\s*;)}{#ifndef __cplusplus\n$1\n#endif};
+	    }
+	    if ($d eq "mpspec.h") {
+		s<^\#define\s+(\w+)\s+\{\s*\{\s*\[\s*0\s*\.\.\.\s*(\w+)\s*-\s*1\s*\]\s*=\s*(.*?)\s*\}\s*\}><expand_array_initializer($1, $2, $3)>emg;
 	    }
 
 	    # unquote.

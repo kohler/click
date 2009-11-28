@@ -15,9 +15,6 @@
 /* Define if fast checksum functions available. */
 #define HAVE_FAST_CHECKSUM 1
 
-/* Define if you have the find_task_by_pid_ns function. */
-#undef HAVE_FIND_TASK_BY_PID_NS
-
 /* Define if 'int64_t' is typedefed to 'long' in linuxmodule. */
 #undef HAVE_INT64_IS_LONG_LINUXMODULE
 
@@ -102,6 +99,9 @@
 
 /* Define if you have the netif_tx_lock function. */
 #undef HAVE_NETIF_TX_LOCK
+
+/* Define if you have the skb_dst_drop function. */
+#undef HAVE_SKB_DST_DROP
 
 /* Define if you have the skb_recycle function. */
 #undef HAVE_SKB_RECYCLE

@@ -1,4 +1,5 @@
 /* -*- related-file-name: "../include/click/crc32.h" -*- */
+#include <click/config.h>
 #include <click/crc32.h>
 
 /* crc32h.c -- package to compute 32-bit CRC one byte at a time using   */
@@ -39,14 +40,14 @@
 
 #define POLYNOMIAL 0x04c11db7L
 
-static unsigned long crc_table[256];
+static uint32_t crc_table[256];
 
 static void
 gen_crc_table()
  /* generate the table of CRC remainders for all possible bytes */
- { register int i, j;  register unsigned long crc_accum;
+ { register int i, j;  register uint32_t crc_accum;
    for ( i = 0;  i < 256;  i++ )
-       { crc_accum = ( (unsigned long) i << 24 );
+       { crc_accum = ( (uint32_t) i << 24 );
          for ( j = 0;  j < 8;  j++ )
               { if ( crc_accum & 0x80000000L )
                    crc_accum =
@@ -60,8 +61,8 @@ gen_crc_table()
 /*
  * update the CRC on the data block one byte at a time
  */
-unsigned long
-update_crc(unsigned long crc_accum,
+uint32_t
+update_crc(uint32_t crc_accum,
            const char *data_blk_ptr,
            int data_blk_size)
 {
@@ -74,7 +75,7 @@ update_crc(unsigned long crc_accum,
   }
 
   for ( j = 0;  j < data_blk_size;  j++ ){
-    i = ( (int) ( crc_accum >> 24) ^ *data_blk_ptr++ ) & 0xff;
+    i = ( (uint32_t) ( crc_accum >> 24) ^ *data_blk_ptr++ ) & 0xff;
     crc_accum = ( crc_accum << 8 ) ^ crc_table[i];
   }
   return crc_accum;

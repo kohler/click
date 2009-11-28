@@ -5,9 +5,8 @@
 extern "C" {
 #endif
 
-unsigned long update_crc(unsigned long crc_accum,
-                         const char *data_blk_ptr,
-                         int data_blk_size);
+uint32_t update_crc(uint32_t crc_accum, const char *data_blk_ptr,
+		    int data_blk_size);
 
 #ifdef __cplusplus
 }

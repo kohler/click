@@ -186,10 +186,14 @@ ToHost::push(int port, Packet *p)
 
     // skb->dst may be set if the packet came from Linux originally. In this
     // case, we must clear skb->dst so Linux finds the correct dst.
+#if HAVE_SKB_DST_DROP
+    skb_dst_drop(skb);
+#else
     if (skb->dst) {
 	dst_release(skb->dst);
 	skb->dst = 0;
     }
+#endif
 
     // get protocol to pass to Linux
     int protocol = (_sniffers ? 0xFFFF : skb->protocol);

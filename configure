@@ -9728,10 +9728,10 @@ if test $ac_have_linux_kernel = y; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Linux 2.6 compilation flags" >&5
 $as_echo_n "checking for Linux 2.6 compilation flags... " >&6; }
 	make -C $linux_builddir M="`pwd`" $linux_makeargs --no-print-directory -p nonexistent.o >conftest.dat 2>&1
-	for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS; do
+	for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS LINUXINCLUDE; do
 	    eval l$v='"'"`grep ^$v' *:*=' conftest.dat | sed s/^$v' *:*= *//'`"'"'
 	done
-	if test -z "$lKBUILD_CPPFLAGS$lKBUILD_CFLAGS$lCPPFLAGS$lCFLAGS"; then
+	if test -z "$lKBUILD_CPPFLAGS$lKBUILD_CFLAGS$lCPPFLAGS$lCFLAGS$lLINUXINCLUDE"; then
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
 	    as_fn_error "
@@ -9741,7 +9741,7 @@ Can't find Linux 2.6 compilation flags.
 
 ==============================================" "$LINENO" 5
 	    	fi
-	echo "$lCPPFLAGS $lCFLAGS $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
+	echo "$lCPPFLAGS $lCFLAGS $lLINUXINCLUDE $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
 	LINUX_CFLAGS="`sed -e 's,-Iinclude ',-I$linux_builddir/include' ,g' \
 	    -e 's,-Iinclude2 ',-I$linux_builddir/include2' ,g' \
 	    -e 's, include/, '$linux_builddir/include/,g \
@@ -10384,6 +10384,38 @@ $as_echo "#define HAVE_LINUX_POLLING 1" >>confdefs.h
 
     fi
 
+    ac_fn_c_check_decl "$LINENO" "skb_dst_drop" "ac_cv_have_decl_skb_dst_drop" "#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#define new linux_new
+#define this linux_this
+#define delete linux_delete
+#define class linux_class
+#define virtual linux_virtual
+#define typename linux_typename
+#define private linux_private
+#define protected linux_protected
+#define public linux_public
+#define namespace linux_namespace
+#define false linux_false
+#define true linux_true
+#include <linux/autoconf.h>
+#include <net/dst.h>
+"
+if test "x$ac_cv_have_decl_skb_dst_drop" = x""yes; then :
+  ac_cv_skb_dst_drop=yes
+else
+  ac_cv_skb_dst_drop=no
+fi
+
+    if test $ac_cv_skb_dst_drop = yes; then
+
+$as_echo "#define HAVE_SKB_DST_DROP 1" >>confdefs.h
+
+    fi
+
     ac_fn_c_check_decl "$LINENO" "skb_recycle" "ac_cv_have_decl_skb_recycle" "#if HAVE_LINUXMODULE_2_6
 # define KBUILD_STR(s)		#s
 # define KBUILD_BASENAME	KBUILD_STR(click)
@@ -10573,38 +10605,6 @@ fi
     if test $ac_cv_netdev_get_tx_queue = yes; then
 
 $as_echo "#define HAVE_NETDEV_GET_TX_QUEUE 1" >>confdefs.h
-
-    fi
-
-    ac_fn_c_check_decl "$LINENO" "find_task_by_pid_ns" "ac_cv_have_decl_find_task_by_pid_ns" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
-#define new linux_new
-#define this linux_this
-#define delete linux_delete
-#define class linux_class
-#define virtual linux_virtual
-#define typename linux_typename
-#define private linux_private
-#define protected linux_protected
-#define public linux_public
-#define namespace linux_namespace
-#define false linux_false
-#define true linux_true
-#include <linux/autoconf.h>
-#include <linux/sched.h>
-"
-if test "x$ac_cv_have_decl_find_task_by_pid_ns" = x""yes; then :
-  ac_cv_find_task_by_pid_ns=yes
-else
-  ac_cv_find_task_by_pid_ns=no
-fi
-
-    if test $ac_cv_find_task_by_pid_ns = yes; then
-
-$as_echo "#define HAVE_FIND_TASK_BY_PID_NS 1" >>confdefs.h
 
     fi
 
