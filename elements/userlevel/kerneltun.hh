@@ -79,17 +79,18 @@ directory" may indicate that your kernel isn't set up, or that some
 required kernel module hasn't been loaded (on Linux, the relevant module is
 "tun").
 
-Packets sent to ADDR will be processed by the host kernel stack; packets sent
-to any other address in ADDR/MASK will be sent to KernelTun.  Say you run this
-configuration:
+On Linux and most BSDs, packets sent to ADDR will be processed by the host
+kernel stack; on Mac OS X there is no special handling for ADDR.
+Packets sent to any (other) address in ADDR/MASK will be sent to KernelTun.
+Say you run this configuration:
 
     tun :: KernelTun(1.0.0.1/8);
     tun -> IPClassifier(icmp type echo) -> ICMPPingResponder
         -> IPPrint -> tun;
 
-If you then "C<ping 1.0.0.1>", I<your own kernel> will respond.  Click will
-never see the packets, so it won't print anything.  But if you "C<ping
-1.0.0.2>", the pings are sent to Click.  You should see printouts from Click,
+On Linux and most BSDs, if you then "C<ping 1.0.0.1>", I<your own kernel> will respond:
+Click will never see the packets, so it won't print anything.
+But if you "C<ping 1.0.0.2>", the pings are sent to Click.  You should see printouts from Click,
 and C<ping> should print Click's responses.
 
 This element differs from KernelTap in that it produces and expects IP

@@ -40,6 +40,7 @@
 # define KERNELTUN_OSX 1
 // assume tun driver installed from http://chrisp.de/en/projects/tunnel.html
 // this driver doesn't produce or expect packets with an address family prepended
+# include <net/route.h>
 #endif
 #if defined(HAVE_NET_IF_TAP_H)
 # define KERNELTAP_NET 1
@@ -301,6 +302,50 @@ KernelTun::updown(IPAddress addr, IPAddress mask, ErrorHandler *errh)
     }
 #else
 # error "Lacking SIOCSIFADDR and/or SIOCSIFNETMASK"
+#endif
+#if defined(KERNELTUN_OSX)
+    // On OSX, we have to explicitly add a route, too
+    {
+       static int seq = 0;
+       struct {
+           struct rt_msghdr msghdr;
+           struct sockaddr_in sin[3]; // Destination, gateway, netmask
+       } msg;
+
+       memset(&msg, 0, sizeof(msg));
+       msg.msghdr.rtm_msglen  = sizeof(msg);
+       msg.msghdr.rtm_version = RTM_VERSION;
+       msg.msghdr.rtm_type    = RTM_ADD;
+       msg.msghdr.rtm_index   = 0;
+       msg.msghdr.rtm_pid     = 0;
+       msg.msghdr.rtm_addrs   = RTA_DST | RTA_GATEWAY | RTA_NETMASK;
+       msg.msghdr.rtm_seq     = ++seq;
+       msg.msghdr.rtm_errno   = 0;
+       msg.msghdr.rtm_flags   = RTF_UP | RTF_GATEWAY;
+
+       for (unsigned int i = 0; i < sizeof(msg.sin) / sizeof(msg.sin[0]); i++) {
+           msg.sin[i].sin_len    = sizeof(msg.sin[0]);
+           msg.sin[i].sin_family = AF_INET;
+       }
+
+       msg.sin[0].sin_addr = addr & mask; // Destination
+       msg.sin[1].sin_addr = addr;        // Gateway
+       msg.sin[2].sin_addr = mask;        // Netmask
+
+       int s = socket(PF_ROUTE, SOCK_RAW, AF_INET);
+       if (s < 0) {
+           errh->warning("Opening a PF_ROUTE socket failed: %s", strerror(errno));
+           goto out;
+       }
+       int r = write(s, (char *)&msg, sizeof(msg));
+       if (r < 0) {
+           errh->warning("Writing to the PF_ROUTE socket failed: %s", strerror(errno));
+       }
+       r = close(s);
+       if (r < 0) {
+           errh->warning("Closing the PF_ROUTE socket failed: %s", strerror(errno));
+       }
+    }
 #endif
 #if defined(SIOCSIFHWADDR)
     if (_macaddr) {
