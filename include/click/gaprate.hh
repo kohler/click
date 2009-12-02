@@ -55,8 +55,7 @@ class GapRate { public:
     /** @brief  Set the current rate to @a r.
      *  @param  r  desired rate (events per second)
      *
-     *  Rates larger than MAX_RATE are reduced to MAX_RATE.  Also performs the
-     *  equivalent of a reset() to flush old state. */
+     *  Rates larger than MAX_RATE are reduced to MAX_RATE. */
     inline void set_rate(unsigned r);
 
     /** @brief  Set the current rate to @a r.
@@ -117,6 +116,8 @@ class GapRate { public:
     Timestamp _last;
 #endif
 
+    inline void initialize_rate(unsigned rate);
+
 };
 
 /** @brief  Reset the underlying rated process. */
@@ -130,28 +131,42 @@ GapRate::reset()
 }
 
 inline void
-GapRate::set_rate(unsigned r)
+GapRate::initialize_rate(unsigned r)
 {
-    if (r > MAX_RATE)
-	r = MAX_RATE;
     _rate = r;
     _ugap = (r == 0 ? MAX_RATE + 1 : MAX_RATE / r);
 #if DEBUG_GAPRATE
     click_chatter("ugap: %u", _ugap);
 #endif
-    reset();
+}
+
+inline void
+GapRate::set_rate(unsigned r)
+{
+    if (r > MAX_RATE)
+	r = MAX_RATE;
+    if (_rate != r) {
+	initialize_rate(r);
+	if (_tv_sec >= 0 && r != 0) {
+	    Timestamp now = Timestamp::now();
+	    _sec_count = (now.usec() << UGAP_SHIFT) / _ugap;
+	}
+    }
 }
 
 inline
 GapRate::GapRate()
 {
-    set_rate(0);
+    initialize_rate(0);
+    reset();
 }
 
 inline
 GapRate::GapRate(unsigned r)
+    : _rate(0)
 {
-    set_rate(r);
+    initialize_rate(r);
+    reset();
 }
 
 inline unsigned
