@@ -58,7 +58,8 @@ if test ! -r $clickdatadir/config.mk; then
     AC_MSG_ERROR([
 ==============================================
 
-'$clickdatadir/config.mk' not found.
+Click must be installed using 'make install' before Clicky is built,
+but '$clickdatadir/config.mk' is not present.
 Are you sure '$clickprefix' is a Click install directory?
 
 ==============================================])

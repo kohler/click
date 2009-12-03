@@ -1,0 +1,20 @@
+CLICKY GUI FOR CLICK CONFIGURATIONS
+===================================
+
+INSTALLATION
+------------
+
+    To install the Clicky GUI, start by installing Click itself.
+
+	cd CLICKDIR
+	./configure --prefix=CLICKPREFIX ...
+	make install
+
+    Make sure your system has the necessary libraries and packages
+installed.  On a Debian or Ubuntu system, this will include automake,
+autoconf, libtool, libgtk2.0-dev (or libgtk2-dev), and graphviz.  Then:
+
+	cd CLICKDIR/apps/clicky
+	autoreconf -i
+	./configure [--prefix=PREFIX] --with-click=CLICKPREFIX
+	make install
