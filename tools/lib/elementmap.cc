@@ -60,11 +60,11 @@ ElementMap::~ElementMap()
 
 
 void
-ElementMap::push_default(ElementMap *em)
+ElementMap::push_default(ElementMap *emap)
 {
-    em->use();
+    emap->use();
     element_map_stack.push_back(the_element_map);
-    the_element_map = em;
+    the_element_map = emap;
 }
 
 void
@@ -77,6 +77,13 @@ ElementMap::pop_default()
     } else
 	the_element_map = &main_element_map;
     old->unuse();
+}
+
+void
+ElementMap::pop_default(ElementMap *emap)
+{
+    if (the_element_map == emap)
+	pop_default();
 }
 
 

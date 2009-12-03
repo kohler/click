@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2001-2002 International Computer Science Institute
  * Copyright (c) 2007 Regents of the University of California
+ * Copyright (c) 2009 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -47,6 +48,7 @@
 #define DOT_OPT			311
 #define GML_OPT			312
 #define GRAPHML_OPT		313
+#define TEMPLATE_TEXT_OPT	314
 
 #define FIRST_DRIVER_OPT	1000
 #define USERLEVEL_OPT		(1000 + Driver::USERLEVEL)
@@ -68,7 +70,8 @@ static const Clp_Option options[] = {
     { "linuxmodule", 'l', LINUXMODULE_OPT, 0, 0 },
     { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
     { "package-docs", 0, PACKAGE_URLS_OPT, Clp_ValString, 0 },
-    { "template", 't', TEMPLATE_OPT, Clp_ValString, 0 },
+    { "template", 't', TEMPLATE_OPT, Clp_ValString, Clp_PreferredMatch },
+    { "template-text", 'T', TEMPLATE_TEXT_OPT, Clp_ValString, 0 },
     { "userlevel", 0, USERLEVEL_OPT, 0, 0 },
     { "version", 'v', VERSION_OPT, 0, 0 },
     { "write-template", 0, WRITE_TEMPLATE_OPT, 0, 0 },
@@ -78,7 +81,7 @@ static const char *program_name;
 static HashTable<String, String> definitions;
 static int specified_driver = -1;
 
-static const char *default_template = "\
+static const char *default_html_template = "\
 <!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\
 <html><head>\n\
 <meta http-equiv='Content-Type' content='text/html; charset=ISO-8859-1'>\n\
@@ -187,6 +190,9 @@ TABLE.conntable TR TD {\n\
 </table>\n\
 </body>\n\
 </html>\n";
+
+static const char *default_graph_template = "\
+<~if test=\"<~anonymous>\" then=\"<~type>\" else=\"<~name> :: <~type>\">";
 
 
 // list of classes
@@ -689,11 +695,13 @@ static String type_landmark = "$fake_type$";
 
 class ElementsOutput { public:
 
-    ElementsOutput(RouterT *, const ProcessingT &, const HashTable<String, String> &);
+    ElementsOutput(RouterT *r, const ProcessingT &processing,
+		   const HashTable<String, String> &main_attrs);
     ~ElementsOutput();
 
-    void run(ElementT *, FILE *);
-    void run(FILE *);
+    String run(const String &templ, ElementT *e);
+    void run(ElementT *e, FILE *outf);
+    void run(FILE *outf);
 
   private:
 
@@ -702,40 +710,24 @@ class ElementsOutput { public:
     const HashTable<String, String> &_main_attrs;
     Vector<ElementT *> _entries;
     Vector<ElementT *> _elements;
+    bool _have_entries;
+    bool _have_elements;
 
     StringAccum _sa;
     String _sep;
 
     void run_template(String, ElementT *, int, bool);
     String expand(const String &, ElementT *, int, bool);
+    void create_entries();
+    void create_elements();
 
 };
 
 
 ElementsOutput::ElementsOutput(RouterT *r, const ProcessingT &processing, const HashTable<String, String> &main_attrs)
-    : _router(r), _processing(processing), _main_attrs(main_attrs)
+    : _router(r), _processing(processing), _main_attrs(main_attrs),
+      _have_entries(false), _have_elements(false)
 {
-    bool do_elements = main_attrs["entry"];
-    bool do_types = main_attrs["typeentry"];
-
-    // get list of elements and/or types
-    HashTable<ElementClassT *, int> done_types(-1);
-    for (RouterT::iterator x = r->begin_elements(); x; x++) {
-	_elements.push_back(x);
-	if (do_elements)
-	    _entries.push_back(x);
-	if (do_types && done_types[x->type()] < 0) {
-	    ElementT *fake = new ElementT(x->type_name(), x->type(), "", LandmarkT(type_landmark));
-	    _entries.push_back(fake);
-	    done_types.set(x->type(), 1);
-	}
-    }
-
-    // sort by name
-    if (_elements.size())
-	qsort(&_elements[0], _elements.size(), sizeof(ElementT *), element_name_compar);
-    if (_entries.size())
-	qsort(&_entries[0], _entries.size(), sizeof(ElementT *), element_name_compar);
 }
 
 ElementsOutput::~ElementsOutput()
@@ -743,6 +735,40 @@ ElementsOutput::~ElementsOutput()
     for (int i = 0; i < _entries.size(); i++)
 	if (_entries[i]->landmark() == type_landmark)
 	    delete _entries[i];
+}
+
+void
+ElementsOutput::create_elements()
+{
+    if (!_have_elements) {
+	for (RouterT::iterator x = _router->begin_elements(); x; ++x)
+	    _elements.push_back(x);
+	if (_elements.size())	// sort by name
+	    qsort(&_elements[0], _elements.size(), sizeof(ElementT *), element_name_compar);
+	_have_elements = true;
+    }
+}
+
+void
+ElementsOutput::create_entries()
+{
+    if (!_have_entries) {
+	bool do_elements = _main_attrs["entry"];
+	bool do_types = _main_attrs["typeentry"];
+	HashTable<ElementClassT *, int> done_types(-1);
+	for (RouterT::iterator x = _router->begin_elements(); x; ++x) {
+	    if (do_elements)
+		_entries.push_back(x);
+	    if (do_types && done_types[x->type()] < 0) {
+		ElementT *fake = new ElementT(x->type_name(), x->type(), "", LandmarkT(type_landmark));
+		_entries.push_back(fake);
+		done_types.set(x->type(), 1);
+	    }
+	}
+	if (_entries.size())	// sort by name
+	    qsort(&_entries[0], _entries.size(), sizeof(ElementT *), element_name_compar);
+	_have_entries = true;
+    }
 }
 
 void
@@ -771,6 +797,11 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_ou
 		_sa << _sep << "<a href='" << href << "'>" << e->name() << "</a>";
 	    else
 		_sa << _sep << e->name();
+	} else if (tag == "anonymous") {
+	    if (e->was_anonymous())
+		_sa << _sep << "yes";
+	    else
+		_sa << _sep;
 	} else if (tag == "type") {
 	    String href = (attrs["link"] ? class_href(t) : String());
 	    if (href)
@@ -793,6 +824,7 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_ou
 	    String text = attrs["entry"];
 	    if (!text)
 		text = _main_attrs["typeref"];
+	    create_elements();
 	    for (int i = 0; i < _elements.size(); i++)
 		if (_elements[i]->type() == t) {
 		    run_template(text, _elements[i], -1, false);
@@ -949,6 +981,15 @@ ElementsOutput::expand(const String &s, ElementT *e, int port, bool is_output)
     return result;
 }
 
+String
+ElementsOutput::run(const String &templ, ElementT *e)
+{
+    run_template(templ, e, -1, false);
+    String s = _sa.take_string();
+    _sep = _main_attrs["sep"];
+    return s;
+}
+
 void
 ElementsOutput::run(ElementT *e, FILE *f)
 {
@@ -966,6 +1007,7 @@ ElementsOutput::run(FILE *f)
     // divide into columns
     int which_col, ncol;
     parse_columns(_main_attrs["column"], which_col, ncol);
+    create_entries();
     int per_col = ((_entries.size() - 1) / ncol) + 1;
     int first = (which_col - 1) * per_col;
     int last = which_col * per_col;
@@ -982,26 +1024,6 @@ ElementsOutput::run(FILE *f)
 // main loop
 //
 
-static void
-run_template(const char *templ, RouterT *r, const String &r_config,
-	     const ElementMap &emap, const ProcessingT &processing, FILE *outf)
-{
-    String tag;
-    HashTable<String, String> attrs;
-
-    while (templ) {
-	templ = output_template_until_tag(templ, outf, tag, attrs, false);
-
-	if (tag == "config")
-	    output_config(r_config, outf);
-	else if (tag == "elements") {
-	    ElementsOutput eo(r, processing, attrs);
-	    eo.run(outf);
-	} else if (String text = definitions.get(tag))
-	    run_template(text.c_str(), r, r_config, emap, processing, outf);
-    }
-}
-
 static FILE *
 open_output_file(const char *outfile, ErrorHandler *errh)
 {
@@ -1014,194 +1036,198 @@ open_output_file(const char *outfile, ErrorHandler *errh)
     return outf;
 }
 
+struct PrettyRouter {
+    String r_config;
+    RouterT *r;
+    ElementMap emap;
+    ProcessingT *processing;
+    FILE *outf;
+
+    PrettyRouter(const char *infile, bool file_is_expr, const char *outfile,
+		 ErrorHandler *errh)
+	: processing(0), outf(0) {
+	r = pretty_read_router(infile, file_is_expr, errh, r_config);
+	if (!r)
+	    return;
+
+	emap.parse_all_files(r, CLICK_DATADIR, errh);
+	emap.set_driver(emap.pick_driver(specified_driver, r, errh));
+
+	processing = new ProcessingT(r, &emap, errh);
+	processing->check_types(errh);
+
+	ElementMap::push_default(&emap);
+
+	outf = open_output_file(outfile, errh);
+    }
+    ~PrettyRouter() {
+	ElementMap::pop_default(&emap);
+	delete processing;
+	delete r;
+	if (outf && outf != stdout)
+	    fclose(outf);
+    }
+    bool ok() const {
+	return outf != 0;
+    }
+};
+
+static void
+run_template(const char *templ, PrettyRouter &pr)
+{
+    String tag;
+    HashTable<String, String> attrs;
+
+    while (templ) {
+	templ = output_template_until_tag(templ, pr.outf, tag, attrs, false);
+
+	if (tag == "config")
+	    output_config(pr.r_config, pr.outf);
+	else if (tag == "elements") {
+	    ElementsOutput eo(pr.r, *pr.processing, attrs);
+	    eo.run(pr.outf);
+	} else if (String text = definitions.get(tag))
+	    run_template(text.c_str(), pr);
+    }
+}
+
 static void
 pretty_process(const char *infile, bool file_is_expr, const char *outfile,
 	       const char *templ, ErrorHandler *errh)
 {
-    String r_config;
-    RouterT *r = pretty_read_router(infile, file_is_expr, errh, r_config);
-    if (!r)
-	return;
-
-    // open output file
-    FILE *outf = open_output_file(outfile, errh);
-    if (!outf) {
-	delete r;
-	return;
-    }
-
-    // get element map and processing
-    ElementMap emap;
-    emap.parse_all_files(r, CLICK_DATADIR, errh);
-    emap.set_driver(emap.pick_driver(specified_driver, r, errh));
-    ProcessingT processing(r, &emap, errh);
-    processing.check_types(errh);
-
-    ElementMap::push_default(&emap);
-
-    // process template
-    run_template(templ, r, r_config, emap, processing, outf);
-
-    ElementMap::pop_default();
-
-    // close files, return
-    if (outf != stdout)
-	fclose(outf);
-    delete r;
+    PrettyRouter pr(infile, file_is_expr, outfile, errh);
+    if (pr.ok())
+	run_template(templ, pr);
 }
+
 
 // This algorithm based on the original click-viz script,
 // donated by Jose Vasconcellos <jvasco@bellatlantic.net>
 static void
 pretty_process_dot(const char *infile, bool file_is_expr, const char *outfile,
-		   ErrorHandler *errh)
+		   const String &the_template, ErrorHandler *errh)
 {
-    RouterT *r = read_router(infile, file_is_expr, errh);
-    if (!r)
+    PrettyRouter pr(infile, file_is_expr, outfile, errh);
+    if (!pr.ok())
 	return;
-
-    // open output file
-    FILE *outf = open_output_file(outfile, errh);
-    if (!outf) {
-	delete r;
-	return;
-    }
+    HashTable<String, String> attrs;
+    ElementsOutput eo(pr.r, *pr.processing, attrs);
 
     // write dot configuration
-    fprintf(outf, "digraph clickrouter {\n\
+    fprintf(pr.outf, "digraph clickrouter {\n\
   node [shape=record,height=.1]\n\
   edge [arrowhead=normal,arrowtail=none,tailclip=false]\n");
 
     // print all nodes
-    for (RouterT::const_iterator n = r->begin_elements(); n != r->end_elements(); n++) {
+    for (RouterT::iterator n = pr.r->begin_elements();
+	 n != pr.r->end_elements();
+	 ++n) {
+	String label_text = eo.run(the_template, n.operator->());
 #if 1
-	fprintf(outf, "  \"%s\" [label=\"", n->name_c_str());
+	fprintf(pr.outf, "  \"%s\" [label=\"", n->name_c_str());
 	if (n->ninputs() || n->noutputs())
-	    fprintf(outf, "{");
+	    fprintf(pr.outf, "{");
 	if (n->ninputs()) {
-	    fprintf(outf, "{");
+	    fprintf(pr.outf, "{");
 	    for (int i = 0; i < n->ninputs(); i++)
-		fprintf(outf, (i ? "|<i%d>" : "<i%d>"), i);
-	    fprintf(outf, "}|");
+		fprintf(pr.outf, (i ? "|<i%d>" : "<i%d>"), i);
+	    fprintf(pr.outf, "}|");
 	}
-	fputs(n->type_name_c_str(), outf);
+	fputs(label_text.c_str(), pr.outf);
 	if (n->noutputs()) {
-	    fprintf(outf, "|{");
+	    fprintf(pr.outf, "|{");
 	    for (int i = 0; i < n->noutputs(); i++)
-		fprintf(outf, (i ? "|<o%d>" : "<o%d>"), i);
-	    fprintf(outf, "}");
+		fprintf(pr.outf, (i ? "|<o%d>" : "<o%d>"), i);
+	    fprintf(pr.outf, "}");
 	}
 	if (n->ninputs() || n->noutputs())
-	    fprintf(outf, "}");
-	fprintf(outf, "\"];\n");
+	    fprintf(pr.outf, "}");
+	fprintf(pr.outf, "\"];\n");
 #else
 	if (!n->ninputs() && !n->noutputs())
-	    fprintf(outf, "  \"%s\" [label=\"%s\"];\n",
-		    n->name_c_str(), n->type_name_c_str());
+	    fprintf(pr.outf, "  \"%s\" [label=\"%s\"];\n",
+		    n->name_c_str(), label_text.c_str());
 	else {
-	    fprintf(outf, "  \"%s\" [label=< <TABLE BORDER=\"0\">", n->name_c_str());
+	    fprintf(pr.outf, "  \"%s\" [label=< <TABLE BORDER=\"0\">", n->name_c_str());
 	    if (n->ninputs() > 0) {
-		fprintf(outf, "<TR><TD><TABLE BORDER=\"0\"><TR>");
+		fprintf(pr.outf, "<TR><TD><TABLE BORDER=\"0\"><TR>");
 		for (int i = 0; i < n->ninputs(); i++)
-		    fprintf(outf, "<TD PORT=\"i%d\">X</TD>", i);
-		fprintf(outf, "</TR></TABLE></TD></TR>");
+		    fprintf(pr.outf, "<TD PORT=\"i%d\">X</TD>", i);
+		fprintf(pr.outf, "</TR></TABLE></TD></TR>");
 	    }
-	    fprintf(outf, "<TR><TD>%s</TD></TR>", n->type_name_c_str());
+	    fprintf(pr.outf, "<TR><TD>%s</TD></TR>", label_text.c_str());
 	    if (n->noutputs() > 0) {
-		fprintf(outf, "<TR><TD><TABLE BORDER=\"0\"><TR>");
+		fprintf(pr.outf, "<TR><TD><TABLE BORDER=\"0\"><TR>");
 		for (int i = 0; i < n->noutputs(); i++)
-		    fprintf(outf, "<TD PORT=\"o%d\">X</TD>", i);
-		fprintf(outf, "</TR></TABLE></TD></TR>");
+		    fprintf(pr.outf, "<TD PORT=\"o%d\">X</TD>", i);
+		fprintf(pr.outf, "</TR></TABLE></TD></TR>");
 	    }
-	    fprintf(outf, "</TABLE> >];\n");
+	    fprintf(pr.outf, "</TABLE> >];\n");
 	}
 #endif
     }
 
     // print all connections
-    const Vector<ConnectionT> &conns = r->connections();
+    const Vector<ConnectionT> &conns = pr.r->connections();
     for (const ConnectionT *c = conns.begin(); c != conns.end(); c++)
-	fprintf(outf, "  \"%s\":o%d -> \"%s\":i%d;\n",
+	fprintf(pr.outf, "  \"%s\":o%d -> \"%s\":i%d;\n",
 		c->from_element()->name_c_str(), c->from_port(),
 		c->to_element()->name_c_str(), c->to_port());
 
-    fprintf(outf, "}\n");
-
-    // close files, return
-    if (outf != stdout)
-	fclose(outf);
-    delete r;
+    fprintf(pr.outf, "}\n");
 }
 
 static void
 pretty_process_gml(const char *infile, bool file_is_expr, const char *outfile,
-		   ErrorHandler *errh)
+		   const String &the_template, ErrorHandler *errh)
 {
-    RouterT *r = read_router(infile, file_is_expr, errh);
-    if (!r)
+    PrettyRouter pr(infile, file_is_expr, outfile, errh);
+    if (!pr.ok())
 	return;
-
-    // open output file
-    FILE *outf = open_output_file(outfile, errh);
-    if (!outf) {
-	delete r;
-	return;
-    }
+    HashTable<String, String> attrs;
+    ElementsOutput eo(pr.r, *pr.processing, attrs);
 
     // write dot configuration
-    fprintf(outf, "Creator \"click-pretty\"\n\
+    fprintf(pr.outf, "Creator \"click-pretty\"\n\
 graph\n[ hierarchic 1\n\
   directed 1\n");
 
     // print all nodes
-    for (RouterT::const_iterator n = r->begin_elements(); n != r->end_elements(); n++)
-	fprintf(outf, "  node\n  [ id %d\n    label \"%s\"\n  ]\n", n->eindex(), n->name().c_str());
+    for (RouterT::iterator n = pr.r->begin_elements();
+	 n != pr.r->end_elements();
+	 ++n) {
+	String label_text = eo.run(the_template, n.operator->());
+	fprintf(pr.outf, "  node\n  [ id %d\n    label \"%s\"\n  ]\n", n->eindex(), label_text.c_str());
+    }
 
     // print all connections
-    const Vector<ConnectionT> &conns = r->connections();
+    const Vector<ConnectionT> &conns = pr.r->connections();
     for (const ConnectionT *c = conns.begin(); c != conns.end(); c++) {
-	fprintf(outf, "  edge\n  [ source %d\n    target %d\n", c->from_eindex(), c->to_eindex());
+	fprintf(pr.outf, "  edge\n  [ source %d\n    target %d\n", c->from_eindex(), c->to_eindex());
 
 	double amt_from = 1. / c->from_element()->noutputs();
 	double first_from = -(c->from_element()->noutputs() - 1.) * amt_from;
 	double amt_to = 1. / c->to_element()->ninputs();
 	double first_to = -(c->to_element()->ninputs() - 1.) * amt_to;
-	fprintf(outf, "    edgeAnchor\n    [ xSource %f\n      xTarget %f\n      ySource 1\n      yTarget -1\n    ]\n", first_from + c->from_port() * amt_from, first_to + c->to_port() * amt_to);
-	fprintf(outf, "  ]\n");
+	fprintf(pr.outf, "    edgeAnchor\n    [ xSource %f\n      xTarget %f\n      ySource 1\n      yTarget -1\n    ]\n", first_from + c->from_port() * amt_from, first_to + c->to_port() * amt_to);
+	fprintf(pr.outf, "  ]\n");
     }
 
-    fprintf(outf, "]\n");
-
-    // close files, return
-    if (outf != stdout)
-	fclose(outf);
-    delete r;
+    fprintf(pr.outf, "]\n");
 }
 
 static void
 pretty_process_graphml(const char *infile, bool file_is_expr, const char *outfile,
-		       ErrorHandler *errh)
+		       const String &the_template, ErrorHandler *errh)
 {
-    RouterT *r = read_router(infile, file_is_expr, errh);
-    if (!r)
+    PrettyRouter pr(infile, file_is_expr, outfile, errh);
+    if (!pr.ok())
 	return;
-
-    // get element map and processing
-    ElementMap emap;
-    emap.parse_all_files(r, CLICK_DATADIR, errh);
-    emap.set_driver(emap.pick_driver(specified_driver, r, errh));
-    ProcessingT processing(r, &emap, errh);
-    processing.check_types(errh);
-
-    // open output file
-    FILE *outf = open_output_file(outfile, errh);
-    if (!outf) {
-	delete r;
-	return;
-    }
+    HashTable<String, String> attrs;
+    ElementsOutput eo(pr.r, *pr.processing, attrs);
 
     // write dot configuration
-    fprintf(outf, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
+    fprintf(pr.outf, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
 <graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">\n\
 <key id=\"kn\" for=\"node\" attr.name=\"name\" attr.type=\"string\" />\n\
 <key id=\"kc\" for=\"node\" attr.name=\"class\" attr.type=\"string\" />\n\
@@ -1212,31 +1238,29 @@ pretty_process_graphml(const char *infile, bool file_is_expr, const char *outfil
 
     // print all nodes
     int nodeid = 0;
-    for (RouterT::iterator n = r->begin_elements(); n != r->end_elements(); n++) {
-	fprintf(outf, "  <node id=\"n%d\" parse.indegree=\"%d\" parse.outdegree=\"%d\">\n\
+    for (RouterT::iterator n = pr.r->begin_elements();
+	 n != pr.r->end_elements();
+	 ++n) {
+	String label_text = eo.run(the_template, n.operator->());
+	fprintf(pr.outf, "  <node id=\"n%d\" parse.indegree=\"%d\" parse.outdegree=\"%d\">\n\
     <data key=\"kn\">%s</data> <data key=\"kc\">%s</data>\n",
 		nodeid++, n->ninputs(), n->noutputs(), n->name().c_str(),
-		n->type_name().c_str());
+		label_text.c_str());
 	for (int i = 0; i < n->ninputs(); i++)
-	    fprintf(outf, "    <port name=\"i%d\"> <data key=\"kp\">%c</data> </port>\n", i, processing.decorated_input_processing_letter(PortT(n.operator->(), i)));
+	    fprintf(pr.outf, "    <port name=\"i%d\"> <data key=\"kp\">%c</data> </port>\n", i, pr.processing->decorated_input_processing_letter(PortT(n.operator->(), i)));
 	for (int i = 0; i < n->noutputs(); i++)
-	    fprintf(outf, "    <port name=\"o%d\"> <data key=\"kp\">%c</data> </port>\n", i, processing.decorated_output_processing_letter(PortT(n.operator->(), i)));
-	fprintf(outf, "  </node>\n");
+	    fprintf(pr.outf, "    <port name=\"o%d\"> <data key=\"kp\">%c</data> </port>\n", i, pr.processing->decorated_output_processing_letter(PortT(n.operator->(), i)));
+	fprintf(pr.outf, "  </node>\n");
     }
 
     // print all connections
     int edgeid = 0;
-    const Vector<ConnectionT> &conns = r->connections();
+    const Vector<ConnectionT> &conns = pr.r->connections();
     for (const ConnectionT *c = conns.begin(); c != conns.end(); c++)
-	fprintf(outf, "  <edge id=\"e%d\" source=\"n%d\" target=\"n%d\" sourceport=\"o%d\" targetport=\"i%d\" />\n",
+	fprintf(pr.outf, "  <edge id=\"e%d\" source=\"n%d\" target=\"n%d\" sourceport=\"o%d\" targetport=\"i%d\" />\n",
 		edgeid++, c->from_eindex(), c->to_eindex(), c->from_port(), c->to_port());
 
-    fprintf(outf, "</graph>\n</graphml>\n");
-
-    // close files, return
-    if (outf != stdout)
-	fclose(outf);
-    delete r;
+    fprintf(pr.outf, "</graph>\n</graphml>\n");
 }
 
 void
@@ -1287,7 +1311,8 @@ main(int argc, char **argv)
     const char *router_file = 0;
     bool file_is_expr = false;
     const char *output_file = 0;
-    String html_template = default_template;
+    bool explicit_template = false;
+    String the_template;
     int action = 0;
 
     while (1) {
@@ -1303,6 +1328,7 @@ main(int argc, char **argv)
 	    printf("click-pretty (Click) %s\n", CLICK_VERSION);
 	    printf("Copyright (c) 2001-2002 International Computer Science Institute\n\
 Copyright (c) 2007 Regents of the University of California\n\
+Copyright (c) 2009 Intel Corporation\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -1328,8 +1354,14 @@ particular purpose.\n");
 	      break;
 	  }
 
-	  case TEMPLATE_OPT:
-	    html_template = file_string(clp->vstr, p_errh);
+	case TEMPLATE_OPT:
+	    explicit_template = true;
+	    the_template = file_string(clp->vstr, p_errh);
+	    break;
+
+	case TEMPLATE_TEXT_OPT:
+	    explicit_template = true;
+	    the_template = clp->vstr;
 	    break;
 
 	  case DEFINE_OPT: {
@@ -1400,19 +1432,26 @@ particular purpose.\n");
     }
 
   done:
+    if (!explicit_template) {
+	if (action == DOT_OPT || action == GML_OPT || action == GRAPHML_OPT)
+	    the_template = default_graph_template;
+	else
+	    the_template = default_html_template;
+    }
+
     if (action == WRITE_TEMPLATE_OPT) {
 	if (FILE *f = open_output_file(output_file, errh)) {
-	    fputs(html_template.c_str(), f);
+	    fputs(the_template.c_str(), f);
 	    fclose(f);
 	}
     } else if (action == DOT_OPT)
-	pretty_process_dot(router_file, file_is_expr, output_file, errh);
+	pretty_process_dot(router_file, file_is_expr, output_file, the_template, errh);
     else if (action == GML_OPT)
-	pretty_process_gml(router_file, file_is_expr, output_file, errh);
+	pretty_process_gml(router_file, file_is_expr, output_file, the_template, errh);
     else if (action == GRAPHML_OPT)
-	pretty_process_graphml(router_file, file_is_expr, output_file, errh);
+	pretty_process_graphml(router_file, file_is_expr, output_file, the_template, errh);
     else
-	pretty_process(router_file, file_is_expr, output_file, html_template.c_str(), errh);
+	pretty_process(router_file, file_is_expr, output_file, the_template.c_str(), errh);
 
     exit(errh->nerrors() > 0 ? 1 : 0);
 }

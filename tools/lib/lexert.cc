@@ -776,7 +776,7 @@ LexerT::yconnection()
 
 	  case ',':
 	  case lex2Colon:
-	    if (router()->element(element2)->anonymous())
+	    if (router()->element(element2)->name_unassigned())
 		// type used as name
 		lerror(t, "class %<%s%> used as element name", router()->etype_name(element2).c_str());
 	    else
@@ -1108,7 +1108,7 @@ LexerT::finish(const VariableEnvironment &global_scope)
     _router = 0;
     r->redefine(global_scope);
     // resolve anonymous element names
-    r->deanonymize_elements();
+    r->assign_element_names();
     // returned router has one reference count
     return r;
 }

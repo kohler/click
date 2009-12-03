@@ -61,10 +61,13 @@ configuration, and writes the result to the standard output.
 '
 .SH "HTML TEMPLATES"
 .BR Click-pretty 's
-HTML output is based on a template file that contains special HTML-like
-tags.  These tags, which start with a tilde "~", control
-.BR click-pretty 's
-operation.
+output is based on a template file that contains special HTML-like tags
+that start with a tilde "~".  You can specify your own template or rely on
+a built-in default.  HTML output is created simply by expanding the
+template.  In
+.B \-\-dot
+mode, graph labels are created by expanding a (smaller) template once per
+element.
 '
 .SS "The config Tag"
 '
@@ -235,11 +238,14 @@ subtag below.
 '
 .PD
 '
-.SS "Subtags"
+.SS "Element-Specific Tags"
 .PP
-These subtags apply only within
+In HTML mode, these tags apply within
 .B <~elements>
-entries and type entries.
+entries and type entries.  In
+.B \-\-dot
+mode, only element-specific tags are meaningful, since the template is
+instantiated once per element.
 '
 .TP 5
 .BR "<~name [link" "=\fIlink\fR" "]>"
@@ -249,6 +255,14 @@ attribute is present, the name is contained in a link pointing at the
 declaration site within the router configuration or, when
 .I link
 equals "type", the element class's Web documentation.
+'
+.TP 5
+.BR "<~anonymous>"
+Expands to "yes" if the current element was originally anonymous, and to
+nothing if it was not.  Generally useful as a
+.B test
+attribute in
+.BR "<~if>" .
 '
 .TP 5
 .BR "<~type [link]>"
@@ -432,6 +446,45 @@ tag's
 attribute.
 .PD
 '
+.SS "Examples"
+.PP
+The default
+.B \-\-dot
+template is the following, which produces a string like "NAME :: TYPE" for
+named elements and a string like "TYPE" for anonymous elements:
+'
+.nf
+    <~if test="<~anonymous>" then="<~type>" else="<~name> :: <~type>">
+.fi
+'
+.PP
+To produce the name unconditionally, try the following template:
+'
+.nf
+    <~name> :: <~type>
+.fi
+'
+which you might specify using a
+.B \-\-template\-text
+option, as follows:
+'
+.nf
+    \fBclick-pretty\fR \fB\-\-dot\fR \fB\-T\fR "<~name> :: <~type>" ...
+.fi
+'
+.PP
+To produce just the name:
+'
+.nf
+    \fBclick-pretty\fR \fB\-\-dot\fR \fB\-T\fR "<~name>" ...
+.fi
+.PP
+To produce just the type:
+'
+.nf
+    \fBclick-pretty\fR \fB\-\-dot\fR \fB\-T\fR "<~type>" ...
+.fi
+'
 .SH "OPTIONS"
 '
 If any filename argument is a single dash "-",
@@ -472,7 +525,18 @@ The default is the standard output.
 .BI \-\-template " file"
 Use
 .I file
-as the HTML template file. If no template is specified,
+as the HTML template. If no template is specified,
+.B click-pretty
+will use a built-in default.
+'
+.Sp
+.TP
+.BI \-T " text"
+.TP
+.BI \-\-template\-text " text"
+Use
+.I text
+as the HTML (or graph) template. If no template is specified,
 .B click-pretty
 will use a built-in default.
 '

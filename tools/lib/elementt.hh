@@ -22,7 +22,8 @@ struct ElementT {
 
     const String &name() const		{ return _name; }
     const char *name_c_str() const	{ return _name.c_str(); }
-    bool anonymous() const		{ return _name && _name[0] == ';'; }
+    bool name_unassigned() const	{ return _name && _name[0] == ';'; }
+    bool was_anonymous() const		{ return _was_anonymous; }
 
     ElementClassT *type() const		{ return _type; }
     ElementClassT *resolve(const VariableEnvironment &env,
@@ -75,7 +76,8 @@ struct ElementT {
     ElementClassT *_type;
     mutable ElementClassT *_resolved_type;
     enum { resolved_type_error = 1, resolved_type_fragile = 2 };
-    mutable int _resolved_type_status;
+    mutable short _resolved_type_status;
+    bool _was_anonymous;
     String _configuration;
     LandmarkT _landmark;
     int _ninputs;

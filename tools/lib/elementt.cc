@@ -32,7 +32,7 @@
 
 ElementT::ElementT()
     : flags(0), _eindex(-1), _type(0), _resolved_type(0),
-      _resolved_type_status(0),
+      _resolved_type_status(0), _was_anonymous(false),
       _tunnel_input(0), _tunnel_output(0), _owner(0), _user_data(0)
 {
 }
@@ -40,7 +40,8 @@ ElementT::ElementT()
 ElementT::ElementT(const String &n, ElementClassT *eclass,
 		   const String &config, const LandmarkT &lm)
     : flags(0), _eindex(-1), _name(n), _type(eclass), _resolved_type(0),
-      _resolved_type_status(0), _configuration(config), _landmark(lm),
+      _resolved_type_status(0), _was_anonymous(n && n[0] == ';'),
+      _configuration(config), _landmark(lm),
       _ninputs(0), _noutputs(0), _tunnel_input(0), _tunnel_output(0),
       _owner(0), _user_data(0)
 {
@@ -53,6 +54,7 @@ ElementT::ElementT(const ElementT &o)
     : flags(o.flags), _eindex(-1), _name(o._name),
       _type(o._type), _resolved_type(o._resolved_type),
       _resolved_type_status(o._resolved_type_status),
+      _was_anonymous(o._was_anonymous),
       _configuration(o._configuration), _landmark(o._landmark),
       _ninputs(0), _noutputs(0), _tunnel_input(0), _tunnel_output(0),
       _owner(0), _user_data(o._user_data)

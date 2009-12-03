@@ -46,7 +46,7 @@ class RouterT : public ElementClassT { public:
     ElementT *get_element(const String &name, ElementClassT *eclass, const String &configuration, const LandmarkT &landmark);
     ElementT *add_anon_element(ElementClassT *eclass, const String &configuration = String(), const LandmarkT &landmark = LandmarkT::empty_landmark());
     void change_ename(int, const String &);
-    void deanonymize_elements();
+    void assign_element_names();
     void free_element(ElementT *);
     void free_dead_elements();
 

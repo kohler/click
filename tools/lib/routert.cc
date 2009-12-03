@@ -242,7 +242,7 @@ RouterT::change_ename(int ei, const String &new_name)
 void
 RouterT::assign_element_name(int ei)
 {
-    assert(_elements[ei]->anonymous());
+    assert(_elements[ei]->name_unassigned());
     String name = _elements[ei]->name().substring(1);
     if (eindex(name) >= 0) {
 	int at_pos = name.find_right('@');
@@ -259,10 +259,10 @@ RouterT::assign_element_name(int ei)
 }
 
 void
-RouterT::deanonymize_elements()
+RouterT::assign_element_names()
 {
     for (int i = 0; i < _elements.size(); i++)
-	if (_elements[i]->anonymous())
+	if (_elements[i]->name_unassigned())
 	    assign_element_name(i);
 }
 
@@ -1218,7 +1218,7 @@ RouterT::finish_type(ErrorHandler *errh)
 	_noutputs = 0;
 
     // resolve anonymous element names
-    deanonymize_elements();
+    assign_element_names();
 
     return (lerrh.nerrors() ? -1 : 0);
 }

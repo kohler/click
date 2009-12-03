@@ -13,7 +13,8 @@ class ElementMap { public:
     ~ElementMap();
 
     static ElementMap* default_map()		{ return the_element_map; }
-    static void push_default(ElementMap*);
+    static void push_default(ElementMap *emap);
+    static void pop_default(ElementMap *emap);
     static void pop_default();
 
     void use()					{ _use_count++; }
