@@ -172,7 +172,7 @@ CLICK_DECLS
 */
 
 void
-Timer::empty_hook(Timer *, void *)
+Timer::do_nothing_hook(Timer *, void *)
 {
 }
 
@@ -194,7 +194,13 @@ Timer::task_hook(Timer *, void *thunk)
 Timer::Timer()
     : _schedpos1(0), _thunk(0), _owner(0)
 {
-    _hook.callback = empty_hook;
+    _hook.callback = do_nothing_hook;
+}
+
+Timer::Timer(const do_nothing_t &)
+    : _schedpos1(0), _thunk((void *) 1), _owner(0)
+{
+    _hook.callback = do_nothing_hook;
 }
 
 Timer::Timer(TimerCallback f, void *user_data)
@@ -213,6 +219,11 @@ Timer::Timer(Task* task)
     : _schedpos1(0), _thunk(task), _owner(0)
 {
     _hook.callback = task_hook;
+}
+
+Timer::Timer(const Timer &x)
+    : _schedpos1(0), _hook(x._hook), _thunk(x._thunk), _owner(0)
+{
 }
 
 void

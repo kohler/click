@@ -16,8 +16,23 @@ typedef TimerCallback TimerHook CLICK_DEPRECATED;
 
 class Timer { public:
 
-    /** @brief Construct a Timer that does nothing when fired. */
+    /** @brief Construct a Timer that does nothing when fired.
+     *
+     * This constructor is most useful for a Timer that will be assigned a
+     * true callback later, using one of the Timer::assign() methods.
+     * Timer::initialize() will report a warning if called on a Timer created
+     * by this constructor. */
     Timer();
+
+    struct do_nothing_t {
+    };
+
+    /** @brief Construct a Timer that does nothing when fired.
+     *
+     * Unlike with the default Timer() constructor, Timer::initialize() will
+     * not report a warning if called on a Timer created by this
+     * constructor. */
+    Timer(const do_nothing_t &unused);
 
     /** @brief Construct a Timer that calls @a f(this, @a user_data) when
      * fired.
@@ -34,12 +49,24 @@ class Timer { public:
      * @param task the task */
     Timer(Task *task);
 
+    /** @brief Construct a Timer that acts like @a x when fired.
+     *
+     * The newly-constructed Timer is not initialized. */
+    Timer(const Timer &x);
+
     /** @brief Destroy a Timer, unscheduling it first if necessary. */
     inline ~Timer() {
 	if (scheduled())
 	    unschedule();
     }
 
+
+    /** @brief Change the Timer to do nothing when fired. */
+    inline void assign(const do_nothing_t &unused) {
+	(void) unused;
+	_hook.callback = do_nothing_hook;
+	_thunk = (void *) 1;
+    }
 
     /** @brief Change the Timer to call @a f(this, @a user_data) when fired.
      * @param f callback function
@@ -92,6 +119,7 @@ class Timer { public:
 
     /** @brief Initialize the timer.
      * @param owner the owner element
+     * @param quiet do not produce default-constructor warning if true
      *
      * Before a timer can be used, it must be attached to a containing router.
      * When that router is destroyed, the timer is automatically
@@ -99,10 +127,15 @@ class Timer { public:
      * on the same router.
      *
      * If Click is compiled with statistics support, time spent in this
-     * Timer will be charged to the @a owner element. */
-    inline void initialize(Element *owner) {
+     * Timer will be charged to the @a owner element.
+     *
+     * Initializing a Timer constructed by the default constructor, Timer(),
+     * will produce a warning. */
+    inline void initialize(Element *owner, bool quiet = false) {
 	assert(!initialized() || _owner->router() == owner->router());
 	_owner = owner;
+	if (unlikely(_hook.callback == do_nothing_hook && !_thunk) && !quiet)
+	    click_chatter("initializing Timer %{element} [%p], which does nothing", _owner, this);
     }
 
     /** @brief Initialize the timer.
@@ -258,10 +291,9 @@ class Timer { public:
     void *_thunk;
     Element *_owner;
 
-    Timer(const Timer &x);
     Timer &operator=(const Timer &x);
 
-    static void empty_hook(Timer *t, void *user_data);
+    static void do_nothing_hook(Timer *t, void *user_data);
     static void element_hook(Timer *t, void *user_data);
     static void task_hook(Timer *t, void *user_data);
 
