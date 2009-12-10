@@ -11,10 +11,19 @@ CLICK_DECLS
  * discards packets
  * =d
  *
- * Has zero or more agnostic outputs and zero or more agnostic inputs. It
- * never pushes a packet to any output or pulls a packet from any input. Any
- * packet it does receive is discarded. Used to avoid "input not connected"
- * error messages.
+ * Idle never pushes a packet to any output or pulls a packet from any input.
+ * Any packet it does receive by push is discarded.  Idle is often used to
+ * avoid "input not connected" error messages.
+ *
+ * Idle provides an upstream-empty notifier to inform downstream pullers that
+ * it is dormant.  As a result, in the configuration
+ *
+ *   Idle -> SimpleQueue -> Discard;
+ *
+ * the Discard element will itself go dormant.  Use SimpleIdle to avoid this
+ * effect.
+ *
+ * =sa SimpleIdle
  */
 
 class Idle : public Element { public:
