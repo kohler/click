@@ -2,10 +2,10 @@
 Check ARPQuerier BROADCAST_POLL.
 
 %script
-$VALGRIND click CONFIG
+$VALGRIND click --simtime CONFIG
 sed "s/\/\/BROADCAST_POLL false/BROADCAST_POLL true/" < CONFIG > CONFIG2
 echo ================================== 1>&2
-$VALGRIND click CONFIG2
+$VALGRIND click --simtime CONFIG2
 
 %file CONFIG
 d::FromIPSummaryDump(DUMP, TIMING true, STOP true)

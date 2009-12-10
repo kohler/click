@@ -2,9 +2,9 @@
 Tests downstream nonfull Notifier functionality.
 
 %script
-click CONFIG -h c.count > OUT
-click CONFIG2 -h c.count > OUT2
-click CONFIG3 -h c.count > OUT3
+click --simtime CONFIG -h c.count > OUT
+click --simtime CONFIG2 -h c.count > OUT2
+click --simtime CONFIG3 -h c.count > OUT3
 
 %file CONFIG
 i :: InfiniteSource(LIMIT 15)

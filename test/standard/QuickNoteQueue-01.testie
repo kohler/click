@@ -5,7 +5,7 @@ Tests QuickNoteQueue notifications.
 click-buildtool provides NotifierDebug
 
 %script
-click -e '
+click --simtime -e '
 i :: InfiniteSource(LIMIT 1, ACTIVE false)
 	-> d1 :: NotifierDebug
 	-> q :: QuickNoteQueue

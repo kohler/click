@@ -2,7 +2,7 @@
 Check ARPQuerier hotswap in the absence of ARPTables.
 
 %script
-click -R CONFIG 2>CHECKX
+click --simtime -R CONFIG 2>CHECKX
 sed '/^1\./s/:/-/g' <CHECKX >CHECK
 
 %file CONFIG

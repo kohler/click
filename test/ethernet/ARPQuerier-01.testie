@@ -1,7 +1,7 @@
 %script
-click CONFIG 2> PRINT
+click --simtime CONFIG 2> PRINT
 sort < TABLE | sed 's/:/-/g' > SORTEDTABLE
-click CONFIG2 2> PRINT2
+click --simtime CONFIG2 2> PRINT2
 sort < TABLE | sed 's/:/-/g' > SORTEDTABLE2
 
 %file CONFIG

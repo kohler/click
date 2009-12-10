@@ -2,7 +2,7 @@
 Tests FullNoteQueue nonfull notifications and capacity changing.
 
 %script
-click -e '
+click --simtime -e '
 i :: InfiniteSource -> q :: Queue -> Idle;
 DriverManager(wait 0.02s, print i.count, write q.capacity 10, print q.config,
    wait 0.02s, print i.count, write q.capacity 1000, print q.config,

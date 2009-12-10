@@ -2,9 +2,9 @@
 Tests multi-Notifier functionality.
 
 %script
-click CONFIG > OUT
+click --simtime CONFIG > OUT
 
-click CONFIG2 > OUT2
+click --simtime CONFIG2 > OUT2
 
 %file CONFIG
 q00 :: NotifierQueue(5);

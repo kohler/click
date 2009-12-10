@@ -2,7 +2,7 @@
 Check ARPQuerier corruption.
 
 %script
-$VALGRIND click CONFIG
+$VALGRIND click --simtime CONFIG
 
 %file CONFIG
 d::FromIPSummaryDump(DUMP, TIMING true, STOP true)

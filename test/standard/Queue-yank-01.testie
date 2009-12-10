@@ -1,5 +1,5 @@
 %script
-click -e '
+click --simtime -e '
 Idle -> q::Queue(6) -> Idle
 qyt::QueueYankTest(q)
 DriverManager(wait_time 0.1s, stop)

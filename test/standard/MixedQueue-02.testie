@@ -1,5 +1,5 @@
 %script
-click CONFIG < DUMP | grep -v '^!'
+click --simtime CONFIG < DUMP | grep -v '^!'
 
 %file CONFIG
 FromIPSummaryDump(-, STOP true)

@@ -2,7 +2,7 @@
 Tests Notifier functionality at userlevel.
 
 %script
-click CONFIG -h c.count > OUT
+click --simtime CONFIG -h c.count > OUT
 
 %file CONFIG
 i :: InfiniteSource(ACTIVE false, LIMIT 5)
