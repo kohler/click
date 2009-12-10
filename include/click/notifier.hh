@@ -178,6 +178,11 @@ class Notifier { public:
     inline Notifier(const NotifierSignal &signal, SearchOp op = SEARCH_STOP);
     virtual ~Notifier();
 
+    /** @brief Return whether the Notifier is initialized. */
+    inline bool initialized() const {
+	return _signal.initialized();
+    }
+
     int initialize(const char *name, Router *router);
 
     inline const NotifierSignal &signal() const;
