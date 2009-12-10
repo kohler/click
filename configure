@@ -1429,7 +1429,7 @@ Optional Features:
   --enable-ipsec          include IP security elements
   --enable-local          include local elements
   --enable-radio          include radio elements (EXPERIMENTAL)
-  --enable-simple         include simple versions of other elements
+  --disable-simple        do not include simple versions of other elements
   --disable-standard      do not include standard elements
   --disable-tcpudp        do not include TCP and UDP elements
   --disable-test          do not include regression test elements
@@ -6253,7 +6253,7 @@ fi
 if test "${enable_simple+set}" = set; then :
   enableval=$enable_simple;
 else
-  enable_simple=NO
+  enable_simple=yes
 fi
 test "x$enable_all_elements" = xyes -a "x$enable_simple" = xNO && enable_simple=yes
 if test "x$enable_simple" = xyes; then
