@@ -2,7 +2,7 @@
  * pullswitch.{cc,hh} -- element routes packets from one input of several
  * Eddie Kohler
  *
- * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2009 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,6 +23,7 @@
 CLICK_DECLS
 
 PullSwitch::PullSwitch()
+    : _notifier(Notifier::SEARCH_CONTINUE_WAKE), _signals(0)
 {
 }
 
@@ -30,72 +31,64 @@ PullSwitch::~PullSwitch()
 {
 }
 
-int
-PullSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
+void *
+PullSwitch::cast(const char *name)
 {
-  _input = 0;
-  if (cp_va_kparse(conf, this, errh,
-		   "INPUT", cpkP, cpInteger, &_input,
-		   cpEnd) < 0)
-    return -1;
-  if (_input >= ninputs())
-    _input = -1;
-  return 0;
+    if (strcmp(name, "SimplePullSwitch") == 0)
+	return static_cast<SimplePullSwitch *>(this);
+    else if (strcmp(name, Notifier::EMPTY_NOTIFIER) == 0)
+	return static_cast<Notifier *>(&_notifier);
+    else
+	return Element::cast(name);
+}
+
+int
+PullSwitch::initialize(ErrorHandler *errh)
+{
+    _notifier.initialize(Notifier::EMPTY_NOTIFIER, router());
+    _notifier.set_active(_input >= 0, false);
+    if (!(_signals = new NotifierSignal[ninputs()]))
+	return errh->error("out of memory!");
+    for (int i = 0; i < ninputs(); ++i)
+	_signals[i] = Notifier::upstream_empty_signal(this, i, 0, &_notifier);
+    return 0;
+}
+
+void
+PullSwitch::cleanup(CleanupStage)
+{
+    delete[] _signals;
+    _signals = 0;
 }
 
 Packet *
 PullSwitch::pull(int)
 {
-  if (_input < 0)
-    return 0;
-  else
-    return input(_input).pull();
-}
-
-String
-PullSwitch::read_param(Element *e, void *)
-{
-  PullSwitch *sw = (PullSwitch *)e;
-  return String(sw->_input);
-}
-
-int
-PullSwitch::write_param(const String &s, Element *e, void *, ErrorHandler *errh)
-{
-  PullSwitch *sw = (PullSwitch *)e;
-  if (!cp_integer(s, &sw->_input))
-    return errh->error("PullSwitch input must be integer");
-  if (sw->_input >= sw->ninputs())
-    sw->_input = -1;
-  return 0;
+    if (_input < 0)
+	return 0;
+    else if (Packet *p = input(_input).pull()) {
+	_notifier.set_active(true, false);
+	return p;
+    } else {
+	if (!_signals[_input])
+	    _notifier.set_active(false, false);
+	return 0;
+    }
 }
 
 void
-PullSwitch::add_handlers()
+PullSwitch::set_input(int input)
 {
-  add_read_handler("switch", read_param, (void *)0);
-  add_write_handler("switch", write_param, (void *)0);
-  add_read_handler("config", read_param, (void *)0);
-  set_handler_flags("config", 0, Handler::CALM);
-}
-
-int
-PullSwitch::llrpc(unsigned command, void *data)
-{
-  if (command == CLICK_LLRPC_SET_SWITCH) {
-    int32_t *val = reinterpret_cast<int32_t *>(data);
-    _input = (*val >= ninputs() ? -1 : *val);
-    return 0;
-
-  } else if (command == CLICK_LLRPC_GET_SWITCH) {
-    int32_t *val = reinterpret_cast<int32_t *>(data);
-    *val = _input;
-    return 0;
-
-  } else
-    return Element::llrpc(command, data);
+    _input = (input < 0 || input >= ninputs() ? -1 : input);
+    if (!_notifier.initialized())
+	/* do nothing, this is the set_input() called from configure() */;
+    else if (_input < 0)
+	_notifier.set_active(false, false);
+    else if (_signals[_input])
+	_notifier.set_active(true, true);
 }
 
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(SimplePullSwitch)
 EXPORT_ELEMENT(PullSwitch)
 ELEMENT_MT_SAFE(PullSwitch)

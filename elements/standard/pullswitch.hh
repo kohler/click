@@ -1,6 +1,7 @@
 #ifndef CLICK_PULLSWITCH_HH
 #define CLICK_PULLSWITCH_HH
-#include <click/element.hh>
+#include "elements/simple/simplepullswitch.hh"
+#include <click/notifier.hh>
 CLICK_DECLS
 
 /*
@@ -19,6 +20,11 @@ ports -- specifically, INPUT. The default INPUT is zero; negative INPUTs
 mean always return a null packet. You can change INPUT with a write handler.
 PullSwitch has an unlimited number of inputs.
 
+PullSwitch supports notification, unlike SimplePullSwitch.  An element
+downstream of PullSwitch will sleep when PullSwitch's active input is
+dormant.  (In contrast, with SimplePullSwitch, a downstream element will
+sleep only when I<all> inputs are dormant.)
+
 =h switch read/write
 
 Return or set the K parameter.
@@ -32,31 +38,28 @@ stored.
 
 Argument is a pointer to an integer. Sets the K parameter to that integer.
 
-=a StaticPullSwitch, PrioSched, RoundRobinSched, StrideSched, Switch */
+=a SimplePullSwitch, StaticPullSwitch, PrioSched, RoundRobinSched,
+StrideSched, Switch */
 
-class PullSwitch : public Element { public:
+class PullSwitch : public SimplePullSwitch { public:
 
-  PullSwitch();
-  ~PullSwitch();
+    PullSwitch();
+    ~PullSwitch();
 
-  const char *class_name() const		{ return "PullSwitch"; }
-  const char *port_count() const		{ return "-/1"; }
-  const char *processing() const		{ return PULL; }
+    const char *class_name() const		{ return "PullSwitch"; }
+    void *cast(const char *name);
 
-  int configure(Vector<String> &, ErrorHandler *);
-  bool can_live_reconfigure() const		{ return true; }
-  void add_handlers();
+    int initialize(ErrorHandler *errh);
+    void cleanup(CleanupStage stage);
 
-  Packet *pull(int);
+    void set_input(int input);
 
-  int llrpc(unsigned, void *);
+    Packet *pull(int);
 
- private:
+  protected:
 
-  int _input;
-
-  static String read_param(Element *, void *);
-  static int write_param(const String &, Element *, void *, ErrorHandler *);
+    ActiveNotifier _notifier;
+    NotifierSignal *_signals;
 
 };
 

@@ -1,0 +1,65 @@
+%info
+Tests PullSwitch's Notifier functionality.
+
+%script
+click --simtime CONFIG 2>OUT 1>&2
+
+%file CONFIG
+i1 :: InfiniteSource(\<11>, LIMIT 4)
+i2 :: InfiniteSource(\<22>, LIMIT 4)
+i3 :: Idle
+ps :: PullSwitch(-1)
+d :: Discard
+
+// The SimplePullSwitches redirect pull requests away from the PullSwitches
+// when the router is first initialized time.  This way, we find out
+// whether the d2 :: Discard begins life scheduled or not.  (As soon as a
+// pull request arrives at ps2 :: PullSwitch, ps2 will set its notifier to
+// false [because its upstream notifier is false], and d2 will unschedule
+// itself.)
+xps, xps2 :: SimplePullSwitch(-1)
+
+i1 -> [0]ps; i2 -> [1]ps; i3 -> [2]ps; ps -> xps -> Print -> d
+
+i4 :: Idle -> ps2 :: PullSwitch -> xps2 -> d2 :: Discard
+
+Script(print d.scheduled,
+	print d2.scheduled,
+	write xps.switch 0,
+	write xps2.switch 0,
+	wait 0.5s,
+	print d2.scheduled,
+	print d.scheduled,
+	write ps.switch 2,
+	print d.scheduled,
+	wait 0.5s,
+	print d.scheduled,
+	write ps.switch 0,
+	print d.scheduled,
+	wait 0.5s,
+	print d.scheduled,
+	write ps.switch 1,
+	print d.scheduled,
+	wait 0.5s,
+	print d.scheduled,
+	stop)
+
+%expect OUT
+false
+true
+false
+false
+false
+false
+true
+   1 | 11
+   1 | 11
+   1 | 11
+   1 | 11
+false
+true
+   1 | 22
+   1 | 22
+   1 | 22
+   1 | 22
+false
