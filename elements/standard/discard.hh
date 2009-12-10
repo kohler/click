@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
 =c
 
-Discard
+Discard([I<keyword> ACTIVE])
 
 =s basicsources
 
@@ -19,6 +19,22 @@ drops all packets
 Discards all packets received on its single input. If used in a pull context,
 it initiates pulls whenever packets are available, and listens for activity
 notification, such as that available from Queue.
+
+Keyword arguments are:
+
+=over 8
+
+=item ACTIVE
+
+Boolean.  If false, then Discard does not pull packets.  Default is true.
+Only meaningful if Discard is in pull context.
+
+=back
+
+=h active rw
+
+Returns or sets the ACTIVE parameter.  Only present if Discard is in pull
+context.
 
 =h count read-only
 
@@ -32,23 +48,24 @@ Resets "count" to 0.
 
 class Discard : public Element { public:
 
-  Discard();
-  ~Discard();
+    Discard();
+    ~Discard();
 
-  const char *class_name() const		{ return "Discard"; }
-  const char *port_count() const		{ return PORTS_1_0; }
-  const char *processing() const		{ return AGNOSTIC; }
+    const char *class_name() const		{ return "Discard"; }
+    const char *port_count() const		{ return PORTS_1_0; }
+    const char *processing() const		{ return AGNOSTIC; }
 
-  int initialize(ErrorHandler *);
-  void add_handlers();
+    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int initialize(ErrorHandler *errh);
+    void add_handlers();
 
-  void push(int, Packet *);
-  bool run_task(Task *);
+    void push(int, Packet *);
+    bool run_task(Task *);
 
- protected:
+  protected:
 
-  Task _task;
-  NotifierSignal _signal;
+    Task _task;
+    NotifierSignal _signal;
 
 #if HAVE_INT64_TYPES
     typedef uint64_t counter_t;
@@ -57,7 +74,9 @@ class Discard : public Element { public:
 #endif
     counter_t _count;
 
-    static String read_handler(Element *, void *);
+    bool _active;
+
+    enum { h_reset_counts = 0, h_active = 1 };
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
 
 };

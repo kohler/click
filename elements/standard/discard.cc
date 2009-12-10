@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 Discard::Discard()
-    : _task(this), _count(0)
+    : _task(this), _count(0), _active(true)
 {
 }
 
@@ -32,10 +32,22 @@ Discard::~Discard()
 }
 
 int
+Discard::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+    if (cp_va_kparse(conf, this, errh,
+		     "ACTIVE", 0, cpBool, &_active,
+		     cpEnd) < 0)
+	return -1;
+    if (!_active && input_is_push(0))
+	return errh->error("ACTIVE is meaningless in push context");
+    return 0;
+}
+
+int
 Discard::initialize(ErrorHandler *errh)
 {
     if (input_is_pull(0)) {
-	ScheduleInfo::initialize_task(this, &_task, errh);
+	ScheduleInfo::initialize_task(this, &_task, _active, errh);
 	_signal = Notifier::upstream_empty_signal(this, 0, &_task);
     }
     return 0;
@@ -51,38 +63,44 @@ Discard::push(int, Packet *p)
 bool
 Discard::run_task(Task *)
 {
-  Packet *p = input(0).pull();
-  if (p) {
-      _count++;
-      p->kill();
-  } else if (!_signal)
-    return false;
-  _task.fast_reschedule();
-  return p != 0;
-}
-
-String
-Discard::read_handler(Element *e, void *)
-{
-    Discard *d = static_cast<Discard *>(e);
-    return String(d->_count);
+    Packet *p = input(0).pull();
+    if (p) {
+	_count++;
+	p->kill();
+    } else if (!_signal || !_active)
+	return false;
+    _task.fast_reschedule();
+    return p != 0;
 }
 
 int
-Discard::write_handler(const String &, Element *e, void *, ErrorHandler *)
+Discard::write_handler(const String &s, Element *e, void *user_data,
+		       ErrorHandler *errh)
 {
     Discard *d = static_cast<Discard *>(e);
-    d->_count = 0;
+    if (!user_data)
+	d->_count = 0;
+    else {
+	if (!cp_bool(s, &d->_active))
+	    return errh->error("syntax error");
+	if (d->_active)
+	    d->_task.reschedule();
+	else
+	    d->_task.unschedule();
+    }
     return 0;
 }
 
 void
 Discard::add_handlers()
 {
-    add_read_handler("count", read_handler, 0);
-    add_write_handler("reset_counts", write_handler, 0, Handler::BUTTON);
-    if (input_is_pull(0))
+    add_data_handlers("count", Handler::OP_READ, &_count);
+    add_write_handler("reset_counts", write_handler, h_reset_counts, Handler::BUTTON);
+    if (input_is_pull(0)) {
+	add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
+	add_write_handler("active", write_handler, h_active);
 	add_task_handlers(&_task);
+    }
 }
 
 CLICK_ENDDECLS
