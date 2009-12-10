@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * sorttest.{cc,hh} -- regression test element for Vector
+ * sorttest.{cc,hh} -- regression test element for click_qsort
  * Eddie Kohler
  *
  * Copyright (c) 2008 Regents of the University of California
