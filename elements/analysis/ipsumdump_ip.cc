@@ -32,7 +32,7 @@ CLICK_DECLS
 
 enum { T_IP_SRC, T_IP_DST, T_IP_TOS, T_IP_TTL, T_IP_FRAG, T_IP_FRAGOFF,
        T_IP_ID, T_IP_SUM, T_IP_PROTO, T_IP_OPT, T_IP_LEN, T_IP_CAPTURE_LEN,
-       T_SPORT, T_DPORT, T_IP_HL };
+       T_SPORT, T_DPORT, T_IP_HL, T_IP_DSCP, T_IP_ECN };
 
 namespace IPSummaryDump {
 
@@ -54,6 +54,14 @@ static bool ip_extract(PacketDesc& d, const FieldWriter *f)
       case T_IP_TOS:
 	CHECK(2);
 	d.v = d.iph->ip_tos;
+	return true;
+      case T_IP_DSCP:
+	CHECK(2);
+	d.v = d.iph->ip_tos >> 2;
+	return true;
+      case T_IP_ECN:
+	CHECK(2);
+	d.v = d.iph->ip_tos & IP_ECNMASK;
 	return true;
       case T_IP_TTL:
 	CHECK(9);
@@ -139,6 +147,12 @@ static void ip_inject(PacketOdesc& d, const FieldReader *f)
 	break;
     case T_IP_TOS:
 	iph->ip_tos = d.v;
+	break;
+    case T_IP_DSCP:
+	iph->ip_tos = (iph->ip_tos & IP_ECNMASK) | ((d.v << 2) & IP_DSCPMASK);
+	break;
+    case T_IP_ECN:
+	iph->ip_tos = (iph->ip_tos & IP_DSCPMASK) | (d.v & IP_ECNMASK);
 	break;
     case T_IP_TTL:
 	iph->ip_ttl = d.v;
@@ -226,6 +240,14 @@ static void ip_outa(const PacketDesc& d, const FieldWriter *f)
 	  default:		*d.sa << d.v; break;
 	}
 	break;
+    case T_IP_ECN:
+	switch (d.v) {
+	case IP_ECN_NOT_ECT:	*d.sa << "no"; break;
+	case IP_ECN_ECT1:	*d.sa << "ect1"; break;
+	case IP_ECN_ECT2:	*d.sa << "ect2"; break;
+	case IP_ECN_CE:		*d.sa << "ce"; break;
+	}
+	break;
       case T_IP_OPT:
 	if (!d.vptr[0])
 	    *d.sa << '.';
@@ -291,6 +313,24 @@ static bool ip_ina(PacketOdesc& d, const String &s, const FieldReader *f)
 	    return true;
 	} else if (cp_integer(s, &d.v) && d.v < 256)
 	    return true;
+	break;
+    case T_IP_ECN:
+	if (s.length() == 1 && s[0] >= '0' && s[0] <= '3') {
+	    d.v = s[0] - '0';
+	    return true;
+	} else if (s.equals("no", 2) || s.equals("-", 1)) {
+	    d.v = IP_ECN_NOT_ECT;
+	    return true;
+	} else if (s.equals("ect1", 4) || s.equals("ECT(1)", 6)) {
+	    d.v = IP_ECN_ECT1;
+	    return true;
+	} else if (s.equals("ect2", 4) || s.equals("ECT(0)", 6)) {
+	    d.v = IP_ECN_ECT2;
+	    return true;
+	} else if (s.equals("ce", 2) || s.equals("CE", 2)) {
+	    d.v = IP_ECN_CE;
+	    return true;
+	}
 	break;
 #if 0
       case T_IP_OPT:
@@ -820,6 +860,10 @@ static const FieldWriter ip_writers[] = {
       ip_prepare, ip_extract, ip_outa, outb },
     { "ip_tos", B_1, T_IP_TOS,
       ip_prepare, ip_extract, num_outa, outb },
+    { "ip_dscp", B_1, T_IP_DSCP,
+      ip_prepare, ip_extract, num_outa, outb },
+    { "ip_ecn", B_1, T_IP_ECN,
+      ip_prepare, ip_extract, ip_outa, outb },
     { "ip_ttl", B_1, T_IP_TTL,
       ip_prepare, ip_extract, num_outa, outb },
     { "ip_frag", B_1, T_IP_FRAG,
@@ -853,6 +897,10 @@ static const FieldReader ip_readers[] = {
       ip_ina, inb, ip_inject },
     { "ip_tos", B_1, T_IP_TOS, order_net,
       num_ina, inb, ip_inject },
+    { "ip_dscp", B_1, T_IP_DSCP, order_net,
+      num_ina, inb, ip_inject },
+    { "ip_ecn", B_1, T_IP_ECN, order_net,
+      ip_ina, inb, ip_inject },
     { "ip_ttl", B_1, T_IP_TTL, order_net,
       num_ina, inb, ip_inject },
     { "ip_frag", B_1, T_IP_FRAG, order_net - 2,
