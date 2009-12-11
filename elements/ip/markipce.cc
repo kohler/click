@@ -31,12 +31,21 @@ MarkIPCE::~MarkIPCE()
 {
 }
 
+int
+MarkIPCE::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+    _force = false;
+    return cp_va_kparse(conf, this, errh,
+			"FORCE", cpkP, cpBool, &_force,
+			cpEnd);
+}
+
 Packet *
 MarkIPCE::simple_action(Packet *p)
 {
     assert(p->has_network_header());
     const click_ip *iph = p->ip_header();
-    if ((iph->ip_tos & IP_ECNMASK) == IP_ECN_NOT_ECT) {
+    if ((iph->ip_tos & IP_ECNMASK) == IP_ECN_NOT_ECT && !_force) {
 	p->kill();
 	return 0;
     } else if ((iph->ip_tos & IP_ECNMASK) == IP_ECN_CE)
