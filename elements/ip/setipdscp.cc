@@ -33,53 +33,46 @@ SetIPDSCP::~SetIPDSCP()
 int
 SetIPDSCP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  unsigned dscp_val;
-  if (cp_va_kparse(conf, this, errh,
-		   "DSCP", cpkP+cpkM, cpUnsigned, &dscp_val,
-		   cpEnd) < 0)
-    return -1;
-  if (dscp_val > 0x3F)
-    return errh->error("diffserv code point out of range");
-
-  // OK: set values
-  _dscp = (dscp_val << 2);
-  return 0;
+    unsigned dscp_val;
+    if (cp_va_kparse(conf, this, errh,
+		     "DSCP", cpkP+cpkM, cpUnsigned, &dscp_val,
+		     cpEnd) < 0)
+	return -1;
+    if (dscp_val > 0x3F)
+	return errh->error("diffserv code point out of range");
+    // OK: set values
+    _dscp = (dscp_val << 2);
+    return 0;
 }
 
 inline Packet *
-SetIPDSCP::smaction(Packet *p_in)
+SetIPDSCP::smaction(Packet *p)
 {
-  WritablePacket *p = p_in->uniqueify();
-  assert(p->has_network_header());
-  click_ip *ip = p->ip_header();
-
-  uint16_t old_hw = (reinterpret_cast<uint16_t *>(ip))[0];
-  ip->ip_tos = (ip->ip_tos & 0x3) | _dscp;
-  uint16_t new_hw = (reinterpret_cast<uint16_t *>(ip))[0];
-
-  // 19.Aug.1999 - incrementally update IP checksum according to RFC1624.
-  // new_sum = ~(~old_sum + ~old_halfword + new_halfword)
-  uint32_t sum = (~ip->ip_sum & 0xFFFF) + (~old_hw & 0xFFFF) + new_hw;
-  sum = (sum & 0xFFFF) + (sum >> 16);
-  ip->ip_sum = ~(sum + (sum >> 16));
-
-  return p;
+    assert(p->has_network_header());
+    WritablePacket *q;
+    if (!(q = p->uniqueify()))
+	return 0;
+    click_ip *ip = q->ip_header();
+    uint16_t old_hw = (reinterpret_cast<uint16_t *>(ip))[0];
+    ip->ip_tos = (ip->ip_tos & 0x3) | _dscp;
+    click_update_in_cksum(&ip->ip_sum, old_hw, reinterpret_cast<uint16_t *>(ip)[0]);
+    return q;
 }
 
 void
 SetIPDSCP::push(int, Packet *p)
 {
-  if ((p = smaction(p)) != 0)
-    output(0).push(p);
+    if ((p = smaction(p)) != 0)
+	output(0).push(p);
 }
 
 Packet *
 SetIPDSCP::pull(int)
 {
-  Packet *p = input(0).pull();
-  if (p)
-    p = smaction(p);
-  return p;
+    Packet *p = input(0).pull();
+    if (p)
+	p = smaction(p);
+    return p;
 }
 
 void
