@@ -15,6 +15,7 @@ CLICK_DECLS
  * Then it incrementally recalculates the IP checksum
  * and passes the packet to output 0.
  * The DSCP is the upper 6 bits of the IP TOS field.
+ * =sa SetIPECN
  */
 
 class SetIPDSCP : public Element { public:
