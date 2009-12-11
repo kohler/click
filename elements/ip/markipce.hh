@@ -22,25 +22,19 @@ field is zero (not ECN-capable), are dropped. */
 
 class MarkIPCE : public Element { public:
 
-  MarkIPCE();
-  ~MarkIPCE();
+    MarkIPCE();
+    ~MarkIPCE();
 
-  const char *class_name() const		{ return "MarkIPCE"; }
-  const char *port_count() const		{ return PORTS_1_1; }
-  const char *processing() const		{ return AGNOSTIC; }
+    const char *class_name() const		{ return "MarkIPCE"; }
+    const char *port_count() const		{ return PORTS_1_1; }
 
-  int initialize(ErrorHandler *);
-  void add_handlers();
+    void add_handlers();
 
-  inline Packet *smaction(Packet *);
-  void push(int, Packet *p);
-  Packet *pull(int);
+    Packet *simple_action(Packet *);
 
- private:
+  private:
 
-  atomic_uint32_t _drops;
-
-  static String read_handler(Element *, void *);
+    atomic_uint32_t _drops;
 
 };
 
