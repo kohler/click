@@ -30,9 +30,27 @@ nearest upstream Queues.
 Marked packets are dropped, or emitted on output 1 if RED has two output
 ports.
 
-Keyword arguments are:
+Arguments are:
 
 =over 8
+
+=item MIN_THRESH
+
+Integer.  When the average queue length less than or equal to MIN_THRESH,
+input packets are never marked.
+
+=item MAX_THRESH
+
+Integer; must be greater than or equal to MIN_THRESH.  When the average queue
+length equals MAX_THRESH, input packets are marked with probability MAX_P.
+When the average queue length is between MIN_THRESH and MAX_THRESH, input
+packets are marked with probability linearly varying from 0 to MAX_P.  For
+behavior above MAX_THRESH, see the SIMPLE argument.
+
+=item MAX_P
+
+Real number between 0 and 1.  The probability of dropping a packet if the
+average queue length equals MAX_THRESH.
 
 =item QUEUES
 
@@ -56,10 +74,19 @@ This is very low (unstable) for most purposes; it corresponds to a link
 bandwidth of roughly 15 packets per second, or a w_q of 0.25. The NS default
 setting for w_q is 0.002, corresponding to a STABILITY of roughly 9.
 
+A STABILITY of 0 means always use the instantaneous queue length.
+
+=item GENTLE
+
+Boolean.  If true (the default), implement the Gentle P<RED> variant first
+proposed by Sally Floyd in October 1997.  In this variant, when the average
+queue length is between MAX_THRESH and 2*MAX_THRESH, input packets are dropped
+with probability linearly varying from MAX_P to 100%; at lengths above
+2*MAX_THRESH all packets are dropped.  If GENTLE is false, then at lengths
+above MAX_THRESH all packets are dropped.
+
 =back
 
-The RED element implements the Gentle P<RED> variant first proposed by Sally
-Floyd in October 1997.
 
 =e
 
@@ -120,12 +147,12 @@ class RED : public Element { public:
     const ewma_type &average_queue_size() const { return _size; }
     int drops() const				{ return _drops; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int check_params(unsigned, unsigned, unsigned, unsigned, ErrorHandler *) const;
-    int initialize(ErrorHandler *);
-    void take_state(Element *, ErrorHandler *);
+    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int check_params(unsigned min_thresh, unsigned max_thresh,
+		     unsigned max_p, unsigned stability, ErrorHandler *errh) const;
+    int initialize(ErrorHandler *errh);
+    void take_state(Element *e, ErrorHandler *errh);
     bool can_live_reconfigure() const		{ return true; }
-    int live_reconfigure(Vector<String> &, ErrorHandler *);
     void add_handlers();
 
     bool should_drop();
@@ -140,6 +167,7 @@ class RED : public Element { public:
 
     unsigned _min_thresh;
     unsigned _max_thresh;
+    unsigned _kill_thresh;
     unsigned _max_p;		// out of 0xFFFF
 
     ewma_type _size;
@@ -154,12 +182,15 @@ class RED : public Element { public:
 
     int _drops;
     Vector<Element *> _queue_elements;
+    bool _gentle;
 
     void set_C1_and_C2();
 
     static String read_handler(Element *, void *);
 
-    int finish_configure(unsigned min_thresh, unsigned max_thresh, unsigned max_p, unsigned stability, const String &queues, ErrorHandler *errh);
+    int finish_configure(unsigned min_thresh, unsigned max_thresh, bool gentle,
+			 unsigned max_p, unsigned stability,
+			 const String &queues, ErrorHandler *errh);
 
 };
 

@@ -5,6 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2009 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -60,26 +61,26 @@ RED::check_params(unsigned min_thresh, unsigned max_thresh,
 {
     unsigned max_allow_thresh = 0xFFFF;
     if (max_thresh > max_allow_thresh)
-	return errh->error("`max_thresh' too large (max %d)", max_allow_thresh);
+	return errh->error("MAX_THRESH must be <= %d", max_allow_thresh);
     if (min_thresh > max_thresh)
-	return errh->error("`min_thresh' greater than `max_thresh'");
+	return errh->error("MIN_THRESH must be <= MAX_THRESH");
     if (max_p > 0x10000)
-	return errh->error("`max_p' parameter must be between 0 and 1");
-    if (stability > 16 || stability < 1)
-	return errh->error("STABILITY parameter must be between 1 and 16");
+	return errh->error("MAX_P must be between 0 and 1");
+    if (stability > 16)
+	return errh->error("STABILITY must be between 0 and 16");
     return 0;
 }
 
 int
-RED::finish_configure(unsigned min_thresh, unsigned max_thresh,
+RED::finish_configure(unsigned min_thresh, unsigned max_thresh, bool gentle,
 		      unsigned max_p, unsigned stability,
 		      const String &queues_string, ErrorHandler *errh)
 {
     if (check_params(min_thresh, max_thresh, max_p, stability, errh) < 0)
 	return -1;
 
-    // check queues_string
-    if (queues_string) {
+    // check queues_string, but only if queues have not been configured already
+    if (queues_string && !_queue_elements.size()) {
 	Vector<String> eids;
 	cp_spacevec(queues_string, eids);
 	_queue_elements.clear();
@@ -93,8 +94,10 @@ RED::finish_configure(unsigned min_thresh, unsigned max_thresh,
     // OK: set variables
     _min_thresh = min_thresh;
     _max_thresh = max_thresh;
+    _kill_thresh = gentle && max_p != 0x10000 ? max_thresh * 2 : max_thresh;
     _max_p = max_p;
     _size.set_stability_shift(stability);
+    _gentle = gentle;
     set_C1_and_C2();
     return 0;
 }
@@ -104,35 +107,18 @@ RED::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned min_thresh, max_thresh, max_p, stability = 4;
     String queues_string = String();
+    bool gentle = true;
     if (cp_va_kparse(conf, this, errh,
 		     "MIN_THRESH", cpkP+cpkM, cpUnsigned, &min_thresh,
 		     "MAX_THRESH", cpkP+cpkM, cpUnsigned, &max_thresh,
 		     "MAX_P", cpkP+cpkM, cpUnsignedReal2, 16, &max_p,
 		     "QUEUES", 0, cpArgument, &queues_string,
 		     "STABILITY", 0, cpUnsigned, &stability,
+		     "GENTLE", 0, cpBool, &gentle,
 		     cpEnd) < 0)
 	return -1;
-    return finish_configure(min_thresh, max_thresh, max_p, stability, queues_string, errh);
-}
-
-int
-RED::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
-{
-    unsigned min_thresh, max_thresh, max_p, stability = 4;
-    String queues_string = String();
-    if (cp_va_kparse(conf, this, errh,
-		     "MIN_THRESH", cpkP+cpkM, cpUnsigned, &min_thresh,
-		     "MAX_THRESH", cpkP+cpkM, cpUnsigned, &max_thresh,
-		     "MAX_P", cpkP+cpkM, cpUnsignedReal2, 16, &max_p,
-		     "QUEUES", 0, cpArgument, &queues_string,
-		     "STABILITY", 0, cpUnsigned, &stability,
-		     cpEnd) < 0)
-	return -1;
-    // XXX This warning is a pain in the ass for "max_p" write handlers, so
-    // it's commented out.
-    //if (queues_string)
-    //    errh->warning("QUEUES argument ignored");
-    return finish_configure(min_thresh, max_thresh, max_p, stability, String(), errh);
+    return finish_configure(min_thresh, max_thresh, gentle, max_p,
+			    stability, queues_string, errh);
 }
 
 int
@@ -155,12 +141,12 @@ RED::initialize(ErrorHandler *errh)
     }
 
     if (_queue_elements.size() == 0)
-	return errh->error("no Queues downstream");
+	return errh->error("no nearby Queues");
     for (int i = 0; i < _queue_elements.size(); i++)
 	if (Storage *s = (Storage *)_queue_elements[i]->cast("Storage"))
 	    _queues.push_back(s);
 	else
-	    errh->error("`%s' is not a Storage element", _queue_elements[i]->name().c_str());
+	    errh->error("%<%s%> is not a Storage element", _queue_elements[i]->name().c_str());
     if (_queues.size() != _queue_elements.size())
 	return -1;
     else if (_queues.size() == 1)
@@ -176,9 +162,8 @@ RED::initialize(ErrorHandler *errh)
 void
 RED::take_state(Element *e, ErrorHandler *)
 {
-    RED *r = (RED *)e->cast("RED");
-    if (!r) return;
-    _size = r->_size;
+    if (RED *r = (RED *)e->cast("RED"))
+	_size = r->_size;
 }
 
 int
@@ -201,9 +186,14 @@ RED::should_drop()
     // Do some rigamarole to handle empty periods, but don't work too hard.
     // (Therefore it contains errors. XXX)
     int s = queue_size();
-    if (s) {
+    unsigned avg;
+
+    if (_size.stability_shift() == 0)
+	avg = s;		// use instantaneous measurement
+    else if (s) {
 	_size.update(s);
 	_last_jiffies = 0;
+	avg = _size.unscaled_average();
     } else {
 	// do timing stuff for when the queue was empty
 #if CLICK_HZ < 50
@@ -213,16 +203,16 @@ RED::should_drop()
 #endif
 	_size.update_n(0, _last_jiffies ? j - _last_jiffies : 1);
 	_last_jiffies = j;
+	avg = _size.unscaled_average();
     }
 
-    unsigned avg = _size.unscaled_average();
     if (avg <= _min_thresh) {
 	_count = -1;
 #if RED_DEBUG
 	click_chatter("%s: no drop", declaration().c_str());
 #endif
 	return false;
-    } else if (avg > _max_thresh * 2) {
+    } else if (avg > _kill_thresh) {
 	_count = -1;
 #if RED_DEBUG
 	click_chatter("%s: drop, over max_thresh", declaration().c_str());
@@ -320,6 +310,8 @@ RED::read_handler(Element *f, void *vparam)
 	for (int i = 0; i < red->_queue_elements.size(); i++)
 	    sa << ' ' << red->_queue_elements[i]->name();
 	sa << ", STABILITY " << red->_size.stability_shift();
+	if (!red->_gentle)
+	    sa << ", GENTLE false";
 	return sa.take_string();
     }
 }

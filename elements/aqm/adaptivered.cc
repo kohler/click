@@ -57,28 +57,7 @@ AdaptiveRED::configure(Vector<String> &conf, ErrorHandler *errh)
 	target_q = 10;
     unsigned min_thresh = target_q / 2;
     unsigned max_thresh = target_q + min_thresh;
-    return finish_configure(min_thresh, max_thresh, max_p, stability, queues_string, errh);
-}
-
-int
-AdaptiveRED::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
-{
-    unsigned target_q, max_p, stability = 4;
-    String queues_string = String();
-    if (cp_va_kparse(conf, this, errh,
-		     "TARGET", cpkP+cpkM, cpUnsigned, &target_q,
-		     "MAX_P", cpkP+cpkM, cpUnsignedReal2, 16, &max_p,
-		     "QUEUES", 0, cpArgument, &queues_string,
-		     "STABILITY", 0, cpUnsigned, &stability,
-		     cpEnd) < 0)
-	return -1;
-    if (queues_string)
-	errh->warning("QUEUES argument ignored");
-    if (target_q < 10)
-	target_q = 10;
-    unsigned min_thresh = target_q / 2;
-    unsigned max_thresh = target_q + min_thresh;
-    return finish_configure(min_thresh, max_thresh, max_p, stability, String(), errh);
+    return finish_configure(min_thresh, max_thresh, true, max_p, stability, queues_string, errh);
 }
 
 int
@@ -95,8 +74,13 @@ AdaptiveRED::initialize(ErrorHandler *errh)
 void
 AdaptiveRED::run_timer(Timer *)
 {
+    uint32_t avg;
+    if (_size.stability_shift() == 0)
+	avg = queue_size();	// use instantaneous measurement
+    else
+	avg = _size.unscaled_average();
+
     uint32_t part = (_max_thresh - _min_thresh) / 2;
-    uint32_t avg = _size.unscaled_average();
     if (avg < _min_thresh + part && _max_p > ONE_HUNDREDTH) {
 	_max_p = (_max_p * NINE_TENTHS) >> 16;
     } else if (avg > _max_thresh - part && _max_p < 0x8000) {
