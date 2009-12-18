@@ -26,11 +26,11 @@ Script(write timewarp 2, set a $(now), wait 0.5s, print $(sub $(now) $a), stop)
 Script(write timewarp 2, set a $(now), wait 0.25s, write timewarp 1, wait 0.25s, print $(sub $(now) $a), stop)
 
 %expect stdout
-0.5{{[01].*}}
+0.5{{|[01].*}}
 .{{(48|49|50|51|52).*}}
-0.5{{[01].*}}
+0.5{{|[01].*}}
 .{{(23|24|25|26|27).*}}
-0.5{{[01].*}}
+0.5{{|[01].*}}
 .{{(35|36|37|38|39|40).*}}
-0.5{{[01].*}}
+0.5{{|[01].*}}
 .{{(00|01).*}}
