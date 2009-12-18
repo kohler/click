@@ -102,7 +102,7 @@ void click_lfree(volatile void *p, size_t size);
 }
 #else
 # define CLICK_LALLOC(size)	((void *)(new uint8_t[(size)]))
-# define CLICK_LFREE(p, size)	delete[] ((uint8_t *)(p))
+# define CLICK_LFREE(p, size)	delete[] ((void) (size), (uint8_t *)(p))
 #endif
 
 
