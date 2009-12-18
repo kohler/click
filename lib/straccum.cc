@@ -43,13 +43,16 @@ CLICK_DECLS
  * <h3>Out-of-memory StringAccums</h3>
  *
  * When there is not enough memory to add requested characters to a
- * StringAccum object, the object becomes a special "out-of-memory" string.
- * Out-of-memory strings are contagious: the result of any concatenation
- * operation involving an out-of-memory string is another out-of-memory
- * string.  Calling take_string() on an out-of-memory StringAccum returns an
- * out-of-memory String.
+ * StringAccum object, the object becomes a special "out-of-memory"
+ * StringAccum.  Out-of-memory objects are contagious: the result of any
+ * concatenation operation involving an out-of-memory StringAccum is another
+ * out-of-memory StringAccum.  Appending an out-of-memory String with "sa <<
+ * s" makes "sa" out-of-memory.  (However, other usually-equivalent calls,
+ * such as "sa.append(s.begin(), s.end())", <em>do not</em> make "sa"
+ * out-of-memory.)  Calling take_string() on an out-of-memory StringAccum
+ * returns an out-of-memory String.
  *
- * Out-of-memory StringAccum objects nominally have zero characters.
+ * Out-of-memory StringAccum objects have length zero.
  */
 
 
@@ -107,12 +110,28 @@ StringAccum::c_str()
 }
 
 void
-StringAccum::append_unsafe_data(const char *s, int len)
+StringAccum::append_internal_data(const char *s, int len)
 {
-    char *copy = (char *) CLICK_LALLOC(len);
-    memcpy(copy, s, len);
-    append_safe_data(copy, len);
-    CLICK_LFREE(copy, len);
+    if (unlikely(out_of_memory()))
+	/* do nothing */;
+    else if (!_s || _len + len <= _cap)
+	append_external_data(s, len);
+    else {
+	unsigned char *old_s = _s;
+	int old_len = _len;
+	int old_cap = _cap;
+
+	_s = 0;
+	_len = 0;
+	_cap = 0;
+
+	if (char *new_s = extend(old_len + len)) {
+	    memcpy(new_s, old_s, old_len);
+	    memcpy(new_s + old_len, s, len);
+	}
+
+	CLICK_LFREE(old_s - MEMO_SPACE, old_cap + MEMO_SPACE);
+    }
 }
 
 String

@@ -243,6 +243,10 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(strcmp(xx.c_str(), "abcdefghijklmnbcdefghijklm") == 0);
     xx << xx;
     CHECK(strcmp(xx.c_str(), "abcdefghijklmnbcdefghijklmabcdefghijklmnbcdefghijklm") == 0);
+    xx << String::make_out_of_memory();
+    CHECK(xx.out_of_memory());
+    xx.append("X", 1);
+    CHECK(xx.out_of_memory());
 
     // String hash codes
     {
