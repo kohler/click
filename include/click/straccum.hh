@@ -34,7 +34,7 @@ class StringAccum { public:
      *
      * If @a capacity <= 0, the StringAccum is created empty.  If @a capacity
      * is too large (so that @a capacity bytes of memory can't be allocated),
-     * the StringAccum is created as out-of-memory. */
+     * the StringAccum falls back to a smaller capacity (possibly zero). */
     explicit inline StringAccum(int capacity);
 
     /** @brief Construct a StringAccum containing the characters in @a str. */
@@ -447,7 +447,7 @@ StringAccum::StringAccum(int capacity)
 	_cap = capacity;
     } else {
 	_s = 0;
-	_cap = (capacity ? -1 : 0);
+	_cap = 0;
     }
 }
 
