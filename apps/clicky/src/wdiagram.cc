@@ -187,6 +187,7 @@ wdiagram::wdiagram(wmain *rw)
     _widget = lookup_widget(_rw->_window, "diagram");
     gtk_widget_realize(_widget);
     gtk_widget_add_events(_widget, GDK_POINTER_MOTION_MASK
+			  | GDK_BUTTON_PRESS_MASK
 			  | GDK_BUTTON_RELEASE_MASK | GDK_FOCUS_CHANGE_MASK
 			  | GDK_LEAVE_NOTIFY_MASK);
 
