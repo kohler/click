@@ -919,7 +919,8 @@ ProcessingT::compound_flow_code(ErrorHandler *errh) const
 	common &= disjoint;
 	for (int j = 0; j < i; j++)
 	    if (common[j]) {
-		codeid.push_back(codeid[j]);
+		int codeid_j = codeid[j]; // ugh, passing a ref that disappears
+		codeid.push_back(codeid_j);
 		// turn off reference
 		for (int k = 0; k < noutputs; k++)
 		    codes[k][i] = false;
