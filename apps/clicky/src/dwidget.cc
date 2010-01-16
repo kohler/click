@@ -522,7 +522,8 @@ void delt::create_bbox_contents(double bbox[4], double mbbox[4], bool include_co
 	if (e->display() == dedisp_expanded)
 	    e->create_bbox_contents(bbox, mbbox, false);
 	else if (e->visible()
-		 || (!root() && include_compound_ports && n < 2)) {
+		 || (!root() && include_compound_ports && n < 2
+		     && e->_e->nports(!n) != 0)) {
 	    const double *m = e->_dess->margin;
 	    bbox[0] = std::min(bbox[0], e->_y);
 	    bbox[1] = std::max(bbox[1], e->_x + e->_width);
