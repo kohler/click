@@ -64,15 +64,24 @@ Vector<T>::operator=(const Vector<T> &o)
 template <class T> Vector<T> &
 Vector<T>::assign(size_type n, const T &e)
 {
-  resize(0, e);
-  resize(n, e);
-  return *this;
+    if (unlikely(&e >= begin() && &e < end())) {
+	T e_copy(e);
+	return assign(n, e_copy);
+    } else {
+	resize(0, e);
+	resize(n, e);
+	return *this;
+    }
 }
 
 template <class T> typename Vector<T>::iterator
-Vector<T>::insert(iterator i, const T& e)
+Vector<T>::insert(iterator i, const T &e)
 {
     assert(i >= begin() && i <= end());
+    if (unlikely(&e >= begin() && &e < end())) {
+	T e_copy(e);
+	return insert(i, e_copy);
+    }
     if (_n == _capacity) {
 	size_type pos = i - begin();
 	if (!reserve(RESERVE_GROW))
@@ -98,69 +107,80 @@ Vector<T>::insert(iterator i, const T& e)
 template <class T> typename Vector<T>::iterator
 Vector<T>::erase(iterator a, iterator b)
 {
-  if (b > a) {
-    assert(a >= begin() && b <= end());
-    iterator i = a, j = b;
-    for (; j < end(); i++, j++) {
-      i->~T();
+    if (b > a) {
+	assert(a >= begin() && b <= end());
+	iterator i = a, j = b;
+	for (; j < end(); i++, j++) {
+	    i->~T();
 #ifdef VALGRIND_MAKE_MEM_UNDEFINED
-      VALGRIND_MAKE_MEM_UNDEFINED(i, sizeof(T));
+	    VALGRIND_MAKE_MEM_UNDEFINED(i, sizeof(T));
 #endif
-      new((void*) i) T(*j);
-    }
-    for (; i < end(); i++)
-      i->~T();
-    _n -= b - a;
+	    new((void*) i) T(*j);
+	}
+	for (; i < end(); i++)
+	    i->~T();
+	_n -= b - a;
 #ifdef VALGRIND_MAKE_MEM_NOACCESS
-    VALGRIND_MAKE_MEM_NOACCESS(_l + _n, (b - a) * sizeof(T));
+	VALGRIND_MAKE_MEM_NOACCESS(_l + _n, (b - a) * sizeof(T));
 #endif
-    return a;
-  } else
-    return b;
+	return a;
+    } else
+	return b;
 }
 
 template <class T> bool
-Vector<T>::reserve(size_type want)
+Vector<T>::reserve_and_push_back(size_type want, const T *push_e)
 {
-  if (want < 0)
-    want = (_capacity > 0 ? _capacity * 2 : 4);
-  if (want <= _capacity)
-    return true;
+    if (unlikely(push_e && push_e >= begin() && push_e < end())) {
+	T e_copy(*push_e);
+	return reserve_and_push_back(want, &e_copy);
+    }
 
-  T *new_l = (T *) CLICK_LALLOC(sizeof(T) * want);
-  if (!new_l)
-    return false;
+    if (want < 0)
+	want = (_capacity > 0 ? _capacity * 2 : 4);
+
+    if (want > _capacity) {
+	T *new_l = (T *) CLICK_LALLOC(sizeof(T) * want);
+	if (!new_l)
+	    return false;
 #ifdef VALGRIND_MAKE_MEM_NOACCESS
-  VALGRIND_MAKE_MEM_NOACCESS(new_l + _n, (want - _n) * sizeof(T));
+	VALGRIND_MAKE_MEM_NOACCESS(new_l + _n, (want - _n) * sizeof(T));
 #endif
 
-  for (size_type i = 0; i < _n; i++) {
-    new(velt(new_l, i)) T(_l[i]);
-    _l[i].~T();
-  }
-  CLICK_LFREE(_l, sizeof(T) * _capacity);
+	for (size_type i = 0; i < _n; i++) {
+	    new(velt(new_l, i)) T(_l[i]);
+	    _l[i].~T();
+	}
+	CLICK_LFREE(_l, sizeof(T) * _capacity);
 
-  _l = new_l;
-  _capacity = want;
-  return true;
+	_l = new_l;
+	_capacity = want;
+    }
+
+    if (unlikely(push_e))
+	push_back(*push_e);
+    return true;
 }
 
 template <class T> void
 Vector<T>::resize(size_type nn, const T &e)
 {
-  if (nn <= _capacity || reserve(nn)) {
-    for (size_type i = nn; i < _n; i++)
-      _l[i].~T();
+    if (unlikely(&e >= begin() && &e < end())) {
+	T e_copy(e);
+	resize(nn, e_copy);
+    } else if (nn <= _capacity || reserve(nn)) {
+	for (size_type i = nn; i < _n; i++)
+	    _l[i].~T();
 #ifdef VALGRIND_MAKE_MEM_NOACCESS
-    if (nn < _n)
-	VALGRIND_MAKE_MEM_NOACCESS(_l + nn, (_n - nn) * sizeof(T));
-    if (_n < nn)
-	VALGRIND_MAKE_MEM_UNDEFINED(_l + _n, (nn - _n) * sizeof(T));
+	if (nn < _n)
+	    VALGRIND_MAKE_MEM_NOACCESS(_l + nn, (_n - nn) * sizeof(T));
+	if (_n < nn)
+	    VALGRIND_MAKE_MEM_UNDEFINED(_l + _n, (nn - _n) * sizeof(T));
 #endif
-    for (size_type i = _n; i < nn; i++)
-      new(velt(i)) T(e);
-    _n = nn;
-  }
+	for (size_type i = _n; i < nn; i++)
+	    new(velt(i)) T(e);
+	_n = nn;
+    }
 }
 
 template <class T> void

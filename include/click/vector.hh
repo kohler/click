@@ -9,18 +9,18 @@ CLICK_DECLS
 template <class T>
 class Vector { public:
 
-  typedef T value_type;
-  typedef T& reference;
-  typedef const T& const_reference;
-  typedef T* pointer;
-  typedef const T* const_pointer;
-  typedef const T& const_access_type;
+    typedef T value_type;
+    typedef T& reference;
+    typedef const T& const_reference;
+    typedef T* pointer;
+    typedef const T* const_pointer;
+    typedef const T& const_access_type;
 
-  typedef int size_type;
-  enum { RESERVE_GROW = (size_type) -1 };
+    typedef int size_type;
+    enum { RESERVE_GROW = (size_type) -1 };
 
-  typedef T* iterator;
-  typedef const T* const_iterator;
+    typedef T* iterator;
+    typedef const T* const_iterator;
 
     explicit Vector()
 	: _l(0), _n(0), _capacity(0) {
@@ -33,24 +33,24 @@ class Vector { public:
     Vector(const Vector<T> &x);
     ~Vector();
 
-  Vector<T>& operator=(const Vector<T>&);
-  Vector<T>& assign(size_type n, const T& e = T());
-  // template <class In> ...
+    Vector<T>& operator=(const Vector<T>&);
+    Vector<T>& assign(size_type n, const T& e = T());
+    // template <class In> ...
 
-  // iterators
-  iterator begin()			{ return _l; }
-  const_iterator begin() const		{ return _l; }
-  iterator end()			{ return _l + _n; }
-  const_iterator end() const		{ return _l + _n; }
+    // iterators
+    iterator begin()			{ return _l; }
+    const_iterator begin() const	{ return _l; }
+    iterator end()			{ return _l + _n; }
+    const_iterator end() const		{ return _l + _n; }
 
-  // capacity
-  size_type size() const		{ return _n; }
-  void resize(size_type nn, const T& e = T());
-  size_type capacity() const		{ return _capacity; }
-  bool empty() const			{ return _n == 0; }
-  bool reserve(size_type);
+    // capacity
+    size_type size() const		{ return _n; }
+    void resize(size_type nn, const T& e = T());
+    size_type capacity() const		{ return _capacity; }
+    bool empty() const			{ return _n == 0; }
+    bool reserve(size_type n)		{ return reserve_and_push_back(n, 0); }
 
-  // element access
+    // element access
     T &operator[](size_type i) {
 	assert((unsigned) i < (unsigned) _n);
 	return _l[i];
@@ -59,76 +59,78 @@ class Vector { public:
 	assert((unsigned) i < (unsigned) _n);
 	return _l[i];
     }
-  T& at(size_type i)			{ return operator[](i); }
-  const T& at(size_type i) const	{ return operator[](i); }
-  T& front()				{ return operator[](0); }
-  const T& front() const		{ return operator[](0); }
-  T& back()				{ return operator[](_n - 1); }
-  const T& back() const			{ return operator[](_n - 1); }
-  T& at_u(size_type i)			{ return _l[i]; }
-  const T& at_u(size_type i) const	{ return _l[i]; }
+    T& at(size_type i)			{ return operator[](i); }
+    const T& at(size_type i) const	{ return operator[](i); }
+    T& front()				{ return operator[](0); }
+    const T& front() const		{ return operator[](0); }
+    T& back()				{ return operator[](_n - 1); }
+    const T& back() const		{ return operator[](_n - 1); }
+    T& at_u(size_type i)		{ return _l[i]; }
+    const T& at_u(size_type i) const	{ return _l[i]; }
 
-  // modifiers
-  inline void push_back(const T&);
-  inline void pop_back();
-  inline void push_front(const T&);
-  inline void pop_front();
-  iterator insert(iterator, const T&);
-  inline iterator erase(iterator);
-  iterator erase(iterator, iterator);
-  void swap(Vector<T> &);
-  void clear()				{ erase(begin(), end()); }
+    // modifiers
+    inline void push_back(const T&);
+    inline void pop_back();
+    inline void push_front(const T&);
+    inline void pop_front();
+    iterator insert(iterator, const T&);
+    inline iterator erase(iterator);
+    iterator erase(iterator, iterator);
+    void swap(Vector<T> &);
+    void clear()			{ erase(begin(), end()); }
 
  private:
 
-  T *_l;
-  size_type _n;
-  size_type _capacity;
+    T *_l;
+    size_type _n;
+    size_type _capacity;
 
-  void *velt(size_type i) const		{ return (void*)&_l[i]; }
-  static void *velt(T* l, size_type i)	{ return (void*)&l[i]; }
+    void *velt(size_type i) const	{ return (void*)&_l[i]; }
+    static void *velt(T* l, size_type i){ return (void*)&l[i]; }
+    bool reserve_and_push_back(size_type, const T*);
 
 };
 
 template <class T> inline void
 Vector<T>::push_back(const T& e)
 {
-  if (_n < _capacity || reserve(RESERVE_GROW)) {
+    if (_n < _capacity) {
 #ifdef VALGRIND_MAKE_MEM_UNDEFINED
-    VALGRIND_MAKE_MEM_UNDEFINED(velt(_n), sizeof(T));
+	VALGRIND_MAKE_MEM_UNDEFINED(velt(_n), sizeof(T));
 #endif
-    new(velt(_n)) T(e);
-    _n++;
-  }
+	new(velt(_n)) T(e);
+	_n++;
+    } else
+	reserve_and_push_back(RESERVE_GROW, &e);
 }
 
 template <class T> inline void
 Vector<T>::pop_back()
 {
-  assert(_n > 0);
-  --_n;
-  _l[_n].~T();
+    assert(_n > 0);
+    --_n;
+    _l[_n].~T();
 #ifdef VALGRIND_MAKE_MEM_NOACCESS
-  VALGRIND_MAKE_MEM_NOACCESS(&_l[_n], sizeof(T));
+    VALGRIND_MAKE_MEM_NOACCESS(&_l[_n], sizeof(T));
 #endif
 }
 
 template <class T> inline typename Vector<T>::iterator
 Vector<T>::erase(iterator i)
 {
-  return (i < end() ? erase(i, i + 1) : i);
+    return (i < end() ? erase(i, i + 1) : i);
 }
 
 template <class T> inline void
 Vector<T>::push_front(const T& e)
 {
-  insert(begin(), e);
+    insert(begin(), e);
 }
 
 template <class T> inline void
 Vector<T>::pop_front()
 {
-  erase(begin());
+    erase(begin());
 }
 
 template <typename T>
