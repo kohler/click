@@ -62,9 +62,12 @@ ICMPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 static void
-update_in_cksum(uint16_t *csum, const uint16_t *old_hw, const uint16_t *new_hw,
+update_in_cksum(uint16_t *csum,
+		const void *old_bytes, const void *new_bytes,
 		int nhw)
 {
+    const uint16_t *old_hw = reinterpret_cast<const uint16_t *>(old_bytes);
+    const uint16_t *new_hw = reinterpret_cast<const uint16_t *>(new_bytes);
     for (; nhw > 0; --nhw, ++old_hw, ++new_hw)
 	click_update_in_cksum(csum, *old_hw, *new_hw);
 }
@@ -93,7 +96,7 @@ ICMPRewriter::rewrite_packet(WritablePacket *p, click_ip *embedded_iph,
     if (IPAddress(iph->ip_dst) == flow.saddr()) {
 	memcpy(old_hw, &iph->ip_dst, 4);
 	iph->ip_dst = new_flow.saddr();
-	update_in_cksum(&iph->ip_sum, old_hw, reinterpret_cast<const uint16_t *>(&iph->ip_dst), 2);
+	update_in_cksum(&iph->ip_sum, old_hw, &iph->ip_dst, 2);
 	if (_dst_anno)
 	    p->set_dst_ip_anno(new_flow.saddr());
     }
@@ -139,7 +142,7 @@ ICMPRewriter::rewrite_ping_packet(WritablePacket *p, click_ip *embedded_iph,
     if (IPAddress(iph->ip_dst) == flow.saddr()) {
 	memcpy(old_hw, &iph->ip_dst, 4);
 	iph->ip_dst = new_flow.saddr();
-	update_in_cksum(&iph->ip_sum, old_hw, reinterpret_cast<const uint16_t *>(&iph->ip_dst), 2);
+	update_in_cksum(&iph->ip_sum, old_hw, &iph->ip_dst, 2);
 	if (_dst_anno)
 	    p->set_dst_ip_anno(new_flow.saddr());
     }

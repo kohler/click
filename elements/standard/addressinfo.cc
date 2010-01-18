@@ -84,20 +84,29 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	for (int j = 1; j < parts.size(); j++) {
 	    union {
 		struct {
-		    struct in_addr a, p;
+		    struct in_addr a;
+		    struct in_addr p;
 		} ip4;
+		struct {
+		    unsigned char a[4];
+		    unsigned char p[4];
+		} ip4b;
 		unsigned char ether[6];
 #if HAVE_IP6
 		struct {
 		    struct click_in6_addr a;
 		    int p;
 		} ip6;
+		struct {
+		    unsigned char a[sizeof(struct click_in6_addr)];
+		    int p;
+		} ip6b;
 #endif
 		char c[24];
 	    } x;
 	    if (cp_ip_address(parts[j], &x.ip4.a))
 		NameInfo::define(NameInfo::T_IP_ADDR, this, parts[0], &x.ip4.a, 4);
-	    else if (cp_ip_prefix(parts[j], reinterpret_cast<IPAddress *>(&x.ip4.a), reinterpret_cast<IPAddress *>(&x.ip4.p), false)) {
+	    else if (cp_ip_prefix(parts[j], x.ip4b.a, x.ip4b.p, false)) {
 		NameInfo::define(NameInfo::T_IP_PREFIX, this, parts[0], &x.ip4, 8);
 		if (x.ip4.a.s_addr & ~x.ip4.p.s_addr)
 		    NameInfo::define(NameInfo::T_IP_ADDR, this, parts[0], &x.ip4.a, 4);
@@ -106,7 +115,7 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 #if HAVE_IP6
 	    else if (cp_ip6_address(parts[j], &x.ip6.a))
 		NameInfo::define(NameInfo::T_IP6_ADDR, this, parts[0], &x.ip6.a, 16);
-	    else if (cp_ip6_prefix(parts[j], reinterpret_cast<IP6Address *>(&x.ip6.a), &x.ip6.p, false)) {
+	    else if (cp_ip6_prefix(parts[j], x.ip6b.a, &x.ip6b.p, false)) {
 		NameInfo::define(NameInfo::T_IP6_PREFIX, this, parts[0], &x.ip6, 16 + sizeof(int));
 		if (x.ip6.a & IP6Address::make_inverted_prefix(x.ip6.p))
 		    NameInfo::define(NameInfo::T_IP6_ADDR, this, parts[0], &x.ip6.a, 16);
