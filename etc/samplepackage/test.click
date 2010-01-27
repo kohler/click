@@ -1,4 +1,4 @@
-require(sample);
+require(package "sample");
 
 test :: SamplePackageElement;
 

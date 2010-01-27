@@ -118,8 +118,7 @@ class Router { public:
     inline void use();
     void unuse();
 
-    inline const Vector<String>& requirements() const;
-    void add_requirement(const String& requirement);
+    void add_requirement(const String &type, const String &value);
     int add_element(Element *e, const String &name, const String &conf, const String &filename, unsigned lineno);
     int add_connection(int from_idx, int from_port, int to_idx, int to_port);
 #if CLICK_LINUXMODULE
@@ -424,12 +423,6 @@ inline Element*
 Router::root_element() const
 {
     return _root_element;
-}
-
-inline const Vector<String>&
-Router::requirements() const
-{
-    return _requirements;
 }
 
 inline ThreadSched*

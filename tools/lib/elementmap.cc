@@ -644,8 +644,11 @@ ElementMap::parse_requirement_files(RouterT *r, const String &default_path, Erro
 
     // parse elementmaps for requirements in required order
     const Vector<String> &requirements = r->requirements();
-    for (int i = 0; i < requirements.size(); i++) {
-	String req = requirements[i];
+    for (int i = 0; i < requirements.size(); i += 2) {
+	if (!requirements[i].equals("package", 7))
+	    continue;
+
+	String req = requirements[i+1];
 	String mapname = "elementmap-" + req + ".xml";
 	String mapname2 = "elementmap." + req;
 

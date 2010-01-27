@@ -109,9 +109,10 @@ RouterT::unparse_requirements(StringAccum &sa, const String &indent) const
 {
     if (_requirements.size() > 0) {
 	sa << indent << "require(";
-	for (int i = 0; i < _requirements.size(); i++) {
-	    if (i) sa << ", ";
-	    sa << _requirements[i];
+	for (int i = 0; i < _requirements.size(); i += 2) {
+	    sa << (i ? ", " : "") << _requirements[i];
+	    if (_requirements[i+1])
+		sa << " " << cp_quote(_requirements[i+1]);
 	}
 	sa << ");\n\n";
     }

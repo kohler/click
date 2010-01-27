@@ -354,20 +354,20 @@ namespace {
 
 class RequireLexerExtra : public LexerExtra { public:
     RequireLexerExtra(const Vector<ArchiveElement> *a) : _archive(a) { }
-    void require(String, ErrorHandler *);
+    void require(String type, String value, ErrorHandler *errh);
   private:
     const Vector<ArchiveElement> *_archive;
 };
 
 void
-RequireLexerExtra::require(String name, ErrorHandler *errh)
+RequireLexerExtra::require(String type, String value, ErrorHandler *errh)
 {
 # ifdef HAVE_DYNAMIC_LINKING
-    if (!click_has_provision(name.c_str()))
-	clickdl_load_requirement(name, _archive, errh);
+    if (type.equals("package", 7) && !click_has_provision(value.c_str()))
+	clickdl_load_requirement(value, _archive, errh);
 # endif
-    if (!click_has_provision(name.c_str()))
-	errh->error("requirement %<%s%> not available", name.c_str());
+    if (type.equals("package", 7) && !click_has_provision(value.c_str()))
+	errh->error("requirement %<%s%> not available", value.c_str());
 }
 
 }

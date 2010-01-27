@@ -154,8 +154,8 @@ class RouterT : public ElementClassT { public:
     inline bool insert_after(ElementT *, const PortT &);
 
     // REQUIREMENTS
-    void add_requirement(const String &);
-    void remove_requirement(const String &);
+    void add_requirement(const String &type, const String &value);
+    void remove_requirement(const String &type, const String &value);
     const Vector<String> &requirements() const	{ return _requirements; }
 
     // ARCHIVE

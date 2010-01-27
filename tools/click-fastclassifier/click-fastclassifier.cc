@@ -369,8 +369,8 @@ classifiers_program(RouterT *r, const Vector<ElementT *> &classifiers)
 
     ElementT *idle = nr->add_anon_element(ElementClassT::base_type("Idle"));
     const Vector<String> &old_requirements = r->requirements();
-    for (int i = 0; i < old_requirements.size(); i++)
-	nr->add_requirement(old_requirements[i]);
+    for (int i = 0; i < old_requirements.size(); i += 2)
+	nr->add_requirement(old_requirements[i], old_requirements[i+1]);
 
     // copy AlignmentInfos and AddressInfos
     copy_elements(r, nr, ElementClassT::base_type("AlignmentInfo"));
@@ -633,7 +633,7 @@ compile_classifiers(RouterT *r, const String &package_name,
     analyze_classifiers(nr, classifiers, errh);
 
     // add requirement
-    r->add_requirement(package_name);
+    r->add_requirement("package", package_name);
 
     // write Classifier programs
     for (int i = 0; i < all_programs.size(); i++)
@@ -758,10 +758,11 @@ reverse_transformation(RouterT *r, ErrorHandler *)
 
   // remove requirements
   {
-    Vector<String> requirements = r->requirements();
-    for (int i = 0; i < requirements.size(); i++)
-      if (requirements[i].substring(0, 14) == "fastclassifier")
-	r->remove_requirement(requirements[i]);
+      Vector<String> requirements = r->requirements();
+      for (int i = 0; i < requirements.size(); i += 2)
+	  if (requirements[i].equals("package", 7)
+	      && requirements[i+1].substring(0, 14) == "fastclassifier")
+	      r->remove_requirement(requirements[i], requirements[i+1]);
   }
 
   // remove archive elements

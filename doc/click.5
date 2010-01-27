@@ -515,15 +515,15 @@ elementclass Test { $a, $b | /* nothing */ || ... }
 .SH "REQUIREMENTS"
 '
 A configuration can say that it depends on optional packages by using the
-`require' statement. Its argument is a comma-separated list of package
-names:
+`require' statement. Its argument is a comma-separated list of require
+statements, such as package names:
 .Rs
-require(fastclassifier, specialcode);
+require(package fastclassifier, package specialcode);
 .Re
 Installation programs can use the package names to find and upload any
-necessary package code. Furthermore, the required package names are checked
-against a list of currently active packages when a configuration is
-installed. If any required packages are unavailable, an error is reported.
+necessary package code. The required package names are also checked against
+a list of currently active packages when a configuration is installed. If
+any required packages are unavailable, an error is reported.
 '
 .SH "PARAMETER DEFINITIONS"
 '

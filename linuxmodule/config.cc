@@ -66,14 +66,14 @@ read_classes(Element *, void *)
 
 class LinuxModuleLexerExtra : public LexerExtra { public:
     LinuxModuleLexerExtra() { }
-    void require(String, ErrorHandler *);
+    void require(String type, String value, ErrorHandler *errh);
 };
 
 void
-LinuxModuleLexerExtra::require(String r, ErrorHandler *errh)
+LinuxModuleLexerExtra::require(String type, String value, ErrorHandler *errh)
 {
-    if (!click_has_provision(r.c_str()))
-	errh->error("unsatisfied requirement '%s'", r.c_str());
+    if (type.equals("package", 7) && !click_has_provision(value.c_str()))
+	errh->error("unsatisfied requirement %<%s%>", value.c_str());
 }
 
 static Router *

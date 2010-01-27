@@ -428,11 +428,12 @@ Router::add_connection(int from_idx, int from_port, int to_idx, int to_port)
 }
 
 void
-Router::add_requirement(const String &r)
+Router::add_requirement(const String &type, const String &requirement)
 {
-    assert(cp_is_word(r));
-    _requirements.push_back(r);
-    if (r.equals("compact_config", 14)) {
+    assert(cp_is_word(type));
+    _requirements.push_back(type);
+    _requirements.push_back(requirement);
+    if (type.equals("compact_config", 14)) {
 	_have_configuration = false;
 	_configuration = String();
     }
@@ -1890,8 +1891,15 @@ void
 Router::unparse_requirements(StringAccum &sa, const String &indent) const
 {
     // requirements
-    if (_requirements.size())
-	sa << indent << "require(" << cp_unargvec(_requirements) << ");\n\n";
+    if (_requirements.size()) {
+	sa << indent << "require(";
+	for (int i = 0; i < _requirements.size(); i += 2) {
+	    sa << (i ? ", " : "") << _requirements[i];
+	    if (_requirements[i+1])
+		sa << " " << cp_quote(_requirements[i+1]);
+	}
+	sa << ");\n\n";
+    }
 }
 
 /** @brief Unparse declarations of the router's elements into @a sa.

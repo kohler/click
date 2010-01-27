@@ -8,6 +8,7 @@
  * Copyright (c) 2001-2003 International Computer Science Institute
  * Copyright (c) 2004-2007 Regents of the University of California
  * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2010 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -998,27 +999,46 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 void
 LexerT::yrequire()
 {
-    if (expect('(')) {
-	Lexeme requirement = lex_config();
-	expect(')');
-	// pre-read ';' to make it easier to write parsing extensions
-	expect(';', false);
+    if (!expect('('))
+	return;
 
-	Vector<String> args;
-	String word;
-	cp_argvec(requirement.string(), args);
-	for (int i = 0; i < args.size(); i++) {
-	    Vector<String> words;
-	    cp_spacevec(args[i], words);
-	    if (words.size() == 0)
-		/* do nothing */;
-	    else if (!cp_word(words[0], &word))
-		lerror(requirement, "bad requirement: not a word");
-	    else if (words.size() > 1)
-		lerror(requirement, "bad requirement: too many words");
-	    else
-		_router->add_requirement(word);
+    Lexeme requirement = lex_config();
+    expect(')');
+    // pre-read ';' to make it easier to write parsing extensions
+    expect(';', false);
+
+    Vector<String> args;
+    cp_argvec(requirement.string(), args);
+
+    String compact_config_str = String::make_stable("compact_config", 14);
+    String package_str = String::make_stable("package", 7);
+
+    for (int i = 0; i < args.size(); i++) {
+	Vector<String> words;
+	cp_spacevec(args[i], words);
+	if (words.size() == 0)
+	    continue;		// do nothing
+
+	String type, value;
+	(void) cp_word(words[0], &type);
+	// "require(UNKNOWN)" means "require(package UNKNOWN)"
+	if (type && type != compact_config_str && type != package_str
+	    && words.size() == 1) {
+	    words.push_back(type);
+	    type = package_str;
 	}
+
+	if (type == compact_config_str && words.size() == 1)
+	    /* OK */;
+	else if (type == package_str && words.size() == 2
+		 && cp_string(words[1], &value))
+	    /* OK */;
+	else {
+	    lerror(requirement, "syntax error at requirement");
+	    continue;
+	}
+
+	_router->add_requirement(type, value);
     }
 }
 

@@ -8,6 +8,7 @@
  * Copyright (c) 2001-2003 International Computer Science Institute
  * Copyright (c) 2004-2007 Regents of the University of California
  * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2010 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -1471,34 +1472,51 @@ Lexer::ycompound(String name)
 void
 Lexer::yrequire()
 {
-  if (expect('(')) {
+    if (!expect('('))
+	return;
+
     String requirement = lex_config();
     expect(')');
     // pre-read ';' to make it easier to write parsing extensions
     expect(';', false);
 
     Vector<String> args;
-    String word;
     cp_argvec(requirement, args);
+
+    String compact_config_str = String::make_stable("compact_config", 14);
+    String package_str = String::make_stable("package", 7);
+
     for (int i = 0; i < args.size(); i++) {
-      Vector<String> words;
-      cp_spacevec(args[i], words);
-      if (words.size() == 0)
-	/* do nothing */;
-      else if (!cp_word(words[0], &word))
-	lerror("bad requirement: not a word");
-      else if (words.size() > 1)
-	lerror("bad requirement: too many words");
-      else {
-	if (word.equals("compact_config", 14)) {
+	Vector<String> words;
+	cp_spacevec(args[i], words);
+	if (words.size() == 0)
+	    continue;		// do nothing
+
+	String type, value;
+	(void) cp_word(words[0], &type);
+	// "require(UNKNOWN)" means "require(package UNKNOWN)"
+	if (type && type != compact_config_str && type != package_str
+	    && words.size() == 1) {
+	    words.push_back(type);
+	    type = package_str;
+	}
+
+	if (type == compact_config_str && words.size() == 1) {
 	    _compact_config = true;
-	    word = word.compact();
-	} else if (_lextra)
-	    _lextra->require(word, _errh);
-	_requirements.push_back(word);
-      }
+	    type = compact_config_str;
+	} else if (type == package_str && words.size() == 2
+		   && cp_string(words[1], &value))
+	    /* OK */;
+	else {
+	    lerror("syntax error at requirement");
+	    continue;
+	}
+
+	if (_lextra)
+	    _lextra->require(type, value, _errh);
+	_requirements.push_back(type);
+	_requirements.push_back(value);
     }
-  }
 }
 
 void
@@ -1712,8 +1730,8 @@ Lexer::create_router(Master *master)
       router->add_connection((*cp)[1].idx, (*cp)[1].port, (*cp)[0].idx, (*cp)[0].port);
 
   // add requirements to router
-  for (int i = 0; i < _requirements.size(); i++)
-    router->add_requirement(_requirements[i]);
+  for (int i = 0; i < _requirements.size(); i += 2)
+      router->add_requirement(_requirements[i], _requirements[i+1]);
 
   return router;
 }
@@ -1724,7 +1742,7 @@ Lexer::create_router(Master *master)
 //
 
 void
-LexerExtra::require(String, ErrorHandler *)
+LexerExtra::require(String, String, ErrorHandler *)
 {
 }
 

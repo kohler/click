@@ -7,6 +7,7 @@
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2007 Regents of the University of California
+ * Copyright (c) 2010 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -747,20 +748,21 @@ RouterT::add_tunnel(const String &namein, const String &nameout,
 //
 
 void
-RouterT::add_requirement(const String &s)
+RouterT::add_requirement(const String &type, const String &value)
 {
-    _requirements.push_back(s);
+    _requirements.push_back(type);
+    _requirements.push_back(value);
 }
 
 void
-RouterT::remove_requirement(const String &s)
+RouterT::remove_requirement(const String &type, const String &value)
 {
-    for (int i = 0; i < _requirements.size(); i++)
-	if (_requirements[i] == s) {
+    for (int i = 0; i < _requirements.size(); i += 2)
+	if (_requirements[i] == type && _requirements[i+1] == value) {
 	    // keep requirements in order
-	    for (int j = i + 1; j < _requirements.size(); j++)
-		_requirements[j-1] = _requirements[j];
-	    _requirements.pop_back();
+	    for (int j = i + 2; j < _requirements.size(); j++)
+		_requirements[j-2] = _requirements[j];
+	    _requirements.resize(_requirements.size() - 2);
 	    return;
 	}
 }
@@ -946,8 +948,8 @@ RouterT::expand_into(RouterT *tor, const String &prefix, VariableEnvironment &en
     }
 
     // add requirements
-    for (int i = 0; i < _requirements.size(); i++)
-	tor->add_requirement(_requirements[i]);
+    for (int i = 0; i < _requirements.size(); i += 2)
+	tor->add_requirement(_requirements[i], _requirements[i+1]);
 
     // add archive elements
     for (int i = 0; i < _archive.size(); i++) {

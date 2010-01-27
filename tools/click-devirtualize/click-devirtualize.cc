@@ -166,10 +166,11 @@ reverse_transformation(RouterT *r, ErrorHandler *)
 
   // remove requirements
   {
-    Vector<String> requirements = r->requirements();
-    for (int i = 0; i < requirements.size(); i++)
-      if (requirements[i].substring(0, 12) == "devirtualize")
-	r->remove_requirement(requirements[i]);
+      Vector<String> requirements = r->requirements();
+      for (int i = 0; i < requirements.size(); i += 2)
+	  if (requirements[i].equals("package", 7)
+	      && requirements[i+1].substring(0, 12) == "devirtualize")
+	      r->remove_requirement(requirements[i], requirements[i+1]);
   }
 
   // remove archive elements
@@ -441,7 +442,7 @@ particular purpose.\n");
       md5_free(&pms);
       package_name = "clickdv_" + String(buf, buflen);
   }
-  router->add_requirement(package_name);
+  router->add_requirement("package", package_name);
 
   // output
   StringAccum header, source;

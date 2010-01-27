@@ -192,7 +192,7 @@ class LexerExtra { public:
     LexerExtra()			{ }
     virtual ~LexerExtra()		{ }
 
-    virtual void require(String, ErrorHandler *);
+    virtual void require(String type, String value, ErrorHandler *errh);
 
 };
 
