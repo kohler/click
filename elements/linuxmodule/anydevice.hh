@@ -10,6 +10,7 @@ CLICK_CXX_PROTECT
 #include <linux/netdevice.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 # include <net/net_namespace.h>
+# include <linux/percpu.h>
 #endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
@@ -25,16 +26,15 @@ CLICK_CXX_UNPROTECT
 #endif
 
 #if CLICK_DEVICE_PRFCTR && __i386__
-
-#define CLICK_DEVICE_STATS 1
-#define SET_STATS(p0mark, p1mark, time_mark) \
+# define CLICK_DEVICE_STATS 1
+# define SET_STATS(p0mark, p1mark, time_mark) \
   { \
     unsigned high; \
     rdpmc(0, p0mark, high); \
     rdpmc(1, p1mark, high); \
     time_mark = click_get_cycles(); \
   }
-#define GET_STATS_RESET(p0mark, p1mark, time_mark, pctr0, pctr1, tctr) \
+# define GET_STATS_RESET(p0mark, p1mark, time_mark, pctr0, pctr1, tctr) \
   { \
     unsigned high; \
     unsigned low01, low11; \
@@ -47,26 +47,28 @@ CLICK_CXX_UNPROTECT
     rdpmc(1, p1mark, high); \
     time_mark = click_get_cycles(); \
   }
-
 #elif CLICK_DEVICE_CYCLES
-
-#define CLICK_DEVICE_STATS 1
-#define SET_STATS(p0mark, p1mark, time_mark) \
+# define CLICK_DEVICE_STATS 1
+# define SET_STATS(p0mark, p1mark, time_mark) \
   { \
     time_mark = click_get_cycles(); \
   }
-#define GET_STATS_RESET(p0mark, p1mark, time_mark, pctr0, pctr1, tctr) \
+# define GET_STATS_RESET(p0mark, p1mark, time_mark, pctr0, pctr1, tctr) \
   { \
     uint64_t __now = click_get_cycles(); \
     tctr += __now - time_mark - CLICK_CYCLE_COMPENSATION; \
     time_mark = __now; \
   }
-
 #else
+# define GET_STATS_RESET(a,b,c,d,e,f)	/* nothing */
+# define SET_STATS(a,b,c)		/* nothing */
+#endif
 
-#define GET_STATS_RESET(a,b,c,d,e,f)	/* nothing */
-#define SET_STATS(a,b,c)		/* nothing */
-
+#if defined(HAVE_NETIF_RECEIVE_SKB) && !(HAVE___NETIF_RECEIVE_SKB || HAVE_NETIF_RECEIVE_SKB_EXTENDED)
+# define CLICK_DEVICE_UNRECEIVABLE_SK_BUFF 1
+extern "C" {
+DECLARE_PER_CPU(sk_buff *, click_device_unreceivable_sk_buff);
+}
 #endif
 
 class AnyDeviceMap;

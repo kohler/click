@@ -249,6 +249,12 @@ packet_notifier_hook(struct notifier_block *nb, unsigned long backlog_len, void 
 static struct sk_buff *
 click_br_handle_frame_hook(struct net_bridge_port *p, struct sk_buff *skb)
 {
+# if CLICK_DEVICE_UNRECEIVABLE_SK_BUFF
+    if (__get_cpu_var(click_device_unreceivable_sk_buff) == skb)
+	// This packet is being passed to Linux by ToHost.
+	return skb;
+# endif
+
     int stolen = 0;
     FromDevice *fd = 0;
     unsigned long lock_flags;

@@ -17,15 +17,14 @@ This manual page describes the Linux kernel module version of the FromDevice
 element. For the user-level element, read the FromDevice.u manual page.
 
 Intercepts all packets received by the Linux network interface named DEVNAME
-and pushes them out output 0. The packets include the link-level header.
+and pushes them out output 0.  The packets include the link-level header.
 DEVNAME may also be an Ethernet address, in which case FromDevice searches for
 a device with that address.
 
-FromDevice receives packets at interrupt time. As this happens, FromDevice
-simply stores the packets in an internal queue. Later, in the Click kernel
-thread -- that is, not at interrupt time -- FromDevice emits packets from that
-queue as it is scheduled by the driver. It emits at most BURST packets per
-scheduling; BURST is 8 by default.
+FromDevice receives packets at interrupt time and stores them in an internal
+queue.  Later, in the Click kernel thread -- that is, not at interrupt time --
+a FromDevice task emits packets from that queue into the configuration.  It
+emits at most BURST packets per task execution; BURST is 8 by default.
 
 Keyword arguments are:
 
@@ -77,15 +76,32 @@ Default is true.
 
 =n
 
-Linux won't see any packets from the device. If you want Linux to process
+Linux won't see any packets from the device.  If you want Linux to process
 packets, you should hand them to ToHost.
 
 FromDevice accesses packets the same way Linux does: through interrupts.
 This is bad for performance. If you care about performance and have a
 polling-capable device, use PollDevice instead.
 
-Linux device drivers, and thus FromDevice, should set packets' timestamp,
-packet-type, and device annotations.
+Linux device drivers should have set packets' timestamp, packet-type, and
+device annotations, so packets emitted by FromDevice generally have these
+annotations.
+
+=head2 Patchless Installations
+
+On patchless installations, FromDevice works by repurposing the hooks used for
+Ethernet bridging.  It is not advised to use FromDevice and the Ethernet
+bridge module simultaneously.
+
+On patched installations, FromDevice intercepts packets before they are passed
+to packet sniffers like tcpdump.  However, on patchless installations, packet
+sniffers receive incoming packets before FromDevice can intercept them.  This
+means that in a configuration such as
+
+  FromDevice(eth0) -> ToHost;
+
+packet sniffers will see eth0's packets twice, once before FromDevice runs and
+once when the packets are handed back to Linux via ToHost.
 
 =h active read/write
 

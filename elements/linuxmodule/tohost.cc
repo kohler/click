@@ -227,14 +227,22 @@ ToHost::push(int port, Packet *p)
     dev_hold(dev);
 
 # if HAVE___NETIF_RECEIVE_SKB
-    int ret = __netif_receive_skb(skb, protocol, -1);
+    (void) __netif_receive_skb(skb, protocol, -1);
 # elif HAVE_NETIF_RECEIVE_SKB_EXTENDED /* from Click configure */
     netif_receive_skb(skb, protocol, -1);
 # else
-    /* XXX can't yet pass packets back to Linux */
-    if (++_drops == 1)
-	click_chatter("ToHost doesn't yet work on unpatched kernels");
-    kfree_skb(skb);
+    // XXX Miss __netif_receive_skb functionality; since we're restricted to
+    // netif_receive_skb, tcpdump will receive packets twice.
+    (void) protocol;
+    // XXX Not sure what effect this assignment has.  Wish netif_nit_deliver
+    // was exported.
+    if (_sniffers)
+	skb->pkt_type = PACKET_OTHERHOST;
+
+    // This assignment prevents any FromDevice from re-receiving the packet.
+    __get_cpu_var(click_device_unreceivable_sk_buff) = skb;
+    netif_receive_skb(skb);
+    __get_cpu_var(click_device_unreceivable_sk_buff) = 0;
 # endif
 
     dev_put(dev);

@@ -39,6 +39,12 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
+#if CLICK_DEVICE_UNRECEIVABLE_SK_BUFF
+extern "C" {
+DEFINE_PER_CPU(sk_buff *, click_device_unreceivable_sk_buff);
+}
+#endif
+
 AnyDevice::AnyDevice()
     : _dev(0), _promisc(false), _timestamp(true), _in_map(false),
       _quiet(false), _allow_nonexistent(false), _devname_exists(false),
