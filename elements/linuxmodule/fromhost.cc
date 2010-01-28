@@ -484,5 +484,5 @@ FromHost::add_handlers()
     add_data_handlers("drops", Handler::OP_READ, &_drops);
 }
 
-ELEMENT_REQUIRES(AnyDevice linuxmodule)
+ELEMENT_REQUIRES(AnyDevice linuxmodule false)
 EXPORT_ELEMENT(FromHost)

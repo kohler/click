@@ -38,6 +38,10 @@ Unsigned integer. Same as the BURST argument.
 
 Boolean.  If true, then suppress device up/down messages.  Default is false.
 
+=item QUEUE
+
+Integer.  The transmit queue to send to.  Default is 0.
+
 =item ALLOW_NONEXISTENT
 
 Allow nonexistent devices. If true, and no device named DEVNAME exists when
@@ -103,6 +107,7 @@ Resets counters to zero when written.
 
 #include "elements/linuxmodule/anydevice.hh"
 #include <click/notifier.hh>
+struct netdev_queue;
 
 class ToDevice : public AnyTaskDevice { public:
 
@@ -141,6 +146,9 @@ class ToDevice : public AnyTaskDevice { public:
 	queue_timeout = CLICK_HZ / 4
     };
 
+#if HAVE_NETDEV_GET_TX_QUEUE
+    int _tx_queue;
+#endif
     Packet *_q;
     click_jiffies_t _q_expiry_j;
     unsigned _burst;
@@ -175,7 +183,7 @@ class ToDevice : public AnyTaskDevice { public:
     uint32_t _busy_returns;
     uint32_t _too_short;
 
-    int queue_packet(Packet *p);
+    int queue_packet(Packet *p, struct netdev_queue *txq);
 
     static String read_calls(Element *e, void *user_data);
     static int write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh);

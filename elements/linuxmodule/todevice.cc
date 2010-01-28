@@ -9,6 +9,7 @@
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2005-2007 Regents of the University of California
+ * Copyright (c) 2010 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,6 +31,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
+#include <click/straccum.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -65,7 +67,6 @@ ToDevice::static_initialize()
     device_notifier.priority = 1;
     device_notifier.next = 0;
     register_netdevice_notifier(&device_notifier);
-
 }
 
 void
@@ -119,14 +120,34 @@ int
 ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 16;
+    int tx_queue = 0;
     if (AnyDevice::configure_keywords(conf, errh, false) < 0
 	|| cp_va_kparse(conf, this, errh,
 			"DEVNAME", cpkP+cpkM, cpString, &_devname,
 			"BURST", cpkP, cpUnsigned, &_burst,
 			"NO_PAD", 0, cpBool, &_no_pad,
+			"QUEUE", 0, cpInteger, &tx_queue,
 			cpEnd) < 0)
 	return -1;
-    return find_device(&to_device_map, errh);
+#if !HAVE_NETDEV_GET_TX_QUEUE
+    if (tx_queue != 0)
+	return errh->error("the kernel only supports QUEUE 0");
+#else
+    _tx_queue = tx_queue;
+#endif
+
+    int before = errh->nerrors();
+    net_device *dev = lookup_device(errh);
+#if HAVE_NETDEV_GET_TX_QUEUE
+    if (dev && _tx_queue >= dev->num_tx_queues) {
+	dev_put(dev);
+	dev = 0;
+	if (!allow_nonexistent())
+	    return errh->error("device %<%s%> has only %d queues", _devname.c_str(), _tx_queue);
+    }
+#endif
+    set_device(dev, &to_device_map, 0);
+    return errh->nerrors() == before ? 0 : -1;
 }
 
 int
@@ -135,7 +156,7 @@ ToDevice::initialize(ErrorHandler *errh)
     if (AnyDevice::initialize_keywords(errh) < 0)
 	return -1;
 
-#ifndef HAVE_CLICK_KERNEL
+#if !HAVE_CLICK_KERNEL
     errh->warning("not compiled for a Click kernel");
 #endif
 
@@ -212,7 +233,7 @@ ToDevice::cleanup(CleanupStage stage)
 #endif
     if (_q)
 	_q->kill();
-    clear_device(&to_device_map);
+    clear_device(&to_device_map, 0);
 }
 
 /*
@@ -222,8 +243,14 @@ ToDevice::cleanup(CleanupStage stage)
  */
 
 #if LINUX_VERSION_CODE < 0x020400
-# define netif_queue_stopped(dev)	((dev)->tbusy)
-# define netif_wake_queue(dev)		mark_bh(NET_BH)
+# define click_netif_tx_queue_stopped(dev, txq)	((dev)->tbusy)
+# define click_netif_tx_wake_queue(dev, txq)	mark_bh(NET_BH)
+#elif HAVE_NETDEV_GET_TX_QUEUE
+# define click_netif_tx_queue_stopped(dev, txq)	netif_tx_queue_stopped((txq))
+# define click_netif_tx_wake_queue(dev, txq)	netif_tx_wake_queue((txq))
+#else
+# define click_netif_tx_queue_stopped(dev, txq)	netif_queue_stopped((dev))
+# define click_netif_tx_wake_queue(dev, txq)	netif_wake_queue((dev))
 #endif
 
 bool
@@ -234,9 +261,10 @@ ToDevice::run_task(Task *)
 
     _runs++;
 
+    struct netdev_queue *txq = 0;
 #if LINUX_VERSION_CODE >= 0x020400
 # if HAVE_NETDEV_GET_TX_QUEUE
-    struct netdev_queue *txq = netdev_get_tx_queue(_dev, 0);
+    txq = netdev_get_tx_queue(_dev, _tx_queue);
     int ok = spin_trylock_bh(&txq->_xmit_lock);
     if (likely(ok))
 	txq->xmit_lock_owner = smp_processor_id();
@@ -279,7 +307,8 @@ ToDevice::run_task(Task *)
 #endif
 
     /* try to send from click */
-    while (sent < _burst && (busy = netif_queue_stopped(_dev)) == 0) {
+    while (sent < _burst
+	   && (busy = click_netif_tx_queue_stopped(_dev, txq)) == 0) {
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
 	click_cycles_t before_pull_cycles = click_get_cycles();
 #endif
@@ -305,7 +334,7 @@ ToDevice::run_task(Task *)
 	GET_STATS_RESET(low00, low10, time_now,
 			_perfcnt1_pull, _perfcnt2_pull, _pull_cycles);
 
-	busy = queue_packet(p);
+	busy = queue_packet(p, txq);
 
 	GET_STATS_RESET(low00, low10, time_now,
 			_perfcnt1_queue, _perfcnt2_queue, _time_queue);
@@ -326,7 +355,7 @@ ToDevice::run_task(Task *)
     // to call qdisc_restart() ourselves, outside of net_bh().
     if (is_polling && !busy && _dev->qdisc->q.qlen) {
 	_dev->tx_eob(_dev);
-	netif_wake_queue(_dev);
+	click_netif_tx_wake_queue(_dev, txq);
     }
 #endif
 
@@ -415,7 +444,7 @@ ToDevice::run_task(Task *)
 }
 
 int
-ToDevice::queue_packet(Packet *p)
+ToDevice::queue_packet(Packet *p, struct netdev_queue *txq)
 {
     struct sk_buff *skb1 = p->skb();
 
@@ -446,14 +475,21 @@ ToDevice::queue_packet(Packet *p)
 
     int ret;
 #if HAVE_LINUX_POLLING
-    if (_dev->polling > 0)
+    if (_dev->polling > 0) {
 	ret = _dev->tx_queue(_dev, skb1);
-    else
+	goto enqueued;
+    }
 #endif
-	{
-	    ret = _dev->hard_start_xmit(skb1, _dev);
-	    _hard_start++;
-	}
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+    // XXX should we call dev_hard_start_xmit???  Probably
+    ret = _dev->netdev_ops->ndo_start_xmit(skb1, _dev);
+#else
+    ret = _dev->hard_start_xmit(skb1, _dev);
+#endif
+    ++_hard_start;
+
+ enqueued:
     if (ret != 0) {
         _q = p;
 	_q_expiry_j = click_jiffies() + queue_timeout;
@@ -467,12 +503,16 @@ ToDevice::queue_packet(Packet *p)
 void
 ToDevice::change_device(net_device *dev)
 {
+#if HAVE_NETDEV_GET_TX_QUEUE
+    if (dev && _tx_queue >= dev->num_tx_queues)
+	dev = 0;
+#endif
     bool dev_change = _dev != dev;
 
     if (dev_change)
 	_task.strong_unschedule();
 
-    set_device(dev, &to_device_map, true);
+    set_device(dev, &to_device_map, anydev_change);
 
     if (dev_change && _dev)
 	_task.strong_reschedule();
@@ -507,32 +547,30 @@ String
 ToDevice::read_calls(Element *e, void *)
 {
     ToDevice *td = (ToDevice *)e;
-    return
-	String(td->_holds) + " packets held\n" +
-	String(td->_drops) + " packets dropped\n" +
-	String(td->_hard_start) + " hard start xmit\n" +
-	String(td->_busy_returns) + " device busy returns\n" +
-	String(td->_npackets) + " packets sent\n" +
-	String(td->_runs) + " calls to run_task()\n" +
-	String(td->_pulls) + " pulls\n" +
+    StringAccum sa;
+    sa << td->_holds << " packets held\n"
+       << td->_drops << " packets dropped\n"
+       << td->_hard_start << " hard start xmit\n"
+       << td->_busy_returns << " device busy returns\n"
+       << td->_npackets << " packets sent\n"
+       << td->_runs << " calls to run_task()\n"
+       << td->_pulls << " pulls\n";
 #if CLICK_DEVICE_STATS
-	String(td->_pull_cycles) + " cycles pull\n" +
-	String(td->_time_clean) + " cycles clean\n" +
-	String(td->_time_freeskb) + " cycles freeskb\n" +
-	String(td->_time_queue) + " cycles queue\n" +
-	String(td->_perfcnt1_pull) + " perfctr1 pull\n" +
-	String(td->_perfcnt1_clean) + " perfctr1 clean\n" +
-	String(td->_perfcnt1_freeskb) + " perfctr1 freeskb\n" +
-	String(td->_perfcnt1_queue) + " perfctr1 queue\n" +
-	String(td->_perfcnt2_pull) + " perfctr2 pull\n" +
-	String(td->_perfcnt2_clean) + " perfctr2 clean\n" +
-	String(td->_perfcnt2_freeskb) + " perfctr2 freeskb\n" +
-	String(td->_perfcnt2_queue) + " perfctr2 queue\n" +
-	String(td->_activations) + " transmit activations\n"
-#else
-	String()
+    sa << td->_pull_cycles << " cycles pull\n"
+       << td->_time_clean << " cycles clean\n"
+       << td->_time_freeskb << " cycles freeskb\n"
+       << td->_time_queue << " cycles queue\n"
+       << td->_perfcnt1_pull << " perfctr1 pull\n"
+       << td->_perfcnt1_clean << " perfctr1 clean\n"
+       << td->_perfcnt1_freeskb << " perfctr1 freeskb\n"
+       << td->_perfcnt1_queue << " perfctr1 queue\n"
+       << td->_perfcnt2_pull << " perfctr2 pull\n"
+       << td->_perfcnt2_clean << " perfctr2 clean\n"
+       << td->_perfcnt2_freeskb << " perfctr2 freeskb\n"
+       << td->_perfcnt2_queue << " perfctr2 queue\n"
+       << td->_activations << " transmit activations\n";
 #endif
-	;
+    return sa.take_string();
 }
 
 int

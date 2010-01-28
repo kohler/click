@@ -96,16 +96,18 @@ ToHost::initialize(ErrorHandler *errh)
 
     // Avoid warnings about "device down" with FromHost devices -- FromHost
     // brings up its device during initialize().
-    int r;
-    if (_devname && (r = find_device(&to_host_map, errh)) < 0)
-	return r;
-    return 0;
+    int before = errh->nerrors();
+    if (_devname) {
+	net_device *dev = lookup_device(errh);
+	set_device(dev, &to_host_map, 0);
+    }
+    return errh->nerrors() == before ? 0 : -1;
 }
 
 void
 ToHost::cleanup(CleanupStage)
 {
-    clear_device(&to_host_map);
+    clear_device(&to_host_map, 0);
 }
 
 extern "C" {
@@ -124,7 +126,7 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 	AnyDevice *es[8];
 	int nes = to_host_map.lookup_all(dev, exists, es, 8);
 	for (int i = 0; i < nes; i++)
-	    ((ToHost *)(es[i]))->set_device(flags == NETDEV_DOWN ? 0 : dev, &to_host_map, true);
+	    ((ToHost *)(es[i]))->set_device(flags == NETDEV_DOWN ? 0 : dev, &to_host_map, AnyDevice::anydev_change);
 	to_host_map.unlock(true, lock_flags);
     }
     return 0;

@@ -33,14 +33,30 @@
 
 static AnyDeviceMap from_device_map;
 static int registered_readers;
-#ifdef HAVE_CLICK_KERNEL
+#if HAVE_CLICK_KERNEL
 static struct notifier_block packet_notifier;
 #endif
 static struct notifier_block device_notifier;
 
+#if !HAVE_CLICK_KERNEL && (defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE))
+# define CLICK_FROMDEVICE_USE_BRIDGE 1
+#endif
+
+#if CLICK_FROMDEVICE_USE_BRIDGE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+# include <linux/if_bridge.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
+#endif
+
+
 extern "C" {
-#ifdef HAVE_CLICK_KERNEL
+#if HAVE_CLICK_KERNEL
 static int packet_notifier_hook(struct notifier_block *nb, unsigned long val, void *v);
+#elif CLICK_FROMDEVICE_USE_BRIDGE
+static struct sk_buff *click_br_handle_frame_hook(struct net_bridge_port *p, struct sk_buff *skb);
+static struct sk_buff *(*real_br_handle_frame_hook)(struct net_bridge_port *p, struct sk_buff *skb);
 #endif
 static int device_notifier_hook(struct notifier_block *nb, unsigned long val, void *v);
 }
@@ -49,7 +65,7 @@ void
 FromDevice::static_initialize()
 {
     from_device_map.initialize();
-#ifdef HAVE_CLICK_KERNEL
+#if HAVE_CLICK_KERNEL
     packet_notifier.notifier_call = packet_notifier_hook;
     packet_notifier.priority = 1;
     packet_notifier.next = 0;
@@ -63,9 +79,12 @@ FromDevice::static_initialize()
 void
 FromDevice::static_cleanup()
 {
-#ifdef HAVE_CLICK_KERNEL
+#if HAVE_CLICK_KERNEL
     if (registered_readers)
 	unregister_net_in(&packet_notifier);
+#elif CLICK_FROMDEVICE_USE_BRIDGE
+    if (br_handle_frame_hook == click_br_handle_frame_hook)
+	br_handle_frame_hook = real_br_handle_frame_hook;
 #endif
     unregister_netdevice_notifier(&device_notifier);
 }
@@ -106,7 +125,10 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     // make queue look full so packets sent to us are ignored
     _head = _tail = _capacity = 0;
 
-    return find_device(&from_device_map, errh);
+    int before = errh->nerrors();
+    net_device *dev = lookup_device(errh);
+    set_device(dev, &from_device_map, anydev_from_device);
+    return errh->nerrors() == before ? 0 : -1;
 }
 
 /*
@@ -127,15 +149,18 @@ FromDevice::initialize(ErrorHandler *errh)
 	used = this;
     }
 
-    if (!registered_readers) {
-#ifdef HAVE_CLICK_KERNEL
+    if (registered_readers == 0) {
+#if HAVE_CLICK_KERNEL
 	packet_notifier.next = 0;
 	register_net_in(&packet_notifier);
+#elif CLICK_FROMDEVICE_USE_BRIDGE
+	real_br_handle_frame_hook = br_handle_frame_hook;
+	br_handle_frame_hook = click_br_handle_frame_hook;
 #else
 	errh->warning("can't get packets: not compiled for a Click kernel");
 #endif
     }
-    registered_readers++;
+    ++registered_readers;
 
     reset_counts();
 
@@ -156,14 +181,17 @@ void
 FromDevice::cleanup(CleanupStage stage)
 {
     if (stage >= CLEANUP_INITIALIZED) {
-	registered_readers--;
-#ifdef HAVE_CLICK_KERNEL
+	--registered_readers;
+#if HAVE_CLICK_KERNEL
 	if (registered_readers == 0)
 	    unregister_net_in(&packet_notifier);
+#elif CLICK_FROMDEVICE_USE_BRIDGE
+	if (registered_readers == 0)
+	    br_handle_frame_hook = real_br_handle_frame_hook;
 #endif
     }
 
-    clear_device(&from_device_map);
+    clear_device(&from_device_map, anydev_from_device);
 
     if (stage >= CLEANUP_INITIALIZED)
 	for (unsigned i = _head; i != _tail; i = next_i(i))
@@ -203,7 +231,7 @@ FromDevice::take_state(Element *e, ErrorHandler *errh)
  */
 extern "C" {
 
-#ifdef HAVE_CLICK_KERNEL
+#if HAVE_CLICK_KERNEL
 static int
 packet_notifier_hook(struct notifier_block *nb, unsigned long backlog_len, void *v)
 {
@@ -216,6 +244,24 @@ packet_notifier_hook(struct notifier_block *nb, unsigned long backlog_len, void 
 	stolen = fd->got_skb(skb);
     from_device_map.unlock(false, lock_flags);
     return (stolen ? NOTIFY_STOP_MASK : 0);
+}
+#elif CLICK_FROMDEVICE_USE_BRIDGE
+static struct sk_buff *
+click_br_handle_frame_hook(struct net_bridge_port *p, struct sk_buff *skb)
+{
+    int stolen = 0;
+    FromDevice *fd = 0;
+    unsigned long lock_flags;
+    from_device_map.lock(false, lock_flags);
+    while (stolen == 0 && (fd = (FromDevice *)from_device_map.lookup(skb->dev, fd)))
+	stolen = fd->got_skb(skb);
+    from_device_map.unlock(false, lock_flags);
+    if (stolen)
+	return 0;
+    else if (real_br_handle_frame_hook)
+	return real_br_handle_frame_hook(p, skb);
+    else
+	return skb;
 }
 #endif
 
@@ -234,7 +280,7 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 	AnyDevice *es[8];
 	int nes = from_device_map.lookup_all(dev, exists, es, 8);
 	for (int i = 0; i < nes; i++)
-	    ((FromDevice*)(es[i]))->set_device(flags == NETDEV_DOWN ? 0 : dev, &from_device_map, true);
+	    ((FromDevice*)(es[i]))->set_device(flags == NETDEV_DOWN ? 0 : dev, &from_device_map, AnyDevice::anydev_change | AnyDevice::anydev_from_device);
 	from_device_map.unlock(true, lock_flags);
     }
     return 0;
@@ -398,5 +444,6 @@ FromDevice::add_handlers()
     add_write_handler("reset_counts", write_handler, H_RESET_COUNTS, Handler::BUTTON);
 }
 
+#undef CLICK_FROMDEVICE_USE_BRIDGE
 ELEMENT_REQUIRES(AnyDevice linuxmodule)
 EXPORT_ELEMENT(FromDevice)

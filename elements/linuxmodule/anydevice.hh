@@ -84,6 +84,7 @@ class AnyDevice : public Element { public:
     net_device *device() const		{ return _dev; }
     int ifindex() const			{ return _dev ? _dev->ifindex : -1; }
 
+    bool allow_nonexistent() const	{ return _allow_nonexistent; }
     bool promisc() const		{ return _promisc; }
     bool timestamp() const		{ return _timestamp; }
 
@@ -91,9 +92,13 @@ class AnyDevice : public Element { public:
 			   bool is_reader);
     int initialize_keywords(ErrorHandler *errh);
 
-    int find_device(AnyDeviceMap *, ErrorHandler *);
-    void set_device(net_device *, AnyDeviceMap *, bool locked = false);
-    void clear_device(AnyDeviceMap *);
+    net_device *lookup_device(ErrorHandler *errh);
+    enum {
+	anydev_change = 1,
+	anydev_from_device = 2
+    };
+    void set_device(net_device *dev, AnyDeviceMap *map, int flags);
+    void clear_device(AnyDeviceMap *map, int flags);
 
     static inline net_device *get_by_name(const char *name) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
@@ -104,6 +109,15 @@ class AnyDevice : public Element { public:
     }
 
     static net_device *get_by_ether_address(const String &name, Element *context);
+
+    // used for FromDevice
+    struct fake_bridge {
+	int magic;
+	atomic_t refcount;
+	enum {
+	    click_magic = 0x817A10A7
+	};
+    };
 
   protected:
 
@@ -124,6 +138,7 @@ class AnyDevice : public Element { public:
     HandlerCall *_down_call;
 
     void alter_promiscuity(int delta);
+    void alter_from_device(int delta);
 
     friend class AnyDeviceMap;
 
@@ -178,11 +193,11 @@ class AnyDeviceMap { public:
     void initialize();
     inline void lock(bool write, unsigned long &flags);
     inline void unlock(bool write, unsigned long flags);
-    inline AnyDevice *lookup(net_device *, AnyDevice *) const;
-    AnyDevice *lookup_unknown(net_device *, AnyDevice *) const;
-    int lookup_all(net_device *, bool known, AnyDevice **dev_store, int ndev) const;
-    void insert(AnyDevice *, bool locked);
-    void remove(AnyDevice *, bool locked);
+    inline AnyDevice *lookup(net_device *dev, AnyDevice *last) const;
+    AnyDevice *lookup_unknown(net_device *dev, AnyDevice *last) const;
+    int lookup_all(net_device *dev, bool known, AnyDevice **develt_store, int ndev) const;
+    void insert(AnyDevice *develt, bool locked);
+    void remove(AnyDevice *develt, bool locked);
 
   private:
 

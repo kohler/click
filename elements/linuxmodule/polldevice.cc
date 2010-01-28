@@ -84,14 +84,16 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpEnd) < 0)
 	return -1;
 
+    int before = errh->nerrors();
 #if HAVE_LINUX_POLLING
-    if (find_device(&poll_device_map, errh) < 0)
-	return -1;
-    if (_dev && (!_dev->poll_on || _dev->polling < 0))
-	return errh->error("device '%s' not pollable, use FromDevice instead", _devname.c_str());
+    net_device *dev = lookup_device(errh);
+    if (dev && (!dev->poll_on || dev->polling < 0)) {
+	dev_put(dev);
+	return errh->error("device %<%s%> not pollable, use FromDevice instead", _devname.c_str());
+    }
+    set_device(dev, &poll_device_map, 0);
 #endif
-
-    return 0;
+    return errh->nerrors() == before ? 0 : -1;
 }
 
 
@@ -177,7 +179,7 @@ PollDevice::cleanup(CleanupStage)
 
     // call clear_device first so we can check poll_device_map for
     // other users
-    clear_device(&poll_device_map);
+    clear_device(&poll_device_map, 0);
 
     unsigned long lock_flags;
     poll_device_map.lock(false, lock_flags);
@@ -324,7 +326,7 @@ PollDevice::change_device(net_device *dev)
 	    _dev->poll_off(_dev);
     }
 
-    set_device(dev, &poll_device_map, true);
+    set_device(dev, &poll_device_map, anydev_change);
 
     if (dev_change) {
 	if (_dev && !_dev->polling)

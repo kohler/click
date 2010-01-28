@@ -108,48 +108,63 @@ AnyDevice::alter_promiscuity(int delta)
 #endif
 }
 
-int
-AnyDevice::find_device(AnyDeviceMap *adm, ErrorHandler *errh)
+void
+AnyDevice::alter_from_device(int delta)
 {
-    _dev = get_by_name(_devname.c_str());
-    _devname_exists = (bool) _dev;
-    if (!_dev)
-	_dev = get_by_ether_address(_devname, this);
-
-    if (!_dev && !_allow_nonexistent)
-	return errh->error("unknown device '%s'", _devname.c_str());
-    else if (!_dev && !_quiet)
-	errh->warning("unknown device '%s'", _devname.c_str());
-    else if (_dev && !(_dev->flags & IFF_UP)) {
-	if (!_quiet)
-	    errh->warning("device '%s' is down", _devname.c_str());
-	dev_put(_dev);
-	_dev = 0;
+#if !HAVE_CLICK_KERNEL && (defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    fake_bridge *fb = reinterpret_cast<fake_bridge *>(_dev->br_port);
+    if (fb && fb->magic != fake_bridge::click_magic) {
+	printk("<1>%s: appears to be owned by the bridge module!", _devname.c_str());
+	return;
     }
 
-    if (_dev && _promisc)
-	alter_promiscuity(1);
-#if HAVE_NET_ENABLE_TIMESTAMP
-    if (_dev && _timestamp)
-	net_enable_timestamp();
+    if (delta < 0 && fb && atomic_dec_and_test(&fb->refcount)) {
+	delete fb;
+	rcu_assign_pointer(_dev->br_port, NULL);
+    } else if (delta > 0 && fb)
+	atomic_inc(&fb->refcount);
+    else if (delta > 0) {
+	fb = new fake_bridge;
+	fb->magic = fake_bridge::click_magic;
+	atomic_set(&fb->refcount, 1);
+	rcu_assign_pointer(_dev->br_port, reinterpret_cast<struct net_bridge_port *>(fb));
+    }
+#else
+    (void) delta;
 #endif
-    _carrier_ok = (_dev && netif_carrier_ok(_dev));
-    if (adm)
-	adm->insert(this, false);
+}
 
-    return 0;
+net_device *
+AnyDevice::lookup_device(ErrorHandler *errh)
+{
+    net_device *dev = get_by_name(_devname.c_str());
+    _devname_exists = (bool) dev;
+    if (!dev)
+	dev = get_by_ether_address(_devname, this);
+
+    if (!dev && !_allow_nonexistent)
+	errh->error("unknown device %<%s%>", _devname.c_str());
+    else if (!dev && !_quiet)
+	errh->warning("unknown device %<%s%>", _devname.c_str());
+    else if (dev && !(dev->flags & IFF_UP)) {
+	if (!_quiet)
+	    errh->warning("device %<%s%> is down", _devname.c_str());
+	dev_put(dev);
+	dev = 0;
+    }
+    return dev;
 }
 
 void
-AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
+AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, int flags)
 {
     if (_dev == dev) {		// no device change == carrier sense only
 	bool carrier_ok = (_dev && netif_carrier_ok(_dev));
 	if (carrier_ok != _carrier_ok) {
 	    _carrier_ok = carrier_ok;
-	    if (_down_call && !_carrier_ok)
+	    if (_down_call && !_carrier_ok && (flags & anydev_change))
 		_down_call->call_write(ErrorHandler::default_handler());
-	    if (_up_call && _carrier_ok)
+	    if (_up_call && _carrier_ok && (flags & anydev_change))
 		_up_call->call_write(ErrorHandler::default_handler());
 	}
 	return;
@@ -157,28 +172,19 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
 
     // call going-down notifiers
     if (_dev) {
-	if (_down_call && _carrier_ok)
+	if (_down_call && _carrier_ok && (flags & anydev_change))
 	    _down_call->call_write(ErrorHandler::default_handler());
 	if (!_down_call && !_quiet)
-	    click_chatter("%s: device '%s' went down", declaration().c_str(), _devname.c_str());
+	    click_chatter("%s: device %<%s%> went down", declaration().c_str(), _devname.c_str());
     }
 
-    if (_dev && _promisc)
-	alter_promiscuity(-1);
-#if HAVE_NET_ENABLE_TIMESTAMP
-    if (_dev && _timestamp)
-	net_disable_timestamp();
-#endif
+    clear_device(adm, flags);
 
-    if (adm && _in_map)
-	adm->remove(this, locked);
-    if (_dev)
-	dev_put(_dev);
     _dev = dev;
-    if (_dev)
+    if (_dev && (flags & anydev_change))
 	dev_hold(_dev);
     if (adm)
-	adm->insert(this, locked);
+	adm->insert(this, flags & anydev_change);
 
     if (_dev && _promisc)
 	alter_promiscuity(1);
@@ -186,19 +192,21 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, bool locked)
     if (_dev && _timestamp)
 	net_enable_timestamp();
 #endif
+    if (_dev && (flags & anydev_from_device))
+	alter_from_device(1);
     _carrier_ok = (_dev && netif_carrier_ok(_dev));
 
     // call going-up notifiers
-    if (_dev) {
+    if (_dev && (flags & anydev_change)) {
 	if (_up_call && _carrier_ok)
 	    _up_call->call_write(ErrorHandler::default_handler());
 	if (!_up_call && !_quiet)
-	    click_chatter("%s: device '%s' came up", declaration().c_str(), _devname.c_str());
+	    click_chatter("%s: device %<%s%> came up", declaration().c_str(), _devname.c_str());
     }
 }
 
 void
-AnyDevice::clear_device(AnyDeviceMap *adm)
+AnyDevice::clear_device(AnyDeviceMap *adm, int flags)
 {
     if (_dev && _promisc)
 	alter_promiscuity(-1);
@@ -206,8 +214,10 @@ AnyDevice::clear_device(AnyDeviceMap *adm)
     if (_dev && _timestamp)
 	net_disable_timestamp();
 #endif
+    if (_dev && (flags & anydev_from_device))
+	alter_from_device(-1);
     if (adm && _in_map)
-	adm->remove(this, false);
+	adm->remove(this, flags & anydev_change);
     if (_dev)
 	dev_put(_dev);
     _dev = 0;
