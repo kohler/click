@@ -156,10 +156,6 @@ ToDevice::initialize(ErrorHandler *errh)
     if (AnyDevice::initialize_keywords(errh) < 0)
 	return -1;
 
-#if !HAVE_CLICK_KERNEL
-    errh->warning("not compiled for a Click kernel");
-#endif
-
     // check for duplicate writers
     if (ifindex() >= 0) {
 	StringAccum writer_name;
