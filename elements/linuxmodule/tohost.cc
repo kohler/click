@@ -133,6 +133,38 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 }
 }
 
+static inline uint16_t
+tohost_eth_type_trans(struct sk_buff *skb, struct net_device *dev)
+{
+#if 0
+    /* XXX Newer versions of eth_type_trans have this code, but we can't use
+     * it in a module since dsa_uses_dsa_tags is not exported. */
+# if HAVE_NETDEV_USES_DSA_TAGS
+    if (netdev_uses_dsa_tags(skb->dev))
+	return __constant_htons(ETH_P_DSA);
+# endif
+# if HAVE_NETDEV_USES_TRAILER_TAGS
+    if (netdev_uses_trailer_tags(skb->dev))
+	return __constant_htons(ETH_P_TRAILER);
+# endif
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    const ethhdr *eth = eth_hdr(skb);
+#else
+    const ethhdr *eth = skb->mac.ethernet;
+#endif
+    if (ntohs(eth->h_proto) >= 1536)
+	return eth->h_proto;
+
+    const unsigned char *rawp = skb->data;
+    /* "This is a magic hack to spot IPX packets."
+     * See net/ethernet/eth.c:eth_type_trans */
+    if (*(const unsigned short *)rawp == 0xFFFF)
+	return __constant_htons(ETH_P_802_3);
+    return __constant_htons(ETH_P_802_2);
+}
+
 void
 ToHost::push(int port, Packet *p)
 {
@@ -157,35 +189,6 @@ ToHost::push(int port, Packet *p)
     skb->pkt_type &= PACKET_TYPE_MASK;
 #endif
 
-    // MAC header is the data pointer
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
-    skb_set_mac_header(skb, 0);
-#else
-    skb->mac.raw = skb->data;
-#endif
-
-    // set skb->protocol
-    if (_type == ARPHRD_NONE)
-	skb->protocol = __constant_htons(ETH_P_IP);
-    else {
-	// do not call eth_type_trans; it changes pkt_type! Instead, do its
-	// work directly.
-	skb_pull(skb, 14);
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-	const ethhdr *eth = eth_hdr(skb);
-#else
-	const ethhdr *eth = skb->mac.ethernet;
-#endif
-	if (ntohs(eth->h_proto) >= 1536)
-	    skb->protocol = eth->h_proto;
-	else {
-	    const unsigned short *crap = (const unsigned short *)skb->data;
-	    // "magic hack to spot IPX packets"
-	    skb->protocol = (*crap == 0xFFFF ? htons(ETH_P_802_3) : htons(ETH_P_802_2));
-	}
-    }
-
     // skb->dst may be set if the packet came from Linux originally. In this
     // case, we must clear skb->dst so Linux finds the correct dst.
 #if HAVE_SKB_DST_DROP
@@ -196,6 +199,23 @@ ToHost::push(int port, Packet *p)
 	skb->dst = 0;
     }
 #endif
+
+    // MAC header is the data pointer
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    skb_reset_mac_header(skb);
+#else
+    skb->mac.raw = skb->data;
+#endif
+
+    // set skb->protocol
+    if (_type == ARPHRD_NONE)
+	skb->protocol = __constant_htons(ETH_P_IP);
+    else {
+	// do not call eth_type_trans; it changes pkt_type! Instead, do its
+	// relevant work directly.
+	skb_pull(skb, 14);
+	skb->protocol = tohost_eth_type_trans(skb, skb->dev);
+    }
 
     // get protocol to pass to Linux
     int protocol = (_sniffers ? 0xFFFF : skb->protocol);
