@@ -148,6 +148,8 @@ class ToDevice : public AnyTaskDevice { public:
 
 #if HAVE_NETDEV_GET_TX_QUEUE
     int _tx_queue;
+#else
+    enum { _tx_queue = 0 };
 #endif
     Packet *_q;
     click_jiffies_t _q_expiry_j;

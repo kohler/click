@@ -115,7 +115,7 @@ PollDevice::initialize(ErrorHandler *errh)
 	    return errh->error("duplicate reader for device '%s'", _devname.c_str());
 	used = this;
 
-	if (!router()->attachment("device_writer_" + String(ifindex())))
+	if (!router()->attachment("device_writer_" + String(ifindex()) + "_0"))
 	    errh->warning("no ToDevice(%s) in configuration\n(\
 Generally, you will get bad performance from PollDevice unless\n\
 you include a ToDevice for the same device. Try adding\n\

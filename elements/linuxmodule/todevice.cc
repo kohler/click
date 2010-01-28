@@ -162,9 +162,11 @@ ToDevice::initialize(ErrorHandler *errh)
 
     // check for duplicate writers
     if (ifindex() >= 0) {
-	void *&used = router()->force_attachment("device_writer_" + String(ifindex()));
+	StringAccum writer_name;
+	writer_name << "device_writer_" << ifindex() << "_" << _tx_queue;
+	void *&used = router()->force_attachment(writer_name.take_string());
 	if (used)
-	    return errh->error("duplicate writer for device '%s'", _devname.c_str());
+	    return errh->error("duplicate writer for device %<%s%>", _devname.c_str());
 	used = this;
     }
 
