@@ -1,0 +1,21 @@
+%info
+Test that all Script-installed signal handlers execute when a signal is
+received.
+
+%script
+/bin/sh THING
+
+%file THING
+click -e "
+  Script(TYPE SIGNAL INT, print >>OUT 'Hello');
+  Script(TYPE SIGNAL INT, print >>OUT 'Goodbye');
+  Script(wait 50ms, stop);
+" &
+cp=$!
+
+click -e "Script(wait 1ms, stop)"
+kill -INT $cp
+
+%expect OUT
+Hello
+Goodbye

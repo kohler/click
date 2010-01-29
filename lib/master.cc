@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2003-7 The Regents of the University of California
  * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2010 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -1095,7 +1096,6 @@ void
 Master::process_signals()
 {
     signals_pending = 0;
-    char handled[NSIG];
     _signal_lock.acquire();
 
     // kill crap data written to pipe
@@ -1105,42 +1105,48 @@ Master::process_signals()
 	    /* do nothing */;
     }
 
+    // collect activated signal handler info
     SignalInfo *happened = 0;
-    SignalInfo **pprev = &_siginfo;
-    sigset_t sigset;
-    sigemptyset(&sigset);
-    for (SignalInfo *si = *pprev; si; si = *pprev)
+    for (SignalInfo **pprev = &_siginfo, *si = *pprev; si; si = *pprev)
 	if (signal_pending[si->signo] && si->router->running()) {
 	    *pprev = si->next;
 	    si->next = happened;
 	    happened = si;
-	    handled[si->signo] = 0;
-	    signal_pending[happened->signo] = 0;
-	    sigaddset(&sigset, si->signo);
 	} else
 	    pprev = &si->next;
 
-    SignalInfo *unhandled;
-    SignalInfo **unhandled_pprev = &unhandled;
+    // clear signal_pending, set handled
+    char handled[NSIG];
+    sigset_t sigset;
+    sigemptyset(&sigset);
+    for (SignalInfo *si = happened; si; si = si->next) {
+	handled[si->signo] = 0;
+	signal_pending[si->signo] = 0;
+	sigaddset(&sigset, si->signo);
+    }
+
+    // call the signal handlers
+    SignalInfo *unhandled = 0;
     while (happened) {
 	SignalInfo *next = happened->next;
 	if (HandlerCall::call_write(happened->handler, happened->router->root_element()) >= 0) {
 	    handled[happened->signo] = 1;
 	    delete happened;
 	} else {
-	    *unhandled_pprev = happened;
-	    unhandled_pprev = &happened->next;
+	    happened->next = unhandled;
+	    unhandled = happened;
 	}
 	happened = next;
     }
-    *unhandled_pprev = 0;
 
     sigprocmask(SIG_UNBLOCK, &sigset, 0);
 
     while (unhandled) {
 	SignalInfo *next = unhandled->next;
-	if (!handled[unhandled->signo])
+	if (!handled[unhandled->signo]) {
 	    kill(getpid(), unhandled->signo);
+	    handled[unhandled->signo] = 1;
+	}
 	delete unhandled;
 	unhandled = next;
     }

@@ -371,8 +371,7 @@ Returns the current timestamp.
 =h cat "read with parameters"
 
 User-level only.  Argument is a filename; reads and returns the file's
-contents.  This handler is "private," meaning that it is not accessible via
-ControlSocket.
+contents.  This handler is not accessible via ControlSocket.
 
 =a DriverManager
 
