@@ -25,6 +25,7 @@
 #include <click/error.hh>
 #include <click/handlercall.hh>
 #if CLICK_USERLEVEL
+# include <fcntl.h>
 # include <click/userutils.hh>
 #endif
 #if CLICK_USERLEVEL && HAVE_SYS_EVENT_H && HAVE_KQUEUE
@@ -35,7 +36,6 @@
 #  define EV_SET_UDATA_CAST	/* nothing */
 # endif
 #endif
-#include <fcntl.h>
 CLICK_DECLS
 
 #if CLICK_USERLEVEL && (!HAVE_POLL_H || HAVE_USE_SELECT)
