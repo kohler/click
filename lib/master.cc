@@ -1030,7 +1030,7 @@ sighandler(int signo)
 #endif
     Master::signals_pending = signal_pending[signo] = 1;
     if (sig_pipe[1] >= 0)
-	write(sig_pipe[1], "", 1);
+	ignore_result(write(sig_pipe[1], "", 1));
 }
 }
 
