@@ -1022,7 +1022,7 @@ sighandler(int signo)
 }
 
 int
-Master::add_signal_handler(int signo, Router *router, const String &handler)
+Master::add_signal_handler(int signo, Router *router, String handler)
 {
     if (signo < 0 || signo >= 32 || router->master() != this)
 	return -1;
@@ -1049,7 +1049,7 @@ Master::add_signal_handler(int signo, Router *router, const String &handler)
 }
 
 int
-Master::remove_signal_handler(int signo, Router *router, const String &handler)
+Master::remove_signal_handler(int signo, Router *router, String handler)
 {
     _signal_lock.acquire();
     int nhandlers = 0, status = -1;

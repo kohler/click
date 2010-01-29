@@ -51,8 +51,8 @@ class Master { public:
     int remove_select(int fd, Element*, int mask);
     void run_selects(bool more_tasks);
 
-    int add_signal_handler(int signo, Router*, const String &handler);
-    int remove_signal_handler(int signo, Router*, const String &handler);
+    int add_signal_handler(int signo, Router *router, String handler);
+    int remove_signal_handler(int signo, Router *router, String handler);
     inline void run_signals();
 #endif
 
