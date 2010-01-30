@@ -163,6 +163,7 @@ class Element { public:
 
     void add_data_handlers(const String &name, int flags, uint8_t *data);
     void add_data_handlers(const String &name, int flags, bool *data);
+    void add_data_handlers(const String &name, int flags, uint16_t *data);
     void add_data_handlers(const String &name, int flags, int *data);
     void add_data_handlers(const String &name, int flags, unsigned *data);
     void add_data_handlers(const String &name, int flags, atomic_uint32_t *data);

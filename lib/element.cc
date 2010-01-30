@@ -2155,6 +2155,25 @@ bool_write_data_handler(const String &str, Element *element, void *user_data, Er
 	return errh->error("expected boolean");
 }
 
+static String
+uint16_t_read_data_handler(Element *element, void *user_data)
+{
+    uint16_t *ptr = reinterpret_cast<uint16_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    return String((int) *ptr);
+}
+
+static int
+uint16_t_write_data_handler(const String &str, Element *element, void *user_data, ErrorHandler *errh)
+{
+    uint16_t *ptr = reinterpret_cast<uint16_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(user_data));
+    int x;
+    if (cp_integer(str, &x) && x >= 0 && x < 65536) {
+	*ptr = x;
+	return 0;
+    } else
+	return errh->error("expected uint16_t");
+}
+
 template <typename T> static String
 integer_read_data_handler(Element *element, void *user_data)
 {
@@ -2315,6 +2334,13 @@ void
 Element::add_data_handlers(const String &name, int flags, bool *data)
 {
     add_data_handlers(name, flags, bool_read_data_handler, bool_write_data_handler, data);
+}
+
+/** @overload */
+void
+Element::add_data_handlers(const String &name, int flags, uint16_t *data)
+{
+    add_data_handlers(name, flags, uint16_t_read_data_handler, uint16_t_write_data_handler, data);
 }
 
 /** @overload */
