@@ -33,13 +33,14 @@ Switch::~Switch()
 int
 Switch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _output = 0;
+  int output = 0;
   if (cp_va_kparse(conf, this, errh,
-		   "OUTPUT", cpkP, cpInteger, &_output,
+		   "OUTPUT", cpkP, cpInteger, &output,
 		   cpEnd) < 0)
     return -1;
-  if (_output >= noutputs())
-    _output = -1;
+  if (output >= noutputs())
+    return errh->error("output must be < %d", noutputs());
+  _output = output;
   return 0;
 }
 
@@ -83,7 +84,9 @@ Switch::llrpc(unsigned command, void *data)
 {
   if (command == CLICK_LLRPC_SET_SWITCH) {
     int32_t *val = reinterpret_cast<int32_t *>(data);
-    _output = (*val >= noutputs() ? -1 : *val);
+    if (*val >= noutputs())
+      return -EINVAL;
+    _output = *val;
     return 0;
 
   } else if (command == CLICK_LLRPC_GET_SWITCH) {
