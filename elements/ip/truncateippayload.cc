@@ -38,7 +38,7 @@ TruncateIPPayload::~TruncateIPPayload()
 int
 TruncateIPPayload::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    unsigned short nbytes = 0;
+    uint16_t nbytes = 0;
     bool transport = true;
     bool extra_length = true;
     if (cp_va_kparse(conf, this, errh,
