@@ -1,8 +1,19 @@
 /*
  * sourceipmapper.{cc,hh} -- source IP mapper (using consistent hashing)
+ * Max Krohn, Eddie Kohler
  *
- * $Id: siphmapper.cc,v 1.7 2005/09/19 22:39:39 eddietwo Exp $
+ * Copyright (c) 2005-2009 Max Krohn
+ * Copyright (c) 2009-2010 Meraki, Inc.
  *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, subject to the conditions
+ * listed in the Click LICENSE file. These conditions include: you must
+ * preserve this copyright notice, and you cannot mention the copyright
+ * holders in advertising related to the Software without their permission.
+ * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
+ * notice is a summary of the Click LICENSE file; the license in that file is
+ * legally binding.
  */
 
 #include <click/config.h>
@@ -12,6 +23,7 @@
 #if CLICK_BSDMODULE
 # include <machine/limits.h>
 #endif
+#include "elements/ip/iprwpattern.hh"
 #include "siphmapper.hh"
 CLICK_DECLS
 
@@ -36,8 +48,7 @@ SourceIPHashMapper::cast(const char *name)
 }
 
 int
-SourceIPHashMapper::parse_server (const String &conf, IPRw::Pattern **pstore,
-			      int *fport_store, int *rport_store,
+SourceIPHashMapper::parse_server(const String &conf, IPRewriterInput *input,
 			      int *id_store, Element *e,
 			      ErrorHandler *errh)
 {
@@ -51,9 +62,8 @@ SourceIPHashMapper::parse_server (const String &conf, IPRw::Pattern **pstore,
     return errh->error("bad server ID in pattern spec");
   words.resize(words.size() - 1);
   *id_store = id;
-  return IPRw::Pattern::parse_with_ports (cp_unspacevec(words), pstore,
-					  fport_store,
-					  rport_store, e, errh);
+  return IPRewriterPattern::parse_with_ports(cp_unspacevec(words), input,
+					     e, errh) ? 0 : -1;
 }
 
 int
@@ -82,17 +92,16 @@ SourceIPHashMapper::configure(Vector<String> &conf, ErrorHandler *errh)
   int idp = 0;
   unsigned short *ids = new unsigned short[conf.size ()];
 
-  for (int i = 1; i < conf.size(); i++) {
-    IPRw::Pattern *p;
-    int f, r, id;
-    if (parse_server (conf[i], &p, &f, &r, &id, this, errh) >= 0) {
-      p->use();
-      _patterns.push_back(p);
-      _forward_outputs.push_back(f);
-      _reverse_outputs.push_back(r);
-      ids[idp++] = id;
+    for (int i = 1; i < conf.size(); i++) {
+	IPRewriterInput is;
+	is.kind = IPRewriterInput::i_pattern;
+	int id;
+	if (parse_server(conf[i], &is, &id, this, errh) >= 0) {
+	    is.u.pattern->use();
+	    _is.push_back(is);
+	    ids[idp++] = id;
+	}
     }
-  }
 
   if (_hasher)
     delete (_hasher);
@@ -105,49 +114,46 @@ SourceIPHashMapper::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 SourceIPHashMapper::cleanup(CleanupStage)
 {
-  for (int i = 0; i < _patterns.size(); i++)
-    _patterns[i]->unuse();
-  delete _hasher;
+    for (int i = 0; i < _is.size(); i++)
+	_is[i].u.pattern->unuse();
+    delete _hasher;
 }
 
 void
-SourceIPHashMapper::notify_rewriter(IPRw *rw, ErrorHandler *errh)
+SourceIPHashMapper::notify_rewriter(IPRewriterBase *rw, ErrorHandler *errh)
 {
-  int no = rw->noutputs();
-  for (int i = 0; i < _patterns.size(); i++) {
-    if (_forward_outputs[i] >= no || _reverse_outputs[i] >= no)
-      errh->error("port in `%s' out of range for `%s'", declaration().c_str(), rw->declaration().c_str());
-    rw->notify_pattern(_patterns[i], errh);
-  }
+    int no = rw->noutputs();
+    for (int i = 0; i < _is.size(); i++)
+	if (_is[i].foutput >= no || _is[i].routput >= no)
+	    errh->error("port in %<%s%> out of range for %<%s%>", declaration().c_str(), rw->declaration().c_str());
 }
 
-IPRw::Mapping *
-SourceIPHashMapper::get_map(IPRw *rw, int ip_p, const IPFlowID &flow,
-			    Packet *p)
+int
+SourceIPHashMapper::rewrite_flowid(IPRewriterInput *input,
+				   const IPFlowID &flowid,
+				   IPFlowID &rewritten_flowid,
+				   Packet *p, int mapid)
 {
-  const click_ip *iph = p->ip_header();
-  const struct in_addr ipsrc = iph->ip_src;
-  unsigned int tmp, t2;
-  memcpy (&tmp, &ipsrc, sizeof (tmp));
-  t2 = tmp & 0xff;
+    const struct in_addr ipsrc = flowid.saddr();
+    unsigned int tmp, t2;
+    memcpy (&tmp, &ipsrc, sizeof (tmp));
+    t2 = tmp & 0xff;
 
-  // make the lower bits have some more impact so that adjacent
-  // IPs can be hashed to different servers.
-  // note that this really isn't necessary for i386 alignment...
-  tmp *= ((t2 << 24) | 0x1);
-  tmp = tmp % INT_MAX;
+    // make the lower bits have some more impact so that adjacent
+    // IPs can be hashed to different servers.
+    // note that this really isn't necessary for i386 alignment...
+    tmp *= ((t2 << 24) | 0x1);
+    tmp = tmp % INT_MAX;
 
-  int v = _hasher->hash2ind (tmp);
-  IPRw::Pattern *pat = _patterns[v];
-  int fport = _forward_outputs[v];
-  int rport = _reverse_outputs[v];
-
-  // debug code
-  click_chatter ("%p -> %d", (void *)tmp, v);
-
-  return (rw->apply_pattern(pat, ip_p, flow, fport, rport));
+    int v = _hasher->hash2ind (tmp);
+    // debug code
+    click_chatter ("%p -> %d", (void *)tmp, v);
+    _is[v].reply_element = input->reply_element;
+    input->foutput = _is[v].foutput;
+    input->routput = _is[v].routput;
+    return _is[v].rewrite_flowid(flowid, rewritten_flowid, p, mapid);
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(IPRw)
+ELEMENT_REQUIRES(IPRewriterBase)
 EXPORT_ELEMENT(SourceIPHashMapper)

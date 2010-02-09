@@ -1,0 +1,45 @@
+%script
+
+# read from a hand-written IPSummaryDump file; check headers, emit to a dump
+$VALGRIND click -e "
+elementclass TPrint { \$x |
+	input -> t :: Tee -> IPPrint(\$x, TIMESTAMP false, PAINT true) -> output;
+	t[1] -> outer_ip::CheckIPHeader(0) -> outer_icmp::CheckICMPHeader
+		-> Strip(28)
+		-> inner_ip::CheckIPHeader(0)
+		-> {
+			input -> c::IPClassifier(tcp, udp)
+			-> inner_tcp::CheckTCPHeader -> output;
+			c[1] -> inner_udp::CheckUDPHeader -> output;
+		} -> IPPrint("\${x}~", TIMESTAMP false, PAINT true) -> Discard;
+}
+FromIPSummaryDump(IN1, STOP true, ZERO true, CHECKSUM true)
+	-> IPPrint(a, TIMESTAMP false, PAINT true)
+	-> ip :: IPRewriter(pattern 21.0.0.1 1024-65535# - - 0 0, REPLY_ANNO PAINT)
+	-> IPPrint(b, TIMESTAMP false, PAINT true)
+	-> ICMPError(19.19.19.19, timeexceeded)
+	-> Paint(0)
+	-> TPrint(c)
+	-> ICMPRewriter(ip, REPLY_ANNO PAINT)
+	-> TPrint(d)
+	-> Discard
+"
+
+%file IN1
+!data link src sport dst dport proto ip_ttl
+2 18.26.4.44 20 10.0.0.8 80 T 0
+2 18.26.4.44 20 10.0.0.8 80 U 0
+
+%expect stderr
+a: paint 2: 18.26.4.44.20 > 10.0.0.8.80: . 0:0(0,40,40) win 0
+b: paint 2: 21.0.0.1.1024 > 10.0.0.8.80: . 0:0(0,40,40) win 0
+c: paint 0: 19.19.19.19 > 21.0.0.1: icmp timeexceeded transit
+d: paint 2: 19.19.19.19 > 18.26.4.44: icmp timeexceeded transit
+d~: paint 2: 18.26.4.44.20 > 10.0.0.8.80: . 0:0(0,40,40) win 0
+c~: paint 0: 21.0.0.1.1024 > 10.0.0.8.80: . 0:0(0,40,40) win 0
+a: paint 2: 18.26.4.44.20 > 10.0.0.8.80: udp 8
+b: paint 2: 21.0.0.1.1025 > 10.0.0.8.80: udp 8
+c: paint 0: 19.19.19.19 > 21.0.0.1: icmp timeexceeded transit
+d: paint 2: 19.19.19.19 > 18.26.4.44: icmp timeexceeded transit
+d~: paint 2: 18.26.4.44.20 > 10.0.0.8.80: udp 8
+c~: paint 0: 21.0.0.1.1025 > 10.0.0.8.80: udp 8

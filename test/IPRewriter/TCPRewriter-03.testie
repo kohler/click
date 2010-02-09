@@ -1,0 +1,45 @@
+%info
+
+TCPRewriter and FTPPortMapper sequence number translation works with
+REPLY_ANNO.
+
+%script
+$VALGRIND click -e "
+IPRewriterPatterns(pat 1.0.0.1 1024-65535# - -)
+rw :: TCPRewriter(pattern pat 0 0, REPLY_ANNO PAINT)
+FromIPSummaryDump(IN1, STOP true, CHECKSUM true)
+	-> CheckIPHeader(VERBOSE true)
+	-> CheckTCPHeader(VERBOSE true)
+	-> FTPPortMapper(rw, rw, 0)
+	-> [0]rw[0]
+	-> CheckIPHeader(VERBOSE true)
+	-> CheckTCPHeader(VERBOSE true)
+	-> ToIPSummaryDump(OUT1, CONTENTS link src sport dst dport proto tcp_seq tcp_ack payload tcp_opt)
+"
+
+%file IN1
+!data link src sport dst dport proto tcp_seq tcp_ack payload tcp_opt
+# first prime TCPRewriter to create a mapping
+2 200.200.200.200 30 2.0.0.2 21 T 0 0 "x" .
+2 200.200.200.200 30 2.0.0.2 21 T 1 0 "PORT 200,200,200,200,200,200\n" .
+2 200.200.200.200 30 2.0.0.2 21 T 30 0 "fubar\n" .
+0 2.0.0.2 21 1.0.0.1 1024 T 0 0 "" .
+0 2.0.0.2 21 1.0.0.1 1024 T 0 1 "" .
+0 2.0.0.2 21 1.0.0.1 1024 T 0 18 "" .
+0 2.0.0.2 21 1.0.0.1 1024 T 0 0 "" sack1:18
+0 2.0.0.2 21 1.0.0.1 1024 T 0 0 "" sack1:10
+0 2.0.0.2 21 1.0.0.1 1024 T 0 0 "" sack1-10;sack1-18;sack18-20
+
+%expect OUT1
+2 1.0.0.1 1024 2.0.0.2 21 T 0 0 "x" .
+2 1.0.0.1 1024 2.0.0.2 21 T 1 0 "PORT 1,0,0,1,4,1\n" .
+2 1.0.0.1 1024 2.0.0.2 21 T 18 0 "fubar\n" .
+2 2.0.0.2 21 200.200.200.200 30 T 0 0 "" .
+2 2.0.0.2 21 200.200.200.200 30 T 0 1 "" .
+2 2.0.0.2 21 200.200.200.200 30 T 0 30 "" .
+2 2.0.0.2 21 200.200.200.200 30 T 0 0 "" sack1-30
+2 2.0.0.2 21 200.200.200.200 30 T 0 0 "" sack1-10
+2 2.0.0.2 21 200.200.200.200 30 T 0 0 "" sack1-10;sack1-30;sack30-32
+
+%ignorex
+!.*

@@ -1,8 +1,9 @@
 #ifndef CLICK_IPREWRITER_HH
 #define CLICK_IPREWRITER_HH
-#include "elements/ip/iprw.hh"
-#include <click/sync.hh>
+#include "tcprewriter.hh"
+#include "udprewriter.hh"
 CLICK_DECLS
+class UDPRewriter;
 
 /*
 =c
@@ -30,7 +31,7 @@ output port.  Input packets with the indexed flow identifier are rewritten to
 use the new flow identifier, then emitted on the output port.  A mapping is
 written as follows:
 
-    (SA, SP, DA, DP, PROTO) => (SA', SP', DA', DP') [OUTPUT]
+    (SA, SP, DA, DP, PROTO) => (SA', SP', DA', DP') [*OUTPUT]
 
 When IPRewriter receives a packet, it first looks up that packet in the
 mapping table by flow identifier.  If the table contains a mapping for the
@@ -58,8 +59,8 @@ Installs mappings that preserve the input packet's flow ID.  Specifically,
 given an input packet with flow ID (SA, SP, DA, DP, PROTO), two mappings are
 installed:
 
-    (SA, SP, DA, DP, PROTO) => (SA, SP, DA, DP) [FOUTPUT]
-    (DA, DP, SA, SP, PROTO) => (DA, DP, SA, SP) [ROUTPUT]
+    (SA, SP, DA, DP, PROTO) => (SA, SP, DA, DP) [*FOUTPUT]
+    (DA, DP, SA, SP, PROTO) => (DA, DP, SA, SP) [*ROUTPUT]
 
 Thus, the input packet is emitted on output port FOUTPUT unchanged, and
 packets from the reply flow are emitted on output port ROUTPUT unchanged.
@@ -72,17 +73,19 @@ field is left unchanged.  For instance, the pattern '1.0.0.1 20 - -' will
 rewrite input packets' source address and port, but leave its destination
 address and port unchanged.  SPORT may be a port range 'L-H'; IPRewriter will
 choose a source port in that range so that the resulting mappings don't
-conflict with any existing mappings.  If no source port is available, the
-packet is dropped.  Normally source ports are chosen randomly within the
-range.  To allocate source ports sequentially (which can make testing easier),
-append a pound sign to the range, as in '1024-65535#'.
+conflict with any existing mappings.  The input packet's source port is
+preferred, if it is available; otherwise a random port is chosen.  If no
+source port is available, the packet is dropped.  To allocate source ports
+sequentially (which can make testing easier), append a pound sign to the
+range, as in '1024-65535#'.  To choose a random port rather than preferring
+the source, append a '?'.
 
 Say a packet with flow ID (SA, SP, DA, DP, PROTO) is received, and the
 corresponding new flow ID is (SA', SP', DA', DP').  Then two mappings are
 installed:
 
-    (SA, SP, DA, DP, PROTO) => (SA', SP', DA', DP') [FOUTPUT]
-    (DA', DP', SA', SP', PROTO) => (DA, DP, SA, SP) [ROUTPUT]
+    (SA, SP, DA, DP, PROTO) => (SA', SP', DA', DP') [*FOUTPUT]
+    (DA', DP', SA', SP', PROTO) => (DA, DP, SA, SP) [*ROUTPUT]
 
 Thus, the input packet is rewritten and sent to FOUTPUT, and packets from the
 reply flow are rewritten to look like part of the original flow and sent to
@@ -114,31 +117,45 @@ Keyword arguments determine how often stale mappings should be removed.
 
 =item TCP_TIMEOUT I<time>
 
-Time out TCP connections every I<time> seconds. Default is 24 hours.
+Time out TCP connections every I<time> seconds. Defaults to 24 hours. This
+timeout applies to TCP connections for which payload data has been seen
+flowing in both directions.
 
 =item TCP_DONE_TIMEOUT I<time>
 
-Time out completed TCP connections every I<time> seconds. Default is 30
-seconds. FIN and RST flags mark TCP connections as complete.
+Time out completed TCP connections every I<time> seconds. Defaults to 4
+minutes. FIN and RST flags mark TCP connections as complete.
+
+=item TCP_NODATA_TIMEOUT I<time>
+
+Time out non-bidirectional TCP connections every I<time> seconds. Defaults to
+5 minutes. A non-bidirectional TCP connection is one in which payload data
+hasn't been seen in at least one direction. This should generally be larger
+than TCP_DONE_TIMEOUT.
+
+=item TCP_GUARANTEE I<time>
+
+Preserve each TCP connection mapping for at least I<time> seconds after each
+successfully processed packet. Defaults to 5 seconds. Incoming flows are
+dropped if an IPRewriter's mapping table is full of guaranteed flows.
 
 =item UDP_TIMEOUT I<time>
 
-Time out UDP connections every I<time> seconds. Default is 1 minute.
+Time out UDP connections every I<time> seconds. Default is 5 minutes.
 
-=item REAP_TCP I<time>
+=item UDP_GUARANTEE I<time>
 
-Reap timed-out TCP connections every I<time> seconds. If no packets
-corresponding to a given mapping have been seen for TCP_TIMEOUT, remove the
-mapping as stale. Default is 1 hour.
+UDP connection mappings are guaranteed to exist for I<time> seconds after each successfully processed packet. Defaults to 5 seconds.
 
-=item REAP_TCP_DONE I<time>
+=item REAP_INTERVAL I<time>
 
-Reap timed-out completed TCP connections every I<time> seconds. Default is 10
-seconds.
+Reap timed-out connections every I<time> seconds. Default is 15 minutes.
 
-=item REAP_UDP I<time>
+=item MAPPING_CAPACITY I<capacity>
 
-Reap timed-out UDP connections every I<time> seconds. Default is 10 seconds.
+Set the maximum number of mappings this rewriter can hold to I<capacity>.
+I<Capacity> can either be an integer or the name of another rewriter-like
+element, in which case this element will share the other element's capacity.
 
 =item DST_ANNO
 
@@ -147,104 +164,100 @@ packets to the rewritten destination address. Default is true.
 
 =back
 
+=h nmappings r
+
+Returns the number of mappings in this IPRewriter's mapping table.
+
+=h mapping_failures r
+
+Returns the number of mapping failures, which can occur, for example, when the
+IPRewriter runs out of source ports, or when a new flow is dropped because the
+IPRewriter is full.
+
+=h length r
+
+Returns the number of flows in the flow set.  This is generally the same as
+'nmappings', but can be more when several rewriters share a flow set.
+
+=h capacity rw
+
+Return or set the capacity of the flow set.  The returned value is two
+space-separated numbers, where the first is the capacity and the second is the
+short-term flow reservation.  When writing, the short-term reservation can be
+omitted; it is then set to the minimum of 50 and one-eighth the capacity.
+
 =h tcp_mappings read-only
 
-Returns a human-readable description of the IPRewriter's current set of
-TCP mappings.
+Returns a human-readable description of the IPRewriter's current set of TCP
+mappings.  An unparsed mapping includes both directions' output ports; the
+relevant output port is starred.
 
 =h udp_mappings read-only
 
 Returns a human-readable description of the IPRewriter's current set of
 UDP mappings.
 
-=h tcp_done_mappings read-only
-
-Returns a human-readable description of the IPRewriter's current set of
-mappings for completed TCP sessions.
-
 =a TCPRewriter, IPAddrRewriter, IPAddrPairRewriter, IPRewriterPatterns,
 RoundRobinIPMapper, FTPPortMapper, ICMPRewriter, ICMPPingRewriter */
 
-#if defined(CLICK_LINUXMODULE) && __MTCLICK__
-# define IPRW_SPINLOCKS 1
-# define IPRW_RWLOCKS 0
-#endif
+class IPRewriter : public TCPRewriter { public:
 
-class IPRewriter : public IPRw { public:
+    IPRewriter();
+    ~IPRewriter();
 
-  IPRewriter();
-  ~IPRewriter();
+    const char *class_name() const		{ return "IPRewriter"; }
+    void *cast(const char *);
 
-  const char *class_name() const		{ return "IPRewriter"; }
-  void *cast(const char *);
-  const char *port_count() const		{ return "1-/1-256"; }
-  const char *processing() const		{ return PUSH; }
+    int configure(Vector<String> &, ErrorHandler *);
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  void take_state(Element *, ErrorHandler *);
+    IPRewriterEntry *get_entry(int ip_p, const IPFlowID &flowid, int input);
+    HashContainer<IPRewriterEntry> *get_map(int mapid) {
+	if (mapid == IPRewriterInput::mapid_default)
+	    return &_map;
+	else if (mapid == IPRewriterInput::mapid_iprewriter_udp)
+	    return &_udp_map;
+	else
+	    return 0;
+    }
+    IPRewriterEntry *add_flow(int ip_p, const IPFlowID &flowid,
+			      const IPFlowID &rewritten_flowid, int input);
+    void destroy_flow(IPRewriterFlow *flow);
+    click_jiffies_t best_effort_expiry(IPRewriterFlow *flow) {
+	if (flow->ip_p() == IP_PROTO_TCP)
+	    return TCPRewriter::best_effort_expiry(flow);
+	else
+	    return flow->expiry() + _udp_timeouts[0] - _udp_timeouts[1];
+    }
 
-  int notify_pattern(Pattern *, ErrorHandler *);
-  Mapping *apply_pattern(Pattern *, int ip_p, const IPFlowID &, int, int);
-  Mapping *get_mapping(int, const IPFlowID &) const;
+    void push(int, Packet *);
 
-  void push(int, Packet *);
+    void add_handlers();
 
-  void add_handlers();
-  int llrpc(unsigned, void *);
+  private:
 
- private:
+    Map _udp_map;
+    SizedHashAllocator<sizeof(IPRewriterFlow)> _udp_allocator;
+    uint32_t _udp_timeouts[2];
 
-  Map _tcp_map;
-  Map _udp_map;
-  Mapping *_tcp_done;
-  Mapping *_tcp_done_tail;
-
-  Vector<InputSpec> _input_specs;
-  bool _dst_anno;
-
-  bool _tcp_done_gc_incr;
-  int _tcp_done_gc_interval;
-  int _tcp_gc_interval;
-  int _udp_gc_interval;
-  Timer _tcp_done_gc_timer;
-  Timer _tcp_gc_timer;
-  Timer _udp_gc_timer;
-  int _udp_timeout_jiffies;
-  int _tcp_timeout_jiffies;
-  int _tcp_done_timeout_jiffies;
-
-#if IPRW_SPINLOCKS
-  Spinlock _spinlock;
-#endif
-#if IPRW_RWLOCKS
-  ReadWriteLock _rwlock;
-#endif
-
-  int _nmapping_failures;
-
-  static void tcp_gc_hook(Timer *, void *);
-  static void udp_gc_hook(Timer *, void *);
-  static void tcp_done_gc_hook(Timer *, void *);
-
-  static String dump_mappings_handler(Element *, void *);
-  static String dump_tcp_done_mappings_handler(Element *, void *);
-  static String dump_nmappings_handler(Element *, void *);
-  static String dump_patterns_handler(Element *, void *);
+    inline Map &reply_udp_map(int input) const {
+	IPRewriter *x = static_cast<IPRewriter *>(_input_specs[input].reply_element);
+	return x->_udp_map;
+    }
+    static String udp_mappings_handler(Element *e, void *user_data);
 
 };
 
 
-inline IPRw::Mapping *
-IPRewriter::get_mapping(int ip_p, const IPFlowID &in) const
+inline void
+IPRewriter::destroy_flow(IPRewriterFlow *flow)
 {
-  if (ip_p == IP_PROTO_TCP)
-    return _tcp_map[in];
-  else if (ip_p == IP_PROTO_UDP)
-    return _udp_map[in];
-  else
-    return 0;
+    if (flow->ip_p() == IP_PROTO_TCP)
+	TCPRewriter::destroy_flow(flow);
+    else {
+	unmap_flow(flow, _udp_map, &reply_udp_map(flow->owner_input()));
+	flow->~IPRewriterFlow();
+	_udp_allocator.deallocate(flow);
+    }
 }
 
 CLICK_ENDDECLS

@@ -1,11 +1,7 @@
-%info
-
-Simple IPRewriter test.
-
 %script
 
 $VALGRIND click -e "
-rw :: IPRewriter(pattern 1.0.0.1 1024-65535# - - 0 1, drop);
+rw :: UDPRewriter(pattern 1.0.0.1 1024-65535# - - 0 1, drop);
 FromIPSummaryDump(IN1, STOP true)
 	-> [0]rw[0]
 	-> ToIPSummaryDump(OUT1, CONTENTS src sport dst dport proto);

@@ -1,6 +1,6 @@
 #ifndef CLICK_RRIPMAPPER_HH
 #define CLICK_RRIPMAPPER_HH
-#include "elements/ip/iprw.hh"
+#include "elements/ip/iprewriterbase.hh"
 CLICK_DECLS
 
 /*
@@ -27,19 +27,19 @@ class RoundRobinIPMapper : public Element, public IPMapper { public:
   const char *class_name() const	{ return "RoundRobinIPMapper"; }
   void *cast(const char *);
 
-  int configure_phase() const		{ return IPRw::CONFIGURE_PHASE_MAPPER;}
+  int configure_phase() const		{ return IPRewriterBase::CONFIGURE_PHASE_MAPPER;}
   int configure(Vector<String> &, ErrorHandler *);
   void cleanup(CleanupStage);
 
-  void notify_rewriter(IPRw *, ErrorHandler *);
-  IPRw::Mapping *get_map(IPRw *, int ip_p, const IPFlowID &, Packet *);
+    void notify_rewriter(IPRewriterBase *, ErrorHandler *);
+    int rewrite_flowid(IPRewriterInput *input,
+		       const IPFlowID &flowid, IPFlowID &rewritten_flowid,
+		       Packet *p, int mapid);
 
  private:
 
-  Vector<IPRw::Pattern *> _patterns;
-  Vector<int> _forward_outputs;
-  Vector<int> _reverse_outputs;
-  int _last_pattern;
+    Vector<IPRewriterInput> _is;
+    int _last_pattern;
 
 };
 

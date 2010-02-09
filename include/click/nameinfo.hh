@@ -49,6 +49,7 @@ class NameInfo { public:
 	T_IP_PROTO = 0x04000003,	///< IP protocol names database
 	T_IPFILTER_TYPE = 0x04000004,	///< IPFilter instruction names database
 	T_TCP_OPT = 0x04000005,		///< TCP option names database
+	T_IPREWRITER_PATTERN = 0x04000006, ///< IPRewriterPattern database
 	T_ICMP_TYPE = 0x04010000,	///< ICMP type names database
 	T_ICMP_CODE = 0x04010100,	///< ICMP code names database
 	T_IP_PORT = 0x04020000,		///< Starting point for IP per-protocol port names databases

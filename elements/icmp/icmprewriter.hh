@@ -1,11 +1,9 @@
-/* -*- c-basic-offset: 2 -*- */
 #ifndef CLICK_ICMPREWRITER_HH
 #define CLICK_ICMPREWRITER_HH
 #include <click/element.hh>
 #include <clicknet/udp.h>
 #include <clicknet/icmp.h>
-#include "elements/ip/iprw.hh"
-#include "elements/icmp/icmppingrewriter.hh"
+#include "elements/ip/iprewriterbase.hh"
 CLICK_DECLS
 
 /*
@@ -62,27 +60,38 @@ IPAddrRewriter, IPRewriter, ICMPPingRewriter, TCPRewriter */
 
 class ICMPRewriter : public Element { public:
 
-  ICMPRewriter();
-  ~ICMPRewriter();
+    ICMPRewriter();
+    ~ICMPRewriter();
 
-  const char *class_name() const	{ return "ICMPRewriter"; }
-  const char *port_count() const	{ return PORTS_1_1X2; }
-  const char *processing() const	{ return PROCESSING_A_AH; }
+    const char *class_name() const	{ return "ICMPRewriter"; }
+    const char *port_count() const	{ return "1/1-"; }
+    const char *processing() const	{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
 
-  Packet *simple_action(Packet *);
+    void push(int, Packet *);
 
- protected:
+  protected:
 
-  Vector<IPRw *> _maps;
-  Vector<ICMPPingRewriter *> _ping_maps;
-  bool _dst_anno;
+    struct MapEntry {
+	MapEntry(IPRewriterBase *e, int po) : _elt(e), _port_offset(po) {}
+	IPRewriterBase *_elt;
+	int _port_offset;
+    };
 
-  void rewrite_packet(WritablePacket *, click_ip *, click_udp *,
-		      const IPFlowID &, IPRw::Mapping *);
-  void rewrite_ping_packet(WritablePacket *, click_ip *, click_icmp_echo *,
-			   const IPFlowID &, ICMPPingRewriter::Mapping *);
+    enum {
+	unmapped_output = -1
+    };
+
+    Vector<MapEntry> _maps;
+    unsigned _annos;
+
+    void rewrite_packet(WritablePacket *, click_ip *, click_udp *,
+			const IPFlowID &, IPRewriterEntry *);
+    void rewrite_ping_packet(WritablePacket *, click_ip *, click_icmp_echo *,
+			     const IPFlowID &, IPRewriterEntry *);
+
+    int handle(WritablePacket *p);
 
 };
 

@@ -1,0 +1,42 @@
+%info
+
+UDPRewriter patterns preference for the original source port.
+
+%script
+
+$VALGRIND click --simtime -e "
+RandomSeed(1)
+rw1 :: UDPRewriter(pattern 1.0.0.2 1024-65534 - - 0 1, drop);
+
+FromIPSummaryDump(IN1, TIMING true, STOP true)
+	-> ps :: PaintSwitch
+	-> [0]rw1[0]
+	-> Paint(0)
+	-> td :: ToIPSummaryDump(OUT1, CONTENTS direction src sport dst dport tcp_seq);
+ps[1] -> [1]rw1[1] -> Paint(1) -> td;
+"
+
+%file IN1
+!proto T
+!data direction src sport dst dport tcp_seq
+> 10.0.0.1 1024 1.0.0.2 20 1
+> 10.0.0.2 1024 1.0.0.2 30 2
+> 10.0.0.3 1024 1.0.0.2 20 3
+< 1.0.0.2 20 1.0.0.2 55226 4
+< 1.0.0.2 30 1.0.0.2 1024 5
+< 1.0.0.2 20 1.0.0.2 1024 6
+
+%expect OUT1
+> 1.0.0.2 1024 1.0.0.2 20 1
+> 1.0.0.2 1024 1.0.0.2 30 2
+> 1.0.0.2 55226 1.0.0.2 20 3
+< 1.0.0.2 20 10.0.0.3 1024 4
+< 1.0.0.2 30 10.0.0.2 1024 5
+< 1.0.0.2 20 10.0.0.1 1024 6
+
+%ignorex OUT1
+^!.*
+
+%ignorex stderr
+^config.*
+^==.*

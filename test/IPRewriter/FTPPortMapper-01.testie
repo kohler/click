@@ -1,5 +1,7 @@
 %info
 
+Kernel FTPPortMapper test.
+
 This test installs two fake devices in the kernel, then initiates a
 connection between two 'netcat' processes that bridges the two devices via
 FTPPortMapper and TCPRewriter.

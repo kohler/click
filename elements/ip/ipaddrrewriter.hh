@@ -1,7 +1,8 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 #ifndef CLICK_IPADDRREWRITER_HH
 #define CLICK_IPADDRREWRITER_HH
-#include "elements/ip/iprw.hh"
+#include "elements/ip/iprewriterbase.hh"
+#include "elements/ip/iprwmapping.hh"
 CLICK_DECLS
 
 /*
@@ -68,6 +69,32 @@ IPAddrRewriter-like pattern.
 Input packets must have their IP header annotations set.  IPAddrRewriter
 changes IP packet data and destination IP address annotations.
 
+Keyword arguments are:
+
+=over 5
+
+=item TIMEOUT I<time>
+
+Time out connections every I<time> seconds. Default is 5 minutes.
+
+=item GUARANTEE I<time>
+
+Preserve each connection mapping for at least I<time> seconds after each
+successfully processed packet. Defaults to 5 seconds. Incoming flows are
+dropped if the mapping table is full of guaranteed flows.
+
+=item REAP_INTERVAL I<time>
+
+Reap timed-out connections every I<time> seconds. Default is 15 minutes.
+
+=item MAPPING_CAPACITY I<capacity>
+
+Set the maximum number of mappings this rewriter can hold to I<capacity>.
+I<Capacity> can either be an integer or the name of another rewriter-like
+element, in which case this element will share the other element's capacity.
+
+=back
+
 =h mappings read-only
 
 Returns a human-readable description of the IPAddrRewriter's current set of
@@ -75,7 +102,7 @@ mappings.
 
 =h nmappings read-only
 
-Returns the number of currently installed mappings.
+Returns the number of currently installed mapping pairs.
 
 =h patterns read-only
 
@@ -86,17 +113,22 @@ IPAddrRewriter.
 RoundRobinIPMapper, FTPPortMapper, ICMPRewriter, ICMPPingRewriter,
 StoreIPAddress (for simple uses) */
 
-class IPAddrRewriter : public IPRw { public:
+class IPAddrRewriter : public IPRewriterBase { public:
 
-    class IPAddrMapping : public Mapping { public:
+    class IPAddrFlow : public IPRewriterFlow { public:
 
-	IPAddrMapping(bool dst_anno)	: Mapping(dst_anno) { }
+	IPAddrFlow(const IPFlowID &flowid, int output,
+		   const IPFlowID &rewritten_flowid, int reply_output,
+		   bool guaranteed, click_jiffies_t expiry_j,
+		   IPRewriterBase *owner, int owner_input)
+	    : IPRewriterFlow(flowid, output, rewritten_flowid, reply_output,
+			     0, guaranteed, expiry_j,
+			     owner, owner_input) {
+	}
 
-	IPAddrMapping *reverse() const { return static_cast<IPAddrMapping *>(reverse()); }
+	void apply(WritablePacket *p, bool direction, unsigned annos);
 
-	void apply(WritablePacket *p);
-
-	String unparse() const;
+	void unparse(StringAccum &sa, bool direction, click_jiffies_t now) const;
 
     };
 
@@ -105,19 +137,14 @@ class IPAddrRewriter : public IPRw { public:
 
     const char *class_name() const		{ return "IPAddrRewriter"; }
     void *cast(const char *);
-    const char *port_count() const		{ return "1-/1-256"; }
-    const char *processing() const		{ return PUSH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &conf, ErrorHandler *errh);
     //void take_state(Element *, ErrorHandler *);
 
-    void run_timer(Timer *);
-
-    int notify_pattern(Pattern *, ErrorHandler *);
-    IPAddrMapping *apply_pattern(Pattern *, int ip_p, const IPFlowID &, int, int);
-    Mapping *get_mapping(int, const IPFlowID &) const;
+    inline IPRewriterEntry *get_entry(int ip_p, const IPFlowID &flowid, int input);
+    IPRewriterEntry *add_flow(int ip_p, const IPFlowID &flowid,
+			      const IPFlowID &rewritten_flowid, int input);
+    void destroy_flow(IPRewriterFlow *flow);
 
     void push(int, Packet *);
 
@@ -125,28 +152,20 @@ class IPAddrRewriter : public IPRw { public:
 
   private:
 
-    Map _map;
-
-    Vector<InputSpec> _input_specs;
-    Timer _timer;
-
-    enum { GC_INTERVAL_SEC = 7200 };
+    SizedHashAllocator<sizeof(IPAddrFlow)> _allocator;
+    unsigned _annos;
 
     static String dump_mappings_handler(Element *, void *);
-    static String dump_nmappings_handler(Element *, void *);
-    static String dump_patterns_handler(Element *, void *);
 
 };
 
 
-inline IPRw::Mapping *
-IPAddrRewriter::get_mapping(int, const IPFlowID &in_flow) const
+inline void
+IPAddrRewriter::destroy_flow(IPRewriterFlow *flow)
 {
-    IPFlowID flow(in_flow.saddr(), 0, IPAddress(0), 0);
-    if (IPRw::Mapping *m = _map[flow])
-	return m;
-    IPFlowID rev(IPAddress(0), 0, in_flow.daddr(), 0);
-    return _map[rev];
+    unmap_flow(flow, _map);
+    static_cast<IPAddrFlow *>(flow)->~IPAddrFlow();
+    _allocator.deallocate(flow);
 }
 
 CLICK_ENDDECLS

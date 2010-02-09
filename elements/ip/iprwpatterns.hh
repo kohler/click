@@ -1,7 +1,7 @@
 #ifndef CLICK_IPRWPATTERNS_HH
 #define CLICK_IPRWPATTERNS_HH
-#include "elements/ip/iprw.hh"
-#include <click/hashmap.hh>
+#include "elements/ip/iprewriterbase.hh"
+#include <click/hashtable.hh>
 CLICK_DECLS
 
 /*
@@ -19,23 +19,16 @@ CLICK_DECLS
  * =a IPRewriter
  */
 
-class IPRewriterPatterns : public Element {
+class IPRewriterPatterns : public Element { public:
 
-  HashTable<String, int> _name_map;
-  Vector<IPRw::Pattern *> _patterns;
+    IPRewriterPatterns();
+    ~IPRewriterPatterns();
 
- public:
+    const char *class_name() const { return "IPRewriterPatterns"; }
 
-  IPRewriterPatterns();
-  ~IPRewriterPatterns();
-
-  const char *class_name() const	{ return "IPRewriterPatterns"; }
-
-  int configure_phase() const	{ return IPRw::CONFIGURE_PHASE_PATTERNS; }
-  int configure(Vector<String> &, ErrorHandler *);
-  void cleanup(CleanupStage);
-
-  static IPRw::Pattern *find(Element *, const String &, ErrorHandler *);
+    int configure_phase() const	{ return IPRewriterBase::CONFIGURE_PHASE_PATTERNS; }
+    int configure(Vector<String> &, ErrorHandler *);
+    void cleanup(CleanupStage);
 
 };
 

@@ -1,9 +1,9 @@
-/* -*- c-basic-offset: 2 -*- */
 /*
  * icmppingrewriter.{cc,hh} -- rewrites ICMP echoes and replies
  * Eddie Kohler
  *
  * Copyright (c) 2000-2001 Mazu Networks, Inc.
+ * Copyright (c) 2009-2010 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,305 +23,202 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
-#include <click/router.hh>
 CLICK_DECLS
 
+// ICMPPingMapping
+
+void
+ICMPPingRewriter::ICMPPingFlow::apply(WritablePacket *p, bool direction, unsigned annos)
+{
+    assert(p->has_network_header());
+    click_ip *iph = p->ip_header();
+
+    // IP header
+    const IPFlowID &revflow = _e[!direction].flowid();
+    iph->ip_src = revflow.daddr();
+    iph->ip_dst = revflow.saddr();
+    if (annos & 1)
+	p->set_dst_ip_anno(revflow.saddr());
+    if (direction && (annos & 2))
+	p->set_anno_u8(annos >> 2, _reply_anno);
+    update_csum(iph->ip_sum, direction, _ip_csum_delta);
+
+    // end if not first fragment
+    if (!IP_FIRSTFRAG(iph))
+	return;
+
+    // ICMP header
+    click_icmp_echo *icmph = reinterpret_cast<click_icmp_echo *>(p->transport_header());
+    icmph->icmp_identifier = (direction ? revflow.sport() : revflow.dport());
+    update_csum(icmph->icmp_cksum, direction, _udp_csum_delta);
+    click_update_zero_in_cksum(&icmph->icmp_cksum, p->transport_header(), p->transport_length());
+}
+
+void
+ICMPPingRewriter::ICMPPingFlow::unparse(StringAccum &sa, bool direction,
+					click_jiffies_t now) const
+{
+    const IPFlowID &flow = _e[direction].flowid();
+    IPFlowID rewritten_flow = _e[direction].rewritten_flowid();
+    sa << '(' << flow.saddr() << ", " << flow.daddr() << ", "
+       << ntohs(flow.sport()) << ") => ("
+       << rewritten_flow.saddr() << ", " << rewritten_flow.daddr() << ", "
+       << ntohs(rewritten_flow.sport()) << ")";
+    unparse_ports(sa, direction, now);
+}
+
+// ICMPPingRewriter
+
 ICMPPingRewriter::ICMPPingRewriter()
-  : _request_map(0), _reply_map(0), _timer(this)
 {
 }
 
 ICMPPingRewriter::~ICMPPingRewriter()
 {
-  assert(!_timer.scheduled());
+}
+
+void *
+ICMPPingRewriter::cast(const char *n)
+{
+    if (strcmp(n, "IPRewriterBase") == 0)
+	return static_cast<IPRewriterBase *>(this);
+    else if (strcmp(n, "ICMPPingRewriter") == 0)
+	return static_cast<ICMPPingRewriter *>(this);
+    else
+	return 0;
 }
 
 int
 ICMPPingRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int ok = 0;
+    // numbers in seconds
+    _timeouts[0] = 5 * 60;	// best effort: 5 minutes
+    bool dst_anno = true, has_reply_anno = false;
+    int reply_anno;
 
-  _dst_anno = true;
-  String srcarg, dstarg;
-  _identifier = 0;
+    if (cp_va_kparse_remove_keywords
+	(conf, this, errh,
+	 "DST_ANNO", 0, cpBool, &dst_anno,
+	 "REPLY_ANNO", cpkC, &has_reply_anno, cpAnno, 1, &reply_anno,
+	 cpEnd) < 0)
+	return -1;
 
-  if (cp_va_kparse(conf, this, errh,
-		   "SRC", cpkP+cpkM, cpArgument, &srcarg,
-		   "DST", cpkP+cpkM, cpArgument, &dstarg,
-		   "DST_ANNO", 0, cpBool, &_dst_anno,
-		   cpEnd) < 0)
-    return -1;
-
-  if (srcarg == "-")
-    _new_src = IPAddress();
-  else if (!cp_ip_address(srcarg, &_new_src, this))
-    ok = errh->error("type mismatch: SRC requires IP address");
-
-  if (dstarg == "-")
-    _new_dst = IPAddress();
-  else if (!cp_ip_address(dstarg, &_new_dst, this))
-    ok = errh->error("type mismatch: DST requires IP address");
-
-  return ok;
+    _annos = (dst_anno ? 1 : 0) + (has_reply_anno ? 2 + (reply_anno << 2) : 0);
+    return IPRewriterBase::configure(conf, errh);
 }
 
-int
-ICMPPingRewriter::initialize(ErrorHandler *)
+IPRewriterEntry *
+ICMPPingRewriter::get_entry(int ip_p, const IPFlowID &xflowid, int input)
 {
-  _timer.initialize(this);
-  _timer.schedule_after_msec(GC_INTERVAL_SEC * 1000);
-  return 0;
+    if (ip_p != IP_PROTO_ICMP)
+	return 0;
+    bool echo = (input != get_entry_reply);
+    IPFlowID flowid(xflowid.saddr(), xflowid.sport() + !echo,
+		    xflowid.daddr(), xflowid.sport() + echo);
+    IPRewriterEntry *m = _map.get(flowid);
+    if (!m && (unsigned) input < (unsigned) _input_specs.size()) {
+	IPRewriterInput &is = _input_specs[input];
+	IPFlowID rewritten_flowid = IPFlowID::uninitialized_t();
+	if (is.rewrite_flowid(flowid, rewritten_flowid, 0) == rw_addmap) {
+	    rewritten_flowid.set_dport(rewritten_flowid.sport() + 1);
+	    m = ICMPPingRewriter::add_flow(IP_PROTO_ICMP, flowid, rewritten_flowid, input);
+	}
+    }
+    return m;
 }
 
-void
-ICMPPingRewriter::cleanup(CleanupStage)
+IPRewriterEntry *
+ICMPPingRewriter::add_flow(int, const IPFlowID &flowid,
+			   const IPFlowID &rewritten_flowid, int input)
 {
-  for (Map::iterator iter = _request_map.begin(); iter.live(); iter++) {
-    Mapping *m = iter.value();
-    delete m->reverse();
-    delete m;
-  }
-  _request_map.clear();
-  _reply_map.clear();
-}
+    void *data;
+    if ((uint16_t) (flowid.sport() + 1) != flowid.dport()
+	|| (uint16_t) (rewritten_flowid.sport() + 1) != rewritten_flowid.dport()
+	|| !(data = _allocator.allocate()))
+	return 0;
 
-/* XXX
-void
-ICMPPingRewriter::take_state(Element *e, ErrorHandler *errh)
-{
-  ICMPPingRewriter *rw = (ICMPPingRewriter *)e->cast("ICMPPingRewriter");
-  if (!rw) return;
+    ICMPPingFlow *flow = new(data) ICMPPingFlow
+	(flowid, _input_specs[input].foutput,
+	 rewritten_flowid, _input_specs[input].routput,
+	 !!_timeouts[1], click_jiffies() + relevant_timeout(_timeouts),
+	 this, input);
 
-  if (noutputs() != rw->noutputs()) {
-    errh->warning("taking mappings from `%s', although it has\n%s output ports", rw->declaration().c_str(), (rw->noutputs() > noutputs() ? "more" : "fewer"));
-    if (noutputs() < rw->noutputs())
-      errh->message("(out of range mappings will be dropped)");
-  }
-
-  _tcp_map.swap(rw->_tcp_map);
-  _udp_map.swap(rw->_udp_map);
-
-  // check rw->_all_patterns against our _all_patterns
-  Vector<Pattern *> pattern_map;
-  for (int i = 0; i < rw->_all_patterns.size(); i++) {
-    Pattern *p = rw->_all_patterns[i], *q = 0;
-    for (int j = 0; j < _all_patterns.size() && !q; j++)
-      if (_all_patterns[j]->can_accept_from(*p))
-	q = _all_patterns[j];
-    pattern_map.push_back(q);
-  }
-
-  take_state_map(_tcp_map, rw->_all_patterns, pattern_map);
-  take_state_map(_udp_map, rw->_all_patterns, pattern_map);
-}
-*/
-
-ICMPPingRewriter::Mapping::Mapping(bool dst_anno)
-  : _used(false), _dst_anno(dst_anno)
-{
-}
-
-void
-ICMPPingRewriter::Mapping::initialize(const IPFlowID &in, const IPFlowID &out,
-				      bool is_reverse, Mapping *reverse)
-{
-  // set fields
-  _mapto = out;
-  _is_reverse = is_reverse;
-  _reverse = reverse;
-
-  // set checksum deltas
-  const unsigned short *source_words = (const unsigned short *)&in;
-  const unsigned short *dest_words = (const unsigned short *)&_mapto;
-  unsigned delta = 0;
-  for (int i = 0; i < 4; i++) {
-    delta += ~source_words[i] & 0xFFFF;
-    delta += dest_words[i];
-  }
-  delta = (delta & 0xFFFF) + (delta >> 16);
-  _ip_csum_delta = delta + (delta >> 16);
-
-  delta = ~source_words[4] & 0xFFFF;
-  delta += dest_words[4];
-  delta = (delta & 0xFFFF) + (delta >> 16);
-  _icmp_csum_delta = delta + (delta >> 16);
-}
-
-void
-ICMPPingRewriter::Mapping::make_pair(const IPFlowID &inf, const IPFlowID &outf,
-				 Mapping *in_map, Mapping *out_map)
-{
-  in_map->initialize(inf, outf, false, out_map);
-  out_map->initialize(outf.reverse(), inf.reverse(), true, in_map);
-}
-
-void
-ICMPPingRewriter::Mapping::apply(WritablePacket *p)
-{
-  assert(p->has_network_header());
-  click_ip *iph = p->ip_header();
-
-  // IP header
-  iph->ip_src = _mapto.saddr();
-  iph->ip_dst = _mapto.daddr();
-  if (_dst_anno)
-    p->set_dst_ip_anno(_mapto.daddr());
-
-  unsigned sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
-  sum = (sum & 0xFFFF) + (sum >> 16);
-  iph->ip_sum = ~(sum + (sum >> 16));
-
-  // ICMP header
-  click_icmp_echo *icmph = reinterpret_cast<click_icmp_echo *>(p->icmp_header());
-  icmph->icmp_identifier = _mapto.sport();
-
-  unsigned sum2 = (~icmph->icmp_cksum & 0xFFFF) + _icmp_csum_delta;
-  sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
-  icmph->icmp_cksum = ~(sum2 + (sum2 >> 16));
-
-  // The above incremental algorithm is sufficient for IP headers, because it
-  // is always the case that IP headers have at least one nonzero byte (and
-  // thus the one's-complement sum of their 16-bit words cannot be +0, so the
-  // checksum field cannot be -0). However, it is not enough for ICMP, because
-  // an ICMP header MAY have all zero bytes (and thus the one's-complement sum
-  // of its 16-bit words MIGHT be +0, and the checksum field MIGHT be -0).
-  // Therefore, if the resulting icmp_cksum is +0, we do a full checksum to
-  // verify.
-  if (!icmph->icmp_cksum)
-    icmph->icmp_cksum = click_in_cksum((const unsigned char *)icmph, p->length() - p->transport_header_offset());
-
-  mark_used();
-}
-
-String
-ICMPPingRewriter::Mapping::s() const
-{
-  StringAccum sa;
-  IPFlowID src_flow = reverse()->flow_id().reverse();
-  sa << "(" << src_flow.saddr() << ", " << src_flow.daddr() << ", "
-     << ntohs(src_flow.sport()) << ") => (" << _mapto.saddr() << ", "
-     << _mapto.daddr() << ", " << ntohs(_mapto.sport()) << ")";
-  return sa.take_string();
-}
-
-void
-ICMPPingRewriter::run_timer(Timer *)
-{
-  Vector<Mapping *> to_free;
-
-  for (Map::iterator iter = _request_map.begin(); iter.live(); iter++) {
-    Mapping *m = iter.value();
-    if (!m->used() && !m->reverse()->used())
-      to_free.push_back(m);
-    else
-      m->clear_used();
-  }
-
-  for (int i = 0; i < to_free.size(); i++) {
-    _request_map.erase(to_free[i]->reverse()->flow_id().reverse());
-    _reply_map.erase(to_free[i]->flow_id().reverse());
-    delete to_free[i]->reverse();
-    delete to_free[i];
-  }
-
-  _timer.schedule_after_msec(GC_INTERVAL_SEC * 1000);
-}
-
-ICMPPingRewriter::Mapping *
-ICMPPingRewriter::apply_pattern(const IPFlowID &flow)
-{
-  Mapping *forward = new Mapping(_dst_anno);
-  Mapping *reverse = new Mapping(_dst_anno);
-
-  if (forward && reverse) {
-    IPFlowID new_flow(_new_src, _identifier, _new_dst, _identifier);
-    if (!_new_src)
-      new_flow.set_saddr(flow.saddr());
-    if (!_new_dst)
-      new_flow.set_daddr(flow.daddr());
-    Mapping::make_pair(flow, new_flow, forward, reverse);
-    _identifier++;
-
-    _request_map.set(flow, forward);
-    _reply_map.set(new_flow.reverse(), reverse);
-    return forward;
-  }
-
-  delete forward;
-  delete reverse;
-  return 0;
-}
-
-ICMPPingRewriter::Mapping *
-ICMPPingRewriter::get_mapping(bool is_request, const IPFlowID &flow) const
-{
-  const Map *map = (is_request ? &_request_map : &_reply_map);
-  return (*map)[flow];
+    return store_flow(flow, input, _map);
 }
 
 void
 ICMPPingRewriter::push(int port, Packet *p_in)
 {
-  WritablePacket *p = p_in->uniqueify();
-  click_ip *iph = p->ip_header();
-  assert(iph->ip_p == IP_PROTO_ICMP);
+    WritablePacket *p = p_in->uniqueify();
+    click_ip *iph = p->ip_header();
+    click_icmp_echo *icmph = reinterpret_cast<click_icmp_echo *>(p->icmp_header());
 
-  click_icmp_echo *icmph = reinterpret_cast<click_icmp_echo *>(p->icmp_header());
-
-  Map *map;
-  if (icmph->icmp_type == ICMP_ECHO)
-    map = &_request_map;
-  else if (icmph->icmp_type == ICMP_ECHOREPLY)
-    map = &_reply_map;
-  else {
-    click_chatter("ICMPPingRewriter got non-request, non-reply");
-    p->kill();
-    return;
-  }
-
-  IPFlowID flow(iph->ip_src, icmph->icmp_identifier, iph->ip_dst, icmph->icmp_identifier);
-  Mapping *m = map->get(flow);
-  if (!m) {
-    if (port == 0 && icmph->icmp_type == ICMP_ECHO) {
-      // create new mapping
-      m = apply_pattern(flow);
-    } else if (port == 0) {
-      // pass through unchanged
-      output(noutputs() - 1).push(p);
-      return;
+    // handle non-first fragments
+    if (iph->ip_p != IP_PROTO_ICMP
+	|| !IP_FIRSTFRAG(iph)
+	|| p->transport_length() < 6
+	|| (icmph->icmp_type != ICMP_ECHO && icmph->icmp_type != ICMP_ECHOREPLY)) {
+    mapping_fail:
+	const IPRewriterInput &is = _input_specs[port];
+	if (is.kind == IPRewriterInput::i_nochange)
+	    output(is.foutput).push(p);
+	else
+	    p->kill();
+	return;
     }
-    if (!m) {
-      p->kill();
-      return;
-    }
-  }
 
-  m->apply(p);
-  if (icmph->icmp_type == ICMP_ECHOREPLY && noutputs() == 2)
-    output(1).push(p);
-  else
-    output(0).push(p);
+    bool echo = icmph->icmp_type == ICMP_ECHO;
+    IPFlowID flowid(iph->ip_src, icmph->icmp_identifier + !echo,
+		    iph->ip_dst, icmph->icmp_identifier + echo);
+
+    IPRewriterEntry *m = _map.get(flowid);
+
+    if (!m && !echo)
+	goto mapping_fail;
+    else if (!m) {		// create new mapping
+	IPRewriterInput &is = _input_specs.at_u(port);
+	IPFlowID rewritten_flowid = IPFlowID::uninitialized_t();
+	int result = is.rewrite_flowid(flowid, rewritten_flowid, p);
+	if (result == rw_addmap) {
+	    rewritten_flowid.set_dport(rewritten_flowid.sport() + 1);
+	    m = ICMPPingRewriter::add_flow(IP_PROTO_ICMP, flowid, rewritten_flowid, port);
+	}
+	if (!m) {
+	    checked_output_push(result, p);
+	    return;
+	} else if (_annos & 2)
+	    m->flow()->set_reply_anno(p->anno_u8(_annos >> 2));
+    }
+
+    ICMPPingFlow *mf = static_cast<ICMPPingFlow *>(m->flow());
+    mf->apply(p, m->direction(), _annos);
+    mf->change_expiry(_heap, click_jiffies(), _timeouts);
+
+    output(m->output()).push(p);
 }
 
 
 String
 ICMPPingRewriter::dump_mappings_handler(Element *e, void *)
 {
-  ICMPPingRewriter *rw = (ICMPPingRewriter *)e;
-
-  StringAccum sa;
-  for (Map::iterator iter = rw->_request_map.begin(); iter.live(); iter++) {
-    Mapping *m = iter.value();
-    sa << m->s() << "\n";
-  }
-  return sa.take_string();
+    ICMPPingRewriter *rw = (ICMPPingRewriter *)e;
+    StringAccum sa;
+    click_jiffies_t now = click_jiffies();
+    for (Map::iterator iter = rw->_map.begin(); iter.live(); ++iter) {
+	ICMPPingFlow *f = static_cast<ICMPPingFlow *>(iter->flow());
+	f->unparse(sa, iter->direction(), now);
+	sa << '\n';
+    }
+    return sa.take_string();
 }
 
 void
 ICMPPingRewriter::add_handlers()
 {
-  add_read_handler("mappings", dump_mappings_handler, (void *)0);
+    add_read_handler("mappings", dump_mappings_handler, (void *)0);
+    add_rewriter_handlers(true);
 }
 
-EXPORT_ELEMENT(ICMPPingRewriter)
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(IPRewriterBase)
+EXPORT_ELEMENT(ICMPPingRewriter)

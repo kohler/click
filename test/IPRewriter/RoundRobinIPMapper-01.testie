@@ -1,5 +1,8 @@
+%info
+RoundRobinIPMapper test.
+
 %script
-click CONFIG < DUMP | grep -v '^!'
+$VALGRIND click CONFIG < DUMP | grep -v '^!'
 
 %file CONFIG
 r::RoundRobinIPMapper(- - - - 0 0, - - - - 1 0, - - - - 2 0);

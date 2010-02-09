@@ -1,0 +1,108 @@
+%info
+
+Writable capacity handler.
+
+%script
+$VALGRIND click --simtime -e "
+rw :: IPRewriter(pattern 2.0.0.1 1024-65535# - - 0 1, drop,
+	MAPPING_CAPACITY 10);
+FromIPSummaryDump(IN1, STOP true, CHECKSUM true, TIMING true)
+	-> ps :: PaintSwitch
+	-> rw
+	-> Paint(0)
+	-> t :: ToIPSummaryDump(OUT1, CONTENTS direction proto src sport dst dport payload);
+ps[1] -> [1] rw [1] -> Paint(1) -> t;
+f2::FromIPSummaryDump(IN2, STOP true, ACTIVE false, CHECKSUM true, TIMING true)
+	-> ps;
+DriverManager(print >INFO rw.capacity,
+	pause,
+	print >>INFO rw.size,
+	write rw.capacity 8,
+	print >>INFO rw.size,
+	print >>INFO rw.capacity,
+	write f2.active true,
+	pause)
+"
+
+%file IN1
+!data direction proto timestamp src sport dst dport payload
+# 11 empty flows, the last will bump out the first because 5s guarantee
+# has expired
+> T 1 1.0.0.1 11 2.0.0.2 21 XXX
+> T 2 1.0.0.2 12 2.0.0.2 22 XXX
+> T 3 1.0.0.3 13 2.0.0.2 23 XXX
+> T 4 1.0.0.4 14 2.0.0.2 24 XXX
+> T 5 1.0.0.5 15 2.0.0.2 25 XXX
+> T 6 1.0.0.6 16 2.0.0.2 26 XXX
+> T 7 1.0.0.7 17 2.0.0.2 27 XXX
+> T 8 1.0.0.8 18 2.0.0.2 28 XXX
+> T 9 1.0.0.9 19 2.0.0.2 29 XXX
+> T 10 1.0.0.10 20 2.0.0.2 30 XXX
+> T 11 1.0.0.11 21 2.0.0.2 31 XXX
+# show that flow 1 is out
+< T 21 2.0.0.2 21 2.0.0.1 1024 should_not_go_through
+< T 22 2.0.0.2 22 2.0.0.1 1025 XXX
+< T 23 2.0.0.2 23 2.0.0.1 1026 XXX
+< T 24 2.0.0.2 24 2.0.0.1 1027 XXX
+< T 25 2.0.0.2 25 2.0.0.1 1028 XXX
+< T 26 2.0.0.2 26 2.0.0.1 1029 XXX
+< T 27 2.0.0.2 27 2.0.0.1 1030 XXX
+< T 28 2.0.0.2 28 2.0.0.1 1031 XXX
+< T 29 2.0.0.2 29 2.0.0.1 1032 XXX
+< T 30 2.0.0.2 30 2.0.0.1 1033 XXX
+< T 31 2.0.0.2 31 2.0.0.1 1034 XXX
+
+%file IN2
+!data direction proto timestamp src sport dst dport payload
+# check that the oldest flows have been bumped when the capacity reduced
+< T 41 2.0.0.2 21 2.0.0.1 1024 should_not_go_through
+< T 42 2.0.0.2 22 2.0.0.1 1025 should_not_go_through
+< T 43 2.0.0.2 23 2.0.0.1 1026 should_not_go_through
+< T 44 2.0.0.2 24 2.0.0.1 1027 XXX
+< T 45 2.0.0.2 25 2.0.0.1 1028 XXX
+< T 46 2.0.0.2 26 2.0.0.1 1029 XXX
+< T 47 2.0.0.2 27 2.0.0.1 1030 XXX
+< T 48 2.0.0.2 28 2.0.0.1 1031 XXX
+< T 49 2.0.0.2 29 2.0.0.1 1032 XXX
+< T 50 2.0.0.2 30 2.0.0.1 1033 XXX
+< T 51 2.0.0.2 31 2.0.0.1 1034 XXX
+
+%expect OUT1
+> T 2.0.0.1 1024 2.0.0.2 21 "XXX"
+> T 2.0.0.1 1025 2.0.0.2 22 "XXX"
+> T 2.0.0.1 1026 2.0.0.2 23 "XXX"
+> T 2.0.0.1 1027 2.0.0.2 24 "XXX"
+> T 2.0.0.1 1028 2.0.0.2 25 "XXX"
+> T 2.0.0.1 1029 2.0.0.2 26 "XXX"
+> T 2.0.0.1 1030 2.0.0.2 27 "XXX"
+> T 2.0.0.1 1031 2.0.0.2 28 "XXX"
+> T 2.0.0.1 1032 2.0.0.2 29 "XXX"
+> T 2.0.0.1 1033 2.0.0.2 30 "XXX"
+> T 2.0.0.1 1034 2.0.0.2 31 "XXX"
+< T 2.0.0.2 22 1.0.0.2 12 "XXX"
+< T 2.0.0.2 23 1.0.0.3 13 "XXX"
+< T 2.0.0.2 24 1.0.0.4 14 "XXX"
+< T 2.0.0.2 25 1.0.0.5 15 "XXX"
+< T 2.0.0.2 26 1.0.0.6 16 "XXX"
+< T 2.0.0.2 27 1.0.0.7 17 "XXX"
+< T 2.0.0.2 28 1.0.0.8 18 "XXX"
+< T 2.0.0.2 29 1.0.0.9 19 "XXX"
+< T 2.0.0.2 30 1.0.0.10 20 "XXX"
+< T 2.0.0.2 31 1.0.0.11 21 "XXX"
+< T 2.0.0.2 24 1.0.0.4 14 "XXX"
+< T 2.0.0.2 25 1.0.0.5 15 "XXX"
+< T 2.0.0.2 26 1.0.0.6 16 "XXX"
+< T 2.0.0.2 27 1.0.0.7 17 "XXX"
+< T 2.0.0.2 28 1.0.0.8 18 "XXX"
+< T 2.0.0.2 29 1.0.0.9 19 "XXX"
+< T 2.0.0.2 30 1.0.0.10 20 "XXX"
+< T 2.0.0.2 31 1.0.0.11 21 "XXX"
+
+%expect INFO
+10
+10
+8
+8
+
+%ignorex
+!.*

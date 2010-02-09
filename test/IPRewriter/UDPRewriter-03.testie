@@ -1,11 +1,7 @@
-%info
-
-Another simple IPRewriter test.
-
 %script
 
 $VALGRIND click -e "
-rw :: IPRewriter(pattern 1.0.0.1 1024-1026# - - 0 1, drop);
+rw :: UDPRewriter(pattern 1.0.0.1 1024-1026# - - 0 1, drop);
 FromIPSummaryDump(IN1, STOP true)
 	-> [0]rw[0]
 	-> ToIPSummaryDump(OUT1, CONTENTS src sport dst dport proto tcp_seq);
@@ -30,9 +26,9 @@ DriverManager(wait_stop, write f2.active true, wait_stop)
 
 %file IN2
 !data src sport dst dport proto
-10.0.0.4 1 1.0.0.1 1024 T 
+10.0.0.4 1 1.0.0.1 1024 T
 10.0.0.8 2 1.0.0.1 1024 T
-10.0.0.4 1 1.0.0.1 1024 T 
+10.0.0.4 1 1.0.0.1 1024 T
 10.0.0.8 2 1.0.0.1 1025 T
 10.0.0.8 2 1.0.0.1 1026 T
 
@@ -51,8 +47,8 @@ DriverManager(wait_stop, write f2.active true, wait_stop)
 1.0.0.1 1026 10.0.0.8 2 T 10
 
 %expect OUT2
-10.0.0.4 1 18.26.4.44 1 T 
+10.0.0.4 1 18.26.4.44 1 T
 10.0.0.8 2 18.26.4.44 4 T
-10.0.0.4 1 18.26.4.44 1 T 
+10.0.0.4 1 18.26.4.44 1 T
 10.0.0.8 2 18.26.4.44 2 T
 10.0.0.8 2 18.26.4.44 5 T

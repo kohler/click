@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
+ * Copyright (c) 2009-2010 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -17,13 +18,14 @@
 
 #include <click/config.h>
 #include "iprwpatterns.hh"
+#include "elements/ip/iprwpattern.hh"
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+#include <click/nameinfo.hh>
 CLICK_DECLS
 
 IPRewriterPatterns::IPRewriterPatterns()
-  : _name_map(-1)
 {
 }
 
@@ -34,56 +36,54 @@ IPRewriterPatterns::~IPRewriterPatterns()
 int
 IPRewriterPatterns::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  // check for an earlier IPRewriterPatterns
-  const Vector<Element *> &ev = router()->elements();
-  for (int i = 0; i < eindex(); i++)
-    if (IPRewriterPatterns *rwp = (IPRewriterPatterns *)ev[i]->cast("IPRewriterPatterns"))
-      return rwp->configure(conf, errh);
+    void *&patterns_attachment = router()->force_attachment("IPRewriterPatterns");
+    if (!patterns_attachment)
+	patterns_attachment = new Vector<IPRewriterPattern *>;
+    Vector<IPRewriterPattern *> *patterns =
+	static_cast<Vector<IPRewriterPattern *> *>(patterns_attachment);
+    int before = errh->nerrors();
 
-  for (int i = 0; i < conf.size(); i++) {
-    String word, rest;
-    // allow empty patterns for convenience
-    if (!cp_word(conf[i], &word, &rest))
-      continue;
-    cp_eat_space(rest);
+    for (int i = 0; i < conf.size(); ++i) {
+	String name = cp_shift_spacevec(conf[i]);
+	if (!name)
+	    continue;
 
-    if (_name_map.get(word) >= 0) {
-      errh->error("pattern name `%s' has already been defined", word.c_str());
-      continue;
+	int32_t x;
+	if (NameInfo::query_int(NameInfo::T_IPREWRITER_PATTERN, this,
+				name, &x)) {
+	    errh->error("pattern %<%s%> already defined", name.c_str());
+	    continue;
+	}
+
+	Vector<String> words;
+	cp_spacevec(conf[i], words);
+	IPRewriterPattern *p;
+	if (!IPRewriterPattern::parse(words, &p, this, errh))
+	    continue;
+
+	p->use();
+	patterns->push_back(p);
+	NameInfo::define_int(NameInfo::T_IPREWRITER_PATTERN, this,
+			     name, patterns->size() - 1);
     }
 
-    IPRw::Pattern *p;
-    if (IPRw::Pattern::parse(rest, &p, this, errh) >= 0) {
-      p->use();
-      _name_map.set(word, _patterns.size());
-      _patterns.push_back(p);
-    }
-  }
-  return 0;
+    return errh->nerrors() == before ? 0 : -1;
 }
 
 void
 IPRewriterPatterns::cleanup(CleanupStage)
 {
-  for (int i = 0; i < _patterns.size(); i++)
-    _patterns[i]->unuse();
-}
-
-IPRw::Pattern *
-IPRewriterPatterns::find(Element *e, const String &name, ErrorHandler *errh)
-{
-  const Vector<Element *> &ev = e->router()->elements();
-  for (int i = 0; i < ev.size(); i++)
-    if (IPRewriterPatterns *rwp = (IPRewriterPatterns *)ev[i]->cast("IPRewriterPatterns")) {
-      int x = rwp->_name_map.get(name);
-      if (x >= 0)
-	return rwp->_patterns[x];
-      break;
+    void *&patterns_attachment = router()->force_attachment("IPRewriterPatterns");
+    if (patterns_attachment) {
+	Vector<IPRewriterPattern *> *patterns =
+	    static_cast<Vector<IPRewriterPattern *> *>(patterns_attachment);
+	for (int i = 0; i < patterns->size(); ++i)
+	    (*patterns)[i]->unuse();
+	delete patterns;
+	patterns_attachment = 0;
     }
-  errh->error("no pattern named `%s'", name.c_str());
-  return 0;
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(IPRw)
+ELEMENT_REQUIRES(IPRewriterPattern)
 EXPORT_ELEMENT(IPRewriterPatterns)

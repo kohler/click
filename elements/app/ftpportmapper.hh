@@ -5,7 +5,7 @@ CLICK_DECLS
 
 /*
  * =c
- * FTPPortMapper(CONTROL_REWRITER, DATA_REWRITER, PATTERN FOUTPUT ROUTPUT)
+ * FTPPortMapper(CONTROL_REWRITER, DATA_REWRITER, DATA_REWRITER_INPUT)
  * =s nat
  * manipulates IPRewriter for FTP
  * =d
@@ -22,39 +22,33 @@ CLICK_DECLS
  * DATA_REWRITER. CONTROL_REWRITER and DATA_REWRITER might be the same
  * element.
  *
- * PATTERN is a pattern specification -- either a pattern name (see
- * L<IPRewriterPatterns>) or a `SADDR SPORT DADDR DPORT' quadruple. See
- * L<IPRewriter> for more information. The address and port specified in the
- * PORT command correspond to `SADDR' and `SPORT' in the pattern. If a new
- * SADDR and SPORT are chosen, then the PORT command is rewritten to reflect
- * the new SADDR and SPORT.
+ * DATA_REWRITER_INPUT is a valid input port number for DATA_REWRITER.  When a
+ * control connection opens a new data port, a mapping is installed in
+ * DATA_REWRITER as if a data packet had arrived on DATA_REWRITER_INPUT.
+ * Usually DATA_REWRITER_INPUT refers to a pattern specification; see
+ * L<IPRewriter> for more information.
  *
  * In summary: Assume that an FTP packet with source address and port
  * 1.0.0.2:6587 and destination address and port 2.0.0.2:21 contains a command
  * `PORT 1,0,0,2,3,9' (that is, 1.0.0.2:777). Furthermore assume that the
- * PATTERN is `1.0.0.1 9000-14000 - -'. Then FTPPortMapper performs the
- * following actions:
+ * pattern corresponding to DATA_REWRITER_INPUT is `1.0.0.1 9000-14000 -
+ * -'. Then FTPPortMapper performs the following actions:
  *
  * =over 3
  *
  * =item *
  *
- * Creates a new mapping using the PATTERN. Say it returns 9000 as the new
- * source port.
- *
- * =item *
- *
- * Installs the following mappings into the rewriter:
+ * Creates a new mapping using the DATA_REWRITER_INPUT pattern. Say it returns
+ * 9000 as the new source port.  This installs the following mappings into the
+ * rewriter:
  *
  * =over 3
  *
  * =item 1.
- * (1.0.0.2, 777, 2.0.0.2, 20) => (1.0.0.1, 9000, 2.0.0.2, 20) with output
- * port FOUTPUT.
+ * (1.0.0.2, 777, 2.0.0.2, 20) => (1.0.0.1, 9000, 2.0.0.2, 20)
  *
  * =item 2.
- * (2.0.0.2, 20, 1.0.0.1, 9000) => (2.0.0.2, 20, 1.0.0.2, 777) with output
- * port ROUTPUT.
+ * (2.0.0.2, 20, 1.0.0.1, 9000) => (2.0.0.2, 20, 1.0.0.2, 777)
  *
  * =back
  *
@@ -89,27 +83,25 @@ CLICK_DECLS
  * L<RFC 959, File Transfer Protocol (FTP)|http://www.ietf.org/rfc/rfc0959.txt>
  */
 
-class FTPPortMapper : public Element {
+class FTPPortMapper : public Element { public:
 
-  TCPRewriter *_control_rewriter;
-  IPRw *_data_rewriter;
-  IPRw::Pattern *_pattern;
-  int _forward_port;
-  int _reverse_port;
+    FTPPortMapper();
+    ~FTPPortMapper();
 
- public:
+    const char *class_name() const	{ return "FTPPortMapper"; }
+    const char *port_count() const	{ return PORTS_1_1; }
 
-  FTPPortMapper();
-  ~FTPPortMapper();
+    int configure(Vector<String> &, ErrorHandler *);
+    bool can_live_reconfigure() const	{ return true; }
+    int initialize(ErrorHandler *);
 
-  const char *class_name() const	{ return "FTPPortMapper"; }
-  const char *port_count() const	{ return PORTS_1_1; }
+    Packet *simple_action(Packet *);
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
+  private:
 
-  Packet *simple_action(Packet *);
+    TCPRewriter *_control_rewriter;
+    IPRewriterBase *_data_rewriter;
+    int _data_rewriter_input;
 
 };
 

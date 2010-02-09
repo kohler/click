@@ -1,0 +1,41 @@
+%info
+
+IPRewriter test for REPLY_ANNO.
+
+%script
+
+$VALGRIND click -e "
+rw :: IPRewriter(pattern 1.0.0.1 1024-65535# - - 0 1, drop, REPLY_ANNO PAINT);
+FromIPSummaryDump(IN1, STOP true)
+	-> [0]rw[0]
+	-> ToIPSummaryDump(OUT1, CONTENTS link src sport dst dport proto);
+FromIPSummaryDump(IN2, STOP true)
+	-> [1]rw[1]
+	-> ToIPSummaryDump(OUT2, CONTENTS link src sport dst dport proto);
+"
+
+%file IN1
+!data link src sport dst dport proto
+1 18.26.4.44 30 10.0.0.4 40 T
+1 18.26.4.44 30 10.0.0.4 40 T
+2 18.26.4.44 20 10.0.0.8 80 T
+
+%file IN2
+!data link src sport dst dport proto
+0 10.0.0.4 40 1.0.0.1 1024 T
+0 10.0.0.4 40 1.0.0.1 1024 T
+0 10.0.0.8 80 1.0.0.1 1025 T
+0 10.0.0.8 80 1.0.0.1 1026 T
+
+%ignorex
+!.*
+
+%expect OUT1
+1 1.0.0.1 1024 10.0.0.4 40 T
+1 1.0.0.1 1024 10.0.0.4 40 T
+2 1.0.0.1 1025 10.0.0.8 80 T
+
+%expect OUT2
+1 10.0.0.4 40 18.26.4.44 30 T
+1 10.0.0.4 40 18.26.4.44 30 T
+2 10.0.0.8 80 18.26.4.44 20 T

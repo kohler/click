@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
+ * Copyright (c) 2009-2010 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -26,7 +27,6 @@
 CLICK_DECLS
 
 FTPPortMapper::FTPPortMapper()
-  : _pattern(0)
 {
 }
 
@@ -37,37 +37,23 @@ FTPPortMapper::~FTPPortMapper()
 int
 FTPPortMapper::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (conf.size() != 3)
-    return errh->error("wrong number of arguments; expected `FTPPortMapper(element, pattern)'");
+    TCPRewriter *new_control_rewriter;
+    IPRewriterBase *new_data_rewriter;
+    int new_data_rewriter_input;
 
-  // get control packet rewriter
-  Element *e = cp_element(conf[0], this, errh);
-  if (!e)
-    return -1;
-  _control_rewriter = (TCPRewriter *)e->cast("TCPRewriter");
-  if (!_control_rewriter)
-    return errh->error("first argument must be a TCPRewriter-like element");
+    if (cp_va_kparse(conf, this, errh,
+		     "CONTROL_REWRITER", cpkP+cpkM, cpElementCast, "TCPRewriter", &new_control_rewriter,
+		     "DATA_REWRITER", cpkP+cpkM, cpElementCast, "IPRewriterBase", &new_data_rewriter,
+		     "DATA_REWRITER_INPUT", cpkP+cpkM, cpInteger, &new_data_rewriter_input,
+		     cpEnd) < 0)
+	return -1;
 
-  // get data packet rewriter
-  e = cp_element(conf[1], this, errh);
-  if (!e)
-    return -1;
-  _data_rewriter = (IPRw *)e->cast("IPRw");
-  if (!_data_rewriter)
-    return errh->error("second argument must be an IPRewriter-like element");
-
-  _pattern = 0;
-  if (IPRw::Pattern::parse_with_ports(conf[2], &_pattern, &_forward_port,
-				      &_reverse_port, this, errh) < 0)
-    return -1;
-  _pattern->use();
-  if (_data_rewriter->notify_pattern(_pattern, errh) < 0)
-    return -1;
-
-  if (_forward_port >= _data_rewriter->noutputs()
-      || _reverse_port >= _data_rewriter->noutputs())
-    return errh->error("port out of range for `%s'", _data_rewriter->declaration().c_str());
-  else
+    if (new_data_rewriter_input < 0
+	|| new_data_rewriter_input >= new_data_rewriter->ninputs())
+	return errh->error("DATA_REWRITER_INPUT out of range");
+    _control_rewriter = new_control_rewriter;
+    _data_rewriter = new_data_rewriter;
+    _data_rewriter_input = new_data_rewriter_input;
     return 0;
 }
 
@@ -80,13 +66,6 @@ FTPPortMapper::initialize(ErrorHandler *errh)
     if (!filter.contains(_control_rewriter))
 	errh->warning("control packet rewriter %<%s%> is not downstream", _control_rewriter->declaration().c_str());
     return 0;
-}
-
-void
-FTPPortMapper::cleanup(CleanupStage)
-{
-  if (_pattern)
-    _pattern->unuse();
 }
 
 Packet *
@@ -144,18 +123,13 @@ FTPPortMapper::simple_action(Packet *p)
   IPFlowID flow(src_data_addr, src_data_port,
 		IPAddress(iph->ip_dst), dst_data_port);
 
-  // check for existing mapping
-  IPRw::Mapping *forward = _data_rewriter->get_mapping(IP_PROTO_TCP, flow);
-  if (!forward) {
-    // create new mapping
-    forward = _data_rewriter->apply_pattern(_pattern, IP_PROTO_TCP, flow,
-					    _forward_port, _reverse_port);
-    if (!forward)
+  // find or create mapping
+  IPRewriterEntry *forward = _data_rewriter->get_entry(IP_PROTO_TCP, flow, _data_rewriter_input);
+  if (!forward)
       return p;
-  }
 
   // rewrite PORT command to reflect mapping
-  IPFlowID new_flow = forward->flow_id();
+  IPFlowID new_flow = forward->rewritten_flowid();
   unsigned new_saddr = ntohl(new_flow.saddr().addr());
   unsigned new_sport = ntohs(new_flow.sport());
   char buf[30];
@@ -197,9 +171,14 @@ FTPPortMapper::simple_action(Packet *p)
 
   // update sequence numbers in old mapping
   IPFlowID p_flow(p);
-  if (TCPRewriter::TCPMapping *p_mapping = _control_rewriter->get_mapping(IP_PROTO_TCP, p_flow)) {
+  if (IPRewriterEntry *p_mapping = _control_rewriter->get_entry(IP_PROTO_TCP, p_flow, -1)) {
     tcp_seq_t interesting_seqno = ntohl(wp_tcph->th_seq) + len;
-    p_mapping->update_seqno_delta(interesting_seqno, buflen - port_arg_len);
+    TCPRewriter::TCPFlow *p_flow = static_cast<TCPRewriter::TCPFlow *>(p_mapping->flow());
+    p_flow->update_seqno_delta(p_mapping->direction(), interesting_seqno,
+			       buflen - port_arg_len);
+    // assume the annotation from the control rewriter also applies to the
+    // data
+    forward->flow()->set_reply_anno(p_flow->reply_anno());
   } else
     click_chatter("%{element}: control packet with no mapping", this);
 

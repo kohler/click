@@ -1,6 +1,7 @@
 #ifndef CLICK_TCPREWRITER_HH
 #define CLICK_TCPREWRITER_HH
-#include "elements/ip/iprw.hh"
+#include "elements/ip/iprewriterbase.hh"
+#include "elements/ip/iprwmapping.hh"
 #include <clicknet/tcp.h>
 CLICK_DECLS
 
@@ -36,23 +37,36 @@ Keyword arguments determine how often stale mappings should be removed.
 
 =item TCP_TIMEOUT I<time>
 
-Time out TCP connections every I<time> seconds. Default is 24 hours.
+Time out TCP connections every I<time> seconds. Default is 24 hours. This
+timeout applies to TCP connections for which payload data has been seen
+flowing in both directions.
 
 =item TCP_DONE_TIMEOUT I<time>
 
-Time out completed TCP connections every I<time> seconds. Default is 30
-seconds. FIN and RST flags mark TCP connections as complete.
+Time out completed TCP connections every I<time> seconds. Default is 4
+minutes. FIN and RST flags mark TCP connections as complete.
 
-=item REAP_TCP I<time>
+=item TCP_NODATA_TIMEOUT I<time>
 
-Reap timed-out TCP connections every I<time> seconds. If no packets
-corresponding to a given mapping have been seen for TCP_TIMEOUT, remove the
-mapping as stale. Default is 1 hour.
+Time out non-bidirectional TCP connections every I<time> seconds. Default is 5
+minutes. A non-bidirectional TCP connection is one in which payload data
+hasn't been seen in at least one direction.
 
-=item REAP_TCP_DONE I<time>
+=item TCP_GUARANTEE I<time>
 
-Reap timed-out completed TCP connections every I<time> seconds. Default is 10
-seconds.
+Preserve each TCP connection mapping for at least I<time> seconds after each
+successfully processed packet. Defaults to 5 seconds. Incoming flows are
+dropped if an TCPRewriter's mapping table is full of guaranteed flows.
+
+=item REAP_INTERVAL I<time>
+
+Reap timed-out connections every I<time> seconds. Default is 15 minutes.
+
+=item MAPPING_CAPACITY I<capacity>
+
+Set the maximum number of mappings this rewriter can hold to I<capacity>.
+I<Capacity> can either be an integer or the name of another rewriter-like
+element, in which case this element will share the other element's capacity.
 
 =item DST_ANNO
 
@@ -69,103 +83,102 @@ mappings.
 =a IPRewriter, IPAddrRewriter, IPAddrPairRewriter, IPRewriterPatterns,
 FTPPortMapper */
 
-class TCPRewriter : public IPRw { public:
+class TCPRewriter : public IPRewriterBase { public:
 
-  class TCPMapping : public Mapping { public:
+    class TCPFlow : public IPRewriterFlow { public:
 
-    TCPMapping(bool dst_anno);
+	TCPFlow(const IPFlowID &flowid, int output,
+		const IPFlowID &rewritten_flowid, int reply_output,
+		bool guaranteed, click_jiffies_t expiry_j,
+		IPRewriterBase *owner, int owner_input)
+	    : IPRewriterFlow(flowid, output, rewritten_flowid, reply_output,
+			     IP_PROTO_TCP, guaranteed, expiry_j,
+			     owner, owner_input) {
+	    _trigger[0] = _trigger[1] = 0;
+	    _delta[0] = _delta[1] = _old_delta[0] = _old_delta[1] = 0;
+	    _tflags = 0;
+	}
 
-    TCPMapping *reverse() const		{ return static_cast<TCPMapping *>(_reverse); }
+	enum {
+	    tf_seqno_delta = 1, tf_reply_seqno_delta = 2
+	};
 
-    bool have_seqno_delta() const	{ return _delta || _old_delta; }
+	int update_seqno_delta(bool direction, tcp_seq_t old_seqno, int32_t delta);
+	tcp_seq_t new_seq(bool direction, tcp_seq_t seqno) const;
+	tcp_seq_t new_ack(bool direction, tcp_seq_t seqno) const;
 
-    int update_seqno_delta(tcp_seq_t old_seqno, int32_t delta);
-    tcp_seq_t new_seq(tcp_seq_t) const;
-    tcp_seq_t new_ack(tcp_seq_t) const;
+	void apply(WritablePacket *p, bool direction, unsigned annos);
 
-    void apply(WritablePacket *p);
+	void unparse(StringAccum &sa, bool direction, click_jiffies_t now) const;
 
-    String s() const;
+      private:
 
-   private:
+	tcp_seq_t _trigger[2];
+	int32_t _delta[2];
+	int32_t _old_delta[2];
 
-    tcp_seq_t _trigger;
-    int32_t _delta;
-    int32_t _old_delta;
+	void apply_sack(bool direction, click_tcp *tcp, int transport_len);
 
-    uint32_t apply_sack(click_tcp *, int transport_length);
+    };
 
-  };
+    TCPRewriter();
+    ~TCPRewriter();
 
-  TCPRewriter();
-  ~TCPRewriter();
+    const char *class_name() const		{ return "TCPRewriter"; }
+    void *cast(const char *);
 
-  const char *class_name() const		{ return "TCPRewriter"; }
-  void *cast(const char *);
-  const char *port_count() const		{ return "1-/1-256"; }
-  const char *processing() const		{ return PUSH; }
+    int configure(Vector<String> &, ErrorHandler *);
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  void take_state(Element *, ErrorHandler *);
+    IPRewriterEntry *add_flow(int ip_p, const IPFlowID &flowid,
+			      const IPFlowID &rewritten_flowid, int input);
+    void destroy_flow(IPRewriterFlow *flow);
+    click_jiffies_t best_effort_expiry(IPRewriterFlow *flow) {
+	return flow->expiry() + tcp_flow_timeout(static_cast<TCPFlow *>(flow)) - _timeouts[1];
+    }
 
-  int notify_pattern(Pattern *, ErrorHandler *);
-  TCPMapping *apply_pattern(Pattern *, int ip_p, const IPFlowID &, int, int);
-  TCPMapping *get_mapping(int ip_p, const IPFlowID &) const;
+    void push(int, Packet *);
 
-  void push(int, Packet *);
+    void add_handlers();
 
-  void add_handlers();
-  int llrpc(unsigned, void *);
+ protected:
 
- private:
+    SizedHashAllocator<sizeof(TCPFlow)> _allocator;
+    unsigned _annos;
+    int _tcp_data_timeout;
+    int _tcp_done_timeout;
 
-  Map _tcp_map;
-  Mapping *_tcp_done;
-  Mapping *_tcp_done_tail;
+    int tcp_flow_timeout(const TCPFlow *mf) const {
+	if (mf->both_done())
+	    return _tcp_done_timeout;
+	else if (mf->both_data())
+	    return _tcp_data_timeout;
+	else
+	    return _timeouts[0];
+    }
 
-  Vector<InputSpec> _input_specs;
-  bool _dst_anno;
-
-  int _tcp_gc_interval;
-  int _tcp_done_gc_interval;
-  Timer _tcp_gc_timer;
-  Timer _tcp_done_gc_timer;
-  int _tcp_timeout_jiffies;
-  int _tcp_done_timeout_jiffies;
-
-  int _nmapping_failures;
-
-  static void tcp_gc_hook(Timer *, void *);
-  static void tcp_done_gc_hook(Timer *, void *);
-
-  static String dump_mappings_handler(Element *, void *);
-  static String dump_nmappings_handler(Element *, void *);
-  static String dump_patterns_handler(Element *, void *);
+    static String tcp_mappings_handler(Element *, void *);
 
 };
 
-inline TCPRewriter::TCPMapping *
-TCPRewriter::get_mapping(int ip_p, const IPFlowID &in) const
+inline void
+TCPRewriter::destroy_flow(IPRewriterFlow *flow)
 {
-  if (ip_p == IP_PROTO_TCP)
-    return static_cast<TCPMapping *>(_tcp_map[in]);
-  else
-    return 0;
+    unmap_flow(flow, _map);
+    static_cast<TCPFlow *>(flow)->~TCPFlow();
+    _allocator.deallocate(flow);
 }
 
 inline tcp_seq_t
-TCPRewriter::TCPMapping::new_seq(tcp_seq_t seqno) const
+TCPRewriter::TCPFlow::new_seq(bool direction, tcp_seq_t seqno) const
 {
-  return seqno + (SEQ_GEQ(seqno, _trigger) ? _delta : _old_delta);
+    return seqno + (SEQ_GEQ(seqno, _trigger[direction]) ? _delta[direction] : _old_delta[direction]);
 }
 
 inline tcp_seq_t
-TCPRewriter::TCPMapping::new_ack(tcp_seq_t ackno) const
+TCPRewriter::TCPFlow::new_ack(bool direction, tcp_seq_t ackno) const
 {
-  tcp_seq_t mod_ackno = ackno - _delta;
-  return (SEQ_GEQ(mod_ackno, _trigger) ? mod_ackno : ackno - _old_delta);
+    tcp_seq_t mod_ackno = ackno - _delta[!direction];
+    return (SEQ_GEQ(mod_ackno, _trigger[!direction]) ? mod_ackno : ackno - _old_delta[!direction]);
 }
 
 CLICK_ENDDECLS

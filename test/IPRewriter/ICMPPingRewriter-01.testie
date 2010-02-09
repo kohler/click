@@ -1,0 +1,37 @@
+%script
+
+# read from a hand-written IPSummaryDump file; check headers, emit to a dump
+$VALGRIND click -e "
+elementclass TPrint { \$x |
+	input -> t :: Tee
+		-> outer_ip::CheckIPHeader(VERBOSE true)
+		-> outer_icmp::CheckICMPHeader(VERBOSE true)
+		-> Discard;
+	t[1] -> IPPrint(\$x, TIMESTAMP false) -> output;
+}
+FromIPSummaryDump(IN1, STOP true, ZERO true, CHECKSUM true)
+	-> TPrint(a)
+	-> icmp :: ICMPPingRewriter(pattern 2.0.0.2 - 0-65535 0 1, drop)
+	-> TPrint(b)
+	-> ICMPPingResponder
+	-> TPrint(c)
+	-> [1] icmp [1]
+	-> TPrint(d)
+	-> Discard
+"
+
+%file IN1
+!data src dst icmp_type_name icmp_flowid
+!proto icmp
+1.0.0.1 5.0.0.5 echo 10
+1.0.0.2 5.0.0.5 echo 10
+
+%expect stderr
+a: 1.0.0.1 > 5.0.0.5: icmp echo (2560, 0)
+b: 2.0.0.2 > 5.0.0.5: icmp echo (2560, 0)
+c: 5.0.0.5 > 2.0.0.2: icmp echo-reply (2560, 0)
+d: 5.0.0.5 > 1.0.0.1: icmp echo-reply (2560, 0)
+a: 1.0.0.2 > 5.0.0.5: icmp echo (2560, 0)
+b: 2.0.0.2 > 5.0.0.5: icmp echo ({{(?!2560,)\d+}}, 0)
+c: 5.0.0.5 > 2.0.0.2: icmp echo-reply ({{(?!2560,)\d+}}, 0)
+d: 5.0.0.5 > 1.0.0.2: icmp echo-reply (2560, 0)

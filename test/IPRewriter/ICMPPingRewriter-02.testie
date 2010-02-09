@@ -1,0 +1,52 @@
+%script
+
+# read from a hand-written IPSummaryDump file; check headers, emit to a dump
+$VALGRIND click -e "
+elementclass TPrint { \$x |
+	input -> t :: Tee
+		-> outer_ip::CheckIPHeader(VERBOSE true)
+		-> outer_icmp::CheckICMPHeader(VERBOSE true)
+		-> Discard;
+	t[1] -> IPPrint(\$x, TIMESTAMP false) -> output;
+}
+FromIPSummaryDump(IN1, STOP true, ZERO true, CHECKSUM true)
+	-> a::TPrint(a)
+	-> icmp :: ICMPPingRewriter(pattern 2.0.0.2 - 0-65535# 0 1, drop)
+	-> b::TPrint(b)
+	-> ICMPPingResponder
+	-> c::TPrint(c)
+	-> [1] icmp [1]
+	-> d::TPrint(d)
+	-> Discard
+"
+
+%file IN1
+!data src dst icmp_type_name icmp_flowid icmp_seq
+!proto icmp
+1.0.0.1 5.0.0.5 echo 10230 0
+1.0.0.1 5.0.0.5 echo 10230 1
+1.0.0.1 5.0.0.5 echo 10230 65535
+1.0.0.2 5.0.0.5 echo 0 0
+1.0.0.2 5.0.0.5 echo 0 1
+
+%expect stderr
+a: 1.0.0.1 > 5.0.0.5: icmp echo (63015, 0)
+b: 2.0.0.2 > 5.0.0.5: icmp echo (0, 0)
+c: 5.0.0.5 > 2.0.0.2: icmp echo-reply (0, 0)
+d: 5.0.0.5 > 1.0.0.1: icmp echo-reply (63015, 0)
+a: 1.0.0.1 > 5.0.0.5: icmp echo (63015, 256)
+b: 2.0.0.2 > 5.0.0.5: icmp echo (0, 256)
+c: 5.0.0.5 > 2.0.0.2: icmp echo-reply (0, 256)
+d: 5.0.0.5 > 1.0.0.1: icmp echo-reply (63015, 256)
+a: 1.0.0.1 > 5.0.0.5: icmp echo (63015, 65535)
+b: 2.0.0.2 > 5.0.0.5: icmp echo (0, 65535)
+c: 5.0.0.5 > 2.0.0.2: icmp echo-reply (0, 65535)
+d: 5.0.0.5 > 1.0.0.1: icmp echo-reply (63015, 65535)
+a: 1.0.0.2 > 5.0.0.5: icmp echo (0, 0)
+b: 2.0.0.2 > 5.0.0.5: icmp echo (256, 0)
+c: 5.0.0.5 > 2.0.0.2: icmp echo-reply (256, 0)
+d: 5.0.0.5 > 1.0.0.2: icmp echo-reply (0, 0)
+a: 1.0.0.2 > 5.0.0.5: icmp echo (0, 256)
+b: 2.0.0.2 > 5.0.0.5: icmp echo (256, 256)
+c: 5.0.0.5 > 2.0.0.2: icmp echo-reply (256, 256)
+d: 5.0.0.5 > 1.0.0.2: icmp echo-reply (0, 256)

@@ -1,11 +1,7 @@
-%info
-
-IPRewriter transport checksums.
-
 %script
 
 $VALGRIND click -e "
-rw :: IPRewriter(pattern 1.0.0.1 1024-1026# - - 0 1, drop);
+rw :: UDPRewriter(pattern 1.0.0.1 1024-1026# - - 0 1, drop);
 FromIPSummaryDump(IN1, STOP true, CHECKSUM true)
 	-> c1 :: CheckIPHeader(VERBOSE true)
 	-> [0]rw[0]

@@ -1,16 +1,15 @@
 %info
 
-Check that TCPRewriter (and FTPPortMapper) correctly translate sequence
-numbers and checksums, even for SACK blocks.
+TCPRewriter and FTPPortMapper sequence number translation, even for SACK.
 
 %script
-click -e "
+$VALGRIND click -e "
 IPRewriterPatterns(pat 1.0.0.1 1024-65535# - -)
 rw :: TCPRewriter(pattern pat 0 0)
 FromIPSummaryDump(IN1, STOP true, CHECKSUM true)
 	-> CheckIPHeader(VERBOSE true)
 	-> CheckTCPHeader(VERBOSE true)
-	-> FTPPortMapper(rw, rw, pat 0 0)
+	-> FTPPortMapper(rw, rw, 0)
 	-> [0]rw[0]
 	-> CheckIPHeader(VERBOSE true)
 	-> CheckTCPHeader(VERBOSE true)

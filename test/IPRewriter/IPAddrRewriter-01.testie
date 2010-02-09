@@ -1,5 +1,10 @@
+%info
+
+IPAddrRewriter pattern parsing.
+
 %script
-click -e "
+
+$VALGRIND click -e "
 i :: Idle
 rw :: IPAddrRewriter(pattern 1.0.0.1 - 0 1,
   pattern 1.0.0.1-1.0.255.255 - 0 1,
@@ -9,7 +14,7 @@ i -> [0]rw i[1] -> [1]rw i[2] -> [2]rw i[3] -> [3]rw
 rw[0] -> i rw[1] -> i
 " -h rw.patterns -q
 
-click -e "
+$VALGRIND click -e "
 i :: Idle
 rw :: IPAddrRewriter(pattern 1.0.0.x - 0 1,
   pattern 1.255.0.0-1.0.255.255 - 0 1)
@@ -18,10 +23,10 @@ rw[0] -> i rw[1] -> i
 " 2>X || true
 
 %expect stdout
-1.0.0.1 - [0]
-1.0.0.1-1.0.255.255 - [0]
-1.0.0.1-1.0.0.254 - [0]
-1.0.0.1-1.255.255.254 - [0]
+1.0.0.1 -
+1.0.0.1-1.0.255.255 -
+1.0.0.1-1.0.0.254 -
+1.0.0.1-1.255.255.254 -
 
 %expect X
   input spec 0: bad source address
@@ -29,4 +34,5 @@ rw[0] -> i rw[1] -> i
 Router could not be initialized!
 
 %ignorex X
+^==.*
 config.*

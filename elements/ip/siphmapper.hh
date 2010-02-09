@@ -3,7 +3,7 @@
 #include <click/element.hh>
 #include <click/ipflowid.hh>
 #include <clicknet/ip.h>
-#include "elements/ip/iprw.hh"
+#include "elements/ip/iprewriterbase.hh"
 #include <click/glue.hh>
 CLICK_DECLS
 
@@ -190,24 +190,23 @@ class SourceIPHashMapper : public Element, public IPMapper { public:
   const char *class_name() const	{ return "SourceIPHashMapper"; }
   void *cast(const char *);
 
-  int configure_phase() const		{ return IPRw::CONFIGURE_PHASE_MAPPER;}
+  int configure_phase() const		{ return IPRewriterBase::CONFIGURE_PHASE_MAPPER;}
   int configure(Vector<String> &, ErrorHandler *);
   void cleanup(CleanupStage);
 
-  void notify_rewriter(IPRw *, ErrorHandler *);
-  IPRw::Mapping *get_map(IPRw *, int ip_p, const IPFlowID &, Packet *);
+    void notify_rewriter(IPRewriterBase *, ErrorHandler *);
+    int rewrite_flowid(IPRewriterInput *input,
+		       const IPFlowID &flowid, IPFlowID &rewritten_flowid,
+		       Packet *p, int mapid);
 
 protected:
-  int parse_server (const String &conf, IPRw::Pattern **pstore,
-		    int *fport_store, int *rport_store,
-		    int *id_store, Element *e, ErrorHandler *errh);
+    int parse_server(const String &conf, IPRewriterInput *input,
+		     int *id_store, Element *e, ErrorHandler *errh);
 
  private:
 
-  Vector<IPRw::Pattern *> _patterns;
-  Vector<int> _forward_outputs;
-  Vector<int> _reverse_outputs;
-  chash_t<int> *_hasher;
+    Vector<IPRewriterInput> _is;
+    chash_t<int> *_hasher;
 };
 
 CLICK_ENDDECLS

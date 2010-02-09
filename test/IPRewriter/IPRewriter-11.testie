@@ -1,0 +1,98 @@
+%info
+
+Reserved area for new flows.
+
+%script
+$VALGRIND click --simtime -e "
+rw :: IPRewriter(pattern 2.0.0.1 1024-65535# - - 0 1, drop,
+	MAPPING_CAPACITY 8);
+FromIPSummaryDump(IN1, STOP true, CHECKSUM true, TIMING true)
+	-> ps :: PaintSwitch
+	-> rw
+	-> Paint(0)
+	-> t :: ToIPSummaryDump(OUT1, CONTENTS direction proto src sport dst dport);
+ps[1] -> [1] rw [1] -> Paint(1) -> t;
+DriverManager(pause, print rw.tcp_mappings, print '==', print rw.udp_mappings)
+"
+
+%file IN1
+!data direction proto timestamp src sport dst dport payload
+# 9 empty flows, the last will be admission controlled
+> T .1 1.0.0.1 11 2.0.0.2 21 XXX
+> T .2 1.0.0.2 12 2.0.0.2 22 XXX
+> T .3 1.0.0.3 13 2.0.0.2 23 XXX
+> T .4 1.0.0.4 14 2.0.0.2 24 XXX
+> T .5 1.0.0.5 15 2.0.0.2 25 XXX
+> T .6 1.0.0.6 16 2.0.0.2 26 XXX
+> T .7 1.0.0.7 17 2.0.0.2 27 XXX
+> T .8 1.0.0.8 18 2.0.0.2 28 XXX
+> T .9 1.0.0.9 19 2.0.0.2 29 XXX
+# show that flow 9 is out
+< T 1.1 2.0.0.2 21 2.0.0.1 1024 XXX
+< T 1.2 2.0.0.2 22 2.0.0.1 1025 XXX
+< T 1.3 2.0.0.2 23 2.0.0.1 1026 XXX
+< T 1.4 2.0.0.2 24 2.0.0.1 1027 XXX
+< T 1.5 2.0.0.2 25 2.0.0.1 1028 XXX
+< T 1.6 2.0.0.2 26 2.0.0.1 1029 XXX
+< T 1.7 2.0.0.2 27 2.0.0.1 1030 XXX
+< T 1.8 2.0.0.2 28 2.0.0.1 1031 XXX
+< T 1.9 2.0.0.2 29 2.0.0.1 1032 XXX
+# Now all those flows are bidirectional and should have long timeouts.
+# Wait 5 seconds to expire the guarantees; then the next new flow should kick
+# out the oldest best effort flow.
+> U 7.0 1.0.0.10 20 2.0.0.2 30 XXX
+< T 7.1 2.0.0.2 21 2.0.0.1 1024 XXX
+< T 7.2 2.0.0.2 22 2.0.0.1 1025 XXX
+< T 7.3 2.0.0.2 23 2.0.0.1 1026 XXX
+< T 7.4 2.0.0.2 24 2.0.0.1 1027 XXX
+< T 7.5 2.0.0.2 25 2.0.0.1 1028 XXX
+< T 7.6 2.0.0.2 26 2.0.0.1 1029 XXX
+< T 7.7 2.0.0.2 27 2.0.0.1 1030 XXX
+< T 7.8 2.0.0.2 28 2.0.0.1 1031 XXX
+< T 7.9 2.0.0.2 29 2.0.0.1 1032 XXX
+< U 8.0 2.0.0.2 30 2.0.0.1 1033 XXX
+# After that UDP flow's guarantee expires, it is the oldest best-effort flow.
+# A new flow will kick it out.
+> T 14.0 1.0.0.11 21 2.0.0.2 31 XXX
+< U 14.1 2.0.0.2 30 2.0.0.1 1033 XXX
+> T 14.2 1.0.0.11 21 2.0.0.2 31 XXX
+# It is still unidirectional, so if we wait 5 seconds for its guarantee to
+# expire, the next UDP packet will kill it since it has the earliest
+# expiration.
+> U 20.0 1.0.0.12 22 2.0.0.2 32 XXX
+< T 20.1 2.0.0.2 31 2.0.0.1 1034 XXX
+< U 20.2 2.0.0.2 32 2.0.0.1 1035 XXX
+
+%expect OUT1
+> T 2.0.0.1 1024 2.0.0.2 21
+> T 2.0.0.1 1025 2.0.0.2 22
+> T 2.0.0.1 1026 2.0.0.2 23
+> T 2.0.0.1 1027 2.0.0.2 24
+> T 2.0.0.1 1028 2.0.0.2 25
+> T 2.0.0.1 1029 2.0.0.2 26
+> T 2.0.0.1 1030 2.0.0.2 27
+> T 2.0.0.1 1031 2.0.0.2 28
+< T 2.0.0.2 21 1.0.0.1 11
+< T 2.0.0.2 22 1.0.0.2 12
+< T 2.0.0.2 23 1.0.0.3 13
+< T 2.0.0.2 24 1.0.0.4 14
+< T 2.0.0.2 25 1.0.0.5 15
+< T 2.0.0.2 26 1.0.0.6 16
+< T 2.0.0.2 27 1.0.0.7 17
+< T 2.0.0.2 28 1.0.0.8 18
+> U 2.0.0.1 1033 2.0.0.2 30
+< T 2.0.0.2 22 1.0.0.2 12
+< T 2.0.0.2 23 1.0.0.3 13
+< T 2.0.0.2 24 1.0.0.4 14
+< T 2.0.0.2 25 1.0.0.5 15
+< T 2.0.0.2 26 1.0.0.6 16
+< T 2.0.0.2 27 1.0.0.7 17
+< T 2.0.0.2 28 1.0.0.8 18
+< U 2.0.0.2 30 1.0.0.10 20
+> T 2.0.0.1 1034 2.0.0.2 31
+> T 2.0.0.1 1034 2.0.0.2 31
+> U 2.0.0.1 1035 2.0.0.2 32
+< U 2.0.0.2 32 1.0.0.12 22
+
+%ignorex
+!.*

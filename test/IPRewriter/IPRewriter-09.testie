@@ -1,0 +1,54 @@
+%info
+Mapping capacity sharing and overflow (small capacity).
+
+%script
+
+$VALGRIND click --simtime -e "
+rw1 :: IPRewriter(pattern 1.0.0.2 1024-65534# - - 0 1, drop, MAPPING_CAPACITY rw2);
+rw2 :: IPRewriter(pattern 1.0.0.3 1024-65534# - - 0 1, drop, MAPPING_CAPACITY 3);
+
+FromIPSummaryDump(IN1, TIMING true, STOP true)
+	-> ps :: PaintSwitch;
+td :: ToIPSummaryDump(OUT1, CONTENTS link src sport dst dport tcp_seq);
+ps[0] -> [0]rw1[0] -> Paint(0) -> td;
+ps[1] -> [1]rw1[1] -> Paint(1) -> td;
+ps[2] -> [0]rw2[0] -> Paint(2) -> td;
+ps[3] -> [1]rw2[1] -> Paint(3) -> td;
+"
+
+%file IN1
+!proto T
+!data timestamp link src sport dst dport tcp_seq payload
+.1 0 53.1.1.1 1 2.115.2.2 2 1 f1_capacity_ok
+.2 1 2.115.2.2 2 1.0.0.2 1024 2 f1_reverse
+.3 2 53.1.1.1 1 2.115.2.2 2 3 f2_capacity_ok
+.4 2 53.1.1.2 1 2.115.2.2 2 4 f3_capacity_now_full
+.5 2 53.1.1.3 1 2.115.2.2 2 5 f4_admission_controlled
+.6 1 2.115.2.2 2 1.0.0.2 1024 6 f1_reverse
+.7 3 2.115.2.2 2 1.0.0.3 1024 7 f2_reverse
+.8 3 2.115.2.2 2 1.0.0.3 1025 8 f3_reverse
+.9 3 2.115.2.2 2 1.0.0.3 1026 9 f4_reverse_SHOULD_FAIL
+5.65 0 53.1.1.4 1 2.115.2.2 2 10 f5_bumps_f1_others_guaranteed
+5.66 0 53.1.1.5 1 2.115.2.2 2 11 f6_admission_controlled
+6.1 1 2.115.2.2 2 1.0.0.2 1024 12 f1_reverse_SHOULD_FAIL
+6.2 3 2.115.2.2 2 1.0.0.3 1024 13 f2_reverse
+6.3 3 2.115.2.2 2 1.0.0.3 1025 14 f3_reverse
+6.4 3 2.115.2.2 2 1.0.0.3 1026 15 f4_reverse_SHOULD_FAIL
+6.5 1 2.115.2.2 2 1.0.0.2 1025 16 f5_reverse
+6.6 1 2.115.2.2 2 1.0.0.2 1026 17 f6_reverse_SHOULD_FAIL
+
+%expect OUT1
+0 1.0.0.2 1024 2.115.2.2 2 1
+1 2.115.2.2 2 53.1.1.1 1 2
+2 1.0.0.3 1024 2.115.2.2 2 3
+2 1.0.0.3 1025 2.115.2.2 2 4
+1 2.115.2.2 2 53.1.1.1 1 6
+3 2.115.2.2 2 53.1.1.1 1 7
+3 2.115.2.2 2 53.1.1.2 1 8
+0 1.0.0.2 1025 2.115.2.2 2 10
+3 2.115.2.2 2 53.1.1.1 1 13
+3 2.115.2.2 2 53.1.1.2 1 14
+1 2.115.2.2 2 53.1.1.4 1 16
+
+%ignorex OUT1
+^!.*

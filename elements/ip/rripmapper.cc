@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
+ * Copyright (c) 2009-2010 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -17,6 +18,7 @@
 
 #include <click/config.h>
 #include "rripmapper.hh"
+#include "elements/ip/iprwpattern.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 CLICK_DECLS
@@ -43,63 +45,66 @@ RoundRobinIPMapper::cast(const char *name)
 int
 RoundRobinIPMapper::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (conf.size() == 0)
-    return errh->error("no patterns given");
-  else if (conf.size() == 1)
-    errh->warning("only one pattern given");
+    if (conf.size() == 0)
+	return errh->error("no patterns given");
+    else if (conf.size() == 1)
+	errh->warning("only one pattern given");
 
-  int before = errh->nerrors();
+    int before = errh->nerrors();
 
-  for (int i = 0; i < conf.size(); i++) {
-    IPRw::Pattern *p;
-    int f, r;
-    if (IPRw::Pattern::parse_with_ports(conf[i], &p, &f, &r, this, errh) >= 0) {
-      p->use();
-      _patterns.push_back(p);
-      _forward_outputs.push_back(f);
-      _reverse_outputs.push_back(r);
+    for (int i = 0; i < conf.size(); i++) {
+	IPRewriterInput is;
+	is.kind = IPRewriterInput::i_pattern;
+	if (IPRewriterPattern::parse_with_ports(conf[i], &is, this, errh)) {
+	    is.u.pattern->use();
+	    _is.push_back(is);
+	}
     }
-  }
 
-  _last_pattern = 0;
-  return (errh->nerrors() == before ? 0 : -1);
+    _last_pattern = 0;
+    return (errh->nerrors() == before ? 0 : -1);
 }
 
 void
 RoundRobinIPMapper::cleanup(CleanupStage)
 {
-  for (int i = 0; i < _patterns.size(); i++)
-    _patterns[i]->unuse();
+    for (int i = 0; i < _is.size(); i++)
+	_is[i].u.pattern->unuse();
 }
 
 void
-RoundRobinIPMapper::notify_rewriter(IPRw *rw, ErrorHandler *errh)
+RoundRobinIPMapper::notify_rewriter(IPRewriterBase *rw, ErrorHandler *errh)
 {
-  int no = rw->noutputs();
-  for (int i = 0; i < _patterns.size(); i++) {
-    if (_forward_outputs[i] >= no || _reverse_outputs[i] >= no)
-      errh->error("port in `%s' out of range for `%s'", declaration().c_str(), rw->declaration().c_str());
-    rw->notify_pattern(_patterns[i], errh);
-  }
+    int no = rw->noutputs();
+    for (int i = 0; i < _is.size(); i++) {
+	if (_is[i].foutput >= no || _is[i].routput >= no)
+	    errh->error("port in %<%s%> out of range for %<%s%>", declaration().c_str(), rw->declaration().c_str());
+    }
 }
 
-IPRw::Mapping *
-RoundRobinIPMapper::get_map(IPRw *rw, int ip_p, const IPFlowID &flow, Packet *)
+int
+RoundRobinIPMapper::rewrite_flowid(IPRewriterInput *input,
+				   const IPFlowID &flowid,
+				   IPFlowID &rewritten_flowid,
+				   Packet *p, int mapid)
 {
-  int first_pattern = _last_pattern;
-  do {
-    IPRw::Pattern *pat = _patterns[_last_pattern];
-    int fport = _forward_outputs[_last_pattern];
-    int rport = _reverse_outputs[_last_pattern];
-    _last_pattern++;
-    if (_last_pattern == _patterns.size())
-      _last_pattern = 0;
-    if (IPRw::Mapping *m = rw->apply_pattern(pat, ip_p, flow, fport, rport))
-      return m;
-  } while (_last_pattern != first_pattern);
-  return 0;
+    for (int i = 0; i < _is.size(); ++i) {
+	IPRewriterInput &is = _is[_last_pattern];
+	++_last_pattern;
+	if (_last_pattern == _is.size())
+	    _last_pattern = 0;
+	is.reply_element = input->reply_element;
+	int result = is.rewrite_flowid(flowid, rewritten_flowid, p, mapid);
+	if (result != IPRewriterBase::rw_drop
+	    || is.kind == IPRewriterInput::i_drop) {
+	    input->foutput = is.foutput;
+	    input->routput = is.routput;
+	    return result;
+	}
+    }
+    return IPRewriterBase::rw_drop;
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(IPRw)
+ELEMENT_REQUIRES(IPRewriterBase)
 EXPORT_ELEMENT(RoundRobinIPMapper)
