@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * sorttest.{cc,hh} -- regression test element for click_qsort
+ * sorttest.{cc,hh} -- regression test element for Vector
  * Eddie Kohler
  *
  * Copyright (c) 2008 Regents of the University of California
@@ -34,7 +34,7 @@ SortTest::~SortTest()
 {
 }
 
-static const char *classes[] = {
+static const char * const unsorted_classes[] = {
 "ToyTCP",
 "SetIPDSCP",
 "DupPath",
@@ -291,6 +291,8 @@ static const char *classes[] = {
 "Block",
 "SpinlockInfo"
 };
+
+const size_t nclasses = sizeof(unsorted_classes) / sizeof(unsorted_classes[0]);
 
 static const char * const sorted_classes[] = {
 "ARPFaker",
@@ -553,6 +555,8 @@ static const char * const sorted_classes[] = {
 static Vector<String> *strvec;
 static Vector<size_t> *sizevec;
 
+typedef int (*qsort_compar_t)(const void *, const void *);
+
 static int compar(const void *xa, const void *xb, void *)
 {
     const char *a = * (const char **) xa;
@@ -619,6 +623,12 @@ static int size_t_permute_rev_compar(const void *xa, const void *xb, void *)
     ssize_t diff = (*sizevec)[*b] - (*sizevec)[*a];
     return (diff < 0 ? -1 : (diff == 0 ? *a - *b : 1));
 }
+
+static int string_bogus_compar(const void *, const void *, void *)
+{
+    return 1;
+}
+
 
 int
 SortTest::configure(Vector<String> &conf, ErrorHandler *errh)
@@ -703,7 +713,7 @@ SortTest::initialize_vec(ErrorHandler *)
 
 #if CLICK_USERLEVEL
 	if (_stdc)
-	    qsort(begin, n, size, (int (*)(const void *, const void *)) compar);
+	    qsort(begin, n, size, (qsort_compar_t) compar);
 	else
 #endif
 	click_qsort(begin, n, size, compar);
@@ -726,7 +736,7 @@ SortTest::initialize_vec(ErrorHandler *)
 
 #if CLICK_USERLEVEL
 	if (_stdc)
-	    qsort(begin, n, size, (int (*)(const void *, const void *)) compar);
+	    qsort(begin, n, size, (qsort_compar_t) compar);
 	else
 #endif
 	click_qsort(begin, n, size, compar);
@@ -750,13 +760,17 @@ SortTest::initialize(ErrorHandler *errh)
     if (_strvec.size() || _sizevec.size())
 	return initialize_vec(errh);
 
-    size_t nclasses = sizeof(classes) / sizeof(classes[0]);
+    const char **classes = new const char *[nclasses];
+
+    memcpy(classes, unsorted_classes, sizeof(unsorted_classes));
     click_qsort(classes, nclasses, sizeof(classes[0]), compar);
 
     for (int i = 0; i < 20; i++) {
 	for (size_t x = 0; x < nclasses; x++)
-	    if (strcmp(classes[x], sorted_classes[x]) != 0)
+	    if (strcmp(classes[x], sorted_classes[x]) != 0) {
+		delete[] classes;
 		return errh->error("sort %d, element %u differs (%s vs. %s)", i, x, classes[x], sorted_classes[x]);
+	    }
 
 	for (size_t permute = 0; permute < nclasses * 2; permute++) {
 	    size_t a = click_random() % nclasses;
@@ -769,10 +783,14 @@ SortTest::initialize(ErrorHandler *errh)
 	click_qsort(classes, nclasses, sizeof(classes[0]), compar);
     }
 
-    memcpy(classes, sorted_classes, sizeof(classes));
+    memcpy(classes, sorted_classes, sizeof(sorted_classes));
     click_qsort(classes, nclasses, sizeof(classes[0]), compar);
 
+    memcpy(classes, unsorted_classes, sizeof(unsorted_classes));
+    click_qsort(classes, nclasses, sizeof(classes[0]), string_bogus_compar);
+
     errh->message("All tests pass!");
+    delete[] classes;
     return 0;
 }
 
