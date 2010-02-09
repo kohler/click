@@ -46,7 +46,7 @@ SetTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
 		     cpEnd) < 0)
 	return -1;
     if ((first && delta) || (_tv.sec() >= 0 && delta))
-	return errh->error("must specify at most one of 'FIRST' and 'DELTA'");
+	return errh->error("must specify at most one of %<FIRST%> and %<DELTA%>");
     _action = (delta ? ACT_DELTA : (_tv.sec() < 0 ? ACT_NOW : ACT_TIME) + (first ? ACT_FIRST_NOW : ACT_NOW));
     return 0;
 }
