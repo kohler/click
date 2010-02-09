@@ -84,6 +84,9 @@ UDPIPEncap::simple_action(Packet *p_in)
   click_ip *ip = reinterpret_cast<click_ip *>(p->data());
   click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
 
+#if !HAVE_INDIFFERENT_ALIGNMENT
+  assert((uintptr_t)ip % 4 == 0);
+#endif
   // set up IP header
   ip->ip_v = 4;
   ip->ip_hl = sizeof(click_ip) >> 2;
