@@ -6,10 +6,6 @@
 #include <click/element.hh>
 #include <click/timestamp.hh>
 CLICK_DECLS
-class Element;
-class Router;
-class Timer;
-class Task;
 
 typedef void (*TimerCallback)(Timer *timer, void *user_data);
 typedef TimerCallback TimerHook CLICK_DEPRECATED;
