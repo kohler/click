@@ -86,6 +86,7 @@ ICMPPingResponder::simple_action(Packet *p_in)
     icmph->icmp_code = 0;
     new_hw = ((uint16_t *)icmph)[0];
     click_update_in_cksum(&icmph->icmp_cksum, old_hw, new_hw);
+    click_update_zero_in_cksum(&icmph->icmp_cksum, q->transport_header(), q->transport_length());
 
     return q;
 }
