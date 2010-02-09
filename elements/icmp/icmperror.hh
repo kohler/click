@@ -14,8 +14,8 @@ CLICK_DECLS
  * The ICMP packet's IP source address is set to SRC.
  * The error packet will include (as payload)
  * the original packet's IP header and an initial segment of its
- * IP payload. ICMPError sets the packet destination IP and
- * fix_ip_src annotations.
+ * IP payload. ICMPError sets the packet destination IP annotation and,
+ * optionally, the fix_ip_src annotation.
  *
  * TYPE and CODE may be integers between 0 and 255 or mnemonic names; CODE
  * defaults to 0. Valid named TYPEs are `unreachable' [3], `sourcequench' [4],
@@ -60,6 +60,31 @@ CLICK_DECLS
  *
  * Will not generate a packet larger than MTU, which defaults to 576.
  *
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item BADADDRS
+ *
+ * A list of source IP addresses for which ICMP errors should not be
+ * generated.  Usually the limited broadcast address(es) of the current
+ * subnet.
+ *
+ * =item MTU
+ *
+ * Unsigned.  The maximum error packet size generated.  Defaults to 576.
+ *
+ * =item PMTU
+ *
+ * Unsigned.  The maximum MTU for the path, reported in unreachable messages.
+ *
+ * =item USE_FIX_ANNO
+ *
+ * Boolean.  If false, do not set the fix_ip_src annotation on output packets.
+ * Defaults to true.
+ *
+ * =back
+ *
  * =e
  * This configuration fragment produces ICMP Time Exceeded error
  * messages in response to TTL expirations, but limits the
@@ -85,7 +110,10 @@ class ICMPError : public Element { public:
     const char *class_name() const		{ return "ICMPError"; }
     const char *port_count() const		{ return PORTS_1_1; }
     const char *processing() const		{ return AGNOSTIC; }
+
     int configure(Vector<String> &, ErrorHandler *);
+    bool can_live_reconfigure() const		{ return true; }
+    void add_handlers();
 
     Packet *simple_action(Packet *);
 
@@ -97,6 +125,7 @@ class ICMPError : public Element { public:
     Vector<IPAddress> _bad_addrs;
     unsigned _mtu;
     unsigned _pmtu;
+    bool _use_fix_anno;
 
     static bool is_error_type(int);
     bool unicast(struct in_addr) const;

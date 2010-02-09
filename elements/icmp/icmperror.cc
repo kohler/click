@@ -49,24 +49,38 @@ int
 ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String code_str = "0";
-    _mtu = 576;
-    _pmtu = 0;
+    unsigned mtu = 576, pmtu = 0;
+    IPAddress src_ip;
+    int type, code;
+    Vector<IPAddress> bad_addrs;
+    bool use_fix_anno = true;
+
     if (cp_va_kparse(conf, this, errh,
-		     "SRC", cpkP+cpkM, cpIPAddress, &_src_ip,
-		     "TYPE", cpkP+cpkM, cpNamedInteger, NameInfo::T_ICMP_TYPE, &_type,
+		     "SRC", cpkP+cpkM, cpIPAddress, &src_ip,
+		     "TYPE", cpkP+cpkM, cpNamedInteger, NameInfo::T_ICMP_TYPE, &type,
 		     "CODE", cpkP, cpWord, &code_str,
-		     "BADADDRS", cpkP, cpIPAddressList, &_bad_addrs,
-		     "MTU", 0, cpUnsigned, &_mtu,
-		     "PMTU", 0, cpUnsigned, &_pmtu,
+		     "BADADDRS", cpkP, cpIPAddressList, &bad_addrs,
+		     "MTU", 0, cpUnsigned, &mtu,
+		     "PMTU", 0, cpUnsigned, &pmtu,
+		     "SET_FIX_ANNO", 0, cpBool, &use_fix_anno,
 		     cpEnd) < 0)
 	return -1;
-    if (_type < 0 || _type > 255)
+
+    if (type < 0 || type > 255)
 	return errh->error("ICMP type must be between 0 and 255");
-    else if (!is_error_type(_type))
-	return errh->error("ICMP type %d is not an error type", _type);
-    if (!NameInfo::query_int(NameInfo::T_ICMP_CODE + _type, this, code_str, &_code)
-	|| _code < 0 || _code > 255)
+    else if (!is_error_type(type))
+	return errh->error("ICMP type %d is not an error type", type);
+    if (!NameInfo::query_int(NameInfo::T_ICMP_CODE + type, this, code_str, &code)
+	|| code < 0 || code > 255)
 	return errh->error("argument 2 takes ICMP code (integer between 0 and 255)");
+
+    _src_ip = src_ip;
+    _type = type;
+    _code = code;
+    _bad_addrs.swap(bad_addrs);
+    _mtu = mtu;
+    _pmtu = pmtu;
+    _use_fix_anno = use_fix_anno;
     return 0;
 }
 
@@ -219,6 +233,7 @@ ICMPError::simple_action(Packet *p)
 
   // prepare IP header; guaranteed that packet data is aligned
   nip = reinterpret_cast<click_ip *>(q->data());
+
   nip->ip_v = 4;
   nip->ip_tos = 0;		// XXX should be same as incoming datagram?
   nip->ip_id = htons(id++);
@@ -231,7 +246,7 @@ ICMPError::simple_action(Packet *p)
 
   // include reversed source route if appropriate 4.3.2.6
   if (source_route) {
-    uint8_t *o = q->data() + sizeof(click_ip);
+    uint8_t *o = (uint8_t *) (nip + 1);
     int olen = source_route[2] - 1;
     o[0] = source_route[0];	// copy option type
     o[1] = olen;
@@ -271,17 +286,26 @@ ICMPError::simple_action(Packet *p)
   icp->icmp_cksum = click_in_cksum((unsigned char *)icp, sizeof(click_icmp) + xlen);
 
   // finish off IP header
-  nip->ip_len = htons(q->length());
+  nip->ip_len = htons(q->network_length());
   nip->ip_sum = click_in_cksum((unsigned char *)nip, nip->ip_hl << 2);
 
   // set annotations
   q->set_dst_ip_anno(IPAddress(nip->ip_dst));
-  SET_FIX_IP_SRC_ANNO(q, 1);
+  if (_use_fix_anno)
+    SET_FIX_IP_SRC_ANNO(q, 1);
   q->timestamp_anno().assign_now();
 
  out:
   p->kill();
   return(q);
+}
+
+void
+ICMPError::add_handlers()
+{
+    add_data_handlers("src", Handler::OP_READ | Handler::OP_WRITE, &_src_ip);
+    add_data_handlers("mtu", Handler::OP_READ | Handler::OP_WRITE, &_mtu);
+    add_data_handlers("pmtu", Handler::OP_READ | Handler::OP_WRITE, &_pmtu);
 }
 
 CLICK_ENDDECLS
