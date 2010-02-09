@@ -3,6 +3,7 @@
  * Eddie Kohler, Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -17,11 +18,13 @@
 
 #include <click/config.h>
 #include "decipttl.hh"
-#include <clicknet/ip.h>
 #include <click/glue.hh>
+#include <click/confparse.hh>
+#include <clicknet/ip.h>
 CLICK_DECLS
 
 DecIPTTL::DecIPTTL()
+    : _active(true), _multicast(true)
 {
     _drops = 0;
 }
@@ -30,21 +33,34 @@ DecIPTTL::~DecIPTTL()
 {
 }
 
+int
+DecIPTTL::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+    return cp_va_kparse(conf, this, errh,
+			"ACTIVE", 0, cpBool, &_active,
+			"MULTICAST", 0, cpBool, &_multicast,
+			cpEnd);
+}
+
 Packet *
 DecIPTTL::simple_action(Packet *p)
 {
-    WritablePacket *q = p->uniqueify();
-    if (!q)
-	return 0;
+    assert(p->has_network_header());
+    if (!_active)
+	return p;
+    const click_ip *ip_in = p->ip_header();
+    if (!_multicast && IPAddress(ip_in->ip_dst).is_multicast())
+	return p;
 
-    assert(q->has_network_header());
-    click_ip *ip = q->ip_header();
-    if (unlikely(ip->ip_ttl <= 1)) {
+    if (ip_in->ip_ttl <= 1) {
 	++_drops;
-	checked_output_push(1, q);
+	checked_output_push(1, p);
 	return 0;
-
     } else {
+	WritablePacket *q = p->uniqueify();
+	if (!q)
+	    return 0;
+	click_ip *ip = q->ip_header();
 	--ip->ip_ttl;
 
 	// 19.Aug.1999 - incrementally update IP checksum as suggested by SOSP
@@ -65,6 +81,7 @@ void
 DecIPTTL::add_handlers()
 {
     add_data_handlers("drops", Handler::OP_READ, &_drops);
+    add_data_handlers("active", Handler::OP_READ | Handler::OP_WRITE | Handler::CHECKBOX, &_active);
 }
 
 CLICK_ENDDECLS

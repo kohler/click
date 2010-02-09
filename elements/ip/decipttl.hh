@@ -7,7 +7,7 @@ CLICK_DECLS
 
 /*
  * =c
- * DecIPTTL
+ * DecIPTTL([keyword I<MULTICAST>])
  * =s ip
  * decrements IP time-to-live, drops dead packets
  * =d
@@ -19,6 +19,19 @@ CLICK_DECLS
  * and sends the packet to output 0.
  *
  * Ordinarily output 1 is connected to an ICMP error packet generator.
+ *
+ * =over 8
+ *
+ * =item ACTIVE
+ *
+ * Boolean.  If false, do not decrement any packets' TTLs.  Defaults to true.
+ *
+ * =item MULTICAST
+ *
+ * Boolean.  If false, do not decrement the TTLs for multicast packets.
+ * Defaults to true.
+ *
+ * =back
  *
  * =e
  * This is a typical IP input processing sequence:
@@ -38,6 +51,7 @@ class DecIPTTL : public Element { public:
     const char *port_count() const		{ return PORTS_1_1X2; }
     const char *processing() const		{ return PROCESSING_A_AH; }
 
+    int configure(Vector<String> &conf, ErrorHandler *errh);
     void add_handlers();
 
     Packet *simple_action(Packet *);
@@ -45,6 +59,8 @@ class DecIPTTL : public Element { public:
   private:
 
     atomic_uint32_t _drops;
+    bool _active;
+    bool _multicast;
 
 };
 
