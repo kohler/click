@@ -38,7 +38,15 @@ Default is false.
 String. Only available at user level. PrintV<> information to the file specified
 by OUTFILE instead of standard error.
 
+=item ACTIVE
+
+Boolean.  If false, don't print messages.  Default is true.
+
 =back
+
+=h active read/write
+
+Returns or sets the ACTIVE parameter.
 
 =a Print, CheckARPHeader */
 
@@ -54,6 +62,7 @@ class ARPPrint : public Element { public:
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
+    void add_handlers();
 
     Packet *simple_action(Packet *);
 
@@ -62,6 +71,7 @@ class ARPPrint : public Element { public:
     String _label;
     bool _print_timestamp;
     bool _print_ether;
+    bool _active;
 
 #if CLICK_USERLEVEL
     String _outfilename;

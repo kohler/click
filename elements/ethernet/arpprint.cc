@@ -52,7 +52,7 @@ CLICK_DECLS
 
 
 ARPPrint::ARPPrint()
-    : _label(), _print_timestamp(true), _print_ether(false)
+    : _label(), _print_timestamp(true), _print_ether(false), _active(true)
 {
 #if CLICK_USERLEVEL
     _outfile = 0;
@@ -72,6 +72,7 @@ ARPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "LABEL", cpkP, cpString, &_label,
 		     "TIMESTAMP", 0, cpBool, &_print_timestamp,
 		     "ETHER", 0, cpBool, &_print_ether,
+		     "ACTIVE", 0, cpBool, &_active,
 #if CLICK_USERLEVEL
 		     "OUTFILE", 0, cpFilename, &_outfilename,
 #endif
@@ -108,11 +109,10 @@ ARPPrint::cleanup(CleanupStage)
 }
 
 
-
 Packet *
 ARPPrint::simple_action(Packet *p)
 {
-    if (!p->has_network_header())
+    if (!_active || !p->has_network_header())
 	return p;
 
     StringAccum sa;
@@ -211,7 +211,11 @@ ARPPrint::simple_action(Packet *p)
 }
 
 
+void
+ARPPrint::add_handlers()
+{
+    add_data_handlers("active", Handler::OP_READ | Handler::OP_WRITE, &_active);
+}
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(ARPPrint)
-
