@@ -40,10 +40,12 @@ IPFragmenter::~IPFragmenter()
 int
 IPFragmenter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    _headroom = Packet::default_headroom;
     if (cp_va_kparse(conf, this, errh,
 		     "MTU", cpkP+cpkM, cpUnsigned, &_mtu,
 		     "HONOR_DF", cpkP, cpBool, &_honor_df,
 		     "VERBOSE", cpkP, cpBool, &_verbose,
+		     "HEADROOM", 0, cpUnsigned, &_headroom,
 		     cpEnd) < 0)
 	return -1;
     if (_mtu < 8)
@@ -127,7 +129,7 @@ IPFragmenter::fragment(Packet *p_in)
 	if (out_dlen + off > in_dlen)
 	    out_dlen = in_dlen - off;
 
-	WritablePacket *q = Packet::make(out_hlen + out_dlen);
+	WritablePacket *q = Packet::make(_headroom, 0, out_hlen + out_dlen, 0);
 	if (q) {
 	    q->set_network_header(q->data(), out_hlen);
 	    click_ip *qip = q->ip_header();

@@ -43,6 +43,11 @@ CLICK_DECLS
  * packet with DF; otherwise, it will print a message only the first 5 times.
  * Default is false.
  *
+ * =item HEADROOM
+ *
+ * Unsigned.  Sets the headroom on the output packets to an explicit value,
+ * rather than the default (which is usually about 28 bytes).
+ *
  * =e
  *   ... -> fr::IPFragmenter(1024) -> Queue(20) -> ...
  *   fr[1] -> ICMPError(18.26.4.24, 3, 4) -> ...
@@ -72,6 +77,7 @@ class IPFragmenter : public Element { public:
   bool _honor_df;
   bool _verbose;
   unsigned _mtu;
+  unsigned _headroom;
   atomic_uint32_t _drops;
   atomic_uint32_t _fragments;
 
