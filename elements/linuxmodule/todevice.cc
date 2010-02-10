@@ -36,6 +36,7 @@
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <net/pkt_sched.h>
+#include <net/dst.h>
 #if __i386__
 #include <asm/msr.h>
 #endif
@@ -251,43 +252,51 @@ ToDevice::cleanup(CleanupStage stage)
 # define click_netif_tx_wake_queue(dev, txq)	netif_wake_queue((dev))
 #endif
 
+#if HAVE_NETIF_TX_QUEUE_FROZEN
+# define click_netif_tx_queue_frozen(txq)	netif_tx_queue_frozen((txq))
+#else
+# define click_netif_tx_queue_frozen(txq)	0
+#endif
+
+#ifdef NETIF_F_LLTX
+# define click_netif_needs_lock(dev)		(((dev)->features & NETIF_F_LLTX) != 0)
+#else
+# define click_netif_needs_lock(dev)		1
+#endif
+
+#if HAVE_NETDEV_GET_TX_QUEUE
+# define click_netif_lock(dev, txq)		(txq)->_xmit_lock
+# define click_netif_lock_owner(dev, txq)	(txq)->xmit_lock_owner
+#elif HAVE_NETIF_TX_LOCK
+# define click_netif_lock(dev, txq)		(dev)->_xmit_lock
+# define click_netif_lock_owner(dev, txq)	(dev)->xmit_lock_owner
+#else
+# define click_netif_lock(dev, txq)		(dev)->xmit_lock
+# define click_netif_lock_owner(dev, txq)	(dev)->xmit_lock_owner
+#endif
+
 bool
 ToDevice::run_task(Task *)
 {
-    int busy = 0;
-    int sent = 0;
+    int busy = 0, sent = 0, ok;
+    struct net_device *dev = _dev;
+    ++_runs;
 
-    _runs++;
-
+#if HAVE_NETDEV_GET_TX_QUEUE
+    struct netdev_queue *txq = netdev_get_tx_queue(dev, _tx_queue);
+#else
     struct netdev_queue *txq = 0;
-#if LINUX_VERSION_CODE >= 0x020400
-# if HAVE_NETDEV_GET_TX_QUEUE
-    txq = netdev_get_tx_queue(_dev, _tx_queue);
-    int ok = spin_trylock_bh(&txq->_xmit_lock);
-    if (likely(ok))
-	txq->xmit_lock_owner = smp_processor_id();
-    else {
-	_task.fast_reschedule();
-	return false;
-    }
-# elif HAVE_NETIF_TX_LOCK
-    int ok = spin_trylock_bh(&_dev->_xmit_lock);
-    if (likely(ok))
-	_dev->xmit_lock_owner = smp_processor_id();
-    else {
-	_task.fast_reschedule();
-	return false;
-    }
-# else
-    local_bh_disable();
-    if (!spin_trylock(&_dev->xmit_lock)) {
-	local_bh_enable();
-	_task.fast_reschedule();
-	return false;
-    }
-    _dev->xmit_lock_owner = smp_processor_id();
-# endif
 #endif
+
+    if (click_netif_needs_lock(dev)) {
+	ok = spin_trylock_bh(&click_netif_lock(dev, txq));
+	if (likely(ok))
+	    click_netif_lock_owner(dev, txq) = smp_processor_id();
+	else {
+	    _task.fast_reschedule();
+	    return false;
+	}
+    }
 
 #if CLICK_DEVICE_STATS
     unsigned low00, low10;
@@ -296,17 +305,22 @@ ToDevice::run_task(Task *)
 #endif
 
 #if HAVE_LINUX_POLLING
-    bool is_polling = (_dev->polling > 0);
+    bool is_polling = (dev->polling > 0);
     struct sk_buff *clean_skbs;
     if (is_polling)
-	clean_skbs = _dev->tx_clean(_dev);
+	clean_skbs = dev->tx_clean(dev);
     else
 	clean_skbs = 0;
 #endif
 
     /* try to send from click */
-    while (sent < _burst
-	   && (busy = click_netif_tx_queue_stopped(_dev, txq)) == 0) {
+    while (sent < _burst) {
+
+	busy = click_netif_tx_queue_stopped(dev, txq)
+	    || click_netif_tx_queue_frozen(txq);
+	if (busy != 0)
+	    break;
+
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
 	click_cycles_t before_pull_cycles = click_get_cycles();
 #endif
@@ -344,16 +358,16 @@ ToDevice::run_task(Task *)
 
 #if HAVE_LINUX_POLLING
     if (is_polling && sent > 0)
-	_dev->tx_eob(_dev);
+	dev->tx_eob(dev);
 
     // If Linux tried to send a packet, but saw tbusy, it will
     // have left it on the queue. It'll just sit there forever
     // (or until Linux sends another packet) unless we poke
     // net_bh(), which calls qdisc_restart(). We are not allowed
     // to call qdisc_restart() ourselves, outside of net_bh().
-    if (is_polling && !busy && _dev->qdisc->q.qlen) {
-	_dev->tx_eob(_dev);
-	click_netif_tx_wake_queue(_dev, txq);
+    if (is_polling && !busy && dev->qdisc->q.qlen) {
+	dev->tx_eob(dev);
+	click_netif_tx_wake_queue(dev, txq);
     }
 #endif
 
@@ -371,7 +385,7 @@ ToDevice::run_task(Task *)
 	    _dev_idle++;
 	    if (_dev_idle == 1024) {
 		/* device didn't send anything, ping it */
-		_dev->tx_start(_dev);
+		dev->tx_start(dev);
 		_dev_idle = 0;
 		_hard_start++;
 	    }
@@ -380,17 +394,16 @@ ToDevice::run_task(Task *)
     }
 #endif
 
-#if LINUX_VERSION_CODE >= 0x020400
-# if HAVE_NETDEV_GET_TX_QUEUE
-    __netif_tx_unlock_bh(txq);
-# elif HAVE_NETIF_TX_LOCK
-    netif_tx_unlock_bh(_dev);
-# else
-    _dev->xmit_lock_owner = -1;
-    spin_unlock(&_dev->xmit_lock);
-    local_bh_enable();
-# endif
+    if (click_netif_needs_lock(dev)) {
+#if HAVE_NETDEV_GET_TX_QUEUE
+	__netif_tx_unlock_bh(txq);
+#elif HAVE_NETIF_TX_LOCK
+	netif_tx_unlock_bh(dev);
+#else
+	dev->xmit_lock_owner = -1;
+	spin_unlock_bh(&dev->xmit_lock);
 #endif
+    }
 
     // If we're polling, never go to sleep! We're relying on ToDevice to clean
     // the transmit ring.
@@ -433,7 +446,7 @@ ToDevice::run_task(Task *)
     // 5.Feb.2007: Incorporate a version of a patch from Jason Park.  If the
     // device is "busy", perhaps there is no carrier!  Don't spin on no
     // carrier; instead, rely on Linux's notifer_hook to wake us up again.
-    if (busy && sent == 0 && !netif_carrier_ok(_dev))
+    if (busy && sent == 0 && !netif_carrier_ok(dev))
 	reschedule = false;
 
     if (reschedule)
@@ -445,6 +458,7 @@ int
 ToDevice::queue_packet(Packet *p, struct netdev_queue *txq)
 {
     struct sk_buff *skb1 = p->skb();
+    struct net_device *dev = _dev;
 
     /*
      * Ensure minimum ethernet packet size (14 hdr + 46 data).
@@ -456,7 +470,7 @@ ToDevice::queue_packet(Packet *p, struct netdev_queue *txq)
     if (!_no_pad && need_tail > 0) {
 	if (skb_tailroom(skb1) < need_tail) {
 	    if (++_too_short == 1)
-		printk("<1>ToDevice %s packet too small (len %d, tailroom %d, need %d), had to copy\n", _dev->name, skb1->len, skb_tailroom(skb1), need_tail);
+		printk("<1>ToDevice %s packet too small (len %d, tailroom %d, need %d), had to copy\n", dev->name, skb1->len, skb_tailroom(skb1), need_tail);
 	    struct sk_buff *nskb = skb_copy_expand(skb1, skb_headroom(skb1), skb_tailroom(skb1) + 60 - skb1->len, GFP_ATOMIC);
 	    kfree_skb(skb1);
 	    if (!nskb)
@@ -469,21 +483,30 @@ ToDevice::queue_packet(Packet *p, struct netdev_queue *txq)
 
     // set the device annotation;
     // apparently some devices in Linux 2.6 require it
-    skb1->dev = _dev;
+    skb1->dev = dev;
+
+#ifdef IFF_XMIT_DST_RELEASE
+    /*
+     * If device doesnt need skb->dst, release it right now while
+     * its hot in this cpu cache
+     */
+    if (dev->priv_flags & IFF_XMIT_DST_RELEASE)
+	skb_dst_drop(skb1);
+#endif
 
     int ret;
 #if HAVE_LINUX_POLLING
-    if (_dev->polling > 0) {
-	ret = _dev->tx_queue(_dev, skb1);
+    if (dev->polling > 0) {
+	ret = dev->tx_queue(dev, skb1);
 	goto enqueued;
     }
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
     // XXX should we call dev_hard_start_xmit???  Probably
-    ret = _dev->netdev_ops->ndo_start_xmit(skb1, _dev);
+    ret = dev->netdev_ops->ndo_start_xmit(skb1, dev);
 #else
-    ret = _dev->hard_start_xmit(skb1, _dev);
+    ret = dev->hard_start_xmit(skb1, dev);
 #endif
     ++_hard_start;
 
@@ -492,7 +515,7 @@ ToDevice::queue_packet(Packet *p, struct netdev_queue *txq)
         _q = p;
 	_q_expiry_j = click_jiffies() + queue_timeout;
         if (++_holds == 1)
-            printk("<1>ToDevice %s is full, packet delayed\n", _dev->name);
+            printk("<1>ToDevice %s is full, packet delayed\n", dev->name);
     } else
         _npackets++;
     return ret;

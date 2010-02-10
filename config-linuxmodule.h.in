@@ -106,6 +106,9 @@
 /* Define if you have the netif_tx_lock function. */
 #undef HAVE_NETIF_TX_LOCK
 
+/* Define if you have the netif_tx_queue_frozen function. */
+#undef HAVE_NETIF_TX_QUEUE_FROZEN
+
 /* Define if you have the skb_dst_drop function. */
 #undef HAVE_SKB_DST_DROP
 

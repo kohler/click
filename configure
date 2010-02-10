@@ -10625,6 +10625,40 @@ $as_echo "#define HAVE_NETDEV_GET_TX_QUEUE 1" >>confdefs.h
 
     fi
 
+    ac_fn_c_check_decl "$LINENO" "netif_tx_queue_frozen" "ac_cv_have_decl_netif_tx_queue_frozen" "#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#define new linux_new
+#define this linux_this
+#define delete linux_delete
+#define class linux_class
+#define virtual linux_virtual
+#define typename linux_typename
+#define private linux_private
+#define protected linux_protected
+#define public linux_public
+#define namespace linux_namespace
+#define false linux_false
+#define true linux_true
+#include <linux/autoconf.h>
+#include <asm/types.h>
+#include <linux/skbuff.h>
+#include <linux/netdevice.h>
+"
+if test "x$ac_cv_have_decl_netif_tx_queue_frozen" = x""yes; then :
+  ac_cv_netif_tx_queue_frozen=yes
+else
+  ac_cv_netif_tx_queue_frozen=no
+fi
+
+    if test $ac_cv_netif_tx_queue_frozen = yes; then
+
+$as_echo "#define HAVE_NETIF_TX_QUEUE_FROZEN 1" >>confdefs.h
+
+    fi
+
     ac_fn_c_check_decl "$LINENO" "netdev_uses_dsa_tags" "ac_cv_have_decl_netdev_uses_dsa_tags" "#if HAVE_LINUXMODULE_2_6
 # define KBUILD_STR(s)		#s
 # define KBUILD_BASENAME	KBUILD_STR(click)
