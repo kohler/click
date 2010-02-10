@@ -96,7 +96,7 @@ inline void
 FullNoteQueue::push_success(int h, int t, int nt, Packet *p)
 {
     _q[t] = p;
-    asm("" : : : "memory");
+    packet_memory_barrier(_q[t], _tail);
     _tail = nt;
 
     int s = size(h, nt);
@@ -130,7 +130,7 @@ inline Packet *
 FullNoteQueue::pull_success(int h, int, int nh)
 {
     Packet *p = _q[h];
-    asm("" : : : "memory");
+    packet_memory_barrier(_q[h], _head);
     _head = nh;
 
     _sleepiness = 0;

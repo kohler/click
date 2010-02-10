@@ -40,28 +40,34 @@ MixedQueue::cast(const char *n)
 void
 MixedQueue::push(int port, Packet *p)
 {
+    Packet *oldp = 0;
+
     if (port == 0) {		// FIFO insert, drop new packet if full
-	int pindex = next_i(_tail);
-	if (pindex == _head) {
+	int h = _head, t = _tail, nt = next_i(t);
+	if (nt == h) {
 	    if (_drops == 0 && _capacity > 0)
 		click_chatter("%{element}: overflow", this);
 	    _drops++;
 	    checked_output_push(1, p);
 	} else {
-	    _q[_tail] = p;
-	    _tail = pindex;
+	    _q[t] = p;
+	    packet_memory_barrier(_q[t], _tail);
+	    _tail = nt;
 	}
     } else {			// LIFO insert, drop old packet if full
-	int pindex = prev_i(_head);
-	if (pindex == _tail) {
+	int h = _head, t = _tail, ph = prev_i(h);
+	if (ph == t) {
 	    if (_drops == 0 && _capacity > 0)
 		click_chatter("%{element}: overflow", this);
 	    _drops++;
-	    _tail = prev_i(_tail);
-	    checked_output_push(1, _q[_tail]);
+	    t = prev_i(t);
+	    oldp = _q[t];
+	    packet_memory_barrier(_q[t], _tail);
+	    _tail = t;
 	}
-	_q[pindex] = p;
-	_head = pindex;
+	_q[ph] = p;
+	packet_memory_barrier(_q[ph], _head);
+	_head = ph;
     }
 
     int s = size();
@@ -69,6 +75,9 @@ MixedQueue::push(int port, Packet *p)
 	_highwater_length = s;
     if (s == 1 && !_empty_note.active())
 	_empty_note.wake();
+
+    if (oldp)
+	checked_output_push(1, oldp);
 }
 
 CLICK_ENDDECLS

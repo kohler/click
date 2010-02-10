@@ -45,7 +45,7 @@ QuickNoteQueue::pull(int)
 
     if (h != t) {
 	p = _q[h];
-	asm("" : : : "memory");
+	packet_memory_barrier(_q[h], _head);
 	_head = h = next_i(h);
 	_full_note.wake();
     } else
