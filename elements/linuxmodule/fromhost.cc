@@ -402,15 +402,16 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
 	int r = NETDEV_TX_OK;
 	int next = fl->next_i(fl->_tail);
 	if (likely(next != fl->_head)) {
-	    Packet **q = (fl->_capacity <= smq_size ? fl->_q.smq : fl->_q.lgq);
+	    Packet * volatile *q = fl->queue();
 	    Packet *p = Packet::make(skb);
-	    p->set_timestamp_anno(Timestamp::now());
+	    p->timestamp_anno().assign_now();
 	    if (fl->_clear_anno)
 		p->clear_annotations(false);
 	    fl->_stats.tx_packets++;
 	    fl->_stats.tx_bytes += p->length();
 	    fl->_task.reschedule();
 	    q[fl->_tail] = p;
+	    packet_memory_barrier(q[fl->_tail], fl->_tail);
 	    fl->_tail = next;
 	} else {
 	    r = NETDEV_TX_BUSY;	// Linux will free the packet.

@@ -157,8 +157,8 @@ class FromHost : public AnyDevice, public Storage { public:
 
     enum { smq_size = 4 };
     union {
-	Packet *smq[smq_size + 1];
-	Packet **lgq;
+	Packet * volatile smq[smq_size + 1];
+	Packet * volatile *lgq;
     } _q;
     NotifierSignal _nonfull_signal;
 
@@ -168,6 +168,9 @@ class FromHost : public AnyDevice, public Storage { public:
 
     net_device *new_device(const char *);
     static int fl_tx(struct sk_buff *, net_device *);
+    inline Packet * volatile *queue() const {
+	return _capacity <= smq_size ? _q.smq : _q.lgq;
+    }
 
     enum { h_length };
     static String read_handler(Element *e, void *thunk);

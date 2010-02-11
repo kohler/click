@@ -317,6 +317,7 @@ FromDevice::got_skb(struct sk_buff *skb)
 
 	Packet *p = Packet::make(skb);
 	_queue[_tail] = p; /* hand it to run_task */
+	packet_memory_barrier(_queue[_tail], _tail);
 
 #if CLICK_DEBUG_SCHEDULING
 	_schinfo[_tail].enq_time.assign_now();

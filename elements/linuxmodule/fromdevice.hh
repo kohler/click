@@ -151,7 +151,7 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
     unsigned _pushes;
 
     enum { QSIZE = 511 };
-    Packet *_queue[QSIZE+1];
+    Packet * volatile _queue[QSIZE+1];
 #if CLICK_DEBUG_SCHEDULING
     struct Schinfo {
 	Timestamp enq_time;

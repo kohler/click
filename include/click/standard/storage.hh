@@ -2,6 +2,7 @@
 #ifndef CLICK_STORAGE_HH
 #define CLICK_STORAGE_HH
 CLICK_DECLS
+class Packet;
 
 class Storage { public:
 
@@ -24,6 +25,9 @@ class Storage { public:
     void set_head(int h)		{ _head = h; }
     void set_tail(int t)		{ _tail = t; }
 
+    static inline void packet_memory_barrier(Packet * volatile &packet,
+					     volatile int &index);
+
   protected:
 
     int _capacity;
@@ -43,6 +47,12 @@ inline int
 Storage::size() const
 {
     return size(_head, _tail);
+}
+
+inline void
+Storage::packet_memory_barrier(Packet * volatile &packet, volatile int &index)
+{
+    __asm__ volatile("" : : "m" (packet), "m" (index));
 }
 
 CLICK_ENDDECLS

@@ -98,9 +98,6 @@ class SimpleQueue : public Element, public Storage { public:
     void push(int port, Packet*);
     Packet* pull(int port);
 
-    static inline void packet_memory_barrier(Packet * volatile &packet,
-					     volatile int &index);
-
   protected:
 
     Packet* volatile * _q;
@@ -117,13 +114,6 @@ class SimpleQueue : public Element, public Storage { public:
 
 };
 
-
-inline void
-SimpleQueue::packet_memory_barrier(Packet * volatile &packet,
-				   volatile int &index)
-{
-    __asm__ volatile("" : : "m" (packet), "m" (index));
-}
 
 inline bool
 SimpleQueue::enq(Packet *p)
