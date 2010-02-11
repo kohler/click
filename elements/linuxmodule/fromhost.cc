@@ -36,6 +36,7 @@ CLICK_CXX_PROTECT
 #include <linux/inetdevice.h>
 #include <linux/if_arp.h>
 #include <net/route.h>
+#include <net/dst.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 # include <net/net_namespace.h>
 #endif
@@ -403,6 +404,18 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
 	int next = fl->next_i(fl->_tail);
 	if (likely(next != fl->_head)) {
 	    Packet * volatile *q = fl->queue();
+
+	    // skb->dst may be set since the packet came from Linux.  Since
+	    // Click doesn't use dst, clear it now.
+#if HAVE_SKB_DST_DROP
+	    skb_dst_drop(skb);
+#else
+	    if (skb->dst) {
+		dst_release(skb->dst);
+		skb->dst = 0;
+	    }
+#endif
+
 	    Packet *p = Packet::make(skb);
 	    p->timestamp_anno().assign_now();
 	    if (fl->_clear_anno)
