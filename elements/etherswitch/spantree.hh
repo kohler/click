@@ -7,6 +7,49 @@ CLICK_DECLS
 class Suppressor;
 class EtherSwitch;
 
+/**
+=c
+
+EtherSpanTree(ADDR, INPUT_SUPPRESSOR, OUTPUT_SUPPRESSOR, SWITCH)
+
+=d
+
+Implements the IEEE 802.1d spanning tree algorithm for Ethernet switches.
+Expects 802.1d control packets on its inputs and reacts by selectively
+suppressing forwarding on an associated EtherSwitch.
+
+ADDR is the address of this Ethernet switch.  SWITCH is the name of an
+EtherSwitch element that actually switches packets.  INPUT_SUPPRESSOR and
+OUTPUT_SUPPRESSOR are two Suppressor elements; they should be placed upstream
+and downstream of the SWITCH.  The EtherSpanTree, Suppressor, and EtherSwitch
+elements should all have the same numbers of inputs and outputs, equal to the
+number of ports in the switch.
+
+=e
+
+  from_port0, from_port1 :: FromDevice...;
+  to_port0, to_port1 :: ToDevice...;
+
+  span_tree :: EtherSpanTree(00-1f-29-4d-f8-31, in_supp, out_supp, switch);
+  switch :: EtherSwitch;
+  in_supp, out_supp :: Suppressor;
+
+  from_port0 -> c0 :: Classifier(14/4242, -); // ethertype 802.1d, others
+  from_port1 -> c1 :: Classifier(14/4242, -);
+
+  q0 :: Queue -> to_port0;
+  q1 :: Queue -> to_port1;
+
+  c0 [0] -> [0] span_tree [0] -> q0;
+  c1 [0] -> [1] span_tree [1] -> q1;
+
+  c0 [1] -> [0] in_supp [0] -> [0] switch [0] -> [0] out_supp [0] -> q0;
+  c1 [1] -> [1] in_supp [1] -> [1] switch [1] -> [1] out_supp [1] -> q1;
+
+=a
+
+EtherSwitch, Suppressor
+*/
 class EtherSpanTree : public Element {
 
 public:
@@ -15,7 +58,7 @@ public:
 
   const char *class_name() const		{ return "EtherSpanTree"; }
   const char *port_count() const		{ return "-/="; }
-  const char *processing() const		{ return "h/h"; }
+  const char *processing() const		{ return PUSH; }
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

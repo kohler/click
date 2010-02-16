@@ -38,25 +38,15 @@ EtherSpanTree::~EtherSpanTree()
 int
 EtherSpanTree::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  Element* in;
-  Element* out;
-  Element* sw;
   _port.resize(noutputs());
 
   if (cp_va_kparse(conf, this, errh,
 		   "ADDR", cpkP+cpkM, cpEthernetAddress, _addr,
-		   "INPUT_SUPPRESSOR", cpkP+cpkM, cpElement, &in,
-		   "OUTPUT_SUPPRESSOR", cpkP+cpkM, cpElement, &out,
-		   "SWITCH", cpkP+cpkM, cpElement, &sw,
+		   "INPUT_SUPPRESSOR", cpkP+cpkM, cpElementCast, "Suppressor", &_input_sup,
+		   "OUTPUT_SUPPRESSOR", cpkP+cpkM, cpElementCast, "Suppressor", &_output_sup,
+		   "SWITCH", cpkP+cpkM, cpElementCast, "EtherSwitch", &_switch,
 		   cpEnd) < 0)
     return -1;
-
-  if (!(_input_sup = static_cast<Suppressor *>(in->cast("Suppressor"))))
-    return errh->error("EtherSpanTree needs an input Suppressor");
-  if (!(_output_sup = static_cast<Suppressor *>(out->cast("Suppressor"))))
-    return errh->error("EtherSpanTree needs an output Suppressor");
-  if (!(_switch = static_cast<EtherSwitch *>(sw->cast("EtherSwitch"))))
-    return errh->error("EtherSpanTree needs an EtherSwitch");
 
   memcpy(&_bridge_id, _addr, 6);
   return 0;
