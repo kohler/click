@@ -152,7 +152,7 @@ IPRewriter::push(int port, Packet *p_in)
 	    tcpmf->change_expiry(_heap, false, now_j + tcp_flow_timeout(tcpmf));
     } else {
 	mf->apply(p, m->direction(), _annos);
-	mf->change_expiry(_heap, now_j, _udp_timeouts);
+	mf->change_expiry_by_timeout(_heap, now_j, _udp_timeouts);
     }
 
     output(m->output()).push(p);

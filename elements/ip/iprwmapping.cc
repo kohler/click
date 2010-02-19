@@ -36,7 +36,7 @@ IPRewriterFlow::IPRewriterFlow(const IPFlowID &flowid, int output,
 			       uint8_t ip_p, bool guaranteed,
 			       click_jiffies_t expiry_j,
 			       IPRewriterBase *owner, int owner_input)
-    : _sexpiry_j(expiry_j), _ip_p(ip_p), _state(0),
+    : _expiry_j(expiry_j), _ip_p(ip_p), _state(0),
       _guaranteed(guaranteed), _reply_anno(0),
       _owner(owner), _owner_input(owner_input)
 {
@@ -102,24 +102,23 @@ void
 IPRewriterFlow::change_expiry(IPRewriterHeap *h, bool guaranteed,
 			      click_jiffies_t expiry_j)
 {
-    assert(h->_heaps[_guaranteed][_place] == this);
-    _sexpiry_j = expiry_j;
+    Vector<IPRewriterFlow *> &current_heap = h->_heaps[_guaranteed];
+    assert(current_heap[_place] == this);
+    _expiry_j = expiry_j;
     if (_guaranteed != guaranteed) {
-	remove_heap(h->_heaps[_guaranteed].begin(),
-		    h->_heaps[_guaranteed].end(),
-		    h->_heaps[_guaranteed].begin() + _place,
-		    less(), place(h->_heaps[_guaranteed].begin()));
-	h->_heaps[_guaranteed].pop_back();
+	remove_heap(current_heap.begin(), current_heap.end(),
+		    current_heap.begin() + _place,
+		    less(), place(current_heap.begin()));
+	current_heap.pop_back();
 	_guaranteed = guaranteed;
-	h->_heaps[_guaranteed].push_back(this);
-	push_heap(h->_heaps[_guaranteed].begin(),
-		  h->_heaps[_guaranteed].end(),
-		  less(), place(h->_heaps[_guaranteed].begin()));
+	Vector<IPRewriterFlow *> &new_heap = h->_heaps[_guaranteed];
+	new_heap.push_back(this);
+	push_heap(new_heap.begin(), new_heap.end(),
+		  less(), place(new_heap.begin()));
     } else
-	change_heap(h->_heaps[_guaranteed].begin(),
-		    h->_heaps[_guaranteed].end(),
-		    h->_heaps[_guaranteed].begin() + _place,
-		    less(), place(h->_heaps[_guaranteed].begin()));
+	change_heap(current_heap.begin(), current_heap.end(),
+		    current_heap.begin() + _place,
+		    less(), place(current_heap.begin()));
 }
 
 void
@@ -150,7 +149,7 @@ IPRewriterFlow::unparse_ports(StringAccum &sa, bool direction,
     else if (e != _owner)
 	sa << e->name() << ':';
     sa << _e[true].output() << "] i" << _owner_input << " exp"
-       << (_sexpiry_j + (CLICK_HZ / 2) - now) / CLICK_HZ;
+       << (_expiry_j + (CLICK_HZ / 2) - now) / CLICK_HZ;
 #else
     sa << " [";
     if (direction && e != _owner)

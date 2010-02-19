@@ -192,7 +192,7 @@ ICMPPingRewriter::push(int port, Packet *p_in)
 
     ICMPPingFlow *mf = static_cast<ICMPPingFlow *>(m->flow());
     mf->apply(p, m->direction(), _annos);
-    mf->change_expiry(_heap, click_jiffies(), _timeouts);
+    mf->change_expiry_by_timeout(_heap, click_jiffies(), _timeouts);
 
     output(m->output()).push(p);
 }

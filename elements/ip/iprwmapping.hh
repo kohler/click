@@ -78,23 +78,45 @@ class IPRewriterFlow { public:
 	return _e[direction];
     }
 
+
+    /** @brief Return the expiration time in absolute jiffies. */
     click_jiffies_t expiry() const {
-	return _sexpiry_j;
+	return _expiry_j;
     }
+
+    /** @brief Test if the flow is expired as of @a now_j.
+     * @param now_j current time in absolute jiffies */
     bool expired(click_jiffies_t now_j) const {
-	return !click_jiffies_less(now_j, _sexpiry_j);
+	return !click_jiffies_less(now_j, _expiry_j);
     }
+
+    /** @brief Test if the flow is guaranteed. */
     bool guaranteed() const {
 	return _guaranteed;
     }
 
+    /** @brief Set expiration time to @a expiry_j.
+     * @param h heap containing this flow
+     * @param guaranteed whether the flow is guaranteed
+     * @param expiry_j expiration time in absolute jiffies */
     void change_expiry(IPRewriterHeap *h, bool guaranteed,
 		       click_jiffies_t expiry_j);
-    void change_expiry(IPRewriterHeap *h, click_jiffies_t now_j,
-		       const uint32_t timeouts[2]) {
-	int timeout = timeouts[1] ? timeouts[1] : timeouts[0];
+
+    /** @brief Set expiration time to a timeout after @a now_j.
+     * @param h heap containing this flow
+     * @param now_j current time in absolute jiffies
+     * @param timeouts timeouts in jiffies: timeout[1] is guarantee, timeout[0] is best-effort
+     *
+     * If @a timeouts[1] is non-zero, then the flow becomes guaranteed, and
+     * the guarantee will expire after @a timeouts[1] jiffies.  Otherwise, the
+     * flow becomes best-effort, and will expire after @a timeouts[0]
+     * jiffies. */
+    void change_expiry_by_timeout(IPRewriterHeap *h, click_jiffies_t now_j,
+				  const uint32_t timeouts[2]) {
+	uint32_t timeout = timeouts[1] ? timeouts[1] : timeouts[0];
 	change_expiry(h, !!timeouts[1], now_j + timeout);
     }
+
 
     enum {
 	s_forward_done = 1, s_reply_done = 2,
@@ -159,7 +181,7 @@ class IPRewriterFlow { public:
     IPRewriterEntry _e[2];
     uint16_t _ip_csum_delta;
     uint16_t _udp_csum_delta;
-    click_jiffies_t _sexpiry_j;
+    click_jiffies_t _expiry_j;
     size_t _place : 32;
     uint8_t _ip_p;
     uint8_t _state : 7;

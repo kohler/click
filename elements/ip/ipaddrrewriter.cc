@@ -170,7 +170,7 @@ IPAddrRewriter::push(int port, Packet *p_in)
 
     IPAddrFlow *mf = static_cast<IPAddrFlow *>(m->flow());
     mf->apply(p, m->direction(), _annos);
-    mf->change_expiry(_heap, click_jiffies(), _timeouts);
+    mf->change_expiry_by_timeout(_heap, click_jiffies(), _timeouts);
     output(m->output()).push(p);
 }
 

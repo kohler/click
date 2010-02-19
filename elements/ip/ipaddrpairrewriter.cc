@@ -159,7 +159,7 @@ IPAddrPairRewriter::push(int port, Packet *p_in)
 
     IPAddrPairFlow *mf = static_cast<IPAddrPairFlow *>(m->flow());
     mf->apply(p, m->direction(), _annos);
-    mf->change_expiry(_heap, click_jiffies(), _timeouts);
+    mf->change_expiry_by_timeout(_heap, click_jiffies(), _timeouts);
     output(m->output()).push(p);
 }
 
