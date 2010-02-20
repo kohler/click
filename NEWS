@@ -1,5 +1,62 @@
 Click NEWS
 
+Version 1.8.0
+
+* Simulation time feature.  By default the Click driver runs in real time:
+  Timestamp::now() returns the current time.  But a router-wide "timewarp"
+  write handler is available.  Set the "timewarp" handler to 2, and Click
+  time appears to move twice as fast as real time.
+    
+  Or run "click --simtime".  This runs Click in simulation time.  Time is
+  completely divorced from real time.  Timers appear to expire immediately
+  (in other words, Click time jumps to the closest timer expiration time).
+  Every call to Timestamp::now() increments Click time by epsilon (one
+  subsecond).  This turns Click into an event-driven simulator, makes time
+  completely deterministic, and makes tests run fast.
+
+* IPRewriter and associated elements rewrite.  This major refactoring adds
+  new functionality, robustness, and speed, while reducing memory
+  footprint.  A few features are lost, especially hotswapping support, and
+  some syntax has changed, FTPPortMapper and ICMPPingRewriter in
+  particular.  Thanks to Cliff Frey.
+
+* Clicky GUI bug fixes, visual improvements.
+
+* New features: ARPPrint ACTIVE, ARPQuerier POLL_TIMEOUT, ControlSocket
+  advanced TCP ports, DecIPTTL MULTICAST and ACTIVE, Discard ACTIVE,
+  FromUserDevice HEADROOM, ICMPError live reconfiguration, IP summary dump
+  ip_dscp and ip_ecn, MarkIPCE FORCE, PullSwitch notification, Queue memory
+  barriers, RED has GENTLE false and STABILITY 0, Unqueue LIMIT and
+  handlers, click-pretty diagram templates.
+
+* New elements: IP6Encap, MarkMACHeader, QuickNoteQueue, Script, SetIPECN,
+  SimpleIdle, SimplePullSwitch.
+
+* Element bug fixes: ARPQuerier/ARPTable (memory corruption bug),
+  AthDescEncap, FromHost, FromIPSummaryDump, ICMPPingResponder,
+  ICMPRewriter, IPFlowRawSockets, IPNameInfo, IPsec elements, KernelTun,
+  Print80211, RadioTapDecap, StaticThreadSched, StoreIPAddress, WEPEncap,
+  WifiDefrag.
+
+* Other bug fixes: Timer fairness, select handling in user-level
+  multithreaded configurations.
+
+* Internals: IP6Address improvements, String performance and memory-usage
+  improvements, avoid strict-aliasing warnings, default to including
+  analysis and test elements, new RouterVisitor class for analyzing
+  configuration graphs, new algorithms for heap functions, set the random
+  seed to a "truly random" value at router configure time, signal handlers
+  become more robust, tool improvements to variable scope handling.
+
+* Deprecated features: ElementFilter.
+
+* Thanks to Mark Allman, Bart Braem, Andrew Brampton, Robert Buchholz,
+  Roman Chertov, Xiaojun Feng, Cliff Frey, Raja Hayek, David Johnson,
+  Joonwoo Park, Roberto Riggio, Nadi Sarrar, Harald Schiöberg, Robert
+  Sombrutzki, Ashish Sharma, Seiichi Tetsukawa, Erwin Van de Velde, Nick
+  Weaver.
+
+
 Version 1.7.0rc1   7.Mar.2009
 
 * Clicky GUI
