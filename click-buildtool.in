@@ -1165,7 +1165,7 @@ makepackage () {
     --di=*|--dir=*|--dire=*|--direc=*|--direct=*|--directo=*|--director=*|--directory=*)
 	dir="`echo "$1" | sed 's/^[^=]*=//'`"/; shift 1;;
     -q|--q|--qu|--qui|--quie|--quiet)
-	quiet="-s"; shift 1;;
+	quiet="-s V=1"; shift 1;;
     -V|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
 	quiet="V=1"; shift 1;;
     -h|--h|--he|--hel|--help)
