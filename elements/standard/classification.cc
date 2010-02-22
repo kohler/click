@@ -32,53 +32,58 @@ namespace Wordwise {
 //
 
 bool
-Insn::implies(const Insn &x) const
+Insn::implies(const Insn &x, unsigned known_length) const
 {
     if (!x.mask.u)
 	return true;
-    if (x.offset != offset)
+    if (x.offset != offset
+	|| (short_output && required_length() > known_length))
 	return false;
     uint32_t both_mask = mask.u & x.mask.u;
     return both_mask == x.mask.u && (value.u & both_mask) == x.value.u;
 }
 
 bool
-Insn::not_implies(const Insn &x) const
+Insn::not_implies(const Insn &x, unsigned known_length) const
 {
     if (!x.mask.u)
 	return true;
-    if (x.offset != offset)
+    if (x.offset != offset
+	|| (!short_output && required_length() > known_length))
 	return false;
     return (mask.u & (mask.u - 1)) == 0 && mask.u == x.mask.u
 	&& value.u != x.value.u;
 }
 
 bool
-Insn::implies_not(const Insn &x) const
+Insn::implies_not(const Insn &x, unsigned known_length) const
 {
-    if (!x.mask.u || x.offset != offset)
+    if (!x.mask.u || x.offset != offset
+	|| (short_output && required_length() > known_length))
 	return false;
     uint32_t both_mask = mask.u & x.mask.u;
     return both_mask == x.mask.u && (value.u & both_mask) != x.value.u;
 }
 
 bool
-Insn::not_implies_not(const Insn &x) const
+Insn::not_implies_not(const Insn &x, unsigned known_length) const
 {
     if (!mask.u)
 	return true;
-    if (x.offset != offset)
+    if (x.offset != offset
+	|| (!short_output && required_length() > known_length))
 	return false;
     uint32_t both_mask = mask.u & x.mask.u;
     return both_mask == mask.u && value.u == (x.value.u & both_mask);
 }
 
 bool
-Insn::compatible(const Insn &x) const
+Insn::compatible(const Insn &x, bool consider_short) const
 {
     if (!mask.u || !x.mask.u)
 	return true;
-    if (x.offset != offset)
+    if (x.offset != offset
+	|| (consider_short && x.short_output != short_output))
 	return false;
     uint32_t both_mask = mask.u & x.mask.u;
     return (value.u & both_mask) == (x.value.u & both_mask);
@@ -101,6 +106,7 @@ Insn::flip()
     int tmp = j[0];
     j[0] = j[1];
     j[1] = tmp;
+    short_output = !short_output;
 }
 
 StringAccum &
@@ -129,6 +135,8 @@ operator<<(StringAccum &sa, const Insn &e)
 	sa << "[" << -e.no() << "]";
     else
 	sa << "step " << e.no();
+    if (e.short_output)
+	sa << "  short->yes";
     return sa;
 }
 
@@ -248,7 +256,7 @@ Program::finish_subtree(Vector<int> &tree, Combiner combiner,
 }
 
 void
-Program::negate_subtree(Vector<int> &tree)
+Program::negate_subtree(Vector<int> &tree, bool flip_short)
 {
     // swap 'j_success' and 'j_failure' within the last subtree
     int level = tree[0];
@@ -266,6 +274,8 @@ Program::negate_subtree(Vector<int> &tree)
 	    e.no() = j_success;
 	else if (e.no() == j_success)
 	    e.no() = j_failure;
+	if (flip_short)
+	    e.short_output = !e.short_output;
     }
 }
 
@@ -306,8 +316,20 @@ Program::negate_subtree(Vector<int> &tree)
 */
 
 DominatorOptimizer::DominatorOptimizer(Program *p)
-    : _p(p), _dom_start(1, 0), _domlist_start(1, 0)
+    : _p(p), _known_length(_p->ninsn(), 0x7FFFFFFF),
+      _dom_start(1, 0), _domlist_start(1, 0)
 {
+    _known_length[0] = 0;
+    for (int i = 0; i < _p->ninsn(); ++i) {
+	const Insn &insn = _p->insn(i);
+	int yes_known_length = insn.required_length();
+	if (yes_known_length < _known_length[i])
+	    yes_known_length = _known_length[i];
+	if (insn.yes() > 0 && yes_known_length < _known_length[insn.yes()])
+	    _known_length[insn.yes()] = yes_known_length;
+	if (insn.no() > 0 && _known_length[i] < _known_length[insn.no()])
+	    _known_length[insn.no()] = _known_length[i];
+    }
 }
 
 void
@@ -613,14 +635,14 @@ Program::combine_compatible_states()
 {
     for (int i = 0; i < _insn.size(); i++) {
 	Insn &e = _insn[i];
-	if (e.no() > 0 && _insn[e.no()].compatible(e) && e.flippable())
+	if (e.no() > 0 && _insn[e.no()].compatible(e, false) && e.flippable())
 	    e.flip();
 	if (e.yes() <= 0)
 	    continue;
 	Insn &ee = _insn[e.yes()];
 	if (e.no() == ee.yes() && ee.flippable())
 	    ee.flip();
-	if (e.no() == ee.no() && ee.compatible(e)) {
+	if (e.no() == ee.no() && ee.compatible(e, true)) {
 	    e.yes() = ee.yes();
 	    if (!e.mask.u)	// but probably ee.mask.u is always != 0...
 		e.offset = ee.offset;
@@ -659,7 +681,7 @@ Program::bubble_sort_and_exprs(unsigned sort_stopper)
 		if (e1.j[!k] == e2.j[!k]
 		    && (e1.offset > e2.offset
 			|| (e1.offset == e2.offset && e1.mask.u > e2.mask.u))
-		    && e1.offset < (int) sort_stopper && inbranch[j] > 0) {
+		    && e1.offset < sort_stopper && inbranch[j] > 0) {
 		    Insn temp(e2);
 		    e2 = e1;
 		    e2.j[k] = temp.j[k];
@@ -767,10 +789,11 @@ CompressedProgram::compile(const Program &prog, bool perform_binary_search,
     // The compressed program is a sequence of tests.  Each test consists of
     // five or more 32-bit words, as follows.
     //
-    // +--------+--------+--------+--------+--------+-------
-    // |nval|off|   no   |   yes  |  mask  |  value | value...
-    // +--------+--------+--------+--------+--------+-------
-    // nval (16 bits)  - number of values in the test
+    // +----------+--------+--------+--------+--------+-------
+    // |nval|S|off|   no   |   yes  |  mask  |  value | value...
+    // +----------+--------+--------+--------+--------+-------
+    // nval (15 bits)  - number of values in the test
+    // S (1 bit)       - short output
     // off (16 bits)   - offset of word into the data packet
     //                   (might be > TRANSP_FAKE_OFFSET)
     // no (32 bits)    - jump if test fails
@@ -807,8 +830,7 @@ CompressedProgram::compile(const Program &prog, bool perform_binary_search,
 	if (wanted[i] == 0)
 	    continue;
 	const Insn &in = prog.insn(i);
-	assert(in.offset >= 0);
-	_zprog.push_back(in.offset + 0x10000);
+	_zprog.push_back(in.offset + (in.short_output ? 0x10000 : 0) + 0x20000);
 	_zprog.push_back(in.no());
 	_zprog.push_back(in.yes());
 	_zprog.push_back(in.mask.u);
@@ -818,13 +840,13 @@ CompressedProgram::compile(const Program &prog, bool perform_binary_search,
 	       && prog.insn(no).yes() == in.yes()
 	       && prog.insn(no).offset == in.offset
 	       && prog.insn(no).mask.u == in.mask.u) {
-	    _zprog[off] += 0x10000;
+	    _zprog[off] += 0x20000;
 	    _zprog[off+1] = prog.insn(no).no();
 	    _zprog.push_back(prog.insn(no).value.u);
 	    wanted[no]--;
 	}
-	if (perform_binary_search && (_zprog[off] >> 16) >= min_binary_search)
-	    click_qsort(&_zprog[off+4], _zprog[off] >> 16);
+	if (perform_binary_search && (_zprog[off] >> 17) >= min_binary_search)
+	    click_qsort(&_zprog[off+4], _zprog[off] >> 17);
     }
     offsets.push_back(_zprog.size());
 
@@ -851,7 +873,7 @@ CompressedProgram::warn_unused_outputs(int noutputs, ErrorHandler *errh) const
 		if (output <= 0 && -output < noutputs)
 		    used[-output] = 1;
 	    }
-	    i += 4 + (_zprog[i] >> 16);
+	    i += 4 + (_zprog[i] >> 17);
 	}
 
     for (int i = 0; i < noutputs; ++i)
@@ -864,7 +886,7 @@ CompressedProgram::unparse() const
 {
     Vector<int> stepno(_zprog.size(), 0);
     for (int i = 0; i < _zprog.size(); ) {
-	int nparts = _zprog[i] >> 16;
+	int nparts = _zprog[i] >> 17;
 	if (i + 4 + nparts < _zprog.size())
 	    stepno[i + 4 + nparts] = stepno[i] + nparts;
 	i += 4 + nparts;
@@ -872,7 +894,7 @@ CompressedProgram::unparse() const
 
     StringAccum sa;
     for (int i = 0; i < _zprog.size(); ) {
-	int nparts = _zprog[i] >> 16;
+	int nparts = _zprog[i] >> 17;
 	for (int j = 0; j < nparts; ++j) {
 	    int mystep = stepno[i] + j;
 	    int32_t no, yes;
@@ -883,7 +905,8 @@ CompressedProgram::unparse() const
 	    if ((yes = _zprog[i + 2]) > 0)
 		yes = stepno[i + yes];
 	    Insn in((uint16_t) _zprog[i] - _align_offset,
-		    _zprog[i + 4 + j], _zprog[i + 3], no, yes);
+		    _zprog[i + 4 + j], _zprog[i + 3], no, yes,
+		    _zprog[i] & 0x10000);
 	    sa << (mystep < 10 ? " " : "") << mystep << ' ' << in << '\n';
 	}
 	i += 4 + nparts;
@@ -928,7 +951,7 @@ Program::length_checked_match(const Packet *p)
 		  || (ex[pos].mask.c[1] && available == 1)))
 		goto length_ok;
 	}
-	pos = ex[pos].j[0];
+	pos = ex[pos].j[ex[pos].short_output];
     } while (pos > 0);
 
     return -pos;

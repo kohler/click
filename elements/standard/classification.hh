@@ -24,7 +24,8 @@ class DominatorOptimizer;
 
 
 struct Insn {
-    int offset;
+    uint16_t offset;
+    bool short_output;
     union {
 	unsigned char c[4];
 	uint32_t u;
@@ -40,8 +41,9 @@ struct Insn {
     };
 
     Insn(int offset_, uint32_t value_, uint32_t mask_,
-	 int32_t failure_ = j_failure, int32_t success_ = j_success)
-	: offset(offset_) {
+	 int32_t failure_ = j_failure, int32_t success_ = j_success,
+	 bool short_output_ = false)
+	: offset(offset_), short_output(short_output_) {
 	mask.u = mask_;
 	value.u = value_ & mask_;
 	j[0] = failure_;
@@ -66,25 +68,34 @@ struct Insn {
 	    return offset + 1;
     }
 
-    /** @brief Test whether a packet that matches *this must match @a x. */
-    bool implies(const Insn &x) const;
+    /** @brief Test whether a packet that matches *this must match @a x.
+     * @param known_length The number of packet bytes known to definitively
+     *   exist when this instruction is executed. */
+    bool implies(const Insn &x, unsigned known_length) const;
     /** @brief Test whether a packet that does not match *this must match @a x.
+     * @param known_length The number of packet bytes known to definitively
+     *   exist when this instruction is executed.
      *
      * This happens when either @a x matches everything, or @a x and *this
      * both match against the same single bit, and they have different
      * values. */
-    bool not_implies(const Insn &x) const;
-    /** @brief Test whether a packet that matches *this must not match @a x. */
-    bool implies_not(const Insn &x) const;
+    bool not_implies(const Insn &x, unsigned known_length) const;
+    /** @brief Test whether a packet that matches *this must not match @a x.
+     * @param known_length The number of packet bytes known to definitively
+     *   exist when this instruction is executed. */
+    bool implies_not(const Insn &x, unsigned known_length) const;
     /** @brief Test whether a packet that does not match *this must not match
-     * @a x. */
-    bool not_implies_not(const Insn &x) const;
+     * @a x.
+     * @param known_length The number of packet bytes known to definitively
+     *   exist when this instruction is executed. */
+    bool not_implies_not(const Insn &x, unsigned known_length) const;
     /** @brief Test whether this instruction and @a x are compatible.
+     * @param consider_short If false, don't consider short packets.
      *
      * Instructions are compatible if every bit pattern that matches one
      * instruction could be extended into a bit pattern that matches both
      * instructions. */
-    bool compatible(const Insn &x) const;
+    bool compatible(const Insn &x, bool consider_short) const;
 
     /** @brief Test whether this instruction is flippable.
      *
@@ -138,7 +149,12 @@ class Program { public:
 
     Vector<int> init_subtree() const;
     void start_subtree(Vector<int> &tree) const;
-    void negate_subtree(Vector<int> &tree);
+    /** @brief Negate the meaning of the last subtree, so that packets that
+     * match the last subtree test will jump to "failure" and packets that
+     * don't match will jump to "success".
+     * @param flip_short If true, then also flip whether short packets
+     *   match. */
+    void negate_subtree(Vector<int> &tree, bool flip_short = false);
     void finish_subtree(Vector<int> &tree, Combiner op = c_and,
 			int success = j_success, int failure = j_failure);
 
@@ -220,18 +236,22 @@ class DominatorOptimizer { public:
 
     bool br_implies(int brno, int state) const {
 	assert(state > 0);
+	int from_state = stateno(brno);
+	unsigned kl = _known_length[from_state];
 	if (br_yes(brno))
-	    return insn(stateno(brno)).implies(insn(state));
+	    return insn(from_state).implies(insn(state), kl);
 	else
-	    return insn(stateno(brno)).not_implies(insn(state));
+	    return insn(from_state).not_implies(insn(state), kl);
     }
 
     bool br_implies_not(int brno, int state) const {
 	assert(state > 0);
+	int from_state = stateno(brno);
+	unsigned kl = _known_length[from_state];
 	if (br_yes(brno))
-	    return insn(stateno(brno)).implies_not(insn(state));
+	    return insn(from_state).implies_not(insn(state), kl);
 	else
-	    return insn(stateno(brno)).not_implies_not(insn(state));
+	    return insn(from_state).not_implies_not(insn(state), kl);
     }
 
     void run(int state);
@@ -241,6 +261,7 @@ class DominatorOptimizer { public:
   private:
 
     Program *_p;
+    Vector<int> _known_length;
     Vector<int> _dom;
     Vector<int> _dom_start;
     Vector<int> _domlist_start;

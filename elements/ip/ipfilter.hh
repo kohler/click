@@ -325,7 +325,7 @@ IPFilter::match(const IPFilterProgram &zprog, const Packet *p)
 	else
 	    data = *(const uint32_t *)(neth_data + off);
 	data &= pr[3];
-	off = pr[0] >> 16;
+	off = pr[0] >> 17;
 	pp = pr + 4;
 	if (!PERFORM_BINARY_SEARCH || off < MIN_BINARY_SEARCH) {
 	    for (; off; --off, ++pp)

@@ -567,7 +567,7 @@ IPFilter::Primitive::add_comparison_exprs(Classification::Wordwise::Program &p, 
   if (_op == IPFilter::OP_EQ) {
     p.add_insn(tree, offset, htonl(u << shift), htonl(mask << shift));
     if (_op_negated && op_negate)
-      p.negate_subtree(tree);
+      p.negate_subtree(tree, true);
     return;
   }
 
@@ -601,7 +601,7 @@ IPFilter::Primitive::add_comparison_exprs(Classification::Wordwise::Program &p, 
     p.start_subtree(tree);
     p.add_insn(tree, offset, htonl(upper_u << shift), htonl(upper_mask << shift));
     if (!high_bit)
-      p.negate_subtree(tree);
+      p.negate_subtree(tree, true);
     high_bit_record = (high_bit_record << 1) | high_bit;
     count++;
 
@@ -616,7 +616,7 @@ IPFilter::Primitive::add_comparison_exprs(Classification::Wordwise::Program &p, 
   }
 
   if (_op_negated && op_negate)
-    p.negate_subtree(tree);
+    p.negate_subtree(tree, true);
 }
 
 void
@@ -644,7 +644,7 @@ IPFilter::Primitive::compile(Classification::Wordwise::Program &p, Vector<int> &
       add_comparison_exprs(p, tree, 16, 0, true, false);
     p.finish_subtree(tree, (_srcdst == SD_OR ? Classification::c_or : Classification::c_and));
     if (_op_negated)
-	p.negate_subtree(tree);
+	p.negate_subtree(tree, true);
     break;
 
    case TYPE_PROTO:
@@ -655,7 +655,7 @@ IPFilter::Primitive::compile(Classification::Wordwise::Program &p, Vector<int> &
   case TYPE_IPFRAG:
       p.add_insn(tree, 4, 0, htonl(0x00003FFF));
       if (!_op_negated)
-	  p.negate_subtree(tree);
+	  p.negate_subtree(tree, true);
       break;
 
   case TYPE_PORT:
@@ -666,7 +666,7 @@ IPFilter::Primitive::compile(Classification::Wordwise::Program &p, Vector<int> &
 	  add_comparison_exprs(p, tree, TRANSP_FAKE_OFFSET, 0, false, false);
       p.finish_subtree(tree, (_srcdst == SD_OR ? Classification::c_or : Classification::c_and));
       if (_op_negated)
-	  p.negate_subtree(tree);
+	  p.negate_subtree(tree, true);
       break;
 
   case TYPE_TCPOPT:
@@ -1188,7 +1188,7 @@ IPFilter::length_checked_match(const IPFilterProgram &zprog, const Packet *p,
 	else
 	    data = *(const uint32_t *)(neth_data + off);
 	data &= pr[3];
-	off = pr[0] >> 16;
+	off = pr[0] >> 17;
 	pp = pr + 4;
 	if (!PERFORM_BINARY_SEARCH || off < MIN_BINARY_SEARCH) {
 	    for (; off; --off, ++pp)
@@ -1209,7 +1209,6 @@ IPFilter::length_checked_match(const IPFilterProgram &zprog, const Packet *p,
 		    px = pm;
 	    }
 	}
-    failure:
 	off = pr[1];
     gotit:
 	if (off <= 0)
@@ -1226,7 +1225,8 @@ IPFilter::length_checked_match(const IPFilterProgram &zprog, const Packet *p,
 		  || (c[1] && available == 1)))
 		goto length_ok;
 	}
-	goto failure;
+	off = pr[1 + ((pr[0] & 0x10000) != 0)];
+	goto gotit;
     }
 }
 
