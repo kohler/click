@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2010 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -36,11 +37,13 @@ IPClassifier::configure(Vector<String> &conf, ErrorHandler *errh)
     if (conf.size() != noutputs())
 	return errh->error("need %d arguments, one per output port", noutputs());
 
-  // leverage IPFilter's parsing
-  Vector<String> new_conf;
-  for (int i = 0; i < conf.size(); i++)
-    new_conf.push_back(String(i) + " " + conf[i]);
-  return IPFilter::configure(new_conf, errh);
+    // leverage IPFilter's parsing
+    Vector<String> new_conf;
+    for (int i = 0; i < conf.size(); i++)
+	new_conf.push_back(String(i) + " " + conf[i]);
+    int r = IPFilter::configure(new_conf, errh);
+    _zprog.warn_unused_outputs(noutputs(), errh);
+    return r;
 }
 
 CLICK_ENDDECLS

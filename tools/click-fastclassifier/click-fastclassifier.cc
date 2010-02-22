@@ -513,14 +513,19 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
 	}
 	// read yes destination
 	step = step.substring(pos);
-	if (step[0] == '[') {
+	if (step[0] == '[' && step[1] == 'X') {
+	  sscanf(step.c_str(), "[X] no->%n", &pos);
+	  e.yes = -prog.noutputs;
+	} else if (step[0] == '[') {
 	  sscanf(step.c_str(), "[%d] no->%n", &e.yes, &pos);
 	  e.yes = -e.yes;
 	} else
 	  sscanf(step.c_str(), "step %d no->%n", &e.yes, &pos);
 	// read no destination
 	step = step.substring(pos);
-	if (step[0] == '[') {
+	if (step[0] == '[' && step[1] == 'X')
+	  e.no = -prog.noutputs;
+	else if (step[0] == '[') {
 	  sscanf(step.c_str(), "[%d]", &e.no);
 	  e.no = -e.no;
 	} else

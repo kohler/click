@@ -1,7 +1,7 @@
 #ifndef CLICK_IPFILTER_HH
 #define CLICK_IPFILTER_HH
-#include "elements/standard/classifier.hh"
-#include <click/hashmap.hh>
+#include "elements/standard/classification.hh"
+#include <click/element.hh>
 CLICK_DECLS
 
 /*
@@ -112,67 +112,71 @@ classifier pattern.
 IPClassifier, Classifier, CheckIPHeader, MarkIPHeader, CheckIPHeader2,
 AddressInfo, tcpdump(1) */
 
-class IPFilter : public Classifier { public:
+class IPFilter : public Element { public:
 
-  IPFilter();
-  ~IPFilter();
+    IPFilter();
+    ~IPFilter();
 
-  static void static_initialize();
-  static void static_cleanup();
+    static void static_initialize();
+    static void static_cleanup();
 
-  const char *class_name() const		{ return "IPFilter"; }
-  const char *port_count() const		{ return "1/-"; }
-  const char *processing() const		{ return PUSH; }
-  // this element does not need AlignmentInfo; override Classifier's "A" flag
-  const char *flags() const			{ return ""; }
+    const char *class_name() const		{ return "IPFilter"; }
+    const char *port_count() const		{ return "1/-"; }
+    const char *processing() const		{ return PUSH; }
+    // this element does not need AlignmentInfo; override Classifier's "A" flag
+    const char *flags() const			{ return ""; }
 
     int configure(Vector<String> &, ErrorHandler *);
     void add_handlers();
 
     void push(int port, Packet *);
 
-    static String compressed_program_string(Element *, void *);
+    typedef Classification::Wordwise::CompressedProgram IPFilterProgram;
+    static void parse_program(IPFilterProgram &zprog,
+			      const Vector<String> &conf, int noutputs,
+			      const Element *context, ErrorHandler *errh);
+    static inline int match(const IPFilterProgram &zprog, const Packet *p);
 
-  enum {
-    TYPE_NONE	= 0,		// data types
-    TYPE_TYPE	= 1,
-    TYPE_SYNTAX	= 2,
-    TYPE_INT	= 3,
+    enum {
+	TYPE_NONE	= 0,		// data types
+	TYPE_TYPE	= 1,
+	TYPE_SYNTAX	= 2,
+	TYPE_INT	= 3,
 
-    TYPE_HOST	= 10,		// expression types
-    TYPE_PROTO	= 11,
-    TYPE_IPFRAG	= 12,
-    TYPE_PORT	= 13,
-    TYPE_TCPOPT = 14,
+	TYPE_HOST	= 10,		// expression types
+	TYPE_PROTO	= 11,
+	TYPE_IPFRAG	= 12,
+	TYPE_PORT	= 13,
+	TYPE_TCPOPT	= 14,
 
-    TYPE_NET	= 30,		// shorthands
-    TYPE_IPUNFRAG = 31,
-    TYPE_IPECT	= 32,
-    TYPE_IPCE	= 33,
+	TYPE_NET	= 30,		// shorthands
+	TYPE_IPUNFRAG	= 31,
+	TYPE_IPECT	= 32,
+	TYPE_IPCE	= 33,
 
-    TYPE_FIELD	= 0x40000000,
-    // bit 31 must be zero
-    // bit 30 must be one
-    // bits 29-21 represent IP protocol (9 bits); 0 means no protocol
-    // bits 20-5 represent field offset into header in bits (16 bits)
-    // bits 4-0 represent field length in bits minus one (5 bits)
-    FIELD_PROTO_SHIFT = 21,
-    FIELD_PROTO_MASK = (0x1FF << FIELD_PROTO_SHIFT),
-    FIELD_OFFSET_SHIFT = 5,
-    FIELD_OFFSET_MASK = (0xFFFF << FIELD_OFFSET_SHIFT),
-    FIELD_LENGTH_SHIFT = 0,
-    FIELD_LENGTH_MASK = (0x1F << FIELD_LENGTH_SHIFT),
-    FIELD_CSUM	= (TYPE_FIELD | ((10*8) << FIELD_OFFSET_SHIFT) | 15),
-    FIELD_IPLEN	= (TYPE_FIELD | ((2*8) << FIELD_OFFSET_SHIFT) | 15),
-    FIELD_ID	= (TYPE_FIELD | ((4*8) << FIELD_OFFSET_SHIFT) | 15),
-    FIELD_VERSION = (TYPE_FIELD | (0 << FIELD_OFFSET_SHIFT) | 3),
-    FIELD_HL	= (TYPE_FIELD | (4 << FIELD_OFFSET_SHIFT) | 3),
-    FIELD_TOS	= (TYPE_FIELD | ((1*8) << FIELD_OFFSET_SHIFT) | 7),
-    FIELD_DSCP	= (TYPE_FIELD | ((1*8) << FIELD_OFFSET_SHIFT) | 5),
-    FIELD_TTL	= (TYPE_FIELD | ((8*8) << FIELD_OFFSET_SHIFT) | 7),
-    FIELD_TCP_WIN = (TYPE_FIELD | (IP_PROTO_TCP << FIELD_PROTO_SHIFT) | ((14*8) << FIELD_OFFSET_SHIFT) | 15),
-    FIELD_ICMP_TYPE = (TYPE_FIELD | (IP_PROTO_ICMP << FIELD_PROTO_SHIFT) | (0 << FIELD_OFFSET_SHIFT) | 7)
-  };
+	TYPE_FIELD	= 0x40000000,
+	// bit 31 must be zero
+	// bit 30 must be one
+	// bits 29-21 represent IP protocol (9 bits); 0 means no protocol
+	// bits 20-5 represent field offset into header in bits (16 bits)
+	// bits 4-0 represent field length in bits minus one (5 bits)
+	FIELD_PROTO_SHIFT = 21,
+	FIELD_PROTO_MASK = (0x1FF << FIELD_PROTO_SHIFT),
+	FIELD_OFFSET_SHIFT = 5,
+	FIELD_OFFSET_MASK = (0xFFFF << FIELD_OFFSET_SHIFT),
+	FIELD_LENGTH_SHIFT = 0,
+	FIELD_LENGTH_MASK = (0x1F << FIELD_LENGTH_SHIFT),
+	FIELD_CSUM	= (TYPE_FIELD | ((10*8) << FIELD_OFFSET_SHIFT) | 15),
+	FIELD_IPLEN	= (TYPE_FIELD | ((2*8) << FIELD_OFFSET_SHIFT) | 15),
+	FIELD_ID	= (TYPE_FIELD | ((4*8) << FIELD_OFFSET_SHIFT) | 15),
+	FIELD_VERSION	= (TYPE_FIELD | (0 << FIELD_OFFSET_SHIFT) | 3),
+	FIELD_HL	= (TYPE_FIELD | (4 << FIELD_OFFSET_SHIFT) | 3),
+	FIELD_TOS	= (TYPE_FIELD | ((1*8) << FIELD_OFFSET_SHIFT) | 7),
+	FIELD_DSCP	= (TYPE_FIELD | ((1*8) << FIELD_OFFSET_SHIFT) | 5),
+	FIELD_TTL	= (TYPE_FIELD | ((8*8) << FIELD_OFFSET_SHIFT) | 7),
+	FIELD_TCP_WIN = (TYPE_FIELD | (IP_PROTO_TCP << FIELD_PROTO_SHIFT) | ((14*8) << FIELD_OFFSET_SHIFT) | 15),
+	FIELD_ICMP_TYPE = (TYPE_FIELD | (IP_PROTO_ICMP << FIELD_PROTO_SHIFT) | (0 << FIELD_OFFSET_SHIFT) | 7)
+    };
 
     enum {
 	UNKNOWN = -1000
@@ -196,65 +200,84 @@ class IPFilter : public Classifier { public:
 	MIN_BINARY_SEARCH = 7
     };
 
-  struct Primitive {
+    struct Primitive {
 
-    int _type;
-    int _data;
+	int _type;
+	int _data;
 
-    int _op;
-    bool _op_negated;
+	int _op;
+	bool _op_negated;
 
-    int _srcdst;
-    int _transp_proto;
+	int _srcdst;
+	int _transp_proto;
 
-    union {
-      uint32_t u;
-      int32_t i;
-      unsigned char c[4];
-    } _u, _mask;
+	union {
+	    uint32_t u;
+	    int32_t i;
+	    unsigned char c[4];
+	} _u, _mask;
 
-    Primitive()				{ clear(); }
+	Primitive()			{ clear(); }
 
-    void clear();
-    void set_type(int, ErrorHandler *);
-    void set_srcdst(int, ErrorHandler *);
-    void set_transp_proto(int, ErrorHandler *);
+	void clear();
+	void set_type(int, ErrorHandler *);
+	void set_srcdst(int, ErrorHandler *);
+	void set_transp_proto(int, ErrorHandler *);
 
-    int set_mask(uint32_t full_mask, int shift, uint32_t provided_mask, ErrorHandler *);
-    int check(const Primitive &, uint32_t provided_mask, ErrorHandler *);
-    void add_exprs(Classifier *, Vector<int> &) const;
+	int set_mask(uint32_t full_mask, int shift, uint32_t provided_mask, ErrorHandler *);
+	int check(const Primitive &, uint32_t provided_mask, ErrorHandler *);
+	void compile(Classification::Wordwise::Program &p, Vector<int> &tree) const;
 
-    bool has_transp_proto() const;
-    bool negation_is_simple() const;
-    void simple_negate();
+	bool has_transp_proto() const;
+	bool negation_is_simple() const;
+	void simple_negate();
 
-    String unparse_type() const;
-    String unparse_op() const;
-    static String unparse_type(int srcdst, int type);
-    static String unparse_transp_proto(int transp_proto);
+	String unparse_type() const;
+	String unparse_op() const;
+	static String unparse_type(int srcdst, int type);
+	static String unparse_transp_proto(int transp_proto);
 
-   private:
+      private:
 
-    void add_comparison_exprs(Classifier *, Vector<int> &tree, int offset, int shift, bool swapped, bool op_negate) const;
+	void add_comparison_exprs(Classification::Wordwise::Program &p, Vector<int> &tree, int offset, int shift, bool swapped, bool op_negate) const;
 
-  };
+    };
 
- private:
+  protected:
 
-  Vector<uint32_t> _prog;
+    IPFilterProgram _zprog;
 
-  int lookup(String word, int type, int transp_proto, uint32_t &data, ErrorHandler *errh) const;
+  private:
 
-  int parse_expr(const Vector<String> &, int, Vector<int> &, Primitive &,
-		 ErrorHandler *);
-  int parse_orexpr(const Vector<String> &, int, Vector<int> &, Primitive &,
-		 ErrorHandler *);
-  int parse_term(const Vector<String> &, int, Vector<int> &, Primitive &,
-		 ErrorHandler *);
-  int parse_factor(const Vector<String> &, int, Vector<int> &, Primitive &,
-		 bool negated, ErrorHandler *);
+    static int lookup(String word, int type, int transp_proto, uint32_t &data,
+		      const Element *context, ErrorHandler *errh);
 
-    void length_checked_push(Packet *p, int safe_length);
+    struct Parser {
+	const Vector<String> &_words;
+	Vector<int> &_tree;
+	Classification::Wordwise::Program &_prog;
+	const Element *_context;
+	ErrorHandler *_errh;
+	Primitive _prev_prim;
+
+	Parser(const Vector<String> &words, Vector<int> &tree,
+	       Classification::Wordwise::Program &prog,
+	       const Element *context, ErrorHandler *errh)
+	    : _words(words), _tree(tree), _prog(prog), _context(context),
+	      _errh(errh) {
+	}
+
+	void parse_slot(int output, int pos);
+	int parse_expr(int pos);
+	int parse_orexpr(int pos);
+	int parse_term(int pos);
+	int parse_factor(int pos, bool negated);
+    };
+
+    static int length_checked_match(const IPFilterProgram &zprog,
+				    const Packet *p, int packet_length);
+
+    static String program_string(Element *e, void *user_data);
 
 };
 
@@ -262,18 +285,73 @@ class IPFilter : public Classifier { public:
 inline bool
 IPFilter::Primitive::has_transp_proto() const
 {
-  return _transp_proto >= 0;
+    return _transp_proto >= 0;
 }
 
 inline bool
 IPFilter::Primitive::negation_is_simple() const
 {
-  if (_type == TYPE_PROTO)
-    return true;
-  else if (_transp_proto >= 0)
-    return false;
-  else
-    return _type == TYPE_HOST || (_type & TYPE_FIELD) || _type == TYPE_IPFRAG;
+    if (_type == TYPE_PROTO)
+	return true;
+    else if (_transp_proto >= 0)
+	return false;
+    else
+	return _type == TYPE_HOST || (_type & TYPE_FIELD) || _type == TYPE_IPFRAG;
+}
+
+inline int
+IPFilter::match(const IPFilterProgram &zprog, const Packet *p)
+{
+    int packet_length = p->network_length();
+    if (packet_length > (int) p->network_header_length())
+	packet_length += TRANSP_FAKE_OFFSET - p->network_header_length();
+
+    if (zprog.output_everything() >= 0)
+	return zprog.output_everything();
+    else if (packet_length < (int) zprog.safe_length())
+	// common case never checks packet length
+	return length_checked_match(zprog, p, packet_length);
+
+    const unsigned char *neth_data = p->network_header();
+    const unsigned char *transph_data = p->transport_header();
+
+    const uint32_t *pr = zprog.begin();
+    const uint32_t *pp;
+    uint32_t data;
+    while (1) {
+	int off = (int16_t) pr[0];
+	if (off >= TRANSP_FAKE_OFFSET)
+	    data = *(const uint32_t *)(transph_data + off - TRANSP_FAKE_OFFSET);
+	else
+	    data = *(const uint32_t *)(neth_data + off);
+	data &= pr[3];
+	off = pr[0] >> 16;
+	pp = pr + 4;
+	if (!PERFORM_BINARY_SEARCH || off < MIN_BINARY_SEARCH) {
+	    for (; off; --off, ++pp)
+		if (*pp == data) {
+		    off = pr[2];
+		    goto gotit;
+		}
+	} else {
+	    const uint32_t *px = pp + off;
+	    while (pp < px) {
+		const uint32_t *pm = pp + (px - pp) / 2;
+		if (*pm == data) {
+		    off = pr[2];
+		    goto gotit;
+		} else if (*pm < data)
+		    pp = pm + 1;
+		else
+		    px = pm;
+	    }
+	}
+	off = pr[1];
+    gotit:
+	if (off <= 0)
+	    return -off;
+	pr += off;
+    }
 }
 
 CLICK_ENDDECLS
