@@ -6,6 +6,7 @@
  * Copyright (c) 2000-2001 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2007 Regents of the University of California
+ * Copyright (c) 2010 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,6 +29,7 @@
 #include <click/straccum.hh>
 #include <click/clp.h>
 #include <click/driver.hh>
+#include <click/bitvector.hh>
 #include "toolutils.hh"
 #include "elementmap.hh"
 #include "click-fastclassifier.hh"
@@ -121,6 +123,45 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 
 
 // Classifier related stuff
+
+void
+Classifier_Insn::write_branch(int branch, const String &label_prefix,
+			      StringAccum &sa)
+{
+    if (branch <= 0)
+	sa << "return " << -branch << ";\n";
+    else
+	sa << "goto " << label_prefix << branch << ";\n";
+}
+
+void
+Classifier_Insn::write_state(int state, bool check_length, bool take_short,
+			     const String &data, const String &label_prefix,
+			     StringAccum &sa) const
+{
+    sa << " " << label_prefix << state << ":\n";
+    if (take_short) {
+	sa << "  ";
+	write_branch(j[short_output], label_prefix, sa);
+	return;
+    }
+
+    bool switched = j[1] == state + 1;
+    sa << "  if (";
+    if (check_length) {
+	if (!!switched == !short_output)
+	    sa << "l < " << required_length() << " || ";
+	else
+	    sa << "l >= " << required_length() << " && ";
+    }
+    sa << "(" << data << " & " << mask.u << "U) "
+       << (switched ? "!= " : "== ") << value.u << "U)\n    ";
+    write_branch(j[!switched], label_prefix, sa);
+    if (j[switched] != state + 1) {
+	sa << "  ";
+	write_branch(j[switched], label_prefix, sa);
+    }
+}
 
 static bool
 combine_classifiers(RouterT *router, ElementT *from, int from_port, ElementT *to)
@@ -232,9 +273,10 @@ Classifier_Program::handler_value(const String &name) const
 bool
 operator!=(const Classifier_Insn &s1, const Classifier_Insn &s2)
 {
-  return (s1.yes != s2.yes
-	  || s1.no != s2.no
+  return (s1.j[0] != s2.j[0]
+	  || s1.j[1] != s2.j[1]
 	  || s1.offset != s2.offset
+	  || s1.short_output != s2.short_output
 	  || s1.mask.u != s2.mask.u
 	  || s1.value.u != s2.value.u);
 }
@@ -278,12 +320,9 @@ operator!=(const Classifier_Program &c1, const Classifier_Program &c2)
  */
 
 struct FastClassifier_Cid {
-  String name;
-  int guaranteed_packet_length;
-  void (*headers)(const Classifier_Program &, StringAccum &);
-  void (*checked_body)(const Classifier_Program &, StringAccum &);
-  void (*unchecked_body)(const Classifier_Program &, StringAccum &);
-  void (*push_body)(const Classifier_Program &, StringAccum &);
+    String name;
+    void (*match_body)(const Classifier_Program &, StringAccum &);
+    void (*more)(const Classifier_Program &, const String &, StringAccum &, StringAccum &);
 };
 
 static HashTable<String, int> cid_name_map(-1);
@@ -291,19 +330,14 @@ static Vector<FastClassifier_Cid *> cids;
 static Vector<String> interesting_handler_names;
 
 int
-add_classifier_type(const String &name, int guaranteed_packet_length,
-	void (*headers)(const Classifier_Program &, StringAccum &),
-	void (*checked_body)(const Classifier_Program &, StringAccum &),
-	void (*unchecked_body)(const Classifier_Program &, StringAccum &),
-	void (*push_body)(const Classifier_Program &, StringAccum &))
+add_classifier_type(const String &name,
+	void (*match_body)(const Classifier_Program &, StringAccum &),
+	void (*more)(const Classifier_Program &, const String &, StringAccum &, StringAccum &))
 {
   FastClassifier_Cid *cid = new FastClassifier_Cid;
   cid->name = name;
-  cid->guaranteed_packet_length = guaranteed_packet_length;
-  cid->headers = headers;
-  cid->checked_body = checked_body;
-  cid->unchecked_body = unchecked_body;
-  cid->push_body = push_body;
+  cid->match_body = match_body;
+  cid->more = more;
   cids.push_back(cid);
   cid_name_map.set(cid->name, cids.size() - 1);
   return cids.size() - 1;
@@ -391,6 +425,38 @@ classifiers_program(RouterT *r, const Vector<ElementT *> &classifiers)
     }
 
     return nr;
+}
+
+static void
+analyze_unsafe_length_jump(Classifier_Program &prog, Bitvector &active,
+			   int jump)
+{
+    if (jump > 0)
+	active[jump] = true;
+    else if (prog.unsafe_length_output_everything == -1)
+	prog.unsafe_length_output_everything = -jump;
+    else if (prog.unsafe_length_output_everything != -jump)
+	prog.unsafe_length_output_everything = -2;
+}
+
+static void
+analyze_unsafe_length_output_everything(Classifier_Program &prog)
+{
+    // analyze unsafe_length_output_everything
+    prog.unsafe_length_output_everything = prog.output_everything;
+    Bitvector active(prog.program.size(), false);
+    active[0] = true;
+    for (int i = 0; i < prog.program.size() && prog.unsafe_length_output_everything >= -1; ++i) {
+	if (!active[i])
+	    continue;
+	const Classifier_Insn &in = prog.program[i];
+	if (in.required_length() >= prog.safe_length)
+	    analyze_unsafe_length_jump(prog, active, in.j[in.short_output]);
+	else {
+	    analyze_unsafe_length_jump(prog, active, in.j[0]);
+	    analyze_unsafe_length_jump(prog, active, in.j[1]);
+	}
+    }
 }
 
 static void
@@ -492,7 +558,8 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
     prog.type = cid_name_map.get(classifier_tname);
     assert(prog.type >= 0);
 
-    prog.safe_length = prog.output_everything = prog.align_offset = -1;
+    prog.safe_length = prog.output_everything =
+	prog.unsafe_length_output_everything = prog.align_offset = -1;
     prog.noutputs = c->noutputs();
     while (program) {
       // find step
@@ -515,21 +582,26 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
 	step = step.substring(pos);
 	if (step[0] == '[' && step[1] == 'X') {
 	  sscanf(step.c_str(), "[X] no->%n", &pos);
-	  e.yes = -prog.noutputs;
+	  e.j[1] = -prog.noutputs;
 	} else if (step[0] == '[') {
-	  sscanf(step.c_str(), "[%d] no->%n", &e.yes, &pos);
-	  e.yes = -e.yes;
+	  sscanf(step.c_str(), "[%d] no->%n", &e.j[1], &pos);
+	  e.j[1] = -e.j[1];
 	} else
-	  sscanf(step.c_str(), "step %d no->%n", &e.yes, &pos);
+	  sscanf(step.c_str(), "step %d no->%n", &e.j[1], &pos);
 	// read no destination
 	step = step.substring(pos);
-	if (step[0] == '[' && step[1] == 'X')
-	  e.no = -prog.noutputs;
-	else if (step[0] == '[') {
-	  sscanf(step.c_str(), "[%d]", &e.no);
-	  e.no = -e.no;
+	if (step[0] == '[' && step[1] == 'X') {
+	  e.j[0] = -prog.noutputs;
+	  pos = 3;
+	} else if (step[0] == '[') {
+	    sscanf(step.c_str(), "[%d]%n", &e.j[0], &pos);
+	  e.j[0] = -e.j[0];
 	} else
-	  sscanf(step.c_str(), "step %d", &e.no);
+	  sscanf(step.c_str(), "step %d%n", &e.j[0], &pos);
+	// read short output
+	while (pos < step.length() && isspace((unsigned char) step[pos]))
+	    ++pos;
+	e.short_output = step.substring(pos, 10).equals("short->yes", 10);
 	// push expr onto list
 	prog.program.push_back(e);
       } else if (sscanf(step.c_str(), "all->[%d]", &prog.output_everything))
@@ -540,6 +612,9 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
 	/* nada */;
       }
     }
+
+    // analyze unsafe_length_output_everything
+    analyze_unsafe_length_output_everything(prog);
 
     // search for an existing fast classifier with the same program
     bool found_program = false;
@@ -579,10 +654,6 @@ output_classifier_program(int which,
   String class_name = gen_eclass_names[which];
   const Classifier_Program &prog = all_programs[which];
   FastClassifier_Cid *cid = cids[prog.type];
-  if (cid->headers) {
-    cid->headers(prog, source);
-    cid->headers = 0;		// only call cid->headers once
-  }
 
   header << "class " << cxx_name << " : public Element {\n\
   void devirtualize_all() { }\n\
@@ -601,24 +672,18 @@ output_classifier_program(int which,
       source << "  p->kill();\n";
     source << "}\n";
   } else {
-    bool need_checked = (prog.safe_length >= cid->guaranteed_packet_length);
-    if (need_checked) {
-      header << "  void length_checked_push(Packet *);\n";
-      source << "void\n" << cxx_name << "::length_checked_push(Packet *p)\n{\n";
-      cid->checked_body(prog, source);
-      source << "}\n";
+    header << "  void push(int, Packet *);\n\
+  inline int match(const Packet *) const {\n";
+    cid->match_body(prog, header);
+    header << "}\n";
+    if (cid->more) {
+	header << " private:\n";
+	cid->more(prog, cxx_name, header, source);
     }
-
-    header << "  inline void length_unchecked_push(Packet *);\n\
-  void push(int, Packet *);\n};\n";
-    source << "inline void\n" << cxx_name
-	   << "::length_unchecked_push(Packet *p)\n{\n";
-    cid->unchecked_body(prog, source);
-    source << "}\n";
-
-    source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n";
-    cid->push_body(prog, source);
-    source << "}\n";
+    header << "};\n";
+    source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n\
+  checked_output_push(match(p), p);\n\
+}\n";
   }
 }
 
