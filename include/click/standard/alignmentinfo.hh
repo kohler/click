@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../../../elements/standard/alignmentinfo.cc" -*-
+// -*- related-file-name: "../../../elements/standard/alignmentinfo.cc" -*-
 #ifndef CLICK_ALIGNMENTINFO_HH
 #define CLICK_ALIGNMENTINFO_HH
 #include <click/element.hh>
@@ -26,22 +26,22 @@ CLICK_DECLS
 
 class AlignmentInfo : public Element { public:
 
-  AlignmentInfo();
-  ~AlignmentInfo();
+    AlignmentInfo();
+    ~AlignmentInfo();
 
-  const char *class_name() const	{ return "AlignmentInfo"; }
-  int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
-  int configure(Vector<String> &, ErrorHandler *);
+    const char *class_name() const	{ return "AlignmentInfo"; }
+    int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
+    int configure(Vector<String> &, ErrorHandler *);
 
-  bool query1(Element *, int port, int &chunk, int &offset) const;
-  static bool query(Element *, int port, int &chunk, int &offset);
+    bool query1(const Element *e, int port, int &chunk, int &offset) const;
+    static bool query(const Element *e, int port, int &chunk, int &offset);
 
- private:
+  private:
 
-  Vector<int> _elem_offset;
-  Vector<int> _elem_icount;
-  Vector<int> _chunks;
-  Vector<int> _offsets;
+    Vector<int> _elem_offset;
+    Vector<int> _elem_icount;
+    Vector<int> _chunks;
+    Vector<int> _offsets;
 
 };
 
