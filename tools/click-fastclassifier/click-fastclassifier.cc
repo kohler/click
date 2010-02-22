@@ -673,7 +673,7 @@ output_classifier_program(int which,
     source << "}\n";
   } else {
     header << "  void push(int, Packet *);\n\
-  inline int match(const Packet *) const {\n";
+  inline int match(const Packet *p) const {\n";
     cid->match_body(prog, header);
     header << "}\n";
     if (cid->more) {
