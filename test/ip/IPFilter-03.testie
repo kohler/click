@@ -1,0 +1,30 @@
+%info
+
+Test that IPFilter does not optimize away necessary length comparisons.
+
+%script
+click SCRIPT
+
+%file SCRIPT
+FromIPSummaryDump(IN, STOP true) -> ps::PaintSwitch;
+
+ps[0] -> f0::IPFilter(0 transp[1]&128!=0, 1 -) -> IPPrint(A)
+      -> f1::IPFilter(0 not (transp[1]&128==0)) -> IPPrint(B) -> Discard;
+f0[1] -> f1;
+ps[1] -> Truncate(21) -> f0;
+
+%file IN
+!data link timestamp sport
+0 1 0
+0 2 128
+1 3 0
+1 4 128
+
+%expect stderr
+A: 2{{.*}}
+B: 2{{.*}}
+B: 3{{.*}}
+B: 4{{.*}}
+
+%ignore
+expensive{{.*}}
