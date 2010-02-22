@@ -1203,11 +1203,10 @@ IPFilter::add_handlers()
 //
 
 void
-IPFilter::length_checked_push(Packet *p)
+IPFilter::length_checked_push(Packet *p, int packet_length)
 {
   const unsigned char *neth_data = p->network_header();
   const unsigned char *transph_data = p->transport_header();
-  int packet_length = p->length() + TRANSP_FAKE_OFFSET - p->transport_header_offset();
   const uint32_t *pr = _prog.begin();
   const uint32_t *pp;
   uint32_t data = 0;
@@ -1272,15 +1271,18 @@ IPFilter::push(int, Packet *p)
 {
   const unsigned char *neth_data = p->network_header();
   const unsigned char *transph_data = p->transport_header();
+  int packet_length = p->network_length();
+  if (packet_length > (int) p->network_header_length())
+      packet_length += TRANSP_FAKE_OFFSET - p->network_header_length();
 
   if (_output_everything >= 0) {
     // must use checked_output_push because the output number might be
     // out of range
     checked_output_push(_output_everything, p);
     return;
-  } else if (p->length() + TRANSP_FAKE_OFFSET - p->transport_header_offset() < _safe_length) {
+  } else if (packet_length < (int) _safe_length) {
     // common case never checks packet length
-    length_checked_push(p);
+    length_checked_push(p, packet_length);
     return;
   }
 

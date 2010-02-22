@@ -254,7 +254,7 @@ class IPFilter : public Classifier { public:
   int parse_factor(const Vector<String> &, int, Vector<int> &, Primitive &,
 		 bool negated, ErrorHandler *);
 
-  void length_checked_push(Packet *);
+    void length_checked_push(Packet *p, int safe_length);
 
 };
 
