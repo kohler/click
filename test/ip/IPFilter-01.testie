@@ -1,0 +1,35 @@
+%info
+
+Test that IPFilter correctly handles short packets.
+
+%script
+click SCRIPT
+
+%file SCRIPT
+FromIPSummaryDump(IN, STOP true) -> ps::PaintSwitch;
+
+ps[0] -> f0::IPFilter(0 ip[19]&128==0) -> IPPrint(A) -> d::Discard;
+ps[1] -> f1::IPFilter(0 transp[1]&128==0) -> IPPrint(B) -> d;
+ps[2] -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> f0;
+ps[3] -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> f1;
+ps[4] -> Truncate(19) -> f0;
+ps[5] -> Truncate(21) -> f1;
+ps[6] -> Truncate(19) -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> f0;
+ps[7] -> Truncate(21) -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> f1;
+
+%file IN
+!data link timestamp sport
+0 1 0
+1 3 0
+2 5 0
+3 7 0
+4 9 0
+5 11 0
+6 13 0
+7 15 0
+
+%expect stderr
+A: 1{{.*}}
+B: 3{{.*}}
+A: 5{{.*}}
+B: 7{{.*}}
