@@ -99,6 +99,19 @@ Insn::compatible(const Insn &x, bool consider_short) const
 }
 
 bool
+Insn::generalizable_or_pair(const Insn &x) const
+{
+    uint32_t value_diff = value.u ^ x.value.u;
+    if (offset && x.offset == offset && mask.u && x.mask.u == mask.u
+	&& (short_output || !x.short_output) && yes() == x.yes()
+	&& (value_diff & (value_diff - 1)) == 0) {
+	Insn test(offset, value.u & ~value_diff, mask.u & ~value_diff);
+	return test.required_length() == required_length();
+    } else
+	return false;
+}
+
+bool
 Insn::flippable() const
 {
     if (!mask.u)
@@ -674,21 +687,32 @@ void
 Program::combine_compatible_states()
 {
     for (int i = 0; i < _insn.size(); i++) {
-	Insn &e = _insn[i];
-	if (e.no() > 0 && _insn[e.no()].compatible(e, false) && e.flippable())
-	    e.flip();
-	if (e.yes() <= 0)
+	Insn &in = _insn[i];
+	if (in.no() > 0) {
+	    Insn &no_in = _insn[in.no()];
+	    if (no_in.compatible(in, false) && in.flippable())
+		in.flip();
+	    else if (in.generalizable_or_pair(no_in)) {
+		uint32_t the_bit = in.value.u ^ no_in.value.u;
+		in.value.u &= ~the_bit;
+		in.mask.u &= ~the_bit;
+		in.no() = no_in.no();
+		--i;
+		continue;
+	    }
+	}
+	if (in.yes() <= 0)
 	    continue;
-	Insn &ee = _insn[e.yes()];
-	if (e.no() == ee.yes() && ee.flippable())
-	    ee.flip();
-	if (e.no() == ee.no() && ee.compatible(e, true)) {
-	    e.yes() = ee.yes();
-	    if (!e.mask.u)	// but probably ee.mask.u is always != 0...
-		e.offset = ee.offset;
-	    e.value.u = (e.value.u & e.mask.u) | (ee.value.u & ee.mask.u);
-	    e.mask.u |= ee.mask.u;
-	    i--;
+	Insn &yes_in = _insn[in.yes()];
+	if (in.no() == yes_in.yes() && yes_in.flippable())
+	    yes_in.flip();
+	if (in.no() == yes_in.no() && yes_in.compatible(in, true)) {
+	    in.yes() = yes_in.yes();
+	    if (!in.mask.u)	// but probably yes_in.mask.u is always != 0...
+		in.offset = yes_in.offset;
+	    in.value.u = (in.value.u & in.mask.u) | (yes_in.value.u & yes_in.mask.u);
+	    in.mask.u |= yes_in.mask.u;
+	    --i;
 	}
     }
 }

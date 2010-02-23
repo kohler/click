@@ -97,6 +97,12 @@ struct Insn {
      * instruction could be extended into a bit pattern that matches both
      * instructions. */
     bool compatible(const Insn &x, bool consider_short) const;
+    /** @brief Test whether this instruction and @a x form a pair whose
+     *   combined effect is that of an instruction with a less specific
+     *   mask.
+     *
+     * @a x is expected to be reachable from *this by the no branch. */
+    bool generalizable_or_pair(const Insn &x) const;
 
     /** @brief Test whether this instruction is flippable.
      *
