@@ -25,7 +25,8 @@ class DominatorOptimizer;
 
 struct Insn {
     uint16_t offset;
-    bool short_output;
+    uint8_t padding;
+    uint8_t short_output;
     union {
 	unsigned char c[4];
 	uint32_t u;
@@ -43,7 +44,7 @@ struct Insn {
     Insn(int offset_, uint32_t value_, uint32_t mask_,
 	 int32_t failure_ = j_failure, int32_t success_ = j_success,
 	 bool short_output_ = false)
-	: offset(offset_), short_output(short_output_) {
+	: offset(offset_), padding(0), short_output(short_output_) {
 	mask.u = mask_;
 	value.u = value_ & mask_;
 	j[0] = failure_;
@@ -107,6 +108,10 @@ struct Insn {
     void flip();
 
     String unparse() const;
+
+    static int compare(const Insn &a, const Insn &b) {
+	return memcmp(&a, &b, 12);
+    }
 
   private:
 
@@ -268,6 +273,7 @@ class DominatorOptimizer { public:
 
     Program *_p;
     Vector<int> _known_length;
+    Vector<int> _insn_id;
     Vector<int> _dom;
     Vector<int> _dom_start;
     Vector<int> _domlist_start;

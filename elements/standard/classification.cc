@@ -324,8 +324,18 @@ Program::negate_subtree(Vector<int> &tree, bool flip_short)
    for state S begins.
 */
 
+static int
+insn_permute_compare(const void *ap, const void *bp, void *user_data)
+{
+    int a = *reinterpret_cast<const int *>(ap);
+    int b = *reinterpret_cast<const int *>(bp);
+    const Insn *in = reinterpret_cast<const Insn *>(user_data);
+    int cmp = Insn::compare(in[a], in[b]);
+    return cmp ? cmp : a - b;
+}
+
 DominatorOptimizer::DominatorOptimizer(Program *p)
-    : _p(p), _known_length(_p->ninsn(), 0x7FFFFFFF),
+    : _p(p), _known_length(_p->ninsn(), 0x7FFFFFFF), _insn_id(_p->ninsn(), 0),
       _dom_start(1, 0), _domlist_start(1, 0)
 {
     if (_p->ninsn())
@@ -341,6 +351,18 @@ DominatorOptimizer::DominatorOptimizer(Program *p)
 	if (insn.j[so] > 0 && _known_length[i] < _known_length[insn.j[so]])
 	    _known_length[insn.j[so]] = _known_length[i];
     }
+
+    // Map instructions to unique IDs
+    Vector<int> insn_permute;
+    for (int i = 0; i < _p->ninsn(); ++i)
+	insn_permute.push_back(i);
+    click_qsort(insn_permute.begin(), insn_permute.size(), sizeof(int),
+		insn_permute_compare, (void *) _p->begin());
+    for (int i = 0; i < _p->ninsn(); ++i)
+	if (i > 0 && Insn::compare(_p->insn(insn_permute[i]), _p->insn(insn_permute[i-1])) == 0)
+	    _insn_id[insn_permute[i]] = _insn_id[insn_permute[i-1]];
+	else
+	    _insn_id[insn_permute[i]] = insn_permute[i];
 }
 
 void
@@ -405,25 +427,31 @@ DominatorOptimizer::calculate_dom(int state)
     // collect dominator lists from predecessors
     Vector<int> pdom, pdom_end;
     for (int i = 0; i < predecessors.size(); i++) {
-	int p = predecessors[i], s = stateno(p);
+	int pred_br = predecessors[i], s = stateno(pred_br);
 
 	// if both branches point at same place, remove predecessor state from
 	// tree
 	if (i > 0 && stateno(predecessors[i-1]) == s) {
-	    assert(i == predecessors.size() - 1 || stateno(predecessors[i+1]) != s);
+	    assert(i == predecessors.size() - 1 || stateno(predecessors[i+1]) != _insn_id[s]);
 	    assert(pdom_end.back() > pdom.back());
-	    assert(stateno(_dom[pdom_end.back() - 1]) == s);
+	    assert(stateno(_dom[pdom_end.back() - 1]) == _insn_id[s]);
 	    pdom_end.back()--;
 	    continue;
 	}
 
 	// append all dom lists to pdom and pdom_end; modify dom array to end
 	// with branch 'p'
+	int pred_brid = brno(_insn_id[s], br_yes(pred_br));
 	for (int j = _domlist_start[s]; j < _domlist_start[s+1]; j++) {
+	    int pos1 = _dom_start[j], pos2 = _dom_start[j+1];
+	    for (int k = pos1; k < pos2 - 1; ++k) // XXX time consuming?
+		if ((_dom[k] ^ pred_brid) == 1)
+		    goto ignore_impossible_path;
 	    pdom.push_back(_dom_start[j]);
 	    pdom_end.push_back(_dom_start[j+1]);
-	    assert(stateno(_dom[pdom_end.back() - 1]) == s);
-	    _dom[pdom_end.back() - 1] = p;
+	    assert(stateno(_dom[pdom_end.back() - 1]) == _insn_id[s]);
+	    _dom[pdom_end.back() - 1] = pred_brid;
+	ignore_impossible_path: ;
 	}
     }
 
@@ -434,7 +462,7 @@ DominatorOptimizer::calculate_dom(int state)
     int pdom_pos = 0;
     if (pdom.size() > MAX_DOMLIST) {
 	intersect_lists(_dom, pdom, pdom_end, 0, pdom.size(), _dom);
-	_dom.push_back(brno(state, false));
+	_dom.push_back(brno(_insn_id[state], false));
 	_dom_start.push_back(_dom.size());
 	pdom_pos = pdom.size();	// skip loop
     }
@@ -445,7 +473,7 @@ DominatorOptimizer::calculate_dom(int state)
 	    int x = _dom[i];
 	    _dom.push_back(x);
 	}
-	_dom.push_back(brno(state, false));
+	_dom.push_back(brno(_insn_id[state], false));
 	_dom_start.push_back(_dom.size());
     }
 
@@ -503,6 +531,7 @@ DominatorOptimizer::dom_shift_branch(int brno, int to_state, int dom, int dom_en
 {
     // shift the branch from `brno' to `to_state' as far down as you can,
     // using information from `brno's dominators
+    brno = DominatorOptimizer::brno(_insn_id[stateno(brno)], br_yes(brno));
     assert(dom_end > dom && stateno(_dom[dom_end - 1]) == stateno(brno));
     _dom[dom_end - 1] = brno;
     if (collector)
