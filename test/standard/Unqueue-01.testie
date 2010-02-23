@@ -1,0 +1,17 @@
+%info
+Test that Unqueue updates its "count" handler as it goes.
+
+%script
+click CONFIG
+
+%file CONFIG
+InfiniteSource(LIMIT 5, STOP true)
+	-> SimpleQueue
+	-> unqueue :: Unqueue(LIMIT 1)
+	-> s :: Script(TYPE PACKET, export count 0,
+	   	  set count $(add $count 1),
+		  write unqueue.reset);
+DriverManager(pause, wait 0.1s, print s.count);
+
+%expect stdout
+5

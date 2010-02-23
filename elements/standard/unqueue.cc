@@ -76,6 +76,7 @@ Unqueue::run_task(Task *)
     while (worked < limit && _active) {
 	if (Packet *p = input(0).pull()) {
 	    ++worked;
+	    ++_count;
 	    output(0).push(p);
 	} else if (!_signal)
 	    goto out;
@@ -85,7 +86,6 @@ Unqueue::run_task(Task *)
 
     _task.fast_reschedule();
   out:
-    _count += worked;
     return worked > 0;
 }
 
