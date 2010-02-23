@@ -176,7 +176,7 @@ class Program { public:
 			int success = j_success, int failure = j_failure);
 
     void combine_compatible_states();
-    bool remove_unused_states();
+    void remove_unused_states();
     void unaligned_optimize();
     void count_inbranches(Vector<int> &inbranches) const;
     void bubble_sort_and_exprs(unsigned sort_stopper = 0x7FFFFFFF);

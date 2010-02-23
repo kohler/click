@@ -203,16 +203,13 @@ Program::add_insn(Vector<int> &tree, int offset, uint32_t value, uint32_t mask)
 void
 Program::redirect_subtree(int first, int last, int success, int failure)
 {
-    for (int i = first; i < last; i++) {
-	Insn &e = _insn[i];
-	if (e.yes() == j_success)
-	    e.yes() = success;
-	else if (e.yes() == j_failure)
-	    e.yes() = failure;
-	if (e.no() == j_success)
-	    e.no() = success;
-	else if (e.no() == j_failure)
-	    e.no() = failure;
+    for (int i = first; i < last; ++i) {
+	Insn &in = _insn[i];
+	for (int k = 0; k < 2; ++k)
+	    if (in.j[k] == j_success)
+		in.j[k] = success;
+	    else if (in.j[k] == j_failure)
+		in.j[k] = failure;
     }
 }
 
@@ -622,63 +619,68 @@ DominatorOptimizer::run(int state)
 
 // OPTIMIZATION 2: SPECIAL CASE OPTIMIZATIONS
 
-bool
+void
 Program::remove_unused_states()
 {
-    // Remove uninteresting exprs
-    int first = 0;
-    for (int i = 0; _output_everything < 0 && i < _insn.size(); i++) {
-	Insn &e = _insn[i];
-	int next = e.yes();
-	if (e.yes() == e.no() || e.mask.u == 0) {
-	    if (i == first && next <= 0)
-		_output_everything = e.yes();
-	    else {
-		for (int j = 0; j < i; j++)
-		    for (int k = 0; k < 2; k++)
-			if (_insn[j].j[k] == i)
-			    _insn[j].j[k] = next;
-		if (i == 0)
-		    first = next;
-	    }
-	}
+    if (!_insn.size())
+	return;
+
+    // Remove uninteresting instructions
+    // Pass in reverse so we can skip multiple uninteresting insns at once
+    Vector<int> destination(_insn.size(), -1);
+    for (int i = _insn.size() - 1; i >= 0; --i) {
+	Insn &in = _insn[i];
+	// First skip uninteresting insns already found
+	for (int k = 0; k < 2; ++k)
+	    if (in.j[k] > 0)
+		in.j[k] = destination[in.j[k]];
+	// Second see if this insn is interesting
+	if (in.yes() != in.no() && in.mask.u != 0)
+	    destination[i] = i;
+	else if (in.yes() <= 0)
+	    destination[i] = in.yes();
+	else
+	    destination[i] = destination[in.yes()];
     }
-    if (_output_everything < 0 && first > 0)
-	_insn[0] = _insn[first];
+
+    // Check first instruction.  Requires special-case logic, since
+    // destination[0] == 0 might mean either 0 is interesting, or 0 is
+    // uninteresting and _output_everything should be 0.
+    if (destination[0] > 0)
+	_insn[0] = _insn[destination[0]];
+    else if (destination[0] < 0)
+	_output_everything = -destination[0];
+    else if (_insn[0].yes() == 0 && (_insn[0].no() == 0 || !_insn[0].mask.u))
+	_output_everything = 0;
 
     // Remove unreachable states
-    for (int i = 1; i < _insn.size(); i++) {
-	for (int j = 0; j < i; j++)	// all branches are forward
-	    if (_insn[j].yes() == i || _insn[j].no() == i)
-		goto done;
-	// if we get here, the state is unused
-	for (int j = i+1; j < _insn.size(); j++)
-	    _insn[j-1] = _insn[j];
-	_insn.pop_back();
-	for (int j = 0; j < _insn.size(); j++)
-	    for (int k = 0; k < 2; k++)
-		if (_insn[j].j[k] >= i)
-		    _insn[j].j[k]--;
-	i--;			// shifted downward, so must reconsider `i'
-    done: ;
-    }
+    // First find which states are reachable and assign them new positions.
+    destination.assign(_insn.size(), -1);
+    if (_output_everything < 0)
+	destination[0] = 0;
+    int new_insn_index = 0;
+    for (int i = 0; i < _insn.size(); ++i)
+	if (destination[i] >= 0) {
+	    destination[i] = new_insn_index;
+	    new_insn_index++;
+	    const Insn &in = _insn[i];
+	    for (int k = 0; k < 2; ++k)
+		if (in.j[k] > 0)
+		    destination[in.j[k]] = 0;
+	}
 
-    // Get rid of bad branches
-    Vector<int> failure_states(_insn.size(), j_failure);
-    bool changed = false;
-    for (int i = _insn.size() - 1; i >= 0; i--) {
-	Insn &e = _insn[i];
-	for (int k = 0; k < 2; k++)
-	    if (e.j[k] > 0 && failure_states[e.j[k]] != j_failure) {
-		e.j[k] = failure_states[e.j[k]];
-		changed = true;
-	    }
-	if (e.yes() == j_failure)
-	    failure_states[i] = e.no();
-	else if (e.no() == j_failure)
-	    failure_states[i] = e.yes();
-    }
-    return changed;
+    // Second actually rearrange the instruction list.
+    for (int i = 0; i < _insn.size(); ++i)
+	if (destination[i] >= 0) {
+	    int j = destination[i];
+	    if (j != i)
+		_insn[j] = _insn[i];
+	    Insn &in = _insn[j];
+	    for (int k = 0; k < 2; ++k)
+		if (in.j[k] > 0)
+		    in.j[k] = destination[in.j[k]];
+	}
+    _insn.erase(_insn.begin() + new_insn_index, _insn.end());
 }
 
 void
@@ -772,7 +774,7 @@ Program::optimize(unsigned sort_stopper)
 	    dom.run(i);
 	//dom.print();
 	combine_compatible_states();
-	(void) remove_unused_states();
+	remove_unused_states();
     }
 
     // click_chatter("%s", unparse().c_str());
