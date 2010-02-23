@@ -319,7 +319,8 @@ DominatorOptimizer::DominatorOptimizer(Program *p)
     : _p(p), _known_length(_p->ninsn(), 0x7FFFFFFF),
       _dom_start(1, 0), _domlist_start(1, 0)
 {
-    _known_length[0] = 0;
+    if (_p->ninsn())
+	_known_length[0] = 0;
     for (int i = 0; i < _p->ninsn(); ++i) {
 	const Insn &insn = _p->insn(i);
 	int yes_known_length = insn.required_length();
