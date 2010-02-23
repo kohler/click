@@ -82,7 +82,7 @@ Classifier::parse_program(Classification::Wordwise::Program &prog,
 	int i = 0;
 	int len = conf[slot].length();
 	const char *s = conf[slot].data();
-	bool empty = 0;
+	bool empty = true;
 
 	prog.start_subtree(tree);
 
