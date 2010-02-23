@@ -294,7 +294,7 @@ Program::negate_subtree(Vector<int> &tree, bool flip_short)
 /* The DominatorOptimizer optimizes Classifier decision trees by removing
    useless branches. If we have a path like:
 
-   0: x>=5?  ---Y-->  1: y==2?  ---Y-->  2: x>=6?  ---Y-->  3: ...
+   0: x>=6?  ---Y-->  1: y==2?  ---Y-->  2: x>=6?  ---Y-->  3: ...
        \
         --N-->...
 
@@ -305,7 +305,7 @@ Program::negate_subtree(Vector<int> &tree, bool flip_short)
    There's an obvious exponential-time algorithm to check this. Namely, given
    a state, enumerate all paths that could lead you to that state; then check
    the test against all tests on those paths. This terminates -- the
-   classifier structure is a DAG -- but clearly in exptime.
+   classifier structure is a DAG -- but in exptime.
 
    We reduce the algorithm to polynomial time by storing a bounded number of
    paths per state. For every state S, we maintain a set of up to
@@ -332,13 +332,14 @@ DominatorOptimizer::DominatorOptimizer(Program *p)
 	_known_length[0] = 0;
     for (int i = 0; i < _p->ninsn(); ++i) {
 	const Insn &insn = _p->insn(i);
-	int yes_known_length = insn.required_length();
-	if (yes_known_length < _known_length[i])
-	    yes_known_length = _known_length[i];
-	if (insn.yes() > 0 && yes_known_length < _known_length[insn.yes()])
-	    _known_length[insn.yes()] = yes_known_length;
-	if (insn.no() > 0 && _known_length[i] < _known_length[insn.no()])
-	    _known_length[insn.no()] = _known_length[i];
+	int tested_length = insn.required_length();
+	if (tested_length < _known_length[i])
+	    tested_length = _known_length[i];
+	bool so = insn.short_output;
+	if (insn.j[!so] > 0 && tested_length < _known_length[insn.j[!so]])
+	    _known_length[insn.j[!so]] = tested_length;
+	if (insn.j[so] > 0 && _known_length[i] < _known_length[insn.j[so]])
+	    _known_length[insn.j[so]] = _known_length[i];
     }
 }
 
