@@ -196,10 +196,8 @@ Program::start_subtree(Vector<int> &tree) const
 void
 Program::add_insn(Vector<int> &tree, int offset, uint32_t value, uint32_t mask)
 {
-    if (_insn.size() < 0x7FFF) {
-	_insn.push_back(Insn(offset, value, mask));
-	tree.push_back(tree[0]);
-    }
+    _insn.push_back(Insn(offset, value, mask));
+    tree.push_back(tree[0]);
 }
 
 void
