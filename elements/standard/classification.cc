@@ -32,12 +32,22 @@ namespace Wordwise {
 //
 
 bool
+Insn::implies_short_ok(bool direction, const Insn &x,
+		       bool next_direction, unsigned known_length) const
+{
+    if (short_output != direction)
+	return true;
+    unsigned r = required_length();
+    return r <= known_length
+	|| (r <= x.required_length() && next_direction == x.short_output);
+}
+
+bool
 Insn::implies(const Insn &x, unsigned known_length) const
 {
     if (!x.mask.u)
 	return true;
-    if (x.offset != offset
-	|| (short_output && required_length() > known_length))
+    if (x.offset != offset || !implies_short_ok(true, x, true, known_length))
 	return false;
     uint32_t both_mask = mask.u & x.mask.u;
     return both_mask == x.mask.u && (value.u & both_mask) == x.value.u;
@@ -48,8 +58,7 @@ Insn::not_implies(const Insn &x, unsigned known_length) const
 {
     if (!x.mask.u)
 	return true;
-    if (x.offset != offset
-	|| (!short_output && required_length() > known_length))
+    if (x.offset != offset || !implies_short_ok(false, x, true, known_length))
 	return false;
     return (mask.u & (mask.u - 1)) == 0 && mask.u == x.mask.u
 	&& value.u != x.value.u;
@@ -59,7 +68,7 @@ bool
 Insn::implies_not(const Insn &x, unsigned known_length) const
 {
     if (!x.mask.u || x.offset != offset
-	|| (short_output && required_length() > known_length))
+	|| !implies_short_ok(true, x, false, known_length))
 	return false;
     uint32_t both_mask = mask.u & x.mask.u;
     return both_mask == x.mask.u && (value.u & both_mask) != x.value.u;
@@ -70,8 +79,7 @@ Insn::not_implies_not(const Insn &x, unsigned known_length) const
 {
     if (!mask.u)
 	return true;
-    if (x.offset != offset
-	|| (!short_output && required_length() > known_length))
+    if (x.offset != offset || !implies_short_ok(false, x, false, known_length))
 	return false;
     uint32_t both_mask = mask.u & x.mask.u;
     return both_mask == mask.u && value.u == (x.value.u & both_mask);

@@ -107,6 +107,12 @@ struct Insn {
     void flip();
 
     String unparse() const;
+
+  private:
+
+    bool implies_short_ok(bool direction, const Insn &x,
+			  bool next_direction, unsigned known_length) const;
+
 };
 
 StringAccum &operator<<(StringAccum &sa, const Insn &insn);
