@@ -1,5 +1,6 @@
 #ifndef CLICK_CLASSIFICATION_HH
 #define CLICK_CLASSIFICATION_HH 1
+#define CLICK_CLASSIFICATION_WORDWISE_DOMINATOR_FASTPRED 1
 #include <click/packet.hh>
 #include <click/vector.hh>
 CLICK_DECLS
@@ -121,8 +122,15 @@ struct Insn {
 
   private:
 
-    bool implies_short_ok(bool direction, const Insn &x,
-			  bool next_direction, unsigned known_length) const;
+    inline bool implies_short_ok(bool direction, const Insn &x, bool next_direction, unsigned known_length) const {
+	// Common cases.
+	if (short_output != direction || offset + 4 <= (int) known_length)
+	    return true;
+	else
+	    return hard_implies_short_ok(direction, x, next_direction, known_length);
+    }
+
+    bool hard_implies_short_ok(bool direction, const Insn &x, bool next_direction, unsigned known_length) const;
 
 };
 
@@ -283,6 +291,11 @@ class DominatorOptimizer { public:
     Vector<int> _dom;
     Vector<int> _dom_start;
     Vector<int> _domlist_start;
+#if CLICK_CLASSIFICATION_WORDWISE_DOMINATOR_FASTPRED
+    mutable Vector<int> _pred_first;	// indexed by state (insn id)
+    mutable Vector<int> _pred_next;	// indexed by branch
+    mutable Vector<int> _pred_prev;	// indexed by branch
+#endif
 
     enum { MAX_DOMLIST = 4 };
 
@@ -297,8 +310,31 @@ class DominatorOptimizer { public:
     static int last_common_state_in_lists(const Vector<int> &, const Vector<int> &, const Vector<int> &);
     void find_predecessors(int state, Vector<int> &) const;
     int dom_shift_branch(int brno, int to_state, int dom, int dom_end, Vector<int> *collector);
-    void shift_branch(int brno);
+    void shift_branch(int state, bool branch);
     void calculate_dom(int state);
+
+    inline void set_branch(int from_state, bool branch, int to_state) {
+	Insn &in = insn(from_state);
+#if CLICK_CLASSIFICATION_WORDWISE_DOMINATOR_FASTPRED
+	int br = brno(from_state, branch);
+	if (in.j[branch] > 0) {
+	    if (_pred_prev[br] >= 0)
+		_pred_next[_pred_prev[br]] = _pred_next[br];
+	    else
+		_pred_first[in.j[branch]] = _pred_next[br];
+	    if (_pred_next[br] >= 0)
+		_pred_prev[_pred_next[br]] = _pred_prev[br];
+	}
+	if (to_state > 0) {
+	    if (_pred_first[to_state] >= 0)
+		_pred_prev[_pred_first[to_state]] = br;
+	    _pred_prev[br] = -1;
+	    _pred_next[br] = _pred_first[to_state];
+	    _pred_first[to_state] = br;
+	}
+#endif
+	in.j[branch] = to_state;
+    }
 
 };
 

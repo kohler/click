@@ -32,8 +32,8 @@ namespace Wordwise {
 //
 
 bool
-Insn::implies_short_ok(bool direction, const Insn &x,
-		       bool next_direction, unsigned known_length) const
+Insn::hard_implies_short_ok(bool direction, const Insn &x,
+			    bool next_direction, unsigned known_length) const
 {
     if (short_output != direction)
 	return true;
@@ -376,13 +376,47 @@ DominatorOptimizer::DominatorOptimizer(Program *p)
 void
 DominatorOptimizer::find_predecessors(int state, Vector<int> &v) const
 {
-    for (int i = 0; i < state; i++) {
-	Insn &e = insn(i);
-	if (e.yes() == state)
-	    v.push_back(brno(i, true));
-	if (e.no() == state)
-	    v.push_back(brno(i, false));
+#if CLICK_CLASSIFICATION_WORDWISE_DOMINATOR_FASTPRED
+    if (!_pred_first.size()) {
+	_pred_first.assign(ninsn(), -1);
+	_pred_next.assign(ninsn() * 2, -1);
+	_pred_prev.assign(ninsn() * 2, -1);
+	for (int i = 0; i < ninsn(); ++i) {
+	    const Insn &in = insn(i);
+	    for (int k = 0; k < 2; ++k)
+		if (in.j[k] > 0) {
+		    int nexts = in.j[k], br = brno(i, k);
+		    _pred_next[br] = _pred_first[nexts];
+		    if (_pred_first[nexts] >= 0)
+			_pred_prev[_pred_first[nexts]] = br;
+		    _pred_first[nexts] = br;
+		}
+	}
     }
+
+    for (int br = _pred_first[state]; br >= 0; br = _pred_next[br])
+	v.push_back(br);
+
+# if 0 /* This code tests that the linked-list predecessors are right */
+    Vector<int> vv;
+    for (int i = 0; i < state; i++) {
+	const Insn &in = insn(i);
+	for (int k = 0; k < 2; ++k)
+	    if (in.j[k] == state)
+		vv.push_back(brno(i, k));
+    }
+
+    click_qsort(v.begin(), v.size());
+    assert(v.size() == vv.size() && memcmp(v.begin(), vv.begin(), sizeof(int) * v.size()) == 0);
+# endif
+#else
+    for (int i = 0; i < state; i++) {
+	const Insn &in = insn(i);
+	for (int k = 0; k < 2; ++k)
+	    if (in.j[k] == state)
+		vv.push_back(brno(i, k));
+    }
+#endif
 }
 
 #if CLICK_USERLEVEL
@@ -421,9 +455,10 @@ DominatorOptimizer::calculate_dom(int state)
 
     // if no predecessors, kill this expr
     if (predecessors.size() == 0) {
-	if (state > 0)
-	    insn(state).j[0] = insn(state).j[1] = Classification::j_never;
-	else {
+	if (state > 0) {
+	    for (int k = 0; k < 2; ++k)
+		set_branch(state, k, Classification::j_never);
+	} else {
 	    assert(state == 0);
 	    _dom.push_back(brno(state, false));
 	    _dom_start.push_back(_dom.size());
@@ -582,28 +617,31 @@ DominatorOptimizer::last_common_state_in_lists(const Vector<int> &in, const Vect
 }
 
 void
-DominatorOptimizer::shift_branch(int brno)
+DominatorOptimizer::shift_branch(int state, bool branch)
 {
     // shift a branch by examining its dominators
 
-    int s = stateno(brno);
-    int32_t &to_state = insn(s).j[br_yes(brno)];
-    if (to_state <= 0)
+    int32_t nexts = insn(state).j[branch], new_nexts;
+    if (nexts <= 0)
 	return;
+    int br = brno(state, branch);
 
-    if (_domlist_start[s] + 1 == _domlist_start[s+1]) {
+    if (_domlist_start[state] + 1 == _domlist_start[state+1]) {
 	// single domlist; faster algorithm
-	int d = _domlist_start[s];
-	to_state = dom_shift_branch(brno, to_state, _dom_start[d], _dom_start[d+1], 0);
+	int d = _domlist_start[state];
+	new_nexts = dom_shift_branch(br, nexts, _dom_start[d], _dom_start[d+1], 0);
     } else {
 	Vector<int> vals, start, end;
-	for (int d = _domlist_start[s]; d < _domlist_start[s+1]; d++) {
+	for (int d = _domlist_start[state]; d < _domlist_start[state+1]; d++) {
 	    start.push_back(vals.size());
-	    (void) dom_shift_branch(brno, to_state, _dom_start[d], _dom_start[d+1], &vals);
+	    (void) dom_shift_branch(br, nexts, _dom_start[d], _dom_start[d+1], &vals);
 	    end.push_back(vals.size());
 	}
-	to_state = last_common_state_in_lists(vals, start, end);
+	new_nexts = last_common_state_in_lists(vals, start, end);
     }
+
+    if (new_nexts != nexts)
+	set_branch(state, branch, new_nexts);
 }
 
 void
@@ -611,8 +649,8 @@ DominatorOptimizer::run(int state)
 {
     assert(_domlist_start.size() == state + 1);
     calculate_dom(state);
-    shift_branch(brno(state, true));
-    shift_branch(brno(state, false));
+    shift_branch(state, true);
+    shift_branch(state, false);
     // click_chatter("%s", _p->unparse().c_str());
 }
 
@@ -773,9 +811,9 @@ Program::optimize(unsigned sort_stopper)
 	for (int i = 0; i < _insn.size(); i++)
 	    dom.run(i);
 	//dom.print();
-	combine_compatible_states();
-	remove_unused_states();
     }
+    combine_compatible_states();
+    remove_unused_states();
 
     // click_chatter("%s", unparse().c_str());
 
