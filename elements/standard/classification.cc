@@ -91,7 +91,8 @@ Insn::compatible(const Insn &x, bool consider_short) const
     if (!mask.u || !x.mask.u)
 	return true;
     if (x.offset != offset
-	|| (consider_short && x.short_output != short_output))
+	|| (consider_short && x.short_output != short_output
+	    && required_length() < x.required_length()))
 	return false;
     uint32_t both_mask = mask.u & x.mask.u;
     return (value.u & both_mask) == (x.value.u & both_mask);
