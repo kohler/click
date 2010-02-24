@@ -186,6 +186,9 @@
 
 /* Set feature test macros before anything is included. */
 #if HAVE_LARGE_FILE_SUPPORT && HAVE_INT64_TYPES
+# if defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS != 64
+#  error "bad _FILE_OFFSET_BITS, did you #include <click/config.h> first?"
+# endif
 # define _LARGEFILE_SOURCE 1
 # define _FILE_OFFSET_BITS 64
 #endif
