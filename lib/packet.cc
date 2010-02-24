@@ -222,7 +222,7 @@ Packet::~Packet()
     else
 	delete[] _head;
 # elif CLICK_BSDMODULE
-    else
+    if (_m)
 	m_freem(_m);
 # endif
     _head = _data = 0;
