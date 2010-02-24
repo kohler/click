@@ -490,10 +490,10 @@ DominatorOptimizer::calculate_dom(int state)
 	    for (int k = pos1; k < pos2 - 1; ++k) // XXX time consuming?
 		if ((_dom[k] ^ pred_brid) == 1)
 		    goto ignore_impossible_path;
-	    pdom.push_back(_dom_start[j]);
-	    pdom_end.push_back(_dom_start[j+1]);
-	    assert(stateno(_dom[pdom_end.back() - 1]) == _insn_id[s]);
-	    _dom[pdom_end.back() - 1] = pred_brid;
+	    pdom.push_back(pos1);
+	    pdom_end.push_back(pos2);
+	    assert(stateno(_dom[pos2 - 1]) == _insn_id[s]);
+	    _dom[pos2 - 1] = pred_brid;
 	ignore_impossible_path: ;
 	}
     }
