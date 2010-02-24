@@ -379,6 +379,7 @@ FromDevice::run_task(Task *)
     int npq = 0;
     while (npq < _burst && _head != _tail) {
 	Packet *p = _queue[_head];
+	packet_memory_barrier(_queue[_head], _head);
 #if CLICK_DEBUG_SCHEDULING
 	emission_report(_head);
 #endif

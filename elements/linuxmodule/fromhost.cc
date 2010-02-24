@@ -304,7 +304,7 @@ FromHost::cleanup(CleanupStage)
 {
     fromlinux_map.remove(this, false);
 
-    Packet **q = (_capacity <= smq_size ? _q.smq : _q.lgq);
+    Packet * volatile *q = queue();
     while (_head != _tail) {
 	Packet *p = q[_head];
 	p->kill();
@@ -444,8 +444,9 @@ FromHost::run_task(Task *)
 	return false;
 
     if (likely(!empty())) {
-	Packet **q = (_capacity <= smq_size ? _q.smq : _q.lgq);
+	Packet * volatile *q = queue();
 	Packet *p = q[_head];
+	packet_memory_barrier(q[_head], _head);
 	_head = next_i(_head);
 
 	// Convenience for TYPE IP: set the IP header and destination address.
