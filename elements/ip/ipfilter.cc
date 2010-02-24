@@ -1144,9 +1144,14 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 int
 IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    int before_nerrors = errh->nerrors();
-    parse_program(_zprog, conf, noutputs(), this, errh);
-    return (errh->nerrors() == before_nerrors ? 0 : -1);
+    int before = errh->nerrors();
+    IPFilterProgram zprog;
+    parse_program(zprog, conf, noutputs(), this, errh);
+    if (errh->nerrors() == before) {
+	_zprog = zprog;
+	return 0;
+    } else
+	return -1;
 }
 
 String

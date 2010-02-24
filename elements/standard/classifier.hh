@@ -82,6 +82,7 @@ class Classifier : public Element { public:
     const char *processing() const		{ return PUSH; }
     // this element needs AlignmentInfo, so supply the "A" flag
     const char *flags() const			{ return "A"; }
+    bool can_live_reconfigure() const		{ return true; }
 
     int configure(Vector<String> &conf, ErrorHandler *errh);
     void add_handlers();

@@ -123,8 +123,7 @@ class IPFilter : public Element { public:
     const char *class_name() const		{ return "IPFilter"; }
     const char *port_count() const		{ return "1/-"; }
     const char *processing() const		{ return PUSH; }
-    // this element does not need AlignmentInfo; override Classifier's "A" flag
-    const char *flags() const			{ return ""; }
+    bool can_live_reconfigure() const		{ return true; }
 
     int configure(Vector<String> &, ErrorHandler *);
     void add_handlers();

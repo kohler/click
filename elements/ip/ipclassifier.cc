@@ -42,7 +42,8 @@ IPClassifier::configure(Vector<String> &conf, ErrorHandler *errh)
     for (int i = 0; i < conf.size(); i++)
 	new_conf.push_back(String(i) + " " + conf[i]);
     int r = IPFilter::configure(new_conf, errh);
-    _zprog.warn_unused_outputs(noutputs(), errh);
+    if (r >= 0)
+	_zprog.warn_unused_outputs(noutputs(), errh);
     return r;
 }
 

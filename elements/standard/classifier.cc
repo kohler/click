@@ -217,11 +217,15 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("need %d arguments, one per output port", noutputs());
 
     int before = errh->nerrors();
-    _prog = empty_program(errh);
-    parse_program(_prog, conf, errh);
-    _prog.warn_unused_outputs(noutputs(), errh);
+    Classification::Wordwise::Program prog = empty_program(errh);
+    parse_program(prog, conf, errh);
 
-    return (errh->nerrors() == before ? 0 : -1);
+    if (errh->nerrors() == before) {
+	prog.warn_unused_outputs(noutputs(), errh);
+	_prog = prog;
+	return 0;
+    } else
+	return -1;
 }
 
 String
