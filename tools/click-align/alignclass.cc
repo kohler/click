@@ -4,7 +4,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2007 Regents of the University of California
- * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2008-2010 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -160,6 +160,30 @@ ClassifierAligner::adjust_flow(Vector<Alignment>::iterator ain, int nin, Vector<
 	*ain = a;
 }
 
+void
+ARPQuerierAligner::have_flow(Vector<Alignment>::const_iterator ain, int nin, Vector<Alignment>::iterator aout, int nout, const String &)
+{
+    if (!nin)
+	return;
+    for (int j = 0; j < nout; ++j, ++aout)
+	if (j == 0 && nin)
+	    *aout = ain[0] - 14;
+	else if (j == 0)
+	    *aout = Alignment::make_universal();
+	else
+	    *aout = Alignment(4, 2);
+}
+
+void
+ARPQuerierAligner::want_flow(Vector<Alignment>::iterator ain, int nin, Vector<Alignment>::const_iterator aout, int nout, const String &)
+{
+    for (int j = 0; j < nin; ++j, ++ain)
+	if (j == 0 && nout)
+	    *ain = aout[0] + 14;
+	else
+	    *ain = Alignment(2, 0);
+}
+
 
 Aligner *
 default_aligner()
@@ -240,15 +264,90 @@ AlignAlignClass::AlignAlignClass()
 {
 }
 
+static Alignment
+parse_alignment(ElementT *e, const String &config, bool spacevec, ErrorHandler *errh)
+{
+    ContextErrorHandler cerrh(errh, "While analyzing alignment for %<%s%>:", e->declaration().c_str());
+    Vector<String> args;
+    spacevec ? cp_spacevec(config, args) : cp_argvec(config, args);
+    int modulus, offset;
+    if (cp_va_kparse(args, &cerrh,
+		     "MODULUS", cpkP+cpkM, cpInteger, &modulus,
+		     "OFFSET", cpkP+cpkM, cpInteger, &offset,
+		     cpEnd) >= 0)
+	return Alignment(modulus, offset);
+    else
+	return Alignment::make_bad();
+}
+
 Aligner *
 AlignAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
 {
-  int offset, modulus;
-  ContextErrorHandler cerrh(errh, "While analyzing alignment for %<%s%>:", e->declaration().c_str());
-  if (cp_va_kparse(e->configuration(), &cerrh,
-		   "MODULUS", cpkP+cpkM, cpUnsigned, &modulus,
-		   "OFFSET", cpkP+cpkM, cpUnsigned, &offset,
-		   cpEnd) < 0)
-    return default_aligner();
-  return new GeneratorAligner(Alignment(modulus, offset));
+    Alignment a = parse_alignment(e, e->configuration(), false, errh);
+    if (!a.bad())
+	return new GeneratorAligner(a);
+    else
+	return default_aligner();
+}
+
+
+FromHostAlignClass::FromHostAlignClass(const String &name)
+    : AlignClass(name)
+{
+}
+
+Aligner *
+FromHostAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *)
+{
+    Vector<String> args;
+    cp_argvec(e->configuration(), args);
+    String type;
+    (void) cp_va_kparse_remove_keywords(args, ErrorHandler::silent_handler(),
+					"TYPE", 0, cpWord, &type, cpEnd);
+    if (type == "IP")
+	return new GeneratorAligner(Alignment(4, 0));
+    else
+	return new GeneratorAligner(Alignment(4, 2));
+}
+
+
+FromDeviceAlignClass::FromDeviceAlignClass(const String &name)
+    : AlignClass(name)
+{
+}
+
+Aligner *
+FromDeviceAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
+{
+    Vector<String> args;
+    cp_argvec(e->configuration(), args);
+    String align_arg;
+    (void) cp_va_kparse_remove_keywords(args, ErrorHandler::silent_handler(),
+					"ALIGNMENT", 0, cpArgument, &align_arg,
+					cpEnd);
+    Alignment a = align_arg ? parse_alignment(e, align_arg, true, errh) : Alignment(4, 2);
+    if (!a.bad())
+	return new GeneratorAligner(a);
+    else
+	return default_aligner();
+}
+
+
+ICMPErrorAlignClass::ICMPErrorAlignClass(const String &name)
+    : AlignClass(name)
+{
+}
+
+Aligner *
+ICMPErrorAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *)
+{
+    Vector<String> args;
+    cp_argvec(e->configuration(), args);
+    bool ether = false;
+    (void) cp_va_kparse_remove_keywords(args, ErrorHandler::silent_handler(),
+					"ETHER", 0, cpBool, &ether, cpEnd);
+    if (ether)
+	return new Aligner();
+    else
+	return new GeneratorAligner(Alignment(4, 0));
 }

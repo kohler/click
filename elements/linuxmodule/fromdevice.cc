@@ -114,11 +114,13 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 8;
     _active = true;
+    String alignment;
     if (AnyDevice::configure_keywords(conf, errh, true) < 0
 	|| cp_va_kparse(conf, this, errh,
 			"DEVNAME", cpkP+cpkM, cpString, &_devname,
 			"BURST", cpkP, cpUnsigned, &_burst,
 			"ACTIVE", 0, cpBool, &_active,
+			"ALIGNMENT", 0, cpArgument, &alignment,
 			cpEnd) < 0)
 	return -1;
 

@@ -49,20 +49,23 @@ struct RouterAlign {
 
     RouterAlign(RouterT *, ErrorHandler *);
 
-  int iindex_eindex(int) const;
-  int iindex_port(int) const;
-  int oindex_eindex(int) const;
-  int oindex_port(int) const;
+    int iindex_eindex(int) const;
+    int iindex_port(int) const;
+    int oindex_eindex(int) const;
+    int oindex_port(int) const;
 
-  bool have_input();
-  void have_output();
+    const Alignment &ialign(const PortT &p) const;
+    const Alignment &oalign(const PortT &p) const;
 
-  void want_input();
-  bool want_output();
+    bool have_input();
+    void have_output();
 
-  void adjust();
+    void want_input();
+    bool want_output();
 
-  void print(FILE *);
+    void adjust();
+
+    void print(FILE *);
 
 };
 
@@ -97,41 +100,51 @@ RouterAlign::RouterAlign(RouterT *r, ErrorHandler *errh)
 int
 RouterAlign::iindex_eindex(int ii) const
 {
-  int ne = _icount.size();
-  for (int i = 0; i < ne; i++)
-    if (ii < _ioffset[i+1])
-      return i;
-  return -1;
+    int ne = _icount.size();
+    for (int i = 0; i < ne; i++)
+	if (ii < _ioffset[i+1])
+	    return i;
+    return -1;
 }
 
 int
 RouterAlign::iindex_port(int ii) const
 {
-  int ne = _icount.size();
-  for (int i = 0; i < ne; i++)
-    if (ii < _ioffset[i+1])
-      return ii - _ioffset[i];
-  return -1;
+    int ne = _icount.size();
+    for (int i = 0; i < ne; i++)
+	if (ii < _ioffset[i+1])
+	    return ii - _ioffset[i];
+    return -1;
 }
 
 int
 RouterAlign::oindex_eindex(int oi) const
 {
-  int ne = _icount.size();
-  for (int i = 0; i < ne; i++)
-    if (oi < _ooffset[i+1])
-      return i;
-  return -1;
+    int ne = _icount.size();
+    for (int i = 0; i < ne; i++)
+	if (oi < _ooffset[i+1])
+	    return i;
+    return -1;
 }
 
 int
 RouterAlign::oindex_port(int oi) const
 {
-  int ne = _icount.size();
-  for (int i = 0; i < ne; i++)
-    if (oi < _ooffset[i+1])
-      return oi - _ooffset[i];
-  return -1;
+    int ne = _icount.size();
+    for (int i = 0; i < ne; i++)
+	if (oi < _ooffset[i+1])
+	    return oi - _ooffset[i];
+    return -1;
+}
+
+const Alignment &RouterAlign::ialign(const PortT &p) const
+{
+    return _ialign[_ioffset[p.eindex()] + p.port];
+}
+
+const Alignment &RouterAlign::oalign(const PortT &p) const
+{
+    return _oalign[_ooffset[p.eindex()] + p.port];
 }
 
 void
@@ -254,21 +267,27 @@ static ElementClassT *class_factory(const String &name)
 	return new AlignClass(name, new ClassifierAligner);
     if (name == "EtherEncap")
 	return new AlignClass(name, new ShifterAligner(-14));
-    if (name == "FromDevice" || name == "PollDevice" || name == "FromHost"
-	|| name == "SR2SetChecksum" || name == "SR2CheckHeader"
+    if (name == "FromHost")
+	return new FromHostAlignClass(name);
+    if (name == "FromDevice" || name == "PollDevice")
+	return new FromDeviceAlignClass(name);
+    if (name == "SR2SetChecksum" || name == "SR2CheckHeader"
 	|| name == "SetSRChecksum" || name == "CheckSRHeader")
 	return new AlignClass(name, new GeneratorAligner(Alignment(4, 2)));
-    if (name == "InfiniteSource" || name == "RatedSource"
-	|| name == "ICMPError")
+    if (name == "ICMPError")
+	return new ICMPErrorAlignClass(name);
+    if (name == "InfiniteSource" || name == "RatedSource")
 	return new AlignClass(name, new GeneratorAligner(Alignment(4, 0)));
-    if (name == "ToHost")
-	return new AlignClass(name, new WantAligner(Alignment(4, 2)));
+    if (name == "Idle")
+	return new AlignClass(name, new GeneratorAligner(Alignment::make_universal()));
     if (name == "IPEncap" || name == "UDPIPEncap" || name == "ICMPPingEncap"
 	|| name == "RandomUDPIPEncap" || name == "RoundRobinUDPIPEncap"
 	|| name == "RoundRobinTCPIPEncap")
 	return new AlignClass(name, new WantAligner(Alignment(4, 0)));
-    if (name == "ARPResponder" || name == "ARPQuerier")
+    if (name == "ARPResponder")
 	return new AlignClass(name, new WantAligner(Alignment(2, 0)));
+    if (name == "ARPQuerier")
+	return new AlignClass(name, new ARPQuerierAligner);
     if (name == "IPInputCombo")
 	return new AlignClass(name, new CombinedAligner(new ShifterAligner(14),
 							new WantAligner(Alignment(4, 2))));
@@ -286,6 +305,8 @@ static ElementClassT *class_factory(const String &name)
 #define ROUTER_OPT		303
 #define EXPRESSION_OPT		304
 #define OUTPUT_OPT		305
+#define VERBOSE_OPT		307
+#define ASSERTIONS_OPT		308
 
 #define FIRST_DRIVER_OPT	1000
 #define USERLEVEL_OPT		(1000 + Driver::USERLEVEL)
@@ -293,14 +314,16 @@ static ElementClassT *class_factory(const String &name)
 #define BSDMODULE_OPT		(1000 + Driver::BSDMODULE)
 
 static const Clp_Option options[] = {
-  { "bsdmodule", 'b', BSDMODULE_OPT, 0, 0 },
-  { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
-  { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
-  { "help", 0, HELP_OPT, 0, 0 },
-  { "linuxmodule", 'l', LINUXMODULE_OPT, 0, 0 },
-  { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
-  { "userlevel", 'u', USERLEVEL_OPT, 0, 0 },
-  { "version", 'v', VERSION_OPT, 0, 0 },
+    { "assertions", 0, ASSERTIONS_OPT, 0, Clp_Negate },
+    { "bsdmodule", 'b', BSDMODULE_OPT, 0, 0 },
+    { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
+    { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
+    { "help", 0, HELP_OPT, 0, 0 },
+    { "linuxmodule", 'l', LINUXMODULE_OPT, 0, 0 },
+    { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
+    { "userlevel", 'u', USERLEVEL_OPT, 0, 0 },
+    { "verbose", 'V', VERBOSE_OPT, 0, 0 },
+    { "version", 'v', VERSION_OPT, 0, 0 }
 };
 
 static const char *program_name;
@@ -328,6 +351,10 @@ Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
   -e, --expression EXPR         Use EXPR as router configuration.\n\
   -o, --output FILE             Write output to FILE.\n\
+      --assertions              Insert CheckAlign assertions, not Aligns.\n\
+  -b, --bsdmodule               Check for bsdmodule driver.\n\
+  -l, --linuxmodule             Check for linuxmodule driver.\n\
+  -u, --userlevel               Check for userlevel driver.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
@@ -338,16 +365,22 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 inline String
 aligner_name(int anonymizer)
 {
-  return String("Align@click_align@") + String(anonymizer);
+    return String("Align@click_align@") + String(anonymizer);
+}
+
+inline String
+checker_name(int anonymizer)
+{
+    return String("CheckAlign@click_align@") + String(anonymizer);
 }
 
 int
 main(int argc, char **argv)
 {
-  click_static_initialize();
-  CLICK_DEFAULT_PROVIDES;
-  ErrorHandler *errh = ErrorHandler::default_handler();
-  PrefixErrorHandler p_errh(errh, "click-align: ");
+    click_static_initialize();
+    CLICK_DEFAULT_PROVIDES;
+    ErrorHandler *errh = ErrorHandler::default_handler();
+    PrefixErrorHandler p_errh(errh, "click-align: ");
 
   // read command line arguments
   Clp_Parser *clp =
@@ -358,6 +391,8 @@ main(int argc, char **argv)
   const char *router_file = 0;
   bool file_is_expr = false;
   const char *output_file = 0;
+  bool assertions = false;
+  bool verbose = false;
 
   while (1) {
     int opt = Clp_Next(clp);
@@ -372,11 +407,16 @@ main(int argc, char **argv)
       printf("click-align (Click) %s\n", CLICK_VERSION);
       printf("Copyright (C) 1999-2000 Massachusetts Institute of Technology\n\
 Copyright (C) 2007 Regents of the University of California\n\
+Copyright (C) 2008-2010 Meraki, Inc.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
+
+      case VERBOSE_OPT:
+	verbose = true;
+	break;
 
      case ROUTER_OPT:
      case EXPRESSION_OPT:
@@ -397,6 +437,10 @@ particular purpose.\n");
 	    goto bad_option;
 	}
 	specified_driver = opt - FIRST_DRIVER_OPT;
+	break;
+
+    case ASSERTIONS_OPT:
+	assertions = !clp->negated;
 	break;
 
      case Clp_NotOption:
@@ -476,6 +520,35 @@ particular purpose.\n");
     while (router->eindex(aligner_name(anonymizer)) >= 0)
 	anonymizer++;
 
+    // change align elements into alignment assertions
+    if (assertions) {
+	// calculate desired alignment
+	RouterAlign want_ral(router, errh);
+	want_ral.want_input();
+
+	// add required alignment checkers
+	ElementClassT *check_class = ElementClassT::base_type("CheckAlign");
+	assert(check_class);
+
+	for (int i = 0; i < original_nelements; i++)
+	    for (int j = 0; j < want_ral._icount[i]; j++) {
+		Alignment want = want_ral._ialign[ want_ral._ioffset[i] + j ];
+		if (want.modulus() > 1) {
+		    ElementT *e = router->get_element
+			(checker_name(anonymizer), check_class,
+			 String(want.modulus()) + ", " + String(want.offset()) + String(", ASSERT true"),
+			 LandmarkT("<click-align>"));
+		    router->insert_before(e, PortT(router->element(i), j));
+		    anonymizer++;
+		}
+	    }
+
+	// write result
+	if (write_router_file(router, output_file, errh) < 0)
+	    exit(1);
+	return 0;
+    }
+
     /*
      * Add Align elements for required alignments
      */
@@ -505,6 +578,11 @@ particular purpose.\n");
 			(aligner_name(anonymizer), align_class,
 			 String(want.modulus()) + ", " + String(want.offset()),
 			 LandmarkT("<click-align>"));
+		    if (verbose)
+			errh->message("%s: adding Align(%d, %d) to fix %s",
+				      PortT(router->element(i), j).unparse_output().c_str(),
+				      want.modulus(), want.offset(),
+				      have.unparse().c_str());
 		    router->insert_before(e, PortT(router->element(i), j));
 		    anonymizer++;
 		    num_aligns_added++;
@@ -657,12 +735,12 @@ particular purpose.\n");
 				LandmarkT("<click-align>"));
     }
 
-  // warn if added aligns
-  if (num_aligns_added > 0)
-    errh->warning((num_aligns_added > 1 ? "added %d Align elements" : "added %d Align element"), num_aligns_added);
+    // warn if added aligns
+    if (num_aligns_added > 0)
+	errh->warning((num_aligns_added > 1 ? "added %d Align elements" : "added %d Align element"), num_aligns_added);
 
-  // write result
-  if (write_router_file(router, output_file, errh) < 0)
-    exit(1);
-  return 0;
+    // write result
+    if (write_router_file(router, output_file, errh) < 0)
+	exit(1);
+    return 0;
 }

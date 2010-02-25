@@ -72,6 +72,13 @@ Boolean.  If false, then FromDevice will not accept packets from the attached
 device; instead, packets from the device are processed by Linux as usual.
 Default is true.
 
+=item ALIGNMENT
+
+Specifies the alignment of packets emitted by this FromDevice, in the form
+"ALIGN OFFSET", such as "4 0".  FromDevice does not process this argument
+itself, but the click-align tool parses the argument and uses it in its
+calculations.  The default ALIGNMENT is 4 2.
+
 =back
 
 =n
