@@ -378,8 +378,8 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
     ControlSocketErrorHandler errh;
     _proxied_handler = proxied_handler_name(canonical_name);
     _proxied_errh = &errh;
-
     const Handler* h = Router::handler(_proxy, _proxied_handler);
+    _proxied_errh = 0;
 
     if (errh.nerrors() > 0) {
       transfer_messages(fd, CSERR_NO_SUCH_HANDLER, String(), &errh);
@@ -441,8 +441,8 @@ ControlSocket::read_command(int fd, const String &handlername, String param)
   ControlSocketErrorHandler errh;
   _proxied_handler = h->name();
   _proxied_errh = &errh;
-
   String data = h->call_read(e, param, &errh);
+  _proxied_errh = 0;
 
   // did we get an error message?
   if (errh.nerrors() > 0)
@@ -574,6 +574,8 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
     retval = _proxy->llrpc(CLICK_LLRPC_PROXY, &pst);
   } else
     retval = e->llrpc(command, data.mutable_data());
+
+  _proxied_errh = 0;
 
   // did we get an error message?
   String msg;
