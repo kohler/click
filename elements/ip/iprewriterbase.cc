@@ -420,12 +420,13 @@ IPRewriterBase::pattern_write_handler(const String &str, Element *e, void *user_
 	// remove all existing flows created by this input
 	for (int which_heap = 0; which_heap < 2; ++which_heap) {
 	    Vector<IPRewriterFlow *> &myheap = rw->_heap->_heaps[which_heap];
-	    for (int i = myheap.size() - 1; i >= 0; )
+	    for (int i = myheap.size() - 1; i >= 0; --i)
 		if (myheap[i]->owner() == rw
-		    && myheap[i]->owner_input() == what)
+		    && myheap[i]->owner_input() == what) {
 		    myheap[i]->destroy(rw->_heap);
-		else
-		    --i;
+		    if (i < myheap.size())
+			++i;
+		}
 	}
 
 	// change pattern
