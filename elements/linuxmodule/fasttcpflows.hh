@@ -73,9 +73,9 @@ class FastTCPFlows : public Element {
   click_jiffies_t _last;
 
   struct flow_t {
-    WritablePacket *syn_packet;
-    WritablePacket *fin_packet;
-    WritablePacket *data_packet;
+    Packet *syn_packet;
+    Packet *fin_packet;
+    Packet *data_packet;
     int flow_count;
   };
   flow_t *_flows;

@@ -79,7 +79,9 @@ FastUDPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 FastUDPFlows::change_ports(int flow)
 {
-  click_ip *ip = reinterpret_cast<click_ip *>(_flows[flow].packet->data()+14);
+  WritablePacket *q = _flows[flow].packet->uniqueify(); // better not fail
+  _flows[flow].packet = q;
+  click_ip *ip = reinterpret_cast<click_ip *>(q->data()+14);
   click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
 
   udp->uh_sport = (click_random() >> 2) % 0xFFFF;
@@ -110,8 +112,7 @@ FastUDPFlows::get_packet()
     _flows[flow].flow_count = 0;
   }
   _flows[flow].flow_count++;
-  atomic_inc(&(_flows[flow].skb)->users);
-  return reinterpret_cast<Packet *>(_flows[flow].skb);
+  return _flows[flow].packet->clone();
 }
 
 
@@ -122,9 +123,10 @@ FastUDPFlows::initialize(ErrorHandler *)
   _flows = new flow_t[_nflows];
 
   for (int i=0; i<_nflows; i++) {
-    _flows[i].packet = Packet::make(_len);
-    memcpy(_flows[i].packet->data(), &_ethh, 14);
-    click_ip *ip = reinterpret_cast<click_ip *>(_flows[i].packet->data()+14);
+    WritablePacket *q = Packet::make(_len);
+    _flows[i].packet = q;
+    memcpy(q->data(), &_ethh, 14);
+    click_ip *ip = reinterpret_cast<click_ip *>(q->data()+14);
     click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
 
     // set up IP header
@@ -155,7 +157,6 @@ FastUDPFlows::initialize(ErrorHandler *)
 				      len, IP_PROTO_UDP, csum);
     } else
       udp->uh_sum = 0;
-    _flows[i].skb = _flows[i].packet->skb();
     _flows[i].flow_count = 0;
   }
   _last_flow = 0;

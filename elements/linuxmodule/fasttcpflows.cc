@@ -84,8 +84,10 @@ FastTCPFlows::change_ports(int flow)
 {
   unsigned short sport = (click_random() >> 2) % 0xFFFF;
   unsigned short dport = (click_random() >> 2) % 0xFFFF;
+  WritablePacket *q = _flows[flow].syn_packet->uniqueify(); // better not fail
+  _flows[flow].syn_packet = q;
   click_ip *ip =
-    reinterpret_cast<click_ip *>(_flows[flow].syn_packet->data()+14);
+    reinterpret_cast<click_ip *>(q->data()+14);
   click_tcp *tcp = reinterpret_cast<click_tcp *>(ip + 1);
   tcp->th_sport = sport;
   tcp->th_dport = dport;
@@ -95,7 +97,9 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_sum = csum_tcpudp_magic
     (_sipaddr.s_addr, _dipaddr.s_addr, len, IP_PROTO_TCP, csum);
 
-  ip = reinterpret_cast<click_ip *>(_flows[flow].data_packet->data()+14);
+  q = _flows[flow].data_packet->uniqueify(); // better not fail
+  _flows[flow].data_packet = q;
+  ip = reinterpret_cast<click_ip *>(q->data()+14);
   tcp = reinterpret_cast<click_tcp *>(ip + 1);
   tcp->th_sport = sport;
   tcp->th_dport = dport;
@@ -105,7 +109,9 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_sum = csum_tcpudp_magic
     (_sipaddr.s_addr, _dipaddr.s_addr, len, IP_PROTO_TCP, csum);
 
-  ip = reinterpret_cast<click_ip *>(_flows[flow].fin_packet->data()+14);
+  q = _flows[flow].fin_packet->uniqueify(); // better not fail
+  _flows[flow].fin_packet = q;
+  ip = reinterpret_cast<click_ip *>(q->data()+14);
   tcp = reinterpret_cast<click_tcp *>(ip + 1);
   tcp->th_sport = sport;
   tcp->th_dport = dport;
@@ -123,8 +129,7 @@ FastTCPFlows::get_packet()
     for (unsigned i=0; i<_nflows; i++) {
       if (_flows[i].flow_count != _flowsize) {
 	_flows[i].flow_count = _flowsize;
-        atomic_inc(&(_flows[i].fin_packet->skb())->users);
-        return reinterpret_cast<Packet *>(_flows[i].fin_packet->skb());
+	return _flows[i].fin_packet->clone();
       }
     }
     _sent_all_fins = true;
@@ -138,16 +143,11 @@ FastTCPFlows::get_packet()
     }
     _flows[flow].flow_count++;
     if (_flows[flow].flow_count == 1) {
-      atomic_inc(&(_flows[flow].syn_packet->skb())->users);
-      return reinterpret_cast<Packet *>(_flows[flow].syn_packet->skb());
-    }
-    else if (_flows[flow].flow_count == _flowsize) {
-      atomic_inc(&(_flows[flow].fin_packet->skb())->users);
-      return reinterpret_cast<Packet *>(_flows[flow].fin_packet->skb());
-    }
-    else {
-      atomic_inc(&(_flows[flow].data_packet->skb())->users);
-      return reinterpret_cast<Packet *>(_flows[flow].data_packet->skb());
+      return _flows[flow].syn_packet->clone();
+    } else if (_flows[flow].flow_count == _flowsize) {
+      return _flows[flow].fin_packet->clone();
+    } else {
+      return _flows[flow].data_packet->clone();
     }
   }
 }
@@ -165,10 +165,11 @@ FastTCPFlows::initialize(ErrorHandler *)
     unsigned short dport = (click_random() >> 2) % 0xFFFF;
 
     // SYN packet
-    _flows[i].syn_packet = Packet::make(_len);
+    WritablePacket *q = Packet::make(_len);
+    _flows[i].syn_packet = q;
     memcpy(_flows[i].syn_packet->data(), &_ethh, 14);
     click_ip *ip =
-      reinterpret_cast<click_ip *>(_flows[i].syn_packet->data()+14);
+      reinterpret_cast<click_ip *>(q->data()+14);
     click_tcp *tcp = reinterpret_cast<click_tcp *>(ip + 1);
     // set up IP header
     ip->ip_v = 4;
@@ -201,9 +202,10 @@ FastTCPFlows::initialize(ErrorHandler *)
 				    len, IP_PROTO_TCP, csum);
 
     // DATA packet with PUSH and ACK
-    _flows[i].data_packet = Packet::make(_len);
-    memcpy(_flows[i].data_packet->data(), &_ethh, 14);
-    ip = reinterpret_cast<click_ip *>(_flows[i].data_packet->data()+14);
+    q = Packet::make(_len);
+    _flows[i].data_packet = q;
+    memcpy(q->data(), &_ethh, 14);
+    ip = reinterpret_cast<click_ip *>(q->data()+14);
     tcp = reinterpret_cast<click_tcp *>(ip + 1);
     // set up IP header
     ip->ip_v = 4;
@@ -236,9 +238,10 @@ FastTCPFlows::initialize(ErrorHandler *)
 				    len, IP_PROTO_TCP, csum);
 
     // FIN packet
-    _flows[i].fin_packet = Packet::make(_len);
-    memcpy(_flows[i].fin_packet->data(), &_ethh, 14);
-    ip = reinterpret_cast<click_ip *>(_flows[i].fin_packet->data()+14);
+    q = Packet::make(_len);
+    _flows[i].fin_packet = q;
+    memcpy(q->data(), &_ethh, 14);
+    ip = reinterpret_cast<click_ip *>(q->data()+14);
     tcp = reinterpret_cast<click_tcp *>(ip + 1);
     // set up IP header
     ip->ip_v = 4;

@@ -70,8 +70,7 @@ class FastUDPSourceIP6 : public Element {
   unsigned short _incr;
   unsigned int _interval;
   bool _cksum;
-  WritablePacket *_packet;
-  struct sk_buff *_skb;
+  Packet *_packet;
   click_jiffies_t _first;
   click_jiffies_t _last;
 

@@ -80,7 +80,9 @@ FastUDPSource::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 FastUDPSource::incr_ports()
 {
-  click_ip *ip = reinterpret_cast<click_ip *>(_packet->data()+14);
+  WritablePacket *q = _packet->uniqueify(); // better not fail
+  _packet = q;
+  click_ip *ip = reinterpret_cast<click_ip *>(q->data()+14);
   click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
   _incr++;
   udp->uh_sport = htons(_sport+_incr);
@@ -100,9 +102,10 @@ FastUDPSource::initialize(ErrorHandler *)
 {
   _count = 0;
   _incr = 0;
-  _packet = Packet::make(_len);
-  memcpy(_packet->data(), &_ethh, 14);
-  click_ip *ip = reinterpret_cast<click_ip *>(_packet->data()+14);
+  WritablePacket *q = Packet::make(_len);
+  _packet = q;
+  memcpy(q->data(), &_ethh, 14);
+  click_ip *ip = reinterpret_cast<click_ip *>(q->data()+14);
   click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
 
   // set up IP header
@@ -134,7 +137,6 @@ FastUDPSource::initialize(ErrorHandler *)
   } else
     udp->uh_sum = 0;
 
-  _skb = _packet->skb();
   return 0;
 }
 
@@ -157,16 +159,13 @@ FastUDPSource::pull(int)
   if(_rate_limited){
     if (_rate.need_update(Timestamp::now())) {
       _rate.update();
-      atomic_inc(&_skb->users);
-      p = reinterpret_cast<Packet *>(_skb);
+      p = _packet->clone();
     }
   } else {
-    atomic_inc(&_skb->users);
-    p = reinterpret_cast<Packet *>(_skb);
+    p = _packet->clone();
   }
 
   if(p) {
-    assert(atomic_read(&_skb->users) > 1);
     _count++;
     if(_count == 1)
       _first = click_jiffies();

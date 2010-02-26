@@ -70,9 +70,8 @@ class FastUDPFlows : public Element {
   click_jiffies_t _last;
 
   struct flow_t {
-    WritablePacket *packet;
-    struct sk_buff *skb;
-    int flow_count;
+      Packet *packet;
+      int flow_count;
   };
   flow_t *_flows;
   void change_ports(int);
