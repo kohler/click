@@ -118,7 +118,7 @@ class IPRewriterBase : public Element { public:
 				      const IPFlowID &rewritten_flowid,
 				      int input) = 0;
     virtual void destroy_flow(IPRewriterFlow *flow) = 0;
-    virtual click_jiffies_t best_effort_expiry(IPRewriterFlow *flow) {
+    virtual click_jiffies_t best_effort_expiry(const IPRewriterFlow *flow) {
 	return flow->expiry() + _timeouts[0] - _timeouts[1];
     }
 

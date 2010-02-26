@@ -148,8 +148,11 @@ IPRewriterFlow::unparse_ports(StringAccum &sa, bool direction,
 	sa << '*';
     else if (e != _owner)
 	sa << e->name() << ':';
+    click_jiffies_t expiry_j = _expiry_j;
+    if (_guaranteed)
+	expiry_j = _owner->best_effort_expiry(this);
     sa << _e[true].output() << "] i" << _owner_input << " exp"
-       << (_expiry_j + (CLICK_HZ / 2) - now) / CLICK_HZ;
+       << (expiry_j + (CLICK_HZ / 2) - now) / CLICK_HZ;
 #else
     sa << " [";
     if (direction && e != _owner)

@@ -222,7 +222,7 @@ class IPRewriter : public TCPRewriter { public:
     IPRewriterEntry *add_flow(int ip_p, const IPFlowID &flowid,
 			      const IPFlowID &rewritten_flowid, int input);
     void destroy_flow(IPRewriterFlow *flow);
-    click_jiffies_t best_effort_expiry(IPRewriterFlow *flow) {
+    click_jiffies_t best_effort_expiry(const IPRewriterFlow *flow) {
 	if (flow->ip_p() == IP_PROTO_TCP)
 	    return TCPRewriter::best_effort_expiry(flow);
 	else

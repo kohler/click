@@ -132,8 +132,8 @@ class TCPRewriter : public IPRewriterBase { public:
     IPRewriterEntry *add_flow(int ip_p, const IPFlowID &flowid,
 			      const IPFlowID &rewritten_flowid, int input);
     void destroy_flow(IPRewriterFlow *flow);
-    click_jiffies_t best_effort_expiry(IPRewriterFlow *flow) {
-	return flow->expiry() + tcp_flow_timeout(static_cast<TCPFlow *>(flow)) - _timeouts[1];
+    click_jiffies_t best_effort_expiry(const IPRewriterFlow *flow) {
+	return flow->expiry() + tcp_flow_timeout(static_cast<const TCPFlow *>(flow)) - _timeouts[1];
     }
 
     void push(int, Packet *);
