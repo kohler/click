@@ -21,6 +21,7 @@
 #include "setudpchecksum.hh"
 #include <click/glue.hh>
 #include <click/error.hh>
+#include <click/router.hh>
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
 CLICK_DECLS
@@ -49,6 +50,13 @@ SetUDPChecksum::simple_action(Packet *p_in)
 	|| (len = ntohs(udph->uh_ulen),
 	    p->transport_length() < len)) {
 	// fragment, or packet data too short
+	if (noutputs() == 1) {
+	    void *&x = router()->force_attachment("SetUDPChecksum_message");
+	    if (!x) {
+		click_chatter("%{element}: fragment or short packet", this);
+		x = this;
+	    }
+	}
 	checked_output_push(1, p);
 	return 0;
     }

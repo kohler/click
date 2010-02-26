@@ -17,8 +17,8 @@ CLICK_DECLS
  * IP header fields to generate the pseudo-header.
  *
  * If input packets are IP fragments, or the UDP length is longer than the
- * packet, then pushes the input packets to the 2nd output, or drops them if
- * there is no 2nd output.
+ * packet, then pushes the input packets to the 2nd output, or drops them with
+ * a warning if there is no 2nd output.
  *
  * =a CheckUDPHeader, SetIPChecksum, CheckIPHeader, SetTCPChecksum */
 
