@@ -291,45 +291,32 @@ AlignAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
 }
 
 
-FromHostAlignClass::FromHostAlignClass(const String &name)
-    : AlignClass(name)
+DeviceAlignClass::DeviceAlignClass(const String &name, bool generator)
+    : AlignClass(name), _generator(generator)
 {
 }
 
 Aligner *
-FromHostAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *)
+DeviceAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
 {
     Vector<String> args;
     cp_argvec(e->configuration(), args);
-    String type;
-    (void) cp_va_kparse_remove_keywords(args, ErrorHandler::silent_handler(),
-					"TYPE", 0, cpWord, &type, cpEnd);
-    if (type == "IP")
-	return new GeneratorAligner(Alignment(4, 0));
-    else
-	return new GeneratorAligner(Alignment(4, 2));
-}
-
-
-FromDeviceAlignClass::FromDeviceAlignClass(const String &name)
-    : AlignClass(name)
-{
-}
-
-Aligner *
-FromDeviceAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
-{
-    Vector<String> args;
-    cp_argvec(e->configuration(), args);
-    String align_arg;
+    String align_arg, type_arg;
     (void) cp_va_kparse_remove_keywords(args, ErrorHandler::silent_handler(),
 					"ALIGNMENT", 0, cpArgument, &align_arg,
+					"TYPE", 0, cpWord, &type_arg,
 					cpEnd);
-    Alignment a = align_arg ? parse_alignment(e, align_arg, true, errh) : Alignment(4, 2);
-    if (!a.bad())
+    Alignment a(4, 2);
+    if (align_arg)
+	a = parse_alignment(e, align_arg, true, errh);
+    else if (type_arg == "IP")
+	a = Alignment(4, 0);
+    if (a.bad())
+	return default_aligner();
+    else if (_generator)
 	return new GeneratorAligner(a);
     else
-	return default_aligner();
+	return new WantAligner(a);
 }
 
 

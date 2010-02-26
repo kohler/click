@@ -117,14 +117,11 @@ class AlignAlignClass : public AlignClass { public:
     Aligner *create_aligner(ElementT *, RouterT *, ErrorHandler *);
 };
 
-class FromDeviceAlignClass : public AlignClass { public:
-    FromDeviceAlignClass(const String &name);
+class DeviceAlignClass : public AlignClass { public:
+    DeviceAlignClass(const String &name, bool generator);
     Aligner *create_aligner(ElementT *e, RouterT *r, ErrorHandler *errh);
-};
-
-class FromHostAlignClass : public AlignClass { public:
-    FromHostAlignClass(const String &name);
-    Aligner *create_aligner(ElementT *e, RouterT *r, ErrorHandler *errh);
+  private:
+    bool _generator;
 };
 
 class ICMPErrorAlignClass : public AlignClass { public:

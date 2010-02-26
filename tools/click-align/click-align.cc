@@ -267,10 +267,8 @@ static ElementClassT *class_factory(const String &name)
 	return new AlignClass(name, new ClassifierAligner);
     if (name == "EtherEncap")
 	return new AlignClass(name, new ShifterAligner(-14));
-    if (name == "FromHost")
-	return new FromHostAlignClass(name);
-    if (name == "FromDevice" || name == "PollDevice")
-	return new FromDeviceAlignClass(name);
+    if (name == "FromHost" || name == "FromDevice" || name == "PollDevice")
+	return new DeviceAlignClass(name, true);
     if (name == "SR2SetChecksum" || name == "SR2CheckHeader"
 	|| name == "SetSRChecksum" || name == "CheckSRHeader")
 	return new AlignClass(name, new GeneratorAligner(Alignment(4, 2)));
@@ -278,6 +276,8 @@ static ElementClassT *class_factory(const String &name)
 	return new ICMPErrorAlignClass(name);
     if (name == "InfiniteSource" || name == "RatedSource")
 	return new AlignClass(name, new GeneratorAligner(Alignment(4, 0)));
+    if (name == "ToHost")
+	return new DeviceAlignClass(name, false);
     if (name == "Idle")
 	return new AlignClass(name, new GeneratorAligner(Alignment::make_universal()));
     if (name == "IPEncap" || name == "UDPIPEncap" || name == "ICMPPingEncap"
