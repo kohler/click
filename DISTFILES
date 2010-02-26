@@ -233,6 +233,7 @@ e1000-4.x
 e1000-5.x
 e1000-7.x
 e1000-7.3.20-polling.patch
+e1000e-0.4.1.7-2010-02-25.polling.patch
 
 ./drivers/e1000-4.x:
 LICENSE
