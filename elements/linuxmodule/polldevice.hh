@@ -48,6 +48,13 @@ Boolean.  If true, then suppress device up/down messages.  Default is false.
 
 Unsigned.  Amount of extra headroom to request on each packet.  Default is 64.
 
+=item LENGTH
+
+Unsigned integer.  Sets the minimum size requested for packet buffers.  Should
+be at least as large as your interface's MTU; some cards require even more
+data than that.  Defaults to a number derived from the driver, which is
+usually the right answer.
+
 =item ALLOW_NONEXISTENT
 
 Allow nonexistent devices. If true, and no device named DEVNAME exists when
@@ -147,6 +154,8 @@ class PollDevice : public AnyTaskDevice { public:
 
     unsigned _burst;
     unsigned _headroom;
+    uint32_t _length;
+    bool _user_length;
 
 };
 

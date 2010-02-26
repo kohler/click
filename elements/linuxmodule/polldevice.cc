@@ -76,11 +76,14 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 8;
     _headroom = 64;
+    _length = 0;
+    _user_length = false;
     if (AnyDevice::configure_keywords(conf, errh, true) < 0
 	|| cp_va_kparse(conf, this, errh,
 			"DEVNAME", cpkP+cpkM, cpString, &_devname,
 			"BURST", cpkP, cpUnsigned, &_burst,
 			"HEADROOM", 0, cpUnsigned, &_headroom,
+			"LENGTH", cpkC, &_user_length, cpUnsigned, &_length,
 			cpEnd) < 0)
 	return -1;
 
@@ -124,10 +127,14 @@ you include a ToDevice for the same device. Try adding\n\
 
     if (_dev && !_dev->polling) {
 	/* turn off interrupt if interrupts weren't already off */
-	_dev->poll_on(_dev);
+	int rx_buffer_length = _dev->poll_on(_dev);
 	if (_dev->polling != 2)
 	    return errh->error("PollDevice detected wrong version of polling patch");
+	if (!_user_length)
+	    _length = (rx_buffer_length < 1536 ? 1536 : rx_buffer_length);
     }
+    if (_dev && _headroom < LL_RESERVED_SPACE(_dev))
+	errh->warning("device %s requests at least %d bytes of HEADROOM", _devname.c_str(), (int) LL_RESERVED_SPACE(_dev));
 
     ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
 #if HAVE_STRIDE_SCHED
@@ -229,7 +236,7 @@ PollDevice::run_task(Task *)
      * Skbmgr adds 64 bytes of headroom and tailroom, so back request off to
      * 1536.
      */
-    struct sk_buff *new_skbs = skbmgr_allocate_skbs(_headroom, 1536, &nskbs);
+    struct sk_buff *new_skbs = skbmgr_allocate_skbs(_headroom, _length, &nskbs);
 
 # if CLICK_DEVICE_STATS
     if (_activations > 0)
@@ -329,8 +336,11 @@ PollDevice::change_device(net_device *dev)
     set_device(dev, &poll_device_map, anydev_change);
 
     if (dev_change) {
-	if (_dev && !_dev->polling)
-	    _dev->poll_on(_dev);
+	if (_dev && !_dev->polling) {
+	    int rx_buffer_length = _dev->poll_on(_dev);
+	    if (!_user_length)
+		_length = (rx_buffer_length < 1536 ? 1536 : rx_buffer_length);
+	}
 
 	if (_dev)
 	    _task.strong_reschedule();
