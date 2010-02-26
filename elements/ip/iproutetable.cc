@@ -101,17 +101,17 @@ IPRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
     int r = 0, r1, eexist = 0;
     IPRoute route;
     for (int i = 0; i < conf.size(); i++) {
-	if (cp_ip_route(conf[i], &route, false, this)
-	    && route.port >= 0 && route.port < noutputs()) {
-	    if ((r1 = add_route(route, false, 0, errh)) < 0) {
-		if (r1 == -EEXIST)
-		    ++eexist;
-		else
-		    r = r1;
-	    }
-	} else {
+	if (!cp_ip_route(conf[i], &route, false, this)) {
 	    errh->error("argument %d should be %<ADDR/MASK [GATEWAY] OUTPUT%>", i+1);
 	    r = -EINVAL;
+	} else if (route.port < 0 || route.port >= noutputs()) {
+	    errh->error("argument %d bad OUTPUT", i+1);
+	    r = -EINVAL;
+	} else if ((r1 = add_route(route, false, 0, errh)) < 0) {
+	    if (r1 == -EEXIST)
+		++eexist;
+	    else
+		r = r1;
 	}
     }
     if (eexist)
@@ -169,10 +169,11 @@ int
 IPRouteTable::run_command(int command, const String &str, Vector<IPRoute>* old_routes, ErrorHandler *errh)
 {
     IPRoute route, old_route;
-    if (!cp_ip_route(str, &route, command == CMD_REMOVE, this)
-	|| route.port < (command == CMD_REMOVE ? -1 : 0)
-	|| route.port >= noutputs())
+    if (!cp_ip_route(str, &route, command == CMD_REMOVE, this))
 	return errh->error("expected %<ADDR/MASK [GATEWAY%s%>", (command == CMD_REMOVE ? " OUTPUT]" : "] OUTPUT"));
+    else if (route.port < (command == CMD_REMOVE ? -1 : 0)
+	     || route.port >= noutputs())
+	return errh->error("bad OUTPUT");
 
     int r, before = errh->nerrors();
     if (command == CMD_ADD)
