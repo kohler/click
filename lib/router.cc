@@ -36,7 +36,11 @@
 #include <click/bighashmap_arena.hh>
 #include <click/standard/errorelement.hh>
 #include <click/standard/threadsched.hh>
-#include <stdarg.h>
+#if CLICK_BSDMODULE
+# include <machine/stdarg.h>
+#else
+# include <stdarg.h>
+#endif
 #if CLICK_USERLEVEL
 # include <unistd.h>
 #endif

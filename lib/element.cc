@@ -37,6 +37,13 @@ CLICK_CXX_PROTECT
 # include <asm/uaccess.h>
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
+#elif CLICK_BSDMODULE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+# include <sys/types.h>
+# include <sys/limits.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
 #endif
 CLICK_DECLS
 

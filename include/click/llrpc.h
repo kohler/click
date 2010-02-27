@@ -3,6 +3,9 @@
 #if CLICK_LINUXMODULE
 # include <linux/errno.h>
 # include <linux/ioctl.h>
+#elif CLICK_BSDMODULE
+# include <sys/errno.h>
+# include <sys/ioccom.h>
 #else
 # include <errno.h>
 # include <sys/ioctl.h>

@@ -24,7 +24,11 @@
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/timestamp.hh>
-#include <stdarg.h>
+#if CLICK_BSDMODULE
+# include <machine/stdarg.h>
+#else
+# include <stdarg.h>
+#endif
 CLICK_DECLS
 
 /** @class StringAccum

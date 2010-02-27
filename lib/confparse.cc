@@ -53,7 +53,11 @@
 #if CLICK_USERLEVEL || CLICK_TOOL
 # include <pwd.h>
 #endif
-#include <stdarg.h>
+#if CLICK_BSDMODULE
+# include <machine/stdarg.h>
+#else
+# include <stdarg.h>
+#endif
 CLICK_DECLS
 
 int cp_errno;

@@ -20,7 +20,11 @@
 #include <click/integers.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <stdarg.h>
+#if CLICK_BSDMODULE
+# include <machine/stdarg.h>
+#else
+# include <stdarg.h>
+#endif
 CLICK_DECLS
 
 #define BITFIELD(proto, offset, length)			\

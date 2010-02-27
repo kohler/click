@@ -5,7 +5,12 @@
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 # include <stdio.h>
 #endif
-#include <stdarg.h>
+#if CLICK_BSDMODULE
+# include <machine/stdarg.h>
+#else
+# include <stdarg.h>
+#endif
+
 #if HAVE_ADDRESSABLE_VA_LIST
 # define VA_LIST_REF_T		va_list *
 # define VA_LIST_DEREF(val)	(*(val))

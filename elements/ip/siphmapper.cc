@@ -21,7 +21,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #if CLICK_BSDMODULE
-# include <machine/limits.h>
+# include <sys/limits.h>
 #endif
 #include "elements/ip/iprwpattern.hh"
 #include "siphmapper.hh"

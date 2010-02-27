@@ -27,8 +27,21 @@
 #include <click/router.hh>
 #include <click/straccum.hh>
 #include <click/master.hh>
+#include <click/confparse.hh>
 
 #ifdef BSD_NETISRSCHED
+#define DEVICE_POLLING
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+#include <sys/param.h>
+#include <sys/time.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <net/if.h>
+#include <net/if_var.h>
+#include <net/if_types.h>
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 #include <elements/bsdmodule/anydevice.hh>
 #endif
 

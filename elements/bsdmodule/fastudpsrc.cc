@@ -21,8 +21,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
-
-#include <machine/limits.h>
+#include <sys/limits.h>
 
 FastUDPSource::FastUDPSource()
   : _m(0)
@@ -290,4 +289,3 @@ FastUDPSource::add_handlers()
 
 ELEMENT_REQUIRES(bsdmodule)
 EXPORT_ELEMENT(FastUDPSource)
-

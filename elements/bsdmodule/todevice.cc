@@ -27,8 +27,12 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
-
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+#include <net/if_var.h>
 #include <net/ethernet.h>
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 
 /* for watching when devices go offline */
 static AnyDeviceMap to_device_map;

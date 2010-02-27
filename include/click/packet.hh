@@ -9,6 +9,9 @@
 #else
 # include <click/atomic.hh>
 #endif
+#if CLICK_BSDMODULE
+# include <sys/stddef.h>
+#endif
 struct click_ether;
 struct click_ip;
 struct click_icmp;

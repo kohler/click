@@ -39,6 +39,12 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #  include <click/cxxunprotect.h>
 # endif
+#elif CLICK_BSDMODULE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+# include <sys/malloc.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
 #endif
 
 // Include header structures so we can check their sizes with static_assert.

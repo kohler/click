@@ -10,7 +10,7 @@ CLICK_CXX_PROTECT
 #include <net/if.h>
 #include <net/if_var.h>
 #include <net/netisr.h>
-#include <machine/limits.h>
+#include <sys/limits.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 #define CLICK_CYCLE_COMPENSATION 0
