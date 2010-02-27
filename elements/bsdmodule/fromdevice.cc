@@ -41,6 +41,7 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
+CLICK_DECLS
 
 #define POLL_LIST_LEN 128	// XXX should refernce a proper #include
 
@@ -465,5 +466,6 @@ FromDevice::add_handlers()
     add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(AnyDevice bsdmodule)
 EXPORT_ELEMENT(FromDevice)

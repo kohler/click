@@ -124,6 +124,8 @@ write_assert_stop(const String &s, Element *, void *, ErrorHandler *errh)
 
 /****************************** Error handlers *******************************/
 
+CLICK_DECLS
+
 void
 KernelErrorHandler::log_line(const char *begin, const char *end)
 {
@@ -181,6 +183,8 @@ KernelErrorHandler::stable_string() const
 {
     return String::make_stable(&_logbuf[0], &_logbuf[_pos]);
 }
+
+CLICK_ENDDECLS
 
 static String
 read_errors(Element *, void *thunk)

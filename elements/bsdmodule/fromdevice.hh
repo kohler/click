@@ -68,7 +68,7 @@ which can be used for better performance and stability).
 #include <click/element.hh>
 #include "elements/bsdmodule/anydevice.hh"
 #include <click/standard/storage.hh>
-
+CLICK_DECLS
 
 class FromDevice : public AnyDevice, public Storage { public:
 
@@ -116,4 +116,5 @@ class FromDevice : public AnyDevice, public Storage { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

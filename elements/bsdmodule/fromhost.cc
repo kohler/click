@@ -26,6 +26,7 @@
 
 #include <net/if_var.h>
 #include <net/ethernet.h>
+CLICK_DECLS
 
 static AnyDeviceMap fromhost_map;
 
@@ -126,5 +127,6 @@ FromHost::run_task(Task *)
     return true;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(AnyDevice bsdmodule)
 EXPORT_ELEMENT(FromHost)

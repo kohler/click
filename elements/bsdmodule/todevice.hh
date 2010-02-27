@@ -66,6 +66,7 @@ Resets C<packets> counter to zero when written.
 
 #include "elements/bsdmodule/anydevice.hh"
 #include <click/notifier.hh>
+CLICK_DECLS
 
 class ToDevice : public AnyDevice {
 
@@ -98,4 +99,5 @@ class ToDevice : public AnyDevice {
 
 };
 
+CLICK_ENDDECLS
 #endif

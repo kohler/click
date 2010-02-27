@@ -22,6 +22,7 @@
 #include "tohost.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 // for watching when devices go offline
 static AnyDeviceMap to_host_map;
@@ -133,5 +134,6 @@ ToHost::add_handlers()
     add_read_handler("drops", read_handler, 0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(AnyDevice bsdmodule)
 EXPORT_ELEMENT(ToHost)

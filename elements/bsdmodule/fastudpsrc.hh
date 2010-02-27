@@ -57,6 +57,7 @@
 #include <click/packet.hh>
 #include <clicknet/ether.h>
 #include <clicknet/udp.h>
+CLICK_DECLS
 
 class FastUDPSource : public Element {
 
@@ -131,4 +132,6 @@ FastUDPSource::make_checksum(click_udp *udp)
     } else
         udp->uh_sum = 0;
 }
+
+CLICK_ENDDECLS
 #endif

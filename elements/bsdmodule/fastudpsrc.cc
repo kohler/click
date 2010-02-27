@@ -22,6 +22,7 @@
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
 #include <sys/limits.h>
+CLICK_DECLS
 
 FastUDPSource::FastUDPSource()
   : _m(0)
@@ -287,5 +288,6 @@ FastUDPSource::add_handlers()
     add_write_handler("limit", FastUDPSource_limit_write_handler, 0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(bsdmodule)
 EXPORT_ELEMENT(FastUDPSource)

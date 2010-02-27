@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <net/ethernet.h>
 #include "elements/bsdmodule/anydevice.hh"
+CLICK_DECLS
 
 class ToHost : public AnyDevice {
 
@@ -38,4 +39,5 @@ class ToHost : public AnyDevice {
     friend class ToHostSniffers;
 };
 
+CLICK_ENDDECLS
 #endif

@@ -4,6 +4,7 @@
 #include <click/element.hh>
 #include <click/notifier.hh>
 #include "elements/bsdmodule/anydevice.hh"
+CLICK_DECLS
 
 class FromHost : public AnyDevice {
 
@@ -27,4 +28,5 @@ class FromHost : public AnyDevice {
     unsigned _burst;
 };
 
+CLICK_ENDDECLS
 #endif

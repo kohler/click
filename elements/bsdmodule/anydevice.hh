@@ -22,10 +22,9 @@ CLICK_CXX_UNPROTECT
 #endif
 #define GET_STATS_RESET(a,b,c,d,e,f)	/* nothing */
 #define SET_STATS(a,b,c)		/* nothing */
+CLICK_DECLS
 
 extern int *polling;            // 1 = BSD poller; 2 = Click poller
-
-CLICK_DECLS
 
 class AnyDeviceMap;
 

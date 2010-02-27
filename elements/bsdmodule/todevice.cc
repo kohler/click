@@ -33,6 +33,7 @@ CLICK_CXX_PROTECT
 #include <net/ethernet.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
+CLICK_DECLS
 
 /* for watching when devices go offline */
 static AnyDeviceMap to_device_map;
@@ -197,5 +198,6 @@ ToDevice::add_handlers()
   add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(AnyDevice bsdmodule)
 EXPORT_ELEMENT(ToDevice)
