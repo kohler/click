@@ -98,7 +98,7 @@ clickfs_root(struct mount *mp, int flags, struct vnode **vpp, struct thread *td)
 
     *vpp = cmp->click_root;
     VREF(*vpp);
-    //vn_lock(*vpp, LK_EXCLUSIVE | LK_RETRY, curthread);
+    vn_lock(*vpp, LK_EXCLUSIVE | LK_RETRY, curthread);
 
     return 0;
 }

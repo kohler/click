@@ -83,8 +83,8 @@ static struct vop_vector clickfs_vnodeops = {
 	NULL,
 	clickfs_readdir,
 	clickfs_readlink,
-	clickfs_inactive,
-	clickfs_reclaim,
+	NULL,
+	NULL,
 	NULL,	/* .. 5 at current revision */
 };
 
@@ -112,6 +112,7 @@ clickfs_rootvnode(struct mount *mp, struct vnode **vpp)
     vp->v_data = de;
     vp->v_type = clickfs_vtype[de->type];
     vp->v_vflag = VV_ROOT;
+    vp->v_mount = mp;
     return 0;
 }
 
@@ -133,7 +134,6 @@ clickfs_lookup(struct vop_lookup_args *ap)
 	return ENOTDIR;
     if (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME)
 	return EROFS;
-    VOP_UNLOCK(dvp, 0, td);
 
     if (plen == 1 && *pname == '.') {
 	*vpp = dvp;
@@ -160,13 +160,13 @@ clickfs_lookup(struct vop_lookup_args *ap)
 
     (*vpp)->v_data = cde;
     (*vpp)->v_type = clickfs_vtype[cde->type];
+    (*vpp)->v_mount = dvp->v_mount;
     if (cde == clickfs_tree_root)
 	(*vpp)->v_vflag = VV_ROOT;
     vn_lock(*vpp, LK_SHARED | LK_RETRY, td);
     return 0;
 
 done:
-    vn_lock(dvp, LK_SHARED | LK_RETRY, td);
     return error;
 }
 
@@ -213,27 +213,6 @@ clickfs_setattr(struct vop_setattr_args *ap)
 }
 
 int
-clickfs_reclaim(struct vop_reclaim_args *ap)
-{
-    return 0;
-}
-
-int
-clickfs_inactive(struct vop_inactive_args *ap)
-{
-    struct vnode *vp = ap->a_vp;
-    struct clickfs_dirent *cde = VTOCDE(vp);
-
-    if (cde->type == CLICKFS_DIRENT_HANDLE)
-	cde->data.handle.r_offset = cde->data.handle.w_offset = 0;
-    vp->v_data = NULL;
-    vp->v_type = VNON;
-    VOP_UNLOCK(vp, 0, ap->a_td);
-
-    return 0;
-}
-
-int
 clickfs_access(struct vop_access_args *ap)
 {
     struct vnode *vp = ap->a_vp;
@@ -243,8 +222,8 @@ clickfs_access(struct vop_access_args *ap)
     int perm = cde->perm;
 
     /* XXX fixme: also allow others, not just root */
-    if (cred->cr_uid != 0)
-	return EPERM;
+    //if (cred->cr_uid != 0)
+    //	return EPERM;
     if ( (mode & VWRITE) && !(perm & S_IWUSR) )
 	return EPERM;
     if ( (mode & VREAD)  && !(perm & S_IRUSR) )
