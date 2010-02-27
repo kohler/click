@@ -1,0 +1,94 @@
+# $FreeBSD: src/sys/modules/mxcore/Makefile,v 1.0.0.0 2008/07/29 05:11:44 knl Exp $ 
+
+KMOD=click
+SRCS=	vnode_if.h \
+	module_c.c \
+	clickfs.cc \
+	clickfs_element.cc \
+	clickfs_tree.cc \
+	clickfs_vnops.cc \
+	config.cc \
+	elements.cc \
+	kernelerror.cc \
+	module.cc \
+	sched.cc 
+
+CLEANFILES+=vnode_if.h vnode_if_newproto.h vnode_if_typedef.h elements.cc elements.conf elements.mk
+
+CLICKDIR=$(.CURDIR)/../
+
+NO_UNDEF=1
+#CFLAGS+=-I.. -I$(.CURDIR) -DMODELNET -Wall
+INCLUDES+=-I$(CLICKDIR)/include -I$(.CURDIR) -I$(CLICKDIR)
+DEFS+=-DCLICK_BSDMODULE -DBSD_NETISRSCHED -DHAVE_CONFIG_H
+
+# Debugging related switches
+# -pg -GPROF is for profiling and debugging
+#  #CFLAGS+= -pg -DGPROF
+#WERROR=-Werror
+DEBUG_FLAGS=-g
+#DEBUG_FLAGS=
+
+EXPORT_SYMS=YES
+
+CFLAGS+=$(INCLUDES) $(DEFS)
+CXXFLAGS+=-fpermissive -fno-exceptions -fno-rtti
+
+VPATH=$(.CURDIR):.:$(CLICKDIR)/lib:$(CLICKDIR)/elements
+
+#
+#  # for optimization (O0 to O3)
+#CFLAGS+= -O3
+
+#VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir)
+
+.SUFFIXES:
+.SUFFIXES: .S .c .cc .o .s .ii .in
+
+INSTALLOBJS = click.ko
+
+GENERIC_OBJS = string.o straccum.o nameinfo.o \
+	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
+	ipaddress.o ipflowid.o etheraddress.o \
+	packet.o in_cksum.o \
+	error.o timestamp.o glue.o task.o timer.o atomic.o gaprate.o \
+	element.o \
+	confparse.o variableenv.o lexer.o elemfilter.o \
+	routerthread.o router.o master.o handlercall.o notifier.o \
+	integers.o crc32.o iptable.o \
+	driver.o \
+	$(EXTRA_DRIVER_OBJS)
+
+BSDMODULE_OBJS = 
+
+EXTRA_DRIVER_OBJS = 
+
+OBJS+=$(ELEMENT_OBJS) $(GENERIC_OBJS) $(BSDMODULE_OBJS)
+
+all: $(CLICKDIR)/include/click/config-bsdmodule.h elements.cc elements.mk $(OBJS)
+
+depend: $(CLICKDIR)/include/click/config-bsdmodule.h
+
+$(CLICKDIR)/include/click/config-bsdmodule.h: $(CLICKDIR)/config-bsdmodule.h.in
+
+.in. config $(CLICKDIR)/config.status $(CLICKDIR)/include/click/config-bsdmodule.h:
+	cd $(CLICKDIR) && ./configure --disable-userlevel --enable-bsdmodule --enable-intel-cpu
+
+elemlist:
+	@/bin/rm -f elements.conf
+	@$(MAKE) elements.conf
+
+elements.conf: $(CLICKDIR)/config.status $(CLICKDIR)/click-buildtool
+	echo "bsdmodule  app aqm ethernet icmp ip standard tcpudp threads" | $(CLICKDIR)/click-buildtool findelem -r bsdmodule -p $(CLICKDIR) -X $(CLICKDIR)/elements.exclude > elements.conf
+
+elements.mk: elements.conf $(CLICKDIR)/click-buildtool
+	$(CLICKDIR)/click-buildtool elem2make --bsd < elements.conf > elements.mk
+
+elements.cc: elements.conf $(CLICKDIR)/click-buildtool
+	$(CLICKDIR)/click-buildtool elem2export < elements.conf > elements.cc
+	@rm -f elements.d
+
+.MAKEFILEDEPS:
+
+.sinclude "elements.mk"
+.include <bsd.kmod.mk>

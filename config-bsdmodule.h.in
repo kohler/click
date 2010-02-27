@@ -6,9 +6,6 @@
 #ifndef __FreeBSD__
 # error "I must be compiled on a FreeBSD machine"
 #endif
-#define KERNEL 1
-#define _KERNEL 1
-#define KLD_MODULE 1
 
 /* Define if Click should use an adaptive scheduler to share the CPU(s) more
    fairly with the kernel. */
@@ -36,8 +33,8 @@
 #define assert(x) /* nada */
 
 /* Define likely and unlikely macros. */
-#define likely(x)	(x)
-#define unlikely(x)	(x)
+#define likely(x)	__builtin_expect((x), 1)
+#define unlikely(x)	__builtin_expect((x), 0)
 
 /* Define HAVE_INT64_IS_LONG based on HAVE_INT64_IS_LONG_BSDMODULE. */
 #ifdef HAVE_INT64_IS_LONG_BSDMODULE
