@@ -489,7 +489,7 @@ RouterThread::driver()
 
     SET_STATE(S_RUNNING);
 
-#if !CLICK_NS
+#if !CLICK_NS && !BSD_NETISRSCHED
   driver_loop:
 #endif
 
@@ -560,7 +560,7 @@ RouterThread::driver()
     check_restride(restride_t_before, t_now, restride_iter);
 #endif
 
-#ifndef BSD_NETISRSCHED
+#if !BSD_NETISRSCHED
     // check to see if driver is stopped
     if (*stopper > 0) {
 	driver_unlock_tasks();
@@ -577,7 +577,9 @@ RouterThread::driver()
     goto driver_loop;
 #endif
 
+#if !BSD_NETISRSCHED
   finish_driver:
+#endif
     driver_unlock_tasks();
 
 #if HAVE_ADAPTIVE_SCHEDULER

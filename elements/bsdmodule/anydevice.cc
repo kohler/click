@@ -30,7 +30,7 @@ CLICK_CXX_UNPROTECT
 CLICK_DECLS
 
 AnyDevice::AnyDevice()
-  : _dev(0), _task(this), _idles(0), _next(0)
+  : _dev(0), _task(this), _next(0), _idles(0)
 {
 }
 

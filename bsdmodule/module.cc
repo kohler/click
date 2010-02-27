@@ -35,7 +35,7 @@ static int click_accessible = 1;
 
 extern "C" int click_cleanup_packages();
 
-KernelErrorHandler *click_logged_errh = 0;
+KernelErrorHandler *Click::click_logged_errh = 0;
 static KernelErrorHandler *syslog_errh = 0;
 Router *click_router = 0;
 Master *click_master = 0;

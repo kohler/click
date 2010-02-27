@@ -89,7 +89,7 @@ clickfs_tree_add_dir(struct clickfs_dirent *cde, char *name, int perm)
     char *cp;
 
     /* If name contains a '/' character, recursively add the whole path. */
-    if (cp = rindex(name, '/')) {
+    if ((cp = rindex(name, '/'))) {
 	*cp = '\0';
 	cde = clickfs_tree_add_dir(cde, name, perm);
 	*cp = '/';

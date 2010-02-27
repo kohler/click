@@ -161,6 +161,7 @@ LinearIPLookup::remove_route(const IPRoute& route, IPRoute* old_route, ErrorHand
 		_t[_zero_route].kill();
 		int r = add_route(zero, false, 0, errh);
 		assert(r >= 0);
+		(void) r;
 	    }
 
 	    // get rid of caches

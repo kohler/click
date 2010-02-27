@@ -105,7 +105,7 @@ AnyDevice::adjust_tickets(int work)
 {
 #if CLICK_DEVICE_ADJUST_TICKETS
     int tix = _task.tickets();
-    int old_tix = tix;
+    // int old_tix = tix;
 
     // simple additive increase damped multiplicative decrease scheme
     if (work > 2) {

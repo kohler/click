@@ -53,9 +53,9 @@ init_router_element_procs()
 	snprintf(linkbuf, sizeof(linkbuf), "%s", id.data());
 	linkbuf[id.length()] = '\0';
 	nbp = namebuf;
-	if (lbp = rindex(linkbuf, '/')) {
+	if ((lbp = rindex(linkbuf, '/'))) {
 	    char *c = linkbuf;
-	    while (c = index(c, '/')) {
+	    while ((c = index(c, '/'))) {
 		sprintf(nbp, "../");
 		nbp += 3;
 		c++;
@@ -76,7 +76,7 @@ init_router_element_procs()
 	click_router->element_hindexes(e, handlers);
 	for (int h_idx=0; h_idx < handlers.size(); h_idx++)
 	    clickfs_tree_add_handle(
-	    	  elemdp,
+		  elemdp,
 		  Router::handler(click_router, handlers[h_idx]),
 		  curelem,
 		  handlers[h_idx]);
