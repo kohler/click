@@ -35,15 +35,6 @@ CLICK_DECLS
     operations like & and | and provides methods for unparsing IP addresses
     into ASCII dotted-quad form. */
 
-IPAddress::IPAddress(const unsigned char *data)
-{
-#ifdef HAVE_INDIFFERENT_ALIGNMENT
-    _addr = *(reinterpret_cast<const unsigned *>(data));
-#else
-    memcpy(&_addr, data, 4);
-#endif
-}
-
 IPAddress::IPAddress(const String &str)
 {
     if (!cp_ip_address(str, this))

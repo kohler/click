@@ -40,7 +40,13 @@ class IPAddress { public:
      * @param data the address data, in network byte order
      *
      * Bytes data[0]...data[3] are used to construct the address. */
-    explicit IPAddress(const unsigned char *data);
+    explicit IPAddress(const unsigned char *data) {
+#if HAVE_INDIFFERENT_ALIGNMENT
+	_addr = *(reinterpret_cast<const unsigned *>(data));
+#else
+	memcpy(&_addr, data, 4);
+#endif
+    }
 
     /** @brief Constructs an IPAddress from a human-readable dotted-quad
      * representation.
