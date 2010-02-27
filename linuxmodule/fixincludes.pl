@@ -228,7 +228,8 @@ foreach my $i (@ARGV) {
 	    push @new_argv, $i;
 	} elsif (!$done{$1}) {
 	    $dir = "$outputroot/include$numdirs";
-	    -d $dir || mkdir $dir || die "fixincludes.pl: mkdir $dir: $!";
+	    -d $dir && system("rm -rf \"$dir\"");
+	    mkdir $dir || die "fixincludes.pl: mkdir $dir: $!";
 	    $done{$1} = $dir;
 	    ++$numdirs;
 	    one_includeroot($1, $dir);
