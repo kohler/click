@@ -669,7 +669,7 @@ class Packet { public:
 # endif
 #endif
 
-    Packet();
+    inline Packet();
     Packet(const Packet &);
     ~Packet();
     Packet &operator=(const Packet &);
@@ -724,6 +724,25 @@ class WritablePacket : public Packet { public:
 
 };
 
+
+inline
+Packet::Packet()
+{
+#if CLICK_LINUXMODULE
+    static_assert(sizeof(Anno) <= sizeof(((struct sk_buff *)0)->cb));
+    panic("Packet constructor");
+#else
+    _use_count = 1;
+    _data_packet = 0;
+    _head = _data = _tail = _end = 0;
+# if CLICK_USERLEVEL
+    _destructor = 0;
+# elif CLICK_BSDMODULE
+    _m = 0;
+# endif
+    clear_annotations();
+#endif
+}
 
 /** @brief Return the packet's data pointer.
  *

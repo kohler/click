@@ -178,9 +178,9 @@ CLICK_DECLS
  * Avoid writing buggy code like this!  Use WritablePacket selectively, and
  * try to avoid calling WritablePacket::clone() when possible. */
 
-inline
-Packet::Packet()
+Packet::~Packet()
 {
+    // This is a convenient place to put static assertions.
     static_assert(addr_anno_offset % 8 == 0 && user_anno_offset % 8 == 0);
     static_assert(addr_anno_offset + addr_anno_size <= anno_size);
     static_assert(user_anno_offset + user_anno_size <= anno_size);
@@ -193,24 +193,7 @@ Packet::Packet()
 		  && dst_ip_anno_offset + 4 <= anno_size
 		  && dst_ip6_anno_offset + 16 <= anno_size);
     static_assert((default_headroom & 3) == 0);
-#if CLICK_LINUXMODULE
-    static_assert(sizeof(Anno) <= sizeof(((struct sk_buff *)0)->cb));
-    panic("Packet constructor");
-#else
-    _use_count = 1;
-    _data_packet = 0;
-    _head = _data = _tail = _end = 0;
-# if CLICK_USERLEVEL
-    _destructor = 0;
-# elif CLICK_BSDMODULE
-    _m = 0;
-# endif
-    clear_annotations();
-#endif
-}
 
-Packet::~Packet()
-{
 #if CLICK_LINUXMODULE
     panic("Packet destructor");
 #else
