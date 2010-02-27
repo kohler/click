@@ -212,8 +212,8 @@ click_clear_error_log()
 
 /******************** Module initialization and cleanup **********************/
 
-extern "C" void click_ether_input(struct ifnet *, struct mbuf **, struct ether_header *);
-extern "C" void (*ng_ether_input_p)(struct ifnet *, struct mbuf **, struct ether_header *);
+extern "C" void click_ether_input(struct ifnet *, struct mbuf **);
+extern "C" void (*ng_ether_input_p)(struct ifnet *, struct mbuf **);
 
 extern "C" void click_ether_output(struct ifnet *, struct mbuf **);
 extern "C" void (*ng_ether_output_p)(struct ifnet *, struct mbuf **);

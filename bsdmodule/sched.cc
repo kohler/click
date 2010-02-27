@@ -30,7 +30,7 @@
 #include <click/confparse.hh>
 
 #ifdef BSD_NETISRSCHED
-#define DEVICE_POLLING
+#undef DEVICE_POLLING
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <sys/param.h>
@@ -60,7 +60,7 @@ static Router *placeholder_router;
 
 #ifdef BSD_NETISRSCHED
 struct ifnet click_dummyifnet;
-struct callout_handle click_timer_h;
+struct callout click_timer_h;
 #else  //BSD_NETISRSCHED
 
 int click_thread_priority = PRIO_PROCESS;
@@ -320,11 +320,13 @@ click_poll(struct ifnet *ifp, enum poll_cmd cmd, int count)
 static void
 click_timer(void *arg)
 {
+#if 0
   if (polling && *polling)
     ether_poll_register(click_poll, &click_dummyifnet);
   else
-    schednetisr(NETISR_CLICK);
-  click_timer_h = timeout(click_timer, NULL, 1);
+#endif
+  schednetisr(NETISR_CLICK);
+  callout_reset(&click_timer_h, 1, click_timer, NULL);
 }
 
 
@@ -350,7 +352,8 @@ click_init_sched(ErrorHandler *errh)
 #ifdef BSD_NETISRSCHED
   netisr_register(NETISR_CLICK, click_netisr, NULL, 0);
   schednetisr(NETISR_CLICK);
-  click_timer_h = timeout(click_timer, NULL, 1);
+  callout_init(&click_timer_h, 0);
+  callout_reset(&click_timer_h, 1, click_timer, NULL);
   click_dummyifnet.if_flags |= IFF_UP|IFF_DRV_RUNNING;
 #endif
 
@@ -406,12 +409,12 @@ int
 click_cleanup_sched()
 {
 #ifdef BSD_NETISRSCHED
-  untimeout(click_timer, NULL, click_timer_h);
+  callout_drain(&click_timer_h);
   netisr_unregister(NETISR_CLICK);
-  ether_poll_deregister(&click_dummyifnet);
+ // ether_poll_deregister(&click_dummyifnet);
   delete placeholder_router;
 #else
-  if (kill_router_threads() < 0) {
+  /*if (kill_router_threads() < 0) {
     printf("click: Following threads still active, expect a crash:\n");
     for (int i = 0; i < click_thread_pids->size(); i++)
       printf("click:   router thread pid %d\n", (*click_thread_pids)[i]);
@@ -420,6 +423,7 @@ click_cleanup_sched()
     delete click_thread_pids;
     click_thread_pids = 0;
     return 0;
-  }
+  }*/
 #endif
+   return 0;
 }

@@ -36,6 +36,7 @@
 CLICK_CXX_PROTECT
 #include <sys/linker.h>
 #include <net/if_var.h>
+#include <net/if_arp.h>
 #include <net/ethernet.h>
 #include <net/netisr.h>
 CLICK_CXX_UNPROTECT
@@ -45,6 +46,7 @@ CLICK_DECLS
 
 #define POLL_LIST_LEN 128	// XXX should refernce a proper #include
 
+#if 0
 struct pollrec {
         poll_handler_t  *handler;
         struct ifnet    *ifp;
@@ -54,6 +56,7 @@ int *polling;			// polling mode
 static int *poll_handlers;	// # of NICs registered for BSD kernel polling
 static int *reg_frac;		// How often we have to check status registers
 static struct pollrec *pr;	// BSD kernel polling handlers
+#endif
 
 static AnyDeviceMap from_device_map;
 static int registered_readers;
@@ -77,10 +80,11 @@ static int from_device_count;
  */
 extern "C"
 void
-click_ether_input(struct ifnet *ifp, struct mbuf **mp, struct ether_header *eh)
+click_ether_input(struct ifnet *ifp, struct mbuf **mp)
 {
-    if (ifp->if_spare2 == NULL)	// not for click.
-	return ;
+    // FIXME: better detection method...
+    if (CLICK_IFP2FD(ifp) == NULL)	// not for click.
+    	return;
 
     struct mbuf *m = *mp;
     if (m->m_pkthdr.rcvif == NULL) {	// Special case: from click to FreeBSD
@@ -90,9 +94,10 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp, struct ether_header *eh)
 
     *mp = NULL;		// tell ether_input no further processing needed.
 
-    FromDevice *me = (FromDevice *)(ifp->if_spare2);
+    FromDevice *me = (FromDevice *)(CLICK_IFP2FD(ifp));
 
-#if 0	/* XXX: needs rewriting for polling(4) rewrite. -bms */
+#if 0
+     /* XXX: needs rewriting for polling(4) rewrite. -bms */
     /*
      * If sysctl kern.polling.enable == 2 we should take care of polling
      * this NIC from inside a Click thread, so steal the handler from BSD.
@@ -120,19 +125,19 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp, struct ether_header *eh)
     }
 #endif
 
-    // put the ethernet header back into the mbuf.
-    M_PREPEND(m, sizeof(*eh), M_WAIT);
-    bcopy(eh, mtod(m, struct ether_header *), sizeof(*eh));
-
     if (_IF_QFULL(me->_inq)) {
 	_IF_DROP(me->_inq);
 	m_freem(m);
     } else
 	_IF_ENQUEUE(me->_inq, m);
+    /*
     if (me->_polling != 1)
+    */
 	me->intr_reschedule();
+	/*
     if (me->_polling == -1)
 	me->_polling = 1; // no need to wakeup task thread any more
+	*/
 #ifdef FROMDEVICE_TSTAMP
     me->_tstamp = rdtsc();
 #endif
@@ -152,11 +157,15 @@ extern "C"
 int
 click_ether_output(struct ifnet *ifp, struct mbuf **mp)
 {
+    return 0;
+#if 0
     int s = splimp();
+/*
     if (ifp->if_spare3 == NULL) { // not for click...
 	splx(s);
 	return 0;
     }
+*/
     struct mbuf *m = *mp;
     *mp = NULL; // tell ether_output no further processing needed
 
@@ -169,13 +178,15 @@ click_ether_output(struct ifnet *ifp, struct mbuf **mp)
     me->intr_reschedule();
     splx(s);
     return 0;
+#endif
 }
 
 static void
 fromdev_static_initialize()
 {
-    linker_file_t kernel_lf = linker_find_file_by_id(1); /* kernel file */
+    linker_file_t kernel_lf = linker_kernel_file; /* kernel file */
 
+#if 0
     pr = (struct pollrec *) linker_file_lookup_symbol(kernel_lf, "pr", 0);
     reg_frac = (int *) linker_file_lookup_symbol(kernel_lf, "reg_frac", 0);
     poll_handlers = (int *)
@@ -187,6 +198,7 @@ fromdev_static_initialize()
 
     if (polling)
 	printf("Cool, we are running Click on a polling capable kernel!\n");
+#endif
 
     if (++from_device_count == 1)
 	from_device_map.initialize();
@@ -278,7 +290,8 @@ FromDevice::initialize(ErrorHandler *errh)
 	    malloc(sizeof (struct ifqueue), M_DEVBUF, M_NOWAIT|M_ZERO);
 	assert(_inq);
 	_inq->ifq_maxlen = QSIZE;
-	(FromDevice *)(device()->if_spare2) = this;
+	mtx_init(&_inq->ifq_mtx, "fromdevice", NULL, MTX_DEF);
+	CLICK_IFP2FD(device()) = (void *)this;
     } else {
 	if (_readers == 0)
 	    printf("Warning, _readers mismatch (should not be 0)\n");
@@ -322,8 +335,10 @@ FromDevice::cleanup(CleanupStage)
     if (_readers == 0) {	// flush queue
 	q = _inq ;
 	_inq = NULL ;
-	device()->if_spare2 = NULL ;
+	CLICK_IFP2FD(device()) = NULL ;
     }
+
+#if 0
     if (_polling == 1) {	// return polling handler to the kernel
 	struct pollrec *prp = pr;
 	int i;
@@ -335,6 +350,8 @@ FromDevice::cleanup(CleanupStage)
 	if (*poll_handlers == 0 && (_dev->if_drv_flags & IFF_DRV_RUNNING))
 	    *poll_handlers = 1;
     }
+#endif
+
     splx(s);
     if (q) {		// we do not mutex for this.
 	int i, max = q->ifq_maxlen ;
@@ -415,8 +432,8 @@ FromDevice::run_task(Task *)
 #if CLICK_DEVICE_ADJUST_TICKETS
 	    adjust_tickets(npq);
 #endif
-	    if (_polling)
-		_task.fast_reschedule();
+	    //if (_polling)
+	//	_task.fast_reschedule();
 	    return npq > 0;
 	}
 

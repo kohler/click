@@ -24,7 +24,7 @@ CLICK_CXX_UNPROTECT
 #define SET_STATS(a,b,c)		/* nothing */
 CLICK_DECLS
 
-extern int *polling;            // 1 = BSD poller; 2 = Click poller
+//extern int *polling;            // 1 = BSD poller; 2 = Click poller
 
 class AnyDeviceMap;
 
@@ -92,7 +92,7 @@ AnyDevice::intr_reschedule(void)
 #ifdef BSD_NETISRSCHED
     if (!_task.scheduled())
 	_task.reschedule();
-    if (!polling || (polling && *polling != 2))
+    //if (!polling || (polling && *polling != 2))
 	schednetisr(NETISR_CLICK);
 #else
     _task.reschedule();

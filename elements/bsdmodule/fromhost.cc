@@ -89,7 +89,7 @@ FromHost::cleanup(CleanupStage)
     int s = splimp();
     struct ifqueue *q = _inq ;
     _inq = NULL;
-    device()->if_spare3 = NULL;
+    // device()->if_spare3 = NULL;
     splx(s);
 
     int i, max = q->ifq_maxlen ;
