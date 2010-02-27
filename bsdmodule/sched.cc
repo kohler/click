@@ -234,7 +234,7 @@ enum { H_TASKS_PER_ITER, H_ITERS_PER_TIMERS, H_ITERS_PER_OS };
 static String
 read_sched_param(Element *, void *thunk)
 {
-    switch ((int)thunk) {
+    switch ((intptr_t) thunk) {
     case H_TASKS_PER_ITER: {
 	if (click_router) {
 	    String s;
@@ -268,8 +268,7 @@ read_sched_param(Element *, void *thunk)
 static int
 write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *errh)
 {
-
-    switch((int)thunk) {
+    switch ((intptr_t) thunk) {
 
     case H_TASKS_PER_ITER: {
 	unsigned x;
