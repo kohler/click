@@ -1,0 +1,725 @@
+From f067c492c37f5f4eecd5afb9da098e0faf211a37 Mon Sep 17 00:00:00 2001
+From: Joonwoo Park <joonwpark81@gmail.com>
+Date: Wed, 3 Sep 2008 18:09:13 -0700
+Subject: [PATCH] e1000 7.6.15.5 polling mode driver for click
+ mostly tested on linux 2.6.24.7
+
+patch works was sponsored by NemeanNetworks <http://www.nemeannetworks.com>
+---
+ src/e1000.h         |   23 ++-
+ src/e1000_ich8lan.c |    4 +-
+ src/e1000_main.c    |  524 ++++++++++++++++++++++++++++++++++++++++++++++++++-
+ src/e1000_osdep.h   |    5 +-
+ src/e1000_param.c   |    2 +-
+ src/e1000_phy.c     |    2 +-
+ 6 files changed, 546 insertions(+), 14 deletions(-)
+
+diff --git a/src/e1000.h b/src/e1000.h
+index 2e0d2f8..93127f0 100644
+--- a/src/e1000.h
++++ b/src/e1000.h
+@@ -63,10 +63,12 @@ struct e1000_adapter;
+ #define E1000_MIN_TXD                       80
+ #define E1000_MAX_82544_TXD               4096
+ 
+-#define E1000_DEFAULT_RXD                  256
++//#define E1000_DEFAULT_RXD                  256
++#define E1000_DEFAULT_RXD			64
+ #define E1000_MAX_RXD                      256
+ 
+-#define E1000_MIN_RXD                       80
++//#define E1000_MIN_RXD                       80
++#define E1000_MIN_RXD                       64
+ #define E1000_MAX_82544_RXD               4096
+ 
+ #define E1000_MIN_ITR_USECS                 10 /* 100000 irq/sec */
+@@ -207,6 +209,7 @@ struct e1000_rx_ring {
+ 
+ 	u16 rdh;
+ 	u16 rdt;
++
+ #ifdef CONFIG_E1000_MQ
+ 	struct e1000_queue_stats rx_stats;
+ #endif
+@@ -239,6 +242,11 @@ struct e1000_phy_regs {
+ };
+ #endif
+ 
++#define E1000_RX_STATE_NORMAL 0
++#define E1000_RX_STATE_QUIET  1
++#define E1000_RX_STATE_LOCKUP 2
++
++
+ /* board specific private data structure */
+ 
+ struct e1000_adapter {
+@@ -370,6 +378,17 @@ struct e1000_adapter {
+ 	/* hardware capability, feature, and workaround flags */
+ 	unsigned int flags;
+ 
++	int do_poll_watchdog; /* Click polling */
++
++#if 1
++	/* Receive Lockup detection and recovery */
++	int rx_state;
++	int rx_lockup_recoveries;
++	int rx_normal_jiffies;
++	int rx_quiet_jiffies;
++	int prev_rdfh;
++	int prev_rdft;
++#endif
+ };
+ 
+ #define E1000_FLAG_HAS_SMBUS                (1 << 0)
+diff --git a/src/e1000_ich8lan.c b/src/e1000_ich8lan.c
+index c341584..9a88294 100644
+--- a/src/e1000_ich8lan.c
++++ b/src/e1000_ich8lan.c
+@@ -1898,7 +1898,7 @@ static s32 e1000_reset_hw_ich8lan(struct e1000_hw *hw)
+ 	E1000_WRITE_REG(hw, E1000_TCTL, E1000_TCTL_PSP);
+ 	E1000_WRITE_FLUSH(hw);
+ 
+-	msec_delay(10);
++	mdelay(10);
+ 
+ 	/* Workaround for ICH8 bit corruption issue in FIFO memory */
+ 	if (hw->mac.type == e1000_ich8lan) {
+@@ -1921,7 +1921,7 @@ static s32 e1000_reset_hw_ich8lan(struct e1000_hw *hw)
+ 	ret_val = e1000_acquire_swflag_ich8lan(hw);
+ 	DEBUGOUT("Issuing a global reset to ich8lan");
+ 	E1000_WRITE_REG(hw, E1000_CTRL, (ctrl | E1000_CTRL_RST));
+-	msec_delay(20);
++	mdelay(20);
+ 
+ 	ret_val = e1000_get_auto_rd_done_generic(hw);
+ 	if (ret_val) {
+diff --git a/src/e1000_main.c b/src/e1000_main.c
+index 7835bb7..3fc49cc 100644
+--- a/src/e1000_main.c
++++ b/src/e1000_main.c
+@@ -268,6 +268,16 @@ static struct notifier_block e1000_notifier_reboot = {
+ };
+ #endif
+ 
++/* For Click polling */
++static int e1000_tx_pqueue(struct net_device *dev, struct sk_buff *skb);
++static int e1000_tx_start(struct net_device *dev);
++static int e1000_rx_refill(struct net_device *dev, struct sk_buff **);
++static int e1000_tx_eob(struct net_device *dev);
++static struct sk_buff *e1000_tx_clean(struct net_device *dev);
++static struct sk_buff *e1000_rx_poll(struct net_device *dev, int *want);
++static int e1000_poll_on(struct net_device *dev);
++static int e1000_poll_off(struct net_device *dev);
++
+ #ifdef CONFIG_NET_POLL_CONTROLLER
+ /* for netdump / net console */
+ static void e1000_netpoll (struct net_device *netdev);
+@@ -332,6 +342,7 @@ static int __init e1000_init_module(void)
+ 	printk(KERN_INFO "%s - version %s\n",
+ 	       e1000_driver_string, e1000_driver_version);
+ 
++        printk(KERN_INFO " w/ Click polling\n");
+ 	printk(KERN_INFO "%s\n", e1000_copyright);
+ 
+ 	ret = pci_register_driver(&e1000_driver);
+@@ -1023,6 +1034,18 @@ static int __devinit e1000_probe(struct pci_dev *pdev,
+ 	netdev->vlan_rx_add_vid = e1000_vlan_rx_add_vid;
+ 	netdev->vlan_rx_kill_vid = e1000_vlan_rx_kill_vid;
+ #endif
++
++        /* Click - polling extensions */
++        netdev->polling = 0;
++        netdev->rx_poll = e1000_rx_poll;
++        netdev->rx_refill = e1000_rx_refill;
++        netdev->tx_queue = e1000_tx_pqueue;
++        netdev->tx_eob = e1000_tx_eob;
++        netdev->tx_start = e1000_tx_start;
++        netdev->tx_clean = e1000_tx_clean;
++        netdev->poll_off = e1000_poll_off;
++        netdev->poll_on = e1000_poll_on;
++
+ #ifdef CONFIG_NET_POLL_CONTROLLER
+ 	netdev->poll_controller = e1000_netpoll;
+ #endif
+@@ -1093,8 +1116,8 @@ static int __devinit e1000_probe(struct pci_dev *pdev,
+ #ifdef NETIF_F_TSO
+ 	if ((adapter->hw.mac.type >= e1000_82544) &&
+ 	   (adapter->hw.mac.type != e1000_82547)) {
+-		adapter->flags |= E1000_FLAG_HAS_TSO;
+-		netdev->features |= NETIF_F_TSO;
++//		adapter->flags |= E1000_FLAG_HAS_TSO;
++//		netdev->features |= NETIF_F_TSO;
+ 	}
+ 
+ #ifdef NETIF_F_TSO6
+@@ -2954,6 +2977,8 @@ static void e1000_enable_receives(struct e1000_adapter *adapter)
+ 	}
+ }
+ 
++#define DEBUG_LINE() printk("[%s][%d]\n", __FUNCTION__, __LINE__)
++
+ /**
+  * e1000_watchdog - Timer Call-back
+  * @data: pointer to adapter cast into an unsigned long
+@@ -2962,8 +2987,10 @@ static void e1000_watchdog(unsigned long data)
+ {
+ 	struct e1000_adapter *adapter = (struct e1000_adapter *) data;
+ 
+-	/* Do the rest outside of interrupt context */
+-	schedule_work(&adapter->watchdog_task);
++	if (!adapter->netdev->polling) {
++		/* Do the rest outside of interrupt context */
++		schedule_work(&adapter->watchdog_task);
++	}
+ }
+ 
+ static void e1000_watchdog_task(struct work_struct *work)
+@@ -3056,9 +3083,9 @@ static void e1000_watchdog_task(struct work_struct *work)
+ #endif
+ 					break;
+ 				case SPEED_1000:
+-					netdev->features |= NETIF_F_TSO;
++//					netdev->features |= NETIF_F_TSO;
+ #ifdef NETIF_F_TSO6
+-					netdev->features |= NETIF_F_TSO6;
++//					netdev->features |= NETIF_F_TSO6;
+ #endif
+ 					break;
+ 				default:
+@@ -6307,4 +6334,489 @@ void e1000_free_dev_spec_struct(struct e1000_hw *hw)
+ 	kfree(hw->dev_spec);
+ }
+ 
++
++/* Click polling support */
++
++static struct sk_buff *
++e1000_rx_poll(struct net_device *dev, int *want)
++{
++	struct e1000_adapter *adapter = dev->priv;
++	struct pci_dev *pdev = adapter->pdev;
++	struct e1000_rx_desc *rx_desc;
++	struct e1000_rx_ring *rx_ring = adapter->rx_ring;
++	struct sk_buff *skb_head = NULL, **skb;
++	uint32_t length;
++	int got, next;
++	static int total = 0;
++
++	skb = &skb_head;
++
++	for (got = 0, next = (rx_ring->next_to_clean + 1) % rx_ring->count;
++	     got < *want && next != rx_ring->next_to_use;
++	     got++, rx_ring->next_to_clean = next,
++		next = (rx_ring->next_to_clean + 1) % rx_ring->count) {
++
++		int i = rx_ring->next_to_clean;
++		rx_desc = E1000_RX_DESC(*rx_ring, i);
++		if(!(rx_desc->status & E1000_RXD_STAT_DD))
++			break;
++
++#if 0
++		pci_unmap_single(pdev, rx_ring->buffer_info[i].dma,
++			adapter->rx_buffer_len,
++			PCI_DMA_FROMDEVICE);
++#else
++		pci_unmap_page(pdev, rx_ring->buffer_info[i].dma,
++			PAGE_SIZE, PCI_DMA_FROMDEVICE);
++#endif
++
++		*skb = rx_ring->buffer_info[i].skb;
++		rx_ring->buffer_info[i].skb = NULL;
++
++		if(!(rx_desc->status & E1000_RXD_STAT_EOP) ||
++		   (rx_desc->errors & E1000_RXD_ERR_FRAME_ERR_MASK)) {
++			rx_desc->status = 0;
++			dev_kfree_skb(*skb);
++			*skb = NULL;
++			got--;
++			printk("RXD EOP || FRAME_ERR_MASK\n");
++			continue;
++		}
++
++		rx_desc->status = 0;
++
++		length = le16_to_cpu(rx_desc->length);
++		skb_put(*skb, length - ETHERNET_FCS_SIZE);
++		e1000_rx_checksum(adapter,
++			(uint32_t)(rx_desc->status) | ((uint32_t)(rx_desc->errors) << 24),
++			rx_desc->csum, *skb);
++		skb_pull(*skb, dev->hard_header_len);
++
++		skb = &((*skb)->next);
++		*skb = NULL;
++	}
++
++	*want = got;
++
++	total+= got;
++
++#if 0
++	/*
++	 *  Receive Lockup detection and recovery
++	 */
++	if (got) {
++		adapter->rx_state = E1000_RX_STATE_NORMAL;
++		adapter->rx_normal_jiffies = jiffies + HZ;
++	} else {
++		int rdfh;
++		int rdft;
++		switch (adapter->rx_state) {
++		case E1000_RX_STATE_NORMAL:
++			if (jiffies < adapter->rx_normal_jiffies)
++				break;
++			adapter->rx_state = E1000_RX_STATE_QUIET;
++			adapter->rx_quiet_jiffies = jiffies + HZ;
++			adapter->prev_rdfh = E1000_READ_REG(&adapter->hw, E1000_RDH(0));
++			adapter->prev_rdft = E1000_READ_REG(&adapter->hw, E1000_RDT(0));
++			break;
++		case E1000_RX_STATE_QUIET:
++			rdfh = E1000_READ_REG(&adapter->hw, E1000_RDH(0));
++			rdft = E1000_READ_REG(&adapter->hw, E1000_RDT(0));
++			if (adapter->prev_rdfh != rdfh ||
++			    adapter->prev_rdft != rdft ||
++			    adapter->prev_rdfh == adapter->prev_rdft) {
++				adapter->prev_rdfh = rdfh;
++				adapter->prev_rdft = rdft;
++				adapter->rx_quiet_jiffies = jiffies + HZ;
++				break;
++			}
++		  if (jiffies < adapter->rx_quiet_jiffies)
++			break;
++		/* Fall into the lockup case */
++		case E1000_RX_STATE_LOCKUP:
++			/* Receive lockup detected: perform a recovery */
++			adapter->rx_lockup_recoveries++;
++			/* taken from e1000_down() */
++			e1000_reset(adapter);
++			e1000_clean_tx_ring(adapter, adapter->tx_ring);
++			e1000_clean_rx_ring(adapter, adapter->rx_ring);
++			/* taken from e1000_up() */
++			e1000_set_multi(dev);
++			e1000_configure_tx(adapter);
++			e1000_setup_rctl(adapter);
++			e1000_configure_rx(adapter);
++			e1000_alloc_rx_buffers(adapter, adapter->rx_ring,
++					   E1000_DESC_UNUSED(adapter->rx_ring));
++			/* reset the lockup detection */
++			adapter->rx_state = E1000_RX_STATE_NORMAL;
++			adapter->rx_normal_jiffies = jiffies + HZ;
++			break;
++		}
++	}
++#endif
++
++	return skb_head;
++}
++
++int
++e1000_rx_refill(struct net_device *dev, struct sk_buff **skbs)
++{
++	struct e1000_adapter *adapter = dev->priv;
++	struct e1000_rx_ring *rx_ring = adapter->rx_ring;
++	struct pci_dev *pdev = adapter->pdev;
++	struct e1000_rx_desc *rx_desc;
++	struct sk_buff *skb;
++	int next;
++
++	/*
++	 * Update statistics counters, check link.
++	 * do_poll_watchdog is set by the timer interrupt e1000_watchdog(),
++	 * but we don't want to do the work in an interrupt (since it may
++	 * happen while polling code is active), so defer it to here.
++	 */
++
++	if (!(jiffies % HZ)) {
++		e1000_watchdog_task(&adapter->watchdog_task);
++	}
++
++	if (!netif_carrier_ok(dev))
++	      return 0;
++
++	if (skbs == 0)
++	      return E1000_DESC_UNUSED(rx_ring);
++
++	for (next = (rx_ring->next_to_use + 1) % rx_ring->count;
++	    next != rx_ring->next_to_clean;
++	    rx_ring->next_to_use = next,
++	    next = (rx_ring->next_to_use + 1) % rx_ring->count) {
++		int i = rx_ring->next_to_use;
++
++		if (rx_ring->buffer_info[i].skb != NULL)
++			break;
++
++		if(!(skb = *skbs))
++		  break;
++		*skbs = skb->next;
++		skb->next = NULL;
++		skb->dev = dev;
++
++		rx_ring->buffer_info[i].skb = skb;
++#if 0
++		rx_ring->buffer_info[i].length = adapter->rx_buffer_len;
++#else
++		adapter->rx_buffer_len = adapter->rx_buffer_len;
++#endif
++		rx_ring->buffer_info[i].dma = pci_map_single(pdev,
++							skb->data,
++							adapter->rx_buffer_len,
++							PCI_DMA_FROMDEVICE);
++
++		rx_desc = E1000_RX_DESC(*rx_ring, i);
++		rx_desc->buffer_addr = cpu_to_le64(rx_ring->buffer_info[i].dma);
++
++		/* Intel documnetation says: "Software adds receive descriptors by
++		 * writing the tail pointer with the index of the entry beyond the
++		 * last valid descriptor." (ref 11337 p 27) */
++
++		E1000_WRITE_REG(&adapter->hw, E1000_RDT(0), next);
++	}
++
++	return E1000_DESC_UNUSED(adapter->rx_ring);
++}
++
++static int
++e1000_tx_pqueue(struct net_device *netdev, struct sk_buff *skb)
++{
++	/*
++	 * This function is just a streamlined version of
++	 * return e1000_xmit_frame(skb, netdev);
++	 */
++
++	struct e1000_adapter *adapter = netdev->priv;
++	struct pci_dev *pdev = adapter->pdev;
++	struct e1000_tx_desc *tx_desc;
++	int i, len, offset, txd_needed;
++	uint32_t txd_upper, txd_lower;
++	struct e1000_buffer *buffer_info;
++	unsigned int max_txd_pwr = E1000_MAX_TXD_PWR;
++
++	if (!netif_carrier_ok(netdev)) {
++		netif_stop_queue(netdev);
++		return -1;
++	}
++
++	txd_needed = TXD_USE_COUNT(skb->len, max_txd_pwr);
++
++	/* make sure there are enough Tx descriptors available in the ring */
++	if (E1000_DESC_UNUSED(adapter->tx_ring) <= (txd_needed + 1)) {
++		adapter->net_stats.tx_dropped++;
++		netif_stop_queue(netdev);
++		return -1;
++	}
++
++	txd_upper = 0;
++	txd_lower = adapter->txd_cmd;
++
++	if (e1000_tx_csum(adapter, adapter->tx_ring, skb)){
++		txd_lower |= E1000_TXD_CMD_DEXT | E1000_TXD_DTYP_D;
++		txd_upper |= E1000_TXD_POPTS_TXSM << 8;
++	}
++
++	i = adapter->tx_ring->next_to_use;
++	tx_desc = E1000_TX_DESC(*(adapter->tx_ring), i);
++
++	len = skb->len;
++	offset = 0;
++
++	buffer_info = &adapter->tx_ring->buffer_info[i];
++
++	buffer_info->length = len;
++	buffer_info->dma = pci_map_page(pdev,
++			virt_to_page(skb->data + offset),
++			(unsigned long) (skb->data + offset) & ~PAGE_MASK, len,
++			PCI_DMA_TODEVICE);
++	/* thanks Adam Greenhalgh and Beyers Cronje! */
++	buffer_info->time_stamp = jiffies;
++
++	tx_desc->buffer_addr = cpu_to_le64(buffer_info->dma);
++	tx_desc->lower.data = cpu_to_le32(txd_lower | len);
++	tx_desc->upper.data = cpu_to_le32(txd_upper);
++
++	/* EOP and SKB pointer go with the last fragment */
++	tx_desc->lower.data |= cpu_to_le32(E1000_TXD_CMD_EOP);
++	buffer_info->skb = skb;
++
++	i = i + 1;
++	if (i >= adapter->tx_ring->count)
++		i = 0;
++
++	/* Move the HW Tx Tail Pointer */
++	adapter->tx_ring->next_to_use = i;
++
++	netdev->trans_start = jiffies;
++
++	return 0;
++}
++
++static struct sk_buff *
++e1000_tx_clean(struct net_device *netdev)
++{
++	/*
++	 * This function is a streamlined version of
++	 * return e1000_clean_tx_irq(adapter, 1);
++	 */
++
++	int i;
++	struct e1000_adapter *adapter = netdev->priv;
++	struct pci_dev *pdev = adapter->pdev;
++	struct e1000_tx_desc *tx_desc;
++	struct sk_buff *skb_head, *skb_last;
++	struct e1000_buffer *buffer_info;
++
++	skb_head = skb_last = 0;
++
++	i = adapter->tx_ring->next_to_clean;
++	tx_desc = E1000_TX_DESC(*(adapter->tx_ring), i);
++
++	while (tx_desc->upper.data & cpu_to_le32(E1000_TXD_STAT_DD)) {
++		buffer_info = &adapter->tx_ring->buffer_info[i];
++		if (buffer_info->dma != 0) {
++			pci_unmap_page(pdev, buffer_info->dma,
++			               buffer_info->length,
++			               PCI_DMA_TODEVICE);
++			buffer_info->dma = 0;
++		}
++
++		if (buffer_info->skb != NULL) {
++			struct sk_buff *skb = buffer_info->skb;
++			if (skb_head == 0) {
++				skb_head = skb;
++				skb_last = skb;
++				skb_last->next = NULL;
++			} else {
++				skb_last->next = skb;
++				skb->next = NULL;
++				skb_last = skb;
++			}
++			buffer_info->skb = NULL;
++		}
++
++		i = (i + 1) % adapter->tx_ring->count;
++
++		tx_desc->upper.data = 0;
++		tx_desc = E1000_TX_DESC(*(adapter->tx_ring), i);
++	}
++
++	adapter->tx_ring->next_to_clean = i;
++
++	if (netif_queue_stopped(netdev) &&
++	   (E1000_DESC_UNUSED(adapter->tx_ring) > E1000_TX_QUEUE_WAKE)) {
++		netif_start_queue(netdev);
++	}
++
++	return skb_head;
++}
++
++static int
++e1000_poll_on(struct net_device *dev)
++{
++  struct e1000_adapter *adapter = dev->priv;
++  unsigned long flags;
++  uint32_t tctl;
++
++  if (!dev->polling) {
++    printk("e1000_poll_on\n");
++    local_irq_save(flags);
++    local_irq_disable();
++    e1000_irq_disable(adapter);
++
++    /* reset the card - start in a clean state */
++
++    /* taken from e1000_down() */
++    e1000_reset(adapter);
++    e1000_clean_tx_ring(adapter, adapter->tx_ring);
++    e1000_clean_rx_ring(adapter, adapter->rx_ring);
++    /* taken from e1000_up() */
++    e1000_set_multi(dev);
++    e1000_configure_tx(adapter);
++    e1000_setup_rctl(adapter);
++    e1000_configure_rx(adapter);
++    e1000_alloc_rx_buffers(adapter, adapter->rx_ring,
++                          E1000_DESC_UNUSED(adapter->rx_ring));
++
++    dev->polling = 2;
++    adapter->do_poll_watchdog = 1;
++
++    /* Re-enable transmit */
++    tctl = E1000_READ_REG(&adapter->hw, E1000_TCTL);
++    tctl |= E1000_TCTL_EN;
++    E1000_WRITE_REG(&adapter->hw, E1000_TCTL, tctl);
++    E1000_WRITE_FLUSH(&adapter->hw);
++
++    local_irq_restore(flags);
++  }
++
++  return 0;
++}
++
++static int
++e1000_poll_off(struct net_device *dev)
++{
++  struct e1000_adapter *adapter = dev->priv;
++
++  if(dev->polling > 0){
++    dev->polling = 0;
++    e1000_irq_enable(adapter);
++    printk("e1000_poll_off\n");
++  }
++
++  return 0;
++}
++
++static int
++e1000_tx_eob(struct net_device *dev)
++{
++	struct e1000_adapter *adapter = dev->priv;
++#if 0
++	E1000_WRITE_REG(&adapter->hw, E1000_TDT(0), adapter->tx_ring->next_to_use);
++#else
++	writel(adapter->tx_ring->next_to_use, adapter->hw.hw_addr + adapter->tx_ring->tdt);
++	E1000_WRITE_FLUSH(&adapter->hw);
++#endif
++
++	return 0;
++}
++
++static int
++e1000_tx_start(struct net_device *dev)
++{
++	e1000_tx_eob(dev);
++	return 0;
++}
++
++#ifdef DEBUG_PRINT
++
++/* debugging tools */
++
++#define PRT_HEX(str,value) printk("skb->%-10s = 0x%08x\n", str, (unsigned int)value);
++#define PRT_DEC(str,value) printk("skb->%-10s = %d\n", str, value);
++void e1000_print_skb(struct sk_buff* skb)
++{
++  int i;
++  printk("========================\n");
++  printk("skb           = 0x%08x\n", (unsigned int)skb);
++  PRT_HEX("next",     skb->next);
++  PRT_HEX("prev",     skb->prev);
++  PRT_DEC("len",      skb->len);
++  PRT_HEX("data",     skb->data);
++  PRT_HEX("tail",     skb->tail);
++  PRT_HEX("dev",      skb->dev);
++  PRT_DEC("cloned",   skb->cloned);
++  PRT_DEC("pkt_type", skb->pkt_type);
++  PRT_DEC("users",    skb->users);
++  PRT_DEC("truesize", skb->truesize);
++  PRT_HEX("head",     skb->head);
++  PRT_HEX("end",      skb->end);
++  PRT_HEX("list",     skb->list);
++  PRT_DEC("data_len", skb->data_len);
++  PRT_HEX("csum",     skb->csum);
++  PRT_HEX("skb_shinfo", skb_shinfo(skb));
++  PRT_HEX("skb_shinfo->frag_list", skb_shinfo(skb)->frag_list);
++  PRT_DEC("skb_shinfo->nr_frags", skb_shinfo(skb)->nr_frags);
++  PRT_DEC("skb_shinfo->dataref", skb_shinfo(skb)->dataref);
++  for (i=0; i<skb_shinfo(skb)->nr_frags && i<8; ++i)
++    printk("skb->skb_shinfo->frags[%d]   = 0x%08x\n", i, skb_shinfo(skb)->frags[i]);
++}
++
++void e1000_print_rx_desc(struct e1000_rx_desc *rx_desc)
++{
++  printk("rx_desc = 0x%08x\n", rx_desc);
++  printk("rx_desc->buffer_addr = 0x%08x\n", rx_desc->buffer_addr);
++  printk("rx_desc->length      = %d\n",     rx_desc->length);
++  printk("rx_desc->csum        = 0x%04x\n", rx_desc->csum);
++  printk("rx_desc->status      = 0x%02x\n", rx_desc->status);
++  printk("rx_desc->errors      = 0x%02x\n", rx_desc->errors);
++  printk("rx_desc->special     = 0x%04x\n", rx_desc->special);
++}
++
++void e1000_print_rx_buffer_info(struct e1000_buffer *bi)
++{
++  printk("buffer_info             = 0x%08x\n", bi);
++  printk("buffer_info->skb        = 0x%08x\n", bi->skb);
++  printk("buffer_info->length     = 0x%08x (%d)\n", bi->length, bi->length);
++  printk("buffer_info->time_stamp = 0x%08x\n", bi->time_stamp);
++}
++
++void e1000_print_rx_desc_ring(struct e1000_desc_ring *desc_ring)
++{
++  int i;
++  struct e1000_buffer *bi;
++  struct e1000_rx_desc *desc;
++
++  printk("\n");
++  printk("desc_ring                = 0x%08x\n", desc_ring);
++  printk("desc_ring->desc          = 0x%08x\n", desc_ring->desc);
++  printk("desc_ring->dma           = 0x%08x\n", desc_ring->dma);
++  printk("desc_ring->size          = 0x%08x (%d)\n", desc_ring->size, desc_ring->size);
++  printk("desc_ring->count         = 0x%08x (%d)\n", desc_ring->count, desc_ring->count);
++  printk("desc_ring->next_to_use   = 0x%08x (%d)\n", desc_ring->next_to_use, desc_ring->next_to_use);
++  printk("desc_ring->next_to_clean = 0x%08x (%d)\n", desc_ring->next_to_clean, desc_ring->next_to_clean);
++  printk("desc_ring->buffer_info   = 0x%08x\n", desc_ring->buffer_info);
++
++  printk("\n");
++  bi = desc_ring->buffer_info;
++  desc = desc_ring->desc;
++  for (i=0; i<desc_ring->count; ++i) {
++    printk("===================================================== desc/buffer_info # %d\n", i);
++    e1000_print_rx_buffer_info(bi++);
++    e1000_print_rx_desc(desc++);
++  }
++
++}
++
++#undef PRT_HEX
++#undef PRT_DEC
++
++#endif
++
+ /* e1000_main.c */
+diff --git a/src/e1000_osdep.h b/src/e1000_osdep.h
+index 96f4612..88ae4a9 100644
+--- a/src/e1000_osdep.h
++++ b/src/e1000_osdep.h
+@@ -42,10 +42,11 @@
+ #include "kcompat.h"
+ 
+ #define usec_delay(x) udelay(x)
++#undef msec_delay
+ #ifndef msec_delay
+ #define msec_delay(x)	do { if(in_interrupt()) { \
+-				/* Don't sleep in interrupt context! */ \
+-	                	BUG(); \
++				/* Click : make possible no-sleepable delay */ \
++				mdelay(x); \
+ 			} else { \
+ 				msleep(x); \
+ 			} } while (0)
+diff --git a/src/e1000_param.c b/src/e1000_param.c
+index 4e08d64..a993771 100644
+--- a/src/e1000_param.c
++++ b/src/e1000_param.c
+@@ -401,7 +401,7 @@ void __devinit e1000_check_options(struct e1000_adapter *adapter)
+ 			.type = list_option,
+ 			.name = "Flow Control",
+ 			.err  = "reading default settings from EEPROM",
+-			.def  = e1000_fc_default,
++			.def  = e1000_fc_none,
+ 			.arg  = { .l = { .nr = ARRAY_SIZE(fc_list),
+ 					 .p = fc_list }}
+ 		};
+diff --git a/src/e1000_phy.c b/src/e1000_phy.c
+index cec2ba3..7c26fb6 100644
+--- a/src/e1000_phy.c
++++ b/src/e1000_phy.c
+@@ -592,7 +592,7 @@ s32 e1000_copper_link_setup_igp(struct e1000_hw *hw)
+ 	}
+ 
+ 	/* Wait 15ms for MAC to configure PHY from NVM settings. */
+-	msec_delay(15);
++	mdelay(15);
+ 
+ 	/*
+ 	 * The NVM settings will configure LPLU in D3 for
+-- 
+1.5.4.3
+

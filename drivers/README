@@ -1,5 +1,27 @@
-This directory contains polling device drivers usable with Click. In
-particular:
+This directory contains polling device drivers usable with Click.
+
+Our newest polling device drivers can be created by downloading a version
+of the driver and applying a patch.  We provide patches for e1000-7.6.15.5
+and e1000e-0.4.1.7, and other versions.  e1000e is the new version of the
+e1000 driver, suitable for newer cards.  In general you should prefer
+drivers and patches with higher version numbers.
+
+drivers/e1000-7.6.15.5-*.patch
+
+    To apply:
+    1. Download and unpack the given version of the e1000 driver
+    2. cd e1000-VERSION
+    3. patch -p1 < CLICKDIR/drivers/e1000-VERSION*.patch
+
+drivers/e1000e-0.4.1.7-*.patch
+
+    To apply:
+    1. Download and unpack the given version of the e1000e driver
+    2. cd e1000e-VERSION
+    3. patch -p1 < CLICKDIR/drivers/e1000e-VERSION*.patch
+
+
+Older drivers are available as complete source, as follows:
 
 drivers/e1000-4.x	A polling version of Intel's E1000 driver, version
 			4.3.15, suitable for Linux 2.4 kernels
@@ -11,15 +33,3 @@ drivers/e1000-7.x	A polling version of Intel's E1000 driver, version
 			Matt Gordon and Massimiliano Poletto from Mazu
 			Networks for providing the patch, with help from
 			Roman Chertov (Purdue) and others.
-
-Our newest polling device drivers can be created by downloading a version
-of the driver and applying a patch.  We provide patches for e1000-7.3.20
-and e1000e-0.4.1.7.  (e1000e is the new version of the e1000 driver,
-suitable for newer cards.)
-
-drivers/e1000e-0.4.1.7-*.patch
-
-    To apply:
-    1. Download and unpack the given version of the e1000e driver
-    2. cd e1000e-VERSION
-    3. patch -p1 < CLICKDIR/drivers/e1000e-VERSION*.patch
