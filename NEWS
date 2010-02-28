@@ -1,12 +1,12 @@
 Click NEWS
 
-Version 1.8.0
+Version 1.8.0   28.Feb.2010
 
 * Simulation time feature.  By default the Click driver runs in real time:
   Timestamp::now() returns the current time.  But a router-wide "timewarp"
   write handler is available.  Set the "timewarp" handler to 2, and Click
   time appears to move twice as fast as real time.
-    
+
   Or run "click --simtime".  This runs Click in simulation time.  Time is
   completely divorced from real time.  Timers appear to expire immediately
   (in other words, Click time jumps to the closest timer expiration time).
@@ -20,23 +20,45 @@ Version 1.8.0
   some syntax has changed, FTPPortMapper and ICMPPingRewriter in
   particular.  Thanks to Cliff Frey.
 
+* Initial BETA support for running in UNPATCHED Linux kernels.  Give
+  ./configure the --enable-fixincludes option to test this support.  (On
+  later kernels, you may need to disable FromHost by adding
+  ELEMENT_REQUIRES(false) to the bottom of
+  elements/linuxmodule/fromhost.cc.)  Thanks to Harald Schiöberg for ideas.
+
+  Note that Click packages (like etc/samplepackage) don't yet work on
+  patchless installs.
+
+* Patch for ns-2.34, thanks to Wim Vandenberghe.
+
+* BETA support for FreeBSD 7.1 kernels, thanks to Nikola Knežević and Simon
+  Schubert.
+
+* Patch for Intel's e1000e driver from Joonwoo Park.  Thanks!
+
+* Patch for Intel's e1000-7.6.15.5 driver from Joonwoo Park, work sponsored
+  by NemeanNetworks.  Thanks!
+
 * Clicky GUI bug fixes, visual improvements.
 
-* New features: ARPPrint ACTIVE, ARPQuerier POLL_TIMEOUT, ControlSocket
-  advanced TCP ports, DecIPTTL MULTICAST and ACTIVE, Discard ACTIVE,
-  FromUserDevice HEADROOM, ICMPError live reconfiguration, IP summary dump
-  ip_dscp and ip_ecn, MarkIPCE FORCE, PullSwitch notification, Queue memory
-  barriers, RED has GENTLE false and STABILITY 0, Unqueue LIMIT and
-  handlers, click-pretty diagram templates.
+* New features: ARPPrint ACTIVE, ARPQuerier POLL_TIMEOUT, ARPResponder
+  lookup, add, and remove handlers, Classifier and IPFilter live
+  reconfiguration and optimization improvements, ControlSocket advanced TCP
+  ports, DecIPTTL MULTICAST and ACTIVE, Discard ACTIVE, FromDevice
+  ALIGNMENT, FromUserDevice HEADROOM, ICMPError live reconfiguration, IP
+  summary dump ip_dscp and ip_ecn, MarkIPCE FORCE, PullSwitch notification,
+  Queue memory barriers, RED has GENTLE false and STABILITY 0, Unqueue
+  LIMIT and handlers, click-pretty diagram templates.
 
 * New elements: IP6Encap, MarkMACHeader, QuickNoteQueue, Script, SetIPECN,
   SimpleIdle, SimplePullSwitch.
 
 * Element bug fixes: ARPQuerier/ARPTable (memory corruption bug),
-  AthDescEncap, FromHost, FromIPSummaryDump, ICMPPingResponder,
-  ICMPRewriter, IPFlowRawSockets, IPNameInfo, IPsec elements, KernelTun,
-  Print80211, RadioTapDecap, StaticThreadSched, StoreIPAddress, WEPEncap,
-  WifiDefrag.
+  AthDescEncap, Classifier, FromHost, FromIPSummaryDump, ICMPPingResponder,
+  ICMPRewriter, IPClassifier, IPFilter, IPFlowRawSockets, IPNameInfo, IPsec
+  elements, KernelTun, linuxmodule device and queue elements (memory
+  corruption bugs), Print80211, RadioTapDecap, StaticThreadSched,
+  StoreIPAddress, Unqueue, WEPEncap, WifiDefrag.
 
 * Other bug fixes: Timer fairness, select handling in user-level
   multithreaded configurations.
@@ -51,9 +73,10 @@ Version 1.8.0
 * Deprecated features: ElementFilter.
 
 * Thanks to Mark Allman, Bart Braem, Andrew Brampton, Robert Buchholz,
-  Roman Chertov, Xiaojun Feng, Cliff Frey, Raja Hayek, David Johnson,
-  Joonwoo Park, Roberto Riggio, Nadi Sarrar, Harald Schiöberg, Robert
-  Sombrutzki, Ashish Sharma, Seiichi Tetsukawa, Erwin Van de Velde, Nick
+  Roman Chertov, Jens De Wit, Xiaojun Feng, Cliff Frey, Raja Hayek, David
+  Johnson, Nikola Knežević, NemeanNetworks, Joonwoo Park, Roberto Riggio,
+  Nadi Sarrar, Harald Schiöberg, Simon Schubert, Robert Sombrutzki, Ashish
+  Sharma, Seiichi Tetsukawa, Erwin Van de Velde, Wim Vandenberghe, Nick
   Weaver.
 
 
