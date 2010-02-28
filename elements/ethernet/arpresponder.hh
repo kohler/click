@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
  * =c
  *
- * ARPResponder(IP/MASK1 [IP/MASK...] ETH1, IP/MASK2 ETH2, ...)
+ * ARPResponder(IP/MASK [IP/MASK...] ETH, IP2/MASK2 ETH2, ...)
  *
  * =s arp
  *
@@ -40,6 +40,25 @@ CLICK_DECLS
  * address and an IP network address, then ARPResponder will prefer the IP
  * address. (You can say C<NAME:ipnet> to use the IP network address.)
  *
+ * =h table r
+ *
+ * Return the ARPResponder's current table, with one IP network entry per
+ * line.
+ *
+ * =h lookup "read with parameters"
+ *
+ * Takes an IP address as a parameter and returns the corresponding Ethernet
+ * address, if any.
+ *
+ * =h add w
+ *
+ * Add new entries.  Takes a string in "IP/MASK [IP/MASK...] ETH" form.
+ *
+ * =h remove w
+ *
+ * Delete a single entry.  Takes a string in "IP/MASK" form; deletes any
+ * entry with the same IP and MASK.
+ *
  * =e
  *
  * Produce ARP replies for the local machine (18.26.4.24)
@@ -57,41 +76,58 @@ CLICK_DECLS
 
 class ARPResponder : public Element { public:
 
-  ARPResponder();
-  ~ARPResponder();
+    ARPResponder();
+    ~ARPResponder();
 
-  const char *class_name() const		{ return "ARPResponder"; }
-  const char *port_count() const		{ return PORTS_1_1X2; }
-  const char *processing() const		{ return PROCESSING_A_AH; }
+    const char *class_name() const		{ return "ARPResponder"; }
+    const char *port_count() const		{ return PORTS_1_1X2; }
+    const char *processing() const		{ return PROCESSING_A_AH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int live_reconfigure(Vector<String> &, ErrorHandler *);
-  bool can_live_reconfigure() const             { return true; }
+    int configure(Vector<String> &, ErrorHandler *);
+    bool can_live_reconfigure() const		{ return true; }
+    void add_handlers();
 
-  void add_handlers();
-
-  Packet *simple_action(Packet *);
+    Packet *simple_action(Packet *);
 
     static Packet *make_response(const uint8_t target_eth[6],
 				 const uint8_t target_ip[4],
 				 const uint8_t src_eth[6],
 				 const uint8_t src_ip[4],
-				 Packet *p = 0);
+				 const Packet *p = 0);
 
-  bool lookup(IPAddress, EtherAddress &) const;
+    const EtherAddress *lookup(IPAddress addr) const {
+	Vector<Entry>::const_iterator end = _v.end();
+	for (Vector<Entry>::const_iterator it = _v.begin(); it != end; ++it)
+	    if ((addr & it->mask) == it->dst)
+		return &it->ena;
+	return 0;
+    }
 
-private:
+    bool lookup(IPAddress addr, EtherAddress &result) const {
+	if (const EtherAddress *x = lookup(addr)) {
+	    result = *x;
+	    return true;
+	} else
+	    return false;
+    }
 
-  struct Entry {
-    IPAddress dst;
-    IPAddress mask;
-    EtherAddress ena;
-  };
-  Vector<Entry> _v;
+  private:
 
-  void add_map(IPAddress dst, IPAddress mask, EtherAddress);
+    struct Entry {
+	IPAddress dst;
+	IPAddress mask;
+	EtherAddress ena;
+    };
+    Vector<Entry> _v;
 
-  static String read_handler(Element *, void *);
+    static int entry_compare(const void *a, const void *b, void *user_data);
+    int add(Vector<Entry> &v, const String &arg, ErrorHandler *errh) const;
+    static void normalize(Vector<Entry> &v, bool warn, ErrorHandler *errh);
+
+    static String read_handler(Element *, void *);
+    static int lookup_handler(int op, String &str, Element *e, const Handler *h, ErrorHandler *errh);
+    static int add_handler(const String &s, Element *e, void *, ErrorHandler *errh);
+    static int remove_handler(const String &s, Element *e, void *, ErrorHandler *errh);
 
 };
 

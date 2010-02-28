@@ -35,81 +35,111 @@ ARPResponder::~ARPResponder()
 {
 }
 
-void
-ARPResponder::add_map(IPAddress ipa, IPAddress mask, EtherAddress ena)
+int
+ARPResponder::add(Vector<Entry> &v, const String &arg, ErrorHandler *errh) const
 {
-    struct Entry e;
-    e.dst = ipa & mask;
-    e.mask = mask;
-    e.ena = ena;
-    _v.push_back(e);
+    int old_vsize = v.size();
+    Vector<String> words;
+    cp_spacevec(arg, words);
+
+    Vector<Entry> entries;
+    EtherAddress ena;
+    bool have_ena = false;
+
+    for (int i = 0; i < words.size(); ++i) {
+	IPAddress addr, mask;
+	if (cp_ip_prefix(words[i], &addr, &mask, true, this)) {
+	    v.push_back(Entry());
+	    v.back().dst = addr & mask;
+	    v.back().mask = mask;
+	} else if (cp_ethernet_address(words[i], &ena, this)) {
+	    if (have_ena) {
+		v.resize(old_vsize);
+		return errh->error("more than one ETH");
+	    }
+	    have_ena = true;
+	} else {
+	    v.resize(old_vsize);
+	    return errh->error("expected IP/MASK ETH");
+	}
+    }
+
+    // check for an argument that is both IP address and Ethernet address
+    for (int i = 0; !have_ena && i < words.size(); ++i)
+	if (cp_ethernet_address(words[i], &ena, this))
+	    have_ena = true;
+
+    if (v.size() == old_vsize)
+	return errh->error("missing IP/MASK");
+    if (!have_ena) {
+	v.resize(old_vsize);
+	return errh->error("missing ETH");
+    }
+    for (int i = old_vsize; i < v.size(); ++i)
+	v[i].ena = ena;
+    return 0;
+}
+
+int
+ARPResponder::entry_compare(const void *ap, const void *bp, void *user_data)
+{
+    int a = *reinterpret_cast<const int *>(ap),
+	b = *reinterpret_cast<const int *>(bp);
+    const Entry *entries = reinterpret_cast<Entry *>(user_data);
+    const Entry &ea = entries[a], &eb = entries[b];
+
+    if (ea.dst == eb.dst && ea.mask == eb.mask)
+	return b - a;		// keep later match
+    else if ((ea.dst & eb.mask) == eb.dst)
+	return -1;
+    else if ((eb.dst & ea.mask) == ea.dst)
+	return 1;
+    else
+	return a - b;
+}
+
+void
+ARPResponder::normalize(Vector<Entry> &v, bool warn, ErrorHandler *errh)
+{
+    Vector<int> permute;
+    for (int i = 0; i < v.size(); ++i)
+	permute.push_back(i);
+    click_qsort(permute.begin(), permute.size(), sizeof(int), entry_compare, v.begin());
+
+    Vector<Entry> nv;
+    for (int i = 0; i < permute.size(); ++i) {
+	const Entry &e = v[permute[i]];
+	if (nv.empty() || nv.back().dst != e.dst || nv.back().mask != e.mask)
+	    nv.push_back(e);
+	else if (warn)
+	    errh->warning("multiple entries for %s", e.dst.unparse_with_mask(e.mask).c_str());
+    }
+    nv.swap(v);
 }
 
 int
 ARPResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    _v.clear();
-
+    Vector<Entry> v;
     int before = errh->nerrors();
     for (int i = 0; i < conf.size(); i++) {
-	IPAddress ipa, mask;
-	EtherAddress ena;
-	bool have_ena = false;
-	int first = _v.size();
-
-	Vector<String> words;
-	cp_spacevec(conf[i], words);
-
-	for (int j = 0; j < words.size(); j++)
-	    if (cp_ip_address(words[j], &ipa, this))
-		add_map(ipa, IPAddress(0xFFFFFFFFU), EtherAddress());
-	    else if (cp_ip_prefix(words[j], &ipa, &mask, this))
-		add_map(ipa, mask, EtherAddress());
-	    else if (cp_ethernet_address(words[j], &ena, this)) {
-		if (have_ena)
-		    errh->error("argument %d has more than one Ethernet address", i);
-		have_ena = true;
-	    } else {
-		errh->error("argument %d should be 'IP/MASK ETHADDR'", i);
-		j = words.size();
-	    }
-
-	// check for an argument that is both IP address and Ethernet address
-	for (int j = 0; !have_ena && j < words.size(); j++)
-	    if (cp_ethernet_address(words[j], &ena, this))
-		have_ena = true;
-
-	if (first == _v.size())
-	    errh->error("argument %d had no IP address and masks", i);
-	if (!have_ena)
-	    errh->error("argument %d had no Ethernet addresses", i);
-	for (int j = first; j < _v.size(); j++)
-	    _v[j].ena = ena;
+	PrefixErrorHandler perrh(errh, "argument " + String(i) + ": ");
+	add(v, conf[i], &perrh);
     }
-
-    return (before == errh->nerrors() ? 0 : -1);
-}
-
-int
-ARPResponder::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
-{
-    // Copy the old mappings to a temporary vector
-    Vector<Entry> old_v = _v;
-    // if the configuration fails copy the old mapping vector back
-    if (configure(conf, errh) < 0) {
-	_v = old_v;
-	return -1;
-    } else
+    if (before == errh->nerrors()) {
+	normalize(v, true, errh);
+	_v.swap(v);
 	return 0;
+    } else
+	return -1;
 }
-
 
 Packet *
 ARPResponder::make_response(const uint8_t target_eth[6], /* them */
                             const uint8_t target_ip[4],
                             const uint8_t src_eth[6], /* me */
                             const uint8_t src_ip[4],
-			    Packet *p /* only used for annotations */)
+			    const Packet *p /* only used for annotations */)
 {
     WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
     if (q == 0) {
@@ -142,45 +172,21 @@ ARPResponder::make_response(const uint8_t target_eth[6], /* them */
     return q;
 }
 
-bool
-ARPResponder::lookup(IPAddress a, EtherAddress &ena) const
-{
-    int best = -1;
-    for (int i = 0; i < _v.size(); i++)
-	if (a.matches_prefix(_v[i].dst, _v[i].mask)) {
-	    if (best < 0 || _v[i].mask.mask_as_specific(_v[best].mask))
-		best = i;
-	}
-
-    if (best < 0)
-	return false;
-    else {
-	ena = _v[best].ena;
-	return true;
-    }
-}
-
 Packet *
 ARPResponder::simple_action(Packet *p)
 {
-    click_ether *e = (click_ether *) p->data();
-    click_ether_arp *ea = (click_ether_arp *) (e + 1);
-    unsigned int tpa;
-    memcpy(&tpa, ea->arp_tpa, 4);
-    IPAddress ipa = IPAddress(tpa);
-
+    const click_ether *e = (const click_ether *) p->data();
+    const click_ether_arp *ea = (const click_ether_arp *) (e + 1);
     Packet *q = 0;
     if (p->length() >= sizeof(*e) + sizeof(click_ether_arp)
 	&& e->ether_type == htons(ETHERTYPE_ARP)
 	&& ea->ea_hdr.ar_hrd == htons(ARPHRD_ETHER)
 	&& ea->ea_hdr.ar_pro == htons(ETHERTYPE_IP)
 	&& ea->ea_hdr.ar_op == htons(ARPOP_REQUEST)) {
-	EtherAddress ena;
-	if (lookup(ipa, ena)) {
-	    q = make_response(ea->arp_sha, ea->arp_spa, ena.data(), ea->arp_tpa, p);
-	}
+	IPAddress ipa((const unsigned char *) ea->arp_tpa);
+	if (const EtherAddress *ena = lookup(ipa))
+	    q = make_response(ea->arp_sha, ea->arp_spa, ena->data(), ea->arp_tpa, p);
     }
-
     if (q)
 	p->kill();
     else
@@ -189,28 +195,67 @@ ARPResponder::simple_action(Packet *p)
 }
 
 String
-ARPResponder::read_handler(Element *e, void *thunk)
+ARPResponder::read_handler(Element *e, void *)
 {
     ARPResponder *ar = static_cast<ARPResponder *>(e);
-    switch ((intptr_t)thunk) {
-
-      case 0: {			// table
-	  StringAccum sa;
-	  for (int i = 0; i < ar->_v.size(); i++)
-	      sa << ar->_v[i].dst.unparse_with_mask(ar->_v[i].mask) << ' ' << ar->_v[i].ena << '\n';
-	  return sa.take_string();
-      }
-
-      default:
-	return "<error>\n";
-
-    }
+    StringAccum sa;
+    for (int i = 0; i < ar->_v.size(); i++)
+	sa << ar->_v[i].dst.unparse_with_mask(ar->_v[i].mask) << ' ' << ar->_v[i].ena << '\n';
+    return sa.take_string();
 }
+
+int
+ARPResponder::lookup_handler(int, String &str, Element *e, const Handler *, ErrorHandler *errh)
+{
+    ARPResponder *ar = static_cast<ARPResponder *>(e);
+    IPAddress a;
+    if (cp_ip_address(str, &a, ar)) {
+	if (const EtherAddress *ena = ar->lookup(a))
+	    str = ena->unparse();
+	else
+	    str = String();
+	return 0;
+    } else
+	return errh->error("expected IP address");
+}
+
+int
+ARPResponder::add_handler(const String &s, Element *e, void *, ErrorHandler *errh)
+{
+    ARPResponder *ar = static_cast<ARPResponder *>(e);
+    Vector<Entry> v(ar->_v);
+    if (ar->add(v, s, errh) >= 0) {
+	normalize(v, false, 0);
+	ar->_v.swap(v);
+	return 0;
+    } else
+	return -1;
+}
+
+int
+ARPResponder::remove_handler(const String &s, Element *e, void *, ErrorHandler *errh)
+{
+    ARPResponder *ar = static_cast<ARPResponder *>(e);
+    IPAddress addr, mask;
+    if (!cp_ip_prefix(s, &addr, &mask, true, ar))
+	return errh->error("expected IP/MASK");
+    addr &= mask;
+    for (Vector<Entry>::iterator it = ar->_v.begin(); it != ar->_v.end(); ++it)
+	if (it->dst == addr && it->mask == mask) {
+	    ar->_v.erase(it);
+	    return 0;
+	}
+    return errh->error("%s not found", addr.unparse_with_mask(mask).c_str());
+}
+
 
 void
 ARPResponder::add_handlers()
 {
-    add_read_handler("table", read_handler, (void *)0);
+    add_read_handler("table", read_handler, 0);
+    set_handler("lookup", Handler::OP_READ | Handler::READ_PARAM, lookup_handler);
+    add_write_handler("add", add_handler, 0);
+    add_write_handler("remove", remove_handler, 0);
 }
 
 EXPORT_ELEMENT(ARPResponder)

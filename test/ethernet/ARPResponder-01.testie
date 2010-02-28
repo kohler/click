@@ -1,0 +1,68 @@
+%info
+
+Tests ARPResponder element.
+
+%script
+$VALGRIND click --simtime CONFIG
+
+%file CONFIG
+AddressInfo(a 1.0.0.2/24 00:01:02:03:04:05, b 00:01:02:03:04:06);
+
+i::Idle
+	-> ar::ARPResponder()
+	-> i;
+
+DriverManager(
+	print "X", print ar.table,
+	writeq ar.config "a",
+	print "X", print ar.table,
+	writeq ar.config "a:ipnet b:eth",
+	print "X", print ar.table,
+	writeq ar.config "a:ipnet b:eth, a",
+	print "X", print ar.table,
+	print "! $(ar.lookup 1.0.0.1) $(ar.lookup 1.0.0.2)",
+	writeq ar.config "a, a:ipnet b:eth",
+	print "X", print ar.table,
+	print "! $(ar.lookup 1.0.0.1) $(ar.lookup 1.0.0.2)",
+	writeq ar.config "a, a, a:ipnet b:eth",
+	print "X", print ar.table,
+	print "! $(ar.lookup 1.0.0.1) $(ar.lookup 1.0.0.2)",
+	writeq ar.remove 1.0.0.2,
+	print "X", print ar.table,
+	print "! $(ar.lookup 1.0.0.1) $(ar.lookup 1.0.0.2)",
+	writeq ar.add "a:ipnet a:eth",
+	print "X", print ar.table,
+	print "! $(ar.lookup 1.0.0.1) $(ar.lookup 1.0.0.2)",
+	);
+
+%expect stdout
+X
+
+X
+1.0.0.2/32 00-01-02-03-04-05
+X
+1.0.0.0/24 00-01-02-03-04-06
+X
+1.0.0.2/32 00-01-02-03-04-05
+1.0.0.0/24 00-01-02-03-04-06
+! 00-01-02-03-04-06 00-01-02-03-04-05
+X
+1.0.0.2/32 00-01-02-03-04-05
+1.0.0.0/24 00-01-02-03-04-06
+! 00-01-02-03-04-06 00-01-02-03-04-05
+X
+1.0.0.2/32 00-01-02-03-04-05
+1.0.0.0/24 00-01-02-03-04-06
+! 00-01-02-03-04-06 00-01-02-03-04-05
+X
+1.0.0.0/24 00-01-02-03-04-06
+! 00-01-02-03-04-06 00-01-02-03-04-06
+X
+1.0.0.0/24 00-01-02-03-04-05
+! 00-01-02-03-04-05 00-01-02-03-04-05
+
+%expect stderr
+  warning: multiple entries for 1.0.0.2/32
+
+%ignore stderr
+While{{.*}}
