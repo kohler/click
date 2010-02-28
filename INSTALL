@@ -212,9 +212,9 @@ directory and run
 
 Now, prepare to compile the NS simulator.  This may involve first compiling
 and installing several external packages, such as tclcl and otcl.  Then
-unpack the latest version of NS; we provide a patch for version 2.30, but a
-patch may apply to later versions.  Apply the appropriate patch from
-Click's etc/ directory, like so:
+unpack the latest version of NS; we provide patches for versions 2.30 and
+2.34, but a patch may apply to later versions.  Apply the appropriate patch
+from Click's etc/ directory, like so:
 
 	cd ns-VERSION
 	patch -p1 < CLICKDIR/etc/ns-VERSION-patch

@@ -335,6 +335,7 @@ linux-2.6.24.7-patch
 linux-2.6.16.13-patch
 linux-2.6.19.2-patch
 ns-2.30-patch
+ns-2.34-patch
 pkg-Makefile
 pkg-config.mk.in
 pkg-linuxmodule-26.mk
