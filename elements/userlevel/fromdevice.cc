@@ -61,7 +61,7 @@ FromDevice::FromDevice()
 #if FROMDEVICE_PCAP
       _pcap(0), _pcap_task(this), _pcap_complaints(0),
 #endif
-      _count(0), _promisc(0), _snaplen(0)
+      _datalink(-1), _count(0), _promisc(0), _snaplen(0)
 {
 }
 
@@ -77,7 +77,8 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _headroom = Packet::default_headroom;
     _headroom += (4 - (_headroom + 2) % 4) % 4; // default 4/2 alignment
     _force_ip = false;
-    String bpf_filter, capture;
+    String bpf_filter, capture, encap_type;
+    bool has_encap;
     if (cp_va_kparse(conf, this, errh,
 		     "DEVNAME", cpkP+cpkM, cpString, &_ifname,
 		     "PROMISC", cpkP, cpBool, &promisc,
@@ -88,6 +89,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		     "BPF_FILTER", 0, cpString, &bpf_filter,
 		     "OUTBOUND", 0, cpBool, &outbound,
 		     "HEADROOM", 0, cpUnsigned, &_headroom,
+		     "ENCAP", cpkC, &has_encap, cpWord, &encap_type,
 		     cpEnd) < 0)
 	return -1;
     if (_snaplen > 8190 || _snaplen < 14)
@@ -97,6 +99,11 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 
 #if FROMDEVICE_PCAP
     _bpf_filter = bpf_filter;
+    if (has_encap) {
+        _datalink = fake_pcap_parse_dlt(encap_type);
+        if (_datalink < 0)
+            return errh->error("bad encapsulation type");
+    }
 #endif
 
     // set _capture
@@ -250,6 +257,13 @@ FromDevice::initialize(ErrorHandler *errh)
 		errh->warning("%s: BIOCIMMEDIATE returns %d", ifname, r);
 	}
 # endif
+
+        if (_datalink == -1) {  // no ENCAP specified in configure()
+            _datalink = pcap_datalink(_pcap);
+        } else {
+            if (pcap_set_datalink(_pcap, _datalink) == -1)
+                return errh->error("%s: pcap_set_datalink: %s", ifname, pcap_geterr(_pcap));
+        }
 
 	bpf_u_int32 netmask;
 	bpf_u_int32 localnet;

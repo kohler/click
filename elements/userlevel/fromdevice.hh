@@ -92,6 +92,11 @@ String.  A BPF filter expression used to select the interesting packets.
 Default is the empty string, which means all packets.  If CAPTURE is not PCAP,
 then any filter expression is ignored with a warning.
 
+=item ENCAP
+
+Word.  The encapsulation type the interface should use; see FromDump for
+choices.  Ignored if CAPTURE is not PCAP.
+
 =item OUTBOUND
 
 Boolean. If true, then emit packets that the kernel sends to the given
