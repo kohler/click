@@ -49,16 +49,26 @@ Any name can be simultaneously associated with an IP address, an IP network
 address, and an Ethernet address. The kind of address that is returned is
 generally determined from context. For example:
 
-   AddressInfo(mauer 10.0.0.1/8 00-50-BA-85-84-A9);
+   AddressInfo(mauer 10.0.0.1 00-50-BA-85-84-A9);
    ... -> IPEncap(6, mauer, ...)                  // as IP address
        -> EtherEncap(0x0800, mauer, ...) -> ...   // as Ethernet address
-   ... -> ARPResponder(mauer) -> ...              // as IP prefix AND Ethernet address!
+   ... -> ARPResponder(mauer) -> ...              // as IP address and Ethernet address!
 
 An optional suffix makes the context unambiguous. C<NAME> is an ambiguous
 reference to some address, but C<NAME:ip> is always an IPv4 address,
 C<NAME:ipnet> is always an IPv4 network address (IPv4 address prefix),
 C<NAME:ip6> is always an IPv6 address, C<NAME:ip6net> is always an IPv6
 network address, and C<NAME:eth> is always an Ethernet address.
+
+Names with both address and prefix definitions are preferentially parsed as
+addresses.  For example:
+
+   AddressInfo(boojum 10.0.0.1/24);         // defines address and prefix
+   a1 :: ARPResponder(boojum 00-01-02-03-04-05);
+   // a1 will have the same configuration as:
+   a2 :: ARPResponder(10.0.0.1/32 00-01-02-03-04-05);
+
+To prefer the network prefix, use C<NAME:ipnet>.
 
 If C<NAME:ipnet> is a valid IPv4 network address, then C<NAME:bcast> is a
 valid IPv4 address equaling the broadcast address for that network.  This is

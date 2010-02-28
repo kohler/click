@@ -112,6 +112,13 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(cp_seconds("1 hr", &d) == true && d == 3600);
 #endif
 
+    {
+	IPAddress a, m;
+	CHECK(cp_ip_prefix("18.26.4/24", &a, &m, this) == true
+	      && a.unparse_with_mask(m) == "18.26.4.0/24");
+	CHECK(cp_ip_prefix("18.26.4/28", &a, &m, this) == false);
+    }
+
 #if CLICK_IP6
     {
 	IP6Address a;

@@ -1880,129 +1880,102 @@ bool cp_bandwidth(const String &str, uint32_t *result)
 
 // PARSING IPv4 ADDRESSES
 
-static int
-ip_address_portion(const String &str, unsigned char *value)
+static const char *
+ip_address_portion(const char *s, const char *end,
+		   unsigned char *value, int &bytes)
 {
-  const unsigned char *s = reinterpret_cast<const unsigned char*>(str.data());
-  int len = str.length();
-  int pos = 0, part;
-
-  for (int d = 0; d < 4; d++) {
-    if (d && pos < len && s[pos] == '.')
-      pos++;
-    if (pos >= len) {
-      memset(value + d, 0, 4 - d);
-      return d;
-    } else if (!isdigit(s[pos]))
-      return 0;
-    for (part = 0; pos < len && isdigit(s[pos]) && part <= 255; pos++)
-      part = part*10 + s[pos] - '0';
-    if (part > 255)
-      return 0;
-    value[d] = part;
-  }
-
-  return (pos == len ? 4 : 0);
+    memset(value, 0, 4);
+    int d = 0;
+    while (d < 4 && s != end && (d == 0 || *s == '.')) {
+	const char *t = s + !!d;
+	if (t == end || !isdigit(*t))
+	    break;
+	int part = 0;
+	do {
+	    part = part * 10 + *t++ - '0';
+	} while (t != end && isdigit(*t) && part <= 255);
+	if (part > 255)
+	    break;
+	s = t;
+	value[d++] = part;
+	if (d == 4)
+	    break;
+    }
+    bytes = d;
+    return s;
 }
 
 bool
 cp_ip_address(const String &str, unsigned char *result
 	      CP_CONTEXT)
 {
-  unsigned char value[4];
-  if (ip_address_portion(str, value) == 4) {
-    memcpy(result, value, 4);
-    return true;
-  }
+    unsigned char value[4];
+    int bytes;
+    if (ip_address_portion(str.begin(), str.end(), value, bytes) == str.end()
+	&& bytes == 4) {
+	memcpy(result, value, 4);
+	return true;
+    }
 #ifndef CLICK_TOOL
-  return AddressInfo::query_ip(str, result, context);
+    return AddressInfo::query_ip(str, result, context);
 #else
-  return false;
+    return false;
 #endif
 }
 
 
 static bool
-bad_ip_prefix(const String &str,
-	      unsigned char *result, unsigned char *return_mask,
-	      bool allow_bare_address
-	      CP_CONTEXT)
+prefix_mask_part(const String &str, IPAddress *result
+		 CP_CONTEXT)
 {
-#ifndef CLICK_TOOL
-  if (AddressInfo::query_ip_prefix(str, result, return_mask, context))
-    return true;
-  else if (allow_bare_address
-	   && AddressInfo::query_ip(str, result, context)) {
-    return_mask[0] = return_mask[1] = return_mask[2] = return_mask[3] = 255;
-    return true;
-  }
-#else
-  // shut up, compiler!
-  (void)str, (void)result, (void)return_mask, (void)allow_bare_address;
-#endif
-  return false;
+    int p;
+    if (cp_integer(str.begin(), str.end(), 10, &p) == str.end()
+	&& p >= 0 && p <= 32) {
+	*result = IPAddress::make_prefix(p);
+	return true;
+    } else
+	return cp_ip_address(str, result  CP_PASS_CONTEXT);
 }
 
 bool
 cp_ip_prefix(const String &str,
-	     unsigned char *result, unsigned char *return_mask,
+	     unsigned char *result_addr, unsigned char *result_mask,
 	     bool allow_bare_address  CP_CONTEXT)
 {
-  do {
-    unsigned char value[4], mask[4];
+    unsigned char value[4];
+    IPAddress mask(0xFFFFFFFFU);
 
-    int slash = str.find_right('/');
-    String ip_part, mask_part;
-    if (slash < 0 && allow_bare_address)
-      ip_part = str;
-    else if (slash >= 0 && slash < str.length() - 1) {
-      ip_part = str.substring(0, slash);
-      mask_part = str.substring(slash + 1);
-    } else
-      goto failure;
-
-    // read IP address part
-    int good_ip_bytes = ip_address_portion(ip_part, value);
-    if (good_ip_bytes == 0) {
-      if (!cp_ip_address(ip_part, value  CP_PASS_CONTEXT))
-	goto failure;
-      good_ip_bytes = 4;
+    int bytes;
+    const char *rest = ip_address_portion(str.begin(), str.end(), value, bytes);
+    if (bytes > 0 && rest == str.end()) {
+	if (!allow_bare_address)
+	    return false;
+    } else if (bytes > 0 && *rest == '/') {
+	if (!prefix_mask_part(str.substring(rest + 1, str.end()), &mask  CP_PASS_CONTEXT))
+	    return false;
+	// check whether mask specifies more bits than user bothered to define
+	// in the IP address, which is considered an error
+	IPAddress bytes_mask = IPAddress::make_prefix(bytes * 8);
+	if ((mask & bytes_mask) != mask)
+	    return false;
+    } else {
+#ifndef CLICK_TOOL
+	rest = find(str, '/');
+	if (rest != str.end() && prefix_mask_part(str.substring(rest + 1, str.end()), &mask, context)) {
+	    if (!AddressInfo::query_ip(str.substring(str.begin(), rest), value, context))
+		return false;
+	} else if (allow_bare_address && AddressInfo::query_ip(str, value, context))
+	    /* OK */;
+	else
+	    return AddressInfo::query_ip_prefix(str, result_addr, result_mask, context);
+#else
+	return false;
+#endif
     }
 
-    // check mask
-    if (allow_bare_address && !mask_part.length() && good_ip_bytes == 4) {
-      memcpy(result, value, 4);
-      return_mask[0] = return_mask[1] = return_mask[2] = return_mask[3] = 255;
-      return true;
-    }
-
-    // check for complete IP address
-    int relevant_bits;
-    if (good_ip_bytes == 4 && cp_ip_address(mask_part, mask  CP_PASS_CONTEXT))
-      /* OK */;
-
-    else if (cp_integer(mask_part, &relevant_bits)
-	     && relevant_bits >= 0 && relevant_bits <= 32) {
-      // set bits
-      unsigned umask = 0;
-      if (relevant_bits > 0)
-	umask = 0xFFFFFFFFU << (32 - relevant_bits);
-      for (int i = 0; i < 4; i++, umask <<= 8)
-	mask[i] = (umask >> 24) & 255;
-      if (good_ip_bytes < (relevant_bits + 7)/8)
-	goto failure;
-
-    } else
-      goto failure;
-
-    memcpy(result, value, 4);
-    memcpy(return_mask, mask, 4);
+    memcpy(result_addr, value, 4);
+    memcpy(result_mask, mask.data(), 4);
     return true;
-
-  } while (0);
-
- failure:
-  return bad_ip_prefix(str, result, return_mask, allow_bare_address CP_PASS_CONTEXT);
 }
 
 /** @brief Parse an IP address from @a str.
@@ -2057,8 +2030,10 @@ cp_ip_address(const String &str, IPAddress *result  CP_CONTEXT)
  * 255.255.255.0.
  *
  * If @a allow_bare_address is true, then a raw IP address is also acceptable
- * input.  The resulting mask will equal 255.255.255.255.  @a
- * allow_bare_address defaults to false.
+ * input.  The resulting mask will equal 255.255.255.255.  Raw IP addresses
+ * take precedence over networks, so given AddressInfo(a 18.26.4.9/24), "a"
+ * will parse as 18.26.4.9/32, not 18.26.4/24.  @a allow_bare_address defaults
+ * to false.
  *
  * If the string fully parses, then the resulting address is stored in *@a
  * result_addr, the resulting mask is stored in *@a result_mask, and the
