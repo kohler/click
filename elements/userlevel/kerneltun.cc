@@ -109,23 +109,13 @@ KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpEnd) < 0)
 	return -1;
 
-    if (_gw) { // then it was set to non-zero by arg
-	// check net part matches
-	unsigned int g = _gw.in_addr().s_addr;
-	unsigned int m = _mask.in_addr().s_addr;
-	unsigned int n = _near.in_addr().s_addr;
-	if ((g & m) != (n & m)) {
-	    _gw = 0;
-	    errh->warning("not setting up default route\n(network address and gateway are on different networks)");
-	}
-    }
-
+    if (_gw && !_gw.matches_prefix(_near, _mask))
+	return errh->error("bad GATEWAY");
     if (_mtu_out < (int) sizeof(click_ip))
 	return errh->error("MTU must be greater than %d", sizeof(click_ip));
     if (_headroom > 8192)
 	return errh->error("HEADROOM too big");
-    else
-	_adjust_headroom = !_adjust_headroom;
+    _adjust_headroom = !_adjust_headroom;
     return 0;
 }
 

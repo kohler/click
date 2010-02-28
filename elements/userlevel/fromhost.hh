@@ -14,13 +14,16 @@ CLICK_DECLS
  *
  * =c
  *
- * FromHost(DEVNAME [, DST, GATEWAY, HEADROOM] [, I<KEYWORDS>])
+ * FromHost(DEVNAME [, DST] [, I<keywords> GATEWAY, HEADROOM, ETHER, MTU])
  *
  * =s comm
  *
  * interface to /dev/net/tun or ethertap (user-level)
  *
  * =d
+ *
+ * B<Note>: The KernelTun and KernelTap elements are preferable for most
+ * purposes.
  *
  * Reads packets from and writes packets through the universal TUN/TAP
  * module in Linux (the /dev/net/tun device).  This allows a
@@ -117,6 +120,7 @@ class FromHost : public Element { public:
     String _dev_name;
     IPAddress _near;
     IPAddress _mask;
+    IPAddress _gw;
     unsigned _headroom;
 
     EtherAddress _macaddr;
@@ -127,7 +131,7 @@ class FromHost : public Element { public:
     int try_linux_universal(ErrorHandler *);
     int try_tun(const String &, ErrorHandler *);
     int alloc_tun(ErrorHandler *);
-    int setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *);
+    int setup_tun(ErrorHandler *);
     void dealloc_tun();
 
     static String read_param(Element *, void *);

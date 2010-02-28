@@ -52,6 +52,7 @@ FromHost::~FromHost()
 int
 FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    _gw = IPAddress();
     _headroom = Packet::default_headroom;
     _headroom += (4 - (_headroom + 2) % 4) % 4; // default 4/2 alignment
     _mtu_out = DEFAULT_MTU;
@@ -59,12 +60,15 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_kparse(conf, this, errh,
 		     "DEVNAME", cpkP+cpkM, cpString, &_dev_name,
 		     "DST", cpkP, cpIPPrefix, &_near, &_mask,
+		     "GATEWAY", 0, cpIPAddress, &_gw,
 		     "ETHER", 0, cpEthernetAddress, &_macaddr,
 		     "HEADROOM", 0, cpUnsigned, &_headroom,
 		     "MTU", 0, cpInteger, &_mtu_out,
 		     cpEnd) < 0)
 	return -1;
 
+    if (_gw && _near && !_gw.matches_prefix(_near, _mask))
+	return errh->error("bad GATEWAY");
     if (!_dev_name)
 	return errh->error("must specify device name");
     if (_headroom > 8192)
@@ -122,9 +126,9 @@ FromHost::try_linux_universal(ErrorHandler *errh)
 }
 
 int
-FromHost::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *errh)
+FromHost::setup_tun(ErrorHandler *errh)
 {
-    char tmp[512], tmp0[64], tmp1[64];
+    char tmp[512];
 
     if (_macaddr) {
 	sprintf(tmp, "/sbin/ifconfig %s hw ether %s", _dev_name.c_str(),
@@ -138,13 +142,23 @@ FromHost::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *errh
 	    return errh->error("%s: couldn't set arp flags: %s", tmp, strerror(errno));
     }
 
-    if (near.s_addr) {
-	strcpy(tmp0, inet_ntoa(near));
-	strcpy(tmp1, inet_ntoa(mask));
-	sprintf(tmp, "/sbin/ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.c_str(), tmp0, tmp1);
-	if (system(tmp) != 0) {
-	    return errh->error("%s: `%s' failed\n(Perhaps Ethertap is in a kernel module that you haven't loaded yet?)", _dev_name.c_str(), tmp);
+    if (_near) {
+	StringAccum sa;
+	sa << "/sbin/ifconfig " << _dev_name << " " << _near << " netmask " << _mask << " up 2>/dev/null";
+	if (system(sa.c_str()) != 0) {
+	    return errh->error("%s: %<%s%> failed\n(Perhaps Ethertap is in a kernel module that you haven't loaded yet?)", _dev_name.c_str(), sa.c_str());
 	}
+    }
+
+    if (_gw) {
+	StringAccum sa;
+	sa << "/sbin/route -n add default ";
+#if defined(__linux__)
+	sa << "gw ";
+#endif
+	sa << _gw;
+	if (system(sa.c_str()) != 0)
+	    return errh->error("%s: %<%s%> failed", _dev_name.c_str(), sa.c_str());
     }
 
     // calculate maximum packet size needed to receive data from
@@ -168,7 +182,7 @@ FromHost::initialize(ErrorHandler *errh)
 {
     if (try_linux_universal(errh) < 0)
 	return -1;
-    if (setup_tun(_near, _mask, errh) < 0)
+    if (setup_tun(errh) < 0)
 	return -1;
 
     ScheduleInfo::join_scheduler(this, &_task, errh);
