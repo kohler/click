@@ -140,7 +140,7 @@ class Task { public:
      * scheduling parameters, such as ticket count and thread preference,
      * based on a router's ScheduleInfo.  ScheduleInfo::initialize_task()
      * calls Task::initialize(). */
-    void initialize(Element *owner, bool scheduled);
+    void initialize(Element *owner, bool schedule);
 
     /** @brief Initialize the Task, and optionally schedule it.
      * @param router specifies the router owning the Task
@@ -150,7 +150,7 @@ class Task { public:
      * Task::initialize@endlink(@a router ->@link Router::root_element
      * root_element@endlink(), @a scheduled).  However, it is better to
      * explicitly associate tasks with real elements. */
-    void initialize(Router *router, bool scheduled);
+    void initialize(Router *router, bool schedule);
 
 
     inline bool scheduled() const;
