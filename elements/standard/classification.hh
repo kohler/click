@@ -140,7 +140,8 @@ StringAccum &operator<<(StringAccum &sa, const Insn &insn);
 class Program { public:
 
     Program(unsigned align_offset = 0)
-	: _output_everything(-1), _align_offset(align_offset) {
+	: _output_everything(-j_never), _safe_length((unsigned) -1),
+	  _align_offset(align_offset) {
     }
 
     unsigned align_offset() const {
@@ -214,7 +215,9 @@ class Program { public:
 
 class CompressedProgram { public:
 
-    CompressedProgram() {
+    CompressedProgram()
+	: _output_everything(-j_never), _safe_length((unsigned) -1),
+	  _align_offset(0) {
     }
 
     unsigned align_offset() const {

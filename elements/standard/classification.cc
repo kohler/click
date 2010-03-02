@@ -198,6 +198,7 @@ Program::add_insn(Vector<int> &tree, int offset, uint32_t value, uint32_t mask)
 {
     _insn.push_back(Insn(offset, value, mask));
     tree.push_back(tree[0]);
+    _output_everything = -1;
 }
 
 void
@@ -684,6 +685,7 @@ Program::remove_unused_states()
     // Check first instruction.  Requires special-case logic, since
     // destination[0] == 0 might mean either 0 is interesting, or 0 is
     // uninteresting and _output_everything should be 0.
+    _output_everything = -1;
     if (destination[0] > 0)
 	_insn[0] = _insn[destination[0]];
     else if (destination[0] < 0)
