@@ -107,7 +107,7 @@ class ChatterSocket : public Element { public:
   void cleanup(CleanupStage);
   void take_state(Element *, ErrorHandler *);
 
-  void selected(int);
+  void selected(int fd, int mask);
 
   void emit(const String &);
   void flush();

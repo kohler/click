@@ -89,7 +89,7 @@ class ToDevice : public Element { public:
   int fd() const				{ return _fd; }
 
   bool run_task(Task *);
-  void selected(int);
+  void selected(int fd, int mask);
   static int write_param(const String &in_s, Element *e, void *vparam, ErrorHandler *errh);
   static String read_param(Element *e, void *thunk);
 protected:

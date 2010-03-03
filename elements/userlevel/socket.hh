@@ -186,7 +186,7 @@ class Socket : public Element { public:
 
   void add_handlers();
   bool run_task(Task *);
-  void selected(int);
+  void selected(int fd, int mask);
   void push(int port, Packet*);
 
   bool allowed(IPAddress);

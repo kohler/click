@@ -202,7 +202,7 @@ FromHost::cleanup(CleanupStage)
 }
 
 void
-FromHost::selected(int fd)
+FromHost::selected(int fd, int)
 {
     if (fd != _fd)
 	return;

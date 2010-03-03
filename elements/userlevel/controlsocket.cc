@@ -755,7 +755,7 @@ ControlSocket::flush_write(int fd, bool read_needs_processing)
 }
 
 void
-ControlSocket::selected(int fd)
+ControlSocket::selected(int fd, int)
 {
     if (fd == _socket_fd) {
 	union { struct sockaddr_in in; struct sockaddr_un un; } sa;

@@ -733,7 +733,29 @@ Master::remove_select(int fd, Element *element, int mask)
 }
 
 
+inline void
+Master::call_selected(int fd, int mask) const
+{
+    const ElementSelector &es = _element_selectors[fd];
+    Element *read = (mask & Element::SELECT_READ ? es.read : 0);
+    Element *write = (mask & Element::SELECT_WRITE ? es.write : 0);
+    if (read)
+	read->selected(fd, write == read ? mask : Element::SELECT_READ);
+    if (write && write != read)
+	write->selected(fd, Element::SELECT_WRITE);
+}
+
+
 #if HAVE_USE_KQUEUE
+static int
+kevent_compare(void *ap, void *bp, const void *)
+{
+    struct kevent *a = static_cast<struct kevent *>(ap);
+    struct kevent *b = static_cast<struct kevent *>(bp);
+    int afd = (int) a->ident, bfd = (int) b->ident;
+    return afd - bfd;
+}
+
 void
 Master::run_selects_kqueue(bool more_tasks)
 {
@@ -759,21 +781,13 @@ Master::run_selects_kqueue(bool more_tasks)
     }
 # endif
 
-    // Bump selected_callno
-    _selected_callno++;
-    if (_selected_callno == 0) { // be anal about wraparound
-	for (ElementSelector *es = _element_selectors.begin(); es != _element_selectors.end(); ++es)
-	    es->callno = 0;
-	_selected_callno++;
-    }
-
 # if HAVE_MULTITHREAD
     _selecting_processor = click_current_processor();
     _select_lock.release();
 # endif
 
-    struct kevent kev[64];
-    int n = kevent(_kqueue, 0, 0, &kev[0], 64, wait_ptr);
+    struct kevent kev[256];
+    int n = kevent(_kqueue, 0, 0, &kev[0], 256, wait_ptr);
     int was_errno = errno;
     run_signals();
 
@@ -784,20 +798,19 @@ Master::run_selects_kqueue(bool more_tasks)
 
     if (n < 0 && was_errno != EINTR)
 	perror("kevent");
-    else if (n > 0)
-	for (struct kevent *p = &kev[0]; p < &kev[n]; p++) {
-	    int fd = (int) p->ident;
-	    if (fd < _element_selectors.size()
-		&& (p->filter == EVFILT_READ || p->filter == EVFILT_WRITE)) {
-		ElementSelector &es = _element_selectors[fd];
-		Element *e = (p->filter == EVFILT_READ ? es.read : es.write);
-		if (e && (es.read != es.write
-			  || es.callno != _selected_callno)) {
-		    es.callno = _selected_callno;
-		    e->selected(fd);
-		}
-	    }
+    else if (n > 0) {
+	click_qsort(&kev[0], n, sizeof(struct kevent), kevent_compare, 0);
+	for (struct kevent *p = &kev[0]; p < &kev[n]; ) {
+	    int fd = (int) p->ident, mask = 0;
+	    for (; (int) p->ident == fd; ++p)
+		if (p->filter == EVFILT_READ)
+		    mask |= Element::SELECT_READ;
+		else if (p->filter == EVFILT_WRITE)
+		    mask |= Element::SELECT_WRITE;
+	    if (fd < _element_selectors.size())
+		call_selected(fd, mask);
 	}
+    }
 }
 #endif /* HAVE_USE_KQUEUE */
 
@@ -861,14 +874,9 @@ Master::run_selects_poll(bool more_tasks)
 		// vectors before calling out.
 
 		int fd = p->fd;
-		Element *read_elt = 0, *write_elt;
-		if ((p->revents & ~POLLOUT)
-		    && (read_elt = _element_selectors[fd].read))
-		    read_elt->selected(fd);
-		if ((p->revents & ~POLLIN)
-		    && (write_elt = _element_selectors[fd].write)
-		    && read_elt != write_elt)
-		    write_elt->selected(fd);
+		int mask = (p->revents & ~POLLOUT ? Element::SELECT_READ : 0)
+		    + (p->revents & ~POLLIN ? Element::SELECT_WRITE : 0);
+		call_selected(fd, mask);
 
 		// 31.Oct.2003 - Peter Swain: _pollfds may have grown or
 		// shrunk!
@@ -934,14 +942,9 @@ Master::run_selects_select(bool more_tasks)
 		// vectors before calling out.
 
 		int fd = p->fd;
-		Element *read_elt = 0, *write_elt;
-		if ((fd >= FD_SETSIZE || FD_ISSET(fd, &read_mask))
-		    && (read_elt = _element_selectors[fd].read))
-		    read_elt->selected(fd);
-		if ((fd >= FD_SETSIZE || FD_ISSET(fd, &write_mask))
-		    && (write_elt = _element_selectors[fd].write)
-		    && read_elt != write_elt)
-		    write_elt->selected(fd);
+		int mask = (fd >= FD_SETSIZE || FD_ISSET(fd, &read_mask) ? Element::SELECT_READ : 0)
+		    + (fd >= FD_SETSIZE || FD_ISSET(fd, &write_mask) ? Element::SELECT_WRITE : 0);
+		call_selected(fd, mask);
 
 		// 31.Oct.2003 - Peter Swain: _pollfds may have grown or
 		// shrunk!

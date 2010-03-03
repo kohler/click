@@ -227,7 +227,7 @@ ToDevice::run_task(Task *)
 }
 
 void
-ToDevice::selected(int)
+ToDevice::selected(int, int)
 {
     _task.reschedule();
     remove_select(_fd, SELECT_WRITE);

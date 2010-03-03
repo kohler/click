@@ -376,7 +376,7 @@ CLICK_DECLS
 #endif
 
 void
-FromDevice::selected(int)
+FromDevice::selected(int, int)
 {
 #if FROMDEVICE_PCAP
     if (_capture == CAPTURE_PCAP) {

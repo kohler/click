@@ -235,7 +235,7 @@ class ControlSocket : public Element { public:
     void take_state(Element *, ErrorHandler *);
     void add_handlers();
 
-  void selected(int);
+    void selected(int fd, int mask);
 
   enum {
     CSERR_OK			= HandlerProxy::CSERR_OK,	       // 200

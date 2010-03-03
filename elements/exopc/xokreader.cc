@@ -212,7 +212,7 @@ xokReader::configure(Vector<String> &conf, ErrorHandler *errh)
 
 
 void
-xokReader::selected(int fd)
+xokReader::selected(int fd, int)
 {
   char data[ETHER_MAX_LEN];
 

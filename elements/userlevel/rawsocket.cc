@@ -170,7 +170,7 @@ RawSocket::cleanup(CleanupStage)
 }
 
 void
-RawSocket::selected(int fd)
+RawSocket::selected(int fd, int)
 {
   ErrorHandler *errh = ErrorHandler::default_handler();
   int len;
@@ -271,7 +271,7 @@ RawSocket::run_timer(Timer *)
   if ((_wq || _signal) && !(_events & SELECT_WRITE) && _fd >= 0) {
     add_select(_fd, SELECT_WRITE);
     _events |= SELECT_WRITE;
-    selected(_fd);
+    selected(_fd, 0);
   }
 }
 
@@ -281,7 +281,7 @@ RawSocket::run_task(Task *)
   if (!_wq && !(_events & SELECT_WRITE) && _fd >= 0) {
     add_select(_fd, SELECT_WRITE);
     _events |= SELECT_WRITE;
-    selected(_fd);
+    selected(_fd, 0);
     return true;
   } else
     return false;

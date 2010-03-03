@@ -120,7 +120,7 @@ BIM::initialize(ErrorHandler *errh)
 }
 
 void
-BIM::selected(int fd)
+BIM::selected(int fd, int)
 {
   int cc, i;
   char b[128];

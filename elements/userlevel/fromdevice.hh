@@ -158,7 +158,7 @@ class FromDevice : public Element { public:
     String ifname() const		{ return _ifname; }
     inline int fd() const;
 
-    void selected(int fd);
+    void selected(int fd, int mask);
 #if FROMDEVICE_PCAP
     bool run_task(Task *);
 #endif

@@ -68,7 +68,7 @@ public:
   int initialize(ErrorHandler *errh);
   void uninitialize();
 
-  void selected(int fd);
+  void selected(int fd, int mask);
   void push(int, Packet *p);
 
 private:

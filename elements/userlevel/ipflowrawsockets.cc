@@ -311,7 +311,7 @@ IPFlowRawSockets_get_packet(u_char* clientdata,
 CLICK_DECLS
 
 void
-IPFlowRawSockets::selected(int fd)
+IPFlowRawSockets::selected(int fd, int)
 {
     ErrorHandler *errh = ErrorHandler::default_handler();
     WritablePacket *p;

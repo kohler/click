@@ -25,7 +25,7 @@ class BIM : public Element {
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
-  void selected(int fd);
+  void selected(int fd, int mask);
 
   void push(int port, Packet *);
   bool run_task(Task *);

@@ -38,6 +38,8 @@ class Element { public:
     virtual bool run_task(Task *task);	// return true iff did useful work
     virtual void run_timer(Timer *timer);
 #if CLICK_USERLEVEL
+    enum { SELECT_READ = 1, SELECT_WRITE = 2 };
+    virtual void selected(int fd, int mask);
     virtual void selected(int fd);
 #endif
 
@@ -146,7 +148,6 @@ class Element { public:
 
 #if CLICK_USERLEVEL
     // SELECT
-    enum { SELECT_READ = 1, SELECT_WRITE = 2 };
     int add_select(int fd, int mask);
     int remove_select(int fd, int mask);
 #endif

@@ -158,20 +158,13 @@ class Master { public:
     struct ElementSelector {
 	Element *read;
 	Element *write;
-# if HAVE_USE_KQUEUE
-	unsigned callno;
-# endif
 	ElementSelector()
 	    : read(0), write(0)
-# if HAVE_USE_KQUEUE
-	    , callno(0)
-# endif
 	{
 	}
     };
 # if HAVE_USE_KQUEUE
     int _kqueue;
-    unsigned _selected_callno;
 # endif
 # if !HAVE_POLL_H || HAVE_USE_SELECT
     struct pollfd {
@@ -191,6 +184,7 @@ class Master { public:
 # endif
     void register_select(int fd, bool add_read, bool add_write);
     void remove_pollfd(int pi, int event);
+    inline void call_selected(int fd, int mask) const;
 # if HAVE_USE_KQUEUE
     void run_selects_kqueue(bool);
 # endif

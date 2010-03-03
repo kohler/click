@@ -206,7 +206,7 @@ class IPFlowRawSockets : public Element, public AggregateListener { public:
 
     Flow *find_aggregate(uint32_t, const Packet * = 0);
     void end_flow(Flow *, ErrorHandler *);
-    void selected(int);
+    void selected(int fd, int mask);
     static void gc_hook(Timer *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler*);
 

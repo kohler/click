@@ -323,7 +323,7 @@ Socket::close_active(void)
 }
 
 void
-Socket::selected(int fd)
+Socket::selected(int fd, int)
 {
   int len;
   union { struct sockaddr_in in; struct sockaddr_un un; } from;

@@ -118,7 +118,7 @@ class KernelTun : public Element { public:
     void cleanup(CleanupStage);
     void add_handlers();
 
-    void selected(int fd);
+    void selected(int fd, int mask);
 
     void push(int port, Packet *);
     bool run_task(Task *);

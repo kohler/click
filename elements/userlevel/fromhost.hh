@@ -108,7 +108,7 @@ class FromHost : public Element { public:
     int fd() const			{ return _fd; }
     String dev_name() const		{ return _dev_name; }
 
-    void selected(int fd);
+    void selected(int fd, int mask);
     bool run_task(Task *);
 
   private:

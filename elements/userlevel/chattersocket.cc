@@ -434,7 +434,7 @@ ChatterSocket::flush()
 }
 
 void
-ChatterSocket::selected(int fd)
+ChatterSocket::selected(int fd, int)
 {
   if (fd == _socket_fd) {
     union { struct sockaddr_in in; struct sockaddr_un un; } sa;

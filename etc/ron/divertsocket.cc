@@ -448,7 +448,7 @@ DivertSocket::uninitialize()
 
 
 void
-DivertSocket::selected(int fd)
+DivertSocket::selected(int fd, int)
 {
   struct sockaddr_in sa;
   socklen_t fromlen;

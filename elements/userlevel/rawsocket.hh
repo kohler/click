@@ -75,7 +75,7 @@ class RawSocket : public Element { public:
   void add_handlers();
 
   bool run_task(Task *);
-  void selected(int);
+  void selected(int fd, int mask);
   void run_timer(Timer *);
 
 protected:

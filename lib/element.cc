@@ -6,6 +6,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2004-2008 Regents of the University of California
+ * Copyright (c) 2010 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software")
@@ -1654,6 +1655,7 @@ Element::configuration() const
 /** @brief Handle a file descriptor event.
  *
  * @param fd the file descriptor
+ * @param mask relevant events: bitwise-or of one or more of SELECT_READ, SELECT_WRITE
  *
  * Click's call to select() indicates that the file descriptor @a fd is
  * readable, writable, or both.  The overriding method should read or write
@@ -1662,6 +1664,25 @@ Element::configuration() const
  *
  * The element must have previously registered interest in @a fd with
  * add_select().
+ *
+ * @note Only available at user level.
+ *
+ * @sa add_select, remove_select
+ */
+void
+Element::selected(int fd, int mask)
+{
+    (void) mask;
+    selected(fd);
+}
+
+/** @brief Handle a file descriptor event.
+ *
+ * @param fd the file descriptor
+ *
+ * @deprecated Elements should define selected(@a fd, mask) in preference to
+ * selected(@a fd).  The default implementation of selected(@a fd, mask) calls
+ * selected(@a fd) for backwards compatibility.
  *
  * @note Only available at user level.
  *
@@ -1681,7 +1702,7 @@ Element::selected(int fd)
  *
  * Click will register interest in readability and/or writability on file
  * descriptor @a fd.  When @a fd is ready, Click will call this element's
- * selected(@a fd) method.
+ * selected(@a fd, @a mask) method.
  *
  * add_select(@a fd, @a mask) overrides any previous add_select() for the same
  * @a fd and events in @a mask.  However, different elements may register
@@ -1692,8 +1713,8 @@ Element::selected(int fd)
  * @note Selecting for writability with SELECT_WRITE normally requires more
  * care than selecting for readability with SELECT_READ.  You should
  * add_select(@a fd, SELECT_WRITE) only when there is data to write to @a fd.
- * Otherwise, Click will constantly poll your element's selected(@a fd)
- * method.
+ * Otherwise, Click will constantly poll your element's selected(@a fd, @a
+ * mask) method.
  *
  * @sa remove_select, selected
  */

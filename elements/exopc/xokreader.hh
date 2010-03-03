@@ -51,7 +51,7 @@ class xokReader : public Element {
 
   int configure(Vector<String> &, ErrorHandler *);
 
-  void selected(int fd);
+  void selected(int fd, int mask);
 };
 
 #endif

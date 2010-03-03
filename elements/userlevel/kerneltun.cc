@@ -500,7 +500,7 @@ KernelTun::cleanup(CleanupStage)
 }
 
 void
-KernelTun::selected(int fd)
+KernelTun::selected(int fd, int)
 {
     if (fd != _fd)
 	return;
