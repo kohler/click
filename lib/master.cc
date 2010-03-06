@@ -76,7 +76,6 @@ Master::Master(int nthreads)
     // select information
 # if HAVE_USE_KQUEUE
     _kqueue = kqueue();
-    _selected_callno = 0;
 # endif
 # if !HAVE_POLL_H || HAVE_USE_SELECT
     FD_ZERO(&_read_select_fd_set);
@@ -748,10 +747,10 @@ Master::call_selected(int fd, int mask) const
 
 #if HAVE_USE_KQUEUE
 static int
-kevent_compare(void *ap, void *bp, const void *)
+kevent_compare(const void *ap, const void *bp, void *)
 {
-    struct kevent *a = static_cast<struct kevent *>(ap);
-    struct kevent *b = static_cast<struct kevent *>(bp);
+    const struct kevent *a = static_cast<const struct kevent *>(ap);
+    const struct kevent *b = static_cast<const struct kevent *>(bp);
     int afd = (int) a->ident, bfd = (int) b->ident;
     return afd - bfd;
 }
