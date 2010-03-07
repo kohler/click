@@ -44,22 +44,31 @@ UDPIPEncap::~UDPIPEncap()
 int
 UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    bool use_dst_anno = (conf.size() >= 3 && conf[2] == "DST_ANNO");
-    if (use_dst_anno)
-	conf[2] = "0.0.0.0";
+    IPAddress saddr;
+    uint16_t sport, dport;
+    bool cksum;
+    String daddr_str;
 
     if (cp_va_kparse(conf, this, errh,
-		     "SRC", cpkP+cpkM, cpIPAddress, &_saddr,
-		     "SPORT", cpkP+cpkM, cpUDPPort, &_sport,
-		     "DST", cpkP+cpkM, cpIPAddress, &_daddr,
-		     "DPORT", cpkP+cpkM, cpUDPPort, &_dport,
-		     "CHECKSUM", cpkP, cpBool, &_cksum,
+		     "SRC", cpkP+cpkM, cpIPAddress, &saddr,
+		     "SPORT", cpkP+cpkM, cpUDPPort, &sport,
+		     "DST", cpkP+cpkM, cpArgument, &daddr_str,
+		     "DPORT", cpkP+cpkM, cpUDPPort, &dport,
+		     "CHECKSUM", cpkP, cpBool, &cksum,
 		     cpEnd) < 0)
 	return -1;
 
-    _sport = htons(_sport);
-    _dport = htons(_dport);
-    _use_dst_anno = use_dst_anno;
+    if (daddr_str.equals("DST_ANNO", 8)) {
+	_daddr = IPAddress();
+	_use_dst_anno = true;
+    } else if (cp_ip_address(daddr_str, &_daddr, this))
+	_use_dst_anno = false;
+    else
+	return errh->error("bad DST");
+
+    _saddr = saddr;
+    _sport = htons(sport);
+    _dport = htons(dport);
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
     if (!_checked_aligned) {
@@ -69,7 +78,7 @@ UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 	if (!_aligned)
 	    errh->warning("IP header unaligned, cannot use fast IP checksum");
 	if (!ans)
-	    errh->message("(Try passing the configuration through `click-align'.)");
+	    errh->message("(Try passing the configuration through %<click-align%>.)");
 	_checked_aligned = true;
     }
 #endif
