@@ -498,7 +498,8 @@ operator<<(StringAccum &sa, const char *cstr)
 inline StringAccum &
 operator<<(StringAccum &sa, bool b)
 {
-    return sa << (b ? "true" : "false");
+    sa.append("truefalse" + (b ? 0 : 4), (b ? 4 : 5));
+    return sa;
 }
 
 /** @relates StringAccum
