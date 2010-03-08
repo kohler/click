@@ -92,52 +92,10 @@ class RadixIPLookup : public IPRouteTable { public:
     Vector<IPRoute> _v;
     int _vfree;
 
-    int32_t _default_key;
-    Radix* _radix;
+    int _default_key;
+    Radix *_radix;
 
 };
-
-
-
-class RadixIPLookup::Radix { public:
-
-    static Radix* make_radix(int bitshift, int n);
-    static void free_radix(Radix*);
-
-    Radix* change(uint32_t addr, uint32_t naddr, int key, uint32_t key_priority);
-    static int lookup(const Radix*, int, uint32_t addr);
-
-  private:
-
-    int32_t _route_index;
-    int _bitshift;
-    int _n;
-    int _nchildren;
-    struct Child {
-	int key;
-	uint32_t key_priority;
-	Radix* child;
-    } _children[0];
-
-    Radix()			{ }
-    ~Radix()			{ }
-
-    friend class RadixIPLookup;
-
-};
-
-inline int
-RadixIPLookup::Radix::lookup(const Radix* r, int cur, uint32_t addr)
-{
-    while (r) {
-	int i1 = addr >> r->_bitshift;
-	addr &= (1 << r->_bitshift) - 1;
-	if (r->_children[i1].key >= 0)
-	    cur = r->_children[i1].key;
-	r = r->_children[i1].child;
-    }
-    return cur;
-}
 
 CLICK_ENDDECLS
 #endif
