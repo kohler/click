@@ -400,30 +400,6 @@ PollDevice_read_calls(Element *f, void *)
 #endif
 }
 
-static String
-PollDevice_read_stats(Element *e, void *thunk)
-{
-  PollDevice *pd = (PollDevice *)e;
-  switch (reinterpret_cast<intptr_t>(thunk)) {
-   case 0:
-    return String(pd->_npackets);
-#if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-   case 1:
-    return String(pd->_push_cycles);
-#endif
-#if CLICK_DEVICE_STATS
-   case 2:
-    return String(pd->_time_poll);
-   case 3:
-    return String(pd->_time_refill);
-#endif
-   case 4:
-    return String(pd->_buffers_reused);
-   default:
-    return String();
-  }
-}
-
 static int
 PollDevice_write_stats(const String &, Element *e, void *, ErrorHandler *)
 {
@@ -435,20 +411,20 @@ PollDevice_write_stats(const String &, Element *e, void *, ErrorHandler *)
 void
 PollDevice::add_handlers()
 {
-  add_read_handler("calls", PollDevice_read_calls, 0);
-  add_read_handler("count", PollDevice_read_stats, 0);
-  // XXX deprecated
-  add_read_handler("packets", PollDevice_read_stats, 0);
+    add_read_handler("calls", PollDevice_read_calls, 0);
+    add_data_handlers("count", Handler::OP_READ, &_npackets);
+    // XXX deprecated
+    add_data_handlers("packets", Handler::OP_READ | Handler::DEPRECATED, &_npackets);
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-  add_read_handler("push_cycles", PollDevice_read_stats, (void *)1);
+    add_data_handlers("push_cycles", Handler::OP_READ, &_push_cycles);
 #endif
 #if CLICK_DEVICE_STATS
-  add_read_handler("poll_cycles", PollDevice_read_stats, (void *)2);
-  add_read_handler("refill_dma_cycles", PollDevice_read_stats, (void *)3);
+    add_data_handlers("poll_cycles", Handler::OP_READ, &_time_poll);
+    add_data_handlers("refill_dma_cycles", Handler::OP_READ, &_time_refill);
 #endif
-  add_write_handler("reset_counts", PollDevice_write_stats, 0, Handler::BUTTON);
-  add_read_handler("buffers_reused", PollDevice_read_stats, (void *)4);
-  add_task_handlers(&_task);
+    add_write_handler("reset_counts", PollDevice_write_stats, 0, Handler::BUTTON);
+    add_data_handlers("buffers_reused", Handler::OP_READ, &_buffers_reused);
+    add_task_handlers(&_task);
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)

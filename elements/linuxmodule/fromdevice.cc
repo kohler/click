@@ -388,7 +388,7 @@ FromDevice::run_task(Task *)
 	_head = next_i(_head);
 	output(0).push(p);
 	npq++;
-	_pushes++;
+	_count++;
     }
     if (npq == 0)
 	_empty_runs++;
@@ -404,41 +404,39 @@ FromDevice::run_task(Task *)
     return npq > 0;
 }
 
-enum { H_ACTIVE, H_DROPS, H_CALLS, H_RESET_COUNTS };
-
 String FromDevice::read_handler(Element *e, void *thunk)
 {
     FromDevice *fd = static_cast<FromDevice *>(e);
+    StringAccum sa;
     switch (reinterpret_cast<intptr_t>(thunk)) {
-      case H_ACTIVE:
-	return cp_unparse_bool(fd->_dev && fd->_active);
-      case H_DROPS:
-	return String(fd->_drops);
-      case H_CALLS: {
-	  StringAccum sa;
-	  sa << "calls to run_task(): " << fd->_runs << "\n"
-	     << "calls to push():     " << fd->_pushes << "\n"
-	     << "empty runs:          " << fd->_empty_runs << "\n"
-	     << "drops:               " << fd->_drops << "\n";
-	  return sa.take_string();
-      }
-      default:
-	return String();
+    case h_active:
+	sa << (fd->_dev && fd->_active);
+	break;
+    case h_length:
+	sa << fd->size();
+	break;
+    case h_calls:
+	sa << "calls to run_task(): " << fd->_runs << "\n"
+	   << "calls to push():     " << fd->_count << "\n"
+	   << "empty runs:          " << fd->_empty_runs << "\n"
+	   << "drops:               " << fd->_drops << "\n";
+	break;
     }
+    return sa.take_string();
 }
 
 int FromDevice::write_handler(const String &str, Element *e, void *thunk, ErrorHandler *errh)
 {
     FromDevice *fd = static_cast<FromDevice *>(e);
     switch (reinterpret_cast<intptr_t>(thunk)) {
-      case H_ACTIVE:
+    case h_active:
 	if (!cp_bool(str, &fd->_active))
 	    return errh->error("active parameter must be boolean");
 	return 0;
-      case H_RESET_COUNTS:
+    case h_reset_counts:
 	fd->reset_counts();
 	return 0;
-      default:
+    default:
 	return 0;
     }
 }
@@ -447,11 +445,13 @@ void
 FromDevice::add_handlers()
 {
     add_task_handlers(&_task);
-    add_read_handler("active", read_handler, H_ACTIVE, Handler::CHECKBOX);
-    add_read_handler("drops", read_handler, H_DROPS);
-    add_read_handler("calls", read_handler, H_CALLS);
-    add_write_handler("active", write_handler, H_ACTIVE);
-    add_write_handler("reset_counts", write_handler, H_RESET_COUNTS, Handler::BUTTON);
+    add_read_handler("active", read_handler, h_active, Handler::CHECKBOX);
+    add_data_handlers("count", Handler::OP_READ, &_count);
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
+    add_read_handler("length", read_handler, h_length);
+    add_read_handler("calls", read_handler, h_calls);
+    add_write_handler("active", write_handler, h_active);
+    add_write_handler("reset_counts", write_handler, h_reset_counts, Handler::BUTTON);
 }
 
 #undef CLICK_FROMDEVICE_USE_BRIDGE

@@ -115,6 +115,18 @@ once when the packets are handed back to Linux via ToHost.
 The write handler sets the ACTIVE parameter.  The read handler returns the
 ACTIVE parameter if the device is up, or "false" if the device is down.
 
+=h count r
+
+Returns the number of packets emitted so far.
+
+=h length r
+
+Returns the current length of FromDevice's internal packet queue.
+
+=h reset_counts w
+
+Resets the count and drops handlers.
+
 =a PollDevice, ToDevice, FromHost, ToHost, FromDevice.u */
 
 #include "elements/linuxmodule/anydevice.hh"
@@ -144,7 +156,7 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
 
     bool run_task(Task *);
     void reset_counts() {
-	_runs = _empty_runs = _pushes = _drops = 0;
+	_runs = _empty_runs = _count = _drops = 0;
     }
 
   private:
@@ -155,7 +167,7 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
 
     unsigned _runs;
     unsigned _empty_runs;
-    unsigned _pushes;
+    unsigned _count;
 
     enum { QSIZE = 511 };
     Packet * volatile _queue[QSIZE+1];
@@ -172,6 +184,7 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
     void emission_report(int);
 #endif
 
+    enum { h_active, h_calls, h_reset_counts, h_length };
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
 
