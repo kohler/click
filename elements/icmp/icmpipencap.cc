@@ -54,38 +54,7 @@ ICMPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 ICMPIPEncap::simple_action(Packet *p)
 {
-	WritablePacket *q;
-	bool need_seq_number = false;
-	switch(_icmp_type) {
-		case ICMP_UNREACH:
-			if (_icmp_code == ICMP_UNREACH_NEEDFRAG)
-				q = p->push(sizeof(click_ip) + sizeof(struct click_icmp_needfrag));
-			else
-				q = p->push(sizeof(click_ip) + sizeof(struct click_icmp));
-			break;
-		case ICMP_TSTAMP:
-		case ICMP_TSTAMPREPLY:
-			q = p->push(sizeof(click_ip) + sizeof(struct click_icmp_tstamp));
-			need_seq_number = true;
-			break;
-		case ICMP_REDIRECT:
-			q = p->push(sizeof(click_ip) + sizeof(struct click_icmp_redirect));
-			break;
-		case ICMP_PARAMPROB:
-			q = p->push(sizeof(click_ip) + sizeof(struct click_icmp_paramprob));
-			break;
-		case ICMP_ECHO:
-		case ICMP_ECHOREPLY:
-		case ICMP_IREQ:
-		case ICMP_IREQREPLY:
-			q = p->push(sizeof(click_ip) + sizeof(struct click_icmp_sequenced));
-			need_seq_number = true;
-			break;
-		default:
-			q = p->push(sizeof(click_ip) + sizeof(struct click_icmp));
-	}
-
-    if (q) {
+    if (WritablePacket *q = p->push(sizeof(click_ip) + click_icmp_hl(_icmp_type))) {
 	click_ip *ip = reinterpret_cast<click_ip *>(q->data());
 	ip->ip_v = 4;
 	ip->ip_hl = sizeof(click_ip) >> 2;
@@ -99,19 +68,21 @@ ICMPIPEncap::simple_action(Packet *p)
 	ip->ip_src = _src;
 	ip->ip_dst = _dst;
 
-	click_icmp_echo *icmp = (struct click_icmp_echo *) (ip + 1);
+	click_icmp_sequenced *icmp = (struct click_icmp_sequenced *) (ip + 1);
+	memset(icmp, 0, click_icmp_hl(_icmp_type));
 	icmp->icmp_type = _icmp_type;
 	icmp->icmp_code = _icmp_code;
-	icmp->icmp_cksum = 0;
+
+	if(_icmp_type == ICMP_TSTAMP || _icmp_type == ICMP_TSTAMPREPLY || _icmp_type == ICMP_ECHO
+		|| _icmp_type == ICMP_ECHOREPLY || _icmp_type == ICMP_IREQ || _icmp_type == ICMP_IREQREPLY) {
 #ifdef __linux__
-	icmp->icmp_identifier = _icmp_id;
-	if(need_seq_number)
+		icmp->icmp_identifier = _icmp_id;
 		icmp->icmp_sequence = _ip_id;
 #else
-	icmp->icmp_identifier = htons(_icmp_id);
-	if(need_seq_number)
+		icmp->icmp_identifier = htons(_icmp_id);
 		icmp->icmp_sequence = htons(_ip_id);
 #endif
+	}
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
 	if (_aligned)
