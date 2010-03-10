@@ -6,7 +6,9 @@
 #include <click/etheraddress.hh>
 #include <click/task.hh>
 #include <click/notifier.hh>
-
+#if HAVE_IP6
+# include <click/ip6address.hh>
+#endif
 CLICK_DECLS
 
 /*
@@ -14,7 +16,7 @@ CLICK_DECLS
  *
  * =c
  *
- * FromHost(DEVNAME [, DST] [, I<keywords> GATEWAY, HEADROOM, ETHER, MTU])
+ * FromHost(DEVNAME [, DST] [, I<keywords> GATEWAY, HEADROOM, ...])
  *
  * =s comm
  *
@@ -54,6 +56,12 @@ CLICK_DECLS
  * Ethernet address. Specifies the fake device's Ethernet address. Default is
  * not specified, in which case the fake device's address is whatever the
  * kernel chooses.
+ *
+ * =item DST6
+ *
+ * IPv6 prefix.  If specified, FromHost runs ifconfig(8) to set the
+ * interface's local (i.e., kernel) IPv6 address and netmask.  Both DST and
+ * DST6 may be specified.
  *
  * =back
  *
@@ -118,13 +126,19 @@ class FromHost : public Element { public:
     int _mtu_in;
     int _mtu_out;
     String _dev_name;
-    IPAddress _near;
-    IPAddress _mask;
-    IPAddress _gw;
-    unsigned _headroom;
 
     EtherAddress _macaddr;
 
+    IPAddress _near;
+    IPAddress _mask;
+    IPAddress _gw;
+
+#if HAVE_IP6
+    IP6Address _near6;
+    int _prefix6;
+#endif
+
+    unsigned _headroom;
     Task _task;
     NotifierSignal _nonfull_signal;
 
