@@ -2826,6 +2826,7 @@ const CpVaParseCmd
   cpHandlerCallPtrWrite	= "handler_call_ptr_write",
   cpIP6Address		= "ip6_addr",
   cpIP6Prefix		= "ip6_prefix",
+  cpIP6PrefixLen	= "ip6_prefix_len",
   cpIP6AddressOrPrefix	= "ip6_addr_or_prefix",
   cpDesCblock		= "des_cblock",
   cpFilename		= "filename",
@@ -2886,6 +2887,7 @@ enum {
   cpiHandlerCallPtrWrite,
   cpiIP6Address,
   cpiIP6Prefix,
+  cpiIP6PrefixLen,
   cpiIP6AddressOrPrefix,
   cpiDesCblock,
   cpiFilename,
@@ -3215,6 +3217,11 @@ default_parsefunc(cp_value *v, const String &arg,
        goto type_mismatch;
      break;
    }
+
+  case cpiIP6PrefixLen:
+      if (!cp_ip6_prefix(arg, v->v.address, &v->v2.i, false CP_PASS_CONTEXT))
+	  goto type_mismatch;
+      break;
 #endif
 
    case cpiEthernetAddress:
@@ -3482,6 +3489,14 @@ default_storefunc(cp_value *v  CP_CONTEXT)
      memcpy(maskstore, v->v2.address, 16);
      break;
    }
+
+  case cpiIP6PrefixLen: {
+      unsigned char *addrstore = (unsigned char *)v->store;
+      memcpy(addrstore, v->v.address, 16);
+      int *prefixlenstore = (int *)v->store2;
+      *prefixlenstore = v->v2.i;
+      break;
+  }
 #endif
 
    case cpiIPAddressList: {
@@ -4834,6 +4849,7 @@ cp_va_static_initialize()
 #if HAVE_IP6
     cp_register_argtype(cpIP6Address, "IPv6 address", 0, default_parsefunc, default_storefunc, cpiIP6Address);
     cp_register_argtype(cpIP6Prefix, "IPv6 address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6Prefix);
+    cp_register_argtype(cpIP6PrefixLen, "IPv6 address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6PrefixLen);
     cp_register_argtype(cpIP6AddressOrPrefix, "IPv6 address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6AddressOrPrefix);
 #endif
 #if HAVE_IPSEC

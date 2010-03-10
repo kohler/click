@@ -292,6 +292,7 @@ extern const CpVaParseCmd
     cpHandlerCallPtrWrite, ///< Result storage HandlerCall**, parsed by HandlerCall::reset_write.
     cpIP6Address,	///< Result storage IP6Address* or equivalent, parsed by cp_ip6_address().
     cpIP6Prefix,	///< Result storage IP6Address* addr and IP6Address* mask, parsed by cp_ip6_prefix().
+    cpIP6PrefixLen,	///< Result storage IP6Address* addr and int* prefix_len, parsed by cp_ip6_prefix().
     cpIP6AddressOrPrefix,///< Result storage IP6Address* addr and IP6Address* mask, parsed by cp_ip6_prefix().
     cpDesCblock,	///< Result storage uint8_t[8], parsed by cp_des_cblock().
 #if CLICK_USERLEVEL || CLICK_TOOL
