@@ -40,6 +40,8 @@ clickdatadir = $(datadir)/click
 DRIVERS = @DRIVERS@
 OTHER_TARGETS = @OTHER_TARGETS@
 ALL_TARGETS = $(DRIVERS) $(OTHER_TARGETS)
+INSTALL_TARGETS = @INSTALL_TARGETS@
+CLEAN_TARGETS = @CLEAN_TARGETS@
 
 all: $(ALL_TARGETS) Makefile
 
@@ -54,9 +56,29 @@ userlevel: Makefile click-buildtool click-compile stamp-h
 tools: Makefile stamp-h
 	@cd tools && $(MAKE) all
 
-install: Makefile click-buildtool click-compile stamp-h installch
-	@for d in $(ALL_TARGETS); do (cd $$d && $(MAKE) install) || exit 1; done
-	@$(MAKE) install-local install-doc install-local-include
+install-bsdmodule: Makefile click-buildtool stamp-h installch
+	@cd bsdmodule && $(MAKE) install
+install-linuxmodule: Makefile click-buildtool stamp-h installch
+	@cd linuxmodule && $(MAKE) install
+install-ns: Makefile click-buildtool stamp-h installch
+	@cd ns && $(MAKE) install
+install-userlevel: Makefile click-buildtool stamp-h installch
+	@cd userlevel && $(MAKE) install
+install-tools: Makefile click-buildtool stamp-h installch
+	@cd tools && $(MAKE) install
+
+clean-bsdmodule:
+	@cd bsdmodule && $(MAKE) clean
+clean-linuxmodule:
+	@cd linuxmodule && $(MAKE) clean
+clean-ns:
+	@cd ns && $(MAKE) clean
+clean-userlevel:
+	@cd userlevel && $(MAKE) clean
+clean-tools:
+	@cd tools && $(MAKE) clean
+
+install: $(INSTALL_TARGETS) install-local install-doc install-local-include
 install-local: elementmap.xml click-buildtool click-compile config.mk \
 	etc/pkg-config.mk installch
 	$(mkinstalldirs) $(DESTDIR)$(bindir)
@@ -158,8 +180,10 @@ check-filenames:
 	@a=`find . \( -name \*.cc -or -name \*.c \) -print | sed 's/.*\/\(.*\)\.c*$$/\1.o/' | grep -v 'elements\.o' | sort | uniq -d`; \
 	if test -z $$a; then echo OK; else echo "*** warning: duplicate object file names:"; echo "$$a"; fi
 
-clean:
-	@-for d in @POSSIBLE_DRIVERS@ tools doc; do (cd $$d && $(MAKE) clean); done
+clean: $(CLEAN_TARGETS) clean-doc clean-local
+clean-doc:
+	@cd doc && $(MAKE) clean
+clean-local:
 	-rm -f elementmap.xml conftest.*
 distclean:
 	@-for d in @POSSIBLE_DRIVERS@ tools doc; do (cd $$d && $(MAKE) distclean); done
@@ -222,7 +246,8 @@ distdir: $(srcdir)/configure
 
 
 .PHONY: all always elemlist elemlists \
-	bsdmodule exopc linuxmodule ns tools userlevel \
-	clean distclean dist distdir \
-	install install-doc install-lib install-man install-local install-include install-local-include \
-	uninstall uninstall-local uninstall-local-include
+	bsdmodule linuxmodule ns userlevel tools \
+	install install-doc install-lib install-man install-local install-include install-local-include $(INSTALL_TARGETS) \
+	clean clean-doc clean-local $(CLEAN_TARGETS) distclean \
+	uninstall uninstall-local uninstall-local-include \
+	dist distdir

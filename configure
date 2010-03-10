@@ -599,6 +599,10 @@ POD2MAN
 TEXI2DVI
 MAKEINFO
 INSTALL_INFO
+TOOL_CLEAN_TARGETS
+TOOL_INSTALL_TARGETS
+CLEAN_TARGETS
+INSTALL_TARGETS
 AWK
 PERL
 localperl5
@@ -6985,7 +6989,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 6988 "configure"
+#line 6992 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -11320,6 +11324,22 @@ GNU make's pathname.
 
 ==============================================" "$LINENO" 5
 fi
+
+
+
+
+
+for t in $DRIVERS $OTHER_TARGETS; do
+    INSTALL_TARGETS="$INSTALL_TARGETS install-$t"
+    CLEAN_TARGETS="$CLEAN_TARGETS clean-$t"
+done
+
+
+
+for t in $TOOL_TARGETS; do
+    TOOL_INSTALL_TARGETS="$TOOL_INSTALL_TARGETS install-$t"
+    TOOL_CLEAN_TARGETS="$TOOL_CLEAN_TARGETS clean-$t"
+done
 
 
 

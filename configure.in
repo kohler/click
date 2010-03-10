@@ -1419,6 +1419,25 @@ fi
 
 
 dnl
+dnl install and clean versions of targets
+dnl
+
+AC_SUBST([INSTALL_TARGETS], [])
+AC_SUBST([CLEAN_TARGETS], [])
+for t in $DRIVERS $OTHER_TARGETS; do
+    INSTALL_TARGETS="$INSTALL_TARGETS install-$t"
+    CLEAN_TARGETS="$CLEAN_TARGETS clean-$t"
+done
+
+AC_SUBST([TOOL_INSTALL_TARGETS], [])
+AC_SUBST([TOOL_CLEAN_TARGETS], [])
+for t in $TOOL_TARGETS; do
+    TOOL_INSTALL_TARGETS="$TOOL_INSTALL_TARGETS install-$t"
+    TOOL_CLEAN_TARGETS="$TOOL_CLEAN_TARGETS clean-$t"
+done
+
+
+dnl
 dnl Makeinfo, texi2dvi, install-info, pod2man
 dnl
 
