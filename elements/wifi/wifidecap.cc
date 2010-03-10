@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 #include <clicknet/wifi.h>
 #include <clicknet/llc.h>
 CLICK_DECLS
@@ -39,9 +40,11 @@ WifiDecap::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _debug = false;
   _strict = false;
+  _push_eth = true;
   if (cp_va_kparse(conf, this, errh,
 		   "DEBUG", 0, cpBool, &_debug,
 		   "STRICT", 0, cpBool, &_strict,
+		   "ETHER", 0, cpBool, &_push_eth,
 		   cpEnd) < 0)
     return -1;
   return 0;
@@ -63,6 +66,10 @@ WifiDecap::simple_action(Packet *p)
 	  wifi_header_size += WIFI_ADDR_LEN;
   if (WIFI_QOS_HAS_SEQ(w))
 	  wifi_header_size += sizeof(uint16_t);
+
+  struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
+  if ((ceh->magic == WIFI_EXTRA_MAGIC) && ceh->pad && (wifi_header_size & 3))
+	  wifi_header_size += 4 - (wifi_header_size & 3);
 
   if (p->length() < wifi_header_size + sizeof(struct click_llc)) {
     p->kill();
@@ -125,23 +132,26 @@ WifiDecap::simple_action(Packet *p)
   }
 
   p_out->pull(wifi_header_size + sizeof(struct click_llc));
-  p_out = p_out->push_mac_header(14);
-  if (!p_out) {
-    return 0;
-  }
 
-  memcpy(p_out->data(), dst.data(), 6);
-  memcpy(p_out->data() + 6, src.data(), 6);
-  memcpy(p_out->data() + 12, &ether_type, 2);
+  if (_push_eth) {
+	  p_out = p_out->push_mac_header(14);
+	  if (!p_out) {
+	    return 0;
+	  }
 
-  if (_debug) {
-	  click_chatter("%{element}: dir %d src %s dst %s bssid %s eth 0x%02x\n",
-			this,
-			dir,
-			src.unparse().c_str(),
-			dst.unparse().c_str(),
-			bssid.unparse().c_str(),
-			ether_type);
+	  memcpy(p_out->data(), dst.data(), 6);
+	  memcpy(p_out->data() + 6, src.data(), 6);
+	  memcpy(p_out->data() + 12, &ether_type, 2);
+
+	  if (_debug) {
+		  click_chatter("%{element}: dir %d src %s dst %s bssid %s eth 0x%02x\n",
+				this,
+				dir,
+				src.unparse().c_str(),
+				dst.unparse().c_str(),
+				bssid.unparse().c_str(),
+				ether_type);
+	  }
   }
 
   return p_out;

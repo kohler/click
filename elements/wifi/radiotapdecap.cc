@@ -122,7 +122,18 @@ RadiotapDecap::simple_action(Packet *p)
 	struct ieee80211_radiotap_header *th = (struct ieee80211_radiotap_header *) p->data();
 	struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
 	if (rt_check_header(th, p->length())) {
+		memset((void*)ceh, 0, sizeof(struct click_wifi_extra));
 		ceh->magic = WIFI_EXTRA_MAGIC;
+
+		if (rt_el_present(th, IEEE80211_RADIOTAP_FLAGS)) {
+			u_int8_t flags = *((u_int8_t *) rt_el_offset(th, IEEE80211_RADIOTAP_FLAGS));
+			if (flags & IEEE80211_RADIOTAP_F_DATAPAD) {
+				ceh->pad = 1;
+			}
+			if (flags & IEEE80211_RADIOTAP_F_FCS) {
+				p->take(4);
+			}
+		}
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_RATE)) {
 			ceh->rate = *((u_int8_t *) rt_el_offset(th, IEEE80211_RADIOTAP_RATE));
@@ -151,16 +162,13 @@ RadiotapDecap::simple_action(Packet *p)
 			ceh->flags |= WIFI_EXTRA_TX;
 			if (flags & IEEE80211_RADIOTAP_F_TX_FAIL)
 				ceh->flags |= WIFI_EXTRA_TX_FAIL;
-
-			if (flags & IEEE80211_RADIOTAP_F_FCS) {
-				p->take(4);
-			}
 		}
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_DATA_RETRIES))
 			ceh->retries = *((u_int8_t *) rt_el_offset(th, IEEE80211_RADIOTAP_DATA_RETRIES));
 
 		p->pull(le16_to_cpu(th->it_len));
+		p->set_mac_header(p->data());  // reset mac-header pointer
 	}
 
   return p;
