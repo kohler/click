@@ -51,9 +51,7 @@ ns: Makefile click-buildtool stamp-h
 	@cd ns && $(MAKE) all
 userlevel: Makefile click-buildtool click-compile stamp-h
 	@cd userlevel && $(MAKE) all
-exopc: Makefile click-buildtool stamp-h
-	@cd exopc && $(MAKE) all
-tools: Makefile
+tools: Makefile stamp-h
 	@cd tools && $(MAKE) all
 
 install: Makefile click-buildtool click-compile stamp-h installch
