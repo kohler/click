@@ -40,8 +40,11 @@
 CLICK_DECLS
 
 FromHost::FromHost()
-    : _fd(-1), _prefix6(0), _task(this)
+    : _fd(-1), _task(this)
 {
+#if HAVE_IP6
+    _prefix6 = 0;
+#endif
 }
 
 FromHost::~FromHost()
