@@ -64,10 +64,10 @@ NeighborhoodTest::handler(int, String &data, Element *element,
 void
 NeighborhoodTest::add_handlers()
 {
-    for (intptr_t i = -1; i < ninputs(); ++i)
-	set_handler("upstream" + (i < 0 ? String() : String(i)), Handler::OP_READ | Handler::READ_PARAM, handler, 0, (void *) i);
-    for (intptr_t o = -1; o < noutputs(); ++o)
-	set_handler("downstream" + (o < 0 ? String() : String(o)), Handler::OP_READ | Handler::READ_PARAM, handler, (void *) 1, (void *) o);
+    for (int i = -1; i < ninputs(); ++i)
+	set_handler("upstream" + (i < 0 ? String() : String(i)), Handler::OP_READ | Handler::READ_PARAM, handler, 0, i);
+    for (int o = -1; o < noutputs(); ++o)
+	set_handler("downstream" + (o < 0 ? String() : String(o)), Handler::OP_READ | Handler::READ_PARAM, handler, 1, o);
 }
 
 CLICK_ENDDECLS

@@ -11,33 +11,33 @@ n -> x::Null -> y::Null -> z::Idle;
 a2::Idle -> [1]n;
 n[1] -> x2::Idle;
 
-Script(print $(n.upstream), print ==,
-	print $(n.downstream), print ==,
-	print $(n.upstream 2), print ==,
-	print $(n.upstream0 2), print ==,
-	print $(n.upstream1 2), print ==,
-	print $(n.downstream0), print ==,
-	print $(n.downstream1), print ==,
+Script(print ==n.upstream, print $(n.upstream),
+	print ==n.downstream, print $(n.downstream),
+	print ==n.upstream 2, print $(n.upstream 2),
+	print ==n.upstream0 2, print $(n.upstream0 2),
+	print ==n.upstream1 2, print $(n.upstream1 2),
+	print ==n.downstream0, print $(n.downstream0),
+	print ==n.downstream1, print $(n.downstream1),
 	stop)
 '
 
 %expect stdout
+==n.upstream
 a
 a2
-==
+==n.downstream
 x
 x2
-==
+==n.upstream 2
 a
 a2
 b
-==
+==n.upstream0 2
 a
 b
-==
+==n.upstream1 2
 a2
-==
+==n.downstream0
 x
-==
+==n.downstream1
 x2
-==

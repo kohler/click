@@ -1791,7 +1791,8 @@ Element::add_read_handler(const String &name, ReadHandlerCallback read_callback,
 void
 Element::add_read_handler(const String &name, ReadHandlerCallback read_callback, int user_data, uint32_t flags)
 {
-    Router::add_read_handler(this, name, read_callback, (void *) (uintptr_t) user_data, flags);
+    uintptr_t u = (uintptr_t) user_data;
+    Router::add_read_handler(this, name, read_callback, (void *) u, flags);
 }
 
 /** @brief Register a write handler named @a name.
@@ -1835,7 +1836,8 @@ Element::add_write_handler(const String &name, WriteHandlerCallback write_callba
 void
 Element::add_write_handler(const String &name, WriteHandlerCallback write_callback, int user_data, uint32_t flags)
 {
-    Router::add_write_handler(this, name, write_callback, (void *) (uintptr_t) user_data, flags);
+    uintptr_t u = (uintptr_t) user_data;
+    Router::add_write_handler(this, name, write_callback, (void *) u, flags);
 }
 
 /** @brief Register a comprehensive handler named @a name.
@@ -1888,7 +1890,8 @@ Element::set_handler(const String& name, int flags, HandlerCallback callback, co
 void
 Element::set_handler(const String &name, int flags, HandlerCallback callback, int user_data1, int user_data2)
 {
-    Router::set_handler(this, name, flags, callback, (void *) (uintptr_t) user_data1, (void *) (uintptr_t) user_data2);
+    uintptr_t u1 = (uintptr_t) user_data1, u2 = (uintptr_t) user_data2;
+    Router::set_handler(this, name, flags, callback, (void *) u1, (void *) u2);
 }
 
 /** @brief Set flags for the handler named @a name.
