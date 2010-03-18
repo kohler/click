@@ -90,6 +90,7 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 ifndef MINDRIVER
 ELEMENTSCONF = elements
 INSTALLLIBS = libnsclick.@SOSUFFIX@
+FINDELEMFLAGS = @FINDELEMFLAGS@
 else
 ELEMENTSCONF = elements_$(MINDRIVER)
 INSTALLLIBS = libns$(MINDRIVER)click.@SOSUFFIX@
@@ -120,7 +121,7 @@ elemlist:
 	@rm -f elements.conf
 	@$(MAKE) elements.conf
 elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
-	echo "ns userlevel @element_groups@" | $(top_builddir)/click-buildtool findelem -r ns -p $(top_srcdir) -X $(srcdir)/elements.exclude > elements.conf
+	echo "ns userlevel @element_groups@" | $(top_builddir)/click-buildtool findelem -r ns -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) > elements.conf
 $(ELEMENTSCONF).mk: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
 	$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).mk
 $(ELEMENTSCONF).cc: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool

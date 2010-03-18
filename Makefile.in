@@ -139,8 +139,9 @@ elemlist elemlists: click-buildtool
 	@for d in $(DRIVERS); do (cd $$d && $(MAKE) elemlist) || exit 1; done
 
 MKELEMMAPFLAGS =
+FINDELEMFLAGS = @FINDELEMFLAGS@
 elementmap.xml: click-buildtool $(srcdir)/click-mkelemmap always
-	echo $(DRIVERS) @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "$(PROVISIONS) $(DRIVERS)" -p $(top_srcdir) | $(PERL) $(top_srcdir)/click-mkelemmap -r "$(PROVISIONS)" -t "$(DRIVERS)" -p $(top_srcdir) -Iinclude -s "`cd $(top_srcdir) && pwd`" $(MKELEMMAPFLAGS) > elementmap.xml
+	echo $(DRIVERS) @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "$(PROVISIONS) $(DRIVERS)" -p $(top_srcdir) $(FINDELEMFLAGS) | $(PERL) $(top_srcdir)/click-mkelemmap -r "$(PROVISIONS)" -t "$(DRIVERS)" -p $(top_srcdir) -Iinclude -s "`cd $(top_srcdir) && pwd`" $(MKELEMMAPFLAGS) > elementmap.xml
 always:
 	@:
 

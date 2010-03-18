@@ -98,6 +98,8 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
+FINDELEMFLAGS = @FINDELEMFLAGS@
+
 all: $(INSTALLOBJS)
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -115,7 +117,7 @@ elemlist:
 	@/bin/rm -f elements.conf
 	@$(MAKE) elements.conf
 elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
-	echo "bsdmodule @element_groups@" | $(top_builddir)/click-buildtool findelem -r bsdmodule -p $(top_srcdir) -X $(srcdir)/elements.exclude > elements.conf
+	echo "bsdmodule @element_groups@" | $(top_builddir)/click-buildtool findelem -r bsdmodule -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) > elements.conf
 elements.mk: elements.conf $(top_builddir)/click-buildtool
 	$(top_builddir)/click-buildtool elem2make < elements.conf > elements.mk
 elements.cc: elements.conf $(top_builddir)/click-buildtool

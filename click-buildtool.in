@@ -78,6 +78,10 @@ END {
 }'
 }
 
+expand_provisions () {
+    tr -s ', \n\r\f\t\v' '\n'
+}
+
 findelem () {
     pfx=
     all=
@@ -106,23 +110,23 @@ findelem () {
 	all=1; shift 1;;
     -r|--pro|--prov|--provi|--provid|--provide)
 	if test $# -lt 2; then findelem_usage; fi
-	shift 1; provisions="$1
-$provisions"; shift 1;;
+	provisions="`echo "$2" | expand_provisions`
+$provisions"; shift 2;;
     -r*)
-	provisions="`echo "$1" | sed 's/^-r//'`
+	provisions="`echo "$1" | sed 's/^-r//' | expand_provisions`
 $provisions"; shift 1;;
     --pro=*|--prov=*|--provi=*|--provid=*|--provide=*)
-	provisions="`echo "$1" | sed 's/^[^=]*=//'`
+	provisions="`echo "$1" | sed 's/^[^=]*=//' | expand_provisions`
 $provisions"; shift 1;;
     -x|--u|--un|--unp|--unpr|--unpro|--unprov|--unprovi|--unprovid|--unprovide)
 	if test $# -lt 2; then findelem_usage; fi
-	shift 1; unprovisions="$1
-$unprovisions"; shift 1;;
+	unprovisions="`echo "$2" | expand_provisions`
+$unprovisions"; shift 2;;
     -x*)
-	unprovisions="`echo "$1" | sed 's/^-x//'`
+	unprovisions="`echo "$1" | sed 's/^-x//' | expand_provisions`
 $unprovisions"; shift 1;;
     --u=*|--un=*|--unp=*|--unpr=*|--unpro=*|--unprov=*|--unprovi=*|--unprovid=*|--unprovide=*)
-	unprovisions="`echo "$1" | sed 's/^[^=]*=//'`
+	unprovisions="`echo "$1" | sed 's/^[^=]*=//' | expand_provisions`
 $unprovisions"; shift 1;;
     -X|--unprovide-|--unprovide-f|--unprovide-fi|--unprovide-fil|--unprovide-file)
 	if test $# -lt 2; then findelem_usage; fi

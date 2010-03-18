@@ -319,6 +319,7 @@ ELEMENTS_ARG_ENABLE(test, [include regression test elements], yes)
 ELEMENTS_ARG_ENABLE(threads, [include thread management elements], yes)
 ELEMENTS_ARG_ENABLE(wifi, [include wifi elements and support], NO)
 AC_ARG_ENABLE(experimental, [  --enable-experimental   enable experimental elements in normal groups], :, enable_experimental=no)
+AC_ARG_ENABLE(skip-elements, [  --enable-skip-elements=ELTS disable comma-separated elements], :, enable_skip_elements=no)
 
 for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^linuxmodule$/d;/^ns$/d;/^userlevel$/d')`; do
     enableval=`eval 'echo $'"enable_$i"`
@@ -326,6 +327,11 @@ for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^linuxmodule$
     test -d "$srcdir/elements/$i" -a "$enableval" = "yes" && element_groups="$element_groups $i"
 done
 
+FINDELEMFLAGS=
+if test "x$enable_skip_elements" != xno -a "x$enable_skip_elements" != xyes; then
+    FINDELEMFLAGS="-x '$enable_skip_elements'"
+fi
+AC_SUBST([FINDELEMFLAGS])
 
 
 dnl

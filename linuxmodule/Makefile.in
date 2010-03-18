@@ -41,6 +41,7 @@ ifndef MINDRIVER
 DRIVER = click
 ELEMENTSCONF = elements
 KSYMS = ksyms
+FINDELEMFLAGS = @FINDELEMFLAGS@
 else
 DRIVER = $(MINDRIVER)click
 ELEMENTSCONF = elements_$(MINDRIVER)
@@ -281,7 +282,7 @@ elemlist:
 	@/bin/rm -f elements.conf
 	@$(MAKE) elements.conf
 elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
-	echo "linuxmodule @element_groups@" | $(top_builddir)/click-buildtool findelem -r linuxmodule -p $(top_srcdir) -X $(srcdir)/elements.exclude > elements.conf
+	echo "linuxmodule @element_groups@" | $(top_builddir)/click-buildtool findelem -r linuxmodule -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) > elements.conf
 $(ELEMENTSCONF).mk: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
 	$(CLICK_ELEM2MAKE) -x "$(STD_ELEMENT_OBJS)" < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).mk
 $(ELEMENTSCONF).cc: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
