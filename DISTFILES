@@ -321,6 +321,7 @@ kcompat_ethtool.c
 
 ./etc:
 README
+click.vim
 debian-2.4.26-patch
 diagrams
 elementmap.xsl
