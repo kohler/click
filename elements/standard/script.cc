@@ -461,9 +461,9 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 
 	case INSN_READ:
 	case INSN_READQ: {
-	    String arg = (insn == INSN_READ ? _args3[ipos] : cp_unquote(_args3[ipos]));
-	    HandlerCall hc(cp_expand(arg, expander));
-	    if (hc.initialize_read(this, errh) >= 0) {
+	    HandlerCall hc(cp_expand(_args3[ipos], expander));
+	    int flags = HandlerCall::OP_READ + (insn == INSN_READQ ? HandlerCall::UNQUOTE_PARAM : 0);
+	    if (hc.initialize(flags, this, errh) >= 0) {
 		ContextErrorHandler c_errh(errh, "While calling %<%s%>:", hc.unparse().c_str());
 		String result = hc.call_read(&c_errh);
 		ErrorHandler *d_errh = ErrorHandler::default_handler();
@@ -474,9 +474,9 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 
 	case INSN_WRITE:
 	case INSN_WRITEQ: {
-	    String arg = (insn == INSN_WRITE ? _args3[ipos] : cp_unquote(_args3[ipos]));
-	    HandlerCall hc(cp_expand(arg, expander));
-	    if (hc.initialize_write(this, errh) >= 0) {
+	    HandlerCall hc(cp_expand(_args3[ipos], expander));
+	    int flags = HandlerCall::OP_WRITE + (insn == INSN_WRITEQ ? HandlerCall::UNQUOTE_PARAM : 0);
+	    if (hc.initialize(flags, this, errh) >= 0) {
 		ContextErrorHandler c_errh(errh, "While calling %<%s%>:", hc.unparse().c_str());
 		_write_status = hc.call_write(&c_errh);
 	    }

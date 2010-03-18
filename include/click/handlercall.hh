@@ -183,11 +183,12 @@ class HandlerCall { public:
 
     enum Flags {
 	OP_READ = Handler::OP_READ, OP_WRITE = Handler::OP_WRITE,
-	PREINITIALIZE = 4
+	PREINITIALIZE = 4, UNQUOTE_PARAM = 8
     };
 
     /** @brief  Initialize the HandlerCall.
-     *  @param  flags    zero or more of OP_READ, OP_WRITE, PREINITIALIZE
+     *  @param  flags    zero or more of OP_READ, OP_WRITE, PREINITIALIZE,
+     *                   UNQUOTE_PARAM
      *  @param  context  optional element context
      *  @param  errh     optional error handler
      *  @return 0 on success, negative on failure
@@ -200,7 +201,8 @@ class HandlerCall { public:
      *  and finally x.  If @a context is null, then the description must refer
      *  to a global handler.)  If OP_READ is set in @a flags, then there
      *  must be a read handler named appropriately; if OP_WRITE is set,
-     *  then there must be a write handler.
+     *  then there must be a write handler.  If UNQUOTE_PARAM is set, then any
+     *  parameters are unquoted.
      *
      *  Initialization fails if the handler description was bogus (for
      *  example, an empty string, or something like "*#!$&!(#&$."), if the

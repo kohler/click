@@ -46,6 +46,9 @@ HandlerCall::initialize(int flags, const Element* context, ErrorHandler* errh)
 	// local handler reference
 	if (e->eindex() == -1 && _value[0] != '.' && Router::handler(context, hname))
 	    e = const_cast<Element *>(context);
+	// unquote if required
+	if (flags & UNQUOTE_PARAM)
+	    value = cp_unquote(value);
     } else
 	hname = _h->name();
 
