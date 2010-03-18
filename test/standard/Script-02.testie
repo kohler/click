@@ -1,0 +1,20 @@
+%script
+click CONFIG
+cat FILE | wc -c
+
+%file CONFIG
+s0 :: Script(printn >FILE $(s.run "\<0a 09 01>"),
+   readq length "\<0a 09 01>",
+   stop)
+s :: Script(TYPE PASSIVE, returnq $1)
+
+%expect stdout
+3
+
+%expect stderr
+s0.length:
+3
+
+%expectv +3 FILE
+
+	
