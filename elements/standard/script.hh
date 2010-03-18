@@ -359,6 +359,15 @@ Given zero arguments, returns a random integer between 0 and RAND_MAX.  Given
 one argument N, returns a random integer between 0 and N-1.  Given two
 arguments N1 and N2, returns a random integer between N1 and N2.
 
+=h length "read with parameters"
+
+Returns the length of its parameter string as a decimal number.  For
+example, 'C<read abcdef>' returns "C<5>".
+
+=h unquote "read with parameters"
+
+Returns its parameter string with one layer of quotes removed.
+
 =h readable, writable "read with parameters"
 
 Parses its parameters as a space-separated list of handler names.  Returns
@@ -451,7 +460,7 @@ class Script : public Element { public:
 	AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
 	AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat,
 	ar_and, ar_or, ar_nand, ar_nor, ar_now, ar_if, ar_in,
-	ar_readable, ar_writable, ar_readexport
+	ar_readable, ar_writable, ar_readexport, ar_length, ar_unquote
     };
 
     void add_insn(int, int, int = 0, const String & = String());

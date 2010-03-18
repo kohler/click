@@ -1108,6 +1108,14 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	return 0;
     }
 
+    case ar_length:
+	str = String(str.length());
+	return 0;
+
+    case ar_unquote:
+	str = cp_unquote(str);
+	return 0;
+
     expected_two_numbers:
 	return errh->error("expected two numbers");
 
@@ -1156,6 +1164,8 @@ Script::add_handlers()
     set_handler("now", Handler::OP_READ, arithmetic_handler, ar_now, 0);
     set_handler("readable", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_readable, 0);
     set_handler("writable", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_writable, 0);
+    set_handler("length", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_length, 0);
+    set_handler("unquote", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_unquote, 0);
 #if CLICK_USERLEVEL
     set_handler("cat", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, arithmetic_handler, ar_cat, 0);
 #endif
