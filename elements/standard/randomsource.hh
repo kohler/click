@@ -1,44 +1,96 @@
 #ifndef CLICK_RANDOMSOURCE_HH
 #define CLICK_RANDOMSOURCE_HH
-#include <click/element.hh>
-#include <click/task.hh>
+#include "infinitesource.hh"
 CLICK_DECLS
 
 /*
  * =c
- * RandomSource(LENGTH)
+ * RandomSource(LENGTH [, LIMIT, BURST, ACTIVE, I<KEYWORDS>])
  * =s basicsources
  * generates random packets whenever scheduled
  * =d
  *
  * Creates packets, of the indicated length, filled with random bytes.
- * Packets' timestamp annotations are set to the current time.
- *
- * =a InfiniteSource
- */
+ * Packets' timestamp annotations are set to the current time. Pushes BURST such
+ * packets out its single output every time it is scheduled (which will be
+ * often). Stops sending after LIMIT packets are generated; but if LIMIT is
+ * negative, sends packets forever. Will send packets only if ACTIVE is
+ * true. (ACTIVE is true by default.) Default LIMIT is -1 (send packets
+ * forever). Default BURST is 1.
 
-class RandomSource : public Element { public:
+Keyword arguments are:
+
+=over 8
+
+=item LENGTH
+
+Integer. The outgoing packet will have this length.
+
+=item LIMIT
+
+Integer. Same as the LIMIT argument.
+
+=item BURST
+
+Integer. Same as the BURST argument.
+
+=item ACTIVE
+
+Boolean. Same as the ACTIVE argument.
+
+=item STOP
+
+Boolean. If true, then stop the driver once LIMIT packets are sent. Default is
+false.
+
+=e
+
+  RandomSource(64) -> Queue -> ...
+
+=n
+
+Useful for profiling and experiments.  Packets' timestamp annotations are set
+to the current time.
+
+RandomSource listens for downstream full notification.
+
+=h count read-only
+Returns the total number of packets that have been generated.
+=h reset write-only
+Resets the number of generated packets to 0. The RandomSource will then
+generate another LIMIT packets (if it is active).
+=h length read/write
+Returns or sets the LENGTH parameter.
+=h limit read/write
+Returns or sets the LIMIT parameter.
+=h burst read/write
+Returns or sets the BURST parameter.
+=h active read/write
+Makes the element active or inactive.
+
+=a
+
+InfiniteSource */
+
+class RandomSource : public InfiniteSource { public:
 
   RandomSource();
   ~RandomSource();
 
   const char *class_name() const		{ return "RandomSource"; }
+  void *cast(const char *);
   const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return AGNOSTIC; }
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
   void add_handlers();
 
-  Packet *pull(int);
+  int configure(Vector<String> &, ErrorHandler *);
+  bool can_live_reconfigure() const		{ return true; }
+
   bool run_task(Task *);
+  Packet *pull(int);
 
  protected:
-
-  int _length;
-  Task _task;
-
   Packet *make_packet();
-
 };
 
 CLICK_ENDDECLS
