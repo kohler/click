@@ -78,19 +78,17 @@ class RandomSource : public InfiniteSource { public:
   ~RandomSource();
 
   const char *class_name() const		{ return "RandomSource"; }
-  void *cast(const char *);
-  const char *port_count() const		{ return PORTS_0_1; }
-  const char *processing() const		{ return AGNOSTIC; }
   void add_handlers();
 
   int configure(Vector<String> &, ErrorHandler *);
-  bool can_live_reconfigure() const		{ return true; }
 
   bool run_task(Task *);
   Packet *pull(int);
 
  protected:
-  Packet *make_packet();
+
+    Packet *make_packet();
+
 };
 
 CLICK_ENDDECLS

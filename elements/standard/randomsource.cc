@@ -33,17 +33,6 @@ RandomSource::~RandomSource()
 {
 }
 
-void *
-RandomSource::cast(const char *n)
-{
-  if (strcmp(n, "RandomSource") == 0)
-    return (RandomSource *)this;
-  else if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0)
-    return static_cast<Notifier *>(this);
-  else
-    return 0;
-}
-
 int
 RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -61,7 +50,7 @@ RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
 		   "STOP", 0, cpBool, &stop,
 		   cpEnd) < 0)
     return -1;
-  if(datasize < 0 || datasize >= 64*1024)
+  if (datasize < 0 || datasize >= 64*1024)
     return errh->error("bad length %d", datasize);
   if (burstsize < 1)
     return errh->error("burst size must be >= 1");
@@ -134,19 +123,18 @@ RandomSource::make_packet()
 void
 RandomSource::add_handlers()
 {
-  add_data_handlers("limit", Handler::OP_READ | Handler::CALM, &_limit);
-  add_write_handler("limit", change_param, (void *)1);
-  add_data_handlers("burst", Handler::OP_READ | Handler::CALM, &_burstsize);
-  add_write_handler("burst", change_param, (void *)2);
-  add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
-  add_write_handler("active", change_param, (void *)3);
-  add_data_handlers("count", Handler::OP_READ, &_count);
-  add_write_handler("reset", change_param, (void *)5, Handler::BUTTON);
-  add_data_handlers("length", Handler::OP_READ | Handler::CALM, &_datasize);
-  add_write_handler("length", change_param, (void *)6);
-
-  if (output_is_push(0))
-    add_task_handlers(&_task);
+    add_data_handlers("limit", Handler::OP_READ | Handler::CALM, &_limit);
+    add_write_handler("limit", change_param, h_limit);
+    add_data_handlers("burst", Handler::OP_READ | Handler::CALM, &_burstsize);
+    add_write_handler("burst", change_param, h_burst);
+    add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
+    add_write_handler("active", change_param, h_active);
+    add_data_handlers("count", Handler::OP_READ, &_count);
+    add_write_handler("reset", change_param, h_reset, Handler::BUTTON);
+    add_data_handlers("length", Handler::OP_READ | Handler::CALM, &_datasize);
+    add_write_handler("length", change_param, h_length);
+    if (output_is_push(0))
+	add_task_handlers(&_task);
 }
 
 CLICK_ENDDECLS

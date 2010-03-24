@@ -96,7 +96,6 @@ class InfiniteSource : public Element, public ActiveNotifier { public:
   const char *class_name() const		{ return "InfiniteSource"; }
   void *cast(const char *);
   const char *port_count() const		{ return PORTS_0_1; }
-  const char *processing() const		{ return AGNOSTIC; }
   const char *flags() const			{ return "S1"; }
   void add_handlers();
 
@@ -108,23 +107,26 @@ class InfiniteSource : public Element, public ActiveNotifier { public:
   bool run_task(Task *);
   Packet *pull(int);
 
- protected:
+  protected:
 
-  void setup_packet();
+    void setup_packet();
 
-  Packet *_packet;
-  int _burstsize;
-  int _limit;
-  int _count;
-  int _datasize;
-  bool _active;
-  bool _stop;
-  Task _task;
-  String _data;
-  NotifierSignal _nonfull_signal;
+    Packet *_packet;
+    int _burstsize;
+    int _limit;
+    int _count;
+    int _datasize;
+    bool _active;
+    bool _stop;
+    Task _task;
+    String _data;
+    NotifierSignal _nonfull_signal;
 
-  static String read_param(Element *, void *);
-  static int change_param(const String &, Element *, void *, ErrorHandler *);
+    enum {
+	h_data, h_limit, h_burst, h_active, h_reset, h_count, h_length,
+	h_notifier
+    };
+    static int change_param(const String &, Element *, void *, ErrorHandler *);
 
 };
 
