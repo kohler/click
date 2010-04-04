@@ -2,6 +2,7 @@
 use Symbol 'qualify_to_ref';
 use IO::Handle;
 use Errno;
+use POSIX ":sys_wait_h";
 no locale;
 use bytes;
 require 5.006;
@@ -999,7 +1000,7 @@ sub check_expects ($$$) {
 
 package main;
 
-my($dir, @show, $show_stdout, $show_stderr);
+my($dir, @show, $show_stdout, $show_stderr, %child_pids);
 my($SHELL) = "/bin/sh";
 
 sub script_fn_to_fn ($) {
@@ -1250,6 +1251,12 @@ sub run_test ($$$) {
 
 sub cleanup () {
     kill("HUP", -$running_pid) if $running_pid; # kill any processes left behind
+
+    my(@children) = keys %child_pids;
+    foreach my $kid (@children) {
+	kill("HUP", $kid) if $child_pids{$kid};
+    }
+
     system("/bin/rm -rf $dir 2>/dev/null")
 	if defined($dir) && !$preserve_temporaries;
 }
@@ -1281,6 +1288,7 @@ sub testie_child () {
     } elsif ($child_pid) {
 	$p2cr->close;
 	$c2pw->close;
+	$child_pids{$child_pid} = 1;
 	return [$c2pr, $p2cw, "", $child_pid];
     }
 
@@ -1315,10 +1323,18 @@ sub testie_child () {
     }
 }
 
+sub testie_child_reaper {
+    my $kid;
+    while (($kid = waitpid(-1, WNOHANG)) > 0) {
+	delete $child_pids{$kid};
+    }
+}
+
 sub testie_parent_loop (\@$$$) {
     my($tests, $tctr, $teh, $jobs) = @_;
     my($testpos, $testdone, $rin, $rout) = (0, 0, "", "");
     my(@children, @child_out, $command, $arg);
+    $SIG{"CHLD"} = \&testie_child_reaper;
 
     for (my $i = 0; $i < $jobs; ++$i) {
 	last if $testpos == @$tests;
