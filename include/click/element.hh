@@ -276,7 +276,7 @@ class Element { public:
 
     static String read_handlers_handler(Element *e, void *user_data);
     void add_default_handlers(bool writable_config);
-    void add_data_handlers(const String &name, int flags, ReadHandlerCallback read_hook, WriteHandlerCallback write_hook, void *data);
+    inline void add_data_handlers(const String &name, int flags, HandlerCallback callback, void *data);
 
     friend class Router;
 #if CLICK_STATS >= 2

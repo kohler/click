@@ -72,6 +72,12 @@ class Handler { public:
 	return _flags;
     }
 
+    /** @brief Return this handler's callback data.
+     * @param op either h_read or h_write. */
+    inline void *user_data(int op) const {
+	return op == h_write ? _write_user_data : _read_user_data;
+    }
+
     /** @brief Return this handler's read callback data. */
     inline void *read_user_data() const {
 	return _read_user_data;
