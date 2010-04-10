@@ -1292,6 +1292,7 @@ sub testie_child () {
 	return [$c2pr, $p2cw, "", $child_pid];
     }
 
+    $SIG{"CHLD"} = "DEFAULT";	# reset SIG{CHLD} handler from parent
     eval { setpgrp() };
     $::quiet_ebadf = 1;
     $p2cw->close;
