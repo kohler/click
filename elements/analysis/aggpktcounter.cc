@@ -300,7 +300,7 @@ AggregatePacketCounter::thing_read_handler(int, String& s, Element* e, const Han
 	aggregate = 0;
     else if (!cp_integer(cp_uncomment(s), &aggregate))
 	return errh->error("argument should be aggregate number");
-    FlowFunc ff = (h->user_data1() ? &Flow::undelivered : &Flow::received);
+    FlowFunc ff = (h->read_user_data() ? &Flow::undelivered : &Flow::received);
     AggregatePacketCounter *apc = static_cast<AggregatePacketCounter *>(e);
     s = apc->flow_handler(aggregate, ff);
     return 0;
@@ -311,8 +311,8 @@ AggregatePacketCounter::add_handlers()
 {
     add_write_handler("clear", write_handler, (void *)H_CLEAR);
     add_read_handler("count", read_handler, (void *)H_COUNT);
-    set_handler("received", Handler::OP_READ | Handler::READ_PARAM, thing_read_handler, 0);
-    set_handler("undelivered", Handler::OP_READ | Handler::READ_PARAM, thing_read_handler, (void*) 1);
+    set_handler("received", Handler::h_read | Handler::h_read_param, thing_read_handler, 0);
+    set_handler("undelivered", Handler::h_read | Handler::h_read_param, thing_read_handler, (void*) 1);
 }
 
 CLICK_ENDDECLS

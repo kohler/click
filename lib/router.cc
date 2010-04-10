@@ -1240,25 +1240,36 @@ Router::set_hotswap_router(Router *r)
     preferred to direct Handler calls for most purposes. */
 
 inline void
-Handler::combine(const Handler &x, int type)
+Handler::combine(const Handler &x)
 {
-    if (type == combine_read && !(x._flags & COMPREHENSIVE)) {
-	_hook.rw.w = x._hook.rw.w;
-	_thunk2 = x._thunk2;
-	_flags |= x._flags & (OP_WRITE | ~SPECIAL_FLAGS);
-    } else if (type == combine_write && !(x._flags & COMPREHENSIVE)) {
-	_hook.rw.r = x._hook.rw.r;
-	_thunk1 = x._thunk1;
-	_flags |= x._flags & (OP_READ | ~SPECIAL_FLAGS);
-    } else if (type == combine_read || type == combine_write)
-	_flags |= x._flags & ~SPECIAL_FLAGS;
+    // Takes relevant data from 'x' and adds it to this handler.
+    // If this handler has no read version, add x's read handler, if any.
+    // If this handler has no write version, add x's write handler, if any.
+    // If this handler has no read or write version, make sure we copy both
+    // of x's user_data arguments, since set-handler may have set them both.
+    if (!(_flags & h_read) && (x._flags & h_read)) {
+	_read_hook = x._read_hook;
+	_read_user_data = x._read_user_data;
+	_flags |= x._flags & (h_read | h_read_comprehensive | ~h_special_flags);
+    }
+    if (!(_flags & h_write) && (x._flags & h_write)) {
+	_write_hook = x._write_hook;
+	_write_user_data = x._write_user_data;
+	_flags |= x._flags & (h_write | h_write_comprehensive | ~h_special_flags);
+    }
+    if (!(_flags & (h_read | h_write))) {
+	_read_user_data = x._read_user_data;
+	_write_user_data = x._write_user_data;
+    }
 }
 
 inline bool
 Handler::compatible(const Handler &x) const
 {
-    return (_hook.rw.r == x._hook.rw.r && _hook.rw.w == x._hook.rw.w
-	    && _thunk1 == x._thunk1 && _thunk2 == x._thunk2
+    return (_read_hook.r == x._read_hook.r
+	    && _write_hook.w == x._write_hook.w
+	    && _read_user_data == x._read_user_data
+	    && _write_user_data == x._write_user_data
 	    && _flags == x._flags);
 }
 
@@ -1266,13 +1277,13 @@ String
 Handler::call_read(Element* e, const String& param, ErrorHandler* errh) const
 {
     LocalErrorHandler lerrh(errh);
-    if (param && !(_flags & READ_PARAM))
+    if (param && !(_flags & h_read_param))
 	lerrh.error("read handler %<%s%> does not take parameters", unparse_name(e).c_str());
-    else if ((_flags & (COMPREHENSIVE | OP_READ)) == OP_READ)
-	return _hook.rw.r(e, _thunk1);
-    else if (_flags & OP_READ) {
+    else if ((_flags & (h_read | h_read_comprehensive)) == h_read)
+	return _read_hook.r(e, _read_user_data);
+    else if (_flags & h_read) {
 	String s(param);
-	if (_hook.h(OP_READ, s, e, this, &lerrh) >= 0)
+	if (_read_hook.h(h_read, s, e, this, &lerrh) >= 0)
 	    return s;
     } else
 	lerrh.error("%<%s%> not a read handler", unparse_name(e).c_str());
@@ -1284,12 +1295,12 @@ int
 Handler::call_write(const String& value, Element* e, ErrorHandler* errh) const
 {
     LocalErrorHandler lerrh(errh);
-    String value_copy(value);
-    if ((_flags & (COMPREHENSIVE | OP_WRITE)) == OP_WRITE)
-	return _hook.rw.w(value_copy, e, _thunk2, &lerrh);
-    else if (_flags & OP_WRITE)
-	return _hook.h(OP_WRITE, value_copy, e, this, &lerrh);
-    else {
+    if ((_flags & (h_write | h_write_comprehensive)) == h_write)
+	return _write_hook.w(value, e, _write_user_data, &lerrh);
+    else if (_flags & h_write) {
+	String s(value);
+	return _write_hook.h(h_write, s, e, this, &lerrh);
+    } else {
 	lerrh.error("%<%s%> not a write handler", unparse_name(e).c_str());
 	return -EACCES;
     }
@@ -1366,12 +1377,12 @@ Router::fetch_handler(const Element* e, const String& name)
 }
 
 void
-Router::store_local_handler(int eindex, Handler &to_store, int type)
+Router::store_local_handler(int eindex, Handler &to_store)
 {
     int old_eh = find_ehandler(eindex, to_store.name(), false);
     if (old_eh >= 0) {
 	Handler *old_h = xhandler(_ehandler_to_handler[old_eh]);
-	to_store.combine(*old_h, type);
+	to_store.combine(*old_h);
 	old_h->_use_count--;
     }
 
@@ -1474,11 +1485,11 @@ Router::store_local_handler(int eindex, Handler &to_store, int type)
 }
 
 void
-Router::store_global_handler(Handler &h, int type)
+Router::store_global_handler(Handler &h)
 {
     for (int i = 0; i < nglobalh; i++)
 	if (globalh[i]._name == h._name) {
-	    h.combine(globalh[i], type);
+	    h.combine(globalh[i]);
 	    globalh[i] = h;
 	    globalh[i]._use_count = 1;
 	    return;
@@ -1502,12 +1513,12 @@ Router::store_global_handler(Handler &h, int type)
 }
 
 inline void
-Router::store_handler(const Element *e, Handler &to_store, int type)
+Router::store_handler(const Element *e, Handler &to_store)
 {
     if (e && e->eindex() >= 0)
-	e->router()->store_local_handler(e->eindex(), to_store, type);
+	e->router()->store_local_handler(e->eindex(), to_store);
     else
-	store_global_handler(to_store, type);
+	store_global_handler(to_store);
 }
 
 
@@ -1654,10 +1665,10 @@ Router::add_read_handler(const Element *e, const String &hname,
 			 uint32_t flags)
 {
     Handler to_add(hname);
-    to_add._hook.rw.r = callback;
-    to_add._thunk1 = user_data;
-    to_add._flags = Handler::OP_READ | (flags & ~Handler::SPECIAL_FLAGS);
-    store_handler(e, to_add, Handler::combine_read);
+    to_add._read_hook.r = callback;
+    to_add._read_user_data = user_data;
+    to_add._flags = Handler::h_read | (flags & ~Handler::h_special_flags);
+    store_handler(e, to_add);
 }
 
 /** @brief Add an @a e.@a hname write handler.
@@ -1687,10 +1698,10 @@ Router::add_write_handler(const Element *e, const String &hname,
 			  uint32_t flags)
 {
     Handler to_add(hname);
-    to_add._hook.rw.w = callback;
-    to_add._thunk2 = user_data;
-    to_add._flags = Handler::OP_WRITE | (flags & ~Handler::SPECIAL_FLAGS);
-    store_handler(e, to_add, Handler::combine_write);
+    to_add._write_hook.w = callback;
+    to_add._write_user_data = user_data;
+    to_add._flags = Handler::h_write | (flags & ~Handler::h_special_flags);
+    store_handler(e, to_add);
 }
 
 /** @brief Add a comprehensive @a e.@a hname handler.
@@ -1698,21 +1709,21 @@ Router::add_write_handler(const Element *e, const String &hname,
  * @param hname handler name
  * @param flags flags to set (Handler::flags())
  * @param callback comprehensive handler callback
- * @param user_data1 first user data for @a callback
- * @param user_data2 second user data for @a callback
+ * @param read_user_data read user data for @a callback
+ * @param write_user_data write user data for @a callback
  *
  * Sets a handler named @a hname for element @a e.  If @a e is NULL or equal
  * to some root_element(), then sets a global handler.  The handler's callback
  * function is @a callback.  The resulting handler is a read handler if @a flags
- * contains Handler::OP_READ, and a write handler if @a flags contains
- * Handler::OP_WRITE.  If the flags contain Handler::READ_PARAM, then any read
+ * contains Handler::h_read, and a write handler if @a flags contains
+ * Handler::h_write.  If the flags contain Handler::h_read_param, then any read
  * handler will accept parameters.
  *
  * When the handler is triggered, Click will call @a callback(operation, data,
  * @a e, h, errh), where:
  *
  * <ul>
- * <li>"operation" is Handler::OP_READ or Handler::OP_WRITE;</li>
+ * <li>"operation" is Handler::h_read or Handler::h_write;</li>
  * <li>"data" is the handler data (empty for reads without parameters);</li>
  * <li>"h" is a pointer to a Handler object; and</li>
  * <li>"errh" is an ErrorHandler.</li>
@@ -1720,21 +1731,28 @@ Router::add_write_handler(const Element *e, const String &hname,
  *
  * Any previous handlers with the same name and element are replaced.
  *
- * The new handler's flags equal @a flags or'ed with Handler::COMPREHENSIVE.
- *
  * @sa add_read_handler(), add_write_handler(), set_handler_flags()
  */
 void
 Router::set_handler(const Element *e, const String &hname, uint32_t flags,
 		    HandlerCallback callback,
-		    void *user_data1, void *user_data2)
+		    void *read_user_data, void *write_user_data)
 {
     Handler to_add(hname);
-    to_add._hook.h = callback;
-    to_add._thunk1 = user_data1;
-    to_add._thunk2 = user_data2;
-    to_add._flags = flags | Handler::COMPREHENSIVE;
-    store_handler(e, to_add, Handler::combine_comprehensive);
+    if (flags & Handler::h_read) {
+	to_add._read_hook.h = callback;
+	flags |= Handler::h_read_comprehensive;
+    } else
+	flags &= ~(Handler::h_read_comprehensive | Handler::h_read_param);
+    if (flags & Handler::h_write) {
+	to_add._write_hook.h = callback;
+	flags |= Handler::h_write_comprehensive;
+    } else
+	flags &= ~Handler::h_write_comprehensive;
+    to_add._read_user_data = read_user_data;
+    to_add._write_user_data = write_user_data;
+    to_add._flags = flags;
+    store_handler(e, to_add);
 }
 
 /** @brief Change the @a e.@a hname handler's flags.
@@ -1758,10 +1776,10 @@ Router::set_handler_flags(const Element *e, const String &hname,
 {
     Handler to_add = fetch_handler(e, hname);
     if (to_add._use_count > 0) {	// only modify existing handlers
-	clear_flags &= ~Handler::SPECIAL_FLAGS;
-	set_flags &= ~Handler::SPECIAL_FLAGS;
+	clear_flags &= ~Handler::h_special_flags;
+	set_flags &= ~Handler::h_special_flags;
 	to_add._flags = (to_add._flags & ~clear_flags) | set_flags;
-	store_handler(e, to_add, Handler::combine_comprehensive);
+	store_handler(e, to_add);
 	return 0;
     } else
 	return -1;

@@ -49,8 +49,8 @@ NeighborhoodTest::handler(int, String &data, Element *element,
     if (data && !cp_integer(data, &diameter))
 	return errh->error("syntax error");
     ElementNeighborhoodTracker tracker(element->router(), diameter);
-    intptr_t port = (intptr_t) handler->user_data2();
-    if (handler->user_data1())
+    intptr_t port = (intptr_t) handler->write_user_data();
+    if (handler->read_user_data())
 	element->router()->visit_downstream(element, port, &tracker);
     else
 	element->router()->visit_upstream(element, port, &tracker);

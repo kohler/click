@@ -69,7 +69,7 @@ class Router { public:
     static const Handler *handler(const Element *e, const String &hname);
     static void add_read_handler(const Element *e, const String &hname, ReadHandlerCallback callback, void *user_data, uint32_t flags = 0);
     static void add_write_handler(const Element *e, const String &hname, WriteHandlerCallback callback, void *user_data, uint32_t flags = 0);
-    static void set_handler(const Element *e, const String &hname, uint32_t flags, HandlerCallback callback, void *user_data1 = 0, void *user_data2 = 0);
+    static void set_handler(const Element *e, const String &hname, uint32_t flags, HandlerCallback callback, void *read_user_data = 0, void *write_user_data = 0);
     static int set_handler_flags(const Element *e, const String &hname, uint32_t set_flags, uint32_t clear_flags = 0);
 
     enum { FIRST_GLOBAL_HANDLER = 0x40000000 };
@@ -326,9 +326,9 @@ class Router { public:
     inline Handler* xhandler(int) const;
     int find_ehandler(int, const String&, bool allow_star) const;
     static inline Handler fetch_handler(const Element*, const String&);
-    void store_local_handler(int eindex, Handler &h, int type);
-    static void store_global_handler(Handler &h, int type);
-    static inline void store_handler(const Element *element, Handler &h, int type);
+    void store_local_handler(int eindex, Handler &h);
+    static void store_global_handler(Handler &h);
+    static inline void store_handler(const Element *element, Handler &h);
 
     int visit_base(bool forward, Element* first_element, int first_port, RouterVisitor* visitor) const;
 
@@ -585,11 +585,11 @@ Router::hotswap_router() const
 
 inline
 Handler::Handler(const String &name)
-    : _name(name), _thunk1(0), _thunk2(0), _flags(0), _use_count(0),
-      _next_by_name(-1)
+    : _name(name), _read_user_data(0), _write_user_data(0), _flags(0),
+      _use_count(0), _next_by_name(-1)
 {
-    _hook.rw.r = 0;
-    _hook.rw.w = 0;
+    _read_hook.r = 0;
+    _write_hook.w = 0;
 }
 
 CLICK_ENDDECLS

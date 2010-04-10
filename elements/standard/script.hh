@@ -460,7 +460,7 @@ class Script : public Element { public:
 	AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
 	AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat,
 	ar_and, ar_or, ar_nand, ar_nor, ar_now, ar_if, ar_in,
-	ar_readable, ar_writable, ar_readexport, ar_length, ar_unquote
+	ar_readable, ar_writable, ar_length, ar_unquote
     };
 
     void add_insn(int, int, int = 0, const String & = String());
@@ -471,6 +471,7 @@ class Script : public Element { public:
 
     static int step_handler(int, String&, Element*, const Handler*, ErrorHandler*);
     static int arithmetic_handler(int, String&, Element*, const Handler*, ErrorHandler*);
+    static String read_export_handler(Element*, void*);
     static int star_write_handler(const String&, Element*, void*, ErrorHandler*);
 
     friend class DriverManager;

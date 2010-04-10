@@ -19,44 +19,45 @@ typedef int (*WriteHandlerCallback)(const String &data, Element *element,
 class Handler { public:
 
     enum Flags {
-	OP_READ = 0x0001,	///< @brief Handler supports read operations.
-	OP_WRITE = 0x0002,	///< @brief Handler supports write operations.
-	READ_PARAM = 0x0004,	///< @brief Read handler takes parameters.
-	COMPREHENSIVE = 0x0008,	///< @brief Use comprehensive callback for all
-				///  operations.
-	SPECIAL_FLAGS = OP_READ | OP_WRITE | READ_PARAM | COMPREHENSIVE,
-				///< @brief These flags may not be set by
-				///  Router::set_handler_flags().
-	EXCLUSIVE = 0,		///< @brief Handler is exclusive (the default):
+	h_read = 0x0001,	///< @brief Handler supports read operations.
+	h_write = 0x0002,	///< @brief Handler supports write operations.
+	h_read_param = 0x0004,	///< @brief Read handler takes parameters.
+	h_exclusive = 0,	///< @brief Handler is exclusive (the default):
 				///  router threads must stop while it is
 				///  called.
-	NONEXCLUSIVE = 0x0010,	///< @brief Handler is nonexclusive: router
+	h_nonexclusive = 0x0020,///< @brief Handler is nonexclusive: router
 				///  threads don't need to stop while it is
 				///  called.
-	RAW = 0x0020,		///< @brief Don't add newline to results.
-	READ_PRIVATE = 0x0040,	///< @brief Read handler private (invisible
+	h_raw = 0x0040,		///< @brief Don't add newline to results.
+	h_read_private = 0x0080,///< @brief Read handler private (invisible
 				///  outside the router configuration).
-	WRITE_PRIVATE = 0x0080,	///< @brief Write handler private (invisible
+	h_write_private = 0x0100,///< @brief Write handler private (invisible
 				///  outside the router configuration).
-	DEPRECATED = 0x0100,	///< @brief Handler is deprecated and available
+	h_deprecated = 0x0200,	///< @brief Handler is deprecated and available
 				///  only for compatibility.
-	UNCOMMON = 0x0200,	///< @brief User interfaces should not display
+	h_uncommon = 0x0400,	///< @brief User interfaces should not display
 				///  handler by default.
-	CALM = 0x0400,		///< @brief Read handler value changes rarely.
-	EXPENSIVE = 0x0800,	///< @brief Read handler is expensive to call.
-	BUTTON = 0x1000,	///< @brief Write handler ignores data.
-	CHECKBOX = 0x2000,	///< @brief Read/write handler is boolean and
+	h_calm = 0x0800,	///< @brief Read handler value changes rarely.
+	h_expensive = 0x1000,	///< @brief Read handler is expensive to call.
+	h_button = 0x2000,	///< @brief Write handler ignores data.
+	h_checkbox = 0x4000,	///< @brief Read/write handler is boolean and
 				///  should be rendered as a checkbox.
-	DRIVER_FLAG_SHIFT = 20,
-	DRIVER_FLAG_0 = 1 << DRIVER_FLAG_SHIFT,
+	h_driver_flag_shift = 20,
+	h_driver_flag_0 = 1 << h_driver_flag_shift,
 				///< @brief First uninterpreted handler flag
 				///  available for drivers.  Equals 1 <<
-				///  DRIVER_FLAG_SHIFT.
-	USER_FLAG_SHIFT = 25,
-	USER_FLAG_0 = 1 << USER_FLAG_SHIFT
+				///  h_driver_flag_shift.
+	h_user_flag_shift = 25,
+	h_user_flag_0 = 1 << h_user_flag_shift,
 				///< @brief First uninterpreted handler flag
 				///  available for element-specific use.
-				///  Equals 1 << USER_FLAG_SHIFT.
+				///  Equals 1 << h_user_flag_shift.
+
+	h_read_comprehensive = 0x0008,
+	h_write_comprehensive = 0x0010,
+	h_special_flags = h_read | h_write | h_read_param | h_read_comprehensive | h_write_comprehensive
+				///< @brief These flags may not be set by
+				///  Router::set_handler_flags().
     };
 
     /** @brief Return this handler's name. */
@@ -71,81 +72,54 @@ class Handler { public:
 	return _flags;
     }
 
-    /** @brief Return this handler's comprehensive callback function.
-     *
-     * Returns 0 if the handler doesn't have a comprehensive callback. */
-    inline HandlerCallback callback() const {
-	if (_flags & COMPREHENSIVE)
-	    return _hook.h;
-	else
-	    return 0;
+    /** @brief Return this handler's read callback data. */
+    inline void *read_user_data() const {
+	return _read_user_data;
     }
 
-    /** @brief Return this handler's read callback function.
-     *
-     * Returns 0 if the handler is not readable or has a comprehensive
-     * callback. */
-    inline ReadHandlerCallback read_callback() const {
-	if ((_flags & (OP_READ | COMPREHENSIVE)) == OP_READ)
-	    return _hook.rw.r;
-	else
-	    return 0;
+    /** @brief Return this handler's write callback data. */
+    inline void *write_user_data() const {
+	return _write_user_data;
     }
 
-    /** @brief Return this handler's write callback function.
-     *
-     * Returns 0 if the handler is not writable or has a comprehensive
-     * callback. */
-    inline WriteHandlerCallback write_callback() const {
-	if ((_flags & (OP_WRITE | COMPREHENSIVE)) == OP_WRITE)
-	    return _hook.rw.w;
-	else
-	    return 0;
-    }
-
-    /** @brief Return this handler's first callback data. */
-    inline void *user_data1() const {
-	return _thunk1;
-    }
-
-    /** @brief Return this handler's second callback data. */
-    inline void *user_data2() const {
-	return _thunk2;
-    }
+    /** @cond never */
+    inline void *user_data1() const CLICK_DEPRECATED;
+    inline void *user_data2() const CLICK_DEPRECATED;
+    /** @endcond never */
 
 
     /** @brief Check if this is a valid read handler. */
     inline bool readable() const {
-	return _flags & OP_READ;
+	return _flags & h_read;
     }
 
     /** @brief Check if this is a valid read handler that may accept
      * parameters. */
     inline bool read_param() const {
-	return _flags & READ_PARAM;
+	return _flags & h_read_param;
     }
 
     /** @brief Check if this is a public read handler.
      *
      * Private handlers may be not called from outside the router
      * configuration.  Handlers are public by default; to make a read handler
-     * private, add the READ_PRIVATE flag. */
+     * private, add the h_read_private flag. */
     inline bool read_visible() const {
-	return (_flags & (OP_READ | READ_PRIVATE)) == OP_READ;
+	return (_flags & (h_read | h_read_private)) == h_read;
     }
 
     /** @brief Check if this is a valid write handler. */
     inline bool writable() const {
-	return _flags & OP_WRITE;
+	return _flags & h_write;
     }
 
     /** @brief Check if this is a public write handler.
      *
      * Private handlers may not be called from outside the router
      * configuration.  Handlers are public by default; to make a write handler
-     * private, add the WRITE_PRIVATE flag. */
+     * private, add the h_write_private flag. */
     inline bool write_visible() const {
-	return (_flags & (OP_WRITE | WRITE_PRIVATE)) == OP_WRITE;
+	return (_flags & (h_write | h_write_private)) == h_write;
     }
 
     /** @brief Check if this is a public read or write handler. */
@@ -159,9 +133,9 @@ class Handler { public:
      * processing.  In the Linux kernel module driver, reading or writing an
      * exclusive handler using the Click filesystem will first lock all router
      * threads and handlers.  Handlers are exclusive by default.  Exclusivity
-     * is cleared by the NONEXCLUSIVE flag.  */
+     * is cleared by the h_nonexclusive flag.  */
     inline bool exclusive() const {
-	return !(_flags & NONEXCLUSIVE);
+	return !(_flags & h_nonexclusive);
     }
 
     /** @brief Check if spaces should be preserved when calling this handler.
@@ -170,7 +144,7 @@ class Handler { public:
      * values, for example by removing a terminating newline from write
      * handler values or adding a terminating newline to read handler values.
      * Raw handlers do not have their values manipulated in this way.  Rawness
-     * is set by the RAW flag.
+     * is set by the h_raw flag.
      *
      * <ul>
      * <li>The linuxmodule driver adds a terminating newline to non-raw read
@@ -183,7 +157,7 @@ class Handler { public:
      * handlers' values in any way.</li>
      * </ul> */
     inline bool raw() const {
-	return _flags & RAW;
+	return _flags & h_raw;
     }
 
 
@@ -196,19 +170,6 @@ class Handler { public:
      * relevant router's Router::root_element().  @a errh may be null, in
      * which case errors are reported to ErrorHandler::silent_handler(). */
     String call_read(Element *e, const String &param, ErrorHandler *errh) const;
-
-    /** @brief Call a read handler, possibly with parameters.
-     * @param e element on which to call the handler
-     * @param param parameters, or an empty string if no parameters
-     * @param raw true iff param is raw text (see raw())
-     * @param errh optional error handler
-     * @deprecated The @a raw argument is deprecated and ignored.
-     *
-     * The element must be nonnull; to call a global handler, pass the
-     * relevant router's Router::root_element().  @a errh may be null, in
-     * which case errors are reported to ErrorHandler::silent_handler(). */
-    inline String call_read(Element *e, const String &param, bool raw,
-			    ErrorHandler *errh) const CLICK_DEPRECATED;
 
     /** @brief Call a read handler without parameters.
      * @param e element on which to call the handler
@@ -230,19 +191,6 @@ class Handler { public:
      * relevant router's Router::root_element().  @a errh may be null, in
      * which case errors are reported to ErrorHandler::silent_handler(). */
     int call_write(const String &value, Element *e, ErrorHandler *errh) const;
-
-    /** @brief Call a write handler.
-     * @param value value to write to the handler
-     * @param e element on which to call the handler
-     * @param raw true iff value is raw text (see raw())
-     * @param errh optional error handler
-     * @deprecated The @a raw argument is deprecated and ignored.
-     *
-     * The element must be nonnull; to call a global handler, pass the
-     * relevant router's Router::root_element().  @a errh may be null, in
-     * which case errors are reported to ErrorHandler::silent_handler(). */
-    inline int call_write(const String &value, Element *e, bool raw,
-			  ErrorHandler *errh) const CLICK_DEPRECATED;
 
 
     /** @brief Unparse this handler's name.
@@ -271,18 +219,43 @@ class Handler { public:
 	return the_blank_handler;
     }
 
+
+    /** @cond never */
+    enum DeprecatedFlags {
+	OP_READ = h_read,
+	OP_WRITE = h_write,
+	READ_PARAM = h_read_param,
+	EXCLUSIVE = h_exclusive,
+	NONEXCLUSIVE = h_nonexclusive,
+	RAW = h_raw,
+	READ_PRIVATE = h_read_private,
+	WRITE_PRIVATE = h_write_private,
+	DEPRECATED = h_deprecated,
+	UNCOMMON = h_uncommon,
+	CALM = h_calm,
+	EXPENSIVE = h_expensive,
+	BUTTON = h_button,
+	CHECKBOX = h_checkbox,
+	DRIVER_FLAG_SHIFT = h_driver_flag_shift,
+	DRIVER_FLAG_0 = h_driver_flag_0,
+	USER_FLAG_SHIFT = h_user_flag_shift,
+	USER_FLAG_0 = h_user_flag_0
+    };
+    /** @endcond never */
+
   private:
 
     String _name;
     union {
 	HandlerCallback h;
-	struct {
-	    ReadHandlerCallback r;
-	    WriteHandlerCallback w;
-	} rw;
-    } _hook;
-    void *_thunk1;
-    void *_thunk2;
+	ReadHandlerCallback r;
+    } _read_hook;
+    union {
+	HandlerCallback h;
+	WriteHandlerCallback w;
+    } _write_hook;
+    void *_read_user_data;
+    void *_write_user_data;
     uint32_t _flags;
     int _use_count;
     int _next_by_name;
@@ -291,8 +264,7 @@ class Handler { public:
 
     Handler(const String & = String());
 
-    enum { combine_read, combine_write, combine_comprehensive };
-    inline void combine(const Handler &x, int type);
+    inline void combine(const Handler &x);
     inline bool compatible(const Handler &x) const;
 
     friend class Router;
@@ -302,24 +274,23 @@ class Handler { public:
 /* The largest size a write handler is allowed to have. */
 #define LARGEST_HANDLER_WRITE 65536
 
-inline String
-Handler::call_read(Element *e, const String &param, bool,
-		   ErrorHandler *errh) const
-{
-    return call_read(e, param, errh);
-}
-
-inline int
-Handler::call_write(const String &value, Element *e, bool,
-		    ErrorHandler *errh) const
-{
-    return call_write(value, e, errh);
-}
-
 typedef HandlerCallback HandlerHook CLICK_DEPRECATED;
 typedef ReadHandlerCallback ReadHandlerHook CLICK_DEPRECATED;
 typedef WriteHandlerCallback WriteHandlerHook CLICK_DEPRECATED;
 
+/** @cond never */
+inline void *
+Handler::user_data1() const
+{
+    return _read_user_data;
+}
+
+inline void *
+Handler::user_data2() const
+{
+    return _write_user_data;
+}
+/** @endcond never */
+
 CLICK_ENDDECLS
 #endif
-

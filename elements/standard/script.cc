@@ -714,7 +714,7 @@ Script::step_handler(int op, String &str, Element *e, const Handler *h, ErrorHan
     Script *scr = (Script *) e;
     String data = cp_uncomment(str);
     int nsteps, steptype;
-    int what = (uintptr_t) h->user_data1();
+    int what = (uintptr_t) h->write_user_data();
     scr->_run_handler_name = h->name();
     scr->_run_args = String();
     scr->_run_op = op;
@@ -771,7 +771,7 @@ Script::step_handler(int op, String &str, Element *e, const Handler *h, ErrorHan
 int
 Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh)
 {
-    int what = (uintptr_t) h->user_data1();
+    int what = (uintptr_t) h->read_user_data();
 
     switch (what) {
 
@@ -1101,13 +1101,6 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	return 0;
     }
 
-    case ar_readexport: {
-	Script *scr = static_cast<Script *>(e);
-	int v = (intptr_t) h->user_data2();
-	str = scr->_vars[v + 1];
-	return 0;
-    }
-
     case ar_length:
 	str = String(str.length());
 	return 0;
@@ -1128,16 +1121,23 @@ int
 Script::star_write_handler(const String &str, Element *e, void *, ErrorHandler *)
 {
     Script *s = static_cast<Script *>(e);
-    s->set_handler(str, Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE, step_handler, ST_RUN, 0);
+    s->set_handler(str, Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE, step_handler, 0, ST_RUN);
     return Router::hindex(s, str);
+}
+
+String
+Script::read_export_handler(Element *e, void *user_data)
+{
+    Script *scr = static_cast<Script *>(e);
+    return scr->_vars[(intptr_t) user_data + 1];
 }
 
 void
 Script::add_handlers()
 {
-    set_handler("step", Handler::OP_WRITE, step_handler, ST_STEP, 0);
-    set_handler("goto", Handler::OP_WRITE, step_handler, ST_GOTO, 0);
-    set_handler("run", Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE, step_handler, ST_RUN, 0);
+    set_handler("step", Handler::OP_WRITE, step_handler, 0, ST_STEP);
+    set_handler("goto", Handler::OP_WRITE, step_handler, 0, ST_GOTO);
+    set_handler("run", Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE, step_handler, 0, ST_RUN);
     set_handler("add", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_ADD, 0);
     set_handler("sub", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_SUB, 0);
     set_handler("mul", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_MUL, 0);
@@ -1173,7 +1173,7 @@ Script::add_handlers()
 	add_write_handler("*", star_write_handler, 0);
     for (int i = 0; i < _insns.size(); ++i)
 	if (_insns[i] == insn_export || _insns[i] == insn_exportq)
-	    set_handler(_vars[_args[i]], Handler::OP_READ, arithmetic_handler, ar_readexport, _args[i]);
+	    add_read_handler(_vars[_args[i]], read_export_handler, _args[i]);
 }
 
 EXPORT_ELEMENT(Script)

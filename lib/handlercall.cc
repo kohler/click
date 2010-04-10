@@ -47,7 +47,7 @@ HandlerCall::initialize(int flags, const Element* context, ErrorHandler* errh)
 	if (e->eindex() == -1 && _value[0] != '.' && Router::handler(context, hname))
 	    e = const_cast<Element *>(context);
 	// unquote if required
-	if (flags & UNQUOTE_PARAM)
+	if (flags & h_unquote_param)
 	    value = cp_unquote(value);
     } else
 	hname = _h->name();
@@ -55,7 +55,7 @@ HandlerCall::initialize(int flags, const Element* context, ErrorHandler* errh)
     // exit early if handlers not yet defined
     if (!e->router()->handlers_ready()) {
 	_e = reinterpret_cast<Element *>(4); // "initialization not attempted"
-	if (flags & PREINITIALIZE)
+	if (flags & h_preinitialize)
 	    return 0;
 	else
 	    return errh->error("handlers not yet defined");

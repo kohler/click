@@ -1845,23 +1845,23 @@ Element::add_write_handler(const String &name, WriteHandlerCallback write_callba
  * @param name handler name
  * @param flags handler flags
  * @param callback function called when handler is written
- * @param user_data1 user data parameter stored in the handler
- * @param user_data2 user data parameter stored in the handler
+ * @param read_user_data read user data parameter stored in the handler
+ * @param write_user_data write user data parameter stored in the handler
  *
  * Registers a comprehensive handler named @a name for this element.  The
  * handler handles the operations specified by @a flags, which can include
- * Handler::OP_READ, Handler::OP_WRITE, Handler::READ_PARAM, and others.
+ * Handler::h_read, Handler::h_write, Handler::h_read_param, and others.
  * Reading the handler calls the @a callback function like this:
  *
  * @code
  * String data;
- * int r = callback(Handler::OP_READ, data, e, h, errh);
+ * int r = callback(Handler::h_read, data, e, h, errh);
  * @endcode
  *
  * Writing the handler calls it like this:
  *
  * @code
- * int r = callback(Handler::OP_WRITE, data, e, h, errh);
+ * int r = callback(Handler::h_write, data, e, h, errh);
  * @endcode
  *
  * @a e is this element pointer, and @a h points to the Handler object for
@@ -1876,9 +1876,9 @@ Element::add_write_handler(const String &name, WriteHandlerCallback write_callba
  * name).
  */
 void
-Element::set_handler(const String& name, int flags, HandlerCallback callback, const void *user_data1, const void *user_data2)
+Element::set_handler(const String& name, int flags, HandlerCallback callback, const void *read_user_data, const void *write_user_data)
 {
-    Router::set_handler(this, name, flags, callback, (void *) user_data1, (void *) user_data2);
+    Router::set_handler(this, name, flags, callback, (void *) read_user_data, (void *) write_user_data);
 }
 
 /** @brief Register a comprehensive handler named @a name.
@@ -1888,9 +1888,9 @@ Element::set_handler(const String& name, int flags, HandlerCallback callback, co
  * values.
  */
 void
-Element::set_handler(const String &name, int flags, HandlerCallback callback, int user_data1, int user_data2)
+Element::set_handler(const String &name, int flags, HandlerCallback callback, int read_user_data, int write_user_data)
 {
-    uintptr_t u1 = (uintptr_t) user_data1, u2 = (uintptr_t) user_data2;
+    uintptr_t u1 = (uintptr_t) read_user_data, u2 = (uintptr_t) write_user_data;
     Router::set_handler(this, name, flags, callback, (void *) u1, (void *) u2);
 }
 
@@ -1960,19 +1960,19 @@ Element::read_handlers_handler(Element *e, void *)
 		sa << 'w';
 	    if (h->read_param())
 		sa << '+';
-	    if (h->flags() & Handler::RAW)
+	    if (h->flags() & Handler::h_raw)
 		sa << '%';
-	    if (h->flags() & Handler::CALM)
+	    if (h->flags() & Handler::h_calm)
 		sa << '.';
-	    if (h->flags() & Handler::EXPENSIVE)
+	    if (h->flags() & Handler::h_expensive)
 		sa << '$';
-	    if (h->flags() & Handler::UNCOMMON)
+	    if (h->flags() & Handler::h_uncommon)
 		sa << 'U';
-	    if (h->flags() & Handler::DEPRECATED)
+	    if (h->flags() & Handler::h_deprecated)
 		sa << 'D';
-	    if (h->flags() & Handler::BUTTON)
+	    if (h->flags() & Handler::h_button)
 		sa << 'b';
-	    if (h->flags() & Handler::CHECKBOX)
+	    if (h->flags() & Handler::h_checkbox)
 		sa << 'c';
 	    sa << '\n';
 	}
@@ -2041,13 +2041,13 @@ Element::write_cycles_handler(const String &, Element *e, void *, ErrorHandler *
 void
 Element::add_default_handlers(bool allow_write_config)
 {
-  add_read_handler("name", read_name_handler, 0, Handler::CALM);
-  add_read_handler("class", read_class_handler, 0, Handler::CALM);
-  add_read_handler("config", read_config_handler, 0, Handler::CALM);
+  add_read_handler("name", read_name_handler, 0, Handler::h_calm);
+  add_read_handler("class", read_class_handler, 0, Handler::h_calm);
+  add_read_handler("config", read_config_handler, 0, Handler::h_calm);
   if (allow_write_config && can_live_reconfigure())
     add_write_handler("config", write_config_handler, 0);
-  add_read_handler("ports", read_ports_handler, 0, Handler::CALM);
-  add_read_handler("handlers", read_handlers_handler, 0, Handler::CALM);
+  add_read_handler("ports", read_ports_handler, 0, Handler::h_calm);
+  add_read_handler("handlers", read_handlers_handler, 0, Handler::h_calm);
 #if CLICK_STATS >= 1
   add_read_handler("icounts", read_icounts_handler, 0);
   add_read_handler("ocounts", read_ocounts_handler, 0);
@@ -2330,22 +2330,22 @@ void
 Element::add_data_handlers(const String &name, int flags, ReadHandlerCallback read_callback, WriteHandlerCallback write_callback, void *data)
 {
     uintptr_t x = reinterpret_cast<uintptr_t>(data) - reinterpret_cast<uintptr_t>(this);
-    if ((flags & Handler::OP_READ) && read_callback)
+    if ((flags & Handler::h_read) && read_callback)
 	add_read_handler(name, read_callback, reinterpret_cast<void *>(x), flags);
-    if ((flags & Handler::OP_WRITE) && write_callback)
+    if ((flags & Handler::h_write) && write_callback)
 	add_write_handler(name, write_callback, reinterpret_cast<void *>(x), flags);
 }
 
 /** @brief Register read and/or write handlers accessing @a data.
  *
  * @param name handler name
- * @param flags handler flags, containing at least one of Handler::OP_READ
- * and Handler::OP_WRITE
+ * @param flags handler flags, containing at least one of Handler::h_read
+ * and Handler::h_write
  * @param data pointer to data
  *
  * Registers read and/or write handlers named @a name for this element.  If
- * (@a flags & Handler::OP_READ), registers a read handler; if (@a flags &
- * Handler::OP_WRITE), registers a write handler.  These handlers read or set
+ * (@a flags & Handler::h_read), registers a read handler; if (@a flags &
+ * Handler::h_write), registers a write handler.  These handlers read or set
  * the data stored at @a *data, which might, for example, be an element
  * instance variable.  This data is unparsed and/or parsed using the expected
  * functions; for example, the <tt>bool</tt> version uses cp_unparse_bool()
@@ -2488,7 +2488,7 @@ configuration_handler(int operation, String &str, Element *e,
 	&& (!keyword || !cp_keyword(conf[argno], &value, &rest) || !rest))
 	gotit = 2;
 
-    if (operation == Handler::OP_READ) {
+    if (operation == Handler::h_read) {
 	if (gotit == 1)
 	    str = value;
 	else if (gotit == 2)
@@ -2540,7 +2540,7 @@ String
 Element::read_positional_handler(Element *element, void *user_data)
 {
     String str;
-    (void) configuration_handler(Handler::OP_READ, str, element, (uintptr_t) user_data, 0, ErrorHandler::silent_handler());
+    (void) configuration_handler(Handler::h_read, str, element, (uintptr_t) user_data, 0, ErrorHandler::silent_handler());
     return str;
 }
 
@@ -2575,7 +2575,7 @@ String
 Element::read_keyword_handler(Element *element, void *user_data)
 {
     String str;
-    (void) configuration_handler(Handler::OP_READ, str, element, -1, (const char *) user_data, ErrorHandler::silent_handler());
+    (void) configuration_handler(Handler::h_read, str, element, -1, (const char *) user_data, ErrorHandler::silent_handler());
     return str;
 }
 
@@ -2612,7 +2612,7 @@ Element::reconfigure_positional_handler(const String &arg, Element *e,
 					void *user_data, ErrorHandler *errh)
 {
     String str = arg;
-    return configuration_handler(Handler::OP_WRITE, str, e, (uintptr_t) user_data, 0, errh);
+    return configuration_handler(Handler::h_write, str, e, (uintptr_t) user_data, 0, errh);
 }
 
 /** @brief Standard write handler for reconfiguring an element by changing one
@@ -2652,7 +2652,7 @@ Element::reconfigure_keyword_handler(const String &arg, Element *e,
 				     void *user_data, ErrorHandler *errh)
 {
     String str = arg;
-    return configuration_handler(Handler::OP_WRITE, str, e, -1, (const char *) user_data, errh);
+    return configuration_handler(Handler::h_write, str, e, -1, (const char *) user_data, errh);
 }
 
 /** @brief Handle a low-level remote procedure call.

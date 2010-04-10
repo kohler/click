@@ -182,13 +182,13 @@ class HandlerCall { public:
 
 
     enum Flags {
-	OP_READ = Handler::OP_READ, OP_WRITE = Handler::OP_WRITE,
-	PREINITIALIZE = 4, UNQUOTE_PARAM = 8
+	h_read = Handler::h_read, h_write = Handler::h_write,
+	h_preinitialize = 4, h_unquote_param = 8
     };
 
     /** @brief  Initialize the HandlerCall.
-     *  @param  flags    zero or more of OP_READ, OP_WRITE, PREINITIALIZE,
-     *                   UNQUOTE_PARAM
+     *  @param  flags    zero or more of h_read, h_write, h_preinitialize,
+     *                   h_unquote_param
      *  @param  context  optional element context
      *  @param  errh     optional error handler
      *  @return 0 on success, negative on failure
@@ -199,9 +199,9 @@ class HandlerCall { public:
      *  example, if @a hdesc was "x.config" and @a context's name is
      *  "aaa/bbb/ccc", this will search for elements named aaa/bbb/x, aaa/x,
      *  and finally x.  If @a context is null, then the description must refer
-     *  to a global handler.)  If OP_READ is set in @a flags, then there
-     *  must be a read handler named appropriately; if OP_WRITE is set,
-     *  then there must be a write handler.  If UNQUOTE_PARAM is set, then any
+     *  to a global handler.)  If h_read is set in @a flags, then there
+     *  must be a read handler named appropriately; if h_write is set,
+     *  then there must be a write handler.  If h_unquote_param is set, then any
      *  parameters are unquoted.
      *
      *  Initialization fails if the handler description was bogus (for
@@ -213,7 +213,7 @@ class HandlerCall { public:
      *  (bool) *this will return false.  Future call_read() and call_write()
      *  attempts will correctly fail.
      *
-     *  If the PREINITIALIZE flag is set, the initialize function will check
+     *  If the h_preinitialize flag is set, the initialize function will check
      *  whether the router's handlers are ready (Router::handlers_ready()).
      *  If handlers are not ready, then initialize() will check for syntax
      *  errors, but not actually look up the handler (since we don't know yet
@@ -227,7 +227,7 @@ class HandlerCall { public:
      *  @param  errh     optional error handler
      *
      *  Equivalent to @link initialize(int, Element*, ErrorHandler*)
-     *  initialize@endlink(OP_READ, @a context, @a errh). */
+     *  initialize@endlink(h_read, @a context, @a errh). */
     inline int initialize_read(const Element *context, ErrorHandler *errh = 0);
 
     /** @brief  Initialize the HandlerCall for writing.
@@ -235,7 +235,7 @@ class HandlerCall { public:
      *  @param  errh     optional error handler
      *
      *  Equivalent to @link initialize(int, Element*, ErrorHandler*)
-     *  initialize@endlink(OP_WRITE, @a context, @a errh). */
+     *  initialize@endlink(h_write, @a context, @a errh). */
     inline int initialize_write(const Element *context, ErrorHandler *errh = 0);
 
 
@@ -308,7 +308,7 @@ class HandlerCall { public:
     /** @brief  Create and initialize a HandlerCall from @a hdesc.
      *  @param  hcall    stores the HandlerCall result
      *  @param  hdesc    handler description "[ename.]hname[ value]"
-     *  @param  flags    initialization flags (OP_READ, OP_WRITE, PREINITIALIZE)
+     *  @param  flags    initialization flags (h_read, h_write, h_preinitialize)
      *  @param  context  optional element context
      *  @param  errh     optional error handler
      *  @return  0 on success, -EINVAL on failure
@@ -334,7 +334,7 @@ class HandlerCall { public:
      *  @param  e      relevant element, if any
      *  @param  hname  handler name
      *  @param  value  handler value
-     *  @param  flags  initialization flags (OP_READ, OP_WRITE, PREINITIALIZE)
+     *  @param  flags  initialization flags (h_read, h_write, h_preinitialize)
      *  @param  errh   optional error handler
      *  @return  0 on success, -EINVAL on failure
      *
@@ -353,7 +353,7 @@ class HandlerCall { public:
      *  @return  0 on success, -EINVAL on failure
      *
      *  Equivalent to
-     *  @link reset(HandlerCall*&, const String&, int, Element*, ErrorHandler*) reset@endlink(@a hcall, @a hdesc, OP_READ, @a context, @a errh). */
+     *  @link reset(HandlerCall*&, const String&, int, Element*, ErrorHandler*) reset@endlink(@a hcall, @a hdesc, h_read, @a context, @a errh). */
     static inline int reset_read(HandlerCall *&hcall, const String &hdesc,
 				 const Element *context, ErrorHandler *errh = 0);
 
@@ -365,7 +365,7 @@ class HandlerCall { public:
      *  @return  0 on success, -EINVAL on failure
      *
      *  Equivalent to
-     *  @link reset(HandlerCall*&, Element*, const String&, const String&, int, ErrorHandler*) reset@endlink(@a hcall, @a e, @a hname, String(), OP_READ, @a context, @a errh). */
+     *  @link reset(HandlerCall*&, Element*, const String&, const String&, int, ErrorHandler*) reset@endlink(@a hcall, @a e, @a hname, String(), h_read, @a context, @a errh). */
     static inline int reset_read(HandlerCall *&hcall,
 				 Element *e, const String &hname,
 				 ErrorHandler *errh = 0);
@@ -378,7 +378,7 @@ class HandlerCall { public:
      *  @return  0 on success, -EINVAL on failure
      *
      *  Equivalent to
-     *  @link reset(HandlerCall*&, const String&, int, Element*, ErrorHandler*) reset@endlink(@a hcall, @a hdesc, OP_WRITE, @a context, @a errh). */
+     *  @link reset(HandlerCall*&, const String&, int, Element*, ErrorHandler*) reset@endlink(@a hcall, @a hdesc, h_write, @a context, @a errh). */
     static inline int reset_write(HandlerCall *&hcall, const String &hdesc,
 				  const Element *context, ErrorHandler *errh = 0);
 
@@ -391,7 +391,7 @@ class HandlerCall { public:
      *  @return  0 on success, -EINVAL on failure
      *
      *  Equivalent to
-     *  @link reset(HandlerCall*&, Element*, const String&, const String&, int, ErrorHandler*) reset@endlink(@a hcall, @a e, @a hname, @ value, OP_WRITE, @a context, @a errh). */
+     *  @link reset(HandlerCall*&, Element*, const String&, const String&, int, ErrorHandler*) reset@endlink(@a hcall, @a e, @a hname, @ value, h_write, @a context, @a errh). */
     static inline int reset_write(HandlerCall *&hcall,
 				  Element *e, const String &hname,
 				  const String &value = String(),
@@ -446,7 +446,10 @@ class HandlerCall { public:
 
 
     /** @cond never */
-    enum { CHECK_READ = OP_READ, CHECK_WRITE = OP_WRITE };
+    enum { CHECK_READ = h_read, CHECK_WRITE = h_write,
+	   OP_READ = h_read, OP_WRITE = h_write,
+	   PREINITIALIZE = h_preinitialize, UNQUOTE_PARAM = h_unquote_param
+    };
     /** @endcond never */
 
   private:
@@ -463,37 +466,37 @@ class HandlerCall { public:
 inline int
 HandlerCall::reset_read(HandlerCall*& hcall, const String& hdesc, const Element* context, ErrorHandler* errh)
 {
-    return reset(hcall, hdesc, OP_READ, context, errh);
+    return reset(hcall, hdesc, h_read, context, errh);
 }
 
 inline int
 HandlerCall::reset_write(HandlerCall*& hcall, const String& hdesc, const Element* context, ErrorHandler* errh)
 {
-    return reset(hcall, hdesc, OP_WRITE, context, errh);
+    return reset(hcall, hdesc, h_write, context, errh);
 }
 
 inline int
 HandlerCall::reset_read(HandlerCall*& hcall, Element* e, const String& hname, ErrorHandler* errh)
 {
-    return reset(hcall, e, hname, String(), OP_READ, errh);
+    return reset(hcall, e, hname, String(), h_read, errh);
 }
 
 inline int
 HandlerCall::reset_write(HandlerCall*& hcall, Element* e, const String& hname, const String& value, ErrorHandler* errh)
 {
-    return reset(hcall, e, hname, value, OP_WRITE, errh);
+    return reset(hcall, e, hname, value, h_write, errh);
 }
 
 inline int
 HandlerCall::initialize_read(const Element* context, ErrorHandler* errh)
 {
-    return initialize(OP_READ, context, errh);
+    return initialize(h_read, context, errh);
 }
 
 inline int
 HandlerCall::initialize_write(const Element* context, ErrorHandler* errh)
 {
-    return initialize(OP_WRITE, context, errh);
+    return initialize(h_write, context, errh);
 }
 
 inline String
