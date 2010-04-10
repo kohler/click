@@ -2462,8 +2462,9 @@ configuration_handler(int operation, String &str, Element *e,
 	// it mucks with the 'conf' array
 	String new_config = cp_unargvec(conf);
 
-	if (e->live_reconfigure(conf, errh) < 0)
-	    return -EINVAL;
+	int r = e->live_reconfigure(conf, errh);
+	if (r < 0)
+	    return r;
 	e->router()->set_econfiguration(e->eindex(), new_config);
     } else
 	return errh->error("missing mandatory arguments");
