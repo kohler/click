@@ -174,6 +174,8 @@ class Element { public:
     void add_data_handlers(const String &name, int flags, long long *data);
     void add_data_handlers(const String &name, int flags, unsigned long long *data);
 #endif
+    void add_net_order_data_handlers(const String &name, int flags, uint16_t *data);
+    void add_net_order_data_handlers(const String &name, int flags, uint32_t *data);
 #if HAVE_FLOAT_TYPES
     void add_data_handlers(const String &name, int flags, double *data);
 #endif

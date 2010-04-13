@@ -2193,6 +2193,36 @@ uint16_t_data_handler(int op, String &str, Element *element, const Handler *h, E
 	return errh->error("expected uint16_t");
 }
 
+static int
+uint16_t_net_data_handler(int op, String &str, Element *element, const Handler *h, ErrorHandler *errh)
+{
+    uint16_t *ptr = reinterpret_cast<uint16_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
+    int x;
+    if (op == Handler::h_read) {
+	str = String((int) ntohs(*ptr));
+	return 0;
+    } else if (cp_integer(str, &x) && x >= 0 && x < 65536) {
+	*ptr = htons(x);
+	return 0;
+    } else
+	return errh->error("expected uint16_t");
+}
+
+static int
+uint32_t_net_data_handler(int op, String &str, Element *element, const Handler *h, ErrorHandler *errh)
+{
+    uint32_t *ptr = reinterpret_cast<uint32_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
+    uint32_t x;
+    if (op == Handler::h_read) {
+	str = String(ntohl(*ptr));
+	return 0;
+    } else if (cp_integer(str, &x)) {
+	*ptr = htonl(x);
+	return 0;
+    } else
+	return errh->error("expected integer");
+}
+
 template <typename T> static int
 integer_data_handler(int op, String &str, Element *element, const Handler *h, ErrorHandler *errh)
 {
@@ -2422,6 +2452,33 @@ void
 Element::add_data_handlers(const String &name, int flags, Timestamp *data)
 {
     add_data_handlers(name, flags, timestamp_data_handler, data);
+}
+
+/** @brief Register read and/or write handlers accessing @a data in network
+ * byte order.
+ *
+ * @param name handler name
+ * @param flags handler flags, containing at least one of Handler::h_read
+ * and Handler::h_write
+ * @param data pointer to data
+ *
+ * Registers read and/or write handlers named @a name for this element.  If
+ * (@a flags & Handler::h_read), registers a read handler; if (@a flags &
+ * Handler::h_write), registers a write handler.  These handlers read or set
+ * the data stored at @a *data, which might, for example, be an element
+ * instance variable.
+ */
+void
+Element::add_net_order_data_handlers(const String &name, int flags, uint16_t *data)
+{
+    add_data_handlers(name, flags, uint16_t_net_data_handler, data);
+}
+
+/** @overload */
+void
+Element::add_net_order_data_handlers(const String &name, int flags, uint32_t *data)
+{
+    add_data_handlers(name, flags, uint32_t_net_data_handler, data);
 }
 
 
