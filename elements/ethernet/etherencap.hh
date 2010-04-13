@@ -32,11 +32,15 @@ For IP packets you probably want to use ARPQuerier instead.
 
 =h src read/write
 
-Returns or sets the SRC parameter.
+Return or set the SRC parameter.
 
 =h dst read/write
 
-Returns or sets the DST parameter.
+Return or set the DST parameter.
+
+=h ethertype read/write
+
+Return or set the ETHERTYPE parameter.
 
 =a
 
@@ -44,26 +48,23 @@ ARPQuerier, EnsureEther, StoreEtherAddress */
 
 class EtherEncap : public Element { public:
 
-  EtherEncap();
-  ~EtherEncap();
+    EtherEncap();
+    ~EtherEncap();
 
-  const char *class_name() const	{ return "EtherEncap"; }
-  const char *port_count() const	{ return PORTS_1_1; }
-  const char *processing() const	{ return AGNOSTIC; }
+    const char *class_name() const	{ return "EtherEncap"; }
+    const char *port_count() const	{ return PORTS_1_1; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  bool can_live_reconfigure() const	{ return true; }
-  void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *);
+    bool can_live_reconfigure() const	{ return true; }
+    void add_handlers();
 
-  Packet *smaction(Packet *);
-  void push(int, Packet *);
-  Packet *pull(int);
+    Packet *smaction(Packet *);
+    void push(int, Packet *);
+    Packet *pull(int);
 
- private:
+  private:
 
-  click_ether _ethh;
-
-  static String read_handler(Element *, void *);
+    click_ether _ethh;
 
 };
 

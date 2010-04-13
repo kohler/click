@@ -1,0 +1,11 @@
+%script
+click --simtime CONFIG
+
+%file CONFIG
+Idle -> e :: EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> Idle;
+
+DriverManager(print e.ethertype, write e.ethertype 0x0801, print e.ethertype, stop)
+
+%expect stdout
+2048
+2049
