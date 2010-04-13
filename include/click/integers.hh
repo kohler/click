@@ -40,6 +40,157 @@ inline uint64_t ntohq(uint64_t x) {
 
 #endif
 
+/** @brief Translate @a x to network byte order.
+ *
+ * Compare htons/htonl/htonq.  host_to_net_order is particularly useful in
+ * template functions, where the type to be translated to network byte order
+ * is unknown. */
+inline unsigned char host_to_net_order(unsigned char x) {
+    return x;
+}
+/** @overload */
+inline signed char host_to_net_order(signed char x) {
+    return x;
+}
+/** @overload */
+inline char host_to_net_order(char x) {
+    return x;
+}
+/** @overload */
+inline short host_to_net_order(short x) {
+    return htons(x);
+}
+/** @overload */
+inline unsigned short host_to_net_order(unsigned short x) {
+    return htons(x);
+}
+/** @overload */
+inline int host_to_net_order(int x) {
+    return htonl(x);
+}
+/** @overload */
+inline unsigned host_to_net_order(unsigned x) {
+    return htonl(x);
+}
+#if SIZEOF_LONG == 4
+/** @overload */
+inline long host_to_net_order(long x) {
+    return htonl(x);
+}
+/** @overload */
+inline unsigned long host_to_net_order(unsigned long x) {
+    return htonl(x);
+}
+#endif
+#if HAVE_INT64_TYPES
+# if SIZEOF_LONG == 8
+/** @overload */
+inline long host_to_net_order(long x) {
+    return htonq(x);
+}
+/** @overload */
+inline unsigned long host_to_net_order(unsigned long x) {
+    return htonq(x);
+}
+# endif
+# if HAVE_LONG_LONG && SIZEOF_LONG_LONG == 8
+/** @overload */
+inline long long host_to_net_order(long long x) {
+    return htonq(x);
+}
+/** @overload */
+inline unsigned long long host_to_net_order(unsigned long long x) {
+    return htonq(x);
+}
+# endif
+# if !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
+/** @overload */
+inline int64_t host_to_net_order(int64_t x) {
+    return htonq(x);
+}
+/** @overload */
+inline uint64_t host_to_net_order(uint64_t x) {
+    return htonq(x);
+}
+# endif
+#endif
+
+/** @brief Translate @a x to host byte order.
+ *
+ * Compare ntohs/ntohl/ntohq.  net_to_host_order is particularly useful in
+ * template functions, where the type to be translated to network byte order
+ * is unknown. */
+inline unsigned char net_to_host_order(unsigned char x) {
+    return x;
+}
+/** @overload */
+inline signed char net_to_host_order(signed char x) {
+    return x;
+}
+/** @overload */
+inline char net_to_host_order(char x) {
+    return x;
+}
+/** @overload */
+inline short net_to_host_order(short x) {
+    return ntohs(x);
+}
+/** @overload */
+inline unsigned short net_to_host_order(unsigned short x) {
+    return ntohs(x);
+}
+/** @overload */
+inline int net_to_host_order(int x) {
+    return ntohl(x);
+}
+/** @overload */
+inline unsigned net_to_host_order(unsigned x) {
+    return ntohl(x);
+}
+#if SIZEOF_LONG == 4
+/** @overload */
+inline long net_to_host_order(long x) {
+    return ntohl(x);
+}
+/** @overload */
+inline unsigned long net_to_host_order(unsigned long x) {
+    return ntohl(x);
+}
+#endif
+#if HAVE_INT64_TYPES
+# if SIZEOF_LONG == 8
+/** @overload */
+inline long net_to_host_order(long x) {
+    return ntohq(x);
+}
+/** @overload */
+inline unsigned long net_to_host_order(unsigned long x) {
+    return ntohq(x);
+}
+# endif
+# if HAVE_LONG_LONG && SIZEOF_LONG_LONG == 8
+/** @overload */
+inline long long net_to_host_order(long long x) {
+    return ntohq(x);
+}
+/** @overload */
+inline unsigned long long net_to_host_order(unsigned long long x) {
+    return ntohq(x);
+}
+# endif
+# if !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
+/** @overload */
+inline int64_t net_to_host_order(int64_t x) {
+    return ntohq(x);
+}
+/** @overload */
+inline uint64_t net_to_host_order(uint64_t x) {
+    return ntohq(x);
+}
+# endif
+#endif
+
+
 // MSB is bit #1
 #if HAVE___BUILTIN_CLZ && !HAVE_NO_INTEGER_BUILTINS
 /** @brief Return the index of the most significant bit set in @a x.
