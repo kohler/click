@@ -34,6 +34,12 @@
 #define FIX_IP_SRC_ANNO(p)		((p)->anno_u8(FIX_IP_SRC_ANNO_OFFSET))
 #define SET_FIX_IP_SRC_ANNO(p, v)	((p)->set_anno_u8(FIX_IP_SRC_ANNO_OFFSET, (v)))
 
+// bytes 20-21
+#define VLAN_ANNO_OFFSET		20
+#define VLAN_ANNO_SIZE			2
+#define VLAN_ANNO(p)			((p)->anno_u16(VLAN_ANNO_OFFSET))
+#define SET_VLAN_ANNO(p, v)		((p)->set_anno_u16(VLAN_ANNO_OFFSET, (v)))
+
 // bytes 20-23
 #define AGGREGATE_ANNO_OFFSET		20
 #define AGGREGATE_ANNO_SIZE		4

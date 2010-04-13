@@ -1,0 +1,30 @@
+%script
+click --simtime CONFIG
+
+%file CONFIG
+InfiniteSource(DATA \<AAABACAD>, LIMIT 1, STOP true)
+  -> Print(x)
+  -> EtherVlanEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, 1)
+  -> Print(a)
+  -> StripEtherVlanHeader
+  -> Print(b)
+  -> EtherVlanEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, ANNO)
+  -> Print(c)
+  -> StripEtherVlanHeader
+  -> Print(d)
+  -> EtherVlanEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, ANNO, NATIVE_VLAN 1)
+  -> Print(e)
+  -> StripEtherVlanHeader
+  -> SetVlanAnno(2, 1)
+  -> EtherVlanEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, ANNO, NATIVE_VLAN 1)
+  -> Print(f)
+  -> Discard;
+
+%expect stderr
+x:    4 | aaabacad
+a:   22 | 02020202 02020101 01010101 81000001 0800aaab acad
+b:    4 | aaabacad
+c:   22 | 02020202 02020101 01010101 81000001 0800aaab acad
+d:    4 | aaabacad
+e:   18 | 02020202 02020101 01010101 0800aaab acad
+f:   22 | 02020202 02020101 01010101 81002002 0800aaab acad
