@@ -105,6 +105,8 @@ class IP6Address { public:
     String s() const			{ return unparse(); }
     inline operator String() const CLICK_DEPRECATED;
 
+    typedef const IP6Address &parameter_type;
+
   private:
 
     click_in6_addr _addr;

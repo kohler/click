@@ -7,6 +7,9 @@ CLICK_DECLS
 
 class EtherAddress { public:
 
+    struct uninitialized_t {
+    };
+
     /** @brief Construct an EtherAddress equal to 00-00-00-00-00-00. */
     inline EtherAddress() {
 	_data[0] = _data[1] = _data[2] = 0;
@@ -16,8 +19,13 @@ class EtherAddress { public:
      * @param data the address data, in network byte order
      *
      * The bytes data[0]...data[5] are used to construct the address. */
-    explicit EtherAddress(const unsigned char *data) {
+    explicit inline EtherAddress(const unsigned char *data) {
 	memcpy(_data, data, 6);
+    }
+
+    /** @brief Construct an uninitialized EtherAddress. */
+    inline EtherAddress(const uninitialized_t &unused) {
+	(void) unused;
     }
 
     /** @brief Return the broadcast EtherAddress, FF-FF-FF-FF-FF-FF. */
@@ -117,6 +125,8 @@ class EtherAddress { public:
      * @deprecated The unparse() function should be preferred to this cast.
      * @sa unparse */
     inline operator String() const CLICK_DEPRECATED;
+
+    typedef const EtherAddress &parameter_type;
 
  private:
 

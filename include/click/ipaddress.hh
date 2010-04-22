@@ -9,6 +9,9 @@ class StringAccum;
 
 class IPAddress { public:
 
+    struct uninitialized_t {
+    };
+
     /** @brief Construct an IPAddress equal to 0.0.0.0. */
     inline IPAddress()
 	: _addr(0) {
@@ -54,6 +57,11 @@ class IPAddress { public:
      * If @a x is not a valid dotted-quad address, then the IPAddress is
      * initialized to 0.0.0.0. */
     explicit IPAddress(const String &x);
+
+    /** @brief Construct an uninitialized IPAddress. */
+    inline IPAddress(const uninitialized_t &unused) {
+	(void) unused;
+    }
 
     /** @brief Return an IPAddress equal to the prefix mask of length @a
      * prefix.
@@ -120,6 +128,8 @@ class IPAddress { public:
 
     inline String s() const;
     inline operator String() const CLICK_DEPRECATED;
+
+    typedef IPAddress parameter_type;
 
   private:
 
