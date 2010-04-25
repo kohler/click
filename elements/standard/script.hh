@@ -139,7 +139,8 @@ Also, 'C<goto exit [CONDITION]>' and 'C<goto end [CONDITION]>' end execution
 of the script, like 'C<exit>' and 'C<end>' respectively.  'C<goto begin
 [CONDITION]>' transfers control to the first instruction, like 'C<loop>'.
 'C<goto error [CONDITION]>' ends execution of the script with an error, like
-'C<error>'.
+'C<error>'.  'C<goto stop [CONDITION]>' ends execution of the script and asks
+the driver to stop, like 'C<stop>'.
 
 =item 'C<loop>'
 
@@ -157,6 +158,12 @@ off the end of a script.
 End execution of this script.  In signal scripts, 'C<exit>' will I<not>
 reinstall the script as a signal handler.  In packet scripts, 'C<exit>' will
 drop the packet.
+
+=item 'C<stop>'
+
+End execution of this script as by 'C<end>', and additionally ask the driver
+to stop.  (A TYPE DRIVER Script, or DriverManager element, can intercept
+this request.)
 
 =item 'C<return> [VALUE]', 'C<returnq> [VALUE]'
 
@@ -406,13 +413,15 @@ class Script : public Element { public:
     void run_timer(Timer *);
 
     enum Insn {
-	INSN_INITIAL, INSN_WAIT_STEP, INSN_WAIT_TIME, // order required
+	INSN_INITIAL, INSN_WAIT_STEP, INSN_WAIT_TIME,
 	INSN_PRINT, INSN_PRINTN, INSN_READ, INSN_READQ, INSN_WRITE, INSN_WRITEQ,
 	INSN_SET, insn_setq, insn_init, insn_initq, insn_export, insn_exportq,
 	INSN_SAVE, INSN_APPEND,
-	INSN_STOP, INSN_END, INSN_EXIT, INSN_LABEL, INSN_GOTO, INSN_RETURN,
-	insn_returnq, insn_error, insn_errorq,
-	INSN_WAIT_PSEUDO, INSN_LOOP_PSEUDO
+	INSN_LABEL, INSN_GOTO, INSN_RETURN, insn_returnq,
+	INSN_WAIT_PSEUDO, INSN_LOOP_PSEUDO,
+	// negative instructions are also valid label constants
+	insn_exit = -1, insn_end = -2, insn_stop = -3, insn_error = -4,
+	insn_errorq = -5
     };
 
   private:
@@ -423,8 +432,7 @@ class Script : public Element { public:
     };
 
     enum {
-	max_jumps = 1000, STEP_NORMAL = 0, STEP_ROUTER, STEP_TIMER, STEP_JUMP,
-	LABEL_EXIT = -1, LABEL_END = -2, label_error = -3, LABEL_BEGIN = 0
+	max_jumps = 1000, STEP_NORMAL = 0, STEP_ROUTER, STEP_TIMER, STEP_JUMP
     };
 
     Vector<int> _insns;

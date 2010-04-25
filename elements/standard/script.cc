@@ -35,10 +35,10 @@
 CLICK_DECLS
 
 static const StaticNameDB::Entry instruction_entries[] = {
-    { "end", Script::INSN_END },
+    { "end", Script::insn_end },
     { "error", Script::insn_error },
     { "errorq", Script::insn_errorq },
-    { "exit", Script::INSN_EXIT },
+    { "exit", Script::insn_exit },
     { "export", Script::insn_export },
     { "exportq", Script::insn_exportq },
     { "goto", Script::INSN_GOTO },
@@ -55,7 +55,7 @@ static const StaticNameDB::Entry instruction_entries[] = {
     { "returnq", Script::insn_returnq },
     { "set", Script::INSN_SET },
     { "setq", Script::insn_setq },
-    { "stop", Script::INSN_STOP },
+    { "stop", Script::insn_stop },
     { "wait", Script::INSN_WAIT_PSEUDO },
     { "wait_for", Script::INSN_WAIT_TIME },
     { "wait_step", Script::INSN_WAIT_STEP },
@@ -115,7 +115,8 @@ Script::add_insn(int insn, int arg, int arg2, const String &arg3)
 {
     // first instruction must be WAIT or WAIT_STEP, so add INITIAL if
     // necessary
-    if (_insns.size() == 0 && insn > INSN_WAIT_TIME)
+    if (_insns.size() == 0 && insn != INSN_INITIAL && insn != INSN_WAIT_STEP
+	&& insn != INSN_WAIT_TIME)
 	add_insn(INSN_INITIAL, 0);
     _insns.push_back(insn);
     _args.push_back(arg);
@@ -129,14 +130,10 @@ Script::find_label(const String &label) const
     for (int i = 0; i < _insns.size(); i++)
 	if (_insns[i] == INSN_LABEL && _args3[i] == label)
 	    return i;
-    if (label.equals("exit", 4))
-	return LABEL_EXIT;
-    if (label.equals("end", 3))
-	return LABEL_END;
-    if (label.equals("begin", 5))
-	return LABEL_BEGIN;
-    if (label.equals("error", 5))
-	return label_error;
+    int32_t insn;
+    if (NameInfo::query_int(NameInfo::T_SCRIPT_INSN, this, label, &insn)
+	&& insn < 0)
+	return insn;		// negative instructions are also labels
     return _insns.size();
 }
 
@@ -276,9 +273,9 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	case INSN_LOOP_PSEUDO:
 	    insn = INSN_GOTO;
 	    /* fallthru */
-	case INSN_END:
-	case INSN_EXIT:
-	case INSN_STOP:
+	case insn_end:
+	case insn_exit:
+	case insn_stop:
 	case insn_error:
 	case insn_errorq:
 	    if (conf[i] && insn != insn_error && insn != insn_errorq)
@@ -304,7 +301,7 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 
     if (_insns.size() == 0 && _type == type_driver)
 	add_insn(INSN_WAIT_STEP, 1, 0);
-    add_insn(_type == type_driver ? INSN_STOP : INSN_END, 0);
+    add_insn(_type == type_driver ? insn_stop : insn_end, 0);
 
     return (errh->nerrors() == before ? 0 : -1);
 }
@@ -326,7 +323,7 @@ Script::initialize(ErrorHandler *errh)
 	    _vars[_args[i] + 1] = cp_unquote(cp_expand(_args3[i], expander));
 
     int insn = _insns[_insn_pos];
-    assert(insn <= INSN_WAIT_TIME);
+    assert(insn == INSN_INITIAL || insn == INSN_WAIT_STEP || INSN_WAIT_TIME);
     if (_type == type_signal || _type == type_passive || _type == type_push
 	|| _type == type_proxy)
 	/* passive, do nothing */;
@@ -373,7 +370,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 
 	switch (insn) {
 
-	case INSN_STOP:
+	case insn_stop:
 	    _step_count++;
 	    _insn_pos--;
 	    if (step_type != STEP_ROUTER)
@@ -525,8 +522,8 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 		errh->error("%.*s", msg.length(), msg.data());
 	    /* fallthru */
 	}
-	case INSN_END:
-	case INSN_EXIT:
+	case insn_end:
+	case insn_exit:
 	insn_finish:
 	    _insn_pos--;
 	    return njumps + 1;
@@ -556,18 +553,12 @@ Script::complete_step(String *retval)
 	last_insn = -1;
     else {
 	last_insn = _insns[_insn_pos];
-	if (last_insn == INSN_GOTO) {
-	    if (_args[_insn_pos] == LABEL_EXIT)
-		last_insn = INSN_EXIT;
-	    else if (_args[_insn_pos] == LABEL_END)
-		last_insn = INSN_END;
-	    else if (_args[_insn_pos] == label_error)
-		last_insn = insn_error;
-	}
+	if (last_insn == INSN_GOTO && _args[_insn_pos] < 0)
+	    last_insn = _args[_insn_pos];
     }
 
 #if CLICK_USERLEVEL
-    if (last_insn == INSN_END && _type == type_signal)
+    if (last_insn == insn_end && _type == type_signal)
 	for (int i = 0; i < _signos.size(); i++)
 	    master()->add_signal_handler(_signos[i], router(), name() + ".run");
 #endif
@@ -579,13 +570,13 @@ Script::complete_step(String *retval)
 	    x = find_variable(String::make_stable("_", 1), false);
 	    if (x < _vars.size())
 		*retval = _vars[x + 1];
-	} else if (last_insn == INSN_END && _type == type_push)
+	} else if (last_insn == insn_end && _type == type_push)
 	    *retval = String::make_stable("0", 1);
     }
 
     if (last_insn == insn_error || last_insn == insn_errorq)
 	return -1;
-    else if (last_insn == INSN_STOP)
+    else if (last_insn == insn_stop)
 	return 1;
     else
 	return 0;
