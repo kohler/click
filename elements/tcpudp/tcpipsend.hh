@@ -17,9 +17,12 @@ CLICK_DECLS
  * =e
  *
  * =h send write-only
- * Expects a string "saddr sport daddr dport seqn ackn bits" with their
- * obvious meaning. Bits is the value of the 6 TCP flags.
  *
+ * Expects a string "saddr sport daddr dport seqno ackno bits [count stop]".
+ * "saddr sport daddr dport seqno ackno" have their obvious meanings.  "bits"
+ * is the value of the 6 TCP flags.  The optional "count" argument is the
+ * number of packets to send.  The optional "stop" argument is a Boolean; if
+ * true, stops the router after sending the packets.
  */
 
 class TCPIPSend : public Element {

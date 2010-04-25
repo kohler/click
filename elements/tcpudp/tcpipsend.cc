@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/router.hh>
 #ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
@@ -45,6 +46,8 @@ TCPIPSend::send_write_handler(const String &conf, Element *e, void *, ErrorHandl
   uint16_t sport, dport;
   unsigned char bits;
   unsigned seqn, ackn;
+  unsigned int limit = 1;
+  bool stop = false;
   if(cp_va_space_kparse(conf, me, errh,
 			"SRC", cpkP+cpkM, cpIPAddress, &saddr,
 			"SPORT", cpkP+cpkM, cpTCPPort, &sport,
@@ -53,11 +56,18 @@ TCPIPSend::send_write_handler(const String &conf, Element *e, void *, ErrorHandl
 			"SEQNO", cpkP+cpkM, cpUnsigned, &seqn,
 			"ACKNO", cpkP+cpkM, cpUnsigned, &ackn,
 			"FLAGS", cpkP+cpkM, cpByte, &bits,
+			"COUNT", cpkP, cpUnsigned, &limit,
+			"STOP", cpkP, cpBool, &stop,
 			cpEnd) < 0)
     return -1;
 
-  Packet *p = me->make_packet(saddr, daddr, sport, dport, seqn, ackn, bits);
-  me->output(0).push(p);
+  if (limit > 0) {
+    Packet *p = me->make_packet(saddr, daddr, sport, dport, seqn, ackn, bits);
+    for (unsigned int i = 0; i < limit; i++)
+      me->output(0).push(i + 1 < limit ? p->clone() : p);
+  }
+  if (stop)
+    me->router()->please_stop_driver();
   return 0;
 }
 
