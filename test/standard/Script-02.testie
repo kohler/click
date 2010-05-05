@@ -9,7 +9,7 @@ s0 :: Script(printn >FILE $(s.run "\<0a 09 01>"),
 s :: Script(TYPE PASSIVE, returnq $1)
 
 %expect stdout
-3
+{{\s*}}3
 
 %expect stderr
 s0.length:
