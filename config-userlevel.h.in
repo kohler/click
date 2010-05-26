@@ -132,6 +132,9 @@
 /* Define if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
+/* Define if you have the strnlen function. */
+#undef HAVE_STRNLEN
+
 /* Define if you have the strtoul function. */
 #undef HAVE_STRTOUL
 

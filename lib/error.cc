@@ -487,8 +487,13 @@ ErrorHandler::vxformat(int default_flags, const char *s, va_list val)
 	    if (flags & cf_alternate_form) {
 		strstore = String(s1).printable();
 		len = strstore.length();
-	    } else
-		len = strlen(s1);
+	    } else {
+#if HAVE_STRNLEN
+		len = (precision >= 0 ? strnlen(s, precision) : strlen(s));
+#else
+		len = strlen(s1); // XXX might touch uninitialized memory
+#endif
+	    }
 
 	    // adjust length for precision
 	    if (precision >= 0 && precision < len)

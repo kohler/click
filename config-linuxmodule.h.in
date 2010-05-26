@@ -115,6 +115,9 @@
 /* Define if you have the skb_recycle function. */
 #undef HAVE_SKB_RECYCLE
 
+/* Define if you have the strnlen function. */
+#define HAVE_STRNLEN 1
+
 /* Define to 1 if Linux defines the type 'uintptr_t'. */
 #undef HAVE_UINTPTR_T_LINUXMODULE
 
