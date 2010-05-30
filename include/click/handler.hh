@@ -249,6 +249,19 @@ class Handler { public:
     };
     /** @endcond never */
 
+    /** @cond never */
+    /** @brief Call a read handler without parameters, passing new user_data().
+     * @param e element on which to call the handler
+     * @param new_user_data new user data
+     *
+     * This function should only be used for special purposes.  It fails
+     * unless called on a handler created with a ReadHandlerCallback. */
+    inline String __call_read(Element *e, void *new_user_data) const {
+	assert((_flags & (h_read | h_read_comprehensive)) == h_read);
+	return _read_hook.r(e, new_user_data);
+    }
+    /** @endcond never */
+
   private:
 
     String _name;

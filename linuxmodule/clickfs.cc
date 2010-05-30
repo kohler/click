@@ -4,7 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2002-2003 International Computer Science Institute
- * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2004-2010 Regents of the University of California
  * Copyright (c) 2008 Meraki, Inc.
  *
  * This source code is free software; you can redistribute it and/or modify it
@@ -606,7 +606,7 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 		hdi.store_f_pos = store_f_pos;
 		hdi.string = &handler_strings[stringno];
 		hdi.retval = 0;
-		(void) (*h->read_callback())(e, &hdi);
+		(void) h->__call_read(e, &hdi);
 		count = hdi.count;
 		retval = hdi.retval;
 	    } else if (h->exclusive()) {
@@ -723,10 +723,10 @@ handler_do_write(struct file *filp, void *address_ptr)
 	ClickfsHandlerErrorHandler cerrh;
 	if (h->exclusive()) {
 	    lock_threads();
-	    retval = h->call_write(data, e, true, &cerrh);
+	    retval = h->call_write(data, e, &cerrh);
 	    unlock_threads();
 	} else
-	    retval = h->call_write(data, e, true, &cerrh);
+	    retval = h->call_write(data, e, &cerrh);
 
 	handler_strings_info[stringno].flags |= HANDLER_DONE;
 
