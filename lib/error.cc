@@ -482,22 +482,25 @@ ErrorHandler::vxformat(int default_flags, const char *s, va_list val)
 	    if (!s1)
 		s1 = "(null)";
 
-	    // transform string, fetch length
+	    // fetch length
 	    int len;
-	    if (flags & cf_alternate_form) {
-		strstore = String(s1).printable();
-		len = strstore.length();
-	    } else {
+	    if (precision < 0)
+		len = strlen(s1);
+	    else {
 #if HAVE_STRNLEN
-		len = (precision >= 0 ? strnlen(s, precision) : strlen(s));
+		len = strnlen(s1, precision);
 #else
-		len = strlen(s1); // XXX might touch uninitialized memory
+		for (len = 0; len < precision && s1[len] != 0; ++len)
+		    /* do nothing */;
 #endif
 	    }
 
-	    // adjust length for precision
-	    if (precision >= 0 && precision < len)
-		len = precision;
+	    // transform string if alternate form
+	    if (flags & cf_alternate_form) {
+		strstore = String(s1, len).printable();
+		if (precision < 0 || strstore.length() < precision)
+		    len = strstore.length();
+	    }
 
 	    // quote characters that look like annotations, readjusting length
 	    if (flags & (cf_singlequote | cf_alternate_form)) {
