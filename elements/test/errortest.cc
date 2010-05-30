@@ -32,11 +32,11 @@ class ErrorTestHandler : public ErrorHandler { public:
 	return 0;
     }
     bool check(const String &text) {
-	bool same = text.equals(_text.begin(), _text.length());
-	_text.clear();
-	return same;
+	_last_text = _text.take_string();
+	return text == _last_text;
     }
     StringAccum _text;
+    String _last_text;
 };
 }
 
@@ -48,7 +48,7 @@ ErrorTest::~ErrorTest()
 {
 }
 
-#define CHECK(text) if (!errh.check((text))) return init_errh->error("%s:%d: test `%s' failed", __FILE__, __LINE__, (text));
+#define CHECK(text) if (!errh.check((text))) return init_errh->error("%s:%d: test %<%s%> failed, got %<%.*s%>", __FILE__, __LINE__, (text), errh._last_text.length(), errh._last_text.data());
 
 int
 ErrorTest::initialize(ErrorHandler *init_errh)
@@ -100,6 +100,13 @@ ErrorTest::initialize(ErrorHandler *init_errh)
 	CHECK("<3>{context:context}Context 'foo':\n<3>  Testing context 1\n");
 	cerrh.error("Testing context 2");
 	CHECK("<3>  Testing context 2\n");
+    }
+
+    {
+	char *x = new char[4];
+	memcpy(x, "Hi!!", 4);
+	errh.error("This should not cause memory errors: %<%.*s%>", 4, x);
+	CHECK("<3>This should not cause memory errors: 'Hi!!'\n");
     }
 
     init_errh->message("All tests pass!");
