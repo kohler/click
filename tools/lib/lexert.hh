@@ -70,7 +70,10 @@ class LexerT { public:
 	assert(_unlex_pos < UNLEX_SIZE);
 	_unlex[_unlex_pos++] = t;
     }
-    Lexeme lex_config();
+    Lexeme lex_config() {
+	assert(!_unlex_pos);
+	return _file.lex_config(this);
+    }
     String landmark() const;
     inline LandmarkT landmarkt(const char *pos1, const char *pos2) const;
 
@@ -90,26 +93,42 @@ class LexerT { public:
 
   protected:
 
+    struct FileState {
+	String _big_string;
+	const char *_data;
+	const char *_end;
+	const char *_pos;
+	String _filename;
+	String _original_filename;
+	unsigned _lineno;
+
+	FileState(const String &text, const String &filename);
+	const char *skip_line(const char *s);
+	const char *skip_slash_star(const char *s);
+	const char *skip_backslash_angle(const char *s);
+	const char *skip_quote(const char *s, char end_c);
+	const char *process_line_directive(const char *s, LexerT *lexer);
+	Lexeme next_lexeme(LexerT *lexer);
+	Lexeme lex_config(LexerT *lexer);
+	String landmark() const;
+	unsigned offset(const char *s) const {
+	    assert(s >= _big_string.begin() && s <= _end);
+	    return s - _big_string.begin();
+	}
+	LandmarkT landmarkt(LandmarkSetT *lset, const char *pos1, const char *pos2) const {
+	    return LandmarkT(lset, offset(pos1), offset(pos2));
+	}
+    };
+
     // lexer
-    String _big_string;
-
-    const char *_data;
-    const char *_end;
-    const char *_pos;
-
-    String _filename;
-    String _original_filename;
-    unsigned _lineno;
+    FileState _file;
     LandmarkSetT *_lset;
     bool _ignore_line_directives;
 
     bool get_data();
-    const char *skip_line(const char *);
-    const char *skip_slash_star(const char *);
-    const char *skip_backslash_angle(const char *);
-    const char *skip_quote(const char *, char);
-    const char *process_line_directive(const char *);
-    Lexeme next_lexeme();
+    Lexeme next_lexeme() {
+	return _file.next_lexeme(this);
+    }
     static String lexeme_string(int);
 
     // parser
@@ -137,7 +156,7 @@ class LexerT { public:
 
     bool expect(int, bool no_error = false);
     const char *next_pos() const {
-	return _unlex_pos ? _unlex[_unlex_pos - 1].pos1() : _pos;
+	return _unlex_pos ? _unlex[_unlex_pos - 1].pos1() : _file._pos;
     }
 
     ElementClassT *element_type(const Lexeme &) const;
@@ -150,14 +169,14 @@ class LexerT { public:
     int make_anon_element(const Lexeme &, const char *decl_pos2, ElementClassT *, const String &);
     void connect(int f1, int p1, int p2, int f2, const char *pos1, const char *pos2);
 
+    friend struct FileState;
+
 };
 
 inline LandmarkT
 LexerT::landmarkt(const char *pos1, const char *pos2) const
 {
-    assert(pos1 >= _big_string.begin() && pos1 <= _big_string.end());
-    assert(pos2 >= _big_string.begin() && pos2 <= _big_string.end());
-    return LandmarkT(_lset, pos1 - _big_string.begin(), pos2 - _big_string.begin());
+    return _file.landmarkt(_lset, pos1, pos2);
 }
 
 #endif

@@ -71,7 +71,10 @@ class Lexer { public:
 	assert(_unlex_pos < UNLEX_SIZE);
 	_unlex[_unlex_pos++] = t;
     }
-    String lex_config();
+    String lex_config() {
+	assert(!_unlex_pos);
+	return _file.lex_config(this);
+    }
     String landmark() const;
 
     bool expect(int, bool no_error = false);
@@ -111,25 +114,33 @@ class Lexer { public:
 
   private:
 
+    struct FileState {
+	String _big_string;
+	const char *_end;
+	const char *_pos;
+	String _filename;
+	String _original_filename;
+	unsigned _lineno;
+
+	FileState(const String &data, const String &filename);
+	const char *skip_line(const char *s);
+	const char *skip_slash_star(const char *s);
+	const char *skip_backslash_angle(const char *s);
+	const char *skip_quote(const char *s, char end_c);
+	const char *process_line_directive(const char *s, Lexer *lexer);
+	Lexeme next_lexeme(Lexer *lexer);
+	String lex_config(Lexer *lexer);
+	String landmark() const;
+    };
+
     // lexer
-    String _big_string;
+    FileState _file;
     bool _compact_config;
-
-    const char *_data;
-    const char *_end;
-    const char *_pos;
-
-    String _filename;
-    String _original_filename;
-    unsigned _lineno;
     LexerExtra *_lextra;
 
-    const char *skip_line(const char *);
-    const char *skip_slash_star(const char *);
-    const char *skip_backslash_angle(const char *);
-    const char *skip_quote(const char *, char);
-    const char *process_line_directive(const char *);
-    Lexeme next_lexeme();
+    Lexeme next_lexeme() {
+	return _file.next_lexeme(this);
+    }
     static String lexeme_string(int);
 
     // parser
@@ -188,6 +199,7 @@ class Lexer { public:
 
     friend class Compound;
     friend class TunnelEnd;
+    friend class FileState;
 
 };
 

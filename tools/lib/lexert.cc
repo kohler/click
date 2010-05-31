@@ -33,8 +33,14 @@
 
 static LexerTInfo *stub_lexinfo = 0;
 
+LexerT::FileState::FileState(const String &data, const String &filename)
+  : _big_string(data), _end(data.end()), _pos(data.begin()),
+    _filename(filename), _original_filename(filename), _lineno(1)
+{
+}
+
 LexerT::LexerT(ErrorHandler *errh, bool ignore_line_directives)
-  : _data(0), _end(0), _pos(0), _lineno(1), _lset(0),
+  : _file(String(), String()), _lset(0),
     _ignore_line_directives(ignore_line_directives),
     _unlex_pos(0), _router(0), _base_type_map(0), _errh(errh)
 {
@@ -58,13 +64,8 @@ LexerT::reset(const String &data, const Vector<ArchiveElement> &archive, const S
 {
     clear();
 
-    _big_string = data;
-    _data = _pos = _big_string.begin();
-    _end = _big_string.end();
-
-    _original_filename = _filename = filename;
-    _lineno = 1;
-    _lset->new_line(0, _filename, _lineno);
+    _file = FileState(data, filename);
+    _lset->new_line(0, _file._filename, _file._lineno);
 
     // provide archive elements
     for (int i = 0; i < archive.size(); i++)
@@ -83,13 +84,7 @@ LexerT::clear()
     _router->use();		// hold a reference to the router
     _lset = new LandmarkSetT();
 
-    _big_string = "";
-    // _data was freed by _big_string
-    _data = 0;
-    _end = 0;
-    _pos = 0;
-    _filename = "";
-    _lineno = 0;
+    _file = FileState(String(), String());
     _unlex_pos = 0;
 
     _base_type_map.clear();
@@ -109,19 +104,19 @@ LexerT::set_lexinfo(LexerTInfo *li)
 String
 LexerT::remaining_text() const
 {
-    return _big_string.substring(_pos, _end);
+    return _file._big_string.substring(_file._pos, _file._end);
 }
 
 void
 LexerT::set_remaining_text(const String &s)
 {
-    _big_string = s;
-    _data = _pos = s.begin();
-    _end = s.end();
+    _file._big_string = s;
+    _file._pos = s.begin();
+    _file._end = s.end();
 }
 
 const char *
-LexerT::skip_line(const char *s)
+LexerT::FileState::skip_line(const char *s)
 {
   _lineno++;
   for (; s < _end; s++)
@@ -138,7 +133,7 @@ LexerT::skip_line(const char *s)
 }
 
 const char *
-LexerT::skip_slash_star(const char *s)
+LexerT::FileState::skip_slash_star(const char *s)
 {
   for (; s < _end; s++)
     if (*s == '\n')
@@ -153,7 +148,7 @@ LexerT::skip_slash_star(const char *s)
 }
 
 const char *
-LexerT::skip_backslash_angle(const char *s)
+LexerT::FileState::skip_backslash_angle(const char *s)
 {
   for (; s < _end; s++)
     if (*s == '\n')
@@ -173,7 +168,7 @@ LexerT::skip_backslash_angle(const char *s)
 }
 
 const char *
-LexerT::skip_quote(const char *s, char endc)
+LexerT::FileState::skip_quote(const char *s, char endc)
 {
   for (; s < _end; s++)
     if (*s == '\n')
@@ -193,7 +188,7 @@ LexerT::skip_quote(const char *s, char endc)
 }
 
 const char *
-LexerT::process_line_directive(const char *s)
+LexerT::FileState::process_line_directive(const char *s, LexerT *lexer)
 {
   const char *first_pos = s;
 
@@ -207,9 +202,9 @@ LexerT::process_line_directive(const char *s)
   }
   if (s >= _end || !isdigit((unsigned char) *s)) {
     // complain about bad directive
-    lerror(first_pos, s, "unknown preprocessor directive");
+    lexer->lerror(first_pos, s, "unknown preprocessor directive");
     return skip_line(s);
-  } else if (_ignore_line_directives)
+  } else if (lexer->_ignore_line_directives)
     return skip_line(s);
 
   // parse line number
@@ -240,19 +235,20 @@ LexerT::process_line_directive(const char *s)
 }
 
 Lexeme
-LexerT::next_lexeme()
+LexerT::FileState::next_lexeme(LexerT *lexer)
 {
+  LandmarkSetT *lset = lexer->_lset;
   const char *s = _pos;
   while (true) {
     while (s < _end && isspace((unsigned char) *s)) {
       if (*s == '\n') {
 	_lineno++;
-	_lset->new_line(s + 1 - _big_string.begin(), _filename, _lineno);
+	lset->new_line(offset(s + 1), _filename, _lineno);
       } else if (*s == '\r') {
 	if (s + 1 < _end && s[1] == '\n')
 	  s++;
 	_lineno++;
-	_lset->new_line(s + 1 - _big_string.begin(), _filename, _lineno);
+	lset->new_line(offset(s + 1), _filename, _lineno);
       }
       s++;
     }
@@ -267,10 +263,10 @@ LexerT::next_lexeme()
 	s = skip_slash_star(s + 2);
       else
 	break;
-      _lexinfo->notify_comment(opos, s);
-    } else if (*s == '#' && (s == _data || s[-1] == '\n' || s[-1] == '\r')) {
-      s = process_line_directive(s);
-      _lexinfo->notify_line_directive(opos, s);
+      lexer->_lexinfo->notify_comment(opos, s);
+    } else if (*s == '#' && (s == _big_string.begin() || s[-1] == '\n' || s[-1] == '\r')) {
+      s = process_line_directive(s, lexer);
+      lexer->_lexinfo->notify_line_directive(opos, s);
     } else
       break;
   }
@@ -288,13 +284,13 @@ LexerT::next_lexeme()
     _pos = s;
     String word = _big_string.substring(word_pos, s);
     if (word.equals("elementclass", 12)) {
-      _lexinfo->notify_keyword(word, word_pos, s);
+      lexer->_lexinfo->notify_keyword(word, word_pos, s);
       return Lexeme(lexElementclass, word, word_pos);
     } else if (word.equals("require", 7)) {
-      _lexinfo->notify_keyword(word, word_pos, s);
+      lexer->_lexinfo->notify_keyword(word, word_pos, s);
       return Lexeme(lexRequire, word, word_pos);
     } else if (word.equals("define", 6)) {
-      _lexinfo->notify_keyword(word, word_pos, s);
+      lexer->_lexinfo->notify_keyword(word, word_pos, s);
       return Lexeme(lexDefine, word, word_pos);
     } else
       return Lexeme(lexIdent, word, word_pos);
@@ -334,9 +330,8 @@ LexerT::next_lexeme()
 }
 
 Lexeme
-LexerT::lex_config()
+LexerT::FileState::lex_config(LexerT *lexer)
 {
-  assert(!_unlex_pos);
   const char *config_pos = _pos;
   const char *s = _pos;
   unsigned paren_depth = 1;
@@ -350,12 +345,12 @@ LexerT::lex_config()
 	break;
     } else if (*s == '\n') {
       _lineno++;
-      _lset->new_line(s + 1 - _big_string.begin(), _filename, _lineno);
+      lexer->_lset->new_line(offset(s + 1), _filename, _lineno);
     } else if (*s == '\r') {
       if (s + 1 < _end && s[1] == '\n')
 	s++;
       _lineno++;
-      _lset->new_line(s + 1 - _big_string.begin(), _filename, _lineno);
+      lexer->_lset->new_line(offset(s + 1), _filename, _lineno);
     } else if (*s == '/' && s + 1 < _end) {
       if (s[1] == '/')
 	s = skip_line(s + 2) - 1;
@@ -367,7 +362,7 @@ LexerT::lex_config()
       s = skip_backslash_angle(s + 2) - 1;
 
   _pos = s;
-  _lexinfo->notify_config_string(config_pos, s);
+  lexer->_lexinfo->notify_config_string(config_pos, s);
   return Lexeme(lexConfig, _big_string.substring(config_pos, s),
 		config_pos);
 }
@@ -417,13 +412,13 @@ LexerT::expect(int kind, bool no_error)
     if (!no_error)
       lerror(_unlex[_unlex_pos - 1], "expected %s", lexeme_string(kind).c_str());
   } else {
-    const char *old_pos = _pos;
+    const char *old_pos = _file._pos;
     Lexeme t = lex();
     if (t.is(kind))
       return true;
     unlex(t);
     if (!no_error)
-      lerror(old_pos, _pos, "expected %s", lexeme_string(kind).c_str());
+      lerror(old_pos, _file._pos, "expected %s", lexeme_string(kind).c_str());
   }
   return false;
 }
@@ -432,7 +427,7 @@ LexerT::expect(int kind, bool no_error)
 // ERRORS
 
 String
-LexerT::landmark() const
+LexerT::FileState::landmark() const
 {
     if (_filename && _filename.back() != ':' && !isspace((unsigned char) _filename.back()))
 	return _filename + ":" + String(_lineno);
@@ -453,7 +448,7 @@ LexerT::lerror(const char *pos1, const char *pos2, const char *format, ...)
 {
     va_list val;
     va_start(val, format);
-    vlerror(pos1, pos2, landmark(), format, val);
+    vlerror(pos1, pos2, _file.landmark(), format, val);
     va_end(val);
     return -1;
 }
@@ -463,7 +458,7 @@ LexerT::lerror(const Lexeme &t, const char *format, ...)
 {
     va_list val;
     va_start(val, format);
-    vlerror(t.pos1(), t.pos2(), landmark(), format, val);
+    vlerror(t.pos1(), t.pos2(), _file.landmark(), format, val);
     va_end(val);
     return -1;
 }
@@ -696,7 +691,7 @@ LexerT::ydeclaration(const Lexeme &first_element)
     for (int i = 0; i < decls.size(); i++) {
 	String name = decls[i].string();
 	if (ElementT *old_e = _router->element(name))
-	    ElementT::redeclaration_error(_errh, "element", name, landmark(), old_e->landmark());
+	    ElementT::redeclaration_error(_errh, "element", name, _file.landmark(), old_e->landmark());
 	else if (_router->declared_type(name) || _base_type_map.get(name))
 	    lerror(decls[i], "class %<%s%> used as element name", name.c_str());
 	else

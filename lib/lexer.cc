@@ -425,8 +425,15 @@ Lexer::Compound::expand_into(Lexer *lexer, int which, VariableEnvironment &ve)
 // LEXER
 //
 
+Lexer::FileState::FileState(const String &data, const String &filename)
+  : _big_string(data), _end(data.end()), _pos(data.begin()),
+    _filename(filename ? filename : String::make_stable("config", 6)),
+    _original_filename(_filename), _lineno(1)
+{
+}
+
 Lexer::Lexer()
-  : _data(0), _end(0), _pos(0), _lineno(1), _lextra(0), _unlex_pos(0),
+  : _file(String(), String()), _lextra(0), _unlex_pos(0),
     _element_type_map(-1),
     _last_element_type(ET_NULL), _free_element_type(-1),
     _global_scope(0), _element_map(-1), _c(0),
@@ -454,14 +461,8 @@ int
 Lexer::begin_parse(const String &data, const String &filename,
 		   LexerExtra *lextra, ErrorHandler *errh)
 {
-  _big_string = data;
+  _file = FileState(data, filename);
   _compact_config = false;
-  _data = _pos = _big_string.begin();
-  _end = _big_string.end();
-
-  _filename = filename ? filename : String::make_stable("config", 6);
-  _original_filename = _filename;
-  _lineno = 1;
 
   _c = new Compound("", "", 0);
 
@@ -489,13 +490,7 @@ Lexer::end_parse(int cookie)
   _element_map.clear();
   _requirements.clear();
 
-  _big_string = "";
-  // _data was freed by _big_string
-  _data = 0;
-  _end = 0;
-  _pos = 0;
-  _filename = _original_filename = "";
-  _lineno = 0;
+  _file = FileState(String(), String());
   _lextra = 0;
 
   // also free out Strings held in the _unlex buffer
@@ -514,20 +509,19 @@ Lexer::end_parse(int cookie)
 String
 Lexer::remaining_text() const
 {
-  return _big_string.substring(_pos, _big_string.end());
+  return _file._big_string.substring(_file._pos, _file._big_string.end());
 }
 
 void
 Lexer::set_remaining_text(const String &s)
 {
-  _big_string = s;
-  _data = s.begin();
-  _pos = s.begin();
-  _end = s.end();
+  _file._big_string = s;
+  _file._pos = s.begin();
+  _file._end = s.end();
 }
 
 const char *
-Lexer::skip_line(const char *s)
+Lexer::FileState::skip_line(const char *s)
 {
   _lineno++;
   for (; s < _end; s++)
@@ -544,7 +538,7 @@ Lexer::skip_line(const char *s)
 }
 
 const char *
-Lexer::skip_slash_star(const char *s)
+Lexer::FileState::skip_slash_star(const char *s)
 {
   for (; s < _end; s++)
     if (*s == '\n')
@@ -559,7 +553,7 @@ Lexer::skip_slash_star(const char *s)
 }
 
 const char *
-Lexer::skip_backslash_angle(const char *s)
+Lexer::FileState::skip_backslash_angle(const char *s)
 {
   for (; s < _end; s++)
     if (*s == '\n')
@@ -579,7 +573,7 @@ Lexer::skip_backslash_angle(const char *s)
 }
 
 const char *
-Lexer::skip_quote(const char *s, char endc)
+Lexer::FileState::skip_quote(const char *s, char endc)
 {
   for (; s < _end; s++)
     if (*s == '\n')
@@ -599,7 +593,7 @@ Lexer::skip_quote(const char *s, char endc)
 }
 
 const char *
-Lexer::process_line_directive(const char *s)
+Lexer::FileState::process_line_directive(const char *s, Lexer *lexer)
 {
   for (s++; s < _end && (*s == ' ' || *s == '\t'); s++)
     /* nada */;
@@ -611,7 +605,7 @@ Lexer::process_line_directive(const char *s)
   }
   if (s >= _end || !isdigit((unsigned char) *s)) {
     // complain about bad directive
-    lerror("unknown preprocessor directive");
+    lexer->lerror("unknown preprocessor directive");
     return skip_line(s);
   }
 
@@ -643,7 +637,7 @@ Lexer::process_line_directive(const char *s)
 }
 
 Lexeme
-Lexer::next_lexeme()
+Lexer::FileState::next_lexeme(Lexer *lexer)
 {
   const char *s = _pos;
   while (true) {
@@ -667,8 +661,8 @@ Lexer::next_lexeme()
 	s = skip_slash_star(s + 2);
       else
 	break;
-    } else if (*s == '#' && (s == _data || s[-1] == '\n' || s[-1] == '\r'))
-      s = process_line_directive(s);
+    } else if (*s == '#' && (s == _big_string.begin() || s[-1] == '\n' || s[-1] == '\r'))
+      s = process_line_directive(s, lexer);
     else
       break;
   }
@@ -692,7 +686,7 @@ Lexer::next_lexeme()
     else if (word.equals("define", 6))
       return Lexeme(lexDefine, word);
     else
-      return Lexeme(lexIdent, word, _compact_config);
+      return Lexeme(lexIdent, word, lexer->_compact_config);
   }
 
   // check for variable
@@ -702,7 +696,7 @@ Lexer::next_lexeme()
       s++;
     if (s + 1 > word_pos) {
       _pos = s;
-      return Lexeme(lexVariable, _big_string.substring(word_pos + 1, s), _compact_config);
+      return Lexeme(lexVariable, _big_string.substring(word_pos + 1, s), lexer->_compact_config);
     } else
       s--;
   }
@@ -729,9 +723,8 @@ Lexer::next_lexeme()
 }
 
 String
-Lexer::lex_config()
+Lexer::FileState::lex_config(Lexer *lexer)
 {
-  assert(!_unlex_pos);
   const char *config_pos = _pos;
   const char *s = _pos;
   unsigned paren_depth = 1;
@@ -761,7 +754,7 @@ Lexer::lex_config()
 
   _pos = s;
   String r = _big_string.substring(config_pos, s);
-  return _compact_config ? r.compact() : r;
+  return lexer->_compact_config ? r.compact() : r;
 }
 
 String
@@ -821,7 +814,7 @@ Lexer::expect(int kind, bool no_error)
 // ERRORS
 
 String
-Lexer::landmark() const
+Lexer::FileState::landmark() const
 {
     return Compound::landmark_string(_filename, _lineno);
 }
@@ -831,7 +824,7 @@ Lexer::lerror(const char *format, ...)
 {
   va_list val;
   va_start(val, format);
-  _errh->xmessage(landmark(), ErrorHandler::e_error, format, val);
+  _errh->xmessage(_file.landmark(), ErrorHandler::e_error, format, val);
   va_end(val);
   return -1;
 }
@@ -962,22 +955,22 @@ Lexer::add_tunnel(String namein, String nameout)
 
   bool ok = true;
   if (_c->_elements[hin.idx] != TUNNEL_TYPE) {
-    redeclaration_error(_errh, "element", namein, landmark(), _c->element_landmark(hin.idx));
+    redeclaration_error(_errh, "element", namein, _file.landmark(), _c->element_landmark(hin.idx));
     ok = false;
   }
   if (_c->_elements[hout.idx] != TUNNEL_TYPE) {
-    redeclaration_error(_errh, "element", nameout, landmark(), _c->element_landmark(hout.idx));
+    redeclaration_error(_errh, "element", nameout, _file.landmark(), _c->element_landmark(hout.idx));
     ok = false;
   }
   if (ok) {
     TunnelEnd *tein = find_tunnel(hin, false, true);
     TunnelEnd *teout = find_tunnel(hout, true, true);
     if (tein->other()) {
-      redeclaration_error(_errh, "connection tunnel input", namein, landmark(), _c->element_landmark(hin.idx));
+      redeclaration_error(_errh, "connection tunnel input", namein, _file.landmark(), _c->element_landmark(hin.idx));
       ok = false;
     }
     if (teout->other()) {
-      redeclaration_error(_errh, "connection tunnel output", nameout, landmark(), _c->element_landmark(hout.idx));
+      redeclaration_error(_errh, "connection tunnel output", nameout, _file.landmark(), _c->element_landmark(hout.idx));
       ok = false;
     }
     if (ok)
@@ -1015,8 +1008,8 @@ Lexer::get_element(String name, int etype, const String &conf,
   _c->_element_names.push_back(name);
   _c->_element_configurations.push_back(conf);
   if (!filename && !lineno) {
-      _c->_element_filenames.push_back(_filename);
-      _c->_element_linenos.push_back(_lineno);
+      _c->_element_filenames.push_back(_file._filename);
+      _c->_element_linenos.push_back(_file._lineno);
   } else {
       _c->_element_filenames.push_back(filename);
       _c->_element_linenos.push_back(lineno);
@@ -1135,8 +1128,8 @@ Lexer::yelement(int &element, bool comma_ok)
   String configuration, filename;
   unsigned lineno = 0;
   if (expect('(', true)) {
-    filename = _filename;	// report landmark from before config string
-    lineno = _lineno;
+    filename = _file._filename;	// report landmark from before config string
+    lineno = _file._lineno;
     if (etype < 0)
       etype = force_element_type(name);
     configuration = lex_config();
@@ -1191,8 +1184,8 @@ Lexer::ydeclaration(const String &first_element)
     }
   }
 
-  String filename = _filename;
-  unsigned lineno = _lineno;
+  String filename = _file._filename;
+  unsigned lineno = _file._lineno;
   int etype;
   t = lex();
   if (t.is(lexIdent))
@@ -1398,7 +1391,7 @@ Lexer::ycompound(String name)
     // create a compound
     _element_map.clear();
     Compound *old_c = _c;
-    Compound *ct = _c = new Compound(name, landmark(), &_c->_scope);
+    Compound *ct = _c = new Compound(name, _file.landmark(), &_c->_scope);
     get_element("input", TUNNEL_TYPE);
     get_element("output", TUNNEL_TYPE);
     _anonymous_offset = 2;
@@ -1609,7 +1602,7 @@ Lexer::expand_compound_element(int which, VariableEnvironment &ve)
   int inputs_used = _c->_element_nports[0][which];
   int outputs_used = _c->_element_nports[1][which];
 
-  int found_type = c->resolve(this, etype, inputs_used, outputs_used, args, _errh, landmark());
+  int found_type = c->resolve(this, etype, inputs_used, outputs_used, args, _errh, _file.landmark());
 
   // check for error or non-compound, or expand compound
   if (found_type < 0)
@@ -1632,7 +1625,7 @@ Lexer::expand_compound_element(int which, VariableEnvironment &ve)
 Router *
 Lexer::create_router(Master *master)
 {
-  Router *router = new Router(_big_string, master);
+  Router *router = new Router(_file._big_string, master);
   if (!router)
     return 0;
 
