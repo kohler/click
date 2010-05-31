@@ -426,8 +426,7 @@ Lexer::Compound::expand_into(Lexer *lexer, int which, VariableEnvironment &ve)
 //
 
 Lexer::Lexer()
-  : _data(0), _end(0), _pos(0), _lineno(1), _lextra(0),
-    _tpos(0), _tfull(0),
+  : _data(0), _end(0), _pos(0), _lineno(1), _lextra(0), _unlex_pos(0),
     _element_type_map(-1),
     _last_element_type(ET_NULL), _free_element_type(-1),
     _global_scope(0), _element_map(-1), _c(0),
@@ -498,12 +497,11 @@ Lexer::end_parse(int cookie)
   _filename = _original_filename = "";
   _lineno = 0;
   _lextra = 0;
-  _tpos = 0;
-  _tfull = 0;
 
-  // also free out Strings held in the _tcircle
-  for (int i = 0; i < TCIRCLE_SIZE; ++i)
-      _tcircle[i] = Lexeme();
+  // also free out Strings held in the _unlex buffer
+  for (int i = 0; i < UNLEX_SIZE; ++i)
+      _unlex[i] = Lexeme();
+  _unlex_pos = 0;
 
   _anonymous_offset = 0;
 
@@ -733,6 +731,7 @@ Lexer::next_lexeme()
 String
 Lexer::lex_config()
 {
+  assert(!_unlex_pos);
   const char *config_pos = _pos;
   const char *s = _pos;
   unsigned paren_depth = 1;
@@ -799,47 +798,21 @@ Lexer::lexeme_string(int kind)
 
 // LEXING: MIDDLE LEVEL (WITH PUSHBACK)
 
-const Lexeme &
-Lexer::lex()
-{
-  int p = _tpos;
-  if (_tpos == _tfull) {
-    _tcircle[p] = next_lexeme();
-    _tfull = (_tfull + 1) % TCIRCLE_SIZE;
-  }
-  _tpos = (_tpos + 1) % TCIRCLE_SIZE;
-  return _tcircle[p];
-}
-
-void
-Lexer::unlex(const Lexeme &t)
-{
-  _tpos = (_tpos + TCIRCLE_SIZE - 1) % TCIRCLE_SIZE;
-  _tcircle[_tpos] = t;
-  assert(_tfull != _tpos);
-}
-
 bool
-Lexer::expect(int kind, bool report_error)
+Lexer::expect(int kind, bool no_error)
 {
-  // Never adds anything to '_tcircle'. This requires a nonobvious
-  // implementation.
-  if (_tpos != _tfull) {
-    if (_tcircle[_tpos].is(kind)) {
-      _tpos = (_tpos + 1) % TCIRCLE_SIZE;
+  if (_unlex_pos) {
+    if (_unlex[_unlex_pos - 1].is(kind)) {
+      --_unlex_pos;
       return true;
     }
   } else {
-    String old_filename = _filename;
-    unsigned old_lineno = _lineno;
-    const char *old_pos = _pos;
-    if (next_lexeme().is(kind))
+    Lexeme t = lex();
+    if (t.is(kind))
       return true;
-    _filename = old_filename;
-    _lineno = old_lineno;
-    _pos = old_pos;
+    unlex(t);
   }
-  if (report_error)
+  if (!no_error)
     lerror("expected %s", lexeme_string(kind).c_str());
   return false;
 }
@@ -1119,13 +1092,10 @@ Lexer::element_landmark(int eid) const
 bool
 Lexer::yport(int &port)
 {
-  const Lexeme &tlbrack = lex();
-  if (!tlbrack.is('[')) {
-    unlex(tlbrack);
+  if (!expect('[', true))
     return false;
-  }
 
-  const Lexeme &tword = lex();
+  Lexeme tword = lex();
   if (tword.is(lexIdent)) {
     if (!cp_integer(tword.string(), &port)) {
       lerror("syntax error: port number should be integer");
@@ -1164,21 +1134,19 @@ Lexer::yelement(int &element, bool comma_ok)
 
   String configuration, filename;
   unsigned lineno = 0;
-  const Lexeme &tparen = lex();
-  if (tparen.is('(')) {
+  if (expect('(', true)) {
     filename = _filename;	// report landmark from before config string
     lineno = _lineno;
     if (etype < 0)
       etype = force_element_type(name);
     configuration = lex_config();
     expect(')');
-  } else
-    unlex(tparen);
+  }
 
   if (etype >= 0)
     element = get_element(anon_element_name(name), etype, configuration, filename, lineno);
   else {
-    const Lexeme &t2colon = lex();
+    Lexeme t2colon = lex();
     unlex(t2colon);
     if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok))
       ydeclaration(name);
@@ -1211,7 +1179,7 @@ Lexer::ydeclaration(const String &first_element)
       decls.push_back(t.string());
 
    midpoint:
-    const Lexeme &tsep = lex();
+    Lexeme tsep = lex();
     if (tsep.is(','))
       /* do nothing */;
     else if (tsep.is(lex2Colon))
@@ -1237,12 +1205,10 @@ Lexer::ydeclaration(const String &first_element)
   }
 
   String configuration;
-  t = lex();
-  if (t.is('(')) {
+  if (expect('(', true)) {
     configuration = lex_config();
     expect(')');
-  } else
-    unlex(t);
+  }
 
   for (int i = 0; i < decls.size(); i++) {
     String name = decls[i];
@@ -1389,7 +1355,7 @@ Lexer::ycompound_arguments(Compound *comptype)
 
     comptype->define(varname, vartype, true, this);
 
-    const Lexeme &tsep = lex();
+    Lexeme tsep = lex();
     if (tsep.is('|'))
       break;
     else if (!tsep.is(',')) {
@@ -1455,8 +1421,7 @@ Lexer::ycompound(String name)
     last = ct;
 
     // check for '||' or '}'
-    const Lexeme &t = lex();
-    if (!t.is(lex2Bar))
+    if (!lex().is(lex2Bar))
       break;
   }
 
@@ -1478,7 +1443,7 @@ Lexer::yrequire()
     String requirement = lex_config();
     expect(')');
     // pre-read ';' to make it easier to write parsing extensions
-    expect(';', false);
+    expect(';', true);
 
     Vector<String> args;
     cp_argvec(requirement, args);
@@ -1549,7 +1514,7 @@ Lexer::yvar()
 bool
 Lexer::ystatement(bool nested)
 {
-  const Lexeme &t = lex();
+  Lexeme t = lex();
   switch (t.kind()) {
 
    case lexIdent:

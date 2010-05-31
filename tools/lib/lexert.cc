@@ -36,7 +36,7 @@ static LexerTInfo *stub_lexinfo = 0;
 LexerT::LexerT(ErrorHandler *errh, bool ignore_line_directives)
   : _data(0), _end(0), _pos(0), _lineno(1), _lset(0),
     _ignore_line_directives(ignore_line_directives),
-    _tpos(0), _tfull(0), _router(0), _base_type_map(0), _errh(errh)
+    _unlex_pos(0), _router(0), _base_type_map(0), _errh(errh)
 {
     if (!_errh)
 	_errh = ErrorHandler::default_handler();
@@ -90,8 +90,7 @@ LexerT::clear()
     _pos = 0;
     _filename = "";
     _lineno = 0;
-    _tpos = 0;
-    _tfull = 0;
+    _unlex_pos = 0;
 
     _base_type_map.clear();
     _anonymous_offset = 0;
@@ -228,7 +227,7 @@ LexerT::process_line_directive(const char *s)
 	s++;
     _filename = cp_unquote(_big_string.substring(first_in_filename, s) + "\"");
     // an empty filename means return to the input file's name
-    if (_filename == "")
+    if (!_filename)
       _filename = _original_filename;
   }
 
@@ -337,6 +336,7 @@ LexerT::next_lexeme()
 Lexeme
 LexerT::lex_config()
 {
+  assert(!_unlex_pos);
   const char *config_pos = _pos;
   const char *s = _pos;
   unsigned paren_depth = 1;
@@ -406,60 +406,26 @@ LexerT::lexeme_string(int kind)
 
 // LEXING: MIDDLE LEVEL (WITH PUSHBACK)
 
-const Lexeme &
-LexerT::lex()
-{
-  int p = _tpos;
-  if (_tpos == _tfull) {
-    _tcircle[p] = next_lexeme();
-    _tfull = (_tfull + 1) % TCIRCLE_SIZE;
-  }
-  _tpos = (_tpos + 1) % TCIRCLE_SIZE;
-  return _tcircle[p];
-}
-
-void
-LexerT::unlex(const Lexeme &t)
-{
-  _tpos = (_tpos + TCIRCLE_SIZE - 1) % TCIRCLE_SIZE;
-  _tcircle[_tpos] = t;
-  assert(_tfull != _tpos);
-}
-
 bool
-LexerT::expect(int kind, bool report_error)
+LexerT::expect(int kind, bool no_error)
 {
-    // Never adds anything to '_tcircle'. This requires a nonobvious
-    // implementation.
-    if (_tpos != _tfull) {
-	if (_tcircle[_tpos].is(kind)) {
-	    _tpos = (_tpos + 1) % TCIRCLE_SIZE;
-	    return true;
-	}
-	if (report_error)
-	    lerror(_tcircle[_tpos], "expected %s", lexeme_string(kind).c_str());
-    } else {
-	String old_filename = _filename;
-	unsigned old_lineno = _lineno;
-	const char *old_pos = _pos;
-	if (next_lexeme().is(kind))
-	    return true;
-	_filename = old_filename;
-	_lineno = old_lineno;
-	if (report_error)
-	    lerror(old_pos, _pos, "expected %s", lexeme_string(kind).c_str());
-	_pos = old_pos;
+  if (_unlex_pos) {
+    if (_unlex[_unlex_pos - 1].is(kind)) {
+      --_unlex_pos;
+      return true;
     }
-    return false;
-}
-
-const char *
-LexerT::next_pos() const
-{
-    if (_tpos != _tfull)
-	return _tcircle[_tpos].pos1();
-    else
-	return _pos;
+    if (!no_error)
+      lerror(_unlex[_unlex_pos - 1], "expected %s", lexeme_string(kind).c_str());
+  } else {
+    const char *old_pos = _pos;
+    Lexeme t = lex();
+    if (t.is(kind))
+      return true;
+    unlex(t);
+    if (!no_error)
+      lerror(old_pos, _pos, "expected %s", lexeme_string(kind).c_str());
+  }
+  return false;
 }
 
 
@@ -592,7 +558,7 @@ LexerT::connect(int element1, int port1, int port2, int element2, const char *po
 bool
 LexerT::yport(int &port, const char *&pos1, const char *&pos2)
 {
-    const Lexeme &tlbrack = lex();
+    Lexeme tlbrack = lex();
     pos1 = tlbrack.pos1();
     if (!tlbrack.is('[')) {
 	unlex(tlbrack);
@@ -600,7 +566,7 @@ LexerT::yport(int &port, const char *&pos1, const char *&pos2)
 	return false;
     }
 
-    const Lexeme &tword = lex();
+    Lexeme tword = lex();
     if (tword.is(lexIdent)) {
 	String p = tword.string();
 	const char *ps = p.c_str();
@@ -647,20 +613,18 @@ LexerT::yelement(int &element, bool comma_ok)
     }
 
     Lexeme configuration;
-    const Lexeme &tparen = lex();
-    if (tparen.is('(')) {
+    if (expect('(', true)) {
 	if (!etype)
 	    etype = force_element_type(tname);
 	configuration = lex_config();
 	expect(')');
 	decl_pos2 = next_pos();
-    } else
-	unlex(tparen);
+    }
 
     if (etype)
 	element = make_anon_element(tname, decl_pos2, etype, configuration.string());
     else {
-	const Lexeme &t2colon = lex();
+	Lexeme t2colon = lex();
 	unlex(t2colon);
 	if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok)) {
 	    ydeclaration(tname);
@@ -698,7 +662,7 @@ LexerT::ydeclaration(const Lexeme &first_element)
 	    decls.push_back(t);
 
       midpoint:
-	const Lexeme &tsep = lex();
+	Lexeme tsep = lex();
 	if (tsep.is(','))
 	    /* do nothing */;
 	else if (tsep.is(lex2Colon))
@@ -722,12 +686,10 @@ LexerT::ydeclaration(const Lexeme &first_element)
     }
 
     Lexeme configuration;
-    t = lex();
-    if (t.is('(')) {
+    if (expect('(', true)) {
 	configuration = lex_config();
 	expect(')');
-    } else
-	unlex(t);
+    }
 
     const char *decl_pos2 = (decls.size() == 1 ? next_pos() : 0);
 
@@ -909,7 +871,7 @@ LexerT::ycompound_arguments(RouterT *comptype)
 
     ydefine(comptype, varname, vartype, t1, scope_order_error);
 
-    const Lexeme &tsep = lex();
+    Lexeme tsep = lex();
     if (tsep.is('|'))
       break;
     else if (!tsep.is(',')) {
@@ -977,7 +939,7 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 	last = compound_class;
 
 	// check for '||' or '}'
-	const Lexeme &t = lex();
+	Lexeme t = lex();
 	compound_class->set_landmarkt(landmarkt(class_pos1, t.pos2()));
 	class_pos1 = t.pos1();
 	if (!t.is(lex2Bar)) {
@@ -1005,7 +967,7 @@ LexerT::yrequire()
     Lexeme requirement = lex_config();
     expect(')');
     // pre-read ';' to make it easier to write parsing extensions
-    expect(';', false);
+    expect(';', true);
 
     Vector<String> args;
     cp_argvec(requirement.string(), args);
@@ -1073,7 +1035,7 @@ LexerT::yvar()
 bool
 LexerT::ystatement(bool nested)
 {
-  const Lexeme &t = lex();
+  Lexeme t = lex();
   switch (t.kind()) {
 
    case lexIdent:

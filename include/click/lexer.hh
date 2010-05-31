@@ -64,12 +64,17 @@ class Lexer { public:
     String remaining_text() const;
     void set_remaining_text(const String &);
 
-    const Lexeme &lex();
-    void unlex(const Lexeme &);
+    Lexeme lex() {
+	return _unlex_pos ? _unlex[--_unlex_pos] : next_lexeme();
+    }
+    void unlex(const Lexeme &t) {
+	assert(_unlex_pos < UNLEX_SIZE);
+	_unlex[_unlex_pos++] = t;
+    }
     String lex_config();
     String landmark() const;
 
-    bool expect(int, bool report_error = true);
+    bool expect(int, bool no_error = false);
 
     typedef Element *(*ElementFactory)(uintptr_t);
 #ifdef CLICK_LINUXMODULE
@@ -128,10 +133,9 @@ class Lexer { public:
     static String lexeme_string(int);
 
     // parser
-    enum { TCIRCLE_SIZE = 8 };
-    Lexeme _tcircle[TCIRCLE_SIZE];
-    int _tpos;
-    int _tfull;
+    enum { UNLEX_SIZE = 2 };
+    Lexeme _unlex[2];
+    int _unlex_pos;
 
     // element types
     struct ElementType {

@@ -63,8 +63,13 @@ class LexerT { public:
     String remaining_text() const;
     void set_remaining_text(const String &);
 
-    const Lexeme &lex();
-    void unlex(const Lexeme &);
+    Lexeme lex() {
+	return _unlex_pos ? _unlex[--_unlex_pos] : next_lexeme();
+    }
+    void unlex(const Lexeme &t) {
+	assert(_unlex_pos < UNLEX_SIZE);
+	_unlex[_unlex_pos++] = t;
+    }
     Lexeme lex_config();
     String landmark() const;
     inline LandmarkT landmarkt(const char *pos1, const char *pos2) const;
@@ -108,10 +113,9 @@ class LexerT { public:
     static String lexeme_string(int);
 
     // parser
-    enum { TCIRCLE_SIZE = 8 };
-    Lexeme _tcircle[TCIRCLE_SIZE];
-    int _tpos;
-    int _tfull;
+    enum { UNLEX_SIZE = 2 };
+    Lexeme _unlex[UNLEX_SIZE];
+    int _unlex_pos;
 
     // router
     RouterT *_router;
@@ -131,8 +135,10 @@ class LexerT { public:
     int lerror(const Lexeme &, const char *, ...);
     String anon_element_name(const String &) const;
 
-    bool expect(int, bool report_error = true);
-    const char *next_pos() const;
+    bool expect(int, bool no_error = false);
+    const char *next_pos() const {
+	return _unlex_pos ? _unlex[_unlex_pos - 1].pos1() : _pos;
+    }
 
     ElementClassT *element_type(const Lexeme &) const;
     ElementClassT *force_element_type(const Lexeme &);
