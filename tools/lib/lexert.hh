@@ -95,14 +95,24 @@ class LexerT { public:
 
     struct FileState {
 	String _big_string;
-	const char *_data;
 	const char *_end;
 	const char *_pos;
 	String _filename;
 	String _original_filename;
 	unsigned _lineno;
+	LandmarkSetT *_lset;
 
 	FileState(const String &text, const String &filename);
+	FileState(const FileState &x)
+	    : _big_string(x._big_string), _end(x._end), _pos(x._pos),
+	      _filename(x._filename), _original_filename(x._original_filename),
+	      _lineno(x._lineno), _lset(x._lset) {
+	    _lset->ref();
+	}
+	~FileState() {
+	    _lset->unref();
+	}
+	FileState &operator=(const FileState &x);
 	const char *skip_line(const char *s);
 	const char *skip_slash_star(const char *s);
 	const char *skip_backslash_angle(const char *s);
@@ -115,14 +125,13 @@ class LexerT { public:
 	    assert(s >= _big_string.begin() && s <= _end);
 	    return s - _big_string.begin();
 	}
-	LandmarkT landmarkt(LandmarkSetT *lset, const char *pos1, const char *pos2) const {
-	    return LandmarkT(lset, offset(pos1), offset(pos2));
+	LandmarkT landmarkt(const char *pos1, const char *pos2) const {
+	    return LandmarkT(_lset, offset(pos1), offset(pos2));
 	}
     };
 
     // lexer
     FileState _file;
-    LandmarkSetT *_lset;
     bool _ignore_line_directives;
 
     bool get_data();
@@ -176,7 +185,7 @@ class LexerT { public:
 inline LandmarkT
 LexerT::landmarkt(const char *pos1, const char *pos2) const
 {
-    return _file.landmarkt(_lset, pos1, pos2);
+    return _file.landmarkt(pos1, pos2);
 }
 
 #endif

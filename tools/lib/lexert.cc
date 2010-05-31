@@ -35,12 +35,29 @@ static LexerTInfo *stub_lexinfo = 0;
 
 LexerT::FileState::FileState(const String &data, const String &filename)
   : _big_string(data), _end(data.end()), _pos(data.begin()),
-    _filename(filename), _original_filename(filename), _lineno(1)
+    _filename(filename), _original_filename(filename), _lineno(1),
+    _lset(new LandmarkSetT)
 {
+    _lset->new_line(0, _filename, _lineno);
+}
+
+LexerT::FileState &
+LexerT::FileState::operator=(const FileState &x)
+{
+    x._lset->ref();
+    _lset->unref();
+    _big_string = x._big_string;
+    _end = x._end;
+    _pos = x._pos;
+    _filename = x._filename;
+    _original_filename = x._original_filename;
+    _lineno = x._lineno;
+    _lset = x._lset;
+    return *this;
 }
 
 LexerT::LexerT(ErrorHandler *errh, bool ignore_line_directives)
-  : _file(String(), String()), _lset(0),
+  : _file(String(), String()),
     _ignore_line_directives(ignore_line_directives),
     _unlex_pos(0), _router(0), _base_type_map(0), _errh(errh)
 {
@@ -56,7 +73,6 @@ LexerT::~LexerT()
 {
     clear();
     _router->unuse();
-    _lset->unref();
 }
 
 void
@@ -65,7 +81,6 @@ LexerT::reset(const String &data, const Vector<ArchiveElement> &archive, const S
     clear();
 
     _file = FileState(data, filename);
-    _lset->new_line(0, _file._filename, _file._lineno);
 
     // provide archive elements
     for (int i = 0; i < archive.size(); i++)
@@ -78,11 +93,8 @@ LexerT::clear()
 {
     if (_router)
 	_router->unuse();
-    if (_lset)
-	_lset->unref();
     _router = new RouterT();
     _router->use();		// hold a reference to the router
-    _lset = new LandmarkSetT();
 
     _file = FileState(String(), String());
     _unlex_pos = 0;
@@ -237,18 +249,17 @@ LexerT::FileState::process_line_directive(const char *s, LexerT *lexer)
 Lexeme
 LexerT::FileState::next_lexeme(LexerT *lexer)
 {
-  LandmarkSetT *lset = lexer->_lset;
   const char *s = _pos;
   while (true) {
     while (s < _end && isspace((unsigned char) *s)) {
       if (*s == '\n') {
 	_lineno++;
-	lset->new_line(offset(s + 1), _filename, _lineno);
+	_lset->new_line(offset(s + 1), _filename, _lineno);
       } else if (*s == '\r') {
 	if (s + 1 < _end && s[1] == '\n')
 	  s++;
 	_lineno++;
-	lset->new_line(offset(s + 1), _filename, _lineno);
+	_lset->new_line(offset(s + 1), _filename, _lineno);
       }
       s++;
     }
@@ -345,12 +356,12 @@ LexerT::FileState::lex_config(LexerT *lexer)
 	break;
     } else if (*s == '\n') {
       _lineno++;
-      lexer->_lset->new_line(offset(s + 1), _filename, _lineno);
+      _lset->new_line(offset(s + 1), _filename, _lineno);
     } else if (*s == '\r') {
       if (s + 1 < _end && s[1] == '\n')
 	s++;
       _lineno++;
-      lexer->_lset->new_line(offset(s + 1), _filename, _lineno);
+      _lset->new_line(offset(s + 1), _filename, _lineno);
     } else if (*s == '/' && s + 1 < _end) {
       if (s[1] == '/')
 	s = skip_line(s + 2) - 1;
