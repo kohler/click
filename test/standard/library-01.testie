@@ -1,0 +1,28 @@
+%info
+Test require(library) lexer support
+
+%script
+click -q -h list main
+click-flatten main
+
+%file main
+require(library lib, library lib3)
+a :: A;
+
+%file lib
+require(library dir/lib2)
+elementclass A { b :: B; }
+
+%file dir/lib2
+elementclass B { i :: Idle; }
+
+%file lib3
+require(library lib)
+
+%expect stdout
+1
+a/b/i
+a/b/i :: Idle;
+
+%ignore stdout
+#{{.*}}

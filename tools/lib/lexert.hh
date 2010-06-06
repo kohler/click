@@ -24,6 +24,7 @@ enum {
     lex3Dot,
     lexElementclass,
     lexRequire,
+    lexProvide,
     lexDefine
 };
 
@@ -151,6 +152,8 @@ class LexerT { public:
     int _anonymous_offset;
     int _anonymous_class_count;
 
+    Vector<String> _libraries;
+
     // what names represent types? (builds up linearly)
     HashTable<String, ElementClassT *> _base_type_map;
 
@@ -171,6 +174,7 @@ class LexerT { public:
     ElementClassT *element_type(const Lexeme &) const;
     ElementClassT *force_element_type(const Lexeme &);
     void ydefine(RouterT *, const String &name, const String &value, const Lexeme &, bool &scope_order_error);
+    void yrequire_library(const Lexeme &lexeme, const String &value);
 
     LexerT(const LexerT &);
     LexerT &operator=(const LexerT &);

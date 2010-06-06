@@ -18,6 +18,7 @@ enum Lexemes {
     lex3Dot,
     lexElementclass,
     lexRequire,
+    lexProvide,
     lexDefine
 };
 
@@ -75,7 +76,6 @@ class Lexer { public:
 	assert(!_unlex_pos);
 	return _file.lex_config(this);
     }
-    String landmark() const;
 
     bool expect(int, bool no_error = false);
 
@@ -176,6 +176,7 @@ class Lexer { public:
 
     // requirements
     Vector<String> _requirements;
+    Vector<String> _libraries;
 
     // errors
     ErrorHandler *_errh;
@@ -193,6 +194,7 @@ class Lexer { public:
     int make_compound_element(int);
     void expand_compound_element(int, VariableEnvironment &);
     void add_router_connections(int, const Vector<int> &);
+    void yrequire_library(const String &value);
 
     TunnelEnd *find_tunnel(const Port &p, bool isoutput, bool insert);
     void expand_connection(const Port &p, bool isoutput, Vector<Port> &);

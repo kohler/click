@@ -27,6 +27,7 @@
 #include "lexertinfo.hh"
 #include "routert.hh"
 #include <click/confparse.hh>
+#include <click/userutils.hh>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -102,6 +103,7 @@ LexerT::clear()
     _base_type_map.clear();
     _anonymous_offset = 0;
     _anonymous_class_count = 0;
+    _libraries.clear();
 }
 
 void
@@ -300,6 +302,9 @@ LexerT::FileState::next_lexeme(LexerT *lexer)
     } else if (word.equals("require", 7)) {
       lexer->_lexinfo->notify_keyword(word, word_pos, s);
       return Lexeme(lexRequire, word, word_pos);
+    } else if (word.equals("provide", 7)) {
+      lexer->_lexinfo->notify_keyword(word, word_pos, s);
+      return Lexeme(lexProvide, word, word_pos);
     } else if (word.equals("define", 6)) {
       lexer->_lexinfo->notify_keyword(word, word_pos, s);
       return Lexeme(lexDefine, word, word_pos);
@@ -398,6 +403,8 @@ LexerT::lexeme_string(int kind)
 	return String::make_stable("'elementclass'", 14);
     else if (kind == lexRequire)
 	return String::make_stable("'require'", 9);
+    else if (kind == lexProvide)
+	return String::make_stable("'provide'", 9);
     else if (kind == lexDefine)
 	return String::make_stable("'define'", 8);
     else if (kind >= 32 && kind < 127) {
@@ -423,13 +430,17 @@ LexerT::expect(int kind, bool no_error)
     if (!no_error)
       lerror(_unlex[_unlex_pos - 1], "expected %s", lexeme_string(kind).c_str());
   } else {
+    // Never adds to _unlex, which requires a nonobvious implementation.
+    String old_filename = _file._filename;
+    unsigned old_lineno = _file._lineno;
     const char *old_pos = _file._pos;
-    Lexeme t = lex();
-    if (t.is(kind))
+    if (lex().is(kind))
       return true;
-    unlex(t);
+    _file._filename = old_filename;
+    _file._lineno = old_lineno;
     if (!no_error)
       lerror(old_pos, _file._pos, "expected %s", lexeme_string(kind).c_str());
+    _file._pos = old_pos;
   }
   return false;
 }
@@ -766,6 +777,7 @@ LexerT::yconnection()
 	  case lex2Bar:
 	  case lexElementclass:
 	  case lexRequire:
+	  case lexProvide:
 	  case lexDefine:
 	    unlex(t);
 	    // FALLTHRU
@@ -965,6 +977,44 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 }
 
 void
+LexerT::yrequire_library(const Lexeme &lexeme, const String &value)
+{
+    if (_router->scope().depth()) {
+	lerror(lexeme, "%<require library%> must be used at file scope");
+	return;
+    }
+
+    String dir = _file._filename;
+    int pos = dir.find_right('/');
+    if (pos > 0)
+	dir = dir.substring(0, pos);
+    else
+	dir = ".";
+    String fn = clickpath_find_file(value, "conf", dir, 0);
+    if (!fn) {
+	lerror(lexeme, "library %<%#s%> not found in CLICKPATH/conf", fn.c_str());
+	return;
+    }
+
+    for (String *it = _libraries.begin(); it != _libraries.end(); ++it)
+	if (*it == fn)
+	    return;
+    _libraries.push_back(fn);
+
+    LandmarkErrorHandler lerrh(_errh, _file.landmark());
+    int before = lerrh.nerrors();
+    String data = file_string(fn, &lerrh);
+    if (lerrh.nerrors() != before)
+	return;
+
+    FileState old_file(_file);
+    _file = FileState(data, fn);
+    while (ystatement(false))
+	/* do nothing */;
+    _file = old_file;
+}
+
+void
 LexerT::yrequire()
 {
     if (!expect('('))
@@ -980,6 +1030,7 @@ LexerT::yrequire()
 
     String compact_config_str = String::make_stable("compact_config", 14);
     String package_str = String::make_stable("package", 7);
+    String library_str = String::make_stable("library", 7);
 
     for (int i = 0; i < args.size(); i++) {
 	Vector<String> words;
@@ -1001,7 +1052,11 @@ LexerT::yrequire()
 	else if (type == package_str && words.size() == 2
 		 && cp_string(words[1], &value))
 	    /* OK */;
-	else {
+	else if (type == library_str && words.size() == 2
+		 && cp_string(words[1], &value)) {
+	    yrequire_library(requirement, value);
+	    continue;
+	} else {
 	    lerror(requirement, "syntax error at requirement");
 	    continue;
 	}
@@ -1028,7 +1083,7 @@ LexerT::yvar()
 		    for (s++; s != var.end() && (isalnum((unsigned char) *s) || *s == '_'); s++)
 			/* nada */;
 		if (var.length() < 2 || s != var.end())
-		    lerror(vars, "bad %<var%> declaration: not a variable");
+		    lerror(vars, "bad %<define%> declaration: not a variable");
 		else {
 		    var = var.substring(1);
 		    if (!_router->define(var, args[i]))

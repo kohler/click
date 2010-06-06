@@ -30,6 +30,9 @@
 #include <click/straccum.hh>
 #include <click/variableenv.hh>
 #include <click/standard/errorelement.hh>
+#if CLICK_USERLEVEL
+# include <click/userutils.hh>
+#endif
 CLICK_DECLS
 
 #ifdef CLICK_LINUXMODULE
@@ -489,6 +492,7 @@ Lexer::end_parse(int cookie)
 
   _element_map.clear();
   _requirements.clear();
+  _libraries.clear();
 
   _file = FileState(String(), String());
   _lextra = 0;
@@ -683,6 +687,8 @@ Lexer::FileState::next_lexeme(Lexer *lexer)
       return Lexeme(lexElementclass, word);
     else if (word.equals("require", 7))
       return Lexeme(lexRequire, word);
+    else if (word.equals("provide", 7))
+      return Lexeme(lexProvide, word);
     else if (word.equals("define", 6))
       return Lexeme(lexDefine, word);
     else
@@ -777,6 +783,8 @@ Lexer::lexeme_string(int kind)
 	return String::make_stable("'elementclass'", 14);
     else if (kind == lexRequire)
 	return String::make_stable("'require'", 9);
+    else if (kind == lexProvide)
+	return String::make_stable("'provide'", 9);
     else if (kind == lexDefine)
 	return String::make_stable("'define'", 8);
     else if (kind >= 32 && kind < 127) {
@@ -800,10 +808,15 @@ Lexer::expect(int kind, bool no_error)
       return true;
     }
   } else {
-    Lexeme t = lex();
-    if (t.is(kind))
+    // Never adds to _unlex, which requires a nonobvious implementation.
+    String old_filename = _file._filename;
+    unsigned old_lineno = _file._lineno;
+    const char *old_pos = _file._pos;
+    if (lex().is(kind))
       return true;
-    unlex(t);
+    _file._filename = old_filename;
+    _file._lineno = old_lineno;
+    _file._pos = old_pos;
   }
   if (!no_error)
     lerror("expected %s", lexeme_string(kind).c_str());
@@ -1264,6 +1277,7 @@ Lexer::yconnection()
      case lex2Bar:
      case lexElementclass:
      case lexRequire:
+     case lexProvide:
      case lexDefine:
       unlex(t);
       // FALLTHRU
@@ -1428,6 +1442,50 @@ Lexer::ycompound(String name)
 }
 
 void
+Lexer::yrequire_library(const String &value)
+{
+#if CLICK_USERLEVEL
+    assert(!_unlex_pos);
+    if (_c->depth()) {
+	lerror("%<require library%> must be used at file scope");
+	return;
+    }
+
+    String dir = _file._filename;
+    int pos = dir.find_right('/');
+    if (pos > 0)
+	dir = dir.substring(0, pos);
+    else
+	dir = ".";
+    String fn = clickpath_find_file(value, "conf", dir, 0);
+    if (!fn) {
+	lerror("library %<%#s%> not found in CLICKPATH/conf", fn.c_str());
+	return;
+    }
+
+    for (String *it = _libraries.begin(); it != _libraries.end(); ++it)
+	if (*it == fn)
+	    return;
+    _libraries.push_back(fn);
+
+    LandmarkErrorHandler lerrh(_errh, _file.landmark());
+    int before = lerrh.nerrors();
+    String data = file_string(fn, &lerrh);
+    if (lerrh.nerrors() != before)
+	return;
+
+    FileState old_file(_file);
+    _file = FileState(data, fn);
+    while (ystatement(false))
+	/* do nothing */;
+    _file = old_file;
+#else
+    (void) value;
+    lerror("%<require library%> may not be used in this driver");
+#endif
+}
+
+void
 Lexer::yrequire()
 {
     if (!expect('('))
@@ -1443,6 +1501,7 @@ Lexer::yrequire()
 
     String compact_config_str = String::make_stable("compact_config", 14);
     String package_str = String::make_stable("package", 7);
+    String library_str = String::make_stable("library", 7);
 
     for (int i = 0; i < args.size(); i++) {
 	Vector<String> words;
@@ -1454,7 +1513,7 @@ Lexer::yrequire()
 	(void) cp_word(words[0], &type);
 	// "require(UNKNOWN)" means "require(package UNKNOWN)"
 	if (type && type != compact_config_str && type != package_str
-	    && words.size() == 1) {
+	    && type != library_str && words.size() == 1) {
 	    words.push_back(type);
 	    type = package_str;
 	}
@@ -1465,7 +1524,11 @@ Lexer::yrequire()
 	} else if (type == package_str && words.size() == 2
 		   && cp_string(words[1], &value))
 	    /* OK */;
-	else {
+	else if (type == library_str && words.size() == 2
+		 && cp_string(words[1], &value)) {
+	    yrequire_library(value);
+	    continue;
+	} else {
 	    lerror("syntax error at requirement");
 	    continue;
 	}
@@ -1495,7 +1558,7 @@ Lexer::yvar()
 	  for (s++; s != var.end() && (isalnum((unsigned char) *s) || *s == '_'); s++)
 	    /* nada */;
 	if (var.length() < 2 || s != var.end())
-	  lerror("bad %<var%> declaration: not a variable");
+	  lerror("bad %<define%> declaration: not a variable");
 	else {
 	  var = var.substring(1);
 	  _c->define(var, args[i], false, this);

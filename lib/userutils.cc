@@ -598,13 +598,13 @@ clickpath_find_file(const String &filename, const char *subdir,
     if (!fns.size() && errh) {
 	if (default_path) {
 	    // CLICKPATH set, left no opportunity to use default path
-	    errh->fatal("cannot find file %<%s%>\nin CLICKPATH %<%s%>", filename.c_str(), path);
+	    errh->fatal("file %<%s%> not found\nin CLICKPATH %<%s%>", filename.c_str(), path);
 	} else if (!path) {
 	    // CLICKPATH not set
-	    errh->fatal("cannot find file %<%s%>\nin install directory %<%s%>\n(Try setting the CLICKPATH environment variable.)", filename.c_str(), was_default_path.c_str());
+	    errh->fatal("file %<%s%> not found\nin install directory %<%s%>\n(Try setting the CLICKPATH environment variable.)", filename.c_str(), was_default_path.c_str());
 	} else {
 	    // CLICKPATH set, left opportunity to use default pathb
-	    errh->fatal("cannot find file %<%s%>\nin CLICKPATH or %<%s%>", filename.c_str(), was_default_path.c_str());
+	    errh->fatal("file %<%s%> not found\nin CLICKPATH or %<%s%>", filename.c_str(), was_default_path.c_str());
 	}
     }
 

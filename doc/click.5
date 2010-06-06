@@ -514,9 +514,12 @@ elementclass Test { $a, $b | /* nothing */ || ... }
 '
 .SH "REQUIREMENTS"
 '
-A configuration can say that it depends on optional packages by using the
-`require' statement. Its argument is a comma-separated list of require
-statements, such as package names:
+The `require' statement is used to link a configuration with optional
+packages and libraries. Its argument is a comma-separated list of
+requirements.
+.PP
+Packages, which are dynamic objects including new compiled element
+definitions, are included with `require(package)' declarations:
 .Rs
 require(package fastclassifier, package specialcode);
 .Re
@@ -524,6 +527,17 @@ Installation programs can use the package names to find and upload any
 necessary package code. The required package names are also checked against
 a list of currently active packages when a configuration is installed. If
 any required packages are unavailable, an error is reported.
+.PP
+Libraries, which are Click configuration files that (for instance) might
+declare new compound element definitions, are included with
+`require(library)' declarations:
+.Rs
+require(library mycompounds.click);
+.Re
+Installation programs search CLICKPATH for the named library
+file. `require(library)' can only be used at file scope, and a given
+library file is included at most once, no matter how many times it is
+mentioned in `require' statements.
 '
 .SH "PARAMETER DEFINITIONS"
 '
@@ -562,7 +576,7 @@ their own identifiers. Identifiers are case-sensitive. No component of an
 identifier may consist solely of numbers; for example, `1/x' is an illegal
 identifier.
 .PP
-The keywords `elementclass', `require', and `define'
+The keywords `elementclass', `require', `provide', and `define'
 may not be used as identifiers. The normal identifiers `input' and `output'
 have special meaning inside compound element definitions.
 .PP
