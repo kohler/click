@@ -153,18 +153,6 @@ stop_signal_handler(int sig)
     else
 	router->set_runcount(Router::STOP_RUNCOUNT);
 }
-
-#if HAVE_MULTITHREAD
-static void
-ignore_signal_handler(int sig)
-{
-# if !HAVE_SIGACTION
-    signal(sig, ignore_signal_handler);
-# else
-    (void) sig;
-# endif
-}
-#endif
 }
 
 
@@ -313,10 +301,6 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
       click_signal(SIGTERM, stop_signal_handler, true);
       // ignore SIGPIPE
       click_signal(SIGPIPE, SIG_IGN, false);
-#if HAVE_MULTITHREAD
-      // use SIGIO as a request to wake up a thread
-      click_signal(SIGIO, ignore_signal_handler, false);
-#endif
   }
 
   // register hotswap router on new router

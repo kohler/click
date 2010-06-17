@@ -124,6 +124,12 @@ Master::Master(int nthreads)
 #if CLICK_NS
     _simnode = 0;
 #endif
+
+#if CLICK_USERLEVEL && HAVE_MULTITHREAD
+    create_sig_pipe();		// needed to ensure add_select wakes up
+				// any blocked selecting thread
+    assert(sig_pipe[0] >= 0);
+#endif
 }
 
 Master::~Master()
@@ -652,7 +658,7 @@ Master::add_select(int fd, Element *element, int mask)
 #if HAVE_MULTITHREAD
     // need to wake up selecting thread since there's more to select
     if (_selecting_processor != click_invalid_processor())
-	pthread_kill(_selecting_processor, SIGIO);
+	ignore_result(write(sig_pipe[1], "", 1));
 #endif
 
     _select_lock.release();
@@ -1078,19 +1084,27 @@ signal_blocker_thread(void *)
 # endif
 
 
-int
-Master::add_signal_handler(int signo, Router *router, String handler)
+void
+Master::create_sig_pipe()
 {
-    if (signo < 0 || signo >= 32 || router->master() != this)
-	return -1;
-
-    if (sig_pipe[0] < 0 && pipe(sig_pipe) >= 0) {
+    assert(sig_pipe[0] < 0);
+    if (pipe(sig_pipe) >= 0) {
 	fcntl(sig_pipe[0], F_SETFL, O_NONBLOCK);
 	fcntl(sig_pipe[1], F_SETFL, O_NONBLOCK);
 	fcntl(sig_pipe[0], F_SETFD, FD_CLOEXEC);
 	fcntl(sig_pipe[1], F_SETFD, FD_CLOEXEC);
 	register_select(sig_pipe[0], true, false);
     }
+}
+
+int
+Master::add_signal_handler(int signo, Router *router, String handler)
+{
+    if (signo < 0 || signo >= 32 || router->master() != this)
+	return -1;
+
+    if (sig_pipe[0] < 0)
+	create_sig_pipe();
 
     SignalInfo *si = new SignalInfo;
     if (!si)

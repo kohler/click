@@ -184,6 +184,7 @@ class Master { public:
 # if HAVE_MULTITHREAD
     click_processor_t _selecting_processor;
 # endif
+    void create_sig_pipe();
     void register_select(int fd, bool add_read, bool add_write);
     void remove_pollfd(int pi, int event);
     inline void call_selected(int fd, int mask) const;
