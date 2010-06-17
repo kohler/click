@@ -4,7 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2003-7 The Regents of the University of California
- * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2008-2010 Meraki, Inc.
  * Copyright (c) 2010 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -1023,13 +1023,6 @@ extern "C" {
 static void
 sighandler(int signo)
 {
-    sigset_t sigset;
-    sigemptyset(&sigset);
-    sigaddset(&sigset, signo);
-    sigprocmask(SIG_BLOCK, &sigset, 0);
-#if !HAVE_SIGACTION
-    signal(signo, SIG_DFL);
-#endif
     Master::signals_pending = signal_pending[signo] = 1;
     if (sig_pipe[1] >= 0)
 	ignore_result(write(sig_pipe[1], "", 1));
@@ -1044,6 +1037,7 @@ Master::add_signal_handler(int signo, Router *router, String handler)
 
     if (sig_pipe[0] < 0 && pipe(sig_pipe) >= 0) {
 	fcntl(sig_pipe[0], F_SETFL, O_NONBLOCK);
+	fcntl(sig_pipe[1], F_SETFL, O_NONBLOCK);
 	fcntl(sig_pipe[0], F_SETFD, FD_CLOEXEC);
 	fcntl(sig_pipe[1], F_SETFD, FD_CLOEXEC);
 	register_select(sig_pipe[0], true, false);
@@ -1064,7 +1058,7 @@ Master::add_signal_handler(int signo, Router *router, String handler)
     si->next = _siginfo;
     _siginfo = si;
 
-    click_signal(signo, sighandler, true);
+    click_signal(signo, sighandler, false);
 
     _signal_lock.release();
     return 0;
@@ -1117,15 +1111,22 @@ Master::process_signals()
 	} else
 	    pprev = &si->next;
 
-    // clear signal_pending, set handled
-    char handled[NSIG];
+    // block signals we're about to attempt to handle
     sigset_t sigset;
     sigemptyset(&sigset);
-    for (SignalInfo *si = happened; si; si = si->next) {
-	handled[si->signo] = 0;
-	signal_pending[si->signo] = 0;
+    for (SignalInfo *si = happened; si; si = si->next)
 	sigaddset(&sigset, si->signo);
-    }
+    sigprocmask(SIG_BLOCK, &sigset, 0);
+
+    // now that they're blocked, reset their signal_pending[] values and
+    // restore their handlers to the default
+    char handled[NSIG];
+    for (int signo = 0; signo < NSIG; ++signo)
+	if (sigismember(&sigset, signo)) {
+	    handled[signo] = 0;
+	    signal_pending[signo] = 0;
+	    click_signal(signo, SIG_DFL, false);
+	}
 
     // call the signal handlers
     SignalInfo *unhandled = 0;
@@ -1141,8 +1142,10 @@ Master::process_signals()
 	happened = next;
     }
 
+    // unblock the signals
     sigprocmask(SIG_UNBLOCK, &sigset, 0);
 
+    // re-deliver any signals we did not handle
     while (unhandled) {
 	SignalInfo *next = unhandled->next;
 	if (!handled[unhandled->signo]) {
