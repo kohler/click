@@ -68,8 +68,12 @@ static const StaticNameDB::Entry instruction_entries[] = {
 #if CLICK_USERLEVEL
 static const StaticNameDB::Entry signal_entries[] = {
     { "ABRT", SIGABRT },
+    { "ALRM", SIGALRM },
     { "HUP", SIGHUP },
     { "INT", SIGINT },
+# ifdef SIGIO
+    { "IO", SIGIO },
+# endif
     { "PIPE", SIGPIPE },
     { "QUIT", SIGQUIT },
     { "TERM", SIGTERM },
@@ -134,6 +138,8 @@ Script::find_label(const String &label) const
     if (NameInfo::query_int(NameInfo::T_SCRIPT_INSN, this, label, &insn)
 	&& insn < 0)
 	return insn;		// negative instructions are also labels
+    if (label.equals("begin", 5))
+	return 0;
     return _insns.size();
 }
 
@@ -661,6 +667,15 @@ Script::Expander::expand(const String &vname, int vartype, int quote, StringAccu
 	return true;
     }
 
+    if (vname.length() == 1 && vname[0] == '$') {
+#if CLICK_USERLEVEL
+	sa << getpid();
+#else
+	sa << current->pid;
+#endif
+	return true;
+    }
+
     if (vname.length() == 1 && vname[0] == '0') {
 	sa << script->_run_handler_name;
 	return true;
@@ -1076,6 +1091,25 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	str = file_string(filename, errh);
 	return (errh->nerrors() == nerrors ? 0 : -errno);
     }
+
+    case ar_kill: {
+	String word = cp_shift_spacevec(str);
+	int32_t signo;
+	if (!word || !NameInfo::query_int(NameInfo::T_SIGNO, e, word, &signo)
+	    || signo < 0 || signo > 32)
+	    return errh->error("bad SIGNO");
+	while (str) {
+	    pid_t pid;
+	    if (!cp_integer(cp_shift_spacevec(str), &pid))
+		return errh->error("bad PID");
+	    if (kill(pid, signo) != 0) {
+		int e = errno;
+		errh->error("kill(%ld, %d): %s", (long) pid, (int) signo, strerror(e));
+		return e;
+	    }
+	}
+	return 0;
+    }
 #endif
 
     case ar_readable:
@@ -1159,6 +1193,7 @@ Script::add_handlers()
     set_handler("unquote", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_unquote, 0);
 #if CLICK_USERLEVEL
     set_handler("cat", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, arithmetic_handler, ar_cat, 0);
+    set_handler("kill", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, arithmetic_handler, ar_kill, 0);
 #endif
     if (_type == type_proxy)
 	add_write_handler("*", star_write_handler, 0);

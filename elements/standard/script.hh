@@ -219,8 +219,8 @@ return value is used as the output port number.
 =item C<PROXY>
 
 The script runs in response to I<any> handler (except Script's predefined
-handlers).  Within the script, the C<$0> variable equals the handler's name.
-Also, the C<$write> variable is "true" if the handler was called as a write
+handlers).  Within the script, the C<$0> variable equals the handler's name,
+and the C<$write> variable is "true" if the handler was called as a write
 handler.  For example, consider:
 
    s :: Script(TYPE PROXY,
@@ -389,6 +389,13 @@ Returns the current timestamp.
 User-level only.  Argument is a filename; reads and returns the file's
 contents.  This handler is not accessible via ControlSocket.
 
+=h kill "read with parameters"
+
+User-level only.  Argument is a signal ID followed by one or more process
+IDs.  Those processes are killed by that signal.  This handler is not
+accessible via ControlSocket.  The "$$" variable may be useful when calling
+C<kill>; it expands to the driver's process ID.
+
 =a DriverManager
 
 */
@@ -468,7 +475,7 @@ class Script : public Element { public:
 	AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
 	AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat,
 	ar_and, ar_or, ar_nand, ar_nor, ar_now, ar_if, ar_in,
-	ar_readable, ar_writable, ar_length, ar_unquote
+	ar_readable, ar_writable, ar_length, ar_unquote, ar_kill
     };
 
     void add_insn(int, int, int = 0, const String & = String());
