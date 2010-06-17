@@ -1,0 +1,53 @@
+%info
+Test that signal redelivery works correctly.
+
+%script
+click CONFIG || echo "Died 1"
+click CONFIG2 || echo "Died 2"
+click CONFIG3 || echo "Died 3"
+
+%file CONFIG
+Script(print "K 1",
+	    set y $(kill USR1 $$),
+	    print "K 2",
+	    set y $(kill USR1 $$),
+	    wait 0.00001s,
+	    stop)
+Script(TYPE SIGNAL USR1,
+	    print "got USR1",
+	    end)
+
+%file CONFIG2
+Script(print "K 1",
+	    set y $(kill USR1 $$),
+	    print "K 2",
+	    set y $(kill USR1 $$),
+	    wait 0.00001s,
+	    stop)
+Script(TYPE SIGNAL USR1,
+	    print "got USR1",
+	    exit)
+
+%file CONFIG3
+Script(print "K 1",
+	    set y $(kill USR1 $$),
+	    wait 0.00001s,
+	    print "K 2",
+	    set y $(kill USR1 $$),
+	    wait 0.00001s,
+	    stop)
+Script(TYPE SIGNAL USR1,
+	    print "got USR1",
+	    exit)
+
+%expect stdout
+K 1
+K 2
+got USR1
+K 1
+K 2
+got USR1
+K 1
+got USR1
+K 2
+Died 3
