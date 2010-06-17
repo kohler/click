@@ -1,8 +1,8 @@
 %script
 click --simtime CONFIG 2> PRINT
-sort < TABLE | sed 's/:/-/g' > SORTEDTABLE
+LC_COLLATE=C sort < TABLE | sed 's/:/-/g' > SORTEDTABLE
 click --simtime CONFIG2 2> PRINT2
-sort < TABLE | sed 's/:/-/g' > SORTEDTABLE2
+LC_COLLATE=C sort < TABLE | sed 's/:/-/g' > SORTEDTABLE2
 
 %file CONFIG
 FromIPSummaryDump(IN, STOP true)
