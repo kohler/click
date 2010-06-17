@@ -46,6 +46,10 @@ enum { POLLIN = Element::SELECT_READ, POLLOUT = Element::SELECT_WRITE };
 volatile sig_atomic_t Master::signals_pending;
 static volatile sig_atomic_t signal_pending[NSIG];
 static int sig_pipe[2] = { -1, -1 };
+# if HAVE_MULTITHREAD
+static volatile int signal_blocker_state;
+static void *signal_blocker_thread(void *);
+# endif
 #endif
 
 Master::Master(int nthreads)
@@ -100,6 +104,11 @@ Master::Master(int nthreads)
     signals_pending = 0;
     _siginfo = 0;
     _signal_adding = false;
+# if HAVE_MULTITHREAD
+    assert(!signal_blocker_state);
+    pthread_t p;
+    pthread_create(&p, 0, signal_blocker_thread, 0);
+# endif
 #endif
 
 #if CLICK_LINUXMODULE
@@ -1029,6 +1038,46 @@ sighandler(int signo)
 }
 }
 
+# if HAVE_MULTITHREAD
+static pthread_cond_t signal_blocker_cond;
+static pthread_mutex_t signal_blocker_mutex;
+static sigset_t signal_blocker_sigset;
+
+static void
+signal_blocker_wait_for_state(int want_state)
+{
+    if (signal_blocker_state != want_state) {
+	pthread_mutex_lock(&signal_blocker_mutex);
+	while (signal_blocker_state != want_state)
+	    pthread_cond_wait(&signal_blocker_cond, &signal_blocker_mutex);
+	pthread_mutex_unlock(&signal_blocker_mutex);
+    }
+}
+
+static void
+signal_blocker_set_state(int to_state)
+{
+    signal_blocker_state = to_state;
+    pthread_cond_signal(&signal_blocker_cond);
+}
+
+// See comment in userlevel/click.cc for an explanation.
+static void *
+signal_blocker_thread(void *)
+{
+    while (1) {
+	signal_blocker_set_state(1);
+	signal_blocker_wait_for_state(2);
+	pthread_sigmask(SIG_BLOCK, &signal_blocker_sigset, 0);
+	signal_blocker_set_state(3);
+	signal_blocker_wait_for_state(4);
+	pthread_sigmask(SIG_UNBLOCK, &signal_blocker_sigset, 0);
+    }
+    return 0;			// unreached
+}
+# endif
+
+
 int
 Master::add_signal_handler(int signo, Router *router, String handler)
 {
@@ -1116,7 +1165,14 @@ Master::process_signals()
     sigemptyset(&sigset);
     for (SignalInfo *si = happened; si; si = si->next)
 	sigaddset(&sigset, si->signo);
+# if HAVE_MULTITHREAD
+    signal_blocker_wait_for_state(1);
+    signal_blocker_sigset = sigset;
+    signal_blocker_set_state(2);
+    signal_blocker_wait_for_state(3);
+# else
     sigprocmask(SIG_BLOCK, &sigset, 0);
+# endif
 
     // now that they're blocked, reset their signal_pending[] values and
     // restore their handlers to the default
@@ -1143,7 +1199,11 @@ Master::process_signals()
     }
 
     // unblock the signals
+# if HAVE_MULTITHREAD
+    signal_blocker_set_state(4);
+# else
     sigprocmask(SIG_UNBLOCK, &sigset, 0);
+# endif
 
     // re-deliver any signals we did not handle
     while (unhandled) {

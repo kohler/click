@@ -391,6 +391,33 @@ round_timeval(struct timeval *tv, int usec_divider)
 extern "C" {
 static void *thread_driver(void *user_data)
 {
+    // For reliable signal handling on multithreaded Click, we need to take
+    // care, since each thread has its own blocked-signal mask.  We must
+    // always block signals on all threads but one, which is the special
+    // signal-blocking thread, defined in master.cc.
+    sigset_t sigset;
+    sigemptyset(&sigset);
+    sigaddset(&sigset, SIGABRT);
+    sigaddset(&sigset, SIGALRM);
+    sigaddset(&sigset, SIGCONT);
+    sigaddset(&sigset, SIGHUP);
+    sigaddset(&sigset, SIGINT);
+# ifdef SIGIO
+    sigaddset(&sigset, SIGIO);
+# endif
+    sigaddset(&sigset, SIGPIPE);
+    sigaddset(&sigset, SIGPOLL);
+    sigaddset(&sigset, SIGQUIT);
+    sigaddset(&sigset, SIGTERM);
+    sigaddset(&sigset, SIGTSTP);
+    sigaddset(&sigset, SIGTTIN);
+    sigaddset(&sigset, SIGTTOU);
+    sigaddset(&sigset, SIGTTOU);
+    sigaddset(&sigset, SIGURG);
+    sigaddset(&sigset, SIGUSR1);
+    sigaddset(&sigset, SIGUSR2);
+    pthread_sigmask(SIG_BLOCK, &sigset, 0);
+
     RouterThread *thread = static_cast<RouterThread *>(user_data);
     thread->driver();
     return 0;
