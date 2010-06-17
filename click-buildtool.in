@@ -33,6 +33,7 @@ elem2=""
 default_provisions="@provisions@"
 driver_provisions="@DRIVERS@"
 
+export LC_COLLATE=C
 trap "exit 1" HUP
 
 # find good versions of awk and grep
