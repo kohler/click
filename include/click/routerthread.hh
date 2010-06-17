@@ -103,6 +103,7 @@ class RouterThread
     struct task_struct *_linux_task;
 #elif HAVE_MULTITHREAD
     click_processor_t _running_processor;
+    volatile bool _select_blocked;
 #endif
     Spinlock _task_lock;
     atomic_uint32_t _task_blocker;
@@ -374,8 +375,7 @@ RouterThread::wake()
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     // see also Master::add_select()
     click_processor_t tid = _running_processor;
-    if (tid != click_current_processor()
-	&& tid != click_invalid_processor())
+    if (_select_blocked && tid != click_invalid_processor())
 	pthread_kill(tid, SIGIO);
 #elif CLICK_BSDMODULE && !BSD_NETISRSCHED
     if (_sleep_ident)

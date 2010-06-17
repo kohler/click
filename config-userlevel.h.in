@@ -108,6 +108,9 @@
 /* Define if you have a non-emulated <poll.h> header file. */
 #undef HAVE_POLL_H
 
+/* Define if you have the pselect function. */
+#undef HAVE_PSELECT
+
 /* Placement new is always provided below. */
 #define HAVE_PLACEMENT_NEW 1
 

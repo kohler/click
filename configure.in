@@ -488,7 +488,7 @@ dnl
 
 AC_CHECK_HEADERS(termio.h netdb.h sys/event.h pwd.h grp.h)
 CLICK_CHECK_POLL_H
-AC_CHECK_FUNCS(sigaction)
+AC_CHECK_FUNCS(pselect sigaction)
 
 AC_CHECK_FUNCS(kqueue, have_kqueue=yes)
 if test "x$have_kqueue" = xyes; then

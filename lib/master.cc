@@ -46,9 +46,9 @@ enum { POLLIN = Element::SELECT_READ, POLLOUT = Element::SELECT_WRITE };
 volatile sig_atomic_t Master::signals_pending;
 static volatile sig_atomic_t signal_pending[NSIG];
 static int sig_pipe[2] = { -1, -1 };
+extern "C" { static void sighandler(int signo); }
 # if HAVE_MULTITHREAD
-static volatile int signal_blocker_state;
-static void *signal_blocker_thread(void *);
+static void start_signal_blocker_thread();
 # endif
 #endif
 
@@ -104,10 +104,14 @@ Master::Master(int nthreads)
     signals_pending = 0;
     _siginfo = 0;
     _signal_adding = false;
+
 # if HAVE_MULTITHREAD
-    assert(!signal_blocker_state);
-    pthread_t p;
-    pthread_create(&p, 0, signal_blocker_thread, 0);
+    // ensure signals are only delivered to one thread
+    start_signal_blocker_thread();
+
+    // SIGIO is used to wake up sleeping threads
+    create_sig_pipe();
+    click_signal(SIGIO, sighandler, false);
 # endif
 #endif
 
@@ -123,12 +127,6 @@ Master::Master(int nthreads)
 
 #if CLICK_NS
     _simnode = 0;
-#endif
-
-#if CLICK_USERLEVEL && HAVE_MULTITHREAD
-    create_sig_pipe();		// needed to ensure add_select wakes up
-				// any blocked selecting thread
-    assert(sig_pipe[0] >= 0);
 #endif
 }
 
@@ -970,13 +968,22 @@ Master::run_selects_select(bool more_tasks)
 #endif /* HAVE_POLL_H && !HAVE_USE_SELECT */
 
 void
-Master::run_selects(bool more_tasks)
+Master::run_selects(RouterThread *thread)
 {
     // Wait in select() for input or timer, and call relevant elements'
     // selected() methods.
 
     if (!_select_lock.attempt())
 	return;
+
+#if HAVE_MULTITHREAD
+    // set _select_blocked to true first: then, if someone else is
+    // concurrently waking us up, we will either detect the reschedule below,
+    // or wake up on the signal
+    thread->_select_blocked = true;
+#endif
+
+    bool more_tasks = thread->active();
 
 #if HAVE_MULTITHREAD
     if (_selecting_processor != click_invalid_processor()) {
@@ -987,17 +994,43 @@ Master::run_selects(bool more_tasks)
 	// thread was blocking.
 	_select_lock.release();
 	if (!more_tasks) {
-	    struct timeval wait, *wait_ptr = &wait;
+	    // watching sig_pipe helps catch wake() requests reliably
+	    fd_set fdr;
+	    int nfds = 0;
+	    FD_ZERO(&fdr);
+	    if (sig_pipe[0] >= 0) {
+		FD_SET(sig_pipe[0], &fdr);
+		nfds = sig_pipe[0] + 1;
+	    }
+
+	    // how long to wait?
+# if HAVE_PSELECT
+#  define timetype timespec
+# else
+#  define timetype timeval
+# endif
+	    struct timetype wait, *wait_ptr = &wait;
 	    Timestamp t = next_timer_expiry_adjusted();
 	    if (t.sec() == 0)
 		wait_ptr = 0;
 	    else if (unlikely(Timestamp::warp_jumping()))
 		Timestamp::warp_jump(t);
 	    else if ((t -= Timestamp::now(), t.sec() >= 0))
-		wait = t.warp_real_delay().timeval();
-	    ignore_result(select(0, (fd_set *) 0, (fd_set *) 0, (fd_set *) 0,
-				 wait_ptr));
+		wait = t.warp_real_delay().timetype();
+# undef timetype
+
+	    // actually wait
+# if HAVE_PSELECT
+	    sigset_t sig;
+	    pthread_sigmask(SIG_BLOCK, 0, &sig);
+	    sigdelset(&sig, SIGIO);
+	    int r = pselect(nfds, &fdr, (fd_set*)0, (fd_set*)0, wait_ptr, &sig);
+# else
+	    int r = select(nfds, &fdr, (fd_set*)0, (fd_set*)0, wait_ptr);
+# endif
+	    (void) r;
 	}
+	thread->_select_blocked = false;
 	return;
     }
 #endif
@@ -1024,6 +1057,9 @@ Master::run_selects(bool more_tasks)
 #endif
 
  unlock_select_exit:
+#if HAVE_MULTITHREAD
+    thread->_select_blocked = false;
+#endif
     _select_lock.release();
 }
 
@@ -1048,6 +1084,7 @@ sighandler(int signo)
 static pthread_cond_t signal_blocker_cond;
 static pthread_mutex_t signal_blocker_mutex;
 static sigset_t signal_blocker_sigset;
+static volatile int signal_blocker_state;
 
 static void
 signal_blocker_wait_for_state(int want_state)
@@ -1080,6 +1117,16 @@ signal_blocker_thread(void *)
 	pthread_sigmask(SIG_UNBLOCK, &signal_blocker_sigset, 0);
     }
     return 0;			// unreached
+}
+
+static void
+start_signal_blocker_thread()
+{
+    assert(!signal_blocker_state);
+    pthread_mutex_init(&signal_blocker_mutex, 0);
+    pthread_cond_init(&signal_blocker_cond, 0);
+    pthread_t p;
+    pthread_create(&p, 0, signal_blocker_thread, 0);
 }
 # endif
 
@@ -1132,6 +1179,9 @@ Master::remove_signal_handler(int signo, Router *router, String handler)
 {
     _signal_lock.acquire();
     int nhandlers = 0, status = -1;
+# if HAVE_MULTITHREAD
+    nhandlers += (signo == SIGIO); // always keep the main SIGIO handler
+# endif
     SignalInfo **pprev = &_siginfo;
     for (SignalInfo *si = *pprev; si; si = *pprev)
 	if (si->signo == signo && si->router == router
@@ -1193,8 +1243,14 @@ Master::process_signals()
     char handled[NSIG];
     for (int signo = 0; signo < NSIG; ++signo)
 	if (sigismember(&sigset, signo)) {
-	    handled[signo] = 0;
 	    signal_pending[signo] = 0;
+# if HAVE_MULTITHREAD
+	    if (signo == SIGIO) {
+		handled[signo] = 1;
+		continue;
+	    }
+# endif
+	    handled[signo] = 0;
 	    click_signal(signo, SIG_DFL, false);
 	}
 

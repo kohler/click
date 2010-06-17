@@ -86,6 +86,7 @@ RouterThread::RouterThread(Master *m, int id)
     _linux_task = 0;
 #elif HAVE_MULTITHREAD
     _running_processor = click_invalid_processor();
+    _select_blocked = false;
 #endif
     _task_blocker = 0;
     _task_blocker_waiting = 0;
@@ -417,7 +418,7 @@ RouterThread::run_os()
     driver_unlock_tasks();
 
 #if CLICK_USERLEVEL
-    _master->run_selects(active());
+    _master->run_selects(this);
 #elif CLICK_LINUXMODULE		/* Linux kernel module */
     if (_greedy) {
 	if (time_after(jiffies, greedy_schedule_jiffies + 5 * CLICK_HZ)) {

@@ -48,7 +48,7 @@ class Master { public:
 #if CLICK_USERLEVEL
     int add_select(int fd, Element *element, int mask);
     int remove_select(int fd, Element *element, int mask);
-    void run_selects(bool more_tasks);
+    void run_selects(RouterThread *thread);
 
     int add_signal_handler(int signo, Router *router, String handler);
     int remove_signal_handler(int signo, Router *router, String handler);
