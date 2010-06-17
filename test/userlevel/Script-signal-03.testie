@@ -1,0 +1,25 @@
+%info
+Test that signal redelivery works correctly in multithread userlevel Click.
+
+%require
+click-buildtool provides umultithread
+
+%script
+click --threads 2 CONFIG || echo "Died 1"
+
+%file CONFIG
+i :: InfiniteSource(LIMIT 10)
+    -> s :: Script(TYPE PACKET, set y $(kill USR1 $$), end)
+    -> d :: Discard;
+j :: InfiniteSource(LIMIT 30)
+    -> s;
+Script(TYPE SIGNAL USR1,
+	    print "got USR1",
+	    write bt.block 0.01s,
+	    end)
+Script(wait 0.02s, stop)
+StaticThreadSched(i 0, j 1)
+bt :: BlockThread
+
+%expect stdout
+got USR1
