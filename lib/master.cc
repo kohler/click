@@ -1119,8 +1119,7 @@ Master::add_signal_handler(int signo, Router *router, String handler)
 
     if ((*pprev = new SignalInfo(signo, router, handler))) {
 	if (nhandlers == 0 && sigismember(&_sig_dispatching, signo) == 0)
-	    {printf("T+ %d %s\n", signo, String(pthread_self()).c_str());
-		click_signal(signo, sighandler, false);}
+	    click_signal(signo, sighandler, false);
     } else
 	status = -1;
 
@@ -1217,7 +1216,9 @@ Master::process_signals(RouterThread *thread)
 	if (sigismember(&_sig_dispatching, signo) > 0) {
 	    if (sigismember(&sigset_active, signo) == 0) {
 		click_signal(signo, SIG_DFL, false);
+#if HAVE_MULTITHREAD
 		click_master_mb();
+#endif
 		if (signal_pending[signo] != 0) {
 		    signal_pending[signo] = 0;
 		    goto suicide;
