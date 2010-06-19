@@ -14,7 +14,11 @@ i :: InfiniteSource(LIMIT 10)
 j :: InfiniteSource(LIMIT 30)
     -> s;
 Script(TYPE SIGNAL USR1,
+	    init x 0,
+	    set x $(add $x 1),
+	    goto l1 $(gt $x 1),
 	    print "got USR1",
+	    label l1,
 	    write bt.block 0.01s,
 	    end)
 Script(wait 0.02s, stop)
@@ -23,3 +27,6 @@ bt :: BlockThread
 
 %expect stdout
 got USR1
+
+%ignore stdout
+T{{.*}}

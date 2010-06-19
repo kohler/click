@@ -7,14 +7,13 @@ received.
 
 %file THING
 click -e "
-  Script(TYPE SIGNAL INT, print >>OUT 'Hello');
+  Script(TYPE SIGNAL INT, print >>OUT 'Hello', stop);
   Script(TYPE SIGNAL INT, print >>OUT 'Goodbye');
-  Script(wait 50ms, stop);
+  Script(print >RUNNING \$\$, wait 100ms, stop);
 " &
-cp=$!
 
-click -e "Script(wait 1ms, stop)"
-kill -INT $cp
+while ! [ -f RUNNING ]; do click -e "Script(wait 1ms, stop)"; done
+kill -INT `cat RUNNING`
 
 %expect OUT
 Hello

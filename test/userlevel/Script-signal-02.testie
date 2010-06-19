@@ -2,8 +2,11 @@
 Test that signal redelivery works correctly.
 
 %script
+echo 1
 click CONFIG || echo "Died 1"
+echo 2
 click CONFIG2 || echo "Died 2"
+echo 3
 click CONFIG3 || echo "Died 3"
 
 %file CONFIG
@@ -41,13 +44,19 @@ Script(TYPE SIGNAL USR1,
 	    exit)
 
 %expect stdout
+1
 K 1
 K 2
 got USR1
+2
 K 1
 K 2
 got USR1
+3
 K 1
 got USR1
 K 2
 Died 3
+
+%ignore stdout
+T{{.*}}

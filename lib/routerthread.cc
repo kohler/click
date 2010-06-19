@@ -6,7 +6,7 @@
  * Copyright (c) 2000-2001 Massachusetts Institute of Technology
  * Copyright (c) 2001-2002 International Computer Science Institute
  * Copyright (c) 2004-2007 Regents of the University of California
- * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2008-2010 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -37,6 +37,9 @@ CLICK_CXX_PROTECT
 # include <sys/kthread.h>
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
+#endif
+#if CLICK_USERLEVEL && HAVE_MULTITHREAD
+# include <fcntl.h>
 #endif
 CLICK_DECLS
 
@@ -87,6 +90,7 @@ RouterThread::RouterThread(Master *m, int id)
 #elif HAVE_MULTITHREAD
     _running_processor = click_invalid_processor();
     _select_blocked = false;
+    _wake_pipe[0] = _wake_pipe[1] = -1;
 #endif
     _task_blocker = 0;
     _task_blocker_waiting = 0;
@@ -136,6 +140,12 @@ RouterThread::~RouterThread()
 {
     _any_pending = 0;
     assert(!active());
+#if CLICK_USERLEVEL && HAVE_MULTITHREAD
+    if (_wake_pipe[0] >= 0) {
+	close(_wake_pipe[0]);
+	close(_wake_pipe[1]);
+    }
+#endif
 }
 
 inline void
@@ -473,6 +483,13 @@ RouterThread::driver()
     _linux_task = current;
 #elif HAVE_MULTITHREAD
     _running_processor = click_current_processor();
+    if (_wake_pipe[0] < 0 && pipe(_wake_pipe) >= 0) {
+	fcntl(_wake_pipe[0], F_SETFL, O_NONBLOCK);
+	fcntl(_wake_pipe[1], F_SETFL, O_NONBLOCK);
+	fcntl(_wake_pipe[0], F_SETFD, FD_CLOEXEC);
+	fcntl(_wake_pipe[1], F_SETFD, FD_CLOEXEC);
+    }
+    assert(_wake_pipe[0] >= 0);
 #endif
 
     driver_lock_tasks();
@@ -503,7 +520,7 @@ RouterThread::driver()
 	iter++;
 
 #if CLICK_USERLEVEL
-	_master->run_signals();
+	_master->run_signals(this);
 #endif
 
 #if !(HAVE_ADAPTIVE_SCHEDULER || BSD_NETISRSCHED)

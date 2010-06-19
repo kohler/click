@@ -16,7 +16,7 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
-# include <signal.h>
+# include <unistd.h>
 #endif
 
 #define CLICK_DEBUG_SCHEDULING 0
@@ -104,6 +104,7 @@ class RouterThread
 #elif HAVE_MULTITHREAD
     click_processor_t _running_processor;
     volatile bool _select_blocked;
+    int _wake_pipe[2];
 #endif
     Spinlock _task_lock;
     atomic_uint32_t _task_blocker;
@@ -374,9 +375,8 @@ RouterThread::wake()
 	wake_up_process(task);
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     // see also Master::add_select()
-    click_processor_t tid = _running_processor;
-    if (_select_blocked && tid != click_invalid_processor())
-	pthread_kill(tid, SIGIO);
+    if (_select_blocked)
+	ignore_result(write(_wake_pipe[1], "", 1));
 #elif CLICK_BSDMODULE && !BSD_NETISRSCHED
     if (_sleep_ident)
 	wakeup_one(&_sleep_ident);
