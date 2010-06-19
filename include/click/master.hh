@@ -124,6 +124,9 @@ class Master { public:
     Timestamp _timer_check;
     uint32_t _timer_check_reports;
     inline Timestamp next_timer_expiry_adjusted() const;
+#if CLICK_USERLEVEL
+    inline int next_timer_delay(bool more_tasks, Timestamp &t) const;
+#endif
     void lock_timers();
     bool attempt_lock_timers();
     void unlock_timers();

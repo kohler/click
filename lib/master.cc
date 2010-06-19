@@ -748,15 +748,40 @@ Master::remove_select(int fd, Element *element, int mask)
 inline void
 Master::call_selected(int fd, int mask) const
 {
-    const ElementSelector &es = _element_selectors[fd];
-    Element *read = (mask & Element::SELECT_READ ? es.read : 0);
-    Element *write = (mask & Element::SELECT_WRITE ? es.write : 0);
-    if (read)
-	read->selected(fd, write == read ? mask : Element::SELECT_READ);
-    if (write && write != read)
-	write->selected(fd, Element::SELECT_WRITE);
+    if ((unsigned) fd < (unsigned) _element_selectors.size()) {
+	const ElementSelector &es = _element_selectors[fd];
+	Element *read = (mask & Element::SELECT_READ ? es.read : 0);
+	Element *write = (mask & Element::SELECT_WRITE ? es.write : 0);
+	if (read)
+	    read->selected(fd, write == read ? mask : Element::SELECT_READ);
+	if (write && write != read)
+	    write->selected(fd, Element::SELECT_WRITE);
+    }
 }
 
+
+inline int
+Master::next_timer_delay(bool more_tasks, Timestamp &t) const
+{
+#if CLICK_NS
+    // The simulator should never block.
+    return 0;
+#else
+    if (more_tasks || signals_pending)
+	return 0;
+    t = next_timer_expiry_adjusted();
+    if (t.sec() == 0)
+	return -1;		// block forever
+    else if (unlikely(Timestamp::warp_jumping())) {
+	Timestamp::warp_jump(t);
+	return 0;
+    } else if ((t -= Timestamp::now(), t.sec() >= 0)) {
+	t = t.warp_real_delay();
+	return 1;
+    } else
+	return 0;
+#endif
+}
 
 #if HAVE_USE_KQUEUE
 static int
@@ -771,32 +796,21 @@ kevent_compare(const void *ap, const void *bp, void *)
 void
 Master::run_selects_kqueue(bool more_tasks)
 {
-    // Decide how long to wait.
-# if CLICK_NS
-    // Never block if we're running in the simulator.
-    struct timespec wait, *wait_ptr = &wait;
-    wait.tv_sec = wait.tv_nsec = 0;
-    (void) more_tasks;
-# else /* !CLICK_NS */
-    // Never wait if anything is scheduled; otherwise, if no timers, block
-    // indefinitely.
-    struct timespec wait, *wait_ptr = &wait;
-    wait.tv_sec = wait.tv_nsec = 0;
-    if (!more_tasks) {
-	Timestamp t = next_timer_expiry_adjusted();
-	if (t.sec() == 0)
-	    wait_ptr = 0;
-	else if (unlikely(Timestamp::warp_jumping()))
-	    Timestamp::warp_jump(t);
-	else if ((t -= Timestamp::now(), t.sec() >= 0))
-	    wait = t.warp_real_delay().timespec();
-    }
-# endif
-
 # if HAVE_MULTITHREAD
     _selecting_processor = click_current_processor();
     _select_lock.release();
 # endif
+
+    // Decide how long to wait.
+    struct timespec wait, *wait_ptr = &wait;
+    Timestamp t;
+    int delay_type = next_timer_delay(more_tasks, t);
+    if (delay_type == 0)
+	wait.tv_sec = wait.tv_nsec = 0;
+    else if (delay_type > 0)
+	wait = t.timespec();
+    else
+	wait_ptr = 0;
 
     struct kevent kev[256];
     int n = kevent(_kqueue, 0, 0, &kev[0], 256, wait_ptr);
@@ -819,8 +833,7 @@ Master::run_selects_kqueue(bool more_tasks)
 		    mask |= Element::SELECT_READ;
 		else if (p->filter == EVFILT_WRITE)
 		    mask |= Element::SELECT_WRITE;
-	    if (fd < _element_selectors.size())
-		call_selected(fd, mask);
+	    call_selected(fd, mask);
 	}
     }
 }
@@ -830,31 +843,6 @@ Master::run_selects_kqueue(bool more_tasks)
 void
 Master::run_selects_poll(bool more_tasks)
 {
-    // Decide how long to wait.
-# if CLICK_NS
-    // Never block if we're running in the simulator.
-    int timeout = -1;
-    (void) more_tasks;
-# else
-    // Never wait if anything is scheduled; otherwise, if no timers, block
-    // indefinitely.
-    int timeout = 0;
-    if (!more_tasks) {
-	Timestamp t = next_timer_expiry_adjusted();
-	if (t.sec() == 0)
-	    timeout = -1;
-	else if (unlikely(Timestamp::warp_jumping()))
-	    Timestamp::warp_jump(t);
-	else if ((t -= Timestamp::now(), t.sec() >= 0)) {
-	    t = t.warp_real_delay();
-	    if (t.sec() >= INT_MAX / 1000)
-		timeout = INT_MAX - 1000;
-	    else
-		timeout = t.msecval();
-	}
-    }
-# endif /* CLICK_NS */
-
 # if HAVE_MULTITHREAD
     // Need a private copy of _pollfds, since other threads may run while we
     // block
@@ -864,6 +852,17 @@ Master::run_selects_poll(bool more_tasks)
 # else
     Vector<struct pollfd> &my_pollfds(_pollfds);
 # endif
+
+    // Decide how long to wait.
+    int timeout;
+    Timestamp t;
+    int delay_type = next_timer_delay(more_tasks, t);
+    if (delay_type == 0)
+	timeout = 0;
+    else if (delay_type > 0)
+	timeout = (t.sec() >= INT_MAX / 1000 ? INT_MAX - 1000 : t.msecval());
+    else
+	timeout = -1;
 
     int n = poll(my_pollfds.begin(), my_pollfds.size(), timeout);
     int was_errno = errno;
@@ -902,28 +901,6 @@ Master::run_selects_poll(bool more_tasks)
 void
 Master::run_selects_select(bool more_tasks)
 {
-    // Decide how long to wait.
-# if CLICK_NS
-    // Never block if we're running in the simulator.
-    struct timeval wait, *wait_ptr = &wait;
-    timerclear(&wait);
-    (void) more_tasks;
-# else /* !CLICK_NS */
-    // Never wait if anything is scheduled; otherwise, if no timers, block
-    // indefinitely.
-    struct timeval wait, *wait_ptr = &wait;
-    timerclear(&wait);
-    if (!more_tasks) {
-	Timestamp t = next_timer_expiry_adjusted();
-	if (t.sec() == 0)
-	    wait_ptr = 0;
-	else if (unlikely(Timestamp::warp_jumping()))
-	    Timestamp::warp_jump(t);
-	else if ((t -= Timestamp::now(), t.sec() >= 0))
-	    wait = t.warp_real_delay().timeval();
-    }
-# endif /* CLICK_NS */
-
     fd_set read_mask = _read_select_fd_set;
     fd_set write_mask = _write_select_fd_set;
 
@@ -931,6 +908,17 @@ Master::run_selects_select(bool more_tasks)
     _selecting_processor = click_current_processor();
     _select_lock.release();
 # endif
+
+    // Decide how long to wait.
+    struct timeval wait, *wait_ptr = &wait;
+    Timestamp t;
+    int delay_type = next_timer_delay(more_tasks, t);
+    if (delay_type == 0)
+	timerclear(&wait);
+    else if (delay_type > 0)
+	wait = t.timeval();
+    else
+	wait_ptr = 0;
 
     int n = select(_max_select_fd + 1, &read_mask, &write_mask, (fd_set*) 0, wait_ptr);
     int was_errno = errno;
@@ -1010,13 +998,14 @@ Master::run_selects(RouterThread *thread)
 #  define timetype timeval
 # endif
 	    struct timetype wait, *wait_ptr = &wait;
-	    Timestamp t = next_timer_expiry_adjusted();
-	    if (t.sec() == 0)
+	    Timestamp t;
+	    int delay_type = next_timer_delay(false, t);
+	    if (delay_type == 0)
+		wait = Timestamp().timetype();
+	    else if (delay_type > 0)
+		wait = t.timetype();
+	    else
 		wait_ptr = 0;
-	    else if (unlikely(Timestamp::warp_jumping()))
-		Timestamp::warp_jump(t);
-	    else if ((t -= Timestamp::now(), t.sec() >= 0))
-		wait = t.warp_real_delay().timetype();
 # undef timetype
 
 	    // actually wait
