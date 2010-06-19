@@ -756,7 +756,6 @@ Master::call_selected(int fd, int mask) const
     }
 }
 
-
 inline int
 Master::next_timer_delay(bool more_tasks, Timestamp &t) const
 {
@@ -1034,7 +1033,6 @@ Master::run_selects(RouterThread *thread)
 #endif
 
     // Return early if paused.
-    // to run.
     if (_master_paused > 0) {
 #if HAVE_MULTITHREAD
 	thread->_select_blocked = false;
