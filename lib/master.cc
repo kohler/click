@@ -797,9 +797,9 @@ Master::run_selects_kqueue(RouterThread *thread, bool more_tasks)
     click_master_mb();
     _select_lock.release();
 
-    struct kevent kev;
-    EV_SET(&kev, thread->_wake_pipe[0], EVFILT_READ, EV_ADD, 0, 0, EV_SET_UDATA_CAST ((intptr_t) 0));
-    (void) kevent(_kqueue, &kev, 1, 0, 0, 0);
+    struct kevent wp_kev;
+    EV_SET(&wp_kev, thread->_wake_pipe[0], EVFILT_READ, EV_ADD, 0, 0, EV_SET_UDATA_CAST ((intptr_t) 0));
+    (void) kevent(_kqueue, &wp_kev, 1, 0, 0, 0);
 # endif
 
     // Decide how long to wait.
@@ -824,8 +824,8 @@ Master::run_selects_kqueue(RouterThread *thread, bool more_tasks)
     selecting_thread = 0;
     thread->_select_blocked = false;
 
-    kev.flags = EV_DELETE;
-    (void) kevent(_kqueue, &kev, 1, 0, 0, 0);
+    wp_kev.flags = EV_DELETE;
+    (void) kevent(_kqueue, &wp_kev, 1, 0, 0, 0);
 # endif
 
     if (n < 0 && was_errno != EINTR)
