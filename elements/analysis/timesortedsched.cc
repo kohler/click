@@ -96,8 +96,6 @@ TimeSortedSched::pull(int)
 	if (is.signal) {
 	    signals_on = true;
 	    while ((_pkt[_npkt].p = input(i).pull())) {
-		if (is.last_emission && _pkt[_npkt].p->timestamp_anno() < is.last_emission)
-		    _well_ordered = false;
 		_pkt[_npkt].input = i;
 		++_npkt;
 		push_heap(_pkt, _pkt + _npkt, packet_s::compare);
@@ -115,8 +113,10 @@ TimeSortedSched::pull(int)
     _notifier.set_active(_npkt > 0 || signals_on);
     if (_npkt > 0) {
 	Packet *p = _pkt[0].p;
+	if (_last_emission && p->timestamp_anno() < _last_emission)
+	    _well_ordered = false;
+	_last_emission = p->timestamp_anno();
 	input_s &is = _input[_pkt[0].input];
-	is.last_emission = p->timestamp_anno();
 	++is.space;
 	if (is.space == 1) {
 	    _input[_nready].ready = _pkt[0].input;

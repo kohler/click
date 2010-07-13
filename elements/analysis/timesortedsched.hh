@@ -25,8 +25,8 @@ next packet pulled from its inputs, determined by packet timestamps.
 
 TimeSortedSched expects its input packet streams to arrive sorted by
 timestamp.  If the C<well_ordered> handler returns "false", then one or more
-packet streams did not arrive correctly sorted by timestamp.  (But see BUFFER,
-below.)
+packet streams did not arrive correctly sorted by timestamp, so
+TimeSortedSched emitted some packets out of order.  (But see BUFFER, below.)
 
 TimeSortedSched listens for notification from its inputs to avoid useless
 pulls, and provides notification for its output.
@@ -106,7 +106,6 @@ class TimeSortedSched : public Element { public:
     };
     struct input_s {
 	NotifierSignal signal;
-	Timestamp last_emission;
 	int space;
 	int ready;
     };
@@ -119,6 +118,7 @@ class TimeSortedSched : public Element { public:
 
     Notifier _notifier;
     int _buffer;
+    Timestamp _last_emission;
     bool _stop;
     bool _well_ordered;
 
