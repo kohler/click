@@ -1,0 +1,70 @@
+%script
+
+click CONFIG1
+click CONFIG2
+
+%file CONFIG1
+a::FromIPSummaryDump(F1);
+b::FromIPSummaryDump(F2);
+a -> t::TimeSortedSched(STOP true) -> ToIPSummaryDump(G1, DATA timestamp);
+b -> [1]t;
+DriverManager(pause, print t.well_ordered);
+
+%file CONFIG2
+a::FromIPSummaryDump(F1b);
+b::FromIPSummaryDump(F2);
+a -> t::TimeSortedSched(STOP true) -> ToIPSummaryDump(G2, DATA timestamp);
+b -> [1]t;
+DriverManager(pause, print t.well_ordered);
+
+%file F1
+!data timestamp
+0.1
+0.2
+1.0
+1.2
+5.5
+
+%file F1b
+!data timestamp
+0.1
+1.0
+0.2
+1.2
+5.5
+
+%file F2
+!data timestamp
+0.3
+0.8
+0.9
+1.4
+
+%expect G1
+0.100000
+0.200000
+0.300000
+0.800000
+0.900000
+1.000000
+1.200000
+1.400000
+5.500000
+
+%expect G2
+0.100000
+0.300000
+0.800000
+0.900000
+1.000000
+0.200000
+1.200000
+1.400000
+5.500000
+
+%ignore G1 G2
+!{{.*}}
+
+%expect stdout
+true
+false

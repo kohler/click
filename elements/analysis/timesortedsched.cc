@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2001-2003 International Computer Science Institute
+ * Copyright (c) 2010 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,7 +26,8 @@
 CLICK_DECLS
 
 TimeSortedSched::TimeSortedSched()
-    : _vec(0), _signals(0), _notifier(Notifier::SEARCH_CONTINUE_WAKE)
+    : _vec(0), _signals(0), _notifier(Notifier::SEARCH_CONTINUE_WAKE),
+      _well_ordered(true)
 {
 }
 
@@ -56,8 +58,9 @@ int
 TimeSortedSched::initialize(ErrorHandler *errh)
 {
     _vec = new Packet*[ninputs()];
+    _ts = new Timestamp[ninputs()];
     _signals = new NotifierSignal[ninputs()];
-    if (!_vec || !_signals)
+    if (!_vec || !_ts || !_signals)
 	return errh->error("out of memory!");
     for (int i = 0; i < ninputs(); i++) {
 	_vec[i] = 0;
@@ -74,6 +77,7 @@ TimeSortedSched::cleanup(CleanupStage)
 	    if (_vec[i])
 		_vec[i]->kill();
     delete[] _vec;
+    delete[] _ts;
     delete[] _signals;
 }
 
@@ -87,6 +91,8 @@ TimeSortedSched::pull(int)
     for (int i = 0; i < ninputs(); i++) {
 	if (!_vec[i] && _signals[i]) {
 	    _vec[i] = input(i).pull();
+	    if (_ts[i] && _vec[i] && _vec[i]->timestamp_anno() < _ts[i])
+		_well_ordered = false;
 	    signals_on = true;
 	}
 	if (_vec[i]) {
@@ -102,12 +108,21 @@ TimeSortedSched::pull(int)
     if (which >= 0) {
 	Packet *p = _vec[which];
 	_vec[which] = input(which).pull();
+	_ts[which] = p->timestamp_anno();
+	if (_vec[which] && _ts[which] && _vec[which]->timestamp_anno() < _ts[which])
+	    _well_ordered = false;
 	return p;
     } else {
 	if (_stop && !signals_on)
 	    router()->please_stop_driver();
 	return 0;
     }
+}
+
+void
+TimeSortedSched::add_handlers()
+{
+    add_data_handlers("well_ordered", Handler::OP_READ | Handler::CHECKBOX, &_well_ordered);
 }
 
 CLICK_ENDDECLS

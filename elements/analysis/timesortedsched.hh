@@ -23,6 +23,10 @@ one output, zero or more inputs
 TimeSortedSched responds to pull requests by returning the chronologically
 next packet pulled from its inputs, determined by packet timestamps.
 
+TimeSortedSched expects its input packet streams to arrive sorted by
+timestamp.  If the C<well_ordered> handler returns "false", then one or more
+packet streams did not arrive correctly sorted by timestamp.
+
 TimeSortedSched listens for notification from its inputs to avoid useless
 pulls, and provides notification for its output.
 
@@ -74,15 +78,18 @@ class TimeSortedSched : public Element { public:
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
+    void add_handlers();
 
     Packet *pull(int);
 
   private:
 
     Packet **_vec;
+    Timestamp *_ts;
     NotifierSignal *_signals;
     Notifier _notifier;
     bool _stop;
+    bool _well_ordered;
 
 };
 
