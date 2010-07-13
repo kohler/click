@@ -26,7 +26,8 @@
 CLICK_DECLS
 
 TimeSortedSched::TimeSortedSched()
-    : _vec(0), _signals(0), _notifier(Notifier::SEARCH_CONTINUE_WAKE),
+    : _pkt(0), _npkt(0), _input(0), _nready(0),
+      _notifier(Notifier::SEARCH_CONTINUE_WAKE), _buffer(1),
       _well_ordered(true)
 {
 }
@@ -49,68 +50,80 @@ TimeSortedSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _notifier.initialize(Notifier::EMPTY_NOTIFIER, router());
     _stop = false;
-    return cp_va_kparse(conf, this, errh,
-			"STOP", 0, cpBool, &_stop,
-		       cpEnd);
+    if (cp_va_kparse(conf, this, errh,
+		     "STOP", 0, cpBool, &_stop,
+		     "BUFFER", 0, cpInteger, &_buffer,
+		     cpEnd) < 0)
+	return -1;
+    if (_buffer <= 0)
+	return errh->error("BUFFER must be at least 1");
+    return 0;
 }
 
 int
 TimeSortedSched::initialize(ErrorHandler *errh)
 {
-    _vec = new Packet*[ninputs()];
-    _ts = new Timestamp[ninputs()];
-    _signals = new NotifierSignal[ninputs()];
-    if (!_vec || !_ts || !_signals)
+    _pkt = new packet_s[ninputs() * _buffer];
+    _input = new input_s[ninputs()];
+    if (!_pkt || !_input)
 	return errh->error("out of memory!");
     for (int i = 0; i < ninputs(); i++) {
-	_vec[i] = 0;
-	_signals[i] = Notifier::upstream_empty_signal(this, i, 0, &_notifier);
+	_input[i].signal = Notifier::upstream_empty_signal(this, i, 0, &_notifier);
+	_input[i].space = _buffer;
+	_input[i].ready = i;
     }
+    _nready = ninputs();
     return 0;
 }
 
 void
 TimeSortedSched::cleanup(CleanupStage)
 {
-    if (_vec)
-	for (int i = 0; i < ninputs(); i++)
-	    if (_vec[i])
-		_vec[i]->kill();
-    delete[] _vec;
-    delete[] _ts;
-    delete[] _signals;
+    for (int i = 0; i < _npkt; ++i)
+	_pkt[i].p->kill();
+    delete[] _pkt;
+    delete[] _input;
 }
 
 Packet*
 TimeSortedSched::pull(int)
 {
-    int which = -1;
-    Timestamp* tv = 0;
     bool signals_on = false;
-
-    for (int i = 0; i < ninputs(); i++) {
-	if (!_vec[i] && _signals[i]) {
-	    _vec[i] = input(i).pull();
-	    if (_ts[i] && _vec[i] && _vec[i]->timestamp_anno() < _ts[i])
-		_well_ordered = false;
+    // first maybe fill in buffer
+    for (int rpos = _nready - 1; rpos >= 0; --rpos) {
+	int i = _input[rpos].ready;
+	input_s &is = _input[i];
+	if (is.signal) {
 	    signals_on = true;
-	}
-	if (_vec[i]) {
-	    Timestamp* this_tv = &_vec[i]->timestamp_anno();
-	    if (!tv || *this_tv < *tv) {
-		which = i;
-		tv = this_tv;
+	    while ((_pkt[_npkt].p = input(i).pull())) {
+		if (is.last_emission && _pkt[_npkt].p->timestamp_anno() < is.last_emission)
+		    _well_ordered = false;
+		_pkt[_npkt].input = i;
+		++_npkt;
+		push_heap(_pkt, _pkt + _npkt, packet_s::compare);
+		--is.space;
+		if (!is.space) {
+		    _input[rpos].ready = _input[_nready - 1].ready;
+		    --_nready;
+		    break;
+		}
 	    }
 	}
     }
 
-    _notifier.set_active(which >= 0 || signals_on);
-    if (which >= 0) {
-	Packet *p = _vec[which];
-	_vec[which] = input(which).pull();
-	_ts[which] = p->timestamp_anno();
-	if (_vec[which] && _ts[which] && _vec[which]->timestamp_anno() < _ts[which])
-	    _well_ordered = false;
+    // then maybe emit a packet
+    _notifier.set_active(_npkt > 0 || signals_on);
+    if (_npkt > 0) {
+	Packet *p = _pkt[0].p;
+	input_s &is = _input[_pkt[0].input];
+	is.last_emission = p->timestamp_anno();
+	++is.space;
+	if (is.space == 1) {
+	    _input[_nready].ready = _pkt[0].input;
+	    ++_nready;
+	}
+	pop_heap(_pkt, _pkt + _npkt, packet_s::compare);
+	--_npkt;
 	return p;
     } else {
 	if (_stop && !signals_on)
