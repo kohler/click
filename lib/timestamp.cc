@@ -244,17 +244,20 @@ Timestamp::unparse_interval() const
     StringAccum sa;
     if (sec() == 0) {
 	uint32_t ss = subsec();
-	if (ss % subsec_per_msec == 0)
-	    sa << (ss / subsec_per_msec) << 'm' << 's';
+	uint32_t ms = ss / subsec_per_msec;
+	if (ms * subsec_per_msec == ss)
+	    sa << ms << 'm' << 's';
+	else {
 #if TIMESTAMP_NANOSEC
-	else if (ss % subsec_per_usec == 0)
-	    sa << (ss / subsec_per_usec) << 'u' << 's';
-	else
-	    sa << ss << 'n' << 's';
+	    uint32_t us = ss / subsec_per_usec;
+	    if (us * subsec_per_usec == ss)
+		sa << us << 'u' << 's';
+	    else
+		sa << ss << 'n' << 's';
 #else
-	else
 	    sa << ss << 'u' << 's';
 #endif
+	}
     } else
 	sa << *this << 's';
     return sa.take_string();
