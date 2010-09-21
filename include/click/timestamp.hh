@@ -435,9 +435,12 @@ class Timestamp { public:
 	ktime_t ktime;
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 14)
 	skb_timeval skbtime;
-# else
-	timeval tv;
 # endif
+#endif
+#if TIMESTAMP_PUNS_TIMEVAL
+	timeval tv;
+#elif TIMESTAMP_PUNS_TIMESPEC
+	timespec tspec;
 #endif
     };
 
@@ -656,7 +659,7 @@ Timestamp::assign_now(bool raw)
 #if TIMESTAMP_NANOSEC && (CLICK_LINUXMODULE || CLICK_BSDMODULE || HAVE_USE_CLOCK_GETTIME)
     // nanosecond precision
 # if TIMESTAMP_PUNS_TIMESPEC
-    struct timespec *tsp = (struct timespec *) this;
+    struct timespec *tsp = &_rep.tspec;
 # else
     struct timespec ts, *tsp = &ts;
 # endif
@@ -676,7 +679,7 @@ Timestamp::assign_now(bool raw)
 #else
     // microsecond precision
 # if TIMESTAMP_PUNS_TIMEVAL
-    struct timeval *tvp = (struct timeval *) this;
+    struct timeval *tvp = &_rep.tv;
 # else
     struct timeval tv, *tvp = &tv;
 # endif
@@ -849,7 +852,7 @@ Timestamp::nsec1() const
 inline const struct timeval &
 Timestamp::timeval() const
 {
-    return *(const struct timeval*) this;
+    return _rep.tv;
 }
 #else
 /** @brief Return a struct timeval with the same value as this timestamp.
@@ -872,7 +875,7 @@ Timestamp::timeval() const
 inline const struct timespec &
 Timestamp::timespec() const
 {
-    return *(const struct timespec*) this;
+    return _rep.tspec;
 }
 # else
 /** @brief Return a struct timespec with the same value as this timestamp.
@@ -883,10 +886,10 @@ Timestamp::timespec() const
 inline struct timespec
 Timestamp::timespec() const
 {
-    struct timespec tv;
-    tv.tv_sec = sec();
-    tv.tv_nsec = nsec();
-    return tv;
+    struct timespec ts;
+    ts.tv_sec = sec();
+    ts.tv_nsec = nsec();
+    return ts;
 }
 # endif
 #endif
