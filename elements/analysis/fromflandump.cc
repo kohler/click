@@ -218,11 +218,8 @@ FromFlanDump::initialize(ErrorHandler *errh)
 
     // try reading a packet
     _pos = 0;
-    if (read_packet(errh)) {
-	struct timeval now;
-	click_gettimeofday(&now);
-	timersub(&now, &_packet->timestamp_anno(), &_time_offset);
-    }
+    if (read_packet(errh))
+	_time_offset = Timestamp::now() - _packet->timestamp_anno();
 
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
@@ -375,14 +372,10 @@ FromFlanDump::run_task(Task *)
 
     bool more;
     if (_packet || read_packet(0)) {
-	if (_timing) {
-	    struct timeval now;
-	    click_gettimeofday(&now);
-	    timersub(&now, &_time_offset, &now);
-	    if (timercmp(&_packet->timestamp_anno(), &now, >)) {
-		_task.fast_reschedule();
-		return;
-	    }
+	if (_timing
+	    && _packet->timestamp_anno() + _time_offset >= Timestamp::now()) {
+	    _task.fast_reschedule();
+	    return;
 	}
 	output(0).push(_packet);
 	more = read_packet(0);
@@ -404,13 +397,9 @@ FromFlanDump::pull(int)
     bool more;
     Packet *p;
     if (_packet || read_packet(0)) {
-	if (_timing) {
-	    struct timeval now;
-	    click_gettimeofday(&now);
-	    timersub(&now, &_time_offset, &now);
-	    if (timercmp(&_packet->timestamp_anno(), &now, >))
-		return 0;
-	}
+	if (_timing
+	    && _packet->timestamp_anno() + _time_offset >= Timestamp::now())
+	    return 0;
 	p = _packet;
 	more = read_packet(0);
     } else {

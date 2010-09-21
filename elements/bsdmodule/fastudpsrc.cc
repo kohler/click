@@ -166,8 +166,7 @@ FastUDPSource::pull(int)
 
     bool need_packet = false;
     if (_rate_limited) {
-	struct timeval now;
-	click_gettimeofday(&now);
+	Timestamp now = Timestamp::now();
 	if (_rate.need_update(now)) {
 	    _rate.update();
 	    need_packet = true;
