@@ -437,11 +437,6 @@ dnl
 dnl timestamps
 dnl
 
-AC_ARG_ENABLE(nanotimestamp, [  --enable-nanotimestamp  enable nanosecond timestamps])
-if test "x$enable_nanotimestamp" = xyes; then
-    AC_DEFINE(HAVE_NANOTIMESTAMP_ENABLED)
-fi
-
 AC_CHECK_HEADERS(time.h)
 AC_CHECK_SIZEOF([struct timeval])
 AC_CHECK_TYPES([struct timespec], have_timespec=yes, have_timespec=no)
@@ -449,6 +444,15 @@ if test "x$have_timespec" = xyes; then
     AC_CHECK_SIZEOF([struct timespec])
 fi
 CLICK_CHECK_POSIX_CLOCKS
+
+AC_ARG_ENABLE(nanotimestamp, [  --enable-nanotimestamp  enable nanosecond timestamps])
+# Default to nanosecond-precision timestamps if clock_gettime is available.
+if test "x$enable_nanotimestamp" = x -a "x$have_clock_gettime" = xyes; then
+    enable_nanotimestamp=yes
+fi
+if test "x$enable_nanotimestamp" = xyes; then
+    AC_DEFINE([HAVE_NANOTIMESTAMP_ENABLED], [1], [Define if nanosecond-granularity timestamps are enabled.])
+fi
 
 
 dnl

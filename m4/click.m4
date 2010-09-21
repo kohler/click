@@ -797,12 +797,14 @@ dnl POSIX_CLOCK_LIBS.
 dnl
 
 AC_DEFUN([CLICK_CHECK_POSIX_CLOCKS], [
+    have_clock_gettime=no
     AC_CHECK_DECLS([clock_gettime], [], [], [#ifdef HAVE_TIME_H
 # include <time.h>
 #endif])
     SAVELIBS="$LIBS"
     AC_SEARCH_LIBS([clock_gettime], [rt],
-	[AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if you have the clock_gettime function.])])
+	[AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define if you have the clock_gettime function.])
+	have_clock_gettime=yes])
     POSIX_CLOCK_LIBS="$LIBS"
     AC_SUBST(POSIX_CLOCK_LIBS)
     LIBS="$SAVELIBS"
