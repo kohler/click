@@ -489,17 +489,19 @@ String::append_fill(int c, int len)
 char *
 String::mutable_data()
 {
-  // If _memo has a capacity (it's not one of the special strings) and it's
-  // uniquely referenced, return _data right away.
-  if (_r.memo && _r.memo->refcount == 1)
-    return const_cast<char *>(_r.data);
+    // If _memo has a capacity (it's not one of the special strings) and it's
+    // uniquely referenced, return _data right away.
+    if (_r.memo && _r.memo->refcount == 1)
+	return const_cast<char *>(_r.data);
 
-  // Otherwise, make a copy of it. Rely on: deref() doesn't change _data or
-  // _length; and if _capacity == 0, then deref() doesn't free _real_data.
-  assert(!_r.memo || _r.memo->refcount > 1);
-  deref();
-  assign(_r.data, _r.length, false);
-  return const_cast<char *>(_r.data);
+    // Otherwise, make a copy of it. Rely on: deref() doesn't change _data or
+    // _length; and if _capacity == 0, then deref() doesn't free _real_data.
+    assert(!_r.memo || _r.memo->refcount > 1);
+    // But in multithreaded situations we must hold a local copy of memo!
+    String do_not_delete_underlying_memo(*this);
+    deref();
+    assign(_r.data, _r.length, false);
+    return const_cast<char *>(_r.data);
 }
 
 char *
