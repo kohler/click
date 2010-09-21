@@ -1,0 +1,26 @@
+%info
+Test that timers still go off after a system time adjustment.
+
+%require
+[ `whoami` = root ]
+expr `date +%s.%N` : '[0-9.]*'
+false
+
+%script
+echo begin >OUT
+adjusted_now=`click -e 'Script(print $(sub $(now) 1), stop)'`
+click -e 'Script(wait 0.2s, print >>OUT "timer", wait 2s)' &
+click="$!"
+date -s @$adjusted_now >/dev/null 2>&1
+echo presleep >>OUT
+sleep 1
+echo postsleep >>OUT
+kill $click
+adjusted_now=`click -e 'Script(print $(add $(now) 1), stop)'`
+date -s @$adjusted_now
+
+%expect OUT
+begin
+presleep
+timer
+postsleep
