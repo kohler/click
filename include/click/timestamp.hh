@@ -531,6 +531,22 @@ class Timestamp { public:
     //@}
 #endif
 
+
+    /** @brief Return a timestamp representing the current real time.
+     *
+     * The current time is measured in seconds since January 1, 1970 GMT.
+     * The time returned is unaffected by timewarping.
+     * @sa assign_now() */
+    static inline Timestamp now_real_time();
+
+    /** @brief Set this timestamp to the current real time.
+     *
+     * The current time is measured in seconds since January 1, 1970 GMT.
+     * Returns the most precise timestamp available.  The time returned is
+     * unaffected by timewarping.
+     * @sa assign_now(), now_real_time() */
+    inline void assign_now_real_time();
+
   private:
 
     rep_t _t;
@@ -725,6 +741,20 @@ Timestamp::now()
 {
     Timestamp t = Timestamp::uninitialized_t();
     t.assign_now(false);
+    return t;
+}
+
+inline void
+Timestamp::assign_now_real_time()
+{
+    assign_now(true);
+}
+
+inline Timestamp
+Timestamp::now_real_time()
+{
+    Timestamp t = Timestamp::uninitialized_t();
+    t.assign_now(true);
     return t;
 }
 
