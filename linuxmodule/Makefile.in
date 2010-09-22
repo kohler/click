@@ -110,11 +110,17 @@ CXXCOMPILE = $(CLICKCXX) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
 COMPILE = $(CLICKCC) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
 	$(CLICKDEFS) $(CLICKINCLUDES) $(CLICKDEPCFLAGS)
 
+ifeq ($(PREPROCESS),1)
+compile_option = -E
+else
+compile_option = -c
+endif
+
 quiet_cmd_cxxcompile = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
-cmd_cxxcompile = $(CXXCOMPILE) -c -o $@ $<
+cmd_cxxcompile = $(CXXCOMPILE) $(compile_option) -o $@ $<
 
 quiet_cmd_ccompile = CC $(quiet_modtag) $(subst $(obj)/,,$@)
-cmd_ccompile = $(COMPILE) -c -o $@ $<
+cmd_ccompile = $(COMPILE) $(compile_option) -o $@ $<
 
 EXTRA_CFLAGS = $(CLICKCPPFLAGS) $(CLICKCFLAGS) $(CLICKDEFS) $(CLICKINCLUDES) 
 
