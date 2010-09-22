@@ -145,7 +145,7 @@ class ARPTable : public Element { public:
 	IPAddress _ip;		// (40B) but probably still fine.
 	ARPEntry *_hashnext;
 	EtherAddress _eth;
-	bool _unicast;
+	bool _known;
 	click_jiffies_t _live_at_j;
 	click_jiffies_t _polled_at_j;
 	Packet *_head;
@@ -160,12 +160,12 @@ class ARPTable : public Element { public:
 	    return click_jiffies_less(_live_at_j + timeout_j, now)
 		&& timeout_j;
 	}
-	bool unicast(click_jiffies_t now, uint32_t timeout_j) const {
-	    return _unicast && !expired(now, timeout_j);
+	bool known(click_jiffies_t now, uint32_t timeout_j) const {
+	    return _known && !expired(now, timeout_j);
 	}
 	ARPEntry(IPAddress ip)
 	    : _ip(ip), _hashnext(), _eth(EtherAddress::make_broadcast()),
-	      _unicast(false), _head(), _tail() {
+	      _known(false), _head(), _tail() {
 	}
     };
 

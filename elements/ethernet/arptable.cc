@@ -187,7 +187,7 @@ ARPTable::insert(IPAddress ip, const EtherAddress &eth, Packet **head)
 	return -ENOMEM;
 
     ae->_eth = eth;
-    ae->_unicast = !eth.is_broadcast();
+    ae->_known = !eth.is_broadcast();
 
     ae->_live_at_j = now;
     ae->_polled_at_j = ae->_live_at_j - CLICK_HZ;
@@ -217,7 +217,7 @@ ARPTable::append_query(IPAddress ip, Packet *p)
     if (!ae)
 	return -ENOMEM;
 
-    if (ae->unicast(now, _timeout_j)) {
+    if (ae->known(now, _timeout_j)) {
 	_lock.release_write();
 	return -EAGAIN;
     }
@@ -290,7 +290,7 @@ ARPTable::read_handler(Element *e, void *user_data)
     switch (reinterpret_cast<uintptr_t>(user_data)) {
     case h_table:
 	for (ARPEntry *ae = arpt->_age.front(); ae; ae = ae->_age_link.next()) {
-	    int ok = ae->unicast(now, arpt->_timeout_j);
+	    int ok = ae->known(now, arpt->_timeout_j);
 	    sa << ae->_ip << ' ' << ok << ' ' << ae->_eth << ' '
 	       << Timestamp::make_jiffies(now - ae->_live_at_j) << '\n';
 	}
