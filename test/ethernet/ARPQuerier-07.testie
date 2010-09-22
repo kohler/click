@@ -1,0 +1,32 @@
+%info
+Check that ARPQuerier continues to query after 1 minute.
+
+%script
+$VALGRIND click --simtime CONFIG
+
+%file CONFIG
+d::FromIPSummaryDump(DUMP, TIMING true, STOP true)
+	-> arpq::ARPQuerier(1.0.10.10, 2:1:0:a:a:f,
+			    CAPACITY 10, ENTRY_CAPACITY 1)
+	-> IPPrint(arpo)
+	-> Discard;
+arpq[1]	-> ARPPrint(arpo, ETHER true)
+	-> Discard;
+Idle -> [1]arpq;
+
+%file DUMP
+!data timestamp ip_dst sport
+0.00 1.0.0.1 1
+0.10 1.0.0.1 2
+59.00 1.0.0.1 3
+61.00 1.0.0.1 4
+
+%expect stderr
+arpo: 0.000000: 02-01-00-0A-0A-0F > FF-FF-FF-FF-FF-FF: arp who-has 1.0.0.1 tell 1.0.10.10
+arpo: 0.100000: 02-01-00-0A-0A-0F > FF-FF-FF-FF-FF-FF: arp who-has 1.0.0.1 tell 1.0.10.10
+arpo: 59.000000: 02-01-00-0A-0A-0F > FF-FF-FF-FF-FF-FF: arp who-has 1.0.0.1 tell 1.0.10.10
+arpo: 61.000000: 02-01-00-0A-0A-0F > FF-FF-FF-FF-FF-FF: arp who-has 1.0.0.1 tell 1.0.10.10
+
+%ignore stderr
+expensive{{.*}}
+=={{\d+}}=={{.*}}
