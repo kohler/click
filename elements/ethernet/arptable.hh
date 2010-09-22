@@ -198,7 +198,7 @@ ARPTable::lookup(IPAddress ip, EtherAddress *eth, uint32_t poll_timeout_j)
     int r = -1;
     if (Table::iterator it = _table.find(ip)) {
 	click_jiffies_t now = click_jiffies();
-	if (!it->expired(now, _timeout_j)) {
+	if (it->known(now, _timeout_j)) {
 	    *eth = it->_eth;
 	    if (poll_timeout_j
 		&& !click_jiffies_less(now, it->_live_at_j + poll_timeout_j)

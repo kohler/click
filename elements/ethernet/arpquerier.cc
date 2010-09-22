@@ -272,7 +272,8 @@ ARPQuerier::handle_ip(Packet *p, bool response)
     // Easy case: requires only read lock
   retry_read_lock:
     r = _arpt->lookup(dst_ip, dst_eth, _poll_timeout_j);
-    if (r >= 0 && !dst_eth->is_broadcast()) {
+    if (r >= 0) {
+	assert(!dst_eth->is_broadcast());
 	if (r > 0)
 	    send_query_for(q, true);
 	// ... and send packet below.
