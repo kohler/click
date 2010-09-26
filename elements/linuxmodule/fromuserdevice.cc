@@ -26,22 +26,19 @@ ANY PARTICULAR PURPOSE.
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <linux/module.h>
 #include <linux/poll.h>
 #include <linux/version.h>
 #include <linux/fs.h>
 #include <unistd.h>
-#include<linux/mm.h>
-
-#include <click/cxxprotect.h>
-CLICK_CXX_PROTECT
+#include <linux/mm.h>
 #include <asm/types.h>
 #include <asm/uaccess.h>
 #include <linux/ip.h>
 #include <linux/inetdevice.h>
 #include <net/route.h>
-
-
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
