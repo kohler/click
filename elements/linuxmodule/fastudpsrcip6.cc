@@ -166,7 +166,6 @@ FastUDPSourceIP6::pull(int)
   }
 
   if(p) {
-    assert(atomic_read(&_skb->users) > 1);
     _count++;
     if(_count == 1)
       _first = click_jiffies();
