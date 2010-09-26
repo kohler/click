@@ -4,11 +4,11 @@
 #include <click/etheraddress.hh>
 #include <click/timer.hh>
 #include <click/notifier.hh>
-#include <linux/fs.h>
-#include <asm/types.h>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
+#include <asm/types.h>
+#include <linux/fs.h>
 #include <linux/netdevice.h>
 #include <linux/route.h>
 CLICK_CXX_UNPROTECT
