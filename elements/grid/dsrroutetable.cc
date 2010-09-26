@@ -738,14 +738,14 @@ DSRRouteTable::push(int port, Packet *p_in)
       // get the bad hops
       IPAddress err_src(dsr_rerr->dsr_err_src);
       IPAddress err_dst(dsr_rerr->dsr_err_dst);
-      IPAddress unreachable(unreachable_addr->s_addr);
+      IPAddress unreachable_dst(unreachable_addr->s_addr);
 
       // now remove the entries from the linkcache
       DEBUG_CHATTER(" - removing link from %s to %s; rerr destination is %s\n",
-		    err_src.unparse().c_str(), unreachable.unparse().c_str(), err_dst.unparse().c_str());
+		    err_src.unparse().c_str(), unreachable_dst.unparse().c_str(), err_dst.unparse().c_str());
 
       // XXX DSR_INVALID_HOP_METRIC isn't really an appropriate name here
-      _link_table->update_both_links(err_src, unreachable, 0, 0, DSR_INVALID_ROUTE_METRIC);
+      _link_table->update_both_links(err_src, unreachable_dst, 0, 0, DSR_INVALID_ROUTE_METRIC);
 
       if (err_dst == *me) {
 	DEBUG_CHATTER(" * killed (reached final destination)\n");
@@ -758,7 +758,7 @@ DSRRouteTable::push(int port, Packet *p_in)
       // them out of our outgoing queue
       if (_outq) {
 	Vector<Packet *> y;
-	_outq->yank(link_filter(err_src, unreachable), y);
+	_outq->yank(link_filter(err_src, unreachable_dst), y);
 	DEBUG_CHATTER("yanked %d packets; killing...\n", y.size());
 	for (int i = 0; i < y.size(); i++)
 	  y[i]->kill();
