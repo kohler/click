@@ -787,7 +787,11 @@ handler_flush(struct file *filp
     int stringno = FILP_WRITE_STRINGNO(filp);
     int retval = 0;
 
+#ifdef file_count
+    long f_count = file_count(filp);
+#else
     int f_count = atomic_read(&filp->f_count);
+#endif
 
     if (writing && f_count == 1
 	&& stringno >= 0 && stringno < handler_strings_cap
