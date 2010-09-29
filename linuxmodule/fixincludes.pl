@@ -205,6 +205,9 @@ sub one_includeroot ($$) {
 		# array dimension.
 		s&sizeof\s*\(\s*struct\s*\{\s*\w+\s*:\s*-\s*\!\s*\!\s*\(e\)\s*;\s*\}\s*\)&(sizeof(int[-!!(e)])*(size_t)0)&g;
 	    }
+	    if ($d eq "sched.h") {
+		s<^(extern char ___assert_task_state)((?:.*?\n)*?.*?\;.*)$><\#ifndef __cplusplus\n$1$2\n\#endif>mg;
+	    }
 
 	    # unquote.
 	    $_ = sunprotect($_);
