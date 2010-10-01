@@ -151,7 +151,7 @@ protected:
   void set_next(Stats *s)                       { _next_deleted = s; }
   void set_first(Stats *s)                      { _first = s; }
   void set_last(Stats *s)                       { _last = s; }
-  void update_alloced_mem(int m)                { _alloced_mem += m; }
+  void update_alloced_mem(ssize_t m)            { _alloced_mem += m; }
 
 private:
 
@@ -161,13 +161,13 @@ private:
   bool _count_packets;		// packets or bytes
   bool _anno_packets;		// annotate packets?
   int _thresh;			// threshold, when to split
-  unsigned int _memmax;		// max. memory usage
+  size_t _memmax;		// max. memory usage
   unsigned int _ratio;		// inspect 1 in how many packets?
   Spinlock* _lock;		// synchronize handlers and update
 
   Stats *_base;			// first level stats
   long unsigned int _resettime;     // time of last reset
-  unsigned int _alloced_mem;        // total allocated memory
+  size_t _alloced_mem;		// total allocated memory
   Stats *_first, *_last;	// first and last element in age list
   // HACK! For interaction between fold() and ~Stats()
   Stats *_prev_deleted, *_next_deleted;
@@ -183,11 +183,8 @@ private:
   String print(Stats *s, String ip = "");
 
   void add_handlers();
-  static String thresh_read_handler(Element *e, void *);
   static String look_read_handler(Element *e, void *);
   static String what_read_handler(Element *e, void *);
-  static String mem_read_handler(Element *e, void *);
-  static String memmax_read_handler(Element *e, void *);
   static int reset_write_handler
     (const String &, Element *, void *, ErrorHandler *);
   static int memmax_write_handler

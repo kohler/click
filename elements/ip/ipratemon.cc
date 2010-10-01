@@ -49,7 +49,7 @@ IPRateMonitor::configure(Vector<String> &conf, ErrorHandler *errh)
 		   "TYPE", cpkP+cpkM, cpWord, &count_what,
 		   "RATIO", cpkP+cpkM, cpUnsignedReal2, 16, &_ratio,
 		   "THRESH", cpkP+cpkM, cpUnsigned, &_thresh,
-		   "MEMORY", cpkP, cpUnsigned, &_memmax,
+		   "MEMORY", cpkP, cpSize, &_memmax,
 		   "ANNO", cpkP, cpBool, &_anno_packets,
 		   cpEnd) < 0)
     return -1;
@@ -329,27 +329,6 @@ IPRateMonitor::look_read_handler(Element *e, void *)
   }
 }
 
-String
-IPRateMonitor::thresh_read_handler(Element *e, void *)
-{
-  IPRateMonitor *me = (IPRateMonitor *) e;
-  return String(me->_thresh);
-}
-
-String
-IPRateMonitor::mem_read_handler(Element *e, void *)
-{
-  IPRateMonitor *me = (IPRateMonitor *) e;
-  return String(me->_alloced_mem);
-}
-
-String
-IPRateMonitor::memmax_read_handler(Element *e, void *)
-{
-  IPRateMonitor *me = (IPRateMonitor *) e;
-  return String(me->_memmax);
-}
-
 int
 IPRateMonitor::reset_write_handler
 (const String &, Element *e, void *, ErrorHandler *)
@@ -448,10 +427,10 @@ IPRateMonitor::anno_level_write_handler
 void
 IPRateMonitor::add_handlers()
 {
-  add_read_handler("thresh", thresh_read_handler, 0);
+  add_data_handlers("thresh", Handler::OP_READ, &_thresh);
   add_read_handler("look", look_read_handler, 0);
-  add_read_handler("mem", mem_read_handler, 0);
-  add_read_handler("memmax", memmax_read_handler, 0);
+  add_data_handlers("mem", Handler::OP_READ, &_alloced_mem);
+  add_data_handlers("memmax", Handler::OP_READ, &_memmax);
 
   add_write_handler("anno_level", anno_level_write_handler, 0);
   add_write_handler("reset", reset_write_handler, 0, Handler::BUTTON);
