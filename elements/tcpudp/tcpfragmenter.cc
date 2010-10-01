@@ -90,9 +90,9 @@ TCPFragmenter::push(int, Packet *p)
         ip->ip_len = htons(q->end_data() - q->network_header());
         ip->ip_sum = 0;
 #if HAVE_FAST_CHECKSUM
-        ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
+        ip->ip_sum = ip_fast_csum((unsigned char *)ip, q->network_header_length() >> 2);
 #else
-        ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
+        ip->ip_sum = click_in_cksum((unsigned char *)ip, q->network_header_length());
 #endif
 
         tcp->th_seq = htonl(ntohl(tcp->th_seq) + offset);
