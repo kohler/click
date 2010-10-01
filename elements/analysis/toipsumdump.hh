@@ -103,6 +103,7 @@ contain those fields. Valid field names, with examples, are:
                 TIMESTAMP_ANNO): '996033261.451094'
    eth_src      Ethernet source: '00-0A-95-A6-D9-BC'
    eth_dst      Ethernet source: '00-0A-95-A6-D9-BC'
+   wire_len     Packet wire length: '54'
 
 If a field does not apply to a particular packet -- for example, 'C<sport>' on
 an ICMP packet -- ToIPSummaryDump prints a single dash for that value.

@@ -26,7 +26,8 @@
 CLICK_DECLS
 
 enum { T_TIMESTAMP, T_TIMESTAMP_SEC, T_TIMESTAMP_USEC, T_TIMESTAMP_USEC1,
-       T_FIRST_TIMESTAMP, T_COUNT, T_LINK, T_DIRECTION, T_AGGREGATE };
+       T_FIRST_TIMESTAMP, T_COUNT, T_LINK, T_DIRECTION, T_AGGREGATE,
+       T_WIRE_LEN };
 
 namespace IPSummaryDump {
 
@@ -71,6 +72,9 @@ static bool anno_extract(PacketDesc& d, const FieldWriter *f)
       case T_AGGREGATE:
 	d.v = AGGREGATE_ANNO(p);
 	return true;
+    case T_WIRE_LEN:
+	d.v = p->length();
+	return true;
       default:
 	return false;
     }
@@ -112,6 +116,9 @@ static void anno_inject(PacketOdesc& d, const FieldReader *f)
 	break;
     case T_AGGREGATE:
 	SET_AGGREGATE_ANNO(p, d.v);
+	break;
+    case T_WIRE_LEN:
+	d.want_len = d.v;
 	break;
     }
 }
@@ -207,6 +214,8 @@ static const IPSummaryDump::FieldWriter anno_writers[] = {
     { "direction", B_1, T_DIRECTION,
       0, anno_extract, anno_outa, outb },
     { "aggregate", B_4, T_AGGREGATE,
+      0, anno_extract, num_outa, outb },
+    { "wire_len", B_4, T_WIRE_LEN,
       0, anno_extract, num_outa, outb }
 };
 
@@ -232,6 +241,8 @@ static const IPSummaryDump::FieldReader anno_readers[] = {
     { "direction", B_1, T_DIRECTION, order_anno,
       anno_ina, inb, anno_inject },
     { "aggregate", B_4, T_AGGREGATE, order_anno,
+      num_ina, inb, anno_inject },
+    { "wire_len", B_4, T_WIRE_LEN, order_anno,
       num_ina, inb, anno_inject }
 };
 
@@ -245,7 +256,8 @@ static const IPSummaryDump::FieldSynonym anno_synonyms[] = {
     { "first_ts", "first_utimestamp" },
     { "pkt_count", "count" },
     { "packet_count", "count" },
-    { "agg", "aggregate" }
+    { "agg", "aggregate" },
+    { "wire_length", "wire_len" }
 };
 
 }
