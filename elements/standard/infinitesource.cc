@@ -242,7 +242,7 @@ InfiniteSource::add_handlers()
     add_write_handler("datasize", change_param, h_length);
     //add_read_handler("notifier", read_param, h_notifier);
     if (output_is_push(0))
-	add_task_handlers(&_task);
+	add_task_handlers(&_task, &_nonfull_signal);
 }
 
 CLICK_ENDDECLS

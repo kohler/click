@@ -142,7 +142,7 @@ Unqueue::add_handlers()
     add_write_handler("reset_counts", write_param, h_reset, Handler::BUTTON | Handler::UNCOMMON);
     add_write_handler("burst", write_param, h_burst);
     add_write_handler("limit", write_param, h_limit);
-    add_task_handlers(&_task);
+    add_task_handlers(&_task, &_signal);
 }
 
 CLICK_ENDDECLS
