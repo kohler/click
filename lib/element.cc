@@ -31,6 +31,9 @@
 #include <click/master.hh>
 #include <click/straccum.hh>
 #include <click/etheraddress.hh>
+#if CLICK_DEBUG_SCHEDULING
+# include <click/notifier.hh>
+#endif
 #if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -2088,16 +2091,33 @@ write_task_tickets(const String &s, Element *e, void *thunk, ErrorHandler *errh)
 static String
 read_task_scheduled(Element *e, void *thunk)
 {
-  Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
-  return String(task->scheduled());
+    Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
+#if CLICK_DEBUG_SCHEDULING
+    StringAccum sa;
+    sa << task->scheduled();
+    if (!task->scheduled() && task->should_be_scheduled())
+	sa << " /* but pending */";
+    return sa.take_string();
+#else
+    return String(task->scheduled());
+#endif
 }
+
+#if CLICK_DEBUG_SCHEDULING
+static String
+read_notifier_signal(Element *e, void *thunk)
+{
+    NotifierSignal *signal = (NotifierSignal *) ((uint8_t *) e + (intptr_t) thunk);
+    return signal->unparse(e->router());
+}
+#endif
 
 #if HAVE_MULTITHREAD
 static String
 read_task_home_thread(Element *e, void *thunk)
 {
-  Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
-  return String(task->home_thread_id());
+    Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
+    return String(task->home_thread_id());
 }
 
 static int
@@ -2116,6 +2136,7 @@ write_task_home_thread(const String &str, Element *e, void *thunk, ErrorHandler 
 /** @brief Register handlers for a task.
  *
  * @param task Task object
+ * @param signal optional NotifierSignal object
  * @param prefix prefix for each handler
  *
  * Adds a standard set of handlers for the task.  They are:
@@ -2127,7 +2148,10 @@ write_task_home_thread(const String &str, Element *e, void *thunk, ErrorHandler 
  * @li A "home_thread" read handler, which returns the task's home thread ID.
  *
  * Depending on Click's configuration options, some of these handlers might
- * not be available.
+ * not be available.  If Click was configured with schedule debugging, the
+ * "scheduled" read handler will additionally report whether an unscheduled
+ * task is pending, and a "notifier" read handler will report the state of
+ * the @a signal, if any.
  *
  * Each handler name is prefixed with the @a prefix string, so an element with
  * multiple Task objects can register handlers for each of them.
@@ -2135,18 +2159,26 @@ write_task_home_thread(const String &str, Element *e, void *thunk, ErrorHandler 
  * @sa add_read_handler, add_write_handler, set_handler
  */
 void
-Element::add_task_handlers(Task *task, const String &prefix)
+Element::add_task_handlers(Task *task, NotifierSignal *signal, const String &prefix)
 {
-  intptr_t task_offset = (uint8_t *)task - (uint8_t *)this;
-  void *thunk = (void *)task_offset;
-  add_read_handler(prefix + "scheduled", read_task_scheduled, thunk);
+    intptr_t task_offset = (uint8_t *)task - (uint8_t *)this;
+    void *thunk = (void *)task_offset;
+    add_read_handler(prefix + "scheduled", read_task_scheduled, thunk);
 #if HAVE_STRIDE_SCHED
-  add_read_handler(prefix + "tickets", read_task_tickets, thunk);
-  add_write_handler(prefix + "tickets", write_task_tickets, thunk);
+    add_read_handler(prefix + "tickets", read_task_tickets, thunk);
+    add_write_handler(prefix + "tickets", write_task_tickets, thunk);
 #endif
 #if HAVE_MULTITHREAD
-  add_read_handler(prefix + "home_thread", read_task_home_thread, thunk);
-  add_write_handler(prefix + "home_thread", write_task_home_thread, thunk);
+    add_read_handler(prefix + "home_thread", read_task_home_thread, thunk);
+    add_write_handler(prefix + "home_thread", write_task_home_thread, thunk);
+#endif
+#if CLICK_DEBUG_SCHEDULING
+    if (signal) {
+	intptr_t signal_offset = (uint8_t *) signal - (uint8_t *) this;
+	add_read_handler(prefix + "notifier", read_notifier_signal, (void *) signal_offset);
+    }
+#else
+    (void) signal;
 #endif
 }
 

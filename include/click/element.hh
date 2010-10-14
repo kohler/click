@@ -11,6 +11,7 @@ class Router;
 class Master;
 class Task;
 class Timer;
+class NotifierSignal;
 class Element;
 class ErrorHandler;
 class Bitvector;
@@ -160,7 +161,10 @@ class Element { public:
     void set_handler(const String &name, int flags, HandlerCallback callback, const void *read_user_data = 0, const void *write_user_data = 0);
     void set_handler(const String &name, int flags, HandlerCallback callback, int read_user_data, int write_user_data = 0);
     int set_handler_flags(const String &name, int set_flags, int clear_flags = 0);
-    void add_task_handlers(Task *task, const String& prefix = String());
+    void add_task_handlers(Task *task, NotifierSignal *signal, const String &prefix = String());
+    inline void add_task_handlers(Task *task, const String &prefix = String()) {
+	add_task_handlers(task, 0, prefix);
+    }
 
     void add_data_handlers(const String &name, int flags, uint8_t *data);
     void add_data_handlers(const String &name, int flags, bool *data);

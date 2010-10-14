@@ -153,9 +153,40 @@ class Task { public:
     void initialize(Router *router, bool schedule);
 
 
+    /** @brief Return true iff the task is currently scheduled to run.
+     *
+     * @note The scheduled() function is only approximate.  It may return
+     * false for a scheduled task, or true for an unscheduled task, due to
+     * locking issues that prevent some unschedule() and reschedule()
+     * operations from completing immediately. */
     inline bool scheduled() const;
 
+#if CLICK_DEBUG_SCHEDULING
+    inline bool should_be_scheduled() const {
+	return _should_be_scheduled;
+    }
+#endif
+
+
+    /** @brief Unschedule the task.
+     *
+     * After unschedule() returns, the task will not run until it is
+     * rescheduled with reschedule().
+     *
+     * @note scheduled() may return true for a short time even after
+     * unschedule().
+     *
+     * @sa reschedule, strong_unschedule, fast_unschedule */
     void unschedule();
+
+    /** @brief Reschedule the task.
+     *
+     * The task is rescheduled on its home thread.  The task will eventually
+     * run (unless the home thread is quiescent).  Due to locking issues, the
+     * task may not be scheduled right away -- scheduled() may not immediately
+     * return true.
+     *
+     * @sa unschedule, strong_reschedule */
     inline void reschedule();
 
     void strong_unschedule();
@@ -315,13 +346,6 @@ Task::initialized() const
     return _owner != 0;
 }
 
-/** @brief Return true iff the task is currently scheduled to run.
- *
- * @note The scheduled() function is only approximate.  It may return false
- * for a scheduled task, or true for an unscheduled task, due to locking
- * issues that prevent some unschedule() and reschedule() operations from
- * completing immediately.
- */
 inline bool
 Task::scheduled() const
 {
@@ -529,14 +553,6 @@ Task::fast_schedule()
 #endif /* HAVE_STRIDE_SCHED */
 
 
-/** @brief Reschedule the task.
- *
- * The task is rescheduled on its home thread.  The task will eventually run
- * (unless the home thread is quiescent).  Due to locking issues, the task may
- * not be scheduled right away -- scheduled() may not immediately return true.
- *
- * @sa unschedule, strong_reschedule
- */
 inline void
 Task::reschedule()
 {

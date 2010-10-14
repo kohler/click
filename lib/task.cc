@@ -236,15 +236,6 @@ Task::add_pending()
     m->_master_task_lock.release(flags);
 }
 
-/** @brief Unschedule the task.
- *
- * After unschedule() returns, the task will not run until it is rescheduled
- * with reschedule().
- *
- * @note scheduled() may return true for a short time even after unschedule().
- *
- * @sa reschedule, strong_unschedule, fast_unschedule
- */
 void
 Task::unschedule()
 {
