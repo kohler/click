@@ -2131,7 +2131,7 @@ Router::configuration_string() const
 
 enum { GH_VERSION, GH_CONFIG, GH_FLATCONFIG, GH_LIST, GH_REQUIREMENTS,
        GH_DRIVER, GH_ACTIVE_PORTS, GH_ACTIVE_PORT_STATS, GH_STRING_PROFILE,
-       GH_STRING_PROFILE_LONG };
+       GH_STRING_PROFILE_LONG, GH_SCHEDULING_PROFILE };
 
 String
 Router::router_read_handler(Element *e, void *thunk)
@@ -2218,6 +2218,13 @@ Router::router_read_handler(Element *e, void *thunk)
 	break;
 #endif
 
+#if CLICK_DEBUG_MASTER || CLICK_DEBUG_SCHEDULING
+    case GH_SCHEDULING_PROFILE:
+	if (r)
+	    return r->master()->info();
+	break;
+#endif
+
     }
     return sa.take_string();
 }
@@ -2256,6 +2263,9 @@ Router::static_initialize()
 # if HAVE_STRING_PROFILING > 1
 	add_read_handler(0, "string_profile_long", router_read_handler, (void *) GH_STRING_PROFILE_LONG);
 # endif
+#endif
+#if CLICK_DEBUG_MASTER || CLICK_DEBUG_SCHEDULING
+	add_read_handler(0, "scheduling_profile", router_read_handler, (void *) GH_SCHEDULING_PROFILE);
 #endif
     }
 }

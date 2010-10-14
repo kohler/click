@@ -1251,26 +1251,26 @@ Master::initialize_ns(simclick_node_t *simnode)
 #endif
 
 
-#if CLICK_DEBUG_MASTER
+#if CLICK_DEBUG_MASTER || CLICK_DEBUG_SCHEDULING
 #include <click/straccum.hh>
 
 String
 Master::info() const
 {
     StringAccum sa;
-    sa << "paused:\t" << _master_paused << '\n';
+    sa << "paused:\t\t" << _master_paused << '\n';
     sa << "stopper:\t" << _stopper << '\n';
     sa << "pending:\t" << (Task::pending_to_task(_pending_head) != 0) << '\n';
     for (int i = 0; i < _threads.size(); i++) {
 	RouterThread *t = _threads[i];
-	sa << "thread " << (i - 1) << ":";
+	sa << "thread " << (i - 2) << ":";
 # ifdef CLICK_LINUXMODULE
 	if (t->_sleeper)
 	    sa << "\tsleep";
 	else
 	    sa << "\twake";
 # endif
-	if (t->_pending)
+	if (t->_any_pending)
 	    sa << "\tpending";
 	sa << '\n';
     }

@@ -61,7 +61,7 @@ class Master { public:
     simclick_node_t *simnode() const		{ return _simnode; }
 #endif
 
-#if CLICK_DEBUG_MASTER
+#if CLICK_DEBUG_MASTER || CLICK_DEBUG_SCHEDULING
     String info() const;
 #endif
 
