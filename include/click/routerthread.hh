@@ -71,10 +71,15 @@ class RouterThread
 
     inline void wake();
 
+    enum { S_PAUSED, S_BLOCKED, S_TIMERWAIT,
+	   S_LOCKSELECT, S_LOCKTASKS,
+	   S_RUNTASK, S_RUNTIMER, S_RUNSIGNAL, S_RUNPENDING, S_RUNSELECT,
+	   NSTATES };
+    inline void set_thread_state(int state);
+    inline void set_thread_state_for_blocking(int delay_type);
 #if CLICK_DEBUG_SCHEDULING
-    enum { S_RUNNING, S_PAUSED, S_TIMER, S_BLOCKED };
     int thread_state() const		{ return _thread_state; }
-    static String thread_state_name(int);
+    static String thread_state_name(int state);
     uint32_t driver_epoch() const	{ return _driver_epoch; }
     uint32_t driver_task_epoch() const	{ return _driver_task_epoch; }
     Timestamp task_epoch_time(uint32_t epoch) const;
@@ -386,6 +391,24 @@ RouterThread::add_pending()
 {
     _any_pending = 1;
     wake();
+}
+
+inline void
+RouterThread::set_thread_state(int state)
+{
+    assert(state >= 0 && state < NSTATES);
+#if CLICK_DEBUG_SCHEDULING
+    _thread_state = state;
+#endif
+}
+
+inline void
+RouterThread::set_thread_state_for_blocking(int delay_type)
+{
+    if (delay_type < 0)
+	set_thread_state(S_BLOCKED);
+    else
+	set_thread_state(delay_type ? S_TIMERWAIT : S_PAUSED);
 }
 
 CLICK_ENDDECLS

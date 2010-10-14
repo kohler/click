@@ -40,7 +40,7 @@ class Master { public:
 
     Timestamp next_timer_expiry() const		{ return _timer_expiry; }
     const Timestamp &timer_check() const	{ return _timer_check; }
-    void run_timers();
+    void run_timers(RouterThread *thread);
     unsigned max_timer_stride() const		{ return _max_timer_stride; }
     unsigned timer_stride() const		{ return _timer_stride; }
     void set_max_timer_stride(unsigned timer_stride);

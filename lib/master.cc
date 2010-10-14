@@ -393,6 +393,7 @@ Master::process_pending(RouterThread *thread)
     // must be called with thread's lock acquired
 
     // claim the current pending list
+    thread->set_thread_state(RouterThread::S_RUNPENDING);
     SpinlockIRQ::flags_t flags = _master_task_lock.acquire();
     if (_master_paused > 0) {
 	_master_task_lock.release(flags);
@@ -452,11 +453,12 @@ Master::run_one_timer(Timer *t)
 }
 
 void
-Master::run_timers()
+Master::run_timers(RouterThread *thread)
 {
     if (!attempt_lock_timers())
 	return;
     if (_master_paused == 0 && _timer_heap.size() > 0 && !_stopper) {
+	thread->set_thread_state(RouterThread::S_RUNTIMER);
 #if CLICK_LINUXMODULE
 	_timer_task = current;
 #endif
@@ -812,6 +814,7 @@ Master::run_selects_kqueue(RouterThread *thread, bool more_tasks)
 	wait = t.timespec();
     else
 	wait_ptr = 0;
+    thread->set_thread_state_for_blocking(delay_type);
 
     struct kevent kev[256];
     int n = kevent(_kqueue, 0, 0, &kev[0], 256, wait_ptr);
@@ -819,13 +822,17 @@ Master::run_selects_kqueue(RouterThread *thread, bool more_tasks)
     run_signals(thread);
 
 # if HAVE_MULTITHREAD
+    thread->set_thread_state(RouterThread::S_LOCKSELECT);
     _select_lock.acquire();
     click_master_mb();
     selecting_thread = 0;
     thread->_select_blocked = false;
 
+    thread->set_thread_state(RouterThread::S_RUNSELECT);
     wp_kev.flags = EV_DELETE;
     (void) kevent(_kqueue, &wp_kev, 1, 0, 0, 0);
+# else
+    thread->set_thread_state(RouterThread::S_RUNSELECT);
 # endif
 
     if (n < 0 && was_errno != EINTR)
@@ -875,17 +882,20 @@ Master::run_selects_poll(RouterThread *thread, bool more_tasks)
 	timeout = (t.sec() >= INT_MAX / 1000 ? INT_MAX - 1000 : t.msecval());
     else
 	timeout = -1;
+    thread->set_thread_state_for_blocking(delay_type);
 
     int n = poll(my_pollfds.begin(), my_pollfds.size(), timeout);
     int was_errno = errno;
     run_signals(thread);
 
 # if HAVE_MULTITHREAD
+    thread->set_thread_state(RouterThread::S_LOCKSELECT);
     _select_lock.acquire();
     click_master_mb();
     selecting_thread = 0;
     thread->_select_blocked = false;
 # endif
+    thread->set_thread_state(RouterThread::S_RUNSELECT);
 
     if (n < 0 && was_errno != EINTR)
 	perror("poll");
@@ -939,17 +949,20 @@ Master::run_selects_select(RouterThread *thread, bool more_tasks)
 	wait = t.timeval();
     else
 	wait_ptr = 0;
+    thread->set_thread_state_for_blocking(delay_type);
 
     int n = select(n_select_fd, &read_mask, &write_mask, (fd_set*) 0, wait_ptr);
     int was_errno = errno;
     run_signals(thread);
 
 # if HAVE_MULTITHREAD
+    thread->set_thread_state(RouterThread::S_LOCKSELECT);
     _select_lock.acquire();
     click_master_mb();
     selecting_thread = 0;
     thread->_select_blocked = false;
 # endif
+    thread->set_thread_state(RouterThread::S_RUNSELECT);
 
     if (n < 0 && was_errno != EINTR)
 	perror("select");
@@ -1020,6 +1033,7 @@ Master::run_selects(RouterThread *thread)
 		wait = t.timeval();
 	    else
 		wait_ptr = 0;
+	    thread->set_thread_state_for_blocking(delay_type);
 
 	    // actually wait
 	    int r = select(thread->_wake_pipe[0] + 1, &fdr,
@@ -1155,7 +1169,7 @@ Master::remove_signal_handler(int signo, Router *router, String handler)
 void
 Master::process_signals(RouterThread *thread)
 {
-    (void) thread;
+    thread->set_thread_state(RouterThread::S_RUNSIGNAL);
 
     // kill crap data written to pipe
 #if HAVE_MULTITHREAD
@@ -1272,6 +1286,9 @@ Master::info() const
 # endif
 	if (t->_any_pending)
 	    sa << "\tpending";
+# if CLICK_DEBUG_SCHEDULING
+	sa << '\t' << RouterThread::thread_state_name(t->thread_state());
+# endif
 	sa << '\n';
     }
     return sa.take_string();
