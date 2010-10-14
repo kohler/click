@@ -8,6 +8,9 @@
 #define CLICK_LITTLE_ENDIAN	1234
 #define CLICK_NO_ENDIAN		0
 
+/* Define to enable debugging support for Click scheduling. */
+#undef CLICK_DEBUG_SCHEDULING
+
 /* Define for Click memory allocation debugging. */
 #undef CLICK_DMALLOC
 
@@ -124,6 +127,11 @@
 #define EXPLICIT_TEMPLATE_INSTANCES 1
 #endif
 #endif /* __cplusplus */
+
+/* Define CLICK_DEBUG_SCHEDULING to 0 if disabled. */
+#ifndef CLICK_DEBUG_SCHEDULING
+# define CLICK_DEBUG_SCHEDULING 0
+#endif
 
 /* Define macro for creating Click version codes (a la Linux version codes). */
 #define CLICK_MAKE_VERSION_CODE(major, minor, patch) \

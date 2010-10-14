@@ -19,8 +19,6 @@ CLICK_CXX_UNPROTECT
 # include <unistd.h>
 #endif
 
-#define CLICK_DEBUG_SCHEDULING 0
-
 // NB: user must #include <click/task.hh> before <click/routerthread.hh>.
 // We cannot #include <click/task.hh> ourselves because of circular #include
 // dependency.
