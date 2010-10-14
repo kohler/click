@@ -86,6 +86,10 @@ class RouterThread
 # if CLICK_LINUXMODULE
     struct task_struct *sleeper() const	{ return _linux_task; }
 # endif
+# if CLICK_DEBUG_SCHEDULING > 1
+    inline Timestamp thread_state_time(int state) const;
+    inline uint64_t thread_state_count(int state) const;
+# endif
 #endif
 
     unsigned _tasks_per_iter;
@@ -149,6 +153,11 @@ class RouterThread
     enum { TASK_EPOCH_BUFSIZ = 32 };
     uint32_t _task_epoch_first;
     Timestamp _task_epoch_time[TASK_EPOCH_BUFSIZ];
+# if CLICK_DEBUG_SCHEDULING > 1
+    Timestamp _thread_state_time[NSTATES];
+    uint64_t _thread_state_count[NSTATES];
+    Timestamp _thread_state_timestamp;
+# endif
 #endif
 
     // called by Master
@@ -399,6 +408,13 @@ RouterThread::set_thread_state(int state)
     assert(state >= 0 && state < NSTATES);
 #if CLICK_DEBUG_SCHEDULING
     _thread_state = state;
+# if CLICK_DEBUG_SCHEDULING > 1
+    Timestamp now = Timestamp::now();
+    if (_thread_state_timestamp)
+	_thread_state_time[_thread_state] += now - _thread_state_timestamp;
+    ++_thread_state_count[_thread_state];
+    _thread_state_timestamp = now;
+# endif
 #endif
 }
 
@@ -410,6 +426,22 @@ RouterThread::set_thread_state_for_blocking(int delay_type)
     else
 	set_thread_state(delay_type ? S_TIMERWAIT : S_PAUSED);
 }
+
+#if CLICK_DEBUG_SCHEDULING > 1
+inline Timestamp
+RouterThread::thread_state_time(int state) const
+{
+    assert(state >= 0 && state < NSTATES);
+    return _thread_state_time[state];
+}
+
+inline uint64_t
+RouterThread::thread_state_count(int state) const
+{
+    assert(state >= 0 && state < NSTATES);
+    return _thread_state_count[state];
+}
+#endif
 
 CLICK_ENDDECLS
 #endif

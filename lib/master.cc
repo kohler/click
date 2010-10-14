@@ -1290,6 +1290,17 @@ Master::info() const
 	sa << '\t' << RouterThread::thread_state_name(t->thread_state());
 # endif
 	sa << '\n';
+# if CLICK_DEBUG_SCHEDULING > 1
+	bool any = false;
+	for (int s = 0; s < RouterThread::NSTATES; ++s)
+	    if (Timestamp time = t->thread_state_time(s)) {
+		sa << (any ? ", " : "\t\t") << RouterThread::thread_state_name(s)
+		   << ' ' << time << '/' << t->thread_state_count(s);
+		any = true;
+	    }
+	if (any)
+	    sa << '\n';
+# endif
     }
     return sa.take_string();
 }

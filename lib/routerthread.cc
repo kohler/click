@@ -123,6 +123,10 @@ RouterThread::RouterThread(Master *m, int id)
     _driver_epoch = 0;
     _driver_task_epoch = 0;
     _task_epoch_first = 0;
+# if CLICK_DEBUG_SCHEDULING > 1
+    for (int s = 0; s < NSTATES; ++s)
+	_thread_state_count[s] = 0;
+# endif
 #endif
 
     static_assert(THREAD_QUIESCENT == (int) ThreadSched::THREAD_QUIESCENT
