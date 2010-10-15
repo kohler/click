@@ -52,14 +52,18 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     ActiveNotifier::initialize(Notifier::EMPTY_NOTIFIER, router());
   String data = "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
-  int limit = -1;
+  counter_t limit = -1;
   int burstsize = 1;
   int datasize = -1;
   bool active = true, stop = false;
 
   if (cp_va_kparse(conf, this, errh,
 		   "DATA", cpkP, cpString, &data,
+#if HAVE_INT64_TYPES
+		   "LIMIT", cpkP, cpInteger64, &limit,
+#else
 		   "LIMIT", cpkP, cpInteger, &limit,
+#endif
 		   "BURST", cpkP, cpInteger, &burstsize,
 		   "ACTIVE", cpkP, cpBool, &active,
 		   "LENGTH", 0, cpInteger, &datasize,
@@ -106,8 +110,8 @@ InfiniteSource::run_task(Task *)
     if (!_active || !_nonfull_signal)
 	return false;
     int n = _burstsize;
-    if (_limit >= 0 && _count + n >= _limit)
-	n = (_count > _limit ? 0 : _limit - _count);
+    if (_limit >= 0 && _count + n >= (ucounter_t) _limit)
+	n = (_count > (ucounter_t) _limit ? 0 : _limit - _count);
     for (int i = 0; i < n; i++) {
 	Packet *p = _packet->clone();
 	p->timestamp_anno().assign_now();
@@ -116,7 +120,7 @@ InfiniteSource::run_task(Task *)
     _count += n;
     if (n > 0)
 	_task.fast_reschedule();
-    else if (_stop && _limit >= 0 && _count >= _limit)
+    else if (_stop && _limit >= 0 && _count >= (ucounter_t) _limit)
 	router()->please_stop_driver();
     return n > 0;
 }
@@ -130,7 +134,7 @@ InfiniteSource::pull(int)
 	    sleep();
 	return 0;
     }
-    if (_limit >= 0 && _count >= _limit) {
+    if (_limit >= 0 && _count >= (ucounter_t) _limit) {
 	if (_stop)
 	    router()->please_stop_driver();
 	goto done;
@@ -211,7 +215,8 @@ InfiniteSource::change_param(const String &s, Element *e, void *vparam,
     }
     }
 
-    if (is->_active && (is->_limit < 0 || is->_count < is->_limit)) {
+    if (is->_active
+	&& (is->_limit < 0 || is->_count < (ucounter_t) is->_limit)) {
 	if (is->output_is_push(0) && !is->_task.scheduled())
 	    is->_task.reschedule();
 	if (is->output_is_pull(0) && !is->Notifier::active())

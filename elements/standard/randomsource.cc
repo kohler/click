@@ -37,14 +37,18 @@ int
 RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   ActiveNotifier::initialize(Notifier::EMPTY_NOTIFIER, router());
-  int limit = -1;
+  counter_t limit = -1;
   int burstsize = 1;
   int datasize = -1;
   bool active = true, stop = false;
 
   if (cp_va_kparse(conf, this, errh,
 		   "LENGTH", cpkP+cpkM, cpInteger, &datasize,
+#if HAVE_INT64_TYPES
+		   "LIMIT", cpkP, cpInteger64, &limit,
+#else
 		   "LIMIT", cpkP, cpInteger, &limit,
+#endif
 		   "BURST", cpkP, cpInteger, &burstsize,
 		   "ACTIVE", cpkP, cpBool, &active,
 		   "STOP", 0, cpBool, &stop,
@@ -71,8 +75,8 @@ RandomSource::run_task(Task *)
     if (!_active || !_nonfull_signal)
 	return false;
     int n = _burstsize;
-    if (_limit >= 0 && _count + n >= _limit)
-	n = (_count > _limit ? 0 : _limit - _count);
+    if (_limit >= 0 && _count + n >= (ucounter_t) _limit)
+	n = (_count > (ucounter_t) _limit ? 0 : _limit - _count);
     for (int i = 0; i < n; i++) {
 	Packet *p = make_packet();
 	output(0).push(p);
@@ -80,7 +84,7 @@ RandomSource::run_task(Task *)
     _count += n;
     if (n > 0)
 	_task.fast_reschedule();
-    else if (_stop && _limit >= 0 && _count >= _limit)
+    else if (_stop && _limit >= 0 && _count >= (ucounter_t) _limit)
 	router()->please_stop_driver();
     return n > 0;
 }
@@ -94,7 +98,7 @@ RandomSource::pull(int)
 	    sleep();
 	return 0;
     }
-    if (_limit >= 0 && _count >= _limit) {
+    if (_limit >= 0 && _count >= (ucounter_t) _limit) {
 	if (_stop)
 	    router()->please_stop_driver();
 	goto done;

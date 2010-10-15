@@ -109,12 +109,20 @@ class InfiniteSource : public Element, public ActiveNotifier { public:
 
   protected:
 
+#if HAVE_INT64_TYPES
+    typedef uint64_t ucounter_t;
+    typedef int64_t counter_t;
+#else
+    typedef uint32_t ucounter_t;
+    typedef int32_t counter_t;
+#endif
+
     void setup_packet();
 
     Packet *_packet;
     int _burstsize;
-    int _limit;
-    int _count;
+    counter_t _limit;
+    ucounter_t _count;
     int _datasize;
     bool _active;
     bool _stop;
