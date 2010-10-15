@@ -1303,10 +1303,12 @@ Master::info() const
 # endif
 	sa << '\n';
 # if CLICK_DEBUG_SCHEDULING > 1
+	t->set_thread_state(t->thread_state()); // account for time
 	bool any = false;
 	for (int s = 0; s < RouterThread::NSTATES; ++s)
 	    if (Timestamp time = t->thread_state_time(s)) {
-		sa << (any ? ", " : "\t\t") << RouterThread::thread_state_name(s)
+		sa << (any ? ", " : "\t\t")
+		   << RouterThread::thread_state_name(s)
 		   << ' ' << time << '/' << t->thread_state_count(s);
 		any = true;
 	    }
