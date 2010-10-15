@@ -1286,6 +1286,18 @@ Master::info() const
 # endif
 	if (t->_any_pending)
 	    sa << "\tpending";
+# if CLICK_USERLEVEL && HAVE_MULTITHREAD
+	if (t->_wake_pipe[0] >= 0) {
+	    fd_set rfd;
+	    struct timeval to;
+	    FD_ZERO(&rfd);
+	    FD_SET(t->_wake_pipe[0], &rfd);
+	    timerclear(&to);
+	    (void) select(t->_wake_pipe[0] + 1, &rfd, 0, 0, &to);
+	    if (FD_ISSET(t->_wake_pipe[0], &rfd))
+		sa << "\tpipewoken";
+	}
+# endif
 # if CLICK_DEBUG_SCHEDULING
 	sa << '\t' << RouterThread::thread_state_name(t->thread_state());
 # endif
