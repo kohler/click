@@ -410,14 +410,15 @@ RouterThread::set_thread_state(int state)
 {
     assert(state >= 0 && state < NSTATES);
 #if CLICK_DEBUG_SCHEDULING
-    _thread_state = state;
 # if CLICK_DEBUG_SCHEDULING > 1
     Timestamp now = Timestamp::now();
     if (_thread_state_timestamp)
 	_thread_state_time[_thread_state] += now - _thread_state_timestamp;
-    ++_thread_state_count[_thread_state];
+    if (_thread_state != state)
+	++_thread_state_count[_thread_state];
     _thread_state_timestamp = now;
 # endif
+    _thread_state = state;
 #endif
 }
 
