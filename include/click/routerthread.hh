@@ -112,6 +112,7 @@ class RouterThread
     click_processor_t _running_processor;
     volatile bool _select_blocked;
     int _wake_pipe[2];
+    volatile bool _wake_pipe_pending;
 #endif
     Spinlock _task_lock;
     atomic_uint32_t _task_blocker;
@@ -390,8 +391,10 @@ RouterThread::wake()
 # if HAVE___SYNC_SYNCHRONIZE
     __sync_synchronize();
 # endif
-    if (_select_blocked)
+    if (_select_blocked) {
+	_wake_pipe_pending = true;
 	ignore_result(write(_wake_pipe[1], "", 1));
+    }
 #elif CLICK_BSDMODULE && !BSD_NETISRSCHED
     if (_sleep_ident)
 	wakeup_one(&_sleep_ident);

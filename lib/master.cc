@@ -1166,6 +1166,16 @@ Master::remove_signal_handler(int signo, Router *router, String handler)
     return status;
 }
 
+static inline void
+clear_pipe(int fd)
+{
+    if (fd >= 0) {
+	char crap[64];
+	while (read(fd, crap, 64) == 64)
+	    /* do nothing */;
+    }
+}
+
 void
 Master::process_signals(RouterThread *thread)
 {
@@ -1173,15 +1183,14 @@ Master::process_signals(RouterThread *thread)
 
     // kill crap data written to pipe
 #if HAVE_MULTITHREAD
-    int fd = thread->_wake_pipe[0];
-#else
-    int fd = sig_pipe[0];
-#endif
-    if (fd >= 0) {
-	char crap[64];
-	while (read(fd, crap, 64) > 0)
-	    /* do nothing */;
+    if (thread->_wake_pipe_pending) {
+	thread->_wake_pipe_pending = false;
+	clear_pipe(thread->_wake_pipe[0]);
     }
+#else
+    if (signals_pending)
+	clear_pipe(sig_pipe[0]);
+#endif
 
     // exit early if still no signals
     if (!signals_pending)

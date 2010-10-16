@@ -251,8 +251,8 @@ inline void
 Master::run_signals(RouterThread *thread)
 {
 # if HAVE_MULTITHREAD
-    // Always process signals, since this clears out the _wake_pipe.
-    process_signals(thread);
+    if (thread->_wake_pipe_pending || signals_pending)
+	process_signals(thread);
 # else
     if (signals_pending)
 	process_signals(thread);

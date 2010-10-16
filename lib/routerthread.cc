@@ -85,6 +85,7 @@ RouterThread::RouterThread(Master *m, int id)
     _running_processor = click_invalid_processor();
     _select_blocked = false;
     _wake_pipe[0] = _wake_pipe[1] = -1;
+    _wake_pipe_pending = false;
 #endif
     _task_blocker = 0;
     _task_blocker_waiting = 0;
