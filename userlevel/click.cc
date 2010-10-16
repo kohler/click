@@ -82,9 +82,7 @@ static const Clp_Option options[] = {
     { "quit", 'q', QUIT_OPT, 0, 0 },
     { "simtime", 0, SIMTIME_OPT, Clp_ValDouble, Clp_Optional },
     { "simulation-time", 0, SIMTIME_OPT, Clp_ValDouble, Clp_Optional },
-#if HAVE_MULTITHREAD
     { "threads", 0, THREADS_OPT, Clp_ValInt, 0 },
-#endif
     { "time", 't', TIME_OPT, 0, 0 },
     { "unix-socket", 'u', UNIX_SOCKET_OPT, Clp_ValString, 0 },
     { "version", 'v', VERSION_OPT, 0, 0 },
@@ -115,11 +113,9 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
-  -e, --expression EXPR         Use EXPR as router configuration.\n"
-#if HAVE_MULTITHREAD
-"      --threads N               Start N threads (default 1).\n"
-#endif
-"  -p, --port PORT               Listen for control connections on TCP port.\n\
+  -e, --expression EXPR         Use EXPR as router configuration.\n\
+      --threads N               Start N threads (default 1).\n\
+  -p, --port PORT               Listen for control connections on TCP port.\n\
   -u, --unix-socket FILE        Listen for control connections on Unix socket.\n\
   -R, --allow-reconfigure       Provide a writable 'hotconfig' handler.\n\
   -h, --handler ELEMENT.H       Call ELEMENT's read handler H after running\n\
@@ -488,13 +484,17 @@ main(int argc, char **argv)
       warnings = clp->negated;
       break;
 
-#if HAVE_MULTITHREAD
      case THREADS_OPT:
       nthreads = clp->val.i;
       if (nthreads <= 1)
 	  nthreads = 1;
-      break;
+#if !HAVE_MULTITHREAD
+      if (nthreads > 1) {
+	  errh->warning("Click was built without multithread support, running single threaded");
+	  nthreads = 1;
+      }
 #endif
+      break;
 
     case SIMTIME_OPT: {
 	Timestamp::warp_set_class(Timestamp::warp_simulation);
