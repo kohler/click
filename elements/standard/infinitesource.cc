@@ -55,7 +55,7 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
   counter_t limit = -1;
   int burstsize = 1;
   int datasize = -1;
-  bool active = true, stop = false;
+  bool active = true, stop = false, timestamp = true;
 
   if (cp_va_kparse(conf, this, errh,
 		   "DATA", cpkP, cpString, &data,
@@ -66,6 +66,7 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
 #endif
 		   "BURST", cpkP, cpInteger, &burstsize,
 		   "ACTIVE", cpkP, cpBool, &active,
+		   "TIMESTAMP", 0, cpBool, &timestamp,
 		   "LENGTH", 0, cpInteger, &datasize,
 		   "DATASIZE", 0, cpInteger, &datasize, // deprecated
 		   "STOP", 0, cpBool, &stop,
@@ -81,6 +82,7 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
   _count = 0;
   _active = active;
   _stop = stop;
+  _timestamp = timestamp;
 
   setup_packet();
 
@@ -114,7 +116,8 @@ InfiniteSource::run_task(Task *)
 	n = (_count > (ucounter_t) _limit ? 0 : _limit - _count);
     for (int i = 0; i < n; i++) {
 	Packet *p = _packet->clone();
-	p->timestamp_anno().assign_now();
+	if (_timestamp)
+	    p->timestamp_anno().assign_now();
 	output(0).push(p);
     }
     _count += n;
@@ -141,7 +144,8 @@ InfiniteSource::pull(int)
     }
     _count++;
     Packet *p = _packet->clone();
-    p->timestamp_anno().assign_now();
+    if (_timestamp)
+	p->timestamp_anno().assign_now();
     return p;
 }
 

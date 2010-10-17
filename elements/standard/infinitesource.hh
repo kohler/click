@@ -52,6 +52,11 @@ Boolean. Same as the ACTIVE argument.
 Boolean. If true, then stop the driver once LIMIT packets are sent. Default is
 false.
 
+=item TIMESTAMP
+
+Boolean. If false, do not set the timestamp annotation on generated
+packets. Defaults to true.
+
 =back
 
 To generate a particular traffic pattern, use this element and RatedSource
@@ -126,6 +131,7 @@ class InfiniteSource : public Element, public ActiveNotifier { public:
     int _datasize;
     bool _active;
     bool _stop;
+    bool _timestamp;
     Task _task;
     String _data;
     NotifierSignal _nonfull_signal;

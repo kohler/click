@@ -120,7 +120,8 @@ RandomSource::make_packet()
     for( ; i < _datasize; i++)
 	*(d + i) = click_random();
 
-    p->timestamp_anno().assign_now();
+    if (_timestamp)
+	p->timestamp_anno().assign_now();
     return p;
 }
 
