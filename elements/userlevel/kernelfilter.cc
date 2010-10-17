@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/userutils.hh>
+#include <unistd.h>
 CLICK_DECLS
 
 KernelFilter::KernelFilter()
@@ -35,6 +36,10 @@ KernelFilter::~KernelFilter()
 int
 KernelFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    if (cp_va_kparse_remove_keywords(conf, this, errh,
+			"IPTABLES_COMMAND", 0, cpString, &_iptables_command,
+			cpEnd) < 0)
+	return -1;
     String action, type, arg;
     for (int i = 0; i < conf.size(); i++) {
 	if (cp_va_space_kparse(conf[i], this, errh,
@@ -56,7 +61,7 @@ KernelFilter::initialize(ErrorHandler *errh)
     // If you update this, also update the device_filter code in FromDevice.u
     int before = errh->nerrors();
     for (int i = 0; i < _drop_devices.size(); ++i)
-	if (device_filter(_drop_devices[i], true, errh) < 0)
+	if (device_filter(_drop_devices[i], true, errh, _iptables_command) < 0)
 	    _drop_devices[i] = String();
     return before == errh->nerrors() ? 0 : -1;
 }
@@ -74,10 +79,19 @@ KernelFilter::cleanup(CleanupStage stage)
 
 int
 KernelFilter::device_filter(const String &devname, bool add_filter,
-			    ErrorHandler *errh)
+			    ErrorHandler *errh,
+			    const String &iptables_command)
 {
     StringAccum cmda;
-    cmda << "/sbin/iptables " << (add_filter ? "-A" : "-D") << " INPUT -i "
+    if (iptables_command)
+	cmda << iptables_command;
+    else if (access("/sbin/iptables", X_OK))
+	cmda << "/sbin/iptables";
+    else if (access("/usr/sbin/iptables", X_OK))
+	cmda << "/usr/sbin/iptables";
+    else
+	return errh->error("no %<iptables%> executable found");
+    cmda << " " << (add_filter ? "-A" : "-D") << " INPUT -i "
 	 << shell_quote(devname) << " -j DROP";
     String cmd = cmda.take_string();
     int before = errh->nerrors();

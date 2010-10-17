@@ -20,7 +20,9 @@ kernel from handling certain types of packets.  Use this in combination with
 FromDevice.u to handle packets in user-level Click configurations.
 
 KernelFilter uses iptables(1) to install filters; if your system does not
-support iptables(1), KernelFilter will fail.
+support iptables(1), KernelFilter will fail.  Normally KernelFilter uses
+either /sbin/iptables or /usr/sbin/iptables.  To override this use the
+IPTABLES_COMMAND keyword argument.
 
 KernelFilter uninstalls its firewall rules when Click shuts down.  If Click
 shuts down uncleanly, for instance because of a segmentation fault or 'kill
@@ -63,11 +65,13 @@ class KernelFilter : public Element { public:
     void cleanup(CleanupStage);
 
     static int device_filter(const String &devname, bool add_filter,
-			     ErrorHandler *errh);
+			     ErrorHandler *errh,
+			     const String &iptables_command = String());
 
   private:
 
     Vector<String> _drop_devices;
+    String _iptables_command;
 
 };
 
