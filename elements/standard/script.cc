@@ -1069,7 +1069,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	    bool have_n2 = false;
 	    if (cp_va_space_kparse(str, e, errh,
 				   "N1", cpkP+cpkM, cpUnsigned, &n1,
-				   "N2", cpkP+cpkM+cpkC, &have_n2, cpUnsigned, &n2,
+				   "N2", cpkP+cpkC, &have_n2, cpUnsigned, &n2,
 				   cpEnd) < 0)
 		return -1;
 	    if ((have_n2 && n2 < n1) || (!have_n2 && n1 == 0))
