@@ -70,6 +70,7 @@ AddressInfo::~AddressInfo()
 int
 AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    enum { t_eth = 1, t_ip4 = 2, t_ip4net = 4, t_ip6 = 8, t_ip6net = 16 };
     int before = errh->nerrors();
 
     for (int i = 0; i < conf.size(); i++) {
@@ -80,48 +81,57 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	    continue;
 	if (parts.size() < 2)
 	    errh->error("expected %<NAME [ADDRS]%>");
+	int types = 0;
 
 	for (int j = 1; j < parts.size(); j++) {
 	    union {
-		struct {
-		    struct in_addr a;
-		    struct in_addr p;
-		} ip4;
-		struct {
-		    unsigned char a[4];
-		    unsigned char p[4];
-		} ip4b;
-		unsigned char ether[6];
+		unsigned char c[4];
+		uint32_t u;
+	    } ip4[2];
+	    unsigned char ether[6];
+# if HAVE_IP6
+	    struct {
+		unsigned char c[sizeof(click_in6_addr)];
+		int p;
+	    } ip6;
+# endif
+
+	    int my_types = 0;
+	    if (cp_ethernet_address(parts[j], ether))
+		my_types |= t_eth;
+	    if (cp_ip_address(parts[j], ip4[0].c))
+		my_types |= t_ip4;
+	    else if (cp_ip_prefix(parts[j], ip4[0].c, ip4[1].c, false)) {
+		my_types |= t_ip4net;
+		if (ip4[0].u & ~ip4[1].u)
+		    my_types |= t_ip4;
+	    }
 #if HAVE_IP6
-		struct {
-		    struct click_in6_addr a;
-		    int p;
-		} ip6;
-		struct {
-		    unsigned char a[sizeof(struct click_in6_addr)];
-		    int p;
-		} ip6b;
-#endif
-		char c[24];
-	    } x;
-	    if (cp_ip_address(parts[j], &x.ip4.a))
-		NameInfo::define(NameInfo::T_IP_ADDR, this, parts[0], &x.ip4.a, 4);
-	    else if (cp_ip_prefix(parts[j], x.ip4b.a, x.ip4b.p, false)) {
-		NameInfo::define(NameInfo::T_IP_PREFIX, this, parts[0], &x.ip4, 8);
-		if (x.ip4.a.s_addr & ~x.ip4.p.s_addr)
-		    NameInfo::define(NameInfo::T_IP_ADDR, this, parts[0], &x.ip4.a, 4);
-	    } else if (cp_ethernet_address(parts[j], x.ether))
-		NameInfo::define(NameInfo::T_ETHERNET_ADDR, this, parts[0], x.ether, 6);
-#if HAVE_IP6
-	    else if (cp_ip6_address(parts[j], &x.ip6.a))
-		NameInfo::define(NameInfo::T_IP6_ADDR, this, parts[0], &x.ip6.a, 16);
-	    else if (cp_ip6_prefix(parts[j], x.ip6b.a, &x.ip6b.p, false)) {
-		NameInfo::define(NameInfo::T_IP6_PREFIX, this, parts[0], &x.ip6, 16 + sizeof(int));
-		if (x.ip6.a & IP6Address::make_inverted_prefix(x.ip6.p))
-		    NameInfo::define(NameInfo::T_IP6_ADDR, this, parts[0], &x.ip6.a, 16);
+	    if (cp_ip6_address(parts[j], ip6.c))
+		my_types |= t_ip6;
+	    else if (cp_ip6_prefix(parts[j], ip6.c, &ip6.p, false)) {
+		my_types |= t_ip6net;
+		if (IP6Address(ip6.c) & IP6Address::make_inverted_prefix(ip6.p))
+		    my_types |= t_ip6;
 	    }
 #endif
-	    else
+
+	    bool one_type = (my_types & (my_types - 1)) == 0;
+	    if ((my_types & t_eth) && (one_type || !(types & t_eth)))
+		NameInfo::define(NameInfo::T_ETHERNET_ADDR, this, parts[0], ether, 6);
+	    if ((my_types & t_ip4) && (one_type || !(types & t_ip4)))
+		NameInfo::define(NameInfo::T_IP_ADDR, this, parts[0], ip4[0].c, 4);
+	    if ((my_types & t_ip4net) && (one_type || !(types & t_ip4net)))
+		NameInfo::define(NameInfo::T_IP_PREFIX, this, parts[0], &ip4, 8);
+#if HAVE_IP6
+	    if ((my_types & t_ip6) && (one_type || !(types & t_ip6)))
+		NameInfo::define(NameInfo::T_IP6_ADDR, this, parts[0], ip6.c, 16);
+	    if ((my_types & t_ip6net) && (one_type || !(types & t_ip6net)))
+		NameInfo::define(NameInfo::T_IP6_PREFIX, this, parts[0], &ip6, 16 + sizeof(int));
+#endif
+
+	    types |= my_types;
+	    if (!my_types)
 		errh->error("\"%s\" %<%s%> is not a recognizable address", parts[0].c_str(), parts[j].c_str());
 	}
     }
