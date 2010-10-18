@@ -88,14 +88,16 @@ RadiotapEncap::simple_action(Packet *p)
 	  memset(crh, 0, sizeof(struct click_radiotap_header));
 
 	  crh->wt_ihdr.it_version = 0;
-	  crh->wt_ihdr.it_len = sizeof(struct click_radiotap_header);
-	  crh->wt_ihdr.it_present = CLICK_RADIOTAP_PRESENT;
+	  crh->wt_ihdr.it_len = cpu_to_le16(sizeof(struct click_radiotap_header));
+	  crh->wt_ihdr.it_present = cpu_to_le32(CLICK_RADIOTAP_PRESENT);
 
 	  crh->wt_rate = ceh->rate;
 	  crh->wt_txpower = ceh->power;
 	  crh->wt_rts_retries = 0;
 	  if (ceh->max_tries > 0) {
 		  crh->wt_data_retries = ceh->max_tries - 1;
+	  } else {
+		  crh->wt_data_retries = WIFI_MAX_RETRIES + 1;
 	  }
   }
 
