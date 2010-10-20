@@ -409,7 +409,9 @@ Master::process_pending(RouterThread *thread)
     while (Task *t = Task::pending_to_task(my_pending)) {
 	my_pending = t->_pending_nextptr;
 	t->_pending_nextptr = 0;
-	click_master_mb();
+#if HAVE_MULTITHREAD && HAVE___SYNC_SYNCHRONIZE
+	__sync_synchronize();
+#endif
 	t->process_pending(thread);
     }
 }
