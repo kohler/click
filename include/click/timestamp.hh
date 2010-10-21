@@ -438,9 +438,9 @@ class Timestamp { public:
 # endif
 #endif
 #if TIMESTAMP_PUNS_TIMEVAL
-	timeval tv;
+	struct timeval tv;
 #elif TIMESTAMP_PUNS_TIMESPEC
-	timespec tspec;
+	struct timespec tspec;
 #endif
     };
 
