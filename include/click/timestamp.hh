@@ -675,7 +675,7 @@ Timestamp::assign_now(bool raw)
 #if TIMESTAMP_NANOSEC && (CLICK_LINUXMODULE || CLICK_BSDMODULE || HAVE_USE_CLOCK_GETTIME)
     // nanosecond precision
 # if TIMESTAMP_PUNS_TIMESPEC
-    struct timespec *tsp = &_rep.tspec;
+    struct timespec *tsp = &_t.tspec;
 # else
     struct timespec ts, *tsp = &ts;
 # endif
@@ -695,7 +695,7 @@ Timestamp::assign_now(bool raw)
 #else
     // microsecond precision
 # if TIMESTAMP_PUNS_TIMEVAL
-    struct timeval *tvp = &_rep.tv;
+    struct timeval *tvp = &_t.tv;
 # else
     struct timeval tv, *tvp = &tv;
 # endif
@@ -882,7 +882,7 @@ Timestamp::nsec1() const
 inline const struct timeval &
 Timestamp::timeval() const
 {
-    return _rep.tv;
+    return _t.tv;
 }
 #else
 /** @brief Return a struct timeval with the same value as this timestamp.
@@ -905,7 +905,7 @@ Timestamp::timeval() const
 inline const struct timespec &
 Timestamp::timespec() const
 {
-    return _rep.tspec;
+    return _t.tspec;
 }
 # else
 /** @brief Return a struct timespec with the same value as this timestamp.
