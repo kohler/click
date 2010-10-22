@@ -158,7 +158,7 @@ Timestamp::set_timeval_ioctl(int fd, int ioctl_selector)
 # if TIMESTAMP_PUNS_TIMEVAL
     r = ioctl(fd, ioctl_selector, &_t.tv);
 # elif SIZEOF_STRUCT_TIMEVAL == 8 && TIMESTAMP_REP_BIG_ENDIAN
-    if ((r = ioctl(fd, ioctl_selector, &_t.tv)) >= 0)
+    if ((r = ioctl(fd, ioctl_selector, &_t)) >= 0)
 	_t.subsec = usec_to_subsec(_t.subsec);
 # else
     struct timeval tv;
