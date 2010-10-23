@@ -109,7 +109,7 @@ IPAddrRewriter::get_entry(int, const IPFlowID &xflowid, int input)
     IPFlowID flowid(xflowid.saddr(), 0, IPAddress(), 0);
     IPRewriterEntry *m = _map.get(flowid);
     if (!m) {
-	IPFlowID rflowid(IPAddress(), 0, xflowid.daddr(), 0);
+	IPFlowID rflowid(0, 0, xflowid.daddr(), 0);
 	m = _map.get(rflowid);
     }
     if (!m && (unsigned) input < (unsigned) _input_specs.size()) {
