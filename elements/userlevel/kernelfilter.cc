@@ -85,9 +85,9 @@ KernelFilter::device_filter(const String &devname, bool add_filter,
     StringAccum cmda;
     if (iptables_command)
 	cmda << iptables_command;
-    else if (access("/sbin/iptables", X_OK))
+    else if (access("/sbin/iptables", X_OK) == 0)
 	cmda << "/sbin/iptables";
-    else if (access("/usr/sbin/iptables", X_OK))
+    else if (access("/usr/sbin/iptables", X_OK) == 0)
 	cmda << "/usr/sbin/iptables";
     else
 	return errh->error("no %<iptables%> executable found");
