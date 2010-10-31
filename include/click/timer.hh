@@ -58,10 +58,15 @@ class Timer { public:
 
 
     /** @brief Change the Timer to do nothing when fired. */
-    inline void assign(const do_nothing_t &unused) {
-	(void) unused;
+    inline void assign() {
 	_hook.callback = do_nothing_hook;
 	_thunk = (void *) 1;
+    }
+
+    /** @brief Change the Timer to do nothing when fired. */
+    inline void assign(const do_nothing_t &unused) {
+	(void) unused;
+	assign();
     }
 
     /** @brief Change the Timer to call @a f(this, @a user_data) when fired.
