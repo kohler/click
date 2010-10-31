@@ -306,6 +306,9 @@ class Timer { public:
     struct heap_element {
 	Timestamp expiry;
 	Timer *t;
+#if SIZEOF_VOID_P == 4
+	uint32_t padding; /* the structure should have size 16 */
+#endif
 	heap_element(Timer *t_)
 	    : expiry(t_->expiry()), t(t_) {
 	}

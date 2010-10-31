@@ -272,7 +272,7 @@ Master::kill_router(Router *router)
 	    --thp;
 	    Timer *t = thp->t;
 	    if (t->router() == router) {
-		remove_heap(_timer_heap.begin(), _timer_heap.end(), thp, Timer::heap_less(), Timer::heap_place());
+		remove_heap<4>(_timer_heap.begin(), _timer_heap.end(), thp, Timer::heap_less(), Timer::heap_place());
 		_timer_heap.pop_back();
 		t->_owner = 0;
 		t->_schedpos1 = 0;
@@ -489,7 +489,7 @@ Master::run_timers(RouterThread *thread)
 	    int max_timers = 64;
 	    do {
 		Timer *t = th->t;
-		pop_heap(_timer_heap.begin(), _timer_heap.end(), Timer::heap_less(), Timer::heap_place());
+		pop_heap<4>(_timer_heap.begin(), _timer_heap.end(), Timer::heap_less(), Timer::heap_place());
 		_timer_heap.pop_back();
 		set_timer_expiry();
 		t->_schedpos1 = 0;
@@ -508,7 +508,7 @@ Master::run_timers(RouterThread *thread)
 		_timer_runchunk.reserve(32);
 		do {
 		    Timer *t = th->t;
-		    pop_heap(_timer_heap.begin(), _timer_heap.end(), Timer::heap_less(), Timer::heap_place());
+		    pop_heap<4>(_timer_heap.begin(), _timer_heap.end(), Timer::heap_less(), Timer::heap_place());
 		    _timer_heap.pop_back();
 		    t->_schedpos1 = -_timer_runchunk.size() - 1;
 

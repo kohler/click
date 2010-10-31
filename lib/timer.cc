@@ -195,6 +195,7 @@ Timer::task_hook(Timer *, void *thunk)
 Timer::Timer()
     : _schedpos1(0), _thunk(0), _owner(0)
 {
+    static_assert(sizeof(heap_element) == 16);
     _hook.callback = do_nothing_hook;
 }
 
@@ -255,9 +256,9 @@ Timer::schedule_at(const Timestamp& when)
 	master->_timer_heap.push_back(heap_element(this));
     }
     master->check_timer_expiry(this);
-    change_heap(master->_timer_heap.begin(), master->_timer_heap.end(),
-		master->_timer_heap.begin() + _schedpos1 - 1,
-		heap_less(), heap_place());
+    change_heap<4>(master->_timer_heap.begin(), master->_timer_heap.end(),
+		   master->_timer_heap.begin() + _schedpos1 - 1,
+		   heap_less(), heap_place());
     if (old_schedpos1 == 1 || _schedpos1 == 1)
 	master->set_timer_expiry();
 
@@ -284,9 +285,9 @@ Timer::unschedule()
     master->lock_timers();
     int old_schedpos1 = _schedpos1;
     if (_schedpos1 > 0) {
-	remove_heap(master->_timer_heap.begin(), master->_timer_heap.end(),
-		    master->_timer_heap.begin() + _schedpos1 - 1,
-		    heap_less(), heap_place());
+	remove_heap<4>(master->_timer_heap.begin(), master->_timer_heap.end(),
+		       master->_timer_heap.begin() + _schedpos1 - 1,
+		       heap_less(), heap_place());
 	master->_timer_heap.pop_back();
 	if (old_schedpos1 == 1)
 	    master->set_timer_expiry();
