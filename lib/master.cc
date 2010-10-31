@@ -267,14 +267,17 @@ Master::kill_router(Router *router)
     {
 	lock_timers();
 	assert(!_timer_runchunk.size());
-	Timer* t;
-	for (Timer** tp = _timer_heap.end(); tp > _timer_heap.begin(); )
-	    if ((t = *--tp, t->router() == router)) {
-		remove_heap(_timer_heap.begin(), _timer_heap.end(), tp, Timer::heap_less(), Timer::heap_place());
+	for (Timer::heap_element *thp = _timer_heap.end();
+	     thp > _timer_heap.begin(); ) {
+	    --thp;
+	    Timer *t = thp->t;
+	    if (t->router() == router) {
+		remove_heap(_timer_heap.begin(), _timer_heap.end(), thp, Timer::heap_less(), Timer::heap_place());
 		_timer_heap.pop_back();
 		t->_owner = 0;
 		t->_schedpos1 = 0;
 	    }
+	}
 	set_timer_expiry();
 	unlock_timers();
     }
@@ -467,11 +470,11 @@ Master::run_timers(RouterThread *thread)
 	_timer_task = current;
 #endif
 	_timer_check = Timestamp::now();
-	Timer *t = _timer_heap.at_u(0);
+	Timer::heap_element *th = _timer_heap.begin();
 
-	if (t->_expiry <= _timer_check) {
+	if (th->expiry <= _timer_check) {
 	    // potentially adjust timer stride
-	    Timestamp adj_expiry = t->_expiry + Timer::adjustment();
+	    Timestamp adj_expiry = th->expiry + Timer::adjustment();
 	    if (adj_expiry <= _timer_check) {
 		_timer_count = 0;
 		if (_timer_stride > 1)
@@ -485,6 +488,7 @@ Master::run_timers(RouterThread *thread)
 	    // actually run timers
 	    int max_timers = 64;
 	    do {
+		Timer *t = th->t;
 		pop_heap(_timer_heap.begin(), _timer_heap.end(), Timer::heap_less(), Timer::heap_place());
 		_timer_heap.pop_back();
 		set_timer_expiry();
@@ -492,7 +496,7 @@ Master::run_timers(RouterThread *thread)
 
 		run_one_timer(t);
 	    } while (_timer_heap.size() > 0 && !_stopper
-		     && (t = _timer_heap.at_u(0), t->_expiry <= _timer_check)
+		     && (th = _timer_heap.begin(), th->expiry <= _timer_check)
 		     && --max_timers >= 0);
 
 	    // If we ran out of timers to run, then perhaps there's an
@@ -503,13 +507,14 @@ Master::run_timers(RouterThread *thread)
 	    if (max_timers < 0 && !_stopper) {
 		_timer_runchunk.reserve(32);
 		do {
+		    Timer *t = th->t;
 		    pop_heap(_timer_heap.begin(), _timer_heap.end(), Timer::heap_less(), Timer::heap_place());
 		    _timer_heap.pop_back();
 		    t->_schedpos1 = -_timer_runchunk.size() - 1;
 
 		    _timer_runchunk.push_back(t);
 		} while (_timer_heap.size() > 0
-			 && (t = _timer_heap.at_u(0), t->_expiry <= _timer_check));
+			 && (th = _timer_heap.begin(), th->expiry <= _timer_check));
 		set_timer_expiry();
 
 		Vector<Timer*>::iterator i = _timer_runchunk.begin();

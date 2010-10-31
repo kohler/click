@@ -252,7 +252,7 @@ Timer::schedule_at(const Timestamp& when)
 	if (_schedpos1 < 0)
 	    master->_timer_runchunk[-_schedpos1 - 1] = 0;
 	_schedpos1 = master->_timer_heap.size() + 1;
-	master->_timer_heap.push_back(this);
+	master->_timer_heap.push_back(heap_element(this));
     }
     master->check_timer_expiry(this);
     change_heap(master->_timer_heap.begin(), master->_timer_heap.end(),

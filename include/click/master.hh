@@ -113,7 +113,7 @@ class Master { public:
     unsigned _max_timer_stride;
     unsigned _timer_stride;
     unsigned _timer_count;
-    Vector<Timer *> _timer_heap;
+    Vector<Timer::heap_element> _timer_heap;
     Vector<Timer *> _timer_runchunk;
 #if CLICK_LINUXMODULE
     spinlock_t _timer_lock;
@@ -134,7 +134,7 @@ class Master { public:
 
     void set_timer_expiry() {
 	if (_timer_heap.size())
-	    _timer_expiry = _timer_heap.at_u(0)->_expiry;
+	    _timer_expiry = _timer_heap.at_u(0).expiry;
 	else
 	    _timer_expiry = Timestamp();
     }
@@ -341,7 +341,7 @@ inline Timer *
 Master::next_timer()
 {
     lock_timers();
-    Timer *t = _timer_heap.empty() ? 0 : _timer_heap[0];
+    Timer *t = _timer_heap.empty() ? 0 : _timer_heap.at_u(0).t;
     unlock_timers();
     return t;
 }
