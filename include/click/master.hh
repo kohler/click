@@ -39,6 +39,7 @@ class Master { public:
     const volatile int* stopper_ptr() const	{ return &_stopper; }
 
     Timestamp next_timer_expiry() const		{ return _timer_expiry; }
+    Timer *next_timer();			// useful for benchmarking
     const Timestamp &timer_check() const	{ return _timer_check; }
     void run_timers(RouterThread *thread);
     unsigned max_timer_stride() const		{ return _max_timer_stride; }
@@ -352,6 +353,15 @@ Master::unlock_timers()
 #elif HAVE_MULTITHREAD
     _timer_lock.release();
 #endif
+}
+
+inline Timer *
+Master::next_timer()
+{
+    lock_timers();
+    Timer *t = _timer_heap.empty() ? 0 : _timer_heap[0];
+    unlock_timers();
+    return t;
 }
 
 inline Master *

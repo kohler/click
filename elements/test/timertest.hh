@@ -19,6 +19,18 @@ runs regression tests for Timer
 TimerTest runs regression tests for Click's Timer class at initialization
 time. It does not route packets.
 
+Keyword arguments are:
+
+=over 8
+
+=item BENCHMARK
+
+Integer.  If set to a positive number, then TimerTest runs a timer
+manipulation benchmark at installation time involving BENCHMARK total
+timers.  Default is 0 (don't benchmark).
+
+=back
+
 */
 
 class TimerTest : public Element { public:
@@ -28,7 +40,16 @@ class TimerTest : public Element { public:
 
     const char *class_name() const		{ return "TimerTest"; }
 
-    int initialize(ErrorHandler *);
+    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int initialize(ErrorHandler *errh);
+
+  private:
+
+    int _benchmark;
+
+    void benchmark_schedules(Timer *ts, int nts, const Timestamp &now);
+    void benchmark_changes(Timer *ts, int nts, const Timestamp &now);
+    void benchmark_fires(Timer *ts, int nts, const Timestamp &now);
 
 };
 
