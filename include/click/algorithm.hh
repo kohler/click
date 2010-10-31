@@ -48,9 +48,21 @@ inline void clear_by_swap(T &x)
 }
 
 
-/** @brief Function object that does nothing when called. */
-template <typename T>
+template <typename T, typename U = void> struct do_nothing;
+
+/** @brief Binary function object that does nothing when called. */
+template <typename T, typename U>
 struct do_nothing {
+    typedef T first_argument_type;
+    typedef U second_argument_type;
+    typedef void result_type;
+    void operator()(const T &, const U &) {
+    }
+};
+
+/** @brief Unary function object that does nothing when called. */
+template <typename T>
+struct do_nothing<T, void> {
     typedef T argument_type;
     typedef void result_type;
     void operator()(const T &) {

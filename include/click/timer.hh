@@ -303,6 +303,17 @@ class Timer { public:
     static void element_hook(Timer *t, void *user_data);
     static void task_hook(Timer *t, void *user_data);
 
+    struct heap_less {
+	inline bool operator()(Timer *a, Timer *b) {
+	    return a->expiry() < b->expiry();
+	}
+    };
+    struct heap_place {
+	inline void operator()(Timer **begin, Timer **t) {
+	    (*t)->_schedpos1 = (t - begin) + 1;
+	}
+    };
+
     friend class Master;
 
 };

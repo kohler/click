@@ -257,7 +257,7 @@ Timer::schedule_at(const Timestamp& when)
     master->check_timer_expiry(this);
     change_heap(master->_timer_heap.begin(), master->_timer_heap.end(),
 		master->_timer_heap.begin() + _schedpos1 - 1,
-		Master::timer_less(), Master::timer_place(master->_timer_heap.begin()));
+		heap_less(), heap_place());
     if (old_schedpos1 == 1 || _schedpos1 == 1)
 	master->set_timer_expiry();
 
@@ -286,7 +286,7 @@ Timer::unschedule()
     if (_schedpos1 > 0) {
 	remove_heap(master->_timer_heap.begin(), master->_timer_heap.end(),
 		    master->_timer_heap.begin() + _schedpos1 - 1,
-		    Master::timer_less(), Master::timer_place(master->_timer_heap.begin()));
+		    heap_less(), heap_place());
 	master->_timer_heap.pop_back();
 	if (old_schedpos1 == 1)
 	    master->set_timer_expiry();

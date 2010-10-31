@@ -18,12 +18,13 @@ CLICK_DECLS
  *
  * The comparison function @a comp defines the heap order.
  *
- * The placement function @a place is called for each element that changes
- * place within the heap order; its argument is an iterator pointing at the
- * element that switched place.  @a place is always called once with an
- * iterator pointing the new element in its final place.  @a place is useful
- * when elements need to keep track of their own positions in the heap order.
- * @a place defaults to do_nothing<>().
+ * The placement function @a place is called for each element that
+ * changes place within the heap order; its arguments are @a begin and
+ * an iterator for the element that switched place.  @a place is always
+ * called once with an iterator pointing the new element in its final
+ * place.  @a place is useful when elements need to keep track of
+ * their own positions in the heap order.  @a place defaults to
+ * do_nothing<>().
  *
  * @sa change_heap, pop_heap, remove_heap */
 template <typename iterator_type, typename compare_type, typename place_type>
@@ -35,11 +36,11 @@ inline void push_heap(iterator_type begin, iterator_type end,
 
     while (i > 0 && (npos = (i-1)/2, comp(begin[i], begin[npos]))) {
 	click_swap(begin[i], begin[npos]);
-	place(begin + i);
+	place(begin, begin + i);
 	i = npos;
     }
 
-    place(begin + i);
+    place(begin, begin + i);
 }
 
 /** @overload */
@@ -47,7 +48,7 @@ template <typename iterator_type, typename compare_type>
 inline void push_heap(iterator_type begin, iterator_type end,
 		      compare_type comp)
 {
-    push_heap(begin, end, comp, do_nothing<iterator_type>());
+    push_heap(begin, end, comp, do_nothing<iterator_type, iterator_type>());
 }
 
 /** @brief Change an element's position within a heap.
@@ -67,11 +68,11 @@ inline void push_heap(iterator_type begin, iterator_type end,
  *
  * The comparison function @a comp defines the heap order.
  *
- * The placement function @a place is called for each element that changes
- * place within the heap order; its argument is an iterator pointing at the
- * element that switched place.  @a place is useful when elements need to keep
- * track of their own positions in the heap order.  @a place defaults to
- * do_nothing<>().
+ * The placement function @a place is called for each element that
+ * changes place within the heap order; its arguments are @a begin and
+ * an iterator for the element that switched place.  @a place is
+ * useful when elements need to keep track of their own positions in
+ * the heap order.  @a place defaults to do_nothing<>().
  *
  * @sa push_heap, pop_heap, remove_heap */
 template <typename iterator_type, typename compare_type, typename place_type>
@@ -84,7 +85,7 @@ iterator_type change_heap(iterator_type begin, iterator_type end,
 
     while (i > 0 && (npos = (i-1)/2, comp(begin[i], begin[npos]))) {
 	click_swap(begin[i], begin[npos]);
-	place(begin + i);
+	place(begin, begin + i);
 	i = npos;
     }
 
@@ -97,12 +98,12 @@ iterator_type change_heap(iterator_type begin, iterator_type end,
         if (smallest == i)
             break;
 	click_swap(begin[i], begin[smallest]);
-	place(begin + i);
+	place(begin, begin + i);
         i = smallest;
     }
 
     if (begin + i != element)
-	place(begin + i);
+	place(begin, begin + i);
     return begin + i;
 }
 
@@ -111,7 +112,7 @@ template <typename iterator_type, typename compare_type>
 inline iterator_type change_heap(iterator_type begin, iterator_type end,
 				 iterator_type element, compare_type comp)
 {
-    return change_heap(begin, end, element, comp, do_nothing<iterator_type>());
+    return change_heap(begin, end, element, comp, do_nothing<iterator_type, iterator_type>());
 }
 
 /** @brief Remove an element from a heap.
@@ -131,12 +132,13 @@ inline iterator_type change_heap(iterator_type begin, iterator_type end,
  *
  * The comparison function @a comp defines the heap order.
  *
- * The placement function @a place is called for each actual element that
- * changes place within the heap order; its argument is an iterator pointing
- * at the element that switched place.  It is not called on @a element, which
- * is no longer considered a member of the heap.  @a place is useful when
- * elements need to keep track of their own positions in the heap order.  @a
- * place defaults to do_nothing<>().
+ * The placement function @a place is called for each actual element
+ * that changes place within the heap order; its arguments are @a
+ * begin and an iterator for the element that switched place.  It is
+ * not called on @a element, which is no longer considered a member of
+ * the heap.  @a place is useful when elements need to keep track of
+ * their own positions in the heap order.  @a place defaults to
+ * do_nothing<>().
  *
  * @sa push_heap, change_heap, pop_heap */
 template <typename iterator_type, typename compare_type, typename place_type>
@@ -147,7 +149,7 @@ inline void remove_heap(iterator_type begin, iterator_type end,
     assert(begin <= element && element < end);
     if (element + 1 != end) {
 	click_swap(element[0], end[-1]);
-	place(element);
+	place(begin, element);
 	change_heap(begin, end - 1, element, comp, place);
     }
 }
@@ -158,7 +160,7 @@ inline void remove_heap(iterator_type begin, iterator_type end,
 			iterator_type element,
 			compare_type comp)
 {
-    remove_heap(begin, end, element, comp, do_nothing<iterator_type>());
+    remove_heap(begin, end, element, comp, do_nothing<iterator_type, iterator_type>());
 }
 
 /** @brief Remove the first element from a heap.
@@ -177,12 +179,13 @@ inline void remove_heap(iterator_type begin, iterator_type end,
  *
  * The comparison function @a comp defines the heap order.
  *
- * The placement function @a place is called for each element that changes
- * place within the heap order; its argument is an iterator pointing at the
- * element that switched place.  It is not called on the first element, which
- * is no longer considered a member of the heap.  @a place is useful when
- * elements need to keep track of their own positions in the heap order.  @a
- * place defaults to do_nothing<>().
+ * The placement function @a place is called for each element that
+ * changes place within the heap order; its arguments are @a begin and
+ * an iterator for the element that switched place.  It is not called
+ * on the first element, which is no longer considered a member of the
+ * heap.  @a place is useful when elements need to keep track of their
+ * own positions in the heap order.  @a place defaults to
+ * do_nothing<>().
  *
  * @sa push_heap, change_heap, remove_heap */
 template <typename iterator_type, typename compare_type, typename place_type>
@@ -197,7 +200,7 @@ template <typename iterator_type, typename compare_type>
 inline void pop_heap(iterator_type begin, iterator_type end,
 		     compare_type comp)
 {
-    pop_heap(begin, end, comp, do_nothing<iterator_type>());
+    pop_heap(begin, end, comp, do_nothing<iterator_type, iterator_type>());
 }
 
 CLICK_ENDDECLS

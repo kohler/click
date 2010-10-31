@@ -157,23 +157,15 @@ class IPRewriterFlow { public:
     void unparse(StringAccum &sa, bool direction, click_jiffies_t now) const;
     void unparse_ports(StringAccum &sa, bool direction, click_jiffies_t now) const;
 
-    struct less {
-	less() {
-	}
-	bool operator()(IPRewriterFlow *a, IPRewriterFlow *b) {
+    struct heap_less {
+	inline bool operator()(IPRewriterFlow *a, IPRewriterFlow *b) {
 	    return click_jiffies_less(a->expiry(), b->expiry());
 	}
     };
-
-    struct place {
-	place(IPRewriterFlow **begin)
-	    : _begin(begin) {
+    struct heap_place {
+	inline void operator()(IPRewriterFlow **begin, IPRewriterFlow **it) {
+	    (*it)->_place = it - begin;
 	}
-	void operator()(IPRewriterFlow **it) {
-	    (*it)->_place = it - _begin;
-	}
-      private:
-	IPRewriterFlow **_begin;
     };
 
   protected:

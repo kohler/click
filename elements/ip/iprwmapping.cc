@@ -109,17 +109,17 @@ IPRewriterFlow::change_expiry(IPRewriterHeap *h, bool guaranteed,
     if (_guaranteed != guaranteed) {
 	remove_heap(current_heap.begin(), current_heap.end(),
 		    current_heap.begin() + _place,
-		    less(), place(current_heap.begin()));
+		    heap_less(), heap_place());
 	current_heap.pop_back();
 	_guaranteed = guaranteed;
 	Vector<IPRewriterFlow *> &new_heap = h->_heaps[_guaranteed];
 	new_heap.push_back(this);
 	push_heap(new_heap.begin(), new_heap.end(),
-		  less(), place(new_heap.begin()));
+		  heap_less(), heap_place());
     } else
 	change_heap(current_heap.begin(), current_heap.end(),
 		    current_heap.begin() + _place,
-		    less(), place(current_heap.begin()));
+		    heap_less(), heap_place());
 }
 
 void
@@ -127,7 +127,7 @@ IPRewriterFlow::destroy(IPRewriterHeap *heap)
 {
     Vector<IPRewriterFlow *> &myheap = heap->_heaps[_guaranteed];
     remove_heap(myheap.begin(), myheap.end(), myheap.begin() + _place,
-		less(), place(myheap.begin()));
+		heap_less(), heap_place());
     myheap.pop_back();
     --_owner->_input_specs[_owner_input].count;
     _owner->destroy_flow(this);

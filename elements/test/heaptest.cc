@@ -36,9 +36,8 @@ HeapTest::~HeapTest()
 
 namespace {
 struct place_intpair {
-    Vector<Pair<int, int> > *vp;
-    void operator()(Pair<int, int> *x) {
-	x->second = x - vp->begin();
+    void operator()(Pair<int, int> *begin, Pair<int, int> *x) {
+	x->second = x - begin;
     }
 };
 }
@@ -95,7 +94,6 @@ HeapTest::initialize(ErrorHandler *errh)
     Vector<Pair<int, int> > vv;
     less<Pair<int, int> > ll;
     place_intpair place;
-    place.vp = &vv;
 
     vv.push_back(make_pair(0, -9));
     push_heap(vv.begin(), vv.end(), ll, place);

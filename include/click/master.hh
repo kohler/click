@@ -139,24 +139,6 @@ class Master { public:
 	    _timer_expiry = Timestamp();
     }
     void check_timer_expiry(Timer *t);
-    static inline void place_timer(Timer **t, Timer **tbegin) {
-	(*t)->_schedpos1 = (t - tbegin) + 1;
-    }
-
-    struct timer_less {
-	bool operator()(Timer *a, Timer *b) {
-	    return a->expiry() < b->expiry();
-	}
-    };
-    struct timer_place {
-	Timer **_begin;
-	timer_place(Timer **begin)
-	    : _begin(begin) {
-	}
-	void operator()(Timer **t) {
-	    Master::place_timer(t, _begin);
-	}
-    };
 
 #if CLICK_USERLEVEL
     // SELECT
