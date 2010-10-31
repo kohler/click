@@ -29,6 +29,7 @@
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/algorithm.hh>
+#include <click/heap.hh>
 CLICK_DECLS
 
 IPRewriterFlow::IPRewriterFlow(const IPFlowID &flowid, int output,

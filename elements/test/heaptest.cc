@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "heaptest.hh"
-#include <click/algorithm.hh>
+#include <click/heap.hh>
 #include <click/error.hh>
 #include <click/pair.hh>
 CLICK_DECLS

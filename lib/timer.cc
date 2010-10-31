@@ -24,6 +24,7 @@
 #include <click/master.hh>
 #include <click/routerthread.hh>
 #include <click/task.hh>
+#include <click/heap.hh>
 CLICK_DECLS
 
 /** @file timer.hh

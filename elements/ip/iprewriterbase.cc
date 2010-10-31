@@ -32,6 +32,7 @@
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/algorithm.hh>
+#include <click/heap.hh>
 
 #ifdef CLICK_LINUXMODULE
 #include <click/cxxprotect.h>

@@ -23,6 +23,7 @@
 #include <click/standard/scheduleinfo.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
+#include <click/heap.hh>
 CLICK_DECLS
 
 TimeSortedSched::TimeSortedSched()

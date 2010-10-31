@@ -24,6 +24,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include <click/handlercall.hh>
+#include <click/heap.hh>
 #if CLICK_USERLEVEL
 # include <fcntl.h>
 # include <click/userutils.hh>
