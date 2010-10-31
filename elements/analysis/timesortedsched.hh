@@ -100,7 +100,9 @@ class TimeSortedSched : public Element { public:
     struct packet_s {
 	Packet *p;
 	int input;		// for space, consider using annotation?
-	static bool compare(packet_s &a, packet_s &b) {
+    };
+    struct heap_less {
+	inline bool operator()(packet_s &a, packet_s &b) {
 	    return a.p->timestamp_anno() < b.p->timestamp_anno();
 	}
     };

@@ -98,7 +98,7 @@ TimeSortedSched::pull(int)
 	    while ((_pkt[_npkt].p = input(i).pull())) {
 		_pkt[_npkt].input = i;
 		++_npkt;
-		push_heap(_pkt, _pkt + _npkt, packet_s::compare);
+		push_heap(_pkt, _pkt + _npkt, heap_less());
 		--is.space;
 		if (!is.space) {
 		    _input[rpos].ready = _input[_nready - 1].ready;
@@ -122,7 +122,7 @@ TimeSortedSched::pull(int)
 	    _input[_nready].ready = _pkt[0].input;
 	    ++_nready;
 	}
-	pop_heap(_pkt, _pkt + _npkt, packet_s::compare);
+	pop_heap(_pkt, _pkt + _npkt, heap_less());
 	--_npkt;
 	return p;
     } else {
