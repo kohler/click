@@ -268,36 +268,6 @@ Task::unschedule()
 	add_pending();
 }
 
-#if HAVE_TASK_HEAP
-void
-Task::fast_reschedule()
-{
-    // should not be scheduled at this point
-    assert(_thread);
-#if CLICK_LINUXMODULE
-    // tasks never run at interrupt time
-    assert(!in_interrupt());
-#endif
-#if CLICK_BSDMODULE
-    // GIANT_REQUIRED;
-#endif
-
-    if (!scheduled()) {
-	// increase pass
-	_pass += _stride;
-
-	if (_thread->_task_heap_hole) {
-	    _schedpos = 0;
-	    _thread->_task_heap_hole = 0;
-	} else {
-	    _schedpos = _thread->_task_heap.size();
-	    _thread->_task_heap.push_back(0);
-	}
-	_thread->task_reheapify_from(_schedpos, this);
-    }
-}
-#endif
-
 void
 Task::true_reschedule()
 {

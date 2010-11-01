@@ -458,7 +458,9 @@ Task::adjust_tickets(int delta)
     set_tickets(_tickets + delta);
 }
 
-# if !HAVE_TASK_HEAP
+#endif /* HAVE_STRIDE_SCHED */
+
+
 /** @brief Reschedule the task.  The task's current thread must be currently
  * locked.
  *
@@ -470,88 +472,70 @@ inline void
 Task::fast_reschedule()
 {
     assert(_thread);
-#  if CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE
     // tasks never run at interrupt time in Linux
     assert(!in_interrupt());
-#  endif
-#  if CLICK_BSDMODULE
+#endif
+#if CLICK_BSDMODULE
     GIANT_REQUIRED;
-#  endif
+#endif
 
     if (!scheduled()) {
+#if HAVE_STRIDE_SCHED
 	// increase pass
 	_pass += _stride;
 
-#  if 0
+# if HAVE_TASK_HEAP
+	if (_thread->_task_heap_hole) {
+	    _schedpos = 0;
+	    _thread->_task_heap_hole = 0;
+	} else {
+	    _schedpos = _thread->_task_heap.size();
+	    _thread->_task_heap.push_back(0);
+	}
+	_thread->task_reheapify_from(_schedpos, this);
+# elif 0
 	// look for 'n' immediately before where we should be scheduled
 	Task* n = _thread->_prev;
 	while (n != _thread && PASS_GT(n->_pass, _pass))
 	    n = n->_prev;
-
 	// schedule after 'n'
 	_next = n->_next;
 	_prev = n;
 	n->_next = this;
 	_next->_prev = this;
-#  else
+# else
 	// look for 'n' immediately after where we should be scheduled
 	Task* n = _thread->_next;
-#   ifdef CLICK_BSDMODULE /* XXX MARKO a race occured here when not spl'ed */
-	while (n->_next != NULL && n != _thread && !PASS_GT(n->_pass, _pass))
-#   else
 	while (n != _thread && !PASS_GT(n->_pass, _pass))
-#   endif
 	    n = n->_next;
-
 	// schedule before 'n'
 	_prev = n->_prev;
 	_next = n;
-	_prev->_next = this;
 	n->_prev = this;
-#  endif
-    }
-}
-# endif /* !HAVE_TASK_HEAP */
-
-inline void
-Task::fast_schedule()
-{
-    GIANT_REQUIRED;
-    assert(_tickets >= 1);
-    _pass = _thread->_pass;
-    fast_reschedule();
-}
+	_prev->_next = this;
+# endif
 
 #else /* !HAVE_STRIDE_SCHED */
-
-inline void
-Task::fast_reschedule()
-{
-    assert(_thread);
-#if CLICK_LINUXMODULE
-    // tasks never run at interrupt time
-    assert(!in_interrupt());
-#endif
-#if CLICK_BSDMODULE
-    // assert(!intr_nesting_level);
-    GIANT_REQUIRED;
-#endif
-    if (!scheduled()) {
+	// schedule at the end of the list
 	_prev = _thread->_prev;
 	_next = _thread;
 	_thread->_prev = this;
 	_thread->_next = this;
+#endif /* HAVE_STRIDE_SCHED */
     }
 }
 
 inline void
 Task::fast_schedule()
 {
+#if HAVE_STRIDE_SCHED
+    GIANT_REQUIRED;
+    assert(_tickets >= 1);
+    _pass = _thread->_pass;
+#endif
     fast_reschedule();
 }
-
-#endif /* HAVE_STRIDE_SCHED */
-
 
 inline void
 Task::reschedule()
