@@ -521,7 +521,7 @@ Task::fast_reschedule()
 	_prev = _thread->_prev;
 	_next = _thread;
 	_thread->_prev = this;
-	_thread->_next = this;
+	_prev->_next = this;
 #endif /* HAVE_STRIDE_SCHED */
     }
 }
