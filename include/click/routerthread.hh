@@ -98,7 +98,16 @@ class RouterThread
   private:
 
 #if HAVE_TASK_HEAP
-    Vector<Task*> _task_heap;
+    struct task_heap_element {
+	unsigned pass;
+	Task *t;
+	task_heap_element() {
+	}
+	task_heap_element(Task *t_)
+	    : pass(t_->_pass), t(t_) {
+	}
+    };
+    Vector<task_heap_element> _task_heap;
     int _task_heap_hole;
     unsigned _pass;
 #endif
@@ -252,7 +261,7 @@ RouterThread::task_begin() const
 {
 #if HAVE_TASK_HEAP
     int p = _task_heap_hole;
-    return (p < _task_heap.size() ? _task_heap.at_u(p) : 0);
+    return (p < _task_heap.size() ? _task_heap.at_u(p).t : 0);
 #else
     return _next;
 #endif
@@ -272,7 +281,7 @@ RouterThread::task_next(Task *task) const
 {
 #if HAVE_TASK_HEAP
     int p = task->_schedpos + 1;
-    return (p < _task_heap.size() ? _task_heap.at_u(p) : 0);
+    return (p < _task_heap.size() ? _task_heap.at_u(p).t : 0);
 #else
     return task->_next;
 #endif

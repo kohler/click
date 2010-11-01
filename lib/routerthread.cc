@@ -310,28 +310,29 @@ void
 RouterThread::task_reheapify_from(int pos, Task* t)
 {
     // MUST be called with task lock held
-    Task** tbegin = _task_heap.begin();
-    Task** tend = _task_heap.end();
+    task_heap_element *tbegin = _task_heap.begin();
+    task_heap_element *tend = _task_heap.end();
     int npos;
 
     int endpos = _task_heap_hole << 1;
     while (pos > endpos
-	   && (npos = (pos-1) >> 1, PASS_GT(tbegin[npos]->_pass, t->_pass))) {
+	   && (npos = (pos-1) >> 1, PASS_GT(tbegin[npos].pass, t->_pass))) {
 	tbegin[pos] = tbegin[npos];
-	tbegin[npos]->_schedpos = pos;
+	tbegin[npos].t->_schedpos = pos;
 	pos = npos;
     }
 
     while (1) {
-	Task* smallest = t;
-	Task** tp = tbegin + 2*pos + 1;
-	if (tp < tend && PASS_GE(smallest->_pass, tp[0]->_pass))
-	    smallest = tp[0];
-	if (tp + 1 < tend && PASS_GE(smallest->_pass, tp[1]->_pass))
-	    smallest = tp[1], tp++;
+	Task *smallest = t;
+	task_heap_element *tp = tbegin + 2*pos + 1;
+	if (tp < tend && PASS_GE(smallest->_pass, tp[0].pass))
+	    smallest = tp[0].t;
+	if (tp + 1 < tend && PASS_GE(smallest->_pass, tp[1].pass))
+	    smallest = tp[1].t, ++tp;
 
 	smallest->_schedpos = pos;
-	tbegin[pos] = smallest;
+	tbegin[pos].t = smallest;
+	tbegin[pos].pass = smallest->_pass;
 
 	if (smallest == t)
 	    return;
@@ -367,7 +368,7 @@ RouterThread::run_tasks(int ntasks)
 #if HAVE_TASK_HEAP
 	if (_task_heap.size() == 0)
 	    break;
-	t = _task_heap.at_u(0);
+	t = _task_heap.at_u(0).t;
 #else
 	t = task_begin();
 	if (t == this)
@@ -403,7 +404,7 @@ RouterThread::run_tasks(int ntasks)
 
 #if HAVE_TASK_HEAP
 	if (_task_heap_hole) {
-	    Task* back = _task_heap.back();
+	    Task *back = _task_heap.back().t;
 	    _task_heap.pop_back();
 	    _task_heap_hole = 0;
 	    if (_task_heap.size() > 0)
@@ -654,10 +655,10 @@ RouterThread::unschedule_router_tasks(Router* r)
 {
     lock_tasks();
 #if HAVE_TASK_HEAP
-    Task* t;
-    for (Task** tp = _task_heap.end(); tp > _task_heap.begin(); )
-	if ((t = *--tp, t->router() == r)) {
-	    task_reheapify_from(tp - _task_heap.begin(), _task_heap.back());
+    Task *t;
+    for (task_heap_element *tp = _task_heap.end(); tp > _task_heap.begin(); )
+	if ((t = (--tp)->t, t->router() == r)) {
+	    task_reheapify_from(tp - _task_heap.begin(), _task_heap.back().t);
 	    // must clear _schedpos AFTER task_reheapify_from
 	    t->_schedpos = -1;
 	    // recheck this slot; have moved a task there

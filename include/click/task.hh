@@ -397,7 +397,7 @@ Task::fast_unschedule(bool should_be_scheduled)
 #endif
     if (scheduled()) {
 #if HAVE_TASK_HEAP
-	Task* back = _thread->_task_heap.back();
+	Task *back = _thread->_task_heap.back().t;
 	_thread->_task_heap.pop_back();
 	if (_thread->_task_heap.size() > 0)
 	    _thread->task_reheapify_from(_schedpos, back);
@@ -491,7 +491,7 @@ Task::fast_reschedule()
 	    _thread->_task_heap_hole = 0;
 	} else {
 	    _schedpos = _thread->_task_heap.size();
-	    _thread->_task_heap.push_back(0);
+	    _thread->_task_heap.push_back(RouterThread::task_heap_element());
 	}
 	_thread->task_reheapify_from(_schedpos, this);
 # elif 0
