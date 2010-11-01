@@ -362,11 +362,15 @@ RouterThread::run_tasks(int ntasks)
 #endif
 
     Task *t;
+    for (; ntasks >= 0; --ntasks) {
 #if HAVE_TASK_HEAP
-    while (_task_heap.size() > 0 && ntasks >= 0) {
+	if (_task_heap.size() == 0)
+	    break;
 	t = _task_heap.at_u(0);
 #else
-    while ((t = task_begin()), t != this && ntasks >= 0) {
+	t = task_begin();
+	if (t == this)
+	    break;
 #endif
 
 	// 22.May.2008: If pending changes on this task, break early to
@@ -415,8 +419,6 @@ RouterThread::run_tasks(int ntasks)
 	    t->update_cycles(delta/32 + (t->cycles()*31)/32);
 	}
 #endif
-
-	--ntasks;
     }
 }
 
