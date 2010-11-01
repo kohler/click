@@ -192,11 +192,7 @@ class Task { public:
     void strong_unschedule();
     void strong_reschedule();
 
-#if HAVE_TASK_HEAP
-    void fast_reschedule();
-#else
     inline void fast_reschedule();
-#endif
 
     void move_thread(int thread_id);
 
