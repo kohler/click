@@ -252,7 +252,7 @@ RouterThread::task_begin() const
 {
 #if HAVE_TASK_HEAP
     int p = _task_heap_hole;
-    return (p < _task_heap.size() ? _task_heap[p] : 0);
+    return (p < _task_heap.size() ? _task_heap.at_u(p) : 0);
 #else
     return _next;
 #endif
@@ -272,7 +272,7 @@ RouterThread::task_next(Task *task) const
 {
 #if HAVE_TASK_HEAP
     int p = task->_schedpos + 1;
-    return (p < _task_heap.size() ? _task_heap[p] : 0);
+    return (p < _task_heap.size() ? _task_heap.at_u(p) : 0);
 #else
     return task->_next;
 #endif
