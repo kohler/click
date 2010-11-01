@@ -106,6 +106,7 @@ void
 SchedOrderTest::add_handlers()
 {
     add_read_handler("order", read_handler, 0);
+    add_task_handlers(&_task);
 }
 
 CLICK_ENDDECLS

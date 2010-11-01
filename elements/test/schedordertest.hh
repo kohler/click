@@ -40,6 +40,8 @@ forever.  Default is 0.
 Boolean.  If true, SchedOrderTest will stop the driver when the ID sequence is
 full.  (Note that this has to do with SIZE, not LIMIT.)  Default is false.
 
+=back
+
 =h order read-only
 
 Reports the ID sequence as a space-separated list of integers.
