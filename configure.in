@@ -1163,7 +1163,6 @@ fixincludes.pl execution failed.
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
-#include <linux/autoconf.h>
 #include <asm/types.h>]])
 
 

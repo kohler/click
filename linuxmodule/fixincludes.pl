@@ -208,9 +208,24 @@ sub one_includeroot ($$) {
 	    if ($d eq "sched.h") {
 		s<^(extern char ___assert_task_state)((?:.*?\n)*?.*?\;.*)$><\#ifndef __cplusplus\n$1$2\n\#endif>mg;
 	    }
+	    if ($d eq "netdevice.h") {
+                s<(NETREG_REGISTERED\))><\n\#ifndef __cplusplus\n$1\n\#else\nnet_device::$1\n\#endif)>g;
+
+            }
+            if ($d eq "rcupdate.h") {
+		s{(^static inline notrace)(.+)}{"$1$2;\nstatic inline$2"}emg;
+	    }
+	    if ($d eq "kobject.h") {
+	        s{(^\#include \<linux\/sysfs.h\>(.*\n)*)(^enum kobj_ns_type\s\{\n([^\}].*\n)*\}\;)((.*\n)*)}{"$3\n$1\/*\n$3\n*\/$5"}emg;
+	    }
+
 
 	    # unquote.
 	    $_ = sunprotect($_);
+            # "new" and other keywords in inline assembler
+            s{(\basm\b.*)+(".*?[^\\])(\bnew\b)(.*")}{$1$2new_value$4}g;
+	    s{(\basm\b.*)+(".*?[^\\])(\band\b)(.*")}{$1$2and_value$4}g;
+	    s{(\basm\b.*)+(".*?[^\\])(\bswap\b)(.*")}{$1$2swap_value$4}g;
 
 	    # perhaps nothing has changed; avoid changing the timestamp
 	    if (-f "$outputroot$dd/$d") {
