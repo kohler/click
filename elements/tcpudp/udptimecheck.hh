@@ -20,7 +20,7 @@ Programmer: Roman Chertov
 
 
 /*
-UDPUDPTimeCheck element can be handy when computing end-to-end UDP packet 
+UDPTimeCheck element can be handy when computing end-to-end UDP packet
 delays.  The element embeds a timestamp and a sequence number into a packet and 
 adjusts the checksum of the UDP packet.  Once the initial timestamp has been 
 placed into the payload of the UDP packet, a time difference can be computed 
@@ -78,11 +78,19 @@ public:
     const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return AGNOSTIC; }
 
-    int  initialize(ErrorHandler *);
     void add_handlers();
     int  configure(Vector<String> &conf, ErrorHandler *errh);
 
     Packet *simple_action(Packet *);
+
+    // packet data payload access struct
+    // Header | PDATA | rest of data
+    // This comes out to 22 bytes which will fit into the smallest Ethernet frame
+    struct PData
+    {
+        uint32_t  seq_num;
+        uint32_t  data[4];
+    };
 
 private:
     unsigned long _count;

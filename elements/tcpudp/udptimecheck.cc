@@ -29,19 +29,10 @@ CLICK_DECLS
 
 /*
  */
-// packet data payload access struct
-// Header | PDATA | rest of data
-// This comes out to 22 bytes which will fit into the smallest Ethernet frame
-struct PData
-{
-    uint32_t  seq_num;
-    uint32_t  data[4];
-};
 
 
 UDPTimeCheck::UDPTimeCheck()
 {
-    initialize(0);
     _count = 0;
     _in = 1;
     _csum = 1;
@@ -52,16 +43,10 @@ UDPTimeCheck::~UDPTimeCheck()
 {
 }
 
-int UDPTimeCheck::initialize(ErrorHandler *)
-{
-    return 0;
-}
 
 
 int UDPTimeCheck::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    initialize(0);
-
     if (cp_va_kparse(conf, this, errh,
                     "OFFSET", cpkP+cpkM, cpInteger, &_offset,
                     "IN", 0, cpBool, &_in,
@@ -86,12 +71,18 @@ Packet* UDPTimeCheck::simple_action(Packet *packet)
     // things up
     if (!p)
     {
+        // If uniqueify() fails, packet itself is garbage and has been deleted
         click_chatter("Non-Writable Packet!");
-        return packet;
+        return 0;
     }
 
     // eth, IP, headers must be bypassed with a correct offset
-    udph = (click_udp*)(p->data() + _offset);
+    // shift_data will deal with alignment issues if necessary
+    if (!(p = p->shift_data(_offset)->uniqueify())) // if NULL then the packet is deleted
+        return 0;
+    udph = (click_udp*)(p->data());
+
+    //udph = (click_udp*)(p->data() + _offset);
 
     pData = (PData*)((char*)udph + 8);
     csum = udph->uh_sum;
@@ -111,7 +102,7 @@ Packet* UDPTimeCheck::simple_action(Packet *packet)
         pData->data[3] = diff.nsec();
         pData->seq_num = ntohl(pData->seq_num);
         csum += click_in_cksum((const unsigned char*)(pData->data + 2), 2 * sizeof(uint32_t));
-        //click_chatter("Time Diff sec: %d usec: %d\n", pData->data[2], pData->data[3]);
+        click_chatter("Time Diff sec: %d usec: %d\n", pData->data[2], pData->data[3]);
     }
     else
     {
@@ -124,6 +115,9 @@ Packet* UDPTimeCheck::simple_action(Packet *packet)
         pData->data[3] = 0;
         csum += click_in_cksum((const unsigned char*)pData, sizeof(PData));
     }
+
+    if (!(p = p->shift_data(-_offset)->uniqueify())) // if NULL then the packet is deleted
+        return 0;
 
     if (!_csum)
         return p;
@@ -142,22 +136,6 @@ Packet* UDPTimeCheck::simple_action(Packet *packet)
 }
 
 
-
-String UDPTimeCheck::read_handler(Element *e, void *thunk)
-{
-    UDPTimeCheck *ta = static_cast<UDPTimeCheck *>(e);
-    int        which = reinterpret_cast<intptr_t>(thunk);
-
-    switch (which)
-    {
-      case 0:
-            return String(ta->_count);
-      default:
-            return String();
-    }
-}
-
-
 int UDPTimeCheck::reset_handler(const String &, Element *e, void *, ErrorHandler *)
 {
     UDPTimeCheck *t = (UDPTimeCheck *) e;
@@ -168,7 +146,7 @@ int UDPTimeCheck::reset_handler(const String &, Element *e, void *, ErrorHandler
 
 void UDPTimeCheck::add_handlers()
 {
-    add_read_handler("count", read_handler, (void *)0);
+    add_data_handlers("count", Handler::OP_READ, &_count);
     add_write_handler("reset", reset_handler, 0);
 }
 
