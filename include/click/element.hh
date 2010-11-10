@@ -161,9 +161,17 @@ class Element { public:
     void set_handler(const String &name, int flags, HandlerCallback callback, const void *read_user_data = 0, const void *write_user_data = 0);
     void set_handler(const String &name, int flags, HandlerCallback callback, int read_user_data, int write_user_data = 0);
     int set_handler_flags(const String &name, int set_flags, int clear_flags = 0);
-    void add_task_handlers(Task *task, NotifierSignal *signal, const String &prefix = String());
+    enum { TASKHANDLER_WRITE_SCHEDULED = 1,
+	   TASKHANDLER_WRITE_TICKETS = 2,
+	   TASKHANDLER_WRITE_HOME_THREAD = 4,
+	   TASKHANDLER_WRITE_ALL = 7,
+	   TASKHANDLER_DEFAULT = 6 };
+    void add_task_handlers(Task *task, NotifierSignal *signal, int flags, const String &prefix = String());
+    inline void add_task_handlers(Task *task, NotifierSignal *signal, const String &prefix = String()) {
+	add_task_handlers(task, signal, TASKHANDLER_DEFAULT, prefix);
+    }
     inline void add_task_handlers(Task *task, const String &prefix = String()) {
-	add_task_handlers(task, 0, prefix);
+	add_task_handlers(task, 0, TASKHANDLER_DEFAULT, prefix);
     }
 
     void add_data_handlers(const String &name, int flags, uint8_t *data);
