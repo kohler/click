@@ -35,6 +35,7 @@ CLICK_CXX_PROTECT
 #include <linux/ip.h>
 #include <linux/inetdevice.h>
 #include <linux/if_arp.h>
+#include <linux/etherdevice.h>
 #include <net/route.h>
 #include <net/dst.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
@@ -71,6 +72,10 @@ static void fl_wakeup(Timer *, void *);
 }
 
 static AnyDeviceMap fromlinux_map;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
+static struct net_device_ops fromhost_netdev_ops;
+#endif
 
 void
 FromHost::static_initialize()
@@ -131,6 +136,7 @@ FromHost::new_device(const char *name)
     if (!dev)
 	return 0;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 32)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     setup(dev);
 #endif
@@ -138,8 +144,17 @@ FromHost::new_device(const char *name)
     dev->stop = fl_close;
     dev->hard_start_xmit = fl_tx;
     dev->get_stats = fl_stats;
+#else
+    fromhost_netdev_ops.ndo_open = fl_open;
+    fromhost_netdev_ops.ndo_stop = fl_close;
+    fromhost_netdev_ops.ndo_start_xmit = fl_tx;
+    fromhost_netdev_ops.ndo_get_stats = fl_stats;
+    fromhost_netdev_ops.ndo_set_mac_address = eth_mac_addr;
+    dev->netdev_ops = &fromhost_netdev_ops;
+#endif
     dev->mtu = _mtu;
     dev->tx_queue_len = 0;
+    dev->ifindex = -1;
     return dev;
 }
 
@@ -175,7 +190,11 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     // check for existing device
     _dev = AnyDevice::get_by_name(_devname.c_str());
     if (_dev) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 32)
 	if (_dev->open != fl_open) {
+#else
+	if (_dev->netdev_ops->ndo_open != fl_open) {
+#endif
 	    dev_put(_dev);
 	    _dev = 0;
 	    return errh->error("device '%s' already exists", _devname.c_str());
@@ -203,18 +222,29 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     _dev = new_device(_devname.c_str());
     if (!_dev)
 	return errh->error("out of memory! registering device '%s'", _devname.c_str());
-    else if ((res = register_netdev(_dev)) < 0) {
+    else {
+	// register_netdev ends up to call copy_rtnl_link_stats which
+	// requires valid net_device_stats structure, therefore device has to
+	// mapped before calling register_netdev
+	dev_hold(_dev);
+	fromlinux_map.insert(this, false);
+	if ((res = register_netdev(_dev))) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-	free_netdev(_dev);
+	    free_netdev(_dev);
 #else
-	kfree(_dev);
+	    kfree(_dev);
 #endif
-	_dev = 0;
-	return errh->error("error %d registering device '%s'", res, _devname.c_str());
+	    dev_put(_dev);
+            fromlinux_map.remove(this, false);
+	    _dev = 0;
+	    return errh->error("error %d registering device '%s'", res, _devname.c_str());
+	} else {
+	    // _dev is in unknown_map
+	    fromlinux_map.remove(this, false);
+	    fromlinux_map.insert(this, false);
+	}
     }
 
-    dev_hold(_dev);
-    fromlinux_map.insert(this, false);
     return 0;
 }
 
@@ -225,34 +255,43 @@ FromHost::set_device_addresses(ErrorHandler *errh)
     struct ifreq ifr;
     strncpy(ifr.ifr_name, _dev->name, IFNAMSIZ);
     struct sockaddr_in *sin = (struct sockaddr_in *)&ifr.ifr_addr;
-
-#if HAVE_LINUX_DEV_IOCTL && HAVE_LINUX_DEVINET_IOCTL
-    mm_segment_t oldfs = get_fs();
-    set_fs(get_ds());
+    mm_segment_t oldfs;
 
     if (_macaddr) {
 	ifr.ifr_hwaddr.sa_family = _dev->type;
 	memcpy(ifr.ifr_hwaddr.sa_data, _macaddr.data(), 6);
-	if ((res = netdev_ioctl(_dev, SIOCSIFHWADDR, &ifr)) < 0)
-	    errh->error("error %d setting hardware address for device '%s'", res, _devname.c_str());
+#if HAVE_LINUX_DEV_IOCTL
+	oldfs = get_fs();
+	set_fs(get_ds());
+	res = netdev_ioctl(_dev, SIOCSIFHWADDR, &ifr);
+	set_fs(oldfs);
+#else
+	rtnl_lock();
+	res = dev_set_mac_address(_dev, &ifr.ifr_hwaddr);
+	rtnl_unlock();
+#endif
+	if (res)
+	    errh->error("error %d setting hardware address for device '%s'",
+			res, _devname.c_str());
     }
 
     if (_destaddr) {
+#if HAVE_LINUX_DEVINET_IOCTL
         sin->sin_family = AF_INET;
         sin->sin_addr = _destaddr;
+	oldfs = get_fs();
+	set_fs(get_ds());
         if (res >= 0 && (res = inetdev_ioctl(_dev, SIOCSIFADDR, &ifr)) < 0)
             errh->error("error %d setting address for device '%s'", res, _devname.c_str());
 
         sin->sin_addr = _destmask;
         if (res >= 0 && (res = inetdev_ioctl(_dev, SIOCSIFNETMASK, &ifr)) < 0)
             errh->error("error %d setting netmask for device '%s'", res, _devname.c_str());
-    }
-
-    set_fs(oldfs);
+	set_fs(oldfs);
 #else
-    if (_macaddr || _destaddr)
-	res = errh->error("cannot set addresses for FromHost devices on this kernel");
+	res = errh->error("cannot set ip address for FromHost devices on this kernel");
 #endif
+    }
 
     return res;
 }
@@ -263,7 +302,7 @@ dev_updown(net_device *dev, int up, ErrorHandler *errh)
     struct ifreq ifr;
     strncpy(ifr.ifr_name, dev->name, IFNAMSIZ);
     uint32_t flags = IFF_UP | IFF_RUNNING;
-    int res;
+    int res = -EINVAL;
 
 #if HAVE_LINUX_DEV_IOCTL
     mm_segment_t oldfs = get_fs();
@@ -276,10 +315,15 @@ dev_updown(net_device *dev, int up, ErrorHandler *errh)
 
     set_fs(oldfs);
 #else
-    if (errh)
-	errh->error("FromHost devices are not supported on this kernel");
-    res = -EINVAL;
+    rtnl_lock();
+    if ((res = dev_change_flags(dev, dev->flags | IFF_UP) < 0)) {
+	errh->error("error %d bringing %s device '%s'", res, (up > 0 ? "up" : "down"), dev->name);
+    }
+    rtnl_unlock();
 #endif
+
+    if (res)
+	errh->error("FromHost devices are not supported on this kernel");
 
     return res;
 }
@@ -376,8 +420,11 @@ fl_stats(net_device *dev)
 {
     net_device_stats *stats = 0;
     unsigned long lock_flags;
+    FromHost *fl;
     fromlinux_map.lock(false, lock_flags);
-    if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0))
+    if (fl = (FromHost *)fromlinux_map.lookup(dev, 0))
+	stats = fl->stats();
+    else if (fl = (FromHost *)fromlinux_map.lookup_unknown(dev, 0))
 	stats = fl->stats();
     fromlinux_map.unlock(false, lock_flags);
     return stats;
@@ -410,10 +457,14 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
 #if HAVE_SKB_DST_DROP
 	    skb_dst_drop(skb);
 #else
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 	    if (skb->dst) {
 		dst_release(skb->dst);
 		skb->dst = 0;
 	    }
+#else
+	    dst_release(skb_dst(skb));
+#endif
 #endif
 
 	    Packet *p = Packet::make(skb);
@@ -499,5 +550,5 @@ FromHost::add_handlers()
     add_data_handlers("drops", Handler::OP_READ, &_drops);
 }
 
-ELEMENT_REQUIRES(AnyDevice linuxmodule false)
+ELEMENT_REQUIRES(AnyDevice linuxmodule)
 EXPORT_ELEMENT(FromHost)
