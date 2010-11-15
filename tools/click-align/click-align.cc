@@ -282,7 +282,7 @@ static ElementClassT *class_factory(const String &name)
 	return new AlignClass(name, new GeneratorAligner(Alignment::make_universal()));
     if (name == "IPEncap" || name == "UDPIPEncap" || name == "ICMPPingEncap"
 	|| name == "RandomUDPIPEncap" || name == "RoundRobinUDPIPEncap"
-	|| name == "RoundRobinTCPIPEncap")
+	|| name == "RoundRobinTCPIPEncap" || name == "UDPTimeCheck")
 	return new AlignClass(name, new WantAligner(Alignment(4, 0)));
     if (name == "ARPResponder")
 	return new AlignClass(name, new WantAligner(Alignment(2, 0)));
