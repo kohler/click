@@ -1018,7 +1018,7 @@ DSRRouteTable::strip_headers(Packet *p_in)
 
   p->set_ip_header((click_ip*)p->data(),sizeof(click_ip));
 
-  DEBUG_CHATTER(" * stripping headers; removed %d bytes\n");
+  DEBUG_CHATTER(" * stripping headers; removed %d bytes\n", dsr_len);
 
   return p;
 }
