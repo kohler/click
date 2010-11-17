@@ -14,9 +14,10 @@ Programmer: Roman Chertov
 */
 
 #include <click/config.h>
-#include "udptimecheck.hh"
+#include "storeudptimeseqrecord.hh"
 #include <click/glue.hh>
 #include <clicknet/ip.h>
+#include <clicknet/ip6.h>
 #include <clicknet/udp.h>
 #include <clicknet/tcp.h>
 #include <click/confparse.hh>
@@ -31,21 +32,20 @@ CLICK_DECLS
  */
 
 
-UDPTimeCheck::UDPTimeCheck()
+StoreUDPTimeSeqRecord::StoreUDPTimeSeqRecord()
 {
     _count = 0;
-    _in = 1;
-    _csum = 1;
+    _delta = 0;
     _offset = 0;
 }
 
 
 
-int UDPTimeCheck::configure(Vector<String> &conf, ErrorHandler *errh)
+int StoreUDPTimeSeqRecord::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     if (cp_va_kparse(conf, this, errh,
                     "OFFSET", cpkP+cpkM, cpInteger, &_offset,
-                    "IN", 0, cpBool, &_in,
+                    "DELTA", 0, cpBool, &_delta,
                     cpEnd) < 0)
         return -1;
     return 0;
@@ -54,13 +54,14 @@ int UDPTimeCheck::configure(Vector<String> &conf, ErrorHandler *errh)
 // This is the tricky bit.  We can't rely on any headers being
 // filled out if elements like CheckIPHeader have not been called
 // so we should just access the raw data and cast wisely
-Packet* UDPTimeCheck::simple_action(Packet *packet)
+Packet* StoreUDPTimeSeqRecord::simple_action(Packet *packet)
 {
     WritablePacket *p = packet->uniqueify();
     Timestamp       tnow;
     click_udp      *udph = 0;
     PData          *pData;
     uint32_t        csum = 0;
+    uint32_t        offset = _offset;
 
     // the packet is shared and we can't modify it without screwing
     // things up
@@ -70,34 +71,68 @@ Packet* UDPTimeCheck::simple_action(Packet *packet)
         click_chatter("Non-Writable Packet!");
         return 0;
     }
+    if (p->length() < offset + sizeof(uint32_t) * 2) // get the first two words of the IP header to see 
+    {                                                // what it is to determine how to proceed further
+        p->kill();
+        return 0;
+    }
+    // here need to get to the right offset.  The IP header can be of variable length due to options
+    // also, the header might be IPv4 of IPv6
+    u_char version = p->data()[offset] >> 4;
+    if (version == 0x04)
+    {
+        const click_ip *ip = reinterpret_cast<const click_ip *>(p->data() + offset);
+        offset += ip->ip_hl << 2;
+    }
+    else if (version == 0x06)
+    {
+        // IPv6 header is 
+        const click_ip6 *ip6 = reinterpret_cast<const click_ip6 *>(p->data() + offset);
+        if (ip6->ip6_nxt == 0x11) // UDP is the next header
+            offset += sizeof(click_ip6);
+        else // the next header is not UDP so stop now
+        {
+            p->kill();
+            return 0;
+        }
+    }
+    else
+    {
+        click_chatter("Unknown IP version!");
+        p->kill();
+        return 0;
+    }
 
+    if (p->length() < offset + sizeof(click_udp) + sizeof(PData))
+    {
+        //click_chatter("Packet is too short");
+        p->kill();
+        return 0;
+    }
     // eth, IP, headers must be bypassed with a correct offset
-    udph = (click_udp*)(p->data() + _offset);
-
-    pData = (PData*)((char*)udph + 8);
+    udph = (click_udp*)(p->data() + offset);
+    pData = (PData*)((char*)udph + sizeof(click_udp));
     csum = udph->uh_sum;
 
     // we use incremental checksum computation to patch up the checksum after
     // the payload will get modified
     _count++;
-    if (_in)
+    if (_delta)
     {
-        pData->data[0] = ntohl(pData->data[0]);
-        pData->data[1] = ntohl(pData->data[1]);
-
-        Timestamp ts1(pData->data[0], Timestamp::nsec_to_subsec(pData->data[1]));
+        Timestamp ts1(ntohl(pData->data[0]), Timestamp::nsec_to_subsec(ntohl(pData->data[1])));
         Timestamp diff = Timestamp::now() - ts1;
 
-        pData->data[2] = diff.sec();
-        pData->data[3] = diff.nsec();
-        pData->seq_num = ntohl(pData->seq_num);
+        //click_chatter("Seq %d Time Diff sec: %d usec: %d\n", ntohl(pData->seq_num), diff.sec(), diff.nsec());
+        pData->data[2] = htonl(diff.sec());
+        pData->data[3] = htonl(diff.nsec());
         csum += click_in_cksum((const unsigned char*)(pData->data + 2), 2 * sizeof(uint32_t));
-        //click_chatter("Time Diff sec: %d usec: %d\n", pData->data[2], pData->data[3]);
     }
     else
     {
         tnow = Timestamp::now();
 
+        // subtract the previous contribution from CHECKSUM in case PData values are non-zero
+        csum -= click_in_cksum((const unsigned char*)pData, sizeof(PData));
         pData->seq_num = htonl(_count);
         pData->data[0] = htonl(tnow.sec());
         pData->data[1] = htonl(tnow.nsec());
@@ -117,19 +152,19 @@ Packet* UDPTimeCheck::simple_action(Packet *packet)
 }
 
 
-int UDPTimeCheck::reset_handler(const String &, Element *e, void *, ErrorHandler *)
+int StoreUDPTimeSeqRecord::reset_handler(const String &, Element *e, void *, ErrorHandler *)
 {
-    UDPTimeCheck *t = (UDPTimeCheck *) e;
+    StoreUDPTimeSeqRecord *t = (StoreUDPTimeSeqRecord *) e;
 
     t->_count = 0;
     return 0;
 }
 
-void UDPTimeCheck::add_handlers()
+void StoreUDPTimeSeqRecord::add_handlers()
 {
     add_data_handlers("count", Handler::OP_READ, &_count);
     add_write_handler("reset", reset_handler, 0);
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(UDPTimeCheck)
+EXPORT_ELEMENT(StoreUDPTimeSeqRecord)
