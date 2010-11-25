@@ -72,6 +72,13 @@ CLICK_DECLS
   also the todo list in dsrroutetable.hh.
 */
 
+/*
+ * that is a nice idea, but I don't have time for this now and want
+ * to build a router configuration that uses notifying queues _after_
+ * the dsrarptable to make it Click not hog the CPU. Thus I made
+ * the first two ports agnostic.
+ */
+
 class DSRArpTable : public Element
 {
 
@@ -82,7 +89,7 @@ public:
 
   const char *class_name() const	{ return "DSRArpTable"; }
   const char *port_count() const	{ return "3/3"; }
-  const char *processing() const	{ return "llh/llh"; }
+  const char *processing() const	{ return "aah/aah"; }
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *errh);
@@ -106,6 +113,7 @@ private:
   void delete_entry(IPAddress);
   EtherAddress lookup_ip(IPAddress);
   bool _debug;
+  Packet* lookup_arp(Packet *);
 };
 CLICK_ENDDECLS
 #endif
