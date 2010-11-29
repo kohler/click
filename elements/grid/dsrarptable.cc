@@ -74,42 +74,26 @@ DSRArpTable::pull(int port)
   assert(port == 0 || port == 1);
 
   // packets to which we want to add an ethernet header
-  Packet *p_in = input(port).pull();
-  if (!p_in)
-    return NULL;
-
-  WritablePacket *q = p_in->push(sizeof(click_ether));
-  if (!q) {
-    click_chatter("DSRArpTable::pull(%d):  could not push space for ethernet header\n", port);
-    return NULL;
-  }
-
-  click_ether *ether = (click_ether *)(q->data());
-
-  IPAddress dst_addr(q->dst_ip_anno());
-  EtherAddress dst_ether = lookup_ip(dst_addr);
-
-  if (! dst_ether) {
-    click_chatter ("DSRArpTable::push:  missing ARP table entry!  src: %s/%s dst: %s/%s\n",
-		   _me.unparse().c_str(), _me_ether.unparse().c_str(),
-		   dst_addr.unparse().c_str(), dst_ether.unparse().c_str());
-    q->kill();
-    return NULL;
-  }
-
-  memcpy(&ether->ether_shost, &_me_ether, 6);
-  memcpy(&ether->ether_dhost, dst_ether.data(), 6);
-  ether->ether_type = htons(_etht);
-
-  return q;
+  return lookup_arp(input(port).pull());
 }
 
 void
 DSRArpTable::push(int port, Packet *p_in)
 {
+  assert(port <= 2);
+
+  if (port == 0 || port == 1) {
+    // packets to which we want to add an ethernet header
+    Packet* p_out = lookup_arp(p_in);
+    if (p_out) {
+      output(port).push(p_out);
+    }
+    return;
+  }
+
   // packets from which we want to extract MAC addresses
 
-  assert(port == 2);
+  // assert(port == 2);
 
   const click_ip *iph = (const click_ip*)(p_in->data() + sizeof(click_ether));
 
@@ -289,6 +273,39 @@ DSRArpTable::lookup_ip(IPAddress ip)
   }
 
   return (_ip_map.find(ip));
+}
+
+// packets to which we want to add an ethernet header
+Packet*
+DSRArpTable::lookup_arp(Packet *p_in)
+{
+  if (!p_in)
+    return NULL;
+
+  WritablePacket *q = p_in->push(sizeof(click_ether));
+  if (!q) {
+    click_chatter("DSRArpTable::lookup_arp:  could not push space for ethernet header\n");
+    return NULL;
+  }
+
+  click_ether *ether = (click_ether *)(q->data());
+
+  IPAddress dst_addr(q->dst_ip_anno());
+  EtherAddress dst_ether = lookup_ip(dst_addr);
+
+  if (! dst_ether) {
+    click_chatter ("DSRArpTable::lookup_arp:  missing ARP table entry!  src: %s/%s dst: %s/%s\n",
+		   _me.unparse().c_str(), _me_ether.unparse().c_str(),
+		   dst_addr.unparse().c_str(), dst_ether.unparse().c_str());
+    q->kill();
+    return NULL;
+  }
+
+  memcpy(&ether->ether_shost, &_me_ether, 6);
+  memcpy(&ether->ether_dhost, dst_ether.data(), 6);
+  ether->ether_type = htons(_etht);
+
+  return q;
 }
 
 EXPORT_ELEMENT(DSRArpTable)

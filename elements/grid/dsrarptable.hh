@@ -22,15 +22,14 @@ CLICK_DECLS
  * ARP table for each pushed packet's source MAC address and source IP
  * address (derived from the various DSR option headers).
  *
- * Pulls on outputs 0 and 1 pull packets from inputs 0 and 1,
- * respectively.  The pulled packets have a link-level MAC header
- * added to them and are sent out output 0.  The destination MAC
- * address is found by using the packet's destination IP annotation to
- * lookup the MAC in the ARP table.
+ * Ports 0 and 1 (both agnostic) add a link-level MAC header to
+ * incoming packets.  Port 0 outputs on port 0, port 1 on port 1.
+ * The destination MAC address is found by using the packet's
+ * destination IP annotation to lookup the MAC in the ARP table.
  *
  * Design rant follows (by Doug):
  *
- * Why two pull inputs that do exactly the same thing and go to their
+ * Why two inputs that do exactly the same thing and go to their
  * respective separate outputs?  I don't know, but I conjecture it's
  * to allow this element to be used on the output of two separate
  * queues.  This is a bad design (I was going to write suboptimal, but
@@ -82,7 +81,8 @@ public:
 
   const char *class_name() const	{ return "DSRArpTable"; }
   const char *port_count() const	{ return "3/3"; }
-  const char *processing() const	{ return "llh/llh"; }
+  const char *processing() const	{ return "aah/aah"; }
+  const char *flow_code() const		{ return "#/#"; }
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *errh);
@@ -106,6 +106,7 @@ private:
   void delete_entry(IPAddress);
   EtherAddress lookup_ip(IPAddress);
   bool _debug;
+  Packet* lookup_arp(Packet *);
 };
 CLICK_ENDDECLS
 #endif
