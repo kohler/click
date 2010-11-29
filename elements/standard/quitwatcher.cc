@@ -68,15 +68,13 @@ QuitWatcher::initialize(ErrorHandler *errh)
 void
 QuitWatcher::run_timer(Timer *)
 {
-    String unscheduled_string = String::make_stable("false", 5);
     for (int i = 0; i < _e.size(); i++) {
 	String s = _handlers[i]->call_read(_e[i]);
-	if (s == unscheduled_string) {
+	if (!s.length() || s[0] == 'f') {
 	    router()->please_stop_driver();
 	    return;
 	}
     }
-
     _timer.schedule_after_msec(10);
 }
 
