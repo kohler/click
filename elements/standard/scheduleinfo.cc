@@ -109,6 +109,7 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
     // return the result you've got
     return tickets_out;
 #else
+    (void) e, (void) errh;
     return 1;
 #endif
 }
@@ -124,6 +125,7 @@ ScheduleInfo::initialize_task(Element *e, Task *task, bool schedule,
 	task->set_tickets(tickets);
     }
 #else
+    (void) errh;
     task->initialize(e, schedule);
 #endif
 }
