@@ -150,6 +150,25 @@ Task::initialize(Router *router, bool schedule)
 }
 
 void
+Task::remove_pending()
+{
+    SpinlockIRQ::flags_t flags = _thread->_pending_lock.acquire();
+    if (_pending_nextptr) {
+	volatile uintptr_t *tptr = &_thread->_pending_head;
+	while (Task *t = pending_to_task(*tptr))
+	    if (t == this) {
+		*tptr = _pending_nextptr;
+		if (!pending_to_task(_pending_nextptr))
+		    _thread->_pending_tail = tptr;
+		_pending_nextptr = 0;
+		break;
+	    } else
+		tptr = &t->_pending_nextptr;
+    }
+    _thread->_pending_lock.release(flags);
+}
+
+void
 Task::cleanup()
 {
 #if CLICK_LINUXMODULE
@@ -161,32 +180,19 @@ Task::cleanup()
     if (initialized()) {
 	strong_unschedule();
 
+	// Perhaps the task is enqueued on the current pending
+	// collection.  If so, remove it.  (Currently this is likely
+	// unnecessary; strong_unschedule() will take care of it.)
 	if (_pending_nextptr) {
-	    // Perhaps the task is enqueued on the current pending collection.
-	    // If so, remove it.
-	    Master *m = _owner->master();
-	    SpinlockIRQ::flags_t flags = m->_master_task_lock.acquire();
-	    if (_pending_nextptr) {
-		volatile uintptr_t *tptr = &m->_pending_head;
-		while (Task *t = pending_to_task(*tptr))
-		    if (t == this) {
-			*tptr = _pending_nextptr;
-			if (!pending_to_task(_pending_nextptr))
-			    m->_pending_tail = tptr;
-			_pending_nextptr = 0;
-			break;
-		    } else
-			tptr = &t->_pending_nextptr;
-	    }
-	    m->_master_task_lock.release(flags);
+	    remove_pending();
 
-	    // If not on the current pending list, perhaps this task is on
-	    // some list currently being processed by
-	    // Master::process_pending().  Wait until that processing is done.
-	    // It is safe to simply spin because pending list processing is so
-	    // simple: processing a pending list will NEVER cause a task to
-	    // get deleted, so ~Task is never called from
-	    // Master::process_pending().
+	    // If not on the current pending list, perhaps this task
+	    // is on some list currently being processed by
+	    // RouterThread::process_pending().  Wait until that
+	    // processing is done.  It is safe to simply spin because
+	    // pending list processing is so simple: processing a
+	    // pending list will NEVER cause a task to get deleted, so
+	    // ~Task is never called from RouterThread::process_pending().
 	    while (_pending_nextptr)
 		/* do nothing */;
 	}
@@ -223,17 +229,16 @@ Task::attempt_lock_tasks()
 void
 Task::add_pending()
 {
-    Router *router = _owner->router();
-    Master *m = router->master();
-    SpinlockIRQ::flags_t flags = m->_master_task_lock.acquire();
-    if (router->_running >= Router::RUNNING_PREPARING
-	&& !_pending_nextptr) {
-	*m->_pending_tail = reinterpret_cast<uintptr_t>(this);
-	m->_pending_tail = &_pending_nextptr;
-	_pending_nextptr = 1;
-	_thread->add_pending();
+    if (_thread->thread_id() >= 0) {
+	SpinlockIRQ::flags_t flags = _thread->_pending_lock.acquire();
+	if (!_pending_nextptr) {
+	    *_thread->_pending_tail = reinterpret_cast<uintptr_t>(this);
+	    _thread->_pending_tail = &_pending_nextptr;
+	    _pending_nextptr = 1;
+	    _thread->add_pending();
+	}
+	_thread->_pending_lock.release(flags);
     }
-    m->_master_task_lock.release(flags);
 }
 
 void
@@ -325,6 +330,8 @@ Task::strong_unschedule()
 #endif
     else if (attempt_lock_tasks()) {
 	fast_unschedule(false);
+	if (_pending_nextptr)
+	    remove_pending();
 	Master *m = _owner->master();
 	RouterThread *old_thread = _thread;
 	_thread = m->thread(RouterThread::THREAD_STRONG_UNSCHEDULE);
@@ -417,6 +424,8 @@ Task::move_thread(int thread_id)
 	    && !_should_be_strong_unscheduled) {
 	    if (scheduled())
 		fast_unschedule(true);
+	    if (_pending_nextptr)
+		remove_pending();
 	    _thread = _owner->master()->thread(_home_thread_id);
 	    old_thread->unlock_tasks();
 	    if (_should_be_scheduled)

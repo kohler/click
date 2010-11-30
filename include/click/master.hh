@@ -103,12 +103,6 @@ class Master { public:
     inline void set_stopper(int);
     bool check_driver();
 
-    // PENDING TASKS
-    uintptr_t _pending_head;
-    volatile uintptr_t *_pending_tail;
-    SpinlockIRQ _master_task_lock;
-    void process_pending(RouterThread*);
-
     // TIMERS
     unsigned _max_timer_stride;
     unsigned _timer_stride;

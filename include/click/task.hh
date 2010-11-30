@@ -265,6 +265,7 @@ class Task { public:
     void cleanup();
 
     void add_pending();
+    void remove_pending();
     void process_pending(RouterThread*);
     inline void fast_schedule();
     void true_reschedule();

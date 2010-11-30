@@ -60,7 +60,7 @@ extern "C" { static void sighandler(int signo); }
 #endif
 
 Master::Master(int nthreads)
-    : _routers(0), _pending_head(0), _pending_tail(&_pending_head)
+    : _routers(0)
 {
     _refcount = 0;
     _stopper = 0;
@@ -180,9 +180,7 @@ Master::pause()
 #if CLICK_USERLEVEL
     _select_lock.acquire();
 #endif
-    SpinlockIRQ::flags_t flags = _master_task_lock.acquire();
     _master_paused++;
-    _master_task_lock.release(flags);
 #if CLICK_USERLEVEL
     _select_lock.release();
 #endif
@@ -386,38 +384,6 @@ Master::check_driver()
 	_stopper = 1;
     unlock_master();
     return any_active;
-}
-
-
-// PENDING TASKS
-
-void
-Master::process_pending(RouterThread *thread)
-{
-    // must be called with thread's lock acquired
-
-    // claim the current pending list
-    thread->set_thread_state(RouterThread::S_RUNPENDING);
-    SpinlockIRQ::flags_t flags = _master_task_lock.acquire();
-    if (_master_paused > 0) {
-	_master_task_lock.release(flags);
-	return;
-    }
-    uintptr_t my_pending = _pending_head;
-    _pending_head = 0;
-    _pending_tail = &_pending_head;
-    thread->_any_pending = 0;
-    _master_task_lock.release(flags);
-
-    // process the list
-    while (Task *t = Task::pending_to_task(my_pending)) {
-	my_pending = t->_pending_nextptr;
-	t->_pending_nextptr = 0;
-#if HAVE_MULTITHREAD && HAVE___SYNC_SYNCHRONIZE
-	__sync_synchronize();
-#endif
-	t->process_pending(thread);
-    }
 }
 
 
@@ -1292,7 +1258,6 @@ Master::info() const
     StringAccum sa;
     sa << "paused:\t\t" << _master_paused << '\n';
     sa << "stopper:\t" << _stopper << '\n';
-    sa << "pending:\t" << (Task::pending_to_task(_pending_head) != 0) << '\n';
     for (int i = 0; i < _threads.size(); i++) {
 	RouterThread *t = _threads[i];
 	sa << "thread " << (i - 2) << ":";
@@ -1302,7 +1267,7 @@ Master::info() const
 	else
 	    sa << "\twake";
 # endif
-	if (t->_any_pending)
+	if (t->_pending_head)
 	    sa << "\tpending";
 # if CLICK_USERLEVEL && HAVE_MULTITHREAD
 	if (t->_wake_pipe[0] >= 0) {

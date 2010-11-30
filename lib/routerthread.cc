@@ -68,10 +68,12 @@ static unsigned long greedy_schedule_jiffies;
 
 RouterThread::RouterThread(Master *m, int id)
 #if HAVE_TASK_HEAP
-    : _task_heap_hole(0), _master(m), _id(id)
+    : _task_heap_hole(0),
 #else
-    : Task(Task::error_hook, 0), _master(m), _id(id)
+    : Task(Task::error_hook, 0),
 #endif
+      _pending_head(0), _pending_tail(&_pending_head),
+      _master(m), _id(id)
 {
 #if HAVE_TASK_HEAP
     _pass = 0;
@@ -481,6 +483,31 @@ RouterThread::run_os()
 }
 
 void
+RouterThread::process_pending()
+{
+    // must be called with thread's lock acquired
+
+    // claim the current pending list
+    set_thread_state(RouterThread::S_RUNPENDING);
+    SpinlockIRQ::flags_t flags = _pending_lock.acquire();
+    uintptr_t my_pending = _pending_head;
+    _pending_head = 0;
+    _pending_tail = &_pending_head;
+    _any_pending = 0;
+    _pending_lock.release(flags);
+
+    // process the list
+    while (Task *t = Task::pending_to_task(my_pending)) {
+	my_pending = t->_pending_nextptr;
+	t->_pending_nextptr = 0;
+#if HAVE_MULTITHREAD && HAVE___SYNC_SYNCHRONIZE
+	__sync_synchronize();
+#endif
+	t->process_pending(this);
+    }
+}
+
+void
 RouterThread::driver()
 {
     const volatile int * const stopper = _master->stopper_ptr();
@@ -554,8 +581,8 @@ RouterThread::driver()
     }
 
     // run task requests (1)
-    if (_any_pending)
-	_master->process_pending(this);
+    if (_pending_head)
+	process_pending();
 
 #if !HAVE_ADAPTIVE_SCHEDULER
     // run a bunch of tasks

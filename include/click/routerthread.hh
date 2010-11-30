@@ -112,6 +112,10 @@ class RouterThread
     unsigned _pass;
 #endif
 
+    uintptr_t _pending_head;
+    volatile uintptr_t *_pending_tail;
+    SpinlockIRQ _pending_lock;
+
     Master *_master;
     int _id;
 
@@ -181,6 +185,7 @@ class RouterThread
     inline void driver_lock_tasks();
     inline void driver_unlock_tasks();
     inline void run_tasks(int ntasks);
+    inline void process_pending();
     inline void run_os();
 #if HAVE_ADAPTIVE_SCHEDULER
     void client_set_tickets(int client, int tickets);
@@ -413,7 +418,6 @@ RouterThread::wake()
 inline void
 RouterThread::add_pending()
 {
-    _any_pending = 1;
     wake();
 }
 
