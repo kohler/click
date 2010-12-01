@@ -379,14 +379,15 @@ RouterThread::run_tasks(int ntasks)
 	    break;
 #endif
 
-	bool was_scheduled = t->_is_scheduled;
-	t->fast_unschedule();
+	t->fast_remove_from_scheduled_list();
 
 	if (unlikely(t->_home_thread_id != thread_id())) {
 	    t->move_thread_second_half();
 	    goto post_fire;
-	} else if (unlikely(!was_scheduled || t->_is_strong_unscheduled))
+	} else if (unlikely(!t->_is_scheduled || t->_is_strong_unscheduled))
 	    goto post_fire;
+
+	t->_is_scheduled = false;
 
 #if HAVE_MULTITHREAD
 	runs = t->cycle_runs();

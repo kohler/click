@@ -315,7 +315,7 @@ class Task { public:
 
     inline void fast_schedule();
     void true_reschedule();
-    inline void fast_unschedule();
+    inline void fast_remove_from_scheduled_list();
     inline void remove_from_scheduled_list();
 
     static bool error_hook(Task *task, void *user_data);
@@ -428,9 +428,8 @@ Task::thread() const
 }
 
 inline void
-Task::fast_unschedule()
+Task::fast_remove_from_scheduled_list()
 {
-    _is_scheduled = false;
 #if HAVE_TASK_HEAP
     _schedpos = -1;
     _thread->_task_heap_hole = 1;
