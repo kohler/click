@@ -816,7 +816,7 @@ Master::run_selects_kqueue(RouterThread *thread, bool more_tasks)
 	click_qsort(&kev[0], n, sizeof(struct kevent), kevent_compare, 0);
 	for (struct kevent *p = &kev[0]; p < &kev[n]; ) {
 	    int fd = (int) p->ident, mask = 0;
-	    for (; (int) p->ident == fd; ++p)
+	    for (; p < &kev[n] && (int) p->ident == fd; ++p)
 		if (p->filter == EVFILT_READ)
 		    mask |= Element::SELECT_READ;
 		else if (p->filter == EVFILT_WRITE)
