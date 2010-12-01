@@ -591,6 +591,7 @@ particular purpose.\n");
   router->use();
 
   int exit_value = 0;
+  Vector<pthread_t> other_threads;
 
   // output flat configuration
   if (output_file) {
@@ -632,6 +633,7 @@ particular purpose.\n");
     for (int t = 1; t < nthreads; ++t) {
 	pthread_t p;
 	pthread_create(&p, 0, thread_driver, router->master()->thread(t));
+	other_threads.push_back(p);
     }
 #endif
     router->master()->thread(0)->driver();
@@ -679,6 +681,10 @@ particular purpose.\n");
 
   Master *master = router->master();
   router->unuse();
+#if HAVE_MULTITHREAD
+  for (int i = 0; i < other_threads.size(); ++i)
+      (void) pthread_cancel(other_threads[i]);
+#endif
   delete master;
   click_static_cleanup();
   Clp_DeleteParser(clp);
