@@ -158,7 +158,7 @@ class Task { public:
      * strong_unschedule() may apper scheduled(), but will not run
      * until strong_reschedule() is called. */
     inline bool scheduled() const {
-	return _is_scheduled;
+	return _status.is_scheduled;
     }
 
 
@@ -169,7 +169,7 @@ class Task { public:
      *
      * @sa reschedule, strong_unschedule */
     inline void unschedule() {
-	_is_scheduled = false;
+	_status.is_scheduled = false;
     }
 
     /** @brief Reschedule the task.
@@ -181,7 +181,7 @@ class Task { public:
      *
      * @sa unschedule, strong_reschedule */
     inline void reschedule() {
-	_is_scheduled = true;
+	_status.is_scheduled = true;
 #if HAVE_MULTITHREAD && HAVE___SYNC_SYNCHRONIZE
 	__sync_synchronize();
 #endif
@@ -205,8 +205,8 @@ class Task { public:
      * @sa strong_reschedule, unschedule
      */
     inline void strong_unschedule() {
-	_is_scheduled = false;
-	_is_strong_unscheduled = true;
+	_status.is_scheduled = false;
+	_status.is_strong_unscheduled = true;
     }
 
     /** @brief Reschedule the Task, undoing a prior strong_unschedule().
@@ -216,7 +216,7 @@ class Task { public:
      * @sa reschedule, strong_unschedule
      */
     inline void strong_reschedule() {
-	_is_strong_unscheduled = false;
+	_status.is_strong_unscheduled = false;
 	reschedule();
     }
 
@@ -273,9 +273,14 @@ class Task { public:
     int _tickets;
 #endif
 
-    int _home_thread_id;
-    bool _is_scheduled;
-    bool _is_strong_unscheduled;
+    union Status {
+	struct {
+	    int16_t home_thread_id;
+	    uint8_t is_scheduled;
+	    uint8_t is_strong_unscheduled;
+	};
+	int32_t status;
+    } _status;
 
     TaskCallback _hook;
     void *_thunk;
@@ -347,7 +352,6 @@ Task::Task(TaskCallback f, void *user_data)
 #if HAVE_STRIDE_SCHED
       _pass(0), _stride(0), _tickets(-1),
 #endif
-      _home_thread_id(-1), _is_scheduled(false), _is_strong_unscheduled(false),
       _hook(f), _thunk(user_data),
 #if HAVE_ADAPTIVE_SCHEDULER
       _runs(0), _work_done(0),
@@ -357,6 +361,8 @@ Task::Task(TaskCallback f, void *user_data)
 #endif
       _thread(0), _owner(0), _pending_nextptr(0)
 {
+    _status.home_thread_id = -1;
+    _status.is_scheduled = _status.is_strong_unscheduled = false;
 }
 
 inline
@@ -369,7 +375,6 @@ Task::Task(Element* e)
 #if HAVE_STRIDE_SCHED
       _pass(0), _stride(0), _tickets(-1),
 #endif
-      _home_thread_id(-1), _is_scheduled(false), _is_strong_unscheduled(false),
       _hook(0), _thunk(e),
 #if HAVE_ADAPTIVE_SCHEDULER
       _runs(0), _work_done(0),
@@ -379,6 +384,8 @@ Task::Task(Element* e)
 #endif
       _thread(0), _owner(0), _pending_nextptr(0)
 {
+    _status.home_thread_id = -1;
+    _status.is_scheduled = _status.is_strong_unscheduled = false;
 }
 
 inline bool
@@ -418,7 +425,7 @@ Task::thunk() const
 inline int
 Task::home_thread_id() const
 {
-    return _home_thread_id;
+    return _status.home_thread_id;
 }
 
 inline RouterThread *
@@ -519,7 +526,7 @@ Task::fast_reschedule()
 #if CLICK_BSDMODULE
     GIANT_REQUIRED;
 #endif
-    _is_scheduled = true;
+    _status.is_scheduled = true;
 
     if (!on_scheduled_list()) {
 #if HAVE_STRIDE_SCHED

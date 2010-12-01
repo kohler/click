@@ -205,8 +205,8 @@ Task::initialize(Element *owner, bool schedule)
     set_tickets(DEFAULT_TICKETS);
 #endif
 
-    _home_thread_id = _thread->thread_id();
-    _is_scheduled = schedule;
+    _status.home_thread_id = _thread->thread_id();
+    _status.is_scheduled = schedule;
     if (schedule)
 	add_pending();
 }
@@ -256,7 +256,7 @@ void
 Task::true_reschedule()
 {
     bool done = false;
-    _is_scheduled = true;
+    _status.is_scheduled = true;
     RouterThread *thread = _thread;
     if (unlikely(thread == 0 || thread->thread_id() < 0))
 	done = true;
@@ -295,10 +295,10 @@ Task::move_thread_second_half()
 	|| old_thread->thread_id() < 0) {
 	remove_from_scheduled_list();
 	remove_pending_locked(old_thread);
-	_thread = master()->thread(_home_thread_id);
+	_thread = master()->thread(_status.home_thread_id);
 	old_thread->_pending_lock.release(flags);
 
-	if (_is_scheduled)
+	if (_status.is_scheduled)
 	    add_pending();
     } else {
 	add_pending_locked(old_thread);
@@ -312,8 +312,8 @@ Task::move_thread(int new_thread_id)
     if (likely(_thread != 0)) {
 	RouterThread *new_thread = master()->thread(new_thread_id);
 	// (new_thread->thread_id() might != new_thread_id)
-	_home_thread_id = new_thread->thread_id();
-	if (_home_thread_id != _thread->thread_id())
+	_status.home_thread_id = new_thread->thread_id();
+	if (_status.home_thread_id != _thread->thread_id())
 	    move_thread_second_half();
     }
 }
@@ -326,9 +326,9 @@ Task::process_pending(RouterThread *thread)
     // router()->_running when necessary.  (Not necessary for add_pending()
     // since that function does it already.)
 
-    if (_home_thread_id != thread->thread_id())
+    if (_status.home_thread_id != thread->thread_id())
 	move_thread_second_half();
-    else if (_is_scheduled) {
+    else if (_status.is_scheduled) {
 	if (router()->running())
 	    fast_schedule();
 	else

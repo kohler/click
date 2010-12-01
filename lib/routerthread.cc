@@ -364,6 +364,11 @@ RouterThread::run_tasks(int ntasks)
     click_cycles_t cycles = 0;
 #endif
 
+    Task::Status want_status;
+    want_status.home_thread_id = thread_id();
+    want_status.is_scheduled = true;
+    want_status.is_strong_unscheduled = false;
+
     Task *t;
 #if HAVE_MULTITHREAD
     int runs;
@@ -381,13 +386,13 @@ RouterThread::run_tasks(int ntasks)
 
 	t->fast_remove_from_scheduled_list();
 
-	if (unlikely(t->_home_thread_id != thread_id())) {
-	    t->move_thread_second_half();
+	if (unlikely(t->_status.status != want_status.status)) {
+	    if (t->_status.home_thread_id != thread_id())
+		t->move_thread_second_half();
 	    goto post_fire;
-	} else if (unlikely(!t->_is_scheduled || t->_is_strong_unscheduled))
-	    goto post_fire;
+	}
 
-	t->_is_scheduled = false;
+	t->_status.is_scheduled = false;
 
 #if HAVE_MULTITHREAD
 	runs = t->cycle_runs();
