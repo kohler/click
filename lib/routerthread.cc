@@ -661,11 +661,7 @@ RouterThread::driver_once()
 #endif
     driver_lock_tasks();
 
-    Task *t = task_begin();
-    if (t != task_end() && !t->_pending_nextptr) {
-	t->fast_unschedule(false);
-	t->fire();
-    }
+    run_tasks(1);
 
     driver_unlock_tasks();
 #if CLICK_BSDMODULE  /* XXX MARKO */
