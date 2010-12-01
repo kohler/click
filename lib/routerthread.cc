@@ -133,7 +133,6 @@ RouterThread::RouterThread(Master *m, int id)
 #endif
 
     static_assert(THREAD_QUIESCENT == (int) ThreadSched::THREAD_QUIESCENT
-		  && THREAD_STRONG_UNSCHEDULE == (int) ThreadSched::THREAD_STRONG_UNSCHEDULE
 		  && THREAD_UNKNOWN == (int) ThreadSched::THREAD_UNKNOWN);
 }
 
@@ -366,6 +365,9 @@ RouterThread::run_tasks(int ntasks)
 #endif
 
     Task *t;
+#if HAVE_MULTITHREAD
+    int runs;
+#endif
     for (; ntasks >= 0; --ntasks) {
 #if HAVE_TASK_HEAP
 	if (_task_heap.size() == 0)
@@ -377,22 +379,19 @@ RouterThread::run_tasks(int ntasks)
 	    break;
 #endif
 
-	// 22.May.2008: If pending changes on this task, break early to
-	// take care of them.
-	if (t->_pending_nextptr)
-	    break;
+	bool was_scheduled = t->_is_scheduled;
+	t->fast_unschedule();
+
+	if (unlikely(t->_home_thread_id != thread_id())) {
+	    t->move_thread_second_half();
+	    goto post_fire;
+	} else if (unlikely(!was_scheduled || t->_is_strong_unscheduled))
+	    goto post_fire;
 
 #if HAVE_MULTITHREAD
-	int runs = t->cycle_runs();
+	runs = t->cycle_runs();
 	if (runs > PROFILE_ELEMENT)
 	    cycles = click_get_cycles();
-#endif
-
-#if HAVE_TASK_HEAP
-	t->_schedpos = -1;
-	_task_heap_hole = 1;
-#else
-	t->fast_unschedule(false);
 #endif
 
 #if HAVE_STRIDE_SCHED
@@ -404,6 +403,14 @@ RouterThread::run_tasks(int ntasks)
 
 	t->fire();
 
+#if HAVE_MULTITHREAD
+	if (runs > PROFILE_ELEMENT) {
+	    unsigned delta = click_get_cycles() - cycles;
+	    t->update_cycles(delta/32 + (t->cycles()*31)/32);
+	}
+#endif
+
+    post_fire:
 #if HAVE_TASK_HEAP
 	if (_task_heap_hole) {
 	    Task *back = _task_heap.back().t;
@@ -415,13 +422,8 @@ RouterThread::run_tasks(int ntasks)
 	    // '_task_heap.size() == 0' now, in which case we didn't call
 	    // task_reheapify_from().
 	}
-#endif
-
-#if HAVE_MULTITHREAD
-	if (runs > PROFILE_ELEMENT) {
-	    unsigned delta = click_get_cycles() - cycles;
-	    t->update_cycles(delta/32 + (t->cycles()*31)/32);
-	}
+#else
+	/* do nothing */;
 #endif
     }
 }

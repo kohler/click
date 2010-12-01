@@ -97,6 +97,7 @@ class Master { public:
 
     // THREADS
     Vector<RouterThread*> _threads;
+    void wake_somebody();
 
     // DRIVERMANAGER
     volatile int _stopper;
@@ -209,7 +210,7 @@ class Master { public:
 inline int
 Master::nthreads() const
 {
-    return _threads.size() - 2;
+    return _threads.size() - 1;
 }
 
 inline RouterThread*
@@ -217,10 +218,16 @@ Master::thread(int id) const
 {
     // return the requested thread, or the quiescent thread if there's no such
     // thread
-    if ((unsigned)(id + 2) < (unsigned)_threads.size())
-	return _threads.at_u(id + 2);
+    if ((unsigned)(id + 1) < (unsigned)_threads.size())
+	return _threads.at_u(id + 1);
     else
-	return _threads.at_u(1);
+	return _threads.at_u(0);
+}
+
+inline void
+Master::wake_somebody()
+{
+    _threads.at_u(1)->wake();
 }
 
 #if CLICK_USERLEVEL

@@ -66,7 +66,7 @@ Master::Master(int nthreads)
     _stopper = 0;
     _master_paused = 0;
 
-    for (int tid = -2; tid < nthreads; tid++)
+    for (int tid = -1; tid < nthreads; tid++)
 	_threads.push_back(new RouterThread(this, tid));
 
     // timer information
@@ -318,7 +318,7 @@ Master::kill_router(Router *router)
 #endif
 
     // something has happened, so wake up threads
-    for (RouterThread** tp = _threads.begin() + 2; tp < _threads.end(); tp++)
+    for (RouterThread** tp = _threads.begin() + 1; tp < _threads.end(); tp++)
 	(*tp)->wake();
 }
 
@@ -1260,7 +1260,7 @@ Master::info() const
     sa << "stopper:\t" << _stopper << '\n';
     for (int i = 0; i < _threads.size(); i++) {
 	RouterThread *t = _threads[i];
-	sa << "thread " << (i - 2) << ":";
+	sa << "thread " << (i - 1) << ":";
 # ifdef CLICK_LINUXMODULE
 	if (t->_sleeper)
 	    sa << "\tsleep";

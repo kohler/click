@@ -2095,7 +2095,7 @@ read_task_scheduled(Element *e, void *thunk)
 #if CLICK_DEBUG_SCHEDULING
     StringAccum sa;
     sa << task->scheduled();
-    if (!task->scheduled() && task->should_be_scheduled())
+    if (!task->on_scheduled_list() && task->scheduled())
 	sa << " /* but pending */";
     return sa.take_string();
 #else

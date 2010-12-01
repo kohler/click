@@ -264,7 +264,7 @@ Timer::schedule_at(const Timestamp& when)
 
     // if we changed the timeout, wake up the first thread
     if (_schedpos1 == 1)
-	master->_threads[2]->wake();
+	master->wake_somebody();
 
     // done
     master->unlock_timers();

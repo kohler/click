@@ -87,10 +87,19 @@ CLICK_DECLS
  * @endcode
  */
 
-// - Changes to _thread are protected by _thread->lock.
-// - Resetting _should_be_scheduled to 0 is protected by _thread->lock.
-// - Changes to _home_thread_id are protected by
-//   router()->master()->task_lock.
+// Invariants:
+// - _home_thread_id, _is_scheduled, _is_strong_unscheduled may be changed
+//   at any time without locking.
+// - If _is_scheduled && !_is_strong_unscheduled && not on quiescent thread,
+//   then either on_scheduled_list() or _pending_nextptr != 0.
+// - _thread may be read at any time, but since it might change underneath,
+//   read it into a local variable.
+// - Changes to _thread are protected by _thread->_pending_lock.
+//   Furthermore, only _thread itself may change _thread
+//   (except that if _thread is quiescent, anyone may change _thread).
+//   To arrange for _thread to change, set _home_thread_id and add_pending().
+// - _pending_nextptr is protected by _thread->_pending_lock.
+//   But after acquiring this lock, verify that _thread has not changed.
 
 bool
 Task::error_hook(Task *, void *)
@@ -117,18 +126,76 @@ Task::master() const
     return _thread->master();
 }
 
+
+inline void
+Task::add_pending_locked(RouterThread *thread)
+{
+    if (!_pending_nextptr) {
+	_pending_nextptr = 1;
+	*thread->_pending_tail = reinterpret_cast<uintptr_t>(this);
+	thread->_pending_tail = &_pending_nextptr;
+	thread->add_pending();
+    }
+}
+
+void
+Task::add_pending()
+{
+    bool thread_match;
+    do {
+	RouterThread *thread = _thread;
+	SpinlockIRQ::flags_t flags = thread->_pending_lock.acquire();
+	thread_match = thread == _thread;
+	if (thread_match && thread->thread_id() >= 0)
+	    add_pending_locked(thread);
+	thread->_pending_lock.release(flags);
+    } while (!thread_match);
+}
+
+inline void
+Task::remove_pending_locked(RouterThread *thread)
+{
+    if (_pending_nextptr) {
+	volatile uintptr_t *tptr = &thread->_pending_head;
+	while (Task *t = pending_to_task(*tptr))
+	    if (t == this) {
+		*tptr = _pending_nextptr;
+		if (!pending_to_task(_pending_nextptr))
+		    thread->_pending_tail = tptr;
+		_pending_nextptr = 0;
+		break;
+	    } else
+		tptr = &t->_pending_nextptr;
+    }
+}
+
+void
+Task::remove_pending()
+{
+    bool thread_match;
+    do {
+	RouterThread *thread = _thread;
+	SpinlockIRQ::flags_t flags = thread->_pending_lock.acquire();
+	thread_match = thread == _thread;
+	if (thread_match)
+	    remove_pending_locked(thread);
+	thread->_pending_lock.release(flags);
+    } while (!thread_match);
+}
+
+
 void
 Task::initialize(Element *owner, bool schedule)
 {
     assert(owner && !initialized() && !scheduled());
 
     Router *router = owner->router();
-    _home_thread_id = router->initial_home_thread_id(owner, this, schedule);
-    if (_home_thread_id == ThreadSched::THREAD_UNKNOWN)
-	_home_thread_id = 0;
+    int tid = router->initial_home_thread_id(owner, this, schedule);
+    if (tid == ThreadSched::THREAD_UNKNOWN)
+	tid = 0;
     // Master::thread() returns the quiescent thread if its argument is out of
     // range
-    _thread = router->master()->thread(_home_thread_id);
+    _thread = router->master()->thread(tid);
 
     // set _owner last, since it is used to determine whether task is
     // initialized
@@ -138,7 +205,8 @@ Task::initialize(Element *owner, bool schedule)
     set_tickets(DEFAULT_TICKETS);
 #endif
 
-    _should_be_scheduled = schedule;
+    _home_thread_id = _thread->thread_id();
+    _is_scheduled = schedule;
     if (schedule)
 	add_pending();
 }
@@ -147,25 +215,6 @@ void
 Task::initialize(Router *router, bool schedule)
 {
     initialize(router->root_element(), schedule);
-}
-
-void
-Task::remove_pending()
-{
-    SpinlockIRQ::flags_t flags = _thread->_pending_lock.acquire();
-    if (_pending_nextptr) {
-	volatile uintptr_t *tptr = &_thread->_pending_head;
-	while (Task *t = pending_to_task(*tptr))
-	    if (t == this) {
-		*tptr = _pending_nextptr;
-		if (!pending_to_task(_pending_nextptr))
-		    _thread->_pending_tail = tptr;
-		_pending_nextptr = 0;
-		break;
-	    } else
-		tptr = &t->_pending_nextptr;
-    }
-    _thread->_pending_lock.release(flags);
 }
 
 void
@@ -179,10 +228,10 @@ Task::cleanup()
 #endif
     if (initialized()) {
 	strong_unschedule();
+	remove_from_scheduled_list();
 
 	// Perhaps the task is enqueued on the current pending
-	// collection.  If so, remove it.  (Currently this is likely
-	// unnecessary; strong_unschedule() will take care of it.)
+	// collection.  If so, remove it.
 	if (_pending_nextptr) {
 	    remove_pending();
 
@@ -202,98 +251,25 @@ Task::cleanup()
     }
 }
 
-inline void
-Task::lock_tasks()
-{
-    while (1) {
-	RouterThread *t = _thread;
-	t->lock_tasks();
-	if (t == _thread)
-	    return;
-	t->unlock_tasks();
-    }
-}
-
-inline bool
-Task::attempt_lock_tasks()
-{
-    RouterThread *t = _thread;
-    if (t->attempt_lock_tasks()) {
-	if (t == _thread)
-	    return true;
-	t->unlock_tasks();
-    }
-    return false;
-}
-
-void
-Task::add_pending()
-{
-    if (_thread->thread_id() >= 0) {
-	SpinlockIRQ::flags_t flags = _thread->_pending_lock.acquire();
-	if (!_pending_nextptr) {
-	    *_thread->_pending_tail = reinterpret_cast<uintptr_t>(this);
-	    _thread->_pending_tail = &_pending_nextptr;
-	    _pending_nextptr = 1;
-	    _thread->add_pending();
-	}
-	_thread->_pending_lock.release(flags);
-    }
-}
-
-void
-Task::unschedule()
-{
-    // Thanksgiving 2001: unschedule() will always unschedule the task. This
-    // seems more reliable, since some people depend on unschedule() ensuring
-    // that the task is not scheduled any more, no way, no how. Possible
-    // problem: calling unschedule() from run_task() will hang!
-    // 2005: It shouldn't hang.
-    // 2008: Allow unschedule() in interrupt context.
-    bool done = false;
-    _should_be_scheduled = false;
-#if CLICK_BSDMODULE
-    GIANT_REQUIRED;
-#endif
-    if (unlikely(_thread == 0))
-	done = true;
-#if CLICK_LINUXMODULE
-    else if (in_interrupt())
-	goto pending;
-#endif
-    else if (attempt_lock_tasks()) {
-	fast_unschedule(false);
-	_thread->unlock_tasks();
-	done = true;
-    }
-#if CLICK_LINUXMODULE
-  pending:
-#endif
-    if (!done)
-	add_pending();
-}
 
 void
 Task::true_reschedule()
 {
     bool done = false;
-    _should_be_scheduled = true;
-    if (unlikely(_thread == 0))
+    _is_scheduled = true;
+    RouterThread *thread = _thread;
+    if (unlikely(thread == 0 || thread->thread_id() < 0))
 	done = true;
 #if CLICK_LINUXMODULE
     else if (in_interrupt())
 	goto pending;
 #endif
-    else if (attempt_lock_tasks()) {
+    else if (thread->current_thread_is_running()) {
 	Router *router = _owner->router();
 	if (router->_running >= Router::RUNNING_BACKGROUND) {
-	    if (!scheduled() && _should_be_scheduled) {
-		fast_schedule();
-		_thread->wake();
-	    }
+	    fast_schedule();
 	    done = true;
 	}
-	_thread->unlock_tasks();
     }
 #if CLICK_LINUXMODULE
   pending:
@@ -302,143 +278,44 @@ Task::true_reschedule()
 	add_pending();
 }
 
-/** @brief Unschedule the Task and move it to a quiescent thread.
- *
- * When strong_unschedule() returns, the task will not be scheduled on any
- * thread.  Furthermore, the task has been moved to a temporary "dead" thread.
- * Future reschedule() calls will not schedule the task, since the dead thread
- * never runs; future move_thread() calls change the home thread ID,
- * but leave the thread on the dead thread.  Only strong_reschedule() can make
- * the task run again.
- * @sa strong_reschedule, unschedule
- */
 void
-Task::strong_unschedule()
+Task::move_thread_second_half()
 {
-    bool done = false;
-    _should_be_strong_unscheduled = true;
-#if CLICK_BSDMODULE
-    GIANT_REQUIRED;
-#endif
-    // unschedule() and move to a quiescent thread, so that subsequent
-    // reschedule()s won't have any effect
-    if (unlikely(_thread == 0))
-	done = true;
-#if CLICK_LINUXMODULE
-    else if (in_interrupt())
-	goto pending;
-#endif
-    else if (attempt_lock_tasks()) {
-	fast_unschedule(false);
-	if (_pending_nextptr)
-	    remove_pending();
-	Master *m = _owner->master();
-	RouterThread *old_thread = _thread;
-	_thread = m->thread(RouterThread::THREAD_STRONG_UNSCHEDULE);
-	old_thread->unlock_tasks();
-	done = true;
+    RouterThread *old_thread;
+    SpinlockIRQ::flags_t flags;
+    while (1) {
+	old_thread = _thread;
+	flags = old_thread->_pending_lock.acquire();
+	if (old_thread == _thread)
+	    break;
+	old_thread->_pending_lock.release(flags);
     }
-#if CLICK_LINUXMODULE
-  pending:
-#endif
-    if (!done)
-	add_pending();
+
+    if (old_thread->current_thread_is_running()
+	|| old_thread->thread_id() < 0) {
+	remove_from_scheduled_list();
+	remove_pending_locked(old_thread);
+	_thread = master()->thread(_home_thread_id);
+	old_thread->_pending_lock.release(flags);
+
+	if (_is_scheduled)
+	    add_pending();
+    } else {
+	add_pending_locked(old_thread);
+	old_thread->_pending_lock.release(flags);
+    }
 }
 
-/** @brief Reschedule the Task, moving it from the "dead" thread to its home
- * thread if appropriate.
- *
- * This function undoes any previous strong_unschedule().  If the task is on
- * the "dead" thread, then it is moved to its home thread.  The task is also
- * rescheduled.  Due to locking issues, the task may not be scheduled right
- * away -- scheduled() may not immediately return true.
- *
- * @sa reschedule, strong_unschedule
- */
 void
-Task::strong_reschedule()
+Task::move_thread(int new_thread_id)
 {
-    bool done = false;
-    _should_be_scheduled = true;
-    _should_be_strong_unscheduled = false;
-#if CLICK_BSDMODULE
-    GIANT_REQUIRED;
-#endif
-    if (unlikely(_thread == 0))
-	done = true;
-#if CLICK_LINUXMODULE
-    else if (in_interrupt())
-	goto pending;
-#endif
-    else if (attempt_lock_tasks()) {
-	RouterThread *old_thread = _thread;
-	if (old_thread->thread_id() == RouterThread::THREAD_STRONG_UNSCHEDULE) {
-	    fast_unschedule(true);
-	    _thread = _owner->master()->thread(_home_thread_id);
-	} else if (old_thread->thread_id() == _home_thread_id) {
-	    _should_be_scheduled = true;
-	    fast_reschedule();
-	    done = true;
-	} else {
-	    // This task must already be on the pending list so it can be moved.
-	    _should_be_scheduled = true;
-	    done = true;
-	}
-	old_thread->unlock_tasks();
+    if (likely(_thread != 0)) {
+	RouterThread *new_thread = master()->thread(new_thread_id);
+	// (new_thread->thread_id() might != new_thread_id)
+	_home_thread_id = new_thread->thread_id();
+	if (_home_thread_id != _thread->thread_id())
+	    move_thread_second_half();
     }
-#if CLICK_LINUXMODULE
-  pending:
-#endif
-    if (!done)
-	add_pending();
-}
-
-/** @brief Move the Task to a new home thread.
- *
- * The home thread ID is set to @a thread_id.  The task, if it is currently
- * scheduled, is rescheduled on thread @a thread_id; this generally takes some
- * time to take effect.  @a thread_id can be less than zero, in which case the
- * thread is scheduled on a quiescent thread: it will never be run.
- */
-void
-Task::move_thread(int thread_id)
-{
-    bool done = false;
-#if CLICK_BSDMODULE
-    GIANT_REQUIRED;
-#endif
-    if (thread_id < RouterThread::THREAD_QUIESCENT)
-	thread_id = RouterThread::THREAD_QUIESCENT;
-    _home_thread_id = thread_id;
-
-    if (unlikely(_thread == 0))
-	done = true;
-#if CLICK_LINUXMODULE
-    else if (in_interrupt())
-	goto pending;
-#endif
-    else if (attempt_lock_tasks()) {
-	RouterThread *old_thread = _thread;
-	if (old_thread->thread_id() != _home_thread_id
-	    && old_thread->thread_id() != RouterThread::THREAD_STRONG_UNSCHEDULE
-	    && !_should_be_strong_unscheduled) {
-	    if (scheduled())
-		fast_unschedule(true);
-	    if (_pending_nextptr)
-		remove_pending();
-	    _thread = _owner->master()->thread(_home_thread_id);
-	    old_thread->unlock_tasks();
-	    if (_should_be_scheduled)
-		add_pending();
-	} else
-	    old_thread->unlock_tasks();
-	done = true;
-    }
-#if CLICK_LINUXMODULE
-  pending:
-#endif
-    if (!done)
-	add_pending();
 }
 
 void
@@ -449,48 +326,14 @@ Task::process_pending(RouterThread *thread)
     // router()->_running when necessary.  (Not necessary for add_pending()
     // since that function does it already.)
 
-#if CLICK_BSDMODULE
-    int s = splimp();
-#endif
-
-    // The quiescent threads, which have thread_id() < 0, never run, and so
-    // they never call process_pending().  Process their tasks as well.
-    RouterThread *other_thread = 0;
-    if (_thread && _thread != thread && _thread->thread_id() < 0) {
-	other_thread = _thread;
-	other_thread->lock_tasks();
-	goto change_schedule;
-    }
-
-    if (_thread == thread) {
-	// we know the thread is locked.
-	// see also move_thread() above
-      change_schedule:
-	int want_thread_id;
-	if (_should_be_strong_unscheduled)
-	    want_thread_id = RouterThread::THREAD_STRONG_UNSCHEDULE;
+    if (_home_thread_id != thread->thread_id())
+	move_thread_second_half();
+    else if (_is_scheduled) {
+	if (router()->running())
+	    fast_schedule();
 	else
-	    want_thread_id = _home_thread_id;
-
-	if (_thread->thread_id() != want_thread_id) {
-	    if (scheduled())
-		fast_unschedule(true);
-	    _thread = _owner->master()->thread(want_thread_id);
-	} else if (_should_be_scheduled && _owner->router()->running()) {
-	    if (!scheduled())
-		fast_schedule();
-	}
+	    add_pending();
     }
-
-    if (_should_be_scheduled && !_should_be_strong_unscheduled && !scheduled())
-	add_pending();
-
-    if (other_thread)
-	other_thread->unlock_tasks();
-
-#if CLICK_BSDMODULE
-    splx(s);
-#endif
 }
 
 CLICK_ENDDECLS
