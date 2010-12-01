@@ -1233,23 +1233,6 @@ instead of @code{_task.reschedule()}.
 @end quotation
 @end deftypemethod
 
-The @code{fast_unschedule} method is to @code{unschedule} as
-@code{fast_reschedule} is to @code{reschedule}. It is rarely used,
-since tasks are automatically unscheduled before they are run.
-
-@deftypemethod Task void fast_unschedule ()
-Unschedules the task by removing it from its task queue. Does nothing if
-if the task is currently unscheduled, or if it was never initialized.
-This method avoids locking overhead, so it is faster than
-@code{unschedule}.
-
-@quotation
-@strong{Caution}: You may call a @code{Task}'s @code{fast_unschedule}
-method only from within its callback function.
-@end quotation
-@end deftypemethod
-
-
 @node Tickets, Task Thread Choice, Scheduling Tasks, Tasks
 @section Tickets
 
