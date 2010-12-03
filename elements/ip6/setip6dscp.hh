@@ -33,7 +33,7 @@ class SetIP6DSCP : public Element {
 
   uint8_t dscp() const			{ return _dscp >> IP6_DSCP_SHIFT; }
 
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
   void add_handlers();
 

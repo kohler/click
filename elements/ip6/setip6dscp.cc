@@ -31,7 +31,7 @@ SetIP6DSCP::~SetIP6DSCP()
 }
 
 int
-SetIP6DSCP::configure(const Vector<String> &conf, ErrorHandler *errh)
+SetIP6DSCP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned dscp_val;
   if (cp_va_kparse(conf, this, errh,
