@@ -17,7 +17,7 @@ Programmer: Roman Chertov
 #define CLICK_STOREUDPTIMESEQRECORD_HH
 #include <click/element.hh>
 
-
+CLICK_DECLS
 
 /*
 =c
@@ -105,5 +105,5 @@ private:
     static int    reset_handler(const String &, Element *, void *, ErrorHandler *);
 };
 
-
+CLICK_ENDDECLS
 #endif
