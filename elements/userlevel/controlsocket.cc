@@ -177,9 +177,9 @@ ControlSocket::initialize_socket(ErrorHandler *errh)
     sa.sin_family = AF_INET;
     sa.sin_port = htons(portno);
     if (_localhost)
-	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     else
-	sa.sin_addr.s_addr = INADDR_ANY;
+	sa.sin_addr.s_addr = htonl(INADDR_ANY);
     int tries = 0;
     while (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
 	if (tries > 10 || _unix_pathname.back() != '+' || portno >= 65534
