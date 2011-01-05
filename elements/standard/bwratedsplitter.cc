@@ -4,6 +4,7 @@
  * Benjie Chen, Eddie Kohler
  *
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2010 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,10 +32,10 @@ BandwidthRatedSplitter::~BandwidthRatedSplitter()
 void
 BandwidthRatedSplitter::push(int, Packet *p)
 {
-    if (_rate.need_update(Timestamp::now())) {
-	_rate.update_with(p->length());
+    _tb.refill();
+    if (_tb.remove_if(p->length()))
 	output(0).push(p);
-    } else
+    else
 	output(1).push(p);
 }
 

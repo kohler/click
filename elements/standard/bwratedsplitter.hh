@@ -6,7 +6,7 @@ CLICK_DECLS
 
 /*
  * =c
- * BandwidthRatedSplitter(RATE)
+ * BandwidthRatedSplitter(RATE, I[<KEYWORDS>])
  * =s shaping
  * splits flow of packets at specified bandwidth rate
  * =processing
@@ -18,6 +18,28 @@ CLICK_DECLS
  * emitted on output port 1.  RATE is a bandwidth, such as "384 kbps".
  * Unlike BandwidthMeter, the base RATE is emitted on output port
  * 0 even when the input rate is greater than RATE.
+ *
+ * The rate is implemented using a token bucket.  The capacity of this token
+ * bucket defaults to 20 milliseconds worth of tokens, but can be customized by
+ * setting one of BURST_DURATION or BURST_SIZE.
+ *
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item RATE
+ *
+ * Bandwidth.  Token bucket fill rate.
+ *
+ * =item BURST_DURATION
+ *
+ * Time.  If specified, the capacity of the token bucket is calculated as
+ * rate * burst_duration.
+ *
+ * =item BURST_BYTES
+ *
+ * Integer.  If specified, the capacity of the token bucket is set to this
+ * value in bytes.
  *
  * =h rate read/write
  * rate of splitting

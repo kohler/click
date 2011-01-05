@@ -5,6 +5,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2010 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,15 +34,32 @@ bool
 BandwidthRatedUnqueue::run_task(Task *)
 {
     bool worked = false;
-    if (_rate.need_update(Timestamp::now())) {
+    _runs++;
+
+    if (!_active)
+	return false;
+
+    _tb.refill();
+
+    if (_tb.contains(tb_bandwidth_thresh)) {
 	if (Packet *p = input(0).pull()) {
-	    _rate.update_with(p->length());
+	    _tb.remove(p->length());
+	    _pushes++;
 	    worked = true;
 	    output(0).push(p);
-	} else if (!_signal)
-	    return false;	// without rescheduling
+	} else {
+	    _failed_pulls++;
+	    if (!_signal)
+		return false;	// without rescheduling
+	}
+    } else {
+	_timer.schedule_after(Timestamp::make_jiffies(_tb.epochs_until_contains(tb_bandwidth_thresh)));
+	_empty_runs++;
+	return false;
     }
     _task.fast_reschedule();
+    if (!worked)
+	_empty_runs++;
     return worked;
 }
 

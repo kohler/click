@@ -6,15 +6,35 @@ CLICK_DECLS
 
 /*
  * =c
- * BandwidthRatedUnqueue(RATE)
+ * BandwidthRatedUnqueue(RATE, I[<KEYWORDS>])
  * =s shaping
  * pull-to-push converter
- * =processing
- * Pull inputs, push outputs
  * =d
  *
- * Pulls packets at the given bandwidth RATE, and pushes them out its single
- * output.  RATE is a bandwidth, such as "384 kbps".
+ * Pulls packets at the given RATE, and pushes them out its single output.  This
+ * rate is implemented using a token bucket.  The capacity of this token bucket
+ * defaults to 20 milliseconds worth of tokens, but can be customized by setting
+ * one of BURST_DURATION or BURST_SIZE.
+ *
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item RATE
+ *
+ * Bandwidth.  Token bucket fill rate.
+ *
+ * =item BURST_DURATION
+ *
+ * Time.  If specified, the capacity of the token bucket is calculated as
+ * rate * burst_duration.
+ *
+ * =item BURST_BYTES
+ *
+ * Integer.  If specified, the capacity of the token bucket is set to this
+ * value in bytes.
+ *
+ * =h rate read/write
  *
  * =a RatedUnqueue, Unqueue, BandwidthShaper, BandwidthRatedSplitter */
 

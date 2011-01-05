@@ -5,6 +5,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2010 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -21,11 +22,12 @@
 #include "ratedunqueue.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/straccum.hh>
 #include <click/standard/scheduleinfo.hh>
 CLICK_DECLS
 
 RatedUnqueue::RatedUnqueue()
-    : _task(this)
+    : _task(this), _timer(&_task), _runs(0), _pushes(0), _failed_pulls(0), _empty_runs(0), _active(true)
 {
 }
 
@@ -36,12 +38,42 @@ RatedUnqueue::~RatedUnqueue()
 int
 RatedUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    return configure_helper(&_tb, is_bandwidth(), this, conf, errh);
+}
+
+int
+RatedUnqueue::configure_helper(TokenBucket *tb, bool is_bandwidth, Element *elt, Vector<String> &conf, ErrorHandler *errh)
+{
     unsigned r;
-    CpVaParseCmd cmd = (is_bandwidth() ? cpBandwidth : cpUnsigned);
-    if (cp_va_kparse(conf, this, errh,
-		     "RATE", cpkP+cpkM, cmd, &r, cpEnd) < 0)
+    unsigned dur_msec = 20;
+    bool dur_specified;
+    unsigned tokens;
+    bool tokens_specified;
+    CpVaParseCmd cmd = is_bandwidth ? cpBandwidth : cpUnsigned;
+    const char *burst_size = is_bandwidth ? "BURST_BYTES" : "BURST_SIZE";
+
+    if (cp_va_kparse(conf, elt, errh,
+		     "RATE", cpkP+cpkM, cmd, &r,
+		     "BURST_DURATION", cpkC, &dur_specified, cpSecondsAsMilli, &dur_msec,
+		     burst_size, cpkC, &tokens_specified, cpUnsigned, &tokens,
+		     cpEnd) < 0)
 	return -1;
-    _rate.set_rate(r, errh);
+
+    if (dur_specified && tokens_specified)
+	return errh->error("cannot specify both BURST_DURATION and BURST_SIZE");
+    else if (!tokens_specified) {
+	bigint::limb_type res[2];
+	bigint::multiply(res[1], res[0], r, dur_msec);
+	bigint::divide(res, res, 2, 1000);
+	tokens = res[1] ? UINT_MAX : res[0];
+    }
+
+    if (is_bandwidth) {
+	unsigned new_tokens = tokens + tb_bandwidth_thresh;
+	tokens = (tokens < new_tokens ? new_tokens : UINT_MAX);
+    }
+
+    tb->assign(r, tokens ? tokens : 1);
     return 0;
 }
 
@@ -50,6 +82,7 @@ RatedUnqueue::initialize(ErrorHandler *errh)
 {
     ScheduleInfo::initialize_task(this, &_task, errh);
     _signal = Notifier::upstream_empty_signal(this, 0, &_task);
+    _timer.initialize(this);
     return 0;
 }
 
@@ -57,40 +90,63 @@ bool
 RatedUnqueue::run_task(Task *)
 {
     bool worked = false;
-    if (_rate.need_update(Timestamp::now())) {
-	//_rate.update();  // uncomment this if you want it to run periodically
+    _runs++;
+    if (!_active)
+	return false;
+    _tb.refill();
+    if (_tb.contains(1)) {
 	if (Packet *p = input(0).pull()) {
-	    _rate.update();
+	    _tb.remove(1);
 	    output(0).push(p);
+            _pushes++;
 	    worked = true;
-	} else  // no Packet available
-	    if (use_signal && !_signal)
-		return false;		// without rescheduling
+	} else { // no Packet available
+            _failed_pulls++;
+	    if (!_signal)
+		return false; // without rescheduling
+        }
+    } else {
+	_timer.schedule_after(Timestamp::make_jiffies(_tb.epochs_until_contains(1)));
+	_empty_runs++;
+	return false;
     }
     _task.fast_reschedule();
+    if (!worked)
+        _empty_runs++;
     return worked;
 }
 
-
-// HANDLERS
-
 String
-RatedUnqueue::read_handler(Element *e, void *)
+RatedUnqueue::read_handler(Element *e, void *thunk)
 {
-    RatedUnqueue *rs = static_cast<RatedUnqueue *>(e);
-    if (rs->is_bandwidth())
-	return cp_unparse_bandwidth(rs->_rate.rate());
-    else
-	return String(rs->_rate.rate());
+    RatedUnqueue *ru = (RatedUnqueue *)e;
+    switch ((uintptr_t) thunk) {
+      case h_rate:
+	if (ru->is_bandwidth())
+	    return cp_unparse_bandwidth(ru->_tb.rate());
+	else
+	    return String(ru->_tb.rate());
+      case h_calls: {
+	  StringAccum sa;
+	  sa << ru->_runs << " calls to run_task()\n"
+	     << ru->_empty_runs << " empty runs\n"
+	     << ru->_pushes << " pushes\n"
+	     << ru->_failed_pulls << " failed pulls\n";
+	  return sa.take_string();
+      }
+    }
+    return String();
 }
 
 void
 RatedUnqueue::add_handlers()
 {
-    add_read_handler("rate", read_handler, 0);
+    add_read_handler("calls", read_handler, h_calls);
+    add_read_handler("rate", read_handler, h_rate);
     add_write_handler("rate", reconfigure_keyword_handler, "0 RATE");
+    add_data_handlers("active", Handler::OP_READ | Handler::OP_WRITE | Handler::CHECKBOX, &_active);
     add_task_handlers(&_task);
-    add_read_handler("config", read_handler, 0);
+    add_read_handler("config", read_handler, h_rate);
     set_handler_flags("config", 0, Handler::CALM);
 }
 

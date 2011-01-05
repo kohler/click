@@ -1,0 +1,43 @@
+%info
+Basic RatedSplitter test
+
+%script
+click --simtime CONFIG
+
+%file CONFIG
+InfiniteSource -> Queue(10) -> RatedUnqueue(10)
+	-> rs1 :: RatedSplitter(RATE 2)
+	-> c1 :: Counter
+	-> Discard;
+rs1 [1] -> Discard;
+
+InfiniteSource -> Queue(10) -> RatedUnqueue(10)
+	-> rs2 :: RatedSplitter(RATE 2, BURST_SIZE 50)
+	-> c2 :: Counter
+	-> Discard;
+rs2 [1] -> Discard;
+
+InfiniteSource -> Queue(10) -> RatedUnqueue(10)
+	-> rs3 :: RatedSplitter(RATE 2, BURST_DURATION 25)
+	-> c3 :: Counter
+	-> Discard;
+rs3 [1] -> Discard;
+
+InfiniteSource -> Queue(10) -> RatedUnqueue(200)
+	-> rs4 :: RatedSplitter(RATE 100, BURST_SIZE 2) // BURST of 1 is pretty hopeless
+	-> c4 :: Counter
+	-> Discard;
+rs4 [1] -> Discard;
+
+Script(wait 10, read c1.count, read c2.count, read c3.count, read c4.count, write stop);
+
+%expect stdout
+%expect -w stderr
+c1.count:
+20
+c2.count:
+69
+c3.count:
+69
+c4.count:
+1001

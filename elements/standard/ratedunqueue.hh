@@ -2,28 +2,45 @@
 #ifndef CLICK_RATEDUNQUEUE_HH
 #define CLICK_RATEDUNQUEUE_HH
 #include <click/element.hh>
-#include <click/gaprate.hh>
+#include <click/tokenbucket.hh>
 #include <click/task.hh>
+#include <click/timer.hh>
 #include <click/notifier.hh>
 CLICK_DECLS
 
 /*
  * =c
- * RatedUnqueue(RATE)
+ * RatedUnqueue(RATE, I[<KEYWORDS>])
  * =s shaping
  * pull-to-push converter
  * =d
  *
  * Pulls packets at the given RATE in packets per second, and pushes them out
- * its single output.
+ * its single output.  It is implemented with a token bucket.  The capacity of
+ * this token bucket defaults to 20 milliseconds worth of tokens, but can be
+ * customized by setting BURST_DURATION or BURST_SIZE.
  *
- * RatedUnqueue will use a lot of CPU if given a low RATE.  This is because it
- * maintains the RATE by constantly rescheduling itself until it's time for a
- * packet to be emitted.  TimedUnqueue is often a better choice for low RATEs.
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item RATE
+ *
+ * Integer.  Token bucket fill rate in packets per second.
+ *
+ * =item BURST_DURATION
+ *
+ * Time.  If specified, the capacity of the token bucket is calculated as
+ * rate * burst_duration.
+ *
+ * =item BURST_SIZE
+ *
+ * Integer.  If specified, the capacity of the token bucket is set to this
+ * value.
  *
  * =h rate read/write
  *
- * =a BandwidthRatedUnqueue, Unqueue, TimedUnqueue, Shaper, RatedSplitter */
+ * =a BandwidthRatedUnqueue, Unqueue, Shaper, RatedSplitter */
 
 class RatedUnqueue : public Element { public:
 
@@ -36,6 +53,8 @@ class RatedUnqueue : public Element { public:
     bool is_bandwidth() const		{ return class_name()[0] == 'B'; }
 
     int configure(Vector<String> &, ErrorHandler *);
+    static int configure_helper(TokenBucket *tb, bool is_bandwidth, Element *elt, Vector<String> &conf, ErrorHandler *errh);
+
     bool can_live_reconfigure() const	{ return true; }
     int initialize(ErrorHandler *);
     void add_handlers();
@@ -44,13 +63,21 @@ class RatedUnqueue : public Element { public:
 
   protected:
 
-    GapRate _rate;
+    TokenBucket _tb;
     Task _task;
-    enum { use_signal = 1 };
+    Timer _timer;
     NotifierSignal _signal;
+    uint32_t _runs;
+    uint32_t _pushes;
+    uint32_t _failed_pulls;
+    uint32_t _empty_runs;
 
-    static String read_handler(Element *, void *);
+    enum { tb_bandwidth_thresh = 131072 };
+    enum { h_calls, h_rate };
 
+    static String read_handler(Element *e, void *thunk);
+
+    bool _active;
 };
 
 CLICK_ENDDECLS
