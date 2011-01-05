@@ -28,6 +28,8 @@ INSTALL = @INSTALL@
 INSTALL_DATA = $(INSTALL) -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
+target_cpu = @target_cpu@
+
 ifeq ($(V),1)
 ccompile = $(COMPILE) $(DEPCFLAGS) $(1)
 ccompile_nodep = $(COMPILE) $(1)
@@ -87,8 +89,15 @@ EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(BSDMODULE_OBJS) elements.o
 
 CPPFLAGS = @CPPFLAGS@ -DCLICK_BSDMODULE -DBSD_NETISRSCHED
+#CPPFLAGS = @CPPFLAGS@ -DCLICK_BSDMODULE
+
+ifeq ($(target_cpu),x86_64)
 CFLAGS = @CFLAGS_NDEBUG@ -g -fPIC -fno-builtin
 CXXFLAGS = @CXXFLAGS_NDEBUG@ -g -fPIC -fno-builtin
+else
+CFLAGS = @CFLAGS_NDEBUG@ -g -fno-builtin
+CXXFLAGS = @CXXFLAGS_NDEBUG@ -g -fno-builtin
+endif
 
 DEFS = @DEFS@ -D_KERNEL
 INCLUDES = -nostdinc -I$(top_builddir)/include -I$(top_srcdir)/include \
