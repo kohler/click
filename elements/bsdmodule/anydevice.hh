@@ -30,6 +30,8 @@ CLICK_DECLS
 
 //extern int *polling;            // 1 = BSD poller; 2 = Click poller
 
+extern struct ifnet _dev_click;
+
 class AnyDeviceMap;
 
 class AnyDevice : public Element { public:

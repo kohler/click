@@ -218,6 +218,9 @@ extern "C" void (*ng_ether_input_p)(struct ifnet *, struct mbuf **);
 extern "C" void click_ether_output(struct ifnet *, struct mbuf **);
 extern "C" void (*ng_ether_output_p)(struct ifnet *, struct mbuf **);
 
+extern "C" void click_ether_input_orphan(struct ifnet *, struct mbuf **);
+extern "C" void (*ng_ether_input_orphan_p)(struct ifnet *, struct mbuf **);
+
 
 extern "C" int
 init_module()
@@ -269,6 +272,7 @@ init_module()
     // netgraph hooks
     ng_ether_input_p = click_ether_input;
     ng_ether_output_p = click_ether_output;
+    ng_ether_input_orphan_p = click_ether_input_orphan;
 
     return 0;
 }
@@ -283,6 +287,7 @@ cleanup_module()
     // netgraph hooks
     ng_ether_input_p = 0;
     ng_ether_output_p = 0;
+    ng_ether_input_orphan_p = 0;
 
     // extra packages, global handlers, packets
     click_cleanup_packages();
