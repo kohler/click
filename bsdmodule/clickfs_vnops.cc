@@ -38,27 +38,27 @@ CLICK_USING_DECLS
 
 #define UIO_MX			32
 
-int clickfs_lookup(struct vop_lookup_args *ap);
-int clickfs_open(struct vop_open_args *ap);
-int clickfs_close(struct vop_close_args *ap);
-int clickfs_access(struct vop_access_args *ap);
-int clickfs_getattr(struct vop_getattr_args *ap);
-int clickfs_setattr(struct vop_setattr_args *ap);
-int clickfs_read(struct vop_read_args *ap);
-int clickfs_write(struct vop_write_args *ap);
-int clickfs_fsync(struct vop_fsync_args *ap);
-int clickfs_readdir(struct vop_readdir_args *ap);
-int clickfs_readlink(struct vop_readlink_args *ap);
-//int clickfs_inactive(struct vop_inactive_args *ap);
-//int clickfs_reclaim(struct vop_reclaim_args *ap);
+static int clickfs_lookup(struct vop_lookup_args *ap);
+static int clickfs_open(struct vop_open_args *ap);
+static int clickfs_close(struct vop_close_args *ap);
+static int clickfs_access(struct vop_access_args *ap);
+static int clickfs_getattr(struct vop_getattr_args *ap);
+static int clickfs_setattr(struct vop_setattr_args *ap);
+static int clickfs_read(struct vop_read_args *ap);
+static int clickfs_write(struct vop_write_args *ap);
+static int clickfs_fsync(struct vop_fsync_args *ap);
+static int clickfs_readdir(struct vop_readdir_args *ap);
+static int clickfs_readlink(struct vop_readlink_args *ap);
+static int clickfs_inactive(struct vop_inactive_args *ap);
+static int clickfs_reclaim(struct vop_reclaim_args *ap);
 
 /* XXX: Blatant kludge as c++ does not like c99 initializers. */
 struct vop_vector clickfs_vnodeops = {
 	&default_vnodeops,
 	NULL,
 	NULL,
+	vfs_cache_lookup,
 	clickfs_lookup,
-	NULL,
 	NULL,
 	NULL,
 	NULL,
@@ -91,8 +91,8 @@ struct vop_vector clickfs_vnodeops = {
 	NULL,
 	clickfs_readdir,
 	clickfs_readlink,
-	NULL, /* inactive */
-	NULL, /* reclaim */
+	clickfs_inactive,
+	clickfs_reclaim,
 	NULL, NULL, NULL, NULL,  NULL, NULL, NULL, NULL,
 	NULL, NULL, NULL, NULL,  NULL, NULL, NULL, NULL,
 	NULL, NULL, NULL, NULL,  NULL, NULL, NULL, /* lock1, ..., vptofh */
@@ -125,11 +125,11 @@ clickfs_rootvnode(struct mount *mp, struct vnode **vpp)
     vp->v_data = de;
     vp->v_type = clickfs_vtype[de->type];
     vp->v_vflag = VV_ROOT;
-    vp->v_mount = mp;
+    insmntque(*vpp, mp);
     return 0;
 }
 
-int
+static int
 clickfs_lookup(struct vop_lookup_args *ap)
 {
     struct componentname *cnp = ap->a_cnp;
@@ -138,7 +138,7 @@ clickfs_lookup(struct vop_lookup_args *ap)
     char *pname = cnp->cn_nameptr;
     int plen = cnp->cn_namelen;
     struct thread *td = cnp->cn_thread;
-    struct clickfs_dirent *cde= VTOCDE(dvp);
+    struct clickfs_dirent *cde = VTOCDE(dvp);
     int error = 0;
 
     *vpp = NULLVP;
@@ -173,7 +173,7 @@ clickfs_lookup(struct vop_lookup_args *ap)
 
     (*vpp)->v_data = cde;
     (*vpp)->v_type = clickfs_vtype[cde->type];
-    (*vpp)->v_mount = dvp->v_mount;
+    insmntque(*vpp, dvp->v_mount);
     if (cde == clickfs_tree_root)
 	(*vpp)->v_vflag = VV_ROOT;
 #if __FreeBSD_version >= 800000
@@ -188,7 +188,7 @@ done:
     return error;
 }
 
-int
+static int
 clickfs_getattr(struct vop_getattr_args *ap)
 {
     struct vnode *vp = ap->a_vp;
@@ -221,7 +221,7 @@ clickfs_getattr(struct vop_getattr_args *ap)
     return 0;
 }
 
-int
+static int
 clickfs_setattr(struct vop_setattr_args *ap)
 {
     /*
@@ -230,7 +230,7 @@ clickfs_setattr(struct vop_setattr_args *ap)
     return 0;
 }
 
-int
+static int
 clickfs_access(struct vop_access_args *ap)
 {
     struct vnode *vp = ap->a_vp;
@@ -274,7 +274,7 @@ clickfs_int_send_dirent(const char *name, int *skip, int fileno, struct uio *uio
     return uiomove((caddr_t) &d, UIO_MX, uio);
 }
 
-int
+static int
 clickfs_readdir(struct vop_readdir_args *ap)
 {
     int skip, off, error = 0;
@@ -321,7 +321,7 @@ clickfs_int_get_element(struct clickfs_dirent *cde)
     return e;
 }
 
-int
+static int
 clickfs_open(struct vop_open_args *ap)
 {
     struct vnode *vp = ap->a_vp;
@@ -337,7 +337,7 @@ clickfs_open(struct vop_open_args *ap)
     return 0;
 }
 
-int
+static int
 clickfs_read(struct vop_read_args *ap)
 {
     struct vnode *vp = ap->a_vp;
@@ -392,7 +392,7 @@ clickfs_read(struct vop_read_args *ap)
     return len;
 }
 
-int
+static int
 clickfs_write(struct vop_write_args *ap)
 {
     struct vnode *vp = ap->a_vp;
@@ -431,7 +431,7 @@ clickfs_write(struct vop_write_args *ap)
     return uiomove(x, len, uio);
 }
 
-int
+static int
 clickfs_fsync_body(struct clickfs_dirent *cde)
 {
     int retval = 0;
@@ -477,7 +477,7 @@ clickfs_fsync_body(struct clickfs_dirent *cde)
     return retval;
 }
 
-int
+static int
 clickfs_close(struct vop_close_args *ap)
 {
     struct vnode *vp = ap->a_vp;
@@ -491,7 +491,7 @@ clickfs_close(struct vop_close_args *ap)
     return retval;
 }
 
-int
+static int
 clickfs_readlink(struct vop_readlink_args *ap)
 {
     struct vnode *vp = ap->a_vp;
@@ -504,11 +504,42 @@ clickfs_readlink(struct vop_readlink_args *ap)
 		   strlen(cde->data.slink.name), ap->a_uio);
 }
 
-int
+static int
 clickfs_fsync(struct vop_fsync_args *ap)
 {
     struct vnode *vp = ap->a_vp;
     struct clickfs_dirent *cde = VTOCDE(vp);
 
     return(clickfs_fsync_body(cde));
+}
+
+static int
+clickfs_inactive(struct vop_inactive_args *ap)
+{
+    struct vnode *vp = ap->a_vp;
+    struct thread *td = ap->a_td;
+    //struct clickfs_dirent *cde = VTOCDE(vp);
+
+    /*
+     * XXX: Recycling always is probably inefficient, but makes
+     *      unmounting easier (and more robust).
+     */
+    //if (cde->file_refcnt == 0) {
+    vrecycle(vp, td);
+
+    return 0;
+}
+
+static int
+clickfs_reclaim(struct vop_reclaim_args *ap)
+{
+    struct vnode *vp = ap->a_vp;
+
+    vnode_destroy_vobject(vp);
+    cache_purge(vp);
+    vp->v_data = NULL;
+
+   /* Dirents freed when unloading. */
+
+   return 0;
 }
