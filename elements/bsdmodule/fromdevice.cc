@@ -74,7 +74,7 @@ static int from_device_count;
  * a queue. Append the packet there, clear *mp to grab the pkt from FreeBSD.
  * call wakeup() to poentially wake up the element.
  *
- * Special case: m->m_pkthdr.rcvif == NULL means the packet is coming
+ * Special case: m->m_pkthdr.rcvif == &_dev_click means the packet is coming
  * from click and directed to this interface on the host.
  * We are already running at splimp() so we need no further protection.
  */
@@ -87,12 +87,15 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp)
     	return;
 
     struct mbuf *m = *mp;
-    if (m->m_pkthdr.rcvif == NULL) {	// Special case: from click to FreeBSD
+    if (m->m_pkthdr.rcvif == &_dev_click) {
+	// Special case: from click to FreeBSD
 	m->m_pkthdr.rcvif = ifp;	// Reset rcvif to correct value, and
 	return;				// let FreeBSD continue processing.
     }
 
+#if __FreeBSD_version < 800000 || !defined(BSD_NETISRSCHED)
     *mp = NULL;		// tell ether_input no further processing needed.
+#endif
 
     FromDevice *me = (FromDevice *)(CLICK_IFP2FD(ifp));
 
@@ -134,6 +137,11 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp)
     if (me->_polling != 1)
     */
 	me->intr_reschedule();
+#if __FreeBSD_version >= 800000 && defined(BSD_NETISRSCHED)
+    netisr_dispatch(NETISR_CLICK, m);
+    *mp = NULL;		// tell ether_input no further processing needed.
+#endif
+
 	/*
     if (me->_polling == -1)
 	me->_polling = 1; // no need to wakeup task thread any more
@@ -179,6 +187,12 @@ click_ether_output(struct ifnet *ifp, struct mbuf **mp)
     splx(s);
     return 0;
 #endif
+}
+
+extern "C"
+void
+click_ether_input_orphan(struct ifnet *ifp, struct mbuf **mp)
+{
 }
 
 static void
