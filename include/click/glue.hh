@@ -278,7 +278,12 @@ extern unsigned char _ctype[];
 
 # define strchr(s, c)	index(s, c)
 
-# define memmove(dst, src, len)		bcopy((src), (dst), (len))
+# if __FreeBSD_version >= 700000 && __FreeBSD_version < 730000
+/* memmove() appeared in the FreeBSD 7.3 kernel */
+extern "C" void *memmove(void *dest, const void *src, size_t len);
+# endif
+//# define memmove(dst, src, len)		bcopy((src), (dst), (len))
+
 
 typedef struct ifnet net_device;
 
