@@ -16,7 +16,7 @@ CLICK_CXX_UNPROTECT
 #define CLICK_CYCLE_COMPENSATION 0
 #ifdef BSD_NETISRSCHED
 # if __FreeBSD_version >= 800000
-   /* XXX */
+#  define NETISR_CLICK 13        // must match empty slots in net/netisr.h !!!
 # else
 #  define NETISR_CLICK 1         // must match empty slots in net/netisr.h !!!
 # endif

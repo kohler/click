@@ -43,6 +43,7 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 #include <elements/bsdmodule/anydevice.hh>
+#else /* !BSD_NETISRSCHED */
 #endif
 
 #include <click/cxxprotect.h>
@@ -61,6 +62,23 @@ static Router *placeholder_router;
 #ifdef BSD_NETISRSCHED
 struct ifnet click_dummyifnet;
 struct callout click_timer_h;
+
+# if __FreeBSD_version >= 800000
+void click_netisr(struct mbuf*);
+static struct netisr_handler click_nh = {
+  "click",
+  click_netisr,
+  NULL,
+  NULL,
+  NULL,
+  NETISR_CLICK,
+  0,
+  NETISR_POLICY_SOURCE,
+};
+
+#  define MT_CLICK 13 /* XXX */
+static struct mbuf *click_timer_mbuf;
+# endif
 #else  //BSD_NETISRSCHED
 
 int click_thread_priority = PRIO_PROCESS;
@@ -337,7 +355,13 @@ click_timer(void *arg)
   else
 #endif
 #if __FreeBSD_version >= 800000
-   /* XXX: FreeBSD 8 does not have schednetisr() */
+# ifdef BSD_NETISRSCHED
+  /*
+   * XXX: FreeBSD 8 does not have schednetisr().
+   *      Calling netisr_dispatch() here is a hack.
+   */
+  netisr_dispatch(NETISR_CLICK, click_timer_mbuf);
+# endif
 #else
   schednetisr(NETISR_CLICK);
 #endif
@@ -368,8 +392,8 @@ click_init_sched(ErrorHandler *errh)
 
 #ifdef BSD_NETISRSCHED
 # if __FreeBSD_version >= 800000
-//  netisr_register(&click_nh);
-   /* XXX: FreeBSD 8 does not have schednetisr() */
+  netisr_register(&click_nh);
+  click_timer_mbuf = m_get(M_DONTWAIT, MT_CLICK); /* XXX */
 # else
   netisr_register(NETISR_CLICK, click_netisr, NULL, 0);
   schednetisr(NETISR_CLICK);
@@ -439,14 +463,18 @@ click_cleanup_sched()
 #ifdef BSD_NETISRSCHED
   callout_drain(&click_timer_h);
 # if __FreeBSD_version >= 800000
-//netisr_unregister(&click_nh);
+  netisr_unregister(&click_nh);
+  m_free(click_timer_mbuf);
 # else
   netisr_unregister(NETISR_CLICK);
 # endif
- // ether_poll_deregister(&click_dummyifnet);
+# if 0
+  ether_poll_deregister(&click_dummyifnet);
+# endif
   delete placeholder_router;
 #else
-  /*if (kill_router_threads() < 0) {
+# if 1
+  if (kill_router_threads() < 0) {
     printf("click: Following threads still active, expect a crash:\n");
     for (int i = 0; i < click_thread_pids->size(); i++)
       printf("click:   router thread pid %d\n", (*click_thread_pids)[i]);
@@ -455,7 +483,9 @@ click_cleanup_sched()
     delete click_thread_pids;
     click_thread_pids = 0;
     return 0;
-  }*/
+  }
+  mtx_destroy(&click_thread_lock);
+# endif
 #endif
    return 0;
 }
