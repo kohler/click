@@ -17,6 +17,9 @@ class ErrorHandler;
  *  designed to efficiently model high rates.  (Contrast this with Timer,
  *  which can serve a similar function at low rates.)
  *
+ *  GapRate is not a great choice for limiting the rates of external
+ *  processes.  See TokenBucketX, a token bucket rate limiter.
+ *
  *  GapRate models an underlying "true" rated process with the correct rate.
  *  It also keeps a counter, maintained by its user via the update() method,
  *  that measures the progress of the user's rated process.  The
@@ -37,7 +40,7 @@ class ErrorHandler;
  *
  *  The maximum rate GapRate can implement is MAX_RATE events per second.
  *
- *  @sa  Timer
+ *  @sa  TokenBucketX, Timer
  */
 class GapRate { public:
 
@@ -48,14 +51,14 @@ class GapRate { public:
      *  @param  r  initial rate (events per second) */
     inline GapRate(unsigned r);
 
-
     /** @brief  Return the current rate. */
     inline unsigned rate() const;
 
     /** @brief  Set the current rate to @a r.
      *  @param  r  desired rate (events per second)
      *
-     *  Rates larger than MAX_RATE are reduced to MAX_RATE. */
+     *  Rates larger than MAX_RATE are reduced to MAX_RATE.  Also performs the
+     *  equivalent of a reset() to flush old state. */
     inline void set_rate(unsigned r);
 
     /** @brief  Set the current rate to @a r.

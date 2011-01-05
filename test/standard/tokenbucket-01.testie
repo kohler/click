@@ -1,0 +1,9 @@
+%info
+Tests TokenBucket
+
+%script
+click -qe TokenBucketTest
+
+%expect stderr
+config:1:{{.*}}
+  All tests pass!
