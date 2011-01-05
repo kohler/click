@@ -23,6 +23,9 @@
 /* Define if 'int64_t' is typedefed to 'long long' in bsdmodule. */
 #undef HAVE_INT64_IS_LONG_LONG_BSDMODULE
 
+/* Define if NETISR scheduling should be used. */
+#undef BSD_NETISRSCHED
+
 /* The size of a `click_jiffies_t', as computed by sizeof. */
 #define SIZEOF_CLICK_JIFFIES_T SIZEOF_INT
 
