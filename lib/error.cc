@@ -137,7 +137,11 @@ ErrorHandler::skip_anno(const String &str, const char *begin, const char *end,
 	const char *x = parse_level(s + 1, end, 0);
 	if (x != s + 1 && x != end && *x == '>') {
 	    name = String::make_stable("<>", 2);
+#if CLICK_BSDMODULE
+	    if (likely(!!(str)))
+#else
 	    if (likely(str))
+#endif
 		value = str.substring(begin + 1, x);
 	    begin = x + 1;
 	}
@@ -150,13 +154,21 @@ ErrorHandler::skip_anno(const String &str, const char *begin, const char *end,
 	    /* nada */;
 	if (s == end || s == begin + 1 || (*s != '}' && *s != ':'))
 	    /* not an annotation */;
+#if CLICK_BSDMODULE
+	else if (*s == '}' && likely(!!(str))) {
+#else
 	else if (*s == '}' && likely(str)) {
+#endif
 	    name = str.substring(begin + 1, s);
 	    begin = s + 1;
 	} else if (*s == '}') {
 	    name = String::make_stable("{}", 2);
 	    begin = s + 1;
+#if CLICK_BSDMODULE
+	} else if (likely(!!(str))) {
+#else
 	} else if (likely(str)) {
+#endif
 	    const char *x, *last = s + 1;
 	    StringAccum sa;
 	    for (x = s + 1; x != end && *x != '\n' && *x != '}'; ++x)

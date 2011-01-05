@@ -10,10 +10,12 @@
 CLICK_DECLS
 
 #if CLICK_BSDMODULE
-extern "C" {
- #include <sys/lock.h>
- #include <sys/mutex.h>
-}
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+# include <sys/lock.h>
+# include <sys/mutex.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
 #else
 #define GIANT_REQUIRED
 #endif

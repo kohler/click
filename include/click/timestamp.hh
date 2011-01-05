@@ -271,8 +271,10 @@ class Timestamp { public:
 #if !CLICK_TOOL
     /** @brief Return a timestamp representing an interval of @a jiffies. */
     static inline Timestamp make_jiffies(click_jiffies_t jiffies);
+# if !CLICK_BSDMODULE
     /** @overload */
     static inline Timestamp make_jiffies(click_jiffies_difference_t jiffies);
+# endif
     /** @brief Return the number of jiffies represented by this timestamp. */
     inline click_jiffies_t jiffies() const;
 #endif
@@ -943,22 +945,29 @@ Timestamp::make_jiffies(click_jiffies_t jiffies)
     return t;
 }
 
+# if !CLICK_BSDMODULE
+/*
+ * XXX: CLICK_BSDMODULE: As click_jiffies_t and click_jiffies_difference_t
+ *      are currently the same type (int), then the make_jiffies() function
+ *      cannot be overloaded like this.
+ */
 inline Timestamp
 Timestamp::make_jiffies(click_jiffies_difference_t jiffies)
 {
     // Not very precise when CLICK_HZ doesn't evenly divide subsec_per_sec.
     Timestamp t = Timestamp::uninitialized_t();
-# if TIMESTAMP_REP_FLAT64
+#  if TIMESTAMP_REP_FLAT64
     t._t.x = (int64_t) jiffies * (subsec_per_sec / CLICK_HZ);
-# else
+#  else
     if (jiffies < 0)
 	t._t.sec = -((-jiffies - 1) / CLICK_HZ) - 1;
     else
 	t._t.sec = jiffies / CLICK_HZ;
     t._t.subsec = (jiffies - t._t.sec * CLICK_HZ) * (subsec_per_sec / CLICK_HZ);
-# endif
+#  endif
     return t;
 }
+# endif
 #endif
 
 inline void Timestamp::set(seconds_type sec, uint32_t subsec) {
