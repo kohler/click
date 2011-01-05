@@ -171,6 +171,12 @@ dnl bsdmodule driver and features
 
 AC_ARG_ENABLE(bsdmodule, [  --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)], :, enable_bsdmodule=no)
 
+AC_ARG_ENABLE(netisr, [[    --disable-netisr          disable NETISR scheduling in BSD]], :, enable_netisr=yes)
+if test $enable_netisr = yes; then
+    AC_DEFINE(BSD_NETISRSCHED)
+fi
+
+
 dnl nsclick driver and features
 
 AC_ARG_ENABLE(nsclick, [  --enable-nsclick        enable NS simulator driver (EXPERIMENTAL)], :, enable_nsclick=no)
