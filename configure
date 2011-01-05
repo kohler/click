@@ -773,6 +773,7 @@ enable_experimental
 enable_skip_elements
 with_freebsd
 enable_int64
+enable_bound_port_transfer
 enable_nanotimestamp
 enable_tools
 enable_dynamic_linking
@@ -1450,6 +1451,7 @@ Optional Features:
   --enable-experimental   enable experimental elements in normal groups
   --enable-skip-elements=ELTS disable comma-separated elements
   --disable-int64         disable 64-bit integer support
+  --enable-bound-port-transfer  enable port transfer function ptr optimization
   --enable-nanotimestamp  enable nanosecond timestamps
   --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]
   --disable-dynamic-linking disable dynamic linking
@@ -7014,7 +7016,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7017 "configure"
+#line 7019 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -7637,6 +7639,23 @@ $as_echo "#define HAVE_CLOCK_GETTIME 1" >>confdefs.h
 
     fi
 
+
+
+
+# Check whether --enable-bound-port-transfer was given.
+if test "${enable_bound_port_transfer+set}" = set; then :
+  enableval=$enable_bound_port_transfer; :
+else
+  enable_bound_port_transfer=no
+fi
+
+
+if test "$enable_bound_port_transfer" = yes; then
+
+$as_echo "#define HAVE_BOUND_PORT_TRANSFER 1" >>confdefs.h
+
+  CXXFLAGS="$CXXFLAGS -Wno-pmf-conversions"
+fi
 
 # Check whether --enable-nanotimestamp was given.
 if test "${enable_nanotimestamp+set}" = set; then :

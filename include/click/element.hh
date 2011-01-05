@@ -213,6 +213,12 @@ class Element { public:
 
 	Element* _e;
 	int _port;
+#if HAVE_BOUND_PORT_TRANSFER
+	union {
+	    void (*push)(Element *e, int port, Packet *p);
+	    Packet *(*pull)(Element *e, int port);
+	} _bound;
+#endif
 
 #if CLICK_STATS >= 1
 	mutable unsigned _packets;	// How many packets have we moved?
@@ -509,6 +515,17 @@ Element::Port::assign(Element *owner, Element *e, int port, bool isoutput)
     _e = e;
     _port = port;
     (void) isoutput;
+#if HAVE_BOUND_PORT_TRANSFER
+    if (e) {
+	if (isoutput) {
+	    void (Element::*pusher)(int, Packet *) = &Element::push;
+	    _bound.push = (void (*)(Element *, int, Packet *)) (e->*pusher);
+	} else {
+	    Packet *(Element::*puller)(int) = &Element::pull;
+	    _bound.pull = (Packet *(*)(Element *, int)) (e->*puller);
+	}
+    }
+#endif
 }
 
 /** @brief Returns whether this port is active (a push output or a pull input).
@@ -570,13 +587,21 @@ Element::Port::push(Packet* p) const
 #if CLICK_STATS >= 2
     ++_e->input(_port)._packets;
     click_cycles_t c0 = click_get_cycles();
+# if HAVE_BOUND_PORT_TRANSFER
+    _bound.push(_e, _port, p);
+# else
     _e->push(_port, p);
+# endif
     click_cycles_t x = click_get_cycles() - c0;
     ++_e->_calls;
     _e->_self_cycles += x;
     _owner->_child_cycles += x;
 #else
+# if HAVE_BOUND_PORT_TRANSFER
+    _bound.push(_e, _port, p);
+# else
     _e->push(_port, p);
+# endif
 #endif
 }
 
@@ -602,7 +627,11 @@ Element::Port::pull() const
     assert(_e);
 #if CLICK_STATS >= 2
     click_cycles_t c0 = click_get_cycles();
+# if HAVE_BOUND_PORT_TRANSFER
+    Packet *p = _bound.pull(_e, _port);
+# else
     Packet *p = _e->pull(_port);
+# endif
     click_cycles_t x = click_get_cycles() - c0;
     ++_e->_calls;
     _e->_self_cycles += x;
@@ -610,7 +639,11 @@ Element::Port::pull() const
     if (p)
 	++_e->output(_port)._packets;
 #else
+# if HAVE_BOUND_PORT_TRANSFER
+    Packet *p = _bound.pull(_e, _port);
+# else
     Packet *p = _e->pull(_port);
+# endif
 #endif
 #if CLICK_STATS >= 1
     if (p)

@@ -445,6 +445,20 @@ if test "x$have_timespec" = xyes; then
 fi
 CLICK_CHECK_POSIX_CLOCKS
 
+
+dnl
+dnl check forms of port transfer
+dnl
+
+AC_ARG_ENABLE(bound-port-transfer,
+  [[  --enable-bound-port-transfer  enable port transfer function ptr optimization]],
+  :, enable_bound_port_transfer=no)
+
+if test "$enable_bound_port_transfer" = yes; then
+  AC_DEFINE([HAVE_BOUND_PORT_TRANSFER], [1], [Define if Port::push/Port::pull should use bound function pointers.])
+  CXXFLAGS="$CXXFLAGS -Wno-pmf-conversions"
+fi
+
 AC_ARG_ENABLE(nanotimestamp, [  --enable-nanotimestamp  enable nanosecond timestamps])
 # Default to nanosecond-precision timestamps if clock_gettime is available.
 if test "x$enable_nanotimestamp" = x -a "x$have_clock_gettime" = xyes; then
