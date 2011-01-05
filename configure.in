@@ -490,7 +490,7 @@ dnl
 dnl headers, event detection, dynamic linking
 dnl
 
-AC_CHECK_HEADERS(termio.h netdb.h sys/event.h pwd.h grp.h)
+AC_CHECK_HEADERS(termio.h netdb.h sys/event.h pwd.h grp.h execinfo.h)
 CLICK_CHECK_POLL_H
 AC_CHECK_FUNCS(pselect sigaction)
 
