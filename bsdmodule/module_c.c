@@ -78,7 +78,7 @@ static struct vfsconf click_vfsconf = {
 	0,
 	VFCF_SYNTHETIC,
 	NULL,
-	NULL,
+	{ NULL, NULL },
 };
 
 static moduledata_t click_mod = {

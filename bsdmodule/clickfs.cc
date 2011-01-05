@@ -98,7 +98,11 @@ clickfs_root(struct mount *mp, int flags, struct vnode **vpp, struct thread *td)
 
     *vpp = cmp->click_root;
     VREF(*vpp);
+#if __FreeBSD_version >= 800000
+    vn_lock(*vpp, LK_EXCLUSIVE | LK_RETRY);
+#else
     vn_lock(*vpp, LK_EXCLUSIVE | LK_RETRY, curthread);
+#endif
 
     return 0;
 }
@@ -142,5 +146,6 @@ struct vfsops clickfs_vfsops = {
 	clickfs_init,
 	clickfs_uninit,
 	NULL,
-	NULL
+	NULL,
+	NULL, /* susp_clean */
 };

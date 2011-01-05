@@ -386,7 +386,7 @@ typedef long click_jiffies_difference_t;
 # define HAS_LONG_CLICK_JIFFIES_T	1
 #elif CLICK_BSDMODULE
 # define click_gettimeofday(tvp)	(getmicrotime(tvp))
-typedef int click_jiffies_t;
+typedef unsigned click_jiffies_t;
 typedef int click_jiffies_difference_t;
 # define click_jiffies()		(ticks)
 # define CLICK_HZ			hz

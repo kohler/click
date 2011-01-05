@@ -49,11 +49,11 @@ int clickfs_write(struct vop_write_args *ap);
 int clickfs_fsync(struct vop_fsync_args *ap);
 int clickfs_readdir(struct vop_readdir_args *ap);
 int clickfs_readlink(struct vop_readlink_args *ap);
-int clickfs_inactive(struct vop_inactive_args *ap);
-int clickfs_reclaim(struct vop_reclaim_args *ap);
+//int clickfs_inactive(struct vop_inactive_args *ap);
+//int clickfs_reclaim(struct vop_reclaim_args *ap);
 
 /* XXX: Blatant kludge as c++ does not like c99 initializers. */
-static struct vop_vector clickfs_vnodeops = {
+struct vop_vector clickfs_vnodeops = {
 	&default_vnodeops,
 	NULL,
 	NULL,
@@ -65,11 +65,19 @@ static struct vop_vector clickfs_vnodeops = {
 	clickfs_open,
 	clickfs_close,
 	clickfs_access,
+#if __FreeBSD_version >= 800000
+	NULL, /* accessx */
+#endif
 	clickfs_getattr,
 	clickfs_setattr,
+#if __FreeBSD_version >= 800000
+	NULL, /* markatime */
+#endif
 	clickfs_read,
 	clickfs_write,
-	NULL,
+#if __FreeBSD_version < 800000
+	NULL, /* lease */
+#endif
 	NULL,
 	NULL,
 	NULL,
@@ -83,9 +91,14 @@ static struct vop_vector clickfs_vnodeops = {
 	NULL,
 	clickfs_readdir,
 	clickfs_readlink,
-	NULL,
-	NULL,
-	NULL,	/* .. 5 at current revision */
+	NULL, /* inactive */
+	NULL, /* reclaim */
+	NULL, NULL, NULL, NULL,  NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL,  NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL,  NULL, NULL, NULL, /* lock1, ..., vptofh */
+#if __FreeBSD_version >= 800000
+	NULL, /* vptocnp */
+#endif
 };
 
 static enum vtype clickfs_vtype[] = {
@@ -163,7 +176,12 @@ clickfs_lookup(struct vop_lookup_args *ap)
     (*vpp)->v_mount = dvp->v_mount;
     if (cde == clickfs_tree_root)
 	(*vpp)->v_vflag = VV_ROOT;
+#if __FreeBSD_version >= 800000
+    vn_lock(*vpp, LK_EXCLUSIVE | LK_RETRY);
+#else
     vn_lock(*vpp, LK_SHARED | LK_RETRY, td);
+#endif
+
     return 0;
 
 done:
@@ -217,7 +235,11 @@ clickfs_access(struct vop_access_args *ap)
 {
     struct vnode *vp = ap->a_vp;
     struct ucred *cred = ap->a_cred;
+#if __FreeBSD_version >= 800000
+    mode_t mode = ap->a_accmode;
+#else
     mode_t mode = ap->a_mode;
+#endif
     struct clickfs_dirent *cde = VTOCDE(vp);
     int perm = cde->perm;
 
@@ -490,4 +512,3 @@ clickfs_fsync(struct vop_fsync_args *ap)
 
     return(clickfs_fsync_body(cde));
 }
-
