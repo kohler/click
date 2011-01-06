@@ -36,6 +36,8 @@ TokenBucketTest::initialize(ErrorHandler *errh)
 {
     TokenBucket tb;
     tb.assign(1024, 2048);
+    CHECK(tb.rate() >= 1022 && tb.rate() <= 1026);
+    CHECK(tb.capacity() >= 2046 && tb.capacity() <= 2050);
     tb.set_full();
     tb.fill((click_jiffies_t)0);
     CHECK(tb.remove_if(1024));
