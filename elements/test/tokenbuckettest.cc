@@ -55,6 +55,24 @@ TokenBucketTest::initialize(ErrorHandler *errh)
     TokenBucket tb3(1, 1024*1024*1024);
     CHECK(tb3.remove_if(2*(UINT_MAX/CLICK_HZ)));
 
+    TokenBucket tb4(2, 1); // rate ends up very slightly less than 2
+    tb4.fill(0);
+    tb4.clear();
+    tb4.fill(tb4.epochs_until_contains(1));
+    CHECK(tb4.contains(1));
+
+    tb4.fill(0);
+    tb4.clear();
+    click_jiffies_t done_at = tb4.epochs_until_contains(1);
+    click_jiffies_t cur_time = 0;
+    while (cur_time < done_at) {
+        CHECK(cur_time == done_at - 1 || !tb4.contains(1));
+        CHECK(tb4.epochs_until_contains(1) <= done_at - cur_time);
+        ++cur_time;
+        tb4.fill(cur_time);
+    }
+    CHECK(tb4.contains(1));
+
     errh->message("All tests pass!");
     return 0;
 }
