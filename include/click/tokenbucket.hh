@@ -632,9 +632,26 @@ class TokenBucketX { public:
      * If @a rate is zero, the token bucket becomes unlimited: it
      * contains an infinite number of tokens.  If @a rate is nonzero
      * but @a capacity is negative or zero, the token bucket becomes
-     * empty: it never contains any tokens. */
+     * empty: it never contains any tokens.
+     *
+     * @sa assign_adjust */
     void assign(token_type rate, token_type capacity) {
 	_rate.assign(rate, capacity);
+    }
+
+    /** @brief Set the token bucket rate and capacity, preserving the
+     *  token count.
+     * @param rate refill rate in tokens per period
+     * @param capacity maximum token accumulation
+     *
+     * This performs the same function as assign(), but additionally
+     * keeps the number of tokens roughly stable.
+     *
+     * @sa assign */
+    void assign_adjust(token_type rate, token_type capacity) {
+	rate_type old_rate(_rate);
+	_rate.assign(rate, capacity);
+	_bucket.adjust(old_rate, _rate);
     }
 
     /** @brief Return true iff the token rate is normal (not unlimited or
