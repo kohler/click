@@ -49,6 +49,12 @@ TokenBucketTest::initialize(ErrorHandler *errh)
     CHECK(tb.remove_if(1024));
     CHECK(!tb.remove_if(1024));
 
+    TokenBucket tb2(1024*1024*1024, 1); // will change capacity
+    CHECK(tb2.remove_if(2*(UINT_MAX/CLICK_HZ)));
+
+    TokenBucket tb3(1, 1024*1024*1024);
+    CHECK(tb3.remove_if(2*(UINT_MAX/CLICK_HZ)));
+
     errh->message("All tests pass!");
     return 0;
 }

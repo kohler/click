@@ -195,26 +195,32 @@ void TokenRateX<P>::assign(token_type rate, token_type capacity)
 	_token_scale = 0;
 	_tokens_per_epoch = 1;
 	_epochs_to_fill = 1;
-	return;
     } else if (capacity <= 0) {
 	_token_scale = 2;
 	_tokens_per_epoch = 0;
 	_epochs_to_fill = 0;
-	return;
+    } else {
+	token_type frequency = P::epoch_frequency();
+
+	// constrain capacity so _tokens_per_epoch fits in 1 limb
+	unsigned min_capacity = (rate - 1) / frequency + 1;
+	if (capacity < min_capacity)
+	    capacity = min_capacity;
+
+	_token_scale = max_tokens / capacity;
+
+	// XXX on non-32 bit types
+	static_assert(sizeof(bigint::limb_type) == sizeof(token_type));
+	bigint::limb_type l[2] = { 0, 0 };
+	bigint::limb_type a[2] = { rate, 0 };
+	bigint::multiply_add(l, a, 2, _token_scale);
+	(void) bigint::divide(l, l, 2, frequency);
+	// constrain _tokens_per_epoch to be at least 1
+	_tokens_per_epoch = l[0] ? l[0] : 1;
+	assert(l[1] == 0);
+
+	_epochs_to_fill = (max_tokens - 1) / _tokens_per_epoch + 1;
     }
-
-    _token_scale = max_tokens / capacity;
-
-    // XXX on non-32 bit types
-    static_assert(sizeof(bigint::limb_type) == sizeof(token_type));
-    bigint::limb_type l[2] = { 0, 0 };
-    bigint::limb_type a[2] = { rate, 0 };
-    bigint::multiply_add(l, a, 2, _token_scale);
-    (void) bigint::divide(l, l, 2, P::epoch_frequency());
-    _tokens_per_epoch = l[0];
-    assert(l[1] == 0);
-
-    _epochs_to_fill = (max_tokens - 1) / _tokens_per_epoch + 1;
 }
 
 template <typename P>
