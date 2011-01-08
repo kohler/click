@@ -39,13 +39,13 @@ TokenBucketTest::initialize(ErrorHandler *errh)
     CHECK(tb.rate() >= 1022 && tb.rate() <= 1026);
     CHECK(tb.capacity() >= 2046 && tb.capacity() <= 2050);
     tb.set_full();
-    tb.fill((click_jiffies_t)0);
+    tb.refill((click_jiffies_t)0);
     CHECK(tb.remove_if(1024));
     CHECK(tb.remove_if(1024));
     CHECK(!tb.remove_if(1024));
-    tb.fill((click_jiffies_t)CLICK_HZ * 99 / 100);
+    tb.refill((click_jiffies_t)CLICK_HZ * 99 / 100);
     CHECK(!tb.remove_if(1024));
-    tb.fill((click_jiffies_t)CLICK_HZ);
+    tb.refill((click_jiffies_t)CLICK_HZ);
     CHECK(tb.remove_if(1024));
     CHECK(!tb.remove_if(1024));
 
@@ -57,12 +57,12 @@ TokenBucketTest::initialize(ErrorHandler *errh)
     CHECK(tb3.remove_if(2*(UINT_MAX/CLICK_HZ)));
 
     TokenBucket tb4(2, 1); // rate ends up very slightly less than 2
-    tb4.fill(0);
+    tb4.refill(0);
     tb4.clear();
-    tb4.fill(tb4.epochs_until_contains(1));
+    tb4.refill(tb4.epochs_until_contains(1));
     CHECK(tb4.contains(1));
 
-    tb4.fill(0);
+    tb4.refill(0);
     tb4.clear();
     click_jiffies_t done_at = tb4.epochs_until_contains(1);
     click_jiffies_t cur_time = 0;
@@ -70,7 +70,7 @@ TokenBucketTest::initialize(ErrorHandler *errh)
         CHECK(cur_time == done_at - 1 || !tb4.contains(1));
         CHECK(tb4.epochs_until_contains(1) <= done_at - cur_time);
         ++cur_time;
-        tb4.fill(cur_time);
+        tb4.refill(cur_time);
     }
     CHECK(tb4.contains(1));
 

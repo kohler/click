@@ -146,7 +146,7 @@ class TokenRateX { public:
 	return _token_scale ? _token_scale : 1;
     }
 
-    /** @brief Return the number of epochs required to fill a counter to
+    /** @brief Return the number of epochs required to refill a counter to
      * capacity.
      *
      * Returns (epoch_type) -1 for idle rates. */
@@ -251,7 +251,7 @@ typename P::token_type TokenRateX<P>::rate() const
  template parameter.  Most of its member functions take an explicit rate
  argument.  The contains() method reports whether the counter has at least a
  given number of tokens.  The counter is emptied by the remove() and
- remove_if() methods, and filled by the fill() methods.
+ remove_if() methods and refilled by the refill() methods.
 
  Often the token rate associated with a counter will not change during the
  counter's lifetime.  TokenCounterX will work correctly if the rate changes,
@@ -377,22 +377,22 @@ class TokenCounterX { public:
 	}
     }
 
-    /** @brief Fill the token counter to time @a rate.epoch().
+    /** @brief Refill the token counter to time @a rate.epoch().
      * @param rate associated token rate
      *
-     * There are three fill() methods, useful for different methods of
+     * There are three refill() methods, useful for different methods of
      * measuring epochs.  This method calls @a rate.epoch(), which returns the
      * current epoch.  Other methods use an explicit epoch and a @a
      * rate.epoch(U) method. */
-    void fill(const rate_type &rate);
+    void refill(const rate_type &rate);
 
-    /** @brief Fill the token counter for time @a epoch.
+    /** @brief Refill the token counter for time @a epoch.
      * @param rate associated token rate */
-    void fill(const rate_type &rate, epoch_type epoch);
+    void refill(const rate_type &rate, epoch_type epoch);
 
-    /** @brief Fill the token counter for @a time.
+    /** @brief Refill the token counter for @a time.
      * @param rate associated token rate */
-    template <typename U> void fill(const rate_type &rate, U time);
+    template <typename U> void refill(const rate_type &rate, U time);
 
     /** @brief Remove @a t tokens from the counter.
      * @param rate associated token rate
@@ -499,7 +499,7 @@ class TokenCounterX { public:
 };
 
 template <typename R>
-void TokenCounterX<R>::fill(const rate_type &rate, epoch_type epoch)
+void TokenCounterX<R>::refill(const rate_type &rate, epoch_type epoch)
 {
     epoch_type diff = rate.epoch_monotonic_difference(_epoch, epoch);
     if (diff >= rate.epochs_until_full()) {
@@ -515,15 +515,15 @@ void TokenCounterX<R>::fill(const rate_type &rate, epoch_type epoch)
 }
 
 template <typename R>
-void TokenCounterX<R>::fill(const rate_type &rate)
+void TokenCounterX<R>::refill(const rate_type &rate)
 {
-    fill(rate, rate.epoch());
+    refill(rate, rate.epoch());
 }
 
 template <typename R> template <typename U>
-void TokenCounterX<R>::fill(const rate_type &rate, U time)
+void TokenCounterX<R>::refill(const rate_type &rate, U time)
 {
-    fill(rate, rate.epoch(time));
+    refill(rate, rate.epoch(time));
 }
 
 
@@ -769,24 +769,24 @@ class TokenBucketX { public:
 	_bucket.set(_rate, t);
     }
 
-    /** @brief Fill the token bucket to time P::epoch().
+    /** @brief Refill the token bucket to time P::epoch().
      *
-     * There are three fill() methods, useful for different methods of
+     * There are three refill() methods, useful for different methods of
      * measuring epochs.  This method call parameter_type::epoch(), which
      * returns the current epoch.  Other methods use an explicit epoch and a
      * parameter_type::epoch(U) method. */
-    void fill() {
-	_bucket.fill(_rate);
+    void refill() {
+	_bucket.refill(_rate);
     }
 
-    /** @brief Fill the token bucket for time @a epoch. */
-    void fill(epoch_type epoch) {
-	_bucket.fill(_rate, epoch);
+    /** @brief Refill the token bucket for time @a epoch. */
+    void refill(epoch_type epoch) {
+	_bucket.refill(_rate, epoch);
     }
 
-    /** @brief Fill the token bucket for time P::epoch(@a time). */
-    template <typename U> void fill(U time) {
-	_bucket.fill(_rate, time);
+    /** @brief Refill the token bucket for time P::epoch(@a time). */
+    template <typename U> void refill(U time) {
+	_bucket.refill(_rate, time);
     }
 
     /** @brief Remove @a t tokens from the bucket.
