@@ -43,14 +43,15 @@ TokenBucketTest::initialize(ErrorHandler *errh)
     CHECK(tb.remove_if(1024));
     CHECK(tb.remove_if(1024));
     CHECK(!tb.remove_if(1024));
-    tb.fill((click_jiffies_t)(CLICK_HZ * 0.99));
+    tb.fill((click_jiffies_t)CLICK_HZ * 99 / 100);
     CHECK(!tb.remove_if(1024));
     tb.fill((click_jiffies_t)CLICK_HZ);
     CHECK(tb.remove_if(1024));
     CHECK(!tb.remove_if(1024));
 
     TokenBucket tb2(1024*1024*1024, 1); // will change capacity
-    CHECK(tb2.remove_if(2*(UINT_MAX/CLICK_HZ)));
+    CHECK(tb2.full());
+    CHECK(tb2.remove_if(1000));
 
     TokenBucket tb3(1, 1024*1024*1024);
     CHECK(tb3.remove_if(2*(UINT_MAX/CLICK_HZ)));
@@ -72,6 +73,10 @@ TokenBucketTest::initialize(ErrorHandler *errh)
         tb4.fill(cur_time);
     }
     CHECK(tb4.contains(1));
+
+    tb4.assign(true);
+    CHECK(tb4.rate() == TokenBucket::max_tokens);
+    CHECK(tb4.capacity() == TokenBucket::max_tokens);
 
     errh->message("All tests pass!");
     return 0;

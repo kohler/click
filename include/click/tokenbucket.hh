@@ -44,9 +44,9 @@ CLICK_DECLS
  of the capacity.
 
  Two special types of rate are supported.  An <em>unlimited</em> TokenRateX
- contains an effectively infinite number of tokens, and is indicated by a rate
- of 0.  An <em>idle</em> TokenRateX never fills, and is indicated by a
- capacity of 0.
+ contains an infinite number of tokens.  An <em>idle</em> TokenRateX never
+ refills (although an idle TokenCounter can be explicitly set to contain a
+ nonzero number of tokens).
 
  Most users will be satisfied with the TokenRate type, which is equal to
  TokenRateX<TokenBucketJiffyParameters<unsigned> >.
@@ -71,39 +71,43 @@ class TokenRateX { public:
 	max_tokens = (token_type) -1
     };
 
-    /** @brief Construct an unlimited token rate. */
-    inline TokenRateX();
+    /** @brief Construct an idle token rate. */
+    TokenRateX() {
+	assign();
+    }
+
+    /** @brief Construct an idle or unlimited token rate.
+     * @param unlimited idle if false, unlimited if true */
+    explicit TokenRateX(bool unlimited) {
+	assign(unlimited);
+    }
 
     /** @brief Construct a token rate representing @a rate.
      * @param rate refill rate in tokens per period
      * @param capacity maximum token accumulation
      *
-     * The initial epoch is 0.
+     * The rate is idle if either @a rate or @a capacity is 0.
      *
      * @sa assign(@a rate, @a capacity) */
-    inline TokenRateX(token_type rate, token_type capacity);
+    TokenRateX(token_type rate, token_type capacity) {
+	assign(rate, capacity);
+    }
+
+    /** @brief Set the token rate to idle or unlimited.
+     * @param unlimited idle if false, unlimited if true */
+    inline void assign(bool unlimited = false);
 
     /** @brief Set the token rate and capacity.
      * @param rate refill rate in tokens per period
      * @param capacity maximum token accumulation
      *
      * Sets the token bucket's rate to @a rate and capacity to @a capacity.
-     *
-     * If @a rate is zero, the token rate becomes unlimited; associated
-     * counters will always be full.  If @a rate is nonzero but @a capacity is
-     * negative or zero, the token rate becomes idle; associated counters will
-     * never be full. */
+     * If either @a rate or @a capacity is 0, the rate becomes idle. */
     inline void assign(token_type rate, token_type capacity);
-
-    /** @brief Return true iff the token rate is normal (not unlimited or
-	idle). */
-    bool normal() const {
-	return _token_scale != 0 && _tokens_per_epoch != 0;
-    }
 
     /** @brief Return true iff the token rate is unlimited. */
     bool unlimited() const {
-	return _token_scale == 0;
+	return _epochs_until_full == 0;
     }
 
     /** @brief Return true iff the token rate is idle. */
@@ -113,32 +117,41 @@ class TokenRateX { public:
 
     /** @brief Return the rate in tokens per period.
      *
-     * Returns 0 for idle and unlimited rates.  Imprecise computer
-     * arithmetic may cause the result to differ from the configured
-     * rate. */
+     * Returns max_tokens for unlimited rates.  Imprecise computer arithmetic
+     * may cause the result to differ from the configured rate. */
     token_type rate() const;
 
     /** @brief Return the capacity in tokens.
      *
-     * Returns 0 for idle rates and max_tokens for unlimited rates.
-     * Imprecise computer arithmetic may cause the result to differ from the
-     * configured capacity. */
-    token_type capacity() const;
+     * Returns max_tokens for unlimited rates.  Imprecise computer arithmetic
+     * may cause the result to differ from the configured capacity. */
+    token_type capacity() const {
+	return max_tokens / (_token_scale ? _token_scale : 1);
+    }
 
     /** @brief Return the number of tokens per epoch. */
     token_type tokens_per_epoch() const {
 	return _tokens_per_epoch;
     }
 
-    /** @brief Return the ratio of fractional tokens to real tokens. */
+    /** @brief Return the ratio of fractional tokens to real tokens.
+     *
+     * The result is 0 for unlimited rates. */
     token_type token_scale() const {
 	return _token_scale;
     }
 
+    /** @brief Return max(token_scale(), 1). */
+    token_type token_scale1() const {
+	return _token_scale ? _token_scale : 1;
+    }
+
     /** @brief Return the number of epochs required to fill a counter to
-	capacity. */
-    epoch_type epochs_to_fill() const {
-	return _epochs_to_fill;
+     * capacity.
+     *
+     * Returns (epoch_type) -1 for idle rates. */
+    epoch_type epochs_until_full() const {
+	return _epochs_until_full;
     }
 
     /** @brief Return the current epoch.
@@ -171,35 +184,30 @@ class TokenRateX { public:
 
     token_type _tokens_per_epoch;	// 0 iff idle()
     token_type _token_scale;		// 0 iff unlimited()
-    epoch_type _epochs_to_fill;
+    epoch_type _epochs_until_full;
 
 };
 
 
 template <typename P>
-TokenRateX<P>::TokenRateX()
-    : _tokens_per_epoch(0), _token_scale(0), _epochs_to_fill(1)
+void TokenRateX<P>::assign(bool unlimited)
 {
-}
-
-template <typename P>
-TokenRateX<P>::TokenRateX(token_type rate, token_type capacity)
-{
-    assign(rate, capacity);
+    if (unlimited) {
+	_token_scale = 0;
+	_tokens_per_epoch = max_tokens;
+	_epochs_until_full = 0;
+    } else {
+	// Give a nominal capacity of 65535.
+	_token_scale = max_tokens / 65535;
+	_tokens_per_epoch = 0;
+	_epochs_until_full = (epoch_type) -1;
+    }
 }
 
 template <typename P>
 void TokenRateX<P>::assign(token_type rate, token_type capacity)
 {
-    if (rate == 0) {
-	_token_scale = 0;
-	_tokens_per_epoch = 1;
-	_epochs_to_fill = 1;
-    } else if (capacity <= 0) {
-	_token_scale = 2;
-	_tokens_per_epoch = 0;
-	_epochs_to_fill = 0;
-    } else {
+    if (rate != 0 && capacity != 0) {
 	token_type frequency = P::epoch_frequency();
 
 	// constrain capacity so _tokens_per_epoch fits in 1 limb
@@ -219,30 +227,20 @@ void TokenRateX<P>::assign(token_type rate, token_type capacity)
 	_tokens_per_epoch = l[0] ? l[0] : 1;
 	assert(l[1] == 0);
 
-	_epochs_to_fill = (max_tokens - 1) / _tokens_per_epoch + 1;
-    }
+	_epochs_until_full = (max_tokens - 1) / _tokens_per_epoch + 1;
+    } else
+	assign(false);
 }
 
 template <typename P>
 typename P::token_type TokenRateX<P>::rate() const
 {
-    if (!normal())
-	return 0;
     static_assert(sizeof(bigint::limb_type) == sizeof(token_type));
-    bigint::limb_type l[2] = { 0, 0 };
+    bigint::limb_type l[2] = { _tokens_per_epoch / 2, 0 };
     bigint::limb_type a[2] = { _tokens_per_epoch, 0 };
     bigint::multiply_add(l, a, 2, P::epoch_frequency());
-    (void) bigint::divide(l, l, 2, _token_scale);
-    return l[0];
-}
-
-template <typename P>
-typename P::token_type TokenRateX<P>::capacity() const
-{
-    if (normal())
-	return max_tokens / _token_scale;
-    else
-	return idle() ? 0 : (token_type) max_tokens;
+    (void) bigint::divide(l, l, 2, token_scale1());
+    return l[1] ? (token_type) max_tokens : l[0];
 }
 
 /** @class TokenCounterX include/click/tokenbucket.hh <click/tokenbucket.hh>
@@ -303,48 +301,37 @@ class TokenCounterX { public:
      * @param rate associated token rate
      *
      * The return value is a lower bound on the number of tokens, since
-     * TokenCounterX keeps track of fractional tokens.  Returns zero for idle
-     * rates and max_tokens for unlimited rates. */
+     * TokenCounterX keeps track of fractional tokens. */
     token_type size(const rate_type &rate) const {
-	if (likely(rate.normal()))
+	if (rate.token_scale() == 0)
+	    return max_tokens;
+	else
 	    return _tokens / rate.token_scale();
-	else
-	    return rate.unlimited() ? (token_type) max_tokens : 0;
     }
 
-    /** @brief Return true iff the token counter is completely empty.
-     * @param rate associated token rate
-     *
-     * Always returns true for idle rates and false for unlimited rates. */
-    inline bool empty(const rate_type &rate) const {
-	if (likely(rate.normal()))
-	    return _tokens == 0;
-	else
-	    return rate.idle();
+    /** @brief Test if the token counter is completely empty. */
+    bool empty(const rate_type &rate) const {
+	return _tokens == 0 && rate.token_scale() != 0;
     }
 
-    /** @brief Return true iff the token counter is at capacity.
-     * @param rate associated token rate
-     *
-     * Always returns false for idle rates and true for unlimited rates. */
-    inline bool full(const rate_type &rate) const {
-	if (likely(rate.normal()))
-	    return _tokens == (token_type) max_tokens;
-	else
-	    return rate.unlimited();
+    /** @brief Test if the token counter is at full capacity. */
+    bool full(const rate_type &rate) const {
+	return _tokens == (token_type) max_tokens || rate.token_scale() == 0;
     }
 
-    /** @brief Return true iff the token counter has at least @a t tokens.
+    /** @brief Test if the token counter has at least @a t tokens.
      * @param rate associated token rate
      *
-     * Returns true whenever @a t is zero or @a rate is unlimited. */
-    inline bool contains(const rate_type &rate, token_type t) const {
-	return t * rate.token_scale() <= (rate.normal() ? _tokens : 1);
+     * Returns true whenever @a t is zero or @a rate is unlimited.  Returns
+     * false whenever @a t is greater than @a rate.capacity().
+     *
+     * @sa fast_contains */
+    bool contains(const rate_type &rate, token_type t) const {
+	return t <= rate.capacity() && fast_contains(rate, t);
     }
 
     /** @brief Clear the token counter.
      *
-     * The resulting counter will appear empty() for all normal token rates.
      * @sa set(), set_full() */
     void clear() {
 	_tokens = 0;
@@ -352,7 +339,6 @@ class TokenCounterX { public:
 
     /** @brief Fill the token counter to capacity.
      *
-     * The resulting counter will appear full() for all normal token rates.
      * @sa clear(), set() */
     void set_full() {
 	_tokens = max_tokens;
@@ -362,10 +348,9 @@ class TokenCounterX { public:
      * @param rate associated token rate
      * @param t number of tokens
      *
-     * The result will never have more tokens than the associated capacity.
-     * For idle @a rate, the counter remains empty. */
+     * The result will never have more tokens than the associated capacity. */
     void set(const rate_type &rate, token_type t) {
-	if (unlikely(rate.unlimited() || t > max_tokens / rate.token_scale()))
+	if (t > rate.capacity() || rate.token_scale() == 0)
 	    _tokens = max_tokens;
 	else
 	    _tokens = t * rate.token_scale();
@@ -382,17 +367,12 @@ class TokenCounterX { public:
      * adjust() with the old and new rates; TokenCounterX will as far as
      * possible compensate for the rate change. */
     void adjust(const rate_type &old_rate, const rate_type &new_rate) {
-	if (old_rate.token_scale() != new_rate.token_scale()
-	    && _tokens != 0
-	    && !old_rate.unlimited()
-	    && !new_rate.unlimited()
-	    && (_tokens != (token_type) max_tokens
-		|| new_rate.token_scale() < old_rate.token_scale())) {
+	if (old_rate.token_scale() != new_rate.token_scale()) {
 	    static_assert(sizeof(bigint::limb_type) == sizeof(token_type));
 	    bigint::limb_type l[2] = { 0, 0 };
 	    bigint::limb_type a[2] = { _tokens, 0 };
-	    bigint::multiply_add(l, a, 2, new_rate.token_scale());
-	    (void) bigint::divide(l, l, 2, old_rate.token_scale());
+	    bigint::multiply_add(l, a, 2, new_rate.token_scale1());
+	    (void) bigint::divide(l, l, 2, old_rate.token_scale1());
 	    _tokens = l[1] ? (token_type) max_tokens : l[0];
 	}
     }
@@ -410,41 +390,105 @@ class TokenCounterX { public:
      * @param rate associated token rate */
     void fill(const rate_type &rate, epoch_type epoch);
 
-    /** @brief Fill the token counter for @a time. */
+    /** @brief Fill the token counter for @a time.
+     * @param rate associated token rate */
     template <typename U> void fill(const rate_type &rate, U time);
 
     /** @brief Remove @a t tokens from the counter.
      * @param rate associated token rate
      * @param t number of tokens
-     * @pre @a t <= capacity
      *
-     * If the token bucket contains less than @a t tokens, the new token count
-     * is 0. */
-    inline void remove(const rate_type &rate, token_type t);
+     * If the token counter contains less than @a t tokens, the new token
+     * count is 0.
+     *
+     * @sa fast_remove */
+    void remove(const rate_type &rate, token_type t) {
+	if (t > rate.capacity())
+	    _tokens = 0;
+	else
+	    fast_remove(rate, t);
+    }
 
     /** @brief Remove @a t tokens from the counter if it contains @a t tokens.
      * @param rate associated token rate
      * @param t number of tokens
-     * @pre @a t <= capacity
      * @return true if @a t tokens were removed, false otherwise
      *
-     * If the counter contains @a t or more tokens, calls remove(@a t)
-     * and returns true.  If it contains less than @a t tokens, returns false
-     * without removing any tokens. */
-    inline bool remove_if(const rate_type &rate, token_type t);
+     * If the counter contains @a t or more tokens, calls remove(@a t) and
+     * returns true.  If it contains less than @a t tokens, returns false
+     * without removing any tokens.
+     *
+     * @sa fast_remove_if */
+    bool remove_if(const rate_type &rate, token_type t) {
+	return t <= rate.capacity() && fast_remove_if(rate, t);
+    }
 
     /** @brief Return the number of epochs until contains(@a t) is true.
      * @param rate associated token rate
      *
-     * Returns (epoch_type) -1 if @a rate is idle. */
-    inline epoch_type epochs_until_contains(const rate_type &rate,
-					    token_type t) const {
-	if (unlikely(!rate.normal()))
-	    return rate.idle() ? (epoch_type) -1 : 0;
+     * Returns (epoch_type) -1 if passing time will never make contains(@a t)
+     * true. */
+    epoch_type epochs_until_contains(const rate_type &rate,
+				     token_type t) const {
+	if (t <= rate.capacity()) {
+	    t *= rate.token_scale();
+	    if (t <= _tokens)
+		return 0;
+	    else if (rate.tokens_per_epoch() == 0)
+		return (epoch_type) -1;
+	    else
+		return (t - _tokens - 1) / rate.tokens_per_epoch() + 1;
+	} else
+	    return (epoch_type) -1;
+    }
+
+
+    /** @brief Return true iff the token counter has at least @a t tokens.
+     * @param rate associated token rate
+     * @pre @a t <= @a rate.capacity()
+     *
+     * Returns true whenever @a t is zero or @a rate is unlimited.
+     *
+     * Consider using fast_contains() when you know that @a t <= @a
+     * rate.capacity(); it is slightly faster than contains(). */
+    bool fast_contains(const rate_type &rate, token_type t) const {
+	return t * rate.token_scale() <= _tokens;
+    }
+
+    /** @brief Remove @a t tokens from the counter.
+     * @param rate associated token rate
+     * @param t number of tokens
+     * @pre @a t <= @a rate.capacity()
+     *
+     * If the token counter contains less than @a t tokens, the new token
+     * count is 0.
+     *
+     * Consider using fast_remove() when you know that @a t <= @a
+     * rate.capacity(); it is slightly faster than remove(). */
+    void fast_remove(const rate_type &rate, token_type t) {
 	t *= rate.token_scale();
-	if (_tokens >= t)
-	    return 0;
-	return (t - _tokens + rate.tokens_per_epoch() - 1) / rate.tokens_per_epoch();
+	_tokens = (t <= _tokens ? _tokens - t : 0);
+    }
+
+    /** @brief Remove @a t tokens from the counter if it contains @a t tokens.
+     * @param rate associated token rate
+     * @param t number of tokens
+     * @pre @a t <= @a rate.capacity()
+     * @return true if @a t tokens were removed, false otherwise
+     *
+     * If the counter contains @a t or more tokens, calls remove(@a t)
+     * and returns true.  If it contains less than @a t tokens, returns false
+     * without removing any tokens.
+     *
+     * Consider using fast_remove() when you know that @a t <= @a
+     * rate.capacity(); it is slightly faster than remove_if(). */
+    bool fast_remove_if(const rate_type &rate, token_type t) {
+	t *= rate.token_scale();
+	if (t <= _tokens) {
+	    _tokens -= t;
+	    return true;
+	} else
+	    return false;
     }
 
   private:
@@ -458,11 +502,14 @@ template <typename R>
 void TokenCounterX<R>::fill(const rate_type &rate, epoch_type epoch)
 {
     epoch_type diff = rate.epoch_monotonic_difference(_epoch, epoch);
-    if (diff >= rate.epochs_to_fill())
-	_tokens = max_tokens;
-    else if (diff > 0) {
-	token_type delta = diff * rate.tokens_per_epoch();
-	_tokens = (_tokens + delta < _tokens ? (token_type) max_tokens : _tokens + delta);
+    if (diff >= rate.epochs_until_full()) {
+	// special case: idle rates never fill, but rate.epochs_until_full()
+	// might be -1 if epoch_type is signed
+	if (rate.tokens_per_epoch() != 0)
+	    _tokens = max_tokens;
+    } else if (diff > 0) {
+	token_type new_tokens = _tokens + diff * rate.tokens_per_epoch();
+	_tokens = (new_tokens < _tokens ? (token_type) max_tokens : new_tokens);
     }
     _epoch = epoch;
 }
@@ -477,25 +524,6 @@ template <typename R> template <typename U>
 void TokenCounterX<R>::fill(const rate_type &rate, U time)
 {
     fill(rate, rate.epoch(time));
-}
-
-template <typename R>
-inline void TokenCounterX<R>::remove(const rate_type &rate, token_type t)
-{
-    t *= rate.token_scale();
-    _tokens = (_tokens < t ? 0 : _tokens - t);
-}
-
-template <typename R>
-inline bool TokenCounterX<R>::remove_if(const rate_type &rate, token_type t)
-{
-    t *= rate.token_scale();
-    if (_tokens < t || unlikely(rate.idle() && t != 0))
-	return false;
-    else {
-	_tokens -= t;
-	return true;
-    }
 }
 
 
@@ -600,12 +628,18 @@ class TokenBucketX { public:
 	max_tokens = rate_type::max_tokens
     };
 
-    /** @brief Construct an unlimited token bucket.
+    /** @brief Construct an idle token bucket.
      *
-     * This token bucket is unlimited, meaning contains(t) is true
-     * for any t.  The initial epoch is 0. */
-    TokenBucketX()
-	: _rate(), _bucket(true) {
+     * The initial epoch is 0. */
+    TokenBucketX() {
+    }
+
+    /** @brief Construct an idle or unlimited token bucket.
+     * @param unlimited idle if false, unlimited if true
+     *
+     * The initial epoch is 0. */
+    explicit TokenBucketX(bool unlimited)
+	: _rate(unlimited), _bucket(unlimited) {
     }
 
     /** @brief Construct a token bucket representing @a rate.
@@ -613,11 +647,18 @@ class TokenBucketX { public:
      * @param capacity maximum token accumulation
      *
      * The initial epoch is 0 and the token bucket is initially full (the
-     * initial token count equals @a capacity).
+     * initial token count equals @a capacity).  The rate is idle if either @a
+     * rate or @a capacity is 0.
      *
      * @sa assign(@a rate, @a capacity) */
     TokenBucketX(token_type rate, token_type capacity)
-	: _rate(rate, capacity), _bucket(true) {
+	: _rate(rate, capacity), _bucket(rate != 0 && capacity != 0) {
+    }
+
+    /** @brief Set the token bucket rate to idle or unlimited.
+     * @param unlimited idle if false, unlimited if true */
+    void assign(bool unlimited = false) {
+	_rate.assign(unlimited);
     }
 
     /** @brief Set the token bucket rate and capacity.
@@ -625,14 +666,12 @@ class TokenBucketX { public:
      * @param capacity maximum token accumulation
      *
      * Sets the token bucket's rate to @a rate and capacity to @a capacity.
-     * The epoch is unchanged.  The ratio of tokens/burst is unchanged by
-     * the assignment, so the actual number of tokens could go up or down,
-     * depending on how the rate is changed.
+     * If either @a rate or @a capacity is 0, the token bucket becomes idle.
+     * The epoch is unchanged.
      *
-     * If @a rate is zero, the token bucket becomes unlimited: it
-     * contains an infinite number of tokens.  If @a rate is nonzero
-     * but @a capacity is negative or zero, the token bucket becomes
-     * empty: it never contains any tokens.
+     * The ratio of tokens/burst is unchanged by the assignment, so the actual
+     * number of tokens could go up or down, depending on how the rate is
+     * changed.
      *
      * @sa assign_adjust */
     void assign(token_type rate, token_type capacity) {
@@ -654,12 +693,6 @@ class TokenBucketX { public:
 	_bucket.adjust(old_rate, _rate);
     }
 
-    /** @brief Return true iff the token rate is normal (not unlimited or
-	idle). */
-    bool normal() const {
-	return _rate.normal();
-    }
-
     /** @brief Return true iff the token rate is unlimited. */
     bool unlimited() const {
 	return _rate.unlimited();
@@ -672,49 +705,50 @@ class TokenBucketX { public:
 
     /** @brief Return the rate in tokens per period.
      *
-     * Returns 0 for idle and unlimited rates.  Imprecise computer
-     * arithmetic may cause the result to differ from the configured
-     * rate. */
+     * Returns max_tokens for unlimited rates.  Imprecise computer arithmetic
+     * may cause the result to differ from the configured rate. */
     token_type rate() const {
 	return _rate.rate();
     }
 
     /** @brief Return the capacity in tokens.
      *
-     * Returns 0 for idle rates and max_tokens for unlimited rates.
-     * Imprecise computer arithmetic may cause the result to differ from the
-     * configured capacity. */
+     * Returns max_tokens for unlimited rates.  Imprecise computer arithmetic
+     * may cause the result to differ from the configured capacity. */
     token_type capacity() const {
 	return _rate.capacity();
     }
 
     /** @brief Return the number of tokens in the bucket.
      *
-     * Returns zero for empty token buckets.  The return value is a lower
-     * bound on the number of tokens, since TokenBucketX keeps track of
-     * fractional tokens. */
+     * The return value is a lower bound on the number of tokens, since
+     * TokenBucketX keeps track of fractional tokens. */
     token_type size() const {
 	return _bucket.size(_rate);
     }
 
-    /** @brief Return true iff the token bucket is completely empty. */
-    inline bool empty() const {
+    /** @brief Test if the token bucket is completely empty. */
+    bool empty() const {
 	return _bucket.empty(_rate);
     }
 
-    /** @brief Return true iff the token bucket is at capacity. */
-    inline bool full() const {
+    /** @brief Test if the token bucket is at full capacity. */
+    bool full() const {
 	return _bucket.full(_rate);
     }
 
-    /** @brief Return true iff the token bucket has at least @a t tokens. */
-    inline bool contains(token_type t) const {
+    /** @brief Test if the token bucket has at least @a t tokens.
+     *
+     * Returns true whenever @a t is zero or @a rate is unlimited.  Returns
+     * false whenever @a t is greater than @a rate.capacity().
+     *
+     * @sa fast_contains */
+    bool contains(token_type t) const {
 	return _bucket.contains(_rate, t);
     }
 
     /** @brief Clear the token bucket.
      *
-     * The resulting bucket will appear empty() for all normal rates.
      * @sa set(), set_full() */
     void clear() {
 	_bucket.clear();
@@ -722,17 +756,15 @@ class TokenBucketX { public:
 
     /** @brief Fill the token bucket to capacity.
      *
-     * The resulting bucket will appear full() for all normal rates.
      * @sa clear(), set() */
     void set_full() {
 	_bucket.set_full();
     }
 
     /** @brief Set the token bucket to contain @a t tokens.
-     * @a t number of tokens
+     * @param t number of tokens
      *
-     * The result will never have more tokens than the associated capacity.
-     * For idle @a rate, the counter remains empty. */
+     * The result will never have more tokens than the associated capacity. */
     void set(token_type t) {
 	_bucket.set(_rate, t);
     }
@@ -759,31 +791,74 @@ class TokenBucketX { public:
 
     /** @brief Remove @a t tokens from the bucket.
      * @param t number of tokens
-     * @pre @a t <= capacity
      *
      * If the token bucket contains less than @a t tokens, the new token
-     * count is 0. */
+     * count is 0.
+     *
+     * @sa fast_remove */
     void remove(token_type t) {
 	_bucket.remove(_rate, t);
     }
 
     /** @brief Remove @a t tokens from the bucket if it contains @a t tokens.
      * @param t number of tokens
-     * @pre @a t <= capacity
      * @return true if @a t tokens were removed, false otherwise
      *
      * If the token bucket contains @a t or more tokens, calls remove(@a t)
      * and returns true.  If it contains less than @a t tokens, returns false
-     * without removing any tokens. */
+     * without removing any tokens.
+     *
+     * @sa fast_remove_if */
     bool remove_if(token_type t) {
 	return _bucket.remove_if(_rate, t);
     }
 
     /** @brief Return the number of epochs until contains(@a t) is true.
      *
-     * Returns (epoch_type) -1 if the bucket is idle. */
+     * Returns (epoch_type) -1 if passing time will never make contains(@a t)
+     * true. */
     epoch_type epochs_until_contains(token_type t) const {
 	return _bucket.epochs_until_contains(_rate, t);
+    }
+
+
+    /** @brief Return true iff the token bucket has at least @a t tokens.
+     * @pre @a t <= capacity()
+     *
+     * Returns true whenever @a t is zero or the token bucket is unlimited.
+     *
+     * Consider using fast_contains() when you know that @a t <= capacity();
+     * it is slightly faster than contains(). */
+    bool fast_contains(token_type t) const {
+	return _bucket.fast_contains(_rate, t);
+    }
+
+    /** @brief Remove @a t tokens from the counter.
+     * @param t number of tokens
+     * @pre @a t <= capacity()
+     *
+     * If the token bucket contains less than @a t tokens, the new token count
+     * is 0.
+     *
+     * Consider using fast_remove() when you know that @a t <= capacity(); it
+     * is slightly faster than remove(). */
+    void fast_remove(token_type t) {
+	_bucket.fast_remove(_rate, t);
+    }
+
+    /** @brief Remove @a t tokens from the counter if it contains @a t tokens.
+     * @param t number of tokens
+     * @pre @a t <= capacity()
+     * @return true if @a t tokens were removed, false otherwise
+     *
+     * If the bucket contains @a t or more tokens, calls remove(@a t)
+     * and returns true.  If it contains less than @a t tokens, returns false
+     * without removing any tokens.
+     *
+     * Consider using fast_remove() when you know that @a t <= capacity(); it
+     * is slightly faster than remove_if(). */
+    bool fast_remove_if(token_type t) {
+	return _bucket.fast_remove_if(_rate, t);
     }
 
   private:
