@@ -1246,14 +1246,21 @@ Packet::make(uint32_t length)
 inline Packet *
 Packet::make(struct sk_buff *skb)
 {
+    struct sk_buff *nskb;
     if (atomic_read(&skb->users) == 1) {
 	skb_orphan(skb);
-	return reinterpret_cast<Packet *>(skb);
+	nskb = skb;
     } else {
-	Packet *p = reinterpret_cast<Packet *>(skb_clone(skb, GFP_ATOMIC));
+	nskb = skb_clone(skb, GFP_ATOMIC);
 	atomic_dec(&skb->users);
-	return p;
     }
+# if HAVE_SKB_LINEARIZE
+    if (nskb && skb_linearize(nskb) != 0) {
+	kfree_skb(nskb);
+	nskb = 0;
+    }
+# endif
+    return reinterpret_cast<Packet *>(nskb);
 }
 #endif
 

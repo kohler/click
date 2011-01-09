@@ -1305,6 +1305,12 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
 	AC_DEFINE([HAVE_SKB_RECYCLE], [1], [Define if you have the skb_recycle function.])
     fi
 
+    AC_CHECK_DECL(skb_linearize, [ac_cv_skb_linearize=yes], [ac_cv_skb_linearize=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>]])
+    if test $ac_cv_skb_linearize = yes; then
+	AC_DEFINE([HAVE_SKB_LINEARIZE], [1], [Define if you have the skb_linearize function.])
+    fi
+
     AC_CACHE_CHECK([whether netif_receive_skb has been extended], [ac_cv_linuxmodule_netif_receive_skb_extended],
 	[AC_LANG_C
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[

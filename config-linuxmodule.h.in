@@ -112,6 +112,9 @@
 /* Define if you have the skb_dst_drop function. */
 #undef HAVE_SKB_DST_DROP
 
+/* Define if you have the skb_linearize function. */
+#undef HAVE_SKB_LINEARIZE
+
 /* Define if you have the skb_recycle function. */
 #undef HAVE_SKB_RECYCLE
 
