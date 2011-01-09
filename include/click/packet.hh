@@ -422,11 +422,11 @@ class Packet { public:
 
     /** @brief Set annotation byte at offset @a i.
      * @param i annotation offset in bytes
-     * @param v value
+     * @param x value
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink */
-    void set_anno_u8(int i, uint8_t v) {
+    void set_anno_u8(int i, uint8_t x) {
 	assert(i >= 0 && i < anno_size);
-	xanno()->u8[i] = v;
+	xanno()->u8[i] = x;
     }
 
     /** @brief Return 16-bit annotation at offset @a i.
@@ -444,17 +444,17 @@ class Packet { public:
 
     /** @brief Set 16-bit annotation at offset @a i.
      * @param i annotation offset in bytes
-     * @param v value
+     * @param x value
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 1
      * @pre On aligned targets, @a i must be evenly divisible by 2.
      *
      * Affects annotation bytes [@a i, @a i+1]. */
-    void set_anno_u16(int i, uint16_t v) {
+    void set_anno_u16(int i, uint16_t x) {
 	assert(i >= 0 && i < anno_size - 1);
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % 2 == 0);
 #endif
-	*reinterpret_cast<uint16_t *>(xanno()->c + i) = v;
+	*reinterpret_cast<uint16_t *>(xanno()->c + i) = x;
     }
 
     /** @brief Return 16-bit annotation at offset @a i.
@@ -472,17 +472,17 @@ class Packet { public:
 
     /** @brief Set 16-bit annotation at offset @a i.
      * @param i annotation offset in bytes
-     * @param v value
+     * @param x value
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 1
      * @pre On aligned targets, @a i must be evenly divisible by 2.
      *
      * Affects annotation bytes [@a i, @a i+1]. */
-    void set_anno_s16(int i, int16_t v) {
+    void set_anno_s16(int i, int16_t x) {
 	assert(i >= 0 && i < anno_size - 1);
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % 2 == 0);
 #endif
-	*reinterpret_cast<int16_t *>(xanno()->c + i) = v;
+	*reinterpret_cast<int16_t *>(xanno()->c + i) = x;
     }
 
     /** @brief Return 32-bit annotation at offset @a i.
@@ -500,17 +500,17 @@ class Packet { public:
 
     /** @brief Set 32-bit annotation at offset @a i.
      * @param i annotation offset in bytes
-     * @param v value
+     * @param x value
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 3
      * @pre On aligned targets, @a i must be evenly divisible by 4.
      *
      * Affects user annotation bytes [@a i, @a i+3]. */
-    void set_anno_u32(int i, uint32_t v) {
+    void set_anno_u32(int i, uint32_t x) {
 	assert(i >= 0 && i < anno_size - 3);
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % 4 == 0);
 #endif
-	*reinterpret_cast<uint32_t *>(xanno()->c + i) = v;
+	*reinterpret_cast<uint32_t *>(xanno()->c + i) = x;
     }
 
     /** @brief Return 32-bit annotation at offset @a i.
@@ -527,17 +527,17 @@ class Packet { public:
 
     /** @brief Set 32-bit annotation at offset @a i.
      * @param i annotation offset in bytes
-     * @param v value
+     * @param x value
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 3
      * @pre On aligned targets, @a i must be evenly divisible by 4.
      *
      * Affects user annotation bytes [@a i, @a i+3]. */
-    void set_anno_s32(int i, int32_t v) {
+    void set_anno_s32(int i, int32_t x) {
 	assert(i >= 0 && i < anno_size - 3);
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % 4 == 0);
 #endif
-	*reinterpret_cast<int32_t *>(xanno()->c + i) = v;
+	*reinterpret_cast<int32_t *>(xanno()->c + i) = x;
     }
 
 #if HAVE_INT64_TYPES
@@ -556,17 +556,17 @@ class Packet { public:
 
     /** @brief Set 64-bit annotation at offset @a i.
      * @param i annotation offset in bytes
-     * @param v value
+     * @param x value
      * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - 7
      * @pre On aligned targets, @a i must be aligned properly for uint64_t.
      *
      * Affects user annotation bytes [@a i, @a i+7]. */
-    void set_anno_u64(int i, uint64_t v) {
+    void set_anno_u64(int i, uint64_t x) {
 	assert(i >= 0 && i < anno_size - 7);
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % __alignof__(uint64_t) == 0);
 #endif
-	*reinterpret_cast<uint64_t *>(xanno()->c + i) = v;
+	*reinterpret_cast<uint64_t *>(xanno()->c + i) = x;
     }
 #endif
 
