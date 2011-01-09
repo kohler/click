@@ -108,6 +108,14 @@ testie.1: $(top_srcdir)/test/testie
 	   $(POD2MAN) -d '' -c '' $(top_srcdir)/test/testie testie.1; \
 	fi
 
+doxygen:
+	@if test -z "$(O)"; then echo 1>&2; echo "Run 'make doxygen O=OUTPUTDIRECTORY'" 1>&2; echo 1>&2; false; fi
+	@O="$(O)"; \
+	if ! expr "$O" : / >/dev/null 2>&1; then O="`pwd`/$O"; fi; \
+	sed -e "s#^HTML_OUTPUT.*#HTML_OUTPUT = $O#" \
+		-e "s#^GENERATE_LATEX.*#GENERATE_LATEX = NO#" \
+		< $(srcdir)/Doxyfile | (cd $(top_srcdir); doxygen -)
+
 always:
 	@:
 
@@ -117,4 +125,5 @@ distclean: clean
 	-rm -f Makefile
 
 .PHONY: all clean distclean info always \
-	install install-man install-info uninstall uninstall-man uninstall-info
+	install install-man install-info uninstall uninstall-man uninstall-info \
+	doxygen
