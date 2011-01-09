@@ -401,7 +401,9 @@ class TokenCounterX { public:
      * There are three refill() methods, useful for different methods of
      * measuring epochs.  This method calls @a rate.epoch(), which returns the
      * current epoch.  Other methods use an explicit epoch and a @a
-     * rate.epoch(U) method. */
+     * rate.epoch(U) method.
+     *
+     * @sa set_epoch */
     void refill(const rate_type &rate);
 
     /** @brief Refill the token counter for time @a epoch.
@@ -411,6 +413,16 @@ class TokenCounterX { public:
     /** @brief Refill the token counter for @a time.
      * @param rate associated token rate */
     template <typename U> void refill(const rate_type &rate, U time);
+
+    /** @brief Set the token counter's internal epoch to @a epoch.
+     * @param epoch number of epochs
+     *
+     * Unlike refill(), this method does not refill the counter.
+     *
+     * @sa refill */
+    void set_epoch(epoch_type epoch) {
+	_epoch = epoch;
+    }
 
     /** @brief Remove @a t tokens from the counter.
      * @param rate associated token rate
@@ -837,7 +849,9 @@ class TokenBucketX { public:
      * There are three refill() methods, useful for different methods of
      * measuring epochs.  This method call parameter_type::epoch(), which
      * returns the current epoch.  Other methods use an explicit epoch and a
-     * parameter_type::epoch(U) method. */
+     * parameter_type::epoch(U) method.
+     *
+     * @sa set_epoch */
     void refill() {
 	_bucket.refill(_rate);
     }
@@ -850,6 +864,16 @@ class TokenBucketX { public:
     /** @brief Refill the token bucket for time P::epoch(@a time). */
     template <typename U> void refill(U time) {
 	_bucket.refill(_rate, time);
+    }
+
+    /** @brief Set the token bucket's internal epoch to @a epoch.
+     * @param epoch number of epochs
+     *
+     * Unlike refill(), this method does not refill the counter.
+     *
+     * @sa refill */
+    void set_epoch(epoch_type epoch) {
+	_bucket.set_epoch(epoch);
     }
 
     /** @brief Remove @a t tokens from the bucket.
