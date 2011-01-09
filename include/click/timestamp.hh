@@ -120,7 +120,14 @@ class Timestamp { public:
 
     enum {
 	max_seconds = (seconds_type) 2147483647U,
-	min_seconds = (seconds_type) -2147483648U,
+			/**< Maximum number of seconds representable in a
+			     Timestamp. */
+	min_seconds = (seconds_type) -2147483648U
+			/**< Minimum number of seconds representable in a
+			     Timestamp. */
+    };
+
+    enum {
 	nsec_per_sec = 1000000000,
 	nsec_per_msec = 1000000,
 	nsec_per_usec = 1000,

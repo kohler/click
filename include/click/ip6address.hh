@@ -59,7 +59,7 @@ class IP6Address { public:
     /** @brief Return an IP6Address equal to the inversion of make_prefix(@a
      * prefix_len).
      * @param prefix_len prefix length; 0 <= @a prefix_len <= 128
-     * @return ~IP6Address::make_prefix(@a prefix_len)
+     * @return ~make_prefix(@a prefix_len)
      * @sa make_prefix */
     static IP6Address make_inverted_prefix(int prefix_len);
 

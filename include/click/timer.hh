@@ -137,10 +137,11 @@ class Timer { public:
     /** @brief Initialize the timer.
      * @param router the owner router
      *
-     * This function is shorthand for @link Timer::initialize(Element *)
-     * Timer::initialize@endlink(@a router ->@link Router::root_element
-     * root_element@endlink()).  However, it is better to
-     * explicitly associate timers with real elements. */
+     * This function is shorthand for @link
+     * Timer::initialize(Element*,bool) Timer::initialize@endlink(@a
+     * router ->@link Router::root_element root_element@endlink()).
+     * However, it is better to explicitly associate timers with real
+     * elements. */
     void initialize(Router *router);
 
 

@@ -2465,10 +2465,11 @@ cp_tcpudp_port(const String &str, int proto, uint16_t *result
 
 #if !CLICK_TOOL
 /** @brief Parse an element reference from @a str.
- * @param  str  string
- * @param  context  element context
- * @param  errh  optional error handler
- * @return  Element pointer, or null if no such element is found.
+ * @param str string
+ * @param context element context
+ * @param errh optional error handler
+ * @param argname optional argument name (used for error messages)
+ * @return Element pointer, or null if no such element is found.
  *
  * Parses an element reference from @a str.  The input must be a single
  * (possibly quoted) string acceptable to cp_string().  The unquoted value
@@ -2505,10 +2506,11 @@ cp_element(const String &str, const Element *context, ErrorHandler *errh,
 }
 
 /** @brief Parse an element reference from @a str.
- * @param  str  string
- * @param  router  router
- * @param  errh  optional error handler
- * @return  Element pointer, or null if no such element is found.
+ * @param str string
+ * @param router router
+ * @param errh optional error handler
+ * @param argname optional argument name (used for error messages)
+ * @return Element pointer, or null if no such element is found.
  *
  * Parses an element reference from @a str.  The input must be a single
  * (possibly quoted) string acceptable to cp_string().  The unquoted value

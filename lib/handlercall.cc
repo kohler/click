@@ -197,7 +197,7 @@ HandlerCall::call_write(Element* e, const String& hname, const String& value, Er
  *
  *  Searches for a write handler matching @a hdesc.  Any element name in @a
  *  hdesc is looked up relative to @a context (see @link
- *  HandlerCall::call_read(const String &, Element *, ErrorHandler *)
+ *  HandlerCall::call_read(const String &, const Element *, ErrorHandler *)
  *  above@endlink).  If the handler exists, calls it with the value
  *  specified by @a hdesc and returns the result.  If @a errh is nonnull, then
  *  errors, such as a missing handler or a read-only handler, are reported
@@ -223,7 +223,7 @@ HandlerCall::call_write(const String &hdesc, const Element *context, ErrorHandle
  *
  *  Searches for a write handler matching @a hdesc.  Any element name in @a
  *  hdesc is looked up relative to @a context (see @link
- *  HandlerCall::call_read(const String &, Element *, ErrorHandler *)
+ *  HandlerCall::call_read(const String &, const Element *, ErrorHandler *)
  *  above@endlink).  If the handler exists, calls it with @a value and returns
  *  the result.  (Any value specified by @a hdesc is ignored.)  If @a errh is
  *  nonnull, then errors, such as a missing handler or a read-only handler,

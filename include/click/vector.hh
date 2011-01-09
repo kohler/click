@@ -233,7 +233,7 @@ Vector<void*>::pop_back()
 }
 
 inline Vector<void*>::iterator
-Vector<void*>::erase(Vector<void*>::iterator it)
+Vector<void*>::erase(iterator it)
 {
     return (it < end() ? erase(it, it + 1) : it);
 }

@@ -226,7 +226,7 @@ class HandlerCall { public:
      *  @param  context  optional element context
      *  @param  errh     optional error handler
      *
-     *  Equivalent to @link initialize(int, Element*, ErrorHandler*)
+     *  Equivalent to @link initialize(int, const Element*, ErrorHandler*)
      *  initialize@endlink(h_read, @a context, @a errh). */
     inline int initialize_read(const Element *context, ErrorHandler *errh = 0);
 
@@ -234,7 +234,7 @@ class HandlerCall { public:
      *  @param  context  optional element context
      *  @param  errh     optional error handler
      *
-     *  Equivalent to @link initialize(int, Element*, ErrorHandler*)
+     *  Equivalent to @link initialize(int, const Element*, ErrorHandler*)
      *  initialize@endlink(h_write, @a context, @a errh). */
     inline int initialize_write(const Element *context, ErrorHandler *errh = 0);
 
@@ -339,7 +339,7 @@ class HandlerCall { public:
      *  @return  0 on success, -EINVAL on failure
      *
      *  Creates a HandlerCall and initializes it.  Behaves analogously to
-     *  reset(HandlerCall*&, const String&, int, Element*, ErrorHandler*). */
+     *  reset(HandlerCall*&, const String&, int, const Element*, ErrorHandler*). */
     static int reset(HandlerCall *&hcall,
 		     Element *e, const String &hname, const String &value,
 		     int flags, ErrorHandler *errh = 0);
@@ -353,7 +353,7 @@ class HandlerCall { public:
      *  @return  0 on success, -EINVAL on failure
      *
      *  Equivalent to
-     *  @link reset(HandlerCall*&, const String&, int, Element*, ErrorHandler*) reset@endlink(@a hcall, @a hdesc, h_read, @a context, @a errh). */
+     *  @link reset(HandlerCall*&, const String&, int, const Element*, ErrorHandler*) reset@endlink(@a hcall, @a hdesc, h_read, @a context, @a errh). */
     static inline int reset_read(HandlerCall *&hcall, const String &hdesc,
 				 const Element *context, ErrorHandler *errh = 0);
 
@@ -378,7 +378,7 @@ class HandlerCall { public:
      *  @return  0 on success, -EINVAL on failure
      *
      *  Equivalent to
-     *  @link reset(HandlerCall*&, const String&, int, Element*, ErrorHandler*) reset@endlink(@a hcall, @a hdesc, h_write, @a context, @a errh). */
+     *  @link reset(HandlerCall*&, const String&, int, const Element*, ErrorHandler*) reset@endlink(@a hcall, @a hdesc, h_write, @a context, @a errh). */
     static inline int reset_write(HandlerCall *&hcall, const String &hdesc,
 				  const Element *context, ErrorHandler *errh = 0);
 

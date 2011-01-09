@@ -14,6 +14,7 @@ template <typename T, typename A = HashContainer_adapter<T> > class HashContaine
 template <typename T, typename A = HashContainer_adapter<T> > class HashContainer_iterator;
 template <typename T, typename A = HashContainer_adapter<T> > class HashContainer;
 
+/** @cond never */
 template <typename T, typename A>
 class HashContainer_rep : public A {
     T **buckets;
@@ -24,6 +25,7 @@ class HashContainer_rep : public A {
     friend class HashContainer_const_iterator<T, A>;
     friend class HashContainer_iterator<T, A>;
 };
+/** @endcond */
 
 template <typename T>
 class HashContainer_adapter { public:

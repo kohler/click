@@ -328,8 +328,10 @@ class TokenCounterX { public:
 
     /** @brief Test if the token counter has at least @a t tokens.
      * @param rate associated token rate
+     * @param t token count
      *
-     * Returns false whenever @a t is greater than @a rate.capacity().
+     * Returns false whenever @a t is greater than <em>rate</em>.@link
+     * TokenRateX::capacity capacity()@endlink.
      *
      * @sa fast_contains */
     bool contains(const rate_type &rate, token_type t) const {
@@ -407,15 +409,17 @@ class TokenCounterX { public:
     void refill(const rate_type &rate);
 
     /** @brief Refill the token counter for time @a epoch.
-     * @param rate associated token rate */
+     * @param rate associated token rate
+     * @param epoch new epoch */
     void refill(const rate_type &rate, epoch_type epoch);
 
     /** @brief Refill the token counter for @a time.
-     * @param rate associated token rate */
+     * @param rate associated token rate
+     * @param time new time */
     template <typename U> void refill(const rate_type &rate, U time);
 
     /** @brief Set the token counter's internal epoch to @a epoch.
-     * @param epoch number of epochs
+     * @param epoch new epoch
      *
      * Unlike refill(), this method does not refill the counter.
      *
@@ -475,10 +479,14 @@ class TokenCounterX { public:
 	    return false;
     }
 
-    /** @brief Return the number of epochs until contains(@a t) is true.
-     * @param rate associated token rate
+    /** @brief Return the number of epochs until @link contains()
+     * contains(<em>rate</em>, <em>t</em>)@endlink.
      *
-     * Returns (epoch_type) -1 if passing time will never make contains(@a t)
+     * @param rate associated token rate
+     * @param t token count
+     *
+     * Returns (epoch_type) -1 if passing time will never make
+     * @link contains() contains(<em>rate</em>, <em>t</em>)@endlink
      * true. */
     epoch_type epochs_until_contains(const rate_type &rate,
 				     token_type t) const {
@@ -488,11 +496,14 @@ class TokenCounterX { public:
 	    return (epoch_type) -1;
     }
 
-    /** @brief Return the number of epochs until contains_fraction(@a f).
+    /** @brief Return the number of epochs until @link contains_fraction()
+     * contains_fraction(<em>f</em>)@endlink.
      * @param rate associated token rate
+     * @param f fullness fraction, where max_tokens is full capacity
      *
      * Returns (epoch_type) -1 if passing time will never make
-     * contains_fraction(@a f) true. */
+     * @link contains_fraction() contains_fraction(<em>f</em>)@endlink
+     * true. */
     epoch_type epochs_until_contains_fraction(const rate_type &rate,
 					      token_type f) const {
 	if (f <= _tokens || rate.epochs_until_full() == 0)
@@ -506,12 +517,14 @@ class TokenCounterX { public:
 
     /** @brief Return true iff the token counter has at least @a t tokens.
      * @param rate associated token rate
-     * @pre @a t <= @a rate.capacity()
+     * @param t token count
+     * @pre @a t <= <em>rate</em>.@link TokenRateX::capacity capacity()@endlink
      *
      * Returns true whenever @a t is zero or @a rate is unlimited.
      *
-     * Consider using fast_contains() when you know that @a t <= @a
-     * rate.capacity(); it is slightly faster than contains(). */
+     * Consider using fast_contains() when you know that @a t <=
+     * <em>rate</em>.@link TokenRateX::capacity capacity()@endlink; it
+     * is slightly faster than contains(). */
     bool fast_contains(const rate_type &rate, token_type t) const {
 	return contains_fraction(t * rate.token_scale());
     }
@@ -519,13 +532,14 @@ class TokenCounterX { public:
     /** @brief Remove @a t tokens from the counter.
      * @param rate associated token rate
      * @param t number of tokens
-     * @pre @a t <= @a rate.capacity()
+     * @pre @a t <= <em>rate</em>.@link TokenRateX::capacity capacity()@endlink
      *
      * If the token counter contains less than @a t tokens, the new token
      * count is 0.
      *
-     * Consider using fast_remove() when you know that @a t <= @a
-     * rate.capacity(); it is slightly faster than remove(). */
+     * Consider using fast_remove() when you know that @a t <=
+     * <em>rate</em>.@link TokenRateX::capacity capacity()@endlink; it
+     * is slightly faster than remove(). */
     void fast_remove(const rate_type &rate, token_type t) {
 	remove_fraction(t * rate.token_scale());
     }
@@ -533,15 +547,16 @@ class TokenCounterX { public:
     /** @brief Remove @a t tokens from the counter if it contains @a t tokens.
      * @param rate associated token rate
      * @param t number of tokens
-     * @pre @a t <= @a rate.capacity()
+     * @pre @a t <= <em>rate</em>.@link TokenRateX::capacity capacity()@endlink
      * @return true if @a t tokens were removed, false otherwise
      *
      * If the counter contains @a t or more tokens, calls remove(@a t)
      * and returns true.  If it contains less than @a t tokens, returns false
      * without removing any tokens.
      *
-     * Consider using fast_remove() when you know that @a t <= @a
-     * rate.capacity(); it is slightly faster than remove_if(). */
+     * Consider using fast_remove() when you know that @a t <=
+     * <em>rate</em>.@link TokenRateX::capacity capacity()@endlink; it
+     * is slightly faster than remove_if(). */
     bool fast_remove_if(const rate_type &rate, token_type t) {
 	return remove_fraction_if(t * rate.token_scale());
     }
@@ -650,7 +665,7 @@ class TokenBucketJiffyParameters { public:
 };
 
 
-/** @class TokenBucket include/click/tokenbucket.hh <click/tokenbucket.hh>
+/** @class TokenBucketX include/click/tokenbucket.hh <click/tokenbucket.hh>
  @brief  Token bucket rate limiter.
 
  The TokenBucketX class implements a token bucket rate limiter.  It is
@@ -918,7 +933,7 @@ class TokenBucketX { public:
 	return _bucket.remove_fraction_if(f);
     }
 
-    /** @brief Return the number of epochs until contains(@a t) is true.
+    /** @brief Return the number of epochs until contains(@a t).
      *
      * Returns (epoch_type) -1 if passing time will never make contains(@a t)
      * true. */
@@ -981,16 +996,28 @@ class TokenBucketX { public:
 
 };
 
-/** @brief Default token bucket rate.
- * @relates TokenRateX */
+/** @class TokenRate include/click/tokenbucket.hh <click/tokenbucket.hh>
+ * @brief Jiffy-based token bucket rate
+ *
+ * Equivalent to
+ * @link TokenRateX TokenRateX<TokenBucketJiffyParameters<unsigned> >@endlink.
+ * @sa TokenRateX, TokenBucketJiffyParameters */
 typedef TokenRateX<TokenBucketJiffyParameters<unsigned> > TokenRate;
 
-/** @brief Default token counter.
- * @relates TokenCounterX */
+/** @class TokenCounter include/click/tokenbucket.hh <click/tokenbucket.hh>
+ * @brief Jiffy-based token counter
+ *
+ * Equivalent to
+ * @link TokenCounterX TokenCounterX<TokenRate>@endlink.
+ * @sa TokenCounterX, TokenRate */
 typedef TokenCounterX<TokenRate> TokenCounter;
 
-/** @brief Default token bucket rate limiter.
- * @relates TokenBucketX */
+/** @class TokenBucket include/click/tokenbucket.hh <click/tokenbucket.hh>
+ * @brief Jiffy-based token bucket rate limiter
+ *
+ * Equivalent to
+ * @link TokenBucketX TokenBucketX<TokenBucketJiffyParameters<unsigned> >@endlink.
+ * @sa TokenBucketX, TokenBucketJiffyParameters */
 typedef TokenBucketX<TokenBucketJiffyParameters<unsigned> > TokenBucket;
 
 CLICK_ENDDECLS

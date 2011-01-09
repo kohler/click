@@ -2,6 +2,7 @@
 #define CLICK_HASHMAP_HH
 #include <click/hashcode.hh>
 CLICK_DECLS
+/** @cond never */
 class HashMap_Arena;
 class HashMap_ArenaFactory;
 
@@ -578,6 +579,7 @@ operator!=(const _HashMap_const_iterator<K, V> &a, const _HashMap_const_iterator
   return a.pair() != b.pair();
 }
 
+/** @endcond */
 CLICK_ENDDECLS
 #include <click/hashmap.cc>
 #endif

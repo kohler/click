@@ -1773,7 +1773,7 @@ LexerExtra::require(String, String, ErrorHandler *)
 //
 
 Lexer::TunnelEnd *
-Lexer::find_tunnel(const Router::Port &h, bool isoutput, bool insert)
+Lexer::find_tunnel(const Port &h, bool isoutput, bool insert)
 {
   // binary search for tunnel
   unsigned l = 0, r = _tunnels.size();

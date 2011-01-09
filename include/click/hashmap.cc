@@ -22,6 +22,7 @@
 #include <click/bighashmap_arena.hh>
 #include <click/glue.hh>
 CLICK_DECLS
+/** @cond never */
 
 #define BIGHASHMAP_REARRANGE_ON_FIND 0
 
@@ -717,5 +718,6 @@ _HashMap_const_iterator<K, void *>::operator++(int)
   }
 }
 
+/** @endcond */
 CLICK_ENDDECLS
 #endif

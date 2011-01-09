@@ -178,7 +178,7 @@ class HashTable<T> {
 
     /** @brief Return an iterator for the first element in the table.
      *
-     * @node HashTable iterators return elements in random order. */
+     * HashTable iterators return elements in random order. */
     inline iterator begin();
     /** @overload */
     inline const_iterator begin() const;

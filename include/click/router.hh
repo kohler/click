@@ -528,7 +528,7 @@ Router::find(const String& name, ErrorHandler *errh) const
  * @param visitor RouterVisitor traversal object
  * @return 0 on success, -1 in early router configuration stages
  *
- * Calls @a visitor->@link RouterVisitor::visit visit() @endlink on each
+ * Calls @a visitor ->@link RouterVisitor::visit visit() @endlink on each
  * reachable input port starting from the output port @a e[@a port].  Follows
  * connections and traverses inside elements from port to port by
  * Element::flow_code().  The visitor can stop a traversal path by returning
@@ -548,7 +548,7 @@ Router::visit_downstream(Element *e, int port, RouterVisitor *visitor) const
  * @param visitor RouterVisitor traversal object
  * @return 0 on success, -1 in early router configuration stages
  *
- * Calls @a visitor->@link RouterVisitor::visit visit() @endlink on each
+ * Calls @a visitor ->@link RouterVisitor::visit visit() @endlink on each
  * reachable output port starting from the input port [@a port]@a e.  Follows
  * connections and traverses inside elements from port to port by
  * Element::flow_code().  The visitor can stop a traversal path by returning
