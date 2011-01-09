@@ -447,6 +447,7 @@ sync.hh
 task.hh
 timer.hh
 timestamp.hh
+tokenbucket.hh
 userutils.hh
 variableenv.hh
 vector.cc
