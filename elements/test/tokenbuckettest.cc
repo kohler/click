@@ -78,6 +78,17 @@ TokenBucketTest::initialize(ErrorHandler *errh)
     CHECK(tb4.rate() == TokenBucket::max_tokens);
     CHECK(tb4.capacity() == TokenBucket::max_tokens);
 
+    tb4.assign(false);
+    tb4.clear();
+    tb4.refill();
+    CHECK(tb4.rate() == 0);
+    CHECK(tb4.capacity() == TokenBucket::max_tokens);
+    CHECK(tb4.empty());
+
+    tb4.assign(0, 1024);
+    CHECK(tb4.rate() == 0);
+    CHECK(tb4.capacity() == 1024);
+
     errh->message("All tests pass!");
     return 0;
 }
