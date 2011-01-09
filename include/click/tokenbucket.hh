@@ -309,6 +309,15 @@ class TokenCounterX { public:
 	    return _tokens / rate.token_scale();
     }
 
+    /** @brief Return the counter's fullness fraction.
+     * @param rate associated token rate
+     *
+     * The return value is a number between 0 and max_tokens, where max_tokens
+     * represents full capacity. */
+    token_type fraction(const rate_type &rate) const {
+	return rate.token_scale() == 0 ? max_tokens : _tokens;
+    }
+
     /** @brief Test if the token counter is completely empty. */
     bool empty(const rate_type &rate) const {
 	return _tokens == 0 && rate.token_scale() != 0;
@@ -328,6 +337,13 @@ class TokenCounterX { public:
      * @sa fast_contains */
     bool contains(const rate_type &rate, token_type t) const {
 	return t <= rate.capacity() && fast_contains(rate, t);
+    }
+
+    /** @brief Test if the token counter is above a fraction of its capacity.
+     * @param rate associated token rate
+     * @param f fullness fraction, where max_tokens is full capacity */
+    bool contains_fraction(const rate_type &rate, token_type f) const {
+	return f <= _tokens || rate.token_scale() == 0;
     }
 
     /** @brief Clear the token counter.
@@ -354,6 +370,13 @@ class TokenCounterX { public:
 	    _tokens = max_tokens;
 	else
 	    _tokens = t * rate.token_scale();
+    }
+
+    /** @brief Set the token counter to a fraction of its capacity.
+     * @param rate associated token rate
+     * @param f fullness fraction, where max_tokens is full capacity */
+    void set_fraction(const rate_type &rate, token_type f) {
+	_tokens = (rate.token_scale() == 0 ? max_tokens : f);
     }
 
     /** @brief Compensate the counter for a change of rate.
@@ -423,6 +446,34 @@ class TokenCounterX { public:
 	return t <= rate.capacity() && fast_remove_if(rate, t);
     }
 
+    /** @brief Remove a fullness fraction from the counter.
+     * @param rate associated token rate
+     * @param f fullness fraction, where max_tokens is full capacity
+     *
+     * If the token counter is less than @a f full, the new token count is 0. */
+    void remove_fraction(const rate_type &rate, token_type f) {
+	if (rate.token_scale() != 0)
+	    _tokens = (f <= _tokens ? _tokens - f : 0);
+    }
+
+    /** @brief Remove a fullness fraction from the counter if it is full enough.
+     * @param rate associated token rate
+     * @param f fullness fraction, where max_tokens is full capacity
+     * @return true if @a f was removed, false otherwise
+     *
+     * If fraction() is at least @a f, calls remove_fraction(@a f) and returns
+     * true.  Otherwise, returns false without removing any tokens. */
+    bool remove_fraction_if(const rate_type &rate, token_type f) {
+	if (rate.token_scale() != 0) {
+	    if (f <= _tokens) {
+		_tokens -= f;
+		return true;
+	    } else
+		return false;
+	} else
+	    return true;
+    }
+
     /** @brief Return the number of epochs until contains(@a t) is true.
      * @param rate associated token rate
      *
@@ -440,6 +491,21 @@ class TokenCounterX { public:
 		return (t - _tokens - 1) / rate.tokens_per_epoch() + 1;
 	} else
 	    return (epoch_type) -1;
+    }
+
+    /** @brief Return the number of epochs until contains_fraction(@a f).
+     * @param rate associated token rate
+     *
+     * Returns (epoch_type) -1 if passing time will never make
+     * contains_fraction(@a f) true. */
+    epoch_type epochs_until_contains_fraction(const rate_type &rate,
+					      token_type f) const {
+	if (f <= _tokens || rate.token_scale() == 0)
+	    return 0;
+	else if (rate.tokens_per_epoch() == 0)
+	    return (epoch_type) -1;
+	else
+	    return (f - _tokens - 1) / rate.tokens_per_epoch() + 1;
     }
 
 
@@ -727,6 +793,14 @@ class TokenBucketX { public:
 	return _bucket.size(_rate);
     }
 
+    /** @brief Return the bucket's fullness fraction.
+     *
+     * The return value is a number between 0 and max_tokens, where max_tokens
+     * represents full capacity. */
+    token_type fraction() const {
+	return _bucket.fraction(_rate);
+    }
+
     /** @brief Test if the token bucket is completely empty. */
     bool empty() const {
 	return _bucket.empty(_rate);
@@ -745,6 +819,12 @@ class TokenBucketX { public:
      * @sa fast_contains */
     bool contains(token_type t) const {
 	return _bucket.contains(_rate, t);
+    }
+
+    /** @brief Test if the token bucket is above a fraction of its capacity.
+     * @param f fullness fraction, where max_tokens is full capacity */
+    bool contains_fraction(token_type f) const {
+	return _bucket.contains_fraction(_rate, f);
     }
 
     /** @brief Clear the token bucket.
@@ -767,6 +847,12 @@ class TokenBucketX { public:
      * The result will never have more tokens than the associated capacity. */
     void set(token_type t) {
 	_bucket.set(_rate, t);
+    }
+
+    /** @brief Set the token bucket to a fraction of its capacity.
+     * @param f fullness fraction, where max_tokens is full capacity */
+    void set_fraction(token_type f) {
+	_bucket.set_fraction(_rate, f);
     }
 
     /** @brief Refill the token bucket to time P::epoch().
@@ -813,12 +899,38 @@ class TokenBucketX { public:
 	return _bucket.remove_if(_rate, t);
     }
 
+    /** @brief Remove a fullness fraction from the bucket.
+     * @param f fullness fraction, where max_tokens is full capacity
+     *
+     * If the token counter is less than @a f full, the new token count is 0. */
+    void remove_fraction(token_type f) {
+	_bucket.remove_fraction(_rate, f);
+    }
+
+    /** @brief Remove a fullness fraction from the bucket if it is full enough.
+     * @param f fullness fraction, where max_tokens is full capacity
+     * @return true if @a f was removed, false otherwise
+     *
+     * If fraction() is at least @a f, calls remove_fraction(@a f) and returns
+     * true.  Otherwise, returns false without removing any tokens. */
+    bool remove_fraction_if(token_type f) {
+	return _bucket.remove_fraction_if(_rate, f);
+    }
+
     /** @brief Return the number of epochs until contains(@a t) is true.
      *
      * Returns (epoch_type) -1 if passing time will never make contains(@a t)
      * true. */
     epoch_type epochs_until_contains(token_type t) const {
 	return _bucket.epochs_until_contains(_rate, t);
+    }
+
+    /** @brief Return the number of epochs until contains_fraction(@a f).
+     *
+     * Returns (epoch_type) -1 if passing time will never make
+     * contains_fraction(@a f) true. */
+    epoch_type epochs_until_contains_fraction(token_type f) const {
+	return _bucket.epochs_until_contains_fraction(_rate, f);
     }
 
 
