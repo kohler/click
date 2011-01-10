@@ -31,6 +31,7 @@ struct ElementTraits {
     String requirements;
     String provisions;
     String libs;
+    String noexport;
     int def_index;
     int driver_mask;
     int name_next;
@@ -54,7 +55,7 @@ struct ElementTraits {
 	D_NONE,
 	D_CLASS, D_CXX_CLASS, D_HEADER_FILE, D_PORT_COUNT, D_PROCESSING,
 	D_FLOW_CODE, D_FLAGS, D_METHODS, D_REQUIREMENTS, D_PROVISIONS, D_LIBS,
-	D_SOURCE_FILE, D_DOC_NAME,
+	D_SOURCE_FILE, D_DOC_NAME, D_NOEXPORT,
 	D_FIRST_DEFAULT = D_CLASS, D_LAST_DEFAULT = D_LIBS
     };
     static int parse_component(const String &);

@@ -190,6 +190,7 @@ ElementTraits::component(int what)
       case D_PROVISIONS:	return &provisions;
       case D_LIBS:		return &libs;
       case D_DOC_NAME:		return &documentation_name;
+      case D_NOEXPORT:		return &noexport;
       default:			return 0;
     }
 }
@@ -214,6 +215,7 @@ ElementTraits::parse_component(const String &s)
 	components.set("libs", D_LIBS);
 	components.set("docname", D_DOC_NAME);
 	components.set("flags", D_FLAGS);
+	components.set("noexport", D_NOEXPORT);
 	// for compatibility
 	components.set("class", D_CLASS);
 	components.set("cxx_class", D_CXX_CLASS);

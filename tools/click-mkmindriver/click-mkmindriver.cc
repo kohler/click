@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2001 Massachusetts Institute of Technology
  * Copyright (c) 2001 International Computer Science Institute
- * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2004-2011 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -145,7 +145,7 @@ void
 Mindriver::provide(const String& req, ErrorHandler* errh)
 {
     if (verbose && _provisions[req] < 0)
-	errh->message("providing '%s'", req.c_str());
+	errh->message("providing %<%s%>", req.c_str());
     _provisions[req] = 1;
 }
 
@@ -154,7 +154,7 @@ Mindriver::require(const String& req, ErrorHandler* errh)
 {
     if (_provisions.get(req) < 0) {
 	if (verbose && _requirements[req] < 0)
-	    errh->message("requiring '%s'", req.c_str());
+	    errh->message("requiring %<%s%>", req.c_str());
 	_requirements[req] = 1;
 	_nrequirements++;
     }
@@ -164,7 +164,7 @@ void
 Mindriver::add_source_file(const String& fn, ErrorHandler* errh)
 {
     if (verbose && _source_files[fn] < 0)
-	errh->message("adding source file '%s'", fn.c_str());
+	errh->message("adding source file %<%s%>", fn.c_str());
     _source_files[fn] = 1;
 }
 
@@ -200,9 +200,9 @@ Mindriver::add_router_requirements(RouterT* router, const ElementMap& default_ma
     }
 
     if (nmissing == 1)
-	errh->fatal("cannot locate required element class '%s'\n(This may be due to a missing or out-of-date 'elementmap.xml'.)", missing_sa.c_str());
+	errh->fatal("cannot locate required element class %<%s%>\n(This may be due to a missing or out-of-date %<elementmap.xml%>.)", missing_sa.c_str());
     else if (nmissing > 1)
-	errh->fatal("cannot locate these required element classes:\n  %s\n(This may be due to a missing or out-of-date 'elementmap.xml'.)", missing_sa.c_str());
+	errh->fatal("cannot locate these required element classes:\n  %s\n(This may be due to a missing or out-of-date %<elementmap.xml%>.)", missing_sa.c_str());
 }
 
 static void
@@ -284,7 +284,7 @@ Mindriver::resolve_requirement(const String& requirement, const ElementMap& emap
     }
 
     if (complain)
-	errh->error("cannot satisfy requirement '%s'", requirement.c_str());
+	errh->error("cannot satisfy requirement %<%s%>", requirement.c_str());
     return false;
 }
 
@@ -330,7 +330,7 @@ Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap, 
 	    // remember header file
 	    headervec[sourcei] = elt.header_file;
 	    // remember name
-	    if (elt.name)
+	    if (elt.name && !elt.noexport)
 		classvec[sourcei] += " " + elt.cxx + "-" + elt.name;
 	    // remember static methods
 	    if (elt.methods && !statichash[elt.cxx]) {
@@ -372,7 +372,7 @@ analyze_makefile(const String &directory, ErrorHandler *errh)
 
     String expectation = String("\n## Click ") + Driver::requirement(driver) + " driver Makefile ##\n";
     if (text.find_left(expectation) < 0) {
-	errh->error("%s lacks magic string\n(Does this directory have a Makefile for Click's %s driver?)", fn.c_str(), Driver::name(driver));
+	errh->error("%s lacks magic string\n(Does this directory have a Makefile for Click%,s %s driver?)", fn.c_str(), Driver::name(driver));
 	return String();
     }
 
@@ -424,7 +424,7 @@ main(int argc, char **argv)
 	    printf("click-mkmindriver (Click) %s\n", CLICK_VERSION);
 	    printf("Copyright (c) 2001 Massachusetts Institute of Technology\n\
 Copyright (c) 2001 International Computer Science Institute\n\
-Copyright (c) 2004-2007 Regents of the University of California\n\
+Copyright (c) 2004-2011 Regents of the University of California\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -509,7 +509,7 @@ particular purpose.\n");
     if (driver < 0)
 	driver = Driver::USERLEVEL;
     if (!package_name)
-	errh->fatal("fatal error: no package name specified\nPlease supply the '-p PKG' option.");
+	errh->fatal("fatal error: no package name specified\nPlease supply the %<-p PKG%> option.");
     if (extras) {
 	md.require("Align", errh);
 	md.require("IPNameInfo", errh);
@@ -575,9 +575,9 @@ particular purpose.\n");
     // Final message
     if (errh->nerrors() == 0) {
 	if (driver == Driver::USERLEVEL)
-	    errh->message("Build '%sclick' with 'make MINDRIVER=%s'.", package_name, package_name);
+	    errh->message("Build %<%sclick%> with %<make MINDRIVER=%s%>.", package_name, package_name);
 	else
-	    errh->message("Build '%sclick.ko' with 'make MINDRIVER=%s'.", package_name, package_name);
+	    errh->message("Build %<%sclick.ko%> with %<make MINDRIVER=%s%>.", package_name, package_name);
 	return 0;
     } else
 	exit(1);

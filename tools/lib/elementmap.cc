@@ -479,6 +479,8 @@ ElementMap::unparse(const String &package) const
 	    sa << " requires=\"" << xml_quote(e.requirements) << "\"";
 	if (e.provisions)
 	    sa << " provides=\"" << xml_quote(e.provisions) << "\"";
+	if (e.noexport)
+	    sa << " noexport=\"" << xml_quote(e.noexport) << "\"";
 	sa << " />\n";
     }
     sa << "</elementmap>\n";
