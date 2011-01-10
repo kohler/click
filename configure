@@ -6133,7 +6133,7 @@ if test "${enable_analysis+set}" = set; then :
 else
   enable_analysis=yes
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_analysis" = xNO && enable_analysis=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_analysis" = xNO -o "x$enable_analysis" = x \) && enable_analysis=yes
 if test "x$enable_analysis" = xyes; then
     :
 
@@ -6144,7 +6144,7 @@ if test "${enable_app+set}" = set; then :
 else
   enable_app=yes
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_app" = xNO && enable_app=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_app" = xNO -o "x$enable_app" = x \) && enable_app=yes
 if test "x$enable_app" = xyes; then
     :
 
@@ -6155,7 +6155,7 @@ if test "${enable_aqm+set}" = set; then :
 else
   enable_aqm=yes
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_aqm" = xNO && enable_aqm=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_aqm" = xNO -o "x$enable_aqm" = x \) && enable_aqm=yes
 if test "x$enable_aqm" = xyes; then
     :
 
@@ -6166,7 +6166,7 @@ if test "${enable_ethernet+set}" = set; then :
 else
   enable_ethernet=yes
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_ethernet" = xNO && enable_ethernet=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_ethernet" = xNO -o "x$enable_ethernet" = x \) && enable_ethernet=yes
 if test "x$enable_ethernet" = xyes; then
     :
 
@@ -6177,7 +6177,7 @@ if test "${enable_etherswitch+set}" = set; then :
 else
   enable_etherswitch=NO
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_etherswitch" = xNO && enable_etherswitch=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_etherswitch" = xNO -o "x$enable_etherswitch" = x \) && enable_etherswitch=yes
 if test "x$enable_etherswitch" = xyes; then
     :
 
@@ -6188,7 +6188,7 @@ if test "${enable_grid+set}" = set; then :
 else
   enable_grid=NO
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_grid" = xNO && enable_grid=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_grid" = xNO -o "x$enable_grid" = x \) && enable_grid=yes
 if test "x$enable_grid" = xyes; then
     :
 
@@ -6199,7 +6199,7 @@ if test "${enable_icmp+set}" = set; then :
 else
   enable_icmp=yes
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_icmp" = xNO && enable_icmp=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_icmp" = xNO -o "x$enable_icmp" = x \) && enable_icmp=yes
 if test "x$enable_icmp" = xyes; then
     :
 
@@ -6210,7 +6210,7 @@ if test "${enable_ip+set}" = set; then :
 else
   enable_ip=yes
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_ip" = xNO && enable_ip=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_ip" = xNO -o "x$enable_ip" = x \) && enable_ip=yes
 if test "x$enable_ip" = xyes; then
     :
 
@@ -6221,7 +6221,7 @@ if test "${enable_ip6+set}" = set; then :
 else
   enable_ip6=NO
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_ip6" = xNO && enable_ip6=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_ip6" = xNO -o "x$enable_ip6" = x \) && enable_ip6=yes
 if test "x$enable_ip6" = xyes; then
     :
     $as_echo "#define HAVE_IP6 1" >>confdefs.h
@@ -6233,7 +6233,7 @@ if test "${enable_ipsec+set}" = set; then :
 else
   enable_ipsec=NO
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_ipsec" = xNO && enable_ipsec=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_ipsec" = xNO -o "x$enable_ipsec" = x \) && enable_ipsec=yes
 if test "x$enable_ipsec" = xyes; then
     :
     $as_echo "#define HAVE_IPSEC 1" >>confdefs.h
@@ -6245,7 +6245,7 @@ if test "${enable_local+set}" = set; then :
 else
   enable_local=NO
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_local" = xNO && enable_local=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_local" = xNO -o "x$enable_local" = x \) && enable_local=yes
 if test "x$enable_local" = xyes; then
     :
 
@@ -6256,7 +6256,7 @@ if test "${enable_radio+set}" = set; then :
 else
   enable_radio=NO
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_radio" = xNO && enable_radio=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_radio" = xNO -o "x$enable_radio" = x \) && enable_radio=yes
 if test "x$enable_radio" = xyes; then
     :
 
@@ -6267,7 +6267,7 @@ if test "${enable_simple+set}" = set; then :
 else
   enable_simple=yes
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_simple" = xNO && enable_simple=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_simple" = xNO -o "x$enable_simple" = x \) && enable_simple=yes
 if test "x$enable_simple" = xyes; then
     :
 
@@ -6278,7 +6278,7 @@ if test "${enable_standard+set}" = set; then :
 else
   enable_standard=yes
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_standard" = xNO && enable_standard=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_standard" = xNO -o "x$enable_standard" = x \) && enable_standard=yes
 if test "x$enable_standard" = xyes; then
     :
 
@@ -6289,7 +6289,7 @@ if test "${enable_tcpudp+set}" = set; then :
 else
   enable_tcpudp=yes
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_tcpudp" = xNO && enable_tcpudp=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_tcpudp" = xNO -o "x$enable_tcpudp" = x \) && enable_tcpudp=yes
 if test "x$enable_tcpudp" = xyes; then
     :
 
@@ -6300,7 +6300,7 @@ if test "${enable_test+set}" = set; then :
 else
   enable_test=yes
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_test" = xNO && enable_test=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_test" = xNO -o "x$enable_test" = x \) && enable_test=yes
 if test "x$enable_test" = xyes; then
     :
 
@@ -6311,7 +6311,7 @@ if test "${enable_threads+set}" = set; then :
 else
   enable_threads=yes
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_threads" = xNO && enable_threads=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_threads" = xNO -o "x$enable_threads" = x \) && enable_threads=yes
 if test "x$enable_threads" = xyes; then
     :
 
@@ -6322,7 +6322,7 @@ if test "${enable_wifi+set}" = set; then :
 else
   enable_wifi=NO
 fi
-test "x$enable_all_elements" = xyes -a "x$enable_wifi" = xNO && enable_wifi=yes
+test "x$enable_all_elements" = xyes -a \( "x$enable_wifi" = xNO -o "x$enable_wifi" = x \) && enable_wifi=yes
 if test "x$enable_wifi" = xyes; then
     :
 
@@ -6344,7 +6344,7 @@ fi
 
 for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^linuxmodule$/d;/^ns$/d;/^userlevel$/d')`; do
     enableval=`eval 'echo $'"enable_$i"`
-    test "x$enable_all_elements" = xyes -a "x$enableval" '!=' 'no' && enableval=yes
+    test "x$enable_all_elements" = xyes -a "x$enableval" '!=' xno && enableval=yes
     test -d "$srcdir/elements/$i" -a "$enableval" = "yes" && element_groups="$element_groups $i"
 done
 
