@@ -50,6 +50,7 @@ CLICK_CXX_PROTECT
 # include <sys/libkern.h>
 # include <sys/proc.h>
 # include <sys/sysproto.h>
+# include <sys/limits.h>
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 
