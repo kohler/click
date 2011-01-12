@@ -660,10 +660,12 @@ class TokenBucketJiffyParameters { public:
 	return Timestamp::make_jiffies(x);
     }
 
+#if !CLICK_BSDMODULE
     /** @brief Return the Timestamp representing a given number of epochs. */
     static Timestamp epoch_timestamp(epoch_difference_type x) {
 	return Timestamp::make_jiffies(x);
     }
+#endif
 
 };
 
