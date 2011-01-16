@@ -172,6 +172,9 @@ sub one_includeroot ($$) {
 	    s{\bnew\b}{new_value}g;
 	    s{\band\b}{and_value}g;
 	    s{\bswap\b}{linux_swap}g;
+	    # including "P[new]" in inline assembly string (look for
+	    # protected version)
+	    1 while (s{(asm.*\333)\356\345\367\335}{$1\356\345\367\337\366\341\354\365\345\335}g);
 
 	    # "sizeof" isn't nice to the preprocessor
 	    s{sizeof(?:\s+(?:unsigned\s+)?long|\s*\(\s*(?:unsigned\s+)?long\s*\))}{(BITS_PER_LONG/8 /*=BITS_PER_BYTE*/)}g;
