@@ -1,8 +1,12 @@
 #ifndef CLICK_LLRPC_H
 #define CLICK_LLRPC_H
 #if CLICK_LINUXMODULE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 # include <linux/errno.h>
 # include <linux/ioctl.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
 #elif CLICK_BSDMODULE
 # include <sys/errno.h>
 # include <sys/ioccom.h>

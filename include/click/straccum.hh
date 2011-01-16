@@ -4,7 +4,11 @@
 #include <click/glue.hh>
 #include <click/string.hh>
 #ifdef CLICK_LINUXMODULE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 # include <asm/string.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
 #elif defined(CLICK_BSDMODULE)
 # include <sys/systm.h>
 #else	/* User-space */

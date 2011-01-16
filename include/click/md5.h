@@ -52,12 +52,12 @@
 #ifndef CLICK_MD5_H
 #define CLICK_MD5_H
 #if CLICK_LINUXMODULE
-#include <click/cxxprotect.h>
+# include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
-#include <linux/crypto.h>
-#include <asm/scatterlist.h>
+# include <linux/crypto.h>
+# include <asm/scatterlist.h>
 CLICK_CXX_UNPROTECT
-#include <click/cxxunprotect.h>
+# include <click/cxxunprotect.h>
 
 typedef struct crypto_tfm *md5_state_t;
 

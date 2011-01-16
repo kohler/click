@@ -7,7 +7,11 @@
 CLICK_DECLS
 #if CLICK_LINUXMODULE
 # if HAVE_LINUX_ASM_SYSTEM_H
+#  include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #  include <asm/system.h>
+CLICK_CXX_UNPROTECT
+#  include <click/cxxunprotect.h>
 # endif
 # define CLICK_ATOMIC_VAL	_val.counter
 #else
