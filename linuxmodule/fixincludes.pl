@@ -89,6 +89,8 @@ sub expand_array_initializer ($$$) {
     return $text . "#else\n#error \"fixincludes.pl needs updating\"\n#endif\n";
 }
 
+my($click_cxx_protect) = "#if defined(__cplusplus) && !CLICK_CXX_PROTECTED\n# error \"missing #include <click/cxxprotect.h>\"\n#endif\n";
+
 sub one_includeroot ($$) {
     my($includeroot, $outputroot) = @_;
     my(@dirs, $d, $dd, $f);
@@ -216,6 +218,16 @@ sub one_includeroot ($$) {
 	    }
 	    if ($d eq "netdevice.h") {
 		1 while (s<(^struct net_device \{[\000-\377]*)^\tenum( \{[^}]*\}) (\w+)><enum net_device_$3$2;\n$1\tenum net_device_$3 $3>mg);
+	    }
+
+	    # CLICK_CXX_PROTECTED check
+	    if (m<\A[\s\200-\377]*\z>) {
+		# empty file, do nothing
+	    } elsif (m<(\A[\s\200-\377]*^\#ifndef.*\n)>m
+		     || m<(\A[\s\200-\377]*^\#if\s+!\s*defined.*\n)>m) {
+		$_ = $1 . $click_cxx_protect . substr($_, length($1));
+	    } elsif ($d ne "version.h" && $d ne "autoconf.h") {
+		$_ = $click_cxx_protect . $_;
 	    }
 
 	    # unquote.

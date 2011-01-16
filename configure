@@ -10012,6 +10012,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10062,6 +10063,7 @@ else
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10119,6 +10121,7 @@ else
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10176,6 +10179,7 @@ else
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10236,6 +10240,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10294,6 +10299,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10352,6 +10358,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10410,6 +10417,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10468,6 +10476,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10526,6 +10535,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10584,6 +10594,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10629,6 +10640,7 @@ $as_echo "#define HAVE_LINUX_POLLING 1" >>confdefs.h
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10664,6 +10676,7 @@ $as_echo "#define HAVE_SKB_DST_DROP 1" >>confdefs.h
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10699,6 +10712,7 @@ $as_echo "#define HAVE_SKB_RECYCLE 1" >>confdefs.h
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10747,6 +10761,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10798,6 +10813,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10834,6 +10850,7 @@ $as_echo "#define HAVE_NET_ENABLE_TIMESTAMP 1" >>confdefs.h
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10870,6 +10887,7 @@ $as_echo "#define HAVE_NETIF_TX_LOCK 1" >>confdefs.h
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10906,6 +10924,7 @@ $as_echo "#define HAVE_NETDEV_GET_TX_QUEUE 1" >>confdefs.h
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10942,6 +10961,7 @@ $as_echo "#define HAVE_NETIF_TX_QUEUE_FROZEN 1" >>confdefs.h
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif
@@ -10978,6 +10998,7 @@ $as_echo "#define HAVE_NETDEV_USES_DSA_TAGS 1" >>confdefs.h
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif

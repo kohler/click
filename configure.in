@@ -1176,6 +1176,7 @@ fixincludes.pl execution failed.
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
+#define CLICK_CXX_PROTECTED 1
 #ifndef AUTOCONF_INCLUDED
 # include <linux/autoconf.h>
 #endif

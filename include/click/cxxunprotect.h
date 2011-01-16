@@ -12,3 +12,4 @@
 # undef false
 # undef true
 #endif
+#undef CLICK_CXX_PROTECTED

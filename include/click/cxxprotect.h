@@ -22,3 +22,5 @@
 #  define CLICK_CXX_UNPROTECT	/* nothing */
 # endif
 #endif
+
+#define CLICK_CXX_PROTECTED 1
