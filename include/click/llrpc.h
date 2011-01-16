@@ -5,6 +5,7 @@
 CLICK_CXX_PROTECT
 # include <linux/errno.h>
 # include <linux/ioctl.h>
+# include <asm/uaccess.h>
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 #elif CLICK_BSDMODULE
@@ -118,12 +119,8 @@ struct click_llrpc_call_handler_st {
 
 # ifdef __cplusplus
 #  define __CLICK_LLRPC_CAST(x) reinterpret_cast< x >
-extern "C" {
-#  include <asm/uaccess.h>
-}
 # else
 #  define __CLICK_LLRPC_CAST(x) (x)
-#  include <asm/uaccess.h>
 # endif
 
 # define __CLICK_LLRPC_GENERIC_GET_DATA(local, remote, size) \
