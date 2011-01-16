@@ -34,7 +34,7 @@
 CLICK_CXX_PROTECT
 #include <linux/netdevice.h>
 #if __i386__
-#include <asm/msr.h>
+#include <click/perfctr-i586.hh>
 #endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>

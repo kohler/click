@@ -1,8 +1,12 @@
 #ifndef CLICK_PERFCTR_HH
 #define CLICK_PERFCTR_HH
 #ifdef __KERNEL__
-#include <click/glue.hh>
-#include <asm/msr.h>
+# include <click/glue.hh>
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+# include <asm/msr.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
 #endif
 
 #define DCU_MISS_OUTSTANDING	0x48

@@ -37,11 +37,11 @@
 CLICK_CXX_PROTECT
 #include <net/pkt_sched.h>
 #include <net/dst.h>
-#if __i386__
-#include <asm/msr.h>
-#endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
+#if __i386__
+#include <click/perfctr-i586.hh>
+#endif
 
 /* for watching when devices go offline */
 static AnyDeviceMap to_device_map;

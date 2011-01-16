@@ -21,7 +21,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
-#include <asm/msr.h>
+#include <click/perfctr-i586.hh>
 
 SetPerfCount::SetPerfCount()
 {
