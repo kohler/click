@@ -23,9 +23,6 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/router.hh>
-#ifdef CLICK_LINUXMODULE
-# include <net/checksum.h>
-#endif
 CLICK_DECLS
 
 TCPIPSend::TCPIPSend()

@@ -24,9 +24,6 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
-#ifdef CLICK_LINUXMODULE
-# include <net/checksum.h>
-#endif
 CLICK_DECLS
 
 const char *CheckUDPHeader::reason_texts[NREASONS] = {

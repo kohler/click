@@ -25,9 +25,6 @@
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/standard/alignmentinfo.hh>
-#ifdef CLICK_LINUXMODULE
-# include <net/checksum.h>
-#endif
 CLICK_DECLS
 
 const char * const CheckIPHeader::reason_texts[NREASONS] = {

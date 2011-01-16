@@ -25,9 +25,6 @@
 #include <click/error.hh>
 #include <click/bitvector.hh>
 #include <click/straccum.hh>
-#ifdef CLICK_LINUXMODULE
-# include <net/checksum.h>
-#endif
 CLICK_DECLS
 
 const char *CheckICMPHeader::reason_texts[NREASONS] = {

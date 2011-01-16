@@ -24,9 +24,6 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/standard/alignmentinfo.hh>
-#ifdef CLICK_LINUXMODULE
-# include <net/checksum.h>
-#endif
 CLICK_DECLS
 
 CheckIP6Header::CheckIP6Header()

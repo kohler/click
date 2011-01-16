@@ -22,15 +22,13 @@
  */
 
 #include <click/config.h>
+#include <clicknet/ip6.h>
 #include "udpip6encap.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
 #include <click/ip6address.hh>
-#ifdef CLICK_LINUXMODULE
-# include <net/checksum.h>
-#endif
 CLICK_DECLS
 
 UDPIP6Encap::UDPIP6Encap()
