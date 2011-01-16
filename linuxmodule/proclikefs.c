@@ -19,7 +19,9 @@
 
 #undef CLICK_LINUXMODULE
 #include <linux/version.h>
-#include <linux/autoconf.h>
+#ifndef AUTOCONF_INCLUDED
+# include <linux/autoconf.h>
+#endif
 #ifndef EXPORT_SYMTAB
 # define EXPORT_SYMTAB
 #endif

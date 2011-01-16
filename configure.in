@@ -1139,10 +1139,9 @@ Can't find Linux 2.6 compilation flags.
 
     LINUX_FIXINCLUDES_PROGRAM=
     if test "$LINUXMODULE_FIXINCLUDES" = 1; then
-	AC_MSG_CHECKING([for C++-safe versions of Linux include files])
+	AC_MSG_NOTICE([creating C++-safe versions of Linux include files (may take a while)])
 	$srcdir/linuxmodule/fixincludes.pl -o "`pwd`/include/click-linuxmodule" $LINUX_CFLAGS >conftest.dat
 	if test $? != 0; then
-	    AC_MSG_RESULT(failed)
 	    AC_MSG_ERROR([
 ==============================================
 
@@ -1152,7 +1151,6 @@ fixincludes.pl execution failed.
 	fi
 	LINUX_CFLAGS="`head -n 1 conftest.dat`"
 	LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
-	AC_MSG_RESULT($LINUX_CFLAGS)
     fi
     AC_SUBST(LINUX_FIXINCLUDES_PROGRAM)
 
@@ -1178,7 +1176,9 @@ fixincludes.pl execution failed.
 #define namespace linux_namespace
 #define false linux_false
 #define true linux_true
-#include <linux/autoconf.h>
+#ifndef AUTOCONF_INCLUDED
+# include <linux/autoconf.h>
+#endif
 #include <asm/types.h>]])
 
 
