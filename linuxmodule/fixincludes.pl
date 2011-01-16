@@ -211,6 +211,9 @@ sub one_includeroot ($$) {
 	    if ($d eq "sched.h") {
 		s<^(extern char ___assert_task_state)((?:.*?\n)*?.*?\;.*)$><\#ifndef __cplusplus\n$1$2\n\#endif>mg;
 	    }
+	    if ($d eq "kobject.h") {
+		s<(^#include[\000-\377]*)(^enum kobj_ns_type\s+\{[\000-\377]*?\}.*\n)><$2$1>mg;
+	    }
 
 	    # unquote.
 	    $_ = sunprotect($_);
