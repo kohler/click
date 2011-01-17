@@ -71,7 +71,6 @@ CLICK_CXX_UNPROTECT
 extern "C" {
 static int fl_open(net_device *);
 static int fl_close(net_device *);
-static net_device_stats *fl_stats(net_device *);
 static void fl_wakeup(Timer *, void *);
 }
 
@@ -92,7 +91,6 @@ FromHost::static_initialize()
     fromhost_netdev_ops.ndo_open = fl_open;
     fromhost_netdev_ops.ndo_stop = fl_close;
     fromhost_netdev_ops.ndo_start_xmit = fl_tx;
-    fromhost_netdev_ops.ndo_get_stats = fl_stats;
     fromhost_netdev_ops.ndo_set_mac_address = eth_mac_addr;
 #endif
 }
@@ -105,7 +103,9 @@ FromHost::FromHost()
     _head = _tail = 0;
     _capacity = 100;
     _q.lgq = 0;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 32)
     memset(&_stats, 0, sizeof(_stats));
+#endif
 }
 
 FromHost::~FromHost()
@@ -225,7 +225,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     int res;
     _dev = new_device(_devname.c_str());
     if (!_dev)
-	return errh->error("out of memory! registering device '%s'", _devname.c_str());
+	return errh->error("out of memory registering device '%s'", _devname.c_str());
     else {
 	// register_netdev ends up to call copy_rtnl_link_stats which
 	// requires valid net_device_stats structure, therefore device has to
@@ -426,8 +426,9 @@ fl_wakeup(Timer *, void *thunk)
     dev_updown(dev, 1, &errh);
 }
 
-static net_device_stats *
-fl_stats(net_device *dev)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 32)
+net_device_stats *
+FromHost::fl_stats(net_device *dev)
 {
     unsigned long lock_flags;
     fromlinux_map.lock(false, lock_flags);
@@ -438,6 +439,7 @@ fl_stats(net_device *dev)
     fromlinux_map.unlock(false, lock_flags);
     return stats;
 }
+#endif
 }
 
 int
@@ -453,10 +455,10 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
          particularly with the task list. The solution is a queue in
          FromHost. fl_tx puts a packet onto the queue, a regular Click Task
          takes the packet off the queue. */
+    int ret;
     unsigned long lock_flags;
     fromlinux_map.lock(false, lock_flags);
     if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0)) {
-	int r = NETDEV_TX_OK;
 	int next = fl->next_i(fl->_tail);
 	if (likely(next != fl->_head)) {
 	    Packet * volatile *q = fl->queue();
@@ -476,21 +478,21 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
 	    p->timestamp_anno().assign_now();
 	    if (fl->_clear_anno)
 		p->clear_annotations(false);
-	    fl->_stats.tx_packets++;
-	    fl->_stats.tx_bytes += p->length();
+	    fl->stats()->tx_packets++;
+	    fl->stats()->tx_bytes += p->length();
 	    fl->_task.reschedule();
 	    q[fl->_tail] = p;
 	    packet_memory_barrier(q[fl->_tail], fl->_tail);
 	    fl->_tail = next;
+	    ret = NETDEV_TX_OK;
 	} else {
-	    r = NETDEV_TX_BUSY;	// Linux will free the packet.
 	    fl->_drops++;
+	    ret = NETDEV_TX_BUSY;	// Linux will free the packet.
 	}
-	fromlinux_map.unlock(false, lock_flags);
-	return r;
-    }
+    } else
+	ret = -1;
     fromlinux_map.unlock(false, lock_flags);
-    return -1;
+    return ret;
 }
 
 bool

@@ -133,8 +133,6 @@ class FromHost : public AnyDevice, public Storage { public:
     const char *processing() const	{ return PUSH; }
     void *cast(const char *name);
 
-    net_device_stats *stats()		{ return &_stats; }
-
     int configure_phase() const		{ return CONFIGURE_PHASE_FROMHOST; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
@@ -150,7 +148,9 @@ class FromHost : public AnyDevice, public Storage { public:
     EtherAddress _macaddr;
     IPAddress _destaddr;
     IPAddress _destmask;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 32)
     net_device_stats _stats;
+#endif
 
     Task _task;
     Timer _wakeup_timer;
@@ -171,6 +171,13 @@ class FromHost : public AnyDevice, public Storage { public:
     inline Packet * volatile *queue() const {
 	return _capacity <= smq_size ? _q.smq : _q.lgq;
     }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
+    net_device_stats *stats()	{ return &_dev->stats; }
+#else
+    net_device_stats *stats()	{ return &_stats; }
+    static net_device_stats *fl_stats(net_device *dev);
+#endif
 
     enum { h_length };
     static String read_handler(Element *e, void *thunk);
