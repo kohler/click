@@ -50,7 +50,7 @@ CLICK_CXX_UNPROTECT
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) && CONFIG_NET_NS
 # define click_inet_ioctl(sock, dev, cmd, arg)	devinet_ioctl((dev)->nd_net, (cmd), (arg))
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
-# define click_inet_ioctl(sock, dev, cmd, arg)	devinet_ioctl(&inet_net, (cmd), (arg))
+# define click_inet_ioctl(sock, dev, cmd, arg)	devinet_ioctl(&init_net, (cmd), (arg))
 #else
 # define click_inet_ioctl(sock, dev, cmd, arg)	devinet_ioctl((cmd), (arg))
 #endif
