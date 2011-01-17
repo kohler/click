@@ -39,7 +39,9 @@ a1[1] -> ICMPPingResponder -> c::Counter -> sw :: Switch;
 sw[0] -> th0;
 sw[1] -> th1;
 
+// This packet should not go through, because there's no device.
 ICMPSendPings(2.0.0.2, 1.0.0.1, LIMIT 1) -> EtherEncap(0x0800, fake0, fake0) -> th0;
+// This packet should go through.
 ICMPSendPings(2.0.0.3, 1.0.0.1, LIMIT 1) -> EtherEncap(0x0800, fake0, fake0) -> th1;
 
 %ignorex -i FAKE0
@@ -52,6 +54,7 @@ ICMPSendPings(2.0.0.3, 1.0.0.1, LIMIT 1) -> EtherEncap(0x0800, fake0, fake0) -> 
 .*end of file.*
 .*icmp6.*
 .*\.mdns >.*
+.*\.5353 >.*
 .*igmp.*
 
 %expectx -i FAKE0
