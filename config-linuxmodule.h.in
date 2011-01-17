@@ -46,6 +46,9 @@
 /* Define if your Linux kernel has devinet_ioctl. */
 #undef HAVE_LINUX_DEVINET_IOCTL
 
+/* Define if your Linux kernel has inet_ioctl. */
+#undef HAVE_LINUX_INET_IOCTL
+
 /* Define if you have the <linux/ktime.h> header file. */
 #undef HAVE_LINUX_KTIME_H
 

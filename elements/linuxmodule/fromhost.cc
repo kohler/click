@@ -38,27 +38,31 @@ CLICK_CXX_PROTECT
 #include <linux/etherdevice.h>
 #include <net/route.h>
 #include <net/dst.h>
+#include <net/inet_common.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 # include <net/net_namespace.h>
 #endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
-# if CONFIG_NET_NS
-#  define netdev_ioctl(dev, cmd, arg)	dev_ioctl((dev)->nd_net, (cmd), (arg))
-#  define inetdev_ioctl(dev, cmd, arg)	devinet_ioctl((dev)->nd_net, (cmd), (arg))
-# else
-#  define netdev_ioctl(dev, cmd, arg)	dev_ioctl(&init_net, (cmd), (arg))
-#  define inetdev_ioctl(dev, cmd, arg)	devinet_ioctl(&init_net, (cmd), (arg))
-# endif
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
-# define netdev_ioctl(dev, cmd, arg)	dev_ioctl(&init_net, (cmd), (arg))
-# define inetdev_ioctl(dev, cmd, arg)	devinet_ioctl((cmd), (arg))
+#if HAVE_LINUX_INET_IOCTL
+# define click_inet_ioctl(sock, dev, cmd, arg)	inet_ioctl((sock), (cmd), (arg))
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) && CONFIG_NET_NS
+# define click_inet_ioctl(sock, dev, cmd, arg)	devinet_ioctl((dev)->nd_net, (cmd), (arg))
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+# define click_inet_ioctl(sock, dev, cmd, arg)	devinet_ioctl(&inet_net, (cmd), (arg))
 #else
-# define netdev_ioctl(dev, cmd, arg)	dev_ioctl((cmd), (arg))
-# define inetdev_ioctl(dev, cmd, arg)	devinet_ioctl((cmd), (arg))
+# define click_inet_ioctl(sock, dev, cmd, arg)	devinet_ioctl((cmd), (arg))
 #endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) && CONFIG_NET_NS
+# define click_dev_ioctl(dev, cmd, arg)		dev_ioctl((dev)->nd_net, (cmd), (arg))
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+# define click_dev_ioctl(dev, cmd, arg)		dev_ioctl(&init_net, (cmd), (arg))
+#else
+# define click_dev_ioctl(dev, cmd, arg)		dev_ioctl((cmd), (arg))
+#endif
+
 #ifndef NETDEV_TX_OK
 # define NETDEV_TX_OK		0
 # define NETDEV_TX_BUSY		1
@@ -263,7 +267,7 @@ FromHost::set_device_addresses(ErrorHandler *errh)
 #if HAVE_LINUX_DEV_IOCTL
 	oldfs = get_fs();
 	set_fs(get_ds());
-	res = netdev_ioctl(_dev, SIOCSIFHWADDR, &ifr);
+	res = click_dev_ioctl(_dev, SIOCSIFHWADDR, &ifr);
 	set_fs(oldfs);
 #else
 	rtnl_lock();
@@ -276,18 +280,30 @@ FromHost::set_device_addresses(ErrorHandler *errh)
     }
 
     if (_destaddr) {
-#if HAVE_LINUX_DEVINET_IOCTL
+#if HAVE_LINUX_DEVINET_IOCTL || HAVE_LINUX_INET_IOCTL
         sin->sin_family = AF_INET;
         sin->sin_addr = _destaddr;
+# if HAVE_LINUX_INET_IOCTL
+	struct socket *sock = kmalloc(sizeof(struct socket), GFP_KERNEL);
+	sock->sk = 0;
+	if (res >= 0 && (res = inet_ctl_sock_create(&sock->sk, AF_INET, SOCK_RAW, IPPROTO_TCP, _dev->nd_net)) != 0) {
+	    errh->error("error %d creating control socket for device '%s'", res, _devname.c_str());
+	    res = -1;
+	}
+# endif
 	oldfs = get_fs();
 	set_fs(get_ds());
-        if (res >= 0 && (res = inetdev_ioctl(_dev, SIOCSIFADDR, &ifr)) < 0)
+        if (res >= 0 && (res = click_inet_ioctl(sock, _dev, SIOCSIFADDR, &ifr)) < 0)
             errh->error("error %d setting address for device '%s'", res, _devname.c_str());
 
         sin->sin_addr = _destmask;
-        if (res >= 0 && (res = inetdev_ioctl(_dev, SIOCSIFNETMASK, &ifr)) < 0)
+        if (res >= 0 && (res = click_inet_ioctl(sock, _dev, SIOCSIFNETMASK, &ifr)) < 0)
             errh->error("error %d setting netmask for device '%s'", res, _devname.c_str());
 	set_fs(oldfs);
+# if HAVE_LINUX_INET_IOCTL
+	inet_ctl_sock_destroy(sock->sk);
+	kfree(sock);
+# endif
 #else
 	res = errh->error("cannot set IP address for FromHost devices on this kernel");
 #endif
@@ -308,9 +324,9 @@ dev_updown(net_device *dev, int up, ErrorHandler *errh)
     mm_segment_t oldfs = get_fs();
     set_fs(get_ds());
 
-    (void) netdev_ioctl(dev, SIOCGIFFLAGS, &ifr);
+    (void) click_dev_ioctl(dev, SIOCGIFFLAGS, &ifr);
     ifr.ifr_flags = (up > 0 ? ifr.ifr_flags | flags : ifr.ifr_flags & ~flags);
-    res = netdev_ioctl(dev, SIOCSIFFLAGS, &ifr);
+    res = click_dev_ioctl(dev, SIOCSIFFLAGS, &ifr);
     set_fs(oldfs);
 #else
     rtnl_lock();

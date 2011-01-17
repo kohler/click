@@ -718,6 +718,14 @@ if test $ac_cv_linux_devinet_ioctl = yes; then
     AC_DEFINE(HAVE_LINUX_DEVINET_IOCTL)
 fi
 
+AC_CACHE_CHECK(for inet_ioctl kernel symbol, ac_cv_linux_inet_ioctl,
+[if grep "__ksymtab_inet_ioctl" $linux_system_map >/dev/null 2>&1; then
+    ac_cv_linux_inet_ioctl=yes
+else ac_cv_linux_inet_ioctl=no; fi])
+if test $ac_cv_linux_inet_ioctl = yes; then
+    AC_DEFINE(HAVE_LINUX_INET_IOCTL)
+fi
+
 AC_CACHE_CHECK(for <linux/ktime.h>, ac_cv_linux_ktime_h,
 [if grep ktime_t `find_linuxpath include/linux/ktime.h` >/dev/null 2>&1; then
   ac_cv_linux_ktime_h=yes
