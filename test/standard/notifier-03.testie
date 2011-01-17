@@ -5,6 +5,7 @@ Tests Notifier functionality in the kernel.
 [ `whoami` = root ]
 
 %script
+usleep () { click -e "DriverManager(wait ${1}us)"; }
 click-install CONFIG
 usleep 200000
 cat /click/c/count > OUT

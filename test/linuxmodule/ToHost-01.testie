@@ -10,6 +10,7 @@ XXX It doesn't test whether SNIFFERS true sends packets to the kernel.
 [ `whoami` = root ]
 
 %script
+usleep () { click -e "DriverManager(wait ${1}us)"; }
 click-install KERNELCONFIG
 tcpdump -n -i fake0 >FAKE0 2>&1 &
 usleep 500000

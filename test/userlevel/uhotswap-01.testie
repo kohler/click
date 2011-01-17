@@ -1,8 +1,5 @@
 %script
-
-usleep () {
-   click -e "DriverManager(wait $1us)"
-}
+usleep () { click -e "DriverManager(wait ${1}us)"; }
 
 (while [ ! -f PORT ]; do usleep 1; done && nc localhost `cat PORT` <CSIN >CSOUT) &
 click -R -p 41900+ -e "Idle -> s :: Switch(0) -> Idle; s[1] -> Idle;

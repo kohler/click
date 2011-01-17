@@ -7,6 +7,7 @@ click-buildtool provides linuxmodule
 ifconfig eth1 >/dev/null 2>&1
 
 %script
+usleep () { click -e "DriverManager(wait ${1}us)"; }
 ifconfig eth1 down
 click-install KERNELCONFIG
 usleep 5000

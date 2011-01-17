@@ -6,6 +6,7 @@ which nc >/dev/null 2>&1
 ifconfig eth1 >/dev/null 2>&1
 
 %script
+usleep () { click -e "DriverManager(wait ${1}us)"; }
 nc -u -l -p 8899 >NCOUT 2>&1 &
 ncproc=$!
 click-install KERNELCONFIG

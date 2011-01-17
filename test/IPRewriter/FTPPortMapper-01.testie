@@ -10,6 +10,7 @@ FTPPortMapper and TCPRewriter.
 [ `whoami` = root ]
 
 %script
+usleep () { click -e "DriverManager(wait ${1}us)"; }
 click-install KERNELCONFIG
 (usleep 50000; echo Hopefully this worked.; usleep 40000) | nc -l 3000 >NETCAT2 &
 usleep 5000
