@@ -40,4 +40,4 @@ c2.count:
 c3.count:
 69
 c4.count:
-910 {{?this is because of inneficiencies with BURST_SIZE == 1 + simtime not being perfect}}
+910 {{?this is because of inefficiencies with BURST_SIZE == 1 + simtime not being perfect}}
