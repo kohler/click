@@ -529,6 +529,7 @@ vectorv.cc
 Makefile.in
 clickfs.cc
 config.cc
+fixincludes.pl
 kernelversion.c
 module.cc
 moduleparm.h
