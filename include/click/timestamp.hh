@@ -584,8 +584,15 @@ class Timestamp { public:
 
     static inline value_type value_div(value_type a, uint32_t b) {
 #if CLICK_LINUXMODULE && TIMESTAMP_VALUE_INT64 && BITS_PER_LONG < 64
-	do_div(a, b);
-	return a;
+	if (unlikely(a < 0)) {
+	    uint64_t a_abs = -a - 1;
+	    do_div(a_abs, b);
+	    return (value_type) -a_abs - 1;
+	} else {
+	    uint64_t &a_abs = reinterpret_cast<uint64_t &>(a);
+	    do_div(a_abs, b);
+	    return a_abs;
+	}
 #else
 	return a / b;
 #endif
@@ -595,14 +602,15 @@ class Timestamp { public:
 				     value_type a, uint32_t b) {
 #if CLICK_LINUXMODULE && TIMESTAMP_VALUE_INT64 && BITS_PER_LONG < 64
 	if (unlikely(a < 0)) {
-	    a = -a - 1;
-	    rem = do_div(a, b);
-	    div = -a - 1;
+	    uint64_t a_abs = -a - 1;
+	    rem = do_div(a_abs, b);
+	    div = (int64_t) -a_abs - 1;
 	    if (rem)
 		rem = b - rem;
 	} else {
-	    rem = do_div(a, b);
-	    div = a;
+	    uint64_t &a_abs = reinterpret_cast<uint64_t &>(a);
+	    rem = do_div(a_abs, b);
+	    div = a_abs;
 	}
 #else
 	// This arithmetic is about twice as fast on my laptop as the
