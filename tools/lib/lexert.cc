@@ -583,30 +583,41 @@ LexerT::yport(Vector<int> &ports, const char *pos[2])
 	return false;
     }
 
-    Lexeme tword = lex();
-    if (tword.is(lexIdent)) {
-	String p = tword.string();
-	const char *ps = p.c_str();
-	int port = 0;
-	if (isdigit((unsigned char) ps[0]) || ps[0] == '-')
-	    port = strtol(ps, (char **)&ps, 0);
-	if (*ps != 0) {
-	    lerror(tword, "syntax error: port number should be integer");
-	    port = 0;
+    int nports = ports.size();
+    while (1) {
+	Lexeme t = lex();
+	if (t.is(lexIdent)) {
+	    String p = t.string();
+	    const char *ps = p.c_str();
+	    int port = 0;
+	    if (isdigit((unsigned char) ps[0]) || ps[0] == '-')
+		port = strtol(ps, (char **)&ps, 0);
+	    if (*ps != 0) {
+		lerror(t, "syntax error: port number should be integer");
+		port = 0;
+	    }
+	    ports.push_back(port);
+	} else if (t.is(']')) {
+	    if (nports == ports.size()) {
+		lerror(t, "syntax error: expected port number");
+		ports.push_back(0);
+	    }
+	    pos[1] = t.pos2();
+	    return true;
+	} else {
+	    lerror(t, "syntax error: expected port number");
+	    unlex(t);
+	    return ports.size() != nports;
 	}
-	ports.push_back(port);
-	expect(']');
-	pos[1] = next_pos();
-	return true;
-    } else if (tword.is(']')) {
-	lerror(tword, "syntax error: expected port number");
-	ports.push_back(0);
-	pos[1] = tword.pos2();
-	return true;
-    } else {
-	lerror(tword, "syntax error: expected port number");
-	unlex(tword);
-	return false;
+
+	t = lex();
+	if (t.is(']')) {
+	    pos[1] = t.pos2();
+	    return true;
+	} else if (!t.is(',')) {
+	    lerror(t, "syntax error: expected ','");
+	    unlex(t);
+	}
     }
 }
 

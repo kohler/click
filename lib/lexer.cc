@@ -1101,24 +1101,35 @@ Lexer::yport(Vector<int> &ports)
     if (!expect('[', true))
 	return false;
 
-    Lexeme tword = lex();
-    if (tword.is(lexIdent)) {
-	int port;
-	if (!cp_integer(tword.string(), &port)) {
-	    lerror("syntax error: port number should be integer");
-	    port = 0;
+    int nports = ports.size();
+    while (1) {
+	Lexeme t = lex();
+	if (t.is(lexIdent)) {
+	    int port;
+	    if (!cp_integer(t.string(), &port)) {
+		lerror("syntax error: port number should be integer");
+		port = 0;
+	    }
+	    ports.push_back(port);
+	} else if (t.is(']')) {
+	    if (nports == ports.size()) {
+		lerror("syntax error: expected port number");
+		ports.push_back(0);
+	    }
+	    return true;
+	} else {
+	    lerror("syntax error: expected port number");
+	    unlex(t);
+	    return ports.size() != nports;
 	}
-	ports.push_back(port);
-	expect(']');
-	return true;
-    } else if (tword.is(']')) {
-	lerror("syntax error: expected port number");
-	ports.push_back(0);
-	return true;
-    } else {
-	lerror("syntax error: expected port number");
-	unlex(tword);
-	return false;
+
+	t = lex();
+	if (t.is(']'))
+	    return true;
+	else if (!t.is(',')) {
+	    lerror("syntax error: expected ','");
+	    unlex(t);
+	}
     }
 }
 
