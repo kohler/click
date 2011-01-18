@@ -32,29 +32,61 @@
 %token REQUIRE
 %token DEFINE
 
+%expect 3
+
 %%
+
+/* Useless input and output ports are accepted by this grammar.  The
+   following strings parse, but should cause errors:
+
+   [0] a -> b;
+   a -> b [1];
+   [0] a :: A;
+   a :: A [0];
+
+   Higher-level processing should detect and report these errors.
+   Similarly, an output port following an explicit declaration, as in "a ::
+   A [0]", should be accepted only if exactly one element was declared. */
 
 stmts:	stmts stmt
 	| empty;
 
 stmt:	connection
-	| multi_declaration
 	| elementclassstmt
 	| requirestmt
 	| definestmt
 	| ';';
 
 connection:
-	element conntail;
+	elements conntail;
 
 conntail:
-	opt_port ARROW opt_port connection
+	ARROW connection
 	| empty;
 
-element:
-	element_name
-	| element_name COLONCOLON class opt_config
-	| class opt_config;
+elements:
+	element_references
+	| element_name_references COLONCOLON class opt_config opt_port;
+
+element_references:
+	element_name_references
+	| anonymous_element_reference element_references_tail
+	| element_name_references ',' anonymous_element_reference element_references_tail;
+
+element_references_tail:
+	element_references_tail ',' element_name_reference
+	| element_references_tail ',' anonymous_element_reference
+	| empty;
+
+anonymous_element_reference:
+	opt_port class opt_config opt_port;
+
+element_name_references:
+	element_name_reference
+	| element_name_references ',' element_name_reference;
+
+element_name_reference:
+	opt_port element_name opt_port;
 
 opt_config:
 	'(' CONFIGSTRING ')'
@@ -63,16 +95,6 @@ opt_config:
 opt_port:
 	'[' NUMBER ']'
 	| empty;
-
-multi_declaration:
-	multi_element_names COLONCOLON class opt_config;
-
-multi_element_names:
-	element_name ',' element_names;
-
-element_names:
-	element_name
-	| element_names ',' element_name;
 
 element_name:
 	IDENTIFIER;
