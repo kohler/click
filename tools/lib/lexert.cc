@@ -573,7 +573,7 @@ LexerT::connect(int element1, int port1, int port2, int element2, const char *po
 // PARSING
 
 bool
-LexerT::yport(int &port, const char *pos[2])
+LexerT::yport(Vector<int> &ports, const char *pos[2])
 {
     Lexeme tlbrack = lex();
     pos[0] = tlbrack.pos1();
@@ -587,18 +587,20 @@ LexerT::yport(int &port, const char *pos[2])
     if (tword.is(lexIdent)) {
 	String p = tword.string();
 	const char *ps = p.c_str();
+	int port = 0;
 	if (isdigit((unsigned char) ps[0]) || ps[0] == '-')
 	    port = strtol(ps, (char **)&ps, 0);
 	if (*ps != 0) {
 	    lerror(tword, "syntax error: port number should be integer");
 	    port = 0;
 	}
+	ports.push_back(port);
 	expect(']');
 	pos[1] = next_pos();
 	return true;
     } else if (tword.is(']')) {
 	lerror(tword, "syntax error: expected port number");
-	port = 0;
+	ports.push_back(0);
 	pos[1] = tword.pos2();
 	return true;
     } else {
@@ -608,41 +610,13 @@ LexerT::yport(int &port, const char *pos[2])
     }
 }
 
-static void
-add_portset(Vector<int> &ports, const int *take, int ntake, int nwant)
-{
-    for (int j = 0; j < ntake; ++j, ++take)
-	ports.push_back(*take);
-    if (ntake == 0 && nwant > 0)
-	ports.push_back(0);
-    for (int j = ntake ? ntake : 1; j < nwant; ++j)
-	ports.push_back(-1);
-}
-
-static int
-add_port(Vector<int> &ports, int ne, int oldnp, int newport)
-{
-    int newnp = newport < 0 ? oldnp : 1;
-    if (oldnp < newnp) {
-	Vector<int> newports;
-	for (int i = 0, *p = ports.begin(); i < ne; ++i, p += oldnp)
-	    add_portset(newports, p, oldnp, newnp);
-	newports.swap(ports);
-    } else
-	newnp = oldnp;
-    if (newport < 0 && newnp)
-	newport = 0;
-    add_portset(ports, &newport, 1, newnp);
-    return newnp;
-}
-
-// Returned result is a vector with at least 2 elements.
-// [0] number of input ports per element
-// [1] number of output ports per element
-// [2] first element index
-// [3..X] input ports specified for first element index
-// [X+1..Y] output ports specified for first element index
-// [Y+1] second element index, and so forth.
+// Returned result is a vector listing all elements and port references.
+// The vector is a concatenated series of groups, each of which looks like:
+// group[0] element index
+// group[1] number of input ports
+// group[2] number of output ports
+// group[3...3+group[1]] input ports
+// group[3+group[1]...3+group[1]+group[2]] output ports
 // epos is used to store character positions.
 // epos[0], [1] is beginning & end of first input port specification
 // epos[2] is beginning of first element name
@@ -655,22 +629,25 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
     Vector<const char *> decl_pos2;
     Vector<ElementClassT *> types;
     Vector<String> configurations;
-    Vector<int> inports, outports;
-    int ninports = 0, noutports = 0;
+    Vector<int> res;
     const char *xport_pos[2];
 
     // parse list of names (which might include classes)
     Lexeme t;
     while (1) {
+	int esize = res.size();
+	res.push_back(-1);
+	res.push_back(0);
+	res.push_back(0);
+
 	// initial port
-	int iport = -1;
 	const char **inpos = names.size() ? xport_pos : epos;
-	yport(iport, inpos);
-	if (iport != -1 && !in_allowed) {
+	yport(res, inpos);
+	if (res.size() != esize + 3 && !in_allowed) {
 	    lerror(inpos[0], inpos[1], "input port useless at start of chain");
-	    iport = -1;
+	    res.resize(esize + 3);
 	}
-	ninports = add_port(inports, names.size(), ninports, iport);
+	res[esize + 1] = res.size() - (esize + 3);
 
 	// element name or class
 	if (names.empty())
@@ -708,13 +685,12 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 	decl_pos2.push_back(my_decl_pos2);
 
 	// final port
-	int oport = -1;
 	if (t.is('[')) {
 	    unlex(t);
-	    yport(oport, epos + 3);
+	    yport(res, epos + 3);
+	    res[esize + 2] = res.size() - (esize + 3 + res[esize + 1]);
 	    t = lex();
 	}
-	noutports = add_port(outports, names.size() - 1, noutports, oport);
 
 	if (!t.is(','))
 	    break;
@@ -750,40 +726,43 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 		make_element(names[i], decl_lexeme[i], my_decl_pos2, decl_etype, decl_configuration);
 
 	// parse optional output port after declaration
-	if (names.size() == 1 && noutports == 0) {
-	    int oport = -1;
-	    yport(oport, epos + 3);
-	    noutports = add_port(outports, names.size() - 1, noutports, oport);
+	if (names.size() == 1 && res[2] == 0) {
+	    yport(res, epos + 3);
+	    res[2] = res.size() - (3 + res[1]);
 	}
 
     } else
 	unlex(t);
 
     // add elements
-    int *inp = inports.begin(), *outp = outports.begin();
-    result.push_back(ninports);
-    result.push_back(noutports);
+    int *resp = res.begin();
     for (int i = 0; i < names.size(); ++i) {
-	int e;
 	if (types[i])
-	    e = make_anon_element(decl_lexeme[i], decl_pos2[i], types[i], configurations[i]);
+	    *resp = make_anon_element(decl_lexeme[i], decl_pos2[i], types[i], configurations[i]);
 	else {
-	    e = _router->eindex(names[i]);
-	    if (e < 0) {
+	    *resp = _router->eindex(names[i]);
+	    if (*resp < 0) {
 		// assume it's an element type
 		ElementClassT *etype = force_element_type(decl_lexeme[i]);
-		e = make_anon_element(decl_lexeme[i], decl_lexeme[i].pos2(), etype, configurations[i]);
+		*resp = make_anon_element(decl_lexeme[i], decl_lexeme[i].pos2(), etype, configurations[i]);
 	    } else
-		_lexinfo->notify_element_reference(_router->element(e), decl_lexeme[i].pos1(), decl_lexeme[i].pos2());
+		_lexinfo->notify_element_reference(_router->element(*resp), decl_lexeme[i].pos1(), decl_lexeme[i].pos2());
 	}
-	result.push_back(e);
-	for (int j = 0; j < ninports; ++j, ++inp)
-	    result.push_back(*inp);
-	for (int j = 0; j < noutports; ++j, ++outp)
-	    result.push_back(*outp);
+	resp += 3 + resp[1] + resp[2];
     }
 
+    result.swap(res);
     return true;
+}
+
+void
+LexerT::yconnection_check_useless(const Vector<int> &x, bool isoutput, const char *epos[2])
+{
+    for (const int *it = x.begin(); it != x.end(); it += 3 + it[1] + it[2])
+	if (it[isoutput ? 2 : 1] > 0) {
+	    lerror(epos[0], epos[1], isoutput ? "output ports useless at end of chain" : "input ports useless at start of chain");
+	    break;
+	}
 }
 
 bool
@@ -792,27 +771,29 @@ LexerT::yconnection()
     Vector<int> elements1, elements2;
     const char *epos[5], *last_element_pos = next_pos();
     Lexeme t;
+    static const int port0[] = {0};
 
     while (true) {
 	// get element
 	elements2.clear();
 	if (!yelement(elements2, !elements1.empty(), epos)) {
-	    if (elements1.size() && elements1[1] >= 0)
-		lerror(epos[3], epos[4], "output ports useless at end of chain");
+	    yconnection_check_useless(elements1, true, epos + 3);
 	    return !elements1.empty();
 	}
 
 	if (!elements1.empty()) {
-	    int nin1 = elements1[0], nout1 = elements1[1];
-	    int nin2 = elements2[0], nout2 = elements2[1];
-	    for (int *e1 = elements1.begin() + 2; e1 != elements1.end(); e1 += 1 + nin1 + nout1)
-		for (int *e2 = elements2.begin() + 2; e2 != elements2.end(); e2 += 1 + nin2 + nout2) {
-		    int port1 = nout1 ? e1[1 + nin1] : 0;
-		    int port2 = nin2 ? e2[1] : 0;
-		    connect(e1[0], port1, port2, e2[0], last_element_pos, next_pos());
+	    for (int *e1 = elements1.begin(); e1 != elements1.end(); e1 += 3 + e1[1] + e1[2])
+		for (int *e2 = elements2.begin(); e2 != elements2.end(); e2 += 3 + e2[1] + e2[2]) {
+		    const int *sp1 = e1[2] ? e1 + 3 + e1[1] : port0;
+		    const int *ep1 = sp1 + (e1[2] ? e1[2] : 1);
+		    const int *sp2 = e2[1] ? e2 + 3 : port0;
+		    const int *ep2 = sp2 + (e2[1] ? e2[1] : 1);
+		    for (const int *p1 = sp1; p1 != ep1; ++p1)
+			for (const int *p2 = sp2; p2 != ep2; ++p2)
+			    connect(*e1, *p1, *p2, *e2, last_element_pos, next_pos());
 		}
-	} else if (elements2[0])
-	    lerror(epos[0], epos[1], "input ports useless at start of chain");
+	} else
+	    yconnection_check_useless(elements2, false, epos);
 
     relex:
 	t = lex();
@@ -839,8 +820,7 @@ LexerT::yconnection()
 	    // FALLTHRU
 	case ';':
 	case lexEOF:
-	    if (elements2[1])
-		lerror(epos[3], epos[4], "output ports useless at end of chain");
+	    yconnection_check_useless(elements2, true, epos + 3);
 	    return true;
 
 	default:

@@ -1096,65 +1096,39 @@ Lexer::element_landmark(int eid) const
 // PARSING
 
 bool
-Lexer::yport(int &port)
+Lexer::yport(Vector<int> &ports)
 {
-  if (!expect('[', true))
-    return false;
+    if (!expect('[', true))
+	return false;
 
-  Lexeme tword = lex();
-  if (tword.is(lexIdent)) {
-    if (!cp_integer(tword.string(), &port)) {
-      lerror("syntax error: port number should be integer");
-      port = 0;
-    }
-    expect(']');
-    return true;
-  } else if (tword.is(']')) {
-    lerror("syntax error: expected port number");
-    port = 0;
-    return true;
-  } else {
-    lerror("syntax error: expected port number");
-    unlex(tword);
-    return false;
-  }
-}
-
-static void
-add_portset(Vector<int> &ports, const int *take, int ntake, int nwant)
-{
-    for (int j = 0; j < ntake; ++j, ++take)
-	ports.push_back(*take);
-    if (ntake == 0 && nwant > 0)
+    Lexeme tword = lex();
+    if (tword.is(lexIdent)) {
+	int port;
+	if (!cp_integer(tword.string(), &port)) {
+	    lerror("syntax error: port number should be integer");
+	    port = 0;
+	}
+	ports.push_back(port);
+	expect(']');
+	return true;
+    } else if (tword.is(']')) {
+	lerror("syntax error: expected port number");
 	ports.push_back(0);
-    for (int j = ntake ? ntake : 1; j < nwant; ++j)
-	ports.push_back(-1);
+	return true;
+    } else {
+	lerror("syntax error: expected port number");
+	unlex(tword);
+	return false;
+    }
 }
 
-static int
-add_port(Vector<int> &ports, int ne, int oldnp, int newport)
-{
-    int newnp = newport < 0 ? oldnp : 1;
-    if (oldnp < newnp) {
-	Vector<int> newports;
-	for (int i = 0, *p = ports.begin(); i < ne; ++i, p += oldnp)
-	    add_portset(newports, p, oldnp, newnp);
-	newports.swap(ports);
-    } else
-	newnp = oldnp;
-    if (newport < 0 && newnp)
-	newport = 0;
-    add_portset(ports, &newport, 1, newnp);
-    return newnp;
-}
-
-// Returned result is a vector with at least 2 elements.
-// [0] number of input ports per element
-// [1] number of output ports per element
-// [2] first element index
-// [3..X] input ports specified for first element index
-// [X+1..Y] output ports specified for first element index
-// [Y+1] second element index, and so forth.
+// Returned result is a vector listing all elements and port references.
+// The vector is a concatenated series of groups, each of which looks like:
+// group[0] element index
+// group[1] number of input ports
+// group[2] number of output ports
+// group[3...3+group[1]] input ports
+// group[3+group[1]...3+group[1]+group[2]] output ports
 bool
 Lexer::yelement(Vector<int> &result, bool in_allowed)
 {
@@ -1163,20 +1137,23 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
     Vector<String> configurations;
     Vector<String> filenames;
     Vector<unsigned> linenos;
-    Vector<int> inports, outports;
-    int ninports = 0, noutports = 0;
+    Vector<int> res;
 
     // parse lists of names (which might include classes)
     Lexeme t;
     while (1) {
+	int esize = res.size();
+	res.push_back(-1);
+	res.push_back(0);
+	res.push_back(0);
+
 	// initial port
-	int iport = -1;
-	yport(iport);
-	if (iport != -1 && !in_allowed) {
+	yport(res);
+	if (res.size() != esize + 3 && !in_allowed) {
 	    lerror("input port useless at start of chain");
-	    iport = -1;
+	    res.resize(esize + 3);
 	}
-	ninports = add_port(inports, names.size(), ninports, iport);
+	res[esize + 1] = res.size() - (esize + 3);
 
 	// element name or class
 	t = lex();
@@ -1207,13 +1184,12 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	    configurations.push_back(String());
 
 	// final port
-	int oport = -1;
 	if (t.is('[')) {
 	    unlex(t);
-	    yport(oport);
+	    yport(res);
+	    res[esize + 2] = res.size() - (esize + 3 + res[esize + 1]);
 	    t = lex();
 	}
-	noutports = add_port(outports, names.size() - 1, noutports, oport);
 
 	if (!t.is(','))
 	    break;
@@ -1250,36 +1226,39 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 		get_element(names[i], decl_etype, decl_configuration, filenames[i], linenos[i]);
 
 	// parse optional output port after declaration
-	if (names.size() == 1 && noutports == 0) {
-	    int oport = -1;
-	    yport(oport);
-	    noutports = add_port(outports, names.size() - 1, noutports, oport);
+	if (names.size() == 1 && res[2] == 0) {
+	    yport(res);
+	    res[2] = res.size() - (3 + res[1]);
 	}
 
     } else
 	unlex(t);
 
     // add elements
-    int *inp = inports.begin(), *outp = outports.begin();
-    result.push_back(ninports);
-    result.push_back(noutports);
+    int *resp = res.begin();
     for (int i = 0; i < names.size(); ++i) {
-	int e;
 	if (types[i] >= 0)
-	    e = get_element(anon_element_name(names[i]), types[i], configurations[i], filenames[i], linenos[i]);
-	else if ((e = _element_map[names[i]]) < 0) {
+	    *resp = get_element(anon_element_name(names[i]), types[i], configurations[i], filenames[i], linenos[i]);
+	else if ((*resp = _element_map[names[i]]) < 0) {
 	    _errh->lerror(Compound::landmark_string(filenames[i], linenos[i]), "undeclared element %<%s%>, assuming element class", names[i].c_str());
 	    int etype = force_element_type(names[i], false);
-	    e = get_element(anon_element_name(names[i]), etype, configurations[i], filenames[i], linenos[i]);
+	    *resp = get_element(anon_element_name(names[i]), etype, configurations[i], filenames[i], linenos[i]);
 	}
-	result.push_back(e);
-	for (int j = 0; j < ninports; ++j, ++inp)
-	    result.push_back(*inp);
-	for (int j = 0; j < noutports; ++j, ++outp)
-	    result.push_back(*outp);
+	resp += 3 + resp[1] + resp[2];
     }
 
+    result.swap(res);
     return true;
+}
+
+void
+Lexer::yconnection_check_useless(const Vector<int> &x, bool isoutput)
+{
+    for (const int *it = x.begin(); it != x.end(); it += 3 + it[1] + it[2])
+	if (it[isoutput ? 2 : 1] > 0) {
+	    lerror(isoutput ? "output ports useless at end of chain" : "input ports useless at start of chain");
+	    break;
+	}
 }
 
 bool
@@ -1287,27 +1266,29 @@ Lexer::yconnection()
 {
     Vector<int> elements1, elements2;
     Lexeme t;
+    static const int port0[] = {0};
 
     while (true) {
 	// get element
 	elements2.clear();
 	if (!yelement(elements2, !elements1.empty())) {
-	    if (elements1.size() && elements1[1] >= 0)
-		lerror("output ports useless at end of chain");
+	    yconnection_check_useless(elements1, true);
 	    return !elements1.empty();
 	}
 
 	if (!elements1.empty()) {
-	    int nin1 = elements1[0], nout1 = elements1[1];
-	    int nin2 = elements2[0], nout2 = elements2[1];
-	    for (int *e1 = elements1.begin() + 2; e1 != elements1.end(); e1 += 1 + nin1 + nout1)
-		for (int *e2 = elements2.begin() + 2; e2 != elements2.end(); e2 += 1 + nin2 + nout2) {
-		    int port1 = nout1 ? e1[1 + nin1] : 0;
-		    int port2 = nin2 ? e2[1] : 0;
-		    _c->connect(e1[0], port1, e2[0], port2);
+	    for (int *e1 = elements1.begin(); e1 != elements1.end(); e1 += 3 + e1[1] + e1[2])
+		for (int *e2 = elements2.begin(); e2 != elements2.end(); e2 += 3 + e2[1] + e2[2]) {
+		    const int *sp1 = e1[2] ? e1 + 3 + e1[1] : port0;
+		    const int *ep1 = sp1 + (e1[2] ? e1[2] : 1);
+		    const int *sp2 = e2[1] ? e2 + 3 : port0;
+		    const int *ep2 = sp2 + (e2[1] ? e2[1] : 1);
+		    for (const int *p1 = sp1; p1 != ep1; ++p1)
+			for (const int *p2 = sp2; p2 != ep2; ++p2)
+			    _c->connect(*e1, *p1, *e2, *p2);
 		}
-	} else if (elements2[0])
-	    lerror("input ports useless at start of chain");
+	} else
+	    yconnection_check_useless(elements2, false);
 
     relex:
 	t = lex();
@@ -1334,8 +1315,7 @@ Lexer::yconnection()
 	    // FALLTHRU
 	case ';':
 	case lexEOF:
-	    if (elements2[1])
-		lerror("output ports useless at end of chain");
+	    yconnection_check_useless(elements2, true);
 	    return true;
 
 	default:

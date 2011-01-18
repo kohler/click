@@ -78,7 +78,7 @@ class LexerT { public:
     String landmark() const;
     inline LandmarkT landmarkt(const char *pos1, const char *pos2) const;
 
-    bool yport(int &port, const char *pos[2]);
+    bool yport(Vector<int> &ports, const char *pos[2]);
     bool yelement(Vector<int> &result, bool in_allowed, const char *epos[5]);
     bool yconnection();
     void ycompound_arguments(RouterT *);
@@ -174,6 +174,7 @@ class LexerT { public:
     ElementClassT *force_element_type(const Lexeme &);
     void ydefine(RouterT *, const String &name, const String &value, const Lexeme &, bool &scope_order_error);
     void yrequire_library(const Lexeme &lexeme, const String &value);
+    void yconnection_check_useless(const Vector<int> &x, bool isoutput, const char *epos[2]);
 
     LexerT(const LexerT &);
     LexerT &operator=(const LexerT &);

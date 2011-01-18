@@ -99,7 +99,7 @@ class Lexer { public:
 
     void add_tunnel(String, String);
 
-    bool yport(int &port);
+    bool yport(Vector<int> &ports);
     bool yelement(Vector<int> &result, bool in_allowed);
     bool yconnection();
     void yelementclass();
@@ -194,6 +194,7 @@ class Lexer { public:
     void expand_compound_element(int, VariableEnvironment &);
     void add_router_connections(int, const Vector<int> &);
     void yrequire_library(const String &value);
+    void yconnection_check_useless(const Vector<int> &x, bool isoutput);
 
     TunnelEnd *find_tunnel(const Port &p, bool isoutput, bool insert);
     void expand_connection(const Port &p, bool isoutput, Vector<Port> &);
