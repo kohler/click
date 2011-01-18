@@ -1120,139 +1120,194 @@ Lexer::yport(int &port)
   }
 }
 
-bool
-Lexer::yelement(int &element, bool comma_ok)
+static void
+add_portset(Vector<int> &ports, const int *take, int ntake, int nwant)
 {
-  Lexeme t = lex();
-  String name;
-  int etype;
+  for (int j = 0; j < ntake; ++j, ++take)
+    ports.push_back(*take);
+  if (ntake == 0 && nwant > 0)
+    ports.push_back(0);
+  for (int j = ntake ? ntake : 1; j < nwant; ++j)
+    ports.push_back(-1);
+}
 
-  if (t.is(lexIdent)) {
-    name = t.string();
-    etype = element_type(name);
-  } else if (t.is('{')) {
-    etype = ycompound();
-    name = _element_types[etype].name;
-  } else {
-    unlex(t);
-    return false;
-  }
+static int
+add_port(Vector<int> &ports, int ne, int oldnp, int newport)
+{
+  int newnp = newport < 0 ? oldnp : 1;
+  if (oldnp < newnp) {
+    Vector<int> newports;
+    for (int i = 0, *p = ports.begin(); i < ne; ++i, p += oldnp)
+      add_portset(newports, p, oldnp, newnp);
+    newports.swap(ports);
+  } else
+    newnp = oldnp;
+  if (newport < 0 && newnp)
+    newport = 0;
+  add_portset(ports, &newport, 1, newnp);
+  return newnp;
+}
 
-  String configuration, filename;
-  unsigned lineno = 0;
-  if (expect('(', true)) {
-    filename = _file._filename;	// report landmark from before config string
-    lineno = _file._lineno;
-    if (etype < 0)
-      etype = force_element_type(name);
-    configuration = lex_config();
-    expect(')');
-  }
+// Returned result is a vector with at least 2 elements.
+// [0] number of input ports per element
+// [1] number of output ports per element
+// [2] first element index
+// [3..X] input ports specified for first element index
+// [X+1..Y] output ports specified for first element index
+// [Y+1] second element index, and so forth.
+bool
+Lexer::yelement(Vector<int> &result, bool in_allowed)
+{
+  Vector<String> names;
+  Vector<int> types;
+  Vector<String> configurations;
+  Vector<String> filenames;
+  Vector<unsigned> linenos;
+  Vector<int> inports, outports;
+  int ninports = 0, noutports = 0;
 
-  if (etype >= 0)
-    element = get_element(anon_element_name(name), etype, configuration, filename, lineno);
-  else {
-    Lexeme t2colon = lex();
-    unlex(t2colon);
-    if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok))
-      ydeclaration(name);
-    if ((element = _element_map[name]) < 0) {
-      lerror("undeclared element %<%s%>, assuming element class", name.c_str());
-      etype = force_element_type(name, false);
-      element = get_element(anon_element_name(name), etype, configuration, filename, lineno);
+  // parse lists of names (which might include classes)
+  Lexeme t;
+  while (1) {
+    // initial port
+    int iport = -1;
+    yport(iport);
+    if (iport != -1 && !in_allowed) {
+      lerror("input port useless at start of chain");
+      iport = -1;
     }
+    ninports = add_port(inports, names.size(), ninports, iport);
+
+    // element name or class
+    t = lex();
+    if (t.is(lexIdent)) {
+      names.push_back(t.string());
+      types.push_back(element_type(names.back()));
+    } else if (t.is('{')) {
+      types.push_back(ycompound());
+      names.push_back(_element_types[types.back()].name);
+    } else if (names.empty() && types.empty()) {
+      unlex(t);
+      return false;
+    } else
+      break;
+
+    filenames.push_back(_file._filename);
+    linenos.push_back(_file._lineno);
+
+    // configuration string
+    t = lex();
+    if (t.is('(')) {
+      if (types.back() < 0)
+	types.back() = force_element_type(names.back());
+      configurations.push_back(lex_config());
+      expect(')');
+      t = lex();
+    } else
+      configurations.push_back(String());
+
+    // final port
+    int oport = -1;
+    if (t.is('[')) {
+      unlex(t);
+      yport(oport);
+      t = lex();
+    }
+    noutports = add_port(outports, names.size() - 1, noutports, oport);
+
+    if (!t.is(','))
+      break;
+  }
+
+  // parse ":: CLASS [(CONFIGSTRING)]"
+  if (t.is(lex2Colon)) {
+    t = lex();
+    int decl_etype;
+    if (t.is(lexIdent))
+      decl_etype = force_element_type(t.string());
+    else if (t.is('{'))
+      decl_etype = ycompound();
+    else {
+      lerror("missing element type in declaration");
+      decl_etype = force_element_type(names[0]);
+    }
+
+    String decl_configuration;
+    if (expect('(', true)) {
+      decl_configuration = lex_config();
+      expect(')');
+    }
+
+    for (int i = 0; i < types.size(); ++i)
+      if (types[i] >= 0)
+	_errh->lerror(Compound::landmark_string(filenames[i], linenos[i]), "%<%s%> is an element class", names[i].c_str());
+      else if (_element_map[names[i]] >= 0) {
+	int e = _element_map[names[i]];
+	_errh->lerror(Compound::landmark_string(filenames[i], linenos[i]), "redeclaration of element %<%s%>", names[i].c_str());
+	if (_c->_elements[e] != TUNNEL_TYPE)
+	  _errh->lerror(_c->element_landmark(e), "element %<%s%> previously declared here", names[i].c_str());
+      } else
+	get_element(names[i], decl_etype, decl_configuration, filenames[i], linenos[i]);
+
+    // parse optional output port after declaration
+    if (names.size() == 1 && noutports == 0) {
+      int oport = -1;
+      yport(oport);
+      noutports = add_port(outports, names.size() - 1, noutports, oport);
+    }
+
+  } else
+    unlex(t);
+
+  // add elements
+  int *inp = inports.begin(), *outp = outports.begin();
+  result.push_back(ninports);
+  result.push_back(noutports);
+  for (int i = 0; i < names.size(); ++i) {
+    int e;
+    if (types[i] >= 0)
+      e = get_element(anon_element_name(names[i]), types[i], configurations[i], filenames[i], linenos[i]);
+    else if ((e = _element_map[names[i]]) < 0) {
+      _errh->lerror(Compound::landmark_string(filenames[i], linenos[i]), "undeclared element %<%s%>, assuming element class", names[i].c_str());
+      int etype = force_element_type(names[i], false);
+      e = get_element(anon_element_name(names[i]), etype, configurations[i], filenames[i], linenos[i]);
+    }
+    result.push_back(e);
+    for (int j = 0; j < ninports; ++j, ++inp)
+      result.push_back(*inp);
+    for (int j = 0; j < noutports; ++j, ++outp)
+      result.push_back(*outp);
   }
 
   return true;
 }
 
-void
-Lexer::ydeclaration(const String &first_element)
-{
-  Vector<String> decls;
-  Lexeme t;
-
-  if (first_element) {
-    decls.push_back(first_element);
-    goto midpoint;
-  }
-
-  while (true) {
-    t = lex();
-    if (!t.is(lexIdent))
-      lerror("syntax error: expected element name");
-    else
-      decls.push_back(t.string());
-
-   midpoint:
-    Lexeme tsep = lex();
-    if (tsep.is(','))
-      /* do nothing */;
-    else if (tsep.is(lex2Colon))
-      break;
-    else {
-      lerror("syntax error: expected %<::%> or %<,%>");
-      unlex(tsep);
-      return;
-    }
-  }
-
-  String filename = _file._filename;
-  unsigned lineno = _file._lineno;
-  int etype;
-  t = lex();
-  if (t.is(lexIdent))
-    etype = force_element_type(t.string());
-  else if (t.is('{'))
-    etype = ycompound();
-  else {
-    lerror("missing element type in declaration");
-    return;
-  }
-
-  String configuration;
-  if (expect('(', true)) {
-    configuration = lex_config();
-    expect(')');
-  }
-
-  for (int i = 0; i < decls.size(); i++) {
-    String name = decls[i];
-    if (_element_map[name] >= 0) {
-      int e = _element_map[name];
-      lerror("redeclaration of element %<%s%>", name.c_str());
-      if (_c->_elements[e] != TUNNEL_TYPE)
-	_errh->lerror(_c->element_landmark(e), "element %<%s%> previously declared here", name.c_str());
-    } else if (element_type(name) >= 0)
-      lerror("%<%s%> is an element class", name.c_str());
-    else
-      get_element(name, etype, configuration, filename, lineno);
-  }
-}
-
 bool
 Lexer::yconnection()
 {
-    int element1 = -1, port1 = -1;
-    Lexeme t;
+  Vector<int> elements1, elements2;
+  Lexeme t;
 
-    while (true) {
-	int element2, port2 = -1;
-
+  while (true) {
     // get element
-    yport(port2);
-    if (!yelement(element2, element1 < 0)) {
-      if (port1 >= 0)
-	lerror("output port useless at end of chain");
-      return element1 >= 0;
+    elements2.clear();
+    if (!yelement(elements2, !elements1.empty())) {
+      if (elements1.size() && elements1[1] >= 0)
+	lerror("output ports useless at end of chain");
+      return !elements1.empty();
     }
 
-    if (element1 >= 0)
-      _c->connect(element1, port1, element2, port2);
-    else if (port2 >= 0)
-      lerror("input port useless at start of chain");
-
-    port1 = -1;
+    if (!elements1.empty()) {
+      int nin1 = elements1[0], nout1 = elements1[1];
+      int nin2 = elements2[0], nout2 = elements2[1];
+      for (int *e1 = elements1.begin() + 2; e1 != elements1.end(); e1 += 1 + nin1 + nout1)
+	for (int *e2 = elements2.begin() + 2; e2 != elements2.end(); e2 += 1 + nin2 + nout2) {
+	  int port1 = nout1 ? e1[1 + nin1] : 0;
+	  int port2 = nin2 ? e2[1] : 0;
+	  _c->connect(e1[0], port1, e2[0], port2);
+	}
+    } else if (elements2[0])
+      lerror("input ports useless at start of chain");
 
    relex:
     t = lex();
@@ -1260,16 +1315,12 @@ Lexer::yconnection()
 
      case ',':
      case lex2Colon:
+     case '[':
       lerror("syntax error before %<%#s%>", t.string().c_str());
       goto relex;
 
      case lexArrow:
       break;
-
-     case '[':
-      unlex(t);
-      yport(port1);
-      goto relex;
 
      case lexIdent:
      case '{':
@@ -1283,8 +1334,8 @@ Lexer::yconnection()
       // FALLTHRU
      case ';':
      case lexEOF:
-      if (port1 >= 0)
-	lerror("output port useless at end of chain", port1);
+      if (elements2[1])
+	lerror("output ports useless at end of chain");
       return true;
 
      default:
@@ -1296,7 +1347,7 @@ Lexer::yconnection()
     }
 
     // have 'x ->'
-    element1 = element2;
+    elements1.swap(elements2);
   }
 }
 

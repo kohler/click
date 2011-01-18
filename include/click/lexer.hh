@@ -100,8 +100,7 @@ class Lexer { public:
     void add_tunnel(String, String);
 
     bool yport(int &port);
-    bool yelement(int &element, bool comma_ok);
-    void ydeclaration(const String &first_element = String());
+    bool yelement(Vector<int> &result, bool in_allowed);
     bool yconnection();
     void yelementclass();
     void ycompound_arguments(Compound *);
