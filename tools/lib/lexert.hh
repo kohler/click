@@ -78,9 +78,8 @@ class LexerT { public:
     String landmark() const;
     inline LandmarkT landmarkt(const char *pos1, const char *pos2) const;
 
-    bool yport(int &port, const char *&pos1, const char *&pos2);
-    bool yelement(int &element, bool comma_ok);
-    void ydeclaration(const Lexeme &first_element = Lexeme());
+    bool yport(int &port, const char *pos[2]);
+    bool yelement(Vector<int> &result, bool in_allowed, const char *epos[5]);
     bool yconnection();
     void ycompound_arguments(RouterT *);
     void yelementclass(const char *pos1);
