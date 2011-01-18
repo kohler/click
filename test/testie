@@ -386,7 +386,7 @@ sub braces_to_regex ($$) {
 	my($before, $middle, $after) = ($1, $2, $3);
 	if ($middle =~ /\A\?/) {
 	    $before =~ s/\s+\z//;
-	    $middle =~ s/\A\?\s+//;
+	    $middle =~ s/\A\?\s*//;
 	    $middle =~ s/\s+\z//;
 	    $after =~ s/\A\s+//;
 	    $message = (defined($message) ? $message . " " . $middle : $middle);
@@ -834,6 +834,15 @@ sub _output_expectation_error ($$$$$) {
     return $tctr;
 }
 
+sub _expect_trim_whitespace ($) {
+    my($out) = "";
+    foreach my $x (split(/(\{\{.*?\}\})/, $_[0])) {
+	$x =~ tr/ \f\r\t\013//d if $x !~ /\A\{\{/;
+	$out .= $x;
+    }
+    return $out;
+}
+
 sub _check_one_typed_expect ($$$$$) {
     my($tt, $raw_text, $fn, $ignores, $etrack) = @_;
     my($mode) = ($fn =~ /^v/ ? 0 : ($fn =~ /^e/ ? 1 : 2));
@@ -882,7 +891,7 @@ sub _check_one_typed_expect ($$$$$) {
 	    my($tline, $eline) = ($tl[$tp], $el[$ep]);
 	    if ($whitespace) {
 		$tline =~ tr/ \f\r\t\013//d;
-		$eline =~ tr/ \f\r\t\013//d;
+		$eline = _expect_trim_whitespace($eline);
 	    }
 	    if ($mode != 0 && $eline =~ /\{\{/) {
 		my($re);
