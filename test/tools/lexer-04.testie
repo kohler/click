@@ -1,0 +1,29 @@
+%info
+Check commas in connections
+%script
+fix () {
+	perl -e 'undef($/); $_ = <STDIN>; s/\n    / /g; print;' | sort
+}
+
+click-flatten A.click | fix > AO_TOOL
+click -qo- A.click | fix > AO_USERLEVEL
+
+%file A.click
+a, b, c :: Idle;
+p, q :: PullNull;
+a, a[1] -> b -> p, q;
+p -> [0]c, [1]c; q -> [2]c;
+
+%expect AO_TOOL AO_USERLEVEL
+a -> b -> p -> c;
+a :: Idle;
+a [1] -> b;
+b -> q -> [2] c;
+b :: Idle;
+c :: Idle;
+p -> [1] c;
+p :: PullNull;
+q :: PullNull;
+
+%ignorex
+#.*
