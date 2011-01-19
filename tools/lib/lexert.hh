@@ -175,6 +175,9 @@ class LexerT { public:
     void ydefine(RouterT *, const String &name, const String &value, const Lexeme &, bool &scope_order_error);
     void yrequire_library(const Lexeme &lexeme, const String &value);
     void yconnection_check_useless(const Vector<int> &x, bool isoutput, const char *epos[2]);
+    static void yconnection_analyze_ports(const Vector<int> &x, bool isoutput,
+					  int &min_ports, int &expandable);
+    void yconnection_connect_all(const Vector<int> &outputs, const Vector<int> &inputs, const char *pos1, const char *pos2);
 
     LexerT(const LexerT &);
     LexerT &operator=(const LexerT &);

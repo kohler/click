@@ -8,6 +8,15 @@ fix () {
 click-flatten A.click | fix > AO_TOOL
 click -qo- A.click | fix > AO_USERLEVEL
 
+click-flatten B.click | fix > BO_TOOL
+click -qo- B.click | fix > BO_USERLEVEL
+
+click-flatten C.click | fix > CO_TOOL
+click -qo- C.click | fix > CO_USERLEVEL
+
+click-flatten D.click | fix > DO_TOOL
+click -qo- D.click | fix > DO_USERLEVEL
+
 %file A.click
 a, b, c :: Idle;
 p, q :: PullNull;
@@ -24,6 +33,40 @@ c :: Idle;
 p -> [1] c;
 p :: PullNull;
 q :: PullNull;
+
+%file B.click
+a, b, c :: Idle;
+a [] -> b, c, [0,1] a;
+
+%expect BO_TOOL BO_USERLEVEL
+a :: Idle;
+a [1] -> c;
+a [2] -> a -> b;
+a [3] -> [1] a;
+b :: Idle;
+c :: Idle;
+
+%file D.click
+a, b :: Idle;
+a -> { -> } -> b;
+a [1] -> { [0] -> [0] } -> [1] b;
+
+%expect DO_TOOL DO_USERLEVEL
+a -> b;
+a :: Idle;
+a [1] -> [1] b;
+b :: Idle;
+
+%file C.click
+a, b, c, d :: Idle;
+a [0,1] -> [0,1,2] b;
+c [] -> [] d;
+
+%expect stderr
+C.click:2: connection mismatch: 2 outputs connected to 3 inputs
+C.click:3: at most one expandable port allowed per connection
+C.click:2: connection mismatch: 2 outputs connected to 3 inputs
+C.click:3: at most one expandable port allowed per connection
 
 %ignorex
 #.*

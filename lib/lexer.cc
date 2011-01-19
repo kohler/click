@@ -1148,7 +1148,6 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
     Vector<String> filenames;
     Vector<unsigned> linenos;
     Vector<int> res;
-    int nexpandable[2] = {0, 0};
     bool any_implicit = false;
 
     // parse lists of names (which might include classes)
@@ -1163,11 +1162,6 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	// initial port
 	yport(res);
 	res[esize + 1] = res.size() - (esize + 3);
-	if (res[esize + 1] > 1 && res.back() == -1 && ++nexpandable[0] > 1) {
-	    lerror("second and subsequent expandable input ports ignored");
-	    --res[esize + 1];
-	    res.pop_back();
-	}
 
 	// element name or class
 	t = lex();
@@ -1222,11 +1216,6 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	    unlex(t);
 	    yport(res);
 	    res[esize + 2] = res.size() - (esize + 3 + res[esize + 1]);
-	    if (res[esize + 2] > 1 && res.back() == -1 && ++nexpandable[1] > 1) {
-		lerror("second and subsequent expandable output ports ignored");
-		--res[esize + 2];
-		res.pop_back();
-	    }
 	    t = lex();
 	}
 
@@ -1308,17 +1297,16 @@ Lexer::yconnection_check_useless(const Vector<int> &x, bool isoutput)
 
 void
 Lexer::yconnection_analyze_ports(const Vector<int> &x, bool isoutput,
-				 int &min_ports, bool &expandable)
+				 int &min_ports, int &expandable)
 {
-    min_ports = 0;
-    expandable = false;
+    min_ports = expandable = 0;
     for (const int *it = x.begin(); it != x.end(); it += 3 + it[1] + it[2]) {
 	int n = it[isoutput ? 2 : 1];
 	if (n <= 1)
 	    min_ports += 1;
 	else if (it[3 + (isoutput ? it[1] : 0) + n - 1] == -1) {
 	    min_ports += n - 1;
-	    expandable = true;
+	    ++expandable;
 	} else
 	    min_ports += n;
     }
@@ -1329,13 +1317,13 @@ Lexer::yconnection_connect_all(const Vector<int> &outputs,
 			       const Vector<int> &inputs)
 {
     int minp[2];
-    bool expandable[2];
+    int expandable[2];
     yconnection_analyze_ports(outputs, true, minp[1], expandable[1]);
     yconnection_analyze_ports(inputs, false, minp[0], expandable[0]);
 
-    if (expandable[0] && expandable[1]) {
-	lerror("only one side of a connection may use expandable ports");
-	expandable[minp[0] < minp[1]] = false;
+    if (expandable[0] + expandable[1] > 1) {
+	lerror("at most one expandable port allowed per connection");
+	expandable[minp[0] < minp[1]] = 0;
     }
 
     bool step[2];
@@ -1347,11 +1335,11 @@ Lexer::yconnection_connect_all(const Vector<int> &outputs,
 
     if (step[0] && step[1]) {
 	if (!expandable[0] && !expandable[1] && minp[0] != minp[1])
-	    lerror("connection port mismatch: %d outputs connected to %d inputs", minp[1], minp[0]);
+	    lerror("connection mismatch: %d outputs connected to %d inputs", minp[1], minp[0]);
 	else if (!expandable[0] && minp[0] < minp[1])
-	    lerror("connection port mismatch: %d or more outputs connected to %d inputs", minp[1], minp[0]);
+	    lerror("connection mismatch: %d or more outputs connected to %d inputs", minp[1], minp[0]);
 	else if (!expandable[1] && minp[1] < minp[0])
-	    lerror("connection port mismatch: %d outputs connected to %d or more inputs", minp[1], minp[0]);
+	    lerror("connection mismatch: %d outputs connected to %d or more inputs", minp[1], minp[0]);
     } else if (!step[0] && !step[1])
 	step[0] = true;
 
