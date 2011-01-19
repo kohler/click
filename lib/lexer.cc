@@ -1149,6 +1149,7 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
     Vector<unsigned> linenos;
     Vector<int> res;
     int nexpandable[2] = {0, 0};
+    bool any_implicit = false;
 
     // parse lists of names (which might include classes)
     Lexeme t;
@@ -1157,13 +1158,10 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	res.push_back(-1);
 	res.push_back(0);
 	res.push_back(0);
+	bool this_implicit = false;
 
 	// initial port
 	yport(res);
-	if (res.size() != esize + 3 && !in_allowed) {
-	    lerror("input port useless at start of chain");
-	    res.resize(esize + 3);
-	}
 	res[esize + 1] = res.size() - (esize + 3);
 	if (res[esize + 1] > 1 && res.back() == -1 && ++nexpandable[0] > 1) {
 	    lerror("second and subsequent expandable input ports ignored");
@@ -1179,18 +1177,38 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	} else if (t.is('{')) {
 	    types.push_back(ycompound());
 	    names.push_back(_element_types[types.back()].name);
-	} else if (names.empty() && types.empty()) {
-	    unlex(t);
-	    return false;
-	} else
-	    break;
+	} else {
+	    if (_c->depth() && t.is(lexArrow))
+		this_implicit = !in_allowed && (res[esize + 1] || !esize);
+	    else if (_c->depth() && t.is(','))
+		this_implicit = !!res[esize + 1];
+	    else if (_c->depth() && !t.is(lex2Colon))
+		this_implicit = in_allowed && (res[esize + 1] || !esize);
+	    if (this_implicit) {
+		any_implicit = true;
+		names.push_back(in_allowed ? "output" : "input");
+		types.push_back(element_type(names.back()));
+		if (!in_allowed)
+		    click_swap(res[esize+1], res[esize+2]);
+		unlex(t);
+	    } else {
+		if (res[esize + 1])
+		    lerror("stranded port ignored");
+		res.resize(esize);
+		if (esize == 0) {
+		    unlex(t);
+		    return false;
+		}
+		break;
+	    }
+	}
 
 	filenames.push_back(_file._filename);
 	linenos.push_back(_file._lineno);
 
 	// configuration string
 	t = lex();
-	if (t.is('(')) {
+	if (t.is('(') && !this_implicit) {
 	    if (types.back() < 0)
 		types.back() = force_element_type(names.back());
 	    configurations.push_back(lex_config());
@@ -1200,7 +1218,7 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	    configurations.push_back(String());
 
 	// final port
-	if (t.is('[')) {
+	if (t.is('[') && !this_implicit) {
 	    unlex(t);
 	    yport(res);
 	    res[esize + 2] = res.size() - (esize + 3 + res[esize + 1]);
@@ -1215,6 +1233,12 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	if (!t.is(','))
 	    break;
     }
+
+    // maybe complain about implicits
+    if (any_implicit && t.is(lex2Colon))
+	lerror("implicit ports used in declaration");
+    else if (any_implicit && in_allowed && t.is(lexArrow))
+	lerror("implicit ports used in the middle of a chain");
 
     // parse ":: CLASS [(CONFIGSTRING)]"
     if (t.is(lex2Colon)) {
@@ -1277,7 +1301,7 @@ Lexer::yconnection_check_useless(const Vector<int> &x, bool isoutput)
 {
     for (const int *it = x.begin(); it != x.end(); it += 3 + it[1] + it[2])
 	if (it[isoutput ? 2 : 1] > 0) {
-	    lerror(isoutput ? "output ports useless at end of chain" : "input ports useless at start of chain");
+	    lerror(isoutput ? "output ports ignored at end of chain" : "input ports ignored at start of chain");
 	    break;
 	}
 }
@@ -1384,7 +1408,6 @@ Lexer::yconnection()
 
 	case ',':
 	case lex2Colon:
-	case '[':
 	    lerror("syntax error before %<%#s%>", t.string().c_str());
 	    goto relex;
 
@@ -1394,6 +1417,7 @@ Lexer::yconnection()
 	case lexIdent:
 	case '{':
 	case '}':
+	case '[':
 	case lex2Bar:
 	case lexElementclass:
 	case lexRequire:
@@ -1695,6 +1719,7 @@ Lexer::ystatement(bool nested)
    case lexIdent:
    case '[':
    case '{':
+   case lexArrow:
     unlex(t);
     yconnection();
     return true;
