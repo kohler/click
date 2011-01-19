@@ -195,6 +195,9 @@ class Lexer { public:
     void add_router_connections(int, const Vector<int> &);
     void yrequire_library(const String &value);
     void yconnection_check_useless(const Vector<int> &x, bool isoutput);
+    void yconnection_analyze_ports(const Vector<int> &x, bool isoutput,
+				   int &min_ports, bool &expandable);
+    void yconnection_connect_all(const Vector<int> &outputs, const Vector<int> &inputs);
 
     TunnelEnd *find_tunnel(const Port &p, bool isoutput, bool insert);
     void expand_connection(const Port &p, bool isoutput, Vector<Port> &);
