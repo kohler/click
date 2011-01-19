@@ -434,9 +434,9 @@ Element::Element()
 Element::~Element()
 {
     nelements_allocated--;
-    if (_ports[0] < _inline_ports || _ports[0] >= _inline_ports + INLINE_PORTS)
+    if (_ports[0] < _inline_ports || _ports[0] > _inline_ports + INLINE_PORTS)
 	delete[] _ports[0];
-    if (_ports[1] < _inline_ports || _ports[1] >= _inline_ports + INLINE_PORTS)
+    if (_ports[1] < _inline_ports || _ports[1] > _inline_ports + INLINE_PORTS)
 	delete[] _ports[1];
 }
 
@@ -600,9 +600,9 @@ Element::set_nports(int new_ninputs, int new_noutputs)
 
     // decide if inputs & outputs were inlined
     bool old_in_inline =
-	(_ports[0] >= _inline_ports && _ports[0] < _inline_ports + INLINE_PORTS);
+	(_ports[0] >= _inline_ports && _ports[0] <= _inline_ports + INLINE_PORTS);
     bool old_out_inline =
-	(_ports[1] >= _inline_ports && _ports[1] < _inline_ports + INLINE_PORTS);
+	(_ports[1] >= _inline_ports && _ports[1] <= _inline_ports + INLINE_PORTS);
     bool prefer_pull = (processing() == PULL);
 
     // decide if inputs & outputs should be inlined
