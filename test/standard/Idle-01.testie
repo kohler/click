@@ -1,0 +1,15 @@
+%info
+Test that inline port layout works properly.
+
+%script
+click -q CONFIG
+
+%file CONFIG
+i, j :: Idle;
+i[0] -> [0]j;
+i[1] -> [1]j;
+i[2] -> [2]j;
+i[3] -> [3]j;
+
+%expect stdout
+
