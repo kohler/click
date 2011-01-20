@@ -468,6 +468,7 @@ Lexer::begin_parse(const String &data, const String &filename,
   _compact_config = false;
 
   _c = new Compound("", "", 0);
+  _group_depth = 0;
 
   _lextra = lextra;
   _errh = (errh ? errh : ErrorHandler::default_handler());
@@ -1171,12 +1172,17 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	} else if (t.is('{')) {
 	    types.push_back(ycompound());
 	    names.push_back(_element_types[types.back()].name);
+	} else if (t.is('(')) {
+	    names.push_back(anon_element_name(""));
+	    types.push_back(-1);
+	    ygroup(names.back());
 	} else {
-	    if (_c->depth() && t.is(lexArrow))
+	    bool nested = _c->depth() || _group_depth;
+	    if (nested && t.is(lexArrow))
 		this_implicit = !in_allowed && (res[esize + 1] || !esize);
-	    else if (_c->depth() && t.is(','))
+	    else if (nested && t.is(','))
 		this_implicit = !!res[esize + 1];
-	    else if (_c->depth() && !t.is(lex2Colon))
+	    else if (nested && !t.is(lex2Colon))
 		this_implicit = in_allowed && (res[esize + 1] || !esize);
 	    if (this_implicit) {
 		any_implicit = true;
@@ -1206,7 +1212,9 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	// configuration string
 	t = lex();
 	if (t.is('(') && !this_implicit) {
-	    if (types.back() < 0)
+	    if (_element_map[names.back()] >= 0)
+		lerror("configuration string ignored on element reference");
+	    else if (types.back() < 0)
 		types.back() = force_element_type(names.back());
 	    configurations.push_back(lex_config());
 	    expect(')');
@@ -1240,7 +1248,12 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	    decl_etype = force_element_type(t.string());
 	else if (t.is('{'))
 	    decl_etype = ycompound();
-	else {
+	else if (t.is('(')) {
+	    if (names.size() != 1)
+		lerror("element groups can only be defined once");
+	    ygroup(names[0]);
+	    decl_etype = -1;
+	} else {
 	    lerror("missing element type in declaration");
 	    decl_etype = force_element_type(names[0]);
 	}
@@ -1256,7 +1269,8 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 		_errh->lerror(Compound::landmark_string(filenames[i], linenos[i]), "class %<%s%> used as element name", names[i].c_str());
 	    else if (_element_map[names[i]] >= 0) {
 		int e = _element_map[names[i]];
-		_errh->lerror(Compound::landmark_string(filenames[i], linenos[i]), "redeclaration of element %<%s%>", names[i].c_str());
+		if (decl_etype >= 0)
+		    _errh->lerror(Compound::landmark_string(filenames[i], linenos[i]), "redeclaration of element %<%s%>", names[i].c_str());
 		if (_c->_elements[e] != TUNNEL_TYPE)
 		    _errh->lerror(_c->element_landmark(e), "element %<%s%> previously declared here", names[i].c_str());
 	    } else
@@ -1409,6 +1423,7 @@ Lexer::yconnection()
 	case '{':
 	case '}':
 	case '[':
+	case ')':
 	case lex2Bar:
 	case lexElementclass:
 	case lexRequire:
@@ -1545,7 +1560,7 @@ Lexer::ycompound(String name)
     _anonymous_offset = 2;
 
     ycompound_arguments(ct);
-    while (ystatement(true))
+    while (ystatement('}'))
       /* nada */;
 
     _anonymous_offset = old_offset;
@@ -1573,6 +1588,28 @@ Lexer::ycompound(String name)
   if (extension)
     last->set_overload_type(extension);
   return ADD_ELEMENT_TYPE(name, compound_element_factory, (uintptr_t) first, true);
+}
+
+void
+Lexer::ygroup(String name)
+{
+    String name_slash = name + "/";
+    add_tunnel(name, name_slash + "input");
+    add_tunnel(name_slash + "output", name);
+
+    int old_input = _element_map["input"];
+    int old_output = _element_map["output"];
+    _element_map["input"] = _element_map[name_slash + "input"];
+    _element_map["output"] = _element_map[name_slash + "output"];
+    ++_group_depth;
+
+    while (ystatement(')'))
+	/* nada */;
+    expect(')');
+
+    --_group_depth;
+    _element_map["input"] = old_input;
+    _element_map["output"] = old_output;
 }
 
 void
@@ -1610,7 +1647,7 @@ Lexer::yrequire_library(const String &value)
 
     FileState old_file(_file);
     _file = FileState(data, fn);
-    while (ystatement(false))
+    while (ystatement(0))
 	/* do nothing */;
     _file = old_file;
 #else
@@ -1702,7 +1739,7 @@ Lexer::yvar()
 }
 
 bool
-Lexer::ystatement(bool nested)
+Lexer::ystatement(int nested)
 {
   Lexeme t = lex();
   switch (t.kind()) {
@@ -1710,6 +1747,7 @@ Lexer::ystatement(bool nested)
    case lexIdent:
    case '[':
    case '{':
+   case '(':
    case lexArrow:
     unlex(t);
     yconnection();
@@ -1732,14 +1770,20 @@ Lexer::ystatement(bool nested)
 
    case '}':
    case lex2Bar:
-    if (!nested)
+    if (nested != '}')
+      goto syntax_error;
+    unlex(t);
+    return false;
+
+   case ')':
+    if (nested != ')')
       goto syntax_error;
     unlex(t);
     return false;
 
    case lexEOF:
     if (nested)
-      lerror("expected %<}%>");
+	lerror("expected %<%c%>", nested);
     return false;
 
    default:

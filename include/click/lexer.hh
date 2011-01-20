@@ -105,9 +105,10 @@ class Lexer { public:
     void yelementclass();
     void ycompound_arguments(Compound *);
     int ycompound(String name = String());
+    void ygroup(String name);
     void yrequire();
     void yvar();
-    bool ystatement(bool nested = false);
+    bool ystatement(int nested = 0);
 
     Router *create_router(Master *);
 
@@ -167,6 +168,7 @@ class Lexer { public:
     // elements
     HashTable<String, int> _element_map;
     Compound *_c;
+    int _group_depth;
 
     Vector<TunnelEnd *> _tunnels;
 
