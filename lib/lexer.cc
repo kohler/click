@@ -1214,6 +1214,7 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 
 	// final port
 	if (t.is('[') && !this_implicit) {
+	    unlex(t);
 	    if (res[esize + 2])	// delete any implied ports
 		res.resize(esize + 3 + res[esize + 1]);
 	    yport(res);
