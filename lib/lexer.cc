@@ -1628,8 +1628,8 @@ Lexer::ygroup(String name, int group_nports[2])
     // check that all inputs and outputs are used
     LandmarkErrorHandler lerrh(_errh, _file.landmark());
     const char *printable_name = (name[0] == ';' ? "<anonymous group>" : name.c_str());
-    group_nports[0] = _c->check_pseudoelement(new_input, 0, printable_name, &lerrh);
-    group_nports[1] = _c->check_pseudoelement(new_output, 0, printable_name, &lerrh);
+    group_nports[0] = _c->check_pseudoelement(new_input, false, printable_name, &lerrh);
+    group_nports[1] = _c->check_pseudoelement(new_output, true, printable_name, &lerrh);
 
     --_group_depth;
     _element_map["input"] = old_input;
