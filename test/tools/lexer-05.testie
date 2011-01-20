@@ -51,6 +51,18 @@ c :: Idle [] ->
 -> post_classification :: Idle;
 
 %expect BO_USERLEVEL
+Paint@{{\d+}} :: Paint(1);
+analyzer :: Idle;
+analyzer [1] -> post_classification;
+c -> [1] analyzer;
+c :: Idle;
+c [1] -> c2 -> post_classification;
+c2 :: Idle;
+c2 [1] -> Paint@{{\d+}} -> post_classification;
+post_classification :: Idle;
+x1 -> analyzer -> x2;
+x1 :: Idle;
+x2 :: Idle;
 
 %ignorex
 #.*
