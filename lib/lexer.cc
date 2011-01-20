@@ -29,6 +29,7 @@
 #include <click/glue.hh>
 #include <click/straccum.hh>
 #include <click/variableenv.hh>
+#include <click/bitvector.hh>
 #include <click/standard/errorelement.hh>
 #if CLICK_USERLEVEL
 # include <click/userutils.hh>
@@ -137,7 +138,8 @@ class Lexer::Compound : public Element { public:
 	return landmark_string(_element_filenames[e], _element_linenos[e]);
     }
 
-  void finish(Lexer *, ErrorHandler *);
+    int check_pseudoelement(int e, bool isoutput, const char *name, ErrorHandler *errh) const;
+    void finish(Lexer *, ErrorHandler *);
 
   inline int assign_arguments(const Vector<String> &args, Vector<String> *values) const;
   int resolve(Lexer *, int etype, int ninputs, int noutputs, Vector<String> &, ErrorHandler *, const String &landmark);
@@ -240,51 +242,34 @@ Lexer::Compound::connect(int from_idx, int from_port, int to_idx, int to_port)
     _element_nports[1][from_idx] = from_port + 1;
 }
 
+int
+Lexer::Compound::check_pseudoelement(int which, bool isoutput, const char *name, ErrorHandler *errh) const
+{
+    static const char * const names[2] = {"input", "output"};
+    Bitvector used(_element_nports[1-isoutput][which]);
+    for (const Connection *it = _conn.begin(); it != _conn.end(); ++it)
+	if ((*it)[1-isoutput].idx == which)
+	    used[(*it)[1-isoutput].port] = true;
+    if (_element_nports[isoutput][which])
+	errh->error("%<%s%> pseudoelement %<%s%> may only be used as %s", name, names[isoutput], names[1-isoutput]);
+    for (int i = 0; i < used.size(); i++)
+	if (!used[i])
+	    errh->error("%<%s%> %s %d missing", name, names[isoutput], i);
+    return used.size();
+}
+
 void
 Lexer::Compound::finish(Lexer *lexer, ErrorHandler *errh)
 {
-  assert(_element_names[0] == "input" && _element_names[1] == "output");
+    assert(_element_names[0] == "input" && _element_names[1] == "output");
+    LandmarkErrorHandler lerrh(errh, _landmark);
+    _ninputs = check_pseudoelement(0, false, printable_name_c_str(), &lerrh);
+    _noutputs = check_pseudoelement(1, true, printable_name_c_str(), &lerrh);
 
-  // count numbers of inputs and outputs
-  Vector<int> from_in, to_out;
-  bool to_in = false, from_out = false;
-  for (int i = 0; i < _conn.size(); i++) {
-    const Connection &c = _conn[i];
-
-    if (c[1].idx == 0) {
-      if (from_in.size() <= c[1].port)
-	from_in.resize(c[1].port + 1, 0);
-      from_in[c[1].port] = 1;
-    } else if (c[1].idx == 1)
-      from_out = true;
-
-    if (c[0].idx == 1) {
-      if (to_out.size() <= c[0].port)
-	to_out.resize(c[0].port + 1, 0);
-      to_out[c[0].port] = 1;
-    } else if (c[0].idx == 0)
-      to_in = true;
-  }
-
-  // store information
-  _ninputs = from_in.size();
-  if (to_in)
-    errh->lerror(_landmark, "%<%s%> pseudoelement %<input%> may only be used as output", printable_name_c_str());
-  for (int i = 0; i < from_in.size(); i++)
-    if (!from_in[i])
-      errh->lerror(_landmark, "compound element %<%s%> input %d unused", printable_name_c_str(), i);
-
-  _noutputs = to_out.size();
-  if (from_out)
-    errh->lerror(_landmark, "%<%s%> pseudoelement %<output%> may only be used as input", printable_name_c_str());
-  for (int i = 0; i < to_out.size(); i++)
-    if (!to_out[i])
-      errh->lerror(_landmark, "compound element %<%s%> output %d unused", printable_name_c_str(), i);
-
-  // deanonymize element names
-  for (int i = 0; i < _elements.size(); i++)
-    if (_element_names[i][0] == ';')
-      _element_names[i] = lexer->deanonymize_element_name(_element_names[i], i);
+    // deanonymize element names
+    for (int i = 0; i < _elements.size(); i++)
+	if (_element_names[i][0] == ';')
+	    _element_names[i] = lexer->deanonymize_element_name(_element_names[i], i);
 }
 
 inline Lexer::Compound *
@@ -1613,16 +1598,24 @@ Lexer::ygroup(String name)
     String name_slash = name + "/";
     add_tunnel(name, name_slash + "input");
     add_tunnel(name_slash + "output", name);
+    int new_input = _element_map[name_slash + "input"];
+    int new_output = _element_map[name_slash + "output"];
 
     int old_input = _element_map["input"];
     int old_output = _element_map["output"];
-    _element_map["input"] = _element_map[name_slash + "input"];
-    _element_map["output"] = _element_map[name_slash + "output"];
+    _element_map["input"] = new_input;
+    _element_map["output"] = new_output;
     ++_group_depth;
 
     while (ystatement(')'))
 	/* nada */;
     expect(')');
+
+    // check that all inputs and outputs are used
+    LandmarkErrorHandler lerrh(_errh, _file.landmark());
+    const char *printable_name = (name[0] == ';' ? "<anonymous group>" : name.c_str());
+    _c->check_pseudoelement(new_input, 0, printable_name, &lerrh);
+    _c->check_pseudoelement(new_output, 0, printable_name, &lerrh);
 
     --_group_depth;
     _element_map["input"] = old_input;
