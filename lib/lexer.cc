@@ -1190,7 +1190,10 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 		    lerror("stranded port ignored");
 		res.resize(esize);
 		if (esize == 0) {
-		    unlex(t);
+		    if (in_allowed)
+			unlex(t);
+		    else
+			lerror("syntax error near %<%#s%>", t.string().c_str());
 		    return false;
 		}
 		break;

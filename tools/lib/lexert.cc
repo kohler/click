@@ -689,7 +689,10 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 		    lerror(t, "stranded port ignored");
 		res.resize(esize);
 		if (esize == 0) {
-		    unlex(t);
+		    if (in_allowed)
+			unlex(t);
+		    else
+			lerror(t, "syntax error near %<%#s%>", t.string().c_str());
 		    return false;
 		}
 		break;
