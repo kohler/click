@@ -1241,13 +1241,7 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	    decl_etype = force_element_type(t.string());
 	else if (t.is('{'))
 	    decl_etype = ycompound();
-	else if (t.is('(')) {
-	    if (names.size() != 1)
-		lerror("element groups can only be defined once");
-	    int group_nports[2] /* unused */;
-	    ygroup(names[0], group_nports);
-	    decl_etype = -1;
-	} else {
+	else {
 	    lerror("missing element type in declaration");
 	    decl_etype = force_element_type(names[0]);
 	}
@@ -1263,8 +1257,7 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 		_errh->lerror(Compound::landmark_string(filenames[i], linenos[i]), "class %<%s%> used as element name", names[i].c_str());
 	    else if (_element_map[names[i]] >= 0) {
 		int e = _element_map[names[i]];
-		if (decl_etype >= 0)
-		    _errh->lerror(Compound::landmark_string(filenames[i], linenos[i]), "redeclaration of element %<%s%>", names[i].c_str());
+		_errh->lerror(Compound::landmark_string(filenames[i], linenos[i]), "redeclaration of element %<%s%>", names[i].c_str());
 		if (_c->_elements[e] != TUNNEL_TYPE)
 		    _errh->lerror(_c->element_landmark(e), "element %<%s%> previously declared here", names[i].c_str());
 	    } else
