@@ -17,21 +17,21 @@ click -qo- B.click | fix > BO_USERLEVEL
 
 %file AX.click
 a, b, c, d :: Idle;
-a [0,1,2] -> c, b, d;
+a [0,1,2] => c, b, d;
 
 %file A.click
 a, b, c, d :: Idle;
-a [0,1,2] -> ( -> c ), ( -> b ), d;
+a [0,1,2] => ( -> c ), ( -> b ), d;
 
 %file AY.click
 a, d :: Idle;
-a [] -> (-> c :: Idle), (-> b :: Idle), d;
+a => (-> c :: Idle), (-> b :: Idle), d;
 
 %file AZ.click
 a, d :: Idle;
 g :: (-> c :: Idle);
 g2 :: (-> b :: Idle);
-a [] -> g, g2, d;
+a => g, g2, d;
 
 %expect AO_USERLEVEL AXO_USERLEVEL AYO_USERLEVEL AZO_USERLEVEL
 a -> c;
@@ -45,9 +45,9 @@ d :: Idle;
 %file B.click
 analyzer, x1, x2 :: Idle;
 x1 -> analyzer -> x2;
-c :: Idle [] ->
+c :: Idle =>
          [1] analyzer [1],
-         (-> c2 :: Idle [] -> (->), Paint(1) ->)
+         (-> c2 :: Idle => (->), Paint(1) ->)
 -> post_classification :: Idle;
 
 %expect BO_USERLEVEL

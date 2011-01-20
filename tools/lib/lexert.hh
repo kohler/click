@@ -15,10 +15,11 @@ class ArchiveElement;
 
 enum {
     lexEOF = 0,
-    lexIdent = 256,
+    lexIdent = 256,		// see also LexerT::lexeme_string
     lexVariable,
     lexConfig,
     lexArrow,
+    lex2Arrow,
     lex2Colon,
     lex2Bar,
     lex3Dot,
@@ -177,7 +178,7 @@ class LexerT { public:
     void yconnection_check_useless(const Vector<int> &x, bool isoutput, const char *epos[2]);
     static void yconnection_analyze_ports(const Vector<int> &x, bool isoutput,
 					  int &min_ports, int &expandable);
-    void yconnection_connect_all(const Vector<int> &outputs, const Vector<int> &inputs, const char *pos1, const char *pos2);
+    void yconnection_connect_all(Vector<int> &outputs, Vector<int> &inputs, int connector, const char *pos1, const char *pos2);
 
     LexerT(const LexerT &);
     LexerT &operator=(const LexerT &);

@@ -14,6 +14,9 @@ click -qo- B.click | fix > BO_USERLEVEL
 click-flatten C.click | fix > CO_TOOL
 click -qo- C.click | fix > CO_USERLEVEL
 
+click-flatten C2.click | fix > C2O_TOOL
+click -qo- C2.click | fix > C2O_USERLEVEL
+
 click-flatten D.click | fix > DO_TOOL
 click -qo- D.click | fix > DO_USERLEVEL
 
@@ -36,7 +39,7 @@ q :: PullNull;
 
 %file B.click
 a, b, c :: Idle;
-a [] -> b, c, [0,1] a;
+a => b, c, [0,1] a;
 
 %expect BO_TOOL BO_USERLEVEL
 a :: Idle;
@@ -59,14 +62,20 @@ b :: Idle;
 
 %file C.click
 a, b, c, d :: Idle;
-a [0,1] -> [0,1,2] b;
-c [] -> [] d;
+a [0,1] => [0,1,2] b;
+c [] => [] d;
+
+%file C2.click
+a, b, c, d :: Idle;
+a [0,1,2] -> [0,1,2] b;
 
 %expect stderr
 C.click:2: connection mismatch: 2 outputs connected to 3 inputs
 C.click:3: at most one expandable port allowed per connection
 C.click:2: connection mismatch: 2 outputs connected to 3 inputs
 C.click:3: at most one expandable port allowed per connection
+C2.click:2: syntax error: many-to-many connections require '=>'
+C2.click:2: syntax error: many-to-many connections require '=>'
 
 %ignorex
 #.*
