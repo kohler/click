@@ -1152,9 +1152,20 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	    types.push_back(ycompound());
 	    names.push_back(_element_types[types.back()].name);
 	} else if (t.is('(')) {
-	    names.push_back(anon_element_name(""));
+	    String name = anon_element_name("");
+	    names.push_back(name);
 	    types.push_back(-1);
-	    ygroup(names.back());
+	    int group_nports[2];
+	    ygroup(name, group_nports);
+
+	    // an anonymous group has implied, overridable port
+	    // specifications on both sides for all inputs & outputs
+	    for (int k = 0; k < 2; ++k)
+		if (res[esize + 1 + k] == 0) {
+		    res[esize + 1 + k] = group_nports[k];
+		    for (int i = 0; i < group_nports[k]; ++i)
+			res.push_back(i);
+		}
 	} else {
 	    bool nested = _c->depth() || _group_depth;
 	    if (nested && (t.is(lexArrow) || t.is(lex2Arrow)))
@@ -1203,7 +1214,8 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 
 	// final port
 	if (t.is('[') && !this_implicit) {
-	    unlex(t);
+	    if (res[esize + 2])	// delete any implied ports
+		res.resize(esize + 3 + res[esize + 1]);
 	    yport(res);
 	    res[esize + 2] = res.size() - (esize + 3 + res[esize + 1]);
 	    t = lex();
@@ -1231,7 +1243,8 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	else if (t.is('(')) {
 	    if (names.size() != 1)
 		lerror("element groups can only be defined once");
-	    ygroup(names[0]);
+	    int group_nports[2] /* unused */;
+	    ygroup(names[0], group_nports);
 	    decl_etype = -1;
 	} else {
 	    lerror("missing element type in declaration");
@@ -1593,7 +1606,7 @@ Lexer::ycompound(String name)
 }
 
 void
-Lexer::ygroup(String name)
+Lexer::ygroup(String name, int group_nports[2])
 {
     String name_slash = name + "/";
     add_tunnel(name, name_slash + "input");
@@ -1614,8 +1627,8 @@ Lexer::ygroup(String name)
     // check that all inputs and outputs are used
     LandmarkErrorHandler lerrh(_errh, _file.landmark());
     const char *printable_name = (name[0] == ';' ? "<anonymous group>" : name.c_str());
-    _c->check_pseudoelement(new_input, 0, printable_name, &lerrh);
-    _c->check_pseudoelement(new_output, 0, printable_name, &lerrh);
+    group_nports[0] = _c->check_pseudoelement(new_input, 0, printable_name, &lerrh);
+    group_nports[1] = _c->check_pseudoelement(new_output, 0, printable_name, &lerrh);
 
     --_group_depth;
     _element_map["input"] = old_input;

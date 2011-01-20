@@ -106,7 +106,7 @@ class Lexer { public:
     void yelementclass();
     void ycompound_arguments(Compound *);
     int ycompound(String name = String());
-    void ygroup(String name);
+    void ygroup(String name, int group_nports[2]);
     void yrequire();
     void yvar();
     bool ystatement(int nested = 0);
