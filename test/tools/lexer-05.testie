@@ -6,15 +6,19 @@ fix () {
 }
 
 click -qo- A.click | fix > AO_USERLEVEL
+click-flatten A.click | fix > AO_TOOL
 
 click -qo- AX.click | fix > AXO_USERLEVEL
+click-flatten AX.click | fix > AXO_TOOL
 
 click -qo- AY.click | fix > AYO_USERLEVEL
+click-flatten AY.click | fix > AYO_TOOL
 
 # 'g :: (...)' no longer supported
 # click -qo- AZ.click | fix > AZO_USERLEVEL
 
 click -qo- B.click | fix > BO_USERLEVEL
+click-flatten B.click | fix > BO_TOOL
 
 %file AX.click
 a, b, c, d :: Idle;
@@ -34,7 +38,7 @@ g :: (-> c :: Idle);
 g2 :: (-> b :: Idle);
 a => g, g2, d;
 
-%expect AO_USERLEVEL AXO_USERLEVEL AYO_USERLEVEL
+%expect AO_USERLEVEL AO_TOOL AXO_USERLEVEL AXO_TOOL AYO_USERLEVEL AYO_TOOL
 a -> c;
 a :: Idle;
 a [1] -> b;
@@ -51,7 +55,7 @@ c :: Idle =>
          (-> c2 :: Idle => (->), Paint(1) ->)
 -> post_classification :: Idle;
 
-%expect BO_USERLEVEL
+%expect BO_USERLEVEL BO_TOOL
 Paint@{{\d+}} :: Paint(1);
 analyzer :: Idle;
 analyzer [1] -> post_classification;

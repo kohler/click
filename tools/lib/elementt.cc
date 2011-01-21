@@ -111,6 +111,10 @@ ElementT::name_ok(const String &name, bool allow_anon_names)
     if (len > 0 && data[pos] == ';' && allow_anon_names) {
 	pos++;
 	int epos = len - 1;
+	if (len > 6 && memcmp(data + len - 6, "/input", 6) == 0)
+	    epos -= 6;
+	else if (len > 7 && memcmp(data + len - 7, "/output", 7) == 0)
+	    epos -= 7;
 	while (epos > 1 && isdigit((unsigned char) data[epos]))
 	    epos--;
 	if (epos == len - 1 || data[epos] != '@')

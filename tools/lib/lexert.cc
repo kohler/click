@@ -103,6 +103,7 @@ LexerT::clear()
     _base_type_map.clear();
     _anonymous_offset = 0;
     _anonymous_class_count = 0;
+    _group_depth = 0;
     _libraries.clear();
 }
 
@@ -664,8 +665,22 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 	    types.push_back(ycompound(String(), t.pos1(), t.pos1()));
 	    names.push_back(types.back()->name());
 	    my_decl_pos2 = next_pos();
+	} else if (t.is('(')) {
+	    names.push_back(anon_element_name(""));
+	    types.push_back(0);
+	    int group_nports[2];
+	    ygroup(names.back(), group_nports, landmarkt(t.pos1(), t.pos2()));
+
+	    // an anonymous group has implied, overridable port
+	    // specifications on both sides for all inputs & outputs
+	    for (int k = 0; k < 2; ++k)
+		if (res[esize + 1 + k] == 0) {
+		    res[esize + 1 + k] = group_nports[k];
+		    for (int i = 0; i < group_nports[k]; ++i)
+			res.push_back(i);
+		}
 	} else {
-	    bool nested = _router->scope().depth();
+	    bool nested = _router->scope().depth() || _group_depth;
 	    if (nested && (t.is(lexArrow) || t.is(lex2Arrow)))
 		this_implicit = !in_allowed && (res[esize + 1] || !esize);
 	    else if (nested && t.is(','))
@@ -699,7 +714,9 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 	// configuration string
 	t = lex();
 	if (t.is('(') && !this_implicit) {
-	    if (!types.back())
+	    if (_router->element(names.back()))
+		lerror(t, "configuration string ignored on element reference");
+	    else if (!types.back())
 		types.back() = force_element_type(decl_lexeme.back());
 	    configurations.push_back(lex_config().string());
 	    expect(')');
@@ -713,6 +730,8 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 	// final port
 	if (t.is('[') && !this_implicit) {
 	    unlex(t);
+	    if (res[esize + 2])	// delete any implied ports
+		res.resize(esize + 3 + res[esize + 1]);
 	    yport(res, epos + 3);
 	    res[esize + 2] = res.size() - (esize + 3 + res[esize + 1]);
 	    t = lex();
@@ -934,6 +953,7 @@ LexerT::yconnection()
 	case '{':
 	case '}':
 	case '[':
+	case ')':
 	case lex2Bar:
 	case lexElementclass:
 	case lexRequire:
@@ -1104,7 +1124,7 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 	_anonymous_offset = 2;
 
 	ycompound_arguments(compound_class);
-	while (ystatement(true))
+	while (ystatement('}'))
 	    /* nada */;
 
 	compound_class->finish_type(_errh);
@@ -1133,6 +1153,35 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
     old_router->add_declared_type(first, anonymous);
     _lexinfo->notify_class_declaration(first, anonymous, decl_pos1, name_pos1, pos2);
     return first;
+}
+
+void
+LexerT::ygroup(String name, int group_nports[2], const LandmarkT &landmark)
+{
+    LandmarkErrorHandler lerrh(_errh, _file.landmark());
+    String name_slash = name + "/";
+    _router->add_tunnel(name, name_slash + "input", landmark, &lerrh);
+    _router->add_tunnel(name_slash + "output", name, landmark, &lerrh);
+    ElementT *new_input = _router->element(name_slash + "input");
+    ElementT *new_output = _router->element(name_slash + "output");
+
+    int old_input = _router->__map_element_name("input", new_input->eindex());
+    int old_output = _router->__map_element_name("output", new_output->eindex());
+    ++_group_depth;
+
+    while (ystatement(')'))
+	/* nada */;
+    expect(')');
+
+    // check that all inputs and outputs are used
+    lerrh.set_landmark(_file.landmark());
+    const char *printable_name = (name[0] == ';' ? "<anonymous group>" : name.c_str());
+    group_nports[0] = _router->check_pseudoelement(new_input, false, printable_name, &lerrh);
+    group_nports[1] = _router->check_pseudoelement(new_output, true, printable_name, &lerrh);
+
+    --_group_depth;
+    _router->__map_element_name("input", old_input);
+    _router->__map_element_name("output", old_output);
 }
 
 void
@@ -1168,7 +1217,7 @@ LexerT::yrequire_library(const Lexeme &lexeme, const String &value)
 
     FileState old_file(_file);
     _file = FileState(data, fn);
-    while (ystatement(false))
+    while (ystatement(0))
 	/* do nothing */;
     _file = old_file;
 }
@@ -1253,7 +1302,7 @@ LexerT::yvar()
 }
 
 bool
-LexerT::ystatement(bool nested)
+LexerT::ystatement(int nested)
 {
   Lexeme t = lex();
   switch (t.kind()) {
@@ -1261,6 +1310,7 @@ LexerT::ystatement(bool nested)
    case lexIdent:
    case '[':
    case '{':
+   case '(':
    case lexArrow:
    case lex2Arrow:
     unlex(t);
@@ -1284,14 +1334,20 @@ LexerT::ystatement(bool nested)
 
    case '}':
    case lex2Bar:
-    if (!nested)
+    if (nested != '}')
+      goto syntax_error;
+    unlex(t);
+    return false;
+
+   case ')':
+    if (nested != ')')
       goto syntax_error;
     unlex(t);
     return false;
 
    case lexEOF:
     if (nested)
-      lerror(t, "expected %<}%>");
+      lerror(t, "expected %<%c%>", nested);
     return false;
 
    default:

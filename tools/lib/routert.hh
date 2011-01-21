@@ -46,6 +46,7 @@ class RouterT : public ElementClassT { public:
     ElementT *get_element(const String &name, ElementClassT *eclass, const String &configuration, const LandmarkT &landmark);
     ElementT *add_anon_element(ElementClassT *eclass, const String &configuration = String(), const LandmarkT &landmark = LandmarkT::empty_landmark());
     void change_ename(int, const String &);
+    int __map_element_name(const String &name, int new_eindex);
     void assign_element_names();
     void free_element(ElementT *);
     void free_dead_elements();
@@ -86,7 +87,7 @@ class RouterT : public ElementClassT { public:
     inline conn_iterator begin_connections_to(ElementT *e) const;
     inline conn_iterator find_connection(int ci) const;
 
-    void add_tunnel(const String &namein, const String &nameout, const LandmarkT &, ErrorHandler *);
+    void add_tunnel(const String &namein, const String &nameout, const LandmarkT &landmark, ErrorHandler *errh);
 
     bool add_connection(const PortT &, const PortT &, const LandmarkT &landmark = LandmarkT::empty_landmark());
     inline bool add_connection(ElementT *, int, ElementT *, int, const LandmarkT &landmark = LandmarkT::empty_landmark());
@@ -99,7 +100,7 @@ class RouterT : public ElementClassT { public:
 
     inline bool has_connection(const PortT &from, const PortT &to) const;
     int find_connection(const PortT &from, const PortT &to) const;
-    void find_connections_touching(ElementT *e, bool isoutput, Vector<int> &v) const;
+    void find_connections_touching(const ElementT *e, bool isoutput, Vector<int> &v) const;
 
     /** @brief Return the ID of unique connection touching port @a port.
      * @a port port specification
@@ -112,13 +113,13 @@ class RouterT : public ElementClassT { public:
 
     void find_connections_touching(const PortT &port, bool isoutput, Vector<PortT> &v, bool clear = true) const;
     void find_connections_touching(const PortT &port, bool isoutput, Vector<int> &v) const;
-    void find_connection_vector_touching(ElementT *e, bool isoutput, Vector<int> &v) const;
+    void find_connection_vector_touching(const ElementT *e, bool isoutput, Vector<int> &v) const;
 
     inline int find_connection_id_from(const PortT &output) const {
 	return find_connection_id_touching(output, end_from);
     }
     inline const PortT &find_connection_from(const PortT &output) const;
-    inline void find_connections_from(ElementT *e, Vector<int> &v) const {
+    inline void find_connections_from(const ElementT *e, Vector<int> &v) const {
 	find_connections_touching(e, end_from, v);
     }
     inline void find_connections_from(const PortT &output, Vector<PortT> &v, bool clear = true) const {
@@ -127,7 +128,7 @@ class RouterT : public ElementClassT { public:
     void find_connections_from(const PortT &output, Vector<int> &v) const {
 	find_connections_touching(output, end_from, v);
     }
-    void find_connection_vector_from(ElementT *e, Vector<int> &v) const {
+    void find_connection_vector_from(const ElementT *e, Vector<int> &v) const {
 	find_connection_vector_touching(e, end_from, v);
     }
 
@@ -135,7 +136,7 @@ class RouterT : public ElementClassT { public:
 	return find_connection_id_touching(input, end_to);
     }
     inline const PortT &find_connection_to(const PortT &input) const;
-    void find_connections_to(ElementT *e, Vector<int> &v) const {
+    void find_connections_to(const ElementT *e, Vector<int> &v) const {
 	find_connections_touching(e, end_to, v);
     }
     void find_connections_to(const PortT &input, Vector<PortT> &v) const {
@@ -144,7 +145,7 @@ class RouterT : public ElementClassT { public:
     void find_connections_to(const PortT &input, Vector<int> &v) const {
 	find_connections_touching(input, end_to, v);
     }
-    void find_connection_vector_to(ElementT *e, Vector<int> &v) const {
+    void find_connection_vector_to(const ElementT *e, Vector<int> &v) const {
 	find_connection_vector_touching(e, end_to, v);
     }
 
@@ -216,7 +217,8 @@ class RouterT : public ElementClassT { public:
     ElementClassT *overload_type() const { return _overload_type; }
     void set_overload_type(ElementClassT *);
 
-    int finish_type(ErrorHandler *);
+    int check_pseudoelement(const ElementT *e, bool isoutput, const char *name, ErrorHandler *errh) const;
+    int finish_type(ErrorHandler *errh);
 
     bool need_resolve() const;
     ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const LandmarkT &landmark);

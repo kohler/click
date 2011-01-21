@@ -1023,22 +1023,25 @@ Lexer::anon_element_name(const String &class_name) const
 String
 Lexer::deanonymize_element_name(const String &ename, int eidx)
 {
-  // This function uses _element_map.
-  assert(ename && ename[0] == ';');
-  String name = ename.substring(1);
-  if (_element_map[name] >= 0) {
-    int at_pos = name.find_right('@');
-    assert(at_pos >= 0);
-    String prefix = name.substring(0, at_pos + 1);
-    int anonymizer;
-    cp_integer(name.substring(at_pos + 1), &anonymizer);
-    do {
-      anonymizer++;
-      name = prefix + String(anonymizer);
-    } while (_element_map[name] >= 0);
-  }
-  _element_map.set(name, eidx);
-  return name;
+    // This function uses _element_map.
+    assert(ename && ename[0] == ';');
+    String name = ename.substring(1);
+    if (_element_map[name] >= 0) {
+	int at_pos = name.find_right('@');
+	assert(at_pos >= 0);
+	String prefix = name.substring(0, at_pos + 1);
+	const char *abegin = name.begin() + at_pos + 1, *aend = abegin;
+	while (aend < name.end() && isdigit((unsigned char) *aend))
+	    ++aend;
+	int anonymizer;
+	cp_integer(abegin, aend, 10, &anonymizer);
+	do {
+	    anonymizer++;
+	    name = prefix + String(anonymizer);
+	} while (_element_map[name] >= 0);
+    }
+    _element_map.set(name, eidx);
+    return name;
 }
 
 String
@@ -1152,11 +1155,10 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	    types.push_back(ycompound());
 	    names.push_back(_element_types[types.back()].name);
 	} else if (t.is('(')) {
-	    String name = anon_element_name("");
-	    names.push_back(name);
+	    names.push_back(anon_element_name(""));
 	    types.push_back(-1);
 	    int group_nports[2];
-	    ygroup(name, group_nports);
+	    ygroup(names.back(), group_nports);
 
 	    // an anonymous group has implied, overridable port
 	    // specifications on both sides for all inputs & outputs

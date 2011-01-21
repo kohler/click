@@ -240,6 +240,16 @@ RouterT::change_ename(int ei, const String &new_name)
     }
 }
 
+int
+RouterT::__map_element_name(const String &name, int new_eindex)
+{
+    assert(ElementT::name_ok(name));
+    int &slot = _element_name_map[name];
+    int old_eindex = slot;
+    slot = new_eindex;
+    return old_eindex;
+}
+
 void
 RouterT::assign_element_name(int ei)
 {
@@ -249,8 +259,11 @@ RouterT::assign_element_name(int ei)
 	int at_pos = name.find_right('@');
 	assert(at_pos >= 0);
 	String prefix = name.substring(0, at_pos + 1);
+	const char *abegin = name.begin() + at_pos + 1, *aend = abegin;
+	while (aend < name.end() && isdigit((unsigned char) *aend))
+	    ++aend;
 	int anonymizer;
-	cp_integer(name.substring(at_pos + 1), &anonymizer);
+	cp_integer(abegin, aend, 10, &anonymizer);
 	do {
 	    anonymizer++;
 	    name = prefix + String(anonymizer);
@@ -597,7 +610,7 @@ RouterT::find_connection(const PortT &hfrom, const PortT &hto) const
 }
 
 void
-RouterT::find_connections_touching(ElementT *e, bool isoutput, Vector<int> &v) const
+RouterT::find_connections_touching(const ElementT *e, bool isoutput, Vector<int> &v) const
 {
     assert(e->router() == this);
     int c = _first_conn[e->eindex()][isoutput];
@@ -657,7 +670,7 @@ RouterT::find_connections_touching(const PortT &port, bool isoutput, Vector<int>
 }
 
 void
-RouterT::find_connection_vector_touching(ElementT *e, bool isoutput, Vector<int> &v) const
+RouterT::find_connection_vector_touching(const ElementT *e, bool isoutput, Vector<int> &v) const
 {
     assert(e->router() == this);
     v.clear();
@@ -1183,40 +1196,33 @@ RouterT::find_traits(ElementMap *emap) const
 }
 
 int
+RouterT::check_pseudoelement(const ElementT *e, bool isoutput, const char *name, ErrorHandler *errh) const
+{
+    static const char * const names[2] = {"input", "output"};
+    Vector<int> used;
+    find_connection_vector_touching(e, !isoutput, used);
+    if (e->nports(isoutput))
+	errh->error("%<%s%> pseudoelement %<%s%> may only be used as %s", name, names[isoutput], names[1-isoutput]);
+    for (int i = 0; i < used.size(); ++i)
+	if (used[i] == -1)
+	    errh->error("%<%s%> %s %d missing", name, names[isoutput], i);
+    return e->nports(!isoutput);
+}
+
+int
 RouterT::finish_type(ErrorHandler *errh)
 {
     LocalErrorHandler lerrh(errh);
+    LandmarkErrorHandler landerrh(&lerrh, _type_landmark.str());
 
-    if (ElementT *einput = element("input")) {
-	_ninputs = einput->noutputs();
-	if (einput->ninputs())
-	    lerrh.lerror(_type_landmark.str(), "%<%s%> pseudoelement %<input%> may only be used as output", printable_name_c_str());
-
-	if (_ninputs) {
-	    Vector<int> used;
-	    find_connection_vector_from(einput, used);
-	    assert(used.size() == _ninputs);
-	    for (int i = 0; i < _ninputs; i++)
-		if (used[i] == -1)
-		    lerrh.lerror(_type_landmark.str(), "compound element %<%s%> input %d unused", printable_name_c_str(), i);
-	}
-    } else
+    if (ElementT *einput = element("input"))
+	_ninputs = check_pseudoelement(einput, false, printable_name_c_str(), &landerrh);
+    else
 	_ninputs = 0;
 
-    if (ElementT *eoutput = element("output")) {
-	_noutputs = eoutput->ninputs();
-	if (eoutput->noutputs())
-	    lerrh.lerror(_type_landmark.str(), "%<%s%> pseudoelement %<output%> may only be used as input", printable_name_c_str());
-
-	if (_noutputs) {
-	    Vector<int> used;
-	    find_connection_vector_to(eoutput, used);
-	    assert(used.size() == _noutputs);
-	    for (int i = 0; i < _noutputs; i++)
-		if (used[i] == -1)
-		    lerrh.lerror(_type_landmark.str(), "compound element %<%s%> output %d unused", printable_name_c_str(), i);
-	}
-    } else
+    if (ElementT *eoutput = element("output"))
+	_noutputs = check_pseudoelement(eoutput, true, printable_name_c_str(), &landerrh);
+    else
 	_noutputs = 0;
 
     // resolve anonymous element names

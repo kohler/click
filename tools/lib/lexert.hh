@@ -85,9 +85,10 @@ class LexerT { public:
     void ycompound_arguments(RouterT *);
     void yelementclass(const char *pos1);
     ElementClassT *ycompound(String, const char *decl_pos1, const char *name_pos1);
+    void ygroup(String name, int group_nports[2], const LandmarkT &landmark);
     void yrequire();
     void yvar();
-    bool ystatement(bool nested = false);
+    bool ystatement(int nested = 0);
 
     RouterT *router() const		{ return _router; }
     RouterT *finish(const VariableEnvironment &global_scope);
@@ -151,6 +152,7 @@ class LexerT { public:
 
     int _anonymous_offset;
     int _anonymous_class_count;
+    int _group_depth;
 
     Vector<String> _libraries;
 
