@@ -33,7 +33,9 @@
 %token REQUIRE
 %token DEFINE
 
-%expect 10
+%left ARROW ARROW2
+%left IDENTIFIER CLASSNAME_IDENTIFIER '(' '[' '{'
+%left ';'
 
 %%
 
@@ -65,13 +67,16 @@ stmt:	connection
 	| ';';
 
 connection:
-	elements conntail
+	elements %prec ';'
+	| elements conntail
 	| conntail;
 
 conntail:
-	ARROW elements conntail
-	| ARROW2 elements conntail
-	| ARROW
+	arrow elements conntail
+	| arrow elements %prec ';'
+	| arrow %prec ';';
+
+arrow:	ARROW
 	| ARROW2;
 
 elements:
@@ -79,22 +84,18 @@ elements:
 	| elements ',' element;
 
 element:
-	element_reference opt_port;
-	| port element_reference opt_port;
+	element_reference %prec ';'
+	| element_reference port
+	| port element_reference %prec ';'
+	| port element_reference port;
 
 element_reference:
 	element_name
-	| element_name COLONCOLON class opt_config
-	| class opt_config
+	| element_name COLONCOLON class '(' CONFIGSTRING ')'
+	| element_name COLONCOLON class %prec ';'
+	| class '(' CONFIGSTRING ')'
+	| class %prec ';'
 	| group;
-
-opt_config:
-	'(' CONFIGSTRING ')'
-	| empty;
-
-opt_port:
-	port
-	| empty;
 
 port:	'[' ']'
 	| '[' port_numbers ']'
