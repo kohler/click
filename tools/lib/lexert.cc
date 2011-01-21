@@ -620,15 +620,16 @@ struct ElementState {
     String name;
     ElementClassT *type;
     ElementClassT *decl_type;
+    bool bare;
     String configuration;
     Lexeme decl_lexeme;
     const char *decl_pos2;
     ElementState *next;
-    ElementState(const String &name_, ElementClassT *type_,
+    ElementState(const String &name_, ElementClassT *type_, bool bare_,
 		 const Lexeme &decl_lexeme_, const char *decl_pos2_,
 		 ElementState **&tail)
-	: name(name_), type(type_), decl_type(0), decl_lexeme(decl_lexeme_),
-	  decl_pos2(decl_pos2_), next(0) {
+	: name(name_), type(type_), decl_type(0), bare(bare_),
+	  decl_lexeme(decl_lexeme_), decl_pos2(decl_pos2_), next(0) {
 	*tail = this;
 	tail = &next;
     }
@@ -652,7 +653,7 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
     ElementState *head = 0, **tail = &head;
     Vector<int> res;
     const char *xport_pos[2];
-    bool any_implicit = false;
+    bool any_implicit = false, any_ports = false;
 
     // parse list of names (which might include classes)
     Lexeme t;
@@ -727,18 +728,33 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 	    }
 	}
 
-	ElementState *e = new ElementState(name, type, t, decl_pos2, tail);
+	ElementState *e = new ElementState(name, type, t.is(lexIdent), t, decl_pos2, tail);
+
+	// ":: CLASS" declaration
+	t = lex();
+	if (t.is(lex2Colon) && !this_implicit) {
+	    t = lex();
+	    if (t.is(lexIdent))
+		e->decl_type = force_element_type(t);
+	    else if (t.is('{'))
+		e->decl_type = ycompound(String(), t.pos1(), t.pos1());
+	    else {
+		lerror(t, "missing element type in declaration");
+		e->decl_type = force_element_type(e->decl_lexeme);
+		unlex(t);
+	    }
+	    e->bare = false;
+	    t = lex();
+	}
 
 	// configuration string
-	t = lex();
 	if (t.is('(') && !this_implicit) {
 	    if (_router->element(e->name))
 		lerror(t, "configuration string ignored on element reference");
-	    else if (!e->type)
-		e->type = force_element_type(e->decl_lexeme);
 	    e->configuration = lex_config().string();
 	    expect(')');
 	    e->decl_pos2 = next_pos();
+	    e->bare = false;
 	    t = lex();
 	}
 
@@ -751,72 +767,52 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 	    res[esize + 2] = res.size() - (esize + 3 + res[esize + 1]);
 	    t = lex();
 	}
+	any_ports = any_ports || res[esize + 1] || res[esize + 2];
 
 	if (!t.is(','))
 	    break;
     }
 
+    unlex(t);
+
     // maybe complain about implicits
-    if (any_implicit && t.is(lex2Colon))
-	lerror(t, "implicit ports used in declaration");
-    else if (any_implicit && in_allowed
-	     && (t.is(lexArrow) || t.is(lex2Arrow)))
+    if (any_implicit && in_allowed && (t.is(lexArrow) || t.is(lex2Arrow)))
 	lerror(t, "implicit ports used in the middle of a chain");
 
-    // parse ":: CLASS [(CONFIGSTRING)]"
-    if (t.is(lex2Colon)) {
-	t = lex();
-	ElementClassT *decl_etype;
-	if (t.is(lexIdent))
-	    decl_etype = force_element_type(t);
-	else if (t.is('{'))
-	    decl_etype = ycompound(String(), t.pos1(), t.pos1());
-	else {
-	    lerror(t, "missing element type in declaration");
-	    decl_etype = force_element_type(head->decl_lexeme);
-	}
-
-	String decl_configuration;
-	if (expect('(', true)) {
-	    decl_configuration = lex_config().string();
-	    expect(')');
-	}
-
-	const char *my_decl_pos2 = (head->next == 0 ? next_pos() : 0);
-
-	for (ElementState *e = head; e; e = e->next)
-	    if (e->type || e->name == decl_etype->name())
-		lerror(e->decl_lexeme, "class %<%s%> used as element name", e->name.c_str());
-	    else if (ElementT *old_e = _router->element(e->name))
-		ElementT::redeclaration_error(_errh, "element", e->name, _file.landmark(), old_e->landmark());
-	    else
-		make_element(e->name, e->decl_lexeme, my_decl_pos2, decl_etype, decl_configuration);
-
-	// parse optional output port after declaration
-	if (head->next == 0 && res[2] == 0) {
-	    yport(res, epos + 3);
-	    res[2] = res.size() - (3 + res[1]);
-	}
-
-    } else
-	unlex(t);
+    // maybe spread class and configuration for standalone
+    // multiple-element declaration
+    if (head->next && !in_allowed && !(t.is(lexArrow) || t.is(lex2Arrow))
+	&& !any_ports && !any_implicit) {
+	ElementState *last = head;
+	while (last->next && last->bare)
+	    last = last->next;
+	if (!last->next && last->decl_type)
+	    for (ElementState *e = head; e->next; e = e->next) {
+		e->decl_type = last->decl_type;
+		e->configuration = last->configuration;
+		e->decl_pos2 = last->decl_pos2;
+	    }
+    }
 
     // add elements
     int *resp = res.begin();
     while (ElementState *e = head) {
-	head = e->next;
-	if (e->type)
-	    *resp = make_anon_element(e->decl_lexeme, e->decl_pos2, e->type, e->configuration);
-	else {
-	    *resp = _router->eindex(e->name);
-	    if (*resp < 0) {
-		// assume it's an element type
-		ElementClassT *etype = force_element_type(e->decl_lexeme);
-		*resp = make_anon_element(e->decl_lexeme, e->decl_lexeme.pos2(), etype, e->configuration);
-	    } else
-		_lexinfo->notify_element_reference(_router->element(*resp), e->decl_lexeme.pos1(), e->decl_lexeme.pos2());
+	if (e->type || (*resp = _router->eindex(e->name)) < 0) {
+	    if (e->decl_type && (e->type || e->name == e->decl_type->name()))
+		lerror(e->decl_lexeme, "class %<%s%> used as element name", e->name.c_str());
+	    else if (!e->decl_type && !e->type)
+		e->type = force_element_type(e->decl_lexeme);
+	    if (e->type)
+		e->name = anon_element_name(e->type->name());
+	    *resp = make_element(e->name, e->decl_lexeme, e->decl_pos2, e->type ? e->type : e->decl_type, e->configuration);
+	} else {
+	    if (e->decl_type)
+		ElementT::redeclaration_error(_errh, "element", e->name, _file.landmark(), _router->element(*resp)->landmark());
+	    _lexinfo->notify_element_reference(_router->element(*resp), e->decl_lexeme.pos1(), e->decl_lexeme.pos2());
 	}
+
 	resp += 3 + resp[1] + resp[2];
+	head = e->next;
 	delete e;
     }
 

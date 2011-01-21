@@ -1120,14 +1120,16 @@ struct ElementState {
     String name;
     int type;
     int decl_type;
+    bool bare;
     String configuration;
     String filename;
     unsigned lineno;
     ElementState *next;
-    ElementState(const String &name_, int type_, const String &filename_,
-		 unsigned lineno_, ElementState **&tail)
-	: name(name_), type(type_), decl_type(-1), filename(filename_),
-	  lineno(lineno_), next(0) {
+    ElementState(const String &name_, int type_, bool bare_,
+		 const String &filename_, unsigned lineno_,
+		 ElementState **&tail)
+	: name(name_), type(type_), decl_type(-1), bare(bare_),
+	  filename(filename_), lineno(lineno_), next(0) {
 	*tail = this;
 	tail = &next;
     }
@@ -1146,7 +1148,7 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 {
     ElementState *head = 0, **tail = &head;
     Vector<int> res;
-    bool any_implicit = false;
+    bool any_implicit = false, any_ports = false;
 
     // parse lists of names (which might include classes)
     Lexeme t;
@@ -1216,17 +1218,32 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	    }
 	}
 
-	ElementState *e = new ElementState(name, type, _file._filename, _file._lineno, tail);
+	ElementState *e = new ElementState(name, type, t.is(lexIdent), _file._filename, _file._lineno, tail);
+
+	// ":: CLASS" declaration
+	t = lex();
+	if (t.is(lex2Colon) && !this_implicit) {
+	    t = lex();
+	    if (t.is(lexIdent))
+		e->decl_type = force_element_type(t.string());
+	    else if (t.is('{'))
+		e->decl_type = ycompound();
+	    else {
+		lerror("missing element type in declaration");
+		e->decl_type = force_element_type(e->name);
+		unlex(t);
+	    }
+	    e->bare = false;
+	    t = lex();
+	}
 
 	// configuration string
-	t = lex();
 	if (t.is('(') && !this_implicit) {
 	    if (_element_map[e->name] >= 0)
 		lerror("configuration string ignored on element reference");
-	    else if (e->type < 0)
-		e->type = force_element_type(e->name);
 	    e->configuration = lex_config();
 	    expect(')');
+	    e->bare = false;
 	    t = lex();
 	}
 
@@ -1239,69 +1256,53 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	    res[esize + 2] = res.size() - (esize + 3 + res[esize + 1]);
 	    t = lex();
 	}
+	any_ports = any_ports || res[esize + 1] || res[esize + 2];
 
 	if (!t.is(','))
 	    break;
     }
 
+    unlex(t);
+
     // maybe complain about implicits
-    if (any_implicit && t.is(lex2Colon))
-	lerror("implicit ports used in declaration");
-    else if (any_implicit && in_allowed
-	     && (t.is(lexArrow) || t.is(lex2Arrow)))
+    if (any_implicit && in_allowed && (t.is(lexArrow) || t.is(lex2Arrow)))
 	lerror("implicit ports used in the middle of a chain");
 
-    // parse ":: CLASS [(CONFIGSTRING)]"
-    if (t.is(lex2Colon)) {
-	t = lex();
-	int decl_etype;
-	if (t.is(lexIdent))
-	    decl_etype = force_element_type(t.string());
-	else if (t.is('{'))
-	    decl_etype = ycompound();
-	else {
-	    lerror("missing element type in declaration");
-	    decl_etype = force_element_type(head->name);
-	}
-
-	String decl_configuration;
-	if (expect('(', true)) {
-	    decl_configuration = lex_config();
-	    expect(')');
-	}
-
-	for (ElementState *e = head; e; e = e->next)
-	    if (e->type >= 0)
-		_errh->lerror(Compound::landmark_string(e->filename, e->lineno), "class %<%s%> used as element name", e->name.c_str());
-	    else if (_element_map[e->name] >= 0) {
-		int ei = _element_map[e->name];
-		_errh->lerror(Compound::landmark_string(e->filename, e->lineno), "redeclaration of element %<%s%>", e->name.c_str());
-		if (_c->_elements[ei] != TUNNEL_TYPE)
-		    _errh->lerror(_c->element_landmark(ei), "element %<%s%> previously declared here", e->name.c_str());
-	    } else
-		get_element(e->name, decl_etype, decl_configuration, e->filename, e->lineno);
-
-	// parse optional output port after declaration
-	if (head->next == 0 && res[2] == 0) {
-	    yport(res);
-	    res[2] = res.size() - (3 + res[1]);
-	}
-
-    } else
-	unlex(t);
+    // maybe spread class and configuration for standalone
+    // multiple-element declaration
+    if (head->next && !in_allowed && !(t.is(lexArrow) || t.is(lex2Arrow))
+	&& !any_ports && !any_implicit) {
+	ElementState *last = head;
+	while (last->next && last->bare)
+	    last = last->next;
+	if (!last->next && last->decl_type)
+	    for (ElementState *e = head; e->next; e = e->next) {
+		e->decl_type = last->decl_type;
+		e->configuration = last->configuration;
+	    }
+    }
 
     // add elements
     int *resp = res.begin();
     while (ElementState *e = head) {
-	head = e->next;
-	if (e->type >= 0)
-	    *resp = get_element(anon_element_name(e->name), e->type, e->configuration, e->filename, e->lineno);
-	else if ((*resp = _element_map[e->name]) < 0) {
-	    _errh->lerror(Compound::landmark_string(e->filename, e->lineno), "undeclared element %<%s%>, assuming element class", e->name.c_str());
-	    int etype = force_element_type(e->name, false);
-	    *resp = get_element(anon_element_name(e->name), etype, e->configuration, e->filename, e->lineno);
+	if (e->type >= 0 || (*resp = _element_map[e->name]) < 0) {
+	    if (e->decl_type >= 0 && e->type >= 0)
+		_errh->lerror(Compound::landmark_string(e->filename, e->lineno), "class %<%s%> used as element name", e->name.c_str());
+	    else if (e->decl_type < 0 && e->type < 0) {
+		_errh->lerror(Compound::landmark_string(e->filename, e->lineno), "undeclared element %<%s%>, assuming element class", e->name.c_str());
+		e->type = force_element_type(e->name, false);
+	    }
+	    if (e->type >= 0)
+		e->name = anon_element_name(e->name);
+	    *resp = get_element(e->name, e->type >= 0 ? e->type : e->decl_type, e->configuration, e->filename, e->lineno);
+	} else if (e->decl_type >= 0) {
+	    _errh->lerror(Compound::landmark_string(e->filename, e->lineno), "redeclaration of element %<%s%>", e->name.c_str());
+	    if (_c->_elements[*resp] != TUNNEL_TYPE)
+		_errh->lerror(_c->element_landmark(*resp), "element %<%s%> previously declared here", e->name.c_str());
 	}
+
 	resp += 3 + resp[1] + resp[2];
+	head = e->next;
 	delete e;
     }
 
