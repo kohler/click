@@ -46,8 +46,14 @@
    a :: A [0];
 
    Higher-level processing should detect and report these errors.
+
    Similarly, an output port following an explicit declaration, as in "a ::
-   A [0]", should be accepted only if exactly one element was declared. */
+   A [0]", should be accepted only if exactly one element was declared.
+
+   The grammar will parse a standalone declaration like "a, b, c :: Class;"
+   as "(a), (b), (c :: Class)".  However, for standalone declarations (and
+   standalone declarations only), the Class declaration applies to all
+   named elements. */
 
 stmts:	stmts stmt
 	| empty;
@@ -69,33 +75,18 @@ conntail:
 	| ARROW2;
 
 elements:
-	element_references
-	| element_name_references COLONCOLON class opt_config opt_port;
+	element
+	| elements ',' element;
 
-element_references:
-	element_name_references
-	| anonymous_element_reference element_references_tail
-	| element_name_references ',' anonymous_element_reference element_references_tail;
+element:
+	element_reference opt_port;
+	| port element_reference opt_port;
 
-element_references_tail:
-	element_references_tail ',' element_name_reference
-	| element_references_tail ',' anonymous_element_reference
-	| empty;
-
-anonymous_element_reference:
-	class opt_config opt_port
-	| port class opt_config opt_port
-	| group opt_port
-	| port group opt_port;
-
-element_name_references:
-	element_name_reference
-	| element_name_references ',' element_name_reference;
-
-element_name_reference:
-	element_name opt_port
-	| port element_name opt_port
-	| port;
+element_reference:
+	element_name
+	| element_name COLONCOLON class opt_config
+	| class opt_config
+	| group;
 
 opt_config:
 	'(' CONFIGSTRING ')'
