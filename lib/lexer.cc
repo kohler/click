@@ -1115,6 +1115,25 @@ Lexer::yport(Vector<int> &ports)
     }
 }
 
+namespace {
+struct ElementState {
+    String name;
+    int type;
+    int decl_type;
+    String configuration;
+    String filename;
+    unsigned lineno;
+    ElementState *next;
+    ElementState(const String &name_, int type_, const String &filename_,
+		 unsigned lineno_, ElementState **&tail)
+	: name(name_), type(type_), decl_type(-1), filename(filename_),
+	  lineno(lineno_), next(0) {
+	*tail = this;
+	tail = &next;
+    }
+};
+}
+
 // Returned result is a vector listing all elements and port references.
 // The vector is a concatenated series of groups, each of which looks like:
 // group[0] element index
@@ -1125,11 +1144,7 @@ Lexer::yport(Vector<int> &ports)
 bool
 Lexer::yelement(Vector<int> &result, bool in_allowed)
 {
-    Vector<String> names;
-    Vector<int> types;
-    Vector<String> configurations;
-    Vector<String> filenames;
-    Vector<unsigned> linenos;
+    ElementState *head = 0, **tail = &head;
     Vector<int> res;
     bool any_implicit = false;
 
@@ -1147,18 +1162,21 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	res[esize + 1] = res.size() - (esize + 3);
 
 	// element name or class
+	String name;
+	int type;
+
 	t = lex();
 	if (t.is(lexIdent)) {
-	    names.push_back(t.string());
-	    types.push_back(element_type(names.back()));
+	    name = t.string();
+	    type = element_type(name);
 	} else if (t.is('{')) {
-	    types.push_back(ycompound());
-	    names.push_back(_element_types[types.back()].name);
+	    type = ycompound();
+	    name = _element_types[type].name;
 	} else if (t.is('(')) {
-	    names.push_back(anon_element_name(""));
-	    types.push_back(-1);
+	    name = anon_element_name("");
+	    type = -1;
 	    int group_nports[2];
-	    ygroup(names.back(), group_nports);
+	    ygroup(name, group_nports);
 
 	    // an anonymous group has implied, overridable port
 	    // specifications on both sides for all inputs & outputs
@@ -1178,8 +1196,8 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 		this_implicit = in_allowed && (res[esize + 1] || !esize);
 	    if (this_implicit) {
 		any_implicit = true;
-		names.push_back(in_allowed ? "output" : "input");
-		types.push_back(element_type(names.back()));
+		name = (in_allowed ? "output" : "input");
+		type = element_type(name);
 		if (!in_allowed)
 		    click_swap(res[esize+1], res[esize+2]);
 		unlex(t);
@@ -1198,21 +1216,19 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	    }
 	}
 
-	filenames.push_back(_file._filename);
-	linenos.push_back(_file._lineno);
+	ElementState *e = new ElementState(name, type, _file._filename, _file._lineno, tail);
 
 	// configuration string
 	t = lex();
 	if (t.is('(') && !this_implicit) {
-	    if (_element_map[names.back()] >= 0)
+	    if (_element_map[e->name] >= 0)
 		lerror("configuration string ignored on element reference");
-	    else if (types.back() < 0)
-		types.back() = force_element_type(names.back());
-	    configurations.push_back(lex_config());
+	    else if (e->type < 0)
+		e->type = force_element_type(e->name);
+	    e->configuration = lex_config();
 	    expect(')');
 	    t = lex();
-	} else
-	    configurations.push_back(String());
+	}
 
 	// final port
 	if (t.is('[') && !this_implicit) {
@@ -1245,7 +1261,7 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	    decl_etype = ycompound();
 	else {
 	    lerror("missing element type in declaration");
-	    decl_etype = force_element_type(names[0]);
+	    decl_etype = force_element_type(head->name);
 	}
 
 	String decl_configuration;
@@ -1254,19 +1270,19 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	    expect(')');
 	}
 
-	for (int i = 0; i < types.size(); ++i)
-	    if (types[i] >= 0)
-		_errh->lerror(Compound::landmark_string(filenames[i], linenos[i]), "class %<%s%> used as element name", names[i].c_str());
-	    else if (_element_map[names[i]] >= 0) {
-		int e = _element_map[names[i]];
-		_errh->lerror(Compound::landmark_string(filenames[i], linenos[i]), "redeclaration of element %<%s%>", names[i].c_str());
-		if (_c->_elements[e] != TUNNEL_TYPE)
-		    _errh->lerror(_c->element_landmark(e), "element %<%s%> previously declared here", names[i].c_str());
+	for (ElementState *e = head; e; e = e->next)
+	    if (e->type >= 0)
+		_errh->lerror(Compound::landmark_string(e->filename, e->lineno), "class %<%s%> used as element name", e->name.c_str());
+	    else if (_element_map[e->name] >= 0) {
+		int ei = _element_map[e->name];
+		_errh->lerror(Compound::landmark_string(e->filename, e->lineno), "redeclaration of element %<%s%>", e->name.c_str());
+		if (_c->_elements[ei] != TUNNEL_TYPE)
+		    _errh->lerror(_c->element_landmark(ei), "element %<%s%> previously declared here", e->name.c_str());
 	    } else
-		get_element(names[i], decl_etype, decl_configuration, filenames[i], linenos[i]);
+		get_element(e->name, decl_etype, decl_configuration, e->filename, e->lineno);
 
 	// parse optional output port after declaration
-	if (names.size() == 1 && res[2] == 0) {
+	if (head->next == 0 && res[2] == 0) {
 	    yport(res);
 	    res[2] = res.size() - (3 + res[1]);
 	}
@@ -1276,15 +1292,17 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 
     // add elements
     int *resp = res.begin();
-    for (int i = 0; i < names.size(); ++i) {
-	if (types[i] >= 0)
-	    *resp = get_element(anon_element_name(names[i]), types[i], configurations[i], filenames[i], linenos[i]);
-	else if ((*resp = _element_map[names[i]]) < 0) {
-	    _errh->lerror(Compound::landmark_string(filenames[i], linenos[i]), "undeclared element %<%s%>, assuming element class", names[i].c_str());
-	    int etype = force_element_type(names[i], false);
-	    *resp = get_element(anon_element_name(names[i]), etype, configurations[i], filenames[i], linenos[i]);
+    while (ElementState *e = head) {
+	head = e->next;
+	if (e->type >= 0)
+	    *resp = get_element(anon_element_name(e->name), e->type, e->configuration, e->filename, e->lineno);
+	else if ((*resp = _element_map[e->name]) < 0) {
+	    _errh->lerror(Compound::landmark_string(e->filename, e->lineno), "undeclared element %<%s%>, assuming element class", e->name.c_str());
+	    int etype = force_element_type(e->name, false);
+	    *resp = get_element(anon_element_name(e->name), etype, e->configuration, e->filename, e->lineno);
 	}
 	resp += 3 + resp[1] + resp[2];
+	delete e;
     }
 
     result.swap(res);

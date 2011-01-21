@@ -615,6 +615,26 @@ LexerT::yport(Vector<int> &ports, const char *pos[2])
     }
 }
 
+namespace {
+struct ElementState {
+    String name;
+    ElementClassT *type;
+    ElementClassT *decl_type;
+    String configuration;
+    Lexeme decl_lexeme;
+    const char *decl_pos2;
+    ElementState *next;
+    ElementState(const String &name_, ElementClassT *type_,
+		 const Lexeme &decl_lexeme_, const char *decl_pos2_,
+		 ElementState **&tail)
+	: name(name_), type(type_), decl_type(0), decl_lexeme(decl_lexeme_),
+	  decl_pos2(decl_pos2_), next(0) {
+	*tail = this;
+	tail = &next;
+    }
+};
+}
+
 // Returned result is a vector listing all elements and port references.
 // The vector is a concatenated series of groups, each of which looks like:
 // group[0] element index
@@ -629,11 +649,7 @@ LexerT::yport(Vector<int> &ports, const char *pos[2])
 bool
 LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 {
-    Vector<String> names;
-    Vector<Lexeme> decl_lexeme;
-    Vector<const char *> decl_pos2;
-    Vector<ElementClassT *> types;
-    Vector<String> configurations;
+    ElementState *head = 0, **tail = &head;
     Vector<int> res;
     const char *xport_pos[2];
     bool any_implicit = false;
@@ -648,28 +664,30 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 	bool this_implicit = false;
 
 	// initial port
-	const char **inpos = names.size() ? xport_pos : epos;
+	const char **inpos = head ? xport_pos : epos;
 	yport(res, inpos);
 	res[esize + 1] = res.size() - (esize + 3);
 
 	// element name or class
-	if (names.empty())
+	String name;
+	ElementClassT *type;
+
+	if (!head)
 	    epos[2] = next_pos();
 	t = lex();
-	const char *my_decl_pos2 = 0;
+	const char *decl_pos2 = t.pos2();
 	if (t.is(lexIdent)) {
-	    names.push_back(t.string());
-	    types.push_back(element_type(t));
-	    my_decl_pos2 = t.pos2();
+	    name = t.string();
+	    type = element_type(t);
 	} else if (t.is('{')) {
-	    types.push_back(ycompound(String(), t.pos1(), t.pos1()));
-	    names.push_back(types.back()->name());
-	    my_decl_pos2 = next_pos();
+	    type = ycompound(String(), t.pos1(), t.pos1());
+	    name = type->name();
+	    decl_pos2 = next_pos();
 	} else if (t.is('(')) {
-	    names.push_back(anon_element_name(""));
-	    types.push_back(0);
+	    name = anon_element_name("");
+	    type = 0;
 	    int group_nports[2];
-	    ygroup(names.back(), group_nports, landmarkt(t.pos1(), t.pos2()));
+	    ygroup(name, group_nports, landmarkt(t.pos1(), t.pos2()));
 
 	    // an anonymous group has implied, overridable port
 	    // specifications on both sides for all inputs & outputs
@@ -689,8 +707,8 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 		this_implicit = in_allowed && (res[esize + 1] || !esize);
 	    if (this_implicit) {
 		any_implicit = true;
-		names.push_back(in_allowed ? "output" : "input");
-		types.push_back(0);
+		name = (in_allowed ? "output" : "input");
+		type = 0;
 		if (!in_allowed)
 		    click_swap(res[esize+1], res[esize+2]);
 		unlex(t);
@@ -709,23 +727,20 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 	    }
 	}
 
-	decl_lexeme.push_back(t);
+	ElementState *e = new ElementState(name, type, t, decl_pos2, tail);
 
 	// configuration string
 	t = lex();
 	if (t.is('(') && !this_implicit) {
-	    if (_router->element(names.back()))
+	    if (_router->element(e->name))
 		lerror(t, "configuration string ignored on element reference");
-	    else if (!types.back())
-		types.back() = force_element_type(decl_lexeme.back());
-	    configurations.push_back(lex_config().string());
+	    else if (!e->type)
+		e->type = force_element_type(e->decl_lexeme);
+	    e->configuration = lex_config().string();
 	    expect(')');
-	    my_decl_pos2 = next_pos();
+	    e->decl_pos2 = next_pos();
 	    t = lex();
-	} else
-	    configurations.push_back(String());
-
-	decl_pos2.push_back(my_decl_pos2);
+	}
 
 	// final port
 	if (t.is('[') && !this_implicit) {
@@ -758,7 +773,7 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 	    decl_etype = ycompound(String(), t.pos1(), t.pos1());
 	else {
 	    lerror(t, "missing element type in declaration");
-	    decl_etype = force_element_type(decl_lexeme[0]);
+	    decl_etype = force_element_type(head->decl_lexeme);
 	}
 
 	String decl_configuration;
@@ -767,18 +782,18 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 	    expect(')');
 	}
 
-	const char *my_decl_pos2 = (names.size() == 1 ? next_pos() : 0);
+	const char *my_decl_pos2 = (head->next == 0 ? next_pos() : 0);
 
-	for (int i = 0; i < types.size(); ++i)
-	    if (types[i] || names[i] == decl_etype->name())
-		lerror(decl_lexeme[i], "class %<%s%> used as element name", names[i].c_str());
-	    else if (ElementT *old_e = _router->element(names[i]))
-		ElementT::redeclaration_error(_errh, "element", names[i], _file.landmark(), old_e->landmark());
+	for (ElementState *e = head; e; e = e->next)
+	    if (e->type || e->name == decl_etype->name())
+		lerror(e->decl_lexeme, "class %<%s%> used as element name", e->name.c_str());
+	    else if (ElementT *old_e = _router->element(e->name))
+		ElementT::redeclaration_error(_errh, "element", e->name, _file.landmark(), old_e->landmark());
 	    else
-		make_element(names[i], decl_lexeme[i], my_decl_pos2, decl_etype, decl_configuration);
+		make_element(e->name, e->decl_lexeme, my_decl_pos2, decl_etype, decl_configuration);
 
 	// parse optional output port after declaration
-	if (names.size() == 1 && res[2] == 0) {
+	if (head->next == 0 && res[2] == 0) {
 	    yport(res, epos + 3);
 	    res[2] = res.size() - (3 + res[1]);
 	}
@@ -788,19 +803,21 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 
     // add elements
     int *resp = res.begin();
-    for (int i = 0; i < names.size(); ++i) {
-	if (types[i])
-	    *resp = make_anon_element(decl_lexeme[i], decl_pos2[i], types[i], configurations[i]);
+    while (ElementState *e = head) {
+	head = e->next;
+	if (e->type)
+	    *resp = make_anon_element(e->decl_lexeme, e->decl_pos2, e->type, e->configuration);
 	else {
-	    *resp = _router->eindex(names[i]);
+	    *resp = _router->eindex(e->name);
 	    if (*resp < 0) {
 		// assume it's an element type
-		ElementClassT *etype = force_element_type(decl_lexeme[i]);
-		*resp = make_anon_element(decl_lexeme[i], decl_lexeme[i].pos2(), etype, configurations[i]);
+		ElementClassT *etype = force_element_type(e->decl_lexeme);
+		*resp = make_anon_element(e->decl_lexeme, e->decl_lexeme.pos2(), etype, e->configuration);
 	    } else
-		_lexinfo->notify_element_reference(_router->element(*resp), decl_lexeme[i].pos1(), decl_lexeme[i].pos2());
+		_lexinfo->notify_element_reference(_router->element(*resp), e->decl_lexeme.pos1(), e->decl_lexeme.pos2());
 	}
 	resp += 3 + resp[1] + resp[2];
+	delete e;
     }
 
     result.swap(res);
