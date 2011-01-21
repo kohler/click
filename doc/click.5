@@ -41,76 +41,118 @@
 click \- Click configuration language
 '
 .SH DESCRIPTION
-The Click language describes the configuration of a Click router. It has
-two main directives:
+The Click language is used to describe Click router configurations.
+.LP
+Two fundamental statements suffice to describe any router:
 .IR declarations
-declare new elements, and
+introduce elements, and
 .IR connections
-connect those elements together.  Click router configurations are like
-directed graphs of elements; in this interpretation, declarations specify
-the vertices of the graph and connections specify the edges.  Other
-language statements define configuration parameters and create new element
-types.
-'
-.SS "Declarations"
-'
+define packet flow between them.  If you
+think of a Click router configuration as a directed graph of elements,
+declarations list the graph's vertices and connections list its edges.
+.LP
 A declaration looks like this:
 .Rs
 .IR "name" " :: " "class" ( "config" );
 .Re
-(The semicolon, like all semicolons in Click syntax, is optional.)
-This declares an element called
+This introduces an element called
 .IR name
 that has element class
 .IR class
 and configuration arguments
 .IR config .
-If the configuration string is empty, the parentheses can be left off.
-Also, there can be two or more names in a comma-separated list, which has
-the same effect as multiple declarations.
+.LP
+A connection looks like this:
+.Rs
+.IR "name1" " [" "port1" "] -> [" "port2" "] " "name2" ;
+.Re
+This says that
+.IR name1 "'s output port " port1
+connects
+.IR name2 "'s input port " port2 .
+The two
+.IR name s
+must refer to previously declared elements, and the two
+.IR port s
+must be nonnegative integers.
+.LP
+Each element must be declared exactly once before being used in
+any connection.  It is an error to declare an element name more than
+once in the same scope.  It is not an error to repeat a connection,
+however.
+.LP
+Lexically, Click identifiers, such as element names and class names,
+are sequences of letters, numbers, underscores, at-signs, and slashes
+that do not begin or end with a slash.  Configuration strings are
+sequences of characters delimited by parentheses, possibly including
+balanced parentheses and quoted strings.  The semicolons that
+terminate statements are generally optional (in some cases described
+later they are required to avoid ambiguity).  Lexical issues are
+described in more depth below.
+.LP
+Any configuration can be completely defined with these statements.
+The rest of the Click language offers extensive shorthand and
+abstraction features that simplify router programming.
+'
+.SH "SHORTHAND"
+.SS "Declaration shorthand"
+'
+Declarations can omit empty configuration strings entirely, and can
+declare multiple elements using a comma-separated list of names:
 .Rs
 .IR "name" " :: " "class" ;
 .br
 .IR "name1" ", " "name2" ", ..., " "nameN" " ::"
 .IR "class" ( "config" );
 .Re
-'
-.SS "Connections"
-'
-A connection looks like this:
+You may also declare an element without specifying its name, in which case the
+system will choose an element name for you.  Such elements are called
+.IR anonymous .
+For example:
 .Rs
-.IR "name1" " [" "port1" "] -> [" "port2" "] " "name2" ;
+.IR class "(" config ");"
 .Re
-where the two
-.IR name s
-are names of previously declared elements, and the two
-.IR port s
-are nonnegative integers. This says that
-.IR name1 "'s output port " port1
-should be connected to
-.IR name2 "'s input port " port2 .
-Two connections can be strung together into a single statement if the
+is equivalent to
+.Rs
+.IR generatedname " :: " class ( config );
+.Re
+The
+.I generatedname
+has the form
+.RI ` class "@" number ',
+where the
+.IR number
+is chosen to make the name unique. These numbers are predictable: when the
+system parses a Click file twice, that file's anonymous elements will get
+the same generated name. Users may also declare elements with names
+like
+.RI ` class "@" number ',
+though we suggest that users avoid the `@'
+character in their element names.
+'
+.SS "Connection shorthand"
+'
+Connections can be strung together into a single statement if the
 output element of one is the same as the input element of the other:
+.Rs
+.IR "n1" " [" "p1" "] -> [" "p2" "] " "x"
+.RI "[" "p3" "] -> [" "p4" "] " "n2" ;
+.Re
+means
 .Rs
 .IR "n1" " [" "p1" "] -> [" "p2" "] " "x" ;
 .br
 .IR "x" " [" "p3" "] -> [" "p4" "] " "n2" ;
 .Re
-is the same as
-.Rs
-.IR "n1" " [" "p1" "] -> [" "p2" "] " "x"
-.RI "[" "p3" "] -> [" "p4" "] " "n2" ;
-.Re
-This can be extended to three or more connections. Furthermore, if an input
-or output port is 0, it can be omitted along with the brackets. These two
-lines are equivalent:
+If a port number is missing, [0] is implied.  These two lines are equivalent:
 .Rs
 .IR "n1" " [0] -> [0] " "n2" ;
 .br
 .IR "n1" " -> " "n2" ;
 .Re
 .PP
-You can also declare elements inside connections:
+Elements may also be declared inside connections, either with names or
+anonymously.  For instance,
 .Rs
 .RI "... -> [" "p1" "] " "name" " ::"
 .IR "class" ( "config" ") [" "p2" "] -> ...;"
@@ -121,21 +163,7 @@ is equivalent to
 .br
 .RI "... -> [" "p1" "] " "name" " [" "p2" "] -> ...;"
 .Re
-Every such declaration can declare at most one element.
-'
-.SS "Anonymous elements"
-You may declare an element without specifying its name, in which case the
-system will choose an element name for you. For example:
-.Rs
-.IR class "(" config ");"
-.Re
-is equivalent to
-.Rs
-.IR generatedname " :: " class ( config );
-.Re
-As usual, the parentheses can be left off if
-.I config
-is empty. You may also declare an anonymous element inside a connection:
+and
 .Rs
 .RI "... -> [" p1 "] " class ( config )
 .RI "[" p2 "] -> ...;"
@@ -146,21 +174,152 @@ is equivalent to
 .br
 .RI "... -> [" p1 "] " generatedname " [" p2 "] -> ...;"
 .Re
-.PP
-The
-.I generatedname
-has the form
-.RI ` class "@" number ',
-where the
-.IR number
-is chosen to make the name unique. These numbers are predictable: when the
-system parses a Click file twice, that file's anonymous elements will get
-the same generated names each time. Nothing prevents a user from declaring
-an element named like an anonymous element. We suggest that users avoid the `@'
-character in their element names.
-.PP
-Not all elements can usefully be anonymous, since an anonymous element can
-be part of at most two connections (once as input, once as output).
+.SS "Many-to-one connections"
+'
+It is sometimes useful to connect many elements to the same port, for
+example a Discard.  This is concisely specified with a many-to-one
+connection:
+.Rs
+.IR "n1" ", " "n2" ", " "n3" " -> " "x" ;
+.Re
+is equivalent to
+.Rs
+.IR "n1" " -> " x ";"
+.br
+.IR "n2" " -> " x ";"
+.br
+.IR "n3" " -> " x ";"
+.Re
+Port numbers are supported:
+.Rs
+.IR "n1" " [\fIp1\fR], " "n2" " [\fIp2\fR] -> [\fIp3\fR] " "x" ;
+.Re
+is equivalent to
+.Rs
+.IR "n1" " [\fIp1\fR] -> [\fIp3\fR] " "x" ;
+.br
+.IR "n2" " [\fIp2\fR] -> [\fIp3\fR] " "x" ;
+.Re
+One-to-many connections are also allowed (the comma-separated
+list is on the right).
+.LP
+Declarations may occur within a many-to-one connection, but in this
+context each declaration applies only to one name.  For example
+.Rs
+.IR "n1" ", " "n2" " :: " "class" " -> " "n3" ";"
+.Re
+means
+.Rs
+.IR "n2" " :: " "class" ";"
+.br
+.IR "n1" " -> " "n3" ";"
+.br
+.IR "n2" " -> " "n3" ";"
+.Re
+Note that
+.IR n1
+was not declared.
+'
+.SS "Many-to-many connections"
+'
+A many-to-many connection describes how many outputs connect to many
+inputs.  One example might be connecting a simple Classifier.  This code:
+.Rs
+.IR c " :: Classifier(00/01, 00/02, 00/03);"
+.br
+.IR next " :: " class ";"
+.Sp
+.br
+.IR c " [0] -> Paint(0) -> " "next" ";"
+.br
+.IR c " [1] -> Paint(1) -> " "next" ";"
+.br
+.IR c " [2] -> Paint(2) -> " "next" ";"
+.Re
+can instead be written like this, using the `=>' many-to-many connector:
+.Rs
+.IR c " [0], " c " [1], " c " [2] => Paint(0), Paint(1), Paint(2) -> " next ";"
+.Re
+or, even more concisely, either of the following:
+.Rs
+.IR c " [0,1,2] => Paint(0), Paint(1), Paint(2) -> " next ";"
+.br
+.IR c " => Paint(0), Paint(1), Paint(2) -> " next ";"
+.Re
+A many-to-many connection matches output ports to input ports.  There
+must be as many ports on the left as on the right.  However, if one
+side has exactly one element and no port, the connection assigns that
+element's ports sequentially starting from 0.
+'
+.SS "Element groups"
+'
+Element groups cleanly express small detours from a connection path.
+For example, consider:
+.Rs
+.IR c " :: Classifier(00/01);"
+.br
+.IR x " -> " c " -> " y ;
+.br
+.IR c " [1] -> Paint(1) -> " y ;
+.Re
+Expressing the detour with an element group preserves the
+configuration's overall linear flow:
+.Rs
+.IR x " -> " c " :: Classifier(00/01) => (
+.br
+.RI "\~\~\~\~input [0] -> output;"
+.br
+.RI "\~\~\~\~input [1] -> Paint(1) -> output"
+.br
+.RI ") -> " y ";"
+.Re
+An element group is one or more Click statements enclosed in parentheses.
+Within the parentheses, the special pseudoelements "input" and
+"output" refer to connections from outside the group.  Click expands
+the group at parse time, so connections through "input" and "output"
+have no run-time overhead.  The following five lines are equivalent:
+.Rs
+.IR x " -> " y ";"
+.br
+.IR x " -> ( input -> output ) -> " y ";"
+.br
+.IR x " -> ( [0] -> [0] ) -> " y ";"
+.br
+.IR x " -> (->) -> " y ";"
+.br
+.IR x " -> ( [0]->[0]; [1]->[1] ) => ( [0]->[0]; [1]->[1] ) -> " y ";"
+.Re
+Lines three through five use the fact that Click infers "input" at the
+beginning of a connection, and "output" at the end of a connection,
+when element names are missing.  (This language feature
+can require explicit semicolons to avoid ambiguity.)  Line five also
+uses the fact that connections may be repeated without error (the line
+expands to "\fIx\fR -> \fIy\fR; \fIx\fR -> \fIy\fR").  The "input"
+pseudoelement only has outputs and vice versa.
+.LP
+Element groups have implicit, overridable port specifications that
+list all their ports in sequential order.  For example, these three
+lines are equivalent:
+.Rs
+.IR x " => ( [0]->[0]; [1]->[1] ) -> " "y" ";"
+.br
+.IR x " => [0,1] ( [0]->[0]; [1]->[1] ) [0,1] -> " "y" ";"
+.br
+.IR x " -> " y "; " x " [1] -> " y ";"
+.Re
+It is an error to define an element group with nonsequential ports, or
+to leave one or more of its ports unconnected:
+.Rs
+.IR x " => [0] ( [0]->[0]; [1]->Idle ) -> " "y" "; /* Error! */"
+.br
+.IR x " => ( [0]->[0]; [2]->Idle ) -> " "y" "; /* Error! */"
+.Re
+.LP
+An element group does not define a new scope.  Its contents may refer
+to elements declared outside of the group, and declarations inside the
+group are visible after the group closes.  This differs from compound
+elements (see below), which have a related syntax but additionally
+introduce a new scope.
 '
 .SH "CONFIGURATION STRINGS"
 '
@@ -191,7 +350,7 @@ equivalent to `abc'.
 \(bu
 .B Integers
 preceded by an optional `+' or `\-' sign. Decimal, octal (first digit `0'),
-and hexadecimal (starting with `0x') are allowed. 
+and hexadecimal (starting with `0x') are allowed.
 .TP
 \(bu
 .B Real numbers
@@ -272,8 +431,8 @@ Any other `\e[CHAR]' sequence is replaced with `[CHAR]'.
 '
 A
 .I compound element
-is a scoped collection of elements that acts like a single element from
-outside. A compound element can be used anywhere an element class is
+is a scoped collection of elements that behaves like a single element.
+A compound element can be used anywhere an element class is
 expected (that is, in a declaration or connection). Syntactically, a
 compound element is a set of Click statements enclosed in braces `{ }'.
 Inside the braces, the special names `input' and `output' represent
@@ -429,12 +588,12 @@ errors; for example:
 The special keyword `__REST__' matches any additional arguments supplied to
 the compound element. For example:
 .Rs
-\%{ $a, COUNT $count, __REST__ $rest | ... } 
+\%{ $a, COUNT $count, __REST__ $rest | ... }
 .br
 \%           (1, 2, COUNT 3, FOO 4)
 .Re
 This compound element will be expanded with `$a' set to `1', `$count' set
-to `3', and `$rest' set to `2, FOO 4'. 
+to `3', and `$rest' set to `2, FOO 4'.
 .PP
 In a compound element definition, all positional parameters must precede
 any keyword parameters, and `__REST__', if present, must appear last of
@@ -444,7 +603,7 @@ As the compound is expanded, its components' configuration strings are
 searched for references to the parameters. Any such references are replaced
 with the supplied arguments. For example, this code:
 .Rs
-\&... -> { $a | input -> 
+\&... -> { $a | input ->
 .br
 \%           A(1, $a, 3) -> output } (100) -> ...
 .Re
@@ -583,7 +742,7 @@ have special meaning inside compound element definitions.
 The following characters and multi-character sequences are single Click
 tokens:
 .RS
-->\~\~::\~\~;\~\~,\~\~(\~\~)\~\~[\~\~]\~\~{\~\~}\~\~|\~\~||\~\~...
+->\~\~=>\~\~::\~\~;\~\~,\~\~(\~\~)\~\~[\~\~]\~\~{\~\~}\~\~|\~\~||\~\~...
 .RE
 .PP
 Whitespace (using the C definition) and comments separate Click tokens.
