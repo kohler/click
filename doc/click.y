@@ -28,11 +28,12 @@
 %token BARBAR
 %token DOTDOTDOT
 %token ARROW
+%token ARROW2
 %token ELEMENTCLASS
 %token REQUIRE
 %token DEFINE
 
-%expect 3
+%expect 10
 
 %%
 
@@ -58,11 +59,14 @@ stmt:	connection
 	| ';';
 
 connection:
-	elements conntail;
+	elements conntail
+	| conntail;
 
 conntail:
-	ARROW connection
-	| empty;
+	ARROW elements conntail
+	| ARROW2 elements conntail
+	| ARROW
+	| ARROW2;
 
 elements:
 	element_references
@@ -79,29 +83,44 @@ element_references_tail:
 	| empty;
 
 anonymous_element_reference:
-	opt_port class opt_config opt_port;
+	class opt_config opt_port
+	| port class opt_config opt_port
+	| group opt_port
+	| port group opt_port;
 
 element_name_references:
 	element_name_reference
 	| element_name_references ',' element_name_reference;
 
 element_name_reference:
-	opt_port element_name opt_port;
+	element_name opt_port
+	| port element_name opt_port
+	| port;
 
 opt_config:
 	'(' CONFIGSTRING ')'
 	| empty;
 
 opt_port:
-	'[' NUMBER ']'
+	port
 	| empty;
+
+port:	'[' ']'
+	| '[' port_numbers ']'
+	| '[' port_numbers ',' ']';
+
+port_numbers:
+	NUMBER
+	| port_numbers ',' NUMBER;
 
 element_name:
 	IDENTIFIER;
 
 class:	CLASSNAME_IDENTIFIER
-	| '{' compounds '}';
+	| '{' compounds '}'
 	| '{' compounds BARBAR DOTDOTDOT '}';
+
+group:	'(' stmts ')';
 
 compounds:
 	compound
