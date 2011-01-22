@@ -294,8 +294,9 @@ beginning of a connection, and "output" at the end of a connection,
 when element names are missing.  (This language feature
 can require explicit semicolons to avoid ambiguity.)  Line five also
 uses the fact that connections may be repeated without error (the line
-expands to "\fIx\fR -> \fIy\fR; \fIx\fR -> \fIy\fR").  The "input"
-pseudoelement only has outputs and vice versa.
+expands to "\fIx\fR -> \fIy\fR; \fIx\fR -> \fIy\fR").  It is an error
+to use an "input" pseudoelement's input ports or an "output"
+pseudoelement's output ports.
 .LP
 Element groups have implicit, overridable port specifications that
 list all their ports in sequential order.  For example, these three
@@ -363,7 +364,7 @@ a -> X -> b;
 c -> Y -> d;
 .Re
 .PP
-The `input' and `output' pseudoelements incur no run-time overhead.
+The "input" and "output" pseudoelements incur no run-time overhead.
 .PP
 The actual expansions will differ from these examples because the elements
 will have different names. A prefix is prepended to the components' names,
@@ -388,13 +389,13 @@ For this purpose, anonymous compound elements are given constructed names
 like
 .RI `@ number '.
 Nothing prevents a user from declaring an element named like a compound
-element component. We suggest that users generally avoid using the `/'
+element component. We suggest that users generally avoid using the "/"
 character in their element names.
 .PP
-It is an error to use the `input' pseudoelement's input ports or the
-`output' pseudoelement's output ports. It is also an error to leave an
-intermediate port unused\*Efor example, to use `input [0]' and `input [2]'
-but not `input [1]'.
+It is an error to use an "input" pseudoelement's input ports or an
+"output" pseudoelement's output ports. It is also an error to leave an
+intermediate port unused\*Efor example, to use "input [0]" and "input [2]"
+but not "input [1]".
 '
 .SS "The `elementclass' statement"
 '
@@ -626,7 +627,8 @@ in any of the conventional forms (for example, `::',
 .TP
 \(bu
 .B Ethernet addresses
-in the conventional `x:x:x:x:x:x' form (for example, `0:a0:c9:9c:fd:9c').
+in the standard `x-x-x-x-x-x' form (for example,
+`0-a0-c9-9c-fd-9c'), or the more conventional `x:x:x:x:x:x' form.
 .TP
 \(bu
 .B Element names.
