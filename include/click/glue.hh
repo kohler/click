@@ -51,6 +51,7 @@ CLICK_CXX_PROTECT
 # include <sys/proc.h>
 # include <sys/sysproto.h>
 # include <sys/limits.h>
+# include <sys/module.h> /* XXX: for packages */
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 

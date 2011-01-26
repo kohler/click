@@ -342,6 +342,7 @@ pkg-Makefile
 pkg-config.mk.in
 pkg-linuxmodule-26.mk
 pkg-linuxmodule.mk
+pkg-bsdmodule.mk
 pkg-userlevel.mk
 samplellrpc
 samplepackage
