@@ -454,6 +454,7 @@ FromDevice::run_task(Task *)
 	// Got a packet, which includes the MAC header. Make it a real Packet.
 
 	Packet *p = Packet::make(m);
+	assert(p);
 	output(0).push(p);
 	npq++;
 	_npackets++;
