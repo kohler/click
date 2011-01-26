@@ -438,7 +438,8 @@ Packet::alloc_data(uint32_t headroom, uint32_t length, uint32_t tailroom)
     _tail = _data + length;
     _end = _head + n;
 #elif CLICK_BSDMODULE
-    if (n > MCLBYTES) {
+    //click_chatter("allocate new mbuf, length=%d", n);
+    if (n > MJUM16BYTES) {
 	click_chatter("trying to allocate %d bytes: too many\n", n);
 	return false;
     }
@@ -447,7 +448,12 @@ Packet::alloc_data(uint32_t headroom, uint32_t length, uint32_t tailroom)
     if (!m)
 	return false;
     if (n > MHLEN) {
-	MCLGET(m, M_DONTWAIT);
+	if (n > MCLBYTES)
+	    m_cljget(m, M_DONTWAIT, (n <= MJUMPAGESIZE ? MJUMPAGESIZE :
+				     n <= MJUM9BYTES   ? MJUM9BYTES   :
+ 							 MJUM16BYTES));
+	else
+	    MCLGET(m, M_DONTWAIT);
 	if (!(m->m_flags & M_EXT)) {
 	    m_freem(m);
 	    return false;
@@ -583,7 +589,17 @@ Packet::clone()
 # if CLICK_BSDMODULE
     struct mbuf *m;
 
-    if ((m = m_dup(this->_m, M_DONTWAIT)) == NULL)
+    if (this->_m == NULL)
+        return 0;
+
+    if (this->_m->m_flags & M_EXT
+        && (   this->_m->m_ext.ext_type == EXT_JUMBOP
+            || this->_m->m_ext.ext_type == EXT_JUMBO9
+            || this->_m->m_ext.ext_type == EXT_JUMBO16)) {
+        if ((m = dup_jumbo_m(this->_m)) == NULL)
+	    return 0;
+    }
+    else if ((m = m_dup(this->_m, M_DONTWAIT)) == NULL)
 	return 0;
 # endif
 
@@ -715,8 +731,7 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
 	delete[] old_head;
     _destructor = 0;
 # elif CLICK_BSDMODULE
-    else
-	m_freem(old_m);
+    m_freem(old_m); // alloc_data() created a new mbuf, so free the old one
 # endif
 
     _use_count = 1;
@@ -743,6 +758,42 @@ Packet::steal_m()
   p->_m = 0;
   p->kill();
   return m2;
+}
+
+/*
+ * Duplicate a packet by copying data from an mbuf chain to a new mbuf with a
+ * jumbo cluster (i.e., contiguous storage).
+ */
+struct mbuf *
+Packet::dup_jumbo_m(struct mbuf *m)
+{
+  int len = m->m_pkthdr.len;
+  struct mbuf *new_m;
+
+  if (len > MJUM16BYTES) {
+    click_chatter("warning: cannot allocate jumbo cluster for %d bytes", len);
+    return NULL;
+  }
+
+  new_m = m_getjcl(M_DONTWAIT, m->m_type, m->m_flags & M_COPYFLAGS,
+                   (len <= MJUMPAGESIZE ? MJUMPAGESIZE :
+                    len <= MJUM9BYTES   ? MJUM9BYTES   :
+                                          MJUM16BYTES));
+  if (!new_m) {
+    click_chatter("warning: jumbo cluster mbuf allocation failed");
+    return NULL;
+  }
+
+  m_copydata(m, 0, len, mtod(new_m, caddr_t));
+  new_m->m_len = len;
+  new_m->m_pkthdr.len = len;
+
+  /* XXX: Only a subset of what m_dup_pkthdr() would copy: */
+  new_m->m_pkthdr.rcvif = m->m_pkthdr.rcvif;
+  new_m->m_pkthdr.flowid = m->m_pkthdr.flowid;
+  new_m->m_pkthdr.ether_vtag = m->m_pkthdr.ether_vtag;
+
+  return new_m;
 }
 #endif /* CLICK_BSDMODULE */
 

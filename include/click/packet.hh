@@ -83,6 +83,7 @@ class Packet { public:
     struct mbuf *m()			{ return _m; }
     const struct mbuf *m() const	{ return (const struct mbuf *)_m; }
     struct mbuf *steal_m();
+    struct mbuf *dup_jumbo_m(struct mbuf *mbuf);
 #endif
 
 
@@ -1376,10 +1377,10 @@ Packet::assimilate_mbuf(Packet *p)
 				      m->m_dat);
   p->_data = (unsigned char *)m->m_data;
   p->_tail = (unsigned char *)(m->m_data + m->m_len);
-  p->_end = p->_head + (
-		m->m_flags & M_EXT    ? MCLBYTES :
-		m->m_flags & M_PKTHDR ? MHLEN :
-					MLEN);
+  p->_end = p->_head +
+	    (m->m_flags & M_EXT    ? min(m->m_pkthdr.len, m->m_ext.ext_size) :
+	     m->m_flags & M_PKTHDR ? MHLEN :
+				     MLEN);
 }
 
 inline void
@@ -1397,10 +1398,21 @@ Packet::make(struct mbuf *m)
   Packet *p = new Packet;
   if (m->m_pkthdr.len != m->m_len) {
     /* click needs contiguous data */
-    // click_chatter("m_pulldown, Click needs contiguous data");
 
-    if (m_pulldown(m, 0, m->m_pkthdr.len, NULL) == NULL)
-	panic("m_pulldown failed");
+    if (m->m_pkthdr.len <= MCLBYTES) {
+      // click_chatter("m_pulldown, Click needs contiguous data");
+      if (m_pulldown(m, 0, m->m_pkthdr.len, NULL) == NULL)
+        panic("m_pulldown failed");
+    } else {
+      struct mbuf *new_m;
+      new_m = p->dup_jumbo_m(m);
+      m_freem(m);
+      if (new_m == NULL) {
+        delete p;
+        return 0;
+      }
+      m = new_m;
+    }
   }
   p->_m = m;
   assimilate_mbuf(p);
