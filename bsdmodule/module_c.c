@@ -88,3 +88,5 @@ static moduledata_t click_mod = {
 };
 
 DECLARE_MODULE(click, click_mod, SI_SUB_VFS, SI_ORDER_MIDDLE);
+
+MODULE_VERSION(click, 1);
