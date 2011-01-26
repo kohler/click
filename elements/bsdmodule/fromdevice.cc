@@ -273,10 +273,6 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
-/*
- * Use a Linux interface added by us, in net/core/dev.c,
- * to register to grab incoming packets.
- */
 int
 FromDevice::initialize(ErrorHandler *errh)
 {
@@ -292,6 +288,10 @@ FromDevice::initialize(ErrorHandler *errh)
 				       _devname.c_str());
 	    }
 	}
+
+    if (device() == NULL)
+        return errh->error("FromDevice for `%s' cannot be initialized",
+                           _devname.c_str());
 
     from_device_map.insert(this);
     if (_promisc && device())
