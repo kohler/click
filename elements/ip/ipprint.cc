@@ -153,6 +153,13 @@ IPPrint::cleanup(CleanupStage)
 #endif
 }
 
+StringAccum &
+IPPrint::address_pair(StringAccum &sa, const click_ip *iph)
+{
+    sa << IPAddress(iph->ip_src) << " > " << IPAddress(iph->ip_dst);
+    return sa;
+}
+
 void
 IPPrint::tcp_line(StringAccum &sa, const Packet *p, int transport_length) const
 {
@@ -162,8 +169,7 @@ IPPrint::tcp_line(StringAccum &sa, const Packet *p, int transport_length) const
     uint32_t seq;
 
     if (transport_length < 4 || !IP_FIRSTFRAG(iph)) {
-	sa << IPAddress(iph->ip_src) << " > " << IPAddress(iph->ip_dst) << ": "
-	   << (transport_length < 4 ? "truncated-tcp" : "tcp");
+	address_pair(sa, iph) << (IP_FIRSTFRAG(iph) ? ": truncated-tcp" : ": tcp");
 	return;
     }
 
@@ -209,8 +215,7 @@ IPPrint::udp_line(StringAccum &sa, const Packet *p, int transport_length) const
     const click_udp *udph = p->udp_header();
 
     if (transport_length < 4 || !IP_FIRSTFRAG(iph)) {
-	sa << IPAddress(iph->ip_src) << " > " << IPAddress(iph->ip_dst) << ": "
-	   << (transport_length < 4 ? "truncated-udp" : "udp");
+	address_pair(sa, iph) << (IP_FIRSTFRAG(iph) ? ": truncated-udp" : ": udp");
 	return;
     }
 
@@ -243,9 +248,12 @@ IPPrint::icmp_line(StringAccum &sa, const Packet *p, int transport_length) const
 {
     const click_ip *iph = p->ip_header();
     const click_icmp *icmph = p->icmp_header();
+    address_pair(sa, iph) << ": ";
 
-    sa << IPAddress(iph->ip_src) << " > " << IPAddress(iph->ip_dst) << ": ";
-    if (transport_length < 2)
+    if (!IP_FIRSTFRAG(iph)) {
+	sa << "icmp";
+	return;
+    } else if (transport_length < 2)
 	goto truncated_icmp;
 
     switch (icmph->icmp_type) {
