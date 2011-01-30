@@ -118,6 +118,8 @@ void
 AnyDevice::alter_from_device(int delta)
 {
 #if !HAVE_CLICK_KERNEL && (defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    if (!_dev)
+	return;
     fake_bridge *fb = reinterpret_cast<fake_bridge *>(_dev->br_port);
     if (fb && fb->magic != fake_bridge::click_magic) {
 	printk("<1>%s: appears to be owned by the bridge module!", _devname.c_str());
