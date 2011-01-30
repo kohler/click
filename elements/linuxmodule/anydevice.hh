@@ -101,6 +101,7 @@ class AnyDevice : public Element { public:
     };
     void set_device(net_device *dev, AnyDeviceMap *map, int flags);
     void clear_device(AnyDeviceMap *map, int flags);
+    void alter_from_device(int delta);
 
     static inline net_device *get_by_name(const char *name) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
@@ -140,7 +141,6 @@ class AnyDevice : public Element { public:
     HandlerCall *_down_call;
 
     void alter_promiscuity(int delta);
-    void alter_from_device(int delta);
 
     friend class AnyDeviceMap;
 
