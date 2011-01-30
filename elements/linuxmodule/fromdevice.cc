@@ -36,7 +36,8 @@ static int registered_readers;
 #if HAVE_CLICK_KERNEL
 static struct notifier_block packet_notifier;
 #endif
-static struct notifier_block device_notifier;
+static struct notifier_block device_notifier_early;
+static struct notifier_block device_notifier_late;
 
 #if !HAVE_CLICK_KERNEL && (defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE))
 # define CLICK_FROMDEVICE_USE_BRIDGE 1
@@ -58,7 +59,8 @@ static int packet_notifier_hook(struct notifier_block *nb, unsigned long val, vo
 static struct sk_buff *click_br_handle_frame_hook(struct net_bridge_port *p, struct sk_buff *skb);
 static struct sk_buff *(*real_br_handle_frame_hook)(struct net_bridge_port *p, struct sk_buff *skb);
 #endif
-static int device_notifier_hook(struct notifier_block *nb, unsigned long val, void *v);
+static int device_notifier_hook_early(struct notifier_block *nb, unsigned long val, void *v);
+static int device_notifier_hook_late(struct notifier_block *nb, unsigned long val, void *v);
 }
 
 void
@@ -70,10 +72,15 @@ FromDevice::static_initialize()
     packet_notifier.priority = 1;
     packet_notifier.next = 0;
 #endif
-    device_notifier.notifier_call = device_notifier_hook;
-    device_notifier.priority = 1;
-    device_notifier.next = 0;
-    register_netdevice_notifier(&device_notifier);
+    device_notifier_early.notifier_call = device_notifier_hook_early;
+    device_notifier_early.priority = INT_MAX;
+    device_notifier_early.next = 0;
+    register_netdevice_notifier(&device_notifier_early);
+
+    device_notifier_late.notifier_call = device_notifier_hook_late;
+    device_notifier_late.priority = INT_MIN;
+    device_notifier_late.next = 0;
+    register_netdevice_notifier(&device_notifier_late);
 }
 
 void
@@ -86,7 +93,8 @@ FromDevice::static_cleanup()
     if (br_handle_frame_hook == click_br_handle_frame_hook)
 	br_handle_frame_hook = real_br_handle_frame_hook;
 #endif
-    unregister_netdevice_notifier(&device_notifier);
+    unregister_netdevice_notifier(&device_notifier_late);
+    unregister_netdevice_notifier(&device_notifier_early);
 }
 
 FromDevice::FromDevice()
@@ -260,6 +268,7 @@ click_br_handle_frame_hook(struct net_bridge_port *p, struct sk_buff *skb)
     int stolen = 0;
     FromDevice *fd = 0;
     unsigned long lock_flags;
+
     from_device_map.lock(false, lock_flags);
     while (stolen == 0 && (fd = (FromDevice *)from_device_map.lookup(skb->dev, fd)))
 	stolen = fd->got_skb(skb);
@@ -274,7 +283,31 @@ click_br_handle_frame_hook(struct net_bridge_port *p, struct sk_buff *skb)
 #endif
 
 static int
-device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
+device_notifier_hook_early(struct notifier_block *nb, unsigned long flags, void *v)
+{
+    unsigned long lock_flags;
+    net_device* dev = (net_device*)v;
+    AnyDevice *es[8];
+    int i, nes;
+
+#ifdef NETDEV_GOING_DOWN
+    if (flags == NETDEV_GOING_DOWN)
+	flags = NETDEV_DOWN;
+#endif
+    if (flags == NETDEV_DOWN || flags == NETDEV_UP || flags == NETDEV_CHANGE) {
+	bool exists = (flags != NETDEV_UP);
+	from_device_map.lock(true, lock_flags);
+	nes = from_device_map.lookup_all(dev, exists, es, 8);
+	for (i = 0; i < nes; i++)
+	    ((FromDevice*)(es[i]))->alter_from_device(-1);
+	from_device_map.unlock(true, lock_flags);
+    }
+
+    return 0;
+}
+
+static int
+device_notifier_hook_late(struct notifier_block *nb, unsigned long flags, void *v)
 {
 #ifdef NETDEV_GOING_DOWN
     if (flags == NETDEV_GOING_DOWN)
@@ -287,8 +320,10 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 	from_device_map.lock(true, lock_flags);
 	AnyDevice *es[8];
 	int nes = from_device_map.lookup_all(dev, exists, es, 8);
-	for (int i = 0; i < nes; i++)
+	for (int i = 0; i < nes; i++) {
+	    ((FromDevice*)(es[i]))->alter_from_device(1);
 	    ((FromDevice*)(es[i]))->set_device(flags == NETDEV_DOWN ? 0 : dev, &from_device_map, AnyDevice::anydev_change | AnyDevice::anydev_from_device);
+	}
 	from_device_map.unlock(true, lock_flags);
     }
     return 0;
