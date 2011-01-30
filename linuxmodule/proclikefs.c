@@ -167,7 +167,7 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
     }
 
     if (!newfs) {
-	newfs = kmalloc(sizeof(struct proclikefs_file_system) + strlen(name), GFP_ATOMIC);
+	newfs = kzalloc(sizeof(struct proclikefs_file_system) + strlen(name), GFP_ATOMIC);
 	if (!newfs) {		/* out of memory */
 	    spin_unlock(&fslist_lock);
 	    MOD_DEC_USE_COUNT;
@@ -247,14 +247,23 @@ static void
 proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
 {
     struct dentry *dentry_tree;
-    struct list_head *p;
+    struct list_head *p, *list;
+#if ((LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)) && (CONFIG_SMP))
+    int cpu;
+#endif
 
     DEBUG("killing files");
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
 # if HAVE_LINUX_FILES_LOCK
     file_list_lock();
 # endif
-    list_for_each(p, &sb->s_files) {
+# if ((LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)) && (CONFIG_SMP))
+    cpu = smp_processor_id();
+    list = per_cpu_ptr(sb->s_files, cpu);
+# else
+    list = &sb->s_files;
+# endif
+    list_for_each(p, list) {
 	struct file *filp = list_entry(p, struct file, f_u.fu_list);
 	filp->f_op = dummy;
     }
