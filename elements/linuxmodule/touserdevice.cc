@@ -52,6 +52,7 @@ static int  DEV_MINOR = 0;
 static int  DEV_NUM = 0;
 
 struct file_operations *ToUserDevice::dev_fops;
+static struct mutex ToUserDevice::_ioctl_mutex;
 
 
 static volatile ToUserDevice *elem[20] = {0};
@@ -91,8 +92,16 @@ void ToUserDevice::static_initialize()
 	dev_fops->poll    = dev_poll;
 	dev_fops->open    = dev_open;
 	dev_fops->release = dev_release;
+#if HAVE_UNLOCKED_IOCTL
+	dev_fops->unlocked_ioctl = dev_unlocked_ioctl;
+#else
 	dev_fops->ioctl	  = dev_ioctl;
+#endif
     }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
+    mutex_init(&_ioctl_mutex);
+#endif
 }
 
 void ToUserDevice::static_cleanup()
@@ -127,6 +136,17 @@ int ToUserDevice::dev_release(struct inode *inode, struct file *filp)
     click_chatter("ToUserDevice_release ReadCounter: %lu\n", elem->_read_count);
     return 0;
 }
+
+#if HAVE_UNLOCKED_IOCTL
+long ToUserDevice::dev_unlocked_ioctl(struct file *filp, unsigned int command,
+				      unsigned long address)
+{
+	mutex_lock(&_ioctl_mutex);
+	long ret = dev_ioctl(NULL, filp, command, address);
+	mutex_unlock(&_ioctl_mutex);
+	return ret;
+}
+#endif
 
 int ToUserDevice::dev_ioctl(struct inode *inode, struct file *filp,
 			    unsigned command, unsigned long address)

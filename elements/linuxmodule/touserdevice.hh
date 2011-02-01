@@ -131,6 +131,9 @@ private:
     ulong                  _sleep_proc;
 
     static struct file_operations *dev_fops;
+#if HAVE_UNLOCKED_IOCTL
+    static struct mutex _ioctl_mutex;
+#endif
 
     static ssize_t dev_read(struct file *file, char *buf, size_t count, loff_t *ppos);
     static int     dev_open(struct inode *inode, struct file *filp);
@@ -138,6 +141,10 @@ private:
     static uint    dev_poll(struct file *, struct poll_table_struct *);
     static int dev_ioctl(struct inode *inode, struct file *filp,
 			 unsigned command, unsigned long address);
+#if HAVE_UNLOCKED_IOCTL
+    static long dev_unlocked_ioctl(struct file *filp, unsigned int command,
+				   unsigned long address);
+#endif
 };
 
 #endif
