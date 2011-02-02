@@ -2,7 +2,7 @@
 Check commas in connections
 %script
 fix () {
-	perl -e 'undef($/); $_ = <STDIN>; s/\n    / /g; print;' | sort
+	perl -e 'undef($/); $_ = <STDIN>; s/\n    / /g; print;' | LC_ALL=C sort
 }
 
 click-flatten A.click | fix > AO_TOOL
