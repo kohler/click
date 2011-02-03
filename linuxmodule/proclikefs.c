@@ -50,6 +50,13 @@
 #ifndef HAVE_LINUX_FILES_LOCK
 # define HAVE_LINUX_FILES_LOCK 0
 #endif
+#ifndef HAVE_LINUX_FILES_LGLOCK
+# define HAVE_LINUX_FILES_LGLOCK 0
+#endif
+
+#if HAVE_LINUX_FILES_LGLOCK
+# include <linux/lglock.h>
+#endif
 
 #ifndef MOD_DEC_USE_COUNT
 # define MOD_DEC_USE_COUNT	module_put(THIS_MODULE)
@@ -167,7 +174,7 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
     }
 
     if (!newfs) {
-	newfs = kmalloc(sizeof(struct proclikefs_file_system) + strlen(name), GFP_ATOMIC);
+	newfs = kzalloc(sizeof(struct proclikefs_file_system) + strlen(name), GFP_ATOMIC);
 	if (!newfs) {		/* out of memory */
 	    spin_unlock(&fslist_lock);
 	    MOD_DEC_USE_COUNT;
@@ -248,18 +255,37 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
 {
     struct dentry *dentry_tree;
     struct list_head *p;
+#if ((LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)) && (CONFIG_SMP))
+    int cpu;
+#endif
+#if HAVE_LINUX_FILES_LGLOCK
+    DECLARE_LGLOCK(files_lglock);
+#endif
 
     DEBUG("killing files");
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
 # if HAVE_LINUX_FILES_LOCK
     file_list_lock();
+# elif HAVE_LINUX_FILES_LGLOCK
+    lg_local_lock(files_lglock);
 # endif
+# if ((LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)) && (CONFIG_SMP))
+    for_each_possible_cpu(cpu) {
+	list_for_each(p, per_cpu_ptr(sb->s_files, cpu)) {
+	    struct file *filp = list_entry(p, struct file, f_u.fu_list);
+	    filp->f_op = dummy;
+	}
+    }
+# else
     list_for_each(p, &sb->s_files) {
 	struct file *filp = list_entry(p, struct file, f_u.fu_list);
 	filp->f_op = dummy;
     }
+# endif
 # if HAVE_LINUX_FILES_LOCK
     file_list_unlock();
+# elif HAVE_LINUX_FILES_LGLOCK
+    lg_local_unlock(files_lglock);
 # endif
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 # if HAVE_LINUX_FILES_LOCK
