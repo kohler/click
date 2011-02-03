@@ -21,7 +21,7 @@ s :: Script(TYPE PASSIVE,
 DriverManager(pause, print >M rw1.tcp_mappings, stop)
 "
 
-LC_COLLATE=C sort M
+sort M
 
 %file IN1
 !proto T

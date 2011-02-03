@@ -1,7 +1,7 @@
 %script
 click-mkmindriver -E Print -p foo --no-check -u -
 mv elements_foo.conf elements_foo.conf~
-LC_COLLATE=C sort elements_foo.conf~ > elements_foo.conf
+sort elements_foo.conf~ > elements_foo.conf
 
 %stdin
 FromDevice(eth0) -> ToDump(/tmp/x);

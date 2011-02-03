@@ -1037,6 +1037,8 @@ sub _shell ($$$$$) {
 	open(STDIN, "<", $stdin) || die "$stdin: $!\n";
 	open(STDOUT, ">", $stdout) || die "$stdout: $!\n";
 	open(STDERR, ">", $stderr) || die "$stderr: $!\n";
+	my($var, $val);
+	$ENV{$var} = $val while (($var, $val) = each %_variables);
 	exec $SHELL, "-e", $scriptfn;
     } else {
 	$running_pid = $child_pid;
@@ -1478,6 +1480,7 @@ sub search_dir ($$) {
 $dir = undef;
 
 my(@tests, $arg, $jobs);
+$Testie::_variables{"LC_ALL"} = "C";
 
 while (@ARGV) {
     $_ = shift @ARGV;
@@ -1625,8 +1628,8 @@ prerequisites fail, the return status is 1 instead of 0.
 =item I<VARIABLE>=I<VALUE>
 
 Provide a setting for I<VARIABLE>. Occurrences in the script of
-'C<$VARIABLE>' or 'C<${VARIABLE}>' will be replaced by I<VALUE>. Note that
-this is not an environment variable setting. Variable references to unset
+'C<$VARIABLE>' or 'C<${VARIABLE}>' will be replaced by I<VALUE>. This is also
+an environment variable setting. Variable references to unset
 variables are left unchanged.
 
 =item -V, --verbose
@@ -1843,6 +1846,12 @@ file.
   B
   %stdout
   1
+
+=head1 ENVIRONMENT
+
+By default, testie sets the C<LC_ALL> environment variable to "C"; without
+this setting commands like 'sort' have unpredictable effects.  To set
+C<LC_ALL> to another value, set it in the %script section.
 
 =head1 AUTHOR
 
