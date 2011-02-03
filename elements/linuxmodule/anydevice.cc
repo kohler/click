@@ -117,7 +117,7 @@ AnyDevice::alter_promiscuity(int delta)
 void
 AnyDevice::alter_from_device(int delta)
 {
-#if !HAVE_CLICK_KERNEL && (defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+#if !HAVE_CLICK_KERNEL && !HAVE_LINUX_NETDEV_RX_HANDLER_REGISTER && (defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
     if (!_dev)
 	return;
     fake_bridge *fb = reinterpret_cast<fake_bridge *>(_dev->br_port);

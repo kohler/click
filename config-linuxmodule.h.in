@@ -103,6 +103,9 @@
 /* Define if you have the netdev_uses_trailer_tags function. */
 #undef HAVE_NETDEV_USES_TRAILER_TAGS
 
+/* Define if your Linux kernel has netdev_rx_handler_register. */
+#undef HAVE_LINUX_NETDEV_RX_HANDLER_REGISTER
+
 /* Define if netif_receive_skb takes 3 arguments. */
 #undef HAVE_NETIF_RECEIVE_SKB_EXTENDED
 
