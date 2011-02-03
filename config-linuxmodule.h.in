@@ -40,6 +40,9 @@
 /* Define if your Linux kernel has files_lock. */
 #undef HAVE_LINUX_FILES_LOCK
 
+/* Define if your Linux kernel has files_lglock. */
+#undef HAVE_LINUX_FILES_LGLOCK
+
 /* Define if your Linux kernel has dev_ioctl. */
 #undef HAVE_LINUX_DEV_IOCTL
 

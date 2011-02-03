@@ -8999,6 +8999,22 @@ if test $ac_cv_linux_files_lock = yes; then
 
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for files_lglock kernel symbol" >&5
+$as_echo_n "checking for files_lglock kernel symbol... " >&6; }
+if test "${ac_cv_linux_files_lglock+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if grep "__ksymtab_files_lglock" $linux_system_map >/dev/null 2>&1; then
+    ac_cv_linux_files_lglock=yes
+else ac_cv_linux_files_lglock=no; fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_files_lglock" >&5
+$as_echo "$ac_cv_linux_files_lglock" >&6; }
+if test $ac_cv_linux_files_lglock = yes; then
+    $as_echo "#define HAVE_LINUX_FILES_LGLOCK 1" >>confdefs.h
+
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sb_lock kernel symbol" >&5
 $as_echo_n "checking for sb_lock kernel symbol... " >&6; }
 if ${ac_cv_linux_sb_lock+:} false; then :
