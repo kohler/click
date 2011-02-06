@@ -98,7 +98,7 @@ class Lexer { public:
     String element_name(int) const;
     String element_landmark(int) const;
 
-    void add_tunnel(String, String);
+    void add_tunnels(String name, int *eidexes);
 
     bool yport(Vector<int> &ports);
     bool yelement(Vector<int> &result, bool in_allowed);

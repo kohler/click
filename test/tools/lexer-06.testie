@@ -1,0 +1,85 @@
+%info
+Check element groups
+%script
+fix () {
+	perl -e 'undef($/); $_ = <STDIN>; s/\n    / /g; print;' | sort
+}
+
+click -qo- A.click | fix > AO_USERLEVEL
+click-flatten A.click | fix > AO_TOOL
+
+click -qo- AX.click | fix > AXO_USERLEVEL
+click-flatten AX.click | fix > AXO_TOOL
+
+click -qo- AY.click | fix > AYO_USERLEVEL
+click-flatten AY.click | fix > AYO_TOOL
+
+# 'g :: (...)' no longer supported
+# click -qo- AZ.click | fix > AZO_USERLEVEL
+
+click -qo- B.click | fix > BO_USERLEVEL
+click-flatten B.click | fix > BO_TOOL
+
+%file AX.click
+elementclass Foo {
+    a, b, c, d :: Idle;
+    a [0,1,2] => c, b, d;
+}
+foo::Foo;
+
+%file A.click
+elementclass Foo {
+    a, b, c, d :: Idle;
+    a [0,1,2] => ( -> c ), ( -> b ), d;
+}
+foo::Foo;
+
+%file AY.click
+elementclass Foo {
+    a, d :: Idle;
+    a => (-> c :: Idle), (-> b :: Idle), d;
+}
+foo::Foo;
+
+%file AZ.click
+elementclass Foo {
+    a, d :: Idle;
+    g :: (-> c :: Idle);
+    g2 :: (-> b :: Idle);
+    a => g, g2, d;
+}
+foo::Foo;
+
+%expect AO_USERLEVEL AO_TOOL AXO_USERLEVEL AXO_TOOL AYO_USERLEVEL AYO_TOOL
+foo/a -> foo/c;
+foo/a :: Idle;
+foo/a [1] -> foo/b;
+foo/a [2] -> foo/d;
+foo/b :: Idle;
+foo/c :: Idle;
+foo/d :: Idle;
+
+%file B.click
+analyzer, x1, x2 :: Idle;
+x1 -> analyzer -> x2;
+c :: Idle =>
+         [1] analyzer [1],
+         foo :: { -> c2 :: Idle => (->), Paint(1) -> }
+-> post_classification :: Idle;
+
+%expect BO_USERLEVEL BO_TOOL
+analyzer :: Idle;
+analyzer [1] -> post_classification;
+c -> [1] analyzer;
+c :: Idle;
+c [1] -> foo/c2 -> post_classification;
+foo/Paint@{{\d+}} :: Paint(1);
+foo/c2 :: Idle;
+foo/c2 [1] -> foo/Paint@{{\d+}} -> post_classification;
+post_classification :: Idle;
+x1 -> analyzer -> x2;
+x1 :: Idle;
+x2 :: Idle;
+
+%ignorex
+#.*

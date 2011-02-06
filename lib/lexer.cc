@@ -44,6 +44,8 @@ CLICK_DECLS
 		add_element_type((name), (factory), (thunk), (scoped))
 #endif
 
+static const char * const port_names[2] = {"input", "output"};
+
 static void
 redeclaration_error(ErrorHandler *errh, const char *what, String name, const String &landmark, const String &old_landmark)
 {
@@ -245,16 +247,15 @@ Lexer::Compound::connect(int from_idx, int from_port, int to_idx, int to_port)
 int
 Lexer::Compound::check_pseudoelement(int which, bool isoutput, const char *name, ErrorHandler *errh) const
 {
-    static const char * const names[2] = {"input", "output"};
     Bitvector used(_element_nports[1-isoutput][which]);
     for (const Connection *it = _conn.begin(); it != _conn.end(); ++it)
 	if ((*it)[1-isoutput].idx == which)
 	    used[(*it)[1-isoutput].port] = true;
     if (_element_nports[isoutput][which])
-	errh->error("%<%s%> pseudoelement %<%s%> may only be used as %s", name, names[isoutput], names[1-isoutput]);
+	errh->error("%<%s%> pseudoelement %<%s%> may only be used as %s", name, port_names[isoutput], port_names[1-isoutput]);
     for (int i = 0; i < used.size(); i++)
 	if (!used[i])
-	    errh->error("%<%s%> %s %d missing", name, names[isoutput], i);
+	    errh->error("%<%s%> %s %d missing", name, port_names[isoutput], i);
     return used.size();
 }
 
@@ -367,46 +368,53 @@ Lexer::Compound::signature() const
 void
 Lexer::Compound::expand_into(Lexer *lexer, int which, VariableEnvironment &ve)
 {
-  ErrorHandler *errh = lexer->_errh;
+    assert(_element_names[0] == "input" && _element_names[1] == "output");
 
-  // 'name_slash' is 'name' constrained to end with a slash
-  String ename = lexer->_c->_element_names[which];
-  String ename_slash = ename + "/";
+    ErrorHandler *errh = lexer->_errh;
+    String ename = lexer->_c->_element_names[which];
 
-  assert(_element_names[0] == "input" && _element_names[1] == "output");
+    lexer->_c->_elements[which] = TUNNEL_TYPE;
+    int eidexes[3];
+    lexer->add_tunnels(ename, eidexes);
 
-  lexer->_c->_elements[which] = TUNNEL_TYPE;
-  lexer->add_tunnel(ename, ename_slash + "input");
-  lexer->add_tunnel(ename_slash + "output", ename);
+    Vector<int> eidx_map;
+    eidx_map.push_back(eidexes[1]);
+    eidx_map.push_back(eidexes[2]);
 
-  Vector<int> eidx_map;
-  eidx_map.push_back(lexer->_element_map[ename_slash + "input"]);
-  eidx_map.push_back(lexer->_element_map[ename_slash + "output"]);
-
-  for (int i = 2; i < _elements.size(); i++) {
-    String cname = ename_slash + _element_names[i];
-    int eidx = lexer->_element_map[cname];
-    if (eidx >= 0) {
-      redeclaration_error(errh, "element", cname, lexer->element_landmark(which), lexer->element_landmark(eidx));
-      eidx_map.push_back(-1);
-    } else {
-      if (lexer->element_type(cname) >= 0)
-	errh->lerror(lexer->element_landmark(which), "%<%s%> is an element class", cname.c_str());
-      eidx = lexer->get_element(cname, _elements[i], cp_expand(_element_configurations[i], ve), _element_filenames[i], _element_linenos[i]);
-      eidx_map.push_back(eidx);
+    // 'name_slash' is 'name' constrained to end with a slash
+    String ename_slash = ename + "/";
+    for (int i = 2; i < _elements.size(); ++i) {
+	String cname = ename_slash + _element_names[i];
+	int eidx = lexer->_element_map[cname];
+	if (eidx >= 0) {
+	    redeclaration_error(errh, "element", cname, lexer->element_landmark(which), lexer->element_landmark(eidx));
+	    eidx_map.push_back(-1);
+	    continue;
+	}
+	if (lexer->element_type(cname) >= 0)
+	    errh->lerror(lexer->element_landmark(which), "%<%s%> is an element class", cname.c_str());
+	if (_elements[i] == TUNNEL_TYPE) {
+	    eidx_map.resize(eidx_map.size() + 3);
+	    // probably should assert() next 2 elements are tunnel type and
+	    // have the expected names
+	    lexer->add_tunnels(cname, eidx_map.end() - 3);
+	    i += 2;
+	} else {
+	    eidx = lexer->get_element(cname, _elements[i], cp_expand(_element_configurations[i], ve), _element_filenames[i], _element_linenos[i]);
+	    eidx_map.push_back(eidx);
+	}
     }
-  }
 
-  // now copy hookups
-  for (const Connection *cp = _conn.begin(); cp != _conn.end(); ++cp)
-    if (eidx_map[(*cp)[0].idx] >= 0 && eidx_map[(*cp)[0].idx] >= 0)
-      lexer->_c->connect(eidx_map[(*cp)[1].idx], (*cp)[1].port,
-			 eidx_map[(*cp)[0].idx], (*cp)[0].port);
+    // now copy hookups
+    for (const Connection *cp = _conn.begin(); cp != _conn.end(); ++cp)
+	if (eidx_map[(*cp)[0].idx] >= 0 && eidx_map[(*cp)[0].idx] >= 0)
+	    lexer->_c->connect(eidx_map[(*cp)[1].idx], (*cp)[1].port,
+			       eidx_map[(*cp)[0].idx], (*cp)[0].port);
 
-  // now expand those
-  for (int i = 2; i < eidx_map.size(); i++)
-    if (eidx_map[i] >= 0)
-      lexer->expand_compound_element(eidx_map[i], ve);
+    // now expand those
+    for (int i = 2; i < eidx_map.size(); i++)
+	if (eidx_map[i] >= 0)
+	    lexer->expand_compound_element(eidx_map[i], ve);
 }
 
 //
@@ -941,34 +949,39 @@ Lexer::element_type_names(Vector<String> &v) const
 // PORT TUNNELS
 
 void
-Lexer::add_tunnel(String namein, String nameout)
+Lexer::add_tunnels(String name, int *eidxes)
 {
-  Port hin(get_element(namein, TUNNEL_TYPE), 0);
-  Port hout(get_element(nameout, TUNNEL_TYPE), 0);
+    String names[4];
+    names[0] = names[3] = name;
+    names[1] = name + "/" + port_names[0];
+    names[2] = name + "/" + port_names[1];
 
-  bool ok = true;
-  if (_c->_elements[hin.idx] != TUNNEL_TYPE) {
-    redeclaration_error(_errh, "element", namein, _file.landmark(), _c->element_landmark(hin.idx));
-    ok = false;
-  }
-  if (_c->_elements[hout.idx] != TUNNEL_TYPE) {
-    redeclaration_error(_errh, "element", nameout, _file.landmark(), _c->element_landmark(hout.idx));
-    ok = false;
-  }
-  if (ok) {
-    TunnelEnd *tein = find_tunnel(hin, false, true);
-    TunnelEnd *teout = find_tunnel(hout, true, true);
-    if (tein->other()) {
-      redeclaration_error(_errh, "connection tunnel input", namein, _file.landmark(), _c->element_landmark(hin.idx));
-      ok = false;
+    Port ports[4];
+    bool ok = true;
+    for (int i = 0; i < 3; ++i) {
+	ports[i].idx = eidxes[i] = get_element(names[i], TUNNEL_TYPE);
+	ports[i].port = 0;
+	if (_c->_elements[eidxes[i]] != TUNNEL_TYPE) {
+	    redeclaration_error(_errh, "element", names[i], _file.landmark(), _c->element_landmark(ports[i].idx));
+	    ok = false;
+	}
     }
-    if (teout->other()) {
-      redeclaration_error(_errh, "connection tunnel output", nameout, _file.landmark(), _c->element_landmark(hout.idx));
-      ok = false;
+    ports[3] = ports[0];
+
+    if (ok && _c->depth() == 0) {
+	TunnelEnd *tes[4];
+	for (int i = 0; i < 4; ++i) {
+	    tes[i] = find_tunnel(ports[i], i % 2, true);
+	    if (tes[i]->other()) {
+		redeclaration_error(_errh, "connection tunnel", names[i], _file.landmark(), _c->element_landmark(ports[i].idx));
+		ok = false;
+	    }
+	}
+	if (ok) {
+	    tes[0]->pair_with(tes[1]);
+	    tes[2]->pair_with(tes[3]);
+	}
     }
-    if (ok)
-      tein->pair_with(teout);
-  }
 }
 
 // ELEMENTS
@@ -1198,7 +1211,7 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 		this_implicit = in_allowed && (res[esize + 1] || !esize);
 	    if (this_implicit) {
 		any_implicit = true;
-		name = (in_allowed ? "output" : "input");
+		name = port_names[in_allowed];
 		type = element_type(name);
 		if (!in_allowed)
 		    click_swap(res[esize+1], res[esize+2]);
@@ -1623,16 +1636,13 @@ Lexer::ycompound(String name)
 void
 Lexer::ygroup(String name, int group_nports[2])
 {
-    String name_slash = name + "/";
-    add_tunnel(name, name_slash + "input");
-    add_tunnel(name_slash + "output", name);
-    int new_input = _element_map[name_slash + "input"];
-    int new_output = _element_map[name_slash + "output"];
+    int eidexes[3];
+    add_tunnels(name, eidexes);
 
     int old_input = _element_map["input"];
     int old_output = _element_map["output"];
-    _element_map["input"] = new_input;
-    _element_map["output"] = new_output;
+    _element_map["input"] = eidexes[1];
+    _element_map["output"] = eidexes[2];
     ++_group_depth;
 
     while (ystatement(')'))
@@ -1642,8 +1652,8 @@ Lexer::ygroup(String name, int group_nports[2])
     // check that all inputs and outputs are used
     LandmarkErrorHandler lerrh(_errh, _file.landmark());
     const char *printable_name = (name[0] == ';' ? "<anonymous group>" : name.c_str());
-    group_nports[0] = _c->check_pseudoelement(new_input, false, printable_name, &lerrh);
-    group_nports[1] = _c->check_pseudoelement(new_output, true, printable_name, &lerrh);
+    group_nports[0] = _c->check_pseudoelement(eidexes[1], false, printable_name, &lerrh);
+    group_nports[1] = _c->check_pseudoelement(eidexes[2], true, printable_name, &lerrh);
 
     --_group_depth;
     _element_map["input"] = old_input;
@@ -2071,7 +2081,7 @@ Lexer::TunnelEnd::expand(Lexer *lexer, Vector<Router::Port> &into)
 	lexer->errh()->lerror(lexer->element_landmark(_other->_port.idx),
 			      "tunnel %<%s -> %s%> %s %d unused",
 			      in_name.c_str(), out_name.c_str(),
-			      (_isoutput ? "input" : "output"), _port.idx);
+			      port_names[_isoutput], _port.idx);
       }
     }
 
@@ -2088,14 +2098,13 @@ Lexer::TunnelEnd::expand(Lexer *lexer, Vector<Router::Port> &into)
 void
 Lexer::expand_connection(const Port &this_end, bool is_out, Vector<Port> &into)
 {
-  if (_c->_elements[this_end.idx] != TUNNEL_TYPE)
-    into.push_back(this_end);
-  else if (TunnelEnd *dp = find_tunnel(this_end, is_out, false))
-    dp->expand(this, into);
-  else if (find_tunnel(this_end, !is_out, false))
-    _errh->lerror(_c->element_landmark(this_end.idx),
-		  (is_out ? "%<%s%> used as output" : "%<%s%> used as input"),
-		  element_name(this_end.idx).c_str());
+    if (_c->_elements[this_end.idx] != TUNNEL_TYPE)
+	into.push_back(this_end);
+    else if (TunnelEnd *dp = find_tunnel(this_end, is_out, false))
+	dp->expand(this, into);
+    else if (find_tunnel(this_end, !is_out, false))
+	_errh->lerror(_c->element_landmark(this_end.idx), "%<%s%> used as %s",
+		      element_name(this_end.idx).c_str(), port_names[is_out]);
 }
 
 CLICK_ENDDECLS
