@@ -25,6 +25,7 @@
 CLICK_DECLS
 
 TimerTest::TimerTest()
+    : _benchmark(0)
 {
 }
 
