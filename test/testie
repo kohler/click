@@ -258,9 +258,8 @@ sub file_err ($$;$) {
     $tt->{'err'}++;
 }
 
-sub _shell_split (\@$\@$$;$) {
-    my($arr, $fn, $lineno_arr, $text, $lineno, $rewrite_sub) = @_;
-    $rewrite_sub = sub { $_[0] } if !defined($rewrite_sub);
+sub _shell_split (\@$\@$$) {
+    my($arr, $fn, $lineno_arr, $text, $lineno) = @_;
     my($qf, $qb, $func, $out) = (0, 0, 0, '');
     my($sq, $dq, $bq, $nl, $hh, $lb, $rb) = (-2, -2, -2, -2, -2, -2, -2);
     my($first, $pos) = (0, 0);
@@ -282,14 +281,14 @@ sub _shell_split (\@$\@$$;$) {
 	    next;
 	} elsif ($qf == 2) {
 	    $qf = 0 if $dq < length $text;
-	    $out .= $rewrite_sub->(substr($text, $pos, $dq - $pos), 2) . '"';
+	    $out .= substr($text, $pos, $dq - $pos) . '"';
 	    $pos = $dq + 1;
 	    next;
 	}
 
 	# find minimum
 	my($min) = ::min($sq, $dq, $bq, $nl, $hh, $lb, $rb);
-	$out .= $rewrite_sub->(substr($text, $pos, $min - $pos), 0) . substr($text, $min, 1);
+	$out .= substr($text, $pos, $min - $pos) . substr($text, $min, 1);
 
 	if ($sq == $min) {
 	    $qf = 1;
@@ -673,16 +672,6 @@ sub script_text ($&$) {
     my($tt, $fileref_subr, $script_type) = @_;
     my($subbody, $var, $val) = '';
 
-    # add variables
-    while (($var, $val) = each %_variables) {
-	$var = quotemeta($var);
-	$val = quotemeta($val);
-	$subbody .= "\$t =~ s/(^|[^\\\\])\\\$$var\\b/\${1}$val/g;\n";
-	$subbody .= "\$t =~ s/(^|[^\\\\])\\\${$var}\\b/\${1}$val/g;\n";
-    }
-
-    my($code) = eval("sub { my(\$t) = \@_; $subbody\$t; }");
-
     my($t) = '';
     if (!$::expand_mode) {
 	$t .= <<'EOD;';
@@ -704,7 +693,7 @@ EOD;
 	my($ln, $text) = ($linenoarr->[$i], $scriptarr->[$i]);
 	$t .= "echo >&2; echo testie_lineno:$ln >&2\n" if !$::expand_mode;
 	my(@c, @d);
-	_shell_split(@c, "", @d, $text, 0, $code);
+	_shell_split(@c, "", @d, $text, 0);
 	die if @c != 1;
 	chomp $c[0];
 	next if $c[0] =~ /^\s*$/s;
@@ -1038,7 +1027,7 @@ sub _shell ($$$$$) {
 	open(STDOUT, ">", $stdout) || die "$stdout: $!\n";
 	open(STDERR, ">", $stderr) || die "$stderr: $!\n";
 	my($var, $val);
-	$ENV{$var} = $val while (($var, $val) = each %_variables);
+	$ENV{$var} = $val while (($var, $val) = each %Testie::_variables);
 	exec $SHELL, "-e", $scriptfn;
     } else {
 	$running_pid = $child_pid;
@@ -1627,10 +1616,7 @@ prerequisites fail, the return status is 1 instead of 0.
 
 =item I<VARIABLE>=I<VALUE>
 
-Provide a setting for I<VARIABLE>. Occurrences in the script of
-'C<$VARIABLE>' or 'C<${VARIABLE}>' will be replaced by I<VALUE>. This is also
-an environment variable setting. Variable references to unset
-variables are left unchanged.
+Provide an environment variable setting for I<VARIABLE> within the script.
 
 =item -V, --verbose
 

@@ -1,0 +1,27 @@
+%info
+Test LC_ALL setting
+
+%script
+export LC_ALL=POSIX
+echo $LC_ALL
+testie TEST1
+testie LC_ALL=POSIX TEST2
+
+%file -d TEST1
+ %script
+ echo $LC_ALL
+ %expect stdout
+ C
+
+%file -d TEST2
+ %script
+ echo $LC_ALL
+ %expect stdout
+ POSIX
+
+%expect stdout
+POSIX
+
+%expect stderr
+testie: 1 success, 0 failures, 0 skipped
+testie: 1 success, 0 failures, 0 skipped
