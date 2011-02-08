@@ -114,8 +114,8 @@ dnl linuxmodule driver and features
 AC_ARG_ENABLE(linuxmodule, [  --disable-linuxmodule   disable Linux kernel driver], :, [enable_linuxmodule=yes; enable_linuxmodule_default=yes])
 
 AC_ARG_ENABLE(fixincludes,
-  [[    --enable-fixincludes      automatically fix Linux includes]],
-  :, enable_fixincludes=no)
+  [[    --disable-fixincludes     do not patch Linux kernel headers for C++]],
+  :, enable_fixincludes=yes)
 LINUXMODULE_FIXINCLUDES=
 if test "$enable_fixincludes" = yes; then
     LINUXMODULE_FIXINCLUDES=1
@@ -1147,7 +1147,7 @@ Can't find Linux 2.6 compilation flags.
 
     LINUX_FIXINCLUDES_PROGRAM=
     if test "$LINUXMODULE_FIXINCLUDES" = 1; then
-	AC_MSG_NOTICE([creating C++-safe versions of Linux include files (may take a while)])
+	AC_MSG_NOTICE([creating C++-safe versions of Linux kernel headers (may take a while)])
 	$srcdir/linuxmodule/fixincludes.pl -o "`pwd`/include/click-linuxmodule" $LINUX_CFLAGS >conftest.dat
 	if test $? != 0; then
 	    AC_MSG_ERROR([
