@@ -80,7 +80,6 @@ RouterThread::RouterThread(Master *m, int id)
 #else
     _prev = _next = _thread = this;
 #endif
-    _any_pending = 0;
 #if CLICK_LINUXMODULE
     _linux_task = 0;
 #elif HAVE_MULTITHREAD
@@ -138,7 +137,6 @@ RouterThread::RouterThread(Master *m, int id)
 
 RouterThread::~RouterThread()
 {
-    _any_pending = 0;
     assert(!active());
 #if CLICK_USERLEVEL && HAVE_MULTITHREAD
     if (_wake_pipe[0] >= 0) {
@@ -501,7 +499,6 @@ RouterThread::process_pending()
     uintptr_t my_pending = _pending_head;
     _pending_head = 0;
     _pending_tail = &_pending_head;
-    _any_pending = 0;
     _pending_lock.release(flags);
 
     // process the list

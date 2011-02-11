@@ -156,11 +156,15 @@ inline void
 Task::remove_pending_locked(RouterThread *thread)
 {
     if (_pending_nextptr) {
-	volatile uintptr_t *tptr = &thread->_pending_head;
+	volatile uintptr_t *thead = &thread->_pending_head, *tptr = thead;
 	while (Task *t = pending_to_task(*tptr))
 	    if (t == this) {
-		*tptr = _pending_nextptr;
-		if (!pending_to_task(_pending_nextptr))
+		Task *next = pending_to_task(_pending_nextptr);
+		if (tptr != thead)
+		    *tptr = _pending_nextptr;
+		else
+		    *tptr = reinterpret_cast<uintptr_t>(next);
+		if (!next)
 		    thread->_pending_tail = tptr;
 		_pending_nextptr = 0;
 		break;
