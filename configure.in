@@ -363,7 +363,7 @@ freebsd_includedir=`echo "$freebsddir,/usr/include," | sed -e 's/^[[^,]]*,\([[^,
 if test "x$freebsddir" = xNONE -o "x$freebsddir" = xno -o "x$enable_bsdmodule" != xyes; then
   ac_have_bsd_kernel=n
   freebsddir=NONE
-elif expr '(' "_$freebsd_includedir" : '_[[^/\\]]' ')' '|' '(' "_$freebsd_srcdir" : '_[[^/\\]]' ')'; then 
+elif expr '(' "_$freebsd_includedir" : '_[[^/\\]]' ')' '|' '(' "_$freebsd_srcdir" : '_[[^/\\]]' ')'; then
   AC_MSG_ERROR([
 =========================================
 
@@ -445,6 +445,15 @@ if test "x$have_timespec" = xyes; then
 fi
 CLICK_CHECK_POSIX_CLOCKS
 
+AC_ARG_ENABLE(nanotimestamp, [  --enable-nanotimestamp  enable nanosecond timestamps])
+# Default to nanosecond-precision timestamps if clock_gettime is available.
+if test "x$enable_nanotimestamp" = x -a "x$have_clock_gettime" = xyes; then
+    enable_nanotimestamp=yes
+fi
+if test "x$enable_nanotimestamp" = xyes; then
+    AC_DEFINE([HAVE_NANOTIMESTAMP_ENABLED], [1], [Define if nanosecond-granularity timestamps are enabled.])
+fi
+
 
 dnl
 dnl check forms of port transfer
@@ -457,15 +466,6 @@ AC_ARG_ENABLE(bound-port-transfer,
 if test "$enable_bound_port_transfer" = yes; then
   AC_DEFINE([HAVE_BOUND_PORT_TRANSFER], [1], [Define if Port::push/Port::pull should use bound function pointers.])
   CXXFLAGS="$CXXFLAGS -Wno-pmf-conversions"
-fi
-
-AC_ARG_ENABLE(nanotimestamp, [  --enable-nanotimestamp  enable nanosecond timestamps])
-# Default to nanosecond-precision timestamps if clock_gettime is available.
-if test "x$enable_nanotimestamp" = x -a "x$have_clock_gettime" = xyes; then
-    enable_nanotimestamp=yes
-fi
-if test "x$enable_nanotimestamp" = xyes; then
-    AC_DEFINE([HAVE_NANOTIMESTAMP_ENABLED], [1], [Define if nanosecond-granularity timestamps are enabled.])
 fi
 
 
@@ -1019,7 +1019,7 @@ if test "$properprefix" != no; then
     saveflags="$CPPFLAGS"; test -n "$properprefix" && CPPFLAGS="$CPPFLAGS -I$properprefix/include"
     AC_CHECK_HEADER(prop.h, have_prop_h=yes, have_prop_h=no)
     CPPFLAGS="$saveflags"
-    
+
     AC_LANG_C
     saveflags="$LDFLAGS"; test -n "$properprefix" && LDFLAGS="$LDFLAGS -L$properprefix/lib"
     AC_CHECK_LIB(proper, prop_open, have_libproper=yes, have_libproper=no)
@@ -1058,7 +1058,7 @@ if test "$expatprefix" != no; then
     saveflags="$CPPFLAGS"; test -n "$expatprefix" && CPPFLAGS="$CPPFLAGS -I$expatprefix/include"
     AC_CHECK_HEADER(expat.h, have_expat_h=yes, have_expat_h=no)
     CPPFLAGS="$saveflags"
-    
+
     AC_LANG_C
     saveflags="$LDFLAGS"; test -n "$expatprefix" && LDFLAGS="$LDFLAGS -L$expatprefix/lib"
     AC_CHECK_LIB(expat, XML_ParserCreateNS, have_libexpat=yes, have_libexpat=no)
@@ -1097,7 +1097,7 @@ if test $ac_have_linux_kernel = y; then
     unset -v CFLAGS CPPFLAGS
     CC="$KERNEL_CC"
     CXX="$KERNEL_CXX"
-    
+
     dnl check for arguments to pass to Linux make
     linux_makeargs=
     if test -n "$ARCH"; then
@@ -1236,7 +1236,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
 	[AC_LANG_C
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
-[[extern struct sk_buff *s; s->security = 0;]])], 
+[[extern struct sk_buff *s; s->security = 0;]])],
 	[ac_cv_linuxmodule_skbuff_security=yes], [ac_cv_linuxmodule_skbuff_security=no])])
     if test $ac_cv_linuxmodule_skbuff_security = yes; then
 	AC_DEFINE([HAVE_LINUX_SKBUFF_SECURITY], [1], [Define if 'struct sk_buff' has a 'security' member.])
@@ -1246,7 +1246,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
 	[AC_LANG_C
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
-[[extern struct sk_buff *s; s->fclone = 0;]])], 
+[[extern struct sk_buff *s; s->fclone = 0;]])],
 	[ac_cv_linuxmodule_skbuff_fclone=yes], [ac_cv_linuxmodule_skbuff_fclone=no])])
     if test $ac_cv_linuxmodule_skbuff_fclone = yes; then
 	AC_DEFINE([HAVE_LINUX_SKBUFF_FCLONE], [1], [Define if 'struct sk_buff' has an 'fclone' member.])

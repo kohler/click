@@ -51,6 +51,7 @@ include/click/hashcontainer.hh
 include/click/hashmap.cc
 include/click/hashmap.hh
 include/click/hashtable.hh
+include/click/heap.hh
 include/click/integers.hh
 include/click/ipaddress.hh
 include/click/ip6address.hh

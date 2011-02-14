@@ -769,8 +769,8 @@ enable_experimental
 enable_skip_elements
 with_freebsd
 enable_int64
-enable_bound_port_transfer
 enable_nanotimestamp
+enable_bound_port_transfer
 enable_tools
 enable_dynamic_linking
 enable_stats
@@ -1446,8 +1446,8 @@ Optional Features:
   --enable-experimental   enable experimental elements in normal groups
   --enable-skip-elements=ELTS disable comma-separated elements
   --disable-int64         disable 64-bit integer support
-  --enable-bound-port-transfer  enable port transfer function ptr optimization
   --enable-nanotimestamp  enable nanosecond timestamps
+  --enable-bound-port-transfer  enable port transfer function ptr optimization
   --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]
   --disable-dynamic-linking disable dynamic linking
   --enable-stats[=LEVEL]  enable statistics collection
@@ -7605,6 +7605,21 @@ $as_echo "#define HAVE_CLOCK_GETTIME 1" >>confdefs.h
     fi
 
 
+# Check whether --enable-nanotimestamp was given.
+if test "${enable_nanotimestamp+set}" = set; then :
+  enableval=$enable_nanotimestamp;
+fi
+
+# Default to nanosecond-precision timestamps if clock_gettime is available.
+if test "x$enable_nanotimestamp" = x -a "x$have_clock_gettime" = xyes; then
+    enable_nanotimestamp=yes
+fi
+if test "x$enable_nanotimestamp" = xyes; then
+
+$as_echo "#define HAVE_NANOTIMESTAMP_ENABLED 1" >>confdefs.h
+
+fi
+
 
 
 # Check whether --enable-bound-port-transfer was given.
@@ -7620,21 +7635,6 @@ if test "$enable_bound_port_transfer" = yes; then
 $as_echo "#define HAVE_BOUND_PORT_TRANSFER 1" >>confdefs.h
 
   CXXFLAGS="$CXXFLAGS -Wno-pmf-conversions"
-fi
-
-# Check whether --enable-nanotimestamp was given.
-if test "${enable_nanotimestamp+set}" = set; then :
-  enableval=$enable_nanotimestamp;
-fi
-
-# Default to nanosecond-precision timestamps if clock_gettime is available.
-if test "x$enable_nanotimestamp" = x -a "x$have_clock_gettime" = xyes; then
-    enable_nanotimestamp=yes
-fi
-if test "x$enable_nanotimestamp" = xyes; then
-
-$as_echo "#define HAVE_NANOTIMESTAMP_ENABLED 1" >>confdefs.h
-
 fi
 
 
