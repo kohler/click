@@ -36,7 +36,7 @@ enum { T_UDP_LEN };
 
 static bool udp_extract(PacketDesc& d, const FieldWriter *f)
 {
-    int transport_length = d.p->transport_length();
+    int transport_length = d.transport_length();
     switch (f->user_data) {
 
 #define CHECK(l) do { if (!d.udph || transport_length < (l)) return field_missing(d, IP_PROTO_UDP, (l)); } while (0)

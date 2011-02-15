@@ -38,7 +38,7 @@ namespace IPSummaryDump {
 
 static bool ip_extract(PacketDesc& d, const FieldWriter *f)
 {
-    int network_length = d.p->network_length();
+    int network_length = d.network_length();
     switch (f->user_data) {
 
 	// IP header properties
@@ -104,7 +104,7 @@ static bool ip_extract(PacketDesc& d, const FieldWriter *f)
 	if (d.iph)
 	    d.v = ntohs(d.iph->ip_len);
 	else
-	    d.v = d.p->length();
+	    d.v = d.length();
 	if (d.force_extra_length)
 	    d.v += EXTRA_LENGTH_ANNO(d.p);
 	return true;
@@ -113,7 +113,7 @@ static bool ip_extract(PacketDesc& d, const FieldWriter *f)
 	d.v = d.iph->ip_hl << 2;
 	return true;
       case T_IP_CAPTURE_LEN: {
-	  uint32_t allow_len = (d.iph ? network_length : d.p->length());
+	  uint32_t allow_len = (d.iph ? network_length : d.length());
 	  uint32_t len = (d.iph ? ntohs(d.iph->ip_len) : allow_len);
 	  d.v = (len < allow_len ? len : allow_len);
 	  return true;
@@ -367,17 +367,17 @@ static const uint8_t* ip_inb(PacketOdesc& d, const uint8_t *s, const uint8_t *en
 
 static bool transport_extract(PacketDesc& d, const FieldWriter *f)
 {
-    Packet* p = d.p;
+    const Packet *p = d.p;
     switch (f->user_data) {
 	// TCP/UDP header properties
     case T_SPORT:
     case T_DPORT: {
 	bool dport = (f->user_data == T_DPORT);
 	if (d.iph
-	    && p->network_length() > (int)(d.iph->ip_hl << 2)
+	    && d.network_length() > (uint32_t) (d.iph->ip_hl << 2)
 	    && IP_FIRSTFRAG(d.iph)
 	    && ip_proto_has_udp_ports(d.iph->ip_p)
-	    && p->transport_length() >= (dport ? 4 : 2)) {
+	    && d.transport_length() >= (dport ? 4 : 2)) {
 	    const click_udp *udph = p->udp_header();
 	    d.v = ntohs(dport ? udph->uh_dport : udph->uh_sport);
 	    return true;

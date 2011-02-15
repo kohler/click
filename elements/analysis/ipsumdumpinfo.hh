@@ -19,11 +19,12 @@ enum { MAJOR_VERSION = 1, MINOR_VERSION = 3 };
 
 
 struct PacketDesc {
-    Packet* p;
-    const click_ip* iph;
-    const click_udp* udph;
-    const click_tcp* tcph;
+    const Packet *p;
+    const click_ip *iph;
+    const click_udp *udph;
+    const click_tcp *tcph;
     const click_icmp *icmph;
+    int tailpad;		// # bytes extraneous data at end of packet
 
     union {
 	uint32_t v;
@@ -40,6 +41,23 @@ struct PacketDesc {
 
     inline PacketDesc(const Element *e, Packet *p, StringAccum* sa, StringAccum* bad_sa, bool careful_trunc, bool force_extra_length);
     void clear_values()			{ vptr[0] = vptr[1] = 0; }
+
+    // These accessors reduce the Packet's length by network-level padding.
+    // (The Packet's length may include extraneous data at the end; e.g. a
+    // 54-byte IP packet with 6 padding bytes.  'tailpad' records the amount
+    // of this data.  We do not modify the packet itself.)
+    const unsigned char *end_data() const {
+	return p->end_data() - tailpad;
+    }
+    uint32_t length() const {
+	return p->length() - tailpad;
+    }
+    uint32_t network_length() const {
+	return p->network_length() - tailpad;
+    }
+    uint32_t transport_length() const {
+	return p->transport_length() - tailpad;
+    }
 };
 
 struct PacketOdesc {
@@ -190,7 +208,7 @@ void unparse_tcp_opt_binary(StringAccum&, const uint8_t*, int olen, int mask);
 void unparse_tcp_opt_binary(StringAccum&, const click_tcp*, int mask);
 
 inline PacketDesc::PacketDesc(const Element *e_, Packet* p_, StringAccum* sa_, StringAccum* bad_sa_, bool careful_trunc_, bool force_extra_length_)
-    : p(p_), iph(0), udph(0), tcph(0), sa(sa_), bad_sa(bad_sa_),
+    : p(p_), iph(0), udph(0), tcph(0), tailpad(0), sa(sa_), bad_sa(bad_sa_),
       careful_trunc(careful_trunc_), force_extra_length(force_extra_length_),
       e(e_)
 {

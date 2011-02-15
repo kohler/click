@@ -33,7 +33,7 @@ namespace IPSummaryDump {
 
 static bool anno_extract(PacketDesc& d, const FieldWriter *f)
 {
-    Packet *p = d.p;
+    const Packet *p = d.p;
     switch (f->user_data) {
       case T_TIMESTAMP:
 	d.u32[0] = p->timestamp_anno().sec();
@@ -59,8 +59,8 @@ static bool anno_extract(PacketDesc& d, const FieldWriter *f)
 #endif
       }
       case T_FIRST_TIMESTAMP:
-	d.u32[0] = FIRST_TIMESTAMP_ANNO(p).sec();
-	d.u32[1] = FIRST_TIMESTAMP_ANNO(p).nsec();
+	d.u32[0] = CONST_FIRST_TIMESTAMP_ANNO(p).sec();
+	d.u32[1] = CONST_FIRST_TIMESTAMP_ANNO(p).nsec();
 	return true;
       case T_COUNT:
 	d.v = 1 + EXTRA_PACKETS_ANNO(p);

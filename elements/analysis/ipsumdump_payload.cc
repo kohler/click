@@ -34,7 +34,7 @@ namespace IPSummaryDump {
 
 enum { T_PAYLOAD_LEN, T_PAYLOAD, T_PAYLOAD_MD5, T_PAYLOAD_MD5_HEX };
 
-static void payload_info(Packet *p, const click_ip *iph,
+static void payload_info(const Packet *p, const click_ip *iph, int tailpad,
 			 int32_t &off, uint32_t &len)
 {
     if (iph) {
@@ -44,7 +44,7 @@ static void payload_info(Packet *p, const click_ip *iph,
 	if (IP_FIRSTFRAG(iph))
 	    switch (iph->ip_p) {
 	    case IP_PROTO_TCP:
-		if (p->transport_length() >= 13
+		if (p->transport_length() - tailpad >= 13
 		    && ((uint32_t) off + (p->tcp_header()->th_off << 2) <= nlen
 			|| len == 0))
 		    off += (p->tcp_header()->th_off << 2);
@@ -58,7 +58,7 @@ static void payload_info(Packet *p, const click_ip *iph,
 	len -= off - p->network_header_offset();
     } else {
 	off = 0;
-	len = p->length();
+	len = p->length() - tailpad;
     }
 }
 
@@ -67,7 +67,7 @@ static bool payload_extract(PacketDesc &d, const FieldWriter *f)
     switch (f->user_data) {
     case T_PAYLOAD_LEN: {
 	int32_t off;
-	payload_info(d.p, d.iph, off, d.v);
+	payload_info(d.p, d.iph, d.tailpad, off, d.v);
 	if (!d.iph || d.force_extra_length)
 	    d.v += EXTRA_LENGTH_ANNO(d.p);
 	return true;
@@ -135,7 +135,7 @@ static void payload_inject(PacketOdesc &d, const FieldReader *f)
 
     int32_t off;
     uint32_t len;
-    payload_info(d.p, d.is_ip ? d.p->ip_header() : 0, off, len);
+    payload_info(d.p, d.is_ip ? d.p->ip_header() : 0, 0, off, len);
     switch (f->user_data) {
     case T_PAYLOAD: {
 	if (!d.vptr[0] || d.vptr[0] == d.vptr[1])
@@ -162,9 +162,9 @@ static void payload_outa(const PacketDesc& d, const FieldWriter *f)
     case T_PAYLOAD_MD5_HEX: {
 	int32_t off;
 	uint32_t len;
-	payload_info(d.p, d.iph, off, len);
-	if (off + len > (uint32_t) d.p->length())
-	    len = d.p->length() - off;
+	payload_info(d.p, d.iph, d.tailpad, off, len);
+	if (off + len > d.length())
+	    len = d.length() - off;
 	if (f->user_data == T_PAYLOAD) {
 	    String s = String::make_stable((const char *)(d.p->data() + off), len);
 	    *d.sa << cp_quote(s);
@@ -220,9 +220,9 @@ static void payload_outb(const PacketDesc& d, bool, const FieldWriter *f)
     case T_PAYLOAD_MD5_HEX: {
 	int32_t off;
 	uint32_t len;
-	payload_info(d.p, d.iph, off, len);
-	if (off + len > (uint32_t) d.p->length())
-	    len = d.p->length() - off;
+	payload_info(d.p, d.iph, d.tailpad, off, len);
+	if (off + len > (uint32_t) d.length())
+	    len = d.length() - off;
 	md5_state_t pms;
 	md5_init(&pms);
 	md5_append(&pms, (const md5_byte_t *) (d.p->data() + off), len);

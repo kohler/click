@@ -189,7 +189,7 @@ bool hard_field_missing(const PacketDesc &d, int proto, int l)
 	    *d.bad_sa << "!bad no IP header\n";
 	else if (proto == MISSING_IP)
 	    *d.bad_sa << "!bad truncated IP header capture\n";
-	else if (d.p->network_length() > (int) offsetof(click_ip, ip_p)
+	else if (d.network_length() > (int) offsetof(click_ip, ip_p)
 		 && ((proto > MISSING_IP && proto < 256
 		      && d.iph->ip_p != proto)
 		     || (proto == IP_PROTO_TCP_OR_UDP
@@ -199,7 +199,7 @@ bool hard_field_missing(const PacketDesc &d, int proto, int l)
 	    return false;
 	else if (!IP_FIRSTFRAG(d.iph))
 	    *d.bad_sa << "!bad fragmented " << field_missing_proto_name(proto) << " header\n";
-	else if ((int) (d.p->transport_length() + EXTRA_LENGTH_ANNO(d.p)) >= l)
+	else if ((int) (d.transport_length() + EXTRA_LENGTH_ANNO(d.p)) >= l)
 	    *d.bad_sa << "!bad truncated " << field_missing_proto_name(proto) << " header capture\n";
 	else
 	    *d.bad_sa << "!bad truncated " << field_missing_proto_name(proto) << " header\n";
@@ -344,9 +344,9 @@ const uint8_t *inb(PacketOdesc& d, const uint8_t *s, const uint8_t *end, const F
 
 
 
-void ip_prepare(PacketDesc& d, const FieldWriter *)
+void ip_prepare(PacketDesc &d, const FieldWriter *)
 {
-    Packet* p = d.p;
+    Packet *p = const_cast<Packet *>(d.p);
     d.iph = (p->has_network_header() ? p->ip_header() : 0);
     d.tcph = (p->has_transport_header() ? p->tcp_header() : 0);
     d.udph = (p->has_transport_header() ? p->udp_header() : 0);
@@ -370,7 +370,7 @@ void ip_prepare(PacketDesc& d, const FieldWriter *)
 	int ip_len = ntohs(d.iph->ip_len);
 	if (p->network_length() > ip_len) {
 	    SET_EXTRA_LENGTH_ANNO(p, EXTRA_LENGTH_ANNO(p) + p->network_length() - ip_len);
-	    p->take(p->network_length() - ip_len);
+	    d.tailpad = p->network_length() - ip_len;
 	} else if (d.careful_trunc && p->network_length() + EXTRA_LENGTH_ANNO(p) < (uint32_t) ip_len) {
 	    /* This doesn't actually kill the IP header. */
 	    int scratch;
@@ -380,24 +380,24 @@ void ip_prepare(PacketDesc& d, const FieldWriter *)
 
     // check TCP header
     if (!d.iph || !d.tcph
-	|| p->network_length() <= (int)(d.iph->ip_hl << 2)
+	|| d.network_length() <= (uint32_t)(d.iph->ip_hl << 2)
 	|| d.iph->ip_p != IP_PROTO_TCP
 	|| !IP_FIRSTFRAG(d.iph))
 	d.tcph = 0;
-    else if (p->transport_length() > 12
+    else if (d.transport_length() > 12
 	     && d.tcph->th_off < (sizeof(click_tcp) >> 2))
 	BAD2("TCP header length ", d.tcph->th_off, d.tcph);
 
     // check UDP header
     if (!d.iph || !d.udph
-	|| p->network_length() <= (int)(d.iph->ip_hl << 2)
+	|| d.network_length() - d.tailpad <= (uint32_t)(d.iph->ip_hl << 2)
 	|| d.iph->ip_p != IP_PROTO_UDP
 	|| !IP_FIRSTFRAG(d.iph))
 	d.udph = 0;
 
     // check ICMP header
     if (!d.iph || !d.icmph
-	|| p->network_length() <= (int)(d.iph->ip_hl << 2)
+	|| d.network_length() <= (uint32_t)(d.iph->ip_hl << 2)
 	|| d.iph->ip_p != IP_PROTO_ICMP
 	|| !IP_FIRSTFRAG(d.iph))
 	d.icmph = 0;
@@ -406,7 +406,7 @@ void ip_prepare(PacketDesc& d, const FieldWriter *)
 
     // Adjust extra length, since we calculate lengths here based on ip_len.
     if (d.iph && EXTRA_LENGTH_ANNO(p) > 0) {
-	uint32_t full_len = p->network_length() + EXTRA_LENGTH_ANNO(p);
+	uint32_t full_len = d.network_length() + EXTRA_LENGTH_ANNO(p);
 	if (d.iph->ip_len != 0xFFFF || full_len <= 0xFFFF)
 	    SET_EXTRA_LENGTH_ANNO(p, 0);
 	else

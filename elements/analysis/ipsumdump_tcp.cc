@@ -37,7 +37,7 @@ enum { T_TCP_SEQ, T_TCP_ACK, T_TCP_FLAGS, T_TCP_WINDOW, T_TCP_URP, T_TCP_OPT,
 
 static bool tcp_extract(PacketDesc& d, const FieldWriter *f)
 {
-    int transport_length = d.p->transport_length();
+    int transport_length = d.transport_length();
     switch (f->user_data) {
 
 #define CHECK(l) do { if (!d.tcph || transport_length < (l)) return field_missing(d, IP_PROTO_TCP, (l)); } while (0)
