@@ -155,7 +155,7 @@ sub textize_add_links ($$) {
 	my $result = ($r eq $PrimaryElement ? "$selfref<$r>" : "L<$r>");
 	for ($pos = index($t, $r); $pos >= 0; $pos = index($t, $r, $pos + 1)) {
 	    if (($pos == 0 || substr($t, $pos - 1, 1) =~ /^[^\w@\/<]$/s)
-		&& (substr($t, $pos + $l, 1) =~ /^[^\w@\/]$/s)) {
+		&& (substr($t, $pos + $l) =~ /\A(?:[^\w@\/]|\z)/s)) {
 		substr($t, $pos, $l) = $result;
 		$pos += 2 + $l;
 	    }
