@@ -1026,9 +1026,11 @@ sub process_file ($;$) {
     my($filename, $text) = @_;
 
     print STDERR "Attempting $filename...\n" if $verbose;
-    $filename = "include/$1" if !-e $filename && $filename =~ /^<(.*)>$/s;
-    $filename = "$PREFIX/$filename" if !-e $filename && defined($PREFIX);
-    return if !-e $filename;
+    if ($filename ne "<stdin>") {
+	$filename = "include/$1" if !-e $filename && $filename =~ /^<(.*)>$/s;
+	$filename = "$PREFIX/$filename" if !-e $filename && defined($PREFIX);
+	return if !-e $filename;
+    }
     print STDERR "Found $filename\n" if $verbose;
     if (!defined($text)) {
 	if (!open(IN, $filename)) {
@@ -1102,8 +1104,8 @@ sub read_elementmap ($;$) {
     close E;
 }
 
-sub process_file_set ($$) {
-    my($fn, $fnhash) = @_;
+sub process_file_set ($$\@) {
+    my($fn, $fnhash, $filedata) = @_;
     if (open(IN, ($fn eq '-' ? "<&STDIN" : $fn))) {
 	my(@a, @b, $t, $x);
 	$t = <IN>;
@@ -1125,8 +1127,11 @@ sub process_file_set ($$) {
 	} elsif ($t =~ /\A<\?xml/) {
 	    read_elementmap_text($t, $fnhash);
 	} elsif ($t =~ /[\(\)]/) {
-	    die if $fn eq '-';
-	    $fnhash->{$fn} = 1;
+	    if ($fn ne "-") {
+		$fnhash->{$fn} = 1;
+	    } else {
+		push @$filedata, $t;
+	    }
 	} else {
 	    $t =~ s/^#.*//mg;
 	    foreach $_ (split(/\s+/, $t)) {
@@ -1327,15 +1332,18 @@ if ($uninstall) {
 }
 
 # read file sets
-my(%fnhash);
+my(%fnhash, @filedata);
 foreach $fn (@files) {
-    process_file_set($fn, \%fnhash);
+    process_file_set($fn, \%fnhash, @filedata);
 }
 fix_requires();
 
 # process files
-foreach $fn (keys(%fnhash)) {
+foreach my $fn (keys(%fnhash)) {
     process_file($fn);
+}
+foreach my $text (@filedata) {
+    process_file("<stdin>", $text);
 }
 
 if ($uninstall || !$directory) {
