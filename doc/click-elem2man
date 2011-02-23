@@ -226,6 +226,18 @@ sub nroff_fixfP ($$) {
     $x;
 }
 
+sub nroff_manref ($$$$) {
+    map { $_ = "\"$_\"" if (s/\"/\\(dq/g) } @_;
+    my($x);
+    if ($_[0] eq "") {
+	$x = "\n.M " . $_[1] . " " . $_[2];
+    } else {
+	$x = "\n.RM " . $_[0] . " " . $_[1] . " " . $_[2];
+    }
+    $x .= " " . $_[3] if $_[3] ne "";
+    $x . "\n";
+}
+
 sub nroffize_text ($) {
     my($t) = @_;
     my($s);
@@ -257,18 +269,20 @@ sub nroffize_text ($) {
 	# files and filelike refs in italics
 	$t =~ s/F<($nonest)>/I<$1>/g;
 
-	# LREF: man page references
-	$t =~ s{L<($nonest)\(([\dln])\)>(\S*)(\s*)}{\n.M $1 $2 $3\n}g;
-
+	# comments
 	$t =~ s/V<($nonest)>//g;
 
-	# LREF: a la HREF L<show this text|man/section>
-	$t =~ s{L<($nonest)>(\S*)(\s*)}{
-	    if (($s = $RelatedSource{$1})) {
-		"\n.M $1 \"$s\" $2\n";
+	# LREF: man page references, or a la HREF L<show this text|man/section>
+	$t =~ s{(\S*)L<($nonest)>(\S*)(\s*)}{
+	    my($pre, $text, $post, $space, $s, $i) = ($1, $2, $3, $4);
+	    if ($text =~ /\A(.*)\((\d+|[ln])\)\z/) {
+		nroff_manref($pre, $1, $2, $post);
+	    } elsif (($s = $RelatedSource{$text})) {
+		nroff_manref($pre, $text, $s, $post);
+	    } elsif (($i = index($text, "|")) >= 0) {
+		$pre . substr($text, 0, $i) . $post . $space;
 	    } else {
-		my $i = index($1, "|");
-		($i >= 0 ? substr($1, 0, $i) . $2 . $3 : "\\fB$1\\fP$2$3");
+		$pre . "\\fB" . $text . "\\fP" . $post . $space;
 	    }
 	}eg;
 
