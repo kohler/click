@@ -26,7 +26,7 @@ Keyword arguments are:
 =item FIRST
 
 Boolean.  If true, then set the packet's "first timestamp" annotation, not its
-timestamp annotation.  Default is true.
+timestamp annotation.  Default is false.
 
 =back
 
