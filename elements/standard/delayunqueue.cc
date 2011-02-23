@@ -74,7 +74,6 @@ DelayUnqueue::run_task(Task *)
 	Timestamp now = Timestamp::now();
 	if (_p->timestamp_anno() <= now) {
 	    // packet ready for output
-	    _p->timestamp_anno() = now;
 	    output(0).push(_p);
 	    _p = 0;
 	    worked = true;
