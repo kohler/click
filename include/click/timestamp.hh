@@ -341,6 +341,11 @@ class Timestamp { public:
 	return Timestamp(0, 1);
     }
 
+    /** @brief Clear this timestamp. */
+    inline void clear() {
+	assign(0, 0);
+    }
+
     /** Set this timestamp to a seconds-and-subseconds value.
      *
      * @sa Timestamp(int, int) */
