@@ -99,17 +99,10 @@ DelayUnqueue::run_task(Task *)
     return worked;
 }
 
-String
-DelayUnqueue::read_param(Element *e, void *)
-{
-    DelayUnqueue *u = (DelayUnqueue *)e;
-    return u->_delay.unparse_interval();
-}
-
 void
 DelayUnqueue::add_handlers()
 {
-    add_read_handler("delay", read_param, (void *)0, Handler::CALM);
+    add_data_handlers("delay", Handler::OP_READ | Handler::OP_WRITE, &_delay, true);
     add_task_handlers(&_task);
 }
 

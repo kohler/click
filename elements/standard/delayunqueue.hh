@@ -13,17 +13,21 @@ DelayUnqueue(DELAY)
 
 =s shaping
 
-delay inducing pull-to-push converter
+delay-inducing pull-to-push converter
 
 =d
 
 Pulls packets from the single input port. Delays them for at least DELAY
 seconds, with microsecond precision. A packet with timestamp T will be emitted
 no earlier than time (T + DELAY). On output, the packet's timestamp is set to
-the current time.
+the delayed time.
 
 DelayUnqueue listens for upstream notification, such as that available from
 Queue.
+
+=h delay read/write
+
+Return or set the DELAY parameter.
 
 =a Queue, Unqueue, RatedUnqueue, BandwidthRatedUnqueue, LinkUnqueue,
 DelayShaper, SetTimestamp */
@@ -43,7 +47,6 @@ class DelayUnqueue : public Element { public:
     void add_handlers();
 
     bool run_task(Task *);
-    static String read_param(Element *e, void *);
 
   private:
 
