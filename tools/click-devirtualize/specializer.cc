@@ -303,12 +303,12 @@ Specializer::do_simple_action(SpecializedClass &spc)
     (CxxFunction("smaction", false, "inline Packet *", simple_action->args(),
 		 simple_action->body(), simple_action->clean_body()));
   spc.cxxc->defun
-    (CxxFunction("push", false, "void", "(int, Packet *p)",
+    (CxxFunction("push", false, "void", "(int port, Packet *p)",
 		 "\n  if (Packet *q = smaction(p))\n\
-    output_push(0, q);\n", ""));
+    output_push(port, q);\n", ""));
   spc.cxxc->defun
-    (CxxFunction("pull", false, "Packet *", "(int)",
-		 "\n  Packet *p = input_pull(0);\n\
+    (CxxFunction("pull", false, "Packet *", "(int port)",
+		 "\n  Packet *p = input_pull(port);\n\
   return (p ? smaction(p) : 0);\n", ""));
   spc.cxxc->find("output_push")->unkill();
   spc.cxxc->find("input_pull")->unkill();

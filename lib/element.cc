@@ -5,7 +5,7 @@
  * statistics: Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
- * Copyright (c) 2004-2008 Regents of the University of California
+ * Copyright (c) 2004-2011 Regents of the University of California
  * Copyright (c) 2010 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -2828,10 +2828,9 @@ Element::local_llrpc(unsigned command, void *data)
 void
 Element::push(int port, Packet *p)
 {
-    (void) port;
     p = simple_action(p);
     if (p)
-	output(0).push(p);
+	output(port).push(p);
 }
 
 /** @brief Pull a packet from pull output @a port.
@@ -2849,8 +2848,7 @@ Element::push(int port, Packet *p)
 Packet *
 Element::pull(int port)
 {
-    (void) port;
-    Packet *p = input(0).pull();
+    Packet *p = input(port).pull();
     if (p)
 	p = simple_action(p);
     return p;
@@ -2894,6 +2892,11 @@ Element::pull(int port)
  * a processing() code like AGNOSTIC or "a/ah", and a flow_code() like
  * COMPLETE_FLOW or "x/x" indicating that packets can flow between the first
  * input and the first output.
+ *
+ * Most elements that use simple_action() have exactly one input and one
+ * output.  However, simple_action() may be used for any number of inputs and
+ * outputs; a packet arriving on input port P will be emitted or output port
+ * P.
  *
  * For technical branch prediction-related reasons, elements that use
  * simple_action() can perform quite a bit slower than elements that use
