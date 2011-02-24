@@ -390,8 +390,6 @@ RouterThread::run_tasks(int ntasks)
 	    goto post_fire;
 	}
 
-	t->_status.is_scheduled = false;
-
 #if HAVE_MULTITHREAD
 	runs = t->cycle_runs();
 	if (runs > PROFILE_ELEMENT)
@@ -405,6 +403,7 @@ RouterThread::run_tasks(int ntasks)
 	_pass = t->_pass;
 #endif
 
+	t->_status.is_scheduled = false;
 	t->fire();
 
 #if HAVE_MULTITHREAD
