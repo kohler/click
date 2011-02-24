@@ -2387,10 +2387,10 @@ interval_data_handler(int op, String &str, Element *element, const Handler *h, E
     if (op == Handler::h_read) {
 	str = ptr->unparse_interval();
 	return 0;
-    } else if (cp_time(str, ptr))
+    } else if (cp_time(str, ptr, true))
 	return 0;
     else
-	return errh->error("expected interval");
+	return errh->error("expected time in seconds");
 }
 
 inline void
