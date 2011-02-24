@@ -163,7 +163,7 @@ RouterThread::driver_lock_tasks()
     }
 #endif
 
-    while (!_task_blocker.compare_and_swap(0, (uint32_t) -1)) {
+    while (_task_blocker.compare_swap(0, (uint32_t) -1) != 0) {
 #if CLICK_LINUXMODULE
 	schedule();
 #endif
@@ -173,8 +173,8 @@ RouterThread::driver_lock_tasks()
 inline void
 RouterThread::driver_unlock_tasks()
 {
-    bool ok = _task_blocker.compare_and_swap((uint32_t) -1, 0);
-    assert(ok);
+    uint32_t val = _task_blocker.compare_swap((uint32_t) -1, 0);
+    assert(val == (uint32_t) -1);
 }
 
 

@@ -331,9 +331,9 @@ RouterThread::block_tasks(bool scheduled)
     if (!scheduled)
 	++_task_blocker_waiting;
     while (1) {
-	int32_t blocker = _task_blocker.value();
-	if (blocker >= 0
-	    && _task_blocker.compare_and_swap(blocker, blocker + 1))
+	uint32_t blocker = _task_blocker.value();
+	if ((int32_t) blocker >= 0
+	    && _task_blocker.compare_swap(blocker, blocker + 1) == blocker)
 	    break;
 #if CLICK_LINUXMODULE
 	// 3.Nov.2008: Must allow other threads a chance to run.  Otherwise,
@@ -371,9 +371,9 @@ RouterThread::attempt_lock_tasks()
 {
     if (likely(current_thread_is_running()))
 	return true;
-    int32_t blocker = _task_blocker.value();
-    if (blocker < 0
-	|| !_task_blocker.compare_and_swap(blocker, blocker + 1))
+    uint32_t blocker = _task_blocker.value();
+    if ((int32_t) blocker < 0
+	|| _task_blocker.compare_swap(blocker, blocker + 1) != blocker)
 	return false;
     if (_task_lock.attempt())
 	return true;

@@ -64,7 +64,7 @@ Packet *
 AverageCounter::simple_action(Packet *p)
 {
     uint32_t jpart = click_jiffies();
-    _first.compare_and_swap(0, jpart);
+    _first.compare_swap(0, jpart);
     if (jpart - _first >= _ignore) {
 	_count++;
 	_byte_count += p->length();

@@ -405,7 +405,7 @@ String::append_garbage(int len)
 	&& ((dirty = _r.memo->dirty), _r.memo->capacity > dirty + len)) {
 	char *real_dirty = _r.memo->real_data + dirty;
 	if (real_dirty == _r.data + _r.length
-	    && atomic_uint32_t::compare_and_swap(_r.memo->dirty, dirty, dirty + len)) {
+	    && atomic_uint32_t::compare_swap(_r.memo->dirty, dirty, dirty + len) == dirty) {
 	    _r.length += len;
 	    assert(_r.memo->dirty < _r.memo->capacity);
 #if HAVE_STRING_PROFILING

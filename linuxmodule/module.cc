@@ -166,7 +166,7 @@ KernelErrorHandler::log_line(String landmark, const char *begin, const char *end
     do {
 	line_head = _tail;
 	line_tail = line_head + (end - begin) + 1 + landmark.length();
-    } while (!atomic_uint32_t::compare_and_swap(_tail, line_head, line_tail));
+    } while (atomic_uint32_t::compare_swap(_tail, line_head, line_tail) != line_head);
     while (line_tail - _head > logbuf_siz)
 	/* spin */;
 
@@ -177,7 +177,7 @@ KernelErrorHandler::log_line(String landmark, const char *begin, const char *end
     _logbuf[(line_tail - 1) & (logbuf_siz - 1)] = '\n';
 
     // mark the line as stored
-    while (!atomic_uint32_t::compare_and_swap(_head, line_head, line_tail))
+    while (atomic_uint32_t::compare_swap(_head, line_head, line_tail) != line_head)
 	/* spin */;
     if (line_tail > logbuf_siz)
 	_wrapped = true;

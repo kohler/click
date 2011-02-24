@@ -42,7 +42,7 @@ RoundRobinSwitch::push(int, Packet *p)
   int newval = i+1;
   if (newval >= noutputs())
     newval = 0;
-  _next.compare_and_swap(i, newval);
+  _next.compare_swap(i, newval);
 #endif
   output(i).push(p);
 }

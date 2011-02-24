@@ -38,7 +38,7 @@ CLICK_CXX_UNPROTECT
  * The atomic_uint32_t class represents a 32-bit integer, with support for
  * atomic operations.  The +=, -=, &=, |=, ++, and -- operations are
  * implemented using atomic instructions.  There are also atomic swap(),
- * fetch_and_add(), dec_and_test(), and compare_and_swap() operations.
+ * fetch_and_add(), dec_and_test(), and compare_swap() operations.
  *
  * Because of some issues with compiler implementations, atomic_uint32_t has
  * no explicit constructor; to set an atomic_uint32_t to a value, use
@@ -72,11 +72,13 @@ class atomic_uint32_t { public:
     inline uint32_t swap(uint32_t x);
     inline uint32_t fetch_and_add(uint32_t delta);
     inline bool dec_and_test();
-    inline bool compare_and_swap(uint32_t test_value, uint32_t new_value);
+    inline uint32_t compare_swap(uint32_t expected, uint32_t desired);
+    inline bool compare_and_swap(uint32_t expected, uint32_t desired) CLICK_DEPRECATED;
 
     inline static void inc(volatile uint32_t &x);
     inline static bool dec_and_test(volatile uint32_t &x);
-    inline static bool compare_and_swap(volatile uint32_t &x, uint32_t test_value, uint32_t new_value);
+    inline static uint32_t compare_swap(volatile uint32_t &x, uint32_t expected, uint32_t desired);
+    inline static bool compare_and_swap(volatile uint32_t &x, uint32_t expected, uint32_t desired) CLICK_DEPRECATED;
 
   private:
 
@@ -372,46 +374,92 @@ atomic_uint32_t::dec_and_test(volatile uint32_t &x)
 }
 
 /** @brief  Perform a compare-and-swap operation.
- *  @param  x           value
- *  @param  test_value  test value
- *  @param  new_value   new value
- *  @return True if the old @a x equaled @a test_value (in which case @a x
- *	    was set to @a new_value), false otherwise.
+ *  @param  x         value
+ *  @param  expected  test value
+ *  @param  desired   new value
+ *  @return The actual old value.  If it equaled @a expected, @a x has been
+ *	    set to @a desired.
+ *
+ * Behaves like this, but in one atomic step:
+ * @code
+ * uint32_t actual = x;
+ * if (x == expected)
+ *     x = desired;
+ * return actual;
+ * @endcode
+ *
+ * Also acts as a memory barrier. */
+inline uint32_t
+atomic_uint32_t::compare_swap(volatile uint32_t &x, uint32_t expected, uint32_t desired)
+{
+#if CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "cmpxchgl %2,%1"
+		  : "=a" (expected), "=m" (x)
+		  : "r" (desired), "0" (expected), "m" (x)
+		  : "cc", "memory");
+    return expected;
+#elif CLICK_LINUXMODULE && defined(cmpxchg)
+    return cmpxchg(&x, expected, desired);
+#elif CLICK_LINUXMODULE
+# warning "using nonatomic approximation for atomic_uint32_t::compare_and_swap"
+    unsigned long flags;
+    local_irq_save(flags);
+    uint32_t actual = x;
+    if (actual == expected)
+	x = desired;
+    local_irq_restore(flags);
+    return actual;
+#else
+    uint32_t actual = x;
+    if (actual == expected)
+	x = desired;
+    return actual;
+#endif
+}
+
+
+/** @brief  Perform a compare-and-swap operation.
+ *  @param  x         value
+ *  @param  expected  test value
+ *  @param  desired   new value
+ *  @return True if the old @a x equaled @a expected (in which case @a x
+ *	    was set to @a desired), false otherwise.
+ *  @deprecated Use compare_swap instead.
  *
  * Behaves like this, but in one atomic step:
  * @code
  * uint32_t old_value = x;
- * if (x == test_value)
- *     x = new_value;
- * return old_value == test_value;
+ * if (x == expected)
+ *     x = desired;
+ * return old_value == expected;
  * @endcode
  *
  * Also acts as a memory barrier. */
 inline bool
-atomic_uint32_t::compare_and_swap(volatile uint32_t &x, uint32_t test_value, uint32_t new_value)
+atomic_uint32_t::compare_and_swap(volatile uint32_t &x, uint32_t expected, uint32_t desired)
 {
 #if CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "cmpxchgl %2,%0 ; sete %%al"
-		  : "=m" (x), "=a" (test_value)
-		  : "r" (new_value), "m" (x), "a" (test_value)
+		  : "=m" (x), "=a" (expected)
+		  : "r" (desired), "m" (x), "a" (expected)
 		  : "cc", "memory");
-    return (uint8_t) test_value;
+    return (uint8_t) expected;
 #elif CLICK_LINUXMODULE && defined(cmpxchg)
-    return cmpxchg(&x, test_value, new_value) == test_value;
+    return cmpxchg(&x, expected, desired) == expected;
 #elif CLICK_LINUXMODULE
 # warning "using nonatomic approximation for atomic_uint32_t::compare_and_swap"
     unsigned long flags;
     local_irq_save(flags);
     uint32_t old_value = x;
-    if (old_value == test_value)
-	x = new_value;
+    if (old_value == expected)
+	x = desired;
     local_irq_restore(flags);
-    return old_value == test_value;
+    return old_value == expected;
 #else
     uint32_t old_value = x;
-    if (old_value == test_value)
-	x = new_value;
-    return old_value == test_value;
+    if (old_value == expected)
+	x = desired;
+    return old_value == expected;
 #endif
 }
 
@@ -441,45 +489,89 @@ atomic_uint32_t::dec_and_test()
 }
 
 /** @brief  Perform a compare-and-swap operation.
- *  @param  test_value  test value
- *  @param  new_value   new value
- *  @return True if the old value equaled @a test_value (in which case the
- *	    value was set to @a new_value), false otherwise.
+ *  @param  expected  test value
+ *  @param  desired   new value
+ *  @return The actual old value.  If @a expected is returned, the
+ *          value has been set to @a desired.
+ *
+ * Behaves like this, but in one atomic step:
+ * @code
+ * uint32_t actual = value();
+ * if (actual == expected)
+ *     *this = desired;
+ * return actual;
+ * @endcode
+ *
+ * Also acts as a memory barrier. */
+inline uint32_t
+atomic_uint32_t::compare_swap(uint32_t expected, uint32_t desired)
+{
+#if CLICK_ATOMIC_X86
+    asm volatile (CLICK_ATOMIC_LOCK "cmpxchgl %2,%1"
+		  : "=a" (expected), "=m" (CLICK_ATOMIC_VAL)
+		  : "r" (desired), "0" (expected), "m" (CLICK_ATOMIC_VAL)
+		  : "cc", "memory");
+    return expected;
+#elif CLICK_LINUXMODULE && defined(atomic_cmpxchg)
+    return atomic_cmpxchg(&_val, expected, desired);
+#elif CLICK_LINUXMODULE
+# warning "using nonatomic approximation for atomic_uint32_t::compare_swap"
+    unsigned long flags;
+    local_irq_save(flags);
+    uint32_t actual = value();
+    if (actual == expected)
+	CLICK_ATOMIC_VAL = desired;
+    local_irq_restore(flags);
+    return actual;
+#else
+    uint32_t actual = value();
+    if (actual == expected)
+	CLICK_ATOMIC_VAL = desired;
+    return actual;
+#endif
+}
+
+/** @brief  Perform a compare-and-swap operation.
+ *  @param  expected  test value
+ *  @param  desired   new value
+ *  @return True if the old value equaled @a expected (in which case the
+ *	    value was set to @a desired), false otherwise.
+ *  @deprecated  Use compare_swap instead.
  *
  * Behaves like this, but in one atomic step:
  * @code
  * uint32_t old_value = value();
- * if (old_value == test_value)
- *     *this = new_value;
- * return old_value == test_value;
+ * if (old_value == expected)
+ *     *this = desired;
+ * return old_value == expected;
  * @endcode
  *
  * Also acts as a memory barrier. */
 inline bool
-atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
+atomic_uint32_t::compare_and_swap(uint32_t expected, uint32_t desired)
 {
 #if CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "cmpxchgl %2,%0 ; sete %%al"
-		  : "=m" (CLICK_ATOMIC_VAL), "=a" (test_value)
-		  : "r" (new_value), "m" (CLICK_ATOMIC_VAL), "a" (test_value)
+		  : "=m" (CLICK_ATOMIC_VAL), "=a" (expected)
+		  : "r" (desired), "m" (CLICK_ATOMIC_VAL), "a" (expected)
 		  : "cc", "memory");
-    return (uint8_t) test_value;
+    return (uint8_t) expected;
 #elif CLICK_LINUXMODULE && defined(atomic_cmpxchg)
-    return atomic_cmpxchg(&_val, test_value, new_value) == test_value;
+    return atomic_cmpxchg(&_val, expected, desired) == expected;
 #elif CLICK_LINUXMODULE
 # warning "using nonatomic approximation for atomic_uint32_t::compare_and_swap"
     unsigned long flags;
     local_irq_save(flags);
     uint32_t old_value = value();
-    if (old_value == test_value)
-	CLICK_ATOMIC_VAL = new_value;
+    if (old_value == expected)
+	CLICK_ATOMIC_VAL = desired;
     local_irq_restore(flags);
-    return old_value == test_value;
+    return old_value == expected;
 #else
     uint32_t old_value = value();
-    if (old_value == test_value)
-	CLICK_ATOMIC_VAL = new_value;
-    return old_value == test_value;
+    if (old_value == expected)
+	CLICK_ATOMIC_VAL = desired;
+    return old_value == expected;
 #endif
 }
 
