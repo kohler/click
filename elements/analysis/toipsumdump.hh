@@ -27,6 +27,9 @@ binary format to save space.
 
 ToIPSummaryDump uses packets' extra-length and extra-packet-count annotations.
 
+ToIPSummaryDump can optionally be used as a filter: it pushes received packets
+to its output if that output exists.
+
 Keyword arguments are:
 
 =over 8
@@ -348,8 +351,8 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     ~ToIPSummaryDump();
 
     const char *class_name() const	{ return "ToIPSummaryDump"; }
-    const char *port_count() const	{ return PORTS_1_0; }
-    const char *processing() const	{ return AGNOSTIC; }
+    const char *port_count() const	{ return "1/0-1"; }
+    const char *processing() const	{ return "a/h"; }
     const char *flags() const		{ return "S2"; }
 
     int configure(Vector<String> &, ErrorHandler *);

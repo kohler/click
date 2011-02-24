@@ -4,7 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2001-3 International Computer Science Institute
- * Copyright (c) 2004-8 Regents of the University of California
+ * Copyright (c) 2004-2011 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -263,7 +263,7 @@ ToIPSummaryDump::push(int, Packet *p)
 {
     if (_active)
 	write_packet(p, _multipacket);
-    p->kill();
+    checked_output_push(0, p);
 }
 
 bool
@@ -273,7 +273,7 @@ ToIPSummaryDump::run_task(Task *)
 	return false;
     if (Packet *p = input(0).pull()) {
 	write_packet(p, _multipacket);
-	p->kill();
+	checked_output_push(0, p);
 	_task.fast_reschedule();
 	return true;
     } else if (_signal) {
