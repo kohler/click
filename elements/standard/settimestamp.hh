@@ -30,7 +30,7 @@ timestamp annotation.  Default is false.
 
 =back
 
-=a StoreTimestamp, SetTimestampDelta, PrintOld */
+=a StoreTimestamp, AdjustTimestamp, SetTimestampDelta, PrintOld */
 
 class SetTimestamp : public Element { public:
 

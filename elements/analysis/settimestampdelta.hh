@@ -42,7 +42,7 @@ relative to the next nonzero timestamp encountered.
 
 =a
 
-TimeFilter */
+SetTimestamp, AdjustTimestamp, TimeFilter */
 
 class SetTimestampDelta : public Element { public:
 

@@ -1,0 +1,43 @@
+%script
+click CONFIG
+
+%file CONFIG
+FromIPSummaryDump(F, STOP true)
+	-> t::AdjustTimestamp(-1)
+	-> ToIPSummaryDump(-, CONTENTS timestamp)
+	-> t2::AdjustTimestamp(+1.5)
+	-> ToIPSummaryDump(T2, CONTENTS timestamp)
+	-> t3::AdjustTimestamp(+0.1, ALL true)
+	-> ToIPSummaryDump(T3, CONTENTS timestamp)
+
+%file F
+!data timestamp
+0.1
+0.2
+1.0
+1.2
+5.5
+
+%expect stdout
+-0.9{{0*}}
+-0.8{{0*}}
+0.0{{0*}}
+0.2{{0*}}
+4.5{{0*}}
+
+%expect T2
+0.6{{0*}}
+0.7{{0*}}
+0.0{{0*}}{{? Zero-valued timestamps are not adjusted by default }}
+1.7{{0*}}
+6.0{{0*}}
+
+%expect T3
+0.7{{0*}}
+0.8{{0*}}
+0.1{{0*}}
+1.8{{0*}}
+6.1{{0*}}
+
+%ignore stdout T2 T3
+!{{.*}}
