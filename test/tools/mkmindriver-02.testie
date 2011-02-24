@@ -11,7 +11,7 @@ FromDevice(eth0) -> BandwidthShaper -> ToHostSniffers(eth1);
 
 %expect stderr
 Creating elements_foo.conf...
-Build 'fooclick.o' with 'make MINDRIVER=foo'.
+Build 'fooclick.ko' with 'make MINDRIVER=foo'.
 
 %expect elements_foo.conf
 elements/ip/ipnameinfo.cc	"elements/ip/ipnameinfo.hh"	IPNameInfo-IPNameInfo IPNameInfo-!si IPNameInfo-!sc
