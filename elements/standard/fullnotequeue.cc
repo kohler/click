@@ -60,7 +60,7 @@ void
 FullNoteQueue::push(int, Packet *p)
 {
     // Code taken from SimpleQueue::push().
-    int h = _head, t = _tail, nt = next_i(t);
+    Storage::index_type h = _head, t = _tail, nt = next_i(t);
 
     if (nt != h)
 	push_success(h, t, nt, p);
@@ -72,10 +72,10 @@ Packet *
 FullNoteQueue::pull(int)
 {
     // Code taken from SimpleQueue::deq.
-    int h = _head, t = _tail, nh = next_i(h);
+    Storage::index_type h = _head, t = _tail, nh = next_i(h);
 
     if (h != t)
-	return pull_success(h, t, nh);
+	return pull_success(h, nh);
     else
 	return pull_failure();
 }

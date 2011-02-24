@@ -6,38 +6,44 @@ class Packet;
 
 class Storage { public:
 
+    typedef uint32_t index_type;
+
     Storage()				: _head(0), _tail(0) { }
 
     operator bool() const		{ return _head != _tail; }
     bool empty() const			{ return _head == _tail; }
     int size() const;
-    int size(int head, int tail) const;
+    int size(index_type head, index_type tail) const;
     int capacity() const		{ return _capacity; }
 
-    int head() const			{ return _head; }
-    int tail() const			{ return _tail; }
+    index_type head() const		{ return _head; }
+    index_type tail() const		{ return _tail; }
 
-    int next_i(int i) const		{ return (i!=_capacity ? i+1 : 0); }
-    int prev_i(int i) const		{ return (i!=0 ? i-1 : _capacity); }
+    index_type next_i(index_type i) const {
+	return (i!=_capacity ? i+1 : 0);
+    }
+    index_type prev_i(index_type i) const {
+	return (i!=0 ? i-1 : _capacity);
+    }
 
     // to be used with care
-    void set_capacity(int c)		{ _capacity = c; }
-    void set_head(int h)		{ _head = h; }
-    void set_tail(int t)		{ _tail = t; }
+    void set_capacity(index_type c)	{ _capacity = c; }
+    void set_head(index_type h)		{ _head = h; }
+    void set_tail(index_type t)		{ _tail = t; }
 
     static inline void packet_memory_barrier(Packet * volatile &packet,
-					     volatile int &index);
+					     volatile index_type &index);
 
   protected:
 
-    int _capacity;
-    volatile int _head;
-    volatile int _tail;
+    index_type _capacity;
+    volatile index_type _head;
+    volatile index_type _tail;
 
 };
 
 inline int
-Storage::size(int head, int tail) const
+Storage::size(index_type head, index_type tail) const
 {
     int x = tail - head;
     return (x >= 0 ? x : _capacity + x + 1);
@@ -50,7 +56,7 @@ Storage::size() const
 }
 
 inline void
-Storage::packet_memory_barrier(Packet * volatile &packet, volatile int &index)
+Storage::packet_memory_barrier(Packet * volatile &packet, volatile index_type &index)
 {
     __asm__ volatile("" : : "m" (packet), "m" (index));
 }

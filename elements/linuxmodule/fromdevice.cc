@@ -196,7 +196,7 @@ FromDevice::cleanup(CleanupStage stage)
     clear_device(&from_device_map, anydev_from_device);
 
     if (stage >= CLEANUP_INITIALIZED)
-	for (unsigned i = _head; i != _tail; i = next_i(i))
+	for (Storage::index_type i = _head; i != _tail; i = next_i(i))
 	    _queue[i]->kill();
     _head = _tail = 0;
 }
@@ -208,9 +208,9 @@ FromDevice::take_state(Element *e, ErrorHandler *errh)
 	SpinlockIRQ::flags_t flags;
 	local_irq_save(flags);
 
-	unsigned fd_i = fd->_head;
+	Storage::index_type fd_i = fd->_head;
 	while (fd_i != fd->_tail) {
-	    unsigned next = next_i(_tail);
+	    Storage::index_type next = next_i(_tail);
 	    if (next == _head)
 		break;
 	    _queue[_tail] = fd->_queue[fd_i];

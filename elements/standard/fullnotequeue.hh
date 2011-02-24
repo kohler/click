@@ -83,9 +83,11 @@ class FullNoteQueue : public NotifierQueue { public:
 
     ActiveNotifier _full_note;
 
-    inline void push_success(int h, int t, int nt, Packet *p);
+    inline void push_success(Storage::index_type h, Storage::index_type t,
+			     Storage::index_type nt, Packet *p);
     inline void push_failure(Packet *p);
-    inline Packet *pull_success(int h, int t, int nh);
+    inline Packet *pull_success(Storage::index_type h,
+				Storage::index_type nh);
     inline Packet *pull_failure();
 
     static int write_handler(const String&, Element*, void*, ErrorHandler*);
@@ -93,7 +95,8 @@ class FullNoteQueue : public NotifierQueue { public:
 };
 
 inline void
-FullNoteQueue::push_success(int h, int t, int nt, Packet *p)
+FullNoteQueue::push_success(Storage::index_type h, Storage::index_type t,
+			    Storage::index_type nt, Packet *p)
 {
     _q[t] = p;
     packet_memory_barrier(_q[t], _tail);
@@ -127,7 +130,8 @@ FullNoteQueue::push_failure(Packet *p)
 }
 
 inline Packet *
-FullNoteQueue::pull_success(int h, int, int nh)
+FullNoteQueue::pull_success(Storage::index_type h,
+			    Storage::index_type nh)
 {
     Packet *p = _q[h];
     packet_memory_barrier(_q[h], _head);

@@ -459,7 +459,7 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
     unsigned long lock_flags;
     fromlinux_map.lock(false, lock_flags);
     if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0)) {
-	int next = fl->next_i(fl->_tail);
+	Storage::index_type next = fl->next_i(fl->_tail);
 	if (likely(next != fl->_head)) {
 	    Packet * volatile *q = fl->queue();
 
