@@ -156,7 +156,7 @@ bool cp_seconds_as_micro(const String& str, uint32_t* result);
 #if HAVE_FLOAT_TYPES
 bool cp_seconds(const String& str, double* result);
 #endif
-bool cp_time(const String& str, Timestamp* result);
+bool cp_time(const String &str, Timestamp *result, bool allow_negative = false);
 bool cp_time(const String& str, struct timeval* result);
 
 bool cp_bandwidth(const String& str, uint32_t* result);
@@ -273,6 +273,7 @@ extern const CpVaParseCmd
     cpSecondsAsMilli,	///< Result storage uint32_t*, parsed by cp_seconds_as_milli().
     cpSecondsAsMicro,	///< Result storage uint32_t*, parsed by cp_seconds_as_micro().
     cpTimestamp,	///< Result storage Timestamp*, parsed by cp_time().
+    cpTimestampSigned,	///< Result storage Timestamp*, parsed by cp_time().
     cpTimeval,		///< Result storage struct timeval*, parsed by cp_time().
     cpBandwidth,	///< Result storage uint32_t*, parsed by cp_bandwidth().
     cpIPAddress,	///< Result storage IPAddress* or equivalent, parsed by cp_ip_address().
