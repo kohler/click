@@ -60,7 +60,7 @@ ThreadSafeQueue::push(int, Packet *p)
 	t = _tail;
 	nt = next_i(t);
     } while (!_xtail.compare_and_swap(t, nt));
-    // Other pushers block until _tail := nt (or _xtail := t)
+    // Other pushers spin until _tail := nt (or _xtail := t)
 
     int h = _head;
     if (nt != h)
@@ -82,7 +82,7 @@ ThreadSafeQueue::pull(int)
 	h = _head;
 	nh = next_i(h);
     } while (!_xhead.compare_and_swap(h, nh));
-    // Other pullers block until _head := nh (or _xhead := h)
+    // Other pullers spin until _head := nh (or _xhead := h)
 
     int t = _tail;
     if (t != h)
