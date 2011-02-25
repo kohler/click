@@ -53,38 +53,44 @@ void
 ThreadSafeQueue::push(int, Packet *p)
 {
     // Code taken from SimpleQueue::push().
-    int h, t, nt;
 
+    // Reserve a slot by incrementing _xtail
+    int t, nt;
     do {
-	h = _head;
 	t = _tail;
 	nt = next_i(t);
-
-	if (nt == h) {
-	    push_failure(p);
-	    return;
-	}
     } while (!_xtail.compare_and_swap(t, nt));
+    // Other pushers block until _tail := nt (or _xtail := t)
 
-    push_success(h, t, nt, p);
+    int h = _head;
+    if (nt != h)
+	push_success(h, t, nt, p);
+    else {
+	_xtail = t;
+	push_failure(p);
+    }
 }
 
 Packet *
 ThreadSafeQueue::pull(int)
 {
     // Code taken from SimpleQueue::deq.
-    int h, t, nh;
 
+    // Reserve a slot by incrementing _xhead
+    int h, nh;
     do {
 	h = _head;
-	t = _tail;
 	nh = next_i(h);
-
-	if (h == t)
-	    return pull_failure();
     } while (!_xhead.compare_and_swap(h, nh));
+    // Other pullers block until _head := nh (or _xhead := h)
 
-    return pull_success(h, t, nh);
+    int t = _tail;
+    if (t != h)
+	return pull_success(h, t, nh);
+    else {
+	_xhead = h;
+	return pull_failure();
+    }
 }
 
 CLICK_ENDDECLS
