@@ -107,11 +107,8 @@ RouterThread::RouterThread(Master *m, int id)
 #endif
 #endif
 
-#if CLICK_USERLEVEL
-    _iters_per_os = 64;           /* iterations per select() */
-#else
-    _iters_per_os = 2;          /* iterations per OS schedule() */
-#endif
+    _iters_per_os = 2;		// userlevel: iterations per select()
+				// kernel: iterations per OS schedule()
 
 #if CLICK_LINUXMODULE || CLICK_BSDMODULE
     _greedy = false;
