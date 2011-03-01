@@ -1035,7 +1035,7 @@ IPFilter::Parser::parse_factor(int pos, bool negated)
 	  && cp_ip_address(_words[pos+1], prim._mask.c, _context)) {
 	pos += 2;
 	prim._data = TYPE_NET;
-      } else if (prim._type == TYPE_NET && cp_ip_prefix(wd, prim._u.c, prim._mask.c, this))
+      } else if (prim._type == TYPE_NET && cp_ip_prefix(wd, prim._u.c, prim._mask.c, _context))
 	prim._data = TYPE_NET;
       else
 	prim._data = TYPE_HOST;
