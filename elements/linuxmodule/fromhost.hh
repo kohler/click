@@ -166,6 +166,7 @@ class FromHost : public AnyDevice, public Storage { public:
     unsigned _drops;
     unsigned _ninvalid;
 
+    static FromHost *configuring;
     net_device *new_device(const char *);
     static int fl_tx(struct sk_buff *, net_device *);
     inline Packet * volatile *queue() const {

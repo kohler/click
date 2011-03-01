@@ -74,6 +74,7 @@ static int fl_close(net_device *);
 static void fl_wakeup(Timer *, void *);
 }
 
+FromHost *FromHost::configuring = 0;
 static AnyDeviceMap fromlinux_map;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
@@ -227,25 +228,24 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     if (!_dev)
 	return errh->error("out of memory registering device '%s'", _devname.c_str());
     else {
-	// register_netdev ends up to call copy_rtnl_link_stats which
-	// requires valid net_device_stats structure, therefore device has to
-	// mapped before calling register_netdev
+	// in Linux < 2.6.32 register_netdev calls copy_rtnl_link_stats which
+	// requires valid net_device_stats structure, so remember which
+	// FromHost we're configuring (configure is serialized)
 	dev_hold(_dev);
-	fromlinux_map.insert(this, false);
-	if ((res = register_netdev(_dev))) {
+	configuring = this;
+	res = register_netdev(_dev);
+	configuring = 0;
+	if (res == 0)
+	    fromlinux_map.insert(this, false);
+	else {
+	    dev_put(_dev);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	    free_netdev(_dev);
 #else
 	    kfree(_dev);
 #endif
-	    dev_put(_dev);
-            fromlinux_map.remove(this, false);
 	    _dev = 0;
 	    return errh->error("error %d registering device '%s'", res, _devname.c_str());
-	} else {
-	    // _dev is in unknown_map
-	    fromlinux_map.remove(this, false);
-	    fromlinux_map.insert(this, false);
 	}
     }
 
@@ -435,6 +435,8 @@ FromHost::fl_stats(net_device *dev)
     FromHost *fl = (FromHost *) fromlinux_map.lookup(dev, 0);
     if (!fl)
 	fl = (FromHost *) fromlinux_map.lookup_unknown(dev, 0);
+    if (!fl && configuring && configuring->device() == dev)
+	fl = configuring;
     net_device_stats *stats = (fl ? fl->stats() : 0);
     fromlinux_map.unlock(false, lock_flags);
     return stats;
