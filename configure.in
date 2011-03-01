@@ -726,6 +726,14 @@ if test $ac_cv_linux_inet_ioctl = yes; then
     AC_DEFINE(HAVE_LINUX_INET_IOCTL)
 fi
 
+AC_CACHE_CHECK(for inet_ctl_sock_create kernel symbol, ac_cv_linux_inet_ctl_sock_create,
+[if grep "__ksymtab_inet_ctl_sock_create" $linux_system_map >/dev/null 2>&1; then
+    ac_cv_linux_inet_ctl_sock_create=yes
+else ac_cv_linux_inet_ctl_sock_create=no; fi])
+if test $ac_cv_linux_inet_ctl_sock_create = yes; then
+    AC_DEFINE(HAVE_LINUX_INET_CTL_SOCK_CREATE)
+fi
+
 AC_CACHE_CHECK(for <linux/ktime.h>, ac_cv_linux_ktime_h,
 [if grep ktime_t `find_linuxpath include/linux/ktime.h` >/dev/null 2>&1; then
   ac_cv_linux_ktime_h=yes

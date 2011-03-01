@@ -8870,6 +8870,22 @@ if test $ac_cv_linux_inet_ioctl = yes; then
 
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_ctl_sock_create kernel symbol" >&5
+$as_echo_n "checking for inet_ctl_sock_create kernel symbol... " >&6; }
+if test "${ac_cv_linux_inet_ctl_sock_create+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if grep "__ksymtab_inet_ctl_sock_create" $linux_system_map >/dev/null 2>&1; then
+    ac_cv_linux_inet_ctl_sock_create=yes
+else ac_cv_linux_inet_ctl_sock_create=no; fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_inet_ctl_sock_create" >&5
+$as_echo "$ac_cv_linux_inet_ctl_sock_create" >&6; }
+if test $ac_cv_linux_inet_ctl_sock_create = yes; then
+    $as_echo "#define HAVE_LINUX_INET_CTL_SOCK_CREATE 1" >>confdefs.h
+
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for <linux/ktime.h>" >&5
 $as_echo_n "checking for <linux/ktime.h>... " >&6; }
 if test "${ac_cv_linux_ktime_h+set}" = set; then :

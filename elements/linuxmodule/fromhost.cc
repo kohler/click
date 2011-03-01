@@ -45,7 +45,7 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-#if HAVE_LINUX_INET_IOCTL
+#if HAVE_LINUX_INET_CTL_SOCK_CREATE
 # define click_inet_ioctl(sock, dev, cmd, arg)	inet_ioctl((sock), (cmd), (arg))
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) && CONFIG_NET_NS
 # define click_inet_ioctl(sock, dev, cmd, arg)	devinet_ioctl((dev)->nd_net, (cmd), (arg))
@@ -280,10 +280,10 @@ FromHost::set_device_addresses(ErrorHandler *errh)
     }
 
     if (_destaddr) {
-#if HAVE_LINUX_DEVINET_IOCTL || HAVE_LINUX_INET_IOCTL
+#if HAVE_LINUX_DEVINET_IOCTL || HAVE_LINUX_INET_CTL_SOCK_CREATE
         sin->sin_family = AF_INET;
         sin->sin_addr = _destaddr;
-# if HAVE_LINUX_INET_IOCTL
+# if HAVE_LINUX_INET_CTL_SOCK_CREATE
 	struct socket *sock = kmalloc(sizeof(struct socket), GFP_KERNEL);
 	sock->sk = 0;
 	if (res >= 0 && (res = inet_ctl_sock_create(&sock->sk, AF_INET, SOCK_RAW, IPPROTO_TCP, _dev->nd_net)) != 0) {
@@ -300,7 +300,7 @@ FromHost::set_device_addresses(ErrorHandler *errh)
         if (res >= 0 && (res = click_inet_ioctl(sock, _dev, SIOCSIFNETMASK, &ifr)) < 0)
             errh->error("error %d setting netmask for device '%s'", res, _devname.c_str());
 	set_fs(oldfs);
-# if HAVE_LINUX_INET_IOCTL
+# if HAVE_LINUX_INET_CTL_SOCK_CREATE
 	inet_ctl_sock_destroy(sock->sk);
 	kfree(sock);
 # endif

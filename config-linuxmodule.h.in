@@ -46,6 +46,9 @@
 /* Define if your Linux kernel has devinet_ioctl. */
 #undef HAVE_LINUX_DEVINET_IOCTL
 
+/* Define if your Linux kernel has inet_ctl_sock_create. */
+#undef HAVE_LINUX_INET_CTL_SOCK_CREATE
+
 /* Define if your Linux kernel has inet_ioctl. */
 #undef HAVE_LINUX_INET_IOCTL
 
