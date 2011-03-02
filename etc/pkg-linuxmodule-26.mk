@@ -19,13 +19,15 @@ CLICKBUILD = linux26module
 CLICKCPPFLAGS += -DCLICK_LINUXMODULE
 CLICKINCLUDES := -I$(clickincludedir) -I$(clicksrcdir)
 
-LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS)" \
+LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS) $(LINUXINCLUDE)" \
 	"$(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) $(CFLAGS_MODULE)" | sed \
 	-e s,-fno-unit-at-a-time,, -e s,-Wstrict-prototypes,, \
 	-e s,-Wdeclaration-after-statement,, \
 	-e s,-Wno-pointer-sign,, -e s,-fno-common,, \
 	-e s,-Werror-implicit-function-declaration,, \
-	-e s,-Iinclude/,-I$(clicklinux_srcdir)include/,g)
+	-e "s,-Iinclude ,-I$(CLICKLINUX_BUILDDIR)/include ",g \
+	-e "s,-Iinclude2 ,-I$(CLICKLINUX_BUILDDIR)/include2 ",g \
+	-e s,-Iinclude/,-I$(CLICKLINUX_SRCDIR)include/,g $(CLICKLINUX_FIXINCLUDES_PROGRAM))
 
 CXXFLAGS ?= $(CLICKCXXFLAGS_NDEBUG)
 DEPCFLAGS ?= -Wp,-MD,$(depfile)
@@ -47,11 +49,17 @@ PACKAGE_DEPS ?=
 CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
 CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
 
+ifeq ($(PREPROCESS),1)
+compile_option = -E
+else
+compile_option = -c
+endif
+
 quiet_cmd_cxxcompile = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
-cmd_cxxcompile = $(CXXCOMPILE) -c -o $@ $<
+cmd_cxxcompile = $(CXXCOMPILE) $(compile_option) -o $@ $<
 
 quiet_cmd_ccompile = CC $(quiet_modtag) $(subst $(obj)/,,$@)
-cmd_ccompile = $(COMPILE) -c -o $@ $<
+cmd_ccompile = $(COMPILE) $(compile_option) -o $@ $<
 
 EXTRA_CFLAGS += $(CLICKCPPFLAGS) $(CLICKCFLAGS_NDEBUG) $(CLICKDEFS) $(CLICKINCLUDES) 
 

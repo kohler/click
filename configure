@@ -590,7 +590,6 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 provisions
-clickdatadir
 POD2MAN
 TEXI2DVI
 MAKEINFO
@@ -613,6 +612,7 @@ INSTALL_IF_CHANGED
 INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
+CLICKLINUX_FIXINCLUDES_PROGRAM
 LINUX_FIXINCLUDES_PROGRAM
 linux_makeargs
 EXPAT_LIBS
@@ -630,6 +630,7 @@ HAVE_LINUXMODULE_DRIVER
 HAVE_USERLEVEL_DRIVER
 DRIVERS
 POSSIBLE_DRIVERS
+clickdatadir
 LINUXMODULE_2_6
 EXTRA_TOOL_OBJS
 EXTRA_DRIVER_OBJS
@@ -6980,7 +6981,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 6983 "configure"
+#line 6984 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -9274,6 +9275,44 @@ done
 
 
 
+shell_expand () {
+    val=`eval echo '$'"$1"`
+    while echo "x$val" | grep '\$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
+    eval "$1='$val'"
+}
+
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+
+if test x$infodir = 'x${prefix}/info'; then
+    test ! -d ${prefix}/info && test -d ${prefix}/share/info && infodir='${prefix}/share/info'
+fi
+
+shell_expand bindir
+shell_expand sbindir
+shell_expand libdir
+shell_expand datarootdir
+shell_expand datadir
+shell_expand includedir
+
+clickdatadir="$datadir/click"
+
+
+cat >>confdefs.h <<_ACEOF
+#define CLICK_BINDIR "$bindir"
+_ACEOF
+
+cat >>confdefs.h <<_ACEOF
+#define CLICK_LIBDIR "$libdir"
+_ACEOF
+
+cat >>confdefs.h <<_ACEOF
+#define CLICK_DATADIR "$clickdatadir"
+_ACEOF
+
+
+
+
 POSSIBLE_DRIVERS=
 for i in bsdmodule linuxmodule ns userlevel; do
     test -f $srcdir/$i/Makefile.in && POSSIBLE_DRIVERS="$POSSIBLE_DRIVERS $i"
@@ -9940,10 +9979,12 @@ $as_echo "$LINUX_CFLAGS" >&6; }
     fi
 
     LINUX_FIXINCLUDES_PROGRAM=
+    CLICKLINUX_FIXINCLUDES_PROGRAM=
     if test "$LINUXMODULE_FIXINCLUDES" = 1; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: making C++-safe versions of Linux kernel headers (may take a while)" >&5
 $as_echo "$as_me: making C++-safe versions of Linux kernel headers (may take a while)" >&6;}
-	$srcdir/linuxmodule/fixincludes.pl -o "`pwd`/include/click-linuxmodule" $LINUX_CFLAGS >conftest.dat
+	mydir="`pwd`/include/click-linuxmodule"
+	$srcdir/linuxmodule/fixincludes.pl -o "$mydir" $LINUX_CFLAGS >conftest.dat
 	if test $? != 0; then
 	    as_fn_error "
 ==============================================
@@ -9954,7 +9995,9 @@ fixincludes.pl execution failed.
 	fi
 	LINUX_CFLAGS="`head -n 1 conftest.dat`"
 	LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
+	CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s	$mydir	$includedir/click-linuxmodule	g"`"
     fi
+
 
 
 
@@ -11672,44 +11715,6 @@ fi
 
 
 
-
-
-
-
-shell_expand () {
-    val=`eval echo '$'"$1"`
-    while echo "x$val" | grep '\$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
-    eval "$1='$val'"
-}
-
-test "x$prefix" = xNONE && prefix=$ac_default_prefix
-test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
-
-if test x$infodir = 'x${prefix}/info'; then
-    test ! -d ${prefix}/info && test -d ${prefix}/share/info && infodir='${prefix}/share/info'
-fi
-
-shell_expand bindir
-shell_expand sbindir
-shell_expand libdir
-shell_expand datarootdir
-shell_expand datadir
-shell_expand includedir
-
-clickdatadir="$datadir/click"
-
-
-cat >>confdefs.h <<_ACEOF
-#define CLICK_BINDIR "$bindir"
-_ACEOF
-
-cat >>confdefs.h <<_ACEOF
-#define CLICK_LIBDIR "$libdir"
-_ACEOF
-
-cat >>confdefs.h <<_ACEOF
-#define CLICK_DATADIR "$clickdatadir"
-_ACEOF
 
 
 
