@@ -104,8 +104,17 @@ sub one_includeroot ($$) {
 
 	opendir(D, "$includeroot$dd") || die "fixincludes.pl: $includeroot$dd: $!";
 	-d "$outputroot$dd" || mkdir("$outputroot$dd") || die "fixincludes.pl: mkdir $outputroot$dd: $!";
+
+	opendir(OD, "$outputroot$dd");
+	my(%previousfiles);
+	foreach $d (readdir(OD)) {
+	    $previousfiles{$d} = 1 if $d !~ /^\./;
+	}
+	closedir(OD);
+
 	while (($d = readdir(D))) {
 	    next if $d =~ /^\./;
+	    delete $previousfiles{$d};
 	    $f = "$includeroot$dd/$d";
 	    if (-d $f) {
 		push @dirs, "$ddy$d";
@@ -247,6 +256,15 @@ sub one_includeroot ($$) {
 	    print F "/* created by click/linuxmodule/fixincludes.pl on " . localtime() . " */\n/* from $f */\n", $_;
 	    close(F);
 	}
+
+	# delete unused files
+	foreach $d (keys(%previousfiles)) {
+	    if (-d "$outputroot$dd/$d") {
+		system("rm -rf \"$outputroot$dd/$d\"");
+	    } else {
+		unlink("$outputroot$dd/$d");
+	    }
+	}
     }
 }
 
@@ -259,8 +277,7 @@ foreach my $i (@ARGV) {
 	    push @new_argv, $i;
 	} elsif (!$done{$1}) {
 	    $dir = "$outputroot/include$numdirs";
-	    -d $dir && system("rm -rf \"$dir\"");
-	    mkdir $dir || die "fixincludes.pl: mkdir $dir: $!";
+	    -d $dir || mkdir $dir || die "fixincludes.pl: mkdir $dir: $!";
 	    $done{$1} = $dir;
 	    ++$numdirs;
 	    one_includeroot($1, $dir);

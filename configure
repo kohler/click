@@ -9939,8 +9939,8 @@ $as_echo "$LINUX_CFLAGS" >&6; }
 
     LINUX_FIXINCLUDES_PROGRAM=
     if test "$LINUXMODULE_FIXINCLUDES" = 1; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: creating C++-safe versions of Linux kernel headers (may take a while)" >&5
-$as_echo "$as_me: creating C++-safe versions of Linux kernel headers (may take a while)" >&6;}
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: making C++-safe versions of Linux kernel headers (may take a while)" >&5
+$as_echo "$as_me: making C++-safe versions of Linux kernel headers (may take a while)" >&6;}
 	$srcdir/linuxmodule/fixincludes.pl -o "`pwd`/include/click-linuxmodule" $LINUX_CFLAGS >conftest.dat
 	if test $? != 0; then
 	    as_fn_error "

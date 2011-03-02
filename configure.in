@@ -1155,7 +1155,7 @@ Can't find Linux 2.6 compilation flags.
 
     LINUX_FIXINCLUDES_PROGRAM=
     if test "$LINUXMODULE_FIXINCLUDES" = 1; then
-	AC_MSG_NOTICE([creating C++-safe versions of Linux kernel headers (may take a while)])
+	AC_MSG_NOTICE([making C++-safe versions of Linux kernel headers (may take a while)])
 	$srcdir/linuxmodule/fixincludes.pl -o "`pwd`/include/click-linuxmodule" $LINUX_CFLAGS >conftest.dat
 	if test $? != 0; then
 	    AC_MSG_ERROR([
