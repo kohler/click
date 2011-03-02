@@ -137,11 +137,13 @@ endif
 install: $(INSTALLPROGS) install-lib
 	$(mkinstalldirs) $(DESTDIR)$(bindir)
 	for i in $(INSTALLPROGS); do $(INSTALL) $$i $(DESTDIR)$(bindir)/$$i; done
+install-include:
+	@:
 install-lib: $(INSTALLLIBS)
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
 	for i in $(INSTALLLIBS); do $(INSTALL) $$i $(DESTDIR)$(libdir)/$$i; done
 install-man:
-	:
+	@:
 uninstall:
 	for i in $(INSTALLLIBS); do rm -f $(DESTDIR)$(libdir)/$$i; done
 	for i in $(INSTALLPROGS); do rm -f $(DESTDIR)$(bindir)/$$i; done
@@ -154,4 +156,4 @@ distclean: clean
 	-rm -f Makefile
 
 .PHONY: all clean clean-lib distclean elemlist \
-	install install-lib uninstall
+	install install-include install-lib install-man uninstall

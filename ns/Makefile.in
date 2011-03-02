@@ -136,6 +136,8 @@ endif
 install: $(INSTALLLIBS)
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
 	for i in $(INSTALLLIBS); do $(INSTALL) $$i $(DESTDIR)$(libdir)/$$i; done
+install-include:
+	@:
 uninstall:
 	for i in $(INSTALLLIBS); do rm -f $(DESTDIR)$(libdir)/$$i; done
 
@@ -145,4 +147,5 @@ clean:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean elemlist install uninstall
+.PHONY: all clean distclean elemlist \
+	install install-include uninstall

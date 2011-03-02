@@ -606,6 +606,8 @@ perl5
 AUTOCONF
 GMAKE
 SUBMAKE
+CLICK_BUILD_INSTALL_IF_CHANGED
+CLICK_BUILD_INSTALL
 CLICKINSTALL
 INSTALL_IF_CHANGED
 INSTALL_DATA
@@ -6978,7 +6980,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 6981 "configure"
+#line 6983 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -11200,6 +11202,10 @@ $as_echo "no" >&6; }
     rm -f conftest.1 conftest.2
 
     CLICKINSTALL=`echo "$INSTALL" | sed 's|^\$(.*)/|\$(clickdatadir)/|'`
+
+    CLICK_BUILD_INSTALL="$INSTALL"
+
+    CLICK_BUILD_INSTALL_IF_CHANGED="`echo "$INSTALL_IF_CHANGED" | sed 's|(INSTALL)|(CLICK_BUILD_INSTALL)|'`"
 
 
 

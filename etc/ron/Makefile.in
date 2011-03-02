@@ -69,7 +69,7 @@ CXXCPP = @CXXCPP@
 LD = @LD@
 STRIP = @STRIP@
 INSTALL = @INSTALL@
-INSTALL_DATA = @INSTALL@ -m 644
+INSTALL_DATA = $(INSTALL) -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 .SUFFIXES:

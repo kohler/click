@@ -24,7 +24,7 @@ LD = @LD@
 STRIP = @STRIP@
 PERL = @PERL@
 INSTALL = @INSTALL@
-INSTALL_DATA = @INSTALL@ -m 644
+INSTALL_DATA = $(INSTALL) -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 ifeq ($(V),1)
@@ -140,8 +140,10 @@ endif
 install: $(INSTALLOBJS)
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
 	for i in $(INSTALLOBJS); do $(INSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
+install-include:
+	@:
 install-man:
-	:
+	@:
 uninstall:
 	for i in $(INSTALLOBJS); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
 
@@ -151,4 +153,5 @@ clean:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean elemlist install uninstall
+.PHONY: all clean distclean elemlist \
+	install install-include install-man uninstall

@@ -10,6 +10,7 @@ exec_prefix = @exec_prefix@
 bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
+includedir = @includedir@
 linux_builddir = @linux_builddir@
 linux_srcdir = @linux_srcdir@
 linux_makeargs = @linux_makeargs@
@@ -78,8 +79,10 @@ endif
 top_builddir := $(obj)/..
 endif
 
-CLICKINSTALL = @INSTALL@
-CLICKINSTALL_DATA = @INSTALL@ -m 644
+CLICK_BUILD_INSTALL = @CLICK_BUILD_INSTALL@
+CLICK_BUILD_INSTALL_IF_CHANGED = @CLICK_BUILD_INSTALL_IF_CHANGED@
+CLICK_BUILD_INSTALL_DATA = $(CLICK_BUILD_INSTALL) -m 644
+CLICK_BUILD_INSTALL_DATA_IF_CHANGED = $(CLICK_BUILD_INSTALL_IF_CHANGED) -m 644
 CLICKmkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make --linux26
@@ -174,13 +177,18 @@ endif
 
 # Don't install in Linux directories for now
 # $(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules_install
-install: Makefile $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc all
+install: install-local install-include
+install-local: Makefile $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc all
 	$(CLICKmkinstalldirs) $(DESTDIR)$(libdir)
-	for i in $(patsubst %.o,%.ko,$(INSTALLOBJS)); do $(CLICKINSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
+	for i in $(patsubst %.o,%.ko,$(INSTALLOBJS)); do $(CLICK_BUILD_INSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
+install-include:
+	(cd $(top_builddir)/include/click-linuxmodule; find . -type d) | grep / | sed 's	^\.\(.*\)	'"$(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 $(CLICKmkinstalldirs)
+	(cd $(top_builddir)/include/click-linuxmodule; find . -type f) | grep / | sed 's	^\.\(.*\)	'"$(top_builddir)/include/click-linuxmodule"'\1'" $(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 $(CLICK_BUILD_INSTALL_DATA_IF_CHANGED)
 install-man:
-	:
+	@:
 uninstall:
 	for i in $(patsubst %.o,%.ko,$(INSTALLOBJS)); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
+	(cd $(top_builddir)/include/click-linuxmodule; find . -type f) | grep / | sed 's	^\.\(.*\)	'"$(top_builddir)/include/click-linuxmodule"'\1'" $(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 rm -f
 
 else
 
@@ -200,7 +208,7 @@ CXXCPP = @CXXCPP@
 LD = @LD@
 STRIP = @STRIP@
 INSTALL = @INSTALL@
-INSTALL_DATA = @INSTALL@ -m 644
+INSTALL_DATA = $(INSTALL) -m 644
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make
 
@@ -270,11 +278,14 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: $(INSTALLOBJS)
+install: install-local
+install-local: $(INSTALLOBJS)
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
 	for i in $(INSTALLOBJS); do $(INSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
+install-include:
+	@:
 install-man:
-	:
+	@:
 uninstall:
 	for i in $(INSTALLOBJS); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
 
@@ -310,4 +321,5 @@ clean:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean elemlist install uninstall always
+.PHONY: always all clean distclean elemlist \
+	install install-local install-include install-man uninstall
