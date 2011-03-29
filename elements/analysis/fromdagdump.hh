@@ -3,7 +3,7 @@
 #define CLICK_FROMDAGDUMP_HH
 #include <click/element.hh>
 #include <click/task.hh>
-#include "elements/userlevel/fromfile.hh"
+#include <click/fromfile.hh>
 CLICK_DECLS
 class HandlerCall;
 

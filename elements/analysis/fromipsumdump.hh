@@ -6,7 +6,7 @@
 #include <click/timer.hh>
 #include <click/notifier.hh>
 #include <click/ipflowid.hh>
-#include "elements/userlevel/fromfile.hh"
+#include <click/fromfile.hh>
 #include "ipsumdumpinfo.hh"
 CLICK_DECLS
 

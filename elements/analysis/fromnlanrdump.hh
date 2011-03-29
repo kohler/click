@@ -4,7 +4,7 @@
 #include <click/element.hh>
 #include <click/task.hh>
 #include <clicknet/tcp.h>
-#include "elements/userlevel/fromfile.hh"
+#include <click/fromfile.hh>
 CLICK_DECLS
 class HandlerCall;
 

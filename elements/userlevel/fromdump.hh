@@ -5,7 +5,7 @@
 #include <click/task.hh>
 #include <click/timer.hh>
 #include <click/notifier.hh>
-#include "fromfile.hh"
+#include <click/fromfile.hh>
 CLICK_DECLS
 class HandlerCall;
 

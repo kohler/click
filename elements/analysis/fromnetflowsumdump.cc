@@ -449,5 +449,5 @@ FromNetFlowSummaryDump::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel FromFile)
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(FromNetFlowSummaryDump)

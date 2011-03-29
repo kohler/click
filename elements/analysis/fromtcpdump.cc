@@ -670,6 +670,6 @@ FromTcpdump::add_handlers()
 	add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(userlevel FromFile IPSummaryDump)
+ELEMENT_REQUIRES(userlevel IPSummaryDump)
 EXPORT_ELEMENT(FromTcpdump)
 CLICK_ENDDECLS

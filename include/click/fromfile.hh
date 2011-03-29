@@ -1,4 +1,5 @@
 // -*- c-basic-offset: 4 -*-
+#ifdef CLICK_USERLEVEL
 #ifndef CLICK_FROMFILE_HH
 #define CLICK_FROMFILE_HH
 #include <click/string.hh>
@@ -92,4 +93,5 @@ class FromFile { public:
 };
 
 CLICK_ENDDECLS
+#endif
 #endif

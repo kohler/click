@@ -7,7 +7,7 @@
 #include <click/ipflowid.hh>
 #include <click/hashtable.hh>
 #include <clicknet/tcp.h>
-#include "elements/userlevel/fromfile.hh"
+#include <click/fromfile.hh>
 #include "ipsumdumpinfo.hh"
 CLICK_DECLS
 

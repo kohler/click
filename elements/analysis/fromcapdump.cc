@@ -472,6 +472,6 @@ FromCapDump::add_handlers()
 	add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(userlevel FromFile)
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(FromCapDump)
 CLICK_ENDDECLS
