@@ -578,5 +578,5 @@ FromDump::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel|ns FakePcap FromFile)
+ELEMENT_REQUIRES(userlevel|ns FakePcap)
 EXPORT_ELEMENT(FromDump)

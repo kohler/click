@@ -17,15 +17,13 @@
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
  */
-
 #include <click/config.h>
-#include "fromfile.hh"
+#include <click/fromfile.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/element.hh>
 #include <click/straccum.hh>
 #include <click/userutils.hh>
-#include "fakepcap.hh"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -580,5 +578,3 @@ FromFile::add_handlers(Element* e, bool filepos_writable) const
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel|ns FakePcap)
-ELEMENT_PROVIDES(FromFile)

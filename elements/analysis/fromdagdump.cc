@@ -471,5 +471,5 @@ FromDAGDump::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel int64 FakePcap FromFile)
+ELEMENT_REQUIRES(userlevel int64 FakePcap)
 EXPORT_ELEMENT(FromDAGDump)

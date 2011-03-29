@@ -405,6 +405,7 @@ error.hh
 etheraddress.hh
 ewma.hh
 fixconfig.h
+fromfile.hh
 gaprate.hh
 glue.hh
 handler.hh
@@ -492,6 +493,7 @@ elemfilter.cc
 error.cc
 etheraddress.cc
 exportstub.cc
+fromfile.cc
 gaprate.cc
 glue.cc
 handlercall.cc

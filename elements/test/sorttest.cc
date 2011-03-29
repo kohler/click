@@ -22,7 +22,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #if CLICK_USERLEVEL
-# include "elements/userlevel/fromfile.hh"
+# include <click/fromfile.hh>
 #endif
 CLICK_DECLS
 

@@ -5,7 +5,7 @@
 #include <click/task.hh>
 #include <click/notifier.hh>
 #include <click/ipflowid.hh>
-#include "elements/userlevel/fromfile.hh"
+#include <click/fromfile.hh>
 CLICK_DECLS
 
 /*

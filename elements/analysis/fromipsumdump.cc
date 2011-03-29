@@ -794,6 +794,6 @@ FromIPSummaryDump::add_handlers()
 	add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(userlevel FromFile IPSummaryDumpInfo)
+ELEMENT_REQUIRES(userlevel IPSummaryDumpInfo)
 EXPORT_ELEMENT(FromIPSummaryDump)
 CLICK_ENDDECLS
