@@ -643,11 +643,11 @@ class String { public:
 	memo_t **pprev;
 	memo_t *next;
 #endif
-	char real_data[1];	// but it is almost certainly more
+	char real_data[8];	// but it might be more or less
     };
 
     enum {
-	MEMO_SPACE = offsetof(memo_t, real_data)
+	MEMO_SPACE = sizeof(memo_t) - 8
     };
 
     struct rep_t {
