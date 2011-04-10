@@ -49,6 +49,8 @@ PACKAGE_DEPS ?=
 CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
 CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
 
+KBUILD_EXTRA_SYMBOLS ?= $(clicklibdir)/click.symvers
+
 ifeq ($(PREPROCESS),1)
 compile_option = -E
 else

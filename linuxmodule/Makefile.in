@@ -130,16 +130,15 @@ EXTRA_CFLAGS = $(CLICKCPPFLAGS) $(CLICKCFLAGS) $(CLICKDEFS) $(CLICKINCLUDES)
 obj-m += $(INSTALLOBJS)
 
 proclikefs-objs = proclikefsmod.o
-$(DRIVER)-objs = $(LIB_C_OBJS) $(LIB_CXX_OBJS) $(STD_ELEMENT_OBJS) \
-	$(ELEMENT_OBJS) $(LINUXMODULE_C_OBJS) $(LINUXMODULE_CXX_OBJS) \
-	$(ELEMENTSCONF).o
-INCLUDE_KSYMS = @INCLUDE_KSYMS@
-ifeq ($(INCLUDE_KSYMS),yes)
-$(DRIVER)-objs += $(KSYMS).o
-endif
 
 KSYM_OBJS = $(LIB_C_OBJS) $(LIB_CXX_OBJS) $(STD_ELEMENT_OBJS) \
 	$(ELEMENT_OBJS) $(LINUXMODULE_C_OBJS) $(LINUXMODULE_CXX_OBJS)
+INCLUDE_KSYMS = @INCLUDE_KSYMS@
+ifeq ($(INCLUDE_KSYMS),yes)
+$(DRIVER)-objs = $(KSYM_OBJS) $(ELEMENTSCONF).o $(KSYMS).o
+else
+$(DRIVER)-objs = $(KSYM_OBJS) $(ELEMENTSCONF).o
+endif
 
 all: Makefile $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc always
 	$(MAKE) -C $(KERNELPATH) M=$(shell pwd) $(linux_makeargs) modules
@@ -181,6 +180,7 @@ install: install-local install-include
 install-local: Makefile $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc all
 	$(CLICKmkinstalldirs) $(DESTDIR)$(libdir)
 	for i in $(patsubst %.o,%.ko,$(INSTALLOBJS)); do $(CLICK_BUILD_INSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
+	$(CLICK_BUILD_INSTALL_DATA) Module.symvers $(DESTDIR)$(libdir)/click.symvers
 install-include:
 	(cd $(top_builddir)/include/click-linuxmodule; find . -type d) | grep / | sed 's	^\.\(.*\)	'"$(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 $(CLICKmkinstalldirs)
 	(cd $(top_builddir)/include/click-linuxmodule; find . -type f) | grep / | sed 's	^\.\(.*\)	'"$(top_builddir)/include/click-linuxmodule"'\1'" $(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 $(CLICK_BUILD_INSTALL_DATA_IF_CHANGED)
@@ -317,7 +317,7 @@ clean:
 	-rm -f *~ *.d *.o *.mod.c *.ko
 	-rm -f .version .*.o.flags .*.o.d .*.o.cmd .*.ko.cmd
 	-rm -f $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc $(KSYMS).c elements.conf
-	-rm -rf Module.symvers .tmp_versions
+	-rm -rf Module.symvers .tmp_versions modules.order
 distclean: clean
 	-rm -f Makefile
 
