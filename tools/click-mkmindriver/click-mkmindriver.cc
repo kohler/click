@@ -93,7 +93,7 @@ directory and supply a package name with the '-p PKG' option. Running\n\
 'make MINDRIVER=PKG' will build a 'PKGclick' user-level driver or 'PKGclick.ko'\n\
 kernel module.\n\
 \n\
-Usage: %s -p PKG [-ku] [OPTION]... [ROUTERFILE]...\n\
+Usage: %s -p PKG [-lu] [OPTION]... [ROUTERFILE]...\n\
 \n\
 Options:\n\
   -p, --package PKG        Name of package is PKG.\n\
