@@ -1088,6 +1088,9 @@ EOF
     cat <<EOF
 #include <click/config.h>
 #include <linux/module.h>
+#if CONFIG_MODVERSIONS && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
+#pragma message "\n   !!!\n   !!! Your kernel was compiled with CONFIG_MODVERSIONS.\n   !!! Click packages are often incompatible with CONFIG_MODVERSIONS.\n   !!! You may need to recompile your kernel and rebuild Click.\n   !!!"
+#endif
 
 /* a new version of EXPORT_NO_SYMBOLS that works */
 const int __ksymtab_nothing[0] __attribute__((section("__ksymtab"))) = { };
