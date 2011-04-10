@@ -21,6 +21,10 @@ MAKE_UPACKAGE = @BUILD_USERLEVEL@
 MAKE_KPACKAGE = @BUILD_LINUXMODULE@
 MAKE_BPACKAGE = @BUILD_BSDMODULE@
 
+# Set 'KVERSIONFLAGS' to '--gpl' to generate a dual BSD/GPL licensed
+# linuxmodule package.
+KVERSIONFLAGS = --gpl
+
 # Set 'STRIP_UPACKAGE' to 'strip -g' to strip debugging symbols from the
 # userlevel package before installing.
 #STRIP_UPACKAGE = $(STRIP) -g
