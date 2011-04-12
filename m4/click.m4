@@ -496,10 +496,12 @@ dnl
 dnl CLICK_CHECK_INTEGER_TYPES
 dnl Finds definitions for 'int8_t' ... 'int32_t' and 'uint8_t' ... 'uint32_t'.
 dnl Also defines shell variable 'have_inttypes_h' to 'yes' iff the header
-dnl file <inttypes.h> exists.  If 'uintXX_t' doesn't exist, try 'u_intXX_t'.
+dnl file <inttypes.h> exists.  If 'uintXX_t' does not exist, try 'u_intXX_t'.
+dnl Also defines __CHAR_UNSIGNED__ if 'char' is unsigned.
 dnl
 
 AC_DEFUN([CLICK_CHECK_INTEGER_TYPES], [
+    AC_C_CHAR_UNSIGNED
     AC_CHECK_HEADERS(inttypes.h, have_inttypes_h=yes, have_inttypes_h=no)
 
     if test $have_inttypes_h = no; then

@@ -8,7 +8,7 @@
 CLICK_DECLS
 
 /** @file <click/integers.hh>
- * @brief Functions for manipulating integers.
+ * @brief Functions and types for manipulating integers.
  */
 
 #if HAVE_INT64_TYPES && (!HAVE_LONG_LONG || SIZEOF_LONG_LONG <= 8)
@@ -21,6 +21,170 @@ typedef unsigned long long click_uint_large_t;
 typedef long click_int_large_t;
 typedef unsigned long click_uint_large_t;
 #endif
+
+/** @class NumericTraits
+  @brief Numeric traits template.
+
+  The NumericTraits template defines constants and type definitions related
+  to integers.  Where T is an integer, NumericTraits<T> defines:
+
+  <dl>
+  <dt>const T const_min</dt>
+  <dd>The minimum value defined for the type.</dd>
+  <dt>const T const_max</dt>
+  <dd>The maximum value available for the type.</dd>
+  <dt>const bool is_numeric</dt>
+  <dd>True.</dd>
+  <dt>const bool is_integer</dt>
+  <dd>True.</dd>
+  <dt>const bool is_signed</dt>
+  <dd>True iff the type is signed.</dd>
+  <dt>signed_type (typedef)</dt>
+  <dd>Signed version of the type.</dd>
+  <dt>unsigned_type (typedef)</dt>
+  <dd>Unsigned version of the type.</dd>
+  </dl>
+
+  If T is <em>not</em> an integer, NumericTraits<T> defines:
+
+  <dl>
+  <dt>const bool is_numeric</dt>
+  <dd>False.</dd>
+  <dt>const bool is_integer</dt>
+  <dd>False.</dd>
+  </dl> */
+template <typename T>
+struct NumericTraits {
+    static const bool is_numeric = false;
+    static const bool is_integer = false;
+};
+
+template <>
+struct NumericTraits<unsigned char> {
+    static const bool is_numeric = true;
+    static const bool is_integer = true;
+    static const unsigned char const_min = 0;
+    static const unsigned char const_max = ~const_min;
+    static const bool is_signed = false;
+    typedef signed char signed_type;
+    typedef unsigned char unsigned_type;
+};
+
+template <>
+struct NumericTraits<signed char> {
+    static const bool is_numeric = true;
+    static const bool is_integer = true;
+    static const signed char const_min = -128;
+    static const signed char const_max = 127;
+    static const bool is_signed = true;
+    typedef signed char signed_type;
+    typedef unsigned char unsigned_type;
+};
+
+#if __CHAR_UNSIGNED__
+template <>
+struct NumericTraits<char> : public NumericTraits<unsigned char> {
+    static const char const_min = 0;
+    static const char const_max = ~const_min;
+};
+#else
+template <>
+struct NumericTraits<char> : public NumericTraits<signed char> {
+    static const char const_min = -128;
+    static const char const_max = 127;
+};
+#endif
+
+template <>
+struct NumericTraits<unsigned short> {
+    static const bool is_numeric = true;
+    static const bool is_integer = true;
+    static const unsigned short const_min = 0;
+    static const unsigned short const_max = ~const_min;
+    static const bool is_signed = false;
+    typedef short signed_type;
+    typedef unsigned short unsigned_type;
+};
+
+template <>
+struct NumericTraits<short> {
+    static const bool is_numeric = true;
+    static const bool is_integer = true;
+    static const short const_min = -32768;
+    static const short const_max = 32767;
+    static const bool is_signed = true;
+    typedef short signed_type;
+    typedef unsigned short unsigned_type;
+};
+
+template <>
+struct NumericTraits<unsigned int> {
+    static const bool is_numeric = true;
+    static const bool is_integer = true;
+    static const unsigned int const_min = 0;
+    static const unsigned int const_max = ~const_min;
+    static const bool is_signed = false;
+    typedef int signed_type;
+    typedef unsigned int unsigned_type;
+};
+
+template <>
+struct NumericTraits<int> {
+    static const bool is_numeric = true;
+    static const bool is_integer = true;
+    static const int const_min = 1 << (8*SIZEOF_INT - 1);
+    static const int const_max = (unsigned) const_min - 1;
+    static const bool is_signed = true;
+    typedef int signed_type;
+    typedef unsigned int unsigned_type;
+};
+
+template <>
+struct NumericTraits<unsigned long> {
+    static const bool is_numeric = true;
+    static const bool is_integer = true;
+    static const unsigned long const_min = 0;
+    static const unsigned long const_max = ~const_min;
+    static const bool is_signed = false;
+    typedef long signed_type;
+    typedef unsigned long unsigned_type;
+};
+
+template <>
+struct NumericTraits<long> {
+    static const bool is_numeric = true;
+    static const bool is_integer = true;
+    static const long const_min = (long) 1 << (8*SIZEOF_LONG - 1);
+    static const long const_max = (unsigned long) const_min - 1;
+    static const bool is_signed = true;
+    typedef long signed_type;
+    typedef unsigned long unsigned_type;
+};
+
+#if HAVE_LONG_LONG
+template <>
+struct NumericTraits<unsigned long long> {
+    static const bool is_numeric = true;
+    static const bool is_integer = true;
+    static const unsigned long long const_min = 0;
+    static const unsigned long long const_max = ~const_min;
+    static const bool is_signed = false;
+    typedef long long signed_type;
+    typedef unsigned long long unsigned_type;
+};
+
+template <>
+struct NumericTraits<long long> {
+    static const bool is_numeric = true;
+    static const bool is_integer = true;
+    static const long long const_min = (long long) 1 << (8*SIZEOF_LONG_LONG - 1);
+    static const long long const_max = (unsigned long long) const_min - 1;
+    static const bool is_signed = true;
+    typedef long long signed_type;
+    typedef unsigned long long unsigned_type;
+};
+#endif
+
 
 #if HAVE_INT64_TYPES
 

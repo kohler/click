@@ -2,6 +2,11 @@
 #ifndef CLICK_CONFIG_H
 #define CLICK_CONFIG_H
 
+/* Define to 1 if type `char' is unsigned and you are not using gcc.  */
+#ifndef __CHAR_UNSIGNED__
+# undef __CHAR_UNSIGNED__
+#endif
+
 /* Define to byte order of target machine. */
 #undef CLICK_BYTE_ORDER
 #define CLICK_BIG_ENDIAN	4321
