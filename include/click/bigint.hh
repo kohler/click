@@ -168,7 +168,7 @@ class Bigint { public:
 	while (n > 0) {
 	    *a++ = b;
 	    n--;
-	    b >>= sizeof(b) * 8;
+	    b >>= limb_bits;
 	}
 	return b;
     }
