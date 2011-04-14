@@ -44,20 +44,24 @@ CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
 
 ifneq ($(CLICK_LINUXMODULE_2_6),1)
 
-CXXCOMPILE = $(CXX) $(CPPFLAGS) $(CFLAGS) $(CXXFLAGS) $(PACKAGE_CXXFLAGS) $(DEFS) $(INCLUDES) $(DEPCFLAGS)
+CXXCOMPILE = $(CXX) $(CPPFLAGS) $(CFLAGS) $(CXXFLAGS) $(PACKAGE_CXXFLAGS) $(DEFS) $(INCLUDES)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
-COMPILE = $(CC) $(CPPFLAGS) $(CFLAGS) $(PACKAGE_CFLAGS) $(DEFS) $(INCLUDES) $(DEPCFLAGS)
+COMPILE = $(CC) $(CPPFLAGS) $(CFLAGS) $(PACKAGE_CFLAGS) $(DEFS) $(INCLUDES)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 FIXDEP = @-sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
 
 ifeq ($(V),1)
-ccompile = $(COMPILE) $(1)
-cxxcompile = $(CXXCOMPILE) $(1)
+ccompile = $(COMPILE) $(DEPCFLAGS) $(1)
+ccompile_nodep = $(COMPILE) $(1)
+cxxcompile = $(CXXCOMPILE) $(DEPCFLAGS) $(1)
+cxxcompile_nodep = $(CXXCOMPILE) $(1)
 else
-ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
-cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
+ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(DEPCFLAGS) $(1)
+ccompile_nodep = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
+cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(DEPCFLAGS) $(1)
+cxxcompile_nodep = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
 endif
 
 .SUFFIXES:
@@ -70,7 +74,7 @@ endif
 	$(call cxxcompile,-c $< -o $@,CXX)
 	$(FIXDEP)
 .cc.kii:
-	$(call cxxcompile,-E $< > $@,CXXCPP)
+	$(call cxxcompile_nodep,-E $< > $@,CXXCPP)
 
 ifneq ($(MAKECMDGOALS),clean)
 -include kelements.mk

@@ -639,10 +639,10 @@ EOF
 	obj_scriptlet='    obj = "%'"$osuffix"'";'
 	action_scriptlet='    action["c" obj] = "	$(call ccompile,-c $< -o $@,CC)";
     action["C" obj] = "	$(call cxxcompile,-c $< -o $@,CXX)";
-    action["c%.i"] = "	$(call ccompile,-E $< -o $@,CPP)";
-    action["C%.ii"] = "	$(call cxxcompile,-E $< -o $@,CXXCPP)";
-    action["c%.s"] = "	$(call ccompile,-S $< -o $@,CC -S)";
-    action["C%.s"] = "	$(call cxxcompile,-S $< -o $@,CXX -S)";'
+    action["c%.i"] = "	$(call ccompile_nodep,-E $< -o $@,CPP)";
+    action["C%.ii"] = "	$(call cxxcompile_nodep,-E $< -o $@,CXXCPP)";
+    action["c%.s"] = "	$(call ccompile_nodep,-S $< -o $@,CC -S)";
+    action["C%.s"] = "	$(call cxxcompile_nodep,-S $< -o $@,CXX -S)";'
 	if test -n "$L"; then
 	    action_scriptlet="$action_scriptlet"'
     action["c" obj] = action["c" obj] "\n	$(FIXDEP)";

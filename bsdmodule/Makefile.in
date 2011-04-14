@@ -20,6 +20,7 @@ CC = @CC@
 CPP = @CPP@
 CXX = @KERNEL_CXX@
 CXXCPP = @CXXCPP@
+DEPCFLAGS = @DEPCFLAGS@
 LD = @LD@
 STRIP = @STRIP@
 PERL = @PERL@
@@ -28,11 +29,15 @@ INSTALL_DATA = $(INSTALL) -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 ifeq ($(V),1)
-ccompile = $(COMPILE) $(1)
-cxxcompile = $(CXXCOMPILE) $(1)
+ccompile = $(COMPILE) $(DEPCFLAGS) $(1)
+ccompile_nodep = $(COMPILE) $(1)
+cxxcompile = $(CXXCOMPILE) $(DEPCFLAGS) $(1)
+cxxcompile_nodep = $(CXXCOMPILE) $(1)
 else
-ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
-cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
+ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(DEPCFLAGS) $(1)
+ccompile_nodep = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
+cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(DEPCFLAGS) $(1)
+cxxcompile_nodep = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
 endif
 
 quiet_cmd_cxxcompile = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
@@ -45,13 +50,13 @@ cmd_ccompile = $(COMPILE) -c -o $@ $<
 .SUFFIXES: .S .c .cc .o .s .ii
 
 .c.o:
-	$(COMPILE) -c $<
+	$(COMPILE) $(DEPCFLAGS) -c $<
 .s.o:
-	$(COMPILE) -c $<
+	$(COMPILE) $(DEPCFLAGS) -c $<
 .S.o:
-	$(COMPILE) -c $<
+	$(COMPILE) $(DEPCFLAGS) -c $<
 .cc.o:
-	$(CXXCOMPILE) -c $<
+	$(CXXCOMPILE) $(DEPCFLAGS) -c $<
 .cc.s:
 	$(CXXCOMPILE) -S $<
 .cc.ii:

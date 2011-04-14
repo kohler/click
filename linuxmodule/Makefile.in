@@ -104,14 +104,14 @@ CLICKCFLAGS = @CFLAGS_NDEBUG@
 CLICKCXXFLAGS = @CXXFLAGS_NDEBUG@
 CLICKDEPCFLAGS = -Wp,-MD,$(depfile)
 
-CLICKDEFS = @DEFS@ 
+CLICKDEFS = @DEFS@
 CLICKINCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(srcdir) -I$(top_srcdir)
 
 CXXCOMPILE = $(CLICKCXX) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
-	$(CLICKCXXFLAGS) $(CLICKDEFS) $(CLICKINCLUDES) $(CLICKDEPCFLAGS)
+	$(CLICKCXXFLAGS) $(CLICKDEFS) $(CLICKINCLUDES)
 COMPILE = $(CLICKCC) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
-	$(CLICKDEFS) $(CLICKINCLUDES) $(CLICKDEPCFLAGS)
+	$(CLICKDEFS) $(CLICKINCLUDES)
 
 ifeq ($(PREPROCESS),1)
 compile_option = -E
@@ -120,12 +120,18 @@ compile_option = -c
 endif
 
 quiet_cmd_cxxcompile = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
-cmd_cxxcompile = $(CXXCOMPILE) $(compile_option) -o $@ $<
+cmd_cxxcompile = $(CXXCOMPILE) $(CLICKDEPCFLAGS) $(compile_option) -o $@ $<
+
+quiet_cmd_cxxcompile_nodep = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
+cmd_cxxcompile_nodep = $(CXXCOMPILE) $(compile_option) -o $@ $<
 
 quiet_cmd_ccompile = CC $(quiet_modtag) $(subst $(obj)/,,$@)
-cmd_ccompile = $(COMPILE) $(compile_option) -o $@ $<
+cmd_ccompile = $(COMPILE) $(CLICKDEPCFLAGS) $(compile_option) -o $@ $<
 
-EXTRA_CFLAGS = $(CLICKCPPFLAGS) $(CLICKCFLAGS) $(CLICKDEFS) $(CLICKINCLUDES) 
+quiet_cmd_ccompile_nodep = CC $(quiet_modtag) $(subst $(obj)/,,$@)
+cmd_ccompile_nodep = $(COMPILE) $(compile_option) -o $@ $<
+
+EXTRA_CFLAGS = $(CLICKCPPFLAGS) $(CLICKCFLAGS) $(CLICKDEFS) $(CLICKINCLUDES)
 
 obj-m += $(INSTALLOBJS)
 
@@ -213,11 +219,15 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make
 
 ifeq ($(V),1)
-ccompile = $(COMPILE) $(1)
-cxxcompile = $(CXXCOMPILE) $(1)
+ccompile = $(COMPILE) $(DEPCFLAGS) $(1)
+ccompile_nodep = $(COMPILE) $(1)
+cxxcompile = $(CXXCOMPILE) $(DEPCFLAGS) $(1)
+cxxcompile_nodep = $(CXXCOMPILE) $(1)
 else
-ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
-cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
+ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(DEPCFLAGS) $(1)
+ccompile_nodep = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
+cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(DEPCFLAGS) $(1)
+cxxcompile_nodep = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
 endif
 
 .SUFFIXES:
@@ -226,7 +236,7 @@ endif
 .c.o:
 	$(call ccompile,-c $< -o $@,CC)
 .c.i:
-	$(call ccompile,-E $< > $@,CPP)
+	$(call ccompile_nodep,-E $< > $@,CPP)
 .s.o:
 	$(call ccompile,-c $< -o $@,ASM)
 .S.o:
@@ -234,9 +244,9 @@ endif
 .cc.o:
 	$(call cxxcompile,-c $< -o $@,CXX)
 .cc.s:
-	$(call cxxcompile,-S $< -o $@,CXX -S)
+	$(call cxxcompile_nodep,-S $< -o $@,CXX -S)
 .cc.ii:
-	$(call cxxcompile,-E $< > $@,CXXCPP)
+	$(call cxxcompile_nodep,-E $< > $@,CXXCPP)
 
 
 OBJS = $(LIB_CXX_OBJS) $(LIB_C_OBJS) $(STD_ELEMENT_OBJS) $(ELEMENT_OBJS) \
@@ -247,16 +257,16 @@ CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@
 DEPCFLAGS = @DEPCFLAGS@
 
-DEFS = @DEFS@ 
+DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(srcdir) -I$(top_srcdir)
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
-CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
@@ -271,7 +281,7 @@ $(DRIVER).o: Makefile $(OBJS)
 	$(STRIP) -g $(DRIVER).o
 
 proclikefs.o: proclikefs.c Makefile
-	$(COMPILE) -D__KERNEL__ -DMODULE -c $< -o $@
+	$(COMPILE) -D__KERNEL__ -DMODULE $(DEPCFLAGS) -c $< -o $@
 
 DEPFILES := $(wildcard *.d)
 ifneq ($(DEPFILES),)

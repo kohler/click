@@ -20,17 +20,22 @@ CC = @CC@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
+DEPCFLAGS = @DEPCFLAGS@
 AR_CREATE = @AR@ @AR_CREATEFLAGS@
 RANLIB = @RANLIB@
 INSTALL = @INSTALL@
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 ifeq ($(V),1)
-ccompile = $(COMPILE) $(1)
-cxxcompile = $(CXXCOMPILE) $(1)
+ccompile = $(COMPILE) $(DEPCFLAGS) $(1)
+ccompile_nodep = $(COMPILE) $(1)
+cxxcompile = $(CXXCOMPILE) $(DEPCFLAGS) $(1)
+cxxcompile_nodep = $(CXXCOMPILE) $(1)
 else
-ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
-cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
+ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(DEPCFLAGS) $(1)
+ccompile_nodep = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
+cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(DEPCFLAGS) $(1)
+cxxcompile_nodep = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
 endif
 
 .SUFFIXES:
@@ -47,7 +52,7 @@ endif
 .cc.s:
 	$(call cxxcompile,-S $< -o $@,CXX -S)
 .cc.ii:
-	$(call cxxcompile,-E $< > $@,CXXCPP)
+	$(call cxxcompile_nodep,-E $< > $@,CXXCPP)
 
 
 GENERIC_OBJS = string.o straccum.o nameinfo.o \
@@ -72,7 +77,6 @@ OBJS = $(ELEMENT_OBJS) $(ELEMENTSCONF).o nsclick.o
 CPPFLAGS = @CPPFLAGS@ -DCLICK_NS
 CFLAGS = @CFLAGS@ -fPIC
 CXXFLAGS = @CXXFLAGS@ -fPIC
-DEPCFLAGS = @DEPCFLAGS@
 
 DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
@@ -80,10 +84,10 @@ INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 LDFLAGS = @LDMODULEFLAGS@
 LIBS = @LIBS@ `$(top_builddir)/click-buildtool --otherlibs` $(ELEMENT_LIBS)
 
-CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 

@@ -37,10 +37,10 @@ INCLUDES ?= $(CLICKINCLUDES)
 
 CXXCOMPILE = $(CLICKKERNEL_CXX) $(LINUXCFLAGS) $(CLICKCPPFLAGS) \
 	$(CLICKCFLAGS_NDEBUG) $(CXXFLAGS) $(PACKAGE_CXXFLAGS) \
-	$(DEFS) $(INCLUDES) $(DEPCFLAGS)
+	$(DEFS) $(INCLUDES)
 COMPILE = $(CLICKKERNEL_CC) $(LINUXCFLAGS) $(CLICKCPPFLAGS) \
 	$(CLICKCFLAGS_NDEBUG) $(PACKAGE_CFLAGS) \
-	$(DEFS) $(INCLUDES) $(DEPCFLAGS)
+	$(DEFS) $(INCLUDES)
 
 packagesrcdir ?= $(srcdir)
 PACKAGE_OBJS ?= kpackage.ko
@@ -58,12 +58,18 @@ compile_option = -c
 endif
 
 quiet_cmd_cxxcompile = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
-cmd_cxxcompile = $(CXXCOMPILE) $(compile_option) -o $@ $<
+cmd_cxxcompile = $(CXXCOMPILE) $(DEPCFLAGS) $(compile_option) -o $@ $<
+
+quiet_cmd_cxxcompile_nodep = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
+cmd_cxxcompile_nodep = $(CXXCOMPILE) $(compile_option) -o $@ $<
 
 quiet_cmd_ccompile = CC $(quiet_modtag) $(subst $(obj)/,,$@)
-cmd_ccompile = $(COMPILE) $(compile_option) -o $@ $<
+cmd_ccompile = $(COMPILE) $(DEPCFLAGS) $(compile_option) -o $@ $<
 
-EXTRA_CFLAGS += $(CLICKCPPFLAGS) $(CLICKCFLAGS_NDEBUG) $(CLICKDEFS) $(CLICKINCLUDES) 
+quiet_cmd_ccompile_nodep = CC $(quiet_modtag) $(subst $(obj)/,,$@)
+cmd_ccompile_nodep = $(COMPILE) $(compile_option) -o $@ $<
+
+EXTRA_CFLAGS += $(CLICKCPPFLAGS) $(CLICKCFLAGS_NDEBUG) $(CLICKDEFS) $(CLICKINCLUDES)
 
 ifneq ($(KBUILD_EXTMOD),)
 ifeq ($(srcdir),.)
