@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include <clicknet/wifi.h>
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <clicknet/llc.h>
@@ -45,16 +45,11 @@ OpenAuthResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
-  if (cp_va_kparse(conf, this, errh,
-		   "DEBUG", 0, cpBool, &_debug,
-		   "WIRELESS_INFO", 0, cpElement, &_winfo,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read("DEBUG", _debug)
+      .read_m("WIRELESS_INFO", ElementCastArg("WirelessInfo"), _winfo)
+      .complete() < 0)
     return -1;
-
-  if (!_winfo || _winfo->cast("WirelessInfo") == 0)
-    return errh->error("No WIRELESS_INFO or it's not a WirelessInfo element\n");
-
-
   return 0;
 }
 

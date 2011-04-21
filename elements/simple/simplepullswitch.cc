@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "simplepullswitch.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/llrpc.h>
 CLICK_DECLS
@@ -34,9 +34,7 @@ int
 SimplePullSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int input = 0;
-    if (cp_va_kparse(conf, this, errh,
-		     "INPUT", cpkP, cpInteger, &input,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh).read_p("INPUT", input).complete() < 0)
 	return -1;
     set_input(input);
     return 0;

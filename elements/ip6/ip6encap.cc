@@ -44,13 +44,13 @@ IP6Encap::configure(Vector<String> &conf, ErrorHandler *errh)
 
     memset(&_iph6, 0, sizeof(click_ip6));
 
-    if (cp_va_kparse(conf, this, errh,
-            "PROTO", cpkP+cpkM, cpNamedInteger, NameInfo::T_IP_PROTO, &proto,
-            "SRC", cpkP+cpkM, cpIP6Address, &src,
-            "DST", cpkP+cpkM, cpArgument, &dst_str,
-            "HLIM", 0, cpInteger, &hlim,
-            "CLASS", 0, cpInteger, &ip_class,
-            cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("PROTO", NamedIntArg(NameInfo::T_IP_PROTO), proto)
+	.read_mp("SRC", src)
+	.read_mp("DST", AnyArg(), dst_str)
+	.read("HLIM", hlim)
+	.read("CLASS", ip_class)
+	.complete() < 0)
         return -1;
 
     if (proto < 0 || proto > 255)

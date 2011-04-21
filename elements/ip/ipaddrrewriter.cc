@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "ipaddrrewriter.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <clicknet/tcp.h>
@@ -93,10 +93,9 @@ IPAddrRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
     int reply_anno;
     _timeouts[0] = 60 * 120;	// 2 hours
 
-    if (cp_va_kparse_remove_keywords
-	(conf, this, errh,
-	 "REPLY_ANNO", cpkC, &has_reply_anno, cpAnno, 1, &reply_anno,
-	 cpEnd) < 0)
+    if (Args(this, errh).bind(conf)
+	.read("REPLY_ANNO", has_reply_anno, AnnoArg(1), reply_anno)
+	.consume() < 0)
 	return -1;
 
     _annos = 1 + (has_reply_anno ? 2 + (reply_anno << 2) : 0);

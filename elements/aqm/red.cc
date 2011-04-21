@@ -24,7 +24,7 @@
 #include <click/routervisitor.hh>
 #include <click/error.hh>
 #include <click/router.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 CLICK_DECLS
 
@@ -108,14 +108,14 @@ RED::configure(Vector<String> &conf, ErrorHandler *errh)
     unsigned min_thresh, max_thresh, max_p, stability = 4;
     String queues_string = String();
     bool gentle = true;
-    if (cp_va_kparse(conf, this, errh,
-		     "MIN_THRESH", cpkP+cpkM, cpUnsigned, &min_thresh,
-		     "MAX_THRESH", cpkP+cpkM, cpUnsigned, &max_thresh,
-		     "MAX_P", cpkP+cpkM, cpUnsignedReal2, 16, &max_p,
-		     "QUEUES", 0, cpArgument, &queues_string,
-		     "STABILITY", 0, cpUnsigned, &stability,
-		     "GENTLE", 0, cpBool, &gentle,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("MIN_THRESH", min_thresh)
+	.read_mp("MAX_THRESH", max_thresh)
+	.read_mp("MAX_P", FixedPointArg(16), max_p)
+	.read("QUEUES", AnyArg(), queues_string)
+	.read("STABILITY", stability)
+	.read("GENTLE", gentle)
+	.complete() < 0)
 	return -1;
     return finish_configure(min_thresh, max_thresh, gentle, max_p,
 			    stability, queues_string, errh);

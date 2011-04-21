@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "gridproxy.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/standard/alignmentinfo.hh>
@@ -49,9 +49,7 @@ GridProxy::configure(Vector<String> &conf, ErrorHandler *errh)
   iph.ip_sum = 0;
   iph.ip_p = 4; /* IP in IP */
 
-  int res = cp_va_kparse(conf, this, errh,
-			 "IP", cpkP+cpkM, cpIPAddress, &iph.ip_src,
-			 cpEnd);
+  int res = Args(conf, this, errh).read_mp("IP", iph.ip_src).complete();
 
   if (res < 0)
     return res;

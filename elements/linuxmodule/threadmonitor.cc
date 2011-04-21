@@ -20,7 +20,7 @@
 #include <click/config.h>
 #include "threadmonitor.hh"
 #include <click/straccum.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/master.hh>
 #include <click/error.hh>
@@ -39,10 +39,10 @@ ThreadMonitor::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _interval = 1000;
     _thresh = 1000;
-    if (cp_va_kparse(conf, this, errh,
-		     "INTERVAL", cpkP, cpUnsigned, &_interval,
-		     "THRESH", cpkP, cpUnsigned, &_thresh,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_p("INTERVAL", _interval)
+	.read_p("THRESH", _thresh)
+	.complete() < 0)
 	return -1;
     return 0;
 }

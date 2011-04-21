@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/etheraddress.hh>
@@ -43,16 +43,14 @@ PrintGrid::~PrintGrid()
 int
 PrintGrid::configure(Vector<String> &conf, ErrorHandler* errh)
 {
-    if (cp_va_kparse(conf, this, errh,
-		     "LABEL", cpkP, cpString, &_label,
-		     "SHOW_ROUTES", 0, cpBool, &_print_routes,
-		     "SHOW_PROBE_CONTENTS", 0, cpBool, &_print_probe_entries,
-		     "VERBOSE", 0, cpBool, &_verbose,
-		     "TIMESTAMP", 0, cpBool, &_timestamp,
-		     "PRINT_ETH", 0, cpBool, &_print_eth,
-		     cpEnd) < 0)
-	return -1;
-    return(0);
+    return Args(conf, this, errh)
+	.read_p("LABEL", _label)
+	.read("SHOW_ROUTES", _print_routes)
+	.read("SHOW_PROBE_CONTENTS", _print_probe_entries)
+	.read("VERBOSE", _verbose)
+	.read("TIMESTAMP", _timestamp)
+	.read("PRINT_ETH", _print_eth)
+	.complete();
 }
 
 String

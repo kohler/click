@@ -29,7 +29,7 @@
 // noted when applicable.
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include "tosimtrace.hh"
 #include <click/packet_anno.hh>
 #include <click/string.hh>
@@ -51,12 +51,12 @@ ToSimTrace::~ToSimTrace()
 int
 ToSimTrace::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-        if (cp_va_kparse(conf, this, errh,
-			 "EVENT", cpkP+cpkM, cpString, &event_,
-			 "ADDITIONAL_INFO", 0, cpString, &additional_info_,
-			 "ANALYZER", 0, cpElement, &_packetAnalyzer,
-			 "OFFSET", 0, cpInteger, &_offset,
-			 cpEnd) < 0)
+        if (Args(conf, this, errh)
+	    .read_mp("EVENT", event_)
+	    .read("ADDITIONAL_INFO", additional_info_)
+	    .read("ANALYZER", ElementCastArg("SimPacketAnalyzer"), _packetAnalyzer)
+	    .read("OFFSET", _offset)
+	    .complete() < 0)
                 return -1;
         return 0;
 }

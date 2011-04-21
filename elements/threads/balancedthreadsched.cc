@@ -25,7 +25,7 @@
 #include <click/router.hh>
 #include <click/master.hh>
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/task.hh>
 #include <click/error.hh>
 
@@ -47,10 +47,10 @@ BalancedThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _interval = 1000;
     _increasing = true;
-    if (cp_va_kparse(conf, this, errh,
-		     "INTERVAL", cpkP, cpUnsigned, &_interval,
-		     "INCREASING", cpkP, cpBool, &_increasing,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_p("INTERVAL", _interval)
+	.read_p("INCREASING", _increasing)
+	.complete() < 0)
 	return -1;
     return 0;
 }

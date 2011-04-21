@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "setrandipaddress.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 SetRandIPAddress::SetRandIPAddress()
@@ -34,23 +34,20 @@ SetRandIPAddress::~SetRandIPAddress()
 int
 SetRandIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int ret;
+    _max = -1;
+    int ret = Args(conf, this, errh)
+	.read_mp("PREFIX", IPPrefixArg(true), _ip, _mask)
+	.read_p("LIMIT", _max).complete();
 
-  _max = -1;
-  ret = cp_va_kparse(conf, this, errh,
-		     "PREFIX", cpkP+cpkM, cpIPAddressOrPrefix, &_ip, &_mask,
-		     "LIMIT", cpkP, cpInteger, &_max,
-		     cpEnd);
+    if(_max >= 0){
+	_addrs = new IPAddress [_max] ();
 
-  if(_max >= 0){
-    _addrs = new IPAddress [_max] ();
+	int i;
+	for(i = 0; i < _max; i++)
+	    _addrs[i] = pick();
+    }
 
-    int i;
-    for(i = 0; i < _max; i++)
-      _addrs[i] = pick();
-  }
-
-  return(ret);
+    return(ret);
 }
 
 IPAddress

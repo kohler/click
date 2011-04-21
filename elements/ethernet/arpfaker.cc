@@ -21,7 +21,7 @@
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 CLICK_DECLS
@@ -38,12 +38,12 @@ ARPFaker::~ARPFaker()
 int
 ARPFaker::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"DSTIP", cpkP+cpkM, cpIPAddress, &_ip1,
-			"DSTETH", cpkP+cpkM, cpEthernetAddress, &_eth1,
-			"SRCIP", cpkP+cpkM, cpIPAddress, &_ip2,
-			"SRCETH", cpkP+cpkM, cpEthernetAddress, &_eth2,
-			cpEnd);
+    return Args(conf, this, errh)
+	.read_mp("DSTIP", _ip1)
+	.read_mp("DSTETH", _eth1)
+	.read_mp("SRCIP", _ip2)
+	.read_mp("SRCETH", _eth2)
+	.complete();
 }
 
 int

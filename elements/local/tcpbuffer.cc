@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include "tcpbuffer.hh"
@@ -35,8 +35,7 @@ int
 TCPBuffer::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _skip = false;
-  return cp_va_kparse(conf, this, errh,
-		      "SKIP", cpkP, cpBool, &_skip, cpEnd);
+  return Args(conf, this, errh).read_p("SKIP", _skip).complete();
 }
 
 

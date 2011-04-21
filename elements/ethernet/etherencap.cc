@@ -17,7 +17,7 @@
 #include <click/config.h>
 #include "etherencap.hh"
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 CLICK_DECLS
@@ -33,14 +33,15 @@ EtherEncap::~EtherEncap()
 int
 EtherEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    uint16_t ether_type;
     click_ether ethh;
-    if (cp_va_kparse(conf, this, errh,
-		     "ETHERTYPE", cpkP+cpkM, cpUnsignedShort, &ethh.ether_type,
-		     "SRC", cpkP+cpkM, cpEthernetAddress, &ethh.ether_shost,
-		     "DST", cpkP+cpkM, cpEthernetAddress, &ethh.ether_dhost,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("ETHERTYPE", ether_type)
+	.read_mp_with("SRC", EtherAddressArg(), ethh.ether_shost)
+	.read_mp_with("DST", EtherAddressArg(), ethh.ether_dhost)
+	.complete() < 0)
 	return -1;
-    ethh.ether_type = htons(ethh.ether_type);
+    ethh.ether_type = htons(ether_type);
     _ethh = ethh;
     return 0;
 }

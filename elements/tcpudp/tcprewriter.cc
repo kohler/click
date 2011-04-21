@@ -22,7 +22,7 @@
 #include "tcprewriter.hh"
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
 CLICK_DECLS
@@ -213,16 +213,15 @@ TCPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
     bool dst_anno = true, has_reply_anno = false;
     int reply_anno;
 
-    if (cp_va_kparse_remove_keywords
-	(conf, this, errh,
-	 "TCP_NODATA_TIMEOUT", 0, cpSeconds, &_timeouts[0],
-	 "TCP_GUARANTEE", 0, cpSeconds, &_timeouts[1],
-	 "TIMEOUT", 0, cpSeconds, &_tcp_data_timeout,
-	 "TCP_TIMEOUT", 0, cpSeconds, &_tcp_data_timeout,
-	 "TCP_DONE_TIMEOUT", 0, cpSeconds, &_tcp_done_timeout,
-	 "DST_ANNO", 0, cpBool, &dst_anno,
-	 "REPLY_ANNO", cpkC, &has_reply_anno, cpAnno, 1, &reply_anno,
-	 cpEnd) < 0)
+    if (Args(this, errh).bind(conf)
+	.read("TCP_NODATA_TIMEOUT", SecondsArg(), _timeouts[0])
+	.read("TCP_GUARANTEE", SecondsArg(), _timeouts[1])
+	.read("TIMEOUT", SecondsArg(), _tcp_data_timeout)
+	.read("TCP_TIMEOUT", SecondsArg(), _tcp_data_timeout)
+	.read("TCP_DONE_TIMEOUT", SecondsArg(), _tcp_done_timeout)
+	.read("DST_ANNO", dst_anno)
+	.read("REPLY_ANNO", AnnoArg(1), reply_anno).read_status(has_reply_anno)
+	.consume() < 0)
 	return -1;
 
     _annos = (dst_anno ? 1 : 0) + (has_reply_anno ? 2 + (reply_anno << 2) : 0);

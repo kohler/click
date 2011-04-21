@@ -21,7 +21,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/timer.hh>
@@ -56,11 +56,10 @@ IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
     _udp_timeouts[0] = 60 * 5;	// 5 minutes
     _udp_timeouts[1] = 5;	// 5 seconds
 
-    if (cp_va_kparse_remove_keywords
-	(conf, this, errh,
-	 "UDP_TIMEOUT", 0, cpSeconds, &_udp_timeouts[0],
-	 "UDP_GUARANTEE", 0, cpSeconds, &_udp_timeouts[1],
-	 cpEnd) < 0)
+    if (Args(this, errh).bind(conf)
+	.read("UDP_TIMEOUT", SecondsArg(), _udp_timeouts[0])
+	.read("UDP_GUARANTEE", SecondsArg(), _udp_timeouts[1])
+	.consume() < 0)
 	return -1;
 
     _udp_timeouts[0] *= CLICK_HZ; // change timeouts to jiffies

@@ -10,7 +10,7 @@
 #include <click/config.h>
 #include "reframe.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
 #include <click/packet.hh>
@@ -39,14 +39,14 @@ int
 Reframe::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   // remove keyword arguments
-  if (cp_va_kparse_remove_keywords(conf, this, errh,
-		"FOFF", 0, cpUnsigned, &_foff,
-		"FLEN", 0, cpUnsigned, &_flen,
-		"NTOH", 0, cpBool, &_ntoh,
-		"MUL", 0, cpInteger, &_mul,
-		"ALIGN", 0, cpInteger, &_align,
-		"ADD", 0, cpInteger, &_add,
-		cpEnd) < 0)
+  if (Args(this, errh).bind(conf)
+      .read("FOFF", _foff)
+      .read("FLEN", _flen)
+      .read("NTOH", _ntoh)
+      .read("MUL", _mul)
+      .read("ALIGN", _align)
+      .read("ADD", _add)
+      .consume() < 0)
     return -1;
 
   switch (_flen) {

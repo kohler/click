@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "pep.hh"
 #include "amoeba.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include "grid.hh"
 #include <math.h>
@@ -49,12 +49,12 @@ PEP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int lat_int = 0, lon_int = 0;
   bool fixed = false;
-  int res = cp_va_kparse(conf, this, errh,
-			 "IP", cpkP+cpkM, cpIPAddress, &_my_ip,
-			 "FIXED", cpkP, cpBool, &fixed,
-			 "LATITUDE", cpkP, cpReal10, 5, &lat_int,
-			 "LONGITUDE", cpkP, cpReal10, 5, &lon_int,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read_mp("IP", _my_ip)
+      .read_p("FIXED", fixed)
+      .read_p("LATITUDE", DecimalFixedPointArg(5), lat_int)
+      .read_p("LONGITUDE", DecimalFixedPointArg(5), lon_int)
+      .complete();
   if(res < 0)
     return(res);
 

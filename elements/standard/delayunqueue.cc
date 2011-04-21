@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/glue.hh>
 #include "delayunqueue.hh"
 #include <click/standard/scheduleinfo.hh>
@@ -36,9 +36,7 @@ DelayUnqueue::~DelayUnqueue()
 int
 DelayUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"DELAY", cpkP+cpkM, cpTimestamp, &_delay,
-			cpEnd);
+    return Args(conf, this, errh).read_mp("DELAY", _delay).complete();
 }
 
 int

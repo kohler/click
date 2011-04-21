@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include <stddef.h>
 #include "filterbyhops.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/router.hh>
 #include <clicknet/ether.h>
@@ -39,9 +39,7 @@ int
 FilterByGridHops::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int mh;
-  int res = cp_va_kparse(conf, this, errh,
-			 "HOPS", cpkP+cpkM, cpInteger, &mh,
-			 cpEnd);
+  int res = Args(conf, this, errh).read_mp("HOPS", mh).complete();
   if (res < 0)
     return res;
 

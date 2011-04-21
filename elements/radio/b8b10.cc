@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include "b8b10.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/glue.hh>
 CLICK_DECLS
 
@@ -102,11 +102,7 @@ B8B10::initialize(ErrorHandler *errh)
 int
 B8B10::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "ENCODE", cpkP+cpkM, cpInteger, &_flag,
-		   cpEnd) < 0)
-    return -1;
-  return(0);
+    return Args(conf, this, errh).read_mp("ENCODE", _flag).complete();
 }
 
 Packet *

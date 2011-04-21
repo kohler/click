@@ -16,7 +16,7 @@
 
 #include <click/config.h>
 #include "fromhandler.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/straccum.hh>
 #include <click/standard/scheduleinfo.hh>
@@ -40,9 +40,9 @@ FromHandler::~FromHandler()
 int
 FromHandler::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (cp_va_kparse(conf, this, errh,
-		     "HANDLER", cpkP+cpkM, cpString, &_handler,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("HANDLER", _handler)
+	.complete() < 0)
 	return -1;
 
     _active = false;

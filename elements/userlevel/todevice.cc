@@ -26,7 +26,7 @@
 #include "todevice.hh"
 #include <click/error.hh>
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/packet_anno.hh>
@@ -69,15 +69,14 @@ ToDevice::~ToDevice()
 int
 ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-
-  if (cp_va_kparse(conf, this, errh,
-		   "DEVNAME", cpkP+cpkM, cpString, &_ifname,
-		   "DEBUG", 0, cpBool, &_debug,
-		   cpEnd) < 0)
-    return -1;
-  if (!_ifname)
-    return errh->error("interface not set");
-  return 0;
+    if (Args(conf, this, errh)
+	.read_mp("DEVNAME", _ifname)
+	.read("DEBUG", _debug)
+	.complete() < 0)
+	return -1;
+    if (!_ifname)
+	return errh->error("interface not set");
+    return 0;
 }
 
 int

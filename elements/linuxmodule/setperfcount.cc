@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "setperfcount.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
@@ -45,13 +45,13 @@ SetPerfCount::cast(const char *n)
 int
 SetPerfCount::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  String metric_name;
-  if (cp_va_kparse(conf, this, errh,
-		   "METRIC", cpkP+cpkM, cpWord, &metric_name,
-		   cpEnd) < 0)
-    return -1;
-  _which = PerfCountUser::prepare(metric_name, errh);
-  return (_which < 0 ? -1 : 0);
+    String metric_name;
+    if (Args(conf, this, errh)
+	.read_mp("METRIC", WordArg(), metric_name)
+	.complete() < 0)
+	return -1;
+    _which = PerfCountUser::prepare(metric_name, errh);
+    return (_which < 0 ? -1 : 0);
 }
 
 inline void

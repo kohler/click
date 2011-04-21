@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 #include "ipratemon.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -42,17 +42,17 @@ IPRateMonitor::~IPRateMonitor()
 int
 IPRateMonitor::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  String count_what;
-  _memmax = 0;
-  _anno_packets = true;
-  if (cp_va_kparse(conf, this, errh,
-		   "TYPE", cpkP+cpkM, cpWord, &count_what,
-		   "RATIO", cpkP+cpkM, cpUnsignedReal2, 16, &_ratio,
-		   "THRESH", cpkP+cpkM, cpUnsigned, &_thresh,
-		   "MEMORY", cpkP, cpSize, &_memmax,
-		   "ANNO", cpkP, cpBool, &_anno_packets,
-		   cpEnd) < 0)
-    return -1;
+    String count_what;
+    _memmax = 0;
+    _anno_packets = true;
+    if (Args(conf, this, errh)
+	.read_mp("TYPE", WordArg(), count_what)
+	.read_mp("RATIO", FixedPointArg(16), _ratio)
+	.read_mp("THRESH", _thresh)
+	.read_p("MEMORY", _memmax)
+	.read_p("ANNO", _anno_packets)
+	.complete() < 0)
+	return -1;
   if (count_what.upper() == "PACKETS")
     _count_packets = true;
   else if (count_what.upper() == "BYTES")

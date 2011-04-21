@@ -43,18 +43,18 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   bool ce = false, df = false;
   String ect_str, dst_str;
 
-  if (cp_va_kparse(conf, this, errh,
-		   "PROTO", cpkP+cpkM, cpNamedInteger, NameInfo::T_IP_PROTO, &proto,
-		   "SRC", cpkP+cpkM, cpIPAddress, &iph.ip_src,
-		   "DST", cpkP+cpkM, cpArgument, &dst_str,
-		   "TOS", 0, cpUnsigned, &tos,
-		   "TTL", 0, cpByte, &iph.ip_ttl,
-		   "DSCP", 0, cpUnsigned, &dscp,
-		   "ECT", 0, cpKeyword, &ect_str,
-		   "CE", 0, cpBool, &ce,
-		   "DF", 0, cpBool, &df,
-		   cpEnd) < 0)
-    return -1;
+    if (Args(conf, this, errh)
+	.read_mp("PROTO", NamedIntArg(NameInfo::T_IP_PROTO), proto)
+	.read_mp("SRC", iph.ip_src)
+	.read_mp("DST", AnyArg(), dst_str)
+	.read("TOS", tos)
+	.read("TTL", iph.ip_ttl)
+	.read("DSCP", dscp)
+	.read("ECT", KeywordArg(), ect_str)
+	.read("CE", ce)
+	.read("DF", df)
+	.complete() < 0)
+	return -1;
 
   if (proto < 0 || proto > 255)
       return errh->error("bad IP protocol");

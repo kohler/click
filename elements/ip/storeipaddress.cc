@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 #include "storeipaddress.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
@@ -39,16 +39,12 @@ StoreIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String offset;
     int r;
-    _use_address = false;
-    if (conf.size() == 1)
-	r = cp_va_kparse(conf, this, errh,
-			 "OFFSET", cpkP+cpkM, cpWord, &offset,
-			 cpEnd);
+    _use_address = conf.size() > 1;
+    if (!_use_address)
+	r = Args(conf, this, errh).read_mp("OFFSET", WordArg(), offset).complete();
     else
-	r = cp_va_kparse(conf, this, errh,
-			 "ADDR", cpkP+cpkC+cpkM, &_use_address, cpIPAddress, &_address,
-			 "OFFSET", cpkP+cpkM, cpWord, &offset,
-			 cpEnd);
+	r = Args(conf, this, errh).read_mp("ADDR", _address)
+	    .read_mp("OFFSET", WordArg(), offset).complete();
     if (r < 0)
 	return r;
     if (offset.lower() == "src")

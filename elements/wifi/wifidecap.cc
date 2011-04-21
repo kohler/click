@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "wifidecap.hh"
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
@@ -41,11 +41,11 @@ WifiDecap::configure(Vector<String> &conf, ErrorHandler *errh)
   _debug = false;
   _strict = false;
   _push_eth = true;
-  if (cp_va_kparse(conf, this, errh,
-		   "DEBUG", 0, cpBool, &_debug,
-		   "STRICT", 0, cpBool, &_strict,
-		   "ETHER", 0, cpBool, &_push_eth,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read("DEBUG", _debug)
+      .read("STRICT", _strict)
+      .read("ETHER", _push_eth)
+      .complete() < 0)
     return -1;
   return 0;
 }

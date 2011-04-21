@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include <clicknet/wifi.h>
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <clicknet/llc.h>
@@ -45,11 +45,11 @@ BeaconTracker::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
-  if (cp_va_kparse(conf, this, errh,
-		   "DEBUG", 0, cpBool, &_debug,
-		   "WIRELESS_INFO", 0, cpElement, &_winfo,
-		   "TRACK", 0, cpInteger, &_track,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read("DEBUG", _debug)
+      .read("WIRELESS_INFO", ElementCastArg("WirelessInfo"), _winfo)
+      .read("TRACK", _track)
+      .complete() < 0)
     return -1;
 
 

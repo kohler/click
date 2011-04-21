@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "etherpausesource.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/etheraddress.hh>
 #include <clicknet/ether.h>
 #include <click/error.hh>
@@ -45,14 +45,14 @@ EtherPauseSource::configure(Vector<String> &conf, ErrorHandler *errh)
     _limit = -1;
     _active = true;
     _interval = 1000;
-    if (cp_va_kparse(conf, this, errh,
-		     "SRC", cpkP+cpkM, cpEtherAddress, &src,
-		     "PAUSETIME", cpkP+cpkM, cpUnsignedShort, &pausetime,
-		     "DST", 0, cpEtherAddress, &dst,
-		     "LIMIT", 0, cpInteger, &_limit,
-		     "ACTIVE", 0, cpBool, &_active,
-		     "INTERVAL", 0, cpSecondsAsMilli, &_interval,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("SRC", src)
+	.read_mp("PAUSETIME", pausetime)
+	.read("DST", dst)
+	.read("LIMIT", _limit)
+	.read("ACTIVE", _active)
+	.read("INTERVAL", SecondsArg(3), _interval)
+	.complete() < 0)
         return -1;
 
     // build PAUSE frame

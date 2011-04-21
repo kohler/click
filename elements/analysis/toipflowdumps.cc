@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "toipflowdumps.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 #include <click/router.hh>
@@ -535,20 +535,20 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
     bool absolute_time = false, absolute_seq = false, binary = false, all_tcp_opt = false, tcp_opt = false, tcp_window = false, ip_id = false, gzip = false;
     _mincount = 0;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "FILEPATTERN", cpkP, cpFilename, &_filename_pattern,
-		     "OUTPUT_PATTERN", 0, cpFilename, &_filename_pattern,
-		     "NOTIFIER", 0, cpElement, &e,
-		     "ABSOLUTE_TIME", 0, cpBool, &absolute_time,
-		     "ABSOLUTE_SEQ", 0, cpBool, &absolute_seq,
-		     "BINARY", 0, cpBool, &binary,
-		     "ALL_TCP_OPT", 0, cpBool, &all_tcp_opt,
-		     "TCP_OPT", 0, cpBool, &tcp_opt,
-		     "TCP_WINDOW", 0, cpBool, &tcp_window,
-		     "GZIP", 0, cpBool, &gzip,
-		     "IP_ID", 0, cpBool, &ip_id,
-		     "MINCOUNT", 0, cpUnsigned, &_mincount,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_p("FILEPATTERN", FilenameArg(), _filename_pattern)
+	.read("OUTPUT_PATTERN", FilenameArg(), _filename_pattern)
+	.read("NOTIFIER", e)
+	.read("ABSOLUTE_TIME", absolute_time)
+	.read("ABSOLUTE_SEQ", absolute_seq)
+	.read("BINARY", binary)
+	.read("ALL_TCP_OPT", all_tcp_opt)
+	.read("TCP_OPT", tcp_opt)
+	.read("TCP_WINDOW", tcp_window)
+	.read("GZIP", gzip)
+	.read("IP_ID", ip_id)
+	.read("MINCOUNT", _mincount)
+	.complete() < 0)
 	return -1;
 
     if (!_filename_pattern)

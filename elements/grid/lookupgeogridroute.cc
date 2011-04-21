@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include <stddef.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>
 #include <clicknet/ip.h>
@@ -53,31 +53,12 @@ LookupGeographicGridRoute::cast(const char *n)
 int
 LookupGeographicGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "ETH", cpkP+cpkM, cpEthernetAddress, &_ethaddr,
-			 "IP", cpkP+cpkM, cpIPAddress, &_ipaddr,
-			 "GRIDROUTES", cpkP+cpkM, cpElement, &_rt,
-			 "LOCINFO", cpkP+cpkM, cpElement, &_li,
-			 cpEnd);
-
-  if (res < 0)
-    return res;
-
-  if (_rt->cast("GridGenericRouteTable") == 0) {
-    errh->warning("%s: GridGenericRouteTable argument %s has the wrong type",
-                  name().c_str(),
-                  _rt->name().c_str());
-    return -1;
-  }
-
-  if (_li->cast("GridLocationInfo") == 0) {
-    errh->warning("%s: GridLocationInfo argument %s has the wrong type",
-                  name().c_str(),
-                  _li->name().c_str());
-    return -1;
-  }
-
-  return res;
+    return Args(conf, this, errh)
+	.read_mp("ETH", _ethaddr)
+	.read_mp("IP", _ipaddr)
+	.read_mp("GRIDROUTES", ElementCastArg("GridGenericRouteTable"), _rt)
+	.read_mp("LOCINFO", ElementCastArg("GridLocationInfo"), _li)
+	.complete();
 }
 
 int

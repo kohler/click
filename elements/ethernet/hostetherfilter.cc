@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "hostetherfilter.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/etheraddress.hh>
@@ -35,18 +35,18 @@ HostEtherFilter::~HostEtherFilter()
 int
 HostEtherFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  bool drop_own = false, drop_other = true;
-  _offset = 0;
-  if (cp_va_kparse(conf, this, errh,
-		   "ETHER", cpkP+cpkM, cpEthernetAddress, &_addr,
-		   "DROP_OWN", cpkP, cpBool, &drop_own,
-		   "DROP_OTHER", cpkP, cpBool, &drop_other,
-		   "OFFSET", 0, cpUnsigned, &_offset,
-		   cpEnd) < 0)
-    return -1;
-  _drop_own = drop_own;
-  _drop_other = drop_other;
-  return 0;
+    bool drop_own = false, drop_other = true;
+    _offset = 0;
+    if (Args(conf, this, errh)
+	.read_mp("ETHER", _addr)
+	.read_p("DROP_OWN", drop_own)
+	.read_p("DROP_OTHER", drop_other)
+	.read("OFFSET", _offset)
+	.complete() < 0)
+	return -1;
+    _drop_own = drop_own;
+    _drop_other = drop_other;
+    return 0;
 }
 
 Packet *
@@ -65,9 +65,9 @@ HostEtherFilter::simple_action(Packet *p)
   const click_ether *e = (const click_ether *) (p->data() + _offset);
   const unsigned short *daddr = (const unsigned short *)e->ether_dhost;
 
-  if (_drop_own && memcmp(e->ether_shost, _addr, 6) == 0)
+  if (_drop_own && memcmp(e->ether_shost, &_addr, 6) == 0)
     return drop(p);
-  else if (memcmp(e->ether_dhost, _addr, 6) == 0) {
+  else if (memcmp(e->ether_dhost, &_addr, 6) == 0) {
     p->set_packet_type_anno(Packet::HOST);
     return p;
   } else if (daddr[0] == 0xFFFF && daddr[1] == 0xFFFF && daddr[2] == 0xFFFF) {

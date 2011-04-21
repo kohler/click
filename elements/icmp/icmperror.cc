@@ -21,7 +21,7 @@
 #include <clicknet/ip.h>
 #include "icmperror.hh"
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
@@ -55,15 +55,15 @@ ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
     Vector<IPAddress> bad_addrs;
     bool use_fix_anno = true;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "SRC", cpkP+cpkM, cpIPAddress, &src_ip,
-		     "TYPE", cpkP+cpkM, cpNamedInteger, NameInfo::T_ICMP_TYPE, &type,
-		     "CODE", cpkP, cpWord, &code_str,
-		     "BADADDRS", cpkP, cpIPAddressList, &bad_addrs,
-		     "MTU", 0, cpUnsigned, &mtu,
-		     "PMTU", 0, cpUnsigned, &pmtu,
-		     "SET_FIX_ANNO", 0, cpBool, &use_fix_anno,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("SRC", src_ip)
+	.read_mp("TYPE", NamedIntArg(NameInfo::T_ICMP_TYPE), type)
+	.read_p("CODE", WordArg(), code_str)
+	.read_p("BADADDRS", bad_addrs)
+	.read("MTU", mtu)
+	.read("PMTU", pmtu)
+	.read("SET_FIX_ANNO", use_fix_anno)
+	.complete() < 0)
 	return -1;
 
     if (type < 0 || type > 255)

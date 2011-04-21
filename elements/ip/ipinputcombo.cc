@@ -19,10 +19,11 @@
 #include "ipinputcombo.hh"
 #include <clicknet/ip.h>
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 #include <click/standard/alignmentinfo.hh>
+#include "elements/ip/checkipheader.hh"
 CLICK_DECLS
 
 IPInputCombo::IPInputCombo()
@@ -37,14 +38,14 @@ IPInputCombo::~IPInputCombo()
 int
 IPInputCombo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "COLOR", cpkP+cpkM, cpUnsigned, &_color,
-		   "BADSRC*", cpkP, "CheckIPHeader.BADSRC_OLD", &_bad_src,
-		   "INTERFACES", 0, "CheckIPHeader.INTERFACES", &_bad_src, &_good_dst,
-		   "BADSRC", 0, "CheckIPHeader.BADSRC", &_bad_src,
-		   "GOODDST", 0, "CheckIPHeader.BADSRC", &_good_dst,
-		   cpEnd) < 0)
-    return -1;
+    if (Args(conf, this, errh)
+	.read_mp("COLOR", _color)
+	.read_p("BADSRC*", CheckIPHeader::OldBadSrcArg(), _bad_src)
+	.read("INTERFACES", CheckIPHeader::InterfacesArg(), _bad_src, _good_dst)
+	.read("BADSRC", _bad_src)
+	.read("GOODDST", _good_dst)
+	.complete() < 0)
+	return -1;
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   // check alignment

@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ether.h>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -42,14 +42,14 @@ LinkStat::~LinkStat()
 int
 LinkStat::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "WINDOW", 0, cpUnsigned, &_window,
-			 "ETH", 0, cpEthernetAddress, &_eth,
-			 "PERIOD", 0, cpUnsigned, &_period,
-			 "TAU", 0, cpUnsigned, &_tau,
-			 "SIZE", 0, cpUnsigned, &_probe_size,
-			 "USE_SECOND_PROTO", 0, cpBool, &_use_proto2,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read("WINDOW", _window)
+      .read("ETH", _eth)
+      .read("PERIOD", _period)
+      .read("TAU", _tau)
+      .read("SIZE", _probe_size)
+      .read("USE_SECOND_PROTO", _use_proto2)
+      .complete();
   if (res < 0)
     return res;
 

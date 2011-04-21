@@ -19,7 +19,7 @@
 #include "tcpipsend.hh"
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/router.hh>
@@ -36,27 +36,27 @@ TCPIPSend::~TCPIPSend()
 int
 TCPIPSend::send_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
-  Vector<String> args;
-  TCPIPSend* me = (TCPIPSend *) e;
+    Vector<String> args;
+    TCPIPSend* me = (TCPIPSend *) e;
 
-  unsigned int saddr, daddr;
-  uint16_t sport, dport;
-  unsigned char bits;
-  unsigned seqn, ackn;
-  unsigned int limit = 1;
-  bool stop = false;
-  if(cp_va_space_kparse(conf, me, errh,
-			"SRC", cpkP+cpkM, cpIPAddress, &saddr,
-			"SPORT", cpkP+cpkM, cpTCPPort, &sport,
-			"DST", cpkP+cpkM, cpIPAddress, &daddr,
-			"DPORT", cpkP+cpkM, cpTCPPort, &dport,
-			"SEQNO", cpkP+cpkM, cpUnsigned, &seqn,
-			"ACKNO", cpkP+cpkM, cpUnsigned, &ackn,
-			"FLAGS", cpkP+cpkM, cpByte, &bits,
-			"COUNT", cpkP, cpUnsigned, &limit,
-			"STOP", cpkP, cpBool, &stop,
-			cpEnd) < 0)
-    return -1;
+    unsigned int saddr, daddr;
+    uint16_t sport, dport;
+    unsigned char bits;
+    unsigned seqn, ackn;
+    unsigned int limit = 1;
+    bool stop = false;
+    if (Args(me, errh).push_back_words(conf)
+	.read_mp("SRC", saddr)
+	.read_mp("SPORT", IPPortArg(IP_PROTO_TCP), sport)
+	.read_mp("DST", daddr)
+	.read_mp("DPORT", IPPortArg(IP_PROTO_TCP), dport)
+	.read_mp("SEQNO", seqn)
+	.read_mp("ACKNO", ackn)
+	.read_mp("FLAGS", bits)
+	.read_p("COUNT", limit)
+	.read_p("STOP", stop)
+	.complete() < 0)
+	return -1;
 
   if (limit > 0) {
     Packet *p = me->make_packet(saddr, daddr, sport, dport, seqn, ackn, bits);

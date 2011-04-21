@@ -22,7 +22,7 @@
 #include <clicknet/tcp.h>
 #include <click/router.hh>
 #include <click/routervisitor.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -41,11 +41,11 @@ FTPPortMapper::configure(Vector<String> &conf, ErrorHandler *errh)
     IPRewriterBase *new_data_rewriter;
     int new_data_rewriter_input;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "CONTROL_REWRITER", cpkP+cpkM, cpElementCast, "TCPRewriter", &new_control_rewriter,
-		     "DATA_REWRITER", cpkP+cpkM, cpElementCast, "IPRewriterBase", &new_data_rewriter,
-		     "DATA_REWRITER_INPUT", cpkP+cpkM, cpInteger, &new_data_rewriter_input,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("CONTROL_REWRITER", ElementCastArg("TCPRewriter"), new_control_rewriter)
+	.read_mp("DATA_REWRITER", ElementCastArg("IPRewriterBase"), new_data_rewriter)
+	.read_mp("DATA_REWRITER_INPUT", new_data_rewriter_input)
+	.complete() < 0)
 	return -1;
 
     if (new_data_rewriter_input < 0

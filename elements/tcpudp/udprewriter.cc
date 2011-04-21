@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "udprewriter.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/timer.hh>
@@ -50,13 +50,12 @@ UDPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
     int reply_anno;
     _timeouts[0] = 300;		// 5 minutes
 
-    if (cp_va_kparse_remove_keywords
-	(conf, this, errh,
-	 "DST_ANNO", 0, cpBool, &dst_anno,
-	 "REPLY_ANNO", cpkC, &has_reply_anno, cpAnno, 1, &reply_anno,
-	 "UDP_TIMEOUT", 0, cpSeconds, &_timeouts[0],
-	 "UDP_GUARANTEE", 0, cpSeconds, &_timeouts[1],
-	 cpEnd) < 0)
+    if (Args(this, errh).bind(conf)
+	.read("DST_ANNO", dst_anno)
+	.read("REPLY_ANNO", AnnoArg(1), reply_anno).read_status(has_reply_anno)
+	.read("UDP_TIMEOUT", SecondsArg(), _timeouts[0])
+	.read("UDP_GUARANTEE", SecondsArg(), _timeouts[1])
+	.consume() < 0)
 	return -1;
 
     _annos = (dst_anno ? 1 : 0) + (has_reply_anno ? 2 + (reply_anno << 2) : 0);

@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "checkpacket.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -38,15 +38,15 @@ CheckPacket::configure(Vector<String> &conf, ErrorHandler *errh)
     String alignment;
     int length_eq = -1, length_ge = -1, length_le = -1;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "DATA", 0, cpString, &_data,
-		     "DATA_OFFSET", 0, cpInteger, &_data_offset,
-		     "LENGTH", 0, cpInteger, &length_eq,
-		     "LENGTH_EQ", 0, cpInteger, &length_eq,
-		     "LENGTH_GE", 0, cpInteger, &length_ge,
-		     "LENGTH_LE", 0, cpInteger, &length_le,
-		     "ALIGNMENT", 0, cpArgument, &alignment,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read("DATA", _data)
+	.read("DATA_OFFSET", _data_offset)
+	.read("LENGTH", length_eq)
+	.read("LENGTH_EQ", length_eq)
+	.read("LENGTH_GE", length_ge)
+	.read("LENGTH_LE", length_le)
+	.read("ALIGNMENT", AnyArg(), alignment)
+	.complete() < 0)
 	return -1;
 
     if ((length_eq >= 0) + (length_ge >= 0) + (length_le >= 0) > 1)
@@ -63,10 +63,10 @@ CheckPacket::configure(Vector<String> &conf, ErrorHandler *errh)
     _data_op = (_data.out_of_memory() ? 0 : '=');
 
     if (alignment) {
-	if (cp_va_space_kparse(alignment, this, errh,
-			       "MODULUS", cpkP+cpkM, cpInteger, &_alignment_chunk,
-			       "OFFSET", cpkP+cpkM, cpInteger, &_alignment_offset,
-			       cpEnd) < 0)
+	if (Args(this, errh).push_back_words(alignment)
+	    .read_mp("MODULUS", _alignment_chunk)
+	    .read_mp("OFFSET", _alignment_offset)
+	    .complete() < 0)
 	    return -1;
 	else if (_alignment_chunk <= 1 || _alignment_offset < 0 || _alignment_offset >= _alignment_chunk)
 	    return errh->error("bad alignment modulus and/or offset");

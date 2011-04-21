@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include "print.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
 #ifdef CLICK_LINUXMODULE
@@ -51,21 +51,21 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
   String label, contents = "HEX";
   unsigned bytes = 24;
 
-  if (cp_va_kparse(conf, this, errh,
-		   "LABEL", cpkP, cpString, &label,
-		   "MAXLENGTH", cpkP, cpInteger, &bytes,
-		   "LENGTH", cpkDeprecated, cpInteger, &bytes,
-		   "NBYTES", cpkDeprecated, cpInteger, &bytes,
-		   "CONTENTS", 0, cpWord, &contents,
-		   "TIMESTAMP", 0, cpBool, &timestamp,
-		   "PRINTANNO", 0, cpBool, &print_anno,
-		   "ACTIVE", 0, cpBool, &_active,
-		   "HEADROOM", 0, cpBool, &headroom,
-#ifdef CLICK_LINUXMODULE
-		   "CPU", 0, cpBool, &print_cpu,
+    if (Args(conf, this, errh)
+	.read_p("LABEL", label)
+	.read_p("MAXLENGTH", bytes)
+	.read("LENGTH", Args::deprecated, bytes)
+	.read("NBYTES", Args::deprecated, bytes)
+	.read("CONTENTS", WordArg(), contents)
+	.read("TIMESTAMP", timestamp)
+	.read("PRINTANNO", print_anno)
+	.read("ACTIVE", _active)
+	.read("HEADROOM", headroom)
+#if CLICK_LINUXMODULE
+	.read("CPU", print_cpu)
 #endif
-		   cpEnd) < 0)
-    return -1;
+	.complete() < 0)
+	return -1;
 
   if (cp_bool(contents, &bcontents))
       _contents = bcontents;

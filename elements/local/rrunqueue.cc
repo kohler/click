@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include <click/error.hh>
 #include "rrunqueue.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/standard/scheduleinfo.hh>
 CLICK_DECLS
 
@@ -35,9 +35,9 @@ int
 RoundRobinUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _burst = 1;
-  return cp_va_kparse(conf, this, errh,
-		      "BURST", cpkP, cpUnsigned, &_burst,
-		      cpEnd);
+  return Args(conf, this, errh)
+      .read_p("BURST", _burst)
+      .complete();
 }
 
 int

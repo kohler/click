@@ -20,6 +20,7 @@
 #include "counter.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/handlercall.hh>
 CLICK_DECLS
 
@@ -45,10 +46,9 @@ int
 Counter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String count_call, byte_count_call;
-  if (cp_va_kparse(conf, this, errh,
-		   "COUNT_CALL", 0, cpArgument, &count_call,
-		   "BYTE_COUNT_CALL", 0, cpArgument, &byte_count_call,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read("COUNT_CALL", AnyArg(), count_call)
+      .read("BYTE_COUNT_CALL", AnyArg(), byte_count_call).complete() < 0)
     return -1;
 
   if (count_call) {

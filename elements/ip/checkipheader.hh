@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <click/atomic.hh>
 CLICK_DECLS
+class Args;
 
 /*
 =c
@@ -108,9 +109,6 @@ class CheckIPHeader : public Element { public:
   CheckIPHeader();
   ~CheckIPHeader();
 
-  static void static_initialize();
-  static void static_cleanup();
-
   const char *class_name() const		{ return "CheckIPHeader"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
@@ -120,6 +118,16 @@ class CheckIPHeader : public Element { public:
   void add_handlers();
 
   Packet *simple_action(Packet *);
+
+  struct OldBadSrcArg {
+      static bool parse(const String &str, Vector<IPAddress> &result,
+			Args &args);
+  };
+
+  struct InterfacesArg {
+      static bool parse(const String &str, Vector<IPAddress> &result_bad_src,
+			Vector<IPAddress> &result_good_dst, Args &args);
+  };
 
  private:
 

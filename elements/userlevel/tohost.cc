@@ -21,7 +21,7 @@
 #include "tohost.hh"
 #include <click/error.hh>
 #include <click/bitvector.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/glue.hh>
 #include <clicknet/ether.h>
@@ -50,9 +50,9 @@ ToHost::~ToHost()
 int
 ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"DEVNAME", cpkP+cpkM, cpString, &_dev_name,
-			cpEnd);
+    return Args(conf, this, errh)
+	.read_mp("DEVNAME", _dev_name)
+	.complete();
 }
 
 int

@@ -17,7 +17,7 @@
 #include <click/config.h>
 #include "elements/grid/gridgatewayinfo.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/ipaddress.hh>
 #include <click/router.hh>
 #include <click/error.hh>
@@ -36,14 +36,10 @@ GridGatewayInfo::~GridGatewayInfo()
 int
 GridGatewayInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "ROUTETABLE", cpkP+cpkM, cpElement, &_rt,
-			 "IS_GATEWAY", cpkP+cpkM, cpBool, &_is_gateway,
-			 cpEnd);
-  if (_rt == 0)
-    return errh->error("No route table specified");
-  if (_rt->cast("GridGenericRouteTable") == 0)
-    return errh->error("Route table element is not the right type");
+  int res = Args(conf, this, errh)
+      .read_mp("ROUTETABLE", ElementCastArg("GridGenericRouteTable"), _rt)
+      .read_mp("IS_GATEWAY", _is_gateway)
+      .complete();
   return res;
 
 }

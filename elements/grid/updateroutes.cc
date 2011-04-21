@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "updateroutes.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>
 #include <clicknet/ip.h>
@@ -54,14 +54,14 @@ UpdateGridRoutes::cast(const char *n)
 int
 UpdateGridRoutes::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    int res = cp_va_kparse(conf, this, errh,
-			   "TIMEOUT", cpkP+cpkM, cpInteger, &_timeout,
-			   "PERIOD", cpkP+cpkM, cpInteger, &_period,
-			   "JITTER", cpkP+cpkM, cpInteger, &_jitter,
-			   "ETH", cpkP+cpkM, cpEthernetAddress, &_ethaddr,
-			   "IP", cpkP+cpkM, cpIPAddress, &_ipaddr,
-			   "MAXHOPS", cpkP, cpInteger, &_max_hops,
-			   cpEnd);
+    int res = Args(conf, this, errh)
+	.read_mp("TIMEOUT", _timeout)
+	.read_mp("PERIOD", _period)
+	.read_mp("JITTER", _jitter)
+	.read_mp("ETH", _ethaddr)
+	.read_mp("IP", _ipaddr)
+	.read_p("MAXHOPS", _max_hops)
+	.complete();
   if (res < 0)
     return res;
 

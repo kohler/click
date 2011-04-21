@@ -22,7 +22,7 @@ ANY PARTICULAR PURPOSE.
 #include <click/config.h>
 #include <click/glue.hh>
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 
@@ -259,11 +259,11 @@ int ToUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("file operations missing");
 
     _max_burst = 0;
-    if (cp_va_kparse(conf, this, errh,
-		     "DEV_MINOR", cpkP+cpkM, cpUnsigned, &_dev_minor,
-		     "CAPACITY", 0, cpUnsigned, &_capacity,
-		     "BURST", 0, cpUnsigned, &_max_burst,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("DEV_MINOR", _dev_minor)
+	.read("CAPACITY", _capacity)
+	.read("BURST", _max_burst)
+	.complete() < 0)
         return -1;
 
 

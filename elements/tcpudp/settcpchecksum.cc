@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "settcpchecksum.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
@@ -36,11 +36,9 @@ SetTCPChecksum::~SetTCPChecksum()
 int
 SetTCPChecksum::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "FIXOFF", cpkP, cpBool, &_fixoff,
-		   cpEnd) < 0)
-    return -1;
-  return 0;
+    return Args(conf, this, errh)
+	.read_p("FIXOFF", _fixoff)
+	.complete();
 }
 
 Packet *

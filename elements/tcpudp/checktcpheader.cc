@@ -21,7 +21,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/bitvector.hh>
 #include <click/straccum.hh>
@@ -45,14 +45,14 @@ CheckTCPHeader::~CheckTCPHeader()
 int
 CheckTCPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  bool verbose = false;
-  bool details = false;
+    bool verbose = false;
+    bool details = false;
 
-  if (cp_va_kparse(conf, this, errh,
-		   "VERBOSE", 0, cpBool, &verbose,
-		   "DETAILS", 0, cpBool, &details,
-		   cpEnd) < 0)
-    return -1;
+    if (Args(conf, this, errh)
+	.read("VERBOSE", verbose)
+	.read("DETAILS", details)
+	.complete() < 0)
+	return -1;
 
   _verbose = verbose;
   if (details) {

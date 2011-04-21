@@ -17,12 +17,12 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/etheraddress.hh>
 #include <clicknet/wifi.h>
 #include "wifidupefilter.hh"
@@ -42,11 +42,7 @@ WifiDupeFilter::~WifiDupeFilter()
 int
 WifiDupeFilter::configure(Vector<String> &conf, ErrorHandler* errh)
 {
-  int ret;
-  ret = cp_va_kparse(conf, this, errh,
-		     "DEBUG", 0, cpBool, &_debug,
-		     cpEnd);
-  return ret;
+    return Args(conf, this, errh).read("DEBUG", _debug).complete();
 }
 
 Packet *

@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 #include "infinitesource.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
@@ -57,21 +57,17 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
   int datasize = -1;
   bool active = true, stop = false, timestamp = true;
 
-  if (cp_va_kparse(conf, this, errh,
-		   "DATA", cpkP, cpString, &data,
-#if HAVE_INT64_TYPES
-		   "LIMIT", cpkP, cpInteger64, &limit,
-#else
-		   "LIMIT", cpkP, cpInteger, &limit,
-#endif
-		   "BURST", cpkP, cpInteger, &burstsize,
-		   "ACTIVE", cpkP, cpBool, &active,
-		   "TIMESTAMP", 0, cpBool, &timestamp,
-		   "LENGTH", 0, cpInteger, &datasize,
-		   "DATASIZE", 0, cpInteger, &datasize, // deprecated
-		   "STOP", 0, cpBool, &stop,
-		   cpEnd) < 0)
-    return -1;
+  if (Args(conf, this, errh)
+      .read_p("DATA", data)
+      .read_p("LIMIT", limit)
+      .read_p("BURST", burstsize)
+      .read_p("ACTIVE", active)
+      .read("TIMESTAMP", timestamp)
+      .read("LENGTH", datasize)
+      .read("DATASIZE", datasize) // deprecated
+      .read("STOP", stop)
+      .complete() < 0)
+      return -1;
   if (burstsize < 1)
     return errh->error("burst size must be >= 1");
 

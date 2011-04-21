@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "setannobyte.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
@@ -38,10 +38,9 @@ int
 SetAnnoByte::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     errh->warning("SetAnnoByte(ANNO, VALUE) is obsolete, use Paint(VALUE, ANNO) instead");
-    return cp_va_kparse(conf, this, errh,
-			"ANNO", cpkP+cpkM, cpAnno, 1, &_offset,
-			"VALUE", cpkP+cpkM, cpByte, &_value,
-			cpEnd);
+    return Args(conf, this, errh)
+	.read_mp("ANNO", AnnoArg(1), _offset)
+	.read_mp("VALUE", _value).complete();
 }
 
 Packet *

@@ -20,7 +20,7 @@
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/router.hh>
@@ -47,9 +47,9 @@ int
 GridProbeReplyReceiver::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String chan;
-  int res = cp_va_kparse(conf, this, errh,
-			 "CHANNEL", cpkP+cpkM, cpString, &chan,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read_mp("CHANNEL", chan)
+      .complete();
   if (res < 0)
     return res;
   _repl_errh = router()->chatter_channel(chan);

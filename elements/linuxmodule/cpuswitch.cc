@@ -15,7 +15,6 @@
 #include <click/config.h>
 #include "cpuswitch.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
 
 CPUSwitch::CPUSwitch()
 {

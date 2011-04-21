@@ -14,7 +14,7 @@
  * legally binding.  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include "elements/grid/lirmetric.hh"
 #include "elements/grid/linkstat.hh"
@@ -44,16 +44,9 @@ LIRMetric::cast(const char *n)
 int
 LIRMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "GRIDROUTES", cpkP+cpkM, cpElement, &_rt,
-			 cpEnd);
-  if (res < 0)
-    return res;
-  if (_rt == 0)
-    errh->error("no GridGenericRouteTable element specified");
-  if (_rt->cast("GridGenericRouteTable") == 0)
-    return errh->error("GridGenericRouteTable argument is wrong element type (should be GridGenericRouteTable)");
-  return 0;
+    return Args(conf, this, errh)
+	.read_mp("GRIDROUTES", ElementCastArg("GridGenericRouteTable"), _rt)
+	.complete();
 }
 
 

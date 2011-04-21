@@ -20,7 +20,7 @@
 #include "timertest.hh"
 #include <click/glue.hh>
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/master.hh>
 CLICK_DECLS
 
@@ -36,9 +36,7 @@ TimerTest::~TimerTest()
 int
 TimerTest::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"BENCHMARK", 0, cpInteger, &_benchmark,
-			cpEnd);
+    return Args(conf, this, errh).read("BENCHMARK", _benchmark).complete();
 }
 
 int

@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include "movesim.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 CLICK_DECLS
@@ -50,12 +50,12 @@ MovementSimulator::read_args(const Vector<String> &conf, ErrorHandler *errh)
     unsigned int t;
     int int_vlat, int_vlon;
     Element *el = 0;
-    if (cp_va_space_kparse(conf[i], this, errh,
-			   "INTERVAL", cpkP+cpkM, cpUnsigned, &t,
-			   "LOCINFO", cpkP+cpkM, cpElement, &el,
-			   "LATITUDE", cpkP+cpkM, cpReal10, 7, &int_vlat,
-			   "LONGITUDE", cpkP+cpkM, cpReal10, 7, &int_vlon,
-			   cpEnd) < 0)
+    if (Args(this, errh).push_back_words(conf[i])
+	.read_mp("INTERVAL", t)
+	.read_mp("LOCINFO", el)
+	.read_mp("LATITUDE", DecimalFixedPointArg(7), int_vlat)
+	.read_mp("LONGITUDE", DecimalFixedPointArg(7), int_vlon)
+	.complete() < 0)
       return -1;
     GridLocationInfo *li = (GridLocationInfo *)el->cast("GridLocationInfo");
     if (!li)

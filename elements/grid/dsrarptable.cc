@@ -23,7 +23,7 @@
 #include <click/glue.hh>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/bitvector.hh>
 #include <click/error.hh>
 #include <clicknet/ip.h>
@@ -49,12 +49,12 @@ int
 DSRArpTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned int etht = 0x0800;
-  if (cp_va_kparse(conf, this, errh,
-		   "IP", cpkP+cpkM, cpIPAddress, &_me,
-		   "ETH", cpkP+cpkM, cpEthernetAddress, &_me_ether,
-		   "ETHERTYPE", 0, cpUnsigned, &etht,
-		   "DEBUG", 0, cpBool, &_debug,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read_mp("IP", _me)
+      .read_mp("ETH", _me_ether)
+      .read("ETHERTYPE", etht)
+      .read("DEBUG", _debug)
+      .complete() < 0)
     return -1;
 
   _etht = etht;

@@ -21,7 +21,7 @@
 #include "fromhost.hh"
 #include <click/error.hh>
 #include <click/bitvector.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/glue.hh>
 #include <clicknet/ether.h>
@@ -58,17 +58,18 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     _headroom += (4 - (_headroom + 2) % 4) % 4; // default 4/2 alignment
     _mtu_out = DEFAULT_MTU;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "DEVNAME", cpkP+cpkM, cpString, &_dev_name,
-		     "DST", cpkP, cpIPPrefix, &_near, &_mask,
-		     "GATEWAY", 0, cpIPAddress, &_gw,
-#if HAVE_IP6
-		     "DST6", 0, cpIP6PrefixLen, &_near6, &_prefix6,
+    if (Args(conf, this, errh)
+	.read_mp("DEVNAME", _dev_name)
+	.read_p("DST", IPPrefixArg(), _near, _mask)
+	.read("GATEWAY", _gw)
+#if HAVE_IP6 && 0
+	// XXX
+	"DST6", 0, cpIP6PrefixLen, &_near6, &_prefix6,
 #endif
-		     "ETHER", 0, cpEthernetAddress, &_macaddr,
-		     "HEADROOM", 0, cpUnsigned, &_headroom,
-		     "MTU", 0, cpInteger, &_mtu_out,
-		     cpEnd) < 0)
+	.read("ETHER", _macaddr)
+	.read("HEADROOM", _headroom)
+	.read("MTU", _mtu_out)
+	.complete() < 0)
 	return -1;
 
     if (_near && _gw && !_gw.matches_prefix(_near, _mask))

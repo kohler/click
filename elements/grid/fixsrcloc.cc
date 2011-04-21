@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "fixsrcloc.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include "grid.hh"
 #include <click/router.hh>
@@ -37,25 +37,9 @@ FixSrcLoc::~FixSrcLoc()
 int
 FixSrcLoc::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "LOCINFO", cpkP+cpkM, cpElement, &_locinfo,
-			 cpEnd);
-  return res;
-}
-
-int
-FixSrcLoc::initialize(ErrorHandler *errh)
-{
-  if(_locinfo && _locinfo->cast("GridGenericLocInfo") == 0){
-    errh->warning("%s: GridGenericLocInfo argument %s has the wrong type",
-                  name().c_str(),
-                  _locinfo->name().c_str());
-    _locinfo = 0;
-  } else if(_locinfo == 0){
-    return errh->error("no GridGenericLocInfo argument");
-  }
-
-  return 0;
+    return Args(conf, this, errh)
+	.read_mp("LOCINFO", ElementCastArg("GridGenericLocInfo"), _locinfo)
+	.complete();
 }
 
 

@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include <click/timer.hh>
@@ -36,9 +36,7 @@ BufferConverter::~BufferConverter()
 int
 BufferConverter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_kparse(conf, this, errh,
-		      "MTU", cpkP+cpkM, cpUnsigned, &_mtu, cpEnd);
-  return 0;
+    return Args(conf, this, errh).read_mp("MTU", _mtu).complete();
 }
 
 int

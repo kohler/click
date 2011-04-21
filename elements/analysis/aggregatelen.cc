@@ -3,7 +3,7 @@
 #include <click/config.h>
 #include "aggregatelen.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ip.h>
 #include <click/packet_anno.hh>
 CLICK_DECLS
@@ -20,9 +20,9 @@ int
 AggregateLength::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _ip = false;
-    if (cp_va_kparse(conf, this, errh,
-		     "IP", 0, cpBool, &_ip,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read("IP", _ip)
+	.complete() < 0)
 	return -1;
     return 0;
 }

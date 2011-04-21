@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "simplequeue.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -46,10 +46,8 @@ SimpleQueue::cast(const char *n)
 int
 SimpleQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    int new_capacity = 1000;
-    if (cp_va_kparse(conf, this, errh,
-		     "CAPACITY", cpkP, cpUnsigned, &new_capacity,
-		     cpEnd) < 0)
+    unsigned new_capacity = 1000;
+    if (Args(conf, this, errh).read_p("CAPACITY", new_capacity).complete() < 0)
 	return -1;
     _capacity = new_capacity;
     return 0;

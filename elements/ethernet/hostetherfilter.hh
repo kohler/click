@@ -1,6 +1,7 @@
 #ifndef CLICK_HOSTETHERFILTER_HH
 #define CLICK_HOSTETHERFILTER_HH
 #include <click/element.hh>
+#include <click/etheraddress.hh>
 CLICK_DECLS
 
 /*
@@ -61,10 +62,10 @@ class HostEtherFilter : public Element { public:
 
  private:
 
-  bool _drop_own : 1;
-  bool _drop_other : 1;
-  int _offset;
-  unsigned char _addr[6];
+    bool _drop_own : 1;
+    bool _drop_other : 1;
+    int _offset;
+    EtherAddress _addr;
 
   inline Packet *drop(Packet *);
 

@@ -35,7 +35,7 @@
 #include "tosimdevice.hh"
 #include <click/error.hh>
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 
@@ -57,10 +57,10 @@ int
 ToSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String encap_type;
-  if (cp_va_kparse(conf, this, errh,
-		   "DEVNAME", cpkP+cpkM, cpString, &_ifname,
-		   "ENCAP", cpkP, cpWord, &encap_type,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read_mp("DEVNAME", _ifname)
+      .read_p("ENCAP", WordArg(), encap_type)
+      .complete() < 0)
     return -1;
   if (!_ifname)
     return errh->error("interface not set");

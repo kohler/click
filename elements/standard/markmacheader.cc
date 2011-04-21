@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "markmacheader.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 MarkMACHeader::MarkMACHeader()
@@ -33,10 +33,9 @@ int
 MarkMACHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     uint32_t offset = 0, length = 0;
-    if (cp_va_kparse(conf, this, errh,
-		     "OFFSET", cpkP, cpUnsigned, &offset,
-		     "LENGTH", cpkP, cpUnsigned, &length,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_p("OFFSET", offset)
+	.read_p("LENGTH", length).complete() < 0)
 	return -1;
     _offset = offset;
     _length = length;

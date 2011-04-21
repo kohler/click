@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "ensureether.hh"
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 CLICK_DECLS
@@ -34,19 +34,19 @@ EnsureEther::~EnsureEther()
 int
 EnsureEther::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  unsigned etht = 0x0800;
-  memset(&_ethh.ether_shost, 1, 6);
-  memset(&_ethh.ether_dhost, 2, 6);
-  if (cp_va_kparse(conf, this, errh,
-		   "ETHERTYPE", cpkP, cpUnsigned, &etht,
-		   "SRC", cpkP, cpEthernetAddress, &_ethh.ether_shost,
-		   "DST", cpkP, cpEthernetAddress, &_ethh.ether_dhost,
-		   cpEnd) < 0)
-    return -1;
-  if (etht > 0xFFFF)
-    return errh->error("argument 1 (Ethernet encapsulation type) must be <= 0xFFFF");
-  _ethh.ether_type = htons(etht);
-  return 0;
+    unsigned etht = 0x0800;
+    memset(&_ethh.ether_shost, 1, 6);
+    memset(&_ethh.ether_dhost, 2, 6);
+    if (Args(conf, this, errh)
+	.read_p("ETHERTYPE", etht)
+	.read_p_with("SRC", EtherAddressArg(), _ethh.ether_shost)
+	.read_p_with("DST", EtherAddressArg(), _ethh.ether_dhost)
+	.complete() < 0)
+	return -1;
+    if (etht > 0xFFFF)
+	return errh->error("argument 1 (Ethernet encapsulation type) must be <= 0xFFFF");
+    _ethh.ether_type = htons(etht);
+    return 0;
 }
 
 Packet *

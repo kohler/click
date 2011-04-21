@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>
 #include <clicknet/ip.h>
@@ -52,14 +52,13 @@ LookupLocalGridRoute2::cast(const char *n)
 int
 LookupLocalGridRoute2::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "ETH", cpkP+cpkM, cpEthernetAddress, &_eth,
-			 "IP", cpkP+cpkM, cpIPAddress, &_ip,
-			 "GRIDROUTES", cpkP, cpElement, &_rtes,
-			 "LOG", 0, cpElement, &_log,
-			 "VERBOSE", 0, cpBool, &_verbose,
-			 cpEnd);
-  return res;
+    return Args(conf, this, errh)
+	.read_mp("ETH", _eth)
+	.read_mp("IP", _ip)
+	.read_p("GRIDROUTES", reinterpret_cast<Element *&>(_rtes))
+	.read("LOG", reinterpret_cast<Element *&>(_log))
+	.read("VERBOSE", _verbose)
+	.complete();
 }
 
 int

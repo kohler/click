@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "ipmirror.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
 #include <clicknet/tcp.h>
@@ -35,9 +35,7 @@ int
 IPMirror::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _dst_anno = true;
-    return cp_va_kparse(conf, this, errh,
-			"DST_ANNO", cpkP, cpBool, &_dst_anno,
-			cpEnd);
+    return Args(conf, this, errh).read_p("DST_ANNO", _dst_anno).complete();
 }
 
 Packet *

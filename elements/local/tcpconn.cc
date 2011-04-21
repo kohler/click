@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include <click/routervisitor.hh>
@@ -238,13 +238,13 @@ TCPConn::ctrl_write_handler
   IPAddress addr0, addr1;
   uint16_t port0 = 0, port1 = 0;
 
-  if(cp_va_space_kparse(s, e, errh,
-			"ACTION", cpkP+cpkM, cpString, &action,
-			"SRC", cpkP+cpkM, cpString, &str_addr0,
-			"SPORT", cpkP+cpkM, cpTCPPort, &port0,
-			"DST", cpkP, cpString, &str_addr1,
-			"DPORT", cpkP, cpTCPPort, &port1,
-			cpEnd) < 0)
+  if (Args(e, errh).push_back_words(s)
+      .read_mp("ACTION", action)
+      .read_mp("SRC", str_addr0)
+      .read_mp("SPORT", IPPortArg(IP_PROTO_TCP), port0)
+      .read_p("DST", str_addr1)
+      .read_p("DPORT", IPPortArg(IP_PROTO_TCP), port1)
+      .complete() < 0)
     return -1;
   addr0 = IPAddress(str_addr0);
   addr1 = IPAddress(str_addr1);

@@ -28,7 +28,7 @@
 
 #include <click/config.h>
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
@@ -81,13 +81,13 @@ cp_ipsec_route(String s, IPsecRoute *r_store, bool remove_route, Element *contex
     words.push_back(word);
     cp_spacevec(s, words);
     String enc_key, auth_key;
-    if (cp_va_kparse(words, context, ErrorHandler::default_handler(),
-		     "SPI", cpkP+cpkM, cpUnsigned, &r.spi,
-		     "ENCRYPT_KEY", cpkP+cpkM, cpString, &enc_key,
-		     "AUTH_KEY", cpkP+cpkM, cpString, &auth_key,
-		     "REPLAY", cpkP+cpkM, cpUnsigned, &replay,
-		     "OOSIZE", cpkP+cpkM, cpUnsigned, &oowin,
-		     cpEnd) < 0)
+    if (Args(words, context, ErrorHandler::default_handler())
+	.read_mp("SPI", r.spi)
+	.read_mp("ENCRYPT_KEY", enc_key)
+	.read_mp("AUTH_KEY", auth_key)
+	.read_mp("REPLAY", replay)
+	.read_mp("OOSIZE", oowin)
+	.complete() < 0)
 	return false;
     if (enc_key.length() != 16 || auth_key.length() != 16) {
 	click_chatter("key has bad length");

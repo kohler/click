@@ -14,7 +14,7 @@
  * legally binding.  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include "elements/grid/threshmetric.hh"
 #include "elements/grid/linkstat.hh"
@@ -43,17 +43,13 @@ ThresholdMetric::cast(const char *n)
 int
 ThresholdMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "LINKSTAT", cpkP+cpkM, cpElement, &_ls,
-			 "THRESH", 0, cpUnsigned, &_thresh,
-			 "TWOWAY", 0, cpBool, &_twoway,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read_mp("LINKSTAT", ElementCastArg("LinkStat"), _ls)
+      .read("THRESH", _thresh)
+      .read("TWOWAY", _twoway)
+      .complete();
   if (res < 0)
     return res;
-  if (_ls == 0)
-    errh->error("no LinkStat element specified");
-  if (_ls->cast("LinkStat") == 0)
-    return errh->error("LinkStat argument is wrong element type (should be LinkStat)");
   if (_thresh > 100)
     return errh->error("THRESH keyword argument is too large, it must be <= 100 percent");
   return 0;

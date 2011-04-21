@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "markip6header.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ip6.h>
 CLICK_DECLS
 
@@ -33,9 +33,7 @@ int
 MarkIP6Header::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _offset = 0;
-  return cp_va_kparse(conf, this, errh,
-		      "OFFSET", cpkP, cpUnsigned, &_offset,
-		      cpEnd);
+  return Args(conf, this, errh).read_p("OFFSET", _offset).complete();
 }
 
 Packet *

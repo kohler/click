@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "linktable.hh"
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <elements/wifi/path.hh>
@@ -66,10 +66,10 @@ LinkTable::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   int stale_period = 120;
-  ret = cp_va_kparse(conf, this, errh,
-		     "IP", 0, cpIPAddress, &_ip,
-		     "STALE", 0, cpUnsigned, &stale_period,
-		     cpEnd);
+  ret = Args(conf, this, errh)
+      .read("IP", _ip)
+      .read("STALE", stale_period)
+      .complete();
 
   if (!_ip)
     return errh->error("IP not specified");

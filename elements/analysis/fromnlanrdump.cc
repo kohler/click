@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "fromnlanrdump.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/packet_anno.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
@@ -58,28 +58,29 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool timing = false, stop = false, active = true;
     String format = "guess";
     Timestamp first_time, first_time_off, last_time, last_time_off, interval;
+    HandlerCall end_h;
     _sampling_prob = (1 << SAMPLING_SHIFT);
     _packet_filepos = 0;
     bool force_ip = true;
 
     if (_ff.configure_keywords(conf, this, errh) < 0)
 	return -1;
-    if (cp_va_kparse(conf, this, errh,
-		     "FILENAME", cpkP+cpkM, cpFilename, &_ff.filename(),
-		     "FORMAT", 0, cpWord, &format,
-		     "STOP", 0, cpBool, &stop,
-		     "ACTIVE", 0, cpBool, &active,
-		     "FORCE_IP", 0, cpBool, &force_ip,
-		     "START", 0, cpTimestamp, &first_time,
-		     "START_AFTER", 0, cpTimestamp, &first_time_off,
-		     "END", 0, cpTimestamp, &last_time,
-		     "END_AFTER", 0, cpTimestamp, &last_time_off,
-		     "INTERVAL", 0, cpTimestamp, &interval,
-		     "END_CALL", 0, cpHandlerCallPtrWrite, &_end_h,
-		     "FILEPOS", 0, cpFileOffset, &_packet_filepos,
-		     "SAMPLE", 0, cpUnsignedReal2, SAMPLING_SHIFT, &_sampling_prob,
-		     "TIMING", 0, cpBool, &timing,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("FILENAME", FilenameArg(), _ff.filename())
+	.read("FORMAT", WordArg(), format)
+	.read("STOP", stop)
+	.read("ACTIVE", active)
+	.read("FORCE_IP", force_ip)
+	.read("START", first_time)
+	.read("START_AFTER", first_time_off)
+	.read("END", last_time)
+	.read("END_AFTER", last_time_off)
+	.read("INTERVAL", interval)
+	.read("END_CALL", HandlerCallArg(HandlerCall::writable), end_h)
+	.read("FILEPOS", _packet_filepos)
+	.read("SAMPLE", FixedPointArg(SAMPLING_SHIFT), _sampling_prob)
+	.read("TIMING", timing)
+	.complete() < 0)
 	return -1;
 
     // check sampling rate
@@ -94,7 +95,7 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _first_time_relative = _last_time_relative = _last_time_interval = false;
 
     if ((bool) first_time + (bool) first_time_off > 1)
-	return errh->error("'START' and 'START_AFTER' are mutually exclusive");
+	return errh->error("START and START_AFTER are mutually exclusive");
     else if (first_time)
 	_first_time = first_time;
     else if (first_time_off)
@@ -103,7 +104,7 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	_have_first_time = false, _first_time_relative = true;
 
     if ((bool) last_time + (bool) last_time_off + (bool) interval > 1)
-	return errh->error("'END', 'END_AFTER', and 'INTERVAL' are mutually exclusive");
+	return errh->error("END, END_AFTER, and INTERVAL are mutually exclusive");
     else if (last_time)
 	_last_time = last_time;
     else if (last_time_off)
@@ -113,11 +114,13 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
     else
 	_have_last_time = false;
 
-    if (stop && _end_h)
-	return errh->error("'END_CALL' and 'STOP' are mutually exclusive");
+    if (stop && end_h)
+	return errh->error("END_CALL and STOP are mutually exclusive");
+    else if (end_h)
+	_end_h = new HandlerCall(end_h);
     else if (stop)
 	_end_h = new HandlerCall(name() + ".stop");
-    else if (_have_last_time && !_end_h)
+    else if (_have_last_time)
 	_end_h = new HandlerCall(name() + ".active false");
 
     // format

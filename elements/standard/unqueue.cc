@@ -20,7 +20,7 @@
 
 #include <click/config.h>
 #include "unqueue.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
 CLICK_DECLS
@@ -40,11 +40,10 @@ Unqueue::configure(Vector<String> &conf, ErrorHandler *errh)
     _burst = 1;
     _limit = -1;
     _active = true;
-    return cp_va_kparse(conf, this, errh,
-			"BURST", cpkP, cpInteger, &_burst,
-			"ACTIVE", 0, cpBool, &_active,
-			"LIMIT", 0, cpInteger, &_limit,
-			cpEnd);
+    return Args(conf, this, errh)
+	.read_p("BURST", _burst)
+	.read("ACTIVE", _active)
+	.read("LIMIT", _limit).complete();
 }
 
 int

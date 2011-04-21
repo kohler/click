@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "aggregatelast.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 #include <click/router.hh>
@@ -40,10 +40,10 @@ AggregateLast::configure(Vector<String> &conf, ErrorHandler *errh)
     Element *e = 0;
     _stop_after_clear = false;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "NOTIFIER", 0, cpElement, &e,
-		     "STOP_AFTER_CLEAR", 0, cpBool, &_stop_after_clear,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read("NOTIFIER", e)
+	.read("STOP_AFTER_CLEAR", _stop_after_clear)
+	.complete() < 0)
 	return -1;
 
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))

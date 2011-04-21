@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 #include "tohost.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 
 #include <click/cxxprotect.h>
@@ -73,11 +73,11 @@ ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String type;
     if (AnyDevice::configure_keywords(conf, errh, false) < 0
-	|| cp_va_kparse(conf, this, errh,
-			"DEVNAME", cpkP, cpString, &_devname,
-			"SNIFFERS", 0, cpBool, &_sniffers,
-			"TYPE", 0, cpWord, &type,
-			cpEnd) < 0)
+	|| (Args(conf, this, errh)
+	    .read_p("DEVNAME", _devname)
+	    .read("SNIFFERS", _sniffers)
+	    .read("TYPE", WordArg(), type)
+	    .complete() < 0))
 	return -1;
     if (type == "ETHER" || type == "")
 	_type = ARPHRD_ETHER;

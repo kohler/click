@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "adjusttimestamp.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/packet_anno.hh>
 #include <click/error.hh>
 CLICK_DECLS
@@ -35,11 +35,10 @@ AdjustTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _first = _all = false;
     _ts.clear();
-    return cp_va_kparse(conf, this, errh,
-			"TIME", cpkP, cpTimestampSigned, &_ts,
-			"FIRST", 0, cpBool, &_first,
-			"ALL", 0, cpBool, &_all,
-			cpEnd);
+    return Args(conf, this, errh)
+	.read_p("TIME", TimeArg<true>(), _ts)
+	.read("FIRST", _first)
+	.read("ALL", _all).complete();
 }
 
 Packet *

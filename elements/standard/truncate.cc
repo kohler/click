@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "truncate.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
@@ -37,10 +37,10 @@ Truncate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned short nbytes;
     bool extra_length = true;
-    if (cp_va_kparse(conf, this, errh,
-		     "LENGTH", cpkP+cpkM, cpUnsignedShort, &nbytes,
-		     "EXTRA_LENGTH", 0, cpBool, &extra_length,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("LENGTH", nbytes)
+	.read("EXTRA_LENGTH", extra_length)
+	.complete() < 0)
 	return -1;
     _nbytes = (nbytes << 1) + extra_length;
     return 0;

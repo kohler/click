@@ -22,7 +22,7 @@
 #include "hmacsha1.hh"
 #include "esp.hh"
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ip.h>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -47,10 +47,7 @@ IPsecAuthHMACSHA1::~IPsecAuthHMACSHA1()
 int
 IPsecAuthHMACSHA1::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "VERIFY", cpkP+cpkM, cpInteger, &_op, cpEnd) < 0)
-    return -1;
-  return 0;
+    return Args(conf, this, errh).read_mp("VERIFY", _op).complete();
 }
 
 int

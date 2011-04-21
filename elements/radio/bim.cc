@@ -20,7 +20,7 @@
 #include "bim.hh"
 #include <click/error.hh>
 #include <click/packet.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/glue.hh>
 #include "bim-proto.hh"
 #include <click/standard/scheduleinfo.hh>
@@ -47,10 +47,10 @@ BIM::~BIM()
 int
 BIM::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "DEVNAME", cpkP+cpkM, cpString, &_dev,
-		   "BAUD", cpkP, cpInteger, &_speed,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read_mp("DEVNAME", _dev)
+      .read_p("BAUD", _speed)
+      .complete() < 0)
     return -1;
 
   if(_speed == 4800)

@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "checkpaint.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 CLICK_DECLS
@@ -35,10 +35,10 @@ int
 CheckPaint::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int anno = PAINT_ANNO_OFFSET;
-    if (cp_va_kparse(conf, this, errh,
-		     "COLOR", cpkP+cpkM, cpByte, &_color,
-		     "ANNO", cpkP, cpAnno, 1, &anno,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("COLOR", _color)
+	.read_p("ANNO", AnnoArg(1), anno)
+	.complete() < 0)
 	return -1;
     _anno = anno;
     return 0;

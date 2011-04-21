@@ -137,7 +137,7 @@ class ICMPPingSource : public Element { public:
     int _count;
     int _limit;
     uint16_t _icmp_id;
-    int _interval;
+    uint32_t _interval;
     Timer _timer;
     String _data;
     bool _active;

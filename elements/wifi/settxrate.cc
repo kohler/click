@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
@@ -41,12 +41,12 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   _et = 0;
   _offset = 0;
   _tries = WIFI_MAX_RETRIES+1;
-  if (cp_va_kparse(conf, this, errh,
-		   "RATE", cpkP, cpUnsigned, &_rate,
-		   "TRIES", 0, cpUnsigned, &_tries,
-		   "ETHTYPE", 0, cpUnsignedShort, &_et,
-		   "OFFSET", 0, cpUnsigned, &_offset,
-		   cpEnd) < 0) {
+  if (Args(conf, this, errh)
+      .read_p("RATE", _rate)
+      .read("TRIES", _tries)
+      .read("ETHTYPE", _et)
+      .read("OFFSET", _offset)
+      .complete() < 0) {
     return -1;
   }
 

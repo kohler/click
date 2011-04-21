@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "loctable.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 CLICK_DECLS
@@ -38,12 +38,12 @@ LocationTable::read_args(const Vector<String> &conf, ErrorHandler *errh)
     IPAddress ip;
     int lat, lon;
     int err;
-    int res = cp_va_space_kparse(conf[i], this, errh,
-				 "IP", cpkP+cpkM, cpIPAddress, &ip,
-				 "LATITUDE", cpkP+cpkM, cpReal10, 7, &lat,
-				 "LONGITUDE", cpkP+cpkM, cpReal10, 7, &lon,
-				 "ERROR_RADIUS", cpkP+cpkM, cpInteger, &err,
-				 cpEnd);
+    int res = Args(this, errh).push_back_words(conf[i])
+	.read_mp("IP", ip)
+	.read_mp("LATITUDE", DecimalFixedPointArg(7), lat)
+	.read_mp("LONGITUDE", DecimalFixedPointArg(7), lon)
+	.read_mp("ERROR_RADIUS", err)
+	.complete();
     if (res < 0)
       return -1;
 
@@ -102,12 +102,12 @@ loc_write_handler(const String &arg, Element *element,
   int lat, lon;
   IPAddress ip;
   int err;
-  int res = cp_va_space_kparse(arg, l, errh,
-			       "IP", cpkP+cpkM, cpIPAddress, &ip,
-			       "LATITUDE", cpkP+cpkM, cpReal10, 7, &lat,
-			       "LONGITUDE", cpkP+cpkM, cpReal10, 7, &lon,
-			       "ERROR_RADIUS", cpkP+cpkM, cpInteger, &err,
-			       cpEnd);
+  int res = Args(l, errh).push_back_words(arg)
+      .read_mp("IP", ip)
+      .read_mp("LATITUDE", DecimalFixedPointArg(7), lat)
+      .read_mp("LONGITUDE", DecimalFixedPointArg(7), lon)
+      .read_mp("ERROR_RADIUS", err)
+      .complete();
   if (res < 0)
     return -1;
   grid_location loc((double) lat /  1.0e7, (double) lon /  1.0e7);

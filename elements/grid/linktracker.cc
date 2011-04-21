@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ether.h>
 #include <click/error.hh>
 #include "linktracker.hh"
@@ -40,9 +40,9 @@ int
 LinkTracker::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned int tau_int = 0;
-  int res = cp_va_kparse(conf, this, errh,
-			 "TAU", cpkP+cpkM, cpUnsigned, &tau_int,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read_mp("TAU", tau_int)
+      .complete();
   if (res < 0)
     return res;
 

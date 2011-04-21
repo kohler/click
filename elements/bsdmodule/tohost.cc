@@ -21,7 +21,7 @@
 #include <click/glue.hh>
 #include "tohost.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 // for watching when devices go offline
@@ -66,12 +66,11 @@ ToHost::~ToHost()
 int
 ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"DEVNAME", cpkP, cpString, &_devname,
-			"SNIFFERS", 0, cpBool, &_sniffers,
-			"ALLOW_NONEXISTENT", 0, cpBool, &_allow_nonexistent,
-			cpEnd);
-
+    return Args(conf, this, errh)
+	.read_p("DEVNAME", _devname)
+	.read("SNIFFERS", _sniffers)
+	.read("ALLOW_NONEXISTENT", _allow_nonexistent)
+	.complete();
 }
 
 int

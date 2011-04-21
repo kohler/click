@@ -20,7 +20,7 @@
 #include "khandlerproxy.hh"
 #include <click/error.hh>
 #include <click/router.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/userutils.hh>
 #include <click/llrpc.h>
 #include <unistd.h>
@@ -52,10 +52,8 @@ KernelHandlerProxy::cast(const char *n)
 int
 KernelHandlerProxy::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _verbose = false;
-  return cp_va_kparse(conf, this, errh,
-		      "VERBOSE", 0, cpBool, &_verbose,
-		      cpEnd);
+    _verbose = false;
+    return Args(conf, this, errh).read("VERBOSE", _verbose).complete();
 }
 
 void

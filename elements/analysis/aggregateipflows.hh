@@ -216,10 +216,10 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     unsigned _active_sec;
     unsigned _gc_sec;
 
-    int _tcp_timeout;
-    int _tcp_done_timeout;
-    int _udp_timeout;
-    int _smallest_timeout;
+    uint32_t _tcp_timeout;
+    uint32_t _tcp_done_timeout;
+    uint32_t _udp_timeout;
+    uint32_t _smallest_timeout;
 
     unsigned _gc_interval;
     unsigned _fragment_timeout;

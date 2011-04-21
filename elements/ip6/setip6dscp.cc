@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "setip6dscp.hh"
 #include <clicknet/ip6.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -34,9 +34,7 @@ int
 SetIP6DSCP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned dscp_val;
-  if (cp_va_kparse(conf, this, errh,
-		   "DSCP", cpkP+cpkM, cpUnsigned, &dscp_val,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh).read_mp("DSCP", dscp_val).complete() < 0)
     return -1;
   if (dscp_val > 0x3F)
     return errh->error("diffserv code point out of range");

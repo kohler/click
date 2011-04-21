@@ -22,7 +22,7 @@
 #include <click/config.h>
 #include <click/router.hh>
 #include "fromhost.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/standard/scheduleinfo.hh>
@@ -176,15 +176,15 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     _destmask = IPAddress();
     _clear_anno = true;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "DEVNAME", cpkP+cpkM, cpString, &_devname,
-		     "PREFIX", cpkP, cpIPPrefix, &_destaddr, &_destmask,
-		     "TYPE", 0, cpWord, &type,
-		     "ETHER", 0, cpEthernetAddress, &_macaddr,
-		     "MTU", 0, cpUnsigned, &mtu,
-		     "CAPACITY", 0, cpUnsigned, &_capacity,
-		     "CLEAR_ANNO", 0, cpBool, &_clear_anno,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("DEVNAME", _devname)
+	.read_p("PREFIX", IPPrefixArg(), _destaddr, _destmask)
+	.read("TYPE", WordArg(), type)
+	.read("ETHER", _macaddr)
+	.read("MTU", mtu)
+	.read("CAPACITY", _capacity)
+	.read("CLEAR_ANNO", _clear_anno)
+	.complete() < 0)
 	return -1;
 
     // check for duplicate element

@@ -14,7 +14,7 @@
  * legally binding.  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include "elements/grid/etx2metric.hh"
 #include "elements/grid/linkstat.hh"
@@ -43,20 +43,12 @@ ETX2Metric::cast(const char *n)
 int
 ETX2Metric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "DATA_LINKSTAT", cpkP+cpkM, cpElement, &_ls_data,
-			 "ACK_LINKSTAT", cpkP+cpkM, cpElement, &_ls_ack,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read_mp("DATA_LINKSTAT", ElementCastArg("LinkStat"), _ls_data)
+      .read_mp("ACK_LINKSTAT", ElementCastArg("LinkStat"), _ls_ack)
+      .complete();
   if (res < 0)
     return res;
-  if (_ls_data == 0)
-    errh->error("no data size LinkStat element specified");
-  if (_ls_data->cast("LinkStat") == 0)
-    return errh->error("data size LinkStat argument is wrong element type (should be LinkStat)");
-  if (_ls_ack == 0)
-    errh->error("no ACK size LinkStat element specified");
-  if (_ls_ack->cast("LinkStat") == 0)
-    return errh->error("ACK size LinkStat argument is wrong element type (should be LinkStat)");
   return 0;
 }
 

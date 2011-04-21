@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include <clicknet/wifi.h>
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <clicknet/llc.h>
@@ -48,17 +48,13 @@ AssociationRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _debug = false;
   _associated = false;
-  if (cp_va_kparse(conf, this, errh,
-		   "DEBUG", 0, cpBool, &_debug,
-		   "ETH", 0, cpEthernetAddress, &_eth,
-		   "WIRELESS_INFO", 0, cpElement, &_winfo,
-		   "RT", 0, cpElement, &_rtable,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read("DEBUG", _debug)
+      .read("ETH", _eth)
+      .read("WIRELESS_INFO", ElementCastArg("WirelessInfo"), _winfo)
+      .read_m("RT", ElementCastArg("AvailableRates"), _rtable)
+      .complete() < 0)
     return -1;
-
-
-  if (!_rtable || _rtable->cast("AvailableRates") == 0)
-    return errh->error("AvailableRates element is not provided or not a AvailableRates");
 
   return 0;
 }

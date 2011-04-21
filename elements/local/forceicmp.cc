@@ -21,7 +21,7 @@
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <clicknet/icmp.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/nameinfo.hh>
 CLICK_DECLS
 
@@ -40,10 +40,10 @@ int
 ForceICMP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String code_str;
-    if (cp_va_kparse(conf, this, errh,
-		     "TYPE", cpkP+cpkM, cpNamedInteger, NameInfo::T_ICMP_TYPE, &_type,
-		     "CODE", cpkP+cpkM, cpWord, &code_str,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("TYPE", NamedIntArg(NameInfo::T_ICMP_TYPE), _type)
+	.read_mp("CODE", WordArg(), code_str)
+	.complete() < 0)
 	return -1;
     if (_type < 0 || _type > 255)
 	return errh->error("ICMP type must be between 0 and 255");

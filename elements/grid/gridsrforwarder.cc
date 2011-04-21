@@ -1,7 +1,7 @@
 #include <click/config.h>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/udp.h>
 #include <click/packet.hh>
 #include "gridsrforwarder.hh"
@@ -30,10 +30,7 @@ GridSRForwarder::cast(const char *name)
 int
 GridSRForwarder::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "IP", cpkP+cpkM, cpIPAddress, &_ip,
-			 cpEnd);
-  return res;
+    return Args(conf, this, errh).read_mp("IP", _ip).complete();
 }
 
 int

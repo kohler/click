@@ -17,7 +17,7 @@
 #include <click/config.h>
 #include "stripethervlanheader.hh"
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 CLICK_DECLS
@@ -34,9 +34,9 @@ int
 StripEtherVlanHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int native_vlan = 0;
-    if (cp_va_kparse(conf, this, errh,
-		     "NATIVE_VLAN_ID", cpkP, cpInteger, &native_vlan,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_p("NATIVE_VLAN_ID", native_vlan)
+	.complete() < 0)
 	return -1;
     if (native_vlan >= 0xFFF)
 	return errh->error("bad NATIVE_VLAN_ID");

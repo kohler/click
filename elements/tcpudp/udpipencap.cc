@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include <clicknet/ip.h>
 #include "udpipencap.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
@@ -46,13 +46,13 @@ UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     bool cksum;
     String daddr_str;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "SRC", cpkP+cpkM, cpIPAddress, &saddr,
-		     "SPORT", cpkP+cpkM, cpUDPPort, &sport,
-		     "DST", cpkP+cpkM, cpArgument, &daddr_str,
-		     "DPORT", cpkP+cpkM, cpUDPPort, &dport,
-		     "CHECKSUM", cpkP, cpBool, &cksum,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("SRC", saddr)
+	.read_mp("SPORT", IPPortArg(IP_PROTO_UDP), sport)
+	.read_mp("DST", AnyArg(), daddr_str)
+	.read_mp("DPORT", IPPortArg(IP_PROTO_UDP), dport)
+	.read_p("CHECKSUM", BoolArg(), cksum)
+	.complete() < 0)
 	return -1;
 
     if (daddr_str.equals("DST_ANNO", 8)) {

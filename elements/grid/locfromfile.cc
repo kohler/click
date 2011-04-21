@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "locfromfile.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 CLICK_DECLS
@@ -45,9 +45,9 @@ int
 LocFromFile::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String filename;
-  int res = cp_va_kparse(conf, this, errh,
-			 "FILENAME", cpkP+cpkM, cpFilename, &filename,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read_mp("FILENAME", FilenameArg(), filename)
+      .complete();
   if(res >= 0){
     FILE *fp = fopen(filename.c_str(), "r");
     if(fp == 0)

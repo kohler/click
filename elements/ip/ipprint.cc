@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include "ipprint.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
@@ -68,27 +68,27 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   bool bcontents;
   String channel;
 
-  if (cp_va_kparse(conf, this, errh,
-		   "LABEL", cpkP, cpString, &_label,
-		   "CONTENTS", 0, cpWord, &contents,
-		   "PAYLOAD", 0, cpWord, &payload,
-		   "MAXLENGTH", 0, cpInteger, &_bytes,
-		   "NBYTES", 0, cpInteger, &_bytes, // deprecated
-		   "ID", 0, cpBool, &print_id,
-		   "TIMESTAMP", 0, cpBool, &print_time,
-		   "PAINT", 0, cpBool, &print_paint,
-		   "TOS", 0, cpBool, &print_tos,
-		   "TTL", 0, cpBool, &print_ttl,
-		   "SWAP", 0, cpBool, &_swap,
-		   "LENGTH", 0, cpBool, &print_len,
-		   "AGGREGATE", 0, cpBool, &print_aggregate,
-		   "ACTIVE", 0, cpBool, &_active,
+    if (Args(conf, this, errh)
+	.read_p("LABEL", _label)
+	.read("CONTENTS", WordArg(), contents)
+	.read("PAYLOAD", WordArg(), payload)
+	.read("MAXLENGTH", _bytes)
+	.read("NBYTES", _bytes) // deprecated
+	.read("ID", print_id)
+	.read("TIMESTAMP", print_time)
+	.read("PAINT", print_paint)
+	.read("TOS", print_tos)
+	.read("TTL", print_ttl)
+	.read("SWAP", _swap)
+	.read("LENGTH", print_len)
+	.read("AGGREGATE", print_aggregate)
+	.read("ACTIVE", _active)
 #if CLICK_USERLEVEL
-		   "OUTFILE", 0, cpFilename, &_outfilename,
+	.read("OUTFILE", FilenameArg(), _outfilename)
 #endif
-		   "CHANNEL", 0, cpWord, &channel,
-		   cpEnd) < 0)
-    return -1;
+	.read("CHANNEL", WordArg(), channel)
+	.complete() < 0)
+	return -1;
 
   if (cp_bool(contents, &bcontents))
       _contents = bcontents;

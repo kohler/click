@@ -16,7 +16,7 @@
 #include <click/config.h>
 #include "elements/grid/gridheaderinfo.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>

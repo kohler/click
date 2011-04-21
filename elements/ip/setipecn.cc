@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "setipecn.hh"
 #include <clicknet/ip.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -34,9 +34,7 @@ int
 SetIPECN::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String ecn;
-    if (cp_va_kparse(conf, this, errh,
-		     "ECN", cpkP+cpkM, cpArgument, &ecn,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh).read_mp("ECN", AnyArg(), ecn).complete() < 0)
 	return -1;
     if (ecn.length() == 1 && ecn[0] >= '0' && ecn[0] <= '3')
 	_ecn = ecn[0] - '0';

@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
@@ -43,10 +43,10 @@ PrintWifi::configure(Vector<String> &conf, ErrorHandler* errh)
 {
   int ret;
   _timestamp = false;
-  ret = cp_va_kparse(conf, this, errh,
-		     "LABEL", cpkP, cpString, &_label,
-		     "TIMESTAMP", 0, cpBool, &_timestamp,
-		     cpEnd);
+  ret = Args(conf, this, errh)
+      .read_p("LABEL", _label)
+      .read("TIMESTAMP", _timestamp)
+      .complete();
   return ret;
 }
 

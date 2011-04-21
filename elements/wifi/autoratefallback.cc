@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
@@ -49,15 +49,15 @@ AutoRateFallback::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _active = true;
   _adaptive_stepup = true;
-  int ret = cp_va_kparse(conf, this, errh,
-			 "OFFSET", 0, cpUnsigned, &_offset,
-			 "ADAPTIVE_STEPUP", 0, cpBool, &_adaptive_stepup,
-			 "STEPUP", 0, cpInteger, &_stepup,
-			 "STEPDOWN", 0, cpInteger, &_stepdown,
-			 "RT", 0, cpElement, &_rtable,
-			 "THRESHOLD", 0, cpUnsigned, &_packet_size_threshold,
-			 "ACTIVE", 0, cpBool, &_active,
-			 cpEnd);
+  int ret = Args(conf, this, errh)
+      .read("OFFSET", _offset)
+      .read("ADAPTIVE_STEPUP", _adaptive_stepup)
+      .read("STEPUP", _stepup)
+      .read("STEPDOWN", _stepdown)
+      .read("RT", ElementCastArg("AvailableRates"), _rtable)
+      .read("THRESHOLD", _packet_size_threshold)
+      .read("ACTIVE", _active)
+      .complete();
   return ret;
 }
 

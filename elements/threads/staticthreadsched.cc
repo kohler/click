@@ -20,7 +20,7 @@
 #include <click/master.hh>
 #include <click/router.hh>
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 StaticThreadSched::StaticThreadSched()
@@ -38,10 +38,10 @@ StaticThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
     Element *e;
     int preference;
     for (int i = 0; i < conf.size(); i++) {
-	if (cp_va_space_kparse(conf[i], this, errh,
-			       "ELEMENT", cpkP+cpkM, cpElement, &e,
-			       "THREAD", cpkP+cpkM, cpInteger, &preference,
-			       cpEnd) < 0)
+	if (Args(this, errh).push_back_words(conf[i])
+	    .read_mp("ELEMENT", e)
+	    .read_mp("THREAD", preference)
+	    .complete() < 0)
 	    return -1;
 	if (e->eindex() >= _thread_preferences.size())
 	    _thread_preferences.resize(e->eindex() + 1, THREAD_UNKNOWN);

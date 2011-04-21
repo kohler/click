@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "align.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -33,18 +33,18 @@ Align::~Align()
 int
 Align::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  unsigned modulus;
-  if (cp_va_kparse(conf, this, errh,
-		   "MODULUS", cpkP+cpkM, cpUnsigned, &modulus,
-		   "OFFSET", cpkP+cpkM, cpUnsigned, &_offset,
-		   cpEnd) < 0)
-    return -1;
-  if (modulus != 2 && modulus != 4 && modulus != 8)
-    return errh->error("align modulus must be 2, 4, or 8");
-  if (_offset >= (int)modulus)
-    return errh->error("align offset must be smaller than modulus");
-  _mask = modulus - 1;
-  return 0;
+    unsigned modulus;
+    if (Args(conf, this, errh)
+	.read_mp("MODULUS", modulus)
+	.read_mp("OFFSET", _offset)
+	.complete() < 0)
+	return -1;
+    if (modulus != 2 && modulus != 4 && modulus != 8)
+	return errh->error("MODULUS must be 2, 4, or 8");
+    if (_offset >= (int)modulus)
+	return errh->error("OFFSET must be smaller than MODULUS");
+    _mask = modulus - 1;
+    return 0;
 }
 
 Packet *

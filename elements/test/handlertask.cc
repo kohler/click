@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "handlertask.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/handlercall.hh>
 #include <click/error.hh>
@@ -37,11 +37,11 @@ HandlerTask::~HandlerTask()
 int
 HandlerTask::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"HANDLER", cpkP+cpkM, cpHandlerCallWrite, &_h,
-			"ACTIVE", 0, cpBool, &_active,
-			"RESCHEDULE", 0, cpBool, &_reschedule,
-			cpEnd);
+    return Args(conf, this, errh)
+	.read_mp("HANDLER", HandlerCallArg(HandlerCall::writable), _h)
+	.read("ACTIVE", _active)
+	.read("RESCHEDULE", _reschedule)
+	.complete();
 }
 
 int

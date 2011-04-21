@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "gridlocationinfo2.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 CLICK_DECLS
@@ -46,14 +46,14 @@ int
 GridLocationInfo2::read_args(const Vector<String> &conf, ErrorHandler *errh)
 {
   int lat, lon, h = 0;
-  int res = cp_va_kparse(conf, this, errh,
-			 "LATITUDE", cpkP+cpkM, cpInteger, &lat,
-			 "LONGITUDE", cpkP+cpkM, cpInteger, &lon,
-			 "HEIGHT", cpkP, cpInteger, &h,
-			 "LOC_GOOD", 0, cpBool, &_loc_good,
-			 "ERR_RADIUS", 0, cpUnsignedShort, &_loc_err,
-			 "TAG", 0, cpString, &_tag,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read_mp("LATITUDE", lat)
+      .read_mp("LONGITUDE", lon)
+      .read_p("HEIGHT", h)
+      .read("LOC_GOOD", _loc_good)
+      .read("ERR_RADIUS", _loc_err)
+      .read("TAG", _tag)
+      .complete();
   if (res < 0)
     return res;
 

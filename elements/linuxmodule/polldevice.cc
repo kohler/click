@@ -25,7 +25,7 @@
 #include "fromdevice.hh"
 #include "todevice.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/skbmgr.hh>
 #include <click/standard/scheduleinfo.hh>
@@ -79,12 +79,12 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _length = 0;
     _user_length = false;
     if (AnyDevice::configure_keywords(conf, errh, true) < 0
-	|| cp_va_kparse(conf, this, errh,
-			"DEVNAME", cpkP+cpkM, cpString, &_devname,
-			"BURST", cpkP, cpUnsigned, &_burst,
-			"HEADROOM", 0, cpUnsigned, &_headroom,
-			"LENGTH", cpkC, &_user_length, cpUnsigned, &_length,
-			cpEnd) < 0)
+	|| (Args(conf, this, errh)
+	    .read_mp("DEVNAME", _devname)
+	    .read_p("BURST", _burst)
+	    .read("HEADROOM", _headroom)
+	    .read("LENGTH", _length).read_status(_user_length)
+	    .complete() < 0))
 	return -1;
 
     int before = errh->nerrors();

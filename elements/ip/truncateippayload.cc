@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "truncateippayload.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
@@ -41,11 +41,10 @@ TruncateIPPayload::configure(Vector<String> &conf, ErrorHandler *errh)
     uint16_t nbytes = 0;
     bool transport = true;
     bool extra_length = true;
-    if (cp_va_kparse(conf, this, errh,
-		     "LENGTH", cpkP, cpUnsignedShort, &nbytes,
-		     "TRANSPORT", cpkP, cpBool, &transport,
-		     "EXTRA_LENGTH", 0, cpBool, &extra_length,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_p("LENGTH", nbytes)
+	.read_p("TRANSPORT", transport)
+	.read("EXTRA_LENGTH", extra_length).complete() < 0)
 	return -1;
     _nbytes = (nbytes << 2) + transport + (extra_length << 1);
     return 0;

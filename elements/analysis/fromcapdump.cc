@@ -19,7 +19,7 @@
 #include <click/config.h>
 
 #include "fromcapdump.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/error.hh>
@@ -62,16 +62,15 @@ FromCapDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool stop = false, active = true, zero = true, checksum = false;
     _sampling_prob = (1 << SAMPLING_SHIFT);
 
-    if (cp_va_kparse(conf, this, errh,
-		     "FILENAME", cpkP+cpkM, cpFilename, &_ff.filename(),
-		     "STOP", 0, cpBool, &stop,
-		     "ACTIVE", 0, cpBool, &active,
-		     "ZERO", 0, cpBool, &zero,
-		     "CHECKSUM", 0, cpBool, &checksum,
-		     "AGGREGATE", 0, cpUnsigned, &_aggregate,
-		     "SAMPLE", 0, cpUnsignedReal2, SAMPLING_SHIFT, &_sampling_prob,
-		     "FLOWID", 0, cpArgument, &_flowid,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("FILENAME", FilenameArg(), _ff.filename())
+	.read("STOP", stop)
+	.read("ACTIVE", active)
+	.read("ZERO", zero)
+	.read("CHECKSUM", checksum)
+	.read("AGGREGATE", _aggregate)
+	.read("SAMPLE", FixedPointArg(SAMPLING_SHIFT), _sampling_prob)
+	.complete() < 0)
 	return -1;
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
 	errh->warning("SAMPLE probability reduced to 1");

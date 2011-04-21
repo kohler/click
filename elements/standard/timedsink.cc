@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "timedsink.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 CLICK_DECLS
@@ -34,9 +34,7 @@ TimedSink::~TimedSink()
 int
 TimedSink::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"INTERVAL", cpkP, cpTimestamp, &_interval,
-			cpEnd);
+    return Args(conf, this, errh).read_p("INTERVAL", _interval).complete();
 }
 
 int

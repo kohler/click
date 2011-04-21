@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "tee.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -32,14 +32,12 @@ Tee::~Tee()
 int
 Tee::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int n = noutputs();
-  if (cp_va_kparse(conf, this, errh,
-		   "N", cpkP, cpUnsigned, &n,
-		   cpEnd) < 0)
-    return -1;
-  if (n != noutputs())
-      return errh->error("%d outputs implies %d arms", noutputs(), noutputs());
-  return 0;
+    unsigned n = noutputs();
+    if (Args(conf, this, errh).read_p("N", n).complete() < 0)
+	return -1;
+    if (n != (unsigned) noutputs())
+	return errh->error("%d outputs implies %d arms", noutputs(), noutputs());
+    return 0;
 }
 
 void
@@ -67,14 +65,12 @@ PullTee::~PullTee()
 int
 PullTee::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int n = noutputs();
-  if (cp_va_kparse(conf, this, errh,
-		   "N", cpkP, cpUnsigned, &n,
-		   cpEnd) < 0)
-    return -1;
-  if (n != noutputs())
-      return errh->error("%d outputs implies %d arms", noutputs(), noutputs());
-  return 0;
+    unsigned n = noutputs();
+    if (Args(conf, this, errh).read_p("N", n).complete() < 0)
+	return -1;
+    if (n != (unsigned) noutputs())
+	return errh->error("%d outputs implies %d arms", noutputs(), noutputs());
+    return 0;
 }
 
 Packet *

@@ -19,7 +19,7 @@
 #include "grid.hh"
 #include "gridlocationinfo.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 #include <math.h>
@@ -81,17 +81,17 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   int h_int = 0;
 
   String chan("routelog");
-  int res = cp_va_kparse(conf, this, errh,
-			 // 5 fractional digits ~= 1 metre precision at the equator
-			 "LATITUDE", cpkP+cpkM, cpReal10, 5, &lat_int,
-			 "LONGITUDE", cpkP+cpkM, cpReal10, 5, &lon_int,
-			 "HEIGHT", cpkP, cpReal10, 3, &h_int,
-			 "MOVESIM", 0, cpInteger, &do_move,
-			 "LOC_GOOD", 0, cpBool, &_loc_good,
-			 "ERR_RADIUS", 0, cpUnsignedShort, &_loc_err,
-			 "LOGCHANNEL", 0, cpString, &chan,
-			 "TAG", 0, cpString, &_tag,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      // 5 fractional digits ~= 1 metre precision at the equator
+      .read_mp("LATITUDE", DecimalFixedPointArg(5), lat_int)
+      .read_mp("LONGITUDE", DecimalFixedPointArg(5), lon_int)
+      .read_p("HEIGHT", DecimalFixedPointArg(3), h_int)
+      .read("MOVESIM", do_move)
+      .read("LOC_GOOD", _loc_good)
+      .read("ERR_RADIUS", _loc_err)
+      .read("LOGCHANNEL", chan)
+      .read("TAG", _tag)
+      .complete();
   if (res < 0)
     return res;
 

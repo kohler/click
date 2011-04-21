@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include <click/glue.hh>
 #include <clicknet/ether.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/packet.hh>
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
@@ -114,16 +114,16 @@ ACKRetrySender::run_task(Task *)
 int
 ACKRetrySender::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _max_tries = 16;
-  _timeout = 10;
-  _verbose = true;
-  _history_length = 500;
-  int res = cp_va_kparse(conf, this, errh,
-			 "MAX_TRIES", 0, cpUnsigned, &_max_tries,
-			 "TIMEOUT", 0, cpUnsigned, &_timeout,
-			 "VERBOSE", 0, cpBool, &_verbose,
-			 "HISTORY_LEN", 0, cpUnsigned, &_history_length,
-			 cpEnd);
+    _max_tries = 16;
+    _timeout = 10;
+    _verbose = true;
+    _history_length = 500;
+    int res = Args(conf, this, errh)
+	.read("MAX_TRIES", _max_tries)
+	.read("TIMEOUT", _timeout)
+	.read("VERBOSE", _verbose)
+	.read("HISTORY_LEN", _history_length)
+	.complete();
 
   if (res < 0)
     return res;

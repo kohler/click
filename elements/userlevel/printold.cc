@@ -36,20 +36,20 @@ PrintOld::~PrintOld()
 int
 PrintOld::configure(Vector<String> &conf, ErrorHandler* errh)
 {
-  _label = String();
-  _bytes = 24;
-  _thresh = 5;
+    _label = String();
+    _bytes = 24;
+    _thresh = 5;
 
-  if (cp_va_kparse(conf, this, errh,
-		   "LABEL", cpkP, cpString, &_label,
-		   "AGE", cpkP, cpInteger, &_thresh,
-		   "MAXLENGTH", cpkP, cpInteger, &_bytes,
-		   "LENGTH", cpkDeprecated, cpInteger, &_bytes,
-		   "NBYTES", cpkDeprecated, cpInteger, &_bytes,
-		   cpEnd) < 0)
-    return -1;
+    if (Args(conf, this, errh)
+	.read_p("LABEL", _label)
+	.read_p("AGE", _thresh)
+	.read_p("MAXLENGTH", _bytes)
+	.read("LENGTH", Args::deprecated, _bytes)
+	.read("NBYTES", Args::deprecated, _bytes)
+	.complete() < 0)
+	return -1;
 
-  return 0;
+    return 0;
 }
 
 Packet *

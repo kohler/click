@@ -20,7 +20,7 @@
 #include <click/glue.hh>
 #include "fromhost.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 
@@ -44,9 +44,9 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 8;	// same as in FromDevice
 
-    if (cp_va_kparse(conf, this, errh,
-		     "DEVNAME", cpkP+cpkM, cpString, &_devname,
-		     cpEnd) < 0 ) {
+    if (Args(conf, this, errh)
+	.read_mp("DEVNAME", _devname)
+	.complete() < 0 ) {
 printf ("FromHost 1\n");
         return -1;
     }

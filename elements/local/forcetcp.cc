@@ -21,7 +21,7 @@
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 ForceTCP::ForceTCP()
@@ -39,11 +39,11 @@ int
 ForceTCP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _dport = 0;
-  return cp_va_kparse(conf, this, errh,
-		      "DPORT", cpkP, cpTCPPort, &_dport,
-		      "RANDOM_DPORT", cpkP, cpBool, &_random,
-		      "FLAGS", cpkP, cpInteger, &_flags,
-		      cpEnd);
+  return Args(conf, this, errh)
+      .read_p("DPORT", IPPortArg(IP_PROTO_TCP), _dport)
+      .read_p("RANDOM_DPORT", _random)
+      .read_p("FLAGS", _flags)
+      .complete();
 }
 
 Packet *

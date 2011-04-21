@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "aggregatepaint.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
@@ -35,10 +35,10 @@ AggregatePaint::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _bits = 8;
     _incremental = false;
-    if (cp_va_kparse(conf, this, errh,
-		     "BITS", cpkP, cpInteger, &_bits,
-		     "INCREMENTAL", 0, cpBool, &_incremental,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_p("BITS", _bits)
+	.read("INCREMENTAL", _incremental)
+	.complete() < 0)
 	return -1;
     if (_bits <= 0 || _bits > 8)
 	return errh->error("bad number of bits");

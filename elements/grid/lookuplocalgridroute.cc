@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>
 #include <clicknet/ip.h>
@@ -60,14 +60,14 @@ LookupLocalGridRoute::cast(const char *n)
 int
 LookupLocalGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "ETH", cpkP+cpkM, cpEthernetAddress, &_ethaddr,
-			 "IP", cpkP+cpkM, cpIPAddress, &_ipaddr,
-			 "GRIDROUTES", cpkP+cpkM, cpElement, &_rtes,
-			 "GWI", 0, cpElement, &_gw_info,
-			 "LT", 0, cpElement, &_link_tracker,
-			 "LOG", 0, cpElement, &_log,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read_mp("ETH", _ethaddr)
+      .read_mp("IP", _ipaddr)
+      .read_mp("GRIDROUTES", reinterpret_cast<Element *&>(_rtes))
+      .read("GWI", reinterpret_cast<Element *&>(_gw_info))
+      .read("LT", reinterpret_cast<Element *&>(_link_tracker))
+      .read("LOG", reinterpret_cast<Element *&>(_log))
+      .complete();
   _any_gateway_ip = htonl((ntohl(_ipaddr.addr()) & 0xFFffFF00) | 254);
   return res;
 }

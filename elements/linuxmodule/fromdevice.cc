@@ -26,7 +26,7 @@
 #include <click/glue.hh>
 #include "fromdevice.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/straccum.hh>
@@ -116,12 +116,12 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _active = true;
     String alignment;
     if (AnyDevice::configure_keywords(conf, errh, true) < 0
-	|| cp_va_kparse(conf, this, errh,
-			"DEVNAME", cpkP+cpkM, cpString, &_devname,
-			"BURST", cpkP, cpUnsigned, &_burst,
-			"ACTIVE", 0, cpBool, &_active,
-			"ALIGNMENT", 0, cpArgument, &alignment,
-			cpEnd) < 0)
+	|| (Args(conf, this, errh)
+	    .read_mp("DEVNAME", _devname)
+	    .read_p("BURST", _burst)
+	    .read("ACTIVE", _active)
+	    .read("ALIGNMENT", AnyArg(), alignment)
+	    .complete() < 0))
 	return -1;
 
     // make queue look full so packets sent to us are ignored

@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "staticpullswitch.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 StaticPullSwitch::StaticPullSwitch()
@@ -32,14 +32,12 @@ StaticPullSwitch::~StaticPullSwitch()
 int
 StaticPullSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _input = 0;
-  if (cp_va_kparse(conf, this, errh,
-		   "INPUT", cpkP+cpkM, cpInteger, &_input,
-		   cpEnd) < 0)
-    return -1;
-  if (_input >= ninputs())
-    _input = -1;
-  return 0;
+    _input = 0;
+    if (Args(conf, this, errh).read_mp("INPUT", _input).complete() < 0)
+	return -1;
+    if (_input >= ninputs())
+	_input = -1;
+    return 0;
 }
 
 Packet *

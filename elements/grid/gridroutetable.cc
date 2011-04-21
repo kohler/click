@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "timeutils.hh" /* includes <cmath> which may #undef NULL, so
 			   must become before <cstddef> */
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>
 #include <clicknet/ip.h>
@@ -117,20 +117,20 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String chan("routelog");
   String metric("est_tx_count");
-  int res = cp_va_kparse(conf, this, errh,
-			 "TIMEOUT", cpkP+cpkM, cpInteger, &_timeout,
-			 "PERIOD", cpkP+cpkM, cpInteger, &_period,
-			 "JITTER", cpkP+cpkM, cpInteger, &_jitter,
-			 "ETH", cpkP+cpkM, cpEthernetAddress, &_eth,
-			 "IP", cpkP+cpkM, cpIPAddress, &_ip,
-			 "GATEWAYINFO", cpkP+cpkM, cpElement, &_gw_info,
-			 "LINKTRACKER", cpkP+cpkM, cpElement, &_link_tracker,
-			 "LINKSTAT", cpkP+cpkM, cpElement, &_link_stat,
-			 "MAX_HOPS", 0, cpInteger, &_max_hops,
-			 "LOGCHANNEL", 0, cpString, &chan,
-			 "METRIC", 0, cpString, &metric,
-			 "LOG", 0, cpElement, &_log,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read_mp("TIMEOUT", _timeout)
+      .read_mp("PERIOD", _period)
+      .read_mp("JITTER", _jitter)
+      .read_mp("ETH", _eth)
+      .read_mp("IP", _ip)
+      .read_mp("GATEWAYINFO", reinterpret_cast<Element *&>(_gw_info))
+      .read_mp("LINKTRACKER", reinterpret_cast<Element *&>(_link_tracker))
+      .read_mp("LINKSTAT", reinterpret_cast<Element *&>(_link_stat))
+      .read("MAX_HOPS", _max_hops)
+      .read("LOGCHANNEL", chan)
+      .read("METRIC", metric)
+      .read("LOG", reinterpret_cast<Element *&>(_log))
+      .complete();
 
   if (res < 0)
     return res;
@@ -1122,10 +1122,10 @@ GridRouteTable::write_metric_range(const String &arg, Element *el,
 {
   GridRouteTable *rt = (GridRouteTable *) el;
   int max, min;
-  int res = cp_va_space_kparse(arg, rt, errh,
-			       "MAX", cpkP+cpkM, cpInteger, &max,
-			       "MIN", cpkP+cpkM, cpInteger, &min,
-			       cpEnd);
+  int res = Args(rt, errh).push_back_words(arg)
+      .read_mp("MAX", max)
+      .read_mp("MIN", min)
+      .complete();
   if (res < 0)
     return -1;
 

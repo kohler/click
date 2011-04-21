@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include "decipttl.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ip.h>
 CLICK_DECLS
 
@@ -36,10 +36,9 @@ DecIPTTL::~DecIPTTL()
 int
 DecIPTTL::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"ACTIVE", 0, cpBool, &_active,
-			"MULTICAST", 0, cpBool, &_multicast,
-			cpEnd);
+    return Args(conf, this, errh)
+	.read("ACTIVE", _active)
+	.read("MULTICAST", _multicast).complete();
 }
 
 Packet *

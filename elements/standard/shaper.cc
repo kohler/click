@@ -20,7 +20,7 @@
 
 #include <click/config.h>
 #include "shaper.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 CLICK_DECLS
@@ -37,10 +37,12 @@ int
 Shaper::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     uint32_t rate;
-    CpVaParseCmd cmd = (is_bandwidth() ? cpBandwidth : cpUnsigned);
-    if (cp_va_kparse(conf, this, errh,
-		     "RATE", cpkP+cpkM, cmd, &rate,
-		     cpEnd) < 0)
+    Args args(conf, this, errh);
+    if (is_bandwidth())
+	args.read_mp("RATE", BandwidthArg(), rate);
+    else
+	args.read_mp("RATE", rate);
+    if (args.complete() < 0)
 	return -1;
     _rate.set_rate(rate, errh);
     return 0;

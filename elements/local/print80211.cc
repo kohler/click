@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include "print80211.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/etheraddress.hh>
@@ -48,11 +48,11 @@ Print80211::configure(Vector<String> &conf, ErrorHandler* errh)
   String label;
   bool timestamp = false;
   bool verbose = false;
-  if (cp_va_kparse(conf, this, errh,
-		   "LABEL", cpkP, cpString, &label,
-		   "TIMESTAMP", 0, cpBool, &timestamp,
-		   "VERBOSE", 0, cpBool, &verbose,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read_p("LABEL", label)
+      .read("TIMESTAMP", timestamp)
+      .read("VERBOSE", verbose)
+      .complete() < 0)
     return -1;
 
   _label = label;

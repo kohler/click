@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "getipaddress.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <clicknet/ip.h>
 CLICK_DECLS
@@ -34,9 +34,7 @@ GetIPAddress::~GetIPAddress()
 int
 GetIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_kparse(conf, this, errh,
-		      "OFFSET", cpkP+cpkM, cpUnsigned, &_offset,
-		      cpEnd);
+    return Args(conf, this, errh).read_mp("OFFSET", _offset).complete();
 }
 
 Packet *

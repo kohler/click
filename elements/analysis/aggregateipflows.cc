@@ -21,7 +21,7 @@
 #include <click/error.hh>
 #include <click/hashmap.hh>
 #include <click/straccum.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
@@ -104,27 +104,28 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
     _gc_interval = 20 * 60;
     _fragments = 2;
     bool handle_icmp_errors = false;
-    bool gave_fragments = false, fragments = true;
+    bool fragments_parsed;
+    bool fragments = true;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "TCP_TIMEOUT", 0, cpSeconds, &_tcp_timeout,
-		     "TCP_DONE_TIMEOUT", 0, cpSeconds, &_tcp_done_timeout,
-		     "UDP_TIMEOUT", 0, cpSeconds, &_udp_timeout,
-		     "FRAGMENT_TIMEOUT", 0, cpSeconds, &_fragment_timeout,
-		     "REAP", 0, cpSeconds, &_gc_interval,
-		     "ICMP", 0, cpBool, &handle_icmp_errors,
+    Args args(conf, this, errh);
+    if (args.read("TCP_TIMEOUT", _tcp_timeout)
+	.read("TCP_DONE_TIMEOUT", _tcp_done_timeout)
+	.read("UDP_TIMEOUT", SecondsArg(), _udp_timeout)
+	.read("FRAGMENT_TIMEOUT", SecondsArg(), _fragment_timeout)
+	.read("REAP", SecondsArg(), _gc_interval)
+	.read("ICMP", handle_icmp_errors)
 #if CLICK_USERLEVEL
-		     "TRACEINFO", 0, cpFilename, &_traceinfo_filename,
-		     "SOURCE", 0, cpElement, &_packet_source,
+	.read("TRACEINFO", FilenameArg(), _traceinfo_filename)
+	.read("SOURCE", ElementArg(), _packet_source)
 #endif
-		     "FRAGMENTS", cpkC, &gave_fragments, cpBool, &fragments,
-		     cpEnd) < 0)
+	.read("FRAGMENTS", fragments).read_status(fragments_parsed)
+	.consume() < 0)
 	return -1;
 
     _smallest_timeout = (_tcp_timeout < _tcp_done_timeout ? _tcp_timeout : _tcp_done_timeout);
     _smallest_timeout = (_smallest_timeout < _udp_timeout ? _smallest_timeout : _udp_timeout);
     _handle_icmp_errors = handle_icmp_errors;
-    if (gave_fragments)
+    if (fragments_parsed)
 	_fragments = fragments;
     return 0;
 }
@@ -356,7 +357,7 @@ AggregateIPFlows::find_flow_info(Map &m, HostPairInfo *hpinfo, uint32_t ports, b
 	    int age = p->timestamp_anno().sec() - finfo->_last_timestamp.sec();
 	    // 4.Feb.2004 - Also start a new flow if the old flow closed off,
 	    // and we have a SYN.
-	    if ((age > _smallest_timeout
+	    if ((age > (int) _smallest_timeout
 		 && age > relevant_timeout(finfo, m))
 		|| (finfo->_flow_over == 3
 		    && p->ip_header()->ip_p == IP_PROTO_TCP

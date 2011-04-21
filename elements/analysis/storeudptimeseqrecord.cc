@@ -20,7 +20,7 @@ Programmer: Roman Chertov
 #include <clicknet/ip6.h>
 #include <clicknet/udp.h>
 #include <clicknet/tcp.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <stdio.h>
 
@@ -43,10 +43,10 @@ StoreUDPTimeSeqRecord::StoreUDPTimeSeqRecord()
 
 int StoreUDPTimeSeqRecord::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (cp_va_kparse(conf, this, errh,
-                    "OFFSET", cpkP+cpkM, cpInteger, &_offset,
-                    "DELTA", 0, cpBool, &_delta,
-                    cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("OFFSET", _offset)
+	.read("DELTA", _delta)
+	.complete() < 0)
         return -1;
     return 0;
 }

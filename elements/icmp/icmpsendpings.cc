@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "icmpsendpings.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <clicknet/ip.h>
@@ -53,16 +53,16 @@ ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
     _data = String();
     _active = true;
     _verbose = true;
-    if (cp_va_kparse(conf, this, errh,
-		     "SRC", cpkP+cpkM, cpIPAddress, &_src,
-		     "DST", cpkP+cpkM, cpIPAddress, &_dst,
-		     "INTERVAL", 0, cpSecondsAsMilli, &_interval,
-		     "IDENTIFIER", 0, cpUnsignedShort, &_icmp_id,
-		     "DATA", 0, cpString, &_data,
-		     "LIMIT", 0, cpInteger, &_limit,
-		     "ACTIVE", 0, cpBool, &_active,
-		     "VERBOSE", 0, cpBool, &_verbose,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("SRC", _src)
+	.read_mp("DST", _dst)
+	.read("INTERVAL", SecondsArg(3), _interval)
+	.read("IDENTIFIER", _icmp_id)
+	.read("DATA", _data)
+	.read("LIMIT", _limit)
+	.read("ACTIVE", _active)
+	.read("VERBOSE", _verbose)
+	.complete() < 0)
 	return -1;
 #ifndef __linux__
     _icmp_id = htons(_icmp_id);

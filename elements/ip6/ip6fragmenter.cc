@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "ip6fragmenter.hh"
 #include <clicknet/ip6.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 CLICK_DECLS
@@ -38,11 +38,7 @@ IP6Fragmenter::~IP6Fragmenter()
 int
 IP6Fragmenter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "MTU", cpkP+cpkM, cpUnsigned, &_mtu,
-		   cpEnd) < 0)
-    return -1;
-  return 0;
+    return Args(conf, this, errh).read_mp("MTU", _mtu).complete();
 }
 
  /*

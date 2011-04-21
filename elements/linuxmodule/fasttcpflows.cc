@@ -18,7 +18,8 @@
 #include <click/config.h>
 #include <clicknet/ip.h>
 #include "fasttcpflows.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
+#include <click/etheraddress.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
@@ -44,18 +45,18 @@ FastTCPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
   _active = true;
   unsigned rate;
   int limit;
-  if (cp_va_kparse(conf, this, errh,
-		   "RATE", cpkP+cpkM, cpUnsigned, &rate,
-		   "LIMIT", cpkP+cpkM, cpInteger, &limit,
-		   "LENGTH", cpkP+cpkM, cpUnsigned, &_len,
-		   "SRCETH", cpkP+cpkM, cpEthernetAddress, &_ethh.ether_shost,
-		   "SRCIP", cpkP+cpkM, cpIPAddress, &_sipaddr,
-		   "DSTETH", cpkP+cpkM, cpEthernetAddress, &_ethh.ether_dhost,
-		   "DSTIP", cpkP+cpkM, cpIPAddress, &_dipaddr,
-		   "FLOWS", cpkP+cpkM, cpUnsigned, &_nflows,
-		   "FLOWSIZE", cpkP+cpkM, cpUnsigned, &_flowsize,
-		   "ACTIVE", cpkP, cpBool, &_active,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read_mp("RATE", rate)
+      .read_mp("LIMIT", limit)
+      .read_mp("LENGTH", _len)
+      .read_mp_with("SRCETH", EtherAddressArg(), _ethh.ether_shost)
+      .read_mp("SRCIP", _sipaddr)
+      .read_mp_with("DSTETH", EtherAddressArg(), _ethh.ether_dhost)
+      .read_mp("DSTIP", _dipaddr)
+      .read_mp("FLOWS", _nflows)
+      .read_mp("FLOWSIZE", _flowsize)
+      .read_p("ACTIVE", _active)
+      .complete() < 0)
     return -1;
   if (_flowsize < 3) {
     click_chatter("warning: flow size < 3, defaulting to 3");
@@ -364,7 +365,7 @@ FastTCPFlows_limit_write_handler
 {
   FastTCPFlows *c = (FastTCPFlows *)e;
   unsigned limit;
-  if (!cp_integer(s, &limit))
+  if (!IntArg::parse(s, limit))
     return errh->error("limit parameter must be integer >= 0");
   c->_limit = (limit >= 0 ? limit : c->NO_LIMIT);
   return 0;
@@ -376,7 +377,7 @@ FastTCPFlows_rate_write_handler
 {
   FastTCPFlows *c = (FastTCPFlows *)e;
   unsigned rate;
-  if (!cp_integer(s, &rate))
+  if (!IntArg::parse(s, rate))
     return errh->error("rate parameter must be integer >= 0");
   if (rate > GapRate::MAX_RATE)
     // report error rather than pin to max

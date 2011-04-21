@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "switch.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/llrpc.h>
 CLICK_DECLS
@@ -33,15 +33,13 @@ Switch::~Switch()
 int
 Switch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int output = 0;
-  if (cp_va_kparse(conf, this, errh,
-		   "OUTPUT", cpkP, cpInteger, &output,
-		   cpEnd) < 0)
-    return -1;
-  if (output >= noutputs())
-    return errh->error("output must be < %d", noutputs());
-  _output = output;
-  return 0;
+    int output = 0;
+    if (Args(conf, this, errh).read_p("OUTPUT", output).complete() < 0)
+	return -1;
+    if (output >= noutputs())
+	return errh->error("output must be < %d", noutputs());
+    _output = output;
+    return 0;
 }
 
 void

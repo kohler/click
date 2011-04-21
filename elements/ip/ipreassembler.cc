@@ -22,7 +22,7 @@
 #include <click/config.h>
 #include "ipreassembler.hh"
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/bitvector.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -49,9 +49,7 @@ int
 IPReassembler::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _mem_high_thresh = 256 * 1024;
-    if (cp_va_kparse(conf, this, errh,
-		     "HIMEM", 0, cpUnsigned, &_mem_high_thresh,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh).read("HIMEM", _mem_high_thresh).complete() < 0)
 	return -1;
     _mem_low_thresh = (_mem_high_thresh >> 2) * 3;
     return 0;

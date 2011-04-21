@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include "kernelfilter.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/userutils.hh>
 #include <unistd.h>
@@ -36,17 +36,17 @@ KernelFilter::~KernelFilter()
 int
 KernelFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (cp_va_kparse_remove_keywords(conf, this, errh,
-			"IPTABLES_COMMAND", 0, cpString, &_iptables_command,
-			cpEnd) < 0)
+    if (Args(this, errh).bind(conf)
+	.read("IPTABLES_COMMAND", _iptables_command)
+	.consume() < 0)
 	return -1;
     String action, type, arg;
     for (int i = 0; i < conf.size(); i++) {
-	if (cp_va_space_kparse(conf[i], this, errh,
-			       "ACTION", cpkP+cpkM, cpWord, &action,
-			       "TYPE", cpkP+cpkM, cpWord, &type,
-			       "ARG", cpkP+cpkM, cpArgument, &arg,
-			       cpEnd) < 0)
+	if (Args(this, errh).push_back_words(conf[i])
+	    .read_mp("ACTION", WordArg(), action)
+	    .read_mp("TYPE", WordArg(), type)
+	    .read_mp("ARG", AnyArg(), arg)
+	    .complete() < 0)
 	    return -1;
 	if (action != "drop" || type != "dev" || !arg)
 	    return errh->error("arguments must follow 'drop dev DEVNAME'");

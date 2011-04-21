@@ -18,7 +18,6 @@
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include "schedulelinux.hh"
-#include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 

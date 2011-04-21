@@ -243,12 +243,12 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _inq = NULL;
     bool allow_nonexistent = false;
     _burst = 8;
-    if (cp_va_kparse(conf, this, errh,
-		     "DEVNAME", cpkP+cpkM, cpString, &_devname,
-		     "PROMISC", cpkP, cpBool, &_promisc,
-		     "BURST", cpkP, cpUnsigned, &_burst,
-		     "ALLOW_NONEXISTENT", 0, cpBool, &allow_nonexistent,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("DEVNAME", _devname)
+	.read_p("PROMISC", _promisc)
+	.read_p("BURST", _burst)
+	.read("ALLOW_NONEXISTENT", allow_nonexistent)
+	.complete() < 0)
 	return -1;
 
     if (find_device(allow_nonexistent, &from_device_map, errh) < 0)

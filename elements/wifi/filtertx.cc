@@ -1,6 +1,6 @@
 #include <click/config.h>
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <clicknet/wifi.h>
 #include <click/straccum.hh>

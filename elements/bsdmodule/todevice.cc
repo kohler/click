@@ -24,7 +24,7 @@
 #include "todevice.hh"
 #include <click/error.hh>
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/cxxprotect.h>
@@ -85,11 +85,11 @@ ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 16;
     bool allow_nonexistent = false;
-    if (cp_va_kparse(conf, this, errh,
-		     "DEVNAME", cpkP+cpkM, cpString, &_devname,
-		     "BURST", cpkP, cpUnsigned, &_burst,
-		     "ALLOW_NONEXISTENT", 0, cpBool, &allow_nonexistent,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("DEVNAME", _devname)
+	.read_p("BURST", _burst)
+	.read("ALLOW_NONEXISTENT", allow_nonexistent)
+	.complete() < 0)
 	return -1;
 
     if (find_device(allow_nonexistent, &to_device_map, errh) < 0)

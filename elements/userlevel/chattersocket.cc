@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "chattersocket.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/straccum.hh>
@@ -103,47 +103,43 @@ ChatterSocket::~ChatterSocket()
 int
 ChatterSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  String socktype;
-  if (cp_va_kparse(conf, this, errh,
-		   "TYPE", cpkP+cpkM, cpString, &socktype,
-		   cpIgnoreRest, cpEnd) < 0)
-    return -1;
+    String socktype;
+    Args args = Args(this, errh).bind(conf);
+    if (args.read_mp("TYPE", socktype).execute() < 0)
+	return -1;
 
-  // remove keyword arguments
-  bool quiet_channel = true, greeting = true, retry_warnings = true;
-  _retries = 0;
-  if (cp_va_kparse_remove_keywords(conf, this, errh,
-		"CHANNEL", 0, cpWord, &_channel,
-		"QUIET_CHANNEL", 0, cpElement, &quiet_channel,
-		"GREETING", 0, cpBool, &greeting,
-		"RETRIES", 0, cpInteger, &_retries,
-		"RETRY_WARNINGS", 0, cpBool, &retry_warnings,
-		cpEnd) < 0)
-    return -1;
-  _greeting = greeting;
-  _retry_warnings = retry_warnings;
+    // remove keyword arguments
+    bool quiet_channel = true, greeting = true, retry_warnings = true;
+    _retries = 0;
+    if (args.read("CHANNEL", WordArg(), _channel)
+	.read("QUIET_CHANNEL", quiet_channel)
+	.read("GREETING", greeting)
+	.read("RETRIES", _retries)
+	.read("RETRY_WARNINGS", retry_warnings)
+	.consume() < 0)
+	return -1;
+    _greeting = greeting;
+    _retry_warnings = retry_warnings;
 
-  socktype = socktype.upper();
-  if (socktype == "TCP") {
-    _tcp_socket = true;
-    uint16_t portno;
-    if (cp_va_kparse(conf, this, errh,
-		     "TYPE", cpkP+cpkM, cpIgnore,
-		     "PORT", cpkP+cpkM, cpTCPPort, &portno, cpEnd) < 0)
-      return -1;
-    _unix_pathname = String(portno);
+    socktype = socktype.upper();
+    if (socktype == "TCP") {
+	_tcp_socket = true;
+	uint16_t portno;
+	if (args.read_mp("PORT", IPPortArg(IP_PROTO_TCP), portno)
+	    .complete() < 0)
+	    return -1;
+	_unix_pathname = String(portno);
 
-  } else if (socktype == "UNIX") {
-    _tcp_socket = false;
-    if (cp_va_kparse(conf, this, errh,
-		     "TYPE", cpkP+cpkM, cpIgnore,
-		     "FILENAME", cpkP+cpkM, cpFilename, &_unix_pathname, cpEnd) < 0)
-      return -1;
-    if (_unix_pathname.length() >= (int)sizeof(((struct sockaddr_un *)0)->sun_path))
-      return errh->error("filename too long");
+    } else if (socktype == "UNIX") {
+	_tcp_socket = false;
+	if (args.read_mp("FILENAME", FilenameArg(), _unix_pathname)
+	    .complete() < 0)
+	    return -1;
+	if (_unix_pathname.length() >= (int)sizeof(((struct sockaddr_un *)0)->sun_path))
+	    return errh->error("filename too long");
 
-  } else
-    return errh->error("unknown socket type `%s'", socktype.c_str());
+    } else
+	return errh->error("unknown socket type `%s'", socktype.c_str());
 
   // Create channel now, so that other configure() methods will get it.
   ChatterSocketErrorHandler *cserrh;

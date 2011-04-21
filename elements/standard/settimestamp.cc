@@ -20,7 +20,7 @@
 
 #include <click/config.h>
 #include "settimestamp.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/packet_anno.hh>
 #include <click/error.hh>
 CLICK_DECLS
@@ -39,11 +39,10 @@ SetTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
     bool first = false, delta = false;
     _tv.set_sec(-1);
     _action = ACT_NOW;
-    if (cp_va_kparse(conf, this, errh,
-		     "TIMESTAMP", cpkP, cpTimestamp, &_tv,
-		     "FIRST", 0, cpBool, &first,
-		     "DELTA", 0, cpBool, &delta,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_p("TIMESTAMP", _tv)
+	.read("FIRST", first)
+	.read("DELTA", delta).complete() < 0)
 	return -1;
     if (delta)
 	return errh->error("SetTimestamp(DELTA) is deprecated, use SetTimestampDelta(TYPE FIRST)");

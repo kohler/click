@@ -37,7 +37,7 @@
 #include "fromsimdevice.hh"
 #include "tosimdevice.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/glue.hh>
 #include <unistd.h>
 #include <fcntl.h>
@@ -61,10 +61,10 @@ int
 FromSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _packetbuf_size = 2048;
-  if (cp_va_kparse(conf, this, errh,
-		   "DEVNAME", cpkP+cpkM, cpString, &_ifname,
-		   "SNAPLEN", cpkP+cpkM, cpUnsigned, &_packetbuf_size,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read_mp("DEVNAME", _ifname)
+      .read_mp("SNAPLEN", _packetbuf_size)
+      .complete() < 0)
     return -1;
   if (_packetbuf_size > 8192 || _packetbuf_size < 128)
     return errh->error("maximum packet length out of range");

@@ -23,7 +23,7 @@ int
 SpinlockAcquire::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String name;
-    if (cp_va_kparse(conf, this, errh, "LOCK", cpkP+cpkM, cpString, &name, cpEnd)<0)
+    if (Args(conf, this, errh).read_mp("LOCK", name).complete() < 0)
 	return -1;
     if (!NameInfo::query(NameInfo::T_SPINLOCK, this, name, &_lock, sizeof(Spinlock *)))
 	return errh->error("cannot locate spinlock %s", name.c_str());

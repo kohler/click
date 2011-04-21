@@ -162,10 +162,9 @@ int
 Script::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String type_arg;
-    if (cp_va_kparse_remove_keywords
-	(conf, this, errh,
-	 "TYPE", 0, cpArgument, &type_arg,
-	 cpEnd) < 0)
+    if (Args(this, errh).bind(conf)
+	.read("TYPE", AnyArg(), type_arg)
+	.consume() < 0)
 	return -1;
 
     int before = errh->nerrors();
@@ -1067,10 +1066,10 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	else {
 	    uint32_t n1, n2;
 	    bool have_n2 = false;
-	    if (cp_va_space_kparse(str, e, errh,
-				   "N1", cpkP+cpkM, cpUnsigned, &n1,
-				   "N2", cpkP+cpkC, &have_n2, cpUnsigned, &n2,
-				   cpEnd) < 0)
+	    if (Args(e, errh).push_back_words(str)
+		.read_mp("N1", n1)
+		.read_mp("N2", n2).read_status(have_n2)
+		.complete() < 0)
 		return -1;
 	    if ((have_n2 && n2 < n1) || (!have_n2 && n1 == 0))
 		return errh->error("bad N");

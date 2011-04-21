@@ -20,7 +20,7 @@
 
 #include <click/config.h>
 #include "ratedunqueue.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/standard/scheduleinfo.hh>
@@ -46,17 +46,18 @@ RatedUnqueue::configure_helper(TokenBucket *tb, bool is_bandwidth, Element *elt,
 {
     unsigned r;
     unsigned dur_msec = 20;
-    bool dur_specified;
     unsigned tokens;
-    bool tokens_specified;
-    CpVaParseCmd cmd = is_bandwidth ? cpBandwidth : cpUnsigned;
+    bool dur_specified, tokens_specified;
     const char *burst_size = is_bandwidth ? "BURST_BYTES" : "BURST_SIZE";
 
-    if (cp_va_kparse(conf, elt, errh,
-		     "RATE", cpkP+cpkM, cmd, &r,
-		     "BURST_DURATION", cpkC, &dur_specified, cpSecondsAsMilli, &dur_msec,
-		     burst_size, cpkC, &tokens_specified, cpUnsigned, &tokens,
-		     cpEnd) < 0)
+    Args args(conf, elt, errh);
+    if (is_bandwidth)
+	args.read_mp("RATE", BandwidthArg(), r);
+    else
+	args.read_mp("RATE", r);
+    if (args.read("BURST_DURATION", SecondsArg(3), dur_msec).read_status(dur_specified)
+	.read(burst_size, tokens).read_status(tokens_specified)
+	.complete() < 0)
 	return -1;
 
     if (dur_specified && tokens_specified)

@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include <clicknet/ip.h>
 #include "dynudpipencap.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
@@ -35,17 +35,17 @@ DynamicUDPIPEncap::~DynamicUDPIPEncap()
 int
 DynamicUDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  bool do_cksum = true;
-  _interval = 0;
-  if (cp_va_kparse(conf, this, errh,
-		   "SRC", cpkP+cpkM, cpIPAddress, &_saddr,
-		   "SPORT", cpkP+cpkM, cpUDPPort, &_sport,
-		   "DST", cpkP+cpkM, cpIPAddress, &_daddr,
-		   "DPORT", cpkP+cpkM, cpUDPPort, &_dport,
-		   "CHECKSUM", cpkP, cpBool, &do_cksum,
-		   "INTERVAL", cpkP, cpUnsigned, &_interval,
-		   cpEnd) < 0)
-    return -1;
+    bool do_cksum = true;
+    _interval = 0;
+    if (Args(conf, this, errh)
+	.read_mp("SRC", _saddr)
+	.read_mp("SPORT", IPPortArg(IP_PROTO_UDP), _sport)
+	.read_mp("DST", _daddr)
+	.read_mp("DPORT", IPPortArg(IP_PROTO_UDP), _dport)
+	.read_p("CHECKSUM", do_cksum)
+	.read_p("INTERVAL", _interval)
+	.complete() < 0)
+	return -1;
 
   _id = 0;
   _cksum = do_cksum;

@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "progressbar.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
@@ -56,16 +56,18 @@ ProgressBar::initialize(ErrorHandler *errh)
     String position_str, size_str;
     bool check_stdout = false, have_size = false;
 
-    if (cp_va_kparse(configuration(), this, errh,
-		     "POSHANDLER", cpkP+cpkM, cpArgument, &position_str,
-		     "SIZEHANDLER", cpkP, cpArgument, &size_str,
-		     "UPDATE", 0, cpSecondsAsMilli, &_interval,
-		     "BANNER", 0, cpString, &_banner,
-		     "ACTIVE", 0, cpBool, &_active,
-		     "DELAY", 0, cpSecondsAsMilli, &_delay_ms,
-		     "CHECK_STDOUT", 0, cpBool, &check_stdout,
-		     "FIXED_SIZE", cpkC, &have_size, cpDouble, &_size,
-		     cpEnd) < 0)
+    Vector<String> conf;
+    cp_argvec(configuration(), conf);
+    if (Args(conf, this, errh)
+	.read_mp("POSHANDLER", AnyArg(), position_str)
+	.read_p("SIZEHANDLER", AnyArg(), size_str)
+	.read("UPDATE", SecondsArg(3), _interval)
+	.read("BANNER", _banner)
+	.read("ACTIVE", _active)
+	.read("DELAY", SecondsArg(3), _delay_ms)
+	.read("CHECK_STDOUT", check_stdout)
+	.read("FIXED_SIZE", _size).read_status(have_size)
+	.complete() < 0)
 	return -1;
 
     Vector<String> words;

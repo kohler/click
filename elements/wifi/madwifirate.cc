@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
@@ -68,14 +68,14 @@ MadwifiRate::configure(Vector<String> &conf, ErrorHandler *errh)
   _alt_rate = false;
   _active = true;
   _period = 1000;
-  int ret = cp_va_kparse(conf, this, errh,
-			 "OFFSET", 0, cpUnsigned, &_offset,
-			 "RT", 0, cpElement, &_rtable,
-			 "THRESHOLD", 0, cpUnsigned, &_packet_size_threshold,
-			 "ALT_RATE", 0, cpBool, &_alt_rate,
-			 "ACTIVE", 0, cpBool, &_active,
-			 "PERIOD", 0, cpUnsigned, &_period,
-			 cpEnd);
+  int ret = Args(conf, this, errh)
+      .read("OFFSET", _offset)
+      .read("RT", ElementCastArg("AvailableRates"), _rtable)
+      .read("THRESHOLD", _packet_size_threshold)
+      .read("ALT_RATE", _alt_rate)
+      .read("ACTIVE", _active)
+      .read("PERIOD", _period)
+      .complete();
   return ret;
 }
 

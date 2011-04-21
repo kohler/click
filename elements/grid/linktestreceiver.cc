@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ether.h>
 #include <click/error.hh>
 #include "linktestreceiver.hh"
@@ -36,12 +36,9 @@ LinkTestReceiver::~LinkTestReceiver()
 int
 LinkTestReceiver::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "AIROINFO", cpkP, cpElement, &_ai,
-			 cpEnd);
-  if (res < 0)
-    return res;
-  return 0;
+    return Args(conf, this, errh)
+	.read_p("AIROINFO", reinterpret_cast<Element *&>(_ai))
+	.complete();
 }
 
 int

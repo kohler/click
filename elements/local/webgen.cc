@@ -20,7 +20,7 @@
 #include <clicknet/tcp.h>
 #include <clicknet/ip.h>
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 CLICK_DECLS
@@ -53,11 +53,11 @@ WebGen::configure (Vector<String> &conf, ErrorHandler *errh)
   int ret;
   int cps;
 
-  ret = cp_va_kparse(conf, this, errh,
-		     "PREFIX", cpkP+cpkM, cpIPAddressOrPrefix, &_src_prefix, &_mask,
-		     "DST", cpkP+cpkM, cpIPAddress, &_dst,
-		     "RATE", cpkP+cpkM, cpUnsigned, &cps,
-		     cpEnd);
+  ret = Args(conf, this, errh)
+      .read_mp("PREFIX", IPPrefixArg(true), _src_prefix, _mask)
+      .read_mp("DST", _dst)
+      .read_mp("RATE", cps)
+      .complete();
 
   start_interval = 1000000 / cps;
   return ret;

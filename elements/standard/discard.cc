@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "discard.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/standard/scheduleinfo.hh>
 CLICK_DECLS
 
@@ -34,9 +34,7 @@ Discard::~Discard()
 int
 Discard::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (cp_va_kparse(conf, this, errh,
-		     "ACTIVE", 0, cpBool, &_active,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh).read("ACTIVE", _active).complete() < 0)
 	return -1;
     if (!_active && input_is_push(0))
 	return errh->error("ACTIVE is meaningless in push context");

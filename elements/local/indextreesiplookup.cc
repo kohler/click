@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include "indextreesiplookup.hh"

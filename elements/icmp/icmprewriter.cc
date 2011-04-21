@@ -21,7 +21,7 @@
 #include "elements/ip/iprwmapping.hh"
 #include <clicknet/icmp.h>
 #include <clicknet/tcp.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
 CLICK_DECLS
@@ -40,11 +40,11 @@ ICMPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
     String arg;
     bool dst_anno = true, has_reply_anno = false;
     int reply_anno;
-    if (cp_va_kparse(conf, this, errh,
-		     "MAPS", cpkP+cpkM, cpArgument, &arg,
-		     "DST_ANNO", 0, cpBool, &dst_anno,
-		     "REPLY_ANNO", cpkC, &has_reply_anno, cpAnno, 1, &reply_anno,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("MAPS", AnyArg(), arg)
+	.read("DST_ANNO", dst_anno)
+	.read("REPLY_ANNO", AnnoArg(1), reply_anno).read_status(has_reply_anno)
+	.complete() < 0)
 	return -1;
 
     _annos = (dst_anno ? 1 : 0) + (has_reply_anno ? 2 + (reply_anno << 2) : 0);

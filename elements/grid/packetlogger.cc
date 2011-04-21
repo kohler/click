@@ -1,5 +1,5 @@
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
@@ -19,14 +19,10 @@ PacketLogger::~PacketLogger()
 int
 PacketLogger::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "ETHERTYPE", 0, cpUnsignedShort, &_et,
-		   "NBYTES", 0, cpUnsigned, &_nb,
-		   cpEnd) < 0) {
-    return -1;
-  }
-
-  return 0;
+    return Args(conf, this, errh)
+	.read("ETHERTYPE", _et)
+	.read("NBYTES", _nb)
+	.complete();
 }
 
 Packet *

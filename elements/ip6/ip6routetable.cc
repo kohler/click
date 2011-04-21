@@ -21,7 +21,7 @@
 
 #include <click/config.h>
 #include <click/ip6address.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include "ip6routetable.hh"
@@ -69,14 +69,16 @@ IP6RouteTable::add_route_handler(const String &conf, Element *e, void *, ErrorHa
     int port, ok;
 
     if (words.size() == 2)
-        ok = cp_va_kparse(words, r, errh,
-			  "PREFIX", cpkP+cpkM, cpIP6AddressOrPrefix, &dst, &mask,
-			  "PORT", cpkP+cpkM, cpInteger, &port, cpEnd);
+        ok = Args(words, r, errh)
+	    .read_mp("PREFIX", IP6PrefixArg(true), dst, mask)
+	    .read_mp("PORT", port)
+	    .complete();
     else
-        ok = cp_va_kparse(words, r, errh,
-			  "PREFIX", cpkP+cpkM, cpIP6AddressOrPrefix, &dst, &mask,
-			  "GATEWAY", cpkP+cpkM, cpIP6Address, &gw,
-			  "PORT", cpkP+cpkM, cpInteger, &port, cpEnd);
+        ok = Args(words, r, errh)
+	    .read_mp("PREFIX", IP6PrefixArg(true), dst, mask)
+	    .read_mp("GATEWAY", gw)
+	    .read_mp("PORT", port)
+	    .complete();
 
     if (ok >= 0 && (port < 0 || port >= r->noutputs()))
         ok = errh->error("output port out of range");
@@ -96,9 +98,9 @@ IP6RouteTable::remove_route_handler(const String &conf, Element *e, void *, Erro
     IP6Address a, mask;
     int ok = 0;
 
-    ok = cp_va_kparse(words, r, errh,
-		      "PREFIX", cpkP+cpkM, cpIP6AddressOrPrefix, &a, &mask,
-		      cpEnd);
+    ok = Args(words, r, errh)
+	.read_mp("PREFIX", IP6PrefixArg(true), a, mask)
+	.complete();
 
     if (ok >= 0)
 	ok = r->remove_route(a, mask, errh);

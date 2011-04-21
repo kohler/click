@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
@@ -43,10 +43,10 @@ PrintTXFeedback::configure(Vector<String> &conf, ErrorHandler* errh)
 {
   int ret;
   _offset = 0;
-  ret = cp_va_kparse(conf, this, errh,
-		     "LABEL", cpkP, cpString, &_label,
-		     "OFFSET", 0, cpUnsigned, &_offset,
-		     cpEnd);
+  ret = Args(conf, this, errh)
+      .read_p("LABEL", _label)
+      .read("OFFSET", _offset)
+      .complete();
   return ret;
 }
 

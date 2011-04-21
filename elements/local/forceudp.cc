@@ -21,7 +21,7 @@
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 ForceUDP::ForceUDP()
@@ -40,9 +40,9 @@ ForceUDP::configure(Vector<String> &conf, ErrorHandler *errh)
     if (conf.size() == 0 || conf[0] == "-1")
 	return 0;
     uint16_t dp;
-    if (cp_va_kparse(conf, this, errh,
-		     "DPORT", cpkP, cpUDPPort, &dp,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_p("DPORT", IPPortArg(IP_PROTO_UDP), dp)
+	.complete() < 0)
 	return -1;
     _dport = dp;
     return 0;

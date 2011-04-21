@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include <elements/grid/grid.hh>
 #include <elements/grid/gridencap.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ether.h>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -36,11 +36,11 @@ GridEncap::~GridEncap()
 int
 GridEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "ETH", cpkP+cpkM, cpEthernetAddress, &_eth,
-		   "IP", cpkP+cpkM, cpIPAddress, &_ip,
-		   cpEnd) < 0)
-    return -1;
+  if (Args(conf, this, errh)
+      .read_mp("ETH", _eth)
+      .read_mp("IP", _ip)
+      .complete() < 0)
+      return -1;
 
   memset(&_eh, 0, sizeof(_eh));
   memset(&_gh, 0, sizeof(_gh));

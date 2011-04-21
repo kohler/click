@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "radiosim.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <math.h>

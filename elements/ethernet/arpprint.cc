@@ -21,7 +21,7 @@
 #include <click/config.h>
 #include "arpprint.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
@@ -68,15 +68,15 @@ ARPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String channel;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "LABEL", cpkP, cpString, &_label,
-		     "TIMESTAMP", 0, cpBool, &_print_timestamp,
-		     "ETHER", 0, cpBool, &_print_ether,
-		     "ACTIVE", 0, cpBool, &_active,
+    if (Args(conf, this, errh)
+	.read_p("LABEL", _label)
+	.read("TIMESTAMP", _print_timestamp)
+	.read("ETHER", _print_ether)
+	.read("ACTIVE", _active)
 #if CLICK_USERLEVEL
-		     "OUTFILE", 0, cpFilename, &_outfilename,
+	.read("OUTFILE", FilenameArg(), _outfilename)
 #endif
-		     cpEnd) < 0)
+	.complete() < 0)
 	return -1;
 
     _errh = router()->chatter_channel(channel);

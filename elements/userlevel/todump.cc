@@ -21,7 +21,7 @@
 #include <click/config.h>
 #include <click/glue.hh>
 #include "todump.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #if CLICK_NS
 # include <click/master.hh>
@@ -53,16 +53,16 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool per_node = false;
 #endif
 
-    if (cp_va_kparse(conf, this, errh,
-		     "FILENAME", cpkP+cpkM, cpFilename, &_filename,
-		     "SNAPLEN", cpkP, cpUnsigned, &_snaplen,
-		     "ENCAP", cpkP, cpWord, &encap_type,
-		     "USE_ENCAP_FROM", 0, cpArgument, &use_encap_from,
-		     "EXTRA_LENGTH", 0, cpBool, &_extra_length,
+    if (Args(conf, this, errh)
+	.read_mp("FILENAME", FilenameArg(), _filename)
+	.read_p("SNAPLEN", _snaplen)
+	.read_p("ENCAP", WordArg(), encap_type)
+	.read("USE_ENCAP_FROM", AnyArg(), use_encap_from)
+	.read("EXTRA_LENGTH", _extra_length)
 #if CLICK_NS
-		     "PER_NODE", 0, cpBool, &per_node,
+	.read("PER_NODE", per_node)
 #endif
-		     cpEnd) < 0)
+	.complete() < 0)
 	return -1;
 
     if (_snaplen == 0)

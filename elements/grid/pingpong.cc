@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ether.h>
 #include "pingpong.hh"
 #include <click/glue.hh>
@@ -36,13 +36,9 @@ PingPong::~PingPong()
 int
 PingPong::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "LINKSTAT", cpkP+cpkM, cpElement, &_ls,
-			 cpEnd);
-  if (res < 0)
-    return res;
-
-  return res;
+    return Args(conf, this, errh)
+	.read_mp("LINKSTAT", reinterpret_cast<Element *&>(_ls))
+	.complete();
 }
 
 

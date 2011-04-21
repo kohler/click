@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "staticswitch.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 StaticSwitch::StaticSwitch()
@@ -32,14 +32,12 @@ StaticSwitch::~StaticSwitch()
 int
 StaticSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _output = 0;
-  if (cp_va_kparse(conf, this, errh,
-		   "OUTPUT", cpkP+cpkM, cpInteger, &_output,
-		   cpEnd) < 0)
-    return -1;
-  if (_output >= noutputs())
-    _output = -1;
-  return 0;
+    _output = 0;
+    if (Args(conf, this, errh).read_mp("OUTPUT", _output).complete() < 0)
+	return -1;
+    if (_output >= noutputs())
+	_output = -1;
+    return 0;
 }
 
 void

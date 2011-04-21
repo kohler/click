@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include <click/error.hh>
 #include "timerange.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 CLICK_DECLS
 
@@ -35,9 +35,9 @@ int
 TimeRange::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _simple = false;
-    if (cp_va_kparse(conf, this, errh,
-		     "SIMPLE", 0, cpBool, &_simple,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read("SIMPLE", _simple)
+	.complete() < 0)
 	return -1;
     return 0;
 }

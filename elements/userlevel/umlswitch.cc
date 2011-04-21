@@ -10,7 +10,7 @@
 
 #include <click/config.h>
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -22,12 +22,9 @@ CLICK_DECLS
 int
 UMLSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "PATH", cpkP, cpFilename, &_ctl_path,
-		   cpEnd) < 0)
-    return -1;
-
-  return 0;
+  return Args(conf, this, errh)
+    .read_p("PATH", FilenameArg(), _ctl_path)
+    .complete();
 }
 
 int

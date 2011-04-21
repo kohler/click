@@ -14,7 +14,7 @@
  * legally binding.  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include "elements/grid/e2elossmetric.hh"
 #include "elements/grid/linkstat.hh"
@@ -43,10 +43,10 @@ E2ELossMetric::cast(const char *n)
 int
 E2ELossMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "LINKSTAT", cpkP+cpkM, cpElement, &_ls,
-			 "TWOWAY", 0, cpBool, &_twoway,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read_mp("LINKSTAT", reinterpret_cast<Element *&>(_ls))
+      .read("TWOWAY", _twoway)
+      .complete();
   if (res < 0)
     return res;
   if (_ls == 0)

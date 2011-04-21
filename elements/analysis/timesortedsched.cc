@@ -21,7 +21,7 @@
 #include <click/error.hh>
 #include "timesortedsched.hh"
 #include <click/standard/scheduleinfo.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/heap.hh>
 CLICK_DECLS
@@ -51,10 +51,10 @@ TimeSortedSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _notifier.initialize(Notifier::EMPTY_NOTIFIER, router());
     _stop = false;
-    if (cp_va_kparse(conf, this, errh,
-		     "STOP", 0, cpBool, &_stop,
-		     "BUFFER", 0, cpInteger, &_buffer,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read("STOP", _stop)
+	.read("BUFFER", _buffer)
+	.complete() < 0)
 	return -1;
     if (_buffer <= 0)
 	return errh->error("BUFFER must be at least 1");

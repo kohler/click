@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 #include "adaptivered.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -46,12 +46,12 @@ AdaptiveRED::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned target_q, max_p, stability = 4;
     String queues_string = String();
-    if (cp_va_kparse(conf, this, errh,
-		     "TARGET", cpkP+cpkM, cpUnsigned, &target_q,
-		     "MAX_P", cpkP+cpkM, cpUnsignedReal2, 16, &max_p,
-		     "QUEUES", 0, cpArgument, &queues_string,
-		     "STABILITY", 0, cpUnsigned, &stability,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("TARGET", target_q)
+	.read_mp("MAX_P", FixedPointArg(16), max_p)
+	.read("QUEUES", AnyArg(), queues_string)
+	.read("STABILITY", stability)
+	.complete() < 0)
 	return -1;
     if (target_q < 10)
 	target_q = 10;

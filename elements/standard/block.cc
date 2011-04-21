@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "block.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
@@ -33,9 +33,7 @@ Block::~Block()
 int
 Block::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_kparse(conf, this, errh,
-		      "THRESH", cpkP+cpkM, cpInteger, &_thresh,
-		      cpEnd);
+    return Args(conf, this, errh).read_mp("THRESH", _thresh).complete();
 }
 
 void

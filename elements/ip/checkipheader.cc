@@ -21,7 +21,7 @@
 #include "checkipheader.hh"
 #include <clicknet/ip.h>
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/standard/alignmentinfo.hh>
@@ -36,72 +36,41 @@ const char * const CheckIPHeader::reason_texts[NREASONS] = {
 #define IPADDR_LIST_BADSRC		((void *)1)
 #define IPADDR_LIST_BADSRC_OLD		((void *)2)
 
-static void
-ipaddr_list_parse(cp_value *v, const String &arg, ErrorHandler *errh, const char *argname, Element *context)
+bool
+CheckIPHeader::OldBadSrcArg::parse(const String &str, Vector<IPAddress> &result, Args &args)
 {
-    Vector<String> words;
-    cp_spacevec(arg, words);
-    if (v->argtype->user_data == IPADDR_LIST_BADSRC_OLD) {
-	words.push_back(String::make_stable("0.0.0.0", 7));
-	words.push_back(String::make_stable("255.255.255.255", 15));
-    }
-
-    bool addresses = (v->argtype->user_data != IPADDR_LIST_INTERFACES);
-    String str = String::make_garbage((addresses ? 4 : 8) * words.size());
-    if (str.out_of_memory()) {
-	errh->error("out of memory!");
-	return;
-    }
-    unsigned char *data = (unsigned char *) str.mutable_data();
-
-    for (int i = 0; i < words.size(); i++)
-	if (addresses ? !cp_ip_address(words[i], &data[i*4], context)
-	    : !cp_ip_prefix(words[i], &data[i*8], &data[i*8+4], true, context)) {
-	    errh->error("%s takes list of IP %s", argname, addresses ? "addresses" : "prefixes");
-	    return;
-	}
-
-    v->v_string = str;
+    if (IPAddressArg::parse(str, result, args)) {
+	result.push_back(IPAddress(0));
+	result.push_back(IPAddress(0xFFFFFFFFU));
+	return true;
+    } else
+	return false;
 }
 
-static void
-ipaddr_list_store(cp_value *v, Element *)
+bool
+CheckIPHeader::InterfacesArg::parse(const String &str,
+				    Vector<IPAddress> &result_bad_src,
+				    Vector<IPAddress> &result_good_dst,
+				    Args &args)
 {
-    Vector<IPAddress> *l1 = (Vector<IPAddress> *)v->store;
-    l1->clear();
-    const uint32_t *vec = reinterpret_cast<const uint32_t *>(v->v_string.data());
-    int len = v->v_string.length() / 4;
-
-    if (v->argtype->user_data == IPADDR_LIST_INTERFACES) {
-	for (int i = 0; i < len/2; i++)
-	    l1->push_back((vec[i*2] & vec[i*2 + 1]) | ~vec[i*2 + 1]);
-	l1->push_back(0x00000000U);
-	l1->push_back(0xFFFFFFFFU);
-
-	Vector<IPAddress> *l2 = (Vector<IPAddress> *)v->store2;
-	l2->clear();
-	for (int i = 0; i < len/2; i++)
-	    l2->push_back(vec[i*2]);
-    } else {
-	for (int i = 0; i < len; i++)
-	    l1->push_back(vec[i]);
+    String arg(str);
+    IPAddress ip, mask;
+    int nwords = 0;
+    while (String word = cp_shift_spacevec(arg)) {
+	++nwords;
+	if (IPPrefixArg(true).parse(word, ip, mask, args)) {
+	    result_bad_src.push_back((ip & mask) | ~mask);
+	    result_good_dst.push_back(ip);
+	} else
+	    return false;
     }
-}
-
-void
-CheckIPHeader::static_initialize()
-{
-  cp_register_argtype("CheckIPHeader.INTERFACES", "list of router IP addresses and prefixes", cpArgStore2, ipaddr_list_parse, ipaddr_list_store, IPADDR_LIST_INTERFACES);
-  cp_register_argtype("CheckIPHeader.BADSRC", "list of IP addresses", cpArgNormal, ipaddr_list_parse, ipaddr_list_store, IPADDR_LIST_BADSRC);
-  cp_register_argtype("CheckIPHeader.BADSRC_OLD", "list of IP addresses", cpArgNormal, ipaddr_list_parse, ipaddr_list_store, IPADDR_LIST_BADSRC_OLD);
-}
-
-void
-CheckIPHeader::static_cleanup()
-{
-  cp_unregister_argtype("CheckIPHeader.INTERFACES");
-  cp_unregister_argtype("CheckIPHeader.BADSRC");
-  cp_unregister_argtype("CheckIPHeader.BADSRC_OLD");
+    if (nwords == result_bad_src.size()) {
+	result_bad_src.push_back(IPAddress(0));
+	result_bad_src.push_back(IPAddress(0xFFFFFFFFU));
+	return true;
+    }
+    args.error("out of memory");
+    return false;
 }
 
 CheckIPHeader::CheckIPHeader()
@@ -122,23 +91,24 @@ CheckIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
   bool verbose = false;
   bool details = false;
 
-  if (cp_va_kparse_remove_keywords(conf, this, errh,
-		"INTERFACES", 0, "CheckIPHeader.INTERFACES", &_bad_src, &_good_dst,
-		"BADSRC", 0, "CheckIPHeader.BADSRC", &_bad_src,
-		"GOODDST", 0, "CheckIPHeader.BADSRC", &_good_dst,
-		"OFFSET", 0, cpUnsigned, &_offset,
-		"VERBOSE", 0, cpBool, &verbose,
-		"DETAILS", 0, cpBool, &details,
-		"CHECKSUM", 0, cpBool, &_checksum,
-		cpEnd) < 0)
-    return -1;
+  if (Args(this, errh).bind(conf)
+      .read("INTERFACES", InterfacesArg(), _bad_src, _good_dst)
+      .read("BADSRC", _bad_src)
+      .read("GOODDST", _good_dst)
+      .read("OFFSET", _offset)
+      .read("VERBOSE", verbose)
+      .read("DETAILS", details)
+      .read("CHECKSUM", _checksum)
+      .consume() < 0)
+      return -1;
 
-  if (conf.size() == 1 && cp_integer(conf[0], &_offset))
+  if (conf.size() == 0
+      || (conf.size() == 1 && IntArg::parse(conf[0], _offset)))
     /* nada */;
-  else if (cp_va_kparse(conf, this, errh,
-			"BADSRC*", cpkP, "CheckIPHeader.BADSRC_OLD", &_bad_src,
-			"OFFSET", cpkP, cpUnsigned, &_offset,
-			cpEnd) < 0)
+  else if (Args(conf, this, errh)
+	   .read("BADSRC", OldBadSrcArg(), _bad_src)
+	   .read("OFFSET", _offset)
+	   .complete() < 0)
     return -1;
 
   _verbose = verbose;

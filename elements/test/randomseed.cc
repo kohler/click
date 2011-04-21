@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "randomseed.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -35,9 +35,9 @@ RandomSeed::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool seed_given = false;
     uint32_t seed;
-    if (cp_va_kparse(conf, this, errh,
-		     "SEED", cpkP+cpkC, &seed_given, cpUnsigned, &seed,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_p("SEED", seed).read_status(seed_given)
+	.complete() < 0)
 	return -1;
     if (!seed_given)
 	click_random_srandom();

@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/glue.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/packet_anno.hh>
@@ -58,27 +58,25 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String socktype;
   _client = (noutputs() == 0);
-  if (cp_va_kparse(conf, this, errh,
-		   "TYPE", cpkP+cpkM, cpString, &socktype,
-		   cpIgnoreRest, cpEnd) < 0)
+  Args args = Args(this, errh).bind(conf);
+  if (args.read_mp("TYPE", socktype).execute() < 0)
     return -1;
   socktype = socktype.upper();
 
   // remove keyword arguments
   Element *allow = 0, *deny = 0;
-  if (cp_va_kparse_remove_keywords(conf, this, errh,
-		"VERBOSE", 0, cpBool, &_verbose,
-		"SNAPLEN", 0, cpUnsigned, &_snaplen,
-		"HEADROOM", 0, cpUnsigned, &_headroom,
-		"TIMESTAMP", 0, cpBool, &_timestamp,
-		"RCVBUF", 0, cpUnsigned, &_rcvbuf,
-		"SNDBUF", 0, cpUnsigned, &_sndbuf,
-		"NODELAY", 0, cpUnsigned, &_nodelay,
-		"CLIENT", 0, cpBool, &_client,
-		"PROPER", 0, cpBool, &_proper,
-		"ALLOW", 0, cpElement, &allow,
-		"DENY", 0, cpElement, &deny,
-		cpEnd) < 0)
+  if (args.read("VERBOSE", _verbose)
+      .read("SNAPLEN", _snaplen)
+      .read("HEADROOM", _headroom)
+      .read("TIMESTAMP", _timestamp)
+      .read("RCVBUF", _rcvbuf)
+      .read("SNDBUF", _sndbuf)
+      .read("NODELAY", _nodelay)
+      .read("CLIENT", _client)
+      .read("PROPER", _proper)
+      .read("ALLOW", allow)
+      .read("DENY", deny)
+      .consume() < 0)
     return -1;
 
   if (allow && !(_allow = (IPRouteTable *)allow->cast("IPRouteTable")))
@@ -91,14 +89,11 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
     _family = AF_INET;
     _socktype = socktype == "TCP" ? SOCK_STREAM : SOCK_DGRAM;
     _protocol = socktype == "TCP" ? IPPROTO_TCP : IPPROTO_UDP;
-    CpVaParseCmd portcmd = (socktype == "TCP" ? cpTCPPort : cpUDPPort);
-    if (cp_va_kparse(conf, this, errh,
-		     "TYPE", cpkP+cpkM, cpIgnore,
-		     "ADDR", cpkP+cpkM, cpIPAddress, &_remote_ip,
-		     "PORT", cpkP+cpkM, portcmd, &_remote_port,
-		     "LOCAL_ADDR", cpkP, cpIPAddress, &_local_ip,
-		     "LOCAL_PORT", cpkP, portcmd, &_local_port,
-		     cpEnd) < 0)
+    if (args.read_mp("ADDR", _remote_ip)
+	.read_mp("PORT", IPPortArg(_protocol), _remote_port)
+	.read_p("LOCAL_ADDR", _local_ip)
+	.read_p("LOCAL_PORT", IPPortArg(_protocol), _local_port)
+	.complete() < 0)
       return -1;
   }
 
@@ -106,11 +101,9 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
     _family = AF_UNIX;
     _socktype = socktype == "UNIX" ? SOCK_STREAM : SOCK_DGRAM;
     _protocol = 0;
-    if (cp_va_kparse(conf, this, errh,
-		     "TYPE", cpkP+cpkM, cpIgnore,
-		     "FILENAME", cpkP+cpkM, cpFilename, &_remote_pathname,
-		     "LOCAL_FILENAME", cpkP, cpFilename, &_local_pathname,
-		     cpEnd) < 0)
+    if (args.read_mp("FILENAME", FilenameArg(), _remote_pathname)
+	.read_p("LOCAL_FILENAME", FilenameArg(), _local_pathname)
+	.complete() < 0)
       return -1;
     int max_path = (int)sizeof(((struct sockaddr_un *)0)->sun_path);
     // if not in the abstract namespace (begins with zero byte),

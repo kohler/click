@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include "debugbridge.hh"
 #include "bridgemessage.hh"
 CLICK_DECLS
@@ -33,9 +33,7 @@ DebugBridge::~DebugBridge()
 int
 DebugBridge::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_kparse(conf, this, errh,
-		      "LABEL", cpkP+cpkM, cpString, &_label,
-		      cpEnd);
+    return Args(conf, this, errh).read_mp("LABEL", _label).complete();
 }
 
 Packet *

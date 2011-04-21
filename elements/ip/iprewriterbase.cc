@@ -28,7 +28,7 @@
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
 #include <click/llrpc.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/algorithm.hh>
@@ -150,15 +150,14 @@ IPRewriterBase::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String capacity_word;
 
-    if (cp_va_kparse_remove_keywords
-	(conf, this, errh,
-	 "CAPACITY", 0, cpArgument, &capacity_word,
-	 "MAPPING_CAPACITY", 0, cpArgument, &capacity_word,
-	 "TIMEOUT", 0, cpSeconds, &_timeouts[0],
-	 "GUARANTEE", 0, cpSeconds, &_timeouts[1],
-	 "REAP_INTERVAL", 0, cpSeconds, &_gc_interval_sec,
-	 "REAP_TIME", cpkDeprecated, cpSeconds, &_gc_interval_sec,
-	 cpEnd) < 0)
+    if (Args(this, errh).bind(conf)
+	.read("CAPACITY", AnyArg(), capacity_word)
+	.read("MAPPING_CAPACITY", AnyArg(), capacity_word)
+	.read("TIMEOUT", SecondsArg(), _timeouts[0])
+	.read("GUARANTEE", SecondsArg(), _timeouts[1])
+	.read("REAP_INTERVAL", SecondsArg(), _gc_interval_sec)
+	.read("REAP_TIME", Args::deprecated, SecondsArg(), _gc_interval_sec)
+	.consume() < 0)
 	return -1;
 
     if (capacity_word) {
@@ -397,9 +396,9 @@ IPRewriterBase::write_handler(const String &str, Element *e, void *user_data, Er
     IPRewriterBase *rw = static_cast<IPRewriterBase *>(e);
     intptr_t what = reinterpret_cast<intptr_t>(user_data);
     if (what == h_capacity) {
-	if (cp_va_space_kparse(str, e, errh,
-			       "CAPACITY", cpkP+cpkM, cpInteger, &rw->_heap->_capacity,
-			       cpEnd) < 0)
+	if (Args(e, errh).push_back_words(str)
+	    .read_mp("CAPACITY", rw->_heap->_capacity)
+	    .complete() < 0)
 	    return -1;
 	rw->shrink_heap(false);
 	return 0;

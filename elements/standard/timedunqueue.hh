@@ -52,7 +52,7 @@ class TimedUnqueue : public Element { public:
     int _burst;
     Task _task;
     Timer _timer;
-    int _interval;
+    unsigned _interval;
     enum { use_signal = 1 };
     NotifierSignal _signal;
 

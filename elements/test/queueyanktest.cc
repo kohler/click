@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "queueyanktest.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -36,9 +36,7 @@ QueueYankTest::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "QUEUE", cpkP+cpkM, cpElement, &e,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh).read_mp("QUEUE", e).complete() < 0)
 	return -1;
 
     if (!(_q = static_cast<SimpleQueue *>(e->cast("SimpleQueue"))))

@@ -144,8 +144,8 @@ class TCPRewriter : public IPRewriterBase { public:
 
     SizedHashAllocator<sizeof(TCPFlow)> _allocator;
     unsigned _annos;
-    int _tcp_data_timeout;
-    int _tcp_done_timeout;
+    uint32_t _tcp_data_timeout;
+    uint32_t _tcp_done_timeout;
 
     int tcp_flow_timeout(const TCPFlow *mf) const {
 	if (mf->both_done())

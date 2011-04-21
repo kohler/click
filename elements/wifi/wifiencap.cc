@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "wifiencap.hh"
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <clicknet/wifi.h>
@@ -42,12 +42,12 @@ WifiEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _debug = false;
   _mode = WIFI_FC1_DIR_NODS;
-  if (cp_va_kparse(conf, this, errh,
-		   "MODE", cpkP+cpkM, cpUnsigned, &_mode,
-		   "BSSID", cpkP, cpEthernetAddress, &_bssid,
-		   "WIRELESS_INFO", 0, cpElement, &_winfo,
-		   "DEBUG", 0, cpBool, &_debug,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read_mp("MODE", _mode)
+      .read_p("BSSID", _bssid)
+      .read("WIRELESS_INFO", ElementCastArg("WirelessInfo"), _winfo)
+      .read("DEBUG", _debug)
+      .complete() < 0)
     return -1;
   return 0;
 }

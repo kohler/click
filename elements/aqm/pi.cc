@@ -23,7 +23,7 @@
 #include <click/routervisitor.hh>
 #include <click/error.hh>
 #include <click/router.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 CLICK_DECLS
 
@@ -59,21 +59,21 @@ PI::check_params(double w, double a, double b, unsigned target_q,
 int
 PI::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-	double a, b, w;
-	unsigned target_q;
+    double a, b, w;
+    unsigned target_q;
     unsigned stability = 4;
 
     String queues_string = String();
-	if (cp_va_kparse(conf, this, errh,
-			 "W", cpkP+cpkM, cpDouble, &w,
-			 "A", cpkP+cpkM, cpDouble, &a,
-			 "B", cpkP+cpkM, cpDouble, &b,
-			 "TARGET", cpkP+cpkM, cpUnsigned, &target_q,
-			 "QUEUES", cpkP, cpArgument, &queues_string,
-			 "QREF", 0, cpUnsigned, &target_q,
-			 "STABILITY", 0, cpUnsigned, &stability,
-			 cpEnd) < 0)
-		return -1;
+    if (Args(conf, this, errh)
+	.read_mp("W", w)
+	.read_mp("A", a)
+	.read_mp("B", b)
+	.read_mp("TARGET", target_q)
+	.read_p("QUEUES", AnyArg(), queues_string)
+	.read("QREF", target_q)
+	.read("STABILITY", stability)
+	.complete() < 0)
+	return -1;
 
     if (check_params(w, a, b, target_q, stability, errh) < 0)
 		return -1;
@@ -102,21 +102,21 @@ PI::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 PI::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
-	double a, b, w;
-	unsigned target_q;
+    double a, b, w;
+    unsigned target_q;
     unsigned stability = 4;
 
     String queues_string = String();
-	if (cp_va_kparse(conf, this, errh,
-			 "W", cpkP+cpkM, cpDouble, &w,
-			 "A", cpkP+cpkM, cpDouble, &a,
-			 "B", cpkP+cpkM, cpDouble, &b,
-			 "TARGET", cpkP+cpkM, cpUnsigned, &target_q,
-			 "QUEUES", cpkP, cpArgument, &queues_string,
-			 "QREF", 0, cpUnsigned, &target_q,
-			 "STABILITY", 0, cpUnsigned, &stability,
-			 cpEnd) < 0)
-		return -1;
+    if (Args(conf, this, errh)
+	.read_mp("W", w)
+	.read_mp("A", a)
+	.read_mp("B", b)
+	.read_mp("TARGET", target_q)
+	.read_p("QUEUES", AnyArg(), queues_string)
+	.read("QREF", target_q)
+	.read("STABILITY", stability)
+	.complete() < 0)
+	return -1;
 
     if (check_params(w, a, b, target_q, stability, errh) < 0)
 		return -1;

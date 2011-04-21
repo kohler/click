@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include "hashswitch.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 HashSwitch::HashSwitch()
@@ -34,14 +34,13 @@ HashSwitch::~HashSwitch()
 int
 HashSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "OFFSET", cpkP+cpkM, cpUnsigned, &_offset,
-		   "LENGTH", cpkP+cpkM, cpUnsigned, &_length,
-		   cpEnd) < 0)
-    return -1;
-  if (_length == 0)
-    return errh->error("length must be > 0");
-  return 0;
+    if (Args(conf, this, errh)
+	.read_mp("OFFSET", _offset)
+	.read_mp("LENGTH", _length).complete() < 0)
+	return -1;
+    if (_length == 0)
+	return errh->error("length must be > 0");
+    return 0;
 }
 
 void

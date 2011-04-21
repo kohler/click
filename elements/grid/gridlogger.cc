@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/glue.hh>
 #include <click/error.hh>
 #include "gridlogger.hh"
@@ -38,10 +38,10 @@ GridLogger::configure(Vector<String> &conf, ErrorHandler *errh)
   String logfile;
   bool short_ip = true;
 
-  int res = cp_va_kparse(conf, this, errh,
-			 "LOGFILE", 0, cpString, &logfile,
-			 "SHORT_IP", 0, cpBool, &short_ip,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read("LOGFILE", logfile)
+      .read("SHORT_IP", short_ip)
+      .complete();
   if (res < 0)
     return res;
 

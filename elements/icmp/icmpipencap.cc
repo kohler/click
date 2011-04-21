@@ -1,6 +1,6 @@
 #include <click/config.h>
 #include "icmpipencap.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <clicknet/icmp.h>
@@ -22,19 +22,23 @@ int
 ICMPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String code_str = "0";
-    int code;
-    if (cp_va_kparse(conf, this, errh,
-		     "SRC", cpkP+cpkM, cpIPAddress, &_src,
-		     "DST", cpkP+cpkM, cpIPAddress, &_dst,
-		     "TYPE", cpkP+cpkM, cpNamedInteger, NameInfo::T_ICMP_TYPE, &_icmp_type,
-		     "CODE", cpkP, cpWord, &code_str,
-		     "IDENTIFIER", 0, cpUnsignedShort, &_icmp_id,
-		     cpEnd) < 0)
+    int icmp_type, icmp_code;
+    if (Args(conf, this, errh)
+	.read_mp("SRC", _src)
+	.read_mp("DST", _dst)
+	.read_mp("TYPE", NamedIntArg(NameInfo::T_ICMP_TYPE), icmp_type)
+	.read_p("CODE", WordArg(), code_str)
+	.read("IDENTIFIER", _icmp_id)
+	.complete() < 0)
 	return -1;
 
-    if (!NameInfo::query_int(NameInfo::T_ICMP_CODE + _icmp_type, this, code_str, &code) || code < 0 || code > 255)
-	return errh->error("invalid code");
-    _icmp_code = code;
+    if (icmp_type < 0 || icmp_type > 255)
+	return errh->error("invalid TYPE");
+    if (!NameInfo::query_int(NameInfo::T_ICMP_CODE + icmp_type, this, code_str, &icmp_code)
+	|| icmp_code < 0 || icmp_code > 255)
+	return errh->error("invalid CODE");
+    _icmp_type = icmp_type;
+    _icmp_code = icmp_code;
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
     { // check alignment

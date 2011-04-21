@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "markipce.hh"
 #include <clicknet/ip.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -35,9 +35,7 @@ int
 MarkIPCE::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _force = false;
-    return cp_va_kparse(conf, this, errh,
-			"FORCE", cpkP, cpBool, &_force,
-			cpEnd);
+    return Args(conf, this, errh).read_p("FORCE", _force).complete();
 }
 
 Packet *

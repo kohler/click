@@ -20,7 +20,7 @@
 #include <click/config.h>
 #include "ipfragmenter.hh"
 #include <clicknet/ip.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 CLICK_DECLS
@@ -41,12 +41,12 @@ int
 IPFragmenter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _headroom = Packet::default_headroom;
-    if (cp_va_kparse(conf, this, errh,
-		     "MTU", cpkP+cpkM, cpUnsigned, &_mtu,
-		     "HONOR_DF", cpkP, cpBool, &_honor_df,
-		     "VERBOSE", cpkP, cpBool, &_verbose,
-		     "HEADROOM", 0, cpUnsigned, &_headroom,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("MTU", _mtu)
+	.read_p("HONOR_DF", _honor_df)
+	.read_p("VERBOSE", _verbose)
+	.read("HEADROOM", _headroom)
+	.complete() < 0)
 	return -1;
     if (_mtu < 8)
 	return errh->error("MTU must be at least 8");

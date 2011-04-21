@@ -20,7 +20,7 @@
 
 #include <click/config.h>
 #include "aggpktcounter.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 #include <click/router.hh>
@@ -100,10 +100,10 @@ AggregatePacketCounter::configure(Vector<String> &conf, ErrorHandler *errh)
     Element *e = 0;
     String anno = String::make_stable("PACKET_NUMBER");
 
-    if (cp_va_kparse(conf, this, errh,
-		     "NOTIFIER", 0, cpElement, &e,
-		     "ANNO", 0, cpWord, &anno,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read("NOTIFIER", e)
+	.read("ANNO", WordArg(), anno)
+	.complete() < 0)
 	return -1;
 
     if (anno == "NONE")

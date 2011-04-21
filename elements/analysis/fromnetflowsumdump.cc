@@ -19,7 +19,7 @@
 #include <click/config.h>
 
 #include "fromnetflowsumdump.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/error.hh>
@@ -62,15 +62,15 @@ FromNetFlowSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _multipacket = _timing = false;
     String link = "input";
 
-    if (cp_va_kparse(conf, this, errh,
-		     "FILENAME", cpkP+cpkM, cpFilename, &_ff.filename(),
-		     "STOP", 0, cpBool, &stop,
-		     "ACTIVE", 0, cpBool, &_active,
-		     "ZERO", 0, cpBool, &_zero,
-		     "MULTIPACKET", 0, cpBool, &_multipacket,
-		     "LINK", 0, cpWord, &link,
-		     "TIMING", 0, cpBool, &_timing,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("FILENAME", FilenameArg(), _ff.filename())
+	.read("STOP", stop)
+	.read("ACTIVE", _active)
+	.read("ZERO", _zero)
+	.read("MULTIPACKET", _multipacket)
+	.read("LINK", WordArg(), link)
+	.read("TIMING", _timing)
+	.complete() < 0)
 	return -1;
 
     _stop = stop;

@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "nulltask.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 CLICK_DECLS
@@ -35,11 +35,11 @@ NullTask::~NullTask()
 int
 NullTask::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"STOP", 0, cpBool, &_stop,
-			"LIMIT", 0, cpUnsigned, &_limit,
-			"ACTIVE", 0, cpBool, &_active,
-			cpEnd);
+    return Args(conf, this, errh)
+	.read("STOP", _stop)
+	.read("LIMIT", _limit)
+	.read("ACTIVE", _active)
+	.complete();
 }
 
 int

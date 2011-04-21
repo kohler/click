@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include <click/glue.hh>
 #include <clicknet/ether.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/packet.hh>
 #include "ackresponder2.hh"
 CLICK_DECLS
@@ -50,9 +50,7 @@ ACKResponder2::simple_action(Packet *p)
 int
 ACKResponder2::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_kparse(conf, this, errh,
-		      "IP", cpkP+cpkM, cpIPAddress, &_ip,
-		      cpEnd);
+    return Args(conf, this, errh).read_mp("IP", _ip).complete();
 }
 
 CLICK_ENDDECLS

@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "sendpattern.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -34,9 +34,9 @@ SendPattern::~SendPattern()
 int
 SendPattern::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_kparse(conf, this, errh,
-		      "LENGTH", cpkP+cpkM, cpUnsigned, &_len,
-		      cpEnd);
+    return Args(conf, this, errh)
+	.read_mp("LENGTH", _len)
+	.complete();
 }
 
 Packet *

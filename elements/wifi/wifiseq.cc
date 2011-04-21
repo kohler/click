@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "wifiseq.hh"
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <clicknet/wifi.h>
@@ -46,12 +46,12 @@ WifiSeq::configure(Vector<String> &conf, ErrorHandler *errh)
   _bytes = 2;
   _shift = 4;
 
-  if (cp_va_kparse(conf, this, errh,
-		   "DEBUG", 0, cpBool, &_debug,
-		   "OFFSET", 0, cpUnsigned, &_offset,
-		   "BYTES", 0, cpUnsigned, &_bytes,
-		   "SHIFT", 0, cpUnsigned, &_shift,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read("DEBUG", _debug)
+      .read("OFFSET", _offset)
+      .read("BYTES", _bytes)
+      .read("SHIFT", _shift)
+      .complete() < 0)
     return -1;
 
   if (_bytes != 2 && _bytes != 4) {

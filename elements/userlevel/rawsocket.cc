@@ -20,7 +20,7 @@
 #include <click/config.h>
 #include "rawsocket.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/glue.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
@@ -66,16 +66,22 @@ RawSocket::configure(Vector<String> &conf, ErrorHandler *errh)
     parsecmd = cpUDPPort;
 
   String socktype;
-  if (cp_va_kparse(conf, this, errh,
-		   "TYPE", cpkP+cpkM, cpString, &socktype,
-		   "PORT", cpkP, parsecmd, &_port,
-		   "SNAPLEN", 0, cpUnsigned, &_snaplen,
-		   "HEADROOM", 0, cpUnsigned, &_headroom,
-		   "PROPER", 0, cpBool, &_proper,
-		   cpEnd) < 0)
+  Args args(conf, this, errh);
+  if (args.read_mp("TYPE", socktype).execute() < 0)
     return -1;
-  socktype = socktype.upper();
+  if (socktype.upper() == "TCP")
+    args.read_p("PORT", IPPortArg(IP_PROTO_TCP), _port);
+  else if (socktype.upper() == "UDP")
+    args.read_p("PORT", IPPortArg(IP_PROTO_UDP), _port);
+  else
+    args.read_p("PORT", _port);
+  if (args.read("SNAPLEN", _snaplen)
+      .read("HEADROOM", _headroom)
+      .read("PROPER", _proper)
+      .complete() < 0)
+    return -1;
 
+  socktype = socktype.upper();
   if (socktype == "TCP")
     _protocol = IPPROTO_TCP;
   else if (socktype == "UDP")

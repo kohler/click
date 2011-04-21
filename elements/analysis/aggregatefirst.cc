@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "aggregatefirst.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 CLICK_DECLS
@@ -38,9 +38,9 @@ AggregateFirst::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "NOTIFIER", 0, cpElement, &e,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read("NOTIFIER", e)
+	.complete() < 0)
 	return -1;
 
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))

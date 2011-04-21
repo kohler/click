@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
@@ -36,12 +36,7 @@ SetRTS::~SetRTS()
 int
 SetRTS::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "RTS", cpkP+cpkM, cpBool, &_rts,
-		   cpEnd) < 0) {
-    return -1;
-  }
-  return 0;
+    return Args(conf, this, errh).read_mp("RTS", _rts).complete();
 }
 
 Packet *

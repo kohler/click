@@ -22,7 +22,7 @@
 #include "fromdevice.hh"
 #include <click/error.hh>
 #include <click/straccum.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
 #include <click/standard/scheduleinfo.hh>
@@ -79,18 +79,18 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _force_ip = false;
     String bpf_filter, capture, encap_type;
     bool has_encap;
-    if (cp_va_kparse(conf, this, errh,
-		     "DEVNAME", cpkP+cpkM, cpString, &_ifname,
-		     "PROMISC", cpkP, cpBool, &promisc,
-		     "SNAPLEN", cpkP, cpUnsigned, &_snaplen,
-		     "SNIFFER", 0, cpBool, &sniffer,
-		     "FORCE_IP", 0, cpBool, &_force_ip,
-		     "CAPTURE", 0, cpWord, &capture,
-		     "BPF_FILTER", 0, cpString, &bpf_filter,
-		     "OUTBOUND", 0, cpBool, &outbound,
-		     "HEADROOM", 0, cpUnsigned, &_headroom,
-		     "ENCAP", cpkC, &has_encap, cpWord, &encap_type,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("DEVNAME", _ifname)
+	.read_p("PROMISC", promisc)
+	.read_p("SNAPLEN", _snaplen)
+	.read("SNIFFER", sniffer)
+	.read("FORCE_IP", _force_ip)
+	.read("CAPTURE", WordArg(), capture)
+	.read("BPF_FILTER", bpf_filter)
+	.read("OUTBOUND", outbound)
+	.read("HEADROOM", _headroom)
+	.read("ENCAP", WordArg(), encap_type).read_status(has_encap)
+	.complete() < 0)
 	return -1;
     if (_snaplen > 8190 || _snaplen < 14)
 	return errh->error("SNAPLEN out of range");

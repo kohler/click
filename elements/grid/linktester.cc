@@ -17,7 +17,7 @@
 
 #include <fcntl.h>
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include "linktester.hh"
 #include <click/glue.hh>
 #include <clicknet/ether.h>
@@ -54,20 +54,20 @@ LinkTester::~LinkTester()
 int
 LinkTester::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "SRC", cpkP+cpkM, cpEthernetAddress, &_src_eth,
-			 "DST", cpkP+cpkM, cpEthernetAddress, &_dst_eth,
-			 "START_TIME", 0, cpInteger, &_start_time,
-			 "ITERATIONS", 0, cpUnsigned, &_num_iters,
-			 "SEND_FIRST", 0, cpBool, &_send_first,
-			 "PAD_TIME", 0, cpUnsigned, &_pad,
-			 "UNICAST_SEND_TIME", 0, cpUnsigned, &_send_time,
-			 "BROADCAST_SEND_TIME", 0, cpUnsigned, &_bcast_send_time,
-			 "UNICAST_PACKET_SZ", 0, cpUnsigned, &_packet_size,
-			 "BROADCAST_PACKET_SZ", 0, cpUnsigned, &_bcast_packet_size,
-			 "UNICAST_LAMBDA", 0, cpDouble, &_lambda,
-			 "BROADCAST_LAMBDA", 0, cpDouble, &_bcast_lambda,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read_mp("SRC", _src_eth)
+      .read_mp("DST", _dst_eth)
+      .read("START_TIME", _start_time)
+      .read("ITERATIONS", _num_iters)
+      .read("SEND_FIRST", _send_first)
+      .read("PAD_TIME", _pad)
+      .read("UNICAST_SEND_TIME", _send_time)
+      .read("BROADCAST_SEND_TIME", _bcast_send_time)
+      .read("UNICAST_PACKET_SZ", _packet_size)
+      .read("BROADCAST_PACKET_SZ", _bcast_packet_size)
+      .read("UNICAST_LAMBDA", _lambda)
+      .read("BROADCAST_LAMBDA", _bcast_lambda)
+      .complete();
 
   if (res > -1 && experiment_params_ok(errh))
     return 1;

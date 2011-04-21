@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "aggcounter.hh"
 #include <click/handlercall.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 #include <click/integers.hh>	// for first_bit_set
@@ -63,19 +63,18 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
     freeze_nnz = stop_nnz = _call_nnz = (uint32_t)(-1);
     freeze_count = stop_count = _call_count = (uint64_t)(-1);
 
-    if (cp_va_kparse(conf, this, errh,
-		     "BYTES", 0, cpBool, &bytes,
-		     "IP_BYTES", 0, cpBool, &ip_bytes,
-		     "MULTIPACKET", 0, cpBool, &packet_count,
-		     "EXTRA_LENGTH", 0, cpBool, &extra_length,
-		     "AGGREGATE_FREEZE", 0, cpUnsigned, &freeze_nnz,
-		     "COUNT_FREEZE", 0, cpUnsigned64, &freeze_count,
-		     "AGGREGATE_STOP", 0, cpUnsigned, &stop_nnz,
-		     "COUNT_STOP", 0, cpUnsigned64, &stop_count,
-		     "AGGREGATE_CALL", 0, cpArgument, &call_nnz,
-		     "COUNT_CALL", 0, cpArgument, &call_count,
-		     "BANNER", 0, cpString, &_output_banner,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read("BYTES", bytes)
+	.read("IP_BYTES", ip_bytes)
+	.read("MULTIPACKET", packet_count)
+	.read("EXTRA_LENGTH", extra_length)
+	.read("AGGREGATE_FREEZE", freeze_nnz)
+	.read("COUNT_FREEZE", freeze_count)
+	.read("AGGREGATE_STOP", stop_nnz)
+	.read("COUNT_STOP", stop_count)
+	.read("AGGREGATE_CALL", AnyArg(), call_nnz)
+	.read("COUNT_CALL", AnyArg(), call_count)
+	.read("BANNER", _output_banner).complete() < 0)
 	return -1;
 
     _bytes = bytes;

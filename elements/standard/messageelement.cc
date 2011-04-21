@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "messageelement.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -34,10 +34,9 @@ int
 MessageElement::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String message, type = "MESSAGE";
-    if (cp_va_kparse(conf, this, errh,
-		     "MESSAGE", cpkP+cpkM, cpString, &message,
-		     "TYPE", cpkP, cpKeyword, &type,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("MESSAGE", message)
+	.read_p("TYPE", KeywordArg(), type).complete() < 0)
 	return -1;
     const char *err;
     if (type == "MESSAGE")

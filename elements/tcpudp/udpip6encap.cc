@@ -24,7 +24,7 @@
 #include <click/config.h>
 #include <clicknet/ip6.h>
 #include "udpip6encap.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
@@ -50,12 +50,12 @@ UDPIP6Encap::configure(Vector<String> &conf, ErrorHandler *errh)
     uint16_t sport, dport;
     String daddr_str;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "SRC", cpkP+cpkM, cpIP6Address, &saddr,
-		     "SPORT", cpkP+cpkM, cpUDPPort, &sport,
-		     "DST", cpkP+cpkM, cpArgument, &daddr_str,
-		     "DPORT", cpkP+cpkM, cpUDPPort, &dport,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("SRC", saddr)
+	.read_mp("SPORT", IPPortArg(IP_PROTO_UDP), sport)
+	.read_mp("DST", AnyArg(), daddr_str)
+	.read_mp("DPORT", IPPortArg(IP_PROTO_UDP), dport)
+	.complete() < 0)
 	return -1;
 
     if (daddr_str.equals("DST_ANNO", 8)) {

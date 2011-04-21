@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "averagecounter.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/sync.hh>
 #include <click/glue.hh>
@@ -45,9 +45,7 @@ int
 AverageCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _ignore = 0;
-  if (cp_va_kparse(conf, this, errh,
-		   "IGNORE", cpkP, cpUnsigned, &_ignore,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh).read_p("IGNORE", _ignore).complete() < 0)
     return -1;
   _ignore *= CLICK_HZ;
   return 0;

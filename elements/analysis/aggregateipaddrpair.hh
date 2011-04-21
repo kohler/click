@@ -99,8 +99,8 @@ class AggregateIPAddrPair : public Element, public AggregateNotifier { public:
     unsigned _active_sec;
     unsigned _gc_sec;
 
-    int _timeout;
-    unsigned _gc_interval;
+    uint32_t _timeout;
+    uint32_t _gc_interval;
     bool _timestamp_warning;
     uint32_t _next;
 

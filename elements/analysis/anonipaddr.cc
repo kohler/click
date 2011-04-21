@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include "anonipaddr.hh"
 #include <click/standard/scheduleinfo.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
@@ -70,11 +70,11 @@ AnonymizeIPAddr::configure(Vector<String> &conf, ErrorHandler *errh)
     String preserve_8;
     bool seed_ignored;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "CLASS", 0, cpInteger, &_preserve_class,
-		     "PRESERVE_8", 0, cpArgument, &preserve_8,
-		     "SEED", 0, cpBool, &seed_ignored,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read("CLASS", _preserve_class)
+	.read("PRESERVE_8", AnyArg(), preserve_8)
+	.read("SEED", seed_ignored)
+	.complete() < 0)
 	return -1;
 
     // check CLASS value

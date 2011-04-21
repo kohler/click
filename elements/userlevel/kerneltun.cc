@@ -22,7 +22,7 @@
 #include "fakepcap.hh"
 #include <click/error.hh>
 #include <click/bitvector.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/glue.hh>
 #include <clicknet/ether.h>
@@ -94,19 +94,19 @@ KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
     _adjust_headroom = false;
     _headroom += (4 - _headroom % 4) % 4; // default 4/0 alignment
     _mtu_out = DEFAULT_MTU;
-    if (cp_va_kparse(conf, this, errh,
-		     "ADDR", cpkP+cpkM, cpIPPrefix, &_near, &_mask,
-		     "GATEWAY", cpkP, cpIPAddress, &_gw,
-		     "TAP", 0, cpBool, &_tap,
-		     "HEADROOM", cpkC, &_adjust_headroom, cpUnsigned, &_headroom,
-		     "ETHER", 0, cpEthernetAddress, &_macaddr,
-		     "IGNORE_QUEUE_OVERFLOWS", 0, cpBool, &_ignore_q_errs,
-		     "MTU", 0, cpInteger, &_mtu_out,
+    if (Args(conf, this, errh)
+	.read_mp("ADDR", IPPrefixArg(), _near, _mask)
+	.read_p("GATEWAY", _gw)
+	.read("TAP", _tap)
+	.read("HEADROOM", _headroom).read_status(_adjust_headroom)
+	.read("ETHER", _macaddr)
+	.read("IGNORE_QUEUE_OVERFLOWS", _ignore_q_errs)
+	.read("MTU", _mtu_out)
 #if KERNELTUN_LINUX
-		     "DEV_NAME", cpkD, cpString, &_dev_name, // deprecated
-		     "DEVNAME", 0, cpString, &_dev_name,
+	.read("DEV_NAME", Args::deprecated, _dev_name)
+	.read("DEVNAME", _dev_name)
 #endif
-		    cpEnd) < 0)
+	.complete() < 0)
 	return -1;
 
     if (_gw && !_gw.matches_prefix(_near, _mask))

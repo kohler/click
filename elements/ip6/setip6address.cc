@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "setip6address.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 SetIP6Address::SetIP6Address()
@@ -32,9 +32,7 @@ SetIP6Address::~SetIP6Address()
 int
 SetIP6Address::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_kparse(conf, this, errh,
-		      "IPADDR", cpkP+cpkM, cpIP6Address, &_ip6,
-		      cpEnd);
+    return Args(conf, this, errh).read_mp("IPADDR", _ip6).complete();
 }
 
 Packet *

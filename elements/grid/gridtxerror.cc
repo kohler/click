@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include "gridtxerror.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/packet_anno.hh>
 #include "gridgenericlogger.hh"
 
@@ -43,12 +43,9 @@ GridTxError::initialize(ErrorHandler *)
 int
 GridTxError::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "LOG", 0, cpElement, &_log,
-			 cpEnd);
-  if (res < 0)
-    return res;
-  return 0;
+    return Args(conf, this, errh)
+	.read("LOG", reinterpret_cast<Element *&>(_log))
+	.complete();
 }
 
 void

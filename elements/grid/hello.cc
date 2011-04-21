@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "hello.hh"
 #include <clicknet/ether.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/router.hh>
 #include "grid.hh"
@@ -36,12 +36,12 @@ SendGridHello::~SendGridHello()
 int
 SendGridHello::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "PERIOD", cpkP+cpkM, cpInteger, &_period,
-			 "JITTER", cpkP+cpkM, cpInteger, &_jitter,
-			 "ETH", cpkP+cpkM, cpEthernetAddress, &_from_eth,
-			 "IP", cpkP+cpkM, cpIPAddress, &_from_ip,
-			 cpEnd);
+  int res = Args(conf, this, errh)
+      .read_mp("PERIOD", _period)
+      .read_mp("JITTER", _jitter)
+      .read_mp("ETH", _from_eth)
+      .read_mp("IP", _from_ip)
+      .complete();
   if (res < 0)
     return res;
 

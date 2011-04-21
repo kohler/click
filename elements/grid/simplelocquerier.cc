@@ -20,7 +20,7 @@
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/bitvector.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -41,11 +41,11 @@ SimpleLocQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
   for (int i = 0; i < conf.size(); i++) {
     IPAddress ip;
     int ilat, ilon;
-    if (cp_va_space_kparse(conf[i], this, errh,
-			   "IP", cpkP+cpkM, cpIPAddress, &ip,
-			   "LATITUDE", cpkP+cpkM, cpReal10, 7, &ilat,
-			   "LONGITUDE", cpkP+cpkM, cpReal10, 7, &ilon,
-			   cpEnd) < 0)
+    if (Args(this, errh).push_back_words(conf[i])
+	.read_mp("IP", ip)
+	.read_mp("LATITUDE", DecimalFixedPointArg(7), ilat)
+	.read_mp("LONGITUDE", DecimalFixedPointArg(7), ilon)
+	.complete() < 0)
       return -1;
     grid_location loc((double) ilat /  1.0e7, (double) ilon /  1.0e7);
     _locs.insert(ip, loc);
@@ -100,11 +100,11 @@ SimpleLocQuerier::add_entry(const String &arg, Element *element,
 
   IPAddress ip;
   int ilat, ilon;
-  if (cp_va_space_kparse(arg, l, errh,
-			 "IP", cpkP+cpkM, cpIPAddress, &ip,
-			 "LATITUDE", cpkP+cpkM, cpReal10, 7, &ilat,
-			 "LONGITUDE", cpkP+cpkM, cpReal10, 7, &ilon,
-			 cpEnd) < 0)
+  if (Args(l, errh).push_back_words(arg)
+      .read_mp("IP", ip)
+      .read_mp("LATITUDE", DecimalFixedPointArg(7), ilat)
+      .read_mp("LONGITUDE", DecimalFixedPointArg(7), ilon)
+      .complete() < 0)
     return -1;
   grid_location loc((double) ilat /  1.0e7, (double) ilon /  1.0e7);
   l->_locs.insert(ip, loc);

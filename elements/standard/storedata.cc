@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "storedata.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 StoreData::StoreData()
@@ -32,10 +32,8 @@ StoreData::~StoreData()
 int
 StoreData::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"OFFSET", cpkP+cpkM, cpUnsigned, &_offset,
-			"DATA", cpkP+cpkM, cpString, &_data,
-			cpEnd);
+    return Args(conf, this, errh).read_mp("OFFSET", _offset)
+	.read_mp("DATA", _data).complete();
 }
 
 Packet *

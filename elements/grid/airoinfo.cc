@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include <stddef.h>
 #include "airoinfo.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/router.hh>
 #include <clicknet/ether.h>
@@ -68,9 +68,7 @@ AiroInfo::~AiroInfo()
 int
 AiroInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"DEVNAME", cpkP+cpkM, cpString, &_ifname,
-			cpEnd);
+    return Args(conf, this, errh).read_mp("DEVNAME", _ifname).complete();
 }
 
 int

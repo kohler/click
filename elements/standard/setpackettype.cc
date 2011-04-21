@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "setpackettype.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -67,9 +67,7 @@ int
 SetPacketType::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String ptype;
-    if (cp_va_kparse(conf, this, errh,
-		     "TYPE", cpkP+cpkM, cpWord, &ptype,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh).read_mp("TYPE", WordArg(), ptype).complete() < 0)
 	return -1;
     int ptype_val = parse_type(ptype.upper());
     if (ptype_val < 0)

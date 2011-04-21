@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
@@ -50,23 +50,19 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   _active = true;
   _original_retries = 4;
   _min_sample = 20;
-  int ret = cp_va_kparse(conf, this, errh,
-			 "OFFSET", 0, cpUnsigned, &_offset,
-			 "WINDOW", 0, cpUnsigned, &_rate_window_ms,
-			 "THRESHOLD", 0, cpUnsigned, &_packet_size_threshold,
-			 "DEBUG", 0, cpBool, &_debug,
-			 "RT", 0, cpElement, &_rtable,
-			 "ACTIVE", 0, cpBool, &_active,
-			 cpEnd);
+  int ret = Args(conf, this, errh)
+      .read("OFFSET", _offset)
+      .read("WINDOW", _rate_window_ms)
+      .read("THRESHOLD", _packet_size_threshold)
+      .read("DEBUG", _debug)
+      .read_m("RT", ElementCastArg("AvailableRates"), _rtable)
+      .read("ACTIVE", _active)
+      .complete();
   if (ret < 0) {
     return ret;
   }
   if (_rate_window_ms <= 0)
     return errh->error("WINDOW must be > 0");
-
-  if (!_rtable || _rtable->cast("AvailableRates") == 0)
-    return errh->error("AvailableRates element is not provided or not a AvailableRates");
-
 
   _rate_window = Timestamp::make_msec(_rate_window_ms);
 

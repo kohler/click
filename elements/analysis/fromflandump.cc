@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "fromflandump.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/error.hh>
@@ -58,13 +58,13 @@ FromFlanDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool stop = false, active = true;
     bool have_packets, packets, have_flows, flows;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "FILENAME", cpkP+cpkM, cpFilename, &_dirname,
-		     "STOP", 0, cpBool, &stop,
-		     "ACTIVE", 0, cpBool, &active,
-		     "PACKETS", cpkC, &have_packets, cpBool, &packets,
-		     "FLOWS", cpkC, &have_flows, cpBool, &flows,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("FILENAME", FilenameArg(), _dirname)
+	.read("STOP", stop)
+	.read("ACTIVE", active)
+	.read("PACKETS", have_packets, packets)
+	.read("FLOWS", have_flows, flows)
+	.complete() < 0)
 	return -1;
 
     // check packets vs. flows

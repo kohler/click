@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include <stddef.h>
 #include "filterbyrange.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/router.hh>
 #include <clicknet/ether.h>
@@ -36,12 +36,10 @@ FilterByRange::~FilterByRange()
 int
 FilterByRange::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "RANGE", cpkP+cpkM, cpInteger, &_range,
-			 "LOCINFO", cpkP+cpkM, cpElement, &_locinfo,
-			 cpEnd);
-
-  return res;
+    return Args(conf, this, errh)
+	.read_mp("RANGE", _range)
+	.read_mp("LOCINFO", reinterpret_cast<Element *&>(_locinfo))
+	.complete();
 }
 
 int

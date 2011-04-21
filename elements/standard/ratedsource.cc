@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "ratedsource.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/straccum.hh>
@@ -47,16 +47,16 @@ RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
   int datasize = -1;
   bool active = true, stop = false;
 
-  if (cp_va_kparse(conf, this, errh,
-		   "DATA", cpkP, cpString, &data,
-		   "RATE", cpkP, cpUnsigned, &rate,
-		   "LIMIT", cpkP, cpInteger, &limit,
-		   "ACTIVE", cpkP, cpBool, &active,
-		   "LENGTH", 0, cpInteger, &datasize,
-		   "DATASIZE", 0, cpInteger, &datasize, // deprecated
-		   "STOP", 0, cpBool, &stop,
-		   cpEnd) < 0)
-    return -1;
+    if (Args(conf, this, errh)
+	.read_p("DATA", data)
+	.read_p("RATE", rate)
+	.read_p("LIMIT", limit)
+	.read_p("ACTIVE", active)
+	.read("LENGTH", datasize)
+	.read("DATASIZE", datasize) // deprecated
+	.read("STOP", stop)
+	.complete() < 0)
+	return -1;
 
   _data = data;
   _datasize = datasize;

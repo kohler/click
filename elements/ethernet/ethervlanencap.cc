@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "ethervlanencap.hh"
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 CLICK_DECLS
@@ -37,15 +37,16 @@ EtherVlanEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     click_ether_vlan ethh;
     String vlan_word;
     int vlan = 0, vlan_pcp = 0, native_vlan = -1;
+    uint16_t ether_vlan_encap_proto;
     ethh.ether_vlan_proto = htons(ETHERTYPE_8021Q);
-    if (cp_va_kparse(conf, this, errh,
-		     "ETHERTYPE", cpkP+cpkM, cpUnsignedShort, &ethh.ether_vlan_encap_proto,
-		     "SRC", cpkP+cpkM, cpEthernetAddress, &ethh.ether_shost,
-		     "DST", cpkP+cpkM, cpEthernetAddress, &ethh.ether_dhost,
-		     "VLAN", cpkP+cpkM, cpWord, &vlan_word,
-		     "VLAN_PCP", cpkP, cpInteger, &vlan_pcp,
-		     "NATIVE_VLAN", 0, cpInteger, &native_vlan,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("ETHERTYPE", ether_vlan_encap_proto)
+	.read_mp_with("SRC", EtherAddressArg(), ethh.ether_shost)
+	.read_mp_with("DST", EtherAddressArg(), ethh.ether_dhost)
+	.read_mp("VLAN", WordArg(), vlan_word)
+	.read_p("VLAN_PCP", vlan_pcp)
+	.read("NATIVE_VLAN", native_vlan)
+	.complete() < 0)
 	return -1;
     if (!vlan_word.equals("ANNO", 4)
 	&& (!cp_integer(vlan_word, &vlan) || vlan < 0 || vlan >= 0x0FFF))
@@ -55,7 +56,7 @@ EtherVlanEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     if (native_vlan >= 0x0FFF)
 	return errh->error("bad NATIVE_VLAN");
     ethh.ether_vlan_tci = htons(vlan | (vlan_pcp << 13));
-    ethh.ether_vlan_encap_proto = htons(ethh.ether_vlan_encap_proto);
+    ethh.ether_vlan_encap_proto = htons(ether_vlan_encap_proto);
     _ethh = ethh;
     _use_anno = vlan_word.equals("ANNO", 4);
     _use_native_vlan = native_vlan >= 0;

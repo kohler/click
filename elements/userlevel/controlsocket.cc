@@ -20,7 +20,7 @@
 
 #include <click/config.h>
 #include "controlsocket.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/timer.hh>
 #include <click/router.hh>
@@ -94,60 +94,56 @@ ControlSocket::~ControlSocket()
 int
 ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  String socktype;
-  if (cp_va_kparse(conf, this, errh,
-		   "TYPE", cpkP+cpkM, cpString, &socktype,
-		   cpIgnoreRest, cpEnd) < 0)
-    return -1;
+    String socktype;
+    Args args = Args(this, errh).bind(conf);
+    if (args.read_mp("TYPE", socktype).execute() < 0)
+	return -1;
 
-  // remove keyword arguments
-  bool read_only = false, verbose = false, retry_warnings = true, localhost = false;
-  _retries = 0;
-  if (cp_va_kparse_remove_keywords(conf, this, errh,
-		"READONLY", 0, cpBool, &read_only,
-		"PROXY", 0, cpElement, &_proxy,
-		"VERBOSE", 0, cpBool, &verbose,
-		"RETRIES", 0, cpInteger, &_retries,
-		"RETRY_WARNINGS", 0, cpBool, &retry_warnings,
-		"LOCALHOST", 0, cpBool, &localhost,
-		cpEnd) < 0)
-    return -1;
-  _read_only = read_only;
-  _verbose = verbose;
-  _retry_warnings = retry_warnings;
-  _localhost = localhost;
+    // remove keyword arguments
+    bool read_only = false, verbose = false, retry_warnings = true, localhost = false;
+    _retries = 0;
+    if (args.read("READONLY", read_only)
+	.read("PROXY", _proxy)
+	.read("VERBOSE", verbose)
+	.read("RETRIES", _retries)
+	.read("RETRY_WARNINGS", retry_warnings)
+	.read("LOCALHOST", localhost)
+	.consume() < 0)
+	return -1;
+    _read_only = read_only;
+    _verbose = verbose;
+    _retry_warnings = retry_warnings;
+    _localhost = localhost;
 
-  socktype = socktype.upper();
-  if (socktype == "TCP") {
-    _tcp_socket = true;
-    if (cp_va_kparse(conf, this, errh,
-		     "TYPE", cpkP+cpkM, cpIgnore,
-		     "PORT", cpkP+cpkM, cpWord, &_unix_pathname, cpEnd) < 0)
-      return -1;
-    uint16_t portno;
-    int portno_int;
-    if (cp_tcpudp_port(_unix_pathname, IP_PROTO_TCP, &portno, this))
-	_unix_pathname = String(portno);
-    else if (_unix_pathname && _unix_pathname.back() == '+'
-	     && cp_integer(_unix_pathname.substring(0, -1), 0, &portno_int)
-	     && portno_int > 0 && portno_int < 65536)
-	_unix_pathname = String(portno_int) + "+";
-    else
-	return errh->error("PORT requires TCP port");
+    socktype = socktype.upper();
+    if (socktype == "TCP") {
+	_tcp_socket = true;
+	if (args.read_mp("PORT", WordArg(), _unix_pathname)
+	    .complete() < 0)
+	    return -1;
+	uint16_t portno;
+	int portno_int;
+	if (cp_tcpudp_port(_unix_pathname, IP_PROTO_TCP, &portno, this))
+	    _unix_pathname = String(portno);
+	else if (_unix_pathname && _unix_pathname.back() == '+'
+		 && cp_integer(_unix_pathname.substring(0, -1), 0, &portno_int)
+		 && portno_int > 0 && portno_int < 65536)
+	    _unix_pathname = String(portno_int) + "+";
+	else
+	    return errh->error("PORT requires TCP port");
 
-  } else if (socktype == "UNIX") {
-    _tcp_socket = false;
-    if (cp_va_kparse(conf, this, errh,
-		     "TYPE", cpkP+cpkM, cpIgnore,
-		     "FILENAME", cpkP+cpkM, cpFilename, &_unix_pathname, cpEnd) < 0)
-      return -1;
-    if (_unix_pathname.length() >= (int)sizeof(((struct sockaddr_un *)0)->sun_path))
-      return errh->error("filename too long");
+    } else if (socktype == "UNIX") {
+	_tcp_socket = false;
+	if (args.read_mp("FILENAME", FilenameArg(), _unix_pathname)
+	    .complete() < 0)
+	    return -1;
+	if (_unix_pathname.length() >= (int)sizeof(((struct sockaddr_un *)0)->sun_path))
+	    return errh->error("filename too long");
 
-  } else
-    return errh->error("unknown socket type '%s'", socktype.c_str());
+    } else
+	return errh->error("unknown socket type '%s'", socktype.c_str());
 
-  return 0;
+    return 0;
 }
 
 

@@ -16,7 +16,7 @@
 
 #include <click/config.h>
 #include "setvlananno.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 CLICK_DECLS
@@ -33,10 +33,10 @@ int
 SetVlanAnno::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int vlan = 0, vlan_pcp = 0;
-    if (cp_va_kparse(conf, this, errh,
-		     "VLAN", cpkP+cpkM, cpInteger, &vlan,
-		     "VLAN_PCP", cpkP, cpInteger, &vlan_pcp,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("VLAN", vlan)
+	.read_p("VLAN_PCP", vlan_pcp)
+	.complete() < 0)
 	return -1;
     if (vlan < 0 || vlan >= 0x0FFF)
 	return errh->error("bad VLAN");

@@ -20,7 +20,7 @@
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/router.hh>
@@ -81,13 +81,13 @@ GridProbeHandler::~GridProbeHandler()
 int
 GridProbeHandler::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_kparse(conf, this, errh,
-		      "ETH", cpkP+cpkM, cpEthernetAddress, &_eth,
-		      "IP", cpkP+cpkM, cpIPAddress, &_ip,
-		      "GRIDROUTE", cpkP, cpElement, &_lr_el,
-		      "GEOGRAPHICROUTE", cpkP, cpElement, &_gf_el,
-		      "LOCQUERIER", cpkP, cpElement, &_fq_el,
-		      cpEnd);
+    return Args(conf, this, errh)
+	.read_mp("ETH", _eth)
+	.read_mp("IP", _ip)
+	.read_p("GRIDROUTE", reinterpret_cast<Element *&>(_lr_el))
+	.read_p("GEOGRAPHICROUTE", reinterpret_cast<Element *&>(_gf_el))
+	.read_p("LOCQUERIER", reinterpret_cast<Element *&>(_fq_el))
+	.complete();
 }
 
 

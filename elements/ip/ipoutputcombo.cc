@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "ipoutputcombo.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
@@ -34,13 +34,10 @@ IPOutputCombo::~IPOutputCombo()
 int
 IPOutputCombo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_kparse(conf, this, errh,
-		   "COLOR", cpkP+cpkM, cpUnsigned, &_color,
-		   "IPADDR", cpkP+cpkM, cpIPAddress, &_my_ip,
-		   "MTU", cpkP+cpkM, cpUnsigned, &_mtu,
-		   cpEnd) < 0)
-    return -1;
-  return 0;
+    return Args(conf, this, errh)
+	.read_mp("COLOR", _color)
+	.read_mp("IPADDR", _my_ip)
+	.read_mp("MTU", _mtu).complete();
 }
 
 void

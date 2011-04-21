@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include <click/routervisitor.hh>
@@ -39,8 +39,9 @@ int
 TCPAck::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _ackdelay_ms = 20;
-  return cp_va_kparse(conf, this, errh,
-		      "DELAY", cpSecondsAsMilli, &_ackdelay_ms, cpEnd);
+  return Args(conf, this, errh)
+      .read("DELAY", SecondsArg(3), _ackdelay_ms)
+      .complete();
 }
 
 

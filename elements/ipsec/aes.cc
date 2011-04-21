@@ -26,7 +26,7 @@
 #include "aes.hh"
 #include "esp.hh"
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
@@ -54,9 +54,7 @@ Aes::configure(Vector<String> &conf, ErrorHandler *errh)
   int dec_int;
   _ignore = 12;/*This is the message digest*/
 
-  if (cp_va_kparse(conf, this, errh,
-		   "ENCRYPT", cpkP+cpkM, cpInteger, &dec_int,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh).read_mp("ENCRYPT", dec_int).complete() < 0)
     return -1;
   _op = dec_int;
   return 0;

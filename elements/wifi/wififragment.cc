@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "wififragment.hh"
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <clicknet/wifi.h>
@@ -41,10 +41,10 @@ WifiFragment::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _debug = false;
   _max_length = 0;
-  if (cp_va_kparse(conf, this, errh,
-		   "MTU", cpkP, cpUnsigned, &_max_length,
-		   "DEBUG", 0, cpBool, &_debug,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read_p("MTU", _max_length)
+      .read("DEBUG", _debug)
+      .complete() < 0)
     return -1;
   return 0;
 }

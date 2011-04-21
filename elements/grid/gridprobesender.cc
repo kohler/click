@@ -20,7 +20,7 @@
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include "grid.hh"
@@ -44,10 +44,10 @@ GridProbeSender::~GridProbeSender()
 int
 GridProbeSender::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_kparse(conf, this, errh,
-		      "ETH", cpkP+cpkM, cpEthernetAddress, &_eth,
-		      "IP", cpkP+cpkM, cpIPAddress, &_ip,
-		      cpEnd);
+    return Args(conf, this, errh)
+	.read_mp("ETH", _eth)
+	.read_mp("IP", _ip)
+	.complete();
 }
 
 void
@@ -101,10 +101,10 @@ probe_write_handler(const String &arg, Element *element,
 
   IPAddress ip;
   unsigned int nonce;
-  int res = cp_va_kparse(arg_list, element, errh,
-			 "IP", cpkP+cpkM, cpIPAddress, &ip,
-			 "NONCE", cpkP+cpkM, cpUnsigned, &nonce,
-			 cpEnd);
+  int res = Args(arg_list, element, errh)
+      .read_mp("IP", ip)
+      .read_mp("NONCE", nonce)
+      .complete();
   if (res < 0)
     return res;
 

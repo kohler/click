@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "fixipsrc.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <click/packet_anno.hh>
@@ -35,14 +35,11 @@ FixIPSrc::~FixIPSrc()
 int
 FixIPSrc::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  IPAddress a;
-
-  if (cp_va_kparse(conf, this, errh,
-		   "IPADDR", cpkP+cpkM, cpIPAddress, &a,
-		   cpEnd) < 0)
-    return -1;
-  _my_ip = a.in_addr();
-  return 0;
+    IPAddress a;
+    if (Args(conf, this, errh).read_mp("IPADDR", a).complete() < 0)
+	return -1;
+    _my_ip = a.in_addr();
+    return 0;
 }
 
 WritablePacket *

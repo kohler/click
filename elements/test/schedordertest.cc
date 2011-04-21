@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "schedordertest.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/router.hh>
@@ -40,12 +40,12 @@ SchedOrderTest::~SchedOrderTest()
 int
 SchedOrderTest::configure(Vector<String>& conf, ErrorHandler* errh)
 {
-    if (cp_va_kparse(conf, this, errh,
-		     "ID", cpkP+cpkM, cpInteger, &_id,
-		     "SIZE", 0, cpInteger, &_bufsiz,
-		     "STOP", 0, cpBool, &_stop,
-		     "LIMIT", 0, cpUnsigned, &_limit,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_mp("ID", _id)
+	.read("SIZE", _bufsiz)
+	.read("STOP", _stop)
+	.read("LIMIT", _limit)
+	.complete() < 0)
 	return -1;
 
     void*& main = router()->force_attachment("SchedOrderTest");

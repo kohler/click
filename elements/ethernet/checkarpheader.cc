@@ -21,7 +21,7 @@
 #include "checkarpheader.hh"
 #include <clicknet/ether.h>
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/standard/alignmentinfo.hh>
@@ -47,22 +47,22 @@ CheckARPHeader::~CheckARPHeader()
 int
 CheckARPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _offset = 0;
-  bool verbose = false;
-  bool details = false;
+    _offset = 0;
+    bool verbose = false;
+    bool details = false;
 
-  if (cp_va_kparse(conf, this, errh,
-		   "OFFSET", cpkP, cpUnsigned, &_offset,
-		   "VERBOSE", 0, cpBool, &verbose,
-		   "DETAILS", 0, cpBool, &details,
-		   cpEnd) < 0)
-      return -1;
+    if (Args(conf, this, errh)
+	.read_p("OFFSET", _offset)
+	.read("VERBOSE", verbose)
+	.read("DETAILS", details)
+	.complete() < 0)
+	return -1;
 
-  _verbose = verbose;
-  if (details)
-    _reason_drops = new atomic_uint32_t[NREASONS];
+    _verbose = verbose;
+    if (details)
+	_reason_drops = new atomic_uint32_t[NREASONS];
 
-  return 0;
+    return 0;
 }
 
 Packet *

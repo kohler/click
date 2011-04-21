@@ -32,7 +32,6 @@ public:
   const char *processing() const		{ return AGNOSTIC; }
 
   int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
 
   Packet *simple_action(Packet *);
 

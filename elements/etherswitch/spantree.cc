@@ -18,7 +18,8 @@
 
 #include <click/config.h>
 #include "spantree.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
+#include <click/etheraddress.hh>
 #include "elements/standard/suppressor.hh"
 #include <click/error.hh>
 CLICK_DECLS
@@ -38,18 +39,18 @@ EtherSpanTree::~EtherSpanTree()
 int
 EtherSpanTree::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _port.resize(noutputs());
+    _port.resize(noutputs());
 
-  if (cp_va_kparse(conf, this, errh,
-		   "ADDR", cpkP+cpkM, cpEthernetAddress, _addr,
-		   "INPUT_SUPPRESSOR", cpkP+cpkM, cpElementCast, "Suppressor", &_input_sup,
-		   "OUTPUT_SUPPRESSOR", cpkP+cpkM, cpElementCast, "Suppressor", &_output_sup,
-		   "SWITCH", cpkP+cpkM, cpElementCast, "EtherSwitch", &_switch,
-		   cpEnd) < 0)
-    return -1;
+    if (Args(conf, this, errh)
+	.read_mp_with("ADDR", EtherAddressArg(), _addr)
+	.read_mp("INPUT_SUPPRESSOR", ElementCastArg("Suppressor"), _input_sup)
+	.read_mp("OUTPUT_SUPPRESSOR", ElementCastArg("Suppressor"), _output_sup)
+	.read_mp("SWITCH", ElementCastArg("EtherSwitch"), _switch)
+	.complete() < 0)
+	return -1;
 
-  memcpy(&_bridge_id, _addr, 6);
-  return 0;
+    memcpy(&_bridge_id, _addr, 6);
+    return 0;
 }
 
 int

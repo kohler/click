@@ -18,7 +18,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include "checkgridheader.hh"
 #include <click/glue.hh>
 #include "grid.hh"

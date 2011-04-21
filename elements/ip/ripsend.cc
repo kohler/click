@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "ripsend.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/glue.hh>
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
@@ -35,16 +35,11 @@ RIPSend::~RIPSend()
 int
 RIPSend::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int ret = cp_va_kparse(conf, this, errh,
-			 "SRC", cpkP+cpkM, cpIPAddress, &_src,
-			 "DST", cpkP+cpkM, cpIPAddress, &_dst,
-			 "PREFIX", cpkP+cpkM, cpIPPrefix, &_what, &_mask,
-			 "METRIC", cpkP+cpkM, cpInteger, &_metric,
-			 cpEnd);
-  if(ret < 0)
-    return(ret);
-
-  return(0);
+    return Args(conf, this, errh)
+	.read_mp("SRC", _src)
+	.read_mp("DST", _dst)
+	.read_mp("PREFIX", IPPrefixArg(), _what, _mask)
+	.read_mp("METRIC", _metric).complete();
 }
 
 int

@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "timedsource.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/router.hh>
@@ -37,23 +37,23 @@ TimedSource::~TimedSource()
 int
 TimedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  String data = "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
+    String data = "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
 
-  if (cp_va_kparse(conf, this, errh,
-		   "INTERVAL", cpkP, cpTimestamp, &_interval,
-		   "DATA", cpkP, cpString, &data,
-		   "LIMIT", 0, cpInteger, &_limit,
-		   "ACTIVE", 0, cpBool, &_active,
-		   "STOP", 0, cpBool, &_stop,
-		   "HEADROOM", 0, cpUnsigned, &_headroom,
-		   cpEnd) < 0)
-    return -1;
+    if (Args(conf, this, errh)
+	.read_p("INTERVAL", _interval)
+	.read_p("DATA", data)
+	.read("LIMIT", _limit)
+	.read("ACTIVE", _active)
+	.read("STOP", _stop)
+	.read("HEADROOM", _headroom)
+	.complete() < 0)
+	return -1;
 
-  _data = data;
-  if (_packet)
-      _packet->kill();
-  _packet = Packet::make(_headroom, _data.data(), _data.length(), 0);
-  return 0;
+    _data = data;
+    if (_packet)
+	_packet->kill();
+    _packet = Packet::make(_headroom, _data.data(), _data.length(), 0);
+    return 0;
 }
 
 int

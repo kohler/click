@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
@@ -44,16 +44,16 @@ WirelessInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res;
   reset();
-  res = cp_va_kparse(conf, this, errh,
-		     "SSID", 0, cpString, &_ssid,
-		     "BSSID", 0, cpEthernetAddress, &_bssid,
-		     "CHANNEL", 0, cpInteger, &_channel,
-		     "INTERVAL", 0, cpInteger, &_interval,
-		     "WEP", 0, cpBool, &_wep,
+  res = Args(conf, this, errh)
+      .read("SSID", _ssid)
+      .read("BSSID", _bssid)
+      .read("CHANNEL", _channel)
+      .read("INTERVAL", _interval)
+      .read("WEP", _wep)
 #if CLICK_NS
-		     "IFID", 0, cpInteger, &_ifid,
+      .read("IFID", _ifid)
 #endif
-		     cpEnd);
+      .complete();
 
 #if CLICK_NS
   // nletor - change interface number ifid

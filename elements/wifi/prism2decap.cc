@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "prism2decap.hh"
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <clicknet/wifi.h>
@@ -37,13 +37,8 @@ Prism2Decap::~Prism2Decap()
 int
 Prism2Decap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-
-  _debug = false;
-  if (cp_va_kparse(conf, this, errh,
-		   "DEBUG", 0, cpBool, &_debug,
-		   cpEnd) < 0)
-    return -1;
-  return 0;
+    _debug = false;
+    return Args(conf, this, errh).read("DEBUG", _debug).complete();
 }
 
 Packet *

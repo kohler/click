@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "fixdstloc.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include "grid.hh"
 #include <click/router.hh>
@@ -36,24 +36,9 @@ FixDstLoc::~FixDstLoc()
 int
 FixDstLoc::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int res = cp_va_kparse(conf, this, errh,
-			 "LOCTABLE", cpkP+cpkM, cpElement, &_loctab,
-			 cpEnd);
-  return res;
-}
-
-int
-FixDstLoc::initialize(ErrorHandler *errh)
-{
-  if(_loctab && _loctab->cast("LocationTable") == 0){
-    errh->warning("%s: LocationTable argument %s has the wrong type",
-                  name().c_str(),
-                  _loctab->name().c_str());
-    _loctab = 0;
-  } else if(_loctab == 0) {
-    return errh->error("no LocationTable argument");
-  }
-  return 0;
+    return Args(conf, this, errh)
+	.read_mp("LOCTABLE", ElementCastArg("LocationTable"), _loctab)
+	.complete();
 }
 
 

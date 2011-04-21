@@ -1,6 +1,6 @@
 #include <click/config.h>
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/packet_anno.hh>
 #include <click/straccum.hh>

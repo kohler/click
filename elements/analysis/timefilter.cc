@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include <click/error.hh>
 #include "timefilter.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/handlercall.hh>
 #include <click/variableenv.hh>
@@ -39,19 +39,20 @@ int
 TimeFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Timestamp first, last, first_init, last_init, first_delta, last_delta, interval;
+    HandlerCall last_h;
     bool stop = false;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "START", cpkP, cpTimestamp, &first,
-		     "END", cpkP, cpTimestamp, &last,
-		     "START_DELAY", 0, cpTimestamp, &first_init,
-		     "END_DELAY", 0, cpTimestamp, &last_init,
-		     "START_AFTER", 0, cpTimestamp, &first_delta,
-		     "END_AFTER", 0, cpTimestamp, &last_delta,
-		     "INTERVAL", 0, cpTimestamp, &interval,
-		     "STOP", 0, cpBool, &stop,
-		     "END_CALL", 0, cpHandlerCallPtrWrite, &_last_h,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_p("START", first)
+	.read_p("END", last)
+	.read("START_DELAY", first_init)
+	.read("END_DELAY", last_init)
+	.read("START_AFTER", first_delta)
+	.read("END_AFTER", last_delta)
+	.read("INTERVAL", interval)
+	.read("STOP", stop)
+	.read("END_CALL", HandlerCallArg(HandlerCall::writable), last_h)
+	.complete() < 0)
 	return -1;
 
     _first_relative = _first_init_relative = _last_relative = _last_init_relative = _last_interval = false;
@@ -78,8 +79,10 @@ TimeFilter::configure(Vector<String> &conf, ErrorHandler *errh)
     else
 	_last.set_sec(Timestamp::max_seconds);
 
-    if (_last_h && stop)
+    if (last_h && stop)
 	return errh->error("END_CALL and STOP are mutually exclusive");
+    else if (last_h)
+	_last_h = new HandlerCall(last_h);
     else if (stop)
 	_last_h = new HandlerCall("stop true");
 

@@ -23,7 +23,7 @@
 #include <click/routervisitor.hh>
 #include <click/standard/storage.hh>
 #include "unqueue2.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/standard/scheduleinfo.hh>
 CLICK_DECLS
 
@@ -39,10 +39,8 @@ Unqueue2::~Unqueue2()
 int
 Unqueue2::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _burst = 1;
-  return cp_va_kparse(conf, this, errh,
-		      "BURST", cpkP, cpUnsigned, &_burst,
-		      cpEnd);
+    _burst = 1;
+    return Args(conf, this, errh).read_p("BURST", _burst).complete();
 }
 
 int

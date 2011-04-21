@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "printairo.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/etheraddress.hh>
@@ -68,12 +68,12 @@ PrintAiro::configure(Vector<String> &conf, ErrorHandler* errh)
   bool timestamp = false;
   bool quiet = false;
   bool verbose = false;
-  if (cp_va_kparse(conf, this, errh,
-		   "LABEL", cpkP, cpString, &label,
-		   "TIMESTAMP", 0, cpBool, &timestamp,
-		   "QUIET", 0, cpBool, &quiet,
-		   "VERBOSE", 0, cpBool, &verbose,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read_p("LABEL", label)
+      .read("TIMESTAMP", timestamp)
+      .read("QUIET", quiet)
+      .read("VERBOSE", verbose)
+      .complete() < 0)
     return -1;
 
   _label = label;

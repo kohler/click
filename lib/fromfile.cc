@@ -19,7 +19,7 @@
  */
 #include <click/config.h>
 #include <click/fromfile.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/element.hh>
 #include <click/straccum.hh>
@@ -50,9 +50,9 @@ FromFile::configure_keywords(Vector<String> &conf, Element *e, ErrorHandler *err
 #else
     bool mmap = _mmap;
 #endif
-    if (cp_va_kparse_remove_keywords(conf, e, errh,
-		    "MMAP", 0, cpBool, &mmap,
-		    cpEnd) < 0)
+    if (Args(e, errh).bind(conf)
+	.read("MMAP", mmap)
+	.consume() < 0)
 	return -1;
 #ifdef ALLOW_MMAP
     _mmap = mmap;

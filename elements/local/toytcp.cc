@@ -20,7 +20,7 @@
 #include <clicknet/tcp.h>
 #include <clicknet/ip.h>
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 CLICK_DECLS
@@ -63,9 +63,9 @@ ToyTCP::configure(Vector<String> &conf, ErrorHandler *errh)
   uint16_t dport;
   int ret;
 
-  ret = cp_va_kparse(conf, this, errh,
-		     "DPORT", cpkP+cpkM, cpTCPPort, &dport,
-		     cpEnd);
+  ret = Args(conf, this, errh)
+      .read_mp("DPORT", IPPortArg(IP_PROTO_TCP), dport)
+      .complete();
   if(ret < 0)
     return(ret);
 

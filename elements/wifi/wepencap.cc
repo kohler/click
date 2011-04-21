@@ -49,7 +49,7 @@
 #include <click/config.h>
 #include "wepencap.hh"
 #include <click/etheraddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <clicknet/wifi.h>
@@ -73,13 +73,13 @@ WepEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   _strict = false;
   _active = false;
   _keyid = 0;
-  if (cp_va_kparse(conf, this, errh,
-		   "KEY", cpkP, cpString, &_key,
-		   "KEYID", 0, cpUnsigned, &_keyid,
-		   "DEBUG", 0, cpBool, &_debug,
-		   "STRICT", 0, cpBool, &_strict,
-		   "ACTIVE", 0, cpBool, &_active,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read_p("KEY", _key)
+      .read("KEYID", _keyid)
+      .read("DEBUG", _debug)
+      .read("STRICT", _strict)
+      .read("ACTIVE", _active)
+      .complete() < 0)
     return -1;
   memset(&_rc4, 0,sizeof(_rc4));
   return 0;

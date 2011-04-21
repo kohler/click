@@ -14,7 +14,7 @@
  * legally binding.  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include "elements/grid/hopcountmetric.hh"
 CLICK_DECLS
 

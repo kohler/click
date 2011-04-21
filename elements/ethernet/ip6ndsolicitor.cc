@@ -20,7 +20,7 @@
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <click/ip6address.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/bitvector.hh>
 #include <click/error.hh>
@@ -44,10 +44,10 @@ IP6NDSolicitor::~IP6NDSolicitor()
 int
 IP6NDSolicitor::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_kparse(conf, this, errh,
-		      "IP", cpkP+cpkM, cpIP6Address, &_my_ip6,
-		      "ETH", cpkP+cpkM, cpEthernetAddress, &_my_en,
-		      cpEnd);
+    return Args(conf, this, errh)
+	.read_mp("IP", _my_ip6)
+	.read_mp("ETH", _my_en)
+	.complete();
 }
 
 int

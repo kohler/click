@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "ipflowrawsockets.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 #include <click/router.hh>
@@ -191,12 +191,12 @@ IPFlowRawSockets::configure(Vector<String> &conf, ErrorHandler *errh)
 
     _snaplen = 2046;
     _usepcap = true;
-    if (cp_va_kparse(conf, this, errh,
-		     "NOTIFIER", 0, cpElement, &e,
-		     "SNAPLEN", 0, cpUnsigned, &_snaplen,
-		     "PCAP", 0, cpBool, &_usepcap,
-		     "HEADROOM", 0, cpUnsigned, &_headroom,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read("NOTIFIER", e)
+	.read("SNAPLEN", _snaplen)
+	.read("PCAP", _usepcap)
+	.read("HEADROOM", _headroom)
+	.complete() < 0)
 	return -1;
 
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))

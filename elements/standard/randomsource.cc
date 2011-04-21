@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "randomsource.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/glue.hh>
@@ -42,22 +42,18 @@ RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
   int datasize = -1;
   bool active = true, stop = false;
 
-  if (cp_va_kparse(conf, this, errh,
-		   "LENGTH", cpkP+cpkM, cpInteger, &datasize,
-#if HAVE_INT64_TYPES
-		   "LIMIT", cpkP, cpInteger64, &limit,
-#else
-		   "LIMIT", cpkP, cpInteger, &limit,
-#endif
-		   "BURST", cpkP, cpInteger, &burstsize,
-		   "ACTIVE", cpkP, cpBool, &active,
-		   "STOP", 0, cpBool, &stop,
-		   cpEnd) < 0)
-    return -1;
-  if (datasize < 0 || datasize >= 64*1024)
-    return errh->error("bad length %d", datasize);
-  if (burstsize < 1)
-    return errh->error("burst size must be >= 1");
+    if (Args(conf, this, errh)
+	.read_mp("LENGTH", datasize)
+	.read_p("LIMIT", limit)
+	.read_p("BURST", burstsize)
+	.read_p("ACTIVE", active)
+	.read("STOP", stop)
+	.complete() < 0)
+	return -1;
+    if (datasize < 0 || datasize >= 64*1024)
+	return errh->error("bad length %d", datasize);
+    if (burstsize < 1)
+	return errh->error("burst size must be >= 1");
 
   _datasize = datasize;
   _limit = limit;

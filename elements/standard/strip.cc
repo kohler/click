@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "strip.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 CLICK_DECLS
@@ -34,9 +34,7 @@ Strip::~Strip()
 int
 Strip::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"LENGTH", cpkP+cpkM, cpUnsigned, &_nbytes,
-			cpEnd);
+    return Args(conf, this, errh).read_mp("LENGTH", _nbytes).complete();
 }
 
 Packet *

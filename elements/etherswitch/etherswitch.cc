@@ -20,7 +20,7 @@
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
 CLICK_DECLS
@@ -38,9 +38,9 @@ EtherSwitch::~EtherSwitch()
 int
 EtherSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"TIMEOUT", 0, cpSeconds, &_timeout,
-			cpEnd);
+    return Args(conf, this, errh)
+	.read("TIMEOUT", SecondsArg(), _timeout)
+	.complete();
 }
 
 void

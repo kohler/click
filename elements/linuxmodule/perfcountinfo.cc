@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "perfcountinfo.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 
 PerfCountInfo::PerfCountInfo()
 {
@@ -42,10 +42,10 @@ int
 PerfCountInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String metric0, metric1;
-  if (cp_va_kparse(conf, this, errh,
-		   "METRIC0", cpkP, cpWord, &metric0,
-		   "METRIC1", cpkP, cpWord, &metric1,
-		   cpEnd) < 0)
+  if (Args(conf, this, errh)
+      .read_p("METRIC0", WordArg(), metric0)
+      .read_p("METRIC1", WordArg(), metric1)
+      .complete() < 0)
     return -1;
 
   bool ok = true;

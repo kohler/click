@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include "compblock.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
@@ -35,12 +35,11 @@ CompareBlock::~CompareBlock()
 int
 CompareBlock::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _bad = 0;
-  return cp_va_kparse(conf, this, errh,
-		      "FWD_WEIGHT", cpkP+cpkM, cpInteger, &_fwd_weight,
-		      "REV_WEIGHT", cpkP+cpkM, cpInteger, &_rev_weight,
-		      "THRESH", cpkP+cpkM, cpInteger, &_thresh,
-		      cpEnd);
+    _bad = 0;
+    return Args(conf, this, errh)
+	.read_mp("FWD_WEIGHT", _fwd_weight)
+	.read_mp("REV_WEIGHT", _rev_weight)
+	.read_mp("THRESH", _thresh).complete();
 }
 
 void

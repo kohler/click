@@ -6,7 +6,7 @@
 #include <click/config.h>
 #include "ip6print.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
@@ -31,11 +31,11 @@ IP6Print::configure(Vector<String> &conf, ErrorHandler *errh)
     _label = "";
     _contents = false;
 
-    if (cp_va_kparse(conf, this, errh,
-		     "LABEL", cpkP, cpString, &_label,
-		     "CONTENTS", 0, cpBool, &_contents,
-		     "NBYTES", 0, cpUnsigned, &_bytes,
-		     cpEnd) < 0)
+    if (Args(conf, this, errh)
+	.read_p("LABEL", _label)
+	.read("CONTENTS", _contents)
+	.read("NBYTES", _bytes)
+	.complete() < 0)
 	return -1;
     return 0;
 }

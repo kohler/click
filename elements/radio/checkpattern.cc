@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "checkpattern.hh"
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 CheckPattern::CheckPattern()
@@ -33,9 +33,9 @@ CheckPattern::~CheckPattern()
 int
 CheckPattern::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh,
-			"LENGTH", cpkP+cpkM, cpUnsigned, &_len,
-			cpEnd);
+    return Args(conf, this, errh)
+	.read_mp("LENGTH", _len)
+	.complete();
 }
 
 Packet *
