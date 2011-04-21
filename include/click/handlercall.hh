@@ -182,7 +182,10 @@ class HandlerCall { public:
 
 
     enum Flags {
-	h_read = Handler::h_read, h_write = Handler::h_write,
+	readable = Handler::h_read,
+	h_read = Handler::h_read,
+	writable = Handler::h_write,
+	h_write = Handler::h_write,
 	h_preinitialize = 4, h_unquote_param = 8
     };
 
@@ -545,6 +548,27 @@ HandlerCall::call_write(Element *e, const String &hname, ErrorHandler *errh)
 {
     return call_write(e, hname, String(), errh);
 }
+
+
+/** @class HandlerCallArg
+  @brief Parser class for handler call specifications.
+
+  The constructor argument should generally be either HandlerCall::writable or
+  HandlerCall::readable.  For example:
+
+  @code
+  HandlerCall end_h;
+  ... Args(...) ...
+     .read("END_CALL", HandlerCallArg(HandlerCall::writable), end_h)
+     ...
+  @endcode */
+struct HandlerCallArg {
+    HandlerCallArg(int f)
+	: flags(f) {
+    }
+    bool parse(const String &str, HandlerCall &result, const ArgContext &args);
+    int flags;
+};
 
 CLICK_ENDDECLS
 #endif

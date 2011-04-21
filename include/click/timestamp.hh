@@ -2,6 +2,7 @@
 #ifndef CLICK_TIMESTAMP_HH
 #define CLICK_TIMESTAMP_HH
 #include <click/glue.hh>
+#include <click/type_traits.hh>
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
 # include <math.h>
 #endif
@@ -1273,6 +1274,24 @@ Timestamp::warp_real_delay() const
 	return *this / _warp_speed;
 }
 #endif
+
+
+class ArgContext;
+extern const ArgContext blank_args;
+bool cp_time(const String &str, Timestamp *result, bool allow_negative);
+
+/** @class TimeArg
+  @brief Parser class for timestamps. */
+template <bool Signed>
+struct TimeArg {
+    static bool parse(const String &str, Timestamp &value, const ArgContext &args = blank_args) {
+	(void) args;
+	return cp_time(str, &value, Signed);
+    }
+};
+
+template<> struct DefaultArg<Timestamp> : public TimeArg<false> {};
+template<> struct has_trivial_copy<Timestamp> : public true_type {};
 
 CLICK_ENDDECLS
 #endif

@@ -3,7 +3,7 @@
  * confparsetest.{cc,hh} -- regression test element for configuration parsing
  * Eddie Kohler
  *
- * Copyright (c) 2007 Regents of the University of California
+ * Copyright (c) 2007-2011 Regents of the University of California
  * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -19,13 +19,28 @@
 
 #include <click/config.h>
 #include "confparsetest.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
 #if CLICK_USERLEVEL
 # include <click/userutils.hh>
 #endif
 CLICK_DECLS
+
+namespace {
+class RecordErrorHandler : public ErrorHandler { public:
+    RecordErrorHandler() {
+    }
+    void *emit(const String &str, void *, bool) {
+	_sa.append(skip_anno(str.begin(), str.end()), str.end());
+	return 0;
+    }
+    String take_string() {
+	return _sa.take_string();
+    }
+    StringAccum _sa;
+};
+}
 
 ConfParseTest::ConfParseTest()
 {
@@ -35,7 +50,17 @@ ConfParseTest::~ConfParseTest()
 {
 }
 
-#define CHECK(x) if (!(x)) return errh->error("%s:%d: test `%s' failed", __FILE__, __LINE__, #x);
+#define CHECK(x) do {				\
+	if (!(x))				\
+	    return errh->error("%s:%d: test %<%s%> failed", __FILE__, __LINE__, #x); \
+    } while (0)
+#define CHECK_ERR(x, errstr) do {		\
+	if (!(x))				\
+	    return errh->error("%s:%d: test %<%s%> failed", __FILE__, __LINE__, #x); \
+	String msg(rerrh.take_string());		\
+	if (!msg.equals(errstr, -1))	\
+	    return errh->error("%s:%d: test %<%s%> produces unexpected error message %<%s%>", __FILE__, __LINE__, #x, msg.c_str()); \
+    } while (0)
 
 int
 ConfParseTest::initialize(ErrorHandler *errh)
@@ -67,6 +92,7 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(v.size() == 10);
     CHECK(v[9] == "'a /*?*/ b'c");
 
+    // cp_integer parsing
     int32_t i32;
     uint32_t u32;
     u32 = 97;
@@ -82,18 +108,63 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(cp_integer("0xFFFFFFFFF", &u32) == true && u32 == 4294967295U && cp_errno == CPE_OVERFLOW);
     CHECK(cp_integer("4294967296", &i32) == true && i32 == 2147483647 && cp_errno == CPE_OVERFLOW);
     CHECK(cp_integer("2147483647", &i32) == true && i32 == 2147483647 && cp_errno == CPE_OK);
+    CHECK(cp_integer("2147483648", &i32) == true && i32 == 2147483647 && cp_errno == CPE_OVERFLOW);
     CHECK(cp_integer("-2147483648", &i32) == true && i32 == -2147483647 - 1 && cp_errno == CPE_OK);
     CHECK(cp_integer("-4294967296", &i32) == true && i32 == -2147483647 - 1 && cp_errno == CPE_OVERFLOW);
     const char *s = "-127 ";
     CHECK(cp_integer(s, s + strlen(s) - 1, 10, &i32) == s + 4 && i32 == -127);
     CHECK(cp_integer(String(s), &i32) == false && cp_errno == CPE_FORMAT);
-
 #if HAVE_LONG_LONG && SIZEOF_LONG_LONG == 8
-    long long ll;
-    unsigned long long ull;
-    CHECK(cp_integer("9223372036854775807", &ll) == true && ll == 0x7FFFFFFFFFFFFFFFULL);
-    CHECK(cp_integer("-9223372036854775808", &ll) == true && ll == (long long) 0x8000000000000000ULL);
-    CHECK(cp_integer("18446744073709551616", &ull) == true && ull == 0xFFFFFFFFFFFFFFFFULL && cp_errno == CPE_OVERFLOW);
+    {
+	long long ll;
+	unsigned long long ull;
+	CHECK(cp_integer("9223372036854775807", &ll) == true && ll == 0x7FFFFFFFFFFFFFFFULL);
+	CHECK(cp_integer("-9223372036854775808", &ll) == true && ll == (long long) 0x8000000000000000ULL);
+	CHECK(cp_integer("18446744073709551616", &ull) == true && ull == 0xFFFFFFFFFFFFFFFFULL && cp_errno == CPE_OVERFLOW);
+    }
+#endif
+
+    // IntArg parsing
+    RecordErrorHandler rerrh;
+    Args args(0, &rerrh);
+    u32 = 97;
+    CHECK(IntArg::parse("0", i32) == true && i32 == 0);
+    CHECK(IntArg::parse("-0", i32) == true && i32 == 0);
+    CHECK(u32 == 97);
+    CHECK(IntArg::parse("0", u32) == true && u32 == 0);
+    CHECK(IntArg::parse("-0", u32) == false);
+    CHECK(IntArg::parse("4294967294", u32) == true && u32 == 4294967294U);
+    CHECK(IntArg::parse("0xFFFFFFFE", u32) == true && u32 == 4294967294U);
+    CHECK_ERR(IntArg::parse("4294967296", u32, &args) == false && u32 == 4294967294U, "overflow, max 4294967295");
+    CHECK(IntArg::parse_pin("4294967296", u32) == true && u32 == 4294967295U);
+    u32 = 97;
+    CHECK_ERR(IntArg::parse("42949672961939", u32, &args) == false && u32 == 97, "overflow, max 4294967295");
+    CHECK_ERR(IntArg::parse_pin("42949672961939", u32, &args) == true && u32 == 4294967295U, "");
+    CHECK(IntArg::parse("0xFFFFFFFFF", u32) == false);
+    CHECK(IntArg::parse_pin("0xFFFFFFFFF", u32) == true && u32 == 0xFFFFFFFFU);
+    CHECK_ERR(IntArg::parse("4294967296", i32, &args) == false, "overflow, max 2147483647");
+    CHECK_ERR(IntArg::parse_pin("4294967296", i32, &args) == true && i32 == 2147483647, "");
+    CHECK_ERR(IntArg::parse("2147483647", i32, &args) == true && i32 == 2147483647, "");
+    CHECK_ERR(IntArg::parse("2147483648", i32, &args) == false && i32 == 2147483647, "overflow, max 2147483647");
+    CHECK_ERR(IntArg::parse_pin("2147483648", i32, &args) == true && i32 == 2147483647, "");
+    CHECK_ERR(IntArg::parse("-2147483648", i32, &args) == true && i32 == -2147483647 - 1, "");
+    CHECK_ERR(IntArg::parse("-2147483649", i32, &args) == false && i32 == -2147483647 - 1, "overflow, min -2147483648");
+    i32 = 0;
+    CHECK_ERR(IntArg::parse_pin("-2147483649", i32, &args) == true && i32 == -2147483647 - 1, "");
+    CHECK_ERR(IntArg::parse("-4294967296", i32, &args) == false && i32 == -2147483647 - 1, "overflow, min -2147483648");
+    int8_t i8 = 0;
+    CHECK_ERR(IntArg::parse("97", i8, &args) == true && i8 == 97, "");
+    CHECK_ERR(IntArg::parse("128", i8, &args) == false && i8 == 97, "overflow, max 127");
+    CHECK_ERR(IntArg::parse_pin("128", i8, &args) == true && i8 == 127, "");
+#if HAVE_LONG_LONG && SIZEOF_LONG_LONG == 8
+    {
+	long long ll;
+	unsigned long long ull = 0;
+	CHECK_ERR(IntArg::parse("9223372036854775807", ll, &args) == true && ll == 0x7FFFFFFFFFFFFFFFULL, "");
+	CHECK_ERR(IntArg::parse("-9223372036854775808", ll, &args) == true && ll == (long long) 0x8000000000000000ULL, "");
+	CHECK_ERR(IntArg::parse("18446744073709551616", ull, &args) == false && ull == 0, "overflow, max 18446744073709551615");
+	CHECK_ERR(IntArg::parse_pin("18446744073709551616", ull, &args) == true && ull == 0xFFFFFFFFFFFFFFFFULL, "");
+    }
 #endif
 
     CHECK(cp_real2("-0.5", 1, &i32) == true && i32 == -1);

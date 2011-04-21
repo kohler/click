@@ -788,5 +788,319 @@ void args_base_read_with(Args *args, const char *keyword, int flags,
     args->base_read_with(keyword, flags, parser, variable);
 }
 
+
+struct NumArg {
+    enum {
+	// order matters
+	status_ok = 0,
+	status_inval = EINVAL,
+	status_range = ERANGE,
+#if defined(ENOTSUP)
+	status_notsup = ENOTSUP
+#elif defined(ENOTSUPP)
+	status_notsup = ENOTSUPP
+#else
+	status_notsup
+#endif
+    };
+};
+
+
+/** @class IntArg
+  @brief Parser class for integers.
+
+  IntArg(@a base) reads integers in base @a base.  @a base defaults to 0,
+  which means arguments are parsed in base 10 by default, but prefixes 0x, 0,
+  and 0b parse hexadecimal, octal, and binary numbers, respectively.
+
+  Integer overflow is treated as an error.
+
+  @sa SaturatingIntArg */
+struct IntArg : public NumArg {
+
+    typedef click_uint_large_t value_type;
+    typedef click_int_large_t signed_value_type;
+
+    IntArg(int b = 0)
+	: base(b) {
+    }
+
+    const char *parse(const char *begin, const char *end, bool is_signed,
+		      value_type &result);
+
+    template<typename V>
+    bool parse(const String &str, V &result, const ArgContext &args = blank_args) {
+	constexpr bool is_signed = integer_traits<V>::is_signed;
+	typedef typename conditional<is_signed, signed_value_type, value_type>::type this_value_type;
+	value_type value;
+	const char *x = parse(str.begin(), str.end(), is_signed, value);
+	if (x == str.end() && status == status_ok) {
+	    V typed_value(value);
+	    if (typed_value == this_value_type(value)) {
+		result = typed_value;
+		return true;
+	    }
+	}
+	report_error(x == str.end(), is_signed ? -int(sizeof(V)) : int(sizeof(V)), args, value);
+	return false;
+    }
+
+    template<typename V>
+    bool parse_saturating(const String &str, V &result, const ArgContext &args = blank_args) {
+	(void) args;
+	constexpr bool is_signed = integer_traits<V>::is_signed;
+	typedef typename conditional<is_signed, signed_value_type, value_type>::type this_value_type;
+	value_type value;
+	const char *x = parse(str.begin(), str.end(), is_signed, value);
+	if (x != str.end() || (status && status != status_range))
+	    return false;
+	result = value;
+	if (result != this_value_type(value))
+	    result = saturated(is_signed ? -int(sizeof(V)) : int(sizeof(V)), value);
+	return true;
+    }
+
+    static constexpr int threshold_high_bits = 6;
+    static constexpr int threshold_shift = 8 * sizeof(value_type) - threshold_high_bits;
+    static constexpr value_type threshold = (value_type) 1 << threshold_shift;
+
+    int base;
+    int status;
+
+  private:
+
+    void report_error(bool good_format, int signed_size, const ArgContext &args,
+		      value_type value) const;
+    value_type saturated(int signed_size, value_type value) const;
+
+};
+
+/** @class SaturatingIntArg
+  @brief Parser class for integers with saturating overflow.
+
+  SaturatingIntArg(@a base) is like IntArg(@a base), but integer overflow is
+  not an error; instead, the closest representable value is returned.
+
+  @sa IntArg */
+struct SaturatingIntArg : public IntArg {
+    SaturatingIntArg(int b = 0)
+	: IntArg(b) {
+    }
+
+    template<typename V>
+    bool parse(const String &str, V &result, const ArgContext &args = blank_args) {
+	return parse_saturating(str, result, args);
+    }
+};
+
+template<> struct DefaultArg<unsigned char> : public IntArg {};
+template<> struct DefaultArg<signed char> : public IntArg {};
+template<> struct DefaultArg<char> : public IntArg {};
+template<> struct DefaultArg<unsigned short> : public IntArg {};
+template<> struct DefaultArg<short> : public IntArg {};
+template<> struct DefaultArg<unsigned int> : public IntArg {};
+template<> struct DefaultArg<int> : public IntArg {};
+template<> struct DefaultArg<unsigned long> : public IntArg {};
+template<> struct DefaultArg<long> : public IntArg {};
+#if HAVE_LONG_LONG
+template<> struct DefaultArg<unsigned long long> : public IntArg {};
+template<> struct DefaultArg<long long> : public IntArg {};
+#endif
+
+
+bool cp_real2(const String &str, int frac_bits, uint32_t *result);
+bool cp_real2(const String &str, int frac_bits, int32_t *result);
+
+/** @class FixedPointArg
+  @brief Parser class for fixed-point numbers with @a n bits of fraction. */
+struct FixedPointArg {
+    FixedPointArg(int n)
+	: frac_bits(n) {
+    }
+    bool parse(const String &str, uint32_t &result, const ArgContext & = blank_args) {
+	// XXX cp_errno
+	return cp_real2(str, frac_bits, &result);
+    }
+    bool parse(const String &str, int32_t &result, const ArgContext & = blank_args) {
+	// XXX cp_errno
+	return cp_real2(str, frac_bits, &result);
+    }
+    int frac_bits;
+};
+
+bool cp_real10(const String& str, int frac_digits, int32_t* result);
+bool cp_real10(const String& str, int frac_digits, uint32_t* result);
+bool cp_real10(const String& str, int frac_digits, uint32_t* result_int, uint32_t* result_frac);
+
+/** @class DecimalFixedPointArg
+  @brief Parser class for fixed-point numbers with @a n decimal digits of fraction. */
+struct DecimalFixedPointArg {
+    DecimalFixedPointArg(int n)
+	: frac_digits(n) {
+    }
+    bool parse(const String &str, uint32_t &result, const ArgContext & = blank_args) {
+	// XXX cp_errno
+	return cp_real10(str, frac_digits, &result);
+    }
+    bool parse(const String &str, int32_t &result, const ArgContext & = blank_args) {
+	// XXX cp_errno
+	return cp_real10(str, frac_digits, &result);
+    }
+    bool parse(const String &str, uint32_t &result_int, uint32_t &result_frac, const ArgContext & = blank_args) {
+	// XXX cp_errno
+	return cp_real10(str, frac_digits, &result_int, &result_frac);
+    }
+    int frac_digits;
+};
+
+
+#if HAVE_FLOAT_TYPES
+/** @class DoubleArg
+  @brief Parser class for double-precision floating point numbers. */
+struct DoubleArg : public NumArg {
+    DoubleArg() {
+    }
+    bool parse(const String &str, double &result, const ArgContext &args = blank_args);
+    int status;
+};
+
+template<> struct DefaultArg<double> : public DoubleArg {};
+#endif
+
+
+bool cp_bandwidth(const String &str, uint32_t *result);
+
+/** @class BandwidthArg
+  @brief Parser class for bandwidth specifications.
+
+  Handles suffixes such as "Gbps", "k", etc. */
+struct BandwidthArg {
+    static bool parse(const String &str, uint32_t &result, const ArgContext & = blank_args) {
+	return cp_bandwidth(str, &result);
+    }
+};
+
+
+#if !CLICK_TOOL
+/** @class AnnoArg
+  @brief Parser class for annotation specifications. */
+struct AnnoArg {
+    AnnoArg(int s)
+	: size(s) {
+    }
+    bool parse(const String &str, int &result, const ArgContext &args = blank_args);
+  private:
+    int size;
+};
+#endif
+
+
+bool cp_seconds_as(const String &str, int frac_digits, uint32_t *result);
+
+/** @class SecondsArg
+  @brief Parser class for seconds or powers thereof.
+
+  The @a p argument is the number of digits of fraction to parse.
+  For example, to parse milliseconds, use SecondsArg(3). */
+struct SecondsArg {
+    SecondsArg(int p = 0)
+	: frac_digits(p) {
+    }
+    bool parse(const String &str, uint32_t &result, const ArgContext & = blank_args) {
+	return cp_seconds_as(str, frac_digits, &result);
+    }
+    int frac_digits;
+};
+
+
+/** @class BoolArg
+  @brief Parser class for booleans. */
+struct BoolArg {
+    static bool parse(const String &str, bool &result, const ArgContext &args = blank_args);
+};
+
+template<> struct DefaultArg<bool> : public BoolArg {};
+
+
+/** @class AnyArg
+  @brief Parser class that accepts any argument. */
+struct AnyArg {
+    static bool parse(const String &, const ArgContext & = blank_args) {
+	return true;
+    }
+    static bool parse(const String &str, String &result, const ArgContext & = blank_args) {
+	result = str;
+	return true;
+    }
+};
+
+
+bool cp_string(const String &str, String *result, String *rest);
+
+/** @class StringArg
+  @brief Parser class for possibly-quoted strings. */
+struct StringArg {
+    static bool parse(const String &str, String &result, const ArgContext & = blank_args) {
+	return cp_string(str, &result, 0);
+    }
+};
+
+template<> struct DefaultArg<String> : public StringArg {};
+
+
+bool cp_keyword(const String &str, String *result, String *rest);
+
+/** @class KeywordArg
+  @brief Parser class for keywords. */
+struct KeywordArg {
+    static bool parse(const String &str, String &result, const ArgContext & = blank_args) {
+	return cp_keyword(str, &result, 0);
+    }
+};
+
+
+bool cp_word(const String &str, String *result, String *rest);
+
+/** @class KeywordArg
+  @brief Parser class for words. */
+struct WordArg {
+    static bool parse(const String &str, String &result, const ArgContext & = blank_args) {
+	return cp_word(str, &result, 0);
+    }
+};
+
+
+#if CLICK_USERLEVEL || CLICK_TOOL
+/** @class FilenameArg
+  @brief Parser class for filenames. */
+struct FilenameArg {
+    static bool parse(const String &str, String &result, const ArgContext &args = blank_args);
+};
+#endif
+
+
+#if !CLICK_TOOL
+/** @class ElementArg
+  @brief Parser class for elements. */
+struct ElementArg {
+    static bool parse(const String &str, Element *&result, const ArgContext &args);
+};
+
+template<> struct DefaultArg<Element *> : public ElementArg {};
+
+/** @class ElementCastArg
+  @brief Parser class for elements of type @a t. */
+struct ElementCastArg {
+    ElementCastArg(const char *t)
+	: type(t) {
+    }
+    bool parse(const String &str, Element *&result, const ArgContext &args);
+    template<typename T> bool parse(const String &str, T *&result, const ArgContext &args) {
+	return parse(str, reinterpret_cast<Element *&>(result), args);
+    }
+    const char *type;
+};
+#endif
+
 CLICK_ENDDECLS
 #endif

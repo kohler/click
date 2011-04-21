@@ -300,5 +300,31 @@ SET_DST_IP6_ANNO(Packet *p, const click_in6_addr &a)
 }
 #endif
 
+
+/** @class IP6AddressArg
+  @brief Parser class for IPv6 addresses. */
+struct IP6AddressArg {
+    static const char *basic_parse(const String &str, IP6Address &result,
+				   const ArgContext &args = blank_args);
+    static bool parse(const String &str, IP6Address &result,
+		      const ArgContext &args = blank_args);
+};
+
+/** @class IP6PrefixArg
+  @brief Parser class for IPv6 address prefixes. */
+struct IP6PrefixArg {
+    IP6PrefixArg(bool allow_bare_address_ = false)
+	: allow_bare_address(allow_bare_address_) {
+    }
+    bool parse(const String &str, IP6Address &addr, int &prefix_len,
+	       const ArgContext &args = blank_args) const;
+    bool parse(const String &str, IP6Address &addr, IP6Address &prefix,
+	       const ArgContext &args = blank_args) const;
+    bool allow_bare_address;
+};
+
+template<> struct DefaultArg<IP6Address> : public IP6AddressArg {};
+template<> struct has_trivial_copy<IP6Address> : public true_type {};
+
 CLICK_ENDDECLS
 #endif

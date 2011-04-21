@@ -22,6 +22,10 @@
 #include <click/ipaddress.hh>
 #include <click/straccum.hh>
 #include <click/confparse.hh>
+#include <click/args.hh>
+#if !CLICK_TOOL
+# include <click/standard/addressinfo.hh>
+#endif
 CLICK_DECLS
 
 IP6Address::IP6Address(const String &str)
@@ -322,6 +326,145 @@ in6_cksum(const struct click_in6_addr *saddr,
 
 	  answer = ~csum;          // truncate to 16 bits
 	  return answer;
+}
+
+
+const char *
+IP6AddressArg::basic_parse(const String &str, IP6Address &result, const ArgContext &args)
+{
+    uint16_t *parts = result.data16();
+    memset(parts, 255, 16);
+    int d = 0, p = 0, coloncolon = -1;
+
+    const char *begin = str.begin(), *end = str.end(), *s;
+    for (s = begin; s != end; ++s) {
+	int digit;
+	if (*s >= '0' && *s <= '9')
+	    digit = *s - '0';
+	else if (*s >= 'a' && *s <= 'f')
+	    digit = *s - 'a' + 10;
+	else if (*s >= 'A' && *s <= 'F')
+	    digit = *s - 'A' + 10;
+	else if (*s == ':' && s + 1 != end && d != 7 && (p != 0 || d == 0)) {
+	    if (s[1] == ':' && coloncolon < 0) {
+		coloncolon = d = (p ? d + 1 : d);
+		parts[d] = 0;
+		++s;
+	    } else if (!isxdigit((unsigned char) s[1]) || p == 0)
+		break;
+	    p = 0;
+	    ++d;
+	    continue;
+	} else
+	    break;
+	if (p == 4)
+	    break;
+	parts[d] = (p != 0 ? parts[d] << 4 : 0) + digit;
+	++p;
+    }
+
+    if (p == 0)
+	--d;
+
+    // check for IPv4 address suffix
+    if ((d == 6 || (d < 6 && coloncolon >= 0)) && s != end) {
+	const char *t = s - 1;
+	while (t != begin && *t != ':')
+	    --t;
+	IPAddress ipv4;
+	if (t != begin
+	    && IPAddressArg::parse(str.substring(t + 1, end), ipv4, args)) {
+	    int dd = d == coloncolon ? d + 1 : d;
+	    parts[dd] = (ipv4.data()[0] << 8) + ipv4.data()[1];
+	    parts[dd + 1] = (ipv4.data()[2] << 8) + ipv4.data()[3];
+	    d = dd + 1;
+	    s = end;
+	}
+    }
+
+    if (d != 7 && coloncolon < 0)
+	return begin;
+    for (int i = 0; i <= d; ++i)
+	parts[i] = htons(parts[i]);
+    if (coloncolon >= 0 && d != 7) {
+	int numextra = 7 - d;
+	memmove(&parts[coloncolon + 1 + numextra], &parts[coloncolon + 1], sizeof(uint16_t) * (d - coloncolon));
+	memset(&parts[coloncolon + 1], 0, sizeof(uint16_t) * numextra);
+    }
+
+    return s;
+}
+
+bool
+IP6AddressArg::parse(const String &str, IP6Address &result, const ArgContext &args)
+{
+    IP6Address a = IP6Address::uninitialized_t();
+    if (basic_parse(str, a, args) == str.end()) {
+	result = a;
+	return true;
+    }
+#if !CLICK_TOOL
+    if (args.context())
+	return AddressInfo::query_ip6(str, result.data(), args.context());
+#else
+    (void) args;
+#endif
+    return false;
+}
+
+bool
+IP6PrefixArg::parse(const String &str,
+		    IP6Address &result_addr, int &result_prefix_len,
+		    const ArgContext &args) const
+{
+    const char *begin = str.begin(), *slash = str.end(), *end = str.end();
+    while (slash != begin)
+	if (*--slash == '/')
+	    break;
+
+    if (slash != begin && slash + 1 != end) {
+	IP6Address a = IP6Address::uninitialized_t();
+	if (IP6AddressArg::parse(str.substring(begin, slash), a, args)) {
+	    int l = -1;
+	    IP6Address m = IP6Address::uninitialized_t();
+	    if ((IntArg::parse(str.substring(slash + 1, end), l, 10)
+		 && l >= 0 && l <= 128)
+		|| (IP6AddressArg::parse(str.substring(slash + 1, end), m, args)
+		    && (l = m.mask_to_prefix_len()) >= 0)) {
+		result_addr = a;
+		result_prefix_len = l;
+		return true;
+	    } else
+		return false;
+	}
+    }
+
+    if (allow_bare_address && IP6AddressArg::parse(str, result_addr, args)) {
+	result_prefix_len = 128;
+	return true;
+    }
+
+#if !CLICK_TOOL
+    if (args.context()
+	&& AddressInfo::query_ip6_prefix(str, result_addr.data(),
+					 &result_prefix_len, args.context()))
+	return true;
+#endif
+
+    return false;
+}
+
+bool
+IP6PrefixArg::parse(const String &str,
+		    IP6Address &result_addr, IP6Address &result_prefix,
+		    const ArgContext &args) const
+{
+    int prefix_len;
+    if (parse(str, result_addr, prefix_len, args)) {
+	result_prefix = IP6Address::make_prefix(prefix_len);
+	return true;
+    } else
+	return false;
 }
 
 CLICK_ENDDECLS

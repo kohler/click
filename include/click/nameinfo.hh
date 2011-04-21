@@ -1,8 +1,7 @@
 // -*- c-basic-offset: 4; related-file-name: "../../lib/nameinfo.cc" -*-
 #ifndef CLICK_NAMEINFO_HH
 #define CLICK_NAMEINFO_HH
-#include <click/string.hh>
-#include <click/vector.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 CLICK_DECLS
 class Element;
@@ -509,6 +508,21 @@ NameDB::define_int(const String &name, const int32_t value)
 {
     return define(name, &value, sizeof(value));
 }
+
+
+/** @class NamedIntArg
+  @brief Parser class for named integers. */
+struct NamedIntArg {
+    NamedIntArg(uint32_t type)
+	: _type(type) {
+    }
+    bool parse(const String &str, int &value, const ArgContext &args) {
+	return NameInfo::query(_type, args.context(), str,
+			       &value, sizeof(value))
+	    || IntArg().parse(str, value, args);
+    }
+    int _type;
+};
 
 CLICK_ENDDECLS
 #endif

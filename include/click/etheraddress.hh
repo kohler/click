@@ -3,6 +3,7 @@
 #define CLICK_ETHERADDRESS_HH
 #include <click/string.hh>
 #include <click/glue.hh>
+#include <click/type_traits.hh>
 CLICK_DECLS
 
 class EtherAddress { public:
@@ -174,6 +175,35 @@ operator!=(const EtherAddress &a, const EtherAddress &b)
 
 class StringAccum;
 StringAccum &operator<<(StringAccum &, const EtherAddress &);
+
+
+class ArgContext;
+class Args;
+extern const ArgContext blank_args;
+
+/** @class EtherAddressArg
+  @brief Parser class for Ethernet addresses.
+
+  This is the default parser for objects of EtherAddress type.  For 6-byte
+  arrays like "click_ether::ether_shost" and "click_ether::ether_dhost", it is
+  necessary use Args::read_with:
+
+  @code
+  struct click_ether ethh;
+  ... Args(...) ...
+      .read_mp_with("SRC", EtherAddressArg(), ethh.ether_shost)
+      ...
+  @endcode */
+struct EtherAddressArg {
+    static bool parse(const String &str, EtherAddress &value, const ArgContext &args = blank_args);
+    static bool parse(const String &str, unsigned char *value, const ArgContext &args = blank_args) {
+	return parse(str, *reinterpret_cast<EtherAddress *>(value), args);
+    }
+    static bool parse(const String &str, Args &args, unsigned char *value);
+};
+
+template<> struct DefaultArg<EtherAddress> : public EtherAddressArg {};
+template<> struct has_trivial_copy<EtherAddress> : public true_type {};
 
 CLICK_ENDDECLS
 #endif

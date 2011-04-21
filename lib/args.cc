@@ -21,6 +21,13 @@
 #include <click/args.hh>
 #include <click/error.hh>
 #include <click/router.hh>
+#if !CLICK_TOOL
+# include <click/nameinfo.hh>
+# include <click/packet_anno.hh>
+#endif
+#if CLICK_USERLEVEL || CLICK_TOOL
+# include <pwd.h>
+#endif
 #include <stdarg.h>
 CLICK_DECLS
 
@@ -371,7 +378,7 @@ void
 Args::postparse(bool ok, Slot *slot_status)
 {
     if (!ok && _read_status)
-	error("type mismatch");
+	error("syntax error");
     _arg_keyword = 0;
 
     if (_read_status) {
@@ -459,5 +466,276 @@ Args::complete()
     check_complete();
     return execute();
 }
+
+
+const char *
+IntArg::parse(const char *begin, const char *end, bool is_signed,
+	      value_type &value)
+{
+    const char *s = begin;
+    bool negative = false;
+    if (s < end && is_signed && *s == '-') {
+	negative = true;
+	++s;
+    } else if (s < end && *s == '+')
+	++s;
+
+    int b = base;
+    if ((b == 0 || b == 16) && s + 2 < end
+	&& *s == '0' && (s[1] == 'x' || s[1] == 'X')) {
+	s += 2;
+	b = 16;
+    } else if (b == 0 && s + 2 < end
+	       && *s == '0' && (s[1] == 'b' || s[1] == 'B')) {
+	s += 2;
+	b = 2;
+    } else if (b == 0 && s < end && *s == '0')
+	b = 8;
+    else if (b == 0)
+	b = 10;
+    else if (b < 2 || b > 36) {
+	status = status_notsup;
+	return begin;
+    }
+
+    const char *firstdigit = s, *lastdigit = s;
+    value_type v = 0;
+    status = status_ok;
+    for (; s < end; ++s) {
+	// find digit
+	int digit;
+	if (*s >= '0' && *s <= '9')
+	    digit = *s - '0';
+	else if (b > 10 && *s >= 'A' && *s <= 'Z')
+	    digit = *s - 'A' + 10;
+	else if (b > 10 && *s >= 'a' && *s <= 'z')
+	    digit = *s - 'a' + 10;
+	else if (*s == '_' && lastdigit + 1 == s)
+	    // skip underscores between digits
+	    continue;
+	else
+	    digit = 36;
+	if (digit >= b)
+	    break;
+	lastdigit = s;
+	// check for overflow without divide
+	if (v <= threshold)
+	    v = v * b + digit;
+	else {
+	    // Let v = (msv * threshold) + lsv, where lsv < threshold.
+	    // Then new_value = (msv * threshold * b)
+	    //   + (lsv * threshold * b) + digit.
+	    value_type msv = (v >> threshold_shift) * b;
+	    value_type lsv = (v & (threshold - 1)) * b + digit;
+	    if (lsv >= threshold) {
+		msv += lsv >> threshold_shift;
+		lsv &= threshold - 1;
+	    }
+	    if (msv >= (1 << threshold_high_bits))
+		status = status_range;
+	    else
+		v = (msv << threshold_shift) + lsv;
+	}
+    }
+
+    if (s == firstdigit && firstdigit > begin + 1)
+	// Happens in cases like "0x!" or "+0x": parse the initial "0".
+	firstdigit = lastdigit = begin + (*begin == '0' ? 0 : 1);
+    else if (s == firstdigit) {
+	status = status_inval;
+	return begin;
+    }
+
+    if (is_signed) {
+	value_type boundary =
+	    value_type(integer_traits<signed_value_type>::const_max) + (negative && v);
+	if (v > boundary)
+	    status = status_range;
+	if (status == status_range)
+	    v = boundary;
+	if (negative)
+	    v = -v;
+    } else if (status == status_range)
+	v = integer_traits<value_type>::const_max;
+    value = v;
+
+    return lastdigit + 1;
+}
+
+void
+IntArg::report_error(bool good_format, int signed_size,
+		     const ArgContext &args, value_type value) const
+{
+    if (args.errh() && good_format
+	&& (status == status_range || status == status_ok)) {
+	value_type boundary(saturated(signed_size, value));
+	const char *fmt;
+	if (signed_size < 0 && signed_value_type(value) < 0)
+	    fmt = "overflow, min -%s";
+	else
+	    fmt = "overflow, max %s";
+	args.error(fmt, String(boundary).c_str());
+    }
+}
+
+IntArg::value_type
+IntArg::saturated(int signed_size, value_type value) const
+{
+    if (signed_size < 0)
+	return (value_type(1) << (8 * -signed_size - 1)) - (signed_value_type(value) >= 0);
+    else
+	return ~value_type(0) >> (8 * (sizeof(value_type) - signed_size));
+}
+
+
+#if HAVE_FLOAT_TYPES
+bool
+DoubleArg::parse(const String &str, double &result, const ArgContext &args)
+{
+    if (str.length() == 0 || isspace((unsigned char) str[0])) {
+    format_error:
+	// check for space because strtod() accepts leading whitespace
+	status = status_inval;
+	return false;
+    }
+
+    errno = 0;
+    char *endptr;
+    double value = strtod(str.c_str(), &endptr);
+    if (endptr != str.end())		// bad format; garbage after number
+	goto format_error;
+
+    if (errno == ERANGE) {
+	status = status_range;
+	if (args.errh()) {
+	    const char *fmt;
+	    if (value == 0)
+		fmt = "underflow, rounded to %g";
+	    else if (value < 0)
+		fmt = "overflow, min %g";
+	    else
+		fmt = "overflow, max %g";
+	    args.error(fmt, value);
+	}
+	return false;
+    }
+
+    status = status_ok;
+    result = value;
+    return true;
+}
+#endif
+
+
+bool
+BoolArg::parse(const String &str, bool &result, const ArgContext &)
+{
+    const char *s = str.data();
+    int len = str.length();
+
+    if (len == 1 && (s[0] == '0' || s[0] == 'n' || s[0] == 'f'))
+	result = false;
+    else if (len == 1 && (s[0] == '1' || s[0] == 'y' || s[0] == 't'))
+	result = true;
+    else if (len == 5 && memcmp(s, "false", 5) == 0)
+	result = false;
+    else if (len == 4 && memcmp(s, "true", 4) == 0)
+	result = true;
+    else if (len == 2 && memcmp(s, "no", 2) == 0)
+	result = false;
+    else if (len == 3 && memcmp(s, "yes", 3) == 0)
+	result = true;
+    else
+	return false;
+
+    return true;
+}
+
+
+#if CLICK_USERLEVEL || CLICK_TOOL
+bool
+FilenameArg::parse(const String &str, String &result, const ArgContext &)
+{
+    String fn;
+    if (!cp_string(str, &fn) || !fn)
+	return false;
+
+    // expand home directory substitutions
+    if (fn[0] == '~') {
+	if (fn.length() == 1 || fn[1] == '/') {
+	    const char *home = getenv("HOME");
+	    if (home)
+		fn = String(home) + fn.substring(1);
+	} else {
+	    int off = 1;
+	    while (off < fn.length() && fn[off] != '/')
+		off++;
+	    String username = fn.substring(1, off - 1);
+	    struct passwd *pwd = getpwnam(username.c_str());
+	    if (pwd && pwd->pw_dir)
+		fn = String(pwd->pw_dir) + fn.substring(off);
+	}
+    }
+
+    // replace double slashes with single slashes
+    int len = fn.length();
+    for (int i = 0; i < len - 1; i++)
+	if (fn[i] == '/' && fn[i+1] == '/') {
+	    fn = fn.substring(0, i) + fn.substring(i + 1);
+	    i--;
+	    len--;
+	}
+
+    // return
+    result = fn;
+    return true;
+}
+#endif
+
+
+#if !CLICK_TOOL
+bool
+AnnoArg::parse(const String &str, int &result, const ArgContext &args)
+{
+    int32_t annoval;
+    if (!NameInfo::query_int(NameInfo::T_ANNOTATION, args.context(),
+			     str, &annoval))
+	return false;
+    if (size > 0) {
+	if (ANNOTATIONINFO_SIZE(annoval) && ANNOTATIONINFO_SIZE(annoval) != size)
+	    return false;
+# if !HAVE_INDIFFERENT_ALIGNMENT
+	if ((size == 2 || size == 4 || size == 8)
+	    && (ANNOTATIONINFO_OFFSET(annoval) % size) != 0)
+	    return false;
+# endif
+	if (ANNOTATIONINFO_OFFSET(annoval) + size > Packet::anno_size)
+	    return false;
+	annoval = ANNOTATIONINFO_OFFSET(annoval);
+    } else if (ANNOTATIONINFO_OFFSET(annoval) >= Packet::anno_size)
+	return false;
+    result = annoval;
+    return true;
+}
+
+bool
+ElementArg::parse(const String &str, Element *&result, const ArgContext &args)
+{
+    const Element *context = args.context();
+    result = context->router()->find(str, context);
+    if (!result)
+	args.error("does not name an element");
+    return result;
+}
+
+bool
+ElementCastArg::parse(const String &str, Element *&result, const ArgContext &args)
+{
+    if (ElementArg::parse(str, result, args)
+	&& !(result = reinterpret_cast<Element *>(result->cast(type))))
+	args.error("element type mismatch, expected %s", type);
+    return result;
+}
+#endif
 
 CLICK_ENDDECLS

@@ -22,6 +22,11 @@
 #include <click/glue.hh>
 #include <click/etheraddress.hh>
 #include <click/straccum.hh>
+#include <click/args.hh>
+#if !CLICK_TOOL
+# include <click/nameinfo.hh>
+# include <click/standard/addressinfo.hh>
+#endif
 CLICK_DECLS
 
 /** @file etheraddress.hh
@@ -73,6 +78,60 @@ operator<<(StringAccum &sa, const EtherAddress &ea)
 		p[0], p[1], p[2], p[3], p[4], p[5]);
     }
     return sa;
+}
+
+
+bool
+EtherAddressArg::parse(const String &str, EtherAddress &value, const ArgContext &args)
+{
+    unsigned char data[6];
+    int d = 0, p = 0, sep = 0;
+    const char *s, *end = str.end();
+
+    for (s = str.begin(); s != end; ++s) {
+	int digit;
+	if (*s >= '0' && *s <= '9')
+	    digit = *s - '0';
+	else if (*s >= 'a' && *s <= 'f')
+	    digit = *s - 'a' + 10;
+	else if (*s >= 'A' && *s <= 'F')
+	    digit = *s - 'A' + 10;
+	else {
+	    if (sep == 0 && (*s == '-' || *s == ':'))
+		sep = *s;
+	    if (*s == sep && (p == 1 || p == 2) && d < 5) {
+		p = 0;
+		++d;
+		continue;
+	    } else
+		break;
+	}
+
+	if (p == 2 || d == 6)
+	    break;
+	data[d] = (p ? data[d] << 4 : 0) + digit;
+	++p;
+    }
+
+    if (s == end && p != 0 && d == 5) {
+	memcpy(&value, data, 6);
+	return true;
+    }
+
+#if !CLICK_TOOL
+    if (args.context())
+	return AddressInfo::query_ethernet(str, value.data(), args.context());
+#else
+    (void) args;
+#endif
+    return false;
+}
+
+bool
+EtherAddressArg::parse(const String &str, Args &args, unsigned char *value)
+{
+    EtherAddress *s = args.slot(*reinterpret_cast<EtherAddress *>(value));
+    return s && parse(str, *s, args);
 }
 
 CLICK_ENDDECLS
