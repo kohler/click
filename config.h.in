@@ -235,4 +235,11 @@
 # include <click/config-userlevel.h>
 #endif
 
+/* Ensure declaration of DefaultArg template. */
+#ifdef __cplusplus
+CLICK_DECLS
+template <typename T> struct DefaultArg;
+CLICK_ENDDECLS
+#endif
+
 #endif /* CLICK_CONFIG_H */

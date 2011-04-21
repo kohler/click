@@ -385,6 +385,7 @@ clicknet
 ./include/click:
 algorithm.hh
 archive.hh
+args.hh
 atomic.hh
 bighashmap.cc
 bighashmap.hh
@@ -482,6 +483,7 @@ wifi.h
 
 ./lib:
 archive.cc
+args.cc
 atomic.cc
 bighashmap_arena.cc
 bitvector.cc
