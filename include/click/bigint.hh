@@ -20,6 +20,7 @@
  * Using the interfaces provided by this file does not create a derived work.
  */
 #include <click/integers.hh>
+#include <click/type_traits.hh>
 #include <click/string.hh>
 CLICK_DECLS
 

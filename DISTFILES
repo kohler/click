@@ -449,6 +449,7 @@ task.hh
 timer.hh
 timestamp.hh
 tokenbucket.hh
+type_traits.hh
 userutils.hh
 variableenv.hh
 vector.cc
