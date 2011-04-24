@@ -421,5 +421,10 @@ inline void click_swap(Bitvector &a, Bitvector &b)
     a.swap(b);
 }
 
+inline void assign_consume(Bitvector &a, Bitvector &b)
+{
+    a.swap(b);
+}
+
 CLICK_ENDDECLS
 #endif

@@ -623,6 +623,11 @@ inline void click_swap(StringAccum &a, StringAccum &b)
     a.swap(b);
 }
 
+inline void assign_consume(StringAccum &a, StringAccum &b)
+{
+    a.swap(b);
+}
+
 #undef CLICK_SNPRINTF_ATTR
 CLICK_ENDDECLS
 #endif

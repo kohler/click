@@ -1054,6 +1054,12 @@ inline void click_swap(HashTable<K, V> &a, HashTable<K, V> &b)
 }
 
 template <typename K, typename V>
+inline void assign_consume(HashTable<K, V> &a, HashTable<K, V> &b)
+{
+    a.swap(b);
+}
+
+template <typename K, typename V>
 inline void clear_by_swap(HashTable<K, V> &x)
 {
     // specialization avoids losing x's default value

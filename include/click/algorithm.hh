@@ -47,6 +47,16 @@ inline void clear_by_swap(T &x)
     click_swap(x, tmp);
 }
 
+/** @brief Assign @a x to a copy of @a y, possibly modifying @a y.
+ *
+ * This is like @a x = @a y, except that under certain circumstances
+ * it can modify @a y (for example, by calling @a x.swap(@a y)). */
+template <typename T, typename V>
+inline void assign_consume(T &x, const V &y)
+{
+    x = y;
+}
+
 
 template <typename T, typename U = void> struct do_nothing;
 

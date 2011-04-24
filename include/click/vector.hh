@@ -139,6 +139,12 @@ inline void click_swap(Vector<T> &a, Vector<T> &b)
     a.swap(b);
 }
 
+template <typename T>
+inline void assign_consume(Vector<T> &a, Vector<T> &b)
+{
+    a.swap(b);
+}
+
 
 template <>
 class Vector<void*> { public:

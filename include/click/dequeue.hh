@@ -148,6 +148,12 @@ inline void click_swap(DEQueue<T> &a, DEQueue<T> &b)
     a.swap(b);
 }
 
+template <typename T>
+inline void assign_consume(DEQueue<T> &a, DEQueue<T> &b)
+{
+    a.swap(b);
+}
+
 CLICK_ENDDECLS
 #include <click/dequeue.cc>
 #endif
