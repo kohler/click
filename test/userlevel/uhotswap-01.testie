@@ -1,7 +1,7 @@
 %script
-usleep () { click -e "DriverManager(wait ${1}us)"; }
+msleep () { click -e "DriverManager(wait ${1}ms)"; }
 
-(while [ ! -f PORT ]; do usleep 1; done && nc localhost `cat PORT` <CSIN >CSOUT) &
+(while [ ! -f PORT ]; do msleep 1; done && { cat CSIN; msleep 12; } | nc localhost `cat PORT` >CSOUT) &
 click -R -p 41900+ -e "Idle -> s :: Switch(0) -> Idle; s[1] -> Idle;
 DriverManager(print >PORT click_driver@@ControlSocket.port, wait 1s, stop)"
 
