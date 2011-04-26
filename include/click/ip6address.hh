@@ -49,8 +49,8 @@ class IP6Address { public:
      * prefix_len.
      * @param prefix_len prefix length; 0 <= @a prefix_len <= 128
      *
-     * For example, make_prefix(0) is ::, make_prefix(12) is FFF0::, and
-     * make_prefix(128) is FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF.  Causes an
+     * For example, make_prefix(0) is ::, make_prefix(12) is fff0::, and
+     * make_prefix(128) is ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff.  Causes an
      * assertion failure if @a prefix_len is out of range.
      *
      * @sa mask_to_prefix_len, make_inverted_prefix */
@@ -73,6 +73,8 @@ class IP6Address { public:
 
     unsigned char *data()			{ return &_addr.s6_addr[0]; }
     const unsigned char *data() const		{ return &_addr.s6_addr[0]; }
+    uint16_t *data16()				{ return &_addr.s6_addr16[0]; }
+    const uint16_t *data16() const		{ return &_addr.s6_addr16[0]; }
     uint32_t *data32()				{ return &_addr.s6_addr32[0]; }
     const uint32_t *data32() const		{ return &_addr.s6_addr32[0]; }
 
@@ -99,6 +101,7 @@ class IP6Address { public:
 
     inline IP6Address &operator=(const click_in6_addr &);
 
+    void unparse(StringAccum &sa) const;
     String unparse() const;
     String unparse_expanded() const;
 
@@ -140,8 +143,11 @@ operator!=(const IP6Address &a, const IP6Address &b)
     return ai[0] != bi[0] || ai[1] != bi[1] || ai[2] != bi[2] || ai[3] != bi[3];
 }
 
-class StringAccum;
-StringAccum &operator<<(StringAccum &, const IP6Address &);
+inline StringAccum &
+operator<<(StringAccum &sa, const IP6Address &a) {
+    a.unparse(sa);
+    return sa;
+}
 
 inline bool
 IP6Address::matches_prefix(const IP6Address &addr, const IP6Address &mask) const

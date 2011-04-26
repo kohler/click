@@ -119,58 +119,69 @@ IP6Address::ip4_address(IPAddress &ip4) const
 	return false;
 }
 
-String
-IP6Address::unparse() const
+void
+IP6Address::unparse(StringAccum &sa) const
 {
-    char buf[48];
+    // Unparse according to RFC 5952
+    const uint32_t *a32 = data32();
+    const uint16_t *a16 = data16();
+    const uint8_t *a8 = data();
 
-    // do some work to print the address well
-    if (_addr.s6_addr32[0] == 0 && _addr.s6_addr32[1] == 0) {
-	if (_addr.s6_addr32[2] == 0 && _addr.s6_addr32[3] == 0)
-	    return String::make_stable("::", 2); // empty address
-	else if (_addr.s6_addr32[2] == 0) {
-	    sprintf(buf, "::%d.%d.%d.%d", _addr.s6_addr[12], _addr.s6_addr[13],
-		    _addr.s6_addr[14], _addr.s6_addr[15]);
-	    return String(buf);
-	} else if (_addr.s6_addr32[2] == htonl(0x0000FFFFU)) {
-	    sprintf(buf, "::FFFF:%d.%d.%d.%d", _addr.s6_addr[12], _addr.s6_addr[13],
-		    _addr.s6_addr[14], _addr.s6_addr[15]);
-	    return String(buf);
+    // :: and special IPv4 addresses
+    if (a32[0] == 0 && a32[1] == 0) {
+	if (a32[2] == 0 && a32[3] == 0) {
+	    sa.append("::", 2);
+	    return;
+	} else if (a32[2] == 0) {
+	    sa.snprintf(18, "::%d.%d.%d.%d", a8[12], a8[13], a8[14], a8[15]);
+	    return;
+	} else {
+	    sa.snprintf(23, "::ffff:%d.%d.%d.%d", a8[12], a8[13], a8[14], a8[15]);
+	    return;
 	}
     }
 
-    char *s = buf;
-    int word;
-    for (word = 0; word < 8 && _addr.s6_addr16[word] != 0; word++)
-	s += sprintf(s, (word ? ":%X" : "%X"), ntohs(_addr.s6_addr16[word]));
-    if (word == 0 || (word < 7 && _addr.s6_addr16[word + 1] == 0)) {
-	*s++ = ':';
-	while (word < 8 && _addr.s6_addr16[word] == 0)
-	    word++;
-	if (word == 8)
-	    *s++ = ':';
+    // find the longest sequences of zero fields; if two sequences have equal
+    // length, choose the first
+    int zp = 0, zl = 0, lzp = 0;
+    for (int p = 0; p < 8; ++p)
+	if (a16[p] != 0)
+	    lzp = p + 1;
+	else if (p + 1 - lzp > zl) {
+	    zp = lzp;
+	    zl = p + 1 - lzp;
+	}
+
+    for (int p = 0; p < 8; ++p)
+	if (p == zp && zl > 1) {
+	    p += zl - 1;
+	    sa.append("::", p == 7 ? 2 : 1);
+	} else
+	    sa.snprintf(5, p ? ":%x" : "%x", ntohs(a16[p]));
+}
+
+String
+IP6Address::unparse() const
+{
+    const uint32_t *a32 = data32();
+    if (a32[0] == 0 && a32[1] == 0 && a32[2] == 0 && a32[3] == 0)
+	return String::make_stable("::", 2);
+    else {
+	StringAccum sa;
+	unparse(sa);
+	return sa.take_string();
     }
-    for (; word < 8; word++)
-	s += sprintf(s, ":%X", ntohs(_addr.s6_addr16[word]));
-    return String(buf, s - buf);
 }
 
 String
 IP6Address::unparse_expanded() const
 {
+    const uint16_t *a16 = data16();
     char buf[48];
-    sprintf(buf, "%X:%X:%X:%X:%X:%X:%X:%X",
-	    ntohs(_addr.s6_addr16[0]), ntohs(_addr.s6_addr16[1]),
-	    ntohs(_addr.s6_addr16[2]), ntohs(_addr.s6_addr16[3]),
-	    ntohs(_addr.s6_addr16[4]), ntohs(_addr.s6_addr16[5]),
-	    ntohs(_addr.s6_addr16[6]), ntohs(_addr.s6_addr16[7]));
+    sprintf(buf, "%x:%x:%x:%x:%x:%x:%x:%x",
+	    ntohs(a16[0]), ntohs(a16[1]), ntohs(a16[2]), ntohs(a16[3]),
+	    ntohs(a16[4]), ntohs(a16[5]), ntohs(a16[6]), ntohs(a16[7]));
     return String(buf);
-}
-
-StringAccum &
-operator<<(StringAccum &sa, const IP6Address &a)
-{
-    return (sa << a.unparse());
 }
 
 
