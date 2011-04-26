@@ -167,6 +167,15 @@
 # define CLICK_DEPRECATED_ENUM __attribute__((deprecated))
 #endif
 
+/* Define macro for marking functions noninlinable. */
+#ifdef CLICK_LINUXMODULE
+# define CLICK_NOINLINE noinline
+#elif __GNUC__
+# define CLICK_NOINLINE __attribute__((noinline))
+#else
+# define CLICK_NOINLINE /* nothing */
+#endif
+
 /* Define macro for functions whose results should not be ignored. */
 #if __GNUC__ < 3 || (__GNUC__ == 3 && __GNUC_MINOR__ < 4)
 # define CLICK_WARN_UNUSED_RESULT /* nothing */
