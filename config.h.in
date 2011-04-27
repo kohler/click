@@ -61,6 +61,9 @@
 /* Define if right shift of signed integers acts by sign extension. */
 #undef HAVE_ARITHMETIC_RIGHT_SHIFT
 
+/* Define if the C++ compiler understands constexpr. */
+#undef HAVE_CXX_CONSTEXPR
+
 /* Define if the machine is indifferent to alignment. */
 #undef HAVE_INDIFFERENT_ALIGNMENT
 
@@ -121,17 +124,15 @@
 #undef __MTCLICK__
 #undef NUM_CLICK_CPUS
 
-#ifndef __cplusplus
 /* Define inline, if necessary. C only. */
+#ifndef __cplusplus
 #undef inline
 #endif
 
-#ifdef __cplusplus
-/* Explicit template instances? */
-#if __GNUC__ == 2 && __GNUC_MINOR__ < 90
-#define EXPLICIT_TEMPLATE_INSTANCES 1
+/* Define constexpr to const under C or old C++. */
+#if !defined(__cplusplus) || !HAVE_CXX_CONSTEXPR
+# define constexpr const
 #endif
-#endif /* __cplusplus */
 
 /* Define CLICK_DEBUG_SCHEDULING to 0 if disabled. */
 #ifndef CLICK_DEBUG_SCHEDULING

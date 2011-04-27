@@ -126,6 +126,15 @@ by setting the 'CXX' environment variable and rerunning me.
     VTABLE_THUNKS=
     test -n "$GXX" && test "$GXX_MAJOR" -lt 3 && VTABLE_THUNKS=-fvtable-thunks
 
+    dnl check for C++0x constexpr
+
+    AC_CACHE_CHECK([whether the C++ compiler understands constexpr], [ac_cv_cxx_constexpr], [
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[constexpr int f(int x) { return x + 1; }]], [[]])],
+	    [ac_cv_cxx_constexpr=yes], [ac_cv_cxx_constexpr=no])])
+    if test "$ac_cv_cxx_constexpr" = yes; then
+	AC_DEFINE([HAVE_CXX_CONSTEXPR], [1], [Define if the C++ compiler understands constexpr.])
+    fi
+
     dnl define correct warning options
 
     CXX_WARNINGS=
