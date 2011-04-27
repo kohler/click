@@ -347,7 +347,7 @@ FromDevice_get_packet(u_char* clientdata,
 		      const struct pcap_pkthdr* pkthdr,
 		      const u_char* data)
 {
-    static char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+    static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
     FromDevice *fd = (FromDevice *) clientdata;
     int length = pkthdr->caplen;
