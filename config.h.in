@@ -64,6 +64,9 @@
 /* Define if the C++ compiler understands constexpr. */
 #undef HAVE_CXX_CONSTEXPR
 
+/* Define if the C++ compiler understands static_assert. */
+#undef HAVE_CXX_STATIC_ASSERT
+
 /* Define if the machine is indifferent to alignment. */
 #undef HAVE_INDIFFERENT_ALIGNMENT
 
