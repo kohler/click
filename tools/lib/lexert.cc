@@ -396,7 +396,7 @@ LexerT::lexeme_string(int kind)
     static const uint8_t offsets[] = {
 	0, 11, 20, 25, 30, 35, 40, 46, 61, 71, 81, 90
     };
-    static_assert(sizeof(names) == 90);
+    static_assert(sizeof(names) == 90, "names screwup.");
 
     char buf[14];
     if (kind >= lexIdent && kind < lexIdent + (int) sizeof(offsets) - 1) {

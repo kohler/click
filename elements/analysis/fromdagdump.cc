@@ -45,7 +45,7 @@ CLICK_DECLS
 FromDAGDump::FromDAGDump()
     : _packet(0), _end_h(0), _task(this)
 {
-    static_assert(sizeof(DAGCell) == 64 && DAGCell::CELL_SIZE == 64);
+    static_assert(sizeof(DAGCell) == 64 && DAGCell::CELL_SIZE == 64, "DAGCell must be exactly 64 bytes long.");
 }
 
 FromDAGDump::~FromDAGDump()

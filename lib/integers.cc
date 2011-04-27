@@ -28,7 +28,7 @@ CLICK_DECLS
 int
 ffs_msb(unsigned x)
 {
-    static_assert(sizeof(unsigned) == 4);
+    static_assert(sizeof(unsigned) == 4, "unsigned has unexpected size.");
 
     int add = 0;
     static uint8_t bvals[] = { 0, 4, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1 };
@@ -67,7 +67,7 @@ ffs_msb(unsigned x)
 int
 ffs_msb(unsigned long x)
 {
-    static_assert(sizeof(unsigned) == 4 && sizeof(unsigned long) == 8);
+    static_assert(sizeof(unsigned) == 4 && sizeof(unsigned long) == 8, "unsigned or unsigned long has unexpected size.");
     ffs_msb_hilo(unsigned);
 }
 #endif
@@ -77,13 +77,13 @@ int
 ffs_msb(unsigned long long x)
 {
 # if SIZEOF_LONG_LONG == 8
-    static_assert(sizeof(unsigned) == 4);
+    static_assert(sizeof(unsigned) == 4, "unsigned has unexpected size.");
     ffs_msb_hilo(unsigned);
 # elif SIZEOF_LONG_LONG == 16
-    static_assert(sizeof(unsigned long) == 8);
+    static_assert(sizeof(unsigned long) == 8, "unsigned long has unexpected size.");
     ffs_msb_hilo(unsigned long);
 # else
-    static_assert(sizeof(unsigned long long) == 8 || sizeof(unsigned long long) == 16);
+    static_assert(sizeof(unsigned long long) == 8 || sizeof(unsigned long long) == 16, "unsigned long long has unexpected size.");
 # endif
 }
 #endif
@@ -92,7 +92,7 @@ ffs_msb(unsigned long long x)
 int
 ffs_msb(uint64_t x)
 {
-    static_assert(sizeof(unsigned) == 4);
+    static_assert(sizeof(unsigned) == 4, "unsigned has unexpected size.");
     ffs_msb_hilo(unsigned);
 }
 #endif
@@ -102,7 +102,7 @@ ffs_msb(uint64_t x)
 int
 ffs_lsb(uint32_t x)
 {
-    static_assert(sizeof(unsigned) == 4);
+    static_assert(sizeof(unsigned) == 4, "unsigned has unexpected size.");
 
     int add = 0;
     static uint8_t bvals[] = { 0, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1 };
@@ -141,7 +141,7 @@ ffs_lsb(uint32_t x)
 int
 ffs_lsb(unsigned long x)
 {
-    static_assert(sizeof(unsigned) == 4 && sizeof(unsigned long) == 8);
+    static_assert(sizeof(unsigned) == 4 && sizeof(unsigned long) == 8, "unsigned or unsigned long has unexpected size.");
     ffs_lsb_hilo(unsigned);
 }
 #endif
@@ -151,13 +151,13 @@ int
 ffs_lsb(unsigned long long x)
 {
 # if SIZEOF_LONG_LONG == 8
-    static_assert(sizeof(unsigned) == 4);
+    static_assert(sizeof(unsigned) == 4, "unsigned has unexpected size.");
     ffs_lsb_hilo(unsigned);
 # elif SIZEOF_LONG_LONG == 16
-    static_assert(sizeof(unsigned long) == 8);
+    static_assert(sizeof(unsigned long) == 8, "unsigned long has unexpected size.");
     ffs_lsb_hilo(unsigned long);
 # else
-    static_assert(sizeof(unsigned long long) == 8 || sizeof(unsigned long long) == 16);
+    static_assert(sizeof(unsigned long long) == 8 || sizeof(unsigned long long) == 16, "unsigned long long has unexpected size.");
 # endif
 }
 #endif
@@ -166,7 +166,7 @@ ffs_lsb(unsigned long long x)
 int
 ffs_lsb(uint64_t x)
 {
-    static_assert(sizeof(unsigned) == 4);
+    static_assert(sizeof(unsigned) == 4, "unsigned has unexpected size.");
     ffs_lsb_hilo(unsigned);
 }
 #endif

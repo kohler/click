@@ -217,7 +217,8 @@ wdiagram::wdiagram(wmain *rw)
     for (int i = 0; i < 3; i++)
 	_highlight[i].clear();
     static_assert((int) ncursors > (int) deg_corner_lrt
-		  && (int) c_element == (int) deg_element);
+		  && (int) c_element == (int) deg_element,
+		  "Corner constants screwup.");
     for (int i = 0; i < ncursors; i++)
 	_cursor[i] = 0;
     _last_cursorno = c_main;

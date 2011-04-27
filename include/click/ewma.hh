@@ -224,7 +224,7 @@ class FixedEWMAXParameters { public:
     /** @brief  Return this EWMA's scaling factor (bits of fraction).
      *  @return  the 2nd template parameter */
     static unsigned scale() {
-	static_assert(SCALE < sizeof(T) * 8);
+	static_assert(SCALE < sizeof(T) * 8, "SCALE too big for EWMA type.");
 	return SCALE;
     }
 

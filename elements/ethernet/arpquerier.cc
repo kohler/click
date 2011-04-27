@@ -202,7 +202,7 @@ ARPQuerier::send_query_for(const Packet *p, bool ether_dhost_valid)
 {
     // Uses p's IP and Ethernet headers.
 
-    static_assert(Packet::default_headroom >= sizeof(click_ether));
+    static_assert(Packet::default_headroom >= sizeof(click_ether), "Packet::default_headroom must be at least 14.");
     WritablePacket *q = Packet::make(Packet::default_headroom - sizeof(click_ether),
 				     NULL, sizeof(click_ether) + sizeof(click_ether_arp), 0);
     if (!q) {

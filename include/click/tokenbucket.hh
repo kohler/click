@@ -211,7 +211,8 @@ void TokenRateX<P>::assign(token_type rate, token_type capacity)
     _token_scale = max_tokens / capacity;
 
     // XXX on non-32 bit types
-    static_assert(sizeof(bigint::limb_type) == sizeof(token_type));
+    static_assert(sizeof(bigint::limb_type) == sizeof(token_type),
+		  "bigint::limb_type should have the same size as token_type.");
     bigint::limb_type l[2] = { 0, 0 };
     bigint::limb_type a[2] = { rate, 0 };
     bigint::multiply_add(l, a, 2, _token_scale);
@@ -231,7 +232,8 @@ void TokenRateX<P>::assign(token_type rate, token_type capacity)
 template <typename P>
 typename P::token_type TokenRateX<P>::rate() const
 {
-    static_assert(sizeof(bigint::limb_type) == sizeof(token_type));
+    static_assert(sizeof(bigint::limb_type) == sizeof(token_type),
+		  "bigint::limb_type should have the same size as token_type.");
     bigint::limb_type l[2] = { _tokens_per_epoch / 2, 0 };
     bigint::limb_type a[2] = { _tokens_per_epoch, 0 };
     bigint::multiply_add(l, a, 2, P::epoch_frequency());
@@ -388,7 +390,8 @@ class TokenCounterX { public:
      * possible compensate for the rate change. */
     void adjust(const rate_type &old_rate, const rate_type &new_rate) {
 	if (old_rate.token_scale() != new_rate.token_scale()) {
-	    static_assert(sizeof(bigint::limb_type) == sizeof(token_type));
+	    static_assert(sizeof(bigint::limb_type) == sizeof(token_type),
+			  "bigint::limb_type should have the same size as token_type.");
 	    bigint::limb_type l[2] = { 0, 0 };
 	    bigint::limb_type a[2] = { _tokens, 0 };
 	    bigint::multiply_add(l, a, 2, new_rate.token_scale());

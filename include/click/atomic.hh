@@ -207,7 +207,7 @@ inline void
 atomic_uint32_t::inc(volatile uint32_t &x)
 {
 #if CLICK_LINUXMODULE
-    static_assert(sizeof(atomic_t) == sizeof(x));
+    static_assert(sizeof(atomic_t) == sizeof(x), "atomic_t expected to take 32 bits.");
     atomic_inc((atomic_t *) &x);
 #elif CLICK_ATOMIC_X86
     asm volatile (CLICK_ATOMIC_LOCK "incl %0"
@@ -359,7 +359,7 @@ inline bool
 atomic_uint32_t::dec_and_test(volatile uint32_t &x)
 {
 #if CLICK_LINUXMODULE
-    static_assert(sizeof(atomic_t) == sizeof(x));
+    static_assert(sizeof(atomic_t) == sizeof(x), "atomic_t expected to take 32 bits.");
     return atomic_dec_and_test((atomic_t *) &x);
 #elif CLICK_ATOMIC_X86
     uint8_t result;

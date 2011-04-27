@@ -129,7 +129,8 @@ RouterThread::RouterThread(Master *m, int id)
 #endif
 
     static_assert(THREAD_QUIESCENT == (int) ThreadSched::THREAD_QUIESCENT
-		  && THREAD_UNKNOWN == (int) ThreadSched::THREAD_UNKNOWN);
+		  && THREAD_UNKNOWN == (int) ThreadSched::THREAD_UNKNOWN,
+		  "Thread constants screwup.");
 }
 
 RouterThread::~RouterThread()

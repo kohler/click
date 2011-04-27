@@ -24,7 +24,7 @@ CLICK_DECLS
 String
 BridgeMessage::s(String tag) const {
   // static assertion on message size
-  static_assert(sizeof(BridgeMessage::wire) == 60);
+  static_assert(sizeof(BridgeMessage::wire) == 60, "BridgeMessages must be 60 bytes on the wire.");
 
   char* buf = new char[256];
   String s;

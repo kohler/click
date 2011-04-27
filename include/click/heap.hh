@@ -236,7 +236,7 @@ template <int arity,
 inline void push_heap(iterator_type begin, iterator_type end,
 		      compare_type comp, place_type place)
 {
-    static_assert(arity > 2);
+    static_assert(arity > 2, "For arity == 2, use push_heap(...), not push_heap<2>(...).");
     assert(begin < end);
     size_t i = end - begin - 1, npos;
 
@@ -289,7 +289,7 @@ iterator_type change_heap(iterator_type begin, iterator_type end,
 			  iterator_type element,
 			  compare_type comp, place_type place)
 {
-    static_assert(arity > 2);
+    static_assert(arity > 2, "For arity == 2, use change_heap(...), not change_heap<2>(...).");
     assert(begin <= element && element < end);
     size_t i = element - begin, size = end - begin, npos;
 

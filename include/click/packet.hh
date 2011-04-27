@@ -729,7 +729,8 @@ inline
 Packet::Packet()
 {
 #if CLICK_LINUXMODULE
-    static_assert(sizeof(Anno) <= sizeof(((struct sk_buff *)0)->cb));
+    static_assert(sizeof(Anno) <= sizeof(((struct sk_buff *)0)->cb),
+		  "Anno structure too big for Linux packet annotation area.");
     panic("Packet constructor");
 #else
     _use_count = 1;

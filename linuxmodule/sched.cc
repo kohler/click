@@ -374,7 +374,7 @@ click_init_sched(ErrorHandler *errh)
     Router::add_read_handler(0, "priority", read_priority, 0);
     Router::add_write_handler(0, "priority", write_priority, 0, Handler::NONEXCLUSIVE);
 #if HAVE_ADAPTIVE_SCHEDULER
-    static_assert(Task::MAX_UTILIZATION == 1000);
+    static_assert(Task::MAX_UTILIZATION == 1000, "The adaptive scheduler requires Task::MAX_UTILIZATION == 1000.");
     Router::add_read_handler(0, "min_cpu_share", read_cpu_share, 0);
     Router::add_write_handler(0, "min_cpu_share", write_cpu_share, 0, Handler::NONEXCLUSIVE);
     Router::add_read_handler(0, "max_cpu_share", read_cpu_share, (void *)1);

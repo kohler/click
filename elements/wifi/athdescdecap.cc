@@ -29,7 +29,7 @@ CLICK_DECLS
 
 AthdescDecap::AthdescDecap()
 {
-    static_assert(WIFI_EXTRA_ANNO_SIZE >= sizeof(click_wifi_extra));
+    static_assert(WIFI_EXTRA_ANNO_SIZE >= sizeof(click_wifi_extra), "WIFI_EXTRA_ANNO_SIZE is not big enough.");
 }
 
 AthdescDecap::~AthdescDecap()

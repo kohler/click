@@ -37,9 +37,9 @@ CLICK_DECLS
 String
 EtherAddress::unparse_dash() const
 {
-    static_assert(sizeof(EtherAddress) == 6);
+    static_assert(sizeof(EtherAddress) == 6, "EtherAddress has the wrong size.");
 #if __GNUC__
-    static_assert(__alignof__(EtherAddress) <= 2);
+    static_assert(__alignof__(EtherAddress) <= 2, "EtherAddress has unexpectedly strict alignment requirements.");
 #endif
 
     String str = String::make_garbage(17);

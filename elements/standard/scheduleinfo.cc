@@ -29,7 +29,7 @@ CLICK_DECLS
 ScheduleInfo::ScheduleInfo()
 {
 #if HAVE_STRIDE_SCHED
-    static_assert((1 << FRAC_BITS) == Task::DEFAULT_TICKETS);
+    static_assert((1 << FRAC_BITS) == Task::DEFAULT_TICKETS, "Stride scheduler constant issue.");
 #endif
 }
 

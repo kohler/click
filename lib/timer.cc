@@ -195,7 +195,7 @@ Timer::task_hook(Timer *, void *thunk)
 Timer::Timer()
     : _schedpos1(0), _thunk(0), _owner(0)
 {
-    static_assert(sizeof(heap_element) == 16);
+    static_assert(sizeof(heap_element) == 16, "size_element should be 16 bytes long.");
     _hook.callback = do_nothing_hook;
 }
 

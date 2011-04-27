@@ -42,7 +42,7 @@ static const char * const driver_multithread_names[] = {
 const char *
 Driver::name(int d)
 {
-    static_assert(USERLEVEL == 0 && LINUXMODULE == 1 && BSDMODULE == 2 && NSMODULE == 3);
+    static_assert(USERLEVEL == 0 && LINUXMODULE == 1 && BSDMODULE == 2 && NSMODULE == 3, "Constant misassignments.");
     if (d >= 0 && d <= COUNT)
 	return driver_names[d];
     else

@@ -38,7 +38,7 @@ IPReassembler::IPReassembler()
 {
     for (int i = 0; i < NMAP; i++)
 	_map[i] = 0;
-    static_assert(sizeof(ChunkLink) == IPREASSEMBLER_ANNO_SIZE);
+    static_assert(sizeof(ChunkLink) == IPREASSEMBLER_ANNO_SIZE, "sizeof(ChunkLink) is expected to equal IPREASSEMBLER_ANNO_SIZE.");
 }
 
 IPReassembler::~IPReassembler()

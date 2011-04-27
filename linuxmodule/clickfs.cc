@@ -926,9 +926,9 @@ int
 init_clickfs()
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-    static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo));
+    static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo), "The file-system-specific data in struct inode isn't big enough.");
 #endif
-    static_assert(HANDLER_DIRECT + HANDLER_DONE + HANDLER_RAW + HANDLER_SPECIAL_INODE + HANDLER_WRITE_UNLIMITED < Handler::USER_FLAG_0);
+    static_assert(HANDLER_DIRECT + HANDLER_DONE + HANDLER_RAW + HANDLER_SPECIAL_INODE + HANDLER_WRITE_UNLIMITED < Handler::USER_FLAG_0, "Too few driver handler flags available.");
 
     spin_lock_init(&handler_strings_lock);
     spin_lock_init(&clickfs_lock);

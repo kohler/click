@@ -129,7 +129,7 @@ CLICK_DECLS
 void
 KernelErrorHandler::log_line(const char *begin, const char *end)
 {
-    static_assert(LOGBUF_SIZ == LOGBUF_SAVESIZ * 2);
+    static_assert(LOGBUF_SIZ == LOGBUF_SAVESIZ * 2, "LOGBUF_SIZ check");
 
     // ensure begin <= end
     if (begin > end)

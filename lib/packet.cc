@@ -181,9 +181,12 @@ CLICK_DECLS
 Packet::~Packet()
 {
     // This is a convenient place to put static assertions.
-    static_assert(addr_anno_offset % 8 == 0 && user_anno_offset % 8 == 0);
-    static_assert(addr_anno_offset + addr_anno_size <= anno_size);
-    static_assert(user_anno_offset + user_anno_size <= anno_size);
+    static_assert(addr_anno_offset % 8 == 0 && user_anno_offset % 8 == 0,
+		  "Annotations must begin at multiples of 8 bytes.");
+    static_assert(addr_anno_offset + addr_anno_size <= anno_size,
+		  "Annotation area too small for address annotations.");
+    static_assert(user_anno_offset + user_anno_size <= anno_size,
+		  "Annotation area too small for user annotations.");
     static_assert(dst_ip_anno_offset == DST_IP_ANNO_OFFSET
 		  && dst_ip6_anno_offset == DST_IP6_ANNO_OFFSET
 		  && dst_ip_anno_size == DST_IP_ANNO_SIZE
@@ -191,8 +194,10 @@ Packet::~Packet()
 		  && dst_ip_anno_size == 4
 		  && dst_ip6_anno_size == 16
 		  && dst_ip_anno_offset + 4 <= anno_size
-		  && dst_ip6_anno_offset + 16 <= anno_size);
-    static_assert((default_headroom & 3) == 0);
+		  && dst_ip6_anno_offset + 16 <= anno_size,
+		  "Address annotations at unexpected locations.");
+    static_assert((default_headroom & 3) == 0,
+		  "Default headroom should be a multiple of 4 bytes.");
 
 #if CLICK_LINUXMODULE
     panic("Packet destructor");

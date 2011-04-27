@@ -144,7 +144,7 @@ KernelErrorHandler::buffer_store(uint32_t head, const char *begin, const char *e
 void
 KernelErrorHandler::log_line(String landmark, const char *begin, const char *end)
 {
-    static_assert((logbuf_siz & (logbuf_siz - 1)) == 0);
+    static_assert((logbuf_siz & (logbuf_siz - 1)) == 0, "logbuf_siz must be a power of two.");
 
     // ensure begin <= end
     if (begin > end)

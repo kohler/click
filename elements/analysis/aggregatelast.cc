@@ -120,7 +120,7 @@ AggregateLast::push(int, Packet *p)
     uint32_t agg = AGGREGATE_ANNO(p);
 
     if (Packet **r = row(agg)) {
-	static_assert(ROW_SHIFT == 0);
+	static_assert(ROW_SHIFT == 0, "ROW_SHIFT failure.");
 	r += (agg & ROW_MASK);
 	if (*r) {
 	    SET_EXTRA_PACKETS_ANNO(p, EXTRA_PACKETS_ANNO(p) + 1 + EXTRA_PACKETS_ANNO(*r));

@@ -1161,7 +1161,7 @@ void delt::layout(dcontext &dcx)
     }
 
     double xpad[4];
-    static_assert(sizeof(_dess->padding) == sizeof(xpad));
+    static_assert(sizeof(_dess->padding) == sizeof(xpad), "Padding screwup.");
     memcpy(xpad, _dess->padding, sizeof(xpad));
     if (!_contents_height) {	// Open displays already account for port widths
 	xpad[orientation()] = MAX(xpad[orientation()], _ports_width[0]);
