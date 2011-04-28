@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "suppressor.hh"
 #include <click/bitvector.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
@@ -69,8 +69,8 @@ write_active(const String &s, Element *e, void *thunk, ErrorHandler *errh)
     Suppressor *sup = static_cast<Suppressor *>(e);
     int port = (int) reinterpret_cast<intptr_t>(thunk);
     bool active;
-    if (!cp_bool(s, &active))
-	return errh->error("active value must be boolean");
+    if (!BoolArg().parse(s, active))
+	return errh->error("type mismatch");
     else {
 	sup->set(port, !active);
 	return 0;

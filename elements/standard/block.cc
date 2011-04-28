@@ -58,7 +58,7 @@ Block::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler
     return -1;
   }
   int thresh;
-  if(!cp_integer(args[0], &thresh)) {
+  if(!IntArg().parse(args[0], thresh)) {
     errh->error("not an integer");
     return -1;
   }

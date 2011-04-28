@@ -220,7 +220,7 @@ FastUDPSourceIP6_limit_write_handler
 {
   FastUDPSourceIP6 *c = (FastUDPSourceIP6 *)e;
   unsigned limit;
-  if (!IntArg::parse(s, limit))
+  if (!IntArg().parse(s, limit))
     return errh->error("limit parameter must be integer >= 0");
   c->_limit = (limit >= 0 ? limit : c->NO_LIMIT);
   return 0;
@@ -232,7 +232,7 @@ FastUDPSourceIP6_rate_write_handler
 {
   FastUDPSourceIP6 *c = (FastUDPSourceIP6 *)e;
   unsigned rate;
-  if (!IntArg::parse(s, rate))
+  if (!IntArg().parse(s, rate))
     return errh->error("rate parameter must be integer >= 0");
   if (rate > GapRate::MAX_RATE)
     // report error rather than pin to max
@@ -247,7 +247,7 @@ FastUDPSourceIP6_active_write_handler
 {
   FastUDPSourceIP6 *c = (FastUDPSourceIP6 *)e;
   bool active;
-  if (!cp_bool(s, &active))
+  if (!BoolArg().parse(s, active))
     return errh->error("active parameter must be boolean");
   c->_active = active;
   if (active) c->reset();

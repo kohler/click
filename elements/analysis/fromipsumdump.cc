@@ -270,10 +270,10 @@ FromIPSummaryDump::bang_flowid(const String &line, ErrorHandler *errh)
     IPAddress src, dst;
     uint32_t sport = 0, dport = 0;
     if (words.size() < 5
-	|| (!cp_ip_address(words[1], &src) && words[1] != "-")
-	|| (!cp_integer(words[2], &sport) && words[2] != "-")
-	|| (!cp_ip_address(words[3], &dst) && words[3] != "-")
-	|| (!cp_integer(words[4], &dport) && words[4] != "-")
+	|| (!IPAddressArg().parse(words[1], src) && words[1] != "-")
+	|| (!IntArg().parse(words[2], sport) && words[2] != "-")
+	|| (!IPAddressArg().parse(words[3], dst) && words[3] != "-")
+	|| (!IntArg().parse(words[4], dport) && words[4] != "-")
 	|| sport > 65535 || dport > 65535) {
 	_ff.error(errh, "bad !flowid specification");
 	_have_flowid = false;
@@ -292,7 +292,7 @@ FromIPSummaryDump::bang_aggregate(const String &line, ErrorHandler *errh)
     cp_spacevec(line, words);
 
     if (words.size() != 2
-	|| !cp_integer(words[1], &_aggregate)) {
+	|| !IntArg().parse(words[1], _aggregate)) {
 	_ff.error(errh, "bad !aggregate specification");
 	_have_aggregate = false;
     } else
@@ -762,7 +762,7 @@ FromIPSummaryDump::write_handler(const String &s_in, Element *e, void *thunk, Er
     switch ((intptr_t)thunk) {
       case H_ACTIVE: {
 	  bool active;
-	  if (cp_bool(s, &active)) {
+	  if (BoolArg().parse(s, active)) {
 	      fd->_active = active;
 	      if (fd->output_is_push(0) && active && !fd->_task.scheduled())
 		  fd->_task.reschedule();
@@ -770,7 +770,7 @@ FromIPSummaryDump::write_handler(const String &s_in, Element *e, void *thunk, Er
 		  fd->_notifier.set_active(active, true);
 	      return 0;
 	  } else
-	      return errh->error("'active' should be Boolean");
+	      return errh->error("type mismatch");
       }
       case H_STOP:
 	fd->_active = false;

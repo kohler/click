@@ -91,8 +91,8 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 	_call_nnz = stop_nnz;
 	_call_nnz_h = new HandlerCall(name() + ".stop");
     } else if (call_nnz) {
-	if (!cp_integer(cp_shift_spacevec(call_nnz), &_call_nnz))
-	    return errh->error("'AGGREGATE_CALL' first word should be unsigned (number of aggregates)");
+	if (!IntArg().parse(cp_shift_spacevec(call_nnz), _call_nnz))
+	    return errh->error("AGGREGATE_CALL first word should be unsigned (number of aggregates)");
 	_call_nnz_h = new HandlerCall(call_nnz);
     }
 
@@ -105,8 +105,8 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 	_call_count = stop_count;
 	_call_count_h = new HandlerCall(name() + ".stop");
     } else if (call_count) {
-	if (!cp_integer(cp_shift_spacevec(call_count), &_call_count))
-	    return errh->error("'COUNT_CALL' first word should be unsigned (count)");
+	if (!IntArg().parse(cp_shift_spacevec(call_count), _call_count))
+	    return errh->error("COUNT_CALL first word should be unsigned (count)");
 	_call_count_h = new HandlerCall(call_count);
     }
 
@@ -419,7 +419,7 @@ AggregateCounter::write_file_handler(const String &data, Element *e, void *thunk
 {
     AggregateCounter *ac = static_cast<AggregateCounter *>(e);
     String fn;
-    if (!cp_filename(cp_uncomment(data), &fn))
+    if (!FilenameArg().parse(cp_uncomment(data), fn))
 	return errh->error("argument should be filename");
     int int_thunk = (intptr_t)thunk;
     return ac->write_file(fn, (WriteFormat)int_thunk, errh);
@@ -464,15 +464,15 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
     switch ((intptr_t)thunk) {
       case AC_FROZEN: {
 	  bool val;
-	  if (!cp_bool(s, &val))
-	      return errh->error("argument to 'frozen' should be bool");
+	  if (!BoolArg().parse(s, val))
+	      return errh->error("type mismatch");
 	  ac->_frozen = val;
 	  return 0;
       }
       case AC_ACTIVE: {
 	  bool val;
-	  if (!cp_bool(s, &val))
-	      return errh->error("argument to 'active' should be bool");
+	  if (!BoolArg().parse(s, val))
+	      return errh->error("type mismatch");
 	  ac->_active = val;
 	  return 0;
       }
@@ -495,7 +495,7 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
       case AC_AGGREGATE_CALL: {
 	  uint32_t new_nnz = (uint32_t)(-1);
 	  if (s) {
-	      if (!cp_integer(cp_shift_spacevec(s), &new_nnz))
+	      if (!IntArg().parse(cp_shift_spacevec(s), new_nnz))
 		  return errh->error("argument to 'aggregate_call' should be 'N HANDLER [VALUE]'");
 	      else if (HandlerCall::reset_write(ac->_call_nnz_h, s, ac, errh) < 0)
 		  return -1;
@@ -506,7 +506,7 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
       case AC_COUNT_CALL: {
 	  uint64_t new_count = (uint64_t)(-1);
 	  if (s) {
-	      if (!cp_integer(cp_shift_spacevec(s), &new_count))
+	      if (!IntArg().parse(cp_shift_spacevec(s), new_count))
 		  return errh->error("argument to 'count_call' should be 'N HANDLER [VALUE]'");
 	      else if (HandlerCall::reset_write(ac->_call_count_h, s, ac, errh) < 0)
 		  return -1;

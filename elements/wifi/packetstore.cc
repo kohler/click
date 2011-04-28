@@ -101,7 +101,7 @@ write_param(const String &in_s, Element *e, void *vparam,
 	switch((intptr_t)vparam) {
 	case H_RESET: {
 		bool active;
-		if (!cp_bool(s, &active))
+		if (!BoolArg().parse(s, active))
 			return errh->error("reset parameter must be boolean");
 		if (active) {
 			while (td->_packets.size()) {

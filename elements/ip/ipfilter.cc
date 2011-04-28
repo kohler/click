@@ -21,7 +21,7 @@
 #include "ipfilter.hh"
 #include <click/glue.hh>
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
@@ -900,7 +900,7 @@ parse_brackets(IPFilter::Primitive& prim, const Vector<String>& words, int pos,
       len = pos2 - fieldpos + 1;
       goto non_syntax_error;
     }
-  } else if (cp_integer(combination, &fieldpos))
+  } else if (IntArg().parse(combination, fieldpos))
     goto non_syntax_error;
   errh->error("syntax error after %<[%>, expected %<[POS]%> or %<[POS:LEN]%>");
   return pos;
@@ -1010,7 +1010,7 @@ IPFilter::Parser::parse_test(int pos, bool negated)
   // optional bitmask
   uint32_t provided_mask = 0;
   if (wd == "&" && pos < _words.size() - 1
-      && cp_integer(_words[pos + 1], &provided_mask)) {
+      && IntArg().parse(_words[pos + 1], provided_mask)) {
       pos += 2;
       wd = (pos >= _words.size() - 1 ? String() : _words[pos]);
       if (provided_mask == 0)
@@ -1051,20 +1051,20 @@ IPFilter::Parser::parse_test(int pos, bool negated)
       prim._data = wt;
       prim._u.u = wdata;
 
-    } else if (cp_integer(wd, &prim._u.i))
+    } else if (IntArg().parse(wd, prim._u.i))
       prim._data = TYPE_INT;
 
-    else if (cp_ip_address(wd, prim._u.c, _context)) {
+    else if (IPAddressArg().parse(wd, prim._u.ip4, _context)) {
       if (pos < _words.size() - 1 && _words[pos] == "mask"
-	  && cp_ip_address(_words[pos+1], prim._mask.c, _context)) {
+	  && IPAddressArg().parse(_words[pos+1], prim._mask.ip4, _context)) {
 	pos += 2;
 	prim._data = TYPE_NET;
-      } else if (prim._type == TYPE_NET && cp_ip_prefix(wd, prim._u.c, prim._mask.c, _context))
+      } else if (prim._type == TYPE_NET && IPPrefixArg().parse(wd, prim._u.ip4, prim._mask.ip4, _context))
 	prim._data = TYPE_NET;
       else
 	prim._data = TYPE_HOST;
 
-    } else if (cp_ip_prefix(wd, prim._u.c, prim._mask.c, _context))
+    } else if (IPPrefixArg().parse(wd, prim._u.ip4, prim._mask.ip4, _context))
       prim._data = TYPE_NET;
 
     else {
@@ -1125,7 +1125,7 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 		    cerrh.warning("meaning of %<deny%> has changed (now it means %<drop%>)");
 	    } else if (slotwd == "drop")
 		/* nada */;
-	    else if (cp_integer(slotwd, &slot)) {
+	    else if (IntArg().parse(slotwd, slot)) {
 		if (slot < 0 || slot >= noutputs) {
 		    cerrh.error("slot %<%d%> out of range", slot);
 		    slot = -Classification::j_never;

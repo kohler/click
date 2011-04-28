@@ -20,7 +20,7 @@
 #include <click/config.h>
 #include <click/standard/alignmentinfo.hh>
 #include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 CLICK_DECLS
@@ -64,9 +64,9 @@ AlignmentInfo::configure(Vector<String> &conf, ErrorHandler *errh)
       _elem_icount[number] = (parts.size() - 1) / 2;
       for (int j = 1; j < parts.size() - 1; j += 2) {
 	int32_t c = -1, o = -1;
-	if (!cp_integer(parts[j], &c))
+	if (!IntArg().parse(parts[j], c))
 	  errh->error("expected CHUNK");
-	if (!cp_integer(parts[j+1], &o))
+	if (!IntArg().parse(parts[j+1], o))
 	  errh->error("expected OFFSET");
 	_chunks.push_back(c);
 	_offsets.push_back(o);

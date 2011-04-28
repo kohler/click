@@ -22,7 +22,7 @@
 #include "ipsumdumpinfo.hh"
 #include <click/packet.hh>
 #include <click/packet_anno.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/ipflowid.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
@@ -243,7 +243,7 @@ bool num_ina(PacketOdesc& d, const String &s, const FieldReader *f)
 #if HAVE_INT64_TYPES
     if (f->type == B_8) {
 	uint64_t v;
-	if (!cp_integer(s, &v))
+	if (!IntArg().parse(s, v))
 	    return false;
 	d.u32[0] = v;
 	d.u32[1] = v >> 32;
@@ -252,7 +252,7 @@ bool num_ina(PacketOdesc& d, const String &s, const FieldReader *f)
 #else
     // XXX die on large numbers
 #endif
-    if (!cp_integer(s, &d.v))
+    if (!IntArg().parse(s, d.v))
 	return false;
     if ((f->type == B_1 && d.v > 255) || (f->type == B_2 && d.v > 65535))
 	return false;

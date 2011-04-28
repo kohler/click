@@ -122,11 +122,11 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 	    .complete() < 0)
 	    return -1;
 	uint16_t portno;
-	int portno_int;
-	if (cp_tcpudp_port(_unix_pathname, IP_PROTO_TCP, &portno, this))
+	int portno_int = 0;
+	if (IPPortArg(IP_PROTO_TCP).parse(_unix_pathname, portno, this))
 	    _unix_pathname = String(portno);
 	else if (_unix_pathname && _unix_pathname.back() == '+'
-		 && cp_integer(_unix_pathname.substring(0, -1), 0, &portno_int)
+		 && IntArg().parse(_unix_pathname.substring(0, -1), portno_int)
 		 && portno_int > 0 && portno_int < 65536)
 	    _unix_pathname = String(portno_int) + "+";
 	else
@@ -412,7 +412,7 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
     e = router()->find(ename);
     if (!e) {
       int num;
-      if (cp_integer(ename, &num) && num > 0 && num <= router()->nelements())
+      if (IntArg().parse(ename, num) && num > 0 && num <= router()->nelements())
 	e = router()->element(num - 1);
     }
     if (!e) {
@@ -545,8 +545,8 @@ int
 ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
 {
   const char *octothorp = find(llrpcname, '#');
-  uint32_t command;
-  if (!cp_integer(llrpcname.substring(octothorp + 1, llrpcname.end()), 16, &command))
+  uint32_t command = 0;
+  if (!IntArg(16).parse(llrpcname.substring(octothorp + 1, llrpcname.end()), command))
     return message(fd, CSERR_SYNTAX, "Syntax error in LLRPC name '" + llrpcname + "'");
   // transform net LLRPC id into host LLRPC id
   command = CLICK_LLRPC_NTOH(command);
@@ -644,7 +644,7 @@ ControlSocket::parse_command(int fd, const String &line)
       if (words.size() != 3)
 	  return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
       int datalen;
-      if (!cp_integer(words[2], &datalen) || datalen < 0)
+      if (!IntArg().parse(words[2], datalen) || datalen < 0)
 	  return message(fd, CSERR_SYNTAX, "Syntax error in '%s'", command.c_str());
       if (_in_texts[fd].length() < datalen) {
 	  if (_flags[fd] & READ_CLOSED)
@@ -700,7 +700,7 @@ ControlSocket::parse_command(int fd, const String &line)
     if (words.size() != 2 && words.size() != 3)
       return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
     int datalen = 0;
-    if (words.size() == 3 && (!cp_integer(words[2], &datalen) || datalen < 0))
+    if (words.size() == 3 && (!IntArg().parse(words[2], datalen) || datalen < 0))
       return message(fd, CSERR_SYNTAX, "Syntax error in 'llrpc'");
     if (_in_texts[fd].length() < datalen) {
       if (_flags[fd] & READ_CLOSED)

@@ -21,7 +21,7 @@
 #include <click/error.hh>
 #include <click/hashmap.hh>
 #include <click/straccum.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>

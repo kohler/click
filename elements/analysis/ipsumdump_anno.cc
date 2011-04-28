@@ -21,7 +21,7 @@
 
 #include "ipsumdump_anno.hh"
 #include <click/packet.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
@@ -163,7 +163,7 @@ static bool anno_ina(PacketOdesc& d, const String &s, const FieldReader *f)
 	    d.v = 1;
 	    return true;
 	} else
-	    return cp_integer(s, &d.v);
+	    return IntArg().parse(s, d.v);
     }
     return false;
 }

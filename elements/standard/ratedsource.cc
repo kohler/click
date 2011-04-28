@@ -189,7 +189,7 @@ RatedSource::change_param(const String &s, Element *e, void *vparam,
 
    case 1: {			// rate
      unsigned rate;
-     if (!cp_integer(s, &rate))
+     if (!IntArg().parse(s, rate))
        return errh->error("rate parameter must be integer >= 0");
      if (rate > GapRate::MAX_RATE)
        // report error rather than pin to max
@@ -200,7 +200,7 @@ RatedSource::change_param(const String &s, Element *e, void *vparam,
 
    case 2: {			// limit
      int limit;
-     if (!cp_integer(s, &limit))
+     if (!IntArg().parse(s, limit))
        return errh->error("limit parameter must be integer");
      rs->_limit = (limit < 0 ? NO_LIMIT : limit);
      break;
@@ -208,7 +208,7 @@ RatedSource::change_param(const String &s, Element *e, void *vparam,
 
    case 3: {			// active
      bool active;
-     if (!cp_bool(s, &active))
+     if (!BoolArg().parse(s, active))
        return errh->error("active parameter must be boolean");
      rs->_active = active;
      if (rs->output_is_push(0) && !rs->_task.scheduled() && active) {
@@ -228,7 +228,7 @@ RatedSource::change_param(const String &s, Element *e, void *vparam,
 
    case 6: {			// datasize
      int datasize;
-     if (!cp_integer(s, &datasize))
+     if (!IntArg().parse(s, datasize))
        return errh->error("length must be integer");
      rs->_datasize = datasize;
      rs->setup_packet();

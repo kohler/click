@@ -25,7 +25,7 @@
 #include <click/glue.hh>
 #include <click/element.hh>
 #include <click/bitvector.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/master.hh>
@@ -77,7 +77,7 @@ int Element::nelements_allocated = 0;
  *  modules (which we call <em>elements</em>).
  *
  *  Most documented Click classes can be found under the "Classes" tab.  Get
- *  started by looking at the Element class, or the confparse.hh header file
+ *  started by looking at the Element class, or the args.hh header file
  *  for configuration string parsing.
  *
  *  <a href='http://www.read.cs.ucla.edu/click/'>Main Click page</a>
@@ -1347,13 +1347,12 @@ Element::configure_phase() const
  * set_ninputs() or set_noutputs() function from configure(), then all push,
  * pull, and neighbor information is invalidated until initialize() time.
  *
- * @sa live_reconfigure, confparse.hh for useful parsing functions like
- * cp_va_kparse()
+ * @sa live_reconfigure, args.hh for argument parsing
  */
 int
 Element::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_kparse(conf, this, errh, cpEnd);
+    return Args(conf, this, errh).complete();
 }
 
 /** @brief Install the element's handlers.
@@ -2074,8 +2073,8 @@ write_task_tickets(const String &s, Element *e, void *thunk, ErrorHandler *errh)
 {
   Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
   int tix;
-  if (!cp_integer(s, &tix))
-    return errh->error("%<tickets%> takes an integer between 1 and %d", Task::MAX_TICKETS);
+  if (!IntArg().parse_saturating(s, tix))
+    return errh->error("syntax error");
   if (tix < 1) {
     errh->warning("tickets pinned at 1");
     tix = 1;
@@ -2108,7 +2107,7 @@ write_task_scheduled(const String &str, Element *e, void *thunk, ErrorHandler *e
 {
     Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
     bool scheduled;
-    if (!cp_bool(str, &scheduled))
+    if (!BoolArg().parse(str, scheduled))
 	return errh->error("syntax error");
     if (scheduled)
 	task->reschedule();
@@ -2140,7 +2139,7 @@ write_task_home_thread(const String &str, Element *e, void *thunk, ErrorHandler 
     Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
     Master *m = task->master();
     int tid;
-    if (!cp_integer(str, &tid) || tid > m->nthreads())
+    if (!IntArg().parse(str, tid) || tid > m->nthreads())
 	return errh->error("bad thread");
     task->move_thread(tid);
     return 0;
@@ -2222,7 +2221,7 @@ uint8_t_data_handler(int op, String &str, Element *element, const Handler *h, Er
     if (op == Handler::h_read) {
 	str = String((int) *ptr);
 	return 0;
-    } else if (cp_integer(str, &x) && x >= 0 && x < 256) {
+    } else if (IntArg().parse(str, x) && x >= 0 && x < 256) {
 	*ptr = x;
 	return 0;
     } else
@@ -2236,7 +2235,7 @@ bool_data_handler(int op, String &str, Element *element, const Handler *h, Error
     if (op == Handler::h_read) {
 	str = cp_unparse_bool(*ptr);
 	return 0;
-    } else if (cp_bool(str, ptr))
+    } else if (BoolArg().parse(str, *ptr))
 	return 0;
     else
 	return errh->error("expected boolean");
@@ -2250,7 +2249,7 @@ uint16_t_data_handler(int op, String &str, Element *element, const Handler *h, E
     if (op == Handler::h_read) {
 	str = String((int) *ptr);
 	return 0;
-    } else if (cp_integer(str, &x) && x >= 0 && x < 65536) {
+    } else if (IntArg().parse(str, x) && x >= 0 && x < 65536) {
 	*ptr = x;
 	return 0;
     } else
@@ -2265,7 +2264,7 @@ uint16_t_net_data_handler(int op, String &str, Element *element, const Handler *
     if (op == Handler::h_read) {
 	str = String((int) ntohs(*ptr));
 	return 0;
-    } else if (cp_integer(str, &x) && x >= 0 && x < 65536) {
+    } else if (IntArg().parse(str, x) && x >= 0 && x < 65536) {
 	*ptr = htons(x);
 	return 0;
     } else
@@ -2280,7 +2279,7 @@ uint32_t_net_data_handler(int op, String &str, Element *element, const Handler *
     if (op == Handler::h_read) {
 	str = String(ntohl(*ptr));
 	return 0;
-    } else if (cp_integer(str, &x)) {
+    } else if (IntArg().parse(str, x)) {
 	*ptr = htonl(x);
 	return 0;
     } else
@@ -2294,7 +2293,7 @@ integer_data_handler(int op, String &str, Element *element, const Handler *h, Er
     if (op == Handler::h_read) {
 	str = String(*ptr);
 	return 0;
-    } else if (cp_integer(str, ptr))
+    } else if (IntArg().parse(str, *ptr))
 	return 0;
     else
 	return errh->error("expected integer");
@@ -2308,7 +2307,7 @@ atomic_uint32_t_data_handler(int op, String &str, Element *element, const Handle
     if (op == Handler::h_read) {
 	str = String(ptr->value());
 	return 0;
-    } else if (cp_integer(str, &value)) {
+    } else if (IntArg().parse(str, value)) {
 	*ptr = value;
 	return 0;
     } else
@@ -2323,7 +2322,7 @@ double_data_handler(int op, String &str, Element *element, const Handler *h, Err
     if (op == Handler::h_read) {
 	str = String(*ptr);
 	return 0;
-    } else if (cp_double(str, ptr))
+    } else if (DoubleArg().parse(str, *ptr))
 	return 0;
     else
 	return errh->error("expected real number");
@@ -2348,7 +2347,7 @@ ip_address_data_handler(int op, String &str, Element *element, const Handler *h,
     if (op == Handler::h_read) {
 	str = ptr->unparse();
 	return 0;
-    } if (cp_ip_address(str, ptr, element))
+    } if (IPAddressArg().parse(str, *ptr, element))
 	return 0;
     else
 	return errh->error("expected IP address");
@@ -2580,7 +2579,7 @@ configuration_handler(int operation, String &str, Element *e,
     int gotit = 0;
     String value, rest;
     if (keyword)
-	gotit = cp_va_kparse_remove_keywords(conf, e, errh, keyword, 0, cpArgument, &value, cpEnd);
+	gotit = Args(e, errh).bind(conf).read(keyword, AnyArg(), value).consume();
     if (gotit == 0 && argno >= 0 && conf.size() > argno
 	&& (!keyword || !cp_keyword(conf[argno], &value, &rest) || !rest))
 	gotit = 2;

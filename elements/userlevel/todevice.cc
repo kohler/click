@@ -262,8 +262,8 @@ ToDevice::write_param(const String &in_s, Element *e, void *vparam,
   switch ((intptr_t)vparam) {
   case H_DEBUG: {
     bool debug;
-    if (!cp_bool(s, &debug))
-      return errh->error("debug parameter must be boolean");
+    if (!BoolArg().parse(s, debug))
+      return errh->error("type mismatch");
     td->_debug = debug;
     break;
   }

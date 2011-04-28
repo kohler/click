@@ -314,7 +314,7 @@ ServicesNameDB::query(const String &name, void *value, size_t vsize)
 
     // Check common case: integer
     int32_t crap;
-    if (cp_integer(name, &crap))
+    if (IntArg().parse(name, crap))
 	return false;
 
     if (!_read_db)

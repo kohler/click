@@ -25,7 +25,7 @@
 #include "routert.hh"
 #include "lexert.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/clp.h>
 #include <click/straccum.hh>
 #include <click/driver.hh>
@@ -401,7 +401,7 @@ particular purpose.\n");
 	const char *colon = find(clp->vstr, clp->vstr + strlen(clp->vstr), ':');
 	if (colon > clp->vstr) {
 	    String s(clp->vstr, colon);
-	    if (!cp_integer(s, &uid)) {
+	    if (!IntArg().parse(s, uid)) {
 		errno = 0;
 		struct passwd *pwd = getpwnam(s.c_str());
 		if (!pwd && errno)
@@ -421,7 +421,7 @@ particular purpose.\n");
 
     gid:
     case GID_OPT: {
-	if (!cp_integer(clp->vstr, &gid)) {
+	if (!IntArg().parse(clp->vstr, gid)) {
 	    errno = 0;
 	    struct group *grp = getgrnam(clp->vstr);
 	    if (!grp && errno)

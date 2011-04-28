@@ -427,7 +427,7 @@ IP6PrefixArg::parse(const String &str,
 	if (IP6AddressArg::parse(str.substring(begin, slash), a, args)) {
 	    int l = -1;
 	    IP6Address m = IP6Address::uninitialized_t();
-	    if ((IntArg::parse(str.substring(slash + 1, end), l, 10)
+	    if ((IntArg(10).parse(str.substring(slash + 1, end), l)
 		 && l >= 0 && l <= 128)
 		|| (IP6AddressArg::parse(str.substring(slash + 1, end), m, args)
 		    && (l = m.mask_to_prefix_len()) >= 0)) {

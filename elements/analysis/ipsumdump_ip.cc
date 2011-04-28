@@ -26,7 +26,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/ipflowid.hh>
 CLICK_DECLS
 
@@ -263,7 +263,7 @@ static bool ip_ina(PacketOdesc& d, const String &s, const FieldReader *f)
     case T_IP_SRC:
     case T_IP_DST: {
 	IPAddress a;
-	if (cp_ip_address(s, &a, d.e)) {
+	if (IPAddressArg().parse(s, a, d.e)) {
 	    d.v = a.addr();
 	    return true;
 	}
@@ -311,7 +311,7 @@ static bool ip_ina(PacketOdesc& d, const String &s, const FieldReader *f)
 	} else if (s.equals("I", 1)) {
 	    d.v = IP_PROTO_ICMP;
 	    return true;
-	} else if (cp_integer(s, &d.v) && d.v < 256)
+	} else if (IntArg().parse(s, d.v) && d.v < 256)
 	    return true;
 	break;
     case T_IP_ECN:

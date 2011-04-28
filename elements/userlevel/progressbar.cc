@@ -159,7 +159,7 @@ ProgressBar::get_value(int first, int last, double *value)
     for (int i = first; i < last; i++) {
 	String s = cp_uncomment(_hs[i]->call_read(_es[i]));
 	double this_value;
-	bool ok = cp_double(s, &this_value);
+	bool ok = DoubleArg().parse(s, this_value);
 	if (ok)
 	    *value += this_value;
 	else
@@ -410,12 +410,12 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
 	  return 0;
       }
       case H_ACTIVE:
-	if (cp_bool(str, &pb->_active)) {
+	  if (BoolArg().parse(str, pb->_active)) {
 	    if (pb->_active && !pb->_timer.scheduled())
 		pb->_timer.schedule_now();
 	    return 0;
 	} else
-	    return errh->error("'active' should be bool (active setting)");
+	    return errh->error("type mismatch");
       case H_RESET:
 	pb->_have_size = false;
 	pb->_status = ST_FIRST;

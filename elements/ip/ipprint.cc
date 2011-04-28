@@ -90,7 +90,7 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
 	.complete() < 0)
 	return -1;
 
-  if (cp_bool(contents, &bcontents))
+    if (BoolArg().parse(contents, bcontents))
       _contents = bcontents;
   else if ((contents = contents.upper()), contents == "NONE")
       _contents = 0;

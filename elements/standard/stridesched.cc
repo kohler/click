@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 #include "stridesched.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
 CLICK_DECLS
@@ -47,7 +47,7 @@ StrideSched::configure(Vector<String> &conf, ErrorHandler *errh)
     int before = errh->nerrors();
     for (int i = 0; i < conf.size(); i++) {
 	int v;
-	if (!cp_integer(conf[i], &v))
+	if (!IntArg().parse(conf[i], v))
 	    errh->error("argument %d should be number of tickets (integer)", i);
 	else if (v < 0)
 	    errh->error("argument %d (number of tickets) must be >= 0", i);
@@ -159,7 +159,7 @@ write_tickets_handler(const String &s, Element *e, void *thunk, ErrorHandler *er
     StrideSched *ss = (StrideSched *)e;
     int port = (intptr_t)thunk;
     int tickets;
-    if (!cp_integer(s, &tickets))
+    if (!IntArg().parse(s, tickets))
 	return errh->error("tickets value must be integer");
     else
 	return ss->set_tickets(port, tickets, errh);

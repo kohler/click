@@ -311,21 +311,21 @@ ProbeTXRate_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {
     bool debug;
-    if (!cp_bool(s, &debug))
+    if (!BoolArg().parse(s, debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
   }
   case H_THRESHOLD: {
     unsigned m;
-    if (!cp_unsigned(s, &m))
+    if (!IntArg().parse(s, m))
       return errh->error("threshold parameter must be unsigned");
     f->_packet_size_threshold = m;
     break;
   }
   case H_OFFSET: {
     unsigned m;
-    if (!cp_unsigned(s, &m))
+    if (!IntArg().parse(s, m))
       return errh->error("offset parameter must be unsigned");
     f->_offset = m;
     break;
@@ -335,7 +335,7 @@ ProbeTXRate_write_param(const String &in_s, Element *e, void *vparam,
     break;
  case H_ACTIVE: {
     bool active;
-    if (!cp_bool(s, &active))
+    if (!BoolArg().parse(s, active))
       return errh->error("active must be boolean");
     f->_active = active;
     break;

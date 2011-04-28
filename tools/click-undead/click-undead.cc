@@ -24,7 +24,7 @@
 #include "processingt.hh"
 #include "elementmap.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/driver.hh>
 #include <click/clp.h>
@@ -125,7 +125,7 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
 
     String config = cp_uncomment(x->configuration());
     int val;
-    if (!cp_integer(config, &val)) {
+    if (!IntArg().parse(config, val)) {
       errh->lerror(x->landmark(), "%s: bad configuration 'StaticSwitch(%s)'", x->name_c_str(), config.c_str());
       val = -1;
     }
@@ -172,7 +172,7 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
 
     String config = cp_uncomment(x->configuration());
     int val;
-    if (!cp_integer(config, &val)) {
+    if (!IntArg().parse(config, val)) {
       errh->lerror(x->landmark(), "%s: bad configuration 'StaticSwitch(%s)'", x->name_c_str(), config.c_str());
       val = -1;
     }

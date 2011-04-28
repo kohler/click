@@ -27,7 +27,7 @@
 #include <click/router.hh>
 #include <click/straccum.hh>
 #include <click/master.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -195,7 +195,7 @@ static int
 write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
 {
     int priority;
-    if (!cp_integer(conf, &priority))
+    if (!IntArg().parse(conf, priority))
 	return errh->error("priority must be an integer");
 
     priority = NICE2PRIO(priority);
@@ -307,7 +307,7 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 
       case H_TASKS_PER_ITER: {
 	  unsigned x;
-	  if (!cp_integer(conf, &x))
+	  if (!IntArg().parse(conf, x))
 	      return errh->error("tasks_per_iter must be unsigned\n");
 	  for (int i = 0; i < click_master->nthreads(); i++)
 	      click_master->thread(i)->_tasks_per_iter = x;
@@ -316,7 +316,7 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 
       case H_ITERS_PER_TIMERS: {
 	  unsigned x;
-	  if (!cp_integer(conf, &x))
+	  if (!IntArg().parse(conf, x))
 	      return errh->error("tasks_per_iter_timers must be unsigned\n");
 	  click_master->set_max_timer_stride(x);
 	  break;
@@ -324,7 +324,7 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 
       case H_ITERS_PER_OS: {
 	  unsigned x;
-	  if (!cp_integer(conf, &x))
+	  if (!IntArg().parse(conf, x))
 	      return errh->error("tasks_per_iter_os must be unsigned\n");
 	  for (int i = 0; i < click_master->nthreads(); i++)
 	      click_master->thread(i)->_iters_per_os = x;

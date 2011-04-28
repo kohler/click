@@ -430,7 +430,7 @@ int FromDevice::write_handler(const String &str, Element *e, void *thunk, ErrorH
     FromDevice *fd = static_cast<FromDevice *>(e);
     switch (reinterpret_cast<intptr_t>(thunk)) {
     case h_active:
-	if (!cp_bool(str, &fd->_active))
+	if (!BoolArg().parse(str, fd->_active))
 	    return errh->error("active parameter must be boolean");
 	return 0;
     case h_reset_counts:

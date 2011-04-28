@@ -60,7 +60,7 @@ SimplePullSwitch::write_param(const String &s, Element *e, void *, ErrorHandler 
 {
     SimplePullSwitch *sw = static_cast<SimplePullSwitch *>(e);
     int input;
-    if (!cp_integer(s, &input))
+    if (!IntArg().parse(s, input))
 	return errh->error("syntax error");
     sw->set_input(input);
     return 0;

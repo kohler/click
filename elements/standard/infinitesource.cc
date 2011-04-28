@@ -178,7 +178,7 @@ InfiniteSource::change_param(const String &s, Element *e, void *vparam,
 
     case h_limit: {		// limit
 	int limit;
-	if (!cp_integer(s, &limit))
+	if (!IntArg().parse(s, limit))
 	    return errh->error("limit parameter must be integer");
 	is->_limit = limit;
 	break;
@@ -186,7 +186,7 @@ InfiniteSource::change_param(const String &s, Element *e, void *vparam,
 
     case h_burst: {		// burstsize
 	int burstsize;
-	if (!cp_integer(s, &burstsize) || burstsize < 1)
+	if (!IntArg().parse(s, burstsize) || burstsize < 1)
 	    return errh->error("burstsize parameter must be integer >= 1");
 	is->_burstsize = burstsize;
 	break;
@@ -194,7 +194,7 @@ InfiniteSource::change_param(const String &s, Element *e, void *vparam,
 
     case h_active: {		// active
 	bool active;
-	if (!cp_bool(s, &active))
+	if (!BoolArg().parse(s, active))
 	    return errh->error("active parameter must be boolean");
 	is->_active = active;
 	break;
@@ -207,7 +207,7 @@ InfiniteSource::change_param(const String &s, Element *e, void *vparam,
 
     case h_length: {		// datasize
 	int datasize;
-	if (!cp_integer(s, &datasize))
+	if (!IntArg().parse(s, datasize))
 	    return errh->error("length must be integer");
 	is->_datasize = datasize;
 	is->setup_packet();

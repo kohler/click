@@ -49,7 +49,7 @@ EtherVlanEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 	.complete() < 0)
 	return -1;
     if (!vlan_word.equals("ANNO", 4)
-	&& (!cp_integer(vlan_word, &vlan) || vlan < 0 || vlan >= 0x0FFF))
+	&& (!IntArg().parse(vlan_word, vlan) || vlan < 0 || vlan >= 0x0FFF))
 	return errh->error("bad VLAN");
     if (vlan_pcp < 0 || vlan_pcp > 0x7)
 	return errh->error("bad VLAN_PCP");

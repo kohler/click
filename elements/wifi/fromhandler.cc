@@ -163,7 +163,7 @@ FromHandler::write_handler(const String &s_in, Element *e, void *thunk, ErrorHan
     switch ((intptr_t)thunk) {
       case H_ACTIVE: {
 	  bool active;
-	  if (cp_bool(s, &active)) {
+	  if (BoolArg().parse(s, active)) {
 	      fd->set_active(active);
 	      return 0;
 	  } else

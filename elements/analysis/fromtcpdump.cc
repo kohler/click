@@ -417,12 +417,12 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 	    const char *sm = s2 - 1;
 	    while (sm > s && *sm != '.' && *sm != ':')
 		sm--;
-	    if (!cp_ip_address(line.substring(s, sm), &iph->ip_src)
-		|| !cp_tcpudp_port(line.substring(sm + 1, s2), iph->ip_p, &udph->uh_sport))
+	    if (!IPAddressArg().parse(line.substring(s, sm), iph->ip_src)
+		|| !IPPortArg(iph->ip_p).parse(line.substring(sm + 1, s2), udph->uh_sport))
 		break;
 	    else
 		udph->uh_sport = htons(udph->uh_sport);
-	} else if (!cp_ip_address(line.substring(s, s2), &iph->ip_src))
+	} else if (!IPAddressArg().parse(line.substring(s, s2), iph->ip_src))
 	    break;
 	s = s2 + 3;
 
@@ -432,12 +432,12 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 	    const char *sm = s2 - 1;
 	    while (sm > s && *sm != '.' && *sm != ':')
 		sm--;
-	    if (!cp_ip_address(line.substring(s, sm), &iph->ip_dst)
-		|| !cp_tcpudp_port(line.substring(sm + 1, s2), iph->ip_p, &udph->uh_dport))
+	    if (!IPAddressArg().parse(line.substring(s, sm), iph->ip_dst)
+		|| !IPPortArg(iph->ip_p).parse(line.substring(sm + 1, s2), udph->uh_dport))
 		break;
 	    else
 		udph->uh_dport = htons(udph->uh_dport);
-	} else if (!cp_ip_address(line.substring(s, s2), &iph->ip_dst))
+	} else if (!IPAddressArg().parse(line.substring(s, s2), iph->ip_dst))
 	    break;
 
 	// then, read protocol data
@@ -638,7 +638,7 @@ FromTcpdump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHan
     switch ((intptr_t)thunk) {
       case H_ACTIVE: {
 	  bool active;
-	  if (cp_bool(s, &active)) {
+	  if (BoolArg().parse(s, active)) {
 	      fd->_active = active;
 	      if (fd->output_is_push(0) && active && !fd->_task.scheduled())
 		  fd->_task.reschedule();
@@ -646,7 +646,7 @@ FromTcpdump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHan
 		  fd->_notifier.set_active(active, true);
 	      return 0;
 	  } else
-	      return errh->error("`active' should be Boolean");
+	      return errh->error("syntax error");
       }
       case H_STOP:
 	fd->_active = false;

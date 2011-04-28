@@ -81,7 +81,7 @@ IncrementSeqNo::write_seq(const String &in_s, Element *e, void *,
     IncrementSeqNo *e2 = (IncrementSeqNo *) e;
 
     unsigned i;
-    if (!cp_integer(in_s, &i)) {
+    if (!IntArg().parse(in_s, i)) {
       return errh->error("seq must be unsigned");
     }
     e2->_seqno = i;

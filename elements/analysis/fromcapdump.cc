@@ -439,7 +439,7 @@ FromCapDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHan
     switch ((intptr_t)thunk) {
       case H_ACTIVE: {
 	  bool active;
-	  if (cp_bool(s, &active)) {
+	  if (BoolArg().parse(s, active)) {
 	      fd->_active = active;
 	      if (fd->output_is_push(0) && active && !fd->_task.scheduled())
 		  fd->_task.reschedule();
@@ -447,7 +447,7 @@ FromCapDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHan
 		  fd->_notifier.set_active(active, true);
 	      return 0;
 	  } else
-	      return errh->error("'active' should be Boolean");
+	      return errh->error("type mismatch");
       }
       case H_STOP:
 	fd->_active = false;

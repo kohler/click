@@ -84,10 +84,7 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	int types = 0;
 
 	for (int j = 1; j < parts.size(); j++) {
-	    union {
-		unsigned char c[4];
-		uint32_t u;
-	    } ip4[2];
+	    struct in_addr ip4[2];
 	    unsigned char ether[6];
 # if HAVE_IP6
 	    struct {
@@ -97,13 +94,13 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 # endif
 
 	    int my_types = 0;
-	    if (cp_ethernet_address(parts[j], ether))
+	    if (EtherAddressArg().parse(parts[j], ether))
 		my_types |= t_eth;
-	    if (cp_ip_address(parts[j], ip4[0].c))
+	    if (IPAddressArg().parse(parts[j], ip4[0]))
 		my_types |= t_ip4;
-	    else if (cp_ip_prefix(parts[j], ip4[0].c, ip4[1].c, false)) {
+	    else if (IPPrefixArg().parse(parts[j], ip4[0], ip4[1])) {
 		my_types |= t_ip4net;
-		if (ip4[0].u & ~ip4[1].u)
+		if (ip4[0].s_addr & ~ip4[1].s_addr)
 		    my_types |= t_ip4;
 	    }
 #if HAVE_IP6
@@ -120,9 +117,9 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	    if ((my_types & t_eth) && (one_type || !(types & t_eth)))
 		NameInfo::define(NameInfo::T_ETHERNET_ADDR, this, parts[0], ether, 6);
 	    if ((my_types & t_ip4) && (one_type || !(types & t_ip4)))
-		NameInfo::define(NameInfo::T_IP_ADDR, this, parts[0], ip4[0].c, 4);
+		NameInfo::define(NameInfo::T_IP_ADDR, this, parts[0], &ip4[0], 4);
 	    if ((my_types & t_ip4net) && (one_type || !(types & t_ip4net)))
-		NameInfo::define(NameInfo::T_IP_PREFIX, this, parts[0], &ip4, 8);
+		NameInfo::define(NameInfo::T_IP_PREFIX, this, parts[0], &ip4[0], 8);
 #if HAVE_IP6
 	    if ((my_types & t_ip6) && (one_type || !(types & t_ip6)))
 		NameInfo::define(NameInfo::T_IP6_ADDR, this, parts[0], ip6.c, 16);
@@ -342,7 +339,7 @@ AddressInfo::query_ip(String s, unsigned char *store, const Element *e)
     if (e) {
 	char tmp[255];
 	int r = simclick_sim_command(e->router()->master()->simnode(), SIMCLICK_IPADDR_FROM_NAME, s.c_str(), tmp, 255);
-	if (r >= 0 && tmp[0] && cp_ip_address(tmp, store))
+	if (r >= 0 && tmp[0] && IPAddressArg().parse(tmp, *reinterpret_cast<IPAddress *>(store)))
 	    return true;
     }
 #elif CLICK_QUERY_NETDEVICE
@@ -448,7 +445,7 @@ AddressInfo::query_ethernet(String s, unsigned char *store, const Element *e)
     if (e) {
 	char tmp[255];
 	int r = simclick_sim_command(e->router()->master()->simnode(), SIMCLICK_MACADDR_FROM_NAME, s.c_str(), tmp, 255);
-	if (r >= 0 && tmp[0] && cp_ethernet_address(tmp, store))
+	if (r >= 0 && tmp[0] && EtherAddressArg().parse(tmp, store))
 	    return true;
     }
 #elif CLICK_QUERY_NETDEVICE

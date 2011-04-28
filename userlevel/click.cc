@@ -49,7 +49,7 @@
 #include <click/glue.hh>
 #include <click/driver.hh>
 #include <click/userutils.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/handlercall.hh>
 #include "elements/standard/quitwatcher.hh"
 #include "elements/userlevel/controlsocket.hh"
@@ -327,7 +327,7 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
 #if HAVE_EXECINFO_H
     const char *click_backtrace = getenv("CLICK_BACKTRACE");
     bool do_click_backtrace;
-    if (click_backtrace && (!cp_bool(click_backtrace, &do_click_backtrace)
+    if (click_backtrace && (!BoolArg().parse(click_backtrace, do_click_backtrace)
 			    || do_click_backtrace)) {
 	click_signal(SIGSEGV, catch_dump_signal, false);
 	click_signal(SIGBUS, catch_dump_signal, false);
@@ -383,7 +383,7 @@ timewarp_write_handler(const String &text, Element *, void *, ErrorHandler *errh
 	Timestamp::warp_set_class(Timestamp::warp_nowait);
     else {
 	double factor;
-	if (!cp_double(text, &factor))
+	if (!DoubleArg().parse(text, factor))
 	    return errh->error("expected double");
 	else if (factor <= 0)
 	    return errh->error("timefactor must be > 0");
@@ -669,9 +669,9 @@ particular purpose.\n");
     bool b;
     if (errh->nerrors() != before)
       exit_value = -1;
-    else if (cp_integer(cp_uncomment(exit_string), &exit_value))
+    else if (IntArg().parse(cp_uncomment(exit_string), exit_value))
       /* nada */;
-    else if (cp_bool(cp_uncomment(exit_string), &b))
+    else if (BoolArg().parse(cp_uncomment(exit_string), b))
       exit_value = (b ? 0 : 1);
     else {
       errh->error("exit handler value should be integer");

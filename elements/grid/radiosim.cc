@@ -45,10 +45,10 @@ RadioSim::configure(Vector<String> &conf, ErrorHandler *errh)
     String rest;
     if (cp_keyword(conf[i], &kw, &rest)) {
       if (kw == "USE_XY") {
-	bool res = cp_bool(rest, &_use_xy);
-	if (!res)
-	  return errh->error("unable to parse boolean arg to USE_XY keyword");
-      continue;
+	  bool res = BoolArg().parse(rest, _use_xy);
+	  if (!res)
+	      return errh->error("unable to parse boolean arg to USE_XY keyword");
+	  continue;
       }
     }
 
@@ -149,7 +149,7 @@ RadioSim::rs_write_handler(const String &arg, Element *element,
   cp_spacevec(arg, words);
   int xi, xlat, xlon;
   if(words.size() != 3 ||
-     !cp_integer(words[0], 10, &xi) ||
+     !IntArg(10).parse(words[0], xi) ||
      !cp_real10(words[1], 5, &xlat) ||
      !cp_real10(words[2], 5, &xlon))
     return errh->error("%s: expecting node-index lat lon", l->name().c_str());

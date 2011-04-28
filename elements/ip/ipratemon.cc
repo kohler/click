@@ -364,7 +364,7 @@ IPRateMonitor::memmax_write_handler
     return -1;
   }
   int memmax;
-  if (!cp_integer(args[0], &memmax)) {
+  if (!IntArg().parse(args[0], memmax)) {
     errh->error("not an integer");
     return -1;
   }
@@ -399,15 +399,15 @@ IPRateMonitor::anno_level_write_handler
     return -1;
   }
 
-  if (!cp_ip_address(args[0], &a)) {
+  if (!IPAddressArg().parse(args[0], a)) {
     errh->error("not an IP address");
     return -1;
   }
-  if (!cp_integer(args[1], &level) || !(level >= 0 && level < 4)) {
+  if (!IntArg().parse(args[1], level) || !(level >= 0 && level < 4)) {
     errh->error("2nd argument specifies a level, between 0 and 3, to annotate");
     return -1;
   }
-  if (!cp_integer(args[2], &when) || when < 1) {
+  if (!IntArg().parse(args[2], when) || when < 1) {
     errh->error("3rd argument specifies when this rule expires, must be > 0");
     return -1;
   }

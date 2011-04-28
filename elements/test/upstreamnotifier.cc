@@ -81,7 +81,7 @@ write_param(const String &s, Element *e, void *vparam,
     switch ((intptr_t) vparam) {
       case H_SIGNAL: {
 	  bool signal;
-	  if (!cp_bool(s, &signal))
+	  if (!BoolArg().parse(s, signal))
 	      return errh->error("signal parameter must be boolean");
 	  f->_notifier.set_active(signal, true);
 	  break;

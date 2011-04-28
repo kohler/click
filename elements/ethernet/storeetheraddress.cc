@@ -42,7 +42,7 @@ StoreEtherAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 	_offset = 6;
     else if (off.lower() == "dst")
 	_offset = 0;
-    else if (!cp_integer(off, &_offset))
+    else if (!IntArg().parse(off, _offset))
 	return errh->error("type mismatch: bad OFFSET");
     return 0;
 }

@@ -189,7 +189,7 @@ static bool icmp_ina(PacketOdesc &d, const String &str, const FieldReader *f)
 		&& d.v < 256)
 		return true;
 	} else {
-	    if (cp_integer(str, &d.v) && d.v < 256)
+	    if (IntArg().parse(str, d.v) && d.v < 256)
 		return true;
 	}
 	break;

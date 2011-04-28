@@ -242,7 +242,7 @@ FastUDPSource_limit_write_handler
 {
     FastUDPSource *c = (FastUDPSource *)e;
     unsigned limit;
-    if (!cp_integer(s, &limit))
+    if (!IntArg().parse(s, limit))
 	return errh->error("limit parameter must be integer >= 0");
     c->_limit = (limit >= 0 ? limit : c->NO_LIMIT);
     return 0;
@@ -254,7 +254,7 @@ FastUDPSource_rate_write_handler
 {
     FastUDPSource *c = (FastUDPSource *)e;
     unsigned rate;
-    if (!cp_integer(s, &rate))
+    if (!IntArg().parse(s, rate))
 	return errh->error("rate parameter must be integer >= 0");
     if (rate > GapRate::MAX_RATE) // report error rather than pin to max
 	return errh->error("rate too large; max is %u", GapRate::MAX_RATE);
@@ -268,8 +268,8 @@ FastUDPSource_active_write_handler
 {
     FastUDPSource *c = (FastUDPSource *)e;
     bool active;
-    if (!cp_bool(s, &active))
-	return errh->error("active parameter must be boolean");
+    if (!BoolArg().parse(s, active))
+	return errh->error("type mismatch");
     c->_active = active;
     if (active)
 	c->reset();

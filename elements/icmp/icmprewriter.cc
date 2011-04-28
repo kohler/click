@@ -58,7 +58,7 @@ ICMPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 	int port_offset = -1;
 	int colon = eltname.find_left(':');
 	if (colon >= 0) {
-	    if (!cp_integer(eltname.substring(colon+1), &port_offset)) {
+	    if (!IntArg().parse(eltname.substring(colon+1), port_offset)) {
 	    parse_problem:
 		errh->error("%s not an IP rewriter", eltname.c_str());
 		continue;

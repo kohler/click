@@ -52,7 +52,7 @@ AnnotationInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	if (!cp_is_word(name_str) || cp_anno(name_str, 0, &offset, 0))
 	    errh->error("bad NAME '%s'", name_str.c_str());
 	else if (!cp_anno(offset_str, 0, &offset, this)
-		 || (size_str && !cp_integer(size_str, &size))
+		 || (size_str && !IntArg().parse(size_str, size))
 		 || size < 0
 		 || ANNOTATIONINFO_OFFSET(offset) + size > Packet::anno_size
 		 || (size && ANNOTATIONINFO_SIZE(offset)

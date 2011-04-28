@@ -73,13 +73,13 @@ ip_address_variation(const String &str, IPAddress *addr, int32_t *variation,
     IPAddress addr2;
 
     if (dash != end
-	&& cp_ip_address(str.substring(str.begin(), dash), addr, context)
-	&& cp_ip_address(str.substring(dash + 1, end), &addr2, context)
+	&& IPAddressArg().parse(str.substring(str.begin(), dash), *addr, context)
+	&& IPAddressArg().parse(str.substring(dash + 1, end), addr2, context)
 	&& ntohl(addr2.addr()) >= ntohl(addr->addr())) {
 	*variation = ntohl(addr2.addr()) - ntohl(addr->addr());
 	return true;
     } else if (dash == end
-	       && cp_ip_prefix(str.substring(str.begin(), end), addr, &addr2, true, context)
+	       && IPPrefixArg(true).parse(str.substring(str.begin(), end), *addr, addr2, context)
 	       && *addr && addr2 && addr2.mask_to_prefix_len() >= 0) {
 	if (addr2.addr() == 0xFFFFFFFFU)
 	    *variation = 0;
@@ -106,10 +106,10 @@ port_variation(const String &str, int32_t *port, int32_t *variation,
     else if (end > str.begin() && end[-1] == '?')
 	*same_first = false, --end;
     const char *dash = find(str.begin(), end, '-');
-    int32_t port2;
+    int32_t port2 = 0;
 
-    if (cp_integer(str.substring(str.begin(), dash), port)
-	&& cp_integer(str.substring(dash + 1, end), &port2)
+    if (IntArg().parse(str.substring(str.begin(), dash), *port)
+	&& IntArg().parse(str.substring(dash + 1, end), port2)
 	&& *port >= 0 && port2 >= *port && port2 < 65536) {
 	*variation = port2 - *port;
 	return true;
@@ -148,7 +148,7 @@ IPRewriterPattern::parse(const Vector<String> &words,
     // source address
     int i = 0;
     if (!(words[i].equals("-", 1)
-	  || cp_ip_address(words[i], &saddr, context)
+	  || IPAddressArg().parse(words[i], saddr, context)
 	  || ip_address_variation(words[i], &saddr, &variation,
 				  &sequential, &same_first, context)))
 	return pattern_error(PE_SADDR, errh);
@@ -157,7 +157,7 @@ IPRewriterPattern::parse(const Vector<String> &words,
     if (words.size() >= 3) {
 	i = words.size() == 3 ? 2 : 1;
 	if (!(words[i].equals("-", 1)
-	      || (cp_integer(words[i], &sport) && sport > 0 && sport < 65536)
+	      || (IntArg().parse(words[i], sport) && sport > 0 && sport < 65536)
 	      || port_variation(words[i], &sport, &variation,
 				&sequential, &same_first)))
 	    return pattern_error(PE_SPORT, errh);
@@ -167,14 +167,14 @@ IPRewriterPattern::parse(const Vector<String> &words,
     // destination address
     ++i;
     if (!(words[i].equals("-", 1)
-	  || cp_ip_address(words[i], &daddr, context)))
+	  || IPAddressArg().parse(words[i], daddr, context)))
 	return pattern_error(PE_DADDR, errh);
 
     // destination port
     if (words.size() == 4) {
 	++i;
 	if (!(words[i].equals("-", 1)
-	      || (cp_integer(words[i], &dport) && dport > 0 && dport < 65536)))
+	      || (IntArg().parse(words[i], dport) && dport > 0 && dport < 65536)))
 	    return pattern_error(PE_DPORT, errh);
     }
 
@@ -190,9 +190,9 @@ IPRewriterPattern::parse_ports(const Vector<String> &words,
 			       Element *, ErrorHandler *errh)
 {
     if (!(words.size() == 2
-	  && cp_integer(words[0], &input->foutput)))
+	  && IntArg().parse(words[0], input->foutput)))
 	return errh->error("bad forward port"), false;
-    if (cp_integer(words[1], &input->routput))
+    if (IntArg().parse(words[1], input->routput))
 	return true;
     else
 	return errh->error("bad reply port"), false;

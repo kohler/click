@@ -1297,7 +1297,7 @@ DSDVRouteTable::write_seqno(const String &arg, Element *el,
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
   unsigned u;
-  if (!cp_integer(arg, &u))
+  if (!IntArg().parse(arg, u))
     return errh->error("sequence number must be unsigned");
   if (u & 1)
     return errh->error("sequence number must be even");
@@ -1319,8 +1319,8 @@ DSDVRouteTable::write_paused(const String &arg, Element *el,
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
   bool was_paused = rt->_paused;
-  if (!cp_bool(arg, &rt->_paused))
-    return errh->error("`paused' must be a boolean");
+  if (!BoolArg().parse(arg, rt->_paused))
+    return errh->error("type mismatch");
 
   click_chatter("DSDVRouteTable %s: %s",
 		rt->name().c_str(), rt->_paused ? "pausing packet routes (_paused = true)" :
@@ -1373,7 +1373,7 @@ DSDVRouteTable::write_use_old_route(const String &arg, Element *el,
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
   unsigned u;
-  if (!cp_integer(arg, &u))
+  if (!IntArg().parse(arg, u))
     return errh->error("`use_old_route' must be an unsigned integer");
 
   bool use_good = false;

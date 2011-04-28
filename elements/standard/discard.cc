@@ -79,7 +79,7 @@ Discard::write_handler(const String &s, Element *e, void *user_data,
     if (!user_data)
 	d->_count = 0;
     else {
-	if (!cp_bool(s, &d->_active))
+	if (!BoolArg().parse(s, d->_active))
 	    return errh->error("syntax error");
 	if (d->_active)
 	    d->_task.reschedule();

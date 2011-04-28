@@ -445,11 +445,11 @@ FromFlanDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHa
     switch ((intptr_t)thunk) {
       case ACTIVE_THUNK: {
 	  bool active;
-	  if (cp_bool(s, &active)) {
+	  if (BoolArg().parse(s, active)) {
 	      fd->set_active(active);
 	      return 0;
 	  } else
-	      return errh->error("`active' should be Boolean");
+	      return errh->error("type mismatch");
       }
       case STOP_THUNK:
 	fd->set_active(false);

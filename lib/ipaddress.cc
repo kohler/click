@@ -212,7 +212,7 @@ prefix_with_slash(const String &str, const char *slash,
 
     int l = -1;
     IPAddress mask;
-    if (IntArg::parse(str.substring(slash + 1, str.end()), l, 10)
+    if (IntArg(10).parse(str.substring(slash + 1, str.end()), l)
 	&& l >= 0 && l <= 32)
 	mask = IPAddress::make_prefix(l);
     else if (!IPAddressArg::parse(str.substring(slash + 1, str.end()), mask, args))
@@ -266,7 +266,7 @@ IPPortArg::parse(const String &str, uint16_t &result, const ArgContext &args) co
 			     str, &value))
 	return false;
 #else
-    if (!IntArg::parse(str, value)) {
+    if (!IntArg().parse(str, value)) {
 # if HAVE_NETDB_H
 	const char *proto_name;
 	if (ip_p == IP_PROTO_TCP)

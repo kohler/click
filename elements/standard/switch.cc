@@ -60,7 +60,7 @@ Switch::write_param(const String &s, Element *e, void *, ErrorHandler *errh)
 {
     Switch *sw = (Switch *)e;
     int sw_output;
-    if (!cp_integer(s, &sw_output))
+    if (!IntArg().parse(s, sw_output))
 	return errh->error("Switch output must be integer");
     if (sw_output >= sw->noutputs())
 	sw_output = -1;

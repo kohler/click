@@ -26,7 +26,7 @@
 #include <clicknet/wifi.h>
 #include <clicknet/llc.h>
 #include <clicknet/ppp.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 static const struct dlt_name {
@@ -59,8 +59,8 @@ fake_pcap_parse_dlt(const String &str)
     for (const dlt_name* d = dlt_names; d < dlt_names + (sizeof(dlt_names) / sizeof(dlt_names[0])); d++)
 	if (str == d->name)
 	    return d->dlt;
-    uint32_t dlt;
-    if (str.length() >= 2 && str[0] == '#' && cp_integer(str.substring(1), &dlt) && dlt < 0x7FFFFFFF)
+    uint32_t dlt = 0;
+    if (str.length() >= 2 && str[0] == '#' && IntArg().parse(str.substring(1), dlt) && dlt < 0x7FFFFFFF)
 	return dlt;
     else
 	return -1;

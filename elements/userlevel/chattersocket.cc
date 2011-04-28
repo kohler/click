@@ -199,8 +199,8 @@ ChatterSocket::initialize_socket(ErrorHandler *errh)
       errh->warning("setsockopt: %s", strerror(errno));
 
     // bind to port
-    int portno;
-    (void) cp_integer(_unix_pathname, &portno);
+    int portno = -1;
+    (void) IntArg().parse(_unix_pathname, portno);
     struct sockaddr_in sa;
     sa.sin_family = AF_INET;
     sa.sin_port = htons(portno);

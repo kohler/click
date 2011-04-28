@@ -97,7 +97,7 @@ IPRewriterBase::parse_input_spec(const String &line, IPRewriterInput &is,
 
     if (word == "pass" || word == "passthrough" || word == "nochange") {
 	int32_t outnum = 0;
-	if (rest && !cp_integer(rest, &outnum))
+	if (rest && !IntArg().parse(rest, outnum))
 	    return cerrh.error("syntax error, expected %<nochange [OUTPUT]%>");
 	else if ((unsigned) outnum >= (unsigned) noutputs())
 	    return cerrh.error("output port out of range");
@@ -163,7 +163,7 @@ IPRewriterBase::configure(Vector<String> &conf, ErrorHandler *errh)
     if (capacity_word) {
 	Element *e;
 	IPRewriterBase *rwb;
-	if (cp_integer(capacity_word, &_heap->_capacity))
+	if (IntArg().parse(capacity_word, _heap->_capacity))
 	    /* OK */;
 	else if ((e = cp_element(capacity_word, this))
 		 && (rwb = (IPRewriterBase *) e->cast("IPRewriterBase"))) {

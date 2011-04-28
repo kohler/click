@@ -28,7 +28,7 @@
 #include <click/error.hh>
 #include <click/driver.hh>
 #include <click/straccum.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
 #include "processingt.hh"
@@ -643,8 +643,8 @@ static bool
 parse_columns(const String &s, int &which, int &count)
 {
     const char *slash = find(s, '/');
-    if (!cp_integer(s.substring(s.begin(), slash), &which)
-	|| !cp_integer(s.substring(slash + 1, s.end()), &count)
+    if (!IntArg().parse(s.substring(s.begin(), slash), which)
+	|| !IntArg().parse(s.substring(slash + 1, s.end()), count)
 	|| which <= 0 || which > count) {
 	which = count = 1;
 	return false;
@@ -811,7 +811,7 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_ou
 	} else if (tag == "config" && !is_type) {
 	    int limit = 0;
 	    if (attrs["limit"])
-		cp_integer(html_unquote(attrs["limit"]), &limit);
+		IntArg().parse(html_unquote(attrs["limit"]), limit);
 	    String config = e->configuration();
 	    if (limit && config.length() > limit)
 		config = config.substring(0, limit) + "...";

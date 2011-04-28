@@ -58,7 +58,7 @@ UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     if (daddr_str.equals("DST_ANNO", 8)) {
 	_daddr = IPAddress();
 	_use_dst_anno = true;
-    } else if (cp_ip_address(daddr_str, &_daddr, this))
+    } else if (IPAddressArg().parse(daddr_str, _daddr, this))
 	_use_dst_anno = false;
     else
 	return errh->error("bad DST");

@@ -166,7 +166,7 @@ WifiEncap_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug))
+    if (!BoolArg().parse(s, debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -174,14 +174,14 @@ WifiEncap_write_param(const String &in_s, Element *e, void *vparam,
 
   case H_MODE: {    //mode
     int m;
-    if (!cp_integer(s, &m))
+    if (!IntArg().parse(s, m))
       return errh->error("mode parameter must be int");
     f->_mode = m;
     break;
   }
   case H_BSSID: {    //debug
     EtherAddress e;
-    if (!cp_ethernet_address(s, &e))
+    if (!EtherAddressArg().parse(s, e))
       return errh->error("bssid parameter must be ethernet address");
     f->_bssid = e;
     break;

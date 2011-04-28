@@ -267,24 +267,24 @@ ICMPPingSource::write_handler(const String &s, Element *e, void *thunk, ErrorHan
 {
     ICMPPingSource *ps = static_cast<ICMPPingSource *>(e);
     switch ((uintptr_t)thunk) {
-      case H_ACTIVE:
-	if (!cp_bool(s, &ps->_active))
-	    return errh->error("'active' should be bool");
+    case H_ACTIVE:
+	if (!BoolArg().parse(s, ps->_active))
+	    return errh->error("type mismatch");
 	if (ps->_active && !ps->_timer.scheduled() && ps->output_is_push(0))
 	    ps->_timer.schedule_now();
 	else if (!ps->_active)
 	    ps->_timer.unschedule();
 	return 0;
-      case H_SRC:
-	if (!cp_ip_address(s, &ps->_src))
-	    return errh->error("'src' should be IP address");
+    case H_SRC:
+	if (!IPAddressArg().parse(s, ps->_src))
+	    return errh->error("syntax error");
 	return 0;
-      case H_DST:
-	if (!cp_ip_address(s, &ps->_dst))
-	    return errh->error("'dst' should be IP address");
+    case H_DST:
+	if (!IPAddressArg().parse(s, ps->_dst))
+	    return errh->error("syntax error");
 	return 0;
       case H_LIMIT:
-	if (!cp_integer(s, &ps->_limit))
+	  if (!IntArg().parse(s, ps->_limit))
 	    return errh->error("'limit' should be integer");
 	if ((ps->_count < ps->_limit || ps->_limit < 0) && ps->_active && !ps->_timer.scheduled() && ps->output_is_push(0))
 	    ps->_timer.schedule_after_msec(ps->_interval);

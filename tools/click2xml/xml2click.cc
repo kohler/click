@@ -26,7 +26,7 @@
 #include <click/error.hh>
 #include <click/driver.hh>
 #include <click/straccum.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
 #include "processingt.hh"
@@ -141,10 +141,10 @@ do_element(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 	else if (strcmp(a[0], "line") == 0)
 	    line = a[1];
 	else if (strcmp(a[0], "ninputs") == 0) {
-	    if (!cp_integer(a[1], &e.ninputs))
+	    if (!IntArg().parse(a[1], e.ninputs))
 		errh->lerror(landmark, "'ninputs' attribute must be an integer");
 	} else if (strcmp(a[0], "noutputs") == 0) {
-	    if (!cp_integer(a[1], &e.noutputs))
+	    if (!IntArg().parse(a[1], e.noutputs))
 		errh->lerror(landmark, "'noutputs' attribute must be an integer");
 	}
 
@@ -193,10 +193,10 @@ do_connection(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 	else if (strcmp(a[0], "to") == 0)
 	    e.to = a[1];
 	else if (strcmp(a[0], "fromport") == 0) {
-	    if (!cp_integer(a[1], &e.fromport) && e.fromport >= 0)
+	    if (!IntArg().parse(a[1], e.fromport) && e.fromport >= 0)
 		errh->lerror(landmark, "'fromport' should be port number");
 	} else if (strcmp(a[0], "toport") == 0) {
-	    if (!cp_integer(a[1], &e.toport) && e.toport >= 0)
+	    if (!IntArg().parse(a[1], e.toport) && e.toport >= 0)
 		errh->lerror(landmark, "'toport' should be port number");
 	}
 
@@ -310,13 +310,13 @@ do_start_compound(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 	} else if (strcmp(a[0], "overloadclassid") == 0)
 	    cx->_prev_class_id = a[1];
 	else if (strcmp(a[0], "ninputs") == 0) {
-	    if (!cp_integer(a[1], &cx->_decl_ninputs))
+	    if (!IntArg().parse(a[1], cx->_decl_ninputs))
 		errh->lerror(landmark, "'ninputs' attribute must be an integer");
 	} else if (strcmp(a[0], "noutputs") == 0) {
-	    if (!cp_integer(a[1], &cx->_decl_noutputs))
+	    if (!IntArg().parse(a[1], cx->_decl_noutputs))
 		errh->lerror(landmark, "'noutputs' attribute must be an integer");
 	} else if (strcmp(a[0], "nformals") == 0) {
-	    if (!cp_integer(a[1], &cx->_decl_nformals))
+	    if (!IntArg().parse(a[1], cx->_decl_nformals))
 		errh->lerror(landmark, "'noutputs' attribute must be an integer");
 	}
     // XXX nformals etc.
@@ -350,7 +350,7 @@ do_formal(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 	    if (!cp_is_word(name))
 		errh->lerror(landmark, "'name' should be formal name");
 	} else if (strcmp(a[0], "number") == 0) {
-	    if (!cp_integer(a[1], &number) || number < 0)
+	    if (!IntArg().parse(a[1], number) || number < 0)
 		errh->lerror(landmark, "'number' should be formal argument position");
 	} else if (strcmp(a[0], "key") == 0) {
 	    key = a[1];

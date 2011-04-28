@@ -61,13 +61,13 @@ AvailableRates::parse_and_insert(String s, ErrorHandler *errh)
     default_rates = true;
     _default_rates.clear();
   } else {
-    if (!cp_ethernet_address(args[0], &e))
+      if (!EtherAddressArg().parse(args[0], e))
       return errh->error("error param %s: must start with ethernet address", s.c_str());
   }
 
   for (int x = 1; x< args.size(); x++) {
     int r;
-    cp_integer(args[x], &r);
+    IntArg().parse(args[x], r);
     if (default_rates) {
       _default_rates.push_back(r);
     } else {
@@ -207,7 +207,7 @@ AvailableRates_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {
     bool debug;
-    if (!cp_bool(s, &debug))
+    if (!BoolArg().parse(s, debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -216,7 +216,7 @@ AvailableRates_write_param(const String &in_s, Element *e, void *vparam,
     return f->parse_and_insert(in_s, errh);
   case H_REMOVE: {
     EtherAddress e;
-    if (!cp_ethernet_address(s, &e))
+    if (!EtherAddressArg().parse(s, e))
       return errh->error("remove parameter must be ethernet address");
     f->_rtable.erase(e);
     break;

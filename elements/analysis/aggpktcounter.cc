@@ -295,10 +295,8 @@ AggregatePacketCounter::flow_handler(uint32_t aggregate, FlowFunc func)
 int
 AggregatePacketCounter::thing_read_handler(int, String& s, Element* e, const Handler* h, ErrorHandler* errh)
 {
-    uint32_t aggregate;
-    if (!s)
-	aggregate = 0;
-    else if (!cp_integer(cp_uncomment(s), &aggregate))
+    uint32_t aggregate = 0;
+    if (s && !IntArg().parse(cp_uncomment(s), aggregate))
 	return errh->error("argument should be aggregate number");
     FlowFunc ff = (h->read_user_data() ? &Flow::undelivered : &Flow::received);
     AggregatePacketCounter *apc = static_cast<AggregatePacketCounter *>(e);

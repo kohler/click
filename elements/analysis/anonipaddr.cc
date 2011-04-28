@@ -89,10 +89,10 @@ AnonymizeIPAddr::configure(Vector<String> &conf, ErrorHandler *errh)
 	int what;
 	cp_spacevec(preserve_8, words);
 	for (int i = 0; i < words.size(); i++)
-	    if (cp_integer(words[i], &what) && what >= 0 && what < 256)
+	    if (IntArg().parse(words[i], what) && what >= 0 && what < 256)
 		_preserve_8.push_back(what);
 	    else
-		return errh->error("bad PRESERVE_8 argument `%s', should be integer between 0 and 255", words[i].c_str());
+		return errh->error("PRESERVE_8 expects integer between 0 and 255", words[i].c_str());
     }
 
     return 0;

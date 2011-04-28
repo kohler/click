@@ -106,18 +106,18 @@ Unqueue::write_param(const String &conf, Element *e, void *user_data,
     Unqueue *u = static_cast<Unqueue *>(e);
     switch (reinterpret_cast<intptr_t>(user_data)) {
     case h_active:
-	if (!cp_bool(conf, &u->_active))
+	if (!BoolArg().parse(conf, u->_active))
 	    return errh->error("syntax error");
 	break;
     case h_reset:
 	u->_count = 0;
 	break;
     case h_limit:
-	if (!cp_integer(conf, &u->_limit))
+	if (!IntArg().parse(conf, u->_limit))
 	    return errh->error("syntax error");
 	break;
     case h_burst:
-	if (!cp_integer(conf, &u->_burst))
+	if (!IntArg().parse(conf, u->_burst))
 	    return errh->error("syntax error");
 	if (u->_burst < 0)
 	    u->_burst = 0x7FFFFFFF;

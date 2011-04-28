@@ -66,7 +66,7 @@ IPsecEncap::configure(Vector<String> &conf, ErrorHandler *errh)
  int ect = 0;
   if (ect_str) {
     bool x;
-    if (cp_bool(ect_str, &x))
+    if (BoolArg().parse(ect_str, x))
       ect = x;
     else if (ect_str == "2")
       ect = 2;

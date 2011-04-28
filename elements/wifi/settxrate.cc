@@ -102,14 +102,14 @@ SetTXRate::write_handler(const String &arg, Element *e,
   switch((intptr_t)vparam) {
   case H_RATE: {
     unsigned m;
-    if (!cp_unsigned(s, &m))
+    if (!IntArg().parse(s, m))
       return errh->error("rate parameter must be unsigned");
     f->_rate = m;
     break;
   }
   case H_TRIES: {
     unsigned m;
-    if (!cp_unsigned(s, &m))
+    if (!IntArg().parse(s, m))
       return errh->error("tries parameter must be unsigned");
     f->_tries = m;
     break;

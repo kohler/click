@@ -50,21 +50,21 @@ cp_ipsec_route(String s, IPsecRoute *r_store, bool remove_route, Element *contex
 
     SADataTuple * sa_data;
 
-    if (!cp_ip_prefix(cp_shift_spacevec(s), &r.addr, &r.mask, true, context))
+    if (!IPPrefixArg(true).parse(cp_shift_spacevec(s), r.addr, r.mask, context))
 	return false;
 
     r.addr &= r.mask;
     String word = cp_shift_spacevec(s);
     if (word == "-")
 	/* null gateway; do nothing */;
-    else if (cp_ip_address(word, &r.gw, context))
+    else if (IPAddressArg().parse(word, r.gw, context))
 	/* do nothing */;
     else
 	goto two_words;
 
     word = cp_shift_spacevec(s);
   two_words:
-    if (cp_integer(word, &r.port) || (!word && remove_route))
+    if (IntArg().parse(word, r.port) || (!word && remove_route))
 	//Ipsec extensions parsing
 	word = cp_shift_spacevec(s);
 
@@ -363,7 +363,7 @@ IPsecRouteTable::lookup_handler(int, String& s, Element* e, const Handler*, Erro
 {
     IPsecRouteTable *table = static_cast<IPsecRouteTable*>(e);
     IPAddress a;
-    if (cp_ip_address(cp_uncomment(s), &a, table)) {
+    if (IPAddressArg().parse(cp_uncomment(s), a, table)) {
 	IPAddress gw;
 	uint32_t spi;
 	SADataTuple * sa_data;

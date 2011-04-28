@@ -115,7 +115,7 @@ click_assert_failed(const char *file, int line, const char *problem_text)
 static int
 write_assert_stop(const String &s, Element *, void *, ErrorHandler *errh)
 {
-    if (!cp_bool(s, &assert_stops_router))
+    if (!BoolArg().parse(s, assert_stops_router))
 	return errh->error("assert_stop must be a boolean");
     else
 	return 0;
@@ -218,7 +218,7 @@ KernelErrorHandler::read(click_handler_direct_info *hdi) const
 	initial = (_wrapped ? _tail - logbuf_siz : 0);
 	*hdi->string = String(initial);
     } else
-	cp_integer(*hdi->string, &initial);
+	IntArg().parse(*hdi->string, initial);
 
     uint32_t tail = _tail;
     uint32_t len = tail - initial;

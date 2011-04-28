@@ -112,7 +112,7 @@ TimedSource::change_param(const String &s, Element *e, void *vparam,
 	goto remake_packet;
 
     case h_headroom:
-	if (!cp_integer(s, &ts->_headroom))
+	if (!IntArg().parse(s, ts->_headroom))
 	    return errh->error("bad headroom");
 	goto remake_packet;
 
@@ -135,7 +135,7 @@ TimedSource::change_param(const String &s, Element *e, void *vparam,
    }
 
    case h_active: {
-     if (!cp_bool(s, &ts->_active))
+       if (!BoolArg().parse(s, ts->_active))
        return errh->error("bad active");
      if (!ts->_timer.scheduled() && ts->_active)
        ts->_timer.schedule_now();

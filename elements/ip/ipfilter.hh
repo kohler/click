@@ -213,6 +213,7 @@ class IPFilter : public Element { public:
 	union {
 	    uint32_t u;
 	    int32_t i;
+	    struct in_addr ip4;
 	    unsigned char c[4];
 	} _u, _mask;
 

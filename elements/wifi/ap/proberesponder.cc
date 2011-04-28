@@ -301,7 +301,7 @@ ProbeResponder_write_param(const String &in_s, Element *e, void *vparam,
   switch((intptr_t)vparam) {
   case H_DEBUG: {    //debug
     bool debug;
-    if (!cp_bool(s, &debug))
+    if (!BoolArg().parse(s, debug))
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
     break;
@@ -319,14 +319,14 @@ ProbeResponder_write_param(const String &in_s, Element *e, void *vparam,
   }
   case H_CHANNEL: {    //channel
     int channel;
-    if (!cp_integer(s, &channel))
+    if (!IntArg().parse(s, channel))
       return errh->error("channel parameter must be int");
     f->_channel = channel;
     break;
   }
   case H_INTERVAL: {    //mode
     int m;
-    if (!cp_integer(s, &m))
+    if (!IntArg().parse(s, m))
       return errh->error("interval parameter must be int");
     f->_interval_ms = m;
     break;

@@ -20,7 +20,7 @@
 #include <click/config.h>
 
 #include "alignclass.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/bitvector.hh>
 #include "processingt.hh"
@@ -232,9 +232,9 @@ StripAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
     cp_argvec(e->configuration(), args);
     unsigned nbytes;
     ContextErrorHandler cerrh(errh, "While analyzing alignment for %<%s%>:", e->declaration().c_str());
-    if (cp_va_kparse(args, &cerrh,
-		     "LENGTH", cpkP+cpkM, cpUnsigned, &nbytes,
-		     cpEnd) < 0)
+    if (Args(args, &cerrh)
+	.read_mp("LENGTH", nbytes)
+	.complete() < 0)
 	return default_aligner();
     return new ShifterAligner(_is_strip ? nbytes : -nbytes);
 }
@@ -253,8 +253,13 @@ CheckIPHeaderAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *)
     unsigned offset = 0;
     // Old CheckIPHeader elements might have a BADSRC* argument before the
     // OFFSET argument.  This magic supposedly parses either.
-    if (cp_va_kparse(args, ErrorHandler::silent_handler(), "OFFSET", cpkP, cpUnsigned, &offset, cpIgnoreRest, cpEnd) < 0)
-	(void) cp_va_kparse(args, ErrorHandler::silent_handler(), "BADSRC*", cpkP, cpIgnore, "OFFSET", cpkP, cpUnsigned, &offset, cpIgnoreRest, cpEnd);
+    if (Args(args)
+	.read_p("OFFSET", offset)
+	.execute() < 0)
+	(void) Args(args)
+	    .read_p_with("BADSRC*", AnyArg())
+	    .read_p("OFFSET", offset)
+	    .execute();
     return new WantAligner(Alignment(4, 0) - (int)offset);
 }
 
@@ -271,10 +276,10 @@ parse_alignment(ElementT *e, const String &config, bool spacevec, ErrorHandler *
     Vector<String> args;
     spacevec ? cp_spacevec(config, args) : cp_argvec(config, args);
     int modulus, offset;
-    if (cp_va_kparse(args, &cerrh,
-		     "MODULUS", cpkP+cpkM, cpInteger, &modulus,
-		     "OFFSET", cpkP+cpkM, cpInteger, &offset,
-		     cpEnd) >= 0)
+    if (Args(args, &cerrh)
+	.read_mp("MODULUS", modulus)
+	.read_mp("OFFSET", offset)
+	.complete() >= 0)
 	return Alignment(modulus, offset);
     else
 	return Alignment::make_bad();
@@ -302,10 +307,10 @@ DeviceAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
     Vector<String> args;
     cp_argvec(e->configuration(), args);
     String align_arg, type_arg;
-    (void) cp_va_kparse_remove_keywords(args, ErrorHandler::silent_handler(),
-					"ALIGNMENT", 0, cpArgument, &align_arg,
-					"TYPE", 0, cpWord, &type_arg,
-					cpEnd);
+    (void) Args().bind(args)
+	.read("ALIGNMENT", AnyArg(), align_arg)
+	.read("TYPE", WordArg(), type_arg)
+	.consume();
     Alignment a(4, 2);
     if (align_arg)
 	a = parse_alignment(e, align_arg, true, errh);
@@ -331,8 +336,9 @@ ICMPErrorAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *)
     Vector<String> args;
     cp_argvec(e->configuration(), args);
     bool ether = false;
-    (void) cp_va_kparse_remove_keywords(args, ErrorHandler::silent_handler(),
-					"ETHER", 0, cpBool, &ether, cpEnd);
+    (void) Args().bind(args)
+	.read("ETHER", ether)
+	.consume();
     if (ether)
 	return new Aligner();
     else

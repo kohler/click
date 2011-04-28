@@ -52,19 +52,21 @@ Counter::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
 
   if (count_call) {
-    if (!cp_integer(cp_shift_spacevec(count_call), &_count_trigger))
-      return errh->error("'COUNT_CALL' first word should be unsigned (count)");
-    else if (cp_errno == CPE_OVERFLOW)
-      errh->error("COUNT_CALL too large; max %s", String(_count_trigger).c_str());
+    IntArg ia;
+    if (!ia.parse_saturating(cp_shift_spacevec(count_call), _count_trigger))
+      return errh->error("COUNT_CALL type mismatch");
+    else if (ia.status == IntArg::status_range)
+      errh->error("COUNT_CALL overflow, max %s", String(_count_trigger).c_str());
     _count_trigger_h = new HandlerCall(count_call);
   } else
     _count_trigger = (counter_t)(-1);
 
   if (byte_count_call) {
-    if (!cp_integer(cp_shift_spacevec(byte_count_call), &_byte_trigger))
-      return errh->error("'BYTE_COUNT_CALL' first word should be unsigned (count)");
-    else if (cp_errno == CPE_OVERFLOW)
-      errh->error("BYTE_COUNT_CALL too large; max %s", String(_count_trigger).c_str());
+    IntArg ia;
+    if (!ia.parse_saturating(cp_shift_spacevec(byte_count_call), _byte_trigger))
+      return errh->error("BYTE_COUNT_CALL type mismatch");
+    else if (ia.status == IntArg::status_range)
+      errh->error("BYTE_COUNT_CALL overflow, max %s", String(_count_trigger).c_str());
     _byte_trigger_h = new HandlerCall(byte_count_call);
   } else
     _byte_trigger = (counter_t)(-1);
@@ -149,14 +151,14 @@ Counter::write_handler(const String &in_str, Element *e, void *thunk, ErrorHandl
     String str = in_str;
     switch ((intptr_t)thunk) {
       case H_COUNT_CALL:
-	if (!cp_integer(cp_shift_spacevec(str), &c->_count_trigger))
+	  if (!IntArg().parse(cp_shift_spacevec(str), c->_count_trigger))
 	    return errh->error("'count_call' first word should be unsigned (count)");
 	if (HandlerCall::reset_write(c->_count_trigger_h, str, c, errh) < 0)
 	    return -1;
 	c->_count_triggered = false;
 	return 0;
       case H_BYTE_COUNT_CALL:
-	if (!cp_integer(cp_shift_spacevec(str), &c->_byte_trigger))
+	  if (!IntArg().parse(cp_shift_spacevec(str), c->_byte_trigger))
 	    return errh->error("'byte_count_call' first word should be unsigned (count)");
 	if (HandlerCall::reset_write(c->_byte_trigger_h, str, c, errh) < 0)
 	    return -1;

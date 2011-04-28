@@ -22,7 +22,7 @@
 #include <click/packet.hh>
 #include <click/packet_anno.hh>
 #include <clicknet/ether.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/etheraddress.hh>
 CLICK_DECLS
 
@@ -107,9 +107,9 @@ static bool link_ina(PacketOdesc& d, const String &str, const FieldReader *f)
     switch (f->user_data) {
     case T_ETH_SRC:
     case T_ETH_DST:
-	return cp_ethernet_address(str, d.u8, d.e);
+	return EtherAddressArg().parse(str, d.u8, d.e);
     case T_ETH_TYPE:
-	return cp_integer(str, 16, &d.v) && d.v < 65536;
+	return IntArg(16).parse(str, d.v) && d.v < 65536;
     default:
 	return false;
     }

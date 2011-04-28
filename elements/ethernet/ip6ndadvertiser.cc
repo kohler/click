@@ -22,7 +22,7 @@
 #include <clicknet/ip6.h>
 #include <click/etheraddress.hh>
 #include <click/ip6address.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 CLICK_DECLS
@@ -65,7 +65,7 @@ IP6NDAdvertiser::configure(Vector<String> &conf, ErrorHandler *errh)
 	add_map(ipa, mask, EtherAddress());
       else if (cp_ip6_address(words[j], &ipa, this))
 	add_map(ipa, IP6Address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"), EtherAddress());
-      else if (cp_ethernet_address(words[j], &ena, this)) {
+      else if (EtherAddressArg().parse(words[j], ena, this)) {
 	if (have_ena)
 	  errh->error("argument %d has more than one Ethernet address", i);
 	have_ena = true;

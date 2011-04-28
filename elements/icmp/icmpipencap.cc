@@ -122,8 +122,8 @@ int ICMPIPEncap::write_handler(const String &str, Element *e, void *thunk, Error
 {
     ICMPIPEncap *i = static_cast<ICMPIPEncap *>(e);
     IPAddress a;
-    if (!cp_ip_address(str, &a))
-	return errh->error("expected IP address");
+    if (!IPAddressArg().parse(str, a))
+	return errh->error("syntax error");
     if (thunk)
 	i->_dst = a;
     else

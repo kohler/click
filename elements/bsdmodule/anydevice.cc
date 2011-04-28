@@ -19,8 +19,9 @@
 #include <click/config.h>
 #include <click/glue.hh>
 #include "anydevice.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
+#include <click/etheraddress.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -158,7 +159,7 @@ AnyDeviceMap::lookup_unknown(struct ifnet *dev)
     if (dev->if_type == IFT_ETHER) {
 	unsigned char en[6];
 	for (AnyDevice *d = _unknown_map; d; d = d->next())
-	    if (cp_ethernet_address(d->devname(), en, d))
+	    if (EtherAddressArg().parse(d->devname(), en, d))
 		if (memcmp(en, dev->dev_addr, 6) == 0)
 		    return d;
     }
@@ -173,7 +174,7 @@ find_device_by_ether_address(const String &name, Element *context)
 {
 #if 0 /* XXX slightly more difficult in BSD */
   unsigned char en[6];
-  if (!cp_ethernet_address(name, en, context))
+  if (!EtherAddressArg().parse(name, en, context))
     return 0;
   for (struct ifnet *dev = dev_base; dev; dev = dev->next)
     if (dev->type == ARPHRD_ETHER && memcmp(en, dev->dev_addr, 6) == 0)

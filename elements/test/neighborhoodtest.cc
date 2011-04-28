@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include "neighborhoodtest.hh"
 #include <click/straccum.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/routervisitor.hh>
 #include <click/error.hh>
@@ -46,7 +46,7 @@ NeighborhoodTest::handler(int, String &data, Element *element,
 {
     cp_uncomment(data);
     int diameter = 1;
-    if (data && !cp_integer(data, &diameter))
+    if (data && !IntArg().parse(data, diameter))
 	return errh->error("syntax error");
     ElementNeighborhoodTracker tracker(element->router(), diameter);
     intptr_t port = (intptr_t) handler->write_user_data();

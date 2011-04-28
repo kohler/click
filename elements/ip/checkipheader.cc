@@ -39,7 +39,7 @@ const char * const CheckIPHeader::reason_texts[NREASONS] = {
 bool
 CheckIPHeader::OldBadSrcArg::parse(const String &str, Vector<IPAddress> &result, Args &args)
 {
-    if (IPAddressArg::parse(str, result, args)) {
+    if (IPAddressArg().parse(str, result, args)) {
 	result.push_back(IPAddress(0));
 	result.push_back(IPAddress(0xFFFFFFFFU));
 	return true;
@@ -103,7 +103,7 @@ CheckIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
       return -1;
 
   if (conf.size() == 0
-      || (conf.size() == 1 && IntArg::parse(conf[0], _offset)))
+      || (conf.size() == 1 && IntArg().parse(conf[0], _offset)))
     /* nada */;
   else if (Args(conf, this, errh)
 	   .read("BADSRC", OldBadSrcArg(), _bad_src)

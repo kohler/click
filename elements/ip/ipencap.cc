@@ -63,13 +63,13 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   bool use_dst_anno = dst_str == "DST_ANNO";
   if (use_dst_anno)
       iph.ip_dst.s_addr = 0;
-  else if (!cp_ip_address(dst_str, &iph.ip_dst, this))
+  else if (!IPAddressArg().parse(dst_str, iph.ip_dst, this))
       return errh->error("DST argument should be IP address or 'DST_ANNO'");
 
   int ect = 0;
   if (ect_str) {
     bool x;
-    if (cp_bool(ect_str, &x))
+    if (BoolArg().parse(ect_str, x))
       ect = x;
     else if (ect_str == "2")
       ect = 2;

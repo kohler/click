@@ -17,7 +17,7 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #if CLICK_BSDMODULE
@@ -57,7 +57,7 @@ SourceIPHashMapper::parse_server(const String &conf, IPRewriterInput *input,
   int32_t id;
 
   if (words.size () <= 1
-      || !cp_integer(words[words.size() - 1], &id)
+      || !IntArg().parse(words[words.size() - 1], id)
       || id < 0)
     return errh->error("bad server ID in pattern spec");
   words.resize(words.size() - 1);
@@ -84,9 +84,9 @@ SourceIPHashMapper::configure(Vector<String> &conf, ErrorHandler *errh)
   cp_spacevec (conf[0], params);
   if (params.size () != 2)
     return errh->error("requires 2 config params: numnodes seed");
-  if (!cp_integer(params[0], &nnodes) || nnodes <= 0)
+  if (!IntArg().parse(params[0], nnodes) || nnodes <= 0)
     return errh->error("number of nodes must be an integer");
-  if (!cp_integer(params[1], &seed))
+  if (!IntArg().parse(params[1], seed))
     return errh->error("hash seed must be an integer");
 
   int idp = 0;

@@ -153,7 +153,7 @@ static int
 write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
 {
   int priority;
-  if (!cp_integer(conf, &priority))
+  if (!IntArg().parse(conf, priority))
     return errh->error("priority must be an integer");
 
   if (priority > PRIO_MAX)
@@ -272,7 +272,7 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 
     case H_TASKS_PER_ITER: {
 	unsigned x;
-	if (!cp_integer(conf, &x))
+	if (!IntArg().parse(conf, x))
 	    return errh->error("tasks_per_iter must be unsigned\n");
 
 	// change current thread priorities
@@ -282,7 +282,7 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 
     case H_ITERS_PER_TIMERS: {
 	unsigned x;
-	if (!cp_integer(conf, &x))
+	if (!IntArg().parse(conf, x))
 	    return errh->error("tasks_per_iter_timers must be unsigned\n");
 
 	// change current thread priorities
@@ -291,7 +291,7 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 
     case H_ITERS_PER_OS: {
 	unsigned x;
-	if (!cp_integer(conf, &x))
+	if (!IntArg().parse(conf, x))
 	    return errh->error("tasks_per_iter_os must be unsigned\n");
 
 	// change current thread priorities

@@ -15,7 +15,7 @@
 
 #include <click/config.h>
 #include "addresstranslator.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <clicknet/ip6.h>
@@ -210,7 +210,7 @@ AddressTranslator::configure(Vector<String> &conf, ErrorHandler *errh)
 
 
   //get the static mapping entries for the mapping table
-  if (!cp_integer(conf[0], &_number_of_smap))
+  if (!IntArg().parse(conf[0], _number_of_smap))
     {
       errh->error("argument %d should be : integer", 0);
       return (before ==errh->nerrors() ? 0: -1);
@@ -224,7 +224,7 @@ AddressTranslator::configure(Vector<String> &conf, ErrorHandler *errh)
     {
 
       s = _number_of_smap+2;
-      if (!cp_bool(conf[1], &_static_portmapping))
+      if (!BoolArg().parse(conf[1], _static_portmapping))
 	errh->error("argument %d should be : bool", 2);
 
       _static_mapping[0] = 1;
@@ -248,27 +248,27 @@ AddressTranslator::configure(Vector<String> &conf, ErrorHandler *errh)
 	  if (_static_mapping[0] ==1)
 	    cp_ip6_address(words0[j],(unsigned char *)&ia);
 	  if (_static_mapping[1] ==1)
-	    cp_integer(words0[++j], &ip);
+	      IntArg().parse(words0[++j], ip);
 	  if (_static_mapping[2] ==1)
 	    cp_ip6_address(words0[++j],(unsigned char *)&ma);
 	  if (_static_mapping[3] ==1)
-	    cp_integer(words0[++j], &mp);
+	      IntArg().parse(words0[++j], mp);
 	  add_map(ia, ip, ma, mp, ea, ep, 1);
 	}
     }
 
 
   //get the dynamic mapping entries for the mapping table
-  if (!cp_bool(conf[s], &_dynamic_mapping))
+  if (!BoolArg().parse(conf[s], _dynamic_mapping))
     errh->error("argument %d should be : bool", s);
 
   if (!_dynamic_mapping)
     return (before ==errh->nerrors() ? 0: -1);
 
-  if (!cp_bool(conf[s+1], &_dynamic_portmapping))
+  if (!BoolArg().parse(conf[s+1], _dynamic_portmapping))
       errh->error("argument %d should be : bool", s+1);
 
-  if (!cp_bool(conf[s+2], &_dynamic_mapping_allocation_direction))
+  if (!BoolArg().parse(conf[s+2], _dynamic_mapping_allocation_direction))
       errh->error("argument %d should be : bool", s+2);
 
  //get the rest of the arguments for dynamic mapping
@@ -299,7 +299,7 @@ AddressTranslator::configure(Vector<String> &conf, ErrorHandler *errh)
   cp_spacevec(conf[s+i], words1);
 
 
-  if (cp_ip6_address(words1[0], (unsigned char *)&ipa6) && cp_integer(words1[1], &port_start) && cp_integer(words1[2], &port_end))
+  if (cp_ip6_address(words1[0], (unsigned char *)&ipa6) && IntArg().parse(words1[1], port_start) && IntArg().parse(words1[2], port_end))
     {
 	  _maddr = ipa6;
 	  _mportl = port_start;

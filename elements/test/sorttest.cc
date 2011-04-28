@@ -663,7 +663,7 @@ SortTest::configure(Vector<String> &conf, ErrorHandler *errh)
 	while ((r = ff.read_line(s, errh, false)) > 0) {
 	    if (!numeric)
 		_strvec.push_back(s);
-	    else if ((s = cp_uncomment(s)) && cp_integer(s, &sz))
+	    else if ((s = cp_uncomment(s)) && IntArg().parse(s, sz))
 		_sizevec.push_back(sz);
 	    else if (s && s[0] != '#' && !complain)
 		complain = errh->lwarning(ff.landmark(), "not integer");
@@ -674,7 +674,7 @@ SortTest::configure(Vector<String> &conf, ErrorHandler *errh)
 	int complain = 0;
 	size_t sz;
 	for (String *sp = conf.begin(); sp != conf.end(); sp++)
-	    if (*sp && cp_integer(*sp, &sz))
+	    if (*sp && IntArg().parse(*sp, sz))
 		_sizevec.push_back(sz);
 	    else if (*sp && !complain)
 		complain = errh->warning("argument not integer");

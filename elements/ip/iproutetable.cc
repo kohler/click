@@ -20,7 +20,7 @@
 
 #include <click/config.h>
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
@@ -32,21 +32,21 @@ bool
 cp_ip_route(String s, IPRoute *r_store, bool remove_route, Element *context)
 {
     IPRoute r;
-    if (!cp_ip_prefix(cp_shift_spacevec(s), &r.addr, &r.mask, true, context))
+    if (!IPPrefixArg(true).parse(cp_shift_spacevec(s), r.addr, r.mask, context))
 	return false;
     r.addr &= r.mask;
 
     String word = cp_shift_spacevec(s);
     if (word == "-")
 	/* null gateway; do nothing */;
-    else if (cp_ip_address(word, &r.gw, context))
+    else if (IPAddressArg().parse(word, r.gw, context))
 	/* do nothing */;
     else
 	goto two_words;
 
     word = cp_shift_spacevec(s);
   two_words:
-    if (cp_integer(word, &r.port) || (!word && remove_route))
+    if (IntArg().parse(word, r.port) || (!word && remove_route))
 	if (!cp_shift_spacevec(s)) { // nothing left
 	    *r_store = r;
 	    return true;
@@ -280,7 +280,7 @@ IPRouteTable::lookup_handler(int, String& s, Element* e, const Handler*, ErrorHa
 {
     IPRouteTable *table = static_cast<IPRouteTable*>(e);
     IPAddress a;
-    if (cp_ip_address(s, &a, table)) {
+    if (IPAddressArg().parse(s, a, table)) {
 	IPAddress gw;
 	int port = table->lookup_route(a, gw);
 	if (gw)
