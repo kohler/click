@@ -18,3 +18,23 @@ autoconf, libtool, libgtk2.0-dev (or libgtk2-dev), and graphviz.  Then:
 	autoreconf -i
 	./configure [--prefix=PREFIX] --with-click=CLICKPREFIX
 	make install
+
+TESTING
+-------
+
+    Try the following:
+
+	click -p 9999 CLICKDIR/conf/test-clicky.click &
+	clicky -p 9999 -s CLICKDIR/conf/test-clicky.ccss &
+
+    Then click on the elements and change their handlers.  For instance,
+change the TimedSources' "interval" handlers to smaller numbers and watch
+the queues fill up.
+
+DOCUMENTATION
+-------------
+
+    The "Clicky Cascading Style Sheets" language used to style Clicky
+diagrams is described on line:
+
+	http://www.read.cs.ucla.edu/click/clicky-css
