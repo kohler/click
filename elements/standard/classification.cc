@@ -627,7 +627,9 @@ DominatorOptimizer::shift_branch(int state, bool branch)
 	return;
     int br = brno(state, branch);
 
-    if (_domlist_start[state] + 1 == _domlist_start[state+1]) {
+    if (_domlist_start[state] == _domlist_start[state+1])
+	return;
+    else if (_domlist_start[state] + 1 == _domlist_start[state+1]) {
 	// single domlist; faster algorithm
 	int d = _domlist_start[state];
 	new_nexts = dom_shift_branch(br, nexts, _dom_start[d], _dom_start[d+1], 0);
