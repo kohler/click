@@ -328,9 +328,12 @@ Program::negate_subtree(Vector<int> &tree, bool flip_short)
    point to #3, since that is the destination of the #2.Y edge.)
 
    _dom holds all the Di sets for all states.
-   _dom_start[k] says where, in _dom, a given Di begins.
-   _domlist_start[S] says where, in _dom_start, the list of dominator sets
-   for state S begins.
+   _dom_start[k] says where, in _dom, Dk begins.
+   _domlist_start[S] says where, in _dom_start, the dominator sets for state
+   S begin.
+   The last element in a dominator list (so, for Dk, _dom[_dom_start[k+1]-1])
+   is a placeholder; its value has no persistent meaning and is reset
+   frequently.
 */
 
 static int
@@ -427,15 +430,21 @@ DominatorOptimizer::print()
     String s = _p->unparse();
     fprintf(stderr, "%s\n", s.c_str());
     for (int i = 0; i < _domlist_start.size() - 1; i++) {
+	if (_insn_id[i] == i)
+	    fprintf(stderr, "S%d    ", i);
+	else
+	    fprintf(stderr, "S%d[=%d]", i, _insn_id[i]);
 	if (_domlist_start[i] == _domlist_start[i+1])
-	    fprintf(stderr, "S-%d   NO DOMINATORS\n", i);
+	    fprintf(stderr, " :  NO DOMINATORS\n");
 	else {
-	    fprintf(stderr, "S-%d : ", i);
-	    for (int j = _domlist_start[i]; j < _domlist_start[i+1]; j++) {
+	    fprintf(stderr, " : ");
+	    for (int j = _domlist_start[i]; j < _domlist_start[i+1]; ++j) {
 		if (j > _domlist_start[i])
-		    fprintf(stderr, "    : ");
-		for (int k = _dom_start[j]; k < _dom_start[j+1]; k++)
-		    fprintf(stderr, " %d.%c", stateno(_dom[k]), br_yes(_dom[k]) ? 'Y' : 'N');
+		    fprintf(stderr, "       : ");
+		int endk = _dom_start[j+1];
+		for (int k = _dom_start[j]; k < endk; ++k)
+		    fprintf(stderr, k == endk - 1 ? " (%d.%c)" : " %d.%c",
+			    stateno(_dom[k]), br_yes(_dom[k]) ? 'Y' : 'N');
 		fprintf(stderr, "\n");
 	    }
 	}
@@ -527,8 +536,8 @@ DominatorOptimizer::calculate_dom(int state)
 
 void
 DominatorOptimizer::intersect_lists(const Vector<int> &in, const Vector<int> &start, const Vector<int> &end, int pos1, int pos2, Vector<int> &out)
-  /* Define subvectors V1...Vk as in[start[i] ... end[i]-1] for each pos1 <= i
-     < pos2. This code places an intersection of V1...Vk in 'out'. */
+  /* For each i, pos1 <= i < pos2, let Vi be in[start[i] ... end[i]-1].
+     This code places an intersection of all such Vi in 'out'. */
 {
     assert(pos1 <= pos2 && pos2 <= start.size() && pos2 <= end.size());
     if (pos1 == pos2)
