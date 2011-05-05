@@ -631,12 +631,13 @@ DominatorOptimizer::shift_branch(int state, bool branch)
 {
     // shift a branch by examining its dominators
 
-    int32_t nexts = insn(state).j[branch], new_nexts;
-    if (nexts <= 0)
-	return;
-    int br = brno(state, branch);
+    int32_t nexts = insn(state).j[branch], new_nexts,
+	br = brno(state, branch);
 
-    if (_domlist_start[state] + 1 == _domlist_start[state+1]) {
+    if (_domlist_start[state] == _domlist_start[state+1] || nexts <= 0)
+	// impossible or terminating branch
+	new_nexts = nexts;
+    else if (_domlist_start[state] + 1 == _domlist_start[state+1]) {
 	// single domlist; faster algorithm
 	int d = _domlist_start[state];
 	new_nexts = dom_shift_branch(br, nexts, _dom_start[d], _dom_start[d+1], 0);
