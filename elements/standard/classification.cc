@@ -463,20 +463,6 @@ DominatorOptimizer::calculate_dom(int state)
     Vector<int> predecessors;
     find_predecessors(state, predecessors);
 
-    // if no predecessors, kill this expr
-    if (predecessors.size() == 0) {
-	if (state > 0) {
-	    for (int k = 0; k < 2; ++k)
-		set_branch(state, k, Classification::j_never);
-	} else {
-	    assert(state == 0);
-	    _dom.push_back(brno(state, false));
-	    _dom_start.push_back(_dom.size());
-	}
-	_domlist_start.push_back(_dom_start.size() - 1);
-	return;
-    }
-
     // collect dominator lists from predecessors
     Vector<int> pdom, pdom_end;
     for (int i = 0; i < predecessors.size(); i++) {
@@ -492,8 +478,8 @@ DominatorOptimizer::calculate_dom(int state)
 	    continue;
 	}
 
-	// append all dom lists to pdom and pdom_end; modify dom array to end
-	// with branch 'p'
+	// append all dom list boundaries to pdom and pdom_end; modify dom
+	// array to end with the correct branch
 	int pred_brid = brno(_insn_id[s], br_yes(pred_br));
 	for (int j = _domlist_start[s]; j < _domlist_start[s+1]; j++) {
 	    int pos1 = _dom_start[j], pos2 = _dom_start[j+1];
@@ -510,24 +496,69 @@ DominatorOptimizer::calculate_dom(int state)
 
     // We now have pdom and pdom_end arrays pointing at predecessors'
     // dominators.
+    // But we may have eliminated every predecessor path as containing a
+    // contradiction.  In that case, this state cannot be reached and should
+    // be eliminated.  The pdom/pdom_end arrays will be empty.
+    int dom_start_oldsize = _dom_start.size();
 
-    // If we have too many arrays, combine some of them.
-    int pdom_pos = 0;
     if (pdom.size() > MAX_DOMLIST) {
+	// We have too many arrays, combine some of them.
 	intersect_lists(_dom, pdom, pdom_end, 0, pdom.size(), _dom);
 	_dom.push_back(brno(_insn_id[state], false));
 	_dom_start.push_back(_dom.size());
-	pdom_pos = pdom.size();	// skip loop
+    } else if (!pdom.empty()) {
+	// Our dominators equal predecessors' dominators.
+
+	// Check for redundant states, where all dominators have the same
+	// value for this state's test.
+	int mybr = brno(_insn_id[state], false), num_mybr = 0;
+
+	// Loop over predecessors.
+	for (int p = 0; p < pdom.size(); p++) {
+	    int endpos = pdom_end[p] - 1, last_pdom_br = _dom[endpos],
+		pred_mybr = -1;
+	    for (int i = pdom[p]; i <= endpos; ++i) {
+		int thisbr = _dom[i];
+		// Skip a state that will occur later in the list.
+		if (i < endpos && (thisbr ^ last_pdom_br) <= 1)
+		    continue;
+		// Check if list determines this state's test.
+		if ((thisbr ^ mybr) <= 1)
+		    pred_mybr = thisbr;
+		_dom.push_back(thisbr);
+	    }
+	    if (pred_mybr >= 0 && (num_mybr == 0 || mybr == pred_mybr))
+		mybr = pred_mybr, ++num_mybr;
+	    else
+		num_mybr = -1;
+	    _dom.push_back(mybr);
+	    _dom_start.push_back(_dom.size());
+	}
+
+	// If state is redundant, predecessors should skip it.
+	if (num_mybr > 0) {
+	    int new_state = insn(state).j[mybr & 1];
+	    for (int i = 0; i < predecessors.size(); ++i)
+		set_branch(stateno(predecessors[i]), br_yes(predecessors[i]),
+			   new_state);
+	    pdom.clear();	// mark this state as impossible (see below)
+	}
     }
 
-    // Our dominators equal predecessors' dominators.
-    for (int p = pdom_pos; p < pdom.size(); p++) {
-	for (int i = pdom[p]; i < pdom_end[p]; i++) {
-	    int x = _dom[i];
-	    _dom.push_back(x);
+    // Set branches of impossible states to "j_never".
+    if (pdom.empty()) {
+	// Clear out any changes to the dom arrays (redundant states only)
+	_dom.resize(_dom_start[dom_start_oldsize - 1]);
+	_dom_start.resize(dom_start_oldsize);
+
+	if (state > 0) {
+	    for (int k = 0; k < 2; ++k)
+		set_branch(state, k, Classification::j_never);
+	} else {
+	    assert(state == 0);
+	    _dom.push_back(brno(state, false));
+	    _dom_start.push_back(_dom.size());
 	}
-	_dom.push_back(brno(_insn_id[state], false));
-	_dom_start.push_back(_dom.size());
     }
 
     _domlist_start.push_back(_dom_start.size() - 1);
