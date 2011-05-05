@@ -1,0 +1,18 @@
+%info
+
+Test IPFilter assertions and optimizations.
+
+%script
+click SCRIPT -qh c.program
+
+%file SCRIPT
+i :: Idle
+-> c :: IPFilter(allow tcp && dst 10.0.0.0/32 && src 2.0.0.0/32,
+		 allow tcp && dst 10.0.0.0/32 && dst port 80 && src 2.0.0.0/32,
+		 allow all)
+-> i;
+
+%expect stdout
+all->[0]
+safe length 0
+alignment offset 0
