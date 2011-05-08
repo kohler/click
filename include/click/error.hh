@@ -125,7 +125,7 @@ class ErrorHandler { public:
 
     /** @brief Construct an ErrorHandler. */
     ErrorHandler()
-	: _nerrors(0), _nwarnings(0) {
+	: _nerrors(0) {
     }
 
     virtual ~ErrorHandler() {
@@ -282,22 +282,9 @@ class ErrorHandler { public:
      * assert(errh1.nerrors() == 1);
      * @endcode
      *
-     * @sa nwarnings, reset_counts */
+     * @sa account, clear */
     int nerrors() const {
 	return _nerrors;
-    }
-
-    /** @brief Return the number of warnings reported via this handler.
-     *
-     * A warning is any message that contains at least one line with error
-     * level 4 (#el_warning), and no line with a lower level. */
-    int nwarnings() const {
-	return _nwarnings;
-    }
-
-    /** @brief Reset the nwarnings() and nerrors() counts to zero. */
-    void reset_counts() {
-	_nwarnings = _nerrors = 0;
     }
 
 
@@ -445,14 +432,19 @@ class ErrorHandler { public:
      * After calling emit() for the lines of an error message, ErrorHandler
      * calls account(), passing the minimum (worst) error level of any message
      * line (or 1000 if no line had a level).  The default implementation
-     * updates the nwarnings() and nerrors() counts.  Some other ErrorHandlers
+     * updates the nerrors() counter.  Some other ErrorHandlers
      * add account() behavior that, for example, exits after printing messages
      * at el_fatal level or below. */
     virtual void account(int level) {
 	if (level <= el_error)
 	    ++_nerrors;
-	else if (level == el_warning)
-	    ++_nwarnings;
+    }
+
+    /** @brief Clear accumulated error state.
+     *
+     * The default implementation sets the nerrors() counter to zero. */
+    virtual void clear() {
+	_nerrors = 0;
     }
 
 
@@ -588,7 +580,6 @@ class ErrorHandler { public:
   private:
 
     int _nerrors;
-    int _nwarnings;
 
     static ErrorHandler *the_default_handler;
     static ErrorHandler *the_silent_handler;
@@ -622,7 +613,8 @@ class SilentErrorHandler : public ErrorHandler { public:
  * printing.  The ErrorVeneer base class simplifies the implementation of
  * stacking ErrorHandlers.  It provides versions of ErrorHandler's format(),
  * decorate(), emit(), and account() methods that forward to the underlying
- * handler. */
+ * handler.  Note that the clear() method is <em>not</em> automatically
+ * forwarded. */
 class ErrorVeneer : public ErrorHandler { public:
 
     /** @brief Construct an ErrorVeneer.

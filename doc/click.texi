@@ -441,14 +441,9 @@ Note that @code{ErrorHandler} does not support the @samp{n} conversion.
 @code{ErrorHandler} objects count the number of errors and warnings they
 have received and make those values available to the user.
 
-@deftypemethod ErrorHandler {virtual int} nwarnings () const
 @deftypemethodx ErrorHandler {virtual int} nerrors () const
-Returns the number of warnings or errors received by this
+Returns the number of errors received by this
 @code{ErrorHandler} so far.
-@end deftypemethod
-
-@deftypemethod ErrorHandler {virtual void} reset_counts ()
-Resets the @code{nwarnings} and @code{nerrors} counters to zero.
 @end deftypemethod
 
 These counters are typically used to determine whether an error has
@@ -493,8 +488,7 @@ Sets the default @code{ErrorHandler} to @var{errh}. The
 
 @deftypeop {Static Method} ErrorHandler {ErrorHandler *} silent_handler ()
 Returns the silent @code{ErrorHandler}. This handler ignores any error
-messages it receives. It maintains correct @code{nwarnings} and
-@code{nerrors} counts, however.
+messages it receives. It maintains correct @code{nerrors} counts, however.
 @end deftypeop
 
 @code{FileErrorHandler}, a kind of basic @code{ErrorHandler}, is
@@ -522,8 +516,7 @@ nested.
 The first argument to each error veneer constructor is a pointer to
 another @code{ErrorHandler} object. The veneer will pass altered error
 text to this handler, the @dfn{base handler}, for further processing and
-printing. It also delegates @code{nwarnings()} and @code{nerrors()}
-calls to the base handler.
+printing. It also delegates @code{nerrors()} calls to the base handler.
 
 Click comes with three error veneers: one for adding context, one for
 prepending text to every line, and one for supplying missing landmarks.
@@ -625,8 +618,7 @@ function, @code{decorate_text}, which may transform the string. The
 final function, @code{handle_text}, prints the resulting error message.
 This structure makes @code{ErrorHandler} easy to extend. To write a new
 basic @code{ErrorHandler}, you will need to override just
-@code{handle_text} and the counting functions (@code{nwarnings},
-@code{nerrors}, and @code{reset_counts}). The @code{ErrorVeneer} helper
+@code{handle_text} and the counting functions (@code{nerrors}). The @code{ErrorVeneer} helper
 class, described below, lets you override just @code{decorate_text} when
 writing an error veneer.
 
@@ -662,8 +654,8 @@ Any spaces and/or a final colon are stripped from the end of
 This method is responsible for printing or otherwise informing the user
 about the error message @var{text}. If @var{s} equals @code{ERR_FATAL},
 the method should exit the program or perform some other drastic action.
-It should also maintain the @code{nwarnings()} and @code{nerrors()}
-counters. In most cases, it should ensure that the last character in
+It should also maintain the @code{nerrors()}
+counter. In most cases, it should ensure that the last character in
 @var{text} is a newline.
 
 This method has no default implementation.
@@ -675,7 +667,7 @@ supplies default implementations for these functions that ease the
 construction of new error veneers. @code{ErrorVeneer}'s single instance
 variable, @code{ErrorHandler *_errh}, is the base handler.
 @code{ErrorVeneer} overrides all the relevant virtual
-functions---@code{nwarnings}, @code{nerrors}, @code{reset_counts},
+functions---@code{nerrors}, @code{clear},
 @code{make_text}, @code{decorate_text}, and @code{handle_text}. Its
 versions simply delegate to the corresponding methods on @code{_errh}.
 An error veneer designer will generally subclass @code{ErrorVeneer}
@@ -1619,8 +1611,7 @@ an instance variable named @code{_x}, the getter method should be named
 
 @item
 A variable or method which counts something is often named
-@code{n@var{object}s}---for instance, @code{_nwarnings},
-@code{ninputs()}, @code{_npackets}.
+@code{n@var{object}s}---for instance, @code{ninputs()}, @code{_npackets}.
 
 @item
 Use a bare @samp{0} for a null pointer, except where some ambiguity

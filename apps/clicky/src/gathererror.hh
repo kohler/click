@@ -36,7 +36,12 @@ class GatherErrorHandler : public ErrorHandler { public:
 	_next_errpos2 = ep2;
     }
 
+    int nwarnings() const {
+	return _nwarnings;
+    }
+
     void *emit(const String &str, void *user_data, bool more);
+    void account(int level);
 
     void clear();
     void pop_back();
@@ -66,6 +71,7 @@ class GatherErrorHandler : public ErrorHandler { public:
     int _end_offset;
     int _next_errpos1;
     int _next_errpos2;
+    int _nwarnings;
 
 };
 

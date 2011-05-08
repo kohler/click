@@ -37,8 +37,8 @@ const char ControlSocket::protocol_version[] = "1.3";
 
 struct ControlSocketErrorHandler : public ErrorHandler { public:
 
-    ControlSocketErrorHandler() {
-	_error_code = ControlSocket::CSERR_OK;
+    ControlSocketErrorHandler()
+	: _error_code(ControlSocket::CSERR_OK), _nwarnings(0) {
     }
 
     const Vector<String> &messages() const {
@@ -47,13 +47,18 @@ struct ControlSocketErrorHandler : public ErrorHandler { public:
     int error_code() const {
 	return _error_code;
     }
+    int nwarnings() const {
+	return _nwarnings;
+    }
 
     void *emit(const String &str, void *user_data, bool more);
+    void account(int level);
 
   private:
 
     Vector<String> _messages;
     int _error_code;
+    int _nwarnings;
 
 };
 
@@ -66,6 +71,14 @@ ControlSocketErrorHandler::emit(const String &str, void *, bool)
     _messages.push_back(clean_landmark(landmark, true)
 			+ str.substring(s, str.end()));
     return 0;
+}
+
+void
+ControlSocketErrorHandler::account(int level)
+{
+    ErrorHandler::account(level);
+    if (level == el_warning)
+	++_nwarnings;
 }
 
 

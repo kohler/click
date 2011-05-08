@@ -101,6 +101,20 @@ Options:\n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
+namespace {
+struct CheckErrorHandler : public ErrorVeneer {
+    CheckErrorHandler(ErrorHandler *errh)
+	: ErrorVeneer(errh), _important_messages(false) {
+    }
+    void account(int level) {
+	ErrorVeneer::account(level);
+	if (level <= el_warning)
+	    _important_messages = true;
+    }
+    bool _important_messages;
+};
+}
+
 static void
 check_once(const RouterT *r, const char *filename,
 	   ElementMap &full_elementmap, int driver,
@@ -118,18 +132,17 @@ check_once(const RouterT *r, const char *filename,
   }
 
   full_elementmap.set_driver(driver);
-  ErrorHandler *errh = full_errh;
+  CheckErrorHandler cerrh(full_errh);
+  ErrorHandler *errh = &cerrh;
   if (print_context)
       errh = new ContextErrorHandler(errh, "While checking configuration for %s driver:", driver_name);
-  int before = errh->nerrors();
-  int before_warnings = errh->nwarnings();
 
   // get processing
   ProcessingT p(const_cast<RouterT *>(r), &full_elementmap, errh);
   p.check_types(errh);
   // ... it will report errors as required
 
-  if (print_ok_message && errh->nerrors() == before && errh->nwarnings() == before_warnings)
+  if (print_ok_message && !cerrh._important_messages)
     full_errh->message("%s: configuration OK in %s driver", filename, driver_name);
   if (print_context)
     delete errh;

@@ -5,7 +5,7 @@
 #include <algorithm>
 
 GatherErrorHandler::GatherErrorHandler()
-    : _end_offset(0), _next_errpos1(0), _next_errpos2(0)
+    : _end_offset(0), _next_errpos1(0), _next_errpos2(0), _nwarnings(0)
 {
 }
 
@@ -25,11 +25,18 @@ void *GatherErrorHandler::emit(const String &str, void *, bool more)
     return 0;
 }
 
+void GatherErrorHandler::account(int level)
+{
+    if (level == el_warning)
+	++_nwarnings;
+}
+
 void GatherErrorHandler::clear()
 {
+    ErrorHandler::clear();
     _v.clear();
     _end_offset = 0;
-    reset_counts();
+    _nwarnings = 0;
 }
 
 GatherErrorHandler::iterator GatherErrorHandler::erase(iterator i)
