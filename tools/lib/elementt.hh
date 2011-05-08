@@ -145,7 +145,7 @@ struct PortT {
 	return unparse(false);
     }
     String unparse_output() const {
-	return unparse(false);
+	return unparse(true);
     }
 
     static void sort(Vector<PortT> &);
