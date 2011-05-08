@@ -407,7 +407,7 @@ dnl
 
 AC_LANG_C
 AC_REPLACE_FUNCS(strerror)
-AC_CHECK_FUNCS(random snprintf strnlen strtoul tcgetpgrp vsnprintf)
+AC_CHECK_FUNCS(random snprintf strnlen strtof strtold strtoul tcgetpgrp vsnprintf)
 AC_LANG_CPLUSPLUS
 
 

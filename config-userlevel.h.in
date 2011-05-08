@@ -138,6 +138,12 @@
 /* Define if you have the strnlen function. */
 #undef HAVE_STRNLEN
 
+/* Define if you have the strtof function. */
+#undef HAVE_STRTOF
+
+/* Define if you have the strtold function. */
+#undef HAVE_STRTOLD
+
 /* Define if you have the strtoul function. */
 #undef HAVE_STRTOUL
 
