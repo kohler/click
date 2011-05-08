@@ -250,14 +250,19 @@ PortT::sort(Vector<PortT> &v)
 }
 
 String
-PortT::unparse(bool isoutput) const
+PortT::unparse(bool isoutput, bool with_class) const
 {
     if (!element)
 	return String::make_stable("<>");
-    else if (isoutput)
-	return element->name() + "[" + String(port) + "]";
-    else
-	return "[" + String(port) + "]" + element->name();
+    StringAccum sa;
+    if (!isoutput)
+	sa << '[' << port << ']';
+    sa << element->name();
+    if (with_class)
+	sa << " :: " << element->printable_type_name();
+    if (isoutput)
+	sa << '[' << port << ']';
+    return sa.take_string();
 }
 
 
@@ -279,7 +284,7 @@ ConnectionT::ConnectionT(const PortT &from, const PortT &to, const LandmarkT &lm
 }
 
 String
-ConnectionT::unparse() const
+ConnectionT::unparse(bool with_class) const
 {
-    return from().unparse_output() + " -> " + to().unparse_input();
+    return from().unparse_output(with_class) + " -> " + to().unparse_input(with_class);
 }

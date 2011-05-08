@@ -140,12 +140,12 @@ struct PortT {
     int index_in(const Vector<PortT> &, int start = 0) const;
     int force_index_in(Vector<PortT> &, int start = 0) const;
 
-    String unparse(bool isoutput) const;
-    String unparse_input() const {
-	return unparse(false);
+    String unparse(bool isoutput, bool with_class = false) const;
+    String unparse_input(bool with_class = false) const {
+	return unparse(false, with_class);
     }
-    String unparse_output() const {
-	return unparse(true);
+    String unparse_output(bool with_class = false) const {
+	return unparse(true, with_class);
     }
 
     static void sort(Vector<PortT> &);
@@ -199,9 +199,9 @@ class ConnectionT { public:
     int next_from() const		{ return next(end_from); }
     int next_to() const			{ return next(end_to); }
 
-    String unparse() const;
-    String unparse_end(bool isoutput) const {
-	return end(isoutput).unparse(isoutput);
+    String unparse(bool with_class = false) const;
+    String unparse_end(bool isoutput, bool with_class = false) const {
+	return end(isoutput).unparse(isoutput, with_class);
     }
 
   private:
