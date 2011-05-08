@@ -61,7 +61,8 @@ gcd(int a, int b)
 Alignment &
 Alignment::operator|=(const Alignment &x)
 {
-    if (_modulus == empty_modulus || x._modulus == bad_modulus)
+    if (_modulus == empty_modulus || x._modulus == bad_modulus
+        || (_modulus == universal_modulus && x._modulus > 0))
 	return (*this = x);
     else if (_modulus <= 1 || x._modulus <= 0)
 	return *this;
