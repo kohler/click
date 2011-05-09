@@ -740,90 +740,135 @@ separate_text(const String &text, Vector<String> &words)
 /*
  * expr ::= orexpr
  *	|   orexpr ? expr : expr
- *	;
  * orexpr ::= orexpr || orexpr
  *	|   orexpr or orexpr
  *	|   term
- *	;
  * term ::= term && term
  *	|   term and term
  *	|   term factor			// juxtaposition = and
  *	|   term
  * factor ::= ! factor
- *	|   true
+ *	|   ( expr )
+ *	|   test
+ * test ::= true
  *	|   false
  *	|   quals data
  *	|   quals relop data
- *	|   ( expr )
- *	;
  */
 
 int
-IPFilter::Parser::parse_expr(int pos)
+IPFilter::Parser::parse_expr_iterative(int pos)
 {
-  _prog.start_subtree(_tree);
+    Vector<parse_state> stk;
+    stk.push_back(parse_state(s_expr0));
 
-  while (1) {
-    pos = parse_orexpr(pos);
-    if (pos >= _words.size())
-      break;
-    if (_words[pos] != "?")
-      break;
-    int old_pos = pos + 1;
-    pos = parse_expr(old_pos);
-    if (pos > old_pos && pos < _words.size() && _words[pos] == ":")
-      pos++;
-    else {
-      _errh->error("%<:%> missing in ternary expression");
-      break;
+    while (stk.size()) {
+	parse_state &ps = stk.back();
+	int new_state = -1;
+
+	switch (ps.state) {
+	case s_expr0:
+	    _prog.start_subtree(_tree);
+	    ps.state = s_expr1;
+	    new_state = s_orexpr0;
+	    break;
+	case s_expr1:
+	    if (pos >= _words.size() || _words[pos] != "?")
+		goto finish_expr;
+	    ++pos;
+	    ps.state = s_expr2;
+	    new_state = s_expr0;
+	    break;
+	case s_expr2:
+	    if (pos == ps.last_pos || pos >= _words.size() || _words[pos] != ":") {
+		_errh->error("missing %<:%> in ternary expression");
+		goto finish_expr;
+	    }
+	    ++pos;
+	    ps.state = s_expr1;
+	    new_state = s_orexpr0;
+	    break;
+	finish_expr:
+	    _prog.finish_subtree(_tree, Classification::c_ternary);
+	    break;
+
+	case s_orexpr0:
+	    _prog.start_subtree(_tree);
+	    ps.state = s_orexpr1;
+	    new_state = s_term0;
+	    break;
+	case s_orexpr1:
+	    if (pos >= _words.size() || (_words[pos] != "or" && _words[pos] != "||"))
+		goto finish_orexpr;
+	    ++pos;
+	    new_state = s_term0;
+	    break;
+	finish_orexpr:
+	    _prog.finish_subtree(_tree, Classification::c_or);
+	    break;
+
+	case s_term0:
+	    _prog.start_subtree(_tree);
+	    ps.state = s_term1;
+	    new_state = s_factor0;
+	    break;
+	case s_term1:
+	case s_term2:
+	    if (pos == ps.last_pos) {
+		if (ps.state == s_term1)
+		    _errh->error("missing expression");
+		goto finish_term;
+	    }
+	    if (pos < _words.size() && (_words[pos] == "and" || _words[pos] == "&&")) {
+		ps.state = s_term1;
+		++pos;
+	    } else
+		ps.state = s_term2;
+	    new_state = s_factor0;
+	    break;
+	finish_term:
+	    _prog.finish_subtree(_tree);
+	    break;
+
+	case s_factor0:
+	case s_factor0_neg:
+	    if (pos < _words.size() && (_words[pos] == "not" || _words[pos] == "!")) {
+		ps.state += (s_factor1 - s_factor0);
+		new_state = (ps.state == s_factor1 ? s_factor0_neg : s_factor0);
+		++pos;
+	    } else if (pos < _words.size() && _words[pos] == "(") {
+		ps.state += (s_factor2 - s_factor0);
+		new_state = s_expr0;
+		++pos;
+	    } else
+		pos = parse_test(pos, ps.state == s_factor0_neg);
+	    break;
+	case s_factor1:
+	case s_factor1_neg:
+	    if (pos == ps.last_pos)
+		_errh->error("missing expression after %<%s%>", _words[pos - 1].c_str());
+	    break;
+	case s_factor2:
+	case s_factor2_neg:
+	    if (pos == ps.last_pos)
+		_errh->error("missing expression after %<(%>");
+	    if (pos < _words.size() && _words[pos] == ")")
+		++pos;
+	    else if (pos != ps.last_pos)
+		_errh->error("missing %<)%>");
+	    if (ps.state == s_factor2_neg)
+		_prog.negate_subtree(_tree);
+	    break;
+	}
+
+	if (new_state >= 0) {
+	    ps.last_pos = pos;
+	    stk.push_back(parse_state(new_state));
+	} else
+	    stk.pop_back();
     }
-  }
 
-  _prog.finish_subtree(_tree, Classification::c_ternary);
-  return pos;
-}
-
-int
-IPFilter::Parser::parse_orexpr(int pos)
-{
-  _prog.start_subtree(_tree);
-
-  while (1) {
-    pos = parse_term(pos);
-    if (pos >= _words.size())
-      break;
-    if (_words[pos] == "or" || _words[pos] == "||")
-      pos++;
-    else
-      break;
-  }
-
-  _prog.finish_subtree(_tree, Classification::c_or);
-  return pos;
-}
-
-int
-IPFilter::Parser::parse_term(int pos)
-{
-  _prog.start_subtree(_tree);
-
-  bool blank_ok = false;
-  while (1) {
-    int next = parse_factor(pos, false);
-    if (next == pos)
-      break;
-    blank_ok = true;
-    if (next < _words.size() && (_words[next] == "and" || _words[next] == "&&")) {
-      blank_ok = false;
-      next++;
-    }
-    pos = next;
-  }
-
-  if (!blank_ok)
-    _errh->error("missing term");
-  _prog.finish_subtree(_tree);
-  return pos;
+    return pos;
 }
 
 static int
@@ -880,49 +925,28 @@ parse_brackets(IPFilter::Primitive& prim, const Vector<String>& words, int pos,
 }
 
 int
-IPFilter::Parser::parse_factor(int pos, bool negated)
+IPFilter::Parser::parse_test(int pos, bool negated)
 {
-  // return immediately on last word, ")", "||", "or", "?", ":"
-  if (pos >= _words.size() || _words[pos] == ")" || _words[pos] == "||" || _words[pos] == "or" || _words[pos] == "?" || _words[pos] == ":")
-    return pos;
+    if (pos >= _words.size())
+	return pos;
+    String first_word = _words[pos];
+    if (first_word == ")" || first_word == "||" || first_word == "or"
+	|| first_word == "?" || first_word == ":")
+	return pos;
 
-  // easy cases
-
-  // 'true' and 'false'
-  if (_words[pos] == "true") {
-    _prog.add_insn(_tree, 0, 0, 0);
-    if (negated)
-      _prog.negate_subtree(_tree);
-    return pos + 1;
-  }
-  if (_words[pos] == "false") {
-    _prog.add_insn(_tree, 0, 0, 0);
-    if (!negated)
-      _prog.negate_subtree(_tree);
-    return pos + 1;
-  }
-  // ! factor
-  if (_words[pos] == "not" || _words[pos] == "!") {
-    int next = parse_factor(pos + 1, !negated);
-    if (next == pos + 1)
-      _errh->error("missing factor after %<%s%>", _words[pos].c_str());
-    return next;
-  }
-  // ( expr )
-  if (_words[pos] == "(") {
-    int next = parse_expr(pos + 1);
-    if (next == pos + 1)
-      _errh->error("missing expression after %<(%>");
-    if (next >= 0) {
-      if (next >= _words.size() || _words[next] != ")")
-	_errh->error("missing %<)%>");
-      else
-	next++;
-      if (negated)
-	_prog.negate_subtree(_tree);
+    // 'true' and 'false'
+    if (first_word == "true") {
+	_prog.add_insn(_tree, 0, 0, 0);
+	if (negated)
+	    _prog.negate_subtree(_tree);
+	return pos + 1;
     }
-    return next;
-  }
+    if (first_word == "false") {
+	_prog.add_insn(_tree, 0, 0, 0);
+	if (!negated)
+	    _prog.negate_subtree(_tree);
+	return pos + 1;
+    }
 
   // hard case
 
@@ -1119,7 +1143,7 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 	    prog.add_insn(tree, 0, 0, 0);
 	else {
 	    Parser parser(words, tree, prog, context, &cerrh);
-	    int pos = parser.parse_expr(1);
+	    int pos = parser.parse_expr_iterative(1);
 	    if (pos < words.size())
 		cerrh.error("garbage after expression at %<%s%>", words[pos].c_str());
 	}

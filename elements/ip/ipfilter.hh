@@ -266,11 +266,23 @@ class IPFilter : public Element { public:
 	      _errh(errh) {
 	}
 
+	struct parse_state {
+	    int state;
+	    int last_pos;
+	    parse_state(int s)
+		: state(s) {
+	    }
+	};
+	enum {
+	    s_expr0, s_expr1, s_expr2,
+	    s_orexpr0, s_orexpr1,
+	    s_term0, s_term1, s_term2,
+	    s_factor0, s_factor1, s_factor2,
+	    s_factor0_neg, s_factor1_neg, s_factor2_neg
+	};
 	void parse_slot(int output, int pos);
-	int parse_expr(int pos);
-	int parse_orexpr(int pos);
-	int parse_term(int pos);
-	int parse_factor(int pos, bool negated);
+	int parse_expr_iterative(int pos);
+	int parse_test(int pos, bool negated);
     };
 
     static int length_checked_match(const IPFilterProgram &zprog,
