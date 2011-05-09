@@ -11,32 +11,6 @@ class StringAccum;
 
 class String { public:
 
-    /** @brief Initialize the String implementation.
-     * @deprecated Initializing or cleaning up the String implementation is
-     * no longer necessary.
-     *
-     * In previous versions, this function needed to be called before any
-     * String functionality was used.  It currently does nothing. */
-    static void static_initialize() CLICK_DEPRECATED;
-
-    /** @brief Clean up the String implementation.
-     * @deprecated Initializing or cleaning up the String implementation is
-     * no longer necessary.
-     *
-     * In previous versions, this function was called to release memory
-     * allocated by the String implementation.  It currently does nothing. */
-    static void static_cleanup() CLICK_DEPRECATED;
-
-    /** @class String::Initializer
-     * @brief Initializes the String implementation.
-     * @deprecated Initializing or cleaning up the String implementation is
-     * no longer necessary.
-     *
-     * In previous versions, this class's constructor initialized the String
-     * implementation.  It currently does nothing. */
-    struct Initializer { Initializer() CLICK_DEPRECATED; };
-
-
     /** @brief Construct an empty String (with length 0). */
     inline String() {
 	assign_memo(&null_data, 0, 0);
@@ -190,14 +164,6 @@ class String { public:
     static String make_numeric(int_large_t x, int base = 10, bool uppercase = true);
     /** @overload */
     static String make_numeric(uint_large_t x, int base = 10, bool uppercase = true);
-
-
-    static inline const String &empty_string() CLICK_DEPRECATED;
-    static inline String garbage_string(int len) CLICK_DEPRECATED;
-    static inline String stable_string(const char *s, int len = -1) CLICK_DEPRECATED;
-    static inline String stable_string(const char *begin, const char *end) CLICK_DEPRECATED;
-    static inline String numeric_string(int_large_t x, int base = 10, bool uppercase = true) CLICK_DEPRECATED;
-    static inline String numeric_string(uint_large_t x, int base = 10, bool uppercase = true) CLICK_DEPRECATED;
 
 
     /** @brief Return the string's length. */
@@ -740,44 +706,6 @@ class String { public:
     friend class StringAccum;
 
 };
-
-
-/** @brief Return a const reference to an empty String.
- * @deprecated Use make_empty() instead. */
-inline const String &String::empty_string() {
-    return make_empty();
-}
-
-/** @brief Return a String containing @a len unknown characters.
- * @deprecated Use make_garbage() instead. */
-inline String String::garbage_string(int len) {
-    return make_garbage(len);
-}
-
-/** @brief Return a String that directly references the first @a len
- * characters of @a s.
- * @deprecated Use make_stable() instead. */
-inline String String::stable_string(const char *s, int len) {
-    return make_stable(s, len);
-}
-
-/** @brief Return a String that directly references the character data in
- * [@a begin, @a end).
- * @deprecated Use make_stable() instead. */
-inline String String::stable_string(const char *begin, const char *end) {
-    return make_stable(begin, end);
-}
-
-/** @brief Create and return a string representation of @a x.
- * @deprecated Use make_numeric() instead. */
-inline String String::numeric_string(int_large_t x, int base, bool uppercase) {
-    return make_numeric(x, base, uppercase);
-}
-
-/** @overload */
-inline String String::numeric_string(uint_large_t x, int base, bool uppercase) {
-    return make_numeric(x, base, uppercase);
-}
 
 
 /** @relates String
