@@ -198,10 +198,6 @@ bool cp_handler_name(const String& str, Element** result_element, String* result
 bool cp_handler(const String& str, int flags, Element** result_element, const Handler** result_handler, const Element* context, ErrorHandler* errh=0);
 #endif
 
-#if HAVE_IPSEC
-bool cp_des_cblock(const String& str, unsigned char* result);
-#endif
-
 #if CLICK_USERLEVEL || CLICK_TOOL
 bool cp_filename(const String& str, String* result);
 bool cp_file_offset(const String& str, off_t* result);
@@ -295,7 +291,6 @@ extern const CpVaParseCmd
     cpIP6Prefix,	///< Result storage IP6Address* addr and IP6Address* mask, parsed by cp_ip6_prefix().
     cpIP6PrefixLen,	///< Result storage IP6Address* addr and int* prefix_len, parsed by cp_ip6_prefix().
     cpIP6AddressOrPrefix,///< Result storage IP6Address* addr and IP6Address* mask, parsed by cp_ip6_prefix().
-    cpDesCblock,	///< Result storage uint8_t[8], parsed by cp_des_cblock().
 #if CLICK_USERLEVEL || CLICK_TOOL
     cpFilename,		///< Result storage String*, parsed by cp_filename().
     cpFileOffset,	///< Result storage off_t*, parsed by cp_integer().

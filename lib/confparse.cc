@@ -266,19 +266,6 @@ cp_is_click_id(const String &str)
   return len > 0;
 }
 
-static int
-xvalue(int x)
-{
-    if (x >= '0' && x <= '9')
-	return x - '0';
-    else if (x >= 'A' && x <= 'F')
-	return x - 'A' + 10;
-    else if (x >= 'a' && x <= 'f')
-	return x - 'a' + 10;
-    else
-	return -1;
-}
-
 static const char *
 skip_comment(const char *s, const char *end)
 {
@@ -2309,35 +2296,6 @@ cp_handler(const String &str, int flags,
 }
 #endif
 
-#ifdef HAVE_IPSEC
-bool
-cp_des_cblock(const String &str, unsigned char *result)
-{
-  int i = 0;
-  const unsigned char *s = reinterpret_cast<const unsigned char*>(str.data());
-  int len = str.length();
-
-  if (len != 16)
-    return false;
-
-  unsigned char value[8];
-  for (int d = 0; d < 8; d++) {
-    if (i < len - 1 && isxdigit(s[i]) && isxdigit(s[i+1])) {
-      value[d] = xvalue(s[i])*16 + xvalue(s[i+1]);
-      i += 2;
-    } else
-      return false;
-  }
-
-  if (len != i)
-    return false;
-  else {
-    memcpy(result, value, 8);
-    return true;
-  }
-}
-#endif
-
 #if CLICK_USERLEVEL || CLICK_TOOL
 
 /** @brief Parse a filename string from @a str.
@@ -2467,7 +2425,6 @@ const CpVaParseCmd
   cpIP6Prefix		= "ip6_prefix",
   cpIP6PrefixLen	= "ip6_prefix_len",
   cpIP6AddressOrPrefix	= "ip6_addr_or_prefix",
-  cpDesCblock		= "des_cblock",
   cpFilename		= "filename",
   cpAnno		= "anno",
   cpInterval		= cpTimeval,
@@ -2529,7 +2486,6 @@ enum {
   cpiIP6Prefix,
   cpiIP6PrefixLen,
   cpiIP6AddressOrPrefix,
-  cpiDesCblock,
   cpiFilename,
   cpiAnno
 };
@@ -2889,13 +2845,6 @@ default_parsefunc(cp_value *v, const String &arg,
       goto type_mismatch;
     break;
 
-#ifdef HAVE_IPSEC
-   case cpiDesCblock:
-    if (!cp_des_cblock(arg, v->v.address))
-      goto type_mismatch;
-    break;
-#endif
-
 #ifndef CLICK_TOOL
   case cpiElement:
       v->v.element = cp_element(arg, context, errh, argname);
@@ -3109,12 +3058,6 @@ default_storefunc(cp_value *v  CP_CONTEXT)
    case cpiEthernetAddress:
     helper = 6;
     goto address;
-
-#if HAVE_IPSEC
-   case cpiDesCblock:
-    helper = 8;
-    goto address;
-#endif
 
    address: {
      unsigned char *addrstore = (unsigned char *)v->store;
@@ -4503,9 +4446,6 @@ cp_va_static_initialize()
     cp_register_argtype(cpIP6Prefix, "IPv6 address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6Prefix);
     cp_register_argtype(cpIP6PrefixLen, "IPv6 address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6PrefixLen);
     cp_register_argtype(cpIP6AddressOrPrefix, "IPv6 address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6AddressOrPrefix);
-#endif
-#if HAVE_IPSEC
-    cp_register_argtype(cpDesCblock, "DES cipher block", 0, default_parsefunc, default_storefunc, cpiDesCblock);
 #endif
 #if CLICK_USERLEVEL || CLICK_TOOL
     cp_register_argtype(cpFileOffset, "file offset", 0, default_parsefunc, default_storefunc, cpiFileOffset);
