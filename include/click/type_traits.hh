@@ -30,12 +30,15 @@ template<typename T> struct has_trivial_copy<T *> : public true_type {};
 #if HAVE_INT64_TYPES && (!HAVE_LONG_LONG || SIZEOF_LONG_LONG < 8)
 typedef int64_t click_int_large_t;
 typedef uint64_t click_uint_large_t;
+# define SIZEOF_CLICK_INT_LARGE_T 8
 #elif HAVE_LONG_LONG
 typedef long long click_int_large_t;
 typedef unsigned long long click_uint_large_t;
+# define SIZEOF_CLICK_INT_LARGE_T SIZEOF_LONG_LONG
 #else
 typedef long click_int_large_t;
 typedef unsigned long click_uint_large_t;
+# define SIZEOF_CLICK_INT_LARGE_T SIZEOF_LONG
 #endif
 
 
