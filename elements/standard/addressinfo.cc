@@ -25,6 +25,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>
+#include <click/etheraddress.hh>
 #if CLICK_NS
 # include <click/master.hh>
 #endif
