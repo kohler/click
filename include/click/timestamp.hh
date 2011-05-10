@@ -3,6 +3,7 @@
 #define CLICK_TIMESTAMP_HH
 #include <click/glue.hh>
 #include <click/type_traits.hh>
+#include <click/integers.hh>
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
 # include <math.h>
 #endif
@@ -589,49 +590,14 @@ class Timestamp { public:
     }
 
     static inline value_type value_div(value_type a, uint32_t b) {
-#if CLICK_LINUXMODULE && TIMESTAMP_VALUE_INT64 && BITS_PER_LONG < 64
-	if (unlikely(a < 0)) {
-	    uint64_t a_abs = -a - 1;
-	    do_div(a_abs, b);
-	    return (value_type) -a_abs - 1;
-	} else {
-	    uint64_t &a_abs = reinterpret_cast<uint64_t &>(a);
-	    do_div(a_abs, b);
-	    return a_abs;
-	}
-#else
-	return a / b;
-#endif
+	return int_divide(a, b);
     }
 
     static inline void value_div_mod(int32_t &div, int32_t &rem,
 				     value_type a, uint32_t b) {
-#if CLICK_LINUXMODULE && TIMESTAMP_VALUE_INT64 && BITS_PER_LONG < 64
-	if (unlikely(a < 0)) {
-	    uint64_t a_abs = -a - 1;
-	    rem = do_div(a_abs, b);
-	    div = (int64_t) -a_abs - 1;
-	    if (rem)
-		rem = b - rem;
-	} else {
-	    uint64_t &a_abs = reinterpret_cast<uint64_t &>(a);
-	    rem = do_div(a_abs, b);
-	    div = a_abs;
-	}
-#else
-	// This arithmetic is about twice as fast on my laptop as the
-	// alternative "div = a / b;
-	//		rem = a - (value_type) div * b;
-	//		if (rem < 0) div--, rem += b;",
-	// and 3-4x faster than "div = a / b;
-	//			 rem = a % b;
-	//			 if (rem < 0) div--, rem += b;".
-	if (unlikely(a < 0))
-	    div = -((-a - 1) / b) - 1;
-	else
-	    div = a / b;
-	rem = a - (value_type) div * b;
-#endif
+	value_type quot;
+	rem = int_divide(a, b, quot);
+	div = quot;
     }
 
     inline void assign_now(bool raw);
