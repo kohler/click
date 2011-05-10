@@ -1320,47 +1320,23 @@ cp_real10(const String &str, int frac_digits, uint32_t *result)
     return unsigned_real10_2to1(int_part, frac_part, frac_digits, result);
 }
 
-static uint32_t ureal2_digit_fractions[] = {
-  0x00000000, 0x19999999, 0x33333333, 0x4CCCCCCC, 0x66666666,
-  0x80000000, 0x99999999, 0xB3333333, 0xCCCCCCCC, 0xE6666666
-};
-
 bool
 cp_real2(const String &str, int frac_bits, uint32_t *result)
 {
-  if (frac_bits < 0 || frac_bits > CP_REAL2_MAX_FRAC_BITS) {
-    cp_errno = CPE_INVALID;
-    return false;
-  }
+    if (frac_bits < 0 || frac_bits > 32) {
+	cp_errno = CPE_INVALID;
+	return false;
+    }
 
-  uint32_t int_part, frac_part;
-  if (!cp_real10(str, 9, 0, &int_part, &frac_part)) {
-    cp_errno = CPE_FORMAT;
-    return false;
-  }
-
-  // method from Knuth's TeX, round_decimals. Works well with
-  // cp_unparse_real2 below
-  uint32_t fraction = 0;
-  for (int i = 0; i < 9; i++) {
-    uint32_t digit = frac_part % 10;
-    fraction = (fraction / 10) + ureal2_digit_fractions[digit];
-    frac_part /= 10;
-  }
-  fraction = ((fraction >> (31 - frac_bits)) + 1) / 2;
-
-  // This can happen! (for example, 16 bits of fraction, .999999) Why?
-  if (fraction == (1U << frac_bits) && int_part < 0xFFFFFFFFU)
-    int_part++, fraction = 0;
-
-  // check for overflow
-  if (cp_errno || int_part > (1U << (32 - frac_bits)) - 1) {
-    cp_errno = CPE_OVERFLOW;
-    *result = 0xFFFFFFFFU;
-  } else
-    *result = (int_part << frac_bits) + fraction;
-
-  return true;
+    FixedPointArg fpa(frac_bits);
+    if (!fpa.parse_saturating(str, *result)) {
+	cp_errno = CPE_FORMAT;
+	return false;
+    } else if (fpa.status == NumArg::status_range)
+	cp_errno = CPE_OVERFLOW;
+    else
+	cp_errno = CPE_OK;
+    return true;
 }
 
 
@@ -1478,7 +1454,15 @@ cp_real10(const String &str, int frac_digits, int32_t *result)
 bool
 cp_real2(const String &str, int frac_bits, int32_t *result)
 {
-  return cp_real_base(str, frac_bits, result, cp_real2);
+    FixedPointArg fpa(frac_bits);
+    if (!fpa.parse_saturating(str, *result)) {
+	cp_errno = CPE_FORMAT;
+	return false;
+    } else if (fpa.status == NumArg::status_range)
+	cp_errno = CPE_OVERFLOW;
+    else
+	cp_errno = CPE_OK;
+    return true;
 }
 
 #ifdef HAVE_FLOAT_TYPES
@@ -1744,15 +1728,6 @@ bool cp_time(const String &str, timeval *result)
 }
 
 
-static const char byte_bandwidth_units[] = "\
-\3\175\1baud\
-\3\175\1bps\
-\3\175\1b/s\
-\0\1\0Bps\
-\0\1\0B/s\
-";
-static const char byte_bandwidth_prefixes[] = "k\103K\103M\106G\111";
-
 /** @brief Parse a bandwidth value from @a str.
  * @param  str  string
  * @param[out]  result  stores parsed result
@@ -1774,25 +1749,23 @@ static const char byte_bandwidth_prefixes[] = "k\103K\103M\106G\111";
  * stored in @a result and the cp_errno variable is set to CPE_OVERFLOW;
  * otherwise, cp_errno is set to CPE_FORMAT (unparsable) or CPE_OK (if all was
  * well).
- *
- * An overloaded version of this function is available for struct timeval @a
- * result values.
  */
 bool cp_bandwidth(const String &str, uint32_t *result)
 {
-  int power = 0, factor = 1;
-  const char *after_unit = read_unit(str.begin(), str.end(), byte_bandwidth_units, sizeof(byte_bandwidth_units), byte_bandwidth_prefixes, &power, &factor);
-  if (!cp_real10(str.substring(str.begin(), after_unit), 0, power, result))
-    return false;
-  if (*result > 0xFFFFFFFFU / factor) {
-    cp_errno = CPE_OVERFLOW;
-    *result = 0xFFFFFFFFU;
-  } else {
-    if (after_unit == str.end() && *result)
-      cp_errno = CPE_NOUNITS;
-    *result *= factor;
-  }
-  return true;
+    BandwidthArg ba;
+    uint32_t x;
+    if (!ba.parse(str, x)) {
+	cp_errno = CPE_FORMAT;
+	return false;
+    }
+    if (ba.status == NumArg::status_range)
+	cp_errno = CPE_OVERFLOW;
+    else if (ba.status == NumArg::status_unitless)
+	cp_errno = CPE_NOUNITS;
+    else
+	cp_errno = CPE_OK;
+    *result = x;
+    return true;
 }
 
 
@@ -2627,11 +2600,10 @@ default_parsefunc(cp_value *v, const String &arg,
 	  IntArg ia;
 	  if (!ia.parse_saturating(arg, v->v.s32))
 	      goto type_mismatch;
-	  else if ((ia.status == IntArg::status_range && v->v.s32 > 0)
-		   || v->v.s32 > int32_t(overflower))
-	      errh->error("%s overflow, max %ld", argname, (long) v->v.s32);
-	  else if (ia.status == IntArg::status_range || v->v.s32 < underflower)
-	      errh->error("%s overflow, min %ld", argname, (long) v->v.s32);
+	  else if (ia.status == IntArg::status_range
+		   || v->v.s32 > int32_t(overflower)
+		   || v->v.s32 < underflower)
+	      errh->error("%s out of range, bound %ld", argname, (long) v->v.s32);
 	  break;
       }
 
@@ -2640,7 +2612,7 @@ default_parsefunc(cp_value *v, const String &arg,
 	  if (!ia.parse_saturating(arg, v->v.u32))
 	      goto type_mismatch;
 	  else if (ia.status == IntArg::status_range || v->v.u32 > overflower)
-	      errh->error("%s overflow, max %lu", argname, (unsigned long) v->v.u32);
+	      errh->error("%s out of range, bound %lu", argname, (unsigned long) v->v.u32);
 	  break;
       }
 
@@ -2650,7 +2622,7 @@ default_parsefunc(cp_value *v, const String &arg,
       if (!ia.parse_saturating(arg, v->v.s64))
 	  goto type_mismatch;
       else if (ia.status == IntArg::status_range)
-	  errh->error("%s overflow, max %^64d", argname, v->v.s64);
+	  errh->error("%s out of range, bound %^64d", argname, v->v.s64);
       break;
   }
 
@@ -2659,7 +2631,7 @@ default_parsefunc(cp_value *v, const String &arg,
       if (!ia.parse_saturating(arg, v->v.u64))
 	  goto type_mismatch;
       else if (ia.status == IntArg::status_range)
-	  errh->error("%s overflow, max %^64u", argname, v->v.u64);
+	  errh->error("%s out of range, bound %^64u", argname, v->v.u64);
       break;
   }
 #endif
@@ -2669,7 +2641,7 @@ default_parsefunc(cp_value *v, const String &arg,
       if (!ia.parse_saturating(arg, v->v.size))
 	  goto type_mismatch;
       else if (ia.status == IntArg::status_range)
-	  errh->error("%s overflow, max %zu", argname, v->v.size);
+	  errh->error("%s out of range, bound %zu", argname, v->v.size);
       break;
   }
 
@@ -2678,7 +2650,7 @@ default_parsefunc(cp_value *v, const String &arg,
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_real10(v->v.s32, v->extra.i);
-      errh->error("%s too large, max %s", argname, m.c_str());
+      errh->error("%s out of range, bound %s", argname, m.c_str());
     }
     break;
 
@@ -2687,7 +2659,7 @@ default_parsefunc(cp_value *v, const String &arg,
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_real10(v->v.u32, v->extra.i);
-      errh->error("%s too large, max %s", argname, m.c_str());
+      errh->error("%s out of range, bound %s", argname, m.c_str());
     }
     break;
 
@@ -2697,7 +2669,7 @@ default_parsefunc(cp_value *v, const String &arg,
       if (!da.parse(arg, v->v.d))
 	  goto type_mismatch;
       else if (da.status == DoubleArg::status_range)
-	  errh->error("%s out of range, limit %g", argname, v->v.d);
+	  errh->error("%s out of range, bound %g", argname, v->v.d);
       break;
   }
 #endif
@@ -2706,7 +2678,7 @@ default_parsefunc(cp_value *v, const String &arg,
     if (!cp_seconds_as(arg, 0, &v->v.u32))
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s too large, max %u", argname, v->v.u32);
+      errh->error("%s out of range, bound %u", argname, v->v.u32);
     break;
 
    case cpiSecondsAsMilli:
@@ -2714,7 +2686,7 @@ default_parsefunc(cp_value *v, const String &arg,
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_milliseconds(v->v.u32);
-      errh->error("%s too large, max %s", argname, m.c_str());
+      errh->error("%s out of range, bound %s", argname, m.c_str());
     }
     break;
 
@@ -2723,7 +2695,7 @@ default_parsefunc(cp_value *v, const String &arg,
       goto type_mismatch;
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_microseconds(v->v.u32);
-      errh->error("%s too large, max %s", argname, m.c_str());
+      errh->error("%s out of range, bound %s", argname, m.c_str());
     }
     break;
 
@@ -2736,7 +2708,7 @@ default_parsefunc(cp_value *v, const String &arg,
        else
 	 goto type_mismatch;
      } else if (cp_errno == CPE_OVERFLOW)
-       errh->error("%s too large", argname);
+       errh->error("%s out of range", argname);
      else {
        v->v.s32 = t.sec();
        v->v2.s32 = t.subsec();
@@ -2752,7 +2724,7 @@ default_parsefunc(cp_value *v, const String &arg,
        else
 	 goto type_mismatch;
      } else if (cp_errno == CPE_OVERFLOW)
-       errh->error("%s too large", argname);
+       errh->error("%s out of range", argname);
      else {
        v->v.s32 = tv.tv_sec;
        v->v2.s32 = tv.tv_usec;
@@ -2760,35 +2732,39 @@ default_parsefunc(cp_value *v, const String &arg,
      break;
    }
 
-   case cpiBandwidth:
-    if (!cp_bandwidth(arg, &v->v.u32))
-      goto type_mismatch;
-    else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_bandwidth(v->v.u32);
-      errh->error("%s too large, max %s", argname, m.c_str());
-    } else if (cp_errno == CPE_NOUNITS)
-      errh->warning("no units on bandwidth %s, assuming Bps", argname);
-    break;
+  case cpiBandwidth: {
+      BandwidthArg ba;
+      if (!ba.parse(arg, v->v.u32))
+	  goto type_mismatch;
+      else if (ba.status == NumArg::status_range) {
+	  String m = cp_unparse_bandwidth(v->v.u32);
+	  errh->error("%s out of range, bound %s", argname, m.c_str());
+      } else if (ba.status == NumArg::status_unitless)
+	  errh->warning("no units on bandwidth %s, assuming Bps", argname);
+      break;
+  }
 
-   case cpiReal2:
-    if (!cp_real2(arg, v->extra.i, &v->v.s32)) {
-      // CPE_INVALID would indicate a bad 'v->extra.i'
-      goto type_mismatch;
-    } else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_real2(v->v.s32, v->extra.i);
-      errh->error("%s too large, max %s", argname, m.c_str());
-    }
-    break;
+  case cpiReal2: {
+      FixedPointArg fpa(v->extra.i);
+      if (!fpa.parse_saturating(arg, v->v.s32))
+	  goto type_mismatch;
+      else if (fpa.status == NumArg::status_range) {
+	  String m = cp_unparse_real2(v->v.s32, v->extra.i);
+	  errh->error("%s out of range, bound %s", argname, m.c_str());
+      }
+      break;
+  }
 
-   case cpiUnsignedReal2:
-    if (!cp_real2(arg, v->extra.i, &v->v.u32)) {
-      // CPE_INVALID would indicate a bad 'v->extra.i'
-      goto type_mismatch;
-    } else if (cp_errno == CPE_OVERFLOW) {
-      String m  = cp_unparse_real2(v->v.u32, v->extra.i);
-      errh->error("%s too large, max %s", argname, m.c_str());
-    }
-    break;
+  case cpiUnsignedReal2: {
+      FixedPointArg fpa(v->extra.i);
+      if (!fpa.parse_saturating(arg, v->v.u32))
+	  goto type_mismatch;
+      else if (fpa.status == NumArg::status_range) {
+	  String m = cp_unparse_real2(v->v.u32, v->extra.i);
+	  errh->error("%s out of range, bound %s", argname, m.c_str());
+      }
+      break;
+  }
 
    case cpiIPAddress:
     if (!cp_ip_address(arg, v->v.address CP_PASS_CONTEXT))
@@ -3179,7 +3155,7 @@ stringlist_parsefunc(cp_value *v, const String &arg,
 	if (!cp_integer(arg, &v->v.s32))
 	    errh->error("%s has type %s", argname, argtype->description);
 	else if (cp_errno == CPE_OVERFLOW)
-	    errh->error("%s too large, max %d", argname, v->v.s32);
+	    errh->error("%s out of range, bound %d", argname, v->v.s32);
     } else
 	errh->error("%s has type %s", argname, argtype->description);
 }
@@ -4242,28 +4218,6 @@ cp_unparse_real2(uint32_t real, int frac_bits)
 
   return sa.take_string();
 }
-
-#undef TEST_REAL2
-#ifdef TEST_REAL2
-void
-test_unparse_real2()
-{
-#define TEST(s, frac_bits, result) { String q = (#s); uint32_t r; if (!cp_real2(q, (frac_bits), &r)) fprintf(stderr, "FAIL: %s unparsable\n", q.c_str()); else { String qq = cp_unparse_real2(r, (frac_bits)); fprintf(stderr, "%s: %s %d/%d %s\n", (qq == (result) ? "PASS" : "FAIL"), q.c_str(), r, (frac_bits), qq.c_str()); }}
-  TEST(0.418, 8, "0.418");
-  TEST(0.417, 8, "0.418");
-  TEST(0.416, 8, "0.414");
-  TEST(0.42, 8, "0.42");
-  TEST(0.3, 16, "0.3");
-  TEST(0.49, 16, "0.49");
-  TEST(0.499, 16, "0.499");
-  TEST(0.4999, 16, "0.4999");
-  TEST(0.49999, 16, "0.49998");
-  TEST(0.499999, 16, "0.5");
-  TEST(0.49998, 16, "0.49998");
-  TEST(0.999999, 16, "1");
-#undef TEST
-}
-#endif
 
 String
 cp_unparse_real2(int32_t real, int frac_bits)

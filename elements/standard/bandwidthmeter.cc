@@ -19,7 +19,7 @@
 #include <click/config.h>
 #include "bandwidthmeter.hh"
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 BandwidthMeter::BandwidthMeter()
@@ -43,12 +43,13 @@ BandwidthMeter::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("too few arguments to BandwidthMeter(bandwidth, ...)");
 
   Vector<unsigned> vals(conf.size(), 0);
+  BandwidthArg ba;
   for (int i = 0; i < conf.size(); i++)
-    if (!cp_bandwidth(conf[i], &vals[i]))
-      return errh->error("argument %d should be bandwidth (rate)", i+1);
+    if (!ba.parse(conf[i], vals[i]))
+      return errh->error("argument %d syntax error", i+1);
     else if (i > 0 && vals[i] <= vals[i-1])
       return errh->error("rate %d must be > rate %d", i+1, i);
-    else if (cp_errno == CPE_NOUNITS)
+    else if (ba.status == NumArg::status_unitless)
       errh->warning("no units for bandwidth argument %d, assuming Bps", i+1);
 
   unsigned max_value = 0xFFFFFFFF >> _rate.scale();

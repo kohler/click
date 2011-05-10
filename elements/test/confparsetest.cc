@@ -139,26 +139,26 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(IntArg().parse("-0", u32) == false);
     CHECK(IntArg().parse("4294967294", u32) == true && u32 == 4294967294U);
     CHECK(IntArg().parse("0xFFFFFFFE", u32) == true && u32 == 4294967294U);
-    CHECK_ERR(ia.parse("4294967296", u32, args) == false && u32 == 4294967294U, "overflow, max 4294967295");
+    CHECK_ERR(ia.parse("4294967296", u32, args) == false && u32 == 4294967294U, "out of range, bound 4294967295");
     CHECK(IntArg().parse_saturating("4294967296", u32) == true && u32 == 4294967295U);
     u32 = 97;
-    CHECK_ERR(ia.parse("42949672961939", u32, args) == false && u32 == 97, "overflow, max 4294967295");
+    CHECK_ERR(ia.parse("42949672961939", u32, args) == false && u32 == 97, "out of range, bound 4294967295");
     CHECK_ERR(ia.parse_saturating("42949672961939", u32, args) == true && u32 == 4294967295U, "");
     CHECK(IntArg().parse("0xFFFFFFFFF", u32) == false);
     CHECK(IntArg().parse_saturating("0xFFFFFFFFF", u32) == true && u32 == 0xFFFFFFFFU);
-    CHECK_ERR(ia.parse("4294967296", i32, args) == false, "overflow, max 2147483647");
+    CHECK_ERR(ia.parse("4294967296", i32, args) == false, "out of range, bound 2147483647");
     CHECK_ERR(ia.parse_saturating("4294967296", i32, args) == true && i32 == 2147483647, "");
     CHECK_ERR(ia.parse("2147483647", i32, args) == true && i32 == 2147483647, "");
-    CHECK_ERR(ia.parse("2147483648", i32, args) == false && i32 == 2147483647, "overflow, max 2147483647");
+    CHECK_ERR(ia.parse("2147483648", i32, args) == false && i32 == 2147483647, "out of range, bound 2147483647");
     CHECK_ERR(ia.parse_saturating("2147483648", i32, args) == true && i32 == 2147483647, "");
     CHECK_ERR(ia.parse("-2147483648", i32, args) == true && i32 == -2147483647 - 1, "");
-    CHECK_ERR(ia.parse("-2147483649", i32, args) == false && i32 == -2147483647 - 1, "overflow, min -2147483648");
+    CHECK_ERR(ia.parse("-2147483649", i32, args) == false && i32 == -2147483647 - 1, "out of range, bound -2147483648");
     i32 = 0;
     CHECK_ERR(ia.parse_saturating("-2147483649", i32, args) == true && i32 == -2147483647 - 1, "");
-    CHECK_ERR(ia.parse("-4294967296", i32, args) == false && i32 == -2147483647 - 1, "overflow, min -2147483648");
+    CHECK_ERR(ia.parse("-4294967296", i32, args) == false && i32 == -2147483647 - 1, "out of range, bound -2147483648");
     int8_t i8 = 0;
     CHECK_ERR(ia.parse("97", i8, args) == true && i8 == 97, "");
-    CHECK_ERR(ia.parse("128", i8, args) == false && i8 == 97, "overflow, max 127");
+    CHECK_ERR(ia.parse("128", i8, args) == false && i8 == 97, "out of range, bound 127");
     CHECK_ERR(ia.parse_saturating("128", i8, args) == true && i8 == 127, "");
 #if HAVE_LONG_LONG && SIZEOF_LONG_LONG == 8
     {
@@ -166,10 +166,34 @@ ConfParseTest::initialize(ErrorHandler *errh)
 	unsigned long long ull = 0;
 	CHECK_ERR(ia.parse("9223372036854775807", ll, args) == true && ll == 0x7FFFFFFFFFFFFFFFULL, "");
 	CHECK_ERR(ia.parse("-9223372036854775808", ll, args) == true && ll == (long long) 0x8000000000000000ULL, "");
-	CHECK_ERR(ia.parse("18446744073709551616", ull, args) == false && ull == 0, "overflow, max 18446744073709551615");
+	CHECK_ERR(ia.parse("18446744073709551616", ull, args) == false && ull == 0, "out of range, bound 18446744073709551615");
 	CHECK_ERR(ia.parse_saturating("18446744073709551616", ull, args) == true && ull == 0xFFFFFFFFFFFFFFFFULL, "");
     }
 #endif
+
+    bool b; (void) b;
+    CHECK(FixedPointArg(1).parse("0.5", i32) == true && i32 == 1);
+    CHECK(FixedPointArg(1).parse("-0.5", i32) == true && i32 == -1);
+#define CHECK_FIXEDPOINT(s, frac_bits, result) { String q = (#s); uint32_t r; \
+    if (!FixedPointArg((frac_bits)).parse(q, r)) \
+	return errh->error("%s:%d: %<%s%> unparseable", __FILE__, __LINE__, q.c_str()); \
+    String qq = cp_unparse_real2(r, (frac_bits)); \
+    if (qq != (result)) \
+	return errh->error("%s:%d: %<%s%> parsed and unparsed is %<%s%>, should be %<%s%>", __FILE__, __LINE__, q.c_str(), qq.c_str(), result); \
+}
+    CHECK_FIXEDPOINT(0.418, 8, "0.418");
+    CHECK_FIXEDPOINT(0.417, 8, "0.418");
+    CHECK_FIXEDPOINT(0.416, 8, "0.414");
+    CHECK_FIXEDPOINT(0.42, 8, "0.42");
+    CHECK_FIXEDPOINT(0.3, 16, "0.3");
+    CHECK_FIXEDPOINT(0.49, 16, "0.49");
+    CHECK_FIXEDPOINT(0.499, 16, "0.499");
+    CHECK_FIXEDPOINT(0.4999, 16, "0.4999");
+    CHECK_FIXEDPOINT(0.49999, 16, "0.49998");
+    CHECK_FIXEDPOINT(0.499999, 16, "0.5");
+    CHECK_FIXEDPOINT(0.49998, 16, "0.49998");
+    CHECK_FIXEDPOINT(0.999999, 16, "1");
+#undef CHECK_FIXEDPOINT
 
     CHECK(cp_real2("-0.5", 1, &i32) == true && i32 == -1);
     CHECK(cp_seconds_as("3600", 0, &u32) == true && u32 == 3600);
@@ -186,6 +210,12 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(cp_seconds("60m", &d) == true && d == 3600);
     CHECK(cp_seconds("1 hr", &d) == true && d == 3600);
 #endif
+
+    BandwidthArg bwarg;
+    CHECK(bwarg.parse("8", u32) == true && bwarg.status == NumArg::status_unitless && u32 == 8);
+    CHECK(bwarg.parse("8 baud", u32) == true && bwarg.status == NumArg::status_ok && u32 == 1);
+    CHECK(bwarg.parse("8Kbps", u32) == true && bwarg.status == NumArg::status_ok && u32 == 1000);
+    CHECK(bwarg.parse("8KBps", u32) == true && bwarg.status == NumArg::status_ok && u32 == 8000);
 
     {
 	IPAddress a, m;
