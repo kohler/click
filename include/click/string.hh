@@ -56,6 +56,11 @@ class String { public:
     inline String(const char *begin, const char *end) {
 	assign(begin, (end > begin ? end - begin : 0), false);
     }
+    /** @overload */
+    inline String(const unsigned char *begin, const unsigned char *end) {
+	assign(reinterpret_cast<const char *>(begin),
+	       (end > begin ? end - begin : 0), false);
+    }
 
     /** @brief Construct a String equal to "true" or "false" depending on the
      * value of @a x. */
