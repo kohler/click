@@ -126,11 +126,11 @@ elemlist:
 	@rm -f elements.conf
 	@$(MAKE) elements.conf
 elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
-	echo "userlevel @element_groups@" | $(top_builddir)/click-buildtool findelem -r userlevel -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) > elements.conf
+	$(call verbose_cmd,echo "userlevel @element_groups@" | $(top_builddir)/click-buildtool findelem -r userlevel -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) > elements.conf,FINDELEMENTS elements.conf)
 $(ELEMENTSCONF).mk: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
-	$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).mk
+	$(call verbose_cmd,$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).mk,CREATE $(ELEMENTSCONF).mk)
 $(ELEMENTSCONF).cc: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
-	$(top_builddir)/click-buildtool elem2export < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).cc
+	$(call verbose_cmd,$(top_builddir)/click-buildtool elem2export < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).cc,CREATE $(ELEMENTSCONF).cc)
 	@rm -f $(ELEMENTSCONF).d
 
 DEPFILES := $(wildcard *.d)
