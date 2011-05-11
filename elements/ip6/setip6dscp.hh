@@ -18,28 +18,27 @@
 #include <clicknet/ip6.h>
 CLICK_DECLS
 
-class SetIP6DSCP : public Element {
+class SetIP6DSCP : public Element { public:
 
-  uint32_t _dscp;
+    SetIP6DSCP();
+    ~SetIP6DSCP();
 
- public:
+    const char *class_name() const	{ return "SetIP6DSCP"; }
+    const char *port_count() const	{ return PORTS_1_1; }
 
-  SetIP6DSCP();
-  ~SetIP6DSCP();
+    uint8_t dscp() const		{ return ntohl(_dscp) >> IP6_DSCP_SHIFT; }
 
-  const char *class_name() const	{ return "SetIP6DSCP"; }
-  const char *port_count() const	{ return PORTS_1_1; }
-  const char *processing() const	{ return AGNOSTIC; }
+    int configure(Vector<String> &conf, ErrorHandler *errh);
+    bool can_live_reconfigure() const	{ return true; }
+    void add_handlers();
 
-  uint8_t dscp() const			{ return _dscp >> IP6_DSCP_SHIFT; }
+    inline Packet *smaction(Packet *p);
+    void push(int port, Packet *p);
+    Packet *pull(int port);
 
-  int configure(Vector<String> &, ErrorHandler *);
-  bool can_live_reconfigure() const	{ return true; }
-  void add_handlers();
+  private:
 
-  inline Packet *smaction(Packet *);
-  void push(int, Packet *p);
-  Packet *pull(int);
+    uint32_t _dscp;
 
 };
 
