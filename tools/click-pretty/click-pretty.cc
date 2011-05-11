@@ -1005,7 +1005,7 @@ void
 ElementsOutput::run(FILE *f)
 {
     // divide into columns
-    int which_col, ncol;
+    int which_col = 0, ncol = 0;
     parse_columns(_main_attrs["column"], which_col, ncol);
     create_entries();
     int per_col = ((_entries.size() - 1) / ncol) + 1;
