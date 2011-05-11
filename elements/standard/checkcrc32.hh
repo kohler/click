@@ -15,23 +15,19 @@ CLICK_DECLS
  * Otherwise, drop the packet.
  * =a SetCRC32
  */
+class CheckCRC32 : public Element { public:
 
-class EtherAddress;
+    CheckCRC32();
+    ~CheckCRC32();
 
-class CheckCRC32 : public Element {
-public:
-  CheckCRC32();
-  ~CheckCRC32();
+    const char *class_name() const		{ return "CheckCRC32"; }
+    const char *port_count() const		{ return PORTS_1_1; }
 
-  const char *class_name() const		{ return "CheckCRC32"; }
-  const char *port_count() const		{ return PORTS_1_1; }
-  const char *processing() const		{ return AGNOSTIC; }
+    Packet *simple_action(Packet *);
 
-  Packet *simple_action(Packet *);
+  private:
 
-private:
-
-  atomic_uint32_t _drops;
+    atomic_uint32_t _drops;
 
 };
 
