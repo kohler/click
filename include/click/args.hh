@@ -6,6 +6,11 @@
 #include <click/string.hh>
 #include <click/confparse.hh>
 #include <click/timestamp.hh>
+#if CLICK_BSDMODULE
+# include <machine/stdarg.h>
+#else
+# include <stdarg.h>
+#endif
 CLICK_DECLS
 class Element;
 class ErrorHandler;
