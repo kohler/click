@@ -1035,52 +1035,36 @@ cp_basic_integer(const char *begin, const char *end, int flags, int size,
 		 void *result)
 {
     IntArg ia(flags & 63);
-    IntArg::value_type parsed_value;
-    const char *x = ia.parse(begin, end, size < 0, parsed_value);
-    if (ia.status == IntArg::status_notsup) {
-	cp_errno = CPE_INVALID;
-	return begin;
-    } else if (ia.status == IntArg::status_inval
-	       || ((flags & cp_basic_integer_whole) && x != end)) {
+    IntArg::limb_type limbs[4];
+    int usize = size < 0 ? -size : size;
+    const char *x = ia.parse(begin, end,
+			     size < 0, usize,
+			     limbs, usize / sizeof(IntArg::limb_type));
+    if ((ia.status && ia.status != IntArg::status_range)
+	|| ((flags & cp_basic_integer_whole) && x != end)) {
 	cp_errno = CPE_FORMAT;
 	return begin;
-    }
-
-    IntArg::value_type value(parsed_value);
-    if (size < 0) {
-	size = -size;
-	IntArg::signed_value_type svalue(value),
-	    maxvalue = IntArg::signed_value_type((IntArg::value_type(1) << (8 * size - 1)) - 1),
-	    minvalue = -IntArg::signed_value_type(IntArg::value_type(maxvalue) + 1);
-	if (svalue < minvalue)
-	    value = minvalue;
-	else if (svalue > maxvalue)
-	    value = maxvalue;
-    } else if (size != (int) sizeof(IntArg::value_type)) {
-	IntArg::value_type maxvalue = (IntArg::value_type(1) << (8 * size)) - 1;
-	if (value > maxvalue)
-	    value = maxvalue;
-    }
-    if (value == parsed_value && ia.status == IntArg::status_ok)
+    } else if (ia.status == IntArg::status_ok)
 	cp_errno = CPE_OK;
     else
 	cp_errno = CPE_OVERFLOW;
 
     // assign
-    if (size == 1)
-	*static_cast<unsigned char *>(result) = value;
-    else if (size == sizeof(short))
-	*static_cast<unsigned short *>(result) = value;
-    else if (size == sizeof(int))
-	*static_cast<unsigned int *>(result) = value;
-    else if (size == sizeof(long))
-	*static_cast<unsigned long *>(result) = value;
+    if (usize == 1)
+	extract_integer(limbs, *static_cast<unsigned char *>(result));
+    else if (usize == sizeof(short))
+	extract_integer(limbs, *static_cast<unsigned short *>(result));
+    else if (usize == sizeof(int))
+	extract_integer(limbs, *static_cast<unsigned *>(result));
+    else if (usize == sizeof(long))
+	extract_integer(limbs, *static_cast<unsigned long *>(result));
 #if HAVE_LONG_LONG
-    else if (size == sizeof(long long))
-	*static_cast<unsigned long long *>(result) = value;
-#elif HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG
-    else if (size == sizeof(int64_t))
-	*static_cast<uint64_t *>(result) = value;
+    else if (usize == sizeof(long long))
+	extract_integer(limbs, *static_cast<unsigned long long *>(result));
+#endif
+#if HAVE_INT64_TYPES && (!HAVE_LONG_LONG || (!HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG))
+    else if (usize == sizeof(int64_t))
+	extract_integer(limbs, *static_cast<uint64_t *>(result));
 #endif
     else
 	assert(0);

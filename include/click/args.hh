@@ -818,43 +818,42 @@ struct NumArg {
   @sa SaturatingIntArg */
 struct IntArg : public NumArg {
 
-    typedef click_uint_large_t value_type;
-    typedef click_int_large_t signed_value_type;
+    typedef uint32_t limb_type;
 
     IntArg(int b = 0)
 	: base(b) {
     }
 
-    const char *parse(const char *begin, const char *end, bool is_signed,
-		      value_type &result);
+    const char *parse(const char *begin, const char *end,
+		      bool is_signed, int size,
+		      limb_type *value, int nlimb);
 
     template<typename V>
     bool parse_saturating(const String &str, V &result, const ArgContext &args = blank_args) {
 	(void) args;
 	constexpr bool is_signed = integer_traits<V>::is_signed;
-	typedef typename conditional<is_signed, signed_value_type, value_type>::type this_value_type;
-	value_type x;
-	if (parse(str.begin(), str.end(), is_signed, x) != str.end())
+	constexpr int nlimb = int((sizeof(V) + sizeof(limb_type) - 1) / sizeof(limb_type));
+	limb_type x[nlimb];
+	if (parse(str.begin(), str.end(), is_signed, int(sizeof(V)), x, nlimb)
+	    != str.end())
 	    status = status_inval;
 	if (status && status != status_range)
 	    return false;
-	else {
-	    result = x;
-	    if (result != this_value_type(x)) {
-		result = saturated(is_signed ? -int(sizeof(V)) : int(sizeof(V)), x);
-		status = status_range;
-	    }
-	    return true;
-	}
+	typedef typename make_unsigned<V>::type unsigned_v_type;
+	extract_integer(x, reinterpret_cast<unsigned_v_type &>(result));
+	return true;
     }
 
     template<typename V>
     bool parse(const String &str, V &result, const ArgContext &args = blank_args) {
 	V x;
-	if (!parse_saturating(str, x, args) || (status && status != status_range))
+	if (!parse_saturating(str, x, args)
+	    || (status && status != status_range))
 	    return false;
 	else if (status == status_range) {
-	    report_error(args, integer_traits<V>::is_signed, value_type(x));
+	    typedef typename make_unsigned<V>::type unsigned_v_type;
+	    report_error(args, integer_traits<V>::negative(x),
+			 unsigned_v_type(x));
 	    return false;
 	} else {
 	    result = x;
@@ -862,17 +861,15 @@ struct IntArg : public NumArg {
 	}
     }
 
-    static constexpr int threshold_high_bits = 6;
-    static constexpr int threshold_shift = 8 * sizeof(value_type) - threshold_high_bits;
-    static constexpr value_type threshold = (value_type) 1 << threshold_shift;
-
     int base;
     int status;
 
   private:
 
-    void report_error(const ArgContext &args, bool is_signed, value_type value) const;
-    value_type saturated(int signed_size, value_type value) const;
+    static const char *span(const char *begin, const char *end,
+			    bool is_signed, int &b);
+    void report_error(const ArgContext &args, bool negative,
+		      click_uint_large_t value) const;
 
 };
 

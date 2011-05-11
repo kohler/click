@@ -21,6 +21,7 @@
 #include <click/args.hh>
 #include <click/error.hh>
 #include <click/router.hh>
+#include <click/bigint.hh>
 #if !CLICK_TOOL
 # include <click/nameinfo.hh>
 # include <click/packet_anno.hh>
@@ -469,18 +470,12 @@ Args::complete()
 
 
 const char *
-IntArg::parse(const char *begin, const char *end, bool is_signed,
-	      value_type &value)
+IntArg::span(const char *begin, const char *end, bool is_signed, int &b)
 {
     const char *s = begin;
-    bool negative = false;
-    if (s < end && is_signed && *s == '-') {
-	negative = true;
-	++s;
-    } else if (s < end && *s == '+')
+    if (s != end && ((is_signed && *s == '-') || *s == '+'))
 	++s;
 
-    int b = base;
     if ((b == 0 || b == 16) && s + 2 < end
 	&& *s == '0' && (s[1] == 'x' || s[1] == 'X')) {
 	s += 2;
@@ -489,106 +484,104 @@ IntArg::parse(const char *begin, const char *end, bool is_signed,
 	       && *s == '0' && (s[1] == 'b' || s[1] == 'B')) {
 	s += 2;
 	b = 2;
-    } else if (b == 0 && s < end && *s == '0')
+    } else if (b == 0 && s != end && *s == '0')
 	b = 8;
     else if (b == 0)
 	b = 10;
-    else if (b < 2 || b > 36) {
-	status = status_notsup;
-	return begin;
-    }
 
-    const char *firstdigit = s, *lastdigit = s;
-    value_type v = 0;
-    status = status_ok;
-    for (; s < end; ++s) {
-	// find digit
-	int digit;
-	if (*s >= '0' && *s <= '9')
-	    digit = *s - '0';
-	else if (b > 10 && *s >= 'A' && *s <= 'Z')
-	    digit = *s - 'A' + 10;
-	else if (b > 10 && *s >= 'a' && *s <= 'z')
-	    digit = *s - 'a' + 10;
-	else if (*s == '_' && lastdigit + 1 == s)
-	    // skip underscores between digits
-	    continue;
+    int ndigits = (b > 10 ? 10 : b), nletters = (b > 10 ? b - 10 : 0);
+    const char *firstdigit = s, *lastdigit = s - 1;
+    for (; s != end; ++s) {
+	if (*s == '_' && lastdigit == s)
+	    /* allow underscores between digits */;
+	else if ((*s >= '0' && *s < '0' + ndigits)
+		 || (*s >= 'A' && *s < 'A' + nletters)
+		 || (*s >= 'a' && *s < 'a' + nletters))
+	    lastdigit = s + 1;
 	else
-	    digit = 36;
-	if (digit >= b)
 	    break;
-	lastdigit = s;
-	// check for overflow without divide
-	if (v <= threshold)
-	    v = v * b + digit;
-	else {
-	    // Let v = (msv * threshold) + lsv, where lsv < threshold.
-	    // Then new_value = (msv * threshold * b)
-	    //   + (lsv * threshold * b) + digit.
-	    value_type msv = (v >> threshold_shift) * b;
-	    value_type lsv = (v & (threshold - 1)) * b + digit;
-	    if (lsv >= threshold) {
-		msv += lsv >> threshold_shift;
-		lsv &= threshold - 1;
-	    }
-	    if (msv >= (1 << threshold_high_bits))
-		status = status_range;
-	    else
-		v = (msv << threshold_shift) + lsv;
-	}
     }
 
-    if (s == firstdigit && firstdigit > begin + 1)
+    if (s != firstdigit)
+	return lastdigit;
+    else if (firstdigit > begin + 1)
 	// Happens in cases like "0x!" or "+0x": parse the initial "0".
-	firstdigit = lastdigit = begin + (*begin == '0' ? 0 : 1);
-    else if (s == firstdigit) {
+	return firstdigit - 1;
+    else
+	return begin;
+}
+
+const char *
+IntArg::parse(const char *begin, const char *end, bool is_signed, int size,
+	      limb_type *value, int nlimb)
+{
+    int b = base;
+    const char *xend = span(begin, end, is_signed, b);
+    if (b < 2 || b > 36 || xend == begin) {
 	status = status_inval;
 	return begin;
     }
 
-    if (is_signed) {
-	value_type boundary =
-	    value_type(integer_traits<signed_value_type>::const_max) + negative;
-	if (v > boundary)
+    constexpr limb_type threshold = integer_traits<limb_type>::const_max / 36;
+    uint32_t v0 = 0;
+    memset(value, 0, sizeof(limb_type) * nlimb);
+    int nletters = (b > 10 ? b - 10 : 0);
+    status = status_ok;
+    for (const char *s = begin; s != xend; ++s) {
+	int digit;
+	if (*s >= '0' && *s <= '9')
+	    digit = *s - '0';
+	else if (*s >= 'A' && *s < 'A' + nletters)
+	    digit = *s - 'A' + 10;
+	else if (*s >= 'a' && *s < 'a' + nletters)
+	    digit = *s - 'a' + 10;
+	else
+	    continue;
+	if (v0 < threshold)
+	    value[0] = v0 = v0 * b + digit;
+	else if (Bigint<limb_type>::multiply_half(value, value, nlimb, b, digit))
 	    status = status_range;
-	if (status == status_range)
-	    v = boundary;
-	if (negative)
-	    v = -v;
-    } else if (status == status_range)
-	v = integer_traits<value_type>::const_max;
-    value = v;
+    }
 
-    return lastdigit + 1;
+    bool negative = is_signed && *begin == '-';
+    int bitsize = size * 8 - is_signed;
+    constexpr int limb_bits = int(sizeof(limb_type)) * 8;
+
+    int bpos = 0;
+    for (limb_type *x = value; x != value + nlimb && status == status_ok;
+	 ++x, bpos += limb_bits)
+	if ((bpos >= bitsize && *x != 0)
+	    || (bpos < bitsize && bitsize < bpos + limb_bits
+		&& *x >= (1U << (bitsize - bpos)) + negative))
+	    status = status_range;
+
+    if (status == status_range) {
+	memset(value, negative ? 0 : 255, size);
+	if (is_signed)
+	    value[bitsize / limb_bits] ^= 1U << (bitsize & (limb_bits - 1));
+    }
+
+    if (negative)
+	for (limb_type *x = value; x != value + nlimb; ++x)
+	    *x = -*x;
+
+    return xend;
 }
 
 void
-IntArg::report_error(const ArgContext &args, bool is_signed, value_type value) const
+IntArg::report_error(const ArgContext &args, bool negative,
+		     click_uint_large_t value) const
 {
     if (args.errh() && status == status_range) {
-	const char *fmt;
-	if (is_signed && signed_value_type(value) < 0) {
-	    fmt = "out of range, bound -%s";
-	    value = -value;
-	} else
-	    fmt = "out of range, bound %s";
-	args.error(fmt, String(value).c_str());
+	const char *sgn = "-" + !negative;
+	args.error("out of range, bound %s%s", sgn, String(value).c_str());
     }
-}
-
-IntArg::value_type
-IntArg::saturated(int signed_size, value_type value) const
-{
-    if (signed_size < 0)
-	return (value_type(1) << (8 * -signed_size - 1)) - (signed_value_type(value) >= 0);
-    else
-	return ~value_type(0) >> (8 * (sizeof(value_type) - signed_size));
 }
 
 
 namespace {
-typedef IntArg::value_type value_type;
-typedef IntArg::signed_value_type signed_value_type;
+typedef click_uint_large_t value_type;
+typedef click_int_large_t signed_value_type;
 
 const char *
 preparse_fraction(const char *begin, const char *end, bool is_signed,
@@ -765,7 +758,7 @@ parse_fraction(const char *begin, const char *end,
 bool
 FixedPointArg::preparse(const String &str, bool is_signed, uint32_t &result)
 {
-    IntArg::value_type ivalue;
+    value_type ivalue;
     uint32_t fvalue;
     const char *end = parse_fraction(str.begin(), str.end(),
 				     is_signed, exponent_delta,
@@ -776,7 +769,7 @@ FixedPointArg::preparse(const String &str, bool is_signed, uint32_t &result)
 	return false;
 
     if (fvalue > (0xFFFFFFFFU - (1U << (31 - fraction_bits)))) {
-	if (ivalue < integer_traits<IntArg::value_type>::const_max)
+	if (ivalue < integer_traits<value_type>::const_max)
 	    ++ivalue;
 	else
 	    status = status_range;
