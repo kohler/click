@@ -70,9 +70,10 @@ class Bigint { public:
 	half_limb_bits = sizeof(limb_type) * 4
     };
     enum {
-	limb_high_bit = ((limb_type) 1 << (limb_bits - 1)),
-	limb_half = ((limb_type) 1 << half_limb_bits),
-	limb_low_mask = limb_half - 1
+	limb_high_bit = limb_type(1) << (limb_bits - 1),
+	limb_half = limb_type(1) << half_limb_bits,
+	limb_low_mask = limb_half - 1,
+	limb_zero = limb_type(0)
     };
 
     /** @brief Return the less significant half of @a x.
@@ -114,15 +115,34 @@ class Bigint { public:
 	half_limb_type al = low(a), ah = high(a);
 	half_limb_type bl = low(b), bh = high(b);
 
-	limb_type r0 = (limb_type) al * bl;
-	limb_type r3 = (limb_type) ah * bh;
+	limb_type r0 = limb_type(al) * bl;
+	limb_type r3 = limb_type(ah) * bh;
 
-	limb_type r1 = (limb_type) ah * bl;
-	limb_type r2 = (limb_type) al * bh + high(r0) + r1;
+	limb_type r1 = limb_type(ah) * bl;
+	limb_type r2 = limb_type(al) * bh + high(r0) + r1;
 	if (r2 < r1)
 	    r3 += limb_half;
 
 	x1 = r3 + high(r2);
+	x0 = (r2 << half_limb_bits) + low(r0);
+    }
+
+    /** @brief Multiply one-limb integer @a a by half-limb integer @a b,
+     * storing the result in [@a x1,@a x0].
+     * @param[out] x1 most significant limb of result
+     * @param[out] x0 least significant limb of result
+     * @param a multiplicand
+     * @param b multiplicand */
+    static void multiply_half(limb_type &x1, limb_type &x0,
+			      limb_type a, half_limb_type b) {
+	half_limb_type al = low(a), ah = high(a);
+
+	limb_type r0 = (limb_type) al * b;
+
+	limb_type r1 = (limb_type) ah * b;
+	limb_type r2 = high(r0) + r1;
+
+	x1 = (r2 < r1 ? limb_half : limb_zero) + high(r2);
 	x0 = (r2 << half_limb_bits) + low(r0);
     }
 
@@ -132,7 +152,7 @@ class Bigint { public:
      * (2**(2*limb_bits))/@a x - (2**limb_bits).  If this would yield
      * overflow, @a y is the largest possible number (i.e., only ones). */
     static limb_type inverse(limb_type x) {
-	limb_type y1 = ~x, y0 = ~(limb_type) 0;
+	limb_type y1 = ~x, y0 = ~limb_zero;
 
 	// now calculate [y1y0] / x
 	limb_type x1 = high(x), x0 = low(x);
@@ -180,6 +200,7 @@ class Bigint { public:
      * @param a points to @a n-limb multiplicand
      * @param n number of limbs in @a x and @a a
      * @param b 1-limb multiplicand
+     * @return overflow
      *
      * Like @a x += @a a * @a b.  Both @a x and @a a must have @a n limbs.  It
      * is safe for @a x and @a a to point to exactly the same memory, but they
@@ -194,6 +215,54 @@ class Bigint { public:
 	    carry = (x0 < carry) + x1;
 	    x0 += *x;
 	    carry += (x0 < *x);
+	    *x++ = x0;
+	} while (--n != 0);
+	return carry;
+    }
+
+    /** @brief Multiply @a n-limb integer @a a by 1-limb integer @a b, add
+     * 1-limb integer @a carry, and store the result in @a n-limb integer @a x.
+     * @param[in,out] x points to @a n-limb result
+     * @param a points to @a n-limb multiplicand
+     * @param n number of limbs in @a x and @a a
+     * @param b 1-limb multiplicand
+     * @param carry 1-limb initial carry
+     * @return overflow
+     *
+     * Like @a x = (@a a * @a b) + @a carry.  Both @a x and @a a must have @a
+     * n limbs.  It is safe for @a x and @a a to point to exactly the same
+     * memory, but they must not otherwise overlap. */
+    static limb_type multiply(limb_type *x, const limb_type *a, int n,
+			      limb_type b, limb_type carry = 0) {
+	do {
+	    limb_type x0, x1;
+	    multiply(x1, x0, *a++, b);
+	    x0 += carry;
+	    carry = (x0 < carry) + x1;
+	    *x++ = x0;
+	} while (--n != 0);
+	return carry;
+    }
+
+    /** @brief Multiply @a n-limb integer @a a by 1/2-limb integer @a b, add
+     * 1-limb integer @a carry, and store the result in @a n-limb integer @a x.
+     * @param[in,out] x points to @a n-limb result
+     * @param a points to @a n-limb multiplicand
+     * @param n number of limbs in @a x and @a a
+     * @param b 1/2-limb multiplicand
+     * @param carry 1-limb initial carry
+     * @return overflow
+     *
+     * Like @a x = (@a a * @a b) + @a carry.  Both @a x and @a a must have @a
+     * n limbs.  It is safe for @a x and @a a to point to exactly the same
+     * memory, but they must not otherwise overlap. */
+    static limb_type multiply_half(limb_type *x, const limb_type *a, int n,
+				   half_limb_type b, limb_type carry = 0) {
+	do {
+	    limb_type x0, x1;
+	    multiply_half(x1, x0, *a++, b);
+	    x0 += carry;
+	    carry = (x0 < carry) + x1;
 	    *x++ = x0;
 	} while (--n != 0);
 	return carry;
@@ -308,7 +377,7 @@ class Bigint { public:
     static void preinverted_divide(limb_type &q, limb_type &r,
 				   limb_type a1, limb_type a0, limb_type b,
 				   limb_type b_inverse) {
-	limb_type a0_mask = (a0 & limb_high_bit ? ~(limb_type) 0 : (limb_type) 0);
+	limb_type a0_mask = (a0 & limb_high_bit ? ~limb_zero : limb_zero);
 	limb_type a0_adjusted = a0 + (b & a0_mask);
 	limb_type x1, x0;
 	multiply(x1, x0, b_inverse, a1 - a0_mask);

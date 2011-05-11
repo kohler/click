@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2011 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -145,6 +146,11 @@ BigintTest::initialize(ErrorHandler *errh)
 
     uint32_t x[3] = { 3481, 592182, 3024921038U };
     CHECK0(bigint::unparse_clear(x, 3) == "55799944231168388787108580761");
+
+    x[0] = 10;
+    x[1] = 0;
+    CHECK0(bigint::multiply(x, x, 2, 10) == 0 && x[0] == 100 && x[1] == 0);
+    CHECK0(bigint::multiply(x, x, 2, 4191384139U) == 0 && x[0] == 0x9698A54CU && x[1] == 0x61U);
 
     errh->message("All tests pass!");
     return 0;
