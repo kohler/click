@@ -31,14 +31,16 @@ ccompile_nodep = $(COMPILE) $(1)
 cxxcompile = $(CXXCOMPILE) $(DEPCFLAGS) $(1)
 cxxcompile_nodep = $(CXXCOMPILE) $(1)
 cxxlink = $(CXXLINK) $(1)
-verbose_cmd = $(1)
+x_verbose_cmd = $(1) $(3)
+verbose_cmd = $(1) $(3)
 else
 ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(DEPCFLAGS) $(1)
 ccompile_nodep = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
 cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(DEPCFLAGS) $(1)
 cxxcompile_nodep = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
 cxxlink = @/bin/echo ' ' $(2) $@ && $(CXXLINK) $(1)
-verbose_cmd = @/bin/echo ' ' $(2) && $(1)
+x_verbose_cmd = $(if $(2),/bin/echo ' ' $(2) $(3) &&,) $(1) $(3)
+verbose_cmd = @$(x_verbose_cmd)
 endif
 
 .SUFFIXES:
@@ -116,7 +118,7 @@ $(DRIVER): Makefile libclick.a $(OBJS)
 
 libclick.a: Makefile $(LIBOBJS)
 	$(call verbose_cmd,$(AR_CREATE) libclick.a $(LIBOBJS),AR libclick.a)
-	$(call verbose_cmd,$(RANLIB) libclick.a,RANLIB libclick.a)
+	$(call verbose_cmd,$(RANLIB),RANLIB,libclick.a)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -126,11 +128,11 @@ elemlist:
 	@rm -f elements.conf
 	@$(MAKE) elements.conf
 elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
-	$(call verbose_cmd,echo "userlevel @element_groups@" | $(top_builddir)/click-buildtool findelem -r userlevel -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) > elements.conf,FINDELEMENTS elements.conf)
+	$(call verbose_cmd,echo "userlevel @element_groups@" | $(top_builddir)/click-buildtool findelem -r userlevel -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) >,FINDELEMENTS,elements.conf)
 $(ELEMENTSCONF).mk: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
-	$(call verbose_cmd,$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).mk,CREATE $(ELEMENTSCONF).mk)
+	$(call verbose_cmd,$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" < $(ELEMENTSCONF).conf >,CREATE,$(ELEMENTSCONF).mk)
 $(ELEMENTSCONF).cc: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
-	$(call verbose_cmd,$(top_builddir)/click-buildtool elem2export < $(ELEMENTSCONF).conf > $(ELEMENTSCONF).cc,CREATE $(ELEMENTSCONF).cc)
+	$(call verbose_cmd,$(top_builddir)/click-buildtool elem2export < $(ELEMENTSCONF).conf >,CREATE,$(ELEMENTSCONF).cc)
 	@rm -f $(ELEMENTSCONF).d
 
 DEPFILES := $(wildcard *.d)
@@ -139,13 +141,13 @@ include $(DEPFILES)
 endif
 
 install: $(INSTALLPROGS) install-lib
-	$(mkinstalldirs) $(DESTDIR)$(bindir)
-	for i in $(INSTALLPROGS); do $(INSTALL) $$i $(DESTDIR)$(bindir)/$$i; done
+	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(bindir))
+	@for i in $(INSTALLPROGS); do $(call x_verbose_cmd,$(INSTALL) $$i,INSTALL,$(DESTDIR)$(bindir)/$$i); done
 install-include:
 	@:
 install-lib: $(INSTALLLIBS)
-	$(mkinstalldirs) $(DESTDIR)$(libdir)
-	for i in $(INSTALLLIBS); do $(INSTALL) $$i $(DESTDIR)$(libdir)/$$i; done
+	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(libdir))
+	@for i in $(INSTALLLIBS); do $(call x_verbose_cmd,$(INSTALL) $$i,INSTALL,$(DESTDIR)$(libdir)/$$i); done
 install-man:
 	@:
 uninstall:

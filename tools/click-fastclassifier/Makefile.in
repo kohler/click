@@ -31,10 +31,14 @@ ifeq ($(V),1)
 ccompile = $(COMPILE) $(1)
 cxxcompile = $(CXXCOMPILE) $(1)
 cxxlink = $(CXXLINK) $(1)
+x_verbose_cmd = $(1) $(3)
+verbose_cmd = $(1) $(3)
 else
 ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
 cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
 cxxlink = @/bin/echo ' ' $(2) $@ && $(CXXLINK) $(1)
+x_verbose_cmd = $(if $(2),/bin/echo ' ' $(2) $(3) &&,) $(1) $(3)
+verbose_cmd = @$(x_verbose_cmd)
 endif
 
 .SUFFIXES:
@@ -90,8 +94,8 @@ endif
 
 install: $(LIBCLICKTOOL) install-local
 install-local: all-local
-	$(mkinstalldirs) $(DESTDIR)$(bindir)
-	$(INSTALL) click-fastclassifier $(DESTDIR)$(bindir)/click-fastclassifier
+	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(bindir))
+	$(call verbose_cmd,$(INSTALL) click-fastclassifier,INSTALL,$(DESTDIR)$(bindir)/click-fastclassifier)
 uninstall:
 	/bin/rm -f $(DESTDIR)$(bindir)/click-fastclassifier
 

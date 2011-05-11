@@ -31,10 +31,14 @@ ifeq ($(V),1)
 ccompile = $(COMPILE) $(1)
 cxxcompile = $(CXXCOMPILE) $(1)
 cxxlink = $(CXXLINK) $(1)
+x_verbose_cmd = $(1) $(3)
+verbose_cmd = $(1) $(3)
 else
 ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
 cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
 cxxlink = @/bin/echo ' ' $(2) $@ && $(CXXLINK) $(1)
+x_verbose_cmd = $(if $(2),/bin/echo ' ' $(2) $(3) &&,) $(1) $(3)
+verbose_cmd = @$(x_verbose_cmd)
 endif
 
 .SUFFIXES:
@@ -94,9 +98,9 @@ endif
 
 install: $(LIBCLICKTOOL) install-local
 install-local: all-local
-	$(mkinstalldirs) $(DESTDIR)$(sbindir)
-	$(INSTALL) click-install $(DESTDIR)$(sbindir)/click-install
-	$(INSTALL) click-uninstall $(DESTDIR)$(sbindir)/click-uninstall
+	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(sbindir))
+	$(call verbose_cmd,$(INSTALL) click-install,INSTALL,$(DESTDIR)$(sbindir)/click-install)
+	$(call verbose_cmd,$(INSTALL) click-uninstall,INSTALL,$(DESTDIR)$(sbindir)/click-uninstall)
 uninstall:
 	/bin/rm -f $(DESTDIR)$(sbindir)/click-install $(DESTDIR)$(sbindir)/click-uninstall
 

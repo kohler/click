@@ -35,13 +35,15 @@ ccompile = $(COMPILE) $(1)
 build_ccompile = $(BUILD_COMPILE) $(1)
 cxxcompile = $(CXXCOMPILE) $(1)
 build_cxxcompile = $(BUILD_CXXCOMPILE) $(1)
-verbose_cmd = $(1)
+x_verbose_cmd = $(1) $(3)
+verbose_cmd = $(1) $(3)
 else
 ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
 build_ccompile = @/bin/echo ' ' $(2) $< && $(BUILD_COMPILE) $(1)
 cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
 build_cxxcompile = @/bin/echo ' ' $(2) $< && $(BUILD_CXXCOMPILE) $(1)
-verbose_cmd = @/bin/echo ' ' $(2) && $(1)
+x_verbose_cmd = $(if $(2),/bin/echo ' ' $(2) $(3) &&,) $(1) $(3)
+verbose_cmd = @$(x_verbose_cmd)
 endif
 
 .SUFFIXES:
@@ -120,11 +122,11 @@ endif
 
 install: install-local
 install-lib install-local: libclicktool.a install-include
-	$(mkinstalldirs) $(DESTDIR)$(libdir)
-	$(INSTALL) libclicktool.a $(DESTDIR)$(libdir)/libclicktool.a
+	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(libdir))
+	$(call verbose_cmd,$(INSTALL) libclicktool.a,INSTALL,$(DESTDIR)$(libdir)/libclicktool.a)
 install-include:
-	$(mkinstalldirs) $(DESTDIR)$(toolincludedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/*.hh $(DESTDIR)$(toolincludedir)
+	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(toolincludedir))
+	$(call verbose_cmd,$(INSTALL_DATA_IF_CHANGED) $(srcdir)/*.hh,INSTALLHEADERS,$(DESTDIR)$(toolincludedir))
 uninstall:
 	/bin/rm -f $(DESTDIR)$(libdir)/libclicktool.a
 	cd $(srcdir); for i in *.hh; do /bin/rm -f $(DESTDIR)$(toolincludedir)/$$i; done
