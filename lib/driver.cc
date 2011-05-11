@@ -461,6 +461,12 @@ click_static_cleanup()
     delete _click_lexer;
     _click_lexer = 0;
 
+#if !(CLICK_LINUXMODULE || CLICK_BSDMODULE)
+    delete[] provisions;
+    provisions = 0;
+    nprovisions = provisions_cap = 0;
+#endif
+
     click_unexport_elements();
 
     Router::static_cleanup();
