@@ -673,8 +673,8 @@ Element::set_nports(int new_ninputs, int new_noutputs)
  * Click extracts port count specifiers from the source for use by tools.  For
  * Click to find a port count specifier, the function definition must appear
  * inline, on a single line, inside the element class's declaration, and must
- * return a C string constant.  It should also have public accessibility.
- * Here's an acceptable port_count() definition:
+ * return a C string constant (or a name below).  It should also have public
+ * accessibility.  Here's an acceptable port_count() definition:
  *
  * @code
  * const char *port_count() const     { return "1/1"; }
