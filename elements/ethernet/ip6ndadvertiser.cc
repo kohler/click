@@ -114,7 +114,7 @@ IP6NDAdvertiser::make_response(u_char dha[6],   /*  des eth address */
   //set ip6 header
   ip6->ip6_flow = 0;		// set flow to 0 (includes version)
   ip6->ip6_v = 6;		// then set version to 6
-  ip6->ip6_plen=htons(sizeof(click_nd_adv));
+  ip6->ip6_plen = htons(sizeof(click_nd_adv));
   ip6->ip6_nxt=0x3a; //i.e. protocal: icmp6 message
   ip6->ip6_hlim=0xff; //indicate no router has processed it
   ip6->ip6_src = IP6Address(spa);

@@ -39,8 +39,8 @@ IP6Encap::configure(Vector<String> &conf, ErrorHandler *errh)
     String     dst_str;
     uint32_t   flow = 0;
     int        proto;
-    uint32_t   hlim = 250;
-    uint32_t   ip_class = 0;
+    uint8_t    hlim = 250;
+    uint8_t    ip_class = 0;
 
     memset(&_iph6, 0, sizeof(click_ip6));
 
@@ -62,9 +62,7 @@ IP6Encap::configure(Vector<String> &conf, ErrorHandler *errh)
     else if (!cp_ip6_address(dst_str, _iph6.ip6_dst.s6_addr, this))
         return errh->error("DST argument should be IP address or 'DST_ANNO'");
     // set up IP6 header
-    _iph6.ip6_flow = flow;	/* must set first: overlaps vfc */
-    _iph6.ip6_v = 6;
-    _iph6.ip6_tc = ip_class;
+    _iph6.ip6_flow = htonl((6 << IP6_V_SHIFT) | (ip_class << IP6_CLASS_SHIFT) | flow);
     _iph6.ip6_plen = 0;
     _iph6.ip6_nxt = proto;
     _iph6.ip6_hlim = hlim;

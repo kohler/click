@@ -19,6 +19,8 @@
 #include <click/config.h>
 #include "packettest.hh"
 #include <click/error.hh>
+#include <clicknet/ip.h>
+#include <clicknet/ip6.h>
 CLICK_DECLS
 
 PacketTest::PacketTest()
@@ -97,7 +99,6 @@ PacketTest::initialize(ErrorHandler *errh)
     p->kill();
 #endif
 
-#if 1
     // test shift_data()
     p = Packet::make(10, lowers, 60, 4);
     CHECK(p->headroom() == 10 && p->tailroom() == 4);
@@ -139,7 +140,21 @@ PacketTest::initialize(ErrorHandler *errh)
     CHECK_DATA(p->data(), lowers + 2, 58);
     CHECK_ALIGNED(p->data());
     p->kill();
-#endif
+
+    // Also check some packet header definition properties.
+    union {
+	click_ip ip4;
+	click_ip6 ip6;
+	uint32_t u32[10];
+    } fakehdr;
+    fakehdr.u32[0] = htonl(0x456789AB);
+    CHECK(fakehdr.ip4.ip_v == 4);
+    CHECK(fakehdr.ip4.ip_hl == 5);
+    CHECK(fakehdr.ip4.ip_tos == 0x67);
+    CHECK(fakehdr.ip4.ip_len == htons(0x89AB));
+    CHECK(fakehdr.ip6.ip6_v == 4);
+    CHECK(fakehdr.ip6.ip6_vfc == 0x45);
+    CHECK(fakehdr.ip6.ip6_flow == htonl(0x456789AB));
 
     errh->message("All tests pass!");
     return 0;
