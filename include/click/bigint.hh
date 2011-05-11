@@ -112,19 +112,7 @@ class Bigint { public:
      * @param b multiplicand */
     static void multiply(limb_type &x1, limb_type &x0,
 			 limb_type a, limb_type b) {
-	half_limb_type al = low(a), ah = high(a);
-	half_limb_type bl = low(b), bh = high(b);
-
-	limb_type r0 = limb_type(al) * bl;
-	limb_type r3 = limb_type(ah) * bh;
-
-	limb_type r1 = limb_type(ah) * bl;
-	limb_type r2 = limb_type(al) * bh + high(r0) + r1;
-	if (r2 < r1)
-	    r3 += limb_half;
-
-	x1 = r3 + high(r2);
-	x0 = (r2 << half_limb_bits) + low(r0);
+	int_multiply(a, b, x0, x1);
     }
 
     /** @brief Multiply one-limb integer @a a by half-limb integer @a b,
@@ -135,15 +123,19 @@ class Bigint { public:
      * @param b multiplicand */
     static void multiply_half(limb_type &x1, limb_type &x0,
 			      limb_type a, half_limb_type b) {
-	half_limb_type al = low(a), ah = high(a);
+	if (has_fast_int_multiply<limb_type>::value)
+	    multiply(x1, x0, a, b);
+	else {
+	    half_limb_type al = low(a), ah = high(a);
 
-	limb_type r0 = (limb_type) al * b;
+	    limb_type r0 = (limb_type) al * b;
 
-	limb_type r1 = (limb_type) ah * b;
-	limb_type r2 = high(r0) + r1;
+	    limb_type r1 = (limb_type) ah * b;
+	    limb_type r2 = high(r0) + r1;
 
-	x1 = (r2 < r1 ? limb_half : limb_zero) + high(r2);
-	x0 = (r2 << half_limb_bits) + low(r0);
+	    x1 = (r2 < r1 ? limb_half : limb_zero) + high(r2);
+	    x0 = (r2 << half_limb_bits) + low(r0);
+	}
     }
 
     /** @brief Return the inverse of limb @a x.

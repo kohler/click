@@ -283,6 +283,38 @@ struct make_unsigned {
 };
 
 
+/** @cond never */
+template<typename T, typename Thalf>
+struct make_fast_half_integer {
+    typedef T type;
+    typedef Thalf half_type;
+    static constexpr int half_bits = int(sizeof(type) * 4);
+    static constexpr type half_value = type(1) << half_bits;
+    static half_type low(type x) {
+	return x & (half_value - 1);
+    }
+    static half_type high(type x) {
+	return x >> (sizeof(type) * 4);
+    }
+};
+
+/** @class fast_half_integer
+  @brief Type transformation for big integers. */
+template<typename T> struct fast_half_integer : public make_fast_half_integer<T, T> {};
+
+#if SIZEOF_LONG >= 8 && SIZEOF_LONG <= 2 * SIZEOF_INT
+template<> struct fast_half_integer<unsigned long> : public make_fast_half_integer<unsigned long, unsigned int> {};
+#endif
+
+#if HAVE_LONG_LONG && SIZEOF_LONG_LONG <= 2 * SIZEOF_INT
+template<> struct fast_half_integer<unsigned long long> : public make_fast_half_integer<unsigned long long, unsigned int> {};
+#endif
+
+#if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG_LONG && !HAVE_INT64_IS_LONG && SIZEOF_INT >= 4
+template <> struct fast_half_integer<uint64_t> : public make_fast_half_integer<uint64_t, unsigned int> {};
+#endif
+
+
 /** @class conditional
   @brief Conditional type transformation.
 
