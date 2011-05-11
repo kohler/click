@@ -2948,7 +2948,7 @@ default_storefunc(cp_value *v  CP_CONTEXT)
 
   case cpiSize: {
       size_t *sizestore = (size_t *) v->store;
-      *sizestore = *((size_t *) v->v.size);
+      *sizestore = v->v.size;
       break;
   }
 

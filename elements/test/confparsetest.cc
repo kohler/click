@@ -418,6 +418,13 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(click_strcmp("a1.2", "a1a") > 0);
 #endif
 
+    Vector<String> conf;
+    conf.push_back("SIZE 123456789");
+    size_t test_size;
+    CHECK(cp_va_kparse(conf, this, errh,
+                       "SIZE", 0, cpSize, &test_size,
+                       cpEnd) == 1 && test_size == 123456789);
+
     errh->message("All tests pass!");
     return 0;
 }
