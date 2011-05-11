@@ -189,10 +189,15 @@ class Task { public:
 	    true_reschedule();
     }
 
-    /** @brief Reschedule a task from that task's callback function.
+    /** @brief Reschedule a task from the task's callback function.
      *
-     * It is an error to call fast_reschedule() outside of the task's own
-     * run_task() callback function.
+     * @warning fast_reschedule() may only be called while that task is being
+     * fired.  That is, Task::fire() calls the task's callback function (often
+     * Element::run_task()), which may call fast_reschedule() to reschedule
+     * the task.  It is a serious error to call @a task.fast_reschedule() at
+     * other times.  For instance, if MyElement::run_task() calls
+     * fast_reschedule(), then it is a serious error to call
+     * MyElement::run_task() from MyElement::run_timer().
      */
     inline void fast_reschedule();
 
