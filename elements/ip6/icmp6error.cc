@@ -176,7 +176,7 @@ ICMP6Error::simple_action(Packet *p)
 
   //set ip6 header
   nip = (click_ip6 *) q->data();
-  nip->ip6_flow = 0;
+  nip->ip6_flow = 0;	/* must set first: overlaps vfc */
   nip->ip6_v = 6;
   nip->ip6_plen = htons(q->length()-40);
   nip->ip6_nxt = IP_PROTO_ICMP6;  /* next header */

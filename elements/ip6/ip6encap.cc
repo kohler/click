@@ -62,9 +62,9 @@ IP6Encap::configure(Vector<String> &conf, ErrorHandler *errh)
     else if (!cp_ip6_address(dst_str, _iph6.ip6_dst.s6_addr, this))
         return errh->error("DST argument should be IP address or 'DST_ANNO'");
     // set up IP6 header
+    _iph6.ip6_flow = flow;	/* must set first: overlaps vfc */
     _iph6.ip6_v = 6;
     _iph6.ip6_tc = ip_class;
-    _iph6.ip6_flow = flow;
     _iph6.ip6_plen = 0;
     _iph6.ip6_nxt = proto;
     _iph6.ip6_hlim = hlim;

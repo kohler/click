@@ -71,7 +71,7 @@ ProtocolTranslator46::make_translate46(IP6Address src,
   click_udp *udp = (click_udp *)(ip6+1);
 
   //set ipv6 header
-  ip6->ip6_flow = 0;
+  ip6->ip6_flow = 0;	/* must set first: overlaps vfc */
   ip6->ip6_v = 6;
   ip6->ip6_plen = htons(ntohs(ip->ip_len)-sizeof(click_ip));
   ip6->ip6_hlim = ip->ip_ttl + 0x40-0xff;
