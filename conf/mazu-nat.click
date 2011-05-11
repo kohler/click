@@ -13,7 +13,7 @@
 // specified in AddressInfo. (No bare IP addresses occur in this
 // configuration; everything has been specified through AddressInfo.)
 //
-//     +---------+  
+//     +---------+
 //    /           \                                              +-------
 //   |             |       +-----------+           +-------+    /        
 //   |  internal   |   ********     ********   **********  |   |         
@@ -42,7 +42,7 @@
 // the documentation for IPRewriter before trying to understand the
 // configuration in depth.
 //
-// Note that the configuration will only forward TCP and UDP through the 
+// Note that the configuration will only forward TCP and UDP through the
 // firewall. ICMP is not passed. A nice exercise: Add ICMP support to the
 // configuration using the ICMPRewriter and ICMPPingRewriter elements.
 //
@@ -120,7 +120,7 @@ IPRewriterPatterns(to_world_pat extern 50000-65535 - -,
 		to_server_pat intern 50000-65535 intern_server -);
 
 rw :: IPRewriter(// internal traffic to outside world
-		 pattern to_world_pat 0 1, 
+		 pattern to_world_pat 0 1,
 		 // external traffic redirected to 'intern_server'
 		 pattern to_server_pat 1 0,
 		 // internal traffic redirected to 'intern_server'
@@ -138,11 +138,11 @@ tcp_rw :: TCPRewriter(// internal traffic to outside world
 
 // OUTPUT PATH
 
-ip_to_extern :: GetIPAddress(16) 
+ip_to_extern :: GetIPAddress(16)
       -> CheckIPHeader
       -> EtherEncap(0x0800, extern:eth, extern_next_hop:eth)
       -> extern_dev;
-ip_to_intern :: GetIPAddress(16) 
+ip_to_intern :: GetIPAddress(16)
       -> CheckIPHeader
       -> [0]intern_arpq
       -> intern_dev;
@@ -211,7 +211,7 @@ ip_from_intern[0] -> my_ip_from_intern; // stuff for 10.0.0.1 from inside
 				// returning redirect HTTP traffic from server
   my_ip_from_intern[5] -> ip_to_host; // non TCP or UDP traffic, to linux
 ip_from_intern[1] -> ip_to_host; // other net 10 stuff, like broadcasts
-ip_from_intern[2] -> FTPPortMapper(tcp_rw, rw, to_world_pat 0 1)
+ip_from_intern[2] -> FTPPortMapper(tcp_rw, rw, 0)
 		-> [0]tcp_rw;	// FTP traffic for outside needs special
 				// treatment
 ip_from_intern[3] -> [0]rw;	// stuff for outside
