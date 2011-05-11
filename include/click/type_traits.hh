@@ -88,6 +88,8 @@ struct integer_traits<unsigned char> {
     static constexpr bool is_signed = false;
     typedef signed char signed_type;
     typedef unsigned char unsigned_type;
+    typedef unsigned char type;
+    static bool negative(type) { return false; }
 };
 
 template<>
@@ -99,6 +101,8 @@ struct integer_traits<signed char> {
     static constexpr bool is_signed = true;
     typedef signed char signed_type;
     typedef unsigned char unsigned_type;
+    typedef signed char type;
+    static bool negative(type x) { return x < 0; }
 };
 
 #if __CHAR_UNSIGNED__
@@ -106,12 +110,16 @@ template<>
 struct integer_traits<char> : public integer_traits<unsigned char> {
     static constexpr char const_min = 0;
     static constexpr char const_max = ~const_min;
+    typedef char type;
+    static bool negative(type) { return false; }
 };
 #else
 template<>
 struct integer_traits<char> : public integer_traits<signed char> {
     static constexpr char const_min = -128;
     static constexpr char const_max = 127;
+    typedef char type;
+    static bool negative(type x) { return x < 0; }
 };
 #endif
 
@@ -124,6 +132,8 @@ struct integer_traits<unsigned short> {
     static constexpr bool is_signed = false;
     typedef short signed_type;
     typedef unsigned short unsigned_type;
+    typedef unsigned short type;
+    static bool negative(type) { return false; }
 };
 
 template<>
@@ -135,6 +145,8 @@ struct integer_traits<short> {
     static constexpr bool is_signed = true;
     typedef short signed_type;
     typedef unsigned short unsigned_type;
+    typedef short type;
+    static bool negative(type x) { return x < 0; }
 };
 
 template<>
@@ -146,6 +158,8 @@ struct integer_traits<unsigned int> {
     static constexpr bool is_signed = false;
     typedef int signed_type;
     typedef unsigned int unsigned_type;
+    typedef unsigned int type;
+    static bool negative(type) { return false; }
 };
 
 template<>
@@ -157,6 +171,8 @@ struct integer_traits<int> {
     static constexpr bool is_signed = true;
     typedef int signed_type;
     typedef unsigned int unsigned_type;
+    typedef int type;
+    static bool negative(type x) { return x < 0; }
 };
 
 template<>
@@ -168,6 +184,8 @@ struct integer_traits<unsigned long> {
     static constexpr bool is_signed = false;
     typedef long signed_type;
     typedef unsigned long unsigned_type;
+    typedef unsigned long type;
+    static bool negative(type) { return false; }
 };
 
 template<>
@@ -179,6 +197,8 @@ struct integer_traits<long> {
     static constexpr bool is_signed = true;
     typedef long signed_type;
     typedef unsigned long unsigned_type;
+    typedef long type;
+    static bool negative(type x) { return x < 0; }
 };
 
 #if HAVE_LONG_LONG
@@ -191,6 +211,8 @@ struct integer_traits<unsigned long long> {
     static constexpr bool is_signed = false;
     typedef long long signed_type;
     typedef unsigned long long unsigned_type;
+    typedef unsigned long long type;
+    static bool negative(type) { return false; }
 };
 
 template<>
@@ -202,6 +224,8 @@ struct integer_traits<long long> {
     static constexpr bool is_signed = true;
     typedef long long signed_type;
     typedef unsigned long long unsigned_type;
+    typedef long long type;
+    static bool negative(type x) { return x < 0; }
 };
 #endif
 
@@ -215,6 +239,8 @@ struct integer_traits<uint64_t> {
     static constexpr bool is_signed = false;
     typedef int64_t signed_type;
     typedef uint64_t unsigned_type;
+    typedef uint64_t type;
+    static bool negative(type) { return false; }
 };
 
 template<>
@@ -226,6 +252,8 @@ struct integer_traits<int64_t> {
     static constexpr bool is_signed = true;
     typedef int64_t signed_type;
     typedef uint64_t unsigned_type;
+    typedef int64_t type;
+    static bool negative(type x) { return x < 0; }
 };
 #endif
 
@@ -273,5 +301,28 @@ template<typename T, typename F>
 struct conditional<false, T, F> {
     typedef F type;
 };
+
+
+template<int n, typename Limb, typename V>
+struct extract_integer_template {
+    static void extract(const Limb *x, V &value) {
+	extract_integer_template<n - 1, Limb, V>::extract(x + 1, value);
+	value = (value << (sizeof(Limb) * 8)) | *x;
+    }
+};
+
+template<typename Limb, typename V>
+struct extract_integer_template<1, Limb, V> {
+    static void extract(const Limb *x, V &value) {
+	value = x[0];
+    }
+};
+
+template<typename Limb, typename V>
+inline void extract_integer(const Limb *x, V &value) {
+    extract_integer_template<
+	int((sizeof(V) + sizeof(Limb) - 1) / sizeof(Limb)), Limb, V
+	>::extract(x, value);
+}
 
 #endif
