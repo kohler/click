@@ -628,6 +628,64 @@ preparse_fraction(const char *begin, const char *end, bool is_signed,
     return s;
 }
 
+template<typename V, typename L = uint32_t>
+struct fraction_accum {
+    enum { nlimb = (sizeof(V) / sizeof(L)) + 1 };
+    fraction_accum()
+	: zero(true) {
+	static_assert(sizeof(V) % sizeof(L) == 0, "V must be a size multiple of L");
+	for (int i = 0; i < nlimb; ++i)
+	    limbs[i] = 0;
+    }
+    void add_decimal_digit(int d) {
+	if (d || !zero) {
+	    zero = false;
+	    limbs[nlimb - 1] += d << 1;
+	    Bigint<L>::divide(limbs, limbs, nlimb, 10);
+	}
+    }
+    bool extract(V &value) {
+	if (zero)
+	    value = 0;
+	else {
+	    for (L *l = limbs; true; ++l)
+		if (++*l != 0)
+		    break;
+	    extract_integer(limbs, value);
+	    value >>= 1;
+	    if (limbs[nlimb - 1] & 1)
+		value |= V(1) << (sizeof(V) * 8 - 1);
+	}
+	return limbs[nlimb - 1] > 1;
+    }
+    bool is_zero() const {
+	return zero;
+    }
+    L limbs[nlimb];
+    bool zero;
+};
+
+#if HAVE_INT64_TYPES
+template<>
+struct fraction_accum<uint32_t, uint32_t> {
+    fraction_accum()
+	: accum(0) {
+    }
+    void add_decimal_digit(int d) {
+	accum = int_divide(accum + (uint64_t(d) << 33), 10);
+    }
+    bool extract(uint32_t &value) {
+	++accum;
+	value = (accum >> 1);
+	return accum >= (uint64_t(1) << 33);
+    }
+    bool is_zero() const {
+	return accum == 0;
+    }
+    uint64_t accum;
+};
+#endif
+
 #if 0
 const char *
 parse_decimal_fraction(const char *begin, const char *end, bool is_signed,
@@ -721,34 +779,27 @@ parse_fraction(const char *begin, const char *end,
     const char *x = s;
     while (x != end && *x != 'E' && *x != 'e')
 	++x;
-    uint64_t fwork = 0;
+    fraction_accum<uint32_t> fwork;
     while (x != s) {
 	--x;
-	if (*x == '0') {
-	    fwork = fwork ? int_divide(fwork, 10) : 0;
-	    ++integer_digits;
-	} else if (*x >= '1' && *x <= '9') {
-	    fwork = int_divide(fwork + (uint64_t(*x - '0') << 33), 10);
+	if (*x >= '0' && *x <= '9') {
+	    fwork.add_decimal_digit(*x - '0');
 	    ++integer_digits;
 	}
     }
-    while (integer_digits <= 0 && fwork) {
-	fwork = int_divide(fwork, 10);
+    while (integer_digits <= 0 && !fwork.is_zero()) {
+	fwork.add_decimal_digit(0);
 	++integer_digits;
     }
 
-    if (fwork > 0x1FFFFFFFEULL) {
-	if (ivalue == integer_traits<value_type>::const_max)
-	    status = NumArg::status_range;
-	else
-	    ++ivalue;
-	fwork = 0;
-    }
-
-    if (status == NumArg::status_range || fwork < 2)
+    if (status == NumArg::status_range)
 	fvalue = 0;
-    else
-	fvalue = (fwork + 1) >> 1;
+    else if (fwork.extract(fvalue)) {
+	if (ivalue != integer_traits<value_type>::const_max)
+	    ++ivalue;
+	else
+	    status = NumArg::status_range;
+    }
 
     return end;
 }
