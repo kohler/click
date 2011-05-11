@@ -330,7 +330,6 @@ uint64_t int_sqrt(uint64_t x);
 #endif
 
 
-#if HAVE_INT64_TYPES
 /** @brief Return @a a / @a b. */
 inline uint32_t int_divide(uint32_t a, uint32_t b) {
     return a / b;
@@ -341,6 +340,7 @@ inline int32_t int_divide(int32_t a, uint32_t b) {
     return a / b;
 }
 
+#if HAVE_INT64_TYPES
 /** @overload */
 inline uint64_t int_divide(uint64_t a, uint32_t b) {
 # if CLICK_LINUXMODULE && BITS_PER_LONG < 64
@@ -395,21 +395,17 @@ template<typename T>
 struct has_fast_int_multiply : public false_type {};
 
 #if defined(__i386__) || defined(__x86_64__)
-# if SIZEOF_INT == 4
 inline void int_multiply(unsigned a, unsigned b, unsigned &xlow, unsigned &xhigh)
 {
     __asm__("mul %2" : "=a" (xlow), "=d" (xhigh) : "r" (a), "a" (b) : "cc");
 }
-
 template<> struct has_fast_int_multiply<unsigned> : public true_type {};
-# endif
 
 # if SIZEOF_LONG == 4 || (defined(__x86_64__) && SIZEOF_LONG == 8)
 inline void int_multiply(unsigned long a, unsigned long b, unsigned long &xlow, unsigned long &xhigh)
 {
     __asm__("mul %2" : "=a" (xlow), "=d" (xhigh) : "r" (a), "a" (b) : "cc");
 }
-
 template<> struct has_fast_int_multiply<unsigned long> : public true_type {};
 # endif
 
@@ -418,7 +414,6 @@ inline void int_multiply(unsigned long long a, unsigned long long b, unsigned lo
 {
     __asm__("mul %2" : "=a" (xlow), "=d" (xhigh) : "r" (a), "a" (b) : "cc");
 }
-
 template<> struct has_fast_int_multiply<unsigned long long> : public true_type {};
 # endif
 #endif
