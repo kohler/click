@@ -202,7 +202,7 @@ AC_DEFUN([CLICK_PROG_KERNEL_CXX], [
 
 dnl
 dnl CLICK_CHECK_DYNAMIC_LINKING
-dnl Defines HAVE_DYNAMIC_LINKING and DL_LIBS if <dlfcn.h> and -ldl exist 
+dnl Defines HAVE_DYNAMIC_LINKING and DL_LIBS if <dlfcn.h> and -ldl exist
 dnl and work.  Also defines LDMODULEFLAGS, the flags to pass to the linker
 dnl when building a loadable module.
 dnl
@@ -235,7 +235,7 @@ AC_DEFUN([CLICK_CHECK_DYNAMIC_LINKING], [
 
 dnl
 dnl CLICK_CHECK_BUILD_DYNAMIC_LINKING
-dnl Defines HAVE_DYNAMIC_LINKING and DL_LIBS if <dlfcn.h> and -ldl exist 
+dnl Defines HAVE_DYNAMIC_LINKING and DL_LIBS if <dlfcn.h> and -ldl exist
 dnl and work, on the build system. Must have done CLICK_CHECK_DYNAMIC_LINKING
 dnl already.
 dnl
@@ -433,7 +433,7 @@ AC_DEFUN([CLICK_PROG_PERL5], [
     else
 	perl5="$PERL"
     fi
-    
+
     test "$perl5" != missing && $perl5 -e "$ac_foo" && perl5=missing
 
     if test "$perl5" = "missing"; then
@@ -606,7 +606,7 @@ dnl Checks endianness of machine.
 dnl
 
 AC_DEFUN([CLICK_CHECK_ENDIAN], [
-    AC_CHECK_HEADERS(endian.h machine/endian.h, 
+    AC_CHECK_HEADERS(endian.h machine/endian.h,
 dnl autoconf 2.53 versus autoconf 2.13
 		    if test "x$ac_header" != x; then
 		        endian_hdr=$ac_header
@@ -616,7 +616,7 @@ dnl autoconf 2.53 versus autoconf 2.13
 		    break, endian_hdr=no)
     if test "x$endian_hdr" != xno; then
 	AC_CACHE_CHECK(endianness, ac_cv_endian, [
-	    dnl can't use AC_PREPROC_IFELSE because it throws out the results
+	    dnl cannot use AC_PREPROC_IFELSE because it throws out the results
 	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
 [#]line __oline__ "configure"
@@ -764,7 +764,7 @@ dnl
 
 AC_DEFUN([CLICK_CHECK_LARGE_FILE_SUPPORT], [
     AC_LANG_C
-    AC_CACHE_CHECK([for large file support in C library], 
+    AC_CACHE_CHECK([for large file support in C library],
 	ac_cv_large_file_support,
 	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _LARGEFILE_SOURCE 1
 #define _FILE_OFFSET_BITS 64
