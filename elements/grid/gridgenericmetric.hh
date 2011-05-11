@@ -1,7 +1,6 @@
 #ifndef GRIDGENERICMETRIC_HH
 #define GRIDGENERICMETRIC_HH
 #include <click/element.hh>
-
 CLICK_DECLS
 
 class EtherAddress;
