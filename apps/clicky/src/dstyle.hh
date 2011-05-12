@@ -136,7 +136,6 @@ struct dactivity_style : public enable_ref_ptr {
     int type;
     double min_value;
     double max_value;
-    double rate_period;
     double decay;
     int autorefresh;
     int autorefresh_period;

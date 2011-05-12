@@ -84,19 +84,19 @@ class dactivity_decor : public ddecor { public:
     ref_ptr<dactivity_style> _das;
 
     struct sample {
-	double raw;
-	double cooked;
+	double value;
+	double metric;
 	double timestamp;
-	sample(double r, double c, double t)
-	    : raw(r), cooked(c), timestamp(t) {
+	sample(double v, double m, double t)
+	    : value(v), metric(m), timestamp(t) {
 	}
     };
 
     std::deque<sample> _samples;
-    double _drawn;
+    double _drawn_activity;
     guint _decay_source;
 
-    double clean_samples(double now, bool want_prev);
+    double get_activity(double now);
 
 };
 

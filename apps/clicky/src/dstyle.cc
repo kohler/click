@@ -156,10 +156,11 @@ fullness {\n\
 activity {\n\
     style: activity;\n\
     handler: count;\n\
-    decay: 5s;\n\
-    max-value: 3;\n\
+    decay: 0.2s;\n\
+    max-value: 1000;\n\
     type: rate;\n\
-    autorefresh: 1s;\n\
+    autorefresh: 0.1s;\n\
+    color: none, red;\n\
 }";
 
 
@@ -2090,13 +2091,9 @@ ref_ptr<dactivity_style> dcss_set::activity_style(PermString decor, crouter *cr,
 	String s = activity_pm[2].vstring("autorefresh");
 	sty->autorefresh = parse_autorefresh(s, "", &sty->autorefresh_period);
 	s = activity_pm[4].vstring("type");
-	if (s.starts_with("rate", 4)) {
+	if (s.starts_with("rate", 4))
 	    sty->type = dactivity_rate;
-	    s = s.substring(4);
-	    sty->rate_period = 1;
-	    (void) cp_seconds(cp_shift_spacevec(s), &sty->rate_period);
-	    sty->rate_period = std::max(sty->rate_period, 0.01);
-	} else
+	else
 	    sty->type = dactivity_absolute;
 	sty->max_value = activity_pm[5].vnumeric("max-value");
 	sty->min_value = activity_pm[6].vnumeric("min-value");

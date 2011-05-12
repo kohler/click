@@ -114,7 +114,7 @@ dactivity_decor::dactivity_decor(PermString name, crouter *cr, delt *e,
 				 ddecor *next)
     : ddecor(next), _name(name), _cr(cr), _e(e),
       _das(cr->ccss()->activity_style(_name, cr, e)),
-      _drawn(0), _decay_source(0)
+      _drawn_activity(0), _decay_source(0)
 {
     if (_das->handler)
 	e->handler_interest(cr, _das->handler, _das->autorefresh > 0, _das->autorefresh_period, true);
@@ -145,42 +145,38 @@ static double square(double d)
     return d * d;
 }
 
-double dactivity_decor::clean_samples(double now, bool want_prev)
+double dactivity_decor::get_activity(double now)
 {
-    double prev_sample = 0;
-    unsigned prev_max = (unsigned) -1;
-    double max = 0;
-    double rate_ago = now - _das->rate_period;
+    double oldest = now - _das->decay;
+    double youngest = now - _das->autorefresh_period;
 
-    for (unsigned i = 0; i < _samples.size(); ++i) {
-	sample &s = _samples[i];
-	if (s.timestamp <= rate_ago || i == 0)
-	    prev_sample = s.raw;
-	if (s.timestamp <= rate_ago && _das->decay <= 0)
-	    s.cooked = 0;
-	if (s.cooked) {
-	    double val = s.cooked;
-	    if (s.timestamp < rate_ago)
-		val -= std::min(1., square((rate_ago - s.timestamp) / _das->decay));
-	    if (val == 0)
-		s.cooked = 0;
-	    else if (val > max) {
-		max = val;
-		if (prev_max != (unsigned) -1)
-		    _samples[prev_max].cooked = 0;
-		prev_max = i;
-	    }
-	}
-	if (s.timestamp <= rate_ago || i == 0)
-	    prev_sample = s.raw;
-    }
-    while (_samples.size() > 1
-	   && _samples.front().cooked == 0
-	   && (_samples[1].timestamp <= rate_ago
-	       || _samples[0].raw == _samples[1].raw))
+    unsigned min_samples = _das->type == dactivity_rate ? 1 : 0;
+    while (_samples.size() > min_samples
+	   && _samples.front().timestamp <= oldest)
 	_samples.pop_front();
 
-    return want_prev ? prev_sample : max;
+    double value = 0;
+    double total_weight = 0;
+    for (unsigned i = 0; i < _samples.size(); ++i) {
+	double this_metric = _samples[i].metric;
+	double this_weight;
+	if (i == _samples.size() - 1 && _samples[i].timestamp >= youngest)
+	    this_weight = 1;
+	else if (_samples[i].timestamp <= oldest)
+	    continue;
+	else
+	    this_weight = square((_samples[i].timestamp - oldest) / _das->decay);
+	value += this_metric * this_weight;
+	total_weight += this_weight;
+    }
+
+    value /= total_weight;
+    if (value <= _das->min_value)
+	return 0;
+    else if (value >= _das->max_value)
+	return 1;
+    else
+	return (value - _das->min_value) / (_das->max_value - _das->min_value);
 }
 
 void color_interpolate(double *c, const double *c1, double m, const double *c2)
@@ -202,11 +198,8 @@ void dactivity_decor::draw(delt *, double *sides, dcontext &dcx)
 	return;
 
     double now = Timestamp::now().doubleval();
-    if (_das->type == dactivity_absolute)
-	_drawn = (_samples.size() ? _samples.back().cooked : 0);
-    else
-	_drawn = clean_samples(now, false);
-    if (_drawn <= 1/128. && !_das->colors[4])
+    double activity = _drawn_activity = get_activity(now);
+    if (activity <= 1/128. && !_das->colors[4])
 	return;
 
     int p;
@@ -214,16 +207,16 @@ void dactivity_decor::draw(delt *, double *sides, dcontext &dcx)
 	p = 0;
     else
 	for (p = 0;
-	     p < _das->colors.size() - 5 && _drawn >= _das->colors[p + 5];
+	     p < _das->colors.size() - 5 && activity >= _das->colors[p + 5];
 	     p += 5)
 	    /* nada */;
 
     double *color, colorbuf[4];
-    if (fabs(_drawn - _das->colors[p]) < 1 / 128.)
+    if (fabs(activity - _das->colors[p]) < 1 / 128.)
 	color = &_das->colors[p+1];
     else {
 	color = colorbuf;
-	double m = (_drawn - _das->colors[p]) / (_das->colors[p+5] - _das->colors[p]);
+	double m = (activity - _das->colors[p]) / (_das->colors[p+5] - _das->colors[p]);
 	color_interpolate(color, &_das->colors[p+1], m, &_das->colors[p+6]);
     }
 
@@ -237,7 +230,11 @@ void dactivity_decor::draw(delt *, double *sides, dcontext &dcx)
 	cairo_fill(dcx);
 	if (_decay_source)
 	    g_source_remove(_decay_source);
-	int dto = std::max((int) (80 * _das->decay), 33);
+	int dto;
+	if (_das->decay == 0)
+	    dto = _das->autorefresh_period;
+	else
+	    dto = std::max((int) (80 * _das->decay), 33);
 	_decay_source = g_timeout_add(dto, on_activity_decay, this);
     }
 }
@@ -250,21 +247,26 @@ void dactivity_decor::notify(crouter *cr, delt *e, handler_value *hv)
     double new_value;
     if (hv->have_hvalue() && cp_double(hv->hvalue(), &new_value)) {
 	double now = Timestamp::now().doubleval();
-	double cooked;
-	if (_das->type == dactivity_absolute || _samples.size() == 0) {
-	    _samples.clear();
-	    cooked = new_value;
-	} else {
-	    double prev_value = clean_samples(now, true);
-	    cooked = std::max(new_value - prev_value, 0.);
-	    //static double first; if (!first) first = now;
-	    //if (_e->name() == "c1")
-	    //    fprintf(stderr, "@%g: %g -> %g : %g\n", now-first, prev_value, new_value, cooked);
+	double new_metric;
+	if (_das->type == dactivity_absolute)
+	    new_metric = new_value;
+	else {			// _das->type == dactivity_rate
+	    if (_samples.empty())
+		new_metric = 0;
+	    else {
+		double delta_t = now - _samples.back().timestamp;
+		double delta_v = new_value - _samples.back().value;
+		if (delta_v < 0) {
+		    if (new_value < 20000000.0
+			&& delta_v >= -4294967296.0
+			&& delta_v <= -4250000000.0)
+			delta_v += 4294967296.0;
+		}
+		new_metric = delta_t ? delta_v / delta_t : 0;
+	    }
 	}
-	double range = _das->max_value - _das->min_value;
-	cooked = std::min(std::max(cooked - _das->min_value, 0.) / range, 1.);
-	_samples.push_back(sample(new_value, cooked, now));
-	if (128 * fabs(cooked - _drawn) > range)
+	_samples.push_back(sample(new_value, new_metric, now));
+	if (128 * fabs(get_activity(now) - _drawn_activity) >= 1)
 	    cr->repaint(*e);
     }
 }
