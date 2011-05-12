@@ -1,6 +1,7 @@
 #ifndef CLICK_CONTROLSOCKET_HH
 #define CLICK_CONTROLSOCKET_HH
 #include "elements/userlevel/handlerproxy.hh"
+#include <click/straccum.hh>
 CLICK_DECLS
 class ControlSocketErrorHandler;
 class Timer;
@@ -223,10 +224,10 @@ UNIX.
 
 class ControlSocket : public Element { public:
 
-  ControlSocket();
-  ~ControlSocket();
+    ControlSocket();
+    ~ControlSocket();
 
-  const char *class_name() const	{ return "ControlSocket"; }
+    const char *class_name() const	{ return "ControlSocket"; }
 
     int configure(Vector<String> &conf, ErrorHandler *);
     int initialize(ErrorHandler *);
@@ -237,66 +238,80 @@ class ControlSocket : public Element { public:
 
     void selected(int fd, int mask);
 
-  enum {
-    CSERR_OK			= HandlerProxy::CSERR_OK,	       // 200
-    CSERR_OK_HANDLER_WARNING	= 220,
-    CSERR_SYNTAX		= HandlerProxy::CSERR_SYNTAX,          // 500
-    CSERR_UNIMPLEMENTED		= 501,
-    CSERR_NO_SUCH_ELEMENT	= HandlerProxy::CSERR_NO_SUCH_ELEMENT, // 510
-    CSERR_NO_SUCH_HANDLER	= HandlerProxy::CSERR_NO_SUCH_HANDLER, // 511
-    CSERR_HANDLER_ERROR		= HandlerProxy::CSERR_HANDLER_ERROR,   // 520
-    CSERR_DATA_TOO_BIG		= 521,
-    CSERR_LLRPC_ERROR		= 522,
-    CSERR_PERMISSION		= HandlerProxy::CSERR_PERMISSION,      // 530
-    CSERR_NO_ROUTER		= HandlerProxy::CSERR_NO_ROUTER,       // 540
-    CSERR_UNSPECIFIED		= HandlerProxy::CSERR_UNSPECIFIED      // 590
-  };
+    enum {
+	CSERR_OK			= HandlerProxy::CSERR_OK,	       // 200
+	CSERR_OK_HANDLER_WARNING	= 220,
+	CSERR_SYNTAX			= HandlerProxy::CSERR_SYNTAX,          // 500
+	CSERR_UNIMPLEMENTED		= 501,
+	CSERR_NO_SUCH_ELEMENT		= HandlerProxy::CSERR_NO_SUCH_ELEMENT, // 510
+	CSERR_NO_SUCH_HANDLER		= HandlerProxy::CSERR_NO_SUCH_HANDLER, // 511
+	CSERR_HANDLER_ERROR		= HandlerProxy::CSERR_HANDLER_ERROR,   // 520
+	CSERR_DATA_TOO_BIG		= 521,
+	CSERR_LLRPC_ERROR		= 522,
+	CSERR_PERMISSION		= HandlerProxy::CSERR_PERMISSION,      // 530
+	CSERR_NO_ROUTER			= HandlerProxy::CSERR_NO_ROUTER,       // 540
+	CSERR_UNSPECIFIED		= HandlerProxy::CSERR_UNSPECIFIED      // 590
+    };
 
- private:
+  private:
 
-  String _unix_pathname;
-  int _socket_fd;
-  bool _read_only : 1;
-  bool _verbose : 1;
-  bool _retry_warnings : 1;
-  bool _tcp_socket : 1;
-  bool _localhost : 1;
-  Element *_proxy;
-  HandlerProxy *_full_proxy;
+    enum { type_tcp, type_unix, type_pipe };
 
-  Vector<String> _in_texts;
-  Vector<String> _out_texts;
-  Vector<int> _flags;
+    String _unix_pathname;
+    int _socket_fd;
+    bool _read_only : 1;
+    bool _verbose : 1;
+    bool _retry_warnings : 1;
+    bool _localhost : 1;
+    uint8_t _type;
+    Element *_proxy;
+    HandlerProxy *_full_proxy;
 
-  String _proxied_handler;
-  ErrorHandler *_proxied_errh;
+    struct connection {
+	int fd;
+	StringAccum in_text;
+	int inpos;
+	StringAccum out_text;
+	int outpos;
+	bool in_closed;
+	bool out_closed;
+	connection(int fd_)
+	    : fd(fd_), inpos(0), outpos(0),
+	      in_closed(false), out_closed(false) {
+	}
+	int message(int code, const String &msg, bool continuation = false);
+	int transfer_messages(int default_code, const String &msg, ControlSocketErrorHandler *);
+	static void contract(StringAccum &sa, int &pos);
+	void flush_write(ControlSocket *cs, bool read_needs_processing);
+	int read(int len, String &data);
+	int read_insufficient();
+    };
+    Vector<connection *> _conns;
 
-  int _retries;
-  Timer *_retry_timer;
+    String _proxied_handler;
+    ErrorHandler *_proxied_errh;
 
-  enum { READ_CLOSED = 1, WRITE_CLOSED = 2, ANY_ERR = -1 };
+    int _retries;
+    Timer *_retry_timer;
 
-  static const char protocol_version[];
+    enum { READ_CLOSED = 1, WRITE_CLOSED = 2, ANY_ERR = -1 };
 
-  int initialize_socket_error(ErrorHandler *, const char *);
-  int initialize_socket(ErrorHandler *);
-  static void retry_hook(Timer *, void *);
+    static const char protocol_version[];
 
-  int message(int fd, int code, const String &, bool continuation = false);
-  int transfer_messages(int fd, int default_code, const String &first_message,
-			ControlSocketErrorHandler *);
+    int initialize_socket_error(ErrorHandler *, const char *);
+    int initialize_socket(ErrorHandler *);
+    static void retry_hook(Timer *, void *);
+    void initialize_connection(int fd);
 
     String proxied_handler_name(const String &) const;
-    const Handler* parse_handler(int fd, const String &, Element **);
-    int read_command(int fd, const String &, String);
-    int write_command(int fd, const String &, String);
-    int check_command(int fd, const String &, bool write);
-    int llrpc_command(int fd, const String &, String);
-    int parse_command(int fd, const String &);
-    void flush_write(int fd, bool read_needs_processing);
+    const Handler* parse_handler(connection &conn, const String &, Element **);
+    int read_command(connection &conn, const String &, String);
+    int write_command(connection &conn, const String &, String);
+    int check_command(connection &conn, const String &, bool write);
+    int llrpc_command(connection &conn, const String &, String);
+    int parse_command(connection &conn, const String &);
 
-  int report_proxy_errors(int fd, const String &);
-  static ErrorHandler *proxy_error_function(const String &, void *);
+    static ErrorHandler *proxy_error_function(const String &, void *);
 
 };
 

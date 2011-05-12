@@ -3,9 +3,9 @@
  * Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
- * Copyright (c) 2001-3 International Computer Science Institute
- * Copyright (c) 2004-2007 Regents of the University of California
+ * Copyright (c) 2001-2003 International Computer Science Institute
  * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2004-2011 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -117,7 +117,7 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 
     socktype = socktype.upper();
     if (socktype == "TCP") {
-	_tcp_socket = true;
+	_type = type_tcp;
 	if (args.read_mp("PORT", WordArg(), _unix_pathname)
 	    .complete() < 0)
 	    return -1;
@@ -133,7 +133,7 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 	    return errh->error("PORT requires TCP port");
 
     } else if (socktype == "UNIX") {
-	_tcp_socket = false;
+	_type = type_unix;
 	if (args.read_mp("FILENAME", FilenameArg(), _unix_pathname)
 	    .complete() < 0)
 	    return -1;
@@ -141,7 +141,7 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 	    return errh->error("filename too long");
 
     } else
-	return errh->error("unknown socket type '%s'", socktype.c_str());
+	return errh->error("unknown socket type %<%s%>", socktype.c_str());
 
     return 0;
 }
@@ -171,7 +171,7 @@ ControlSocket::initialize_socket(ErrorHandler *errh)
   _retries--;
 
   // open socket, set options, bind to address
-  if (_tcp_socket) {
+  if (_type == type_tcp) {
     _socket_fd = socket(PF_INET, SOCK_STREAM, 0);
     if (_socket_fd < 0)
       return initialize_socket_error(errh, "socket");
@@ -199,7 +199,7 @@ ControlSocket::initialize_socket(ErrorHandler *errh)
     }
     _unix_pathname = String(portno);
 
-  } else {
+  } else if (_type == type_unix) {
     _socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if (_socket_fd < 0)
       return initialize_socket_error(errh, "socket");
@@ -265,9 +265,9 @@ ControlSocket::hotswap_element() const
 {
     if (Element *e = Element::hotswap_element())
 	if (ControlSocket *cs = (ControlSocket *)e->cast("ControlSocket"))
-	    if (cs->_tcp_socket == _tcp_socket
+	    if (cs->_type == _type
 		&& (cs->_unix_pathname == _unix_pathname
-		    || (_tcp_socket && _unix_pathname.back() == '+')))
+		    || (_type == type_tcp && _unix_pathname.back() == '+')))
 		return cs;
     return 0;
 }
@@ -275,85 +275,142 @@ ControlSocket::hotswap_element() const
 void
 ControlSocket::take_state(Element *e, ErrorHandler *errh)
 {
-  ControlSocket *cs = (ControlSocket *) e->cast("ControlSocket");
+    ControlSocket *cs = (ControlSocket *) e->cast("ControlSocket");
 
-  if (_socket_fd >= 0) {
-    errh->error("already initialized, can't take state");
-    return;
-  }
+    if (_socket_fd >= 0) {
+	errh->error("already initialized, can't take state");
+	return;
+    }
 
-  _socket_fd = cs->_socket_fd;
-  _unix_pathname = cs->_unix_pathname; // in case _unix_pathname == "41930+"
-  cs->_socket_fd = -1;
-  _in_texts.swap(cs->_in_texts);
-  _out_texts.swap(cs->_out_texts);
-  _flags.swap(cs->_flags);
+    _socket_fd = cs->_socket_fd;
+    _unix_pathname = cs->_unix_pathname; // in case _unix_pathname == "41930+"
+    cs->_socket_fd = -1;
+    _conns.swap(cs->_conns);
 
-  if (_socket_fd >= 0)
-    add_select(_socket_fd, SELECT_READ);
-  for (int i = 0; i < _flags.size(); i++)
-    if (_flags[i] >= 0)
-      add_select(i, SELECT_READ | SELECT_WRITE);
+    if (_socket_fd >= 0)
+	add_select(_socket_fd, SELECT_READ);
+    for (connection **it = _conns.begin(); it != _conns.end(); ++it) {
+	if (*it && !(*it)->in_closed)
+	    add_select((*it)->fd, SELECT_READ);
+	if (*it && !(*it)->out_closed)
+	    add_select((*it)->fd, SELECT_WRITE);
+    }
 }
 
 void
 ControlSocket::cleanup(CleanupStage)
 {
-  if (_full_proxy)
-    _full_proxy->remove_error_receiver(proxy_error_function, this);
-  if (_socket_fd >= 0) {
-    // shut down the listening socket in case we forked
+    if (_full_proxy)
+	_full_proxy->remove_error_receiver(proxy_error_function, this);
+    if (_socket_fd >= 0) {
+	// shut down the listening socket in case we forked
 #ifdef SHUT_RDWR
-    shutdown(_socket_fd, SHUT_RDWR);
+	shutdown(_socket_fd, SHUT_RDWR);
 #else
-    shutdown(_socket_fd, 2);
+	shutdown(_socket_fd, 2);
 #endif
-    close(_socket_fd);
-    if (!_tcp_socket)
-      unlink(_unix_pathname.c_str());
-    _socket_fd = -1;
-  }
-  for (int i = 0; i < _flags.size(); i++)
-    if (_flags[i] >= 0) {
-      flush_write(i, false);	// try one last time to emit all data
-      close(i);
-      _flags[i] = -1;
+	close(_socket_fd);
+	if (_type == type_unix)
+	    unlink(_unix_pathname.c_str());
+	_socket_fd = -1;
     }
-  if (_retry_timer) {
-    delete _retry_timer;
-    _retry_timer = 0;
-  }
+    for (connection **it = _conns.begin(); it != _conns.end(); ++it)
+	if (*it) {
+	    (*it)->flush_write(this, false);	// try one last time to emit all data
+	    close((*it)->fd);
+	    delete *it;
+	}
+    if (_retry_timer) {
+	delete _retry_timer;
+	_retry_timer = 0;
+    }
 }
 
 int
-ControlSocket::message(int fd, int code, const String &s, bool continuation)
+ControlSocket::connection::message(int code, const String &msg, bool continuation)
 {
-  assert(code >= 100 && code <= 999);
-  if (fd >= 0 && !(_flags[fd] & WRITE_CLOSED))
-    _out_texts[fd] += String(code) + (continuation ? "-" : " ") + s.printable() + "\r\n";
-  return ANY_ERR;
+    assert(code >= 100 && code <= 999);
+    if (fd >= 0 && !out_closed)
+	out_text << code << (continuation ? '-' : ' ') << msg.printable() << '\r' << '\n';
+    return ANY_ERR;
 }
 
 int
-ControlSocket::transfer_messages(int fd, int default_code, const String &msg,
-				 ControlSocketErrorHandler *errh)
+ControlSocket::connection::transfer_messages(int default_code, const String &msg,
+					     ControlSocketErrorHandler *errh)
 {
-  int code = errh->error_code();
-  if (code == CSERR_OK)
-    code = default_code;
-  const Vector<String> &messages = errh->messages();
+    int code = errh->error_code();
+    if (code == CSERR_OK)
+	code = default_code;
+    const Vector<String> &messages = errh->messages();
 
-  if (msg) {
-    if (messages.size() > 0)
-      message(fd, code, msg + ":", true);
-    else
-      message(fd, code, msg, false);
-  }
+    if (msg) {
+	if (messages.size() > 0)
+	    message(code, msg + ":", true);
+	else
+	    message(code, msg, false);
+    }
 
-  for (int i = 0; i < messages.size(); i++)
-    message(fd, code, messages[i], i < messages.size() - 1);
+    for (int i = 0; i < messages.size(); i++)
+	message(code, messages[i], i < messages.size() - 1);
 
-  return ANY_ERR;
+    return ANY_ERR;
+}
+
+void
+ControlSocket::connection::contract(StringAccum &sa, int &pos)
+{
+    if (pos == sa.length()) {
+	sa.clear();
+	pos = 0;
+    } else if (pos > 8192) {
+	memmove(sa.data(), sa.data() + pos, sa.length() - pos);
+	sa.resize(sa.length() - pos);
+	pos = 0;
+    }
+}
+
+int
+ControlSocket::connection::read_insufficient()
+{
+    if (in_closed)
+	return message(CSERR_SYNTAX, "Not enough data");
+    else			// retry
+	return 1;
+}
+
+int
+ControlSocket::connection::read(int len, String &data)
+{
+    if (in_text.length() < inpos + len)
+	return read_insufficient();
+    data = String(in_text.begin() + inpos, in_text.begin() + inpos + len);
+    inpos += len;
+    return 0;
+}
+
+void
+ControlSocket::connection::flush_write(ControlSocket *cs, bool read_needs_processing)
+{
+    if (!out_closed) {
+	ssize_t w = 0;
+	while (outpos < out_text.length()) {
+	    w = write(fd, out_text.data() + outpos, out_text.length() - outpos);
+	    if (w == -1 && errno != EINTR)
+		break;
+	    if (w != 0 && w != -1)
+		outpos += w;
+	}
+	if (w == -1 && errno == EPIPE)
+	    out_closed = true;
+	contract(out_text, outpos);
+	// don't select writes unless we have data to write (or read needs more
+	// processing)
+	if (out_text.length() || read_needs_processing)
+	    cs->add_select(fd, Element::SELECT_WRITE);
+	else
+	    cs->remove_select(fd, Element::SELECT_WRITE);
+    }
 }
 
 static String
@@ -376,7 +433,7 @@ ControlSocket::proxied_handler_name(const String &n) const
 }
 
 const Handler*
-ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
+ControlSocket::parse_handler(connection &conn, const String &full_name, Element **es)
 {
   // Parse full_name into element_name and handler_name.
   String canonical_name = canonical_handler_name(full_name);
@@ -391,10 +448,10 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
     _proxied_errh = 0;
 
     if (errh.nerrors() > 0) {
-      transfer_messages(fd, CSERR_NO_SUCH_HANDLER, String(), &errh);
+      conn.transfer_messages(CSERR_NO_SUCH_HANDLER, String(), &errh);
       return 0;
     } else if (!h) {
-      message(fd, CSERR_NO_SUCH_HANDLER, "No proxied handler named '" + full_name + "'");
+      conn.message(CSERR_NO_SUCH_HANDLER, "No proxied handler named '" + full_name + "'");
       return 0;
     } else {
       *es = _proxy;
@@ -416,7 +473,7 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
 	e = router()->element(num - 1);
     }
     if (!e) {
-      message(fd, CSERR_NO_SUCH_ELEMENT, "No element named '" + ename + "'");
+      conn.message(CSERR_NO_SUCH_ELEMENT, "No element named '" + ename + "'");
       return 0;
     }
     hname = canonical_name.substring(dot + 1, canonical_name.end());
@@ -431,20 +488,20 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
     *es = e;
     return h;
   } else {
-    message(fd, CSERR_NO_SUCH_HANDLER, "No handler named '" + full_name + "'");
+    conn.message(CSERR_NO_SUCH_HANDLER, "No handler named '" + full_name + "'");
     return 0;
   }
 }
 
 int
-ControlSocket::read_command(int fd, const String &handlername, String param)
+ControlSocket::read_command(connection &conn, const String &handlername, String param)
 {
   Element *e;
-  const Handler* h = parse_handler(fd, handlername, &e);
+  const Handler* h = parse_handler(conn, handlername, &e);
   if (!h)
     return ANY_ERR;
   else if (!h->read_visible())
-    return message(fd, CSERR_PERMISSION, "Handler '" + handlername + "' write-only");
+    return conn.message(CSERR_PERMISSION, "Handler '" + handlername + "' write-only");
 
   // collect errors from proxy
   ControlSocketErrorHandler errh;
@@ -455,30 +512,29 @@ ControlSocket::read_command(int fd, const String &handlername, String param)
 
   // did we get an error message?
   if (errh.nerrors() > 0)
-    return transfer_messages(fd, CSERR_UNSPECIFIED, "Read handler '" + handlername + "' error", &errh);
+    return conn.transfer_messages(CSERR_UNSPECIFIED, "Read handler '" + handlername + "' error", &errh);
 
-  message(fd, CSERR_OK, "Read handler '" + handlername + "' OK");
-  _out_texts[fd] += "DATA " + String(data.length()) + "\r\n";
-  _out_texts[fd] += data;
+  conn.message(CSERR_OK, "Read handler '" + handlername + "' OK");
+  conn.out_text << "DATA " << data.length() << '\r' << '\n' << data;
   return 0;
 }
 
 int
-ControlSocket::write_command(int fd, const String &handlername, String data)
+ControlSocket::write_command(connection &conn, const String &handlername, String data)
 {
   Element *e;
-  const Handler* h = parse_handler(fd, handlername, &e);
+  const Handler* h = parse_handler(conn, handlername, &e);
   if (!h)
     return ANY_ERR;
   else if (!h->writable())
-    return message(fd, CSERR_PERMISSION, "Handler '" + handlername + "' read-only");
+    return conn.message(CSERR_PERMISSION, "Handler '" + handlername + "' read-only");
 
   if (_read_only)
-    return message(fd, CSERR_PERMISSION, "Permission denied for '" + handlername + "'");
+    return conn.message(CSERR_PERMISSION, "Permission denied for '" + handlername + "'");
 
 #ifdef LARGEST_HANDLER_WRITE
   if (data.length() > LARGEST_HANDLER_WRITE)
-    return message(fd, CSERR_DATA_TOO_BIG, "Data too large for write handler '" + handlername + "'");
+    return conn.message(CSERR_DATA_TOO_BIG, "Data too large for write handler '" + handlername + "'");
 #endif
 
   ControlSocketErrorHandler errh;
@@ -502,12 +558,12 @@ ControlSocket::write_command(int fd, const String &handlername, String data)
     msg = "Write handler '" + handlername + "' OK with warnings";
   else if (code == CSERR_HANDLER_ERROR)
     msg = "Write handler '" + handlername + "' error";
-  transfer_messages(fd, code, msg, &errh);
+  conn.transfer_messages(code, msg, &errh);
   return 0;
 }
 
 int
-ControlSocket::check_command(int fd, const String &hname, bool write)
+ControlSocket::check_command(connection &conn, const String &hname, bool write)
 {
   int ok = 0;
   int any_visible = 0;
@@ -520,7 +576,7 @@ ControlSocket::check_command(int fd, const String &hname, bool write)
     ok = _full_proxy->check_handler(phname, write, &errh);
   } else {
     Element *e;
-    const Handler* h = parse_handler(fd, hname, &e);
+    const Handler* h = parse_handler(conn, hname, &e);
     if (!h)
       return 0;			// error messages already reported
     ok = (h->visible() && (write ? h->write_visible() : h->read_visible()));
@@ -529,43 +585,43 @@ ControlSocket::check_command(int fd, const String &hname, bool write)
 
   // remember _read_only!
   if (write && _read_only && ok)
-    return message(fd, CSERR_PERMISSION, "Permission denied for '" + hname + "'");
+    return conn.message(CSERR_PERMISSION, "Permission denied for '" + hname + "'");
   else if (errh.messages().size() > 0)
-    transfer_messages(fd, CSERR_OK, String(), &errh);
+    conn.transfer_messages(CSERR_OK, String(), &errh);
   else if (ok)
-    message(fd, CSERR_OK, String(write ? "Write" : "Read") + " handler '" + hname + "' OK");
+    conn.message(CSERR_OK, String(write ? "Write" : "Read") + " handler '" + hname + "' OK");
   else if (any_visible)
-    message(fd, CSERR_NO_SUCH_HANDLER, "Handler '" + hname + (write ? "' not writable" : "' not readable"));
+    conn.message(CSERR_NO_SUCH_HANDLER, "Handler '" + hname + (write ? "' not writable" : "' not readable"));
   else
-    message(fd, CSERR_NO_SUCH_HANDLER, "No " + String(write ? "write" : "read") + " handler named '" + hname + "'");
+    conn.message(CSERR_NO_SUCH_HANDLER, "No " + String(write ? "write" : "read") + " handler named '" + hname + "'");
   return 0;
 }
 
 int
-ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
+ControlSocket::llrpc_command(connection &conn, const String &llrpcname, String data)
 {
   const char *octothorp = find(llrpcname, '#');
   uint32_t command = 0;
   if (!IntArg(16).parse(llrpcname.substring(octothorp + 1, llrpcname.end()), command))
-    return message(fd, CSERR_SYNTAX, "Syntax error in LLRPC name '" + llrpcname + "'");
+    return conn.message(CSERR_SYNTAX, "Syntax error in LLRPC name '" + llrpcname + "'");
   // transform net LLRPC id into host LLRPC id
   command = CLICK_LLRPC_NTOH(command);
 
   Element *e;
-  const Handler* h = parse_handler(fd, llrpcname.substring(llrpcname.begin(), octothorp) + ".name", &e);
+  const Handler* h = parse_handler(conn, llrpcname.substring(llrpcname.begin(), octothorp) + ".name", &e);
   if (!h)
     return ANY_ERR;
 
   int size = _CLICK_IOC_SIZE(command);
   if (!size || !(command & (_CLICK_IOC_IN | _CLICK_IOC_OUT)) || !(command & _CLICK_IOC_FLAT))
-    return message(fd, CSERR_UNIMPLEMENTED, "Cannot call LLRPC '" + llrpcname + "' remotely");
+    return conn.message(CSERR_UNIMPLEMENTED, "Cannot call LLRPC '" + llrpcname + "' remotely");
 
   if (_read_only)		// can't tell whether an LLRPC is read-only;
 				// so disallow them all
-    return message(fd, CSERR_PERMISSION, "Permission denied for '" + llrpcname + "'");
+    return conn.message(CSERR_PERMISSION, "Permission denied for '" + llrpcname + "'");
 
   if ((command & _CLICK_IOC_IN) && data.length() != size)
-    return message(fd, CSERR_LLRPC_ERROR, "LLRPC '" + llrpcname + "' requires " + String(size) + " bytes input data");
+    return conn.message(CSERR_LLRPC_ERROR, "LLRPC '" + llrpcname + "' requires " + String(size) + " bytes input data");
   else if (!(command & _CLICK_IOC_IN))
     data = String::make_garbage(size);
 
@@ -595,19 +651,18 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
   else
     msg = "LLRPC '" + llrpcname + "' OK";
   int code = (retval < 0 || errh.nerrors() > 0 ? CSERR_LLRPC_ERROR : CSERR_OK);
-  transfer_messages(fd, code, msg, &errh);
+  conn.transfer_messages(code, msg, &errh);
 
   if (code == CSERR_OK) {
     if (!(command & _CLICK_IOC_OUT))
       data = String();
-    _out_texts[fd] += "DATA " + String(data.length()) + "\r\n";
-    _out_texts[fd] += data;
+    conn.out_text << "DATA " << data.length() << '\r' << '\n' << data;
   }
   return 0;
 }
 
 int
-ControlSocket::parse_command(int fd, const String &line)
+ControlSocket::parse_command(connection &conn, const String &line)
 {
   // split 'line' into words; don't use cp_ functions since they strip comments
   Vector<String> words;
@@ -630,137 +685,113 @@ ControlSocket::parse_command(int fd, const String &line)
   if (command == "READ" || command == "GET" || command == "WRITE"
       || command == "SET") {
       if (words.size() < 2)
-	  return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
+	  return conn.message(CSERR_SYNTAX, "Wrong number of arguments");
       String data;
       if (words.size() > 2)
 	  data = line.substring(words[2].begin(), words.back().end());
       if (command[0] == 'R' || command[0] == 'G')
-	  return read_command(fd, words[1], data);
+	  return read_command(conn, words[1], data);
       else
-	  return write_command(fd, words[1], data);
+	  return write_command(conn, words[1], data);
 
   } else if (command == "READDATA" || command == "WRITEDATA"
 	     || command == "SETDATA") {
       if (words.size() != 3)
-	  return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
-      int datalen;
+	  return conn.message(CSERR_SYNTAX, "Wrong number of arguments");
+      int datalen, r;
       if (!IntArg().parse(words[2], datalen) || datalen < 0)
-	  return message(fd, CSERR_SYNTAX, "Syntax error in '%s'", command.c_str());
-      if (_in_texts[fd].length() < datalen) {
-	  if (_flags[fd] & READ_CLOSED)
-	      return message(fd, CSERR_SYNTAX, "Not enough data");
-	  else			// retry
-	      return 1;
-      }
-      String data = _in_texts[fd].substring(0, datalen);
-      _in_texts[fd] = _in_texts[fd].substring(datalen);
+	  return conn.message(CSERR_SYNTAX, "Syntax error in '%s'", command.c_str());
+      String data;
+      if ((r = conn.read(datalen, data)) != 0)
+	  return r;
       if (command[0] == 'R')
-	  return read_command(fd, words[1], data);
+	  return read_command(conn, words[1], data);
       else
-	  return write_command(fd, words[1], data);
+	  return write_command(conn, words[1], data);
 
   } else if (command == "READUNTIL" || command == "WRITEUNTIL") {
       if (words.size() < 2)
-	  return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
+	  return conn.message(CSERR_SYNTAX, "Wrong number of arguments");
       String until;
       if (words.size() > 2)
 	  until = line.substring(words[2].begin(), words.back().end());
-      const char *s = _in_texts[fd].begin(), *linebegin, *lineend;
+      const char *s = conn.in_text.begin() + conn.inpos,
+	  *end = conn.in_text.end(), *linebegin, *lineend;
       while (1) {
 	  linebegin = lineend = s;
-	  for (; s != _in_texts[fd].end() && *s != '\n' && *s != '\r'; ++s)
+	  for (; s != end && *s != '\n' && *s != '\r'; ++s)
 	      if (!isspace((unsigned char) *s))
 		  lineend = s + 1;
-	  if (s == _in_texts[fd].end()) {
-	      if (_flags[fd] & READ_CLOSED)
-		  return message(fd, CSERR_SYNTAX, "Connection closed");
-	      else		// retry
-		  return 1;
-	  }
-	  if (*s == '\r' && s + 1 != _in_texts[fd].end() && s[1] == '\n')
+	  if (s == end)
+	      return conn.read_insufficient();
+	  if (*s == '\r' && s + 1 != end && s[1] == '\n')
 	      s += 2;
 	  else
 	      ++s;
-	  if (_in_texts[fd].substring(linebegin, lineend) == until)
+	  if (lineend - linebegin == until.length()
+	      && memcmp(linebegin, until.begin(), until.length()) == 0)
 	      break;
       }
-      String data = _in_texts[fd].substring(_in_texts[fd].begin(), linebegin);
-      _in_texts[fd] = _in_texts[fd].substring(lineend, _in_texts[fd].end());
+      String data(conn.in_text.begin() + conn.inpos, linebegin);
+      conn.inpos = s - conn.in_text.begin();
       if (command[0] == 'R')
-	  return read_command(fd, words[1], data);
+	  return read_command(conn, words[1], data);
       else
-	  return write_command(fd, words[1], data);
+	  return write_command(conn, words[1], data);
 
   } else if (command == "CHECKREAD" || command == "CHECKWRITE") {
-    if (words.size() != 2)
-      return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
-    return check_command(fd, words[1], command[5] == 'W');
+      if (words.size() != 2)
+	  return conn.message(CSERR_SYNTAX, "Wrong number of arguments");
+      return check_command(conn, words[1], command[5] == 'W');
 
   } else if (command == "LLRPC") {
     if (words.size() != 2 && words.size() != 3)
-      return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
-    int datalen = 0;
+      return conn.message(CSERR_SYNTAX, "Wrong number of arguments");
+    int datalen = 0, r;
     if (words.size() == 3 && (!IntArg().parse(words[2], datalen) || datalen < 0))
-      return message(fd, CSERR_SYNTAX, "Syntax error in 'llrpc'");
-    if (_in_texts[fd].length() < datalen) {
-      if (_flags[fd] & READ_CLOSED)
-	return message(fd, CSERR_SYNTAX, "Not enough data");
-      else			// retry
-	return 1;
-    }
-    String data = _in_texts[fd].substring(0, datalen);
-    _in_texts[fd] = _in_texts[fd].substring(datalen);
-    return llrpc_command(fd, words[1], data);
+      return conn.message(CSERR_SYNTAX, "Syntax error in 'llrpc'");
+    String data;
+    if ((r = conn.read(datalen, data)) != 0)
+	return r;
+    return llrpc_command(conn, words[1], data);
 
   } else if (command == "CLOSE" || command == "QUIT") {
     if (words.size() != 1)
-      message(fd, CSERR_SYNTAX, "Bad command syntax");
-    message(fd, CSERR_OK, "Goodbye!");
-    _flags[fd] |= READ_CLOSED;
-    _in_texts[fd] = String();
+      conn.message(CSERR_SYNTAX, "Bad command syntax");
+    conn.message(CSERR_OK, "Goodbye!");
+    conn.in_closed = true;
+    conn.in_text.clear();
+    conn.inpos = 0;
     return 0;
 
   } else if (command == "HELP") {
-    message(fd, CSERR_OK, "Commands supported:", true);
-    message(fd, CSERR_OK, "READ handler [arg...]   call read handler, return DATA", true);
-    message(fd, CSERR_OK, "READDATA handler len    call read handler with len data bytes, return DATA", true);
-    message(fd, CSERR_OK, "READUNTIL handler term  call read handler, take data until term, return DATA", true);
-    message(fd, CSERR_OK, "WRITE handler [arg...]  call write handler", true);
-    message(fd, CSERR_OK, "WRITEDATA handler len   call write handler, pass len data bytes", true);
-    message(fd, CSERR_OK, "WRITEUNTIL handler term call write handler, take data until term", true);
-    message(fd, CSERR_OK, "CHECKREAD handler       check if read handler is valid", true);
-    message(fd, CSERR_OK, "CHECKWRITE handler      check if write handler is valid", true);
-    message(fd, CSERR_OK, "LLRPC elt#number [len]  call LLRPC, pass len data bytes, return DATA", true);
-    message(fd, CSERR_OK, "QUIT                    close connection");
+    conn.message(CSERR_OK, "Commands supported:", true);
+    conn.message(CSERR_OK, "READ handler [arg...]   call read handler, return DATA", true);
+    conn.message(CSERR_OK, "READDATA handler len    call read handler with len data bytes, return DATA", true);
+    conn.message(CSERR_OK, "READUNTIL handler term  call read handler, take data until term, return DATA", true);
+    conn.message(CSERR_OK, "WRITE handler [arg...]  call write handler", true);
+    conn.message(CSERR_OK, "WRITEDATA handler len   call write handler, pass len data bytes", true);
+    conn.message(CSERR_OK, "WRITEUNTIL handler term call write handler, take data until term", true);
+    conn.message(CSERR_OK, "CHECKREAD handler       check if read handler is valid", true);
+    conn.message(CSERR_OK, "CHECKWRITE handler      check if write handler is valid", true);
+    conn.message(CSERR_OK, "LLRPC elt#number [len]  call LLRPC, pass len data bytes, return DATA", true);
+    conn.message(CSERR_OK, "QUIT                    close connection");
     return 0;
 
   } else
-    return message(fd, CSERR_UNIMPLEMENTED, "Command '" + command + "' unimplemented");
+    return conn.message(CSERR_UNIMPLEMENTED, "Command '" + command + "' unimplemented");
 }
 
 void
-ControlSocket::flush_write(int fd, bool read_needs_processing)
+ControlSocket::initialize_connection(int fd)
 {
-    assert(_flags[fd] >= 0);
-    if (!(_flags[fd] & WRITE_CLOSED)) {
-	int w = 0;
-	while (_out_texts[fd].length()) {
-	    const char *x = _out_texts[fd].data();
-	    w = write(fd, x, _out_texts[fd].length());
-	    if (w < 0 && errno != EINTR)
-		break;
-	    if (w > 0)
-		_out_texts[fd] = _out_texts[fd].substring(w);
-	}
-	if (w < 0 && errno == EPIPE)
-	    _flags[fd] |= WRITE_CLOSED;
-	// don't select writes unless we have data to write (or read needs more
-	// processing)
-	if (_out_texts[fd].length() || read_needs_processing)
-	    add_select(fd, SELECT_WRITE);
-	else
-	    remove_select(fd, SELECT_WRITE);
-    }
+    fcntl(fd, F_SETFL, O_NONBLOCK);
+    fcntl(fd, F_SETFD, FD_CLOEXEC);
+    add_select(fd, SELECT_READ | SELECT_WRITE);
+    if (_conns.size() <= fd)
+	_conns.resize(fd + 1);
+    _conns[fd] = new connection(fd);
+    _conns[fd]->out_text << "Click::ControlSocket/" << protocol_version << '\r' << '\n';
 }
 
 void
@@ -783,72 +814,61 @@ ControlSocket::selected(int fd, int)
 	}
 
 	if (_verbose) {
-	    if (_tcp_socket)
+	    if (_type == type_tcp)
 		click_chatter("%s: opened connection %d from %s.%d", declaration().c_str(), new_fd, IPAddress(sa.in.sin_addr).unparse().c_str(), ntohs(sa.in.sin_port));
 	    else
 		click_chatter("%s: opened connection %d", declaration().c_str(), new_fd);
 	}
 
-	fcntl(new_fd, F_SETFL, O_NONBLOCK);
-	fcntl(new_fd, F_SETFD, FD_CLOEXEC);
-	add_select(new_fd, SELECT_READ | SELECT_WRITE);
-
-	while (new_fd >= _in_texts.size()) {
-	    _in_texts.push_back(String());
-	    _out_texts.push_back(String());
-	    _flags.push_back(-1);
-	}
-	_in_texts[new_fd] = String();
-	_out_texts[new_fd] = String();
-	_flags[new_fd] = 0;
-
+	initialize_connection(new_fd);
 	fd = new_fd;
-	_out_texts[new_fd] = "Click::ControlSocket/" + String(protocol_version) + "\r\n";
     }
 
     // find file descriptor
-    if (fd >= _in_texts.size() || _flags[fd] < 0)
+    if (fd >= _conns.size() || !_conns[fd])
 	return;
+    connection *conn = _conns[fd];
 
     // read commands from socket (but only a bit on each select)
-    if (!(_flags[fd] & READ_CLOSED)) {
-	char buf[2048];
-	int r = read(fd, buf, 2048);
-	if (r > 0)
-	    _in_texts[fd].append(buf, r);
-	else if (r == 0 || (r < 0 && errno != EAGAIN && errno != EINTR))
-	    _flags[fd] |= READ_CLOSED;
-    }
+    if (!conn->in_closed)
+	if (char *buf = conn->in_text.reserve(2048)) {
+	    ssize_t r = read(conn->fd, buf, 2048);
+	    if (r != 0 && r != -1)
+		conn->in_text.adjust_length(r);
+	    else if (r == 0 || (r == -1 && errno != EAGAIN && errno != EINTR))
+		conn->in_closed = true;
+	}
 
     // parse commands
     // 16.Jun.2004: process only one command each time through
     bool blocked = false;
-    if (_in_texts[fd].length()) {
-	const char *in_text = _in_texts[fd].data();
-	int len = _in_texts[fd].length();
-	int pos = 0;
-	while (pos < len && in_text[pos] != '\r' && in_text[pos] != '\n')
-	    pos++;
-	if (pos < len || (_flags[fd] & READ_CLOSED)) {
+    if (conn->in_text.length()) {
+	const char *in_text = conn->in_text.begin() + conn->inpos;
+	const char *in_end = conn->in_text.end();
+	const char *line_end = in_text;
+	while (line_end != in_end && *line_end != '\r' && *line_end != '\n')
+	    ++line_end;
+	if (line_end != in_end || conn->in_closed) {
 	    // have a complete command, parse it
 
 	    // include end of line
-	    if (pos < len - 1 && in_text[pos] == '\r' && in_text[pos+1] == '\n')
-		pos += 2;
-	    else if (pos < len)	// '\r' or '\n' alone
-		pos++;
+	    if (line_end + 2 <= in_end && *line_end == '\r' && line_end[1] == '\n')
+		line_end += 2;
+	    else if (line_end != in_end)
+		++line_end;
 
 	    // grab string
-	    String old_text = _in_texts[fd];
-	    String line = old_text.substring(0, pos);
-	    _in_texts[fd] = old_text.substring(pos);
+	    int oldpos = conn->inpos;
+	    String line(in_text, line_end);
+	    conn->inpos = line_end - conn->in_text.begin();
 
 	    // parse each individual command
-	    if (parse_command(fd, line) > 0) {
+	    if (parse_command(*conn, line) > 0) {
 		// more data to come, so wait
-		_in_texts[fd] = old_text;
+		conn->inpos = oldpos;
 		blocked = true;
-	    }
+	    } else
+		connection::contract(conn->in_text, conn->inpos);
 	} else
 	    // 12.Jul.2006, Cliff Frey: write incomplete, so we are blocked
 	    blocked = true;
@@ -857,30 +877,34 @@ ControlSocket::selected(int fd, int)
     // write data until blocked
     // The 2nd argument causes write events to remain selected when commands
     // remain to be processed (whether or not CS has data to write).
-    flush_write(fd, _in_texts[fd].length() && !blocked);
+    conn->flush_write(this, conn->in_text.length() && !blocked);
 
     // maybe close out
-    if (((_flags[fd] & READ_CLOSED) && !_in_texts[fd].length() && !_out_texts[fd].length())
-	|| (_flags[fd] & WRITE_CLOSED)) {
-	remove_select(fd, SELECT_READ | SELECT_WRITE);
-	close(fd);
+    if ((conn->in_closed && !conn->in_text.length() && !conn->out_text.length())
+	|| conn->out_closed) {
+	remove_select(conn->fd, SELECT_READ | SELECT_WRITE);
+	close(conn->fd);
 	if (_verbose)
 	    click_chatter("%s: closed connection %d", declaration().c_str(), fd);
-	_flags[fd] = -1;
+	_conns[conn->fd] = 0;
+	delete conn;
     }
 }
 
 ErrorHandler *
 ControlSocket::proxy_error_function(const String &h, void *thunk)
 {
-  ControlSocket *cs = static_cast<ControlSocket *>(thunk);
-  return (h == cs->_proxied_handler ? cs->_proxied_errh : 0);
+    ControlSocket *cs = static_cast<ControlSocket *>(thunk);
+    return (h == cs->_proxied_handler ? cs->_proxied_errh : 0);
 }
 
 void
 ControlSocket::add_handlers()
 {
-    add_data_handlers(_tcp_socket ? "port" : "filename", Handler::OP_READ, &_unix_pathname);
+    if (_type == type_tcp)
+	add_data_handlers("port", Handler::OP_READ, &_unix_pathname);
+    else if (_type == type_unix)
+	add_data_handlers("filename", Handler::OP_READ, &_unix_pathname);
 }
 
 CLICK_ENDDECLS
