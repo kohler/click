@@ -136,7 +136,7 @@ without blocking), the script is disabled.  If CONDITION is supplied, then the
 branch executes only when CONDITION is true.
 
 Also, 'C<goto exit [CONDITION]>' and 'C<goto end [CONDITION]>' end execution
-of the script, like 'C<exit>' and 'C<end>' respectively.  'C<goto begin
+of the script, like 'C<exit>' and 'C<end>' respectively.  'C<goto loop
 [CONDITION]>' transfers control to the first instruction, like 'C<loop>'.
 'C<goto error [CONDITION]>' ends execution of the script with an error, like
 'C<error>'.  'C<goto stop [CONDITION]>' ends execution of the script and asks
@@ -321,6 +321,14 @@ returns "C<1>".  'C<mod>' expects integer operands and returns the integer
 modulus.  At user level, 'C<rem>' implements floating-point remainder; in the
 kernel, it is the same as 'C<mod>'.
 
+=h neg "read with parameters"
+
+Returns the negative of its numeric parameter.
+
+=h abs "read with parameters"
+
+Returns the absolute value of its numeric parameter.
+
 =h eq, ne, lt, gt, le, ge "read with parameters"
 
 Compares two parameters and returns the result.  For example, 'C<eq 10 0xA>'
@@ -471,7 +479,8 @@ class Script : public Element { public:
 
     enum {
 	ST_STEP = 0, ST_RUN, ST_GOTO,
-	AR_ADD = 0, AR_SUB, AR_MUL, AR_DIV, AR_IDIV, ar_mod, ar_rem,
+	ar_add = 0, ar_sub, ar_mul, ar_div, ar_idiv, ar_mod, ar_rem,
+	ar_neg, ar_abs,
 	AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
 	AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat,
 	ar_and, ar_or, ar_nand, ar_nor, ar_now, ar_if, ar_in,

@@ -138,7 +138,7 @@ Script::find_label(const String &label) const
     if (NameInfo::query_int(NameInfo::T_SCRIPT_INSN, this, label, &insn)
 	&& insn < 0)
 	return insn;		// negative instructions are also labels
-    if (label.equals("begin", 5))
+    if (label.equals("begin", 5) || label.equals("loop", 4))
 	return 0;
     return _insns.size();
 }
@@ -784,16 +784,16 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	str = cp_shift_spacevec(str);
 	return 0;
 
-    case AR_ADD:
-    case AR_SUB:
-    case AR_MUL:
-    case AR_DIV:
-    case AR_IDIV: {
-	click_intmax_t accum = (what == AR_ADD || what == AR_SUB ? 0 : 1), arg;
+    case ar_add:
+    case ar_sub:
+    case ar_mul:
+    case ar_div:
+    case ar_idiv: {
+	click_intmax_t accum = (what == ar_add || what == ar_sub ? 0 : 1), arg;
 	bool first = true;
 #if CLICK_USERLEVEL
-	double daccum = (what == AR_ADD || what == AR_SUB ? 0 : 1), darg;
-	bool use_daccum = (what == AR_DIV || what == AR_IDIV);
+	double daccum = (what == ar_add || what == ar_sub ? 0 : 1), darg;
+	bool use_daccum = (what == ar_div || what == ar_idiv);
 #endif
 	while (1) {
 	    String word = cp_shift_spacevec(str);
@@ -809,11 +809,11 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	    if (use_daccum) {
 		if (first)
 		    daccum = darg;
-		else if (what == AR_ADD)
+		else if (what == ar_add)
 		    daccum += darg;
-		else if (what == AR_SUB)
+		else if (what == ar_sub)
 		    daccum -= darg;
-		else if (what == AR_MUL)
+		else if (what == ar_mul)
 		    daccum *= darg;
 		else
 		    daccum /= darg;
@@ -825,11 +825,11 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 #endif
 	    if (first)
 		accum = arg;
-	    else if (what == AR_ADD)
+	    else if (what == ar_add)
 		accum += arg;
-	    else if (what == AR_SUB)
+	    else if (what == ar_sub)
 		accum -= arg;
-	    else if (what == AR_MUL)
+	    else if (what == ar_mul)
 		accum *= arg;
 	    else {
 #if CLICK_USERLEVEL || !HAVE_INT64_TYPES
@@ -847,7 +847,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	    first = false;
 	}
 #if CLICK_USERLEVEL
-	if (what == AR_IDIV) {
+	if (what == ar_idiv) {
 	    use_daccum = false;
 	    accum = (click_intmax_t) daccum;
 	}
@@ -884,6 +884,25 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	    a %= b;
 #endif
 	    str = String(a);
+	    return 0;
+	}
+    }
+
+    case ar_neg:
+    case ar_abs: {
+	click_intmax_t x;
+	if (!IntArg().parse(str, x)) {
+#if CLICK_USERLEVEL
+	    double dx;
+	    if (!DoubleArg().parse(str, dx))
+		goto expected_one_number;
+	    str = String(what == ar_neg ? -dx : fabs(dx));
+	    return 0;
+#else
+	    goto expected_one_number;
+#endif
+	} else {
+	    str = String(what == ar_neg || x < 0 ? -x : x);
 	    return 0;
 	}
     }
@@ -1137,6 +1156,9 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
     expected_two_numbers:
 	return errh->error("expected two numbers");
 
+    expected_one_number:
+	return errh->error("expected one number");
+
     }
 
     return -1;
@@ -1163,13 +1185,15 @@ Script::add_handlers()
     set_handler("step", Handler::OP_WRITE, step_handler, 0, ST_STEP);
     set_handler("goto", Handler::OP_WRITE, step_handler, 0, ST_GOTO);
     set_handler("run", Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE, step_handler, 0, ST_RUN);
-    set_handler("add", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_ADD, 0);
-    set_handler("sub", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_SUB, 0);
-    set_handler("mul", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_MUL, 0);
-    set_handler("div", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_DIV, 0);
-    set_handler("idiv", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_IDIV, 0);
+    set_handler("add", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_add, 0);
+    set_handler("sub", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_sub, 0);
+    set_handler("mul", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_mul, 0);
+    set_handler("div", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_div, 0);
+    set_handler("idiv", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_idiv, 0);
     set_handler("mod", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_mod, 0);
     set_handler("rem", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_rem, 0);
+    set_handler("neg", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_neg, 0);
+    set_handler("abs", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_abs, 0);
     set_handler("eq", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_EQ, 0);
     set_handler("ne", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_NE, 0);
     set_handler("gt", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, AR_GT, 0);
