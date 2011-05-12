@@ -70,11 +70,11 @@ ErrorTest::initialize(ErrorHandler *init_errh)
     }
 
     {
+	ContextErrorHandler cerrh(&errh, "Context:");
 	PrefixErrorHandler perrh(&errh, "{context:no}");
-	ContextErrorHandler cerrh(&perrh, "Context:");
-	cerrh.error("Testing context 1");
+	perrh.error("Testing context 1");
 	CHECK("{context:no}<3>Testing context 1\n");
-	cerrh.error("Testing context 2");
+	perrh.error("Testing context 2");
 	CHECK("{context:no}<3>Testing context 2\n");
     }
 

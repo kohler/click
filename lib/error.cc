@@ -1143,28 +1143,28 @@ ContextErrorHandler::ContextErrorHandler(ErrorHandler *errh, const char *fmt,
 String
 ContextErrorHandler::decorate(const String &str)
 {
-    String cstr = ErrorVeneer::decorate(str), context_anno;
-    const char *cstr_endanno = parse_anno(cstr, cstr.begin(), cstr.end(),
-					  "context", &context_anno,
-					  (const char *) 0);
+    String context_anno;
+    const char *str_endanno = parse_anno(str, str.begin(), str.end(),
+					 "context", &context_anno,
+					 (const char *) 0);
     if (context_anno.equals("no", 2))
-	return cstr;
+	return ErrorVeneer::decorate(str);
 
-    String icstr;
+    String istr;
     if (context_anno.equals("noindent", 8))
-	icstr = combine_anno(cstr, _context_landmark);
+	istr = combine_anno(str, _context_landmark);
     else
-	icstr = combine_anno(cstr, _context_landmark + _indent);
+	istr = combine_anno(str, _context_landmark + _indent);
 
     if (!_context_printed && !context_anno.equals("nocontext", 9)) {
 	String astr = combine_anno(combine_anno(_context, _context_landmark),
-				   cstr.substring(cstr.begin(), cstr_endanno));
+				   str.substring(str.begin(), str_endanno));
 	if (astr && astr.back() != '\n')
 	    astr += '\n';
 	_context_printed = true;
-	return ErrorVeneer::decorate(astr) + icstr;
+	return ErrorVeneer::decorate(astr + istr);
     } else
-	return icstr;
+	return ErrorVeneer::decorate(istr);
 }
 
 
