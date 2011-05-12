@@ -14,3 +14,5 @@ TimedSource(0.5) -> c2 :: Counter
 	-> [1]rr;
 
 rr -> TimedSink(0.1);
+
+ClickyInfo(STYLE @import test-clicky.ccss);
