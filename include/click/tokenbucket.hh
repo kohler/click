@@ -26,7 +26,7 @@ CLICK_DECLS
 
  The token bucket templates divide time into discrete units called I<epochs>.
  Token counters are refilled up to once per epoch.  An epoch may be less than
- a full period.  For example, if periods and epochs are 1 second a 1
+ a full period.  For example, if periods and epochs are 1 second and 1
  millisecond, respectively, then a TokenCounterX with associated rate 1000
  tokens per second would be refilled at 1 token per millisecond.  The
  TokenRateX template parameter P defines the epoch unit.  The provided
