@@ -244,7 +244,7 @@ crouter::calculate_router_ccss()
 
     if (sa) {
 	_ccss = new dcss_set(_ccss);
-	_ccss->parse(sa.take_string());
+	_ccss->parse(dcss_set::expand_imports(sa.take_string(), _landmark, 0));
     }
 }
 
