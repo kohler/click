@@ -21,8 +21,7 @@ extern "C" {
 static void on_new_window_activate(GtkMenuItem *, gpointer user_data)
 {
     wmain *old_wm = reinterpret_cast<wmain *>(user_data);
-    wmain *rw = new wmain(old_wm->show_toolbar(), old_wm->show_list());
-    rw->set_ccss_text(old_wm->ccss_text());
+    wmain *rw = new wmain(old_wm->show_toolbar(), old_wm->show_list(), old_wm->ccss());
     rw->show();
 }
 
@@ -247,11 +246,10 @@ void wmain::on_open_file()
 		rw = this;
 		rw->clear(true);
 	    } else
-		rw = new wmain(_show_toolbar, _show_list);
+		rw = new wmain(_show_toolbar, _show_list, ccss());
 	    rw->set_landmark(filename);
 	    rw->set_config(s, true);
 	    rw->set_save_file(filename, true);
-	    rw->set_ccss_text(ccss_text());
 	    rw->show();
 	}
 	g_free(filename);
@@ -365,10 +363,9 @@ void wmain::on_open_socket()
 	    rw = this;
 	    rw->clear(true);
 	} else
-	    rw = new wmain(_show_toolbar, _show_list);
+	    rw = new wmain(_show_toolbar, _show_list, ccss());
 	rw->set_landmark(String(hosts) + ":" + String(ports));
 	(void) new csocket_cdriver(rw, socket, helper.ready);
-	rw->set_ccss_text(ccss_text());
 	rw->show();
 	break;
     }
@@ -391,10 +388,9 @@ void wmain::on_open_kernel()
 	    rw = this;
 	    rw->clear(true);
 	} else
-	    rw = new wmain(_show_toolbar, _show_list);
+	    rw = new wmain(_show_toolbar, _show_list, ccss());
 	rw->set_landmark(prefix);
 	(void) new clickfs_cdriver(rw, prefix);
-	rw->set_ccss_text(ccss_text());
 	rw->show();
     }
 }

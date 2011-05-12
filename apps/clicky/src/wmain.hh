@@ -8,7 +8,8 @@ class wdiagram;
 
 class wmain : public crouter { public:
 
-    wmain(bool show_toolbar, bool show_list, gint width = -1, gint height = -1);
+    wmain(bool show_toolbar, bool show_list, dcss_set *ccss,
+	  gint width = -1, gint height = -1);
     ~wmain();
 
     void clear(bool alive);

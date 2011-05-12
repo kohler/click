@@ -25,7 +25,7 @@ typedef Vector<Pair<String, String> > messagevector;
 
 class crouter { public:
 
-    crouter();
+    crouter(dcss_set *ccss);
     virtual ~crouter();
 
     String landmark() const {
@@ -90,8 +90,6 @@ class crouter { public:
     dcss_set *ccss() const {
 	return _ccss;
     }
-    String ccss_text() const;
-    void set_ccss_text(const String &str);
     void set_ccss_media(const String &media);
     virtual void on_ccss_changed() {
     }
@@ -169,6 +167,7 @@ class crouter { public:
     bool _driver_active;
 
     dcss_set *_ccss;
+    bool _router_ccss;
 
     mutable GatherErrorHandler _gerrh;
     int _throbber_count;
@@ -194,6 +193,8 @@ class crouter { public:
 	void export_matches(reachable_t &reach, ErrorHandler *debug_errh);
     };
     void calculate_reachable(const String &str, bool forward, reachable_t &reach);
+
+    void calculate_router_ccss();
 
 };
 

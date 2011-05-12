@@ -174,6 +174,7 @@ class dcss_selector { public:
 	return _type_glob;
     }
 
+    void unparse(StringAccum &sa) const;
     String unparse() const;
 
     bool match(crouter *cr, const delt *e, int *sensitivity = 0) const;
@@ -402,7 +403,10 @@ class dcss { public:
 
     const char *parse(const String &str, const String &media, const char *s);
 
+    void unparse_selector(StringAccum &sa) const;
     String unparse_selector() const;
+    void unparse(StringAccum &sa) const;
+    String unparse() const;
 
     int assign(dcss_propmatch **begin, dcss_propmatch **end) const;
     static void assign_all(dcss_propmatch *pbegin, dcss_propmatch *pend,
@@ -449,6 +453,9 @@ class dcss_set { public:
     }
     const String &text() const {
 	return _text;
+    }
+    dcss_set *below() const {
+	return _below;
     }
 
     dcss_set *remedia(const String &media);

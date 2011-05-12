@@ -5,7 +5,7 @@ namespace clicky {
 
 class tmain : public crouter { public:
 
-    tmain();
+    tmain(dcss_set *ccss);
     ~tmain();
 
     // not really public

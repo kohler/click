@@ -44,8 +44,10 @@ static void destroy(gpointer data) {
 }
 }
 
-wmain::wmain(bool show_toolbar, bool show_list, gint width, gint height)
-    : _window(create_mainw()),
+wmain::wmain(bool show_toolbar, bool show_list, dcss_set *ccss,
+	     gint width, gint height)
+    : crouter(ccss),
+      _window(create_mainw()),
       _config_clean_errors(true), _config_clean_elements(true),
       _error_hover_tag(0), _error_highlight_tag(0),
       _error_endpos(0), _error_hover_index(-1),

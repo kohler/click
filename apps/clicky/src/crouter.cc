@@ -14,6 +14,7 @@
 #include <clicktool/processingt.hh>
 #include <click/straccum.hh>
 #include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/pathvars.h>
 #include <math.h>
 #include <algorithm>
@@ -36,11 +37,10 @@ String g_click_to_utf8(const String &str)
     return str;
 }
 
-crouter::crouter()
+crouter::crouter(dcss_set *ccss)
     : _r(0), _emap(0), _selected_driver(-1), _processing(0),
       _hvalues(this), _driver(0), _driver_active(false),
-      _ccss(new dcss_set(dcss_set::default_set("screen"))),
-      _throbber_count(0)
+      _ccss(ccss), _router_ccss(false), _throbber_count(0)
 {
 }
 
@@ -98,22 +98,6 @@ void crouter::set_landmark(const String &landmark)
 {
     _landmark = landmark;
     on_landmark_changed();
-}
-
-String crouter::ccss_text() const
-{
-    return _ccss->text();
-}
-
-void crouter::set_ccss_text(const String &str)
-{
-    if (_ccss->text() != str) {
-	String media = _ccss->media();
-	delete _ccss;
-	_ccss = new dcss_set(dcss_set::default_set(media));
-	_ccss->parse(str);
-	on_ccss_changed();
-    }
 }
 
 void crouter::set_ccss_media(const String &media)
@@ -224,6 +208,7 @@ void crouter::set_config(const String &conf, bool replace)
 	_processing = processing;
 	_downstreams.clear();
 	_upstreams.clear();
+	calculate_router_ccss();
     } else {
 	delete r;
 	delete emap;
@@ -233,6 +218,34 @@ void crouter::set_config(const String &conf, bool replace)
     on_config_changed(replace, lexinfo);
 
     delete lexinfo;
+}
+
+void
+crouter::calculate_router_ccss()
+{
+    if (_router_ccss) {
+	dcss_set *old_ccss = _ccss;
+	_ccss = old_ccss->below();
+	delete old_ccss;
+	_router_ccss = false;
+    }
+
+    StringAccum sa;
+    for (RouterT::type_iterator it = _r->begin_elements(ElementClassT::base_type("ClickyInfo"));
+	 it != _r->end_elements(); ++it) {
+	String s;
+	(void) Args().push_back_args(it->config())
+	    .read_p("STYLE", AnyArg(), s).execute();
+	if (s && s[0] == '\"')
+	    s = cp_unquote(s);
+	if (s)
+	    sa << s << '\n';
+    }
+
+    if (sa) {
+	_ccss = new dcss_set(_ccss);
+	_ccss->parse(sa.take_string());
+    }
 }
 
 

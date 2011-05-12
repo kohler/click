@@ -258,10 +258,16 @@ particular purpose.\n");
 	exit(1);
     }
 
+    // create styles
+    clicky::dcss_set *ccss = clicky::dcss_set::default_set("screen");
+    if (css_text) {
+	ccss = new clicky::dcss_set(ccss);
+	ccss->parse(css_text);
+    }
+
     // create GUIs
     if (wfiles.size() == 0) {
-	clicky::wmain *rw = new clicky::wmain(show_toolbar, show_list, width, height);
-	rw->set_ccss_text(css_text);
+	clicky::wmain *rw = new clicky::wmain(show_toolbar, show_list, ccss, width, height);
 	rw->show();
     }
 
@@ -272,15 +278,14 @@ particular purpose.\n");
 
     for (int i = 0; i < wfiles.size(); i++) {
 	if (!do_pdf)
-	    cr = wm = new clicky::wmain(show_toolbar, show_list, width, height);
+	    cr = wm = new clicky::wmain(show_toolbar, show_list, ccss, width, height);
 	else {
-	    cr = new clicky::tmain;
+	    cr = new clicky::tmain(ccss);
 	    wm = 0;
 	}
 
 	GatherErrorHandler *gerrh = cr->error_handler();
 	cr->set_landmark(wtypes[i] == 1 ? "config" : wfiles[i]);
-	cr->set_ccss_text(css_text);
 
 	if (wtypes[i] == 1)
 	    cr->set_config(wfiles[i], true);

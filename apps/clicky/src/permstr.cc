@@ -1,6 +1,6 @@
 /* permstr.{cc,hh} -- permanent strings
  *
- * Copyright (c) 1998-2008 Eddie Kohler
+ * Copyright (c) 1998-2011 Eddie Kohler
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -15,6 +15,7 @@
 # include <config.h>
 #endif
 #include <click/config.h>
+#include <click/straccum.hh>
 #include "permstr.hh"
 #include <stdlib.h>
 #include <string.h>
@@ -159,4 +160,10 @@ PermString operator+(PermString p1, PermString p2)
     PermString p(s, l1 + l2);
     delete[] s;
     return p;
+}
+
+StringAccum &operator<<(StringAccum &sa, PermString x)
+{
+    sa.append(x.c_str(), x.length());
+    return sa;
 }

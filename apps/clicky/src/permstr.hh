@@ -199,4 +199,6 @@ inline PermString PermString::decapsule(Capsule c)
 
 PermString operator+(PermString a, PermString b);
 
+StringAccum &operator<<(StringAccum &sa, PermString x);
+
 #endif

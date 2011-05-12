@@ -6,7 +6,8 @@
 #include "gathererror.hh"
 namespace clicky {
 
-tmain::tmain()
+tmain::tmain(dcss_set *ccss)
+    : crouter(ccss)
 {
 }
 
