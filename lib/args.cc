@@ -561,9 +561,14 @@ IntArg::parse(const char *begin, const char *end, bool is_signed, int size,
 	    value[bitsize / limb_bits] ^= 1U << (bitsize & (limb_bits - 1));
     }
 
-    if (negative)
+    if (negative) {
+	limb_type *first_zero = value + nlimb;
 	for (limb_type *x = value; x != value + nlimb; ++x)
-	    *x = -*x;
+	    if ((*x = -*x))
+		first_zero = x + 1;
+	for (limb_type *x = first_zero; x != value + nlimb; ++x)
+	    --*x;
+    }
 
     return xend;
 }

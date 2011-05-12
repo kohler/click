@@ -134,6 +134,7 @@ ConfParseTest::initialize(ErrorHandler *errh)
     IntArg ia;
     CHECK(IntArg().parse("0", i32) == true && i32 == 0);
     CHECK(IntArg().parse("-0", i32) == true && i32 == 0);
+    CHECK(IntArg().parse("-5", i32) == true && i32 == -5);
     CHECK(u32 == 97);
     CHECK(IntArg().parse("0", u32) == true && u32 == 0);
     CHECK(IntArg().parse("-0", u32) == false);
@@ -160,15 +161,14 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK_ERR(ia.parse("97", i8, args) == true && i8 == 97, "");
     CHECK_ERR(ia.parse("128", i8, args) == false && i8 == 97, "out of range, bound 127");
     CHECK_ERR(ia.parse_saturating("128", i8, args) == true && i8 == 127, "");
-#if HAVE_LONG_LONG && SIZEOF_LONG_LONG == 8
-    {
-	long long ll;
-	unsigned long long ull = 0;
-	CHECK_ERR(ia.parse("9223372036854775807", ll, args) == true && ll == 0x7FFFFFFFFFFFFFFFULL, "");
-	CHECK_ERR(ia.parse("-9223372036854775808", ll, args) == true && ll == (long long) 0x8000000000000000ULL, "");
-	CHECK_ERR(ia.parse("18446744073709551616", ull, args) == false && ull == 0, "out of range, bound 18446744073709551615");
-	CHECK_ERR(ia.parse_saturating("18446744073709551616", ull, args) == true && ull == 0xFFFFFFFFFFFFFFFFULL, "");
-    }
+#if HAVE_INT64_TYPES
+    int64_t i64;
+    uint64_t u64 = 0;
+    CHECK_ERR(ia.parse("9223372036854775807", i64, args) == true && i64 == int64_t(0x7FFFFFFFFFFFFFFFULL), "");
+    CHECK_ERR(ia.parse("-9223372036854775808", i64, args) == true && i64 == int64_t(0x8000000000000000ULL), "");
+    CHECK_ERR(ia.parse("-5", i64, args) == true && i64 == -5, "");
+    CHECK_ERR(ia.parse("18446744073709551616", u64, args) == false && u64 == 0, "out of range, bound 18446744073709551615");
+    CHECK_ERR(ia.parse_saturating("18446744073709551616", u64, args) == true && u64 == 0xFFFFFFFFFFFFFFFFULL, "");
 #endif
 
     bool b; (void) b;
