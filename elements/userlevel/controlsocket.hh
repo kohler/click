@@ -255,7 +255,7 @@ class ControlSocket : public Element { public:
 
   private:
 
-    enum { type_tcp, type_unix, type_pipe };
+    enum { type_tcp, type_unix, type_socket };
 
     String _unix_pathname;
     int _socket_fd;

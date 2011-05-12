@@ -140,6 +140,13 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 	if (_unix_pathname.length() >= (int)sizeof(((struct sockaddr_un *)0)->sun_path))
 	    return errh->error("filename too long");
 
+    } else if (socktype == "SOCKET") {
+	_type = type_socket;
+	int fd;
+	if (args.read_mp("FD", fd).complete() < 0)
+	    return -1;
+	_unix_pathname = String(fd);
+
     } else
 	return errh->error("unknown socket type %<%s%>", socktype.c_str());
 
@@ -210,6 +217,14 @@ ControlSocket::initialize_socket(ErrorHandler *errh)
     memcpy(sa.sun_path, _unix_pathname.c_str(), _unix_pathname.length() + 1);
     if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
       return initialize_socket_error(errh, "bind");
+
+  } else if (_type == type_socket) {
+      if (!hotswap_element()) {
+	  int fd;
+	  (void) Args().push_back_words(_unix_pathname).read_mp("FD", fd).execute();
+	  initialize_connection(fd);
+      }
+      return 0;
   }
 
   // start listening
