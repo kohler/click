@@ -75,6 +75,17 @@ static gboolean csocket_watch(GIOChannel *, GIOCondition condition, gpointer use
 }
 }
 
+int csocket_cdriver::make_nonblocking(int fd, ErrorHandler *errh)
+{
+    int flags = 1;
+    if (::ioctl(fd, FIONBIO, &flags) != 0) {
+	flags = ::fcntl(fd, F_GETFL);
+	if (flags < 0 || ::fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
+	    return errh->error("%s", strerror(errno));
+    }
+    return 0;
+}
+
 GIOChannel *csocket_cdriver::start_connect(IPAddress addr, uint16_t port, bool *ready, ErrorHandler *errh)
 {
     // open socket, set options
@@ -85,40 +96,27 @@ GIOChannel *csocket_cdriver::start_connect(IPAddress addr, uint16_t port, bool *
     }
 
     // make socket nonblocking
-    {
-	int flags = 1;
-	if (::ioctl(fd, FIONBIO, &flags) != 0) {
-	    flags = ::fcntl(fd, F_GETFL);
-	    if (flags < 0 || ::fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-		errh->error("%s", strerror(errno));
-		return 0;
-	    }
-	}
-    }
-
-    // attach file descriptor
-    GIOChannel *socket = g_io_channel_unix_new(fd);
-    g_io_channel_set_encoding(socket, NULL, NULL);
+    if (make_nonblocking(fd, errh) != 0)
+	return 0;
 
     // connect to port
     struct sockaddr_in sa;
     sa.sin_family = AF_INET;
     sa.sin_port = htons(port);
     sa.sin_addr = addr;
-    if (connect(fd, (struct sockaddr *)&sa, sizeof(sa)) == -1) {
-	if (errno != EINPROGRESS) {
-	    errh->error("%s", strerror(errno));
-	    g_io_channel_unref(socket);
-	    return 0;
-	} else {
-	    *ready = false;
-	    return socket;
-	}
+    if (connect(fd, (struct sockaddr *)&sa, sizeof(sa)) != -1)
+	*ready = true;
+    else if (errno == EINPROGRESS)
+	*ready = false;
+    else {
+	errh->error("%s", strerror(errno));
+	return 0;
     }
 
-    // otherwise, succeeded
-    *ready = true;
-    return socket;
+    // attach file descriptor
+    GIOChannel *channel = g_io_channel_unix_new(fd);
+    g_io_channel_set_encoding(channel, NULL, NULL);
+    return channel;
 }
 
 csocket_cdriver::csocket_cdriver(crouter *cr, GIOChannel *socket, bool ready)

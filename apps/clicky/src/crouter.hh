@@ -113,6 +113,9 @@ class crouter { public:
 	return _driver_active ? _driver : 0;
     }
     void set_driver(cdriver *driver, bool active);
+    void kill_driver();
+    void run(ErrorHandler *errh);
+
     void select_driver(int driver) {
 	_selected_driver = driver;
     }
@@ -165,6 +168,7 @@ class crouter { public:
     handler_values _hvalues;
     cdriver *_driver;
     bool _driver_active;
+    pid_t _driver_process;
 
     dcss_set *_ccss;
     bool _router_ccss;

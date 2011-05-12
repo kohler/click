@@ -24,9 +24,10 @@ class cdriver { public:
 
 class csocket_cdriver : public cdriver { public:
 
-    csocket_cdriver(crouter *rw, GIOChannel *socket, bool ready);
+    csocket_cdriver(crouter *rw, GIOChannel *channel, bool ready);
     ~csocket_cdriver();
 
+    static int make_nonblocking(int fd, ErrorHandler *errh);
     static GIOChannel *start_connect(IPAddress addr, uint16_t port, bool *ready, ErrorHandler *errh);
 
     bool active() const;

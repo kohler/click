@@ -39,7 +39,7 @@ String g_click_to_utf8(const String &str)
 
 crouter::crouter(dcss_set *ccss)
     : _r(0), _emap(0), _selected_driver(-1), _processing(0),
-      _hvalues(this), _driver(0), _driver_active(false),
+      _hvalues(this), _driver(0), _driver_active(false), _driver_process(0),
       _ccss(ccss), _router_ccss(false), _throbber_count(0)
 {
 }
@@ -88,8 +88,11 @@ void crouter::clear(bool alive)
 
     if (_driver)
 	delete _driver;
+    if (_driver_process)
+	kill(_driver_process, SIGHUP);
     _driver = 0;
     _driver_active = false;
+    _driver_process = 0;
 
     // XXX _hvalues.clear();
 }
@@ -260,6 +263,67 @@ void crouter::set_driver(cdriver *driver, bool active)
     assert(driver && (!_driver || driver == _driver));
     _driver = driver;
     _driver_active = active;
+}
+
+void crouter::kill_driver()
+{
+    if (_driver)
+	delete _driver;
+    if (_driver_process)
+	kill(_driver_process, SIGHUP);
+    _driver = 0;
+    _driver_active = false;
+    _driver_process = 0;
+}
+
+void crouter::run(ErrorHandler *errh)
+{
+    kill_driver();
+
+    int configpipe[2], ctlsocket[2];
+    if (pipe(configpipe) == -1)
+	assert(0);
+    if (socketpair(PF_UNIX, SOCK_STREAM, 0, ctlsocket) == -1)
+	assert(0);
+
+    _driver_process = fork();
+    if (_driver_process == -1)
+	assert(0);
+    else if (_driver_process == 0) {
+	close(0);
+	dup2(configpipe[0], 0);
+	close(configpipe[0]);
+	close(configpipe[1]);
+	close(ctlsocket[0]);
+
+	String arg = String(ctlsocket[1]);
+	execlp("click", "click", "-R", "--socket", arg.c_str(), (const char *) 0);
+	assert(0);
+    }
+
+    close(configpipe[0]);
+    close(ctlsocket[1]);
+    if (csocket_cdriver::make_nonblocking(ctlsocket[0], errh) != 0)
+	assert(0);
+
+    int pos = 0;
+    while (pos != _conf.length()) {
+	ssize_t r = write(configpipe[1], _conf.begin() + pos, _conf.length() - pos);
+	if (r == 0 || (r == -1 && errno != EAGAIN && errno != EINTR))
+	    break;
+	else if (r != -1)
+	    pos += r;
+    }
+    if (pos != _conf.length()) {
+	kill_driver();
+	close(configpipe[1]);
+	close(ctlsocket[0]);
+    } else {
+	close(configpipe[1]);
+	GIOChannel *channel = g_io_channel_unix_new(ctlsocket[0]);
+	g_io_channel_set_encoding(channel, NULL, NULL);
+	new csocket_cdriver(this, channel, true);
+    }
 }
 
 void crouter::on_handler_read(const String &hname, const String &hparam,

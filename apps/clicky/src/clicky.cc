@@ -45,6 +45,7 @@ extern "C" {
 #define TOOLBAR_OPT 314
 #define NO_TOOLBAR_OPT 315
 #define GEOMETRY_OPT 316
+#define RUN_OPT 317
 
 static const Clp_Option options[] = {
     { "version", 0, VERSION_OPT, 0, 0 },
@@ -63,6 +64,7 @@ static const Clp_Option options[] = {
     { "pdf", 0, PDF_OPT, Clp_ValString, Clp_Optional },
     { "pdf-scale", 0, PDF_SCALE_OPT, Clp_ValDouble, 0 },
     { "pdf-multipage", 0, PDF_MULTIPAGE_OPT, 0, Clp_Negate },
+    { "run", 'r', RUN_OPT, 0, Clp_Negate },
     { "help", 0, HELP_OPT, 0, 0 }
 };
 
@@ -78,6 +80,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 Options:\n\
   -f, --file FILE              Read router configuration from FILE.\n\
   -e, --expression EXPR        Use EXPR as router configuration.\n\
+  -r, --run                    Run configuration in a Click driver.\n\
   -p, --port [HOST:]PORT       Connect to HOST:PORT for configuration.\n\
   -k, --kernel                 Read configuration from kernel.\n\
   -s, --style FILE             Add CCSS style information from FILE.\n\
@@ -93,6 +96,11 @@ Options:\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
+
+enum {
+    wt_mask = 7, wt_expr = 1, wt_port = 2, wt_file = 3, wt_kernel = 4,
+    wt_run = 8
+};
 
 int
 main(int argc, char *argv[])
@@ -127,6 +135,7 @@ main(int argc, char *argv[])
     String css_text;
     Vector<String> wfiles;
     Vector<int> wtypes;
+    int runmask = 0;
     bool do_pdf = false;
     String pdf_file = "-";
     double pdf_scale = 2.5;
@@ -162,27 +171,31 @@ particular purpose.\n");
 	    css_text += clicky::dcss_set::expand_imports(clp->vstr, "<style>", ErrorHandler::default_handler());
 	    break;
 
-	  case EXPRESSION_OPT:
-	    wfiles.push_back(clp->vstr);
-	    wtypes.push_back(1);
+	case RUN_OPT:
+	    runmask = clp->negated ? 0 : wt_run;
 	    break;
 
-	  case PORT_OPT:
+	case EXPRESSION_OPT:
+	    wfiles.push_back(clp->vstr);
+	    wtypes.push_back(wt_expr | runmask);
+	    break;
+
+	case PORT_OPT:
 	    if (strchr(clp->vstr, ':'))
 		wfiles.push_back(clp->vstr);
 	    else
 		wfiles.push_back("localhost:" + String(clp->vstr));
-	    wtypes.push_back(2);
+	    wtypes.push_back(wt_port);
 	    break;
 
 	  case FILE_OPT:
 	    wfiles.push_back(clp->vstr);
-	    wtypes.push_back(3);
+	    wtypes.push_back(wt_file | runmask);
 	    break;
 
 	  case KERNEL_OPT:
 	    wfiles.push_back("<kernel>");
-	    wtypes.push_back(4);
+	    wtypes.push_back(wt_kernel);
 	    break;
 
 	  case PDF_OPT:
@@ -233,7 +246,7 @@ particular purpose.\n");
 
 	  case Clp_NotOption:
 	    wfiles.push_back(clp->vstr);
-	    wtypes.push_back(2);
+	    wtypes.push_back(wt_port | runmask);
 	    break;
 
 	case Clp_BadOption:
@@ -285,11 +298,12 @@ particular purpose.\n");
 	}
 
 	GatherErrorHandler *gerrh = cr->error_handler();
-	cr->set_landmark(wtypes[i] == 1 ? "config" : wfiles[i]);
+	int type = wtypes[i] & wt_mask;
+	cr->set_landmark(type == wt_expr ? "config" : wfiles[i]);
 
-	if (wtypes[i] == 1)
+	if (type == wt_expr)
 	    cr->set_config(wfiles[i], true);
-	else if (wtypes[i] == 2
+	else if (type == wt_port
 		 && (colon = wfiles[i].find_right(':')) >= 0
 		 && cp_tcpudp_port(wfiles[i].substring(colon + 1), IP_PROTO_TCP, &port)) {
 	    IPAddress addr;
@@ -301,7 +315,7 @@ particular purpose.\n");
 		if (channel)
 		    (void) new clicky::csocket_cdriver(cr, channel, ready);
 	    }
-	} else if (wtypes[i] == 4) {
+	} else if (type == wt_kernel) {
 	    (void) new clicky::clickfs_cdriver(cr, "/click/");
 	} else {
 	    String s = file_string(wfiles[i], cr->error_handler());
@@ -319,6 +333,8 @@ particular purpose.\n");
 		wm->set_save_file(wfiles[i], (bool) s);
 	}
 
+	if (!cr->driver() && (wtypes[i] & wt_run))
+	    cr->run(gerrh);
 	if (wm)
 	    wm->show();
     }
