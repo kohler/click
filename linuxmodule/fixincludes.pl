@@ -174,11 +174,6 @@ sub one_includeroot ($$) {
 	    s{([\{,]\s*)\.\s*([a-zA-Z_]\w*)\s*=}{$1$2: }g;
 	    s{([\{,]\s*\\\n\s*)\.\s*([a-zA-Z_]\w*)\s*=}{$1$2: }g;
 
-	    # ktime initializers
-	    s{(return|=)\s*\((\w+)\)\s*(\{[^\{\}]*\})}{$1 \(\{ $2 __magic_$2__ = $3; __magic_$2__; \}\)}g;
-	    s{(return|=)\s*\((\w+)\)\s*(\{[^\{\}]*\{[^\{\}]*\}[^\{\}]*\})}{$1 \(\{ $2 __magic_$2__ = $3; __magic_$2__; \}\)}g;
-	    s{\(struct\s+(\w+)\)\s*(__.*\(.*?\));}{\(\{ struct $1 __magic_$1__ = $2; __magic_$1__; \}\);}g;
-
 	    # "new" and other keywords
 	    s{\bnew\b}{new_value}g;
 	    s{\band\b}{and_value}g;
@@ -227,6 +222,18 @@ sub one_includeroot ($$) {
 	    }
 	    if ($d eq "netdevice.h") {
 		1 while (s<(^struct net_device \{[\000-\377]*)^\tenum( \{[^}]*\}) (\w+)><enum net_device_$3$2;\n$1\tenum net_device_$3 $3>mg);
+	    }
+
+	    # ktime initializers
+	    if ($d eq "ktime.h") {
+		s{(return|=)\s*\((\w+)\)\s*(\{[^\{\}]*\})}{$1 \(\{ $2 __magic_$2__ = $3; __magic_$2__; \}\)}g;
+		s{(return|=)\s*\((\w+)\)\s*(\{[^\{\}]*\{[^\{\}]*\}[^\{\}]*\})}{$1 \(\{ $2 __magic_$2__ = $3; __magic_$2__; \}\)}g;
+		s{\(struct\s+(\w+)\)\s*(__.*\(.*?\));}{\(\{ struct $1 __magic_$1__ = $2; __magic_$1__; \}\);}g;
+	    }
+
+	    if ($d eq "semaphore.h") {
+		s{(static inline void sema_init)}{#ifndef __cplusplus\n$1};
+	        s/(lockdep.*})/$1\n#endif\n/s;
 	    }
 
 	    # CLICK_CXX_PROTECTED check
