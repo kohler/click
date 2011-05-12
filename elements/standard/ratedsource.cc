@@ -40,12 +40,12 @@ RatedSource::~RatedSource()
 int
 RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  String data =
-    "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
-  unsigned rate = 10;
-  int limit = -1;
-  int datasize = -1;
-  bool active = true, stop = false;
+    String data =
+	"Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
+    unsigned rate = 10;
+    int limit = -1;
+    int datasize = -1;
+    bool active = true, stop = false;
 
     if (Args(conf, this, errh)
 	.read_p("DATA", data)
@@ -58,33 +58,34 @@ RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 	.complete() < 0)
 	return -1;
 
-  _data = data;
-  _datasize = datasize;
-  _rate.set_rate(rate, errh);
-  _limit = (limit >= 0 ? limit : NO_LIMIT);
-  _active = active;
-  _stop = stop;
+    _data = data;
+    _datasize = datasize;
+    _tb.assign(rate, rate < CLICK_HZ / 50 ? 2 : rate / 100);
+    _limit = (limit >= 0 ? limit : NO_LIMIT);
+    _active = active;
+    _stop = stop;
 
-  setup_packet();
+    setup_packet();
 
-  return 0;
+    return 0;
 }
 
 int
 RatedSource::initialize(ErrorHandler *errh)
 {
-  _count = 0;
-  if (output_is_push(0))
-    ScheduleInfo::initialize_task(this, &_task, errh);
-  return 0;
+    _count = 0;
+    if (output_is_push(0))
+	ScheduleInfo::initialize_task(this, &_task, errh);
+    _tb.set(1);
+    return 0;
 }
 
 void
 RatedSource::cleanup(CleanupStage)
 {
-  if (_packet)
-    _packet->kill();
-  _packet = 0;
+    if (_packet)
+	_packet->kill();
+    _packet = 0;
 }
 
 bool
@@ -98,11 +99,10 @@ RatedSource::run_task(Task *)
 	return false;
     }
 
-    Timestamp now = Timestamp::now();
-    if (_rate.need_update(now)) {
-	_rate.update();
+    _tb.refill();
+    if (_tb.remove_if(1)) {
 	Packet *p = _packet->clone();
-	p->set_timestamp_anno(now);
+	p->set_timestamp_anno(Timestamp::now());
 	output(0).push(p);
 	_count++;
 	_task.fast_reschedule();
@@ -124,12 +124,11 @@ RatedSource::pull(int)
 	return 0;
     }
 
-    Timestamp now = Timestamp::now();
-    if (_rate.need_update(now)) {
-	_rate.update();
+    _tb.refill();
+    if (_tb.remove_if(1)) {
 	_count++;
 	Packet *p = _packet->clone();
-	p->set_timestamp_anno(now);
+	p->set_timestamp_anno(Timestamp::now());
 	return p;
     } else
 	return 0;
@@ -165,7 +164,7 @@ RatedSource::read_param(Element *e, void *vparam)
    case 0:			// data
     return rs->_data;
    case 1:			// rate
-    return String(rs->_rate.rate());
+    return String(rs->_tb.rate());
    case 2:			// limit
     return (rs->_limit != NO_LIMIT ? String(rs->_limit) : String("-1"));
    default:
@@ -187,53 +186,50 @@ RatedSource::change_param(const String &s, Element *e, void *vparam,
       rs->_packet = Packet::make(rs->_data.data(), rs->_data.length());
       break;
 
-   case 1: {			// rate
-     unsigned rate;
-     if (!IntArg().parse(s, rate))
-       return errh->error("rate parameter must be integer >= 0");
-     if (rate > GapRate::MAX_RATE)
-       // report error rather than pin to max
-       return errh->error("rate too large; max is %u", GapRate::MAX_RATE);
-     rs->_rate.set_rate(rate);
-     break;
-   }
+  case 1: {			// rate
+      unsigned rate;
+      if (!IntArg().parse(s, rate))
+	  return errh->error("syntax error");
+      rs->_tb.assign_adjust(rate, rate < CLICK_HZ / 50 ? 2 : rate / 200);
+      break;
+  }
 
    case 2: {			// limit
      int limit;
      if (!IntArg().parse(s, limit))
-       return errh->error("limit parameter must be integer");
+       return errh->error("syntax error");
      rs->_limit = (limit < 0 ? NO_LIMIT : limit);
      break;
    }
 
-   case 3: {			// active
-     bool active;
-     if (!BoolArg().parse(s, active))
-       return errh->error("active parameter must be boolean");
-     rs->_active = active;
-     if (rs->output_is_push(0) && !rs->_task.scheduled() && active) {
-       rs->_rate.reset();
-       rs->_task.reschedule();
-     }
-     break;
-   }
+  case 3: {			// active
+      bool active;
+      if (!BoolArg().parse(s, active))
+	  return errh->error("syntax error");
+      rs->_active = active;
+      if (rs->output_is_push(0) && !rs->_task.scheduled() && active) {
+	  rs->_tb.set(1);
+	  rs->_task.reschedule();
+      }
+      break;
+  }
 
-   case 5: {			// reset
-     rs->_count = 0;
-     rs->_rate.reset();
-     if (rs->output_is_push(0) && !rs->_task.scheduled() && rs->_active)
-       rs->_task.reschedule();
-     break;
-   }
+  case 5: {			// reset
+      rs->_count = 0;
+      rs->_tb.set(1);
+      if (rs->output_is_push(0) && !rs->_task.scheduled() && rs->_active)
+	  rs->_task.reschedule();
+      break;
+  }
 
-   case 6: {			// datasize
-     int datasize;
-     if (!IntArg().parse(s, datasize))
-       return errh->error("length must be integer");
-     rs->_datasize = datasize;
-     rs->setup_packet();
-     break;
-   }
+  case 6: {			// datasize
+      int datasize;
+      if (!IntArg().parse(s, datasize))
+	  return errh->error("syntax error");
+      rs->_datasize = datasize;
+      rs->setup_packet();
+      break;
+  }
   }
   return 0;
 }

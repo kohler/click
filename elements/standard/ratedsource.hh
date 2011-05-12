@@ -1,7 +1,7 @@
 #ifndef CLICK_RATEDSOURCE_HH
 #define CLICK_RATEDSOURCE_HH
 #include <click/element.hh>
-#include <click/gaprate.hh>
+#include <click/tokenbucket.hh>
 #include <click/task.hh>
 CLICK_DECLS
 
@@ -84,39 +84,38 @@ InfiniteSource, PokeHandlers */
 
 class RatedSource : public Element { public:
 
-  RatedSource();
-  ~RatedSource();
+    RatedSource();
+    ~RatedSource();
 
-  const char *class_name() const		{ return "RatedSource"; }
-  const char *port_count() const		{ return PORTS_0_1; }
-  const char *processing() const		{ return AGNOSTIC; }
-  void add_handlers();
+    const char *class_name() const		{ return "RatedSource"; }
+    const char *port_count() const		{ return PORTS_0_1; }
+    void add_handlers();
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
+    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int initialize(ErrorHandler *errh);
+    void cleanup(CleanupStage);
 
-  bool run_task(Task *);
-  Packet *pull(int);
+    bool run_task(Task *task);
+    Packet *pull(int);
 
- protected:
+  protected:
 
-  void setup_packet();
+    static const unsigned NO_LIMIT = 0xFFFFFFFFU;
 
-  static const unsigned NO_LIMIT = 0xFFFFFFFFU;
+    TokenBucket _tb;
+    unsigned _count;
+    unsigned _limit;
+    int _datasize;
+    bool _active;
+    bool _stop;
+    Packet *_packet;
+    Task _task;
+    String _data;
 
-  GapRate _rate;
-  unsigned _count;
-  unsigned _limit;
-  int _datasize;
-  bool _active;
-  bool _stop;
-  Packet *_packet;
-  Task _task;
-  String _data;
+    void setup_packet();
 
-  static String read_param(Element *, void *);
-  static int change_param(const String &, Element *, void *, ErrorHandler *);
+    static String read_param(Element *, void *);
+    static int change_param(const String &, Element *, void *, ErrorHandler *);
 
 };
 
