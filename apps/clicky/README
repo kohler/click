@@ -24,8 +24,7 @@ TESTING
 
     Try the following:
 
-	click -p 9999 CLICKDIR/conf/test-clicky.click &
-	clicky -p 9999 -s CLICKDIR/conf/test-clicky.ccss &
+	clicky -r CLICKDIR/conf/test-clicky.click &
 
     Then click on the elements and change their handlers.  For instance,
 change the TimedSources' "interval" handlers to smaller numbers and watch
