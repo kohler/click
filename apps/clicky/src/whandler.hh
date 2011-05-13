@@ -27,8 +27,8 @@ struct whandler {
     }
 
     void display(const String &ename, bool incremental);
+    void redisplay();
 
-    void notify_element(const String &ename);
     void notify_read(handler_value *hv);
     void notify_write(const String &hname, const String &hvalue, int status);
 
@@ -110,10 +110,6 @@ struct whandler {
     inline hinfo *find_hinfo(handler_value *hv);
 
 };
-
-inline void whandler::notify_element(const String &)
-{
-}
 
 inline const String &whandler::active_action() const
 {

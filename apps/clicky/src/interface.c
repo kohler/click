@@ -149,7 +149,6 @@ create_mainw (void)
   GtkWidget *menu_quit;
   GtkWidget *view1;
   GtkWidget *view1_menu;
-  GSList *menu_view_diagram_group = NULL;
   GtkWidget *menu_view_diagram;
   GtkWidget *menu_view_configuration;
   GtkWidget *separator2;
@@ -181,9 +180,10 @@ create_mainw (void)
   GtkWidget *toolbar1;
   GtkIconSize tmp_toolbar_icon_size;
   GtkWidget *tmp_image;
-  GtkWidget *toolbar_check;
+  GtkWidget *toolbar_run;
+  GtkWidget *toolbar_stop;
   GtkWidget *toolbar_install;
-  GtkWidget *toolbar_save;
+  GtkWidget *toolbar_configuration;
   GtkWidget *toolbar_diagram;
   GtkWidget *throbberitem;
   GtkWidget *throbberbox;
@@ -205,7 +205,7 @@ create_mainw (void)
   GtkWidget *label16;
   GtkWidget *elementtreewindow;
   GtkWidget *elementtree;
-  GtkWidget *vbox7;
+  GtkWidget *configdiagrampaned;
   GtkWidget *configwindow;
   GtkWidget *configview;
   GtkWidget *diagramwindow;
@@ -334,17 +334,15 @@ create_mainw (void)
   view1_menu = gtk_menu_new ();
   gtk_menu_item_set_submenu (GTK_MENU_ITEM (view1), view1_menu);
 
-  menu_view_diagram = gtk_radio_menu_item_new_with_mnemonic (menu_view_diagram_group, _("Diagram"));
-  menu_view_diagram_group = gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (menu_view_diagram));
-  gtk_widget_show (menu_view_diagram);
-  gtk_container_add (GTK_CONTAINER (view1_menu), menu_view_diagram);
-  gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_view_diagram), TRUE);
-
-  menu_view_configuration = gtk_radio_menu_item_new_with_mnemonic (menu_view_diagram_group, _("Configuration"));
-  menu_view_diagram_group = gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (menu_view_configuration));
+  menu_view_configuration = gtk_check_menu_item_new_with_mnemonic (_("Configuration"));
   gtk_widget_show (menu_view_configuration);
   gtk_container_add (GTK_CONTAINER (view1_menu), menu_view_configuration);
   gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_view_configuration), TRUE);
+
+  menu_view_diagram = gtk_check_menu_item_new_with_mnemonic (_("Diagram"));
+  gtk_widget_show (menu_view_diagram);
+  gtk_container_add (GTK_CONTAINER (view1_menu), menu_view_diagram);
+  gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_view_diagram), TRUE);
 
   separator2 = gtk_separator_menu_item_new ();
   gtk_widget_show (separator2);
@@ -423,7 +421,7 @@ create_mainw (void)
   gtk_widget_show (image119);
   gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_check), image119);
 
-  menu_install = gtk_image_menu_item_new_with_mnemonic (_("_Install"));
+  menu_install = gtk_image_menu_item_new_with_mnemonic (_("_Restart"));
   gtk_widget_show (menu_install);
   gtk_container_add (GTK_CONTAINER (item1_menu), menu_install);
 
@@ -473,31 +471,38 @@ create_mainw (void)
   gtk_toolbar_set_style (GTK_TOOLBAR (toolbar1), GTK_TOOLBAR_BOTH);
   tmp_toolbar_icon_size = gtk_toolbar_get_icon_size (GTK_TOOLBAR (toolbar1));
 
-  tmp_image = gtk_image_new_from_stock ("gtk-apply", tmp_toolbar_icon_size);
+  tmp_image = gtk_image_new_from_stock ("gtk-media-play", tmp_toolbar_icon_size);
   gtk_widget_show (tmp_image);
-  toolbar_check = (GtkWidget*) gtk_tool_button_new (tmp_image, _("Check"));
-  gtk_widget_show (toolbar_check);
-  gtk_container_add (GTK_CONTAINER (toolbar1), toolbar_check);
-  gtk_widget_set_sensitive (toolbar_check, FALSE);
+  toolbar_run = (GtkWidget*) gtk_tool_button_new (tmp_image, _("Run"));
+  gtk_container_add (GTK_CONTAINER (toolbar1), toolbar_run);
+  gtk_widget_set_sensitive (toolbar_run, TRUE);
 
-  tmp_image = gtk_image_new_from_stock ("gtk-execute", tmp_toolbar_icon_size);
+  tmp_image = gtk_image_new_from_stock ("gtk-stop", tmp_toolbar_icon_size);
   gtk_widget_show (tmp_image);
-  toolbar_install = (GtkWidget*) gtk_tool_button_new (tmp_image, _("Install"));
+  toolbar_stop = (GtkWidget*) gtk_tool_button_new (tmp_image, _("Stop"));
+  gtk_container_add (GTK_CONTAINER (toolbar1), toolbar_stop);
+  gtk_widget_set_sensitive (toolbar_stop, TRUE);
+
+  tmp_image = gtk_image_new_from_stock ("gtk-refresh", tmp_toolbar_icon_size);
+  gtk_widget_show (tmp_image);
+  toolbar_install = (GtkWidget*) gtk_tool_button_new (tmp_image, _("Restart"));
   gtk_widget_show (toolbar_install);
   gtk_container_add (GTK_CONTAINER (toolbar1), toolbar_install);
   gtk_widget_set_sensitive (toolbar_install, FALSE);
 
-  toolbar_save = (GtkWidget*) gtk_tool_button_new_from_stock ("gtk-save");
-  gtk_widget_show (toolbar_save);
-  gtk_container_add (GTK_CONTAINER (toolbar1), toolbar_save);
+  tmp_image = gtk_image_new_from_stock ("gtk-edit", tmp_toolbar_icon_size);
+  gtk_widget_show (tmp_image);
+  toolbar_configuration = (GtkWidget*) gtk_tool_button_new (tmp_image, _("Configuration"));
+  gtk_widget_show (toolbar_configuration);
+  gtk_container_add (GTK_CONTAINER (toolbar1), toolbar_configuration);
+  gtk_widget_set_sensitive (toolbar_configuration, TRUE);
 
-  toolbar_diagram = (GtkWidget*) gtk_toggle_tool_button_new ();
-  gtk_tool_button_set_label (GTK_TOOL_BUTTON (toolbar_diagram), _("Diagram"));
   tmp_image = gtk_image_new_from_stock ("gtk-properties", tmp_toolbar_icon_size);
   gtk_widget_show (tmp_image);
-  gtk_tool_button_set_icon_widget (GTK_TOOL_BUTTON (toolbar_diagram), tmp_image);
+  toolbar_diagram = (GtkWidget*) gtk_tool_button_new (tmp_image, _("Diagram"));
   gtk_widget_show (toolbar_diagram);
   gtk_container_add (GTK_CONTAINER (toolbar1), toolbar_diagram);
+  gtk_widget_set_sensitive (toolbar_diagram, TRUE);
 
   throbberitem = (GtkWidget*) gtk_tool_item_new ();
   gtk_widget_show (throbberitem);
@@ -602,13 +607,13 @@ create_mainw (void)
   gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (elementtree), FALSE);
   gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (elementtree), TRUE);
 
-  vbox7 = gtk_vbox_new (FALSE, 0);
-  gtk_widget_show (vbox7);
-  gtk_paned_pack2 (GTK_PANED (hpaned1), vbox7, TRUE, TRUE);
+  configdiagrampaned = gtk_hpaned_new ();
+  gtk_widget_show (configdiagrampaned);
+  gtk_paned_pack2 (GTK_PANED (hpaned1), configdiagrampaned, TRUE, TRUE);
 
   configwindow = gtk_scrolled_window_new (NULL, NULL);
   gtk_widget_show (configwindow);
-  gtk_box_pack_start (GTK_BOX (vbox7), configwindow, TRUE, TRUE, 0);
+  gtk_paned_pack1 (GTK_PANED (configdiagrampaned), configwindow, TRUE, TRUE);
   gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (configwindow), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
   gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (configwindow), GTK_SHADOW_IN);
 
@@ -618,7 +623,7 @@ create_mainw (void)
   gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (configview), GTK_WRAP_WORD);
 
   diagramwindow = gtk_scrolled_window_new (NULL, NULL);
-  gtk_box_pack_start (GTK_BOX (vbox7), diagramwindow, TRUE, TRUE, 0);
+  gtk_paned_pack2 (GTK_PANED (configdiagrampaned), diagramwindow, TRUE, TRUE);
   gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (diagramwindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 
   diagram = gtk_layout_new (NULL, NULL);
@@ -814,9 +819,10 @@ create_mainw (void)
   GLADE_HOOKUP_OBJECT (mainw, menu_config_bsdmodule, "menu_config_bsdmodule");
   GLADE_HOOKUP_OBJECT (mainw, menu_config_ns, "menu_config_ns");
   GLADE_HOOKUP_OBJECT (mainw, toolbar1, "toolbar1");
-  GLADE_HOOKUP_OBJECT (mainw, toolbar_check, "toolbar_check");
+  GLADE_HOOKUP_OBJECT (mainw, toolbar_run, "toolbar_run");
+  GLADE_HOOKUP_OBJECT (mainw, toolbar_stop, "toolbar_stop");
   GLADE_HOOKUP_OBJECT (mainw, toolbar_install, "toolbar_install");
-  GLADE_HOOKUP_OBJECT (mainw, toolbar_save, "toolbar_save");
+  GLADE_HOOKUP_OBJECT (mainw, toolbar_configuration, "toolbar_configuration");
   GLADE_HOOKUP_OBJECT (mainw, toolbar_diagram, "toolbar_diagram");
   GLADE_HOOKUP_OBJECT (mainw, throbberitem, "throbberitem");
   GLADE_HOOKUP_OBJECT (mainw, throbberbox, "throbberbox");
@@ -838,7 +844,7 @@ create_mainw (void)
   GLADE_HOOKUP_OBJECT (mainw, label16, "label16");
   GLADE_HOOKUP_OBJECT (mainw, elementtreewindow, "elementtreewindow");
   GLADE_HOOKUP_OBJECT (mainw, elementtree, "elementtree");
-  GLADE_HOOKUP_OBJECT (mainw, vbox7, "vbox7");
+  GLADE_HOOKUP_OBJECT (mainw, configdiagrampaned, "configdiagrampaned");
   GLADE_HOOKUP_OBJECT (mainw, configwindow, "configwindow");
   GLADE_HOOKUP_OBJECT (mainw, configview, "configview");
   GLADE_HOOKUP_OBJECT (mainw, diagramwindow, "diagramwindow");

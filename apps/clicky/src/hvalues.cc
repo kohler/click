@@ -56,7 +56,8 @@ void handler_value::refresh(crouter *cr, bool clear_outstanding)
     if (_flags & (hflag_r | hflag_rparam)) {
 	int read_flags = (_flags & hflag_raw ? 0 : cdriver::dflag_nonraw);
 	_flags |= hflag_outstanding;
-	cr->driver()->do_read(_hname, _hparam, read_flags);
+	if (cdriver *d = cr->driver())
+	    d->do_read(_hname, _hparam, read_flags);
     } else if (empty())
 	_flags |= hflag_outstanding;
 }
@@ -237,6 +238,10 @@ void handler_values::set_handlers(const String &hname, const String &, const Str
 	v->set_driver_flags(_cr, flags);
 	if (was_empty || v->notify_delt())
 	    _cr->on_handler_create(v, was_empty);
+	if ((v->_flags & hflag_autorefresh)
+	    && v->readable()
+	    && !v->_autorefresh_source)
+	    v->create_autorefresh(_cr);
 	if (was_empty && (v->_flags & hflag_outstanding)) {
 	    v->_flags &= ~hflag_outstanding;
 	    if (flags & hflag_refresh)
@@ -277,6 +282,25 @@ handler_value *handler_values::hard_find_placeholder(const String &hname,
 	&& hv->autorefresh_period() > autorefresh_period)
 	hv->set_autorefresh_period(autorefresh_period);
     return hv;
+}
+
+void handler_values::clear()
+{
+    Vector<String> interesting_elements;
+    for (HashTable<handler_value>::iterator it = _hv.begin();
+	 it != _hv.end(); ++it) {
+	if (it->notify_delt() || it->notify_whandlers())
+	    interesting_elements.push_back(it->element_name());
+	it->clear();
+    }
+
+    if (_cr->driver())
+	for (String *it = interesting_elements.begin();
+	     it != interesting_elements.end(); ++it) {
+	    String name = *it + (*it ? ".handlers" : "handlers");
+	    handler_value *hh = _hv.find_insert(name).get();
+	    hh->refresh(_cr);
+	}
 }
 
 }

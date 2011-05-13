@@ -161,6 +161,11 @@ class handler_value { public:
 
     void set_flags(crouter *cr, int new_flags);
 
+    void clear() {
+	clear_hvalue();
+	_flags &= ~hflag_outstanding;
+    }
+
     static const String no_hvalue_string;
 
   private:
@@ -258,9 +263,7 @@ struct handler_values {
 	return _hv.empty();
     }
 
-    void clear() {
-	_hv.clear();
-    }
+    void clear();
 
     handler_value *set(const String &hname, const String &hparam, const String &hvalue, bool &changed);
 

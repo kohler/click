@@ -91,13 +91,37 @@ static void on_view_element_toggled(GtkCheckMenuItem *check, gpointer user_data)
 static void on_view_configuration_toggled(GtkCheckMenuItem *check, gpointer user_data)
 {
     wmain *rw = reinterpret_cast<wmain *>(user_data);
-    rw->set_diagram_mode(!check->active);
+    rw->set_diagram_mode(check->active, -1);
 }
 
-static void on_toolbar_diagram_toggled(GtkToggleToolButton *button, gpointer user_data)
+static void on_view_diagram_toggled(GtkCheckMenuItem *check, gpointer user_data)
 {
     wmain *rw = reinterpret_cast<wmain *>(user_data);
-    rw->set_diagram_mode(gtk_toggle_tool_button_get_active(button));
+    rw->set_diagram_mode(-1, check->active);
+}
+
+static void on_toolbar_run_activate(GtkToolButton *, gpointer user_data)
+{
+    wmain *rw = reinterpret_cast<wmain *>(user_data);
+    rw->run(ErrorHandler::default_handler());
+}
+
+static void on_toolbar_stop_activate(GtkToolButton *, gpointer user_data)
+{
+    wmain *rw = reinterpret_cast<wmain *>(user_data);
+    rw->kill_driver();
+}
+
+static void on_toolbar_diagram_activate(GtkToolButton *, gpointer user_data)
+{
+    wmain *rw = reinterpret_cast<wmain *>(user_data);
+    rw->set_diagram_mode(false, true);
+}
+
+static void on_toolbar_configuration_activate(GtkToolButton *, gpointer user_data)
+{
+    wmain *rw = reinterpret_cast<wmain *>(user_data);
+    rw->set_diagram_mode(true, false);
 }
 
 static void on_zoom_in_activate(GtkMenuItem *, gpointer user_data)
@@ -161,8 +185,6 @@ void wmain::dialogs_connect()
 		     G_CALLBACK(on_save_as_activate), this);
     g_signal_connect(lookup_widget(_window, "menu_export_diagram"), "activate",
 		     G_CALLBACK(on_export_diagram_activate), this);
-    g_signal_connect(lookup_widget(_window, "toolbar_check"), "clicked",
-		     G_CALLBACK(on_check_activate), this);
     g_signal_connect(lookup_widget(_window, "menu_check"), "activate",
 		     G_CALLBACK(on_check_activate), this);
     g_signal_connect(lookup_widget(_window, "toolbar_install"), "clicked",
@@ -170,8 +192,6 @@ void wmain::dialogs_connect()
     g_signal_connect(lookup_widget(_window, "menu_install"), "activate",
 		     G_CALLBACK(on_install_activate), this);
     gtk_widget_set_sensitive(lookup_widget(_window, "menu_install"), FALSE);
-    g_signal_connect(lookup_widget(_window, "toolbar_save"), "clicked",
-		     G_CALLBACK(on_save_activate), this);
     g_signal_connect(lookup_widget(_window, "menu_quit"), "activate",
 		     G_CALLBACK(on_quit_activate), this);
     g_signal_connect(lookup_widget(_window, "menu_view_toolbar"), "toggled",
@@ -182,8 +202,16 @@ void wmain::dialogs_connect()
 		     G_CALLBACK(on_view_element_toggled), this);
     g_signal_connect(lookup_widget(_window, "menu_view_configuration"), "toggled",
 		     G_CALLBACK(on_view_configuration_toggled), this);
-    g_signal_connect(lookup_widget(_window, "toolbar_diagram"), "toggled",
-		     G_CALLBACK(on_toolbar_diagram_toggled), this);
+    g_signal_connect(lookup_widget(_window, "menu_view_diagram"), "toggled",
+		     G_CALLBACK(on_view_diagram_toggled), this);
+    g_signal_connect(lookup_widget(_window, "toolbar_run"), "clicked",
+		     G_CALLBACK(on_toolbar_run_activate), this);
+    g_signal_connect(lookup_widget(_window, "toolbar_stop"), "clicked",
+		     G_CALLBACK(on_toolbar_stop_activate), this);
+    g_signal_connect(lookup_widget(_window, "toolbar_configuration"), "clicked",
+		     G_CALLBACK(on_toolbar_configuration_activate), this);
+    g_signal_connect(lookup_widget(_window, "toolbar_diagram"), "clicked",
+		     G_CALLBACK(on_toolbar_diagram_activate), this);
     g_signal_connect(lookup_widget(_window, "menu_zoom_in"), "activate",
 		     G_CALLBACK(on_zoom_in_activate), this);
     g_signal_connect(lookup_widget(_window, "menu_zoom_out"), "activate",

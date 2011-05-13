@@ -144,7 +144,7 @@ wmain::wmain(bool show_toolbar, bool show_list, dcss_set *ccss,
     _diagram = new wdiagram(this);
     dialogs_connect();
     config_changed_initialize(true, false);
-    set_diagram_mode(true);
+    set_diagram_mode(false, true);
 
     gtk_quit_add_destroy(1, GTK_OBJECT(_window));
     ++num_main_windows;
@@ -355,6 +355,23 @@ void wmain::set_save_file(const String &savefile, bool loading)
 	config_changed_initialize(false, true);
 }
 
+void wmain::on_driver_changed()
+{
+    if (driver_local())
+	gtk_widget_show(lookup_widget(_window, "toolbar_stop"));
+    else
+	gtk_widget_hide(lookup_widget(_window, "toolbar_stop"));
+    if (!driver()) {
+	gtk_widget_show(lookup_widget(_window, "toolbar_run"));
+	gtk_widget_hide(lookup_widget(_window, "toolbar_install"));
+    } else {
+	gtk_widget_hide(lookup_widget(_window, "toolbar_run"));
+	gtk_widget_show(lookup_widget(_window, "toolbar_install"));
+    }
+    gtk_widget_set_sensitive(lookup_widget(_window, "menu_install"), !!driver());
+    _handlers->redisplay();
+}
+
 
 /*****
  *
@@ -433,32 +450,6 @@ void wmain::on_handler_create(handler_value *hv, bool was_empty)
     if (hv->notify_delt())
 	_diagram->notify_read(hv);
     crouter::on_handler_create(hv, was_empty);
-}
-
-void wmain::on_handler_read(const String &hname, const String &hparam,
-			    const String &hvalue,
-			    int status, messagevector &messages)
-{
-    if (hname == "list") {
-	_handlers->clear();
-	const char *s = hvalue.begin();
-	int line = 0, nelements = 0;
-	while (s != hvalue.end()) {
-	    const char *x = s;
-	    while (x != hvalue.end() && !isspace((unsigned char) *x))
-		++x;
-	    String name = hvalue.substring(s, x);
-
-	    // first line is count of elements
-	    if (++line == 1 && !cp_integer(name, &nelements))
-		/* syntax error */;
-	    else if (line > 1)
-		_handlers->notify_element(name);
-	    for (s = x; s != hvalue.end() && isspace((unsigned char) *s); )
-		++s;
-	}
-    }
-    crouter::on_handler_read(hname, hparam, hvalue, status, messages);
 }
 
 void wmain::on_handler_read(handler_value *hv, bool changed)
@@ -1079,10 +1070,7 @@ void wmain::config_changed_initialize(bool check, bool save)
 {
     if (!_config_changed_signal)
 	_config_changed_signal = g_signal_connect(_config_buffer, "changed", G_CALLBACK(clicky::config_changed), this);
-    if (check)
-	gtk_widget_set_sensitive(lookup_widget(_window, "toolbar_check"), FALSE);
-    if (save && _savefile)
-	gtk_widget_set_sensitive(lookup_widget(_window, "toolbar_save"), FALSE);
+    (void) check, (void) save;
 }
 
 void wmain::on_config_changed()
@@ -1093,8 +1081,6 @@ void wmain::on_config_changed()
     _config_clean_errors = _config_clean_elements = false;
     error_unhighlight();
     element_unhighlight();
-    gtk_widget_set_sensitive(lookup_widget(_window, "toolbar_check"), TRUE);
-    gtk_widget_set_sensitive(lookup_widget(_window, "toolbar_save"), TRUE);
 }
 
 void wmain::config_check(bool install)
@@ -1134,27 +1120,48 @@ void wmain::config_check(bool install)
  *
  */
 
-void wmain::set_diagram_mode(bool diagram)
+void wmain::set_diagram_mode(int configuration, int diagram)
 {
-    if (diagram) {
-	g_object_set(G_OBJECT(lookup_widget(_window, "menu_view_diagram")), "active", TRUE, (const char *) NULL);
-	gtk_toggle_tool_button_set_active(GTK_TOGGLE_TOOL_BUTTON(lookup_widget(_window, "toolbar_diagram")), TRUE);
-	gtk_widget_show(lookup_widget(_window, "diagramwindow"));
-	gtk_widget_hide(lookup_widget(_window, "configwindow"));
-	gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_in"), TRUE);
-	gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_out"), TRUE);
-	gtk_widget_set_sensitive(lookup_widget(_window, "menu_normal_size"), TRUE);
-	gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_fit"), TRUE);
-    } else {
-	g_object_set(G_OBJECT(lookup_widget(_window, "menu_view_configuration")), "active", TRUE, (const char *) NULL);
-	gtk_toggle_tool_button_set_active(GTK_TOGGLE_TOOL_BUTTON(lookup_widget(_window, "toolbar_diagram")), FALSE);
-	gtk_widget_hide(lookup_widget(_window, "diagramwindow"));
-	gtk_widget_show(lookup_widget(_window, "configwindow"));
-	gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_in"), FALSE);
-	gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_out"), FALSE);
-	gtk_widget_set_sensitive(lookup_widget(_window, "menu_normal_size"), FALSE);
-	gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_fit"), FALSE);
+    if (configuration < 0)
+	configuration = gtk_widget_get_visible(lookup_widget(_window, "configwindow"));
+    if (diagram < 0)
+	diagram = gtk_widget_get_visible(lookup_widget(_window, "diagramwindow"));
+    if (!configuration && !diagram)
+	return;
+
+    if (configuration && diagram) {
+	GtkWidget *paned = lookup_widget(_window, "configdiagrampaned");
+	if (gtk_paned_get_position(GTK_PANED(paned)) <= 0)
+	    gtk_paned_set_position(GTK_PANED(paned), paned->allocation.width / 2);
     }
+
+    GtkWidget *configm = lookup_widget(_window, "menu_view_configuration");
+    gtk_widget_set_sensitive(configm, !configuration || diagram);
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(configm), configuration);
+    if (configuration)
+	gtk_widget_show(lookup_widget(_window, "configwindow"));
+    else
+	gtk_widget_hide(lookup_widget(_window, "configwindow"));
+    if (!configuration || diagram)
+	gtk_widget_show(lookup_widget(_window, "toolbar_configuration"));
+    else
+	gtk_widget_hide(lookup_widget(_window, "toolbar_configuration"));
+
+    GtkWidget *diagramm = lookup_widget(_window, "menu_view_diagram");
+    gtk_widget_set_sensitive(diagramm, configuration || !diagram);
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(diagramm), diagram);
+    if (diagram)
+	gtk_widget_show(lookup_widget(_window, "diagramwindow"));
+    else
+	gtk_widget_hide(lookup_widget(_window, "diagramwindow"));
+    if (!diagram || configuration)
+	gtk_widget_show(lookup_widget(_window, "toolbar_diagram"));
+    else
+	gtk_widget_hide(lookup_widget(_window, "toolbar_diagram"));
+    gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_in"), diagram);
+    gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_out"), diagram);
+    gtk_widget_set_sensitive(lookup_widget(_window, "menu_normal_size"), diagram);
+    gtk_widget_set_sensitive(lookup_widget(_window, "menu_zoom_fit"), diagram);
 }
 
 void wmain::repaint(const rectangle &rect)

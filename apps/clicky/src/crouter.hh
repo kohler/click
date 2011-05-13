@@ -112,9 +112,15 @@ class crouter { public:
     cdriver *driver() const {
 	return _driver_active ? _driver : 0;
     }
+    bool driver_local() const {
+	return _driver_active && _driver_process;
+    }
     void set_driver(cdriver *driver, bool active);
     void kill_driver();
     void run(ErrorHandler *errh);
+    virtual void on_driver_changed() {
+    }
+    virtual void on_driver_connected();
 
     void select_driver(int driver) {
 	_selected_driver = driver;

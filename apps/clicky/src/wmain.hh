@@ -63,9 +63,6 @@ class wmain : public crouter { public:
     void on_error(bool replace, const String &dialog);
 
     void on_handler_create(handler_value *hv, bool was_empty);
-    void on_handler_read(const String &hname, const String &hparam,
-			 const String &hvalue,
-			 int status, messagevector &messages);
     void on_handler_read(handler_value *hv, bool changed);
     void on_handler_write(const String &hname, const String &hvalue,
 			  int status, messagevector &messages);
@@ -78,6 +75,7 @@ class wmain : public crouter { public:
     void on_save_file(bool save_as);
     void on_export_diagram();
     void on_config_changed();
+    void on_driver_changed();
     void config_set_driver(int driver);
     void config_check(bool install);
 
@@ -86,7 +84,7 @@ class wmain : public crouter { public:
     }
     void element_show(String ename, int expand, bool incremental);
 
-    void set_diagram_mode(bool diagram);
+    void set_diagram_mode(int configuration, int diagram);
 
     gboolean error_view_event(GdkEvent *event);
     gboolean error_tag_event(GtkTextTag *tag, GObject *event_object,

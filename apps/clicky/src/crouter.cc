@@ -263,6 +263,12 @@ void crouter::set_driver(cdriver *driver, bool active)
     assert(driver && (!_driver || driver == _driver));
     _driver = driver;
     _driver_active = active;
+    on_driver_changed();
+}
+
+void crouter::on_driver_connected()
+{
+    _hvalues.clear();
 }
 
 void crouter::kill_driver()
@@ -274,6 +280,8 @@ void crouter::kill_driver()
     _driver = 0;
     _driver_active = false;
     _driver_process = 0;
+    _hvalues.clear();
+    on_driver_changed();
 }
 
 void crouter::run(ErrorHandler *errh)

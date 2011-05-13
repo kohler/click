@@ -441,10 +441,10 @@ void whandler::display(const String &ename, bool incremental)
     hide_actions();
     _hpref_actions = 0;
 
-    handler_values::iterator hiter = main()->hvalues().begin(ename);
+    handler_value *hv = main()->hvalues().find(ename + ".handlers");
 
     // no information about this element's handlers yet
-    if (hiter == main()->hvalues().end()) {
+    if (!hv || !hv->have_hvalue()) {
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(_eview_config), TRUE);
 	g_object_set(G_OBJECT(_eview_config), "can-focus", TRUE, (const char *) NULL);
 
@@ -464,7 +464,7 @@ void whandler::display(const String &ename, bool incremental)
 	    gtk_label_set_markup(GTK_LABEL(l), _("<i>Loading...</i>"));
 	    gtk_widget_show(l);
 	    gtk_box_pack_start(_handlerbox, l, FALSE, FALSE, 0);
-	    handler_value *hv = _rw->hvalues().find_force(ename + ".handlers");
+	    hv = _rw->hvalues().find_force(ename + ".handlers");
 	    hv->set_flags(main(), hv->flags() | hflag_notify_whandlers);
 	    hv->refresh(main());
 	}
@@ -472,6 +472,7 @@ void whandler::display(const String &ename, bool incremental)
     }
 
     // parse handlers into _hinfo
+    handler_values::iterator hiter = main()->hvalues().begin(ename);
     for (; hiter != main()->hvalues().end(); ++hiter)
 	_hinfo.push_back(hiter.operator->());
 
@@ -506,6 +507,12 @@ void whandler::display(const String &ename, bool incremental)
     GtkWidget *w = gtk_hseparator_new();
     gtk_box_pack_end(_handlerbox, w, FALSE, FALSE, 4);
     gtk_widget_show(w);
+}
+
+void whandler::redisplay()
+{
+    if (_display_ename)
+	display(_display_ename, false);
 }
 
 void whandler::on_preferences(int action)

@@ -218,6 +218,7 @@ gboolean csocket_cdriver::csocket_event(GIOCondition)
 	    do_read("config", String(), 0);
 	    do_check_write("hotconfig", 0);
 	    do_read("list", String(), 0);
+	    _cr->on_driver_connected();
 	}
     }
 
@@ -491,6 +492,7 @@ clickfs_cdriver::clickfs_cdriver(crouter *cr, const String &prefix)
     do_read("config", String(), 0);
     do_check_write("hotconfig", 0);
     do_read("list", String(), 0);
+    _cr->on_driver_connected();
 }
 
 bool clickfs_cdriver::active() const
