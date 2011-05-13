@@ -67,17 +67,14 @@ static unsigned long greedy_schedule_jiffies;
  */
 
 RouterThread::RouterThread(Master *m, int id)
-#if HAVE_TASK_HEAP
-    : _task_heap_hole(0),
-#else
-    : Task(Task::error_hook, 0),
+    :
+#if !HAVE_TASK_HEAP
+      Task(Task::error_hook, 0),
 #endif
       _pending_head(0), _pending_tail(&_pending_head),
       _master(m), _id(id)
 {
-#if HAVE_TASK_HEAP
-    _pass = 0;
-#else
+#if !HAVE_TASK_HEAP
     _prev = _next = _thread = this;
 #endif
 #if CLICK_LINUXMODULE
@@ -311,8 +308,7 @@ RouterThread::task_reheapify_from(int pos, Task* t)
     task_heap_element *tend = _task_heap.end();
     int npos;
 
-    int endpos = _task_heap_hole << 1;
-    while (pos > endpos
+    while (pos > 0
 	   && (npos = (pos-1) >> 1, PASS_GT(tbegin[npos].pass, t->_pass))) {
 	tbegin[pos] = tbegin[npos];
 	tbegin[npos].t->_schedpos = pos;
@@ -380,9 +376,8 @@ RouterThread::run_tasks(int ntasks)
 	    break;
 #endif
 
-	t->fast_remove_from_scheduled_list();
-
 	if (unlikely(t->_status.status != want_status.status)) {
+	    t->remove_from_scheduled_list();
 	    if (t->_status.home_thread_id != thread_id())
 		t->move_thread_second_half();
 	    goto post_fire;
@@ -392,13 +387,6 @@ RouterThread::run_tasks(int ntasks)
 	runs = t->cycle_runs();
 	if (runs > PROFILE_ELEMENT)
 	    cycles = click_get_cycles();
-#endif
-
-#if HAVE_STRIDE_SCHED
-	// 21.May.2007: Always set the current thread's pass to the current
-	// task's pass, to avoid problems when fast_reschedule() interacts
-	// with fast_schedule() (passes got out of sync).
-	_pass = t->_pass;
 #endif
 
 	t->_status.is_scheduled = false;
@@ -411,30 +399,36 @@ RouterThread::run_tasks(int ntasks)
 	}
 #endif
 
-	// reschedule if required
-	if (t->scheduled() && !t->on_scheduled_list()) {
+	// fix task list
+	if (t->scheduled()) {
+	    // adjust position in scheduled list
 #if HAVE_STRIDE_SCHED
-	    t->complete_schedule(_pass + t->_stride);
-#else
-	    t->complete_schedule(0);
+	    t->_pass += t->_stride;
 #endif
-	}
+#if HAVE_STRIDE_SCHED && HAVE_TASK_HEAP
+	    task_reheapify_from(0, t);
+#else
+# if HAVE_STRIDE_SCHED
+	    Task *n = t->_next;
+	    while (n != this && !PASS_GT(n->_pass, t->_pass))
+		n = n->_next;
+# else
+	    n = this;
+# endif
+	    if (t->_next != n) {
+		t->_next->_prev = t->_prev;
+		t->_prev->_next = t->_next;
+		t->_next = n;
+		t->_prev = n->_prev;
+		n->_prev->_next = t;
+		n->_prev = t;
+	    }
+#endif
+	} else
+	    t->remove_from_scheduled_list();
 
     post_fire:
-#if HAVE_TASK_HEAP
-	if (_task_heap_hole) {
-	    Task *back = _task_heap.back().t;
-	    _task_heap.pop_back();
-	    _task_heap_hole = 0;
-	    if (_task_heap.size() > 0)
-		task_reheapify_from(0, back);
-	    // No need to reset t->_schedpos: 'back == t' only if
-	    // '_task_heap.size() == 0' now, in which case we didn't call
-	    // task_reheapify_from().
-	}
-#else
 	/* do nothing */;
-#endif
     }
 }
 

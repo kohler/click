@@ -327,7 +327,6 @@ class Task { public:
     inline void complete_schedule(unsigned new_pass);
     inline void fast_schedule();
     void true_reschedule();
-    inline void fast_remove_from_scheduled_list();
     inline void remove_from_scheduled_list();
 
     static bool error_hook(Task *task, void *user_data);
@@ -442,19 +441,6 @@ Task::thread() const
 }
 
 inline void
-Task::fast_remove_from_scheduled_list()
-{
-#if HAVE_TASK_HEAP
-    _schedpos = -1;
-    _thread->_task_heap_hole = 1;
-#else
-    _next->_prev = _prev;
-    _prev->_next = _next;
-    _next = _prev = 0;
-#endif
-}
-
-inline void
 Task::remove_from_scheduled_list()
 {
     if (on_scheduled_list()) {
@@ -545,13 +531,8 @@ Task::complete_schedule(unsigned new_pass)
     _pass = new_pass;
 
 # if HAVE_TASK_HEAP
-    if (_thread->_task_heap_hole) {
-	_schedpos = 0;
-	_thread->_task_heap_hole = 0;
-    } else {
-	_schedpos = _thread->_task_heap.size();
-	_thread->_task_heap.push_back(RouterThread::task_heap_element());
-    }
+    _schedpos = _thread->_task_heap.size();
+    _thread->_task_heap.push_back(RouterThread::task_heap_element());
     _thread->task_reheapify_from(_schedpos, this);
 # elif 0
     // look for 'n' immediately before where we should be scheduled
@@ -592,7 +573,7 @@ Task::fast_schedule()
     if (!on_scheduled_list()) {
 #if HAVE_STRIDE_SCHED
 	assert(_tickets >= 1);
-	complete_schedule(_thread->_pass + _stride);
+	complete_schedule(_thread->pass() + _stride);
 #else
 	complete_schedule(0);
 #endif
