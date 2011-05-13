@@ -411,6 +411,15 @@ RouterThread::run_tasks(int ntasks)
 	}
 #endif
 
+	// reschedule if required
+	if (t->scheduled() && !t->on_scheduled_list()) {
+#if HAVE_STRIDE_SCHED
+	    t->complete_schedule(_pass + t->_stride);
+#else
+	    t->complete_schedule(0);
+#endif
+	}
+
     post_fire:
 #if HAVE_TASK_HEAP
 	if (_task_heap_hole) {
