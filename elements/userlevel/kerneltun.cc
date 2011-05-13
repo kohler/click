@@ -123,7 +123,7 @@ KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
 
 #if KERNELTUN_LINUX
 int
-KernelTun::try_linux_universal(ErrorHandler *errh)
+KernelTun::try_linux_universal()
 {
     int fd = open("/dev/net/tun", O_RDWR | O_NONBLOCK);
     if (fd < 0)
@@ -137,7 +137,6 @@ KernelTun::try_linux_universal(ErrorHandler *errh)
 	strncpy(ifr.ifr_name, _dev_name.c_str(), sizeof(ifr.ifr_name));
     int err = ioctl(fd, TUNSETIFF, (void *)&ifr);
     if (err < 0) {
-	errh->warning("Linux universal tun failed: %s", strerror(errno));
 	close(fd);
 	return -errno;
     }
@@ -179,12 +178,12 @@ KernelTun::alloc_tun(ErrorHandler *errh)
     StringAccum tried;
 
 #if KERNELTUN_LINUX
-    if ((error = try_linux_universal(errh)) >= 0)
+    if ((error = try_linux_universal()) >= 0)
 	return error;
     else if (!saved_error || error != -ENOENT) {
 	saved_error = error, saved_device = "net/tun";
 	if (error == -ENODEV)
-	    saved_message = "\n(Perhaps you need to enable tun in your kernel or load the `tun' module.)";
+	    saved_message = "\n(Perhaps you need to enable tun in your kernel or load the 'tun' module.)";
     }
     tried << "/dev/net/tun, ";
 #endif
@@ -239,7 +238,7 @@ KernelTun::alloc_tun(ErrorHandler *errh)
 	tried.pop_back(2);
 	return errh->error("could not find a tap device\n(checked %s)\nYou may need to load a kernel module to support tap.", tried.c_str());
     } else
-	return errh->error("could not allocate device /dev/%s: %s%s", saved_device.c_str(), strerror(-saved_error), saved_message.c_str());
+	return errh->error("/dev/%s: %s%s", saved_device.c_str(), strerror(-saved_error), saved_message.c_str());
 }
 
 int

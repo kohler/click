@@ -156,7 +156,7 @@ class KernelTun : public Element { public:
     static String print_dev_name(Element *e, void *);
 
 #if HAVE_LINUX_IF_TUN_H
-    int try_linux_universal(ErrorHandler *);
+    int try_linux_universal();
 #endif
     int try_tun(const String &, ErrorHandler *);
     int alloc_tun(ErrorHandler *);
