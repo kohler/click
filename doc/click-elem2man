@@ -1423,11 +1423,22 @@ sub one_elementlist (@) {
     $t . ".PD\n";
 }
 
-my(@Links, $Text);
+my(@Links, $Text, %unknown_shorthand);
 
 sub one_summary ($@) {
     my($name, @elts) = @_;
-    print STDERR "click-elem2man: warning: category '", $name, "' begins with a lowercase letter (used in @elts)\n" if $name =~ /^[a-z]/;
+    if ($name =~ /^[a-z]/) {
+      my(@badelts);
+      foreach my $x (@elts) {
+	if (!exists($unknown_shorthand{"$x $name"})) {
+	  $unknown_shorthand{"$x $name"} = 1;
+	  push @badelts, $x;
+	}
+      }
+      if (@badelts) {
+	print STDERR "click-elem2man: warning: unknown category shorthand '$name' in ", join(", ", @badelts), "\n";
+      }
+    }
     my($a) = $name;
     $a =~ s{([+\&\#\"\000-\037\177-\377])}{sprintf("%%%02X", $1)}eg;
     $a =~ tr/ /+/;
