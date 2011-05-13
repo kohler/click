@@ -244,7 +244,7 @@ class Task { public:
     inline void adjust_tickets(int delta);
 #endif
 
-    inline void fire();
+    inline bool fire();
 
 #if HAVE_ADAPTIVE_SCHEDULER
     inline unsigned runs() const;
@@ -597,7 +597,7 @@ Task::fast_schedule()
  * This function is generally called by the RouterThread implementation; there
  * should be no need to call it yourself.
  */
-inline void
+inline bool
 Task::fire()
 {
 #if CLICK_STATS >= 2
@@ -606,22 +606,20 @@ Task::fire()
 #if HAVE_MULTITHREAD
     _cycle_runs++;
 #endif
+    bool work_done;
+    if (!_hook)
+	work_done = ((Element*)_thunk)->run_task(this);
+    else
+	work_done = _hook(this, _thunk);
 #if HAVE_ADAPTIVE_SCHEDULER
-    _runs++;
-    if (!_hook)
-	_work_done += ((Element*)_thunk)->run_task(this);
-    else
-	_work_done += _hook(this, _thunk);
-#else
-    if (!_hook)
-	(void) ((Element*)_thunk)->run_task(this);
-    else
-	(void) _hook(this, _thunk);
+    ++_runs;
+    _work_done += work_done;
 #endif
 #if CLICK_STATS >= 2
     ++_owner->_task_calls;
     _owner->_task_cycles += click_get_cycles() - start_cycles;
 #endif
+    return work_done;
 }
 
 #if HAVE_ADAPTIVE_SCHEDULER
