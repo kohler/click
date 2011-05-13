@@ -25,6 +25,14 @@ POD2MAN = @POD2MAN@
 CP_PRESERVE = /bin/cp -p
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
+ifeq ($(V),1)
+x_verbose_cmd = $(1) $(3)
+verbose_cmd = $(1) $(3)
+else
+x_verbose_cmd = $(if $(2),/bin/echo ' ' $(2) $(3) &&,) $(1) $(3)
+verbose_cmd = @$(x_verbose_cmd)
+endif
+
 EXTRA_PROVIDES =
 
 all: Makefile
@@ -34,28 +42,28 @@ Makefile: $(srcdir)/Makefile.in
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 install: Makefile install-man
-	$(mkinstalldirs) $(DESTDIR)$(bindir)
-	$(INSTALL) $(srcdir)/click-elem2man $(DESTDIR)$(bindir)/click-elem2man
+	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(bindir))
+	$(call verbose_cmd,$(INSTALL) $(srcdir)/click-elem2man,INSTALL,$(DESTDIR)$(bindir)/click-elem2man)
 install-man: testie.1 $(top_builddir)/elementmap.xml Makefile
-	$(mkinstalldirs) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man3 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man7 $(DESTDIR)$(mandir)/man8 $(DESTDIR)$(mandir)/mann
-	$(INSTALL_DATA) $(srcdir)/click.1 $(DESTDIR)$(mandir)/man1/click.1
-	$(INSTALL_DATA) $(srcdir)/click.5 $(DESTDIR)$(mandir)/man5/click.5
-	$(INSTALL_DATA) $(srcdir)/click.o.8 $(DESTDIR)$(mandir)/man8/click.o.8
-	$(INSTALL_DATA) $(srcdir)/click-align.1 $(DESTDIR)$(mandir)/man1/click-align.1
-	$(INSTALL_DATA) $(srcdir)/click-combine.1 $(DESTDIR)$(mandir)/man1/click-combine.1
-	$(INSTALL_DATA) $(srcdir)/click-devirtualize.1 $(DESTDIR)$(mandir)/man1/click-devirtualize.1
-	$(INSTALL_DATA) $(srcdir)/click-fastclassifier.1 $(DESTDIR)$(mandir)/man1/click-fastclassifier.1
-	$(INSTALL_DATA) $(srcdir)/click-flatten.1 $(DESTDIR)$(mandir)/man1/click-flatten.1
-	$(INSTALL_DATA) $(srcdir)/click-install.1 $(DESTDIR)$(mandir)/man1/click-install.1
-	$(INSTALL_DATA) $(srcdir)/click-mkmindriver.1 $(DESTDIR)$(mandir)/man1/click-mkmindriver.1
-	$(INSTALL_DATA) $(srcdir)/click-pretty.1 $(DESTDIR)$(mandir)/man1/click-pretty.1
-	$(INSTALL_DATA) $(srcdir)/click-uncombine.1 $(DESTDIR)$(mandir)/man1/click-uncombine.1
-	$(INSTALL_DATA) $(srcdir)/click-undead.1 $(DESTDIR)$(mandir)/man1/click-undead.1
-	$(INSTALL_DATA) $(srcdir)/click-uninstall.1 $(DESTDIR)$(mandir)/man1/click-uninstall.1
-	$(INSTALL_DATA) $(srcdir)/click-xform.1 $(DESTDIR)$(mandir)/man1/click-xform.1
-	$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(DESTDIR)$(mandir)/man7/elementdoc.7
-	$(INSTALL_DATA) testie.1 $(DESTDIR)$(mandir)/man1/testie.1
-	$(PERL) $(srcdir)/click-elem2man -l -d $(DESTDIR)$(mandir)/mann -P DEFAULT -p $(top_srcdir) $(top_builddir)/elementmap.xml
+	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man3 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man7 $(DESTDIR)$(mandir)/man8 $(DESTDIR)$(mandir)/mann)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click.1 $(DESTDIR)$(mandir)/man1/click.1,INSTALLMANPAGES $(DESTDIR)$(mandir))
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click.5 $(DESTDIR)$(mandir)/man5/click.5)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click.o.8 $(DESTDIR)$(mandir)/man8/click.o.8)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-align.1 $(DESTDIR)$(mandir)/man1/click-align.1)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-combine.1 $(DESTDIR)$(mandir)/man1/click-combine.1)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-devirtualize.1 $(DESTDIR)$(mandir)/man1/click-devirtualize.1)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-fastclassifier.1 $(DESTDIR)$(mandir)/man1/click-fastclassifier.1)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-flatten.1 $(DESTDIR)$(mandir)/man1/click-flatten.1)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-install.1 $(DESTDIR)$(mandir)/man1/click-install.1)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-mkmindriver.1 $(DESTDIR)$(mandir)/man1/click-mkmindriver.1)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-pretty.1 $(DESTDIR)$(mandir)/man1/click-pretty.1)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-uncombine.1 $(DESTDIR)$(mandir)/man1/click-uncombine.1)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-undead.1 $(DESTDIR)$(mandir)/man1/click-undead.1)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-uninstall.1 $(DESTDIR)$(mandir)/man1/click-uninstall.1)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-xform.1 $(DESTDIR)$(mandir)/man1/click-xform.1)
+	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(DESTDIR)$(mandir)/man7/elementdoc.7)
+	$(call verbose_cmd,$(INSTALL_DATA) testie.1 $(DESTDIR)$(mandir)/man1/testie.1)
+	$(call verbose_cmd,$(PERL) $(srcdir)/click-elem2man -l -d $(DESTDIR)$(mandir)/mann -P DEFAULT -p $(top_srcdir) $(top_builddir)/elementmap.xml,CLICK-ELEM2MAN -d $(DESTDIR)$(mandir)/mann)
 install-info: Makefile click.info
 	$(mkinstalldirs) $(DESTDIR)$(infodir)
 	@for f in click.info click.info-[0-9] click.info-[0-9][0-9]; do \
