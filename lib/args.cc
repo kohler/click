@@ -20,9 +20,9 @@
 #include <click/glue.hh>
 #include <click/args.hh>
 #include <click/error.hh>
-#include <click/router.hh>
 #include <click/bigint.hh>
 #if !CLICK_TOOL
+# include <click/router.hh>
 # include <click/nameinfo.hh>
 # include <click/packet_anno.hh>
 #endif
