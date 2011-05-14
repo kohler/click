@@ -365,6 +365,8 @@ RouterThread::run_tasks(int ntasks)
 #if HAVE_MULTITHREAD
     int runs;
 #endif
+    bool work_done;
+
     for (; ntasks >= 0; --ntasks) {
 #if HAVE_TASK_HEAP
 	if (_task_heap.size() == 0)
@@ -380,7 +382,7 @@ RouterThread::run_tasks(int ntasks)
 	    t->remove_from_scheduled_list();
 	    if (t->_status.home_thread_id != thread_id())
 		t->move_thread_second_half();
-	    goto post_fire;
+	    continue;
 	}
 
 #if HAVE_MULTITHREAD
@@ -390,7 +392,7 @@ RouterThread::run_tasks(int ntasks)
 #endif
 
 	t->_status.is_scheduled = false;
-	t->fire();
+	work_done = t->fire();
 
 #if HAVE_MULTITHREAD
 	if (runs > PROFILE_ELEMENT) {
@@ -405,6 +407,31 @@ RouterThread::run_tasks(int ntasks)
 #if HAVE_STRIDE_SCHED
 	    t->_pass += t->_stride;
 #endif
+
+	    // If the task didn't do any work, don't run it next.  This might
+	    // require delaying its pass, or exiting the scheduling loop
+	    // entirely.
+	    if (!work_done) {
+#if HAVE_STRIDE_SCHED && HAVE_TASK_HEAP
+		if (_task_heap.size() < 2)
+		    break;
+#else
+		if (t->_next == this)
+		    break;
+#endif
+#if HAVE_STRIDE_SCHED
+# if HAVE_TASK_HEAP
+		unsigned p1 = _task_heap.at_u(1).pass;
+		if (_task_heap.size() > 2 && PASS_GT(p1, _task_heap.at_u(2).pass))
+		    p1 = _task_heap.at_u(2).pass;
+# else
+		unsigned p1 = t->_next->_pass;
+# endif
+		if (PASS_GT(p1, t->_pass))
+		    t->_pass = p1;
+#endif
+	    }
+
 #if HAVE_STRIDE_SCHED && HAVE_TASK_HEAP
 	    task_reheapify_from(0, t);
 #else
@@ -426,9 +453,6 @@ RouterThread::run_tasks(int ntasks)
 #endif
 	} else
 	    t->remove_from_scheduled_list();
-
-    post_fire:
-	/* do nothing */;
     }
 }
 
