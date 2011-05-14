@@ -196,19 +196,29 @@ ConfParseTest::initialize(ErrorHandler *errh)
 #undef CHECK_FIXEDPOINT
 
     CHECK(cp_real2("-0.5", 1, &i32) == true && i32 == -1);
+    CHECK(SecondsArg().parse("3600", u32) == true && u32 == 3600);
     CHECK(cp_seconds_as("3600", 0, &u32) == true && u32 == 3600);
-    CHECK(cp_seconds_as("3600s", 0, &u32) == true && u32 == 3600);
-    CHECK(cp_seconds_as("3.6e6 msec", 0, &u32) == true && u32 == 3600);
-    CHECK(cp_seconds_as("60m", 0, &u32) == true && u32 == 3600);
-    CHECK(cp_seconds_as("1 hr", 0, &u32) == true && u32 == 3600);
+    CHECK(SecondsArg().parse("3600s", u32) == true && u32 == 3600);
+    CHECK(SecondsArg().parse("3.6e6 msec", u32) == true && u32 == 3600);
+    CHECK(SecondsArg().parse("60m", u32) == true && u32 == 3600);
+    CHECK(SecondsArg().parse("1 hr", u32) == true && u32 == 3600);
+    CHECK(SecondsArg().parse("1.99 hr", u32) == true && u32 == 7164);
+    CHECK(SecondsArg().parse("1.99 s", u32) == true && u32 == 2);
+    CHECK(SecondsArg(1).parse("1.99 s", u32) == true && u32 == 20);
+    CHECK(SecondsArg(2).parse("1.99 s", u32) == true && u32 == 199);
+    CHECK(SecondsArg().parse("1ms", u32) == true && u32 == 0);
+    CHECK(SecondsArg(3).parse("1ms", u32) == true && u32 == 1);
+    CHECK(SecondsArg(3).parse("1.9ms", u32) == true && u32 == 2);
+    CHECK(SecondsArg(6).parse("1ms", u32) == true && u32 == 1000);
+    CHECK(SecondsArg(6).parse("1.9ms", u32) == true && u32 == 1900);
 
 #if HAVE_FLOAT_TYPES
     double d;
-    CHECK(cp_seconds("3600", &d) == true && d == 3600);
-    CHECK(cp_seconds("3600s", &d) == true && d == 3600);
-    CHECK(cp_seconds("3.6e6 msec", &d) == true && d == 3600);
-    CHECK(cp_seconds("60m", &d) == true && d == 3600);
-    CHECK(cp_seconds("1 hr", &d) == true && d == 3600);
+    CHECK(SecondsArg().parse("3600", d) == true && d == 3600);
+    CHECK(SecondsArg().parse("3600s", d) == true && d == 3600);
+    CHECK(SecondsArg().parse("3.6e6 msec", d) == true && d == 3600);
+    CHECK(SecondsArg().parse("60m", d) == true && d == 3600);
+    CHECK(SecondsArg().parse("1 hr", d) == true && d == 3600);
 #endif
 
     BandwidthArg bwarg;

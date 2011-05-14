@@ -996,15 +996,12 @@ template<> struct DefaultArg<long long> : public IntArg {};
 
 
 /** @class FixedPointArg
-  @brief Parser class for fixed-point numbers with @a n bits of fraction. */
+  @brief Parser class for fixed-point numbers with @a b bits of fraction. */
 struct FixedPointArg : public NumArg {
-    explicit FixedPointArg(int n, int exponent = 0)
-	: fraction_bits(n), exponent_delta(exponent) {
+    explicit FixedPointArg(int b, int exponent = 0)
+	: fraction_bits(b), exponent_delta(exponent) {
     }
-    bool parse_saturating(const String &str, uint32_t &result, const ArgContext &args = blank_args) {
-	(void) args;
-	return preparse(str, false, result);
-    }
+    inline bool parse_saturating(const String &str, uint32_t &result, const ArgContext &args = blank_args);
     bool parse(const String &str, uint32_t &result, const ArgContext &args = blank_args);
     bool parse_saturating(const String &str, int32_t &result, const ArgContext &args = blank_args);
     bool parse(const String &str, int32_t &result, const ArgContext &args = blank_args);
@@ -1015,29 +1012,27 @@ struct FixedPointArg : public NumArg {
     bool preparse(const String &str, bool is_signed, uint32_t &result);
 };
 
-bool cp_real10(const String& str, int frac_digits, int32_t* result);
-bool cp_real10(const String& str, int frac_digits, uint32_t* result);
-bool cp_real10(const String& str, int frac_digits, uint32_t* result_int, uint32_t* result_frac);
+inline bool
+FixedPointArg::parse_saturating(const String &str, uint32_t &result, const ArgContext &)
+{
+    return preparse(str, false, result);
+}
 
 /** @class DecimalFixedPointArg
-  @brief Parser class for fixed-point numbers with @a n decimal digits of fraction. */
-struct DecimalFixedPointArg {
-    DecimalFixedPointArg(int n)
-	: frac_digits(n) {
+  @brief Parser class for fixed-point numbers with @a d decimal digits of fraction. */
+struct DecimalFixedPointArg : public NumArg {
+    DecimalFixedPointArg(int d, int exponent = 0)
+	: fraction_digits(d), exponent_delta(exponent) {
     }
-    bool parse(const String &str, uint32_t &result, const ArgContext & = blank_args) {
-	// XXX cp_errno
-	return cp_real10(str, frac_digits, &result);
-    }
-    bool parse(const String &str, int32_t &result, const ArgContext & = blank_args) {
-	// XXX cp_errno
-	return cp_real10(str, frac_digits, &result);
-    }
-    bool parse(const String &str, uint32_t &result_int, uint32_t &result_frac, const ArgContext & = blank_args) {
-	// XXX cp_errno
-	return cp_real10(str, frac_digits, &result_int, &result_frac);
-    }
-    int frac_digits;
+    bool parse_saturating(const String &str, uint32_t &result, const ArgContext &args = blank_args);
+    bool parse(const String &str, uint32_t &result, const ArgContext &args = blank_args);
+    bool parse_saturating(const String &str, int32_t &result, const ArgContext &args = blank_args);
+    bool parse(const String &str, int32_t &result, const ArgContext &args = blank_args);
+    bool parse_saturating(const String &str, uint32_t &iresult, uint32_t &fresult, const ArgContext &args = blank_args);
+    bool parse(const String &str, uint32_t &iresult, uint32_t &fresult, const ArgContext &args = blank_args);
+    int fraction_digits;
+    int exponent_delta;
+    int status;
 };
 
 
@@ -1105,21 +1100,22 @@ struct AnnoArg {
 #endif
 
 
-bool cp_seconds_as(const String &str, int frac_digits, uint32_t *result);
-
 /** @class SecondsArg
-  @brief Parser class for seconds or powers thereof.
+  @brief Parser class for seconds and powers thereof.
 
-  The @a p argument is the number of digits of fraction to parse.
+  The @a d argument is the number of digits of fraction to parse.
   For example, to parse milliseconds, use SecondsArg(3). */
-struct SecondsArg {
-    SecondsArg(int p = 0)
-	: frac_digits(p) {
+struct SecondsArg : public NumArg {
+    SecondsArg(int d = 0)
+	: fraction_digits(d) {
     }
-    bool parse(const String &str, uint32_t &result, const ArgContext & = blank_args) {
-	return cp_seconds_as(str, frac_digits, &result);
-    }
-    int frac_digits;
+    bool parse_saturating(const String &str, uint32_t &result, const ArgContext &args = blank_args);
+    bool parse(const String &str, uint32_t &result, const ArgContext &args = blank_args);
+#if HAVE_FLOAT_TYPES
+    bool parse(const String &str, double &result, const ArgContext &args = blank_args);
+#endif
+    int fraction_digits;
+    int status;
 };
 
 

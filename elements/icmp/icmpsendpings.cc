@@ -290,7 +290,7 @@ ICMPPingSource::write_handler(const String &s, Element *e, void *thunk, ErrorHan
 	    ps->_timer.schedule_after_msec(ps->_interval);
 	return 0;
       case H_INTERVAL:
-	if (!cp_seconds_as_milli(s, (uint32_t *)&ps->_interval))
+	  if (!SecondsArg(3).parse_saturating(s, ps->_interval))
 	    return errh->error("'interval' should be an interval");
 	return 0;
       case H_RESET_COUNTS:

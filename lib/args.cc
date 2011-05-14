@@ -582,9 +582,9 @@ void
 IntArg::report_error(const ArgContext &args, bool negative,
 		     click_uint_large_t value) const
 {
-    if (args.errh() && status == status_range) {
+    if (status == status_range) {
 	const char *sgn = "-" + !negative;
-	args.error("out of range, bound %s%s", sgn, String(value).c_str());
+	args.error("out of range, bound %s%" CLICK_ERRHuLARGE, sgn, value);
     }
 }
 
@@ -636,6 +636,89 @@ preparse_fraction(const char *begin, const char *end, bool is_signed,
     }
 
     return s;
+}
+
+const char *
+parse_integer_portion(const char *s, const char *end, int integer_digits,
+		      value_type &ivalue, int &status)
+{
+    constexpr value_type thresh = integer_traits<value_type>::const_max / 10;
+    constexpr int thresh_digit = integer_traits<value_type>::const_max - thresh * 10;
+    ivalue = 0;
+    while (integer_digits > 0) {
+	int digit;
+	if (s == end || *s == 'E' || *s == 'e')
+	    digit = 0;
+	else if (*s >= '0' && *s <= '9') {
+	    digit = *s - '0';
+	    ++s;
+	} else {
+	    ++s;
+	    continue;
+	}
+	if (ivalue > thresh || (ivalue == thresh && digit > thresh_digit)) {
+	    ivalue = integer_traits<value_type>::const_max;
+	    status = NumArg::status_range;
+	} else
+	    ivalue = 10 * ivalue + digit;
+	--integer_digits;
+    }
+    return s;
+}
+
+const char *
+parse_decimal_fraction(const char *begin, const char *end,
+		       bool is_signed, int exponent_delta,
+		       value_type &ivalue,
+		       int fraction_digits, uint32_t &fvalue,
+		       int &status)
+{
+    int integer_digits = exponent_delta;
+    end = preparse_fraction(begin, end, is_signed, integer_digits);
+    if (end == begin) {
+	status = NumArg::status_inval;
+	return begin;
+    }
+
+    status = NumArg::status_ok;
+    const char *s = begin;
+
+    ivalue = 0;
+    if (integer_digits > 0) {
+	s = parse_integer_portion(s, end, integer_digits, ivalue, status);
+	integer_digits = 0;
+    }
+
+    fvalue = 0;
+    uint32_t maxfvalue = 1;
+    while (fraction_digits > 0) {
+	int digit;
+	if (integer_digits < 0) {
+	    digit = 0;
+	    ++integer_digits;
+	} else if (s == end || *s == 'E' || *s == 'e')
+	    digit = 0;
+	else if (*s >= '0' && *s <= '9') {
+	    digit = *s - '0';
+	    ++s;
+	} else {
+	    ++s;
+	    continue;
+	}
+	fvalue = fvalue * 10 + digit;
+	maxfvalue = maxfvalue * 10;
+	--fraction_digits;
+    }
+    // perhaps round up
+    while (s != end && *s != 'E' && *s != 'e' && (*s < '0' || *s > '9'))
+	++s;
+    if (s != end && *s >= '5' && *s <= '9' && ++fvalue == maxfvalue) {
+	fvalue = 0;
+	if (++ivalue == 0)
+	    status = NumArg::status_range;
+    }
+
+    return end;
 }
 
 template<typename V, typename L = uint32_t>
@@ -696,59 +779,6 @@ struct fraction_accum<uint32_t, uint32_t> {
 };
 #endif
 
-#if 0
-const char *
-parse_decimal_fraction(const char *begin, const char *end, bool is_signed,
-		       value_type &ivalue,
-		       int fraction_digits, value_type &fvalue, int &status)
-{
-    int integer_digits = 0;
-    end = preparse_fraction(begin, end, is_signed, integer_digits);
-    if (end == begin) {
-	status = NumArg::status_inval;
-	return begin;
-    }
-
-    status = NumArg::status_ok;
-    const char *s = begin;
-
-    constexpr value_type thresh = integer_traits<value_type>::const_max / 10;
-    constexpr int thresh_digit = integer_traits<value_type>::const_max - thresh * 10;
-    ivalue = fvalue = 0;
-    while (integer_digits > 0 || fraction_digits > 0) {
-	int digit;
-	if (integer_digits < 0) {
-	    digit = 0;
-	    ++integer_digits;
-	} else if (s == end || *s == 'E' || *s == 'e')
-	    digit = 0;
-	else if (*s >= '0' && *s <= '9') {
-	    digit = *s - '0';
-	    ++s;
-	} else {
-	    ++s;
-	    continue;
-	}
-	if (integer_digits > 0) {
-	    if (ivalue > thresh || (ivalue == thresh && digit > thresh_digit)) {
-		ivalue = integer_traits<value_type>::const_max;
-		status = NumArg::status_range;
-	    } else
-		ivalue = 10 * ivalue + digit;
-	    --integer_digits;
-	} else {
-	    fvalue = 10 * fvalue + digit;
-	    --fraction_digits;
-	}
-    }
-
-    if (status == NumArg::status_range)
-	fvalue = 0;
-
-    return end;
-}
-#endif
-
 const char *
 parse_fraction(const char *begin, const char *end,
 	       bool is_signed, int exponent_delta,
@@ -764,26 +794,10 @@ parse_fraction(const char *begin, const char *end,
     status = NumArg::status_ok;
     const char *s = begin;
 
-    constexpr value_type thresh = integer_traits<value_type>::const_max / 10;
-    constexpr int thresh_digit = integer_traits<value_type>::const_max - thresh * 10;
     ivalue = 0;
-    while (integer_digits > 0) {
-	int digit;
-	if (s == end || *s == 'E' || *s == 'e')
-	    digit = 0;
-	else if (*s >= '0' && *s <= '9') {
-	    digit = *s - '0';
-	    ++s;
-	} else {
-	    ++s;
-	    continue;
-	}
-	if (ivalue > thresh || (ivalue == thresh && digit > thresh_digit)) {
-	    ivalue = integer_traits<value_type>::const_max;
-	    status = NumArg::status_range;
-	} else
-	    ivalue = 10 * ivalue + digit;
-	--integer_digits;
+    if (integer_digits > 0) {
+	s = parse_integer_portion(s, end, integer_digits, ivalue, status);
+	integer_digits = 0;
     }
 
     const char *x = s;
@@ -801,15 +815,8 @@ parse_fraction(const char *begin, const char *end,
 	fwork.add_decimal_digit(0);
 	++integer_digits;
     }
-
-    if (status == NumArg::status_range)
-	fvalue = 0;
-    else if (fwork.extract(fvalue)) {
-	if (ivalue != integer_traits<value_type>::const_max)
-	    ++ivalue;
-	else
-	    status = NumArg::status_range;
-    }
+    if (fwork.extract(fvalue) && ++ivalue == 0)
+	status = NumArg::status_range;
 
     return end;
 }
@@ -829,21 +836,25 @@ FixedPointArg::preparse(const String &str, bool is_signed, uint32_t &result)
     if (status && status != status_range)
 	return false;
 
-    if (fvalue > (0xFFFFFFFFU - (1U << (31 - fraction_bits)))) {
-	if (ivalue < integer_traits<value_type>::const_max)
-	    ++ivalue;
+    if (fraction_bits == 32) {
+	// Separating this case helps avoid undefined behavior like <<32
+	if (ivalue == 0)
+	    result = fvalue;
+	else
+	    status = status_range;
+    } else {
+	value_type mivalue = ivalue;
+	uint32_t mfvalue = fvalue + (1U << (31 - fraction_bits));
+	if (mfvalue < fvalue)
+	    ++mivalue;
+	if (mivalue >= ivalue && mivalue < (1U << (32 - fraction_bits)))
+	    result = (uint32_t(mivalue) << fraction_bits)
+		| (mfvalue >> (32 - fraction_bits));
 	else
 	    status = status_range;
     }
-    if (fraction_bits == 32 ? ivalue : ivalue >= (1U << (32 - fraction_bits)))
-	status = status_range;
     if (status == status_range)
 	result = 0xFFFFFFFFU;
-    else if (fraction_bits == 32)
-	result = fvalue;
-    else
-	result = (uint32_t(ivalue) << fraction_bits)
-	    | ((fvalue + (1U << (31 - fraction_bits))) >> (32 - fraction_bits));
     return true;
 }
 
@@ -854,8 +865,7 @@ FixedPointArg::parse(const String &str, uint32_t &result, const ArgContext &args
     if (!preparse(str, false, x))
 	return false;
     else if (status == status_range) {
-	if (args.errh())
-	    args.error("out of range, bound %s", cp_unparse_real2(x, fraction_bits).c_str());
+	args.error("out of range, bound %s", cp_unparse_real2(x, fraction_bits).c_str());
 	return false;
     } else {
 	result = x;
@@ -886,11 +896,142 @@ FixedPointArg::parse(const String &str, int32_t &result, const ArgContext &args)
     if (!parse_saturating(str, x, args))
 	return false;
     else if (status == status_range) {
-	if (args.errh())
-	    args.error("out of range, bound %s", cp_unparse_real2(int32_t(x), fraction_bits).c_str());
+	args.error("out of range, bound %s", cp_unparse_real2(int32_t(x), fraction_bits).c_str());
 	return false;
     } else {
 	result = x;
+	return true;
+    }
+}
+
+
+static uint32_t exp10val[] = { 1, 10, 100, 1000, 10000, 100000, 1000000,
+			       10000000, 100000000, 1000000000 };
+
+bool
+DecimalFixedPointArg::parse_saturating(const String &str, uint32_t &result,
+				       const ArgContext &)
+{
+    assert(fraction_digits < int(sizeof(exp10val) / sizeof(exp10val[0])));
+
+    value_type ivalue;
+    uint32_t fvalue;
+    const char *end = parse_decimal_fraction(str.begin(), str.end(),
+					     false, exponent_delta,
+					     ivalue, fraction_digits, fvalue, status);
+    if (end != str.end())
+	status = status_inval;
+    if (status && status != status_range)
+	return false;
+
+    uint32_t mivalue(ivalue);
+    if (mivalue == ivalue) {
+	uint32_t imul[2];
+	int_multiply(mivalue, exp10val[fraction_digits], imul[0], imul[1]);
+	if (imul[1] == 0 && imul[0] + fvalue >= imul[0])
+	    mivalue = imul[0] + fvalue;
+	else
+	    status = status_range;
+    } else
+	status = status_range;
+
+    if (status == status_range)
+	mivalue = integer_traits<uint32_t>::const_max;
+    result = mivalue;
+    return true;
+}
+
+bool
+DecimalFixedPointArg::parse(const String &str, uint32_t &result,
+			    const ArgContext &args)
+{
+    uint32_t x;
+    if (!parse_saturating(str, x, args))
+	return false;
+    else if (status == status_range) {
+	args.error("out of range");
+	return false;
+    } else {
+	result = x;
+	return true;
+    }
+}
+
+bool
+DecimalFixedPointArg::parse_saturating(const String &str, int32_t &result,
+				       const ArgContext &args)
+{
+    String s(str);
+    bool negative = s && s[0] == '-';
+    if (negative)
+	s = s.substring(1);
+    uint32_t x;
+    if (!parse_saturating(s, x, args))
+	return false;
+    uint32_t limit(negative ? integer_traits<int32_t>::const_min
+		   : integer_traits<int32_t>::const_max);
+    if (x > limit) {
+	status = status_range;
+	result = limit;
+    } else
+	result = x;
+    return true;
+}
+
+bool
+DecimalFixedPointArg::parse(const String &str, int32_t &result,
+			    const ArgContext &args)
+{
+    int32_t x;
+    if (!parse_saturating(str, x, args))
+	return false;
+    else if (status == status_range) {
+	args.error("out of range");
+	return false;
+    } else {
+	result = x;
+	return true;
+    }
+}
+
+bool
+DecimalFixedPointArg::parse_saturating(const String &str, uint32_t &iresult,
+				       uint32_t &fresult, const ArgContext &)
+{
+    value_type ivalue;
+    uint32_t fvalue;
+    const char *end = parse_decimal_fraction(str.begin(), str.end(),
+					     false, exponent_delta,
+					     ivalue, fraction_digits, fvalue, status);
+    if (end != str.end())
+	status = status_inval;
+    if (status && status != status_range)
+	return false;
+    if (uint32_t(ivalue) != ivalue)
+	status = status_range;
+    if (status == status_range) {
+	iresult = integer_traits<uint32_t>::const_max;
+	fresult = exp10val[fraction_digits] - 1;
+    } else {
+	iresult = ivalue;
+	fresult = fvalue;
+    }
+    return true;
+}
+
+bool
+DecimalFixedPointArg::parse(const String &str, uint32_t &iresult,
+			    uint32_t &fresult, const ArgContext &args)
+{
+    uint32_t ivalue, fvalue;
+    if (!parse_saturating(str, ivalue, fvalue, args))
+	return false;
+    else if (status == status_range) {
+	args.error("out of range");
+	return false;
+    } else {
+	iresult = ivalue;
+	fresult = fvalue;
 	return true;
     }
 }
@@ -915,14 +1056,12 @@ DoubleArg::parse(const String &str, double &result, const ArgContext &args)
 
     if (errno == ERANGE) {
 	status = status_range;
-	if (args.errh()) {
-	    const char *fmt;
-	    if (value == 0)
-		fmt = "underflow, rounded to %g";
-	    else
-		fmt = "out of range, bound %g";
-	    args.error(fmt, value);
-	}
+	const char *fmt;
+	if (value == 0)
+	    fmt = "underflow, rounded to %g";
+	else
+	    fmt = "out of range, bound %g";
+	args.error(fmt, value);
 	return false;
     }
 
@@ -1036,7 +1175,24 @@ static const char byte_bandwidth_units[] = "\
 static const char byte_bandwidth_prefixes[] = "\
 k\103K\103M\106G\111";
 
-extern bool cp_real10(const String &str, int frac_digits, int exponent_delta, uint32_t *result);
+static uint32_t
+multiply_factor(uint32_t ix, uint32_t fx, int factor, int &status)
+{
+    if (factor == 1) {
+	if (int32_t(fx) < 0 && ++ix == 0)
+	    status = NumArg::status_range;
+	return ix;
+    } else {
+	uint32_t flow, ftoint, ilow, ihigh;
+	int_multiply(fx, factor, flow, ftoint);
+	if (int32_t(flow) < 0)
+	    ++ftoint;
+	int_multiply(ix, factor, ilow, ihigh);
+	if (ihigh != 0 || ilow + ftoint < ftoint)
+	    status = NumArg::status_range;
+	return ilow + ftoint;
+    }
+}
 
 bool
 BandwidthArg::parse(const String &str, uint32_t &result, const ArgContext &args)
@@ -1054,23 +1210,7 @@ BandwidthArg::parse(const String &str, uint32_t &result, const ArgContext &args)
     }
     if (uint32_t(ix) != ix)
 	status = status_range;
-    if (factor) {
-	uint32_t addend;
-#if HAVE_INT64_TYPES
-	uint64_t fscale = uint64_t(fx) * factor;
-	addend = (fscale + (1ULL << 31)) >> 32;
-#else
-	uint32_t ax[2] = { fx, 0 }, bx[2] = { 0x80000000U, 0 };
-	Bigint<uint32_t>::multiply_add(bx, ax, 2, factor);
-	addend = bx[1];
-#endif
-	const uint32_t threshold = 0xFFFFFFFFU / factor;
-	if (ix > threshold
-	    || (ix == threshold && addend > 0xFFFFFFFFU - threshold * factor))
-	    status = status_range;
-	else
-	    ix = ix * factor + addend;
-    }
+    ix = multiply_factor(ix, fx, factor, status);
     if (status == status_range) {
 	args.error("out of range");
 	result = 0xFFFFFFFFU;
@@ -1095,6 +1235,73 @@ BandwidthArg::unparse(uint32_t x)
     else
 	return cp_unparse_real10(x * 8, 3) + "kbps";
 }
+
+
+static const char seconds_units[] = "\
+\1\0\1s\
+\1\0\1sec\
+\1\1\6m\
+\1\1\6min\
+\1\2\044h\
+\1\2\044hr\
+\2\2\003\140d\
+\2\2\003\140day";
+static const char seconds_prefixes[] = "m\075u\072n\067";
+
+bool
+SecondsArg::parse_saturating(const String &str, uint32_t &result, const ArgContext &)
+{
+    int power, factor;
+    const char *unit_end = UnitArg(seconds_units, seconds_prefixes).parse(str.begin(), str.end(), power, factor);
+
+    value_type ix;
+    uint32_t fx;
+    const char *xend = parse_fraction(str.begin(), unit_end,
+				      false, power + fraction_digits, ix, fx, status);
+    if (status == status_inval || xend != unit_end) {
+	status = status_inval;
+	return false;
+    }
+    if (uint32_t(ix) != ix)
+	status = status_range;
+    ix = multiply_factor(ix, fx, factor, status);
+    if (status == status_range)
+	ix = integer_traits<uint32_t>::const_max;
+    result = ix;
+    return true;
+}
+
+bool
+SecondsArg::parse(const String &str, uint32_t &result, const ArgContext &args)
+{
+    uint32_t x;
+    if (!parse_saturating(str, x, args))
+	return false;
+    else if (status == status_range) {
+	args.error("out of range");
+	return false;
+    } else {
+	result = x;
+	return true;
+    }
+}
+
+#if HAVE_FLOAT_TYPES
+bool
+SecondsArg::parse(const String &str, double &result, const ArgContext &)
+{
+    int power, factor;
+    const char *unit_end = UnitArg(seconds_units, seconds_prefixes).parse(str.begin(), str.end(), power, factor);
+    if (!DoubleArg().parse(str.substring(str.begin(), unit_end), result))
+	return false;
+    if (factor != 1)
+	result *= factor;
+    power += fraction_digits;
+    if (power != 0)
+	result *= pow(10, power);
+    return true;
+}
+#endif
 
 
 #if CLICK_USERLEVEL || CLICK_TOOL

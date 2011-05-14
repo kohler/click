@@ -1112,147 +1112,15 @@ bool
 cp_real10(const String &str, int frac_digits, int exponent_delta,
 	  uint32_t *return_int_part, uint32_t *return_frac_part)
 {
-  const char *s = str.data();
-  const char *last = s + str.length();
-
-  cp_errno = CPE_FORMAT;
-  if (s == last)
-    return false;
-  if (frac_digits < 0 || frac_digits > 9) {
-    cp_errno = CPE_INVALID;
-    return false;
-  }
-
-  if (*s == '+')
-    s++;
-
-  // find integer part of string
-  const char *int_s = s;
-  for (int_s = s; s < last; s++)
-    if (!(isdigit((unsigned char) *s) || (*s == '_' && s > int_s && s < last - 1 && s[1] != '_')))
-      break;
-  int int_chars = s - int_s;
-
-  // find fractional part of string
-  const char *frac_s;
-  int frac_chars;
-  if (s < last && *s == '.') {
-    for (frac_s = ++s; s < last; s++)
-      if (!(isdigit((unsigned char) *s) || (*s == '_' && s > frac_s && s < last - 1 && s[1] != '_')))
-	break;
-    frac_chars = s - frac_s;
-  } else
-    frac_s = s, frac_chars = 0;
-
-  // no integer or fraction? illegal real
-  if (int_chars == 0 && frac_chars == 0)
-    return false;
-
-  // find exponent, if any
-  int exponent = 0;
-  if (s < last && (*s == 'E' || *s == 'e')) {
-    if (++s == last)
-      return false;
-
-    bool negexp = (*s == '-');
-    if (*s == '-' || *s == '+')
-      s++;
-    if (s >= last || !isdigit((unsigned char) *s))
-      return false;
-
-    // XXX overflow?
-    for (; s < last; s++)
-      if (isdigit((unsigned char) *s))
-	exponent = 10*exponent + *s - '0';
-      else if (*s != '_' || s == last - 1 || s[1] == '_')
-	break;
-
-    if (negexp)
-      exponent = -exponent;
-  }
-
-  if (s != last)
-    return false;
-
-  // OK! now create the result
-  // determine integer part; careful about overflow
-  uint32_t int_part = 0;
-  cp_errno = CPE_OK;
-  exponent += exponent_delta;
-  int digit;
-
-  for (int i = 0; i < int_chars + exponent; i++) {
-    if (i < int_chars)
-      digit = int_s[i] - '0';
-    else if (i - int_chars < frac_chars)
-      digit = frac_s[i - int_chars] - '0';
-    else
-      digit = 0;
-    if (digit == ('_' - '0'))
-      continue;
-    if (int_part > 0x19999999U || (int_part == 0x19999999U && digit > 5))
-      cp_errno = CPE_OVERFLOW;
-    int_part = int_part * 10 + digit;
-  }
-
-  // determine fraction part
-  uint32_t frac_part = 0;
-  digit = 0;
-
-  for (int i = 0; i <= frac_digits; i++) {
-    if (i + exponent + int_chars < 0)
-      digit = 0;
-    else if (i + exponent < 0)
-      digit = int_s[i + exponent + int_chars] - '0';
-    else if (i + exponent < frac_chars)
-      digit = frac_s[i + exponent] - '0';
-    else
-      digit = 0;
-    if (digit == ('_' - '0'))
-      continue;
-    // skip out on the last digit
-    if (i == frac_digits)
-      break;
-    // no overflow possible b/c frac_digits was limited
-    frac_part = frac_part * 10 + digit;
-  }
-
-  // round fraction part if required
-  if (digit >= 5) {
-    if (frac_part == exp10val[frac_digits] - 1) {
-      frac_part = 0;
-      if (int_part == 0xFFFFFFFFU)
+    DecimalFixedPointArg dfpa(frac_digits, exponent_delta);
+    if (!dfpa.parse_saturating(str, *return_int_part, *return_frac_part)) {
+	cp_errno = CPE_FORMAT;
+	return false;
+    } else if (dfpa.status == NumArg::status_range)
 	cp_errno = CPE_OVERFLOW;
-      int_part++;
-    } else
-      frac_part++;
-  }
-
-  // done!
-  if (cp_errno) {		// overflow
-    int_part = 0xFFFFFFFFU;
-    frac_part = exp10val[frac_digits] - 1;
-  }
-
-  //click_chatter("%d: %u %u", frac_digits, int_part, frac_part);
-  *return_int_part = int_part;
-  *return_frac_part = frac_part;
-  return true;
-}
-
-static bool
-unsigned_real10_2to1(uint32_t int_part, uint32_t frac_part, int frac_digits,
-		     uint32_t *result)
-{
-  uint32_t one = exp10val[frac_digits];
-  uint32_t int_max = 0xFFFFFFFFU / one;
-  uint32_t frac_max = 0xFFFFFFFFU - int_max * one;
-  if (int_part > int_max || (int_part == int_max && frac_part > frac_max)) {
-    cp_errno = CPE_OVERFLOW;
-    *result = 0xFFFFFFFFU;
-  } else
-    *result = int_part * one + frac_part;
-  return true;
+    else
+	cp_errno = CPE_OK;
+    return true;
 }
 
 /** @brief Parse a real number from @a str, representing the result as an
@@ -1280,28 +1148,28 @@ bool
 cp_real10(const String &str, int frac_digits,
 	  uint32_t *result_int_part, uint32_t *result_frac_part)
 {
-  return cp_real10(str, frac_digits, 0, result_int_part, result_frac_part);
+    return cp_real10(str, frac_digits, 0, result_int_part, result_frac_part);
 }
 
 bool
 cp_real10(const String &str, int frac_digits, int exponent_delta,
 	  uint32_t *result)
 {
-  uint32_t int_part, frac_part;
-  if (!cp_real10(str, frac_digits, exponent_delta, &int_part, &frac_part))
-    return false;
-  else
-    return unsigned_real10_2to1(int_part, frac_part, frac_digits, result);
+    DecimalFixedPointArg dfpa(frac_digits, exponent_delta);
+    if (!dfpa.parse_saturating(str, *result)) {
+	cp_errno = CPE_FORMAT;
+	return false;
+    } else if (dfpa.status == dfpa.status_range)
+	cp_errno = CPE_OVERFLOW;
+    else
+	cp_errno = CPE_OK;
+    return true;
 }
 
 bool
 cp_real10(const String &str, int frac_digits, uint32_t *result)
 {
-  uint32_t int_part, frac_part;
-  if (!cp_real10(str, frac_digits, 0, &int_part, &frac_part))
-    return false;
-  else
-    return unsigned_real10_2to1(int_part, frac_part, frac_digits, result);
+    return cp_real10(str, frac_digits, 0, result);
 }
 
 bool
@@ -1326,32 +1194,6 @@ cp_real2(const String &str, int frac_bits, uint32_t *result)
 
 // Parsing signed reals
 
-static bool
-cp_real_base(const String &in_str, int frac_digits, int32_t *result,
-	     bool (*func)(const String &, int, uint32_t *))
-{
-  String str = in_str;
-  bool negative = false;
-  if (str.length() > 1 && str[0] == '-' && str[1] != '+') {
-    negative = true;
-    str = str.substring(1);
-  }
-
-  uint32_t value;
-  if (!func(str, frac_digits, &value))
-    return false;
-
-  // check for overflow
-  uint32_t umax = (negative ? 0x80000000 : 0x7FFFFFFF);
-  if (value > umax) {
-    cp_errno = CPE_OVERFLOW;
-    value = umax;
-  }
-
-  *result = (negative ? -value : value);
-  return true;
-}
-
 /** @brief Parse a real number from @a str, representing the result as an
  * integer with @a frac_digits decimal digits of fraction.
  * @param  str  string
@@ -1374,7 +1216,15 @@ cp_real_base(const String &in_str, int frac_digits, int32_t *result,
 bool
 cp_real10(const String &str, int frac_digits, int32_t *result)
 {
-  return cp_real_base(str, frac_digits, result, cp_real10);
+    DecimalFixedPointArg dfpa(frac_digits);
+    if (!dfpa.parse_saturating(str, *result)) {
+	cp_errno = CPE_FORMAT;
+	return false;
+    } else if (dfpa.status == dfpa.status_range)
+	cp_errno = CPE_OVERFLOW;
+    else
+	cp_errno = CPE_OK;
+    return true;
 }
 
 /** @brief  Parse a fixed-point number from @a str.
@@ -1581,16 +1431,14 @@ static const char seconds_prefixes[] = "m\075u\072n\067";
  */
 bool cp_seconds_as(const String &str, int frac_digits, uint32_t *result)
 {
-  int power = 0, factor = 1;
-  const char *after_unit = read_unit(str.begin(), str.end(), seconds_units, sizeof(seconds_units), seconds_prefixes, &power, &factor);
-  if (!cp_real10(str.substring(str.begin(), after_unit), frac_digits, power, result))
-    return false;
-  if (*result > 0xFFFFFFFFU / factor) {
-    cp_errno = CPE_OVERFLOW;
-    *result = 0xFFFFFFFFU;
-  } else
-    *result *= factor;
-  return true;
+    SecondsArg sa(frac_digits);
+    if (!sa.parse_saturating(str, *result))
+	return false;
+    else if (sa.status == sa.status_range)
+	cp_errno = CPE_OVERFLOW;
+    else
+	cp_errno = CPE_OK;
+    return true;
 }
 
 /** @brief Parse an amount of time in milliseconds from @a str.
@@ -1635,15 +1483,7 @@ bool cp_seconds_as_micro(const String &str, uint32_t *result)
  */
 bool cp_seconds(const String &str, double *result)
 {
-  int power = 0, factor = 1;
-  const char *after_unit = read_unit(str.begin(), str.end(), seconds_units, sizeof(seconds_units), seconds_prefixes, &power, &factor);
-  if (!cp_double(str.substring(str.begin(), after_unit), result))
-    return false;
-  if (power < 0)
-      *result = (*result * factor) / exp10val[-power];
-  else
-      *result = (*result * factor) * exp10val[power];
-  return true;
+    return SecondsArg().parse(str, *result);
 }
 #endif
 
@@ -2629,23 +2469,23 @@ default_parsefunc(cp_value *v, const String &arg,
       break;
   }
 
-   case cpiReal10:
-    if (!cp_real10(arg, v->extra.i, &v->v.s32))
-      goto type_mismatch;
-    else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_real10(v->v.s32, v->extra.i);
-      errh->error("%s out of range, bound %s", argname, m.c_str());
-    }
-    break;
+  case cpiReal10: {
+      DecimalFixedPointArg dfpa(v->extra.i);
+      if (!dfpa.parse_saturating(arg, v->v.s32))
+	  goto type_mismatch;
+      else if (dfpa.status == dfpa.status_range)
+	  errh->error("%s out of range", argname);
+      break;
+  }
 
-   case cpiUnsignedReal10:
-    if (!cp_real10(arg, v->extra.i, &v->v.u32))
-      goto type_mismatch;
-    else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_real10(v->v.u32, v->extra.i);
-      errh->error("%s out of range, bound %s", argname, m.c_str());
-    }
-    break;
+  case cpiUnsignedReal10: {
+      DecimalFixedPointArg dfpa(v->extra.i);
+      if (!dfpa.parse_saturating(arg, v->v.u32))
+	  goto type_mismatch;
+      else if (dfpa.status == dfpa.status_range)
+	  errh->error("%s out of range", argname);
+      break;
+  }
 
 #ifdef HAVE_FLOAT_TYPES
   case cpiDouble: {
@@ -2658,30 +2498,36 @@ default_parsefunc(cp_value *v, const String &arg,
   }
 #endif
 
-   case cpiSeconds:
-    if (!cp_seconds_as(arg, 0, &v->v.u32))
-      goto type_mismatch;
-    else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s out of range, bound %u", argname, v->v.u32);
-    break;
+  case cpiSeconds: {
+      SecondsArg sa;
+      if (!sa.parse_saturating(arg, v->v.u32))
+	  goto type_mismatch;
+      else if (sa.status == sa.status_range)
+	  errh->error("%s out of range, bound %u", argname, v->v.u32);
+      break;
+  }
 
-   case cpiSecondsAsMilli:
-    if (!cp_seconds_as(arg, 3, &v->v.u32))
-      goto type_mismatch;
-    else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_milliseconds(v->v.u32);
-      errh->error("%s out of range, bound %s", argname, m.c_str());
-    }
-    break;
+  case cpiSecondsAsMilli: {
+      SecondsArg sa(3);
+      if (!sa.parse_saturating(arg, v->v.u32))
+	  goto type_mismatch;
+      else if (sa.status == sa.status_range) {
+	  String m = cp_unparse_milliseconds(v->v.u32);
+	  errh->error("%s out of range, bound %s", argname, m.c_str());
+      }
+      break;
+  }
 
-   case cpiSecondsAsMicro:
-    if (!cp_seconds_as(arg, 6, &v->v.u32))
-      goto type_mismatch;
-    else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_microseconds(v->v.u32);
-      errh->error("%s out of range, bound %s", argname, m.c_str());
-    }
-    break;
+  case cpiSecondsAsMicro: {
+      SecondsArg sa(6);
+      if (!sa.parse_saturating(arg, v->v.u32))
+	  goto type_mismatch;
+      else if (sa.status == sa.status_range) {
+	  String m = cp_unparse_microseconds(v->v.u32);
+	  errh->error("%s out of range, bound %s", argname, m.c_str());
+      }
+      break;
+  }
 
   case cpiTimestamp:
   case cpiTimestampSigned: {
