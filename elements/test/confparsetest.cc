@@ -424,6 +424,29 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(cp_va_kparse(conf, this, errh,
                        "SIZE", 0, cpSize, &test_size,
                        cpEnd) == 1 && test_size == 123456789);
+    CHECK(Args(conf, this, errh)
+	  .read("SIZE", test_size).read_status(b)
+	  .complete() >= 0 && b == true && test_size == 123456789);
+
+    Vector<String> results;
+    bool b2;
+    CHECK(Args(this, errh).push_back_args("A 1, B 2, A 3, A 4   , A 5")
+	  .read_all_with("A", AnyArg(), results).read_status(b)
+	  .read("B", i32).read_status(b2)
+	  .complete() >= 0);
+    CHECK(b == true);
+    CHECK(b2 == true);
+    CHECK(i32 == 2);
+    CHECK(results.size() == 4);
+    CHECK(results[0] == "1" && results[1] == "3" && results[2] == "4" && results[3] == "5");
+
+    results.clear();
+    CHECK(Args(this, errh).push_back_args("B 3")
+	  .read_all_with("A", AnyArg(), results).read_status(b)
+	  .read("B", i32).read_status(b2)
+	  .complete() >= 0
+	  && b == false && b2 == true && i32 == 3
+	  && results.size() == 0);
 
     errh->message("All tests pass!");
     return 0;

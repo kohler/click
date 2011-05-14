@@ -289,6 +289,7 @@ struct Args : public ArgContext {
     static constexpr int mandatory = 1;  ///< read flag for mandatory arguments
     static constexpr int positional = 2; ///< read flag for positional arguments
     static constexpr int deprecated = 4; ///< read flag for deprecated arguments
+    static constexpr int firstmatch = 8; ///< read flag to take first matching argument
 
     /** @brief Read an argument using its type's default parser.
      * @param keyword argument name
@@ -451,7 +452,7 @@ struct Args : public ArgContext {
     }
     template<typename P>
     Args &read_with(const char *keyword, int flags, P parser) {
-	base_read_with(keyword, flags, parser);
+	args_base_read_with(this, keyword, flags, parser);
 	return *this;
     }
 
@@ -480,7 +481,46 @@ struct Args : public ArgContext {
     }
     template<typename P, typename T>
     Args &read_with(const char *keyword, int flags, P parser, T &variable) {
-	base_read_with(keyword, flags, parser, variable);
+	args_base_read_with(this, keyword, flags, parser, variable);
+	return *this;
+    }
+
+    /** @brief Pass all matching arguments to a specified parser.
+     * @param keyword argument name
+     * @param parser parser object
+     * @return *this
+     *
+     * Calls @a parser.parse(string, *this) zero or more times.
+     *
+     * @note The value of read_status() is true iff at least one argument
+     * matched and all matching arguments successfully parsed. */
+    template<typename P>
+    Args &read_all_with(const char *keyword, P parser) {
+	return read_all_with(keyword, 0, parser);
+    }
+    template<typename P>
+    Args &read_all_with(const char *keyword, int flags, P parser) {
+	args_base_read_all_with(this, keyword, flags | firstmatch, parser);
+	return *this;
+    }
+
+    /** @brief Pass all matching arguments to a specified parser.
+     * @param keyword argument name
+     * @param parser parser object
+     * @param variable reference to result variable
+     * @return *this
+     *
+     * Calls @a parser.parse(string, *this, variable) zero or more times.
+     *
+     * @note The value of read_status() is true iff at least one argument
+     * matched and all matching arguments successfully parsed. */
+    template<typename P, typename T>
+    Args &read_all_with(const char *keyword, P parser, T &variable) {
+	return read_all_with(keyword, 0, parser, variable);
+    }
+    template<typename P, typename T>
+    Args &read_all_with(const char *keyword, int flags, P parser, T &variable) {
+	args_base_read_all_with(this, keyword, flags | firstmatch, parser, variable);
 	return *this;
     }
 
@@ -627,6 +667,30 @@ struct Args : public ArgContext {
 	Slot *slot_status;
 	if (String str = find(keyword, flags, slot_status))
 	    postparse(parser.parse(str, *this, variable), slot_status);
+    }
+
+    template<typename P>
+    void base_read_all_with(const char *keyword, int flags, P parser) {
+	Slot *slot_status;
+	int read_status = -1;
+	while (String str = find(keyword, flags, slot_status)) {
+	    postparse(parser.parse(str, *this), slot_status);
+	    read_status = (read_status != 0) && _read_status;
+	    flags &= ~mandatory;
+	}
+	_read_status = (read_status == 1);
+    }
+
+    template<typename P, typename T>
+    void base_read_all_with(const char *keyword, int flags, P parser, T &variable) {
+	Slot *slot_status;
+	int read_status = -1;
+	while (String str = find(keyword, flags, slot_status)) {
+	    postparse(parser.parse(str, *this, variable), slot_status);
+	    read_status = (read_status != 0) && _read_status;
+	    flags &= ~mandatory;
+	}
+	_read_status = (read_status == 1);
     }
     /** @endcond never */
 
@@ -792,6 +856,26 @@ void args_base_read_with(Args *args, const char *keyword, int flags,
 {
     args->base_read_with(keyword, flags, parser, variable);
 }
+
+template<typename P>
+void args_base_read_all_with(Args *args, const char *keyword, int flags, P parser)
+    CLICK_NOINLINE;
+template<typename P>
+void args_base_read_all_with(Args *args, const char *keyword, int flags, P parser)
+{
+    args->base_read_all_with(keyword, flags, parser);
+}
+
+template<typename P, typename T>
+void args_base_read_all_with(Args *args, const char *keyword, int flags,
+			     P parser, T &variable) CLICK_NOINLINE;
+template<typename P, typename T>
+void args_base_read_all_with(Args *args, const char *keyword, int flags,
+			     P parser, T &variable)
+{
+    args->base_read_all_with(keyword, flags, parser, variable);
+}
+/** @endcond never */
 
 
 struct NumArg {
@@ -1043,6 +1127,10 @@ struct AnyArg {
     }
     static bool parse(const String &str, String &result, const ArgContext & = blank_args) {
 	result = str;
+	return true;
+    }
+    static bool parse(const String &str, const ArgContext &, Vector<String> &result) {
+	result.push_back(str);
 	return true;
     }
 };

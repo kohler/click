@@ -327,7 +327,7 @@ Args::find(const char *keyword, int flags, Slot *&slot_status)
     _read_status = true;
     slot_status = _slots;
 
-    // Find last matching keyword.
+    // Find matching keyword -- normally last, sometimes first.
     int keyword_length = keyword ? strlen(keyword) : 0;
     int got = -1, got_kwpos = -1, position = -1;
     for (int i = 0; i < _kwpos.size(); ++i) {
@@ -338,6 +338,8 @@ Args::find(const char *keyword, int flags, Slot *&slot_status)
 	    got = i;
 	    got_kwpos = _kwpos[i];
 	    _kwpos[i] = -2;
+	    if (flags & firstmatch)
+		break;
 	}
     }
 
@@ -346,12 +348,15 @@ Args::find(const char *keyword, int flags, Slot *&slot_status)
     // But if the requested keyword is mandatory but so far lacking, take the
     // current argument even if it appears to have a keyword.
     if ((flags & positional) && position >= 0 && _kwpos[position] >= 0
-	&& ((got < 0 && (flags & mandatory)) || _kwpos[position] == 0)) {
-	if (got < position) {
+	&& ((got < 0 && (flags & mandatory)) || _kwpos[position] == 0)
+	&& (!(flags & firstmatch) || got < 0 || position < got)) {
+	_kwpos[position] = -1;
+	if ((flags & firstmatch) && position < got)
+	    _kwpos[got] = keyword_length;
+	if ((flags & firstmatch) || got < position) {
 	    got = position;
 	    got_kwpos = 0;
 	}
-	_kwpos[position] = -1;
     }
 
     if (got < 0) {
