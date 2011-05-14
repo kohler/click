@@ -422,7 +422,7 @@ FromFlanDump::read_handler(Element *e, void *thunk)
     FromFlanDump *fd = static_cast<FromFlanDump *>(e);
     switch ((intptr_t)thunk) {
       case ACTIVE_THUNK:
-	return cp_unparse_bool(fd->_active);
+	return BoolArg::unparse(fd->_active);
       case FILESIZE_THUNK: {
 	  struct stat s;
 	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0 && S_ISREG(s.st_mode))

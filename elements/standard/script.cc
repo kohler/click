@@ -698,7 +698,7 @@ Script::Expander::expand(const String &vname, int vartype, int quote, StringAccu
     }
 
     if (vname.equals("write", 5)) {
-	sa << cp_unparse_bool(script->_run_op & Handler::OP_WRITE);
+	sa << BoolArg::unparse(script->_run_op & Handler::OP_WRITE);
 	return true;
     }
 
@@ -932,8 +932,8 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 #endif
 	comparison = (a < b ? AR_LT : (a == b ? AR_EQ : AR_GT));
     compare_return:
-	str = cp_unparse_bool(what == comparison
-			      || (what >= AR_GE && what != comparison + 3));
+	str = BoolArg::unparse(what == comparison
+			       || (what >= AR_GE && what != comparison + 3));
 	return 0;
     compare_strings:
 	a = String::compare(cp_unquote(astr), cp_unquote(bstr));
@@ -945,7 +945,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	bool x;
 	if (!BoolArg().parse(str, x))
 	    return errh->error("syntax error");
-	str = cp_unparse_bool(!x);
+	str = BoolArg::unparse(!x);
 	return 0;
     }
 
@@ -962,7 +962,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	}
 	if (what == ar_nand || what == ar_nor)
 	    current_value = !current_value;
-	str = cp_unparse_bool(current_value);
+	str = BoolArg::unparse(current_value);
 	return 0;
     }
 
@@ -984,7 +984,7 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
 	bool answer = false;
 	while (word && str && !answer)
 	    answer = (word == cp_unquote(cp_shift_spacevec(str)));
-	str = cp_unparse_bool(answer);
+	str = BoolArg::unparse(answer);
 	return 0;
     }
 

@@ -4159,10 +4159,7 @@ cp_assign_arguments(const Vector<String> &argv, const String *param_begin, const
 String
 cp_unparse_bool(bool b)
 {
-    if (b)
-	return String::make_stable("true", 4);
-    else
-	return String::make_stable("false", 5);
+    return BoolArg::unparse(b);
 }
 
 String
@@ -4299,14 +4296,7 @@ cp_unparse_interval(const timeval& tv)
 String
 cp_unparse_bandwidth(uint32_t bw)
 {
-    if (bw >= 0x20000000U)
-	return cp_unparse_real10(bw, 6) + "MBps";
-    else if (bw >= 125000000)
-	return cp_unparse_real10(bw * 8, 9) + "Gbps";
-    else if (bw >= 125000)
-	return cp_unparse_real10(bw * 8, 6) + "Mbps";
-    else
-	return cp_unparse_real10(bw * 8, 3) + "kbps";
+    return BandwidthArg::unparse(bw);
 }
 
 

@@ -21,7 +21,7 @@
 #include "ratedsplitter.hh"
 #include <click/glue.hh>
 #include <click/error.hh>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include "ratedunqueue.hh"
 CLICK_DECLS
 
@@ -57,7 +57,7 @@ RatedSplitter::read_handler(Element *e, void *)
 {
     RatedSplitter *rs = static_cast<RatedSplitter *>(e);
     if (rs->is_bandwidth())
-	return cp_unparse_bandwidth(rs->_tb.rate());
+	return BandwidthArg::unparse(rs->_tb.rate());
     else
 	return String(rs->_tb.rate());
 }

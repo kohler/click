@@ -144,7 +144,7 @@ FromHandler::read_handler(Element *e, void *thunk)
     FromHandler *fd = static_cast<FromHandler *>(e);
     switch ((intptr_t)thunk) {
       case H_ACTIVE:
-	return cp_unparse_bool(fd->_active) + "\n";
+	return BoolArg::unparse(fd->_active);
     case H_TIME: {
 	StringAccum sa;
 	sa << fd->_end - fd->_start << "\n";

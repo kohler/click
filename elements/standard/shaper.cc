@@ -64,7 +64,7 @@ Shaper::read_handler(Element *e, void *)
 {
     Shaper *s = static_cast<Shaper *>(e);
     if (s->is_bandwidth())
-	return cp_unparse_bandwidth(s->_rate.rate());
+	return BandwidthArg::unparse(s->_rate.rate());
     else
 	return String(s->_rate.rate());
 }

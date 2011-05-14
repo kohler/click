@@ -124,7 +124,7 @@ RatedUnqueue::read_handler(Element *e, void *thunk)
     switch ((uintptr_t) thunk) {
       case h_rate:
 	if (ru->is_bandwidth())
-	    return cp_unparse_bandwidth(ru->_tb.rate());
+	    return BandwidthArg::unparse(ru->_tb.rate());
 	else
 	    return String(ru->_tb.rate());
       case h_calls: {

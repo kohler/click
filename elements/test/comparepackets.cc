@@ -142,7 +142,7 @@ ComparePackets::read_handler(Element *e, void *thunk)
 	  return sa.take_string();
       }
       case H_ALL_SAME:
-	return cp_unparse_bool(cp->_ndiff == 0);
+	return BoolArg::unparse(cp->_ndiff == 0);
       default:
 	return "<error>";
     }

@@ -2233,7 +2233,7 @@ bool_data_handler(int op, String &str, Element *element, const Handler *h, Error
 {
     bool *ptr = reinterpret_cast<bool *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
     if (op == Handler::h_read) {
-	str = cp_unparse_bool(*ptr);
+	str = String(*ptr);
 	return 0;
     } else if (BoolArg().parse(str, *ptr))
 	return 0;
@@ -2411,8 +2411,8 @@ Element::add_data_handlers(const String &name, int flags, HandlerCallback callba
  * Handler::h_write), registers a write handler.  These handlers read or set
  * the data stored at @a *data, which might, for example, be an element
  * instance variable.  This data is unparsed and/or parsed using the expected
- * functions; for example, the <tt>bool</tt> version uses cp_unparse_bool()
- * and cp_bool().
+ * functions; for example, the <tt>bool</tt> version uses BoolArg::unparse()
+ * and BoolArg::parse().
  *
  * Overloaded versions of this function are available for many fundamental
  * data types.

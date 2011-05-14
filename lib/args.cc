@@ -1083,6 +1083,19 @@ BandwidthArg::parse(const String &str, uint32_t &result, const ArgContext &args)
     }
 }
 
+String
+BandwidthArg::unparse(uint32_t x)
+{
+    if (x >= 0x20000000U)
+	return cp_unparse_real10(x, 6) + "MBps";
+    else if (x >= 125000000)
+	return cp_unparse_real10(x * 8, 9) + "Gbps";
+    else if (x >= 125000)
+	return cp_unparse_real10(x * 8, 6) + "Mbps";
+    else
+	return cp_unparse_real10(x * 8, 3) + "kbps";
+}
+
 
 #if CLICK_USERLEVEL || CLICK_TOOL
 bool

@@ -1059,6 +1059,9 @@ template<> struct DefaultArg<double> : public DoubleArg {};
   @brief Parser class for booleans. */
 struct BoolArg {
     static bool parse(const String &str, bool &result, const ArgContext &args = blank_args);
+    static String unparse(bool x) {
+	return String(x);
+    }
 };
 
 template<> struct DefaultArg<bool> : public BoolArg {};
@@ -1083,6 +1086,7 @@ struct UnitArg {
   Handles suffixes such as "Gbps", "k", etc. */
 struct BandwidthArg : public NumArg {
     bool parse(const String &str, uint32_t &result, const ArgContext & = blank_args);
+    static String unparse(uint32_t x);
     int status;
 };
 

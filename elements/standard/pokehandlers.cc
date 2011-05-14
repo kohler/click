@@ -20,7 +20,7 @@
 
 #include <click/config.h>
 #include "pokehandlers.hh"
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/router.hh>
 CLICK_DECLS
@@ -138,7 +138,7 @@ String
 PokeHandlers::read_param(Element *e, void *)
 {
     PokeHandlers *p = (PokeHandlers *)e;
-    return cp_unparse_bool(p->_paused);
+    return BoolArg::unparse(p->_paused);
 }
 
 int

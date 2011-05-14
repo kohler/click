@@ -622,7 +622,7 @@ FromTcpdump::read_handler(Element *e, void *thunk)
       case H_SAMPLING_PROB:
 	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT);
       case H_ACTIVE:
-	return cp_unparse_bool(fd->_active);
+	return BoolArg::unparse(fd->_active);
       case H_ENCAP:
 	return "IP";
       default:
