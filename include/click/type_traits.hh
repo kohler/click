@@ -31,14 +31,29 @@ template<typename T> struct has_trivial_copy<T *> : public true_type {};
 typedef int64_t click_int_large_t;
 typedef uint64_t click_uint_large_t;
 # define SIZEOF_CLICK_INT_LARGE_T 8
+# define CLICK_ERRHdLARGE "^64d"
+# define CLICK_ERRHuLARGE "^64u"
+# define CLICK_ERRHoLARGE "^64o"
+# define CLICK_ERRHxLARGE "^64x"
+# define CLICK_ERRHXLARGE "^64X"
 #elif HAVE_LONG_LONG
 typedef long long click_int_large_t;
 typedef unsigned long long click_uint_large_t;
 # define SIZEOF_CLICK_INT_LARGE_T SIZEOF_LONG_LONG
+# define CLICK_ERRHdLARGE "lld"
+# define CLICK_ERRHuLARGE "llu"
+# define CLICK_ERRHoLARGE "llo"
+# define CLICK_ERRHxLARGE "llx"
+# define CLICK_ERRHXLARGE "llX"
 #else
 typedef long click_int_large_t;
 typedef unsigned long click_uint_large_t;
 # define SIZEOF_CLICK_INT_LARGE_T SIZEOF_LONG
+# define CLICK_ERRHdLARGE "ld"
+# define CLICK_ERRHuLARGE "lu"
+# define CLICK_ERRHoLARGE "lo"
+# define CLICK_ERRHxLARGE "lx"
+# define CLICK_ERRHXLARGE "lX"
 #endif
 
 
