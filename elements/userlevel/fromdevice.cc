@@ -210,6 +210,19 @@ FromDevice::set_promiscuous(int fd, String ifname, bool promisc)
 }
 #endif /* FROMDEVICE_LINUX */
 
+#if FROMDEVICE_PCAP
+String
+FromDevice::get_pcap_error(const char *ebuf)
+{
+    if ((!ebuf || !ebuf[0]) && _pcap)
+	ebuf = pcap_geterr(_pcap);
+    if (!ebuf || !ebuf[0])
+	return "unknown error";
+    else
+	return ebuf;
+}
+#endif
+
 int
 FromDevice::initialize(ErrorHandler *errh)
 {
@@ -221,18 +234,22 @@ FromDevice::initialize(ErrorHandler *errh)
 	assert(!_pcap);
 	char *ifname = _ifname.mutable_c_str();
 	char ebuf[PCAP_ERRBUF_SIZE];
+	ebuf[0] = 0;
 	_pcap = pcap_open_live(ifname, _snaplen, _promisc,
 			       1,     /* timeout: don't wait for packets */
 			       ebuf);
 	// Note: pcap error buffer will contain the interface name
 	if (!_pcap)
-	    return errh->error("%s", ebuf);
+	    return errh->error("%s while opening %s", get_pcap_error(ebuf).c_str(), ifname);
+	else if (ebuf[0])
+	    errh->warning("%s", ebuf);
 
 	// nonblocking I/O on the packet socket so we can poll
 	int pcap_fd = fd();
 # if HAVE_PCAP_SETNONBLOCK
-	if (pcap_setnonblock(_pcap, 1, ebuf) < 0)
-	    errh->warning("pcap_setnonblock: %s", ebuf);
+	ebuf[0] = 0;
+	if (pcap_setnonblock(_pcap, 1, ebuf) < 0 || ebuf[0])
+	    errh->warning("pcap_setnonblock: %s", get_pcap_error(ebuf).c_str());
 # else
 	if (fcntl(pcap_fd, F_SETFL, O_NONBLOCK) < 0)
 	    errh->warning("setting nonblocking: %s", strerror(errno));
@@ -267,8 +284,9 @@ FromDevice::initialize(ErrorHandler *errh)
 
 	bpf_u_int32 netmask;
 	bpf_u_int32 localnet;
-	if (pcap_lookupnet(ifname, &localnet, &netmask, ebuf) < 0)
-	    errh->warning("%s", ebuf);
+	ebuf[0] = 0;
+	if (pcap_lookupnet(ifname, &localnet, &netmask, ebuf) < 0 || ebuf[0] != 0)
+	    errh->warning("%s", get_pcap_error(ebuf).c_str());
 
 	// Later versions of pcap distributed with linux (e.g. the redhat
 	// linux pcap-0.4-16) want to have a filter installed before they

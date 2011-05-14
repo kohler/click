@@ -182,6 +182,7 @@ class FromDevice : public Element { public:
     int _pcap_complaints;
     friend void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*,
 				      const u_char*);
+    String get_pcap_error(const char *ebuf);
 #endif
     bool _force_ip;
     int _datalink;
