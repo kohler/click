@@ -178,7 +178,7 @@ class RouterThread
 #if HAVE_STRIDE_SCHED
     inline unsigned pass() const {
 # if HAVE_TASK_HEAP
-	return _task_heap.size() ? _task_heap.at_u(0).t->_pass : 0;
+	return _task_heap.size() ? _task_heap.at_u(0).pass : 0;
 # else
 	return _next->_pass;
 # endif
