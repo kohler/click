@@ -1009,13 +1009,13 @@ struct FixedPointArg : public NumArg {
     int exponent_delta;
     int status;
   private:
-    bool preparse(const String &str, bool is_signed, uint32_t &result);
+    bool underparse(const String &str, bool is_signed, uint32_t &result);
 };
 
 inline bool
 FixedPointArg::parse_saturating(const String &str, uint32_t &result, const ArgContext &)
 {
-    return preparse(str, false, result);
+    return underparse(str, false, result);
 }
 
 /** @class DecimalFixedPointArg
@@ -1024,7 +1024,7 @@ struct DecimalFixedPointArg : public NumArg {
     DecimalFixedPointArg(int d, int exponent = 0)
 	: fraction_digits(d), exponent_delta(exponent) {
     }
-    bool parse_saturating(const String &str, uint32_t &result, const ArgContext &args = blank_args);
+    inline bool parse_saturating(const String &str, uint32_t &result, const ArgContext &args = blank_args);
     bool parse(const String &str, uint32_t &result, const ArgContext &args = blank_args);
     bool parse_saturating(const String &str, int32_t &result, const ArgContext &args = blank_args);
     bool parse(const String &str, int32_t &result, const ArgContext &args = blank_args);
@@ -1033,7 +1033,15 @@ struct DecimalFixedPointArg : public NumArg {
     int fraction_digits;
     int exponent_delta;
     int status;
+  private:
+    bool underparse(const String &str, bool is_signed, uint32_t &result);
 };
+
+inline bool
+DecimalFixedPointArg::parse_saturating(const String &str, uint32_t &result, const ArgContext &)
+{
+    return underparse(str, false, result);
+}
 
 
 #if HAVE_FLOAT_TYPES

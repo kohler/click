@@ -824,7 +824,7 @@ parse_fraction(const char *begin, const char *end,
 
 
 bool
-FixedPointArg::preparse(const String &str, bool is_signed, uint32_t &result)
+FixedPointArg::underparse(const String &str, bool is_signed, uint32_t &result)
 {
     value_type ivalue;
     uint32_t fvalue;
@@ -862,7 +862,7 @@ bool
 FixedPointArg::parse(const String &str, uint32_t &result, const ArgContext &args)
 {
     uint32_t x;
-    if (!preparse(str, false, x))
+    if (!underparse(str, false, x))
 	return false;
     else if (status == status_range) {
 	args.error("out of range, bound %s", cp_unparse_real2(x, fraction_bits).c_str());
@@ -877,7 +877,7 @@ bool
 FixedPointArg::parse_saturating(const String &str, int32_t &result, const ArgContext &)
 {
     uint32_t x;
-    if (!preparse(str, true, x))
+    if (!underparse(str, true, x))
 	return false;
     bool negative = str[0] == '-';
     if (status == status_ok
@@ -909,15 +909,14 @@ static uint32_t exp10val[] = { 1, 10, 100, 1000, 10000, 100000, 1000000,
 			       10000000, 100000000, 1000000000 };
 
 bool
-DecimalFixedPointArg::parse_saturating(const String &str, uint32_t &result,
-				       const ArgContext &)
+DecimalFixedPointArg::underparse(const String &str, bool is_signed, uint32_t &result)
 {
     assert(fraction_digits < int(sizeof(exp10val) / sizeof(exp10val[0])));
 
     value_type ivalue;
     uint32_t fvalue;
     const char *end = parse_decimal_fraction(str.begin(), str.end(),
-					     false, exponent_delta,
+					     is_signed, exponent_delta,
 					     ivalue, fraction_digits, fvalue, status);
     if (end != str.end())
 	status = status_inval;
@@ -946,7 +945,7 @@ DecimalFixedPointArg::parse(const String &str, uint32_t &result,
 			    const ArgContext &args)
 {
     uint32_t x;
-    if (!parse_saturating(str, x, args))
+    if (!underparse(str, false, x))
 	return false;
     else if (status == status_range) {
 	args.error("out of range");
@@ -959,15 +958,12 @@ DecimalFixedPointArg::parse(const String &str, uint32_t &result,
 
 bool
 DecimalFixedPointArg::parse_saturating(const String &str, int32_t &result,
-				       const ArgContext &args)
+				       const ArgContext &)
 {
-    String s(str);
-    bool negative = s && s[0] == '-';
-    if (negative)
-	s = s.substring(1);
     uint32_t x;
-    if (!parse_saturating(s, x, args))
+    if (!underparse(str, true, x))
 	return false;
+    bool negative = str[0] == '-';
     uint32_t limit(negative ? integer_traits<int32_t>::const_min
 		   : integer_traits<int32_t>::const_max);
     if (x > limit) {
