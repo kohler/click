@@ -474,40 +474,54 @@ create_mainw (void)
   tmp_image = gtk_image_new_from_stock ("gtk-media-play", tmp_toolbar_icon_size);
   gtk_widget_show (tmp_image);
   toolbar_run = (GtkWidget*) gtk_tool_button_new (tmp_image, _("Run"));
-  gtk_container_add (GTK_CONTAINER (toolbar1), toolbar_run);
+  gtk_widget_show (toolbar_run);
+  gtk_toolbar_insert (GTK_TOOLBAR (toolbar1), GTK_TOOL_ITEM (toolbar_run), -1);
+  gtk_tool_item_set_homogeneous (GTK_TOOL_ITEM (toolbar_run), TRUE);
   gtk_widget_set_sensitive (toolbar_run, TRUE);
 
   tmp_image = gtk_image_new_from_stock ("gtk-stop", tmp_toolbar_icon_size);
   gtk_widget_show (tmp_image);
   toolbar_stop = (GtkWidget*) gtk_tool_button_new (tmp_image, _("Stop"));
-  gtk_container_add (GTK_CONTAINER (toolbar1), toolbar_stop);
+  gtk_widget_show (toolbar_stop);
+  gtk_toolbar_insert (GTK_TOOLBAR (toolbar1), GTK_TOOL_ITEM (toolbar_stop), -1);
+  gtk_tool_item_set_homogeneous (GTK_TOOL_ITEM (toolbar_stop), TRUE);
   gtk_widget_set_sensitive (toolbar_stop, TRUE);
 
   tmp_image = gtk_image_new_from_stock ("gtk-refresh", tmp_toolbar_icon_size);
   gtk_widget_show (tmp_image);
   toolbar_install = (GtkWidget*) gtk_tool_button_new (tmp_image, _("Restart"));
   gtk_widget_show (toolbar_install);
-  gtk_container_add (GTK_CONTAINER (toolbar1), toolbar_install);
+  gtk_toolbar_insert (GTK_TOOLBAR (toolbar1), GTK_TOOL_ITEM (toolbar_install), -1);
+  gtk_tool_item_set_homogeneous (GTK_TOOL_ITEM (toolbar_install), TRUE);
   gtk_widget_set_sensitive (toolbar_install, FALSE);
 
   tmp_image = gtk_image_new_from_stock ("gtk-edit", tmp_toolbar_icon_size);
   gtk_widget_show (tmp_image);
   toolbar_configuration = (GtkWidget*) gtk_tool_button_new (tmp_image, _("Configuration"));
   gtk_widget_show (toolbar_configuration);
-  gtk_container_add (GTK_CONTAINER (toolbar1), toolbar_configuration);
+  gtk_toolbar_insert (GTK_TOOLBAR (toolbar1), GTK_TOOL_ITEM (toolbar_configuration), -1);
+  gtk_tool_item_set_homogeneous (GTK_TOOL_ITEM (toolbar_configuration), TRUE);
   gtk_widget_set_sensitive (toolbar_configuration, TRUE);
 
   tmp_image = gtk_image_new_from_stock ("gtk-properties", tmp_toolbar_icon_size);
   gtk_widget_show (tmp_image);
   toolbar_diagram = (GtkWidget*) gtk_tool_button_new (tmp_image, _("Diagram"));
   gtk_widget_show (toolbar_diagram);
-  gtk_container_add (GTK_CONTAINER (toolbar1), toolbar_diagram);
+  gtk_toolbar_insert (GTK_TOOLBAR (toolbar1), GTK_TOOL_ITEM (toolbar_diagram), -1);
+  gtk_tool_item_set_homogeneous (GTK_TOOL_ITEM (toolbar_diagram), TRUE);
   gtk_widget_set_sensitive (toolbar_diagram, TRUE);
+
+  {
+      GtkWidget *separator = (GtkWidget*) gtk_separator_tool_item_new();
+      gtk_separator_tool_item_set_draw (GTK_SEPARATOR_TOOL_ITEM (separator), FALSE);
+      gtk_tool_item_set_expand (GTK_TOOL_ITEM (separator), TRUE);
+      gtk_widget_show (separator);
+      gtk_toolbar_insert (GTK_TOOLBAR (toolbar1), GTK_TOOL_ITEM (separator), -1);
+  }
 
   throbberitem = (GtkWidget*) gtk_tool_item_new ();
   gtk_widget_show (throbberitem);
-  gtk_tool_item_set_expand (GTK_TOOL_ITEM (throbberitem), TRUE);
-  gtk_container_add (GTK_CONTAINER (toolbar1), throbberitem);
+  gtk_toolbar_insert (GTK_TOOLBAR (toolbar1), GTK_TOOL_ITEM (throbberitem), -1);
 
   throbberbox = gtk_hbox_new (FALSE, 0);
   gtk_widget_show (throbberbox);

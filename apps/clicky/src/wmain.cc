@@ -145,6 +145,7 @@ wmain::wmain(bool show_toolbar, bool show_list, dcss_set *ccss,
     dialogs_connect();
     config_changed_initialize(true, false);
     set_diagram_mode(false, true);
+    on_driver_changed();
 
     gtk_quit_add_destroy(1, GTK_OBJECT(_window));
     ++num_main_windows;
