@@ -1172,7 +1172,7 @@ static const char byte_bandwidth_prefixes[] = "\
 k\103K\103M\106G\111";
 
 static uint32_t
-multiply_factor(uint32_t ix, uint32_t fx, int factor, int &status)
+multiply_factor(uint32_t ix, uint32_t fx, uint32_t factor, int &status)
 {
     if (factor == 1) {
 	if (int32_t(fx) < 0 && ++ix == 0)
