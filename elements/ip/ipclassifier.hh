@@ -115,6 +115,11 @@ B<ip[POS:1]>.
 Like B<ip[POS:LEN]>, but for transport header fields.  You can also give
 particular transport protocols, such as B<tcp[POS:LEN]>.
 
+=item B<[SRCORDST] ether host ETH>
+
+Matches packets whose source and/or destination Ethernet address matches ETH.
+The packet's MAC header annotation must be set.
+
 =item B<true>
 
 Matches every packet.

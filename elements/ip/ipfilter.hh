@@ -147,6 +147,7 @@ class IPFilter : public Element { public:
 	TYPE_IPFRAG	= 12,
 	TYPE_PORT	= 13,
 	TYPE_TCPOPT	= 14,
+	TYPE_ETHER	= 15,
 
 	TYPE_NET	= 30,		// shorthands
 	TYPE_IPUNFRAG	= 31,
@@ -191,12 +192,21 @@ class IPFilter : public Element { public:
 
     enum {
 	// if you change this, change click-fastclassifier.cc also
-	TRANSP_FAKE_OFFSET = 64
+	offset_mac = 0,
+	offset_net = 64,
+	offset_transp = 128
     };
 
     enum {
 	PERFORM_BINARY_SEARCH = 1,
 	MIN_BINARY_SEARCH = 7
+    };
+
+    union PrimitiveData {
+	uint32_t u;
+	int32_t i;
+	struct in_addr ip4;
+	unsigned char c[8];
     };
 
     struct Primitive {
@@ -210,12 +220,8 @@ class IPFilter : public Element { public:
 	int _srcdst;
 	int _transp_proto;
 
-	union {
-	    uint32_t u;
-	    int32_t i;
-	    struct in_addr ip4;
-	    unsigned char c[4];
-	} _u, _mask;
+	PrimitiveData _u;
+	PrimitiveData _mask;
 
 	Primitive()			{ clear(); }
 
@@ -224,8 +230,11 @@ class IPFilter : public Element { public:
 	void set_srcdst(int, ErrorHandler *);
 	void set_transp_proto(int, ErrorHandler *);
 
-	int set_mask(uint32_t full_mask, int shift, uint32_t provided_mask, ErrorHandler *);
-	int check(const Primitive &, uint32_t provided_mask, ErrorHandler *);
+	int set_mask(uint32_t full_mask, int shift, uint32_t provided_mask,
+		     ErrorHandler *errh);
+	int check(const Primitive &prev_prim, int level,
+		  int mask_dt, const PrimitiveData &mask,
+		  ErrorHandler *errh);
 	void compile(Classification::Wordwise::Program &p, Vector<int> &tree) const;
 
 	bool has_transp_proto() const;
@@ -239,6 +248,7 @@ class IPFilter : public Element { public:
 
       private:
 
+	int type_error(ErrorHandler *errh, const char *msg) const;
 	void add_comparison_exprs(Classification::Wordwise::Program &p, Vector<int> &tree, int offset, int shift, bool swapped, bool op_negate) const;
 
     };
@@ -314,9 +324,12 @@ IPFilter::Primitive::negation_is_simple() const
 inline int
 IPFilter::match(const IPFilterProgram &zprog, const Packet *p)
 {
-    int packet_length = p->network_length();
-    if (packet_length > (int) p->network_header_length())
-	packet_length += TRANSP_FAKE_OFFSET - p->network_header_length();
+    int packet_length = p->network_length(),
+	network_header_length = p->network_header_length();
+    if (packet_length > network_header_length)
+	packet_length += offset_transp - network_header_length;
+    else
+	packet_length += offset_net;
 
     if (zprog.output_everything() >= 0)
 	return zprog.output_everything();
@@ -332,10 +345,12 @@ IPFilter::match(const IPFilterProgram &zprog, const Packet *p)
     uint32_t data;
     while (1) {
 	int off = (int16_t) pr[0];
-	if (off >= TRANSP_FAKE_OFFSET)
-	    data = *(const uint32_t *)(transph_data + off - TRANSP_FAKE_OFFSET);
+	if (off >= offset_transp)
+	    data = *(const uint32_t *)(transph_data + off - offset_transp);
+	else if (off >= offset_net)
+	    data = *(const uint32_t *)(neth_data + off - offset_net);
 	else
-	    data = *(const uint32_t *)(neth_data + off);
+	    data = *(const uint32_t *)(p->mac_header() - 2 + off);
 	data &= pr[3];
 	off = pr[0] >> 17;
 	pp = pr + 4;

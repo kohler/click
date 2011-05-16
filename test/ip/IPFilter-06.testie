@@ -1,0 +1,23 @@
+%info
+
+Test IPFilter Ethernet header support.
+
+%script
+click SCRIPT -qh c.program
+
+%file SCRIPT
+i :: Idle
+-> c :: IPFilter(allow src 0:1:2:3:4:5,
+		 allow src 10.0.0.0 & 8.0.0.0 = 8.0.0.0,
+		 allow dst 10:20:30:40:50:60,
+		 deny all)
+-> i;
+
+%expect stdout
+ 0   8/00010203%ffffffff  yes->step 1  no->step 2
+ 1  12/04050000%ffff0000  yes->[0]  no->step 2
+ 2  76/0a000000%ffffffff  yes->[0]  no->step 3
+ 3   0/00001020%0000ffff  yes->step 4  no->[X]
+ 4   4/30405060%ffffffff  yes->[0]  no->[X]
+safe length 80
+alignment offset 0

@@ -16,3 +16,5 @@ i :: Idle
 all->[0]
 safe length 0
 alignment offset 0
+
+%expect stderr

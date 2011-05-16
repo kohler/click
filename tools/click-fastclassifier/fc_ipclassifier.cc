@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2010 Intel Corporation
+ * Copyright (c) 2011 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,31 +24,66 @@
 #include "click-fastclassifier.hh"
 
 // magic constants imported from Click itself
-#define IPCLASSIFIER_TRANSP_FAKE_OFFSET 64
+#define IPCLASSIFIER_OFFSET_MAC 0
+#define IPCLASSIFIER_OFFSET_NET 64
+#define IPCLASSIFIER_OFFSET_TRANSP 128
+
+enum {
+    used_mach = 1, used_neth = 2, used_transph = 4
+};
+
+static void
+get_data(StringAccum &data_sa, int &used, int offset)
+{
+    if (offset >= IPCLASSIFIER_OFFSET_TRANSP) {
+	data_sa << "transph_data[" << ((offset - IPCLASSIFIER_OFFSET_TRANSP) / 4) << "]";
+	used |= used_transph;
+    } else if (offset >= IPCLASSIFIER_OFFSET_NET) {
+	data_sa << "neth_data[" << ((offset - IPCLASSIFIER_OFFSET_NET) / 4) << "]";
+	used |= used_neth;
+    } else {
+	data_sa << "mach_data[" << ((offset - IPCLASSIFIER_OFFSET_MAC) / 4) << "]";
+	used |= used_mach;
+    }
+}
+
+static void
+finish(StringAccum &source, const StringAccum &program, int used)
+{
+    if (used & used_mach)
+	source << "  const uint32_t *mach_data = reinterpret_cast<const uint32_t *>(p->mac_header() - 2);\n";
+    if (used & used_neth)
+	source << "  const uint32_t *neth_data = reinterpret_cast<const uint32_t *>(p->network_header());\n";
+    if (used & used_transph)
+	source << "  const uint32_t *transph_data = reinterpret_cast<const uint32_t *>(p->transport_header());\n";
+    source << program;
+}
 
 static void
 match_body(const Classifier_Program &c, StringAccum &source)
 {
     source << "  int l = p->network_length();\n\
   if (l > (int) p->network_header_length())\n\
-    l += " << IPCLASSIFIER_TRANSP_FAKE_OFFSET << " - p->network_header_length();\n\
+    l += " << IPCLASSIFIER_OFFSET_TRANSP << " - p->network_header_length();\n\
+  else\n\
+    l += " << IPCLASSIFIER_OFFSET_NET << ";\n\
   if (l < " << c.safe_length << ")\n    return ";
     if (c.unsafe_length_output_everything >= 0)
 	source << c.unsafe_length_output_everything << ";\n";
     else
 	source << "length_checked_match(p, l);\n";
-    source << "  const uint32_t *neth_data = reinterpret_cast<const uint32_t *>(p->network_header());\n\
-  const uint32_t *transph_data = reinterpret_cast<const uint32_t *>(p->transport_header());\n";
 
+    int used = 0;
+    StringAccum program;
     for (int i = 0; i < c.program.size(); i++) {
 	const Classifier_Insn &in = c.program[i];
 	StringAccum data_sa;
-	if (in.offset >= IPCLASSIFIER_TRANSP_FAKE_OFFSET)
-	    data_sa << "transph_data[" << ((in.offset - IPCLASSIFIER_TRANSP_FAKE_OFFSET) / 4) << "]";
-	else
-	    data_sa << "neth_data[" << (in.offset / 4) << "]";
-	in.write_state(i, false, false, data_sa.take_string(), "step_", source);
+	get_data(data_sa, used, in.offset);
+	in.write_state(i, false, false,
+		       data_sa.take_string(), "step_", program);
     }
+
+    finish(source, program, used);
 }
 
 static void
@@ -58,22 +94,21 @@ more(const Classifier_Program &c, const String &type_name,
 	return;
 
     header << "  int length_checked_match(const Packet *p, int l) const;\n";
-    source << "int\n" << type_name << "::length_checked_match(const Packet *p, int l) const\n{\n"
-	   << "  const uint32_t *neth_data = reinterpret_cast<const uint32_t *>(p->network_header());\n\
-  const uint32_t *transph_data = reinterpret_cast<const uint32_t *>(p->transport_header());\n";
+    source << "int\n" << type_name << "::length_checked_match(const Packet *p, int l) const\n{\n";
 
+    int used = 0;
+    StringAccum program;
     for (int i = 0; i < c.program.size(); i++) {
 	const Classifier_Insn &in = c.program[i];
 	StringAccum data_sa;
-	if (in.offset >= IPCLASSIFIER_TRANSP_FAKE_OFFSET)
-	    data_sa << "transph_data[" << ((in.offset - IPCLASSIFIER_TRANSP_FAKE_OFFSET) / 4) << "]";
-	else
-	    data_sa << "neth_data[" << (in.offset / 4) << "]";
+	get_data(data_sa, used, in.offset);
 	int want_l = in.required_length();
-	in.write_state(i, true, want_l >= c.safe_length,
-		       data_sa.take_string(), "lstep_", source);
+	in.write_state(i, want_l >= IPCLASSIFIER_OFFSET_NET,
+		       want_l >= c.safe_length,
+		       data_sa.take_string(), "lstep_", program);
     }
 
+    finish(source, program, used);
     source << "}\n";
 }
 

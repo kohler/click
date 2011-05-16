@@ -12,14 +12,16 @@ i :: Idle
 c[1] -> i; c[2] -> i; c[3] -> i; c[4] -> i; c[5] -> i;
 
 %expect stdout
- 0   4/00000000%00001fff  yes->step 1  no->step 8
- 1   8/00060000%00ff0000  yes->step 3  no->step 2
- 2   8/00110000%00ff0000  yes->step 3  no->step 6
- 3  64/00001e61%0000ffff  yes->[0]  no->step 4
- 4  64/000022b8%0000ffff  yes->[1]  no->step 5
- 5  64/00001b58%0000ffff  yes->[2]  no->[5]
- 6   8/00010000%00ff0000  yes->step 7  no->[5]
- 7  64/08000000%ff000000  yes->[3]  no->[4]
- 8   8/00010000%00ff0000  yes->[4]  no->[5]
-safe length 68
+ 0  68/00000000%00001fff  yes->step 1  no->step 8
+ 1  72/00060000%00ff0000  yes->step 3  no->step 2
+ 2  72/00110000%00ff0000  yes->step 3  no->step 6
+ 3 128/00001e61%0000ffff  yes->[0]  no->step 4
+ 4 128/000022b8%0000ffff  yes->[1]  no->step 5
+ 5 128/00001b58%0000ffff  yes->[2]  no->[5]
+ 6  72/00010000%00ff0000  yes->step 7  no->[5]
+ 7 128/08000000%ff000000  yes->[3]  no->[4]
+ 8  72/00010000%00ff0000  yes->[4]  no->[5]
+safe length 132
 alignment offset 0
+
+%expect stderr
