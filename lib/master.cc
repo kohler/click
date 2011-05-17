@@ -455,6 +455,7 @@ Master::run_timers(RouterThread *thread)
 	    int max_timers = 64;
 	    do {
 		Timer *t = th->t;
+		assert(t->expiry() == th->expiry);
 		pop_heap<4>(_timer_heap.begin(), _timer_heap.end(), Timer::heap_less(), Timer::heap_place());
 		_timer_heap.pop_back();
 		set_timer_expiry();
