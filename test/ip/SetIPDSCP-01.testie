@@ -1,0 +1,18 @@
+%info
+Test read_keyword_handler via SetIPDSCP.
+
+%script
+click C
+
+%file C
+Idle -> s::SetIPDSCP(DSCP 10) -> Idle;
+DriverManager(read s.dscp,
+	write s.dscp 2,
+	read s.dscp,
+	stop)
+
+%expect stderr
+s.dscp:
+10
+s.dscp:
+2
