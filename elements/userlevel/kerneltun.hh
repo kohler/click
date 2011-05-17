@@ -40,9 +40,13 @@ Keyword arguments are:
 
 =over 8
 
+=item BURST
+
+Integer. The maximum number of packets to emit per scheduling. Default is 1.
+
 =item HEADROOM
 
-Integer. The number of bytes left empty before the packet data to leave
+Integer. The number of bytes left empty before output packet data to leave
 room for additional encapsulation headers. Default is 28.
 
 =item MTU
@@ -140,6 +144,7 @@ class KernelTun : public Element { public:
     IPAddress _gw;
     EtherAddress _macaddr;
     unsigned _headroom;
+    unsigned _burst;
     Task _task;
     NotifierSignal _signal;
 
@@ -157,6 +162,7 @@ class KernelTun : public Element { public:
     int alloc_tun(ErrorHandler *);
     int setup_tun(ErrorHandler *);
     int updown(IPAddress, IPAddress, ErrorHandler *);
+    bool one_selected();
 
     friend class KernelTap;
 

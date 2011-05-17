@@ -94,11 +94,13 @@ KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
     _adjust_headroom = false;
     _headroom += (4 - _headroom % 4) % 4; // default 4/0 alignment
     _mtu_out = DEFAULT_MTU;
+    _burst = 1;
     if (Args(conf, this, errh)
 	.read_mp("ADDR", IPPrefixArg(), _near, _mask)
 	.read_p("GATEWAY", _gw)
 	.read("TAP", _tap)
 	.read("HEADROOM", _headroom).read_status(_adjust_headroom)
+	.read("BURST", _burst)
 	.read("ETHER", _macaddr)
 	.read("IGNORE_QUEUE_OVERFLOWS", _ignore_q_errs)
 	.read("MTU", _mtu_out)
@@ -504,10 +506,18 @@ KernelTun::selected(int fd, int)
 {
     if (fd != _fd)
 	return;
+    unsigned n = _burst;
+    while (n > 0 && one_selected())
+	--n;
+}
+
+bool
+KernelTun::one_selected()
+{
     WritablePacket *p = Packet::make(_headroom, 0, _mtu_in, 0);
     if (!p) {
 	click_chatter("out of memory!");
-	return;
+	return false;
     }
 
     int cc = read(_fd, p->data(), _mtu_in);
@@ -557,12 +567,15 @@ KernelTun::selected(int fd, int)
 	    output(0).push(p);
 	} else
 	    checked_output_push(1, p);
+	return true;
 
     } else {
-	if (!_ignore_q_errs || !_printed_read_err || (errno != ENOBUFS)) {
+	if (errno != EAGAIN && errno != EWOULDBLOCK
+	    && (!_ignore_q_errs || !_printed_read_err || errno != ENOBUFS)) {
 	    _printed_read_err = true;
 	    perror("KernelTun read");
 	}
+	return false;
     }
 }
 
