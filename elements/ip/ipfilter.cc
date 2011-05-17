@@ -456,7 +456,6 @@ IPFilter::Primitive::check(const Primitive &prev_prim, int header,
 	break;
 
     case TYPE_ETHER:
-    type_etherhost:
 	if (header != 'e' || _data != TYPE_ETHER)
 	    return type_error(errh, "address missing");
 	if (_op != OP_EQ)
