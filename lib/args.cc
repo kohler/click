@@ -130,10 +130,13 @@ Args::reset_from(int i)
 	_kwpos.reserve(_conf->size());
 	for (String *it = _conf->begin() + i; it != _conf->end(); ++it) {
 	    const char *s = it->begin(), *ends = it->end();
-	    while (s != ends &&
-		   (isalnum((unsigned char) *s) || *s == '_'
-		    || *s == ':' || *s == '.' || *s == '?' || *s == '!'))
-		++s;
+	    if (s != ends && (isalpha((unsigned char) *s) || *s == '_')) {
+		do {
+		    ++s;
+		} while (s != ends &&
+			 (isalnum((unsigned char) *s) || *s == '_'
+			  || *s == ':' || *s == '.' || *s == '?' || *s == '!'));
+	    }
 	    const char *t = s;
 	    while (t != ends && isspace((unsigned char) *t))
 		++t;
