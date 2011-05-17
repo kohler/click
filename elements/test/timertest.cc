@@ -37,7 +37,7 @@ int
 TimerTest::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Timestamp delay;
-    bool schedule;
+    bool schedule = false;
     if (Args(conf, this, errh)
 	.read("BENCHMARK", _benchmark)
 	.read("DELAY", delay)
