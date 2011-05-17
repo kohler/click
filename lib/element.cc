@@ -2576,23 +2576,25 @@ configuration_handler(int operation, String &str, Element *e,
 	keyword += 2;
     }
 
-    int gotit = 0;
+    bool found = false, found_positional = false;
     String value, rest;
     if (keyword)
-	gotit = Args(e, errh).bind(conf).read(keyword, AnyArg(), value).consume();
-    if (gotit == 0 && argno >= 0 && conf.size() > argno
+	(void) Args(e, errh).bind(conf)
+	    .read(keyword, AnyArg(), value).read_status(found)
+	    .consume();
+    if (!found && argno >= 0 && conf.size() > argno
 	&& (!keyword || !cp_keyword(conf[argno], &value, &rest) || !rest))
-	gotit = 2;
+	found = found_positional = true;
 
     if (operation == Handler::h_read) {
-	if (gotit == 1)
-	    str = value;
-	else if (gotit == 2)
+	if (found_positional)
 	    str = conf[argno];
+	else if (found)
+	    str = value;
 	else
 	    str = String();
-    } else if (keyword || gotit == 2) {
-	if (gotit == 2)
+    } else if (keyword || found_positional) {
+	if (found_positional)
 	    conf[argno] = str;
 	else
 	    conf.push_back(String(keyword) + " " + str);
