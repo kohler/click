@@ -1246,17 +1246,20 @@ class ArgContext;
 extern const ArgContext blank_args;
 bool cp_time(const String &str, Timestamp *result, bool allow_negative);
 
-/** @class TimeArg
+/** @class TimestampArg
   @brief Parser class for timestamps. */
-template <bool Signed>
-struct TimeArg {
-    static bool parse(const String &str, Timestamp &value, const ArgContext &args = blank_args) {
-	(void) args;
-	return cp_time(str, &value, Signed);
+struct TimestampArg {
+    TimestampArg(bool is_signed = false)
+	: is_signed(is_signed) {
     }
+    bool parse(const String &str, Timestamp &value, const ArgContext &args = blank_args) {
+	(void) args;
+	return cp_time(str, &value, is_signed);
+    }
+    bool is_signed;
 };
 
-template<> struct DefaultArg<Timestamp> : public TimeArg<false> {};
+template<> struct DefaultArg<Timestamp> : public TimestampArg {};
 template<> struct has_trivial_copy<Timestamp> : public true_type {};
 
 CLICK_ENDDECLS

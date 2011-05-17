@@ -36,7 +36,7 @@ AdjustTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
     _first = _all = false;
     _ts.clear();
     return Args(conf, this, errh)
-	.read_p("TIME", TimeArg<true>(), _ts)
+	.read_p("TIME", TimestampArg(true), _ts)
 	.read("FIRST", _first)
 	.read("ALL", _all).complete();
 }
