@@ -1,0 +1,19 @@
+%info
+Tests Timer rescheduling functionality.
+
+%require
+click-buildtool provides TimerTest
+
+%script
+click --simtime CONFIG
+
+%file CONFIG
+t1 :: TimerTest(DELAY .03s);
+t2 :: TimerTest(DELAY .02s);
+t3 :: TimerTest(DELAY .01s);
+DriverManager(write t1.schedule_after 0, wait .05s, stop);
+
+%expect stderr
+1000000000.00{{[\d]+}}: t1 :: TimerTest fired
+1000000000.01{{[\d]+}}: t3 :: TimerTest fired
+1000000000.02{{[\d]+}}: t2 :: TimerTest fired

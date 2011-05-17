@@ -25,7 +25,7 @@
 CLICK_DECLS
 
 TimerTest::TimerTest()
-    : _benchmark(0)
+    : _timer(this), _benchmark(0)
 {
 }
 
@@ -36,13 +36,26 @@ TimerTest::~TimerTest()
 int
 TimerTest::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return Args(conf, this, errh).read("BENCHMARK", _benchmark).complete();
+    Timestamp delay;
+    bool schedule;
+    if (Args(conf, this, errh)
+	.read("BENCHMARK", _benchmark)
+	.read("DELAY", delay)
+	.read("SCHEDULE", schedule)
+	.complete() < 0)
+	return -1;
+    _timer.initialize(this);
+    if (schedule || delay)
+	_timer.schedule_after(delay);
+    return 0;
 }
 
 int
 TimerTest::initialize(ErrorHandler *)
 {
-    if (_benchmark <= 0) {
+    if (_timer.scheduled())
+	/* do nothing */;
+    else if (_benchmark <= 0) {
 	Timer default_constructor_timer;
 	Timer explicit_do_nothing_timer = Timer::do_nothing_t();
 
@@ -64,6 +77,12 @@ TimerTest::initialize(ErrorHandler *)
     }
 
     return 0;
+}
+
+void
+TimerTest::run_timer(Timer *t)
+{
+    click_chatter("%{timestamp}: %{element} fired", &t->expiry(), this);
 }
 
 void
@@ -94,6 +113,58 @@ TimerTest::benchmark_fires(Timer *, int, const Timestamp &)
     Master *m = master();
     while (Timer *t = m->next_timer())
 	t->unschedule();
+}
+
+String
+TimerTest::read_handler(Element *e, void *user_data)
+{
+    TimerTest *tt = static_cast<TimerTest *>(e);
+    switch ((uintptr_t) user_data) {
+    case h_scheduled:
+	return String(tt->_timer.scheduled());
+    case h_expiry:
+    default:
+	return String(tt->_timer.expiry());
+    }
+}
+
+int
+TimerTest::write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh)
+{
+    TimerTest *tt = static_cast<TimerTest *>(e);
+    switch ((uintptr_t) user_data) {
+    case h_scheduled: {
+	bool schedule;
+	if (!BoolArg().parse(str, schedule))
+	    return errh->error("syntax error");
+	if (schedule)
+	    tt->_timer.schedule_at(tt->_timer.expiry());
+	else
+	    tt->_timer.unschedule();
+	break;
+    }
+    case h_schedule_after: {
+	Timestamp delay;
+	if (!TimestampArg().parse(str, delay))
+	    return errh->error("syntax error");
+	tt->_timer.schedule_after(delay);
+	break;
+    }
+    case h_unschedule:
+	tt->_timer.unschedule();
+	break;
+    }
+    return 0;
+}
+
+void
+TimerTest::add_handlers()
+{
+    add_read_handler("scheduled", read_handler, h_scheduled);
+    add_write_handler("scheduled", write_handler, h_scheduled);
+    add_read_handler("expiry", read_handler, h_expiry);
+    add_write_handler("schedule_after", write_handler, h_schedule_after);
+    add_write_handler("unschedule", write_handler, h_unschedule);
 }
 
 CLICK_ENDDECLS
