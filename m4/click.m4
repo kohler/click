@@ -255,7 +255,9 @@ AC_DEFUN([CLICK_CHECK_BUILD_DYNAMIC_LINKING], [
 	AC_MSG_ERROR([
 =========================================
 
-Build system and host system don't have the same dynamic linking state!
+You have configured Click with '--enable-dynamic-linking', which requires
+that both the build system and host system support dynamic linking.
+Try running 'configure' with the '--disable-dynamic-linking' option.
 
 =========================================])
     fi
@@ -641,7 +643,7 @@ EOF
 		echo "configure: failed program was:" >&5
 		cat conftest.$ac_ext >&5
 	    fi
-	    rm -f conftest*])
+	    rm -f conftest.$ac_ext conftest.result conftest.out])
     elif test "x$cross_compiling" != xyes ; then
 	AC_CACHE_CHECK(endianness, ac_cv_endian,
 	    [AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdlib.h>
