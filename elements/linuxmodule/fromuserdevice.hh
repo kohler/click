@@ -1,27 +1,21 @@
 #ifndef CLICK_FROMUSERDEVICE_HH
 #define CLICK_FROMUSERDEVICE_HH
 #include <click/element.hh>
-#include <click/etheraddress.hh>
-#include <click/timer.hh>
 #include <click/notifier.hh>
-#include <linux/fs.h>
+#include <click/atomic.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
-#include <linux/netdevice.h>
-#include <linux/route.h>
+#include <linux/wait.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-#define SLOT_SIZE (1536+16)
-#define CAPACITY  64
-
 /*
 =c
-FromUserDevice(DEV_MINOR, [<keywords> CAPACITY, HEADROOM])
+FromUserDevice(TO_USER_DEVICE, [<keywords>])
 
 =s netdevices
-Reads packets from the device's ring buffer and injects them into Click
+Allows packets to be injected into click through a character device.
 
 =d
 Requires --enable-experimental.
@@ -30,28 +24,44 @@ Keyword arguments are:
 
 =over 8
 
+=item TO_USER_DEVICE
+
+ToUserDevice element.  This is the ToUserDevice element that set up the actual
+character device.  The element must be of 'TYPE packet,' as FromUserDevice does
+not support the streaming interfaces or encapsulations.  If only the
+FromUserDevice functionality is desired, then just include
+"Idle -> my_tud :: ToUserDevice(...);" in the config.
+
 =item CAPACITY
-Unsigned integer.  Sets the CAPACITY of the internal ring buffer that stores the packets.
+
+Unsigned integer.  Sets the CAPACITY of the internal ring buffer that stores the
+packets.  Defaults to 64.
 
 =item HEADROOM
 
-Unsigned integer.  Sets the headroom on packets.  Defaults to the
-default headroom.
+Unsigned integer.  Sets the headroom on packets.  Defaults to the default
+headroom.
+
+=item TAILROOM
+
+Unsigned integer.  Sets the tailroom on packets.  Defaults to 0.
+
+=item MAX_PACKET_SIZE
+
+Unsigned integer.  Sets the maximum packet size in bytes that this element will
+accept.  Calls to write/send with a larger size will return with errno EMSGSIZE.
+Defaults to 1536.
 
 =back
 
-The device must be first created in the /dev directory
-via mknod /dev/toclickX c 240 X  where X is the minor device number (i.e. 0, 1, 2)
-
-A user level application can then write directly into the device once it opens a file
-/dev/toclickX
-The FromUserDevice element expects that complete IP packets are written into the device.
+FromUserDevice makes no assumptions about the data being written into it.  It is
+necessary to use MarkMACHeader/CheckIPHeader elements if header annotations
+should be set.
 
 =n
 
-
 =a
-ToUser */
+ToUserDevice */
 
 
 class FromUserDevice : public Element
@@ -61,50 +71,48 @@ class FromUserDevice : public Element
     FromUserDevice();
     ~FromUserDevice();
 
-    static void static_initialize();
-    static void static_cleanup();
-
     const char *class_name() const      { return "FromUserDevice"; }
     const char *port_count() const      { return PORTS_0_1; }
     const char *processing() const      { return PULL; }
 
-    int  configure(Vector<String> &, ErrorHandler *);
-    int  initialize(ErrorHandler *);
+    void *cast(const char *);
+    int configure(Vector<String> &, ErrorHandler *);
     void cleanup(CleanupStage);
     void add_handlers();
 
-    static String read_handler(Element *e, void *thunk);
-
     Packet* pull(int port);
 
-    static ssize_t dev_write (struct file *file, const char *buf, size_t count, loff_t *ppos);
-    static int     dev_open (struct inode *inode, struct file *filp);
-    static int     dev_release (struct inode *inode, struct file *file);
-    static uint    dev_poll(struct file *, struct poll_table_struct *);
+    ssize_t dev_write(const char *buf, size_t count, loff_t *ppos);
+    uint dev_poll();
 
 private:
-    String           _devname;
-    ulong            _size;
-    WritablePacket **_buff;
-    ulong            _r_slot; // where we read from
-    ulong            _w_slot; // where we write to
-    ulong            _capacity;
-    ulong            _headroom;
-    spinlock_t       _lock;
-    ulong            _write_count;
-    ulong            _drop_count;
-    ulong            _pkt_count;
-    ulong            _block_count;
-    ulong            _max;
-    ulong            _failed_count;
-    bool             _exit;
+    ActiveNotifier _empty_note;
+
+    // ring buffer state
+    spinlock_t _lock;
+    uint32_t _size;
+    Packet **_buff;
+    uint32_t _r_slot; // where we read from
+    uint32_t _w_slot; // where we write to
+
+    // configuration
+    uint32_t _capacity;
+    uint32_t _max_pkt_size;
+    uint32_t _headroom;
+    uint32_t _tailroom;
+
+    // stats
+    uint32_t _write_count;
+    uint32_t _drop_count;
+    uint32_t _pkt_count;
+    uint32_t _block_count;
+    uint32_t _max;
+    uint32_t _failed_count;
+    bool _exit;
 
     // related to the device management
-    ulong                  _sleep_proc;
-    wait_queue_head_t      _proc_queue;
-    ulong                  _dev_major;
-    ulong                  _dev_minor;
-    static struct file_operations *dev_fops;
+    uint32_t _sleep_proc;
+    wait_queue_head_t _proc_queue;
 };
 
 #endif
