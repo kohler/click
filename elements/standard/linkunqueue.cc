@@ -183,7 +183,7 @@ LinkUnqueue::run_task(Task *)
     return worked;
 }
 
-enum { H_LATENCY, H_BANDWIDTH, H_SIZE };
+enum { H_LATENCY, H_BANDWIDTH, H_SIZE, H_RESET };
 
 String
 LinkUnqueue::read_param(Element *e, void *thunk)
@@ -202,9 +202,34 @@ LinkUnqueue::read_param(Element *e, void *thunk)
 }
 
 int
-LinkUnqueue::write_handler(const String &, Element *e, void *, ErrorHandler *)
+LinkUnqueue::write_handler(const String &s, Element *e, void *thunk, ErrorHandler *errh)
 {
     LinkUnqueue *u = (LinkUnqueue *)e;
+    switch ((intptr_t) thunk) {
+    case H_LATENCY: {
+          Timestamp l;
+          if (!cp_time(s, &l)) {
+              return errh->error("latency must be a timestamp");
+          }
+          u->_latency = l;
+          break;
+    }
+    case H_BANDWIDTH: {
+        uint32_t bw;
+        if (!cp_bandwidth(s, &bw)) {
+            return errh->error("invalid bandwidth");
+        } else if (bw < 100) {
+            return errh->error("bandwidth too small, minimum 100Bps");
+        }
+        u->_bandwidth = bw / 100;
+        break;
+    }
+    case H_RESET:
+        break;
+    default:
+        return errh->error("unknown handler");
+    }
+    /* do a full reset */
     u->cleanup(CLEANUP_MANUAL);
     u->_qhead = u->_qtail = 0;
     u->Storage::_tail = 0;
@@ -219,7 +244,9 @@ LinkUnqueue::add_handlers()
     add_read_handler("latency", read_param, (void *)H_LATENCY, Handler::CALM);
     add_read_handler("bandwidth", read_param, (void *)H_BANDWIDTH, Handler::CALM);
     add_read_handler("size", read_param, (void *)H_SIZE);
-    add_write_handler("reset", write_handler, 0, Handler::BUTTON);
+    add_write_handler("reset", write_handler, (void *) H_RESET, Handler::BUTTON);
+    add_write_handler("latency", write_handler, (void *) H_LATENCY);
+    add_write_handler("bandwidth", write_handler, (void *) H_BANDWIDTH);
     add_task_handlers(&_task);
 }
 
