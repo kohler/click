@@ -223,6 +223,9 @@ inline void
 Vector<void*>::push_back(void* x)
 {
     if (_n < _capacity || reserve(RESERVE_GROW)) {
+#ifdef VALGRIND_MAKE_MEM_UNDEFINED
+	VALGRIND_MAKE_MEM_UNDEFINED(&_l[_n], sizeof(void*));
+#endif
 	_l[_n] = x;
 	_n++;
     }
