@@ -57,17 +57,17 @@ class HostEtherFilter : public Element { public:
   const char *processing() const		{ return PROCESSING_A_AH; }
 
   int configure(Vector<String> &, ErrorHandler *);
+  bool can_live_reconfigure() const		{ return true; }
 
   Packet *simple_action(Packet *);
+  void add_handlers();
 
  private:
 
-    bool _drop_own : 1;
-    bool _drop_other : 1;
-    int _offset;
-    EtherAddress _addr;
-
-  inline Packet *drop(Packet *);
+  bool _drop_own : 1;
+  bool _drop_other : 1;
+  int _offset;
+  EtherAddress _addr;
 
 };
 

@@ -27,12 +27,16 @@ class Truncate : public Element { public:
     const char *processing() const		{ return AGNOSTIC; }
 
     int configure(Vector<String> &, ErrorHandler *);
+    bool can_live_reconfigure() const		{ return true; }
 
     Packet *simple_action(Packet *);
+
+    void add_handlers();
 
   private:
 
     unsigned _nbytes;
+    bool _extra_anno;
 
 };
 

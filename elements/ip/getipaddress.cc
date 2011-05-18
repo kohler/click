@@ -1,9 +1,10 @@
 /*
  * getipaddress.{cc,hh} -- element sets IP destination annotation from
  * packet header
- * Robert Morris
+ * Robert Morris, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2008-2011 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -34,14 +35,36 @@ GetIPAddress::~GetIPAddress()
 int
 GetIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return Args(conf, this, errh).read_mp("OFFSET", _offset).complete();
+    _offset = -1;
+    _anno = Packet::dst_ip_anno_offset;
+    String ip_word;
+    if (Args(conf, this, errh)
+        .read_p("OFFSET", _offset)
+        .read_p("ANNO", AnnoArg(4), _anno)
+        .read("IP", ip_word)
+        .complete())
+	return -1;
+    if ((_offset >= 0 && ip_word) || (_offset < 0 && !ip_word))
+	return errh->error("set one of OFFSET, IP");
+    else if (ip_word == "src")
+	_offset = offset_ip_src;
+    else if (ip_word == "dst")
+	_offset = offset_ip_dst;
+    else if (ip_word)
+	return errh->error("bad IP");
+    return 0;
 }
 
 Packet *
 GetIPAddress::simple_action(Packet *p)
 {
-  p->set_dst_ip_anno(IPAddress(p->data() + _offset));
-  return p;
+    if (_offset >= 0)
+	p->set_anno_u32(_anno, IPAddress(p->data() + _offset).addr());
+    else if (_offset == offset_ip_src)
+	p->set_anno_u32(_anno, p->ip_header()->ip_src.s_addr);
+    else if (_offset == offset_ip_dst)
+	p->set_anno_u32(_anno, p->ip_header()->ip_dst.s_addr);
+    return p;
 }
 
 CLICK_ENDDECLS

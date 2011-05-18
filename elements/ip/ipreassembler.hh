@@ -30,7 +30,8 @@ IPReassembler's memory usage is bounded. When memory consumption rises above
 HIMEM bytes, IPReassembler throws away old fragments until memory consumption
 drops below 3/4*HIMEM bytes. Default HIMEM is 256K.
 
-Output packets have no MAC headers, and input MAC headers are ignored.
+Output packets have the same MAC header as the fragment that contains
+offset 0.  Other than that, input MAC headers are ignored.
 
 The IPREASSEMBLER annotation area is used to store packet metadata about
 packets in the process of reassembly.  On emitted reassembled packets,
@@ -43,6 +44,12 @@ Keyword arguments are:
 =item HIMEM
 
 The upper bound for memory consumption, in bytes. Default is 256K.
+
+=item MAX_MTU_ANNO
+
+A 2 byte annotation that will be filled with the maximum size of any one
+fragment of this packet.  If no reassembly is required, then the annotation
+is unchanged.
 
 =back
 
@@ -72,6 +79,8 @@ class IPReassembler : public Element { public:
 
     Packet *simple_action(Packet *);
 
+    void add_handlers();
+
     struct ChunkLink {
 	uint16_t off;
 	uint16_t lastoff;
@@ -88,12 +97,19 @@ class IPReassembler : public Element { public:
 
     int _reap_time;
 
+    uint32_t _stat_frags_seen;
+    uint32_t _stat_good_assem;
+    uint32_t _stat_failed_assem;
+    uint32_t _stat_bad_pkts;
+
     uint32_t _mem_used;
     uint32_t _mem_high_thresh;	// defaults to 256K
     uint32_t _mem_low_thresh;	// defaults to 3/4 * _mem_high_thresh
+    int8_t _mtu_anno;
 
     static inline int bucketno(const click_ip *);
     static inline bool same_segment(const click_ip *, const click_ip *);
+    static String debug_dump(Element *e, void *);
 
     WritablePacket *find_queue(Packet *, WritablePacket ***);
     void make_queue(Packet *, WritablePacket **);

@@ -235,6 +235,11 @@ Print the version number and some quickie warranty information and exit.
 '
 .PD
 '
+.SH "ENVIRONMENT"
+The CLICK_BACKTRACE environment variable controls Click's printing of stack
+backtraces.  Set CLICK_BACKTRACE to 1 and Click will print a stack
+backtrace immediately before crashing.
+'
 .SH "BUGS"
 If you get an unaligned access error, try running your configuration
 through

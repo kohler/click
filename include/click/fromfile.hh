@@ -29,7 +29,7 @@ class FromFile { public:
     off_t file_pos() const		{ return _file_offset + _pos; }
 
     int configure_keywords(Vector<String> &conf, Element *, ErrorHandler *);
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *, bool allow_nonexistent = false);
     void add_handlers(Element *, bool filepos_writable = false) const;
     void cleanup();
     void take_state(FromFile &, ErrorHandler *);

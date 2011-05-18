@@ -153,7 +153,8 @@ class KernelTun : public Element { public:
     bool _printed_read_err;
     bool _adjust_headroom;
 
-    static String print_dev_name(Element *e, void *);
+    uint64_t _selected_calls;
+    uint64_t _packets;
 
 #if HAVE_LINUX_IF_TUN_H
     int try_linux_universal();
@@ -162,7 +163,7 @@ class KernelTun : public Element { public:
     int alloc_tun(ErrorHandler *);
     int setup_tun(ErrorHandler *);
     int updown(IPAddress, IPAddress, ErrorHandler *);
-    bool one_selected();
+    bool one_selected(Timestamp);
 
     friend class KernelTap;
 

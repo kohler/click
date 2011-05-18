@@ -33,6 +33,8 @@ class CheckLength : public Element { public:
   void push(int, Packet *);
   Packet *pull(int);
 
+  void add_handlers();
+
  protected:
 
   unsigned _max;
