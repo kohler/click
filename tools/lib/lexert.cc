@@ -59,7 +59,7 @@ LexerT::FileState::operator=(const FileState &x)
 
 LexerT::LexerT(ErrorHandler *errh, bool ignore_line_directives)
   : _file(String(), String()),
-    _ignore_line_directives(ignore_line_directives),
+    _ignore_line_directives(ignore_line_directives), _expand_groups(false),
     _unlex_pos(0), _router(0), _base_type_map(0), _errh(errh)
 {
     if (!_errh)
@@ -104,6 +104,7 @@ LexerT::clear()
     _anonymous_offset = 0;
     _anonymous_class_count = 0;
     _group_depth = 0;
+    _ngroups = 0;
     _libraries.clear();
 }
 
@@ -1103,6 +1104,7 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
     // '{' was already read
     RouterT *old_router = _router;
     int old_offset = _anonymous_offset;
+    int old_ngroups = _ngroups;
 
     RouterT *first = 0, *last = 0;
     ElementClassT *extension = 0;
@@ -1135,12 +1137,15 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 	compound_class->set_printable_name(printable_name);
 	_router = compound_class->cast_router();
 	_anonymous_offset = 2;
+	_ngroups = 0;
 
 	ycompound_arguments(compound_class);
 	while (ystatement('}'))
 	    /* nada */;
 
 	compound_class->finish_type(_errh);
+	if (_ngroups && _expand_groups)
+	    compound_class->remove_tunnels();
 
 	if (last)
 	    last->set_overload_type(compound_class);
@@ -1159,6 +1164,7 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
     }
 
     _anonymous_offset = old_offset;
+    _ngroups = old_ngroups;
     _router = old_router;
 
     if (extension)
@@ -1181,6 +1187,7 @@ LexerT::ygroup(String name, int group_nports[2], const LandmarkT &landmark)
     int old_input = _router->__map_element_name("input", new_input->eindex());
     int old_output = _router->__map_element_name("output", new_output->eindex());
     ++_group_depth;
+    ++_ngroups;
 
     while (ystatement(')'))
 	/* nada */;
@@ -1382,6 +1389,8 @@ LexerT::finish(const VariableEnvironment &global_scope)
     r->redefine(global_scope);
     // resolve anonymous element names
     r->assign_element_names();
+    if (_ngroups && _expand_groups)
+	r->remove_tunnels();
     // returned router has one reference count
     return r;
 }

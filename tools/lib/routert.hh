@@ -178,7 +178,7 @@ class RouterT : public ElementClassT { public:
     void remove_dead_elements(ErrorHandler * = 0);
 
     void remove_compound_elements(ErrorHandler *, bool expand_vars);
-    void remove_tunnels(ErrorHandler * = 0);
+    bool remove_tunnels(ErrorHandler *errh = 0);
 
     void expand_into(RouterT *dest, const String &prefix, VariableEnvironment &env, ErrorHandler *errh);
     void flatten(ErrorHandler *errh, bool expand_vars = false);

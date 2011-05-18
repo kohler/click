@@ -177,6 +177,7 @@ void crouter::set_config(const String &conf, bool replace)
     if (!_conf.length())
 	_gerrh.warning("empty configuration");
     LexerT lexer(&_gerrh, false);
+    lexer.expand_groups(true);
     lexer.reset(_conf, archive, (_driver ? "config" : _landmark));
     LexerTInfo *lexinfo = on_config_changed_prepare();
     if (lexinfo)

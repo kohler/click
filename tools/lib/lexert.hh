@@ -60,7 +60,8 @@ class LexerT { public:
     void reset(const String &data, const Vector<ArchiveElement> &archive, const String &filename);
     void clear();
     void set_lexinfo(LexerTInfo *);
-    void ignore_line_directives(bool g)	{ _ignore_line_directives = g; }
+    void ignore_line_directives(bool x)	{ _ignore_line_directives = x; }
+    void expand_groups(bool x)		{ _expand_groups = x; }
 
     String remaining_text() const;
     void set_remaining_text(const String &);
@@ -135,6 +136,7 @@ class LexerT { public:
     // lexer
     FileState _file;
     bool _ignore_line_directives;
+    bool _expand_groups;
 
     bool get_data();
     Lexeme next_lexeme() {
@@ -153,6 +155,7 @@ class LexerT { public:
     int _anonymous_offset;
     int _anonymous_class_count;
     int _group_depth;
+    int _ngroups;
 
     Vector<String> _libraries;
 

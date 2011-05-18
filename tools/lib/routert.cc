@@ -325,8 +325,10 @@ RouterT::collect_types(HashTable<ElementClassT *, int> &m) const
 	it.value() = 1;
 	for (int i = 0; i < _declared_types.size(); i++)
 	    _declared_types[i].type->collect_types(m);
-	for (int i = 0; i < _elements.size(); i++)
-	    _elements[i]->type()->collect_types(m);
+	for (Vector<ElementT *>::const_iterator it = _elements.begin();
+	     it != _elements.end(); ++it)
+	    if ((*it)->live())
+		(*it)->type()->collect_types(m);
 	if (_overload_type)
 	    _overload_type->collect_types(m);
     }
@@ -1050,7 +1052,7 @@ RouterT::expand_tunnel(Vector<PortT> *port_expansions,
     expanded.swap(store);
 }
 
-void
+bool
 RouterT::remove_tunnels(ErrorHandler *errh)
 {
     if (!errh)
@@ -1071,6 +1073,8 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 
     // expand tunnels
     int nin = inputs.size(), nout = outputs.size();
+    if (nin == 0 && nout == 0)
+	return false;		// nothing to do
     Vector<PortT> *in_expansions = new Vector<PortT>[nin];
     Vector<PortT> *out_expansions = new Vector<PortT>[nout];
     // initialize to placeholders
@@ -1116,6 +1120,9 @@ RouterT::remove_tunnels(ErrorHandler *errh)
     // actually remove tunnel connections and elements
     remove_duplicate_connections();
     free_dead_elements();
+    remove_dead_elements();
+    compact_connections();
+    return true;
 }
 
 
@@ -1145,11 +1152,10 @@ RouterT::flatten(ErrorHandler *errh, bool expand_vars)
     //String s = configuration_string(); fprintf(stderr, "1.\n%s\n\n", s.c_str());
     remove_compound_elements(errh, expand_vars);
     //s = configuration_string(); fprintf(stderr, "2.\n%s\n\n", s.c_str());
-    remove_tunnels(errh);
-    //s = configuration_string(); fprintf(stderr, "3.\n%s\n\n", s.c_str());
-    remove_dead_elements();
-    //s = configuration_string(); fprintf(stderr, "4.\n%s\n\n", s.c_str());
-    compact_connections();
+    if (!remove_tunnels(errh)) {
+	remove_dead_elements();
+	compact_connections();
+    }
     //s = configuration_string(); fprintf(stderr, "5.\n%s\n\n", s.c_str());
     _declared_type_map.clear();
     _declared_types.clear();
