@@ -70,7 +70,7 @@ FromIPSummaryDump::cast(const char *n)
 int
 FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    bool stop = false, active = true, zero = true, checksum = false, multipacket = false, timing = false;
+    bool stop = false, active = true, zero = true, checksum = false, multipacket = false, timing = false, allow_nonexistent = false;
     uint8_t default_proto = IP_PROTO_TCP;
     _sampling_prob = (1 << SAMPLING_SHIFT);
     String default_contents, default_flowid;
@@ -89,6 +89,7 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("DEFAULT_FLOWID", AnyArg(), default_flowid)
 	.read("CONTENTS", AnyArg(), default_contents)
 	.read("FLOWID", AnyArg(), default_flowid)
+	.read("ALLOW_NONEXISTENT", allow_nonexistent)
 	.complete() < 0)
 	return -1;
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
@@ -103,6 +104,7 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _zero = zero;
     _checksum = checksum;
     _timing = timing;
+    _allow_nonexistent = allow_nonexistent;
     _have_timing = false;
     _multipacket = multipacket;
     _have_flowid = _have_aggregate = _binary = false;
@@ -147,9 +149,15 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
     if (!output_is_push(0))
 	_notifier.initialize(Notifier::EMPTY_NOTIFIER, router());
     _timer.initialize(this);
+    _format_complaint = false;
+    if (output_is_push(0))
+	ScheduleInfo::initialize_task(this, &_task, _active, errh);
 
-    if (_ff.initialize(errh) < 0)
-	return -1;
+    int e = _ff.initialize(errh, _allow_nonexistent);
+    if (e == -ENOENT && _allow_nonexistent)
+	return 0;
+    else if (e < 0)
+	return e;
 
     _minor_version = IPSummaryDump::MINOR_VERSION; // expected minor version
     String line;
@@ -176,9 +184,6 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
 	}
     }
 
-    _format_complaint = false;
-    if (output_is_push(0))
-	ScheduleInfo::initialize_task(this, &_task, _active, errh);
     return 0;
 }
 

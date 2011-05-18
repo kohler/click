@@ -100,6 +100,12 @@ destination address, destination port, and, optionally, protocol). Defines the
 IP addresses and ports used by default. Any flow information in the input file
 will override this setting.
 
+=item ALLOW_NONEXISTENT
+
+Boolean.  If true, allow nonexistent and empty files: FromIPSummaryDump will
+successfully initialize even if the input file is nonexistent or empty.
+Defaults to false.
+
 =back
 
 Only available in user-level processes.
@@ -187,6 +193,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     bool _binary : 1;
     bool _timing : 1;
     bool _have_timing : 1;
+    bool _allow_nonexistent : 1;
     Packet *_work_packet;
     uint32_t _multipacket_length;
     Timestamp _multipacket_timestamp_delta;
