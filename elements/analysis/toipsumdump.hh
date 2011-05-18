@@ -181,7 +181,8 @@ The end of the dump may contain a comment 'C<!drops N>', meaning that C<N>
 packets were dropped before they could be entered into the dump.
 
 A 'C<!flowid>' comment can specify source and destination addresses and ports
-for packets that otherwise don't have one.
+for packets that otherwise don't have one.  Its arguments are 'C<!flowid SRC
+SPORT DST DPORT [PROTO]>'.
 
 Any packet line may contain fewer fields than specified in the 'C<!data>'
 line, down to one field. Missing fields are treated as 'C<->'.
