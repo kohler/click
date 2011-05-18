@@ -689,7 +689,7 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 	    name = anon_element_name("");
 	    type = 0;
 	    int group_nports[2];
-	    ygroup(name, group_nports, landmarkt(t.pos1(), t.pos2()));
+	    ygroup(name, group_nports, t.pos1(), t.pos2());
 
 	    // an anonymous group has implied, overridable port
 	    // specifications on both sides for all inputs & outputs
@@ -1175,9 +1175,10 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 }
 
 void
-LexerT::ygroup(String name, int group_nports[2], const LandmarkT &landmark)
+LexerT::ygroup(String name, int group_nports[2], const char *open_pos1, const char *open_pos2)
 {
-    LandmarkErrorHandler lerrh(_errh, _file.landmark());
+    LandmarkT landmark = landmarkt(open_pos1, open_pos2);
+    LandmarkErrorHandler lerrh(_errh, landmark.decorated_str());
     String name_slash = name + "/";
     _router->add_tunnel(name, name_slash + "input", landmark, &lerrh);
     _router->add_tunnel(name_slash + "output", name, landmark, &lerrh);
@@ -1194,7 +1195,7 @@ LexerT::ygroup(String name, int group_nports[2], const LandmarkT &landmark)
     expect(')');
 
     // check that all inputs and outputs are used
-    lerrh.set_landmark(_file.landmark());
+    lerrh.set_landmark(landmarkt(open_pos1, next_pos()).decorated_str());
     const char *printable_name = (name[0] == ';' ? "<anonymous group>" : name.c_str());
     group_nports[0] = _router->check_pseudoelement(new_input, false, printable_name, &lerrh);
     group_nports[1] = _router->check_pseudoelement(new_output, true, printable_name, &lerrh);

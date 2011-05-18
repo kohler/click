@@ -86,7 +86,7 @@ class LexerT { public:
     void ycompound_arguments(RouterT *);
     void yelementclass(const char *pos1);
     ElementClassT *ycompound(String, const char *decl_pos1, const char *name_pos1);
-    void ygroup(String name, int group_nports[2], const LandmarkT &landmark);
+    void ygroup(String name, int group_nports[2], const char *open_pos1, const char *open_pos2);
     void yrequire();
     void yvar();
     bool ystatement(int nested = 0);
