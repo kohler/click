@@ -49,6 +49,7 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
     String use_encap_from;
     _snaplen = 2000;
     _extra_length = true;
+    _buffered = true;
 #if CLICK_NS
     bool per_node = false;
 #endif
@@ -59,6 +60,7 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read_p("ENCAP", WordArg(), encap_type)
 	.read("USE_ENCAP_FROM", AnyArg(), use_encap_from)
 	.read("EXTRA_LENGTH", _extra_length)
+	.read("BUFFERED", _buffered)
 #if CLICK_NS
 	.read("PER_NODE", per_node)
 #endif
@@ -153,6 +155,9 @@ ToDump::initialize(ErrorHandler *errh)
 	    _fp = stdout;
 	    _filename = "<stdout>";
 	}
+
+	if (!_buffered)
+	    setvbuf(_fp, (char *) 0, _IONBF, 0);
 
 	struct fake_pcap_file_header h;
 
