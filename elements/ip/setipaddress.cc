@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
+ * Copyright (c) 2008 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -19,6 +20,7 @@
 #include <click/config.h>
 #include "setipaddress.hh"
 #include <click/args.hh>
+#include <click/packet_anno.hh>
 CLICK_DECLS
 
 SetIPAddress::SetIPAddress()
@@ -32,14 +34,21 @@ SetIPAddress::~SetIPAddress()
 int
 SetIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return Args(conf, this, errh).read_mp("IPADDR", _ip).complete();
+    int anno = 0;
+    if (Args(conf, this, errh)
+        .read_mp("IPADDR", _ip)
+        .read("ANNO", AnnoArg(4), anno)
+        .complete() < 0)
+        return -1;
+    _anno = anno;
+    return 0;
 }
 
 Packet *
 SetIPAddress::simple_action(Packet *p)
 {
-  p->set_dst_ip_anno(_ip);
-  return p;
+    p->set_anno_u32(_anno, _ip.addr());
+    return p;
 }
 
 CLICK_ENDDECLS

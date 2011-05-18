@@ -6,7 +6,7 @@ CLICK_DECLS
 
 /*
  * =c
- * GetIPAddress(OFFSET)
+ * GetIPAddress(OFFSET [, ANNO, keyword IP])
  * =s ip
  * sets destination IP address annotation from packet data
  * =d
@@ -14,6 +14,13 @@ CLICK_DECLS
  * Copies 4 bytes from the packet, starting at OFFSET, to the destination IP
  * address annotation. OFFSET is usually 16, to fetch the destination address
  * from an IP packet.
+ *
+ * Set ANNO to set a non-default destination IP address annotation.
+ *
+ * You may also give an IP keyword argument instead of an OFFSET.  IP must
+ * equal 'src' or 'dst'.  The input packet must have its IP header annotation
+ * set.  The named destination IP address annotation is set to that IP
+ * header's source or destination address, respectively.
  *
  * =n
  * The destination address annotation is used by elements
@@ -26,7 +33,13 @@ CLICK_DECLS
 
 class GetIPAddress : public Element {
 
-  int _offset;
+    enum {
+	offset_ip_src = -1,
+	offset_ip_dst = -2
+    };
+
+    int _offset;
+    int _anno;
 
  public:
 
