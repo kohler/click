@@ -158,7 +158,7 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
       if (j != val)
 	r->change_connection_from(connv_out[j], PortT(idle, idle_out++));
 
-    x->simple_kill();
+    x->kill();
   }
 }
 
@@ -205,7 +205,7 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
       if (j != val)
 	r->change_connection_to(connv_in[j], PortT(idle, idle_in++));
 
-    x->simple_kill();
+    x->kill();
   }
 }
 
@@ -250,7 +250,7 @@ remove_nulls(RouterT *r, ElementClassT *t, ErrorHandler *errh)
     else if (hnext.size() == 1)
       skip_over_push(r, PortT(x, 0), r->connection(hnext[0]).to());
 
-    x->simple_kill();
+    x->kill();
   }
 }
 
@@ -306,7 +306,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
       if (verbose)
 	errh->lerror(x->landmark(), "removing redundant scheduler '%s'", x->declaration().c_str());
       skip_over_pull(r, PortT(x, 0), r->connection(hprev[0]).from());
-      x->simple_kill();
+      x->kill();
       changed = true;
     }
 
@@ -358,7 +358,7 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
 	skip_over_pull(r, PortT(x, 0), r->connection(hprev[0]).from());
       } else
 	skip_over_push(r, PortT(x, 0), r->connection(hnext[0]).to());
-      x->simple_kill();
+      x->kill();
       changed = true;
     }
 
@@ -687,7 +687,7 @@ particular purpose.\n");
       ElementT *e = r->element(i);
       if (verbose)
 	default_errh->lmessage(e->landmark(), "removing '%s'", e->declaration().c_str());
-      e->simple_kill();
+      e->kill();
     }
 
   // remove dead connections (not elements yet: keep indexes in 'processing'

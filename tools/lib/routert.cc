@@ -827,16 +827,10 @@ RouterT::remove_duplicate_connections()
     }
 }
 
-
 void
-RouterT::remove_dead_elements(ErrorHandler *errh)
+RouterT::remove_dead_elements()
 {
-    if (!errh)
-	errh = ErrorHandler::silent_handler();
     int nelements = _elements.size();
-
-    // change hookup
-    kill_bad_connections();
 
     // find new element indexes
     Vector<int> new_eindex(nelements, 0);
@@ -847,6 +841,11 @@ RouterT::remove_dead_elements(ErrorHandler *errh)
 	else
 	    new_eindex[i] = j++;
     int new_nelements = j;
+    if (new_nelements == nelements)
+	return;
+
+    // change hookup
+    kill_bad_connections();
 
     // compress element arrays
     for (int i = 0; i < nelements; i++) {
@@ -899,7 +898,7 @@ RouterT::free_element(ElementT *e)
     // finally, free the element itself
     if (_element_name_map[e->name()] == ei)
 	_element_name_map.set(e->name(), -1);
-    e->simple_kill();
+    e->kill();
     e->_tunnel_input = _free_element;
     _free_element = e;
     _n_live_elements--;
@@ -1000,12 +999,9 @@ RouterT::expand_tunnel(Vector<PortT> *port_expansions,
     const PortT &me = ports[which];
     ElementT *other_elt = (is_output ? me.element->tunnel_input() : me.element->tunnel_output());
 
-    // find connections from tunnel input
+    // find connections from tunnel input or to tunnel output
     Vector<PortT> connections;
-    if (is_output)
-	find_connections_to(PortT(other_elt, me.port), connections);
-    else			// or to tunnel output
-	find_connections_from(PortT(other_elt, me.port), connections);
+    find_connections_touching(PortT(other_elt, me.port), !is_output, connections);
 
     // give good errors for unused or nonexistent compound element ports
     if (!connections.size()) {
@@ -1052,7 +1048,7 @@ RouterT::expand_tunnel(Vector<PortT> *port_expansions,
     expanded.swap(store);
 }
 
-bool
+void
 RouterT::remove_tunnels(ErrorHandler *errh)
 {
     if (!errh)
@@ -1073,8 +1069,6 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 
     // expand tunnels
     int nin = inputs.size(), nout = outputs.size();
-    if (nin == 0 && nout == 0)
-	return false;		// nothing to do
     Vector<PortT> *in_expansions = new Vector<PortT>[nin];
     Vector<PortT> *out_expansions = new Vector<PortT>[nout];
     // initialize to placeholders
@@ -1115,14 +1109,21 @@ RouterT::remove_tunnels(ErrorHandler *errh)
     for (int i = 0; i < nelements; i++)
 	if (_elements[i]->tunnel()
 	    && (_elements[i]->tunnel_output() || _elements[i]->tunnel_input()))
-	    _elements[i]->simple_kill();
+	    _elements[i]->kill();
 
     // actually remove tunnel connections and elements
     remove_duplicate_connections();
     free_dead_elements();
+
+    delete[] in_expansions;
+    delete[] out_expansions;
+}
+
+void
+RouterT::compact()
+{
     remove_dead_elements();
     compact_connections();
-    return true;
 }
 
 
@@ -1152,10 +1153,8 @@ RouterT::flatten(ErrorHandler *errh, bool expand_vars)
     //String s = configuration_string(); fprintf(stderr, "1.\n%s\n\n", s.c_str());
     remove_compound_elements(errh, expand_vars);
     //s = configuration_string(); fprintf(stderr, "2.\n%s\n\n", s.c_str());
-    if (!remove_tunnels(errh)) {
-	remove_dead_elements();
-	compact_connections();
-    }
+    remove_tunnels(errh);
+    compact();
     //s = configuration_string(); fprintf(stderr, "5.\n%s\n\n", s.c_str());
     _declared_type_map.clear();
     _declared_types.clear();

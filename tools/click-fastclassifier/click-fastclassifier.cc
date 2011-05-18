@@ -248,7 +248,7 @@ try_remove_classifiers(RouterT *router, Vector<ElementT *> &classifiers)
     Vector<PortT> v;
     router->find_connections_to(PortT(classifiers[i], 0), v);
     if (v.size() == 0) {
-      classifiers[i]->simple_kill();
+      classifiers[i]->kill();
       classifiers[i] = classifiers.back();
       classifiers.pop_back();
       i--;

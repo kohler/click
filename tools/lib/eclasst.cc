@@ -214,7 +214,7 @@ ElementClassT::expand_element(
     ElementClassT *found_c = c->resolve(inputs_used, outputs_used, args, errh, e->landmarkt());
     if (!found_c) {		// destroy element
 	if (fromr == tor)
-	    e->simple_kill();
+	    e->kill();
 	return 0;
     }
 

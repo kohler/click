@@ -175,10 +175,11 @@ class RouterT : public ElementClassT { public:
     void check() const;
 
     void remove_duplicate_connections();
-    void remove_dead_elements(ErrorHandler * = 0);
+    void remove_dead_elements();
 
     void remove_compound_elements(ErrorHandler *, bool expand_vars);
-    bool remove_tunnels(ErrorHandler *errh = 0);
+    void remove_tunnels(ErrorHandler *errh = 0);
+    void compact();
 
     void expand_into(RouterT *dest, const String &prefix, VariableEnvironment &env, ErrorHandler *errh);
     void flatten(ErrorHandler *errh, bool expand_vars = false);

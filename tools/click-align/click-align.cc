@@ -689,7 +689,7 @@ particular purpose.\n");
     {
 	for (RouterT::type_iterator x = router->begin_elements(aligninfo_class);
 	     x != router->end_elements(); ++x)
-	    x->full_kill();
+	    x->kill();
 	bool again;
 	do {
 	    again = false;
@@ -699,7 +699,7 @@ particular purpose.\n");
 		    if (x->landmark() == "<click-align>")
 			num_aligns_added--;
 		    again = true;
-		    x->full_kill();
+		    x->kill();
 		}
 	} while (again);
 	router->remove_dead_elements();

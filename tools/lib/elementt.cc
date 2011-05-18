@@ -85,7 +85,7 @@ ElementT::set_type(ElementClassT *t)
 }
 
 void
-ElementT::full_kill()
+ElementT::kill()
 {
     if (_type) {
 	if (_owner) {

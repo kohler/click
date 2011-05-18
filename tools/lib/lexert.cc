@@ -1144,8 +1144,10 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 	    /* nada */;
 
 	compound_class->finish_type(_errh);
-	if (_ngroups && _expand_groups)
+	if (_ngroups && _expand_groups) {
 	    compound_class->remove_tunnels();
+	    compound_class->compact();
+	}
 
 	if (last)
 	    last->set_overload_type(compound_class);
@@ -1390,8 +1392,10 @@ LexerT::finish(const VariableEnvironment &global_scope)
     r->redefine(global_scope);
     // resolve anonymous element names
     r->assign_element_names();
-    if (_ngroups && _expand_groups)
+    if (_ngroups && _expand_groups) {
 	r->remove_tunnels();
+	r->compact();
+    }
     // returned router has one reference count
     return r;
 }

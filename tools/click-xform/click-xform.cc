@@ -639,7 +639,7 @@ particular purpose.\n");
 
   // write result
   if (nreplace)
-    r->remove_dead_elements(0);
+    r->remove_dead_elements();
   if (write_router_file(r, output_file, errh) < 0)
     exit(1);
   return 0;

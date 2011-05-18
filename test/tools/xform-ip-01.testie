@@ -124,7 +124,7 @@ InfiniteSource(DATA \<
   // UDP header
   13 69 13 69  00 14 d6 41
   // UDP payload
-  55 44 50 20  70 61 63 6b  65 74 21 0a  04 00 00 00  01 00 00 00  
+  55 44 50 20  70 61 63 6b  65 74 21 0a  04 00 00 00  01 00 00 00
   01 00 00 00  00 00 00 00  00 80 04 08  00 80 04 08  53 53 00 00
   53 53 00 00  05 00 00 00  00 10 00 00  01 00 00 00  54 53 00 00
   54 e3 04 08  54 e3 04 08  d8 01 00 00
@@ -252,7 +252,7 @@ InfiniteSource@4 :: InfiniteSource(DATA \<
   // UDP header
   13 69 13 69  00 14 d6 41
   // UDP payload
-  55 44 50 20  70 61 63 6b  65 74 21 0a  04 00 00 00  01 00 00 00  
+  55 44 50 20  70 61 63 6b  65 74 21 0a  04 00 00 00  01 00 00 00
   01 00 00 00  00 00 00 00  00 80 04 08  00 80 04 08  53 53 00 00
   53 53 00 00  05 00 00 00  00 10 00 00  01 00 00 00  54 53 00 00
   54 e3 04 08  54 e3 04 08  d8 01 00 00
@@ -311,30 +311,30 @@ t [1] -> fake_arpq0
     -> out0;
 t [2] -> fake_arpq1
     -> out1;
-IPOutput@1/combo [4] -> fr1
-    -> fake_arpq0;
-fr2 [1] -> ICMPError@36
+c1 [2] -> IPInput@1/IPInputCombo@1
     -> rt
     -> EtherEncap@20
     -> tol;
-IPOutput@2/combo [2] -> ICMPError@38
+c0 [2] -> IPInput2@1/IPInputCombo@1
     -> rt;
-IPOutput@2/combo [1] -> ICMPError@40
-    -> rt;
-IPOutput@2/combo [4] -> fr2
-    -> fake_arpq1;
+IPOutput@1/combo [4] -> fr1
+    -> fake_arpq0;
 rt [2] -> IPOutput@2/combo
     -> fake_arpq1;
-c1 [2] -> IPInput@1/IPInputCombo@1
+IPOutput@2/combo [4] -> fr2
+    -> fake_arpq1;
+fr2 [1] -> ICMPError@36
     -> rt;
 IPOutput@2/combo [3] -> ICMPError@34
-    -> rt;
-c0 [2] -> IPInput2@1/IPInputCombo@1
     -> rt;
 c0 [3] -> Print@41
     -> Discard@42;
 c1 [3] -> Print@43
     -> Discard@44;
+IPOutput@2/combo [2] -> ICMPError@38
+    -> rt;
+IPOutput@2/combo [1] -> ICMPError@40
+    -> rt;
 IPOutput@1/combo [3] -> ICMPError@33
     -> rt;
 rt [1] -> IPOutput@1/combo

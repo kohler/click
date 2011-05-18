@@ -17,8 +17,7 @@ struct ElementT {
 
     bool live() const			{ return _type; }
     bool dead() const			{ return !_type; }
-    void full_kill();
-    inline void simple_kill();
+    void kill();
 
     const String &name() const		{ return _name; }
     const char *name_c_str() const	{ return _name.c_str(); }
@@ -214,15 +213,6 @@ class ConnectionT { public:
 
 };
 
-
-inline void
-ElementT::simple_kill()
-{
-    if (_type)
-	_type->unuse();
-    _type = 0;
-    unresolve_type();
-}
 
 inline RouterT *
 ElementT::resolved_router(const VariableEnvironment &env, ErrorHandler *errh) const
