@@ -40,7 +40,7 @@ String g_click_to_utf8(const String &str)
 crouter::crouter(dcss_set *ccss)
     : _r(0), _emap(0), _selected_driver(-1), _processing(0),
       _hvalues(this), _driver(0), _driver_active(false), _driver_process(0),
-      _ccss(ccss), _router_ccss(false), _throbber_count(0)
+      _ccss(ccss), _router_ccss(false), _gerrh(true), _throbber_count(0)
 {
 }
 

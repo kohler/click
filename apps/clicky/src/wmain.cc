@@ -811,7 +811,7 @@ void wmain::error_unhighlight()
 	    gtk_text_buffer_remove_tag(_config_buffer, _config_error_highlight_tag, &i1, &i2);
 	}
 	gtk_text_buffer_get_iter_at_offset(_error_buffer, &i1, gi->offset1);
-	gtk_text_buffer_get_iter_at_offset(_error_buffer, &i2, gi->offset2());
+	gtk_text_buffer_get_iter_at_offset(_error_buffer, &i2, gi->offset2);
 	gtk_text_buffer_remove_tag(_error_buffer, _error_highlight_tag, &i1, &i2);
 	_error_highlight_index = -1;
     }
@@ -825,7 +825,7 @@ bool wmain::error_view_motion_offsets(int off1, int off2, int eindex)
 	if (_error_hover_index >= 0) {
 	    GatherErrorHandler::iterator gi = gerrh->begin() + _error_hover_index;
 	    gtk_text_buffer_get_iter_at_offset(_error_buffer, &i1, gi->offset1);
-	    gtk_text_buffer_get_iter_at_offset(_error_buffer, &i2, gi->offset2());
+	    gtk_text_buffer_get_iter_at_offset(_error_buffer, &i2, gi->offset2);
 	    gtk_text_buffer_remove_tag(_error_buffer, _error_hover_tag, &i1, &i2);
 	}
 	if (off1 != off2) {
@@ -875,7 +875,7 @@ bool wmain::error_view_motion_position(gint x, gint y)
     if (message == gerrh->end() || message->errpos1 >= message->errpos2)
 	result = error_view_motion_offsets(0, 0, -1);
     else
-	result = error_view_motion_offsets(message->offset1, message->offset2(), message - gerrh->begin());
+	result = error_view_motion_offsets(message->offset1, message->offset2, message - gerrh->begin());
 
     // get more motion events
     GdkModifierType mod;
@@ -914,7 +914,7 @@ gboolean wmain::error_view_event(GdkEvent *event)
 	    gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(_config_view), &i2, 0, FALSE, 0, 0);
 	    gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(_config_view), &i1, 0, FALSE, 0, 0);
 	    gtk_text_buffer_get_iter_at_offset(_error_buffer, &i1, gi->offset1);
-	    gtk_text_buffer_get_iter_at_offset(_error_buffer, &i2, gi->offset2());
+	    gtk_text_buffer_get_iter_at_offset(_error_buffer, &i2, gi->offset2);
 	    gtk_text_buffer_apply_tag(_error_buffer, _error_highlight_tag, &i1, &i2);
 	}
     }

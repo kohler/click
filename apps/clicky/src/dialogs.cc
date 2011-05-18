@@ -263,7 +263,7 @@ void wmain::on_open_file()
 
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
 	char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-	GatherErrorHandler gerrh;
+	GatherErrorHandler gerrh(true);
 	String s = file_string(filename, &gerrh);
 	if (gerrh.nerrors()) {
 	    gerrh.translate_prefix(filename, "Error opening '" + String(filename) + "'");
@@ -349,7 +349,7 @@ void wmain::on_open_socket()
     gtk_window_set_transient_for(GTK_WINDOW(dialog), GTK_WINDOW(_window));
 
     while (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
-	GatherErrorHandler gerrh;
+	GatherErrorHandler gerrh(true);
 	String hosts(gtk_entry_get_text(GTK_ENTRY(lookup_widget(dialog, "host"))));
 	String ports(gtk_entry_get_text(GTK_ENTRY(lookup_widget(dialog, "port"))));
 	IPAddress addr;
@@ -462,7 +462,7 @@ void wmain::on_save_file(bool save_as)
 
     GError *err = NULL;
     if (!g_file_set_contents(_savefile.c_str(), data, -1, &err)) {
-	GatherErrorHandler gerrh;
+	GatherErrorHandler gerrh(true);
 	gerrh.error("Save error: %s", err->message);
 	gerrh.run_dialog(GTK_WINDOW(_window));
 	g_error_free(err);

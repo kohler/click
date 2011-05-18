@@ -5,25 +5,29 @@
 #include <click/pair.hh>
 #include <click/vector.hh>
 
+extern int utf8_length(const char *begin, const char *end);
+inline int utf8_length(const String &str) {
+    return utf8_length(str.begin(), str.end());
+}
+
 class GatherErrorHandler : public ErrorHandler { public:
 
-    GatherErrorHandler();
+    GatherErrorHandler(bool utf8);
 
     struct Message {
 	String message;
 	int level;
 
 	int offset1;
+	int offset2;
 
 	int errpos1;
 	int errpos2;
 
 	Message(const String &m, int l, int off, int ep1, int ep2)
-	    : message(m), level(l), offset1(off), errpos1(ep1), errpos2(ep2) {
-	}
-
-	int offset2() const {
-	    return offset1 + message.length();
+	    : message(m), level(l), offset1(off),
+	      offset2(offset1 + utf8_length(m)),
+	      errpos1(ep1), errpos2(ep2) {
 	}
     };
 
@@ -40,6 +44,7 @@ class GatherErrorHandler : public ErrorHandler { public:
 	return _nwarnings;
     }
 
+    String vformat(const char *fmt, va_list val);
     void *emit(const String &str, void *user_data, bool more);
     void account(int level);
 
@@ -72,6 +77,7 @@ class GatherErrorHandler : public ErrorHandler { public:
     int _next_errpos1;
     int _next_errpos2;
     int _nwarnings;
+    bool _utf8;
 
 };
 
