@@ -22,7 +22,6 @@ Programmer: Roman Chertov
 #include <clicknet/tcp.h>
 #include <click/args.hh>
 #include <click/error.hh>
-#include <stdio.h>
 
 
 
