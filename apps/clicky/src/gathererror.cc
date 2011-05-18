@@ -27,6 +27,7 @@ void *GatherErrorHandler::emit(const String &str, void *, bool more)
 
 void GatherErrorHandler::account(int level)
 {
+    ErrorHandler::account(level);
     if (level == el_warning)
 	++_nwarnings;
 }

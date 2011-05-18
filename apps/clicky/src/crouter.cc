@@ -168,7 +168,7 @@ void crouter::set_config(const String &conf, bool replace)
 	if (ArchiveElement *ae = ArchiveElement::find(archive, "config"))
 	    _conf = ae->data;
 	else {
-	    _gerrh.error("archive has no 'config' section");
+	    _gerrh.error("archive has no %<config%> section");
 	    _conf = String();
 	}
     }
