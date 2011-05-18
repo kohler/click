@@ -69,7 +69,8 @@ CLICK_DECLS
 
 KernelTun::KernelTun()
     : _fd(-1), _tap(false), _task(this), _ignore_q_errs(false),
-      _printed_write_err(false), _printed_read_err(false)
+      _printed_write_err(false), _printed_read_err(false),
+      _selected_calls(0), _packets(0)
 {
 }
 
@@ -113,6 +114,8 @@ KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
 
     if (_gw && !_gw.matches_prefix(_near, _mask))
 	return errh->error("bad GATEWAY");
+    if (_burst < 1)
+	return errh->error("BURST must be >= 1");
     if (_mtu_out < (int) sizeof(click_ip))
 	return errh->error("MTU must be greater than %d", sizeof(click_ip));
     if (_headroom > 8192)
@@ -503,15 +506,17 @@ KernelTun::cleanup(CleanupStage)
 void
 KernelTun::selected(int fd, int)
 {
+    Timestamp now = Timestamp::now();
     if (fd != _fd)
 	return;
+    ++_selected_calls;
     unsigned n = _burst;
-    while (n > 0 && one_selected())
+    while (n > 0 && one_selected(now))
 	--n;
 }
 
 bool
-KernelTun::one_selected()
+KernelTun::one_selected(const Timestamp &now)
 {
     WritablePacket *p = Packet::make(_headroom, 0, _mtu_in, 0);
     if (!p) {
@@ -521,6 +526,7 @@ KernelTun::one_selected()
 
     int cc = read(_fd, p->data(), _mtu_in);
     if (cc > 0) {
+	++_packets;
 	p->take(_mtu_in - cc);
 	bool ok = false;
 
@@ -562,13 +568,13 @@ KernelTun::one_selected()
 	}
 
 	if (ok) {
-	    p->timestamp_anno().assign_now();
+	    p->set_timestamp_anno(now);
 	    output(0).push(p);
 	} else
 	    checked_output_push(1, p);
 	return true;
-
     } else {
+	p->kill();
 	if (errno != EAGAIN && errno != EWOULDBLOCK
 	    && (!_ignore_q_errs || !_printed_read_err || errno != ENOBUFS)) {
 	    _printed_read_err = true;
@@ -680,19 +686,14 @@ KernelTun::push(int, Packet *p)
 	click_chatter("%s(%s): out of memory", class_name(), _dev_name.c_str());
 }
 
-String
-KernelTun::print_dev_name(Element *e, void *)
-{
-    KernelTun *kt = (KernelTun *) e;
-    return kt->_dev_name;
-}
-
 void
 KernelTun::add_handlers()
 {
     if (input_is_pull(0))
 	add_task_handlers(&_task);
-    add_read_handler("dev_name", print_dev_name, 0);
+    add_data_handlers("dev_name", Handler::OP_READ, &_dev_name);
+    add_data_handlers("selected_calls", Handler::OP_READ, &_selected_calls);
+    add_data_handlers("packets", Handler::OP_READ, &_packets);
 }
 
 CLICK_ENDDECLS
