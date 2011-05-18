@@ -66,7 +66,8 @@ EtherSwitch::push(int source, Packet *p)
 
     // 0 timeout means dumb switch
     if (_timeout != 0) {
-	_table.set(EtherAddress(e->ether_shost), AddrInfo(source, p->timestamp_anno()));
+	Timestamp pts = p->timestamp_anno();
+	_table.set(EtherAddress(e->ether_shost), AddrInfo(source, pts));
 
 	// Set outport if dst is unicast, we have info about it, and the
 	// info is still valid.
@@ -78,6 +79,13 @@ EtherSwitch::push(int source, Packet *p)
 		else
 		    _table.erase(dst_info);
 	    }
+	}
+	if (unlikely(!pts)) {
+	    EtherAddress src(e->ether_shost);
+	    static int nwarned = 0;
+	    if (nwarned++ < 20)
+		click_chatter("%{element}: packet src=%{ether_ptr} dst=%{ether_ptr} input=%d output=%d with 0 timestamp!\n", this,
+		    &src, &dst, source, outport);
 	}
     }
 
