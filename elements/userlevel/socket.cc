@@ -521,7 +521,8 @@ Socket::run_task(Task *)
       add_select(_active, SELECT_WRITE);
     } else if (_signal)
       // more pending
-      _task.fast_reschedule();
+      // (can't use fast_reschedule() cause selected() calls this)
+      _task.reschedule();
     else
       // wrote all we could and no more pending
       remove_select(_active, SELECT_WRITE);
