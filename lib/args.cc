@@ -330,6 +330,14 @@ Args::find(const char *keyword, int flags, Slot *&slot_status)
     _read_status = true;
     slot_status = _slots;
 
+    // Check for common errors.
+    // Note that we don't check the whole keyword for validity; there are
+    // sometimes good reasons to pass something like "BADSRC*", which can only
+    // match a positional argument (no keyword will ever match) but still
+    // looks helpful in error messages.
+    if (keyword && isdigit((unsigned char) *keyword))
+	error("keywords must start with a letter or underscore");
+
     // Find matching keyword -- normally last, sometimes first.
     int keyword_length = keyword ? strlen(keyword) : 0;
     int got = -1, got_kwpos = -1, position = -1;
