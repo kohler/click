@@ -55,6 +55,12 @@ CheckLength::pull(int)
     return p;
 }
 
+void
+CheckLength::add_handlers()
+{
+    add_data_handlers("length", Handler::OP_READ | Handler::OP_WRITE, &_max);
+}
+
 CLICK_ENDDECLS
 EXPORT_ELEMENT(CheckLength)
 ELEMENT_MT_SAFE(CheckLength)
