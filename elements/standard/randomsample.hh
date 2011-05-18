@@ -84,12 +84,14 @@ class RandomSample : public Element { public:
     enum { SAMPLING_SHIFT = 28 };
     enum { SAMPLING_MASK = (1 << SAMPLING_SHIFT) - 1 };
 
+    enum { h_sample, h_drop, h_config };
+
     uint32_t _sampling_prob;		// out of (1<<SAMPLING_SHIFT)
     bool _active;
     atomic_uint32_t _drops;
 
     static String read_handler(Element *, void *);
-
+    static int write_handler(const String &, Element *, void *, ErrorHandler *);
 };
 
 CLICK_ENDDECLS

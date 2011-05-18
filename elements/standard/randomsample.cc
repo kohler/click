@@ -37,15 +37,17 @@ RandomSample::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     uint32_t sampling_prob = 0xFFFFFFFFU;
     uint32_t drop_prob = 0xFFFFFFFFU;
-    bool active = true;
+    bool active = true, have_sample = false, have_drop = false;
     if (Args(conf, this, errh)
 	.read_p("P", FixedPointArg(SAMPLING_SHIFT), sampling_prob)
-	.read("SAMPLE", FixedPointArg(SAMPLING_SHIFT), sampling_prob)
-	.read("DROP", FixedPointArg(SAMPLING_SHIFT), drop_prob)
+	.read("SAMPLE", FixedPointArg(SAMPLING_SHIFT), sampling_prob).read_status(have_sample)
+	.read("DROP", FixedPointArg(SAMPLING_SHIFT), drop_prob).read_status(have_drop)
 	.read("ACTIVE", active)
 	.complete() < 0)
 	return -1;
-    if (sampling_prob == 0xFFFFFFFFU && drop_prob <= (1 << SAMPLING_SHIFT))
+    if (have_sample && have_drop)
+	return errh->error("give at most one of SAMPLE and DROP");
+    else if (have_drop)
 	sampling_prob = (1 << SAMPLING_SHIFT) - drop_prob;
     if (sampling_prob > (1 << SAMPLING_SHIFT))
 	return errh->error("sampling probability must be between 0 and 1");
@@ -95,11 +97,11 @@ RandomSample::read_handler(Element *e, void *thunk)
 {
     RandomSample *rs = static_cast<RandomSample *>(e);
     switch ((intptr_t)thunk) {
-      case 0:
+      case h_sample:
 	return cp_unparse_real2(rs->_sampling_prob, SAMPLING_SHIFT);
-      case 3:
+      case h_drop:
 	return cp_unparse_real2((1 << SAMPLING_SHIFT) - rs->_sampling_prob, SAMPLING_SHIFT);
-      case 4: {
+      case h_config: {
 	  StringAccum sa;
 	  sa << "SAMPLE " << cp_unparse_real2(rs->_sampling_prob, SAMPLING_SHIFT)
 	     << ", ACTIVE " << rs->_active;
@@ -110,17 +112,29 @@ RandomSample::read_handler(Element *e, void *thunk)
     }
 }
 
+int
+RandomSample::write_handler(const String &str, Element *e, void *thunk, ErrorHandler *errh)
+{
+    RandomSample *rs = static_cast<RandomSample *>(e);
+    uint32_t p;
+    if (!FixedPointArg(SAMPLING_SHIFT).parse(cp_uncomment(str), p) || p > (1 << SAMPLING_SHIFT))
+	return errh->error("Must be given a number between 0.0 and 1.0");
+    if ((intptr_t)thunk == h_drop)
+	p = (1 << SAMPLING_SHIFT) - p;
+    rs->_sampling_prob = p;
+    return 0;
+}
+
 void
 RandomSample::add_handlers()
 {
-    add_read_handler("sampling_prob", read_handler, 0);
-    add_write_handler("sampling_prob", reconfigure_keyword_handler, (void *)"SAMPLE");
-    add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
-    add_write_handler("active", reconfigure_keyword_handler, "ACTIVE");
+    add_read_handler("sampling_prob", read_handler, h_sample);
+    add_write_handler("sampling_prob", write_handler, h_sample);
+    add_data_handlers("active", Handler::OP_READ | Handler::OP_WRITE | Handler::CHECKBOX, &_active);
     add_data_handlers("drops", Handler::OP_READ, &_drops);
-    add_read_handler("drop_prob", read_handler, 3);
-    add_write_handler("drop_prob", reconfigure_keyword_handler, "DROP");
-    add_read_handler("config", read_handler, 4);
+    add_read_handler("drop_prob", read_handler, h_drop);
+    add_write_handler("drop_prob", write_handler, h_drop);
+    add_read_handler("config", read_handler, h_config);
     set_handler_flags("config", 0, Handler::CALM);
 }
 
