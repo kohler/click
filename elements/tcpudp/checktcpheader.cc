@@ -68,7 +68,7 @@ Packet *
 CheckTCPHeader::drop(Reason reason, Packet *p)
 {
   if (_drops == 0 || _verbose)
-    click_chatter("TCP header check failed: %s", reason_texts[reason]);
+    click_chatter("%{element}: TCP header check failed: %s", this, reason_texts[reason]);
   _drops++;
 
   if (_reason_drops)
