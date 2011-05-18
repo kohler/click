@@ -48,17 +48,18 @@ glob_match(const String &str, const String &pattern)
 {
     const char *send = str.end();
     const char *pend = pattern.end();
-    Vector<const char *> state, nextstate;
-    state.push_back(pattern.data());
 
     // quick common-case check for suffix matches
     while (pattern.begin() < pend && str.begin() < send
 	   && pend[-1] != '*' && pend[-1] != '?' && pend[-1] != ']'
-	   && (pattern.begin() + 1 < pend || pend[-2] != '\\'))
+	   && (pattern.begin() + 1 == pend || pend[-2] != '\\'))
 	if (pend[-1] == send[-1])
 	    --pend, --send;
 	else
 	    return false;
+
+    Vector<const char *> state, nextstate;
+    state.push_back(pattern.data());
 
     for (const char *s = str.data(); s != send && state.size(); ++s) {
 	nextstate.clear();

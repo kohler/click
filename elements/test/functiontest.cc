@@ -68,6 +68,9 @@ FunctionTest::initialize(ErrorHandler *errh)
 
 #if CLICK_USERLEVEL
     CHECK(glob_match("", "*"));
+    CHECK(glob_match("a", "\\a"));
+    CHECK(glob_match("*", "\\*"));
+    CHECK(!glob_match("a", "\\*"));
     CHECK(glob_match("Q", "*"));
     CHECK(glob_match("QX", "*"));
     CHECK(glob_match("Q", "Q*"));
