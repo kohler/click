@@ -35,28 +35,28 @@ Truncate::~Truncate()
 int
 Truncate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    unsigned short nbytes;
-    bool extra_length = true;
-    if (Args(conf, this, errh)
-	.read_mp("LENGTH", nbytes)
-	.read("EXTRA_LENGTH", extra_length)
-	.complete() < 0)
-	return -1;
-    _nbytes = (nbytes << 1) + extra_length;
-    return 0;
+    return Args(conf, this, errh)
+	.read_mp("LENGTH", _nbytes)
+	.read("EXTRA_LENGTH", _extra_anno)
+	.complete();
 }
 
 Packet *
 Truncate::simple_action(Packet *p)
 {
-    unsigned nbytes = _nbytes >> 1;
-    if (p->length() > nbytes) {
-	nbytes = p->length() - nbytes;
-	if (_nbytes & 1)
+    if (p->length() > _nbytes) {
+	unsigned nbytes = p->length() - _nbytes;
+	if (_extra_anno)
 	    SET_EXTRA_LENGTH_ANNO(p, EXTRA_LENGTH_ANNO(p) + nbytes);
         p->take(nbytes);
     }
     return p;
+}
+
+void
+Truncate::add_handlers()
+{
+    add_data_handlers("nbytes", Handler::OP_READ | Handler::OP_WRITE, &_nbytes);
 }
 
 CLICK_ENDDECLS
