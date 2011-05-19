@@ -486,23 +486,25 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	const PortT &hf = conn[c].from(), &ht = conn[c].to();
 	int fp = output_pidx(hf), tp = input_pidx(ht);
 
-	if ((_processing[end_from][fp] & ppush) && output_used[fp] >= 0) {
+	if ((_processing[end_from][fp] & ppush) && output_used[fp] >= 0
+	    && conn[output_used[fp]] != ht) {
 	    errh->lerror(conn[c].decorated_landmark(),
 			 "illegal reuse of %<%s%> push output %d",
 			 hf.element->name_c_str(), hf.port);
 	    errh->lmessage(conn[output_used[fp]].decorated_landmark(),
-			   "  %<%s%> output %d previously used here",
+			   "%<%s%> output %d previously used here",
 			   hf.element->name_c_str(), hf.port);
 	    _processing[end_from][fp] |= perror;
 	} else
 	    output_used[fp] = c;
 
-	if ((_processing[end_to][tp] & ppull) && input_used[tp] >= 0) {
+	if ((_processing[end_to][tp] & ppull) && input_used[tp] >= 0
+	    && conn[input_used[tp]] != hf) {
 	    errh->lerror(conn[c].decorated_landmark(),
 			 "illegal reuse of %<%s%> pull input %d",
 			 ht.element->name_c_str(), ht.port);
 	    errh->lmessage(conn[input_used[tp]].decorated_landmark(),
-			   "  %<%s%> input %d previously used here",
+			   "%<%s%> input %d previously used here",
 			   ht.element->name_c_str(), ht.port);
 	    _processing[end_to][tp] |= perror;
 	} else
