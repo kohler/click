@@ -42,7 +42,8 @@ RouterT::RouterT()
       _declaration_scope(0), _scope_cookie(0),
       _scope(0),
       _ninputs(0), _noutputs(0), _scope_order_error(false),
-      _circularity_flag(false), _overload_type(0)
+      _circularity_flag(false), _potential_duplicate_connections(false),
+      _overload_type(0)
 {
 }
 
@@ -56,7 +57,8 @@ RouterT::RouterT(const String &name, const LandmarkT &landmark, RouterT *declara
       _declaration_scope(declaration_scope), _scope_cookie(0),
       _scope(declaration_scope ? &declaration_scope->_scope : 0),
       _ninputs(0), _noutputs(0), _scope_order_error(false),
-      _circularity_flag(false), _overload_type(0), _type_landmark(landmark)
+      _circularity_flag(false), _potential_duplicate_connections(false),
+      _overload_type(0), _type_landmark(landmark)
 {
     // borrow definitions from 'declaration'
     if (_declaration_scope) {
@@ -152,6 +154,11 @@ RouterT::check() const
 		assert(_conn[j].from_element() == e);
 		if (_conn[j].from().port >= noutputs)
 		    noutputs = _conn[j].from().port + 1;
+		if (!_potential_duplicate_connections)
+		    for (int k = _conn[j].next_from(); k >= 0;
+			 k = _conn[k].next_from())
+			assert(_conn[k].from_port() != _conn[j].from_port()
+			       || _conn[k].to() != _conn[j].to());
 		j = _conn[j].next_from();
 	    }
 
@@ -384,6 +391,18 @@ RouterT::add_connection(const PortT &hfrom, const PortT &hto,
     Pair &first_from = _first_conn[hfrom.eindex()];
     Pair &first_to = _first_conn[hto.eindex()];
 
+    // maintain port counts (or ignore duplicate connections)
+    if (hfrom.port < hfrom.element->noutputs() && hto.port < hto.element->ninputs()) {
+	for (int ci = first_from[end_from]; ci >= 0; ci = _conn[ci].next_from())
+	    if (_conn[ci].from_port() == hfrom.port && _conn[ci].to() == hto)
+		return true;
+    } else {
+	if (hfrom.port >= hfrom.element->noutputs())
+	    hfrom.element->set_noutputs(hfrom.port + 1);
+	if (hto.port >= hto.element->ninputs())
+	    hto.element->set_ninputs(hto.port + 1);
+    }
+
     int i;
     if (_free_conn >= 0) {
 	i = _free_conn;
@@ -395,12 +414,6 @@ RouterT::add_connection(const PortT &hfrom, const PortT &hto,
     }
 
     first_from[end_from] = first_to[end_to] = i;
-
-    // maintain port counts
-    if (hfrom.port >= hfrom.element->noutputs())
-	hfrom.element->set_noutputs(hfrom.port + 1);
-    if (hto.port >= hto.element->ninputs())
-	hto.element->set_ninputs(hto.port + 1);
 
     return true;
 }
@@ -544,6 +557,7 @@ RouterT::change_connection_from(int c, PortT h)
     int ei = h.eindex();
     _conn[c]._next[end_from] = _first_conn[ei][end_from];
     _first_conn[ei][end_from] = c;
+    _potential_duplicate_connections = true;
 }
 
 void
@@ -559,6 +573,7 @@ RouterT::change_connection_to(int c, PortT h)
     int ei = h.eindex();
     _conn[c]._next[end_to] = _first_conn[ei][end_to];
     _first_conn[ei][end_to] = c;
+    _potential_duplicate_connections = true;
 }
 
 RouterT::conn_iterator
@@ -799,6 +814,9 @@ RouterT::add_archive(const ArchiveElement &ae)
 void
 RouterT::remove_duplicate_connections()
 {
+    if (!_potential_duplicate_connections)
+	return;
+
     // 5.Dec.1999 - This function dominated the running time of click-xform.
     // Use an algorithm faster on the common case (few connections per
     // element).
@@ -825,6 +843,8 @@ RouterT::remove_duplicate_connections()
 	    trav = next;
 	}
     }
+
+    _potential_duplicate_connections = false;
 }
 
 void

@@ -282,6 +282,7 @@ class RouterT : public ElementClassT { public:
     int _noutputs;
     bool _scope_order_error;
     bool _circularity_flag;
+    bool _potential_duplicate_connections;
     ElementClassT *_overload_type;
     LandmarkT _type_landmark;
     mutable ElementTraits _traits;
