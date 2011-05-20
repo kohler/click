@@ -122,6 +122,24 @@ Master::pause()
     _ts.unlock_timers();
 }
 
+void
+Master::block_all()
+{
+    for (int i = 1; i < _threads.size(); ++i)
+	_threads[i]->schedule_block_tasks();
+    for (int i = 1; i < _threads.size(); ++i)
+	_threads[i]->block_tasks(true);
+    pause();
+}
+
+void
+Master::unblock_all()
+{
+    unpause();
+    for (int i = 1; i < _threads.size(); ++i)
+	_threads[i]->unblock_tasks();
+}
+
 
 // ROUTERS
 

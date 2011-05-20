@@ -504,19 +504,13 @@ free_handler_string(int hs)
 static void
 lock_threads()
 {
-    for (int i = 0; i < click_master->nthreads(); i++)
-	click_master->thread(i)->schedule_block_tasks();
-    for (int i = 0; i < click_master->nthreads(); i++)
-	click_master->thread(i)->block_tasks(true);
-    click_master->pause();
+    click_master->block_all();
 }
 
 static void
 unlock_threads()
 {
-    click_master->unpause();
-    for (int i = click_master->nthreads() - 1; i >= 0; i--)
-	click_master->thread(i)->unblock_tasks();
+    click_master->unblock_all();
 }
 
 

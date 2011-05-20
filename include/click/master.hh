@@ -23,6 +23,9 @@ class Master { public:
     void use();
     void unuse();
 
+    void block_all();
+    void unblock_all();
+
     void pause();
     inline void unpause();
     bool paused() const				{ return _master_paused > 0; }
