@@ -103,12 +103,11 @@ class RouterT : public ElementClassT { public:
 
     bool add_connection(const PortT &, const PortT &, const LandmarkT &landmark = LandmarkT::empty_landmark());
     inline bool add_connection(ElementT *, int, ElementT *, int, const LandmarkT &landmark = LandmarkT::empty_landmark());
-    void kill_connection(const conn_iterator &);
+    conn_iterator erase(conn_iterator it);
     void kill_bad_connections();
-    void compact_connections();
 
-    conn_iterator change_connection_to(const conn_iterator &it, PortT new_to);
-    conn_iterator change_connection_from(const conn_iterator &it, PortT new_from);
+    conn_iterator change_connection_to(conn_iterator it, PortT new_to);
+    conn_iterator change_connection_from(conn_iterator it, PortT new_from);
 
     bool insert_before(const PortT &, const PortT &);
     bool insert_after(const PortT &, const PortT &);
@@ -194,14 +193,6 @@ class RouterT : public ElementClassT { public:
 
   private:
 
-    struct Pair {
-	int end[2];
-	Pair() { end[0] = end[1] = -1; }
-	Pair(int from, int to) { end[end_from] = from; end[end_to] = to; }
-	int &operator[](int i) { assert(i >= 0 && i <= 1); return end[i]; }
-	int operator[](int i) const { assert(i >= 0 && i <= 1); return end[i]; }
-    };
-
     struct ElementType {
 	ElementClassT * const type;
 	int scope_cookie;
@@ -214,23 +205,34 @@ class RouterT : public ElementClassT { public:
 	ElementType &operator=(const ElementType &);
     };
 
+    enum { end_all = 2 };
+
     struct ConnectionX : public ConnectionT {
-	int _next[2];
-	ConnectionX() {
-	    _next[0] = _next[1] = -1;
-	}
+	ConnectionX **_pprev;
+	ConnectionX *_next[3];
 	ConnectionX(const PortT &from, const PortT &to,
-		    const LandmarkT &landmark, int next_from, int next_to)
+		    const LandmarkT &landmark)
 	    : ConnectionT(from, to, landmark) {
-	    _next[end_from] = next_from;
-	    _next[end_to] = next_to;
 	}
-	int next_from() const {
+	ConnectionX *next_from() const {
 	    return _next[end_from];
 	}
-	int next_to() const {
+	ConnectionX *next_to() const {
 	    return _next[end_to];
 	}
+    };
+
+    struct ConnectionSet {
+	ConnectionSet *next;
+	ConnectionX c[1];
+    };
+
+    struct Pair {
+	ConnectionX *end[2];
+	Pair() { end[0] = end[1] = 0; }
+	Pair(ConnectionX *from, ConnectionX *to) { end[end_from] = from; end[end_to] = to; }
+	ConnectionX *&operator[](int i) { assert(i >= 0 && i <= 1); return end[i]; }
+	ConnectionX *operator[](int i) const { assert(i >= 0 && i <= 1); return end[i]; }
     };
 
     StringMap _element_name_map;
@@ -239,9 +241,12 @@ class RouterT : public ElementClassT { public:
     int _n_live_elements;
     Vector<int> *_new_eindex_collector;
 
-    Vector<ConnectionX> _conn;
+    ConnectionSet *_connsets;
+    int _nconnx;
     Vector<Pair> _first_conn;
-    int _free_conn;
+    ConnectionX *_conn_head;
+    ConnectionX **_conn_tail;
+    ConnectionX *_free_conn;
 
     StringMap _declared_type_map;
     Vector<ElementType> _declared_types;
@@ -275,19 +280,14 @@ class RouterT : public ElementClassT { public:
     void update_ninputs(int);
     ElementT *add_element(const ElementT &);
     void assign_element_name(int);
-    void free_connection(int ci);
-    void unlink_connection_from(int ci);
-    void unlink_connection_to(int ci);
+    void free_connection(ConnectionX *c);
+    void unlink_connection_from(ConnectionX *c);
+    void unlink_connection_to(ConnectionX *c);
     void expand_tunnel(Vector<PortT> *port_expansions, const Vector<PortT> &ports, bool is_output, int which, ErrorHandler *) const;
     int assign_arguments(const Vector<String> &, Vector<String> *) const;
 
     friend class RouterUnparserT;
     friend class conn_iterator;
-
-    // ProcessingT is not really a full friend, but it has access to:
-    const Vector<ConnectionX> &connections() const { return _conn; }
-
-    friend class ProcessingT;
 
 };
 
@@ -366,10 +366,8 @@ class RouterT::conn_iterator { public:
     void assign(const ConnectionX *conn, int by) {
 	_conn = conn;
 	_by = by;
-	if (_conn && _conn->dead())
-	    ++(*this);
     }
-    void complex_step(const RouterT *);
+    void complex_step();
     friend class RouterT;
 };
 
@@ -427,17 +425,12 @@ inline
 RouterT::conn_iterator::conn_iterator(const ConnectionX *conn, int by)
     : _conn(conn), _by(by)
 {
-    if (_conn && _conn->dead())
-	++(*this);
 }
 
 inline RouterT::conn_iterator
 RouterT::begin_connections() const
 {
-    if (_conn.size())
-	return conn_iterator(_conn.begin(), 0);
-    else
-	return conn_iterator();
+    return conn_iterator(_conn_head, end_all);
 }
 
 inline RouterT::conn_iterator
@@ -497,18 +490,10 @@ inline RouterT::conn_iterator RouterT::find_connections_to(ElementT *e, int port
 inline RouterT::conn_iterator &
 RouterT::conn_iterator::operator++()
 {
-    if (_conn) {
-	const RouterT *r = _conn->router();
-      again:
-	if (_by == 0)
-	    ++_conn;
-	else
-	    complex_step(r);
-	if (_conn == r->_conn.end())
-	    _conn = 0;
-	else if (_conn && !_conn->live())
-	    goto again;
-    }
+    if (_conn && unsigned(_by) <= end_all)
+	_conn = _conn->_next[_by];
+    else
+	complex_step();
     return *this;
 }
 

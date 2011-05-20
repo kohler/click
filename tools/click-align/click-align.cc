@@ -648,8 +648,8 @@ particular purpose.\n");
 
 	// skip redundant Aligns
 	for (RouterT::conn_iterator ci = router->begin_connections();
-	     ci != router->end_connections(); ++ci)
-	    if (ci->live() && ci->to_element()->type() == align_class) {
+	     ci != router->end_connections(); ) {
+	    if (ci->to_element()->type() == align_class) {
 		Alignment have = ral._oalign[ ral._ooffset[ci->from_eindex()] + ci->from_port() ];
 		Alignment want = ral._oalign[ ral._ooffset[ci->to_eindex()] ];
 		if (have <= want) {
@@ -658,9 +658,12 @@ particular purpose.\n");
 		    router->find_connections_from(ci->to(), align_dest);
 		    for (int j = 0; j < align_dest.size(); j++)
 			router->add_connection(ci->from(), align_dest[j]);
-		    router->kill_connection(ci);
+		    ci = router->erase(ci);
+		    continue;
 		}
 	    }
+	    ++ci;
+	}
 
 	if (!changed)
 	    break;

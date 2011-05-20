@@ -89,11 +89,12 @@ ElementT::kill()
 {
     if (_type) {
 	if (_owner) {
-	    RouterT::conn_iterator ci;
-	    while ((ci = _owner->find_connections_from(this)))
-		_owner->kill_connection(ci);
-	    while ((ci = _owner->find_connections_to(this)))
-		_owner->kill_connection(ci);
+	    RouterT::conn_iterator ci = _owner->find_connections_from(this);
+	    while (ci)
+		ci = _owner->erase(ci);
+	    ci = _owner->find_connections_to(this);
+	    while (ci)
+		ci = _owner->erase(ci);
 	}
 	_type->unuse();
 	_type = 0;

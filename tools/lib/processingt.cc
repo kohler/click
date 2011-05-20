@@ -99,12 +99,17 @@ ProcessingT::create(const String &compound_pcode, bool resolve_agnostics,
 
     // create pidx and elt arrays, warn about dead elements
     create_pidx(&lerrh);
+    // collect connections
+    Vector<ConnectionT> conn;
+    for (RouterT::conn_iterator it = _router->begin_connections(); it; ++it)
+	conn.push_back(*it);
+    // do processing
     initial_processing(compound_pcode, &lerrh);
-    check_processing(&lerrh);
+    check_processing(conn, &lerrh);
     // change remaining agnostic ports to agnostic-push
     if (resolve_agnostics)
 	this->resolve_agnostics();
-    check_connections(&lerrh);
+    check_connections(conn, &lerrh);
 
     ElementMap::pop_default();
 }
@@ -303,11 +308,11 @@ ProcessingT::processing_error(const ConnectionT &conn, int processing_from,
 }
 
 void
-ProcessingT::check_processing(ErrorHandler *errh)
+ProcessingT::check_processing(Vector<ConnectionT> &conn, ErrorHandler *errh)
 {
     // add fake connections for agnostics
+    int old_size = conn.size();
     LandmarkT agnostic_landmark("<agnostic>");
-    Vector<RouterT::ConnectionX> conn = _router->connections();
     Bitvector bv;
     for (int i = 0; i < ninput_pidx(); i++)
 	if (_processing[end_to][i] == pagnostic) {
@@ -319,7 +324,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 	    forward_flow(flow_code(e), port, &bv, noutputs, errh);
 	    for (int j = 0; j < noutputs; j++)
 		if (bv[j] && _processing[end_from][opidx + j] == pagnostic)
-		    conn.push_back(RouterT::ConnectionX(PortT(e, j), PortT(e, port), agnostic_landmark, -1, -1));
+		    conn.push_back(ConnectionT(PortT(e, j), PortT(e, port), agnostic_landmark));
 	}
 
     // spread personalities
@@ -352,7 +357,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 		    changed = true;
 		} else if (((pf ^ pt) & 3) != 0) {
 		    processing_error(conn[c], pf, errh);
-		    conn[c] = RouterT::ConnectionX();
+		    conn[c] = ConnectionT();
 		}
 		break;
 
@@ -365,6 +370,8 @@ ProcessingT::check_processing(ErrorHandler *errh)
 	if (!changed)
 	    break;
     }
+
+    conn.resize(old_size);
 }
 
 static const char *
@@ -402,7 +409,8 @@ notify_nports_pair(const char *&s, const char *ends, int &lo, int &hi)
 }
 
 void
-ProcessingT::check_nports(const ElementT *e, const int *input_used, const int *output_used, ErrorHandler *errh)
+ProcessingT::check_nports(Vector<ConnectionT> &conn, const ElementT *e,
+			  const int *input_used, const int *output_used, ErrorHandler *errh)
 {
     String port_count = e->resolved_type(_scope, errh)->port_count_code();
     const char *s_in = port_count.c_str();
@@ -440,7 +448,6 @@ ProcessingT::check_nports(const ElementT *e, const int *input_used, const int *o
 	errh->lerror(e->decorated_landmark(), "too few inputs for %<%s%>, %s%d required", e->name_c_str(), (ninlo == ninhi ? "" : "at least "), ninlo);
 	ninputs = ninlo;
     } else if (ninputs > ninhi) {
-	const Vector<RouterT::ConnectionX> &conn = _router->connections();
 	errh->lerror(e->decorated_landmark(), "too many inputs for %<%s%>, %s%d allowed", e->name_c_str(), (ninlo == ninhi ? "" : "at most "), ninhi);
 	for (int i = ninhi; i < e->ninputs(); i++)
 	    if (input_used[i] >= 0)
@@ -457,7 +464,6 @@ ProcessingT::check_nports(const ElementT *e, const int *input_used, const int *o
     if (e->noutputs() < noutlo)
 	errh->lerror(e->decorated_landmark(), "too few outputs for %<%s%>%s, %s%d required", e->name_c_str(), equalmsg.c_str(), (noutlo == nouthi ? "" : "at least "), noutlo);
     else if (e->noutputs() > nouthi) {
-	const Vector<RouterT::ConnectionX> &conn = _router->connections();
 	errh->lerror(e->decorated_landmark(), "too many outputs for %<%s%>%s, %s%d allowed", e->name_c_str(), equalmsg.c_str(), (noutlo == nouthi ? "" : "at most "), nouthi);
 	for (int i = nouthi; i < e->noutputs(); i++)
 	    if (output_used[i] >= 0)
@@ -472,17 +478,13 @@ ProcessingT::check_nports(const ElementT *e, const int *input_used, const int *o
 }
 
 void
-ProcessingT::check_connections(ErrorHandler *errh)
+ProcessingT::check_connections(Vector<ConnectionT> &conn, ErrorHandler *errh)
 {
     Vector<int> input_used(ninput_pidx(), -1);
     Vector<int> output_used(noutput_pidx(), -1);
 
     // Check each hookup to ensure it doesn't reuse a port
-    const Vector<RouterT::ConnectionX> &conn = _router->connections();
     for (int c = 0; c < conn.size(); c++) {
-	if (conn[c].dead())
-	    continue;
-
 	const PortT &hf = conn[c].from(), &ht = conn[c].to();
 	int fp = output_pidx(hf), tp = input_pidx(ht);
 
@@ -517,7 +519,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	if (e->dead())
 	    continue;
 	int ipdx = _pidx[end_to][ei], opdx = _pidx[end_from][ei];
-	check_nports(e, input_used.begin() + ipdx, output_used.begin() + opdx, errh);
+	check_nports(conn, e, input_used.begin() + ipdx, output_used.begin() + opdx, errh);
 	for (int i = 0; i < e->ninputs(); i++)
 	    if (input_used[ipdx + i] < 0) {
 		errh->lerror(e->decorated_landmark(),

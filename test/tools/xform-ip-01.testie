@@ -311,39 +311,39 @@ t [1] -> fake_arpq0
     -> out0;
 t [2] -> fake_arpq1
     -> out1;
-c1 [2] -> IPInput@1/IPInputCombo@1
-    -> rt
-    -> EtherEncap@20
-    -> tol;
-c0 [2] -> IPInput2@1/IPInputCombo@1
-    -> rt;
-IPOutput@1/combo [4] -> fr1
-    -> fake_arpq0;
-rt [2] -> IPOutput@2/combo
-    -> fake_arpq1;
-IPOutput@2/combo [4] -> fr2
-    -> fake_arpq1;
-fr2 [1] -> ICMPError@36
-    -> rt;
-IPOutput@2/combo [3] -> ICMPError@34
-    -> rt;
 c0 [3] -> Print@41
     -> Discard@42;
 c1 [3] -> Print@43
     -> Discard@44;
-IPOutput@2/combo [2] -> ICMPError@38
-    -> rt;
-IPOutput@2/combo [1] -> ICMPError@40
-    -> rt;
-IPOutput@1/combo [3] -> ICMPError@33
-    -> rt;
+IPOutput@1/combo [4] -> fr1
+    -> fake_arpq0;
 rt [1] -> IPOutput@1/combo
     -> fake_arpq0;
+IPOutput@1/combo [3] -> ICMPError@33
+    -> rt
+    -> EtherEncap@20
+    -> tol;
 fr1 [1] -> ICMPError@35
     -> rt;
 IPOutput@1/combo [2] -> ICMPError@37
     -> rt;
 IPOutput@1/combo [1] -> ICMPError@39
+    -> rt;
+IPOutput@2/combo [4] -> fr2
+    -> fake_arpq1;
+rt [2] -> IPOutput@2/combo
+    -> fake_arpq1;
+IPOutput@2/combo [3] -> ICMPError@34
+    -> rt;
+fr2 [1] -> ICMPError@36
+    -> rt;
+IPOutput@2/combo [2] -> ICMPError@38
+    -> rt;
+IPOutput@2/combo [1] -> ICMPError@40
+    -> rt;
+c0 [2] -> IPInput2@1/IPInputCombo@1
+    -> rt;
+c1 [2] -> IPInput@1/IPInputCombo@1
     -> rt;
 
 %ignorex

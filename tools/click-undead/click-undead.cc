@@ -284,7 +284,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
 
 	// now do connections
 	if (hprev[p])
-	    r->kill_connection(hprev[p]);
+	    r->erase(hprev[p]);
 	for (int pp = p + 1; pp < hprev.size(); pp++) {
 	  r->change_connection_to(hprev[pp], PortT(x.get(), pp - 1));
 	  hprev[pp - 1] = hprev[pp];
@@ -330,8 +330,8 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
     for (int p = hnext.size() - 1; p >= (is_pull_tee ? 1 : 0); p--)
       if (!hnext[p] || (hnext[p].is_back() && hnext[p]->from_element()->type() == idlet)) {
 	// remove that tee port
-	if (!hnext[p])
-	    r->kill_connection(hnext[p]);
+	if (hnext[p])
+	    r->erase(hnext[p]);
 	for (int pp = p + 1; pp < hnext.size(); pp++) {
 	  r->change_connection_from(hnext[pp], PortT(x.get(), pp - 1));
 	  hnext[pp - 1] = hnext[pp];

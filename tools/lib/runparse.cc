@@ -268,25 +268,25 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
 void
 RouterT::unparse_connections(StringAccum &sa, const String &indent) const
 {
-    // mark loser connections
-    int nc = _conn.size();
+    // collect connections
+    Vector<ConnectionX *> conns;
+    for (ConnectionX *c = _conn_head; c; c = c->_next[end_all])
+	conns.push_back(c);
+    int nc = conns.size();
     Bitvector used(nc, false);
-    for (int c = 0; c < nc; c++)
-	if (_conn[c].dead())
-	    used[c] = true;
 
     // prepare hookup chains
     Vector<int> next(nc, -1);
     Bitvector startchain(nc, true);
     for (int c = 0; c < nc; c++) {
-	const PortT &ht = _conn[c].to();
+	const PortT &ht = conns[c]->to();
 	if (ht.port != 0 || used[c])
 	    continue;
 	int result = -1;
 	for (int d = 0; d < nc; d++)
-	    if (d != c && _conn[d].from() == ht && !used[d]) {
+	    if (d != c && conns[d]->from() == ht && !used[d]) {
 		result = d;
-		if (_conn[d].to().port == 0)
+		if (conns[d]->to().port == 0)
 		    break;
 	    }
 	if (result >= 0) {
@@ -311,7 +311,7 @@ RouterT::unparse_connections(StringAccum &sa, const String &indent) const
     while (!done) {
 	// print chains
 	for (int c = 0; c < nc; c++) {
-	    const PortT &hf = _conn[c].from();
+	    const PortT &hf = conns[c]->from();
 	    if (used[c] || !startchain[c])
 		continue;
 
@@ -325,7 +325,7 @@ RouterT::unparse_connections(StringAccum &sa, const String &indent) const
 		    sa << " -> ";
 		else
 		    sa << "\n" << indent << "    -> ";
-		const PortT &ht = _conn[d].to();
+		const PortT &ht = conns[d]->to();
 		if (ht.port)
 		    sa << "[" << ht.port << "] ";
 		sa << ht.element->name();

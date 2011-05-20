@@ -212,7 +212,7 @@ combine_classifiers(RouterT *router, ElementT *from, int from_port, ElementT *to
   from->set_configuration(cp_unargvec(new_words));
 
   // change connections
-  router->kill_connection(first_hop[from_port]);
+  router->erase(first_hop[from_port]);
   for (int i = from_port + 1; i < first_hop.size(); i++)
     router->change_connection_from(first_hop[i], PortT(from, i + to_words.size() - 1));
   for (int i = 0; i < second_hop_to.size(); i++)
@@ -246,19 +246,14 @@ try_combine_classifiers(RouterT *router, ElementT *classifier)
 static void
 try_remove_classifiers(RouterT *router, Vector<ElementT *> &classifiers)
 {
-  for (int i = 0; i < classifiers.size(); i++) {
-    Vector<PortT> v;
-    router->find_connections_to(PortT(classifiers[i], 0), v);
-    if (v.size() == 0) {
-      classifiers[i]->kill();
-      classifiers[i] = classifiers.back();
-      classifiers.pop_back();
-      i--;
-    }
-  }
-
-  router->remove_dead_elements();
-  router->compact_connections();
+    for (int i = 0; i < classifiers.size(); i++)
+	if (!router->find_connections_to(PortT(classifiers[i], 0))) {
+	    classifiers[i]->kill();
+	    classifiers[i] = classifiers.back();
+	    classifiers.pop_back();
+	    i--;
+	}
+    router->remove_dead_elements();
 }
 
 
