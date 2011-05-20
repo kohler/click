@@ -113,6 +113,15 @@ ElementClassT::base_type(const String &name)
 }
 
 
+ElementTraits &
+ElementClassT::force_traits(ElementMap *emap) const
+{
+    ElementTraits &traits = emap->force_traits(_name);
+    _traits = &traits;
+    _traits_version = emap->version();
+    return traits;
+}
+
 const ElementTraits *
 ElementClassT::find_traits(ElementMap *emap) const
 {

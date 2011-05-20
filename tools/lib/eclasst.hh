@@ -38,6 +38,8 @@ class ElementClassT { public:
     virtual bool overloaded() const	{ return false; }
     bool tunnel() const			{ return this == tunnel_type(); }
 
+    ElementTraits &force_traits() const;
+    ElementTraits &force_traits(ElementMap *emap) const;
     inline const ElementTraits &traits() const;
     inline const ElementTraits &traits(ElementMap *emap) const;
     virtual const ElementTraits *find_traits(ElementMap *emap) const;
@@ -180,6 +182,12 @@ inline const ElementTraits &
 ElementClassT::traits() const
 {
     return traits(ElementMap::default_map());
+}
+
+inline ElementTraits &
+ElementClassT::force_traits() const
+{
+    return force_traits(ElementMap::default_map());
 }
 
 inline const String &

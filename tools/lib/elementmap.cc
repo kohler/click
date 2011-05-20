@@ -147,6 +147,24 @@ ElementMap::remove_at(int i)
     incr_version();
 }
 
+Traits &
+ElementMap::force_traits(const String &class_name)
+{
+    int initial_i = _name_map[class_name], i = initial_i;
+    if (!(_e[i].driver_mask & _driver_mask) && i > 0)
+	i = driver_elt_index(i);
+    if (i == 0) {
+	Traits t;
+	if (initial_i == 0)
+	    t.name = class_name;
+	else
+	    t = _e[initial_i];
+	t.driver_mask = _driver_mask;
+	i = add(t);
+    }
+    return _e[i];
+}
+
 static const char *
 parse_attribute_value(String *result,
 		      const char *s, const char *ends,

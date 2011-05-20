@@ -24,10 +24,11 @@ class ElementMap { public:
     bool empty() const				{ return _e.size() == 1; }
     int32_t version() const			{ return _version; }
 
-    const Traits& traits(const String&) const;
-    const Traits& traits_at(int i) const	{ return _e[i]; }
-    bool has_traits(const String&) const;
-    int traits_index(const String&) const;
+    Traits &force_traits(const String &class_name);
+    inline const Traits &traits(const String &class_name) const;
+    const Traits &traits_at(int i) const	{ return _e[i]; }
+    inline bool has_traits(const String &class_name) const;
+    inline int traits_index(const String &class_name) const;
 
     bool provides_global(const String&) const;
 
@@ -40,8 +41,8 @@ class ElementMap { public:
     class TraitsIterator;
     TraitsIterator begin_elements() const;
 
-    int add(const Traits&);
-    void remove_at(int);
+    int add(const Traits &traits);
+    void remove_at(int i);
 
     void parse(const String& data, ErrorHandler* = 0);
     void parse(const String& data, const String& package_name, ErrorHandler* = 0);
@@ -115,31 +116,25 @@ class ElementMap::TraitsIterator { public:
 };
 
 
-inline const Traits&
-ElementMap::traits(const String& name) const
-{
-    int i = _name_map[name];
-    if (!(_e[i].driver_mask & _driver_mask))
-	i = driver_elt_index(i);
-    return _e[i];
-}
-
-inline bool
-ElementMap::has_traits(const String& name) const
-{
-    int i = _name_map[name];
-    if (!(_e[i].driver_mask & _driver_mask) && i > 0)
-	i = driver_elt_index(i);
-    return i > 0;
-}
-
 inline int
-ElementMap::traits_index(const String& name) const
+ElementMap::traits_index(const String &class_name) const
 {
-    int i = _name_map[name];
+    int i = _name_map[class_name];
     if (!(_e[i].driver_mask & _driver_mask) && i > 0)
 	i = driver_elt_index(i);
     return i;
+}
+
+inline const Traits &
+ElementMap::traits(const String &class_name) const
+{
+    return _e[traits_index(class_name)];
+}
+
+inline bool
+ElementMap::has_traits(const String &class_name) const
+{
+    return traits_index(class_name) > 0;
 }
 
 inline const String&
