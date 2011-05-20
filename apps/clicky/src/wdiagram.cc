@@ -501,10 +501,10 @@ void wdiagram::notify_active_ports(String value)
 		if (dconn *c = e->find_connection(isoutput, port))
 		    actives.push_back(std::make_pair(c, lineno));
 
-	    int cid = chain.back_router()->find_connection_id_touching(PortT(element, port), isoutput);
-	    assert(cid >= 0);
+	    RouterT::conn_iterator cit = chain.back_router()->find_connections_touching(PortT(element, port), isoutput);
+	    assert(cit.is_back());
 
-	    PortT oport = chain.back_router()->connection(cid).end(!isoutput);
+	    PortT oport = cit->end(!isoutput);
 	    ElementClassT *oclass = chain.resolved_type(oport.element);
 	    if (RouterT *subr = oclass->cast_router()) {
 		chain.enter_element(oport.element);

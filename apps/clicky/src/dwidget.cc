@@ -241,7 +241,7 @@ void delt::create_connections(crouter *cr)
 
 	if (c.from->display() == dedisp_expanded) {
 	    RouterT *subr = c.from->_resolved_router;
-	    for (RouterT::conn_iterator it = subr->begin_connections_to(PortT(subr->element(1), c.from_port));
+	    for (RouterT::conn_iterator it = subr->find_connections_to(PortT(subr->element(1), c.from_port));
 		 it != subr->end_connections(); ++it)
 		cc.push_back(delt_conn(c.from->_elt[it->from_eindex()],
 				       it->from_port(), c.to, c.to_port));
@@ -250,7 +250,7 @@ void delt::create_connections(crouter *cr)
 
 	if (c.to->display() == dedisp_expanded) {
 	    RouterT *subr = c.to->_resolved_router;
-	    for (RouterT::conn_iterator it = subr->begin_connections_from(PortT(subr->element(0), c.to_port));
+	    for (RouterT::conn_iterator it = subr->find_connections_from(PortT(subr->element(0), c.to_port));
 		 it != subr->end_connections(); ++it)
 		cc.push_back(delt_conn(c.from, c.from_port,
 				       c.to->_elt[it->to_eindex()],
@@ -262,7 +262,7 @@ void delt::create_connections(crouter *cr)
 	    && c.from->parent()->display() == dedisp_expanded) {
 	    delt *pp = c.from->parent()->parent();
 	    RouterT *subr = pp->_resolved_router;
-	    for (RouterT::conn_iterator it = subr->begin_connections_to(PortT(c.from->parent()->_e, c.from_port));
+	    for (RouterT::conn_iterator it = subr->find_connections_to(PortT(c.from->parent()->_e, c.from_port));
 		 it != subr->end_connections(); ++it)
 		cc.push_back(delt_conn(pp->_elt[it->from_eindex()], it->from_port(), c.to, c.to_port));
 	    continue;
@@ -272,7 +272,7 @@ void delt::create_connections(crouter *cr)
 	    && c.to->parent()->display() == dedisp_expanded) {
 	    delt *pp = c.to->parent()->parent();
 	    RouterT *subr = pp->_resolved_router;
-	    for (RouterT::conn_iterator it = subr->begin_connections_from(PortT(c.to->parent()->_e, c.to_port));
+	    for (RouterT::conn_iterator it = subr->find_connections_from(PortT(c.to->parent()->_e, c.to_port));
 		 it != subr->end_connections(); ++it)
 		cc.push_back(delt_conn(c.from, c.from_port, pp->_elt[it->to_eindex()], it->to_port()));
 	    continue;
@@ -284,7 +284,7 @@ void delt::create_connections(crouter *cr)
 	    RouterT *subr = c.to->_e->router();
 	    for (int p = 0; p < c.to->noutputs(); ++p)
 		if (bv[p]) {
-		    for (RouterT::conn_iterator it = subr->begin_connections_from(PortT(c.to->_e, p));
+		    for (RouterT::conn_iterator it = subr->find_connections_from(PortT(c.to->_e, p));
 			 it != subr->end_connections(); ++it)
 			cc.push_back(delt_conn(c.from, c.from_port,
 					       c.to->parent()->_elt[it->to_eindex()],

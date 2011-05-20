@@ -86,7 +86,7 @@ void
 RouterT::check() const
 {
     int ne = nelements();
-    int nc = nconnections();
+    int nc = _conn.size();
     int nt = _declared_types.size();
 
     // check basic sizes
@@ -139,7 +139,7 @@ RouterT::check() const
 
     // check hookup
     for (int i = 0; i < nc; i++)
-	if (connection_live(i))
+	if (_conn[i].live())
 	    assert(has_connection(_conn[i].from(), _conn[i].to()));
 
     // check hookup next pointers, port counts
@@ -165,7 +165,7 @@ RouterT::check() const
 	    j = _first_conn[i][end_to];
 	    while (j >= 0) {
 		assert(j < _conn.size());
-		assert(_conn[j].to_element() == e && connection_live(j));
+		assert(_conn[j].to_element() == e && _conn[j].live());
 		if (_conn[j].to().port >= ninputs)
 		    ninputs = _conn[j].to().port + 1;
 		j = _conn[j].next_to();
@@ -182,7 +182,7 @@ RouterT::check() const
 	bv[i] = false;
     }
     for (int i = 0; i < _conn.size(); i++)
-	assert(connection_live(i) == (bool)bv[i]);
+	assert(_conn[i].live() == (bool)bv[i]);
 }
 
 
@@ -407,10 +407,10 @@ RouterT::add_connection(const PortT &hfrom, const PortT &hto,
     if (_free_conn >= 0) {
 	i = _free_conn;
 	_free_conn = _conn[i].next_from();
-	_conn[i] = ConnectionT(hfrom, hto, landmark, first_from[end_from], first_to[end_to]);
+	_conn[i] = ConnectionX(hfrom, hto, landmark, first_from[end_from], first_to[end_to]);
     } else {
 	i = _conn.size();
-	_conn.push_back(ConnectionT(hfrom, hto, landmark, first_from[end_from], first_to[end_to]));
+	_conn.push_back(ConnectionX(hfrom, hto, landmark, first_from[end_from], first_to[end_to]));
     }
 
     first_from[end_from] = first_to[end_to] = i;
@@ -425,10 +425,10 @@ RouterT::compact_connections()
     Vector<int> new_numbers(nc, -1);
     int last = nc;
     for (int i = 0; i < last; i++)
-	if (connection_live(i))
+	if (_conn[i].live())
 	    new_numbers[i] = i;
 	else {
-	    for (last--; last > i && !connection_live(last); last--)
+	    for (last--; last > i && !_conn[last].live(); last--)
 		/* nada */;
 	    if (last > i)
 		new_numbers[last] = i;
@@ -443,7 +443,7 @@ RouterT::compact_connections()
 
     _conn.resize(last);
     for (int i = 0; i < last; i++) {
-	ConnectionT &c = _conn[i];
+	ConnectionX &c = _conn[i];
 	if (c._next[end_from] >= 0)
 	    c._next[end_from] = new_numbers[c._next[end_from]];
 	if (c._next[end_to] >= 0)
@@ -544,10 +544,13 @@ RouterT::kill_bad_connections()
 	    kill_connection(ci);
 }
 
-void
-RouterT::change_connection_from(int c, PortT h)
+RouterT::conn_iterator
+RouterT::change_connection_from(const conn_iterator &it, PortT h)
 {
-    assert(h.router() == this);
+    assert(h.router() == this && it->router() == this);
+    conn_iterator next = it + 1;
+    int c = it._conn - _conn.begin();
+
     unlink_connection_from(c);
 
     _conn[c]._end[end_from] = h;
@@ -558,12 +561,17 @@ RouterT::change_connection_from(int c, PortT h)
     _conn[c]._next[end_from] = _first_conn[ei][end_from];
     _first_conn[ei][end_from] = c;
     _potential_duplicate_connections = true;
+
+    return next;
 }
 
-void
-RouterT::change_connection_to(int c, PortT h)
+RouterT::conn_iterator
+RouterT::change_connection_to(const conn_iterator &it, PortT h)
 {
-    assert(h.router() == this);
+    assert(h.router() == this && it->router() == this);
+    conn_iterator next = it + 1;
+    int c = it._conn - _conn.begin();
+
     unlink_connection_to(c);
 
     _conn[c]._end[end_to] = h;
@@ -574,16 +582,18 @@ RouterT::change_connection_to(int c, PortT h)
     _conn[c]._next[end_to] = _first_conn[ei][end_to];
     _first_conn[ei][end_to] = c;
     _potential_duplicate_connections = true;
+
+    return next;
 }
 
 RouterT::conn_iterator
-RouterT::begin_connections_touching(int eindex, int port, bool isoutput) const
+RouterT::find_connections_touching(int eindex, int port, bool isoutput) const
 {
     assert(eindex >= 0 && eindex < nelements());
     int c = _first_conn[eindex][isoutput];
     if (port >= 0) {
 	while (c >= 0 && _conn[c].port(isoutput) != port)
-	    c = _conn[c].next(isoutput);
+	    c = _conn[c]._next[isoutput];
 	port = (isoutput ? port + 2 : -port - 2);
     } else
 	port = (isoutput ? 1 : -1);
@@ -612,9 +622,8 @@ RouterT::conn_iterator::complex_step(const RouterT *router)
 	_conn = &router->_conn[c];
 }
 
-
-int
-RouterT::find_connection(const PortT &hfrom, const PortT &hto) const
+bool
+RouterT::has_connection(const PortT &hfrom, const PortT &hto) const
 {
     assert(hfrom.router() == this && hto.router() == this);
     int c = _first_conn[hfrom.eindex()][end_from];
@@ -623,38 +632,7 @@ RouterT::find_connection(const PortT &hfrom, const PortT &hto) const
 	    break;
 	c = _conn[c].next_from();
     }
-    return c;
-}
-
-void
-RouterT::find_connections_touching(const ElementT *e, bool isoutput, Vector<int> &v) const
-{
-    assert(e->router() == this);
-    int c = _first_conn[e->eindex()][isoutput];
-    v.clear();
-    while (c >= 0) {
-	v.push_back(c);
-	c = _conn[c].next(isoutput);
-    }
-}
-
-int
-RouterT::find_connection_id_touching(const PortT &port, bool isoutput) const
-{
-    assert(port.router() == this);
-    int c = _first_conn[port.eindex()][isoutput];
-    int p = port.port;
-    int result = -1;
-    while (c >= 0) {
-	if (_conn[c].port(isoutput) == p) {
-	    if (result == -1)
-		result = c;
-	    else
-		return -2;
-	}
-	c = _conn[c].next(isoutput);
-    }
-    return result;
+    return c >= 0;
 }
 
 void
@@ -668,39 +646,23 @@ RouterT::find_connections_touching(const PortT &port, bool isoutput, Vector<Port
     while (c >= 0) {
 	if (_conn[c].port(isoutput) == p)
 	    v.push_back(_conn[c].end(!isoutput));
-	c = _conn[c].next(isoutput);
+	c = _conn[c]._next[isoutput];
     }
 }
 
 void
-RouterT::find_connections_touching(const PortT &port, bool isoutput, Vector<int> &v) const
-{
-    assert(port.router() == this);
-    int c = _first_conn[port.eindex()][isoutput];
-    int p = port.port;
-    v.clear();
-    while (c >= 0) {
-	if (_conn[c].port(isoutput) == p)
-	    v.push_back(c);
-	c = _conn[c].next(isoutput);
-    }
-}
-
-void
-RouterT::find_connection_vector_touching(const ElementT *e, bool isoutput, Vector<int> &v) const
+RouterT::find_connection_vector_touching(const ElementT *e, bool isoutput, Vector<conn_iterator> &x) const
 {
     assert(e->router() == this);
-    v.clear();
+    x.clear();
     int c = _first_conn[e->eindex()][isoutput];
     while (c >= 0) {
 	int p = _conn[c].port(isoutput);
-	if (p >= v.size())
-	    v.resize(p + 1, -1);
-	if (v[p] >= 0)
-	    v[p] = -2;
-	else
-	    v[p] = c;
-	c = _conn[c].next(isoutput);
+	if (p >= x.size())
+	    x.resize(p + 1);
+	if (!x[p])
+	    x[p].assign(&_conn[c], isoutput ? p + 2 : -p - 2);
+	c = _conn[c]._next[isoutput];
     }
 }
 
@@ -713,9 +675,9 @@ RouterT::insert_before(const PortT &inserter, const PortT &h)
     int i = _first_conn[h.eindex()][end_to];
     while (i >= 0) {
 	int next = _conn[i].next_to();
-	if (_conn[i].to() == h && connection_live(i)
+	if (_conn[i].to() == h && _conn[i].live()
 	    && _conn[i].from() != inserter)
-	    change_connection_to(i, inserter);
+	    change_connection_to(conn_iterator(&_conn[i], 0), inserter);
 	i = next;
     }
     return true;
@@ -731,7 +693,7 @@ RouterT::insert_after(const PortT &inserter, const PortT &h)
     while (i >= 0) {
 	int next = _conn[i].next_from();
 	if (_conn[i].from() == h && _conn[i].to() != inserter)
-	    change_connection_from(i, inserter);
+	    change_connection_from(conn_iterator(&_conn[i], 0), inserter);
 	i = next;
     }
     return true;
@@ -895,7 +857,6 @@ RouterT::free_element(ElementT *e)
     int ei = e->eindex();
 
     // first, remove bad connections from other elements' connection lists
-    Vector<int> bad_from, bad_to;
     for (int c = _first_conn[ei][end_from]; c >= 0; c = _conn[c].next_from())
 	unlink_connection_to(c);
     for (int c = _first_conn[ei][end_to]; c >= 0; c = _conn[c].next_to())
@@ -1224,12 +1185,12 @@ int
 RouterT::check_pseudoelement(const ElementT *e, bool isoutput, const char *name, ErrorHandler *errh) const
 {
     static const char * const names[2] = {"input", "output"};
-    Vector<int> used;
+    Vector<conn_iterator> used;
     find_connection_vector_touching(e, !isoutput, used);
     if (e->nports(isoutput))
 	errh->error("%<%s%> pseudoelement %<%s%> may only be used as %s", name, names[isoutput], names[1-isoutput]);
     for (int i = 0; i < used.size(); ++i)
-	if (used[i] == -1)
+	if (!used[i])
 	    errh->error("%<%s%> %s %d missing", name, names[isoutput], i);
     return e->nports(!isoutput);
 }

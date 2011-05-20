@@ -173,17 +173,20 @@ combine_classifiers(RouterT *router, ElementT *from, int from_port, ElementT *to
   assert(from->type() == classifier_t && to->type() == classifier_t);
 
   // find where 'to' is heading for
-  Vector<int> first_hop, second_hop;
+  Vector<RouterT::conn_iterator> first_hop, second_hop;
   router->find_connection_vector_from(from, first_hop);
   router->find_connection_vector_from(to, second_hop);
 
   // check for weird configurations
   for (int i = 0; i < first_hop.size(); i++)
-    if (first_hop[i] < 0)
+    if (!first_hop[i].is_back())
       return false;
-  for (int i = 0; i < second_hop.size(); i++)
-    if (second_hop[i] < 0)
+  Vector<PortT> second_hop_to;
+  for (int i = 0; i < second_hop.size(); i++) {
+    if (!second_hop[i].is_back())
       return false;
+    second_hop_to.push_back(second_hop[i]->to());
+  }
   if (second_hop.size() == 0)
     return false;
 
@@ -209,12 +212,11 @@ combine_classifiers(RouterT *router, ElementT *from, int from_port, ElementT *to
   from->set_configuration(cp_unargvec(new_words));
 
   // change connections
-  router->kill_connection(router->find_connection(first_hop[from_port]));
+  router->kill_connection(first_hop[from_port]);
   for (int i = from_port + 1; i < first_hop.size(); i++)
     router->change_connection_from(first_hop[i], PortT(from, i + to_words.size() - 1));
-  const Vector<ConnectionT> &conn = router->connections();
-  for (int i = 0; i < second_hop.size(); i++)
-    router->add_connection(PortT(from, from_port + i), conn[second_hop[i]].to());
+  for (int i = 0; i < second_hop_to.size(); i++)
+    router->add_connection(PortT(from, from_port + i), second_hop_to[i]);
 
   return true;
 }
@@ -1009,7 +1011,7 @@ particular purpose.\n");
   Vector<ElementT *> classifiers;
   for (RouterT::iterator x = r->begin_elements(); x; x++)
     if (cid_name_map.get(x->type_name()) >= 0)
-      classifiers.push_back(x);
+      classifiers.push_back(x.get());
 
   // quit early if no Classifiers
   if (classifiers.size() == 0) {

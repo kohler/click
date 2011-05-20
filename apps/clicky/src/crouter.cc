@@ -454,7 +454,7 @@ void crouter::reachable_match_t::set_seed(const ConnectionT &conn)
 void crouter::reachable_match_t::set_seed_connections(ElementT *e, int port)
 {
     assert(port >= -1 && port < e->nports(_forward));
-    for (RouterT::conn_iterator cit = _router->begin_connections_touching(PortT(e, port), _forward);
+    for (RouterT::conn_iterator cit = _router->find_connections_touching(PortT(e, port), _forward);
 	 cit != _router->end_connections(); ++cit)
 	set_seed(*cit);
 }
@@ -466,9 +466,9 @@ bool crouter::reachable_match_t::add_matches(reachable_t &reach, ErrorHandler *d
 	if (glob_match(it->name(), _name)
 	    || glob_match(it->type_name(), _name)
 	    || (_name && _name[0] == '#' && glob_match(it->name(), _name.substring(1))))
-	    set_seed_connections(it, _port);
+	    set_seed_connections(it.get(), _port);
 	else if (it->resolved_router(_processing->scope())) {
-	    reachable_match_t sub_match(*this, it);
+	    reachable_match_t sub_match(*this, it.get());
 	    RouterT *sub_router = sub_match._router;
 	    if (sub_match.add_matches(reach, debug_errh)) {
 		assert(!reach.compound.get_pointer(sub_match._router_name));
@@ -477,7 +477,7 @@ bool crouter::reachable_match_t::add_matches(reachable_t &reach, ErrorHandler *d
 		       && sub_router->element(1)->name() == "output");
 		for (int p = 0; p < sub_router->element(_forward)->nports(!_forward); ++p)
 		    if (sub_match.get_seed(_forward, p))
-			set_seed_connections(it, p);
+			set_seed_connections(it.get(), p);
 	    }
 	}
     if (_seed.size()) {
@@ -509,7 +509,7 @@ void crouter::reachable_match_t::export_matches(reachable_t &reach, ErrorHandler
 	    }
 	if (any && it->resolved_router(_processing->scope())) {
 	    // spread matches from inputs through the compound
-	    reachable_match_t sub_match(*this, it);
+	    reachable_match_t sub_match(*this, it.get());
 	    RouterT *sub_router = sub_match._router;
 	    for (int p = 0; p < it->nports(!_forward); ++p)
 		if (_seed[pidx + p])

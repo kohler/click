@@ -1,0 +1,23 @@
+%script
+
+click-undead CONFIG
+
+%file CONFIG
+Idle -> Counter -> td1 :: ToDump(a);
+is :: InfiniteSource -> ss :: StaticSwitch(1);
+  ss[0] -> ToDump(c);
+  ss[1] -> q :: Queue -> rr :: RoundRobinSched;
+  Idle -> [1]rr;
+  rr -> td2 :: ToDump(b);
+
+%expect stderr
+
+%expect stdout
+is :: InfiniteSource;
+q :: Queue;
+td2 :: ToDump(b);
+is -> q
+    -> td2;
+
+%ignorex
+#.*

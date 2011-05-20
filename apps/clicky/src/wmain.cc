@@ -680,7 +680,7 @@ void wmain::fill_elements(RouterT *r, const String &compound, bool only_primitiv
 	element_lister el;
 	el.compound = compound;
 	el.name = i->name();
-	el.element = i;
+	el.element = i.get();
 
 	VariableEnvironment new_scope(0);
 	ElementClassT *eclass = i->resolve(scope, &new_scope);

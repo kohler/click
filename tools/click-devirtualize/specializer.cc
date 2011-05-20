@@ -329,21 +329,19 @@ Specializer::create_connector_methods(SpecializedClass &spc)
   CxxClass *cxxc = spc.cxxc;
 
   // create mangled names of attached push and pull functions
-  const Vector<ConnectionT> &conn = _router->connections();
-  int nhook = _router->nconnections();
   Vector<String> input_class(_ninputs[eindex], String());
   Vector<String> output_class(_noutputs[eindex], String());
   Vector<int> input_port(_ninputs[eindex], -1);
   Vector<int> output_port(_noutputs[eindex], -1);
-  for (int i = 0; i < nhook; i++) {
-    if (conn[i].from_eindex() == eindex) {
-      output_class[conn[i].from_port()] = enew_cxx_type(conn[i].to_eindex());
-      output_port[conn[i].from_port()] = conn[i].to_port();
-    }
-    if (conn[i].to_eindex() == eindex) {
-      input_class[conn[i].to_port()] = enew_cxx_type(conn[i].from_eindex());
-      input_port[conn[i].to_port()] = conn[i].from_port();
-    }
+  for (RouterT::conn_iterator it = _router->find_connections_from(_router->element(eindex));
+       it != _router->end_connections(); ++it) {
+      output_class[it->from_port()] = enew_cxx_type(it->to_eindex());
+      output_port[it->from_port()] = it->to_port();
+  }
+  for (RouterT::conn_iterator it = _router->find_connections_to(_router->element(eindex));
+       it != _router->end_connections(); ++it) {
+      input_class[it->to_port()] = enew_cxx_type(it->from_eindex());
+      input_port[it->to_port()] = it->from_port();
   }
 
   // create input_pull

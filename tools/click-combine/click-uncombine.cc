@@ -95,7 +95,7 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
   // find all links
   Vector<ElementT *> links;
   for (RouterT::type_iterator x = r->begin_elements(link_type); x; x++)
-    links.push_back(x);
+    links.push_back(x.get());
 
   for (int i = 0; i < links.size(); i++) {
     // check configuration string for correctness
@@ -157,9 +157,6 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
 {
   assert(compname.back() == '/');
 
-  int nh = r->nconnections();
-  const Vector<ConnectionT> &conn = r->connections();
-
   // mark endpoints
   for (int i = 0; i < component_endpoints.size(); i++)
     live[component_endpoints[i]->eindex()] = 1;
@@ -174,16 +171,13 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
   bool changed;
   do {
     changed = false;
-    for (int i = 0; i < nh; i++)
-      if (conn[i].dead())
-	/* nada */;
-      else if (live[conn[i].from_eindex()] && !live[conn[i].to_eindex()]) {
-	live[conn[i].to_eindex()] = 1;
-	changed = true;
-      } else if (live[conn[i].to_eindex()] && !live[conn[i].from_eindex()]) {
-	live[conn[i].from_eindex()] = 1;
-	changed = true;
-      }
+    for (RouterT::conn_iterator it = r->begin_connections();
+	 it != r->end_connections(); ++it) {
+	if (live[it->from_eindex()] && !live[it->to_eindex()])
+	    live[it->to_eindex()] = changed = true;
+	else if (live[it->to_eindex()] && !live[it->from_eindex()])
+	    live[it->from_eindex()] = changed = true;
+    }
   } while (changed);
 
   // print names of lives

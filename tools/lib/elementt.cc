@@ -90,9 +90,9 @@ ElementT::kill()
     if (_type) {
 	if (_owner) {
 	    RouterT::conn_iterator ci;
-	    while ((ci = _owner->begin_connections_from(this)) != _owner->end_connections())
+	    while ((ci = _owner->find_connections_from(this)))
 		_owner->kill_connection(ci);
-	    while ((ci = _owner->begin_connections_to(this)) != _owner->end_connections())
+	    while ((ci = _owner->find_connections_to(this)))
 		_owner->kill_connection(ci);
 	}
 	_type->unuse();
@@ -271,16 +271,6 @@ ConnectionT::ConnectionT(const PortT &from, const PortT &to, const LandmarkT &lm
 {
     _end[end_to] = to;
     _end[end_from] = from;
-    _next[0] = _next[1] = -1;
-}
-
-ConnectionT::ConnectionT(const PortT &from, const PortT &to, const LandmarkT &lm, int next_from, int next_to)
-    : _landmark(lm)
-{
-    _end[end_to] = to;
-    _end[end_from] = from;
-    _next[end_to] = next_to;
-    _next[end_from] = next_from;
 }
 
 String

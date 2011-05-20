@@ -653,16 +653,14 @@ parse_columns(const String &s, int &which, int &count)
 }
 
 extern "C" {
-static const Vector<ConnectionT> *conn_compar_connvec;
 static bool conn_compar_from;
 static int
 conn_compar(const void *v1, const void *v2)
 {
-    const int *i1 = (const int *)v1, *i2 = (const int *)v2;
-    const ConnectionT &c1 = (*conn_compar_connvec)[*i1];
-    const ConnectionT &c2 = (*conn_compar_connvec)[*i2];
-    const PortT &p1 = (conn_compar_from ? c1.from() : c1.to());
-    const PortT &p2 = (conn_compar_from ? c2.from() : c2.to());
+    const ConnectionT *c1 = (const ConnectionT *)v1;
+    const ConnectionT *c2 = (const ConnectionT *)v2;
+    const PortT &p1 = (conn_compar_from ? c1->from() : c1->to());
+    const PortT &p2 = (conn_compar_from ? c2->from() : c2->to());
     if (p1.element == p2.element)
 	return p1.port - p2.port;
     else
@@ -678,12 +676,12 @@ element_name_compar(const void *v1, const void *v2)
 }
 
 static void
-sort_connections(RouterT *r, Vector<int> &conn, bool from)
+sort_connections(Vector<ConnectionT> &conn, bool from)
 {
-    conn_compar_connvec = &r->connections();
-    conn_compar_from = from;
-    if (conn.size())
-	qsort(&conn[0], conn.size(), sizeof(int), conn_compar);
+    if (conn.size()) {
+	conn_compar_from = from;
+	qsort(&conn[0], conn.size(), sizeof(ConnectionT), conn_compar);
+    }
 }
 
 
@@ -742,7 +740,7 @@ ElementsOutput::create_elements()
 {
     if (!_have_elements) {
 	for (RouterT::iterator x = _router->begin_elements(); x; ++x)
-	    _elements.push_back(x);
+	    _elements.push_back(x.get());
 	if (_elements.size())	// sort by name
 	    qsort(&_elements[0], _elements.size(), sizeof(ElementT *), element_name_compar);
 	_have_elements = true;
@@ -758,7 +756,7 @@ ElementsOutput::create_entries()
 	HashTable<ElementClassT *, int> done_types(-1);
 	for (RouterT::iterator x = _router->begin_elements(); x; ++x) {
 	    if (do_elements)
-		_entries.push_back(x);
+		_entries.push_back(x.get());
 	    if (do_types && done_types[x->type()] < 0) {
 		ElementT *fake = new ElementT(x->type_name(), x->type(), "", LandmarkT(type_landmark));
 		_entries.push_back(fake);
@@ -880,42 +878,46 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_ou
 		}
 	    }
 	} else if (tag == "inputconnections" && port >= 0 && !is_output) {
-	    Vector<int> conn;
-	    _router->find_connections_to(PortT(e, port), conn);
-	    if (conn.size() == 0) {
+	    Vector<ConnectionT> conn;
+	    for (RouterT::conn_iterator it = _router->find_connections_to(PortT(e, port));
+		 it != _router->end_connections(); ++it)
+		conn.push_back(*it);
+	    if (conn.empty()) {
 		String text = attrs["noentry"];
 		if (!text)
 		    text = _main_attrs["noinputconnection"];
 		run_template(text, e, port, false);
 	    } else {
-		sort_connections(_router, conn, true);
+		sort_connections(conn, true);
 		String subsep = attrs["sep"];
 		String text = attrs["entry"];
 		if (!text)
 		    text = _main_attrs["inputconnection"];
-		for (int i = 0; i < conn.size(); i++) {
-		    const ConnectionT &c = _router->connection(conn[i]);
-		    run_template(text, c.from_element(), c.from_port(), true);
+		for (Vector<ConnectionT>::iterator it = conn.begin();
+		     it != conn.end(); ++it) {
+		    run_template(text, it->from_element(), it->from_port(), true);
 		    _sep = subsep;
 		}
 	    }
 	} else if (tag == "outputconnections" && port >= 0 && is_output) {
-	    Vector<int> conn;
-	    _router->find_connections_from(PortT(e, port), conn);
-	    if (conn.size() == 0) {
+	    Vector<ConnectionT> conn;
+	    for (RouterT::conn_iterator it = _router->find_connections_from(PortT(e, port));
+		 it != _router->end_connections(); ++it)
+		conn.push_back(*it);
+	    if (conn.empty()) {
 		String text = attrs["noentry"];
 		if (!text)
 		    text = _main_attrs["nooutputconnection"];
 		run_template(text, e, port, true);
 	    } else {
-		sort_connections(_router, conn, false);
+		sort_connections(conn, false);
 		String subsep = attrs["sep"];
 		String text = attrs["entry"];
 		if (!text)
 		    text = _main_attrs["outputconnection"];
-		for (int i = 0; i < conn.size(); i++) {
-		    const ConnectionT &c = _router->connection(conn[i]);
-		    run_template(text, c.to_element(), c.to_port(), false);
+		for (Vector<ConnectionT>::iterator it = conn.begin();
+		     it != conn.end(); ++it) {
+		    run_template(text, it->to_element(), it->to_port(), false);
 		    _sep = subsep;
 		}
 	    }
@@ -1168,11 +1170,11 @@ pretty_process_dot(const char *infile, bool file_is_expr, const char *outfile,
     }
 
     // print all connections
-    const Vector<ConnectionT> &conns = pr.r->connections();
-    for (const ConnectionT *c = conns.begin(); c != conns.end(); c++)
+    for (RouterT::conn_iterator it = pr.r->begin_connections();
+	 it != pr.r->end_connections(); ++it)
 	fprintf(pr.outf, "  \"%s\":o%d -> \"%s\":i%d;\n",
-		c->from_element()->name_c_str(), c->from_port(),
-		c->to_element()->name_c_str(), c->to_port());
+		it->from_element()->name_c_str(), it->from_port(),
+		it->to_element()->name_c_str(), it->to_port());
 
     fprintf(pr.outf, "}\n");
 }
@@ -1201,15 +1203,15 @@ graph\n[ hierarchic 1\n\
     }
 
     // print all connections
-    const Vector<ConnectionT> &conns = pr.r->connections();
-    for (const ConnectionT *c = conns.begin(); c != conns.end(); c++) {
-	fprintf(pr.outf, "  edge\n  [ source %d\n    target %d\n", c->from_eindex(), c->to_eindex());
+    for (RouterT::conn_iterator it = pr.r->begin_connections();
+	 it != pr.r->end_connections(); ++it) {
+	fprintf(pr.outf, "  edge\n  [ source %d\n    target %d\n", it->from_eindex(), it->to_eindex());
 
-	double amt_from = 1. / c->from_element()->noutputs();
-	double first_from = -(c->from_element()->noutputs() - 1.) * amt_from;
-	double amt_to = 1. / c->to_element()->ninputs();
-	double first_to = -(c->to_element()->ninputs() - 1.) * amt_to;
-	fprintf(pr.outf, "    edgeAnchor\n    [ xSource %f\n      xTarget %f\n      ySource 1\n      yTarget -1\n    ]\n", first_from + c->from_port() * amt_from, first_to + c->to_port() * amt_to);
+	double amt_from = 1. / it->from_element()->noutputs();
+	double first_from = -(it->from_element()->noutputs() - 1.) * amt_from;
+	double amt_to = 1. / it->to_element()->ninputs();
+	double first_to = -(it->to_element()->ninputs() - 1.) * amt_to;
+	fprintf(pr.outf, "    edgeAnchor\n    [ xSource %f\n      xTarget %f\n      ySource 1\n      yTarget -1\n    ]\n", first_from + it->from_port() * amt_from, first_to + it->to_port() * amt_to);
 	fprintf(pr.outf, "  ]\n");
     }
 
@@ -1255,10 +1257,10 @@ pretty_process_graphml(const char *infile, bool file_is_expr, const char *outfil
 
     // print all connections
     int edgeid = 0;
-    const Vector<ConnectionT> &conns = pr.r->connections();
-    for (const ConnectionT *c = conns.begin(); c != conns.end(); c++)
+    for (RouterT::conn_iterator it = pr.r->begin_connections();
+	 it != pr.r->end_connections(); ++it)
 	fprintf(pr.outf, "  <edge id=\"e%d\" source=\"n%d\" target=\"n%d\" sourceport=\"o%d\" targetport=\"i%d\" />\n",
-		edgeid++, c->from_eindex(), c->to_eindex(), c->from_port(), c->to_port());
+		edgeid++, it->from_eindex(), it->to_eindex(), it->from_port(), it->to_port());
 
     fprintf(pr.outf, "</graph>\n</graphml>\n");
 }

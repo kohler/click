@@ -74,15 +74,11 @@ AdjacencyMatrix::init(RouterT *r)
   }
 
   // add connections
-  int nh = r->nconnections();
-  if (nh) {
-    // avoid bounds checks
-    const ConnectionT *conn = &(r->connections()[0]);
-    for (int i = 0; i < nh; i++)
-      if (conn[i].live() && conn[i].from_eindex() != conn[i].to_eindex())
-	_x[ conn[i].from_eindex() + (conn[i].to_eindex()<<cap) ] |=
-	  connection_indicator(conn[i].from_port(), conn[i].to_port());
-  }
+  for (RouterT::conn_iterator it = r->begin_connections();
+       it != r->end_connections(); ++it)
+      if (it->from_eindex() != it->to_eindex())
+	  _x[it->from_eindex() + (it->to_eindex() << cap)] |=
+	      connection_indicator(it->from_port(), it->to_port());
 
   _output_0_of.clear();
 }
@@ -126,15 +122,11 @@ AdjacencyMatrix::update(const Vector<int> &changed_eindexes)
   }
 
   // now set new connections
-  int nh = r->nconnections();
-  if (nh) {
-    // avoid bounds checks
-    const ConnectionT *conn = &(r->connections()[0]);
-    for (int i = 0; i < nh; i++)
-      if (conn[i].live() && conn[i].from_eindex() != conn[i].to_eindex())
-	_x[ conn[i].from_eindex() + (conn[i].to_eindex()<<cap) ] |=
-	  connection_indicator(conn[i].from_port(), conn[i].to_port());
-  }
+  for (RouterT::conn_iterator it = r->begin_connections();
+       it != r->end_connections(); ++it)
+      if (it->from_eindex() != it->to_eindex())
+	  _x[it->from_eindex() + (it->to_eindex() << cap)] |=
+	      connection_indicator(it->from_port(), it->to_port());
 
   _output_0_of.clear();
 }
@@ -145,15 +137,15 @@ AdjacencyMatrix::init_pattern() const
   // checking for a single connection from output 0
   RouterT *r = _router;
   Vector<int> output_0(_n, -1);
-  const Vector<ConnectionT> &conn = r->connections();
-  for (int i = 0; i < conn.size(); i++)
-    if (conn[i].live() && conn[i].from_port() == 0) {
-      int fromi = conn[i].from_eindex();
-      if (conn[i].to_eindex() == fromi || output_0[fromi] >= 0)
-	output_0[fromi] = -2;
-      else if (output_0[fromi] == -1)
-	output_0[fromi] = conn[i].to_eindex();
-    }
+  for (RouterT::conn_iterator it = r->begin_connections();
+       it != r->end_connections(); ++it)
+      if (it->from_port() == 0) {
+	  int fromi = it->from_eindex();
+	  if (it->to_eindex() == fromi || output_0[fromi] >= 0)
+	      output_0[fromi] = -2;
+	  else if (output_0[fromi] == -1)
+	      output_0[fromi] = it->to_eindex();
+      }
 
   // set _output_0_of
   _output_0_of.assign(_n, -1);
@@ -224,11 +216,12 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
       // 'input' or 'output'). In this case, the match to E2 will be the
       // single element connected from (match[E1])[0]. Find it directly so we
       // don't have to scan over all elements in the input.
-      PortT output(input_r->element(match[output_0_of[match_eindex]]), 0), result;
-      if (rover > 0 || !(result = input_r->find_connection_from(output)))
+      PortT output(input_r->element(match[output_0_of[match_eindex]]), 0);
+      RouterT::conn_iterator it = input_r->find_connections_from(output);
+      if (rover > 0 || !it.is_back())
 	max_rover = -1;
       else {
-	rover = result.eindex();
+	rover = it->to().eindex();
 	max_rover = rover + 1;
       }
     } else
@@ -290,16 +283,15 @@ bool
 check_subgraph_isomorphism(const RouterT *pat, const RouterT *input,
 			   const Vector<ElementT *> &match)
 {
-  // check connections
-  const Vector<ConnectionT> &conn = pat->connections();
-  int nh = conn.size();
-  for (int i = 0; i < nh; i++) {
-    int fi = conn[i].from_eindex(), ti = conn[i].to_eindex();
-    if (!match[fi] || !match[ti])
-      continue;
-    if (!input->has_connection(PortT(match[fi], conn[i].from_port()),
-			       PortT(match[ti], conn[i].to_port())))
-      return false;
-  }
-  return true;
+    // check connections
+    for (RouterT::conn_iterator it = pat->begin_connections();
+	 it != pat->end_connections(); ++it) {
+	int fi = it->from_eindex(), ti = it->to_eindex();
+	if (!match[fi] || !match[ti])
+	    continue;
+	if (!input->has_connection(PortT(match[fi], it->from_port()),
+				   PortT(match[ti], it->to_port())))
+	    return false;
+    }
+    return true;
 }

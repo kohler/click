@@ -154,8 +154,8 @@ struct PortT {
 class ConnectionT { public:
 
     inline ConnectionT();
-    ConnectionT(const PortT &, const PortT &, const LandmarkT & = LandmarkT::empty_landmark());
-    ConnectionT(const PortT &, const PortT &, const LandmarkT &, int, int);
+    ConnectionT(const PortT &from, const PortT &to,
+		const LandmarkT &landmark = LandmarkT::empty_landmark());
 
     typedef PortT::unspecified_bool_type unspecified_bool_type;
     inline operator unspecified_bool_type() const;
@@ -192,12 +192,6 @@ class ConnectionT { public:
     String decorated_landmark() const	{ return _landmark.decorated_str(); }
     const LandmarkT &landmarkt() const	{ return _landmark; }
 
-    int next(bool isoutput) const {
-	return _next[isoutput];
-    }
-    int next_from() const		{ return next(end_from); }
-    int next_to() const			{ return next(end_to); }
-
     String unparse(bool with_class = false) const;
     String unparse_end(bool isoutput, bool with_class = false) const {
 	return end(isoutput).unparse(isoutput, with_class);
@@ -207,7 +201,6 @@ class ConnectionT { public:
 
     PortT _end[2];
     LandmarkT _landmark;
-    int _next[2];
 
     friend class RouterT;
 
@@ -308,9 +301,7 @@ operator>=(const PortT &h1, const PortT &h2)
 
 inline
 ConnectionT::ConnectionT()
-    : _landmark()
 {
-    _next[0] = _next[1] = -1;
 }
 
 inline

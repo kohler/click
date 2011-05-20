@@ -70,15 +70,15 @@ Signatures::check_port_numbers(int eid, const ProcessingT &pt)
   int ni = e->ninputs(), no = e->noutputs();
   for (int i = 0; i < ni; i++)
       if (pt.input_is_pull(eid, i)) {
-	  const PortT &h = _router->find_connection_to(PortT(e, i));
-	  if (h.element)
-	      new_ports.push_back(h.port);
+	  RouterT::conn_iterator it = _router->find_connections_to(PortT(e, i));
+	  if (it.is_back())
+	      new_ports.push_back(it->from().port);
       }
   for (int i = 0; i < no; i++)
       if (pt.output_is_push(eid, i)) {
-	  const PortT &h = _router->find_connection_from(PortT(e, i));
-	  if (h.element)
-	      new_ports.push_back(h.port);
+	  RouterT::conn_iterator it = _router->find_connections_from(PortT(e, i));
+	  if (it.is_back())
+	      new_ports.push_back(it->to().port);
       }
 
   // check for no interesting connections
@@ -129,15 +129,15 @@ Signatures::next_phase(int phase, int eid, Vector<int> &new_sigid,
   int ni = e->ninputs(), no = e->noutputs();
   for (int i = 0; i < ni; i++)
       if (pt.input_is_pull(eid, i)) {
-	  const PortT &h = _router->find_connection_to(PortT(e, i));
-	  if (h.element)
-	      new_connections.push_back(_sigid[h.eindex()]);
+	  RouterT::conn_iterator it = _router->find_connections_to(PortT(e, i));
+	  if (it.is_back())
+	      new_connections.push_back(_sigid[it->from().eindex()]);
       }
   for (int i = 0; i < no; i++)
       if (pt.output_is_push(eid, i)) {
-	  const PortT &h = _router->find_connection_from(PortT(e, i));
-	  if (h.element)
-	      new_connections.push_back(_sigid[h.eindex()]);
+	  RouterT::conn_iterator it = _router->find_connections_from(PortT(e, i));
+	  if (it.is_back())
+	      new_connections.push_back(_sigid[it->to().eindex()]);
       }
 
   // add new node to list

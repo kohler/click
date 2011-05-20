@@ -156,7 +156,7 @@ class ProcessingT { public:
     /** @brief Set bits in @a sink that are connected to ports in @a source.
      * @param source source ports
      * @param source_isoutput whether @a source represents output ports
-     * @param[out] sink sink ports
+     * @param[out] sink sink ports (input if @a source_isoutput, and vice versa)
      */
     void follow_connections(const Bitvector &source, bool source_isoutput, Bitvector &sink) const;
     void follow_connections(const PortT &source, bool source_isoutput, Bitvector &sink) const;

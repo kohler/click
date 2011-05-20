@@ -307,7 +307,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 {
     // add fake connections for agnostics
     LandmarkT agnostic_landmark("<agnostic>");
-    Vector<ConnectionT> conn = _router->connections();
+    Vector<RouterT::ConnectionX> conn = _router->connections();
     Bitvector bv;
     for (int i = 0; i < ninput_pidx(); i++)
 	if (_processing[end_to][i] == pagnostic) {
@@ -319,7 +319,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 	    forward_flow(flow_code(e), port, &bv, noutputs, errh);
 	    for (int j = 0; j < noutputs; j++)
 		if (bv[j] && _processing[end_from][opidx + j] == pagnostic)
-		    conn.push_back(ConnectionT(PortT(e, j), PortT(e, port), agnostic_landmark));
+		    conn.push_back(RouterT::ConnectionX(PortT(e, j), PortT(e, port), agnostic_landmark, -1, -1));
 	}
 
     // spread personalities
@@ -352,7 +352,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 		    changed = true;
 		} else if (((pf ^ pt) & 3) != 0) {
 		    processing_error(conn[c], pf, errh);
-		    conn[c] = ConnectionT();
+		    conn[c] = RouterT::ConnectionX();
 		}
 		break;
 
@@ -440,12 +440,12 @@ ProcessingT::check_nports(const ElementT *e, const int *input_used, const int *o
 	errh->lerror(e->decorated_landmark(), "too few inputs for %<%s%>, %s%d required", e->name_c_str(), (ninlo == ninhi ? "" : "at least "), ninlo);
 	ninputs = ninlo;
     } else if (ninputs > ninhi) {
-	const Vector<ConnectionT> &conn = _router->connections();
+	const Vector<RouterT::ConnectionX> &conn = _router->connections();
 	errh->lerror(e->decorated_landmark(), "too many inputs for %<%s%>, %s%d allowed", e->name_c_str(), (ninlo == ninhi ? "" : "at most "), ninhi);
 	for (int i = ninhi; i < e->ninputs(); i++)
 	    if (input_used[i] >= 0)
 		errh->lmessage(conn[input_used[i]].decorated_landmark(),
-			       "  %<%s%> input %d used here", e->name_c_str(), i);
+			       "%<%s%> input %d used here", e->name_c_str(), i);
 	ninputs = ninhi;
     }
 
@@ -457,12 +457,12 @@ ProcessingT::check_nports(const ElementT *e, const int *input_used, const int *o
     if (e->noutputs() < noutlo)
 	errh->lerror(e->decorated_landmark(), "too few outputs for %<%s%>%s, %s%d required", e->name_c_str(), equalmsg.c_str(), (noutlo == nouthi ? "" : "at least "), noutlo);
     else if (e->noutputs() > nouthi) {
-	const Vector<ConnectionT> &conn = _router->connections();
+	const Vector<RouterT::ConnectionX> &conn = _router->connections();
 	errh->lerror(e->decorated_landmark(), "too many outputs for %<%s%>%s, %s%d allowed", e->name_c_str(), equalmsg.c_str(), (noutlo == nouthi ? "" : "at most "), nouthi);
 	for (int i = nouthi; i < e->noutputs(); i++)
 	    if (output_used[i] >= 0)
 		errh->lmessage(conn[output_used[i]].decorated_landmark(),
-			       "  %<%s%> output %d used here", e->name_c_str(), i);
+			       "%<%s%> output %d used here", e->name_c_str(), i);
     }
 
     return;
@@ -478,7 +478,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
     Vector<int> output_used(noutput_pidx(), -1);
 
     // Check each hookup to ensure it doesn't reuse a port
-    const Vector<ConnectionT> &conn = _router->connections();
+    const Vector<RouterT::ConnectionX> &conn = _router->connections();
     for (int c = 0; c < conn.size(); c++) {
 	if (conn[c].dead())
 	    continue;
@@ -773,7 +773,7 @@ ProcessingT::follow_connections(const PortT &source, bool source_isoutput,
 				Bitvector &sink) const
 {
     assert(sink.size() == npidx(!source_isoutput));
-    for (RouterT::conn_iterator it = _router->begin_connections_touching(source, source_isoutput);
+    for (RouterT::conn_iterator it = _router->find_connections_touching(source, source_isoutput);
 	 it != _router->end_connections(); ++it)
 	sink[pidx(*it, !source_isoutput)] = true;
 }

@@ -197,20 +197,20 @@ generate_router(RouterT *r, FILE *f, String indent, ErrorHandler *errh)
 	    fprintf(f, " ninputs=\"%d\" noutputs=\"%d\"",
 		    e->ninputs(), e->noutputs());
 	    if (e->ninputs() || e->noutputs())
-		fprintf(f, " processing=\"%s\"", processing.processing_code(e).c_str());
+		fprintf(f, " processing=\"%s\"", processing.processing_code(e.get()).c_str());
 	    if (e->config())
 		fprintf(f, " config=\"%s\"", xml_quote(e->config()).c_str());
 	    fprintf(f, " />\n");
 	}
 
     // print connections
-    const Vector<ConnectionT> &conn = r->connections();
-    for (int i = 0; i < conn.size(); i++) {
-	int p = processing.output_processing(conn[i].from());
+    for (RouterT::conn_iterator it = r->begin_connections();
+	 it != r->end_connections(); ++it) {
+	int p = processing.output_processing(it->from());
 	fprintf(f, "%s<connection from=\"%s\" fromport=\"%d\" to=\"%s\" toport=\"%d\" processing=\"%c\" />\n",
 		indent.c_str(),
-		conn[i].from_element()->name_c_str(), conn[i].from_port(),
-		conn[i].to_element()->name_c_str(), conn[i].to_port(),
+		it->from_element()->name_c_str(), it->from_port(),
+		it->to_element()->name_c_str(), it->to_port(),
 		ProcessingT::processing_letters[p]);
     }
 }

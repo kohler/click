@@ -84,9 +84,9 @@ Matcher::Matcher(RouterT *pat, AdjacencyMatrix *pat_m,
     else if (x->tunnel_connected())
       errh->lerror(x->landmark(), "pattern has active connection tunnels");
     else if (x->name() == "input" && !_pat_input)
-      _pat_input = x;
+      _pat_input = x.get();
     else if (x->name() == "output" && !_pat_output)
-      _pat_output = x;
+      _pat_output = x.get();
     else
       errh->lerror(x->landmark(), "connection tunnel with funny name '%s'", x->name_c_str());
   }
@@ -99,17 +99,17 @@ Matcher::~Matcher()
 bool
 Matcher::check_into(const PortT &houtside, const PortT &hinside)
 {
-  const Vector<ConnectionT> &pconn = _pat->connections();
   PortT phinside(_back_match[hinside.eindex()], hinside.port);
   PortT success;
   // now look for matches
-  for (int i = 0; i < pconn.size(); i++)
-    if (pconn[i].to() == phinside && pconn[i].from_element() == _pat_input
-	&& (success.dead() || pconn[i].from() < success)) {
+  for (RouterT::conn_iterator it = _pat->find_connections_to(phinside);
+       it != _pat->end_connections(); ++it)
+    if (it->from_element() == _pat_input
+	&& (success.dead() || it->from() < success)) {
       Vector<PortT> pfrom_phf, from_houtside;
       // check that it's valid: all connections from tunnels are covered
       // in body
-      _pat->find_connections_from(pconn[i].from(), pfrom_phf);
+      _pat->find_connections_from(it->from(), pfrom_phf);
       _body->find_connections_from(houtside, from_houtside);
       for (int j = 0; j < pfrom_phf.size(); j++) {
 	PortT want(_match[pfrom_phf[j].eindex()], pfrom_phf[j].port);
@@ -117,7 +117,7 @@ Matcher::check_into(const PortT &houtside, const PortT &hinside)
 	  goto no_match;
       }
       // success: save it
-      success = pconn[i].from();
+      success = it->from();
      no_match: ;
     }
   // if succeeded, save it
@@ -132,17 +132,17 @@ Matcher::check_into(const PortT &houtside, const PortT &hinside)
 bool
 Matcher::check_out_of(const PortT &hinside, const PortT &houtside)
 {
-  const Vector<ConnectionT> &pconn = _pat->connections();
   PortT phinside(_back_match[hinside.eindex()], hinside.port);
   PortT success;
   // now look for matches
-  for (int i = 0; i < pconn.size(); i++)
-    if (pconn[i].from() == phinside && pconn[i].to_element() == _pat_output
-	&& (success.dead() || pconn[i].to() < success)) {
+  for (RouterT::conn_iterator it = _pat->find_connections_from(phinside);
+       it != _pat->end_connections(); ++it)
+    if (it->to_element() == _pat_output
+	&& (success.dead() || it->to() < success)) {
       Vector<PortT> pto_pht, to_houtside;
       // check that it's valid: all connections to tunnels are covered
       // in body
-      _pat->find_connections_to(pconn[i].to(), pto_pht);
+      _pat->find_connections_to(it->to(), pto_pht);
       _body->find_connections_to(houtside, to_houtside);
       for (int j = 0; j < pto_pht.size(); j++) {
 	PortT want(_match[pto_pht[j].eindex()], pto_pht[j].port);
@@ -150,7 +150,7 @@ Matcher::check_out_of(const PortT &hinside, const PortT &houtside)
 	  goto no_match;
       }
       // success: save it
-      success = pconn[i].to();
+      success = it->to();
      no_match: ;
     }
   // if succeeded, save it
@@ -196,13 +196,9 @@ Matcher::check_match()
 
   // find the pattern ports any cross-pattern jumps correspond to
   //fprintf(stderr, "XPJ\n");
-  const Vector<ConnectionT> &conn = _body->connections();
-  int nhook = conn.size();
-
-  for (int i = 0; i < nhook; i++) {
-    if (conn[i].dead())
-      continue;
-    const PortT &hf = conn[i].from(), &ht = conn[i].to();
+  for (RouterT::conn_iterator it = _body->begin_connections();
+       it != _body->end_connections(); ++it) {
+    const PortT &hf = it->from(), &ht = it->to();
     ElementT *pf = _back_match[hf.eindex()], *pt = _back_match[ht.eindex()];
     if (pf && pt) {
       if (!_pat->has_connection(PortT(pf, hf.port), PortT(pt, ht.port)))
@@ -218,13 +214,13 @@ Matcher::check_match()
 
   // check for unconnected tunnels in the pattern
   //fprintf(stderr, "UNC\n");
-  const Vector<ConnectionT> &pconn = _pat->connections();
-  for (int i = 0; i < pconn.size(); i++) {
-    if (pconn[i].from_element() == _pat_input
-	&& pconn[i].from().index_in(_to_pp_to) < 0)
+  for (RouterT::conn_iterator it = _pat->begin_connections();
+       it != _body->end_connections(); ++it) {
+    if (it->from_element() == _pat_input
+	&& it->from().index_in(_to_pp_to) < 0)
       return false;
-    if (pconn[i].to_element() == _pat_output
-	&& pconn[i].to().index_in(_from_pp_from) < 0)
+    if (it->to_element() == _pat_output
+	&& it->to().index_in(_from_pp_from) < 0)
       return false;
   }
 
