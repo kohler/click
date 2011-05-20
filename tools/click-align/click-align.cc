@@ -589,14 +589,21 @@ particular purpose.\n");
      */
     for (RouterT::conn_iterator it = router->begin_connections();
 	 it != router->end_connections(); ++it)
-	if (it->to_element()->type() == align_class
-	    && it->from_element()->type() == align_class) {
-	    // skip over it->from()
-	    RouterT::conn_iterator above = router->find_connections_to(it->from()),
-		below = router->find_connections_from(it->from());
-	    if (below.is_back() || above.is_back())
-		while (above)
-		    above = router->change_connection_to(above, it->to());
+	if (it->to_element()->type() == align_class && it->to_port() == 0
+	    && it->from_element()->type() == align_class && it->from_port() == 0) {
+	    RouterT::conn_iterator it0 = router->find_connections_to(it->from()),
+		it1 = router->find_connections_from(it->from()),
+		it2 = router->find_connections_to(it->to());
+	    Alignment afrom(it->from_element()), ato(it->to_element());
+	    if (afrom <= ato)
+		/* The BOTTOM alignment is redundant.  It will be removed later. */;
+	    else if (it2.is_back() && it0.is_back())
+		router->change_connection_from(it2, it0->from());
+	    else if (it1.is_back()) {
+		while (it0)
+		    it0 = router->change_connection_to(it0, it->to());
+		router->erase(it1);
+	    }
 	}
 
     /*

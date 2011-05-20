@@ -1,6 +1,7 @@
 #ifndef ALIGNMENT_HH
 #define ALIGNMENT_HH
 #include <click/string.hh>
+class ElementT;
 
 class Alignment { public:
 
@@ -14,6 +15,8 @@ class Alignment { public:
 	: _modulus(modulus), _offset(offset) {
 	assert(modulus > 0 && offset >= 0 && offset < modulus);
     }
+    /** @brief Construct an alignment from an Align element's configuration. */
+    Alignment(ElementT *element);
     /** @brief Return a bad alignment.
      *
      * A bad alignment represents unsatisfiable alignment constraints,

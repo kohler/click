@@ -17,6 +17,24 @@
 
 #include <click/config.h>
 #include "alignment.hh"
+#include <click/args.hh>
+#include "elementt.hh"
+
+Alignment::Alignment(ElementT *e)
+{
+    int modulus, offset;
+    if (Args().push_back_args(e->configuration())
+	.read_mp("MODULUS", modulus)
+	.read_mp("OFFSET", offset)
+	.execute() >= 0
+	&& modulus > 0 && offset >= 0 && offset < modulus) {
+	_modulus = modulus;
+	_offset = offset;
+    } else {
+	_modulus = bad_modulus;
+	_offset = 0;
+    }
+}
 
 bool
 Alignment::operator<=(const Alignment &x) const

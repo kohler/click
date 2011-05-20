@@ -36,7 +36,7 @@ click-align -e "
 fd::FromDevice(eth3, true) -> st::Strip(14)->chip::CheckIPHeader();
 
 chip[0]-> ust::Unstrip(14)->mip::MarkIPHeader(14)->ipcl_0::IPClassifier(dst 10.0.0.0/8, -);
-chip[1]->d1::Discard; 
+chip[1]->d1::Discard;
 
 ipcl_0[0]->a::Align(4, 0)->th::ToHost();
 ipcl_0[1]->d2::Discard;
@@ -48,7 +48,7 @@ click-align -e "
 fd::FromDevice(eth3, true) -> fst::Strip(1) -> a1::Align(4, 2) -> st::Strip(14)->chip::CheckIPHeader();
 
 chip[0]-> ust::Unstrip(14)->mip::MarkIPHeader(14)->ipcl_0::IPClassifier(dst 10.0.0.0/8, -);
-chip[1]->d1::Discard; 
+chip[1]->d1::Discard;
 
 ipcl_0[0]->a::Align(4, 0)->th::ToHost();
 ipcl_0[1]->d2::Discard;
