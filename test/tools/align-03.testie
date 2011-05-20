@@ -1,0 +1,160 @@
+%info
+
+Check that non-redundant Aligns aren't skipped.
+
+%script
+
+echo A
+click-align -e "
+x::X -> Align(8, 0) -> Align(4, 2) -> y::Y
+"
+
+echo B
+click-align -e "
+x::X -> Align(4, 2) -> Align(8, 0) -> y::Y
+"
+
+echo C
+click-align -e "
+x::X -> a1::Align(4, 2) -> a2::Align(8, 0) -> y::Y
+a1 -> z::Z; a2 -> w::W
+"
+
+echo D
+click-align -e "
+x::X -> a1::Align(4, 2) -> a2::Align(8, 0) -> y::Y
+z::Z -> a1; w::W -> a2
+"
+
+echo E
+click-align -e "
+x::X -> a1::Align(8, 2) -> a2::Align(4, 2) -> y::Y
+"
+
+echo F
+click-align -e "
+x::X -> a1::Align(8, 2) -> a2::Align(4, 2) -> y::Y
+z::Z -> a2; w::W -> a1
+"
+
+echo G
+click-align -e "
+x::X -> a1::Align(8, 2) -> a2::Align(4, 2) -> y::Y
+a1 -> z::Z; a2 -> w::W
+"
+
+echo H
+click-align -e "
+x::X -> a1::Align(8, 2) -> a2::Align(4, 2) -> y::Y
+a1 -> z::Z; w::W -> a2
+"
+
+echo I
+click-align -e "
+x::X -> a1::Align(8, 2) -> a2::Align(4, 2) -> y::Y
+a1 -> z::Z; w::W -> a2; a2 -> v::V
+"
+
+%expect stdout
+A
+x :: X;
+Align@3 :: Align(4, 2);
+y :: Y;
+x -> Align@3
+    -> y;
+
+B
+x :: X;
+Align@3 :: Align(8, 0);
+y :: Y;
+x -> Align@3
+    -> y;
+
+C
+x :: X;
+a1 :: Align(4, 2);
+a2 :: Align(8, 0);
+y :: Y;
+z :: Z;
+w :: W;
+x -> a1
+    -> z;
+x -> a2
+    -> y;
+a2 -> w;
+
+D
+x :: X;
+a2 :: Align(8, 0);
+y :: Y;
+z :: Z;
+w :: W;
+x -> a2
+    -> y;
+z -> a2;
+w -> a2;
+
+E
+x :: X;
+a1 :: Align(8, 2);
+y :: Y;
+x -> a1
+    -> y;
+
+F
+x :: X;
+a1 :: Align(8, 2);
+a2 :: Align(4, 2);
+y :: Y;
+z :: Z;
+w :: W;
+x -> a1
+    -> y;
+z -> a2
+    -> y;
+w -> a1;
+
+G
+x :: X;
+a1 :: Align(8, 2);
+y :: Y;
+z :: Z;
+w :: W;
+x -> a1
+    -> z;
+a1 -> w;
+a1 -> y;
+
+H
+x :: X;
+a1 :: Align(8, 2);
+a2 :: Align(4, 2);
+y :: Y;
+z :: Z;
+w :: W;
+x -> a1
+    -> z;
+w -> a2
+    -> y;
+a1 -> y;
+
+I
+x :: X;
+a1 :: Align(8, 2);
+a2 :: Align(4, 2);
+y :: Y;
+z :: Z;
+w :: W;
+v :: V;
+x -> a1
+    -> z;
+w -> a2
+    -> y;
+a2 -> v;
+a1 -> v;
+a1 -> y;
+
+%expect stderr
+
+%ignorex
+#.*
