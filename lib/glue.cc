@@ -57,6 +57,35 @@ CLICK_CXX_UNPROTECT
 #include <clicknet/udp.h>
 #include <clicknet/rfc1483.h>
 
+// Allocate space for static constants from integer_traits.
+CLICK_DECLS
+#define DO(t) \
+    constexpr bool integer_traits<t>::is_numeric; \
+    constexpr bool integer_traits<t>::is_integer; \
+    constexpr t integer_traits<t>::const_min; \
+    constexpr t integer_traits<t>::const_max; \
+    constexpr bool integer_traits<t>::is_signed;
+DO(unsigned char)
+DO(signed char)
+constexpr char integer_traits<char>::const_min;
+constexpr char integer_traits<char>::const_max;
+DO(unsigned short)
+DO(short)
+DO(unsigned int)
+DO(int)
+DO(unsigned long)
+DO(long)
+#if HAVE_LONG_LONG
+DO(unsigned long long)
+DO(long long)
+#endif
+#if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
+DO(uint64_t)
+DO(int64_t)
+#endif
+#undef DO
+CLICK_ENDDECLS
+
 void
 click_check_header_sizes()
 {

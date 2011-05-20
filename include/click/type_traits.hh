@@ -7,6 +7,7 @@ struct integral_constant {
     typedef T value_type;
     static constexpr T value = val;
 };
+template<typename T, T val> constexpr T integral_constant<T, val>::value;
 typedef integral_constant<bool, true> true_type;
 typedef integral_constant<bool, false> false_type;
 
@@ -93,6 +94,8 @@ struct integer_traits {
     static constexpr bool is_numeric = false;
     static constexpr bool is_integer = false;
 };
+template<typename T> constexpr bool integer_traits<T>::is_numeric;
+template<typename T> constexpr bool integer_traits<T>::is_integer;
 
 template<>
 struct integer_traits<unsigned char> {
