@@ -123,6 +123,7 @@ void
 Vector<void*>::resize(size_type nn, void* e)
 {
   if (nn <= _capacity || reserve(nn)) {
+    assert(nn >= 0);
 #ifdef VALGRIND_MAKE_MEM_NOACCESS
     if (nn < _n)
 	VALGRIND_MAKE_MEM_NOACCESS(_l + nn, (_n - nn) * sizeof(void *));

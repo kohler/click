@@ -465,9 +465,11 @@ replace_blank_ports(RouterT *r)
   int idle_next_in = 0, idle_next_out = 0;
   for (RouterT::iterator x = r->begin_elements(); x; x++) {
     Vector<RouterT::conn_iterator> connv;
+    int nin = element_ninputs[x->name()], nout = element_noutputs[x->name()];
 
     r->find_connection_vector_to(x.get(), connv);
-    connv.resize(element_ninputs[x->name()]);
+    if (nin >= 0)
+      connv.resize(nin);
     for (int p = 0; p < connv.size(); p++)
       if (!connv[p]) {	// unconnected port
 	if (!idle)
@@ -476,7 +478,8 @@ replace_blank_ports(RouterT *r)
       }
 
     r->find_connection_vector_from(x.get(), connv);
-    connv.resize(element_noutputs[x->name()]);
+    if (nout >= 0)
+      connv.resize(nout);
     for (int p = 0; p < connv.size(); p++)
       if (!connv[p]) {	// unconnected port
 	if (!idle)

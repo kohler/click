@@ -169,6 +169,7 @@ Vector<T>::resize(size_type n, const T &x)
 	T x_copy(x);
 	resize(n, x_copy);
     } else if (n <= _capacity || reserve(n)) {
+	assert(n >= 0);
 	for (size_type i = n; i < _n; i++)
 	    _l[i].~T();
 #ifdef VALGRIND_MAKE_MEM_NOACCESS
