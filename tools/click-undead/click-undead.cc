@@ -386,7 +386,7 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
   for (RouterT::iterator x = r->begin_elements(); x; x++) {
     int nin = x->ninputs();
     int nout = x->noutputs();
-    int source_flag = x->type()->traits().flag_value('S');
+    int source_flag = x->type()->traits().flag_value("S");
     const char *assuming = "";
 
     if (source_flag < 0 || source_flag > 3) {
@@ -440,7 +440,7 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
   for (RouterT::iterator x = r->begin_elements(); x; x++)
     if (!live_elements[x->eindex()]) {
       int ei = x->eindex();
-      int live_flag = x->type()->traits().flag_value('L');
+      int live_flag = x->type()->traits().flag_value("L");
       if (live_flag == 0)	// not live
 	continue;
       else if (live_flag == 1) { // live

@@ -42,9 +42,10 @@ struct ElementTraits {
 
     bool allows_driver(int d) const	{ return (driver_mask&(1<<d)) != 0; }
 
-    bool requires(const String &) const;
-    bool provides(const String &) const;
-    int flag_value(int) const;
+    bool requires(const String &str) const;
+    bool provides(const String &str) const;
+    inline int flag_value(const String &str) const;
+    int hard_flag_value(const String &str) const;
 
     String *component(int);
     String *component(const String &);
@@ -82,6 +83,12 @@ inline String *
 ElementTraits::component(const String &s)
 {
     return component(parse_component(s));
+}
+
+inline int
+ElementTraits::flag_value(const String &str) const
+{
+    return flags ? hard_flag_value(str) : -1;
 }
 
 #endif

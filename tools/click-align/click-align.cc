@@ -710,7 +710,7 @@ particular purpose.\n");
 	StringAccum sa;
 	for (RouterT::iterator x = router->begin_elements(); x; x++) {
 	    ElementTraits t = element_map.traits(x->type_name());
-	    if (x->ninputs() && t.flag_value('A') > 0) {
+	    if (x->ninputs() && t.flag_value("A") > 0) {
 		if (sa.length())
 		    sa << ",\n  ";
 		sa << x->name();

@@ -135,22 +135,30 @@ ElementTraits::provides(const String &n) const
 }
 
 int
-ElementTraits::flag_value(int flag) const
+ElementTraits::hard_flag_value(const String &str) const
 {
-    const unsigned char *data = reinterpret_cast<const unsigned char *>(flags.data());
-    int len = flags.length();
-    for (int i = 0; i < len; i++) {
-	if (data[i] == flag) {
-	    if (i < len - 1 && isdigit(data[i+1])) {
-		int value = 0;
-		for (i++; i < len && isdigit(data[i]); i++)
-		    value = 10*value + data[i] - '0';
-		return value;
-	    } else
+    assert(str);
+    const char *s = flags.begin(), *end = flags.end() - str.length();
+    while (s <= end) {
+	if (memcmp(s, str.begin(), str.length()) == 0
+	    && (s == end || isdigit((unsigned char) s[str.length()])
+		|| isspace((unsigned char) s[str.length()])
+		|| s[str.length()] == '=')) {
+	    s += str.length();
+	    end = flags.end();
+	    if (s != end && *s == '=')
+		++s;
+	    if (s == end || !isdigit((unsigned char) *s))
 		return 1;
+	    int i = 0;
+	    do {
+		i = i * 10 + *s - '0';
+		++s;
+	    } while (s != end && isdigit((unsigned char) *s));
+	    return (s == end || isspace((unsigned char) *s) ? i : 1);
 	} else
-	    while (i < len && !isspace((unsigned char) data[i]))
-		i++;
+	    while (s <= end && !isspace((unsigned char) *s))
+		++s;
     }
     return -1;
 }
