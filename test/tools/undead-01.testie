@@ -1,6 +1,7 @@
 %script
 
 click-undead CONFIG
+click-undead CONFIG2
 
 %file CONFIG
 Idle -> Counter -> td1 :: ToDump(a);
@@ -10,6 +11,10 @@ is :: InfiniteSource -> ss :: StaticSwitch(1);
   Idle -> [1]rr;
   rr -> td2 :: ToDump(b);
 
+%file CONFIG2
+fa::FromDevice(a) -> arpq::ARPQuerier -> td::ToDump;
+fb::FromDevice(b) -> [1]arpq;
+
 %expect stderr
 
 %expect stdout
@@ -18,6 +23,14 @@ q :: Queue;
 td2 :: ToDump(b);
 is -> q
     -> td2;
+
+fa :: FromDevice(a);
+arpq :: ARPQuerier;
+td :: ToDump;
+fb :: FromDevice(b);
+fa -> arpq
+    -> td;
+fb -> [1] arpq;
 
 %ignorex
 #.*
