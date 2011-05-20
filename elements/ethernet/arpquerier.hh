@@ -173,6 +173,8 @@ class ARPQuerier : public Element { public:
     const char *port_count() const		{ return "2/1-2"; }
     const char *processing() const		{ return PUSH; }
     const char *flow_code() const		{ return "xy/x"; }
+    // click-undead should consider all paths live (not just "xy/x"):
+    const char *flags() const			{ return "L2"; }
     void *cast(const char *name);
 
     int configure(Vector<String> &, ErrorHandler *);

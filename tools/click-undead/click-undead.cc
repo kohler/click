@@ -373,6 +373,19 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
 
   full_elementmap.set_driver(driver);
 
+  // reset flow codes for all elements with "L2" flag
+  {
+      HashTable<ElementClassT *, int> classmap;
+      for (RouterT::iterator it = r->begin_elements(); it; ++it) {
+	  int &used = classmap[it->type()];
+	  if (!used) {
+	      used = 1;
+	      if (it->type()->traits().flag_value("L") == 2)
+		  it->type()->force_traits().flow_code = "";
+	  }
+      }
+  }
+
   // get processing
   ProcessingT processing(r, &full_elementmap, errh);
   // ... it will report errors as required
@@ -446,7 +459,7 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
       else if (live_flag == 1) { // live
 	live_elements[ei] = true;
 	continue;
-      } else if (live_flag > 0)
+      } else if (live_flag > 2)
 	errh->lwarning(x->landmark(), "%<%s%> has strange live flag value %d", x->declaration().c_str(), live_flag);
 
       // if no live flag, make an educated guess

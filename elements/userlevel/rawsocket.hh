@@ -68,6 +68,7 @@ class RawSocket : public Element { public:
   const char *port_count() const	{ return "0-1/0-1"; }
   const char *processing() const	{ return "l/h"; }
   const char *flow_code() const		{ return "x/y"; }
+  const char *flags() const		{ return "S3"; }
 
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);
