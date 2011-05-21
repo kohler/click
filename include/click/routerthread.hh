@@ -46,7 +46,6 @@ class RouterThread : private TaskLink { public:
     void scheduled_tasks(Router *router, Vector<Task *> &x);
 
     inline void lock_tasks();
-    inline bool attempt_lock_tasks();
     inline void unlock_tasks();
 
     inline void schedule_block_tasks();
@@ -384,21 +383,6 @@ RouterThread::lock_tasks()
 	block_tasks(false);
 	_task_lock.acquire();
     }
-}
-
-inline bool
-RouterThread::attempt_lock_tasks()
-{
-    if (likely(current_thread_is_running()))
-	return true;
-    uint32_t blocker = _task_blocker.value();
-    if ((int32_t) blocker < 0
-	|| _task_blocker.compare_swap(blocker, blocker + 1) != blocker)
-	return false;
-    if (_task_lock.attempt())
-	return true;
-    --_task_blocker;
-    return false;
 }
 
 inline void
