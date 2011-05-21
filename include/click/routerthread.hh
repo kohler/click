@@ -43,6 +43,7 @@ class RouterThread : private TaskLink { public:
     inline Task *task_begin() const;
     inline Task *task_next(Task *task) const;
     inline Task *task_end() const;
+    void scheduled_tasks(Router *router, Vector<Task *> &x);
 
     inline void lock_tasks();
     inline bool attempt_lock_tasks();

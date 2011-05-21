@@ -167,6 +167,16 @@ RouterThread::driver_unlock_tasks()
     assert(val == (uint32_t) -1);
 }
 
+void
+RouterThread::scheduled_tasks(Router *router, Vector<Task *> &x)
+{
+    lock_tasks();
+    for (Task *t = task_begin(); t != task_end(); t = task_next(t))
+	if (t->router() == router)
+	    x.push_back(t);
+    unlock_tasks();
+}
+
 
 /******************************/
 /* Adaptive scheduler         */

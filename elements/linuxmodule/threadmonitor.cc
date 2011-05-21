@@ -61,22 +61,19 @@ ThreadMonitor::run_timer(Timer *)
     Master *m = router()->master();
     StringAccum sa;
     click_jiffies_t now_jiffies = click_jiffies();
+    Vector<Task *> tasks;
 
     // report currently scheduled tasks (ignore pending list)
     for (int tid = 0; tid < m->nthreads(); tid++) {
-	RouterThread *thread = m->thread(tid);
-	thread->lock_tasks();
-	Task *end = thread->task_end();
-	for (Task *t = thread->task_begin(); t != end; t = thread->task_next(t))
-	    if (t->cycles() >= _thresh) {
-		sa << now_jiffies << ": on thread " << tid << ": " << (void *)t << " (";
-		if (Element *e = t->element())
-		    sa << e->id();
-		else
-		    sa << "hook";
-		sa << "), cycles " << t->cycles() << '\n';
+	tasks.clear();
+	m->thread(tid)->scheduled_tasks(router(), tasks);
+	for (Task **t = tasks.begin(); t != tasks.end(); ++t)
+	    if ((*t)->cycles() >= _thresh) {
+		sa << now_jiffies << ": on thread " << tid << ": "
+		   << (void *)*t
+		   << " (" << (*t)->owner()->declaration()
+		   << "), cycles " << (*t)->cycles() << '\n';
 	    }
-	thread->unlock_tasks();
     }
 
     if (sa.length())
