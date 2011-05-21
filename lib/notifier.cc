@@ -19,6 +19,9 @@
  */
 
 #include <click/config.h>
+#if __GNUC__
+# pragma implementation "click/notifier.hh"
+#endif
 #include <click/notifier.hh>
 #include <click/router.hh>
 #include <click/element.hh>

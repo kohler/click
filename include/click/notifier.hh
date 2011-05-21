@@ -3,6 +3,9 @@
 #define CLICK_NOTIFIER_HH
 #include <click/task.hh>
 #include <click/atomic.hh>
+#if __GNUC__
+# pragma interface "click/notifier.hh"
+#endif
 CLICK_DECLS
 
 class NotifierSignal { public:
