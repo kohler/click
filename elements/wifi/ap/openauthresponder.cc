@@ -164,8 +164,8 @@ OpenAuthResponder::send_auth_response(EtherAddress dst, uint16_t seq, uint16_t s
   memcpy(w->i_addr3, _winfo->_bssid.data(), 6);
 
 
-  *(uint16_t *) w->i_dur = 0;
-  *(uint16_t *) w->i_seq = 0;
+  w->i_dur = 0;
+  w->i_seq = 0;
 
   uint8_t *ptr;
 

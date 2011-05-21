@@ -89,11 +89,8 @@ AssociationRequester::send_assoc_req()
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_ASSOC_REQ;
   w->i_fc[1] = WIFI_FC1_DIR_NODS;
 
-  w->i_dur[0] = 0;
-  w->i_dur[1] = 0;
-
-  w->i_seq[0] = 0;
-  w->i_seq[1] = 0;
+  w->i_dur = 0;
+  w->i_seq = 0;
 
   memcpy(w->i_addr1, bssid.data(), 6);
   memcpy(w->i_addr2, _eth.data(), 6);

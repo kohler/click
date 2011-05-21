@@ -158,8 +158,8 @@ OpenAuthRequester::send_auth_request()
   memcpy(w->i_addr3, bssid.data(), 6);
 
 
-  *(uint16_t *) w->i_dur = 0;
-  *(uint16_t *) w->i_seq = 0;
+  w->i_dur = 0;
+  w->i_seq = 0;
 
   uint8_t *ptr;
 
