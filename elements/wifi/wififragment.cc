@@ -55,7 +55,7 @@ WifiFragment::push(int port, Packet *p)
 {
 
   click_wifi *w = (click_wifi *) p->data();
-  uint16_t seq = le16_to_cpu(*(u_int16_t *)w->i_seq) >> WIFI_SEQ_SEQ_SHIFT;
+  uint16_t seq = le16_to_cpu(w->i_seq) >> WIFI_SEQ_SEQ_SHIFT;
   if (!_max_length ||
       p->length() <= sizeof(click_wifi) + _max_length) {
     if (_debug) {
@@ -95,7 +95,7 @@ WifiFragment::push(int port, Packet *p)
 	   frag_len);
     click_wifi *w_o = (click_wifi *) p_out->data();
     uint16_t seq_o = (seq << WIFI_SEQ_SEQ_SHIFT) | (((u_int8_t) frag) & WIFI_SEQ_FRAG_MASK);
-    *((uint16_t *)w_o->i_seq) = cpu_to_le16(seq_o);
+    w_o->i_seq = cpu_to_le16(seq_o);
     if (frag != num_frags - 1) {
       w_o->i_fc[1] |= WIFI_FC1_MORE_FRAG;
     }

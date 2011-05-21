@@ -83,8 +83,8 @@ ProbeRequester::send_probe_request()
   memset(w->i_addr3, 0xff, 6);
 
 
-  *(uint16_t *) w->i_dur = 0;
-  *(uint16_t *) w->i_seq = 0;
+  w->i_dur = 0;
+  w->i_seq = 0;
 
   uint8_t *ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
   int actual_length = sizeof (struct click_wifi);

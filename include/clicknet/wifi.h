@@ -59,11 +59,11 @@ struct click_wifi_extra {
 
 struct click_wifi {
 	uint8_t		i_fc[2];
-	uint8_t		i_dur[2];
+	uint16_t	i_dur;
 	uint8_t		i_addr1[WIFI_ADDR_LEN];
 	uint8_t		i_addr2[WIFI_ADDR_LEN];
 	uint8_t		i_addr3[WIFI_ADDR_LEN];
-	uint8_t		i_seq[2];
+	uint16_t	i_seq;
 } CLICK_SIZE_PACKED_ATTRIBUTE;
 
 #define	WIFI_FC0_VERSION_MASK		0x03
