@@ -127,14 +127,16 @@ WepDecap::simple_action(Packet *p_in)
   /* decrypt ICV and compare to CRC */
   icv = payload + payload_len;
   rc4_crypt_skip(&_rc4, icv, crcbuf, WIFI_WEP_CRCLEN, 0);
+  u_int32_t crc_foo;
+  memcpy(&crc_foo, crcbuf, 4);
 
-  if (crc != ~le32_to_cpu(*(u_int32_t *)crcbuf)) {
+  if (crc != ~le32_to_cpu(crc_foo)) {
     click_chatter("crc failed keyid %d iv %d %x wanted %x %x\n",
 		  keyid,
 		  iv,
 		  crc,
-		  ~le32_to_cpu(*(u_int32_t *)crcbuf),
-		  *(u_int32_t *)crcbuf);
+		  ~le32_to_cpu(crc_foo),
+		  crc_foo);
     /* packet failed decrypt */
     return p;
   }

@@ -139,8 +139,10 @@ WepEncap::simple_action(Packet *p_in)
 		 p->length() - (sizeof(click_wifi) + WIFI_WEP_HEADERSIZE),
 		 0);
   /* tack on ICV */
-  *(u_int32_t *)crcbuf = cpu_to_le32(~crc);
-  p = p->put(WIFI_WEP_CRCLEN);
+  crc = cpu_to_le32(~crc);
+  memcpy(crcbuf, &crc, 4);
+  if (!(p = p->put(WIFI_WEP_CRCLEN)))
+      return 0;
   icv = p->end_data() - WIFI_WEP_CRCLEN;
   rc4_crypt_skip(&_rc4, crcbuf, icv, WIFI_WEP_CRCLEN, 0);
 

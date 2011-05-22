@@ -231,11 +231,10 @@ Print80211::simple_action(Packet *p)
   unsigned fc0 = frame->i_fc[0];
   if (_verbose) {
     unsigned fc1 = frame->i_fc[1];
-    unsigned dur0 = frame->i_dur[0];
-    unsigned dur1 = frame->i_dur[1];
+    unsigned dur0 = ntohs(frame->i_dur);
     snprintf(sbuf, sizeof(sbuf), "Frame Control: %02x %02x  ", fc0, fc1);
     sa << sbuf;
-    snprintf(sbuf, sizeof(sbuf), "Duration: %02x %02x  ", dur0, dur1);
+    snprintf(sbuf, sizeof(sbuf), "Duration: %04x  ", dur);
     sa << sbuf;
   }
 

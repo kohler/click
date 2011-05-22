@@ -210,8 +210,8 @@ ProbeResponder::send_probe_response(EtherAddress dst)
   memcpy(w->i_addr3, _bssid.data(), 6);
 
 
-  *(uint16_t *) w->i_dur = 0;
-  *(uint16_t *) w->i_seq = 0;
+  w->i_dur = 0;
+  w->i_seq = 0;
 
   uint8_t *ptr;
 
