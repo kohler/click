@@ -891,6 +891,15 @@ handler_ioctl(struct inode *inode, struct file *filp,
     return retval;
 }
 
+#if HAVE_UNLOCKED_IOCTL
+static long
+handler_unlocked_ioctl(struct file *filp, unsigned command,
+		       unsigned long address)
+{
+    return handler_ioctl(filp->f_dentry->d_inode, filp, command, address);
+}
+#endif
+
 #if INO_DEBUG
 static String
 read_ino_info(Element *, void *)
@@ -961,7 +970,11 @@ init_clickfs()
 
     click_handler_file_ops->read = handler_read;
     click_handler_file_ops->write = handler_write;
+#if HAVE_UNLOCKED_IOCTL
+    click_handler_file_ops->unlocked_ioctl = handler_unlocked_ioctl;
+#else
     click_handler_file_ops->ioctl = handler_ioctl;
+#endif
     click_handler_file_ops->open = handler_open;
     click_handler_file_ops->flush = handler_flush;
     click_handler_file_ops->release = handler_release;

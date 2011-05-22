@@ -138,6 +138,10 @@ private:
     static uint    dev_poll(struct file *, struct poll_table_struct *);
     static int dev_ioctl(struct inode *inode, struct file *filp,
 			 unsigned command, unsigned long address);
+#if HAVE_UNLOCKED_IOCTL
+    static long dev_unlocked_ioctl(struct file *filp, unsigned int command,
+				   unsigned long address);
+#endif
 };
 
 #endif

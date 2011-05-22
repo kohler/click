@@ -159,6 +159,11 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
 	_runs = _empty_runs = _count = _drops = 0;
     }
 
+#if HAVE_LINUX_NETDEV_RX_HANDLER_REGISTER
+    rx_handler_func_t *_real_rx_handler;
+    void	      *_real_rx_handler_data;
+#endif
+
   private:
 
     bool _active;
