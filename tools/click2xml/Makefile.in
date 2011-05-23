@@ -100,7 +100,7 @@ install: $(LIBCLICKTOOL) install-local
 install-local: all-local
 	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(bindir))
 	$(call verbose_cmd,$(INSTALL) click2xml,INSTALL,$(DESTDIR)$(bindir)/click2xml)
-	@test -z "@XML2CLICK@" || $(call x_verbose_cmd,$(INSTALL) xml2click,INSTALL,$(DESTDIR)$(bindir)/xml2click)
+	@test -z "@XML2CLICK@" || ( $(call x_verbose_cmd,$(INSTALL) xml2click,INSTALL,$(DESTDIR)$(bindir)/xml2click) )
 uninstall:
 	/bin/rm -f $(DESTDIR)$(bindir)/click2xml
 	test -z "@XML2CLICK@" || /bin/rm -f $(DESTDIR)$(bindir)/xml2click
