@@ -106,7 +106,7 @@ port.agnostic.error, port.push.agnostic.error, port.pull.agnostic.error {\n\
     queue-stripe: 1px solid rgb(87%, 87%, 50%);\n\
     queue-stripe-spacing: 12px;\n\
     text: \"%n\\n<small>%c</small>\";\n\
-    display: open;\n\
+    display: normal;\n\
     port-display: both;\n\
     port-font: 6;\n\
     @media print {\n\
@@ -1826,14 +1826,14 @@ ref_ptr<delt_style> dcss_set::elt_style(crouter *cr, const delt *e, int *sensiti
 	sty->style = (s.equals("queue", 5) ? destyle_queue : destyle_normal);
 	sty->text = cp_unquote(elt_pm[8].vstring("text"));
 	s = elt_pm[9].vstring("display");
-	sty->display = dedisp_open;
+	sty->display = dedisp_normal;
 	if (s.equals("none", 4))
 	    sty->display = dedisp_none;
 	else if (s.equals("closed", 6))
 	    sty->display = dedisp_closed;
 	else if (s.equals("passthrough", 11))
 	    sty->display = dedisp_passthrough;
-	else if (s.equals("expanded", 8))
+	else if (s.equals("expanded", 8) || s.equals("open", 4))
 	    sty->display = dedisp_expanded;
 	sty->font = elt_pm[10].vstring("font");
 	sty->decorations = elt_pm[11].vstring("decorations");

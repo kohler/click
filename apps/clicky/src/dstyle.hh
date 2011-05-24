@@ -15,7 +15,7 @@ class handler_value;
 
 enum {
     dedisp_none = 0,
-    dedisp_open = 1,
+    dedisp_normal = 1,
     dedisp_closed = 2,
     dedisp_passthrough = -1,
     dedisp_expanded = -2,
@@ -53,7 +53,7 @@ static inline bool dedisp_visible(int dedisp) {
 }
 
 static inline bool dedisp_children_visible(int dedisp) {
-    return dedisp == dedisp_open || dedisp == dedisp_expanded;
+    return dedisp == dedisp_normal || dedisp == dedisp_expanded;
 }
 
 enum {

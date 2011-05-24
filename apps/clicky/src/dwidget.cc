@@ -177,7 +177,7 @@ void delt::create_elements(crouter *cr, RouterT *router,
     // create sub-elements for open or expanded compounds
     for (iterator e = begin_contents(); e; ++e)
 	if (e->_resolved_router
-	    && (e->_display == dedisp_open || e->_display == dedisp_expanded)) {
+	    && (e->_display == dedisp_normal || e->_display == dedisp_expanded)) {
 	    chain.enter_element(e->_e);
 	    ProcessingT subprocessing(*processing, e->_e);
 	    e->create_elements(cr, subprocessing.router(), &subprocessing,
@@ -210,7 +210,7 @@ void delt::create_connections(std::vector<delt_conn> &cc, crouter *cr) const
     for (iterator e = begin_contents(); e; ++e) {
 	if (e->_elt.size() && e->_display == dedisp_expanded)
 	    e->create_connections(cc, cr);
-	else if (e->_elt.size() && e->_display == dedisp_open)
+	else if (e->_elt.size() && e->_display == dedisp_normal)
 	    e->create_connections(cr);
     }
 }
@@ -222,7 +222,7 @@ void delt::create_connections(crouter *cr)
 	delete *it;
     _conn.clear();
 
-    if (!root() && _des->display != dedisp_open)
+    if (!root() && _des->display != dedisp_normal)
 	return;
 
     // create initial connections
@@ -803,7 +803,7 @@ bool delt::reccss(crouter *cr, int change)
 	    || (_flow_split && old_des && old_des->flow_split != _des->flow_split))
 	    resplit = true;
 	if (_display == dedisp_expanded && primitive())
-	    _display = dedisp_open;
+	    _display = dedisp_normal;
 	if (dedisp_visible(_display)
 	    && (_parent->root()		// NB _parent->_display is not yet set
 		|| dedisp_children_visible(_parent->_des->display)))
@@ -814,7 +814,7 @@ bool delt::reccss(crouter *cr, int change)
 	if (_e->tunnel() && !_parent->root()
 	    && (this == _parent->_elt[0] || this == _parent->_elt[1])) {
 	    _visible = false;
-	    _display = dedisp_open;
+	    _display = dedisp_normal;
 	}
     }
 
@@ -919,7 +919,7 @@ void delt::layout_contents(dcontext &dcx)
     for (iterator e = begin_contents(); e; ++e)
 	e->layout(dcx);
 
-    if (root() || _display == dedisp_open)
+    if (root() || _display == dedisp_normal)
 	position_contents_dot(dcx.cr, dcx.cr->error_handler());
     //position_contents_scc(router);
     //position_contents_first_heuristic(router);
@@ -1375,7 +1375,7 @@ void delt::remove(rect_search<dwidget> &rects, rectangle &bounds)
 	    rects.remove(*it);
 	}
 
-    if (_parent && _elt.size() && _display == dedisp_open) {
+    if (_parent && _elt.size() && _display == dedisp_normal) {
 	delt *ein = _elt[0], *eout = _elt[1];
 	ein->remove(rects, bounds);
 	eout->remove(rects, bounds);
@@ -1402,7 +1402,7 @@ void delt::insert(rect_search<dwidget> &rects, crouter *cr,
 	    rects.insert(*it);
 	}
 
-    if (_parent && _elt.size() && _display == dedisp_open) {
+    if (_parent && _elt.size() && _display == dedisp_normal) {
 	layout_compound_ports(cr);
 	delt *ein = _elt[0], *eout = _elt[1];
 	ein->insert(rects, cr, bounds);
