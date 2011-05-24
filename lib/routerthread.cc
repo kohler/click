@@ -367,15 +367,9 @@ RouterThread::run_tasks(int ntasks)
     bool work_done;
 
     for (; ntasks >= 0; --ntasks) {
-#if HAVE_TASK_HEAP
-	if (_task_heap.size() == 0)
-	    break;
-	t = _task_heap.at_u(0).t;
-#else
 	t = task_begin();
-	if (t == this)
+	if (t == task_end())
 	    break;
-#endif
 
 	if (unlikely(t->_status.status != want_status.status)) {
 	    t->remove_from_scheduled_list();
