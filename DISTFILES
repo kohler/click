@@ -440,6 +440,7 @@ perfctr-i586.hh
 router.hh
 routerthread.hh
 routervisitor.hh
+selectset.hh
 simclick.h
 skbmgr.hh
 standard
@@ -520,6 +521,7 @@ packet.cc
 router.cc
 routerthread.cc
 routervisitor.cc
+selectset.cc
 straccum.cc
 strerror.c
 string.cc

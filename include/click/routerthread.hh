@@ -24,6 +24,7 @@ CLICK_CXX_UNPROTECT
 // dependency.
 CLICK_DECLS
 class TimerSet;
+class SelectSet;
 
 class RouterThread
 #if !HAVE_TASK_HEAP
@@ -38,6 +39,8 @@ class RouterThread
     inline Master *master() const;
     inline TimerSet &timer_set();
     inline const TimerSet &timer_set() const;
+    inline SelectSet &select_set();
+    inline const SelectSet &select_set() const;
 
     // Task list functions
     inline bool active() const;
@@ -73,6 +76,10 @@ class RouterThread
 #endif
 
     inline void wake();
+
+#if CLICK_USERLEVEL
+    inline void run_signals();
+#endif
 
     enum { S_PAUSED, S_BLOCKED, S_TIMERWAIT,
 	   S_LOCKSELECT, S_LOCKTASKS,
@@ -206,6 +213,7 @@ class RouterThread
 
     friend class Task;
     friend class Master;
+    friend class SelectSet;
 
 };
 

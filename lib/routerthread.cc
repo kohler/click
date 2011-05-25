@@ -459,7 +459,7 @@ RouterThread::run_os()
     driver_unlock_tasks();
 
 #if CLICK_USERLEVEL
-    _master->run_selects(this);
+    select_set().run_selects(this);
 #elif CLICK_LINUXMODULE		/* Linux kernel module */
     if (_greedy) {
 	if (time_after(jiffies, greedy_schedule_jiffies + 5 * CLICK_HZ)) {
@@ -575,7 +575,7 @@ RouterThread::driver()
 	iter++;
 
 #if CLICK_USERLEVEL
-	_master->run_signals(this);
+	run_signals();
 #endif
 
 #if !(HAVE_ADAPTIVE_SCHEDULER || BSD_NETISRSCHED)
