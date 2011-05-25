@@ -82,6 +82,7 @@ include/click/string.hh
 include/click/sync.hh
 include/click/task.hh
 include/click/timer.hh
+include/click/timerset.hh
 include/click/timestamp.hh
 include/click/type_traits.hh
 include/click/userutils.hh
@@ -156,6 +157,7 @@ lib/string.cc:libsrc/string.cc
 lib/task.cc:libsrc/task.cc
 lib/templatei.cc:libsrc/templatei.cc
 lib/timer.cc:libsrc/timer.cc
+lib/timerset.cc:libsrc/timerset.cc
 lib/timestamp.cc:libsrc/timestamp.cc
 lib/userutils.cc:libsrc/userutils.cc
 lib/variableenv.cc:libsrc/variableenv.cc

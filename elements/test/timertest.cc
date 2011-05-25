@@ -99,7 +99,7 @@ TimerTest::benchmark_changes(Timer *ts, int nts, const Timestamp &now)
     for (int i = 0; i < 6 * nts; ++i) {
 	Timer *t;
 	if (click_random(0, 8) < 6) {
-	    t = m->next_timer();
+	    t = m->timer_set().next_timer();
 	    t->unschedule();
 	} else
 	    t = &ts[click_random(0, nts - 1)];
@@ -111,7 +111,7 @@ void
 TimerTest::benchmark_fires(Timer *, int, const Timestamp &)
 {
     Master *m = master();
-    while (Timer *t = m->next_timer())
+    while (Timer *t = m->timer_set().next_timer())
 	t->unschedule();
 }
 

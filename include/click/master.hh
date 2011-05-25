@@ -3,6 +3,7 @@
 #define CLICK_MASTER_HH
 #include <click/router.hh>
 #include <click/atomic.hh>
+#include <click/timerset.hh>
 #if CLICK_USERLEVEL
 # include <unistd.h>
 # include <signal.h>
@@ -45,19 +46,16 @@ class Master { public:
 
     void pause();
     inline void unpause();
+    bool paused() const				{ return _master_paused > 0; }
 
     inline int nthreads() const;
     inline RouterThread* thread(int id) const;
+    void wake_somebody();
 
     const volatile int* stopper_ptr() const	{ return &_stopper; }
 
-    Timestamp next_timer_expiry() const		{ return _timer_expiry; }
-    Timer *next_timer();			// useful for benchmarking
-    const Timestamp &timer_check() const	{ return _timer_check; }
-    void run_timers(RouterThread *thread);
-    unsigned max_timer_stride() const		{ return _max_timer_stride; }
-    unsigned timer_stride() const		{ return _timer_stride; }
-    void set_max_timer_stride(unsigned timer_stride);
+    TimerSet &timer_set()			{ return _ts; }
+    const TimerSet &timer_set() const		{ return _ts; }
 
 #if CLICK_USERLEVEL
     int add_select(int fd, Element *element, int mask);
@@ -85,10 +83,6 @@ class Master { public:
 
   private:
 
-    // stick _timer_expiry here so it will most likely fit in a cache line,
-    // & we don't have to worry about its parts being updated separately
-    Timestamp _timer_expiry;
-
 #if CLICK_LINUXMODULE
     spinlock_t _master_lock;
     struct task_struct *_master_lock_task;
@@ -110,43 +104,14 @@ class Master { public:
 
     // THREADS
     Vector<RouterThread*> _threads;
-    void wake_somebody();
 
     // DRIVERMANAGER
     volatile int _stopper;
     inline void set_stopper(int);
     bool check_driver();
 
-    // TIMERS
-    unsigned _max_timer_stride;
-    unsigned _timer_stride;
-    unsigned _timer_count;
-    Vector<Timer::heap_element> _timer_heap;
-    Vector<Timer *> _timer_runchunk;
-#if CLICK_LINUXMODULE
-    spinlock_t _timer_lock;
-    struct task_struct *_timer_task;
-#elif HAVE_MULTITHREAD
-    Spinlock _timer_lock;
-#endif
-    Timestamp _timer_check;
-    uint32_t _timer_check_reports;
-    inline Timestamp next_timer_expiry_adjusted() const;
-#if CLICK_USERLEVEL
-    inline int next_timer_delay(bool more_tasks, Timestamp &t) const;
-#endif
-    void lock_timers();
-    bool attempt_lock_timers();
-    void unlock_timers();
-    inline void run_one_timer(Timer *);
-
-    void set_timer_expiry() {
-	if (_timer_heap.size())
-	    _timer_expiry = _timer_heap.at_u(0).expiry;
-	else
-	    _timer_expiry = Timestamp();
-    }
-    void check_timer_expiry(Timer *t);
+    // TIMER
+    TimerSet _ts;
 
 #if CLICK_USERLEVEL
     // SELECT
@@ -214,7 +179,6 @@ class Master { public:
     Master& operator=(const Master&);
 
     friend class Task;
-    friend class Timer;
     friend class RouterThread;
     friend class Router;
 
@@ -243,6 +207,18 @@ Master::wake_somebody()
     _threads.at_u(1)->wake();
 }
 
+inline TimerSet &
+RouterThread::timer_set()
+{
+    return _master->timer_set();
+}
+
+inline const TimerSet &
+RouterThread::timer_set() const
+{
+    return _master->timer_set();
+}
+
 #if CLICK_USERLEVEL
 inline void
 Master::run_signals(RouterThread *thread)
@@ -253,6 +229,30 @@ Master::run_signals(RouterThread *thread)
 # else
     if (signals_pending)
 	process_signals(thread);
+# endif
+}
+
+inline int
+TimerSet::next_timer_delay(bool more_tasks, Timestamp &t) const
+{
+# if CLICK_NS
+    // The simulator should never block.
+    (void) more_tasks, (void) t;
+    return 0;
+# else
+    if (more_tasks || Master::signals_pending)
+	return 0;
+    t = next_timer_expiry_adjusted();
+    if (t.sec() == 0)
+	return -1;		// block forever
+    else if (unlikely(Timestamp::warp_jumping())) {
+	Timestamp::warp_jump(t);
+	return 0;
+    } else if ((t -= Timestamp::now(), t.sec() >= 0)) {
+	t = t.warp_real_delay();
+	return 1;
+    } else
+	return 0;
 # endif
 }
 #endif
@@ -296,68 +296,6 @@ inline void
 Master::unpause()
 {
     _master_paused--;
-}
-
-inline Timestamp
-Master::next_timer_expiry_adjusted() const
-{
-    Timestamp e = _timer_expiry;
-#if CLICK_USERLEVEL
-    if (likely(!Timestamp::warp_jumping())) {
-#endif
-    if (_timer_stride >= 8 || e.sec() == 0)
-	/* do nothing */;
-    else if (_timer_stride >= 4)
-	e -= Timer::adjustment();
-    else
-	e -= Timer::adjustment() + Timer::adjustment();
-#if CLICK_USERLEVEL
-    }
-#endif
-    return e;
-}
-
-inline void
-Master::lock_timers()
-{
-#if CLICK_LINUXMODULE
-    if (current != _timer_task)
-	spin_lock(&_timer_lock);
-#elif HAVE_MULTITHREAD
-    _timer_lock.acquire();
-#endif
-}
-
-inline bool
-Master::attempt_lock_timers()
-{
-#if CLICK_LINUXMODULE
-    return spin_trylock(&_timer_lock);
-#elif HAVE_MULTITHREAD
-    return _timer_lock.attempt();
-#else
-    return true;
-#endif
-}
-
-inline void
-Master::unlock_timers()
-{
-#if CLICK_LINUXMODULE
-    if (current != _timer_task)
-	spin_unlock(&_timer_lock);
-#elif HAVE_MULTITHREAD
-    _timer_lock.release();
-#endif
-}
-
-inline Timer *
-Master::next_timer()
-{
-    lock_timers();
-    Timer *t = _timer_heap.empty() ? 0 : _timer_heap.at_u(0).t;
-    unlock_timers();
-    return t;
 }
 
 inline Master *

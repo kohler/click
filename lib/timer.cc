@@ -195,7 +195,7 @@ Timer::task_hook(Timer *, void *thunk)
 Timer::Timer()
     : _schedpos1(0), _thunk(0), _owner(0)
 {
-    static_assert(sizeof(heap_element) == 16, "size_element should be 16 bytes long.");
+    static_assert(sizeof(TimerSet::heap_element) == 16, "size_element should be 16 bytes long.");
     _hook.callback = do_nothing_hook;
 }
 
@@ -239,12 +239,12 @@ Timer::schedule_at(const Timestamp& when)
 {
     // acquire lock, unschedule
     assert(_owner && initialized());
-    Master* master = _owner->master();
-    master->lock_timers();
+    TimerSet &ts = _owner->master()->timer_set();
+    ts.lock_timers();
 
     // set expiration timer
     _expiry = when;
-    master->check_timer_expiry(this);
+    ts.check_timer_expiry(this);
 
     // manipulate list; this is essentially a "decrease-key" operation
     // any reschedule removes a timer from the runchunk (XXX -- even backwards
@@ -252,23 +252,23 @@ Timer::schedule_at(const Timestamp& when)
     int old_schedpos1 = _schedpos1;
     if (_schedpos1 <= 0) {
 	if (_schedpos1 < 0)
-	    master->_timer_runchunk[-_schedpos1 - 1] = 0;
-	_schedpos1 = master->_timer_heap.size() + 1;
-	master->_timer_heap.push_back(heap_element(this));
+	    ts._timer_runchunk[-_schedpos1 - 1] = 0;
+	_schedpos1 = ts._timer_heap.size() + 1;
+	ts._timer_heap.push_back(TimerSet::heap_element(this));
     } else
-	master->_timer_heap.at_u(_schedpos1 - 1).expiry = _expiry;
-    change_heap<4>(master->_timer_heap.begin(), master->_timer_heap.end(),
-		   master->_timer_heap.begin() + _schedpos1 - 1,
-		   heap_less(), heap_place());
+	ts._timer_heap.at_u(_schedpos1 - 1).expiry = _expiry;
+    change_heap<4>(ts._timer_heap.begin(), ts._timer_heap.end(),
+		   ts._timer_heap.begin() + _schedpos1 - 1,
+		   TimerSet::heap_less(), TimerSet::heap_place());
     if (old_schedpos1 == 1 || _schedpos1 == 1)
-	master->set_timer_expiry();
+	ts.set_timer_expiry();
 
     // if we changed the timeout, wake up the first thread
     if (_schedpos1 == 1)
-	master->wake_somebody();
+	_owner->master()->wake_somebody();
 
     // done
-    master->unlock_timers();
+    ts.unlock_timers();
 }
 
 void
@@ -282,20 +282,20 @@ Timer::unschedule()
 {
     if (!scheduled())
 	return;
-    Master* master = _owner->master();
-    master->lock_timers();
+    TimerSet &ts = _owner->master()->timer_set();
+    ts.lock_timers();
     int old_schedpos1 = _schedpos1;
     if (_schedpos1 > 0) {
-	remove_heap<4>(master->_timer_heap.begin(), master->_timer_heap.end(),
-		       master->_timer_heap.begin() + _schedpos1 - 1,
-		       heap_less(), heap_place());
-	master->_timer_heap.pop_back();
+	remove_heap<4>(ts._timer_heap.begin(), ts._timer_heap.end(),
+		       ts._timer_heap.begin() + _schedpos1 - 1,
+		       TimerSet::heap_less(), TimerSet::heap_place());
+	ts._timer_heap.pop_back();
 	if (old_schedpos1 == 1)
-	    master->set_timer_expiry();
+	    ts.set_timer_expiry();
     } else if (_schedpos1 < 0)
-	master->_timer_runchunk[-_schedpos1 - 1] = 0;
+	ts._timer_runchunk[-_schedpos1 - 1] = 0;
     _schedpos1 = 0;
-    master->unlock_timers();
+    ts.unlock_timers();
 }
 
 // list-related functions in master.cc

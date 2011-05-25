@@ -149,15 +149,11 @@
 #define CLICK_MAKE_VERSION_CODE(major, minor, patch) \
 		(((major) << 16) | ((minor) << 8) | (patch))
 
-/* Define macros for declaring packed structures. */
-#ifdef __GNUC__
-#define CLICK_PACKED_STRUCTURE(open, close) open close __attribute__((packed))
-#define CLICK_SIZE_PACKED_STRUCTURE(open, close) open close __attribute__((packed)) /* deprecated */
-#define CLICK_SIZE_PACKED_ATTRIBUTE __attribute__((packed))
+/* Define macro for aligning variables. */
+#if __GNUC__
+# define CLICK_ALIGNED(x) __attribute__((aligned(x)))
 #else
-#define CLICK_PACKED_STRUCTURE(open, close) _Cannot_pack_structure__Use_GCC
-#define CLICK_SIZE_PACKED_STRUCTURE(open, close) open close /* deprecated */
-#define CLICK_SIZE_PACKED_ATTRIBUTE
+# define CLICK_ALIGNED(x) /* nothing */
 #endif
 
 /* Define macro for deprecated functions. */
@@ -181,6 +177,17 @@
 # define CLICK_NOINLINE __attribute__((noinline))
 #else
 # define CLICK_NOINLINE /* nothing */
+#endif
+
+/* Define macros for declaring packed structures. */
+#ifdef __GNUC__
+# define CLICK_PACKED_STRUCTURE(open, close) open close __attribute__((packed))
+# define CLICK_SIZE_PACKED_STRUCTURE(open, close) open close __attribute__((packed)) /* deprecated */
+# define CLICK_SIZE_PACKED_ATTRIBUTE __attribute__((packed))
+#else
+# define CLICK_PACKED_STRUCTURE(open, close) _Cannot_pack_structure__Use_GCC
+# define CLICK_SIZE_PACKED_STRUCTURE(open, close) open close /* deprecated */
+# define CLICK_SIZE_PACKED_ATTRIBUTE
 #endif
 
 /* Define macro for functions whose results should not be ignored. */

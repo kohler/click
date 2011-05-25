@@ -23,6 +23,7 @@ CLICK_CXX_UNPROTECT
 // We cannot #include <click/task.hh> ourselves because of circular #include
 // dependency.
 CLICK_DECLS
+class TimerSet;
 
 class RouterThread
 #if !HAVE_TASK_HEAP
@@ -33,6 +34,10 @@ class RouterThread
     enum { THREAD_QUIESCENT = -1, THREAD_UNKNOWN = -1000 };
 
     inline int thread_id() const;
+
+    inline Master *master() const;
+    inline TimerSet &timer_set();
+    inline const TimerSet &timer_set() const;
 
     // Task list functions
     inline bool active() const;
@@ -48,7 +53,6 @@ class RouterThread
     inline void block_tasks(bool scheduled);
     inline void unblock_tasks();
 
-    inline Master* master() const;
     void driver();
     void driver_once();
 

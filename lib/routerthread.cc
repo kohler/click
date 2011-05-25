@@ -475,7 +475,7 @@ RouterThread::run_os()
       block:
 	set_thread_state(S_BLOCKED);
 	schedule();
-    } else if (Timestamp wait = _master->next_timer_expiry_adjusted()) {
+    } else if (Timestamp wait = timer_set().next_timer_expiry_adjusted()) {
 	wait -= Timestamp::now();
 	if (!(wait > Timestamp(0, Timestamp::subsec_per_sec / CLICK_HZ)))
 	    goto short_pause;
@@ -583,7 +583,7 @@ RouterThread::driver()
 	    run_os();
 #endif
 
-	bool run_timers = (iter % _master->timer_stride()) == 0;
+	bool run_timers = (iter % timer_set().timer_stride()) == 0;
 #if BSD_NETISRSCHED
 	run_timers = run_timers || _oticks != ticks;
 #endif
@@ -591,11 +591,11 @@ RouterThread::driver()
 #if BSD_NETISRSCHED
 	    _oticks = ticks;
 #endif
-	    _master->run_timers(this);
+	    timer_set().run_timers(this, _master);
 #if CLICK_NS
 	    // If there's another timer, tell the simulator to make us
 	    // run when it's due to go off.
-	    if (Timestamp next_expiry = _master->next_timer_expiry()) {
+	    if (Timestamp next_expiry = timer_set().next_timer_expiry()) {
 		struct timeval nexttime = next_expiry.timeval();
 		simclick_sim_command(_master->simnode(), SIMCLICK_SCHEDULE, &nexttime);
 	    }

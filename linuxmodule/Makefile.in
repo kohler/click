@@ -22,7 +22,7 @@ LIB_CXX_OBJS = string.o straccum.o nameinfo.o \
 	error.o timestamp.o glue.o task.o timer.o atomic.o gaprate.o \
 	element.o \
 	confparse.o args.o variableenv.o lexer.o elemfilter.o routervisitor.o \
-	routerthread.o router.o master.o handlercall.o notifier.o \
+	routerthread.o router.o master.o timerset.o handlercall.o notifier.o \
 	integers.o iptable.o \
 	driver.o ino.o \
 	$(EXTRA_DRIVER_OBJS)

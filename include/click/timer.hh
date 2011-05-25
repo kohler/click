@@ -303,28 +303,7 @@ class Timer { public:
     static void element_hook(Timer *t, void *user_data);
     static void task_hook(Timer *t, void *user_data);
 
-    struct heap_element {
-	Timestamp expiry;
-	Timer *t;
-#if SIZEOF_VOID_P == 4
-	uint32_t padding; /* the structure should have size 16 */
-#endif
-	heap_element(Timer *t_)
-	    : expiry(t_->expiry()), t(t_) {
-	}
-    };
-    struct heap_less {
-	inline bool operator()(const heap_element &a, const heap_element &b) {
-	    return a.expiry < b.expiry;
-	}
-    };
-    struct heap_place {
-	inline void operator()(heap_element *begin, heap_element *t) {
-	    t->t->_schedpos1 = (t - begin) + 1;
-	}
-    };
-
-    friend class Master;
+    friend class TimerSet;
 
 };
 

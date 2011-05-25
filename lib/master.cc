@@ -64,20 +64,6 @@ Master::Master(int nthreads)
     for (int tid = -1; tid < nthreads; tid++)
 	_threads.push_back(new RouterThread(this, tid));
 
-    // timer information
-#if CLICK_NS
-    _max_timer_stride = 1;
-#else
-    _max_timer_stride = 32;
-#endif
-    _timer_stride = _max_timer_stride;
-    _timer_count = 0;
-#if CLICK_LINUXMODULE
-    _timer_check_reports = 5;
-#else
-    _timer_check_reports = 0;
-#endif
-
 #if CLICK_USERLEVEL
     // select information
 # if HAVE_ALLOW_KQUEUE
@@ -119,11 +105,7 @@ Master::Master(int nthreads)
     spin_lock_init(&_master_lock);
     _master_lock_task = 0;
     _master_lock_count = 0;
-    spin_lock_init(&_timer_lock);
-    _timer_task = 0;
 #endif
-    _timer_check = Timestamp::now();
-    _timer_check_reports = 0;
 
 #if CLICK_NS
     _simnode = 0;
@@ -178,7 +160,7 @@ Master::unuse()
 void
 Master::pause()
 {
-    lock_timers();
+    _ts.lock_timers();
 #if CLICK_USERLEVEL
     _select_lock.acquire();
 #endif
@@ -186,7 +168,7 @@ Master::pause()
 #if CLICK_USERLEVEL
     _select_lock.release();
 #endif
-    unlock_timers();
+    _ts.unlock_timers();
 }
 
 
@@ -264,23 +246,7 @@ Master::kill_router(Router *router)
     // likely) when the pending list is processed.
 
     // Remove timers
-    {
-	lock_timers();
-	assert(!_timer_runchunk.size());
-	for (Timer::heap_element *thp = _timer_heap.end();
-	     thp > _timer_heap.begin(); ) {
-	    --thp;
-	    Timer *t = thp->t;
-	    if (t->router() == router) {
-		remove_heap<4>(_timer_heap.begin(), _timer_heap.end(), thp, Timer::heap_less(), Timer::heap_place());
-		_timer_heap.pop_back();
-		t->_owner = 0;
-		t->_schedpos1 = 0;
-	    }
-	}
-	set_timer_expiry();
-	unlock_timers();
-    }
+    _ts.kill_router(router);
 
 #if CLICK_USERLEVEL
     // Remove selects
@@ -386,128 +352,6 @@ Master::check_driver()
 	_stopper = 1;
     unlock_master();
     return any_active;
-}
-
-
-// TIMERS
-
-void
-Master::set_max_timer_stride(unsigned timer_stride)
-{
-    _max_timer_stride = timer_stride;
-    if (_timer_stride > _max_timer_stride)
-	_timer_stride = _max_timer_stride;
-}
-
-void
-Master::check_timer_expiry(Timer *t)
-{
-    // do not schedule timers for too far in the past
-    if (t->_expiry.sec() + Timer::behind_sec < _timer_check.sec()) {
-	if (_timer_check_reports > 0) {
-	    --_timer_check_reports;
-	    click_chatter("timer %p outdated expiry %{timestamp} updated to %{timestamp}", t, &t->_expiry, &_timer_check, &t->_expiry);
-	}
-	t->_expiry = _timer_check;
-    }
-}
-
-inline void
-Master::run_one_timer(Timer *t)
-{
-#if CLICK_STATS >= 2
-    click_cycles_t start_cycles = click_get_cycles();
-#endif
-
-    t->_hook.callback(t, t->_thunk);
-
-#if CLICK_STATS >= 2
-    t->_owner->_timer_cycles += click_get_cycles() - start_cycles;
-    t->_owner->_timer_calls++;
-#endif
-}
-
-void
-Master::run_timers(RouterThread *thread)
-{
-    if (!attempt_lock_timers())
-	return;
-    if (_master_paused == 0 && _timer_heap.size() > 0 && !_stopper) {
-	thread->set_thread_state(RouterThread::S_RUNTIMER);
-#if CLICK_LINUXMODULE
-	_timer_task = current;
-#endif
-	_timer_check = Timestamp::now();
-	Timer::heap_element *th = _timer_heap.begin();
-
-	if (th->expiry <= _timer_check) {
-	    // potentially adjust timer stride
-	    Timestamp adj_expiry = th->expiry + Timer::adjustment();
-	    if (adj_expiry <= _timer_check) {
-		_timer_count = 0;
-		if (_timer_stride > 1)
-		    _timer_stride = (_timer_stride * 4) / 5;
-	    } else if (++_timer_count >= 12) {
-		_timer_count = 0;
-		if (++_timer_stride >= _max_timer_stride)
-		    _timer_stride = _max_timer_stride;
-	    }
-
-	    // actually run timers
-	    int max_timers = 64;
-	    do {
-		Timer *t = th->t;
-		assert(t->expiry() == th->expiry);
-		pop_heap<4>(_timer_heap.begin(), _timer_heap.end(), Timer::heap_less(), Timer::heap_place());
-		_timer_heap.pop_back();
-		set_timer_expiry();
-		t->_schedpos1 = 0;
-
-		run_one_timer(t);
-	    } while (_timer_heap.size() > 0 && !_stopper
-		     && (th = _timer_heap.begin(), th->expiry <= _timer_check)
-		     && --max_timers >= 0);
-
-	    // If we ran out of timers to run, then perhaps there's an
-	    // infinite timer loop or one timer is very far behind system
-	    // time.  Eventually the system would catch up and run all timers,
-	    // but in the meantime other timers could starve.  We detect this
-	    // case and run ALL expired timers, reducing possible damage.
-	    if (max_timers < 0 && !_stopper) {
-		_timer_runchunk.reserve(32);
-		do {
-		    Timer *t = th->t;
-		    pop_heap<4>(_timer_heap.begin(), _timer_heap.end(), Timer::heap_less(), Timer::heap_place());
-		    _timer_heap.pop_back();
-		    t->_schedpos1 = -_timer_runchunk.size() - 1;
-
-		    _timer_runchunk.push_back(t);
-		} while (_timer_heap.size() > 0
-			 && (th = _timer_heap.begin(), th->expiry <= _timer_check));
-		set_timer_expiry();
-
-		Vector<Timer*>::iterator i = _timer_runchunk.begin();
-		for (; !_stopper && i != _timer_runchunk.end(); ++i)
-		    if (*i) {
-			(*i)->_schedpos1 = 0;
-			run_one_timer(*i);
-		    }
-
-		// reschedule unrun timers if stopped early
-		for (; i != _timer_runchunk.end(); ++i)
-		    if (*i) {
-			(*i)->_schedpos1 = 0;
-			(*i)->schedule_at((*i)->_expiry);
-		    }
-		_timer_runchunk.clear();
-	    }
-	}
-
-#if CLICK_LINUXMODULE
-	_timer_task = 0;
-#endif
-    }
-    unlock_timers();
 }
 
 
@@ -736,29 +580,6 @@ Master::call_selected(int fd, int mask) const
     }
 }
 
-inline int
-Master::next_timer_delay(bool more_tasks, Timestamp &t) const
-{
-#if CLICK_NS
-    // The simulator should never block.
-    return 0;
-#else
-    if (more_tasks || signals_pending)
-	return 0;
-    t = next_timer_expiry_adjusted();
-    if (t.sec() == 0)
-	return -1;		// block forever
-    else if (unlikely(Timestamp::warp_jumping())) {
-	Timestamp::warp_jump(t);
-	return 0;
-    } else if ((t -= Timestamp::now(), t.sec() >= 0)) {
-	t = t.warp_real_delay();
-	return 1;
-    } else
-	return 0;
-#endif
-}
-
 #if HAVE_ALLOW_KQUEUE
 static int
 kevent_compare(const void *ap, const void *bp, void *)
@@ -785,7 +606,7 @@ Master::run_selects_kqueue(RouterThread *thread, bool more_tasks)
     // Decide how long to wait.
     struct timespec wait, *wait_ptr = &wait;
     Timestamp t;
-    int delay_type = next_timer_delay(more_tasks, t);
+    int delay_type = _ts.next_timer_delay(more_tasks, t);
     if (delay_type == 0)
 	wait.tv_sec = wait.tv_nsec = 0;
     else if (delay_type > 0)
@@ -852,7 +673,7 @@ Master::run_selects_poll(RouterThread *thread, bool more_tasks)
     // Decide how long to wait.
     int timeout;
     Timestamp t;
-    int delay_type = next_timer_delay(more_tasks, t);
+    int delay_type = _ts.next_timer_delay(more_tasks, t);
     if (delay_type == 0)
 	timeout = 0;
     else if (delay_type > 0)
@@ -918,7 +739,7 @@ Master::run_selects_select(RouterThread *thread, bool more_tasks)
     // Decide how long to wait.
     struct timeval wait, *wait_ptr = &wait;
     Timestamp t;
-    int delay_type = next_timer_delay(more_tasks, t);
+    int delay_type = _ts.next_timer_delay(more_tasks, t);
     if (delay_type == 0)
 	timerclear(&wait);
     else if (delay_type > 0)
@@ -993,7 +814,7 @@ Master::run_selects(RouterThread *thread)
 	    // how long to wait?
 	    struct timeval wait, *wait_ptr = &wait;
 	    Timestamp t;
-	    int delay_type = next_timer_delay(false, t);
+	    int delay_type = _ts.next_timer_delay(false, t);
 	    if (delay_type == 0)
 		timerclear(&wait);
 	    else if (delay_type > 0)
