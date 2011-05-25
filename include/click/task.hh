@@ -26,7 +26,25 @@ class RouterThread;
 class TaskList;
 class Master;
 
-class Task { public:
+struct TaskLink {
+#if !HAVE_TASK_HEAP
+    TaskLink *_prev;
+    TaskLink *_next;
+#endif
+#if HAVE_STRIDE_SCHED
+    unsigned _pass;
+#endif
+    TaskLink() {
+#if !HAVE_TASK_HEAP
+	_prev = _next = 0;
+#endif
+#if HAVE_STRIDE_SCHED
+	_pass = 0;
+#endif
+    }
+};
+
+class Task : private TaskLink { public:
 
 #if HAVE_STRIDE_SCHED
     enum { STRIDE1 = 1U<<16, MAX_STRIDE = 1U<<31 };
@@ -259,13 +277,9 @@ class Task { public:
 
 #if HAVE_TASK_HEAP
     int _schedpos;
-#else
-    Task* _prev;
-    Task* _next;
 #endif
 
 #if HAVE_STRIDE_SCHED
-    unsigned _pass;
     unsigned _stride;
     int _tickets;
 #endif
@@ -344,13 +358,12 @@ CLICK_DECLS
 
 inline
 Task::Task(TaskCallback f, void *user_data)
+    :
 #if HAVE_TASK_HEAP
-    : _schedpos(-1),
-#else
-    : _prev(0), _next(0),
+      _schedpos(-1),
 #endif
 #if HAVE_STRIDE_SCHED
-      _pass(0), _stride(0), _tickets(-1),
+      _stride(0), _tickets(-1),
 #endif
       _hook(f), _thunk(user_data),
 #if HAVE_ADAPTIVE_SCHEDULER
@@ -367,13 +380,12 @@ Task::Task(TaskCallback f, void *user_data)
 
 inline
 Task::Task(Element* e)
+    :
 #if HAVE_TASK_HEAP
-    : _schedpos(-1),
-#else
-    : _prev(0), _next(0),
+      _schedpos(-1),
 #endif
 #if HAVE_STRIDE_SCHED
-      _pass(0), _stride(0), _tickets(-1),
+      _stride(0), _tickets(-1),
 #endif
       _hook(0), _thunk(e),
 #if HAVE_ADAPTIVE_SCHEDULER
@@ -530,7 +542,7 @@ Task::complete_schedule(unsigned new_pass)
     _thread->task_reheapify_from(_schedpos, this);
 # elif 0
     // look for 'n' immediately before where we should be scheduled
-    Task* n = _thread->_prev;
+    TaskLink *n = _thread->_prev;
     while (n != _thread && PASS_GT(n->_pass, _pass))
 	n = n->_prev;
     // schedule after 'n'
@@ -540,7 +552,7 @@ Task::complete_schedule(unsigned new_pass)
     _next->_prev = this;
 # else
     // look for 'n' immediately after where we should be scheduled
-    Task* n = _thread->_next;
+    TaskLink *n = _thread->_next;
     while (n != _thread && !PASS_GT(n->_pass, _pass))
 	n = n->_next;
     // schedule before 'n'

@@ -110,13 +110,8 @@ Task::error_hook(Task *, void *)
 
 Task::~Task()
 {
-#if HAVE_TASK_HEAP
     if (scheduled() || _pending_nextptr)
 	cleanup();
-#else
-    if ((scheduled() || _pending_nextptr) && _thread != this)
-	cleanup();
-#endif
 }
 
 Master *

@@ -26,11 +26,7 @@ CLICK_DECLS
 class TimerSet;
 class SelectSet;
 
-class RouterThread
-#if !HAVE_TASK_HEAP
-    : private Task
-#endif
-{ public:
+class RouterThread : private TaskLink { public:
 
     enum { THREAD_QUIESCENT = -1, THREAD_UNKNOWN = -1000 };
 
@@ -249,7 +245,7 @@ RouterThread::active() const
 #if HAVE_TASK_HEAP
     return _task_heap.size() != 0 || _pending_head;
 #else
-    return ((const Task *)_next != this) || _pending_head;
+    return _next != this || _pending_head;
 #endif
 }
 
@@ -282,7 +278,7 @@ RouterThread::task_begin() const
 #if HAVE_TASK_HEAP
     return (_task_heap.size() ? _task_heap.at_u(0).t : 0);
 #else
-    return _next;
+    return static_cast<Task *>(_next);
 #endif
 }
 
@@ -302,13 +298,13 @@ RouterThread::task_next(Task *task) const
     int p = task->_schedpos + 1;
     return (p < _task_heap.size() ? _task_heap.at_u(p).t : 0);
 #else
-    return task->_next;
+    return static_cast<Task *>(task->_next);
 #endif
 }
 
 /** @brief Returns the end of the scheduled task list.
  *
- * The return value is not a real task
+ * The return value is not a real task.
  *
  * @sa task_begin for usage, task_next
  */
@@ -318,7 +314,7 @@ RouterThread::task_end() const
 #if HAVE_TASK_HEAP
     return 0;
 #else
-    return (Task *) this;
+    return static_cast<Task *>(const_cast<TaskLink *>(static_cast<const TaskLink *>(this)));
 #endif
 }
 

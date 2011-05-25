@@ -67,15 +67,11 @@ static unsigned long greedy_schedule_jiffies;
  */
 
 RouterThread::RouterThread(Master *m, int id)
-    :
-#if !HAVE_TASK_HEAP
-      Task(Task::error_hook, 0),
-#endif
-      _pending_head(0), _pending_tail(&_pending_head),
+    : _pending_head(0), _pending_tail(&_pending_head),
       _master(m), _id(id)
 {
 #if !HAVE_TASK_HEAP
-    _prev = _next = _thread = this;
+    _prev = _next = this;
 #endif
 #if CLICK_LINUXMODULE
     _linux_task = 0;
@@ -429,11 +425,11 @@ RouterThread::run_tasks(int ntasks)
 	    task_reheapify_from(0, t);
 #else
 # if HAVE_STRIDE_SCHED
-	    Task *n = t->_next;
+	    TaskLink *n = t->_next;
 	    while (n != this && !PASS_GT(n->_pass, t->_pass))
 		n = n->_next;
 # else
-	    n = this;
+	    TaskLink *n = this;
 # endif
 	    if (t->_next != n) {
 		t->_next->_prev = t->_prev;
@@ -722,10 +718,10 @@ RouterThread::unschedule_router_tasks(Router* r)
 		tp++;
 	}
 #else
-    Task* prev = this;
-    Task* t;
+    TaskLink *prev = this;
+    TaskLink *t;
     for (t = prev->_next; t != this; t = t->_next)
-	if (t->router() == r)
+	if (static_cast<Task *>(t)->router() == r)
 	    t->_prev = 0;
 	else {
 	    prev->_next = t;
