@@ -52,6 +52,8 @@ class RouterThread : private TaskLink { public:
     inline void block_tasks(bool scheduled);
     inline void unblock_tasks();
 
+    inline bool stop_flag() const;
+
     void driver();
     void driver_once();
 
@@ -102,6 +104,8 @@ class RouterThread : private TaskLink { public:
     unsigned _iters_per_os;
 
   private:
+
+    volatile int _stop_flag;
 
 #if HAVE_TASK_HEAP
     struct task_heap_element {
@@ -428,6 +432,12 @@ inline void
 RouterThread::add_pending()
 {
     wake();
+}
+
+inline bool
+RouterThread::stop_flag() const
+{
+    return _stop_flag;
 }
 
 inline void

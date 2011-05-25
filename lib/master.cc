@@ -44,7 +44,6 @@ Master::Master(int nthreads)
     : _routers(0)
 {
     _refcount = 0;
-    _stopper = 0;
     _master_paused = 0;
 
     for (int tid = -1; tid < nthreads; tid++)
@@ -183,7 +182,7 @@ Master::kill_router(Router *router)
     }
 
     // Fix stopper
-    _stopper = 1;
+    set_stopper(1);
 #if CLICK_LINUXMODULE && HAVE_LINUXMODULE_2_6
     preempt_disable();
 #endif
@@ -262,7 +261,7 @@ Master::check_driver()
 #endif
 
     lock_master();
-    _stopper = 0;
+    set_stopper(0);
     bool any_active = false;
 
     for (Router *r = _routers; r; ) {
@@ -287,7 +286,7 @@ Master::check_driver()
     }
 
     if (!any_active)
-	_stopper = 1;
+	set_stopper(1);
     unlock_master();
     return any_active;
 }
@@ -495,7 +494,7 @@ Master::info() const
 {
     StringAccum sa;
     sa << "paused:\t\t" << _master_paused << '\n';
-    sa << "stopper:\t" << _stopper << '\n';
+    sa << "stopper:\t" << _threads[0]->_stopper << '\n';
     for (int i = 0; i < _threads.size(); i++) {
 	RouterThread *t = _threads[i];
 	sa << "thread " << (i - 1) << ":";

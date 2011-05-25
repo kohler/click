@@ -31,8 +31,6 @@ class Master { public:
     inline RouterThread* thread(int id) const;
     void wake_somebody();
 
-    const volatile int* stopper_ptr() const	{ return &_stopper; }
-
     TimerSet &timer_set()			{ return _ts; }
     const TimerSet &timer_set() const		{ return _ts; }
 
@@ -86,7 +84,6 @@ class Master { public:
     Vector<RouterThread*> _threads;
 
     // DRIVERMANAGER
-    volatile int _stopper;
     inline void set_stopper(int);
     bool check_driver();
 
@@ -216,7 +213,8 @@ TimerSet::next_timer_delay(bool more_tasks, Timestamp &t) const
 inline void
 Master::set_stopper(int s)
 {
-    _stopper = s;
+    for (RouterThread **t = _threads.begin(); t != _threads.end(); ++t)
+	(*t)->_stop_flag = s;
 }
 
 inline void

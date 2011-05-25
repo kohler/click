@@ -110,7 +110,7 @@ TimerSet::run_timers(RouterThread *thread, Master *master)
 {
     if (!attempt_lock_timers())
 	return;
-    if (!master->paused() && _timer_heap.size() > 0 && !*master->stopper_ptr()) {
+    if (!master->paused() && _timer_heap.size() > 0 && !thread->stop_flag()) {
 	thread->set_thread_state(RouterThread::S_RUNTIMER);
 #if CLICK_LINUXMODULE
 	_timer_task = current;
@@ -142,7 +142,7 @@ TimerSet::run_timers(RouterThread *thread, Master *master)
 		t->_schedpos1 = 0;
 
 		run_one_timer(t);
-	    } while (_timer_heap.size() > 0 && !*master->stopper_ptr()
+	    } while (_timer_heap.size() > 0 && !thread->stop_flag()
 		     && (th = _timer_heap.begin(), th->expiry <= _timer_check)
 		     && --max_timers >= 0);
 
@@ -151,7 +151,7 @@ TimerSet::run_timers(RouterThread *thread, Master *master)
 	    // time.  Eventually the system would catch up and run all timers,
 	    // but in the meantime other timers could starve.  We detect this
 	    // case and run ALL expired timers, reducing possible damage.
-	    if (max_timers < 0 && !*master->stopper_ptr()) {
+	    if (max_timers < 0 && !thread->stop_flag()) {
 		_timer_runchunk.reserve(32);
 		do {
 		    Timer *t = th->t;
@@ -165,7 +165,7 @@ TimerSet::run_timers(RouterThread *thread, Master *master)
 		set_timer_expiry();
 
 		Vector<Timer*>::iterator i = _timer_runchunk.begin();
-		for (; !*master->stopper_ptr() && i != _timer_runchunk.end(); ++i)
+		for (; !thread->stop_flag() && i != _timer_runchunk.end(); ++i)
 		    if (*i) {
 			(*i)->_schedpos1 = 0;
 			run_one_timer(*i);
