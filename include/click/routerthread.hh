@@ -405,9 +405,7 @@ RouterThread::wake()
 	wake_up_process(task);
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     // see also Master::add_select()
-# if HAVE___SYNC_SYNCHRONIZE
-    __sync_synchronize();
-# endif
+    click_fence();
     if (_select_blocked) {
 	_wake_pipe_pending = true;
 	ignore_result(write(_wake_pipe[1], "", 1));

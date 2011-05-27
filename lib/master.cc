@@ -48,11 +48,6 @@ volatile sig_atomic_t Master::signals_pending;
 static volatile sig_atomic_t signal_pending[NSIG];
 # if HAVE_MULTITHREAD
 static RouterThread * volatile selecting_thread;
-#  if HAVE___SYNC_SYNCHRONIZE
-#   define click_master_mb()	__sync_synchronize()
-#  else
-#   define click_master_mb()	__asm__ volatile("" : : : "memory")
-#  endif
 # else
 static int sig_pipe[2] = { -1, -1 };
 # endif
@@ -772,7 +767,7 @@ Master::run_selects_kqueue(RouterThread *thread, bool more_tasks)
 {
 # if HAVE_MULTITHREAD
     selecting_thread = thread;
-    click_master_mb();
+    click_fence();
     _select_lock.release();
 
     struct kevent wp_kev;
@@ -800,7 +795,7 @@ Master::run_selects_kqueue(RouterThread *thread, bool more_tasks)
 # if HAVE_MULTITHREAD
     thread->set_thread_state(RouterThread::S_LOCKSELECT);
     _select_lock.acquire();
-    click_master_mb();
+    click_fence();
     selecting_thread = 0;
     thread->_select_blocked = false;
 
@@ -837,7 +832,7 @@ Master::run_selects_poll(RouterThread *thread, bool more_tasks)
     // block
     Vector<struct pollfd> my_pollfds(_pollfds);
     selecting_thread = thread;
-    click_master_mb();
+    click_fence();
     _select_lock.release();
 
     pollfd wake_pollfd;
@@ -867,7 +862,7 @@ Master::run_selects_poll(RouterThread *thread, bool more_tasks)
 # if HAVE_MULTITHREAD
     thread->set_thread_state(RouterThread::S_LOCKSELECT);
     _select_lock.acquire();
-    click_master_mb();
+    click_fence();
     selecting_thread = 0;
     thread->_select_blocked = false;
 # endif
@@ -907,7 +902,7 @@ Master::run_selects_select(RouterThread *thread, bool more_tasks)
 
 # if HAVE_MULTITHREAD
     selecting_thread = thread;
-    click_master_mb();
+    click_fence();
     _select_lock.release();
 
     FD_SET(&read_mask, thread->_wake_pipe[0]);
@@ -934,7 +929,7 @@ Master::run_selects_select(RouterThread *thread, bool more_tasks)
 # if HAVE_MULTITHREAD
     thread->set_thread_state(RouterThread::S_LOCKSELECT);
     _select_lock.acquire();
-    click_master_mb();
+    click_fence();
     selecting_thread = 0;
     thread->_select_blocked = false;
 # endif
@@ -980,7 +975,7 @@ Master::run_selects(RouterThread *thread)
     // concurrently waking us up, we will either detect that the thread is now
     // active(), or wake up on the write to the thread's _wake_pipe
     thread->_select_blocked = true;
-    click_master_mb();
+    click_fence();
 #endif
 
     bool more_tasks = thread->active();
@@ -1070,7 +1065,7 @@ sighandler(int signo)
 {
     Master::signals_pending = signal_pending[signo] = 1;
 # if HAVE_MULTITHREAD
-    click_master_mb();
+    click_fence();
     if (selecting_thread)
 	selecting_thread->wake();
 # else
@@ -1215,9 +1210,7 @@ Master::process_signals(RouterThread *thread)
 	if (sigismember(&_sig_dispatching, signo) > 0) {
 	    if (sigismember(&sigset_active, signo) == 0) {
 		click_signal(signo, SIG_DFL, false);
-#if HAVE_MULTITHREAD
-		click_master_mb();
-#endif
+		click_fence();
 		if (signal_pending[signo] != 0) {
 		    signal_pending[signo] = 0;
 		    goto suicide;

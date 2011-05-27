@@ -302,9 +302,7 @@ NotifierSignal::uninitialized_signal()
 inline bool
 NotifierSignal::active() const
 {
-#if HAVE_MULTITHREAD && HAVE___SYNC_SYNCHRONIZE
-    __sync_synchronize();
-#endif
+    click_fence();
     if (likely(_mask))
 	return (*_v.v1 & _mask) != 0;
     else {
@@ -534,10 +532,7 @@ ActiveNotifier::set_active(bool active, bool schedule)
 	// reschedule might run BEFORE we set the notifier; after which it
 	// would go to sleep forever.
 	Notifier::set_active(active);
-
-#if HAVE_MULTITHREAD && HAVE___SYNC_SYNCHRONIZE
-	__sync_synchronize();
-#endif
+	click_fence();
 
 	if (active && schedule) {
 	    if (_listener1)

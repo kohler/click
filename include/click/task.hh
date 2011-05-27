@@ -182,9 +182,7 @@ class Task { public:
      * @sa unschedule, strong_reschedule */
     inline void reschedule() {
 	_status.is_scheduled = true;
-#if HAVE_MULTITHREAD && HAVE___SYNC_SYNCHRONIZE
-	__sync_synchronize();
-#endif
+	click_fence();
 	if (!on_scheduled_list())
 	    true_reschedule();
     }

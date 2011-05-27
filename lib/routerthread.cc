@@ -529,9 +529,7 @@ RouterThread::process_pending()
     while (Task *t = Task::pending_to_task(my_pending)) {
 	my_pending = t->_pending_nextptr;
 	t->_pending_nextptr = 0;
-#if HAVE_MULTITHREAD && HAVE___SYNC_SYNCHRONIZE
-	__sync_synchronize();
-#endif
+	click_fence();
 	t->process_pending(this);
     }
 }

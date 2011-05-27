@@ -460,6 +460,20 @@ ReadWriteLock::release_write()
 #endif
 }
 
+
+/** @brief Provide a memory barrier. */
+inline void
+click_fence()
+{
+#if CLICK_LINUXMODULE
+    smp_mb();
+#elif HAVE_MULTITHREAD && HAVE___SYNC_SYNCHRONIZE
+    __sync_synchronize();
+#else
+    asm volatile("" : : : "memory");
+#endif
+}
+
 CLICK_ENDDECLS
 #undef SPINLOCK_ASSERTLEVEL
 #endif
