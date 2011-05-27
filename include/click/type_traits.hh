@@ -2,16 +2,47 @@
 #define CLICK_TYPE_TRAITS_HH
 CLICK_DECLS
 
-template<typename T, T val>
+/** @file <click/type_traits.hh>
+  @brief Type traits structures. */
+
+/** @class integral_constant
+  @brief Type wrapper for an integral constant V.
+
+  Offers the following members:
+
+  <dl>
+  <dt>type</dt>
+  <dd>The type itself.</dd>
+  <dt>value_type</dt>
+  <dd>The type argument T.</dd>
+  <dt>value</dt>
+  <dd>The value argument V.</dd>
+  </dl> */
+template<typename T, T V>
 struct integral_constant {
-    typedef integral_constant<T, val> type;
+    typedef integral_constant<T, V> type;
     typedef T value_type;
-    static constexpr T value = val;
+    static constexpr T value = V;
 };
-template<typename T, T val> constexpr T integral_constant<T, val>::value;
+template<typename T, T V> constexpr T integral_constant<T, V>::value;
+
+/** @class true_type
+  @brief Type wrapper for the constant true. */
 typedef integral_constant<bool, true> true_type;
+
+/** @class false_type
+  @brief Type wrapper for the constant false. */
 typedef integral_constant<bool, false> false_type;
 
+
+/** @class has_trivial_copy
+  @brief Template determining whether T may be copied by memcpy.
+
+  has_trivial_copy<T> is equivalent to true_type if T has a trivial
+  copy constructor, false_type if it does not. */
+#if HAVE___HAS_TRIVIAL_COPY
+template<typename T> struct has_trivial_copy : public integral_constant<bool, __has_trivial_copy(T)> {};
+#else
 template<typename T> struct has_trivial_copy : public false_type {};
 template<> struct has_trivial_copy<unsigned char> : public true_type {};
 template<> struct has_trivial_copy<signed char> : public true_type {};
@@ -22,11 +53,12 @@ template<> struct has_trivial_copy<unsigned> : public true_type {};
 template<> struct has_trivial_copy<int> : public true_type {};
 template<> struct has_trivial_copy<unsigned long> : public true_type {};
 template<> struct has_trivial_copy<long> : public true_type {};
-#if HAVE_LONG_LONG
+# if HAVE_LONG_LONG
 template<> struct has_trivial_copy<unsigned long long> : public true_type {};
 template<> struct has_trivial_copy<long long> : public true_type {};
-#endif
+# endif
 template<typename T> struct has_trivial_copy<T *> : public true_type {};
+#endif
 
 
 #if HAVE_INT64_TYPES && (!HAVE_LONG_LONG || SIZEOF_LONG_LONG < 8)
@@ -369,6 +401,7 @@ struct extract_integer_template<1, Limb, V> {
     }
 };
 
+/** @brief Extract an integral type from a multi-limb integer. */
 template<typename Limb, typename V>
 inline void extract_integer(const Limb *x, V &value) {
     extract_integer_template<
