@@ -49,6 +49,9 @@
 /* Define if you have the __builtin_ffsll function. */
 #undef HAVE___BUILTIN_FFSLL
 
+/* Define if you have the __has_trivial_copy compiler intrinsic. */
+#undef HAVE___HAS_TRIVIAL_COPY
+
 /* Define if you have the __sync_synchronize function. */
 #undef HAVE___SYNC_SYNCHRONIZE
 

@@ -679,11 +679,11 @@ AC_DEFUN([CLICK_CHECK_SIGNED_SHIFT], [
 
 
 dnl
-dnl CLICK_CHECK_INTEGER_BUILTINS
-dnl Checks for '__builtin_clz', '__builtin_clzll', and other builtins.
+dnl CLICK_CHECK_COMPILER_INTRINSICS
+dnl Checks for '__builtin_clz', '__builtin_clzll', and other intrinsics.
 dnl
 
-AC_DEFUN([CLICK_CHECK_INTEGER_BUILTINS], [
+AC_DEFUN([CLICK_CHECK_COMPILER_INTRINSICS], [
     AC_CACHE_CHECK([for __builtin_clz], [ac_cv_have___builtin_clz],
 	 [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[volatile int x = 11;]], [[int y = __builtin_clz(x);]])], [ac_cv_have___builtin_clz=yes], [ac_cv_have___builtin_clz=no])])
     if test $ac_cv_have___builtin_clz = yes; then
@@ -725,6 +725,12 @@ AC_DEFUN([CLICK_CHECK_INTEGER_BUILTINS], [
 	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[long x = 11;]], [[long *y = &x; __sync_synchronize(*y);]])], [ac_cv_have___sync_synchronize_args=yes], [ac_cv_have___sync_synchronize_args=no])])
     if test $ac_cv_have___sync_synchronize_args = yes; then
 	AC_DEFINE([HAVE___SYNC_SYNCHRONIZE_ARGUMENTS], [1], [Define if the __sync_synchronize function supports arguments.])
+    fi
+
+    AC_CACHE_CHECK([for __has_trivial_copy], [ac_cv_have___has_trivial_copy],
+	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[long x = 1; if (__has_trivial_copy(long)) x = 0;]])], [ac_cv_have___has_trivial_copy=yes], [ac_cv_have___has_trivial_copy=no])])
+    if test $ac_cv_have___has_trivial_copy = yes; then
+	AC_DEFINE([HAVE___HAS_TRIVIAL_COPY], [1], [Define if you have the __has_trivial_copy compiler intrinsic.])
     fi
 
     AC_CHECK_HEADERS(strings.h)
