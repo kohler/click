@@ -1,5 +1,6 @@
 #ifndef CLICK_TYPE_TRAITS_HH
 #define CLICK_TYPE_TRAITS_HH
+CLICK_DECLS
 
 template<typename T, T val>
 struct integral_constant {
@@ -375,4 +376,5 @@ inline void extract_integer(const Limb *x, V &value) {
 	>::extract(x, value);
 }
 
+CLICK_ENDDECLS
 #endif
