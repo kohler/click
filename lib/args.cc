@@ -37,6 +37,8 @@ const ArgContext blank_args;
 inline void
 Args::initialize(const Vector<String> *conf)
 {
+    static_assert(has_trivial_copy<int>::value && !has_trivial_copy<String>::value, "has_trivial_copy problems");
+
     _conf = conf ? new Vector<String>(*conf) : 0;
     _slots = 0;
     _simple_slotbuf[0] = 0;
