@@ -15,7 +15,8 @@ i :: InfiniteSource(LIMIT 1, ACTIVE false)
 	-> d :: Discard;
 Idle	-> [1] s;
 
-DriverManager(print d1.signal, print d2.signal,
+DriverManager(wait 0.01s,
+	print d1.signal, print d2.signal,
 	write i.active true,
 	wait 0.01s,
 	print d1.signal, print d2.signal,
