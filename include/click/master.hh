@@ -3,7 +3,6 @@
 #define CLICK_MASTER_HH
 #include <click/router.hh>
 #include <click/atomic.hh>
-#include <click/timerset.hh>
 #if CLICK_USERLEVEL
 # include <click/selectset.hh>
 # include <signal.h>
@@ -33,9 +32,6 @@ class Master { public:
     inline int nthreads() const;
     inline RouterThread *thread(int id) const;
     void wake_somebody();
-
-    TimerSet &timer_set()			{ return _ts; }
-    const TimerSet &timer_set() const		{ return _ts; }
 
 #if CLICK_USERLEVEL
     SelectSet &select_set()			{ return _selects; }
@@ -91,9 +87,6 @@ class Master { public:
     // DRIVERMANAGER
     inline void set_stopper(int);
     bool check_driver();
-
-    // TIMER
-    TimerSet _ts;
 
 #if CLICK_USERLEVEL
     // SELECTS
@@ -151,18 +144,6 @@ inline void
 Master::wake_somebody()
 {
     _threads[1]->wake();
-}
-
-inline TimerSet &
-RouterThread::timer_set()
-{
-    return _master->timer_set();
-}
-
-inline const TimerSet &
-RouterThread::timer_set() const
-{
-    return _master->timer_set();
 }
 
 inline SelectSet &

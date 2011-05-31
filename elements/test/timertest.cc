@@ -95,11 +95,11 @@ TimerTest::benchmark_schedules(Timer *ts, int nts, const Timestamp &now)
 void
 TimerTest::benchmark_changes(Timer *ts, int nts, const Timestamp &now)
 {
-    Master *m = master();
+    RouterThread *th = ts->thread();
     for (int i = 0; i < 6 * nts; ++i) {
 	Timer *t;
 	if (click_random(0, 8) < 6) {
-	    t = m->timer_set().next_timer();
+	    t = th->timer_set().next_timer();
 	    t->unschedule();
 	} else
 	    t = &ts[click_random(0, nts - 1)];
@@ -108,10 +108,10 @@ TimerTest::benchmark_changes(Timer *ts, int nts, const Timestamp &now)
 }
 
 void
-TimerTest::benchmark_fires(Timer *, int, const Timestamp &)
+TimerTest::benchmark_fires(Timer *ts, int, const Timestamp &)
 {
-    Master *m = master();
-    while (Timer *t = m->timer_set().next_timer())
+    RouterThread *th = ts->thread();
+    while (Timer *t = th->timer_set().next_timer())
 	t->unschedule();
 }
 

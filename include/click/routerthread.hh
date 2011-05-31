@@ -3,6 +3,7 @@
 #define CLICK_ROUTERTHREAD_HH
 #include <click/sync.hh>
 #include <click/vector.hh>
+#include <click/timerset.hh>
 #if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -23,7 +24,6 @@ CLICK_CXX_UNPROTECT
 // We cannot #include <click/task.hh> ourselves because of circular #include
 // dependency.
 CLICK_DECLS
-class TimerSet;
 class SelectSet;
 
 class RouterThread : private TaskLink { public:
@@ -33,8 +33,8 @@ class RouterThread : private TaskLink { public:
     inline int thread_id() const;
 
     inline Master *master() const;
-    inline TimerSet &timer_set();
-    inline const TimerSet &timer_set() const;
+    inline TimerSet &timer_set()		{ return _timers; }
+    inline const TimerSet &timer_set() const	{ return _timers; }
     inline SelectSet &select_set();
     inline const SelectSet &select_set() const;
 
@@ -57,7 +57,7 @@ class RouterThread : private TaskLink { public:
     void driver();
     void driver_once();
 
-    void unschedule_router_tasks(Router*);
+    void kill_router(Router *router);
 
 #if HAVE_ADAPTIVE_SCHEDULER
     // min_cpu_share() and max_cpu_share() are expressed on a scale with
@@ -137,6 +137,8 @@ class RouterThread : private TaskLink { public:
     Spinlock _task_lock;
     atomic_uint32_t _task_blocker;
     atomic_uint32_t _task_blocker_waiting;
+
+    TimerSet _timers;
 
 #if CLICK_LINUXMODULE
     bool _greedy;

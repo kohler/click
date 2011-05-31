@@ -6,6 +6,7 @@
 #include <click/element.hh>
 #include <click/timestamp.hh>
 CLICK_DECLS
+class RouterThread;
 
 typedef void (*TimerCallback)(Timer *timer, void *user_data);
 typedef TimerCallback TimerHook CLICK_DEPRECATED;
@@ -117,6 +118,14 @@ class Timer { public:
 	return _owner->router();
     }
 
+    /** @brief Return the Timer's associated RouterThread. */
+    inline RouterThread *thread() const {
+	return _thread;
+    }
+
+    /** @brief Return the Timer's associated home thread ID. */
+    int home_thread_id() const;
+
 
     /** @brief Initialize the timer.
      * @param owner the owner element
@@ -132,12 +141,7 @@ class Timer { public:
      *
      * Initializing a Timer constructed by the default constructor, Timer(),
      * will produce a warning. */
-    inline void initialize(Element *owner, bool quiet = false) {
-	assert(!initialized() || _owner->router() == owner->router());
-	_owner = owner;
-	if (unlikely(_hook.callback == do_nothing_hook && !_thunk) && !quiet)
-	    click_chatter("initializing Timer %{element} [%p], which does nothing", _owner, this);
-    }
+    void initialize(Element *owner, bool quiet = false);
 
     /** @brief Initialize the timer.
      * @param router the owner router
@@ -296,6 +300,7 @@ class Timer { public:
     } _hook;
     void *_thunk;
     Element *_owner;
+    RouterThread *_thread;
 
     Timer &operator=(const Timer &x);
 

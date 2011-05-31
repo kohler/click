@@ -193,38 +193,38 @@ Timer::task_hook(Timer *, void *thunk)
 
 
 Timer::Timer()
-    : _schedpos1(0), _thunk(0), _owner(0)
+    : _schedpos1(0), _thunk(0), _owner(0), _thread(0)
 {
     static_assert(sizeof(TimerSet::heap_element) == 16, "size_element should be 16 bytes long.");
     _hook.callback = do_nothing_hook;
 }
 
 Timer::Timer(const do_nothing_t &)
-    : _schedpos1(0), _thunk((void *) 1), _owner(0)
+    : _schedpos1(0), _thunk((void *) 1), _owner(0), _thread(0)
 {
     _hook.callback = do_nothing_hook;
 }
 
 Timer::Timer(TimerCallback f, void *user_data)
-    : _schedpos1(0), _thunk(user_data), _owner(0)
+    : _schedpos1(0), _thunk(user_data), _owner(0), _thread(0)
 {
     _hook.callback = f;
 }
 
 Timer::Timer(Element* element)
-    : _schedpos1(0), _thunk(element), _owner(0)
+    : _schedpos1(0), _thunk(element), _owner(0), _thread(0)
 {
     _hook.callback = element_hook;
 }
 
 Timer::Timer(Task* task)
-    : _schedpos1(0), _thunk(task), _owner(0)
+    : _schedpos1(0), _thunk(task), _owner(0), _thread(0)
 {
     _hook.callback = task_hook;
 }
 
 Timer::Timer(const Timer &x)
-    : _schedpos1(0), _hook(x._hook), _thunk(x._thunk), _owner(0)
+    : _schedpos1(0), _hook(x._hook), _thunk(x._thunk), _owner(0), _thread(0)
 {
 }
 
@@ -235,11 +235,32 @@ Timer::initialize(Router *router)
 }
 
 void
+Timer::initialize(Element *owner, bool quiet)
+{
+    assert(!initialized() || _owner->router() == owner->router());
+    _owner = owner;
+    if (unlikely(_hook.callback == do_nothing_hook && !_thunk) && !quiet)
+	click_chatter("initializing Timer %{element} [%p], which does nothing", _owner, this);
+
+    int tid = owner->router()->home_thread_id(owner);
+    _thread = owner->master()->thread(tid);
+}
+
+int
+Timer::home_thread_id() const
+{
+    if (_thread)
+	return _thread->thread_id();
+    else
+	return ThreadSched::THREAD_UNKNOWN;
+}
+
+void
 Timer::schedule_at(const Timestamp& when)
 {
     // acquire lock, unschedule
     assert(_owner && initialized());
-    TimerSet &ts = _owner->master()->timer_set();
+    TimerSet &ts = _thread->timer_set();
     ts.lock_timers();
 
     // set expiration timer
@@ -263,9 +284,9 @@ Timer::schedule_at(const Timestamp& when)
     if (old_schedpos1 == 1 || _schedpos1 == 1)
 	ts.set_timer_expiry();
 
-    // if we changed the timeout, wake up the first thread
+    // if we changed the timeout, wake up the thread
     if (_schedpos1 == 1)
-	_owner->master()->wake_somebody();
+	_thread->wake();
 
     // done
     ts.unlock_timers();
@@ -282,7 +303,7 @@ Timer::unschedule()
 {
     if (!scheduled())
 	return;
-    TimerSet &ts = _owner->master()->timer_set();
+    TimerSet &ts = _thread->timer_set();
     ts.lock_timers();
     int old_schedpos1 = _schedpos1;
     if (_schedpos1 > 0) {

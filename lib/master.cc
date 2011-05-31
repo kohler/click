@@ -114,15 +114,15 @@ Master::unuse()
 void
 Master::pause()
 {
-    _ts.lock_timers();
-#if CLICK_USERLEVEL
-    _selects._select_lock.acquire();
-#endif
     _master_paused++;
 #if CLICK_USERLEVEL
+    _selects._select_lock.acquire();
     _selects._select_lock.release();
 #endif
-    _ts.unlock_timers();
+    for (int i = 1; i < _nthreads; ++i) {
+	_threads[i]->timer_set().lock_timers();
+	_threads[i]->timer_set().unlock_timers();
+    }
 }
 
 void
@@ -211,14 +211,11 @@ Master::kill_router(Router *router)
 
     // Remove tasks
     for (RouterThread **tp = _threads; tp != _threads + _nthreads; ++tp)
-	(*tp)->unschedule_router_tasks(router);
+	(*tp)->kill_router(router);
 
     // 4.Sep.2007 - Don't bother to remove pending tasks.  They will be
     // removed shortly anyway, either when the task itself is deleted or (more
     // likely) when the pending list is processed.
-
-    // Remove timers
-    _ts.kill_router(router);
 
 #if CLICK_USERLEVEL
     // Remove selects
