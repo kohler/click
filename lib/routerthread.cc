@@ -226,28 +226,26 @@ RouterThread::client_set_tickets(int client, int new_tickets)
 }
 
 inline void
-RouterThread::client_update_pass(int client, const Timestamp &t_before, const Timestamp &t_after)
+RouterThread::client_update_pass(int client, const Timestamp &t_before)
 {
     Client &c = _clients[client];
-    Timestamp::seconds_type elapsed = (t_after - t_before).usec1();
+    Timestamp t_now = Timestamp::now();
+    Timestamp::seconds_type elapsed = (t_now - t_before).usec1();
     if (elapsed > 0)
 	c.pass += (c.stride * elapsed) / DRIVER_QUANTUM;
     else
 	c.pass += c.stride;
-}
 
-inline void
-RouterThread::check_restride(Timestamp &t_before, const Timestamp &t_now, int &restride_iter)
-{
-    Timestamp::seconds_type elapsed = (t_now - t_before).usec1();
+    // check_restride
+    Timestamp::seconds_type elapsed = (t_now - _adaptive_restride_timestamp).usec1();
     if (elapsed > DRIVER_RESTRIDE_INTERVAL || elapsed < 0) {
 	// mark new measurement period
-	t_before = t_now;
+	_adaptive_restride_timestamp = t_now;
 
 	// reset passes every 10 intervals, or when time moves backwards
-	if (++restride_iter == 10 || elapsed < 0) {
+	if (++_adaptive_restride_iter == 10 || elapsed < 0) {
 	    _global_pass = _clients[C_CLICK].tickets = _clients[C_KERNEL].tickets = 0;
-	    restride_iter = 0;
+	    _adaptive_restride_iter = 0;
 	} else
 	    _global_pass += (DRIVER_GLOBAL_STRIDE * elapsed) / DRIVER_QUANTUM;
 
@@ -351,6 +349,9 @@ RouterThread::run_tasks(int ntasks)
     if ((_driver_task_epoch % TASK_EPOCH_BUFSIZ) == 0)
 	_task_epoch_first = _driver_task_epoch;
 #endif
+#if HAVE_ADAPTIVE_SCHEDULER
+    Timestamp t_before = Timestamp::now();
+#endif
 
     // never run more than 32768 tasks
     if (ntasks > 32768)
@@ -453,6 +454,10 @@ RouterThread::run_tasks(int ntasks)
 	} else
 	    t->remove_from_scheduled_list();
     }
+
+#if HAVE_ADAPTIVE_SCHEDULER
+    client_update_pass(C_CLICK, t_before);
+#endif
 }
 
 inline void
@@ -463,6 +468,9 @@ RouterThread::run_os()
     set_current_state(TASK_INTERRUPTIBLE);
 #endif
     driver_unlock_tasks();
+#if HAVE_ADAPTIVE_SCHEDULER
+    Timestamp t_before = Timestamp::now();
+#endif
 
 #if CLICK_USERLEVEL
     select_set().run_selects(this);
@@ -508,6 +516,9 @@ RouterThread::run_os()
 # error "Compiling for unknown target."
 #endif
 
+#if HAVE_ADAPTIVE_SCHEDULER
+    client_update_pass(C_KERNEL, t_before);
+#endif
     driver_lock_tasks();
 }
 
@@ -557,14 +568,11 @@ RouterThread::driver()
     driver_lock_tasks();
 
 #if HAVE_ADAPTIVE_SCHEDULER
-    int restride_iter = 0;
-    Timestamp t_before = Timestamp::uninitialized_t();
-    Timestamp restride_t_before = Timestamp::uninitialized_t();
-    Timestamp t_now = Timestamp::uninitialized_t();
     client_set_tickets(C_CLICK, DRIVER_TOTAL_TICKETS / 2);
     client_set_tickets(C_KERNEL, DRIVER_TOTAL_TICKETS / 2);
     _cur_click_share = Task::MAX_UTILIZATION / 2;
-    restride_t_before.assign_now();
+    _adaptive_restride_timestamp.assign_now();
+    _adaptive_restride_iter = 0;
 #endif
 
 #if !CLICK_NS && !BSD_NETISRSCHED
@@ -622,18 +630,10 @@ RouterThread::driver()
     splx(s);
 # endif
 #else /* HAVE_ADAPTIVE_SCHEDULER */
-    t_before.assign_now();
-    int client;
-    if (PASS_GT(_clients[C_KERNEL].pass, _clients[C_CLICK].pass)) {
-	client = C_CLICK;
+    if (PASS_GT(_clients[C_KERNEL].pass, _clients[C_CLICK].pass))
 	run_tasks(_tasks_per_iter);
-    } else {
-	client = C_KERNEL;
+    else
 	run_os();
-    }
-    t_now.assign_now();
-    client_update_pass(client, t_before, t_now);
-    check_restride(restride_t_before, t_now, restride_iter);
 #endif
 
 #if !BSD_NETISRSCHED

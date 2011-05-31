@@ -163,6 +163,8 @@ class RouterThread : private TaskLink { public:
     unsigned _max_click_share;		// maximum allowed Click share of CPU
     unsigned _min_click_share;		// minimum allowed Click share of CPU
     unsigned _cur_click_share;		// current Click share
+    Timestamp _adaptive_restride_timestamp;
+    int _adaptive_restride_iter;
 #endif
 
 #if CLICK_DEBUG_SCHEDULING
@@ -203,8 +205,7 @@ class RouterThread : private TaskLink { public:
     inline void run_os();
 #if HAVE_ADAPTIVE_SCHEDULER
     void client_set_tickets(int client, int tickets);
-    inline void client_update_pass(int client, const Timestamp &before, const Timestamp &after);
-    inline void check_restride(Timestamp &before, const Timestamp &now, int &restride_iter);
+    inline void client_update_pass(int client, const Timestamp &before);
 #endif
 #if HAVE_TASK_HEAP
     void task_reheapify_from(int pos, Task*);
