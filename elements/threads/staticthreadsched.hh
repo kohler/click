@@ -27,7 +27,7 @@ class StaticThreadSched : public Element, public ThreadSched { public:
 
     int configure(Vector<String> &, ErrorHandler *);
 
-    int initial_home_thread_id(Element *owner, Task *task, bool scheduled);
+    int initial_home_thread_id(const Element *e);
 
   private:
 

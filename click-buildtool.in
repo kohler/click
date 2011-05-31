@@ -348,7 +348,7 @@ $bad_files"
 	outscriptlet='i, "\t", header[i], "\t", ex'
     fi
 
-    $egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^ELEMENT_LIBS|^class|^[ 	]*(virtual[ 	]*)*const[ 	]*char[ 	]*\*[ 	]*class_name|^[ 	]*static[ 	]*void[ 	]*static_[ic]|^[ 	]*(virtual[ 	]*)*bool[ 	]*run_t|^}' $files $header_files /dev/null 2>/dev/null | $awk -F: 'BEGIN {
+    $egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^ELEMENT_LIBS|^class|^[ 	]*(virtual[ 	]*)*const[ 	]*char[ 	]*\*[ 	]*class_name|^[ 	]*static[ 	]*void[ 	]*static_[ic]|^[ 	]*(virtual[ 	]*)*bool[ 	]*run_t|^[ 	]*(virtual[ 	]*)*int[ 	]*initial_home|^}' $files $header_files /dev/null 2>/dev/null | $awk -F: 'BEGIN {
   OFS = ""; cur_class = ""; line_warned = 0; nexports = 0
 }
 /:class[ 	]/ {
@@ -424,6 +424,9 @@ $bad_files"
 }
 /[^_a-z]run_timer *\( *\)/ {
   print $1, ": ", cur_class, "::run_timer should take a Timer * argument" | "cat 1>&2"
+}
+/[^_a-z]initial_home_thread_id *\([ 	]*E/ {
+  print $1, ": ", cur_class, "::initial_home_thread_id should take ONLY a const Element * argument" | "cat 1>&2"
 }
 END {
   if (nexports == 0)

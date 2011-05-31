@@ -348,6 +348,17 @@ Router::elandmark(int eindex) const
 	return filename + String(':') + String(lineno);
 }
 
+int
+Router::hard_home_thread_id(const Element *e) const
+{
+    int &x = _element_home_thread_ids[e->eindex() + 1];
+    if (x == ThreadSched::THREAD_UNKNOWN && _thread_sched)
+	x = _thread_sched->initial_home_thread_id(e);
+    if (x == ThreadSched::THREAD_UNKNOWN)
+	return 0;
+    return x;
+}
+
 
 // CREATION
 
@@ -1057,6 +1068,9 @@ Router::initialize(ErrorHandler *errh)
     if (check_hookup_elements(errh) < 0)
 	return -1;
 
+    // prepare thread IDs
+    _element_home_thread_ids.assign(nelements() + 1, ThreadSched::THREAD_UNKNOWN);
+
     // set up configuration order
     _element_configure_order.assign(nelements(), 0);
     if (_element_configure_order.size()) {
@@ -1155,6 +1169,14 @@ Router::initialize(ErrorHandler *errh)
     // If there were errors, uninitialize any elements that we initialized
     // successfully and return -1 (error). Otherwise, we're all set!
     if (all_ok) {
+	// Get a home thread for every element, not just the ones that have
+	// been explicitly queried so far.
+	for (int i = 0; i <= nelements(); ++i) {
+	    int &x = _element_home_thread_ids[i];
+	    if (x == ThreadSched::THREAD_UNKNOWN)
+		x = hard_home_thread_id(i ? _elements[i - 1] : _root_element);
+	}
+
 	_state = ROUTER_LIVE;
 #ifdef CLICK_NAMEDB_CHECK
 	NameInfo::check(_root_element, errh);
@@ -1885,7 +1907,7 @@ Router::notifier_signal_name(const atomic_uint32_t *signal) const
 }
 
 int
-ThreadSched::initial_home_thread_id(Element *, Task *, bool)
+ThreadSched::initial_home_thread_id(const Element *)
 {
     return 0;
 }

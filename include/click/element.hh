@@ -9,6 +9,7 @@
 CLICK_DECLS
 class Router;
 class Master;
+class RouterThread;
 class Task;
 class Timer;
 class NotifierSignal;
@@ -146,6 +147,8 @@ class Element { public:
 
     virtual bool can_live_reconfigure() const;
     virtual int live_reconfigure(Vector<String>&, ErrorHandler*);
+
+    RouterThread *home_thread() const;
 
 #if CLICK_USERLEVEL
     // SELECT

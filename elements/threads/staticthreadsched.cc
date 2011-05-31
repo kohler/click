@@ -57,15 +57,14 @@ StaticThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-StaticThreadSched::initial_home_thread_id(Element *owner, Task *task,
-					  bool scheduled)
+StaticThreadSched::initial_home_thread_id(const Element *e)
 {
-    int eidx = owner->eindex();
+    int eidx = e->eindex();
     if (eidx >= 0 && eidx < _thread_preferences.size()
 	&& _thread_preferences[eidx] != THREAD_UNKNOWN)
 	return _thread_preferences[eidx];
     if (_next_thread_sched)
-	return _next_thread_sched->initial_home_thread_id(owner, task, scheduled);
+	return _next_thread_sched->initial_home_thread_id(e);
     else
 	return THREAD_UNKNOWN;
 }

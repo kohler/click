@@ -10,7 +10,7 @@ class ThreadSched { public:
     ThreadSched()			{ }
     virtual ~ThreadSched()		{ }
 
-    virtual int initial_home_thread_id(Element *owner, Task *t, bool scheduled);
+    virtual int initial_home_thread_id(const Element *e);
 
 };
 

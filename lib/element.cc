@@ -1650,6 +1650,14 @@ Element::configuration() const
 }
 
 
+/** @brief Return the element's home thread. */
+RouterThread *
+Element::home_thread() const
+{
+    return master()->thread(router()->home_thread_id(this));
+}
+
+
 // SELECT
 
 #if CLICK_USERLEVEL
