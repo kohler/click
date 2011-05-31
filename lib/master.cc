@@ -46,8 +46,10 @@ Master::Master(int nthreads)
     _refcount = 0;
     _master_paused = 0;
 
+    _nthreads = nthreads + 1;
+    _threads = new RouterThread *[_nthreads];
     for (int tid = -1; tid < nthreads; tid++)
-	_threads.push_back(new RouterThread(this, tid));
+	_threads[tid + 1] = new RouterThread(this, tid);
 
 #if CLICK_USERLEVEL
     // signal information
@@ -85,8 +87,9 @@ Master::~Master()
     if (_refcount > 0)
 	click_chatter("deleting master while ref count = %d", _refcount);
 
-    for (int i = 0; i < _threads.size(); i++)
+    for (int i = 0; i < _nthreads; i++)
 	delete _threads[i];
+    delete[] _threads;
 }
 
 void
@@ -125,9 +128,9 @@ Master::pause()
 void
 Master::block_all()
 {
-    for (int i = 1; i < _threads.size(); ++i)
+    for (int i = 1; i < _nthreads; ++i)
 	_threads[i]->schedule_block_tasks();
-    for (int i = 1; i < _threads.size(); ++i)
+    for (int i = 1; i < _nthreads; ++i)
 	_threads[i]->block_tasks(true);
     pause();
 }
@@ -136,7 +139,7 @@ void
 Master::unblock_all()
 {
     unpause();
-    for (int i = 1; i < _threads.size(); ++i)
+    for (int i = 1; i < _nthreads; ++i)
 	_threads[i]->unblock_tasks();
 }
 
@@ -207,7 +210,7 @@ Master::kill_router(Router *router)
     unlock_master();
 
     // Remove tasks
-    for (RouterThread **tp = _threads.begin(); tp < _threads.end(); tp++)
+    for (RouterThread **tp = _threads; tp != _threads + _nthreads; ++tp)
 	(*tp)->unschedule_router_tasks(router);
 
     // 4.Sep.2007 - Don't bother to remove pending tasks.  They will be
@@ -241,7 +244,7 @@ Master::kill_router(Router *router)
 #endif
 
     // something has happened, so wake up threads
-    for (RouterThread** tp = _threads.begin() + 1; tp < _threads.end(); tp++)
+    for (RouterThread **tp = _threads + 1; tp != _threads + _nthreads; ++tp)
 	(*tp)->wake();
 }
 
@@ -513,7 +516,7 @@ Master::info() const
     StringAccum sa;
     sa << "paused:\t\t" << _master_paused << '\n';
     sa << "stopper:\t" << _threads[0]->_stopper << '\n';
-    for (int i = 0; i < _threads.size(); i++) {
+    for (int i = 0; i < _nthreads; i++) {
 	RouterThread *t = _threads[i];
 	sa << "thread " << (i - 1) << ":";
 # ifdef CLICK_LINUXMODULE

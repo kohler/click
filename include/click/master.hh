@@ -31,7 +31,7 @@ class Master { public:
     bool paused() const				{ return _master_paused > 0; }
 
     inline int nthreads() const;
-    inline RouterThread* thread(int id) const;
+    inline RouterThread *thread(int id) const;
     void wake_somebody();
 
     TimerSet &timer_set()			{ return _ts; }
@@ -64,6 +64,19 @@ class Master { public:
 
   private:
 
+    // THREADS
+    RouterThread **_threads;
+    int _nthreads;
+    volatile uint32_t _runticket;
+
+    // ROUTERS
+    Router *_routers;
+    int _refcount;
+    void register_router(Router*);
+    void prepare_router(Router*);
+    void run_router(Router*, bool foreground);
+    void unregister_router(Router*);
+
 #if CLICK_LINUXMODULE
     spinlock_t _master_lock;
     struct task_struct *_master_lock_task;
@@ -74,17 +87,6 @@ class Master { public:
     atomic_uint32_t _master_paused;
     inline void lock_master();
     inline void unlock_master();
-
-    // ROUTERS
-    Router* _routers;
-    int _refcount;
-    void register_router(Router*);
-    void prepare_router(Router*);
-    void run_router(Router*, bool foreground);
-    void unregister_router(Router*);
-
-    // THREADS
-    Vector<RouterThread*> _threads;
 
     // DRIVERMANAGER
     inline void set_stopper(int);
@@ -131,7 +133,7 @@ class Master { public:
 inline int
 Master::nthreads() const
 {
-    return _threads.size() - 1;
+    return _nthreads - 1;
 }
 
 inline RouterThread*
@@ -139,16 +141,16 @@ Master::thread(int id) const
 {
     // return the requested thread, or the quiescent thread if there's no such
     // thread
-    if ((unsigned)(id + 1) < (unsigned)_threads.size())
-	return _threads.at_u(id + 1);
+    if (unsigned(id + 1) < unsigned(_nthreads))
+	return _threads[id + 1];
     else
-	return _threads.at_u(0);
+	return _threads[0];
 }
 
 inline void
 Master::wake_somebody()
 {
-    _threads.at_u(1)->wake();
+    _threads[1]->wake();
 }
 
 inline TimerSet &
@@ -216,7 +218,7 @@ TimerSet::next_timer_delay(bool more_tasks, Timestamp &t) const
 inline void
 Master::set_stopper(int s)
 {
-    for (RouterThread **t = _threads.begin(); t != _threads.end(); ++t)
+    for (RouterThread **t = _threads; t != _threads + _nthreads; ++t)
 	(*t)->_stop_flag = s;
 }
 
