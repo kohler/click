@@ -131,6 +131,7 @@ class Router { public:
     int initialize(ErrorHandler* errh);
     void activate(bool foreground, ErrorHandler* errh);
     inline void activate(ErrorHandler* errh);
+    inline void set_foreground(bool foreground);
 
     int new_notifier_signal(const char *name, NotifierSignal &signal);
     String notifier_signal_name(const atomic_uint32_t *signal) const;
@@ -505,6 +506,13 @@ inline void
 Router::activate(ErrorHandler* errh)
 {
     activate(true, errh);
+}
+
+inline void
+Router::set_foreground(bool foreground)
+{
+    assert(_running >= RUNNING_BACKGROUND);
+    _running = foreground ? RUNNING_ACTIVE : RUNNING_BACKGROUND;
 }
 
 /** @brief  Finds an element named @a name.

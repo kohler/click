@@ -279,6 +279,7 @@ static Task hotswap_task(hotswap_hook, 0);
 static bool
 hotswap_hook(Task *, void *)
 {
+    hotswap_thunk_router->set_foreground(false);
     hotswap_router->activate(ErrorHandler::default_handler());
     router->unuse();
     router = hotswap_router;
@@ -371,6 +372,7 @@ hotconfig_handler(const String &text, Element *, void *, ErrorHandler *errh)
     if (hotswap_router)
       hotswap_router->unuse();
     hotswap_router = q;
+    hotswap_thunk_router->set_foreground(true);
     hotswap_task.reschedule();
     return 0;
   } else

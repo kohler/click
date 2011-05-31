@@ -283,7 +283,6 @@ Master::check_driver()
 
     lock_master();
     set_stopper(0);
-    bool any_active = false;
 
     for (Router *r = _routers; r; ) {
 	Router *next_router = r->_next_router;
@@ -295,17 +294,18 @@ Master::check_driver()
 		       && r->runcount() <= 0 && --max >= 0)
 		    /* do nothing */;
 	    }
-	    if (r->runcount() <= 0 && r->_running >= Router::RUNNING_BACKGROUND) {
+	    if (r->runcount() <= 0 && r->_running >= Router::RUNNING_BACKGROUND)
 		kill_router(r);
-		goto next;
-	    }
 	}
-	if (r->_running == Router::RUNNING_ACTIVE)
-	    any_active = true;
-    next:
 	r = next_router;
     }
 
+    bool any_active = false;
+    for (Router *r = _routers; r; r = r->_next_router)
+	if (r->_running == Router::RUNNING_ACTIVE) {
+	    any_active = true;
+	    break;
+	}
     if (!any_active)
 	set_stopper(1);
     unlock_master();
