@@ -586,53 +586,6 @@ RouterThread::driver()
 	_driver_epoch++;
 #endif
 
-	if (_stop_flag == 0) {
-	    // run occasional tasks: timers, select, etc.
-	    iter++;
-
-#if CLICK_USERLEVEL
-	    run_signals();
-#endif
-
-#if !(HAVE_ADAPTIVE_SCHEDULER || BSD_NETISRSCHED)
-	    if ((iter % _iters_per_os) == 0)
-		run_os();
-#endif
-
-	    bool run_timers = (iter % timer_set().timer_stride()) == 0;
-#if BSD_NETISRSCHED
-	    run_timers = run_timers || _oticks != ticks;
-#endif
-	    if (run_timers) {
-#if BSD_NETISRSCHED
-		_oticks = ticks;
-#endif
-		timer_set().run_timers(this, _master);
-#if CLICK_NS
-		// If there's another timer, tell the simulator to make us
-		// run when it's due to go off.
-		if (Timestamp next_expiry = timer_set().next_timer_expiry()) {
-		    struct timeval nexttime = next_expiry.timeval();
-		    simclick_sim_command(_master->simnode(), SIMCLICK_SCHEDULE, &nexttime);
-		}
-#endif
-	    }
-	}
-
-	// run task requests (1)
-	if (_pending_head)
-	    process_pending();
-
-#if !HAVE_ADAPTIVE_SCHEDULER
-	// run a bunch of tasks
-	run_tasks(_tasks_per_iter);
-#else /* HAVE_ADAPTIVE_SCHEDULER */
-	if (PASS_GT(_clients[C_KERNEL].pass, _clients[C_CLICK].pass))
-	    run_tasks(_tasks_per_iter);
-	else
-	    run_os();
-#endif
-
 #if !BSD_NETISRSCHED
 	// check to see if driver is stopped
 	if (_stop_flag > 0) {
@@ -643,6 +596,62 @@ RouterThread::driver()
 		break;
 	}
 #endif
+
+	// run occasional tasks: timers, select, etc.
+	iter++;
+
+	// run task requests
+	if (_pending_head)
+	    process_pending();
+
+	// run tasks
+	do {
+#if HAVE_ADAPTIVE_SCHEDULER
+	    if (PASS_GT(_clients[C_CLICK].pass, _clients[C_KERNEL].pass))
+		break;
+#endif
+	    run_tasks(_tasks_per_iter);
+	} while (0);
+
+#if CLICK_USERLEVEL
+	// run signals
+	run_signals();
+#endif
+
+	// run timers
+	do {
+#if !BSD_NETISRSCHED
+	    if (iter % timer_set().timer_stride())
+		break;
+#elif BSD_NETISRSCHED
+	    if (iter % timer_set().timer_stride() && _oticks == ticks)
+		break;
+	    _oticks = ticks;
+#endif
+	    timer_set().run_timers(this, _master);
+#if CLICK_NS
+	    // If there's another timer, tell the simulator to make us
+	    // run when it's due to go off.
+	    if (Timestamp next_expiry = timer_set().next_timer_expiry()) {
+		struct timeval nexttime = next_expiry.timeval();
+		simclick_sim_command(_master->simnode(), SIMCLICK_SCHEDULE, &nexttime);
+	    }
+#endif
+	} while (0);
+
+	// run operating system
+	do {
+#if !HAVE_ADAPTIVE_SCHEDULER && !BSD_NETISRSCHED
+	    if (iter % _iters_per_os)
+		break;
+#elif HAVE_ADAPTIVE_SCHEDULER
+	    if (!PASS_GT(_clients[C_CLICK].pass, _clients[C_KERNEL].pass))
+		break;
+#elif BSD_NETISRSCHED
+	    break;
+#endif
+	    run_os();
+	} while (0);
 
 #if CLICK_NS || BSD_NETISRSCHED
 	// Everyone except the NS driver stays in driver() until the driver is
