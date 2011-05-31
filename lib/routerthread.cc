@@ -352,6 +352,9 @@ RouterThread::run_tasks(int ntasks)
 #if HAVE_ADAPTIVE_SCHEDULER
     Timestamp t_before = Timestamp::now();
 #endif
+#if CLICK_BSDMODULE && !BSD_NETISRSCHED
+    int bsd_spl = splimp();
+#endif
 
     // never run more than 32768 tasks
     if (ntasks > 32768)
@@ -455,6 +458,9 @@ RouterThread::run_tasks(int ntasks)
 	    t->remove_from_scheduled_list();
     }
 
+#if CLICK_BSDMODULE && !BSD_NETISRSCHED
+    splx(bsd_spl);
+#endif
 #if HAVE_ADAPTIVE_SCHEDULER
     client_update_pass(C_CLICK, t_before);
 #endif
@@ -622,13 +628,7 @@ RouterThread::driver()
 
 #if !HAVE_ADAPTIVE_SCHEDULER
     // run a bunch of tasks
-# if CLICK_BSDMODULE && !BSD_NETISRSCHED
-    int s = splimp();
-# endif
     run_tasks(_tasks_per_iter);
-# if CLICK_BSDMODULE && !BSD_NETISRSCHED
-    splx(s);
-# endif
 #else /* HAVE_ADAPTIVE_SCHEDULER */
     if (PASS_GT(_clients[C_KERNEL].pass, _clients[C_CLICK].pass))
 	run_tasks(_tasks_per_iter);
@@ -682,9 +682,7 @@ RouterThread::driver_once()
     if (!_master->check_driver())
 	return;
 
-#if CLICK_BSDMODULE  /* XXX MARKO */
-    int s = splimp();
-#elif CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE
     // this task is running the driver
     _linux_task = current;
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
@@ -698,9 +696,7 @@ RouterThread::driver_once()
     run_tasks(1);
 
     driver_unlock_tasks();
-#if CLICK_BSDMODULE  /* XXX MARKO */
-    splx(s);
-#elif CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE
     _linux_task = 0;
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     _running_processor = click_invalid_processor();
