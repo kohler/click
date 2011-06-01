@@ -42,12 +42,11 @@ enum { POLLIN = Element::SELECT_READ, POLLOUT = Element::SELECT_WRITE };
 #endif
 }
 
-#if HAVE_MULTITHREAD
-RouterThread * volatile SelectSet::selecting_thread;
-#endif
-
 SelectSet::SelectSet()
 {
+    _wake_pipe_pending = false;
+    _wake_pipe[0] = _wake_pipe[1] = -1;
+
 #if HAVE_ALLOW_KQUEUE
 # if defined(__APPLE__) && (HAVE_ALLOW_SELECT || HAVE_ALLOW_POLL)
     // Marc Lehmann's libev documentation, and some other online
@@ -75,10 +74,6 @@ SelectSet::SelectSet()
 #endif
     _pollfds.push_back(dummy);
     _pollfds.clear();
-
-#if HAVE_MULTITHREAD
-    selecting_thread = 0;
-#endif
 }
 
 SelectSet::~SelectSet()
@@ -87,6 +82,23 @@ SelectSet::~SelectSet()
     if (_kqueue >= 0)
 	close(_kqueue);
 #endif
+    if (_wake_pipe[0] >= 0) {
+	close(_wake_pipe[0]);
+	close(_wake_pipe[1]);
+    }
+}
+
+void
+SelectSet::initialize()
+{
+    if (_wake_pipe[0] < 0 && pipe(_wake_pipe) >= 0) {
+	fcntl(_wake_pipe[0], F_SETFL, O_NONBLOCK);
+	fcntl(_wake_pipe[1], F_SETFL, O_NONBLOCK);
+	fcntl(_wake_pipe[0], F_SETFD, FD_CLOEXEC);
+	fcntl(_wake_pipe[1], F_SETFD, FD_CLOEXEC);
+	register_select(_wake_pipe[0], true, false);
+    }
+    assert(_wake_pipe[0] >= 0);
 }
 
 void
@@ -222,8 +234,7 @@ SelectSet::add_select(int fd, Element *element, int mask)
 
 #if HAVE_MULTITHREAD
     // need to wake up selecting thread since there's more to select
-    if (RouterThread *r = selecting_thread)
-	r->wake();
+    wake_immediate();
 #endif
 
     _select_lock.release();
@@ -311,6 +322,17 @@ SelectSet::remove_select(int fd, Element *element, int mask)
     return 0;
 }
 
+inline void
+SelectSet::post_select(RouterThread *thread)
+{
+    if (_wake_pipe_pending) {
+	_wake_pipe_pending = false;
+	char crap[64];
+	while (read(_wake_pipe[0], crap, 64) == 64)
+	    /* do nothing */;
+    }
+    thread->run_signals();
+}
 
 inline void
 SelectSet::call_selected(int fd, int mask) const
@@ -337,22 +359,17 @@ kevent_compare(const void *ap, const void *bp, void *)
 }
 
 void
-SelectSet::run_selects_kqueue(RouterThread *thread, bool more_tasks)
+SelectSet::run_selects_kqueue(RouterThread *thread)
 {
 # if HAVE_MULTITHREAD
-    selecting_thread = thread;
     click_fence();
-    _select_lock.release();
-
-    struct kevent wp_kev;
-    EV_SET(&wp_kev, thread->_wake_pipe[0], EVFILT_READ, EV_ADD, 0, 0, EV_SET_UDATA_CAST ((intptr_t) 0));
-    (void) kevent(_kqueue, &wp_kev, 1, 0, 0, 0);
 # endif
+    _select_lock.release();
 
     // Decide how long to wait.
     struct timespec wait, *wait_ptr = &wait;
     Timestamp t;
-    int delay_type = thread->timer_set().next_timer_delay(more_tasks, t);
+    int delay_type = thread->timer_set().next_timer_delay(thread->active(), t);
     if (delay_type == 0)
 	wait.tv_sec = wait.tv_nsec = 0;
     else if (delay_type > 0)
@@ -364,21 +381,11 @@ SelectSet::run_selects_kqueue(RouterThread *thread, bool more_tasks)
     struct kevent kev[256];
     int n = kevent(_kqueue, 0, 0, &kev[0], 256, wait_ptr);
     int was_errno = errno;
-    thread->run_signals();
 
-# if HAVE_MULTITHREAD
-    thread->set_thread_state(RouterThread::S_LOCKSELECT);
+    post_select(thread);
+
     _select_lock.acquire();
-    click_fence();
-    selecting_thread = 0;
-
     thread->set_thread_state(RouterThread::S_RUNSELECT);
-    wp_kev.flags = EV_DELETE;
-    (void) kevent(_kqueue, &wp_kev, 1, 0, 0, 0);
-# else
-    thread->set_thread_state(RouterThread::S_RUNSELECT);
-# endif
-
     if (n < 0 && was_errno != EINTR)
 	perror("kevent");
     else if (n > 0) {
@@ -398,28 +405,22 @@ SelectSet::run_selects_kqueue(RouterThread *thread, bool more_tasks)
 
 #if HAVE_ALLOW_POLL
 void
-SelectSet::run_selects_poll(RouterThread *thread, bool more_tasks)
+SelectSet::run_selects_poll(RouterThread *thread)
 {
 # if HAVE_MULTITHREAD
     // Need a private copy of _pollfds, since other threads may run while we
     // block
     Vector<struct pollfd> my_pollfds(_pollfds);
-    selecting_thread = thread;
     click_fence();
-    _select_lock.release();
-
-    pollfd wake_pollfd;
-    wake_pollfd.fd = thread->_wake_pipe[0];
-    wake_pollfd.events = POLLIN;
-    my_pollfds.push_back(wake_pollfd);
 # else
     Vector<struct pollfd> &my_pollfds(_pollfds);
 # endif
+    _select_lock.release();
 
     // Decide how long to wait.
     int timeout;
     Timestamp t;
-    int delay_type = thread->timer_set().next_timer_delay(more_tasks, t);
+    int delay_type = thread->timer_set().next_timer_delay(thread->active(), t);
     if (delay_type == 0)
 	timeout = 0;
     else if (delay_type > 0)
@@ -430,16 +431,11 @@ SelectSet::run_selects_poll(RouterThread *thread, bool more_tasks)
 
     int n = poll(my_pollfds.begin(), my_pollfds.size(), timeout);
     int was_errno = errno;
-    thread->run_signals();
 
-# if HAVE_MULTITHREAD
-    thread->set_thread_state(RouterThread::S_LOCKSELECT);
+    post_select(thread);
+
     _select_lock.acquire();
-    click_fence();
-    selecting_thread = 0;
-# endif
     thread->set_thread_state(RouterThread::S_RUNSELECT);
-
     if (n < 0 && was_errno != EINTR)
 	perror("poll");
     else if (n > 0)
@@ -466,26 +462,21 @@ SelectSet::run_selects_poll(RouterThread *thread, bool more_tasks)
 
 #else /* !HAVE_ALLOW_POLL */
 void
-SelectSet::run_selects_select(RouterThread *thread, bool more_tasks)
+SelectSet::run_selects_select(RouterThread *thread)
 {
     fd_set read_mask = _read_select_fd_set;
     fd_set write_mask = _write_select_fd_set;
     int n_select_fd = _max_select_fd + 1;
 
 # if HAVE_MULTITHREAD
-    selecting_thread = thread;
     click_fence();
-    _select_lock.release();
-
-    FD_SET(thread->_wake_pipe[0], &read_mask);
-    if (thread->_wake_pipe[0] >= n_select_fd)
-	n_select_fd = thread->_wake_pipe[0] + 1;
 # endif
+    _select_lock.release();
 
     // Decide how long to wait.
     struct timeval wait, *wait_ptr = &wait;
     Timestamp t;
-    int delay_type = thread->timer_set().next_timer_delay(more_tasks, t);
+    int delay_type = thread->timer_set().next_timer_delay(thread->active(), t);
     if (delay_type == 0)
 	timerclear(&wait);
     else if (delay_type > 0)
@@ -496,16 +487,11 @@ SelectSet::run_selects_select(RouterThread *thread, bool more_tasks)
 
     int n = select(n_select_fd, &read_mask, &write_mask, (fd_set*) 0, wait_ptr);
     int was_errno = errno;
-    thread->run_signals();
 
-# if HAVE_MULTITHREAD
-    thread->set_thread_state(RouterThread::S_LOCKSELECT);
+    post_select(thread);
+
     _select_lock.acquire();
-    click_fence();
-    selecting_thread = 0;
-# endif
     thread->set_thread_state(RouterThread::S_RUNSELECT);
-
     if (n < 0 && was_errno != EINTR)
 	perror("select");
     else if (n > 0)
@@ -541,66 +527,30 @@ SelectSet::run_selects(RouterThread *thread)
     if (!_select_lock.attempt())
 	return;
 
-    bool more_tasks = thread->active();
-
     // Return early if paused.
     if (thread->master()->paused() || thread->stop_flag())
 	goto unlock_exit;
 
-#if HAVE_MULTITHREAD
-    if (selecting_thread) {
-	// Another thread is blocked in select().  No point in this thread's
-	// also checking file descriptors, so block if there are no more tasks
-	// to run.  It *is* useful to wait until the next timer expiry,
-	// because we may have set some new short-term timers while the other
-	// thread was blocking.
-	_select_lock.release();
-	if (!more_tasks) {
-	    // watch _wake_pipe so the thread can be awoken
-	    fd_set fdr;
-	    FD_ZERO(&fdr);
-	    FD_SET(thread->_wake_pipe[0], &fdr);
-
-	    // how long to wait?
-	    struct timeval wait, *wait_ptr = &wait;
-	    Timestamp t;
-	    int delay_type = thread->timer_set().next_timer_delay(false, t);
-	    if (delay_type == 0)
-		timerclear(&wait);
-	    else if (delay_type > 0)
-		wait = t.timeval();
-	    else
-		wait_ptr = 0;
-	    thread->set_thread_state_for_blocking(delay_type);
-
-	    // actually wait
-	    int r = select(thread->_wake_pipe[0] + 1, &fdr,
-			   (fd_set *) 0, (fd_set *) 0, wait_ptr);
-	    (void) r;
-	}
-	thread->run_signals();
-	return;
-    }
-#endif
-
     // Return early (just run signals) if there are no selectors and there are
-    // tasks to run.
-    if (_pollfds.size() == 0 && more_tasks) {
-	thread->run_signals();
-	goto unlock_exit;
+    // tasks to run.  NB there will always be at least one _pollfd (the
+    // _wake_pipe).
+    if (_pollfds.size() < 2 && thread->active()) {
+	_select_lock.release();
+	post_select(thread);
+	return;
     }
 
     // Call the relevant selector implementation.
 #if HAVE_ALLOW_KQUEUE
     if (_kqueue >= 0) {
-	run_selects_kqueue(thread, more_tasks);
+	run_selects_kqueue(thread);
 	goto unlock_exit;
     }
 #endif
 #if HAVE_ALLOW_POLL
-    run_selects_poll(thread, more_tasks);
+    run_selects_poll(thread);
 #else
-    run_selects_select(thread, more_tasks);
+    run_selects_select(thread);
 #endif
 
  unlock_exit:

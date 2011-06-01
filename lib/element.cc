@@ -1731,7 +1731,7 @@ Element::selected(int fd)
 int
 Element::add_select(int fd, int mask)
 {
-    return master()->select_set().add_select(fd, this, mask);
+    return home_thread()->select_set().add_select(fd, this, mask);
 }
 
 /** @brief Remove interest in @a mask events on file descriptor @a fd.
@@ -1750,7 +1750,7 @@ Element::add_select(int fd, int mask)
 int
 Element::remove_select(int fd, int mask)
 {
-    return master()->select_set().remove_select(fd, this, mask);
+    return home_thread()->select_set().remove_select(fd, this, mask);
 }
 
 #endif

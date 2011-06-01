@@ -16,15 +16,14 @@ CLICK_CXX_PROTECT
 # include <sys/systm.h>
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
-#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
-# include <unistd.h>
+#elif CLICK_USERLEVEL
+# include <click/selectset.hh>
 #endif
 
 // NB: user must #include <click/task.hh> before <click/routerthread.hh>.
 // We cannot #include <click/task.hh> ourselves because of circular #include
 // dependency.
 CLICK_DECLS
-class SelectSet;
 
 class RouterThread : private TaskLink { public:
 
@@ -35,8 +34,10 @@ class RouterThread : private TaskLink { public:
     inline Master *master() const;
     inline TimerSet &timer_set()		{ return _timers; }
     inline const TimerSet &timer_set() const	{ return _timers; }
-    inline SelectSet &select_set();
-    inline const SelectSet &select_set() const;
+#if CLICK_USERLEVEL
+    inline SelectSet &select_set()		{ return _selects; }
+    inline const SelectSet &select_set() const	{ return _selects; }
+#endif
 
     // Task list functions
     inline bool active() const;
@@ -129,16 +130,18 @@ class RouterThread : private TaskLink { public:
 
 #if CLICK_LINUXMODULE
     struct task_struct *_linux_task;
-#elif HAVE_MULTITHREAD
+#endif
+#if HAVE_MULTITHREAD && !CLICK_LINUXMODULE
     click_processor_t _running_processor;
-    int _wake_pipe[2];
-    volatile bool _wake_pipe_pending;
 #endif
     Spinlock _task_lock;
     atomic_uint32_t _task_blocker;
     atomic_uint32_t _task_blocker_waiting;
 
     TimerSet _timers;
+#if CLICK_USERLEVEL
+    SelectSet _selects;
+#endif
 
 #if CLICK_LINUXMODULE
     bool _greedy;
@@ -216,7 +219,9 @@ class RouterThread : private TaskLink { public:
 
     friend class Task;
     friend class Master;
+#if CLICK_USERLEVEL
     friend class SelectSet;
+#endif
 
 };
 
@@ -404,12 +409,10 @@ RouterThread::wake()
     struct task_struct *task = _linux_task;
     if (task)
 	wake_up_process(task);
-#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
+#elif CLICK_USERLEVEL
     // see also Master::add_select()
-    if (!current_thread_is_running()) {
-	_wake_pipe_pending = true;
-	ignore_result(write(_wake_pipe[1], "", 1));
-    }
+    if (!current_thread_is_running())
+	_selects.wake_immediate();
 #elif CLICK_BSDMODULE && !BSD_NETISRSCHED
     if (_sleep_ident)
 	wakeup_one(&_sleep_ident);

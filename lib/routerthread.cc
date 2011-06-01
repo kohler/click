@@ -37,8 +37,7 @@ CLICK_CXX_PROTECT
 # include <sys/kthread.h>
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
-#endif
-#if CLICK_USERLEVEL && HAVE_MULTITHREAD
+#elif CLICK_USERLEVEL
 # include <fcntl.h>
 #endif
 CLICK_DECLS
@@ -77,9 +76,8 @@ RouterThread::RouterThread(Master *m, int id)
     _linux_task = 0;
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     _running_processor = click_invalid_processor();
-    _wake_pipe[0] = _wake_pipe[1] = -1;
-    _wake_pipe_pending = false;
 #endif
+
     _task_blocker = 0;
     _task_blocker_waiting = 0;
 #if HAVE_ADAPTIVE_SCHEDULER
@@ -128,12 +126,6 @@ RouterThread::RouterThread(Master *m, int id)
 RouterThread::~RouterThread()
 {
     assert(!active());
-#if CLICK_USERLEVEL && HAVE_MULTITHREAD
-    if (_wake_pipe[0] >= 0) {
-	close(_wake_pipe[0]);
-	close(_wake_pipe[1]);
-    }
-#endif
 }
 
 inline void
@@ -557,18 +549,14 @@ RouterThread::driver()
 #if CLICK_LINUXMODULE
     // this task is running the driver
     _linux_task = current;
-#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
+#elif CLICK_USERLEVEL
+    select_set().initialize();
+# if CLICK_USERLEVEL && HAVE_MULTITHREAD
     _running_processor = click_current_processor();
-# if HAVE___THREAD_STORAGE_CLASS
+#  if HAVE___THREAD_STORAGE_CLASS
     click_current_thread_id = _id;
+#  endif
 # endif
-    if (_wake_pipe[0] < 0 && pipe(_wake_pipe) >= 0) {
-	fcntl(_wake_pipe[0], F_SETFL, O_NONBLOCK);
-	fcntl(_wake_pipe[1], F_SETFL, O_NONBLOCK);
-	fcntl(_wake_pipe[0], F_SETFD, FD_CLOEXEC);
-	fcntl(_wake_pipe[1], F_SETFD, FD_CLOEXEC);
-    }
-    assert(_wake_pipe[0] >= 0);
 #endif
 
     driver_lock_tasks();
@@ -743,6 +731,9 @@ RouterThread::kill_router(Router *r)
     unlock_tasks();
 
     _timers.kill_router(r);
+#if CLICK_USERLEVEL
+    _selects.kill_router(r);
+#endif
 }
 
 #if CLICK_DEBUG_SCHEDULING

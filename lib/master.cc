@@ -34,9 +34,7 @@ CLICK_DECLS
 #if CLICK_USERLEVEL
 volatile sig_atomic_t Master::signals_pending;
 static volatile sig_atomic_t signal_pending[NSIG];
-# if !HAVE_MULTITHREAD
-static int sig_pipe[2] = { -1, -1 };
-# endif
+static RouterThread *signal_thread;
 extern "C" { static void sighandler(int signo); }
 #endif
 
@@ -56,6 +54,7 @@ Master::Master(int nthreads)
     signals_pending = 0;
     _siginfo = 0;
     sigemptyset(&_sig_dispatching);
+    signal_thread = _threads[1];
 #endif
 
 #if CLICK_LINUXMODULE
@@ -87,6 +86,9 @@ Master::~Master()
     if (_refcount > 0)
 	click_chatter("deleting master while ref count = %d", _refcount);
 
+#if CLICK_USERLEVEL
+    signal_thread = 0;
+#endif
     for (int i = 0; i < _nthreads; i++)
 	delete _threads[i];
     delete[] _threads;
@@ -115,13 +117,13 @@ void
 Master::pause()
 {
     _master_paused++;
-#if CLICK_USERLEVEL
-    _selects._select_lock.acquire();
-    _selects._select_lock.release();
-#endif
     for (int i = 1; i < _nthreads; ++i) {
 	_threads[i]->timer_set().lock_timers();
 	_threads[i]->timer_set().unlock_timers();
+#if CLICK_USERLEVEL
+	_threads[i]->select_set()._select_lock.acquire();
+	_threads[i]->select_set()._select_lock.release();
+#endif
     }
 }
 
@@ -218,9 +220,6 @@ Master::kill_router(Router *router)
     // likely) when the pending list is processed.
 
 #if CLICK_USERLEVEL
-    // Remove selects
-    _selects.kill_router(router);
-
     // Remove signals
     {
 	_signal_lock.acquire();
@@ -320,12 +319,9 @@ Master::signal_handler(int signo)
     signals_pending = signal_pending[signo] = 1;
 # if HAVE_MULTITHREAD
     click_fence();
-    if (SelectSet::selecting_thread)
-	SelectSet::selecting_thread->wake();
-# else
-    if (sig_pipe[1] >= 0)
-	ignore_result(write(sig_pipe[1], "", 1));
 # endif
+    if (signal_thread)
+	signal_thread->wake();
 }
 
 extern "C" {
@@ -341,16 +337,6 @@ Master::add_signal_handler(int signo, Router *router, String handler)
 {
     if (signo < 0 || signo >= NSIG || router->master() != this)
 	return -1;
-
-# if !HAVE_MULTITHREAD
-    if (sig_pipe[0] < 0 && pipe(sig_pipe) >= 0) {
-	fcntl(sig_pipe[0], F_SETFL, O_NONBLOCK);
-	fcntl(sig_pipe[1], F_SETFL, O_NONBLOCK);
-	fcntl(sig_pipe[0], F_SETFD, FD_CLOEXEC);
-	fcntl(sig_pipe[1], F_SETFD, FD_CLOEXEC);
-	_selects.register_select(sig_pipe[0], true, false);
-    }
-# endif
 
     _signal_lock.acquire();
     int status = 0, nhandlers = 0;
@@ -398,37 +384,12 @@ Master::remove_signal_handler(int signo, Router *router, String handler)
     return status;
 }
 
-static inline void
-clear_pipe(int fd)
-{
-    if (fd >= 0) {
-	char crap[64];
-	while (read(fd, crap, 64) == 64)
-	    /* do nothing */;
-    }
-}
-
 void
 Master::process_signals(RouterThread *thread)
 {
     thread->set_thread_state(RouterThread::S_RUNSIGNAL);
 
-    // kill crap data written to pipe
-#if HAVE_MULTITHREAD
-    if (thread->_wake_pipe_pending) {
-	thread->_wake_pipe_pending = false;
-	clear_pipe(thread->_wake_pipe[0]);
-    }
-#else
-    if (signals_pending)
-	clear_pipe(sig_pipe[0]);
-#endif
-
-    // exit early if still no signals
-    if (!signals_pending)
-	return;
-
-    // otherwise, grab the signal lock
+    // grab the signal lock
     signals_pending = 0;
     _signal_lock.acquire();
 

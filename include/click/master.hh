@@ -4,7 +4,6 @@
 #include <click/router.hh>
 #include <click/atomic.hh>
 #if CLICK_USERLEVEL
-# include <click/selectset.hh>
 # include <signal.h>
 #endif
 #if CLICK_NS
@@ -34,9 +33,6 @@ class Master { public:
     void wake_somebody();
 
 #if CLICK_USERLEVEL
-    SelectSet &select_set()			{ return _selects; }
-    const SelectSet &select_set() const		{ return _selects; }
-
     int add_signal_handler(int signo, Router *router, String handler);
     int remove_signal_handler(int signo, Router *router, String handler);
     void process_signals(RouterThread *thread);
@@ -89,9 +85,6 @@ class Master { public:
     bool check_driver();
 
 #if CLICK_USERLEVEL
-    // SELECTS
-    SelectSet _selects;
-
     // SIGNALS
     struct SignalInfo {
 	int signo;
@@ -146,29 +139,12 @@ Master::wake_somebody()
     _threads[1]->wake();
 }
 
-inline SelectSet &
-RouterThread::select_set()
-{
-    return _master->select_set();
-}
-
-inline const SelectSet &
-RouterThread::select_set() const
-{
-    return _master->select_set();
-}
-
 #if CLICK_USERLEVEL
 inline void
 RouterThread::run_signals()
 {
-# if HAVE_MULTITHREAD
-    if (_wake_pipe_pending || Master::signals_pending)
-	_master->process_signals(this);
-# else
     if (Master::signals_pending)
 	_master->process_signals(this);
-# endif
 }
 
 inline int
