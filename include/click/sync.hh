@@ -30,14 +30,14 @@ CLICK_DECLS
  */
 
 /** @class Spinlock
- * @brief A spinlock for SMP Click threads.
+ * @brief A recursive spinlock for SMP Click threads.
  *
- * The Spinlock class abstracts a spinlock, or polling mutex, in SMP Click.
- * This is a type of mutual-exclusion lock in which acquiring the lock is a
- * polling operation (basically a "while (lock.acquired()) do nothing;" loop).
- * Spinlocks can be used to synchronize access to shared data among multiple
- * Click SMP threads.  Spinlocks should not be held for long periods of time:
- * use them for quick updates and such.
+ * The Spinlock class abstracts a recursive spinlock, or polling mutex, in SMP
+ * Click.  This is a type of mutual-exclusion lock in which acquiring the lock
+ * is a polling operation (basically a "while (lock.acquired()) do nothing;"
+ * loop).  Spinlocks can be used to synchronize access to shared data among
+ * multiple Click SMP threads.  Spinlocks should not be held for long periods
+ * of time: use them for quick updates and such.
  *
  * Spinlock operations do nothing unless Click was compiled with SMP support
  * (with --enable-multithread).  Therefore, Spinlock should not be used to,
@@ -50,6 +50,8 @@ CLICK_DECLS
  *
  * It is OK for a thread to acquire a lock it has already acquired, but you
  * must release it as many times as you have acquired it.
+ *
+ * @sa SimpleSpinlock, SpinlockIRQ
  */
 class Spinlock { public:
 
@@ -171,6 +173,115 @@ Spinlock::nested() const
     return _depth > 1;
 #else
     return false;
+#endif
+}
+
+
+/** @class SimpleSpinlock
+ * @brief A non-recursive spinlock for SMP Click threads.
+ *
+ * The Spinlock class abstracts a non-recursive spinlock, or polling mutex, in
+ * SMP Click.  This is a type of mutual-exclusion lock in which acquiring the
+ * lock is a polling operation (basically a "while (lock.acquired()) do
+ * nothing;" loop).  Spinlocks can be used to synchronize access to shared
+ * data among multiple Click SMP threads.  Spinlocks should not be held for
+ * long periods of time: use them for quick updates and such.
+ *
+ * Spinlock operations do nothing unless Click was compiled with SMP support
+ * (with --enable-multithread).  Therefore, Spinlock should not be used to,
+ * for example, synchronize handlers with main element threads.  See also
+ * SpinlockIRQ.
+ *
+ * The main Spinlock operations are acquire(), which acquires the lock, and
+ * release(), which releases the lock.  attempt() acquires the lock only if it
+ * can be acquired instantaneously.
+ *
+ * It is NOT OK for a thread to acquire a lock it has already acquired.
+ *
+ * @sa Spinlock, SpinlockIRQ
+ */
+class SimpleSpinlock { public:
+
+    inline SimpleSpinlock();
+    inline ~SimpleSpinlock();
+
+    inline void acquire();
+    inline void release();
+    inline bool attempt();
+
+#if CLICK_LINUXMODULE
+  private:
+    spinlock_t _lock;
+#elif CLICK_MULTITHREAD_SPINLOCK
+  private:
+    atomic_uint32_t _lock;
+#endif
+
+};
+
+/** @brief Create a SimpleSpinlock. */
+inline
+SimpleSpinlock::SimpleSpinlock()
+{
+#if CLICK_LINUXMODULE
+    spin_lock_init(&_lock);
+#elif CLICK_MULTITHREAD_SPINLOCK
+    _lock = 0;
+#endif
+}
+
+inline
+SimpleSpinlock::~SimpleSpinlock()
+{
+}
+
+/** @brief Acquires the SimpleSpinlock.
+ *
+ * On return, this thread has acquired the lock.  The function will spin
+ * indefinitely until the lock is acquired.
+ */
+inline void
+SimpleSpinlock::acquire()
+{
+#if CLICK_LINUXMODULE
+    spin_lock(&_lock);
+#elif CLICK_MULTITHREAD_SPINLOCK
+    while (_lock.swap(1) != 0)
+	while (_lock != 0)
+	    asm volatile ("" : : : "memory");
+#endif
+}
+
+/** @brief Attempts to acquire the SimpleSpinlock.
+ * @return True iff the SimpleSpinlock was acquired.
+ *
+ * This function will acquire the lock and return true only if the
+ * SimpleSpinlock can be acquired right away, without retries.
+ */
+inline bool
+SimpleSpinlock::attempt()
+{
+#if CLICK_LINUXMODULE
+    return spin_trylock(&_lock);
+#elif CLICK_MULTITHREAD_SPINLOCK
+    return _lock.swap(1) == 0;
+#else
+    return true;
+#endif
+}
+
+/** @brief Releases the SimpleSpinlock.
+ *
+ * The SimpleSpinlock must have been previously acquired by either
+ * SimpleSpinlock::acquire or SimpleSpinlock::attempt.
+ */
+inline void
+SimpleSpinlock::release()
+{
+#if CLICK_LINUXMODULE
+    spin_unlock(&_lock);
+#elif CLICK_MULTITHREAD_SPINLOCK
+    _lock = 0;
 #endif
 }
 
