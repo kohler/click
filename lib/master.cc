@@ -121,8 +121,7 @@ Master::pause()
 	_threads[i]->timer_set().lock_timers();
 	_threads[i]->timer_set().unlock_timers();
 #if CLICK_USERLEVEL
-	_threads[i]->select_set()._select_lock.acquire();
-	_threads[i]->select_set()._select_lock.release();
+	_threads[i]->select_set().fence();
 #endif
     }
 }

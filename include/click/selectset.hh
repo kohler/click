@@ -51,6 +51,8 @@ class SelectSet { public:
 
     void kill_router(Router *router);
 
+    inline void fence();
+
   private:
 
     struct SelectorInfo {
@@ -79,12 +81,15 @@ class SelectSet { public:
 #endif /* !HAVE_ALLOW_POLL */
     Vector<struct pollfd> _pollfds;
     Vector<SelectorInfo> _selinfo;
-    Spinlock _select_lock;
+#if HAVE_MULTITHREAD
+    SimpleSpinlock _select_lock;
+    click_processor_t _select_processor;
+#endif
 
     void register_select(int fd, bool add_read, bool add_write);
     void remove_pollfd(int pi, int event);
     inline void call_selected(int fd, int mask) const;
-    inline void post_select(RouterThread *thread);
+    inline bool post_select(RouterThread *thread, bool acquire);
 #if HAVE_ALLOW_KQUEUE
     void run_selects_kqueue(RouterThread *thread);
 #endif
@@ -94,9 +99,35 @@ class SelectSet { public:
     void run_selects_select(RouterThread *thread);
 #endif
 
-    friend class Master;	// for _select_lock
+    inline void lock();
+    inline void unlock();
 
 };
+
+inline void
+SelectSet::lock()
+{
+#if HAVE_MULTITHREAD
+    if (click_get_processor() != _select_processor)
+	_select_lock.acquire();
+#endif
+}
+
+inline void
+SelectSet::unlock()
+{
+#if HAVE_MULTITHREAD
+    if (click_get_processor() != _select_processor)
+	_select_lock.release();
+#endif
+}
+
+inline void
+SelectSet::fence()
+{
+    lock();
+    unlock();
+}
 
 CLICK_ENDDECLS
 #endif
