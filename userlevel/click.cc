@@ -87,7 +87,7 @@ static const Clp_Option options[] = {
     { "quit", 'q', QUIT_OPT, 0, 0 },
     { "simtime", 0, SIMTIME_OPT, Clp_ValDouble, Clp_Optional },
     { "simulation-time", 0, SIMTIME_OPT, Clp_ValDouble, Clp_Optional },
-    { "threads", 0, THREADS_OPT, Clp_ValInt, 0 },
+    { "threads", 'j', THREADS_OPT, Clp_ValInt, 0 },
     { "time", 't', TIME_OPT, 0, 0 },
     { "unix-socket", 'u', UNIX_SOCKET_OPT, Clp_ValString, 0 },
     { "version", 'v', VERSION_OPT, 0, 0 },
@@ -119,7 +119,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
   -e, --expression EXPR         Use EXPR as router configuration.\n\
-      --threads N               Start N threads (default 1).\n\
+  -j, --threads N               Start N threads (default 1).\n\
   -p, --port PORT               Listen for control connections on TCP port.\n\
   -u, --unix-socket FILE        Listen for control connections on Unix socket.\n\
       --socket FD               Add a file descriptor control connection.\n\

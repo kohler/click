@@ -78,7 +78,8 @@ static const Clp_Option options[] = {
 #if FOR_LINUXMODULE
   { "map", 'm', MAP_OPT, 0, 0 },
   { "private", 'p', PRIVATE_OPT, 0, Clp_Negate },
-  { "threads", 't', THREADS_OPT, Clp_ValUnsigned, 0 },
+  { "threads", 'j', THREADS_OPT, Clp_ValUnsigned, 0 },
+  { 0, 't', THREADS_OPT, Clp_ValUnsigned, 0 }, // deprecated
   { "greedy", 'G', GREEDY_OPT, 0, Clp_Negate },
   { "uid", 'U', UID_OPT, Clp_ValString, 0 },
   { "user", 0, UID_OPT, Clp_ValString, 0 },
@@ -124,7 +125,7 @@ Options:\n\
   printf("\
   -p, --private            Make /click readable only by owning user.\n\
   -U, --user USER[:GROUP]  Set owning user [root].\n\
-  -t, --threads N          Use N threads (multithreaded Click only).\n\
+  -j, --threads N          Use N threads (multithreaded Click only).\n\
   -G, --greedy             Make Click thread take up an entire CPU.\n\
       --cpu N              Click thread runs on CPU N.\n");
 # if HAVE_LINUXMODULE_2_6
