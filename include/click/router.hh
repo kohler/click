@@ -202,6 +202,7 @@ class Router { public:
     void sim_trace(const char* event);
     int sim_get_node_id();
     int sim_get_next_pkt_id();
+    int sim_if_promisc(int ifid);
 
   protected:
     Vector<Vector<int> *> _listenvecs;

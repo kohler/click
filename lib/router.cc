@@ -2352,6 +2352,11 @@ Router::sim_get_next_pkt_id() {
     return simclick_sim_command(_master->simnode(), SIMCLICK_GET_NEXT_PKT_ID);
 }
 
+int
+Router::sim_if_promisc(int ifid) {
+    return simclick_sim_command(_master->simnode(), SIMCLICK_IF_PROMISC, ifid);
+}
+
 #endif // CLICK_NS
 
 CLICK_ENDDECLS

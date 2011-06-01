@@ -61,9 +61,11 @@ int
 FromSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _packetbuf_size = 2048;
+  _promisc = false;
   if (Args(conf, this, errh)
       .read_mp("DEVNAME", _ifname)
       .read_mp("SNAPLEN", _packetbuf_size)
+      .read_mp("PROMISC", _promisc)
       .complete() < 0)
     return -1;
   if (_packetbuf_size > 8192 || _packetbuf_size < 128)
@@ -91,6 +93,10 @@ FromSimDevice::initialize(ErrorHandler *errh)
   // Request that we get packets sent to us from the simulator
   myrouter->sim_listen(_fd,eindex());
 
+  // Set the promisc mode on the interface
+  if (_promisc) {
+    myrouter->sim_if_promisc(_fd);
+  }
   return 0;
 }
 
