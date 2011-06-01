@@ -118,8 +118,7 @@ Master::pause()
 {
     _master_paused++;
     for (int i = 1; i < _nthreads; ++i) {
-	_threads[i]->timer_set().lock_timers();
-	_threads[i]->timer_set().unlock_timers();
+	_threads[i]->timer_set().fence();
 #if CLICK_USERLEVEL
 	_threads[i]->select_set().fence();
 #endif

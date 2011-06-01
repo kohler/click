@@ -42,8 +42,9 @@ TimerSet::TimerSet()
 #endif
 
 #if CLICK_LINUXMODULE
-    spin_lock_init(&_timer_lock);
     _timer_task = 0;
+#elif HAVE_MULTITHREAD
+    _timer_processor = click_invalid_processor();
 #endif
     _timer_check = Timestamp::now();
     _timer_check_reports = 0;
@@ -108,12 +109,14 @@ TimerSet::run_one_timer(Timer *t)
 void
 TimerSet::run_timers(RouterThread *thread, Master *master)
 {
-    if (!attempt_lock_timers())
+    if (!_timer_lock.attempt())
 	return;
     if (!master->paused() && _timer_heap.size() > 0 && !thread->stop_flag()) {
 	thread->set_thread_state(RouterThread::S_RUNTIMER);
 #if CLICK_LINUXMODULE
 	_timer_task = current;
+#elif HAVE_MULTITHREAD
+	_timer_processor = click_current_processor();
 #endif
 	_timer_check = Timestamp::now();
 	heap_element *th = _timer_heap.begin();
@@ -183,9 +186,11 @@ TimerSet::run_timers(RouterThread *thread, Master *master)
 
 #if CLICK_LINUXMODULE
 	_timer_task = 0;
+#elif HAVE_MULTITHREAD
+	_timer_processor = click_invalid_processor();
 #endif
     }
-    unlock_timers();
+    _timer_lock.release();
 }
 
 CLICK_ENDDECLS

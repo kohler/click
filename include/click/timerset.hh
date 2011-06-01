@@ -30,9 +30,7 @@ class TimerSet { public:
 
     void run_timers(RouterThread *thread, Master *master);
 
-    inline void lock_timers();
-    inline bool attempt_lock_timers();
-    inline void unlock_timers();
+    inline void fence();
 
   private:
 
@@ -65,11 +63,11 @@ class TimerSet { public:
     unsigned _timer_count;
     Vector<heap_element> _timer_heap;
     Vector<Timer *> _timer_runchunk;
+    SimpleSpinlock _timer_lock;
 #if CLICK_LINUXMODULE
-    spinlock_t _timer_lock;
     struct task_struct *_timer_task;
 #elif HAVE_MULTITHREAD
-    Spinlock _timer_lock;
+    click_processor_t _timer_processor;
 #endif
     Timestamp _timer_check;
     uint32_t _timer_check_reports;
@@ -83,6 +81,10 @@ class TimerSet { public:
 	    _timer_expiry = Timestamp();
     }
     void check_timer_expiry(Timer *t);
+
+    inline void lock_timers();
+    inline bool attempt_lock_timers();
+    inline void unlock_timers();
 
     friend class Timer;
 
@@ -112,18 +114,17 @@ TimerSet::lock_timers()
 {
 #if CLICK_LINUXMODULE
     if (current != _timer_task)
-	spin_lock(&_timer_lock);
+	_timer_lock.acquire();
 #elif HAVE_MULTITHREAD
-    _timer_lock.acquire();
+    if (click_current_processor() != _timer_processor)
+	_timer_lock.acquire();
 #endif
 }
 
 inline bool
 TimerSet::attempt_lock_timers()
 {
-#if CLICK_LINUXMODULE
-    return spin_trylock(&_timer_lock);
-#elif HAVE_MULTITHREAD
+#if CLICK_LINUXMODULE || HAVE_MULTITHREAD
     return _timer_lock.attempt();
 #else
     return true;
@@ -135,10 +136,18 @@ TimerSet::unlock_timers()
 {
 #if CLICK_LINUXMODULE
     if (current != _timer_task)
-	spin_unlock(&_timer_lock);
+	_timer_lock.release();
 #elif HAVE_MULTITHREAD
-    _timer_lock.release();
+    if (click_current_processor() != _timer_processor)
+	_timer_lock.release();
 #endif
+}
+
+inline void
+TimerSet::fence()
+{
+    lock_timers();
+    unlock_timers();
 }
 
 inline Timer *
