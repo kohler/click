@@ -21,9 +21,9 @@ Patch Linux using a command like this:
 
 Use the NS-2 patches in this directory as follows:
 
-For this version of NS-2		Use this patch
-2.30				                ns-2.30-patch
-2.34				                ns-2.34-patch
+For this version of NS-2	Use this patch
+2.30				ns-2.30-patch
+2.34				ns-2.34-patch
 
 Patch NS-2 using a command like this:
 % cd NSDIR
