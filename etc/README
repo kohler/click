@@ -19,12 +19,12 @@ Patch Linux using a command like this:
 % patch -p0 < CLICKDIR/etc/linux-VERSION-patch
 
 
-Use the NS patches in this directory as follows:
+Use the NS-2 patches in this directory as follows:
 
-For this version of NS		Use this patch
-2.30				ns-2.30-patch
-2.34				ns-2.34-patch
+For this version of NS-2		Use this patch
+2.30				                ns-2.30-patch
+2.34				                ns-2.34-patch
 
-Patch NS using a command like this:
+Patch NS-2 using a command like this:
 % cd NSDIR
 % patch -p1 < CLICKDIR/etc/ns-VERSION-patch
