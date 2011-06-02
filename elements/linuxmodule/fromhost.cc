@@ -47,16 +47,14 @@ CLICK_CXX_UNPROTECT
 
 #if HAVE_LINUX_INET_CTL_SOCK_CREATE
 # define click_inet_ioctl(sock, dev, cmd, arg)	inet_ioctl((sock), (cmd), (arg))
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) && CONFIG_NET_NS
-# define click_inet_ioctl(sock, dev, cmd, arg)	devinet_ioctl((dev)->nd_net, (cmd), (arg))
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
-# define click_inet_ioctl(sock, dev, cmd, arg)	devinet_ioctl(&init_net, (cmd), (arg))
+# define click_inet_ioctl(sock, dev, cmd, arg)	devinet_ioctl(dev_net(dev), (cmd), (arg))
 #else
 # define click_inet_ioctl(sock, dev, cmd, arg)	devinet_ioctl((cmd), (arg))
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) && CONFIG_NET_NS
-# define click_dev_ioctl(dev, cmd, arg)		dev_ioctl((dev)->nd_net, (cmd), (arg))
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+# define click_dev_ioctl(dev, cmd, arg)		dev_ioctl(dev_net(dev), (cmd), (arg))
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 # define click_dev_ioctl(dev, cmd, arg)		dev_ioctl(&init_net, (cmd), (arg))
 #else
@@ -286,7 +284,7 @@ FromHost::set_device_addresses(ErrorHandler *errh)
 # if HAVE_LINUX_INET_CTL_SOCK_CREATE
 	struct socket *sock = kmalloc(sizeof(struct socket), GFP_KERNEL);
 	sock->sk = 0;
-	if (res >= 0 && (res = inet_ctl_sock_create(&sock->sk, AF_INET, SOCK_RAW, IPPROTO_TCP, _dev->nd_net)) != 0) {
+	if (res >= 0 && (res = inet_ctl_sock_create(&sock->sk, AF_INET, SOCK_RAW, IPPROTO_TCP, dev_net(_dev))) != 0) {
 	    errh->error("error %d creating control socket for device '%s'", res, _devname.c_str());
 	    res = -1;
 	}
