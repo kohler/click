@@ -117,12 +117,19 @@ This will also install the kernel module if necessary and report any errors
 to standard error. (You must run 'make install' before 'click-install' will
 work.)
 
-NS Simulator
+NS-3 Simulator
+-------------
+
+    See 'INSTALL' for more information on how to enable the NS-3 Click
+Integration. Further information on ns-3-click is available in the ns-3 
+manual: http://www.nsnam.org/docs/models/index.html#document-click.
+
+NS-2 Simulator
 ............
 
-    See 'INSTALL' for more information.  Once a Click-enabled version of NS
+    See 'INSTALL' for more information.  Once a Click-enabled version of NS-2
 is installed, the 'ns' command is able to run Click scripts as part of a
-normal NS simulation.
+normal NS-2 simulation.
 
 Configurations
 ..............
