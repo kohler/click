@@ -605,7 +605,20 @@ if test "$linux_system_map" = NONE; then
     fi
 fi
 
-if test ! -f "$linux_system_map"; then
+AC_MSG_CHECKING([for Linux System.map])
+if test -r "$linux_system_map"; then
+    AC_MSG_RESULT([$linux_system_map])
+elif test -f "$linux_system_map"; then
+    AC_MSG_RESULT([$linux_system_map (unreadable)])
+    AC_MSG_ERROR([
+=========================================
+
+The Linux System.map file $linux_system_map cannot be read.
+Try running the ./configure script as root (or use the --with-linux=DIR
+and/or --with-linux-map=MAP options).
+
+=========================================])
+else
     if test "x$enable_linuxmodule_default" = xyes; then
 	AC_MSG_WARN([
 =========================================

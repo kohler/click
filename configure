@@ -8847,7 +8847,23 @@ if test "$linux_system_map" = NONE; then
     fi
 fi
 
-if test ! -f "$linux_system_map"; then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Linux System.map" >&5
+$as_echo_n "checking for Linux System.map... " >&6; }
+if test -r "$linux_system_map"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $linux_system_map" >&5
+$as_echo "$linux_system_map" >&6; }
+elif test -f "$linux_system_map"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $linux_system_map (unreadable)" >&5
+$as_echo "$linux_system_map (unreadable)" >&6; }
+    as_fn_error $? "
+=========================================
+
+The Linux System.map file $linux_system_map cannot be read.
+Try running the ./configure script as root (or use the --with-linux=DIR
+and/or --with-linux-map=MAP options).
+
+=========================================" "$LINENO" 5
+else
     if test "x$enable_linuxmodule_default" = xyes; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
 =========================================
