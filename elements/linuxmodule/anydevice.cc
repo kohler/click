@@ -22,6 +22,7 @@
 #include <click/config.h>
 #include <click/glue.hh>
 #include "anydevice.hh"
+#include "fromdevice.hh"
 #include <click/args.hh>
 #include <click/error.hh>
 #include <click/handlercall.hh>
@@ -120,31 +121,44 @@ AnyDevice::alter_promiscuity(int delta)
 #endif
 }
 
-#if CLICK_FROMDEVICE_USE_BRIDGE
 void
 AnyDevice::alter_from_device(int delta)
 {
+#if HAVE_CLICK_KERNEL
+    (void) delta;
+#elif CLICK_FROMDEVICE_USE_BRIDGE
     if (!_dev)
 	return;
     fake_bridge *fb = reinterpret_cast<fake_bridge *>(_dev->br_port);
-    if (fb && fb->magic != fake_bridge::click_magic) {
+    if (fb && fb->magic != fake_bridge::click_magic)
 	printk("<1>%s: appears to be owned by the bridge module!", _devname.c_str());
-	return;
-    }
-
-    if (delta < 0 && fb && atomic_dec_and_test(&fb->refcount)) {
+    else if (delta < 0 && fb && atomic_dec_and_test(&fb->refcount)) {
 	delete fb;
 	rcu_assign_pointer(_dev->br_port, NULL);
-    } else if (delta > 0 && fb)
-	atomic_inc(&fb->refcount);
-    else if (delta > 0) {
+    } else if (delta > 0 && !fb) {
 	fb = new fake_bridge;
 	fb->magic = fake_bridge::click_magic;
 	atomic_set(&fb->refcount, 1);
 	rcu_assign_pointer(_dev->br_port, reinterpret_cast<struct net_bridge_port *>(fb));
-    }
-}
+    } else if (delta > 0)
+	atomic_inc(&fb->refcount);
+#elif HAVE_LINUX_NETDEV_RX_HANDLER_REGISTER
+    if (!_dev)
+	return;
+    rtnl_lock();
+    if (_dev->rx_handler && _dev->rx_handler != click_fromdevice_rx_handler)
+	printk("<1>%s: rx_handler already set!", _devname.c_str());
+    else if (delta < 0 && !_dev->rx_handler_data)
+	netdev_rx_handler_unregister(_dev);
+    else if (delta > 0 && !_dev->rx_handler)
+	netdev_rx_handler_register(_dev, click_fromdevice_rx_handler, 0);
+    else
+	_dev->rx_handler_data = (void *) ((uintptr_t) _dev->rx_handler_data + delta);
+    rtnl_unlock();
+#else
+    (void) delta;
 #endif
+}
 
 net_device *
 AnyDevice::lookup_device(ErrorHandler *errh)
@@ -204,10 +218,8 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, int flags)
     if (_dev && _timestamp)
 	net_enable_timestamp();
 #endif
-#if CLICK_FROMDEVICE_USE_BRIDGE
     if (_dev && (flags & anydev_from_device))
 	alter_from_device(1);
-#endif
     _carrier_ok = (_dev && netif_carrier_ok(_dev));
 
     // call going-up notifiers
@@ -228,10 +240,8 @@ AnyDevice::clear_device(AnyDeviceMap *adm, int flags)
     if (_dev && _timestamp)
 	net_disable_timestamp();
 #endif
-#if CLICK_FROMDEVICE_USE_BRIDGE
     if (_dev && (flags & anydev_from_device))
 	alter_from_device(-1);
-#endif
     if (adm && _in_map)
 	adm->remove(this, flags & anydev_change);
     if (_dev)
@@ -364,5 +374,5 @@ AnyDevice::get_by_ether_address(const String &name, Element *context)
     return dev;
 }
 
-ELEMENT_REQUIRES(linuxmodule)
+ELEMENT_REQUIRES(linuxmodule FromDevice)
 ELEMENT_PROVIDES(AnyDevice)

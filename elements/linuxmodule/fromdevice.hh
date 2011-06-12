@@ -190,4 +190,8 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
 
 };
 
+extern "C" {
+struct sk_buff *click_fromdevice_rx_handler(struct sk_buff *skb);
+}
+
 #endif
