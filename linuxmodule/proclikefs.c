@@ -19,7 +19,8 @@
 
 #undef CLICK_LINUXMODULE
 #include <linux/version.h>
-#ifndef AUTOCONF_INCLUDED
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 30) \
+	&& !defined(AUTOCONF_INCLUDED)
 # include <linux/autoconf.h>
 #endif
 #ifndef EXPORT_SYMTAB
@@ -255,12 +256,11 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
 {
     struct dentry *dentry_tree;
     struct list_head *p;
-#if ((LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)) && (CONFIG_SMP))
     int cpu;
-#endif
 #if HAVE_LINUX_FILES_LGLOCK
     DECLARE_LGLOCK(files_lglock);
 #endif
+    (void) cpu;
 
     DEBUG("killing files");
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
@@ -269,7 +269,7 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
 # elif HAVE_LINUX_FILES_LGLOCK
     lg_local_lock(files_lglock);
 # endif
-# if ((LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)) && (CONFIG_SMP))
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
     for_each_possible_cpu(cpu) {
 	list_for_each(p, per_cpu_ptr(sb->s_files, cpu)) {
 	    struct file *filp = list_entry(p, struct file, f_u.fu_list);

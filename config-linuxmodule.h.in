@@ -6,6 +6,9 @@
    fairly with the kernel. */
 #undef HAVE_ADAPTIVE_SCHEDULER
 
+/* Define if the AUTOCONF_INCLUDED symbol should be checked. */
+#undef HAVE_CHECK_AUTOCONF_INCLUDED
+
 /* Define if your Linux kernel has Click extensions. */
 #undef HAVE_CLICK_KERNEL
 
@@ -167,7 +170,7 @@
 #define MODULE 1
 
 /* Include Linux configuration and type definitions. */
-#ifndef AUTOCONF_INCLUDED
+#if HAVE_CHECK_AUTOCONF_INCLUDED && !defined(AUTOCONF_INCLUDED)
 # include <linux/autoconf.h>
 #endif
 #include <linux/version.h>

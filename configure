@@ -8885,23 +8885,31 @@ fi
 
 if test $ac_have_linux_kernel = y; then
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Linux 2.6" >&5
-$as_echo_n "checking for Linux 2.6... " >&6; }
-if ${ac_cv_linux26+:} false; then :
-  $as_echo_n "(cached) " >&6
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking Linux version" >&5
+$as_echo_n "checking Linux version... " >&6; }
+linuxpath_makefile=`find_linuxpath Makefile`
+linux_version=`grep '^VERSION[ 	]*=[ 	]*[0-9][0-9]*[ 	]*$' "$linuxpath_makefile" | tr -c -d 0-9`
+linux_patchlevel=`grep '^PATCHLEVEL[ 	]*=[ 	]*[0-9][0-9]*[ 	]*$' "$linuxpath_makefile" | tr -c -d 0-9`
+linux_sublevel=`grep '^SUBLEVEL[ 	]*=[ 	]*[0-9][0-9]*[ 	]*$' "$linuxpath_makefile" | tr -c -d 0-9`
+if test -n "$linux_version" -a -n "$linux_patchlevel" -a -z "$linux_sublevel"; then linux_sublevel=0; fi
+if test -n "$linux_version" -a -n "$linux_patchlevel" -a -n "$linux_sublevel"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $linux_version.$linux_patchlevel.$linux_sublevel" >&5
+$as_echo "$linux_version.$linux_patchlevel.$linux_sublevel" >&6; }
+    linux_version_code=`expr $linux_version '*' 65536 + $linux_patchlevel '*' 256 + $linux_sublevel`
 else
-  if grep '^PATCHLEVEL 	*= 	*6' `find_linuxpath Makefile` >/dev/null 2>&1; then ac_cv_linux26=yes; else ac_cv_linux26=no; fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
+$as_echo "unknown" >&6; }
+    linux_version_code=0
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux26" >&5
-$as_echo "$ac_cv_linux26" >&6; }
-LINUXMODULE_2_6=0
-if test "$ac_cv_linux26" = yes; then LINUXMODULE_2_6=1; fi
 
-if test $LINUXMODULE_2_6 = 1; then
+LINUXMODULE_2_6=0
+if test "$linux_version.$linux_patchlevel" = 2.6; then
+    LINUXMODULE_2_6=1
 
 $as_echo "#define HAVE_LINUXMODULE_2_6 1" >>confdefs.h
 
 fi
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Click Linux kernel extensions" >&5
 $as_echo_n "checking for Click Linux kernel extensions... " >&6; }
@@ -9001,7 +9009,7 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for files_lglock kernel symbol" >&5
 $as_echo_n "checking for files_lglock kernel symbol... " >&6; }
-if test "${ac_cv_linux_files_lglock+set}" = set; then :
+if ${ac_cv_linux_files_lglock+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   if grep "__ksymtab_files_lglock" $linux_system_map >/dev/null 2>&1; then
@@ -10210,6 +10218,16 @@ fixincludes.pl execution failed.
 
 
     # CLICK_LINUXMODULE_PROLOGUE()
+    linux_autoconf_include=
+    if test "$linux_version_code" -lt 132638; then
+
+$as_echo "#define HAVE_CHECK_AUTOCONF_INCLUDED 1" >>confdefs.h
+
+	linux_autoconf_include="#if !defined(AUTOCONF_INCLUDED)
+# include <linux/autoconf.h>
+#endif
+"
+    fi
 
 
 
@@ -10244,9 +10262,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/signal.h>
 #include <linux/skbuff.h>
@@ -10295,9 +10311,7 @@ else
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/types.h>
 void f1(long) {
@@ -10353,9 +10367,7 @@ else
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/types.h>
 void f1(long long) {
@@ -10411,9 +10423,7 @@ else
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/types.h>
 
@@ -10472,9 +10482,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 int
@@ -10531,9 +10539,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 int
@@ -10590,9 +10596,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 int
@@ -10649,9 +10653,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 int
@@ -10708,9 +10710,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 int
@@ -10767,9 +10767,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 int
@@ -10826,9 +10824,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/netdevice.h>
 int
@@ -10872,9 +10868,7 @@ $as_echo "#define HAVE_LINUX_POLLING 1" >>confdefs.h
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <net/dst.h>
 "
@@ -10908,9 +10902,7 @@ $as_echo "#define HAVE_SKB_DST_DROP 1" >>confdefs.h
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 "
@@ -10944,9 +10936,7 @@ $as_echo "#define HAVE_SKB_RECYCLE 1" >>confdefs.h
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 "
@@ -10993,9 +10983,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/netdevice.h>
 int
@@ -11045,9 +11033,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
@@ -11082,9 +11068,7 @@ $as_echo "#define HAVE_NET_ENABLE_TIMESTAMP 1" >>confdefs.h
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
@@ -11119,9 +11103,7 @@ $as_echo "#define HAVE_NETIF_TX_LOCK 1" >>confdefs.h
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
@@ -11156,9 +11138,7 @@ $as_echo "#define HAVE_NETDEV_GET_TX_QUEUE 1" >>confdefs.h
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
@@ -11193,9 +11173,7 @@ $as_echo "#define HAVE_NETIF_TX_QUEUE_FROZEN 1" >>confdefs.h
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
@@ -11230,9 +11208,7 @@ $as_echo "#define HAVE_NETDEV_USES_DSA_TAGS 1" >>confdefs.h
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>

@@ -39,10 +39,6 @@ static struct notifier_block packet_notifier;
 static struct notifier_block device_notifier_early;
 static struct notifier_block device_notifier_late;
 
-#if !HAVE_CLICK_KERNEL && (defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE))
-# define CLICK_FROMDEVICE_USE_BRIDGE 1
-#endif
-
 #if CLICK_FROMDEVICE_USE_BRIDGE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -298,8 +294,11 @@ device_notifier_hook_early(struct notifier_block *nb, unsigned long flags, void 
 	bool exists = (flags != NETDEV_UP);
 	from_device_map.lock(true, lock_flags);
 	nes = from_device_map.lookup_all(dev, exists, es, 8);
-	for (i = 0; i < nes; i++)
+	for (i = 0; i < nes; i++) {
+#if CLICK_FROMDEVICE_USE_BRIDGE
 	    ((FromDevice*)(es[i]))->alter_from_device(-1);
+#endif
+	}
 	from_device_map.unlock(true, lock_flags);
     }
 
@@ -321,7 +320,9 @@ device_notifier_hook_late(struct notifier_block *nb, unsigned long flags, void *
 	AnyDevice *es[8];
 	int nes = from_device_map.lookup_all(dev, exists, es, 8);
 	for (int i = 0; i < nes; i++) {
+#if CLICK_FROMDEVICE_USE_BRIDGE
 	    ((FromDevice*)(es[i]))->alter_from_device(1);
+#endif
 	    ((FromDevice*)(es[i]))->set_device(flags == NETDEV_DOWN ? 0 : dev, &from_device_map, AnyDevice::anydev_change | AnyDevice::anydev_from_device);
 	}
 	from_device_map.unlock(true, lock_flags);

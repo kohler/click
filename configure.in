@@ -637,14 +637,26 @@ dnl Check for Linux 2.6
 
 if test $ac_have_linux_kernel = y; then
 
-AC_CACHE_CHECK([for Linux 2.6], [ac_cv_linux26],
-    [if grep '^PATCHLEVEL[ 	]*=[ 	]*6' `find_linuxpath Makefile` >/dev/null 2>&1; then ac_cv_linux26=yes; else ac_cv_linux26=no; fi])
+AC_MSG_CHECKING([Linux version])
+linuxpath_makefile=`find_linuxpath Makefile`
+linux_version=`grep '^VERSION[[ 	]]*=[[ 	]]*[[0-9]][[0-9]]*[[ 	]]*$' "$linuxpath_makefile" | tr -c -d 0-9`
+linux_patchlevel=`grep '^PATCHLEVEL[[ 	]]*=[[ 	]]*[[0-9]][[0-9]]*[[ 	]]*$' "$linuxpath_makefile" | tr -c -d 0-9`
+linux_sublevel=`grep '^SUBLEVEL[[ 	]]*=[[ 	]]*[[0-9]][[0-9]]*[[ 	]]*$' "$linuxpath_makefile" | tr -c -d 0-9`
+if test -n "$linux_version" -a -n "$linux_patchlevel" -a -z "$linux_sublevel"; then linux_sublevel=0; fi
+if test -n "$linux_version" -a -n "$linux_patchlevel" -a -n "$linux_sublevel"; then
+    AC_MSG_RESULT([$linux_version.$linux_patchlevel.$linux_sublevel])
+    linux_version_code=`expr $linux_version '*' 65536 + $linux_patchlevel '*' 256 + $linux_sublevel`
+else
+    AC_MSG_RESULT([unknown])
+    linux_version_code=0
+fi
+
 LINUXMODULE_2_6=0
-if test "$ac_cv_linux26" = yes; then LINUXMODULE_2_6=1; fi
-AC_SUBST(LINUXMODULE_2_6)
-if test $LINUXMODULE_2_6 = 1; then
+if test "$linux_version.$linux_patchlevel" = 2.6; then
+    LINUXMODULE_2_6=1
     AC_DEFINE([HAVE_LINUXMODULE_2_6], [1], [Define if the Click linuxmodule is compiled for a 2.6 kernel.])
 fi
+AC_SUBST(LINUXMODULE_2_6)
 
 AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
 [if grep "register_net_in" $linux_system_map >/dev/null 2>&1; then
@@ -1221,6 +1233,14 @@ fixincludes.pl execution failed.
 
 
     # CLICK_LINUXMODULE_PROLOGUE()
+    linux_autoconf_include=
+    if test "$linux_version_code" -lt 132638; then
+	AC_DEFINE([HAVE_CHECK_AUTOCONF_INCLUDED], [1], [Define if the AUTOCONF_INCLUDED symbol should be checked.])
+	linux_autoconf_include="#if !defined(AUTOCONF_INCLUDED)
+# include <linux/autoconf.h>
+#endif
+"
+    fi
     AC_DEFUN([CLICK_LINUXMODULE_PROLOGUE], [[#if HAVE_LINUXMODULE_2_6
 # define KBUILD_STR(s)		#s
 # define KBUILD_BASENAME	KBUILD_STR(click)
@@ -1239,9 +1259,7 @@ fixincludes.pl execution failed.
 #define false linux_false
 #define true linux_true
 #define CLICK_CXX_PROTECTED 1
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
+$linux_autoconf_include
 #include <asm/types.h>]])
 
 

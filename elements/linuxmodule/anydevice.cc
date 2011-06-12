@@ -120,10 +120,10 @@ AnyDevice::alter_promiscuity(int delta)
 #endif
 }
 
+#if CLICK_FROMDEVICE_USE_BRIDGE
 void
 AnyDevice::alter_from_device(int delta)
 {
-#if !HAVE_CLICK_KERNEL && (defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
     if (!_dev)
 	return;
     fake_bridge *fb = reinterpret_cast<fake_bridge *>(_dev->br_port);
@@ -143,10 +143,8 @@ AnyDevice::alter_from_device(int delta)
 	atomic_set(&fb->refcount, 1);
 	rcu_assign_pointer(_dev->br_port, reinterpret_cast<struct net_bridge_port *>(fb));
     }
-#else
-    (void) delta;
-#endif
 }
+#endif
 
 net_device *
 AnyDevice::lookup_device(ErrorHandler *errh)
@@ -206,8 +204,10 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, int flags)
     if (_dev && _timestamp)
 	net_enable_timestamp();
 #endif
+#if CLICK_FROMDEVICE_USE_BRIDGE
     if (_dev && (flags & anydev_from_device))
 	alter_from_device(1);
+#endif
     _carrier_ok = (_dev && netif_carrier_ok(_dev));
 
     // call going-up notifiers
@@ -228,8 +228,10 @@ AnyDevice::clear_device(AnyDeviceMap *adm, int flags)
     if (_dev && _timestamp)
 	net_disable_timestamp();
 #endif
+#if CLICK_FROMDEVICE_USE_BRIDGE
     if (_dev && (flags & anydev_from_device))
 	alter_from_device(-1);
+#endif
     if (adm && _in_map)
 	adm->remove(this, flags & anydev_change);
     if (_dev)

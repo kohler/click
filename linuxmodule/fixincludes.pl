@@ -43,12 +43,13 @@ sub sunprotect ($) {
     $t;
 }
 
-sub expand_initializer ($$) {
-    my($var, $v) = @_;
-    my(@prefix, $r, $slot);
+sub expand_initializer ($$$) {
+    my($var, $v, $f) = @_;
+    my(@prefix, $r, $slot, $originalv);
     push @prefix, $var;
     $r = "";
     $v =~ tr/\n/ /;
+    $originalv = $v;
     while (1) {
 	$v =~ s/\A\s+//;
 	if ($v =~ /\A\}(.*)\z/s) {
@@ -65,16 +66,19 @@ sub expand_initializer ($$) {
 	    } elsif ($v =~ /\A(.*?)([,\{\}].*)\z/s) {
 		$r .= join(".", @prefix, $slot) . " = $1;\n";
 		$v = $2;
+	    } elsif ($v =~ /\A([^;\{\}]*?)\s*\z/s) {
+		$r .= join(".", @prefix, $slot) . " = $1;\n";
+		$v = "";
 	    } else {
-		die "$v (2)";
+		die "$f: $slot : $v @ $originalv (2)";
 	    }
 	} elsif ($v eq "") {
 	    last;
 	} else {
-	    die "$v [$r] (3)";
+	    die "$f: $v [$r] (3)";
 	}
     }
-    die "(4)" if @prefix != 1;
+    die "$f: (4)" if @prefix != 1;
     return $r;
 }
 
@@ -191,6 +195,9 @@ sub one_includeroot ($$) {
 	    s{__xchg_u64\((\w+)\s*,}{__xchg_u64((volatile __u64 *) $1,}g;
 	    s{void\s+([\w\s]+)\s*;}{void *$1;}g;
 
+	    # constant expressions
+	    s{__cpu_to_be32 *\( *([0-9][0-9a-fxA-FX]*) *\)}{__constant_htonl($1)}g;
+
 	    # stuff for particular files (what a shame)
 	    if ($d eq "page-flags.h") {
 		s{(#define PAGE_FLAGS_H)}{$1\n#undef private};
@@ -200,7 +207,7 @@ sub one_includeroot ($$) {
 		s{enum hrtimer_restart}{int};
 	    }
 	    if ($d eq "route.h") {
-		s{\b(\w+)\s*=\s*\{(\s*\w+:.*)\}\s*;}{"$1;\n" . expand_initializer($1, $2)}sge;
+		s{\b(\w+)\s*=\s*\{(\s*\w+:.*)\}\s*;}{"$1;\n" . expand_initializer($1, $2, $f)}sge;
 	    }
 	    if ($d eq "types.h") {
 		s{(typedef.*bool\s*;)}{#ifndef __cplusplus\n$1\n#endif};
@@ -234,6 +241,11 @@ sub one_includeroot ($$) {
 	    if ($d eq "semaphore.h") {
 		s{(static inline void sema_init)}{#ifndef __cplusplus\n$1};
 	        s/(lockdep.*})/$1\n#endif\n/s;
+	    }
+	    if ($d eq "radix-tree.h") {
+		# errors in the RCU macros with rcu_dereference(*pslot)
+		1 while s<void \*\*pslot([^\}]*?)\{><void **____pslot$1\{char **pslot = (char **) ____pslot;>;
+		1 while s<void \*item([^\}]*?)\{><void *____item$1\{char *item = (char *) ____item;>;
 	    }
 
 	    # CLICK_CXX_PROTECTED check
