@@ -32,7 +32,7 @@ CLICK_DECLS
 /*
  * =title FromSimDevice.u
  * =c
- * FromSimDevice(DEVNAME [, PROMISC? [, MAXPACKETSIZE]])
+ * FromSimDevice(DEVNAME [, PROMISC? [, SNAPLEN]])
  * =s netdevices
  * reads packets from a simulator device
  * =d
@@ -41,7 +41,7 @@ CLICK_DECLS
  * element.
  *
  * =e
- *   FromSimDevice(eth0, 0) -> ...
+ *   FromSimDevice(eth0, 2048) -> ...
  *
  * =a ToSimDevice.u, FromDump, ToDump, FromDevice(n) */
 
