@@ -1383,6 +1383,8 @@ bool
 ElementArg::parse(const String &str, Element *&result, const ArgContext &args)
 {
     const Element *context = args.context();
+    assert(context);
+
     result = context->router()->find(str, context);
     if (!result)
 	args.error("does not name an element");
