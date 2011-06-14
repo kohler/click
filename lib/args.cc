@@ -1383,11 +1383,7 @@ bool
 ElementArg::parse(const String &str, Element *&result, const ArgContext &args)
 {
     const Element *context = args.context();
-
-    if (!context) {
-	args.error("no element context");
-	return false;
-    }
+    assert(context);
 
     result = context->router()->find(str, context);
     if (!result)
