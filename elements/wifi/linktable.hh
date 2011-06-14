@@ -188,7 +188,7 @@ protected:
     bool _marked_from_me;
     bool _marked_to_me;
 
-    HostInfo(IPAddress p) {
+    HostInfo(IPAddress p = IPAddress()) {
       _ip = p;
       _metric_from_me = 0;
       _metric_to_me = 0;
@@ -196,9 +196,6 @@ protected:
       _prev_to_me = IPAddress();
       _marked_from_me = false;
       _marked_to_me = false;
-    }
-    HostInfo() {
-      HostInfo(IPAddress());
     }
 
     HostInfo(const HostInfo &p) :
