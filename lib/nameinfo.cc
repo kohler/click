@@ -296,7 +296,7 @@ NameInfo::NameInfo()
 NameInfo::~NameInfo()
 {
     for (int i = 0; i < _namedbs.size(); i++) {
-	_namedbs[i]->_installed = false;
+	_namedbs[i]->_installed = NULL;
 	delete _namedbs[i];
     }
 }
