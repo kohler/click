@@ -83,13 +83,6 @@ class IPAddress { public:
 	return IPAddress(0xFFFFFFFF);
     }
 
-
-    typedef uint32_t (IPAddress::*unspecified_bool_type)() const;
-    /** @brief Return true iff the address is not 0.0.0.0. */
-    inline operator unspecified_bool_type() const {
-	return _addr != 0 ? &IPAddress::addr : 0;
-    }
-
     /** @brief Return true iff the address is a multicast address.
      *
      * These are the class D addresses, 224.0.0.0-239.255.255.255. */
