@@ -574,7 +574,7 @@ inline void HashContainer<T, A>::insert_at(iterator &it, T *element)
     click_hash_assert(it._hc == this && it._bucket < _rep.nbuckets);
     click_hash_assert(bucket(_rep.hashkey(element)) == it._bucket);
     ++_rep.size;
-    if (!(_rep.hashnext(element) = it._element))
+    if (!(_rep.hashnext(element) = *it._pprev))
 	_rep.first_bucket = 0;
     *it._pprev = element;
     it._pprev = &_rep.hashnext(element);
