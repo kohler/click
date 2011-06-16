@@ -431,9 +431,45 @@ static const char * const nonclasses[] = {
 };
 #endif
 
+struct MyHashContainerEntry {
+    int _key;
+    struct MyHashContainerEntry *_hashnext;
+
+    typedef int key_type;
+    typedef int key_const_reference;
+
+    key_const_reference hashkey() const {
+	return _key;
+    }
+
+    MyHashContainerEntry(int key) : _key(key), _hashnext(0) {};
+};
+
+typedef HashContainer<MyHashContainerEntry> MyHashContainer;
+
 int
 HashTableTest::initialize(ErrorHandler *errh)
 {
+    MyHashContainer my_hashcontainer;
+    SizedHashAllocator<sizeof(MyHashContainerEntry)> my_alloc;
+    int my_num_to_insert = 1000;
+    for (int i = 0; i < my_num_to_insert; ++i) {
+	void *p = my_alloc.allocate();
+	MyHashContainerEntry *e = new(p) MyHashContainerEntry(i);
+	MyHashContainer::iterator insert_it = my_hashcontainer.find(i);
+	CHECK(!insert_it.get());
+	my_hashcontainer.insert_at(insert_it, e);
+	my_hashcontainer.balance();
+    }
+    CHECK(my_hashcontainer.size() == 1000);
+    for (MyHashContainer::iterator it = my_hashcontainer.begin(); it.live();) {
+	MyHashContainerEntry *e = it.get();
+	my_hashcontainer.erase(it);
+	e->~MyHashContainerEntry();
+	my_alloc.deallocate(e);
+    }
+    CHECK(my_hashcontainer.size() == 0);
+
     MAP_S2I h;
 
     MAP_INSERT(h, "Foo", 1);
