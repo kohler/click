@@ -40,6 +40,11 @@ Integer. If set, the outgoing packet will have this length.
 
 Integer. Same as the RATE argument.
 
+=item BANDWIDTH
+
+Integer. Sets the RATE argument based on the initial outgoing packet length
+and a target bandwdith.
+
 =item LIMIT
 
 Integer. Same as the LIMIT argument.

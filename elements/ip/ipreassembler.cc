@@ -28,6 +28,7 @@
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
 #include <click/straccum.hh>
+#include <click/ipflowid.hh>
 CLICK_DECLS
 
 #define PACKET_CHUNK(p)		(*((ChunkLink *)((p)->anno_u8() + IPREASSEMBLER_ANNO_OFFSET)))
@@ -35,9 +36,11 @@ CLICK_DECLS
 #define IP_BYTE_OFF(iph)	((ntohs((iph)->ip_off) & IP_OFFMASK) << 3)
 
 IPReassembler::IPReassembler()
+    : _stat_frags_seen(0), _stat_good_assem(0), _stat_failed_assem(0), _stat_bad_pkts(0)
 {
     for (int i = 0; i < NMAP; i++)
 	_map[i] = 0;
+    static_assert(IPREASSEMBLER_ANNO_OFFSET + IPREASSEMBLER_ANNO_SIZE <= Packet::anno_size, "anno too big");
     static_assert(sizeof(ChunkLink) == IPREASSEMBLER_ANNO_SIZE, "sizeof(ChunkLink) is expected to equal IPREASSEMBLER_ANNO_SIZE.");
 }
 
@@ -49,8 +52,13 @@ int
 IPReassembler::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _mem_high_thresh = 256 * 1024;
-    if (Args(conf, this, errh).read("HIMEM", _mem_high_thresh).complete() < 0)
+    int mtu_anno = -1;
+    if (Args(conf, this, errh)
+	.read("HIMEM", _mem_high_thresh)
+	.read("MAX_MTU_ANNO", AnnoArg(2), mtu_anno)
+	.complete() < 0)
 	return -1;
+    _mtu_anno = mtu_anno;
     _mem_low_thresh = (_mem_high_thresh >> 2) * 3;
     return 0;
 }
@@ -134,6 +142,36 @@ IPReassembler::check(ErrorHandler *errh)
     return 0;
 }
 
+String
+IPReassembler::debug_dump(Element *e, void *)
+{
+    IPReassembler *r = (IPReassembler *) e;
+    r->check();
+    StringAccum sa;
+    sa <<
+	"frags seen total:    " << r->_stat_frags_seen << "\n"
+	"good reassemblies:   " << r->_stat_good_assem << "\n"
+	"failed reassemblies: " << r->_stat_failed_assem << "\n"
+	"bad fragments seen:  " << r->_stat_bad_pkts << "\n"
+	"cached chunk data:\n";
+    for (int b = 0; b < NMAP; b++)
+	for (WritablePacket *q = r->_map[b]; q; q = (WritablePacket *)(q->next()))
+	    if (const click_ip *qip = q->ip_header()) {
+		sa << ' ' << IPFlowID(qip) << ' ' << ntohs(qip->ip_id);
+		ChunkLink *chunk = &PACKET_CHUNK(q);
+		int off = 0;
+		while (chunk &&
+		       (chunk->lastoff > chunk->off) &&
+		       (chunk->lastoff <= q->transport_length())) {
+		    sa << " (" << chunk->off << ',' << chunk->lastoff << ')';
+		    off = chunk->lastoff;
+		    chunk = next_chunk(q, chunk);
+		}
+		sa << '\n';
+	    }
+    return sa.take_string();;
+}
+
 WritablePacket *
 IPReassembler::find_queue(Packet *p, WritablePacket ***store_pprev)
 {
@@ -156,6 +194,7 @@ Packet *
 IPReassembler::emit_whole_packet(WritablePacket *q, WritablePacket **q_pprev,
 				 Packet *p_in)
 {
+    ++_stat_good_assem;
     *q_pprev = (WritablePacket *)q->next();
 
     click_ip *q_iph = q->ip_header();
@@ -176,28 +215,38 @@ IPReassembler::emit_whole_packet(WritablePacket *q, WritablePacket **q_pprev,
 void
 IPReassembler::make_queue(Packet *p, WritablePacket **q_pprev)
 {
-    const click_ip *iph = p->ip_header();
-    int p_off = IP_BYTE_OFF(iph);
+    int p_off = IP_BYTE_OFF(p->ip_header());
     int p_lastoff = p_off + PACKET_DLEN(p);
+    WritablePacket *q;
 
-    int hl = (p_off == 0 ? iph->ip_hl << 2 : 20);
-    WritablePacket *q = Packet::make(60 - hl, 0, hl + p_lastoff, 0);
-    if (!q) {
-	click_chatter("out of memory");
-	return;
+    if (p_off == 0) {
+	q = p->uniqueify();
+	if (!q) {
+	    click_chatter("out of memory");
+	    return;
+	}
+    } else {
+	q = Packet::make(p->headroom() + p->ip_header_offset(), 0, 20 + p_lastoff, 0);
+	if (!q) {
+	    p->kill();
+	    click_chatter("out of memory");
+	    return;
+	}
+	q->set_ip_header((click_ip *)q->data(), 20);
+	memcpy(q->ip_header(), p->ip_header(), 20);
+	// copy data
+	memcpy(q->transport_header() + p_off, p->transport_header(), PACKET_DLEN(p));
+	p->kill();
     }
+
     _mem_used += IPH_MEM_USED + p_lastoff;
 
-    // copy IP header and annotations if appropriate
-    q->set_ip_header((click_ip *)q->data(), hl);
-    memcpy(q->ip_header(), iph, hl);
     click_ip *q_iph = q->ip_header();
-    q_iph->ip_off = (iph->ip_off & ~htons(IP_OFFMASK)); // leave MF, DF, RF
-    if (p_off == 0)
-	q->copy_annotations(p);
+    q_iph->ip_off = (q_iph->ip_off & ~htons(IP_OFFMASK)); // leave MF, DF, RF
 
-    // copy data
-    memcpy(q->transport_header() + p_off, p->transport_header(), PACKET_DLEN(p));
+    if (_mtu_anno >= 0)
+	q->set_anno_u16(_mtu_anno, p->network_length());
+
     PACKET_CHUNK(q).off = p_off;
     PACKET_CHUNK(q).lastoff = p_lastoff;
 
@@ -226,6 +275,8 @@ IPReassembler::simple_action(Packet *p)
     if (!IP_ISFRAG(iph))
 	return p;
 
+    ++_stat_frags_seen;
+
     // reap if necessary
     int now = p->timestamp_anno().sec();
     if (!now) {
@@ -245,6 +296,7 @@ IPReassembler::simple_action(Packet *p)
 	|| ((p_lastoff & 7) != 0 && (iph->ip_off & htons(IP_MF)) != 0)
 	|| PACKET_DLEN(p) < p_lastoff - p_off) {
 	p->kill();
+	++_stat_bad_pkts;
 	return 0;
     }
     p->take(PACKET_DLEN(p) - (p_lastoff - p_off));
@@ -260,10 +312,12 @@ IPReassembler::simple_action(Packet *p)
     WritablePacket *q = find_queue(p, &q_pprev);
     if (!q) {			// make a new queue
 	make_queue(p, q_pprev);
-	p->kill();
 	return 0;
     }
     WritablePacket *q_bucket_next = (WritablePacket *)(q->next());
+
+    if (_mtu_anno >= 0 && q->anno_u16(_mtu_anno) < p->network_length())
+	q->set_anno_u16(_mtu_anno, p->network_length());
 
     // extend the packet if necessary
     if (p_lastoff > q->transport_length()) {
@@ -322,17 +376,26 @@ IPReassembler::simple_action(Packet *p)
 
     // copy p's annotations and IP header if it is the first packet
     if (p_off == 0) {
-	int old_ip_off = q->ip_header()->ip_off;
-	int hl = iph->ip_hl << 2;
-	if (hl > (int) q->network_header_length())
-	    q = q->push(hl - q->network_header_length());
-	else
-	    q->pull(q->network_header_length() - hl);
-	q->set_ip_header((click_ip *)(q->transport_header() - hl), hl);
-	memcpy(q->ip_header(), p->ip_header(), hl);
+	uint16_t old_ip_off = q->ip_header()->ip_off;
+	int header_delta = p->ip_header_offset() - q->ip_header_offset();
+	if (header_delta > 0)
+	    q = q->push(header_delta);
+	else if (header_delta < 0)
+	    q->pull(-header_delta);
+	q->set_ip_header((click_ip *)(q->data() + p->ip_header_offset()), p->ip_header_length());
+        if (p->has_mac_header())
+	    q->set_mac_header((q->data() + p->mac_header_offset()), p->mac_header_length());
+	memcpy(q->data(), p->data(), p->ip_header_offset() + p->ip_header_length());
 	q->ip_header()->ip_off = old_ip_off;
-	//q->copy_annotations(p); XXX
-	q->set_device_anno(p->device_anno());
+	ChunkLink old_chunk = PACKET_CHUNK(q);
+	if (_mtu_anno >= 0) {
+	    uint16_t old_mtu = q->anno_u16(_mtu_anno);
+	    q->copy_annotations(p);
+	    q->set_anno_u16(_mtu_anno, old_mtu);
+	} else {
+	    q->copy_annotations(p);
+	}
+	PACKET_CHUNK(q) = old_chunk;
     }
 
     // clear MF if incoming packet has it cleared
@@ -362,11 +425,12 @@ IPReassembler::reap_overfull(int now)
 	for (int bucket = 0; bucket < NMAP; bucket++) {
 	    WritablePacket **pprev = &_map[bucket];
 	    for (WritablePacket *q = *pprev; q; q = *pprev)
-		if (q->timestamp_anno().sec() < now - delta) {
+		if (!delta || q->timestamp_anno().sec() < now - delta) {
 		    *pprev = (WritablePacket *)q->next();
 		    _mem_used -= IPH_MEM_USED + q->transport_length();
 		    q->set_next(0);
 		    checked_output_push(1, q);
+		    ++_stat_failed_assem;
 		    if (_mem_used <= _mem_low_thresh)
 			return;
 		} else
@@ -398,6 +462,12 @@ IPReassembler::reap(int now)
     }
 
     _reap_time = now + REAP_INTERVAL;
+}
+
+void
+IPReassembler::add_handlers()
+{
+    add_read_handler("dump", debug_dump, 0);
 }
 
 CLICK_ENDDECLS
