@@ -60,7 +60,7 @@ RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 
     _data = data;
     _datasize = datasize;
-    _tb.assign(rate, rate < CLICK_HZ / 50 ? 2 : rate / 100);
+    _tb.assign(rate, rate < 200 ? 2 : rate / 100);
     _limit = (limit >= 0 ? limit : NO_LIMIT);
     _active = active;
     _stop = stop;
@@ -190,7 +190,7 @@ RatedSource::change_param(const String &s, Element *e, void *vparam,
       unsigned rate;
       if (!IntArg().parse(s, rate))
 	  return errh->error("syntax error");
-      rs->_tb.assign_adjust(rate, rate < CLICK_HZ / 50 ? 2 : rate / 200);
+      rs->_tb.assign_adjust(rate, rate < 200 ? 2 : rate / 100);
       break;
   }
 
