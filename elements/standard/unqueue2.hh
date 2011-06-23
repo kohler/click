@@ -2,11 +2,12 @@
 #define CLICK_UNQUEUE2_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include <click/notifier.hh>
 CLICK_DECLS
 
 /*
  * =c
- * Unqueue2([BURSTSIZE])
+ * Unqueue2([BURST, I<keywords> QUEUES])
  * =s shaping
  * pull-to-push converter
  * =d
@@ -17,32 +18,46 @@ CLICK_DECLS
  * downstream queue that is full. It will also limit burst size to equal to
  * the number of available slots in the fullest downstream queue.
  *
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item QUEUES
+ *
+ * The Storage elements whose sizes should be checked.  If empty, then don't
+ * check downstream Storage elements' sizes.  Defaults to the set of downstream
+ * Storage elements.
+ *
+ * =back
+ *
  * =a Unqueue, RatedUnqueue, BandwidthRatedUnqueue
  */
 
 class Unqueue2 : public Element { public:
 
-  Unqueue2();
-  ~Unqueue2();
+    Unqueue2();
+    ~Unqueue2();
 
-  const char *class_name() const		{ return "Unqueue2"; }
-  const char *port_count() const		{ return PORTS_1_1; }
-  const char *processing() const		{ return PULL_TO_PUSH; }
+    const char *class_name() const		{ return "Unqueue2"; }
+    const char *port_count() const		{ return PORTS_1_1; }
+    const char *processing() const		{ return PULL_TO_PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void add_handlers();
 
-  bool run_task(Task *);
+    bool run_task(Task *);
 
-  static String read_param(Element *e, void *);
+    static String read_param(Element *e, void *);
 
- private:
+  private:
 
-  int _burst;
-  unsigned _packets;
-  Task _task;
-  Vector<Element*> _queue_elements;
+    int _burst;
+    unsigned _count;
+    Task _task;
+    Vector<Storage *> _queues;
+    bool _explicit_queues;
+    NotifierSignal _signal;
 
 };
 

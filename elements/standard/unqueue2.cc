@@ -28,7 +28,7 @@
 CLICK_DECLS
 
 Unqueue2::Unqueue2()
-  : _task(this)
+    : _burst(1), _count(0), _task(this)
 {
 }
 
@@ -39,74 +39,76 @@ Unqueue2::~Unqueue2()
 int
 Unqueue2::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    _burst = 1;
-    return Args(conf, this, errh).read_p("BURST", _burst).complete();
+    String queues_string;
+    if (Args(conf, this, errh)
+	.read_p("BURST", _burst)
+	.read("QUEUES", AnyArg(), queues_string).read_status(_explicit_queues)
+	.complete() < 0)
+	return -1;
+    while (String word = cp_shift_spacevec(queues_string)) {
+	_queues.push_back(0);
+	if (!ElementCastArg("Storage").parse(word, _queues.back(), this))
+	    return errh->error("bad QUEUES");
+    }
+    if (_burst == 0)
+	_burst = INT_MAX;
+    return 0;
 }
 
 int
 Unqueue2::initialize(ErrorHandler *errh)
 {
-  ElementCastTracker filter(router(), "Storage");
-  if (router()->visit_downstream(this, 0, &filter) < 0)
-    return errh->error("flow-based router context failure");
-  _queue_elements = filter.elements();
-  click_chatter("Unqueue2: found %d downstream queues", _queue_elements.size());
-  _packets = 0;
-  ScheduleInfo::initialize_task(this, &_task, errh);
-  return 0;
+    if (!_explicit_queues) {
+	ElementCastTracker filter(router(), "Storage");
+	if (router()->visit_downstream(this, 0, &filter) < 0)
+	    return errh->error("flow-based router context failure");
+	for (Element * const *it = filter.begin(); it != filter.end(); ++it)
+	    _queues.push_back((Storage *) (*it)->cast("Storage"));
+    }
+    ScheduleInfo::initialize_task(this, &_task, errh);
+    _signal = Notifier::upstream_empty_signal(this, 0, &_task);
+    return 0;
 }
 
 bool
 Unqueue2::run_task(Task *)
 {
-  int burst = -1;
-  for (int i=0; i<_queue_elements.size(); i++) {
-    Storage *s = (Storage*)_queue_elements[i]->cast("Storage");
-    if (s) {
-      int size = s->capacity()-s->size();
-      if (burst < 0 || size < burst)
-	burst = size;
+    int worked = 0, limit = _burst;
+    for (Storage **it = _queues.begin(); it != _queues.end(); ++it) {
+	int space = (*it)->capacity() - (*it)->size();
+	if (limit < 0 || space < limit)
+	    limit = space;
     }
-  }
-  if (burst > _burst) burst = _burst;
-  else if (burst == 0) {
+
+    while (worked < limit) {
+	if (Packet *p = input(0).pull()) {
+	    ++worked;
+	    ++_count;
+	    output(0).push(p);
+	} else if (!_signal)
+	    goto out;
+	else
+	    break;
+    }
+
     _task.fast_reschedule();
-    return false;
-  }
-
-  int sent = 0;
-  Packet *p_next = input(0).pull();
-
-  while (p_next) {
-    Packet *p = p_next;
-    sent++;
-    if (sent < burst || burst == 0) {
-      p_next = input(0).pull();
-    }
-    else
-      p_next = 0;
-#ifdef CLICK_LINUXMODULE
-#if __i386__ && HAVE_INTEL_CPU
-    if (p_next) {
-      struct sk_buff *skb = p_next->skb();
-      asm volatile("prefetcht0 %0" : : "m" (skb->len));
-      asm volatile("prefetcht0 %0" : : "m" (skb->cb[0]));
-    }
-#endif
-#endif
-    output(0).push(p);
-    _packets++;
-  }
-
-  _task.fast_reschedule();
-  return sent > 0;
+ out:
+    return worked > 0;
 }
+
+#if CLICK_LINUXMODULE && __i386__ && HAVE_INTEL_CPU && 0
+	if (p_next) {
+	    struct sk_buff *skb = p_next->skb();
+	    asm volatile("prefetcht0 %0" : : "m" (skb->len));
+	    asm volatile("prefetcht0 %0" : : "m" (skb->cb[0]));
+	}
+#endif
 
 String
 Unqueue2::read_param(Element *e, void *)
 {
-  Unqueue2 *u = (Unqueue2 *)e;
-  return String(u->_packets) + " packets\n";
+    Unqueue2 *u = (Unqueue2 *)e;
+    return String(u->_count) + " packets\n";
 }
 
 void

@@ -128,8 +128,8 @@ RED::initialize(ErrorHandler *errh)
     _queues.clear();
     _queue1 = 0;
 
-    if (!_queue_elements.size()) {
-	ElementCastTracker filter(router(),"Storage");
+    if (_queue_elements.empty()) {
+	ElementCastTracker filter(router(), "Storage");
 	int ok;
 	if (output_is_push(0))
 	    ok = router()->visit_downstream(this, 0, &filter);
@@ -140,7 +140,7 @@ RED::initialize(ErrorHandler *errh)
 	_queue_elements = filter.elements();
     }
 
-    if (_queue_elements.size() == 0)
+    if (_queue_elements.empty() == 0)
 	return errh->error("no nearby Queues");
     for (int i = 0; i < _queue_elements.size(); i++)
 	if (Storage *s = (Storage *)_queue_elements[i]->cast("Storage"))
