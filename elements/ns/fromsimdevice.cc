@@ -64,8 +64,8 @@ FromSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
   _promisc = false;
   if (Args(conf, this, errh)
       .read_mp("DEVNAME", _ifname)
-      .read_mp("SNAPLEN", _packetbuf_size)
-      .read_mp("PROMISC", _promisc)
+      .read_p("PROMISC", _promisc)
+      .read_p("SNAPLEN", _packetbuf_size)
       .complete() < 0)
     return -1;
   if (_packetbuf_size > 8192 || _packetbuf_size < 128)

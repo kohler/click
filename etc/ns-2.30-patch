@@ -5008,7 +5008,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.30-pure/tcl/ex/nsclick-raw-wl
 +	-> ExtraEncap()
 +	-> ToSimDevice(eth0);
 +
-+  FromSimDevice(eth0,4096)
++  FromSimDevice(eth0,SNAPLEN 4096)
 +	-> ExtraDecap()
 +	-> filtertx::FilterTX()
 +	-> ToDump(in_eth0,PER_NODE 1,ENCAP 802_11)
@@ -5048,7 +5048,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.30-pure/tcl/ex/nsclick-raw-wl
 +	-> Discard;
 +
 +  // Packets sent out by the "kernel" get pushed into the ARP query module
-+  FromSimDevice(tap0,4096)
++  FromSimDevice(tap0,SNAPLEN 4096)
 +	-> CheckIPHeader 
 +	-> IPPrint(fromkernel) 
 +	-> ToDump(fromkernel,2000,IP,PER_NODE 1)
@@ -5443,11 +5443,11 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.30-pure/tcl/ex/nsclick-simple
 +// in off of eth1 are pumped out on eth0.
 +//
 +
-+FromSimDevice(eth0,4096)
++FromSimDevice(eth0,SNAPLEN 4096)
 +	-> Queue
 +	-> ToSimDevice(eth1);
 +	
-+FromSimDevice(eth1,4096)
++FromSimDevice(eth1,SNAPLEN 4096)
 +	-> Queue
 +	-> ToSimDevice(eth0);
 +
@@ -6563,7 +6563,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.30-pure/tcl/ex/nsclick-simple
 +  myarpresponder :: ARPResponder($myaddr $myaddr_ethernet);
 +  ethout :: Queue -> ToSimDevice(eth0);
 +
-+  FromSimDevice(eth0,4096)
++  FromSimDevice(eth0,SNAPLEN 4096)
 +	-> Print(eth0,64)
 +	-> ToDump(in_eth0,PER_NODE 1)
 +	-> HostEtherFilter($myaddr_ethernet)
@@ -6596,7 +6596,7 @@ diff -ruN --exclude='*.o' --exclude='autom4*' ns-2.30-pure/tcl/ex/nsclick-simple
 +	-> Discard;
 +
 +  // Packets sent out by the "kernel" get pushed into the ARP query module
-+  FromSimDevice(tap0,4096)
++  FromSimDevice(tap0,SNAPLEN 4096)
 +	-> CheckIPHeader 
 +	-> IPPrint(fromkernel) 
 +	-> ToDump(fromkernel,2000,IP,PER_NODE 1)
