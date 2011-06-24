@@ -599,7 +599,7 @@ operator<<(StringAccum &sa, uint64_t q)
 /** @relates StringAccum
     @brief Append the contents of @a str to @a sa.
     @return @a sa */
-StringAccum &
+inline StringAccum &
 operator<<(StringAccum &sa, const String &str)
 {
     if (likely(!str.out_of_memory()))

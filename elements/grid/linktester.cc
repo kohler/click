@@ -394,10 +394,11 @@ LinkTester::init_random()
 
   unsigned long seed;
   int err = read(fd, &seed, sizeof(seed));
+
+  close(fd);
   if (err != sizeof(seed))
     return false;
 
-  close(fd);
   click_srandom(seed);
   return true;
 }
