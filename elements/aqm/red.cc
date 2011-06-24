@@ -140,7 +140,7 @@ RED::initialize(ErrorHandler *errh)
 	_queue_elements = filter.elements();
     }
 
-    if (_queue_elements.empty() == 0)
+    if (_queue_elements.empty())
 	return errh->error("no nearby Queues");
     for (int i = 0; i < _queue_elements.size(); i++)
 	if (Storage *s = (Storage *)_queue_elements[i]->cast("Storage"))
