@@ -83,15 +83,30 @@ class IPAddress { public:
 	return IPAddress(0xFFFFFFFF);
     }
 
+    /** @brief Test if the address is 0.0.0.0. */
+    inline bool empty() const {
+	return !_addr;
+    }
+
+    /** @brief Return the address as a uint32_t in network byte order. */
+    inline uint32_t addr() const {
+	return _addr;
+    }
+
+    /** @brief Return the address as a uint32_t in network byte order.
+     *
+     * Also suitable for use as an operator bool, returning true iff
+     * the address is not 0.0.0.0. */
+    inline operator uint32_t() const {
+	return _addr;
+    }
+
     /** @brief Return true iff the address is a multicast address.
      *
      * These are the class D addresses, 224.0.0.0-239.255.255.255. */
     inline bool is_multicast() const {
 	return (_addr & htonl(0xF0000000)) == htonl(0xE0000000);
     }
-
-    inline uint32_t addr() const;
-    inline operator uint32_t() const;
 
     inline struct in_addr in_addr() const;
     inline operator struct in_addr() const;
@@ -135,20 +150,6 @@ class IPAddress { public:
 
 };
 
-
-/** @brief Return the address as a uint32_t in network byte order. */
-inline
-IPAddress::operator uint32_t() const
-{
-    return _addr;
-}
-
-/** @brief Return the address as a uint32_t in network byte order. */
-inline uint32_t
-IPAddress::addr() const
-{
-    return _addr;
-}
 
 /** @relates IPAddress
     @brief Compare two IPAddress objects for equality. */
