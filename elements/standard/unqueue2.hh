@@ -10,6 +10,7 @@ CLICK_DECLS
  * Unqueue2([BURST, I<keywords> QUEUES])
  * =s shaping
  * pull-to-push converter
+ * =deprecated Unqueue
  * =d
  * Pulls packets whenever they are available, then pushes them out its single
  * output. Pulls a maximum of BURSTSIZE packets every time it is scheduled,
@@ -17,6 +18,8 @@ CLICK_DECLS
  * 0, pull until nothing comes back. Unqueue2 will not pull if there is a
  * downstream queue that is full. It will also limit burst size to equal to
  * the number of available slots in the fullest downstream queue.
+ *
+ * The Unqueue element should be preferred for most purposes.
  *
  * Keyword arguments are:
  *
@@ -27,6 +30,10 @@ CLICK_DECLS
  * The Storage elements whose sizes should be checked.  If empty, then don't
  * check downstream Storage elements' sizes.  Defaults to the set of downstream
  * Storage elements.
+ *
+ * =item QUIET
+ *
+ * Boolean. If true, do not print a deprecation warning on configuration.
  *
  * =back
  *

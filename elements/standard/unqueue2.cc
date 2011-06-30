@@ -40,9 +40,11 @@ int
 Unqueue2::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String queues_string;
+    bool quiet = false;
     if (Args(conf, this, errh)
 	.read_p("BURST", _burst)
 	.read("QUEUES", AnyArg(), queues_string).read_status(_explicit_queues)
+	.read("QUIET", quiet)
 	.complete() < 0)
 	return -1;
     while (String word = cp_shift_spacevec(queues_string)) {
@@ -52,6 +54,8 @@ Unqueue2::configure(Vector<String> &conf, ErrorHandler *errh)
     }
     if (_burst == 0)
 	_burst = INT_MAX;
+    if (!quiet)
+	errh->error("Unqueue2 is deprecated, you should probably use Unqueue");
     return 0;
 }
 
