@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 Discard::Discard()
-    : _task(this), _count(0), _active(true)
+    : _task(this), _count(0), _burst(1), _active(true)
 {
 }
 
@@ -34,10 +34,15 @@ Discard::~Discard()
 int
 Discard::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (Args(conf, this, errh).read("ACTIVE", _active).complete() < 0)
+    if (Args(conf, this, errh)
+	.read("ACTIVE", _active)
+	.read("BURST", _burst)
+	.complete() < 0)
 	return -1;
     if (!_active && input_is_push(0))
 	return errh->error("ACTIVE is meaningless in push context");
+    if (_burst == 0)
+	_burst = ~(unsigned) 0;
     return 0;
 }
 
@@ -61,14 +66,18 @@ Discard::push(int, Packet *p)
 bool
 Discard::run_task(Task *)
 {
-    Packet *p = input(0).pull();
-    if (p) {
-	_count++;
+    unsigned x = _burst;
+    Packet *p;
+    while (x && (p = input(0).pull())) {
 	p->kill();
-    } else if (!_signal || !_active)
-	return false;
-    _task.fast_reschedule();
-    return p != 0;
+	--x;
+    }
+    unsigned sent = _burst - x;
+
+    _count += sent;
+    if (_active && (sent || _signal))
+	_task.fast_reschedule();
+    return sent != 0;
 }
 
 int

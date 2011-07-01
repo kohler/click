@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
 =c
 
-Discard([I<keyword> ACTIVE])
+Discard([I<keywords> ACTIVE, BURST])
 
 =s basicsources
 
@@ -26,8 +26,13 @@ Keyword arguments are:
 
 =item ACTIVE
 
-Boolean.  If false, then Discard does not pull packets.  Default is true.
-Only meaningful if Discard is in pull context.
+Boolean. If false, then Discard does not pull packets. Default is true.
+Only meaningful in pull context.
+
+=item BURST
+
+Unsigned. Number of packets to pull per scheduling. Default is 1. Only
+meaningful in pull context.
 
 =back
 
@@ -74,6 +79,7 @@ class Discard : public Element { public:
 #endif
     counter_t _count;
 
+    unsigned _burst;
     bool _active;
 
     enum { h_reset_counts = 0, h_active = 1 };

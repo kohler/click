@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
 =c
 
-InfiniteSource([DATA, LIMIT, BURST, ACTIVE, I<KEYWORDS>])
+InfiniteSource([DATA, LIMIT, BURST, ACTIVE, I<keywords>])
 
 =s basicsources
 
