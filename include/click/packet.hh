@@ -295,8 +295,8 @@ class Packet { public:
     const Anno *xanno() const		{ return (const Anno *)skb()->cb; }
     Anno *xanno()			{ return (Anno *)skb()->cb; }
 #else
-    const Anno *xanno() const		{ return (const Anno *)_cb; }
-    Anno *xanno()			{ return (Anno *)_cb; }
+    const Anno *xanno() const		{ return &_aa.cb; }
+    Anno *xanno()			{ return &_aa.cb; }
 #endif
     /** @endcond never */
   public:
@@ -639,6 +639,24 @@ class Packet { public:
 #endif
 	// allocations: see packet_anno.hh
     };
+
+#if !CLICK_LINUXMODULE
+    // All packet annotations are stored in AllAnno so that
+    // clear_annotations(true) can memset() the structure to zero.
+    struct AllAnno {
+	Anno cb;
+	unsigned char *mac;
+	unsigned char *nh;
+	unsigned char *h;
+	PacketType pkt_type;
+	Timestamp timestamp;
+	Packet *next;
+	Packet *prev;
+	AllAnno()
+	    : timestamp(Timestamp::uninitialized_t()) {
+	}
+    };
+#endif
     /** @endcond never */
 
 #if !CLICK_LINUXMODULE
@@ -653,27 +671,16 @@ class Packet { public:
 # if CLICK_USERLEVEL
     void (*_destructor)(unsigned char *, size_t);
 # endif
-    unsigned char _cb[48];
-    unsigned char *_mac;
-    unsigned char *_nh;
-    unsigned char *_h;
-    PacketType _pkt_type;
-    Timestamp _timestamp;
 # if CLICK_BSDMODULE
     struct mbuf *_m;
 # endif
-    Packet *_next;
-    Packet *_prev;
+    AllAnno _aa;
 # if CLICK_NS
     SimPacketinfoWrapper _sim_packetinfo;
 # endif
 #endif
 
-    inline Packet()
-#if !CLICK_LINUXMODULE
-	: _timestamp(Timestamp::uninitialized_t())
-#endif
-    {
+    inline Packet() {
 #if CLICK_LINUXMODULE
 	panic("Packet constructor");
 #endif
@@ -749,7 +756,8 @@ class WritablePacket : public Packet { public:
 inline void
 Packet::clear_annotations(bool all)
 {
-    memset(xanno(), '\0', sizeof(Anno));
+#if CLICK_LINUXMODULE
+    memset(xanno(), 0, sizeof(Anno));
     if (all) {
 	set_packet_type_anno(HOST);
 	set_device_anno(0);
@@ -762,6 +770,9 @@ Packet::clear_annotations(bool all)
 	set_next(0);
 	set_prev(0);
     }
+#else
+    memset(&_aa, 0, all ? sizeof(AllAnno) : sizeof(Anno));
+#endif
 }
 
 /** @brief Copy most packet annotations from @a p.
@@ -908,7 +919,7 @@ Packet::next() const
 #if CLICK_LINUXMODULE
     return (Packet *)(skb()->next);
 #else
-    return _next;
+    return _aa.next;
 #endif
 }
 
@@ -918,7 +929,7 @@ Packet::next()
 #if CLICK_LINUXMODULE
     return (Packet *&)(skb()->next);
 #else
-    return _next;
+    return _aa.next;
 #endif
 }
 
@@ -928,7 +939,7 @@ Packet::set_next(Packet *p)
 #if CLICK_LINUXMODULE
     skb()->next = p->skb();
 #else
-    _next = p;
+    _aa.next = p;
 #endif
 }
 
@@ -938,7 +949,7 @@ Packet::prev() const
 #if CLICK_LINUXMODULE
     return (Packet *)(skb()->prev);
 #else
-    return _prev;
+    return _aa.prev;
 #endif
 }
 
@@ -948,7 +959,7 @@ Packet::prev()
 #if CLICK_LINUXMODULE
     return (Packet *&)(skb()->prev);
 #else
-    return _prev;
+    return _aa.prev;
 #endif
 }
 
@@ -958,7 +969,7 @@ Packet::set_prev(Packet *p)
 #if CLICK_LINUXMODULE
     skb()->prev = p->skb();
 #else
-    _prev = p;
+    _aa.prev = p;
 #endif
 }
 
@@ -974,7 +985,7 @@ Packet::has_mac_header() const
     return skb()->mac.raw != 0;
 # endif
 #else
-    return _mac != 0;
+    return _aa.mac != 0;
 #endif
 }
 
@@ -992,7 +1003,7 @@ Packet::mac_header() const
     return skb()->mac.raw;
 # endif
 #else
-    return _mac;
+    return _aa.mac;
 #endif
 }
 
@@ -1012,7 +1023,7 @@ Packet::has_network_header() const
     return skb()->nh.raw != 0;
 # endif
 #else
-    return _nh != 0;
+    return _aa.nh != 0;
 #endif
 }
 
@@ -1030,7 +1041,7 @@ Packet::network_header() const
     return skb()->nh.raw;
 # endif
 #else
-    return _nh;
+    return _aa.nh;
 #endif
 }
 
@@ -1050,7 +1061,7 @@ Packet::has_transport_header() const
     return skb()->h.raw != 0;
 # endif
 #else
-    return _h != 0;
+    return _aa.h != 0;
 #endif
 }
 
@@ -1068,7 +1079,7 @@ Packet::transport_header() const
     return skb()->h.raw;
 # endif
 #else
-    return _h;
+    return _aa.h;
 #endif
 }
 
@@ -1169,7 +1180,7 @@ Packet::timestamp_anno() const
     return *reinterpret_cast<const Timestamp *>(&skb()->tstamp);
 # endif
 #else
-    return _timestamp;
+    return _aa.timestamp;
 #endif
 }
 
@@ -1183,7 +1194,7 @@ Packet::timestamp_anno()
     return *reinterpret_cast<Timestamp *>(&skb()->tstamp);
 # endif
 #else
-    return _timestamp;
+    return _aa.timestamp;
 #endif
 }
 
@@ -1229,7 +1240,7 @@ Packet::packet_type_anno() const
 #elif CLICK_LINUXMODULE
     return (PacketType)(skb()->pkt_type);
 #else
-    return _pkt_type;
+    return _aa.pkt_type;
 #endif
 }
 
@@ -1241,7 +1252,7 @@ Packet::set_packet_type_anno(PacketType p)
 #elif CLICK_LINUXMODULE
     skb()->pkt_type = p;
 #else
-    _pkt_type = p;
+    _aa.pkt_type = p;
 #endif
 }
 
@@ -1634,7 +1645,7 @@ Packet::set_mac_header(const unsigned char *p)
     skb()->mac.raw = const_cast<unsigned char *>(p);
 # endif
 #else				/* User-space and BSD kernel module */
-    _mac = const_cast<unsigned char *>(p);
+    _aa.mac = const_cast<unsigned char *>(p);
 #endif
 }
 
@@ -1655,8 +1666,8 @@ Packet::set_mac_header(const unsigned char *p, uint32_t len)
     skb()->nh.raw = const_cast<unsigned char *>(p) + len;
 # endif
 #else				/* User-space and BSD kernel module */
-    _mac = const_cast<unsigned char *>(p);
-    _nh = const_cast<unsigned char *>(p) + len;
+    _aa.mac = const_cast<unsigned char *>(p);
+    _aa.nh = const_cast<unsigned char *>(p) + len;
 #endif
 }
 
@@ -1686,7 +1697,7 @@ Packet::clear_mac_header()
     skb()->mac.raw = 0;
 # endif
 #else				/* User-space and BSD kernel module */
-    _mac = 0;
+    _aa.mac = 0;
 #endif
 }
 
@@ -1731,8 +1742,8 @@ Packet::set_network_header(const unsigned char *p, uint32_t len)
     skb()->h.raw = const_cast<unsigned char *>(p) + len;
 # endif
 #else				/* User-space and BSD kernel module */
-    _nh = const_cast<unsigned char *>(p);
-    _h = const_cast<unsigned char *>(p) + len;
+    _aa.nh = const_cast<unsigned char *>(p);
+    _aa.h = const_cast<unsigned char *>(p) + len;
 #endif
 }
 
@@ -1753,7 +1764,7 @@ Packet::set_network_header_length(uint32_t len)
     skb()->h.raw = skb()->nh.raw + len;
 # endif
 #else				/* User-space and BSD kernel module */
-    _h = _nh + len;
+    _aa.h = _aa.nh + len;
 #endif
 }
 
@@ -1807,7 +1818,7 @@ Packet::clear_network_header()
     skb()->nh.raw = 0;
 # endif
 #else				/* User-space and BSD kernel module */
-    _nh = 0;
+    _aa.nh = 0;
 #endif
 }
 
@@ -1923,7 +1934,7 @@ Packet::clear_transport_header()
     skb()->h.raw = 0;
 # endif
 #else				/* User-space and BSD kernel module */
-    _h = 0;
+    _aa.h = 0;
 #endif
 }
 
@@ -1951,9 +1962,9 @@ Packet::shift_header_annotations(const unsigned char *old_head,
 # endif
 #else
     ptrdiff_t shift = (_head - old_head) + extra_headroom;
-    _mac += (_mac ? shift : 0);
-    _nh += (_nh ? shift : 0);
-    _h += (_h ? shift : 0);
+    _aa.mac += (_aa.mac ? shift : 0);
+    _aa.nh += (_aa.nh ? shift : 0);
+    _aa.h += (_aa.h ? shift : 0);
 #endif
 }
 
