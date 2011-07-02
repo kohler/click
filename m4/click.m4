@@ -733,6 +733,12 @@ AC_DEFUN([CLICK_CHECK_COMPILER_INTRINSICS], [
 	AC_DEFINE([HAVE___HAS_TRIVIAL_COPY], [1], [Define if you have the __has_trivial_copy compiler intrinsic.])
     fi
 
+    AC_CACHE_CHECK([for __thread storage class support], [ac_cv_have___thread],
+	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[__thread long x;]], [[x == 1;]])], [ac_cv_have___thread=yes], [ac_cv_have___thread=no])])
+    if test $ac_cv_have___thread = yes; then
+	AC_DEFINE([HAVE___THREAD_STORAGE_CLASS], [1], [Define if you have the __thread storage class specifier.])
+    fi
+
     AC_CHECK_HEADERS(strings.h)
     AC_CHECK_FUNCS(ffs ffsl ffsll)
     ])
