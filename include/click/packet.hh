@@ -15,6 +15,9 @@
 #if CLICK_NS
 # include <click/simclick.h>
 #endif
+#if (CLICK_USERLEVEL || CLICK_NS) && (!HAVE_MULTITHREAD || HAVE___THREAD_STORAGE_CLASS)
+# define HAVE_CLICK_PACKET_POOL 1
+#endif
 struct click_ether;
 struct click_ip;
 struct click_icmp;
@@ -736,6 +739,13 @@ class WritablePacket : public Packet { public:
     WritablePacket(const Packet &x);
     ~WritablePacket() { }
 
+#if HAVE_CLICK_PACKET_POOL
+    static WritablePacket *pool_allocate(bool with_data);
+    static WritablePacket *pool_allocate(uint32_t headroom, uint32_t length,
+					 uint32_t tailroom);
+    static void recycle(WritablePacket *p);
+#endif
+
     friend class Packet;
 
 };
@@ -1343,6 +1353,9 @@ Packet::kill()
     b->list = 0;
 # endif
     skbmgr_recycle_skbs(b);
+#elif HAVE_CLICK_PACKET_POOL
+    if (_use_count.dec_and_test())
+	WritablePacket::recycle(static_cast<WritablePacket *>(this));
 #else
     if (_use_count.dec_and_test())
 	delete this;
