@@ -284,9 +284,10 @@ cleanup_module()
     ng_ether_input_p = 0;
     ng_ether_output_p = 0;
 
-    // extra packages, global handlers
+    // extra packages, global handlers, packets
     click_cleanup_packages();
     Router::static_cleanup();
+    Packet::static_cleanup();
 
     // config manager, thread manager
     click_cleanup_config();

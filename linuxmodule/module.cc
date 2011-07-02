@@ -340,9 +340,10 @@ cleanup_module()
     // filesystem interface
     cleanup_clickfs();
 
-    // extra packages, global handlers
+    // extra packages, global handlers, packets
     click_cleanup_packages();
     Router::static_cleanup();
+    Packet::static_cleanup();
 
     // config manager, thread manager, sk_buff manager
     click_cleanup_config();

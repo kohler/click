@@ -470,6 +470,7 @@ click_static_cleanup()
     click_unexport_elements();
 
     Router::static_cleanup();
+    Packet::static_cleanup();
     ErrorHandler::static_cleanup();
     cp_va_static_cleanup();
     NameInfo::static_cleanup();

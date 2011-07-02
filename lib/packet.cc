@@ -5,7 +5,7 @@
  * Eddie Kohler, Robert Morris, Nickolai Zeldovich
  *
  * Copyright (c) 1999-2001 Massachusetts Institute of Technology
- * Copyright (c) 2008 Regents of the University of California
+ * Copyright (c) 2008-2011 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -198,6 +198,10 @@ Packet::~Packet()
 		  "Address annotations at unexpected locations.");
     static_assert((default_headroom & 3) == 0,
 		  "Default headroom should be a multiple of 4 bytes.");
+#if CLICK_LINUXMODULE
+    static_assert(sizeof(Anno) <= sizeof(((struct sk_buff *)0)->cb),
+		  "Anno structure too big for Linux packet annotation area.");
+#endif
 
 #if CLICK_LINUXMODULE
     panic("Packet destructor");
@@ -219,55 +223,48 @@ Packet::~Packet()
 
 #if !CLICK_LINUXMODULE
 
-inline WritablePacket *
-Packet::make(int, int, int)
-{
-    return static_cast<WritablePacket *>(new Packet(6, 6, 6));
-}
-
 bool
-Packet::alloc_data(uint32_t headroom, uint32_t len, uint32_t tailroom)
+Packet::alloc_data(uint32_t headroom, uint32_t length, uint32_t tailroom)
 {
-  uint32_t n = len + headroom + tailroom;
-  if (n < min_buffer_length) {
-    tailroom = min_buffer_length - len - headroom;
-    n = min_buffer_length;
-  }
-#if CLICK_USERLEVEL
-  unsigned char *d = new unsigned char[n];
-  if (!d)
-    return false;
-  _head = d;
-  _data = d + headroom;
-  _tail = _data + len;
-  _end = _head + n;
-#elif CLICK_BSDMODULE
-  if (n > MCLBYTES) {
-    click_chatter("trying to allocate %d bytes: too many\n", n);
-    return false;
-  }
-  struct mbuf *m;
-  MGETHDR(m, M_DONTWAIT, MT_DATA);
-  if (!m)
-    return false;
-  if (n > MHLEN) {
-    MCLGET(m, M_DONTWAIT);
-    if (!(m->m_flags & M_EXT)) {
-      m_freem(m);
-      return false;
+    uint32_t n = length + headroom + tailroom;
+    if (n < min_buffer_length) {
+	tailroom = min_buffer_length - length - headroom;
+	n = min_buffer_length;
     }
-  }
-  _m = m;
-  _m->m_data += headroom;
-  _m->m_len = len;
-  _m->m_pkthdr.len = len;
-  assimilate_mbuf();
+#if CLICK_USERLEVEL
+    unsigned char *d = new unsigned char[n];
+    if (!d)
+	return false;
+    _head = d;
+    _data = d + headroom;
+    _tail = _data + length;
+    _end = _head + n;
+#elif CLICK_BSDMODULE
+    if (n > MCLBYTES) {
+	click_chatter("trying to allocate %d bytes: too many\n", n);
+	return false;
+    }
+    struct mbuf *m;
+    MGETHDR(m, M_DONTWAIT, MT_DATA);
+    if (!m)
+	return false;
+    if (n > MHLEN) {
+	MCLGET(m, M_DONTWAIT);
+	if (!(m->m_flags & M_EXT)) {
+	    m_freem(m);
+	    return false;
+	}
+    }
+    _m = m;
+    _m->m_data += headroom;
+    _m->m_len = length;
+    _m->m_pkthdr.len = length;
+    assimilate_mbuf();
 #endif
-  return true;
+    return true;
 }
 
 #endif
-
 
 /** @brief Create and return a new packet.
  * @param headroom headroom in new packet
@@ -311,7 +308,9 @@ Packet::make(uint32_t headroom, const void *data,
     WritablePacket *p = new WritablePacket;
     if (!p)
 	return 0;
+    p->initialize();
     if (!p->alloc_data(headroom, length, tailroom)) {
+	p->_head = 0;
 	delete p;
 	return 0;
     }
@@ -344,6 +343,7 @@ Packet::make(unsigned char *data, uint32_t length,
 {
     WritablePacket *p = new WritablePacket;
     if (p) {
+	p->initialize();
 	p->_head = p->_data = data;
 	p->_tail = p->_end = data + length;
 	p->_destructor = destructor;
@@ -380,7 +380,7 @@ Packet::clone()
 # endif
 
     // timing: .31-.39 normal, .43-.55 two allocs, .55-.58 two memcpys
-    Packet *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
+    Packet *p = new WritablePacket; // no initialization
     if (!p)
 	return 0;
     memcpy(p, this, sizeof(Packet));
@@ -635,6 +635,12 @@ Packet::shift_data(int offset, bool free_on_failure)
 	    offset += ((uintptr_t)buffer() & 7);
 	return expensive_uniqueify(offset, tailroom_offset, free_on_failure);
     }
+}
+
+
+void
+Packet::static_cleanup()
+{
 }
 
 CLICK_ENDDECLS

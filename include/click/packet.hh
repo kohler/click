@@ -12,17 +12,15 @@
 #if CLICK_BSDMODULE
 # include <sys/stddef.h>
 #endif
+#if CLICK_NS
+# include <click/simclick.h>
+#endif
 struct click_ether;
 struct click_ip;
 struct click_icmp;
 struct click_ip6;
 struct click_tcp;
 struct click_udp;
-
-#if CLICK_NS
-# include <click/simclick.h>
-#endif
-
 CLICK_DECLS
 
 class IP6Address;
@@ -57,6 +55,8 @@ class Packet { public:
     static WritablePacket *make(unsigned char *data, uint32_t length,
 				void (*destructor)(unsigned char *, size_t)) CLICK_WARN_UNUSED_RESULT;
 #endif
+
+    static void static_cleanup();
 
     inline void kill();
 
@@ -669,15 +669,21 @@ class Packet { public:
 # endif
 #endif
 
-    inline Packet();
-    Packet(const Packet &);
+    inline Packet()
+#if !CLICK_LINUXMODULE
+	: _timestamp(Timestamp::uninitialized_t())
+#endif
+    {
+#if CLICK_LINUXMODULE
+	panic("Packet constructor");
+#endif
+    }
+    Packet(const Packet &x);
     ~Packet();
-    Packet &operator=(const Packet &);
+    Packet &operator=(const Packet &x);
 
 #if !CLICK_LINUXMODULE
-    Packet(int, int, int)			{ }
-    static WritablePacket *make(int, int, int);
-    bool alloc_data(uint32_t, uint32_t, uint32_t);
+    bool alloc_data(uint32_t headroom, uint32_t length, uint32_t tailroom);
 #endif
 #if CLICK_BSDMODULE
     static void assimilate_mbuf(Packet *p);
@@ -716,34 +722,80 @@ class WritablePacket : public Packet { public:
 
  private:
 
-    WritablePacket()				{ }
-    WritablePacket(const Packet &)		{ }
-    ~WritablePacket()				{ }
+    inline WritablePacket() { }
+#if !CLICK_LINUXMODULE
+    inline void initialize();
+#endif
+    WritablePacket(const Packet &x);
+    ~WritablePacket() { }
 
     friend class Packet;
 
 };
 
 
-inline
-Packet::Packet()
+/** @brief Clear all packet annotations.
+ * @param  all  If true, clear all annotations.  If false, clear only Click's
+ *   internal annotations.
+ *
+ * All user annotations and the address annotation are set to zero, the packet
+ * type annotation is set to HOST, the device annotation and all header
+ * pointers are set to null, the timestamp annotation is cleared, and the
+ * next/prev-packet annotations are set to null.
+ *
+ * If @a all is false, then the packet type, device, timestamp, header, and
+ * next/prev-packet annotations are left alone.
+ */
+inline void
+Packet::clear_annotations(bool all)
 {
-#if CLICK_LINUXMODULE
-    static_assert(sizeof(Anno) <= sizeof(((struct sk_buff *)0)->cb),
-		  "Anno structure too big for Linux packet annotation area.");
-    panic("Packet constructor");
-#else
+    memset(xanno(), '\0', sizeof(Anno));
+    if (all) {
+	set_packet_type_anno(HOST);
+	set_device_anno(0);
+	set_timestamp_anno(Timestamp());
+
+	clear_mac_header();
+	clear_network_header();
+	clear_transport_header();
+
+	set_next(0);
+	set_prev(0);
+    }
+}
+
+/** @brief Copy most packet annotations from @a p.
+ * @param p source of annotations
+ *
+ * This packet's user annotations, address annotation, packet type annotation,
+ * device annotation, and timestamp annotation are set to the corresponding
+ * annotations from @a p.
+ *
+ * @note The next/prev-packet and header annotations are not copied. */
+inline void
+Packet::copy_annotations(const Packet *p)
+{
+    *xanno() = *p->xanno();
+    set_packet_type_anno(p->packet_type_anno());
+    set_device_anno(p->device_anno());
+    set_timestamp_anno(p->timestamp_anno());
+}
+
+
+#if !CLICK_LINUXMODULE
+inline void
+WritablePacket::initialize()
+{
     _use_count = 1;
     _data_packet = 0;
-    _head = _data = _tail = _end = 0;
 # if CLICK_USERLEVEL
     _destructor = 0;
 # elif CLICK_BSDMODULE
     _m = 0;
 # endif
     clear_annotations();
-#endif
 }
+#endif
 
 /** @brief Return the packet's data pointer.
  *
@@ -1873,53 +1925,6 @@ Packet::clear_transport_header()
 #else				/* User-space and BSD kernel module */
     _h = 0;
 #endif
-}
-
-/** @brief Clear all packet annotations.
- * @param  all  If true, clear all annotations.  If false, clear only Click's
- *   internal annotations.
- *
- * All user annotations and the address annotation are set to zero, the packet
- * type annotation is set to HOST, the device annotation and all header
- * pointers are set to null, the timestamp annotation is cleared, and the
- * next/prev-packet annotations are set to null.
- *
- * If @a all is false, then the packet type, device, timestamp, header, and
- * next/prev-packet annotations are left alone.
- */
-inline void
-Packet::clear_annotations(bool all)
-{
-    memset(xanno(), '\0', sizeof(Anno));
-    if (all) {
-	set_packet_type_anno(HOST);
-	set_device_anno(0);
-	set_timestamp_anno(Timestamp());
-
-	clear_mac_header();
-	clear_network_header();
-	clear_transport_header();
-
-	set_next(0);
-	set_prev(0);
-    }
-}
-
-/** @brief Copy most packet annotations from @a p.
- * @param p source of annotations
- *
- * This packet's user annotations, address annotation, packet type annotation,
- * device annotation, and timestamp annotation are set to the corresponding
- * annotations from @a p.
- *
- * @note The next/prev-packet and header annotations are not copied. */
-inline void
-Packet::copy_annotations(const Packet *p)
-{
-    *xanno() = *p->xanno();
-    set_packet_type_anno(p->packet_type_anno());
-    set_device_anno(p->device_anno());
-    set_timestamp_anno(p->timestamp_anno());
 }
 
 inline void
