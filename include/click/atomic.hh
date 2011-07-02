@@ -69,12 +69,13 @@ class atomic_uint32_t { public:
     inline void operator--();
     inline void operator--(int);
 
-    inline uint32_t swap(uint32_t x);
+    inline uint32_t swap(uint32_t desired);
     inline uint32_t fetch_and_add(uint32_t delta);
     inline bool dec_and_test();
     inline uint32_t compare_swap(uint32_t expected, uint32_t desired);
     inline bool compare_and_swap(uint32_t expected, uint32_t desired) CLICK_DEPRECATED;
 
+    inline static uint32_t swap(volatile uint32_t &x, uint32_t desired);
     inline static void inc(volatile uint32_t &x);
     inline static bool dec_and_test(volatile uint32_t &x);
     inline static uint32_t compare_swap(volatile uint32_t &x, uint32_t expected, uint32_t desired);
@@ -283,34 +284,50 @@ atomic_uint32_t::operator--(int)
 #endif
 }
 
-/** @brief  Atomically assign the value to @a x, returning the old value.
+/** @brief  Atomically assign the value to @a desired, returning the old value.
+ *
+ * Behaves like this, but in one atomic step:
+ * @code
+ * uint32_t actual = x;
+ * x = desired;
+ * return actual;
+ * @endcode
+ *
+ * Also acts as a memory barrier. */
+inline uint32_t
+atomic_uint32_t::swap(volatile uint32_t &x, uint32_t desired)
+{
+#if CLICK_ATOMIC_X86
+    asm volatile ("xchgl %0,%1"
+		  : "=r" (desired), "=m" (x)
+		  : "0" (desired), "m" (x)
+		  : "memory");
+    return desired;
+#elif CLICK_LINUXMODULE && defined(xchg)
+    return atomic_xchg(&x, desired);
+#elif CLICK_LINUXMODULE
+# error "need xchg for atomic_uint32_t::swap"
+#else
+    uint32_t actual = x;
+    x = desired;
+    return actual;
+#endif
+}
+
+/** @brief  Atomically assign the value to @a desired, returning the old value.
  *
  * Behaves like this, but in one atomic step:
  * @code
  * uint32_t old_value = value();
- * *this = x;
+ * *this = desired;
  * return old_value;
  * @endcode
  *
  * Also acts as a memory barrier. */
 inline uint32_t
-atomic_uint32_t::swap(uint32_t x)
+atomic_uint32_t::swap(uint32_t desired)
 {
-#if CLICK_ATOMIC_X86
-    asm volatile ("xchgl %0,%1"
-		  : "=r" (x), "=m" (CLICK_ATOMIC_VAL)
-		  : "0" (x), "m" (CLICK_ATOMIC_VAL)
-		  : "memory");
-    return x;
-#elif CLICK_LINUXMODULE && defined(xchg)
-    return atomic_xchg(&_val, x);
-#elif CLICK_LINUXMODULE
-# error "need xchg for atomic_uint32_t::swap"
-#else
-    uint32_t old_value = value();
-    CLICK_ATOMIC_VAL = x;
-    return old_value;
-#endif
+    return swap(CLICK_ATOMIC_VAL, desired);
 }
 
 /** @brief  Atomically add @a delta to the value, returning the old value.
