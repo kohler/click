@@ -305,6 +305,9 @@ class Task { public:
  public:
 #endif
     inline bool on_scheduled_list() const;
+    inline bool on_pending_list() const {
+	return _pending_nextptr;
+    }
 #if CLICK_DEBUG_SCHEDULING
  private:
 #endif
