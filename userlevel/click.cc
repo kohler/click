@@ -707,7 +707,9 @@ particular purpose.\n");
   router->unuse();
 #if HAVE_MULTITHREAD
   for (int i = 0; i < other_threads.size(); ++i)
-      (void) pthread_cancel(other_threads[i]);
+      master->thread(i + 1)->wake();
+  for (int i = 0; i < other_threads.size(); ++i)
+      (void) pthread_join(other_threads[i], 0);
 #endif
   delete master;
 
