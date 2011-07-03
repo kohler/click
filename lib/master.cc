@@ -905,7 +905,7 @@ Master::run_selects_select(RouterThread *thread, bool more_tasks)
     click_fence();
     _select_lock.release();
 
-    FD_SET(&read_mask, thread->_wake_pipe[0]);
+    FD_SET(thread->_wake_pipe[0], &read_mask);
     if (thread->_wake_pipe[0] >= n_select_fd)
 	n_select_fd = thread->_wake_pipe[0] + 1;
 # endif
