@@ -365,6 +365,10 @@ click_invalid_processor()
 #endif
 }
 
+#if CLICK_USERLEVEL && HAVE_MULTITHREAD && HAVE___THREAD_STORAGE_CLASS
+extern __thread int click_current_thread_id;
+#endif
+
 
 // TIMEVALS AND JIFFIES
 // click_jiffies_t is the type of click_jiffies() and is usually unsigned.

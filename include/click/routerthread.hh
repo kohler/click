@@ -316,6 +316,8 @@ RouterThread::current_thread_is_running() const
 {
 #if CLICK_LINUXMODULE
     return current == _linux_task;
+#elif CLICK_USERLEVEL && HAVE_MULTITHREAD && HAVE___THREAD_STORAGE_CLASS
+    return click_current_thread_id == _id;
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     return click_current_processor() == _running_processor;
 #else

@@ -5,8 +5,8 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2007 Regents of the University of California
- * Copyright (c) 2008 Meraki, Inc.
  * Copyright (c) 2008 Mazu Networks, Inc.
+ * Copyright (c) 2008-2011 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -664,6 +664,13 @@ click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const
 }
 
 
+// THREADS
+
+#if CLICK_USERLEVEL && HAVE_MULTITHREAD && HAVE___THREAD_STORAGE_CLASS
+__thread int click_current_thread_id;
+#endif
+
+
 // TIMEVALS AND JIFFIES
 
 #if CLICK_USERLEVEL
@@ -844,5 +851,4 @@ size_t strlen(const char * s)
     return sc - s;
 }
 }
-
 #endif

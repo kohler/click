@@ -79,7 +79,7 @@ RouterThread::RouterThread(Master *m, int id)
 #endif
 #if CLICK_LINUXMODULE
     _linux_task = 0;
-#elif HAVE_MULTITHREAD
+#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     _running_processor = click_invalid_processor();
     _select_blocked = false;
     _wake_pipe[0] = _wake_pipe[1] = -1;
@@ -542,8 +542,11 @@ RouterThread::driver()
 #if CLICK_LINUXMODULE
     // this task is running the driver
     _linux_task = current;
-#elif HAVE_MULTITHREAD
+#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     _running_processor = click_current_processor();
+# if HAVE___THREAD_STORAGE_CLASS
+    click_current_thread_id = _id;
+# endif
     if (_wake_pipe[0] < 0 && pipe(_wake_pipe) >= 0) {
 	fcntl(_wake_pipe[0], F_SETFL, O_NONBLOCK);
 	fcntl(_wake_pipe[1], F_SETFL, O_NONBLOCK);
@@ -662,8 +665,11 @@ RouterThread::driver()
 #endif
 #if CLICK_LINUXMODULE
     _linux_task = 0;
-#elif HAVE_MULTITHREAD
+#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     _running_processor = click_invalid_processor();
+# if HAVE___THREAD_STORAGE_CLASS
+    click_current_thread_id = 0;
+# endif
 #endif
 }
 
@@ -683,8 +689,11 @@ RouterThread::driver_once()
 #elif CLICK_LINUXMODULE
     // this task is running the driver
     _linux_task = current;
-#elif HAVE_MULTITHREAD
+#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     _running_processor = click_current_processor();
+# if HAVE___THREAD_STORAGE_CLASS
+    click_current_thread_id = _id;
+# endif
 #endif
     driver_lock_tasks();
 
@@ -695,8 +704,11 @@ RouterThread::driver_once()
     splx(s);
 #elif CLICK_LINUXMODULE
     _linux_task = 0;
-#elif HAVE_MULTITHREAD
+#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     _running_processor = click_invalid_processor();
+# if HAVE___THREAD_STORAGE_CLASS
+    click_current_thread_id = _id;
+# endif
 #endif
 }
 
