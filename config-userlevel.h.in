@@ -8,6 +8,15 @@
 /* Define if accept() uses socklen_t. */
 #undef HAVE_ACCEPT_SOCKLEN_T
 
+/* Define if kqueue() may be used to wait for file descriptor events. */
+#undef HAVE_ALLOW_KQUEUE
+
+/* Define if poll() may be used to wait for file descriptor events. */
+#undef HAVE_ALLOW_POLL
+
+/* Define if select() may be used to wait for file descriptor events. */
+#undef HAVE_ALLOW_SELECT
+
 /* Define if <pcap.h> uses bpf_timeval. */
 #undef HAVE_BPF_TIMEVAL
 
@@ -167,15 +176,6 @@
 
 /* Define if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
-
-/* Define if kqueue() should be used to wait for file descriptor events. */
-#undef HAVE_USE_KQUEUE
-
-/* Define if poll() should be used to wait for file descriptor events. */
-#undef HAVE_USE_POLL
-
-/* Define if select() should be used to wait for file descriptor events. */
-#undef HAVE_USE_SELECT
 
 /* Define if a Click user-level driver might run multiple threads. */
 #undef HAVE_USER_MULTITHREAD

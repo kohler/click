@@ -750,6 +750,8 @@ enable_option_checking
 enable_userlevel
 enable_user_multithread
 enable_select
+enable_poll
+enable_kqueue
 enable_linuxmodule
 enable_fixincludes
 enable_multithread
@@ -1429,7 +1431,10 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-userlevel     disable user-level driver
     --enable-user-multithread support userlevel multithreading (EXPERIMENTAL)
-    --enable-select=[select|poll|kqueue] set select() mechanism
+    --enable-select=[select|poll|kqueue] set file descriptor wait mechanism
+    --disable-select          do not use select()
+    --disable-poll            do not use poll()
+    --disable-kqueue          do not use kqueue()
   --disable-linuxmodule   disable Linux kernel driver
     --disable-fixincludes     do not patch Linux kernel headers for C++
     --enable-multithread[=N]  support kernel multithreading, N threads max
@@ -5969,35 +5974,43 @@ fi
 if test "${enable_select+set}" = set; then :
   enableval=$enable_select; :
 else
-  enable_select=
+  enable_select='select poll kqueue'
+fi
+
+# Check whether --enable-poll was given.
+if test "${enable_poll+set}" = set; then :
+  enableval=$enable_poll; :
+else
+  enable_poll=yes
+fi
+
+# Check whether --enable-kqueue was given.
+if test "${enable_kqueue+set}" = set; then :
+  enableval=$enable_kqueue; :
+else
+  enable_kqueue=yes
 fi
 
 
-if test "$enable_select" = select; then
+if test "$enable_select" = yes; then
+    enable_select='select poll kqueue'
+elif test "$enable_select" = no; then
+    enable_select='poll kqueue'
+fi
+if echo "$enable_select" | grep select >/dev/null 2>&1; then
 
-$as_echo "#define HAVE_USE_SELECT 1" >>confdefs.h
+$as_echo "#define HAVE_ALLOW_SELECT 1" >>confdefs.h
 
-elif test "$enable_select" = poll; then
+fi
+if echo "$enable_select" | grep poll >/dev/null 2>&1 && test "$enable_poll" = yes; then
 
-$as_echo "#define HAVE_USE_POLL 1" >>confdefs.h
+$as_echo "#define HAVE_ALLOW_POLL 1" >>confdefs.h
 
-elif test "$enable_select" = kqueue; then
+fi
+if echo "$enable_select" | grep kqueue >/dev/null 2>&1 && test "$enable_kqueue" = yes; then
 
-$as_echo "#define HAVE_USE_KQUEUE 1" >>confdefs.h
+$as_echo "#define HAVE_ALLOW_KQUEUE 1" >>confdefs.h
 
-elif test -n "$enable_select"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
-=========================================
-
-Unexpected --enable-select type ignored.
-
-=========================================" >&5
-$as_echo "$as_me: WARNING:
-=========================================
-
-Unexpected --enable-select type ignored.
-
-=========================================" >&2;}
 fi
 
 
@@ -7124,7 +7137,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7127 "configure"
+#line 7140 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER

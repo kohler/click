@@ -39,7 +39,7 @@
 #endif
 CLICK_DECLS
 
-#if CLICK_USERLEVEL && (!HAVE_POLL_H || HAVE_USE_SELECT)
+#if CLICK_USERLEVEL && !HAVE_ALLOW_POLL
 enum { POLLIN = Element::SELECT_READ, POLLOUT = Element::SELECT_WRITE };
 #endif
 
@@ -80,10 +80,10 @@ Master::Master(int nthreads)
 
 #if CLICK_USERLEVEL
     // select information
-# if HAVE_USE_KQUEUE
+# if HAVE_ALLOW_KQUEUE
     _kqueue = kqueue();
 # endif
-# if !HAVE_POLL_H || HAVE_USE_SELECT
+# if !HAVE_ALLOW_POLL
     FD_ZERO(&_read_select_fd_set);
     FD_ZERO(&_write_select_fd_set);
     _max_select_fd = -1;
@@ -93,7 +93,7 @@ Master::Master(int nthreads)
     // _pollfds.begin() is nonnull, preventing crashes on Mac OS X
     struct pollfd dummy;
     dummy.events = dummy.fd = 0;
-# if HAVE_POLL_H && !HAVE_USE_SELECT
+# if HAVE_ALLOW_POLL
     dummy.revents = 0;
 # endif
     _pollfds.push_back(dummy);
@@ -143,7 +143,7 @@ Master::~Master()
 
     for (int i = 0; i < _threads.size(); i++)
 	delete _threads[i];
-#if CLICK_USERLEVEL && HAVE_USE_KQUEUE
+#if CLICK_USERLEVEL && HAVE_ALLOW_KQUEUE
     if (_kqueue >= 0)
 	close(_kqueue);
 #endif
@@ -532,7 +532,7 @@ Master::register_select(int fd, bool add_read, bool add_write)
     if (add_write)
 	_pollfds[pi].events |= POLLOUT;
 
-#if HAVE_USE_KQUEUE
+#if HAVE_ALLOW_KQUEUE
     if (_kqueue >= 0) {
 	// Add events to the kqueue
 	struct kevent kev[2];
@@ -555,7 +555,7 @@ Master::register_select(int fd, bool add_read, bool add_write)
     }
 #endif
 
-#if !HAVE_POLL_H || HAVE_USE_SELECT
+#if !HAVE_ALLOW_POLL
     // Add 'mask' to the fd_sets
     if (fd < FD_SETSIZE) {
 	if (add_read)
@@ -566,7 +566,7 @@ Master::register_select(int fd, bool add_read, bool add_write)
 	    _max_select_fd = fd;
     } else {
 	static int warned = 0;
-# if HAVE_USE_KQUEUE
+# if HAVE_ALLOW_KQUEUE
 	if (_kqueue < 0)
 # endif
 	    if (!warned) {
@@ -646,7 +646,7 @@ Master::remove_pollfd(int pi, int event)
     else
 	_element_selectors[fd].write = 0;
 
-#if HAVE_USE_KQUEUE
+#if HAVE_ALLOW_KQUEUE
     // remove event from kqueue
     if (_kqueue >= 0) {
 	struct kevent kev;
@@ -656,7 +656,7 @@ Master::remove_pollfd(int pi, int event)
 	    click_chatter("Master::remove_pollfd(fd %d): kevent: %s", _pollfds[pi].fd, strerror(errno));
     }
 #endif
-#if !HAVE_POLL_H || HAVE_USE_SELECT
+#if !HAVE_ALLOW_POLL
     // remove event from select list
     if (fd < FD_SETSIZE) {
 	fd_set *fd_ptr = (event == POLLIN ? &_read_select_fd_set : &_write_select_fd_set);
@@ -674,7 +674,7 @@ Master::remove_pollfd(int pi, int event)
     _fd_to_pollfd[fd] = -1;
     if (pi < _pollfds.size())
 	_fd_to_pollfd[_pollfds[pi].fd] = pi;
-#if !HAVE_POLL_H || HAVE_USE_SELECT
+#if !HAVE_ALLOW_POLL
     if (fd == _max_select_fd) {
 	_max_select_fd = -1;
 	for (int pix = 0; pix < _pollfds.size(); ++pix)
@@ -752,7 +752,7 @@ Master::next_timer_delay(bool more_tasks, Timestamp &t) const
 #endif
 }
 
-#if HAVE_USE_KQUEUE
+#if HAVE_ALLOW_KQUEUE
 static int
 kevent_compare(const void *ap, const void *bp, void *)
 {
@@ -821,9 +821,9 @@ Master::run_selects_kqueue(RouterThread *thread, bool more_tasks)
 	}
     }
 }
-#endif /* HAVE_USE_KQUEUE */
+#endif /* HAVE_ALLOW_KQUEUE */
 
-#if HAVE_POLL_H && !HAVE_USE_SELECT
+#if HAVE_ALLOW_POLL
 void
 Master::run_selects_poll(RouterThread *thread, bool more_tasks)
 {
@@ -892,7 +892,7 @@ Master::run_selects_poll(RouterThread *thread, bool more_tasks)
 	    }
 }
 
-#else /* !HAVE_POLL_H || HAVE_USE_SELECT */
+#else /* !HAVE_ALLOW_POLL */
 void
 Master::run_selects_select(RouterThread *thread, bool more_tasks)
 {
@@ -959,7 +959,7 @@ Master::run_selects_select(RouterThread *thread, bool more_tasks)
 		    p--;
 	    }
 }
-#endif /* HAVE_POLL_H && !HAVE_USE_SELECT */
+#endif /* HAVE_ALLOW_POLL */
 
 void
 Master::run_selects(RouterThread *thread)
@@ -1036,13 +1036,13 @@ Master::run_selects(RouterThread *thread)
     }
 
     // Call the relevant selector implementation.
-#if HAVE_USE_KQUEUE
+#if HAVE_ALLOW_KQUEUE
     if (_kqueue >= 0) {
 	run_selects_kqueue(thread, more_tasks);
 	goto unlock_exit;
     }
 #endif
-#if HAVE_POLL_H && !HAVE_USE_SELECT
+#if HAVE_ALLOW_POLL
     run_selects_poll(thread, more_tasks);
 #else
     run_selects_select(thread, more_tasks);

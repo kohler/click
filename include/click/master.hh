@@ -6,13 +6,22 @@
 #if CLICK_USERLEVEL
 # include <unistd.h>
 # include <signal.h>
-# if HAVE_POLL_H && !HAVE_USE_SELECT
-#  include <poll.h>
+# if !HAVE_ALLOW_SELECT && !HAVE_ALLOW_POLL && !HAVE_ALLOW_KQUEUE
+#  define HAVE_ALLOW_SELECT 1
 # endif
-# if HAVE_SYS_EVENT_H && HAVE_KQUEUE && !HAVE_USE_SELECT && !HAVE_USE_POLL && !defined(HAVE_USE_KQUEUE)
-#  define HAVE_USE_KQUEUE 1
-# elif (!HAVE_SYS_EVENT_H || !HAVE_KQUEUE) && HAVE_USE_KQUEUE
-#  error "--enable-select=kqueue is not supported on this system"
+# if HAVE_POLL_H && HAVE_ALLOW_POLL
+#  include <poll.h>
+# else
+#  undef HAVE_ALLOW_POLL
+#  if !HAVE_ALLOW_SELECT && !HAVE_ALLOW_KQUEUE
+#   error "poll is not supported on this system, try --enable-select"
+#  endif
+# endif
+# if !HAVE_SYS_EVENT_H || !HAVE_KQUEUE
+#  undef HAVE_ALLOW_KQUEUE
+#  if !HAVE_ALLOW_SELECT && !HAVE_ALLOW_POLL
+#   error "kqueue is not supported on this system, try --enable-select"
+#  endif
 # endif
 #endif
 #if CLICK_NS
@@ -145,10 +154,10 @@ class Master { public:
 	{
 	}
     };
-# if HAVE_USE_KQUEUE
+# if HAVE_ALLOW_KQUEUE
     int _kqueue;
 # endif
-# if !HAVE_POLL_H || HAVE_USE_SELECT
+# if !HAVE_ALLOW_POLL
     struct pollfd {
 	int fd;
 	int events;
@@ -156,7 +165,7 @@ class Master { public:
     fd_set _read_select_fd_set;
     fd_set _write_select_fd_set;
     int _max_select_fd;
-# endif /* !HAVE_POLL_H || HAVE_USE_SELECT */
+# endif /* !HAVE_ALLOW_POLL */
     Vector<struct pollfd> _pollfds;
     Vector<ElementSelector> _element_selectors;
     Vector<int> _fd_to_pollfd;
@@ -164,10 +173,10 @@ class Master { public:
     void register_select(int fd, bool add_read, bool add_write);
     void remove_pollfd(int pi, int event);
     inline void call_selected(int fd, int mask) const;
-# if HAVE_USE_KQUEUE
+# if HAVE_ALLOW_KQUEUE
     void run_selects_kqueue(RouterThread *thread, bool more_tasks);
 # endif
-# if HAVE_POLL_H && !HAVE_USE_SELECT
+# if HAVE_ALLOW_POLL
     void run_selects_poll(RouterThread *thread, bool more_tasks);
 # else
     void run_selects_select(RouterThread *thread, bool more_tasks);
