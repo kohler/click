@@ -260,7 +260,6 @@ void
 Task::true_reschedule()
 {
     bool done = false;
-    _status.is_scheduled = true;
     RouterThread *thread = _thread;
     if (unlikely(thread == 0 || thread->thread_id() < 0))
 	done = true;
