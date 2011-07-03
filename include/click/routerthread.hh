@@ -120,7 +120,6 @@ class RouterThread
     struct task_struct *_linux_task;
 #elif HAVE_MULTITHREAD
     click_processor_t _running_processor;
-    volatile bool _select_blocked;
     int _wake_pipe[2];
     volatile bool _wake_pipe_pending;
 #endif
@@ -407,8 +406,7 @@ RouterThread::wake()
 	wake_up_process(task);
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     // see also Master::add_select()
-    click_fence();
-    if (_select_blocked) {
+    if (!current_thread_is_running()) {
 	_wake_pipe_pending = true;
 	ignore_result(write(_wake_pipe[1], "", 1));
     }

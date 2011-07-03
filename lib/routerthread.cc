@@ -81,7 +81,6 @@ RouterThread::RouterThread(Master *m, int id)
     _linux_task = 0;
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     _running_processor = click_invalid_processor();
-    _select_blocked = false;
     _wake_pipe[0] = _wake_pipe[1] = -1;
     _wake_pipe_pending = false;
 #endif

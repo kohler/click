@@ -797,7 +797,6 @@ Master::run_selects_kqueue(RouterThread *thread, bool more_tasks)
     _select_lock.acquire();
     click_fence();
     selecting_thread = 0;
-    thread->_select_blocked = false;
 
     thread->set_thread_state(RouterThread::S_RUNSELECT);
     wp_kev.flags = EV_DELETE;
@@ -864,7 +863,6 @@ Master::run_selects_poll(RouterThread *thread, bool more_tasks)
     _select_lock.acquire();
     click_fence();
     selecting_thread = 0;
-    thread->_select_blocked = false;
 # endif
     thread->set_thread_state(RouterThread::S_RUNSELECT);
 
@@ -931,7 +929,6 @@ Master::run_selects_select(RouterThread *thread, bool more_tasks)
     _select_lock.acquire();
     click_fence();
     selecting_thread = 0;
-    thread->_select_blocked = false;
 # endif
     thread->set_thread_state(RouterThread::S_RUNSELECT);
 
@@ -970,14 +967,6 @@ Master::run_selects(RouterThread *thread)
     if (!_select_lock.attempt())
 	return;
 
-#if HAVE_MULTITHREAD
-    // set _select_blocked to true first: then, if someone else is
-    // concurrently waking us up, we will either detect that the thread is now
-    // active(), or wake up on the write to the thread's _wake_pipe
-    thread->_select_blocked = true;
-    click_fence();
-#endif
-
     bool more_tasks = thread->active();
 
 #if HAVE_MULTITHREAD
@@ -1012,26 +1001,18 @@ Master::run_selects(RouterThread *thread)
 	    (void) r;
 	}
 	run_signals(thread);
-	thread->_select_blocked = false;
 	return;
     }
 #endif
 
     // Return early if paused.
-    if (_master_paused > 0) {
-#if HAVE_MULTITHREAD
-	thread->_select_blocked = false;
-#endif
+    if (_master_paused > 0)
 	goto unlock_exit;
-    }
 
     // Return early (just run signals) if there are no selectors and there are
     // tasks to run.
     if (_pollfds.size() == 0 && more_tasks) {
 	run_signals(thread);
-#if HAVE_MULTITHREAD
-	thread->_select_blocked = false;
-#endif
 	goto unlock_exit;
     }
 
