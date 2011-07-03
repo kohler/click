@@ -175,17 +175,10 @@ class Task { public:
     /** @brief Reschedule the task.
      *
      * The task is rescheduled on its home thread.  The task will eventually
-     * run (unless the home thread is quiescent).  Due to locking issues, the
-     * task may not be scheduled right away -- scheduled() may not immediately
-     * return true.
+     * run (unless the home thread is quiescent).
      *
      * @sa unschedule, strong_reschedule */
-    inline void reschedule() {
-	_status.is_scheduled = true;
-	click_fence();
-	if (!on_scheduled_list())
-	    true_reschedule();
-    }
+    inline void reschedule();
 
     /** @brief Reschedule a task from the task's callback function.
      *
@@ -576,6 +569,15 @@ Task::fast_schedule()
 	complete_schedule(0);
 #endif
     }
+}
+
+inline void
+Task::reschedule()
+{
+    _status.is_scheduled = true;
+    if (!on_scheduled_list()
+	|| (likely(_thread) && !_thread->current_thread_is_running()))
+	true_reschedule();
 }
 
 
