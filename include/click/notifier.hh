@@ -84,13 +84,14 @@ class NotifierSignal { public:
 
     /** @brief Set whether the basic signal is active.
      * @param active true iff the basic signal is active
+     * @return previous active state
      *
      * Use this function to set whether a basic signal is active.
      *
      * It is illegal to call set_active() on derived, idle, busy, or
      * overderived signals.  Some of these actions may cause an assertion
      * failure. */
-    inline void set_active(bool active);
+    inline bool set_active(bool active);
 
     /** @brief Assign a signal. */
     NotifierSignal &operator=(const NotifierSignal &x);
@@ -193,7 +194,7 @@ class Notifier { public:
 
     inline bool active() const;
 
-    inline void set_active(bool active);
+    inline bool set_active(bool active);
     inline void wake();
     inline void sleep();
 
@@ -305,6 +306,8 @@ NotifierSignal::uninitialized_signal()
 inline bool
 NotifierSignal::active() const
 {
+    // 2011.Jul.3 Is this fence actually necessary with the new reschedule()
+    // plan??  It doesn't seem to be on one simple test, anyway.
     click_fence();
     if (likely(_mask))
 	return (*_v.v1 & _mask) != 0;
@@ -346,14 +349,23 @@ NotifierSignal::initialized() const
     return (!(_mask & uninitialized_mask) || _v.v1 != &static_value);
 }
 
-inline void
+inline bool
 NotifierSignal::set_active(bool active)
 {
     assert(_mask && _v.v1 != &static_value && !(_mask & (_mask - 1)));
-    if (active)
-	*_v.v1 |= _mask;
-    else
-	*_v.v1 &= ~_mask;
+    uint32_t expected = *_v.v1;
+#if !CLICK_USERLEVEL || HAVE_MULTITHREAD
+    while (1) {
+	uint32_t desired = (active ? expected | _mask : expected & ~_mask);
+	uint32_t actual = _v.v1->compare_swap(expected, desired);
+	if (expected == actual)
+	    break;
+	expected = actual;
+    }
+#else
+    *_v.v1 = (active ? expected | _mask : expected & ~_mask);
+#endif
+    return expected & _mask;
 }
 
 inline NotifierSignal &
@@ -490,11 +502,12 @@ Notifier::active() const
 
 /** @brief Sets the associated signal's activity.
  * @param active true iff the signal should be active
+ * @return previous active state
  */
-inline void
+inline bool
 Notifier::set_active(bool active)
 {
-    _signal.set_active(active);
+    return _signal.set_active(active);
 }
 
 /** @brief Sets the associated signal to active.
@@ -528,24 +541,20 @@ Notifier::sleep()
 inline void
 ActiveNotifier::set_active(bool active, bool schedule)
 {
-    if (active != Notifier::active()) {
+    bool was_active = Notifier::set_active(active);
+    if (active && schedule && !was_active) {
 	// 2007.Sep.6: Perhaps there was a race condition here.  Make sure
 	// that we set the notifier to active BEFORE rescheduling downstream
 	// tasks.  This is because, in a multithreaded environment, a task we
 	// reschedule might run BEFORE we set the notifier; after which it
 	// would go to sleep forever.
-	Notifier::set_active(active);
-	click_fence();
-
-	if (active && schedule) {
-	    if (_listener1)
-		_listener1->reschedule();
-	    else if (task_or_signal_t *tos = _listeners) {
-		for (; tos->t; tos++)
-		    tos->t->reschedule();
-		for (tos++; tos->s; tos++)
-		    tos->s->set_active(true);
-	    }
+	if (_listener1)
+	    _listener1->reschedule();
+	else if (task_or_signal_t *tos = _listeners) {
+	    for (; tos->t; tos++)
+		tos->t->reschedule();
+	    for (tos++; tos->s; tos++)
+		tos->s->set_active(true);
 	}
     }
 }
