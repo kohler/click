@@ -50,3 +50,6 @@ a: 1.0.0.2 > 5.0.0.5: icmp echo (0, 256)
 b: 2.0.0.2 > 5.0.0.5: icmp echo (256, 256)
 c: 5.0.0.5 > 2.0.0.2: icmp echo-reply (256, 256)
 d: 5.0.0.5 > 1.0.0.2: icmp echo-reply (0, 256)
+
+%ignore stderr
+=={{\d+}}=={{.*}}

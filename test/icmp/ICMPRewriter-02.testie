@@ -34,3 +34,6 @@ c: 3.0.0.3 > 2.0.0.2: icmp 5.0.0.5 unreachable net
 d: 3.0.0.3 > 1.0.0.1: icmp 5.0.0.5 unreachable net
 d~: 1.0.0.1 > 5.0.0.5: icmp echo (2560, 0)
 c~: 2.0.0.2 > 5.0.0.5: icmp echo (2560, 0)
+
+%ignore stderr
+=={{\d+}}=={{.*}}
