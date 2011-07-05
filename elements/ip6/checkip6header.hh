@@ -21,6 +21,8 @@ CLICK_DECLS
  *
  * Keyword arguments are:
  *
+ * =over 8
+ *
  * =item BADADDRS
  *
  * The BADADDRS argument is a space-separated list of IP6 addresses that are
@@ -30,6 +32,8 @@ CLICK_DECLS
  * =item OFFSET
  *
  * Unsigned integer. Byte position at which the IP6 header begins. Default is 0.
+ *
+ * =back
  *
  * =a MarkIP6Header */
 
