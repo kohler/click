@@ -304,7 +304,7 @@ atomic_uint32_t::swap(volatile uint32_t &x, uint32_t desired)
 		  : "memory");
     return desired;
 #elif CLICK_LINUXMODULE && defined(xchg)
-    return atomic_xchg(&x, desired);
+    return xchg(&x, desired);
 #elif CLICK_LINUXMODULE
 # error "need xchg for atomic_uint32_t::swap"
 #else
