@@ -327,7 +327,13 @@ atomic_uint32_t::swap(volatile uint32_t &x, uint32_t desired)
 inline uint32_t
 atomic_uint32_t::swap(uint32_t desired)
 {
+#if CLICK_LINUXMODULE && defined(xchg)
+    return atomic_xchg(&_val, desired);
+#elif CLICK_LINUXMODULE
+# error "need xchg for atomic_uint32_t::swap"
+#else
     return swap(CLICK_ATOMIC_VAL, desired);
+#endif
 }
 
 /** @brief  Atomically add @a delta to the value, returning the old value.
