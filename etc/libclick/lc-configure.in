@@ -11,7 +11,7 @@ dnl The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
 dnl notice is a summary of the Click LICENSE file; the license in that file is
 dnl legally binding.
 
-AC_INIT([libclick], [1.8.0])
+AC_INIT([libclick], [2.0pre1])
 AC_PREREQ(2.60)
 AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-userlevel.h:config-userlevel.h.in)
 
@@ -20,6 +20,9 @@ CLICK_VERSION=$PACKAGE_VERSION
 AC_SUBST(ac_configure_args)
 AC_DEFINE_UNQUOTED([CLICK_VERSION], ["$CLICK_VERSION"])
 AC_SUBST(CLICK_VERSION)
+
+click_version_code_in=`echo "$CLICK_VERSION" | sed -e 's/[[a-z]].*//' | sed -e 's/$/.0/' | tr . , | sed -e 's/^\([[0-9]]*,[[0-9]]*,[[0-9]]\).*/\1/'`
+AC_DEFINE_UNQUOTED([CLICK_VERSION_CODE], [CLICK_MAKE_VERSION_CODE($click_version_code_in)])
 
 CLICK_INIT('$(top_srcdir)')
 
