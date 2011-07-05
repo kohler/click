@@ -37,4 +37,4 @@ c: 5.0.0.5 > 2.0.0.2: icmp echo-reply ({{(?!2560,)\d+}}, 0)
 d: 5.0.0.5 > 1.0.0.2: icmp echo-reply (2560, 0)
 
 %ignore stderr
-=={{\d+}}=={{.*}}
+=={{\d+}}=={{(?!.*\b(?:uninit|[Ii]nvalid|Mismatched).*).*}}

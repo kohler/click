@@ -29,7 +29,7 @@ DriverManager(pause, print arpq.count, print arpq.length, print arpq.table);
 
 %ignore stderr
 expensive{{.*}}
-=={{\d+}}=={{.*}}
+=={{\d+}}=={{(?!.*\b(?:uninit|[Ii]nvalid|Mismatched).*).*}}
 
 %expect stderr
 arpo: 0.000000: arp who-has 1.0.0.1 tell 1.0.10.10

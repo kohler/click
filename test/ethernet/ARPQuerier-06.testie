@@ -55,4 +55,4 @@ arpo: 0.162000: 0.0.0.0.5 > 1.0.0.1.0: . 0:0(0,54,40) win 0
 
 %ignore stderr
 expensive{{.*}}
-=={{\d+}}=={{.*}}
+=={{\d+}}=={{(?!.*\b(?:uninit|[Ii]nvalid|Mismatched).*).*}}

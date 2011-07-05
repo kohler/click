@@ -29,4 +29,4 @@ arpo: 61.000000: 02-01-00-0A-0A-0F > FF-FF-FF-FF-FF-FF: arp who-has 1.0.0.1 tell
 
 %ignore stderr
 expensive{{.*}}
-=={{\d+}}=={{.*}}
+=={{\d+}}=={{(?!.*\b(?:uninit|[Ii]nvalid|Mismatched).*).*}}

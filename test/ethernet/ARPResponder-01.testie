@@ -66,4 +66,4 @@ X
 
 %ignore stderr
 While{{.*}}
-=={{\d+}}=={{.*}}
+=={{\d+}}=={{(?!.*\b(?:uninit|[Ii]nvalid|Mismatched).*).*}}

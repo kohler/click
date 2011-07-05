@@ -45,4 +45,4 @@ d~: paint 2: 18.26.4.44.20 > 10.0.0.8.80: udp 8
 c~: paint 0: 21.0.0.1.1025 > 10.0.0.8.80: udp 8
 
 %ignore stderr
-=={{\d+}}=={{.*}}
+=={{\d+}}=={{(?!.*\b(?:uninit|[Ii]nvalid|Mismatched).*).*}}
