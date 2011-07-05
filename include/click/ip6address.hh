@@ -277,7 +277,7 @@ IP6Address::operator=(const click_in6_addr &a)
 inline uint32_t
 IP6Address::hashcode() const
 {
-    return (data32()[3] << 1) + data32()[4];
+    return (data32()[2] << 1) + data32()[3];
 }
 
 #if !CLICK_TOOL
