@@ -11,7 +11,7 @@ CLICK_DECLS
 /*
  * =title ToDevice.u
  * =c
- * ToDevice(DEVNAME [, I<KEYWORDS>])
+ * ToDevice(DEVNAME [, I<keywords>])
  * =s netdevices
  * sends packets to network device (user-level)
  * =d
@@ -25,6 +25,10 @@ CLICK_DECLS
  * Keyword arguments are:
  *
  * =over 8
+ *
+ * =item BURST
+ *
+ * Integer. Maximum number of packets to pull per scheduling. Defaults to 1.
  *
  * =item DEBUG
  *
@@ -71,43 +75,47 @@ extern "C" {
 
 class ToDevice : public Element { public:
 
-  ToDevice();
-  ~ToDevice();
+    ToDevice();
+    ~ToDevice();
 
-  const char *class_name() const		{ return "ToDevice"; }
-  const char *port_count() const		{ return "1/0-2"; }
-  const char *processing() const		{ return "l/h"; }
-  const char *flags() const			{ return "S2"; }
+    const char *class_name() const		{ return "ToDevice"; }
+    const char *port_count() const		{ return "1/0-2"; }
+    const char *processing() const		{ return "l/h"; }
+    const char *flags() const			{ return "S2"; }
 
-  int configure_phase() const { return KernelFilter::CONFIGURE_PHASE_TODEVICE; }
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  void add_handlers();
+    int configure_phase() const { return KernelFilter::CONFIGURE_PHASE_TODEVICE; }
+    int configure(Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void cleanup(CleanupStage);
+    void add_handlers();
 
-  String ifname() const				{ return _ifname; }
-  int fd() const				{ return _fd; }
+    String ifname() const			{ return _ifname; }
+    int fd() const				{ return _fd; }
 
-  bool run_task(Task *);
-  void selected(int fd, int mask);
-  static int write_param(const String &in_s, Element *e, void *vparam, ErrorHandler *errh);
-  static String read_param(Element *e, void *thunk);
-protected:
-  Task _task;
-  Timer _timer;
-private:
+    bool run_task(Task *);
+    void selected(int fd, int mask);
 
-  String _ifname;
-  int _fd;
-  bool _my_fd;
-  NotifierSignal _signal;
+  private:
 
+    Task _task;
+    Timer _timer;
 
-  Packet *_q;
-public:
-  bool _debug;
-  bool _backoff;
-  int _pulls;
+    String _ifname;
+    int _fd;
+    bool _my_fd;
+    int _burst;
+    NotifierSignal _signal;
+
+    Packet *_q;
+
+    bool _debug;
+    bool _backoff;
+    int _pulls;
+
+    enum { h_debug, h_signal, h_pulls, h_q };
+    static int write_param(const String &in_s, Element *e, void *vparam, ErrorHandler *errh);
+    static String read_param(Element *e, void *thunk);
+
 };
 
 CLICK_ENDDECLS

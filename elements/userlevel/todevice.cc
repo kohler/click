@@ -139,7 +139,7 @@ ToDevice::initialize(ErrorHandler *errh)
   // check for duplicate writers
   void *&used = router()->force_attachment("device_writer_" + _ifname);
   if (used)
-    return errh->error("duplicate writer for device `%s'", _ifname.c_str());
+    return errh->error("duplicate writer for device %<%s%>", _ifname.c_str());
   used = this;
 
   ScheduleInfo::join_scheduler(this, &_task, errh);
@@ -233,56 +233,51 @@ ToDevice::selected(int, int)
 }
 
 
-enum {H_DEBUG, H_SIGNAL, H_PULLS, H_Q};
-
 String
 ToDevice::read_param(Element *e, void *thunk)
 {
-  ToDevice *td = (ToDevice *)e;
-  switch((uintptr_t) thunk) {
-  case H_DEBUG:
-      return String(td->_debug);
-  case H_SIGNAL:
-      return String(td->_signal);
-  case H_PULLS:
-      return String(td->_pulls);
-  case H_Q:
-      return String((bool) td->_q);
-  default:
-      return String();
-  }
+    ToDevice *td = (ToDevice *)e;
+    switch((uintptr_t) thunk) {
+    case h_debug:
+	return String(td->_debug);
+    case h_signal:
+	return String(td->_signal);
+    case h_pulls:
+	return String(td->_pulls);
+    case h_q:
+	return String((bool) td->_q);
+    default:
+	return String();
+    }
 }
 
 int
 ToDevice::write_param(const String &in_s, Element *e, void *vparam,
 		     ErrorHandler *errh)
 {
-  ToDevice *td = (ToDevice *)e;
-  String s = cp_uncomment(in_s);
-  switch ((intptr_t)vparam) {
-  case H_DEBUG: {
-    bool debug;
-    if (!BoolArg().parse(s, debug))
-      return errh->error("type mismatch");
-    td->_debug = debug;
-    break;
-  }
-  }
-  return 0;
+    ToDevice *td = (ToDevice *)e;
+    String s = cp_uncomment(in_s);
+    switch ((intptr_t)vparam) {
+    case h_debug: {
+	bool debug;
+	if (!BoolArg().parse(s, debug))
+	    return errh->error("type mismatch");
+	td->_debug = debug;
+	break;
+    }
+    }
+    return 0;
 }
 
 void
 ToDevice::add_handlers()
 {
-  add_task_handlers(&_task);
-
-  add_read_handler("debug", read_param, (void *) H_DEBUG, Handler::CHECKBOX);
-  add_read_handler("pulls", read_param, (void *) H_PULLS);
-  add_read_handler("signal", read_param, (void *) H_SIGNAL);
-  add_read_handler("q", read_param, (void *) H_Q);
-
-  add_write_handler("debug", write_param, (void *) H_DEBUG);
-
+    add_task_handlers(&_task);
+    add_read_handler("debug", read_param, h_debug, Handler::CHECKBOX);
+    add_read_handler("pulls", read_param, h_pulls);
+    add_read_handler("signal", read_param, h_signal);
+    add_read_handler("q", read_param, h_q);
+    add_write_handler("debug", write_param, h_debug);
 }
 
 CLICK_ENDDECLS
