@@ -78,14 +78,18 @@ int
 ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String method;
+    _burst = 1;
     if (Args(conf, this, errh)
 	.read_mp("DEVNAME", _ifname)
 	.read("DEBUG", _debug)
 	.read("METHOD", WordArg(), method)
+	.read("BURST", _burst)
 	.complete() < 0)
 	return -1;
     if (!_ifname)
 	return errh->error("interface not set");
+    if (_burst <= 0)
+	return errh->error("bad BURST");
 
     if (method == "") {
 #if TODEVICE_ALLOW_PCAP && TODEVICE_ALLOW_LINUX
@@ -286,47 +290,47 @@ ToDevice::run_task(Task *)
 {
     Packet *p = _q;
     _q = 0;
-    if (!p) {
-	p = input(0).pull();
-	_pulls++;
-    }
+    int count = 0, r = 0;
 
-    if (p) {
-	int r = send_packet(p);
-
-	if (r >= 0) {
+    do {
+	if (!p) {
+	    ++_pulls;
+	    if (!(p = input(0).pull()))
+		break;
+	}
+	if ((r = send_packet(p)) >= 0) {
 	    _backoff = 0;
 	    checked_output_push(0, p);
+	    ++count;
+	} else
+	    break;
+    } while (count < _burst);
 
-	} else if (r == -ENOBUFS || r == -EAGAIN) {
-	    assert(!_q);
-	    _q = p;
+    if (r == -ENOBUFS || r == -EAGAIN) {
+	assert(!_q);
+	_q = p;
 
-	    if (!_backoff) {
-		_backoff = 1;
-		add_select(_fd, SELECT_WRITE);
-	    } else {
-		_timer.schedule_after(Timestamp::make_usec(_backoff));
-		if (_backoff < 32768)
-		    _backoff *= 2;
-		if (_debug) {
-		    Timestamp now = Timestamp::now();
-		    click_chatter("%{element} backing off for %d at %{timestamp}\n", this, _backoff, &now);
-		}
-	    }
-
-	    return false;
-
+	if (!_backoff) {
+	    _backoff = 1;
+	    add_select(_fd, SELECT_WRITE);
 	} else {
-	    click_chatter("ToDevice(%s): %s", _ifname.c_str(), strerror(-r));
-	    checked_output_push(1, p);
+	    _timer.schedule_after(Timestamp::make_usec(_backoff));
+	    if (_backoff < 32768)
+		_backoff *= 2;
+	    if (_debug) {
+		Timestamp now = Timestamp::now();
+		click_chatter("%{element} backing off for %d at %{timestamp}\n", this, _backoff, &now);
+	    }
 	}
+	return count > 0;
+    } else if (r < 0) {
+	click_chatter("ToDevice(%s): %s", _ifname.c_str(), strerror(-r));
+	checked_output_push(1, p);
     }
 
-    if (!p && !_signal)
-	return false;
-    _task.fast_reschedule();
-    return p != 0;
+    if (p || _signal)
+	_task.fast_reschedule();
+    return count > 0;
 }
 
 void

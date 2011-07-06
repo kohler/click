@@ -26,6 +26,10 @@ CLICK_DECLS
  *
  * =over 8
  *
+ * =item BURST
+ *
+ * Integer. Maximum number of packets to pull per scheduling. Defaults to 1.
+ *
  * =item METHOD
  *
  * Word. Defines the method ToDevice will use to write packets to the
@@ -114,6 +118,7 @@ class ToDevice : public Element { public:
     NotifierSignal _signal;
 
     Packet *_q;
+    int _burst;
 
     bool _debug;
     bool _backoff;
