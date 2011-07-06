@@ -269,13 +269,13 @@ ToDevice::send_packet(Packet *p)
 
 #if TODEVICE_ALLOW_DEVBPF
     if (_method == method_devbpf)
-	if (write(_fd, p->data(), p->length()) != p->length())
+	if (write(_fd, p->data(), p->length()) != (ssize_t) p->length())
 	    r = -1;
 #endif
 
 #if TODEVICE_ALLOW_PCAPFD
     if (_method == method_pcapfd)
-	if (write(_fd, p->data(), p->length()) != p->length())
+	if (write(_fd, p->data(), p->length()) != (ssize_t) p->length())
 	    r = -1;
 #endif
 
