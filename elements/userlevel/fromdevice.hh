@@ -24,7 +24,7 @@ CLICK_DECLS
 
 =c
 
-FromDevice(DEVNAME [, I<keywords> SNIFFER, PROMISC, SNAPLEN, FORCE_IP, CAPTURE, BPF_FILTER, OUTBOUND, HEADROOM])
+FromDevice(DEVNAME [, I<keywords> SNIFFER, PROMISC, FORCE_IP, etc.])
 
 =s netdevices
 
@@ -108,6 +108,10 @@ false.
 Integer. Amount of bytes of headroom to leave before the packet data. Defaults
 to roughly 28.
 
+=item BURST
+
+Integer. Maximum number of packets to read per scheduling. Defaults to 1.
+
 =back
 
 =e
@@ -185,6 +189,7 @@ class FromDevice : public Element { public:
     String get_pcap_error(const char *ebuf);
 #endif
     bool _force_ip;
+    int _burst;
     int _datalink;
 
 #if HAVE_INT64_TYPES

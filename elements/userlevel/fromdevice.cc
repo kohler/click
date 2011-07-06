@@ -77,6 +77,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _headroom = Packet::default_headroom;
     _headroom += (4 - (_headroom + 2) % 4) % 4; // default 4/2 alignment
     _force_ip = false;
+    _burst = 1;
     String bpf_filter, capture, encap_type;
     bool has_encap;
     if (Args(conf, this, errh)
@@ -90,12 +91,15 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("OUTBOUND", outbound)
 	.read("HEADROOM", _headroom)
 	.read("ENCAP", WordArg(), encap_type).read_status(has_encap)
+	.read("BURST", _burst)
 	.complete() < 0)
 	return -1;
     if (_snaplen > 8190 || _snaplen < 14)
 	return errh->error("SNAPLEN out of range");
     if (_headroom > 8190)
 	return errh->error("HEADROOM out of range");
+    if (_burst <= 0)
+	return errh->error("BURST out of range");
 
 #if FROMDEVICE_PCAP
     _bpf_filter = bpf_filter;
@@ -399,15 +403,17 @@ FromDevice::selected(int, int)
 #if FROMDEVICE_PCAP
     if (_capture == CAPTURE_PCAP) {
 	// Read and push() at most one packet.
-	int r = pcap_dispatch(_pcap, 1, FromDevice_get_packet, (u_char *) this);
-	if (r > 0)
+	int r = pcap_dispatch(_pcap, _burst, FromDevice_get_packet, (u_char *) this);
+	if (r > 0) {
+	    _count += r;
 	    _pcap_task.reschedule();
-	else if (r < 0 && ++_pcap_complaints < 5)
+	} else if (r < 0 && ++_pcap_complaints < 5)
 	    ErrorHandler::default_handler()->error("%{element}: %s", this, pcap_geterr(_pcap));
     }
 #endif
 #if FROMDEVICE_LINUX
-    if (_capture == CAPTURE_LINUX) {
+    int nlinux = 0;
+    while (_capture == CAPTURE_LINUX && nlinux < _burst) {
 	struct sockaddr_ll sa;
 	socklen_t fromlen = sizeof(sa);
 	WritablePacket *p = Packet::make(_headroom, 0, _snaplen, 0);
@@ -421,6 +427,8 @@ FromDevice::selected(int, int)
 	    p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
 	    p->timestamp_anno().set_timeval_ioctl(_linux_fd, SIOCGSTAMP);
 	    p->set_mac_header(p->data());
+	    ++nlinux;
+	    ++_count;
 	    if (!_force_ip || fake_pcap_force_ip(p, _datalink))
 		output(0).push(p);
 	    else
@@ -429,6 +437,7 @@ FromDevice::selected(int, int)
 	    p->kill();
 	    if (len <= 0 && errno != EAGAIN)
 		click_chatter("FromDevice(%s): recvfrom: %s", _ifname.c_str(), strerror(errno));
+	    break;
 	}
     }
 #endif
@@ -439,10 +448,11 @@ bool
 FromDevice::run_task(Task *)
 {
     // Read and push() at most one packet.
-    int r = pcap_dispatch(_pcap, 1, FromDevice_get_packet, (u_char *) this);
-    if (r > 0)
+    int r = pcap_dispatch(_pcap, _burst, FromDevice_get_packet, (u_char *) this);
+    if (r > 0) {
+	_count += r;
 	_pcap_task.fast_reschedule();
-    else if (r < 0 && ++_pcap_complaints < 5)
+    } else if (r < 0 && ++_pcap_complaints < 5)
 	ErrorHandler::default_handler()->error("%{element}: %s", this, pcap_geterr(_pcap));
     return r > 0;
 }

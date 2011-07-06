@@ -124,7 +124,7 @@ ToDevice::initialize(ErrorHandler *errh)
     _fd = FromDevice::open_packet_socket(_ifname, errh);
     _my_fd = true;
 # else
-    return errh->error("ToDevice requires an initialized FromDevice on this platform") ;
+    return errh->error("ToDevice requires an initialized FromDevice on this platform");
 # endif
   }
   if (_fd < 0)
