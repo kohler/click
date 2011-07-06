@@ -440,7 +440,7 @@ dnl
 dnl timestamps
 dnl
 
-AC_CHECK_HEADERS(time.h)
+AC_CHECK_HEADERS([time.h])
 AC_CHECK_SIZEOF([struct timeval])
 AC_CHECK_TYPES([struct timespec], have_timespec=yes, have_timespec=no)
 if test "x$have_timespec" = xyes; then
@@ -507,11 +507,11 @@ dnl
 dnl headers, event detection, dynamic linking
 dnl
 
-AC_CHECK_HEADERS(termio.h netdb.h sys/event.h pwd.h grp.h execinfo.h)
+AC_CHECK_HEADERS([termio.h netdb.h sys/event.h pwd.h grp.h execinfo.h])
 CLICK_CHECK_POLL_H
-AC_CHECK_FUNCS(pselect sigaction)
+AC_CHECK_FUNCS([pselect sigaction])
 
-AC_CHECK_FUNCS(kqueue, have_kqueue=yes)
+AC_CHECK_FUNCS([kqueue], [have_kqueue=yes])
 if test "x$have_kqueue" = xyes; then
     AC_CACHE_CHECK([whether EV_SET last argument is void *], [ac_cv_ev_set_udata_pointer],
 	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
@@ -961,7 +961,7 @@ dnl
 dnl kernel interfaces
 dnl
 
-AC_CHECK_HEADERS(linux/if_tun.h net/if_tun.h net/if_tap.h net/bpf.h)
+AC_CHECK_HEADERS([ifaddrs.h linux/if_tun.h net/if_dl.h net/if_tap.h net/if_tun.h net/if_types.h net/bpf.h netpacket/packet.h])
 
 
 dnl

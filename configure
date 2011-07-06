@@ -9532,7 +9532,7 @@ fi
 
 
 
-for ac_header in linux/if_tun.h net/if_tun.h net/if_tap.h net/bpf.h
+for ac_header in ifaddrs.h linux/if_tun.h net/if_dl.h net/if_tap.h net/if_tun.h net/if_types.h net/bpf.h netpacket/packet.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"

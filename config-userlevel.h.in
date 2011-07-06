@@ -65,6 +65,9 @@
 /* Define if 'struct if_data' has an 'ifi_datalen' member. */
 #undef HAVE_IF_DATA_IFI_DATALEN
 
+/* Define if you have the <ifaddrs.h> header file. */
+#undef HAVE_IFADDRS_H
+
 /* Define if 'int64_t' is typedefed to 'long' at user level. */
 #undef HAVE_INT64_IS_LONG_USERLEVEL
 
@@ -92,14 +95,23 @@
 /* Define if you have the <net/bpf.h> header file. */
 #undef HAVE_NET_BPF_H
 
+/* Define if you have the <net/if_dl.h> header file. */
+#undef HAVE_NET_IF_DL_H
+
 /* Define if you have the <net/if_tap.h> header file. */
 #undef HAVE_NET_IF_TAP_H
 
 /* Define if you have the <net/if_tun.h> header file. */
 #undef HAVE_NET_IF_TUN_H
 
+/* Define if you have the <net/if_types.h> header file. */
+#undef HAVE_NET_IF_TYPES_H
+
 /* Define if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
+
+/* Define if you have the <netpacket/packet.h> header file. */
+#undef HAVE_NETPACKET_PACKET_H
 
 /* Define if <new.h> exists and works. */
 #undef HAVE_NEW_H

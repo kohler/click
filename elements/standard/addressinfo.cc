@@ -32,21 +32,28 @@
 #endif
 #if CLICK_USERLEVEL
 # include <unistd.h>
-#endif
-#if CLICK_USERLEVEL && defined(__linux__)
-# include <net/if.h>
-# include <sys/ioctl.h>
-# include <net/if_arp.h>
-# include <click/userutils.hh>
 # include <time.h>
-#elif CLICK_USERLEVEL && (defined(__APPLE__) || defined(__FreeBSD__))
-# include <sys/sysctl.h>
-# include <net/if.h>
-# include <net/if_dl.h>
-# include <net/if_types.h>
-# include <net/route.h>
-#endif
-#if CLICK_LINUXMODULE
+# if HAVE_IFADDRS_H
+#  include <sys/types.h>
+#  include <sys/socket.h>
+#  include <net/if.h>
+#  if HAVE_NET_IF_TYPES_H
+#   include <net/if_types.h>
+#  endif
+#  if HAVE_NET_IF_DL_H
+#   include <net/if_dl.h>
+#  endif
+#  if HAVE_NETPACKET_PACKET_H
+#   include <netpacket/packet.h>
+#  endif
+#  include <ifaddrs.h>
+# elif defined(__linux__)
+#  include <net/if.h>
+#  include <sys/ioctl.h>
+#  include <net/if_arp.h>
+#  include <click/userutils.hh>
+# endif
+#elif CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 # include <linux/netdevice.h>
@@ -139,6 +146,104 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 
+#if CLICK_USERLEVEL && !CLICK_NS && (HAVE_IFADDRS_H || defined(__linux__))
+static void
+create_deviceinfo(Vector<String> &deviceinfo)
+{
+# if HAVE_IFADDRS_H
+    // Read network device information from getifaddrs().
+    struct ifaddrs *ifap;
+    if (getifaddrs(&ifap) >= 0) {
+	for (struct ifaddrs *ifa = ifap; ifa; ifa = ifa->ifa_next) {
+	    if (!ifa->ifa_addr)
+		continue;
+
+	    if (ifa->ifa_addr->sa_family == AF_INET) {
+		struct sockaddr_in *sin = (struct sockaddr_in *) ifa->ifa_addr;
+		deviceinfo.push_back(ifa->ifa_name);
+		deviceinfo.push_back(String('i') + String((char *) &sin->sin_addr, sizeof(struct in_addr)));
+		if (ifa->ifa_netmask) {
+		    struct sockaddr_in *sinm = (struct sockaddr_in *) ifa->ifa_netmask;
+		    deviceinfo.push_back(ifa->ifa_name);
+		    deviceinfo.push_back(String('I') + String((char *) &sin->sin_addr, sizeof(struct in_addr)) + String((char *) &sinm->sin_addr, sizeof(struct in_addr)));
+		}
+	    }
+
+#  if defined(AF_PACKET) && HAVE_NETPACKET_PACKET_H
+	    if (ifa->ifa_addr->sa_family == AF_PACKET) {
+		struct sockaddr_ll *sll = (struct sockaddr_ll *) ifa->ifa_addr;
+		if ((sll->sll_hatype == ARPHRD_ETHER || sll->sll_hatype == ARPHRD_80211) && sll->sll_halen == sizeof(EtherAddress)) {
+		    deviceinfo.push_back(ifa->ifa_name);
+		    deviceinfo.push_back(String('e') + String((char *) sll->sll_addr, sizeof(EtherAddress)));
+		}
+	    }
+#  endif
+
+#  if defined(AF_LINK) && HAVE_NET_IF_DL_H
+	    if (ifa->ifa_addr->sa_family == AF_LINK) {
+		struct sockaddr_dl *sdl = (struct sockaddr_dl *) ifa->ifa_addr;
+		if (sdl->sdl_type == IFT_ETHER && sdl->sdl_alen == sizeof(EtherAddress)) {
+		    deviceinfo.push_back(ifa->ifa_name);
+		    deviceinfo.push_back(String('e') + String((char *) LLADDR(sdl), sizeof(EtherAddress)));
+		}
+	    }
+#  endif
+	}
+
+	freeifaddrs(ifap);
+    }
+
+# elif defined(__linux__)
+    // Read network device information from /proc/net/dev and ioctls.
+    int query_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (query_fd < 0)
+	return;
+
+    String f = file_string("/proc/net/dev");
+    const char *begin = f.begin(), *end = f.end(), *nl;
+    struct ifreq ifr;
+    for (; begin < end; begin = nl + 1) {
+	const char *colon = find(begin, end, ':');
+	nl = find(begin, end, '\n');
+	if (colon <= begin || colon >= nl)
+	    continue;
+
+	const char *word = colon;
+	while (word > begin && !isspace((unsigned char) word[-1]))
+	    --word;
+	if ((size_t) (colon - word) >= sizeof(ifr.ifr_name))
+	    continue;
+
+	// based on patch from Jose Vasconcellos <jvasco@bellatlantic.net>
+	String dev_name = f.substring(word, colon);
+	strcpy(ifr.ifr_name, dev_name.c_str());
+	if (ioctl(query_fd, SIOCGIFHWADDR, &ifr) >= 0
+	    && (ifr.ifr_hwaddr.sa_family == ARPHRD_ETHER
+		|| ifr.ifr_hwaddr.sa_family == ARPHRD_80211)) {
+	    deviceinfo.push_back(dev_name);
+	    deviceinfo.push_back(String('e') + String(ifr.ifr_hwaddr.sa_data, sizeof(EtherAddress)));
+	}
+	char x[8];
+	if (ioctl(query_fd, SIOCGIFADDR, &ifr) >= 0
+	    && ifr.ifr_addr.sa_family == AF_INET) {
+	    struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
+	    deviceinfo.push_back(dev_name);
+	    memcpy(x, &sin->sin_addr, sizeof(struct in_addr));
+	    deviceinfo.push_back(String('i') + String(x, sizeof(struct in_addr)));
+	    if (ioctl(query_fd, SIOCGIFNETMASK, &ifr) >= 0
+		&& ifr.ifr_addr.sa_family == AF_INET) {
+		deviceinfo.push_back(dev_name);
+		memcpy(x + sizeof(struct in_addr), &sin->sin_addr, sizeof(struct in_addr));
+		deviceinfo.push_back(String('I') + String(x, 2 * sizeof(struct in_addr)));
+	    }
+	}
+    }
+
+    close(query_fd);
+# endif
+}
+#endif
+
 bool
 AddressInfo::query_netdevice(const String &s, unsigned char *store,
 			     int type, int len, const Element *context)
@@ -146,148 +251,33 @@ AddressInfo::query_netdevice(const String &s, unsigned char *store,
 {
     (void) s, (void) store, (void) type, (void) len, (void) context;
 
-#if CLICK_USERLEVEL && !CLICK_NS && (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__))
+#if CLICK_USERLEVEL && !CLICK_NS && (HAVE_IFADDRS_H || defined(__linux__))
 
     // 5 Mar 2004 - Don't call ioctl for every attempt to look up an Ethernet
     // device name, because this causes the kernel to try to load weird kernel
     // modules.
     static time_t read_time = 0;
-    static Vector<String> device_names;
-    static Vector<String> device_addrs;
+    static Vector<String> deviceinfo;
 
     // XXX magic time constant
     if (!read_time || read_time + 30 < time(0)) {
-	device_names.clear();
-	device_addrs.clear();
-
-# ifdef __linux__
-	int query_fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (query_fd < 0)
-	    return false;
-	struct ifreq ifr;
-
-	String f = file_string("/proc/net/dev");
-	const char *begin = f.begin(), *end = f.end();
-	while (begin < end) {
-	    const char *colon = find(begin, end, ':');
-	    const char *nl = find(begin, end, '\n');
-	    if (colon > begin && colon < nl) {
-		const char *word = colon;
-		while (word > begin && !isspace((unsigned char) word[-1]))
-		    word--;
-		if ((size_t) (colon - word) < sizeof(ifr.ifr_name)) {
-		    // based on patch from Jose Vasconcellos
-		    // <jvasco@bellatlantic.net>
-		    String dev_name = f.substring(word, colon);
-		    strcpy(ifr.ifr_name, dev_name.c_str());
-		    if (ioctl(query_fd, SIOCGIFHWADDR, &ifr) >= 0
-			&& ifr.ifr_hwaddr.sa_family == ARPHRD_ETHER) {
-			device_names.push_back(dev_name);
-			device_addrs.push_back(String('e') + String(ifr.ifr_hwaddr.sa_data, 6));
-		    }
-		    char x[8];
-		    if (ioctl(query_fd, SIOCGIFADDR, &ifr) >= 0
-			&& ifr.ifr_addr.sa_family == AF_INET) {
-			device_names.push_back(dev_name);
-			memcpy(x, &((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr, 4);
-			device_addrs.push_back(String('i') + String(x, 4));
-			if (ioctl(query_fd, SIOCGIFNETMASK, &ifr) >= 0
-			    && ifr.ifr_addr.sa_family == AF_INET) {
-			    device_names.push_back(dev_name);
-			    memcpy(x + 4, &((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr, 4);
-			    device_addrs.push_back(String('I') + String(x, 8));
-			}
-		    }
-		}
-	    }
-	    begin = nl + 1;
-	}
-
-	close(query_fd);
-# elif defined(__APPLE__) || defined(__FreeBSD__)
-	// get list of interfaces (this code borrowed, with changes, from
-	// FreeBSD ifconfig(8))
-	int mib[8];
-	mib[0] = CTL_NET;
-	mib[1] = PF_ROUTE;
-	mib[2] = 0;
-	mib[3] = 0;		// address family
-	mib[4] = NET_RT_IFLIST;
-	mib[5] = 0;		// ifindex
-
-	size_t if_needed;
-	char* buf = 0;
-	while (!buf) {
-	    if (sysctl(mib, 6, 0, &if_needed, 0, 0) < 0)
-		return false;
-	    if ((buf = new char[if_needed]) == 0)
-		return false;
-	    if (sysctl(mib, 6, buf, &if_needed, 0, 0) < 0) {
-		if (errno == ENOMEM) {
-		    delete[] buf;
-		    buf = 0;
-		} else
-		    return false;
-	    }
-	}
-
-	for (char* pos = buf; pos < buf + if_needed; ) {
-	    // grab next if_msghdr
-	    struct if_msghdr* ifm = reinterpret_cast<struct if_msghdr*>(pos);
-	    if (ifm->ifm_type != RTM_IFINFO)
-		break;
-	    int datalen = sizeof(struct if_data);
-#  if HAVE_IF_DATA_IFI_DATALEN
-	    if (ifm->ifm_data.ifi_datalen)
-		datalen = ifm->ifm_data.ifi_datalen;
-#  endif
-
-	    // extract interface name from 'ifm'
-	    struct sockaddr_dl* sdl = reinterpret_cast<struct sockaddr_dl*>(pos + sizeof(struct if_msghdr) - sizeof(struct if_data) + datalen);
-	    String name(sdl->sdl_data, sdl->sdl_nlen);
-
-	    // Ethernet address is stored in 'sdl'
-	    if (sdl->sdl_type == IFT_ETHER && sdl->sdl_alen == 6) {
-		device_names.push_back(name);
-		device_addrs.push_back(String('e') + String((const char*)(LLADDR(sdl)), 6));
-	    }
-
-	    // parse all addresses, looking for IP
-	    pos += ifm->ifm_msglen;
-	    while (pos < buf + if_needed) {
-		struct if_msghdr* nextifm = reinterpret_cast<struct if_msghdr*>(pos);
-		if (nextifm->ifm_type != RTM_NEWADDR)
-		    break;
-
-		struct ifa_msghdr* ifam = reinterpret_cast<struct ifa_msghdr*>(nextifm);
-		char* sa_buf = reinterpret_cast<char*>(ifam + 1);
-		pos += nextifm->ifm_msglen;
-		for (int i = 0; i < RTAX_MAX && sa_buf < pos; i++) {
-		    if (!(ifam->ifam_addrs & (1 << i)))
-			continue;
-		    struct sockaddr* sa = reinterpret_cast<struct sockaddr*>(sa_buf);
-		    if (sa->sa_len)
-			sa_buf += 1 + ((sa->sa_len - 1) | (sizeof(long) - 1));
-		    else
-			sa_buf += sizeof(long);
-		    if (i != RTAX_IFA)
-			continue;
-		    if (sa->sa_family == AF_INET) {
-			device_names.push_back(name);
-			device_addrs.push_back(String('i') + String((const char *)&((struct sockaddr_in*)sa)->sin_addr, 4));
-		    }
-		}
-	    }
-	}
-
-	delete[] buf;
-# endif /* defined(__APPLE__) || defined(__FreeBSD__) */
+	deviceinfo.clear();
+	create_deviceinfo(deviceinfo);
 	read_time = time(0);
     }
 
-    for (int i = 0; i < device_names.size(); i++)
-	if (device_names[i] == s && device_addrs[i][0] == type) {
-	    memcpy(store, device_addrs[i].data() + 1, len);
+# if 0 /* debugging */
+    for (int i = 0; i < deviceinfo.size(); i += 2) {
+	fprintf(stderr, "%s %c:", deviceinfo[i].c_str(), deviceinfo[i+1][0]);
+	for (const char *x = deviceinfo[i+1].begin() + 1; x != deviceinfo[i+1].end(); ++x)
+	    fprintf(stderr, "%02x", (unsigned char) *x);
+	fprintf(stderr, "\n");
+    }
+# endif
+
+    for (int i = 0; i < deviceinfo.size(); i += 2)
+	if (deviceinfo[i] == s && deviceinfo[i+1][0] == type) {
+	    memcpy(store, deviceinfo[i+1].data() + 1, len);
 	    return true;
 	}
 
