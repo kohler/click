@@ -4,7 +4,8 @@
 // pings to host 131.179.80.139 (read.cs.ucla.edu) via 'eth0'.  Change the
 // 'define' statement to use another device or address, or run e.g. "click
 // test-ping.click DEV=eth1" to change a parameter at the command line.
-// You will need to run the configuration as root.
+// You will need to run the configuration as root.  You may also need to update
+// the gateway address used for the ping packets (by default $DEV:gw).
 //
 // FromDevice's "SNIFFER false" option tells Click to install kernel
 // firewall rules that prevent the host kernel from processing received
@@ -15,7 +16,7 @@
 // You should see, printed to standard error, a sequence of "icmp echo"
 // printouts intermixed with "ping :: ICMPPingSource" receive reports.
 
-define($DEV eth0, $DADDR 131.179.80.139, $GW 131.179.33.1)
+define($DEV eth0, $DADDR 131.179.80.139, $GW $DEV:gw)
 
 FromDevice($DEV, SNIFFER false)
 	-> c :: Classifier(12/0800, 12/0806 20/0002)
