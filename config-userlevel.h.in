@@ -233,6 +233,9 @@
 # define _LARGEFILE_SOURCE 1
 # define _FILE_OFFSET_BITS 64
 #endif
+#ifdef __APPLE__
+# define _DARWIN_UNLIMITED_SELECT 1
+#endif
 
 /* Include integer type definitions. */
 #ifdef HAVE_INTTYPES_H
