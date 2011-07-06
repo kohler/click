@@ -647,36 +647,36 @@ Script::pull(int)
     }
 }
 
-bool
-Script::Expander::expand(const String &vname, int vartype, int quote, StringAccum &sa) const
+int
+Script::Expander::expand(const String &vname, String &out, int vartype, int) const
 {
     int x = script->find_variable(vname, false);
     if (x < script->_vars.size()) {
-	sa << cp_expand_in_quotes(script->_vars[x + 1], quote);
+	out = script->_vars[x + 1];
 	return true;
     }
 
     if (vname.length() == 1 && vname[0] == '?') {
-	sa << script->_write_status;
+	out = String(script->_write_status);
 	return true;
     }
 
     if (vname.equals("args", 4)) {
-	sa << cp_expand_in_quotes(script->_run_args, quote);
+	out = script->_run_args;
 	return true;
     }
 
     if (vname.length() == 1 && vname[0] == '$') {
 #if CLICK_USERLEVEL
-	sa << getpid();
+	out = String(getpid());
 #else
-	sa << current->pid;
+	out = String(current->pid);
 #endif
 	return true;
     }
 
     if (vname.length() == 1 && vname[0] == '0') {
-	sa << script->_run_handler_name;
+	out = script->_run_handler_name;
 	return true;
     }
 
@@ -685,7 +685,7 @@ Script::Expander::expand(const String &vname, int vartype, int quote, StringAccu
 	String arg, run_args = script->_run_args;
 	for (; x > 0; --x)
 	    arg = cp_shift_spacevec(run_args);
-	sa << cp_expand_in_quotes(arg, quote);
+	out = arg;
 	return true;
     }
 
@@ -693,19 +693,19 @@ Script::Expander::expand(const String &vname, int vartype, int quote, StringAccu
 	String run_args = script->_run_args;
 	for (x = 0; cp_shift_spacevec(run_args); )
 	    ++x;
-	sa << cp_expand_in_quotes(String(x), quote);
+	out = String(x);
 	return true;
     }
 
     if (vname.equals("write", 5)) {
-	sa << BoolArg::unparse(script->_run_op & Handler::OP_WRITE);
+	out = BoolArg::unparse(script->_run_op & Handler::OP_WRITE);
 	return true;
     }
 
     if (vartype == '(') {
 	HandlerCall hc(vname);
 	if (hc.initialize_read(script, errh) >= 0) {
-	    sa << cp_expand_in_quotes(hc.call_read(errh), quote);
+	    out = hc.call_read(errh);
 	    return true;
 	}
     }

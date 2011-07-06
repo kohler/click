@@ -474,7 +474,7 @@ class Script : public Element { public:
     struct Expander : public VariableExpander {
 	Script *script;
 	ErrorHandler *errh;
-	bool expand(const String &, int vartype, int quote, StringAccum &) const;
+	int expand(const String &var, String &expansion, int vartype, int depth) const;
     };
 
     enum {

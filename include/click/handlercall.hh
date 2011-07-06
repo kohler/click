@@ -514,12 +514,12 @@ HandlerCall::call_write(ErrorHandler *errh) const
     return _h->call_write(_value, _e, errh);
 }
 
-String cp_expand(const String &str, const VariableExpander &env, bool expand_quote);
+String cp_expand(const String &str, const VariableExpander &env, bool expand_quote, int depth);
 
 inline int
 HandlerCall::call_write(const VariableExpander &scope, ErrorHandler *errh) const
 {
-    return _h->call_write(cp_expand(_value, scope, false), _e, errh);
+    return _h->call_write(cp_expand(_value, scope, false, 0), _e, errh);
 }
 
 inline int

@@ -11,7 +11,7 @@ class VariableExpander { public:
     VariableExpander()			{ }
     virtual ~VariableExpander()		{ }
 
-    virtual bool expand(const String &var, int vartype, int quote, StringAccum &sa) const = 0;
+    virtual int expand(const String &var, String &expansion, int vartype, int depth) const = 0;
 
 };
 
@@ -32,7 +32,7 @@ class VariableEnvironment : public VariableExpander { public:
 
     VariableEnvironment *parent_of(int depth) const;
     bool define(const String &name, const String &value, bool override);
-    bool expand(const String &var, int vartype, int quote, StringAccum &sa) const;
+    int expand(const String &var, String &expansion, int vartype, int depth) const;
 
   private:
 
@@ -43,8 +43,8 @@ class VariableEnvironment : public VariableExpander { public:
 
 };
 
-String cp_expand(const String &str, const VariableExpander &env, bool expand_quote = false);
-String cp_expand_in_quotes(const String &str, int quote);
+String cp_expand(const String &str, const VariableExpander &env,
+		 bool expand_quote = false, int depth = 0);
 
 CLICK_ENDDECLS
 #endif

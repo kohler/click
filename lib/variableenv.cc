@@ -6,6 +6,7 @@
  * Copyright (c) 2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2004-2005 Regents of the University of California
+ * Copyright (c) 2011 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,7 +26,8 @@
 CLICK_DECLS
 
 String
-cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
+cp_expand(const String &config, const VariableExpander &ve,
+	  bool expand_quote, int depth)
 {
     if (!config || find(config, '$') == config.end())
 	return config;
@@ -58,7 +60,7 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 	    break;
 
 	case '$': {
-	    if (s + 1 >= end || quote == '\'')
+	    if (s + 1 >= end || quote == '\'' || depth > 10)
 		break;
 
 	    const char *beforedollar = s, *cstart;
@@ -128,25 +130,27 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 
 	    output << config.substring(uninterpolated, beforedollar);
 
-	    bool result;
 	    if (expand_vname)
-		vname = cp_expand(vname, ve);
-	    if (expand_quote && quote == 0) {
-		output << '\"';
-		result = ve.expand(vname, vtype, '\"', output);
-		output << '\"';
-	    } else
-		result = ve.expand(vname, vtype, quote, output);
+		vname = cp_expand(vname, ve, false, depth + 1);
+	    String text;
+	    bool result = ve.expand(vname, text, vtype, depth);
 
 	    uninterpolated = s;
 	    if (!result) {
-		if (expand_quote && quote == 0)
-		    output.pop_back(2);
 		if (expand_vname)
 		    output << beforedollar[0] << beforedollar[1] << vname << s[-1];
 		else
 		    uninterpolated = beforedollar;
-	    }
+	    } else if (quote == '\"' || (expand_quote && quote == 0)) {
+		text = cp_quote(text);
+		if (text[0] == '\"')
+		    text = text.substring(text.begin() + 1, text.end() - 1);
+		if (quote == '\"')
+		    output << text;
+		else
+		    output << '\"' << text << '\"';
+	    } else
+		output << text;
 
 	    s--;
 	    break;
@@ -160,18 +164,6 @@ cp_expand(const String &config, const VariableExpander &ve, bool expand_quote)
 	output << config.substring(uninterpolated, s);
 	return output.take_string();
     }
-}
-
-String
-cp_expand_in_quotes(const String &s, int quote)
-{
-    if (quote == '\"') {
-	String ss = cp_quote(s);
-	if (ss[0] == '\"')
-	    ss = ss.substring(1, ss.length() - 2);
-	return ss;
-    } else
-	return s;
 }
 
 VariableEnvironment::VariableEnvironment(VariableEnvironment *parent)
@@ -227,9 +219,9 @@ VariableEnvironment::value(const String &formal, bool &found) const
     return String::make_empty();
 }
 
-bool
-VariableEnvironment::expand(const String &var, int vartype, int quote,
-			    StringAccum &output) const
+int
+VariableEnvironment::expand(const String &var, String &expansion,
+			    int vartype, int depth) const
 {
     String v(var);
     const char *minus = 0;
@@ -259,19 +251,18 @@ VariableEnvironment::expand(const String &var, int vartype, int quote,
     bool found;
     const String &val = value(v, found);
 
-    if (found && space_index >= 0) {
-	String word;
-	for (String valcopy(val);
-	     space_index >= 0 && (valcopy || word);
-	     --space_index)
-	    word = cp_shift_spacevec(valcopy);
-	output << cp_expand_in_quotes(word, quote);
-	return true;
-    } else if (found) {
-	output << cp_expand_in_quotes(val, quote);
+    if (found) {
+	String value = cp_expand(val, *this, false, depth + 1);
+	if (space_index >= 0) {
+	    String word;
+	    for (; space_index >= 0 && (value || word); --space_index)
+		word = cp_shift_spacevec(value);
+	    expansion = word;
+	} else
+	    expansion = value;
 	return true;
     } else if (minus) {
-	output << cp_expand_in_quotes(var.substring(minus + 1, var.end()), quote);
+	expansion = cp_expand(var.substring(minus + 1, var.end()), *this, false, depth + 1);
 	return true;
     } else
 	return false;
