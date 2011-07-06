@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2003-7 The Regents of the University of California
  * Copyright (c) 2010 Intel Corporation
- * Copyright (c) 2008-2010 Meraki, Inc.
+ * Copyright (c) 2008-2011 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -81,7 +81,14 @@ Master::Master(int nthreads)
 #if CLICK_USERLEVEL
     // select information
 # if HAVE_ALLOW_KQUEUE
+#  if defined(__APPLE__) && (HAVE_ALLOW_SELECT || HAVE_ALLOW_POLL)
+    // Marc Lehmann's libev documentation, and some other online
+    // documentation, indicate serious problems with kqueue on Mac OS X.  I've
+    // observed delays even on 10.6.  So don't use it unless ordered.
+    _kqueue = -1;
+#  else
     _kqueue = kqueue();
+#  endif
 # endif
 # if !HAVE_ALLOW_POLL
     FD_ZERO(&_read_select_fd_set);

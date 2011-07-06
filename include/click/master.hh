@@ -9,6 +9,10 @@
 # if !HAVE_ALLOW_SELECT && !HAVE_ALLOW_POLL && !HAVE_ALLOW_KQUEUE
 #  define HAVE_ALLOW_SELECT 1
 # endif
+# if defined(__APPLE__) && HAVE_ALLOW_SELECT && HAVE_ALLOW_POLL
+// Apple's poll() is often broken
+#  undef HAVE_ALLOW_POLL
+# endif
 # if HAVE_POLL_H && HAVE_ALLOW_POLL
 #  include <poll.h>
 # else
