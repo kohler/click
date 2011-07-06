@@ -159,8 +159,8 @@ class FromDevice : public Element { public:
     void cleanup(CleanupStage);
     void add_handlers();
 
-    String ifname() const		{ return _ifname; }
-    inline int fd() const;
+    inline String ifname() const	{ return _ifname; }
+    inline int fd() const		{ return _fd; }
 
     void selected(int fd, int mask);
 #if FROMDEVICE_PCAP
@@ -171,7 +171,7 @@ class FromDevice : public Element { public:
 #endif
 
 #if FROMDEVICE_LINUX
-    int linux_fd() const		{ return _linux_fd; }
+    int linux_fd() const		{ return _capture == CAPTURE_LINUX ? _fd : -1; }
     static int open_packet_socket(String, ErrorHandler *);
     static int set_promiscuous(int, String, bool);
 #endif
@@ -180,8 +180,10 @@ class FromDevice : public Element { public:
 
   private:
 
+#if FROMDEVICE_LINUX || FROMDEVICE_PCAP
+    int _fd;
+#endif
 #if FROMDEVICE_LINUX
-    int _linux_fd;
     unsigned char *_linux_packetbuf;
 #endif
 #if FROMDEVICE_PCAP
@@ -222,21 +224,6 @@ class FromDevice : public Element { public:
     static int write_handler(const String&, Element*, void*, ErrorHandler*);
 
 };
-
-
-inline int
-FromDevice::fd() const
-{
-#if FROMDEVICE_LINUX
-    if (_linux_fd >= 0)
-	return _linux_fd;
-#endif
-#if FROMDEVICE_PCAP
-    if (_pcap)
-	return pcap_fileno(_pcap);
-#endif
-    return -1;
-}
 
 CLICK_ENDDECLS
 #endif

@@ -20,6 +20,13 @@
  */
 
 #include <click/config.h>
+#if HAVE_NET_BPF_H
+# include <sys/types.h>
+# include <sys/time.h>
+# include <sys/ioctl.h>
+# include <net/bpf.h>
+# define PCAP_DONT_INCLUDE_PCAP_BPF_H 1
+#endif
 #include "fromdevice.hh"
 #include <click/error.hh>
 #include <click/straccum.hh>
@@ -31,11 +38,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "fakepcap.hh"
-
-#ifndef __sun
-#include <sys/ioctl.h>
-#else
-#include <sys/ioccom.h>
+#ifdef __sun
+# include <sys/ioccom.h>
 #endif
 
 #if FROMDEVICE_LINUX
@@ -56,14 +60,14 @@ CLICK_DECLS
 
 FromDevice::FromDevice()
     :
-#if FROMDEVICE_LINUX
-      _linux_fd(-1),
-#endif
 #if FROMDEVICE_PCAP
       _pcap(0), _pcap_task(this), _pcap_complaints(0),
 #endif
       _datalink(-1), _count(0), _promisc(0), _snaplen(0)
 {
+#if FROMDEVICE_LINUX || FROMDEVICE_PCAP
+    _fd = -1;
+#endif
 }
 
 FromDevice::~FromDevice()
@@ -271,13 +275,13 @@ FromDevice::initialize(ErrorHandler *errh)
 	_pcap = open_pcap(_ifname, _snaplen, _promisc, errh);
 	if (!_pcap)
 	    return 0;
+	_fd = pcap_fileno(_pcap);
 	char *ifname = _ifname.mutable_c_str();
-	int pcap_fd = fd();
 
 # ifdef BIOCSSEESENT
 	{
 	    int r, accept = _outbound;
-	    if ((r = ioctl(pcap_fd, BIOCSSEESENT, &accept)) == -1)
+	    if ((r = ioctl(_fd, BIOCSSEESENT, &accept)) == -1)
 		return errh->error("%s: BIOCSSEESENT: %s", ifname, strerror(errno));
 	    else if (r != 0)
 		errh->warning("%s: BIOCSSEESENT returns %d", ifname, r);
@@ -287,7 +291,7 @@ FromDevice::initialize(ErrorHandler *errh)
 # if defined(BIOCIMMEDIATE) && !defined(__sun) // pcap/bpf ioctl, not in DLPI/bufmod
 	{
 	    int r, yes = 1;
-	    if ((r = ioctl(pcap_fd, BIOCIMMEDIATE, &yes)) == -1)
+	    if ((r = ioctl(_fd, BIOCIMMEDIATE, &yes)) == -1)
 		return errh->error("%s: BIOCIMMEDIATE: %s", ifname, strerror(errno));
 	    else if (r != 0)
 		errh->warning("%s: BIOCIMMEDIATE returns %d", ifname, r);
@@ -319,7 +323,7 @@ FromDevice::initialize(ErrorHandler *errh)
 	if (pcap_setfilter(_pcap, &fcode) < 0)
 	    return errh->error("%s: %s", ifname, pcap_error(0));
 
-	add_select(pcap_fd, SELECT_READ);
+	add_select(_fd, SELECT_READ);
 
 	_datalink = pcap_datalink(_pcap);
 	if (_force_ip && !fake_pcap_dlt_force_ipable(_datalink))
@@ -331,11 +335,11 @@ FromDevice::initialize(ErrorHandler *errh)
 
 #if FROMDEVICE_LINUX
     if (_capture == CAPTURE_LINUX) {
-	_linux_fd = open_packet_socket(_ifname, errh);
-	if (_linux_fd < 0)
+	_fd = open_packet_socket(_ifname, errh);
+	if (_fd < 0)
 	    return -1;
 
-	int promisc_ok = set_promiscuous(_linux_fd, _ifname, _promisc);
+	int promisc_ok = set_promiscuous(_fd, _ifname, _promisc);
 	if (promisc_ok < 0) {
 	    if (_promisc)
 		errh->warning("cannot set promiscuous mode");
@@ -343,7 +347,7 @@ FromDevice::initialize(ErrorHandler *errh)
 	} else
 	    _was_promisc = promisc_ok;
 
-	add_select(_linux_fd, SELECT_READ);
+	add_select(_fd, SELECT_READ);
 
 	_datalink = FAKE_DLT_EN10MB;
     }
@@ -362,17 +366,19 @@ FromDevice::cleanup(CleanupStage stage)
     if (stage >= CLEANUP_INITIALIZED && !_sniffer)
 	KernelFilter::device_filter(_ifname, false, ErrorHandler::default_handler());
 #if FROMDEVICE_LINUX
-    if (_linux_fd >= 0) {
+    if (_fd >= 0 && _capture == CAPTURE_LINUX) {
 	if (_was_promisc >= 0)
-	    set_promiscuous(_linux_fd, _ifname, _was_promisc);
-	close(_linux_fd);
-	_linux_fd = -1;
+	    set_promiscuous(_fd, _ifname, _was_promisc);
+	close(_fd);
     }
 #endif
 #if FROMDEVICE_PCAP
     if (_pcap)
 	pcap_close(_pcap);
     _pcap = 0;
+#endif
+#if FROMDEVICE_PCAP || FROMDEVICE_LINUX
+    _fd = -1;
 #endif
 }
 
@@ -432,7 +438,7 @@ FromDevice::selected(int, int)
 	struct sockaddr_ll sa;
 	socklen_t fromlen = sizeof(sa);
 	WritablePacket *p = Packet::make(_headroom, 0, _snaplen, 0);
-	int len = recvfrom(_linux_fd, p->data(), p->length(), MSG_TRUNC, (sockaddr *)&sa, &fromlen);
+	int len = recvfrom(_fd, p->data(), p->length(), MSG_TRUNC, (sockaddr *)&sa, &fromlen);
 	if (len > 0 && (sa.sll_pkttype != PACKET_OUTGOING || _outbound)) {
 	    if (len > _snaplen) {
 		assert(p->length() == (uint32_t)_snaplen);
@@ -440,7 +446,7 @@ FromDevice::selected(int, int)
 	    } else
 		p->take(_snaplen - len);
 	    p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
-	    p->timestamp_anno().set_timeval_ioctl(_linux_fd, SIOCGSTAMP);
+	    p->timestamp_anno().set_timeval_ioctl(_fd, SIOCGSTAMP);
 	    p->set_mac_header(p->data());
 	    ++nlinux;
 	    ++_count;
