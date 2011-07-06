@@ -20,10 +20,14 @@
  */
 
 #include <click/config.h>
-#if HAVE_NET_BPF_H
-# include <sys/types.h>
-# include <sys/time.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#if !defined(__sun)
 # include <sys/ioctl.h>
+#else
+# include <sys/ioccom.h>
+#endif
+#if HAVE_NET_BPF_H
 # include <net/bpf.h>
 # define PCAP_DONT_INCLUDE_PCAP_BPF_H 1
 #endif
@@ -38,9 +42,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "fakepcap.hh"
-#ifdef __sun
-# include <sys/ioccom.h>
-#endif
 
 #if FROMDEVICE_LINUX
 # include <sys/socket.h>
