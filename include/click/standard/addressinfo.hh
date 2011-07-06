@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../../../elements/standard/addressinfo.cc" -*-
+// -*- related-file-name: "../../../elements/standard/addressinfo.cc" -*-
 #ifndef CLICK_ADDRESSINFO_HH
 #define CLICK_ADDRESSINFO_HH
 #include <click/element.hh>
@@ -74,6 +74,11 @@ If C<NAME:ipnet> is a valid IPv4 network address, then C<NAME:bcast> is a
 valid IPv4 address equaling the broadcast address for that network.  This is
 obtained by setting all the host bits in the address prefix to 1.
 
+If C<NAME:ipnet> is a valid IPv4 network address, then C<NAME:gw> is a valid
+IPv4 address equaling the default gateway address for that network.  This is
+obtained by setting all the host bits in the address prefix to 0, except for
+the lowest order bit.
+
 =head1 DEFAULT ADDRESSES
 
 If you do not define an address for a given name, AddressInfo will use the
@@ -101,21 +106,25 @@ PortInfo */
 
 class AddressInfo : public Element { public:
 
-  AddressInfo();
-  ~AddressInfo();
+    AddressInfo();
+    ~AddressInfo();
 
-  const char *class_name() const	{ return "AddressInfo"; }
+    const char *class_name() const	{ return "AddressInfo"; }
 
-  int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
-  int configure(Vector<String> &, ErrorHandler *);
+    int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
+    int configure(Vector<String> &conf, ErrorHandler *errh);
 
-  static bool query_ip(String, unsigned char *, const Element *);
-  static bool query_ip_prefix(String, unsigned char *, unsigned char *, const Element *);
-#ifdef HAVE_IP6
-  static bool query_ip6(String, unsigned char *, const Element *);
-  static bool query_ip6_prefix(String, unsigned char *, int *, const Element *);
+    static bool query_ip(String s, unsigned char *store, const Element *context);
+    static bool query_ip_prefix(String s, unsigned char *store_addr, unsigned char *store_mask, const Element *context);
+#if HAVE_IP6
+    static bool query_ip6(String s, unsigned char *store, const Element *context);
+    static bool query_ip6_prefix(String s, unsigned char *store_addr, int *store_prefixlen, const Element *context);
 #endif
-  static bool query_ethernet(String, unsigned char *, const Element *);
+    static bool query_ethernet(String s, unsigned char *store, const Element *context);
+
+ private:
+
+  static bool query_netdevice(const String &name, unsigned char *store, int type, int len, const Element *context);
 
 };
 

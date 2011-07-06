@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2004 The Regents of the University of California
+ * Copyright (c) 2011 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -138,16 +139,15 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 
-#if CLICK_USERLEVEL && !CLICK_NS && (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__))
-# define CLICK_QUERY_NETDEVICE 1
-#endif
-
-#if CLICK_QUERY_NETDEVICE
-
-static bool
-query_netdevice(const String &s, unsigned char *store, int type, int len)
-    // type: should be 'e' (Ethernet) or 'i' (ipv4)
+bool
+AddressInfo::query_netdevice(const String &s, unsigned char *store,
+			     int type, int len, const Element *context)
+    // type: should be 'e' (Ethernet), 'i' (ipv4), 'I' (ipv4 prefix)
 {
+    (void) s, (void) store, (void) type, (void) len, (void) context;
+
+#if CLICK_USERLEVEL && !CLICK_NS && (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__))
+
     // 5 Mar 2004 - Don't call ioctl for every attempt to look up an Ethernet
     // device name, because this causes the kernel to try to load weird kernel
     // modules.
@@ -185,9 +185,18 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
 			device_names.push_back(dev_name);
 			device_addrs.push_back(String('e') + String(ifr.ifr_hwaddr.sa_data, 6));
 		    }
-		    if (ioctl(query_fd, SIOCGIFADDR, &ifr) >= 0) {
+		    char x[8];
+		    if (ioctl(query_fd, SIOCGIFADDR, &ifr) >= 0
+			&& ifr.ifr_addr.sa_family == AF_INET) {
 			device_names.push_back(dev_name);
-			device_addrs.push_back(String('i') + String((const char *)&((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr, 4));
+			memcpy(x, &((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr, 4);
+			device_addrs.push_back(String('i') + String(x, 4));
+			if (ioctl(query_fd, SIOCGIFNETMASK, &ifr) >= 0
+			    && ifr.ifr_addr.sa_family == AF_INET) {
+			    device_names.push_back(dev_name);
+			    memcpy(x + 4, &((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr, 4);
+			    device_addrs.push_back(String('I') + String(x, 8));
+			}
 		    }
 		}
 	    }
@@ -282,27 +291,78 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
 	    return true;
 	}
 
+#elif CLICK_LINUXMODULE
+
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+    net_device *dev = dev_get_by_name(&init_net, s.c_str());
+# else
+    net_device *dev = dev_get_by_name(s.c_str());
+# endif
+    bool found = false;
+    if (dev && type == 'e'
+	&& (dev->type == ARPHRD_ETHER || dev->type == ARPHRD_80211)) {
+	memcpy(store, dev->dev_addr, 6);
+	found = true;
+    } else if (dev && (type == 'i' || type == 'I')) {
+	if (in_device *in_dev = in_dev_get(dev)) {
+	    for_primary_ifa(in_dev) {
+		memcpy(store, &ifa->ifa_local, 4);
+		if (type == 'I')
+		    memcpy(store + 4, &ifa->ifa_mask, 4);
+		found = true;
+		break;
+	    }
+	    endfor_ifa(in_dev);
+	    in_dev_put(in_dev);
+	}
+    }
+    dev_put(dev);
+    return found;
+
+#elif CLICK_NS
+
+    if (context && type == 'i') {
+	char tmp[255];
+	int r = simclick_sim_command(e->router()->master()->simnode(), SIMCLICK_IPADDR_FROM_NAME, s.c_str(), tmp, 255);
+	if (r >= 0 && tmp[0] && IPAddressArg().parse(tmp, *reinterpret_cast<IPAddress *>(store)))
+	    return true;
+    } else if (context && type == 'e') {
+	char tmp[255];
+	int r = simclick_sim_command(e->router()->master()->simnode(), SIMCLICK_MACADDR_FROM_NAME, s.c_str(), tmp, 255);
+	if (r >= 0 && tmp[0] && EtherAddressArg().parse(tmp, store))
+	    return true;
+    }
+
+#endif
+
     return false;
 }
 
-#endif /* CLICK_QUERY_NETDEVICE */
-
 
 bool
-AddressInfo::query_ip(String s, unsigned char *store, const Element *e)
+AddressInfo::query_ip(String s, unsigned char *store, const Element *context)
 {
     int colon = s.find_right(':');
     if (colon >= 0) {
 	String typestr = s.substring(colon).lower();
 	s = s.substring(0, colon);
+	union {
+	    uint32_t addr[2];
+	    unsigned char x[8];
+	} u;
 	if (typestr.equals(":ip", 3) || typestr.equals(":ip4", 4))
 	    /* do nothing */;
 	else if (typestr.equals(":bcast", 6)) {
-	    // ":bcast" type only supported for NameDB at the moment
-	    uint32_t addr[2];
-	    if (NameInfo::query(NameInfo::T_IP_PREFIX, e, s, &addr[0], 8)) {
-		addr[0] |= ~addr[1];
-		memcpy(store, addr, 4);
+	    if (query_ip_prefix(s, &u.x[0], &u.x[4], context)) {
+		u.addr[0] |= ~u.addr[1];
+		memcpy(store, u.x, 4);
+		return true;
+	    } else
+		return false;
+	} else if (typestr.equals(":gw", 3)) {
+	    if (query_ip_prefix(s, &u.x[0], &u.x[4], context)) {
+		u.addr[0] = (u.addr[0] & u.addr[1]) | htonl(1);
+		memcpy(store, u.x, 4);
 		return true;
 	    } else
 		return false;
@@ -310,50 +370,13 @@ AddressInfo::query_ip(String s, unsigned char *store, const Element *e)
 	    return false;
     }
 
-    if (NameInfo::query(NameInfo::T_IP_ADDR, e, s, store, 4))
-	return true;
-
-    // if it's a device name, return a primary IP address
-#if CLICK_LINUXMODULE
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
-    net_device *dev = dev_get_by_name(&init_net, s.c_str());
-# else
-    net_device *dev = dev_get_by_name(s.c_str());
-# endif
-    if (dev) {
-	bool found = false;
-	in_device *in_dev = in_dev_get(dev);
-	if (in_dev) {
-	    for_primary_ifa(in_dev) {
-		memcpy(store, &ifa->ifa_local, 4);
-		found = true;
-		break;
-	    }
-	    endfor_ifa(in_dev);
-	    in_dev_put(in_dev);
-	}
-	dev_put(dev);
-	if (found)
-	    return true;
-    }
-#elif CLICK_NS
-    if (e) {
-	char tmp[255];
-	int r = simclick_sim_command(e->router()->master()->simnode(), SIMCLICK_IPADDR_FROM_NAME, s.c_str(), tmp, 255);
-	if (r >= 0 && tmp[0] && IPAddressArg().parse(tmp, *reinterpret_cast<IPAddress *>(store)))
-	    return true;
-    }
-#elif CLICK_QUERY_NETDEVICE
-    if (query_netdevice(s, store, 'i', 4))
-	return true;
-#endif
-
-    return false;
+    return NameInfo::query(NameInfo::T_IP_ADDR, context, s, store, 4)
+	|| query_netdevice(s, store, 'i', 4, context);
 }
 
 bool
 AddressInfo::query_ip_prefix(String s, unsigned char *store,
-			     unsigned char *mask_store, const Element *e)
+			     unsigned char *mask_store, const Element *context)
 {
     int colon = s.find_right(':');
     if (colon >= 0) {
@@ -365,13 +388,13 @@ AddressInfo::query_ip_prefix(String s, unsigned char *store,
     }
 
     uint8_t data[8];
-    if (NameInfo::query(NameInfo::T_IP_PREFIX, e, s, &data[0], 8)) {
+    if (NameInfo::query(NameInfo::T_IP_PREFIX, context, s, &data[0], 8)
+	|| query_netdevice(s, data, 'I', 8, context)) {
 	memcpy(store, &data[0], 4);
 	memcpy(mask_store, &data[4], 4);
 	return true;
-    }
-
-    return false;
+    } else
+	return false;
 }
 
 
@@ -391,7 +414,7 @@ AddressInfo::query_ip6(String s, unsigned char *store, const Element *e)
 
 bool
 AddressInfo::query_ip6_prefix(String s, unsigned char *store,
-			      int *bits_store, const Element *e)
+			      int *bits_store, const Element *context)
 {
     int colon = s.find_right(':');
     if (colon >= 0 && s.substring(colon).lower() != ":ip6net")
@@ -403,7 +426,7 @@ AddressInfo::query_ip6_prefix(String s, unsigned char *store,
 	unsigned char c[16];
 	int p;
     } data;
-    if (NameInfo::query(NameInfo::T_IP6_PREFIX, e, s, &data, sizeof(data))) {
+    if (NameInfo::query(NameInfo::T_IP6_PREFIX, context, s, &data, sizeof(data))) {
 	memcpy(store, data.c, 16);
 	*bits_store = data.p;
 	return true;
@@ -416,7 +439,7 @@ AddressInfo::query_ip6_prefix(String s, unsigned char *store,
 
 
 bool
-AddressInfo::query_ethernet(String s, unsigned char *store, const Element *e)
+AddressInfo::query_ethernet(String s, unsigned char *store, const Element *context)
 {
     int colon = s.find_right(':');
     if (colon >= 0 && s.substring(colon).lower() != ":eth"
@@ -425,36 +448,8 @@ AddressInfo::query_ethernet(String s, unsigned char *store, const Element *e)
     else if (colon >= 0)
 	s = s.substring(0, colon);
 
-    if (NameInfo::query(NameInfo::T_ETHERNET_ADDR, e, s, store, 6))
-	return true;
-
-    // if it's a device name, return its Ethernet address
-#if CLICK_LINUXMODULE
-    // in the Linux kernel, just look at the device list
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
-    net_device *dev = dev_get_by_name(&init_net, s.c_str());
-# else
-    net_device *dev = dev_get_by_name(s.c_str());
-# endif
-    if (dev && (dev->type == ARPHRD_ETHER || dev->type == ARPHRD_80211)) {
-	memcpy(store, dev->dev_addr, 6);
-	dev_put(dev);
-	return true;
-    } else if (dev)
-	dev_put(dev);
-#elif CLICK_NS
-    if (e) {
-	char tmp[255];
-	int r = simclick_sim_command(e->router()->master()->simnode(), SIMCLICK_MACADDR_FROM_NAME, s.c_str(), tmp, 255);
-	if (r >= 0 && tmp[0] && EtherAddressArg().parse(tmp, store))
-	    return true;
-    }
-#elif CLICK_QUERY_NETDEVICE
-    if (query_netdevice(s, store, 'e', 6))
-	return true;
-#endif
-
-    return false;
+    return NameInfo::query(NameInfo::T_ETHERNET_ADDR, context, s, store, 6)
+	|| query_netdevice(s, store, 'e', 6, context);
 }
 
 CLICK_ENDDECLS
