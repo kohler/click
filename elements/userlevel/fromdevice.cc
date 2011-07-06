@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2005-2007 Regents of the University of California
+ * Copyright (c) 2011 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -73,7 +74,7 @@ int
 FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool promisc = false, outbound = false, sniffer = true;
-    _snaplen = 2046;
+    _snaplen = default_snaplen;
     _headroom = Packet::default_headroom;
     _headroom += (4 - (_headroom + 2) % 4) % 4; // default 4/2 alignment
     _force_ip = false;
@@ -86,7 +87,8 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read_p("SNAPLEN", _snaplen)
 	.read("SNIFFER", sniffer)
 	.read("FORCE_IP", _force_ip)
-	.read("CAPTURE", WordArg(), capture)
+	.read("METHOD", WordArg(), capture)
+	.read("CAPTURE", WordArg(), capture) // deprecated
 	.read("BPF_FILTER", bpf_filter)
 	.read("OUTBOUND", outbound)
 	.read("HEADROOM", _headroom)
@@ -119,7 +121,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 #elif FROMDEVICE_PCAP
 	_capture = CAPTURE_PCAP;
 #else
-	return errh->error("this platform does not support any capture method");
+	return errh->error("cannot receive packets on this platform");
 #endif
     }
 #if FROMDEVICE_LINUX
@@ -131,10 +133,10 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	_capture = CAPTURE_PCAP;
 #endif
     else
-	return errh->error("capture method '%s' not supported", capture.c_str());
+	return errh->error("bad METHOD");
 
     if (bpf_filter && _capture != CAPTURE_PCAP)
-	errh->warning("not using PCAP capture method, BPF filter ignored");
+	errh->warning("not using METHOD PCAP, BPF filter ignored");
 
     _sniffer = sniffer;
     _promisc = promisc;
@@ -215,15 +217,45 @@ FromDevice::set_promiscuous(int fd, String ifname, bool promisc)
 #endif /* FROMDEVICE_LINUX */
 
 #if FROMDEVICE_PCAP
-String
-FromDevice::get_pcap_error(const char *ebuf)
+const char *
+FromDevice::pcap_error(pcap_t *pcap, const char *ebuf)
 {
-    if ((!ebuf || !ebuf[0]) && _pcap)
-	ebuf = pcap_geterr(_pcap);
+    if ((!ebuf || !ebuf[0]) && pcap)
+	ebuf = pcap_geterr(pcap);
     if (!ebuf || !ebuf[0])
 	return "unknown error";
     else
 	return ebuf;
+}
+
+pcap_t *
+FromDevice::open_pcap(String ifname, int snaplen, bool promisc,
+		      ErrorHandler *errh)
+{
+    char ebuf[PCAP_ERRBUF_SIZE];
+    ebuf[0] = 0;
+    pcap_t *pcap = pcap_open_live(ifname.mutable_c_str(), snaplen, promisc,
+			       1,     /* timeout: don't wait for packets */
+			       ebuf);
+
+    // Note: pcap error buffer will contain the interface name
+    if (!pcap) {
+	errh->error("%s while opening %s", pcap_error(0, ebuf), ifname.c_str());
+	return 0;
+    } else if (ebuf[0])
+	errh->warning("%s", ebuf);
+
+    // nonblocking I/O on the packet socket so we can poll
+# if HAVE_PCAP_SETNONBLOCK
+    ebuf[0] = 0;
+    if (pcap_setnonblock(pcap, 1, ebuf) < 0 || ebuf[0])
+	errh->warning("pcap_setnonblock: %s", pcap_error(pcap, ebuf));
+# else
+    if (fcntl(pcap_fileno(pcap), F_SETFL, O_NONBLOCK) < 0)
+	errh->warning("setting nonblocking: %s", strerror(errno));
+# endif
+
+    return pcap;
 }
 #endif
 
@@ -236,28 +268,11 @@ FromDevice::initialize(ErrorHandler *errh)
 #if FROMDEVICE_PCAP
     if (_capture == CAPTURE_PCAP) {
 	assert(!_pcap);
-	char *ifname = _ifname.mutable_c_str();
-	char ebuf[PCAP_ERRBUF_SIZE];
-	ebuf[0] = 0;
-	_pcap = pcap_open_live(ifname, _snaplen, _promisc,
-			       1,     /* timeout: don't wait for packets */
-			       ebuf);
-	// Note: pcap error buffer will contain the interface name
+	_pcap = open_pcap(_ifname, _snaplen, _promisc, errh);
 	if (!_pcap)
-	    return errh->error("%s while opening %s", get_pcap_error(ebuf).c_str(), ifname);
-	else if (ebuf[0])
-	    errh->warning("%s", ebuf);
-
-	// nonblocking I/O on the packet socket so we can poll
+	    return 0;
+	char *ifname = _ifname.mutable_c_str();
 	int pcap_fd = fd();
-# if HAVE_PCAP_SETNONBLOCK
-	ebuf[0] = 0;
-	if (pcap_setnonblock(_pcap, 1, ebuf) < 0 || ebuf[0])
-	    errh->warning("pcap_setnonblock: %s", get_pcap_error(ebuf).c_str());
-# else
-	if (fcntl(pcap_fd, F_SETFL, O_NONBLOCK) < 0)
-	    errh->warning("setting nonblocking: %s", strerror(errno));
-# endif
 
 # ifdef BIOCSSEESENT
 	{
@@ -288,9 +303,10 @@ FromDevice::initialize(ErrorHandler *errh)
 
 	bpf_u_int32 netmask;
 	bpf_u_int32 localnet;
+	char ebuf[PCAP_ERRBUF_SIZE];
 	ebuf[0] = 0;
 	if (pcap_lookupnet(ifname, &localnet, &netmask, ebuf) < 0 || ebuf[0] != 0)
-	    errh->warning("%s", get_pcap_error(ebuf).c_str());
+	    errh->warning("%s", pcap_error(ebuf));
 
 	// Later versions of pcap distributed with linux (e.g. the redhat
 	// linux pcap-0.4-16) want to have a filter installed before they
@@ -299,9 +315,9 @@ FromDevice::initialize(ErrorHandler *errh)
 	// compile the BPF filter
 	struct bpf_program fcode;
 	if (pcap_compile(_pcap, &fcode, _bpf_filter.mutable_c_str(), 0, netmask) < 0)
-	    return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
+	    return errh->error("%s: %s", ifname, pcap_error(0));
 	if (pcap_setfilter(_pcap, &fcode) < 0)
-	    return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
+	    return errh->error("%s: %s", ifname, pcap_error(0));
 
 	add_select(pcap_fd, SELECT_READ);
 
@@ -354,10 +370,9 @@ FromDevice::cleanup(CleanupStage stage)
     }
 #endif
 #if FROMDEVICE_PCAP
-    if (_pcap) {
+    if (_pcap)
 	pcap_close(_pcap);
-	_pcap = 0;
-    }
+    _pcap = 0;
 #endif
 }
 

@@ -79,23 +79,22 @@ Defaults to 2046.
 Boolean. If true, then output only IP packets. (Any link-level header remains,
 but the IP header annotation has been set appropriately.) Default is false.
 
-=item CAPTURE
+=item METHOD
 
 Word.  Defines the capture method FromDevice will use to read packets from the
-kernel.  Linux targets generally support PCAP and LINUX; other targets support
-only PCAP.  Defaults to LINUX on Linux targets (unless you give a BPF_FILTER),
-and PCAP elsewhere.
+device.  Linux targets generally support PCAP and LINUX; other targets support
+only PCAP.  Defaults to PCAP.
 
 =item BPF_FILTER
 
 String.  A BPF filter expression used to select the interesting packets.
-Default is the empty string, which means all packets.  If CAPTURE is not PCAP,
+Default is the empty string, which means all packets.  If METHOD is not PCAP,
 then any filter expression is ignored with a warning.
 
 =item ENCAP
 
 Word.  The encapsulation type the interface should use; see FromDump for
-choices.  Ignored if CAPTURE is not PCAP.
+choices.  Ignored if METHOD is not PCAP.
 
 =item OUTBOUND
 
@@ -153,6 +152,7 @@ class FromDevice : public Element { public:
     const char *port_count() const	{ return "0/1-2"; }
     const char *processing() const	{ return PUSH; }
 
+    enum { default_snaplen = 2046 };
     int configure_phase() const		{ return KernelFilter::CONFIGURE_PHASE_FROMDEVICE; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
@@ -164,10 +164,14 @@ class FromDevice : public Element { public:
 
     void selected(int fd, int mask);
 #if FROMDEVICE_PCAP
+    pcap_t *pcap() const		{ return _pcap; }
     bool run_task(Task *);
+    static const char *pcap_error(pcap_t *pcap, const char *ebuf);
+    static pcap_t *open_pcap(String ifname, int snaplen, bool promisc, ErrorHandler *errh);
 #endif
 
 #if FROMDEVICE_LINUX
+    int linux_fd() const		{ return _linux_fd; }
     static int open_packet_socket(String, ErrorHandler *);
     static int set_promiscuous(int, String, bool);
 #endif
@@ -181,12 +185,14 @@ class FromDevice : public Element { public:
     unsigned char *_linux_packetbuf;
 #endif
 #if FROMDEVICE_PCAP
-    pcap_t* _pcap;
+    pcap_t *_pcap;
     Task _pcap_task;
     int _pcap_complaints;
     friend void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*,
 				      const u_char*);
-    String get_pcap_error(const char *ebuf);
+    const char *pcap_error(const char *ebuf) {
+	return pcap_error(_pcap, ebuf);
+    }
 #endif
     bool _force_ip;
     int _burst;

@@ -309,7 +309,7 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
 	if test "$ac_cv_bpf_timeval" = yes; then
 	    AC_DEFINE([HAVE_BPF_TIMEVAL], [1], [Define if <pcap.h> uses bpf_timeval.])
 	fi
-	AC_CHECK_DECLS(pcap_setnonblock, [], [], [#include <pcap.h>])
+	AC_CHECK_DECLS([pcap_inject, pcap_sendpacket, pcap_setnonblock], [], [], [#include <pcap.h>])
 	CPPFLAGS="$saveflags"
     fi
 
@@ -359,7 +359,7 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
 
 	saveflags="$LDFLAGS"
 	LDFLAGS="$saveflags $PCAP_LIBS"
-	AC_CHECK_FUNCS(pcap_setnonblock)
+	AC_CHECK_FUNCS([pcap_inject pcap_sendpacket pcap_setnonblock])
 	LDFLAGS="$saveflags"
     fi
 ])

@@ -26,9 +26,11 @@ CLICK_DECLS
  *
  * =over 8
  *
- * =item BURST
+ * =item METHOD
  *
- * Integer. Maximum number of packets to pull per scheduling. Defaults to 1.
+ * Word. Defines the method ToDevice will use to write packets to the
+ * device. Linux targets generally support PCAP and LINUX; other targets
+ * support PCAP or, occasionally, other methods. Generally defaults to PCAP.
  *
  * =item DEBUG
  *
@@ -58,20 +60,20 @@ CLICK_DECLS
  * FromDevice.u, FromDump, ToDump, KernelTun, ToDevice(n) */
 
 #if defined(__linux__)
-# define TODEVICE_LINUX 1
-# define TODEVICE_SEND 1
-#elif HAVE_PCAP
+# define TODEVICE_ALLOW_LINUX 1
+#endif
+#if HAVE_PCAP && (HAVE_PCAP_INJECT || HAVE_PCAP_SENDPACKET)
 extern "C" {
 # include <pcap.h>
 }
-# if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__) || defined(__NetBSD__)
-#  define TODEVICE_BSD_DEV_BPF 1
-#  define TODEVICE_WRITE 1
-# elif defined(__sun)
-#  define TODEVICE_PCAP 1
-#  define TODEVICE_WRITE 1
-# endif
+# define TODEVICE_ALLOW_PCAP 1
 #endif
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__) || defined(__NetBSD__)
+# define TODEVICE_ALLOW_DEVBPF 1
+#elif defined(__sun)
+# define TODEVICE_ALLOW_PCAPFD 1
+#endif
+class FromDevice;
 
 class ToDevice : public Element { public:
 
@@ -101,18 +103,31 @@ class ToDevice : public Element { public:
     Timer _timer;
 
     String _ifname;
+#if TODEVICE_ALLOW_PCAP
+    pcap_t *_pcap;
+#endif
+#if TODEVICE_ALLOW_LINUX || TODEVICE_ALLOW_DEVBPF || TODEVICE_ALLOW_PCAPFD
     int _fd;
-    bool _my_fd;
-    int _burst;
+#endif
+    enum { method_linux, method_pcap, method_devbpf, method_pcapfd };
+    int _method;
     NotifierSignal _signal;
 
     Packet *_q;
 
     bool _debug;
     bool _backoff;
+#if TODEVICE_ALLOW_PCAP
+    bool _my_pcap;
+#endif
+#if TODEVICE_ALLOW_LINUX || TODEVICE_ALLOW_DEVBPF || TODEVICE_ALLOW_PCAPFD
+    bool _my_fd;
+#endif
     int _pulls;
 
     enum { h_debug, h_signal, h_pulls, h_q };
+    FromDevice *find_fromdevice() const;
+    int send_packet(Packet *p);
     static int write_param(const String &in_s, Element *e, void *vparam, ErrorHandler *errh);
     static String read_param(Element *e, void *thunk);
 
