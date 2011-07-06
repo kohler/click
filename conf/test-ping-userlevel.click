@@ -1,7 +1,7 @@
 // test-ping-userlevel.click
 
 // This configuration tests the FromDevice and ToDevice elements by sending
-// pings to host 131.179.80.139 (read.cs.ucla.edu) via 'eth0'.  Change the
+// pings to host 8.8.8.8 (Google Public DNS) via 'eth0'.  Change the
 // 'define' statement to use another device or address, or run e.g. "click
 // test-ping.click DEV=eth1" to change a parameter at the command line.
 // You will need to run the configuration as root.  You may also need to update
@@ -16,7 +16,7 @@
 // You should see, printed to standard error, a sequence of "icmp echo"
 // printouts intermixed with "ping :: ICMPPingSource" receive reports.
 
-define($DEV eth0, $DADDR 131.179.80.139, $GW $DEV:gw)
+define($DEV eth0, $DADDR 8.8.8.8, $GW $DEV:gw)
 
 FromDevice($DEV, SNIFFER false)
 	-> c :: Classifier(12/0800, 12/0806 20/0002)
