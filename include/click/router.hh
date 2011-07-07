@@ -280,6 +280,7 @@ class Router { public:
 	notifier_signals_t *next;
 	notifier_signals_t(const String &n, notifier_signals_t *nx)
 	    : name(n), nsig(0), next(nx) {
+	    memset(&sig[0], 0, sizeof(sig));
 	}
     };
     notifier_signals_t *_notifier_signals;
