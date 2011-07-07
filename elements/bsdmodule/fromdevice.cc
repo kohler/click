@@ -93,9 +93,7 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp)
 	return;				// let FreeBSD continue processing.
     }
 
-#if __FreeBSD_version < 800000 || !defined(BSD_NETISRSCHED)
     *mp = NULL;		// tell ether_input no further processing needed.
-#endif
 
     FromDevice *me = (FromDevice *)(CLICK_IFP2FD(ifp));
 
@@ -139,7 +137,6 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp)
 	me->intr_reschedule();
 #if __FreeBSD_version >= 800000 && defined(BSD_NETISRSCHED)
     netisr_dispatch(NETISR_CLICK, m);
-    *mp = NULL;		// tell ether_input no further processing needed.
 #endif
 
 	/*
@@ -192,6 +189,18 @@ click_ether_output(struct ifnet *ifp, struct mbuf **mp)
 extern "C"
 void
 click_ether_input_orphan(struct ifnet *ifp, struct mbuf **mp)
+{
+}
+
+/*
+ * This dummy function is meant to be assigned to ng_ether_link_state_p
+ * which is NULL by default but is called when the state of a network
+ * interface changes and the ac_netgraph hook is not NULL (which is the
+ * case for us).
+ */
+extern "C"
+void
+click_ether_link_state(struct ifnet *ifp, int state)
 {
 }
 
@@ -455,6 +464,7 @@ FromDevice::run_task(Task *)
 
 	Packet *p = Packet::make(m);
 	assert(p);
+        p->set_timestamp_anno(Timestamp()); /* XXX */
 	output(0).push(p);
 	npq++;
 	_npackets++;
