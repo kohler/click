@@ -7,7 +7,7 @@ CLICK_DECLS
 
 /*
  * =c
- * DRRSched
+ * DRRSched([QUANTUM])
  * =s scheduling
  * pulls from inputs with deficit round robin scheduling
  * =io
@@ -19,6 +19,16 @@ CLICK_DECLS
  *
  * The inputs usually come from Queues or other pull schedulers.
  * DRRSched uses notification to avoid pulling from empty inputs.
+ *
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item QUANTUM
+ *
+ * Integer. Quantum (in bytes) added to each round. Defaults to 500.
+ *
+ * =back
  *
  * =n
  *
@@ -47,11 +57,14 @@ class DRRSched : public Element { public:
 
   private:
 
-    int _quantum;   // Number of bytes to send per round.
+    struct portinfo {
+	Packet *head;
+	unsigned deficit;
+	NotifierSignal signal;
+    };
 
-    Packet **_head; // First packet from each queue.
-    unsigned *_deficit;  // Each queue's deficit.
-    NotifierSignal *_signals;	// upstream signals
+    int _quantum;   // Number of bytes to send per round.
+    portinfo *_pi;
     Notifier _notifier;
     int _next;      // Next input to consider.
 
