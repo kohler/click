@@ -119,7 +119,13 @@ EtherAddressArg::parse(const String &str, EtherAddress &value, const ArgContext 
     }
 
 #if !CLICK_TOOL
+# if 0
+    /*
+     * XXX: Checking the context here seems unnecessary.
+     *      Currently it's anyway done in query_ethernet() if needed.
+     */
     if (args.context())
+# endif
 	return AddressInfo::query_ethernet(str, value.data(), args.context());
 #else
     (void) args;
