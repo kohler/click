@@ -28,6 +28,7 @@
 #include "fromdevice.hh"
 #include "fromhost.hh"
 #include <click/error.hh>
+#include <click/args.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>

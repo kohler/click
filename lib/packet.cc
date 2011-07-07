@@ -790,7 +790,9 @@ Packet::dup_jumbo_m(struct mbuf *m)
 
   /* XXX: Only a subset of what m_dup_pkthdr() would copy: */
   new_m->m_pkthdr.rcvif = m->m_pkthdr.rcvif;
+# if __FreeBSD_version >= 800000
   new_m->m_pkthdr.flowid = m->m_pkthdr.flowid;
+# endif
   new_m->m_pkthdr.ether_vtag = m->m_pkthdr.ether_vtag;
 
   return new_m;
