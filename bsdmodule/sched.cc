@@ -24,6 +24,7 @@
 
 #include <click/routerthread.hh>
 #include <click/glue.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/straccum.hh>
 #include <click/master.hh>
@@ -277,7 +278,7 @@ read_sched_param(Element *, void *thunk)
 	if (click_router) {
 	    String s;
 	    for (int i = 0; i < click_master->nthreads(); i++)
-		s += String(click_master->max_timer_stride()) + "\n";
+		s += String(click_master->thread(i)->timer_set().max_timer_stride()) + "\n";
 	return s;
 	}
     }
@@ -315,7 +316,8 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 	    return errh->error("tasks_per_iter_timers must be unsigned\n");
 
 	// change current thread priorities
-	click_master->set_max_timer_stride(x);
+	for (int i = 0; i < click_master->nthreads(); ++i)
+	    click_master->thread(i)->timer_set().set_max_timer_stride(x);
     }
 
     case H_ITERS_PER_OS: {

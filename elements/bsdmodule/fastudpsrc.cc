@@ -18,6 +18,7 @@
 #include <clicknet/ip.h>
 #include "fastudpsrc.hh"
 #include <click/args.hh>
+#include <click/etheraddress.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
