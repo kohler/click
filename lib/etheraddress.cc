@@ -119,8 +119,7 @@ EtherAddressArg::parse(const String &str, EtherAddress &value, const ArgContext 
     }
 
 #if !CLICK_TOOL
-    if (args.context())
-	return AddressInfo::query_ethernet(str, value.data(), args.context());
+    return AddressInfo::query_ethernet(str, value.data(), args.context());
 #else
     (void) args;
 #endif
