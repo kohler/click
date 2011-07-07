@@ -22,6 +22,7 @@
 #include <click/packet.hh>
 #include <click/packet_anno.hh>
 #include <click/glue.hh>
+#include <click/sync.hh>
 #if CLICK_USERLEVEL
 # include <unistd.h>
 #endif
@@ -245,10 +246,27 @@ struct PacketPool {
 };
 }
 #  if HAVE_MULTITHREAD
-static __thread PacketPool packet_pool;
+static __thread PacketPool *thread_packet_pool;
+static PacketPool *all_thread_packet_pools;
 static PacketPool global_packet_pool;
-static PacketPool *thread_packet_pools;
 static volatile uint32_t global_packet_pool_lock;
+
+static inline PacketPool *
+get_packet_pool()
+{
+    PacketPool *pp = thread_packet_pool;
+    if (!pp && (pp = new PacketPool)) {
+	memset(pp, 0, sizeof(PacketPool));
+	while (atomic_uint32_t::swap(global_packet_pool_lock, 1) == 1)
+	    /* do nothing */;
+	pp->chain = all_thread_packet_pools;
+	all_thread_packet_pools = pp;
+	thread_packet_pool = pp;
+	click_compiler_fence();
+	global_packet_pool_lock = 0;
+    }
+    return pp;
+}
 #  else
 static PacketPool packet_pool;
 #  endif
@@ -257,6 +275,7 @@ WritablePacket *
 WritablePacket::pool_allocate(bool with_data)
 {
 #  if HAVE_MULTITHREAD
+    PacketPool &packet_pool = *get_packet_pool();
     if ((!packet_pool.p && global_packet_pool.p)
 	|| (with_data && !packet_pool.pd && global_packet_pool.pd)) {
 	while (atomic_uint32_t::swap(global_packet_pool_lock, 1) == 1)
@@ -278,6 +297,7 @@ WritablePacket::pool_allocate(bool with_data)
 	    packet_pool.pdcount = CLICK_PACKET_POOL_SIZE;
 	}
 
+	click_compiler_fence();
 	global_packet_pool_lock = 0;
     }
 #  else
@@ -304,6 +324,9 @@ WritablePacket::pool_allocate(uint32_t headroom, uint32_t length,
     if (p) {
 	p->initialize();
 	PacketData *pd;
+#  if HAVE_MULTITHREAD
+	PacketPool &packet_pool = *thread_packet_pool;
+#  endif
 	if (n == CLICK_PACKET_POOL_BUFSIZ && (pd = packet_pool.pd)) {
 	    packet_pool.pd = pd->next;
 	    --packet_pool.pdcount;
@@ -332,9 +355,9 @@ WritablePacket::recycle(WritablePacket *p)
     }
 
 #  if HAVE_MULTITHREAD
+    PacketPool &packet_pool = *get_packet_pool();
     if ((packet_pool.p && packet_pool.pcount == CLICK_PACKET_POOL_SIZE)
-	|| (data && packet_pool.pd && packet_pool.pdcount == CLICK_PACKET_POOL_SIZE)
-	|| !packet_pool.chain) {
+	|| (data && packet_pool.pd && packet_pool.pdcount == CLICK_PACKET_POOL_SIZE)) {
 	while (atomic_uint32_t::swap(global_packet_pool_lock, 1) == 1)
 	    /* do nothing */;
 
@@ -368,11 +391,7 @@ WritablePacket::recycle(WritablePacket *p)
 	    packet_pool.pdcount = 0;
 	}
 
-	if (!packet_pool.chain) {
-	    packet_pool.chain = (thread_packet_pools ? thread_packet_pools : reinterpret_cast<PacketPool *>((uintptr_t) 1));
-	    thread_packet_pools = &packet_pool;
-	}
-
+	click_compiler_fence();
 	global_packet_pool_lock = 0;
     }
 #  else
@@ -851,10 +870,10 @@ Packet::static_cleanup()
 {
 #if HAVE_CLICK_PACKET_POOL
 # if HAVE_MULTITHREAD
-    PacketPool *pp = thread_packet_pools;
-    while (pp && pp != reinterpret_cast<PacketPool *>((uintptr_t) 1)) {
+    while (PacketPool *pp = all_thread_packet_pools) {
+	all_thread_packet_pools = pp->chain;
 	cleanup_pool(pp);
-	pp = pp->chain;
+	delete pp;
     }
     while (global_packet_pool.p || global_packet_pool.pd) {
 	WritablePacket *next_p = global_packet_pool.p;

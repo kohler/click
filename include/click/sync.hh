@@ -474,6 +474,13 @@ click_fence()
 #endif
 }
 
+/** @brief Provide a memory barrier for the compiler. */
+inline void
+click_compiler_fence()
+{
+    asm volatile("" : : : "memory");
+}
+
 CLICK_ENDDECLS
 #undef SPINLOCK_ASSERTLEVEL
 #endif
