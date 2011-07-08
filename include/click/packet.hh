@@ -83,6 +83,7 @@ class Packet { public:
     struct mbuf *m()			{ return _m; }
     const struct mbuf *m() const	{ return (const struct mbuf *)_m; }
     struct mbuf *steal_m();
+    struct mbuf *dup_jumbo_m(struct mbuf *mbuf);
 #endif
 
 
@@ -1376,10 +1377,10 @@ Packet::assimilate_mbuf(Packet *p)
 				      m->m_dat);
   p->_data = (unsigned char *)m->m_data;
   p->_tail = (unsigned char *)(m->m_data + m->m_len);
-  p->_end = p->_head + (
-		m->m_flags & M_EXT    ? MCLBYTES :
-		m->m_flags & M_PKTHDR ? MHLEN :
-					MLEN);
+  p->_end = p->_head +
+	    (m->m_flags & M_EXT    ? min(m->m_pkthdr.len, m->m_ext.ext_size) :
+	     m->m_flags & M_PKTHDR ? MHLEN :
+				     MLEN);
 }
 
 inline void
@@ -1395,12 +1396,46 @@ Packet::make(struct mbuf *m)
     panic("trying to construct Packet from a non-packet mbuf");
 
   Packet *p = new Packet;
-  if (m->m_pkthdr.len != m->m_len) {
-    /* click needs contiguous data */
-    // click_chatter("m_pulldown, Click needs contiguous data");
+  if (!p) {
+    m_freem(m);
+    return 0;
+  }
+  p->_use_count = 1;
+  p->_data_packet = NULL;
 
-    if (m_pulldown(m, 0, m->m_pkthdr.len, NULL) == NULL)
-	panic("m_pulldown failed");
+  if (m->m_pkthdr.len != m->m_len) {
+    struct mbuf *m2;
+    /* click needs contiguous data */
+
+    if (m->m_pkthdr.len <= MCLBYTES) {
+      // click_chatter("m_pulldown, Click needs contiguous data");
+      m2 = m_pulldown(m, 0, m->m_pkthdr.len, NULL);
+      if (m2 == NULL)
+        panic("m_pulldown failed");
+      if (m2 != m) {
+        /*
+         * XXX: m_pulldown ensures that the data is contiguous, but
+         * it's not necessarily in the first mbuf in the chain.
+         * Currently that's not OK for Click, so we need to
+         * defragment the mbuf - which involves more copying etc.
+         */
+        m2 = m_defrag(m, M_DONTWAIT);
+        if (m2 == NULL) {
+          m_freem(m);
+          delete p;
+          return 0;
+        }
+        m = m2;
+      }
+    } else {
+      m2 = p->dup_jumbo_m(m);
+      m_freem(m);
+      if (m2 == NULL) {
+        delete p;
+        return 0;
+      }
+      m = m2;
+    }
   }
   p->_m = m;
   assimilate_mbuf(p);

@@ -23,6 +23,13 @@
 /* Define if 'int64_t' is typedefed to 'long long' in bsdmodule. */
 #undef HAVE_INT64_IS_LONG_LONG_BSDMODULE
 
+/* Define to enable assertion checking. Failed assertions will print a message
+   and optionally stop the router. */
+#undef HAVE_KERNEL_ASSERT
+
+/* Define if NETISR scheduling should be used. */
+#undef BSD_NETISRSCHED
+
 /* The size of a `click_jiffies_t', as computed by sizeof. */
 #define SIZEOF_CLICK_JIFFIES_T SIZEOF_INT
 
@@ -30,7 +37,19 @@
 #include <sys/types.h>
 
 /* Define assert macro. */
-#define assert(x) /* nada */
+# ifdef __cplusplus
+extern "C" {
+# endif
+void click_assert_failed(const char *file, int line, const char *problem_text);
+# ifdef __cplusplus
+}
+# endif
+
+#ifdef HAVE_KERNEL_ASSERT
+# define assert(x)	((x) ? (void)0 : click_assert_failed(__FILE__, __LINE__, #x))
+#else
+# define assert(x)	/* nada */
+#endif
 
 /* Define likely and unlikely macros. */
 #define likely(x)	__builtin_expect((x), 1)

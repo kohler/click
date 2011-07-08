@@ -24,6 +24,7 @@
 
 #include <click/routerthread.hh>
 #include <click/glue.hh>
+#include <click/args.hh>
 #include <click/router.hh>
 #include <click/straccum.hh>
 #include <click/master.hh>
@@ -43,6 +44,7 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 #include <elements/bsdmodule/anydevice.hh>
+#else /* !BSD_NETISRSCHED */
 #endif
 
 #include <click/cxxprotect.h>
@@ -61,6 +63,23 @@ static Router *placeholder_router;
 #ifdef BSD_NETISRSCHED
 struct ifnet click_dummyifnet;
 struct callout click_timer_h;
+
+# if __FreeBSD_version >= 800000
+void click_netisr(struct mbuf*);
+static struct netisr_handler click_nh = {
+  "click",
+  click_netisr,
+  NULL,
+  NULL,
+  NULL,
+  NETISR_CLICK,
+  0,
+  NETISR_POLICY_SOURCE,
+};
+
+#  define MT_CLICK 13 /* XXX */
+static struct mbuf *click_timer_mbuf;
+# endif
 #else  //BSD_NETISRSCHED
 
 int click_thread_priority = PRIO_PROCESS;
@@ -69,6 +88,8 @@ static Vector<int> *click_thread_pids;
 #if HAVE_ADAPTIVE_SCHEDULER
 static unsigned min_click_frac = 5, max_click_frac = 800;
 #endif
+
+static struct mtx click_thread_lock;
 
 static void
 click_sched(void *thunk)
@@ -98,7 +119,11 @@ click_sched(void *thunk)
 	break;
       }
     }
+# if __FreeBSD_version >= 800000
+  kthread_exit();
+# else
   kthread_exit(0);
+# endif
 }
 
 static int
@@ -135,11 +160,13 @@ static String
 read_threads(Element *, void *)
 {
   StringAccum sa;
-  simple_lock(&click_thread_lock);
+  mtx_lock(&click_thread_lock);
+  //simple_lock(&click_thread_lock);
   if (click_thread_pids)
     for (int i = 0; i < click_thread_pids->size(); i++)
       sa << (*click_thread_pids)[i] << '\n';
-  simple_unlock(&click_thread_lock);
+  mtx_unlock(&click_thread_lock);
+  //simple_unlock(&click_thread_lock);
   return sa.take_string();
 }
 
@@ -168,7 +195,10 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
       struct proc *proc = pfind((*click_thread_pids)[i]);
       if (proc) {
 	proc->p_nice = priority;
+# if 0
+        /* XXX: FreeBSD does not have resetpriority(proc) */
 	resetpriority(proc);
+# endif
     }
   }
 
@@ -248,7 +278,7 @@ read_sched_param(Element *, void *thunk)
 	if (click_router) {
 	    String s;
 	    for (int i = 0; i < click_master->nthreads(); i++)
-		s += String(click_master->max_timer_stride()) + "\n";
+		s += String(click_master->thread(i)->timer_set().max_timer_stride()) + "\n";
 	return s;
 	}
     }
@@ -286,7 +316,8 @@ write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *err
 	    return errh->error("tasks_per_iter_timers must be unsigned\n");
 
 	// change current thread priorities
-	click_master->set_max_timer_stride(x);
+	for (int i = 0; i < click_master->nthreads(); ++i)
+	    click_master->thread(i)->timer_set().set_max_timer_stride(x);
     }
 
     case H_ITERS_PER_OS: {
@@ -325,7 +356,17 @@ click_timer(void *arg)
     ether_poll_register(click_poll, &click_dummyifnet);
   else
 #endif
+#if __FreeBSD_version >= 800000
+# ifdef BSD_NETISRSCHED
+  /*
+   * XXX: FreeBSD 8 does not have schednetisr().
+   *      Calling netisr_dispatch() here is a hack.
+   */
+  netisr_dispatch(NETISR_CLICK, click_timer_mbuf);
+# endif
+#else
   schednetisr(NETISR_CLICK);
+#endif
   callout_reset(&click_timer_h, 1, click_timer, NULL);
 }
 
@@ -345,13 +386,20 @@ click_init_sched(ErrorHandler *errh)
 {
 #ifndef BSD_NETISRSCHED
   click_thread_pids = new Vector<int>;
+
+  mtx_init(&click_thread_lock, "click thread lock", NULL, MTX_SPIN); /* XXX */
 #endif
 
   click_master = new Master(1);
 
 #ifdef BSD_NETISRSCHED
+# if __FreeBSD_version >= 800000
+  netisr_register(&click_nh);
+  click_timer_mbuf = m_get(M_DONTWAIT, MT_CLICK); /* XXX */
+# else
   netisr_register(NETISR_CLICK, click_netisr, NULL, 0);
   schednetisr(NETISR_CLICK);
+# endif
   callout_init(&click_timer_h, 0);
   callout_reset(&click_timer_h, 1, click_timer, NULL);
   click_dummyifnet.if_flags |= IFF_UP|IFF_DRV_RUNNING;
@@ -365,8 +413,14 @@ click_init_sched(ErrorHandler *errh)
   for (int i = 0; i < click_master->nthreads(); i++) {
     struct proc *p;
     click_master->use();
+# if __FreeBSD_version >= 800000
+    struct thread *newtd;
+    int error  = kthread_add
+      (click_sched, click_master->thread(i), p, &newtd, 0, 0, "kclick"); /*XXX*/
+# else
     int error  = kthread_create
-      (click_sched, click_master->thread(i), &p, "kclick");
+      (click_sched, click_master->thread(i), &p, 0, 0, "kclick");
+# endif
     if (error < 0) {
       errh->error("cannot create kernel thread for Click thread %i!", i);
       click_master->unuse();
@@ -410,11 +464,19 @@ click_cleanup_sched()
 {
 #ifdef BSD_NETISRSCHED
   callout_drain(&click_timer_h);
+# if __FreeBSD_version >= 800000
+  netisr_unregister(&click_nh);
+  m_free(click_timer_mbuf);
+# else
   netisr_unregister(NETISR_CLICK);
- // ether_poll_deregister(&click_dummyifnet);
+# endif
+# if 0
+  ether_poll_deregister(&click_dummyifnet);
+# endif
   delete placeholder_router;
 #else
-  /*if (kill_router_threads() < 0) {
+# if 1
+  if (kill_router_threads() < 0) {
     printf("click: Following threads still active, expect a crash:\n");
     for (int i = 0; i < click_thread_pids->size(); i++)
       printf("click:   router thread pid %d\n", (*click_thread_pids)[i]);
@@ -423,7 +485,9 @@ click_cleanup_sched()
     delete click_thread_pids;
     click_thread_pids = 0;
     return 0;
-  }*/
+  }
+  mtx_destroy(&click_thread_lock);
+# endif
 #endif
    return 0;
 }

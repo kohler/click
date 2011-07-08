@@ -669,6 +669,8 @@ Script::Expander::expand(const String &vname, String &out, int vartype, int) con
     if (vname.length() == 1 && vname[0] == '$') {
 #if CLICK_USERLEVEL
 	out = String(getpid());
+#elif CLICK_BSDMODULE
+	out = String(curproc->p_pid);
 #else
 	out = String(current->pid);
 #endif

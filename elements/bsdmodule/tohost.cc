@@ -110,8 +110,12 @@ ToHost::push(int, Packet *p)
 	return;
     }
 
+#if 0
     m->m_pkthdr.rcvif = NULL; // tell click-ether-input to ignore this
     m_adj(m, ETHER_HDR_LEN);
+#else
+    m->m_pkthdr.rcvif = &_dev_click;
+#endif
 #if 1
     /* XXX: ether_input() is now declared static. -bms */
     (*ifp->if_input)(ifp, m);

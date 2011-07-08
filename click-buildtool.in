@@ -818,7 +818,7 @@ END {
   print "  click_provide(\"", packname, "\");\n", B, "  CLICK_DMALLOC_REG(\"nXXX\");\n  return 0;";
   print "#ifdef CLICK_BSDMODULE\n  } else if (t == MOD_UNLOAD) {\n#else\n}\nextern \"C\" void\ncleanup_module()\n{\n#endif";
   print C, "  click_unprovide(\"", packname, "\");";
-  print "#ifdef CLICK_BSDMODULE\n  return 0;\n  } else\n    return 0;\n}\nstatic moduledata_t modinfo = {\n  \"", packname, "\", modevent, 0\n};\nDECLARE_MODULE(", packname, ", modinfo, SI_SUB_PSEUDO, SI_ORDER_ANY);\n#else\n}\n#endif";
+  print "#ifdef CLICK_BSDMODULE\n  return 0;\n  } else\n    return 0;\n}\nstatic moduledata_t modinfo = {\n  \"", packname, "\", modevent, 0\n};\nDECLARE_MODULE(", packname, ", modinfo, SI_SUB_PSEUDO, SI_ORDER_ANY);\nMODULE_VERSION(", packname, ", 1);\nMODULE_DEPEND(", packname, ", click, 1, 1, 1);\n#else\n}\n#endif";
 }
 '
 

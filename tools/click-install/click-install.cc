@@ -543,7 +543,10 @@ particular purpose.\n");
     if (verbose)
       errh->message("Mounting Click module at %s", clickfs_dir.c_str());
 # if FOR_BSDMODULE
-    int mount_retval = mount("click", clickfs_dir.c_str(), 0, 0);
+    String cmdline = "mount -t click click ";
+    cmdline += clickfs_dir.c_str();
+    int mount_retval = system(cmdline.c_str());
+    //int mount_retval = mount("click", clickfs_dir.c_str(), 0, 0);
 # else
     int mount_retval = mount("none", clickfs_dir.c_str(), "click", 0, 0);
 # endif

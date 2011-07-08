@@ -30,6 +30,8 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 CLICK_DECLS
 
+struct ifnet _dev_click = {};
+
 AnyDevice::AnyDevice()
   : _dev(0), _task(this), _next(0), _idles(0)
 {
