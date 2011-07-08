@@ -120,7 +120,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     // set _capture
     if (capture == "") {
 #if FROMDEVICE_PCAP && FROMDEVICE_LINUX
-	_capture = (bpf_filter ? CAPTURE_PCAP : CAPTURE_LINUX);
+	_capture = CAPTURE_PCAP;
 #elif FROMDEVICE_LINUX
 	_capture = CAPTURE_LINUX;
 #elif FROMDEVICE_PCAP
