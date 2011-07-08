@@ -1,5 +1,10 @@
 Click NEWS
 
+Version 2.0
+
+* Thanks to Dmitriy Bubnov.
+
+
 Version 1.8.0   28.Feb.2010
 
 * Simulation time feature.  By default the Click driver runs in real time:
