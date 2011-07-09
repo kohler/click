@@ -98,7 +98,7 @@ uninstall-man: always elementmap-$(package).xml
 	$(clickbindir)/click-elem2man -L -d $(DESTDIR)$(mandir)/mann -P $(package) -e $(clickdatadir)/elementmap.xml -u elementmap-$(package).xml
 
 clean: always
-	@for i in $(DRIVERS); do make CLICK_PACKAGE_MAKING=$$i clean; done
+	@for i in $(DRIVERS); do $(MAKE) CLICK_PACKAGE_MAKING=$$i clean; done
 	-rm -f elementmap-$(package).xml conftest.*
 distclean: clean
 	-rm -f Makefile config.h config.status config.cache config.log
