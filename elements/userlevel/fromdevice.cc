@@ -279,7 +279,9 @@ FromDevice::initialize(ErrorHandler *errh)
 	_fd = pcap_fileno(_pcap);
 	char *ifname = _ifname.mutable_c_str();
 
-# ifdef BIOCSSEESENT
+# if HAVE_PCAP_SETDIRECTION
+	pcap_setdirection(_pcap, _outbound ? PCAP_D_INOUT : PCAP_D_IN);
+# elif defined(BIOCSSEESENT)
 	{
 	    int r, accept = _outbound;
 	    if ((r = ioctl(_fd, BIOCSSEESENT, &accept)) == -1)

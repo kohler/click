@@ -35,14 +35,6 @@
 #undef HAVE_DECL_MADVISE
 
 /* Define to 1 if you have the declaration
-   of 'pcap_inject', and to 0 if you don't. */
-#undef HAVE_DECL_PCAP_INJECT
-
-/* Define to 1 if you have the declaration
-   of 'pcap_sendpacket', and to 0 if you don't. */
-#undef HAVE_DECL_PCAP_SENDPACKET
-
-/* Define to 1 if you have the declaration
    of 'pcap_setnonblock', and to 0 if you don't. */
 #undef HAVE_DECL_PCAP_SETNONBLOCK
 
@@ -135,6 +127,9 @@
 
 /* Define if you have the pcap_sendpacket function. */
 #undef HAVE_PCAP_SENDPACKET
+
+/* Define if you have the pcap_setdirection function. */
+#undef HAVE_PCAP_SETDIRECTION
 
 /* Define if you have the pcap_setnonblock function. */
 #undef HAVE_PCAP_SETNONBLOCK
