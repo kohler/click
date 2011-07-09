@@ -69,7 +69,7 @@ IPRewriterFlow::apply(WritablePacket *p, bool direction, unsigned annos)
 	p->set_dst_ip_anno(revflow.saddr());
     if (direction && (annos & 2))
 	p->set_anno_u8(annos >> 2, _reply_anno);
-    update_csum(iph->ip_sum, direction, _ip_csum_delta);
+    update_csum(&iph->ip_sum, direction, _ip_csum_delta);
 
     // end if not first fragment
     if (!IP_FIRSTFRAG(iph))
@@ -80,7 +80,7 @@ IPRewriterFlow::apply(WritablePacket *p, bool direction, unsigned annos)
 	click_tcp *tcph = p->tcp_header();
 	tcph->th_sport = revflow.dport();
 	tcph->th_dport = revflow.sport();
-	update_csum(tcph->th_sum, direction, _udp_csum_delta);
+	update_csum(&tcph->th_sum, direction, _udp_csum_delta);
 
 	// check for session ending flags
 	if (tcph->th_flags & TH_RST)
@@ -95,7 +95,7 @@ IPRewriterFlow::apply(WritablePacket *p, bool direction, unsigned annos)
 	udph->uh_sport = revflow.dport();
 	udph->uh_dport = revflow.sport();
 	if (udph->uh_sum)	// 0 checksum is no checksum
-	    update_csum(udph->uh_sum, direction, _udp_csum_delta);
+	    update_csum(&udph->uh_sum, direction, _udp_csum_delta);
     }
 }
 

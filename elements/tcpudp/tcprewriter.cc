@@ -123,7 +123,7 @@ TCPRewriter::TCPFlow::apply(WritablePacket *p, bool direction, unsigned annos)
 	p->set_dst_ip_anno(revflow.saddr());
     if (direction && (annos & 2))
 	p->set_anno_u8(annos >> 2, _reply_anno);
-    update_csum(iph->ip_sum, direction, _ip_csum_delta);
+    update_csum(&iph->ip_sum, direction, _ip_csum_delta);
 
     // end if not first fragment
     if (!IP_FIRSTFRAG(iph) || p->transport_length() < 18)
@@ -133,7 +133,7 @@ TCPRewriter::TCPFlow::apply(WritablePacket *p, bool direction, unsigned annos)
     click_tcp *tcph = p->tcp_header();
     tcph->th_sport = revflow.dport();
     tcph->th_dport = revflow.sport();
-    update_csum(tcph->th_sum, direction, _udp_csum_delta);
+    update_csum(&tcph->th_sum, direction, _udp_csum_delta);
 
     // track connection state
     bool have_payload = ((iph->ip_hl + tcph->th_off) << 2) < ntohs(iph->ip_len);

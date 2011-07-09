@@ -41,7 +41,7 @@ ICMPPingRewriter::ICMPPingFlow::apply(WritablePacket *p, bool direction, unsigne
 	p->set_dst_ip_anno(revflow.saddr());
     if (direction && (annos & 2))
 	p->set_anno_u8(annos >> 2, _reply_anno);
-    update_csum(iph->ip_sum, direction, _ip_csum_delta);
+    update_csum(&iph->ip_sum, direction, _ip_csum_delta);
 
     // end if not first fragment
     if (!IP_FIRSTFRAG(iph))
@@ -50,7 +50,7 @@ ICMPPingRewriter::ICMPPingFlow::apply(WritablePacket *p, bool direction, unsigne
     // ICMP header
     click_icmp_echo *icmph = reinterpret_cast<click_icmp_echo *>(p->transport_header());
     icmph->icmp_identifier = (direction ? revflow.sport() : revflow.dport());
-    update_csum(icmph->icmp_cksum, direction, _udp_csum_delta);
+    update_csum(&icmph->icmp_cksum, direction, _udp_csum_delta);
     click_update_zero_in_cksum(&icmph->icmp_cksum, p->transport_header(), p->transport_length());
 }
 

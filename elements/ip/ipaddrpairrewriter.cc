@@ -40,18 +40,18 @@ IPAddrPairRewriter::IPAddrPairFlow::apply(WritablePacket *p, bool direction,
 	p->set_dst_ip_anno(revflow.saddr());
     if (direction && (annos & 2))
 	p->set_anno_u8(annos >> 2, _reply_anno);
-    update_csum(iph->ip_sum, direction, _ip_csum_delta);
+    update_csum(&iph->ip_sum, direction, _ip_csum_delta);
 
     // UDP/TCP header
     if (!IP_FIRSTFRAG(iph))
 	/* do nothing */;
     else if (iph->ip_p == IP_PROTO_TCP && p->transport_length() >= 18) {
 	click_tcp *tcph = p->tcp_header();
-	update_csum(tcph->th_sum, direction, _udp_csum_delta);
+	update_csum(&tcph->th_sum, direction, _udp_csum_delta);
     } else if (iph->ip_p == IP_PROTO_UDP && p->transport_length() >= 8) {
 	click_udp *udph = p->udp_header();
 	if (udph->uh_sum)	// 0 checksum is no checksum
-	    update_csum(udph->uh_sum, direction, _udp_csum_delta);
+	    update_csum(&udph->uh_sum, direction, _udp_csum_delta);
     }
 }
 

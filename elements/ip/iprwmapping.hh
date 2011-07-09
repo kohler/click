@@ -149,7 +149,7 @@ class IPRewriterFlow { public:
 	_reply_anno = reply_anno;
     }
 
-    static inline void update_csum(uint16_t &csum, bool direction,
+    static inline void update_csum(uint16_t *csum, bool direction,
 				   uint16_t csum_delta);
 
     void apply(WritablePacket *p, bool direction, unsigned annos);
@@ -200,10 +200,10 @@ IPRewriterEntry::rewritten_flowid() const
 }
 
 inline void
-IPRewriterFlow::update_csum(uint16_t &csum, bool direction, uint16_t csum_delta)
+IPRewriterFlow::update_csum(uint16_t *csum, bool direction, uint16_t csum_delta)
 {
     if (csum_delta)
-	click_update_in_cksum(&csum, 0, direction ? csum_delta : ~csum_delta);
+	click_update_in_cksum(csum, 0, direction ? csum_delta : ~csum_delta);
 }
 
 CLICK_ENDDECLS
