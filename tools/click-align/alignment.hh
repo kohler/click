@@ -30,7 +30,7 @@ class Alignment { public:
      * generally used for impossible paths: if an element will not emit
      * any packets on some output, then that output's packets have
      * universal alignment, because all emitted packets trivially match any
-     * downstream alignment requirements.*/
+     * downstream alignment requirements. */
     static inline Alignment make_universal() {
 	return Alignment(universal_modulus, 0, 0);
     }

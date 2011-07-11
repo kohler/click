@@ -1,5 +1,6 @@
 *.bak
 *.o
+*~
 .deps
 .gdb_history
 Makefile
