@@ -159,6 +159,8 @@ class HashContainer { public:
 
     /** @brief Return an iterator for the first element in bucket @a n. */
     inline iterator begin(size_type n);
+    /** @overload */
+    inline const_iterator begin(size_type n) const;
 
     /** @brief Return an iterator for an element with @a key, if any.
      *
@@ -493,6 +495,14 @@ HashContainer<T, A>::begin(size_type b)
 {
     click_hash_assert(b < _rep.nbuckets);
     return iterator(this, b, &_rep.buckets[b], _rep.buckets[b]);
+}
+
+template <typename T, typename A>
+inline typename HashContainer<T, A>::const_iterator
+HashContainer<T, A>::begin(size_type b) const
+{
+    click_hash_assert(b < _rep.nbuckets);
+    return const_iterator(this, b, &_rep.buckets[b], _rep.buckets[b]);
 }
 
 template <typename T, typename A>
