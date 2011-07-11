@@ -47,7 +47,7 @@
 
 
 /* most ICMP6 request types */
-struct click_icmp6 { 
+struct click_icmp6 {
     uint8_t icmp6_type;		/* one of the ICMP6_TYPE_*'s above */
     uint8_t icmp6_code;		/* one of the ICMP6_CODE_*'s above */
     uint16_t icmp6_cksum;		/* 16 1's comp csum */
@@ -99,7 +99,7 @@ struct click_icmp6_membership {
 /* struct for redirect messages */
 struct click_icmp6_redirect {
     uint8_t icmp6_type;
-    uint8_t icmp6_code;  
+    uint8_t icmp6_code;
     uint16_t icmp6_cksum;
     uint32_t padding;
     struct click_in6_addr icmp6_target;
