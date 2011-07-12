@@ -1393,9 +1393,9 @@ PREDEFINED             = CLICK_DECLS= \
                          ELEMENT_REQUIRES(req)= \
                          ELEMENT_PROVIDES(req)= \
                          EXPORT_ELEMENT(elt)= \
-                         "CP_CONTEXT=, Element *context" \
-			 "CP_OPT_CONTEXT=, Element *context=0" \
-			 "CP_VA_PARSE_ARGS_REST=Element *context, ErrorHandler *errh, ..." \
+                         "CP_CONTEXT=, const Element *context" \
+			 "CP_OPT_CONTEXT=, const Element *context=0" \
+			 "CP_VA_PARSE_ARGS_REST=const Element *context, ErrorHandler *errh, ..." \
                          CLICK_USERLEVEL \
                          CLICK_LINUXMODULE \
                          CLICK_DEPRECATED= \

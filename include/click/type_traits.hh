@@ -348,6 +348,7 @@ struct make_fast_half_integer {
 	return x >> (sizeof(type) * 4);
     }
 };
+/** @endcond never */
 
 /** @class fast_half_integer
   @brief Type transformation for big integers. */

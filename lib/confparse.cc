@@ -3088,6 +3088,7 @@ handle_special_argtype_for_keyword(cp_value *val, const String &rest)
 }
 
 
+/** @cond never */
 namespace {
 
 struct CpVaHelper {
@@ -3482,6 +3483,7 @@ CpVaHelper::parse_arguments(const char *argname,
 }
 
 }
+/** @endcond never */
 
 
 /// @brief Legacy function for parsing a list of arguments.

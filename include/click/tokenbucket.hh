@@ -482,8 +482,7 @@ class TokenCounterX { public:
 	    return false;
     }
 
-    /** @brief Return the number of epochs until @link contains()
-     * contains(<em>rate</em>, <em>t</em>)@endlink.
+    /** @brief Return the number of epochs until contains(<em>rate</em>, <em>t</em>).
      *
      * @param rate associated token rate
      * @param t token count
@@ -499,8 +498,7 @@ class TokenCounterX { public:
 	    return (epoch_type) -1;
     }
 
-    /** @brief Return the number of epochs until @link contains_fraction()
-     * contains_fraction(<em>f</em>)@endlink.
+    /** @brief Return the number of epochs until contains_fraction(<em>f</em>).
      * @param rate associated token rate
      * @param f fullness fraction, where max_tokens is full capacity
      *
