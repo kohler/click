@@ -12,6 +12,10 @@ class EtherSwitch;
 
 EtherSpanTree(ADDR, INPUT_SUPPRESSOR, OUTPUT_SUPPRESSOR, SWITCH)
 
+=s ethernet
+
+802.1d Ethernet spanning tree implementation
+
 =d
 
 Implements the IEEE 802.1d spanning tree algorithm for Ethernet switches.

@@ -24,7 +24,9 @@ CLICK_DECLS
 
 StoreUDPTimeSeqRecord([I<keywords> OFFSET, DELTA])
 
-=s
+=s timestamps
+
+=d
 
 StoreUDPTimeSeqRecord element can be handy when computing end-to-end UDP packet
 delays.  The element embeds a timestamp and a sequence number into a packet and

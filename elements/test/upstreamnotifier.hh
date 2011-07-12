@@ -9,11 +9,12 @@ CLICK_DECLS
 UpstreamNotifier([SIGNAL])
 
 =s test
-passes packets unchanged. Has an upstream notifier. Generally used
-for testing upstream notification.
+null element with an upstream notifier
 
 =d
 Responds to each packet by pushing it unchanged out its first output.
+Also has an upstream notifier, and is generally used
+for testing upstream notification.
 
 Keyword arguments are:
 

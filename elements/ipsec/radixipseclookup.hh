@@ -13,7 +13,7 @@ CLICK_DECLS
 
 RadixIPsecLookup(ADDR1/MASK1 [GW1] OUT1, ADDR2/MASK2 [GW2] OUT2, ...)
 
-=s ipsecroute
+=s ipsec
 
 IP lookup using a radix trie
 

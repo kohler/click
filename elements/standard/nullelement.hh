@@ -8,7 +8,7 @@ CLICK_DECLS
 Null
 
 =s basictransfer
-passes packets unchanged
+null element: passes packets unchanged
 
 =d
 Just passes packets along without doing anything else.
@@ -35,7 +35,7 @@ class NullElement : public Element { public:
 PushNull
 
 =s basictransfer
-passes packets unchanged
+push-only null element
 
 =d
 Responds to each pushed packet by pushing it unchanged out its first output.
@@ -62,7 +62,7 @@ class PushNullElement : public Element { public:
 PullNull
 
 =s basictransfer
-passes packets unchanged
+pull-only null element
 
 =d
 Responds to each pull request by pulling a packet from its input and returning

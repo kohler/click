@@ -5,8 +5,7 @@
  * =c
  * LookupLocalGridRoute2(ETH, IP, GenericGridRouteTable, I<KEYWORDS>)
  *
- * =s
- * Grid
+ * =s Grid
  *
  * =d
  *

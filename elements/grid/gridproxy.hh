@@ -11,6 +11,7 @@ CLICK_DECLS
 /*
  * =c
  * GridProxy(IP)
+ * =s Grid
  * =d
  * a simple mobile-ip proxy
  * Input 0: ipip packets from a gateway

@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
  * =c
  * StripDSRHeader()
- * =s grid
+ * =s Grid
  * strips DSR header, saves offset to VLAN_ANNO
  * =d
  *
