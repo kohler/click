@@ -376,11 +376,8 @@ sub nroff_do_section ($$$) {
 	    print STDERR "click-elem2man: $Filename: bad arguments to '=over'\n";
 	}
     } elsif ($name eq 'item') {
-	if (@Over == 0) {
-	    print STDERR "click-elem2man: $Filename: '=item' outside any '=over' section\n";
-	} else {
-	    print OUT ".IP \"", protquote(nroffize($args)), "\" $Over[-1]\n";
-	}
+	my($over) = (@Over ? $Over[-1] : 8);
+	print OUT ".IP \"", protquote(nroffize($args)), "\" $over\n";
     } elsif ($name eq 'back') {
 	my($overarg);
 	if ($args =~ /^\s*(\d+)\s*$/s) {
