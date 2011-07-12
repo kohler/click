@@ -100,8 +100,6 @@ install-local: elementmap.xml click-buildtool click-compile config.mk \
 	/bin/ln -s "`cd $(top_srcdir); pwd`" $(DESTDIR)$(clickdatadir)/src
 install-doc: elementmap.xml
 	@cd doc && $(MAKE) install
-install-info:
-	@cd doc && $(MAKE) install-info
 install-man: elementmap.xml
 	@-for d in $(ALL_TARGETS) doc; do (cd $$d && $(MAKE) install-man); done
 install-local-include: stamp-h installch
@@ -203,13 +201,13 @@ dist: distdir
 	-rm -rf $(distdir)
 distdir: $(srcdir)/configure
 	-rm -rf doc/click.info* doc/testie.1 $(srcdir)/doc/click.info* $(srcdir)/doc/testie.1
-	cd doc && $(MAKE) info testie.1
+	cd doc && $(MAKE) testie.1
 	cd $(srcdir)/etc/samplepackage && $(AUTOCONF)
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	chmod 777 $(distdir)
 	@echo Copying library, documentation, configuration, and driver files...
-	[ "$(srcdir)" = . ] || cp doc/click.info* doc/testie.1 $(srcdir)/doc
+	[ "$(srcdir)" = . ] || cp doc/testie.1 $(srcdir)/doc
 	@for file in `cat $(srcdir)/DISTFILES | grep .`; do \
 	  if expr "$$file" : '.*:$$' >/dev/null 2>&1; then \
 	    d=`echo $$file | sed 's/:$$//;s/^\.\///'`; \

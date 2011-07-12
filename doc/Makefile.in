@@ -13,14 +13,10 @@ mandir = @mandir@
 datarootdir = @datarootdir@
 datadir = @datadir@
 clickdatadir = $(datadir)/click
-infodir = @infodir@
 
 PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_DATA = $(INSTALL) -m 644
-INSTALL_INFO = @INSTALL_INFO@
-MAKEINFO = @MAKEINFO@
-TEXI2DVI = @TEXI2DVI@
 POD2MAN = @POD2MAN@
 CP_PRESERVE = /bin/cp -p
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
@@ -64,16 +60,8 @@ install-man: testie.1 $(top_builddir)/elementmap.xml Makefile
 	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(DESTDIR)$(mandir)/man7/elementdoc.7)
 	$(call verbose_cmd,$(INSTALL_DATA) testie.1 $(DESTDIR)$(mandir)/man1/testie.1)
 	$(call verbose_cmd,$(PERL) $(srcdir)/click-elem2man -l -d $(DESTDIR)$(mandir)/mann -P DEFAULT -p $(top_srcdir) $(top_builddir)/elementmap.xml,CLICK-ELEM2MAN -d $(DESTDIR)$(mandir)/mann)
-install-info: Makefile click.info
-	$(mkinstalldirs) $(DESTDIR)$(infodir)
-	@for f in click.info click.info-[0-9] click.info-[0-9][0-9]; do \
-	  if test -f $$f; then \
-	    echo "$(INSTALL_DATA) $$f $(DESTDIR)$(infodir)/$$f"; \
-	    $(INSTALL_DATA) $$f $(DESTDIR)$(infodir)/$$f || exit 1; fi; \
-	done
-	-$(INSTALL_INFO) --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/click.info 2>&1 >/dev/null
 
-uninstall: uninstall-man uninstall-info
+uninstall: uninstall-man
 	/bin/rm -f $(DESTDIR)$(bindir)/click-elem2man
 uninstall-man: $(top_builddir)/elementmap.xml
 	cd $(DESTDIR)$(mandir)/man1; /bin/rm -f click.1 click-align.1 click-combine.1 click-devirtualize.1 click-fastclassifier.1 click-flatten.1 click-install.1 click-mkmindriver.1 click-pretty.1 click-uncombine.1 click-undead.1 click-uninstall.1 click-xform.1 testie.1
@@ -81,30 +69,6 @@ uninstall-man: $(top_builddir)/elementmap.xml
 	cd $(DESTDIR)$(mandir)/man7; /bin/rm -f elementdoc.7
 	cd $(DESTDIR)$(mandir)/man8; /bin/rm -f click.o.8
 	$(PERL) $(srcdir)/click-elem2man -l -d $(DESTDIR)$(mandir)/mann -P DEFAULT -p $(top_srcdir) -u $(top_builddir)/elementmap.xml
-uninstall-info: click.info
-	@for f in click.info click.info-[0-9] click.info-[0-9][0-9]; do \
-	  if test -f $$f; then \
-	    echo "/bin/rm -f $(DESTDIR)$(infodir)/$$f"; \
-	    /bin/rm -f $(DESTDIR)$(infodir)/$$f; fi; \
-	done
-
-info: click.info
-	@:
-click.info: $(srcdir)/click.texi
-	@-if [ ! -f click.info -a -f $(srcdir)/click.info ]; then \
-	    echo $(CP_PRESERVE) "$(srcdir)/click.info*" .; \
-	    $(CP_PRESERVE) $(srcdir)/click.info* .; \
-	    $(MAKE) click.info; \
-	else \
-	    echo $(MAKEINFO) $(srcdir)/click.texi; \
-	    $(MAKEINFO) $(srcdir)/click.texi; \
-	fi
-click.html: $(srcdir)/click.texi
-	$(MAKEINFO) --html --no-split --number-sections $(srcdir)/click.texi
-	$(PERL) -pi -e 's|^<h3(.*)</h4|<h3$$1</h3|' click.html
-	$(PERL) -pi -e 's|^<h3(.*)</h5|<h4$$1</h4|' click.html
-click.dvi: $(srcdir)/click.texi always
-	$(TEXI2DVI) $(srcdir)/click.texi
 
 testie.1: $(top_srcdir)/test/testie
 	@-if [ ! -f testie.1 -a -f $(srcdir)/testie.1 ]; then \
@@ -132,6 +96,6 @@ clean:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean info always \
-	install install-man install-info uninstall uninstall-man uninstall-info \
+.PHONY: all clean distclean always \
+	install install-man uninstall uninstall-man \
 	doxygen
