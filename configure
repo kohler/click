@@ -9275,7 +9275,7 @@ else
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <sys/param.h>
-#if __FreeBSD_version < 500000
+#if __FreeBSD_version < 700000
 #include <NONEXISTENT_FILE>
 #endif
 int
@@ -9305,13 +9305,13 @@ $as_echo "$ac_cv_freebsd_version" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
 =========================================
 
-Your version of FreeBSD is old.  Click works with FreeBSD 5.x and later.
+Your version of FreeBSD is old.  Click works with FreeBSD 7.x and later.
 
 =========================================" >&5
 $as_echo "$as_me: WARNING:
 =========================================
 
-Your version of FreeBSD is old.  Click works with FreeBSD 5.x and later.
+Your version of FreeBSD is old.  Click works with FreeBSD 7.x and later.
 
 =========================================" >&2;}
     fi
