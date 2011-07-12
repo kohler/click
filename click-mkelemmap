@@ -81,6 +81,7 @@ sub process_file ($) {
     $first = @cxx_name;
     foreach $_ (split(m{^class(?=.*[\n\s]*\{)}m, $text)) {
 	my($cxx_class) = (/^\s*(\w+)(\s|:\s).*[\n\s]*\{/);
+	$cxx_class = "" if !defined($cxx_class);
 	my($click_name) = (/class_name.*return\s*\"([^\"]+)\"/);
 	next if !$click_name;
 	push @cxx_name, $cxx_class;
