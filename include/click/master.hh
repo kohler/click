@@ -59,7 +59,6 @@ class Master { public:
     // THREADS
     RouterThread **_threads;
     int _nthreads;
-    volatile uint32_t _runticket;
 
     // ROUTERS
     Router *_routers;
