@@ -6,7 +6,7 @@ CLICK_DECLS
 /*
 =c
 
-SetVlanAnno(VLAN [, VLAN_PCP])
+SetVLANAnno(VLAN [, VLAN_PCP])
 
 =s ethernet
 
@@ -29,14 +29,14 @@ Return or set the VLAN_PCP parameter.
 
 =a
 
-EtherVlanEncap */
+EtherVLANEncap */
 
-class SetVlanAnno : public Element { public:
+class SetVLANAnno : public Element { public:
 
-    SetVlanAnno();
-    ~SetVlanAnno();
+    SetVLANAnno();
+    ~SetVLANAnno();
 
-    const char *class_name() const	{ return "SetVlanAnno"; }
+    const char *class_name() const	{ return "SetVLANAnno"; }
     const char *port_count() const	{ return PORTS_1_1; }
 
     int configure(Vector<String> &conf, ErrorHandler *errh);

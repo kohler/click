@@ -21,16 +21,16 @@
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
-SetVlanAnno::SetVlanAnno()
+SetVLANAnno::SetVLANAnno()
 {
 }
 
-SetVlanAnno::~SetVlanAnno()
+SetVLANAnno::~SetVLANAnno()
 {
 }
 
 int
-SetVlanAnno::configure(Vector<String> &conf, ErrorHandler *errh)
+SetVLANAnno::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int vlan = 0, vlan_pcp = 0;
     if (Args(conf, this, errh)
@@ -47,16 +47,16 @@ SetVlanAnno::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 Packet *
-SetVlanAnno::simple_action(Packet *p)
+SetVLANAnno::simple_action(Packet *p)
 {
     SET_VLAN_ANNO(p, _vlan_tci);
     return p;
 }
 
 String
-SetVlanAnno::read_handler(Element *e, void *user_data)
+SetVLANAnno::read_handler(Element *e, void *user_data)
 {
-    SetVlanAnno *eve = static_cast<SetVlanAnno *>(e);
+    SetVLANAnno *eve = static_cast<SetVLANAnno *>(e);
     switch (reinterpret_cast<uintptr_t>(user_data)) {
     case h_vlan:
 	return String(ntohs(eve->_vlan_tci) & 0x0FFF);
@@ -67,7 +67,7 @@ SetVlanAnno::read_handler(Element *e, void *user_data)
 }
 
 void
-SetVlanAnno::add_handlers()
+SetVLANAnno::add_handlers()
 {
     add_read_handler("vlan", read_handler, h_vlan);
     add_write_handler("vlan", reconfigure_keyword_handler, "0 VLAN");
@@ -76,4 +76,4 @@ SetVlanAnno::add_handlers()
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(SetVlanAnno)
+EXPORT_ELEMENT(SetVLANAnno SetVLANAnno-SetVlanAnno)

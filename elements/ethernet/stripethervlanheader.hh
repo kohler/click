@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-StripEtherVlanHeader([NATIVE_VLAN_ID])
+StripEtherVLANHeader([NATIVE_VLAN_ID])
 
 =s ethernet
 
@@ -28,14 +28,14 @@ emitted from output 1).
 
 =a
 
-EtherVlanEncap */
+EtherVLANEncap */
 
-class StripEtherVlanHeader : public Element { public:
+class StripEtherVLANHeader : public Element { public:
 
-    StripEtherVlanHeader();
-    ~StripEtherVlanHeader();
+    StripEtherVLANHeader();
+    ~StripEtherVLANHeader();
 
-    const char *class_name() const	{ return "StripEtherVlanHeader"; }
+    const char *class_name() const	{ return "StripEtherVLANHeader"; }
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PROCESSING_A_AH; }
 

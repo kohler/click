@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-EtherVlanEncap(ETHERTYPE, SRC, DST, VLAN [, VLAN_PCP, I<keywords> NATIVE_VLAN])
+EtherVLANEncap(ETHERTYPE, SRC, DST, VLAN [, VLAN_PCP, I<keywords> NATIVE_VLAN])
 
 =s ethernet
 
@@ -34,7 +34,7 @@ Encapsulate packets in an 802.1Q Ethernet VLAN header with type ETHERTYPE_IP
 (0x0800), source address 1:1:1:1:1:1, destination address 2:2:2:2:2:2, and
 VLAN ID 1:
 
-  EtherVlanEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, 1)
+  EtherVLANEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, 1)
 
 =h src read/write
 
@@ -58,15 +58,15 @@ Return or set the VLAN_PCP parameter.
 
 =a
 
-StripEtherVlanHeader, SetVlanAnno, EtherEncap, ARPQuerier, EnsureEther,
+StripEtherVLANHeader, SetVLANAnno, EtherEncap, ARPQuerier, EnsureEther,
 StoreEtherAddress */
 
-class EtherVlanEncap : public Element { public:
+class EtherVLANEncap : public Element { public:
 
-    EtherVlanEncap();
-    ~EtherVlanEncap();
+    EtherVLANEncap();
+    ~EtherVLANEncap();
 
-    const char *class_name() const	{ return "EtherVlanEncap"; }
+    const char *class_name() const	{ return "EtherVLANEncap"; }
     const char *port_count() const	{ return PORTS_1_1; }
 
     int configure(Vector<String> &conf, ErrorHandler *errh);

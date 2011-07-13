@@ -22,16 +22,16 @@
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
-StripEtherVlanHeader::StripEtherVlanHeader()
+StripEtherVLANHeader::StripEtherVLANHeader()
 {
 }
 
-StripEtherVlanHeader::~StripEtherVlanHeader()
+StripEtherVLANHeader::~StripEtherVLANHeader()
 {
 }
 
 int
-StripEtherVlanHeader::configure(Vector<String> &conf, ErrorHandler *errh)
+StripEtherVLANHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int native_vlan = 0;
     if (Args(conf, this, errh)
@@ -46,7 +46,7 @@ StripEtherVlanHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 Packet *
-StripEtherVlanHeader::simple_action(Packet *p)
+StripEtherVLANHeader::simple_action(Packet *p)
 {
     const click_ether_vlan *ethh = reinterpret_cast<const click_ether_vlan *>(p->data());
     if (ethh->ether_vlan_proto == htons(ETHERTYPE_8021Q)) {
@@ -63,4 +63,4 @@ StripEtherVlanHeader::simple_action(Packet *p)
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(StripEtherVlanHeader)
+EXPORT_ELEMENT(StripEtherVLANHeader StripEtherVLANHeader-StripEtherVlanHeader)

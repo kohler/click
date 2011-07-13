@@ -23,16 +23,16 @@
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
-EtherVlanEncap::EtherVlanEncap()
+EtherVLANEncap::EtherVLANEncap()
 {
 }
 
-EtherVlanEncap::~EtherVlanEncap()
+EtherVLANEncap::~EtherVLANEncap()
 {
 }
 
 int
-EtherVlanEncap::configure(Vector<String> &conf, ErrorHandler *errh)
+EtherVLANEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     click_ether_vlan ethh;
     String vlan_word;
@@ -65,7 +65,7 @@ EtherVlanEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 Packet *
-EtherVlanEncap::smaction(Packet *p)
+EtherVLANEncap::smaction(Packet *p)
 {
     if (_use_anno) {
 	if (_use_native_vlan
@@ -87,14 +87,14 @@ EtherVlanEncap::smaction(Packet *p)
 }
 
 void
-EtherVlanEncap::push(int, Packet *p)
+EtherVLANEncap::push(int, Packet *p)
 {
     if (Packet *q = smaction(p))
 	output(0).push(q);
 }
 
 Packet *
-EtherVlanEncap::pull(int)
+EtherVLANEncap::pull(int)
 {
     if (Packet *p = input(0).pull())
 	return smaction(p);
@@ -103,9 +103,9 @@ EtherVlanEncap::pull(int)
 }
 
 String
-EtherVlanEncap::read_handler(Element *e, void *user_data)
+EtherVLANEncap::read_handler(Element *e, void *user_data)
 {
-    EtherVlanEncap *eve = static_cast<EtherVlanEncap *>(e);
+    EtherVLANEncap *eve = static_cast<EtherVLANEncap *>(e);
     switch (reinterpret_cast<uintptr_t>(user_data)) {
     case h_vlan:
 	if (eve->_use_anno)
@@ -119,7 +119,7 @@ EtherVlanEncap::read_handler(Element *e, void *user_data)
 }
 
 void
-EtherVlanEncap::add_handlers()
+EtherVLANEncap::add_handlers()
 {
     add_data_handlers("src", Handler::h_read, reinterpret_cast<EtherAddress *>(&_ethh.ether_shost));
     add_write_handler("src", reconfigure_keyword_handler, "1 SRC");
@@ -136,4 +136,4 @@ EtherVlanEncap::add_handlers()
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(EtherVlanEncap)
+EXPORT_ELEMENT(EtherVLANEncap EtherVLANEncap-EtherVlanEncap)
