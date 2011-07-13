@@ -4,7 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
- * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2008-2011 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -182,13 +182,15 @@ click_strcmp(const String &a, const String &b)
 {
     const char *ad = a.begin(), *ae = a.end();
     const char *bd = b.begin(), *be = b.end();
+    const char *aperiod = 0;
+    bool aperiod_negative = false;
     int raw_compare = 0;
 
     while (ad < ae && bd < be) {
-	if ((isdigit((unsigned char) *ad) || *ad == '.')
-	    && (isdigit((unsigned char) *bd) || *bd == '.')) {
+	if (isdigit((unsigned char) *ad) && isdigit((unsigned char) *bd)) {
 	    // compare the two numbers, but treat them as strings
 	    // (a decimal conversion might cause overflow)
+	    bool potential_decimal = (ad == aperiod);
 
 	    // check if both are negative (note that if we get here, entire
 	    // string prefixes are identical)
@@ -219,35 +221,46 @@ click_strcmp(const String &a, const String &b)
 		++bd;
 	    }
 
+	    // real number comparison: leading zeros are significant,
+	    // digit comparisons take precedence
+	    if (potential_decimal) {
+		const char *ax = ad, *bx = bd;
+		while (ax < ae && isdigit((unsigned char) *ax))
+		    ++ax;
+		while (bx < be && isdigit((unsigned char) *bx))
+		    ++bx;
+		// watch for IP addresses: don't treat "0.2." like a decimal
+		if ((ax == ae || *ax != '.' || ax + 1 == ae || isspace((unsigned char) ax[1]))
+		    && (bx == be || *bx != '.' || bx + 1 == be || isspace((unsigned char) bx[1]))) {
+		    negative = aperiod_negative;
+		    if (longer_zeros)
+			return negative ? 1 : -1;
+		    if (digit_compare)
+			a_good = b_good;
+		}
+	    }
 	    // if one number is longer, it must also be larger
 	    if (a_good != b_good)
 		return negative == a_good ? -1 : 1;
 	    // otherwise, digit comparisons take precedence
 	    if (digit_compare)
 		return negative == (digit_compare > 0) ? -1 : 1;
-
-	    // otherwise, integer parts are equal; check for fractions and
-	    // compare them digit by digit
-	    a_good = ad+1 < ae && *ad == '.' && isdigit((unsigned char) ad[1]);
-	    b_good = bd+1 < be && *bd == '.' && isdigit((unsigned char) bd[1]);
-	    if (a_good && b_good) {
-		// inside fractions, the earliest digit difference wins
-		++ad, ++bd;
-		do {
-		    if (*ad != *bd)
-			return negative == (*ad > *bd) ? -1 : 1;
-		    ++ad, ++bd;
-		    a_good = ad < ae && isdigit((unsigned char) *ad);
-		    b_good = bd < be && isdigit((unsigned char) *bd);
-		} while (a_good && b_good);
-		// then longer strings are greater; fallthru dtrt
-	    }
-	    if (a_good || b_good)
-		return negative == a_good ? -1 : 1;
-
 	    // as a last resort, the longer string of zeros is greater
 	    if (longer_zeros)
 		return longer_zeros;
+	    // prepare for potential decimal comparison later
+	    if (!aperiod) {
+		a_good = ad + 1 < ae && *ad == '.'
+		    && isdigit((unsigned char) ad[1]);
+		b_good = bd + 1 < be && *bd == '.'
+		    && isdigit((unsigned char) bd[1]);
+		if (a_good != b_good)
+		    return negative == b_good ? 1 : -1;
+		else if (a_good) {
+		    aperiod = ad + 1;
+		    aperiod_negative = negative;
+		}
+	    }
 
 	    // if we get here, the numeric portions were byte-for-byte
 	    // identical; move on
@@ -262,6 +275,8 @@ click_strcmp(const String &a, const String &b)
 		return alower - blower;
 	    if (raw_compare == 0)
 		raw_compare = (unsigned char) *ad - (unsigned char) *bd;
+	    if (*ad != '.')
+		aperiod = 0;
 	    ++ad;
 	    ++bd;
 	}

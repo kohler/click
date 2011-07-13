@@ -420,12 +420,18 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(click_strcmp("-0.2", "-0.1") < 0);
     CHECK(click_strcmp("-2.2", "-2") < 0);
     CHECK(click_strcmp("2.2", "2") > 0);
-    CHECK(click_strcmp(".2", "0.1") > 0);
-    CHECK(click_strcmp(".2", "0.39") < 0);
+    CHECK(click_strcmp("0.2", "0.1") > 0);
+    CHECK(click_strcmp("0.2", "0.39") < 0);
     CHECK(click_strcmp(".2", "0.2") < 0);
     CHECK(click_strcmp("a-2", "a-23") < 0);
     CHECK(click_strcmp("a-2", "a-3") < 0);
     CHECK(click_strcmp("a1.2", "a1a") > 0);
+    CHECK(click_strcmp("1.2.3.4", "10.2.3.4") < 0);
+    CHECK(click_strcmp("1.12", "1.2") < 0);
+    CHECK(click_strcmp("1.012", "1.2") < 0);
+    CHECK(click_strcmp("1.012.", "1.2.") < 0);
+    CHECK(click_strcmp("1.12.3.4", "1.2.3.4") > 0);
+    CHECK(click_strcmp("1.2.10.4", "1.2.9.4") > 0);
 #endif
 
     Vector<String> conf;
