@@ -15,10 +15,11 @@
  */
 
 #include <click/config.h>
-#include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <clicknet/ether.h>
+#include <click/packet_anno.hh>
 #include "vlandecap.hh"
 CLICK_DECLS
 
@@ -33,8 +34,9 @@ VLANDecap::~VLANDecap()
 int
 VLANDecap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    _anno = true;
     return Args(conf, this, errh)
-	.read("WRITE_TCI_ANNO", AnnoArg(2), _tci_anno)
+	.read_p("ANNO", _anno)
         .complete();
 }
 
@@ -43,19 +45,19 @@ VLANDecap::simple_action(Packet *p)
 {
     assert(!p->mac_header() || p->mac_header() == p->data());
     uint16_t tci = 0;
-    click_ether_vlan *vlan = (click_ether_vlan *) p->data();
+    const click_ether_vlan *vlan = reinterpret_cast<const click_ether_vlan *>(p->data());
     if (vlan->ether_vlan_proto == htons(ETHERTYPE_8021Q)) {
 	tci = vlan->ether_vlan_tci;
-	WritablePacket *q = p->uniqueify();
-	if (!q)
+	if (WritablePacket *q = p->uniqueify()) {
+	    memmove(q->data() + 4, q->data(), 12);
+	    q->pull(4);
+	    p = q;
+	} else
 	    return 0;
-	memmove(q->data() + 4, q->data(), 12);
-	q->pull(4);
-	p = q;
     }
-
-    p->set_mac_header(p->data(), 14);
-    p->set_anno_u16(_tci_anno, tci);
+    p->set_mac_header(p->data(), sizeof(click_ether));
+    if (_anno)
+	SET_VLAN_TCI_ANNO(p, tci);
     return p;
 }
 

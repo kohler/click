@@ -7,16 +7,20 @@ CLICK_DECLS
 /*
 =c
 
-VLANDecap(WRITE_TCI_ANNO)
+VLANDecap([ANNO])
 
 =s ethernet
 
-Expects a potentially VLAN encapsulated packet as input.  If it is
-encapsulated, then the encapsulation is stripped and WRITE_TCI_ANNO is
-set to the encapsulated value in network-byte-order, otherwise
-WRITE_TCI_ANNO is set to 0.
+strip VLAN information from Ethernet packets
 
 =d
+
+Expects a potentially 802.1Q VLAN encapsulated packet as input.  If it is
+encapsulated, then the encapsulation is stripped, leaving a conventional
+Ethernet packet.
+
+If ANNO is true (the default), then the VLAN_TCI annotation is set to the VLAN
+TCI in network byte order, or 0 if the packet was not VLAN-encapsulated.
 
 =a
 
@@ -37,7 +41,8 @@ class VLANDecap : public Element { public:
 
 private:
 
-    int _tci_anno;
+    bool _anno;
+
 };
 
 CLICK_ENDDECLS

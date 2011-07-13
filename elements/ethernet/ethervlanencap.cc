@@ -17,7 +17,6 @@
 
 #include <click/config.h>
 #include "ethervlanencap.hh"
-#include "setvlananno.hh"
 #include <click/etheraddress.hh>
 #include <click/args.hh>
 #include <click/straccum.hh>
@@ -39,7 +38,7 @@ EtherVLANEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     click_ether_vlan ethh;
     uint16_t ether_vlan_encap_proto;
     String tci_word;
-    int tci = -1, id = 0, pcp = 0, native_vlan = -1;
+    int tci = -1, id = 0, pcp = 0, native_vlan = 0;
     ethh.ether_vlan_proto = htons(ETHERTYPE_8021Q);
     if (Args(conf, this, errh)
 	.read_mp("ETHERTYPE", ether_vlan_encap_proto)
@@ -48,7 +47,7 @@ EtherVLANEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read_p("VLAN_TCI", WordArg(), tci_word)
 	.read_p("VLAN_PCP", BoundedIntArg(0, 7), pcp)
 	.read("VLAN_ID", BoundedIntArg(0, 0xFFF), id)
-	.read("NATIVE_VLAN", BoundedIntArg(0, 0xFFF), native_vlan)
+	.read("NATIVE_VLAN", BoundedIntArg(-1, 0xFFF), native_vlan)
 	.complete() < 0)
 	return -1;
     if (tci_word && !tci_word.equals("ANNO", 4)
@@ -115,12 +114,15 @@ EtherVLANEncap::read_handler(Element *e, void *user_data)
 	else
 	    sa << ", VLAN_ID " << (ntohs(eve->_ethh.ether_vlan_tci) & 0xFFF)
 	       << ", VLAN_PCP " << ((ntohs(eve->_ethh.ether_vlan_tci) >> 13) & 7);
-	if (eve->_native_vlan >= 0)
+	if (eve->_native_vlan != 0)
 	    sa << ", NATIVE_VLAN " << ntohs(eve->_native_vlan);
 	return sa.take_string();
     }
     case h_vlan_tci:
-	return String(ntohs(eve->_ethh.ether_vlan_tci));
+	if (eve->_use_anno)
+	    return String::make_stable("ANNO", 4);
+	else
+	    return String(ntohs(eve->_ethh.ether_vlan_tci));
     }
     return String();
 }
@@ -143,5 +145,4 @@ EtherVLANEncap::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(SetVLANAnno)
 EXPORT_ELEMENT(EtherVLANEncap EtherVLANEncap-EtherVlanEncap)

@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-EtherVLANEncap(ETHERTYPE, SRC, DST, VLAN_TCI [, I<keywords>])
+EtherVLANEncap(ETHERTYPE, SRC, DST, VLAN_TCI [, VLAN_PCP, I<keywords>])
 
 =s ethernet
 
@@ -25,6 +25,9 @@ VLAN_TCI may also be the string "ANNO"; in ANNO mode, the encapsulated VLAN
 TCI is read from the input packet's VLAN_TCI annotation.  You may also set the
 VLAN_ID and VLAN_PCP separately via keywords.
 
+If you want to add a VLAN shim header to a packet that's already
+Ethernet-encapsulated, use VLANEncap.
+
 Keyword arguments are:
 
 =item VLAN_ID
@@ -38,9 +41,10 @@ The VLAN Priority Code Point, a number between 0 and 7.  Defaults to 0.
 
 =item NATIVE_VLAN
 
-The native VLAN, a number between 0 and 0xFFF.  If the output VLAN ID equals
+The native VLAN, a number between -1 and 0xFFF.  If the output VLAN ID equals
 NATIVE_VLAN, then the output packet is encapsulated in a conventional Ethernet
-header, rather than an 802.1Q header.  Defaults to -1 (no native VLAN).
+header, rather than an 802.1Q header.  Set to -1 for no native VLAN.  Defaults
+to 0.
 
 =e
 
@@ -80,8 +84,8 @@ Return or set the NATIVE_VLAN parameter.
 
 =a
 
-StripEtherVLANHeader, SetVLANAnno, EtherEncap, ARPQuerier, EnsureEther,
-StoreEtherAddress */
+VLANEncap, StripEtherVLANHeader, SetVLANAnno, EtherEncap, ARPQuerier,
+EnsureEther, StoreEtherAddress */
 
 class EtherVLANEncap : public Element { public:
 
