@@ -107,8 +107,8 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
     bool fragments_parsed;
     bool fragments = true;
 
-    Args args(conf, this, errh);
-    if (args.read("TCP_TIMEOUT", _tcp_timeout)
+    if (Args(conf, this, errh)
+	.read("TCP_TIMEOUT", _tcp_timeout)
 	.read("TCP_DONE_TIMEOUT", _tcp_done_timeout)
 	.read("UDP_TIMEOUT", SecondsArg(), _udp_timeout)
 	.read("FRAGMENT_TIMEOUT", SecondsArg(), _fragment_timeout)
@@ -119,7 +119,7 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("SOURCE", ElementArg(), _packet_source)
 #endif
 	.read("FRAGMENTS", fragments).read_status(fragments_parsed)
-	.consume() < 0)
+	.complete() < 0)
 	return -1;
 
     _smallest_timeout = (_tcp_timeout < _tcp_done_timeout ? _tcp_timeout : _tcp_done_timeout);
