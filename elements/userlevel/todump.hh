@@ -121,7 +121,7 @@ class ToDump : public Element { public:
     int _linktype;
     bool _active;
     bool _extra_length;
-    bool _buffered;
+    bool _unbuffered;
 
 #if HAVE_INT64_TYPES
     typedef uint64_t counter_t;
