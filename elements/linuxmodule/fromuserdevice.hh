@@ -15,7 +15,7 @@ CLICK_CXX_UNPROTECT
 FromUserDevice(TO_USER_DEVICE, [<keywords>])
 
 =s netdevices
-Allows packets to be injected into click through a character device.
+Emit packets written to a character device.
 
 =d
 Requires --enable-experimental.
