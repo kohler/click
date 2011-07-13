@@ -28,6 +28,7 @@
 #include "fromdevice.hh"
 #include "fromhost.hh"
 #include <click/error.hh>
+#include <click/args.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
@@ -74,7 +75,7 @@ static int from_device_count;
  * a queue. Append the packet there, clear *mp to grab the pkt from FreeBSD.
  * call wakeup() to poentially wake up the element.
  *
- * Special case: m->m_pkthdr.rcvif == NULL means the packet is coming
+ * Special case: m->m_pkthdr.rcvif == &_dev_click means the packet is coming
  * from click and directed to this interface on the host.
  * We are already running at splimp() so we need no further protection.
  */
@@ -87,7 +88,8 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp)
     	return;
 
     struct mbuf *m = *mp;
-    if (m->m_pkthdr.rcvif == NULL) {	// Special case: from click to FreeBSD
+    if (m->m_pkthdr.rcvif == &_dev_click) {
+	// Special case: from click to FreeBSD
 	m->m_pkthdr.rcvif = ifp;	// Reset rcvif to correct value, and
 	return;				// let FreeBSD continue processing.
     }
@@ -134,6 +136,10 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp)
     if (me->_polling != 1)
     */
 	me->intr_reschedule();
+#if __FreeBSD_version >= 800000 && defined(BSD_NETISRSCHED)
+    netisr_dispatch(NETISR_CLICK, m);
+#endif
+
 	/*
     if (me->_polling == -1)
 	me->_polling = 1; // no need to wakeup task thread any more
@@ -179,6 +185,24 @@ click_ether_output(struct ifnet *ifp, struct mbuf **mp)
     splx(s);
     return 0;
 #endif
+}
+
+extern "C"
+void
+click_ether_input_orphan(struct ifnet *ifp, struct mbuf **mp)
+{
+}
+
+/*
+ * This dummy function is meant to be assigned to ng_ether_link_state_p
+ * which is NULL by default but is called when the state of a network
+ * interface changes and the ac_netgraph hook is not NULL (which is the
+ * case for us).
+ */
+extern "C"
+void
+click_ether_link_state(struct ifnet *ifp, int state)
+{
 }
 
 static void
@@ -256,10 +280,6 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
-/*
- * Use a Linux interface added by us, in net/core/dev.c,
- * to register to grab incoming packets.
- */
 int
 FromDevice::initialize(ErrorHandler *errh)
 {
@@ -275,6 +295,10 @@ FromDevice::initialize(ErrorHandler *errh)
 				       _devname.c_str());
 	    }
 	}
+
+    if (device() == NULL)
+        return errh->error("FromDevice for `%s' cannot be initialized",
+                           _devname.c_str());
 
     from_device_map.insert(this);
     if (_promisc && device())
@@ -440,6 +464,8 @@ FromDevice::run_task(Task *)
 	// Got a packet, which includes the MAC header. Make it a real Packet.
 
 	Packet *p = Packet::make(m);
+	assert(p);
+        p->set_timestamp_anno(Timestamp()); /* XXX */
 	output(0).push(p);
 	npq++;
 	_npackets++;

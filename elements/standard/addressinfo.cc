@@ -66,6 +66,15 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 #endif
+#if CLICK_BSDMODULE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+# include <sys/socket.h>
+# include <net/if.h>
+# include <net/if_dl.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
+#endif
 CLICK_DECLS
 
 AddressInfo::AddressInfo()
@@ -307,6 +316,37 @@ AddressInfo::query_netdevice(const String &s, unsigned char *store,
 	}
     }
     dev_put(dev);
+    return found;
+
+#elif CLICK_BSDMODULE
+    struct ifnet *ifp;
+    bool found = false;
+    ifp = ifunit(s.c_str());
+    if (ifp && type == 'e') {
+	struct sockaddr_dl *sdl;
+	sdl = (struct sockaddr_dl *)ifp->if_addr->ifa_addr;
+	memcpy(store, LLADDR(sdl), 6 /*sdl->sdl_alen*/);
+	found = true;
+    } else if (ifp && (type == 'i' || type == 'I')) {
+	struct ifaddr *ifa;
+	IF_ADDR_LOCK(ifp);
+	TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+	    struct sockaddr_in *sin;
+	    sin = satosin(ifa->ifa_addr);
+	    // use first IP address
+	    if (sin != NULL && sin->sin_family == AF_INET) {
+		memcpy(store, (uint8_t *)(&(sin->sin_addr)),
+		       4 /*sizeof(sin->sin_addr)*/);
+		if (type == 'I') {
+		    sin = satosin(ifa->ifa_netmask);
+		    memcpy(store + 4, (uint8_t *)(&(sin->sin_addr)), 4);
+		}
+		found = true;
+		break;
+	    }
+	}
+	IF_ADDR_UNLOCK(ifp);
+    }
     return found;
 
 #elif CLICK_NS

@@ -97,7 +97,7 @@ read_active_modules(StringMap &packages, ErrorHandler *errh)
      "      n = i;\n"
      "  next;\n"
      "}\n"
-     "{ print $n }\'", String(), errh);
+     "{ print $n }\';", String(), errh);
   if (!output && errh->nerrors() != before)
     return false;
   read_package_string(output, packages);
@@ -158,7 +158,7 @@ remove_unneeded_packages(const StringMap &active_modules, const StringMap &packa
       retval = errh->error("cannot remove package(s) '%s'", to_remove.c_str());
 #elif FOR_BSDMODULE
     for (int i = 0; i < removals.size(); i++) {
-      String cmdline = "/sbin/kldunload " + removals[i];
+      String cmdline = "/sbin/kldunload " + removals[i] + ".bo";
       int status = system(cmdline.c_str());
       if (status < 0 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
 	retval = errh->error("cannot remove package '%s'", removals[i].c_str());
