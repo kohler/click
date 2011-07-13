@@ -41,7 +41,6 @@ IPRewriterPatterns::configure(Vector<String> &conf, ErrorHandler *errh)
 	patterns_attachment = new Vector<IPRewriterPattern *>;
     Vector<IPRewriterPattern *> *patterns =
 	static_cast<Vector<IPRewriterPattern *> *>(patterns_attachment);
-    int before = errh->nerrors();
 
     for (int i = 0; i < conf.size(); ++i) {
 	String name = cp_shift_spacevec(conf[i]);
@@ -67,7 +66,7 @@ IPRewriterPatterns::configure(Vector<String> &conf, ErrorHandler *errh)
 			     name, patterns->size() - 1);
     }
 
-    return errh->nerrors() == before ? 0 : -1;
+    return errh->nerrors() ? -1 : 0;
 }
 
 void

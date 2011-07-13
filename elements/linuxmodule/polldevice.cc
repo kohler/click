@@ -87,7 +87,6 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	    .complete() < 0))
 	return -1;
 
-    int before = errh->nerrors();
 #if HAVE_LINUX_POLLING
     net_device *dev = lookup_device(errh);
     if (dev && (!dev->poll_on || dev->polling < 0)) {
@@ -96,7 +95,7 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     }
     set_device(dev, &poll_device_map, 0);
 #endif
-    return errh->nerrors() == before ? 0 : -1;
+    return errh->nerrors() ? -1 : 0;
 }
 
 

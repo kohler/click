@@ -50,7 +50,6 @@ IP6NDAdvertiser::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _v.clear();
 
-  int before = errh->nerrors();
   for (int i = 0; i < conf.size(); i++) {
     IP6Address ipa, mask;
     EtherAddress ena;
@@ -80,7 +79,7 @@ IP6NDAdvertiser::configure(Vector<String> &conf, ErrorHandler *errh)
       _v[j].ena = ena;
   }
 
-  return (before == errh->nerrors() ? 0 : -1);
+  return errh->nerrors() ? -1 : 0;
 }
 
 

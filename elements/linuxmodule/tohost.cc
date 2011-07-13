@@ -96,12 +96,11 @@ ToHost::initialize(ErrorHandler *errh)
 
     // Avoid warnings about "device down" with FromHost devices -- FromHost
     // brings up its device during initialize().
-    int before = errh->nerrors();
     if (_devname) {
 	net_device *dev = lookup_device(errh);
 	set_device(dev, &to_host_map, 0);
     }
-    return errh->nerrors() == before ? 0 : -1;
+    return errh->nerrors() ? -1 : 0;
 }
 
 void

@@ -37,19 +37,6 @@ ProtocolTranslator46::~ProtocolTranslator46()
 }
 
 
-int
-ProtocolTranslator46::configure(Vector<String> &conf, ErrorHandler *errh)
-{
-  int before = errh->nerrors();
-  if (!(conf.size()==0))
-    {
-     errh->error("there should be no arguments");
-    }
-  return (before ==errh->nerrors() ? 0: -1);
-}
-
-
-
 //make the ipv4->ipv6 translation of the packet according to SIIT (RFC 2765)
 Packet *
 ProtocolTranslator46::make_translate46(IP6Address src,

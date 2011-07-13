@@ -52,7 +52,6 @@ ICMPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
     Vector<String> words;
     cp_spacevec(arg, words);
 
-    int before = errh->nerrors();
     for (int i = 0; i < words.size(); i++) {
 	String eltname = words[i];
 	int port_offset = -1;
@@ -81,7 +80,7 @@ ICMPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 
     if (_maps.size() == 0)
 	return errh->error("no IP rewriters supplied");
-    return before == errh->nerrors() ? 0 : -1;
+    return errh->nerrors() ? -1 : 0;
 }
 
 static void

@@ -47,7 +47,6 @@ LookupIPRouteMP::configure(Vector<String> &conf, ErrorHandler *errh)
   int maxout = -1;
   _t.clear();
 
-  int before = errh->nerrors();
   for (int i = 0; i < conf.size(); i++) {
     IPAddress dst, mask, gw;
     int32_t output_num;
@@ -72,7 +71,7 @@ LookupIPRouteMP::configure(Vector<String> &conf, ErrorHandler *errh)
     } else
       errh->error("argument %d should be `DADDR/MASK [GATEWAY] OUTPUT'", i+1);
   }
-  if (errh->nerrors() != before)
+  if (errh->nerrors())
     return -1;
   if (maxout < 0)
     errh->warning("no routes");

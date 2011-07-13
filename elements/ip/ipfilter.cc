@@ -1282,10 +1282,9 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 int
 IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    int before = errh->nerrors();
     IPFilterProgram zprog;
     parse_program(zprog, conf, noutputs(), this, errh);
-    if (errh->nerrors() == before) {
+    if (!errh->nerrors()) {
 	_zprog = zprog;
 	return 0;
     } else

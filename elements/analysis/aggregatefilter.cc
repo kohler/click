@@ -58,7 +58,6 @@ AggregateFilter::find_group(uint32_t aggregate)
 int
 AggregateFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    int before_nerrors = errh->nerrors();
     _default_output = noutputs() + 1;
     Group *g = 0;
 
@@ -116,7 +115,7 @@ AggregateFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	    }
     }
 
-    return (errh->nerrors() == before_nerrors ? 0 : -1);
+    return errh->nerrors() ? -1 : 0;
 }
 
 void

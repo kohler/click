@@ -89,7 +89,6 @@ int
 AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     enum { t_eth = 1, t_ip4 = 2, t_ip4net = 4, t_ip6 = 8, t_ip6net = 16 };
-    int before = errh->nerrors();
 
     for (int i = 0; i < conf.size(); i++) {
 	Vector<String> parts;
@@ -151,7 +150,7 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	}
     }
 
-    return (errh->nerrors() == before ? 0 : -1);
+    return errh->nerrors() ? -1 : 0;
 }
 
 

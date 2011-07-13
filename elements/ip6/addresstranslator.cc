@@ -203,7 +203,6 @@ int
 AddressTranslator::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _v.clear();
-  int before = errh->nerrors();
   int s = 0;
   IP6Address ia, ma, ea;
   int ip, mp, ep;
@@ -211,11 +210,7 @@ AddressTranslator::configure(Vector<String> &conf, ErrorHandler *errh)
 
   //get the static mapping entries for the mapping table
   if (!IntArg().parse(conf[0], _number_of_smap))
-    {
-      errh->error("argument %d should be : integer", 0);
-      return (before ==errh->nerrors() ? 0: -1);
-    }
-
+      return errh->error("argument %d should be : integer", 0);
 
   if (_number_of_smap==0)
     s = 1;
@@ -263,7 +258,7 @@ AddressTranslator::configure(Vector<String> &conf, ErrorHandler *errh)
     errh->error("argument %d should be : bool", s);
 
   if (!_dynamic_mapping)
-    return (before ==errh->nerrors() ? 0: -1);
+      return errh->nerrors() ? -1 : 0;
 
   if (!BoolArg().parse(conf[s+1], _dynamic_portmapping))
       errh->error("argument %d should be : bool", s+1);
@@ -286,7 +281,7 @@ AddressTranslator::configure(Vector<String> &conf, ErrorHandler *errh)
 	  else
 	    errh->error("argument %d should be : <IP6Address>", i);
 	}
-      return (before ==errh->nerrors() ? 0: -1);
+      return errh->nerrors() ? -1 : 0;
     }
 
 
@@ -309,7 +304,7 @@ AddressTranslator::configure(Vector<String> &conf, ErrorHandler *errh)
 	  errh->error("argument %d should be : <IP6Address> <unsigned char> <unsigned char>", i);
 
   //click_chatter("configuration for AT is successful");
-  return (before ==errh->nerrors() ? 0: -1);
+  return errh->nerrors() ? -1 : 0;
 }
 
 bool

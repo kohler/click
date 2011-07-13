@@ -137,7 +137,6 @@ ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _tx_queue = tx_queue;
 #endif
 
-    int before = errh->nerrors();
     net_device *dev = lookup_device(errh);
 #if HAVE_NETDEV_GET_TX_QUEUE
     if (dev && _tx_queue >= dev->num_tx_queues) {
@@ -148,7 +147,7 @@ ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     }
 #endif
     set_device(dev, &to_device_map, 0);
-    return errh->nerrors() == before ? 0 : -1;
+    return errh->nerrors() ? -1 : 0;
 }
 
 int

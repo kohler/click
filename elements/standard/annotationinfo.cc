@@ -35,8 +35,6 @@ AnnotationInfo::~AnnotationInfo()
 int
 AnnotationInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    int before = errh->nerrors();
-
     for (int i = 0; i < conf.size(); i++) {
 	String str = conf[i];
 	String name_str = cp_shift_spacevec(str);
@@ -50,7 +48,7 @@ AnnotationInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 
 	int offset, size = 0;
 	if (!cp_is_word(name_str) || cp_anno(name_str, 0, &offset, 0))
-	    errh->error("bad NAME '%s'", name_str.c_str());
+	    errh->error("bad NAME %<%s%>", name_str.c_str());
 	else if (!cp_anno(offset_str, 0, &offset, this)
 		 || (size_str && !IntArg().parse(size_str, size))
 		 || size < 0
@@ -58,21 +56,19 @@ AnnotationInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 		 || (size && ANNOTATIONINFO_SIZE(offset)
 		     && size != ANNOTATIONINFO_SIZE(offset))
 		 || str)
-	    errh->error("bad entry for '%s'", name_str.c_str());
+	    errh->error("bad entry for %<%s%>", name_str.c_str());
 	else {
 	    uint32_t anno = MAKE_ANNOTATIONINFO(ANNOTATIONINFO_OFFSET(offset), size);
 	    NameInfo::define(NameInfo::T_ANNOTATION, this, name_str, &anno, 4);
 	}
     }
 
-    return (errh->nerrors() == before ? 0 : -1);
+    return errh->nerrors() ? -1 : 0;
 }
 
 int
 AnnotationInfo::initialize(ErrorHandler *errh)
 {
-    int before = errh->nerrors();
-
     Vector<String> conf;
     cp_argvec(configuration(), conf);
     for (int i = 0; i < conf.size(); i++) {
@@ -87,7 +83,7 @@ AnnotationInfo::initialize(ErrorHandler *errh)
 	    if (cp_anno(words[i], 0, &offset, this))
 		offsets[i] = offset;
 	    else
-		errh->error("bad ANNO '%s'", words[i].c_str());
+		errh->error("bad ANNO %<%s%>", words[i].c_str());
 
 	for (int i = 1; i < words.size(); ++i)
 	    for (int j = i + 1; j < words.size(); ++j) {
@@ -101,11 +97,11 @@ AnnotationInfo::initialize(ErrorHandler *errh)
 		    || (ANNOTATIONINFO_OFFSET(offsets[j]) + jsize <= ANNOTATIONINFO_OFFSET(offsets[i])))
 		    /* OK */;
 		else
-		    errh->error("annotations '%s' and '%s' conflict", words[i].c_str(), words[j].c_str());
+		    errh->error("annotations %<%s%> and %<%s%> conflict", words[i].c_str(), words[j].c_str());
 	    }
     }
 
-    return (errh->nerrors() == before ? 0 : -1);
+    return errh->nerrors() ? -1 : 0;
 }
 
 EXPORT_ELEMENT(AnnotationInfo)

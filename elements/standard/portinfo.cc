@@ -37,8 +37,6 @@ PortInfo::~PortInfo()
 int
 PortInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    int before = errh->nerrors();
-
     for (int i = 0; i < conf.size(); i++) {
 	String str = conf[i];
 	String name_str = cp_shift_spacevec(str);
@@ -74,7 +72,7 @@ PortInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	} while (name_str && name_str[0] != '#');
     }
 
-    return (errh->nerrors() == before ? 0 : -1);
+    return errh->nerrors() ? -1 : 0;
 }
 
 CLICK_ENDDECLS

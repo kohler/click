@@ -153,7 +153,6 @@ IPsecRouteTable::cast(const char *name)
 int
 IPsecRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    int before = errh->nerrors();
     IPsecRoute r;
     for (int i = 0; i < conf.size(); i++) {
 	if (cp_ipsec_route(conf[i], &r, false, this)
@@ -162,8 +161,7 @@ IPsecRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	else
 	    errh->error("argument %d should be 'ADDR/MASK [GATEWAY] OUTPUT'", i+1);
     }
-
-    return (errh->nerrors() != before ? -1 : 0);
+    return errh->nerrors() ? -1 : 0;
 }
 
 int

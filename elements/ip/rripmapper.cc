@@ -50,8 +50,6 @@ RoundRobinIPMapper::configure(Vector<String> &conf, ErrorHandler *errh)
     else if (conf.size() == 1)
 	errh->warning("only one pattern given");
 
-    int before = errh->nerrors();
-
     for (int i = 0; i < conf.size(); i++) {
 	IPRewriterInput is;
 	is.kind = IPRewriterInput::i_pattern;
@@ -62,7 +60,7 @@ RoundRobinIPMapper::configure(Vector<String> &conf, ErrorHandler *errh)
     }
 
     _last_pattern = 0;
-    return (errh->nerrors() == before ? 0 : -1);
+    return errh->nerrors() ? -1 : 0;
 }
 
 void

@@ -178,7 +178,6 @@ void clptest_errh(Clp_Parser *clp, const char *error) {
 int
 CLPTest::initialize(ErrorHandler *errh)
 {
-    int before = errh->nerrors();
     Clp_Parser *clp = Clp_NewParser(0, 0, 0, 0);
     StringAccum sa;
     clp->user_data = &sa;
@@ -324,7 +323,7 @@ CLPTest::initialize(ErrorHandler *errh)
     CHECK(Clp_Next(clp) == Clp_Done);
 
     Clp_DeleteParser(clp);
-    if (errh->nerrors() == before) {
+    if (!errh->nerrors()) {
 	errh->message("All tests pass!");
 	return 0;
     } else

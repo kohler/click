@@ -30,7 +30,6 @@ SpinlockInfo::~SpinlockInfo()
 int
 SpinlockInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    int before = errh->nerrors();
     if (NameDB *ndb = NameInfo::getdb(NameInfo::T_SPINLOCK, this,
 				      sizeof(Spinlock *), true)) {
 	_spinlocks.reserve(conf.size());
@@ -44,7 +43,7 @@ SpinlockInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 		errh->error("bad NAME");
     } else
 	errh->error("out of memory!");
-    return (errh->nerrors() == before ? 0 : -1);
+    return errh->nerrors() ? -1 : 0;
 }
 
 CLICK_ENDDECLS

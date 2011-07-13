@@ -37,7 +37,6 @@ LookupIP6Route::configure(Vector<String> &conf, ErrorHandler *errh)
   int maxout = -1;
   _t.clear();
 
-  int before = errh->nerrors();
   for (int i = 0; i < conf.size(); i++) {
     IP6Address dst, mask, gw;
     int output_num;
@@ -68,7 +67,7 @@ LookupIP6Route::configure(Vector<String> &conf, ErrorHandler *errh)
   }
 
 
-  if (errh->nerrors()!=before)
+  if (errh->nerrors())
     return -1;
   if (maxout <0)
     errh->warning("no routes");

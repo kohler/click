@@ -142,10 +142,9 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     // make queue look full so packets sent to us are ignored
     _head = _tail = _capacity = 0;
 
-    int before = errh->nerrors();
     net_device *dev = lookup_device(errh);
     set_device(dev, &from_device_map, anydev_from_device);
-    return errh->nerrors() == before ? 0 : -1;
+    return errh->nerrors() ? -1 : 0;
 }
 
 /*

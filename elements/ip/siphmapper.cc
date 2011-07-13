@@ -76,8 +76,6 @@ SourceIPHashMapper::configure(Vector<String> &conf, ErrorHandler *errh)
   else if (conf.size() == 2)
     errh->warning("only one pattern given");
 
-  int before = errh->nerrors();
-
   int nnodes;
   int32_t seed;
   Vector<String> params;
@@ -108,7 +106,7 @@ SourceIPHashMapper::configure(Vector<String> &conf, ErrorHandler *errh)
   _hasher = new chash_t<int> (idp, ids, nnodes, seed);
 
   delete [] ids;
-  return (errh->nerrors() == before ? 0 : -1);
+  return errh->nerrors() ? -1 : 0;
 }
 
 void

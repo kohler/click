@@ -121,12 +121,11 @@ int
 ARPResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Vector<Entry> v;
-    int before = errh->nerrors();
     for (int i = 0; i < conf.size(); i++) {
 	PrefixErrorHandler perrh(errh, "argument " + String(i) + ": ");
 	add(v, conf[i], &perrh);
     }
-    if (before == errh->nerrors()) {
+    if (!errh->nerrors()) {
 	normalize(v, true, errh);
 	_v.swap(v);
 	return 0;

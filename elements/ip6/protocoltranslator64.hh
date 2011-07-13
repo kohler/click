@@ -36,7 +36,6 @@ class ProtocolTranslator64 : public Element {
   const char *class_name() const		{ return "ProtocolTranslator64"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
-  int configure(Vector<String> &, ErrorHandler *);
   void push(int port, Packet *p);
   void handle_ip6(Packet *);
 

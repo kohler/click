@@ -38,19 +38,6 @@ ProtocolTranslator64::~ProtocolTranslator64()
 }
 
 
-int
-ProtocolTranslator64::configure(Vector<String> &conf, ErrorHandler *errh)
-{
-   int before = errh->nerrors();
-   if (!(conf.size()==0))
-    {
-      errh->error("there should be no arguments");
-    }
-  return (before ==errh->nerrors() ? 0: -1);
-
-}
-
-
 //make the ipv6->ipv4 translation of the packet according to SIIT (RFC 2765)
 Packet *
 ProtocolTranslator64::make_translate64(IPAddress src,

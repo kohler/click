@@ -42,7 +42,6 @@ ToIPSummaryDump::~ToIPSummaryDump()
 int
 ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    int before = errh->nerrors();
     String save = "timestamp ip_src";
     bool verbose = false;
     bool bad_packets = false;
@@ -110,7 +109,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _header = header;
     _extra_length = extra_length;
 
-    return (before == errh->nerrors() ? 0 : -1);
+    return errh->nerrors() ? -1 : 0;
 }
 
 int

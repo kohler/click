@@ -59,11 +59,10 @@ int
 KernelFilter::initialize(ErrorHandler *errh)
 {
     // If you update this, also update the device_filter code in FromDevice.u
-    int before = errh->nerrors();
     for (int i = 0; i < _drop_devices.size(); ++i)
 	if (device_filter(_drop_devices[i], true, errh, _iptables_command) < 0)
 	    _drop_devices[i] = String();
-    return before == errh->nerrors() ? 0 : -1;
+    return errh->nerrors() ? -1 : 0;
 }
 
 void
