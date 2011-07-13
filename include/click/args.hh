@@ -576,8 +576,9 @@ struct Args : public ArgContext {
      * @return 0 if the parse succeeded, <0 otherwise
      * @post results_empty()
      *
-     * Results are only assigned if status() is true (the parse is successful
-     * so far).  Clears results as a side effect. */
+     * Matched arguments are always removed.  Results are only assigned if
+     * status() is true (the parse is successful so far).  Clears results as a
+     * side effect. */
     int consume();
 
     /** @brief Assign results if all arguments matched.

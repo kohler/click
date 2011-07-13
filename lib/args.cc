@@ -474,8 +474,7 @@ Args::execute()
 int
 Args::consume()
 {
-    if (_status)
-	strip();
+    strip();
     return execute();
 }
 
