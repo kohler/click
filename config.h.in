@@ -64,6 +64,9 @@
 /* Define if right shift of signed integers acts by sign extension. */
 #undef HAVE_ARITHMETIC_RIGHT_SHIFT
 
+/* Define if Port::push/Port::pull should use bound function pointers. */
+#undef HAVE_BOUND_PORT_TRANSFER
+
 /* Define if the C++ compiler understands constexpr. */
 #undef HAVE_CXX_CONSTEXPR
 

@@ -44,6 +44,9 @@
 /* Define if dynamic linking is possible. */
 #undef HAVE_DYNAMIC_LINKING
 
+/* Define if you have the <execinfo.h> header file. */
+#undef HAVE_EXECINFO_H
+
 /* Define if you have the ffs function. */
 #undef HAVE_FFS
 
