@@ -60,6 +60,9 @@ $(package).uo: Makefile always
 $(package).ko: Makefile always
 	$(MAKE) -R CLICK_PACKAGE_MAKING=linuxmodule $(package).ko
 
+$(package).bo: Makefile always
+	$(MAKE) -R CLICK_PACKAGE_MAKING=bsdmodule $(package).bo
+
 ifneq ($(wildcard $(srcdir)/Makefile.in),)
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \

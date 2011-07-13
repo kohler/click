@@ -171,6 +171,12 @@ dnl bsdmodule driver and features
 
 AC_ARG_ENABLE(bsdmodule, [  --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)], :, enable_bsdmodule=no)
 
+AC_ARG_ENABLE(netisr, [[    --disable-netisr          disable NETISR scheduling in BSD]], :, enable_netisr=yes)
+if test $enable_netisr = yes; then
+    AC_DEFINE(BSD_NETISRSCHED)
+fi
+
+
 dnl nsclick driver and features
 
 AC_ARG_ENABLE(nsclick, [  --enable-nsclick        enable NS simulator driver (EXPERIMENTAL)], :, enable_nsclick=no)
@@ -823,7 +829,7 @@ if test $ac_have_bsd_kernel = y; then
 	save_flags="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/param.h>
-#if __FreeBSD_version < 500000
+#if __FreeBSD_version < 700000
 #include <NONEXISTENT_FILE>
 #endif]], [[]])], ac_cv_freebsd_version=yes, ac_cv_freebsd_version=no)
 	CPPFLAGS="$save_flags"])
@@ -834,7 +840,7 @@ if test $ac_have_bsd_kernel = y; then
 	AC_MSG_WARN([
 =========================================
 
-Your version of FreeBSD is old.  Click works with FreeBSD 5.x and later.
+Your version of FreeBSD is old.  Click works with FreeBSD 7.x and later.
 
 =========================================])
     fi

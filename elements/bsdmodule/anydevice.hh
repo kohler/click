@@ -15,7 +15,11 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 #define CLICK_CYCLE_COMPENSATION 0
 #ifdef BSD_NETISRSCHED
-# define NETISR_CLICK 1		// must match empty slots in net/netisr.h !!!
+# if __FreeBSD_version >= 800000
+#  define NETISR_CLICK 13        // must match empty slots in net/netisr.h !!!
+# else
+#  define NETISR_CLICK 1         // must match empty slots in net/netisr.h !!!
+# endif
 #endif
 #if HAVE_STRIDE_SCHED
 # define CLICK_DEVICE_ADJUST_TICKETS 1
@@ -25,6 +29,8 @@ CLICK_CXX_UNPROTECT
 CLICK_DECLS
 
 //extern int *polling;            // 1 = BSD poller; 2 = Click poller
+
+extern struct ifnet _dev_click;
 
 class AnyDeviceMap;
 
@@ -93,7 +99,11 @@ AnyDevice::intr_reschedule(void)
     if (!_task.scheduled())
 	_task.reschedule();
     //if (!polling || (polling && *polling != 2))
+# if __FreeBSD_version >= 800000
+        /* XXX: FreeBSD 8 does not have schednetisr() */
+# else
 	schednetisr(NETISR_CLICK);
+# endif
 #else
     _task.reschedule();
 #endif

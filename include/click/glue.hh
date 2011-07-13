@@ -50,6 +50,8 @@ CLICK_CXX_PROTECT
 # include <sys/libkern.h>
 # include <sys/proc.h>
 # include <sys/sysproto.h>
+# include <sys/limits.h>
+# include <sys/module.h> /* XXX: for packages */
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 
@@ -278,7 +280,11 @@ extern unsigned char _ctype[];
 
 # define strchr(s, c)	index(s, c)
 
-# define memmove(dst, src, len)		bcopy((src), (dst), (len))
+# if __FreeBSD_version >= 700000 && __FreeBSD_version < 730000
+/* memmove() appeared in the FreeBSD 7.3 kernel */
+extern "C" void *memmove(void *dest, const void *src, size_t len);
+# endif
+
 
 typedef struct ifnet net_device;
 
@@ -386,7 +392,7 @@ typedef long click_jiffies_difference_t;
 # define HAS_LONG_CLICK_JIFFIES_T	1
 #elif CLICK_BSDMODULE
 # define click_gettimeofday(tvp)	(getmicrotime(tvp))
-typedef int click_jiffies_t;
+typedef unsigned click_jiffies_t;
 typedef int click_jiffies_difference_t;
 # define click_jiffies()		(ticks)
 # define CLICK_HZ			hz

@@ -742,6 +742,16 @@ extern "C" void __assert(const char *file, int line, const char *cond) {
     printf("Failed assertion at %s:%d: %s\n", file, line, cond);
 }
 
+# if __FreeBSD_version >= 700000 && __FreeBSD_version < 703000
+/* memmove() appeared in the FreeBSD 7.3 kernel */
+extern "C" void *
+memmove(void *dest, const void *src, size_t n)
+{
+    bcopy(src, dest, n);
+    return (dest);
+}
+# endif
+
 #endif
 
 extern "C" {
