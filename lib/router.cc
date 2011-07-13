@@ -1109,19 +1109,19 @@ Router::initialize(ErrorHandler *errh)
 	// Set the random seed to a "truly random" value by default.
 	click_random_srandom();
 	for (int ord = 0; ord < _elements.size(); ord++) {
-	    int i = _element_configure_order[ord];
+	    int i = _element_configure_order[ord], r;
 #if CLICK_DMALLOC
 	    sprintf(dmalloc_buf, "c%d  ", i);
 	    CLICK_DMALLOC_REG(dmalloc_buf);
 #endif
 	    RouterContextErrh cerrh(errh, "While configuring", element(i));
-	    int before = cerrh.nerrors(), r;
+	    assert(!cerrh.nerrors());
 	    conf.clear();
 	    cp_argvec(_element_configurations[i], conf);
 	    if ((r = _elements[i]->configure(conf, &cerrh)) < 0) {
 		element_stage[i] = Element::CLEANUP_CONFIGURE_FAILED;
 		all_ok = false;
-		if (cerrh.nerrors() == before) {
+		if (!cerrh.nerrors()) {
 		    if (r == -ENOMEM)
 			cerrh.error("out of memory");
 		    else
@@ -1148,13 +1148,13 @@ Router::initialize(ErrorHandler *errh)
 	    CLICK_DMALLOC_REG(dmalloc_buf);
 #endif
 	    RouterContextErrh cerrh(errh, "While initializing", element(i));
-	    int before = cerrh.nerrors();
+	    assert(!cerrh.nerrors());
 	    if (_elements[i]->initialize(&cerrh) >= 0)
 		element_stage[i] = Element::CLEANUP_INITIALIZED;
 	    else {
 		// don't report 'unspecified error' for ErrorElements:
 		// keep error messages clean
-		if (cerrh.nerrors() == before && !_elements[i]->cast("Error"))
+		if (!cerrh.nerrors() && !_elements[i]->cast("Error"))
 		    cerrh.error("unspecified error");
 		element_stage[i] = Element::CLEANUP_INITIALIZE_FAILED;
 		all_ok = false;

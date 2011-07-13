@@ -1310,7 +1310,7 @@ Element::configure_phase() const
  *
  * Any errors, warnings, or messages should be reported to @a errh.  Messages
  * need not specify the element name or type, since this information will be
- * provided as context.
+ * provided as context.  @a errh.nerrors() is initially zero.
  *
  * configure() should return a negative number if configuration fails.
  * Returning a negative number prevents the router from initializing.  The
@@ -1391,7 +1391,8 @@ Element::add_handlers()
  * line. It performs any final initialization, and provides the last chance to
  * abort router installation with an error.  Any errors, warnings, or messages
  * should be reported to @a errh.  Messages need not specify the element
- * name; this information will be supplied externally.
+ * name; this information will be supplied externally.  @a errh.nerrors()
+ * is initially zero.
  *
  * initialize() should return zero if initialization succeeds, or a negative
  * number if it fails.  Returning a negative number prevents the router from
@@ -2591,7 +2592,7 @@ configuration_handler(int operation, String &str, Element *e,
     bool found = false, found_positional = false;
     String value, rest;
     if (keyword)
-	(void) Args(e, errh).bind(conf)
+	(void) Args(e).bind(conf)
 	    .read(keyword, AnyArg(), value).read_status(found)
 	    .consume();
     if (!found && argno >= 0 && conf.size() > argno
@@ -2651,7 +2652,8 @@ String
 Element::read_positional_handler(Element *element, void *user_data)
 {
     String str;
-    (void) configuration_handler(Handler::h_read, str, element, (uintptr_t) user_data, 0, ErrorHandler::silent_handler());
+    SilentErrorHandler errh;
+    (void) configuration_handler(Handler::h_read, str, element, (uintptr_t) user_data, 0, &errh);
     return str;
 }
 
@@ -2686,7 +2688,8 @@ String
 Element::read_keyword_handler(Element *element, void *user_data)
 {
     String str;
-    (void) configuration_handler(Handler::h_read, str, element, -1, (const char *) user_data, ErrorHandler::silent_handler());
+    SilentErrorHandler errh;
+    (void) configuration_handler(Handler::h_read, str, element, -1, (const char *) user_data, &errh);
     return str;
 }
 
