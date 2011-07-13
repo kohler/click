@@ -16,15 +16,13 @@
 #include <ctype.h>
 
 #include <algorithm>
+#include <iostream>
 
 #include "csclient.hh"
 
 
-#define INCLUDE_TEST_CODE 1
+#define INCLUDE_TEST_CODE 0
 
-#if INCLUDE_TEST_CODE
-#include <iostream>
-#endif
 
 #define check_init() do { if (!_init) return init_err; } while (false);
 
@@ -644,4 +642,4 @@ main(int argc, char **argv)
 
   return 0;
 }
-#endif;
+#endif
