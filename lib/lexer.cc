@@ -1302,7 +1302,7 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	    if (e->decl_type >= 0 && e->type >= 0)
 		_errh->lerror(Compound::landmark_string(e->filename, e->lineno), "class %<%s%> used as element name", e->name.c_str());
 	    else if (e->decl_type < 0 && e->type < 0) {
-		_errh->lerror(Compound::landmark_string(e->filename, e->lineno), "undeclared element %<%s%>, assuming element class", e->name.c_str());
+		_errh->lerror(Compound::landmark_string(e->filename, e->lineno), "undeclared element %<%s%>", e->name.c_str());
 		e->type = force_element_type(e->name, false);
 	    }
 	    if (e->type >= 0)
