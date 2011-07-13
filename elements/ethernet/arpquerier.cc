@@ -28,6 +28,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 CLICK_DECLS
 
 ARPQuerier::ARPQuerier()
@@ -232,6 +233,7 @@ ARPQuerier::send_query_for(const Packet *p, bool ether_dhost_valid)
     memcpy(ea->arp_tpa, want_ip.data(), 4);
 
     q->set_timestamp_anno(p->timestamp_anno());
+    SET_VLAN_TCI_ANNO(q, VLAN_TCI_ANNO(p));
 
     _arp_queries++;
     output(noutputs() - 1).push(q);

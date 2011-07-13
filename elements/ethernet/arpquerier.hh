@@ -106,7 +106,8 @@ If a host has multiple interfaces, it will need multiple
 instances of ARPQuerier.
 
 ARPQuerier uses packets' destination IP address annotations, and can destroy
-their next packet annotations.
+their next packet annotations.  Generated ARP queries have VLAN TCI
+annotations set from the corresponding input packets.
 
 ARPQuerier will send at most 10 queries a second for any IP address.
 

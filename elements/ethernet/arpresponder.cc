@@ -25,6 +25,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
+#include <click/packet_anno.hh>
 CLICK_DECLS
 
 ARPResponder::ARPResponder()
@@ -148,8 +149,10 @@ ARPResponder::make_response(const uint8_t target_eth[6], /* them */
 
     // in case of FromLinux, set the device annotation: want to make it seem
     // that ARP response came from the device that the query arrived on
-    if (p)
+    if (p) {
 	q->set_device_anno(p->device_anno());
+	SET_VLAN_TCI_ANNO(q, VLAN_TCI_ANNO(p));
+    }
 
     click_ether *e = (click_ether *) q->data();
     q->set_ether_header(e);

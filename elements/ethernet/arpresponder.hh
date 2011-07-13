@@ -28,8 +28,8 @@ CLICK_DECLS
  * The netmask can be specified in CIDR form (`C<18.26.7.0/24>') or dotted
  * decimal form (`C<18.26.7.0/255.255.255.0>').
  *
- * ARPResponder sets the device annotations on generated ARP responses to the
- * device annotations from the corresponding queries.
+ * ARPResponder sets the device and VLAN TCI annotations on generated ARP
+ * responses to the corresponding annotations from the queries.
  *
  * =n
  *
