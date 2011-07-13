@@ -905,7 +905,7 @@ struct NumArg {
 
   Integer overflow is treated as an error.
 
-  @sa SaturatingIntArg */
+  @sa SaturatingIntArg, BoundedIntArg */
 struct IntArg : public NumArg {
 
     typedef uint32_t limb_type;
@@ -954,7 +954,7 @@ struct IntArg : public NumArg {
     int base;
     int status;
 
-  private:
+  protected:
 
     static const char *span(const char *begin, const char *end,
 			    bool is_signed, int &b);
@@ -979,6 +979,38 @@ struct SaturatingIntArg : public IntArg {
     bool parse(const String &str, V &result, const ArgContext &args = blank_args) {
 	return parse_saturating(str, result, args);
     }
+};
+
+/** @class BoundedIntArg
+  @brief Parser class for integers with explicit bounds.
+
+  BoundedIntArg(@a min, @a max, @a base) is like IntArg(@a base), but numbers
+  less than @a min or greater than @a max are treated as errors.
+
+  @sa IntArg */
+struct BoundedIntArg : public IntArg {
+    BoundedIntArg(int min, int max, int b = 0)
+	: IntArg(b), min(min), max(max) {
+    }
+
+    template<typename V>
+    bool parse(const String &str, V &result, const ArgContext &args = blank_args) {
+	V x;
+	if (!IntArg::parse(str, x, args))
+	    return false;
+	else if (x < min || x > max) {
+	    int bound = x < min ? min : max;
+	    status = status_range;
+	    report_error(args, bound < 0, bound < 0 ? -bound : bound);
+	    return false;
+	} else {
+	    result = x;
+	    return true;
+	}
+    }
+
+    int min;
+    int max;
 };
 
 template<> struct DefaultArg<unsigned char> : public IntArg {};

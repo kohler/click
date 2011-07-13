@@ -171,6 +171,10 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK_ERR(ia.parse_saturating("18446744073709551616", u64, args) == true && u64 == 0xFFFFFFFFFFFFFFFFULL, "");
 #endif
 
+    CHECK_ERR(BoundedIntArg(0, 10).parse("10", i32, args) == true && i32 == 10, "");
+    CHECK_ERR(BoundedIntArg(0, 9).parse("10", i32, args) == false && i32 == 10, "out of range, bound 9");
+    CHECK_ERR(BoundedIntArg(-1, 9).parse("-10", i32, args) == false && i32 == 10, "out of range, bound -1");
+
     bool b; (void) b;
     CHECK(FixedPointArg(1).parse("0.5", i32) == true && i32 == 1);
     CHECK(FixedPointArg(1).parse("-0.5", i32) == true && i32 == -1);
