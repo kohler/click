@@ -35,13 +35,12 @@ StripEtherVLANHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int native_vlan = 0;
     if (Args(conf, this, errh)
-	.read_p("NATIVE_VLAN_ID", native_vlan)
+	.read_p("NATIVE_VLAN", native_vlan)
 	.complete() < 0)
 	return -1;
-    if (native_vlan >= 0xFFF)
-	return errh->error("bad NATIVE_VLAN_ID");
-    _has_native_vlan = native_vlan >= 0;
-    _native_vlan = htons(native_vlan);
+    if (native_vlan > 0xFFF)
+	return errh->error("bad NATIVE_VLAN");
+    _native_vlan = native_vlan >= 0 ? htons(native_vlan) : -1;
     return 0;
 }
 
@@ -50,10 +49,10 @@ StripEtherVLANHeader::simple_action(Packet *p)
 {
     const click_ether_vlan *ethh = reinterpret_cast<const click_ether_vlan *>(p->data());
     if (ethh->ether_vlan_proto == htons(ETHERTYPE_8021Q)) {
-	SET_VLAN_ANNO(p, ethh->ether_vlan_tci);
+	SET_VLAN_TCI_ANNO(p, ethh->ether_vlan_tci);
 	p->pull(sizeof(click_ether_vlan));
-    } else if (_has_native_vlan) {
-	SET_VLAN_ANNO(p, _native_vlan);
+    } else if (_native_vlan >= 0) {
+	SET_VLAN_TCI_ANNO(p, _native_vlan);
 	p->pull(sizeof(click_ether));
     } else {
 	checked_output_push(1, p);

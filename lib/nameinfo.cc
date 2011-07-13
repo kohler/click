@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2005-2008 The Regents of the University of California
+ * Copyright (c) 2011 Meraki, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -131,7 +132,8 @@ static const StaticNameDB::Entry annotation_entries[] = {
 #endif
     { "REV_RATE", MKAI(REV_RATE) },
     { "SEQUENCE_NUMBER", MKAI(SEQUENCE_NUMBER) },
-    { "VLAN", MKAI(VLAN) },
+    { "VLAN", MKAI(VLAN_TCI) },
+    { "VLAN_TCI", MKAI(VLAN_TCI) },
     { "WIFI_EXTRA", MKAI(WIFI_EXTRA) }
 };
 

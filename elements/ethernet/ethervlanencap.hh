@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-EtherVLANEncap(ETHERTYPE, SRC, DST, VLAN [, VLAN_PCP, I<keywords> NATIVE_VLAN])
+EtherVLANEncap(ETHERTYPE, SRC, DST, VLAN_TCI [, I<keywords>])
 
 =s ethernet
 
@@ -18,15 +18,29 @@ encapsulates packets in 802.1Q VLAN Ethernet header
 Encapsulates each packet in the 802.1Q header specified by its arguments.  The
 resulting packet looks like an Ethernet packet with type 0x8100.  The
 encapsulated Ethernet type is ETHERTYPE, which should be in host order.  The
-VLAN and VLAN_PCP arguments define the VLAN ID and priority code point.
+VLAN arguments define the VLAN ID and priority code point.
 
-VLAN must be between 0 and 0xFFE.  It may also be the string "ANNO".  In VLAN
-ANNO mode, the encapsulated VLAN and VLAN_PCP are read from the input packet's
-VLAN annotation.  Also, if the NATIVE_VLAN keyword is set, and the VLAN
-annotation equals NATIVE_VLAN, then the output packet is encapsulated in a
-conventional Ethernet header, rather than an 802.1Q header.
+VLAN_TCI is a 16-bit VLAN TCI, including both the VLAN ID and the VLAN PCP.
+VLAN_TCI may also be the string "ANNO"; in ANNO mode, the encapsulated VLAN
+TCI is read from the input packet's VLAN_TCI annotation.  You may also set the
+VLAN_ID and VLAN_PCP separately via keywords.
 
-VLAN_PCP defaults to 0, and must be between 0 and 7.
+Keyword arguments are:
+
+=item VLAN_ID
+
+The VLAN ID, a number between 0 and 0xFFF.  Exactly one of VLAN_ID and
+VLAN_TCI must be set.  Note that VLAN IDs 0 and 0xFFF are reserved in 802.1Q.
+
+=item VLAN_PCP
+
+The VLAN Priority Code Point, a number between 0 and 7.  Defaults to 0.
+
+=item NATIVE_VLAN
+
+The native VLAN, a number between 0 and 0xFFF.  If the output VLAN ID equals
+NATIVE_VLAN, then the output packet is encapsulated in a conventional Ethernet
+header, rather than an 802.1Q header.  Defaults to -1 (no native VLAN).
 
 =e
 
@@ -48,13 +62,21 @@ Return or set the DST parameter.
 
 Return or set the ETHERTYPE parameter.
 
-=h vlan read/write
+=h vlan_tci read/write
 
-Return or set the VLAN parameter.
+Return or set the VLAN_TCI parameter.
+
+=h vlan_id read/write
+
+Return or set the VLAN_ID parameter.
 
 =h vlan_pcp read/write
 
 Return or set the VLAN_PCP parameter.
+
+=h native_vlan read/write
+
+Return or set the NATIVE_VLAN parameter.
 
 =a
 
@@ -81,11 +103,11 @@ class EtherVLANEncap : public Element { public:
 
     click_ether_vlan _ethh;
     bool _use_anno;
-    bool _use_native_vlan;
-    uint16_t _native_vlan;
+    int _native_vlan;
 
-    enum { h_vlan, h_vlan_pcp };
+    enum { h_config, h_vlan_tci };
     static String read_handler(Element *e, void *user_data);
+    static int write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh);
 
 };
 

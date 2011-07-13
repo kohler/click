@@ -4,19 +4,19 @@ click --simtime CONFIG
 %file CONFIG
 InfiniteSource(DATA \<AAABACAD>, LIMIT 1, STOP true)
   -> Print(x)
-  -> EtherVlanEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, 1)
+  -> EtherVLANEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, 1)
   -> Print(a)
-  -> StripEtherVlanHeader
+  -> StripEtherVLANHeader
   -> Print(b)
-  -> EtherVlanEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, ANNO)
+  -> EtherVLANEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, ANNO)
   -> Print(c)
-  -> StripEtherVlanHeader
+  -> StripEtherVLANHeader
   -> Print(d)
-  -> EtherVlanEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, ANNO, NATIVE_VLAN 1)
+  -> EtherVLANEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, ANNO, NATIVE_VLAN 1)
   -> Print(e)
-  -> StripEtherVlanHeader
-  -> SetVlanAnno(2, 1)
-  -> EtherVlanEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, ANNO, NATIVE_VLAN 1)
+  -> StripEtherVLANHeader
+  -> SetVLANAnno(2, 1)
+  -> EtherVLANEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2, ANNO, NATIVE_VLAN 1)
   -> Print(f)
   -> Discard;
 
