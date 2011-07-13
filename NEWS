@@ -2,7 +2,187 @@ Click NEWS
 
 Version 2.0
 
-* Thanks to Dmitriy Bubnov.
+* Fixes:
+
+UDPIPEncap,
+RadixIPLookup,
+WifiDecap,
+RadiotapDecap,
+FastUDPSourceIP6,
+FromUserDevice,
+ToUserDevice,
+IPAddrRewriter,
+KernelFilter,
+DSRRouteTable
+SetIP6DSCP,
+CheckTCPHeader,
+CheckUDPHeader,
+TimeSortedSched,
+DelayUnqueue,
+ThreadSafeQueue,
+FromHost,
+IPFilter and other classifiers,
+click-align,
+IP6Encap,
+Socket,
+click-undead,
+
+* New elements:
+
+ICMPIPEncap,
+UDPIP6Encap,
+EtherVLANEncap,
+StripEtherVLANHeader,
+SetVLANAnno,
+BlockThread,
+TCPFragmenter,
+StoreUDPTimeSeqRecord,
+StripDSRHeader,
+UnstripDSRHeader,
+NullTask,
+HandlerTask,
+AdjustTimestamp,
+ClickyInfo,
+
+* Improved elements:
+
+FromHost userlevel,
+FromDevice userlevel,
+ToDevice userlevel,
+Script,
+RandomSource,
+TCPIPSend,
+TimeSortedSched,
+ARPQuerier,
+InfiniteSource,
+AddressInfo,
+RatedUnqueue,
+RatedSplitter,
+BandwidthRatedUnqueue,
+BandwidthRatedSplitter,
+SetTimestamp,
+IPFilter ("ether" comparisons, faster initialization),
+RatedSource,
+KernelTun,
+FromIPSummaryDump,
+RandomSource,
+CheckLength,
+GetIPAddress,
+SetIPAddress,
+Truncate,
+LinkUnqueue,
+HostEtherFilter,
+FromSimDevice,
+FromDevice linuxmodule,
+ToUserDevice,
+FromUserDevice,
+Unqueue2,
+DRRSched,
+
+* Internal improvements:
+
+- Args
+
+- handlers
+
+- Default to nanosecond precision timestamps on many platforms.
+
+- TokenBucket
+
+- Bound port transfer
+
+- Easy-to-use userlevel backtrace debugging. CLICK_BACKTRACE=1
+
+- simple_action improvement
+
+- Type traits
+
+- IPv6 address unparsing
+
+* Performance improvements
+
+- Correct round-robin scheduler
+
+- Timer 4-heap
+
+- Task improvements: Reschedule by setting boolean, lazy rescheduling
+
+- Delay re-running useless tasks
+
+- Userlevel performance improvements: default to libpcap, packet pool
+  (Luigi Rizzo), Mac OS X environments
+
+* Language changes
+
+- require(library FOO) construct
+
+- interpolate "input" and "output"
+
+- parallel connections
+
+* Multithreading
+
+- Task improvements: Reschedule by setting boolean, lazy rescheduling
+
+- Per-thread timer heaps and selector sets
+
+* Linuxmodule
+
+- Patchless by default
+
+* Clicky changes
+
+- Per-router styles
+
+- --run/Run/Stop
+
+* Thanks to
+
+Frey, Cliff
+
+Park, Joonwoo
+
+Nikander, Pekka
+Kjällman, Jimmy
+
+Rose, Ian
+De Wit, Jens
+Vandenberghe, Wim
+Bergs, Johan
+Brown, Jesse
+Riggio, Roberto
+Kreibich, Christian
+Cronje, Beyers
+Schiöberg, Harald
+Merz, Ruben
+Chertov, Roman
+Sesser, Florian
+Longpocket, Bobby
+Jopen, Sascha Alexander
+Herbert, Kevin Paul
+Roewe, Jim
+Suresh, Lalith
+Pallas, Derrick
+Rizzo, Luigi
+
+Bubnov, Dmitriy
+Kirchhoff, Jonathan
+Ruponen, Sami
+Allman, Mark
+Xiao, Xianghua
+Pelechrinis, Kostas
+xuhui122000 gmail com
+Bourguiba, Manel
+Levin, Dan
+Oliveira, José Pedro
+Aguayo, Dan
+Verkaik, Patrick
+Shanks, Robert
+Braem, Bart
+Sombrutzki, Robert
+Clavier, Rémi
+Bro, Lars
+Weaver, Nicholas
 
 
 Version 1.8.0   28.Feb.2010
