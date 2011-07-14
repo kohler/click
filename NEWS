@@ -1,188 +1,232 @@
 Click NEWS
 
-Version 2.0
-
-* Fixes:
-
-UDPIPEncap,
-RadixIPLookup,
-WifiDecap,
-RadiotapDecap,
-FastUDPSourceIP6,
-FromUserDevice,
-ToUserDevice,
-IPAddrRewriter,
-KernelFilter,
-DSRRouteTable
-SetIP6DSCP,
-CheckTCPHeader,
-CheckUDPHeader,
-TimeSortedSched,
-DelayUnqueue,
-ThreadSafeQueue,
-FromHost,
-IPFilter and other classifiers,
-click-align,
-IP6Encap,
-Socket,
-click-undead,
+Version 2.0   16.Jul.2011
 
 * New elements:
 
-ICMPIPEncap,
-UDPIP6Encap,
-EtherVLANEncap,
-StripEtherVLANHeader,
-SetVLANAnno,
+AdjustTimestamp,
 BlockThread,
-TCPFragmenter,
+ClickyInfo,
+EtherVLANEncap,
+HandlerTask,
+ICMPIPEncap,
+NullTask,
+SetVLANAnno,
 StoreUDPTimeSeqRecord,
 StripDSRHeader,
+StripEtherVLANHeader,
+TCPFragmenter,
+UDPIP6Encap,
 UnstripDSRHeader,
-NullTask,
-HandlerTask,
-AdjustTimestamp,
-ClickyInfo,
 
 * Improved elements:
 
-FromHost userlevel,
+ARPQuerier,
+AddressInfo,
+BandwidthRatedSplitter,
+BandwidthRatedUnqueue,
+CheckLength,
+DRRSched,
+FromDevice linuxmodule,
 FromDevice userlevel,
-ToDevice userlevel,
-Script,
+FromHost userlevel,
+FromIPSummaryDump,
+FromSimDevice,
+FromUserDevice,
+GetIPAddress,
+HostEtherFilter,
+IPFilter ("ether" comparisons, faster initialization),
+InfiniteSource,
+KernelTun,
+LinkUnqueue,
 RandomSource,
+RatedSource,
+RatedSplitter,
+RatedUnqueue,
+Script,
+SetIPAddress,
+SetTimestamp,
 TCPIPSend,
 TimeSortedSched,
-ARPQuerier,
-InfiniteSource,
-AddressInfo,
-RatedUnqueue,
-RatedSplitter,
-BandwidthRatedUnqueue,
-BandwidthRatedSplitter,
-SetTimestamp,
-IPFilter ("ether" comparisons, faster initialization),
-RatedSource,
-KernelTun,
-FromIPSummaryDump,
-RandomSource,
-CheckLength,
-GetIPAddress,
-SetIPAddress,
-Truncate,
-LinkUnqueue,
-HostEtherFilter,
-FromSimDevice,
-FromDevice linuxmodule,
+ToDevice userlevel,
 ToUserDevice,
-FromUserDevice,
+Truncate,
 Unqueue2,
-DRRSched,
 
-* Internal improvements:
+and others.
 
-- Args
+* Element and tool bug fixes:
 
-- handlers
+CheckTCPHeader,
+CheckUDPHeader,
+DSRRouteTable
+DelayUnqueue,
+FastUDPSourceIP6,
+FromHost,
+FromUserDevice,
+IP6Encap,
+IPAddrRewriter,
+IPFilter and other classifiers,
+KernelFilter,
+RadiotapDecap,
+RadixIPLookup,
+SetIP6DSCP,
+Socket,
+ThreadSafeQueue,
+TimeSortedSched,
+ToUserDevice,
+UDPIPEncap,
+WifiDecap,
+click-align,
+click-undead,
 
-- Default to nanosecond precision timestamps on many platforms.
-
-- TokenBucket
-
-- Bound port transfer
-
-- Easy-to-use userlevel backtrace debugging. CLICK_BACKTRACE=1
-
-- simple_action improvement
-
-- Type traits
-
-- IPv6 address unparsing
+and others.
 
 * Performance improvements
 
-- Correct round-robin scheduler
+** Tasks: A simplified reschedule implementation and streamlined driver
+   loop is both faster and less error prone (now calling fast_reschedule()
+   outside of Element::run_task() is safe).
 
-- Timer 4-heap
+** Tasks: If a task does no work, delay re-running it.  This simple change
+   improves performance on many configurations, particularly those mixing
+   file descriptor or timer access and Tasks.
 
-- Task improvements: Reschedule by setting boolean, lazy rescheduling
+** Timers: A 4-heap improves performance with very large numbers of timers.
 
-- Delay re-running useless tasks
+** User-level: Device elements default to libpcap even on Linux, offering
+   improved performance depending on how libpcap was compiled (e.g. packet
+   mmap support).  A packet memory pool suggested by Luigi Rizzo offers
+   much better performance for packet allocation and freeing.
 
-- Userlevel performance improvements: default to libpcap, packet pool
-  (Luigi Rizzo), Mac OS X environments
+** The round-robin scheduler (--disable-stride) works again.
+
+** New configure option --enable-bound-port-transfer slightly optimizes
+   push() and pull() calls (Cliff Frey).
 
 * Language changes
 
-- require(library FOO) construct
+** New "require(library FILE)" allows one Click script to include another
+   (Christian Kreibich).
 
-- interpolate "input" and "output"
+** Many-to-one, one-to-many, and many-to-many connections cleanly express
+   some connection patterns.  For example, "c :: Classifier => a1, a2, a3"
+   means the same as "c :: Classifier; c [0] -> a1; c [1] -> a2; c [2] ->
+   a3".
 
-- parallel connections
+** Element groups cleanly express short detours from a connection path.
+   For example, this:
+
+	c :: Classifier(00/01);
+	x -> c -> y;
+	c [1] -> Paint(1) -> y;
+
+   can be expressed like this:
+
+	x -> c :: Classifier(00/01) => (
+            [0] -> [0]; [1] -> Paint(1) -> [0]
+        ) -> y;
 
 * Multithreading
 
-- Task improvements: Reschedule by setting boolean, lazy rescheduling
+** Many performance and stability improvements to multithreaded
+   configurations, particularly at userlevel.
 
-- Per-thread timer heaps and selector sets
+** Lazy Task rescheduling reduces opportunities for bugs.
+
+** Each thread gains its own sets of Timers (and, at user level, selector
+   file descriptors).  An element's Timers are initially scheduled on the
+   same thread as its Tasks.  This should simplify reasoning about
+   Task/Timer conflicts, and can help improve performance.
 
 * Linuxmodule
 
-- Patchless by default
+** Patchless installs are on by default.  Click installs and works without
+   a patch on many versions of Linux up to 2.6.38.
 
 * Clicky changes
 
-- Per-router styles
+** Per-router styles: ClickyInfo elements let a script specify how it
+   should be drawn.
 
-- --run/Run/Stop
+** "Run" and "Stop" buttons can execute a configuration.
 
-* Thanks to
+* Internals
 
-Frey, Cliff
+** Args: This new class and its helpers support concise, easy-to-use,
+   type-safe argument parsing and are strongly preferred to cp_va_kparse in
+   new code.
 
-Park, Joonwoo
+** TokenBucket: This new template class supports fast, flexible,
+   integer-based token bucket rate management.
 
-Nikander, Pekka
-Kjällman, Jimmy
+** Timestamps default to nanosecond precision on many platforms.
 
-Rose, Ian
-De Wit, Jens
-Vandenberghe, Wim
+** Element::simple_action() can be used for multi-port elements.
+
+** On some platforms, set environment variable CLICK_BACKTRACE to 1 and get
+   a useful stack backtrace if Click crashes (Cliff Frey).
+
+** Other improvements: more flexible handlers, simple_action, type traits,
+   faster multi-precision arithmetic, better IPv6 address unparsing.
+
+* Acknowledgements
+
+** Thanks to Cliff Frey for extensive discussion, multithreaded debugging,
+   802.1Q elements, TokenBucket, TCPFragmenter, bound port transfer, and
+   others.
+
+** Thanks to Joonwoo Park for Linux kernel module patches.
+
+** Thanks to Jimmy Kjällman and Pekka Nikander for FreeBSD kernel module
+   support.
+
+** Thanks to
+
 Bergs, Johan
 Brown, Jesse
-Riggio, Roberto
-Kreibich, Christian
-Cronje, Beyers
-Schiöberg, Harald
-Merz, Ruben
 Chertov, Roman
-Sesser, Florian
-Longpocket, Bobby
-Jopen, Sascha Alexander
+Cronje, Beyers
+De Wit, Jens
 Herbert, Kevin Paul
-Roewe, Jim
-Suresh, Lalith
+Jopen, Sascha Alexander
+Kreibich, Christian
+Longpocket, Bobby
+Merz, Ruben
 Pallas, Derrick
+Riggio, Roberto
 Rizzo, Luigi
+Roewe, Jim
+Rose, Ian
+Schiöberg, Harald
+Sesser, Florian
+Suresh, Lalith
+Vandenberghe, Wim
 
-Bubnov, Dmitriy
-Kirchhoff, Jonathan
-Ruponen, Sami
+for patches, bug fixes, and new elements.
+
+** Thanks to
+
+Aguayo, Dan
 Allman, Mark
-Xiao, Xianghua
-Pelechrinis, Kostas
-xuhui122000 gmail com
 Bourguiba, Manel
+Braem, Bart
+Bro, Lars
+Bubnov, Dmitriy
+Clavier, Rémi
+Kirchhoff, Jonathan
 Levin, Dan
 Oliveira, José Pedro
-Aguayo, Dan
-Verkaik, Patrick
+Pelechrinis, Kostas
+Ruponen, Sami
 Shanks, Robert
-Braem, Bart
 Sombrutzki, Robert
-Clavier, Rémi
-Bro, Lars
+Verkaik, Patrick
 Weaver, Nicholas
+Xiao, Xianghua
+xuhui122000 gmail com
+
+for bug reports.
 
 
 Version 1.8.0   28.Feb.2010
