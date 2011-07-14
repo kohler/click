@@ -989,8 +989,8 @@ struct SaturatingIntArg : public IntArg {
 
   @sa IntArg */
 struct BoundedIntArg : public IntArg {
-    BoundedIntArg(int min, int max, int b = 0)
-	: IntArg(b), min(min), max(max) {
+    BoundedIntArg(int min_value, int max_value, int b = 0)
+	: IntArg(b), min_value(min_value), max_value(max_value) {
     }
 
     template<typename V>
@@ -998,8 +998,8 @@ struct BoundedIntArg : public IntArg {
 	V x;
 	if (!IntArg::parse(str, x, args))
 	    return false;
-	else if (x < min || x > max) {
-	    int bound = x < min ? min : max;
+	else if (x < min_value || x > max_value) {
+	    int bound = x < min_value ? min_value : max_value;
 	    status = status_range;
 	    report_error(args, bound < 0, bound < 0 ? -bound : bound);
 	    return false;
@@ -1009,8 +1009,8 @@ struct BoundedIntArg : public IntArg {
 	}
     }
 
-    int min;
-    int max;
+    int min_value;
+    int max_value;
 };
 
 template<> struct DefaultArg<unsigned char> : public IntArg {};
