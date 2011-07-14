@@ -308,7 +308,7 @@ NotifierSignal::active() const
 {
     // 2011.Jul.3 Is this fence actually necessary with the new reschedule()
     // plan??  It doesn't seem to be on one simple test, anyway.
-    click_fence();
+    // click_fence();
     if (likely(_mask))
 	return (*_v.v1 & _mask) != 0;
     else {
