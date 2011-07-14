@@ -314,7 +314,8 @@ AddressInfo::query_netdevice(const String &s, unsigned char *store,
 	    in_dev_put(in_dev);
 	}
     }
-    dev_put(dev);
+    if (dev)
+	dev_put(dev);
     return found;
 
 #elif CLICK_BSDMODULE
