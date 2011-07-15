@@ -471,7 +471,7 @@ Master::info() const
 {
     StringAccum sa;
     sa << "paused:\t\t" << _master_paused << '\n';
-    sa << "stopper:\t" << _threads[0]->_stopper << '\n';
+    sa << "stop_flag:\t" << _threads[0]->_stop_flag << '\n';
     for (int i = 0; i < _nthreads; i++) {
 	RouterThread *t = _threads[i];
 	sa << "thread " << (i - 1) << ":";
@@ -483,15 +483,15 @@ Master::info() const
 # endif
 	if (t->_pending_head)
 	    sa << "\tpending";
-# if CLICK_USERLEVEL && HAVE_MULTITHREAD
-	if (t->_wake_pipe[0] >= 0) {
+# if CLICK_USERLEVEL
+	if (t->select_set()._wake_pipe[0] >= 0) {
 	    fd_set rfd;
 	    struct timeval to;
 	    FD_ZERO(&rfd);
-	    FD_SET(t->_wake_pipe[0], &rfd);
+	    FD_SET(t->select_set()._wake_pipe[0], &rfd);
 	    timerclear(&to);
-	    (void) select(t->_wake_pipe[0] + 1, &rfd, 0, 0, &to);
-	    if (FD_ISSET(t->_wake_pipe[0], &rfd))
+	    (void) select(t->select_set()._wake_pipe[0] + 1, &rfd, 0, 0, &to);
+	    if (FD_ISSET(t->select_set()._wake_pipe[0], &rfd))
 		sa << "\tpipewoken";
 	}
 # endif

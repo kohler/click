@@ -305,6 +305,10 @@ class Element { public:
 #if CLICK_STATS >= 2
     friend class Task;
     friend class Master;
+    friend class TimerSet;
+# if CLICK_USERLEVEL
+    friend class SelectSet;
+# endif
 #endif
 
 };

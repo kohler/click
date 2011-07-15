@@ -102,6 +102,10 @@ class SelectSet { public:
     inline void lock();
     inline void unlock();
 
+#if CLICK_DEBUG_MASTER || CLICK_DEBUG_SCHEDULING
+    friend class Master;
+#endif
+
 };
 
 inline void
