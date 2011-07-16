@@ -767,7 +767,7 @@ Program::remove_unused_states()
 void
 Program::combine_compatible_states()
 {
-    for (int i = 0; i < _insn.size(); i++) {
+    for (int i = _insn.size() - 1; i >= 0; --i) {
 	Insn &in = _insn[i];
 	if (in.no() > 0) {
 	    Insn &no_in = _insn[in.no()];
@@ -778,7 +778,7 @@ Program::combine_compatible_states()
 		in.value.u &= ~the_bit;
 		in.mask.u &= ~the_bit;
 		in.no() = no_in.no();
-		--i;
+		++i;
 		continue;
 	    }
 	}
@@ -793,7 +793,7 @@ Program::combine_compatible_states()
 		in.offset = yes_in.offset;
 	    in.value.u = (in.value.u & in.mask.u) | (yes_in.value.u & yes_in.mask.u);
 	    in.mask.u |= yes_in.mask.u;
-	    --i;
+	    ++i;
 	}
     }
 }
@@ -825,7 +825,8 @@ Program::bubble_sort_and_exprs(unsigned sort_stopper)
 		Insn &e2 = _insn[j];
 		if (e1.j[!k] == e2.j[!k]
 		    && (e1.offset > e2.offset
-			|| (e1.offset == e2.offset && e1.mask.u > e2.mask.u))
+			|| (e1.offset == e2.offset && ntohl(e1.mask.u) > ntohl(e2.mask.u))
+			|| (e1.offset == e2.offset && e1.mask.u == e2.mask.u && ntohl(e1.value.u) > ntohl(e2.value.u)))
 		    && e1.offset < sort_stopper && inbranch[j] > 0) {
 		    Insn temp(e2);
 		    e2 = e1;
