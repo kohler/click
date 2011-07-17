@@ -265,6 +265,6 @@ FromUserDevice::add_handlers()
     add_data_handlers("max", Handler::h_read, &_max);
 }
 
-ELEMENT_REQUIRES(linuxmodule experimental ToUserDevice)
+ELEMENT_REQUIRES(linuxmodule ToUserDevice)
 EXPORT_ELEMENT(FromUserDevice)
 ELEMENT_MT_SAFE(FromUserDevice)

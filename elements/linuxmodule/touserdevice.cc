@@ -573,6 +573,6 @@ ToUserDevice::add_handlers()
 }
 
 
-ELEMENT_REQUIRES(linuxmodule experimental FromUserDevice)
+ELEMENT_REQUIRES(linuxmodule FromUserDevice)
 EXPORT_ELEMENT(ToUserDevice)
 ELEMENT_MT_SAFE(ToUserDevice)

@@ -18,7 +18,6 @@ ToUserDevice(DEV_MINOR, [I<KEYWORDS>])
 Pass packets to user-level programs via a character device.
 
 =d
-Requires --enable-experimental.
 
 ToUserDevice provides a way to get packets from click running in linuxmodule
 into userspace through a character device.  This is a way of giving packets to a

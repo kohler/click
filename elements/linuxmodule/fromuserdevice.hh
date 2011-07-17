@@ -18,7 +18,6 @@ FromUserDevice(TO_USER_DEVICE, [<keywords>])
 Emit packets written to a character device.
 
 =d
-Requires --enable-experimental.
 
 Keyword arguments are:
 
