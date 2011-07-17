@@ -1,0 +1,38 @@
+%script
+
+click CONFIG
+
+%file CONFIG
+FromIPSummaryDump(X, STOP true)
+	-> p::PaintSwitch
+	-> h::Hub
+	-> Paint(0)
+	-> t::ToIPSummaryDump(Y, DATA link ip_src)
+
+	p[1] -> [1]h[1] -> Paint(1) -> t
+	p[2] -> [2]h[2] -> Paint(2) -> t
+	p[3] -> [3]h[3] -> Paint(3) -> t
+
+%file X
+!data link ip_src
+0 1.0.0.0
+1 1.0.0.1
+2 1.0.0.2
+3 1.0.0.3
+
+%file Y
+1 1.0.0.0
+2 1.0.0.0
+3 1.0.0.0
+0 1.0.0.1
+2 1.0.0.1
+3 1.0.0.1
+0 1.0.0.2
+1 1.0.0.2
+3 1.0.0.2
+0 1.0.0.3
+1 1.0.0.3
+2 1.0.0.3
+
+%ignore Y
+!{{.*}}
