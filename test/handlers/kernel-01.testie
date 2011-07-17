@@ -7,7 +7,7 @@ This test installs a configuration with conflicting handler names.
 
 %script
 click-install KERNELCONFIG
-ls -R /click >HANDLERS
+ls -aR /click >HANDLERS
 click-uninstall
 
 %file KERNELCONFIG
@@ -20,17 +20,17 @@ j/k/y :: Idle;
 
 %expect HANDLERS
 /click:
-1
-2
-3
-4
-5
-6
+.
+..
+.e
+.h
 classes
 config
 cycles
+driver
 errors
 flatconfig
+handlers
 hotconfig
 i
 j
@@ -44,42 +44,104 @@ stop
 threads
 version
 
-/click/1:
+/click/.e:
+.
+..
+0
+1
+2
+3
+4
+5
+
+/click/.e/0:
+.
+..
 class
 config
 handlers
 name
 ports
 
-/click/2:
+/click/.e/1:
+.
+..
 class
 config
 handlers
 name
 ports
 
-/click/3:
+/click/.e/2:
+.
+..
 class
 config
 handlers
 name
 ports
 
-/click/4:
+/click/.e/3:
+.
+..
 class
 config
 handlers
 name
 ports
 
-/click/5:
+/click/.e/4:
+.
+..
 class
 config
 handlers
 name
 ports
 
-/click/6:
+/click/.e/5:
+.
+..
+class
+config
+handlers
+name
+ports
+
+/click/.h:
+.
+..
+classes
+config
+cycles
+driver
+errors
+flatconfig
+handlers
+hotconfig
+list
+meminfo
+messages
+packages
+priority
+requirements
+stop
+threads
+version
+
+/click/config:
+.
+..
+.h
+class
+config
+handlers
+name
+ports
+
+/click/config/.h:
+.
+..
 class
 config
 handlers
@@ -87,6 +149,9 @@ name
 ports
 
 /click/i:
+.
+..
+.h
 class
 config
 handlers
@@ -94,7 +159,47 @@ i1
 name
 ports
 
+/click/i/.h:
+.
+..
+class
+config
+handlers
+name
+ports
+
 /click/i/i1:
+.
+..
+.h
+class
+config
+handlers
+name
+ports
+
+/click/i/i1/.h:
+.
+..
+class
+config
+handlers
+name
+ports
+
+/click/i/name:
+.
+..
+.h
+class
+config
+handlers
+name
+ports
+
+/click/i/name/.h:
+.
+..
 class
 config
 handlers
@@ -102,13 +207,29 @@ name
 ports
 
 /click/j:
+.
+..
 k
 
 /click/j/k:
+.
+..
 x
 y
 
 /click/j/k/x:
+.
+..
+.h
+class
+config
+handlers
+name
+ports
+
+/click/j/k/x/.h:
+.
+..
 class
 config
 handlers
@@ -116,6 +237,18 @@ name
 ports
 
 /click/j/k/y:
+.
+..
+.h
+class
+config
+handlers
+name
+ports
+
+/click/j/k/y/.h:
+.
+..
 class
 config
 handlers
@@ -130,3 +263,7 @@ cpu_share
 iters_per_os
 iters_per_timers
 tasks_per_iter
+scheduling_profile
+string_profile
+active_element_cycles
+active_class_cycles
