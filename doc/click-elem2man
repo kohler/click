@@ -583,13 +583,11 @@ sub dokuwiki_do_section ($$$) {
 	    print STDERR "click-elem2man: $Filename: bad arguments to '=over'\n";
 	}
     } elsif ($name eq 'item') {
-	if (@Over == 0) {
-	    print STDERR "click-elem2man: $Filename: '=item' outside any '=over' section\n";
-	} else {
-	    print OUT "\n", ' ' x @Over, "? " if $dokuwiki_dl;
-	    print OUT dokuwikiize("B<" . quote_unquoted_gt($args) . ">");
-	    print OUT ($dokuwiki_dl ? "\n" : "\n\n");
-	}
+	my($nover) = scalar(@Over);
+	$nover = 1 if $nover == 0;
+	print OUT "\n", ' ' x $nover, "? " if $dokuwiki_dl;
+	print OUT dokuwikiize("B<" . quote_unquoted_gt($args) . ">");
+	print OUT ($dokuwiki_dl ? "\n" : "\n\n");
     } elsif ($name eq 'back') {
 	my($overarg);
 	if ($args =~ /^\s*(\d+)\s*$/s) {
