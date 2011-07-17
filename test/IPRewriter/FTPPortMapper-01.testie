@@ -40,7 +40,7 @@ fh2 -> a2 :: ARPer -> th2;
 
 IPRewriterPatterns(pat 2.0.0.2 1024-65535 1.0.0.1 -)
 
-a1[1] -> FTPPortMapper(rw, rw, pat 0 1)
+a1[1] -> FTPPortMapper(rw, rw, 0)
       -> rw :: TCPRewriter(pattern pat 0 1, drop);
 a2[1] -> [1] rw;
 rw[0] -> c2 :: RSTCounter(2) -> th2;
