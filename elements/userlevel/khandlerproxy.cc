@@ -251,7 +251,6 @@ KernelHandlerProxy::llrpc(unsigned command, void *data)
       return complain_about_open(0, h->name(), err);
     }
 
-    click_chatter("about to %x on %s", proxy->proxied_command, fn.c_str());
     int retval = ioctl(fd, proxy->proxied_command, proxy->proxied_data);
     err = errno;
 
