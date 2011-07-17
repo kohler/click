@@ -65,7 +65,7 @@ dnl userlevel driver and features
 
 AC_ARG_ENABLE(userlevel, [  --disable-userlevel     disable user-level driver], :, enable_userlevel=yes)
 
-AC_ARG_ENABLE(user-multithread, [[    --enable-user-multithread support userlevel multithreading (EXPERIMENTAL)]], :, [enable_user_multithread=no])
+AC_ARG_ENABLE(user-multithread, [[    --enable-user-multithread support userlevel multithreading]], :, [enable_user_multithread=no])
 
 PTHREAD_LIBS=""
 AC_SUBST(PTHREAD_LIBS)
@@ -179,7 +179,7 @@ fi
 
 dnl nsclick driver and features
 
-AC_ARG_ENABLE(nsclick, [  --enable-nsclick        enable NS simulator driver (EXPERIMENTAL)], :, enable_nsclick=no)
+AC_ARG_ENABLE(nsclick, [  --enable-nsclick        enable NS simulator driver], :, enable_nsclick=no)
 
 
 dnl
@@ -312,14 +312,14 @@ ELEMENTS_ARG_ENABLE(analysis, [include elements for network analysis], yes)
 ELEMENTS_ARG_ENABLE(app, [include application-level elements], yes)
 ELEMENTS_ARG_ENABLE(aqm, [include active queue management elements], yes)
 ELEMENTS_ARG_ENABLE(ethernet, [include Ethernet elements], yes)
-ELEMENTS_ARG_ENABLE(etherswitch, [include Ethernet switch elements (EXPERIMENTAL)], NO)
+ELEMENTS_ARG_ENABLE(etherswitch, [include Ethernet switch elements], NO)
 ELEMENTS_ARG_ENABLE(grid, [include Grid elements (see FAQ)], NO)
 ELEMENTS_ARG_ENABLE(icmp, [include ICMP elements], yes)
 ELEMENTS_ARG_ENABLE(ip, [include IP elements], yes)
-ELEMENTS_ARG_ENABLE(ip6, [include IPv6 elements (EXPERIMENTAL)], NO, AC_DEFINE(HAVE_IP6))
+ELEMENTS_ARG_ENABLE(ip6, [include IPv6 elements], NO, AC_DEFINE(HAVE_IP6))
 ELEMENTS_ARG_ENABLE(ipsec, [include IP security elements], NO, AC_DEFINE(HAVE_IPSEC))
 ELEMENTS_ARG_ENABLE(local, [include local elements], NO)
-ELEMENTS_ARG_ENABLE(radio, [include radio elements (EXPERIMENTAL)], NO)
+ELEMENTS_ARG_ENABLE(radio, [include radio elements], NO)
 ELEMENTS_ARG_ENABLE(simple, [include simple versions of other elements], yes)
 dnl ELEMENTS_ARG_ENABLE(snmp, [include SNMP elements], NO)
 ELEMENTS_ARG_ENABLE(standard, [include standard elements], yes)

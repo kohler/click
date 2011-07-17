@@ -1431,7 +1431,7 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-userlevel     disable user-level driver
-    --enable-user-multithread support userlevel multithreading (EXPERIMENTAL)
+    --enable-user-multithread support userlevel multithreading
     --enable-select=[select|poll|kqueue] set file descriptor wait mechanism
     --disable-select          do not use select()
     --disable-poll            do not use poll()
@@ -1446,20 +1446,20 @@ Optional Features:
     --disable-linux-symbols   do not export Click symbols (breaks packages)
   --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)
     --disable-netisr          disable NETISR scheduling in BSD
-  --enable-nsclick        enable NS simulator driver (EXPERIMENTAL)
+  --enable-nsclick        enable NS simulator driver
   --enable-all-elements   include all provided element groups
   --disable-analysis      do not include elements for network analysis
   --disable-app           do not include application-level elements
   --disable-aqm           do not include active queue management elements
   --disable-ethernet      do not include Ethernet elements
-  --enable-etherswitch    include Ethernet switch elements (EXPERIMENTAL)
+  --enable-etherswitch    include Ethernet switch elements
   --enable-grid           include Grid elements (see FAQ)
   --disable-icmp          do not include ICMP elements
   --disable-ip            do not include IP elements
-  --enable-ip6            include IPv6 elements (EXPERIMENTAL)
+  --enable-ip6            include IPv6 elements
   --enable-ipsec          include IP security elements
   --enable-local          include local elements
-  --enable-radio          include radio elements (EXPERIMENTAL)
+  --enable-radio          include radio elements
   --disable-simple        do not include simple versions of other elements
   --disable-standard      do not include standard elements
   --disable-tcpudp        do not include TCP and UDP elements
