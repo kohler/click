@@ -44,7 +44,7 @@ StripDSRHeader::simple_action(Packet *p)
     if (dsr_option->dsr_type != DSR_TYPE_SOURCE_ROUTE) {
 	// this is not a DSR DATA packet -- do "nothing"
 	// (but mark the packet to not unstrip it later)
-	SET_VLAN_ANNO(p, 1);
+	SET_VLAN_TCI_ANNO(p, 1);
 	// click_chatter("StripDSR: Marked non-payload");
 	return p;
     }
@@ -75,7 +75,7 @@ StripDSRHeader::swap_headers(Packet *p_in)
   // save the to-be-overwritten DSR part to the orig. ip header (swap them)
   memcpy(ip, dsr, dsr_len);
   // save the offset to the VLAN_ANNO tag
-  SET_VLAN_ANNO(p, htons(dsr_len));
+  SET_VLAN_TCI_ANNO(p, htons(dsr_len));
 
   // remove the headers
   p->pull(dsr_len);

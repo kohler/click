@@ -36,17 +36,17 @@ UnstripDSRHeader::~UnstripDSRHeader()
 Packet *
 UnstripDSRHeader::simple_action(Packet *p_in)
 {
-    if (VLAN_ANNO(p_in) == 0) {
+    if (VLAN_TCI_ANNO(p_in) == 0) {
 	// click_chatter("UnstripDSR: No VLAN_ANNO, no DSR unstripping");
 	return p_in;
     }
-    if (VLAN_ANNO(p_in) == 1) {
+    if (VLAN_TCI_ANNO(p_in) == 1) {
 	// click_chatter("UnstripDSR: Packet had been marked non-payload");
-	SET_VLAN_ANNO(p_in, 0);
+	SET_VLAN_TCI_ANNO(p_in, 0);
 	return p_in;
     }
 
-    ptrdiff_t dsr_len = ntohs(VLAN_ANNO(p_in));
+    ptrdiff_t dsr_len = ntohs(VLAN_TCI_ANNO(p_in));
 
     WritablePacket *p = p_in->uniqueify();
     click_dsr *dsr_old = reinterpret_cast<click_dsr *>(p->data() - dsr_len);
@@ -64,8 +64,8 @@ UnstripDSRHeader::simple_action(Packet *p_in)
 
     // un-remove the headers
     p = p->push(dsr_len);	// should never create a new packet
-    // clear VLAN_ANNO
-    SET_VLAN_ANNO(p, 0);
+    // clear VLAN_TCI_ANNO
+    SET_VLAN_TCI_ANNO(p, 0);
 
     memcpy(p->data(), &new_ip, sizeof(click_ip));
     ip=reinterpret_cast<click_ip *>(p->data());
