@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "TESTIE 1"
-.TH TESTIE 1 "2010-04-10" "perl v5.10.1" ""
+.TH TESTIE 1 "2011-02-24" "perl v5.10.1" ""
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -155,10 +155,7 @@ prerequisites fail, the return status is 1 instead of 0.
 .IX Header "OPTIONS"
 .IP "\fI\s-1VARIABLE\s0\fR=\fI\s-1VALUE\s0\fR" 8
 .IX Item "VARIABLE=VALUE"
-Provide a setting for \fI\s-1VARIABLE\s0\fR. Occurrences in the script of
-\&'\f(CW$VARIABLE\fR' or '\f(CW\*(C`${VARIABLE}\*(C'\fR' will be replaced by \fI\s-1VALUE\s0\fR. Note that
-this is not an environment variable setting. Variable references to unset
-variables are left unchanged.
+Provide an environment variable setting for \fI\s-1VARIABLE\s0\fR within the script.
 .IP "\-V, \-\-verbose" 8
 .IX Item "-V, --verbose"
 Print information to standard error about successful tests as well as
@@ -360,6 +357,11 @@ file.
 \&  %stdout
 \&  1
 .Ve
+.SH "ENVIRONMENT"
+.IX Header "ENVIRONMENT"
+By default, testie sets the \f(CW\*(C`LC_ALL\*(C'\fR environment variable to \*(L"C\*(R"; without
+this setting commands like 'sort' have unpredictable effects.  To set
+\&\f(CW\*(C`LC_ALL\*(C'\fR to another value, set it in the \f(CW%script\fR section.
 .SH "AUTHOR"
 .IX Header "AUTHOR"
 Eddie Kohler, <kohler@cs.ucla.edu>

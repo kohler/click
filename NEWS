@@ -2,85 +2,26 @@ Click NEWS
 
 Version 2.0   16.Jul.2011
 
-* New elements:
+* New elements: AdjustTimestamp, BlockThread, ClickyInfo, EtherVLANEncap,
+  HandlerTask, ICMPIPEncap, NullTask, SetVLANAnno, StoreUDPTimeSeqRecord,
+  StripDSRHeader, StripEtherVLANHeader, TCPFragmenter, UDPIP6Encap,
+  UnstripDSRHeader.
 
-AdjustTimestamp,
-BlockThread,
-ClickyInfo,
-EtherVLANEncap,
-HandlerTask,
-ICMPIPEncap,
-NullTask,
-SetVLANAnno,
-StoreUDPTimeSeqRecord,
-StripDSRHeader,
-StripEtherVLANHeader,
-TCPFragmenter,
-UDPIP6Encap,
-UnstripDSRHeader,
+* Improved elements: ARPQuerier, AddressInfo, BandwidthRatedSplitter,
+  BandwidthRatedUnqueue, CheckLength, DRRSched, FromDevice linuxmodule,
+  FromDevice userlevel, FromHost userlevel, FromIPSummaryDump,
+  FromSimDevice, FromUserDevice, GetIPAddress, HostEtherFilter, IPFilter
+  ("ether" comparisons, faster initialization), InfiniteSource, KernelTun,
+  LinkUnqueue, RandomSource, RatedSource, RatedSplitter, RatedUnqueue,
+  Script, SetIPAddress, SetTimestamp, TCPIPSend, TimeSortedSched, ToDevice
+  userlevel, ToUserDevice, Truncate, Unqueue2, and others.
 
-* Improved elements:
-
-ARPQuerier,
-AddressInfo,
-BandwidthRatedSplitter,
-BandwidthRatedUnqueue,
-CheckLength,
-DRRSched,
-FromDevice linuxmodule,
-FromDevice userlevel,
-FromHost userlevel,
-FromIPSummaryDump,
-FromSimDevice,
-FromUserDevice,
-GetIPAddress,
-HostEtherFilter,
-IPFilter ("ether" comparisons, faster initialization),
-InfiniteSource,
-KernelTun,
-LinkUnqueue,
-RandomSource,
-RatedSource,
-RatedSplitter,
-RatedUnqueue,
-Script,
-SetIPAddress,
-SetTimestamp,
-TCPIPSend,
-TimeSortedSched,
-ToDevice userlevel,
-ToUserDevice,
-Truncate,
-Unqueue2,
-
-and others.
-
-* Element and tool bug fixes:
-
-CheckTCPHeader,
-CheckUDPHeader,
-DSRRouteTable
-DelayUnqueue,
-FastUDPSourceIP6,
-FromHost,
-FromUserDevice,
-IP6Encap,
-IPAddrRewriter,
-IPFilter and other classifiers,
-KernelFilter,
-RadiotapDecap,
-RadixIPLookup,
-SetIP6DSCP,
-Socket,
-ThreadSafeQueue,
-TimeSortedSched,
-ToUserDevice,
-UDPIPEncap,
-WifiDecap,
-click-align,
-click-undead,
-
-and others.
+* Element and tool bug fixes: CheckTCPHeader, CheckUDPHeader, DSRRouteTable
+  DelayUnqueue, FastUDPSourceIP6, FromHost, FromUserDevice, IP6Encap,
+  IPAddrRewriter, IPFilter and other classifiers, KernelFilter,
+  RadiotapDecap, RadixIPLookup, SetIP6DSCP, Socket, ThreadSafeQueue,
+  TimeSortedSched, ToUserDevice, UDPIPEncap, WifiDecap, click-align,
+  click-undead, and others.
 
 * Performance improvements
 
@@ -181,52 +122,19 @@ and others.
 ** Thanks to Jimmy Kjällman and Pekka Nikander for FreeBSD kernel module
    support.
 
-** Thanks to
+** Thanks to Johan Bergs, Jesse Brown, Roman Chertov, Beyers Cronje, Jens
+   De Wit, Kevin Paul Herbert, Sascha Alexander Jopen, Christian Kreibich,
+   Bobby Longpocket, Ruben Merz, Derrick Pallas, Roberto Riggio, Luigi
+   Rizzo, Jim Roewe, Ian Rose, Harald Schiöberg, Florian Sesser, Lalith
+   Suresh, and Wim Vandenberghe for patches, bug fixes, and new elements.
 
-Bergs, Johan
-Brown, Jesse
-Chertov, Roman
-Cronje, Beyers
-De Wit, Jens
-Herbert, Kevin Paul
-Jopen, Sascha Alexander
-Kreibich, Christian
-Longpocket, Bobby
-Merz, Ruben
-Pallas, Derrick
-Riggio, Roberto
-Rizzo, Luigi
-Roewe, Jim
-Rose, Ian
-Schiöberg, Harald
-Sesser, Florian
-Suresh, Lalith
-Vandenberghe, Wim
+** Thanks to Dan Aguayo, Mark Allman, Manel Bourguiba, Bart Braem, Lars
+   Bro, Dmitriy Bubnov, Rémi Clavier, Jonathan Kirchhoff, Dan Levin, José
+   Pedro Oliveira, Kostas Pelechrinis, Sami Ruponen, Robert Shanks, Robert
+   Sombrutzki, Patrick Verkaik, Nicholas Weaver, Xianghua Xiao, and
+   xuhui122000 gmail com for bug reports.
 
-for patches, bug fixes, and new elements.
-
-** Thanks to
-
-Aguayo, Dan
-Allman, Mark
-Bourguiba, Manel
-Braem, Bart
-Bro, Lars
-Bubnov, Dmitriy
-Clavier, Rémi
-Kirchhoff, Jonathan
-Levin, Dan
-Oliveira, José Pedro
-Pelechrinis, Kostas
-Ruponen, Sami
-Shanks, Robert
-Sombrutzki, Robert
-Verkaik, Patrick
-Weaver, Nicholas
-Xiao, Xianghua
-xuhui122000 gmail com
-
-for bug reports.
+** Thanks to everyone else who supports and uses Click.
 
 
 Version 1.8.0   28.Feb.2010
