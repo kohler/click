@@ -61,7 +61,7 @@ CLICK_CXX_UNPROTECT
 CLICK_DECLS
 #define DO(t) \
     constexpr bool integer_traits<t>::is_numeric; \
-    constexpr bool integer_traits<t>::is_integer; \
+    constexpr bool integer_traits<t>::is_integral; \
     constexpr t integer_traits<t>::const_min; \
     constexpr t integer_traits<t>::const_max; \
     constexpr bool integer_traits<t>::is_signed;

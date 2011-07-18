@@ -104,7 +104,7 @@ typedef unsigned long click_uint_large_t;
   <dd>The maximum value available for the type.</dd>
   <dt>const bool is_numeric</dt>
   <dd>True.</dd>
-  <dt>const bool is_integer</dt>
+  <dt>const bool is_integral</dt>
   <dd>True.</dd>
   <dt>const bool is_signed</dt>
   <dd>True iff the type is signed.</dd>
@@ -119,21 +119,21 @@ typedef unsigned long click_uint_large_t;
   <dl>
   <dt>constexpr bool is_numeric</dt>
   <dd>False.</dd>
-  <dt>constexpr bool is_integer</dt>
+  <dt>constexpr bool is_integral</dt>
   <dd>False.</dd>
   </dl> */
 template<typename T>
 struct integer_traits {
     static constexpr bool is_numeric = false;
-    static constexpr bool is_integer = false;
+    static constexpr bool is_integral = false;
 };
 template<typename T> constexpr bool integer_traits<T>::is_numeric;
-template<typename T> constexpr bool integer_traits<T>::is_integer;
+template<typename T> constexpr bool integer_traits<T>::is_integral;
 
 template<>
 struct integer_traits<unsigned char> {
     static constexpr bool is_numeric = true;
-    static constexpr bool is_integer = true;
+    static constexpr bool is_integral = true;
     static constexpr unsigned char const_min = 0;
     static constexpr unsigned char const_max = ~const_min;
     static constexpr bool is_signed = false;
@@ -146,7 +146,7 @@ struct integer_traits<unsigned char> {
 template<>
 struct integer_traits<signed char> {
     static constexpr bool is_numeric = true;
-    static constexpr bool is_integer = true;
+    static constexpr bool is_integral = true;
     static constexpr signed char const_min = -128;
     static constexpr signed char const_max = 127;
     static constexpr bool is_signed = true;
@@ -177,7 +177,7 @@ struct integer_traits<char> : public integer_traits<signed char> {
 template<>
 struct integer_traits<unsigned short> {
     static constexpr bool is_numeric = true;
-    static constexpr bool is_integer = true;
+    static constexpr bool is_integral = true;
     static constexpr unsigned short const_min = 0;
     static constexpr unsigned short const_max = ~const_min;
     static constexpr bool is_signed = false;
@@ -190,7 +190,7 @@ struct integer_traits<unsigned short> {
 template<>
 struct integer_traits<short> {
     static constexpr bool is_numeric = true;
-    static constexpr bool is_integer = true;
+    static constexpr bool is_integral = true;
     static constexpr short const_min = -32768;
     static constexpr short const_max = 32767;
     static constexpr bool is_signed = true;
@@ -203,7 +203,7 @@ struct integer_traits<short> {
 template<>
 struct integer_traits<unsigned int> {
     static constexpr bool is_numeric = true;
-    static constexpr bool is_integer = true;
+    static constexpr bool is_integral = true;
     static constexpr unsigned int const_min = 0;
     static constexpr unsigned int const_max = ~const_min;
     static constexpr bool is_signed = false;
@@ -216,7 +216,7 @@ struct integer_traits<unsigned int> {
 template<>
 struct integer_traits<int> {
     static constexpr bool is_numeric = true;
-    static constexpr bool is_integer = true;
+    static constexpr bool is_integral = true;
     static constexpr int const_min = 1 << (8*SIZEOF_INT - 1);
     static constexpr int const_max = (unsigned) const_min - 1;
     static constexpr bool is_signed = true;
@@ -229,7 +229,7 @@ struct integer_traits<int> {
 template<>
 struct integer_traits<unsigned long> {
     static constexpr bool is_numeric = true;
-    static constexpr bool is_integer = true;
+    static constexpr bool is_integral = true;
     static constexpr unsigned long const_min = 0;
     static constexpr unsigned long const_max = ~const_min;
     static constexpr bool is_signed = false;
@@ -242,7 +242,7 @@ struct integer_traits<unsigned long> {
 template<>
 struct integer_traits<long> {
     static constexpr bool is_numeric = true;
-    static constexpr bool is_integer = true;
+    static constexpr bool is_integral = true;
     static constexpr long const_min = (long) 1 << (8*SIZEOF_LONG - 1);
     static constexpr long const_max = (unsigned long) const_min - 1;
     static constexpr bool is_signed = true;
@@ -256,7 +256,7 @@ struct integer_traits<long> {
 template<>
 struct integer_traits<unsigned long long> {
     static constexpr bool is_numeric = true;
-    static constexpr bool is_integer = true;
+    static constexpr bool is_integral = true;
     static constexpr unsigned long long const_min = 0;
     static constexpr unsigned long long const_max = ~const_min;
     static constexpr bool is_signed = false;
@@ -269,7 +269,7 @@ struct integer_traits<unsigned long long> {
 template<>
 struct integer_traits<long long> {
     static constexpr bool is_numeric = true;
-    static constexpr bool is_integer = true;
+    static constexpr bool is_integral = true;
     static constexpr long long const_min = (long long) 1 << (8*SIZEOF_LONG_LONG - 1);
     static constexpr long long const_max = (unsigned long long) const_min - 1;
     static constexpr bool is_signed = true;
@@ -284,7 +284,7 @@ struct integer_traits<long long> {
 template<>
 struct integer_traits<uint64_t> {
     static constexpr bool is_numeric = true;
-    static constexpr bool is_integer = true;
+    static constexpr bool is_integral = true;
     static constexpr uint64_t const_min = 0;
     static constexpr uint64_t const_max = ~const_min;
     static constexpr bool is_signed = false;
@@ -297,7 +297,7 @@ struct integer_traits<uint64_t> {
 template<>
 struct integer_traits<int64_t> {
     static constexpr bool is_numeric = true;
-    static constexpr bool is_integer = true;
+    static constexpr bool is_integral = true;
     static constexpr int64_t const_min = (int64_t) 1 << 63;
     static constexpr int64_t const_max = (uint64_t) const_min - 1;
     static constexpr bool is_signed = true;
