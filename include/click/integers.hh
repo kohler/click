@@ -392,7 +392,9 @@ void int_multiply(T a, T b, T &xlow, T &xhigh)
 }
 
 template<typename T>
-struct has_fast_int_multiply : public false_type {};
+struct has_fast_int_multiply : public false_type {
+    enum { check_t_integral = integer_traits<T>::is_signed };
+};
 
 #if defined(__i386__) || defined(__x86_64__)
 inline void int_multiply(unsigned a, unsigned b, unsigned &xlow, unsigned &xhigh)
