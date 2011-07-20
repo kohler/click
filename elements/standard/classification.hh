@@ -329,11 +329,16 @@ class DominatorOptimizer { public:
 		_pred_prev[_pred_next[br]] = _pred_prev[br];
 	}
 	if (to_state > 0) {
-	    if (_pred_first[to_state] >= 0)
-		_pred_prev[_pred_first[to_state]] = br;
-	    _pred_prev[br] = -1;
-	    _pred_next[br] = _pred_first[to_state];
-	    _pred_first[to_state] = br;
+	    int prev = -1, *pnext = &_pred_first[to_state];
+	    while (*pnext >= 0 && *pnext < br) {
+		prev = *pnext;
+		pnext = &_pred_next[*pnext];
+	    }
+	    _pred_prev[br] = prev;
+	    _pred_next[br] = *pnext;
+	    *pnext = br;
+	    if (_pred_next[br] >= 0)
+		_pred_prev[_pred_next[br]] = br;
 	}
 #endif
 	in.j[branch] = to_state;

@@ -410,7 +410,6 @@ DominatorOptimizer::find_predecessors(int state, Vector<int> &v) const
 		vv.push_back(brno(i, k));
     }
 
-    click_qsort(v.begin(), v.size());
     assert(v.size() == vv.size() && memcmp(v.begin(), vv.begin(), sizeof(int) * v.size()) == 0);
 # endif
 #else
