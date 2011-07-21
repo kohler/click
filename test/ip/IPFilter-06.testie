@@ -16,8 +16,8 @@ i :: Idle
 %expect stdout
  0   8/00010203%ffffffff  yes->step 1  no->step 2
  1  12/04050000%ffff0000  yes->[0]  no->step 2
- 2  76/0a000000%ffffffff  yes->[0]  no->step 3
+ 2 268/0a000000%ffffffff  yes->[0]  no->step 3
  3   0/00001020%0000ffff  yes->step 4  no->[X]
  4   4/30405060%ffffffff  yes->[0]  no->[X]
-safe length 80
+safe length 272
 alignment offset 0

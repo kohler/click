@@ -131,6 +131,17 @@ Insn::flip()
     short_output = !short_output;
 }
 
+static void
+jump_accum(StringAccum &sa, int j)
+{
+    if (j <= j_success)
+	sa << '[' << ("X-+"[j - j_never]) << ']';
+    else if (j <= 0)
+	sa << '[' << (-j) << ']';
+    else
+	sa << "step " << j;
+}
+
 StringAccum &
 operator<<(StringAccum &sa, const Insn &e)
 {
@@ -144,19 +155,9 @@ operator<<(StringAccum &sa, const Insn &e)
     for (int i = 0; i < 4; i++)
 	sprintf(buf + 9 + 2*i, "%02x", e.mask.c[i]);
     sa << buf << "  yes->";
-    if (e.yes() == j_never)
-	sa << "[X]";
-    else if (e.yes() <= 0)
-	sa << "[" << -e.yes() << "]";
-    else
-	sa << "step " << e.yes();
+    jump_accum(sa, e.yes());
     sa << "  no->";
-    if (e.no() == j_never)
-	sa << "[X]";
-    else if (e.no() <= 0)
-	sa << "[" << -e.no() << "]";
-    else
-	sa << "step " << e.no();
+    jump_accum(sa, e.no());
     if (e.short_output)
 	sa << "  short->yes";
     return sa;

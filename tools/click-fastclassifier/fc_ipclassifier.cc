@@ -25,8 +25,8 @@
 
 // magic constants imported from Click itself
 #define IPCLASSIFIER_OFFSET_MAC 0
-#define IPCLASSIFIER_OFFSET_NET 64
-#define IPCLASSIFIER_OFFSET_TRANSP 128
+#define IPCLASSIFIER_OFFSET_NET 256
+#define IPCLASSIFIER_OFFSET_TRANSP 512
 
 enum {
     used_mach = 1, used_neth = 2, used_transph = 4

@@ -195,8 +195,8 @@ class IPFilter : public Element { public:
     enum {
 	// if you change this, change click-fastclassifier.cc also
 	offset_mac = 0,
-	offset_net = 64,
-	offset_transp = 128
+	offset_net = 256,
+	offset_transp = 512
     };
 
     enum {
