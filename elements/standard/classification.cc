@@ -527,7 +527,8 @@ DominatorOptimizer::calculate_dom(int state)
 		    pred_mybr = thisbr;
 		_dom.push_back(thisbr);
 	    }
-	    if (pred_mybr >= 0 && (num_mybr == 0 || mybr == pred_mybr))
+	    if (num_mybr >= 0 && pred_mybr >= 0
+		&& (num_mybr == 0 || mybr == pred_mybr))
 		mybr = pred_mybr, ++num_mybr;
 	    else
 		num_mybr = -1;
