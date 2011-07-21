@@ -697,14 +697,13 @@ IPFilter::Primitive::compile(Classification::Wordwise::Program &p, Vector<int> &
 {
   p.start_subtree(tree);
 
-  // enforce first fragment: fragmentation offset == 0
-  // (before transport protocol to enhance later optimizations)
-  if (_type == TYPE_PORT || _type == TYPE_TCPOPT || ((_type & TYPE_FIELD) && (_type & FIELD_PROTO_MASK)))
-    p.add_insn(tree, offset_net + 4, 0, htonl(0x00001FFF));
-
   // handle transport protocol uniformly
   if (_transp_proto != UNKNOWN)
     add_exprs_for_proto(_transp_proto, 0xFF, p, tree);
+
+  // enforce first fragment: fragmentation offset == 0
+  if (_type == TYPE_PORT || _type == TYPE_TCPOPT || ((_type & TYPE_FIELD) && (_type & FIELD_PROTO_MASK)))
+    p.add_insn(tree, offset_net + 4, 0, htonl(0x00001FFF));
 
   // handle other types
   switch (_type) {
@@ -1269,11 +1268,12 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 	prog.finish_subtree(tree, Classification::c_or, Classification::j_never, Classification::j_never);
 
     // click_chatter("%s", prog.unparse().c_str());
-    prog.optimize();
+    static const int offset_map[] = { offset_net + 8, offset_net + 3 };
+    prog.optimize(offset_map, offset_map + 2, Classification::offset_max);
 
     // Compress the program into _zprog.
     // It helps to do another bubblesort for things like ports.
-    prog.bubble_sort_and_exprs();
+    prog.bubble_sort_and_exprs(offset_map, offset_map + 2, Classification::offset_max);
     zprog.compile(prog, PERFORM_BINARY_SEARCH, MIN_BINARY_SEARCH);
 
     // click_chatter("%s", zprog.unparse().c_str());

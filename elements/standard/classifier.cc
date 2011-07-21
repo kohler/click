@@ -206,7 +206,7 @@ Classifier::parse_program(Classification::Wordwise::Program &prog,
     prog.finish_subtree(tree, Classification::c_or, Classification::j_never, Classification::j_never);
 
     // click_chatter("%s", prog.unparse().c_str());
-    prog.optimize();
+    prog.optimize(0, 0, Classification::offset_max);
     // click_chatter("%s", prog.unparse().c_str());
 }
 

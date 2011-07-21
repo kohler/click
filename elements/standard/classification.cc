@@ -811,8 +811,34 @@ Program::count_inbranches(Vector<int> &inbranches) const
     }
 }
 
+inline int
+Program::map_offset(int offset, const int *begin, const int *end)
+{
+    if (begin == end || offset < begin[0] || offset > end[-2])
+	return offset;
+    else
+	return hard_map_offset(offset, begin, end);
+}
+
+int
+Program::hard_map_offset(int offset, const int *begin, const int *end)
+{
+    while (begin != end) {
+	const int *mid = begin + (((end - begin) >> 2) << 1);
+	if (mid[0] == offset)
+	    return mid[1];
+	else if (mid[0] < offset)
+	    begin = mid + 2;
+	else
+	    end = begin;
+    }
+    return offset;
+}
+
 void
-Program::bubble_sort_and_exprs(unsigned sort_stopper)
+Program::bubble_sort_and_exprs(const int *offset_map_begin,
+			       const int *offset_map_end,
+			       int last_offset)
 {
     Vector<int> inbranch;
     count_inbranches(inbranch);
@@ -820,33 +846,42 @@ Program::bubble_sort_and_exprs(unsigned sort_stopper)
     // do bubblesort
     for (int i = 0; i < _insn.size(); i++) {
 	Insn &e1 = _insn[i];
-	for (int k = 0; k < 2; k++)
-	    if (e1.j[k] > 0) {
-		int j = e1.j[k];
-		Insn &e2 = _insn[j];
-		if (e1.j[!k] == e2.j[!k]
-		    && (e1.offset > e2.offset
-			|| (e1.offset == e2.offset && ntohl(e1.mask.u) > ntohl(e2.mask.u))
-			|| (e1.offset == e2.offset && e1.mask.u == e2.mask.u && ntohl(e1.value.u) > ntohl(e2.value.u)))
-		    && e1.offset < sort_stopper && inbranch[j] > 0) {
-		    Insn temp(e2);
-		    e2 = e1;
-		    e2.j[k] = temp.j[k];
-		    e1 = temp;
-		    e1.j[k] = j;
-		    // step backwards to continue the sort
-		    i = (inbranch[i] > 0 ? inbranch[i] - 1 : i - 1);
-		    break;
-		}
+	for (int k = 0; k < 2; k++) {
+	    int j = e1.j[k];
+	    if (j <= 0
+		|| e1.offset >= static_cast<unsigned>(last_offset)
+		|| inbranch[j] <= 0)
+		continue;
+	    Insn &e2 = _insn[j];
+	    if (e1.j[!k] != e2.j[!k])
+		continue;
+	    int o1 = map_offset(e1.offset, offset_map_begin, offset_map_end),
+		o2 = map_offset(e2.offset, offset_map_begin, offset_map_end);
+	    if (o1 > o2
+		|| (o1 == o2
+		    && (ntohl(e1.mask.u) > ntohl(e2.mask.u)
+			|| (e1.mask.u == e2.mask.u
+			    && ntohl(e1.value.u) > ntohl(e2.value.u))))) {
+		Insn temp(e2);
+		e2 = e1;
+		e2.j[k] = temp.j[k];
+		e1 = temp;
+		e1.j[k] = j;
+		// step backwards to continue the sort
+		i = (inbranch[i] > 0 ? inbranch[i] - 1 : i - 1);
+		break;
 	    }
+	}
     }
 }
 
 void
-Program::optimize(unsigned sort_stopper)
+Program::optimize(const int *offset_map_begin,
+		  const int *offset_map_end,
+		  int last_offset)
 {
     // sort 'and' expressions
-    bubble_sort_and_exprs(sort_stopper);
+    bubble_sort_and_exprs(offset_map_begin, offset_map_end, last_offset);
 
     // click_chatter("%s", unparse().c_str());
 

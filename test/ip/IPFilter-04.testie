@@ -19,21 +19,21 @@ i [2] -> e :: IPClassifier(proto icmp,
 
 %expect stdout
 c.program:
- 0 260/00000000%00001fff  yes->step 1  no->step 8
- 1 264/00060000%00ff0000  yes->step 3  no->step 2
- 2 264/00110000%00ff0000  yes->step 3  no->step 6
+ 0 264/00060000%00ff0000  yes->step 2  no->step 1
+ 1 264/00110000%00ff0000  yes->step 2  no->step 6
+ 2 260/00000000%00001fff  yes->step 3  no->[5]
  3 512/00001e61%0000ffff  yes->[0]  no->step 4
  4 512/000022b8%0000ffff  yes->[1]  no->step 5
  5 512/00001b58%0000ffff  yes->[2]  no->[5]
  6 264/00010000%00ff0000  yes->step 7  no->[5]
- 7 512/08000000%ff000000  yes->[3]  no->[4]
- 8 264/00010000%00ff0000  yes->[4]  no->[5]
+ 7 260/00000000%00001fff  yes->step 8  no->[4]
+ 8 512/08000000%ff000000  yes->[3]  no->[4]
 safe length 516
 alignment offset 0
 
 d.program:
- 0 260/00000000%00001fff  yes->step 1  no->step 5
- 1 264/00110000%00ff0000  yes->step 2  no->step 5
+ 0 264/00110000%00ff0000  yes->step 1  no->step 5
+ 1 260/00000000%00001fff  yes->step 2  no->step 5
  2 512/00000089%0000ffff  yes->[0]  no->step 3
  3 512/000014e9%0000ffff  yes->[1]  no->step 4
  4 512/00440000%ffff0000  yes->[2]  no->step 5
@@ -44,9 +44,9 @@ alignment offset 0
 
 e.program:
  0 264/00010000%00ff0000  yes->[0]  no->step 1
- 1 260/00000000%00001fff  yes->step 2  no->step 5
- 2 264/00060000%00ff0000  yes->step 4  no->step 3
- 3 264/00110000%00ff0000  yes->step 4  no->[3]
+ 1 264/00060000%00ff0000  yes->step 3  no->step 2
+ 2 264/00110000%00ff0000  yes->step 3  no->[3]
+ 3 260/00000000%00001fff  yes->step 4  no->step 5
  4 512/00000035%0000ffff  yes->[1]  no->step 5
  5 264/00060000%00ff0000  yes->step 6  no->step 8
  6 260/00000000%00001fff  yes->step 7  no->[2]
