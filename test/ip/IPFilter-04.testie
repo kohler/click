@@ -10,6 +10,13 @@ i :: Idle;
 
 i -> c :: IPClassifier(dst port 7777, dst port 8888, dst port 7000, icmp type echo, icmp, -) [0,1,2,3,4,5] -> i;
 
+i [1] -> d :: IPFilter(0 udp dst port netbios-ns, 1 udp dst port 5353, 2 udp src port bootpc, 3 128.230.206.0/24, 4 -) [0,1,2,3,4] -> i;
+
+i [2] -> e :: IPClassifier(proto icmp,
+	    dst port 53,
+	    (proto tcp and !(syn and !ack)) or (tcpudp port >= 1024),
+            -) [0,1,2,3] -> i;
+
 %expect stdout
 c.program:
  0 260/00000000%00001fff  yes->step 1  no->step 8
@@ -22,6 +29,31 @@ c.program:
  7 512/08000000%ff000000  yes->[3]  no->[4]
  8 264/00010000%00ff0000  yes->[4]  no->[5]
 safe length 516
+alignment offset 0
+
+d.program:
+ 0 260/00000000%00001fff  yes->step 1  no->step 5
+ 1 264/00110000%00ff0000  yes->step 2  no->step 5
+ 2 512/00000089%0000ffff  yes->[0]  no->step 3
+ 3 512/000014e9%0000ffff  yes->[1]  no->step 4
+ 4 512/00440000%ffff0000  yes->[2]  no->step 5
+ 5 268/80e6ce00%ffffff00  yes->[3]  no->step 6
+ 6 272/80e6ce00%ffffff00  yes->[3]  no->[4]
+safe length 516
+alignment offset 0
+
+e.program:
+ 0 264/00010000%00ff0000  yes->[0]  no->step 1
+ 1 260/00000000%00001fff  yes->step 2  no->step 5
+ 2 264/00060000%00ff0000  yes->step 4  no->step 3
+ 3 264/00110000%00ff0000  yes->step 4  no->[3]
+ 4 512/00000035%0000ffff  yes->[1]  no->step 5
+ 5 264/00060000%00ff0000  yes->step 6  no->step 8
+ 6 260/00000000%00001fff  yes->step 7  no->[2]
+ 7 524/00020000%00120000  yes->step 9  no->[2]
+ 8 260/00000000%00001fff  yes->step 9  no->[3]
+ 9 512/00000000%fc00fc00  yes->[3]  no->[2]  short->yes
+safe length 526
 alignment offset 0
 
 %expect stderr
