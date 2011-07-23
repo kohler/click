@@ -24,14 +24,14 @@ CLICK_DECLS
  case that a single counter is paired with a unique rate, the TokenBucketX
  template class combines a TokenRateX and a TokenCounterX.
 
- The token bucket templates divide time into discrete units called I<epochs>.
- Token counters are refilled up to once per epoch.  An epoch may be less than
- a full period.  For example, if periods and epochs are 1 second and 1
+ The token bucket templates divide time into discrete units called I<ticks>.
+ Token counters are refilled up to once per tick.  A tick may be less than a
+ full period.  For example, if periods and ticks are 1 second and 1
  millisecond, respectively, then a TokenCounterX with associated rate 1000
  tokens per second would be refilled at 1 token per millisecond.  The
- TokenRateX template parameter P defines the epoch unit.  The provided
- TokenBucketJiffyParameters class is designed to be used as TokenRateX's
- parameter; it measures epochs in units of jiffies.
+ TokenRateX template parameter P defines the time tick unit and frequency.
+ The provided TokenBucketJiffyParameters class is designed to be used as
+ TokenRateX's parameter; it measures ticks in units of jiffies.
 
  @sa GapRate */
 
@@ -55,7 +55,7 @@ CLICK_DECLS
 template <typename P> class TokenRateX;
 
 template <typename P>
-class TokenRateX { public:
+class TokenRateX : public P { public:
 
     /** @brief The template parameter type. */
     typedef P parameter_type;
@@ -63,8 +63,11 @@ class TokenRateX { public:
     /** @brief Unsigned type of token counts. */
     typedef typename P::token_type token_type;
 
-    /** @brief Type of time epochs. */
-    typedef typename P::epoch_type epoch_type;
+    /** @brief Type of time points. */
+    typedef typename P::time_point_type time_point_type;
+
+    /** @brief Unsigned type of tick counts (differences between time points). */
+    typedef typename make_unsigned<typename P::duration_type>::type ticks_type;
 
     enum {
 	max_tokens = (token_type) -1
@@ -106,12 +109,12 @@ class TokenRateX { public:
 
     /** @brief Return true iff the token rate is unlimited. */
     bool unlimited() const {
-	return _epochs_until_full == 0;
+	return _time_until_full == 0;
     }
 
     /** @brief Return true iff the token rate is idle. */
     bool idle() const {
-	return _tokens_per_epoch == 0;
+	return _tokens_per_tick == 0;
     }
 
     /** @brief Return the rate in tokens per period.
@@ -128,9 +131,9 @@ class TokenRateX { public:
 	return max_tokens / _token_scale;
     }
 
-    /** @brief Return the number of tokens per epoch. */
-    token_type tokens_per_epoch() const {
-	return _tokens_per_epoch;
+    /** @brief Return the number of tokens per tick. */
+    token_type tokens_per_tick() const {
+	return _tokens_per_tick;
     }
 
     /** @brief Return the ratio of fractional tokens to real tokens. */
@@ -138,45 +141,45 @@ class TokenRateX { public:
 	return _token_scale;
     }
 
-    /** @brief Return the number of epochs required to refill a counter to
+    /** @brief Return the number of ticks required to refill a counter to
      * capacity.
      *
-     * Returns (epoch_type) -1 for idle rates. */
-    epoch_type epochs_until_full() const {
-	return _epochs_until_full;
+     * Returns (ticks_type) -1 for idle rates. */
+    ticks_type time_until_full() const {
+	return _time_until_full;
     }
 
-    /** @brief Return the current epoch.
+    /** @brief Return the current time point.
      *
-     * Implemented as P::epoch(). */
-    epoch_type epoch() const {
-	return P::epoch();
+     * Implemented as P::now(). */
+    time_point_type now() const {
+	return P::now();
     }
 
-    /** @brief Return the epoch corresponding to the @a time parameter.
+    /** @brief Return the time point corresponding to the @a time parameter.
      *
-     * May not be available for all U types.  Implemented as P::epoch(@a
+     * May not be available for all U types.  Implemented as P::time_point(@a
      * time). */
     template <typename U>
-    epoch_type epoch(U time) const {
-	return P::epoch(time);
+    time_point_type time_point(U time) const {
+	return P::time_point(time);
     }
 
     /** @brief Return @a b - @a a, assuming that @a b was measured after @a a.
      *
-     * Some epoch measurements can, in rare cases, appear to jump backwards,
+     * Some time measurements can, in rare cases, appear to jump backwards,
      * as timestamps do when the user changes the current time.  If this
-     * happens (@a b < @a a), epoch_monotonic_difference returns 0.
-     * Implemented as P::epoch_monotonic_difference(@a a, @a b). */
-    epoch_type epoch_monotonic_difference(epoch_type a, epoch_type b) const {
-	return P::epoch_monotonic_difference(a, b);
+     * happens (@a b < @a a), time_monotonic_difference returns 0.
+     * Implemented as P::time_monotonic_difference(@a a, @a b). */
+    ticks_type time_monotonic_difference(time_point_type a, time_point_type b) const {
+	return P::time_monotonic_difference(a, b);
     }
 
  private:
 
-    token_type _tokens_per_epoch;	// 0 iff idle()
+    token_type _tokens_per_tick;	// 0 iff idle()
     token_type _token_scale;
-    epoch_type _epochs_until_full;	// 0 iff unlimited()
+    ticks_type _time_until_full;	// 0 iff unlimited()
 
 };
 
@@ -185,11 +188,11 @@ void TokenRateX<P>::assign(bool unlimited)
 {
     _token_scale = 1;
     if (unlimited) {
-	_tokens_per_epoch = max_tokens;
-	_epochs_until_full = 0;
+	_tokens_per_tick = max_tokens;
+	_time_until_full = 0;
     } else {
-	_tokens_per_epoch = 0;
-	_epochs_until_full = (epoch_type) -1;
+	_tokens_per_tick = 0;
+	_time_until_full = (ticks_type) -1;
     }
 }
 
@@ -201,9 +204,9 @@ void TokenRateX<P>::assign(token_type rate, token_type capacity)
 	capacity = max_tokens;
     }
 
-    token_type frequency = P::epoch_frequency();
+    token_type frequency = P::frequency();
     if (rate != 0) {
-	// constrain capacity so _tokens_per_epoch fits in 1 limb
+	// constrain capacity so _tokens_per_tick fits in 1 limb
 	unsigned min_capacity = (rate - 1) / frequency + 1;
 	if (capacity < min_capacity)
 	    capacity = min_capacity;
@@ -220,12 +223,12 @@ void TokenRateX<P>::assign(token_type rate, token_type capacity)
     assert(l[1] == 0);
 
     if (rate != 0) {
-	// constrain _tokens_per_epoch to be at least 1
-	_tokens_per_epoch = (l[0] != 0 ? l[0] : 1);
-	_epochs_until_full = (max_tokens - 1) / _tokens_per_epoch + 1;
+	// constrain _tokens_per_tick to be at least 1
+	_tokens_per_tick = (l[0] != 0 ? l[0] : 1);
+	_time_until_full = (max_tokens - 1) / _tokens_per_tick + 1;
     } else {
-	_tokens_per_epoch = 0;
-	_epochs_until_full = (epoch_type) -1;
+	_tokens_per_tick = 0;
+	_time_until_full = (ticks_type) -1;
     }
 }
 
@@ -234,9 +237,9 @@ typename P::token_type TokenRateX<P>::rate() const
 {
     static_assert(sizeof(bigint::limb_type) == sizeof(token_type),
 		  "bigint::limb_type should have the same size as token_type.");
-    bigint::limb_type l[2] = { _tokens_per_epoch / 2, 0 };
-    bigint::limb_type a[2] = { _tokens_per_epoch, 0 };
-    bigint::multiply_add(l, a, 2, P::epoch_frequency());
+    bigint::limb_type l[2] = { _tokens_per_tick / 2, 0 };
+    bigint::limb_type a[2] = { _tokens_per_tick, 0 };
+    bigint::multiply_add(l, a, 2, P::frequency());
     (void) bigint::divide(l, l, 2, token_scale());
     return l[1] ? (token_type) max_tokens : l[0];
 }
@@ -278,8 +281,11 @@ class TokenCounterX { public:
     /** @brief Unsigned type of token counts. */
     typedef typename R::token_type token_type;
 
-    /** @brief Type of time epochs. */
-    typedef typename R::epoch_type epoch_type;
+    /** @brief Type of time points. */
+    typedef typename R::time_point_type time_point_type;
+
+    /** @brief Unsigned type of tick counts (differences between time points). */
+    typedef typename R::ticks_type ticks_type;
 
     enum {
 	max_tokens = R::max_tokens
@@ -287,18 +293,18 @@ class TokenCounterX { public:
 
     /** @brief Construct an empty TokenCounter.
      *
-     * The initial epoch is 0. */
+     * The initial time point is 0. */
     TokenCounterX()
-	: _tokens(0), _epoch() {
+	: _tokens(0), _time_point() {
     }
 
     /** @brief Construct a TokenCounter.
      * @param full whether the counter is created full
      *
      * The counter is initially full() if @a full is true, otherwise it is
-     * empty.  The initial epoch is 0. */
+     * empty.  The initial time point is 0. */
     explicit TokenCounterX(bool full)
-	: _tokens(full ? (token_type) max_tokens : 0), _epoch() {
+	: _tokens(full ? (token_type) max_tokens : 0), _time_point() {
     }
 
     /** @brief Return the number of tokens in the counter.
@@ -400,35 +406,35 @@ class TokenCounterX { public:
 	}
     }
 
-    /** @brief Refill the token counter to time @a rate.epoch().
+    /** @brief Refill the token counter to time @a rate.now().
      * @param rate associated token rate
      *
      * There are three refill() methods, useful for different methods of
-     * measuring epochs.  This method calls @a rate.epoch(), which returns the
-     * current epoch.  Other methods use an explicit epoch and a @a
-     * rate.epoch(U) method.
+     * measuring time.  This method calls @a rate.now(), which returns the
+     * current time.  Other methods use an explicit time point and a @a
+     * rate.time_point(U) method.
      *
-     * @sa set_epoch */
+     * @sa set_time_point */
     void refill(const rate_type &rate);
 
-    /** @brief Refill the token counter for time @a epoch.
+    /** @brief Refill the token counter for @a time.
      * @param rate associated token rate
-     * @param epoch new epoch */
-    void refill(const rate_type &rate, epoch_type epoch);
+     * @param time new time point */
+    void refill(const rate_type &rate, time_point_type time);
 
     /** @brief Refill the token counter for @a time.
      * @param rate associated token rate
      * @param time new time */
     template <typename U> void refill(const rate_type &rate, U time);
 
-    /** @brief Set the token counter's internal epoch to @a epoch.
-     * @param epoch new epoch
+    /** @brief Set the token counter's internal time point to @a time.
+     * @param time new time point
      *
      * Unlike refill(), this method does not refill the counter.
      *
      * @sa refill */
-    void set_epoch(epoch_type epoch) {
-	_epoch = epoch;
+    void set_time_point(time_point_type time) {
+	_time_point = time;
     }
 
     /** @brief Remove @a t tokens from the counter.
@@ -482,37 +488,37 @@ class TokenCounterX { public:
 	    return false;
     }
 
-    /** @brief Return the number of epochs until contains(<em>rate</em>, <em>t</em>).
+    /** @brief Return the number of ticks until contains(<em>rate</em>, <em>t</em>).
      *
      * @param rate associated token rate
      * @param t token count
      *
-     * Returns (epoch_type) -1 if passing time will never make
+     * Returns (ticks_type) -1 if passing time will never make
      * @link contains() contains(<em>rate</em>, <em>t</em>)@endlink
      * true. */
-    epoch_type epochs_until_contains(const rate_type &rate,
-				     token_type t) const {
+    ticks_type time_until_contains(const rate_type &rate,
+				   token_type t) const {
 	if (t <= rate.capacity())
-	    return epochs_until_contains_fraction(rate, t * rate.token_scale());
+	    return time_until_contains_fraction(rate, t * rate.token_scale());
 	else
-	    return (epoch_type) -1;
+	    return (ticks_type) -1;
     }
 
-    /** @brief Return the number of epochs until contains_fraction(<em>f</em>).
+    /** @brief Return the number of ticks until contains_fraction(<em>f</em>).
      * @param rate associated token rate
      * @param f fullness fraction, where max_tokens is full capacity
      *
-     * Returns (epoch_type) -1 if passing time will never make
+     * Returns (ticks_type) -1 if passing time will never make
      * @link contains_fraction() contains_fraction(<em>f</em>)@endlink
      * true. */
-    epoch_type epochs_until_contains_fraction(const rate_type &rate,
-					      token_type f) const {
-	if (f <= _tokens || rate.epochs_until_full() == 0)
+    ticks_type time_until_contains_fraction(const rate_type &rate,
+					    token_type f) const {
+	if (f <= _tokens || rate.time_until_full() == 0)
 	    return 0;
-	else if (rate.tokens_per_epoch() == 0)
-	    return (epoch_type) -1;
+	else if (rate.tokens_per_tick() == 0)
+	    return (ticks_type) -1;
 	else
-	    return (f - _tokens - 1) / rate.tokens_per_epoch() + 1;
+	    return (f - _tokens - 1) / rate.tokens_per_tick() + 1;
     }
 
 
@@ -565,36 +571,36 @@ class TokenCounterX { public:
   private:
 
     token_type _tokens;
-    epoch_type _epoch;
+    time_point_type _time_point;
 
 };
 
 template <typename R>
-void TokenCounterX<R>::refill(const rate_type &rate, epoch_type epoch)
+void TokenCounterX<R>::refill(const rate_type &rate, time_point_type time)
 {
-    epoch_type diff = rate.epoch_monotonic_difference(_epoch, epoch);
-    if (diff >= rate.epochs_until_full()) {
-	// special case: idle rates never fill, but rate.epochs_until_full()
-	// might be -1 if epoch_type is signed
-	if (rate.tokens_per_epoch() != 0)
-	    _tokens = max_tokens;
+    ticks_type diff = rate.time_monotonic_difference(_time_point, time);
+    if (diff >= rate.time_until_full()) {
+	// ignore special case of idle rates -- we assume that
+	// rate.time_monotonic_difference() will never return (ticks_type) -1,
+	// and ensure that ticks_type is unsigned
+	_tokens = max_tokens;
     } else if (diff > 0) {
-	token_type new_tokens = _tokens + diff * rate.tokens_per_epoch();
+	token_type new_tokens = _tokens + diff * rate.tokens_per_tick();
 	_tokens = (new_tokens < _tokens ? (token_type) max_tokens : new_tokens);
     }
-    _epoch = epoch;
+    _time_point = time;
 }
 
 template <typename R>
 void TokenCounterX<R>::refill(const rate_type &rate)
 {
-    refill(rate, rate.epoch());
+    refill(rate, rate.now());
 }
 
 template <typename R> template <typename U>
 void TokenCounterX<R>::refill(const rate_type &rate, U time)
 {
-    refill(rate, rate.epoch(time));
+    refill(rate, rate.time_point(time));
 }
 
 
@@ -602,7 +608,7 @@ void TokenCounterX<R>::refill(const rate_type &rate, U time)
  @brief  Helper class for token bucket rate limiter.
 
  Pass this class as the parameter to TokenRateX.  TokenBucketJiffyParameters
- measures epochs in units of jiffies.  The template parameter is the type of
+ measures ticks in units of jiffies.  The template parameter is the type of
  tokens. */
 
 template <typename T>
@@ -611,29 +617,29 @@ class TokenBucketJiffyParameters { public:
     /** @brief The type of tokens.  Always unsigned. */
     typedef T token_type;
 
-    /** @brief The type of an epoch.  Possibly signed. */
-    typedef click_jiffies_t epoch_type;
+    /** @brief The type of a time point.  Always unsigned. */
+    typedef click_jiffies_t time_point_type;
 
-    /** @brief The type of a difference between epochs.  Always signed. */
-    typedef click_jiffies_difference_t epoch_difference_type;
+    /** @brief The type of a difference between time points.  Always signed. */
+    typedef click_jiffies_difference_t duration_type;
 
-    /** @brief Return the current epoch number.
-     * @note TokenBucketJiffyParameters measures epochs in jiffies. */
-    static epoch_type epoch() {
+    /** @brief Return the current time point.
+     * @note TokenBucketJiffyParameters measures time points in jiffies. */
+    static time_point_type now() {
 	return click_jiffies();
     }
 
-    static epoch_type epoch(epoch_type t) {
+    static time_point_type time_point(time_point_type t) {
 	return t;
     }
 
     /** @brief Return @a b - @a a, assuming that @a b was measured after @a a.
      *
-     * Some epoch measurements can, in rare cases, appear to jump backwards,
+     * Some time measurements can, in rare cases, appear to jump backwards,
      * as timestamps do when the user changes the current time.  If this
      * happens, and @a b < @a a (even though @a b happened after @a a),
-     * epoch_monotonic_difference must return 0. */
-    static epoch_type epoch_monotonic_difference(epoch_type a, epoch_type b) {
+     * time_monotonic_difference must return 0. */
+    static duration_type time_monotonic_difference(time_point_type a, time_point_type b) {
 #if CLICK_JIFFIES_MONOTONIC
 	return b - a;
 #else
@@ -642,24 +648,24 @@ class TokenBucketJiffyParameters { public:
     }
 
     /** @brief Return true if @a a happened before @a b. */
-    static bool epoch_less(epoch_type a, epoch_type b) {
+    static bool time_less(time_point_type a, time_point_type b) {
 	return click_jiffies_less(a, b);
     }
 
-    /** @brief Return the number of epochs per period.
+    /** @brief Return the number of time points per period.
      *
      * Here, this is the number of jiffies per second. */
-    static unsigned epoch_frequency() {
+    static unsigned frequency() {
 	return CLICK_HZ;
     }
 
-    /** @brief Return the Timestamp representing a given number of epochs. */
-    static Timestamp epoch_timestamp(epoch_type x) {
+    /** @brief Return the Timestamp representing a given time point. */
+    static Timestamp timestamp(time_point_type x) {
 	return Timestamp::make_jiffies(x);
     }
 
-    /** @brief Return the Timestamp representing a given number of epochs. */
-    static Timestamp epoch_timestamp(epoch_difference_type x) {
+    /** @brief Return the Timestamp representing a given tick count. */
+    static Timestamp timestamp(duration_type x) {
 	return Timestamp::make_jiffies(x);
     }
 
@@ -692,8 +698,11 @@ class TokenBucketX { public:
     /** @brief Unsigned type of token counts. */
     typedef typename rate_type::token_type token_type;
 
-    /** @brief Type of time epochs. */
-    typedef typename rate_type::epoch_type epoch_type;
+    /** @brief Type of time ticks. */
+    typedef typename rate_type::time_point_type time_point_type;
+
+    /** @brief Unsigned type of differences between time ticks. */
+    typedef typename rate_type::ticks_type ticks_type;
 
     enum {
 	max_tokens = rate_type::max_tokens
@@ -701,14 +710,14 @@ class TokenBucketX { public:
 
     /** @brief Construct an idle token bucket.
      *
-     * The initial epoch is 0. */
+     * The initial time point is 0. */
     TokenBucketX() {
     }
 
     /** @brief Construct an idle or unlimited token bucket.
      * @param unlimited idle if false, unlimited if true
      *
-     * The initial epoch is 0. */
+     * The initial time point is 0. */
     explicit TokenBucketX(bool unlimited)
 	: _rate(unlimited), _bucket(unlimited) {
     }
@@ -717,7 +726,7 @@ class TokenBucketX { public:
      * @param rate refill rate in tokens per period
      * @param capacity maximum token accumulation
      *
-     * The initial epoch is 0 and the token bucket is initially full (the
+     * The initial time point is 0 and the token bucket is initially full (the
      * initial token count equals @a capacity).  The rate is idle if either @a
      * rate or @a capacity is 0.
      *
@@ -738,7 +747,7 @@ class TokenBucketX { public:
      *
      * Sets the token bucket's rate to @a rate and capacity to @a capacity.
      * If either @a rate or @a capacity is 0, the token bucket becomes idle.
-     * The epoch is unchanged.
+     * The time point is unchanged.
      *
      * The ratio of tokens/burst is unchanged by the assignment, so the actual
      * number of tokens could go up or down, depending on how the rate is
@@ -860,36 +869,35 @@ class TokenBucketX { public:
 	_bucket.set_fraction(f);
     }
 
-    /** @brief Refill the token bucket to time P::epoch().
+    /** @brief Refill the token bucket to time P::now().
      *
      * There are three refill() methods, useful for different methods of
-     * measuring epochs.  This method call parameter_type::epoch(), which
-     * returns the current epoch.  Other methods use an explicit epoch and a
-     * parameter_type::epoch(U) method.
+     * measuring ticks.  This method call parameter_type::now(), which returns
+     * the current time.  Other methods use an explicit time point and a
+     * parameter_type::time(U) method.
      *
-     * @sa set_epoch */
+     * @sa set_time_point */
     void refill() {
 	_bucket.refill(_rate);
     }
 
-    /** @brief Refill the token bucket for time @a epoch. */
-    void refill(epoch_type epoch) {
-	_bucket.refill(_rate, epoch);
+    /** @brief Refill the token bucket for @a time. */
+    void refill(time_point_type time) {
+	_bucket.refill(_rate, time);
     }
 
-    /** @brief Refill the token bucket for time P::epoch(@a time). */
+    /** @brief Refill the token bucket for time P::time_point(@a time). */
     template <typename U> void refill(U time) {
 	_bucket.refill(_rate, time);
     }
 
-    /** @brief Set the token bucket's internal epoch to @a epoch.
-     * @param epoch number of epochs
+    /** @brief Set the token bucket's internal time point to @a time.
      *
      * Unlike refill(), this method does not refill the counter.
      *
      * @sa refill */
-    void set_epoch(epoch_type epoch) {
-	_bucket.set_epoch(epoch);
+    void set_time_point(time_point_type time) {
+	_bucket.set_time_point(time);
     }
 
     /** @brief Remove @a t tokens from the bucket.
@@ -934,20 +942,20 @@ class TokenBucketX { public:
 	return _bucket.remove_fraction_if(f);
     }
 
-    /** @brief Return the number of epochs until contains(@a t).
+    /** @brief Return the number of ticks until contains(@a t).
      *
-     * Returns (epoch_type) -1 if passing time will never make contains(@a t)
+     * Returns (ticks_type) -1 if passing time will never make contains(@a t)
      * true. */
-    epoch_type epochs_until_contains(token_type t) const {
-	return _bucket.epochs_until_contains(_rate, t);
+    ticks_type time_until_contains(token_type t) const {
+	return _bucket.time_until_contains(_rate, t);
     }
 
-    /** @brief Return the number of epochs until contains_fraction(@a f).
+    /** @brief Return the number of ticks until contains_fraction(@a f).
      *
-     * Returns (epoch_type) -1 if passing time will never make
+     * Returns (ticks_type) -1 if passing time will never make
      * contains_fraction(@a f) true. */
-    epoch_type epochs_until_contains_fraction(token_type f) const {
-	return _bucket.epochs_until_contains_fraction(_rate, f);
+    ticks_type time_until_contains_fraction(ticks_type f) const {
+	return _bucket.time_until_contains_fraction(_rate, f);
     }
 
 

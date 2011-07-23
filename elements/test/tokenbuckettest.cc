@@ -59,16 +59,16 @@ TokenBucketTest::initialize(ErrorHandler *errh)
     TokenBucket tb4(2, 1); // rate ends up very slightly less than 2
     tb4.refill(0);
     tb4.clear();
-    tb4.refill(tb4.epochs_until_contains(1));
+    tb4.refill(tb4.time_until_contains(1));
     CHECK(tb4.contains(1));
 
     tb4.refill(0);
     tb4.clear();
-    click_jiffies_t done_at = tb4.epochs_until_contains(1);
+    click_jiffies_t done_at = tb4.time_until_contains(1);
     click_jiffies_t cur_time = 0;
     while (cur_time < done_at) {
         CHECK(cur_time == done_at - 1 || !tb4.contains(1));
-        CHECK(tb4.epochs_until_contains(1) <= done_at - cur_time);
+        CHECK(tb4.time_until_contains(1) <= (TokenBucket::ticks_type) (done_at - cur_time));
         ++cur_time;
         tb4.refill(cur_time);
     }

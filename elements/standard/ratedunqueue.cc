@@ -107,7 +107,7 @@ RatedUnqueue::run_task(Task *)
 		return false; // without rescheduling
         }
     } else {
-	_timer.schedule_after(Timestamp::make_jiffies(_tb.epochs_until_contains(1)));
+	_timer.schedule_after(Timestamp::make_jiffies(_tb.time_until_contains(1)));
 	_empty_runs++;
 	return false;
     }

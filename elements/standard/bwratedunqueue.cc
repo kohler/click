@@ -53,7 +53,7 @@ BandwidthRatedUnqueue::run_task(Task *)
 		return false;	// without rescheduling
 	}
     } else {
-	_timer.schedule_after(Timestamp::make_jiffies(_tb.epochs_until_contains(tb_bandwidth_thresh)));
+	_timer.schedule_after(Timestamp::make_jiffies(_tb.time_until_contains(tb_bandwidth_thresh)));
 	_empty_runs++;
 	return false;
     }
