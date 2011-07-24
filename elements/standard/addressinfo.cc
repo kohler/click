@@ -353,12 +353,12 @@ AddressInfo::query_netdevice(const String &s, unsigned char *store,
 
     if (context && type == 'i') {
 	char tmp[255];
-	int r = simclick_sim_command(e->router()->master()->simnode(), SIMCLICK_IPADDR_FROM_NAME, s.c_str(), tmp, 255);
+	int r = simclick_sim_command(context->router()->master()->simnode(), SIMCLICK_IPADDR_FROM_NAME, s.c_str(), tmp, 255);
 	if (r >= 0 && tmp[0] && IPAddressArg().parse(tmp, *reinterpret_cast<IPAddress *>(store)))
 	    return true;
     } else if (context && type == 'e') {
 	char tmp[255];
-	int r = simclick_sim_command(e->router()->master()->simnode(), SIMCLICK_MACADDR_FROM_NAME, s.c_str(), tmp, 255);
+	int r = simclick_sim_command(context->router()->master()->simnode(), SIMCLICK_MACADDR_FROM_NAME, s.c_str(), tmp, 255);
 	if (r >= 0 && tmp[0] && EtherAddressArg().parse(tmp, store))
 	    return true;
     }
