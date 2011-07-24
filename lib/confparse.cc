@@ -2011,7 +2011,8 @@ cp_element(const String &str, Router *router, ErrorHandler *errh,
  *   The named element must exist; it is looked up as by cp_element() in the
  *   compound element context specified by @a context.
  * - <tt>".handlername"</tt>, for a global handler on @a context's router.
- * - <tt>"handlername"</tt>, for a global handler on @a context's router.
+ * - <tt>"handlername"</tt>, for a handler on the @a context element (if
+ *   such a handler exists), or a global handler on @a context's router.
  *
  * The handler name must contain at least one character.  Although the named
  * element must exist, this function does not check whether the named handler
@@ -2029,33 +2030,44 @@ cp_handler_name(const String& str,
 		Element** result_element, String* result_hname,
 		const Element* context, ErrorHandler* errh)
 {
-  SilentErrorHandler serrh;
-  if (!errh)
-    errh = &serrh;
+    LocalErrorHandler lerrh(errh);
 
-  String text;
-  if (!cp_string(str, &text) || !text) {
-    errh->error("bad handler name format");
-    return false;
-  }
+    String text;
+    if (!cp_string(str, &text) || !text) {
+    syntax_error:
+	lerrh.error("syntax error");
+	return false;
+    }
 
-  const char *leftmost_dot = find(text, '.');
-  if (leftmost_dot == text.end() || leftmost_dot == text.begin()) {
-    *result_element = context->router()->root_element();
-    *result_hname = (leftmost_dot == text.begin() ? text.substring(text.begin() + 1, text.end()) : text);
+    Router *r = context->router();
+    const char *dot = find(text, '.'), *hstart = text.begin();
+    Element *e = 0;
+
+    if (dot == text.begin()) {
+	hstart++;
+	e = r->root_element();
+    } else if (dot == text.end() - 1)
+	goto syntax_error;
+    else if (dot != text.end()) {
+	String ename(text.substring(text.begin(), dot));
+	if ((e = r->find(ename, context)))
+	    hstart = dot + 1;
+    } 
+
+    if (!e) {
+	if (context->eindex() >= 0 && r->handler(context, text))
+	    e = const_cast<Element *>(context);
+	else if (dot == text.end() || r->handler(r->root_element(), text))
+	    e = r->root_element();
+	else {
+	    lerrh.error("no element named %<%.*s%>", dot - text.begin(), text.begin());
+	    return false;
+	}
+    }
+
+    *result_element = e;
+    *result_hname = text.substring(hstart, text.end());
     return true;
-  } else if (leftmost_dot == text.end() - 1) {
-    errh->error("empty handler name");
-    return false;
-  }
-
-  Element *e = context->router()->find(text.substring(text.begin(), leftmost_dot), context, errh);
-  if (!e)
-    return false;
-
-  *result_element = e;
-  *result_hname = text.substring(leftmost_dot + 1, text.end());
-  return true;
 }
 
 /** @brief Parse a handler reference from @a str.
