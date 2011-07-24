@@ -607,7 +607,8 @@ inline bool
 Task::fire()
 {
 #if CLICK_STATS >= 2
-    click_cycles_t start_cycles = click_get_cycles();
+    click_cycles_t start_cycles = click_get_cycles(),
+	start_child_cycles = _owner->_child_cycles;
 #endif
 #if HAVE_MULTITHREAD
     _cycle_runs++;
@@ -622,8 +623,10 @@ Task::fire()
     _work_done += work_done;
 #endif
 #if CLICK_STATS >= 2
-    ++_owner->_task_calls;
-    _owner->_task_cycles += click_get_cycles() - start_cycles;
+    click_cycles_t all_delta = click_get_cycles() - start_cycles,
+	own_delta = all_delta - (_owner->_child_cycles - start_child_cycles);
+    _owner->_task_calls += 1;
+    _owner->_task_own_cycles += own_delta;
 #endif
     return work_done;
 }

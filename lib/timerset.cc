@@ -95,14 +95,18 @@ inline void
 TimerSet::run_one_timer(Timer *t)
 {
 #if CLICK_STATS >= 2
-    click_cycles_t start_cycles = click_get_cycles();
+    Element *owner = t->_owner;
+    click_cycles_t start_cycles = click_get_cycles(),
+	start_child_cycles = owner->_child_cycles;
 #endif
 
     t->_hook.callback(t, t->_thunk);
 
 #if CLICK_STATS >= 2
-    t->_owner->_timer_cycles += click_get_cycles() - start_cycles;
-    t->_owner->_timer_calls++;
+    click_cycles_t all_delta = click_get_cycles() - start_cycles,
+	own_delta = all_delta - (owner->_child_cycles - start_child_cycles);
+    owner->_timer_calls += 1;
+    owner->_timer_own_cycles += own_delta;
 #endif
 }
 

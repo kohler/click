@@ -266,19 +266,19 @@ class Element { public:
 
 #if CLICK_STATS >= 2
     // STATISTICS
-    unsigned _calls;		// Push and pull calls into this element.
-    click_cycles_t _self_cycles;	// Cycles spent in self and children.
+    unsigned _xfer_calls;	// Push and pull calls into this element.
+    click_cycles_t _xfer_own_cycles;	// Cycles spent in self from push and pull.
     click_cycles_t _child_cycles;	// Cycles spent in children.
 
     unsigned _task_calls;	// Calls to tasks owned by this element.
-    click_cycles_t _task_cycles;	// Cycles spent in self from tasks.
+    click_cycles_t _task_own_cycles;	// Cycles spent in self from tasks.
 
     unsigned _timer_calls;	// Calls to timers owned by this element.
-    click_cycles_t _timer_cycles;	// Cycles spent in self from timers.
+    click_cycles_t _timer_own_cycles;	// Cycles spent in self from timers.
 
     inline void reset_cycles() {
-	_calls = _task_calls = _timer_calls = 0;
-	_self_cycles = _child_cycles = _task_cycles = _timer_cycles = 0;
+	_xfer_calls = _task_calls = _timer_calls = 0;
+	_xfer_own_cycles = _task_own_cycles = _timer_own_cycles = _child_cycles = 0;
     }
     static String read_cycles_handler(Element *, void *);
     static int write_cycles_handler(const String &, Element *, void *, ErrorHandler *);
@@ -601,16 +601,18 @@ Element::Port::push(Packet* p) const
 #endif
 #if CLICK_STATS >= 2
     ++_e->input(_port)._packets;
-    click_cycles_t c0 = click_get_cycles();
+    click_cycles_t start_cycles = click_get_cycles(),
+	start_child_cycles = _e->_child_cycles;
 # if HAVE_BOUND_PORT_TRANSFER
     _bound.push(_e, _port, p);
 # else
     _e->push(_port, p);
 # endif
-    click_cycles_t x = click_get_cycles() - c0;
-    ++_e->_calls;
-    _e->_self_cycles += x;
-    _owner->_child_cycles += x;
+    click_cycles_t all_delta = click_get_cycles() - start_cycles,
+	own_delta = all_delta - (_e->_child_cycles - start_child_cycles);
+    _e->_xfer_calls += 1;
+    _e->_xfer_own_cycles += own_delta;
+    _owner->_child_cycles += all_delta;
 #else
 # if HAVE_BOUND_PORT_TRANSFER
     _bound.push(_e, _port, p);
@@ -641,18 +643,20 @@ Element::Port::pull() const
 {
     assert(_e);
 #if CLICK_STATS >= 2
-    click_cycles_t c0 = click_get_cycles();
+    click_cycles_t start_cycles = click_get_cycles(),
+	old_child_cycles = _e->_child_cycles;
 # if HAVE_BOUND_PORT_TRANSFER
     Packet *p = _bound.pull(_e, _port);
 # else
     Packet *p = _e->pull(_port);
 # endif
-    click_cycles_t x = click_get_cycles() - c0;
-    ++_e->_calls;
-    _e->_self_cycles += x;
-    _owner->_child_cycles += x;
     if (p)
-	++_e->output(_port)._packets;
+	_e->output(_port)._packets += 1;
+    click_cycles_t all_delta = click_get_cycles() - start_cycles,
+	own_delta = all_delta - (_e->_child_cycles - old_child_cycles);
+    _e->_xfer_calls += 1;
+    _e->_xfer_own_cycles += own_delta;
+    _owner->_child_cycles += all_delta;
 #else
 # if HAVE_BOUND_PORT_TRANSFER
     Packet *p = _bound.pull(_e, _port);

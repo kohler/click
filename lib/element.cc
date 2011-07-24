@@ -2021,23 +2021,16 @@ read_ocounts_handler(Element *f, void *)
 #endif /* CLICK_STATS >= 1 */
 
 #if CLICK_STATS >= 2
-/*
- * cycles:
- * # of calls to this element (push or pull).
- * cycles spent in this element and elements it pulls or pushes.
- * cycles spent in the elements this one pulls and pushes.
- */
 String
 Element::read_cycles_handler(Element *e, void *)
 {
     StringAccum sa;
-    if (e->_calls)
-	sa << e->_calls << ' ' << e->_self_cycles << ' '
-	   << e->_child_cycles << '\n';
     if (e->_task_calls)
-	sa << "tasks " << e->_task_calls << ' ' << e->_task_cycles << "\n";
+	sa << "tasks " << e->_task_calls << ' ' << e->_task_own_cycles << '\n';
     if (e->_timer_calls)
-	sa << "timers " << e->_timer_calls << ' ' << e->_timer_cycles << "\n";
+	sa << "timers " << e->_timer_calls << ' ' << e->_timer_own_cycles << '\n';
+    if (e->_xfer_calls)
+	sa << "xfer " << e->_xfer_calls << ' ' << e->_xfer_own_cycles << '\n';
     return sa.take_string();
 }
 

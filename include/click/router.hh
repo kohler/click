@@ -338,7 +338,8 @@ class Router { public:
     int visit_base(bool forward, Element* first_element, int first_port, RouterVisitor* visitor) const;
 
     // global handlers
-    static String router_read_handler(Element*, void*);
+    static String router_read_handler(Element *e, void *user_data);
+    static int router_write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh);
 
     /** @cond never */
     friend class Master;

@@ -34,6 +34,9 @@
 #include <click/notifier.hh>
 #include <click/nameinfo.hh>
 #include <click/bighashmap_arena.hh>
+#if CLICK_STATS >= 2
+# include <click/hashtable.hh>
+#endif
 #include <click/standard/errorelement.hh>
 #include <click/standard/threadsched.hh>
 #if CLICK_BSDMODULE
@@ -2153,7 +2156,15 @@ Router::configuration_string() const
 
 enum { GH_VERSION, GH_CONFIG, GH_FLATCONFIG, GH_LIST, GH_REQUIREMENTS,
        GH_DRIVER, GH_ACTIVE_PORTS, GH_ACTIVE_PORT_STATS, GH_STRING_PROFILE,
-       GH_STRING_PROFILE_LONG, GH_SCHEDULING_PROFILE };
+       GH_STRING_PROFILE_LONG, GH_SCHEDULING_PROFILE, GH_STOP,
+       GH_ELEMENT_CYCLES, GH_CLASS_CYCLES, GH_RESET_CYCLES };
+
+#if CLICK_STATS >= 2
+struct stats_info {
+    click_cycles_t task_own_cycles, timer_own_cycles, xfer_own_cycles;
+    uint32_t task_calls, timer_calls, xfer_calls, nelements;
+};
+#endif
 
 String
 Router::router_read_handler(Element *e, void *thunk)
@@ -2247,19 +2258,119 @@ Router::router_read_handler(Element *e, void *thunk)
 	break;
 #endif
 
+#if CLICK_STATS >= 2
+    case GH_ELEMENT_CYCLES:
+	if (!r)
+	    break;
+	sa << "name,class,task_calls,task_cycles,cycles_per_task,timer_calls,timer_cycles,cycles_per_timer,xfer_calls,xfer_cycles,cycles_per_xfer,any_cycles,cycles_per_any\n";
+	for (int ei = 0; ei < r->nelements(); ++ei) {
+	    Element *e = r->element(ei);
+	    if (!(e->_task_own_cycles || e->_timer_own_cycles || e->_xfer_own_cycles))
+		continue;
+	    sa << r->_element_names[ei] << ','
+	       << e->class_name() << ','
+	       << e->_task_calls << ','
+	       << e->_task_own_cycles << ','
+	       << int_divide(e->_task_own_cycles, e->_task_calls ? e->_task_calls : 1) << ','
+	       << e->_timer_calls << ','
+	       << e->_timer_own_cycles << ','
+	       << int_divide(e->_timer_own_cycles, e->_timer_calls ? e->_timer_calls : 1) << ','
+	       << e->_xfer_calls << ','
+	       << e->_xfer_own_cycles << ','
+	       << int_divide(e->_xfer_own_cycles, e->_xfer_calls ? e->_xfer_calls : 1) << ',';
+	    click_cycles_t any_cycles = e->_task_own_cycles + e->_timer_own_cycles + e->_xfer_own_cycles;
+	    uint32_t any_calls = e->_task_calls + e->_timer_calls + e->_xfer_calls;
+	    sa << any_cycles << ','
+	       << int_divide(any_cycles, any_calls ? any_calls : 1) << '\n';
+	}
+	break;
+
+    case GH_CLASS_CYCLES: {
+	if (!r)
+	    break;
+	HashTable<String, int> class_map(-1);
+	int nclasses = 0;
+	for (int ei = 0; ei < r->nelements(); ++ei) {
+	    Element *e = r->element(ei);
+	    if (!(e->_task_own_cycles || e->_timer_own_cycles || e->_xfer_own_cycles))
+		continue;
+	    int &x = class_map[e->class_name()];
+	    if (x < 0)
+		x = nclasses++;
+	}
+
+	stats_info *si = new stats_info[nclasses];
+	memset(si, 0, sizeof(stats_info) * nclasses);
+	for (int ei = 0; ei < r->nelements(); ++ei) {
+	    Element *e = r->element(ei);
+	    int x = class_map.get(e->class_name());
+	    if (!(e->_task_own_cycles || e->_timer_own_cycles || e->_xfer_own_cycles) || x < 0)
+		continue;
+	    stats_info &sii = si[x];
+	    sii.task_own_cycles += e->_task_own_cycles;
+	    sii.task_calls += e->_task_calls;
+	    sii.timer_own_cycles += e->_timer_own_cycles;
+	    sii.timer_calls += e->_timer_calls;
+	    sii.xfer_own_cycles += e->_xfer_own_cycles;
+	    sii.xfer_calls += e->_xfer_calls;
+	    sii.nelements += 1;
+	}
+
+	sa << "class,nelements,task_calls,task_cycles,cycles_per_task,timer_calls,timer_cycles,cycles_per_timer,xfer_calls,xfer_cycles,cycles_per_xfer,any_cycles,cycles_per_any\n";
+	for (HashTable<String, int>::iterator it = class_map.begin();
+	     it != class_map.end(); ++it) {
+	    stats_info &sii = si[it.value()];
+	    sa << it.key() << ','
+	       << sii.nelements << ','
+	       << sii.task_calls << ','
+	       << sii.task_own_cycles << ','
+	       << int_divide(sii.task_own_cycles, sii.task_calls ? sii.task_calls : 1) << ','
+	       << sii.timer_calls << ','
+	       << sii.timer_own_cycles << ','
+	       << int_divide(sii.timer_own_cycles, sii.timer_calls ? sii.timer_calls : 1) << ','
+	       << sii.xfer_calls << ','
+	       << sii.xfer_own_cycles << ','
+	       << int_divide(sii.xfer_own_cycles, sii.xfer_calls ? sii.xfer_calls : 1) << ',';
+	    click_cycles_t any_cycles = sii.task_own_cycles + sii.timer_own_cycles + sii.xfer_own_cycles;
+	    uint32_t any_calls = sii.task_calls + sii.timer_calls + sii.xfer_calls;
+	    sa << any_cycles << ','
+	       << int_divide(any_cycles, any_calls ? any_calls : 1) << '\n';
+	}
+
+	delete[] si;
+	break;
+    }
+#endif
+
     }
     return sa.take_string();
 }
 
-static int
-stop_global_handler(const String &s, Element *e, void *, ErrorHandler *errh)
+int
+Router::router_write_handler(const String &s, Element *e, void *thunk, ErrorHandler *errh)
 {
-    if (e) {
+    Router *r = (e ? e->router() : 0);
+    if (!r)
+	return 0;
+    switch ((uintptr_t) thunk) {
+    case GH_STOP: {
 	int n = 1;
 	(void) IntArg().parse(s, n);
-	e->router()->adjust_runcount(-n);
-    } else
-	errh->message("no router to stop");
+	if (r)
+	    r->adjust_runcount(-n);
+	else
+	    errh->message("no router to stop");
+	break;
+    }
+#if CLICK_STATS >= 2
+    case GH_RESET_CYCLES:
+	for (int i = 0; i < (r ? r->nelements() : 0); i++)
+	    r->_elements[i]->reset_cycles();
+	break;
+#endif
+    default:
+	break;
+    }
     return 0;
 }
 
@@ -2275,7 +2386,7 @@ Router::static_initialize()
 	add_read_handler(0, "requirements", router_read_handler, (void *)GH_REQUIREMENTS);
 	add_read_handler(0, "handlers", Element::read_handlers_handler, 0);
 	add_read_handler(0, "list", router_read_handler, (void *)GH_LIST);
-	add_write_handler(0, "stop", stop_global_handler, 0);
+	add_write_handler(0, "stop", router_write_handler, (void *)GH_STOP);
 #if CLICK_STATS >= 1
 	add_read_handler(0, "active_ports", router_read_handler, (void *)GH_ACTIVE_PORTS);
 	add_read_handler(0, "active_port_stats", router_read_handler, (void *)GH_ACTIVE_PORT_STATS);
@@ -2288,6 +2399,11 @@ Router::static_initialize()
 #endif
 #if CLICK_DEBUG_MASTER || CLICK_DEBUG_SCHEDULING
 	add_read_handler(0, "scheduling_profile", router_read_handler, (void *) GH_SCHEDULING_PROFILE);
+#endif
+#if CLICK_STATS >= 2
+        add_read_handler(0, "element_cycles.csv", router_read_handler, (void *)GH_ELEMENT_CYCLES);
+        add_read_handler(0, "class_cycles.csv", router_read_handler, (void *)GH_CLASS_CYCLES);
+        add_write_handler(0, "reset_cycles", router_write_handler, (void *)GH_RESET_CYCLES);
 #endif
     }
 }
