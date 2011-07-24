@@ -28,7 +28,7 @@ Returns if the signal is active. Same as the SIGNAL argument.
 
 
 =a
-PullNull, PokeHandlers, InfiniteSource
+PullNull, Script, InfiniteSource
 */
 
 class UpstreamNotifier : public Element { public:

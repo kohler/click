@@ -420,8 +420,6 @@ elementclass GridLoad {
     -> count :: Counter
     -> tr :: TimeRange
     -> output;
-
-  ph :: PokeHandlers;
 }
 
 ls2 :: $ls2_element;

@@ -381,7 +381,7 @@ setup :: RatedSource(ACTIVE false, RATE 1, DATA 'xxx')
         -> GetIPAddress(16) 
         -> [0]dsr_rt;
 
-poke :: PokeHandlers(pause,
+poke :: Script(pause,
 		     write setup.active true,
 		     wait 5,
 		     write setup.active false,
@@ -391,7 +391,7 @@ poke :: PokeHandlers(pause,
                      write spew.active false,
                      loop);
 
-setup_poke :: PokeHandlers(pause, write setup.active true, wait 5, write setup.active false, loop);
+setup_poke :: Script(pause, write setup.active true, wait 5, write setup.active false, loop);
 
 ";
 

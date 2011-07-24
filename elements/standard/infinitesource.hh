@@ -60,7 +60,7 @@ packets. Defaults to true.
 =back
 
 To generate a particular traffic pattern, use this element and RatedSource
-in conjunction with PokeHandlers.
+in conjunction with Script.
 
 =e
 
@@ -91,7 +91,7 @@ Makes the element active or inactive.
 
 =a
 
-RatedSource, PokeHandlers */
+RatedSource, Script */
 
 class InfiniteSource : public Element, public ActiveNotifier { public:
 

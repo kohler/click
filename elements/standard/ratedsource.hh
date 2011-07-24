@@ -61,7 +61,7 @@ false.
 =back
 
 To generate a particular repeatable traffic pattern, use this element's
-B<rate> and B<active> handlers in conjunction with PokeHandlers.
+B<rate> and B<active> handlers in conjunction with Script.
 
 =e
 
@@ -85,7 +85,7 @@ Makes the element active or inactive.
 
 =a
 
-InfiniteSource, PokeHandlers */
+InfiniteSource, Script */
 
 class RatedSource : public Element { public:
 
