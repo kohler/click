@@ -282,8 +282,8 @@ ClickIno::lookup(ino_t ino, const String &component)
 	    return INO_MKHNDIR(ClickIno::elementno(found));
     }
 
-    // look for handlers
-    if (INO_DT_HAS_H(ino) && elementno < nelements) {
+    // look for handlers (no initial period)
+    if (INO_DT_HAS_H(ino) && elementno < nelements && component[0] != '.') {
 	Element *element = Router::element(_router, elementno);
 	int hi = Router::hindex(element, component);
 	if (hi >= 0)
@@ -312,6 +312,18 @@ ClickIno::lookup(ino_t ino, const String &component)
 
     // no luck
     return 0;
+}
+
+static bool
+check_handler_name(const String &hname)
+{
+    const char *s = hname.begin(), *end = hname.end();
+    if (s == end || *s == '.')
+	return false;
+    for (; s != end; ++s)
+	if (*s == '/' || *s == 0)
+	    return false;
+    return true;
 }
 
 int
@@ -359,7 +371,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 	    int hi = his[his.size() - (f_pos - RD_HOFF) - 1];
 	    const Handler* h = Router::handler(_router, hi);
 	    if (!INO_DT_HAS_N(ino) || element_name_search(h->name(), elementno) < 0) {
-		if (h->visible())
+		if (h->visible() && check_handler_name(h->name()))
 		    FILLDIR(h->name().data(), h->name().length(), INO_MKHANDLER(elementno, hi), DT_REG, f_pos, thunk);
 	    }
 	    f_pos++;
