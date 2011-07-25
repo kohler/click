@@ -175,6 +175,13 @@ class TokenRateX : public P { public:
 	return P::time_monotonic_difference(a, b);
     }
 
+
+    /** @cond never */
+    typedef time_point_type epoch_type CLICK_DEPRECATED;
+    inline token_type tokens_per_epoch() const CLICK_DEPRECATED;
+    inline ticks_type epochs_until_full() const CLICK_DEPRECATED;
+    /** @endcond never */
+
  private:
 
     token_type _tokens_per_tick;	// 0 iff idle()
@@ -243,6 +250,20 @@ typename P::token_type TokenRateX<P>::rate() const
     (void) bigint::divide(l, l, 2, token_scale());
     return l[1] ? (token_type) max_tokens : l[0];
 }
+
+/** @cond never */
+template <typename P>
+inline typename TokenRateX<P>::token_type TokenRateX<P>::tokens_per_epoch() const
+{
+    return tokens_per_tick();
+}
+
+template <typename P>
+inline typename TokenRateX<P>::ticks_type TokenRateX<P>::epochs_until_full() const
+{
+    return time_until_full();
+}
+/** @endcond never */
 
 
 /** @cond never */
@@ -540,6 +561,12 @@ class TokenCounterX { public:
 	    return (f - _tokens - 1) / rate.tokens_per_tick() + 1;
     }
 
+
+    /** @cond never */
+    inline ticks_type epochs_until_contains(const rate_type &rate, token_type t) const CLICK_DEPRECATED;
+    inline ticks_type epochs_until_contains_fraction(const rate_type &rate, token_type f) const CLICK_DEPRECATED;
+    /** @endcond never */
+
   private:
 
     token_type _tokens;
@@ -576,6 +603,19 @@ void TokenCounterX<R>::refill(const rate_type &rate, U time)
 {
     refill(rate, rate.time_point(time));
 }
+
+/** @cond never */
+template <typename R>
+inline typename TokenCounterX<R>::ticks_type TokenCounterX<R>::epochs_until_contains(const rate_type &rate, token_type t) const
+{
+    return time_until_contains(rate, t);
+}
+template <typename R>
+inline typename TokenCounterX<R>::ticks_type TokenCounterX<R>::epochs_until_contains_fraction(const rate_type &rate, token_type f) const
+{
+    return time_until_contains_fraction(rate, f);
+}
+/** @endcond never */
 
 
 /** @class TokenBucketJiffyParameters include/click/tokenbucket.hh <click/tokenbucket.hh>
@@ -926,12 +966,32 @@ class TokenBucketX { public:
 	return _bucket.time_until_contains_fraction(_rate, f);
     }
 
+
+    /** @cond never */
+    inline ticks_type epochs_until_contains(const rate_type &rate, token_type t) const CLICK_DEPRECATED;
+    inline ticks_type epochs_until_contains_fraction(const rate_type &rate, token_type f) const CLICK_DEPRECATED;
+    /** @endcond never */
+
   private:
 
     rate_type _rate;
     counter_type _bucket;
 
 };
+
+/** @cond never */
+template <typename P>
+inline typename TokenBucketX<P>::ticks_type TokenBucketX<P>::epochs_until_contains(const rate_type &rate, token_type t) const
+{
+    return time_until_contains(rate, t);
+}
+template <typename P>
+inline typename TokenBucketX<P>::ticks_type TokenBucketX<P>::epochs_until_contains_fraction(const rate_type &rate, token_type f) const
+{
+    return time_until_contains_fraction(rate, f);
+}
+/** @endcond never */
+
 
 /** @class TokenRate include/click/tokenbucket.hh <click/tokenbucket.hh>
  * @brief Jiffy-based token bucket rate
