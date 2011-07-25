@@ -245,6 +245,35 @@ typename P::token_type TokenRateX<P>::rate() const
 }
 
 
+/** @cond never */
+/* TokenRateConverter safely scales token counts according to an input rate.
+   Template specializations let us make use of a fast int_multiply() when one
+   is available. */
+template<typename rate_type, bool FM> struct TokenRateConverter {
+};
+template<typename rate_type> struct TokenRateConverter<rate_type, true> {
+    static bool cvt(const rate_type &rate, typename rate_type::token_type &t) {
+	typename rate_type::token_type high;
+	int_multiply(t, rate.token_scale(), t, high);
+	if (high)
+	    t = rate_type::max_tokens;
+	return !high;
+    }
+};
+template<typename rate_type> struct TokenRateConverter<rate_type, false> {
+    static bool cvt(const rate_type &rate, typename rate_type::token_type &t) {
+	if (t <= rate.capacity()) {
+	    t *= rate.token_scale();
+	    return true;
+	} else {
+	    t = rate_type::max_tokens;
+	    return false;
+	}
+    }
+};
+/** @endcond never */
+
+
 /** @class TokenCounterX include/click/tokenbucket.hh <click/tokenbucket.hh>
  @brief  Token bucket counter template.
 
@@ -339,11 +368,9 @@ class TokenCounterX { public:
      * @param t token count
      *
      * Returns false whenever @a t is greater than <em>rate</em>.@link
-     * TokenRateX::capacity capacity()@endlink.
-     *
-     * @sa fast_contains */
+     * TokenRateX::capacity capacity()@endlink. */
     bool contains(const rate_type &rate, token_type t) const {
-	return t <= rate.capacity() && fast_contains(rate, t);
+	return cvt_type::cvt(rate, t) && contains_fraction(t);
     }
 
     /** @brief Test if the token counter is above a fraction of its capacity.
@@ -372,10 +399,8 @@ class TokenCounterX { public:
      *
      * The result will never have more tokens than the associated capacity. */
     void set(const rate_type &rate, token_type t) {
-	if (t > rate.capacity())
-	    _tokens = max_tokens;
-	else
-	    _tokens = t * rate.token_scale();
+	(void) cvt_type::cvt(rate, t);
+	_tokens = t;
     }
 
     /** @brief Set the token counter to a fraction of its capacity.
@@ -442,14 +467,10 @@ class TokenCounterX { public:
      * @param t number of tokens
      *
      * If the token counter contains less than @a t tokens, the new token
-     * count is 0.
-     *
-     * @sa fast_remove */
+     * count is 0. */
     void remove(const rate_type &rate, token_type t) {
-	if (t > rate.capacity())
-	    _tokens = 0;
-	else
-	    fast_remove(rate, t);
+	(void) cvt_type::cvt(rate, t);
+	remove_fraction(t);
     }
 
     /** @brief Remove @a t tokens from the counter if it contains @a t tokens.
@@ -459,11 +480,9 @@ class TokenCounterX { public:
      *
      * If the counter contains @a t or more tokens, calls remove(@a t) and
      * returns true.  If it contains less than @a t tokens, returns false
-     * without removing any tokens.
-     *
-     * @sa fast_remove_if */
+     * without removing any tokens. */
     bool remove_if(const rate_type &rate, token_type t) {
-	return t <= rate.capacity() && fast_remove_if(rate, t);
+	return cvt_type::cvt(rate, t) && remove_fraction_if(t);
     }
 
     /** @brief Remove a fullness fraction from the counter.
@@ -498,8 +517,8 @@ class TokenCounterX { public:
      * true. */
     ticks_type time_until_contains(const rate_type &rate,
 				   token_type t) const {
-	if (t <= rate.capacity())
-	    return time_until_contains_fraction(rate, t * rate.token_scale());
+	if (cvt_type::cvt(rate, t))
+	    return time_until_contains_fraction(rate, t);
 	else
 	    return (ticks_type) -1;
     }
@@ -521,57 +540,12 @@ class TokenCounterX { public:
 	    return (f - _tokens - 1) / rate.tokens_per_tick() + 1;
     }
 
-
-    /** @brief Return true iff the token counter has at least @a t tokens.
-     * @param rate associated token rate
-     * @param t token count
-     * @pre @a t <= <em>rate</em>.@link TokenRateX::capacity capacity()@endlink
-     *
-     * Returns true whenever @a t is zero or @a rate is unlimited.
-     *
-     * Consider using fast_contains() when you know that @a t <=
-     * <em>rate</em>.@link TokenRateX::capacity capacity()@endlink; it
-     * is slightly faster than contains(). */
-    bool fast_contains(const rate_type &rate, token_type t) const {
-	return contains_fraction(t * rate.token_scale());
-    }
-
-    /** @brief Remove @a t tokens from the counter.
-     * @param rate associated token rate
-     * @param t number of tokens
-     * @pre @a t <= <em>rate</em>.@link TokenRateX::capacity capacity()@endlink
-     *
-     * If the token counter contains less than @a t tokens, the new token
-     * count is 0.
-     *
-     * Consider using fast_remove() when you know that @a t <=
-     * <em>rate</em>.@link TokenRateX::capacity capacity()@endlink; it
-     * is slightly faster than remove(). */
-    void fast_remove(const rate_type &rate, token_type t) {
-	remove_fraction(t * rate.token_scale());
-    }
-
-    /** @brief Remove @a t tokens from the counter if it contains @a t tokens.
-     * @param rate associated token rate
-     * @param t number of tokens
-     * @pre @a t <= <em>rate</em>.@link TokenRateX::capacity capacity()@endlink
-     * @return true if @a t tokens were removed, false otherwise
-     *
-     * If the counter contains @a t or more tokens, calls remove(@a t)
-     * and returns true.  If it contains less than @a t tokens, returns false
-     * without removing any tokens.
-     *
-     * Consider using fast_remove() when you know that @a t <=
-     * <em>rate</em>.@link TokenRateX::capacity capacity()@endlink; it
-     * is slightly faster than remove_if(). */
-    bool fast_remove_if(const rate_type &rate, token_type t) {
-	return remove_fraction_if(t * rate.token_scale());
-    }
-
   private:
 
     token_type _tokens;
     time_point_type _time_point;
+
+    typedef TokenRateConverter<rate_type, has_fast_int_multiply<token_type>::value> cvt_type;
 
 };
 
@@ -828,9 +802,7 @@ class TokenBucketX { public:
     /** @brief Test if the token bucket has at least @a t tokens.
      *
      * Returns true whenever @a t is zero or @a rate is unlimited.  Returns
-     * false whenever @a t is greater than @a rate.capacity().
-     *
-     * @sa fast_contains */
+     * false whenever @a t is greater than @a rate.capacity(). */
     bool contains(token_type t) const {
 	return _bucket.contains(_rate, t);
     }
@@ -904,9 +876,7 @@ class TokenBucketX { public:
      * @param t number of tokens
      *
      * If the token bucket contains less than @a t tokens, the new token
-     * count is 0.
-     *
-     * @sa fast_remove */
+     * count is 0. */
     void remove(token_type t) {
 	_bucket.remove(_rate, t);
     }
@@ -917,9 +887,7 @@ class TokenBucketX { public:
      *
      * If the token bucket contains @a t or more tokens, calls remove(@a t)
      * and returns true.  If it contains less than @a t tokens, returns false
-     * without removing any tokens.
-     *
-     * @sa fast_remove_if */
+     * without removing any tokens. */
     bool remove_if(token_type t) {
 	return _bucket.remove_if(_rate, t);
     }
@@ -956,46 +924,6 @@ class TokenBucketX { public:
      * contains_fraction(@a f) true. */
     ticks_type time_until_contains_fraction(ticks_type f) const {
 	return _bucket.time_until_contains_fraction(_rate, f);
-    }
-
-
-    /** @brief Return true iff the token bucket has at least @a t tokens.
-     * @pre @a t <= capacity()
-     *
-     * Returns true whenever @a t is zero or the token bucket is unlimited.
-     *
-     * Consider using fast_contains() when you know that @a t <= capacity();
-     * it is slightly faster than contains(). */
-    bool fast_contains(token_type t) const {
-	return _bucket.fast_contains(_rate, t);
-    }
-
-    /** @brief Remove @a t tokens from the counter.
-     * @param t number of tokens
-     * @pre @a t <= capacity()
-     *
-     * If the token bucket contains less than @a t tokens, the new token count
-     * is 0.
-     *
-     * Consider using fast_remove() when you know that @a t <= capacity(); it
-     * is slightly faster than remove(). */
-    void fast_remove(token_type t) {
-	_bucket.fast_remove(_rate, t);
-    }
-
-    /** @brief Remove @a t tokens from the counter if it contains @a t tokens.
-     * @param t number of tokens
-     * @pre @a t <= capacity()
-     * @return true if @a t tokens were removed, false otherwise
-     *
-     * If the bucket contains @a t or more tokens, calls remove(@a t)
-     * and returns true.  If it contains less than @a t tokens, returns false
-     * without removing any tokens.
-     *
-     * Consider using fast_remove() when you know that @a t <= capacity(); it
-     * is slightly faster than remove_if(). */
-    bool fast_remove_if(token_type t) {
-	return _bucket.fast_remove_if(_rate, t);
     }
 
   private:
