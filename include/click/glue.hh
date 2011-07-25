@@ -377,7 +377,7 @@ extern __thread int click_current_thread_id;
 
 
 // TIMEVALS AND JIFFIES
-// click_jiffies_t is the type of click_jiffies() and is usually unsigned.
+// click_jiffies_t is the type of click_jiffies() and must be unsigned.
 // click_jiffies_difference_t is the signed version of click_jiffies_t.
 // CLICK_JIFFIES_MONOTONIC is true if click_jiffies() never goes backwards.
 
