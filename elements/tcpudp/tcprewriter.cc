@@ -33,18 +33,54 @@ int
 TCPRewriter::TCPFlow::update_seqno_delta(bool direction,
 					 tcp_seq_t trigger, int32_t d)
 {
-    if (SEQ_LEQ(trigger, _trigger[direction])
-	&& (_trigger[direction] || _delta[direction]
-	    || _old_delta[direction]))
+    // delta transitions must be added in increasing order by sequence number
+    if (_dt && (_dt->nextptr & (1 << direction))
+	&& !SEQ_GEQ(trigger, _dt->trigger[direction]))
 	return -1;
-    else {
-	_old_delta[direction] = _delta[direction];
-	_trigger[direction] = trigger;
-	_delta[direction] += d;
-	if (_old_delta[direction] || _delta[direction])
-	    _tflags |= tf_seqno_delta << direction;
-	return 0;
+
+    // create a new delta transition object if required (there's already a
+    // delta)
+    if (!_dt || (_dt->nextptr & (1 << direction)
+		 ? trigger != _dt->trigger[direction]
+		 : _dt->delta[direction])) {
+	delta_transition *ndt = new delta_transition;
+	if (!ndt)
+	    return -1;
+	ndt->nextptr = reinterpret_cast<uintptr_t>(_dt);
+	_dt = ndt;
+	while (delta_transition *x = ndt->next()) {
+	    ndt->delta[!direction] = x->delta[!direction];
+	    ndt->trigger[!direction] = x->trigger[!direction];
+	    if (x->nextptr & (1 << !direction)) {
+		ndt->nextptr |= 1 << !direction;
+		ndt = x;
+	    } else {
+		ndt->nextptr -= ndt->nextptr & (1 << !direction);
+		break;
+	    }
+	}
     }
+
+    // install new transition
+    _dt->trigger[direction] = trigger;
+    delta_transition *ndt = _dt->next();
+    _dt->delta[direction] = (ndt ? ndt->delta[direction] : 0) + d;
+    _dt->nextptr |= 1 << direction;
+
+    // maybe remove old transitions (1G behind the current transition)
+    while (ndt && ndt->has_trigger(direction)
+	   && !SEQ_GEQ(trigger, ndt->trigger[direction] + (1U << 30)))
+	ndt = ndt->next();
+    if (ndt && ndt->has_trigger(direction)) {
+	ndt->nextptr -= 1 << direction;
+	if (!(ndt->nextptr & 3))
+	    while (delta_transition *x = ndt->next()) {
+		ndt->nextptr = x->nextptr - (x->nextptr & 3);
+		delete x;
+	    }
+    }
+
+    return 0;
 }
 
 void
@@ -151,14 +187,28 @@ TCPRewriter::TCPFlow::apply(WritablePacket *p, bool direction, unsigned annos)
 	return;
 
     // update sequence numbers
-    if (_tflags & (tf_seqno_delta << direction)) {
+    if (!_dt)
+	return;
+
+    // drop trigger once sequence number has advanced 1G beyond it
+    if (_dt->has_trigger(direction)
+	&& SEQ_GEQ(ntohl(tcph->th_seq), _dt->trigger[direction] + (1U << 30))) {
+	_dt->nextptr -= 1 << direction;
+	if (!(_dt->nextptr & 3))
+	    while (delta_transition *ndt = _dt->next()) {
+		_dt->nextptr = ndt->nextptr - (ndt->nextptr & 3);
+		delete ndt;
+	    }
+    }
+
+    if (_dt->delta[direction] || _dt->has_trigger(direction)) {
 	uint32_t newval = htonl(new_seq(direction, ntohl(tcph->th_seq)));
 	click_update_in_cksum(&tcph->th_sum, tcph->th_seq >> 16, newval >> 16);
 	click_update_in_cksum(&tcph->th_sum, tcph->th_seq, newval);
 	tcph->th_seq = newval;
     }
 
-    if (_tflags & (tf_seqno_delta << !direction)) {
+    if (_dt->delta[!direction] || _dt->has_trigger(!direction)) {
 	uint32_t newval = htonl(new_ack(direction, ntohl(tcph->th_ack)));
 	click_update_in_cksum(&tcph->th_sum, tcph->th_ack >> 16, newval >> 16);
 	click_update_in_cksum(&tcph->th_sum, tcph->th_ack, newval);
@@ -176,8 +226,8 @@ void
 TCPRewriter::TCPFlow::unparse(StringAccum &sa, bool direction, click_jiffies_t now) const
 {
     sa << _e[direction].flowid() << " => " << _e[direction].rewritten_flowid();
-    if (_delta[direction] != 0)
-	sa << " seq " << (_delta[direction] > 0 ? "+" : "") << _delta[direction];
+    if (_dt && _dt->delta[direction] != 0)
+	sa << " seq " << (_dt->delta[direction] > 0 ? "+" : "") << _dt->delta[direction];
     unparse_ports(sa, direction, now);
 }
 
