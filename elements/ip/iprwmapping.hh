@@ -11,6 +11,7 @@ CLICK_DECLS
 class IPRewriterBase;
 class IPRewriterFlow;
 class IPRewriterHeap;
+class IPRewriterInput;
 
 class IPRewriterEntry { public:
 
@@ -66,10 +67,9 @@ class IPRewriterEntry { public:
 
 class IPRewriterFlow { public:
 
-    IPRewriterFlow(const IPFlowID &flowid, int output,
-		   const IPFlowID &rewritten_flowid, int reply_output,
-		   uint8_t ip_p, bool guaranteed, click_jiffies_t expiry_j,
-		   IPRewriterBase *owner, int owner_input);
+    IPRewriterFlow(IPRewriterInput *owner, const IPFlowID &flowid,
+		   const IPFlowID &rewritten_flowid,
+		   uint8_t ip_p, bool guaranteed, click_jiffies_t expiry_j);
 
     IPRewriterEntry &entry(bool direction) {
 	return _e[direction];
@@ -135,11 +135,8 @@ class IPRewriterFlow { public:
 	return _ip_p;
     }
 
-    IPRewriterBase *owner() const {
+    IPRewriterInput *owner() const {
 	return _owner;
-    }
-    int owner_input() const {
-	return _owner_input;
     }
 
     uint8_t reply_anno() const {
@@ -180,8 +177,7 @@ class IPRewriterFlow { public:
     uint8_t _guaranteed : 1;
     uint8_t _tflags;
     uint8_t _reply_anno;
-    IPRewriterBase *_owner;
-    int _owner_input;
+    IPRewriterInput *_owner;
 
     friend class IPRewriterBase;
     friend class IPRewriterEntry;

@@ -87,13 +87,11 @@ class TCPRewriter : public IPRewriterBase { public:
 
     class TCPFlow : public IPRewriterFlow { public:
 
-	TCPFlow(const IPFlowID &flowid, int output,
-		const IPFlowID &rewritten_flowid, int reply_output,
-		bool guaranteed, click_jiffies_t expiry_j,
-		IPRewriterBase *owner, int owner_input)
-	    : IPRewriterFlow(flowid, output, rewritten_flowid, reply_output,
-			     IP_PROTO_TCP, guaranteed, expiry_j,
-			     owner, owner_input), _dt(0) {
+	TCPFlow(IPRewriterInput *owner, const IPFlowID &flowid,
+		const IPFlowID &rewritten_flowid,
+		bool guaranteed, click_jiffies_t expiry_j)
+	    : IPRewriterFlow(owner, flowid, rewritten_flowid,
+			     IP_PROTO_TCP, guaranteed, expiry_j), _dt(0) {
 	}
 
 	~TCPFlow() {

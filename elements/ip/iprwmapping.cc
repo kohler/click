@@ -32,17 +32,16 @@
 #include <click/heap.hh>
 CLICK_DECLS
 
-IPRewriterFlow::IPRewriterFlow(const IPFlowID &flowid, int output,
-			       const IPFlowID &rewritten_flowid, int reply_output,
+IPRewriterFlow::IPRewriterFlow(IPRewriterInput *owner, const IPFlowID &flowid,
+			       const IPFlowID &rewritten_flowid,
 			       uint8_t ip_p, bool guaranteed,
-			       click_jiffies_t expiry_j,
-			       IPRewriterBase *owner, int owner_input)
+			       click_jiffies_t expiry_j)
     : _expiry_j(expiry_j), _ip_p(ip_p), _state(0),
       _guaranteed(guaranteed), _reply_anno(0),
-      _owner(owner), _owner_input(owner_input)
+      _owner(owner)
 {
-    _e[0].initialize(flowid, output, false);
-    _e[1].initialize(rewritten_flowid.reverse(), reply_output, true);
+    _e[0].initialize(flowid, owner->foutput, false);
+    _e[1].initialize(rewritten_flowid.reverse(), owner->routput, true);
 
     // set checksum deltas
     const uint16_t *swords = reinterpret_cast<const uint16_t *>(&flowid);
@@ -129,36 +128,36 @@ IPRewriterFlow::destroy(IPRewriterHeap *heap)
     remove_heap(myheap.begin(), myheap.end(), myheap.begin() + _place,
 		heap_less(), heap_place());
     myheap.pop_back();
-    --_owner->_input_specs[_owner_input].count;
-    _owner->destroy_flow(this);
+    --_owner->count;
+    _owner->owner->destroy_flow(this);
 }
 
 void
 IPRewriterFlow::unparse_ports(StringAccum &sa, bool direction,
 			      click_jiffies_t now) const
 {
-    Element *e = _owner->reply_element(_owner_input);
+    IPRewriterBase *my_e = _owner->owner, *reply_e = _owner->reply_element;
 #if 1 /* UNPARSE_PORTS_OUTPUTS */
     sa << " [";
     if (!direction)
 	sa << '*';
-    else if (e != _owner)
-	sa << _owner->name() << ':';
+    else if (my_e != reply_e)
+	sa << my_e->name() << ':';
     sa << _e[false].output() << ' ';
     if (direction)
 	sa << '*';
-    else if (e != _owner)
-	sa << e->name() << ':';
+    else if (my_e != reply_e)
+	sa << reply_e->name() << ':';
     click_jiffies_t expiry_j = _expiry_j;
     if (_guaranteed)
-	expiry_j = _owner->best_effort_expiry(this);
-    sa << _e[true].output() << "] i" << _owner_input << " exp"
+	expiry_j = my_e->best_effort_expiry(this);
+    sa << _e[true].output() << "] i" << _owner->owner_input << " exp"
        << (expiry_j + (CLICK_HZ / 2) - now) / CLICK_HZ;
 #else
     sa << " [";
-    if (direction && e != _owner)
-	sa << _owner->name() << ':';
-    sa << _owner_input << (direction ? " R]" : " F]");
+    if (direction && my_e != reply_e)
+	sa << my_e->name() << ':';
+    sa << _owner->owner_input << (direction ? " R]" : " F]");
 #endif
 }
 

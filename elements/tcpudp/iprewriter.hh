@@ -239,8 +239,8 @@ class IPRewriter : public TCPRewriter { public:
     SizedHashAllocator<sizeof(IPRewriterFlow)> _udp_allocator;
     uint32_t _udp_timeouts[2];
 
-    inline Map &reply_udp_map(int input) const {
-	IPRewriter *x = static_cast<IPRewriter *>(_input_specs[input].reply_element);
+    static inline Map &reply_udp_map(IPRewriterInput *rwinput) {
+	IPRewriter *x = static_cast<IPRewriter *>(rwinput->reply_element);
 	return x->_udp_map;
     }
     static String udp_mappings_handler(Element *e, void *user_data);
@@ -254,7 +254,7 @@ IPRewriter::destroy_flow(IPRewriterFlow *flow)
     if (flow->ip_p() == IP_PROTO_TCP)
 	TCPRewriter::destroy_flow(flow);
     else {
-	unmap_flow(flow, _udp_map, &reply_udp_map(flow->owner_input()));
+	unmap_flow(flow, _udp_map, &reply_udp_map(flow->owner()));
 	flow->~IPRewriterFlow();
 	_udp_allocator.deallocate(flow);
     }

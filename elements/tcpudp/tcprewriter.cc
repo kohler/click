@@ -290,10 +290,8 @@ TCPRewriter::add_flow(int /*ip_p*/, const IPFlowID &flowid,
 	return 0;
 
     TCPFlow *flow = new(data) TCPFlow
-	(flowid, _input_specs[input].foutput,
-	 rewritten_flowid, _input_specs[input].routput,
-	 !!_timeouts[1], click_jiffies() + relevant_timeout(_timeouts),
-	 this, input);
+	(&_input_specs[input], flowid, rewritten_flowid,
+	 !!_timeouts[1], click_jiffies() + relevant_timeout(_timeouts));
 
     return store_flow(flow, input, _map);
 }

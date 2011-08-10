@@ -71,10 +71,8 @@ UDPRewriter::add_flow(int ip_p, const IPFlowID &flowid,
 	return 0;
 
     IPRewriterFlow *flow = new(data) IPRewriterFlow
-	(flowid, _input_specs[input].foutput,
-	 rewritten_flowid, _input_specs[input].routput, ip_p,
-	 !!_timeouts[1], click_jiffies() + relevant_timeout(_timeouts),
-	 this, input);
+	(&_input_specs[input], flowid, rewritten_flowid,
+	 ip_p, !!_timeouts[1], click_jiffies() + relevant_timeout(_timeouts));
 
     return store_flow(flow, input, _map);
 }

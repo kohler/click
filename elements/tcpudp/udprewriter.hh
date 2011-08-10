@@ -118,11 +118,11 @@ Keyword arguments are:
 
 =over 5
 
-=item TIMEOUT I<time>
+=item UDP_TIMEOUT I<time>
 
 Time out connections every I<time> seconds. Default is 5 minutes.
 
-=item GUARANTEE I<time>
+=item UDP_GUARANTEE I<time>
 
 Preserve each connection mapping for at least I<time> seconds after each
 successfully processed packet. Defaults to 5 seconds. Incoming flows are

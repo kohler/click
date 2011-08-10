@@ -96,13 +96,12 @@ IPRewriter::add_flow(int ip_p, const IPFlowID &flowid,
     if (!(data = _udp_allocator.allocate()))
 	return 0;
 
+    IPRewriterInput *rwinput = &_input_specs[input];
     IPRewriterFlow *flow = new(data) IPRewriterFlow
-	(flowid, _input_specs[input].foutput,
-	 rewritten_flowid, _input_specs[input].routput, ip_p,
-	 !!_udp_timeouts[1], click_jiffies() + relevant_timeout(_udp_timeouts),
-	 this, input);
+	(rwinput, flowid, rewritten_flowid, ip_p,
+	 !!_udp_timeouts[1], click_jiffies() + relevant_timeout(_udp_timeouts));
 
-    return store_flow(flow, input, _udp_map, &reply_udp_map(input));
+    return store_flow(flow, input, _udp_map, &reply_udp_map(rwinput));
 }
 
 void

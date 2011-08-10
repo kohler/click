@@ -84,15 +84,17 @@ IPRewriterBase::~IPRewriterBase()
 
 int
 IPRewriterBase::parse_input_spec(const String &line, IPRewriterInput &is,
-				 String name, ErrorHandler *errh)
+				 int input_number, ErrorHandler *errh)
 {
-    PrefixErrorHandler cerrh(errh, name + ": ");
+    PrefixErrorHandler cerrh(errh, "input spec " + String(input_number) + ": ");
     String word, rest;
     if (!cp_word(line, &word, &rest))
 	return cerrh.error("empty argument");
     cp_eat_space(rest);
 
     is.kind = IPRewriterInput::i_drop;
+    is.owner = this;
+    is.owner_input = input_number;
     is.reply_element = this;
 
     if (word == "pass" || word == "passthrough" || word == "nochange") {
@@ -130,7 +132,7 @@ IPRewriterBase::parse_input_spec(const String &line, IPRewriterInput &is,
     } else if (Element *e = cp_element(word, this, 0)) {
 	IPMapper *mapper = (IPMapper *)e->cast("IPMapper");
 	if (rest)
-	    return cerrh.error("syntax error, expected 'ELEMENTNAME'");
+	    return cerrh.error("syntax error, expected element name");
 	else if (!mapper)
 	    return cerrh.error("element is not an IPMapper");
 	else {
@@ -182,7 +184,7 @@ IPRewriterBase::configure(Vector<String> &conf, ErrorHandler *errh)
 
     for (int i = 0; i < conf.size(); ++i) {
 	IPRewriterInput is;
-	if (parse_input_spec(conf[i], is, "input spec " + String(i), errh) >= 0)
+	if (parse_input_spec(conf[i], is, i, errh) >= 0)
 	    _input_specs.push_back(is);
     }
 
@@ -235,7 +237,7 @@ IPRewriterBase::store_flow(IPRewriterFlow *flow, int input,
     IPRewriterBase *reply_element = _input_specs[input].reply_element;
     if ((unsigned) flow->entry(false).output() >= (unsigned) noutputs()
 	|| (unsigned) flow->entry(true).output() >= (unsigned) reply_element->noutputs()) {
-	flow->owner()->destroy_flow(flow);
+	flow->owner()->owner->destroy_flow(flow);
 	return 0;
     }
 
@@ -283,7 +285,7 @@ IPRewriterBase::shift_heap_best_effort(click_jiffies_t now_j)
     Vector<IPRewriterFlow *> &guaranteed_heap = _heap->_heaps[1];
     while (guaranteed_heap.size() && guaranteed_heap[0]->expired(now_j)) {
 	IPRewriterFlow *mf = guaranteed_heap[0];
-	click_jiffies_t new_expiry = mf->owner()->best_effort_expiry(mf);
+	click_jiffies_t new_expiry = mf->owner()->owner->best_effort_expiry(mf);
 	mf->change_expiry(_heap, false, new_expiry);
     }
 }
@@ -415,14 +417,15 @@ IPRewriterBase::pattern_write_handler(const String &str, Element *e, void *user_
     IPRewriterBase *rw = static_cast<IPRewriterBase *>(e);
     intptr_t what = reinterpret_cast<intptr_t>(user_data);
     IPRewriterInput is;
-    int r = rw->parse_input_spec(str, is, "input spec " + String(what), errh);
+    int r = rw->parse_input_spec(str, is, what, errh);
     if (r >= 0) {
+	IPRewriterInput *spec = &rw->_input_specs[what];
+
 	// remove all existing flows created by this input
 	for (int which_heap = 0; which_heap < 2; ++which_heap) {
 	    Vector<IPRewriterFlow *> &myheap = rw->_heap->_heaps[which_heap];
 	    for (int i = myheap.size() - 1; i >= 0; --i)
-		if (myheap[i]->owner() == rw
-		    && myheap[i]->owner_input() == what) {
+		if (myheap[i]->owner() == spec) {
 		    myheap[i]->destroy(rw->_heap);
 		    if (i < myheap.size())
 			++i;
@@ -430,9 +433,9 @@ IPRewriterBase::pattern_write_handler(const String &str, Element *e, void *user_
 	}
 
 	// change pattern
-	if (rw->_input_specs[what].kind == IPRewriterInput::i_pattern)
-	    rw->_input_specs[what].u.pattern->unuse();
-	rw->_input_specs[what] = is;
+	if (spec->kind == IPRewriterInput::i_pattern)
+	    spec->u.pattern->unuse();
+	*spec = is;
     }
     return 0;
 }

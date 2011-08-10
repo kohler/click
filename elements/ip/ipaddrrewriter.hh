@@ -117,13 +117,11 @@ class IPAddrRewriter : public IPRewriterBase { public:
 
     class IPAddrFlow : public IPRewriterFlow { public:
 
-	IPAddrFlow(const IPFlowID &flowid, int output,
-		   const IPFlowID &rewritten_flowid, int reply_output,
-		   bool guaranteed, click_jiffies_t expiry_j,
-		   IPRewriterBase *owner, int owner_input)
-	    : IPRewriterFlow(flowid, output, rewritten_flowid, reply_output,
-			     0, guaranteed, expiry_j,
-			     owner, owner_input) {
+	IPAddrFlow(IPRewriterInput *owner, const IPFlowID &flowid,
+		   const IPFlowID &rewritten_flowid,
+		   bool guaranteed, click_jiffies_t expiry_j)
+	    : IPRewriterFlow(owner, flowid, rewritten_flowid,
+			     0, guaranteed, expiry_j) {
 	}
 
 	void apply(WritablePacket *p, bool direction, unsigned annos);

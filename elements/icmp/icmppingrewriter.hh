@@ -82,13 +82,11 @@ class ICMPPingRewriter : public IPRewriterBase { public:
 
     class ICMPPingFlow : public IPRewriterFlow { public:
 
-	ICMPPingFlow(const IPFlowID &flowid, int output,
-		     const IPFlowID &rewritten_flowid, int reply_output,
-		     bool guaranteed, click_jiffies_t expiry_j,
-		     IPRewriterBase *owner, int owner_input)
-	    : IPRewriterFlow(flowid, output, rewritten_flowid, reply_output,
-			     IP_PROTO_ICMP, guaranteed, expiry_j,
-			     owner, owner_input) {
+	ICMPPingFlow(IPRewriterInput *owner, const IPFlowID &flowid,
+		     const IPFlowID &rewritten_flowid,
+		     bool guaranteed, click_jiffies_t expiry_j)
+	    : IPRewriterFlow(owner, flowid, rewritten_flowid,
+			     IP_PROTO_ICMP, guaranteed, expiry_j) {
 	    _udp_csum_delta = 0;
 	    click_update_in_cksum(&_udp_csum_delta, flowid.sport(), rewritten_flowid.sport());
 	}
