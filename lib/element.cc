@@ -1805,6 +1805,20 @@ Element::add_read_handler(const String &name, ReadHandlerCallback read_callback,
     Router::add_read_handler(this, name, read_callback, (void *) u, flags);
 }
 
+/** @brief Register a read handler named @a name.
+ *
+ * This version of add_read_handler() is useful when @a name is a static
+ * constant string.  @a name is passed to String::make_stable.  The memory
+ * referenced by @a name must remain valid for as long as the router containing
+ * this element.
+ */
+void
+Element::add_read_handler(const char *name, ReadHandlerCallback read_callback, int user_data, uint32_t flags)
+{
+    uintptr_t u = (uintptr_t) user_data;
+    Router::add_read_handler(this, String::make_stable(name), read_callback, (void *) u, flags);
+}
+
 /** @brief Register a write handler named @a name.
  *
  * @param name handler name
@@ -1848,6 +1862,20 @@ Element::add_write_handler(const String &name, WriteHandlerCallback write_callba
 {
     uintptr_t u = (uintptr_t) user_data;
     Router::add_write_handler(this, name, write_callback, (void *) u, flags);
+}
+
+/** @brief Register a write handler named @a name.
+ *
+ * This version of add_write_handler() is useful when @a name is a static
+ * constant string.  @a name is passed to String::make_stable.  The memory
+ * referenced by @a name must remain valid for as long as the router containing
+ * this element.
+ */
+void
+Element::add_write_handler(const char *name, WriteHandlerCallback write_callback, int user_data, uint32_t flags)
+{
+    uintptr_t u = (uintptr_t) user_data;
+    Router::add_write_handler(this, String::make_stable(name), write_callback, (void *) u, flags);
 }
 
 /** @brief Register a comprehensive handler named @a name.
@@ -1902,6 +1930,20 @@ Element::set_handler(const String &name, int flags, HandlerCallback callback, in
 {
     uintptr_t u1 = (uintptr_t) read_user_data, u2 = (uintptr_t) write_user_data;
     Router::set_handler(this, name, flags, callback, (void *) u1, (void *) u2);
+}
+
+/** @brief Register a comprehensive handler named @a name.
+ *
+ * This version of set_handler() is useful when @a name is a static
+ * constant string.  @a name is passed to String::make_stable.  The memory
+ * referenced by @a name must remain valid for as long as the router containing
+ * this element.
+ */
+void
+Element::set_handler(const char *name, int flags, HandlerCallback callback, int read_user_data, int write_user_data)
+{
+    uintptr_t u1 = (uintptr_t) read_user_data, u2 = (uintptr_t) write_user_data;
+    Router::set_handler(this, String::make_stable(name), flags, callback, (void *) u1, (void *) u2);
 }
 
 /** @brief Set flags for the handler named @a name.
@@ -2398,7 +2440,7 @@ interval_data_handler(int op, String &str, Element *element, const Handler *h, E
 }
 
 inline void
-Element::add_data_handlers(const String &name, int flags, HandlerCallback callback, void *data)
+Element::add_data_handlers(const char *name, int flags, HandlerCallback callback, void *data)
 {
     uintptr_t x = reinterpret_cast<uintptr_t>(data) - reinterpret_cast<uintptr_t>(this);
     set_handler(name, flags, callback, x, x);
@@ -2417,62 +2459,64 @@ Element::add_data_handlers(const String &name, int flags, HandlerCallback callba
  * the data stored at @a *data, which might, for example, be an element
  * instance variable.  This data is unparsed and/or parsed using the expected
  * functions; for example, the <tt>bool</tt> version uses BoolArg::unparse()
- * and BoolArg::parse().
+ * and BoolArg::parse().  @a name is passed to String::make_stable.  The memory
+ * referenced by @a name must remain valid for as long as the router containing
+ * this element.
  *
  * Overloaded versions of this function are available for many fundamental
  * data types.
  */
 void
-Element::add_data_handlers(const String &name, int flags, uint8_t *data)
+Element::add_data_handlers(const char *name, int flags, uint8_t *data)
 {
     add_data_handlers(name, flags, uint8_t_data_handler, data);
 }
 
 /** @overload */
 void
-Element::add_data_handlers(const String &name, int flags, bool *data)
+Element::add_data_handlers(const char *name, int flags, bool *data)
 {
     add_data_handlers(name, flags, bool_data_handler, data);
 }
 
 /** @overload */
 void
-Element::add_data_handlers(const String &name, int flags, uint16_t *data)
+Element::add_data_handlers(const char *name, int flags, uint16_t *data)
 {
     add_data_handlers(name, flags, uint16_t_data_handler, data);
 }
 
 /** @overload */
 void
-Element::add_data_handlers(const String &name, int flags, int *data)
+Element::add_data_handlers(const char *name, int flags, int *data)
 {
     add_data_handlers(name, flags, integer_data_handler<int>, data);
 }
 
 /** @overload */
 void
-Element::add_data_handlers(const String &name, int flags, unsigned *data)
+Element::add_data_handlers(const char *name, int flags, unsigned *data)
 {
     add_data_handlers(name, flags, integer_data_handler<unsigned>, data);
 }
 
 /** @overload */
 void
-Element::add_data_handlers(const String &name, int flags, atomic_uint32_t *data)
+Element::add_data_handlers(const char *name, int flags, atomic_uint32_t *data)
 {
     add_data_handlers(name, flags, atomic_uint32_t_data_handler, data);
 }
 
 /** @overload */
 void
-Element::add_data_handlers(const String &name, int flags, long *data)
+Element::add_data_handlers(const char *name, int flags, long *data)
 {
     add_data_handlers(name, flags, integer_data_handler<long>, data);
 }
 
 /** @overload */
 void
-Element::add_data_handlers(const String &name, int flags, unsigned long *data)
+Element::add_data_handlers(const char *name, int flags, unsigned long *data)
 {
     add_data_handlers(name, flags, integer_data_handler<unsigned long>, data);
 }
@@ -2480,14 +2524,14 @@ Element::add_data_handlers(const String &name, int flags, unsigned long *data)
 #if HAVE_LONG_LONG
 /** @overload */
 void
-Element::add_data_handlers(const String &name, int flags, long long *data)
+Element::add_data_handlers(const char *name, int flags, long long *data)
 {
     add_data_handlers(name, flags, integer_data_handler<long long>, data);
 }
 
 /** @overload */
 void
-Element::add_data_handlers(const String &name, int flags, unsigned long long *data)
+Element::add_data_handlers(const char *name, int flags, unsigned long long *data)
 {
     add_data_handlers(name, flags, integer_data_handler<unsigned long long>, data);
 }
@@ -2496,7 +2540,7 @@ Element::add_data_handlers(const String &name, int flags, unsigned long long *da
 #if HAVE_FLOAT_TYPES
 /** @overload */
 void
-Element::add_data_handlers(const String &name, int flags, double *data)
+Element::add_data_handlers(const char *name, int flags, double *data)
 {
     add_data_handlers(name, flags, double_data_handler, data);
 }
@@ -2504,14 +2548,14 @@ Element::add_data_handlers(const String &name, int flags, double *data)
 
 /** @overload */
 void
-Element::add_data_handlers(const String &name, int flags, IPAddress *data)
+Element::add_data_handlers(const char *name, int flags, IPAddress *data)
 {
     add_data_handlers(name, flags, ip_address_data_handler, data);
 }
 
 /** @overload */
 void
-Element::add_data_handlers(const String &name, int flags, EtherAddress *data)
+Element::add_data_handlers(const char *name, int flags, EtherAddress *data)
 {
     add_data_handlers(name, flags, ether_address_data_handler, data);
 }
@@ -2523,7 +2567,7 @@ Element::add_data_handlers(const String &name, int flags, EtherAddress *data)
  * removing leading and trailing whitespace.
  */
 void
-Element::add_data_handlers(const String &name, int flags, String *data)
+Element::add_data_handlers(const char *name, int flags, String *data)
 {
     add_data_handlers(name, flags, string_data_handler, data);
 }
@@ -2536,7 +2580,7 @@ Element::add_data_handlers(const String &name, int flags, String *data)
  * @param is_interval If true, the read handler unparses *@a data as an
  *   interval. */
 void
-Element::add_data_handlers(const String &name, int flags, Timestamp *data,
+Element::add_data_handlers(const char *name, int flags, Timestamp *data,
 			   bool is_interval)
 {
     if (is_interval)
@@ -2560,14 +2604,14 @@ Element::add_data_handlers(const String &name, int flags, Timestamp *data,
  * instance variable.
  */
 void
-Element::add_net_order_data_handlers(const String &name, int flags, uint16_t *data)
+Element::add_net_order_data_handlers(const char *name, int flags, uint16_t *data)
 {
     add_data_handlers(name, flags, uint16_t_net_data_handler, data);
 }
 
 /** @overload */
 void
-Element::add_net_order_data_handlers(const String &name, int flags, uint32_t *data)
+Element::add_net_order_data_handlers(const char *name, int flags, uint32_t *data)
 {
     add_data_handlers(name, flags, uint32_t_net_data_handler, data);
 }
