@@ -159,10 +159,13 @@ class Element { public:
     // HANDLERS
     void add_read_handler(const String &name, ReadHandlerCallback read_callback, const void *user_data = 0, uint32_t flags = 0);
     void add_read_handler(const String &name, ReadHandlerCallback read_callback, int user_data, uint32_t flags = 0);
+    void add_read_handler(const char *name, ReadHandlerCallback read_callback, int user_data, uint32_t flags = 0);
     void add_write_handler(const String &name, WriteHandlerCallback write_callback, const void *user_data = 0, uint32_t flags = 0);
     void add_write_handler(const String &name, WriteHandlerCallback write_callback, int user_data, uint32_t flags = 0);
+    void add_write_handler(const char *name, WriteHandlerCallback write_callback, int user_data, uint32_t flags = 0);
     void set_handler(const String &name, int flags, HandlerCallback callback, const void *read_user_data = 0, const void *write_user_data = 0);
     void set_handler(const String &name, int flags, HandlerCallback callback, int read_user_data, int write_user_data = 0);
+    void set_handler(const char *name, int flags, HandlerCallback callback, int read_user_data, int write_user_data = 0);
     int set_handler_flags(const String &name, int set_flags, int clear_flags = 0);
     enum { TASKHANDLER_WRITE_SCHEDULED = 1,
 	   TASKHANDLER_WRITE_TICKETS = 2,
@@ -177,27 +180,27 @@ class Element { public:
 	add_task_handlers(task, 0, TASKHANDLER_DEFAULT, prefix);
     }
 
-    void add_data_handlers(const String &name, int flags, uint8_t *data);
-    void add_data_handlers(const String &name, int flags, bool *data);
-    void add_data_handlers(const String &name, int flags, uint16_t *data);
-    void add_data_handlers(const String &name, int flags, int *data);
-    void add_data_handlers(const String &name, int flags, unsigned *data);
-    void add_data_handlers(const String &name, int flags, atomic_uint32_t *data);
-    void add_data_handlers(const String &name, int flags, long *data);
-    void add_data_handlers(const String &name, int flags, unsigned long *data);
+    void add_data_handlers(const char *name, int flags, uint8_t *data);
+    void add_data_handlers(const char *name, int flags, bool *data);
+    void add_data_handlers(const char *name, int flags, uint16_t *data);
+    void add_data_handlers(const char *name, int flags, int *data);
+    void add_data_handlers(const char *name, int flags, unsigned *data);
+    void add_data_handlers(const char *name, int flags, atomic_uint32_t *data);
+    void add_data_handlers(const char *name, int flags, long *data);
+    void add_data_handlers(const char *name, int flags, unsigned long *data);
 #if HAVE_LONG_LONG
-    void add_data_handlers(const String &name, int flags, long long *data);
-    void add_data_handlers(const String &name, int flags, unsigned long long *data);
+    void add_data_handlers(const char *name, int flags, long long *data);
+    void add_data_handlers(const char *name, int flags, unsigned long long *data);
 #endif
-    void add_net_order_data_handlers(const String &name, int flags, uint16_t *data);
-    void add_net_order_data_handlers(const String &name, int flags, uint32_t *data);
+    void add_net_order_data_handlers(const char *name, int flags, uint16_t *data);
+    void add_net_order_data_handlers(const char *name, int flags, uint32_t *data);
 #if HAVE_FLOAT_TYPES
-    void add_data_handlers(const String &name, int flags, double *data);
+    void add_data_handlers(const char *name, int flags, double *data);
 #endif
-    void add_data_handlers(const String &name, int flags, String *data);
-    void add_data_handlers(const String &name, int flags, IPAddress *data);
-    void add_data_handlers(const String &name, int flags, EtherAddress *data);
-    void add_data_handlers(const String &name, int flags, Timestamp *data, bool is_interval = false);
+    void add_data_handlers(const char *name, int flags, String *data);
+    void add_data_handlers(const char *name, int flags, IPAddress *data);
+    void add_data_handlers(const char *name, int flags, EtherAddress *data);
+    void add_data_handlers(const char *name, int flags, Timestamp *data, bool is_interval = false);
 
     static String read_positional_handler(Element*, void*);
     static String read_keyword_handler(Element*, void*);
@@ -298,7 +301,7 @@ class Element { public:
 
     static String read_handlers_handler(Element *e, void *user_data);
     void add_default_handlers(bool writable_config);
-    inline void add_data_handlers(const String &name, int flags, HandlerCallback callback, void *data);
+    inline void add_data_handlers(const char *name, int flags, HandlerCallback callback, void *data);
 
     friend class Router;
 #if CLICK_STATS >= 2
