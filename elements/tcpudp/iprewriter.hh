@@ -143,6 +143,13 @@ dropped if an IPRewriter's mapping table is full of guaranteed flows.
 
 Time out UDP connections every I<time> seconds. Default is 5 minutes.
 
+=item UDP_STREAMING_TIMEOUT I<time>
+
+Timeout UDP streaming connections every I<time> seconds. A "streaming"
+connection, in contrast to an "RPC-like" connection, comprises at least 3
+packets and at least one packet in each direction. Default is the UDP_TIMEOUT
+setting.
+
 =item UDP_GUARANTEE I<time>
 
 UDP connection mappings are guaranteed to exist for I<time> seconds after each successfully processed packet. Defaults to 5 seconds.
@@ -202,6 +209,8 @@ RoundRobinIPMapper, FTPPortMapper, ICMPRewriter, ICMPPingRewriter */
 
 class IPRewriter : public TCPRewriter { public:
 
+    typedef UDPRewriter::UDPFlow UDPFlow;
+
     IPRewriter();
     ~IPRewriter();
 
@@ -226,7 +235,7 @@ class IPRewriter : public TCPRewriter { public:
 	if (flow->ip_p() == IP_PROTO_TCP)
 	    return TCPRewriter::best_effort_expiry(flow);
 	else
-	    return flow->expiry() + _udp_timeouts[0] - _udp_timeouts[1];
+	    return flow->expiry() + udp_flow_timeout(static_cast<const UDPFlow *>(flow)) - _udp_timeouts[1];
     }
 
     void push(int, Packet *);
@@ -236,8 +245,16 @@ class IPRewriter : public TCPRewriter { public:
   private:
 
     Map _udp_map;
-    SizedHashAllocator<sizeof(IPRewriterFlow)> _udp_allocator;
+    SizedHashAllocator<sizeof(UDPFlow)> _udp_allocator;
     uint32_t _udp_timeouts[2];
+    uint32_t _udp_streaming_timeout;
+
+    int udp_flow_timeout(const UDPFlow *mf) const {
+	if (mf->streaming())
+	    return _udp_streaming_timeout;
+	else
+	    return _udp_timeouts[0];
+    }
 
     static inline Map &reply_udp_map(IPRewriterInput *rwinput) {
 	IPRewriter *x = static_cast<IPRewriter *>(rwinput->reply_element);

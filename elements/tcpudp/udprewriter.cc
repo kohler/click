@@ -22,7 +22,49 @@
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/timer.hh>
+#include <clicknet/tcp.h>
+#include <clicknet/udp.h>
 CLICK_DECLS
+
+void
+UDPRewriter::UDPFlow::apply(WritablePacket *p, bool direction, unsigned annos)
+{
+    assert(p->has_network_header());
+    click_ip *iph = p->ip_header();
+
+    // IP header
+    const IPFlowID &revflow = _e[!direction].flowid();
+    iph->ip_src = revflow.daddr();
+    iph->ip_dst = revflow.saddr();
+    if (annos & 1)
+	p->set_dst_ip_anno(revflow.saddr());
+    if (direction && (annos & 2))
+	p->set_anno_u8(annos >> 2, _reply_anno);
+    update_csum(&iph->ip_sum, direction, _ip_csum_delta);
+
+    // end if not first fragment
+    if (!IP_FIRSTFRAG(iph))
+	return;
+
+    // TCP/UDP header
+    click_udp *udph = p->udp_header();
+    udph->uh_sport = revflow.dport(); // TCP ports in the same place
+    udph->uh_dport = revflow.sport();
+    if (iph->ip_p == IP_PROTO_TCP) {
+	if (p->transport_length() >= 18)
+	    update_csum(&reinterpret_cast<click_tcp *>(udph)->th_sum, direction, _udp_csum_delta);
+    } else if (iph->ip_p == IP_PROTO_UDP) {
+	if (p->transport_length() >= 8 && udph->uh_sum)
+	    // 0 checksum is no checksum
+	    update_csum(&udph->uh_sum, direction, _udp_csum_delta);
+    }
+
+    // track connection state
+    if (direction)
+	_tflags |= 1;
+    if (_tflags < 6)
+	_tflags += 2;
+}
 
 UDPRewriter::UDPRewriter()
 {
@@ -46,7 +88,8 @@ UDPRewriter::cast(const char *n)
 int
 UDPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    bool dst_anno = true, has_reply_anno = false;
+    bool dst_anno = true, has_reply_anno = false,
+	has_udp_streaming_timeout, has_streaming_timeout;
     int reply_anno;
     _timeouts[0] = 300;		// 5 minutes
 
@@ -54,11 +97,18 @@ UDPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("DST_ANNO", dst_anno)
 	.read("REPLY_ANNO", AnnoArg(1), reply_anno).read_status(has_reply_anno)
 	.read("UDP_TIMEOUT", SecondsArg(), _timeouts[0])
+	.read("TIMEOUT", SecondsArg(), _timeouts[0])
+	.read("UDP_STREAMING_TIMEOUT", SecondsArg(), _udp_streaming_timeout).read_status(has_udp_streaming_timeout)
+	.read("STREAMING_TIMEOUT", SecondsArg(), _udp_streaming_timeout).read_status(has_streaming_timeout)
 	.read("UDP_GUARANTEE", SecondsArg(), _timeouts[1])
 	.consume() < 0)
 	return -1;
 
     _annos = (dst_anno ? 1 : 0) + (has_reply_anno ? 2 + (reply_anno << 2) : 0);
+    if (!has_udp_streaming_timeout && !has_streaming_timeout)
+	_udp_streaming_timeout = _timeouts[0];
+    _udp_streaming_timeout *= CLICK_HZ; // IPRewriterBase handles the others
+
     return IPRewriterBase::configure(conf, errh);
 }
 
@@ -70,9 +120,9 @@ UDPRewriter::add_flow(int ip_p, const IPFlowID &flowid,
     if (!(data = _allocator.allocate()))
 	return 0;
 
-    IPRewriterFlow *flow = new(data) IPRewriterFlow
-	(&_input_specs[input], flowid, rewritten_flowid,
-	 ip_p, !!_timeouts[1], click_jiffies() + relevant_timeout(_timeouts));
+    UDPFlow *flow = new(data) UDPFlow
+	(&_input_specs[input], flowid, rewritten_flowid, ip_p,
+	 !!_timeouts[1], click_jiffies() + relevant_timeout(_timeouts));
 
     return store_flow(flow, input, _map);
 }
@@ -114,9 +164,14 @@ UDPRewriter::push(int port, Packet *p_in)
 	    m->flow()->set_reply_anno(p->anno_u8(_annos >> 2));
     }
 
-    IPRewriterFlow *mf = static_cast<IPRewriterFlow *>(m->flow());
+    UDPFlow *mf = static_cast<UDPFlow *>(m->flow());
     mf->apply(p, m->direction(), _annos);
-    mf->change_expiry_by_timeout(_heap, click_jiffies(), _timeouts);
+
+    click_jiffies_t now_j = click_jiffies();
+    if (_timeouts[1])
+	mf->change_expiry(_heap, true, now_j + _timeouts[1]);
+    else
+	mf->change_expiry(_heap, false, now_j + udp_flow_timeout(mf));
 
     output(m->output()).push(p);
 }
