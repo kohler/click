@@ -36,7 +36,7 @@ IPRewriterFlow::IPRewriterFlow(IPRewriterInput *owner, const IPFlowID &flowid,
 			       const IPFlowID &rewritten_flowid,
 			       uint8_t ip_p, bool guaranteed,
 			       click_jiffies_t expiry_j)
-    : _expiry_j(expiry_j), _ip_p(ip_p), _state(0),
+    : _expiry_j(expiry_j), _ip_p(ip_p), _tflags(0),
       _guaranteed(guaranteed), _reply_anno(0),
       _owner(owner)
 {
@@ -80,15 +80,6 @@ IPRewriterFlow::apply(WritablePacket *p, bool direction, unsigned annos)
 	tcph->th_sport = revflow.dport();
 	tcph->th_dport = revflow.sport();
 	update_csum(&tcph->th_sum, direction, _udp_csum_delta);
-
-	// check for session ending flags
-	if (tcph->th_flags & TH_RST)
-	    _state |= s_both_done;
-	else if (tcph->th_flags & TH_FIN)
-	    _state |= (s_forward_done << direction);
-	else if (tcph->th_flags & TH_SYN)
-	    _state &= ~(s_forward_done << direction);
-
     } else if (iph->ip_p == IP_PROTO_UDP) {
 	click_udp *udph = p->udp_header();
 	udph->uh_sport = revflow.dport();

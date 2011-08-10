@@ -101,6 +101,19 @@ class TCPRewriter : public IPRewriterBase { public:
 	    }
 	}
 
+	enum {
+	    s_forward_done = 1, s_reply_done = 2,
+	    s_both_done = (s_forward_done | s_reply_done),
+	    s_forward_data = 4, s_reply_data = 8,
+	    s_both_data = (s_forward_data | s_reply_data)
+	};
+	bool both_done() const {
+	    return (_tflags & s_both_done) == s_both_done;
+	}
+	bool both_data() const {
+	    return (_tflags & s_both_data) == s_both_data;
+	}
+
 	int update_seqno_delta(bool direction, tcp_seq_t old_seqno, int32_t delta);
 	tcp_seq_t new_seq(bool direction, tcp_seq_t seqno) const;
 	tcp_seq_t new_ack(bool direction, tcp_seq_t seqno) const;

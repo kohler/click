@@ -174,13 +174,13 @@ TCPRewriter::TCPFlow::apply(WritablePacket *p, bool direction, unsigned annos)
     // track connection state
     bool have_payload = ((iph->ip_hl + tcph->th_off) << 2) < ntohs(iph->ip_len);
     if (tcph->th_flags & TH_RST)
-	_state |= s_both_done;
+	_tflags |= s_both_done;
     else if (tcph->th_flags & TH_FIN)
-	_state |= s_forward_done << direction;
+	_tflags |= s_forward_done << direction;
     else if ((tcph->th_flags & TH_SYN) || have_payload)
-	_state &= ~(s_forward_done << direction);
+	_tflags &= ~(s_forward_done << direction);
     if (have_payload)
-	_state |= s_forward_data << direction;
+	_tflags |= s_forward_data << direction;
 
     // end if weird transport length
     if (p->transport_length() < (tcph->th_off << 2))

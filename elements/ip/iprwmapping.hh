@@ -117,20 +117,6 @@ class IPRewriterFlow { public:
 	change_expiry(h, !!timeouts[1], now_j + timeout);
     }
 
-
-    enum {
-	s_forward_done = 1, s_reply_done = 2,
-	s_both_done = (s_forward_done | s_reply_done),
-	s_forward_data = 4, s_reply_data = 8,
-	s_both_data = (s_forward_data | s_reply_data)
-    };
-    bool both_done() const {
-	return (_state & s_both_done) == s_both_done;
-    }
-    bool both_data() const {
-	return (_state & s_both_data) == s_both_data;
-    }
-
     uint8_t ip_p() const {
 	return _ip_p;
     }
@@ -173,9 +159,8 @@ class IPRewriterFlow { public:
     click_jiffies_t _expiry_j;
     size_t _place : 32;
     uint8_t _ip_p;
-    uint8_t _state : 7;
-    uint8_t _guaranteed : 1;
     uint8_t _tflags;
+    bool _guaranteed;
     uint8_t _reply_anno;
     IPRewriterInput *_owner;
 
