@@ -107,8 +107,8 @@ CPUQueue::read_handler(Element *e, void *thunk)
 void
 CPUQueue::add_handlers()
 {
-  add_read_handler("capacity", read_handler, (void *)0);
-  add_read_handler("drops", read_handler, (void *)1);
+  add_read_handler("capacity", read_handler, 0);
+  add_read_handler("drops", read_handler, 1);
 }
 
 ELEMENT_REQUIRES(linuxmodule)

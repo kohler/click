@@ -58,7 +58,7 @@ FilterFailures_read_param(Element *e, void *thunk)
 void
 FilterFailures::add_handlers()
 {
-  add_read_handler("drops", FilterFailures_read_param, (void *) H_DROPS);
+  add_read_handler("drops", FilterFailures_read_param, H_DROPS);
 }
 
 CLICK_ENDDECLS

@@ -177,9 +177,9 @@ FromHandler::write_handler(const String &s_in, Element *e, void *thunk, ErrorHan
 void
 FromHandler::add_handlers()
 {
-    add_read_handler("time", read_handler, (void *)H_TIME);
-    add_read_handler("active", read_handler, (void *)H_ACTIVE);
-    add_write_handler("active", write_handler, (void *)H_ACTIVE);
+    add_read_handler("time", read_handler, H_TIME);
+    add_read_handler("active", read_handler, H_ACTIVE);
+    add_write_handler("active", write_handler, H_ACTIVE);
 }
 
 CLICK_ENDDECLS

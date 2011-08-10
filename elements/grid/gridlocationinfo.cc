@@ -253,10 +253,10 @@ tag_write_handler(const String &arg, Element *element,
 void
 GridLocationInfo::add_handlers()
 {
-  add_write_handler("loc", loc_write_handler, (void *) 0);
-  add_read_handler("loc", loc_read_handler, (void *) 0);
-  add_write_handler("tag", tag_write_handler, (void *) 0);
-  add_read_handler("tag", tag_read_handler, (void *) 0);
+  add_write_handler("loc", loc_write_handler, 0);
+  add_read_handler("loc", loc_read_handler, 0);
+  add_write_handler("tag", tag_write_handler, 0);
+  add_read_handler("tag", tag_read_handler, 0);
 }
 
 

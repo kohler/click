@@ -184,8 +184,8 @@ RadioSim::rs_read_handler(Element *f, void *)
 void
 RadioSim::add_handlers()
 {
-  add_write_handler("loc", rs_write_handler, (void *) 0);
-  add_read_handler("loc", rs_read_handler, (void *) 0);
+  add_write_handler("loc", rs_write_handler, 0);
+  add_read_handler("loc", rs_read_handler, 0);
 }
 
 CLICK_ENDDECLS

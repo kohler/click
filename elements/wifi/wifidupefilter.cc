@@ -153,12 +153,12 @@ WifiDupeFilter_write_param(const String &in_s, Element *e, void *vparam,
 void
 WifiDupeFilter::add_handlers()
 {
-  add_read_handler("debug", WifiDupeFilter_read_param, (void *) H_DEBUG);
-  add_read_handler("dupes", WifiDupeFilter_read_param, (void *) H_DUPES);
-  add_read_handler("drops", WifiDupeFilter_read_param, (void *) H_DUPES);
+  add_read_handler("debug", WifiDupeFilter_read_param, H_DEBUG);
+  add_read_handler("dupes", WifiDupeFilter_read_param, H_DUPES);
+  add_read_handler("drops", WifiDupeFilter_read_param, H_DUPES);
 
-  add_write_handler("debug", WifiDupeFilter_write_param, (void *) H_DEBUG);
-  add_write_handler("reset", WifiDupeFilter_write_param, (void *) H_RESET, Handler::BUTTON);
+  add_write_handler("debug", WifiDupeFilter_write_param, H_DEBUG);
+  add_write_handler("reset", WifiDupeFilter_write_param, H_RESET, Handler::BUTTON);
 
   add_read_handler("stats", static_read_stats, 0);
 }

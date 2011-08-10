@@ -309,8 +309,8 @@ IP6NDSolicitor_read_stats(Element *e, void *)
 void
 IP6NDSolicitor::add_handlers()
 {
-  add_read_handler("table", read_table, (void *)0);
-  add_read_handler("stats", IP6NDSolicitor_read_stats, (void *)0);
+  add_read_handler("table", read_table, 0);
+  add_read_handler("stats", IP6NDSolicitor_read_stats, 0);
 }
 
 CLICK_ENDDECLS

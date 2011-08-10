@@ -213,7 +213,7 @@ AggregateLast::write_handler(const String &, Element *e, void *thunk, ErrorHandl
 void
 AggregateLast::add_handlers()
 {
-    add_write_handler("clear", write_handler, (void *)H_CLEAR);
+    add_write_handler("clear", write_handler, H_CLEAR);
 }
 
 ELEMENT_REQUIRES(userlevel AggregateNotifier)

@@ -119,8 +119,8 @@ AthdescEncap_write_param(const String &in_s, Element *e, void *vparam,
 void
 AthdescEncap::add_handlers()
 {
-	add_read_handler("debug", AthdescEncap_read_param, (void *) H_DEBUG);
-	add_write_handler("debug", AthdescEncap_write_param, (void *) H_DEBUG);
+	add_read_handler("debug", AthdescEncap_read_param, H_DEBUG);
+	add_write_handler("debug", AthdescEncap_write_param, H_DEBUG);
 }
 CLICK_ENDDECLS
 EXPORT_ELEMENT(AthdescEncap)

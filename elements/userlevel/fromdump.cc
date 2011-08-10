@@ -566,16 +566,16 @@ void
 FromDump::add_handlers()
 {
     _ff.add_handlers(this, true);
-    add_read_handler("sampling_prob", read_handler, (void *)H_SAMPLING_PROB);
+    add_read_handler("sampling_prob", read_handler, H_SAMPLING_PROB);
     add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
-    add_write_handler("active", write_handler, (void *)H_ACTIVE);
-    add_read_handler("encap", read_handler, (void *)H_ENCAP);
-    add_write_handler("stop", write_handler, (void *)H_STOP, Handler::BUTTON);
+    add_write_handler("active", write_handler, H_ACTIVE);
+    add_read_handler("encap", read_handler, H_ENCAP);
+    add_write_handler("stop", write_handler, H_STOP, Handler::BUTTON);
     add_data_handlers("packet_filepos", Handler::OP_READ, &_packet_filepos);
-    add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
+    add_write_handler("extend_interval", write_handler, H_EXTEND_INTERVAL);
     add_data_handlers("count", Handler::OP_READ, &_count);
-    add_write_handler("reset_counts", write_handler, (void *)H_RESET_COUNTS, Handler::BUTTON);
-    add_write_handler("reset_timing", write_handler, (void *)H_RESET_TIMING, Handler::BUTTON);
+    add_write_handler("reset_counts", write_handler, H_RESET_COUNTS, Handler::BUTTON);
+    add_write_handler("reset_timing", write_handler, H_RESET_TIMING, Handler::BUTTON);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }

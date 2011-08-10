@@ -372,7 +372,7 @@ EstimateRouterRegion::s()
 void
 EstimateRouterRegion::add_handlers()
 {
-  add_read_handler("status", pep_read_handler, (void *) 0);
+  add_read_handler("status", pep_read_handler, 0);
 }
 
 CLICK_ENDDECLS

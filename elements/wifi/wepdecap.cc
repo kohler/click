@@ -201,13 +201,13 @@ write_param(const String &in_s, Element *e, void *vparam,
 void
 WepDecap::add_handlers()
 {
-  add_read_handler("debug", read_param, (void *) H_DEBUG);
-  add_read_handler("key", read_param, (void *) H_KEY);
-  add_read_handler("keyid", read_param, (void *) H_KEYID);
+  add_read_handler("debug", read_param, H_DEBUG);
+  add_read_handler("key", read_param, H_KEY);
+  add_read_handler("keyid", read_param, H_KEYID);
 
-  add_write_handler("debug", write_param, (void *) H_DEBUG);
-  add_write_handler("key", write_param, (void *) H_KEY);
-  add_write_handler("keyid", write_param, (void *) H_KEYID);
+  add_write_handler("debug", write_param, H_DEBUG);
+  add_write_handler("key", write_param, H_KEY);
+  add_write_handler("keyid", write_param, H_KEYID);
 }
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(rc4)

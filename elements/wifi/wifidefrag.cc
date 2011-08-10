@@ -181,9 +181,9 @@ WifiDefrag::write_param(const String &in_s, Element *e, void *vparam,
 void
 WifiDefrag::add_handlers()
 {
-  add_read_handler("debug", read_param, (void *) H_DEBUG);
+  add_read_handler("debug", read_param, H_DEBUG);
 
-  add_write_handler("debug", write_param, (void *) H_DEBUG);
+  add_write_handler("debug", write_param, H_DEBUG);
 }
 
 EXPORT_ELEMENT(WifiDefrag)

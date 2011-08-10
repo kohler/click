@@ -386,14 +386,14 @@ AssociationRequester_write_param(const String &in_s, Element *e, void *vparam,
 void
 AssociationRequester::add_handlers()
   {
-  add_read_handler("debug", AssociationRequester_read_param, (void *) H_DEBUG);
-  add_read_handler("eth", AssociationRequester_read_param, (void *) H_ETH);
-  add_read_handler("associated", AssociationRequester_read_param, (void *) H_ASSOCIATED);
+  add_read_handler("debug", AssociationRequester_read_param, H_DEBUG);
+  add_read_handler("eth", AssociationRequester_read_param, H_ETH);
+  add_read_handler("associated", AssociationRequester_read_param, H_ASSOCIATED);
 
 
-  add_write_handler("debug", AssociationRequester_write_param, (void *) H_DEBUG);
-  add_write_handler("eth", AssociationRequester_write_param, (void *) H_ETH);
-  add_write_handler("send_assoc_req", AssociationRequester_write_param, (void *) H_SEND_ASSOC_REQ);
+  add_write_handler("debug", AssociationRequester_write_param, H_DEBUG);
+  add_write_handler("eth", AssociationRequester_write_param, H_ETH);
+  add_write_handler("send_assoc_req", AssociationRequester_write_param, H_SEND_ASSOC_REQ);
 
 }
 

@@ -338,17 +338,17 @@ ProbeResponder_write_param(const String &in_s, Element *e, void *vparam,
 void
 ProbeResponder::add_handlers()
 {
-  add_read_handler("debug", ProbeResponder_read_param, (void *) H_DEBUG);
-  add_read_handler("bssid", ProbeResponder_read_param, (void *) H_BSSID);
-  add_read_handler("ssid", ProbeResponder_read_param, (void *) H_SSID);
-  add_read_handler("channel", ProbeResponder_read_param, (void *) H_CHANNEL);
-  add_read_handler("interval", ProbeResponder_read_param, (void *) H_INTERVAL);
+  add_read_handler("debug", ProbeResponder_read_param, H_DEBUG);
+  add_read_handler("bssid", ProbeResponder_read_param, H_BSSID);
+  add_read_handler("ssid", ProbeResponder_read_param, H_SSID);
+  add_read_handler("channel", ProbeResponder_read_param, H_CHANNEL);
+  add_read_handler("interval", ProbeResponder_read_param, H_INTERVAL);
 
-  add_write_handler("debug", ProbeResponder_write_param, (void *) H_DEBUG);
-  add_write_handler("bssid", ProbeResponder_write_param, (void *) H_BSSID);
-  add_write_handler("ssid", ProbeResponder_write_param, (void *) H_SSID);
-  add_write_handler("channel", ProbeResponder_write_param, (void *) H_CHANNEL);
-  add_write_handler("interval", ProbeResponder_write_param, (void *) H_INTERVAL);
+  add_write_handler("debug", ProbeResponder_write_param, H_DEBUG);
+  add_write_handler("bssid", ProbeResponder_write_param, H_BSSID);
+  add_write_handler("ssid", ProbeResponder_write_param, H_SSID);
+  add_write_handler("channel", ProbeResponder_write_param, H_CHANNEL);
+  add_write_handler("interval", ProbeResponder_write_param, H_INTERVAL);
 }
 
 CLICK_ENDDECLS

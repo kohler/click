@@ -170,10 +170,10 @@ AggregateIP::read_handler(Element *e, void *thunk)
 void
 AggregateIP::add_handlers()
 {
-    add_read_handler("header", read_handler, (void *)0);
-    add_read_handler("bit_offset", read_handler, (void *)1);
-    add_read_handler("bit_length", read_handler, (void *)2);
-    add_read_handler("field", read_handler, (void *)3);
+    add_read_handler("header", read_handler, 0);
+    add_read_handler("bit_offset", read_handler, 1);
+    add_read_handler("bit_length", read_handler, 2);
+    add_read_handler("field", read_handler, 3);
 }
 
 CLICK_ENDDECLS

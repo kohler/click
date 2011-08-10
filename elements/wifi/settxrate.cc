@@ -121,10 +121,10 @@ SetTXRate::write_handler(const String &arg, Element *e,
 void
 SetTXRate::add_handlers()
 {
-  add_read_handler("rate", read_handler, (void *) H_RATE);
-  add_read_handler("tries", read_handler, (void *) H_TRIES);
-  add_write_handler("rate", write_handler, (void *) H_RATE);
-  add_write_handler("tries", write_handler, (void *) H_TRIES);
+  add_read_handler("rate", read_handler, H_RATE);
+  add_read_handler("tries", read_handler, H_TRIES);
+  add_write_handler("rate", write_handler, H_RATE);
+  add_write_handler("tries", write_handler, H_TRIES);
 }
 
 CLICK_ENDDECLS

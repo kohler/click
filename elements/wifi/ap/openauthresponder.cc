@@ -218,9 +218,9 @@ OpenAuthResponder_write_param(const String &in_s, Element *e, void *vparam,
 void
 OpenAuthResponder::add_handlers()
 {
-  add_read_handler("debug", OpenAuthResponder_read_param, (void *) H_DEBUG);
+  add_read_handler("debug", OpenAuthResponder_read_param, H_DEBUG);
 
-  add_write_handler("debug", OpenAuthResponder_write_param, (void *) H_DEBUG);
+  add_write_handler("debug", OpenAuthResponder_write_param, H_DEBUG);
 }
 
 CLICK_ENDDECLS

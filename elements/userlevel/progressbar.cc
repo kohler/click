@@ -430,18 +430,18 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
 void
 ProgressBar::add_handlers()
 {
-    add_write_handler("mark_stopped", write_handler, (void *)H_MARK_STOPPED);
-    add_write_handler("mark_done", write_handler, (void *)H_MARK_DONE);
+    add_write_handler("mark_stopped", write_handler, H_MARK_STOPPED);
+    add_write_handler("mark_done", write_handler, H_MARK_DONE);
     add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
-    add_write_handler("active", write_handler, (void *)H_ACTIVE);
+    add_write_handler("active", write_handler, H_ACTIVE);
     add_data_handlers("banner", Handler::OP_READ | Handler::OP_WRITE | Handler::RAW, &_banner);
-    add_read_handler("poshandler", read_handler, (void *)H_POSHANDLER);
-    add_write_handler("poshandler", write_handler, (void *)H_POSHANDLER);
-    add_read_handler("sizehandler", read_handler, (void *)H_SIZEHANDLER);
-    add_write_handler("sizehandler", write_handler, (void *)H_SIZEHANDLER);
+    add_read_handler("poshandler", read_handler, H_POSHANDLER);
+    add_write_handler("poshandler", write_handler, H_POSHANDLER);
+    add_read_handler("sizehandler", read_handler, H_SIZEHANDLER);
+    add_write_handler("sizehandler", write_handler, H_SIZEHANDLER);
     add_data_handlers("pos", Handler::OP_READ, &_last_pos);
     add_data_handlers("size", Handler::OP_READ | Handler::OP_WRITE, &_size);
-    add_write_handler("reset", write_handler, (void *)H_RESET, Handler::BUTTON);
+    add_write_handler("reset", write_handler, H_RESET, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS

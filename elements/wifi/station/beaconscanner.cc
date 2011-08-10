@@ -315,11 +315,11 @@ BeaconScanner_write_param(const String &in_s, Element *e, void *vparam,
 void
 BeaconScanner::add_handlers()
 {
-  add_read_handler("debug", BeaconScanner_read_param, (void *) H_DEBUG);
-  add_read_handler("scan", BeaconScanner_read_param, (void *) H_SCAN);
+  add_read_handler("debug", BeaconScanner_read_param, H_DEBUG);
+  add_read_handler("scan", BeaconScanner_read_param, H_SCAN);
 
-  add_write_handler("debug", BeaconScanner_write_param, (void *) H_DEBUG);
-  add_write_handler("reset", BeaconScanner_write_param, (void *) H_RESET, Handler::BUTTON);
+  add_write_handler("debug", BeaconScanner_write_param, H_DEBUG);
+  add_write_handler("reset", BeaconScanner_write_param, H_RESET, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS

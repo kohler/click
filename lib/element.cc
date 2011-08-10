@@ -2631,9 +2631,9 @@ configuration_handler(int operation, String &str, Element *e,
  * configuration arguments:
  *
  * @code
- * add_read_handler("first", read_positional_handler, (void *) 0);
- * add_read_handler("second", read_positional_handler, (void *) 1);
- * add_read_handler("third", read_positional_handler, (void *) 2);
+ * add_read_handler("first", read_positional_handler, 0);
+ * add_read_handler("second", read_positional_handler, 1);
+ * add_read_handler("third", read_positional_handler, 2);
  * @endcode
  *
  * Returns the empty string if there aren't enough arguments.
@@ -2661,7 +2661,7 @@ Element::read_positional_handler(Element *element, void *user_data)
  * returns the element's "DATA" keyword argument:
  *
  * @code
- * add_read_handler("data", read_keyword_handler, (void *) "DATA");
+ * add_read_handler("data", read_keyword_handler, "DATA");
  * @endcode
  *
  * Returns the empty string if the configuration doesn't have the specified
@@ -2674,7 +2674,7 @@ Element::read_positional_handler(Element *element, void *user_data)
  * missing:
  *
  * @code
- * add_write_handler("data", reconfigure_keyword_handler, (void *) "0 DATA");
+ * add_write_handler("data", reconfigure_keyword_handler, "0 DATA");
  * @endcode
  *
  * @sa configuration: used to obtain the element's current configuration.

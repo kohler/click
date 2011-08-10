@@ -190,12 +190,12 @@ ProbeRequester_write_param(const String &in_s, Element *e, void *vparam,
 void
 ProbeRequester::add_handlers()
 {
-  add_read_handler("debug", ProbeRequester_read_param, (void *) H_DEBUG);
-  add_read_handler("eth", ProbeRequester_read_param, (void *) H_ETH);
+  add_read_handler("debug", ProbeRequester_read_param, H_DEBUG);
+  add_read_handler("eth", ProbeRequester_read_param, H_ETH);
 
-  add_write_handler("debug", ProbeRequester_write_param, (void *) H_DEBUG);
-  add_write_handler("eth", ProbeRequester_write_param, (void *) H_ETH);
-  add_write_handler("send_probe", ProbeRequester_write_param, (void *) H_SEND_PROBE);
+  add_write_handler("debug", ProbeRequester_write_param, H_DEBUG);
+  add_write_handler("eth", ProbeRequester_write_param, H_ETH);
+  add_write_handler("send_probe", ProbeRequester_write_param, H_SEND_PROBE);
 }
 
 CLICK_ENDDECLS

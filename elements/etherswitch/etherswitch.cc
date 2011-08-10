@@ -120,7 +120,7 @@ void
 EtherSwitch::add_handlers()
 {
     add_read_handler("table", reader, 0);
-    add_read_handler("timeout", reader, (void *) 1);
+    add_read_handler("timeout", reader, 1);
     add_write_handler("timeout", writer, 0);
 }
 

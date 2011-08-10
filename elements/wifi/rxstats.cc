@@ -117,8 +117,8 @@ RXStats_write_param(const String &in_s, Element *e, void *vparam,
 void
 RXStats::add_handlers()
 {
-  add_read_handler("stats", RXStats_read_param, (void *) H_STATS);
-  add_write_handler("reset", RXStats_write_param, (void *) H_RESET, Handler::BUTTON);
+  add_read_handler("stats", RXStats_read_param, H_STATS);
+  add_write_handler("reset", RXStats_write_param, H_RESET, Handler::BUTTON);
 
 }
 

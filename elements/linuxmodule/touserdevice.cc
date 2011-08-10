@@ -558,7 +558,7 @@ ToUserDevice::add_handlers()
     add_data_handlers("block_count", Handler::OP_READ, &_block_count);
     add_data_handlers("sleeping_proc", Handler::OP_READ, &_sleep_proc);
 
-    add_write_handler("reset", write_handler, (void *) h_reset);
+    add_write_handler("reset", write_handler, h_reset);
     add_data_handlers("debug", Handler::OP_READ | Handler::OP_WRITE, &_debug);
     add_data_handlers("drop_tail", Handler::OP_READ | Handler::OP_WRITE, &_drop_tail);
     add_data_handlers("burst", Handler::OP_READ | Handler::OP_WRITE, &_max_burst);

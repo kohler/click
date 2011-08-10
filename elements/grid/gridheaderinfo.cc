@@ -121,7 +121,7 @@ void
 GridHeaderInfo::add_handlers()
 {
   for (unsigned int i = 0; i < sizeof(handler_info_array)/sizeof(GridHeaderInfo::info_t); i++)
-    add_read_handler(handler_info_array[i].name, ghi_read_handler, (void *) i);
+    add_read_handler(handler_info_array[i].name, ghi_read_handler, i);
 }
 
 CLICK_ENDDECLS

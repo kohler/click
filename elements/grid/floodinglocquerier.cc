@@ -414,9 +414,9 @@ FloodingLocQuerier_read_stats(Element *e, void *)
 void
 FloodingLocQuerier::add_handlers()
 {
-  add_read_handler("table", read_table, (void *)0);
-  add_read_handler("queries", read_seqs, (void *)0);
-  add_read_handler("stats", FloodingLocQuerier_read_stats, (void *)0);
+  add_read_handler("table", read_table, 0);
+  add_read_handler("queries", read_seqs, 0);
+  add_read_handler("stats", FloodingLocQuerier_read_stats, 0);
 }
 
 EXPORT_ELEMENT(FloodingLocQuerier)

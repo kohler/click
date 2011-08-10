@@ -99,8 +99,8 @@ SetTimestampDelta::write_handler(const String &, Element *e, void *, ErrorHandle
 void
 SetTimestampDelta::add_handlers()
 {
-    add_read_handler("first", read_handler, (void *)0);
-    add_write_handler("reset", write_handler, (void *)0, Handler::BUTTON);
+    add_read_handler("first", read_handler, 0);
+    add_write_handler("reset", write_handler, 0, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS

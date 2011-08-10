@@ -57,7 +57,7 @@ FilterTX_read_param(Element *e, void *thunk)
 void
 FilterTX::add_handlers()
 {
-  add_read_handler("drops", FilterTX_read_param, (void *) H_DROPS);
+  add_read_handler("drops", FilterTX_read_param, H_DROPS);
 }
 
 CLICK_ENDDECLS

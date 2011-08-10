@@ -133,10 +133,10 @@ int ICMPIPEncap::write_handler(const String &str, Element *e, void *thunk, Error
 
 void ICMPIPEncap::add_handlers()
 {
-    add_read_handler("src", read_handler, (void *) 0, Handler::CALM);
-    add_write_handler("src", write_handler, (void *) 0);
-    add_read_handler("dst", read_handler, (void *) 1, Handler::CALM);
-    add_write_handler("dst", write_handler, (void *) 1);
+    add_read_handler("src", read_handler, 0, Handler::CALM);
+    add_write_handler("src", write_handler, 0);
+    add_read_handler("dst", read_handler, 1, Handler::CALM);
+    add_write_handler("dst", write_handler, 1);
 }
 
 CLICK_ENDDECLS

@@ -141,9 +141,9 @@ Prism2Encap_write_param(const String &in_s, Element *e, void *vparam,
 void
 Prism2Encap::add_handlers()
 {
-  add_read_handler("debug", Prism2Encap_read_param, (void *) H_DEBUG);
+  add_read_handler("debug", Prism2Encap_read_param, H_DEBUG);
 
-  add_write_handler("debug", Prism2Encap_write_param, (void *) H_DEBUG);
+  add_write_handler("debug", Prism2Encap_write_param, H_DEBUG);
 }
 CLICK_ENDDECLS
 EXPORT_ELEMENT(Prism2Encap)

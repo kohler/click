@@ -73,8 +73,8 @@ RTCycles_reset_counts(const String &, Element *e, void *, ErrorHandler *)
 void
 RTCycles::add_handlers()
 {
-  add_read_handler("packets", RTCycles_read_cycles, (void *)0);
-  add_read_handler("cycles", RTCycles_read_cycles, (void *)1);
+  add_read_handler("packets", RTCycles_read_cycles, 0);
+  add_read_handler("cycles", RTCycles_read_cycles, 1);
   add_write_handler("reset_counts", RTCycles_reset_counts, 0, Handler::BUTTON);
 }
 

@@ -379,7 +379,7 @@ void
 IPsecRouteTable::add_handlers()
 {
     add_write_handler("add", add_route_handler, 0);
-    add_write_handler("set", add_route_handler, (void*) 1);
+    add_write_handler("set", add_route_handler, 1);
     add_write_handler("remove", remove_route_handler, 0);
     add_write_handler("ctrl", ctrl_handler, 0);
     add_read_handler("table", table_handler, 0);
