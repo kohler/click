@@ -71,7 +71,7 @@ ThreadMonitor::run_timer(Timer *)
 	    if ((*t)->cycles() >= _thresh) {
 		sa << now_jiffies << ": on thread " << tid << ": "
 		   << (void *)*t
-		   << " (" << (*t)->owner()->declaration()
+		   << " (" << (*t)->element()->declaration()
 		   << "), cycles " << (*t)->cycles() << '\n';
 	    }
     }
