@@ -1,0 +1,33 @@
+%require -q
+click-buildtool provides FromIPSummaryDump
+
+%script
+
+click -e "
+FromIPSummaryDump(IN1, STOP true, ZERO true)
+	-> a::AggregateCounter
+	-> Discard;
+DriverManager(pause, write a.write_text_file -, stop)
+" >OUT1
+
+%file IN1
+!data aggregate
+1
+1
+0
+0
+0
+2
+3
+2
+
+%expect OUT1
+0 3
+1 2
+2 2
+3 1
+
+%ignorex
+!.*
+
+%eof
