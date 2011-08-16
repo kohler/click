@@ -1678,7 +1678,7 @@ Lexer::yrequire_library(const String &value)
 	dir = ".";
     String fn = clickpath_find_file(value, "conf", dir, 0);
     if (!fn) {
-	lerror("library %<%#s%> not found in CLICKPATH/conf", fn.c_str());
+	lerror("library %<%#s%> not found in CLICKPATH/conf", value.c_str());
 	return;
     }
 
