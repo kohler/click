@@ -225,7 +225,7 @@ distdir: $(srcdir)/configure
 	done
 	@echo Copying element files...
 	@d=$(srcdir); \
-	for dir in `cd $$d && find elements -type d | grep -v 'exopc\|CVS'`; do \
+	for dir in `cd $$d && find elements -type d -print | grep -v 'exopc\|CVS'`; do \
 	  mkdir $(distdir)/$$dir 2>/dev/null; \
 	  chmod 777 $(distdir)/$$dir; \
 	  for cfile in `cd $$d && find $$dir -maxdepth 1 \( -type f -and \( -name \[^,.]\*.cc -or -name \[^,.]\*.c -or -name \[^,.]\*.hh -or -name \[^,.]\*.h -or -name README \) \) -print`; do \
@@ -237,7 +237,7 @@ distdir: $(srcdir)/configure
 	for i in `cat $(srcdir)/NODIST`; do \
 	  rm -rf $(distdir)/$$i; \
 	done; fi
-	@if grep -q 'Id:.*benjie' `find $(srcdir)/etc -maxdepth 1 -type f`; then \
+	@if grep -q 'Id:.*benjie' `find $(srcdir)/etc -maxdepth 1 -type f -print`; then \
 	  echo 'ERROR: Benjie must be punished!'; exit 1; \
 	fi
 	@if test `grep 'CLICK_VERSION=' $(srcdir)/configure.in` != `grep 'CLICK_VERSION=' $(srcdir)/etc/libclick/lc-configure.in`; then \

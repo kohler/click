@@ -198,13 +198,14 @@ install-local: Makefile $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc all
 install-include:
 	/bin/rm -f .install-include*
 	$(CLICKmkinstalldirs) $(DESTDIR)$(includedir)/click-linuxmodule
-	(cd $(DESTDIR)$(includedir)/click-linuxmodule; find . -type d | grep /) >.install-include0
-	(cd $(top_builddir)/include/click-linuxmodule; find . -type d | grep /) >.install-include1
+	(cd $(DESTDIR)$(includedir)/click-linuxmodule; find . -type d -print | grep /) >.install-include0 || true
+	(cd $(top_builddir)/include/click-linuxmodule; find . -type d -print | grep /) >.install-include1 || true
 	cat .install-include0 .install-include1 | sort | uniq -u >.install-include2
 	cat .install-include0 .install-include2 | sort | uniq -d | sed 's	^\.\(.*\)	'"$(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 /bin/rm -rf
 	cat .install-include1 .install-include2 | sort | uniq -d | sed 's	^\.\(.*\)	'"$(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 $(CLICKmkinstalldirs)
-	(cd $(DESTDIR)$(includedir)/click-linuxmodule; find . -type f | grep /) >.install-include0
-	(cd $(top_builddir)/include/click-linuxmodule; find . -type f | grep /) >.install-include1
+	/bin/rm -f .install-include*
+	(cd $(DESTDIR)$(includedir)/click-linuxmodule; find . -type f -print | grep /) >.install-include0 || true
+	(cd $(top_builddir)/include/click-linuxmodule; find . -type f -print | grep /) >.install-include1 || true
 	cat .install-include0 .install-include1 | sort | uniq -u >.install-include2
 	cat .install-include0 .install-include2 | sort | uniq -d | sed 's	^\.\(.*\)	'"$(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 /bin/rm -f
 	cat .install-include1 | sed 's	^\.\(.*\)	'"$(top_builddir)/include/click-linuxmodule"'\1'" $(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 $(CLICK_BUILD_INSTALL_DATA_IF_CHANGED)
@@ -213,7 +214,7 @@ install-man:
 	@:
 uninstall:
 	for i in $(patsubst %.o,%.ko,$(INSTALLOBJS)); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
-	(cd $(top_builddir)/include/click-linuxmodule; find . -type f) | grep / | sed 's	^\.\(.*\)	'"$(top_builddir)/include/click-linuxmodule"'\1'" $(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 rm -f
+	(cd $(top_builddir)/include/click-linuxmodule; find . -type f -print) | grep / | sed 's	^\.\(.*\)	'"$(top_builddir)/include/click-linuxmodule"'\1'" $(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 rm -f
 
 else
 
