@@ -148,7 +148,7 @@ class IPAddrRewriter : public IPRewriterBase { public:
 
     void add_handlers();
 
-  private:
+  protected:
 
     SizedHashAllocator<sizeof(IPAddrFlow)> _allocator;
     unsigned _annos;
