@@ -2052,7 +2052,7 @@ cp_handler_name(const String& str,
 	String ename(text.substring(text.begin(), dot));
 	if ((e = r->find(ename, context)))
 	    hstart = dot + 1;
-    } 
+    }
 
     if (!e) {
 	if (context->eindex() >= 0 && r->handler(context, text))
