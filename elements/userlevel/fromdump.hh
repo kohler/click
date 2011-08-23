@@ -248,12 +248,13 @@ class FromDump : public Element { public:
     Task _task;
     ActiveNotifier _notifier;
 
-    Timestamp _time_offset;
+    Timestamp _timing_offset;
     off_t _packet_filepos;
 
     bool read_packet(ErrorHandler *);
 
     void prepare_times(const Timestamp &);
+    bool check_timing(Packet *p);
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);

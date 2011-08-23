@@ -103,6 +103,7 @@ FromNetFlowSummaryDump::initialize(ErrorHandler *errh)
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
     _timer.initialize(this);
+    _have_timing = false;
     return 0;
 }
 
@@ -342,6 +343,30 @@ FromNetFlowSummaryDump::run_timer(Timer *)
 }
 
 bool
+FromNetFlowSummaryDump::check_timing(Packet *p)
+{
+    Timestamp now_s = Timestamp::now_steady();
+    if (!_have_timing) {
+	_timing_offset = now_s - p->timestamp_anno();
+	_have_timing = true;
+    }
+    Timestamp t = p->timestamp_anno() + _timing_offset;
+    if (now_s < t) {
+	t -= Timer::adjustment();
+	if (now_s < t) {
+	    _timer.schedule_at_steady(t);
+	    if (output_is_pull(0))
+		_notifier.sleep();
+	} else {
+	    if (output_is_push(0))
+		_task.fast_reschedule();
+	}
+	return false;
+    }
+    return true;
+}
+
+bool
 FromNetFlowSummaryDump::run_task(Task *)
 {
     if (!_active)
@@ -352,18 +377,8 @@ FromNetFlowSummaryDump::run_task(Task *)
 	if (_stop)
 	    router()->please_stop_driver();
 	return false;
-    } else if (_timing) {
-	Timestamp now = Timestamp::now();
-	Timestamp t = _packet->timestamp_anno() + _time_offset;
-	if (t > now) {
-	    t -= Timestamp::make_msec(50);
-	    if (t > now)
-		_timer.schedule_at(t);
-	    else
-		_task.fast_reschedule();
-	    return false;
-	}
-    }
+    } else if (_timing && !check_timing(p))
+	return false;
     output(0).push(_packet);
     _task.fast_reschedule();
     return true;
@@ -380,18 +395,8 @@ FromNetFlowSummaryDump::pull(int)
     Packet *p = next_packet();
     if (!p && _stop)
 	router()->please_stop_driver();
-    else if (p && _timing) {
-	Timestamp now = Timestamp::now();
-	Timestamp t = _packet->timestamp_anno() + _time_offset;
-	if (t > now) {
-	    t -= Timestamp::make_msec(50);
-	    if (t > now) {
-		_timer.schedule_at(t);
-		_notifier.sleep();
-	    }
-	    return 0;
-	}
-    }
+    else if (p && _timing && !check_timing(p))
+	return 0;
     _notifier.set_active(p != 0, true);
     return p;
 }

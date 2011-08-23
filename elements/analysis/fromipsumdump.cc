@@ -653,16 +653,16 @@ bool
 FromIPSummaryDump::check_timing(Packet *p)
 {
     assert(!_work_packet || _work_packet == p);
+    Timestamp now_s = Timestamp::now_steady();
     if (!_have_timing) {
-	_timing_offset = Timestamp::now() - p->timestamp_anno();
+	_timing_offset = now_s - p->timestamp_anno();
 	_have_timing = true;
     }
-    Timestamp now = Timestamp::now();
     Timestamp t = p->timestamp_anno() + _timing_offset;
-    if (now < t) {
+    if (now_s < t) {
 	t -= Timer::adjustment();
-	if (now < t) {
-	    _timer.schedule_at(t);
+	if (now_s < t) {
+	    _timer.schedule_at_steady(t);
 	    if (output_is_pull(0))
 		_notifier.sleep();
 	} else {
