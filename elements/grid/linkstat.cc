@@ -116,8 +116,7 @@ LinkStat::send_hook()
 
   unsigned max_jitter = _period / 10;
   unsigned j = click_random(0, max_jitter * 2);
-  _next_bcast += Timestamp::make_usec(1000 * (_period + j - max_jitter));
-  _send_timer->schedule_at(_next_bcast);
+  _send_timer->reschedule_after_msec(_period + j - max_jitter);
 
   checked_output_push(0, p);
 }
@@ -158,8 +157,7 @@ LinkStat::initialize(ErrorHandler *errh)
       return errh->error("Source Ethernet address must be specified to send probes");
     _send_timer = new Timer(static_send_hook, this);
     _send_timer->initialize(this);
-    _next_bcast = Timestamp::now() + Timestamp(1, 0);
-    _send_timer->schedule_at(_next_bcast);
+    _send_timer->schedule_after_sec(1);
   }
   return 0;
 }

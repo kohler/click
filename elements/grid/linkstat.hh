@@ -207,7 +207,6 @@ private:
   void send_hook();
 
   Timer *_send_timer;
-  Timestamp _next_bcast;
 
   bool _use_proto2;
 
