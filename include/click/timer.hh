@@ -217,9 +217,9 @@ class Timer { public:
 
     /** @brief Shedule the timer to fire immediately.
      *
-     * Equivalent to schedule_at(Timestamp::now()). */
+     * Equivalent to schedule_at(Timestamp::recent()). */
     inline void schedule_now() {
-	schedule_at_steady(Timestamp::now_steady());
+	schedule_at_steady(Timestamp::recent_steady());
     }
 
     /** @brief Schedule the timer to fire @a delta time in the future.
