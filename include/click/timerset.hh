@@ -93,7 +93,7 @@ inline Timestamp
 TimerSet::next_timer_expiry_adjusted() const
 {
     Timestamp e = _timer_expiry;
-#if CLICK_USERLEVEL
+#if TIMESTAMP_WARPABLE
     if (likely(!Timestamp::warp_jumping())) {
 #endif
     if (_timer_stride >= 8 || e.sec() == 0)
@@ -102,7 +102,7 @@ TimerSet::next_timer_expiry_adjusted() const
 	e -= Timer::adjustment();
     else
 	e -= Timer::adjustment() + Timer::adjustment();
-#if CLICK_USERLEVEL
+#if TIMESTAMP_WARPABLE
     }
 #endif
     return e;

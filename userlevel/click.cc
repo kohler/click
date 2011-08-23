@@ -641,7 +641,7 @@ particular purpose.\n");
 
   struct rusage before, after;
   getrusage(RUSAGE_SELF, &before);
-  Timestamp before_time = Timestamp::now_real_time();
+  Timestamp before_time = Timestamp::now_unwarped();
   Timestamp after_time = Timestamp::uninitialized_t();
 
   // run driver
@@ -666,7 +666,7 @@ particular purpose.\n");
   } else if (!quit_immediately && warnings)
     errh->warning("%s: configuration has no elements, exiting", filename_landmark(router_file, file_is_expr));
 
-  after_time.assign_now_real_time();
+  after_time.assign_now_unwarped();
   getrusage(RUSAGE_SELF, &after);
   // report time
   if (report_time) {

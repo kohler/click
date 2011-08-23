@@ -109,6 +109,14 @@ class String;
 #endif
 
 
+// TIMESTAMP_WARPABLE is defined if this Timestamp implementation supports
+// timewarping.
+
+#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE && !CLICK_NS
+# define TIMESTAMP_WARPABLE 1
+#endif
+
+
 class Timestamp { public:
 
     /** @brief  Type represents a number of seconds. */
@@ -333,11 +341,7 @@ class Timestamp { public:
 	return t;
     }
 
-    /** @brief Return a timestamp representing the current time.
-     *
-     * The current time is measured in seconds since January 1, 1970 GMT.
-     * @sa assign_now() */
-    static inline Timestamp now();
+
     /** @brief Return the smallest nonzero timestamp, Timestamp(0, 1). */
     static inline Timestamp epsilon() {
 	return Timestamp(0, 1);
@@ -347,6 +351,7 @@ class Timestamp { public:
     inline void clear() {
 	assign(0, 0);
     }
+
 
     /** Set this timestamp to a seconds-and-subseconds value.
      *
@@ -368,6 +373,7 @@ class Timestamp { public:
 	assign(sec, nsec_to_subsec(nsec));
     }
 
+    /** @cond never */
     /** Assign this timestamp to a seconds-and-subseconds value.
      * @deprecated Use assign() instead. */
     inline void set(seconds_type sec, uint32_t subsec = 0) CLICK_DEPRECATED;
@@ -377,22 +383,94 @@ class Timestamp { public:
     /** Assign this timestamp to a seconds-and-nanoseconds value.
      * @deprecated Use assign_nsec() instead. */
     inline void set_nsec(seconds_type sec, uint32_t nsec) CLICK_DEPRECATED;
-
-    /** @brief Set this timestamp to the current time.
-     *
-     * The current time is measured in seconds since January 1, 1970 GMT.
-     * Returns the most precise timestamp available.
-     * @sa now() */
-    inline void assign_now();
     /** @brief Deprecated synonym for assign_now().
      * @deprecated Use Timestamp::assign_now() instead. */
     inline void set_now() CLICK_DEPRECATED;
+    /** @endcond never */
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
     int set_timeval_ioctl(int fd, int ioctl_selector);
 #endif
 
+
+    /** @brief Return the current system time.
+     *
+     * System time is measured in seconds since January 1, 1970 GMT.
+     * Produces the most precise timestamp available.
+     *
+     * @note System time can jump forwards or backwards as a result of user
+     * actions.  For a clock that never moves backwards, see now_steady().
+     * @sa recent(), assign_now(), now_steady() */
+    static inline Timestamp now();
+
+    /** @brief Set this timestamp to the current system time.
+     *
+     * Like "*this = Timestamp::now()".
+     * @sa now(), assign_recent() */
+    inline void assign_now();
+
+    /** @brief Return a recent system time.
+     *
+     * The Timestamp::now() function calculates the current system time, which
+     * is relatively expensive.  Timestamp::recent() can be faster, but is
+     * less precise: it returns a cached copy of a recent system time.
+     * @sa now(), assign_recent() */
+    static inline Timestamp recent();
+
+    /** @brief Set this timestamp to a recent system time.
+     *
+     * Like "*this = Timestamp::recent()".
+     * @sa recent(), assign_now() */
+    inline void assign_recent();
+
+
+    /** @brief Return the current steady-clock time.
+     *
+     * The steady clock, often called a monotonic clock, is a system clock
+     * that never moves backwards.  Steady-clock time is measured in seconds
+     * since an undefined start point (often related to the most recent boot).
+     * Produces the most precise timestamp available.
+     *
+     * @note Steady-clock times and system times are incomparable, since they
+     * have different start points.
+     *
+     * @sa recent_steady(), assign_now_steady() */
+    static inline Timestamp now_steady();
+
+    /** @brief Set this timestamp to the current steady-clock time.
+     *
+     * Like "*this = Timestamp::now_steady()".
+     * @sa now_steady() */
+    inline void assign_now_steady();
+
+    /** @brief Return a recent steady-clock time.
+     *
+     * The Timestamp::now_steady() function calculates the current
+     * steady-clock time, which is relatively expensive.
+     * Timestamp::recent_steady() can be faster, but is less precise: it
+     * returns a cached copy of a recent steady-clock time.
+     * @sa now_steady(), assign_recent_steady() */
+    static inline Timestamp recent_steady();
+
+    /** @brief Set this timestamp to a recent steady-clock time.
+     *
+     * Like "*this = Timestamp::recent_steady()".
+     * @sa recent_steady(), assign_now_steady() */
+    inline void assign_recent_steady();
+
+
+    /** @brief Unparse this timestamp into a String.
+     *
+     * Returns a string formatted like "10.000000", with at least six
+     * subsecond digits.  (Nanosecond-precision timestamps where the number of
+     * nanoseconds is not evenly divisible by 1000 are given nine subsecond
+     * digits.) */
     String unparse() const;
+
+    /** @brief Unparse this timestamp into a String as an interval.
+     *
+     * Returns a string formatted like "1us" or "1.000002s". */
     String unparse_interval() const;
+
 
     /** @brief Convert milliseconds to subseconds.
      *
@@ -458,7 +536,7 @@ class Timestamp { public:
 #endif
     };
 
-#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+#if TIMESTAMP_WARPABLE
     /** @name Timewarping */
     //@{
     enum warp_class_type {
@@ -542,24 +620,21 @@ class Timestamp { public:
      *
      * Does nothing if warp_jumping() is false or @a expiry is in the past. */
     static void warp_jump(const Timestamp &expiry);
+
+
+    /** @brief Return the warp-free current system time.
+     *
+     * Like now(), but the time returned is unaffected by timewarping.
+     * @sa now(), assign_now_unwarped() */
+    static inline Timestamp now_unwarped();
+
+    /** @brief Set this timestamp to the warp-free current system time.
+     *
+     * Like assign_now(), but the time assigned is unaffected by timewarping.
+     * @sa assign_now(), now_unwarped() */
+    inline void assign_now_unwarped();
     //@}
 #endif
-
-
-    /** @brief Return a timestamp representing the current real time.
-     *
-     * The current time is measured in seconds since January 1, 1970 GMT.
-     * The time returned is unaffected by timewarping.
-     * @sa assign_now() */
-    static inline Timestamp now_real_time();
-
-    /** @brief Set this timestamp to the current real time.
-     *
-     * The current time is measured in seconds since January 1, 1970 GMT.
-     * Returns the most precise timestamp available.  The time returned is
-     * unaffected by timewarping.
-     * @sa assign_now(), now_real_time() */
-    inline void assign_now_real_time();
 
   private:
 
@@ -600,9 +675,9 @@ class Timestamp { public:
 	div = quot;
     }
 
-    inline void assign_now(bool raw);
+    inline void assign_now(bool recent, bool steady, bool unwarped);
 
-#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+#if TIMESTAMP_WARPABLE
     static warp_class_type _warp_class;
     static Timestamp _warp_flat_offset;
     static double _warp_speed;
@@ -657,93 +732,186 @@ Timestamp::operator unspecified_bool_type() const
 }
 
 inline void
-Timestamp::assign_now(bool raw)
+Timestamp::assign_now(bool recent, bool steady, bool unwarped)
 {
-#if TIMESTAMP_NANOSEC && (CLICK_LINUXMODULE || CLICK_BSDMODULE || HAVE_USE_CLOCK_GETTIME)
-    // nanosecond precision
-# if TIMESTAMP_PUNS_TIMESPEC
-    struct timespec *tsp = &_t.tspec;
-# else
-    struct timespec ts, *tsp = &ts;
-# endif
-# if CLICK_LINUXMODULE
-    getnstimeofday(tsp);
-# elif CLICK_BSDMODULE
-    nanotime(tsp);		// This is the more precise function
-# elif CLICK_USERLEVEL || CLICK_TOOL
-    clock_gettime(CLOCK_REALTIME, tsp);
-# else
-#  error "unknown driver"
-# endif
-# if !TIMESTAMP_PUNS_TIMESPEC
-    assign(ts.tv_sec, nsec_to_subsec(ts.tv_nsec));
-# endif
+    (void) recent, (void) steady, (void) unwarped;
 
+#if TIMESTAMP_PUNS_TIMESPEC
+# define TIMESTAMP_DECLARE_TSP struct timespec &tsp = _t.tspec
+# define TIMESTAMP_RESOLVE_TSP /* nothing */
 #else
-    // microsecond precision
-# if TIMESTAMP_PUNS_TIMEVAL
-    struct timeval *tvp = &_t.tv;
-# else
-    struct timeval tv, *tvp = &tv;
-# endif
-# if CLICK_LINUXMODULE
-    do_gettimeofday(tvp);
-# elif CLICK_BSDMODULE
-    microtime(tvp);
-# elif CLICK_NS
-    simclick_gettimeofday(tvp);
-# elif CLICK_USERLEVEL || CLICK_TOOL
-    gettimeofday(tvp, (struct timezone *) 0);
-# else
-#  error "unknown driver"
-# endif
-# if !TIMESTAMP_PUNS_TIMEVAL
-    assign(tv.tv_sec, usec_to_subsec(tv.tv_usec));
-# endif
+# define TIMESTAMP_DECLARE_TSP struct timespec ts, &tsp = ts
+# define TIMESTAMP_RESOLVE_TSP assign(tsp.tv_sec, nsec_to_subsec(tsp.tv_nsec))
+#endif
+#if TIMESTAMP_PUNS_TIMEVAL
+# define TIMESTAMP_DECLARE_TVP struct timeval &tvp = _t.tv
+# define TIMESTAMP_RESOLVE_TVP /* nothing */
+#else
+# define TIMESTAMP_DECLARE_TVP struct timeval tv, &tvp = tv
+# define TIMESTAMP_RESOLVE_TVP assign(tvp.tv_sec, usec_to_subsec(tvp.tv_usec))
 #endif
 
-    // timewarping
-#if CLICK_USERLEVEL
-    if (!raw && _warp_class)
-	warp(true);
+#if CLICK_LINUXMODULE
+# if !TIMESTAMP_NANOSEC
+    if (!recent && !steady) {
+	TIMESTAMP_DECLARE_TVP;
+	do_gettimeofday(&tvp);
+	TIMESTAMP_RESOLVE_TVP;
+	return;
+    }
+# endif
+    TIMESTAMP_DECLARE_TSP;
+    if (recent && steady) {
+# if HAVE_LINUX_GET_MONOTONIC_COARSE
+	tsp = get_monotonic_coarse();
+# else
+	tsp = current_kernel_time();
+	struct timespec delta;
+	getboottime(&delta);
+	monotonic_to_bootbased(&delta);
+	set_normalized_timespec(&tsp, tsp.tv_sec - delta.tv_sec,
+				tsp.tv_nsec - delta.tv_nsec);
+# endif
+    } else if (recent)
+	tsp = current_kernel_time();
+    else if (steady)
+	ktime_get_ts(&tsp);
+    else
+	getnstimeofday(&tsp);
+    TIMESTAMP_RESOLVE_TSP;
+
+#elif TIMESTAMP_NANOSEC && CLICK_BSDMODULE
+    TIMESTAMP_DECLARE_TSP;
+    if (recent && steady)
+	getnanouptime(&tsp);
+    else if (recent)
+	getnanotime(&tsp);
+    else if (steady)
+	nanouptime(&tsp);
+    else
+	nanotime(&tsp);
+    TIMESTAMP_RESOLVE_TSP;
+
+#elif CLICK_BSDMODULE
+    TIMESTAMP_DECLARE_TVP;
+    if (recent && steady)
+	getmicrouptime(&tvp);
+    else if (recent)
+	getmicrotime(&tvp);
+    else if (steady)
+	microuptime(&tvp);
+    else
+	microtime(&tvp);
+    TIMESTAMP_RESOLVE_TVP;
+
+#elif CLICK_NS
+    TIMESTAMP_DECLARE_TVP;
+    simclick_gettimeofday(tvp);
+    TIMESTAMP_RESOLVE_TVP;
+
+#elif HAVE_USE_CLOCK_GETTIME
+    TIMESTAMP_DECLARE_TSP;
+    if (steady)
+	clock_gettime(CLOCK_MONOTONIC, &tsp);
+    else
+	clock_gettime(CLOCK_REALTIME, &tsp);
+    TIMESTAMP_RESOLVE_TSP;
+
 #else
-    (void) raw;
+    TIMESTAMP_DECLARE_TVP;
+    gettimeofday(&tvp, (struct timezone *) 0);
+    TIMESTAMP_RESOLVE_TVP;
+#endif
+
+#undef TIMESTAMP_DECLARE_TSP
+#undef TIMESTAMP_RESOLVE_TSP
+#undef TIMESTAMP_DECLARE_TVP
+#undef TIMESTAMP_RESOLVE_TVP
+
+#if TIMESTAMP_WARPABLE
+    // timewarping
+    if (!unwarped && _warp_class)
+	warp(true);
 #endif
 }
 
 inline void
 Timestamp::assign_now()
 {
-    assign_now(false);
+    assign_now(false, false, false);
 }
 
 inline void
 Timestamp::set_now()
 {
-    assign_now(false);
+    assign_now(false, false, false);
 }
 
 inline Timestamp
 Timestamp::now()
 {
     Timestamp t = Timestamp::uninitialized_t();
-    t.assign_now(false);
+    t.assign_now();
     return t;
 }
 
 inline void
-Timestamp::assign_now_real_time()
+Timestamp::assign_recent()
 {
-    assign_now(true);
+    assign_now(true, false, false);
 }
 
 inline Timestamp
-Timestamp::now_real_time()
+Timestamp::recent()
 {
     Timestamp t = Timestamp::uninitialized_t();
-    t.assign_now(true);
+    t.assign_recent();
     return t;
 }
+
+inline void
+Timestamp::assign_now_steady()
+{
+    assign_now(false, true, false);
+}
+
+inline Timestamp
+Timestamp::now_steady()
+{
+    Timestamp t = Timestamp::uninitialized_t();
+    t.assign_now_steady();
+    return t;
+}
+
+inline void
+Timestamp::assign_recent_steady()
+{
+    assign_now(true, true, false);
+}
+
+inline Timestamp
+Timestamp::recent_steady()
+{
+    Timestamp t = Timestamp::uninitialized_t();
+    t.assign_recent_steady();
+    return t;
+}
+
+#if TIMESTAMP_WARPABLE
+inline void
+Timestamp::assign_now_unwarped()
+{
+    assign_now(false, false, true);
+}
+
+inline Timestamp
+Timestamp::now_unwarped()
+{
+    Timestamp t = Timestamp::uninitialized_t();
+    t.assign_now_unwarped();
+    return t;
+}
+#endif
 
 /** @brief Set this timestamp's seconds component.
 
@@ -1230,7 +1398,7 @@ operator/(const Timestamp &a, const Timestamp &b)
 
 StringAccum& operator<<(StringAccum&, const Timestamp&);
 
-#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+#if TIMESTAMP_WARPABLE
 inline Timestamp
 Timestamp::warp_real_delay() const
 {

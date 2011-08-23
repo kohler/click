@@ -11317,6 +11317,22 @@ $as_echo "$ac_cv_linux_netdev_rx_handler_register" >&6; }
 
     fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for get_monotonic_coarse kernel symbol" >&5
+$as_echo_n "checking for get_monotonic_coarse kernel symbol... " >&6; }
+if ${ac_cv_linux_get_monotonic_coarse+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if grep "__ksymtab_get_monotonic_coarse" $linux_system_map >/dev/null 2>&1; then
+        ac_cv_linux_get_monotonic_coarse=yes
+    else ac_cv_linux_get_monotonic_coarse=no; fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_get_monotonic_coarse" >&5
+$as_echo "$ac_cv_linux_get_monotonic_coarse" >&6; }
+    if test $ac_cv_linux_get_monotonic_coarse = yes; then
+        $as_echo "#define HAVE_LINUX_GET_MONOTONIC_COARSE 1" >>confdefs.h
+
+    fi
+
     CC="$save_cc"
     CXX="$save_cxx"
     CPPFLAGS="$save_cppflags"

@@ -55,7 +55,7 @@ CLICK_DECLS
  -1, usec() == +900000.
  */
 
-#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+#if TIMESTAMP_WARPABLE
 Timestamp::warp_class_type Timestamp::_warp_class = Timestamp::warp_none;
 Timestamp Timestamp::_warp_flat_offset = Timestamp(0, 0);
 double Timestamp::_warp_speed = 1.0;
@@ -111,7 +111,7 @@ void
 Timestamp::warp_set_now(const Timestamp &t)
 {
     Timestamp now_raw = Timestamp::uninitialized_t();
-    now_raw.assign_now(true);
+    now_raw.assign_now_unwarped();
     warp_adjust(now_raw, t);
 }
 
@@ -120,7 +120,7 @@ Timestamp::warp_set_speed(double f)
 {
     assert(f > 0);
     Timestamp now_raw = Timestamp::uninitialized_t();
-    now_raw.assign_now(true);
+    now_raw.assign_now_unwarped();
     Timestamp now_adj = now_raw.warped();
     _warp_speed = f;
     if (_warp_class < warp_nowait)
@@ -135,7 +135,7 @@ Timestamp::warp_jump(const Timestamp &expiry)
 	    _warp_flat_offset = expiry;
     } else if (_warp_class == warp_nowait) {
 	Timestamp now_raw = Timestamp::uninitialized_t();
-	now_raw.assign_now(true);
+	now_raw.assign_now_unwarped();
 	if (now_raw.warped() < expiry)
 	    warp_adjust(now_raw, expiry);
     }
@@ -222,11 +222,6 @@ operator<<(StringAccum &sa, const Timestamp& ts)
     return sa;
 }
 
-/** @brief Unparse this timestamp into a String.
-
-    Returns a string formatted like "10.000000", with at least six subsecond
-    digits.  (Nanosecond-precision timestamps where the number of nanoseconds
-    is not evenly divisible by 1000 are given nine subsecond digits.) */
 String
 Timestamp::unparse() const
 {
@@ -235,9 +230,6 @@ Timestamp::unparse() const
     return sa.take_string();
 }
 
-/** @brief Unparse this timestamp into a String as an interval.
-
-    Returns a string formatted like "1us" or "1.000002s". */
 String
 Timestamp::unparse_interval() const
 {
