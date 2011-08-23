@@ -78,11 +78,11 @@ CLICK_DECLS
  void PeriodicPrinter::run_timer(Timer *timer) {
      // This function is called when the timer fires.
      assert(timer == &_timer);
-     Timestamp now = Timestamp::now();
+     Timestamp now = Timestamp::now_steady();
      click_chatter("%s: %{timestamp}: timer fired with expiry %{timestamp}!\n",
-                   declaration().c_str(), &now, &_timer.expiry());
-		   // _timer.expiry() is the Timestamp at which the timer
-		   // was set to fire.
+                   declaration().c_str(), &now, &_timer.expiry_steady());
+		   // _timer.expiry_steady() is the steady-clock Timestamp
+		   // at which the timer was set to fire.
      _timer.reschedule_after_sec(5);  // Fire again 5 seconds later.
  }
  @endcode
@@ -100,9 +100,9 @@ CLICK_DECLS
  </pre>
 
  The expiry time measures when the timer was supposed to fire, while
- Timestamp::now() reports the current system time.  Note that the timer's
- expiry time goes up by exactly 5 seconds each time, and that system time
- is always later than the expiry time.
+ Timestamp::now_steady() reports the current steady-clock time.  Note that the
+ timer's expiry time goes up by exactly 5 seconds each time, and that
+ steady-clock time is always later than the expiry time.
 
  Click aims to fire the timer as soon as possible after the expiry time, but
  cannot hit the expiry time exactly.  The reschedule_after_sec() function and
@@ -112,18 +112,18 @@ CLICK_DECLS
 
  @code
  void PeriodicPrinter::run_timer(Timer *timer) {
-     Timestamp now = Timestamp::now();
+     Timestamp now = Timestamp::now_steady();
      click_chatter("%s: %{timestamp}: timer fired with expiry %{timestamp}!\n",
-                   name().c_str(), &now, &_timer.expiry());
+                   name().c_str(), &now, &_timer.expiry_steady());
      _timer.schedule_after_sec(5);  // Fire again 5 seconds later.
          // This is the same as:
-	 // _timer.schedule_at(Timestamp::now() + Timestamp::make_sec(5));
+	 // _timer.schedule_at_steady(Timestamp::now_steady() + Timestamp::make_sec(5));
  }
  @endcode
 
  The schedule_after_sec() function sets the timer to fire an interval after
- the <em>current system time</em>, not the previous expiry.  As a result, the
- timer drifts:
+ the <em>current steady-clock time</em>, not the previous expiry.  As a
+ result, the timer drifts:
 
  <pre>
  pp: 1204658494.374277: timer fired with expiry 1204658494.374256!
@@ -138,8 +138,8 @@ CLICK_DECLS
  </pre>
 
  Timers that are set to fire more than 1 second in the past are silently
- updated to the current system time.  Thus, the reschedule_after() methods
- will never fall more than a second or two behind system time.
+ updated to the current steady-clock time.  Thus, the reschedule_after()
+ methods will never fall more than a second or two behind steady-clock time.
 
  <h3>Notes</h3>
 
@@ -256,7 +256,7 @@ Timer::home_thread_id() const
 }
 
 void
-Timer::schedule_at(const Timestamp& when)
+Timer::schedule_at_steady(const Timestamp &when)
 {
     // acquire lock, unschedule
     assert(_owner && initialized());
@@ -264,7 +264,7 @@ Timer::schedule_at(const Timestamp& when)
     ts.lock_timers();
 
     // set expiration timer
-    _expiry = when;
+    _expiry_s = when;
     ts.check_timer_expiry(this);
 
     // manipulate list; this is essentially a "decrease-key" operation
@@ -277,7 +277,7 @@ Timer::schedule_at(const Timestamp& when)
 	_schedpos1 = ts._timer_heap.size() + 1;
 	ts._timer_heap.push_back(TimerSet::heap_element(this));
     } else
-	ts._timer_heap.at_u(_schedpos1 - 1).expiry = _expiry;
+	ts._timer_heap.at_u(_schedpos1 - 1).expiry_s = _expiry_s;
     change_heap<4>(ts._timer_heap.begin(), ts._timer_heap.end(),
 		   ts._timer_heap.begin() + _schedpos1 - 1,
 		   TimerSet::heap_less(), TimerSet::heap_place());
@@ -295,7 +295,7 @@ Timer::schedule_at(const Timestamp& when)
 void
 Timer::schedule_after(const Timestamp &delta)
 {
-    schedule_at(Timestamp::now() + delta);
+    schedule_at_steady(Timestamp::now_steady() + delta);
 }
 
 void

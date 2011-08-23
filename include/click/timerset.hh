@@ -13,8 +13,8 @@ class TimerSet { public:
 
     TimerSet();
 
-    Timestamp next_timer_expiry() const		{ return _timer_expiry; }
-    inline Timestamp next_timer_expiry_adjusted() const;
+    Timestamp timer_expiry_steady() const	{ return _timer_expiry; }
+    inline Timestamp timer_expiry_steady_adjusted() const;
 #if CLICK_USERLEVEL
     inline int next_timer_delay(bool more_tasks, Timestamp &t) const;
 #endif
@@ -34,18 +34,18 @@ class TimerSet { public:
   private:
 
     struct heap_element {
-	Timestamp expiry;
+	Timestamp expiry_s;
 	Timer *t;
 #if SIZEOF_VOID_P == 4
 	uint32_t padding; /* the structure should have size 16 */
 #endif
 	heap_element(Timer *t_)
-	    : expiry(t_->expiry()), t(t_) {
+	    : expiry_s(t_->expiry_steady()), t(t_) {
 	}
     };
     struct heap_less {
 	inline bool operator()(const heap_element &a, const heap_element &b) {
-	    return a.expiry < b.expiry;
+	    return a.expiry_s < b.expiry_s;
 	}
     };
     struct heap_place {
@@ -75,7 +75,7 @@ class TimerSet { public:
 
     void set_timer_expiry() {
 	if (_timer_heap.size())
-	    _timer_expiry = _timer_heap.at_u(0).expiry;
+	    _timer_expiry = _timer_heap.at_u(0).expiry_s;
 	else
 	    _timer_expiry = Timestamp();
     }
@@ -90,7 +90,7 @@ class TimerSet { public:
 };
 
 inline Timestamp
-TimerSet::next_timer_expiry_adjusted() const
+TimerSet::timer_expiry_steady_adjusted() const
 {
     Timestamp e = _timer_expiry;
 #if TIMESTAMP_WARPABLE

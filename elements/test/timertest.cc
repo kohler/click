@@ -64,7 +64,7 @@ TimerTest::initialize(ErrorHandler *)
 	click_chatter("Initializing explicit_do_nothing_timer");
 	explicit_do_nothing_timer.initialize(this);
     } else {
-	Timestamp now = Timestamp::now();
+	Timestamp now = Timestamp::now_steady();
 	Timer *ts = new Timer[_benchmark];
 	for (int i = 0; i < _benchmark; ++i) {
 	    ts[i].assign();
@@ -82,14 +82,14 @@ TimerTest::initialize(ErrorHandler *)
 void
 TimerTest::run_timer(Timer *t)
 {
-    click_chatter("%{timestamp}: %{element} fired", &t->expiry(), this);
+    click_chatter("%{timestamp}: %{element} fired", &t->expiry_steady(), this);
 }
 
 void
 TimerTest::benchmark_schedules(Timer *ts, int nts, const Timestamp &now)
 {
     for (int i = 0; i < nts; ++i)
-	ts[i].schedule_at(now + Timestamp::make_msec(click_random(0, 10000)));
+	ts[i].schedule_at_steady(now + Timestamp::make_msec(click_random(0, 10000)));
 }
 
 void
@@ -103,7 +103,7 @@ TimerTest::benchmark_changes(Timer *ts, int nts, const Timestamp &now)
 	    t->unschedule();
 	} else
 	    t = &ts[click_random(0, nts - 1)];
-	t->schedule_at(now + Timestamp::make_msec(click_random(0, 10000)));
+	t->schedule_at_steady(now + Timestamp::make_msec(click_random(0, 10000)));
     }
 }
 
@@ -124,7 +124,7 @@ TimerTest::read_handler(Element *e, void *user_data)
 	return String(tt->_timer.scheduled());
     case h_expiry:
     default:
-	return String(tt->_timer.expiry());
+	return String(tt->_timer.expiry_steady());
     }
 }
 
@@ -138,7 +138,7 @@ TimerTest::write_handler(const String &str, Element *e, void *user_data, ErrorHa
 	if (!BoolArg().parse(str, schedule))
 	    return errh->error("syntax error");
 	if (schedule)
-	    tt->_timer.schedule_at(tt->_timer.expiry());
+	    tt->_timer.schedule_at_steady(tt->_timer.expiry_steady());
 	else
 	    tt->_timer.unschedule();
 	break;
