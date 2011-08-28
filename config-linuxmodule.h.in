@@ -55,6 +55,9 @@
 /* Define if your Linux kernel exports get_monotonic_coarse. */
 #undef HAVE_LINUX_GET_MONOTONIC_COARSE
 
+/* Define if your Linux kernel exports getboottime. */
+#undef HAVE_LINUX_GETBOOTTIME
+
 /* Define if your Linux kernel has inet_ctl_sock_create. */
 #undef HAVE_LINUX_INET_CTL_SOCK_CREATE
 

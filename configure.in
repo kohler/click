@@ -1483,6 +1483,14 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
         AC_DEFINE(HAVE_LINUX_GET_MONOTONIC_COARSE)
     fi
 
+    AC_CACHE_CHECK([for getboottime kernel symbol], [ac_cv_linux_getboottime],
+    [if grep "__ksymtab_getboottime" $linux_system_map >/dev/null 2>&1; then
+        ac_cv_linux_getboottime=yes
+    else ac_cv_linux_getboottime=no; fi])
+    if test $ac_cv_linux_getboottime = yes; then
+        AC_DEFINE(HAVE_LINUX_GETBOOTTIME)
+    fi
+
     CC="$save_cc"
     CXX="$save_cxx"
     CPPFLAGS="$save_cppflags"

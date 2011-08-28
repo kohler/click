@@ -764,13 +764,17 @@ Timestamp::assign_now(bool recent, bool steady, bool unwarped)
     if (recent && steady) {
 # if HAVE_LINUX_GET_MONOTONIC_COARSE
 	tsp = get_monotonic_coarse();
-# else
+# elif HAVE_LINUX_GETBOOTTIME
 	tsp = current_kernel_time();
 	struct timespec delta;
 	getboottime(&delta);
 	monotonic_to_bootbased(&delta);
 	set_normalized_timespec(&tsp, tsp.tv_sec - delta.tv_sec,
 				tsp.tv_nsec - delta.tv_nsec);
+# else
+	// older kernels don't export enough information to produce a recent
+	// steady timestamp; produce a current steady timestamp
+	ktime_get_ts(&tsp);
 # endif
     } else if (recent)
 	tsp = current_kernel_time();
