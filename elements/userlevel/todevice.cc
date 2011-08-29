@@ -315,7 +315,7 @@ ToDevice::run_task(Task *)
 	    add_select(_fd, SELECT_WRITE);
 	} else {
 	    _timer.schedule_after(Timestamp::make_usec(_backoff));
-	    if (_backoff < 32768)
+	    if (_backoff < 256)
 		_backoff *= 2;
 	    if (_debug) {
 		Timestamp now = Timestamp::now();

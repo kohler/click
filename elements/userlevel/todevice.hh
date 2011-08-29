@@ -121,13 +121,13 @@ class ToDevice : public Element { public:
     int _burst;
 
     bool _debug;
-    bool _backoff;
 #if TODEVICE_ALLOW_PCAP
     bool _my_pcap;
 #endif
 #if TODEVICE_ALLOW_LINUX || TODEVICE_ALLOW_DEVBPF || TODEVICE_ALLOW_PCAPFD
     bool _my_fd;
 #endif
+    int _backoff;
     int _pulls;
 
     enum { h_debug, h_signal, h_pulls, h_q };
