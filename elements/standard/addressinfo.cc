@@ -89,6 +89,18 @@ int
 AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     enum { t_eth = 1, t_ip4 = 2, t_ip4net = 4, t_ip6 = 8, t_ip6net = 16 };
+    struct in_addr ip4[2];
+    unsigned char ether[6];
+#if HAVE_IP6
+    struct ip6parts {
+	IP6Address ip6;
+	int plen;
+	ip6parts() : ip6(IP6Address::uninitialized_t()) {
+	}
+    };
+    ip6parts ip6;
+#endif
+    ArgContext context(this);
 
     for (int i = 0; i < conf.size(); i++) {
 	Vector<String> parts;
@@ -101,31 +113,22 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 	int types = 0;
 
 	for (int j = 1; j < parts.size(); j++) {
-	    struct in_addr ip4[2];
-	    unsigned char ether[6];
-# if HAVE_IP6
-	    struct {
-		unsigned char c[sizeof(click_in6_addr)];
-		int p;
-	    } ip6;
-# endif
-
 	    int my_types = 0;
-	    if (EtherAddressArg().parse(parts[j], ether))
+	    if (EtherAddressArg().parse(parts[j], ether, context))
 		my_types |= t_eth;
-	    if (IPAddressArg().parse(parts[j], ip4[0]))
+	    if (IPAddressArg().parse(parts[j], ip4[0], context))
 		my_types |= t_ip4;
-	    else if (IPPrefixArg().parse(parts[j], ip4[0], ip4[1])) {
+	    else if (IPPrefixArg().parse(parts[j], ip4[0], ip4[1], context)) {
 		my_types |= t_ip4net;
 		if (ip4[0].s_addr & ~ip4[1].s_addr)
 		    my_types |= t_ip4;
 	    }
 #if HAVE_IP6
-	    if (cp_ip6_address(parts[j], ip6.c))
+	    if (IP6AddressArg().parse(parts[j], ip6.ip6, context))
 		my_types |= t_ip6;
-	    else if (cp_ip6_prefix(parts[j], ip6.c, &ip6.p, false)) {
+	    else if (IP6PrefixArg().(parts[j], ip6.ip6, ip6.plen, context)) {
 		my_types |= t_ip6net;
-		if (IP6Address(ip6.c) & IP6Address::make_inverted_prefix(ip6.p))
+		if (ip6.ip6 & IP6Address::make_inverted_prefix(ip6.plen))
 		    my_types |= t_ip6;
 	    }
 #endif
@@ -139,14 +142,14 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 		NameInfo::define(NameInfo::T_IP_PREFIX, this, parts[0], &ip4[0], 8);
 #if HAVE_IP6
 	    if ((my_types & t_ip6) && (one_type || !(types & t_ip6)))
-		NameInfo::define(NameInfo::T_IP6_ADDR, this, parts[0], ip6.c, 16);
+		NameInfo::define(NameInfo::T_IP6_ADDR, this, parts[0], &ip6.ip6, 16);
 	    if ((my_types & t_ip6net) && (one_type || !(types & t_ip6net)))
 		NameInfo::define(NameInfo::T_IP6_PREFIX, this, parts[0], &ip6, 16 + sizeof(int));
 #endif
 
 	    types |= my_types;
 	    if (!my_types)
-		errh->error("\"%s\" %<%s%> is not a recognizable address", parts[0].c_str(), parts[j].c_str());
+		errh->error("%<%s%> is not a recognizable address", parts[j].c_str());
 	}
     }
 
@@ -410,11 +413,12 @@ AddressInfo::query_ip_prefix(String s, unsigned char *store,
 {
     int colon = s.find_right(':');
     if (colon >= 0) {
-	String typestr = s.substring(colon).lower();
-	s = s.substring(0, colon);
-	if (!(typestr.equals(":net", 4) || typestr.equals(":ipnet", 6)
-	      || typestr.equals(":ip4net", 7)))
+	String typestr(s.substring(colon).lower());
+	if (!typestr.equals(":net", 4)
+	    && !typestr.equals(":ipnet", 6)
+	    && !typestr.equals(":ip4net", 7))
 	    return false;
+	s = s.substring(0, colon);
     }
 
     uint8_t data[8];
@@ -434,10 +438,11 @@ bool
 AddressInfo::query_ip6(String s, unsigned char *store, const Element *e)
 {
     int colon = s.find_right(':');
-    if (colon >= 0 && s.substring(colon).lower() != ":ip6")
-	return false;
-    else if (colon >= 0)
+    if (colon >= 0) {
+	if (!s.substring(colon).lower().equals(":ip6", 4))
+	    return false;
 	s = s.substring(0, colon);
+    }
 
     return NameInfo::query(NameInfo::T_IP6_ADDR, e, s, store, 16);
 }
@@ -447,10 +452,11 @@ AddressInfo::query_ip6_prefix(String s, unsigned char *store,
 			      int *bits_store, const Element *context)
 {
     int colon = s.find_right(':');
-    if (colon >= 0 && s.substring(colon).lower() != ":ip6net")
-	return false;
-    else if (colon >= 0)
+    if (colon >= 0) {
+	if (!s.substring(colon).lower().equals(":ip6net", 7))
+	    return false;
 	s = s.substring(0, colon);
+    }
 
     struct {
 	unsigned char c[16];
@@ -472,11 +478,14 @@ bool
 AddressInfo::query_ethernet(String s, unsigned char *store, const Element *context)
 {
     int colon = s.find_right(':');
-    if (colon >= 0 && s.substring(colon).lower() != ":eth"
-	&& s.substring(colon).lower() != ":ethernet")
-	return false;
-    else if (colon >= 0)
+    if (colon >= 0) {
+	String typestr(s.substring(colon).lower());
+	if (!typestr.equals(":eth", 4)
+	    && !typestr.equals(":ether", 6)
+	    && !typestr.equals(":ethernet", 9))
+	    return false;
 	s = s.substring(0, colon);
+    }
 
     return NameInfo::query(NameInfo::T_ETHERNET_ADDR, context, s, store, 6)
 	|| query_netdevice(s, store, 'e', 6, context);
