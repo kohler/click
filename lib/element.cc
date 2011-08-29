@@ -133,9 +133,8 @@ class MyNothingElement : public Element { public:
   nothing.  The required class_name() function informs Click's infrastructure
   of the element's class name.
 
-  Although this element definition is complete, Click's compilation process
-  requires that a real element come with a bit more boilerplate.  Here's a
-  possible definition of our nothing element, including all boilerplate:
+  Although this element is code-complete, Click's build process requires a bit
+  more boilerplate, like so:
 
 @code
 // ================== elements/local/mynothingelement.hh ==================
@@ -165,9 +164,7 @@ EXPORT_ELEMENT(MyNothingElement)
   - The element class must be defined in a header file and a source file.
   - The header file is protected from multiple inclusion.  A common error is
     to copy and paste another element's header file, but forget to change the
-    header protection symbol (here, CLICK_MYNOTHINGELEMENT_HH).  This will
-    cause an error when Click tries to compile a generated file called
-    elements.cc.
+    header protection symbol (here, CLICK_MYNOTHINGELEMENT_HH).
   - All Click declarations are enclosed within a macro pair,
     <tt>CLICK_DECLS</tt> and <tt>CLICK_ENDDECLS</tt>.  These are required for
     the NS and FreeBSD kernel drivers.  Note that <tt>\#include</tt> statements
@@ -549,6 +546,7 @@ Element::name() const
     return (s ? s : String::make_stable("<unknown>", 9));
 }
 
+/** @cond never */
 /** @brief Return the element's name (deprecated).
  *
  * @deprecated This function is deprecated; use name() instead. */
@@ -556,19 +554,6 @@ String
 Element::id() const
 {
     return name();
-}
-
-/** @brief Return a string giving the element's name and class name.
- *
- * The result has the form &quot;@e name :: @e class_name&quot;.  Element
- * classes can override this function to supply additional important
- * information, if desired; for example, @e FromDump returns a string &quot;@e
- * name :: @e class_name(@e filename)&quot;.
- */
-String
-Element::declaration() const
-{
-    return name() + " :: " + class_name();
 }
 
 /** @brief Return a string describing where the element was declared.
@@ -582,6 +567,20 @@ Element::landmark() const
     if (Router *r = router())
 	s = r->elandmark(_eindex);
     return (s ? s : String::make_stable("<unknown>", 9));
+}
+/** @endcond never */
+
+/** @brief Return a string giving the element's name and class name.
+ *
+ * The result has the form &quot;@e name :: @e class_name&quot;.  Element
+ * classes can override this function to supply additional important
+ * information, if desired; for example, @e FromDump returns a string &quot;@e
+ * name :: @e class_name(@e filename)&quot;.
+ */
+String
+Element::declaration() const
+{
+    return name() + " :: " + class_name();
 }
 
 // INPUTS AND OUTPUTS
@@ -2530,6 +2529,10 @@ Element::add_data_handlers(const String &name, int flags, String *data)
 }
 
 /** @brief Register read and/or write handlers accessing @a data.
+ * @param name handler name
+ * @param flags handler flags, containing at least one of Handler::h_read
+ * and Handler::h_write
+ * @param data pointer to data
  * @param is_interval If true, the read handler unparses *@a data as an
  *   interval. */
 void
@@ -2935,6 +2938,7 @@ Element::run_task(Task *)
     return run_task();
 }
 
+/** @cond never */
 /** @brief Run the element's task (deprecated).
  *
  * @return true if the task accomplished some meaningful work, false otherwise
@@ -2953,6 +2957,7 @@ Element::run_task()
     assert(0 /* run_task not overridden */);
     return false;
 }
+/** @endcond never */
 
 /** @brief Run the element's timer.
  *
@@ -2975,6 +2980,7 @@ Element::run_timer(Timer *timer)
     (void) timer;
 }
 
+/** @cond never */
 /** @brief Run the element's timer (deprecated).
  *
  * @deprecated This method is deprecated.  Elements should override the
@@ -2990,5 +2996,6 @@ Element::run_timer()
 {
     assert(0 /* run_timer not overridden */);
 }
+/** @endcond never */
 
 CLICK_ENDDECLS

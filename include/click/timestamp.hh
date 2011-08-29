@@ -845,12 +845,6 @@ Timestamp::assign_now()
     assign_now(false, false, false);
 }
 
-inline void
-Timestamp::set_now()
-{
-    assign_now(false, false, false);
-}
-
 inline Timestamp
 Timestamp::now()
 {
@@ -1133,6 +1127,11 @@ Timestamp::make_jiffies(click_jiffies_difference_t jiffies)
 }
 #endif
 
+/** @cond never */
+inline void Timestamp::set_now() {
+    assign_now(false, false, false);
+}
+
 inline void Timestamp::set(seconds_type sec, uint32_t subsec) {
     assign(sec, subsec);
 }
@@ -1144,6 +1143,7 @@ inline void Timestamp::set_usec(seconds_type sec, uint32_t usec) {
 inline void Timestamp::set_nsec(seconds_type sec, uint32_t nsec) {
     assign_nsec(sec, nsec);
 }
+/** @endcond never */
 
 /** @relates Timestamp
     @brief Compare two timestamps for equality.

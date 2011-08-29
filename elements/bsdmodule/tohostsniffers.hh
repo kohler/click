@@ -1,6 +1,6 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
-#ifndef CLICK_TOHOSTSNIFFERS_HH
-#define CLICK_TOHOSTSNIFFERS_HH
+#ifndef CLICK_TOHOSTSNIFFERS_BSDMODULE_HH
+#define CLICK_TOHOSTSNIFFERS_BSDMODULE_HH
 #include "elements/bsdmodule/tohost.hh"
 CLICK_DECLS
 

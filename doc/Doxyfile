@@ -1399,9 +1399,11 @@ PREDEFINED             = CLICK_DECLS= \
                          CLICK_USERLEVEL \
                          CLICK_LINUXMODULE \
                          CLICK_DEPRECATED= \
+                         CLICK_ELEMENT_DEPRECATED= \
                          CLICK_WARN_UNUSED_RESULT= \
                          CLICK_ELEMENT_PORT_COUNT_DEPRECATED= \
 			 CLICK_SIZE_PACKED_ATTRIBUE= \
+                         CLICK_ALIGNED(x)= \
 			 CLICK_BYTE_ORDER=4321 \
 			 CLICK_BIG_ENDIAN=4321 \
                          __attribute__(x)= \
