@@ -2928,36 +2928,14 @@ Element::simple_action(Packet *p)
  * The Task(Element *) constructor creates a Task object that calls this
  * method when it fires.  Most elements that have tasks use this method.
  *
- * @note The default implementation calls the deprecated run_timer() method
- * (the one with no parameters).  In future, the default implementation will
- * cause an assertion failure.
+ * @note The default implementation causes an assertion failure.
  */
 bool
 Element::run_task(Task *)
 {
-    return run_task();
-}
-
-/** @cond never */
-/** @brief Run the element's task (deprecated).
- *
- * @return true if the task accomplished some meaningful work, false otherwise
- *
- * @deprecated This method is deprecated.  Elements should override the
- * run_task(Task *) function instead, which can differentiate between
- * multiple Task objects.
- *
- * The Task(Element *) constructor creates a Task object that calls this
- * method (via Element::run_task(Task *)) when it fires.  The default
- * implementation causes an assertion failure.
- */
-bool
-Element::run_task()
-{
-    assert(0 /* run_task not overridden */);
+    assert(0 /* run_task implementation missing */);
     return false;
 }
-/** @endcond never */
 
 /** @brief Run the element's timer.
  *
@@ -2966,36 +2944,13 @@ Element::run_task()
  * The Timer(Element *) constructor creates a Timer object that calls this
  * method when it fires.  Most elements that have timers use this method.
  *
- * @note The default implementation calls the deprecated run_timer() method
- * (the one with no parameters).  In future, the default implementation will
- * cause an assertion failure.
+ * @note The default implementation causes an assertion failure.
  */
 void
 Element::run_timer(Timer *timer)
 {
-    static int nwarn = 0;
-    if (nwarn++ < 3)
-	click_chatter("warning: calling deprecated run_timer() method for %{element};\nreplace with run_timer(Timer *) in your code", this);
-    run_timer();
+    assert(0 /* run_timer implementation missing */);
     (void) timer;
 }
-
-/** @cond never */
-/** @brief Run the element's timer (deprecated).
- *
- * @deprecated This method is deprecated.  Elements should override the
- * run_timer(Timer *) function instead, which can differentiate between
- * multiple Timer objects.
- *
- * The Timer(Element *) constructor creates a Timer object that calls this
- * method (via Element::run_timer(Timer *)) when it fires.  The default
- * implementation causes an assertion failure.
- */
-void
-Element::run_timer()
-{
-    assert(0 /* run_timer not overridden */);
-}
-/** @endcond never */
 
 CLICK_ENDDECLS

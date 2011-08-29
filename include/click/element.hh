@@ -249,9 +249,6 @@ class Element { public:
     /** @cond never */
     String id() const CLICK_DEPRECATED;
     String landmark() const CLICK_DEPRECATED;
-
-    virtual bool run_task() CLICK_ELEMENT_DEPRECATED;
-    virtual void run_timer() CLICK_ELEMENT_DEPRECATED;
     /** @endcond never */
 
   private:
