@@ -431,7 +431,9 @@ class Script : public Element { public:
 	INSN_INITIAL, INSN_WAIT_STEP, INSN_WAIT_TIME,
 	INSN_PRINT, INSN_PRINTN, INSN_READ, INSN_READQ, INSN_WRITE, INSN_WRITEQ,
 	INSN_SET, insn_setq, insn_init, insn_initq, insn_export, insn_exportq,
-	INSN_SAVE, INSN_APPEND,
+#if CLICK_USERLEVEL
+	insn_save, insn_append,
+#endif
 	INSN_LABEL, INSN_GOTO, INSN_RETURN, insn_returnq,
 	INSN_WAIT_PSEUDO, INSN_LOOP_PSEUDO,
 	// negative instructions are also valid label constants

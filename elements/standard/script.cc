@@ -35,6 +35,9 @@
 CLICK_DECLS
 
 static const StaticNameDB::Entry instruction_entries[] = {
+#if CLICK_USERLEVEL
+    { "append", Script::insn_append },
+#endif
     { "end", Script::insn_end },
     { "error", Script::insn_error },
     { "errorq", Script::insn_errorq },
@@ -53,6 +56,9 @@ static const StaticNameDB::Entry instruction_entries[] = {
     { "readq", Script::INSN_READQ },
     { "return", Script::INSN_RETURN },
     { "returnq", Script::insn_returnq },
+#if CLICK_USERLEVEL
+    { "save", Script::insn_save },
+#endif
     { "set", Script::INSN_SET },
     { "setq", Script::insn_setq },
     { "stop", Script::insn_stop },
@@ -238,6 +244,10 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	case INSN_READQ:
 	case INSN_PRINT:
 	case INSN_PRINTN:
+#if CLICK_USERLEVEL
+	case insn_save:
+	case insn_append:
+#endif
 	case INSN_GOTO:
 	    add_insn(insn, 0, 0, conf[i]);
 	    break;
@@ -412,11 +422,20 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	    }
 	    break;
 
+#if CLICK_USERLEVEL
+	case insn_save:
+	case insn_append: {
+	    String word = cp_shift_spacevec(_args3[ipos]);
+	    String file = (_args3[ipos] ? _args3[ipos] : "-");
+	    _args3[ipos] = (">>" + (insn == insn_save)) + file + " " + word;
+	    /* FALLTHRU */
+	}
+#endif
 	case INSN_PRINT:
 	case INSN_PRINTN: {
 	    String text = _args3[ipos];
 
-#if CLICK_USERLEVEL || CLICK_TOOL
+#if CLICK_USERLEVEL
 	    FILE *f = stdout;
 	    if (text.length() && text[0] == '>') {
 		bool append = (text.length() > 1 && text[1] == '>');
@@ -447,7 +466,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 		&& insn != INSN_PRINTN)
 		result += "\n";
 
-#if CLICK_USERLEVEL || CLICK_TOOL
+#if CLICK_USERLEVEL
 	    ignore_result(fwrite(result.data(), 1, result.length(), f));
 	    if (f == stdout)
 		fflush(f);
