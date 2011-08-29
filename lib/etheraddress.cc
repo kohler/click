@@ -122,8 +122,8 @@ EtherAddressArg::parse(const String &str, EtherAddress &value, const ArgContext 
     return AddressInfo::query_ethernet(str, value.data(), args.context());
 #else
     (void) args;
-#endif
     return false;
+#endif
 }
 
 bool

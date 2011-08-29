@@ -404,12 +404,10 @@ IP6AddressArg::parse(const String &str, IP6Address &result, const ArgContext &ar
 	return true;
     }
 #if !CLICK_TOOL
-    if (args.context())
-	return AddressInfo::query_ip6(str, result.data(), args.context());
+    return AddressInfo::query_ip6(str, result.data(), args.context());
 #else
-    (void) args;
-#endif
     return false;
+#endif
 }
 
 bool
@@ -445,13 +443,11 @@ IP6PrefixArg::parse(const String &str,
     }
 
 #if !CLICK_TOOL
-    if (args.context()
-	&& AddressInfo::query_ip6_prefix(str, result_addr.data(),
-					 &result_prefix_len, args.context()))
-	return true;
-#endif
-
+    return AddressInfo::query_ip6_prefix(str, result_addr.data(),
+					 &result_prefix_len, args.context());
+#else
     return false;
+#endif
 }
 
 bool

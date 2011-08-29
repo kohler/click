@@ -163,12 +163,11 @@ IPAddressArg::parse(const String &str, IPAddress &result, const ArgContext &args
 	return true;
     }
 #if !CLICK_TOOL
-    if (args.context())
-	return AddressInfo::query_ip(str, result.data(), args.context());
+    return AddressInfo::query_ip(str, result.data(), args.context());
 #else
     (void) args;
-#endif
     return false;
+#endif
 }
 
 bool
@@ -248,13 +247,11 @@ IPPrefixArg::parse(const String &str,
     }
 
 #if !CLICK_TOOL
-    if (args.context()
-	&& AddressInfo::query_ip_prefix(str, result_addr.data(),
-					result_mask.data(), args.context()))
-	return true;
-#endif
-
+    return AddressInfo::query_ip_prefix(str, result_addr.data(),
+					result_mask.data(), args.context());
+#else
     return false;
+#endif
 }
 
 bool
