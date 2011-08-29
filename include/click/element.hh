@@ -316,11 +316,11 @@ class Element { public:
 
 /** @brief Initialize static data for this element class.
  *
- * Elements that need to initialize global state, such as global hash tables
- * or configuration parsing functions, should place that initialization code
- * inside a static_initialize() static member function.  Click's build
- * machinery will find that function and cause it to be called when the
- * element code is loaded, before any elements of the class are created.
+ * Place initialization code for an element class's shared global state in the
+ * static_initialize() static member function.  (For example, the IPFilter
+ * element class uses static_initialize() to set up various parsing tables.)
+ * Click drivers will call this function when the element code is loaded,
+ * before any elements of the class are created.
  *
  * static_initialize functions are called in an arbitrary and unpredictable
  * order (not, for example, the configure_phase() order).  Element authors are
@@ -336,6 +336,9 @@ class Element { public:
  *
  * It must also have public accessibility.
  *
+ * @note In most cases you should also define a static_cleanup() function to
+ * clean up state initialized by static_initialize().
+ *
  * @sa Element::static_cleanup
  */
 inline void
@@ -345,10 +348,9 @@ Element::static_initialize()
 
 /** @brief Clean up static data for this element class.
  *
- * Elements that need to free global state, such as global hash tables or
- * configuration parsing functions, should place that code inside a
- * static_cleanup() static member function.  Click's build machinery will find
- * that function and cause it to be called when the element code is unloaded.
+ * Place cleanup code for an element class's shared global state in the
+ * static_cleanup() static member function.  Click drivers will call this
+ * function before unloading the element code.
  *
  * static_cleanup functions are called in an arbitrary and unpredictable order
  * (not, for example, the configure_phase() order, and not the reverse of the
