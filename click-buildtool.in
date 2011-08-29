@@ -348,8 +348,8 @@ $bad_files"
 	outscriptlet='i, "\t", header[i], "\t", ex'
     fi
 
-    $egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^ELEMENT_LIBS|^class|^[ 	]*(virtual[ 	]*)*const[ 	]*char[ 	]*\*[ 	]*class_name|^[ 	]*static[ 	]*void[ 	]*static_[ic]|^[ 	]*(virtual[ 	]*)*bool[ 	]*run_t|^[ 	]*(virtual[ 	]*)*int[ 	]*initial_home|^}' $files $header_files /dev/null 2>/dev/null | $awk -F: 'BEGIN {
-  OFS = ""; cur_class = ""; line_warned = 0; nexports = 0
+    $egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^ELEMENT_LIBS|^class|^[ 	]*(virtual[ 	]*)*const[ 	]*char[ 	]*\*[ 	]*class_name|^[ 	]*static[ 	]*void[ 	]*static_[ic]|^[ 	]*(virtual[ 	]*)*[bv]o[oi][ld][ 	]*run_t|^[ 	]*(virtual[ 	]*)*int[ 	]*initial_home|^}' $files $header_files /dev/null 2>/dev/null | $awk -F: 'BEGIN {
+  OFS = ""; cur_class = ""; errors = 0; class_name_warned = 0; nexports = 0
 }
 /:class[ 	]/ {
   sub(/^class[ 	]*/, "", $2);
@@ -408,8 +408,9 @@ $bad_files"
 }
 /class_name/ {
   print $1, ": ", cur_class, "::class_name method malformed" | "cat 1>&2"
-  if (++line_warned == 1)
+  if (++class_name_warned == 1)
     print "  (class_name methods must be written on a single line.)" | "cat 1>&2"
+  ++errors
 }
 /static_initialize/ {
   static_initialize[cur_class] = 1
@@ -419,19 +420,26 @@ $bad_files"
   static_cleanup[cur_class] = 1
   next
 }
+/void[ 	]*run_task/ {
+  print $1, ": ", cur_class, "::run_task must return bool" | "cat 1>&2"
+  ++errors
+}
 /[^_a-z]run_task *\( *\)/ {
   print $1, ": ", cur_class, "::run_task should take a Task * argument" | "cat 1>&2"
+  ++errors
 }
 /[^_a-z]run_timer *\( *\)/ {
   print $1, ": ", cur_class, "::run_timer should take a Timer * argument" | "cat 1>&2"
+  ++errors
 }
 /[^_a-z]initial_home_thread_id *\([ 	]*E/ {
   print $1, ": ", cur_class, "::initial_home_thread_id should take ONLY a const Element * argument" | "cat 1>&2"
+  ++errors
 }
 END {
   if (nexports == 0)
     print "click-buildtool: No elements found" | "cat 1>&2"
-  if (line_warned || nexports == 0)
+  if (errors || nexports == 0)
     system("kill -HUP '$$'")
   for (i in exports) {
     if (header[i] == "") {
