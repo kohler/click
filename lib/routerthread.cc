@@ -169,6 +169,29 @@ RouterThread::scheduled_tasks(Router *router, Vector<Task *> &x)
     unlock_tasks();
 }
 
+void
+RouterThread::request_stop()
+{
+    _stop_flag = 1;
+    if (current_thread_is_running()) {
+	// Set the current thread's tasks to "is_scheduled 2" and mark them as
+	// pending.  As a result the driver loop will not run these tasks:
+	// it's checking for "is_scheduled 1".  (We cannot call
+	// Task::remove_from_scheduled_list(), because run_tasks keeps the
+	// current task in limbo, so it must stay in the scheduled list.)
+	Task::Status want_status;
+	want_status.home_thread_id = thread_id();
+	want_status.is_scheduled = true;
+	want_status.is_strong_unscheduled = false;
+	Task::Status new_status(want_status);
+	new_status.is_strong_unscheduled = 2;
+
+	for (Task *t = task_begin(); t != task_end(); t = task_next(t))
+	    if (atomic_uint32_t::compare_swap(t->_status.status, want_status.status, new_status.status) == want_status.status)
+		t->add_pending();
+    }
+}
+
 
 /******************************/
 /* Adaptive scheduler         */

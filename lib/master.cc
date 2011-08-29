@@ -203,7 +203,7 @@ Master::kill_router(Router *router)
     }
 
     // Fix stopper
-    set_stopper(1);
+    request_stop();
 #if CLICK_LINUXMODULE && HAVE_LINUXMODULE_2_6
     preempt_disable();
 #endif
@@ -276,7 +276,7 @@ Master::check_driver()
 #endif
 
     lock_master();
-    set_stopper(0);
+    request_go();
 
     for (Router *r = _routers; r; ) {
 	Router *next_router = r->_next_router;
@@ -301,7 +301,7 @@ Master::check_driver()
 	    break;
 	}
     if (!any_active)
-	set_stopper(1);
+	request_stop();
     unlock_master();
     return any_active;
 }

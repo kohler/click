@@ -216,6 +216,8 @@ class RouterThread : private TaskLink { public:
     void task_reheapify_from(int pos, Task*);
 #endif
     inline bool current_thread_is_running() const;
+    void request_stop();
+    inline void request_go();
 
     friend class Task;
     friend class Master;
@@ -429,6 +431,12 @@ inline bool
 RouterThread::stop_flag() const
 {
     return _stop_flag;
+}
+
+inline void
+RouterThread::request_go()
+{
+    _stop_flag = 0;
 }
 
 inline void

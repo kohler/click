@@ -322,9 +322,17 @@ Task::process_pending(RouterThread *thread)
     // router()->_running when necessary.  (Not necessary for add_pending()
     // since that function does it already.)
 
-    if (_status.home_thread_id != thread->thread_id())
+    Task::Status status(_status);
+    if (status.is_strong_unscheduled == 2) {
+	// clean up is_strong_unscheduled values used for driver stop events
+	Task::Status new_status(status);
+	new_status.is_strong_unscheduled = false;
+	atomic_uint32_t::compare_swap(_status.status, status.status, new_status.status);
+    }
+
+    if (status.home_thread_id != thread->thread_id())
 	move_thread_second_half();
-    else if (_status.is_scheduled) {
+    else if (status.is_scheduled) {
 	if (router()->running())
 	    fast_schedule();
 	else

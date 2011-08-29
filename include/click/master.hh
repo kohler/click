@@ -80,7 +80,8 @@ class Master { public:
     inline void unlock_master();
 
     // DRIVERMANAGER
-    inline void set_stopper(int);
+    inline void request_stop();
+    inline void request_go();
     bool check_driver();
 
 #if CLICK_USERLEVEL
@@ -172,10 +173,19 @@ TimerSet::next_timer_delay(bool more_tasks, Timestamp &t) const
 #endif
 
 inline void
-Master::set_stopper(int s)
+Master::request_stop()
 {
     for (RouterThread **t = _threads; t != _threads + _nthreads; ++t)
-	(*t)->_stop_flag = s;
+	(*t)->request_stop();
+    // ensure that at least one thread is awake to handle the stop event
+    wake_somebody();
+}
+
+inline void
+Master::request_go()
+{
+    for (RouterThread **t = _threads; t != _threads + _nthreads; ++t)
+	(*t)->request_go();
 }
 
 inline void
