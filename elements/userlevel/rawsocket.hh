@@ -24,9 +24,10 @@ transports raw IP packets via safe raw sockets (user-level)
 Reads data from and writes data to a raw IPv4 socket. The raw IPv4
 socket may optionally be bound to a source port number in the case of
 TCP/UDP, a GRE key or PPTP call ID in the case of GRE, or an
-identifier in the case of ICMP. Binding a port to a raw IPv4 socket to
-reserve it and suppress TCP RST and ICMP Unreachable errors, is
-specific to PlanetLab Linux.
+identifier in the case of ICMP.  For PlanetLab Linux (versions with VMNET+ onwards)
+and TCP or UDP protocol, a seperate SOCK_STREAM or SOCK_DGRAM will be
+created and  bound to the specified port. This triggers the slice port registration
+mechanism in VMNET+.
 
 Keyword arguments are:
 
@@ -38,11 +39,6 @@ Unsigned integer. Maximum packet length. This value
 represents the MRU of the RawSocket if it is used as a
 packet source. If the MRU is violated by the peer, i.e. if a packet
 longer than SNAPLEN is sent, the connection may be terminated.
-
-=item PROPER
-
-Boolean. PlanetLab specific. If true and Click has been configured
---with-proper, use Proper to bind a reserved port.
 
 =item HEADROOM
 
@@ -85,9 +81,9 @@ protected:
 
 private:
   int _fd;			// socket descriptor
+  int _port_register_socket;      // socket for planetlab port registration
   int _protocol;		// IP protocol to bind
   uint16_t _port;		// (PlanetLab only) port to bind
-  bool _proper;			// (PlanetLab only) use Proper to bind port
   int _snaplen;			// maximum received packet length
   unsigned _headroom;           // header length to set aside in the packet
 
