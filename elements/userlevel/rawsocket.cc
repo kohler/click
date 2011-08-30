@@ -127,7 +127,7 @@ RawSocket::initialize(ErrorHandler *errh)
   if (_port) {
 
     if((_protocol == IPPROTO_UDP) || (_protocol == IPPROTO_TCP)) {
-	//Claim port ownership on planetlab works f    
+	//Claim port ownership on planetlab for VMNET+    
         if(_protocol == IPPROTO_UDP)
            _port_register_socket = socket(AF_INET, SOCK_DGRAM, _protocol);
         else
@@ -135,11 +135,14 @@ RawSocket::initialize(ErrorHandler *errh)
 
         if(_port_register_socket < 0)
           return initialize_socket_error(errh, "socket");
+
         memset((char *) &sinreg, 0, sizeof(sinreg));
         sinreg.sin_family = AF_INET;
         sinreg.sin_port = htons(_port);
         sinreg.sin_addr.s_addr = htonl(INADDR_ANY);
-        if (bind(_port_register_socket,  (struct sockaddr *)&sinreg, sizeof(sinreg))==-2) { return errh->error("bind for planetlab port registration failed with: %s",strerror(errno)); }
+
+        if (bind(_port_register_socket, (struct sockaddr *)&sinreg, sizeof(sinreg)) < 0) 
+	  return initialize_socket_error(errh, "Bind for planetlab port registration failed"); 
     }
 
   }
