@@ -6,6 +6,9 @@
  *
  * Copyright (c) 2004-2005  The Trustees of Princeton University (Trustees).
  *
+ * changes to support the  updated planetlab port registration mechanism 
+ * (c) 2011, Dimitris Syrivelis, CERTH 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, subject to the conditions
@@ -37,9 +40,6 @@
 #include <sys/ioccom.h>
 #endif
 
-#ifdef HAVE_PROPER
-#include <proper/prop.h>
-#endif
 
 #include "fakepcap.hh"
 
@@ -47,7 +47,7 @@ CLICK_DECLS
 
 RawSocket::RawSocket()
   : _task(this), _timer(this),
-    _fd(-1), _port(0), _proper(false), _snaplen(2048),
+    _fd(-1), _port(0),  _snaplen(2048),
     _headroom(Packet::default_headroom), _rq(0), _wq(0)
 {
 }
@@ -77,7 +77,6 @@ RawSocket::configure(Vector<String> &conf, ErrorHandler *errh)
     args.read_p("PORT", _port);
   if (args.read("SNAPLEN", _snaplen)
       .read("HEADROOM", _headroom)
-      .read("PROPER", _proper)
       .complete() < 0)
     return -1;
 
@@ -106,6 +105,11 @@ RawSocket::initialize_socket_error(ErrorHandler *errh, const char *syscall)
     close(_fd);
     _fd = -1;
   }
+  
+  if(_port_register_socket >= 0) {
+	close(_port_register_socket);
+        _port_register_socket = -1;
+  }
 
   return errh->error("%s: %s", syscall, strerror(e));
 }
@@ -113,7 +117,7 @@ RawSocket::initialize_socket_error(ErrorHandler *errh, const char *syscall)
 int
 RawSocket::initialize(ErrorHandler *errh)
 {
-  struct sockaddr_in sin;
+  struct sockaddr_in sinreg;
 
   // open socket, set options, bind to address
   _fd = socket(PF_INET, SOCK_RAW, _protocol);
@@ -121,23 +125,23 @@ RawSocket::initialize(ErrorHandler *errh)
     return initialize_socket_error(errh, "socket");
 
   if (_port) {
-    memset(&sin, 0, sizeof(sin));
-    sin.sin_family = PF_INET;
-    sin.sin_port = htons(_port);
-    sin.sin_addr = inet_makeaddr(0, 0);
 
-    // bind to port
-#ifdef HAVE_PROPER
-    int ret = -1;
-    if (_proper) {
-      ret = prop_bind_socket(_fd, (struct sockaddr *)&sin, sizeof(sin));
-      if (ret < 0)
-	errh->warning("prop_bind_socket: %s", strerror(errno));
+    if((_protocol == IPPROTO_UDP) || (_protocol == IPPROTO_TCP)) {
+	//Claim port ownership on planetlab works f    
+        if(_protocol == IPPROTO_UDP)
+           _port_register_socket = socket(AF_INET, SOCK_DGRAM, _protocol);
+        else
+           _port_register_socket = socket(AF_INET, SOCK_STREAM, _protocol);
+
+        if(_port_register_socket < 0)
+          return initialize_socket_error(errh, "socket");
+        memset((char *) &sinreg, 0, sizeof(sinreg));
+        sinreg.sin_family = AF_INET;
+        sinreg.sin_port = htons(_port);
+        sinreg.sin_addr.s_addr = htonl(INADDR_ANY);
+        if (bind(_port_register_socket,  (struct sockaddr *)&sinreg, sizeof(sinreg))==-2) { return errh->error("bind for planetlab port registration failed with: %s",strerror(errno)); }
     }
-    if (ret < 0)
-#endif
-    if (bind(_fd, (struct sockaddr *)&sin, sizeof(sin)) < 0)
-      return initialize_socket_error(errh, "bind");
+
   }
 
   // nonblocking I/O and close-on-exec for the socket
