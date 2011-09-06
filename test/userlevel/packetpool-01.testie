@@ -1,0 +1,14 @@
+%info
+Test that the packet pool remains in bounds.
+
+%script
+click --simtime -e '
+src :: InfiniteSource(LIMIT 1000, END_CALL s0.run)
+ -> q :: Queue(3000)
+ -> d :: Discard(ACTIVE false);
+s0 :: Script(TYPE PASSIVE, write src.length 2, write d.active true);
+DriverManager(wait 1s, stop);
+' -h q.highwater_length
+
+%expect stdout
+1000
