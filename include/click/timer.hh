@@ -302,7 +302,7 @@ class Timer { public:
      * Timer::adjustment() is an appropriate value for this time
      * difference. */
     static inline Timestamp adjustment() {
-#if CLICK_USERLEVEL
+#if TIMESTAMP_WARPABLE
 	if (Timestamp::warp_jumping())
 	    return Timestamp();
 #endif

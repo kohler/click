@@ -810,7 +810,7 @@ Timestamp::assign_now(bool recent, bool steady, bool unwarped)
 
 #elif CLICK_NS
     TIMESTAMP_DECLARE_TVP;
-    simclick_gettimeofday(tvp);
+    simclick_gettimeofday(&tvp);
     TIMESTAMP_RESOLVE_TVP;
 
 #elif HAVE_USE_CLOCK_GETTIME
