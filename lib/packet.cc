@@ -406,17 +406,18 @@ WritablePacket::recycle(WritablePacket *p)
 #  endif
 
     if (p) {
+	++packet_pool.pcount;	// increment first, lest nested recycle() call (from
+				// _data_packet->kill()) observe incorrect state
 	p->~WritablePacket();
 	p->set_next(packet_pool.p);
 	packet_pool.p = p;
-	++packet_pool.pcount;
 	assert(packet_pool.pcount <= CLICK_PACKET_POOL_SIZE);
     }
     if (data) {
+	++packet_pool.pdcount;
 	PacketData *pd = reinterpret_cast<PacketData *>(data);
 	pd->next = packet_pool.pd;
 	packet_pool.pd = pd;
-	++packet_pool.pdcount;
 	assert(packet_pool.pdcount <= CLICK_PACKET_POOL_SIZE);
     }
 }
