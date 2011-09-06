@@ -43,6 +43,11 @@ Boolean. Same as the ACTIVE argument.
 Boolean. If true, then stop the driver once LIMIT packets are sent. Default is
 false.
 
+=item END_CALL
+
+A write handler called once LIMIT packets are sent. END_CALL and
+STOP are mutually exclusive.
+
 =e
 
   RandomSource(64) -> Queue -> ...

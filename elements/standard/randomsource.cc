@@ -23,6 +23,7 @@
 #include <click/router.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
+#include <click/handlercall.hh>
 CLICK_DECLS
 
 RandomSource::RandomSource()
@@ -36,11 +37,12 @@ RandomSource::~RandomSource()
 int
 RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  ActiveNotifier::initialize(Notifier::EMPTY_NOTIFIER, router());
-  counter_t limit = -1;
-  int burstsize = 1;
-  int datasize = -1;
-  bool active = true, stop = false;
+    ActiveNotifier::initialize(Notifier::EMPTY_NOTIFIER, router());
+    counter_t limit = -1;
+    int burstsize = 1;
+    int datasize = -1;
+    bool active = true, stop = false;
+    HandlerCall end_h;
 
     if (Args(conf, this, errh)
 	.read_mp("LENGTH", datasize)
@@ -48,21 +50,30 @@ RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read_p("BURST", burstsize)
 	.read_p("ACTIVE", active)
 	.read("STOP", stop)
+	.read("END_CALL", HandlerCallArg(HandlerCall::writable), end_h)
 	.complete() < 0)
 	return -1;
     if (datasize < 0 || datasize >= 64*1024)
 	return errh->error("bad length %d", datasize);
     if (burstsize < 1)
 	return errh->error("burst size must be >= 1");
+    if (stop && end_h)
+	return errh->error("END_CALL and STOP are mutually exclusive");
 
-  _datasize = datasize;
-  _limit = limit;
-  _burstsize = burstsize;
-  _count = 0;
-  _active = active;
-  _stop = stop;
+    _datasize = datasize;
+    _limit = limit;
+    _burstsize = burstsize;
+    _count = 0;
+    _active = active;
+    delete _end_h;
+    if (end_h)
+	_end_h = new HandlerCall(end_h);
+    else if (stop)
+	_end_h = new HandlerCall("stop");
+    else
+	_end_h = 0;
 
-  return 0;
+    return 0;
 }
 
 bool
@@ -80,8 +91,8 @@ RandomSource::run_task(Task *)
     _count += n;
     if (n > 0)
 	_task.fast_reschedule();
-    else if (_stop && _limit >= 0 && _count >= (ucounter_t) _limit)
-	router()->please_stop_driver();
+    else if (_end_h && _limit >= 0 && _count >= (ucounter_t) _limit)
+	(void) _end_h->call_write();
     return n > 0;
 }
 
@@ -95,8 +106,8 @@ RandomSource::pull(int)
 	return 0;
     }
     if (_limit >= 0 && _count >= (ucounter_t) _limit) {
-	if (_stop)
-	    router()->please_stop_driver();
+	if (_end_h)
+	    (void) _end_h->call_write();
 	goto done;
     }
     _count++;

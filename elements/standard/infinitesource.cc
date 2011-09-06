@@ -5,6 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2006 Regents of the University of California
+ * Copyright (c) 2011 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,10 +26,11 @@
 #include <click/standard/scheduleinfo.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
+#include <click/handlercall.hh>
 CLICK_DECLS
 
 InfiniteSource::InfiniteSource()
-  : _packet(0), _task(this)
+    : _packet(0), _task(this), _end_h(0)
 {
 }
 
@@ -51,55 +53,67 @@ int
 InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     ActiveNotifier::initialize(Notifier::EMPTY_NOTIFIER, router());
-  String data = "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
-  counter_t limit = -1;
-  int burstsize = 1;
-  int datasize = -1;
-  bool active = true, stop = false, timestamp = true;
+    String data = "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
+    counter_t limit = -1;
+    int burstsize = 1;
+    int datasize = -1;
+    bool active = true, stop = false, timestamp = true;
+    HandlerCall end_h;
 
-  if (Args(conf, this, errh)
-      .read_p("DATA", data)
-      .read_p("LIMIT", limit)
-      .read_p("BURST", burstsize)
-      .read_p("ACTIVE", active)
-      .read("TIMESTAMP", timestamp)
-      .read("LENGTH", datasize)
-      .read("DATASIZE", datasize) // deprecated
-      .read("STOP", stop)
-      .complete() < 0)
-      return -1;
-  if (burstsize < 1)
-    return errh->error("burst size must be >= 1");
+    if (Args(conf, this, errh)
+	.read_p("DATA", data)
+	.read_p("LIMIT", limit)
+	.read_p("BURST", burstsize)
+	.read_p("ACTIVE", active)
+	.read("TIMESTAMP", timestamp)
+	.read("LENGTH", datasize)
+	.read("DATASIZE", datasize) // deprecated
+	.read("STOP", stop)
+	.read("END_CALL", HandlerCallArg(HandlerCall::writable), end_h)
+	.complete() < 0)
+	return -1;
+    if (burstsize < 1)
+	return errh->error("burst size must be >= 1");
+    if (stop && end_h)
+	return errh->error("END_CALL and STOP are mutually exclusive");
 
-  _data = data;
-  _datasize = datasize;
-  _limit = limit;
-  _burstsize = burstsize;
-  _count = 0;
-  _active = active;
-  _stop = stop;
-  _timestamp = timestamp;
+    _data = data;
+    _datasize = datasize;
+    _limit = limit;
+    _burstsize = burstsize;
+    _count = 0;
+    _active = active;
+    _timestamp = timestamp;
+    delete _end_h;
+    if (end_h)
+	_end_h = new HandlerCall(end_h);
+    else if (stop)
+	_end_h = new HandlerCall("stop");
+    else
+	_end_h = 0;
 
-  setup_packet();
+    setup_packet();
 
-  return 0;
+    return 0;
 }
 
 int
 InfiniteSource::initialize(ErrorHandler *errh)
 {
-  if (output_is_push(0)) {
-    ScheduleInfo::initialize_task(this, &_task, errh);
-    _nonfull_signal = Notifier::downstream_full_signal(this, 0, &_task);
-  }
-  return 0;
+    if (output_is_push(0)) {
+	ScheduleInfo::initialize_task(this, &_task, errh);
+	_nonfull_signal = Notifier::downstream_full_signal(this, 0, &_task);
+    }
+    if (_end_h && _end_h->initialize_write(this, errh) < 0)
+	return -1;
+    return 0;
 }
 
 void
 InfiniteSource::cleanup(CleanupStage)
 {
-  if (_packet)
-    _packet->kill();
+    if (_packet)
+	_packet->kill();
 }
 
 bool
@@ -119,8 +133,8 @@ InfiniteSource::run_task(Task *)
     _count += n;
     if (n > 0)
 	_task.fast_reschedule();
-    else if (_stop && _limit >= 0 && _count >= (ucounter_t) _limit)
-	router()->please_stop_driver();
+    else if (_end_h && _limit >= 0 && _count >= (ucounter_t) _limit)
+	(void) _end_h->call_write();
     return n > 0;
 }
 
@@ -134,8 +148,8 @@ InfiniteSource::pull(int)
 	return 0;
     }
     if (_limit >= 0 && _count >= (ucounter_t) _limit) {
-	if (_stop)
-	    router()->please_stop_driver();
+	if (_end_h)
+	    (void) _end_h->call_write();
 	goto done;
     }
     _count++;
