@@ -263,8 +263,8 @@ Timer::schedule_at_steady(const Timestamp &when)
     TimerSet &ts = _thread->timer_set();
     ts.lock_timers();
 
-    // set expiration timer
-    _expiry_s = when;
+    // set expiration timer (ensure nonzero)
+    _expiry_s = when ? when : Timestamp::epsilon();
     ts.check_timer_expiry(this);
 
     // manipulate list; this is essentially a "decrease-key" operation
