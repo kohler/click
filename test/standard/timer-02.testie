@@ -14,6 +14,6 @@ t3 :: TimerTest(DELAY .01s);
 DriverManager(write t1.schedule_after 0, wait .05s, stop);
 
 %expect stderr
-1000000000.00{{[\d]+}}: t1 :: TimerTest fired
-1000000000.01{{[\d]+}}: t3 :: TimerTest fired
-1000000000.02{{[\d]+}}: t2 :: TimerTest fired
+{{[\d]+0000|0}}.00{{[\d]+}}: t1 :: TimerTest fired
+{{[\d]+0000|0}}.01{{[\d]+}}: t3 :: TimerTest fired
+{{[\d]+0000|0}}.02{{[\d]+}}: t2 :: TimerTest fired

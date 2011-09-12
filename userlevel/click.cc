@@ -405,8 +405,7 @@ timewarp_write_handler(const String &text, Element *, void *, ErrorHandler *errh
 	    return errh->error("expected double");
 	else if (factor <= 0)
 	    return errh->error("timefactor must be > 0");
-	Timestamp::warp_set_class(Timestamp::warp_linear);
-	Timestamp::warp_set_speed(factor);
+	Timestamp::warp_set_class(Timestamp::warp_linear, factor);
     }
     return 0;
 }
@@ -568,7 +567,7 @@ main(int argc, char **argv)
     case SIMTIME_OPT: {
 	Timestamp::warp_set_class(Timestamp::warp_simulation);
 	Timestamp simbegin(clp->have_val ? clp->val.d : 1000000000);
-	Timestamp::warp_set_now(simbegin);
+	Timestamp::warp_set_now(simbegin, simbegin);
 	break;
     }
 

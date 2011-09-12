@@ -559,7 +559,7 @@ class Timestamp { public:
 
     /** @brief Return the timewarp speed.
      *
-     * Timewarp speeed measures how much faster Timestamp::now() appears to
+     * Timewarp speed measures how much faster Timestamp::now() appears to
      * move compared with wall-clock time.  Only meaningful if warp_class() is
      * #warp_linear or #warp_nowait. */
     static inline double warp_speed() {
@@ -568,17 +568,21 @@ class Timestamp { public:
 
 
     /** @brief Set the timewarp class to @a w.
+     * @param w warp class
+     * @param s speed (\> 0, meaningful when @a w == #warp_linear)
      *
      * The timewarp classes are as follows:
      *
      * <dl>
      * <dt>#warp_none</dt>
-     * <dd>Click time corresponds to real time.  This is the default.
-     * warp_set_class(#warp_none) also resets the timewarp speed to 1.</dd>
+     * <dd>Click time corresponds to real time.  This is the default.</dd>
      *
      * <dt>#warp_linear</dt>
      * <dd>Click time is a speeded-up or slowed-down version of real time.
-     * The speedup factor is determined by warp_set_speed().</dd>
+     * The speedup factor is @a s.  If @a s \> 1, then time as measured by
+     * Timestamp::now() will appear to move a factor of @a s faster than real
+     * time: for instance, a Timer set using Timer::schedule_after_s(2) from
+     * now will fire after just 1 second of wall-clock time.</dd>
      *
      * <dt>#warp_nowait</dt>
      * <dd>Like #warp_linear, but the Click driver never waits for a timer to
@@ -593,23 +597,14 @@ class Timestamp { public:
      * simulator.</dd>
      * </dl>
      */
-    static void warp_set_class(warp_class_type w);
+    static void warp_set_class(warp_class_type w, double s = 1.0);
 
-    /** @brief Set the timewarp speed to @a s.
-     * @pre @a s \> 0
+    /** @brief Reset current time.
+     * @a t_system new system time
+     * @a t_steady new steady-clock time
      *
-     * If @a s \> 1, then time as measured by Timestamp::now() will appear to
-     * move a factor of @a s faster than real time: for instance, a Timer set
-     * using Timer::schedule_after_s(2) from now will fire after just 1 second
-     * of wall-clock time.
-     *
-     * May change warp_class() from #warp_none to #warp_linear. */
-    static void warp_set_speed(double s = 1.0);
-
-    /** @brief Shift time so that Timestamp::now() would return @a t.
-     *
-     * May change warp_class() from #warp_none to #warp_linear. */
-    static void warp_set_now(const Timestamp &t);
+     * Only usable when warp_class() is not #warp_none. */
+    static void warp_set_now(const Timestamp &t_system, const Timestamp &t_steady);
 
 
     /** @brief Return the wall-clock time corresponding to a delay. */
@@ -623,7 +618,7 @@ class Timestamp { public:
     /** @brief Move Click time past a timer expiration.
      *
      * Does nothing if warp_jumping() is false or @a expiry is in the past. */
-    static void warp_jump(const Timestamp &expiry);
+    static void warp_jump_steady(const Timestamp &expiry);
 
 
     /** @brief Return the warp-free current system time.
@@ -637,6 +632,19 @@ class Timestamp { public:
      * Like assign_now(), but the time assigned is unaffected by timewarping.
      * @sa assign_now(), now_unwarped() */
     inline void assign_now_unwarped();
+
+    /** @brief Return the warp-free current steady-clock time.
+     *
+     * Like now_steady(), but the time returned is unaffected by timewarping.
+     * @sa now_steady(), assign_now_steady_unwarped() */
+    static inline Timestamp now_steady_unwarped();
+
+    /** @brief Set this timestamp to the warp-free current steady-clock time.
+     *
+     * Like assign_now_steady(), but the time assigned is unaffected by
+     * timewarping.
+     * @sa assign_now_steady(), now_steady_unwarped() */
+    inline void assign_now_steady_unwarped();
     //@}
 #endif
 
@@ -683,18 +691,18 @@ class Timestamp { public:
 
 #if TIMESTAMP_WARPABLE
     static warp_class_type _warp_class;
-    static Timestamp _warp_flat_offset;
     static double _warp_speed;
-    static double _warp_offset;
+    static Timestamp _warp_flat_offset[2];
+    static double _warp_offset[2];
 
-    static inline void warp_adjust(const Timestamp &t_raw, const Timestamp &t_warped);
-    inline Timestamp warped() const {
+    static inline void warp_adjust(bool steady, const Timestamp &t_raw, const Timestamp &t_warped);
+    inline Timestamp warped(bool steady) const {
 	Timestamp t = *this;
 	if (_warp_class)
-	    t.warp(false);
+	    t.warp(steady, false);
 	return t;
     }
-    void warp(bool from_now);
+    void warp(bool steady, bool from_now);
 #endif
 
     friend inline bool operator==(const Timestamp &a, const Timestamp &b);
@@ -839,7 +847,7 @@ Timestamp::assign_now(bool recent, bool steady, bool unwarped)
 #if TIMESTAMP_WARPABLE
     // timewarping
     if (!unwarped && _warp_class)
-	warp(true);
+	warp(steady, true);
 #endif
 }
 
@@ -911,6 +919,20 @@ Timestamp::now_unwarped()
 {
     Timestamp t = Timestamp::uninitialized_t();
     t.assign_now_unwarped();
+    return t;
+}
+
+inline void
+Timestamp::assign_now_steady_unwarped()
+{
+    assign_now(false, true, true);
+}
+
+inline Timestamp
+Timestamp::now_steady_unwarped()
+{
+    Timestamp t = Timestamp::uninitialized_t();
+    t.assign_now_steady_unwarped();
     return t;
 }
 #endif
