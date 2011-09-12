@@ -96,7 +96,7 @@ TimerSet::timer_expiry_steady_adjusted() const
 #if TIMESTAMP_WARPABLE
     if (likely(!Timestamp::warp_jumping())) {
 #endif
-    if (_timer_stride >= 8 || e.sec() == 0)
+    if (_timer_stride >= 8 || !e)
 	/* do nothing */;
     else if (_timer_stride >= 4)
 	e -= Timer::adjustment();
