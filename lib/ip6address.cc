@@ -33,7 +33,7 @@ IP6Address::IP6Address(const String &str)
     static_assert(sizeof(*this) == 16, "IPAddress has the wrong size.");
     static_assert(sizeof(click_in6_addr) == 16, "click_in6_addr has the wrong size.");
     static_assert(sizeof(struct click_ip6) == 40, "click_ip6 has the wrong size.");
-    if (!cp_ip6_address(str, this))
+    if (!IP6AddressArg::parse(str, *this))
 	memset(&_addr, 0, sizeof(_addr));
 }
 

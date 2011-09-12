@@ -26,6 +26,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include <click/confparse.hh>
+#include <click/args.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
 #include <click/variableenv.hh>
@@ -1046,8 +1047,8 @@ Lexer::deanonymize_element_name(const String &ename, int eidx)
 	const char *abegin = name.begin() + at_pos + 1, *aend = abegin;
 	while (aend < name.end() && isdigit((unsigned char) *aend))
 	    ++aend;
-	int anonymizer;
-	cp_integer(abegin, aend, 10, &anonymizer);
+	int anonymizer = 0;
+	IntArg(10).parse(name.substring(abegin, aend), anonymizer);
 	do {
 	    anonymizer++;
 	    name = prefix + String(anonymizer);
@@ -1102,7 +1103,7 @@ Lexer::yport(Vector<int> &ports)
 	Lexeme t = lex();
 	if (t.is(lexIdent)) {
 	    int port;
-	    if (!cp_integer(t.string(), &port)) {
+	    if (!IntArg().parse(t.string(), port)) {
 		lerror("syntax error: port number should be integer");
 		port = 0;
 	    }
@@ -1729,7 +1730,7 @@ Lexer::yrequire()
 	    continue;		// do nothing
 
 	String type, value;
-	(void) cp_word(words[0], &type);
+	(void) WordArg::parse(words[0], type);
 	// "require(UNKNOWN)" means "require(package UNKNOWN)"
 	if (type && type != compact_config_str && type != package_str
 	    && type != library_str && words.size() == 1) {
@@ -1741,10 +1742,10 @@ Lexer::yrequire()
 	    _compact_config = true;
 	    type = compact_config_str;
 	} else if (type == package_str && words.size() == 2
-		   && cp_string(words[1], &value))
+		   && StringArg::parse(words[1], value))
 	    /* OK */;
 	else if (type == library_str && words.size() == 2
-		 && cp_string(words[1], &value)) {
+		 && StringArg::parse(words[1], value)) {
 	    yrequire_library(value);
 	    continue;
 	} else {

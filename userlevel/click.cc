@@ -8,6 +8,7 @@
  * Copyright (c) 2001-2003 International Computer Science Institute
  * Copyright (c) 2004-2006 Regents of the University of California
  * Copyright (c) 2008-2009 Meraki, Inc.
+ * Copyright (c) 1999-2011 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -509,12 +510,12 @@ main(int argc, char **argv)
 
   case PORT_OPT: {
       uint16_t portno;
-      int portno_int;
+      int portno_int = -1;
       String vstr(clp->vstr);
-      if (cp_tcpudp_port(vstr, IP_PROTO_TCP, &portno))
+      if (IPPortArg(IP_PROTO_TCP).parse(vstr, portno))
 	  cs_ports.push_back(String(portno));
       else if (vstr && vstr.back() == '+'
-	       && cp_integer(vstr.substring(0, -1), 0, &portno_int)
+	       && IntArg().parse(vstr.substring(0, -1), portno_int)
 	       && portno_int > 0 && portno_int < 65536)
 	  cs_ports.push_back(String(portno_int) + "+");
       else {
