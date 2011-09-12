@@ -118,8 +118,8 @@ loc_write_handler(const String &arg, Element *element,
 void
 LocationTable::add_handlers()
 {
-  add_write_handler("loc", loc_write_handler, (void *) 0);
-  add_read_handler("table", table_read_handler, (void *) 0);
+  add_write_handler("loc", loc_write_handler, 0);
+  add_read_handler("table", table_read_handler, 0);
 }
 
 

@@ -178,7 +178,7 @@ IPAddrPairRewriter::dump_mappings_handler(Element *e, void *)
 void
 IPAddrPairRewriter::add_handlers()
 {
-    add_read_handler("mappings", dump_mappings_handler, (void *)0);
+    add_read_handler("mappings", dump_mappings_handler, 0);
     add_rewriter_handlers(true);
 }
 

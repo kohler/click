@@ -151,9 +151,9 @@ ComparePackets::read_handler(Element *e, void *thunk)
 void
 ComparePackets::add_handlers()
 {
-    add_read_handler("diffs", read_handler, (void *) H_DIFFS);
-    add_read_handler("diff_details", read_handler, (void *) H_DIFF_DETAILS);
-    add_read_handler("all_same", read_handler, (void *) H_ALL_SAME);
+    add_read_handler("diffs", read_handler, H_DIFFS);
+    add_read_handler("diff_details", read_handler, H_DIFF_DETAILS);
+    add_read_handler("all_same", read_handler, H_ALL_SAME);
 }
 
 CLICK_ENDDECLS

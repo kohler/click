@@ -88,8 +88,8 @@ TimedSink::write_handler(const String &s, Element *e, void *vparam,
 void
 TimedSink::add_handlers()
 {
-    add_read_handler("interval", read_handler, (void *) H_INTERVAL, Handler::CALM);
-    add_write_handler("interval", write_handler, (void *) H_INTERVAL);
+    add_read_handler("interval", read_handler, H_INTERVAL, Handler::CALM);
+    add_write_handler("interval", write_handler, H_INTERVAL);
 }
 
 CLICK_ENDDECLS

@@ -462,12 +462,12 @@ FromDAGDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHan
 void
 FromDAGDump::add_handlers()
 {
-    add_read_handler("sampling_prob", read_handler, (void *)H_SAMPLING_PROB);
+    add_read_handler("sampling_prob", read_handler, H_SAMPLING_PROB);
     add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
-    add_write_handler("active", write_handler, (void *)H_ACTIVE);
-    add_read_handler("encap", read_handler, (void *)H_ENCAP);
-    add_write_handler("stop", write_handler, (void *)H_STOP);
-    add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
+    add_write_handler("active", write_handler, H_ACTIVE);
+    add_read_handler("encap", read_handler, H_ENCAP);
+    add_write_handler("stop", write_handler, H_STOP);
+    add_write_handler("extend_interval", write_handler, H_EXTEND_INTERVAL);
     _ff.add_handlers(this);
     if (output_is_push(0))
 	add_task_handlers(&_task);

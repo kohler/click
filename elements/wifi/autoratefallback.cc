@@ -350,21 +350,21 @@ AutoRateFallback_write_param(const String &in_s, Element *e, void *vparam,
 void
 AutoRateFallback::add_handlers()
 {
-  add_read_handler("debug", AutoRateFallback_read_param, (void *) H_DEBUG);
-  add_read_handler("rates", AutoRateFallback_read_param, (void *) H_RATES);
-  add_read_handler("threshold", AutoRateFallback_read_param, (void *) H_THRESHOLD);
-  add_read_handler("stepup", AutoRateFallback_read_param, (void *) H_STEPUP);
-  add_read_handler("stepdown", AutoRateFallback_read_param, (void *) H_STEPDOWN);
-  add_read_handler("offset", AutoRateFallback_read_param, (void *) H_OFFSET);
-  add_read_handler("active", AutoRateFallback_read_param, (void *) H_ACTIVE);
+  add_read_handler("debug", AutoRateFallback_read_param, H_DEBUG);
+  add_read_handler("rates", AutoRateFallback_read_param, H_RATES);
+  add_read_handler("threshold", AutoRateFallback_read_param, H_THRESHOLD);
+  add_read_handler("stepup", AutoRateFallback_read_param, H_STEPUP);
+  add_read_handler("stepdown", AutoRateFallback_read_param, H_STEPDOWN);
+  add_read_handler("offset", AutoRateFallback_read_param, H_OFFSET);
+  add_read_handler("active", AutoRateFallback_read_param, H_ACTIVE);
 
-  add_write_handler("debug", AutoRateFallback_write_param, (void *) H_DEBUG);
-  add_write_handler("threshold", AutoRateFallback_write_param, (void *) H_THRESHOLD);
-  add_write_handler("stepup", AutoRateFallback_write_param, (void *) H_STEPUP);
-  add_write_handler("stepdown", AutoRateFallback_write_param, (void *) H_STEPDOWN);
-  add_write_handler("reset", AutoRateFallback_write_param, (void *) H_RESET, Handler::BUTTON);
-  add_write_handler("offset", AutoRateFallback_write_param, (void *) H_OFFSET);
-  add_write_handler("active", AutoRateFallback_write_param, (void *) H_ACTIVE);
+  add_write_handler("debug", AutoRateFallback_write_param, H_DEBUG);
+  add_write_handler("threshold", AutoRateFallback_write_param, H_THRESHOLD);
+  add_write_handler("stepup", AutoRateFallback_write_param, H_STEPUP);
+  add_write_handler("stepdown", AutoRateFallback_write_param, H_STEPDOWN);
+  add_write_handler("reset", AutoRateFallback_write_param, H_RESET, Handler::BUTTON);
+  add_write_handler("offset", AutoRateFallback_write_param, H_OFFSET);
+  add_write_handler("active", AutoRateFallback_write_param, H_ACTIVE);
 }
 
 CLICK_ENDDECLS

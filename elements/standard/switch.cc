@@ -71,9 +71,9 @@ Switch::write_param(const String &s, Element *e, void *, ErrorHandler *errh)
 void
 Switch::add_handlers()
 {
-    add_read_handler("switch", read_param, (void *)0);
-    add_write_handler("switch", write_param, (void *)0, Handler::NONEXCLUSIVE);
-    add_read_handler("config", read_param, (void *)0);
+    add_read_handler("switch", read_param, 0);
+    add_write_handler("switch", write_param, 0, Handler::NONEXCLUSIVE);
+    add_read_handler("config", read_param, 0);
     set_handler_flags("config", 0, Handler::CALM);
 }
 

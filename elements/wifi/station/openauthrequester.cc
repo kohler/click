@@ -225,12 +225,12 @@ OpenAuthRequester_write_param(const String &in_s, Element *e, void *vparam,
 void
 OpenAuthRequester::add_handlers()
 {
-  add_read_handler("debug", OpenAuthRequester_read_param, (void *) H_DEBUG);
-  add_read_handler("eth", OpenAuthRequester_read_param, (void *) H_ETH);
+  add_read_handler("debug", OpenAuthRequester_read_param, H_DEBUG);
+  add_read_handler("eth", OpenAuthRequester_read_param, H_ETH);
 
-  add_write_handler("debug", OpenAuthRequester_write_param, (void *) H_DEBUG);
-  add_write_handler("eth", OpenAuthRequester_write_param, (void *) H_ETH);
-  add_write_handler("send_auth_req", OpenAuthRequester_write_param, (void *) H_SEND_AUTH_REQ);
+  add_write_handler("debug", OpenAuthRequester_write_param, H_DEBUG);
+  add_write_handler("eth", OpenAuthRequester_write_param, H_ETH);
+  add_write_handler("send_auth_req", OpenAuthRequester_write_param, H_SEND_AUTH_REQ);
 }
 
 CLICK_ENDDECLS

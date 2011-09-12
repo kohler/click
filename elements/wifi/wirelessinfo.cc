@@ -148,19 +148,19 @@ WirelessInfo::read_param(Element *e, void *thunk)
 void
 WirelessInfo::add_handlers()
 {
-  add_read_handler("ssid", read_param, (void *) H_SSID);
-  add_read_handler("bssid", read_param, (void *) H_BSSID);
-  add_read_handler("channel", read_param, (void *) H_CHANNEL);
-  add_read_handler("interval", read_param, (void *) H_INTERVAL);
-  add_read_handler("wep", read_param, (void *) H_WEP);
+  add_read_handler("ssid", read_param, H_SSID);
+  add_read_handler("bssid", read_param, H_BSSID);
+  add_read_handler("channel", read_param, H_CHANNEL);
+  add_read_handler("interval", read_param, H_INTERVAL);
+  add_read_handler("wep", read_param, H_WEP);
 
 
-  add_write_handler("ssid", write_param, (void *) H_SSID);
-  add_write_handler("bssid", write_param, (void *) H_BSSID);
-  add_write_handler("channel", write_param, (void *) H_CHANNEL);
-  add_write_handler("interval", write_param, (void *) H_INTERVAL);
-  add_write_handler("wep", write_param, (void *) H_WEP);
-  add_write_handler("reset", write_param, (void *) H_RESET, Handler::BUTTON);
+  add_write_handler("ssid", write_param, H_SSID);
+  add_write_handler("bssid", write_param, H_BSSID);
+  add_write_handler("channel", write_param, H_CHANNEL);
+  add_write_handler("interval", write_param, H_INTERVAL);
+  add_write_handler("wep", write_param, H_WEP);
+  add_write_handler("reset", write_param, H_RESET, Handler::BUTTON);
 
 }
 

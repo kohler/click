@@ -229,13 +229,13 @@ AvailableRates_write_param(const String &in_s, Element *e, void *vparam,
 void
 AvailableRates::add_handlers()
 {
-  add_read_handler("debug", AvailableRates_read_param, (void *) H_DEBUG);
-  add_read_handler("rates", AvailableRates_read_param, (void *) H_RATES);
+  add_read_handler("debug", AvailableRates_read_param, H_DEBUG);
+  add_read_handler("rates", AvailableRates_read_param, H_RATES);
 
 
-  add_write_handler("debug", AvailableRates_write_param, (void *) H_DEBUG);
-  add_write_handler("insert", AvailableRates_write_param, (void *) H_INSERT);
-  add_write_handler("remove", AvailableRates_write_param, (void *) H_REMOVE);
+  add_write_handler("debug", AvailableRates_write_param, H_DEBUG);
+  add_write_handler("insert", AvailableRates_write_param, H_INSERT);
+  add_write_handler("remove", AvailableRates_write_param, H_REMOVE);
 
 
 }

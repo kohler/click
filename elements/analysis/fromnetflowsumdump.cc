@@ -445,9 +445,9 @@ FromNetFlowSummaryDump::write_handler(const String &s_in, Element *e, void *thun
 void
 FromNetFlowSummaryDump::add_handlers()
 {
-    add_read_handler("active", read_handler, (void *)H_ACTIVE, Handler::CHECKBOX);
-    add_write_handler("active", write_handler, (void *)H_ACTIVE);
-    add_read_handler("encap", read_handler, (void *)H_ENCAP);
+    add_read_handler("active", read_handler, H_ACTIVE, Handler::CHECKBOX);
+    add_write_handler("active", write_handler, H_ACTIVE);
+    add_read_handler("encap", read_handler, H_ENCAP);
     _ff.add_handlers(this);
     if (output_is_push(0))
 	add_task_handlers(&_task);

@@ -115,8 +115,8 @@ SimpleLocQuerier::add_entry(const String &arg, Element *element,
 void
 SimpleLocQuerier::add_handlers()
 {
-  add_read_handler("table", read_table, (void *)0);
-  add_write_handler("add", add_entry, (void *)0);
+  add_read_handler("table", read_table, 0);
+  add_write_handler("add", add_entry, 0);
 }
 
 ELEMENT_REQUIRES(userlevel)

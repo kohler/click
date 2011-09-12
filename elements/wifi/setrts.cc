@@ -90,8 +90,8 @@ SetRTS_write_param(const String &in_s, Element *e, void *vparam,
 void
 SetRTS::add_handlers()
 {
-  add_read_handler("rts", SetRTS_read_param, (void *) H_RTS);
-  add_write_handler("rts", SetRTS_write_param, (void *) H_RTS);
+  add_read_handler("rts", SetRTS_read_param, H_RTS);
+  add_write_handler("rts", SetRTS_write_param, H_RTS);
 }
 
 CLICK_ENDDECLS

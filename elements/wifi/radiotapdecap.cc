@@ -204,9 +204,9 @@ RadiotapDecap_write_param(const String &in_s, Element *e, void *vparam,
 void
 RadiotapDecap::add_handlers()
 {
-  add_read_handler("debug", RadiotapDecap_read_param, (void *) H_DEBUG);
+  add_read_handler("debug", RadiotapDecap_read_param, H_DEBUG);
 
-  add_write_handler("debug", RadiotapDecap_write_param, (void *) H_DEBUG);
+  add_write_handler("debug", RadiotapDecap_write_param, H_DEBUG);
 }
 CLICK_ENDDECLS
 EXPORT_ELEMENT(RadiotapDecap)

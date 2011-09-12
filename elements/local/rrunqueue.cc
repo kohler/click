@@ -95,7 +95,7 @@ RoundRobinUnqueue::read_param(Element *e, void *)
 void
 RoundRobinUnqueue::add_handlers()
 {
-  add_read_handler("packets", read_param, (void *)0);
+  add_read_handler("packets", read_param, 0);
   add_task_handlers(&_task);
 }
 

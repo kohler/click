@@ -165,9 +165,9 @@ CheckICMPHeader::read_handler(Element *e, void *thunk)
 void
 CheckICMPHeader::add_handlers()
 {
-  add_read_handler("drops", read_handler, (void *)0);
+  add_read_handler("drops", read_handler, 0);
   if (_reason_drops)
-    add_read_handler("drop_details", read_handler, (void *)1);
+    add_read_handler("drop_details", read_handler, 1);
 }
 
 CLICK_ENDDECLS

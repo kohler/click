@@ -199,14 +199,14 @@ write_param(const String &in_s, Element *e, void *vparam,
 void
 BeaconTracker::add_handlers()
 {
-  add_read_handler("debug", read_param, (void *) H_DEBUG);
-  add_read_handler("scan", read_param, (void *) H_SCAN);
-  add_read_handler("stats", read_param, (void *) H_STATS);
-  add_read_handler("track", read_param, (void *) H_TRACK);
-  add_read_handler("beacon_interval", read_param, (void *) H_BEACON_INTERVAL);
+  add_read_handler("debug", read_param, H_DEBUG);
+  add_read_handler("scan", read_param, H_SCAN);
+  add_read_handler("stats", read_param, H_STATS);
+  add_read_handler("track", read_param, H_TRACK);
+  add_read_handler("beacon_interval", read_param, H_BEACON_INTERVAL);
 
-  add_write_handler("debug", write_param, (void *) H_DEBUG);
-  add_write_handler("reset", write_param, (void *) H_RESET, Handler::BUTTON);
+  add_write_handler("debug", write_param, H_DEBUG);
+  add_write_handler("reset", write_param, H_RESET, Handler::BUTTON);
 }
 
 CLICK_ENDDECLS

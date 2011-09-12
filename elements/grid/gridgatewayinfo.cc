@@ -80,8 +80,8 @@ GridGatewayInfo::print_best_gateway(Element *f, void *)
 void
 GridGatewayInfo::add_handlers()
 {
-  add_read_handler("best_gateway", print_best_gateway, (void *) 0);
-  add_read_handler("is_gateway", gw_read_handler, (void *) 0);
+  add_read_handler("best_gateway", print_best_gateway, 0);
+  add_read_handler("is_gateway", gw_read_handler, 0);
 }
 
 Packet *

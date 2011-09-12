@@ -180,8 +180,8 @@ StrideSched::add_handlers()
     // beware: StrideSwitch inherits from StrideSched
     for (intptr_t i = 0; i < nclients(); i++) {
 	String s = "tickets" + String(i);
-	add_read_handler(s, read_tickets_handler, (void *)i);
-	add_write_handler(s, write_tickets_handler, (void *)i);
+	add_read_handler(s, read_tickets_handler, i);
+	add_write_handler(s, write_tickets_handler, i);
     }
     add_read_handler("config", read_handler);
     set_handler_flags("config", 0, Handler::CALM);

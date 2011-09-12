@@ -442,7 +442,7 @@ IPFlowRawSockets::write_handler(const String &, Element *e, void *thunk, ErrorHa
 void
 IPFlowRawSockets::add_handlers()
 {
-    add_write_handler("clear", write_handler, (void *)H_CLEAR);
+    add_write_handler("clear", write_handler, H_CLEAR);
     if (input_is_pull(0))
 	add_task_handlers(&_task);
 }

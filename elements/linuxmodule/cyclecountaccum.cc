@@ -86,10 +86,10 @@ CycleCountAccum::reset_handler(const String &, Element *e, void *, ErrorHandler 
 void
 CycleCountAccum::add_handlers()
 {
-    add_read_handler("count", read_handler, (void *)0);
-    add_read_handler("cycles", read_handler, (void *)1);
-    add_read_handler("zero_count", read_handler, (void *)2);
-    add_write_handler("reset_counts", reset_handler, (void *)0, Handler::BUTTON);
+    add_read_handler("count", read_handler, 0);
+    add_read_handler("cycles", read_handler, 1);
+    add_read_handler("zero_count", read_handler, 2);
+    add_write_handler("reset_counts", reset_handler, 0, Handler::BUTTON);
 }
 
 ELEMENT_REQUIRES(linuxmodule int64)

@@ -116,7 +116,7 @@ probe_write_handler(const String &arg, Element *element,
 void
 GridProbeSender::add_handlers()
 {
-  add_write_handler("send_probe", probe_write_handler, (void *) 0);
+  add_write_handler("send_probe", probe_write_handler, 0);
 }
 
 CLICK_ENDDECLS

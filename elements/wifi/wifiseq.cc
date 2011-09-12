@@ -140,15 +140,15 @@ WifiSeq::write_param(const String &in_s, Element *e, void *vparam,
 void
 WifiSeq::add_handlers()
 {
-  add_read_handler("debug", read_param, (void *) H_DEBUG);
-  add_read_handler("seq", read_param, (void *) H_SEQ);
-  add_read_handler("offset", read_param, (void *) H_OFFSET);
-  add_read_handler("bytes", read_param, (void *) H_BYTES);
-  add_read_handler("shift", read_param, (void *) H_SHIFT);
+  add_read_handler("debug", read_param, H_DEBUG);
+  add_read_handler("seq", read_param, H_SEQ);
+  add_read_handler("offset", read_param, H_OFFSET);
+  add_read_handler("bytes", read_param, H_BYTES);
+  add_read_handler("shift", read_param, H_SHIFT);
 
-  add_write_handler("debug", write_param, (void *) H_DEBUG);
-  add_write_handler("seq", write_param, (void *) H_SEQ);
-  add_write_handler("reset", write_param, (void *) H_RESET, Handler::BUTTON);
+  add_write_handler("debug", write_param, H_DEBUG);
+  add_write_handler("seq", write_param, H_SEQ);
+  add_write_handler("reset", write_param, H_RESET, Handler::BUTTON);
 }
 CLICK_ENDDECLS
 EXPORT_ELEMENT(WifiSeq)

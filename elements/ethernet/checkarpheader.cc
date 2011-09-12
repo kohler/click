@@ -118,7 +118,7 @@ CheckARPHeader::add_handlers()
 {
     add_data_handlers("drops", Handler::OP_READ, &_drops);
     if (_reason_drops)
-	add_read_handler("drop_details", read_handler, (void *)1);
+	add_read_handler("drop_details", read_handler, 1);
 }
 
 CLICK_ENDDECLS

@@ -193,13 +193,13 @@ WifiEncap_write_param(const String &in_s, Element *e, void *vparam,
 void
 WifiEncap::add_handlers()
 {
-  add_read_handler("debug", WifiEncap_read_param, (void *) H_DEBUG);
-  add_read_handler("mode", WifiEncap_read_param, (void *) H_MODE);
-  add_read_handler("bssid", WifiEncap_read_param, (void *) H_BSSID);
+  add_read_handler("debug", WifiEncap_read_param, H_DEBUG);
+  add_read_handler("mode", WifiEncap_read_param, H_MODE);
+  add_read_handler("bssid", WifiEncap_read_param, H_BSSID);
 
-  add_write_handler("debug", WifiEncap_write_param, (void *) H_DEBUG);
-  add_write_handler("mode", WifiEncap_write_param, (void *) H_MODE);
-  add_write_handler("bssid", WifiEncap_write_param, (void *) H_BSSID);
+  add_write_handler("debug", WifiEncap_write_param, H_DEBUG);
+  add_write_handler("mode", WifiEncap_write_param, H_MODE);
+  add_write_handler("bssid", WifiEncap_write_param, H_BSSID);
 }
 CLICK_ENDDECLS
 EXPORT_ELEMENT(WifiEncap)

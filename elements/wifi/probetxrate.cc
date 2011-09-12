@@ -349,17 +349,17 @@ ProbeTXRate_write_param(const String &in_s, Element *e, void *vparam,
 void
 ProbeTXRate::add_handlers()
 {
-  add_read_handler("debug", ProbeTXRate_read_param, (void *) H_DEBUG);
-  add_read_handler("rates", ProbeTXRate_read_param, (void *) H_RATES);
-  add_read_handler("threshold", ProbeTXRate_read_param, (void *) H_THRESHOLD);
-  add_read_handler("offset", ProbeTXRate_read_param, (void *) H_OFFSET);
-  add_read_handler("active", ProbeTXRate_read_param, (void *) H_ACTIVE);
+  add_read_handler("debug", ProbeTXRate_read_param, H_DEBUG);
+  add_read_handler("rates", ProbeTXRate_read_param, H_RATES);
+  add_read_handler("threshold", ProbeTXRate_read_param, H_THRESHOLD);
+  add_read_handler("offset", ProbeTXRate_read_param, H_OFFSET);
+  add_read_handler("active", ProbeTXRate_read_param, H_ACTIVE);
 
-  add_write_handler("debug", ProbeTXRate_write_param, (void *) H_DEBUG);
-  add_write_handler("threshold", ProbeTXRate_write_param, (void *) H_THRESHOLD);
-  add_write_handler("offset", ProbeTXRate_write_param, (void *) H_OFFSET);
-  add_write_handler("reset", ProbeTXRate_write_param, (void *) H_RESET, Handler::BUTTON);
-  add_write_handler("active", ProbeTXRate_write_param, (void *) H_ACTIVE);
+  add_write_handler("debug", ProbeTXRate_write_param, H_DEBUG);
+  add_write_handler("threshold", ProbeTXRate_write_param, H_THRESHOLD);
+  add_write_handler("offset", ProbeTXRate_write_param, H_OFFSET);
+  add_write_handler("reset", ProbeTXRate_write_param, H_RESET, Handler::BUTTON);
+  add_write_handler("active", ProbeTXRate_write_param, H_ACTIVE);
 
 }
 
