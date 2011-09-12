@@ -219,7 +219,11 @@ class Timestamp { public:
 
     /** @brief Test if this Timestamp is negative (< Timestamp(0, 0)). */
     inline bool is_negative() const {
+#if TIMESTAMP_REP_FLAT64 || TIMESTAMP_MATH_FLAT64
+	return _t.x < 0;
+#else
 	return sec() < 0;
+#endif
     }
 
     inline seconds_type sec() const;

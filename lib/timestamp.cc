@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2004-2008 Regents of the University of California
+ * Copyright (c) 2004-2011 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -196,7 +197,7 @@ operator<<(StringAccum &sa, const Timestamp& ts)
     if (char *x = sa.reserve(33)) {
 	Timestamp::seconds_type sec;
 	uint32_t subsec;
-	if (ts.sec() >= 0)
+	if (!ts.is_negative())
 	    sec = ts.sec(), subsec = ts.subsec();
 	else {
 	    *x++ = '-';

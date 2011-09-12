@@ -163,7 +163,7 @@ TimerSet::next_timer_delay(bool more_tasks, Timestamp &t) const
     else if (unlikely(Timestamp::warp_jumping())) {
 	Timestamp::warp_jump(t);
 	return 0;
-    } else if ((t -= Timestamp::now_steady(), t.sec() >= 0)) {
+    } else if ((t -= Timestamp::now_steady(), !t.is_negative())) {
 	t = t.warp_real_delay();
 	return 1;
     } else
