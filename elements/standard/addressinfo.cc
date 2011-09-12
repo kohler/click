@@ -126,7 +126,7 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 #if HAVE_IP6
 	    if (IP6AddressArg().parse(parts[j], ip6.ip6, context))
 		my_types |= t_ip6;
-	    else if (IP6PrefixArg().(parts[j], ip6.ip6, ip6.plen, context)) {
+	    else if (IP6PrefixArg().parse(parts[j], ip6.ip6, ip6.plen, context)) {
 		my_types |= t_ip6net;
 		if (ip6.ip6 & IP6Address::make_inverted_prefix(ip6.plen))
 		    my_types |= t_ip6;
