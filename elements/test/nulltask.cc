@@ -73,7 +73,7 @@ NullTask::add_handlers()
 {
     add_data_handlers("count", Handler::OP_READ, &_count);
     add_data_handlers("limit", Handler::OP_READ | Handler::OP_WRITE, &_limit);
-    add_write_handler("reset", write_handler, 0);
+    add_write_handler("reset", write_handler);
     add_task_handlers(&_task, 0, TASKHANDLER_WRITE_ALL);
 }
 

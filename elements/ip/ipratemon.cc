@@ -428,13 +428,13 @@ void
 IPRateMonitor::add_handlers()
 {
   add_data_handlers("thresh", Handler::OP_READ, &_thresh);
-  add_read_handler("look", look_read_handler, 0);
+  add_read_handler("look", look_read_handler);
   add_data_handlers("mem", Handler::OP_READ, &_alloced_mem);
   add_data_handlers("memmax", Handler::OP_READ, &_memmax);
 
-  add_write_handler("anno_level", anno_level_write_handler, 0);
+  add_write_handler("anno_level", anno_level_write_handler);
   add_write_handler("reset", reset_write_handler, 0, Handler::BUTTON);
-  add_write_handler("memmax", memmax_write_handler, 0);
+  add_write_handler("memmax", memmax_write_handler);
 }
 
 int

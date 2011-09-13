@@ -159,13 +159,13 @@ class Element { public:
     // HANDLERS
     void add_read_handler(const String &name, ReadHandlerCallback read_callback, const void *user_data = 0, uint32_t flags = 0);
     void add_read_handler(const String &name, ReadHandlerCallback read_callback, int user_data, uint32_t flags = 0);
-    void add_read_handler(const char *name, ReadHandlerCallback read_callback, int user_data, uint32_t flags = 0);
+    void add_read_handler(const char *name, ReadHandlerCallback read_callback, int user_data = 0, uint32_t flags = 0);
     void add_write_handler(const String &name, WriteHandlerCallback write_callback, const void *user_data = 0, uint32_t flags = 0);
     void add_write_handler(const String &name, WriteHandlerCallback write_callback, int user_data, uint32_t flags = 0);
-    void add_write_handler(const char *name, WriteHandlerCallback write_callback, int user_data, uint32_t flags = 0);
+    void add_write_handler(const char *name, WriteHandlerCallback write_callback, int user_data = 0, uint32_t flags = 0);
     void set_handler(const String &name, int flags, HandlerCallback callback, const void *read_user_data = 0, const void *write_user_data = 0);
     void set_handler(const String &name, int flags, HandlerCallback callback, int read_user_data, int write_user_data = 0);
-    void set_handler(const char *name, int flags, HandlerCallback callback, int read_user_data, int write_user_data = 0);
+    void set_handler(const char *name, int flags, HandlerCallback callback, int read_user_data = 0, int write_user_data = 0);
     int set_handler_flags(const String &name, int set_flags, int clear_flags = 0);
     enum { TASKHANDLER_WRITE_SCHEDULED = 1,
 	   TASKHANDLER_WRITE_TICKETS = 2,

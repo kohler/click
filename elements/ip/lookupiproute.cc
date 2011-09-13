@@ -55,7 +55,7 @@ StaticIPLookup::remove_route(const IPRoute& r, IPRoute* old_route, ErrorHandler 
 void
 StaticIPLookup::add_handlers()
 {
-    add_read_handler("table", table_handler, 0);
+    add_read_handler("table", table_handler);
     set_handler("lookup", Handler::OP_READ | Handler::READ_PARAM, lookup_handler);
 }
 

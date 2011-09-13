@@ -1301,7 +1301,7 @@ IPFilter::program_string(Element *e, void *)
 void
 IPFilter::add_handlers()
 {
-    add_read_handler("program", program_string, 0);
+    add_read_handler("program", program_string);
 }
 
 

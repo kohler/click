@@ -153,7 +153,7 @@ CheckIP6Header_read_drops(Element *xf, void *)
 void
 CheckIP6Header::add_handlers()
 {
-  add_read_handler("drops", CheckIP6Header_read_drops, 0);
+  add_read_handler("drops", CheckIP6Header_read_drops);
 }
 
 CLICK_ENDDECLS

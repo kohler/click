@@ -467,7 +467,7 @@ IPReassembler::reap(int now)
 void
 IPReassembler::add_handlers()
 {
-    add_read_handler("dump", debug_dump, 0);
+    add_read_handler("dump", debug_dump);
 }
 
 CLICK_ENDDECLS

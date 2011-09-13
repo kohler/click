@@ -296,7 +296,7 @@ PI::read_parameter(Element *f, void *vparam)
 void
 PI::add_handlers()
 {
-    add_read_handler("drops", pi_read_drops, 0);
+    add_read_handler("drops", pi_read_drops);
     set_handler("w", Handler::OP_READ | Handler::OP_WRITE, configuration_keyword_handler, "W", (void *) (uintptr_t) 1);
     set_handler("a", Handler::OP_READ | Handler::OP_WRITE, configuration_keyword_handler, "A", (void *) (uintptr_t) 2);
     set_handler("b", Handler::OP_READ | Handler::OP_WRITE, configuration_keyword_handler, "B", (void *) (uintptr_t) 3);

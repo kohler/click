@@ -325,7 +325,7 @@ ToIPSummaryDump::add_handlers()
 {
     if (input_is_pull(0))
 	add_task_handlers(&_task);
-    add_write_handler("flush", flush_handler, 0);
+    add_write_handler("flush", flush_handler);
 }
 
 ELEMENT_REQUIRES(userlevel IPSummaryDump IPSummaryDump_Anno IPSummaryDump_IP IPSummaryDump_TCP IPSummaryDump_UDP IPSummaryDump_ICMP IPSummaryDump_Payload IPSummaryDump_Link)

@@ -57,7 +57,7 @@ NotifierDebug::read_handler(Element *e, void *)
 void
 NotifierDebug::add_handlers()
 {
-    add_read_handler("signal", read_handler, 0);
+    add_read_handler("signal", read_handler);
 }
 
 CLICK_ENDDECLS

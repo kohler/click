@@ -70,7 +70,7 @@ void
 SimplePullSwitch::add_handlers()
 {
     add_data_handlers("switch", Handler::OP_READ, &_input);
-    add_write_handler("switch", write_param, 0);
+    add_write_handler("switch", write_param);
     add_data_handlers("config", Handler::OP_READ, &_input);
     set_handler_flags("config", 0, Handler::CALM);
 }

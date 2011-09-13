@@ -297,8 +297,8 @@ IPRouteTable::add_handlers()
 {
     add_write_handler("add", add_route_handler, 0);
     add_write_handler("set", add_route_handler, 1);
-    add_write_handler("remove", remove_route_handler, 0);
-    add_write_handler("ctrl", ctrl_handler, 0);
+    add_write_handler("remove", remove_route_handler);
+    add_write_handler("ctrl", ctrl_handler);
     add_read_handler("table", table_handler, 0, Handler::EXPENSIVE);
     set_handler("lookup", Handler::OP_READ | Handler::READ_PARAM, lookup_handler);
 }

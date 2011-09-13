@@ -105,7 +105,7 @@ SchedOrderTest::read_handler(Element* e, void*)
 void
 SchedOrderTest::add_handlers()
 {
-    add_read_handler("order", read_handler, 0);
+    add_read_handler("order", read_handler);
     add_task_handlers(&_task);
 }
 
