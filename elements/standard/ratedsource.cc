@@ -116,7 +116,7 @@ RatedSource::run_task(Task *)
 	_task.fast_reschedule();
 	return true;
     } else {
-	_timer.schedule_after(Timestamp::make_jiffies(_tb.epochs_until_contains(1)));
+	_timer.schedule_after(Timestamp::make_jiffies(_tb.time_until_contains(1)));
 	return false;
     }
 }
