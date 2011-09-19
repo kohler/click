@@ -2,7 +2,7 @@
 Check that ARPQuerier correctly rate-limits queries per IP address.
 
 %script
-click CONFIG
+click --simtime CONFIG
 
 %file CONFIG
 RatedSource(RATE 1000, LIMIT 1500, STOP true)

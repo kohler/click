@@ -29,7 +29,7 @@ CLICK_DECLS
 const unsigned RatedSource::NO_LIMIT;
 
 RatedSource::RatedSource()
-  : _packet(0), _task(this)
+  : _packet(0), _task(this), _timer(&_task)
 {
 }
 
@@ -84,6 +84,7 @@ RatedSource::initialize(ErrorHandler *errh)
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, errh);
     _tb.set(1);
+    _timer.initialize(this);
     return 0;
 }
 
@@ -115,7 +116,7 @@ RatedSource::run_task(Task *)
 	_task.fast_reschedule();
 	return true;
     } else {
-	_task.fast_reschedule();
+	_timer.schedule_after(Timestamp::make_jiffies(_tb.epochs_until_contains(1)));
 	return false;
     }
 }
