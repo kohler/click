@@ -115,6 +115,7 @@ class RatedSource : public Element { public:
     bool _stop;
     Packet *_packet;
     Task _task;
+    Timer _timer;
     String _data;
 
     void setup_packet();
