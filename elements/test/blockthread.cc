@@ -20,6 +20,7 @@
 #include "blockthread.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <sys/select.h>
 CLICK_DECLS
 
 BlockThread::BlockThread()
