@@ -204,7 +204,7 @@ ChatterSocket::initialize_socket(ErrorHandler *errh)
     struct sockaddr_in sa;
     sa.sin_family = AF_INET;
     sa.sin_port = htons(portno);
-    sa.sin_addr = inet_makeaddr(0, 0);
+    sa.sin_addr = IPAddress().in_addr();
     if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
       return initialize_socket_error(errh, "bind");
 

@@ -78,7 +78,7 @@ IPFlowRawSockets::Flow::initialize(ErrorHandler *errh, int snaplen, bool usepcap
     memset(&sin, 0, sizeof(sin));
     sin.sin_family = PF_INET;
     sin.sin_port = _flowid.sport();
-    sin.sin_addr = inet_makeaddr(0, 0);
+    sin.sin_addr = IPAddress().in_addr();
 
     // bind to source port
     if (bind(_wd, (struct sockaddr *)&sin, sizeof(sin)) < 0)
