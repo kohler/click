@@ -84,8 +84,9 @@ CLICK_BUILD_INSTALL_IF_CHANGED = @CLICK_BUILD_INSTALL_IF_CHANGED@
 CLICK_BUILD_INSTALL_DATA = $(CLICK_BUILD_INSTALL) -m 644
 CLICK_BUILD_INSTALL_DATA_IF_CHANGED = $(CLICK_BUILD_INSTALL_IF_CHANGED) -m 644
 CLICKmkinstalldirs = $(conf_auxdir)/mkinstalldirs
+CLICK_BUILDTOOL = $(top_builddir)/click-buildtool
 
-CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make --linux26
+CLICK_ELEM2MAKE = $(CLICK_BUILDTOOL) elem2make --linux26
 
 CLICKCC = @KERNEL_CC@
 CLICKCXX = @KERNEL_CXX@
@@ -119,11 +120,13 @@ else
 compile_option = -c
 endif
 
+cmd_shortensyms = $(CLICK_BUILDTOOL) shortensyms $@
+
 quiet_cmd_cxxcompile = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
-cmd_cxxcompile = $(CXXCOMPILE) $(CLICKDEPCFLAGS) $(compile_option) -o $@ $<
+cmd_cxxcompile = $(CXXCOMPILE) $(CLICKDEPCFLAGS) $(compile_option) -o $@ $< && $(cmd_shortensyms)
 
 quiet_cmd_cxxcompile_nodep = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
-cmd_cxxcompile_nodep = $(CXXCOMPILE) $(compile_option) -o $@ $<
+cmd_cxxcompile_nodep = $(CXXCOMPILE) $(compile_option) -o $@ $< && $(cmd_shortensyms)
 
 quiet_cmd_ccompile = CC $(quiet_modtag) $(subst $(obj)/,,$@)
 cmd_ccompile = $(COMPILE) $(CLICKDEPCFLAGS) $(compile_option) -o $@ $<

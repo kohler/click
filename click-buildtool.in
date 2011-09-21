@@ -49,6 +49,100 @@ echo_n () {
 }
 
 
+###############
+# SHORTENSYMS #
+###############
+
+shortensyms_usage () {
+    echo "Usage: click-buildtool shortensyms OBJ..." 1>&2
+    echo "Try 'click-buildtool shortensyms --help' for more information." 1>&2
+    exit 1
+}
+
+shortensyms () {
+    driver=""
+    date=`date`
+    objs=
+    len=56
+    while [ x"$1" != x ]; do
+    case $1 in
+    -n|--l|--le|--len|--leng|--lengt|--length)
+	if test $# -lt 2; then shortensyms_usage; fi
+	len="$2"; shift 2;;
+    -n*)
+	len="`echo "$1" | sed 's/^-n//'`"/; shift 1;;
+    --l=*|--le=*|--len=*|--leng=*|--lengt=*|--length=*)
+	len="`echo "$1" | sed 's/^[^=]*=//'`"/; shift 1;;
+    -h|--h|--he|--hel|--help)
+	cat <<'EOF' 1>&2
+'Click-buildtool shortensyms' shortens the symbols in the object files listed
+on the command line to be at most 56 characters long.
+
+Usage: click-buildtool shortensyms OBJ...
+
+Options:
+  -n, --length=N           Set maximum symbol length to N.
+  -h, --help               Print this message and exit.
+
+Report bugs to <click@pdos.lcs.mit.edu>.
+EOF
+	exit 0;;
+    *)
+	objs="$objs
+$1"; shift 1;;
+    esac
+    done
+
+    test -z "$objs" && shortensyms_usage
+    objs=`echo "$objs" | sort | uniq`
+
+    for obj in $objs; do
+	longsyms=`nm -g $obj | sed 's/^[^ 	]*[ 	]*.[ 	]*//
+/^.\{0,'$len'\}$/d'`
+	if test -z "$longsyms"; then
+	    continue
+	fi
+
+	/bin/rm -f $obj.shortenmap $obj~
+	echo "$longsyms" | $awk 'BEGIN {
+  split("28HashContainer_const_iterator 3HCj \
+22HashContainer_iterator 3HCi \
+21HashContainer_adapter 3HCa \
+13HashContainer 2HC \
+26TokenBucketJiffyParameters 3TBJ \
+12TokenBucketX 3TBX \
+20can_live_reconfigure 10can_reconf \
+16live_reconfigure 6reconf \
+12ErrorHandler 2EH \
+10ArgContext 4Argx \
+14NotifierSignal 4NSig \
+6Vector 1V \
+11StringAccum 2SA \
+6String 1S \
+7Element 2El \
+6Packet 1P", pats, "[^A-Za-z0-9_]*");
+}
+{
+  orig = $0;
+  for (i = 1; length() > '$len' && pats[i]; i += 2)
+    gsub(pats[i], pats[i+1]);
+  if (length() > '$len') {
+    ("echo " orig " | sha1sum") | getline hash
+    $0 = substr($0, 1, '$len' - 12) ".H" substr(hash, 1, 10)
+  }
+  print orig, $0;
+}' > $obj.shortenmap || exit 1
+	cp $obj $obj~ || exit 1
+	objcopy --redefine-syms=$obj.shortenmap $obj~ $obj || exit 1
+	/bin/rm -f $obj.shortenmap $obj~
+    done
+}
+
+if test "$1" = shortensyms; then
+    shift 1; shortensyms "$@"; exit 0
+fi
+
+
 ############
 # FINDELEM #
 ############
@@ -1106,9 +1200,6 @@ EOF
     cat <<EOF
 #include <click/config.h>
 #include <linux/module.h>
-#if CONFIG_MODVERSIONS && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
-#pragma message "\n   !!!\n   !!! Your kernel was compiled with CONFIG_MODVERSIONS.\n   !!! Click packages are often incompatible with CONFIG_MODVERSIONS.\n   !!! You may need to recompile your kernel and rebuild Click.\n   !!!"
-#endif
 
 /* a new version of EXPORT_NO_SYMBOLS that works */
 const int __ksymtab_nothing[0] __attribute__((section("__ksymtab"))) = { };
@@ -1349,7 +1440,7 @@ BEGIN {
 /^[ 	]/ {
     next
 }
-/........[ 	][ABCDGRSTVW]/ {
+/^.*[ 	][ABCDGRSTVW]/ {
     x = $3;
     if (x ~ /^[_A-Za-z][_A-Za-z0-9]*$/ && !printed[x]) {
 	printed[x] = 1;
@@ -1403,6 +1494,7 @@ Usage: click-buildtool elem2make [-V] [-p PREFIX] < [ELEMENTS]
    or: click-buildtool kbuild
    or: click-buildtool kversion [--gpl]
    or: click-buildtool ksyms OBJS > KSYMSFILE
+   or: click-buildtool shortensyms OBJS
    or: click-buildtool [--cflags | --otherlibs | --toolcflags | --toollibs]
 
 Options:
@@ -1435,6 +1527,8 @@ EOF
      shift 1; kbuild "$@"; exit 0;;
   ksyms)
      shift 1; ksyms "$@"; exit 0;;
+  shortensyms)
+     shift 1; shortensyms "$@"; exit 0;;
   --c|--cf|--cfl|--cfla|--cflag|--cflags|--d|--de|--def|--defs)
      echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ -I@includedir@; exit 0;;
   --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)
