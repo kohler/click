@@ -132,7 +132,7 @@ $1"; shift 1;;
   }
   print orig, $0;
 }' > $obj.shortenmap || exit 1
-	cp $obj $obj~ || exit 1
+	mv $obj $obj~ || exit 1
 	objcopy --redefine-syms=$obj.shortenmap $obj~ $obj || exit 1
 	/bin/rm -f $obj.shortenmap $obj~
     done
