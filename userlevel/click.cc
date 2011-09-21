@@ -617,7 +617,9 @@ particular purpose.\n");
   router->use();
 
   int exit_value = 0;
+#if HAVE_MULTITHREAD
   Vector<pthread_t> other_threads;
+#endif
 
   // output flat configuration
   if (output_file) {
