@@ -145,7 +145,6 @@ class FromFlanDump : public Element { public:
 
     const char *class_name() const		{ return "FromFlanDump"; }
     const char *port_count() const		{ return PORTS_0_1; }
-    const char *processing() const		{ return AGNOSTIC; }
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

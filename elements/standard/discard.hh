@@ -58,7 +58,6 @@ class Discard : public Element { public:
 
     const char *class_name() const		{ return "Discard"; }
     const char *port_count() const		{ return PORTS_1_0; }
-    const char *processing() const		{ return AGNOSTIC; }
 
     int configure(Vector<String> &conf, ErrorHandler *errh);
     int initialize(ErrorHandler *errh);

@@ -39,7 +39,6 @@ class SetTimestamp : public Element { public:
 
     const char *class_name() const		{ return "SetTimestamp"; }
     const char *port_count() const		{ return PORTS_1_1; }
-    const char *processing() const		{ return AGNOSTIC; }
     int configure(Vector<String> &, ErrorHandler *);
 
     Packet *simple_action(Packet *);

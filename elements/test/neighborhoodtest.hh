@@ -30,7 +30,6 @@ class NeighborhoodTest : public Element { public:
 
     const char *class_name() const		{ return "NeighborhoodTest"; }
     const char *port_count() const		{ return "-/-"; }
-    const char *processing() const		{ return AGNOSTIC; }
     const char *flow_code() const		{ return "x/y"; }
 
     void add_handlers();

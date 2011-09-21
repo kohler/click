@@ -27,7 +27,6 @@ class SetIP6Address : public Element {
 
   const char *class_name() const		{ return "SetIP6Address"; }
   const char *port_count() const		{ return PORTS_1_1; }
-  const char *processing() const		{ return AGNOSTIC; }
 
   int configure(Vector<String> &, ErrorHandler *);
 

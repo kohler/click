@@ -58,8 +58,6 @@ class NullTask : public Element { public:
     ~NullTask();
 
     const char *class_name() const		{ return "NullTask"; }
-    const char *port_count() const		{ return PORTS_0_0; }
-    const char *processing() const		{ return AGNOSTIC; }
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

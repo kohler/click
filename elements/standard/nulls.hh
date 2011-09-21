@@ -29,7 +29,6 @@ class Null1 : public Element {
 
   const char *class_name() const	{ return "Null1"; }
   const char *port_count() const	{ return PORTS_1_1; }
-  const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
 
@@ -44,7 +43,6 @@ class Null2 : public Element {
 
   const char *class_name() const	{ return "Null2"; }
   const char *port_count() const	{ return PORTS_1_1; }
-  const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
 
@@ -59,7 +57,6 @@ class Null3 : public Element {
 
   const char *class_name() const	{ return "Null3"; }
   const char *port_count() const	{ return PORTS_1_1; }
-  const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
 
@@ -74,7 +71,6 @@ class Null4 : public Element {
 
   const char *class_name() const	{ return "Null4"; }
   const char *port_count() const	{ return PORTS_1_1; }
-  const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
 
@@ -89,7 +85,6 @@ class Null5 : public Element {
 
   const char *class_name() const	{ return "Null5"; }
   const char *port_count() const	{ return PORTS_1_1; }
-  const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
 
@@ -104,7 +99,6 @@ class Null6 : public Element {
 
   const char *class_name() const	{ return "Null6"; }
   const char *port_count() const	{ return PORTS_1_1; }
-  const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
 
@@ -119,7 +113,6 @@ class Null7 : public Element {
 
   const char *class_name() const	{ return "Null7"; }
   const char *port_count() const	{ return PORTS_1_1; }
-  const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
 
@@ -134,7 +127,6 @@ class Null8 : public Element {
 
   const char *class_name() const	{ return "Null8"; }
   const char *port_count() const	{ return PORTS_1_1; }
-  const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *p)	{ return p; }
 

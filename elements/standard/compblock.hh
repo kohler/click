@@ -40,7 +40,6 @@ class CompareBlock : public Element { public:
 
   const char *class_name() const		{ return "CompareBlock"; }
   const char *port_count() const		{ return "1/2"; }
-  const char *processing() const	        { return AGNOSTIC; }
   void add_handlers();
 
   int configure(Vector<String> &, ErrorHandler *);

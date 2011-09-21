@@ -76,7 +76,6 @@ class AddressTranslator : public Element {
 
   const char *class_name() const		{ return "AddressTranslator"; }
   const char *port_count() const		{ return "2/2"; }
-  const char *processing() const	{ return AGNOSTIC; }
   int configure(Vector<String> &, ErrorHandler *);
   void push(int port, Packet *p);
   void add_map(IP6Address &mai,  bool binding);

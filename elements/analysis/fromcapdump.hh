@@ -148,7 +148,6 @@ class FromCapDump : public Element { public:
 
     const char *class_name() const	{ return "FromCapDump"; }
     const char *port_count() const	{ return PORTS_0_1; }
-    const char *processing() const	{ return AGNOSTIC; }
     void *cast(const char *);
 
     int configure(Vector<String> &, ErrorHandler *);

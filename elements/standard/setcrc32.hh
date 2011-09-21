@@ -23,7 +23,6 @@ class SetCRC32 : public Element { public:
 
   const char *class_name() const	{ return "SetCRC32"; }
   const char *port_count() const	{ return PORTS_1_1; }
-  const char *processing() const	{ return AGNOSTIC; }
 
   Packet *simple_action(Packet *);
 

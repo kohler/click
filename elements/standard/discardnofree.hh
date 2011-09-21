@@ -21,7 +21,6 @@ class DiscardNoFree : public Element { public:
 
   const char *class_name() const		{ return "DiscardNoFree"; }
   const char *port_count() const		{ return PORTS_1_0; }
-  const char *processing() const		{ return AGNOSTIC; }
 
   int initialize(ErrorHandler *);
   void add_handlers();

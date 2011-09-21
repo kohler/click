@@ -196,7 +196,6 @@ class AggregateCounter : public Element { public:
 
     const char *class_name() const	{ return "AggregateCounter"; }
     const char *port_count() const	{ return "1-2/1-2"; }
-    const char *processing() const	{ return AGNOSTIC; }
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

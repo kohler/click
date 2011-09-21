@@ -41,7 +41,6 @@ class Block : public Element {
 
   const char *class_name() const		{ return "Block"; }
   const char *port_count() const		{ return "1/2"; }
-  const char *processing() const	        { return AGNOSTIC; }
   void add_handlers();
 
   int configure(Vector<String> &, ErrorHandler *);

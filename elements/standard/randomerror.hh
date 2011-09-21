@@ -41,7 +41,6 @@ class RandomBitErrors : public Element {
 
   const char *class_name() const		{ return "RandomBitErrors"; }
   const char *port_count() const		{ return PORTS_1_1; }
-  const char *processing() const		{ return AGNOSTIC; }
 
   unsigned p_bit_error() const			{ return _p_bit_error; }
   int kind() const				{ return _kind; }

@@ -32,7 +32,6 @@ public:
 
   const char *class_name() const	{ return "CopyFlowID"; }
   const char *port_count() const	{ return "2/2"; }
-  const char *processing() const	{ return AGNOSTIC; }
 
   int initialize(ErrorHandler *);
   int configure(Vector<String> &conf, ErrorHandler *errh);

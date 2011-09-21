@@ -97,7 +97,6 @@ class ToDump : public Element { public:
 
     const char *class_name() const	{ return "ToDump"; }
     const char *port_count() const	{ return "1/0-1"; }
-    const char *processing() const	{ return AGNOSTIC; }
     const char *flags() const		{ return "S2"; }
 
     // configure after FromDevice and FromDump
