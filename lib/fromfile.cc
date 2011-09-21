@@ -418,6 +418,8 @@ FromFile::take_state(FromFile &o, ErrorHandler *errh)
     _mmap = o._mmap;
     _mmap_unit = o._mmap_unit;
     _mmap_off = o._mmap_off;
+#else
+    (void) errh;
 #endif
 
     _file_offset = o._file_offset;
