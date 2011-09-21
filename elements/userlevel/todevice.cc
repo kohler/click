@@ -159,6 +159,8 @@ ToDevice::initialize(ErrorHandler *errh)
 		return -1;
 	    _my_pcap = true;
 	}
+	_fd = pcap_fileno(_pcap);
+	/* _my_fd = false by default */
     }
 #endif
 
