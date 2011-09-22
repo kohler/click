@@ -95,12 +95,21 @@ $1"; shift 1;;
 
     test -z "$objs" && shortensyms_usage
     objs=`echo "$objs" | sort | uniq`
+    if test -z "$NM"; then NM="@NM@"; fi
+    if test -z "$OBJCOPY"; then OBJCOPY="@OBJCOPY@"; fi
+    if test -z "$MD5SUM"; then MD5SUM="@MD5SUM@"; fi
 
     for obj in $objs; do
-	longsyms=`nm -g $obj | sed 's/^[^ 	]*[ 	]*.[ 	]*//
+	longsyms=`$NM -g $obj | sed 's/^[^ 	]*[ 	]*.[ 	]*//
 /^.\{0,'$len'\}$/d'`
 	if test -z "$longsyms"; then
 	    continue
+	elif test -z "$OBJCOPY"; then
+	    echo "$obj: 'objcopy' missing, 'click-buildtool shortensyms' must leave long symbols unchanged" 1>&2
+	    continue
+	elif test -z "$MD5SUM"; then
+	    # We don't need security, so default to a weaker checksum.
+	    if echo | sum >/dev/null; then MD5SUM=sum; else MD5SUM=cat; fi
 	fi
 
 	/bin/rm -f $obj.shortenmap $obj~
@@ -113,9 +122,16 @@ $1"; shift 1;;
 12TokenBucketX 3TBX \
 20can_live_reconfigure 10can_reconf \
 16live_reconfigure 6reconf \
+24HashTable_const_iterator 3HTj \
+18HashTable_iterator 3HTi \
+9HashTable 2HT \
+16OrderedHashTable 3OHT \
 12ErrorHandler 2EH \
 10ArgContext 4Argx \
 14NotifierSignal 4NSig \
+9IPAddress 2IP \
+12EtherAddress 3Eth \
+10IP6Address 3IP6 \
 6Vector 1V \
 11StringAccum 2SA \
 6String 1S \
@@ -127,14 +143,14 @@ $1"; shift 1;;
   for (i = 1; length() > '$len' && pats[i]; i += 2)
     gsub(pats[i], pats[i+1]);
   if (length() > '$len') {
-    ("echo " orig " | sha1sum") | getline hash
+    ("echo " orig " | '"$MD5SUM"'") | getline hash
+    sub("[^A-Za-z_0-9.].*", "", hash)
     $0 = substr($0, 1, '$len' - 12) ".H" substr(hash, 1, 10)
   }
   print orig, $0;
 }' > $obj.shortenmap || exit 1
-	mv $obj $obj~ || exit 1
-	objcopy --redefine-syms=$obj.shortenmap $obj~ $obj || exit 1
-	/bin/rm -f $obj.shortenmap $obj~
+	$OBJCOPY --redefine-syms=$obj.shortenmap $obj || { /bin/rm -f $obj.shortenmap; exit 1; }
+	/bin/rm -f $obj.shortenmap
     done
 }
 
@@ -1429,11 +1445,12 @@ $1"; shift 1;;
 $exclude" | sort | uniq -u`
 
     if test -n "$dir"; then cd "$dir"; fi
+    if test -z "$NM"; then NM="@NM@"; fi
     echo "// Created by 'click-buildtool ksyms' on $date"
     echo "#include <click/config.h>"
     echo "#include <linux/version.h>"
     echo "#include <linux/module.h>"
-    nm -g $objs | $awk '
+    $NM -g $objs | $awk '
 BEGIN {
     printed["init_module"] = printed["cleanup_module"] = 1;
 }
