@@ -70,9 +70,9 @@ shortensyms () {
 	if test $# -lt 2; then shortensyms_usage; fi
 	len="$2"; shift 2;;
     -n*)
-	len="`echo "$1" | sed 's/^-n//'`"/; shift 1;;
+	len="`echo "$1" | sed 's/^-n//'`"; shift 1;;
     --l=*|--le=*|--len=*|--leng=*|--lengt=*|--length=*)
-	len="`echo "$1" | sed 's/^[^=]*=//'`"/; shift 1;;
+	len="`echo "$1" | sed 's/^[^=]*=//'`"; shift 1;;
     -h|--h|--he|--hel|--help)
 	cat <<'EOF' 1>&2
 'Click-buildtool shortensyms' shortens the symbols in the object files listed
