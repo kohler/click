@@ -64,15 +64,21 @@ shortensyms () {
     date=`date`
     objs=
     len=56
+    objcopy="objcopy"
+    nm="nm"
     while [ x"$1" != x ]; do
     case $1 in
     -n|--l|--le|--len|--leng|--lengt|--length)
 	if test $# -lt 2; then shortensyms_usage; fi
 	len="$2"; shift 2;;
     -n*)
-	len="`echo "$1" | sed 's/^-n//'`"/; shift 1;;
+	len="`echo "$1" | sed 's/^-n//'`"; shift 1;;
     --l=*|--le=*|--len=*|--leng=*|--lengt=*|--length=*)
-	len="`echo "$1" | sed 's/^[^=]*=//'`"/; shift 1;;
+	len="`echo "$1" | sed 's/^[^=]*=//'`"; shift 1;;
+    --objcopy=*)
+	objcopy="`echo "$1" | sed 's/^[^=]*=//'`"; shift 1;;
+    --nm=*)
+	nm="`echo "$1" | sed 's/^[^=]*=//'`"; shift 1;;
     -h|--h|--he|--hel|--help)
 	cat <<'EOF' 1>&2
 'Click-buildtool shortensyms' shortens the symbols in the object files listed
@@ -82,6 +88,8 @@ Usage: click-buildtool shortensyms OBJ...
 
 Options:
   -n, --length=N           Set maximum symbol length to N.
+      --objcopy=OBJCOPY    Use OBJCOPY as the objcopy command.
+      --nm=NM              Use NM as the nm command.
   -h, --help               Print this message and exit.
 
 Report bugs to <click@pdos.lcs.mit.edu>.
@@ -97,7 +105,7 @@ $1"; shift 1;;
     objs=`echo "$objs" | sort | uniq`
 
     for obj in $objs; do
-	longsyms=`nm -g $obj | sed 's/^[^ 	]*[ 	]*.[ 	]*//
+	longsyms=`$nm -g $obj | sed 's/^[^ 	]*[ 	]*.[ 	]*//
 /^.\{0,'$len'\}$/d'`
 	if test -z "$longsyms"; then
 	    continue
@@ -109,6 +117,12 @@ $1"; shift 1;;
 22HashContainer_iterator 3HCi \
 21HashContainer_adapter 3HCa \
 13HashContainer 2HC \
+9HashTableI 2HT \
+24HashTable_const_iterator 3HTj \
+18HashTable_iterator 3HTi \
+16OrderedHashTable 3OHT \
+12EtherAddress 3Eth \
+9IPAddress 2IP \
 26TokenBucketJiffyParameters 3TBJ \
 12TokenBucketX 3TBX \
 20can_live_reconfigure 10can_reconf \
@@ -133,7 +147,7 @@ $1"; shift 1;;
   print orig, $0;
 }' > $obj.shortenmap || exit 1
 	mv $obj $obj~ || exit 1
-	objcopy --redefine-syms=$obj.shortenmap $obj~ $obj || exit 1
+	$objcopy --redefine-syms=$obj.shortenmap $obj~ $obj || exit 1
 	/bin/rm -f $obj.shortenmap $obj~
     done
 }

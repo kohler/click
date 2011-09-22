@@ -57,7 +57,7 @@ else
 compile_option = -c
 endif
 
-cmd_shortensyms = $(CLICK_BUILDTOOL) shortensyms $@
+cmd_shortensyms = $(CLICK_BUILDTOOL) shortensyms --objcopy="$(OBJCOPY)" --nm="$(NM)" $@
 
 quiet_cmd_cxxcompile = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
 cmd_cxxcompile = $(CXXCOMPILE) $(DEPCFLAGS) $(compile_option) -o $@ $< && $(cmd_shortensyms)
