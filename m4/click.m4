@@ -13,12 +13,14 @@ dnl If so, we don't screw with their choices later.
 dnl
 
 AC_DEFUN([CLICK_INIT], [
-    ac_user_cc=; test -n "$CC" && ac_user_cc=y
-    ac_user_kernel_cc=; test -n "$KERNEL_CC" && ac_user_kernel_cc=y
-    ac_user_cxx=; test -n "$CXX" && ac_user_cxx=y
-    ac_user_build_cxx=; test -n "$BUILD_CXX" && ac_user_build_cxx=y
-    ac_user_kernel_cxx=; test -n "$KERNEL_CXX" && ac_user_kernel_cxx=y
-    ac_user_depcflags=; test -n "$DEPCFLAGS" && ac_user_depcflags=y
+    ac_user_cc=${CC+y}
+    ac_user_cflags=${CFLAGS+y}
+    ac_user_kernel_cc=${KERNEL_CC+y}
+    ac_user_cxx=${CXX+y}
+    ac_user_cxxflags=${CXXFLAGS+y}
+    ac_user_build_cxx=${BUILD_CXX+y}
+    ac_user_kernel_cxx=${KENREL_CXX+y}
+    ac_user_depcflags=${DEPCFLAGS+y}
     ac_compile_with_warnings=y
 
     conf_auxdir=$1
@@ -41,10 +43,10 @@ AC_DEFUN([CLICK_PROG_CC], [
     AC_REQUIRE([AC_PROG_CC])
 
     ac_base_cc="$CC"
-    test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
-	CC="$CC -W -Wall"
+    test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
+	CFLAGS="$CFLAGS -W -Wall"
 
-    test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depcflags" && \
+    test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depcflags" && \
 	DEPCFLAGS="-MD -MP"
     AC_SUBST(DEPCFLAGS)
 
@@ -82,22 +84,6 @@ and Linux header files are GCC-specific.)
     fi
 
     AC_LANG_CPLUSPLUS
-    if test -n "$GXX"; then
-	changequote(<<,>>)GXX_VERSION=`$CXX --version | head -n 1 | sed 's/^[^0-9]*\([0-9.]*\).*/\1/'`
-	GXX_MAJOR=`echo $GXX_VERSION | sed 's/\..*//'`
-	GXX_MINOR=`echo $GXX_VERSION | sed 's/^[^.]*\.\([^.]*\).*/\1/'`changequote([,])
-
-	if test $GXX_MAJOR -lt 2 -o \( $GXX_MAJOR -eq 2 -a $GXX_MINOR -le 7 \); then
-	    AC_MSG_ERROR([
-=========================================
-
-Your GNU C++ compiler ($CXX) is too old!
-Either download a newer compiler, or tell me to use a different compiler
-by setting the 'CXX' environment variable and rerunning me.
-
-=========================================])
-	fi
-    fi
 
     dnl check for <new> and <new.h>
 
@@ -142,14 +128,24 @@ by setting the 'CXX' environment variable and rerunning me.
 	AC_DEFINE([HAVE_CXX_STATIC_ASSERT], [1], [Define if the C++ compiler understands static_assert.])
     fi
 
+    AC_CACHE_CHECK([[whether the C++ compiler understands #pragma interface]], [ac_cv_cxx_pragma_interface], [
+	save_cxxflags="$CXXFLAGS"; CXXFLAGS="$CXXFLAGS -Werror -Wall -W"
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#pragma interface "foo.c"
+#pragma implementation "foo.c"]], [[]])], [ac_cv_cxx_pragma_interface=yes], [ac_cv_cxx_pragma_interface=no])
+        CXXFLAGS="$save_cxxflags"
+    ])
+    if test "$ac_cv_cxx_pragma_interface" = yes; then
+	AC_DEFINE([HAVE_CXX_PRAGMA_INTERFACE], [1], [Define if the C++ compiler understands #pragma interface.])
+    fi
+
     dnl define correct warning options
 
     CXX_WARNINGS=
-    test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX_WARNINGS='-W -Wall'
+    test -z "$ac_user_cxxflags" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
+	CXX_WARNINGS="-W -Wall"
 
     ac_base_cxx="$CXX"
-    test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
+    test -z "$ac_user_cxxflags" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
 	CXX="$CXX $CXX_WARNINGS $VTABLE_THUNKS"
 
     CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`

@@ -299,7 +299,7 @@ typedef struct device net_device;
 // COMPILE-TIME ASSERTION CHECKING
 
 #if !defined(__cplusplus) || !HAVE_CXX_STATIC_ASSERT
-# define static_assert(x, ...) switch (x) case 0: case !!(x):
+# define static_assert(x, ...) switch ((int) (x)) case 0: case !!((int) (x)):
 #endif
 
 

@@ -49,7 +49,7 @@ StoreTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 StoreTimestamp::simple_action(Packet *p)
 {
-    int offset = (_offset < 0 ? p->length() : _offset);
+    int offset = (_offset < 0 ? (int) p->length() : _offset);
     int delta = offset + 8 - p->length();
     if (WritablePacket *q = p->put(delta < 0 ? 0 : delta)) {
 	memcpy(q->data() + offset, &q->timestamp_anno(), 8);

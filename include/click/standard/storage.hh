@@ -7,6 +7,7 @@ class Packet;
 class Storage { public:
 
     typedef uint32_t index_type;
+    typedef int32_t signed_index_type;
 
     Storage()				: _head(0), _tail(0) { }
 
@@ -45,8 +46,8 @@ class Storage { public:
 inline int
 Storage::size(index_type head, index_type tail) const
 {
-    int x = tail - head;
-    return (x >= 0 ? x : _capacity + x + 1);
+    index_type x = tail - head;
+    return (signed_index_type(x) >= 0 ? x : _capacity + x + 1);
 }
 
 inline int

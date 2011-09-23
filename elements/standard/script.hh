@@ -473,7 +473,7 @@ class Script : public Element { public:
     Timer _timer;
     int *_cur_steps;
 
-    struct Expander : public VariableExpander {
+    class Expander : public VariableExpander { public:
 	Script *script;
 	ErrorHandler *errh;
 	int expand(const String &var, String &expansion, int vartype, int depth) const;

@@ -159,7 +159,7 @@ ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
 
 	    pi++;
 	} else {
-	    int len = (ni == _nnote - 1 ? _note_text.length() : _note[ni+1].pos) - _note[ni].pos;
+	    int len = (ni == _nnote - 1 ? (uint32_t) _note_text.length() : _note[ni+1].pos) - _note[ni].pos;
 	    int record_len = (4 + len + 2);
 	    buf.u[0] = ntohl(record_len | 0x80000000U);
 	    buf.c[4] = '#';
@@ -294,7 +294,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 
 		pi++;
 	    } else {
-		int len = (ni == _nnote - 1 ? _note_text.length() : _note[ni+1].pos) - _note[ni].pos;
+		int len = (ni == _nnote - 1 ? (uint32_t) _note_text.length() : _note[ni+1].pos) - _note[ni].pos;
 		sa << '#';
 		sa.append(_note_text.data() + _note[ni].pos, len);
 		sa << '\n';

@@ -70,6 +70,9 @@
 /* Define if the C++ compiler understands constexpr. */
 #undef HAVE_CXX_CONSTEXPR
 
+/* Define if the C++ compiler understands #pragma interface. */
+#undef HAVE_CXX_PRAGMA_INTERFACE
+
 /* Define if the C++ compiler understands static_assert. */
 #undef HAVE_CXX_STATIC_ASSERT
 

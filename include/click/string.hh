@@ -711,7 +711,7 @@ class String { public:
 
     static String make_claim(char *, int, int); // claim memory
 
-    friend class rep_t;
+    friend struct rep_t;
     friend class StringAccum;
 
 };

@@ -361,7 +361,7 @@ IPAddress::s() const
 
 /** @class IPAddressArg
   @brief Parser class for IPv4 addresses. */
-struct IPAddressArg {
+class IPAddressArg { public:
     static const char *basic_parse(const char *begin, const char *end,
 				   unsigned char value[4], int &nbytes);
     static bool parse(const String &str, IPAddress &result,
@@ -376,7 +376,7 @@ struct IPAddressArg {
 
 /** @class IPPrefixArg
   @brief Parser class for IPv4 prefixes. */
-struct IPPrefixArg {
+class IPPrefixArg { public:
     IPPrefixArg(bool allow_bare_address_ = false)
 	: allow_bare_address(allow_bare_address_) {
     }
@@ -402,7 +402,7 @@ template<> struct has_trivial_copy<IPAddress> : public true_type {};
   @brief Parser class for TCP/UDP ports.
 
   The constructor argument is the relevant IP protocol. */
-struct IPPortArg {
+class IPPortArg { public:
     IPPortArg(int p)
 	: ip_p(p) {
 	assert(ip_p > 0 && ip_p < 256);

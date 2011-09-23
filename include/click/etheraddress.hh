@@ -194,7 +194,7 @@ extern const ArgContext blank_args;
       .read_mp_with("SRC", EtherAddressArg(), ethh.ether_shost)
       ...
   @endcode */
-struct EtherAddressArg {
+class EtherAddressArg { public:
     static bool parse(const String &str, EtherAddress &value, const ArgContext &args = blank_args);
     static bool parse(const String &str, unsigned char *value, const ArgContext &args = blank_args) {
 	return parse(str, *reinterpret_cast<EtherAddress *>(value), args);

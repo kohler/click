@@ -19,7 +19,7 @@
  */
 
 #include <click/config.h>
-#if __GNUC__
+#if HAVE_CXX_PRAGMA_INTERFACE
 # pragma implementation "click/notifier.hh"
 #endif
 #include <click/notifier.hh>

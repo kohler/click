@@ -1446,7 +1446,7 @@ bool cp_time(const String &str, Timestamp *result, bool allow_negative);
 
 /** @class TimestampArg
   @brief Parser class for timestamps. */
-struct TimestampArg {
+class TimestampArg { public:
     TimestampArg(bool is_signed = false)
 	: is_signed(is_signed) {
     }

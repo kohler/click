@@ -68,7 +68,7 @@ RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
     if (bandwidth > 0 && burst < 2 * datasize)
 	burst = 2 * datasize;
     _tb.assign(rate, burst);
-    _limit = (limit >= 0 ? limit : NO_LIMIT);
+    _limit = (limit >= 0 ? unsigned(limit) : NO_LIMIT);
     _active = active;
     _stop = stop;
 
@@ -206,7 +206,7 @@ RatedSource::change_param(const String &s, Element *e, void *vparam,
      int limit;
      if (!IntArg().parse(s, limit))
        return errh->error("syntax error");
-     rs->_limit = (limit < 0 ? NO_LIMIT : limit);
+     rs->_limit = (limit >= 0 ? unsigned(limit) : NO_LIMIT);
      break;
    }
 

@@ -312,7 +312,7 @@ struct IP6AddressArg {
 
 /** @class IP6PrefixArg
   @brief Parser class for IPv6 address prefixes. */
-struct IP6PrefixArg {
+class IP6PrefixArg { public:
     IP6PrefixArg(bool allow_bare_address_ = false)
 	: allow_bare_address(allow_bare_address_) {
     }

@@ -207,7 +207,7 @@ class Lexer { public:
 
     friend class Compound;
     friend class TunnelEnd;
-    friend class FileState;
+    friend struct FileState;
 
 };
 

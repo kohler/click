@@ -26,7 +26,7 @@ class ErrorHandler;
   function doesn't modify Args internals.  Also, ArgContext objects are smaller
   and quicker to construct than Args objects.
 */
-struct ArgContext {
+class ArgContext { public:
 
     /** @brief Construct an argument context.
      * @param errh optional error handler */
@@ -176,10 +176,9 @@ struct ArgContext {
   parse succeeds.  (This doesn't matter in the context of Args, but can matter
   to users who call a parse function directly.)
 */
-struct Args : public ArgContext {
-
-  private:
+class Args : public ArgContext {
     struct Slot;
+
   public:
 
     /** @brief Construct an argument parser.
@@ -879,7 +878,7 @@ void args_base_read_all_with(Args *args, const char *keyword, int flags,
 /** @endcond never */
 
 
-struct NumArg {
+class NumArg { public:
     enum {
 	status_ok = 0,
 	status_inval = EINVAL,
@@ -906,7 +905,7 @@ struct NumArg {
   Integer overflow is treated as an error.
 
   @sa SaturatingIntArg, BoundedIntArg */
-struct IntArg : public NumArg {
+class IntArg : public NumArg { public:
 
     typedef uint32_t limb_type;
 
@@ -970,7 +969,7 @@ struct IntArg : public NumArg {
   not an error; instead, the closest representable value is returned.
 
   @sa IntArg */
-struct SaturatingIntArg : public IntArg {
+class SaturatingIntArg : public IntArg { public:
     SaturatingIntArg(int b = 0)
 	: IntArg(b) {
     }
@@ -988,7 +987,7 @@ struct SaturatingIntArg : public IntArg {
   less than @a min or greater than @a max are treated as errors.
 
   @sa IntArg */
-struct BoundedIntArg : public IntArg {
+class BoundedIntArg : public IntArg { public:
     BoundedIntArg(int min_value, int max_value, int b = 0)
 	: IntArg(b), min_value(min_value), max_value(max_value) {
     }
@@ -1030,7 +1029,7 @@ template<> struct DefaultArg<long long> : public IntArg {};
 
 /** @class FixedPointArg
   @brief Parser class for fixed-point numbers with @a b bits of fraction. */
-struct FixedPointArg : public NumArg {
+class FixedPointArg : public NumArg { public:
     explicit FixedPointArg(int b, int exponent = 0)
 	: fraction_bits(b), exponent_delta(exponent) {
     }
@@ -1053,7 +1052,7 @@ FixedPointArg::parse_saturating(const String &str, uint32_t &result, const ArgCo
 
 /** @class DecimalFixedPointArg
   @brief Parser class for fixed-point numbers with @a d decimal digits of fraction. */
-struct DecimalFixedPointArg : public NumArg {
+class DecimalFixedPointArg : public NumArg { public:
     DecimalFixedPointArg(int d, int exponent = 0)
 	: fraction_digits(d), exponent_delta(exponent) {
     }
@@ -1080,7 +1079,7 @@ DecimalFixedPointArg::parse_saturating(const String &str, uint32_t &result, cons
 #if HAVE_FLOAT_TYPES
 /** @class DoubleArg
   @brief Parser class for double-precision floating point numbers. */
-struct DoubleArg : public NumArg {
+class DoubleArg : public NumArg { public:
     DoubleArg() {
     }
     bool parse(const String &str, double &result, const ArgContext &args = blank_args);
@@ -1093,7 +1092,7 @@ template<> struct DefaultArg<double> : public DoubleArg {};
 
 /** @class BoolArg
   @brief Parser class for booleans. */
-struct BoolArg {
+class BoolArg { public:
     static bool parse(const String &str, bool &result, const ArgContext &args = blank_args);
     static String unparse(bool x) {
 	return String(x);
@@ -1103,7 +1102,7 @@ struct BoolArg {
 template<> struct DefaultArg<bool> : public BoolArg {};
 
 
-struct UnitArg {
+class UnitArg { public:
     explicit UnitArg(const char *unit_def, const char *prefix_chars_def)
 	: units_(reinterpret_cast<const unsigned char *>(unit_def)),
 	  prefix_chars_(reinterpret_cast<const unsigned char *>(prefix_chars_def)) {
@@ -1120,7 +1119,7 @@ struct UnitArg {
   @brief Parser class for bandwidth specifications.
 
   Handles suffixes such as "Gbps", "k", etc. */
-struct BandwidthArg : public NumArg {
+class BandwidthArg : public NumArg { public:
     bool parse(const String &str, uint32_t &result, const ArgContext & = blank_args);
     static String unparse(uint32_t x);
     int status;
@@ -1130,7 +1129,7 @@ struct BandwidthArg : public NumArg {
 #if !CLICK_TOOL
 /** @class AnnoArg
   @brief Parser class for annotation specifications. */
-struct AnnoArg {
+class AnnoArg { public:
     AnnoArg(int s)
 	: size(s) {
     }
@@ -1146,7 +1145,7 @@ struct AnnoArg {
 
   The @a d argument is the number of digits of fraction to parse.
   For example, to parse milliseconds, use SecondsArg(3). */
-struct SecondsArg : public NumArg {
+class SecondsArg : public NumArg { public:
     SecondsArg(int d = 0)
 	: fraction_digits(d) {
     }
@@ -1162,7 +1161,7 @@ struct SecondsArg : public NumArg {
 
 /** @class AnyArg
   @brief Parser class that accepts any argument. */
-struct AnyArg {
+class AnyArg { public:
     static bool parse(const String &, const ArgContext & = blank_args) {
 	return true;
     }
@@ -1181,7 +1180,7 @@ bool cp_string(const String &str, String *result, String *rest);
 
 /** @class StringArg
   @brief Parser class for possibly-quoted strings. */
-struct StringArg {
+class StringArg { public:
     static bool parse(const String &str, String &result, const ArgContext & = blank_args) {
 	return cp_string(str, &result, 0);
     }
@@ -1194,7 +1193,7 @@ bool cp_keyword(const String &str, String *result, String *rest);
 
 /** @class KeywordArg
   @brief Parser class for keywords. */
-struct KeywordArg {
+class KeywordArg { public:
     static bool parse(const String &str, String &result, const ArgContext & = blank_args) {
 	return cp_keyword(str, &result, 0);
     }
@@ -1205,7 +1204,7 @@ bool cp_word(const String &str, String *result, String *rest);
 
 /** @class KeywordArg
   @brief Parser class for words. */
-struct WordArg {
+class WordArg { public:
     static bool parse(const String &str, String &result, const ArgContext & = blank_args) {
 	return cp_word(str, &result, 0);
     }
@@ -1215,7 +1214,7 @@ struct WordArg {
 #if CLICK_USERLEVEL || CLICK_TOOL
 /** @class FilenameArg
   @brief Parser class for filenames. */
-struct FilenameArg {
+class FilenameArg { public:
     static bool parse(const String &str, String &result, const ArgContext &args = blank_args);
 };
 #endif
@@ -1224,7 +1223,7 @@ struct FilenameArg {
 #if !CLICK_TOOL
 /** @class ElementArg
   @brief Parser class for elements. */
-struct ElementArg {
+class ElementArg { public:
     static bool parse(const String &str, Element *&result, const ArgContext &args);
 };
 
@@ -1232,7 +1231,7 @@ template<> struct DefaultArg<Element *> : public ElementArg {};
 
 /** @class ElementCastArg
   @brief Parser class for elements of type @a t. */
-struct ElementCastArg {
+class ElementCastArg { public:
     ElementCastArg(const char *t)
 	: type(t) {
     }

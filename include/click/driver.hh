@@ -11,7 +11,7 @@ class Router;
 class Master;
 class ErrorHandler;
 class Lexer;
-class ArchiveElement;
+struct ArchiveElement;
 
 void click_static_initialize();
 void click_static_cleanup();
@@ -28,7 +28,7 @@ CLICK_ENDDECLS
 #elif CLICK_TOOL
 CLICK_DECLS
 class ErrorHandler;
-class ArchiveElement;
+struct ArchiveElement;
 
 void click_static_initialize();
 

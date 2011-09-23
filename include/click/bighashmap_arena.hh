@@ -43,7 +43,7 @@ class HashMap_Arena { public:
 
     void *hard_alloc();
 
-    friend class Link;		// shut up, compiler
+    friend struct Link;		// shut up, compiler
 
 };
 

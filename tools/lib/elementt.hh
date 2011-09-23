@@ -4,7 +4,7 @@
 #include "eclasst.hh"
 #include "landmarkt.hh"
 
-struct ElementT {
+class ElementT { public:
 
     int flags;
 

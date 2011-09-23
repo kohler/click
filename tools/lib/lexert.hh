@@ -11,7 +11,7 @@ class ElementClassT;
 class StringAccum;
 class LexerTInfo;
 class VariableEnvironment;
-class ArchiveElement;
+struct ArchiveElement;
 
 enum {
     lexEOF = 0,

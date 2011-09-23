@@ -637,7 +637,8 @@ click_qsort(void *base, size_t n, size_t size,
 	size_t s = (pa - a < pb - pa ? pa - a : pb - pa);
 	if (s)
 	    cq_swapfunc(a, pb - s, s, swaptype);
-	s = ((size_t) (pd - pc) < pn - pd - size ? pd - pc : pn - pd - size);
+	size_t pd_minus_pc = pd - pc;
+	s = (pd_minus_pc < pn - pd - size ? pd_minus_pc : pn - pd - size);
 	if (s)
 	    cq_swapfunc(pb, pn - s, s, swaptype);
 

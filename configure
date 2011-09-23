@@ -3130,12 +3130,14 @@ _ACEOF
 
 
 
-    ac_user_cc=; test -n "$CC" && ac_user_cc=y
-    ac_user_kernel_cc=; test -n "$KERNEL_CC" && ac_user_kernel_cc=y
-    ac_user_cxx=; test -n "$CXX" && ac_user_cxx=y
-    ac_user_build_cxx=; test -n "$BUILD_CXX" && ac_user_build_cxx=y
-    ac_user_kernel_cxx=; test -n "$KERNEL_CXX" && ac_user_kernel_cxx=y
-    ac_user_depcflags=; test -n "$DEPCFLAGS" && ac_user_depcflags=y
+    ac_user_cc=${CC+y}
+    ac_user_cflags=${CFLAGS+y}
+    ac_user_kernel_cc=${KERNEL_CC+y}
+    ac_user_cxx=${CXX+y}
+    ac_user_cxxflags=${CXXFLAGS+y}
+    ac_user_build_cxx=${BUILD_CXX+y}
+    ac_user_kernel_cxx=${KENREL_CXX+y}
+    ac_user_depcflags=${DEPCFLAGS+y}
     ac_compile_with_warnings=y
 
     conf_auxdir='$(top_srcdir)'
@@ -4662,10 +4664,10 @@ done
 
 
     ac_base_cc="$CC"
-    test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
-	CC="$CC -W -Wall"
+    test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
+	CFLAGS="$CFLAGS -W -Wall"
 
-    test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depcflags" && \
+    test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depcflags" && \
 	DEPCFLAGS="-MD -MP"
 
 
@@ -5160,22 +5162,6 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-    if test -n "$GXX"; then
-	GXX_VERSION=`$CXX --version | head -n 1 | sed 's/^[^0-9]*\([0-9.]*\).*/\1/'`
-	GXX_MAJOR=`echo $GXX_VERSION | sed 's/\..*//'`
-	GXX_MINOR=`echo $GXX_VERSION | sed 's/^[^.]*\.\([^.]*\).*/\1/'`
-
-	if test $GXX_MAJOR -lt 2 -o \( $GXX_MAJOR -eq 2 -a $GXX_MINOR -le 7 \); then
-	    as_fn_error $? "
-=========================================
-
-Your GNU C++ compiler ($CXX) is too old!
-Either download a newer compiler, or tell me to use a different compiler
-by setting the 'CXX' environment variable and rerunning me.
-
-=========================================" "$LINENO" 5
-	fi
-    fi
 
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether <new> works" >&5
@@ -5321,13 +5307,49 @@ $as_echo "#define HAVE_CXX_STATIC_ASSERT 1" >>confdefs.h
 
     fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the C++ compiler understands #pragma interface" >&5
+$as_echo_n "checking whether the C++ compiler understands #pragma interface... " >&6; }
+if ${ac_cv_cxx_pragma_interface+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	save_cxxflags="$CXXFLAGS"; CXXFLAGS="$CXXFLAGS -Werror -Wall -W"
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#pragma interface "foo.c"
+#pragma implementation "foo.c"
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ac_cv_cxx_pragma_interface=yes
+else
+  ac_cv_cxx_pragma_interface=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+        CXXFLAGS="$save_cxxflags"
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_pragma_interface" >&5
+$as_echo "$ac_cv_cxx_pragma_interface" >&6; }
+    if test "$ac_cv_cxx_pragma_interface" = yes; then
+
+$as_echo "#define HAVE_CXX_PRAGMA_INTERFACE 1" >>confdefs.h
+
+    fi
+
 
     CXX_WARNINGS=
-    test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX_WARNINGS='-W -Wall'
+    test -z "$ac_user_cxxflags" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
+	CXX_WARNINGS="-W -Wall"
 
     ac_base_cxx="$CXX"
-    test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
+    test -z "$ac_user_cxxflags" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
 	CXX="$CXX $CXX_WARNINGS $VTABLE_THUNKS"
 
     CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
@@ -7339,7 +7361,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7342 "configure"
+#line 7364 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER

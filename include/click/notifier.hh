@@ -3,7 +3,7 @@
 #define CLICK_NOTIFIER_HH
 #include <click/task.hh>
 #include <click/atomic.hh>
-#if __GNUC__
+#if HAVE_CXX_PRAGMA_INTERFACE
 # pragma interface "click/notifier.hh"
 #endif
 CLICK_DECLS

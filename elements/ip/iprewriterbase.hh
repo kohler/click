@@ -8,7 +8,7 @@ CLICK_DECLS
 class IPMapper;
 class IPRewriterPattern;
 
-struct IPRewriterInput {
+class IPRewriterInput { public:
     enum {
 	i_drop, i_nochange, i_keep, i_pattern, i_mapper
     };
