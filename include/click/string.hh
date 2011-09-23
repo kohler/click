@@ -44,6 +44,10 @@ class String { public:
     inline String(const char *s, int len) {
 	assign(s, len, false);
     }
+    /** @overload */
+    inline String(const unsigned char *s, int len) {
+	assign(reinterpret_cast<const char *>(s), len, false);
+    }
 
     /** @brief Construct a String containing the characters from @a begin
      * to @a end.
