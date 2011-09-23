@@ -2395,9 +2395,9 @@ Router::static_initialize()
 	add_read_handler(0, "scheduling_profile", router_read_handler, (void *) GH_SCHEDULING_PROFILE);
 #endif
 #if CLICK_STATS >= 2
-        add_read_handler(0, "element_cycles.csv", router_read_handler, GH_ELEMENT_CYCLES);
-        add_read_handler(0, "class_cycles.csv", router_read_handler, GH_CLASS_CYCLES);
-        add_write_handler(0, "reset_cycles", router_write_handler, GH_RESET_CYCLES);
+        add_read_handler(0, "element_cycles.csv", router_read_handler, (void *)GH_ELEMENT_CYCLES);
+        add_read_handler(0, "class_cycles.csv", router_read_handler, (void *)GH_CLASS_CYCLES);
+        add_write_handler(0, "reset_cycles", router_write_handler, (void *)GH_RESET_CYCLES);
 #endif
     }
 }
