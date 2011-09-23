@@ -65,19 +65,22 @@ typedef struct crypto_tfm *md5_state_t;
 typedef struct crypto_hash *md5_state_t;
 #endif
 
-static inline void md5_init(md5_state_t *pms) {
+static inline int md5_init(md5_state_t *pms) {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
     *pms = crypto_alloc_tfm("md5", 0);
-    if (*pms)
-        crypto_digest_init(*pms);
+    if (IS_ERR(*pms))
+	return PTR_ERR(*pms);
+    crypto_digest_init(*pms);
+    return 0;
 #else
     *pms = crypto_alloc_hash("md5", 0, CRYPTO_ALG_ASYNC);
-    if (*pms) {
-        struct hash_desc desc;
-        desc.tfm = *pms;
-        desc.flags = 0;
-        crypto_hash_init(&desc);
-    }
+    if (IS_ERR(*pms))
+	return PTR_ERR(*pms);
+    struct hash_desc desc;
+    desc.tfm = *pms;
+    desc.flags = 0;
+    crypto_hash_init(&desc);
+    return 0;
 #endif
 }
 
@@ -145,7 +148,7 @@ extern "C"
 #endif
 
 /* Initialize the algorithm. */
-void md5_init(md5_state_t *pms);
+int md5_init(md5_state_t *pms);
 
 /* Append a string to the message. */
 void md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes);
