@@ -1,0 +1,12 @@
+%info
+Tests crypto algorithms with the CryptoTest element.
+
+%require
+click-buildtool provides CryptoTest
+
+%script
+click -qe CryptoTest
+
+%expect stderr
+config:1:{{.*}}
+  All tests pass!
