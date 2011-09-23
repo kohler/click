@@ -465,6 +465,13 @@ click_random_srandom()
 	result ^= buf.u32[i];
 	result = (result << 1) | (result >> 31);
     }
+
+#if CLICK_LINUXMODULE
+    uint32_t kernrand;
+    get_random_bytes(&kernrand, sizeof(kernrand));
+    result ^= kernrand;
+#endif
+
     click_srandom(result);
 }
 
