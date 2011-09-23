@@ -59,64 +59,52 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
-typedef struct crypto_tfm *md5_state_t;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+typedef struct hash_desc md5_state_t;
 #else
-typedef struct crypto_hash *md5_state_t;
+typedef struct crypto_tfm *md5_state_t;
 #endif
 
 static inline int md5_init(md5_state_t *pms) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+    pms->tfm = crypto_alloc_hash("md5", 0, CRYPTO_ALG_ASYNC);
+    if (IS_ERR(pms->tfm))
+	return PTR_ERR(pms->tfm);
+    pms->flags = 0;
+    crypto_hash_init(pms);
+    return 0;
+#else
     *pms = crypto_alloc_tfm("md5", 0);
     if (IS_ERR(*pms))
 	return PTR_ERR(*pms);
     crypto_digest_init(*pms);
     return 0;
-#else
-    *pms = crypto_alloc_hash("md5", 0, CRYPTO_ALG_ASYNC);
-    if (IS_ERR(*pms))
-	return PTR_ERR(*pms);
-    struct hash_desc desc;
-    desc.tfm = *pms;
-    desc.flags = 0;
-    crypto_hash_init(&desc);
-    return 0;
 #endif
 }
 
 static inline void md5_append(md5_state_t *pms, const unsigned char *data, int nbytes) {
-    if (*pms) {
-        struct scatterlist sg;
-        sg_init_one(&sg, const_cast<uint8_t *>(data), nbytes);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
-        crypto_digest_update(*pms, sg, 1);
+    struct scatterlist sg;
+    sg_init_one(&sg, const_cast<uint8_t *>(data), nbytes);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+    crypto_hash_update(pms, &sg, nbytes);
 #else
-        struct hash_desc desc;
-        desc.tfm = *pms;
-        desc.flags = 0;
-        crypto_hash_update(&desc, &sg, nbytes);
+    crypto_digest_update(*pms, sg, 1);
 #endif
-    }
 }
 
 static inline void md5_finish(md5_state_t *pms, const unsigned char digest[16]) {
-    if (*pms) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
-        crypto_digest_final(*pms, digest);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+    crypto_hash_final(pms, digest);
 #else
-        struct hash_desc desc;
-        desc.tfm = *pms;
-        desc.flags = 0;
-        crypto_hash_final(&desc, digest);
+    crypto_digest_final(*pms, digest);
 #endif
-    }
 }
 
 static inline void md5_free(md5_state_t *pms) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
-    crypto_free_tfm(*pms);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+    crypto_free_hash(pms->tfm);
 #else
-    crypto_free_hash(*pms);
+    crypto_free_tfm(*pms);
 #endif
 }
 

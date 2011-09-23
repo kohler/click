@@ -40,9 +40,14 @@ md5_test(const char *s, size_t len, const char *expected_digest,
 	return 0;
     }
 
-    md5_append(&md5s, reinterpret_cast<const unsigned char *>(s), len);
+    // In the Linux kernel we can't MD5 a constant string (virtual memory
+    // stuff).
+    char *x = new char[len];
+    memcpy(x, s, len);
+    md5_append(&md5s, reinterpret_cast<const unsigned char *>(x), len);
+    delete[] x;
+
     unsigned char digest[16];
-    memset(digest, 255, 16);
     md5_finish(&md5s, digest);
     md5_free(&md5s);
 
@@ -57,7 +62,7 @@ CryptoTest::initialize(ErrorHandler *errh)
     if (md5_test("Marriage\n\n\nThis institution,\nperhaps one should say enterprise\nout of respect for which\none says one need not change one's mind\n", 128, "\x93\x48\x6a\xc6\xe0\x32\x44\xf0\x32\xb3\x24\xba\x4a\xde\x28\x43", errh, __FILE__, __LINE__) < 0)
 	return -1;
 
-    if (md5_test("This is a test\n", 15, "\xFF\x22\x94\x13\x36\x95\x60\x98\xAE\x9A\x56\x42\x89\xD1\xBF\x1B", errh, __FILE__, __LINE__) < 0)
+    if (md5_test("This is a test\n", 15, "\xff\x22\x94\x13\x36\x95\x60\x98\xae\x9a\x56\x42\x89\xd1\xbf\x1b", errh, __FILE__, __LINE__) < 0)
 	return -1;
 
     errh->message("All tests pass!");

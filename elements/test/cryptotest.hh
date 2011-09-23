@@ -27,7 +27,7 @@ class CryptoTest : public Element { public:
 
     const char *class_name() const		{ return "CryptoTest"; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *errh);
 
 };
 
