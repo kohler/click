@@ -59,31 +59,62 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
 typedef struct crypto_tfm *md5_state_t;
+#else
+typedef struct crypto_hash *md5_state_t;
+#endif
 
 static inline void md5_init(md5_state_t *pms) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
     *pms = crypto_alloc_tfm("md5", 0);
     if (*pms)
-	crypto_digest_init(*pms);
+        crypto_digest_init(*pms);
+#else
+    *pms = crypto_alloc_hash("md5", 0, CRYPTO_ALG_ASYNC);
+    if (*pms) {
+        struct hash_desc desc;
+        desc.tfm = *pms;
+        desc.flags = 0;
+        crypto_hash_init(&desc);
+    }
+#endif
 }
 
 static inline void md5_append(md5_state_t *pms, const unsigned char *data, int nbytes) {
     if (*pms) {
-	struct scatterlist sg[1];
-	sg[0].page = virt_to_page(data);
-	sg[0].offset = offset_in_page(data);
-	sg[0].length = nbytes;
-	crypto_digest_update(*pms, sg, 1);
+        struct scatterlist sg;
+        sg_init_one(&sg, const_cast<uint8_t *>(data), nbytes);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
+        crypto_digest_update(*pms, sg, 1);
+#else
+        struct hash_desc desc;
+        desc.tfm = *pms;
+        desc.flags = 0;
+        crypto_hash_update(&desc, &sg, nbytes);
+#endif
     }
 }
 
 static inline void md5_finish(md5_state_t *pms, const unsigned char digest[16]) {
-    if (*pms)
-	crypto_digest_final(*pms, digest);
+    if (*pms) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
+        crypto_digest_final(*pms, digest);
+#else
+        struct hash_desc desc;
+        desc.tfm = *pms;
+        desc.flags = 0;
+        crypto_hash_final(&desc, digest);
+#endif
+    }
 }
 
 static inline void md5_free(md5_state_t *pms) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
     crypto_free_tfm(*pms);
+#else
+    crypto_free_hash(*pms);
+#endif
 }
 
 #else
