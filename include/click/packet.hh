@@ -574,6 +574,34 @@ class Packet { public:
     }
 #endif
 
+    /** @brief Return void * sized annotation at offset @a i.
+     * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - sizeof(void *)
+     * @pre On aligned targets, @a i must be aligned properly.
+     *
+     * Affects user annotation bytes [@a i, @a i+sizeof(void *)]. */
+    void *anno_ptr(int i) const {
+	assert(i >= 0 && i <= anno_size - (int)sizeof(void *));
+#if !HAVE_INDIFFERENT_ALIGNMENT
+	assert(i % __alignof__(void *) == 0);
+#endif
+	return *reinterpret_cast<void * const *>(xanno()->c + i);
+    }
+
+    /** @brief Set void * sized annotation at offset @a i.
+     * @param i annotation offset in bytes
+     * @param x value
+     * @pre 0 <= @a i < @link Packet::anno_size anno_size @endlink - sizeof(void *)
+     * @pre On aligned targets, @a i must be aligned properly.
+     *
+     * Affects user annotation bytes [@a i, @a i+sizeof(void *)]. */
+    void set_anno_ptr(int i, const void *x) {
+	assert(i >= 0 && i <= anno_size - (int)sizeof(void *));
+#if !HAVE_INDIFFERENT_ALIGNMENT
+	assert(i % __alignof__(void *) == 0);
+#endif
+	*reinterpret_cast<const void **>(xanno()->c + i) = x;
+    }
+
     inline void clear_annotations(bool all = true);
     inline void copy_annotations(const Packet *);
     //@}
