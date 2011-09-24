@@ -199,8 +199,8 @@ case $driver in
     idefs="@DEFS@ -DCLICK_LINUXMODULE"
     iincludes="${include_source} -I${includedir}"
     icppflags="@CPPFLAGS@"
-    icxxflags="@CXXFLAGS_NDEBUG@ @DEPCFLAGS@"
-    icflags="@CFLAGS_NDEBUG@ @DEPCFLAGS@"
+    icxxflags="@KERNEL_CXXFLAGS@ @DEPCFLAGS@"
+    icflags="@KERNEL_CFLAGS@ @DEPCFLAGS@"
     command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     c_command="${CC-@CC@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CFLAGS-$icflags} $cflags $compileflag"
     driver=linuxmodule;;
@@ -208,8 +208,8 @@ case $driver in
     idefs="@DEFS@ -DCLICK_BSDMODULE"
     iincludes="-nostdinc ${include_source} -I${includedir}"
     icppflags="@CPPFLAGS@"
-    icxxflags="-fPIC @CXXFLAGS_NDEBUG@ @DEPCFLAGS@"
-    icflags="-fPIC @CFLAGS_NDEBUG@ @DEPCFLAGS@"
+    icxxflags="-fPIC @KERNEL_CXXFLAGS@ @DEPCFLAGS@"
+    icflags="-fPIC @KERNEL_CFLAGS@ @DEPCFLAGS@"
     command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     c_command="${CC-@CC@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CFLAGS-$icflags} $cflags $compileflag"
     driver=bsdmodule;;

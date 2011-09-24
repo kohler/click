@@ -92,11 +92,11 @@ OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(BSDMODULE_OBJS) elements.o
 CPPFLAGS = @CPPFLAGS@ -DCLICK_BSDMODULE
 
 ifeq ($(target_cpu),x86_64)
-CFLAGS = @CFLAGS_NDEBUG@ -g -fPIC -fno-builtin
-CXXFLAGS = @CXXFLAGS_NDEBUG@ -g -fPIC -fno-builtin
+CFLAGS = @KERNEL_CFLAGS@ -g -fPIC -fno-builtin
+CXXFLAGS = @KERNEL_CXXFLAGS@ -g -fPIC -fno-builtin
 else
-CFLAGS = @CFLAGS_NDEBUG@ -g -fno-builtin
-CXXFLAGS = @CXXFLAGS_NDEBUG@ -g -fno-builtin
+CFLAGS = @KERNEL_CFLAGS@ -g -fno-builtin
+CXXFLAGS = @KERNEL_CXXFLAGS@ -g -fno-builtin
 endif
 
 DEFS = @DEFS@ -D_KERNEL
