@@ -1,5 +1,36 @@
 Click NEWS
 
+Version 2.0.1   24.Sep.2011
+
+* ns-3 support, thanks to Lalith Suresh and Sascha Alexander Jopen.
+
+* Important bug fixes for user-level ToDevice thanks to Jaeyong Yoo.
+
+* Better handling for time: Timestamp knows about steady clocks (also known
+  as monotonic clocks -- clocks that never go backwards) on most platforms,
+  so Timers should go off at predictable intervals even when the system
+  time is set backwards.
+
+* IPRewriter and friends: TCP supports >2GB transfers and multiple sequence
+  number transitions; UDP supports different timeouts for streaming
+  connections and RPC-like connections.
+
+* Configure with --enable-stats=2 for more precise cycle counting.
+
+* Classifier and friends (IPFilter, etc.): Correct bugs and improve
+  optimization.
+
+* Bug fixes for AddressInfo, user-level packet pool (thanks to Seiichi
+  Tetsukawa).
+
+* Support packages on patchless Linux installs.
+
+* Thanks to Cliff Frey, and to Felipe Chaulet, Sascha Alexander Jopen,
+  Christian Kreibich, Meraki, Inc., Roberto Riggio, Jim Roewe, Robert
+  Sombrutzki, Lalith Suresh, Dimitris Syrivelis, Seiichi Tetsukawa, Michael
+  W.S. Yee, Jaeyong Yoo, and all other contributors.
+
+
 Version 2.0   16.Jul.2011
 
 * New elements: AdjustTimestamp, BlockThread, ClickyInfo, EtherVLANEncap,
