@@ -78,6 +78,7 @@ class wmain : public crouter { public:
     void on_driver_changed();
     void config_set_driver(int driver);
     void config_check(bool install);
+    void buffer_to_config();
 
     const String &element_showing() const {
 	return _eview_name;

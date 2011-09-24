@@ -318,9 +318,11 @@ void crouter::run(ErrorHandler *errh)
     int pos = 0;
     while (pos != _conf.length()) {
 	ssize_t r = write(configpipe[1], _conf.begin() + pos, _conf.length() - pos);
-	if (r == 0 || (r == -1 && errno != EAGAIN && errno != EINTR))
+	if (r == 0 || (r == -1 && errno != EAGAIN && errno != EINTR)) {
+	    if (r == -1)
+		errh->message("%s while writing configuration", strerror(errno));
 	    break;
-	else if (r != -1)
+	} else if (r != -1)
 	    pos += r;
     }
     if (pos != _conf.length()) {

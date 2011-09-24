@@ -103,6 +103,7 @@ static void on_view_diagram_toggled(GtkCheckMenuItem *check, gpointer user_data)
 static void on_toolbar_run_activate(GtkToolButton *, gpointer user_data)
 {
     wmain *rw = reinterpret_cast<wmain *>(user_data);
+    rw->buffer_to_config();
     rw->run(ErrorHandler::default_handler());
 }
 
@@ -423,6 +424,16 @@ void wmain::on_open_kernel()
     }
 }
 
+void wmain::buffer_to_config()
+{
+    GtkTextIter i1, i2;
+    gtk_text_buffer_get_start_iter(_config_buffer, &i1);
+    gtk_text_buffer_get_end_iter(_config_buffer, &i2);
+    char *data = gtk_text_buffer_get_text(_config_buffer, &i1, &i2, FALSE);
+    set_config(String(data), true);
+    g_free(data);
+}
+
 void wmain::on_save_file(bool save_as)
 {
     if (save_as || !_savefile) {
@@ -455,21 +466,17 @@ void wmain::on_save_file(bool save_as)
 	}
     }
 
-    GtkTextIter i1, i2;
-    gtk_text_buffer_get_start_iter(_config_buffer, &i1);
-    gtk_text_buffer_get_end_iter(_config_buffer, &i2);
-    char *data = gtk_text_buffer_get_text(_config_buffer, &i1, &i2, FALSE);
+    buffer_to_config();
 
     GError *err = NULL;
-    if (!g_file_set_contents(_savefile.c_str(), data, -1, &err)) {
+    String conf = config();
+    if (!g_file_set_contents(_savefile.c_str(), conf.data(), conf.length(), &err)) {
 	GatherErrorHandler gerrh(true);
 	gerrh.error("Save error: %s", err->message);
 	gerrh.run_dialog(GTK_WINDOW(_window));
 	g_error_free(err);
     } else
 	set_save_file(_savefile, true);
-
-    g_free(data);
 }
 
 void wmain::on_export_diagram()
