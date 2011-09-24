@@ -75,15 +75,10 @@ config.h.in
 configure
 configure.ac
 images
-po
 src
-stamp-h.in
 
 ./apps/clicky/images:
 throbber.gif
-
-./apps/clicky/po:
-POTFILES.in
 
 ./apps/clicky/src:
 Makefile.am
