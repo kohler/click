@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <dirent.h>
@@ -333,37 +334,66 @@ shell_quote(const String &str, bool quote_tilde)
 String
 shell_command_output_string(String cmdline, const String &input, ErrorHandler *errh)
 {
-    FILE *f = tmpfile();
-    if (!f) {
-	errh->fatal("cannot create temporary file: %s", strerror(errno));
-	return String();
+    FILE *f;
+    int pfd[2] = {-1, -1};
+    pid_t child = -1;
+    StringAccum sa;
+
+    if (!(f = tmpfile())) {
+	errh->error("%<%s%>: tmpfile: %s", cmdline.c_str(), strerror(errno));
+	goto out;
     }
     ignore_result(fwrite(input.data(), 1, input.length(), f));
     fflush(f);
     rewind(f);
 
-    String new_cmdline = cmdline + " <&" + String(fileno(f));
-    FILE *p = popen(new_cmdline.c_str(), "r");
-    if (!p) {
-	errh->fatal("%<%s%>: %s", cmdline.c_str(), strerror(errno));
-	return String();
+    if (pipe(pfd) == -1) {
+	errh->error("%<%s%>: pipe: %s", cmdline.c_str(), strerror(errno));
+	fclose(f);
+	goto out;
     }
 
-  StringAccum sa;
-  while (!feof(p)) {
-    if (char *s = sa.reserve(2048)) {
-      int x = fread(s, 1, 2048, p);
-      if (x > 0)
-	sa.adjust_length(x);
-    } else /* out of memory */
-      break;
-  }
-  if (!feof(p))
-    errh->warning("%<%s%> output too long, truncated", cmdline.c_str());
+    child = fork();
+    if (child == -1)
+	errh->error("%<%s%>: fork: %s", cmdline.c_str(), strerror(errno));
+    else if (child == 0) {
+	close(0);
+	close(1);
+	close(pfd[0]);
+	dup2(fileno(f), 0);
+	dup2(pfd[1], 1);
+	close(fileno(f));
+	close(pfd[1]);
 
-  fclose(f);
-  pclose(p);
-  return sa.take_string();
+	execl("/bin/sh", "sh", "-c", cmdline.c_str(), (char *) 0);
+	exit(127);
+    }
+
+    close(pfd[1]);
+    fclose(f);
+    while (1) {
+	char *s = sa.reserve(4096);
+	if (!s) {
+	    errh->error("%<%s%>: out of memory", cmdline.c_str());
+	    sa.clear();
+	    break;
+	}
+	ssize_t r = read(pfd[0], s, 4096);
+	if (r == 0 || (r == -1 && errno != EAGAIN && errno != EINTR)) {
+	    if (r == -1)
+		errh->error("%<%s%>: %s", cmdline.c_str(), strerror(errno));
+	    break;
+	} else if (r != -1)
+	    sa.adjust_length(r);
+    }
+
+    close(pfd[0]);
+    int status;
+    while (child > 0 && waitpid(child, &status, 0) != child)
+	/* nada */;
+
+ out:
+    return sa.take_string();
 }
 
 String
