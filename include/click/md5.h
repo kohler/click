@@ -82,6 +82,14 @@ static inline int md5_init(md5_state_t *pms) {
 #endif
 }
 
+static inline void md5_reinit(md5_state_t *pms) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+    crypto_hash_init(pms);
+#else
+    crypto_digest_init(*pms);
+#endif
+}
+
 static inline void md5_append(md5_state_t *pms, const unsigned char *data, int nbytes) {
     struct scatterlist sg;
     sg_init_one(&sg, const_cast<uint8_t *>(data), nbytes);
@@ -137,6 +145,11 @@ extern "C"
 
 /* Initialize the algorithm. */
 int md5_init(md5_state_t *pms);
+
+/* Re-initialize the algorithm after a prior md5_init(). */
+static inline void md5_reinit(md5_state_t *pms) {
+    md5_init(pms);
+}
 
 /* Append a string to the message. */
 void md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes);
