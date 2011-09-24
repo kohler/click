@@ -678,13 +678,13 @@ AR
 KERNEL_CXX
 KERNEL_CC
 CXXCPP
-CXXFLAGS_NDEBUG
+KERNEL_CXXFLAGS
 ac_ct_CXX
 CXXFLAGS
 EGREP
 GREP
 CPP
-CFLAGS_NDEBUG
+KERNEL_CFLAGS
 DEPCFLAGS
 OBJEXT
 EXEEXT
@@ -4664,14 +4664,18 @@ done
 
 
     ac_base_cc="$CC"
-    test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
-	CFLAGS="$CFLAGS -W -Wall"
 
     test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depcflags" && \
 	DEPCFLAGS="-MD -MP"
 
 
-    CFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
+        KERNEL_CFLAGS=`echo "$CFLAGS" | sed 's/-g//'`
+
+
+    WARNING_CFLAGS=
+    test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
+	WARNING_CFLAGS=" -W -Wall"
+    CFLAGS="$CFLAGS$WARNING_CFLAGS"
 
     for ac_header in sys/types.h unistd.h
 do :
@@ -5340,15 +5344,11 @@ $as_echo "#define HAVE_CXX_PRAGMA_INTERFACE 1" >>confdefs.h
     fi
 
 
-    CXX_WARNINGS=
-    test -z "$ac_user_cxxflags" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX_WARNINGS="-W -Wall"
-
     ac_base_cxx="$CXX"
     test -z "$ac_user_cxxflags" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX="$CXX $CXX_WARNINGS"
+	CXX="$CXX$CFLAGS_WARNINGS"
 
-    CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
+    KERNEL_CXXFLAGS=`echo "$CXXFLAGS" | sed 's/-g//'`
 
 
 ac_ext=cpp
@@ -5490,7 +5490,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     test -z "$ac_user_kernel_cc" && \
 	KERNEL_CC="$ac_base_cc"
     test -z "$ac_user_kernel_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CC="$ac_base_cc -w $CXX_WARNINGS"
+	KERNEL_CC="$ac_base_cc -w $WARNING_CFLAGS"
 
 
 
@@ -5498,7 +5498,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     test -z "$ac_user_kernel_cxx" && \
 	KERNEL_CXX="$ac_base_cxx"
     test -z "$ac_user_kernel_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CXX="$ac_base_cxx -w $CXX_WARNINGS -fno-exceptions -fno-rtti -fpermissive"
+	KERNEL_CXX="$ac_base_cxx -w $WARNING_CFLAGS -fno-exceptions -fno-rtti -fpermissive"
 
 
 
@@ -8184,7 +8184,7 @@ done
 
         ac_base_build_cxx="$CXX"
     test -z "$ac_user_build_cxx" -a -n "$ac_compile_with_warnings" && \
-	BUILD_CXX="$BUILD_CXX $CXX_WARNINGS"
+	BUILD_CXX="$BUILD_CXX$WARNING_CFLAGS"
 
   for ac_prog in ar
 do
