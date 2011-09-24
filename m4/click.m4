@@ -107,11 +107,6 @@ and Linux header files are GCC-specific.)
 	fi
     fi
 
-    dnl check for -fvtable-thunks
-
-    VTABLE_THUNKS=
-    test -n "$GXX" && test "$GXX_MAJOR" -lt 3 && VTABLE_THUNKS=-fvtable-thunks
-
     dnl check for C++0x constexpr and static_assert
 
     AC_CACHE_CHECK([whether the C++ compiler understands constexpr], [ac_cv_cxx_constexpr], [
@@ -146,7 +141,7 @@ and Linux header files are GCC-specific.)
 
     ac_base_cxx="$CXX"
     test -z "$ac_user_cxxflags" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX="$CXX $CXX_WARNINGS $VTABLE_THUNKS"
+	CXX="$CXX $CXX_WARNINGS"
 
     CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
     AC_SUBST(CXXFLAGS_NDEBUG)
@@ -162,7 +157,7 @@ AC_DEFUN([CLICK_PROG_BUILD_CXX], [
     dnl This doesn't really work, but it's close.
     ac_base_build_cxx="$CXX"
     test -z "$ac_user_build_cxx" -a -n "$ac_compile_with_warnings" && \
-	BUILD_CXX="$BUILD_CXX $CXX_WARNINGS $VTABLE_THUNKS"
+	BUILD_CXX="$BUILD_CXX $CXX_WARNINGS"
 ])
 
 
@@ -191,7 +186,7 @@ AC_DEFUN([CLICK_PROG_KERNEL_CXX], [
     test -z "$ac_user_kernel_cxx" && \
 	KERNEL_CXX="$ac_base_cxx"
     test -z "$ac_user_kernel_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CXX="$ac_base_cxx -w $CXX_WARNINGS -fno-exceptions -fno-rtti $VTABLE_THUNKS -fpermissive"
+	KERNEL_CXX="$ac_base_cxx -w $CXX_WARNINGS -fno-exceptions -fno-rtti -fpermissive"
     AC_SUBST(KERNEL_CXX)
 ])
 

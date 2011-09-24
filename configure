@@ -5239,10 +5239,6 @@ $as_echo "#define HAVE_NEW_H 1" >>confdefs.h
     fi
 
 
-    VTABLE_THUNKS=
-    test -n "$GXX" && test "$GXX_MAJOR" -lt 3 && VTABLE_THUNKS=-fvtable-thunks
-
-
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the C++ compiler understands constexpr" >&5
 $as_echo_n "checking whether the C++ compiler understands constexpr... " >&6; }
 if ${ac_cv_cxx_constexpr+:} false; then :
@@ -5350,7 +5346,7 @@ $as_echo "#define HAVE_CXX_PRAGMA_INTERFACE 1" >>confdefs.h
 
     ac_base_cxx="$CXX"
     test -z "$ac_user_cxxflags" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX="$CXX $CXX_WARNINGS $VTABLE_THUNKS"
+	CXX="$CXX $CXX_WARNINGS"
 
     CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
 
@@ -5502,7 +5498,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     test -z "$ac_user_kernel_cxx" && \
 	KERNEL_CXX="$ac_base_cxx"
     test -z "$ac_user_kernel_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CXX="$ac_base_cxx -w $CXX_WARNINGS -fno-exceptions -fno-rtti $VTABLE_THUNKS -fpermissive"
+	KERNEL_CXX="$ac_base_cxx -w $CXX_WARNINGS -fno-exceptions -fno-rtti -fpermissive"
 
 
 
@@ -7361,7 +7357,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7364 "configure"
+#line 7360 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -8188,7 +8184,7 @@ done
 
         ac_base_build_cxx="$CXX"
     test -z "$ac_user_build_cxx" -a -n "$ac_compile_with_warnings" && \
-	BUILD_CXX="$BUILD_CXX $CXX_WARNINGS $VTABLE_THUNKS"
+	BUILD_CXX="$BUILD_CXX $CXX_WARNINGS"
 
   for ac_prog in ar
 do
