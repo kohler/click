@@ -386,7 +386,6 @@ click_lalloc(size_t size)
 	click_dmalloc_curnew++;
 # if CLICK_DMALLOC
 	click_dmalloc_curmem += size;
-	click_dmalloc_totalmem += size;
 # endif
     } else
 	click_dmalloc_failnew++;
