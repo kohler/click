@@ -69,6 +69,8 @@ ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
 #endif
     if (_interval == 0)
 	errh->warning("INTERVAL so small that it is zero");
+	if (output_is_pull(0) && (_interval != 1000))
+	errh->warning("element is pull, INTERVAL parameter will be ignored");
     return 0;
 }
 
