@@ -9122,9 +9122,9 @@ $as_echo "$linux_system_map (unreadable)" >&6; }
     as_fn_error $? "
 =========================================
 
-The Linux System.map file $linux_system_map cannot be read.
-Try running the ./configure script as root (or use the --with-linux=DIR
-and/or --with-linux-map=MAP options).
+$linux_system_map exists, but is unreadable.
+Either run ./configure as root, run 'chmod go+r $linux_system_map' as root,
+or use the --with-linux=DIR and/or --with-linux-map=MAP options.
 
 =========================================" "$LINENO" 5
 else

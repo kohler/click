@@ -624,9 +624,9 @@ elif test -f "$linux_system_map"; then
     AC_MSG_ERROR([
 =========================================
 
-The Linux System.map file $linux_system_map cannot be read.
-Try running the ./configure script as root (or use the --with-linux=DIR
-and/or --with-linux-map=MAP options).
+$linux_system_map exists, but is unreadable.
+Either run ./configure as root, run 'chmod go+r $linux_system_map' as root,
+or use the --with-linux=DIR and/or --with-linux-map=MAP options.
 
 =========================================])
 else
