@@ -908,7 +908,7 @@ Packet::shift_data(int offset, bool free_on_failure)
 
 #if HAVE_CLICK_PACKET_POOL
 static void
-cleanup_pool(PacketPool *pp)
+cleanup_pool(PacketPool *pp, int global)
 {
     unsigned pcount = 0, pdcount = 0;
     while (WritablePacket *p = pp->p) {
@@ -921,8 +921,9 @@ cleanup_pool(PacketPool *pp)
 	pp->pd = pd->next;
 	delete[] reinterpret_cast<unsigned char *>(pd);
     }
-    assert(pcount == pp->pcount && pdcount == pp->pdcount
-	   && pp->pcount <= CLICK_PACKET_POOL_SIZE && pp->pdcount <= CLICK_PACKET_POOL_SIZE);
+    assert(pcount <= CLICK_PACKET_POOL_SIZE);
+    assert(pdcount <= CLICK_PACKET_POOL_SIZE);
+    assert(global || (pcount == pp->pcount && pdcount == pp->pdcount));
 }
 #endif
 
@@ -933,20 +934,24 @@ Packet::static_cleanup()
 # if HAVE_MULTITHREAD
     while (PacketPool *pp = all_thread_packet_pools) {
 	all_thread_packet_pools = pp->chain;
-	cleanup_pool(pp);
+	cleanup_pool(pp, 0);
 	delete pp;
     }
+    unsigned rounds = (global_packet_pool.pcount > global_packet_pool.pdcount ? global_packet_pool.pcount : global_packet_pool.pdcount);
+    assert(rounds <= CLICK_GLOBAL_PACKET_POOL_COUNT);
     while (global_packet_pool.p || global_packet_pool.pd) {
 	WritablePacket *next_p = global_packet_pool.p;
 	next_p = (next_p ? static_cast<WritablePacket *>(next_p->prev()) : 0);
 	PacketData *next_pd = global_packet_pool.pd;
 	next_pd = (next_pd ? next_pd->pool_next : 0);
-	cleanup_pool(&global_packet_pool);
+	cleanup_pool(&global_packet_pool, 1);
 	global_packet_pool.p = next_p;
 	global_packet_pool.pd = next_pd;
+	--rounds;
     }
+    assert(rounds == 0);
 # else
-    cleanup_pool(&packet_pool);
+    cleanup_pool(&packet_pool, 0);
 # endif
 #endif
 }
