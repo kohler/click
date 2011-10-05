@@ -239,6 +239,7 @@ FromDevice::take_state(Element *e, ErrorHandler *errh)
 	    _task.reschedule();
 
 	fd->_head = fd->_tail = fd->_capacity = 0;
+	_highwater_length = size();
 
 	local_irq_restore(flags);
     }
@@ -373,9 +374,9 @@ FromDevice::got_skb(struct sk_buff *skb)
     if (!_active)
 	return 0;		// 0 means not handled
 
-    unsigned next = next_i(_tail);
+    unsigned next = next_i(_tail), head = _head;
 
-    if (next != _head) { /* ours */
+    if (next != head) { /* ours */
 	assert(skb_shared(skb) == 0); /* else skb = skb_clone(skb, GFP_ATOMIC); */
 
 	/* Retrieve the MAC header. */
@@ -405,6 +406,10 @@ FromDevice::got_skb(struct sk_buff *skb)
 #if CLICK_DEBUG_SCHEDULING
 	_schinfo[_tail].enq_woke_process = enq_process_asleep && rt->sleeper()->state == TASK_RUNNING;
 #endif
+
+	unsigned s = size(head, next);
+	if (s > _highwater_length)
+	    _highwater_length = s;
 
     } else if (_capacity > 0) {
 	/* queue full, drop */
@@ -517,6 +522,7 @@ FromDevice::add_handlers()
     add_data_handlers("count", Handler::OP_READ, &_count);
     add_data_handlers("drops", Handler::OP_READ, &_drops);
     add_read_handler("length", read_handler, h_length);
+    add_data_handlers("highwater_length", Handler::OP_READ, &_highwater_length);
     add_read_handler("calls", read_handler, h_calls);
     add_write_handler("active", write_handler, h_active);
     add_write_handler("reset_counts", write_handler, h_reset_counts, Handler::BUTTON);
