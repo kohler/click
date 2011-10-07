@@ -48,6 +48,7 @@ ICMPPingSource::~ICMPPingSource()
 int
 ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    bool has_interval;
     _icmp_id = 0;
     _interval = 1000;
     _data = String();
@@ -56,7 +57,7 @@ ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
     if (Args(conf, this, errh)
 	.read_mp("SRC", _src)
 	.read_mp("DST", _dst)
-	.read("INTERVAL", SecondsArg(3), _interval)
+	.read("INTERVAL", SecondsArg(3), _interval).read_status(has_interval)
 	.read("IDENTIFIER", _icmp_id)
 	.read("DATA", _data)
 	.read("LIMIT", _limit)
@@ -69,6 +70,8 @@ ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
 #endif
     if (_interval == 0)
 	errh->warning("INTERVAL so small that it is zero");
+    if (output_is_pull(0) && has_interval)
+	errh->warning("element is pull, INTERVAL parameter will be ignored");
     return 0;
 }
 
