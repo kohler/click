@@ -71,12 +71,12 @@ StringAccum::assign_out_of_memory()
     _len = 0;
 }
 
-bool
+char *
 StringAccum::grow(int want)
 {
     // can't append to out-of-memory strings
     if (_cap < 0)
-	return false;
+	return 0;
 
     int ncap = (_cap ? (_cap + MEMO_SPACE) * 2 : 128) - MEMO_SPACE;
     while (ncap <= want)
@@ -85,7 +85,7 @@ StringAccum::grow(int want)
     unsigned char *n = (unsigned char *) CLICK_LALLOC(ncap + MEMO_SPACE);
     if (!n) {
 	assign_out_of_memory();
-	return false;
+	return 0;
     }
     n += MEMO_SPACE;
 
@@ -95,15 +95,30 @@ StringAccum::grow(int want)
     }
     _s = n;
     _cap = ncap;
-    return true;
+    return reinterpret_cast<char *>(_s + _len);
 }
 
-void
-StringAccum::append_fill(int c, int len)
+int
+StringAccum::resize(int len)
 {
-    if (char *s = extend(len))
-	memset(s, c, len);
+    assert(len >= 0);
+    if (len > _cap && !grow(len))
+	return -ENOMEM;
+    else {
+	_len = len;
+	return 0;
+    }
 }
+
+char *
+StringAccum::hard_extend(int nadjust, int nreserve)
+{
+    char *x = grow(_len + nadjust + nreserve);
+    if (x)
+	_len += nadjust;
+    return x;
+}
+
 
 const char *
 StringAccum::c_str()
@@ -114,13 +129,27 @@ StringAccum::c_str()
 }
 
 void
-StringAccum::append_internal_data(const char *s, int len)
+StringAccum::append_fill(int c, int len)
 {
-    if (unlikely(out_of_memory()))
-	/* do nothing */;
-    else if (!_s || _len + len <= _cap)
-	append_external_data(s, len);
-    else {
+    if (char *s = extend(len))
+	memset(s, c, len);
+}
+
+void
+StringAccum::hard_append(const char *s, int len)
+{
+    // We must be careful about calls like "sa.append(sa.begin(), sa.end())";
+    // a naive implementation might use sa's data after freeing it.
+    const char *my_s = reinterpret_cast<char *>(_s);
+
+    if (_len + len <= _cap) {
+    success:
+	memcpy(_s + _len, s, len);
+	_len += len;
+    } else if (likely(s < my_s || s >= my_s + _cap)) {
+	if (grow(_len + len))
+	    goto success;
+    } else {
 	unsigned char *old_s = _s;
 	int old_len = _len;
 	int old_cap = _cap;
@@ -136,6 +165,12 @@ StringAccum::append_internal_data(const char *s, int len)
 
 	CLICK_LFREE(old_s - MEMO_SPACE, old_cap + MEMO_SPACE);
     }
+}
+
+void
+StringAccum::append(const char *s)
+{
+    hard_append(s, strlen(s));
 }
 
 String
