@@ -494,11 +494,16 @@ class String { public:
     }
 
 
+    /** @brief Append the null-terminated C string @a s to this string.
+     * @param cstr data to append */
+    void append(const char *cstr) {
+	append(cstr, -1);
+    }
+
     /** @brief Append the first @a len characters of @a s to this string.
      * @param s data to append
      * @param len length of data
-     *
-     * If @a len @< 0, treats @a s as a null-terminated C string. */
+     * @pre @a len @>= 0 */
     void append(const char *s, int len);
 
     /** @brief Appends the data from @a begin to @a end to the end of this
@@ -533,7 +538,7 @@ class String { public:
      *
      * Returns the result. */
     inline String &operator+=(const char *cstr) {
-	append(cstr, -1);
+	append(cstr);
 	return *this;
     }
 
@@ -809,7 +814,7 @@ inline String operator+(String a, const String &b) {
 
 /** @relates String */
 inline String operator+(String a, const char *b) {
-    a.append(b, -1);
+    a.append(b);
     return a;
 }
 
