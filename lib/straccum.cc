@@ -90,7 +90,7 @@ StringAccum::grow(int want)
     n += MEMO_SPACE;
 
     if (_s) {
-	memcpy(n, _s, _cap);
+	memcpy(n, _s, _len);
 	CLICK_LFREE(_s - MEMO_SPACE, _cap + MEMO_SPACE);
     }
     _s = n;

@@ -284,7 +284,6 @@ class StringAccum { public:
     }
 
 
-
     /** @brief Append character @a c to the StringAccum.
      * @param c character to append */
     inline void append(char c) {
@@ -453,6 +452,7 @@ inline void StringAccum::forward(int delta) {
 /** @endcond never */
 
 inline void StringAccum::append(const char *s, int len) {
+    assert(s && len >= 0);
     if (_len + len <= _cap) {
 	memcpy(_s + _len, s, len);
 	_len += len;
