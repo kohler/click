@@ -347,7 +347,7 @@ static bool ip_ina(PacketOdesc& d, const String &s, const FieldReader *f)
 static void ip_outb(const PacketDesc& d, bool ok, const FieldWriter *f)
 {
     if (f->user_data == T_IP_OPT) {
-	if (!ok || !d.vptr)
+	if (!ok || !d.vptr[0])
 	    *d.sa << '\0';
 	else
 	    unparse_ip_opt_binary(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_IPOPT_ALL);
