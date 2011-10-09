@@ -452,7 +452,7 @@ inline void StringAccum::forward(int delta) {
 /** @endcond never */
 
 inline void StringAccum::append(const char *s, int len) {
-    assert(s && len >= 0);
+    assert(len >= 0);
     if (_len + len <= _cap) {
 	memcpy(_s + _len, s, len);
 	_len += len;

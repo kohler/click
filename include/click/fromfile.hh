@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 4 -*-
+// -*- related-file-name: "../../lib/fromfile.cc"; c-basic-offset: 4 -*-
 #ifndef CLICK_FROMFILE_HH
 #define CLICK_FROMFILE_HH
 #include <click/string.hh>

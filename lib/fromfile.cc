@@ -1,4 +1,4 @@
-// -*- mode: c++; c-basic-offset: 4 -*-
+// -*- related-file-name: "../include/click/fromfile.hh"; c-basic-offset: 4 -*-
 /*
  * fromfile.{cc,hh} -- provides convenient, fast access to files
  * Eddie Kohler
