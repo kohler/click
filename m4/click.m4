@@ -16,10 +16,12 @@ AC_DEFUN([CLICK_INIT], [
     ac_user_cc=${CC+y}
     ac_user_cflags=${CFLAGS+y}
     ac_user_kernel_cc=${KERNEL_CC+y}
+    ac_user_kernel_cflags=${KERNEL_CFLAGS+y}
     ac_user_cxx=${CXX+y}
     ac_user_cxxflags=${CXXFLAGS+y}
+    ac_user_kernel_cxx=${KERNEL_CXX+y}
+    ac_user_kernel_cxxflags=${KERNEL_CXXFLAGS+y}
     ac_user_build_cxx=${BUILD_CXX+y}
-    ac_user_kernel_cxx=${KENREL_CXX+y}
     ac_user_depcflags=${DEPCFLAGS+y}
     ac_compile_with_warnings=y
 
@@ -43,19 +45,18 @@ AC_DEFUN([CLICK_PROG_CC], [
     AC_REQUIRE([AC_PROG_CC])
 
     ac_base_cc="$CC"
+    ac_base_cflags="$CFLAGS"
 
     test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depcflags" && \
 	DEPCFLAGS="-MD -MP"
     AC_SUBST(DEPCFLAGS)
 
-    dnl do not add WARNING_CFLAGS to KERNEL_CFLAGS
-    KERNEL_CFLAGS=`echo "$CFLAGS" | sed 's/-g//'`
-    AC_SUBST(KERNEL_CFLAGS)
-
     WARNING_CFLAGS=
-    test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
+    test -n "$GCC" -a -n "$ac_compile_with_warnings" && \
 	WARNING_CFLAGS=" -W -Wall"
-    CFLAGS="$CFLAGS$WARNING_CFLAGS"
+
+    test -z "$ac_user_cflags" && \
+	CFLAGS="$CFLAGS$WARNING_CFLAGS"
 
     AC_CHECK_HEADERS(sys/types.h unistd.h)
 ])
@@ -141,11 +142,10 @@ and Linux header files are GCC-specific.)
     dnl define correct warning options
 
     ac_base_cxx="$CXX"
-    test -z "$ac_user_cxxflags" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX="$CXX$CFLAGS_WARNINGS"
+    ac_base_cxxflags="$CXXFLAGS"
 
-    KERNEL_CXXFLAGS=`echo "$CXXFLAGS" | sed 's/-g//'`
-    AC_SUBST(KERNEL_CXXFLAGS)
+    test -z "$ac_user_cxxflags" -a -n "$GXX" && \
+	CXXFLAGS="$CXXFLAGS$WARNING_CFLAGS"
 ])
 
 
@@ -171,9 +171,11 @@ AC_DEFUN([CLICK_PROG_KERNEL_CC], [
     AC_REQUIRE([CLICK_PROG_CC])
     test -z "$ac_user_kernel_cc" && \
 	KERNEL_CC="$ac_base_cc"
-    test -z "$ac_user_kernel_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CC="$ac_base_cc -w $WARNING_CFLAGS"
     AC_SUBST(KERNEL_CC)
+
+    test -z "$ac_kernel_cflags" && \
+	KERNEL_CFLAGS=`echo "$ac_base_cflags -Wno-undef" | sed 's/-g//'`
+    AC_SUBST(KERNEL_CFLAGS)
 ])
 
 
@@ -186,9 +188,11 @@ AC_DEFUN([CLICK_PROG_KERNEL_CXX], [
     AC_REQUIRE([CLICK_PROG_CXX])
     test -z "$ac_user_kernel_cxx" && \
 	KERNEL_CXX="$ac_base_cxx"
-    test -z "$ac_user_kernel_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CXX="$ac_base_cxx -w $WARNING_CFLAGS -fno-exceptions -fno-rtti -fpermissive"
     AC_SUBST(KERNEL_CXX)
+
+    test -z "$ac_user_kernel_cxxflags" && \
+	KERNEL_CXXFLAGS=`echo "$ac_base_cxxflags -fno-exceptions -fno-rtti -fpermissive -Wno-undef -Wno-pointer-arith" | sed 's/-g//'`
+    AC_SUBST(KERNEL_CXXFLAGS)
 ])
 
 

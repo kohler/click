@@ -315,4 +315,5 @@ while (($k, $v) = each %done) {
     push @sed, "-e s,$k,$v,";
 }
 @sed = sort { length($a) <=> length($b) } @sed;
+push @sed, "-e s,\\ -I,\\ -isystem\\ ,g";
 print join(" ", @sed), "\n";

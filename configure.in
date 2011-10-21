@@ -1134,9 +1134,11 @@ if test $ac_have_linux_kernel = y; then
     save_cxx="$CXX"
     save_cppflags="$CPPFLAGS"
     save_cflags="$CFLAGS"
+    save_cxxflags="$CXXFLAGS"
     unset -v CFLAGS CPPFLAGS
     CC="$KERNEL_CC"
     CXX="$KERNEL_CXX"
+    CXXFLAGS="$KERNEL_CXXFLAGS"
 
     dnl check for arguments to pass to Linux make
     linux_makeargs=
@@ -1451,6 +1453,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     CXX="$save_cxx"
     CPPFLAGS="$save_cppflags"
     CFLAGS="$save_cflags"
+    CXXFLAGS="$save_cxxflags"
     export CFLAGS CPPFLAGS
 
     if test $ac_cv_cxx_aware_system = yes; then

@@ -681,16 +681,16 @@ OBJCOPY
 NM
 LD
 AR
+KERNEL_CXXFLAGS
 KERNEL_CXX
+KERNEL_CFLAGS
 KERNEL_CC
 CXXCPP
-KERNEL_CXXFLAGS
 ac_ct_CXX
 CXXFLAGS
 EGREP
 GREP
 CPP
-KERNEL_CFLAGS
 DEPCFLAGS
 OBJEXT
 EXEEXT
@@ -3139,10 +3139,12 @@ _ACEOF
     ac_user_cc=${CC+y}
     ac_user_cflags=${CFLAGS+y}
     ac_user_kernel_cc=${KERNEL_CC+y}
+    ac_user_kernel_cflags=${KERNEL_CFLAGS+y}
     ac_user_cxx=${CXX+y}
     ac_user_cxxflags=${CXXFLAGS+y}
+    ac_user_kernel_cxx=${KERNEL_CXX+y}
+    ac_user_kernel_cxxflags=${KERNEL_CXXFLAGS+y}
     ac_user_build_cxx=${BUILD_CXX+y}
-    ac_user_kernel_cxx=${KENREL_CXX+y}
     ac_user_depcflags=${DEPCFLAGS+y}
     ac_compile_with_warnings=y
 
@@ -4670,18 +4672,18 @@ done
 
 
     ac_base_cc="$CC"
+    ac_base_cflags="$CFLAGS"
 
     test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depcflags" && \
 	DEPCFLAGS="-MD -MP"
 
 
-        KERNEL_CFLAGS=`echo "$CFLAGS" | sed 's/-g//'`
-
-
     WARNING_CFLAGS=
-    test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
+    test -n "$GCC" -a -n "$ac_compile_with_warnings" && \
 	WARNING_CFLAGS=" -W -Wall"
-    CFLAGS="$CFLAGS$WARNING_CFLAGS"
+
+    test -z "$ac_user_cflags" && \
+	CFLAGS="$CFLAGS$WARNING_CFLAGS"
 
     for ac_header in sys/types.h unistd.h
 do :
@@ -5351,11 +5353,10 @@ $as_echo "#define HAVE_CXX_PRAGMA_INTERFACE 1" >>confdefs.h
 
 
     ac_base_cxx="$CXX"
-    test -z "$ac_user_cxxflags" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX="$CXX$CFLAGS_WARNINGS"
+    ac_base_cxxflags="$CXXFLAGS"
 
-    KERNEL_CXXFLAGS=`echo "$CXXFLAGS" | sed 's/-g//'`
-
+    test -z "$ac_user_cxxflags" -a -n "$GXX" && \
+	CXXFLAGS="$CXXFLAGS$WARNING_CFLAGS"
 
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -5495,16 +5496,20 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
     test -z "$ac_user_kernel_cc" && \
 	KERNEL_CC="$ac_base_cc"
-    test -z "$ac_user_kernel_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CC="$ac_base_cc -w $WARNING_CFLAGS"
+
+
+    test -z "$ac_kernel_cflags" && \
+	KERNEL_CFLAGS=`echo "$ac_base_cflags -Wno-undef" | sed 's/-g//'`
 
 
 
 
     test -z "$ac_user_kernel_cxx" && \
 	KERNEL_CXX="$ac_base_cxx"
-    test -z "$ac_user_kernel_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CXX="$ac_base_cxx -w $WARNING_CFLAGS -fno-exceptions -fno-rtti -fpermissive"
+
+
+    test -z "$ac_user_kernel_cxxflags" && \
+	KERNEL_CXXFLAGS=`echo "$ac_base_cxxflags -fno-exceptions -fno-rtti -fpermissive -Wno-undef -Wno-pointer-arith" | sed 's/-g//'`
 
 
 
@@ -7352,7 +7357,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7355 "configure"
+#line 7360 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -10356,9 +10361,11 @@ if test $ac_have_linux_kernel = y; then
     save_cxx="$CXX"
     save_cppflags="$CPPFLAGS"
     save_cflags="$CFLAGS"
+    save_cxxflags="$CXXFLAGS"
     unset -v CFLAGS CPPFLAGS
     CC="$KERNEL_CC"
     CXX="$KERNEL_CXX"
+    CXXFLAGS="$KERNEL_CXXFLAGS"
 
         linux_makeargs=
     if test -n "$ARCH"; then
@@ -11493,6 +11500,7 @@ $as_echo "$ac_cv_linux_getboottime" >&6; }
     CXX="$save_cxx"
     CPPFLAGS="$save_cppflags"
     CFLAGS="$save_cflags"
+    CXXFLAGS="$save_cxxflags"
     export CFLAGS CPPFLAGS
 
     if test $ac_cv_cxx_aware_system = yes; then

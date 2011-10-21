@@ -99,7 +99,8 @@ LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS) $(LINUXINCLUDE)" \
 	-e s,-Werror-implicit-function-declaration,, \
 	-e "s,-Iinclude ,-I$(linux_builddir)/include ",g \
 	-e "s,-Iinclude2 ,-I$(linux_builddir)/include2 ",g \
-	-e s,-Iinclude/,-I$(linux_srcdir)include/,g @LINUX_FIXINCLUDES_PROGRAM@)
+	-e s,-Iinclude/,-I$(linux_srcdir)include/,g \
+	@LINUX_FIXINCLUDES_PROGRAM@)
 CLICKCPPFLAGS = @CPPFLAGS@ -DCLICK_LINUXMODULE
 CLICKCFLAGS = @KERNEL_CFLAGS@
 CLICKCXXFLAGS = @KERNEL_CXXFLAGS@
