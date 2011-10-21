@@ -37,7 +37,6 @@ CLICK_CXX_PROTECT
 # include <linux/rtnetlink.h>
 # include <net/net_namespace.h>
 #endif
-#include <linux/smp_lock.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 

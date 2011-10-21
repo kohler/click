@@ -194,7 +194,7 @@ AC_ARG_WITH(linux-map, [[  --with-linux-map[=FILE] filename for Linux System.map
 linux_system_map_boot=no
 
 if test "x$linuxpath" = xNONE -o "x$linuxpath" = xyes; then
-    if uname -r 2>/dev/null | grep '^2\.6' >/dev/null 2>&1; then
+    if uname -r 2>/dev/null | grep '^\(2\.6\|3\.\)' >/dev/null 2>&1; then
 	linuxpath=/lib/modules/"`uname -r`"/build
 	linux_system_map_boot="`uname -r`"
     else
@@ -671,9 +671,9 @@ else
 fi
 
 LINUXMODULE_2_6=0
-if test "$linux_version.$linux_patchlevel" = 2.6; then
+if test "$linux_version.$linux_patchlevel" = 2.6 -o "$linux_version" = 3; then
     LINUXMODULE_2_6=1
-    AC_DEFINE([HAVE_LINUXMODULE_2_6], [1], [Define if the Click linuxmodule is compiled for a 2.6 kernel.])
+    AC_DEFINE([HAVE_LINUXMODULE_2_6], [1], [Define if the Click linuxmodule is compiled for a 2.6 or later kernel.])
 fi
 AC_SUBST(LINUXMODULE_2_6)
 

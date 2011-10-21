@@ -6383,7 +6383,7 @@ fi
 linux_system_map_boot=no
 
 if test "x$linuxpath" = xNONE -o "x$linuxpath" = xyes; then
-    if uname -r 2>/dev/null | grep '^2\.6' >/dev/null 2>&1; then
+    if uname -r 2>/dev/null | grep '^\(2\.6\|3\.\)' >/dev/null 2>&1; then
 	linuxpath=/lib/modules/"`uname -r`"/build
 	linux_system_map_boot="`uname -r`"
     else
@@ -9183,7 +9183,7 @@ $as_echo "unknown" >&6; }
 fi
 
 LINUXMODULE_2_6=0
-if test "$linux_version.$linux_patchlevel" = 2.6; then
+if test "$linux_version.$linux_patchlevel" = 2.6 -o "$linux_version" = 3; then
     LINUXMODULE_2_6=1
 
 $as_echo "#define HAVE_LINUXMODULE_2_6 1" >>confdefs.h

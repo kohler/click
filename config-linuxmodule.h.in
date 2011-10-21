@@ -100,7 +100,7 @@
 /* Define if your Linux kernel has tulip_interrupt_hook. */
 #undef HAVE_LINUX_TULIP_INTERRUPT_HOOK
 
-/* Define if the Click linuxmodule is compiled for a 2.6 kernel. */
+/* Define if the Click linuxmodule is compiled for a 2.6 or later kernel. */
 #undef HAVE_LINUXMODULE_2_6
 
 /* Define if the linuxmodule driver might run multiple threads. */

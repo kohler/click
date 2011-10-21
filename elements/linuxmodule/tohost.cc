@@ -25,7 +25,6 @@
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <net/dst.h>
-#include <linux/smp_lock.h>
 #include <linux/if_ether.h>
 #include <linux/if_arp.h>
 #include <linux/etherdevice.h>
@@ -272,9 +271,7 @@ ToHost::push(int port, Packet *p)
     br_read_unlock(BR_NETPROTO_LOCK);
     local_bh_enable();
 #  else
-    lock_kernel();
-    ptype_dispatch(skb, protocol);
-    unlock_kernel();
+#   error "Linux 2.2 is no longer supported"
 #  endif
 # else
     ++_drops;

@@ -135,14 +135,7 @@ proclikefs_null_root_lookup(struct inode *dir, struct dentry *dentry)
 
 struct proclikefs_file_system *
 proclikefs_register_filesystem(const char *name, int fs_flags,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
-	int (*get_sb) (struct file_system_type *, int, const char *, void *, struct vfsmount *)
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-	struct super_block *(*get_sb) (struct file_system_type *, int, const char *, void *)
-#else
-	struct super_block *(*read_super) (struct super_block *, void *, int)
-#endif
-	)
+			       proclikefs_mountfunc mountfunc)
 {
     struct proclikefs_file_system *newfs = 0;
     struct list_head *next;
@@ -199,11 +192,14 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
     }
 
     newfs->fs.fs_flags = fs_flags;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    newfs->fs.get_sb = get_sb;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0)
+    newfs->fs.mount = mountfunc;
+    newfs->fs.kill_sb = kill_anon_super;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    newfs->fs.get_sb = mountfunc;
     newfs->fs.kill_sb = kill_anon_super;
 #else
-    newfs->fs.read_super = read_super;
+    newfs->fs.read_super = mountfunc;
 #endif
     newfs->live = 1;
     DEBUG("pfs[%p]: created filesystem %s", newfs, name);
