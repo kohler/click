@@ -19,6 +19,9 @@
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <asm/system.h>
+#if __i386__ || __x86_64__
+# include <asm/msr.h>
+#endif
 
 
 #define P6MSR_CTRSEL0 0x186   /* MSR for programming CTR0 on P6 */
@@ -26,36 +29,15 @@
 #define P6MSR_CTR0 0xc1       /* Ctr0 on P6 */
 #define P6MSR_CTR1 0xc2       /* Ctr1 on P6 */
 
-typedef unsigned long long u_quad_t;
-typedef u_quad_t pctrval;
-
-#define rdmsr(msr)						\
-({								\
-  pctrval v;							\
-  __asm __volatile (".byte 0xf, 0x32" : "=A" (v) : "c" (msr));	\
-  v;								\
-})
-
-#define wrmsr(msr, v) \
-     __asm __volatile (".byte 0xf, 0x30" :: "A" ((u_quad_t) (v)), "c" (msr));
-
-/* Read the performance counters (Pentium Pro only) */
-#define rdpmc(ctr)				\
-({						\
-  pctrval v;					\
-  __asm __volatile (".byte 0xf, 0x33\n"		\
-		    "\tandl $0xff, %%edx"	\
-		    : "=A" (v) : "c" (ctr));	\
-  v;						\
-})
-
 void
 click_cycle_counter(int which, unsigned int *fnp, unsigned long long *valp)
 {
 #ifdef __i386__
-  *fnp = rdmsr(P6MSR_CTRSEL0 + which);
-  *valp = rdpmc(which);
-  wrmsr(P6MSR_CTR0+which, 0);
+  unsigned low, high;
+  rdmsr(P6MSR_CTRSEL0 + which, low, high);
+  *fnp = low;
+  rdpmcl(which, *valp);
+  wrmsrl(P6MSR_CTR0 + which, 0);
 #else
   printk("<1>click_cycle_counter: not i386\n");
 #endif

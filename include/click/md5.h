@@ -100,7 +100,7 @@ static inline void md5_append(md5_state_t *pms, const unsigned char *data, int n
 #endif
 }
 
-static inline void md5_finish(md5_state_t *pms, const unsigned char digest[16]) {
+static inline void md5_finish(md5_state_t *pms, unsigned char digest[16]) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
     crypto_hash_final(pms, digest);
 #else

@@ -415,7 +415,7 @@ click_cleanup_sched()
 	for (int i = 0; i < click_thread_tasks->size(); i++) {
 	    struct task_struct *ct = (*click_thread_tasks)[i];
 	    printk("<1>click:   router thread pid %d\n", (int) ct->pid);
-	    printk("<1>click:   state %d, EIP %08x\n", (int) ct->state, KSTK_EIP(ct));
+	    printk("<1>click:   state %d, EIP %08lx\n", (int) ct->state, KSTK_EIP(ct));
 	}
 	SPIN_UNLOCK(&click_thread_lock);
 	click_master->unuse();

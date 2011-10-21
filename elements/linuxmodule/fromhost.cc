@@ -442,7 +442,7 @@ FromHost::fl_stats(net_device *dev)
 #endif
 }
 
-int
+netdev_tx_t
 FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
 {
     /* 8.May.2003 - Doug and company had crashes with FromHost configurations.
@@ -455,7 +455,7 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
          particularly with the task list. The solution is a queue in
          FromHost. fl_tx puts a packet onto the queue, a regular Click Task
          takes the packet off the queue. */
-    int ret;
+    netdev_tx_t ret;
     unsigned long lock_flags;
     fromlinux_map.lock(false, lock_flags);
     if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0)) {
@@ -484,13 +484,13 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
 	    q[fl->_tail] = p;
 	    packet_memory_barrier(q[fl->_tail], fl->_tail);
 	    fl->_tail = next;
-	    ret = NETDEV_TX_OK;
+	    ret = (netdev_tx_t) NETDEV_TX_OK;
 	} else {
 	    fl->_drops++;
-	    ret = NETDEV_TX_BUSY;	// Linux will free the packet.
+	    ret = (netdev_tx_t) NETDEV_TX_BUSY;	// Linux will free the packet.
 	}
     } else
-	ret = -1;
+	ret = (netdev_tx_t) NETDEV_TX_BUSY;
     fromlinux_map.unlock(false, lock_flags);
     return ret;
 }

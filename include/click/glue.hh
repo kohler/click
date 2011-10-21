@@ -546,30 +546,32 @@ CLICK_ENDDECLS
 
 // BYTE ORDER
 
-#if CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
-# define le16_to_cpu(x) (x)
-# define cpu_to_le16(x) (x)
-# define le32_to_cpu(x) (x)
-# define cpu_to_le32(x) (x)
-#elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN && defined(__APPLE__)
-# include <machine/byte_order.h>
-# define le16_to_cpu(x) NXSwapShort((x))
-# define cpu_to_le16(x) NXSwapShort((x))
-# define le32_to_cpu(x) NXSwapInt((x))
-# define cpu_to_le32(x) NXSwapInt((x))
-#elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN && HAVE_BYTESWAP_H
-# include <byteswap.h>
-# define le16_to_cpu(x) bswap_16((x))
-# define cpu_to_le16(x) bswap_16((x))
-# define le32_to_cpu(x) bswap_32((x))
-# define cpu_to_le32(x) bswap_32((x))
-#elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
-# define le16_to_cpu(x) ((((x) & 0x00ff) << 8) | (((x) & 0xff00) >> 8))
-# define cpu_to_le16(x) le16_to_cpu((x))
-# define le32_to_cpu(x) (le16_to_cpu((x) >> 16) | (le16_to_cpu(x) << 16))
-# define cpu_to_le32(x) le32_to_cpu((x))
-#else
+#ifndef le16_to_cpu
+# if CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
+#  define le16_to_cpu(x) (x)
+#  define cpu_to_le16(x) (x)
+#  define le32_to_cpu(x) (x)
+#  define cpu_to_le32(x) (x)
+# elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN && defined(__APPLE__)
+#  include <machine/byte_order.h>
+#  define le16_to_cpu(x) NXSwapShort((x))
+#  define cpu_to_le16(x) NXSwapShort((x))
+#  define le32_to_cpu(x) NXSwapInt((x))
+#  define cpu_to_le32(x) NXSwapInt((x))
+# elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN && HAVE_BYTESWAP_H
+#  include <byteswap.h>
+#  define le16_to_cpu(x) bswap_16((x))
+#  define cpu_to_le16(x) bswap_16((x))
+#  define le32_to_cpu(x) bswap_32((x))
+#  define cpu_to_le32(x) bswap_32((x))
+# elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
+#  define le16_to_cpu(x) ((((x) & 0x00ff) << 8) | (((x) & 0xff00) >> 8))
+#  define cpu_to_le16(x) le16_to_cpu((x))
+#  define le32_to_cpu(x) (le16_to_cpu((x) >> 16) | (le16_to_cpu(x) << 16))
+#  define cpu_to_le32(x) le32_to_cpu((x))
+# else
 /* leave them undefined */
+# endif
 #endif
 
 

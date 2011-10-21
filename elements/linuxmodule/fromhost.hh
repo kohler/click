@@ -121,6 +121,10 @@ CLICK_CXX_UNPROTECT
 #include "elements/linuxmodule/anydevice.hh"
 class EtherAddress;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 32)
+typedef int netdev_tx_t;
+#endif
+
 class FromHost : public AnyDevice, public Storage { public:
 
     FromHost();
@@ -168,8 +172,8 @@ class FromHost : public AnyDevice, public Storage { public:
 
     static FromHost *configuring;
     net_device *new_device(const char *);
-    static int fl_tx(struct sk_buff *, net_device *);
-    inline Packet * volatile *queue() const {
+    static netdev_tx_t fl_tx(struct sk_buff *, net_device *);
+    inline Packet * volatile *queue() {
 	return _capacity <= smq_size ? _q.smq : _q.lgq;
     }
 

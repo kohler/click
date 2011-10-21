@@ -197,7 +197,7 @@ KernelErrorHandler::emit(const String &str, void *, bool)
 
     landmark = clean_landmark(landmark, true);
     printk("<%d>%.*s%.*s\n", level, landmark.length(), landmark.begin(),
-	   str.end() - s, s);
+	   (int) (str.end() - s), s);
     log_line(landmark, s, str.end());
     return 0;
 }
@@ -213,7 +213,7 @@ KernelErrorHandler::account(int level)
 String
 KernelErrorHandler::read(click_handler_direct_info *hdi) const
 {
-    uint32_t initial;
+    uint32_t initial = 0;
     if (!*hdi->string) {
 	initial = (_wrapped ? _tail - logbuf_siz : 0);
 	*hdi->string = String(initial);
@@ -370,7 +370,7 @@ cleanup_module()
     if (Element::nelements_allocated)
 	printk("<1>click error: %d elements still allocated\n", Element::nelements_allocated);
     if (click_dmalloc_curnew) {
-	printk("<1>click error: %d outstanding news\n", click_dmalloc_curnew);
+	printk("<1>click error: %d outstanding news\n", (int) click_dmalloc_curnew);
 	click_dmalloc_cleanup();
     }
 #ifdef HAVE_LINUX_READ_NET_SKBCOUNT

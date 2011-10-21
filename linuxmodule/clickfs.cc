@@ -886,9 +886,9 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
 }
 
 #if HAVE_UNLOCKED_IOCTL
-static int
+static long
 handler_unlocked_ioctl(struct file *filp,
-		       unsigned command, unsigned address)
+		       unsigned command, unsigned long address)
 {
     return do_handler_ioctl(filp->f_dentry->d_inode, filp, command, address);
 }
