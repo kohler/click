@@ -164,7 +164,7 @@
 #endif
 
 /* Define if fast checksum functions require correct alignment. */
-#ifndef __i386__
+#if !defined(__i386__) && !defined(__x86_64__)
 # define FAST_CHECKSUM_ALIGNED 1
 #endif
 
