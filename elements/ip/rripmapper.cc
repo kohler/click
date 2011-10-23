@@ -71,12 +71,13 @@ RoundRobinIPMapper::cleanup(CleanupStage)
 }
 
 void
-RoundRobinIPMapper::notify_rewriter(IPRewriterBase *rw, ErrorHandler *errh)
+RoundRobinIPMapper::notify_rewriter(IPRewriterBase *user,
+				    IPRewriterInput *input, ErrorHandler *errh)
 {
-    int no = rw->noutputs();
     for (int i = 0; i < _is.size(); i++) {
-	if (_is[i].foutput >= no || _is[i].routput >= no)
-	    errh->error("port in %<%s%> out of range for %<%s%>", declaration().c_str(), rw->declaration().c_str());
+	if (_is[i].foutput >= user->noutputs()
+	    || _is[i].routput >= input->reply_element->noutputs())
+	    errh->error("output port out of range in %s pattern %d", declaration().c_str(), i);
     }
 }
 

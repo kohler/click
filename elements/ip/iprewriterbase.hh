@@ -104,6 +104,9 @@ class IPRewriterBase : public Element { public:
     void add_rewriter_handlers(bool writable_patterns);
     void cleanup(CleanupStage);
 
+    const IPRewriterHeap *flow_heap() const {
+	return _heap;
+    }
     IPRewriterBase *reply_element(int input) const {
 	return _input_specs[input].reply_element;
     }
@@ -184,7 +187,8 @@ class IPMapper { public:
     IPMapper()				{ }
     virtual ~IPMapper()			{ }
 
-    void notify_rewriter(IPRewriterBase*, ErrorHandler*);
+    virtual void notify_rewriter(IPRewriterBase *user, IPRewriterInput *input,
+				 ErrorHandler *errh);
     virtual int rewrite_flowid(IPRewriterInput *input,
 			       const IPFlowID &flowid,
 			       IPFlowID &rewritten_flowid,

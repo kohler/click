@@ -194,7 +194,8 @@ class SourceIPHashMapper : public Element, public IPMapper { public:
   int configure(Vector<String> &, ErrorHandler *);
   void cleanup(CleanupStage);
 
-    void notify_rewriter(IPRewriterBase *, ErrorHandler *);
+    void notify_rewriter(IPRewriterBase *user, IPRewriterInput *input,
+			 ErrorHandler *errh);
     int rewrite_flowid(IPRewriterInput *input,
 		       const IPFlowID &flowid, IPFlowID &rewritten_flowid,
 		       Packet *p, int mapid);

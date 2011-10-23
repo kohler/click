@@ -52,7 +52,7 @@ CLICK_DECLS
 //
 
 void
-IPMapper::notify_rewriter(IPRewriterBase *, ErrorHandler *)
+IPMapper::notify_rewriter(IPRewriterBase *, IPRewriterInput *, ErrorHandler *)
 {
 }
 
@@ -138,7 +138,6 @@ IPRewriterBase::parse_input_spec(const String &line, IPRewriterInput &is,
 	else {
 	    is.kind = IPRewriterInput::i_mapper;
 	    is.u.mapper = mapper;
-	    mapper->notify_rewriter(this, &cerrh);
 	}
 
     } else
@@ -194,15 +193,17 @@ IPRewriterBase::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 IPRewriterBase::initialize(ErrorHandler *errh)
 {
-    for (int i = 0; i < _input_specs.size(); ++i)
-	if ((_input_specs[i].kind == IPRewriterInput::i_pattern
-	     || _input_specs[i].kind == IPRewriterInput::i_keep)
-	    && _input_specs[i].reply_element->_heap != _heap)
-	    return errh->error("input spec %d: reply element %<%s%> must share this MAPPING_CAPACITY", i, _input_specs[i].reply_element->name().c_str());
+    for (int i = 0; i < _input_specs.size(); ++i) {
+	PrefixErrorHandler cerrh(errh, "input spec " + String(i) + ": ");
+	if (_input_specs[i].reply_element->_heap != _heap)
+	    cerrh.error("reply element %<%s%> must share this MAPPING_CAPACITY", i, _input_specs[i].reply_element->name().c_str());
+	if (_input_specs[i].kind == IPRewriterInput::i_mapper)
+	    _input_specs[i].u.mapper->notify_rewriter(this, &_input_specs[i], &cerrh);
+    }
     _gc_timer.initialize(this);
     if (_gc_interval_sec)
 	_gc_timer.schedule_after_sec(_gc_interval_sec);
-    return 0;
+    return errh->nerrors() ? -1 : 0;
 }
 
 void
