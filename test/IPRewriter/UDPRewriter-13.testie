@@ -1,0 +1,36 @@
+%info
+Degenerate mappings should avoid a crash.
+
+%script
+
+$VALGRIND click --simtime -e "
+rw1 :: UDPRewriter(pattern 1.0.0.2 1024-65534# - - 0 1, drop,
+	GUARANTEE 1, TIMEOUT 4, STREAMING_TIMEOUT 5, MAPPING_CAPACITY 3);
+
+FromIPSummaryDump(IN1, TIMING true, STOP true)
+	-> ps :: PaintSwitch;
+td :: ToIPSummaryDump(OUT1, CONTENTS link src sport dst dport tcp_seq);
+ps[0] -> [0]rw1[0] -> Paint(0) -> td;
+ps[1] -> [1]rw1[1] -> Paint(1) -> td;
+"
+
+%file IN1
+!proto T
+!data timestamp link src sport dst dport tcp_seq
+1 0 1.0.0.2 1024 1.0.0.2 1024 1
+2 0 1.0.0.2 1 1.0.0.2 1024 2
+3 0 1.0.0.2 2 2.0.0.2 1024 3
+4 0 1.0.0.2 3 2.0.0.2 1024 4
+5 0 1.0.0.2 4 2.0.0.2 1024 5
+6 0 1.0.0.2 5 1.0.0.2 1024 6
+
+%expect OUT1
+0 1.0.0.2 1024 1.0.0.2 1024 1
+0 1.0.0.2 1025 1.0.0.2 1024 2
+0 1.0.0.2 1026 2.0.0.2 1024 3
+0 1.0.0.2 1027 2.0.0.2 1024 4
+0 1.0.0.2 1028 2.0.0.2 1024 5
+0 1.0.0.2 1029 1.0.0.2 1024 6
+
+%ignorex OUT1
+^!.*
