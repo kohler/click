@@ -248,8 +248,10 @@ IPRewriterBase::store_flow(IPRewriterFlow *flow, int input,
     if (!reply_map_ptr)
 	reply_map_ptr = &reply_element->_map;
     old = reply_map_ptr->set(&flow->entry(true));
-    if (unlikely(old))		// Assume every map has the same heap.
-	old->flow()->destroy(_heap);
+    if (unlikely(old)) {		// Assume every map has the same heap.
+	if (likely(old->flow() != flow))
+	    old->flow()->destroy(_heap);
+    }
 
     Vector<IPRewriterFlow *> &myheap = _heap->_heaps[flow->guaranteed()];
     myheap.push_back(flow);
