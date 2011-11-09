@@ -49,7 +49,6 @@ make
 %install
 rm -rf $RPM_BUILD_ROOT
 %makeinstall
-rm -f $RPM_BUILD_ROOT/%{_infodir}/dir
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -63,18 +62,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/click
 %{_includedir}/clicknet
 %{_includedir}/clicktool
-%{_infodir}
 %{_libdir}
-
-%post
-if [ -x /sbin/install-info ] ; then
-   /sbin/install-info %{_infodir}/click.info %{_infodir}/dir
-fi
-
-%preun
-if [ -x /sbin/install-info ] ; then
-   /sbin/install-info --delete %{_infodir}/click.info %{_infodir}/dir
-fi
 
 %changelog
 * Mon Jan 10 2005 Jonathan Day <imipak@yahoo.com>

@@ -615,11 +615,6 @@ dnl Preset $prefix and $exec_prefix.
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
 test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
 
-dnl Expand 'infodir' to check for Red Hat
-if test x$infodir = 'x${prefix}/info'; then
-    test ! -d ${prefix}/info && test -d ${prefix}/share/info && infodir='${prefix}/share/info'
-fi
-
 shell_expand bindir
 shell_expand sbindir
 shell_expand libdir
