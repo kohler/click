@@ -14,7 +14,7 @@ subdir := .
 # Generally, you will provide a '--with-click=CLICKPREFIX' option, and set:
 include @clickdatadir@/config.mk
 
-# Set 'MAKE_UPACKAGE', 'MAKE_KPACKAGE', and 'MAKE_BPACKAGE' to '0' or '1' 
+# Set 'MAKE_UPACKAGE', 'MAKE_KPACKAGE', and 'MAKE_BPACKAGE' to '0' or '1'
 # to determine whether to build userlevel, linuxmodule, and bsdmodule
 # packages, respectively.
 MAKE_UPACKAGE = @BUILD_USERLEVEL@

@@ -55,7 +55,6 @@ ToDeviceNotify::ToDeviceNotify()
 
 ToDeviceNotify::~ToDeviceNotify()
 {
-  uninitialize();
 }
 
 int

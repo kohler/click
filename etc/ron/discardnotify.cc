@@ -42,7 +42,7 @@ DiscardNotify::initialize(ErrorHandler *errh)
   _data_ready = false;
 
   ElementCastTracker filter(router(), "QueueNotify");
-  ok = router()->upstream_elements(this, 0, &filter);
+  ok = router()->visit_upstream(this, 0, &filter);
   if (ok < 0)
     return errh->error("could not find upstream notify queues");
 

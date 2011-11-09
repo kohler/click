@@ -216,6 +216,7 @@ private:
 };
 
 class LookupIPRouteRON::DstTableEntry {
+public:
 
   struct ProbeInfo {
     int port_number;
@@ -225,7 +226,6 @@ class LookupIPRouteRON::DstTableEntry {
     struct ProbeInfo *next;
   };
 
-public:
   IPAddress dst;
   unsigned outgoing_port;
   unsigned probe_time;

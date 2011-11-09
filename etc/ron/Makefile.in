@@ -1,182 +1,59 @@
 SHELL = @SHELL@
-@SUBMAKE@
 
 
 # THESE VARIABLES MAY CHANGE BETWEEN PACKAGES
 
-# Set `package' to the name of your package.
-package := ron
-
+# Set 'package' to the name of your package.
+package := @CLICKPACKAGENAME@
 
 # Set these variables appropriately.
 top_builddir := .
 subdir := .
 
-# Set `clicksrcdir' to the Click source directory.
-# Generally, you will provide a `--with-click=CLICKPREFIX' option, and set:
-clicksrcdir := @clickprefix@/share/click/src
+# Require Click prefix settings.
+# Generally, you will provide a '--with-click=CLICKPREFIX' option, and set:
+include @clickdatadir@/config.mk
 
-# Set `clickbindir' to the Click binary directory.
-# Generally, you will set:
-clickbindir := @clickprefix@/bin
+# Set 'MAKE_UPACKAGE', 'MAKE_KPACKAGE', and 'MAKE_BPACKAGE' to '0' or '1'
+# to determine whether to build userlevel, linuxmodule, and bsdmodule
+# packages, respectively.
+MAKE_UPACKAGE = @BUILD_USERLEVEL@
+MAKE_KPACKAGE = @BUILD_LINUXMODULE@
+MAKE_BPACKAGE = @BUILD_BSDMODULE@
 
-# Set `clickincludedir' to the Click include directory.
-# Generally, you will set:
-clickincludedir := @clickprefix@/include
+# Set 'KVERSIONFLAGS' to '--gpl' to generate a dual BSD/GPL licensed
+# linuxmodule package.
+KVERSIONFLAGS = --gpl
 
-
-# Set `MAKE_UPACKAGE' and `MAKE_KPACKAGE' to `0' or `1' to determine
-# whether to build userlevel and kernel driver packages, respectively.
-MAKE_UPACKAGE = @HAVE_USERLEVEL_TARGET@
-MAKE_KPACKAGE = @HAVE_LINUXMODULE_TARGET@
-
-# Set `STRIP_UPACKAGE' to `strip -g' to strip debugging symbols from the
+# Set 'STRIP_UPACKAGE' to 'strip -g' to strip debugging symbols from the
 # userlevel package before installing.
-STRIP_UPACKAGE = true
 #STRIP_UPACKAGE = $(STRIP) -g
 
 # Set these variables as required.
-DEFS = @DEFS@ 
-K_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir) -I$(linuxdir)/include
-U_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir)
+DEFS = @DEFS@ $(CLICKDEFS)
+INCLUDES = -I. -I$(top_builddir) -I$(srcdir) $(CLICKINCLUDES)
+
+# Set this variable to force 'click-elem2package' to include a header,
+# such as your package's '<config.h>', if necessary.
+#ELEM2PACKAGE_INCLUDES = -i'<config.h>'
 
 # END OF VARIABLES THAT MAY CHANGE BETWEEN PACKAGES
 
 
 # Everything below here will probably stay unchanged
 
-srcdir := @srcdir@
-top_srcdir := @top_srcdir@
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
 
+ifeq ($(CLICK_PACKAGE_MAKING),)
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
-linuxdir = @linuxdir@
 mandir = @mandir@
 datarootdir = @datarootdir@
-datadir = @datadir@/click
-
-VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)
-
-K_CC = @CC@
-U_CC = @CC@
-CPP = @CPP@
-K_CXX = @KERNEL_CXX@
-U_CXX = @CXX@
-CXXCPP = @CXXCPP@
-LD = @LD@
-STRIP = @STRIP@
-INSTALL = @INSTALL@
-INSTALL_DATA = $(INSTALL) -m 644
-mkinstalldirs = @top_srcdir@/mkinstalldirs
-
-.SUFFIXES:
-.SUFFIXES: .c .cc .o .ko .uo .kii .uii
-
-.c.uo:
-	$(U_COMPILE) -c $< -o $@
-	@sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
-.cc.uo:
-	$(U_CXXCOMPILE) -c $< -o $@
-	@sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
-.cc.uii:
-	$(U_CXXCOMPILE) -E $< > $@
-.c.ko:
-	$(K_COMPILE) -c $< -o $@
-	@sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
-.cc.ko:
-	$(K_CXXCOMPILE) -c $< -o $@
-	@sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
-.cc.kii:
-	$(K_CXXCOMPILE) -E $< > $@
-
-
--include elements.mk
-
-K_OBJS = $(K_ELEMENT_OBJS) kpackage.ko kernelversion.ko
-U_OBJS = $(U_ELEMENT_OBJS) upackage.uo
-
-K_CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_LINUXMODULE -DCLICK_PACKAGE
-U_CPPFLAGS = @CPPFLAGS@ -g -MD -DCLICK_USERLEVEL -DCLICK_PACKAGE
-CFLAGS = @CFLAGS_NDEBUG@
-CXXFLAGS = @CXXFLAGS_NDEBUG@
-DEPCFLAGS = @DEPCFLAGS@
-
-K_CXXCOMPILE = $(K_CXX) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
-U_CXXCOMPILE = $(U_CXX) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
-K_COMPILE = $(K_CC) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CFLAGS) -D__KERNEL__ $(DEPCFLAGS)
-U_COMPILE = $(U_CC) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
-
-# set TARGETS, etc. based on MAKE_UPACKAGE and MAKE_KPACKAGE
-ifeq ($(MAKE_UPACKAGE),1)
-TARGETS += $(package).uo
-CONFFILES += uelements.conf
-DRIVERS += userlevel
-endif
-ifeq ($(MAKE_KPACKAGE),1)
-TARGETS += $(package).ko
-CONFFILES += kelements.conf
-DRIVERS += linuxmodule
+datadir = @datadir@
 endif
 
-all: $(TARGETS)
-
-$(package).ko: Makefile $(K_OBJS)
-	$(LD) -r -o $(package).ko $(K_OBJS)
-	$(STRIP) -g $(package).ko
-
-$(package).uo: Makefile $(U_OBJS)
-	$(LD) -shared -o $(package).uo $(U_OBJS)
-	$(STRIP_UPACKAGE) $(package).uo
-
-Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
-
-elemlist:
-	@rm -f $(CONFFILES)
-	@$(MAKE) $(CONFFILES)
-kelements.conf: $(clickbindir)/click-buildtool
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r $(package) > kelements.conf
-uelements.conf: $(clickbindir)/click-buildtool
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r userlevel -r $(package) > uelements.conf
-elements.mk: $(CONFFILES) $(clickbindir)/click-buildtool
-	@rm -f elements.mk
-	[ ! -f kelements.conf ] || $(clickbindir)/click-buildtool elem2make -t kernel < kelements.conf >> elements.mk
-	[ ! -f uelements.conf ] || $(clickbindir)/click-buildtool elem2make -t user < uelements.conf >> elements.mk
-kpackage.cc: kelements.conf $(clickbindir)/click-buildtool
-	$(clickbindir)/click-buildtool elem2package $(package) < kelements.conf > kpackage.cc
-	@rm -f kpackage.kd
-upackage.cc: uelements.conf $(clickbindir)/click-buildtool
-	$(clickbindir)/click-buildtool elem2package $(package) < uelements.conf > upackage.cc
-	@rm -f upackage.ud
-
-elementmap-$(package).xml: $(clickbindir)/click-mkelemmap always
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -F -r "$(DRIVERS)" -r $(package) | $(clickbindir)/click-mkelemmap -f - > elementmap-$(package).xml
-always:
-	@:
-
-DEPFILES := $(wildcard *.d *.kd *.ud)
-ifneq ($(DEPFILES),)
-include $(DEPFILES)
-endif
-
-install: install-obj install-man elementmap-$(package).xml always
-	$(mkinstalldirs) $(datadir)
-	$(INSTALL_DATA) elementmap-$(package).xml $(datadir)/elementmap-$(package).xml
-install-obj: $(TARGETS) always
-	$(mkinstalldirs) $(libdir)
-	for i in $(TARGETS); do $(INSTALL_DATA) $$i $(libdir)/$$i; done
-install-man: always
-	$(mkinstalldirs) $(mandir)
-	$(mkinstalldirs) $(mandir)/mann
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -F -r "$(DRIVERS)" -r $(package) | $(clickbindir)/click-elem2man -L -d $(mandir)/mann -f -
-
-clean:
-	-rm -f *.d *.kd *.ud *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf elementmap-$(package).xml conftest.[12]
-distclean: clean
-	-rm -f Makefile config.h config.status config.cache config.log 
-
-.PHONY: all always clean distclean elemlist install install-obj install-man
+include $(clickdatadir)/pkg-Makefile

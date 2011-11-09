@@ -101,7 +101,7 @@ class ToDevice : public Element { public:
     bool run_task(Task *);
     void selected(int fd, int mask);
 
-  private:
+  protected:
 
     Task _task;
     Timer _timer;

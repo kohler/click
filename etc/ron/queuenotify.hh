@@ -3,7 +3,7 @@
 #include <click/element.hh>
 #include <click/bitvector.hh>
 #include <click/glue.hh>
-#include "../../elements/standard/queue.hh"
+#include "elements/standard/notifierqueue.hh"
 /*
  * =c
  * QueueNotify
@@ -33,7 +33,7 @@ class NotifiedElement { public:
   virtual void notify(int i);
 };
 
-class QueueNotify : public Queue { public:
+class QueueNotify : public NotifierQueue { public:
   static const int NODATA = 0;
   static const int DATAREADY = 1;
 

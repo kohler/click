@@ -99,7 +99,7 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
   int confindex = 5;
   _have_sport = _have_dport = false;
   _setup_fw = true;
-#ifdef 0
+#if 0
   for(int i=0; i < conf.size(); i++){
     click_chatter("  %s\n", ((String)conf[i]).c_str());
   }
@@ -350,7 +350,7 @@ DivertSocket::initialize(ErrorHandler *errh)
 
 
 
-#ifdef 0
+#if 0
   printf("Device  : \t%s\n", _device.c_str());
   printf("DIV port: \t%u\n", _divertport);
   printf("Rule Num: \t%u\n", _rulenumber);

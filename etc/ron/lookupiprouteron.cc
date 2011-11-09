@@ -693,7 +693,7 @@ LookupIPRouteRON::push(int inport, Packet *p)
   */
 
 
-#ifdef 0
+#if 0
   _flow_table->print();
   _dst_table->print();
   rtprintf("\n");

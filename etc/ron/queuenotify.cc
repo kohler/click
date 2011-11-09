@@ -56,10 +56,10 @@ void
 QueueNotify::push(int, Packet *packet)
 {
   if (!size()) {
-    Queue::push(0, packet);
+    NotifierQueue::push(0, packet);
     if (size()) notify_subscribers(DATAREADY);
   } else
-    Queue::push(0, packet);
+    NotifierQueue::push(0, packet);
 }
 
 

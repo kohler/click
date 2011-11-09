@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include "ipprinttime.hh"
+#include "printtime.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
