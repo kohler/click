@@ -45,12 +45,11 @@ Are you sure '$clickprefix' is a Click install directory?
 ==============================================])
 fi
 
+clickbuild_prefix="$clickprefix"
 . $clickdatadir/config.mk
 
-AC_SUBST(clickprefix)
-AC_SUBST(clickbindir)
-AC_SUBST(clicksbindir)
-AC_SUBST(clickdatadir)
+AC_SUBST(clickbuild_prefix)
+AC_SUBST(clickbuild_datadir)
 
 
 dnl

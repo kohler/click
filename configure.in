@@ -973,35 +973,6 @@ AC_CHECK_HEADERS([ifaddrs.h linux/if_tun.h net/if_dl.h net/if_tap.h net/if_tun.h
 
 
 dnl
-dnl set path variables
-dnl
-
-shell_expand () {
-    val=`eval echo '$'"$1"`
-    while echo "x$val" | grep '\$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
-    eval "$1='$val'"
-}
-
-dnl Preset $prefix and $exec_prefix.
-test "x$prefix" = xNONE && prefix=$ac_default_prefix
-test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
-
-shell_expand bindir
-shell_expand sbindir
-shell_expand libdir
-shell_expand datarootdir
-shell_expand datadir
-shell_expand includedir
-
-clickdatadir="$datadir/click"
-AC_SUBST(clickdatadir)
-
-AC_DEFINE_UNQUOTED(CLICK_BINDIR, "$bindir")
-AC_DEFINE_UNQUOTED(CLICK_LIBDIR, "$libdir")
-AC_DEFINE_UNQUOTED(CLICK_DATADIR, "$clickdatadir")
-
-
-dnl
 dnl possible drivers
 dnl
 
@@ -1660,6 +1631,61 @@ AC_SUBST(MAKEINFO)
 AC_SUBST(TEXI2DVI)
 AC_SUBST(INSTALL_INFO)
 AC_SUBST(POD2MAN)
+
+
+dnl
+dnl set path variables
+dnl The "click" versions are expanded versions of the final install locations.
+dnl The "clickbuild_" versions are partially expanded versions, with an initial
+dnl "clickprefix" replaced by "${clickbuild_prefix}".
+dnl
+
+shell_expand () {
+    val=`eval echo '$'"$1"`
+    while echo "x$val" | grep '\$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
+    val=`echo "$val" | sed 's,//*,/,g'`
+    eval "$1='$val'"
+}
+
+shell_mkbuild () {
+    val=`eval echo '$'"$1"`
+    pval="$prefix"
+    while test -n "$pval" -a -n "$val"; do
+	component=`echo "$val" | sed 's,^\(/[[^/]]*\).*,\1,'`
+	pcomponent=`echo "$pval" | sed 's,^\(/[[^/]]*\).*,\1,'`
+	if test "$component" != "$pcomponent"; then break; fi
+	val=`echo "$val" | sed 's,^/[[^/]]*,,'`
+	pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
+    done
+    while test -n "$pval"; do
+	val="/..$val"
+	pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
+    done
+    eval "clickbuild_$1='"'$'"{clickbuild_prefix}$val'"
+}
+
+dnl Preset $prefix and $exec_prefix.
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+
+clickdatadir="$datadir/click"
+
+for i in bin clickdata data dataroot include lib sbin; do
+    shell_expand ${i}dir
+    shell_mkbuild ${i}dir
+done
+
+AC_DEFINE_UNQUOTED(CLICK_BINDIR, "$bindir")
+AC_DEFINE_UNQUOTED(CLICK_LIBDIR, "$libdir")
+AC_DEFINE_UNQUOTED(CLICK_DATADIR, "$clickdatadir")
+
+AC_SUBST(clickdatadir)
+AC_SUBST(clickbuild_bindir)
+AC_SUBST(clickbuild_clickdatadir)
+AC_SUBST(clickbuild_datadir)
+AC_SUBST(clickbuild_includedir)
+AC_SUBST(clickbuild_libdir)
+AC_SUBST(clickbuild_sbindir)
 
 
 dnl

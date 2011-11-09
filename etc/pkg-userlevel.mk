@@ -2,6 +2,7 @@
 # Eddie Kohler
 #
 # Copyright (c) 2006-2007 Regents of the University of California
+# Copyright (c) 2011 Eddie Kohler
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -37,8 +38,6 @@ PACKAGE_OBJS ?= upackage.uo
 PACKAGE_LIBS ?=
 PACKAGE_DEPS ?=
 
-CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
-CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
 STRIP_UPACKAGE ?= true
 
 CXXCOMPILE = $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(PACKAGE_CXXFLAGS) $(DEFS) $(INCLUDES)
@@ -79,14 +78,14 @@ endif
 
 OBJS = $(ELEMENT_OBJS) $(PACKAGE_OBJS)
 
-$(package).uo: $(clickdatadir)/pkg-userlevel.mk $(OBJS) $(PACKAGE_DEPS)
+$(package).uo: $(clickbuild_datadir)/pkg-userlevel.mk $(OBJS) $(PACKAGE_DEPS)
 	$(CXXLINK) -o $(package).uo $(OBJS) $(ELEMENT_LIBS) $(PACKAGE_LIBS)
 	$(STRIP_UPACKAGE) $(package).uo
 
 elemlist uelements.conf: $(CLICK_BUILDTOOL)
-	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) findelem -r userlevel -r $(package) -P $(CLICKFINDELEMFLAGS) > uelements.conf
+	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r userlevel -r $(package) -P $(CLICKFINDELEMFLAGS) > uelements.conf
 uelements.mk: uelements.conf $(CLICK_BUILDTOOL)
-	$(CLICK_BUILDTOOL) elem2make -t userlevel < uelements.conf > uelements.mk
+	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t userlevel < uelements.conf > uelements.mk
 upackage.cc: uelements.conf $(CLICK_BUILDTOOL)
 	$(CLICK_ELEM2PACKAGE) $(package) < uelements.conf > upackage.cc
 	@rm -f upackage.ud

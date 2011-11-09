@@ -3,6 +3,7 @@
 #
 # Copyright (c) 2006-2007 Regents of the University of California
 # Copyright (c) 2008 Meraki, Inc.
+# Copyright (c) 2011 Eddie Kohler
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -17,7 +18,7 @@
 CLICKBUILD = linux26module
 
 CLICKCPPFLAGS += -DCLICK_LINUXMODULE
-CLICKINCLUDES := -I$(clickincludedir) -I$(clicksrcdir)
+CLICKINCLUDES := -I$(clickbuild_includedir) -I$(clickbuild_srcdir)
 
 LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS) $(LINUXINCLUDE)" \
 	"$(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) $(CFLAGS_MODULE)" | sed \
@@ -46,10 +47,7 @@ packagesrcdir ?= $(srcdir)
 PACKAGE_OBJS ?= kpackage.ko
 PACKAGE_DEPS ?=
 
-CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
-CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
-
-KBUILD_EXTRA_SYMBOLS ?= $(clicklibdir)/click.symvers
+KBUILD_EXTRA_SYMBOLS ?= $(clickbuild_libdir)/click.symvers
 
 ifeq ($(PREPROCESS),1)
 compile_option = -E
@@ -57,7 +55,7 @@ else
 compile_option = -c
 endif
 
-cmd_shortensyms = $(CLICK_BUILDTOOL) shortensyms $@
+cmd_shortensyms = $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) shortensyms $@
 
 quiet_cmd_cxxcompile = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
 cmd_cxxcompile = $(CXXCOMPILE) $(DEPCFLAGS) $(compile_option) -o $@ $< && $(cmd_shortensyms)
@@ -94,9 +92,9 @@ endif
 obj-m += $(package).o
 
 $(obj)/kelements.conf: $(CLICK_BUILDTOOL)
-	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) findelem -r linuxmodule -r $(package) -P $(CLICKFINDELEMFLAGS) > $(obj)/kelements.conf
+	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r linuxmodule -r $(package) -P $(CLICKFINDELEMFLAGS) > $(obj)/kelements.conf
 $(obj)/kelements.mk: $(obj)/kelements.conf $(CLICK_BUILDTOOL)
-	$(CLICK_BUILDTOOL) elem2make -t linuxmodule < $(obj)/kelements.conf > $(obj)/kelements.mk
+	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t linuxmodule < $(obj)/kelements.conf > $(obj)/kelements.mk
 $(obj)/kpackage.ko: $(obj)/kpackage.cc
 	$(call if_changed_dep,cxxcompile)
 $(obj)/kpackage.cc: $(obj)/kelements.conf $(CLICK_BUILDTOOL)
@@ -105,7 +103,7 @@ $(obj)/kpackage.cc: $(obj)/kelements.conf $(CLICK_BUILDTOOL)
 $(obj)/kversion.ko: $(obj)/kversion.c
 	$(call if_changed_dep,ccompile)
 $(obj)/kversion.c: $(CLICK_BUILDTOOL)
-	$(CLICK_BUILDTOOL) kversion $(KVERSIONFLAGS) > $(obj)/kversion.c
+	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) kversion $(KVERSIONFLAGS) > $(obj)/kversion.c
 
 DEPFILES := $(wildcard *.kd)
 ifneq ($(DEPFILES),)

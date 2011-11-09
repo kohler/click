@@ -2,6 +2,7 @@
 # Eddie Kohler
 #
 # Copyright (c) 2006 Regents of the University of California
+# Copyright (c) 2011 Eddie Kohler
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -15,28 +16,29 @@
 
 VPATH ?= .:$(top_srcdir)/$(subdir):$(top_srcdir)
 
-include $(clickdatadir)/pkg-config.mk
+include $(clickbuild_datadir)/pkg-config.mk
+
+CLICK_BUILDTOOL = $(clickbuild_bindir)/click-buildtool
+CLICK_BUILDTOOL_FLAGS = -C $(clickbuild_prefix)
+CLICK_ELEM2PACKAGE = $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2package $(ELEM2PACKAGE_INCLUDES)
 
 ifeq ($(CLICK_PACKAGE_MAKING),userlevel)
-include $(clickdatadir)/pkg-userlevel.mk
+include $(clickbuild_datadir)/pkg-userlevel.mk
 endif
 
 ifeq ($(CLICK_PACKAGE_MAKING),linuxmodule)
-include $(clickdatadir)/pkg-linuxmodule.mk
+include $(clickbuild_datadir)/pkg-linuxmodule.mk
 endif
 
 ifeq ($(CLICK_PACKAGE_MAKING),bsdmodule)
-include $(clickdatadir)/pkg-bsdmodule.mk
+include $(clickbuild_datadir)/pkg-bsdmodule.mk
 endif
 
 ifeq ($(CLICK_PACKAGE_MAKING),)
 
 INSTALL ?= $(CLICKINSTALL)
 INSTALL_DATA ?= $(CLICKINSTALL) -m 644
-mkinstalldirs ?= $(clickdatadir)/mkinstalldirs
-
-CLICK_BUILDTOOL = $(clickbindir)/click-buildtool
-CLICK_ELEM2PACKAGE = $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
+mkinstalldirs ?= $(clickbuild_datadir)/mkinstalldirs
 
 # set TARGETS, etc. based on MAKE_UPACKAGE, MAKE_KPACKAGE, and MAKE_BPACKAGE
 ifeq ($(MAKE_UPACKAGE),1)
@@ -79,8 +81,8 @@ endif
 elemlist:
 	for i in $(DRIVERS); do $(MAKE) CLICK_PACKAGE_MAKING=$$i elemlist; done
 
-elementmap-$(package).xml: $(clickbindir)/click-mkelemmap always
-	r="$(DRIVERS) $(package)"; echo $(srcdir) | $(CLICK_BUILDTOOL) findelem -r "$$r" -P | $(clickbindir)/click-mkelemmap -r "$(package)" -t "$(DRIVERS)" -s `cd $(srcdir) && pwd` > elementmap-$(package).xml
+elementmap-$(package).xml: $(clickbuild_bindir)/click-mkelemmap always
+	r="$(DRIVERS) $(package)"; echo $(srcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r "$$r" -P | $(clickbuild_bindir)/click-mkelemmap -r "$(package)" -t "$(DRIVERS)" -s `cd $(srcdir) && pwd` > elementmap-$(package).xml
 
 install: install-obj install-man elementmap-$(package).xml always
 	$(mkinstalldirs) $(DESTDIR)$(clickdatadir)
@@ -91,14 +93,14 @@ install-obj: $(TARGETS) always
 install-man: always elementmap-$(package).xml
 	$(mkinstalldirs) $(DESTDIR)$(mandir)
 	$(mkinstalldirs) $(DESTDIR)$(mandir)/mann
-	$(clickbindir)/click-elem2man -L -d $(DESTDIR)$(mandir)/mann -P $(package) -e $(clickdatadir)/elementmap.xml elementmap-$(package).xml
+	$(clickbuild_bindir)/click-elem2man -L -d $(DESTDIR)$(mandir)/mann -P $(package) -e $(clickbuild_datadir)/elementmap.xml elementmap-$(package).xml
 
 uninstall: uninstall-obj uninstall-man always
 	/bin/rm -f $(DESTDIR)$(clickdatadir)/elementmap-$(package).xml
 uninstall-obj: always
 	for i in $(TARGETS); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
 uninstall-man: always elementmap-$(package).xml
-	$(clickbindir)/click-elem2man -L -d $(DESTDIR)$(mandir)/mann -P $(package) -e $(clickdatadir)/elementmap.xml -u elementmap-$(package).xml
+	$(clickbuild_bindir)/click-elem2man -L -d $(DESTDIR)$(mandir)/mann -P $(package) -e $(clickbuild_datadir)/elementmap.xml -u elementmap-$(package).xml
 
 clean: always
 	@for i in $(DRIVERS); do $(MAKE) CLICK_PACKAGE_MAKING=$$i clean; done

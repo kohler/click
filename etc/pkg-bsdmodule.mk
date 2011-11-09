@@ -1,10 +1,12 @@
 # pkg-bsdmodule.mk -- build tools for Click
-# Jimmy Kjällman, 2011, Ericsson. Based on pkg-linuxmodule.mk. 
+# Jimmy Kjällman, 2011, Ericsson. Based on pkg-linuxmodule.mk.
 #
 # Eddie Kohler
 #
 # Copyright (c) 2006 Regents of the University of California
 # Copyright (c) 2008 Meraki, Inc.
+# Copyright (c) 2011 Jimmy Kjällman
+# Copyright (c) 2011 Eddie Kohler
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -33,7 +35,7 @@ CXXFLAGS ?= $(CLICKKERNEL_CXXFLAGS)
 DEPCFLAGS ?= $(CLICKDEPCFLAGS)
 
 DEFS ?= $(CLICKDEFS)
-INCLUDES ?= -I$(clickincludedir) -I$(clicksrcdir)
+INCLUDES ?= -I$(clickbuild_includedir) -I$(clickbuild_srcdir)
 LDFLAGS ?= $(CLICKLDFLAGS)
 
 target_cpu ?= $(shell /usr/bin/uname -p)
@@ -50,9 +52,6 @@ DEFS +=  -D_KERNEL  # XXX
 packagesrcdir ?= $(srcdir)
 PACKAGE_OBJS ?= bpackage.bo
 PACKAGE_DEPS ?=
-
-CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
-CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
 
 CXXCOMPILE = $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(PACKAGE_CXXFLAGS) $(DEFS) $(INCLUDES) $(DEPCFLAGS)
 CXXLD = $(CXX)
@@ -88,14 +87,14 @@ endif
 
 OBJS = $(ELEMENT_OBJS) $(PACKAGE_OBJS)
 
-$(package).bo: $(clickdatadir)/pkg-bsdmodule.mk $(OBJS) $(PACKAGE_DEPS)
+$(package).bo: $(clickbuild_datadir)/pkg-bsdmodule.mk $(OBJS) $(PACKAGE_DEPS)
 	$(LD) -Bshareable -o $(package).bo $(OBJS)
 #	$(STRIP) -g $(package).bo
 
 elemlist belements.conf: $(CLICK_BUILDTOOL)
-	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) findelem -r bsdmodule -r $(package) -P $(CLICKFINDELEMFLAGS) > belements.conf
+	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r bsdmodule -r $(package) -P $(CLICKFINDELEMFLAGS) > belements.conf
 belements.mk: belements.conf $(CLICK_BUILDTOOL)
-	$(CLICK_BUILDTOOL) elem2make -t bsdmodule < belements.conf > belements.mk
+	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t bsdmodule < belements.conf > belements.mk
 bpackage.cc: belements.conf $(CLICK_BUILDTOOL)
 	$(CLICK_ELEM2PACKAGE) $(package) < belements.conf > bpackage.cc
 	@rm -f bpackage.bd

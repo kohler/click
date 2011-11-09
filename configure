@@ -602,6 +602,13 @@ ac_includes_default="\
 ac_header_list=
 ac_subst_vars='LTLIBOBJS
 provisions
+clickbuild_sbindir
+clickbuild_libdir
+clickbuild_includedir
+clickbuild_datadir
+clickbuild_clickdatadir
+clickbuild_bindir
+clickdatadir
 POD2MAN
 TEXI2DVI
 MAKEINFO
@@ -643,7 +650,6 @@ HAVE_LINUXMODULE_DRIVER
 HAVE_USERLEVEL_DRIVER
 DRIVERS
 POSSIBLE_DRIVERS
-clickdatadir
 LINUXMODULE_2_6
 EXTRA_TOOL_OBJS
 EXTRA_DRIVER_OBJS
@@ -7357,7 +7363,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7360 "configure"
+#line 7366 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -9764,40 +9770,6 @@ _ACEOF
 fi
 
 done
-
-
-
-
-shell_expand () {
-    val=`eval echo '$'"$1"`
-    while echo "x$val" | grep '\$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
-    eval "$1='$val'"
-}
-
-test "x$prefix" = xNONE && prefix=$ac_default_prefix
-test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
-
-shell_expand bindir
-shell_expand sbindir
-shell_expand libdir
-shell_expand datarootdir
-shell_expand datadir
-shell_expand includedir
-
-clickdatadir="$datadir/click"
-
-
-cat >>confdefs.h <<_ACEOF
-#define CLICK_BINDIR "$bindir"
-_ACEOF
-
-cat >>confdefs.h <<_ACEOF
-#define CLICK_LIBDIR "$libdir"
-_ACEOF
-
-cat >>confdefs.h <<_ACEOF
-#define CLICK_DATADIR "$clickdatadir"
-_ACEOF
 
 
 
@@ -12235,6 +12207,63 @@ else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: missing" >&5
 $as_echo "missing" >&6; }
 fi
+
+
+
+
+
+
+
+
+
+shell_expand () {
+    val=`eval echo '$'"$1"`
+    while echo "x$val" | grep '\$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
+    val=`echo "$val" | sed 's,//*,/,g'`
+    eval "$1='$val'"
+}
+
+shell_mkbuild () {
+    val=`eval echo '$'"$1"`
+    pval="$prefix"
+    while test -n "$pval" -a -n "$val"; do
+	component=`echo "$val" | sed 's,^\(/[^/]*\).*,\1,'`
+	pcomponent=`echo "$pval" | sed 's,^\(/[^/]*\).*,\1,'`
+	if test "$component" != "$pcomponent"; then break; fi
+	val=`echo "$val" | sed 's,^/[^/]*,,'`
+	pval=`echo "$pval" | sed 's,^/[^/]*,,'`
+    done
+    while test -n "$pval"; do
+	val="/..$val"
+	pval=`echo "$pval" | sed 's,^/[^/]*,,'`
+    done
+    eval "clickbuild_$1='"'$'"{clickbuild_prefix}$val'"
+}
+
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+
+clickdatadir="$datadir/click"
+
+for i in bin clickdata data dataroot include lib sbin; do
+    shell_expand ${i}dir
+    shell_mkbuild ${i}dir
+done
+
+cat >>confdefs.h <<_ACEOF
+#define CLICK_BINDIR "$bindir"
+_ACEOF
+
+cat >>confdefs.h <<_ACEOF
+#define CLICK_LIBDIR "$libdir"
+_ACEOF
+
+cat >>confdefs.h <<_ACEOF
+#define CLICK_DATADIR "$clickdatadir"
+_ACEOF
+
+
+
 
 
 

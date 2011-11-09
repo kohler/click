@@ -20,12 +20,13 @@
 # notice is a summary of the Click LICENSE file; the license in that file is
 # legally binding.
 
+set_clickbuild () {
+    clickbuild_prefix="`echo "$1" | sed 's,/$,,'`"
+    clickbuild_clickdatadir="@clickbuild_clickdatadir@"
+}
+
 prefix=@prefix@
-exec_prefix=@exec_prefix@
-bindir=@bindir@
-datarootdir=@datarootdir@
-datadir=@datadir@
-clickdatadir=@clickdatadir@
+set_clickbuild "$prefix"
 LINUXMODULE_2_6=@LINUXMODULE_2_6@
 gmake=@GMAKE@
 
@@ -263,7 +264,7 @@ $provisions"; shift 1;;
 	provisions="`elementmap_provisions "$emap"`
 $provisions"; shift 1;;
     -P|--pa|--pac|--pack|--packa|--packag|--package)
-	provisions="`elementmap_provisions "${clickdatadir}/elementmap.xml"`
+	provisions="`elementmap_provisions "${clickbuild_clickdatadir}/elementmap.xml"`
 $provisions"; shift 1;;
     -h|--h|--he|--hel|--help)
 	cat <<'EOF' 1>&2
@@ -1014,7 +1015,7 @@ provides_usage () {
 provides () {
     provisions="$default_provisions
 $driver_provisions
-"`elementmap_provisions ${clickdatadir}/elementmap.xml`
+"`elementmap_provisions ${clickbuild_clickdatadir}/elementmap.xml`
     requirements=""
     stdin=n; query=n; print=n
     while [ x"$1" != x ]; do
@@ -1261,7 +1262,7 @@ EOF
     esac
     done
 
-    echo "include ${clickdatadir}/pkg-linuxmodule-26.mk"
+    echo "include ${clickbuild_clickdatadir}/pkg-linuxmodule-26.mk"
 }
 
 
@@ -1374,8 +1375,8 @@ top_builddir = .
 PACKAGE_CFLAGS = $cflags
 PACKAGE_CXXFLAGS = $cflags
 
-include ${clickdatadir}/config.mk
-include ${clickdatadir}/pkg-Makefile" > Makefile
+include ${clickbuild_clickdatadir}/config.mk
+include ${clickbuild_clickdatadir}/pkg-Makefile" > Makefile
 
     test -z "$quiet" && echo "+" $gmake $pkg$osuffix
     $gmake $quiet $pkg$osuffix
@@ -1474,6 +1475,12 @@ BEGIN {
 # MAIN PROGRAM #
 ################
 
+main_usage () {
+     echo "Usage: click-buildtool TOOLNAME [ARGUMENTS]
+Try 'click-buildtool --help' for more information." 1>&2
+     exit 1
+}
+
 if test $# = 0; then
     # force usage message
     set crapfunc
@@ -1488,6 +1495,7 @@ Copyright (c) 2000-2001 Massachusetts Institute of Technology
 Copyright (c) 2000-2004 Mazu Networks, Inc.
 Copyright (c) 2001-2003 International Computer Science Institute
 Copyright (c) 2004-2007 Regents of the University of California
+Copyright (c) 2000-2011 Eddie Kohler
 This is free software; see the source for copying conditions.
 There is NO warranty, not even for merchantability or fitness for a
 particular purpose.
@@ -1495,6 +1503,13 @@ EOF
      exit 0;;
   -V|--verb|--verbo|--verbos|--verbose)
      verbose=1; shift 1;;
+  -C|--cl|--cli|--clic|--click|--clickp|--clickpr|--clickpre|--clickpref|--clickprefi|--clickprefix)
+     test $# -lt 2 && main_usage
+     shift 1; set_clickbuild "$1"; shift 1;;
+  -C*)
+     set_clickbuild "`echo "$1" | sed 's/^-C//`"; shift 1;;
+  --cl=*|--cli=*|--clic=*|--click=*|--clickp=*|--clickpr=*|--clickpre=*|--clickpref=*|--clickprefi=*|--clickprefix=*)
+     set_clickbuild "`echo "$1" | sed 's/^[^=]*=//'`"; shift 1;;
   -h|--h|--he|--hel|--help)
      cat <<'EOF' 1>&2
 'Click-buildtool' is a set of tools used when building Click. For information
@@ -1517,6 +1532,7 @@ Usage: click-buildtool elem2make [-V] [-p PREFIX] < [ELEMENTS]
 Options:
   -V, --verbose            Print more information.
   -h, --help               Print this message and exit.
+  -C, --clickprefix PFX    Set the prefix for locating data files.
       --version            Print version number and exit.
 
 Report bugs to <click@pdos.lcs.mit.edu>.
@@ -1546,7 +1562,7 @@ EOF
      shift 1; ksyms "$@"; exit 0;;
   shortensyms)
      shift 1; shortensyms "$@"; exit 0;;
-  --c|--cf|--cfl|--cfla|--cflag|--cflags|--d|--de|--def|--defs)
+  --cf|--cfl|--cfla|--cflag|--cflags|--d|--de|--def|--defs)
      echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ -I@includedir@; exit 0;;
   --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)
      echo @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@ @PTHREAD_LIBS@ @POSIX_CLOCK_LIBS@;
@@ -1556,8 +1572,6 @@ EOF
   --tooll|--toolli|--toollib|--toollibs)
      echo -L@libdir@ -lclicktool @DL_LIBS@ @SOCKET_LIBS@ @POSIX_CLOCK_LIBS@; exit 0;;
   *)
-     echo "Usage: click-buildtool TOOLNAME [ARGUMENTS]
-Try 'click-buildtool --help' for more information." 1>&2
-     exit 1;;
+     main_usage;;
 esac
 done

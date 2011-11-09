@@ -3,6 +3,7 @@
 #
 # Copyright (c) 2006 Regents of the University of California
 # Copyright (c) 2008 Meraki, Inc.
+# Copyright (c) 2011 Eddie Kohler
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@ CXXFLAGS ?= $(CLICKKERNEL_CXXFLAGS)
 DEPCFLAGS ?= $(CLICKDEPCFLAGS)
 
 DEFS ?= $(CLICKDEFS)
-INCLUDES ?= -I$(clickincludedir) -I$(clicksrcdir)
+INCLUDES ?= -I$(clickbuild_includedir) -I$(clickbuild_srcdir)
 LDFLAGS ?= $(CLICKLDFLAGS)
 
 LINUX_MAKEARGS ?= $(CLICKLINUX_MAKEARGS)
@@ -38,9 +39,6 @@ LINUX_MAKEARGS ?= $(CLICKLINUX_MAKEARGS)
 packagesrcdir ?= $(srcdir)
 PACKAGE_OBJS ?= kpackage.ko
 PACKAGE_DEPS ?=
-
-CLICK_BUILDTOOL ?= $(clickbindir)/click-buildtool
-CLICK_ELEM2PACKAGE ?= $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
 
 ifneq ($(CLICK_LINUXMODULE_2_6),1)
 
@@ -90,22 +88,22 @@ $(package).ko: Makefile Kbuild always $(PACKAGE_DEPS)
 	{ ( $(MAKE) -C $(clicklinux_builddir) M=$(shell pwd) $(LINUX_MAKEARGS) CLICK_PACKAGE_MAKING=linuxmodule-26 modules 2>&1 1>&3; echo $$? > .$(package).ko.status ) | grep -iv '^[\* ]*Warning:.*undefined' 1>&2; } 3>&1; v=`cat .$(package).ko.status`; rm .$(package).ko.status; exit $$v
 Kbuild: $(CLICK_BUILDTOOL)
 	echo 'include $$(obj)/Makefile' > Kbuild
-	$(CLICK_BUILDTOOL) kbuild >> Kbuild
+	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) kbuild >> Kbuild
 else
-$(package).ko: $(clickdatadir)/pkg-linuxmodule.mk $(OBJS) $(PACKAGE_DEPS)
+$(package).ko: $(clickbuild_datadir)/pkg-linuxmodule.mk $(OBJS) $(PACKAGE_DEPS)
 	$(LD) -r -o $(package).ko $(OBJS)
 	$(STRIP) -g $(package).ko
 endif
 
 elemlist kelements.conf: $(CLICK_BUILDTOOL)
-	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) findelem -r linuxmodule -r $(package) -P $(CLICKFINDELEMFLAGS) > kelements.conf
+	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r linuxmodule -r $(package) -P $(CLICKFINDELEMFLAGS) > kelements.conf
 kelements.mk: kelements.conf $(CLICK_BUILDTOOL)
-	$(CLICK_BUILDTOOL) elem2make -t linuxmodule < kelements.conf > kelements.mk
+	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t linuxmodule < kelements.conf > kelements.mk
 kpackage.cc: kelements.conf $(CLICK_BUILDTOOL)
 	$(CLICK_ELEM2PACKAGE) $(package) < kelements.conf > kpackage.cc
 	@rm -f kpackage.kd
 kversion.c: $(CLICK_BUILDTOOL)
-	$(CLICK_BUILDTOOL) kversion $(KVERSIONFLAGS) > kversion.c
+	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) kversion $(KVERSIONFLAGS) > kversion.c
 
 DEPFILES := $(wildcard *.kd)
 ifneq ($(DEPFILES),)
