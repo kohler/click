@@ -130,9 +130,7 @@ uninstall-local-include:
 	cd $(top_builddir)/include/click; for i in *.h; do /bin/rm -f $(DESTDIR)$(clickincludedir)/$$i; done
 	cd $(srcdir)/include/click/standard; for i in *.hh; do /bin/rm -f $(DESTDIR)$(clickincludedir)/standard/$$i; done
 	cd $(srcdir)/include/clicknet; for i in *.h; do /bin/rm -f $(DESTDIR)$(netincludedir)/$$i; done
-	@-/bin/rmdir $(DESTDIR)$(clickincludedir)/standard
-	@-/bin/rmdir $(DESTDIR)$(clickincludedir)
-	@-/bin/rmdir $(DESTDIR)$(netincludedir)
+	for i in $(clickincludedir)/standard $(clickincludedir) $(netincludedir); do if test -d $(DESTDIR)$$i; then /bin/rmdir $(DESTDIR)$$i; fi; done
 
 elemlist elemlists: click-buildtool
 	@for d in $(DRIVERS); do (cd $$d && $(MAKE) elemlist) || exit 1; done

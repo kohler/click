@@ -1562,5 +1562,5 @@ if ($elementlist && @all_outfiles) {
 	write_elementlist($fename, $uninstall);
     }
     read_main_elementlist();
-    write_elementlist("elements", 0);
+    write_elementlist("elements", $uninstall && defined($package) && $package eq "DEFAULT");
 }
