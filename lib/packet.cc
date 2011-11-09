@@ -353,6 +353,7 @@ WritablePacket::recycle(WritablePacket *p)
 	data = p->_head;
 	p->_head = 0;
     }
+    p->~WritablePacket();
 
 #  if HAVE_MULTITHREAD
     PacketPool &packet_pool = *get_packet_pool();
@@ -396,7 +397,7 @@ WritablePacket::recycle(WritablePacket *p)
     }
 #  else
     if (packet_pool.pcount == CLICK_PACKET_POOL_SIZE) {
-	delete p;
+	::operator delete((void *) p);
 	p = 0;
     }
     if (data && packet_pool.pdcount == CLICK_PACKET_POOL_SIZE) {
@@ -406,9 +407,7 @@ WritablePacket::recycle(WritablePacket *p)
 #  endif
 
     if (p) {
-	++packet_pool.pcount;	// increment first, lest nested recycle() call (from
-				// _data_packet->kill()) observe incorrect state
-	p->~WritablePacket();
+	++packet_pool.pcount;
 	p->set_next(packet_pool.p);
 	packet_pool.p = p;
 	assert(packet_pool.pcount <= CLICK_PACKET_POOL_SIZE);
