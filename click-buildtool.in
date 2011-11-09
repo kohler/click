@@ -1375,6 +1375,7 @@ top_builddir = .
 PACKAGE_CFLAGS = $cflags
 PACKAGE_CXXFLAGS = $cflags
 
+clickbuild_prefix := ${clickbuild_prefix}
 include ${clickbuild_clickdatadir}/config.mk
 include ${clickbuild_clickdatadir}/pkg-Makefile" > Makefile
 
