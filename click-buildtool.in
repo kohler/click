@@ -1508,7 +1508,7 @@ EOF
      test $# -lt 2 && main_usage
      shift 1; set_clickbuild "$1"; shift 1;;
   -C*)
-     set_clickbuild "`echo "$1" | sed 's/^-C//`"; shift 1;;
+     set_clickbuild "`echo "$1" | sed 's/^-C//'`"; shift 1;;
   --cl=*|--cli=*|--clic=*|--click=*|--clickp=*|--clickpr=*|--clickpre=*|--clickpref=*|--clickprefi=*|--clickprefix=*)
      set_clickbuild "`echo "$1" | sed 's/^[^=]*=//'`"; shift 1;;
   -h|--h|--he|--hel|--help)
