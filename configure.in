@@ -128,19 +128,14 @@ fi
 AC_SUBST(LINUXMODULE_FIXINCLUDES)
 
 AC_ARG_ENABLE(multithread,
-  [[    --enable-multithread[=N]  support kernel multithreading, N threads max]],
+  [[    --enable-multithread      support kernel multithreading]],
   :, enable_multithread=no)
 
-test "$enable_multithread" = yes && enable_multithread=4
-test "$enable_multithread" = no && enable_multithread=1
-if test "$enable_multithread" -gt 1; then
-    AC_DEFINE_UNQUOTED(NUM_CLICK_CPUS, $enable_multithread)
+if test "$enable_multithread" != no; then
     AC_DEFINE_UNQUOTED(__MTCLICK__, 1)
     AC_DEFINE_UNQUOTED(HAVE_LINUXMODULE_MULTITHREAD, 1)
     saveflags="$CPPFLAGS"
     CPPFLAGS="$saveflags -D__MTCLICK__"
-else
-    AC_DEFINE_UNQUOTED(NUM_CLICK_CPUS, 1)
 fi
 
 AC_ARG_ENABLE(warp9, [[    --enable-warp9            reduce PollDevice functionality for speed]], :, enable_warp9=no)

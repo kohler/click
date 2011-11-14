@@ -134,7 +134,6 @@
 
 /* Define if you want to run multithreaded Click. */
 #undef __MTCLICK__
-#undef NUM_CLICK_CPUS
 
 /* Define inline, if necessary. C only. */
 #ifndef __cplusplus

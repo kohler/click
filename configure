@@ -1447,7 +1447,7 @@ Optional Features:
     --disable-kqueue          do not use kqueue()
   --disable-linuxmodule   disable Linux kernel driver
     --disable-fixincludes     do not patch Linux kernel headers for C++
-    --enable-multithread[=N]  support kernel multithreading, N threads max
+    --enable-multithread      support kernel multithreading
     --enable-warp9            reduce PollDevice functionality for speed
     --enable-kassert          enable kernel assertions
     --enable-adaptive         use adaptive scheduler to flexibly arbitrate
@@ -6257,13 +6257,7 @@ else
 fi
 
 
-test "$enable_multithread" = yes && enable_multithread=4
-test "$enable_multithread" = no && enable_multithread=1
-if test "$enable_multithread" -gt 1; then
-    cat >>confdefs.h <<_ACEOF
-#define NUM_CLICK_CPUS $enable_multithread
-_ACEOF
-
+if test "$enable_multithread" != no; then
     cat >>confdefs.h <<_ACEOF
 #define __MTCLICK__ 1
 _ACEOF
@@ -6274,11 +6268,6 @@ _ACEOF
 
     saveflags="$CPPFLAGS"
     CPPFLAGS="$saveflags -D__MTCLICK__"
-else
-    cat >>confdefs.h <<_ACEOF
-#define NUM_CLICK_CPUS 1
-_ACEOF
-
 fi
 
 # Check whether --enable-warp9 was given.
@@ -7363,7 +7352,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7366 "configure"
+#line 7355 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER

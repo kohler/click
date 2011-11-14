@@ -278,13 +278,6 @@ AC_CHECK_DECLS(madvise, [], [], [#if HAVE_SYS_MMAN_H
 
 
 dnl
-dnl kernel features
-dnl
-
-    AC_DEFINE_UNQUOTED(NUM_CLICK_CPUS, 1)
-
-
-dnl
 dnl objects required by element collections
 dnl
 
