@@ -41,7 +41,7 @@ bool
 ICMPError::is_error_type(int type)
 {
     return type == ICMP_UNREACH || type == ICMP_SOURCEQUENCH
-	|| type == ICMP_REDIRECT ||	type == ICMP_TIMXCEED
+	|| type == ICMP_REDIRECT || type == ICMP_TIMXCEED
 	|| type == ICMP_PARAMPROB;
 }
 
