@@ -6262,7 +6262,7 @@ else
 fi
 
 
-if test "$enable_multithread" != no; then
+if test "$enable_multithread" != no -a "$enable_multithread" != 1; then
     cat >>confdefs.h <<_ACEOF
 #define __MTCLICK__ 1
 _ACEOF
@@ -6273,6 +6273,8 @@ _ACEOF
 
     saveflags="$CPPFLAGS"
     CPPFLAGS="$saveflags -D__MTCLICK__"
+else
+    enable_multithread=no
 fi
 
 # Check whether --enable-warp9 was given.
@@ -7357,7 +7359,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7360 "configure"
+#line 7362 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -12313,7 +12315,7 @@ if test "x$HAVE_PCAP" = xyes; then
     provisions="$provisions pcap"
 fi
 
-if test "$enable_multithread" -gt 1; then
+if test "$enable_multithread" != no; then
     provisions="$provisions smpclick"
 fi
 
