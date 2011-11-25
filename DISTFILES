@@ -533,7 +533,6 @@ straccum.cc
 strerror.c
 string.cc
 task.cc
-templatei.cc
 timer.cc
 timerset.cc
 timestamp.cc
@@ -870,7 +869,6 @@ runparse.cc
 runparse.hh
 toolutils.cc
 toolutils.hh
-vectori.cc
 
 ./userlevel:
 Makefile.in

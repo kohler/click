@@ -78,6 +78,4 @@ IPTable::del(IPAddress dst, IPAddress mask)
     }
 }
 
-// must always generate the whole template instance! LookupIPRoute demands it
-template class Vector<IPTable::Entry>;
 CLICK_ENDDECLS

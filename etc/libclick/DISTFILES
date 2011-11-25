@@ -157,7 +157,6 @@ lib/straccum.cc:libsrc/straccum.cc
 lib/strerror.c:libsrc/strerror.c
 lib/string.cc:libsrc/string.cc
 lib/task.cc:libsrc/task.cc
-lib/templatei.cc:libsrc/templatei.cc
 lib/timer.cc:libsrc/timer.cc
 lib/timerset.cc:libsrc/timerset.cc
 lib/timestamp.cc:libsrc/timestamp.cc
