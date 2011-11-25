@@ -156,6 +156,7 @@ inline void
 RouterThread::driver_unlock_tasks()
 {
     uint32_t val = _task_blocker.compare_swap((uint32_t) -1, 0);
+    (void) val;
     assert(val == (uint32_t) -1);
 }
 
