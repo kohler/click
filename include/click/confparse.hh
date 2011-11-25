@@ -162,7 +162,6 @@ bool cp_time(const String& str, struct timeval* result);
 bool cp_bandwidth(const String& str, uint32_t* result);
 
 // network addresses
-class IPAddress;
 class IPAddressList;
 bool cp_ip_address(const String& str, IPAddress* result  CP_OPT_CONTEXT);
 inline bool cp_ip_address(const String& str, struct in_addr* result  CP_OPT_CONTEXT);

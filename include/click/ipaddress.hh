@@ -395,7 +395,7 @@ class IPPrefixArg { public:
 template<> struct DefaultArg<IPAddress> : public IPAddressArg {};
 template<> struct DefaultArg<struct in_addr> : public IPAddressArg {};
 template<> struct DefaultArg<Vector<IPAddress> > : public IPAddressArg {};
-template<> struct has_trivial_copy<IPAddress> : public true_type {};
+/* template<> struct has_trivial_copy<IPAddress> : public true_type {}; -- in type_traits.hh */
 
 
 /** @class IPPortArg
