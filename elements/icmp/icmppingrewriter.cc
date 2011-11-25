@@ -173,7 +173,7 @@ ICMPPingRewriter::push(int port, Packet *p_in)
     if (!m && !echo)
 	goto mapping_fail;
     else if (!m) {		// create new mapping
-	IPRewriterInput &is = _input_specs.at_u(port);
+	IPRewriterInput &is = _input_specs.unchecked_at(port);
 	IPFlowID rewritten_flowid = IPFlowID::uninitialized_t();
 	int result = is.rewrite_flowid(flowid, rewritten_flowid, p);
 	if (result == rw_addmap) {

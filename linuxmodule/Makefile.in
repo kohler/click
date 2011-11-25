@@ -16,7 +16,7 @@ linux_srcdir = @linux_srcdir@
 linux_makeargs = @linux_makeargs@
 
 LIB_CXX_OBJS = string.o straccum.o nameinfo.o \
-	bitvector.o vectorv.o bighashmap_arena.o hashallocator.o \
+	bitvector.o bighashmap_arena.o hashallocator.o \
 	ipaddress.o ipflowid.o etheraddress.o \
 	packet.o \
 	error.o timestamp.o glue.o task.o timer.o atomic.o gaprate.o \

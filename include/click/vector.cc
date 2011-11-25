@@ -4,6 +4,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2006 Regents of the University of California
+ * Copyright (c) 2011 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -21,184 +22,144 @@
 #include <click/glue.hh>
 #include <click/vector.hh>
 CLICK_DECLS
+/** @cond never */
 
-template <class T>
-Vector<T>::Vector(const Vector<T> &x)
-    : _l(0), _n(0), _capacity(0)
+template <typename AM>
+vector_memory<AM>::~vector_memory()
 {
-    *this = x;
+    AM::destroy(l_, n_);
+    CLICK_LFREE(l_, capacity_ * sizeof(type));
 }
 
-template <class T>
-Vector<T>::~Vector()
+template <typename AM>
+void vector_memory<AM>::assign(const vector_memory<AM> &x)
 {
-    for (size_type i = 0; i < _n; i++)
-	_l[i].~T();
-    CLICK_LFREE(_l, sizeof(T) * _capacity);
-}
-
-template <class T> Vector<T> &
-Vector<T>::operator=(const Vector<T> &o)
-{
-    if (&o != this) {
-	for (size_type i = 0; i < _n; i++)
-	    _l[i].~T();
-#ifdef VALGRIND_MAKE_MEM_NOACCESS
-	if (_l && _n)
-	    VALGRIND_MAKE_MEM_NOACCESS(_l, _n * sizeof(T));
-#endif
-	_n = 0;
-	if (reserve(o._n)) {
-	    _n = o._n;
-#ifdef VALGRIND_MAKE_MEM_UNDEFINED
-	    if (_l && _n)
-		VALGRIND_MAKE_MEM_UNDEFINED(_l, _n * sizeof(T));
-#endif
-	    for (size_type i = 0; i < _n; i++)
-		new(velt(i)) T(o._l[i]);
+    if (&x != this) {
+	AM::destroy(l_, n_);
+	AM::mark_noaccess(l_, n_);
+	n_ = 0;
+	if (reserve_and_push_back(x.n_, 0)) {
+	    n_ = x.n_;
+	    AM::mark_undefined(l_, n_);
+	    AM::copy(l_, x.l_, n_);
 	}
     }
-    return *this;
 }
 
-template <class T> Vector<T> &
-Vector<T>::assign(size_type n, const T &x)
+template <typename AM>
+void vector_memory<AM>::assign(size_type n, const type *vp)
 {
-    if (unlikely(&x >= begin() && &x < end())) {
-	T x_copy(x);
-	return assign(n, x_copy);
-    } else {
-	resize(0, x);
-	resize(n, x);
-	return *this;
+    if (unlikely(need_argument_copy(vp))) {
+	type v_copy(*vp);
+	return assign(n, &v_copy);
     }
+
+    resize(0, vp);
+    resize(n, vp);
 }
 
-template <class T> typename Vector<T>::iterator
-Vector<T>::insert(iterator it, const T &x)
+template <typename AM>
+typename vector_memory<AM>::iterator vector_memory<AM>::insert(iterator it, const type *vp)
 {
     assert(it >= begin() && it <= end());
-    if (unlikely(&x >= begin() && &x < end())) {
-	T x_copy(x);
-	return insert(it, x_copy);
+    if (unlikely(need_argument_copy(vp))) {
+	type v_copy(*vp);
+	return insert(it, &v_copy);
     }
-    if (_n == _capacity) {
+
+    if (n_ == capacity_) {
 	size_type pos = it - begin();
-	if (!reserve(RESERVE_GROW))
+	if (!reserve_and_push_back(-1, 0))
 	    return end();
 	it = begin() + pos;
     }
-#ifdef VALGRIND_MAKE_MEM_UNDEFINED
-    VALGRIND_MAKE_MEM_UNDEFINED(velt(_n), sizeof(T));
-#endif
-    for (iterator j = end(); j > it; ) {
-	--j;
-	new((void*) (j + 1)) T(*j);
-	j->~T();
-#ifdef VALGRIND_MAKE_MEM_UNDEFINED
-	VALGRIND_MAKE_MEM_UNDEFINED(j, sizeof(T));
-#endif
-    }
-    new((void*) it) T(x);
-    _n++;
+    AM::mark_undefined(l_ + n_, 1);
+    AM::move(it + 1, it, end() - it);
+    AM::mark_undefined(it, 1);
+    AM::fill(it, 1, vp);
+    ++n_;
     return it;
 }
 
-template <class T> typename Vector<T>::iterator
-Vector<T>::erase(iterator a, iterator b)
+template <typename AM>
+typename vector_memory<AM>::iterator vector_memory<AM>::erase(iterator a, iterator b)
 {
-    if (b > a) {
+    if (a < b) {
 	assert(a >= begin() && b <= end());
-	iterator i = a, j = b;
-	for (; j < end(); i++, j++) {
-	    i->~T();
-#ifdef VALGRIND_MAKE_MEM_UNDEFINED
-	    VALGRIND_MAKE_MEM_UNDEFINED(i, sizeof(T));
-#endif
-	    new((void*) i) T(*j);
-	}
-	for (; i < end(); i++)
-	    i->~T();
-	_n -= b - a;
-#ifdef VALGRIND_MAKE_MEM_NOACCESS
-	VALGRIND_MAKE_MEM_NOACCESS(_l + _n, (b - a) * sizeof(T));
-#endif
+	AM::move_onto(a, b, end() - b);
+	n_ -= b - a;
+	AM::destroy(end(), b - a);
+	AM::mark_noaccess(end(), b - a);
 	return a;
     } else
 	return b;
 }
 
-template <class T> bool
-Vector<T>::reserve_and_push_back(size_type want, const T *push_x)
+template <typename AM>
+bool vector_memory<AM>::reserve_and_push_back(size_type want, const type *push_vp)
 {
-    if (unlikely(push_x && push_x >= begin() && push_x < end())) {
-	T x_copy(*push_x);
-	return reserve_and_push_back(want, &x_copy);
+    if (unlikely(push_vp && need_argument_copy(push_vp))) {
+	type push_v_copy(*push_vp);
+	return reserve_and_push_back(want, &push_v_copy);
     }
 
     if (want < 0)
-	want = (_capacity > 0 ? _capacity * 2 : 4);
+	want = (capacity_ > 0 ? capacity_ * 2 : 4);
 
-    if (want > _capacity) {
-	T *new_l = (T *) CLICK_LALLOC(sizeof(T) * want);
+    if (want > capacity_) {
+	type *new_l = (type *) CLICK_LALLOC(want * sizeof(type));
 	if (!new_l)
 	    return false;
-#ifdef VALGRIND_MAKE_MEM_NOACCESS
-	VALGRIND_MAKE_MEM_NOACCESS(new_l + _n, (want - _n) * sizeof(T));
-#endif
-
-	for (size_type i = 0; i < _n; i++) {
-	    new(velt(new_l, i)) T(_l[i]);
-	    _l[i].~T();
-	}
-	CLICK_LFREE(_l, sizeof(T) * _capacity);
-
-	_l = new_l;
-	_capacity = want;
+	AM::mark_noaccess(new_l + n_, want - n_);
+	AM::move(new_l, l_, n_);
+	CLICK_LFREE(l_, capacity_ * sizeof(type));
+	l_ = new_l;
+	capacity_ = want;
     }
 
-    if (unlikely(push_x))
-	push_back(*push_x);
+    if (unlikely(push_vp))
+	push_back(push_vp);
     return true;
 }
 
-template <class T> void
-Vector<T>::resize(size_type n, const T &x)
+template <typename AM>
+void vector_memory<AM>::resize(size_type n, const type *vp)
 {
-    if (unlikely(&x >= begin() && &x < end())) {
-	T x_copy(x);
-	resize(n, x_copy);
-    } else if (n <= _capacity || reserve(n)) {
+    if (unlikely(need_argument_copy(vp))) {
+	type v_copy(*vp);
+	return resize(n, &v_copy);
+    }
+
+    if (n <= capacity_ || reserve_and_push_back(n, 0)) {
 	assert(n >= 0);
-	for (size_type i = n; i < _n; i++)
-	    _l[i].~T();
-#ifdef VALGRIND_MAKE_MEM_NOACCESS
-	if (n < _n)
-	    VALGRIND_MAKE_MEM_NOACCESS(_l + n, (_n - n) * sizeof(T));
-	if (_n < n)
-	    VALGRIND_MAKE_MEM_UNDEFINED(_l + _n, (n - _n) * sizeof(T));
-#endif
-	for (size_type i = _n; i < n; i++)
-	    new(velt(i)) T(x);
-	_n = n;
+	if (n < n_) {
+	    AM::destroy(l_ + n, n_ - n);
+	    AM::mark_noaccess(l_ + n, n_ - n);
+	}
+	if (n_ < n) {
+	    AM::mark_undefined(l_ + n_, n - n_);
+	    AM::fill(l_ + n_, n - n_, vp);
+	}
+	n_ = n;
     }
 }
 
-template <class T> void
-Vector<T>::swap(Vector<T> &x)
+template <typename AM>
+void vector_memory<AM>::swap(vector_memory<AM> &x)
 {
-    T *l = _l;
-    _l = x._l;
-    x._l = l;
+    type *l = l_;
+    l_ = x.l_;
+    x.l_ = l;
 
-    size_type n = _n;
-    _n = x._n;
-    x._n = n;
+    size_type n = n_;
+    n_ = x.n_;
+    x.n_ = n;
 
-    size_type cap = _capacity;
-    _capacity = x._capacity;
-    x._capacity = cap;
+    size_type capacity = capacity_;
+    capacity_ = x.capacity_;
+    x.capacity_ = capacity;
 }
 
+/** @endcond never */
 CLICK_ENDDECLS
 #endif

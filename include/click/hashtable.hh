@@ -34,7 +34,7 @@ template <typename T> class HashTable_const_iterator;
 
   The HashTable template implements a hash table or associative array suitable
   for use in the kernel or at user level.  Its interface is similar to C++'s
-  map and unordered_map, although those types have more methods.
+  std::map and std::unordered_map, although those types have more methods.
 
   Used with two template parameters, as HashTable<K, V>, the table maps keys K
   to values V.  Used with one template parameter, as HashTable<T>, HashTable
@@ -156,7 +156,7 @@ class HashTable<T> {
 	return _rep.size();
     }
 
-    /** @brief Return true iff size() == 0. */
+    /** @brief Test if size() == 0. */
     inline bool empty() const {
 	return _rep.empty();
     }
@@ -281,7 +281,7 @@ class HashTable<T> {
     }
 
 
-    /** @brief Assign this hash table's contents to a copy of @a x. */
+    /** @brief Replace this hash table's contents with a copy of @a x. */
     HashTable<T> &operator=(const HashTable<T> &x);
 
   private:

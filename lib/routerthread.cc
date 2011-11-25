@@ -440,9 +440,9 @@ RouterThread::run_tasks(int ntasks)
 #endif
 #if HAVE_STRIDE_SCHED
 # if HAVE_TASK_HEAP
-		unsigned p1 = _task_heap.at_u(1).pass;
-		if (_task_heap.size() > 2 && PASS_GT(p1, _task_heap.at_u(2).pass))
-		    p1 = _task_heap.at_u(2).pass;
+		unsigned p1 = _task_heap.unchecked_at(1).pass;
+		if (_task_heap.size() > 2 && PASS_GT(p1, _task_heap.unchecked_at(2).pass))
+		    p1 = _task_heap.unchecked_at(2).pass;
 # else
 		unsigned p1 = t->_next->_pass;
 # endif

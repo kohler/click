@@ -392,6 +392,7 @@ clicknet
 algorithm.hh
 archive.hh
 args.hh
+array_memory.hh
 atomic.hh
 bighashmap.cc
 bighashmap.hh
@@ -538,7 +539,6 @@ timerset.cc
 timestamp.cc
 userutils.cc
 variableenv.cc
-vectorv.cc
 
 ./linuxmodule:
 Makefile.in

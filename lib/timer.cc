@@ -277,7 +277,7 @@ Timer::schedule_at_steady(const Timestamp &when)
 	_schedpos1 = ts._timer_heap.size() + 1;
 	ts._timer_heap.push_back(TimerSet::heap_element(this));
     } else
-	ts._timer_heap.at_u(_schedpos1 - 1).expiry_s = _expiry_s;
+	ts._timer_heap.unchecked_at(_schedpos1 - 1).expiry_s = _expiry_s;
     change_heap<4>(ts._timer_heap.begin(), ts._timer_heap.end(),
 		   ts._timer_heap.begin() + _schedpos1 - 1,
 		   TimerSet::heap_less(), TimerSet::heap_place());

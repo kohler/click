@@ -195,7 +195,7 @@ class RouterThread : private TaskLink { public:
 #if HAVE_STRIDE_SCHED
     inline unsigned pass() const {
 # if HAVE_TASK_HEAP
-	return _task_heap.size() ? _task_heap.at_u(0).pass : 0;
+	return _task_heap.size() ? _task_heap.unchecked_at(0).pass : 0;
 # else
 	return _next->_pass;
 # endif
@@ -290,7 +290,7 @@ inline Task *
 RouterThread::task_begin() const
 {
 #if HAVE_TASK_HEAP
-    return (_task_heap.size() ? _task_heap.at_u(0).t : 0);
+    return (_task_heap.size() ? _task_heap.unchecked_at(0).t : 0);
 #else
     return static_cast<Task *>(_next);
 #endif
@@ -310,7 +310,7 @@ RouterThread::task_next(Task *task) const
 {
 #if HAVE_TASK_HEAP
     int p = task->_schedpos + 1;
-    return (p < _task_heap.size() ? _task_heap.at_u(p).t : 0);
+    return (p < _task_heap.size() ? _task_heap.unchecked_at(p).t : 0);
 #else
     return static_cast<Task *>(task->_next);
 #endif

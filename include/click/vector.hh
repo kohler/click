@@ -1,137 +1,348 @@
 #ifndef CLICK_VECTOR_HH
 #define CLICK_VECTOR_HH
 #include <click/algorithm.hh>
-#if HAVE_VALGRIND && HAVE_VALGRIND_MEMCHECK_H
-# include <valgrind/memcheck.h>
-#endif
+#include <click/array_memory.hh>
 CLICK_DECLS
 
-template <class T>
-class Vector { public:
+/** @file <click/vector.hh>
+  @brief Click's vector container template. */
 
-    typedef T value_type;
-    typedef T& reference;
-    typedef const T& const_reference;
-    typedef T* pointer;
-    typedef const T* const_pointer;
-    typedef const T& const_access_type;
-
+/** @cond never */
+template <typename AM> class vector_memory { public:
     typedef int size_type;
+    typedef typename AM::type type;
+    typedef type *iterator;
+    inline bool need_argument_copy(const type *argp) {
+	return fast_argument<type>::is_reference && (uintptr_t) argp - (uintptr_t) l_ < (size_t) (n_ * sizeof(type));
+    }
+
+    vector_memory()
+	: l_(0), n_(0), capacity_(0) {
+    }
+    ~vector_memory();
+    void assign(const vector_memory<AM> &x);
+    void assign(size_type n, const type *vp);
+    void resize(size_type n, const type *vp);
+    iterator begin() {
+	return l_;
+    }
+    iterator end() {
+	return l_ + n_;
+    }
+    iterator insert(iterator it, const type *vp);
+    iterator erase(iterator a, iterator b);
+    inline void push_back(const type *vp) {
+	if (n_ < capacity_) {
+	    AM::mark_undefined(l_ + n_, 1);
+	    AM::fill(l_ + n_, 1, vp);
+	    ++n_;
+	} else
+	    reserve_and_push_back(-1, vp);
+    }
+    inline void pop_back() {
+	assert(n_ > 0);
+	--n_;
+	AM::destroy(l_ + n_, 1);
+	AM::mark_noaccess(l_ + n_, 1);
+    }
+    inline void clear() {
+	AM::destroy(l_, n_);
+	AM::mark_noaccess(l_, n_);
+	n_ = 0;
+    }
+    bool reserve_and_push_back(size_type n, const type *vp);
+    void swap(vector_memory<AM> &x);
+    type *l_;
+    size_type n_;
+    size_type capacity_;
+};
+/** @endcond never */
+
+
+/** @class Vector
+  @brief Vector template.
+
+  Vector implements a vector, or growable array, suitable for use in the
+  kernel or at user level. Its interface should be compatible with C++'s
+  std::vector, although that type has more methods. Vector elements are
+  accessed with operator[] like arrays, and can be resized and expanded
+  through append operations (see push_back() and resize()). A common (and
+  efficient) usage pattern grows a Vector through repeated push_back() calls.
+
+  Vector iterators are pointers into the underlying array. This can simplify
+  interactions between Vector and code that expects conventional C arrays.
+
+  Vector's push_front() and pop_front() operations are quite expensive (O(size())
+  complexity). For fast push_front() and pop_front() operations, use Deque.
+
+  Example code:
+  @code
+  Vector<int> v;
+  printf("%d\n", v.size());         // prints "0"
+
+  v.push_back(1);
+  v.push_back(2);
+  printf("%d\n", v.size());         // prints "2"
+  printf("%d %d\n", v[0], v[1]);    // prints "1 2"
+
+  Vector<int>::iterator it = v.begin();
+  int *ip = it;                     // Vector iterators are pointers
+  assert(it == v.end() - 2);
+
+  v.erase(v.begin());
+  printf("%d\n", v.size());         // prints "1"
+  printf("%d\n", v[0]);             // prints "2"
+  @endcode
+*/
+template <typename T>
+class Vector {
+
+    typedef typename array_memory<T>::type array_memory_type;
+    typedef typename vector_memory<array_memory_type>::type memory_object;
+    mutable vector_memory<array_memory_type> vm_;
+
+  public:
+
+    /** @brief Value type. */
+    typedef T value_type;
+
+    /** @brief Reference to value type. */
+    typedef T &reference;
+
+    /** @brief Const reference to value type. */
+    typedef const T &const_reference;
+
+    /** @brief Pointer to value type. */
+    typedef T *pointer;
+
+    /** @brief Pointer to const value type. */
+    typedef const T *const_pointer;
+
+    /** @brief Type used for value arguments (either T or const T &). */
+    typedef typename fast_argument<T>::type value_argument_type;
+
+    typedef const T &const_access_type;
+
+    /** @brief Type of sizes (size()). */
+    typedef int size_type;
+
+    /** @brief Constant passed to reserve() to grow the Vector. */
     enum { RESERVE_GROW = (size_type) -1 };
 
-    typedef T* iterator;
-    typedef const T* const_iterator;
 
-    explicit Vector()
-	: _l(0), _n(0), _capacity(0) {
+    /** @brief Construct an empty vector. */
+    explicit Vector() {
     }
-    explicit Vector(size_type n, const T &e)
-	: _l(0), _n(0), _capacity(0) {
-	resize(n, e);
+
+    /** @brief Construct a vector containing @a n copies of @a v. */
+    explicit Vector(size_type n, value_argument_type v) {
+	vm_.resize(n, (const memory_object *)&v);
     }
-    // template <class In> ...
-    Vector(const Vector<T> &x);
-    ~Vector();
 
-    Vector<T>& operator=(const Vector<T>&);
-    Vector<T>& assign(size_type n, const T& e = T());
-    // template <class In> ...
+    /** @brief Construct a vector as a copy of @a x. */
+    Vector(const Vector<T> &x) {
+	vm_.assign(x.vm_);
+    }
 
-    // iterators
-    iterator begin()			{ return _l; }
-    const_iterator begin() const	{ return _l; }
-    iterator end()			{ return _l + _n; }
-    const_iterator end() const		{ return _l + _n; }
+    /** @brief Destroy the vector, freeing its memory. */
+    ~Vector() {
+    }
 
-    // capacity
-    size_type size() const		{ return _n; }
-    void resize(size_type nn, const T& e = T());
-    size_type capacity() const		{ return _capacity; }
-    bool empty() const			{ return _n == 0; }
-    bool reserve(size_type n)		{ return reserve_and_push_back(n, 0); }
 
-    // element access
+    /** @brief Return the number of elements. */
+    size_type size() const {
+	return vm_.n_;
+    }
+
+    /** @brief Test if the vector is empty (size() == 0). */
+    bool empty() const {
+	return vm_.n_ == 0;
+    }
+
+    /** @brief Return the vector's capacity.
+
+	The capacity is greater than or equal to the size(). Functions such as
+	resize(n) will not allocate new memory for the vector if n <=
+	capacity(). */
+    size_type capacity() const {
+	return vm_.capacity_;
+    }
+
+
+    /** @brief Iterator type. */
+    typedef T *iterator;
+
+    /** @brief Const iterator type. */
+    typedef const T *const_iterator;
+
+    /** @brief Return an iterator for the first element in the vector. */
+    iterator begin() {
+	return (iterator) vm_.l_;
+    }
+    /** @overload */
+    const_iterator begin() const	{ return (const_iterator) vm_.l_; }
+
+    /** @brief Return an iterator for the end of the vector.
+      @invariant end() == begin() + size() */
+    iterator end() {
+	return (iterator) vm_.l_ + vm_.n_;
+    }
+    /** @overload */
+    const_iterator end() const		{ return (const_iterator) vm_.l_ + vm_.n_; }
+
+
+    /** @brief Return a reference to the <em>i</em>th element.
+      @pre 0 <= @a i < size() */
     T &operator[](size_type i) {
-	assert((unsigned) i < (unsigned) _n);
-	return _l[i];
+	assert((unsigned) i < (unsigned) vm_.n_);
+	return *(T *)&vm_.l_[i];
     }
+    /** @overload */
     const T &operator[](size_type i) const {
-	assert((unsigned) i < (unsigned) _n);
-	return _l[i];
+	assert((unsigned) i < (unsigned) vm_.n_);
+	return *(T *)&vm_.l_[i];
     }
-    T& at(size_type i)			{ return operator[](i); }
-    const T& at(size_type i) const	{ return operator[](i); }
-    T& front()				{ return operator[](0); }
-    const T& front() const		{ return operator[](0); }
-    T& back()				{ return operator[](_n - 1); }
-    const T& back() const		{ return operator[](_n - 1); }
-    T& at_u(size_type i)		{ return _l[i]; }
-    const T& at_u(size_type i) const	{ return _l[i]; }
+    /** @brief Return a reference to the <em>i</em>th element.
+      @pre 0 <= @a i < size()
+      @sa operator[]() */
+    T &at(size_type i) {
+	return operator[](i);
+    }
+    /** @overload */
+    const T &at(size_type i) const	{ return operator[](i); }
 
-    // modifiers
-    inline void push_back(const T& x);
-    inline void pop_back();
-    inline void push_front(const T& x);
-    inline void pop_front();
-    iterator insert(iterator it, const T& x);
-    inline iterator erase(iterator it);
-    iterator erase(iterator a, iterator b);
-    void swap(Vector<T>& x);
-    void clear()			{ erase(begin(), end()); }
+    /** @brief Return a reference to the first element.
+      @pre !empty() */
+    T &front() {
+	return operator[](0);
+    }
+    /** @overload */
+    const T &front() const		{ return operator[](0); }
 
- private:
+    /** @brief Return a reference to the last element (number size()-1).
+      @pre !empty() */
+    T &back() {
+	return operator[](vm_.n_ - 1);
+    }
+    /** @overload */
+    const T &back() const		{ return operator[](vm_.n_ - 1); }
 
-    T *_l;
-    size_type _n;
-    size_type _capacity;
+    /** @brief Return a reference to the <em>i</em>th element.
+      @pre 0 <= @a i < size()
 
-    void *velt(size_type i) const		{ return (void *)&_l[i]; }
-    static void *velt(T *l, size_type i)	{ return (void *)&l[i]; }
-    bool reserve_and_push_back(size_type n, const T *x);
+      Unlike operator[]() and at(), this function does not check bounds,
+      even if assertions are enabled. Use with caution. */
+    T &unchecked_at(size_type i) {
+	return *(T *)&vm_.l_[i];
+    }
+    /** @overload */
+    const T &unchecked_at(size_type i) const	{ return *(T *)&vm_.l_[i]; }
+
+    /** @cond never */
+    inline T &at_u(size_type i) CLICK_DEPRECATED;
+    inline const T &at_u(size_type i) const CLICK_DEPRECATED;
+    /** @endcond never */
+
+
+    /** @brief Resize the vector to contain @a n elements.
+      @param n new size
+      @param v value used to fill new elements */
+    void resize(size_type n, value_argument_type v = T()) {
+	vm_.resize(n, (memory_object *) &v);
+    }
+
+    /** @brief Append element @a v.
+
+      A copy of @a v is inserted at position size(). Takes amortized O(1)
+      time. */
+    void push_back(value_argument_type v) {
+	vm_.push_back((const memory_object *) &v);
+    }
+
+    /** @brief Remove the last element.
+
+      Takes O(1) time. */
+    void pop_back() {
+	vm_.pop_back();
+    }
+
+    /** @brief Prepend element @a v.
+
+      A copy of @a v is added to position 0. Other elements are shifted one
+      position forward. Takes O(size()) time. */
+    void push_front(value_argument_type v) {
+	vm_.insert(vm_.l_, (const memory_object *) &v);
+    }
+
+    /** @brief Remove the first element.
+
+      Other elements are shifted one position backward. Takes O(size())
+      time. */
+    void pop_front() {
+	vm_.erase(vm_.l_, vm_.l_ + 1);
+    }
+
+    /** @brief Insert @a v before position @a it.
+      @return An iterator pointing at the new element. */
+    iterator insert(iterator it, value_argument_type v) {
+	return (iterator) vm_.insert((memory_object *) it, (const memory_object *) &v);
+    }
+
+    /** @brief Remove the element at position @a it.
+      @return An iterator pointing at the element following @a it. */
+    iterator erase(iterator it) {
+	return (it < end() ? erase(it, it + 1) : it);
+    }
+
+    /** @brief Remove the elements in [@a a, @a b).
+      @return An iterator corresponding to @a b. */
+    iterator erase(iterator a, iterator b) {
+	return (iterator) vm_.erase((memory_object *) a, (memory_object *) b);
+    }
+
+    /** @brief Remove all elements.
+      @post size() == 0 */
+    void clear() {
+	vm_.clear();
+    }
+
+
+    /** @brief Reserve space for at least @a n more elements.
+      @return true iff reserve succeeded.
+
+      This function changes the vector's capacity(), not its size(). If
+      reserve(@a n) succeeds, then any succeeding call to resize(@a m) with @a
+      m < @a n will succeed without allocating vector memory. */
+    bool reserve(size_type n)		{ return vm_.reserve_and_push_back(n, 0); }
+
+
+    /** @brief Swap the contents of this vector and @a x. */
+    void swap(Vector<T> &x)		{ vm_.swap(x.vm_); }
+
+
+    /** @brief Replace this vector's contents with a copy of @a x. */
+    Vector<T> &operator=(const Vector<T> &x) {
+	vm_.assign(x.vm_);
+	return *this;
+    }
+
+    /** @brief Replace this vector's contents with @a n copies of @a v.
+      @post size() == @a n */
+    Vector<T> &assign(size_type n, value_argument_type v = T()) {
+	vm_.assign(n, (const memory_object *) &v);
+	return *this;
+    }
 
 };
 
-template <class T> inline void
-Vector<T>::push_back(const T& x)
-{
-    if (_n < _capacity) {
-#ifdef VALGRIND_MAKE_MEM_UNDEFINED
-	VALGRIND_MAKE_MEM_UNDEFINED(velt(_n), sizeof(T));
-#endif
-	new(velt(_n)) T(x);
-	++_n;
-    } else
-	reserve_and_push_back(RESERVE_GROW, &x);
+/** @cond never */
+template <typename T> T &Vector<T>::at_u(size_type i) {
+    return unchecked_at(i);
 }
-
-template <class T> inline void
-Vector<T>::pop_back()
-{
-    assert(_n > 0);
-    --_n;
-    _l[_n].~T();
-#ifdef VALGRIND_MAKE_MEM_NOACCESS
-    VALGRIND_MAKE_MEM_NOACCESS(&_l[_n], sizeof(T));
-#endif
+template <typename T> const T &Vector<T>::at_u(size_type i) const {
+    return unchecked_at(i);
 }
-
-template <class T> inline typename Vector<T>::iterator
-Vector<T>::erase(iterator it)
-{
-    return (it < end() ? erase(it, it + 1) : it);
-}
-
-template <class T> inline void
-Vector<T>::push_front(const T& x)
-{
-    insert(begin(), x);
-}
-
-template <class T> inline void
-Vector<T>::pop_front()
-{
-    erase(begin());
-}
+/** @endcond never */
 
 template <typename T>
 inline void click_swap(Vector<T> &a, Vector<T> &b)
@@ -144,189 +355,6 @@ inline void assign_consume(Vector<T> &a, Vector<T> &b)
 {
     a.swap(b);
 }
-
-
-template <>
-class Vector<void*> { public:
-
-    typedef void* value_type;
-    typedef void*& reference;
-    typedef void* const& const_reference;
-    typedef void** pointer;
-    typedef void* const* const_pointer;
-    typedef void* const_access_type;
-
-    typedef int size_type;
-    enum { RESERVE_GROW = (size_type) -1 };
-
-    typedef void** iterator;
-    typedef void* const* const_iterator;
-
-    explicit Vector()
-	: _l(0), _n(0), _capacity(0) {
-    }
-    explicit Vector(size_type n, void* e)
-	: _l(0), _n(0), _capacity(0) {
-	resize(n, e);
-    }
-    Vector(const Vector<void*> &);
-    ~Vector();
-
-    Vector<void*> &operator=(const Vector<void*> &);
-    Vector<void*> &assign(size_type n, void* x = 0);
-
-    // iterators
-    iterator begin()			{ return _l; }
-    const_iterator begin() const	{ return _l; }
-    iterator end()			{ return _l + _n; }
-    const_iterator end() const		{ return _l + _n; }
-
-    // capacity
-    size_type size() const		{ return _n; }
-    void resize(size_type n, void* x = 0);
-    size_type capacity() const		{ return _capacity; }
-    bool empty() const			{ return _n == 0; }
-    bool reserve(size_type n);
-
-    // element access
-    void*& operator[](size_type i)	{ assert(i>=0 && i<_n); return _l[i]; }
-    void* operator[](size_type i) const	{ assert(i>=0 && i<_n); return _l[i]; }
-    void*& at(size_type i)		{ return operator[](i); }
-    void* at(size_type i) const		{ return operator[](i); }
-    void*& front()			{ return operator[](0); }
-    void* front() const			{ return operator[](0); }
-    void*& back()			{ return operator[](_n - 1); }
-    void* back() const			{ return operator[](_n - 1); }
-    void*& at_u(size_type i)		{ return _l[i]; }
-    void* at_u(size_type i) const	{ return _l[i]; }
-
-    // modifiers
-    inline void push_back(void* x);
-    inline void pop_back();
-    inline void push_front(void* x);
-    inline void pop_front();
-    iterator insert(iterator it, void* x);
-    inline iterator erase(iterator it);
-    iterator erase(iterator a, iterator b);
-    void swap(Vector<void*> &x);
-    void clear()			{ _n = 0; }
-
- private:
-
-    void **_l;
-    size_type _n;
-    size_type _capacity;
-
-};
-
-inline void
-Vector<void*>::push_back(void* x)
-{
-    if (_n < _capacity || reserve(RESERVE_GROW)) {
-#ifdef VALGRIND_MAKE_MEM_UNDEFINED
-	VALGRIND_MAKE_MEM_UNDEFINED(&_l[_n], sizeof(void*));
-#endif
-	_l[_n] = x;
-	_n++;
-    }
-}
-
-inline void
-Vector<void*>::pop_back()
-{
-    assert(_n > 0);
-    --_n;
-#ifdef VALGRIND_MAKE_MEM_NOACCESS
-    VALGRIND_MAKE_MEM_NOACCESS(&_l[_n], sizeof(void *));
-#endif
-}
-
-inline Vector<void*>::iterator
-Vector<void*>::erase(iterator it)
-{
-    return (it < end() ? erase(it, it + 1) : it);
-}
-
-inline void
-Vector<void*>::push_front(void* x)
-{
-    insert(begin(), x);
-}
-
-inline void
-Vector<void*>::pop_front()
-{
-    erase(begin());
-}
-
-
-template <class T>
-class Vector<T*>: private Vector<void*> {
-
-    typedef Vector<void*> Base;
-
- public:
-
-    typedef T* value_type;
-    typedef T*& reference;
-    typedef T* const& const_reference;
-    typedef T** pointer;
-    typedef T* const* const_pointer;
-    typedef T* const_access_type;
-
-    typedef int size_type;
-    enum { RESERVE_GROW = Base::RESERVE_GROW };
-
-    typedef T** iterator;
-    typedef T* const* const_iterator;
-
-    explicit Vector()			: Base() { }
-    explicit Vector(size_type n, T* x)	: Base(n, (void *)x) { }
-    Vector(const Vector<T*>& x)		: Base(x) { }
-    ~Vector()				{ }
-
-    Vector<T*>& operator=(const Vector<T*>& x)
-		{ Base::operator=(x); return *this; }
-    Vector<T*>& assign(size_type n, T* x = 0)
-		{ Base::assign(n, (void*)x); return *this; }
-
-    // iterators
-    const_iterator begin() const { return (const_iterator)(Base::begin()); }
-    iterator begin()		{ return (iterator)(Base::begin()); }
-    const_iterator end() const	{ return (const_iterator)(Base::end()); }
-    iterator end()		{ return (iterator)(Base::end()); }
-
-    // capacity
-    size_type size() const	{ return Base::size(); }
-    void resize(size_type n, T* x = 0) { Base::resize(n, (void*)x); }
-    size_type capacity() const	{ return Base::capacity(); }
-    bool empty() const		{ return Base::empty(); }
-    bool reserve(size_type n)	{ return Base::reserve(n); }
-
-    // element access
-    T*& operator[](size_type i)	{ return (T*&)(Base::at(i)); }
-    T* operator[](size_type i) const { return (T*)(Base::operator[](i)); }
-    T*& at(size_type i)		{ return (T*&)(Base::operator[](i)); }
-    T* at(size_type i) const	{ return (T*)(Base::at(i)); }
-    T*& front()			{ return (T*&)(Base::front()); }
-    T* front() const		{ return (T*)(Base::front()); }
-    T*& back()			{ return (T*&)(Base::back()); }
-    T* back() const		{ return (T*)(Base::back()); }
-    T*& at_u(size_type i)	{ return (T*&)(Base::at_u(i)); }
-    T* at_u(size_type i) const	{ return (T*)(Base::at_u(i)); }
-
-    // modifiers
-    void push_back(T* x)	{ Base::push_back((void*)x); }
-    void pop_back()		{ Base::pop_back(); }
-    void push_front(T* x)	{ Base::push_front((void*)x); }
-    void pop_front()		{ Base::pop_front(); }
-    iterator insert(iterator it, T* x) { return (iterator)Base::insert((void**)it, (void*)x); }
-    iterator erase(iterator it)	{ return (iterator)Base::erase((void**)it); }
-    iterator erase(iterator a, iterator b) { return (iterator)Base::erase((void**)a, (void**)b); }
-    void swap(Vector<T*>& x)	{ Base::swap(x); }
-    void clear()		{ Base::clear(); }
-
-};
 
 CLICK_ENDDECLS
 #include <click/vector.cc>

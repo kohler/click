@@ -75,7 +75,7 @@ class TimerSet { public:
 
     void set_timer_expiry() {
 	if (_timer_heap.size())
-	    _timer_expiry = _timer_heap.at_u(0).expiry_s;
+	    _timer_expiry = _timer_heap.unchecked_at(0).expiry_s;
 	else
 	    _timer_expiry = Timestamp();
     }
@@ -153,7 +153,7 @@ inline Timer *
 TimerSet::next_timer()
 {
     lock_timers();
-    Timer *t = _timer_heap.empty() ? 0 : _timer_heap.at_u(0).t;
+    Timer *t = _timer_heap.empty() ? 0 : _timer_heap.unchecked_at(0).t;
     unlock_timers();
     return t;
 }

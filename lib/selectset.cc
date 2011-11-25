@@ -113,7 +113,7 @@ SelectSet::kill_router(Router *router)
 	int fd = _pollfds[pi].fd;
 	// take components out of the arrays early
 	if (fd < _selinfo.size()) {
-	    SelectorInfo &es = _selinfo.at_u(fd);
+	    SelectorInfo &es = _selinfo.unchecked_at(fd);
 	    if (es.read && es.read->router() == router)
 		remove_pollfd(pi, POLLIN);
 	    if (es.write && es.write->router() == router)

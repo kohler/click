@@ -133,6 +133,10 @@ $1"; shift 1;;
 9IPAddress 2IP \
 12EtherAddress 3Eth \
 10IP6Address 3IP6 \
+13vector_memory 1v \
+18typed_array_memory 1T \
+18sized_array_memory 1S \
+10char_array 1C \
 6Vector 1V \
 11StringAccum 2SA \
 6String 1S \

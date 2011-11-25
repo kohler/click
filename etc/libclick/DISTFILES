@@ -24,6 +24,7 @@ include/click
 include/click/algorithm.hh
 include/click/archive.hh
 include/click/args.hh
+include/click/array_memory.hh
 include/click/atomic.hh
 include/click/bitvector.hh
 include/click/bighashmap.cc
@@ -162,7 +163,6 @@ lib/timerset.cc:libsrc/timerset.cc
 lib/timestamp.cc:libsrc/timestamp.cc
 lib/userutils.cc:libsrc/userutils.cc
 lib/variableenv.cc:libsrc/variableenv.cc
-lib/vectorv.cc:libsrc/vectorv.cc
 
 elements/standard/addressinfo.cc:libsrc/addressinfo.cc
 elements/standard/alignmentinfo.cc:libsrc/alignmentinfo.cc
