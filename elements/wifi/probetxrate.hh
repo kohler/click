@@ -1,7 +1,7 @@
 #ifndef CLICK_PROBETXRATE_HH
 #define CLICK_PROBETXRATE_HH
 #include <click/element.hh>
-#include <click/dequeue.hh>
+#include <click/deque.hh>
 #include <click/etheraddress.hh>
 #include <click/bighashmap.hh>
 #include <click/glue.hh>
@@ -104,7 +104,7 @@ class ProbeTXRate : public Element { public:
   public:
 
     EtherAddress _eth;
-    DEQueue<tx_result> _results;
+    Deque<tx_result> _results;
 
     Vector<int> _rates;
 

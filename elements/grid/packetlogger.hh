@@ -2,7 +2,7 @@
 #define CLICK_PACKETLOGGER_HH
 #include <click/element.hh>
 #include <click/glue.hh>
-#include <click/dequeue.hh>
+#include <click/deque.hh>
 
 CLICK_DECLS
 
@@ -57,7 +57,7 @@ class PacketLogger : public Element { public:
   uint16_t _et;
   unsigned int _nb;
 
-  DEQueue<log_entry> _p;
+  Deque<log_entry> _p;
 
 };
 

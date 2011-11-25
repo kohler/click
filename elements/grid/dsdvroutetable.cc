@@ -606,7 +606,7 @@ DSDVRouteTable::init_metric(RTEntry &r)
 #if SEQ_METRIC
   if (_use_seq_metric) {
     r.metric = metric_t(r.num_hops());
-    DEQueue<unsigned> *q = _seq_history.findp(r.dest_ip);
+    Deque<unsigned> *q = _seq_history.findp(r.dest_ip);
     if (!q || q->size() < MAX_BCAST_HISTORY)
       r.metric = _bad_metric;
     else {
@@ -1046,9 +1046,9 @@ DSDVRouteTable::simple_action(Packet *packet)
 
 #if SEQ_METRIC
   // track last few broadcast numbers we heard directly from this node
-  DEQueue<unsigned> *q = _seq_history.findp(ipaddr);
+  Deque<unsigned> *q = _seq_history.findp(ipaddr);
   if (!q) {
-    _seq_history.insert(ipaddr, DEQueue<unsigned>());
+    _seq_history.insert(ipaddr, Deque<unsigned>());
     q = _seq_history.findp(ipaddr);
   }
   unsigned bcast_num = ntohl(grid_hdr::get_pad_bytes(*gh));

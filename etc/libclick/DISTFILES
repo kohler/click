@@ -36,6 +36,8 @@ include/click/confparse.hh
 include/click/crc32.h
 include/click/cxxprotect.h
 include/click/cxxunprotect.h
+include/click/deque.cc
+include/click/deque.hh
 include/click/driver.hh
 include/click/element.hh
 include/click/elemfilter.hh

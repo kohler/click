@@ -9,8 +9,9 @@
 CLICK_DECLS
 
 PacketLogger2::PacketLogger2()
-  : _nb(34), _p(1000)
+  : _nb(34)
 {
+    _p.reserve(1000);
 }
 
 PacketLogger2::~PacketLogger2()

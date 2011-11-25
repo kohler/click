@@ -1,7 +1,6 @@
 #ifndef CLICK_MADWIFIRATE_HH
 #define CLICK_MADWIFIRATE_HH
 #include <click/element.hh>
-#include <click/dequeue.hh>
 #include <click/etheraddress.hh>
 #include <click/bighashmap.hh>
 #include <click/glue.hh>

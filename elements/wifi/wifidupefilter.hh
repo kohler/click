@@ -2,7 +2,6 @@
 #define CLICK_WIFIDUPEFILTER_HH
 #include <click/element.hh>
 #include <click/string.hh>
-#include <click/dequeue.hh>
 #include <click/hashmap.hh>
 CLICK_DECLS
 

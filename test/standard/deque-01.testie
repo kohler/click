@@ -1,0 +1,12 @@
+%info
+Tests Deque functionality with the DequeTest element.
+
+%require
+click-buildtool provides DequeTest
+
+%script
+click -qe DequeTest
+
+%expect stderr
+config:1:{{.*}}
+  All tests pass!

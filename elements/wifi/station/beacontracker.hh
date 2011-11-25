@@ -3,7 +3,7 @@
 #include <click/element.hh>
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
-#include <click/dequeue.hh>
+#include <click/deque.hh>
 CLICK_DECLS
 
 /*
@@ -44,7 +44,7 @@ class BeaconTracker : public Element { public:
     Timestamp rx;
     uint16_t seq;
   };
-  DEQueue<beacon_t> _beacons;
+  Deque<beacon_t> _beacons;
 
   int _beacon_int;
   Timestamp _start;

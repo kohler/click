@@ -54,7 +54,7 @@
  * =back */
 
 #include <click/bighashmap.hh>
-#include <click/dequeue.hh>
+#include <click/deque.hh>
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/etheraddress.hh>
@@ -161,7 +161,7 @@ private:
     EtherAddress    eth;
     unsigned int    period;   // period of this node's probes, as reported by the node
     unsigned int    tau;      // this node's stats averaging period, as reported by the node
-    DEQueue<probe_t> probes;   // most recently received probes
+    Deque<probe_t> probes;   // most recently received probes
     probe_list_t(const EtherAddress &e, unsigned int p, unsigned int t) : eth(e), period(p), tau(t) { }
     probe_list_t() : period(0), tau(0) { }
   };

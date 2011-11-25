@@ -8,7 +8,7 @@
 #include <elements/grid/gridgenericrt.hh>
 #include <click/timer.hh>
 #include <elements/grid/gridgenericlogger.hh>
-#include <click/dequeue.hh>
+#include <click/deque.hh>
 #include <elements/grid/gridgenericmetric.hh>
 CLICK_DECLS
 
@@ -221,7 +221,7 @@ private:
 
 #if SEQ_METRIC
   bool _use_seq_metric; // use the `dsdv_seqs' metric
-  HashMap<IPAddress, DEQueue<unsigned> > _seq_history;
+  HashMap<IPAddress, Deque<unsigned> > _seq_history;
 #endif
 
   typedef GridGenericMetric::metric_t metric_t;

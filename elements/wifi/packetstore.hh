@@ -2,7 +2,7 @@
 #define CLICK_PACKETSTORE_HH
 #include <click/element.hh>
 #include <click/glue.hh>
-#include <click/dequeue.hh>
+#include <click/deque.hh>
 #include <click/notifier.hh>
 #include <clicknet/wifi.h>
 
@@ -56,7 +56,7 @@ class PacketStore : public Element { public:
 	  char data[80];
 	  int len;
   };
-  DEQueue <store> _packets;
+  Deque <store> _packets;
 
   int _dirty;
   bool run_task(Task *);

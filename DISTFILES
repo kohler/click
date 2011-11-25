@@ -404,7 +404,8 @@ confparse.hh
 crc32.h
 cxxprotect.h
 cxxunprotect.h
-dequeue.cc
+deque.cc
+deque.hh
 dequeue.hh
 driver.hh
 element.hh
@@ -699,6 +700,7 @@ StrideSched-01.testie
 Unqueue-01.testie
 bigint-01.testie
 confparse-01.testie
+deque-01.testie
 error-01.testie
 functions-01.testie
 hashtable-01.testie

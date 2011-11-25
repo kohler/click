@@ -6,7 +6,7 @@
 #include <click/task.hh>
 #include <click/timer.hh>
 #include <click/ipaddress.hh>
-#include <click/dequeue.hh>
+#include <click/deque.hh>
 CLICK_DECLS
 
 /*
@@ -126,7 +126,7 @@ private:
     bool success;
   };
 
-  typedef DEQueue<tx_result_t> HistQ;
+  typedef Deque<tx_result_t> HistQ;
   HistQ _history;
 
   IPAddress _ip;
