@@ -36,7 +36,12 @@ click_cycle_counter(int which, unsigned int *fnp, unsigned long long *valp)
   unsigned low, high;
   rdmsr(P6MSR_CTRSEL0 + which, low, high);
   *fnp = low;
+# ifdef rdpmcl
   rdpmcl(which, *valp);
+# else
+  rdpmc(which, low, high);
+  *valp = ((unsigned long long) high << 32) | low;
+# endif
   wrmsrl(P6MSR_CTR0 + which, 0);
 #else
   printk("<1>click_cycle_counter: not i386\n");
