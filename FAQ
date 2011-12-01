@@ -120,15 +120,15 @@ A. There are two ways to add an element class to Click: in the main Click
 
      EXPORT_ELEMENT takes a single argument, the name of the C++ class
      corresponding to your element. You can have multiple EXPORT_ELEMENT
-     lines if your source file declares multiple element classes. If your
-     element is meant only for the user-level driver, add this line near
-     EXPORT_ELEMENT:
+     lines if your source file declares multiple element classes.
+
+     If your element is meant only for the user-level driver, add this line
+     near EXPORT_ELEMENT:
 
 	ELEMENT_REQUIRES(userlevel)
 
-     Or, if it is meant for the Linux kernel module:
-
-	ELEMENT_REQUIRES(linuxmodule)
+     Other driver names are "linuxmodule", "bsdmodule", and "ns". You can
+     also say, for example, "ELEMENT_REQUIRES(userlevel|ns)".
 
      ELEMENT_REQUIRES can also take element names and package names like
      'ip6':
