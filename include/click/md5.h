@@ -54,8 +54,10 @@
 #if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
+# include <linux/err.h>
 # include <linux/crypto.h>
 # include <asm/scatterlist.h>
+# include <linux/scatterlist.h>
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 
@@ -96,7 +98,7 @@ static inline void md5_append(md5_state_t *pms, const unsigned char *data, int n
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
     crypto_hash_update(pms, &sg, nbytes);
 #else
-    crypto_digest_update(*pms, sg, 1);
+    crypto_digest_update(*pms, &sg, 1);
 #endif
 }
 
