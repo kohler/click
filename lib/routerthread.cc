@@ -680,10 +680,10 @@ RouterThread::driver()
 #endif
 #if CLICK_NS
     if (active()) {
-	struct timeval nexttime = (Timestamp::now() + Timestamp::make_usec(1)).timeval();
+	struct timeval nexttime = Timestamp::now().timeval_ceil();
 	simclick_sim_command(_master->simnode(), SIMCLICK_SCHEDULE, &nexttime);
     } else if (Timestamp next_expiry = timer_set().timer_expiry_steady()) {
-	struct timeval nexttime = next_expiry.timeval();
+	struct timeval nexttime = next_expiry.timeval_ceil();
 	simclick_sim_command(_master->simnode(), SIMCLICK_SCHEDULE, &nexttime);
     }
 #endif
