@@ -241,8 +241,10 @@ class Timestamp { public:
 
 #if TIMESTAMP_PUNS_TIMEVAL
     inline const struct timeval &timeval() const;
+    inline const struct timeval &timeval_ceil() const;
 #else
     inline struct timeval timeval() const;
+    inline struct timeval timeval_ceil() const;
 #endif
 #if HAVE_STRUCT_TIMESPEC
 # if TIMESTAMP_PUNS_TIMESPEC
@@ -1057,52 +1059,6 @@ Timestamp::nsec1() const
 #endif
 }
 
-#if TIMESTAMP_PUNS_TIMEVAL
-inline const struct timeval &
-Timestamp::timeval() const
-{
-    return _t.tv;
-}
-#else
-/** @brief Return a struct timeval with the same value as this timestamp.
-
-    If Timestamp and struct timeval have the same size and representation,
-    then this operation returns a "const struct timeval &" whose address is
-    the same as this Timestamp. */
-inline struct timeval
-Timestamp::timeval() const
-{
-    struct timeval tv;
-    tv.tv_sec = sec();
-    tv.tv_usec = usec();
-    return tv;
-}
-#endif
-
-#if HAVE_STRUCT_TIMESPEC
-# if TIMESTAMP_PUNS_TIMESPEC
-inline const struct timespec &
-Timestamp::timespec() const
-{
-    return _t.tspec;
-}
-# else
-/** @brief Return a struct timespec with the same value as this timestamp.
-
-    If Timestamp and struct timespec have the same size and representation,
-    then this operation returns a "const struct timespec &" whose address is
-    the same as this Timestamp. */
-inline struct timespec
-Timestamp::timespec() const
-{
-    struct timespec ts;
-    ts.tv_sec = sec();
-    ts.tv_nsec = nsec();
-    return ts;
-}
-# endif
-#endif
-
 #if !CLICK_TOOL
 inline click_jiffies_t
 Timestamp::jiffies() const
@@ -1437,6 +1393,70 @@ Timestamp::warp_real_delay() const
     else
 	return *this / _warp_speed;
 }
+#endif
+
+#if TIMESTAMP_PUNS_TIMEVAL
+inline const struct timeval &
+Timestamp::timeval() const
+{
+    return _t.tv;
+}
+
+inline const struct timeval &
+Timestamp::timeval_ceil() const
+{
+    return _t.tv;
+}
+#else
+/** @brief Return a struct timeval that approximates this timestamp.
+
+    If Timestamp and struct timeval have the same size and representation,
+    then this operation returns a "const struct timeval &" whose address is
+    the same as this Timestamp. If Timestamps have nanosecond precision,
+    the conversion rounds down, so Timestamp(t.timeval()) <= t. */
+inline struct timeval
+Timestamp::timeval() const
+{
+    struct timeval tv;
+    tv.tv_sec = sec();
+    tv.tv_usec = usec();
+    return tv;
+}
+
+/** @brief Return the minimum struct timeval >= this timestamp.
+
+    If Timestamp and struct timeval have the same size and representation,
+    then this operation returns a "const struct timeval &" whose address is
+    the same as this Timestamp. */
+inline struct timeval
+Timestamp::timeval_ceil() const
+{
+    return (*this + Timestamp(0, subsec_per_usec - 1)).timeval();
+}
+#endif
+
+#if HAVE_STRUCT_TIMESPEC
+# if TIMESTAMP_PUNS_TIMESPEC
+inline const struct timespec &
+Timestamp::timespec() const
+{
+    return _t.tspec;
+}
+# else
+/** @brief Return a struct timespec with the same value as this timestamp.
+
+    If Timestamp and struct timespec have the same size and representation,
+    then this operation returns a "const struct timespec &" whose address is
+    the same as this Timestamp. */
+inline struct timespec
+Timestamp::timespec() const
+{
+    struct timespec ts;
+    ts.tv_sec = sec();
+    ts.tv_nsec = nsec();
+    return ts;
+}
+# endif
 #endif
 
 
