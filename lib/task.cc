@@ -256,10 +256,6 @@ Task::true_reschedule()
     RouterThread *thread = _thread;
     if (unlikely(thread == 0 || thread->thread_id() < 0))
 	done = true;
-#if CLICK_LINUXMODULE
-    else if (in_interrupt())
-	goto pending;
-#endif
     else if (thread->current_thread_is_running()) {
 	Router *router = _owner->router();
 	if (router->_running >= Router::RUNNING_BACKGROUND) {
@@ -267,9 +263,6 @@ Task::true_reschedule()
 	    done = true;
 	}
     }
-#if CLICK_LINUXMODULE
-  pending:
-#endif
     if (!done)
 	add_pending();
 }

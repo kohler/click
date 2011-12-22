@@ -220,6 +220,7 @@ class RouterThread : private TaskLink { public:
 #if HAVE_TASK_HEAP
     void task_reheapify_from(int pos, Task*);
 #endif
+    static inline bool running_in_interrupt();
     inline bool current_thread_is_running() const;
     void request_stop();
     inline void request_go();
@@ -338,10 +339,20 @@ RouterThread::task_end() const
 }
 
 inline bool
+RouterThread::running_in_interrupt()
+{
+#if CLICK_LINUXMODULE
+    return in_interrupt();
+#else
+    return false;
+#endif
+}
+
+inline bool
 RouterThread::current_thread_is_running() const
 {
 #if CLICK_LINUXMODULE
-    return current == _linux_task;
+    return current == _linux_task && !running_in_interrupt();
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD && HAVE___THREAD_STORAGE_CLASS
     return click_current_thread_id == _id;
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
@@ -361,7 +372,7 @@ RouterThread::schedule_block_tasks()
 inline void
 RouterThread::block_tasks(bool scheduled)
 {
-    assert(!current_thread_is_running());
+    assert(!current_thread_is_running() && !running_in_interrupt());
     if (!scheduled)
 	++_task_blocker_waiting;
     while (1) {
@@ -394,6 +405,7 @@ RouterThread::unblock_tasks()
 inline void
 RouterThread::lock_tasks()
 {
+    assert(!running_in_interrupt());
     if (unlikely(!current_thread_is_running())) {
 	block_tasks(false);
 	_task_lock.acquire();
@@ -403,6 +415,7 @@ RouterThread::lock_tasks()
 inline void
 RouterThread::unlock_tasks()
 {
+    assert(!running_in_interrupt());
     if (unlikely(!current_thread_is_running())) {
 	_task_lock.release();
 	unblock_tasks();
