@@ -142,6 +142,11 @@ class RouterThread : private TaskLink { public:
 #if CLICK_USERLEVEL
     SelectSet _selects;
 #endif
+#if CLICK_NS
+    struct timeval _last_active_tv;
+    int _active_iter;
+    enum { ns_iters_per_time = 1000 };
+#endif
 
 #if CLICK_LINUXMODULE
     bool _greedy;
