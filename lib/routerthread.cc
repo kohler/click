@@ -109,6 +109,7 @@ RouterThread::RouterThread(Master *m, int id)
 
 #if CLICK_NS
     timerclear(&_last_active_tv);
+    _active_iter = 0;
 #endif
 
 #if CLICK_DEBUG_SCHEDULING
