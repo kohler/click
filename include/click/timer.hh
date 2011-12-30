@@ -118,6 +118,11 @@ class Timer { public:
 	return _owner->router();
     }
 
+    /** @brief Return the Timer's owning element. */
+    inline Element *element() const {
+	return _owner;
+    }
+
     /** @brief Return the Timer's associated RouterThread. */
     inline RouterThread *thread() const {
 	return _thread;

@@ -83,11 +83,17 @@ TimerSet::check_timer_expiry(Timer *t)
 {
     // do not schedule timers for too far in the past
     if (t->_expiry.sec() + Timer::behind_sec < _timer_check.sec()) {
+	// Perhaps system time has gone backwards, so _timer_check is
+	// out of date.
+	Timestamp now = Timestamp::now();
+	if (t->_expiry.sec() + Timer::behind_sec >= now.sec())
+	    return;
+
 	if (_timer_check_reports > 0) {
 	    --_timer_check_reports;
-	    click_chatter("timer %p outdated expiry %{timestamp} updated to %{timestamp}", t, &t->_expiry, &_timer_check, &t->_expiry);
+	    click_chatter("timer %p outdated expiry %{timestamp} updated to %{timestamp}", t, &t->_expiry, &now);
 	}
-	t->_expiry = _timer_check;
+	t->_expiry = now;
     }
 }
 

@@ -20,7 +20,6 @@ class TimerSet { public:
 #endif
 
     Timer *next_timer();			// useful for benchmarking
-    const Timestamp &timer_check() const	{ return _timer_check; }
 
     unsigned max_timer_stride() const		{ return _max_timer_stride; }
     unsigned timer_stride() const		{ return _timer_stride; }
