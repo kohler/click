@@ -24,6 +24,9 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+#if !HAVE_INDIFFERENT_ALIGNMENT
+#include <click/router.hh>
+#endif
 #include <click/standard/alignmentinfo.hh>
 CLICK_DECLS
 
@@ -45,8 +48,17 @@ Classifier::empty_program(ErrorHandler *errh) const
 	o = (4 - (o % 4)) % 4;
     else {
 #if !HAVE_INDIFFERENT_ALIGNMENT
-	if (errh)
-	    errh->error("machine is sensitive to alignment: you must run config through click-align");
+	if (errh) {
+	    errh->warning("alignment unknown, but machine is sensitive to alignment");
+	    void *&x = router()->force_attachment("Classifier alignment warning");
+	    if (!x) {
+		x = (void *) this;
+		errh->message("(%s must be told how its input packets are aligned in memory.\n"
+			      "Fix this error either by passing your configuration through click-align,\n"
+			      "or by providing explicit AlignmentInfo. I am assuming the equivalent\n"
+			      "of %<AlignmentInfo(%s 4 0)%>.)", class_name(), name().c_str());
+	    }
+	}
 #else
 	(void) errh;
 #endif
