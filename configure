@@ -9754,6 +9754,42 @@ fi
 
 
 
+shell_expand () {
+    val=`eval echo '$'"$1"`
+    while echo "x$val" | grep '\$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
+    val=`echo "$val" | sed 's,//*,/,g'`
+    eval "$1='$val'"
+}
+
+shell_mkbuild () {
+    val=`eval echo '$'"$1"`
+    pval="$prefix"
+    while test -n "$pval" -a -n "$val"; do
+	component=`echo "$val" | sed 's,^\(/[^/]*\).*,\1,'`
+	pcomponent=`echo "$pval" | sed 's,^\(/[^/]*\).*,\1,'`
+	if test "$component" != "$pcomponent"; then break; fi
+	val=`echo "$val" | sed 's,^/[^/]*,,'`
+	pval=`echo "$pval" | sed 's,^/[^/]*,,'`
+    done
+    while test -n "$pval"; do
+	val="/..$val"
+	pval=`echo "$pval" | sed 's,^/[^/]*,,'`
+    done
+    eval "clickbuild_$1='"'$'"{clickbuild_prefix}$val'"
+}
+
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+
+clickdatadir="$datadir/click"
+
+for i in bin clickdata data dataroot include lib sbin; do
+    shell_expand ${i}dir
+    shell_mkbuild ${i}dir
+done
+
+
+
 for ac_header in ifaddrs.h linux/if_tun.h net/if_dl.h net/if_tap.h net/if_tun.h net/if_types.h net/bpf.h netpacket/packet.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -10433,7 +10469,7 @@ fixincludes.pl execution failed.
 	fi
 	LINUX_CFLAGS="`head -n 1 conftest.dat`"
 	LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
-	CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s	$mydir	$includedir/click-linuxmodule	g"`"
+	CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s	$mydir	$clickbuild_includedir/click-linuxmodule	g"`"
     fi
 
 
@@ -12214,40 +12250,6 @@ fi
 
 
 
-
-shell_expand () {
-    val=`eval echo '$'"$1"`
-    while echo "x$val" | grep '\$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
-    val=`echo "$val" | sed 's,//*,/,g'`
-    eval "$1='$val'"
-}
-
-shell_mkbuild () {
-    val=`eval echo '$'"$1"`
-    pval="$prefix"
-    while test -n "$pval" -a -n "$val"; do
-	component=`echo "$val" | sed 's,^\(/[^/]*\).*,\1,'`
-	pcomponent=`echo "$pval" | sed 's,^\(/[^/]*\).*,\1,'`
-	if test "$component" != "$pcomponent"; then break; fi
-	val=`echo "$val" | sed 's,^/[^/]*,,'`
-	pval=`echo "$pval" | sed 's,^/[^/]*,,'`
-    done
-    while test -n "$pval"; do
-	val="/..$val"
-	pval=`echo "$pval" | sed 's,^/[^/]*,,'`
-    done
-    eval "clickbuild_$1='"'$'"{clickbuild_prefix}$val'"
-}
-
-test "x$prefix" = xNONE && prefix=$ac_default_prefix
-test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
-
-clickdatadir="$datadir/click"
-
-for i in bin clickdata data dataroot include lib sbin; do
-    shell_expand ${i}dir
-    shell_mkbuild ${i}dir
-done
 
 cat >>confdefs.h <<_ACEOF
 #define CLICK_BINDIR "$bindir"

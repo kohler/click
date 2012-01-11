@@ -107,6 +107,11 @@ RouterThread::RouterThread(Master *m, int id)
     greedy_schedule_jiffies = jiffies;
 #endif
 
+#if CLICK_NS
+    timerclear(&_last_active_tv);
+    _active_iter = 0;
+#endif
+
 #if CLICK_DEBUG_SCHEDULING
     _thread_state = S_BLOCKED;
     _driver_epoch = 0;
@@ -680,10 +685,18 @@ RouterThread::driver()
 #endif
 #if CLICK_NS
     if (active()) {
-	struct timeval nexttime = (Timestamp::now() + Timestamp::make_usec(1)).timeval();
+	struct timeval nexttime = Timestamp::now().timeval_ceil();
+	if (memcmp(&nexttime, &_last_active_tv, sizeof(struct timeval)) != 0) {
+	    _active_iter = 0;
+	    _last_active_tv = nexttime;
+	} else if (++_active_iter >= ns_iters_per_time) {
+	    ++nexttime.tv_usec;
+	    if (nexttime.tv_usec == 1000000)
+		++nexttime.tv_sec, nexttime.tv_usec = 0;
+	}
 	simclick_sim_command(_master->simnode(), SIMCLICK_SCHEDULE, &nexttime);
     } else if (Timestamp next_expiry = timer_set().timer_expiry_steady()) {
-	struct timeval nexttime = next_expiry.timeval();
+	struct timeval nexttime = next_expiry.timeval_ceil();
 	simclick_sim_command(_master->simnode(), SIMCLICK_SCHEDULE, &nexttime);
     }
 #endif

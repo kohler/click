@@ -350,6 +350,12 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK((-t).usecval() == -999000);
     CHECK((-t).nsecval() == -999000000);
 
+    CHECK(Timestamp(Timestamp::make_nsec(0, 999).timeval()) == Timestamp::make_usec(0, 0));
+#if TIMESTAMP_NANOSEC
+    CHECK(Timestamp(Timestamp::make_nsec(0, 1).timeval_ceil()) == Timestamp::make_usec(0, 1));
+    CHECK(Timestamp(Timestamp::make_nsec(0, 0).timeval_ceil()) == Timestamp::make_usec(0, 0));
+#endif
+
     // some string tests for good measure
     CHECK(String("abcdef").substring(-3) == "def");
     CHECK(String("abc").substring(-3) == "abc");

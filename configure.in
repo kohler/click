@@ -963,6 +963,51 @@ fi
 
 
 dnl
+dnl expand path variables
+dnl The "click" versions are expanded versions of the final install locations.
+dnl The "clickbuild_" versions are partially expanded versions, with an initial
+dnl "clickprefix" replaced by "${clickbuild_prefix}".
+dnl Do this here because variables like "CLICKLINUX_FIXINCLUDES_PROGRAM" need
+dnl the expanded versions.
+dnl
+
+shell_expand () {
+    val=`eval echo '$'"$1"`
+    while echo "x$val" | grep '\$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
+    val=`echo "$val" | sed 's,//*,/,g'`
+    eval "$1='$val'"
+}
+
+shell_mkbuild () {
+    val=`eval echo '$'"$1"`
+    pval="$prefix"
+    while test -n "$pval" -a -n "$val"; do
+	component=`echo "$val" | sed 's,^\(/[[^/]]*\).*,\1,'`
+	pcomponent=`echo "$pval" | sed 's,^\(/[[^/]]*\).*,\1,'`
+	if test "$component" != "$pcomponent"; then break; fi
+	val=`echo "$val" | sed 's,^/[[^/]]*,,'`
+	pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
+    done
+    while test -n "$pval"; do
+	val="/..$val"
+	pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
+    done
+    eval "clickbuild_$1='"'$'"{clickbuild_prefix}$val'"
+}
+
+dnl Preset $prefix and $exec_prefix.
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+
+clickdatadir="$datadir/click"
+
+for i in bin clickdata data dataroot include lib sbin; do
+    shell_expand ${i}dir
+    shell_mkbuild ${i}dir
+done
+
+
+dnl
 dnl kernel interfaces
 dnl
 
@@ -1205,7 +1250,7 @@ fixincludes.pl execution failed.
 	fi
 	LINUX_CFLAGS="`head -n 1 conftest.dat`"
 	LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
-	CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s	$mydir	$includedir/click-linuxmodule	g"`"
+	CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s	$mydir	$clickbuild_includedir/click-linuxmodule	g"`"
     fi
     AC_SUBST(LINUX_FIXINCLUDES_PROGRAM)
     AC_SUBST(CLICKLINUX_FIXINCLUDES_PROGRAM)
@@ -1634,46 +1679,8 @@ AC_SUBST(POD2MAN)
 
 
 dnl
-dnl set path variables
-dnl The "click" versions are expanded versions of the final install locations.
-dnl The "clickbuild_" versions are partially expanded versions, with an initial
-dnl "clickprefix" replaced by "${clickbuild_prefix}".
+dnl substitute path variables
 dnl
-
-shell_expand () {
-    val=`eval echo '$'"$1"`
-    while echo "x$val" | grep '\$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
-    val=`echo "$val" | sed 's,//*,/,g'`
-    eval "$1='$val'"
-}
-
-shell_mkbuild () {
-    val=`eval echo '$'"$1"`
-    pval="$prefix"
-    while test -n "$pval" -a -n "$val"; do
-	component=`echo "$val" | sed 's,^\(/[[^/]]*\).*,\1,'`
-	pcomponent=`echo "$pval" | sed 's,^\(/[[^/]]*\).*,\1,'`
-	if test "$component" != "$pcomponent"; then break; fi
-	val=`echo "$val" | sed 's,^/[[^/]]*,,'`
-	pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
-    done
-    while test -n "$pval"; do
-	val="/..$val"
-	pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
-    done
-    eval "clickbuild_$1='"'$'"{clickbuild_prefix}$val'"
-}
-
-dnl Preset $prefix and $exec_prefix.
-test "x$prefix" = xNONE && prefix=$ac_default_prefix
-test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
-
-clickdatadir="$datadir/click"
-
-for i in bin clickdata data dataroot include lib sbin; do
-    shell_expand ${i}dir
-    shell_mkbuild ${i}dir
-done
 
 AC_DEFINE_UNQUOTED(CLICK_BINDIR, "$bindir")
 AC_DEFINE_UNQUOTED(CLICK_LIBDIR, "$libdir")
