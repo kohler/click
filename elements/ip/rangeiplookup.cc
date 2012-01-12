@@ -210,9 +210,9 @@ void
 RangeIPLookup::flush_table()
 {
     _helper.flush();
-    memset(_range_base, 0, sizeof(_range_base));
-    memset(_range_len, 0, sizeof(_range_len));
-    memset(_range_t, 0, sizeof(_range_t));
+    memset(_range_base, 0, (1 << KICKSTART_BITS) * sizeof(*_range_base));
+    memset(_range_len, 0, (1 << KICKSTART_BITS) * sizeof(*_range_len));
+    memset(_range_t, 0, RANGES_MAX * sizeof(*_range_t));
 }
 
 int
