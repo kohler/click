@@ -143,16 +143,20 @@ foreach $dir (@ffiles) {
     push @files, $dir;
   }
 }
-if (defined $directory) {
-  opendir(DIR, $directory) || die "$directory: $!\n";
-  foreach $i (grep { /^([!.].*\..*)\.html$/ } readdir(DIR)) {
-    $hyperlink_man{$i} = 1;
-  }
-  foreach $i (@files) {
-    $i =~ m{([^/]*)$}s;
-    $hyperlink_man{$1} = 1;
+
+$output_dir = $directory if defined($directory);
+$output_dir = $1 if !defined($output_dir) && defined($output_file) && $output_file =~ m|^(.*)/[^/]*$|;
+if (defined $output_dir) {
+  opendir(DIR, $output_dir) || die "$output_dir: $!\n";
+  foreach $i (grep { /^([^.].*\..*)\.html$/ } readdir(DIR)) {
+    $hyperlink_man{substr($i, 0, -5)} = 1;
   }
 }
+foreach $i (@files) {
+  $i =~ m{([^/]*)$}s;
+  $hyperlink_man{$1} = 1;
+}
+
 if (defined $template) {
   open T, $template || die "$template: $!\n";
   undef $/;
@@ -206,9 +210,9 @@ sub get_line () {
 sub get_args () {
     @args = (undef);
     while (/\S/) {
-	if (/^\s*\"(([^\"]|\"\")*)\"(.*)/) {
+	if (/\A\s*"((?:[^"]|"")*)(?:"|\z)(.*)/) {
 	    my($x) = $1;
-	    $_ = $3;
+	    $_ = $2;
 	    $x =~ s/\"\"/\"/g;
 	    $x =~ s{(  +)}{'<tt>&nbsp;</tt>' x length($1)}eg;
 	    push @args, $x;
@@ -415,44 +419,47 @@ sub combine_args (&) {
 
 sub dot_B {
     combine_args { o("<B>" . shift(@args) . " <R>") };
+    o("\n");
 }
 
 sub dot_BI {
     combine_args { o("<B>" . shift(@args) . "<I>" . shift(@args) . "<R>") };
-    o(" ");
+    o("\n");
 }
 
 sub dot_BR {
     combine_args { o("<B>" . shift(@args) . "<R>" . shift(@args) . "<R>") };
-    o(" ");
+    o("\n");
 }
 
 sub dot_I {
     combine_args { o("<I>" . shift(@args) . " <R>") };
+    o("\n");
 }
 
 sub dot_IB {
     combine_args { o("<I>" . shift(@args) . "<B>" . shift(@args) . "<R>") };
-    o(" ");
+    o("\n");
 }
 
 sub dot_IR {
     combine_args { o("<I>" . shift(@args) . "<R>" . shift(@args) . "<R>") };
-    o(" ");
+    o("\n");
 }
 
 sub dot_RB {
     combine_args { o("<R>" . shift(@args) . "<B>" . shift(@args) . "<R>") };
-    o(" ");
+    o("\n");
 }
 
 sub dot_RI {
     combine_args { o("<R>" . shift(@args) . "<I>" . shift(@args) . "<R>") };
-    o(" ");
+    o("\n");
 }
 
 sub dot_SM {
     combine_args { o("<small>" . shift(@args) . " </small>") };
+    o("\n");
 }
 
 sub dot_SH {
@@ -784,7 +791,7 @@ EOF;
     }
 
     # skip this file if nothing has changed except possibly the datestamp
-    if ($directory && $file && -r $this_output_file) {
+    if (-r $this_output_file) {
 	open TRY, $this_output_file || die;
 	local($/) = undef;
 	my($old_TTT) = <TRY>;
