@@ -3,6 +3,7 @@
  * Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2012 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,6 +23,7 @@
 CLICK_DECLS
 
 SetIPChecksum::SetIPChecksum()
+    : _drops(0)
 {
 }
 
@@ -33,28 +35,29 @@ Packet *
 SetIPChecksum::simple_action(Packet *p_in)
 {
     if (WritablePacket *p = p_in->uniqueify()) {
-	click_ip *ip;
-	unsigned plen, hlen;
+	unsigned char *nh_data = (p->has_network_header() ? p->network_header() : p->data());
+	click_ip *iph = reinterpret_cast<click_ip *>(nh_data);
+	unsigned plen = p->end_data() - nh_data, hlen;
 
-	if (!p->has_network_header())
-	    goto bad;
-	plen = p->network_length();
-	if (plen < sizeof(click_ip))
-	    goto bad;
-	ip = p->ip_header();
-	hlen = ip->ip_hl << 2;
-	if (hlen < sizeof(click_ip) || hlen > plen)
-	    goto bad;
+	if (likely(plen >= sizeof(click_ip))
+	    && likely((hlen = iph->ip_hl << 2) >= sizeof(click_ip))
+	    && likely(hlen <= plen)) {
+	    iph->ip_sum = 0;
+	    iph->ip_sum = click_in_cksum((unsigned char *) iph, hlen);
+	    return p;
+	}
 
-	ip->ip_sum = 0;
-	ip->ip_sum = click_in_cksum((unsigned char *)ip, hlen);
-	return p;
-
-      bad:
-	click_chatter("SetIPChecksum: bad lengths");
+	if (++_drops == 1)
+	    click_chatter("SetIPChecksum: bad input packet");
 	p->kill();
     }
     return 0;
+}
+
+void
+SetIPChecksum::add_handlers()
+{
+    add_data_handlers("drops", Handler::OP_READ, &_drops);
 }
 
 CLICK_ENDDECLS

@@ -19,15 +19,21 @@ CLICK_DECLS
  *
  * =a CheckIPHeader, DecIPTTL, SetIPDSCP, IPRewriter */
 
-class SetIPChecksum : public Element {
-public:
-  SetIPChecksum();
-  ~SetIPChecksum();
+class SetIPChecksum : public Element { public:
 
-  const char *class_name() const		{ return "SetIPChecksum"; }
-  const char *port_count() const		{ return PORTS_1_1; }
+    SetIPChecksum();
+    ~SetIPChecksum();
 
-  Packet *simple_action(Packet *);
+    const char *class_name() const		{ return "SetIPChecksum"; }
+    const char *port_count() const		{ return PORTS_1_1; }
+    void add_handlers();
+
+    Packet *simple_action(Packet *p);
+
+  private:
+
+    unsigned _drops;
+
 };
 
 CLICK_ENDDECLS
