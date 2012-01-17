@@ -49,7 +49,7 @@ Usage: man2html [-l] [-t TEMPLATE] [MANFILE] [HTMLFILE]
        man2html -r FILE [-l] [MANFILE]
 
 Options:
-  -t, --template FILE     Use FILE as a template for generated HTML. 
+  -t, --template FILE     Use FILE as a template for generated HTML.
   -r, --replace FILE      Use FILE as a template for generated HTML and as
                           output file.
   -d, --directory DIR     Place generated HTML files in directory DIR.
@@ -60,7 +60,7 @@ Options:
   -f, --force             Ignore file errors.
   -h, --help              Print this message and exit.
 
-Report bugs to <kohler@cs.ucla.edu>.
+Report bugs to <kohler@seas.harvard.edu>.
 EOD;
   exit 0;
 }
