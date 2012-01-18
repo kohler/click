@@ -5,7 +5,7 @@
 /*
  * =c
  * ThreadMonitor([INTERVAL, THRESH])
- * =s smpclick
+ * =s threads
  * print out thread status
  * =d
  *

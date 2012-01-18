@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
  * =c
  * LookupIPRouteMP(DST1/MASK1 [GW1] OUT1, DST2/MASK2 [GW2] OUT2, ...)
- * =s smpclick
+ * =s threads
  * simple static IP routing table
  * V<classification>
  * =d

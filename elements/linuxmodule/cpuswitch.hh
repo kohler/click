@@ -5,7 +5,7 @@
 /*
  * =c
  * CPUSwitch()
- * =s smpclick
+ * =s threads
  * classifies packets by cpu
  * =d
  * Can have any number of outputs.

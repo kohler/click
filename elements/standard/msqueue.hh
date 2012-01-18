@@ -8,7 +8,7 @@ CLICK_DECLS
  * MSQueue
  * MSQueue(CAPACITY)
  * =deprecated ThreadSafeQueue
- * =s smpclick
+ * =s threads
  * stores packets in a FIFO queue
  * =d
  * Stores incoming packets in a multiple producer single consumer
