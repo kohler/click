@@ -390,7 +390,7 @@ ${ppfx}$i"
 	rm -f "$checksum_data"
 	if test -z "$MD5SUM"; then MD5SUM="@MD5SUM@"; fi
 	if test -n "$MD5SUM"; then
-	    checksum_command="ls -1R $checksum_files | $MD5SUM | sed 's/[^0-9a-f].*//'"
+	    checksum_command="LC_ALL=C ls -1R $checksum_files | $MD5SUM | sed 's/[^0-9a-f].*//'"
 	    checksum=`eval "$checksum_command"`
 	    echo "ELEMENT_CHECKSUM=$checksum" >"$checksum_data"
 	    echo "ELEMENT_CHECKSUMCOMMAND=$checksum_command" >>"$checksum_data"
