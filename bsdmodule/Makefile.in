@@ -112,7 +112,15 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-FINDELEMFLAGS = @FINDELEMFLAGS@
+FINDELEMFLAGS = @FINDELEMFLAGS@ --checksum elements.csmk
+-include elements.csmk
+
+ifneq ($(ELEMENT_CHECKSUM),)
+ifneq ($(shell $(ELEMENT_CHECKSUMCOMMAND)),$(ELEMENT_CHECKSUM))
+$(shell rm -f $(ELEMENTSCONF).conf $(ELEMENTSCONF).csmk)
+endif
+endif
+
 
 all: $(INSTALLOBJS)
 
@@ -128,7 +136,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 elemlist:
-	@/bin/rm -f elements.conf
+	@/bin/rm -f elements.conf elements.csmk
 	@$(MAKE) elements.conf
 elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
 	echo "bsdmodule @element_groups@" | $(top_builddir)/click-buildtool findelem -r bsdmodule -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) > elements.conf
@@ -162,7 +170,7 @@ uninstall:
 	for i in $(INSTALLOBJS); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
 
 clean:
-	-rm -f *.d *.o click.ko elements.mk elements.cc elements.conf \
+	-rm -f *.d *.o click.ko elements.mk elements.cc elements.conf elements.csmk \
 	vnode_if.h vnode_if_newproto.h vnode_if_typedef.h
 distclean: clean
 	-rm -f Makefile

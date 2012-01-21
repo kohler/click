@@ -94,10 +94,17 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 ifndef MINDRIVER
 ELEMENTSCONF = elements
 INSTALLLIBS = libnsclick.@SOSUFFIX@
-FINDELEMFLAGS = @FINDELEMFLAGS@
+FINDELEMFLAGS = @FINDELEMFLAGS@ --checksum elements.csmk
+-include elements.csmk
 else
 ELEMENTSCONF = elements_$(MINDRIVER)
 INSTALLLIBS = libns$(MINDRIVER)click.@SOSUFFIX@
+endif
+
+ifneq ($(ELEMENT_CHECKSUM),)
+ifneq ($(shell $(ELEMENT_CHECKSUMCOMMAND)),$(ELEMENT_CHECKSUM))
+$(shell rm -f $(ELEMENTSCONF).conf $(ELEMENTSCONF).csmk)
+endif
 endif
 
 all: $(INSTALLLIBS)
@@ -122,7 +129,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 elemlist:
-	@rm -f elements.conf
+	@rm -f elements.conf elements.csmk
 	@$(MAKE) elements.conf
 elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
 	echo "ns userlevel @element_groups@" | $(top_builddir)/click-buildtool findelem -r ns -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) > elements.conf
@@ -146,7 +153,7 @@ uninstall:
 	for i in $(INSTALLLIBS); do rm -f $(DESTDIR)$(libdir)/$$i; done
 
 clean:
-	rm -f *.d *.o $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc elements.conf libnsclick.a \
+	rm -f *.d *.o $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc elements.conf elements.csmk libnsclick.a \
 	$(INSTALLLIBS)
 distclean: clean
 	-rm -f Makefile
