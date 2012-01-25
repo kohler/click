@@ -9,6 +9,8 @@
 #endif
 CLICK_DECLS
 class String;
+class Timestamp;
+Timestamp operator+(Timestamp, const Timestamp &);
 
 // Timestamp has three possible internal representations, selected by #defines.
 // * TIMESTAMP_REP_FLAT64: a 64-bit integer number of nanoseconds
@@ -280,6 +282,25 @@ class Timestamp { public:
 #else
 	return (value_type) _t.sec * nsec_per_sec + subsec_to_nsec(_t.subsec);
 #endif
+    }
+
+    /** @brief Return the next millisecond-valued timestamp no smaller than *this. */
+    inline Timestamp msec_ceil() const {
+	uint32_t x = subsec() % subsec_per_msec;
+	return (x ? *this + Timestamp(0, subsec_per_msec - x) : *this);
+    }
+    /** @brief Return the next microsecond-valued timestamp no smaller than *this. */
+    inline Timestamp usec_ceil() const {
+#if TIMESTAMP_NANOSEC
+	uint32_t x = subsec() % subsec_per_usec;
+	return (x ? *this + Timestamp(0, subsec_per_usec - x) : *this);
+#else
+	return *this;
+#endif
+    }
+    /** @brief Return the next nanosecond-valued timestamp no smaller than *this. */
+    inline Timestamp nsec_ceil() const {
+	return *this;
     }
 
 #if !CLICK_TOOL
