@@ -4,7 +4,6 @@
 #include <click/timer.hh>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
-#include <click/hashmap.hh>
 CLICK_DECLS
 
 /*

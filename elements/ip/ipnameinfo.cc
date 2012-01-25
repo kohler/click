@@ -19,7 +19,6 @@
 #include "ipnameinfo.hh"
 #include <click/nameinfo.hh>
 #include <click/confparse.hh>
-#include <click/hashmap.hh>
 #include <clicknet/ip.h>
 #include <clicknet/icmp.h>
 #include <clicknet/tcp.h>

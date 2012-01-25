@@ -2,7 +2,6 @@
 #ifndef CLICK_PORTINFO_HH
 #define CLICK_PORTINFO_HH
 #include <click/element.hh>
-#include <click/hashmap.hh>
 CLICK_DECLS
 
 /*

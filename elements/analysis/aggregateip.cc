@@ -19,7 +19,6 @@
 #include <click/config.h>
 #include "aggregateip.hh"
 #include <click/error.hh>
-#include <click/hashmap.hh>
 #include <click/straccum.hh>
 #include <click/args.hh>
 #include <clicknet/ip.h>

@@ -1,7 +1,6 @@
 #ifndef CLICK_RFC2507D_HH
 #define CLICK_RFC2507D_HH
 #include <click/element.hh>
-#include <click/hashmap.hh>
 #include <click/glue.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
