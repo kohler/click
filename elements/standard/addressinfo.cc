@@ -75,6 +75,9 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 #endif
+#if HAVE_IP6
+# include <click/ip6address.hh>
+#endif
 CLICK_DECLS
 
 AddressInfo::AddressInfo()

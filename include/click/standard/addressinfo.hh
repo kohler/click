@@ -2,10 +2,6 @@
 #ifndef CLICK_ADDRESSINFO_HH
 #define CLICK_ADDRESSINFO_HH
 #include <click/element.hh>
-#include <click/hashmap.hh>
-#ifdef HAVE_IP6
-# include <click/ip6address.hh>
-#endif
 CLICK_DECLS
 
 /*
