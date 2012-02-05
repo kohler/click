@@ -1,0 +1,18 @@
+%info
+Check backslash quoting
+%script
+fix () {
+	perl -e 'undef($/); $_ = <STDIN>; s/\n    / /g; print;' | sort
+}
+
+click -qo- A.click | fix > AO_USERLEVEL
+click-flatten A.click | fix > AO_TOOL
+
+%file A.click
+m :: Message("\\");
+
+%expect AO_USERLEVEL AO_TOOL
+m :: Message("\\");
+
+%ignorex
+#.*
