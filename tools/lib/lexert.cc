@@ -3,11 +3,12 @@
  * lexert.{cc,hh} -- configuration file parser for tools
  * Eddie Kohler
  *
+ * Copyright (c) 1999-2012 Eddie Kohler
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
  * Copyright (c) 2004-2011 Regents of the University of California
- * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2008-2012 Meraki, Inc.
  * Copyright (c) 2010 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -196,7 +197,7 @@ LexerT::FileState::skip_quote(const char *s, char endc)
     } else if (*s == '\\' && endc == '\"' && s + 1 < _end) {
       if (s[1] == '<')
 	s = skip_backslash_angle(s + 2) - 1;
-      else if (s[1] == '\"')
+      else
 	s++;
     } else if (*s == endc)
       return s + 1;
