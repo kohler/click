@@ -1,0 +1,47 @@
+%info
+Basic BandwidthRatedSpliter test
+
+%script
+click --simtime CONFIG
+
+%file CONFIG
+InfiniteSource(LENGTH 100)
+	-> Queue(10)
+	-> u1 :: BandwidthRatedUnqueue(RATE 2000Bps)
+	-> s1 :: BandwidthRatedSplitter(RATE 200Bps)
+	-> c1 :: Counter
+	-> Discard;
+
+InfiniteSource(LENGTH 100)
+	-> Queue(10)
+	-> u2 :: BandwidthRatedUnqueue(RATE 2000Bps)
+	-> s2 :: BandwidthRatedSplitter(RATE 200Bps, BURST_BYTES 5000)
+	-> c2 :: Counter
+	-> Discard;
+
+InfiniteSource(LENGTH 100)
+	-> Queue(10)
+	-> u3 :: BandwidthRatedUnqueue(RATE 2000Bps)
+	-> s3 :: BandwidthRatedSplitter(RATE 200Bps, BURST_DURATION 25)
+	-> c3 :: Counter
+	-> Discard;
+
+InfiniteSource(LENGTH 100)
+	-> Queue(10)
+	-> u4 :: BandwidthRatedUnqueue(RATE 20000Bps)
+	-> s4 :: BandwidthRatedSplitter(RATE 10000Bps, BURST_BYTES 100)
+	-> c4 :: Counter
+	-> Discard;
+
+Script(wait 10, read c1.count, read c2.count, read c3.count, read c4.count, write stop);
+
+%expect stdout
+%expect -w stderr
+c1.count:
+20
+c2.count:
+70
+c3.count:
+70
+c4.count:
+1001
