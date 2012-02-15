@@ -19,6 +19,7 @@
 
 #include <click/config.h>
 #include "bwratedsplitter.hh"
+#include "ratedunqueue.hh"
 CLICK_DECLS
 
 BandwidthRatedSplitter::BandwidthRatedSplitter()
@@ -33,10 +34,11 @@ void
 BandwidthRatedSplitter::push(int, Packet *p)
 {
     _tb.refill();
-    if (_tb.remove_if(p->length()))
+    if (_tb.contains(RatedUnqueue::tb_bandwidth_thresh)) {
+	_tb.remove(p->length());
 	output(0).push(p);
-    else
-	output(1).push(p);
+    } else
+	checked_output_push(1, p);
 }
 
 CLICK_ENDDECLS
