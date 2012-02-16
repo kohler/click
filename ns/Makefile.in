@@ -114,11 +114,11 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 libnsclick.so: Makefile $(LIBOBJS) $(OBJS)
-	$(CXXLINK) -shared $(LIBOBJS) $(OBJS)
+	$(CXXLINK) -shared $(LIBOBJS) $(OBJS) $(LIBS)
 libnsclick.dylib: Makefile $(LIBOBJS) $(OBJS)
-	$(CXXLINK) -dynamiclib $(LIBOBJS) $(OBJS)
+	$(CXXLINK) -dynamiclib $(LIBOBJS) $(OBJS) $(LIBS)
 libnsclick.a: Makefile $(LIBOBJS) $(OBJS)
-	$(AR_CREATE) libnsclick.a $(LIBOBJS) $(OBJS)
+	$(AR_CREATE) libnsclick.a $(LIBOBJS) $(OBJS) $(LIBS)
 	$(RANLIB) libnsclick.a
 
 nsclick-test: libnsclick.a nsclick-test.o
