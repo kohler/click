@@ -52,6 +52,8 @@ static const StaticNameDB::Entry instruction_entries[] = {
     { "pause", Script::INSN_WAIT_STEP },
     { "print", Script::INSN_PRINT },
     { "printn", Script::INSN_PRINTN },
+    { "printnq", Script::INSN_PRINTNQ },
+    { "printq", Script::INSN_PRINTQ },
     { "read", Script::INSN_READ },
     { "readq", Script::INSN_READQ },
     { "return", Script::INSN_RETURN },
@@ -243,7 +245,9 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 	case INSN_READ:
 	case INSN_READQ:
 	case INSN_PRINT:
+	case INSN_PRINTQ:
 	case INSN_PRINTN:
+	case INSN_PRINTNQ:
 #if CLICK_USERLEVEL
 	case insn_save:
 	case insn_append:
@@ -432,7 +436,9 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	}
 #endif
 	case INSN_PRINT:
-	case INSN_PRINTN: {
+	case INSN_PRINTQ:
+	case INSN_PRINTN:
+	case INSN_PRINTNQ: {
 	    String text = _args3[ipos];
 
 #if CLICK_USERLEVEL
@@ -457,13 +463,18 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	    int before = errh->nerrors();
 	    String result;
 	    if (text && (isalpha((unsigned char) text[0]) || text[0] == '@' || text[0] == '_')) {
-		result = cp_expand(text, expander);
-		result = HandlerCall::call_read(result, this, errh);
+		HandlerCall hc(cp_expand(text, expander));
+		int flags = HandlerCall::OP_READ + ((insn == INSN_PRINTQ || insn == INSN_PRINTNQ) ? HandlerCall::UNQUOTE_PARAM : 0);
+		if (hc.initialize(flags, this, errh) >= 0) {
+		    ContextErrorHandler c_errh(errh, "While calling %<%s%>:", hc.unparse().c_str());
+		    result = hc.call_read(&c_errh);
+		}
 	    } else
 		result = cp_unquote(cp_expand(text, expander, true));
 	    if (errh->nerrors() == before
 		&& (!result || result.back() != '\n')
-		&& insn != INSN_PRINTN)
+		&& insn != INSN_PRINTN
+		&& insn != INSN_PRINTNQ)
 		result += "\n";
 
 #if CLICK_USERLEVEL
@@ -1121,12 +1132,15 @@ Script::arithmetic_handler(int, String &str, Element *e, const Handler *h, Error
     }
 
 #if CLICK_USERLEVEL
-    case ar_cat: {
+    case ar_cat:
+    case ar_catq: {
 	String filename;
 	if (!FilenameArg().parse(str, filename))
 	    return errh->error("bad FILE");
 	int nerrors = errh->nerrors();
 	str = file_string(filename, errh);
+	if (what == ar_catq)
+	    str = cp_quote(str);
 	return (errh->nerrors() == nerrors ? 0 : -errno);
     }
 
@@ -1236,6 +1250,7 @@ Script::add_handlers()
     set_handler("unquote", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_unquote, 0);
 #if CLICK_USERLEVEL
     set_handler("cat", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, arithmetic_handler, ar_cat, 0);
+    set_handler("catq", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, arithmetic_handler, ar_catq, 0);
     set_handler("kill", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, arithmetic_handler, ar_kill, 0);
 #endif
     if (_type == type_proxy)

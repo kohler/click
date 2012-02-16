@@ -82,9 +82,17 @@ printed.  For example, assuming the 'c.count' read handler returns "0":
    print $x          => c.count
    print $($x)       => 0
 
+=item 'C<printq> [>FILE | >>FILE] [TEXT | HANDLER]'
+
+Like C<print>, but unquotes HANDLER
+
 =item 'C<printn> [>FILE | >>FILE] [TEXT | HANDLER]'
 
 Like C<print>, but does not append a newline.
+
+=item 'C<printnq> [>FILE | >>FILE] [TEXT | HANDLER]'
+
+Like C<printn>, but unquotes HANDLER
 
 =item 'C<read> HANDLER [ARGS]', 'C<readq> HANDLER [ARGS]'
 
@@ -397,6 +405,10 @@ Returns the current timestamp.
 User-level only.  Argument is a filename; reads and returns the file's
 contents.  This handler is not accessible via ControlSocket.
 
+=h catq "read with parameters"
+
+User-level only.  Like cat, but returns a quoted version of the file.
+
 =h kill "read with parameters"
 
 User-level only.  Argument is a signal ID followed by one or more process
@@ -429,7 +441,8 @@ class Script : public Element { public:
 
     enum Insn {
 	INSN_INITIAL, INSN_WAIT_STEP, INSN_WAIT_TIME,
-	INSN_PRINT, INSN_PRINTN, INSN_READ, INSN_READQ, INSN_WRITE, INSN_WRITEQ,
+	INSN_PRINT, INSN_PRINTQ, INSN_PRINTN, INSN_PRINTNQ,
+	INSN_READ, INSN_READQ, INSN_WRITE, INSN_WRITEQ,
 	INSN_SET, insn_setq, insn_init, insn_initq, insn_export, insn_exportq,
 #if CLICK_USERLEVEL
 	insn_save, insn_append,
@@ -484,7 +497,7 @@ class Script : public Element { public:
 	ar_add = 0, ar_sub, ar_mul, ar_div, ar_idiv, ar_mod, ar_rem,
 	ar_neg, ar_abs,
 	AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
-	AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat,
+	AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat, ar_catq,
 	ar_and, ar_or, ar_nand, ar_nor, ar_now, ar_if, ar_in,
 	ar_readable, ar_writable, ar_length, ar_unquote, ar_kill
     };
