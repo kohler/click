@@ -175,6 +175,13 @@
 # define CLICK_DEPRECATED_ENUM __attribute__((deprecated))
 #endif
 
+/* Define macros for marking types as may-alias. */
+#if __GNUC__ < 3 || (__GNUC__ == 3 && __GNUC_MINOR__ < 3)
+# define CLICK_MAY_ALIAS /* nothing */
+#else
+# define CLICK_MAY_ALIAS __attribute__((__may_alias__))
+#endif
+
 /* Define macro for marking functions noninlinable. */
 #ifdef CLICK_LINUXMODULE
 # define CLICK_NOINLINE noinline
@@ -256,5 +263,16 @@ CLICK_DECLS
 template <typename T> struct DefaultArg;
 CLICK_ENDDECLS
 #endif
+
+/* Define aliasing versions of integer and pointer types. */
+typedef uint16_t click_aliasable_uint16_t CLICK_MAY_ALIAS;
+typedef int16_t click_aliasable_int16_t CLICK_MAY_ALIAS;
+typedef uint32_t click_aliasable_uint32_t CLICK_MAY_ALIAS;
+typedef int32_t click_aliasable_int32_t CLICK_MAY_ALIAS;
+#if HAVE_INT64_TYPES
+typedef uint64_t click_aliasable_uint64_t CLICK_MAY_ALIAS;
+typedef int64_t click_aliasable_int64_t CLICK_MAY_ALIAS;
+#endif
+typedef void *click_aliasable_void_pointer_t CLICK_MAY_ALIAS;
 
 #endif /* CLICK_CONFIG_H */

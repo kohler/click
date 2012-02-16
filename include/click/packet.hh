@@ -443,7 +443,7 @@ class Packet { public:
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % 2 == 0);
 #endif
-	return *reinterpret_cast<const uint16_t *>(xanno()->c + i);
+	return *reinterpret_cast<const click_aliasable_uint16_t *>(xanno()->c + i);
     }
 
     /** @brief Set 16-bit annotation at offset @a i.
@@ -458,7 +458,7 @@ class Packet { public:
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % 2 == 0);
 #endif
-	*reinterpret_cast<uint16_t *>(xanno()->c + i) = x;
+	*reinterpret_cast<click_aliasable_uint16_t *>(xanno()->c + i) = x;
     }
 
     /** @brief Return 16-bit annotation at offset @a i.
@@ -471,7 +471,7 @@ class Packet { public:
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % 2 == 0);
 #endif
-	return *reinterpret_cast<const int16_t *>(xanno()->c + i);
+	return *reinterpret_cast<const click_aliasable_int16_t *>(xanno()->c + i);
     }
 
     /** @brief Set 16-bit annotation at offset @a i.
@@ -486,7 +486,7 @@ class Packet { public:
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % 2 == 0);
 #endif
-	*reinterpret_cast<int16_t *>(xanno()->c + i) = x;
+	*reinterpret_cast<click_aliasable_int16_t *>(xanno()->c + i) = x;
     }
 
     /** @brief Return 32-bit annotation at offset @a i.
@@ -499,7 +499,7 @@ class Packet { public:
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % 4 == 0);
 #endif
-	return *reinterpret_cast<const uint32_t *>(xanno()->c + i);
+	return *reinterpret_cast<const click_aliasable_uint32_t *>(xanno()->c + i);
     }
 
     /** @brief Set 32-bit annotation at offset @a i.
@@ -514,7 +514,7 @@ class Packet { public:
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % 4 == 0);
 #endif
-	*reinterpret_cast<uint32_t *>(xanno()->c + i) = x;
+	*reinterpret_cast<click_aliasable_uint32_t *>(xanno()->c + i) = x;
     }
 
     /** @brief Return 32-bit annotation at offset @a i.
@@ -526,7 +526,7 @@ class Packet { public:
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % 4 == 0);
 #endif
-	return *reinterpret_cast<const int32_t *>(xanno()->c + i);
+	return *reinterpret_cast<const click_aliasable_int32_t *>(xanno()->c + i);
     }
 
     /** @brief Set 32-bit annotation at offset @a i.
@@ -541,7 +541,7 @@ class Packet { public:
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % 4 == 0);
 #endif
-	*reinterpret_cast<int32_t *>(xanno()->c + i) = x;
+	*reinterpret_cast<click_aliasable_int32_t *>(xanno()->c + i) = x;
     }
 
 #if HAVE_INT64_TYPES
@@ -555,7 +555,7 @@ class Packet { public:
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % __alignof__(uint64_t) == 0);
 #endif
-	return *reinterpret_cast<const uint64_t *>(xanno()->c + i);
+	return *reinterpret_cast<const click_aliasable_uint64_t *>(xanno()->c + i);
     }
 
     /** @brief Set 64-bit annotation at offset @a i.
@@ -570,7 +570,7 @@ class Packet { public:
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % __alignof__(uint64_t) == 0);
 #endif
-	*reinterpret_cast<uint64_t *>(xanno()->c + i) = x;
+	*reinterpret_cast<click_aliasable_uint64_t *>(xanno()->c + i) = x;
     }
 #endif
 
@@ -584,7 +584,7 @@ class Packet { public:
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % __alignof__(void *) == 0);
 #endif
-	return *reinterpret_cast<void * const *>(xanno()->c + i);
+	return *reinterpret_cast<const click_aliasable_void_pointer_t *>(xanno()->c + i);
     }
 
     /** @brief Set void * sized annotation at offset @a i.
@@ -599,7 +599,7 @@ class Packet { public:
 #if !HAVE_INDIFFERENT_ALIGNMENT
 	assert(i % __alignof__(void *) == 0);
 #endif
-	*reinterpret_cast<const void **>(xanno()->c + i) = x;
+	*reinterpret_cast<click_aliasable_void_pointer_t *>(xanno()->c + i) = const_cast<void *>(x);
     }
 
     inline void clear_annotations(bool all = true);
