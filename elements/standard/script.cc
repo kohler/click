@@ -38,10 +38,10 @@ static const StaticNameDB::Entry instruction_entries[] = {
 #if CLICK_USERLEVEL
     { "append", Script::insn_append },
 #endif
-    { "end", Script::insn_end },
-    { "error", Script::insn_error },
-    { "errorq", Script::insn_errorq },
-    { "exit", Script::insn_exit },
+    { "end", (uint32_t) Script::insn_end },
+    { "error", (uint32_t) Script::insn_error },
+    { "errorq", (uint32_t) Script::insn_errorq },
+    { "exit", (uint32_t) Script::insn_exit },
     { "export", Script::insn_export },
     { "exportq", Script::insn_exportq },
     { "goto", Script::INSN_GOTO },
@@ -63,7 +63,7 @@ static const StaticNameDB::Entry instruction_entries[] = {
 #endif
     { "set", Script::INSN_SET },
     { "setq", Script::insn_setq },
-    { "stop", Script::insn_stop },
+    { "stop", (uint32_t) Script::insn_stop },
     { "wait", Script::INSN_WAIT_PSEUDO },
     { "wait_for", Script::INSN_WAIT_TIME },
     { "wait_step", Script::INSN_WAIT_STEP },

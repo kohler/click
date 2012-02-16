@@ -375,6 +375,7 @@ void ip_prepare(PacketDesc &d, const FieldWriter *)
 	    /* This doesn't actually kill the IP header. */
 	    int scratch;
 	    BAD2("truncated IP missing ", (ntohs(d.iph->ip_len) - p->network_length() - EXTRA_LENGTH_ANNO(p)), scratch);
+	    (void) scratch;
 	}
     }
 

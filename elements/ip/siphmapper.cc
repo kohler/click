@@ -146,8 +146,6 @@ SourceIPHashMapper::rewrite_flowid(IPRewriterInput *input,
     tmp = tmp % INT_MAX;
 
     int v = _hasher->hash2ind (tmp);
-    // debug code
-    click_chatter ("%p -> %d", (void *)tmp, v);
     _is[v].reply_element = input->reply_element;
     input->foutput = _is[v].foutput;
     input->routput = _is[v].routput;

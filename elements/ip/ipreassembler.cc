@@ -159,17 +159,15 @@ IPReassembler::debug_dump(Element *e, void *)
 	    if (const click_ip *qip = q->ip_header()) {
 		sa << ' ' << IPFlowID(qip) << ' ' << ntohs(qip->ip_id);
 		ChunkLink *chunk = &PACKET_CHUNK(q);
-		int off = 0;
 		while (chunk &&
 		       (chunk->lastoff > chunk->off) &&
 		       (chunk->lastoff <= q->transport_length())) {
 		    sa << " (" << chunk->off << ',' << chunk->lastoff << ')';
-		    off = chunk->lastoff;
 		    chunk = next_chunk(q, chunk);
 		}
 		sa << '\n';
 	    }
-    return sa.take_string();;
+    return sa.take_string();
 }
 
 WritablePacket *
