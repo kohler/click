@@ -1,5 +1,0 @@
-Makefile *.d
-elements.conf elements.mk elements.cc
-setdef0.c setdef1.c setdefs.h
-vnode_if.h vnode_if.h~
-click.ko click-mount

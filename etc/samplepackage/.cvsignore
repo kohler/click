@@ -1,7 +1,0 @@
-Makefile *.d *.kd *.ud *.ko *.uo Kbuild
-kelements.conf kelements.mk kpackage.cc kversion.c
-uelements.conf uelements.mk upackage.cc
-config.h configure config.log config.status
-elementmap-sample.xml
-autom4te*
-*.o.cmd *.ko.cmd sample.mod.c .tmp_versions
