@@ -214,6 +214,15 @@ AC_DEFUN([CLICK_CHECK_DYNAMIC_LINKING], [
     fi
     AC_SUBST(DL_LIBS)
 
+    DL_LDFLAGS=
+    save_ldflags="$LDFLAGS"; LDFLAGS="$LDFLAGS -rdynamic"
+    AC_MSG_CHECKING([whether linker accepts the -rdynamic flag])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],
+	[ac_cv_rdynamic=yes; DL_LDFLAGS=-rdynamic], [ac_cv_rdynamic=no])
+    AC_MSG_RESULT($ac_cv_rdynamic)
+    LDFLAGS="$save_ldflags"
+    AC_SUBST(DL_LDFLAGS)
+
     AC_MSG_CHECKING(compiler flags for building loadable modules)
     LDMODULEFLAGS=-shared
     SOSUFFIX=so
@@ -247,6 +256,16 @@ AC_DEFUN([CLICK_CHECK_BUILD_DYNAMIC_LINKING], [
     if test "x$ac_build_have_dlopen" = xyes -a "x$ac_build_have_dlfcn_h" = xyes; then
 	ac_build_have_dynamic_linking=yes
     fi
+
+    BUILD_DL_LDFLAGS=
+    save_ldflags="$LDFLAGS"; LDFLAGS="$LDFLAGS -rdynamic"
+    AC_MSG_CHECKING([whether linker accepts the -rdynamic flag])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],
+	[ac_cv_build_rdynamic=yes; BUILD_DL_LDFLAGS=-rdynamic], [ac_cv_build_rdynamic=no])
+    AC_MSG_RESULT($ac_cv_build_rdynamic)
+    LDFLAGS="$save_ldflags"
+    AC_SUBST(BUILD_DL_LDFLAGS)
+
     if test "x$ac_build_have_dynamic_linking" != "x$ac_have_dynamic_linking"; then
 	AC_MSG_ERROR([
 =========================================

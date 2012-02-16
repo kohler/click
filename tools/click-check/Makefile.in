@@ -18,11 +18,13 @@ CC = @BUILD_CC@
 CXX = @BUILD_CXX@
 LIBCLICKTOOL = libclicktool_build.a
 DL_LIBS = @BUILD_DL_LIBS@
+DL_LDFLAGS = @BUILD_DL_LDFLAGS@
 else
 CC = @CC@
 CXX = @CXX@
 LIBCLICKTOOL = libclicktool.a
 DL_LIBS = @DL_LIBS@
+DL_LDFLAGS = @DL_LDFLAGS@
 endif
 INSTALL = @INSTALL@
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
@@ -81,7 +83,7 @@ $(LIBCLICKTOOL):
 	@cd ../lib; $(MAKE) $(LIBCLICKTOOL)
 
 click-check: Makefile $(OBJS) ../lib/$(LIBCLICKTOOL)
-	$(call cxxlink,-rdynamic $(OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
+	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \

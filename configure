@@ -655,8 +655,10 @@ EXTRA_TOOL_OBJS
 EXTRA_DRIVER_OBJS
 SOCKET_LIBS
 BUILD_DL_LIBS
+BUILD_DL_LDFLAGS
 SOSUFFIX
 LDMODULEFLAGS
+DL_LDFLAGS
 DL_LIBS
 HOST_TOOLS
 BUILD_RANLIB
@@ -7359,7 +7361,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7362 "configure"
+#line 7364 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -8478,6 +8480,33 @@ $as_echo "#define HAVE_DYNAMIC_LINKING 1" >>confdefs.h
     fi
 
 
+    DL_LDFLAGS=
+    save_ldflags="$LDFLAGS"; LDFLAGS="$LDFLAGS -rdynamic"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether linker accepts the -rdynamic flag" >&5
+$as_echo_n "checking whether linker accepts the -rdynamic flag... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_rdynamic=yes; DL_LDFLAGS=-rdynamic
+else
+  ac_cv_rdynamic=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_rdynamic" >&5
+$as_echo "$ac_cv_rdynamic" >&6; }
+    LDFLAGS="$save_ldflags"
+
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking compiler flags for building loadable modules" >&5
 $as_echo_n "checking compiler flags for building loadable modules... " >&6; }
     LDMODULEFLAGS=-shared
@@ -8564,6 +8593,34 @@ fi
     if test "x$ac_build_have_dlopen" = xyes -a "x$ac_build_have_dlfcn_h" = xyes; then
 	ac_build_have_dynamic_linking=yes
     fi
+
+    BUILD_DL_LDFLAGS=
+    save_ldflags="$LDFLAGS"; LDFLAGS="$LDFLAGS -rdynamic"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether linker accepts the -rdynamic flag" >&5
+$as_echo_n "checking whether linker accepts the -rdynamic flag... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_build_rdynamic=yes; BUILD_DL_LDFLAGS=-rdynamic
+else
+  ac_cv_build_rdynamic=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_build_rdynamic" >&5
+$as_echo "$ac_cv_build_rdynamic" >&6; }
+    LDFLAGS="$save_ldflags"
+
+
     if test "x$ac_build_have_dynamic_linking" != "x$ac_have_dynamic_linking"; then
 	as_fn_error $? "
 =========================================
