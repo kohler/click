@@ -1,0 +1,10 @@
+%script
+click --simtime CONFIG
+
+%file CONFIG
+s0 :: Script(label a, goto a);
+s1 :: Script(wait 1, stop);
+
+%expect stderr
+s0 :: Script: too many jumps, giving up
+
