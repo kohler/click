@@ -766,7 +766,7 @@ Element::notify_nports(int ninputs, int noutputs, ErrorHandler *errh)
 
   parse_error:
     if (errh)
-	errh->error("%{element}: bad port count", this);
+	errh->error("%p{element}: bad port count", this);
     return -1;
 }
 
@@ -967,13 +967,13 @@ next_flow_code(const char*& p, int port, Bitvector& code, ErrorHandler* errh, co
 	    else if (*p == '#')
 		code[port + 128] = true;
 	    else if (errh)
-		errh->error("%<%{element}%> flow code: invalid character %<%c%>", e, *p);
+		errh->error("%<%p{element}%> flow code: invalid character %<%c%>", e, *p);
 	}
 	if (negated)
 	    code.negate();
 	if (!*p) {
 	    if (errh)
-		errh->error("%<%{element}%> flow code: missing %<]%>", e);
+		errh->error("%<%p{element}%> flow code: missing %<]%>", e);
 	    p--;			// don't skip over final '\0'
 	}
     } else if ((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z'))
@@ -982,7 +982,7 @@ next_flow_code(const char*& p, int port, Bitvector& code, ErrorHandler* errh, co
 	code[port + 128] = true;
     else {
 	if (errh)
-	    errh->error("%<%{element}%> flow code: invalid character %<%c%>", e, *p);
+	    errh->error("%<%p{element}%> flow code: invalid character %<%c%>", e, *p);
 	p++;
 	return -1;
     }
@@ -1041,7 +1041,7 @@ Element::port_flow(bool isoutput, int p, Bitvector* travels) const
     const char* f_out = strchr(f, '/');
     f_out = (f_out ? f_out + 1 : f_in);
     if (*f_out == '\0' || *f_out == '/') {
-	errh->error("%<%{element}%> flow code: missing or bad %</%>", this);
+	errh->error("%<%p{element}%> flow code: missing or bad %</%>", this);
 	return;
     }
 
@@ -1631,7 +1631,7 @@ Element::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
   if (can_live_reconfigure())
     return configure(conf, errh);
   else
-    return errh->error("cannot reconfigure %{element} live", this);
+    return errh->error("cannot reconfigure %p{element} live", this);
 }
 
 

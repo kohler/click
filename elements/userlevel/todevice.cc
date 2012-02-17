@@ -323,7 +323,7 @@ ToDevice::run_task(Task *)
 		_backoff *= 2;
 	    if (_debug) {
 		Timestamp now = Timestamp::now();
-		click_chatter("%{element} backing off for %d at %{timestamp}\n", this, _backoff, &now);
+		click_chatter("%p{element} backing off for %d at %p{timestamp}\n", this, _backoff, &now);
 	    }
 	}
 	return count > 0;

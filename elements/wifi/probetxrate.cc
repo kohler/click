@@ -76,7 +76,7 @@ void
 ProbeTXRate::assign_rate(Packet *p_in) {
 
   if (!p_in) {
-    click_chatter("%{element} ah, !p_in\n", this);
+    click_chatter("%p{element} ah, !p_in\n", this);
     return;
   }
 
@@ -153,7 +153,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   if (dst == _bcast) {
     /* don't record info for bcast packets */
     if (_debug) {
-      click_chatter("%{element}: discarding bcast %s\n",
+      click_chatter("%p{element}: discarding bcast %s\n",
 		    this,
 		    dst.unparse().c_str());
     }
@@ -163,7 +163,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   if (0 == ceh->rate) {
     /* rate wasn't set */
     if (_debug) {
-          click_chatter("%{element} no rate set for %s\n",
+          click_chatter("%p{element} no rate set for %s\n",
 			this,
 			dst.unparse().c_str());
     }
@@ -177,7 +177,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
      * we should be at
      */
     if (_debug) {
-          click_chatter("%{element} short success for %s\n",
+          click_chatter("%p{element} short success for %s\n",
 			this,
 			dst.unparse().c_str());
     }
@@ -187,7 +187,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   DstInfo *nfo = _neighbors.findp(dst);
   if (!nfo) {
     if (_debug) {
-          click_chatter("%{element} no info for %s\n",
+          click_chatter("%p{element} no info for %s\n",
 			this,
 			dst.unparse().c_str());
     }
@@ -195,7 +195,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   }
 
   if (!success && _debug) {
-    click_chatter("%{element} packet failed %s retries %d rate %d alt %d\n",
+    click_chatter("%p{element} packet failed %s retries %d rate %d alt %d\n",
 		  this,
 		  dst.unparse().c_str(),
 		  retries,
@@ -209,7 +209,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
 				    retries);
 
   if (_debug) {
-	  click_chatter("%{element}::%s() rate %d tries %d (retries %d) time %d\n",
+	  click_chatter("%p{element}::%s() rate %d tries %d (retries %d) time %d\n",
 			this, __func__, ceh->rate, tries, retries, time);
   }
   nfo->add_result(now, ceh->rate, tries,

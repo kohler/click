@@ -59,7 +59,7 @@ WifiFragment::push(int port, Packet *p)
   if (!_max_length ||
       p->length() <= sizeof(click_wifi) + _max_length) {
     if (_debug) {
-      click_chatter("%{element}: no modificatoin\n",
+      click_chatter("%p{element}: no modificatoin\n",
 		    this);
     }
     output(port).push(p);
@@ -74,13 +74,13 @@ WifiFragment::push(int port, Packet *p)
     last_len = _max_length;
   }
   if (_debug) {
-    click_chatter("%{element} click_wifi %d, seq %d frags %d last_len %d\n",
+    click_chatter("%p{element} click_wifi %d, seq %d frags %d last_len %d\n",
 		  this, sizeof(click_wifi), seq, num_frags, last_len);
   }
   for (int frag = 0; frag < num_frags; frag++) {
     uint32_t frag_len = (frag == num_frags - 1) ? last_len : _max_length;
     if (_debug) {
-      click_chatter("%{element}: %s: on frag %d/%d len %d\n",
+      click_chatter("%p{element}: %s: on frag %d/%d len %d\n",
 		    this,
 		    __func__,
 		    frag, num_frags,

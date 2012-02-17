@@ -336,7 +336,7 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 		errh->warning("odd DAG cell type %d, assuming old-style ATM encapsulation", cell->type);
 		errh->message("(To avoid this warning, specify an explicit ENCAP.)");
 	    } else
-		click_chatter("%{element}: DAG cell with odd type %d, assuming old-style\n  ATM encapsulation for rest of dump.  Packets may have been read incorrectly!\n  (To avoid this warning, specify an explicit ENCAP.)", this, cell->type);
+		click_chatter("%p{element}: DAG cell with odd type %d, assuming old-style\n  ATM encapsulation for rest of dump.  Packets may have been read incorrectly!\n  (To avoid this warning, specify an explicit ENCAP.)", this, cell->type);
 	    goto use_base_linktype;
 	}
 	if (read_length < DAGCell::HEADER_SIZE)

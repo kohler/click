@@ -465,7 +465,7 @@ LinkTable::clear_stale() {
       links.insert(IPPair(nfo._from, nfo._to), nfo);
     } else {
       if (0) {
-	click_chatter("%{element} :: %s removing link %s -> %s metric %d seq %d age %d\n",
+	click_chatter("%p{element} :: %s removing link %s -> %s metric %d seq %d age %d\n",
 		      this,
 		      __func__,
 		      nfo._from.unparse().c_str(),

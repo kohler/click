@@ -98,7 +98,7 @@ ToHost::push(int, Packet *p)
 	}
 	q->kill();
     } else
-	click_chatter("%{element}: out of memory", this);
+	click_chatter("%p{element}: out of memory", this);
 }
 
 void

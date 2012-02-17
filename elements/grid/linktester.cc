@@ -129,7 +129,7 @@ LinkTester::timer_hook()
 {
   Timestamp tv = Timestamp::now();
 #if 1
-  click_chatter("OK %{timestamp}    (delta: %s)\n", tv.unparse().c_str(),
+  click_chatter("OK %p{timestamp}    (delta: %s)\n", tv.unparse().c_str(),
 		(tv - _last_time).unparse().c_str());
 #endif
   _last_time = tv;

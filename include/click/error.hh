@@ -329,8 +329,8 @@ class ErrorHandler { public:
      * <tt>\%g</tt>, <tt>\%G</tt></td><td>Format a <tt>double</tt> (user-level
      * only).</td></tr>
      *
-     * <tr><td><tt>\%{...}</tt><td>Call a user-provided conversion function.
-     * For example, <tt>\%{ip_ptr}</tt> reads an <tt>IPAddress *</tt> argument
+     * <tr><td><tt>\%p{...}</tt><td>Call a user-provided conversion function.
+     * For example, <tt>\%p{ip_ptr}</tt> reads an <tt>IPAddress *</tt> argument
      * from the argument list, and formats the pointed-to address using
      * IPAddress::unparse().</td></tr>
      *

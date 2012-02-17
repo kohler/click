@@ -215,7 +215,7 @@ ICMPPingSource::push(int, Packet *p)
 	    uint16_t readable_seq = ntohs(icmph->icmp_sequence);
 #endif
 	    if (_verbose)
-		click_chatter("%s: %d bytes from %{ip_ptr}: icmp_seq=%u ttl=%u time=%d.%03d ms", declaration().c_str(), ntohs(iph->ip_len) - (iph->ip_hl << 2) - sizeof(*icmph), &iph->ip_src, readable_seq, iph->ip_ttl, (unsigned)(diffval/1000), (unsigned)(diffval % 1000));
+		click_chatter("%s: %d bytes from %p{ip_ptr}: icmp_seq=%u ttl=%u time=%d.%03d ms", declaration().c_str(), ntohs(iph->ip_len) - (iph->ip_hl << 2) - sizeof(*icmph), &iph->ip_src, readable_seq, iph->ip_ttl, (unsigned)(diffval/1000), (unsigned)(diffval % 1000));
 	}
     }
     p->kill();

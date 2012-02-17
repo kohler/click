@@ -58,7 +58,7 @@ ErrorTest::initialize(ErrorHandler *init_errh)
     IPAddress ipa(String("1.0.2.3"));
     EtherAddress etha;
     EtherAddressArg().parse("0:1:3:5:A:B", etha);
-    errh.error("IP %{ip_ptr} %% ETH %{ether_ptr}", &ipa, &etha);
+    errh.error("IP %p{ip_ptr} %% ETH %p{ether_ptr}", &ipa, &etha);
     CHECK("<3>IP 1.0.2.3 % ETH 00-01-03-05-0A-0B\n");
 
     {

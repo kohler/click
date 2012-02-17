@@ -177,7 +177,7 @@ FromUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	return -1;
 
     if (tud->_from_user_device)
-	return errh->error("%{element} already has a registered FromUserDevice", tud);
+	return errh->error("%p{element} already has a registered FromUserDevice", tud);
     if (tud->_type != ToUserDevice::type_packet)
 	return errh->error("FromUserDevice only supports 'TYPE packet' ToUserDevice elements");
     tud->_from_user_device = this;

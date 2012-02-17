@@ -62,7 +62,7 @@ OpenAuthResponder::push(int, Packet *p)
   uint8_t subtype;
 
   if (p->length() < sizeof(struct click_wifi)) {
-    click_chatter("%{element}: packet too small: %d vs %d\n",
+    click_chatter("%p{element}: packet too small: %d vs %d\n",
 		  this,
 		  p->length(),
 		  sizeof(struct click_wifi));
@@ -79,14 +79,14 @@ OpenAuthResponder::push(int, Packet *p)
   subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
 
   if (type != WIFI_FC0_TYPE_MGT) {
-    click_chatter("%{element}: received non-management packet\n",
+    click_chatter("%p{element}: received non-management packet\n",
 		  this);
     p->kill();
     return;
   }
 
   if (subtype != WIFI_FC0_SUBTYPE_AUTH) {
-    click_chatter("%{element}: received non-probe-req packet\n",
+    click_chatter("%p{element}: received non-probe-req packet\n",
 		  this);
     p->kill();
     return;
@@ -110,7 +110,7 @@ OpenAuthResponder::push(int, Packet *p)
 
   EtherAddress src = EtherAddress(w->i_addr2);
   if (algo != WIFI_AUTH_ALG_OPEN) {
-    click_chatter("%{element}: auth %d from %s not supported\n",
+    click_chatter("%p{element}: auth %d from %s not supported\n",
 		  this,
 		  algo,
 		  src.unparse().c_str());
@@ -119,7 +119,7 @@ OpenAuthResponder::push(int, Packet *p)
   }
 
   if (seq != 1) {
-    click_chatter("%{element}: auth %d weird sequence number %d\n",
+    click_chatter("%p{element}: auth %d weird sequence number %d\n",
 		  this,
 		  algo,
 		  seq);
@@ -128,7 +128,7 @@ OpenAuthResponder::push(int, Packet *p)
   }
 
   if (_debug) {
-    click_chatter("%{element}: auth %d seq %d status %d\n",
+    click_chatter("%p{element}: auth %d seq %d status %d\n",
 		  this,
 		  algo,
 		  seq,

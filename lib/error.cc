@@ -665,6 +665,13 @@ ErrorHandler::vxformat(int default_flags, const char *s, va_list val)
 	    goto number;
 
 	case 'p': {
+	    if (*s == '{') {
+		s1 = s2 = s + 1;
+		while (*s2 && *s2 != '}' && !isspace((unsigned char) *s2))
+		    ++s2;
+		if (*s2 == '}')
+		    goto braces;
+	    }
 	    void *v = va_arg(val, void *);
 	    s2 = numbuf + NUMBUF_SIZE;
 	    s1 = do_number((unsigned long)v, (char *)s2, 16, flags);
@@ -695,21 +702,24 @@ ErrorHandler::vxformat(int default_flags, const char *s, va_list val)
 	}
 #endif
 
-	case '{': {
-	    const char *rbrace = strchr(s, '}');
-	    if (!rbrace || rbrace == s)
-		assert(0 /* Bad %{ in error */);
-	    String name(s, rbrace - s);
-	    s = rbrace + 1;
+	case '{':
+	    s1 = s2 = s + 1;
+	    while (*s2 && *s2 != '}' && !isspace((unsigned char) *s2))
+		++s2;
+	    if (*s2 != '}')
+		goto error;
+	    goto braces;
+
+	braces:
+	    s = s2 + 1;
 	    for (Conversion *item = error_items; item; item = item->next)
-		if (item->name == name) {
+		if (item->name.equals(s1, s2 - s1)) {
 		    strstore = item->hook(flags, VA_LIST_REF(val));
 		    s1 = strstore.begin();
 		    s2 = strstore.end();
 		    goto got_result;
 		}
 	    goto error;
-	}
 
 	error:
 	default:

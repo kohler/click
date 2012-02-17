@@ -560,7 +560,7 @@ GridRouteTable::update_metric(RTEntry &r)
 	click_chatter("update_metric WARNING received metric (%d) too low for %s (%d hops)",
 		      r.metric, r.dest_ip.unparse().c_str(), r.num_hops());
       if (next_hop->metric < 100)
-	click_chatter("update_metric WARNING next hop %{ip_ptr} for %{ip_ptr} metric is too low (%d)",
+	click_chatter("update_metric WARNING next hop %p{ip_ptr} for %p{ip_ptr} metric is too low (%d)",
 		      &next_hop->dest_ip, &r.dest_ip, next_hop->metric);
     }
     r.metric += next_hop->metric;
@@ -713,10 +713,10 @@ GridRouteTable::simple_action(Packet *packet)
   RTEntry *r = _rtes.findp(ipaddr);
 
   if (!r)
-    click_chatter("GridRouteTable %s: adding new 1-hop route %{ip_ptr} -- %{ether_ptr}",
+    click_chatter("GridRouteTable %s: adding new 1-hop route %p{ip_ptr} -- %p{ether_ptr}",
 		  name().c_str(), &ipaddr, &ethaddr);
   else if (r->num_hops() == 1 && r->next_hop_eth != ethaddr)
-    click_chatter("GridRouteTable %s: ethernet address of %{ip_ptr} changed from %{ether_ptr} to %{ether_ptr}",
+    click_chatter("GridRouteTable %s: ethernet address of %p{ip_ptr} changed from %p{ether_ptr} to %p{ether_ptr}",
 		  name().c_str(), &ipaddr, &r->next_hop_eth, &ethaddr);
 
   /*
@@ -819,7 +819,7 @@ GridRouteTable::simple_action(Packet *packet)
 
       if ((route.seq_no() & 1) == 0) {
 	// broken routes should have odd seq_no
-	click_chatter("ignoring invalid broken route entry from %{ip_ptr} for %{ip_ptr}: num_hops was 0 but seq_no was even\n",
+	click_chatter("ignoring invalid broken route entry from %p{ip_ptr} for %p{ip_ptr}: num_hops was 0 but seq_no was even\n",
 		      &ipaddr, &route.dest_ip);
 	continue;
       }

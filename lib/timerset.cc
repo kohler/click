@@ -85,7 +85,7 @@ TimerSet::check_timer_expiry(Timer *t)
     if (t->_expiry_s.sec() + Timer::behind_sec < _timer_check.sec()) {
 	if (_timer_check_reports > 0) {
 	    --_timer_check_reports;
-	    click_chatter("timer %p outdated expiry %{timestamp} updated to %{timestamp}", t, &t->_expiry_s, &_timer_check);
+	    click_chatter("timer %p outdated expiry %p{timestamp} updated to %p{timestamp}", t, &t->_expiry_s, &_timer_check);
 	}
 	t->_expiry_s = _timer_check;
     }

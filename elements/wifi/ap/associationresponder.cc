@@ -65,7 +65,7 @@ AssociationResponder::recv_association_request(Packet *p)
   uint8_t subtype;
 
   if (p->length() < sizeof(struct click_wifi)) {
-    click_chatter("%{element}: packet too small: %d vs %d\n",
+    click_chatter("%p{element}: packet too small: %d vs %d\n",
 		  this,
 		  p->length(),
 		  sizeof(struct click_wifi));
@@ -81,14 +81,14 @@ AssociationResponder::recv_association_request(Packet *p)
   subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
 
   if (type != WIFI_FC0_TYPE_MGT) {
-    click_chatter("%{element}: received non-management packet\n",
+    click_chatter("%p{element}: received non-management packet\n",
 		  this);
     p->kill();
     return;
   }
 
   if (subtype != WIFI_FC0_SUBTYPE_ASSOC_REQ) {
-    click_chatter("%{element}: received non-association-req packet\n",
+    click_chatter("%p{element}: received non-association-req packet\n",
 		  this);
     p->kill();
     return;
@@ -121,7 +121,7 @@ AssociationResponder::recv_association_request(Packet *p)
       break;
     default:
       if (_debug) {
-	click_chatter("%{element}: ignored element id %u %u \n",
+	click_chatter("%p{element}: ignored element id %u %u \n",
 		      this,
 		      *ptr,
 		      ptr[1]);
@@ -162,7 +162,7 @@ AssociationResponder::recv_association_request(Packet *p)
     /* respond to blank ssid probes also */
   if (ssid != "" && ssid != my_ssid) {
     if (_debug) {
-      click_chatter("%{element}: other ssid %s wanted %s\n",
+      click_chatter("%p{element}: other ssid %s wanted %s\n",
 		    this,
 		    ssid.c_str(),
 		    my_ssid.c_str());
@@ -212,7 +212,7 @@ AssociationResponder::recv_association_request(Packet *p)
 
   sa << ")\n";
 
-  click_chatter("%{element}: request %s\n",
+  click_chatter("%p{element}: request %s\n",
 		this,
 		sa.take_string().c_str());
 
@@ -221,7 +221,7 @@ AssociationResponder::recv_association_request(Packet *p)
   uint16_t associd = 0xc000 | _associd++;
 
   if (_debug) {
-    click_chatter("%{element}: association %s associd %d\n",
+    click_chatter("%p{element}: association %s associd %d\n",
 		  this,
 		  src.unparse().c_str(),
 		  associd);

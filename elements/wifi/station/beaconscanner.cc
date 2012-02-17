@@ -138,7 +138,7 @@ BeaconScanner::simple_action(Packet *p)
       break;
     default:
       if (_debug) {
-	click_chatter("%{element}: ignored element id %u %u \n",
+	click_chatter("%p{element}: ignored element id %u %u \n",
 		      this,
 		      *ptr,
 		      ptr[1]);

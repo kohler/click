@@ -67,7 +67,7 @@ NotifierQueue::push(int, Packet *p)
 
     } else {
 	if (_drops == 0 && _capacity > 0)
-	    click_chatter("%{element}: overflow", this);
+	    click_chatter("%p{element}: overflow", this);
 	_drops++;
 	checked_output_push(1, p);
     }

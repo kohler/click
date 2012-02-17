@@ -177,7 +177,7 @@ ToHost::push(int port, Packet *p)
     // check that device exists
     if (!skb->dev) {
 	if (++_drops == 1)
-	    click_chatter("%{element}: dropped a packet with null skb->dev", this);
+	    click_chatter("%p{element}: dropped a packet with null skb->dev", this);
 	p->kill();
 	return;
     }

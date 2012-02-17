@@ -74,7 +74,7 @@ ProbeResponder::push(int, Packet *p)
   uint8_t subtype;
 
   if (p->length() < sizeof(struct click_wifi)) {
-    click_chatter("%{element}: packet too small: %d vs %d\n",
+    click_chatter("%p{element}: packet too small: %d vs %d\n",
 		  this,
 		  p->length(),
 		  sizeof(struct click_wifi));
@@ -91,14 +91,14 @@ ProbeResponder::push(int, Packet *p)
   subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
 
   if (type != WIFI_FC0_TYPE_MGT) {
-    click_chatter("%{element}: received non-management packet\n",
+    click_chatter("%p{element}: received non-management packet\n",
 		  this);
     p->kill();
     return;
   }
 
   if (subtype != WIFI_FC0_SUBTYPE_PROBE_REQ) {
-    click_chatter("%{element}: received non-probe-req packet\n",
+    click_chatter("%p{element}: received non-probe-req packet\n",
 		  this);
     p->kill();
     return;
@@ -123,7 +123,7 @@ ProbeResponder::push(int, Packet *p)
       break;
     default:
       if (_debug) {
-	click_chatter("%{element}: ignored element id %u %u \n",
+	click_chatter("%p{element}: ignored element id %u %u \n",
 		      this,
 		      *ptr,
 		      ptr[1]);
@@ -143,7 +143,7 @@ ProbeResponder::push(int, Packet *p)
   /* respond to blank ssid probes also */
   if (ssid != "" && ssid != _ssid) {
     if (_debug) {
-      click_chatter("%{element}: other ssid %s wanted %s\n",
+      click_chatter("%p{element}: other ssid %s wanted %s\n",
 		    this,
 		    ssid.c_str(),
 		    _ssid.c_str());
@@ -171,7 +171,7 @@ ProbeResponder::push(int, Packet *p)
   sa << " }";
 
   if (_debug) {
-    click_chatter("%{element}: %s\n",
+    click_chatter("%p{element}: %s\n",
 		  this,
 		  sa.take_string().c_str());
   }

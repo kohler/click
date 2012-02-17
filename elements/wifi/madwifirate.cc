@@ -117,7 +117,7 @@ MadwifiRate::adjust(EtherAddress dst)
 
   if (stepdown) {
     if (_debug && WIFI_MAX(nfo->_current_index - 1, 0) != nfo->_current_index) {
-      click_chatter("%{element} stepping down for %s from %d to %d\n",
+      click_chatter("%p{element} stepping down for %s from %d to %d\n",
 		    this,
 		    nfo->_eth.unparse().c_str(),
 		    nfo->_rates[nfo->_current_index],
@@ -129,7 +129,7 @@ MadwifiRate::adjust(EtherAddress dst)
     nfo->_credits++;
     if (nfo->_credits >= CREDITS_FOR_RAISE) {
       if (_debug) {
-	click_chatter("%{element} steping up for %s from %d to %d\n",
+	click_chatter("%p{element} steping up for %s from %d to %d\n",
 		      this,
 		      nfo->_eth.unparse().c_str(),
 		      nfo->_rates[nfo->_current_index],
@@ -157,7 +157,7 @@ void
 MadwifiRate::process_feedback(Packet *p_in)
 {
   if (!p_in) {
-    click_chatter("%{element} bad packet %s\n",
+    click_chatter("%p{element} bad packet %s\n",
 		  this,
 		  __func__);
     return;
@@ -180,7 +180,7 @@ MadwifiRate::process_feedback(Packet *p_in)
   }
 
   if (!success && _debug) {
-    click_chatter("%{element} packet failed %s success %d rate %d alt %d\n",
+    click_chatter("%p{element} packet failed %s success %d rate %d alt %d\n",
 		  this,
 		  dst.unparse().c_str(),
 		  success,
@@ -206,7 +206,7 @@ void
 MadwifiRate::assign_rate(Packet *p_in)
 {
   if (!p_in) {
-    click_chatter("%{element} ah, !p_in\n",
+    click_chatter("%p{element} ah, !p_in\n",
 		  this);
     return;
   }
@@ -244,7 +244,7 @@ MadwifiRate::assign_rate(Packet *p_in)
     nfo->_current_index = ndx;
     nfo->_credits = 0;
     if (_debug) {
-      click_chatter("%{element} initial rate for %s is %d\n",
+      click_chatter("%p{element} initial rate for %s is %d\n",
 		    this,
 		    nfo->_eth.unparse().c_str(),
 		    nfo->_rates[nfo->_current_index]);

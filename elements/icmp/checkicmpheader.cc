@@ -65,7 +65,7 @@ Packet *
 CheckICMPHeader::drop(Reason reason, Packet *p)
 {
   if (_drops == 0 || _verbose)
-    click_chatter("%{element}: ICMP header check failed: %s", this, reason_texts[reason]);
+    click_chatter("%p{element}: ICMP header check failed: %s", this, reason_texts[reason]);
   _drops++;
 
   if (_reason_drops)

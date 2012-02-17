@@ -83,7 +83,7 @@ ToDevice::static_cleanup()
 inline void
 ToDevice::tx_wake_queue(net_device *dev)
 {
-    //click_chatter("%{element}::%s for dev %s\n", this, __func__, dev->name);
+    //click_chatter("%p{element}::%s for dev %s\n", this, __func__, dev->name);
     _task.reschedule();
 }
 

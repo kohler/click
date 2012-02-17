@@ -162,7 +162,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
   grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
 
 #if NOISY
-  click_chatter("FloodingLocQuerier %s: got packet for %{ip_ptr}", name().c_str(), &nb->dst_ip);
+  click_chatter("FloodingLocQuerier %s: got packet for %p{ip_ptr}", name().c_str(), &nb->dst_ip);
 #endif
 
 #ifdef SMALL_GRID_HEADERS
@@ -188,7 +188,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
     // we have a query entry for this destination
     if (ae->p == 0) {
 #if NOISY
-      click_chatter("FloodingLocQuerier %s: dest %{ip_ptr} has good cached info, sending immediately", name().c_str(), &nb->dst_ip);
+      click_chatter("FloodingLocQuerier %s: dest %p{ip_ptr} has good cached info, sending immediately", name().c_str(), &nb->dst_ip);
 #endif
       // ae data is cached from sending last p
       WritablePacket *q = p->uniqueify();

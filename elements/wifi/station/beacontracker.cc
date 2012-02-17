@@ -66,7 +66,7 @@ BeaconTracker::simple_action(Packet *p)
 
 
   if (p->length() < sizeof(struct click_wifi)) {
-    click_chatter("%{element}: packet too small: %d vs %d\n",
+    click_chatter("%p{element}: packet too small: %d vs %d\n",
 		  this,
 		  p->length(),
 		  sizeof(struct click_wifi));
@@ -83,14 +83,14 @@ BeaconTracker::simple_action(Packet *p)
   subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
 
   if (type != WIFI_FC0_TYPE_MGT) {
-    click_chatter("%{element}: received non-management packet\n",
+    click_chatter("%p{element}: received non-management packet\n",
 		  this);
     p->kill();
     return 0;
   }
 
   if (subtype != WIFI_FC0_SUBTYPE_BEACON && subtype != WIFI_FC0_SUBTYPE_PROBE_RESP) {
-    click_chatter("%{element}: received subtype %d packet\n",
+    click_chatter("%p{element}: received subtype %d packet\n",
 		  this,
 		  subtype);
     p->kill();

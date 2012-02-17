@@ -127,7 +127,7 @@ AggregateIPAddrPair::simple_action(Packet *p)
 	    // assign timestamp if no timestamp given
 	    if (!p->timestamp_anno()) {
 		if (!_timestamp_warning) {
-		    click_chatter("%{element}: warning: packet received without timestamp", this);
+		    click_chatter("%p{element}: warning: packet received without timestamp", this);
 		    _timestamp_warning = true;
 		}
 		p->timestamp_anno().assign_now();

@@ -65,7 +65,7 @@ WifiEncap::simple_action(Packet *p)
   WritablePacket *p_out = 0;
 
   if (p->length() < sizeof(struct click_ether)) {
-    click_chatter("%{element}: packet too small: %d vs %d\n",
+    click_chatter("%p{element}: packet too small: %d vs %d\n",
 		  this,
 		  p->length(),
 		  sizeof(struct click_ether));
@@ -130,7 +130,7 @@ WifiEncap::simple_action(Packet *p)
     memcpy(w->i_addr3, bssid.data(), 6);
     break;
   default:
-    click_chatter("%{element}: invalid mode %d\n",
+    click_chatter("%p{element}: invalid mode %d\n",
 		  this,
 		  _mode);
     p_out->kill();

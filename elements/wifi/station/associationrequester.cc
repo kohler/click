@@ -81,7 +81,7 @@ AssociationRequester::send_assoc_req()
 
 
   if (!rates.size()) {
-    click_chatter("%{element}: couldn't lookup rates for %s\n",
+    click_chatter("%p{element}: couldn't lookup rates for %s\n",
 		  this,
 		  bssid.unparse().c_str());
   }
@@ -242,7 +242,7 @@ AssociationRequester::process_response(Packet *p)
 
   sa << ")";
   if (_debug) {
-    click_chatter("%{element}: response %s\n",
+    click_chatter("%p{element}: response %s\n",
 		  this,
 		  sa.take_string().c_str());
   }
@@ -268,13 +268,13 @@ AssociationRequester::process_disassociation(Packet *p)
   ptr += 2;
 
   if (_winfo && _winfo->_bssid == bssid) {
-    click_chatter("%{element} disassociation from %s reason %d\n",
+    click_chatter("%p{element} disassociation from %s reason %d\n",
 		  this,
 		  bssid.unparse().c_str(),
 		  reason);
     _associated = false;
   } else {
-    click_chatter("%{element} BAD disassociation from %s reason %d\n",
+    click_chatter("%p{element} BAD disassociation from %s reason %d\n",
 		  this,
 		  bssid.unparse().c_str(),
 		  reason);
@@ -291,7 +291,7 @@ AssociationRequester::push(int, Packet *p)
 
 
   if (p->length() < sizeof(struct click_wifi)) {
-    click_chatter("%{element}: packet too small: %d vs %d\n",
+    click_chatter("%p{element}: packet too small: %d vs %d\n",
 		  this,
 		  p->length(),
 		  sizeof(struct click_wifi));
@@ -309,7 +309,7 @@ AssociationRequester::push(int, Packet *p)
   subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
 
   if (type != WIFI_FC0_TYPE_MGT) {
-    click_chatter("%{element}: received non-management packet\n",
+    click_chatter("%p{element}: received non-management packet\n",
 		  this);
     p->kill();
     return ;
@@ -328,7 +328,7 @@ AssociationRequester::push(int, Packet *p)
   }
 
 
-  click_chatter("%{element}: received non-assoc response packet\n",
+  click_chatter("%p{element}: received non-assoc response packet\n",
 		this);
   p->kill();
   return ;

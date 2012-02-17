@@ -198,7 +198,7 @@ GapRate::need_update(const Timestamp &now)
     }
 
 #if DEBUG_GAPRATE
-    click_chatter("%{timestamp} -> %u @ %u [%d]", &now, need, _sec_count, (int)need >= _sec_count);
+    click_chatter("%p{timestamp} -> %u @ %u [%d]", &now, need, _sec_count, (int)need >= _sec_count);
 #endif
     return ((int)need >= _sec_count);
 }

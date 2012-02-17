@@ -180,7 +180,7 @@ FTPPortMapper::simple_action(Packet *p)
     // data
     forward->flow()->set_reply_anno(p_flow->reply_anno());
   } else
-    click_chatter("%{element}: control packet with no mapping", this);
+    click_chatter("%p{element}: control packet with no mapping", this);
 
   wp_tcph->th_sum = 0;
   unsigned wp_tcp_len = wp->length() - wp->transport_header_offset();

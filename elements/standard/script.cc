@@ -569,7 +569,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 
   done:
     if (njumps >= max_jumps) {
-	ErrorHandler::default_handler()->error("%{element}: too many jumps, giving up", this);
+	ErrorHandler::default_handler()->error("%p{element}: too many jumps, giving up", this);
 	_insn_pos = _insns.size();
 	_timer.unschedule();
     }
@@ -621,7 +621,7 @@ Script::run_timer(Timer *)
     // called when a timer expires
     assert(_insns[_insn_pos] == INSN_WAIT_TIME || _insns[_insn_pos] == INSN_INITIAL);
     ErrorHandler *errh = ErrorHandler::default_handler();
-    ContextErrorHandler cerrh(errh, "While executing %<%{element}%>:", this);
+    ContextErrorHandler cerrh(errh, "While executing %<%p{element}%>:", this);
     step(1, STEP_TIMER, 0, &cerrh);
     complete_step(0);
 }
@@ -630,7 +630,7 @@ void
 Script::push(int port, Packet *p)
 {
     ErrorHandler *errh = ErrorHandler::default_handler();
-    ContextErrorHandler cerrh(errh, "While executing %<%{element}%>:", this);
+    ContextErrorHandler cerrh(errh, "While executing %<%p{element}%>:", this);
 
     // This is slow, but it probably doesn't need to be fast.
     int i = find_variable(String::make_stable("input", 5), true);
@@ -654,7 +654,7 @@ Script::pull(int)
 	return 0;
 
     ErrorHandler *errh = ErrorHandler::default_handler();
-    ContextErrorHandler cerrh(errh, "While executing %<%{element}%>:", this);
+    ContextErrorHandler cerrh(errh, "While executing %<%p{element}%>:", this);
 
     // This is slow, but it probably doesn't need to be fast.
     int i = find_variable(String::make_stable("input", 5), true);

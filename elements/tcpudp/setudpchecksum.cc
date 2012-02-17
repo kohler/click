@@ -53,7 +53,7 @@ SetUDPChecksum::simple_action(Packet *p_in)
 	if (noutputs() == 1) {
 	    void *&x = router()->force_attachment("SetUDPChecksum_message");
 	    if (!x) {
-		click_chatter("%{element}: fragment or short packet", this);
+		click_chatter("%p{element}: fragment or short packet", this);
 		x = this;
 	    }
 	}

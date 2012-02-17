@@ -72,7 +72,7 @@ LinkTestReceiver::simple_action(Packet *p)
 
   LinkTester::payload_t *payload = (LinkTester::payload_t *) (eh + 1);
 
-  click_chatter("%{timestamp},%u.%06u,%{ether_ptr},%{ether_ptr},%hu,%d,%u,%u\n",
+  click_chatter("%p{timestamp},%u.%06u,%p{ether_ptr},%p{ether_ptr},%hu,%d,%u,%u\n",
 		&p->timestamp_anno(),
 		ntohl(payload->tx_sec), ntohl(payload->tx_usec),
 		&src, &dst, ntohs(payload->size),

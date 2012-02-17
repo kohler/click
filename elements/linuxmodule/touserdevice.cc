@@ -195,7 +195,7 @@ ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t *ppos)
 	    to_copy = len;
 	if (copy_to_user(buff, p->data(), to_copy)) {
 	    elem->_failed_count++;
-	    click_chatter("%{element}: Read Fault", elem);
+	    click_chatter("%p{element}: Read Fault", elem);
 	    p->kill();
 	    return -EFAULT;
 	}
@@ -259,7 +259,7 @@ ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t *ppos)
 	    to_copy = len - nread;
 	if (copy_to_user(buff + nread, p->data(), to_copy)) {
 	    elem->_failed_count++;
-	    click_chatter("%{element}: Read Fault", elem);
+	    click_chatter("%p{element}: Read Fault", elem);
 	    p->kill();
 	    return -EFAULT;
 	}

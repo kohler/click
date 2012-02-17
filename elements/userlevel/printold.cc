@@ -80,7 +80,7 @@ PrintOld::simple_action(Packet *p)
 #if 1
   assert(sizeof(long) == sizeof(int));
   if (age_ms > _thresh)
-    click_chatter("%s Now-FromDevice age is %d (FromDevice time: %{timestamp}  dsec %ld  dusec %ld)",
+    click_chatter("%s Now-FromDevice age is %d (FromDevice time: %p{timestamp}  dsec %ld  dusec %ld)",
 		  name().c_str(), age_ms, &p->timestamp_anno(), age_s, age_u);
 #endif
 

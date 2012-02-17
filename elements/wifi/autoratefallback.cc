@@ -110,7 +110,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
     }
     int next_index = WIFI_MAX(0, nfo->_current_index - down);
     if (_debug) {
-      click_chatter("%{element} stepping down for %s from %d to %d\n",
+      click_chatter("%p{element} stepping down for %s from %d to %d\n",
 		    this,
 		    nfo->_eth.unparse().c_str(),
 		    nfo->_rates[nfo->_current_index],
@@ -147,7 +147,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
 
       nfo->_current_index != nfo->_rates.size() - 1) {
     if (_debug) {
-      click_chatter("%{element} steping up for %s from %d to %d\n",
+      click_chatter("%p{element} steping up for %s from %d to %d\n",
 		    this,
 		    nfo->_eth.unparse().c_str(),
 		    nfo->_rates[nfo->_current_index],
@@ -166,7 +166,7 @@ void
 AutoRateFallback::assign_rate(Packet *p_in)
 {
   if (!p_in) {
-    click_chatter("%{element} ah, !p_in\n",
+    click_chatter("%p{element} ah, !p_in\n",
 		  this);
     return;
   }
@@ -197,7 +197,7 @@ AutoRateFallback::assign_rate(Packet *p_in)
     /* start at the highest rate */
     nfo->_current_index = nfo->_rates.size() - 1;
     if (_debug) {
-      click_chatter("%{element} initial rate for %s is %d\n",
+      click_chatter("%p{element} initial rate for %s is %d\n",
 		    this,
 		    nfo->_eth.unparse().c_str(),
 		    nfo->_rates[nfo->_current_index]);

@@ -459,7 +459,7 @@ BigHashMapTest::initialize(ErrorHandler *errh)
 
     Timestamp ru_delta = Timestamp(ru1.ru_utime) - Timestamp(ru0.ru_utime);
     ts1 -= ts0;
-    errh->message("%{timestamp}u %{timestamp} total", &ru_delta, &ts1);
+    errh->message("%p{timestamp}u %p{timestamp} total", &ru_delta, &ts1);
 #endif
 
     errh->message("All tests pass!");

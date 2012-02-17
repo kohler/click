@@ -105,7 +105,7 @@ ToHost::push(int, Packet *p)
     // check that device exists
     if (!ifp) {
 	if (++_drops == 1)
-	    click_chatter("%{element}: device not set and packet has rcvif=NULL, dropping", this);
+	    click_chatter("%p{element}: device not set and packet has rcvif=NULL, dropping", this);
 	m_freem(m);
 	return;
     }
