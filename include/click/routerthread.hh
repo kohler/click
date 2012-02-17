@@ -143,8 +143,9 @@ class RouterThread : private TaskLink { public:
     SelectSet _selects;
 #endif
 #if CLICK_NS
-    struct timeval _last_active_tv;
-    int _active_iter;
+    Timestamp _ns_scheduled;
+    Timestamp _ns_last_active;
+    int _ns_active_iter;
     enum { ns_iters_per_time = 1000 };
 #endif
 

@@ -7,6 +7,7 @@
  * Copyright (c) 2001-2002 International Computer Science Institute
  * Copyright (c) 2004-2007 Regents of the University of California
  * Copyright (c) 2008-2010 Meraki, Inc.
+ * Copyright (c) 2000-2012 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -108,8 +109,8 @@ RouterThread::RouterThread(Master *m, int id)
 #endif
 
 #if CLICK_NS
-    timerclear(&_last_active_tv);
-    _active_iter = 0;
+    _ns_scheduled = _ns_last_active = Timestamp(-1, 0);
+    _ns_active_iter = 0;
 #endif
 
 #if CLICK_DEBUG_SCHEDULING
@@ -588,6 +589,14 @@ RouterThread::driver()
 # endif
 #endif
 
+#if CLICK_NS
+    {
+	Timestamp now = Timestamp::now();
+	if (now >= _ns_scheduled)
+	    _ns_scheduled.set_sec(-1);
+    }
+#endif
+
     driver_lock_tasks();
 
 #if HAVE_ADAPTIVE_SCHEDULER
@@ -684,21 +693,32 @@ RouterThread::driver()
 # endif
 #endif
 #if CLICK_NS
-    if (active()) {
-	struct timeval nexttime = Timestamp::now().timeval_ceil();
-	if (memcmp(&nexttime, &_last_active_tv, sizeof(struct timeval)) != 0) {
-	    _active_iter = 0;
-	    _last_active_tv = nexttime;
-	} else if (++_active_iter >= ns_iters_per_time) {
-	    ++nexttime.tv_usec;
-	    if (nexttime.tv_usec == 1000000)
-		++nexttime.tv_sec, nexttime.tv_usec = 0;
+    do {
+	Timestamp t = Timestamp::uninitialized_t();
+	if (active()) {
+	    t = Timestamp::now();
+	    if (t != _ns_last_active) {
+		_ns_active_iter = 0;
+		_ns_last_active = t;
+	    } else if (++_ns_active_iter >= ns_iters_per_time)
+		t += Timestamp::epsilon();
+	} else if (Timestamp next_expiry = timer_set().timer_expiry_steady())
+	    t = next_expiry;
+	else
+	    break;
+	if (t >= _ns_scheduled && _ns_scheduled.sec() >= 0)
+	    break;
+	if (Timestamp::schedule_granularity == Timestamp::usec_per_sec) {
+	    t = t.usec_ceil();
+	    struct timeval tv = t.timeval();
+	    simclick_sim_command(_master->simnode(), SIMCLICK_SCHEDULE, &tv);
+	} else {
+	    t = t.nsec_ceil();
+	    struct timespec ts = t.timespec();
+	    simclick_sim_command(_master->simnode(), SIMCLICK_SCHEDULE, &ts);
 	}
-	simclick_sim_command(_master->simnode(), SIMCLICK_SCHEDULE, &nexttime);
-    } else if (Timestamp next_expiry = timer_set().timer_expiry_steady()) {
-	struct timeval nexttime = next_expiry.timeval_ceil();
-	simclick_sim_command(_master->simnode(), SIMCLICK_SCHEDULE, &nexttime);
-    }
+	_ns_scheduled = t;
+    } while (0);
 #endif
 }
 

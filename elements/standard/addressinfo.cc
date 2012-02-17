@@ -368,11 +368,12 @@ AddressInfo::query_netdevice(const String &s, unsigned char *store,
 	if (r >= 0 && tmp[0] && EtherAddressArg().parse(tmp, store))
 	    return true;
     } else if (context && type == 'I') {
-	char tmp[255], storex[8];
+	char tmp[255];
+	IPAddress storex[2];
 	int r = simclick_sim_command(context->router()->master()->simnode(), SIMCLICK_IPADDR_FROM_NAME, s.c_str(), tmp, 255);
-	if (r >= 0 && tmp[0] && IPAddressArg().parse(tmp, *reinterpret_cast<IPAddress *>(storex))) {
+	if (r >= 0 && tmp[0] && IPAddressArg().parse(tmp, storex[0])) {
 	    r = simclick_sim_command(context->router()->master()->simnode(), SIMCLICK_IPPREFIX_FROM_NAME, s.c_str(), tmp, 255);
-	    if (r >= 0 && tmp[0] && IPAddressArg().parse(tmp, *reinterpret_cast<IPAddress *>(storex + 4))) {
+	    if (r >= 0 && tmp[0] && IPAddressArg().parse(tmp, storex[1])) {
 		memcpy(store, storex, 8);
 		return true;
 	    }

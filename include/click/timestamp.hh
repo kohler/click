@@ -156,6 +156,9 @@ class Timestamp { public:
 #endif
 	subsec_per_msec = subsec_per_sec / msec_per_sec,
 	subsec_per_usec = subsec_per_sec / usec_per_sec
+#if CLICK_NS
+	, schedule_granularity = usec_per_sec
+#endif
     };
 
     enum {
@@ -857,9 +860,13 @@ Timestamp::assign_now(bool recent, bool steady, bool unwarped)
     TIMESTAMP_RESOLVE_TSP;
 
 #else
-    TIMESTAMP_DECLARE_TVP;
-    gettimeofday(&tvp, (struct timezone *) 0);
-    TIMESTAMP_RESOLVE_TVP;
+    if (schedule_granularity == usec_per_sec) {
+	TIMESTAMP_DECLARE_TVP;
+	gettimeofday(&tvp, (struct timezone *) 0);
+	TIMESTAMP_RESOLVE_TVP;
+    } else {
+	assert(0 && "nanosecond precision not available yet");
+    }
 #endif
 
 #undef TIMESTAMP_DECLARE_TSP
