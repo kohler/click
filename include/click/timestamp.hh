@@ -847,9 +847,13 @@ Timestamp::assign_now(bool recent, bool steady, bool unwarped)
     TIMESTAMP_RESOLVE_TVP;
 
 #elif CLICK_NS
-    TIMESTAMP_DECLARE_TVP;
-    simclick_gettimeofday(&tvp);
-    TIMESTAMP_RESOLVE_TVP;
+    if (schedule_granularity == usec_per_sec) {
+	TIMESTAMP_DECLARE_TVP;
+	simclick_gettimeofday(&tvp);
+	TIMESTAMP_RESOLVE_TVP;
+    } else {
+	assert(0 && "nanosecond precision not available yet");
+    }
 
 #elif HAVE_USE_CLOCK_GETTIME
     TIMESTAMP_DECLARE_TSP;
@@ -860,13 +864,9 @@ Timestamp::assign_now(bool recent, bool steady, bool unwarped)
     TIMESTAMP_RESOLVE_TSP;
 
 #else
-    if (schedule_granularity == usec_per_sec) {
-	TIMESTAMP_DECLARE_TVP;
-	gettimeofday(&tvp, (struct timezone *) 0);
-	TIMESTAMP_RESOLVE_TVP;
-    } else {
-	assert(0 && "nanosecond precision not available yet");
-    }
+    TIMESTAMP_DECLARE_TVP;
+    gettimeofday(&tvp, (struct timezone *) 0);
+    TIMESTAMP_RESOLVE_TVP;
 #endif
 
 #undef TIMESTAMP_DECLARE_TSP
