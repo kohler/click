@@ -97,7 +97,7 @@ AggregateFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 		    dash = find(words[i], '-');
 		    if (!IntArg().parse(words[i].substring(words[i].begin(), dash), agg1)
 			|| !IntArg().parse(words[i].substring(dash + 1, words[i].end()), agg2)) {
-			errh->error("pattern %d: bad aggregate number `%#s'", words[i].c_str());
+			errh->error("pattern %d: bad aggregate number %<%#s%>", argno, words[i].c_str());
 			continue;
 		    }
 		}
