@@ -426,7 +426,7 @@ FromDevice::selected(int, int)
 {
 #if FROMDEVICE_PCAP
     if (_capture == CAPTURE_PCAP) {
-	// Read and push() at most one packet.
+	// Read and push() at most one burst of packets.
 	int r = pcap_dispatch(_pcap, _burst, FromDevice_get_packet, (u_char *) this);
 	if (r > 0) {
 	    _count += r;
@@ -471,7 +471,7 @@ FromDevice::selected(int, int)
 bool
 FromDevice::run_task(Task *)
 {
-    // Read and push() at most one packet.
+    // Read and push() at most one burst of packets.
     int r = pcap_dispatch(_pcap, _burst, FromDevice_get_packet, (u_char *) this);
     if (r > 0) {
 	_count += r;
