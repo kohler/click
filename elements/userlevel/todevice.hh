@@ -77,9 +77,15 @@ extern "C" {
 #elif defined(__sun)
 # define TODEVICE_ALLOW_PCAPFD 1
 #endif
-class FromDevice;
+#if FROMDEVICE_ALLOW_NETMAP
+# define TODEVICE_ALLOW_NETMAP 1
+#endif
 
 class ToDevice : public Element { public:
+
+#if TODEVICE_ALLOW_NETMAP
+    typedef struct FromDevice::netmap_type netmap_type;
+#endif
 
     ToDevice();
     ~ToDevice();
@@ -110,10 +116,14 @@ class ToDevice : public Element { public:
 #if TODEVICE_ALLOW_PCAP
     pcap_t *_pcap;
 #endif
-#if TODEVICE_ALLOW_LINUX || TODEVICE_ALLOW_DEVBPF || TODEVICE_ALLOW_PCAPFD
+#if TODEVICE_ALLOW_LINUX || TODEVICE_ALLOW_DEVBPF || TODEVICE_ALLOW_PCAPFD || TODEVICE_ALLOW_NETMAP
     int _fd;
 #endif
-    enum { method_linux, method_pcap, method_devbpf, method_pcapfd };
+#if TODEVICE_ALLOW_NETMAP
+    netmap_type _netmap;
+    int netmap_send_packet(Packet *p);
+#endif
+    enum { method_default, method_netmap, method_linux, method_pcap, method_devbpf, method_pcapfd };
     int _method;
     NotifierSignal _signal;
 
@@ -124,7 +134,7 @@ class ToDevice : public Element { public:
 #if TODEVICE_ALLOW_PCAP
     bool _my_pcap;
 #endif
-#if TODEVICE_ALLOW_LINUX || TODEVICE_ALLOW_DEVBPF || TODEVICE_ALLOW_PCAPFD
+#if TODEVICE_ALLOW_LINUX || TODEVICE_ALLOW_DEVBPF || TODEVICE_ALLOW_PCAPFD || TODEVICE_ALLOW_NETMAP
     bool _my_fd;
 #endif
     int _backoff;

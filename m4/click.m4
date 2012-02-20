@@ -381,6 +381,36 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
 
 
 dnl
+dnl CLICK_CHECK_NETMAP
+dnl Finds header files for netmap.
+dnl
+
+AC_DEFUN([CLICK_CHECK_NETMAP], [
+    HAVE_NETMAP=no
+    AC_CACHE_CHECK([for net/netmap.h], [ac_cv_net_netmap_header_path], [
+	AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <net/netmap.h>]])],
+	    [ac_cv_net_netmap_header_path="found"],
+	    [ac_cv_net_netmap_header_path="not found"])])
+    if test "$ac_cv_net_netmap_header_path" = "found"; then
+	HAVE_NETMAP=yes
+    fi
+
+    if test "$HAVE_NETMAP" = yes; then
+	AC_CACHE_CHECK([whether net/netmap.h works],
+	    [ac_cv_working_net_netmap_h], [
+	    AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <net/netmap.h>]])],
+		[ac_cv_working_net_netmap_h=yes],
+		[ac_cv_working_net_netmap_h=no])])
+	test "$ac_cv_working_net_netmap_h" != yes && HAVE_NETMAP=
+    fi
+
+    if test "$HAVE_NETMAP" = yes; then
+	AC_DEFINE([HAVE_NET_NETMAP_H], [1], [Define if you have the <net/netmap.h> header file.])
+    fi
+])
+
+
+dnl
 dnl CLICK_PROG_INSTALL
 dnl Substitute both INSTALL and INSTALL_IF_CHANGED.
 dnl

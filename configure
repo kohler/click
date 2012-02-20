@@ -10161,7 +10161,61 @@ done
 	LDFLAGS="$saveflags"
     fi
 
-    if test "$HAVE_PCAP" != yes -a "$ac_cv_under_linux" != yes; then
+
+    HAVE_NETMAP=no
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for net/netmap.h" >&5
+$as_echo_n "checking for net/netmap.h... " >&6; }
+if ${ac_cv_net_netmap_header_path+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <net/netmap.h>
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"; then :
+  ac_cv_net_netmap_header_path="found"
+else
+  ac_cv_net_netmap_header_path="not found"
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_net_netmap_header_path" >&5
+$as_echo "$ac_cv_net_netmap_header_path" >&6; }
+    if test "$ac_cv_net_netmap_header_path" = "found"; then
+	HAVE_NETMAP=yes
+    fi
+
+    if test "$HAVE_NETMAP" = yes; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether net/netmap.h works" >&5
+$as_echo_n "checking whether net/netmap.h works... " >&6; }
+if ${ac_cv_working_net_netmap_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <net/netmap.h>
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"; then :
+  ac_cv_working_net_netmap_h=yes
+else
+  ac_cv_working_net_netmap_h=no
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_net_netmap_h" >&5
+$as_echo "$ac_cv_working_net_netmap_h" >&6; }
+	test "$ac_cv_working_net_netmap_h" != yes && HAVE_NETMAP=
+    fi
+
+    if test "$HAVE_NETMAP" = yes; then
+
+$as_echo "#define HAVE_NET_NETMAP_H 1" >>confdefs.h
+
+    fi
+
+    if test "$HAVE_PCAP" != yes -a "$HAVE_NETMAP" != yes -a "$ac_cv_under_linux" != yes; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
 =========================================
 

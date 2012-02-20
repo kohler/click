@@ -32,6 +32,7 @@
 # define PCAP_DONT_INCLUDE_PCAP_BPF_H 1
 #endif
 #include "fromdevice.hh"
+#include <click/etheraddress.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/args.hh>
@@ -43,7 +44,7 @@
 #include <fcntl.h>
 #include "fakepcap.hh"
 
-#if FROMDEVICE_LINUX
+#if FROMDEVICE_ALLOW_LINUX
 # include <sys/socket.h>
 # include <net/if.h>
 # include <features.h>
@@ -57,16 +58,23 @@
 # endif
 #endif
 
+#if FROMDEVICE_ALLOW_NETMAP
+# include <sys/mman.h>
+#endif
+
 CLICK_DECLS
 
 FromDevice::FromDevice()
     :
-#if FROMDEVICE_PCAP
-      _pcap(0), _pcap_task(this), _pcap_complaints(0),
+#if FROMDEVICE_ALLOW_NETMAP || FROMDEVICE_ALLOW_PCAP
+      _task(this),
+#endif
+#if FROMDEVICE_ALLOW_PCAP
+      _pcap(0), _pcap_complaints(0),
 #endif
       _datalink(-1), _count(0), _promisc(0), _snaplen(0)
 {
-#if FROMDEVICE_LINUX || FROMDEVICE_PCAP
+#if FROMDEVICE_ALLOW_LINUX || FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_NETMAP
     _fd = -1;
 #endif
 }
@@ -108,7 +116,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     if (_burst <= 0)
 	return errh->error("BURST out of range");
 
-#if FROMDEVICE_PCAP
+#if FROMDEVICE_ALLOW_PCAP
     _bpf_filter = bpf_filter;
     if (has_encap) {
         _datalink = fake_pcap_parse_dlt(encap_type);
@@ -117,30 +125,30 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     }
 #endif
 
-    // set _capture
+    // set _method
     if (capture == "") {
-#if FROMDEVICE_PCAP && FROMDEVICE_LINUX
-	_capture = CAPTURE_PCAP;
-#elif FROMDEVICE_LINUX
-	_capture = CAPTURE_LINUX;
-#elif FROMDEVICE_PCAP
-	_capture = CAPTURE_PCAP;
+#if FROMDEVICE_ALLOW_NETMAP || FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_LINUX
+	_method = _bpf_filter ? method_pcap : method_default;
 #else
 	return errh->error("cannot receive packets on this platform");
 #endif
     }
-#if FROMDEVICE_LINUX
+#if FROMDEVICE_ALLOW_LINUX
     else if (capture == "LINUX")
-	_capture = CAPTURE_LINUX;
+	_method = method_linux;
 #endif
-#if FROMDEVICE_PCAP
+#if FROMDEVICE_ALLOW_PCAP
     else if (capture == "PCAP")
-	_capture = CAPTURE_PCAP;
+	_method = method_pcap;
+#endif
+#if FROMDEVICE_ALLOW_NETMAP
+    else if (capture == "NETMAP")
+	_method = method_netmap;
 #endif
     else
 	return errh->error("bad METHOD");
 
-    if (bpf_filter && _capture != CAPTURE_PCAP)
+    if (bpf_filter && _method != method_pcap)
 	errh->warning("not using METHOD PCAP, BPF filter ignored");
 
     _sniffer = sniffer;
@@ -149,7 +157,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
-#if FROMDEVICE_LINUX
+#if FROMDEVICE_ALLOW_LINUX
 int
 FromDevice::open_packet_socket(String ifname, ErrorHandler *errh)
 {
@@ -219,9 +227,9 @@ FromDevice::set_promiscuous(int fd, String ifname, bool promisc)
 
     return was_promisc;
 }
-#endif /* FROMDEVICE_LINUX */
+#endif /* FROMDEVICE_ALLOW_LINUX */
 
-#if FROMDEVICE_PCAP
+#if FROMDEVICE_ALLOW_PCAP
 const char *
 FromDevice::pcap_error(pcap_t *pcap, const char *ebuf)
 {
@@ -264,18 +272,78 @@ FromDevice::open_pcap(String ifname, int snaplen, bool promisc,
 }
 #endif
 
+#if FROMDEVICE_ALLOW_NETMAP
+int
+FromDevice::netmap_type::open(const String &ifname,
+			      bool always_error, ErrorHandler *errh)
+{
+    ErrorHandler *initial_errh = always_error ? errh : ErrorHandler::silent_handler();
+
+    int fd = ::open("/dev/netmap", O_RDWR);
+    if (fd < 0) {
+	initial_errh->error("/dev/netmap: %s", strerror(errno));
+	return -1;
+    }
+
+    struct nmreq req;
+    memset(&req, 0, sizeof(req));
+    strncpy(req.nr_name, ifname.c_str(), sizeof(req.nr_name));
+    req.nr_ringid = 0;
+    int r;
+    if ((r = ioctl(fd, NIOCGINFO, &req))) {
+	initial_errh->error("netmap %s: %s", ifname.c_str(), strerror(errno));
+    error:
+	close(fd);
+	return -1;
+    }
+
+    memsize = req.nr_memsize;
+    if ((r = ioctl(fd, NIOCREGIF, &req))) {
+	errh->error("netmap register %s: %s", ifname.c_str(), strerror(errno));
+	goto error;
+    }
+
+    mem = (char *) mmap(0, memsize, PROT_WRITE | PROT_READ,
+			MAP_SHARED, fd, 0);
+    if (mem == MAP_FAILED) {
+	errh->error("netmap allocate %s: %s", ifname.c_str(), strerror(errno));
+	mem = 0;
+	goto error;
+    }
+
+    nifp = NETMAP_IF(mem, req.nr_offset);
+    ring_begin = 0;
+    ring_end = req.nr_numrings;
+
+    // XXX timestamp off
+    for (unsigned i = ring_begin; i != ring_end; ++i)
+	NETMAP_RXRING(nifp, i)->flags = NR_TIMESTAMP;
+    return fd;
+}
+#endif
+
 int
 FromDevice::initialize(ErrorHandler *errh)
 {
     if (!_ifname)
 	return errh->error("interface not set");
 
-#if FROMDEVICE_PCAP
-    if (_capture == CAPTURE_PCAP) {
+#if FROMDEVICE_ALLOW_NETMAP
+    if (_method == method_default || _method == method_netmap) {
+	_fd = _netmap.open(_ifname, _method == method_netmap, errh);
+	if (_fd >= 0) {
+	    _datalink = FAKE_DLT_EN10MB;
+	    _method = method_netmap;
+	}
+    }
+#endif
+
+#if FROMDEVICE_ALLOW_PCAP
+    if (_method == method_default || _method == method_pcap) {
 	assert(!_pcap);
 	_pcap = open_pcap(_ifname, _snaplen, _promisc, errh);
 	if (!_pcap)
-	    return 0;
+	    return -1;
 	_fd = pcap_fileno(_pcap);
 	char *ifname = _ifname.mutable_c_str();
 
@@ -326,18 +394,16 @@ FromDevice::initialize(ErrorHandler *errh)
 	if (pcap_setfilter(_pcap, &fcode) < 0)
 	    return errh->error("%s: %s", ifname, pcap_error(0));
 
-	add_select(_fd, SELECT_READ);
-
 	_datalink = pcap_datalink(_pcap);
 	if (_force_ip && !fake_pcap_dlt_force_ipable(_datalink))
 	    errh->warning("%s: strange data link type %d, FORCE_IP will not work", ifname, _datalink);
 
-	ScheduleInfo::initialize_task(this, &_pcap_task, false, errh);
+	_method = method_pcap;
     }
 #endif
 
-#if FROMDEVICE_LINUX
-    if (_capture == CAPTURE_LINUX) {
+#if FROMDEVICE_ALLOW_LINUX
+    if (_method == method_default || _method == method_linux) {
 	_fd = open_packet_socket(_ifname, errh);
 	if (_fd < 0)
 	    return -1;
@@ -350,10 +416,18 @@ FromDevice::initialize(ErrorHandler *errh)
 	} else
 	    _was_promisc = promisc_ok;
 
-	add_select(_fd, SELECT_READ);
-
 	_datalink = FAKE_DLT_EN10MB;
+	_method = method_linux;
     }
+#endif
+
+#if FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_NETMAP
+    if (_method == method_pcap || _method == method_netmap)
+	ScheduleInfo::initialize_task(this, &_task, false, errh);
+#endif
+#if FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_LINUX || FROMDEVICE_ALLOW_NETMAP
+    if (_fd >= 0)
+	add_select(_fd, SELECT_READ);
 #endif
 
     if (!_sniffer)
@@ -368,24 +442,59 @@ FromDevice::cleanup(CleanupStage stage)
 {
     if (stage >= CLEANUP_INITIALIZED && !_sniffer)
 	KernelFilter::device_filter(_ifname, false, ErrorHandler::default_handler());
-#if FROMDEVICE_LINUX
-    if (_fd >= 0 && _capture == CAPTURE_LINUX) {
+#if FROMDEVICE_ALLOW_NETMAP
+    if (_fd >= 0 && _method == method_netmap) {
+	munmap(_netmap.mem, _netmap.memsize);
+	ioctl(_fd, NIOCUNREGIF, (struct nmreq *) 0);
+	close(_fd);
+	_netmap.mem = 0;
+    }
+#endif
+#if FROMDEVICE_ALLOW_LINUX
+    if (_fd >= 0 && _method == method_linux) {
 	if (_was_promisc >= 0)
 	    set_promiscuous(_fd, _ifname, _was_promisc);
 	close(_fd);
     }
 #endif
-#if FROMDEVICE_PCAP
+#if FROMDEVICE_ALLOW_PCAP
     if (_pcap)
 	pcap_close(_pcap);
     _pcap = 0;
 #endif
-#if FROMDEVICE_PCAP || FROMDEVICE_LINUX
+#if FROMDEVICE_ALLOW_NETMAP || FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_LINUX
     _fd = -1;
 #endif
 }
 
-#if FROMDEVICE_PCAP
+#if FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_NETMAP
+void
+FromDevice::emit_packet_data(const unsigned char *buf, int len, int fulllen,
+			     const Timestamp &ts)
+{
+    WritablePacket *p = Packet::make(_headroom, buf, len, 0);
+
+    // set packet type annotation
+    if (p->data()[0] & 1) {
+	if (EtherAddress::is_broadcast(p->data()))
+	    p->set_packet_type_anno(Packet::BROADCAST);
+	else
+	    p->set_packet_type_anno(Packet::MULTICAST);
+    }
+
+    // set annotations
+    p->set_timestamp_anno(ts);
+    p->set_mac_header(p->data());
+    SET_EXTRA_LENGTH_ANNO(p, fulllen - len);
+
+    if (!_force_ip || fake_pcap_force_ip(p, _datalink))
+	output(0).push(p);
+    else
+	checked_output_push(1, p);
+}
+#endif
+
+#if FROMDEVICE_ALLOW_PCAP
 CLICK_ENDDECLS
 extern "C" {
 void
@@ -393,51 +502,65 @@ FromDevice_get_packet(u_char* clientdata,
 		      const struct pcap_pkthdr* pkthdr,
 		      const u_char* data)
 {
-    static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-
     FromDevice *fd = (FromDevice *) clientdata;
-    int length = pkthdr->caplen;
-    Packet *p = Packet::make(fd->_headroom, data, length, 0);
-
-    // set packet type annotation
-    if (p->data()[0] & 1) {
-	if (memcmp(bcast_addr, p->data(), 6) == 0)
-	    p->set_packet_type_anno(Packet::BROADCAST);
-	else
-	    p->set_packet_type_anno(Packet::MULTICAST);
-    }
-
-    // set annotations
-    p->set_timestamp_anno(Timestamp::make_usec(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec));
-    p->set_mac_header(p->data());
-    SET_EXTRA_LENGTH_ANNO(p, pkthdr->len - length);
-
-    if (!fd->_force_ip || fake_pcap_force_ip(p, fd->_datalink))
-	fd->output(0).push(p);
-    else
-	fd->checked_output_push(1, p);
+    fd->emit_packet_data(data, pkthdr->caplen, pkthdr->len,
+			 Timestamp::make_usec(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec));
 }
 }
 CLICK_DECLS
 #endif
 
+#if FROMDEVICE_ALLOW_NETMAP
+int
+FromDevice::netmap_dispatch()
+{
+    int n = 0;
+    for (unsigned ri = _netmap.ring_begin; ri != _netmap.ring_end; ++ri) {
+	struct netmap_ring *ring = NETMAP_RXRING(_netmap.nifp, ri);
+	if (ring->avail == 0)
+	    continue;
+	while (n != _burst && ring->avail > 0) {
+	    unsigned i = ring->cur;
+	    unsigned buf_idx = ring->slot[i].buf_idx;
+	    if (buf_idx < 2)
+		break;
+	    unsigned char *buf = (unsigned char *) NETMAP_BUF(ring, buf_idx);
+	    emit_packet_data(buf, ring->slot[i].len, ring->slot[i].len, ring->ts);
+	    ring->cur = NETMAP_RING_NEXT(ring, i);
+	    ring->avail--;
+	    n++;
+	}
+    }
+    return n;
+}
+#endif
+
 void
 FromDevice::selected(int, int)
 {
-#if FROMDEVICE_PCAP
-    if (_capture == CAPTURE_PCAP) {
+#if FROMDEVICE_ALLOW_NETMAP
+    if (_method == method_netmap) {
+	int r = netmap_dispatch();
+	if (r > 0) {
+	    _count += r;
+	    _task.reschedule();
+	}
+    }
+#endif
+#if FROMDEVICE_ALLOW_PCAP
+    if (_method == method_pcap) {
 	// Read and push() at most one burst of packets.
 	int r = pcap_dispatch(_pcap, _burst, FromDevice_get_packet, (u_char *) this);
 	if (r > 0) {
 	    _count += r;
-	    _pcap_task.reschedule();
+	    _task.reschedule();
 	} else if (r < 0 && ++_pcap_complaints < 5)
 	    ErrorHandler::default_handler()->error("%p{element}: %s", this, pcap_geterr(_pcap));
     }
 #endif
-#if FROMDEVICE_LINUX
+#if FROMDEVICE_ALLOW_LINUX
     int nlinux = 0;
-    while (_capture == CAPTURE_LINUX && nlinux < _burst) {
+    while (_method == method_linux && nlinux < _burst) {
 	struct sockaddr_ll sa;
 	socklen_t fromlen = sizeof(sa);
 	WritablePacket *p = Packet::make(_headroom, 0, _snaplen, 0);
@@ -467,31 +590,42 @@ FromDevice::selected(int, int)
 #endif
 }
 
-#if FROMDEVICE_PCAP
+#if FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_NETMAP
 bool
 FromDevice::run_task(Task *)
 {
     // Read and push() at most one burst of packets.
-    int r = pcap_dispatch(_pcap, _burst, FromDevice_get_packet, (u_char *) this);
+    int r = 0;
+# if FROMDEVICE_ALLOW_NETMAP
+    if (_method == method_netmap)
+	r = netmap_dispatch();
+# endif
+# if FROMDEVICE_ALLOW_PCAP
+    if (_method == method_pcap) {
+	r = pcap_dispatch(_pcap, _burst, FromDevice_get_packet, (u_char *) this);
+	if (r < 0 && ++_pcap_complaints < 5)
+	    ErrorHandler::default_handler()->error("%p{element}: %s", this, pcap_geterr(_pcap));
+    }
+# endif
     if (r > 0) {
 	_count += r;
-	_pcap_task.fast_reschedule();
-    } else if (r < 0 && ++_pcap_complaints < 5)
-	ErrorHandler::default_handler()->error("%p{element}: %s", this, pcap_geterr(_pcap));
-    return r > 0;
+	_task.fast_reschedule();
+	return true;
+    } else
+	return false;
 }
 #endif
 
 void
 FromDevice::kernel_drops(bool& known, int& max_drops) const
 {
-#if FROMDEVICE_LINUX
+#if FROMDEVICE_ALLOW_LINUX
     // You might be able to do this better by parsing netstat/ifconfig output,
     // but for now, we just give up.
 #endif
     known = false, max_drops = -1;
-#if FROMDEVICE_PCAP
-    if (_capture == CAPTURE_PCAP) {
+#if FROMDEVICE_ALLOW_PCAP
+    if (_method == method_pcap) {
 	struct pcap_stat stats;
 	if (pcap_stats(_pcap, &stats) >= 0)
 	    known = true, max_drops = stats.ps_drop;

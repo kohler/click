@@ -1058,7 +1058,8 @@ dnl note: no longer need pcap under Linux
 
 if test "$enable_userlevel" = yes; then
     CLICK_CHECK_LIBPCAP
-    if test "$HAVE_PCAP" != yes -a "$ac_cv_under_linux" != yes; then
+    CLICK_CHECK_NETMAP
+    if test "$HAVE_PCAP" != yes -a "$HAVE_NETMAP" != yes -a "$ac_cv_under_linux" != yes; then
 	AC_MSG_WARN([
 =========================================
 
