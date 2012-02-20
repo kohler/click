@@ -63,7 +63,16 @@ class EtherAddress { public:
      *
      * The Ethernet broadcast address is FF-FF-FF-FF-FF-FF. */
     inline bool is_broadcast() const {
-	return _data[0] == 0xFFFF && _data[1] == 0xFFFF && _data[2] == 0xFFFF;
+	return _data[0] + _data[1] + _data[2] == 0x2FFFD;
+    }
+
+    /** @brief Return true if @a data points to a broadcast address. */
+    static inline bool is_broadcast(const unsigned char *data) {
+#if HAVE_INDIFFERENT_ALIGNMENT
+	return reinterpret_cast<const EtherAddress *>(data)->is_broadcast();
+#else
+	return data[0] + data[1] + data[2] + data[3] + data[4] + data[5] == 0x5FA;
+#endif
     }
 
     /** @brief Return a pointer to the address data. */
