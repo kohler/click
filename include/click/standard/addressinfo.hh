@@ -70,10 +70,10 @@ If C<NAME:ipnet> is a valid IPv4 network address, then C<NAME:bcast> is a
 valid IPv4 address equaling the broadcast address for that network.  This is
 obtained by setting all the host bits in the address prefix to 1.
 
-If C<NAME:ipnet> is a valid IPv4 network address, then C<NAME:gw> is a valid
-IPv4 address equaling the default gateway address for that network.  This is
-obtained by setting all the host bits in the address prefix to 0, except for
-the lowest order bit.
+C<NAME:gw> usually equals the default gateway address for network
+C<NAME>. If C<NAME> is a device, then C<NAME:gw> can sometimes be
+looked up explicitly; otherwise, C<NAME:gw> is calculated from
+C<NAME:ipnet> by setting the lowest-order bit in the network address.
 
 =head1 DEFAULT ADDRESSES
 
@@ -91,6 +91,10 @@ DEVNAME's Ethernet address.  (At userlevel, this works only on BSD and Linux.)
 
 C<DEVNAME:ip> defaults to the first primary IPv4 address associated with the
 device DEVNAME.
+
+=item *
+
+C<DEVNAME:gw> defaults to the device DEVNAME's default gateway.
 
 =back
 
@@ -110,7 +114,7 @@ class AddressInfo : public Element { public:
     int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
     int configure(Vector<String> &conf, ErrorHandler *errh);
 
-    static bool query_ip(String s, unsigned char *store, const Element *context);
+    static bool query_ip(const String &s, unsigned char *store, const Element *context);
     static bool query_ip_prefix(String s, unsigned char *store_addr, unsigned char *store_mask, const Element *context);
 #if HAVE_IP6
     static bool query_ip6(String s, unsigned char *store, const Element *context);
@@ -118,9 +122,9 @@ class AddressInfo : public Element { public:
 #endif
     static bool query_ethernet(String s, unsigned char *store, const Element *context);
 
- private:
+  private:
 
-  static bool query_netdevice(const String &name, unsigned char *store, int type, int len, const Element *context);
+    static bool query_netdevice(const String &name, unsigned char *store, int type, int len, const Element *context);
 
 };
 
