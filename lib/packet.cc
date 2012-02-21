@@ -551,7 +551,7 @@ Packet::make(uint32_t headroom, const void *data,
  * null. */
 WritablePacket *
 Packet::make(unsigned char *data, uint32_t length,
-	     void (*destructor)(unsigned char *, size_t))
+	     buffer_destructor_type destructor)
 {
 # if HAVE_CLICK_PACKET_POOL
     WritablePacket *p = WritablePacket::pool_allocate(false);
