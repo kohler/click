@@ -129,7 +129,11 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     // set _method
     if (capture == "") {
 #if FROMDEVICE_ALLOW_NETMAP || FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_LINUX
+# if FROMDEVICE_ALLOW_PCAP
 	_method = _bpf_filter ? method_pcap : method_default;
+# else
+	_method = method_default;
+# endif
 #else
 	return errh->error("cannot receive packets on this platform");
 #endif
