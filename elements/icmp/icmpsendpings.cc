@@ -159,13 +159,13 @@ ICMPPingSource::make_packet()
 void
 ICMPPingSource::run_timer(Timer *)
 {
-    if (Packet *q = make_packet()) {
+    if (_count >= _limit && _limit >= 0) {
+	if (_stop)
+	    router()->please_stop_driver();
+    } else if (Packet *q = make_packet()) {
 	output(0).push(q);
 	_count++;
-	if (_count < _limit || _limit < 0)
-	    _timer.reschedule_after_msec(_interval);
-	else if (_stop)
-	    router()->please_stop_driver();
+	_timer.reschedule_after_msec(_interval);
     }
 }
 
@@ -176,8 +176,10 @@ ICMPPingSource::pull(int)
     if (_count < _limit || _limit < 0) {
 	if ((p = make_packet()))
 	    _count++;
-    } else if (_stop)
+    } else if (_stop) {
 	router()->please_stop_driver();
+	_stop = false;
+    }
     return p;
 }
 
