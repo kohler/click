@@ -85,7 +85,8 @@ CXXFLAGS = @CXXFLAGS@
 
 DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(srcdir) -I$(top_srcdir) @PROPER_INCLUDES@ @PCAP_INCLUDES@
+	-I$(srcdir) -I$(top_srcdir) \
+	@PROPER_INCLUDES@ @PCAP_INCLUDES@ @NETMAP_INCLUDES@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@ `$(top_builddir)/click-buildtool --otherlibs` $(ELEMENT_LIBS)
 DL_LDFLAGS = @DL_LDFLAGS@

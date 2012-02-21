@@ -7,6 +7,7 @@
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2005-2007 Regents of the University of California
  * Copyright (c) 2011 Meraki, Inc.
+ * Copyright (c) 2012 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -272,56 +273,6 @@ FromDevice::open_pcap(String ifname, int snaplen, bool promisc,
 }
 #endif
 
-#if FROMDEVICE_ALLOW_NETMAP
-int
-FromDevice::netmap_type::open(const String &ifname,
-			      bool always_error, ErrorHandler *errh)
-{
-    ErrorHandler *initial_errh = always_error ? errh : ErrorHandler::silent_handler();
-
-    int fd = ::open("/dev/netmap", O_RDWR);
-    if (fd < 0) {
-	initial_errh->error("/dev/netmap: %s", strerror(errno));
-	return -1;
-    }
-
-    struct nmreq req;
-    memset(&req, 0, sizeof(req));
-    strncpy(req.nr_name, ifname.c_str(), sizeof(req.nr_name));
-    req.nr_ringid = 0;
-    int r;
-    if ((r = ioctl(fd, NIOCGINFO, &req))) {
-	initial_errh->error("netmap %s: %s", ifname.c_str(), strerror(errno));
-    error:
-	close(fd);
-	return -1;
-    }
-
-    memsize = req.nr_memsize;
-    if ((r = ioctl(fd, NIOCREGIF, &req))) {
-	errh->error("netmap register %s: %s", ifname.c_str(), strerror(errno));
-	goto error;
-    }
-
-    mem = (char *) mmap(0, memsize, PROT_WRITE | PROT_READ,
-			MAP_SHARED, fd, 0);
-    if (mem == MAP_FAILED) {
-	errh->error("netmap allocate %s: %s", ifname.c_str(), strerror(errno));
-	mem = 0;
-	goto error;
-    }
-
-    nifp = NETMAP_IF(mem, req.nr_offset);
-    ring_begin = 0;
-    ring_end = req.nr_numrings;
-
-    // XXX timestamp off
-    for (unsigned i = ring_begin; i != ring_end; ++i)
-	NETMAP_RXRING(nifp, i)->flags = NR_TIMESTAMP;
-    return fd;
-}
-#endif
-
 int
 FromDevice::initialize(ErrorHandler *errh)
 {
@@ -443,12 +394,8 @@ FromDevice::cleanup(CleanupStage stage)
     if (stage >= CLEANUP_INITIALIZED && !_sniffer)
 	KernelFilter::device_filter(_ifname, false, ErrorHandler::default_handler());
 #if FROMDEVICE_ALLOW_NETMAP
-    if (_fd >= 0 && _method == method_netmap) {
-	munmap(_netmap.mem, _netmap.memsize);
-	ioctl(_fd, NIOCUNREGIF, (struct nmreq *) 0);
-	close(_fd);
-	_netmap.mem = 0;
-    }
+    if (_fd >= 0 && _method == method_netmap)
+	_netmap.close(_fd);
 #endif
 #if FROMDEVICE_ALLOW_LINUX
     if (_fd >= 0 && _method == method_linux) {
@@ -469,11 +416,8 @@ FromDevice::cleanup(CleanupStage stage)
 
 #if FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_NETMAP
 void
-FromDevice::emit_packet_data(const unsigned char *buf, int len, int fulllen,
-			     const Timestamp &ts)
+FromDevice::emit_packet(WritablePacket *p, int extra_len, const Timestamp &ts)
 {
-    WritablePacket *p = Packet::make(_headroom, buf, len, 0);
-
     // set packet type annotation
     if (p->data()[0] & 1) {
 	if (EtherAddress::is_broadcast(p->data()))
@@ -485,7 +429,7 @@ FromDevice::emit_packet_data(const unsigned char *buf, int len, int fulllen,
     // set annotations
     p->set_timestamp_anno(ts);
     p->set_mac_header(p->data());
-    SET_EXTRA_LENGTH_ANNO(p, fulllen - len);
+    SET_EXTRA_LENGTH_ANNO(p, extra_len);
 
     if (!_force_ip || fake_pcap_force_ip(p, _datalink))
 	output(0).push(p);
@@ -503,8 +447,9 @@ FromDevice_get_packet(u_char* clientdata,
 		      const u_char* data)
 {
     FromDevice *fd = (FromDevice *) clientdata;
-    fd->emit_packet_data(data, pkthdr->caplen, pkthdr->len,
-			 Timestamp::make_usec(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec));
+    WritablePacket *p = Packet::make(fd->_headroom, data, pkthdr->caplen, 0);
+    fd->emit_packet(p, pkthdr->len - pkthdr->caplen,
+		    Timestamp::make_usec(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec));
 }
 }
 CLICK_DECLS
@@ -517,18 +462,38 @@ FromDevice::netmap_dispatch()
     int n = 0;
     for (unsigned ri = _netmap.ring_begin; ri != _netmap.ring_end; ++ri) {
 	struct netmap_ring *ring = NETMAP_RXRING(_netmap.nifp, ri);
+	//click_chatter("netmap dispatch %s %u %u %u %u", _ifname.c_str(), ri, ring->cur, ring->reserved, ring->avail);
+
+	while (ring->reserved > 0 && NetmapInfo::refill(ring))
+	    /* click_chatter("Refilled") */;
+
 	if (ring->avail == 0)
 	    continue;
+
+	int nzcopy = (int) (ring->num_slots / 2) - (int) ring->reserved;
+
 	while (n != _burst && ring->avail > 0) {
-	    unsigned i = ring->cur;
-	    unsigned buf_idx = ring->slot[i].buf_idx;
+	    unsigned cur = ring->cur;
+	    unsigned buf_idx = ring->slot[cur].buf_idx;
 	    if (buf_idx < 2)
 		break;
 	    unsigned char *buf = (unsigned char *) NETMAP_BUF(ring, buf_idx);
-	    emit_packet_data(buf, ring->slot[i].len, ring->slot[i].len, ring->ts);
-	    ring->cur = NETMAP_RING_NEXT(ring, i);
-	    ring->avail--;
-	    n++;
+
+	    WritablePacket *p;
+	    if (nzcopy > 0) {
+		p = Packet::make(buf, ring->slot[cur].len, NetmapInfo::buffer_destructor);
+		++ring->reserved;
+		--nzcopy;
+	    } else {
+		p = Packet::make(_headroom, buf, ring->slot[cur].len, 0);
+		unsigned res1idx = NETMAP_RING_FIRST_RESERVED(ring);
+		ring->slot[res1idx].buf_idx = buf_idx;
+	    }
+	    ring->cur = NETMAP_RING_NEXT(ring, ring->cur);
+	    --ring->avail;
+	    ++n;
+
+	    emit_packet(p, 0, ring->ts);
 	}
     }
     return n;
@@ -671,5 +636,5 @@ FromDevice::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel FakePcap KernelFilter)
+ELEMENT_REQUIRES(userlevel FakePcap KernelFilter NetmapInfo)
 EXPORT_ELEMENT(FromDevice)

@@ -145,7 +145,7 @@ ToDevice::initialize(ErrorHandler *errh)
     _timer.initialize(this);
 
     FromDevice *fd = find_fromdevice();
-    if (_method == method_default) {
+    if (_method == method_default && fd) {
 #if FROMDEVICE_ALLOW_NETMAP
 	if (fd->netmap())
 	    _method = method_netmap;
@@ -167,9 +167,10 @@ ToDevice::initialize(ErrorHandler *errh)
 	    _netmap = *fd->netmap();
 	} else {
 	    _fd = _netmap.open(_ifname, _method == method_netmap, errh);
-	    if (_fd >= 0)
+	    if (_fd >= 0) {
 		_my_fd = true;
-	    else if (_method == method_netmap)
+		add_select(_fd, SELECT_READ); // NB NOT writable!
+	    } else if (_method == method_netmap)
 		return -1;
 	}
 	if (_fd >= 0)
@@ -264,9 +265,8 @@ ToDevice::cleanup(CleanupStage)
 #endif
 #if TODEVICE_ALLOW_NETMAP
     if (_fd >= 0 && _my_fd && _method == method_netmap) {
-	munmap(_netmap.mem, _netmap.memsize);
-	ioctl(_fd, NIOCUNREGIF, (struct nmreq *) 0);
-	_netmap.mem = 0;
+	_netmap.close(_fd);
+	_fd = -1;
     }
 #endif
 #if TODEVICE_ALLOW_LINUX || TODEVICE_ALLOW_DEVBPF || TODEVICE_ALLOW_PCAPFD || TODEVICE_ALLOW_NETMAP
@@ -285,15 +285,19 @@ ToDevice::netmap_send_packet(Packet *p)
 	struct netmap_ring *ring = NETMAP_TXRING(_netmap.nifp, ri);
 	if (ring->avail == 0)
 	    continue;
-	unsigned i = ring->cur;
-	unsigned buf_idx = ring->slot[i].buf_idx;
+	unsigned cur = ring->cur;
+	unsigned buf_idx = ring->slot[cur].buf_idx;
 	if (buf_idx < 2)
 	    continue;
 	unsigned char *buf = (unsigned char *) NETMAP_BUF(ring, buf_idx);
-	memcpy(buf, p->data(), p->length());
-	ring->slot[i].len = p->length();
+	if (NetmapInfo::is_netmap_buffer(p)) {
+	    ring->slot[cur].buf_idx = NETMAP_BUF_IDX(ring, (char *) p->buffer());
+	    NetmapInfo::buffer_destructor(buf, 0);
+	} else
+	    memcpy(buf, p->data(), p->length());
+	ring->slot[cur].len = p->length();
 	__asm__ volatile("" : : : "memory");
-	ring->cur = NETMAP_RING_NEXT(ring, i);
+	ring->cur = NETMAP_RING_NEXT(ring, cur);
 	ring->avail--;
 	return 0;
     }

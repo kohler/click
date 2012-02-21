@@ -1593,7 +1593,7 @@ EOF
   shortensyms)
      shift 1; shortensyms "$@"; exit 0;;
   --cf|--cfl|--cfla|--cflag|--cflags|--d|--de|--def|--defs)
-     echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ -I@includedir@; exit 0;;
+     echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ @NETMAP_INCLUDES@ -I@includedir@; exit 0;;
   --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)
      echo @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@ @PTHREAD_LIBS@ @POSIX_CLOCK_LIBS@;
      exit 0;;

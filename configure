@@ -640,6 +640,7 @@ EXPAT_INCLUDES
 XML2CLICK
 PROPER_LIBS
 PROPER_INCLUDES
+NETMAP_INCLUDES
 PCAP_LIBS
 PCAP_INCLUDES
 TOOL_TARGETS
@@ -809,6 +810,7 @@ enable_dmalloc
 enable_valgrind
 enable_schedule_debugging
 enable_intel_cpu
+with_netmap
 with_proper
 with_expat
 '
@@ -1442,11 +1444,13 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-userlevel     disable user-level driver
-    --enable-user-multithread support userlevel multithreading
-    --enable-select=[select|poll|kqueue] set file descriptor wait mechanism
-    --disable-select          do not use select()
-    --disable-poll            do not use poll()
-    --disable-kqueue          do not use kqueue()
+    --enable-user-multithread
+                          support userlevel multithreading
+    --enable-select=[select|poll|kqueue]
+                          set file descriptor wait mechanism
+    --disable-select      do not use select()
+    --disable-poll        do not use poll()
+    --disable-kqueue      do not use kqueue()
   --disable-linuxmodule   disable Linux kernel driver
     --disable-fixincludes     do not patch Linux kernel headers for C++
     --enable-multithread      support kernel multithreading
@@ -1500,6 +1504,7 @@ Optional Packages:
   --with-linux-map[=FILE] filename for Linux System.map [LINUXDIR/System.map]
   --with-freebsd[=SRC,INC] FreeBSD source code is in SRC [/usr/src/sys],
                           include directory is INC [/usr/include]
+  --with-netmap           enable netmap [no]
   --with-proper[=PREFIX]  use PlanetLab Proper library (optional)
   --with-expat[=PREFIX]   locate expat XML library (optional)
 
@@ -6194,7 +6199,7 @@ fi
 if test "${enable_select+set}" = set; then :
   enableval=$enable_select; :
 else
-  enable_select='select poll kqueue'
+  enable_select="select poll kqueue"
 fi
 
 # Check whether --enable-poll was given.
@@ -7361,7 +7366,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7364 "configure"
+#line 7369 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -10162,14 +10167,31 @@ done
     fi
 
 
+
+# Check whether --with-netmap was given.
+if test "${with_netmap+set}" = set; then :
+  withval=$with_netmap; use_netmap=$withval
+else
+  use_netmap=no
+fi
+
+
+    if test "$use_netmap" != "yes" -a "$use_netmap" != "no"; then
+	if test "${NETMAP_INCLUDES-NO}" != NO; then
+	    :
+	elif test -f "$use_netmap/net/netmap.h"; then
+	    NETMAP_INCLUDES="-I$use_netmap"
+	elif test -f "$use_netmap/include/net/netmap.h"; then
+	    NETMAP_INCLUDES="-I$use_netmap/include"
+	fi
+    fi
+    saveflags="$CPPFLAGS"
+    CPPFLAGS="$saveflags $NETMAP_INCLUDES"
+
     HAVE_NETMAP=no
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for net/netmap.h" >&5
 $as_echo_n "checking for net/netmap.h... " >&6; }
-if ${ac_cv_net_netmap_header_path+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <net/netmap.h>
 _ACEOF
@@ -10179,9 +10201,9 @@ else
   ac_cv_net_netmap_header_path="not found"
 fi
 rm -f conftest.err conftest.i conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_net_netmap_header_path" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_net_netmap_header_path" >&5
 $as_echo "$ac_cv_net_netmap_header_path" >&6; }
+
     if test "$ac_cv_net_netmap_header_path" = "found"; then
 	HAVE_NETMAP=yes
     fi
@@ -10209,11 +10231,13 @@ $as_echo "$ac_cv_working_net_netmap_h" >&6; }
 	test "$ac_cv_working_net_netmap_h" != yes && HAVE_NETMAP=
     fi
 
-    if test "$HAVE_NETMAP" = yes; then
+    CPPFLAGS="$saveflags"
+    if test "$HAVE_NETMAP" = yes -a "$use_netmap" != no; then
 
 $as_echo "#define HAVE_NET_NETMAP_H 1" >>confdefs.h
 
     fi
+
 
     if test "$HAVE_PCAP" != yes -a "$HAVE_NETMAP" != yes -a "$ac_cv_under_linux" != yes; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
@@ -12422,6 +12446,10 @@ if test $ac_have_linux_kernel = y; then
     elif test $ac_linux_version_code -ge 132608 -a $ac_linux_version_code -lt 132864; then
 	provisions="$provisions linux_2_6"
     fi
+fi
+
+if test "x$HAVE_NETMAP" = xyes; then
+    provisions="$provisions netmap"
 fi
 
 if test "x$HAVE_PCAP" = xyes; then

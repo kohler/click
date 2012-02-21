@@ -21,9 +21,7 @@ void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*, const u_char*);
 
 #if HAVE_NET_NETMAP_H
 # define FROMDEVICE_ALLOW_NETMAP 1
-# include <net/if.h>
-# include <net/netmap.h>
-# include <net/netmap_user.h>
+# include "elements/userlevel/netmapinfo.hh"
 #endif
 
 #if FROMDEVICE_ALLOW_NETMAP || FROMDEVICE_ALLOW_PCAP
@@ -190,16 +188,7 @@ class FromDevice : public Element { public:
 #endif
 
 #if FROMDEVICE_ALLOW_NETMAP
-    struct netmap_type {
-	char *mem;
-	size_t memsize;
-	unsigned ring_begin;
-	unsigned ring_end;
-	struct netmap_if *nifp;
-	int open(const String &ifname, bool always_error,
-		 ErrorHandler *errh);
-    };
-    const netmap_type *netmap() const	{ return _method == method_netmap ? &_netmap : 0; }
+    const NetmapInfo::ring *netmap() const { return _method == method_netmap ? &_netmap : 0; }
 #endif
 
 #if FROMDEVICE_ALLOW_NETMAP || FROMDEVICE_ALLOW_PCAP
@@ -220,8 +209,7 @@ class FromDevice : public Element { public:
     unsigned char *_linux_packetbuf;
 #endif
 #if FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_NETMAP
-    void emit_packet_data(const unsigned char *buf, int len, int fulllen,
-			  const Timestamp &ts);
+    void emit_packet(WritablePacket *p, int extra_len, const Timestamp &ts);
 #endif
 #if FROMDEVICE_ALLOW_PCAP
     pcap_t *_pcap;
@@ -233,7 +221,7 @@ class FromDevice : public Element { public:
     }
 #endif
 #if FROMDEVICE_ALLOW_NETMAP
-    netmap_type _netmap;
+    NetmapInfo::ring _netmap;
     int netmap_dispatch();
 #endif
 

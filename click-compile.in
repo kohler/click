@@ -47,7 +47,7 @@ while true; do
       --dr=*|--dri=*|--driv=*|--drive=*|--driver=*)
 	driver=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
       --c|--cf|--cfl|--cfla|--cflag|--cflags|--de|--def|--defs)
-	echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ -I$includedir
+	echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ @NETMAP_INCLUDES@ -I$includedir
 	exit=y; shift 1;;
       --l|--li|--lib|--libs)
 	echo -L$libdir -lclick @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@ @PTHREAD_LIBS@ @POSIX_CLOCK_LIBS@

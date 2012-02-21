@@ -83,10 +83,6 @@ extern "C" {
 
 class ToDevice : public Element { public:
 
-#if TODEVICE_ALLOW_NETMAP
-    typedef struct FromDevice::netmap_type netmap_type;
-#endif
-
     ToDevice();
     ~ToDevice();
 
@@ -120,7 +116,7 @@ class ToDevice : public Element { public:
     int _fd;
 #endif
 #if TODEVICE_ALLOW_NETMAP
-    netmap_type _netmap;
+    NetmapInfo::ring _netmap;
     int netmap_send_packet(Packet *p);
 #endif
     enum { method_default, method_netmap, method_linux, method_pcap, method_devbpf, method_pcapfd };
