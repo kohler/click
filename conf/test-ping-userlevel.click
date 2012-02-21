@@ -16,9 +16,9 @@
 // You should see, printed to standard error, a sequence of "icmp echo"
 // printouts intermixed with "ping :: ICMPPingSource" receive reports.
 
-define($DEV eth0, $DADDR 8.8.8.8, $GW $DEV:gw, $LIMIT -1)
+define($DEV eth0, $DADDR 8.8.8.8, $GW $DEV:gw, $LIMIT -1, $METHOD PCAP)
 
-FromDevice($DEV, SNIFFER false)
+FromDevice($DEV, SNIFFER false, METHOD $METHOD)
 	-> c :: Classifier(12/0800, 12/0806 20/0002)
 	-> CheckIPHeader(14)
 	-> ip :: IPClassifier(icmp echo-reply)
