@@ -33,30 +33,34 @@ Keyword arguments are:
 
 =item INTERVAL
 
-Amount of time between pings, in seconds. Default is 1.
+Amount of time between pings, in seconds. Defaults to 1.
 
 =item IDENTIFIER
 
-Integer. Determines the ICMP identifier field in emitted pings. Default is
+Integer. Determines the ICMP identifier field in emitted pings. Defaults to
 0.
 
 =item LIMIT
 
 Integer. The number of pings to send; but if LIMIT is negative, sends pings
-forever. Default is -1.
+forever. Defaults to -1.
+
+=item STOP
+
+Boolean. If true, stop the router when LIMIT is reached. Defaults to false.
 
 =item DATA
 
-String. Extra data in emitted pings. Default is the empty string (nothing).
+String. Extra data in emitted pings. Defaults to the empty string (nothing).
 
 =item ACTIVE
 
-Boolean.  Whether ICMPPingSource is active.  Default is true.
+Boolean.  Whether ICMPPingSource is active.  Defaults to true.
 
 =item VERBOSE
 
 Boolean.  Whether ICMPPingSource should print reports when echo replies
-arrive.  Default is true.
+arrive.  Defaults to true.
 
 =back
 
@@ -142,6 +146,7 @@ class ICMPPingSource : public Element { public:
     String _data;
     bool _active;
     bool _verbose;
+    bool _stop;
 
 #if HAVE_INT64_TYPES && !CLICK_LINUXMODULE
     typedef uint64_t counter_t;
