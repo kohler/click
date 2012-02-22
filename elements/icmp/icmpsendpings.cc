@@ -55,6 +55,7 @@ ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
     _active = true;
     _verbose = true;
     _stop = false;
+    _mirror = false;
     if (Args(conf, this, errh)
 	.read_mp("SRC", _src)
 	.read_mp("DST", _dst)
@@ -65,6 +66,7 @@ ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("ACTIVE", _active)
 	.read("VERBOSE", _verbose)
 	.read("STOP", _stop)
+	.read("MIRROR", _mirror)
 	.complete() < 0)
 	return -1;
 #ifndef __linux__
@@ -74,6 +76,8 @@ ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
 	errh->warning("INTERVAL so small that it is zero");
     if (output_is_pull(0) && has_interval)
 	errh->warning("element is pull, INTERVAL parameter will be ignored");
+    if (output_is_pull(0) && _mirror)
+	return errh->error("MIRROR invalid on pull element");
     return 0;
 }
 
@@ -114,13 +118,17 @@ ICMPPingSource::cleanup(CleanupStage)
 }
 
 Packet*
-ICMPPingSource::make_packet()
+ICMPPingSource::make_packet(WritablePacket *q)
 {
-    WritablePacket *q = Packet::make(sizeof(click_ip) + sizeof(struct click_icmp_echo) + _data.length());
+    size_t hsz = sizeof(click_ip) + sizeof(click_icmp_echo);
+    bool data = !q;
+    if (!q)
+	q = Packet::make(hsz + _data.length());
     if (!q)
 	return 0;
-    memset(q->data(), '\0', sizeof(click_ip) + sizeof(struct click_icmp_echo));
-    memcpy(q->data() + sizeof(click_ip) + sizeof(struct click_icmp_echo), _data.data(), _data.length());
+    memset(q->data(), '\0', hsz);
+    if (data)
+	memcpy(q->data() + hsz, _data.data(), _data.length());
 
     click_ip *nip = reinterpret_cast<click_ip *>(q->data());
     nip->ip_v = 4;
@@ -162,7 +170,7 @@ ICMPPingSource::run_timer(Timer *)
     if (_count >= _limit && _limit >= 0) {
 	if (_stop)
 	    router()->please_stop_driver();
-    } else if (Packet *q = make_packet()) {
+    } else if (Packet *q = make_packet(0)) {
 	output(0).push(q);
 	_count++;
 	_timer.reschedule_after_msec(_interval);
@@ -174,7 +182,7 @@ ICMPPingSource::pull(int)
 {
     Packet *p = 0;
     if (_count < _limit || _limit < 0) {
-	if ((p = make_packet()))
+	if ((p = make_packet(0)))
 	    _count++;
     } else if (_stop) {
 	router()->please_stop_driver();
@@ -225,6 +233,17 @@ ICMPPingSource::push(int, Packet *p)
 #endif
 	    if (_verbose)
 		click_chatter("%s: %d bytes from %p{ip_ptr}: icmp_seq=%u ttl=%u time=%d.%03d ms", declaration().c_str(), ntohs(iph->ip_len) - (iph->ip_hl << 2) - sizeof(*icmph), &iph->ip_src, readable_seq, iph->ip_ttl, (unsigned)(diffval/1000), (unsigned)(diffval % 1000));
+	}
+
+	if (_mirror) {
+	    WritablePacket *q = p->uniqueify();
+	    if (q && q->data() < q->network_header())
+		q->pull(q->network_header() - q->data());
+	    if (q && (p = make_packet(q))) {
+		output(0).push(p);
+		++_count;
+	    }
+	    return;
 	}
     }
     p->kill();
