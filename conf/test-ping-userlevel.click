@@ -16,13 +16,15 @@
 // You should see, printed to standard error, a sequence of "icmp echo"
 // printouts intermixed with "ping :: ICMPPingSource" receive reports.
 
-define($DEV eth0, $DADDR 8.8.8.8, $GW $DEV:gw, $LIMIT -1, $METHOD PCAP)
+define($DEV eth0, $DADDR 8.8.8.8, $GW $DEV:gw, $METHOD PCAP,
+       $LIMIT -1, $INTERVAL 1)
 
 FromDevice($DEV, SNIFFER false, METHOD $METHOD)
 	-> c :: Classifier(12/0800, 12/0806 20/0002)
 	-> CheckIPHeader(14)
 	-> ip :: IPClassifier(icmp echo-reply)
-	-> ping :: ICMPPingSource($DEV, $DADDR, LIMIT $LIMIT, STOP true)
+	-> ping :: ICMPPingSource($DEV, $DADDR, INTERVAL $INTERVAL,
+				  LIMIT $LIMIT, STOP true)
 	-> SetIPAddress($GW)
 	-> arpq :: ARPQuerier($DEV)
 	-> IPPrint
