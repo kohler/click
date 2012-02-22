@@ -89,6 +89,11 @@ class Packet { public:
     buffer_destructor_type buffer_destructor() const {
 	return _destructor;
     }
+    void reset_buffer() {
+	assert(!shared());
+	_head = _data = _tail = _end = 0;
+	_destructor = 0;
+    }
 #endif
 
 
