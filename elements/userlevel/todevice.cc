@@ -290,15 +290,17 @@ ToDevice::netmap_send_packet(Packet *p)
 	if (buf_idx < 2)
 	    continue;
 	unsigned char *buf = (unsigned char *) NETMAP_BUF(ring, buf_idx);
+	uint32_t p_length = p->length();
 	if (NetmapInfo::is_netmap_buffer(p)
 	    && !p->shared() && p->buffer() == p->data()
 	    && noutputs() == 0) {
 	    ring->slot[cur].buf_idx = NETMAP_BUF_IDX(ring, (char *) p->buffer());
+	    ring->slot[cur].flags |= NS_BUF_CHANGED;
 	    NetmapInfo::buffer_destructor(buf, 0);
 	    p->reset_buffer();
 	} else
-	    memcpy(buf, p->data(), p->length());
-	ring->slot[cur].len = p->length();
+	    memcpy(buf, p->data(), p_length);
+	ring->slot[cur].len = p_length;
 	__asm__ volatile("" : : : "memory");
 	ring->cur = NETMAP_RING_NEXT(ring, cur);
 	ring->avail--;

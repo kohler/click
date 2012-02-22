@@ -35,6 +35,7 @@ class NetmapInfo { public:
 	    buffers = *reinterpret_cast<unsigned char **>(buffers);
 	    unsigned res1idx = NETMAP_RING_FIRST_RESERVED(ring);
 	    ring->slot[res1idx].buf_idx = NETMAP_BUF_IDX(ring, (char *) buf);
+	    ring->slot[res1idx].flags |= NS_BUF_CHANGED;
 	    --ring->reserved;
 	    return true;
 	} else
