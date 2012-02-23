@@ -703,7 +703,7 @@ ErrorHandler::vxformat(int default_flags, const char *s, va_list val)
 #endif
 
 	case '{':
-	    s1 = s2 = s + 1;
+	    s1 = s2 = s;
 	    while (*s2 && *s2 != '}' && !isspace((unsigned char) *s2))
 		++s2;
 	    if (*s2 != '}')
