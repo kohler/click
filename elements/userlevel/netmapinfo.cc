@@ -50,6 +50,9 @@ NetmapInfo::ring::open(const String &ifname,
     memset(&req, 0, sizeof(req));
     strncpy(req.nr_name, ifname.c_str(), sizeof(req.nr_name));
     req.nr_ringid = 0;
+#if NETMAP_API
+    req.nr_version = NETMAP_API;
+#endif
     int r;
     if ((r = ioctl(fd, NIOCGINFO, &req))) {
 	initial_errh->error("netmap %s: %s", ifname.c_str(), strerror(errno));
