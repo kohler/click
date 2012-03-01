@@ -190,8 +190,8 @@ class ProcessingT { public:
     void initial_processing_for(int, const String &compound_pcode, ErrorHandler *);
     void initial_processing(const String &compound_pcode, ErrorHandler *);
     void processing_error(const ConnectionT &, int, ErrorHandler *);
-    void check_processing(Vector<ConnectionT> &conn, ErrorHandler *errh);
-    void check_connections(Vector<ConnectionT> &conn, ErrorHandler *errh);
+    void check_processing(Vector<ConnectionT> &conn, Bitvector &invalid_conn, ErrorHandler *errh);
+    void check_connections(Vector<ConnectionT> &conn, Bitvector &invalid_conn, ErrorHandler *errh);
     void check_nports(Vector<ConnectionT> &conn, const ElementT *, const int *, const int *, ErrorHandler *);
     void resolve_agnostics();	// change remaining AGNOSTICs to PUSH
     void debug_print_pidxes(const Bitvector &ports, bool isoutput, const String &prefix, ErrorHandler *debug_errh) const;
