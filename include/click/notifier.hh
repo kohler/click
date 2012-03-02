@@ -3,6 +3,7 @@
 #define CLICK_NOTIFIER_HH
 #include <click/task.hh>
 #include <click/atomic.hh>
+#include <click/algorithm.hh>
 #if HAVE_CXX_PRAGMA_INTERFACE
 # pragma interface "click/notifier.hh"
 #endif
@@ -96,6 +97,12 @@ class NotifierSignal { public:
     /** @brief Assign a signal. */
     NotifierSignal &operator=(const NotifierSignal &x);
 
+    /** @brief Exchange the values of this signal and @a x. */
+    void swap(NotifierSignal &x) {
+	click_swap(_v, x._v);
+	click_swap(_mask, x._mask);
+    }
+
     /** @brief Make this signal derived by adding information from @a x.
      * @param x the signal to add
      *
@@ -155,11 +162,12 @@ class NotifierSignal { public:
 	atomic_uint32_t *value;
 	uint32_t mask;
     };
-
-    union {
+    union vmvalue {
 	atomic_uint32_t *v1;
 	vmpair *vm;
-    } _v;
+    };
+
+    vmvalue _v;
     uint32_t _mask;
 
     enum {
@@ -352,10 +360,10 @@ NotifierSignal::initialized() const
 inline bool
 NotifierSignal::set_active(bool active)
 {
-    assert(_mask && _v.v1 != &static_value && !(_mask & (_mask - 1)));
+    assert(_v.v1 != &static_value && !(_mask & (_mask - 1)));
     uint32_t expected = *_v.v1;
 #if !CLICK_USERLEVEL || HAVE_MULTITHREAD
-    while (1) {
+    while (_mask) {
 	uint32_t desired = (active ? expected | _mask : expected & ~_mask);
 	uint32_t actual = _v.v1->compare_swap(expected, desired);
 	if (expected == actual)
@@ -580,6 +588,11 @@ inline void
 ActiveNotifier::sleep()
 {
     set_active(false, true);
+}
+
+inline void click_swap(NotifierSignal &x, NotifierSignal &y)
+{
+    x.swap(y);
 }
 
 CLICK_ENDDECLS
