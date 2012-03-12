@@ -105,7 +105,7 @@ class IPAddress { public:
      *
      * These are the class D addresses, 224.0.0.0-239.255.255.255. */
     inline bool is_multicast() const {
-	return (_addr & htonl(0xF0000000)) == htonl(0xE0000000);
+	return (_addr & htonl(0xF0000000U)) == htonl(0xE0000000U);
     }
 
     inline struct in_addr in_addr() const;
