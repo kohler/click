@@ -18,6 +18,8 @@ class NetmapInfo { public:
 
 	int open(const String &ifname,
 		 bool always_error, ErrorHandler *errh);
+	void initialize_rings_rx(int timestamp);
+	void initialize_rings_tx();
 	void close(int fd);
     };
 

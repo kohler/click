@@ -122,6 +122,10 @@ to roughly 28.
 
 Integer. Maximum number of packets to read per scheduling. Defaults to 1.
 
+=item TIMESTAMP
+
+Boolean. If false, then do not timestamp packets. Defaults to true.
+
 =back
 
 =e
@@ -240,6 +244,7 @@ class FromDevice : public Element { public:
     bool _sniffer : 1;
     bool _promisc : 1;
     bool _outbound : 1;
+    bool _timestamp : 1;
     int _was_promisc : 2;
     int _snaplen;
     unsigned _headroom;

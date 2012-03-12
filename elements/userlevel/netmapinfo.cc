@@ -83,13 +83,27 @@ NetmapInfo::ring::open(const String &ifname,
     netmap_memory_lock.release();
 
     nifp = NETMAP_IF(mem, req.nr_offset);
-    ring_begin = 0;
-    ring_end = req.nr_numrings;
-
-    // XXX timestamp off
-    for (unsigned i = ring_begin; i != ring_end; ++i)
-	NETMAP_RXRING(nifp, i)->flags = NR_TIMESTAMP;
     return fd;
+}
+
+void
+NetmapInfo::ring::initialize_rings_rx(int timestamp)
+{
+    ring_begin = 0;
+    // 0 means "same count as the converse direction"
+    ring_end = nifp->ni_rx_queues ? nifp->ni_rx_queues : nifp->ni_tx_queues;
+    if (timestamp >= 0) {
+	int flags = (timestamp > 0 ? NR_TIMESTAMP : 0);
+	for (unsigned i = ring_begin; i != ring_end; ++i)
+	    NETMAP_RXRING(nifp, i)->flags = flags;
+    }
+}
+
+void
+NetmapInfo::ring::initialize_rings_tx()
+{
+    ring_begin = 0;
+    ring_end = nifp->ni_tx_queues ? nifp->ni_tx_queues : nifp->ni_rx_queues;
 }
 
 void

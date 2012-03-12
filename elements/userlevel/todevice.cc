@@ -173,8 +173,10 @@ ToDevice::initialize(ErrorHandler *errh)
 	    } else if (_method == method_netmap)
 		return -1;
 	}
-	if (_fd >= 0)
+	if (_fd >= 0) {
 	    _method = method_netmap;
+	    _netmap.initialize_rings_tx();
+	}
     }
 #endif
 

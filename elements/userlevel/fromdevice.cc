@@ -87,7 +87,7 @@ FromDevice::~FromDevice()
 int
 FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    bool promisc = false, outbound = false, sniffer = true;
+    bool promisc = false, outbound = false, sniffer = true, timestamp = true;
     _snaplen = default_snaplen;
     _headroom = Packet::default_headroom;
     _headroom += (4 - (_headroom + 2) % 4) % 4; // default 4/2 alignment
@@ -108,6 +108,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("HEADROOM", _headroom)
 	.read("ENCAP", WordArg(), encap_type).read_status(has_encap)
 	.read("BURST", _burst)
+	.read("TIMESTAMP", timestamp)
 	.complete() < 0)
 	return -1;
     if (_snaplen > 8190 || _snaplen < 14)
@@ -159,6 +160,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _sniffer = sniffer;
     _promisc = promisc;
     _outbound = outbound;
+    _timestamp = timestamp;
     return 0;
 }
 
@@ -289,6 +291,7 @@ FromDevice::initialize(ErrorHandler *errh)
 	if (_fd >= 0) {
 	    _datalink = FAKE_DLT_EN10MB;
 	    _method = method_netmap;
+	    _netmap.initialize_rings_rx(_timestamp);
 	}
     }
 #endif
