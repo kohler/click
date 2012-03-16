@@ -110,14 +110,14 @@ parse_instruction(const String &text, Signatures &sigs,
     /* nada */;
   else if (words[0] == "like") {
     if (words.size() < 3)
-      errh->error("too few arguments to 'like'");
+      errh->error("too few arguments to %<like%>");
   } else if (words[0] == "noclass") {
     if (words.size() < 2)
-      errh->error("too few arguments to 'noclass'");
+      errh->error("too few arguments to %<noclass%>");
     for (int i = 1; i < words.size(); i++)
       sigs.specialize_class(words[i], 0);
   } else
-    errh->error("unknown command '%s'", words[0].c_str());
+    errh->error("unknown command %<%s%>", words[0].c_str());
 }
 
 static void
@@ -398,7 +398,7 @@ particular purpose.\n");
       (router, Driver::USERLEVEL);
     if (linuxmodule_ok && userlevel_ok
 	&& (compile_kernel > 0) == (compile_user > 0))
-      p_errh->fatal("kernel and user-level drivers require different code;\nyou must specify either '-k' or '-u'");
+      p_errh->fatal("kernel and user-level drivers require different code;\nyou must specify either %<-k%> or %<-u%>");
     else if (!linuxmodule_ok && compile_kernel > 0)
       p_errh->fatal("configuration incompatible with kernel driver");
     else if (!userlevel_ok && compile_user > 0)
