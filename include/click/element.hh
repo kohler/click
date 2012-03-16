@@ -223,6 +223,8 @@ class Element { public:
 	unsigned npackets() const	{ return _packets; }
 #endif
 
+	inline void assign(bool isoutput, Element *e, int port);
+
       private:
 
 	Element* _e;
@@ -242,7 +244,7 @@ class Element { public:
 #endif
 
 	inline Port();
-	inline void assign(Element *owner, Element *e, int port, bool isoutput);
+	inline void assign(bool isoutput, Element *owner, Element *e, int port);
 
 	friend class Element;
 
@@ -528,9 +530,8 @@ Element::Port::Port()
 }
 
 inline void
-Element::Port::assign(Element *owner, Element *e, int port, bool isoutput)
+Element::Port::assign(bool isoutput, Element *e, int port)
 {
-    PORT_ASSIGN(owner);
     _e = e;
     _port = port;
     (void) isoutput;
@@ -545,6 +546,13 @@ Element::Port::assign(Element *owner, Element *e, int port, bool isoutput)
 	}
     }
 #endif
+}
+
+inline void
+Element::Port::assign(bool isoutput, Element *owner, Element *e, int port)
+{
+    PORT_ASSIGN(owner);
+    assign(isoutput, e, port);
 }
 
 /** @brief Returns whether this port is active (a push output or a pull input).

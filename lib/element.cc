@@ -776,13 +776,13 @@ Element::initialize_ports(const int *in_v, const int *out_v)
     for (int i = 0; i < ninputs(); i++) {
 	// allowed iff in_v[i] == VPULL
 	int port = (in_v[i] == VPULL ? 0 : -1);
-	_ports[0][i].assign(this, 0, port, false);
+	_ports[0][i].assign(false, this, 0, port);
     }
 
     for (int o = 0; o < noutputs(); o++) {
 	// allowed iff out_v[o] != VPULL
 	int port = (out_v[o] == VPULL ? -1 : 0);
-	_ports[1][o].assign(this, 0, port, true);
+	_ports[1][o].assign(true, this, 0, port);
     }
 }
 
@@ -790,7 +790,7 @@ int
 Element::connect_port(bool isoutput, int port, Element* e, int e_port)
 {
     if (port_active(isoutput, port)) {
-	_ports[isoutput][port].assign(this, e, e_port, isoutput);
+	_ports[isoutput][port].assign(isoutput, this, e, e_port);
 	return 0;
     } else
 	return -1;
