@@ -822,9 +822,9 @@ Element::connect_port(bool isoutput, int port, Element* e, int e_port)
  * A port code may also be a sequence of letters in brackets, such as
  * <tt>[abz]</tt>. Two port codes match iff they have at least one letter in
  * common, so <tt>[abz]</tt> matches <tt>a</tt>, but <tt>[abz]</tt> and
- * <tt>[cde]</tt> do not match. The opening bracket may be followed by a caret
- * <tt>^</tt>; this makes the port code match letters @e not mentioned between
- * the brackets. Thus, the port code <tt>[^bc]</tt> is equivalent to
+ * <tt>[cde]</tt> do not match. If a caret <tt>^</tt> appears after the open
+ * bracket, the port code will match all letters @e except for
+ * those after the caret. Thus, the port code <tt>[^bc]</tt> is equivalent to
  * <tt>[ABC...XYZadef...xyz]</tt>.
  *
  * Finally, the @c # character is also a valid port code, and may be used
@@ -861,7 +861,13 @@ Element::connect_port(bool isoutput, int port, Element* e, int e_port)
  *
  * <dt><tt>"#/[^#]"</tt></dt> <dd>Packets arriving on input port @e K may
  * travel to any output port except @e K.  @e EtherSwitch uses this flow
- * code.</dd> </dl>
+ * code.</dd>
+ *
+ * <dt><tt>"xy/[xy]x"</tt></dt> <dd>Packets arriving on input port 0 may
+ * travel to any output port. Packet arriving on any other input port can
+ * <em>only</em> travel to output port 0. @e Bypass uses this flow code.</dd>
+ *
+ * </dl>
  *
  * Click extracts flow codes from the source for use by tools.  For Click to
  * find a flow code, the function definition must appear inline, on a single
