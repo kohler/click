@@ -11,7 +11,32 @@ Null
 null element: passes packets unchanged
 
 =d
-Just passes packets along without doing anything else.
+Emits input packets unchanged.
+
+=n
+Click supports several null-type elements useful for different purposes.
+
+I<Placeholder elements> help make configurations easier to read by allowing a
+more natural declaration order. For example, you might say:
+
+  join_point :: Null;
+  // packet sources
+  src0 :: ...;
+  src0 -> join_point;
+  src1 :: ...;
+  src1 -> join_point;
+  // packet sinks
+  join_point -> c :: Classifier -> ...;
+
+Null is a reasonable class for placeholder elements, but an empty compound
+element serves the same purpose without any runtime overhead.
+
+  join_point :: {->};
+
+PushNull and PullNull can be used to force an agnostic configuration to be
+push or pull, respectively.
+
+Null itself is most useful for benchmarking.
 
 =a
 PushNull, PullNull
