@@ -1,0 +1,36 @@
+%info
+Tests Bypass.
+
+%script
+click --simtime CONFIG 2>OUT 1>&2
+click --simtime CONFIG2 2>>OUT 1>&2
+
+%file CONFIG
+InfiniteSource(\<11>, LIMIT 4, STOP true)
+-> Counter(COUNT_CALL 3 b.active true)
+-> b :: Bypass
+-> Print(A)
+-> Discard;
+b[1] -> Print(B) -> [1]b;
+
+%file CONFIG2
+InfiniteSource(\<11>, LIMIT 4, STOP true)
+-> PullNull
+-> Counter(COUNT_CALL 3 b.active true)
+-> b :: Bypass
+-> Print(C)
+-> Discard;
+b[1] -> Print(D) -> [1]b;
+
+%expect OUT
+A:    1 | 11
+A:    1 | 11
+B:    1 | 11
+A:    1 | 11
+B:    1 | 11
+A:    1 | 11
+C:    1 | 11
+C:    1 | 11
+C:    1 | 11
+D:    1 | 11
+C:    1 | 11
