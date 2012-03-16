@@ -55,6 +55,7 @@ class Router { public:
     Element* find(const String& name, String context, ErrorHandler* errh = 0) const;
     Element* find(const String& name, const Element* context, ErrorHandler* errh = 0) const;
 
+    int visit(Element *e, bool isoutput, int port, RouterVisitor *visitor) const;
     int visit_downstream(Element *e, int port, RouterVisitor *visitor) const;
     int visit_upstream(Element *e, int port, RouterVisitor *visitor) const;
 
@@ -335,8 +336,6 @@ class Router { public:
     static void store_global_handler(Handler &h);
     static inline void store_handler(const Element *element, Handler &h);
 
-    int visit_base(bool forward, Element* first_element, int first_port, RouterVisitor* visitor) const;
-
     // global handlers
     static String router_read_handler(Element *e, void *user_data);
     static int router_write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh);
@@ -547,12 +546,12 @@ Router::find(const String& name, ErrorHandler *errh) const
  * Element::flow_code().  The visitor can stop a traversal path by returning
  * false from visit().
  *
- * @sa visit_upstream()
+ * @sa visit_upstream(), visit()
  */
 inline int
 Router::visit_downstream(Element *e, int port, RouterVisitor *visitor) const
 {
-    return visit_base(true, e, port, visitor);
+    return visit(e, true, port, visitor);
 }
 
 /** @brief Traverse the router configuration upstream of [@a port]@a e.
@@ -567,12 +566,12 @@ Router::visit_downstream(Element *e, int port, RouterVisitor *visitor) const
  * Element::flow_code().  The visitor can stop a traversal path by returning
  * false from visit().
  *
- * @sa visit_downstream()
+ * @sa visit_downstream(), visit()
  */
 inline int
 Router::visit_upstream(Element *e, int port, RouterVisitor *visitor) const
 {
-    return visit_base(false, e, port, visitor);
+    return visit(e, false, port, visitor);
 }
 
 inline HashMap_ArenaFactory*

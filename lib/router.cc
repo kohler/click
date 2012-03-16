@@ -850,9 +850,27 @@ Router::set_flow_code_override(int eindex, const String &flow_code)
     _flow_code_override.push_back(flow_code);
 }
 
+/** @brief Traverse the router configuration from one of @a e's ports.
+ * @param e element to start search
+ * @param isoutput true to search down from outputs, false to search up from
+ *   inputs
+ * @param port port (or -1 to search all ports)
+ * @param visitor RouterVisitor traversal object
+ * @return 0 on success, -1 in early router configuration stages
+ *
+ * Calls @a visitor ->@link RouterVisitor::visit visit() @endlink on each
+ * reachable port starting from a port on @a e.  Follows connections and
+ * traverses inside elements from port to port by Element::flow_code().  The
+ * visitor can stop a traversal path by returning false from visit().
+ *
+ * Equivalent to either visit_downstream() or visit_upstream(), depending on
+ * @a isoutput.
+ *
+ * @sa visit_downstream(), visit_upstream()
+ */
 int
-Router::visit_base(bool forward, Element *first_element, int first_port,
-		   RouterVisitor *visitor) const
+Router::visit(Element *first_element, bool forward, int first_port,
+	      RouterVisitor *visitor) const
 {
     if (!_have_connections || first_element->router() != this)
 	return -1;
@@ -951,7 +969,7 @@ int
 Router::downstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element *> &result)
 {
     ElementFilterRouterVisitor visitor(filter, result);
-    return visit_base(true, e, port, &visitor);
+    return visit(e, true, port, &visitor);
 }
 
 /** @brief Search for elements upstream from @a e.
@@ -980,7 +998,7 @@ int
 Router::upstream_elements(Element *e, int port, ElementFilter *filter, Vector<Element *> &result)
 {
     ElementFilterRouterVisitor visitor(filter, result);
-    return visit_base(false, e, port, &visitor);
+    return visit(e, false, port, &visitor);
 }
 
 
