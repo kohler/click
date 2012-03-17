@@ -69,7 +69,7 @@ TimeSortedSched::initialize(ErrorHandler *errh)
     if (!_pkt || !_input)
 	return errh->error("out of memory!");
     for (int i = 0; i < ninputs(); i++) {
-	_input[i].signal = Notifier::upstream_empty_signal(this, i, 0, &_notifier);
+	_input[i].signal = Notifier::upstream_empty_signal(this, i, &_notifier);
 	_input[i].space = _buffer;
 	_input[i].ready = i;
     }

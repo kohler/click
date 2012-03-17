@@ -486,43 +486,14 @@ NotifierRouterVisitor::visit(Element* e, bool isoutput, int port,
 }
 
 /** @brief Calculate and return the NotifierSignal derived from all empty
- * notifiers upstream of element @a e's input @a port, and optionally register
- * @a task as a listener.
+ * notifiers upstream of element @a e's input @a port.
  * @param e an element
  * @param port the input port of @a e at which to start the upstream search
- * @param task Task to register as a listener, or null
- * @param dependent_notifier Notifier to register as dependent, or null
- *
- * Searches the configuration upstream of element @a e's input @a port for @e
- * empty @e notifiers.  These notifiers are associated with packet storage,
- * and should be true when packets are available (or likely to be available
- * quite soon), and false when they are not.  All notifiers found are combined
- * into a single derived signal.  Thus, if any of the base notifiers are
- * active, indicating that at least one packet is available upstream, the
- * derived signal will also be active.  Element @a e's code generally uses the
- * resulting signal to decide whether or not to reschedule itself.
- *
- * The returned signal is generally conservative, meaning that the signal
- * is true whenever a packet exists upstream, but the elements that provide
- * notification are responsible for ensuring this.
- *
- * If @a task is nonnull, then @a task becomes a listener for each located
- * notifier.  Thus, when a notifier becomes active (when packets become
- * available), @a task will be rescheduled.
- *
- * If @a dependent_notifier is null, then its signal is registered as a
- * <em>dependent signal</em> on each located upstream notifier.  When
- * an upstream notifier becomes active, @a dependent_notifier's signal is also
- * activated.
- *
- * <h3>Supporting upstream_empty_signal()</h3>
- *
- * Elements that have an empty notifier must override the Element::cast()
- * method.  When passed the @a name Notifier::EMPTY_NOTIFIER, this method
- * should return a pointer to the corresponding Notifier object.
- */
+ * @param f callback function
+ * @param user_data user data for callback function
+ * @sa add_activate_callback */
 NotifierSignal
-Notifier::upstream_empty_signal(Element* e, int port, Task* task, Notifier* dependent_notifier)
+Notifier::upstream_empty_signal(Element* e, int port, callback_type f, void *user_data)
 {
     NotifierRouterVisitor filter(EMPTY_NOTIFIER);
     int ok = e->router()->visit_upstream(e, port, &filter);
@@ -540,53 +511,22 @@ Notifier::upstream_empty_signal(Element* e, int port, Task* task, Notifier* depe
     if (ok < 0 || signal == NotifierSignal())
 	return NotifierSignal();
 
-    if (task)
+    if (f || user_data)
 	for (int i = 0; i < filter._notifiers.size(); i++)
-	    filter._notifiers[i]->add_listener(task);
-    if (dependent_notifier)
-	for (int i = 0; i < filter._notifiers.size(); i++)
-	    filter._notifiers[i]->add_dependent_signal(&dependent_notifier->_signal);
+	    filter._notifiers[i]->add_activate_callback(f, user_data);
 
     return signal;
 }
 
 /** @brief Calculate and return the NotifierSignal derived from all full
- * notifiers downstream of element @a e's output @a port, and optionally
- * register @a task as a listener.
+ * notifiers downstream of element @a e's output @a port.
  * @param e an element
  * @param port the output port of @a e at which to start the downstream search
- * @param task Task to register as a listener, or null
- * @param dependent_notifier Notifier to register as dependent, or null
- *
- * Searches the configuration downstream of element @a e's output @a port for
- * @e full @e notifiers.  These notifiers are associated with packet storage,
- * and should be true when there is space for at least one packet, and false
- * when there is not.  All notifiers found are combined into a single derived
- * signal.  Thus, if any of the base notifiers are active, indicating that at
- * least one path has available space, the derived signal will also be active.
- * Element @a e's code generally uses the resulting signal to decide whether
- * or not to reschedule itself.
- *
- * If @a task is nonnull, then @a task becomes a listener for each located
- * notifier.  Thus, when a notifier becomes active (when space become
- * available), @a task will be rescheduled.
- *
- * If @a dependent_notifier is null, then its signal is registered as a
- * <em>dependent signal</em> on each located downstream notifier.  When
- * an downstream notifier becomes active, @a dependent_notifier's signal is
- * also activated.
- *
- * In current Click, the returned signal is conservative: if it's inactive,
- * then there is no space for packets downstream.
- *
- * <h3>Supporting downstream_full_signal()</h3>
- *
- * Elements that have a full notifier must override the Element::cast()
- * method.  When passed the @a name Notifier::FULL_NOTIFIER, this method
- * should return a pointer to the corresponding Notifier object.
- */
+ * @param f callback function
+ * @param user_data user data for callback function
+ * @sa add_activate_callback */
 NotifierSignal
-Notifier::downstream_full_signal(Element* e, int port, Task* task, Notifier* dependent_notifier)
+Notifier::downstream_full_signal(Element* e, int port, callback_type f, void *user_data)
 {
     NotifierRouterVisitor filter(FULL_NOTIFIER);
     int ok = e->router()->visit_downstream(e, port, &filter);
@@ -604,12 +544,9 @@ Notifier::downstream_full_signal(Element* e, int port, Task* task, Notifier* dep
     if (ok < 0 || signal == NotifierSignal())
 	return NotifierSignal();
 
-    if (task)
+    if (f || user_data)
 	for (int i = 0; i < filter._notifiers.size(); i++)
-	    filter._notifiers[i]->add_listener(task);
-    if (dependent_notifier)
-	for (int i = 0; i < filter._notifiers.size(); i++)
-	    filter._notifiers[i]->add_dependent_signal(&dependent_notifier->_signal);
+	    filter._notifiers[i]->add_activate_callback(f, user_data);
 
     return signal;
 }

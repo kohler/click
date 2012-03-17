@@ -48,8 +48,8 @@ ComparePackets::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 ComparePackets::initialize(ErrorHandler *)
 {
-    _signal[0] = Notifier::upstream_empty_signal(this, 0, 0);
-    _signal[1] = Notifier::upstream_empty_signal(this, 1, 0);
+    _signal[0] = Notifier::upstream_empty_signal(this, 0);
+    _signal[1] = Notifier::upstream_empty_signal(this, 1);
     return 0;
 }
 

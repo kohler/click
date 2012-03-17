@@ -217,8 +217,20 @@ class Notifier { public:
     static const char EMPTY_NOTIFIER[];
     static const char FULL_NOTIFIER[];
 
-    static NotifierSignal upstream_empty_signal(Element* e, int port, Task* task, Notifier* dependent_notifier = 0);
-    static NotifierSignal downstream_full_signal(Element* e, int port, Task* task, Notifier* dependent_notifier = 0);
+    static inline NotifierSignal upstream_empty_signal(Element *e, int port);
+    static inline NotifierSignal upstream_empty_signal(Element *e, int port, Task *task);
+    static inline NotifierSignal upstream_empty_signal(Element *e, int port, Notifier *dependent_notifier);
+    static NotifierSignal upstream_empty_signal(Element *e, int port, callback_type f, void *user_data);
+
+    static inline NotifierSignal downstream_full_signal(Element *e, int port);
+    static inline NotifierSignal downstream_full_signal(Element *e, int port, Task *task);
+    static inline NotifierSignal downstream_full_signal(Element *e, int port, Notifier *dependent_notifier);
+    static NotifierSignal downstream_full_signal(Element *e, int port, callback_type f, void *user_data);
+
+    static inline NotifierSignal upstream_empty_signal(Element *e, int port, int) CLICK_DEPRECATED;
+    static inline NotifierSignal upstream_empty_signal(Element *e, int port, int, Notifier *) CLICK_DEPRECATED;
+    static inline NotifierSignal downstream_full_signal(Element *e, int port, int) CLICK_DEPRECATED;
+    static inline NotifierSignal downstream_full_signal(Element *e, int port, int, Notifier *) CLICK_DEPRECATED;
 
   private:
 
@@ -602,6 +614,163 @@ Notifier::remove_dependent_signal(NotifierSignal *signal)
     remove_activate_callback(dependent_signal_callback, signal);
 }
 
+/** @brief Calculate and return the NotifierSignal derived from all empty
+ * notifiers upstream of element @a e's input @a port.
+ * @param e an element
+ * @param port the input port of @a e at which to start the upstream search
+ *
+ * Searches the configuration upstream of element @a e's input @a port for @e
+ * empty @e notifiers.  These notifiers are associated with packet storage,
+ * and should be true when packets are available (or likely to be available
+ * quite soon), and false when they are not.  All notifiers found are combined
+ * into a single derived signal.  Thus, if any of the base notifiers are
+ * active, indicating that at least one packet is available upstream, the
+ * derived signal will also be active.  Element @a e's code generally uses the
+ * resulting signal to decide whether or not to reschedule itself.
+ *
+ * The returned signal is generally conservative, meaning that the signal
+ * is true whenever a packet exists upstream, but the elements that provide
+ * notification are responsible for ensuring this.
+ *
+ * Overloaded versions of this function can also register a task (as in
+ * add_listener()), a signal (as in add_dependent_notifier()), or a callback
+ * function (as in add_active_callback()) for each located notifier. When
+ * packets become available, the task will be scheduled, the signal will be
+ * activated, or the callback will be called.
+ *
+ * <h3>Supporting upstream_empty_signal()</h3>
+ *
+ * Elements that have an empty notifier must override the Element::cast()
+ * method.  When passed the @a name Notifier::EMPTY_NOTIFIER, this method
+ * should return a pointer to the corresponding Notifier object.
+ *
+ * @sa downstream_full_signal
+ */
+inline NotifierSignal
+Notifier::upstream_empty_signal(Element *e, int port)
+{
+    return upstream_empty_signal(e, port, (callback_type) 0, 0);
+}
+
+/** @brief Calculate and return the NotifierSignal derived from all empty
+ * notifiers upstream of element @a e's input @a port.
+ * @param e an element
+ * @param port the input port of @a e at which to start the upstream search
+ * @param task task to schedule when packets become available
+ * @sa add_listener */
+inline NotifierSignal
+Notifier::upstream_empty_signal(Element *e, int port, Task *task)
+{
+    return upstream_empty_signal(e, port, (callback_type) 0, task);
+}
+
+/** @brief Calculate and return the NotifierSignal derived from all empty
+ * notifiers upstream of element @a e's input @a port.
+ * @param e an element
+ * @param port the input port of @a e at which to start the upstream search
+ * @param notifier notifier to activate when packets become available
+ * @sa add_dependent_signal */
+inline NotifierSignal
+Notifier::upstream_empty_signal(Element *e, int port, Notifier *dependent_notifier)
+{
+    return upstream_empty_signal(e, port, dependent_signal_callback, &dependent_notifier->_signal);
+}
+
+/** @brief Calculate and return the NotifierSignal derived from all full
+ * notifiers downstream of element @a e's output @a port.
+ * @param e an element
+ * @param port the output port of @a e at which to start the downstream search
+ *
+ * Searches the configuration downstream of element @a e's output @a port for
+ * @e full @e notifiers.  These notifiers are associated with packet storage,
+ * and should be true when there is space for at least one packet, and false
+ * when there is not.  All notifiers found are combined into a single derived
+ * signal.  Thus, if any of the base notifiers are active, indicating that at
+ * least one path has available space, the derived signal will also be active.
+ * Element @a e's code generally uses the resulting signal to decide whether
+ * or not to reschedule itself.
+ *
+ * Overloaded versions of this function can also register a task (as in
+ * add_listener()), a signal (as in add_dependent_notifier()), or a callback
+ * function (as in add_active_callback()) for each located notifier. When
+ * space becomes available, the task will be scheduled, the signal will be
+ * activated, or the callback will be called.
+ *
+ * In current Click, the returned signal is conservative: if it's inactive,
+ * then there is no space for packets downstream.
+ *
+ * <h3>Supporting downstream_full_signal()</h3>
+ *
+ * Elements that have a full notifier must override the Element::cast()
+ * method.  When passed the @a name Notifier::FULL_NOTIFIER, this method
+ * should return a pointer to the corresponding Notifier object.
+ *
+ * @sa upstream_empty_signal
+ */
+inline NotifierSignal
+Notifier::downstream_full_signal(Element *e, int port)
+{
+    return downstream_full_signal(e, port, (callback_type) 0, 0);
+}
+
+/** @brief Calculate and return the NotifierSignal derived from all full
+ * notifiers downstream of element @a e's output @a port.
+ * @param e an element
+ * @param port the output port of @a e at which to start the downstream search
+ * @param task task to schedule when packets become available
+ * @sa add_listener */
+inline NotifierSignal
+Notifier::downstream_full_signal(Element *e, int port, Task *task)
+{
+    return downstream_full_signal(e, port, (callback_type) 0, task);
+}
+
+/** @brief Calculate and return the NotifierSignal derived from all full
+ * notifiers downstream of element @a e's output @a port.
+ * @param e an element
+ * @param port the output port of @a e at which to start the downstream search
+ * @param notifier notifier to activate when packets become available
+ * @sa add_dependent_signal */
+inline NotifierSignal
+Notifier::downstream_full_signal(Element *e, int port, Notifier *dependent_notifier)
+{
+    return downstream_full_signal(e, port, dependent_signal_callback, &dependent_notifier->_signal);
+}
+
+/** @cond never */
+inline NotifierSignal
+Notifier::upstream_empty_signal(Element *e, int port, int x)
+{
+    (void) x;
+    assert(x == 0);
+    return upstream_empty_signal(e, port);
+}
+
+inline NotifierSignal
+Notifier::upstream_empty_signal(Element *e, int port, int x, Notifier *notifier)
+{
+    (void) x;
+    assert(x == 0);
+    return upstream_empty_signal(e, port, notifier);
+}
+
+inline NotifierSignal
+Notifier::downstream_full_signal(Element *e, int port, int x)
+{
+    (void) x;
+    assert(x == 0);
+    return downstream_full_signal(e, port);
+}
+
+inline NotifierSignal
+Notifier::downstream_full_signal(Element *e, int port, int x, Notifier *notifier)
+{
+    (void) x;
+    assert(x == 0);
+    return downstream_full_signal(e, port, notifier);
+}
+/** @endcond never */
+
 /** @brief Set the associated signal's activity, possibly scheduling any
  * listener tasks.
  * @param active true iff the signal should be active
@@ -657,7 +826,8 @@ ActiveNotifier::sleep()
     set_active(false, true);
 }
 
-inline void click_swap(NotifierSignal &x, NotifierSignal &y)
+inline void
+click_swap(NotifierSignal &x, NotifierSignal &y)
 {
     x.swap(y);
 }
