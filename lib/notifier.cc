@@ -6,6 +6,7 @@
  * Copyright (c) 2002 International Computer Science Institute
  * Copyright (c) 2004-2005 Regents of the University of California
  * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2012 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -238,46 +239,51 @@ Notifier::~Notifier()
 {
 }
 
-/** @brief Called to register a listener with this Notifier.
- * @param task the listener's Task
+void
+Notifier::dependent_signal_callback(void *user_data, Notifier *)
+{
+    NotifierSignal *signal = static_cast<NotifierSignal *>(user_data);
+    signal->set_active(true);
+}
+
+/** @brief Register an activate callback with this Notifier.
+ * @param f callback function
+ * @param user_data callback data for @a f
+ * @return 1 if notifier was added, 0 on other success, negative on error
  *
- * This notifier should register @a task as a listener, if appropriate.
- * Later, when the signal is activated, the Notifier should reschedule @a task
- * along with the other listeners.  Not all types of Notifier need to provide
- * this functionality, however.  The default implementation does nothing.
+ * When this Notifier's associated signal is activated, this Notifier should
+ * call @a f(@a user_data, this). Not all types of Notifier provide this
+ * functionality. The default implementation does nothing.
+ *
+ * If @a f is null, then @a user_data is a Task pointer passed to
+ * add_listener.
+ *
+ * @sa remove_activate_callback, add_listener, add_dependent_signal
  */
 int
-Notifier::add_listener(Task* task)
+Notifier::add_activate_callback(callback_type f, void *user_data)
 {
-    (void) task;
+    (void) f, (void) user_data;
     return 0;
 }
 
-/** @brief Called to unregister a listener with this Notifier.
- * @param task the listener's Task
+/** @brief Unregister an activate callback with this Notifier.
+ * @param f callback function
+ * @param user_data callback data for @a f
  *
- * Undoes the effect of any prior add_listener(@a task).  Should do nothing if
- * @a task was never added.  The default implementation does nothing.
+ * Undoes the effect of all prior add_activate_callback(@a f, @a user_data)
+ * calls. Does nothing if (@a f,@a user_data) was never added. The default
+ * implementation does nothing.
+ *
+ * If @a f is null, then @a user_data is a Task pointer passed to
+ * remove_listener.
+ *
+ * @sa add_activate_callback
  */
 void
-Notifier::remove_listener(Task* task)
+Notifier::remove_activate_callback(callback_type f, void *user_data)
 {
-    (void) task;
-}
-
-/** @brief Called to register a dependent signal with this Notifier.
- * @param signal the dependent signal
- *
- * This notifier should register @a signal as a dependent signal, if
- * appropriate.  Later, when this notifier's signal is activated, it should go
- * ahead and activate @a signal as well.  Not all types of Notifier need to
- * provide this functionality.  The default implementation does nothing.
- */
-int
-Notifier::add_dependent_signal(NotifierSignal* signal)
-{
-    (void) signal;
-    return 0;
+    (void) f, (void) user_data;
 }
 
 /** @brief Initialize the associated NotifierSignal, if necessary.
@@ -317,102 +323,94 @@ ActiveNotifier::~ActiveNotifier()
 }
 
 int
-ActiveNotifier::listener_change(void *what, int where, bool add)
+ActiveNotifier::add_activate_callback(callback_type f, void *v)
 {
-    int n = 0, x;
-    task_or_signal_t *tos, *ntos, *otos;
-
     // common case
-    if (!_listener1 && !_listeners && where == 0 && add) {
-	_listener1 = (Task *) what;
-	return 0;
+    if (!_listener1 && !_listeners && !f) {
+	_listener1 = static_cast<Task *>(v);
+	return 1;
     }
 
-    for (tos = _listeners, x = 0; tos && x < 2; tos++)
-	tos->v ? n++ : x++;
-    if (_listener1)
-	n++;
+    // count existing listeners
+    int delta = 1;
+    task_or_signal_t *tos = _listeners;
+    for (; tos && tos->p; tos += delta)
+	if (tos->p == 1) {
+	    delta = 2;
+	    --tos;
+	} else if ((!f && delta == 1 && tos->t == static_cast<Task *>(v))
+		   || (f && delta == 2 && tos->f == f && tos[1].v == v))
+	    return 0;
 
-    if (!(ntos = new task_or_signal_t[n + 2 + add])) {
-      memory_error:
-	delete[] ntos;
+    // create new listener array
+    int n = tos - _listeners + 1;
+    if (_listener1)
+	++n;
+    if (f)
+	n += (delta == 2 ? 2 : 3);
+    else
+	++n;
+    task_or_signal_t *ntos = new task_or_signal_t[n];
+    if (!ntos) {
 	click_chatter("out of memory in Notifier!");
 	return -ENOMEM;
     }
 
-    otos = ntos;
-    if (!_listeners) {
-	// handles both the case of _listener1 != 0 and _listener1 == 0
-	if (!(_listeners = new task_or_signal_t[3]))
-	    goto memory_error;
-	_listeners[0].t = _listener1;
-	_listeners[1].v = _listeners[2].v = 0;
-    }
-    for (tos = _listeners, x = 0; x < 2; tos++)
-	if (tos->v && (add || tos->v != what)) {
-	    (otos++)->v = tos->v;
-	    if (tos->v == what)
-		add = false;
-	} else if (!tos->v) {
-	    if (add && where == x)
-		(otos++)->v = what;
-	    (otos++)->v = 0;
-	    x++;
+    // populate listener array
+    task_or_signal_t *otos = ntos;
+    if (_listener1)
+	(otos++)->t = _listener1;
+    for (tos = _listeners; tos && tos->p > 1; ++tos)
+	(otos++)->t = tos->t;
+    if (!f)
+	(otos++)->t = static_cast<Task *>(v);
+    if (f || (tos && tos->p == 1)) {
+	(otos++)->p = 1;
+	if (tos && tos->p == 1)
+	    for (++tos; tos->p > 0; ) {
+		*otos++ = *tos++;
+		*otos++ = *tos++;
+	    }
+	if (f) {
+	    (otos++)->f = f;
+	    (otos++)->v = v;
 	}
-    assert(otos - ntos <= n + 2 + add);
+    }
+    (otos++)->p = 0;
 
     delete[] _listeners;
-    if (!ntos[0].v && !ntos[1].v) {
-	_listeners = 0;
-	_listener1 = 0;
-	delete[] ntos;
-    } else if (ntos[0].v && !ntos[1].v && !ntos[2].v) {
-	_listeners = 0;
-	_listener1 = ntos[0].t;
-	delete[] ntos;
-    } else {
-	_listeners = ntos;
-	_listener1 = 0;
-    }
-    return 0;
+    _listeners = ntos;
+    _listener1 = 0;
+    return 1;
 }
 
-/** @brief Add a listener to this notifier.
- * @param task the listener to add
- *
- * Adds @a task to this notifier's listener list (the clients interested in
- * notification).  Whenever the ActiveNotifier activates its signal, @a task
- * will be rescheduled.
- */
-int
-ActiveNotifier::add_listener(Task* task)
-{
-    return listener_change(task, 0, true);
-}
-
-/** @brief Remove a listener from this notifier.
- * @param task the listener to remove
- *
- * Removes @a task from this notifier's listener list (the clients interested
- * in notification).  @a task will not be rescheduled when the Notifier is
- * activated.
- */
 void
-ActiveNotifier::remove_listener(Task* task)
+ActiveNotifier::remove_activate_callback(callback_type f, void *v)
 {
-    listener_change(task, 0, false);
-}
-
-/** @brief Add a dependent signal to this Notifier.
- * @param signal the dependent signal
- *
- * Adds @a signal as a dependent signal to this notifier.  Whenever the
- * ActiveNotifier activates its signal, @a signal will be activated as well.
- */
-int
-ActiveNotifier::add_dependent_signal(NotifierSignal* signal)
-{
-    return listener_change(signal, 1, true);
+    if (!f && _listener1 == static_cast<Task *>(v)) {
+	_listener1 = 0;
+	return;
+    }
+    int delta = 0, step = 1;
+    task_or_signal_t *tos;
+    for (tos = _listeners; tos && tos->p; )
+	if ((!f && step == 1 && tos->t == static_cast<Task *>(v))
+	    || (f && step == 2 && tos->f == f && tos[1].v == v)) {
+	    delta = -step;
+	    tos += step;
+	} else {
+	    if (delta)
+		tos[delta] = *tos;
+	    if (delta && step == 2)
+		tos[delta + 1] = tos[1];
+	    if (tos->p == 1) {
+		++tos;
+		step = 2;
+	    } else
+		tos += step;
+	}
+    if (delta != 0)
+	tos[delta].p = 0;
 }
 
 /** @brief Return the listener list.
@@ -426,7 +424,7 @@ ActiveNotifier::listeners(Vector<Task*>& v) const
     if (_listener1)
 	v.push_back(_listener1);
     else if (_listeners)
-	for (task_or_signal_t* l = _listeners; l->t; l++)
+	for (task_or_signal_t* l = _listeners; l->p > 1; l++)
 	    v.push_back(l->t);
 }
 

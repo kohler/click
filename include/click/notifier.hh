@@ -185,6 +185,7 @@ class NotifierSignal { public:
 class Notifier { public:
 
     enum SearchOp { SEARCH_STOP = 0, SEARCH_CONTINUE, SEARCH_CONTINUE_WAKE };
+    typedef void (*callback_type)(void *, Notifier *);
 
     inline Notifier(SearchOp op = SEARCH_STOP);
     inline Notifier(const NotifierSignal &signal, SearchOp op = SEARCH_STOP);
@@ -206,9 +207,12 @@ class Notifier { public:
     inline void wake();
     inline void sleep();
 
-    virtual int add_listener(Task *task);
-    virtual void remove_listener(Task *task);
-    virtual int add_dependent_signal(NotifierSignal *signal);
+    virtual int add_activate_callback(callback_type f, void *user_data);
+    virtual void remove_activate_callback(callback_type f, void *user_data);
+    inline int add_listener(Task *task);
+    inline void remove_listener(Task *task);
+    inline int add_dependent_signal(NotifierSignal *signal);
+    inline void remove_dependent_signal(NotifierSignal *signal);
 
     static const char EMPTY_NOTIFIER[];
     static const char FULL_NOTIFIER[];
@@ -221,6 +225,8 @@ class Notifier { public:
     NotifierSignal _signal;
     SearchOp _search_op;
 
+    static void dependent_signal_callback(void *, Notifier *);
+
 };
 
 class ActiveNotifier : public Notifier { public:
@@ -228,9 +234,8 @@ class ActiveNotifier : public Notifier { public:
     ActiveNotifier(SearchOp op = SEARCH_STOP);
     ~ActiveNotifier();
 
-    int add_listener(Task *task);	// complains on out of memory
-    void remove_listener(Task *task);
-    int add_dependent_signal(NotifierSignal *signal);
+    int add_activate_callback(callback_type f, void *v);
+    void remove_activate_callback(callback_type f, void *v);
     void listeners(Vector<Task*> &v) const;
 
     inline void set_active(bool active, bool schedule = true);
@@ -241,14 +246,16 @@ class ActiveNotifier : public Notifier { public:
 
     typedef union {
 	Task *t;
-	NotifierSignal *s;
+	callback_type f;
 	void *v;
+	uintptr_t p;
     } task_or_signal_t;
 
     Task* _listener1;
     task_or_signal_t* _listeners;
 
-    int listener_change(void *what, int where, bool rem);
+    int listener_add(callback_type f, void *v);
+    int listener_remove(callback_type f, void *v);
 
     ActiveNotifier(const ActiveNotifier&); // does not exist
     ActiveNotifier& operator=(const ActiveNotifier&); // does not exist
@@ -508,7 +515,7 @@ Notifier::active() const
     return _signal.active();
 }
 
-/** @brief Sets the associated signal's activity.
+/** @brief Set the associated signal's activity.
  * @param active true iff the signal should be active
  * @return previous active state
  */
@@ -518,7 +525,7 @@ Notifier::set_active(bool active)
     return _signal.set_active(active);
 }
 
-/** @brief Sets the associated signal to active.
+/** @brief Set the associated signal to active.
  * @sa set_active
  */
 inline void
@@ -527,7 +534,7 @@ Notifier::wake()
     set_active(true);
 }
 
-/** @brief Sets the associated signal to inactive.
+/** @brief Set the associated signal to inactive.
  * @sa set_active
  */
 inline void
@@ -536,7 +543,66 @@ Notifier::sleep()
     set_active(false);
 }
 
-/** @brief Sets the associated signal's activity, possibly scheduling any
+/** @brief Register a listener with this Notifier.
+ * @param task Task to reschedule when this Notifier becomes active
+ *
+ * When this Notifier's associated signal is activated, the Notifier should
+ * schedule @a task. Not all types of Notifier provide this functionality. The
+ * default implementation does nothing.
+ *
+ * @sa remove_listener, add_activate_callback, add_dependent_signal
+ */
+inline int
+Notifier::add_listener(Task *task)
+{
+    return add_activate_callback(0, task);
+}
+
+/** @brief Unregister a listener with this Notifier.
+ * @param task listener Task
+ *
+ * Undoes the effect of all prior add_listener(@a task) calls. Does nothing if
+ * @a task was never added. The default implementation does nothing.
+ *
+ * @sa add_listener
+ */
+inline void
+Notifier::remove_listener(Task *task)
+{
+    remove_activate_callback(0, task);
+}
+
+/** @brief Register a dependent signal with this Notifier.
+ * @param signal dependent signal
+ *
+ * When this Notifier's associated signal is activated, the Notifier should
+ * also activate @a signal. Not all types of Notifier provide this
+ * functionality. The default implementation does nothing.
+ *
+ * @sa add_listener, add_activate_callback, remove_dependent_signal
+ */
+inline int
+Notifier::add_dependent_signal(NotifierSignal *signal)
+{
+    return add_activate_callback(dependent_signal_callback, signal);
+}
+
+/** @brief Unregister a dependent signal with this Notifier.
+ * @param signal dependent signal
+ *
+ * Undoes the effect of all prior add_dependent_signal(@a signal) calls. Does
+ * nothing if @a signal was never added. The default implementation does
+ * nothing.
+ *
+ * @sa add_dependent_signal
+ */
+inline void
+Notifier::remove_dependent_signal(NotifierSignal *signal)
+{
+    remove_activate_callback(dependent_signal_callback, signal);
+}
+
+/** @brief Set the associated signal's activity, possibly scheduling any
  * listener tasks.
  * @param active true iff the signal should be active
  * @param schedule if true, wake up listener tasks
@@ -559,15 +625,16 @@ ActiveNotifier::set_active(bool active, bool schedule)
 	if (_listener1)
 	    _listener1->reschedule();
 	else if (task_or_signal_t *tos = _listeners) {
-	    for (; tos->t; tos++)
+	    for (; tos->p > 1; tos++)
 		tos->t->reschedule();
-	    for (tos++; tos->s; tos++)
-		tos->s->set_active(true);
+	    if (tos->p == 1)
+		for (tos++; tos->p; tos += 2)
+		    tos->f(tos[1].v, this);
 	}
     }
 }
 
-/** @brief Sets the associated signal to active and schedules any listener
+/** @brief Set the associated signal to active and schedule any listener
  * tasks.
  *
  * If the signal was previously inactive, then any listener Tasks are
@@ -581,7 +648,7 @@ ActiveNotifier::wake()
     set_active(true, true);
 }
 
-/** @brief Sets the associated signal to inactive.
+/** @brief Set the associated signal to inactive.
  * @sa set_active
  */
 inline void

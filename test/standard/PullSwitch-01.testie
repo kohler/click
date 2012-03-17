@@ -2,7 +2,7 @@
 Tests PullSwitch's Notifier functionality.
 
 %script
-click --simtime CONFIG 2>OUT 1>&2
+$VALGRIND click --simtime CONFIG 2>OUT 1>&2
 
 %file CONFIG
 i1 :: InfiniteSource(\<11>, LIMIT 4)
@@ -63,3 +63,6 @@ true
    1 | 22
    1 | 22
 false
+
+%ignore
+=={{\d+}}=={{.*}}
