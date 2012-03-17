@@ -61,6 +61,8 @@ class PullSwitch : public SimplePullSwitch { public:
     ActiveNotifier _notifier;
     NotifierSignal *_signals;
 
+    static void wake_callback(void *, Notifier *);
+
 };
 
 CLICK_ENDDECLS

@@ -23,7 +23,7 @@
 CLICK_DECLS
 
 PullSwitch::PullSwitch()
-    : _notifier(Notifier::SEARCH_CONTINUE_WAKE), _signals(0)
+    : _signals(0)
 {
 }
 
@@ -42,6 +42,15 @@ PullSwitch::cast(const char *name)
 	return Element::cast(name);
 }
 
+void
+PullSwitch::wake_callback(void *user_data, Notifier *)
+{
+    PullSwitch *ps = static_cast<PullSwitch *>(user_data);
+    if (ps->_input >= 0 && !ps->_notifier.active()
+	&& ps->_signals[ps->_input].active())
+	ps->_notifier.wake();
+}
+
 int
 PullSwitch::initialize(ErrorHandler *errh)
 {
@@ -50,7 +59,7 @@ PullSwitch::initialize(ErrorHandler *errh)
     if (!(_signals = new NotifierSignal[ninputs()]))
 	return errh->error("out of memory!");
     for (int i = 0; i < ninputs(); ++i)
-	_signals[i] = Notifier::upstream_empty_signal(this, i, &_notifier);
+	_signals[i] = Notifier::upstream_empty_signal(this, i, wake_callback, this);
     return 0;
 }
 
