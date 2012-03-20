@@ -27,10 +27,6 @@ PaintSwitch::PaintSwitch()
 {
 }
 
-PaintSwitch::~PaintSwitch()
-{
-}
-
 int
 PaintSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {

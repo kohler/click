@@ -26,10 +26,6 @@ Block::Block()
 {
 }
 
-Block::~Block()
-{
-}
-
 int
 Block::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -26,10 +26,6 @@ BandwidthRatedSplitter::BandwidthRatedSplitter()
 {
 }
 
-BandwidthRatedSplitter::~BandwidthRatedSplitter()
-{
-}
-
 void
 BandwidthRatedSplitter::push(int, Packet *p)
 {

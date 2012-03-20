@@ -25,10 +25,6 @@ CheckLength::CheckLength()
 {
 }
 
-CheckLength::~CheckLength()
-{
-}
-
 int
 CheckLength::configure(Vector<String> &conf, ErrorHandler *errh)
 {

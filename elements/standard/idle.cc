@@ -24,10 +24,6 @@ Idle::Idle()
 {
 }
 
-Idle::~Idle()
-{
-}
-
 void *
 Idle::cast(const char *name)
 {

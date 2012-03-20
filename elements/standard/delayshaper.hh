@@ -38,7 +38,6 @@ Returns or sets the DELAY parameter.
 class DelayShaper : public Element, public ActiveNotifier { public:
 
     DelayShaper();
-    ~DelayShaper();
 
     const char *class_name() const	{ return "DelayShaper"; }
     const char *port_count() const	{ return PORTS_1_1; }

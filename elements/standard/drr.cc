@@ -29,10 +29,6 @@ DRRSched::DRRSched()
 {
 }
 
-DRRSched::~DRRSched()
-{
-}
-
 void *
 DRRSched::cast(const char *n)
 {

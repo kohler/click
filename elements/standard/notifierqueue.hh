@@ -71,7 +71,6 @@ ThreadSafeQueue */
 class NotifierQueue : public SimpleQueue { public:
 
     NotifierQueue();
-    ~NotifierQueue();
 
     const char *class_name() const		{ return "NotifierQueue"; }
     void *cast(const char *);

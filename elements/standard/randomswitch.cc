@@ -24,10 +24,6 @@ RandomSwitch::RandomSwitch()
 {
 }
 
-RandomSwitch::~RandomSwitch()
-{
-}
-
 void
 RandomSwitch::push(int, Packet *p)
 {

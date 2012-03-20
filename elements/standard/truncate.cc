@@ -28,10 +28,6 @@ Truncate::Truncate()
 {
 }
 
-Truncate::~Truncate()
-{
-}
-
 int
 Truncate::configure(Vector<String> &conf, ErrorHandler *errh)
 {

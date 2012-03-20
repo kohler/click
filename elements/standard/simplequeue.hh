@@ -65,7 +65,6 @@ When written, drops all packets in the queue.
 class SimpleQueue : public Element, public Storage { public:
 
     SimpleQueue();
-    ~SimpleQueue();
 
     int drops() const				{ return _drops; }
     int highwater_length() const		{ return _highwater_length; }

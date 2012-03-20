@@ -28,7 +28,6 @@ class StaticPullSwitch : public Element {
  public:
 
   StaticPullSwitch();
-  ~StaticPullSwitch();
 
   const char *class_name() const		{ return "StaticPullSwitch"; }
   const char *port_count() const		{ return "-/1"; }

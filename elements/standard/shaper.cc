@@ -29,10 +29,6 @@ Shaper::Shaper()
 {
 }
 
-Shaper::~Shaper()
-{
-}
-
 int
 Shaper::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -26,10 +26,6 @@ FrontDropQueue::FrontDropQueue()
 {
 }
 
-FrontDropQueue::~FrontDropQueue()
-{
-}
-
 void *
 FrontDropQueue::cast(const char *n)
 {

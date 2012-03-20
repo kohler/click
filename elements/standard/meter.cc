@@ -24,10 +24,6 @@ Meter::Meter()
 {
 }
 
-Meter::~Meter()
-{
-}
-
 void
 Meter::push(int, Packet *p)
 {

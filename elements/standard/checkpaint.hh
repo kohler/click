@@ -26,7 +26,6 @@ argument can specify any one-byte annotation.
 class CheckPaint : public Element { public:
 
     CheckPaint();
-    ~CheckPaint();
 
     const char *class_name() const	{ return "CheckPaint"; }
     const char *port_count() const	{ return PORTS_1_1X2; }

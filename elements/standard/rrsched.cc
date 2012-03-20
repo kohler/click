@@ -26,10 +26,6 @@ RRSched::RRSched()
 {
 }
 
-RRSched::~RRSched()
-{
-}
-
 int
 RRSched::initialize(ErrorHandler *errh)
 {

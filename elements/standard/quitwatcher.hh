@@ -24,7 +24,6 @@ scheduled.
 class QuitWatcher : public Element { public:
 
   QuitWatcher();
-  ~QuitWatcher();
 
   const char *class_name() const		{ return "QuitWatcher"; }
   int configure(Vector<String> &, ErrorHandler *);

@@ -31,10 +31,6 @@ RatedUnqueue::RatedUnqueue()
 {
 }
 
-RatedUnqueue::~RatedUnqueue()
-{
-}
-
 int
 RatedUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {

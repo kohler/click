@@ -24,10 +24,6 @@ MixedQueue::MixedQueue()
 {
 }
 
-MixedQueue::~MixedQueue()
-{
-}
-
 void *
 MixedQueue::cast(const char *n)
 {

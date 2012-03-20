@@ -68,7 +68,6 @@ FrontDropQueue */
 class FullNoteQueue : public NotifierQueue { public:
 
     FullNoteQueue();
-    ~FullNoteQueue();
 
     const char *class_name() const		{ return "Queue"; }
     void *cast(const char *);

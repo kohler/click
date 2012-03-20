@@ -38,7 +38,6 @@ RandomSwitch */
 class Switch : public Element { public:
 
   Switch();
-  ~Switch();
 
   const char *class_name() const		{ return "Switch"; }
   const char *port_count() const		{ return "1/-"; }

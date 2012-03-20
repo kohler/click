@@ -27,7 +27,6 @@ CLICK_DECLS
 class AlignmentInfo : public Element { public:
 
     AlignmentInfo();
-    ~AlignmentInfo();
 
     const char *class_name() const	{ return "AlignmentInfo"; }
     int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }

@@ -34,10 +34,6 @@ Classifier::Classifier()
 {
 }
 
-Classifier::~Classifier()
-{
-}
-
 Classification::Wordwise::Program
 Classifier::empty_program(ErrorHandler *errh) const
 {

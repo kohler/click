@@ -25,10 +25,6 @@ DiscardNoFree::DiscardNoFree()
 {
 }
 
-DiscardNoFree::~DiscardNoFree()
-{
-}
-
 int
 DiscardNoFree::initialize(ErrorHandler *errh)
 {

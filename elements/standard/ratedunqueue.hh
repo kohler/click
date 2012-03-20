@@ -45,7 +45,6 @@ CLICK_DECLS
 class RatedUnqueue : public Element { public:
 
     RatedUnqueue();
-    ~RatedUnqueue();
 
     const char *class_name() const	{ return "RatedUnqueue"; }
     const char *port_count() const	{ return PORTS_1_1; }

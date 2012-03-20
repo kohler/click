@@ -36,7 +36,6 @@ CLICK_DECLS
 class CompareBlock : public Element { public:
 
   CompareBlock();
-  ~CompareBlock();
 
   const char *class_name() const		{ return "CompareBlock"; }
   const char *port_count() const		{ return "1/2"; }

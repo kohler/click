@@ -27,10 +27,6 @@ PaintTee::PaintTee()
 {
 }
 
-PaintTee::~PaintTee()
-{
-}
-
 int
 PaintTee::configure(Vector<String> &conf, ErrorHandler *errh)
 {

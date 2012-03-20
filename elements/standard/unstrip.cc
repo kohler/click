@@ -27,10 +27,6 @@ Unstrip::Unstrip(unsigned nbytes)
 {
 }
 
-Unstrip::~Unstrip()
-{
-}
-
 int
 Unstrip::configure(Vector<String> &conf, ErrorHandler *errh)
 {

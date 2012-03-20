@@ -25,10 +25,6 @@ StaticSwitch::StaticSwitch()
 {
 }
 
-StaticSwitch::~StaticSwitch()
-{
-}
-
 int
 StaticSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {

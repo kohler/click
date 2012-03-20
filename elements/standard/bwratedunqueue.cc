@@ -26,10 +26,6 @@ BandwidthRatedUnqueue::BandwidthRatedUnqueue()
 {
 }
 
-BandwidthRatedUnqueue::~BandwidthRatedUnqueue()
-{
-}
-
 bool
 BandwidthRatedUnqueue::run_task(Task *)
 {

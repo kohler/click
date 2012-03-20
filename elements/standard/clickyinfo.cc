@@ -23,10 +23,6 @@ ClickyInfo::ClickyInfo()
 {
 }
 
-ClickyInfo::~ClickyInfo()
-{
-}
-
 int
 ClickyInfo::configure(Vector<String> &, ErrorHandler *)
 {

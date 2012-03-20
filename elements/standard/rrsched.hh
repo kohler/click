@@ -28,7 +28,6 @@ CLICK_DECLS
 class RRSched : public Element { public:
 
     RRSched();
-    ~RRSched();
 
     const char *class_name() const	{ return "RoundRobinSched"; }
     const char *port_count() const	{ return "-/1"; }

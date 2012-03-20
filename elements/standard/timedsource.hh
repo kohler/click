@@ -65,7 +65,6 @@ Returns or sets the INTERVAL parameter.
 class TimedSource : public Element { public:
 
   TimedSource();
-  ~TimedSource();
 
   const char *class_name() const		{ return "TimedSource"; }
   const char *port_count() const		{ return PORTS_0_1; }

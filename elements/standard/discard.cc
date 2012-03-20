@@ -27,10 +27,6 @@ Discard::Discard()
 {
 }
 
-Discard::~Discard()
-{
-}
-
 int
 Discard::configure(Vector<String> &conf, ErrorHandler *errh)
 {

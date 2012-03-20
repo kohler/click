@@ -26,10 +26,6 @@ Switch::Switch()
 {
 }
 
-Switch::~Switch()
-{
-}
-
 int
 Switch::configure(Vector<String> &conf, ErrorHandler *errh)
 {

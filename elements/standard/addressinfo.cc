@@ -88,10 +88,6 @@ AddressInfo::AddressInfo()
 {
 }
 
-AddressInfo::~AddressInfo()
-{
-}
-
 int
 AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {

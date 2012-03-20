@@ -20,7 +20,6 @@ and adds them to its styles.
 class ClickyInfo : public Element { public:
 
     ClickyInfo();
-    ~ClickyInfo();
 
     const char *class_name() const	{ return "ClickyInfo"; }
     int configure(Vector<String> &conf, ErrorHandler *errh);

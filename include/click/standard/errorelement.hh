@@ -20,7 +20,6 @@ CLICK_DECLS
 class ErrorElement : public Element { public:
 
     ErrorElement();
-    ~ErrorElement();
 
     const char *class_name() const		{ return "Error"; }
     const char *port_count() const		{ return "-/-"; }

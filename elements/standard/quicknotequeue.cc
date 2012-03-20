@@ -24,10 +24,6 @@ QuickNoteQueue::QuickNoteQueue()
 {
 }
 
-QuickNoteQueue::~QuickNoteQueue()
-{
-}
-
 void *
 QuickNoteQueue::cast(const char *n)
 {

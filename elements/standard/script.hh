@@ -423,7 +423,6 @@ C<kill>; it expands to the driver's process ID.
 class Script : public Element { public:
 
     Script();
-    ~Script();
 
     static void static_initialize();
     static void static_cleanup();

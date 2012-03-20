@@ -26,10 +26,6 @@ NotifierQueue::NotifierQueue()
 {
 }
 
-NotifierQueue::~NotifierQueue()
-{
-}
-
 void *
 NotifierQueue::cast(const char *n)
 {

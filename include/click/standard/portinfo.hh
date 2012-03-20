@@ -59,7 +59,6 @@ AddressInfo */
 class PortInfo : public Element { public:
 
     PortInfo();
-    ~PortInfo();
 
     const char *class_name() const	{ return "PortInfo"; }
 

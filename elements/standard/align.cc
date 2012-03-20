@@ -26,10 +26,6 @@ Align::Align()
 {
 }
 
-Align::~Align()
-{
-}
-
 int
 Align::configure(Vector<String> &conf, ErrorHandler *errh)
 {

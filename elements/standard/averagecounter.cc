@@ -28,10 +28,6 @@ AverageCounter::AverageCounter()
 {
 }
 
-AverageCounter::~AverageCounter()
-{
-}
-
 void
 AverageCounter::reset()
 {

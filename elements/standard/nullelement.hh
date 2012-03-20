@@ -45,7 +45,6 @@ PushNull, PullNull
 class NullElement : public Element { public:
 
   NullElement();
-  ~NullElement();
 
   const char *class_name() const	{ return "Null"; }
   const char *port_count() const	{ return PORTS_1_1; }
@@ -71,7 +70,6 @@ Null, PullNull
 class PushNullElement : public Element { public:
 
   PushNullElement();
-  ~PushNullElement();
 
   const char *class_name() const	{ return "PushNull"; }
   const char *port_count() const	{ return PORTS_1_1; }
@@ -98,7 +96,6 @@ Null, PushNull */
 class PullNullElement : public Element { public:
 
   PullNullElement();
-  ~PullNullElement();
 
   const char *class_name() const	{ return "PullNull"; }
   const char *port_count() const	{ return PORTS_1_1; }

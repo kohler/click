@@ -28,10 +28,6 @@ CompareBlock::CompareBlock()
 {
 }
 
-CompareBlock::~CompareBlock()
-{
-}
-
 int
 CompareBlock::configure(Vector<String> &conf, ErrorHandler *errh)
 {

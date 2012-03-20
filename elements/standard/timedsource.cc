@@ -30,10 +30,6 @@ TimedSource::TimedSource()
 {
 }
 
-TimedSource::~TimedSource()
-{
-}
-
 int
 TimedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {

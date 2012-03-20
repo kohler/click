@@ -24,10 +24,6 @@ FullNoteQueue::FullNoteQueue()
 {
 }
 
-FullNoteQueue::~FullNoteQueue()
-{
-}
-
 void *
 FullNoteQueue::cast(const char *n)
 {

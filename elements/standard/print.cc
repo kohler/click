@@ -35,10 +35,6 @@ Print::Print()
 {
 }
 
-Print::~Print()
-{
-}
-
 int
 Print::configure(Vector<String> &conf, ErrorHandler* errh)
 {

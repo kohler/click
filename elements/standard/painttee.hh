@@ -31,7 +31,6 @@ CLICK_DECLS
 class PaintTee : public Element { public:
 
     PaintTee();
-    ~PaintTee();
 
     const char *class_name() const	{ return "PaintTee"; }
     const char *port_count() const	{ return "1/2"; }

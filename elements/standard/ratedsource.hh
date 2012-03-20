@@ -90,7 +90,6 @@ InfiniteSource, Script */
 class RatedSource : public Element { public:
 
     RatedSource();
-    ~RatedSource();
 
     const char *class_name() const		{ return "RatedSource"; }
     const char *port_count() const		{ return PORTS_0_1; }

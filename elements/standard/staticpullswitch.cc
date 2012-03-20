@@ -25,10 +25,6 @@ StaticPullSwitch::StaticPullSwitch()
 {
 }
 
-StaticPullSwitch::~StaticPullSwitch()
-{
-}
-
 int
 StaticPullSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {

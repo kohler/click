@@ -41,7 +41,6 @@ CLICK_DECLS
 class BandwidthRatedUnqueue : public RatedUnqueue { public:
 
     BandwidthRatedUnqueue();
-    ~BandwidthRatedUnqueue();
 
     const char *class_name() const	{ return "BandwidthRatedUnqueue"; }
 

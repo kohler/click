@@ -27,10 +27,6 @@ HashSwitch::HashSwitch()
 {
 }
 
-HashSwitch::~HashSwitch()
-{
-}
-
 int
 HashSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {

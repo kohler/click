@@ -36,7 +36,6 @@ CLICK_DECLS
 class TimedUnqueue : public Element { public:
 
     TimedUnqueue();
-    ~TimedUnqueue();
 
     const char *class_name() const		{ return "TimedUnqueue"; }
     const char *port_count() const		{ return PORTS_1_1; }

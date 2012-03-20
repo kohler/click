@@ -49,7 +49,6 @@ CLICK_DECLS
 class BandwidthRatedSplitter : public RatedSplitter { public:
 
     BandwidthRatedSplitter();
-    ~BandwidthRatedSplitter();
 
     const char *class_name() const	{ return "BandwidthRatedSplitter"; }
 

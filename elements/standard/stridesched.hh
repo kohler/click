@@ -35,7 +35,6 @@ CLICK_DECLS
 class StrideSched : public Element { public:
 
     StrideSched();
-    ~StrideSched();
 
     const char *class_name() const		{ return "StrideSched"; }
     const char *port_count() const		{ return "1-/1"; }

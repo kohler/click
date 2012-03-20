@@ -27,7 +27,6 @@ has flow code CODE.
 class FlowInfo : public Element { public:
 
     FlowInfo();
-    ~FlowInfo();
 
     const char* class_name() const	{ return "FlowInfo"; }
 

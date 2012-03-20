@@ -25,7 +25,6 @@ CLICK_DECLS
 class PrioSched : public Element { public:
 
     PrioSched();
-    ~PrioSched();
 
     const char *class_name() const	{ return "PrioSched"; }
     const char *port_count() const	{ return "-/1"; }

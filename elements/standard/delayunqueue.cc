@@ -29,10 +29,6 @@ DelayUnqueue::DelayUnqueue()
 {
 }
 
-DelayUnqueue::~DelayUnqueue()
-{
-}
-
 int
 DelayUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {

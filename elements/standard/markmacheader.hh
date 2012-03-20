@@ -21,7 +21,6 @@ CLICK_DECLS
 class MarkMACHeader : public Element { public:
 
     MarkMACHeader();
-    ~MarkMACHeader();
 
     const char *class_name() const		{ return "MarkMACHeader"; }
     const char *port_count() const		{ return PORTS_1_1; }

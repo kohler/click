@@ -29,10 +29,6 @@ RatedSplitter::RatedSplitter()
 {
 }
 
-RatedSplitter::~RatedSplitter()
-{
-}
-
 int
 RatedSplitter::configure(Vector<String> &conf, ErrorHandler *errh)
 {

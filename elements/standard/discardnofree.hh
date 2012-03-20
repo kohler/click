@@ -17,7 +17,6 @@ CLICK_DECLS
 class DiscardNoFree : public Element { public:
 
   DiscardNoFree();
-  ~DiscardNoFree();
 
   const char *class_name() const		{ return "DiscardNoFree"; }
   const char *port_count() const		{ return PORTS_1_0; }

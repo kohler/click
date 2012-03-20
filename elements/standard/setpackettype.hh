@@ -24,7 +24,6 @@ was it broadcast? TYPE should be one of `C<HOST>', `C<BROADCAST>',
 class SetPacketType : public Element { public:
 
     SetPacketType();
-    ~SetPacketType();
 
     const char *class_name() const		{ return "SetPacketType"; }
     const char *port_count() const		{ return PORTS_1_1; }

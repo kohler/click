@@ -24,10 +24,6 @@ SetCRC32::SetCRC32()
 {
 }
 
-SetCRC32::~SetCRC32()
-{
-}
-
 Packet *
 SetCRC32::simple_action(Packet *p)
 {

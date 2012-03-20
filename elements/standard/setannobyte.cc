@@ -30,10 +30,6 @@ SetAnnoByte::SetAnnoByte()
 {
 }
 
-SetAnnoByte::~SetAnnoByte()
-{
-}
-
 int
 SetAnnoByte::configure(Vector<String> &conf, ErrorHandler *errh)
 {

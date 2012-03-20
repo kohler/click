@@ -28,10 +28,6 @@ RandomSample::RandomSample()
 {
 }
 
-RandomSample::~RandomSample()
-{
-}
-
 int
 RandomSample::configure(Vector<String> &conf, ErrorHandler *errh)
 {

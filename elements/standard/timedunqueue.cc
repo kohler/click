@@ -29,10 +29,6 @@ TimedUnqueue::TimedUnqueue()
 {
 }
 
-TimedUnqueue::~TimedUnqueue()
-{
-}
-
 int
 TimedUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {

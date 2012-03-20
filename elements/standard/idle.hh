@@ -29,7 +29,6 @@ CLICK_DECLS
 class Idle : public Element { public:
 
   Idle();
-  ~Idle();
 
   const char *class_name() const	{ return "Idle"; }
   const char *port_count() const	{ return "-/-"; }

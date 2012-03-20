@@ -23,10 +23,6 @@ Hub::Hub()
 {
 }
 
-Hub::~Hub()
-{
-}
-
 void
 Hub::push(int port, Packet *p)
 {

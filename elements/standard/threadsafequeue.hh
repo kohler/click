@@ -54,7 +54,6 @@ When written, drops all packets in the queue.
 class ThreadSafeQueue : public FullNoteQueue { public:
 
     ThreadSafeQueue();
-    ~ThreadSafeQueue();
 
     const char *class_name() const		{ return "ThreadSafeQueue"; }
     void *cast(const char *);

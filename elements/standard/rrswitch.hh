@@ -25,7 +25,6 @@ class RoundRobinSwitch : public Element {
  public:
 
   RoundRobinSwitch();
-  ~RoundRobinSwitch();
 
   const char *class_name() const	{ return "RoundRobinSwitch"; }
   const char *port_count() const	{ return "1/1-"; }

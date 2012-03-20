@@ -9,10 +9,6 @@ MSQueue::MSQueue()
 {
 }
 
-MSQueue::~MSQueue()
-{
-}
-
 void *
 MSQueue::cast(const char *n)
 {

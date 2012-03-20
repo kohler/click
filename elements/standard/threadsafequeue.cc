@@ -25,10 +25,6 @@ ThreadSafeQueue::ThreadSafeQueue()
     _xhead = _xtail = 0;
 }
 
-ThreadSafeQueue::~ThreadSafeQueue()
-{
-}
-
 void *
 ThreadSafeQueue::cast(const char *n)
 {

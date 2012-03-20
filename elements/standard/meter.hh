@@ -43,7 +43,6 @@ CLICK_DECLS
 class Meter : public BandwidthMeter { public:
 
   Meter();
-  ~Meter();
 
   const char *class_name() const		{ return "Meter"; }
 

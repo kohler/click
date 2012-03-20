@@ -30,10 +30,6 @@ RandomSource::RandomSource()
 {
 }
 
-RandomSource::~RandomSource()
-{
-}
-
 int
 RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {

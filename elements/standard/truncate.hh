@@ -20,7 +20,6 @@ CLICK_DECLS
 class Truncate : public Element { public:
 
     Truncate();
-    ~Truncate();
 
     const char *class_name() const		{ return "Truncate"; }
     const char *port_count() const		{ return PORTS_1_1; }

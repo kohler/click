@@ -26,10 +26,6 @@ Suppressor::Suppressor()
 {
 }
 
-Suppressor::~Suppressor()
-{
-}
-
 int
 Suppressor::configure(Vector<String> &, ErrorHandler *)
 {

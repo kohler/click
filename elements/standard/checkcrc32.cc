@@ -25,10 +25,6 @@ CheckCRC32::CheckCRC32()
   _drops = 0;
 }
 
-CheckCRC32::~CheckCRC32()
-{
-}
-
 Packet *
 CheckCRC32::simple_action(Packet *p)
 {

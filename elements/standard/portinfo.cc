@@ -30,10 +30,6 @@ PortInfo::PortInfo()
 {
 }
 
-PortInfo::~PortInfo()
-{
-}
-
 int
 PortInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {

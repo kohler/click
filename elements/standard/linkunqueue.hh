@@ -59,7 +59,6 @@ DelayShaper, SetTimestamp */
 class LinkUnqueue : public Element, public Storage { public:
 
     LinkUnqueue();
-    ~LinkUnqueue();
 
     const char *class_name() const	{ return "LinkUnqueue"; }
     const char *port_count() const	{ return PORTS_1_1; }

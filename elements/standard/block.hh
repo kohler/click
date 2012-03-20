@@ -37,7 +37,6 @@ class Block : public Element {
  public:
 
   Block();
-  ~Block();
 
   const char *class_name() const		{ return "Block"; }
   const char *port_count() const		{ return "1/2"; }

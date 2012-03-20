@@ -26,10 +26,6 @@ BandwidthShaper::BandwidthShaper()
 {
 }
 
-BandwidthShaper::~BandwidthShaper()
-{
-}
-
 Packet *
 BandwidthShaper::pull(int)
 {

@@ -27,10 +27,6 @@ Strip::Strip()
 {
 }
 
-Strip::~Strip()
-{
-}
-
 int
 Strip::configure(Vector<String> &conf, ErrorHandler *errh)
 {

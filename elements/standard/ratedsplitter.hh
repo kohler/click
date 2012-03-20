@@ -65,7 +65,6 @@ CLICK_DECLS
 class RatedSplitter : public Element { public:
 
     RatedSplitter();
-    ~RatedSplitter();
 
     const char *class_name() const	{ return "RatedSplitter"; }
     const char *port_count() const	{ return PORTS_1_1X2; }

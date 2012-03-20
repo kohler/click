@@ -27,10 +27,6 @@ CheckPaint::CheckPaint()
 {
 }
 
-CheckPaint::~CheckPaint()
-{
-}
-
 int
 CheckPaint::configure(Vector<String> &conf, ErrorHandler *errh)
 {

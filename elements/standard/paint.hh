@@ -28,7 +28,6 @@ Get/set the color to paint.
 class Paint : public Element { public:
 
     Paint();
-    ~Paint();
 
     const char *class_name() const		{ return "Paint"; }
     const char *port_count() const		{ return PORTS_1_1; }

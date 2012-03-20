@@ -66,7 +66,6 @@ Same as the BURST keyword.
 class Unqueue : public Element { public:
 
     Unqueue();
-    ~Unqueue();
 
     const char *class_name() const		{ return "Unqueue"; }
     const char *port_count() const		{ return PORTS_1_1; }

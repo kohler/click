@@ -29,10 +29,6 @@ SetTimestamp::SetTimestamp()
 {
 }
 
-SetTimestamp::~SetTimestamp()
-{
-}
-
 int
 SetTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
 {

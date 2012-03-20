@@ -54,7 +54,6 @@ Resets "count" to 0.
 class Discard : public Element { public:
 
     Discard();
-    ~Discard();
 
     const char *class_name() const		{ return "Discard"; }
     const char *port_count() const		{ return PORTS_1_0; }

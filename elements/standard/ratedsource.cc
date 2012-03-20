@@ -33,10 +33,6 @@ RatedSource::RatedSource()
 {
 }
 
-RatedSource::~RatedSource()
-{
-}
-
 int
 RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {

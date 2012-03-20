@@ -24,7 +24,6 @@ CLICK_DECLS
 class StrideSwitch : public StrideSched { public:
 
   StrideSwitch();
-  ~StrideSwitch();
 
   const char *class_name() const		{ return "StrideSwitch"; }
   const char *port_count() const		{ return "1/1-"; }

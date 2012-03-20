@@ -29,10 +29,6 @@ StrideSched::StrideSched()
 {
 }
 
-StrideSched::~StrideSched()
-{
-}
-
 int
 StrideSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {

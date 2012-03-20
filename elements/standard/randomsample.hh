@@ -65,7 +65,6 @@ CLICK_DECLS
 class RandomSample : public Element { public:
 
     RandomSample();
-    ~RandomSample();
 
     const char *class_name() const		{ return "RandomSample"; }
     const char *port_count() const		{ return PORTS_1_1X2; }

@@ -29,10 +29,6 @@ AlignmentInfo::AlignmentInfo()
 {
 }
 
-AlignmentInfo::~AlignmentInfo()
-{
-}
-
 int
 AlignmentInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {

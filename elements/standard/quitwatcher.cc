@@ -31,10 +31,6 @@ QuitWatcher::QuitWatcher()
 {
 }
 
-QuitWatcher::~QuitWatcher()
-{
-}
-
 int
 QuitWatcher::configure(Vector<String> &, ErrorHandler *)
 {

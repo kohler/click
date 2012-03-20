@@ -28,10 +28,6 @@ AnnotationInfo::AnnotationInfo()
 {
 }
 
-AnnotationInfo::~AnnotationInfo()
-{
-}
-
 int
 AnnotationInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -25,10 +25,6 @@ MarkMACHeader::MarkMACHeader()
 {
 }
 
-MarkMACHeader::~MarkMACHeader()
-{
-}
-
 int
 MarkMACHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -72,7 +72,6 @@ class ScheduleInfo : public Element { public:
     enum { FRAC_BITS = 10 };
 
     ScheduleInfo();
-    ~ScheduleInfo();
 
     const char* class_name() const	{ return "ScheduleInfo"; }
 

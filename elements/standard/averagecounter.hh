@@ -43,7 +43,6 @@ CLICK_DECLS
 class AverageCounter : public Element { public:
 
     AverageCounter();
-    ~AverageCounter();
 
     const char *class_name() const		{ return "AverageCounter"; }
     const char *port_count() const		{ return PORTS_1_1; }

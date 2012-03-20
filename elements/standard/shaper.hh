@@ -38,7 +38,6 @@ CLICK_DECLS
 class Shaper : public Element { public:
 
     Shaper();
-    ~Shaper();
 
     const char *class_name() const	{ return "Shaper"; }
     const char *port_count() const	{ return PORTS_1_1; }

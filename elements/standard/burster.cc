@@ -26,10 +26,6 @@ Burster::Burster()
     _burst = 8;
 }
 
-Burster::~Burster()
-{
-}
-
 void *
 Burster::cast(const char *name)
 {

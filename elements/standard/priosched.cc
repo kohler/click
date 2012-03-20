@@ -27,10 +27,6 @@ PrioSched::PrioSched()
 {
 }
 
-PrioSched::~PrioSched()
-{
-}
-
 int
 PrioSched::initialize(ErrorHandler *errh)
 {

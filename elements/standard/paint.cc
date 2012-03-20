@@ -28,10 +28,6 @@ Paint::Paint()
 {
 }
 
-Paint::~Paint()
-{
-}
-
 int
 Paint::configure(Vector<String> &conf, ErrorHandler *errh)
 {

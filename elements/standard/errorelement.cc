@@ -25,10 +25,6 @@ ErrorElement::ErrorElement()
 {
 }
 
-ErrorElement::~ErrorElement()
-{
-}
-
 int
 ErrorElement::configure(Vector<String> &, ErrorHandler *)
 {

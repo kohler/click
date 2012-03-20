@@ -30,7 +30,6 @@ class HashSwitch : public Element {
  public:
 
   HashSwitch();
-  ~HashSwitch();
 
   const char *class_name() const		{ return "HashSwitch"; }
   const char *port_count() const		{ return "1/1-"; }

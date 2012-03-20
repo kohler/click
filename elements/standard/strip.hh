@@ -21,7 +21,6 @@ CLICK_DECLS
 class Strip : public Element { public:
 
     Strip();
-    ~Strip();
 
     const char *class_name() const		{ return "Strip"; }
     const char *port_count() const		{ return PORTS_1_1; }

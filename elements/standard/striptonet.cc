@@ -26,10 +26,6 @@ StripToNetworkHeader::StripToNetworkHeader()
 {
 }
 
-StripToNetworkHeader::~StripToNetworkHeader()
-{
-}
-
 Packet *
 StripToNetworkHeader::simple_action(Packet *p)
 {

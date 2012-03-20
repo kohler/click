@@ -102,7 +102,6 @@ RatedSource, Script */
 class InfiniteSource : public Element, public ActiveNotifier { public:
 
   InfiniteSource();
-  ~InfiniteSource();
 
   const char *class_name() const		{ return "InfiniteSource"; }
   void *cast(const char *);

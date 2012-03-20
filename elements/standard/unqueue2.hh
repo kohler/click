@@ -43,7 +43,6 @@ CLICK_DECLS
 class Unqueue2 : public Element { public:
 
     Unqueue2();
-    ~Unqueue2();
 
     const char *class_name() const		{ return "Unqueue2"; }
     const char *port_count() const		{ return PORTS_1_1; }

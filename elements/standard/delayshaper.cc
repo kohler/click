@@ -30,10 +30,6 @@ DelayShaper::DelayShaper()
 {
 }
 
-DelayShaper::~DelayShaper()
-{
-}
-
 void *
 DelayShaper::cast(const char *n)
 {

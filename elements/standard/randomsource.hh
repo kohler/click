@@ -80,7 +80,6 @@ InfiniteSource */
 class RandomSource : public InfiniteSource { public:
 
   RandomSource();
-  ~RandomSource();
 
   const char *class_name() const		{ return "RandomSource"; }
   void add_handlers();

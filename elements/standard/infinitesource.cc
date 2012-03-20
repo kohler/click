@@ -34,10 +34,6 @@ InfiniteSource::InfiniteSource()
 {
 }
 
-InfiniteSource::~InfiniteSource()
-{
-}
-
 void *
 InfiniteSource::cast(const char *n)
 {

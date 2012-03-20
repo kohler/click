@@ -118,10 +118,6 @@ Script::Script()
 {
 }
 
-Script::~Script()
-{
-}
-
 void
 Script::add_insn(int insn, int arg, int arg2, const String &arg3)
 {

@@ -30,10 +30,6 @@ Unqueue::Unqueue()
 {
 }
 
-Unqueue::~Unqueue()
-{
-}
-
 int
 Unqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {

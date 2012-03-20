@@ -28,7 +28,6 @@ Returns or sets VALUE
 class SetAnnoByte : public Element { public:
 
     SetAnnoByte();
-    ~SetAnnoByte();
 
     const char *class_name() const		{ return "SetAnnoByte"; }
     const char *port_count() const		{ return PORTS_1_1; }

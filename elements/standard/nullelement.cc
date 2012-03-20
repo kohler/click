@@ -23,10 +23,6 @@ NullElement::NullElement()
 {
 }
 
-NullElement::~NullElement()
-{
-}
-
 Packet *
 NullElement::simple_action(Packet *p)
 {
@@ -37,10 +33,6 @@ PushNullElement::PushNullElement()
 {
 }
 
-PushNullElement::~PushNullElement()
-{
-}
-
 void
 PushNullElement::push(int, Packet *p)
 {
@@ -48,10 +40,6 @@ PushNullElement::push(int, Packet *p)
 }
 
 PullNullElement::PullNullElement()
-{
-}
-
-PullNullElement::~PullNullElement()
 {
 }
 

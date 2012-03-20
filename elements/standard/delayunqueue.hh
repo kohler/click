@@ -35,7 +35,6 @@ DelayShaper, SetTimestamp */
 class DelayUnqueue : public Element { public:
 
     DelayUnqueue();
-    ~DelayUnqueue();
 
     const char *class_name() const	{ return "DelayUnqueue"; }
     const char *port_count() const	{ return PORTS_1_1; }

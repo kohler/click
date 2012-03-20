@@ -29,7 +29,6 @@ Annotation names defined by default, such as PAINT, may not be redefined.
 class AnnotationInfo : public Element { public:
 
     AnnotationInfo();
-    ~AnnotationInfo();
 
     const char *class_name() const	{ return "AnnotationInfo"; }
 

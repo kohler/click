@@ -27,7 +27,6 @@ class Tee : public Element {
  public:
 
   Tee();
-  ~Tee();
 
   const char *class_name() const		{ return "Tee"; }
   const char *port_count() const		{ return "1/1-"; }
@@ -44,7 +43,6 @@ class PullTee : public Element {
  public:
 
   PullTee();
-  ~PullTee();
 
   const char *class_name() const		{ return "PullTee"; }
   const char *port_count() const		{ return "1/1-"; }

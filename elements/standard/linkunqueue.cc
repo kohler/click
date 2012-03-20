@@ -34,10 +34,6 @@ LinkUnqueue::LinkUnqueue()
 {
 }
 
-LinkUnqueue::~LinkUnqueue()
-{
-}
-
 void *
 LinkUnqueue::cast(const char *n)
 {

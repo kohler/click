@@ -26,10 +26,6 @@ SetPacketType::SetPacketType()
 {
 }
 
-SetPacketType::~SetPacketType()
-{
-}
-
 int
 SetPacketType::parse_type(const String &s)
 {

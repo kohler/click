@@ -27,10 +27,6 @@ PullSwitch::PullSwitch()
 {
 }
 
-PullSwitch::~PullSwitch()
-{
-}
-
 void *
 PullSwitch::cast(const char *name)
 {

@@ -27,7 +27,6 @@ CLICK_DECLS
 class Suppressor : public Element { public:
 
   Suppressor();
-  ~Suppressor();
 
   const char *class_name() const		{ return "Suppressor"; }
   const char *port_count() const		{ return "-/="; }

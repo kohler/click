@@ -77,10 +77,6 @@ RandomBitErrors::RandomBitErrors()
 {
 }
 
-RandomBitErrors::~RandomBitErrors()
-{
-}
-
 void
 RandomBitErrors::set_bit_error(unsigned bit_error)
 {

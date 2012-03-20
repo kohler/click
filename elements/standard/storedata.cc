@@ -25,10 +25,6 @@ StoreData::StoreData()
 {
 }
 
-StoreData::~StoreData()
-{
-}
-
 int
 StoreData::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -26,10 +26,6 @@ StrideSwitch::StrideSwitch()
 {
 }
 
-StrideSwitch::~StrideSwitch()
-{
-}
-
 void
 StrideSwitch::push(int, Packet *p)
 {

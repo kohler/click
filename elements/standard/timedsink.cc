@@ -27,10 +27,6 @@ TimedSink::TimedSink()
 {
 }
 
-TimedSink::~TimedSink()
-{
-}
-
 int
 TimedSink::configure(Vector<String> &conf, ErrorHandler *errh)
 {

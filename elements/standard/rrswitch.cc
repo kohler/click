@@ -24,10 +24,6 @@ RoundRobinSwitch::RoundRobinSwitch()
   _next = 0;
 }
 
-RoundRobinSwitch::~RoundRobinSwitch()
-{
-}
-
 void
 RoundRobinSwitch::push(int, Packet *p)
 {

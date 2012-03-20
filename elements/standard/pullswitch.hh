@@ -44,7 +44,6 @@ StrideSched, Switch */
 class PullSwitch : public SimplePullSwitch { public:
 
     PullSwitch();
-    ~PullSwitch();
 
     const char *class_name() const		{ return "PullSwitch"; }
     void *cast(const char *name);

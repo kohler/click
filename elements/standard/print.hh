@@ -70,7 +70,6 @@ IPPrint */
 class Print : public Element { public:
 
     Print();
-    ~Print();
 
     const char *class_name() const		{ return "Print"; }
     const char *port_count() const		{ return PORTS_1_1; }

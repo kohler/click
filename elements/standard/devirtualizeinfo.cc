@@ -24,10 +24,6 @@ DevirtualizeInfo::DevirtualizeInfo()
 {
 }
 
-DevirtualizeInfo::~DevirtualizeInfo()
-{
-}
-
 int
 DevirtualizeInfo::configure(Vector<String> &, ErrorHandler *)
 {

@@ -27,10 +27,6 @@ SimpleQueue::SimpleQueue()
 {
 }
 
-SimpleQueue::~SimpleQueue()
-{
-}
-
 void *
 SimpleQueue::cast(const char *n)
 {

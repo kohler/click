@@ -25,10 +25,6 @@ Tee::Tee()
 {
 }
 
-Tee::~Tee()
-{
-}
-
 int
 Tee::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -55,10 +51,6 @@ Tee::push(int, Packet *p)
 //
 
 PullTee::PullTee()
-{
-}
-
-PullTee::~PullTee()
 {
 }
 

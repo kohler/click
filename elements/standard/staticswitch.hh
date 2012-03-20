@@ -28,7 +28,6 @@ class StaticSwitch : public Element {
  public:
 
   StaticSwitch();
-  ~StaticSwitch();
 
   const char *class_name() const		{ return "StaticSwitch"; }
   const char *port_count() const		{ return "1/-"; }

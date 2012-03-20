@@ -28,7 +28,6 @@ CLICK_DECLS
 class StripToNetworkHeader : public Element { public:
 
     StripToNetworkHeader();
-    ~StripToNetworkHeader();
 
     const char *class_name() const	{ return "StripToNetworkHeader"; }
     const char *port_count() const	{ return PORTS_1_1; }

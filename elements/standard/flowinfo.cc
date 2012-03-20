@@ -27,10 +27,6 @@ FlowInfo::FlowInfo()
 {
 }
 
-FlowInfo::~FlowInfo()
-{
-}
-
 int
 FlowInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {

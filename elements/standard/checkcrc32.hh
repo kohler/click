@@ -18,7 +18,6 @@ CLICK_DECLS
 class CheckCRC32 : public Element { public:
 
     CheckCRC32();
-    ~CheckCRC32();
 
     const char *class_name() const		{ return "CheckCRC32"; }
     const char *port_count() const		{ return PORTS_1_1; }

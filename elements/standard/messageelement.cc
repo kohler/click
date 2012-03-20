@@ -26,10 +26,6 @@ MessageElement::MessageElement()
 {
 }
 
-MessageElement::~MessageElement()
-{
-}
-
 int
 MessageElement::configure(Vector<String> &conf, ErrorHandler *errh)
 {

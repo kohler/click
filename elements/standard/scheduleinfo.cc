@@ -33,10 +33,6 @@ ScheduleInfo::ScheduleInfo()
 #endif
 }
 
-ScheduleInfo::~ScheduleInfo()
-{
-}
-
 int
 ScheduleInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {

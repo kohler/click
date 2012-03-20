@@ -8,10 +8,6 @@ DropBroadcasts::DropBroadcasts()
   _drops = 0;
 }
 
-DropBroadcasts::~DropBroadcasts()
-{
-}
-
 void
 DropBroadcasts::drop_it(Packet *p)
 {
