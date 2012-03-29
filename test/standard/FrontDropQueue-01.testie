@@ -1,0 +1,14 @@
+%info
+Tests that FrontDropQueue doesn't crash on live_reconfigure()
+
+%script
+click --simtime -e "
+Idle -> q::FrontDropQueue -> Discard;
+
+Script(write q.capacity 100,
+       wait 1,
+       write stop);
+"
+
+%expect stdout
+%expect stderr
