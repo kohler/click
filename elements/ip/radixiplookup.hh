@@ -68,6 +68,7 @@ elements.
 LinearIPLookup, SortedIPLookup, LinuxIPLookup
 */
 
+
 class RadixIPLookup : public IPRouteTable { public:
 
     RadixIPLookup();
@@ -77,25 +78,51 @@ class RadixIPLookup : public IPRouteTable { public:
     const char *port_count() const		{ return "1/-"; }
     const char *processing() const		{ return PUSH; }
 
+
     void cleanup(CleanupStage);
 
     int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
     int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
     int lookup_route(IPAddress, IPAddress&) const;
+    int find_lookup_key(IPAddress gw, int port);
     String dump_routes();
 
   private:
+	struct GWPort {
+    	IPAddress gw;
+    	int32_t port;
+	};
+
+
+    static inline int32_t combine_key(int32_t key, int32_t lookup_key) {
+	assert(lookup_key <= 0xff);
+	assert(key <= 0x00ffffff);
+	return ((lookup_key) << 24 | key);	
+    }
+
+    static inline int32_t get_key(int32_t comb) {
+	return (comb & 0x00ffffff);
+    }
+
+    static inline int32_t get_lookup_key(int32_t comb) {
+	return ((comb & 0xff000000) >> 24);
+    }
+
 
     class Radix;
 
     // Simple routing table
     Vector<IPRoute> _v;
     int _vfree;
+    
+    // Compressed routing table holding unique values of (gw, port).
+    Vector<GWPort> _lookup;
 
     int _default_key;
     Radix *_radix;
 
 };
+
 
 CLICK_ENDDECLS
 #endif
