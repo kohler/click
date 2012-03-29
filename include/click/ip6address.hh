@@ -26,7 +26,9 @@ class IP6Address { public:
 	memcpy(&_addr, x, sizeof(_addr));
     }
 
-    /** @brief Construct an IP6Address that represents an IPAddress. */
+    /** @brief Construct an IP6Address that represents an IPAddress.
+     *
+     * The address has format ::@a x. */
     explicit inline IP6Address(IPAddress x) {
 	memset(&_addr, 0, 12);
 	_addr.s6_addr32[3] = x.addr();
@@ -84,8 +86,34 @@ class IP6Address { public:
     inline bool matches_prefix(const IP6Address &addr, const IP6Address &mask) const;
     inline bool mask_as_specific(const IP6Address &) const;
 
-    bool ether_address(EtherAddress &) const;
-    bool ip4_address(IPAddress &) const;
+    /** @brief Test if this address contains an embedded Ethernet address.
+     *
+     * An IPv6 address with embedded Ethernet address has format
+     * "nnnn:nnnn:nnnn:nnnn:uuvv:wwFF:FExx:yyzz", where the embedded Ethernet
+     * address is "uu-vv-ww-xx-yy-zz". */
+    bool has_ether_address() const {
+	return _addr.s6_addr[11] == 0xFF && _addr.s6_addr[12] == 0xFE;
+    }
+
+    /** @brief Extract embedded Ethernet address into @a x.
+     * @param[out] x Ethernet address
+     * @return true iff has_ether_address() */
+    bool ether_address(EtherAddress &x) const;
+
+    /** @brief Test if this address contains an embedded IPv4 address.
+     *
+     * An IPv6 address with embedded IPv4 address has format either
+     * "::w.x.y.z" or "::FFFF:w.x.y.z", where the embedded IPv4 address is
+     * "w.x.y.z". */
+    bool has_ip4_address() const {
+	return _addr.s6_addr32[0] == 0 && _addr.s6_addr32[1] == 0
+	    && (_addr.s6_addr32[2] == 0 || _addr.s6_addr32[2] == htonl(0x0000FFFFU));
+    }
+
+    /** @brief Extract embedded IPv4 address into @a x.
+     * @param[out] x IPv4 address
+     * @return true iff has_ip4_address() */
+    bool ip4_address(IPAddress &x) const;
 
     // bool operator==(const IP6Address &, const IP6Address &);
     // bool operator!=(const IP6Address &, const IP6Address &);

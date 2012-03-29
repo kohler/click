@@ -94,12 +94,7 @@ IP6Address::mask_to_prefix_len() const
 bool
 IP6Address::ether_address(EtherAddress &mac) const
 {
-    /*
-     * embedded mac address look like this:
-     * nnnn:nnnn:nnnn:nnnn:xxxx:xxFF:FExx:xxxx
-     * where xx's are the mac address.
-     */
-    if (_addr.s6_addr[11] == 0xFF && _addr.s6_addr[12] == 0xFE) {
+    if (has_ether_address()) {
 	unsigned char *d = mac.data();
 	d[0] = _addr.s6_addr[8];
 	d[1] = _addr.s6_addr[9];
@@ -115,8 +110,7 @@ IP6Address::ether_address(EtherAddress &mac) const
 bool
 IP6Address::ip4_address(IPAddress &ip4) const
 {
-    if (_addr.s6_addr32[0] == 0 && _addr.s6_addr32[1] == 0
-	&& (_addr.s6_addr32[2] == 0 || _addr.s6_addr32[2] == htonl(0x0000FFFFU))) {
+    if (has_ip4_address()) {
 	ip4 = IPAddress(_addr.s6_addr32[3]);
 	return true;
     } else
