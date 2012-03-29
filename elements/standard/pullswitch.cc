@@ -69,9 +69,10 @@ PullSwitch::cleanup(CleanupStage)
 Packet *
 PullSwitch::pull(int)
 {
-    if (_input < 0)
+    if (_input < 0) {
+        _notifier.set_active(false, false);
 	return 0;
-    else if (Packet *p = input(_input).pull()) {
+    } else if (Packet *p = input(_input).pull()) {
 	_notifier.set_active(true, false);
 	return p;
     } else {
