@@ -1,0 +1,12 @@
+%info
+Tests Notifier and NotifierSignal functionality with the NotifierTest element.
+
+%require
+click-buildtool provides NotifierTest
+
+%script
+click -qe NotifierTest
+
+%expect stderr
+config:1:{{.*}}
+  All tests pass!
