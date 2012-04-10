@@ -143,8 +143,11 @@ NotifierSignal::hard_assign_vm(const NotifierSignal &x)
 	++n;
     if (likely((_v.vm = new vmpair[n + 1])))
 	memcpy(_v.vm, x._v.vm, sizeof(vmpair) * (n + 1));
-    else
-	*this = overderived_signal();
+    else {
+	// cannot call "*this = overderived_signal()" b/c _v.vm is invalid
+	_v.v1 = &static_value;
+	_mask = overderived_mask | true_mask;
+    }
 }
 
 void
