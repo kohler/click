@@ -148,10 +148,11 @@ class NotifierSignal { public:
      * Signal derivation is commutative and associative.  The following
      * special combinations are worth remembering:
      *
-     *  - An idle() signal plus any other signal @a a equals @a a.  Thus,
+     *  - An idle signal plus any other signal @a a equals @a a.  Thus,
      *    idle_signal() is the identity for signal derivation.
-     *  - A busy() signal plus any other signal is busy().  Thus,
+     *  - A busy signal plus any other signal is busy().  Thus,
      *    busy_signal() is the "zero element" for signal derivation.
+     *  - overderived_signal() plus busy_signal() equals busy_signal().
      *
      * @sa NotifierSignal::operator+= */
     friend NotifierSignal operator+(NotifierSignal a, const NotifierSignal &b);
