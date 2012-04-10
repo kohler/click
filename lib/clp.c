@@ -2,7 +2,7 @@
 /* clp.c - Complete source code for CLP.
  * This file is part of CLP, the command line parser package.
  *
- * Copyright (c) 1997-2008 Eddie Kohler, ekohler@gmail.com
+ * Copyright (c) 1997-2011 Eddie Kohler, ekohler@gmail.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -274,7 +274,7 @@ encode_utf8(char *s, int n, int c)
 }
 
 static int
-decode_utf8(const char *s, char **cp)
+decode_utf8(const char *s, const char **cp)
 {
     int c;
     if ((unsigned char) *s <= 0x7F)		/* 1 byte:  0x000000-0x00007F */
@@ -318,14 +318,14 @@ decode_utf8(const char *s, char **cp)
 	    /* nothing */;
     }
     if (cp)
-	*cp = (char *) s;
+	*cp = s;
     return c;
 }
 
 static int
 utf8_charlen(const char *s)
 {
-    char *sout;
+    const char *sout;
     (void) decode_utf8(s, &sout);
     return sout - s;
 }
@@ -363,7 +363,7 @@ long_as_short(const Clp_Internal *cli, const Clp_Option *o,
     if ((cli->long1pos || cli->long1neg) && io->ilong) {
 	const char *name = o->long_name + io->ilongoff;
 	if (cli->utf8) {
-	    int c = decode_utf8(name, (char **) &name);
+	    int c = decode_utf8(name, &name);
 	    if (!*name && c && c != U_REPLACEMENT)
 		return c;
 	} else if (name[0] && !name[1])
@@ -487,6 +487,7 @@ Clp_NewParser(int argc, const char * const *argv, int nopt, const Clp_Option *op
     if (!clp || !cli || !iopt || !cli->valtype)
 	goto failed;
 
+    clp->opt = -1;
     clp->negated = 0;
     clp->have_val = 0;
     clp->vstr = 0;
@@ -615,6 +616,13 @@ Clp_SetUTF8(Clp_Parser *clp, int utf8)
     return old_utf8;
 }
 
+/** @param clp the parser
+ * @param c character
+ * @return option character treatment
+ *
+ * Returns an integer specifying how CLP treats arguments that begin
+ * with character @a c.  See Clp_SetOptionChar for possibilities.
+ */
 int
 Clp_OptionChar(Clp_Parser *clp, int c)
 {
@@ -1062,22 +1070,22 @@ parse_string(Clp_Parser *clp, const char *arg, int complain, void *user_data)
 static int
 parse_int(Clp_Parser *clp, const char *arg, int complain, void *user_data)
 {
-    char *val;
+    const char *val;
     if (*arg == 0 || isspace((unsigned char) *arg)
 	|| (user_data != 0 && *arg == '-'))
-	val = (char *) arg;
+	val = arg;
     else if (user_data != 0) {	/* unsigned */
 #if HAVE_STRTOUL
-	clp->val.u = strtoul(arg, &val, 0);
+	clp->val.u = strtoul(arg, (char **) &val, 0);
 #else
 	/* don't bother really trying to do it right */
 	if (arg[0] == '-')
-	    val = (char *) arg;
+	    val = arg;
 	else
-	    clp->val.u = strtol(arg, &val, 0);
+	    clp->val.u = strtol(arg, (char **) &val, 0);
 #endif
     } else
-	clp->val.i = strtol(arg, &val, 0);
+	clp->val.i = strtol(arg, (char **) &val, 0);
     if (*arg != 0 && *val == 0)
 	return 1;
     else if (complain) {
@@ -1092,12 +1100,12 @@ parse_int(Clp_Parser *clp, const char *arg, int complain, void *user_data)
 static int
 parse_double(Clp_Parser *clp, const char *arg, int complain, void *user_data)
 {
-    char *val;
+    const char *val;
     (void)user_data;
     if (*arg == 0 || isspace((unsigned char) *arg))
-	val = (char *) arg;
+	val = arg;
     else
-	clp->val.d = strtod(arg, &val);
+	clp->val.d = strtod(arg, (char **) &val);
     if (*arg != 0 && *val == 0)
 	return 1;
     else if (complain)
@@ -1164,21 +1172,24 @@ parse_string_list(Clp_Parser *clp, const char *arg, int complain, void *user_dat
     }
 
     if (complain) {
-	const char *complaint = (ambiguous ? "ambiguous" : "invalid");
-	if (!ambiguous) {
+	const char *complaint;
+	if (ambiguous)
+	    complaint = "ambiguous value %<%s%> for option %<%O%>";
+	else {
+	    complaint = "unknown value %<%s%> for option %<%O%>";
 	    ambiguous = sl->nitems_invalid_report;
 	    for (idx = 0; idx < ambiguous; idx++)
 		ambiguous_values[idx] = idx;
 	}
 	return ambiguity_error
 	    (clp, ambiguous, ambiguous_values, sl->items, sl->iopt,
-	     "", "option %<%O%> value %<%s%> is %s", arg, complaint);
+	     "", complaint, arg);
     } else
 	return 0;
 }
 
 
-int
+static int
 finish_string_list(Clp_Parser *clp, int val_type, int flags,
 		   Clp_Option *items, int nitems, int itemscap)
 {
@@ -1506,7 +1517,7 @@ get_oclass(Clp_Parser *clp, const char *text, int *ocharskip)
 {
     int c;
     if (clp->internal->utf8) {
-	char *s;
+	const char *s;
 	c = decode_utf8(text, &s);
 	*ocharskip = s - text;
     } else {
@@ -1805,7 +1816,8 @@ Clp_Next(Clp_Parser *clp)
     /* Get the next argument or option */
     if (!next_argument(clp, cli->option_processing ? 0 : 2)) {
 	clp->val.s = clp->vstr;
-	return clp->have_val ? Clp_NotOption : Clp_Done;
+	clp->opt = clp->have_val ? Clp_NotOption : Clp_Done;
+	return clp->opt;
     }
 
     clp->negated = cli->whole_negated;
@@ -1843,7 +1855,7 @@ Clp_Next(Clp_Parser *clp)
 	    Clp_OptionError(clp, "unrecognized option %<%s%s%>",
 			    cli->option_chars, cli->xtext);
 
-	return Clp_BadOption;
+	return (clp->opt = Clp_BadOption);
     }
 
     /* Set the current option */
@@ -1855,20 +1867,21 @@ Clp_Next(Clp_Parser *clp)
     if (clp->negated
 	|| (!cli->iopt[optno].imandatory && !cli->iopt[optno].ioptional)) {
 	if (clp->have_val) {
-	    Clp_OptionError(clp, "%<%O%> can%'t take an argument");
-	    return Clp_BadOption;
+	    Clp_OptionError(clp, "%<%O%> can%,t take an argument");
+	    clp->opt = Clp_BadOption;
 	} else
-	    return cli->opt[optno].option_id;
+	    clp->opt = cli->opt[optno].option_id;
+	return clp->opt;
     }
 
     /* Get an argument if we need one, or if it's optional */
     /* Sanity-check the argument type. */
     opt = &cli->opt[optno];
     if (opt->val_type <= 0)
-	return Clp_Error;
+	return (clp->opt = Clp_Error);
     vtpos = val_type_binsearch(cli, opt->val_type);
     if (vtpos == cli->nvaltype || cli->valtype[vtpos].val_type != opt->val_type)
-	return Clp_Error;
+	return (clp->opt = Clp_Error);
 
     /* complain == 1 only if the argument was explicitly given,
        or it is mandatory. */
@@ -1888,14 +1901,16 @@ Clp_Next(Clp_Parser *clp)
 		Clp_OptionError(clp, "%<%O%> requires a non-option argument");
 	    else
 		Clp_OptionError(clp, "%<%O%> requires an argument");
-	    return Clp_BadOption;
+	    return (clp->opt = Clp_BadOption);
 	}
 
     } else if (cli->is_short && !clp->have_val
-	       && cli->xtext[clp_utf8_charlen(cli, cli->xtext)])
+	       && cli->xtext[clp_utf8_charlen(cli, cli->xtext)]) {
 	/* The -[option]argument case:
 	   Assume that the rest of the current string is the argument. */
 	next_argument(clp, 1);
+	complain = 1;
+    }
 
     /* Parse the argument */
     if (clp->have_val) {
@@ -1903,14 +1918,14 @@ Clp_Next(Clp_Parser *clp)
 	if (atr->func(clp, clp->vstr, complain, atr->user_data) <= 0) {
 	    /* parser failed */
 	    clp->have_val = 0;
-	    if (cli->iopt[optno].imandatory)
-		return Clp_BadOption;
+	    if (complain)
+		return (clp->opt = Clp_BadOption);
 	    else
 		Clp_RestoreParser(clp, &clpsave);
 	}
     }
 
-    return opt->option_id;
+    return (clp->opt = opt->option_id);
 }
 
 
@@ -2111,7 +2126,8 @@ Clp_VaOptionError(Clp_Parser *clp, Clp_BuildString *bs,
 	    append_build_string(bs, (cli->utf8 ? "\342\200\230" : "'"), -1);
 	    break;
 
-	  case '\'':
+	  case '\'':		/* backwards compatibility */
+	  case ',':
 	  case '>':
 	    append_build_string(bs, (cli->utf8 ? "\342\200\231" : "'"), -1);
 	    break;
@@ -2183,7 +2199,7 @@ do_error(Clp_Parser *clp, Clp_BuildString *bs)
  * <dt><tt>%</tt><tt>&gt;</tt></dt>
  * <dd>Prints a closing quote string.  In UTF-8 mode, prints a right single
  * quote.  Otherwise prints a single quote.</dd>
- * <dt><tt>%</tt><tt>'</tt></dt>
+ * <dt><tt>%</tt><tt>,</tt></dt>
  * <dd>Prints an apostrophe.  In UTF-8 mode, prints a right single quote.
  * Otherwise prints a single quote.</dd>
  * </dl>

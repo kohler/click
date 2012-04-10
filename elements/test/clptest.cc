@@ -314,7 +314,7 @@ CLPTest::initialize(ErrorHandler *errh)
     CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->val.i == 3);
     CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->val.i == 3);
     CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "option \342\200\230--animal\342\200\231 value \342\200\230c\342\200\231 is ambiguous\n(Possibilities are \342\200\230cat\342\200\231 and \342\200\230cattle\342\200\231.)\n");
+    CHECK(sa.take_string() == "ambiguous value \342\200\230c\342\200\231 for option \342\200\230--animal\342\200\231\n(Possibilities are \342\200\230cat\342\200\231 and \342\200\230cattle\342\200\231.)\n");
     CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->val.i == 4);
     CHECK(Clp_Next(clp) == Clp_Done);
 

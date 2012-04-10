@@ -8,7 +8,7 @@ extern "C" {
 /* clp.h - Public interface to CLP.
  * This file is part of CLP, the command line parser package.
  *
- * Copyright (c) 1997-2008 Eddie Kohler, ekohler@gmail.com
+ * Copyright (c) 1997-2011 Eddie Kohler, ekohler@gmail.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -165,6 +165,8 @@ typedef void (*Clp_ErrorHandler)(Clp_Parser *clp, const char *message);
  * value types, and current arguments.
  * @sa Clp_NewParser, Clp_SetOptions, Clp_SetArguments */
 struct Clp_Parser {
+    int opt;			/**< The last option. */
+
     int negated;		/**< Whether the last option was negated. */
 
     int have_val;		/**< Whether the last option had a value. */
@@ -194,6 +196,14 @@ struct Clp_Parser {
     struct Clp_Internal *internal;
 };
 
+/** @cond never */
+#if __GNUC__ >= 4
+# define CLP_SENTINEL		__attribute__((sentinel))
+#else
+# define CLP_SENTINEL		/* nothing */
+#endif
+/** @endcond never */
+
 
 /** @brief Create a new Clp_Parser. */
 Clp_Parser *Clp_NewParser(int argc, const char * const *argv,
@@ -215,6 +225,9 @@ Clp_ErrorHandler Clp_SetErrorHandler(Clp_Parser *clp, Clp_ErrorHandler errh);
 
 /** @brief Set @a clp's UTF-8 mode. */
 int Clp_SetUTF8(Clp_Parser *clp, int utf8);
+
+/** @brief Return @a clp's treatment of character @a c. */
+int Clp_OptionChar(Clp_Parser *clp, int c);
 
 /** @brief Set @a clp's treatment of character @a c. */
 int Clp_SetOptionChar(Clp_Parser *clp, int c, int type);
@@ -250,7 +263,8 @@ int Clp_AddStringListTypeVec(Clp_Parser *clp, int val_type, int flags,
 			     const int *vals);
 
 /** @brief Define a new string list value type for @a clp. */
-int Clp_AddStringListType(Clp_Parser *clp, int val_type, int flags, ...);
+int Clp_AddStringListType(Clp_Parser *clp, int val_type, int flags, ...)
+			  CLP_SENTINEL;
 
 
 /** @brief Parse and return the next argument from @a clp. */
@@ -282,6 +296,7 @@ int Clp_CurOptionNameBuf(Clp_Parser *clp, char *buf, int len);
 /** @brief Extract the current option as a string. */
 const char *Clp_CurOptionName(Clp_Parser *clp);
 
+#undef CLP_SENTINEL
 #ifdef __cplusplus
 }
 #endif
