@@ -772,6 +772,8 @@ Clp_SetOptions(Clp_Parser *clp, int nopt, const Clp_Option *opt)
 
     /* Massage the options to make them usable */
     for (i = 0; i < nopt; ++i) {
+	memset(&iopt[i], 0, sizeof(iopt[i]));
+
 	/* Ignore negative option_ids, which are internal to CLP */
 	if (opt[i].option_id < 0) {
 	    Clp_OptionError(clp, "CLP internal error: option %d has negative option_id", i);
