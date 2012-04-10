@@ -429,6 +429,18 @@ compare_options(Clp_Parser *clp, const Clp_Option *o1, Clp_InternOption *io1,
     }
 }
 
+static void
+calculate_lmm(Clp_Parser *clp, const Clp_Option *opt, Clp_InternOption *iopt, int nopt)
+{
+    int i, j;
+    for (i = 0; i < nopt; ++i) {
+	iopt[i].lmmpos = iopt[i].lmmneg = 1;
+	iopt[i].lmmpos_short = iopt[i].lmmneg_short = 0;
+	for (j = 0; j < nopt; ++j)
+	    compare_options(clp, &opt[i], &iopt[i], &opt[j], &iopt[j]);
+    }
+}
+
 /** @param argc number of arguments
  * @param argv argument array
  * @param nopt number of option definitions
@@ -597,15 +609,9 @@ int
 Clp_SetUTF8(Clp_Parser *clp, int utf8)
 {
     Clp_Internal *cli = clp->internal;
-    int i, j, old_utf8 = cli->utf8;
+    int old_utf8 = cli->utf8;
     cli->utf8 = utf8;
-    for (i = 0; i < cli->nopt; ++i) {
-	cli->iopt[i].lmmpos = cli->iopt[i].lmmneg = 1;
-	cli->iopt[i].lmmpos_short = cli->iopt[i].lmmneg_short = 0;
-	for (j = 0; j < cli->nopt; ++j)
-	    compare_options(clp, &cli->opt[i], &cli->iopt[i],
-			    &cli->opt[j], &cli->iopt[j]);
-    }
+    calculate_lmm(clp, cli->opt, cli->iopt, cli->nopt);
     return old_utf8;
 }
 
@@ -670,7 +676,7 @@ Clp_OptionChar(Clp_Parser *clp, int c)
 int
 Clp_SetOptionChar(Clp_Parser *clp, int c, int type)
 {
-    int i, j, long1pos, long1neg;
+    int i, long1pos, long1neg;
     int old = Clp_OptionChar(clp, c);
     Clp_Internal *cli = clp->internal;
 
@@ -709,13 +715,7 @@ Clp_SetOptionChar(Clp_Parser *clp, int c, int type)
 	/* Must recheck option set */
 	cli->long1pos = long1pos;
 	cli->long1neg = long1neg;
-	for (i = 0; i < cli->nopt; ++i) {
-	    cli->iopt[i].lmmpos = cli->iopt[i].lmmneg = 1;
-	    cli->iopt[i].lmmpos_short = cli->iopt[i].lmmneg_short = 0;
-	    for (j = 0; j < cli->nopt; ++j)
-		compare_options(clp, &cli->opt[i], &cli->iopt[i],
-				&cli->opt[j], &cli->iopt[j]);
-	}
+	calculate_lmm(clp, cli->opt, cli->iopt, cli->nopt);
     }
 
     return old;
@@ -753,7 +753,7 @@ Clp_SetOptions(Clp_Parser *clp, int nopt, const Clp_Option *opt)
 {
     Clp_Internal *cli = clp->internal;
     Clp_InternOption *iopt;
-    int i, j;
+    int i;
     static unsigned opt_generation = 0;
 
     if (nopt > cli->nopt) {
@@ -771,7 +771,7 @@ Clp_SetOptions(Clp_Parser *clp, int nopt, const Clp_Option *opt)
     cli->current_option = -1;
 
     /* Massage the options to make them usable */
-    for (i = 0; i < nopt; i++) {
+    for (i = 0; i < nopt; ++i) {
 	/* Ignore negative option_ids, which are internal to CLP */
 	if (opt[i].option_id < 0) {
 	    Clp_OptionError(clp, "CLP internal error: option %d has negative option_id", i);
@@ -810,12 +810,7 @@ Clp_SetOptions(Clp_Parser *clp, int nopt, const Clp_Option *opt)
     }
 
     /* Check option set */
-    for (i = 0; i < nopt; ++i) {
-	iopt[i].lmmpos = iopt[i].lmmneg = 1;
-	iopt[i].lmmpos_short = iopt[i].lmmneg_short = 0;
-	for (j = 0; j < nopt; ++j)
-	    compare_options(clp, &opt[i], &iopt[i], &opt[j], &iopt[j]);
-    }
+    calculate_lmm(clp, opt, iopt, nopt);
 
     return 0;
 }
@@ -1185,7 +1180,7 @@ int
 finish_string_list(Clp_Parser *clp, int val_type, int flags,
 		   Clp_Option *items, int nitems, int itemscap)
 {
-    int i, j;
+    int i;
     Clp_StringList *clsl = (Clp_StringList *)malloc(sizeof(Clp_StringList));
     Clp_InternOption *iopt = (Clp_InternOption *)malloc(sizeof(Clp_InternOption) * nitems);
     if (!clsl || !iopt)
@@ -1207,12 +1202,8 @@ finish_string_list(Clp_Parser *clp, int val_type, int flags,
     for (i = 0; i < nitems; i++) {
 	iopt[i].ilong = iopt[i].ipos = 1;
 	iopt[i].ishort = iopt[i].ineg = iopt[i].ilongoff = iopt[i].iprefmatch = 0;
-	iopt[i].lmmpos = 1;
-	iopt[i].lmmpos_short = 0;
     }
-    for (i = 0; i < nitems; i++)
-	for (j = 0; j < nitems; j++)
-	    compare_options(clp, &items[i], &iopt[i], &items[j], &iopt[j]);
+    calculate_lmm(clp, items, iopt, nitems);
 
     if (Clp_AddType(clp, val_type, 0, parse_string_list, clsl) >= 0)
 	return 0;
