@@ -110,6 +110,7 @@ InfiniteSource::cleanup(CleanupStage)
 {
     if (_packet)
 	_packet->kill();
+    delete _end_h;
 }
 
 bool
