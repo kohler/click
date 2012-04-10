@@ -27,7 +27,6 @@ Write this handler to block execution for a specified number of seconds.
 class BlockThread : public Element { public:
 
     BlockThread();
-    ~BlockThread();
 
     const char *class_name() const	{ return "BlockThread"; }
 

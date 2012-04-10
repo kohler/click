@@ -23,7 +23,6 @@ integer functions, at initialization time. It does not route packets.
 class FunctionTest : public Element { public:
 
     FunctionTest();
-    ~FunctionTest();
 
     const char *class_name() const		{ return "FunctionTest"; }
 

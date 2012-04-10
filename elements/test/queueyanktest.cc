@@ -27,10 +27,6 @@ QueueYankTest::QueueYankTest()
 {
 }
 
-QueueYankTest::~QueueYankTest()
-{
-}
-
 int
 QueueYankTest::configure(Vector<String> &conf, ErrorHandler *errh)
 {

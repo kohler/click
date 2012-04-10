@@ -64,7 +64,6 @@ Unschedule the TimerTest's timer.
 class TimerTest : public Element { public:
 
     TimerTest();
-    ~TimerTest();
 
     const char *class_name() const		{ return "TimerTest"; }
 

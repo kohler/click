@@ -23,7 +23,6 @@ initialization time. It does not route packets.
 class CryptoTest : public Element { public:
 
     CryptoTest();
-    ~CryptoTest();
 
     const char *class_name() const		{ return "CryptoTest"; }
 

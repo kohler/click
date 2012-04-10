@@ -47,7 +47,6 @@ ScheduleInfo
 class HandlerTask : public Element { public:
 
     HandlerTask();
-    ~HandlerTask();
 
     const char *class_name() const		{ return "HandlerTask"; }
 

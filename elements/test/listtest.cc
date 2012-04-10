@@ -30,10 +30,6 @@ ListTest::ListTest()
 {
 }
 
-ListTest::~ListTest()
-{
-}
-
 namespace {
 struct stringlistentry {
     String s;

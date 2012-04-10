@@ -31,10 +31,6 @@ ComparePackets::ComparePackets()
     memset(_diff_details, 0, sizeof(_diff_details));
 }
 
-ComparePackets::~ComparePackets()
-{
-}
-
 int
 ComparePackets::configure(Vector<String> &conf, ErrorHandler *errh)
 {

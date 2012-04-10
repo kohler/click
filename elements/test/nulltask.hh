@@ -55,7 +55,6 @@ ScheduleInfo
 class NullTask : public Element { public:
 
     NullTask();
-    ~NullTask();
 
     const char *class_name() const		{ return "NullTask"; }
 

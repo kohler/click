@@ -27,10 +27,6 @@ BlockThread::BlockThread()
 {
 }
 
-BlockThread::~BlockThread()
-{
-}
-
 int
 BlockThread::handler(int, String &str, Element *, const Handler *, ErrorHandler *errh)
 {

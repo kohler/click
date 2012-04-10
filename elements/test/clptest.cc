@@ -30,10 +30,6 @@ CLPTest::CLPTest()
 {
 }
 
-CLPTest::~CLPTest()
-{
-}
-
 static const Clp_Option options_x1[] = {
     { "a", 0, 1, 0, 0 },
     { 0, 'a', 2, 0, 0 }

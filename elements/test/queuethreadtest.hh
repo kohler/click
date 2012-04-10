@@ -26,7 +26,6 @@ runs regression tests for Queue threading
 class QueueThreadTest1 : public Element { public:
 
     QueueThreadTest1();
-    ~QueueThreadTest1();
 
     const char *class_name() const		{ return "QueueThreadTest1"; }
     const char *port_count() const		{ return PORTS_0_1; }
@@ -60,7 +59,6 @@ runs regression tests for Queue threading
 class QueueThreadTest2 : public Element { public:
 
     QueueThreadTest2();
-    ~QueueThreadTest2();
 
     const char *class_name() const		{ return "QueueThreadTest2"; }
     const char *port_count() const		{ return PORTS_1_0; }

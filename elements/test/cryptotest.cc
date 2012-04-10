@@ -26,10 +26,6 @@ CryptoTest::CryptoTest()
 {
 }
 
-CryptoTest::~CryptoTest()
-{
-}
-
 static int
 md5_test(const char *s, size_t len, const char *expected_digest,
 	 ErrorHandler *errh, const char *file, int line)

@@ -23,7 +23,6 @@ time. It does not route packets.
 class TokenBucketTest : public Element { public:
 
     TokenBucketTest();
-    ~TokenBucketTest();
 
     const char *class_name() const		{ return "TokenBucketTest"; }
 

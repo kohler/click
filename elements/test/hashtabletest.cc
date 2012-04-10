@@ -31,10 +31,6 @@ HashTableTest::HashTableTest()
 {
 }
 
-HashTableTest::~HashTableTest()
-{
-}
-
 #if 0
 # define MAP_S2I HashMap<String, int>
 # define MAP_VALUE(m, k) (m).find((k))

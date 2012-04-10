@@ -30,11 +30,7 @@ FunctionTest::FunctionTest()
 {
 }
 
-FunctionTest::~FunctionTest()
-{
-}
-
-#define CHECK(x) if (!(x)) return errh->error("%s:%d: test `%s' failed", __FILE__, __LINE__, #x);
+#define CHECK(x) if (!(x)) return errh->error("%s:%d: test %<%s%> failed", __FILE__, __LINE__, #x);
 
 int
 FunctionTest::initialize(ErrorHandler *errh)

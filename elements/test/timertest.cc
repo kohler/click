@@ -29,10 +29,6 @@ TimerTest::TimerTest()
 {
 }
 
-TimerTest::~TimerTest()
-{
-}
-
 int
 TimerTest::configure(Vector<String> &conf, ErrorHandler *errh)
 {

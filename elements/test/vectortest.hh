@@ -23,7 +23,6 @@ does not route packets.
 class VectorTest : public Element { public:
 
     VectorTest();
-    ~VectorTest();
 
     const char *class_name() const		{ return "VectorTest"; }
 

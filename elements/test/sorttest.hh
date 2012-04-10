@@ -58,7 +58,6 @@ Default is false.
 class SortTest : public Element { public:
 
     SortTest();
-    ~SortTest();
 
     const char *class_name() const		{ return "SortTest"; }
 

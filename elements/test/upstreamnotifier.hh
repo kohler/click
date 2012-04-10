@@ -34,7 +34,6 @@ PullNull, Script, InfiniteSource
 class UpstreamNotifier : public Element { public:
 
   UpstreamNotifier();
-  ~UpstreamNotifier();
 
   const char *class_name() const	{ return "UpstreamNotifier"; }
   const char *port_count() const	{ return PORTS_1_1; }

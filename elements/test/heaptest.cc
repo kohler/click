@@ -27,10 +27,6 @@ HeapTest::HeapTest()
 {
 }
 
-HeapTest::~HeapTest()
-{
-}
-
 #define CHECK(x) if (!(x)) return errh->error("%s:%d: test %<%s%> failed", __FILE__, __LINE__, #x);
 #define CHECK_PLACE(v) for (int iii = 0; iii < (v).size(); ++iii) if ((v)[iii].second != iii) return errh->error("%s:%d: place failed at position %d", __FILE__, __LINE__, iii);
 

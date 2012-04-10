@@ -27,10 +27,6 @@ NotifierDebug::NotifierDebug()
 {
 }
 
-NotifierDebug::~NotifierDebug()
-{
-}
-
 int
 NotifierDebug::initialize(ErrorHandler *)
 {

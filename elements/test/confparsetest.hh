@@ -11,7 +11,7 @@ ConfParseTest()
 
 =s test
 
-runs regression tests for configuration parsing
+run regression tests for configuration parsing
 
 =d
 
@@ -23,7 +23,6 @@ time. It does not route packets.
 class ConfParseTest : public Element { public:
 
     ConfParseTest();
-    ~ConfParseTest();
 
     const char *class_name() const		{ return "ConfParseTest"; }
 

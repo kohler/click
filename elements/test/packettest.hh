@@ -25,7 +25,6 @@ CheckPacket */
 class PacketTest : public Element { public:
 
     PacketTest();
-    ~PacketTest();
 
     const char *class_name() const		{ return "PacketTest"; }
 

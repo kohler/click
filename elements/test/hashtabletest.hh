@@ -23,7 +23,6 @@ does not route packets.
 class HashTableTest : public Element { public:
 
     HashTableTest();
-    ~HashTableTest();
 
     const char *class_name() const		{ return "HashTableTest"; }
 

@@ -32,10 +32,6 @@ BigHashMapTest::BigHashMapTest()
 {
 }
 
-BigHashMapTest::~BigHashMapTest()
-{
-}
-
 #define CHECK(x) if (!(x)) return errh->error("%s:%d: test `%s' failed", __FILE__, __LINE__, #x);
 #define CHECK_DATA(x, y, l) CHECK(memcmp((x), (y), (l)) == 0)
 

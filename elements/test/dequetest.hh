@@ -23,7 +23,6 @@ route packets.
 class DequeTest : public Element { public:
 
     DequeTest();
-    ~DequeTest();
 
     const char *class_name() const		{ return "DequeTest"; }
 

@@ -27,10 +27,6 @@ PacketTest::PacketTest()
 {
 }
 
-PacketTest::~PacketTest()
-{
-}
-
 #define CHECK(x) if (!(x)) return errh->error("%s:%d: test `%s' failed", __FILE__, __LINE__, #x);
 #define CHECK_DATA(x, y, l) CHECK(memcmp((x), (y), (l)) == 0)
 #define CHECK_ALIGNED(x) CHECK((reinterpret_cast<uintptr_t>((x)) & 3) == 0)

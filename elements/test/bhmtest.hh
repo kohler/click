@@ -23,7 +23,6 @@ does not route packets.
 class BigHashMapTest : public Element { public:
 
     BigHashMapTest();
-    ~BigHashMapTest();
 
     const char *class_name() const		{ return "BigHashMapTest"; }
 

@@ -33,10 +33,6 @@ BigintTest::BigintTest()
 {
 }
 
-BigintTest::~BigintTest()
-{
-}
-
 #define CHECK(x, a, b) if (!(x)) return errh->error("%s:%d: test `%s' failed [%llu, %u]", __FILE__, __LINE__, #x, a, b);
 #define CHECK0(x) if (!(x)) return errh->error("%s:%d: test `%s' failed", __FILE__, __LINE__, #x);
 

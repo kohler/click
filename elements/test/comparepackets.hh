@@ -51,7 +51,6 @@ PacketTest */
 class ComparePackets : public Element { public:
 
     ComparePackets();
-    ~ComparePackets();
 
     const char *class_name() const		{ return "ComparePackets"; }
     const char *port_count() const		{ return "2/2"; }

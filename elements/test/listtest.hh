@@ -22,7 +22,6 @@ packets.
 class ListTest : public Element { public:
 
     ListTest();
-    ~ListTest();
 
     const char *class_name() const		{ return "ListTest"; }
 

@@ -30,10 +30,6 @@ SortTest::SortTest()
 {
 }
 
-SortTest::~SortTest()
-{
-}
-
 static const char * const unsorted_classes[] = {
 "ToyTCP",
 "SetIPDSCP",

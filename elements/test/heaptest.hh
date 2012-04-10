@@ -23,7 +23,6 @@ time. It does not route packets.
 class HeapTest : public Element { public:
 
     HeapTest();
-    ~HeapTest();
 
     const char *class_name() const		{ return "HeapTest"; }
 

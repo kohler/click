@@ -30,10 +30,6 @@ HandlerTask::HandlerTask()
 {
 }
 
-HandlerTask::~HandlerTask()
-{
-}
-
 int
 HandlerTask::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -62,7 +62,6 @@ PacketTest */
 class QueueYankTest : public Element { public:
 
     QueueYankTest();
-    ~QueueYankTest();
 
     const char *class_name() const		{ return "QueueYankTest"; }
 

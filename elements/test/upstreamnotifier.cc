@@ -27,10 +27,6 @@ UpstreamNotifier::UpstreamNotifier()
 {
 }
 
-UpstreamNotifier::~UpstreamNotifier()
-{
-}
-
 void *
 UpstreamNotifier::cast(const char *n)
 {

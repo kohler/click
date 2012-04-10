@@ -28,10 +28,6 @@ NullTask::NullTask()
 {
 }
 
-NullTask::~NullTask()
-{
-}
-
 int
 NullTask::configure(Vector<String> &conf, ErrorHandler *errh)
 {

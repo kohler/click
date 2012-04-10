@@ -23,7 +23,6 @@ time.
 class ErrorTest : public Element { public:
 
     ErrorTest();
-    ~ErrorTest();
 
     const char *class_name() const		{ return "ErrorTest"; }
 

@@ -26,10 +26,6 @@ CheckPacket::CheckPacket()
 {
 }
 
-CheckPacket::~CheckPacket()
-{
-}
-
 int
 CheckPacket::configure(Vector<String> &conf, ErrorHandler *errh)
 {

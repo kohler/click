@@ -23,7 +23,6 @@ initialization time. It does not route packets.
 class CLPTest : public Element { public:
 
     CLPTest();
-    ~CLPTest();
 
     const char *class_name() const		{ return "CLPTest"; }
 

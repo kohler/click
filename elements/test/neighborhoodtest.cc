@@ -29,10 +29,6 @@ NeighborhoodTest::NeighborhoodTest()
 {
 }
 
-NeighborhoodTest::~NeighborhoodTest()
-{
-}
-
 Packet *
 NeighborhoodTest::simple_action(Packet *p)
 {

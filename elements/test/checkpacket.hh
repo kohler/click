@@ -60,7 +60,6 @@ PacketTest */
 class CheckPacket : public Element { public:
 
     CheckPacket();
-    ~CheckPacket();
 
     const char *class_name() const		{ return "CheckPacket"; }
     const char *port_count() const		{ return PORTS_1_1; }

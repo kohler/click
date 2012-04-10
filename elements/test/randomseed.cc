@@ -26,10 +26,6 @@ RandomSeed::RandomSeed()
 {
 }
 
-RandomSeed::~RandomSeed()
-{
-}
-
 int
 RandomSeed::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -44,10 +44,6 @@ ErrorTest::ErrorTest()
 {
 }
 
-ErrorTest::~ErrorTest()
-{
-}
-
 #define CHECK(text) if (!errh.check((text))) return init_errh->error("%s:%d: test %<%s%> failed, got %<%.*s%>", __FILE__, __LINE__, (text), errh._last_text.length(), errh._last_text.data());
 
 int

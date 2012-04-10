@@ -27,10 +27,6 @@ QueueThreadTest1::QueueThreadTest1()
 {
 }
 
-QueueThreadTest1::~QueueThreadTest1()
-{
-}
-
 extern "C" {
 static void *queue_thread_pusher(void *arg)
 {
@@ -80,10 +76,6 @@ QueueThreadTest1::cleanup(CleanupStage stage)
 
 QueueThreadTest2::QueueThreadTest2()
     : _task(this)
-{
-}
-
-QueueThreadTest2::~QueueThreadTest2()
 {
 }
 

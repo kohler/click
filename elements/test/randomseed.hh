@@ -30,7 +30,6 @@ Write this handler to reset the random seed, either to a particular value or
 class RandomSeed : public Element { public:
 
     RandomSeed();
-    ~RandomSeed();
 
     const char *class_name() const	{ return "RandomSeed"; }
 
