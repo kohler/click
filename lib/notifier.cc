@@ -32,9 +32,9 @@
 CLICK_DECLS
 
 // should be const, but we need to explicitly initialize it
-atomic_uint32_t NotifierSignal::static_value;
 const char Notifier::EMPTY_NOTIFIER[] = "empty";
 const char Notifier::FULL_NOTIFIER[] = "full";
+const NotifierSignal::value_type NotifierSignal::static_values[] = {1, 0, 1, 0};
 
 /** @file notifier.hh
  * @brief Support for activity signals.
@@ -112,7 +112,6 @@ const char Notifier::FULL_NOTIFIER[] = "full";
 void
 NotifierSignal::static_initialize()
 {
-    static_value = true_mask | overderived_mask;
 }
 
 NotifierSignal &
@@ -122,15 +121,13 @@ NotifierSignal::operator+=(const NotifierSignal &x)
     // leads to overderived_signal()
     if (idle() || (x.busy() && *this != busy_signal()) || !x.initialized())
 	*this = x;
-    else if (busy() || !initialized() || x.idle())
+    else if (busy() || !initialized() || x.idle() || _v.v == x._v.v)
 	/* do nothing */;
-    else if (_mask && x._mask && _v.v1 == x._v.v1)
-	_mask |= x._mask;
-    else if (x._mask)
-	hard_derive_one(x._v.v1, x._mask);
-    else if (this != &x)
-	for (vmpair *vm = x._v.vm; vm->mask; ++vm)
-	    hard_derive_one(vm->value, vm->mask);
+    else if (*x._v.v != 2)
+	hard_derive_one(x._v.v);
+    else
+	for (value_type **vm = x._v.vp + 1; *vm; ++vm)
+	    hard_derive_one(*vm);
 
     return *this;
 }
@@ -138,102 +135,95 @@ NotifierSignal::operator+=(const NotifierSignal &x)
 void
 NotifierSignal::hard_assign_vm(const NotifierSignal &x)
 {
-    size_t n = 0;
-    for (vmpair *vm = x._v.vm; vm->mask; ++vm)
+    size_t n = 1;
+    for (value_type **vm = x._v.vp + 1; *vm; ++vm)
 	++n;
-    if (likely((_v.vm = new vmpair[n + 1])))
-	memcpy(_v.vm, x._v.vm, sizeof(vmpair) * (n + 1));
-    else {
-	// cannot call "*this = overderived_signal()" b/c _v.vm is invalid
-	_v.v1 = &static_value;
-	_mask = overderived_mask | true_mask;
-    }
+    if (likely((_v.vp = new value_type *[n + 1])))
+	memcpy(_v.vp, x._v.vp, sizeof(*_v.vp) * (n + 1));
+    else
+	// cannot call "*this = overderived_signal()" b/c _v is invalid
+	_v.v = const_cast<value_type *>(&static_values[overderived_offset]);
 }
 
 void
-NotifierSignal::hard_derive_one(atomic_uint32_t *value, uint32_t mask)
+NotifierSignal::hard_derive_one(value_type *value)
 {
-    if (unlikely(_mask)) {
-	if (busy())
+    if (unlikely(*_v.v != 2)) {
+	if (busy() || unlikely(value == _v.v))
 	    return;
-	if (_v.v1 == value) {
-	    _mask |= mask;
-	    return;
-	}
-	vmpair *vmp;
-	if (unlikely(!(vmp = new vmpair[2]))) {
+	value_type **vmp;
+	if (unlikely(!(vmp = new value_type *[4]))) {
 	    *this = overderived_signal();
 	    return;
 	}
-	vmp[0].value = _v.v1;
-	vmp[0].mask = _mask;
-	vmp[1].mask = 0;
-	_v.vm = vmp;
-	_mask = 0;
-    }
-
-    size_t n, i;
-    vmpair *vmp;
-    for (i = 0, vmp = _v.vm; vmp->mask && vmp->value < value; ++i, ++vmp)
-	/* do nothing */;
-    if (vmp->mask && vmp->value == value) {
-	vmp->mask |= mask;
+	vmp[1] = _v.v < value ? _v.v : value;
+	vmp[2] = _v.v < value ? value : _v.v;
+	vmp[3] = 0;
+	_v.vp = vmp;
+	*_v.v = 2;
 	return;
     }
-    for (n = i; vmp->mask; ++n, ++vmp)
+
+    size_t i, n;
+    value_type **vmp;
+    for (i = 1, vmp = _v.vp + 1; *vmp && *vmp < value; ++i, ++vmp)
+	/* do nothing */;
+    if (*vmp == value)
+	return;
+    for (n = i; *vmp; ++n, ++vmp)
 	/* do nothing */;
 
-    if (unlikely(!(vmp = new vmpair[n + 2]))) {
+    if (unlikely(!(vmp = new value_type *[n + 2]))) {
 	*this = overderived_signal();
 	return;
     }
-    memcpy(vmp, _v.vm, sizeof(vmpair) * i);
-    memcpy(vmp + i + 1, _v.vm + i, sizeof(vmpair) * (n + 1 - i));
-    vmp[i].value = value;
-    vmp[i].mask = mask;
-    delete[] _v.vm;
-    _v.vm = vmp;
+    memcpy(vmp, _v.vp, sizeof(*_v.vp) * i);
+    vmp[i] = value;
+    memcpy(vmp + i + 1, _v.vp + i, sizeof(*_v.vp) * (n + 1 - i));
+    delete[] _v.vp;
+    _v.vp = vmp;
 }
 
 bool
-NotifierSignal::hard_equals(const vmpair *a, const vmpair *b)
+NotifierSignal::hard_equals(value_type **a, value_type **b)
 {
-    while (a->mask && a->mask == b->mask && a->value == b->value)
+    while (*a && *a == *b)
 	++a, ++b;
-    return !a->mask && a->mask == b->mask;
+    return !*a && !*b;
 }
 
 String
 NotifierSignal::unparse(Router *router) const
 {
-    if (!_mask) {
+    if (*_v.v == 2) {
 	StringAccum sa;
-	for (vmpair *vm = _v.vm; vm->mask; ++vm)
-	    sa << (vm == _v.vm ? "" : "+")
-	       << NotifierSignal(vm->value, vm->mask).unparse(router);
+	for (value_type **vm = _v.vp + 1; *vm; ++vm)
+	    sa << (vm == _v.vp + 1 ? "" : "+")
+	       << NotifierSignal(*vm).unparse(router);
 	return sa.take_string();
     }
 
     char buf[80];
     int pos;
     String s;
-    if (_v.v1 == &static_value) {
-	if (_mask == true_mask)
+    if (is_static()) {
+	if (busy() && !overderived())
 	    return "busy*";
-	else if (_mask == false_mask)
+	else if (idle())
 	    return "idle";
-	else if (_mask == overderived_mask)
+	else if (overderived())
 	    return "overderived*";
-	else if (_mask == uninitialized_mask)
+	else if (!initialized())
 	    return "uninitialized";
 	else
-	    pos = sprintf(buf, "internal/");
-    } else if (router && (s = router->notifier_signal_name(_v.v1)) >= 0) {
-	pos = sprintf(buf, "%.52s/", s.c_str());
+	    pos = sprintf(buf, "internal%d", (int) (_v.v - static_values));
+    } else if (router && (s = router->notifier_signal_name(_v.v)) >= 0) {
+	pos = sprintf(buf, "%.52s", s.c_str());
     } else
-	pos = sprintf(buf, "@%p/", _v.v1);
-    sprintf(buf + pos, active() ? "%x:%x*" : "%x:%x", _mask, (*_v.v1) & _mask);
-    return String(buf);
+	pos = sprintf(buf, "@%p", _v.v);
+    if (active())
+	buf[pos++] = '*';
+    return String(buf, pos);
 }
 
 

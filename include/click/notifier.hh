@@ -11,6 +11,8 @@ CLICK_DECLS
 
 class NotifierSignal { public:
 
+    typedef uint8_t value_type;
+
     /** @brief Construct a busy signal.
      *
      * The returned signal is always active. */
@@ -20,7 +22,7 @@ class NotifierSignal { public:
      *
      * Elements should not use this constructor directly.
      * @sa Router::new_notifier_signal */
-    inline NotifierSignal(atomic_uint32_t* value, uint32_t mask);
+    explicit inline NotifierSignal(value_type* value);
 
     /** @brief Copy construct a signal. */
     inline NotifierSignal(const NotifierSignal &x);
@@ -100,7 +102,6 @@ class NotifierSignal { public:
     /** @brief Exchange the values of this signal and @a x. */
     void swap(NotifierSignal &x) {
 	click_swap(_v, x._v);
-	click_swap(_mask, x._mask);
     }
 
     /** @brief Make this signal derived by adding information from @a x.
@@ -158,27 +159,29 @@ class NotifierSignal { public:
 
   private:
 
-    struct vmpair {
-	atomic_uint32_t *value;
-	uint32_t mask;
+    struct vmlist {
+	value_type marker;
+	value_type *p[0];
     };
     union vmvalue {
-	atomic_uint32_t *v1;
-	vmpair *vm;
+	value_type *v;
+	value_type **vp;
     };
 
     vmvalue _v;
-    uint32_t _mask;
 
     enum {
-	true_mask = 1, false_mask = 2, overderived_mask = 4,
-	uninitialized_mask = 8
+	true_offset = 0, false_offset = 1, overderived_offset = 2,
+	uninitialized_offset = 3
     };
-    static atomic_uint32_t static_value;
+    static const value_type static_values[4];
 
+    inline bool is_static() const {
+	return static_cast<uintptr_t>(_v.v - static_values) < sizeof(static_values);
+    }
     void hard_assign_vm(const NotifierSignal &x);
-    void hard_derive_one(atomic_uint32_t *value, uint32_t mask);
-    static bool hard_equals(const vmpair *a, const vmpair *b);
+    void hard_derive_one(value_type *v);
+    static bool hard_equals(value_type **a, value_type **b);
 
 };
 
@@ -281,24 +284,22 @@ class ActiveNotifier : public Notifier { public:
 
 inline
 NotifierSignal::NotifierSignal()
-    : _mask(true_mask)
 {
-    _v.v1 = &static_value;
+    _v.v = const_cast<value_type*>(&static_values[true_offset]);
 }
 
 inline
-NotifierSignal::NotifierSignal(atomic_uint32_t* value, uint32_t mask)
-    : _mask(mask)
+NotifierSignal::NotifierSignal(value_type* value)
 {
-    _v.v1 = value;
+    assert(*value < 2);
+    _v.v = value;
 }
 
 inline
 NotifierSignal::NotifierSignal(const NotifierSignal &x)
-    : _mask(x._mask)
 {
-    if (likely(_mask))
-	_v.v1 = x._v.v1;
+    if (likely(*x._v.v != 2))
+	_v = x._v;
     else
 	hard_assign_vm(x);
 }
@@ -306,32 +307,32 @@ NotifierSignal::NotifierSignal(const NotifierSignal &x)
 inline
 NotifierSignal::~NotifierSignal()
 {
-    if (unlikely(_mask == 0))
-	delete[] _v.vm;
+    if (unlikely(*_v.v == 2))
+	delete[] _v.vp;
 }
 
 inline NotifierSignal
 NotifierSignal::idle_signal()
 {
-    return NotifierSignal(&static_value, false_mask);
+    return NotifierSignal(const_cast<value_type*>(&static_values[false_offset]));
 }
 
 inline NotifierSignal
 NotifierSignal::busy_signal()
 {
-    return NotifierSignal(&static_value, true_mask);
+    return NotifierSignal(const_cast<value_type*>(&static_values[true_offset]));
 }
 
 inline NotifierSignal
 NotifierSignal::overderived_signal()
 {
-    return NotifierSignal(&static_value, overderived_mask | true_mask);
+    return NotifierSignal(const_cast<value_type*>(&static_values[overderived_offset]));
 }
 
 inline NotifierSignal
 NotifierSignal::uninitialized_signal()
 {
-    return NotifierSignal(&static_value, uninitialized_mask);
+    return NotifierSignal(const_cast<value_type*>(&static_values[uninitialized_offset]));
 }
 
 inline bool
@@ -340,11 +341,12 @@ NotifierSignal::active() const
     // 2012.May.16 This fence is necessary; consider, for example,
     // InfiniteSource's checking of nonfull notifiers.
     click_fence();
-    if (likely(_mask))
-	return (*_v.v1 & _mask) != 0;
+    value_type x = *_v.v;
+    if (likely(x != 2))
+	return x != 0;
     else {
-	for (vmpair *vm = _v.vm; vm->mask; ++vm)
-	    if ((*vm->value & vm->mask) != 0)
+	for (value_type **vm = _v.vp + 1; *vm; ++vm)
+	    if (*vm != 0)
 		return true;
 	return false;
     }
@@ -359,55 +361,48 @@ NotifierSignal::operator unspecified_bool_type() const
 inline bool
 NotifierSignal::idle() const
 {
-    return (_mask == false_mask && _v.v1 == &static_value);
+    return _v.v == &static_values[false_offset];
 }
 
 inline bool
 NotifierSignal::busy() const
 {
-    return ((_mask & true_mask) && _v.v1 == &static_value);
+    return _v.v == &static_values[true_offset] || _v.v == &static_values[overderived_offset];
 }
 
 inline bool
 NotifierSignal::overderived() const
 {
-    return ((_mask & overderived_mask) && _v.v1 == &static_value);
+    return _v.v == &static_values[overderived_offset];
 }
 
 inline bool
 NotifierSignal::initialized() const
 {
-    return (!(_mask & uninitialized_mask) || _v.v1 != &static_value);
+    return _v.v != &static_values[uninitialized_offset];
 }
 
 inline bool
 NotifierSignal::set_active(bool active)
 {
-    assert(_v.v1 != &static_value && !(_mask & (_mask - 1)));
-    uint32_t expected = *_v.v1;
+    assert(!is_static() && *_v.v < 2);
 #if !CLICK_USERLEVEL || HAVE_MULTITHREAD
-    while (_mask) {
-	uint32_t desired = (active ? expected | _mask : expected & ~_mask);
-	uint32_t actual = _v.v1->compare_swap(expected, desired);
-	if (expected == actual)
-	    break;
-	expected = actual;
-    }
+    bool old = active ? __sync_fetch_and_or(_v.v, 1) : __sync_fetch_and_and(_v.v, 254);
 #else
-    *_v.v1 = (active ? expected | _mask : expected & ~_mask);
+    bool old = *_v.v;
+    *_v.v = active;
 #endif
-    return expected & _mask;
+    return old;
 }
 
 inline NotifierSignal &
 NotifierSignal::operator=(const NotifierSignal &x)
 {
     if (likely(this != &x)) {
-	if (unlikely(_mask == 0))
-	    delete[] _v.vm;
-	_mask = x._mask;
-	if (likely(_mask))
-	    _v.v1 = x._v.v1;
+	if (unlikely(*_v.v == 2))
+	    delete[] _v.vp;
+	if (likely(*x._v.v != 2))
+	    _v = x._v;
 	else
 	    hard_assign_vm(x);
     }
@@ -417,13 +412,12 @@ NotifierSignal::operator=(const NotifierSignal &x)
 inline bool
 operator==(const NotifierSignal& a, const NotifierSignal& b)
 {
-    if (a._mask == b._mask) {
-	if (likely(a._mask))
-	    return a._v.v1 == b._v.v1;
-	else
-	    return NotifierSignal::hard_equals(a._v.vm, b._v.vm);
-    } else
+    if (a._v.v == b._v.v)
+	return true;
+    else if ((*a._v.v | *b._v.v) < 2)
 	return false;
+    else
+	return NotifierSignal::hard_equals(a._v.vp, b._v.vp);
 }
 
 inline bool

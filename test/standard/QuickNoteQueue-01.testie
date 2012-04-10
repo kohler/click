@@ -27,9 +27,9 @@ DriverManager(wait 0.01s,
 ' >OUT
 
 %expect OUT
-full.0/1:1*
-empty.0/{{\d+}}:0
-full.0/1:1*
-empty.0/{{\d+}}:0
-full.0/1:1*
-empty.0/{{\d+}}:0
+full.0*
+empty.0
+full.0*
+empty.0
+full.0*
+empty.0

@@ -103,11 +103,11 @@ DriverManager(wait 0.1s, print n.signal, print d.scheduled,
 	stop)
 
 %expect OUT
-empty.0/{{.*}}:0+empty.1/{{.*}}:0
+empty.0+empty.1
 false
-empty.0/{{.*}}:{{.*}}*+empty.1/{{.*}}:0
+empty.0*+empty.1
 true
-empty.0/{{.*}}:0+empty.1/{{.*}}:0
+empty.0+empty.1
 false
 
 %file CONFIG2

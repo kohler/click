@@ -134,7 +134,7 @@ class Router { public:
     inline void set_foreground(bool foreground);
 
     int new_notifier_signal(const char *name, NotifierSignal &signal);
-    String notifier_signal_name(const atomic_uint32_t *signal) const;
+    String notifier_signal_name(const void *signal) const;
     //@}
 
     /** @cond never */
@@ -274,17 +274,7 @@ class Router { public:
     Element* _root_element;
     String _configuration;
 
-    struct notifier_signals_t {
-	enum { capacity = 4096 };
-	String name;
-	int nsig;
-	atomic_uint32_t sig[capacity / 32];
-	notifier_signals_t *next;
-	notifier_signals_t(const String &n, notifier_signals_t *nx)
-	    : name(n), nsig(0), next(nx) {
-	    memset(&sig[0], 0, sizeof(sig));
-	}
-    };
+    struct notifier_signals_t;
     notifier_signals_t *_notifier_signals;
     HashMap_ArenaFactory* _arena_factory;
     Router* _hotswap_router;

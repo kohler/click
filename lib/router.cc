@@ -66,6 +66,18 @@ static Handler* globalh;
 static int nglobalh;
 static int globalh_cap;
 
+struct Router::notifier_signals_t {
+    enum { capacity = 256 };
+    String name;
+    int nsig;
+    NotifierSignal::value_type sig[capacity];
+    notifier_signals_t *next;
+    notifier_signals_t(const String &n, notifier_signals_t *nx)
+	: name(n), nsig(0), next(nx) {
+	memset(&sig[0], 0, sizeof(sig));
+    }
+};
+
 /** @brief  Create a router.
  *  @param  configuration  router configuration
  *  @param  master         Master object
@@ -1894,18 +1906,18 @@ Router::new_notifier_signal(const char *name, NotifierSignal &signal)
 	    return -1;
 	_notifier_signals = ns;
     }
-    signal = NotifierSignal(&ns->sig[ns->nsig / 32], 1 << (ns->nsig % 32));
+    signal = NotifierSignal(&ns->sig[ns->nsig]);
     signal.set_active(true);
     ++ns->nsig;
     return 0;
 }
 
 String
-Router::notifier_signal_name(const atomic_uint32_t *signal) const
+Router::notifier_signal_name(const void *signal) const
 {
     notifier_signals_t *ns;
     for (ns = _notifier_signals; ns; ns = ns->next)
-	if (signal >= ns->sig && signal < ns->sig + (ns->capacity / 32))
+	if (signal >= ns->sig && signal < ns->sig + ns->capacity)
 	    break;
     if (!ns)
 	return String();
@@ -1917,7 +1929,7 @@ Router::notifier_signal_name(const atomic_uint32_t *signal) const
     sa << ns->name;
     if (which)
 	sa << (which + 1);
-    sa << '.' << (signal - ns->sig);
+    sa << '.' << (reinterpret_cast<const NotifierSignal::value_type*>(signal) - ns->sig);
     return sa.take_string();
 }
 
