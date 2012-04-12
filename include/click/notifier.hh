@@ -164,6 +164,7 @@ class NotifierSignal { public:
 	value_type *p[0];
     };
     union vmvalue {
+	uintptr_t u;
 	value_type *v;
 	value_type **vp;
     };
@@ -171,13 +172,12 @@ class NotifierSignal { public:
     vmvalue _v;
 
     enum {
-	true_offset = 0, false_offset = 1, overderived_offset = 2,
-	uninitialized_offset = 3
+	false_value = 0, true_value = 1, uninitialized_value = 2,
+	overderived_value = 3
     };
-    static const value_type static_values[4];
 
     inline bool is_static() const {
-	return static_cast<uintptr_t>(_v.v - static_values) < sizeof(static_values);
+	return _v.u < 4;
     }
     void hard_assign_vm(const NotifierSignal &x);
     void hard_derive_one(value_type *v);
@@ -285,7 +285,7 @@ class ActiveNotifier : public Notifier { public:
 inline
 NotifierSignal::NotifierSignal()
 {
-    _v.v = const_cast<value_type*>(&static_values[true_offset]);
+    _v.u = true_value;
 }
 
 inline
@@ -298,7 +298,7 @@ NotifierSignal::NotifierSignal(value_type* value)
 inline
 NotifierSignal::NotifierSignal(const NotifierSignal &x)
 {
-    if (likely(*x._v.v != 2))
+    if (likely(x.is_static() || *x._v.v != 2))
 	_v = x._v;
     else
 	hard_assign_vm(x);
@@ -307,32 +307,40 @@ NotifierSignal::NotifierSignal(const NotifierSignal &x)
 inline
 NotifierSignal::~NotifierSignal()
 {
-    if (unlikely(*_v.v == 2))
+    if (unlikely(!is_static() && *_v.v == 2))
 	delete[] _v.vp;
 }
 
 inline NotifierSignal
 NotifierSignal::idle_signal()
 {
-    return NotifierSignal(const_cast<value_type*>(&static_values[false_offset]));
+    NotifierSignal s;
+    s._v.u = false_value;
+    return s;
 }
 
 inline NotifierSignal
 NotifierSignal::busy_signal()
 {
-    return NotifierSignal(const_cast<value_type*>(&static_values[true_offset]));
+    NotifierSignal s;
+    s._v.u = true_value;
+    return s;
 }
 
 inline NotifierSignal
 NotifierSignal::overderived_signal()
 {
-    return NotifierSignal(const_cast<value_type*>(&static_values[overderived_offset]));
+    NotifierSignal s;
+    s._v.u = overderived_value;
+    return s;
 }
 
 inline NotifierSignal
 NotifierSignal::uninitialized_signal()
 {
-    return NotifierSignal(const_cast<value_type*>(&static_values[uninitialized_offset]));
+    NotifierSignal s;
+    s._v.u = uninitialized_value;
+    return s;
 }
 
 inline bool
@@ -341,7 +349,7 @@ NotifierSignal::active() const
     // 2012.May.16 This fence is necessary; consider, for example,
     // InfiniteSource's checking of nonfull notifiers.
     click_fence();
-    value_type x = *_v.v;
+    value_type x = is_static() ? _v.u & 1 : *_v.v;
     if (likely(x != 2))
 	return x != 0;
     else {
@@ -361,25 +369,25 @@ NotifierSignal::operator unspecified_bool_type() const
 inline bool
 NotifierSignal::idle() const
 {
-    return _v.v == &static_values[false_offset];
+    return _v.u == false_value;
 }
 
 inline bool
 NotifierSignal::busy() const
 {
-    return _v.v == &static_values[true_offset] || _v.v == &static_values[overderived_offset];
+    return is_static() && (_v.u & 1);
 }
 
 inline bool
 NotifierSignal::overderived() const
 {
-    return _v.v == &static_values[overderived_offset];
+    return _v.u == overderived_value;
 }
 
 inline bool
 NotifierSignal::initialized() const
 {
-    return _v.v != &static_values[uninitialized_offset];
+    return _v.u != uninitialized_value;
 }
 
 inline bool
@@ -399,9 +407,9 @@ inline NotifierSignal &
 NotifierSignal::operator=(const NotifierSignal &x)
 {
     if (likely(this != &x)) {
-	if (unlikely(*_v.v == 2))
+	if (unlikely(!is_static() && *_v.v == 2))
 	    delete[] _v.vp;
-	if (likely(*x._v.v != 2))
+	if (likely(x.is_static() || *x._v.v != 2))
 	    _v = x._v;
 	else
 	    hard_assign_vm(x);
@@ -414,7 +422,7 @@ operator==(const NotifierSignal& a, const NotifierSignal& b)
 {
     if (a._v.v == b._v.v)
 	return true;
-    else if ((*a._v.v | *b._v.v) < 2)
+    else if (a.is_static() || b.is_static() || *a._v.v != 2 || *b._v.v != 2)
 	return false;
     else
 	return NotifierSignal::hard_equals(a._v.vp, b._v.vp);

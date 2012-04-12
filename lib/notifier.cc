@@ -34,7 +34,6 @@ CLICK_DECLS
 // should be const, but we need to explicitly initialize it
 const char Notifier::EMPTY_NOTIFIER[] = "empty";
 const char Notifier::FULL_NOTIFIER[] = "full";
-const NotifierSignal::value_type NotifierSignal::static_values[] = {1, 0, 1, 0};
 
 /** @file notifier.hh
  * @brief Support for activity signals.
@@ -142,7 +141,7 @@ NotifierSignal::hard_assign_vm(const NotifierSignal &x)
 	memcpy(_v.vp, x._v.vp, sizeof(*_v.vp) * (n + 1));
     else
 	// cannot call "*this = overderived_signal()" b/c _v is invalid
-	_v.v = const_cast<value_type *>(&static_values[overderived_offset]);
+	_v.u = overderived_value;
 }
 
 void
@@ -195,7 +194,7 @@ NotifierSignal::hard_equals(value_type **a, value_type **b)
 String
 NotifierSignal::unparse(Router *router) const
 {
-    if (*_v.v == 2) {
+    if (!is_static() && *_v.v == 2) {
 	StringAccum sa;
 	for (value_type **vm = _v.vp + 1; *vm; ++vm)
 	    sa << (vm == _v.vp + 1 ? "" : "+")
@@ -216,7 +215,7 @@ NotifierSignal::unparse(Router *router) const
 	else if (!initialized())
 	    return "uninitialized";
 	else
-	    pos = sprintf(buf, "internal%d", (int) (_v.v - static_values));
+	    pos = sprintf(buf, "internal%d", (int) _v.u);
     } else if (router && (s = router->notifier_signal_name(_v.v)) >= 0) {
 	pos = sprintf(buf, "%.52s", s.c_str());
     } else
