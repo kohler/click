@@ -346,7 +346,7 @@ NotifierSignal::active() const
 	return x != 0;
     else {
 	for (value_type **vm = _v.vp + 1; *vm; ++vm)
-	    if (*vm != 0)
+	    if (**vm != 0)
 		return true;
 	return false;
     }
