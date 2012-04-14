@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2005 Regents of the University of California
+ * Copyright (c) 2012 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -19,6 +20,7 @@
 #include "ipfieldinfo.hh"
 #include <click/integers.hh>
 #include <click/confparse.hh>
+#include <click/straccum.hh>
 #include <click/error.hh>
 #if CLICK_BSDMODULE
 # include <machine/stdarg.h>
@@ -299,18 +301,20 @@ IPField::unparse(Element *elt, bool tcpdump_rules)
     if (!ok())
 	return String::make_stable("<bad>");
 
-    String protstr;
+    StringAccum sa;
+    String s;
     int32_t val = proto();
     if (val == 0)
-	protstr = "ip";
-    else if ((protstr = NameInfo::revquery(NameInfo::T_IP_PROTO, elt, &val, 4)))
-	/* OK */;
+	sa << "ip";
+    else if ((s = NameInfo::revquery(NameInfo::T_IP_PROTO, elt, &val, 4)))
+	sa << s;
     else
-	protstr = "ip proto " + String(proto());
+	sa << "ip proto " << proto();
 
-    String s;
-    if ((s = NameInfo::revquery(NameInfo::T_IP_FIELDNAME + proto(), elt, &_val, 4)))
-	return protstr + " " + s;
+    if ((s = NameInfo::revquery(NameInfo::T_IP_FIELDNAME + proto(), elt, &_val, 4))) {
+	sa << ' ' << s;
+	return sa.take_string();
+    }
 
     int bo = bit_offset(), bl = bit_length();
 
@@ -318,30 +322,35 @@ IPField::unparse(Element *elt, bool tcpdump_rules)
 	if (bo / container == (bo + bl - 1) / container) {
 	    IPField x(proto(), bo & ~(container - 1), container);
 	    if ((s = NameInfo::revquery(NameInfo::T_IP_FIELDNAME + proto(), elt, &x, 4))) {
-		protstr += " " + s;
+		sa << ' ' << s;
 		bo &= container - 1;
-		if (bo == 0)
-		    return protstr + "/" + String(bl);
+		if (bo == 0) {
+		    sa << '/' << bl;
+		    return sa.take_string();
+		}
 		break;
 	    }
 	}
 
-    String mask;
+    uint32_t maskval = 0;
     if (tcpdump_rules && (bo % 8 != 0 || bl % 8 != 0)
 	&& bl / 32 == (bo + bl - 1) / 32) {
-	uint32_t maskval = ((1 << bl) - 1) << (7 - (bo + bl - 1) % 8);
-	mask = " & " + String(maskval);
+	maskval = ((1 << bl) - 1) << (7 - (bo + bl - 1) % 8);
 	bl = (bo % 8 + bl + 7) & ~7;
 	bo &= ~7;
     }
 
     if (bo % 8 == 0 && bl == 8)
-	return protstr + "[" + String(bo / 8) + "]" + mask;
+	sa << '[' << (bo / 8) << ']';
     else if (bo % 8 == 0 && bl % 8 == 0)
-	return protstr + "[" + String(bo / 8) + ":" + String(bl / 8) + "]" + mask;
+	sa << '[' << (bo / 8) << ':' << (bl / 8) << ']';
     else if (bl == 1)
-	return protstr + "{" + String(bo) + "}" + mask;
-    return protstr + "{" + String(bo) + ":" + String(bl) + "}" + mask;
+	sa << '{' << bo << '}';
+    else
+	sa << '{' << bo << ':' << bl << '}';
+    if (maskval)
+	sa << " & " << maskval;
+    return sa.take_string();
 }
 
 CLICK_ENDDECLS

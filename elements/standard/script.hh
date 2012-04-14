@@ -508,7 +508,14 @@ class Script : public Element { public:
     int find_variable(const String &name, bool add);
 
     static int step_handler(int, String&, Element*, const Handler*, ErrorHandler*);
-    static int arithmetic_handler(int, String&, Element*, const Handler*, ErrorHandler*);
+    enum { error_one_number, error_two_numbers };
+    static int normal_error(int message, ErrorHandler *errh);
+    static int arithmetic_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh);
+    static int modrem_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh);
+    static int negabs_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh);
+    static int compare_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh);
+    static int sprintf_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh);
+    static int basic_handler(int, String&, Element*, const Handler*, ErrorHandler*);
     static String read_export_handler(Element*, void*);
     static int star_write_handler(const String&, Element*, void*, ErrorHandler*);
 
