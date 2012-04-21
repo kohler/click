@@ -519,8 +519,8 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
     Lexer *l = click_lexer();
     RequireLexerExtra lextra(&archive);
     int cookie = l->begin_parse(config_str, filename, &lextra, errh);
-    while (l->ystatement())
-	/* do nothing */;
+    while (!l->ydone())
+	l->ystep();
     Router *router = l->create_router(master ? master : new Master(1));
     l->end_parse(cookie);
 

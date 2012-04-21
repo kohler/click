@@ -43,8 +43,8 @@ main(int argc, char **argv)
   lex->element_types_permanent();
 
   lex->reset(fp);
-  while (lex->ystatement())
-    /* do nothing */;
+  while (!lex->ydone())
+      lex->ystep();
 
   Router *router = lex->create_router();
   delete fp;
@@ -57,8 +57,8 @@ main(int argc, char **argv)
       fp = new FileLexerSource(argv[1], 0);
       lex->reset(fp);
       delete router;
-      while (lex->ystatement())
-	/* do nothing */;
+      while (!lex->ydone())
+	  lex->ystep();
       router = lex->create_router();
       lex->clear();
     }

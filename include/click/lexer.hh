@@ -100,16 +100,8 @@ class Lexer { public:
 
     void add_tunnels(String name, int *eidexes);
 
-    bool yport(Vector<int> &ports);
-    bool yelement(Vector<int> &result, bool in_allowed);
-    bool yconnection();
-    void yelementclass();
-    void ycompound_arguments(Compound *);
-    int ycompound(String name = String());
-    void ygroup(String name, int group_nports[2]);
-    void yrequire();
-    void yvar();
-    bool ystatement(int nested = 0);
+    bool ydone() const			{ return !_ps; }
+    void ystep();
 
     Router *create_router(Master *);
 
@@ -133,6 +125,9 @@ class Lexer { public:
 	String lex_config(Lexer *lexer);
 	String landmark() const;
     };
+
+    struct ElementState;
+    struct ParseState;
 
     // lexer
     FileState _file;
@@ -167,8 +162,8 @@ class Lexer { public:
     VariableEnvironment _global_scope;
 
     // elements
-    HashTable<String, int> _element_map;
     Compound *_c;
+    ParseState *_ps;
     int _group_depth;
 
     Vector<TunnelEnd *> _tunnels;
@@ -184,9 +179,9 @@ class Lexer { public:
     ErrorHandler *_errh;
 
     int lerror(const char *, ...);
+    int lerror_syntax(const Lexeme &t);
 
     String anon_element_name(const String &) const;
-    String deanonymize_element_name(const String &, int);
     int get_element(String name, int etype,
 		    const String &configuration = String(),
 		    const String &filename = String(), unsigned lineno = 0);
@@ -196,11 +191,33 @@ class Lexer { public:
     int make_compound_element(int);
     void expand_compound_element(int, VariableEnvironment &);
     void add_router_connections(int, const Vector<int> &);
-    void yrequire_library(const String &value);
+
+    void yport(bool isoutput);
+    void yelement_name();
+    void yelement_type(String name, int type,
+		       bool this_ident, bool this_implicit);
+    void yelement_config(ElementState *e, bool this_implicit);
+    void yelement_next();
+
+    void yconnection_connector();
     void yconnection_check_useless(const Vector<int> &x, bool isoutput);
     static void yconnection_analyze_ports(const Vector<int> &x, bool isoutput,
 					  int &min_ports, int &expandable);
     void yconnection_connect_all(Vector<int> &outputs, Vector<int> &inputs, int connector);
+
+    void ycompound_arguments(Compound *ct);
+    void ycompound();
+    void ycompound_next();
+    void ycompound_end(const Lexeme &t);
+    void ygroup();
+    void ygroup_end();
+
+    void yelementclass();
+    void yrequire();
+    void yrequire_library(const String &value);
+    void yvar();
+
+    void ystatement();
 
     TunnelEnd *find_tunnel(const Port &p, bool isoutput, bool insert);
     void expand_connection(const Port &p, bool isoutput, Vector<Port> &);

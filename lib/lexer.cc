@@ -10,6 +10,7 @@
  * Copyright (c) 2004-2011 Regents of the University of California
  * Copyright (c) 2008-2012 Meraki, Inc.
  * Copyright (c) 2010 Intel Corporation
+ * Copyright (c) 2012 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -143,51 +144,57 @@ class Lexer::Compound : public Element { public:
     }
 
     int check_pseudoelement(int e, bool isoutput, const char *name, ErrorHandler *errh) const;
-    void finish(Lexer *, ErrorHandler *);
+    void finish(ErrorHandler *errh);
 
-  inline int assign_arguments(const Vector<String> &args, Vector<String> *values) const;
-  int resolve(Lexer *, int etype, int ninputs, int noutputs, Vector<String> &, ErrorHandler *, const String &landmark);
-  void expand_into(Lexer *, int, VariableEnvironment &);
-  void connect(int from_idx, int from_port, int to_idx, int to_port);
+    inline int assign_arguments(const Vector<String> &args, Vector<String> *values) const;
+    int resolve(Lexer *, int etype, int ninputs, int noutputs, Vector<String> &, ErrorHandler *, const String &landmark);
+    void expand_into(Lexer *, int, VariableEnvironment &);
+    void connect(int from_idx, int from_port, int to_idx, int to_port);
 
-  const char *class_name() const	{ return _name.c_str(); }
-  void *cast(const char *);
-  Compound *clone() const		{ return 0; }
+    String deanonymize_element_name(int eidx);
 
-  void set_overload_type(int t)		{ _overload_type = t; }
-  inline Compound *overload_compound(Lexer *) const;
+    const char *class_name() const	{ return _name.c_str(); }
+    void *cast(const char *);
+    Compound *clone() const		{ return 0; }
 
-  String signature() const;
-  static String signature(const String &name, const Vector<String> *formal_types, int nargs, int ninputs, int noutputs);
+    void set_overload_type(int t)	{ _overload_type = t; }
+    inline Compound *overload_compound(Lexer *) const;
 
- private:
+    String signature() const;
+    static String signature(const String &name, const Vector<String> *formal_types, int nargs, int ninputs, int noutputs);
 
-  mutable String _name;
-  String _landmark;
-  int _overload_type;
+  private:
 
-  VariableEnvironment _scope;
-  int _nformals;
-  int _ninputs;
-  int _noutputs;
-  bool _scope_order_error : 1;
+    String _name;
+    String _landmark;
+    int _overload_type;
 
-  Vector<int> _elements;
-  Vector<String> _element_names;
-  Vector<String> _element_configurations;
-  Vector<String> _element_filenames;
-  Vector<unsigned> _element_linenos;
-  Vector<int> _element_nports[2];
-  Vector<Router::Connection> _conn;
+    VariableEnvironment _scope;
+    int _nformals;
+    int _ninputs;
+    int _noutputs;
+    bool _scope_order_error : 1;
 
-  friend class Lexer;
+    HashTable<String, int> _element_map;
+    Vector<int> _elements;
+    Vector<String> _element_names;
+    Vector<String> _element_configurations;
+    Vector<String> _element_filenames;
+    Vector<unsigned> _element_linenos;
+    Vector<int> _element_nports[2];
+    int _anonymous_offset;
+
+    Vector<Router::Connection> _conn;
+
+    friend class Lexer;
 
 };
 
 Lexer::Compound::Compound(const String &name, const String &lm, VariableEnvironment *parent)
-  : _name(name), _landmark(lm), _overload_type(-1),
-    _scope(parent),
-    _nformals(0), _ninputs(0), _noutputs(0), _scope_order_error(false)
+    : _name(name), _landmark(lm), _overload_type(-1),
+      _scope(parent),
+      _nformals(0), _ninputs(0), _noutputs(0), _scope_order_error(false),
+      _element_map(-1), _anonymous_offset(0)
 {
 }
 
@@ -262,7 +269,7 @@ Lexer::Compound::check_pseudoelement(int which, bool isoutput, const char *name,
 }
 
 void
-Lexer::Compound::finish(Lexer *lexer, ErrorHandler *errh)
+Lexer::Compound::finish(ErrorHandler *errh)
 {
     assert(_element_names[0] == "input" && _element_names[1] == "output");
     LandmarkErrorHandler lerrh(errh, _landmark);
@@ -272,7 +279,7 @@ Lexer::Compound::finish(Lexer *lexer, ErrorHandler *errh)
     // deanonymize element names
     for (int i = 0; i < _elements.size(); i++)
 	if (_element_names[i][0] == ';')
-	    _element_names[i] = lexer->deanonymize_element_name(_element_names[i], i);
+	    deanonymize_element_name(i);
 }
 
 inline Lexer::Compound *
@@ -387,7 +394,7 @@ Lexer::Compound::expand_into(Lexer *lexer, int which, VariableEnvironment &ve)
     String ename_slash = ename + "/";
     for (int i = 2; i < _elements.size(); ++i) {
 	String cname = ename_slash + _element_names[i];
-	int eidx = lexer->_element_map[cname];
+	int eidx = lexer->_c->_element_map[cname];
 	if (eidx >= 0) {
 	    redeclaration_error(errh, "element", cname, lexer->element_landmark(which), lexer->element_landmark(eidx));
 	    eidx_map.push_back(-1);
@@ -423,6 +430,83 @@ Lexer::Compound::expand_into(Lexer *lexer, int which, VariableEnvironment &ve)
 // LEXER
 //
 
+// "elements" and "last_elements" list all elements and port references.
+// Each vector is a concatenated series of groups, each of which looks like:
+// group[0] element index
+// group[1] number of input ports
+// group[2] number of output ports
+// group[3...3+group[1]] input ports
+// group[3+group[1]...3+group[1]+group[2]] output ports
+
+struct Lexer::ParseState {
+    enum {
+	s_statement, s_first_element, s_element, s_next_element,
+	s_connector, s_connection_done,
+	s_compound_element, s_compound_type, s_compound_elementclass,
+	s_stopped
+    };
+    enum {
+	t_file, t_compound, t_group
+    };
+
+    int state;
+    int _type;
+
+    Vector<int> last_elements;
+    int connector;
+
+    ElementState *_head;
+    ElementState *_tail;
+    bool any_implicit;
+    bool any_ports;
+    Vector<int> elements;
+    int cur_epos;
+
+    String _element_name;
+
+    HashTable<String, int> _saved_type_map;
+    Compound *_saved_compound;
+    Compound *_compound_first;
+    Compound *_compound_last;
+    int _compound_extension;
+
+    ParseState *_parent;
+
+    ParseState(int type, ParseState *parent)
+	: state(s_statement), _type(type), connector(0), _parent(parent) {
+    }
+
+    void enter_element_state() {
+	_head = _tail = 0;
+	any_implicit = any_ports = false;
+	elements.clear();
+	state = s_element;
+    }
+    bool first_element_set() const {
+	return last_elements.empty();
+    }
+
+    void start_element() {
+	cur_epos = elements.size();
+	elements.push_back(-1);
+	elements.push_back(0);
+	elements.push_back(0);
+    }
+    int nports(bool isoutput) const {
+	return elements[cur_epos + 1 + isoutput];
+    }
+    void clear_ports(bool isoutput) {
+	assert(isoutput || elements[cur_epos + 2] == 0);
+	elements.resize(elements.size() - elements[cur_epos + 1 + isoutput]);
+	elements[cur_epos + 1 + isoutput] = 0;
+    }
+    void push_back_port(bool isoutput, int port) {
+	assert(isoutput || elements[cur_epos + 2] == 0);
+	elements.push_back(port);
+	++elements[cur_epos + 1 + isoutput];
+    }
+};
+
 Lexer::FileState::FileState(const String &data, const String &filename)
   : _big_string(data), _end(data.end()), _pos(data.begin()),
     _filename(filename ? filename : String::make_stable("config", 6)),
@@ -434,7 +518,7 @@ Lexer::Lexer()
   : _file(String(), String()), _lextra(0), _unlex_pos(0),
     _element_type_map(-1),
     _last_element_type(ET_NULL), _free_element_type(-1),
-    _global_scope(0), _element_map(-1), _c(0),
+    _global_scope(0), _c(0), _ps(0),
     _errh(ErrorHandler::default_handler())
 {
   end_parse(ET_NULL);		// clear private state
@@ -463,7 +547,7 @@ Lexer::begin_parse(const String &data, const String &filename,
   _compact_config = false;
 
   _c = new Compound("", "", 0);
-  _group_depth = 0;
+  _ps = new ParseState(ParseState::t_file, 0);
 
   _lextra = lextra;
   _errh = (errh ? errh : ErrorHandler::default_handler());
@@ -485,8 +569,9 @@ Lexer::end_parse(int cookie)
 
   delete _c;
   _c = 0;
+  delete _ps;
+  _ps = 0;
 
-  _element_map.clear();
   _requirements.clear();
   _libraries.clear();
 
@@ -497,8 +582,6 @@ Lexer::end_parse(int cookie)
   for (int i = 0; i < UNLEX_SIZE; ++i)
       _unlex[i] = Lexeme();
   _unlex_pos = 0;
-
-  _anonymous_offset = 0;
 
   _errh = ErrorHandler::default_handler();
 }
@@ -832,6 +915,12 @@ Lexer::lerror(const char *format, ...)
   return -1;
 }
 
+int
+Lexer::lerror_syntax(const Lexeme &t)
+{
+    return lerror("syntax error near %<%#s%>", t.string().c_str());
+}
+
 
 // ELEMENT TYPES
 
@@ -995,11 +1084,11 @@ Lexer::get_element(String name, int etype, const String &conf,
   assert(name && etype >= 0 && etype < _element_types.size());
 
   // if an element 'name' already exists return it
-  if (_element_map[name] >= 0)
-    return _element_map[name];
+  if (_c->_element_map[name] >= 0)
+    return _c->_element_map[name];
 
   int eid = _c->_elements.size();
-  _element_map.set(name, eid);
+  _c->_element_map.set(name, eid);
 
   // check 'name' for validity
   for (int i = 0; i < name.length(); i++) {
@@ -1031,16 +1120,15 @@ Lexer::get_element(String name, int etype, const String &conf,
 String
 Lexer::anon_element_name(const String &class_name) const
 {
-  int anonymizer = _c->_elements.size() - _anonymous_offset + 1;
+  int anonymizer = _c->_elements.size() - _c->_anonymous_offset + 1;
   return ";" + class_name + "@" + String(anonymizer);
 }
 
 String
-Lexer::deanonymize_element_name(const String &ename, int eidx)
+Lexer::Compound::deanonymize_element_name(int eidx)
 {
     // This function uses _element_map.
-    assert(ename && ename[0] == ';');
-    String name = ename.substring(1);
+    String name = _element_names[eidx].substring(1);
     if (_element_map[name] >= 0) {
 	int at_pos = name.find_right('@');
 	assert(at_pos >= 0);
@@ -1056,6 +1144,7 @@ Lexer::deanonymize_element_name(const String &ename, int eidx)
 	} while (_element_map[name] >= 0);
     }
     _element_map.set(name, eidx);
+    _element_names[eidx] = name;
     return name;
 }
 
@@ -1093,13 +1182,12 @@ Lexer::element_landmark(int eid) const
 
 // PARSING
 
-bool
-Lexer::yport(Vector<int> &ports)
+void
+Lexer::yport(bool isoutput)
 {
     if (!expect('[', true))
-	return false;
+	return;
 
-    int nports = ports.size();
     while (1) {
 	Lexeme t = lex();
 	if (t.is(lexIdent)) {
@@ -1108,30 +1196,30 @@ Lexer::yport(Vector<int> &ports)
 		lerror("syntax error: port number should be integer");
 		port = 0;
 	    }
-	    ports.push_back(port);
+	    _ps->push_back_port(isoutput, port);
 	} else if (t.is(']')) {
-	    if (nports == ports.size())
-		ports.push_back(0);
-	    ports.push_back(-1);
-	    return true;
+	    if (_ps->nports(isoutput) == 0)
+		_ps->push_back_port(isoutput, 0);
+	    _ps->push_back_port(isoutput, -1);
+	    break;
 	} else {
 	    lerror("syntax error: expected port number");
 	    unlex(t);
-	    return ports.size() != nports;
+	    break;
 	}
 
 	t = lex();
 	if (t.is(']'))
-	    return true;
+	    break;
 	else if (!t.is(',')) {
-	    lerror("syntax error: expected ','");
+	    lerror("syntax error: expected %<,%>");
 	    unlex(t);
 	}
     }
 }
 
-namespace {
-struct ElementState {
+
+struct Lexer::ElementState {
     String name;
     int type;
     int decl_type;
@@ -1140,167 +1228,210 @@ struct ElementState {
     String filename;
     unsigned lineno;
     ElementState *next;
+
     ElementState(const String &name_, int type_, bool bare_,
 		 const String &filename_, unsigned lineno_,
-		 ElementState **&tail)
+		 ParseState *ps)
 	: name(name_), type(type_), decl_type(-1), bare(bare_),
 	  filename(filename_), lineno(lineno_), next(0) {
-	*tail = this;
-	tail = &next;
+	(ps->_tail ? ps->_tail->next : ps->_head) = this;
+	ps->_tail = this;
     }
 };
-}
 
-// Returned result is a vector listing all elements and port references.
-// The vector is a concatenated series of groups, each of which looks like:
-// group[0] element index
-// group[1] number of input ports
-// group[2] number of output ports
-// group[3...3+group[1]] input ports
-// group[3+group[1]...3+group[1]+group[2]] output ports
-bool
-Lexer::yelement(Vector<int> &result, bool in_allowed)
+
+// Configuration parsing, formerly recursive descent, has changed to a
+// hand-built state machine. (Linux kernel threads have very small stacks; the
+// recursive descent could overflow those stacks.)
+//
+// The current state of the machine is stored in Lexer::_ps, a pointer to a
+// ParseState object. There's a stack of ParseStates, linked by
+// ParseState::_parent. The current parse state is _ps->state. The current
+// type of parse is _ps->_type, which can be either ParseState::t_file,
+// ParseState::t_group, or ParseState::t_compound.
+//
+// A basic connection is parsed by the following functions:
+//
+// ... [port] element   :: Class         (config) [port]
+//     ^^^^^^^^^^^^^^   ^^^^^^^^         ^^^^^^^^^^^^^^^    ^^
+//     yelement_name()  yelement_type()  yelement_config()  yelement_next()
+//     s_element                                            s_element_next
+//
+// The s_element state parses an element declaration or reference. But
+// "element" can be a compound element or group, and "Class" can be a compound
+// element. These require recursive parsing. So yelement_name() can call
+// ycompound() or ygroup(), which push a new ParseState on the stack; when
+// done, the parser will call yelement_type() with the result. Similarly,
+// yelement_type() can call ycompound(), which, when complete, will call
+// yelement_config().
+//
+// The yelement_next() function parses either another element reference
+// (indicated by a comma), or a connection (indicated by an arrow -- state
+// s_connector). It can also stop parsing the current connection.
+//
+// Groups are pretty simple; ygroup() starts a group, ygroup_end() finishes
+// it. Compounds are less simple. ycompound() starts a compound.
+// ycompound_next() parses a new compound, by creating a new ParseState and
+// Compound. ycompound_end() might parse an overriding compound or pop the
+// current compound off the stack.
+
+void
+Lexer::yelement_name()
 {
-    ElementState *head = 0, **tail = &head;
-    Vector<int> res;
-    bool any_implicit = false, any_ports = false;
+    assert(_ps->state == _ps->s_element);
+    _ps->start_element();
 
-    // parse lists of names (which might include classes)
-    Lexeme t;
-    while (1) {
-	int esize = res.size();
-	res.push_back(-1);
-	res.push_back(0);
-	res.push_back(0);
-	bool this_implicit = false;
+    // initial port
+    yport(false);
 
-	// initial port
-	yport(res);
-	res[esize + 1] = res.size() - (esize + 3);
+    // element name or class
+    Lexeme t = lex();
 
-	// element name or class
-	String name;
-	int type;
+    String name;
+    int type;
+    bool this_implicit = false;
+    bool this_ident = false;
 
-	t = lex();
-	if (t.is(lexIdent)) {
-	    name = t.string();
+    if (t.is(lexIdent)) {
+	name = t.string();
+	type = element_type(name);
+	this_ident = true;
+    } else if (t.is('{')) {
+	_ps->_element_name = String();
+	_ps->state = ParseState::s_compound_element;
+	ycompound();
+	return;
+    } else if (t.is('(')) {
+	_ps->_element_name = anon_element_name("");
+	ygroup();
+	return;
+    } else {
+	bool nested = _c->depth() || _ps->_parent;
+	if (nested && (t.is(lexArrow) || t.is(lex2Arrow)))
+	    this_implicit = _ps->first_element_set()
+		&& (_ps->nports(false) || !_ps->cur_epos);
+	else if (nested && t.is(','))
+	    this_implicit = !!_ps->nports(false);
+	else if (nested && !t.is(lex2Colon))
+	    this_implicit = !_ps->first_element_set()
+		&& (_ps->nports(false) || !_ps->cur_epos);
+	if (this_implicit) {
+	    _ps->any_implicit = true;
+	    name = port_names[!_ps->first_element_set()];
 	    type = element_type(name);
-	} else if (t.is('{')) {
-	    type = ycompound();
-	    name = _element_types[type].name;
-	} else if (t.is('(')) {
-	    name = anon_element_name("");
-	    type = -1;
-	    int group_nports[2];
-	    ygroup(name, group_nports);
-
-	    // an anonymous group has implied, overridable port
-	    // specifications on both sides for all inputs & outputs
-	    for (int k = 0; k < 2; ++k)
-		if (res[esize + 1 + k] == 0) {
-		    res[esize + 1 + k] = group_nports[k];
-		    for (int i = 0; i < group_nports[k]; ++i)
-			res.push_back(i);
-		}
-	} else {
-	    bool nested = _c->depth() || _group_depth;
-	    if (nested && (t.is(lexArrow) || t.is(lex2Arrow)))
-		this_implicit = !in_allowed && (res[esize + 1] || !esize);
-	    else if (nested && t.is(','))
-		this_implicit = !!res[esize + 1];
-	    else if (nested && !t.is(lex2Colon))
-		this_implicit = in_allowed && (res[esize + 1] || !esize);
-	    if (this_implicit) {
-		any_implicit = true;
-		name = port_names[in_allowed];
-		type = element_type(name);
-		if (!in_allowed)
-		    click_swap(res[esize+1], res[esize+2]);
-		unlex(t);
-	    } else {
-		if (res[esize + 1])
-		    lerror("stranded port ignored");
-		res.resize(esize);
-		if (esize == 0) {
-		    if (in_allowed)
-			unlex(t);
-		    else
-			lerror("syntax error near %<%#s%>", t.string().c_str());
-		    return false;
-		}
-		break;
-	    }
-	}
-
-	ElementState *e = new ElementState(name, type, t.is(lexIdent), _file._filename, _file._lineno, tail);
-
-	// ":: CLASS" declaration
-	t = lex();
-	if (t.is(lex2Colon) && !this_implicit) {
-	    t = lex();
-	    if (t.is(lexIdent))
-		e->decl_type = force_element_type(t.string());
-	    else if (t.is('{'))
-		e->decl_type = ycompound();
-	    else {
-		lerror("missing element type in declaration");
-		e->decl_type = force_element_type(e->name);
-		unlex(t);
-	    }
-	    e->bare = false;
-	    t = lex();
-	}
-
-	// configuration string
-	if (t.is('(') && !this_implicit) {
-	    if (_element_map[e->name] >= 0)
-		lerror("configuration string ignored on element reference");
-	    e->configuration = lex_config();
-	    expect(')');
-	    e->bare = false;
-	    t = lex();
-	}
-
-	// final port
-	if (t.is('[') && !this_implicit) {
+	    if (_ps->first_element_set()) // swap inputs and outputs
+		click_swap(_ps->elements[_ps->cur_epos + 1], _ps->elements[_ps->cur_epos + 2]);
 	    unlex(t);
-	    if (res[esize + 2])	// delete any implied ports
-		res.resize(esize + 3 + res[esize + 1]);
-	    yport(res);
-	    res[esize + 2] = res.size() - (esize + 3 + res[esize + 1]);
-	    t = lex();
+	} else {
+	    if (_ps->nports(false))
+		lerror("stranded port ignored");
+	    _ps->elements.resize(_ps->cur_epos);
+	    if (_ps->cur_epos == 0) {
+		if (_ps->first_element_set())
+		    unlex(t);
+		else
+		    lerror_syntax(t);
+		_ps->state = _ps->s_connection_done;
+	    } else
+		_ps->state = _ps->s_next_element;
+	    return;
 	}
-	any_ports = any_ports || res[esize + 1] || res[esize + 2];
-
-	if (!t.is(','))
-	    break;
     }
 
+    yelement_type(name, type, this_ident, this_implicit);
+}
+
+void
+Lexer::yelement_type(String name, int type,
+		     bool this_ident, bool this_implicit)
+{
+    ElementState *e = new ElementState(name, type, this_ident, _file._filename, _file._lineno, _ps);
+
+    // ":: CLASS" declaration
+    Lexeme t = lex();
+    if (t.is(lex2Colon) && !this_implicit) {
+	e->bare = false;
+	t = lex();
+	if (t.is(lexIdent)) {
+	    e->decl_type = force_element_type(t.string());
+	    t = lex();
+	} else if (t.is('{')) {
+	    _ps->_element_name = String();
+	    _ps->state = ParseState::s_compound_type;
+	    ycompound();
+	    return;
+	} else {
+	    lerror("missing element type in declaration");
+	    e->decl_type = force_element_type(e->name);
+	}
+    }
+    unlex(t);
+
+    yelement_config(e, this_implicit);
+}
+
+void
+Lexer::yelement_config(ElementState *e, bool this_implicit)
+{
+    // configuration string
+    Lexeme t = lex();
+    if (t.is('(') && !this_implicit) {
+	if (_c->_element_map[e->name] >= 0)
+	    lerror("configuration string ignored on element reference");
+	e->configuration = lex_config();
+	expect(')');
+	e->bare = false;
+	t = lex();
+    }
+
+    // final port
+    unlex(t);
+    if (t.is('[') && !this_implicit) {
+	_ps->clear_ports(true);		    // delete any implied ports
+	yport(true);
+    }
+
+    if (_ps->nports(false) || _ps->nports(true))
+	_ps->any_ports = true;
+    _ps->state = ParseState::s_next_element;
+}
+
+void
+Lexer::yelement_next()
+{
+    assert(_ps->state == _ps->s_next_element);
+
+    // parse lists of names (which might include classes)
+    Lexeme t = lex();
+    if (t.is(',')) {
+	_ps->state = _ps->s_element;
+	return;
+    }
     unlex(t);
 
     // maybe complain about implicits
-    if (any_implicit && in_allowed && (t.is(lexArrow) || t.is(lex2Arrow)))
+    if (_ps->any_implicit && !_ps->first_element_set() && (t.is(lexArrow) || t.is(lex2Arrow)))
 	lerror("implicit ports used in the middle of a chain");
 
     // maybe spread class and configuration for standalone
     // multiple-element declaration
-    if (head->next && !in_allowed && !(t.is(lexArrow) || t.is(lex2Arrow))
-	&& !any_ports && !any_implicit) {
-	ElementState *last = head;
+    if (_ps->_head->next && _ps->first_element_set()
+	&& !(t.is(lexArrow) || t.is(lex2Arrow))
+	&& !_ps->any_ports && !_ps->any_implicit) {
+	ElementState *last = _ps->_head;
 	while (last->next && last->bare)
 	    last = last->next;
 	if (!last->next && last->decl_type)
-	    for (ElementState *e = head; e->next; e = e->next) {
+	    for (ElementState *e = _ps->_head; e->next; e = e->next) {
 		e->decl_type = last->decl_type;
 		e->configuration = last->configuration;
 	    }
     }
 
     // add elements
-    int *resp = res.begin();
-    while (ElementState *e = head) {
-	if (e->type >= 0 || (*resp = _element_map[e->name]) < 0) {
+    int *resp = _ps->elements.begin();
+    while (ElementState *e = _ps->_head) {
+	if (e->type >= 0 || (*resp = _c->_element_map[e->name]) < 0) {
 	    if (e->decl_type >= 0 && e->type >= 0)
 		_errh->lerror(Compound::landmark_string(e->filename, e->lineno), "class %<%s%> used as element name", e->name.c_str());
 	    else if (e->decl_type < 0 && e->type < 0) {
@@ -1317,12 +1448,11 @@ Lexer::yelement(Vector<int> &result, bool in_allowed)
 	}
 
 	resp += 3 + resp[1] + resp[2];
-	head = e->next;
+	_ps->_head = e->next;
 	delete e;
     }
 
-    result.swap(res);
-    return true;
+    _ps->state = ParseState::s_connector;
 }
 
 void
@@ -1430,67 +1560,57 @@ Lexer::yconnection_connect_all(Vector<int> &outputs, Vector<int> &inputs,
     }
 }
 
-bool
-Lexer::yconnection()
+void
+Lexer::yconnection_connector()
 {
-    Vector<int> elements1, elements2;
-    int connector = 0;
+    assert(_ps->state == _ps->s_connector);
+    if (_ps->first_element_set())
+	yconnection_check_useless(_ps->elements, false);
+    else
+	yconnection_connect_all(_ps->last_elements, _ps->elements, _ps->connector);
+    _ps->last_elements.swap(_ps->elements);
+
     Lexeme t;
+ relex:
+    t = lex();
+    switch (t.kind()) {
 
-    while (true) {
-	// get element
-	elements2.clear();
-	if (!yelement(elements2, !elements1.empty())) {
-	    yconnection_check_useless(elements1, true);
-	    return !elements1.empty();
-	}
+    case ',':
+    case lex2Colon:
+	lerror_syntax(t);
+	goto relex;
 
-	if (elements1.empty())
-	    yconnection_check_useless(elements2, false);
-	else
-	    yconnection_connect_all(elements1, elements2, connector);
-
-    relex:
-	t = lex();
-	switch (t.kind()) {
-
-	case ',':
-	case lex2Colon:
-	    lerror("syntax error before %<%#s%>", t.string().c_str());
-	    goto relex;
-
-	case lexArrow:
-	case lex2Arrow:
-	    connector = t.kind();
-	    break;
-
-	case lexIdent:
-	case '{':
-	case '}':
-	case '[':
-	case ')':
-	case lex2Bar:
-	case lexElementclass:
-	case lexRequire:
-	case lexProvide:
-	case lexDefine:
-	    unlex(t);
-	    // FALLTHRU
-	case ';':
-	case lexEOF:
-	    yconnection_check_useless(elements2, true);
-	    return true;
-
-	default:
-	    lerror("syntax error near %<%#s%>", t.string().c_str());
-	    if (t.kind() >= lexIdent)	// save meaningful tokens
-		unlex(t);
-	    return true;
-
-	}
-
+    case lexArrow:
+    case lex2Arrow:
 	// have 'x ->'
-	elements1.swap(elements2);
+	_ps->connector = t.kind();
+	_ps->state = ParseState::s_first_element;
+	break;
+
+    case lexIdent:
+    case '{':
+    case '}':
+    case '[':
+    case ')':
+    case lex2Bar:
+    case lexElementclass:
+    case lexRequire:
+    case lexProvide:
+    case lexDefine:
+	unlex(t);
+	// FALLTHRU
+    case ';':
+    case lexEOF:
+	_ps->state = ParseState::s_connection_done;
+	break;
+
+    default:
+	lerror_syntax(t);
+	if (t.kind() >= lexIdent)	// save meaningful tokens
+	    unlex(t);
+	_ps->state = ParseState::s_connection_done;
+	break;
+
     }
 }
 
@@ -1507,16 +1627,18 @@ Lexer::yelementclass()
   }
 
   Lexeme tnext = lex();
-  if (tnext.is('{'))
-    ycompound(name);
+  if (tnext.is('{')) {
+    _ps->_element_name = name;
+    _ps->state = ParseState::s_compound_elementclass;
+    ycompound();
 
-  else if (tnext.is(lexIdent)) {
+  } else if (tnext.is(lexIdent)) {
     // define synonym type
     int t = force_element_type(tnext.string());
     ADD_ELEMENT_TYPE(name, _element_types[t].factory, _element_types[t].thunk, true);
 
   } else {
-    lerror("syntax error near %<%#s%>", tnext.string().c_str());
+    lerror_syntax(tnext);
     ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
   }
 }
@@ -1567,99 +1689,130 @@ Lexer::ycompound_arguments(Compound *comptype)
   }
 }
 
-int
-Lexer::ycompound(String name)
+void
+Lexer::ycompound()
 {
-  HashTable<String, int> old_element_map(-1);
-  old_element_map.swap(_element_map);
-  HashTable<String, int> old_type_map(_element_type_map);
-  int old_offset = _anonymous_offset;
+    _ps->_saved_type_map = _element_type_map;
+    _ps->_saved_compound = _c;
+    _ps->_compound_first = _ps->_compound_last = 0;
+    _ps->_compound_extension = -1;
 
-  Compound *first = 0, *last = 0;
-  int extension = -1;
-
-  while (1) {
-    Lexeme dots = lex();
-    if (dots.is(lex3Dot)) {
-      // '...' marks an extension type
-      if (element_type(name) < 0) {
-	lerror("cannot extend unknown element class %<%s%>", name.c_str());
-	ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
-      }
-      extension = element_type(name);
-
-      dots = lex();
-      if (!first || !dots.is('}'))
-	lerror("%<...%> should occur last, after one or more compounds");
-      if (dots.is('}') && first)
-	break;
-    }
-    unlex(dots);
-
-    // create a compound
-    _element_map.clear();
-    Compound *old_c = _c;
-    Compound *ct = _c = new Compound(name, _file.landmark(), &_c->_scope);
-    get_element("input", TUNNEL_TYPE);
-    get_element("output", TUNNEL_TYPE);
-    _anonymous_offset = 2;
-
-    ycompound_arguments(ct);
-    while (ystatement('}'))
-      /* nada */;
-
-    _anonymous_offset = old_offset;
-    _element_type_map = old_type_map;
-    _c = old_c;
-
-    ct->finish(this, _errh);
-
-    if (last) {
-      int t = ADD_ELEMENT_TYPE(name, compound_element_factory, (uintptr_t) ct, true);
-      last->set_overload_type(t);
-    } else
-      first = ct;
-    last = ct;
-
-    // check for '||' or '}'
-    if (!lex().is(lex2Bar))
-      break;
-  }
-
-  // on the way out
-  old_element_map.swap(_element_map);
-
-  // add all types to ensure they're freed later
-  if (extension)
-    last->set_overload_type(extension);
-  return ADD_ELEMENT_TYPE(name, compound_element_factory, (uintptr_t) first, true);
+    ycompound_next();
 }
 
 void
-Lexer::ygroup(String name, int group_nports[2])
+Lexer::ycompound_next()
+{
+    Lexeme t = lex();
+    if (t.is(lex3Dot)) {
+	// '...' marks an extension type
+	String name = _ps->_element_name;
+	if (element_type(name) < 0) {
+	    lerror("cannot extend unknown element class %<%s%>", name.c_str());
+	    ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
+	}
+	_ps->_compound_extension = element_type(name);
+
+	t = lex();
+	if (!_ps->_compound_first || !t.is('}'))
+	    lerror("%<...%> should occur last, after one or more compounds");
+	unlex(t);
+
+    } else {
+	// create a compound
+	_c = new Compound(_ps->_element_name, _file.landmark(), &_ps->_saved_compound->_scope);
+	_ps = new ParseState(ParseState::t_compound, _ps);
+	get_element("input", TUNNEL_TYPE);
+	get_element("output", TUNNEL_TYPE);
+	_c->_anonymous_offset = 2;
+
+	unlex(t);
+	ycompound_arguments(_c);
+	_ps->state = ParseState::s_statement;
+    }
+}
+
+void
+Lexer::ycompound_end(const Lexeme &t)
+{
+    ParseState *new_ps = _ps;
+    Compound *new_c = _c;
+
+    _ps = _ps->_parent;
+    _element_type_map = _ps->_saved_type_map;
+    _c = _ps->_saved_compound;
+
+    new_c->finish(_errh);
+    delete new_ps;
+
+    if (_ps->_compound_last) {
+	int type = ADD_ELEMENT_TYPE(_ps->_element_name, compound_element_factory, (uintptr_t) new_c, true);
+	_ps->_compound_last->set_overload_type(type);
+    } else
+	_ps->_compound_first = new_c;
+    _ps->_compound_last = new_c;
+
+    // check for overloads to come
+    if (t.is(lex2Bar))
+	return;
+
+    // otherwise, end of compound
+    _ps->_compound_last->set_overload_type(_ps->_compound_extension);
+    int type = ADD_ELEMENT_TYPE(_ps->_element_name, compound_element_factory, (uintptr_t) _ps->_compound_first, true);
+
+    if (_ps->state == ParseState::s_compound_element)
+	yelement_type(_element_types[type].name, type, false, false);
+    else if (_ps->state == ParseState::s_compound_type) {
+	ElementState *e = _ps->_tail;
+	e->decl_type = type;
+	yelement_config(e, false);
+    } else {
+	assert(_ps->state == ParseState::s_compound_elementclass);
+	_ps->state = ParseState::s_statement;
+    }
+}
+
+void
+Lexer::ygroup()
 {
     int eidexes[3];
-    add_tunnels(name, eidexes);
+    add_tunnels(_ps->_element_name, eidexes);
 
-    int old_input = _element_map["input"];
-    int old_output = _element_map["output"];
-    _element_map["input"] = eidexes[1];
-    _element_map["output"] = eidexes[2];
-    ++_group_depth;
+    _ps->elements.push_back(_c->_element_map["input"]);
+    _ps->elements.push_back(_c->_element_map["output"]);
+    _c->_element_map["input"] = eidexes[1];
+    _c->_element_map["output"] = eidexes[2];
+    _ps = new ParseState(ParseState::t_group, _ps);
+}
 
-    while (ystatement(')'))
-	/* nada */;
-    expect(')');
+void
+Lexer::ygroup_end()
+{
+    ParseState *new_ps = _ps;
+    _ps = _ps->_parent;
+    delete new_ps;
 
-    // check that all inputs and outputs are used
+    // count inputs & outputs, check that all inputs and outputs are used
     LandmarkErrorHandler lerrh(_errh, _file.landmark());
-    const char *printable_name = (name[0] == ';' ? "<anonymous group>" : name.c_str());
-    group_nports[0] = _c->check_pseudoelement(eidexes[1], false, printable_name, &lerrh);
-    group_nports[1] = _c->check_pseudoelement(eidexes[2], true, printable_name, &lerrh);
+    const char *printable_name = (_ps->_element_name[0] == ';' ? "<anonymous group>" : _ps->_element_name.c_str());
+    int group_nports[2];
+    group_nports[0] = _c->check_pseudoelement(_c->_element_map["input"], false, printable_name, &lerrh);
+    group_nports[1] = _c->check_pseudoelement(_c->_element_map["output"], true, printable_name, &lerrh);
 
-    --_group_depth;
-    _element_map["input"] = old_input;
-    _element_map["output"] = old_output;
+    _c->_element_map["input"] = _ps->elements[_ps->elements.size() - 2];
+    _c->_element_map["output"] = _ps->elements[_ps->elements.size() - 1];
+    _ps->elements.resize(_ps->elements.size() - 2);
+
+    // an anonymous group has implied, overridable port
+    // specifications on both sides for all inputs & outputs
+    for (int k = 0; k < 2; ++k)
+	if (_ps->elements[_ps->cur_epos + 1 + k] == 0) {
+	    _ps->elements[_ps->cur_epos + 1 + k] = group_nports[k];
+	    for (int i = 0; i < group_nports[k]; ++i)
+		_ps->elements.push_back(i);
+	}
+
+    yelement_type(_ps->_element_name, -1, false, false);
 }
 
 void
@@ -1697,9 +1850,14 @@ Lexer::yrequire_library(const String &value)
 
     FileState old_file(_file);
     _file = FileState(data, fn);
-    while (ystatement(0))
-	/* do nothing */;
+    ParseState *old_ps = _ps;
+    _ps = new ParseState(ParseState::t_file, 0);
+
+    while (!ydone())
+	ystep();
+
     _file = old_file;
+    _ps = old_ps;
 #else
     (void) value;
     lerror("%<require library%> may not be used in this driver");
@@ -1788,61 +1946,114 @@ Lexer::yvar()
   }
 }
 
-bool
-Lexer::ystatement(int nested)
+void
+Lexer::ystatement()
 {
-  Lexeme t = lex();
-  switch (t.kind()) {
+    Lexeme t = lex();
+    switch (t.kind()) {
 
-   case lexIdent:
-   case '[':
-   case '{':
-   case '(':
-   case lexArrow:
-   case lex2Arrow:
-    unlex(t);
-    yconnection();
-    return true;
+    case lexIdent:
+    case '[':
+    case '{':
+    case '(':
+    case lexArrow:
+    case lex2Arrow:
+	unlex(t);
+	_ps->state = _ps->s_first_element;
+	break;
 
-   case lexElementclass:
-    yelementclass();
-    return true;
+    case lexElementclass:
+	yelementclass();
+	break;
 
-   case lexRequire:
-    yrequire();
-    return true;
+    case lexRequire:
+	yrequire();
+	break;
 
-   case lexDefine:
-    yvar();
-    return true;
+    case lexDefine:
+	yvar();
+	break;
 
-   case ';':
-    return true;
+    case ';':
+	break;
 
-   case '}':
-   case lex2Bar:
-    if (nested != '}')
-      goto syntax_error;
-    unlex(t);
-    return false;
+    case '}':
+    case lex2Bar:
+	if (_ps->_type == ParseState::t_compound)
+	    ycompound_end(t);
+	else {
+	    lerror_syntax(t);
+	    if (_ps->_type == ParseState::t_group) {
+		unlex(t);
+		ygroup_end();
+	    }
+	}
+	break;
 
-   case ')':
-    if (nested != ')')
-      goto syntax_error;
-    unlex(t);
-    return false;
+    case ')':
+	if (_ps->_type == ParseState::t_group)
+	    ygroup_end();
+	else
+	    goto syntax_error;
+	break;
 
-   case lexEOF:
-    if (nested)
-	lerror("expected %<%c%>", nested);
-    return false;
+    case lexEOF:
+	if (_ps->_type == ParseState::t_group) {
+	    lerror("expected %<)%>");
+	    ygroup_end();
+	} else if (_ps->_type == ParseState::t_compound) {
+	    lerror("expected %<}%>");
+	    ycompound_end(t);
+	} else {
+	    assert(_ps->_type == ParseState::t_file && !_ps->_parent);
+	    delete _ps;
+	    _ps = 0;
+	}
+	break;
 
-   default:
-   syntax_error:
-    lerror("syntax error near %<%#s%>", t.string().c_str());
-    return true;
+    default:
+    syntax_error:
+	lerror_syntax(t);
+	break;
+    }
+}
 
-  }
+void
+Lexer::ystep()
+{
+    switch (_ps->state) {
+    case ParseState::s_statement:
+	ystatement();
+	break;
+
+    case ParseState::s_first_element:
+	_ps->enter_element_state();
+	break;
+
+    case ParseState::s_element:
+	yelement_name();
+	break;
+
+    case ParseState::s_next_element:
+	yelement_next();
+	break;
+
+    case ParseState::s_connector:
+	yconnection_connector();
+	break;
+
+    case ParseState::s_connection_done:
+	yconnection_check_useless(_ps->last_elements, true);
+	_ps->last_elements.clear();
+	_ps->state = ParseState::s_statement;
+	break;
+
+    case ParseState::s_compound_element:
+    case ParseState::s_compound_type:
+    case ParseState::s_compound_elementclass:
+	ycompound_next();
+	break;
+    }
 }
 
 
@@ -1875,7 +2086,7 @@ Lexer::expand_compound_element(int which, VariableEnvironment &ve)
 
   // deanonymize element name if necessary
   if (name[0] == ';')
-    name = _c->_element_names[which] = deanonymize_element_name(name, which);
+      name = _c->deanonymize_element_name(which);
 
   // avoid TUNNEL_TYPE
   if (etype == TUNNEL_TYPE)
