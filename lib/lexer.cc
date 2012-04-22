@@ -471,9 +471,11 @@ struct Lexer::ParseState {
     int _compound_extension;
 
     ParseState *_parent;
+    int _depth;
 
     ParseState(int type, ParseState *parent)
-	: state(s_statement), _type(type), connector(0), _parent(parent) {
+	: state(s_statement), _type(type), connector(0), _parent(parent),
+	  _depth(parent ? parent->_depth + 1 : 0) {
     }
 
     void enter_element_state() {
@@ -1729,6 +1731,11 @@ Lexer::ycompound_next()
 	unlex(t);
 	ycompound_arguments(_c);
 	_ps->state = ParseState::s_statement;
+
+	if (_ps->_depth >= max_depth) {
+	    lerror("maximum compound element nesting depth exceeded");
+	    ycompound_end(Lexeme());
+	}
     }
 }
 
@@ -1783,6 +1790,11 @@ Lexer::ygroup()
     _c->_element_map["input"] = eidexes[1];
     _c->_element_map["output"] = eidexes[2];
     _ps = new ParseState(ParseState::t_group, _ps);
+
+    if (_ps->_depth >= max_depth) {
+	lerror("maximum element group nesting depth exceeded");
+	ygroup_end();
+    }
 }
 
 void

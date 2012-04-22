@@ -107,6 +107,10 @@ class Lexer { public:
 
   private:
 
+    enum {
+	max_depth = 50
+    };
+
     struct FileState {
 	String _big_string;
 	const char *_end;
