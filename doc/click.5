@@ -41,15 +41,15 @@
 click \- Click configuration language
 '
 .SH DESCRIPTION
-The Click language is used to describe Click router configurations.
+The Click language describes Click router configurations.
 .LP
-Two fundamental statements suffice to describe any router:
-.IR declarations
-introduce elements, and
-.IR connections
-define packet flow between them.  If you
-think of a Click router configuration as a directed graph of elements,
-declarations list the graph's vertices and connections list its edges.
+Two basic statements can implement any router.
+.IR Declaration
+statements create elements, and
+.IR connection
+statements define packet flow among them.
+Think of a Click router configuration as a directed graph of elements.
+Then declarations list the graph's vertices and connections list its edges.
 .LP
 A declaration looks like this:
 .Rs
@@ -57,7 +57,7 @@ A declaration looks like this:
 .Re
 This introduces an element called
 .IR name
-that has element class
+with element class
 .IR class
 and configuration arguments
 .IR config .
@@ -66,9 +66,9 @@ A connection looks like this:
 .Rs
 .IR "name1" " [" "port1" "] -> [" "port2" "] " "name2" ;
 .Re
-This says that
+This connects
 .IR name1 "'s output port " port1
-connects
+and
 .IR name2 "'s input port " port2 .
 The two
 .IR name s
@@ -97,11 +97,13 @@ abstraction features that simplify router programming.
 .SH "SHORTHAND"
 .SS "Declaration shorthand"
 '
-Declarations can omit empty configuration strings entirely, and can
-declare multiple elements using a comma-separated list of names:
+Empty configuration strings can be omitted.
 .Rs
 .IR "name" " :: " "class" ;
-.br
+.Re
+You can also
+declare multiple elements using a comma-separated list of names.
+.Rs
 .IR "name1" ", " "name2" ", ..., " "nameN" " ::"
 .IR "class" ( "config" );
 .Re
@@ -119,12 +121,12 @@ is equivalent to
 The
 .I generatedname
 has the form
-.RI ` class "@" number ',
-where the
+.RI ` class "@" number ';
+Click chooses the
 .IR number
-is chosen to make the name unique. These numbers are predictable: when the
+so that the name is unique. These numbers are predictable: when the
 system parses a Click file twice, that file's anonymous elements will get
-the same generated name. Users may also declare elements with names
+the same generated names each time. Users may also declare elements with names
 like
 .RI ` class "@" number ',
 though we suggest that users avoid the `@'
@@ -132,19 +134,19 @@ character in their element names.
 '
 .SS "Connection shorthand"
 '
-Connections can be strung together into a single statement if the
+You can string together several connections into a single statement if the
 output element of one is the same as the input element of the other:
 .Rs
-.IR "n1" " [" "p1" "] -> [" "p2" "] " "x"
-.RI "[" "p3" "] -> [" "p4" "] " "n2" ;
+.IR "a" " [1] -> [2] " "x"
+.RI "[3] -> [4] " "b" ;
 .Re
 means
 .Rs
-.IR "n1" " [" "p1" "] -> [" "p2" "] " "x" ;
+.IR "a" " [1] -> [2] " "x" ;
 .br
-.IR "x" " [" "p3" "] -> [" "p4" "] " "n2" ;
+.IR "x" " [3] -> [4] " "b" ;
 .Re
-If a port number is missing, [0] is implied.  These two lines are equivalent:
+A missing port number implies port [0]. These two lines mean the same thing:
 .Rs
 .IR "n1" " [0] -> [0] " "n2" ;
 .br
@@ -157,18 +159,18 @@ anonymously.  For instance,
 .RI "... -> [" "p1" "] " "name" " ::"
 .IR "class" ( "config" ") [" "p2" "] -> ...;"
 .Re
-is equivalent to
+means
 .Rs
 .IR "name" " :: " "class" ( "config" );
 .br
 .RI "... -> [" "p1" "] " "name" " [" "p2" "] -> ...;"
 .Re
-and
+Similarly,
 .Rs
 .RI "... -> [" p1 "] " class ( config )
 .RI "[" p2 "] -> ...;"
 .Re
-is equivalent to
+means
 .Rs
 .IR generatedname " :: " class ( config );
 .br
@@ -176,13 +178,11 @@ is equivalent to
 .Re
 .SS "Many-to-one connections"
 '
-It is sometimes useful to connect many elements to the same port, for
-example a Discard.  This is concisely specified with a many-to-one
-connection:
+A many-to-one connection connects many elements to the same port.
 .Rs
 .IR "n1" ", " "n2" ", " "n3" " -> " "x" ;
 .Re
-is equivalent to
+means
 .Rs
 .IR "n1" " -> " x ";"
 .br
@@ -194,17 +194,17 @@ Port numbers are supported:
 .Rs
 .IR "n1" " [\fIp1\fR], " "n2" " [\fIp2\fR] -> [\fIp3\fR] " "x" ;
 .Re
-is equivalent to
+means
 .Rs
 .IR "n1" " [\fIp1\fR] -> [\fIp3\fR] " "x" ;
 .br
 .IR "n2" " [\fIp2\fR] -> [\fIp3\fR] " "x" ;
 .Re
-One-to-many connections are also allowed (the comma-separated
-list is on the right).
+One-to-many connections are also allowed; put the comma-separated
+list is on the right.
 .LP
-Declarations may occur within a many-to-one connection, but in this
-context each declaration applies only to one name.  For example
+You may declare elements within a many-to-one connection, but unlike with declaration shorthand,
+each declaration applies to only one name. For example
 .Rs
 .IR "n1" ", " "n2" " :: " "class" " -> " "n3" ";"
 .Re
@@ -222,8 +222,8 @@ was not declared.
 '
 .SS "Many-to-many connections"
 '
-A many-to-many connection describes how many outputs connect to many
-inputs.  One example might be connecting a simple Classifier.  This code:
+A many-to-many connection connects many outputs to many
+inputs. For example, consider a simple Classifier. This code:
 .Rs
 .IR c " :: Classifier(00/01, 00/02, 00/03);"
 .br
@@ -236,7 +236,7 @@ inputs.  One example might be connecting a simple Classifier.  This code:
 .br
 .IR c " [2] -> Paint(2) -> " "next" ";"
 .Re
-can instead be written like this, using the `=>' many-to-many connector:
+can more concisely be written like this, using the `=>' many-to-many connector:
 .Rs
 .IR c " [0], " c " [1], " c " [2] => Paint(0), Paint(1), Paint(2) -> " next ";"
 .Re
@@ -246,9 +246,8 @@ or, even more concisely, either of the following:
 .br
 .IR c " => Paint(0), Paint(1), Paint(2) -> " next ";"
 .Re
-A many-to-many connection matches output ports to input ports.  There
-must be as many ports on the left as on the right.  However, if one
-side has exactly one element and no port, the connection assigns that
+Each many-to-many connection must list the same number of output ports (on the left) as input ports (on the right).
+However, if one side of the connection has exactly one element and no port, Click implicitly assigns that
 element's ports sequentially starting from 0.
 '
 .SS "Element groups"
@@ -319,7 +318,7 @@ to leave one or more of its ports unconnected:
 An element group does not define a new scope.  Its contents may refer
 to elements declared outside of the group, and declarations inside the
 group are visible after the group closes.  This differs from compound
-elements, described next, which have a related syntax but additionally
+elements, described next, which have a related syntax but
 introduce a new scope.
 '
 .SH "COMPOUND ELEMENTS"
