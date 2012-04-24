@@ -198,8 +198,7 @@ class Lexer { public:
 
     void yport(bool isoutput);
     void yelement_name();
-    void yelement_type(String name, int type,
-		       bool this_ident, bool this_implicit);
+    void yelement_type(int type, bool this_ident, bool this_implicit);
     void yelement_config(ElementState *e, bool this_implicit);
     void yelement_next();
 

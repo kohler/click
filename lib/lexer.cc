@@ -1287,87 +1287,85 @@ Lexer::yelement_name()
     yport(false);
 
     // element name or class
-    Lexeme t = lex();
-
-    String name;
-    int type;
     bool this_implicit = false;
     bool this_ident = false;
 
-    if (t.is(lexIdent)) {
-	name = t.string();
-	type = element_type(name);
-	this_ident = true;
-    } else if (t.is('{')) {
-	_ps->_element_name = String();
-	_ps->state = ParseState::s_compound_element;
-	ycompound();
-	return;
-    } else if (t.is('(')) {
-	_ps->_element_name = anon_element_name("");
-	ygroup();
-	return;
-    } else {
-	bool nested = _c->depth() || _ps->_parent;
-	if (nested && (t.is(lexArrow) || t.is(lex2Arrow)))
-	    this_implicit = _ps->first_element_set()
-		&& (_ps->nports(false) || !_ps->cur_epos);
-	else if (nested && t.is(','))
-	    this_implicit = !!_ps->nports(false);
-	else if (nested && !t.is(lex2Colon))
-	    this_implicit = !_ps->first_element_set()
-		&& (_ps->nports(false) || !_ps->cur_epos);
-	if (this_implicit) {
-	    _ps->any_implicit = true;
-	    name = port_names[!_ps->first_element_set()];
-	    type = element_type(name);
-	    if (_ps->first_element_set()) // swap inputs and outputs
-		click_swap(_ps->elements[_ps->cur_epos + 1], _ps->elements[_ps->cur_epos + 2]);
-	    unlex(t);
-	} else {
-	    if (_ps->nports(false))
-		lerror("stranded port ignored");
-	    _ps->elements.resize(_ps->cur_epos);
-	    if (_ps->cur_epos == 0) {
-		if (_ps->first_element_set())
-		    unlex(t);
-		else
-		    lerror_syntax(t);
-		_ps->state = _ps->s_connection_done;
-	    } else
-		_ps->state = _ps->s_next_element;
+    {
+	Lexeme t = lex();
+	if (t.is(lexIdent)) {
+	    _ps->_element_name = t.string();
+	    this_ident = true;
+	} else if (t.is('{')) {
+	    _ps->_element_name = String();
+	    _ps->state = ParseState::s_compound_element;
+	    ycompound();
 	    return;
+	} else if (t.is('(')) {
+	    _ps->_element_name = anon_element_name("");
+	    ygroup();
+	    return;
+	} else {
+	    bool nested = _c->depth() || _ps->_parent;
+	    if (nested && (t.is(lexArrow) || t.is(lex2Arrow)))
+		this_implicit = _ps->first_element_set()
+		    && (_ps->nports(false) || !_ps->cur_epos);
+	    else if (nested && t.is(','))
+		this_implicit = !!_ps->nports(false);
+	    else if (nested && !t.is(lex2Colon))
+		this_implicit = !_ps->first_element_set()
+		    && (_ps->nports(false) || !_ps->cur_epos);
+	    if (this_implicit) {
+		_ps->_element_name = port_names[!_ps->first_element_set()];
+		_ps->any_implicit = true;
+		if (_ps->first_element_set()) // swap inputs and outputs
+		    click_swap(_ps->elements[_ps->cur_epos + 1], _ps->elements[_ps->cur_epos + 2]);
+		unlex(t);
+	    } else {
+		if (_ps->nports(false))
+		    lerror("stranded port ignored");
+		_ps->elements.resize(_ps->cur_epos);
+		if (_ps->cur_epos == 0) {
+		    if (_ps->first_element_set())
+			unlex(t);
+		    else
+			lerror_syntax(t);
+		    _ps->state = _ps->s_connection_done;
+		} else
+		    _ps->state = _ps->s_next_element;
+		return;
+	    }
 	}
     }
 
-    yelement_type(name, type, this_ident, this_implicit);
+    yelement_type(element_type(_ps->_element_name), this_ident, this_implicit);
 }
 
 void
-Lexer::yelement_type(String name, int type,
-		     bool this_ident, bool this_implicit)
+Lexer::yelement_type(int type, bool this_ident, bool this_implicit)
 {
-    ElementState *e = new ElementState(name, type, this_ident, _file._filename, _file._lineno, _ps);
+    ElementState *e = new ElementState(_ps->_element_name, type, this_ident, _file._filename, _file._lineno, _ps);
 
     // ":: CLASS" declaration
-    Lexeme t = lex();
-    if (t.is(lex2Colon) && !this_implicit) {
-	e->bare = false;
-	t = lex();
-	if (t.is(lexIdent)) {
-	    e->decl_type = force_element_type(t.string());
+    {
+	Lexeme t = lex();
+	if (t.is(lex2Colon) && !this_implicit) {
+	    e->bare = false;
 	    t = lex();
-	} else if (t.is('{')) {
-	    _ps->_element_name = String();
-	    _ps->state = ParseState::s_compound_type;
-	    ycompound();
-	    return;
-	} else {
-	    lerror("missing element type in declaration");
-	    e->decl_type = force_element_type(e->name);
+	    if (t.is(lexIdent)) {
+		e->decl_type = force_element_type(t.string());
+		t = lex();
+	    } else if (t.is('{')) {
+		_ps->_element_name = String();
+		_ps->state = ParseState::s_compound_type;
+		ycompound();
+		return;
+	    } else {
+		lerror("missing element type in declaration");
+		e->decl_type = force_element_type(e->name);
+	    }
 	}
+	unlex(t);
     }
-    unlex(t);
 
     yelement_config(e, this_implicit);
 }
@@ -1767,9 +1765,10 @@ Lexer::ycompound_end(const Lexeme &t)
     _ps->_compound_last->set_overload_type(_ps->_compound_extension);
     int type = ADD_ELEMENT_TYPE(_ps->_element_name, compound_element_factory, (uintptr_t) _ps->_compound_first, true);
 
-    if (_ps->state == ParseState::s_compound_element)
-	yelement_type(_element_types[type].name, type, false, false);
-    else if (_ps->state == ParseState::s_compound_type) {
+    if (_ps->state == ParseState::s_compound_element) {
+	_ps->_element_name = _element_types[type].name;
+	yelement_type(type, false, false);
+    } else if (_ps->state == ParseState::s_compound_type) {
 	ElementState *e = _ps->_tail;
 	e->decl_type = type;
 	yelement_config(e, false);
@@ -1824,7 +1823,7 @@ Lexer::ygroup_end()
 		_ps->elements.push_back(i);
 	}
 
-    yelement_type(_ps->_element_name, -1, false, false);
+    yelement_type(-1, false, false);
 }
 
 void
