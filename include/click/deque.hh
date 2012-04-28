@@ -253,7 +253,9 @@ class Deque {
 	return operator[](vm_.n_ - 1);
     }
     /** @overload */
-    const T &back() const		{ return operator[](vm_.n_ - 1); }
+    const T &back() const {
+	return operator[](vm_.n_ - 1);
+    }
 
     /** @brief Return a reference to the <em>i</em>th element.
       @pre 0 <= @a i < size()
@@ -264,7 +266,9 @@ class Deque {
 	return *(T *)&vm_.l_[vm_.i2p(i)];
     }
     /** @overload */
-    const T &unchecked_at(size_type i) const	{ return *(T *)&vm_.l_[vm_.i2p(i)]; }
+    const T &unchecked_at(size_type i) const {
+	return *(T *)&vm_.l_[vm_.i2p(i)];
+    }
 
     /** @cond never */
     inline T &at_u(size_type i) CLICK_DEPRECATED;
