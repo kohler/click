@@ -56,7 +56,6 @@ class RouterThread { public:
     inline bool stop_flag() const;
 
     void driver();
-    void driver_once();
 
     void kill_router(Router *router);
 

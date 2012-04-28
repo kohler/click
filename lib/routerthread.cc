@@ -723,40 +723,6 @@ RouterThread::driver()
 }
 
 
-/******************************/
-/* Secondary driver functions */
-/******************************/
-
-void
-RouterThread::driver_once()
-{
-    if (!_master->check_driver())
-	return;
-
-#if CLICK_LINUXMODULE
-    // this task is running the driver
-    _linux_task = current;
-#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
-    _running_processor = click_current_processor();
-# if HAVE___THREAD_STORAGE_CLASS
-    click_current_thread_id = _id;
-# endif
-#endif
-    driver_lock_tasks();
-
-    run_tasks(1);
-
-    driver_unlock_tasks();
-#if CLICK_LINUXMODULE
-    _linux_task = 0;
-#elif CLICK_USERLEVEL && HAVE_MULTITHREAD
-    _running_processor = click_invalid_processor();
-# if HAVE___THREAD_STORAGE_CLASS
-    click_current_thread_id = 0;
-# endif
-#endif
-}
-
 void
 RouterThread::kill_router(Router *r)
 {
