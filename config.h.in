@@ -161,6 +161,14 @@
 # define CLICK_ALIGNED(x) /* nothing */
 #endif
 
+/* Define macro for size of a cache line. */
+#define CLICK_CACHE_LINE_SIZE 64
+
+/* Define macro for the difference between 'x' and the next higher multiple
+   of CLICK_CACHE_LINE_SIZE (between 0 and CLICK_CACHE_LINE_SIZE - 1). */
+#define CLICK_CACHE_LINE_PAD_BYTES(x) \
+	((((x) + CLICK_CACHE_LINE_SIZE - 1) / CLICK_CACHE_LINE_SIZE) * CLICK_CACHE_LINE_SIZE - (x))
+
 /* Define macro for deprecated functions. */
 #if __GNUC__ < 3 || (__GNUC__ == 3 && __GNUC_MINOR__ == 0)
 # define CLICK_DEPRECATED /* nothing */
