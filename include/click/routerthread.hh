@@ -25,7 +25,7 @@ CLICK_CXX_UNPROTECT
 // dependency.
 CLICK_DECLS
 
-class RouterThread : private TaskLink { public:
+class RouterThread { public:
 
     enum { THREAD_QUIESCENT = -1, THREAD_UNKNOWN = -1000 };
 
@@ -101,12 +101,7 @@ class RouterThread : private TaskLink { public:
 # endif
 #endif
 
-    unsigned _tasks_per_iter;
-    unsigned _iters_per_os;
-
   private:
-
-    volatile int _stop_flag;
 
 #if HAVE_TASK_HEAP
     struct task_heap_element {
@@ -118,47 +113,18 @@ class RouterThread : private TaskLink { public:
 	    : pass(t_->_pass), t(t_) {
 	}
     };
+#endif
+
+    // LOCAL STATE GROUP
+    TaskLink _task_link;
+    volatile int _stop_flag;
+#if HAVE_TASK_HEAP
     Vector<task_heap_element> _task_heap;
 #endif
-
-    uintptr_t _pending_head;
-    volatile uintptr_t *_pending_tail;
-    SpinlockIRQ _pending_lock;
-
-    Master *_master;
-    int _id;
-
-#if CLICK_LINUXMODULE
-    struct task_struct *_linux_task;
-#endif
-#if HAVE_MULTITHREAD && !CLICK_LINUXMODULE
-    click_processor_t _running_processor;
-#endif
-    Spinlock _task_lock;
-    atomic_uint32_t _task_blocker;
-    atomic_uint32_t _task_blocker_waiting;
 
     TimerSet _timers;
 #if CLICK_USERLEVEL
     SelectSet _selects;
-#endif
-#if CLICK_NS
-    Timestamp _ns_scheduled;
-    Timestamp _ns_last_active;
-    int _ns_active_iter;
-    enum { ns_iters_per_time = 1000 };
-#endif
-
-#if CLICK_LINUXMODULE
-    bool _greedy;
-#endif
-
-#if CLICK_BSDMODULE
-    // XXX FreeBSD
-    u_int64_t _old_tsc; /* MARKO - temp. */
-    void *_sleep_ident;
-    int _oticks;
-    bool _greedy;
 #endif
 
 #if HAVE_ADAPTIVE_SCHEDULER
@@ -178,6 +144,45 @@ class RouterThread : private TaskLink { public:
     int _adaptive_restride_iter;
 #endif
 
+    // EXTERNAL STATE GROUP
+    Spinlock _task_lock CLICK_ALIGNED(CLICK_CACHE_LINE_SIZE);
+    atomic_uint32_t _task_blocker;
+    atomic_uint32_t _task_blocker_waiting;
+
+    uintptr_t _pending_head;
+    volatile uintptr_t *_pending_tail;
+    SpinlockIRQ _pending_lock;
+
+    // SHARED STATE GROUP
+    Master *_master CLICK_ALIGNED(CLICK_CACHE_LINE_SIZE);
+    int _id;
+#if HAVE_MULTITHREAD && !CLICK_LINUXMODULE
+    click_processor_t _running_processor;
+#endif
+#if CLICK_LINUXMODULE
+    struct task_struct *_linux_task;
+    bool _greedy;
+#endif
+  public:
+    unsigned _tasks_per_iter;
+    unsigned _iters_per_os;
+  private:
+
+#if CLICK_NS
+    Timestamp _ns_scheduled;
+    Timestamp _ns_last_active;
+    int _ns_active_iter;
+    enum { ns_iters_per_time = 1000 };
+#endif
+
+#if CLICK_BSDMODULE
+    // XXX FreeBSD
+    u_int64_t _old_tsc; /* MARKO - temp. */
+    void *_sleep_ident;
+    int _oticks;
+    bool _greedy;
+#endif
+
 #if CLICK_DEBUG_SCHEDULING
     int _thread_state;
     uint32_t _driver_epoch;
@@ -193,7 +198,7 @@ class RouterThread : private TaskLink { public:
 #endif
 
     // called by Master
-    RouterThread(Master *, int);
+    RouterThread(Master *master, int threadno);
     ~RouterThread();
 
     // task requests
@@ -203,7 +208,7 @@ class RouterThread : private TaskLink { public:
 # if HAVE_TASK_HEAP
 	return _task_heap.size() ? _task_heap.unchecked_at(0).pass : 0;
 # else
-	return _next->_pass;
+	return _task_link._next->_pass;
 # endif
     }
 #endif
@@ -266,7 +271,7 @@ RouterThread::active() const
 #if HAVE_TASK_HEAP
     return _task_heap.size() != 0 || _pending_head;
 #else
-    return _next != this || _pending_head;
+    return _task_link._next != &_task_link || _pending_head;
 #endif
 }
 
@@ -299,7 +304,7 @@ RouterThread::task_begin() const
 #if HAVE_TASK_HEAP
     return (_task_heap.size() ? _task_heap.unchecked_at(0).t : 0);
 #else
-    return static_cast<Task *>(_next);
+    return static_cast<Task *>(_task_link._next);
 #endif
 }
 
@@ -335,7 +340,7 @@ RouterThread::task_end() const
 #if HAVE_TASK_HEAP
     return 0;
 #else
-    return static_cast<Task *>(const_cast<TaskLink *>(static_cast<const TaskLink *>(this)));
+    return static_cast<Task *>(const_cast<TaskLink *>(&_task_link));
 #endif
 }
 
@@ -461,8 +466,9 @@ RouterThread::request_go()
 inline void
 RouterThread::set_thread_state(int state)
 {
-    assert(state >= 0 && state < NSTATES);
+    (void) state;
 #if CLICK_DEBUG_SCHEDULING
+    assert(state >= 0 && state < NSTATES);
 # if CLICK_DEBUG_SCHEDULING > 1
     Timestamp now = Timestamp::now();
     if (_thread_state_timestamp)

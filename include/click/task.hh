@@ -549,8 +549,8 @@ Task::complete_schedule(unsigned new_pass)
     _next->_prev = this;
 # else
     // look for 'n' immediately after where we should be scheduled
-    TaskLink *n = _thread->_next;
-    while (n != _thread && !PASS_GT(n->_pass, _pass))
+    TaskLink *n = _thread->_task_link._next;
+    while (n != &_thread->_task_link && !PASS_GT(n->_pass, _pass))
 	n = n->_next;
     // schedule before 'n'
     _prev = n->_prev;

@@ -66,12 +66,12 @@ static unsigned long greedy_schedule_jiffies;
  * @brief A set of Tasks scheduled on the same CPU.
  */
 
-RouterThread::RouterThread(Master *m, int id)
+RouterThread::RouterThread(Master *master, int id)
     : _stop_flag(0), _pending_head(0), _pending_tail(&_pending_head),
-      _master(m), _id(id)
+      _master(master), _id(id)
 {
 #if !HAVE_TASK_HEAP
-    _prev = _next = this;
+    _task_link._prev = _task_link._next = &_task_link;
 #endif
 #if CLICK_LINUXMODULE
     _linux_task = 0;
@@ -441,7 +441,7 @@ RouterThread::run_tasks(int ntasks)
 		if (_task_heap.size() < 2)
 		    break;
 #else
-		if (t->_next == this)
+		if (t->_next == &_task_link)
 		    break;
 #endif
 #if HAVE_STRIDE_SCHED
@@ -462,7 +462,7 @@ RouterThread::run_tasks(int ntasks)
 #else
 # if HAVE_STRIDE_SCHED
 	    TaskLink *n = t->_next;
-	    while (n != this && !PASS_GT(n->_pass, t->_pass))
+	    while (n != &_task_link && !PASS_GT(n->_pass, t->_pass))
 		n = n->_next;
 # else
 	    TaskLink *n = this;
@@ -774,9 +774,9 @@ RouterThread::kill_router(Router *r)
 		tp++;
 	}
 #else
-    TaskLink *prev = this;
+    TaskLink *prev = &_task_link;
     TaskLink *t;
-    for (t = prev->_next; t != this; t = t->_next)
+    for (t = prev->_next; t != &_task_link; t = t->_next)
 	if (static_cast<Task *>(t)->router() == r)
 	    t->_prev = 0;
 	else {
