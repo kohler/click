@@ -33,6 +33,8 @@ class Master { public:
     inline RouterThread *unchecked_thread(int id) const;
     void wake_somebody();
 
+    inline unsigned rcu_global_epoch() const;
+
 #if CLICK_USERLEVEL
     int add_signal_handler(int signo, Router *router, String handler);
     int remove_signal_handler(int signo, Router *router, String handler);
@@ -57,6 +59,11 @@ class Master { public:
 #endif
 
   private:
+
+    volatile click_rcu_epoch_type _rcu_global_epoch;
+#if CLICK_LINUXMODULE || HAVE_MULTITHREAD
+    Spinlock _rcu_epoch_lock;
+#endif
 
     // THREADS
     struct aligned_thread {
@@ -242,6 +249,16 @@ inline Master *
 Element::master() const
 {
     return _router->master();
+}
+
+inline void
+RouterThread::rcu_online_after_synchronization()
+{
+    click_compiler_fence();
+    if (_rcu_local_epoch != _master->_rcu_global_epoch) {
+	_rcu_local_epoch = _master->_rcu_global_epoch;
+	click_fence();
+    }
 }
 
 CLICK_ENDDECLS

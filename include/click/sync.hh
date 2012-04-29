@@ -563,6 +563,14 @@ ReadWriteLock::release_write()
 #endif
 }
 
+#if HAVE_INT64_TYPES
+typedef uint64_t click_rcu_epoch_type;
+typedef int64_t click_rcu_epoch_difference_type;
+#else
+typedef unsigned long click_rcu_epoch_type;
+typedef long click_rcu_epoch_difference_type;
+#endif
+
 CLICK_ENDDECLS
 #undef SPINLOCK_ASSERTLEVEL
 #endif

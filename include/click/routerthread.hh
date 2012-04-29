@@ -3,6 +3,7 @@
 #define CLICK_ROUTERTHREAD_HH
 #include <click/sync.hh>
 #include <click/vector.hh>
+#include <click/deque.hh>
 #include <click/timerset.hh>
 #if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
@@ -55,9 +56,15 @@ class RouterThread { public:
 
     inline bool stop_flag() const;
 
+    inline void rcu_offline();
+    inline void rcu_online_after_synchronization();
+
     void driver();
 
     void kill_router(Router *router);
+
+    typedef void (*rcu_callback_type)(RouterThread *, void *);
+    inline void register_rcu(rcu_callback_type f, void *callback_data);
 
 #if HAVE_ADAPTIVE_SCHEDULER
     // min_cpu_share() and max_cpu_share() are expressed on a scale with
@@ -84,7 +91,7 @@ class RouterThread { public:
 	   S_RUNTASK, S_RUNTIMER, S_RUNSIGNAL, S_RUNPENDING, S_RUNSELECT,
 	   NSTATES };
     inline void set_thread_state(int state);
-    inline void set_thread_state_for_blocking(int delay_type);
+    inline void prepare_to_block(int delay_type);
 #if CLICK_DEBUG_SCHEDULING
     int thread_state() const		{ return _thread_state; }
     static String thread_state_name(int state);
@@ -114,6 +121,15 @@ class RouterThread { public:
     };
 #endif
 
+    struct rcu_element {
+	click_rcu_epoch_type epoch;
+	rcu_callback_type callback;
+	void *callback_data;
+	rcu_element(click_rcu_epoch_type e, rcu_callback_type f, void *d)
+	    : epoch(e), callback(f), callback_data(d) {
+	}
+    };
+
     // LOCAL STATE GROUP
     TaskLink _task_link;
     volatile int _stop_flag;
@@ -125,6 +141,9 @@ class RouterThread { public:
 #if CLICK_USERLEVEL
     SelectSet _selects;
 #endif
+
+    Deque<rcu_element> _rcu;
+    Task _rcu_task;
 
 #if HAVE_ADAPTIVE_SCHEDULER
     enum { C_CLICK, C_KERNEL, NCLIENTS };
@@ -151,6 +170,8 @@ class RouterThread { public:
     Task::Pending _pending_head;
     Task::Pending *_pending_tail;
     SpinlockIRQ _pending_lock;
+
+    click_rcu_epoch_type _rcu_local_epoch;
 
     // SHARED STATE GROUP
     Master *_master CLICK_ALIGNED(CLICK_CACHE_LINE_SIZE);
@@ -218,6 +239,8 @@ class RouterThread { public:
     inline void run_tasks(int ntasks);
     inline void process_pending();
     inline void run_os();
+    static bool rcu_callback(Task *t, void *user_data);
+    inline void process_rcu();
 #if HAVE_ADAPTIVE_SCHEDULER
     void client_set_tickets(int client, int tickets);
     inline void client_update_pass(int client, const Timestamp &before);
@@ -482,12 +505,22 @@ RouterThread::set_thread_state(int state)
 }
 
 inline void
-RouterThread::set_thread_state_for_blocking(int delay_type)
+RouterThread::rcu_offline()
 {
-    if (delay_type < 0)
-	set_thread_state(S_BLOCKED);
-    else
-	set_thread_state(delay_type ? S_TIMERWAIT : S_PAUSED);
+    click_release_fence();
+    _rcu_local_epoch = 0;
+    click_release_fence();
+}
+
+inline void
+RouterThread::prepare_to_block(int delay_type)
+{
+    if (delay_type == 0)
+	set_thread_state(S_PAUSED);
+    else {
+	set_thread_state(delay_type < 0 ? S_BLOCKED : S_TIMERWAIT);
+	rcu_offline();
+    }
 }
 
 #if CLICK_DEBUG_SCHEDULING > 1
@@ -505,6 +538,12 @@ RouterThread::thread_state_count(int state) const
     return _thread_state_count[state];
 }
 #endif
+
+inline void
+RouterThread::register_rcu(rcu_callback_type f, void *callback_data)
+{
+    _rcu.push_back(rcu_element(_rcu_local_epoch, f, callback_data));
+}
 
 CLICK_ENDDECLS
 #endif

@@ -333,6 +333,7 @@ SelectSet::post_select(RouterThread *thread, bool acquire)
     if (acquire) {
 	_select_lock.acquire();
 	_select_processor = click_current_processor();
+	thread->rcu_online_after_synchronization();
     }
 #else
     (void) acquire;
@@ -397,7 +398,7 @@ SelectSet::run_selects_kqueue(RouterThread *thread)
 	wait = t.timespec();
     else
 	wait_ptr = 0;
-    thread->set_thread_state_for_blocking(delay_type);
+    thread->prepare_to_block(delay_type);
 
     struct kevent kev[256];
     int n = kevent(_kqueue, 0, 0, &kev[0], 256, wait_ptr);
@@ -448,7 +449,7 @@ SelectSet::run_selects_poll(RouterThread *thread)
 	timeout = (t.sec() >= INT_MAX / 1000 ? INT_MAX - 1000 : t.msecval());
     else
 	timeout = -1;
-    thread->set_thread_state_for_blocking(delay_type);
+    thread->prepare_to_block(delay_type);
 
     int n = poll(my_pollfds.begin(), my_pollfds.size(), timeout);
     int was_errno = errno;
@@ -504,7 +505,7 @@ SelectSet::run_selects_select(RouterThread *thread)
 	wait = t.timeval();
     else
 	wait_ptr = 0;
-    thread->set_thread_state_for_blocking(delay_type);
+    thread->prepare_to_block(delay_type);
 
     int n = select(n_select_fd, &read_mask, &write_mask, (fd_set*) 0, wait_ptr);
     int was_errno = errno;

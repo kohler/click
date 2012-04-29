@@ -37,6 +37,21 @@ click_relax_fence()
 #endif
 }
 
+/** @brief Release memory fence. */
+inline void
+click_release_fence()
+{
+#if CLICK_LINUXMODULE
+    smp_wmb();
+#elif HAVE_MULTITHREAD && CLICK_ATOMIC_X86
+    click_compiler_fence();
+#elif HAVE_MULTITHREAD && HAVE___SYNC_SYNCHRONIZE
+    __sync_synchronize();
+#else
+    click_compiler_fence();
+#endif
+}
+
 /** @brief Full memory fence. */
 inline void
 click_fence()

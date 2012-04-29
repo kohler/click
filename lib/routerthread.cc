@@ -67,7 +67,8 @@ static unsigned long greedy_schedule_jiffies;
  */
 
 RouterThread::RouterThread(Master *master, int id)
-    : _stop_flag(0), _master(master), _id(id)
+    : _stop_flag(0), _rcu_task(rcu_callback, (void *) this),
+      _master(master), _id(id)
 {
     assert(reinterpret_cast<uintptr_t>(this) % CLICK_CACHE_LINE_SIZE == 0);
 
@@ -111,6 +112,9 @@ RouterThread::RouterThread(Master *master, int id)
 #if CLICK_LINUXMODULE
     greedy_schedule_jiffies = jiffies;
 #endif
+
+    _rcu_local_epoch = 0;
+    _rcu_task.initialize(master->root_router(), false);
 
 #if CLICK_NS
     _ns_scheduled = _ns_last_active = Timestamp(-1, 0);
@@ -514,32 +518,32 @@ RouterThread::run_os()
 	}
     } else if (active()) {
       short_pause:
-	set_thread_state(S_PAUSED);
+	prepare_to_block(0);
 	set_current_state(TASK_RUNNING);
 	schedule();
     } else if (_id != 0) {
       block:
-	set_thread_state(S_BLOCKED);
+	prepare_to_block(-1);
 	schedule();
     } else if (Timestamp wait = timer_set().timer_expiry_steady_adjusted()) {
 	wait -= Timestamp::now_steady();
 	if (!(wait > Timestamp(0, Timestamp::subsec_per_sec / CLICK_HZ)))
 	    goto short_pause;
-	set_thread_state(S_TIMERWAIT);
+	prepare_to_block(1);
 	if (wait.sec() >= LONG_MAX / CLICK_HZ - 1)
 	    (void) schedule_timeout(LONG_MAX - CLICK_HZ - 1);
 	else
 	    (void) schedule_timeout(wait.jiffies() - 1);
     } else
 	goto block;
-#elif defined(CLICK_BSDMODULE)
+#elif CLICK_BSDMODULE
     if (_greedy)
 	/* do nothing */;
     else if (active()) {	// just schedule others for a moment
-	set_thread_state(S_PAUSED);
+	prepare_to_block(0);
 	yield(curthread, NULL);
     } else {
-	set_thread_state(S_BLOCKED);
+	prepare_to_block(1);
 	_sleep_ident = &_sleep_ident;	// arbitrary address, != NULL
 	tsleep(&_sleep_ident, PPAUSE, "pause", 1);
 	_sleep_ident = NULL;
@@ -552,6 +556,9 @@ RouterThread::run_os()
     client_update_pass(C_KERNEL, t_before);
 #endif
     driver_lock_tasks();
+#if !CLICK_USERLEVEL
+    rcu_online_after_synchronization();
+#endif
 }
 
 void
@@ -574,6 +581,54 @@ RouterThread::process_pending()
 	t->_pending_nextptr.x = 0;
 	click_fence();
 	t->process_pending(this);
+    }
+}
+
+void
+RouterThread::process_rcu()
+{
+    _rcu_task.reschedule();
+
+    if (_rcu.back().epoch == _rcu_local_epoch) {
+#if CLICK_LINUXMODULE || HAVE_MULTITHREAD
+	_master->_rcu_epoch_lock.acquire();
+#endif
+	if (_master->_rcu_global_epoch == _rcu_local_epoch) {
+	    _master->_rcu_global_epoch += 2;
+	    _rcu_local_epoch = _master->_rcu_global_epoch;
+	}
+#if CLICK_LINXUMODULE || HAVE_MULTITHREAD
+	_master->_rcu_epoch_lock.release();
+#endif
+    }
+}
+
+bool
+RouterThread::rcu_callback(Task *task, void *user_data)
+{
+    RouterThread *thread = reinterpret_cast<RouterThread *>(user_data);
+    Master *master = thread->master();
+    click_rcu_epoch_type ge = master->unchecked_thread(-1)->_rcu_local_epoch;
+    int nthreads = master->nthreads();
+    for (int i = 0; i < nthreads; ++i) {
+	click_rcu_epoch_type le = master->unchecked_thread(i)->_rcu_local_epoch;
+	if (le && (click_rcu_epoch_difference_type(le - ge) > 0 || !ge))
+	    ge = le;
+    }
+
+    while (!thread->_rcu.empty()) {
+	rcu_element &e = thread->_rcu.front();
+	if (click_rcu_epoch_difference_type(ge - e.epoch) <= 0)
+	    break;
+	e.callback(thread, e.callback_data);
+	thread->_rcu.pop_front();
+    }
+
+    if (thread->_rcu.empty())
+	return true;
+    else {
+	task->fast_reschedule();
+	return false;
     }
 }
 
@@ -616,6 +671,11 @@ RouterThread::driver()
 #if CLICK_DEBUG_SCHEDULING
 	_driver_epoch++;
 #endif
+
+	// mark RCU quiescent state
+	rcu_online_after_synchronization();
+	if (_rcu.size())
+	    process_rcu();
 
 #if !BSD_NETISRSCHED
 	// check to see if driver is stopped
@@ -685,6 +745,7 @@ RouterThread::driver()
     }
 
     driver_unlock_tasks();
+    rcu_offline();
 
 #if HAVE_ADAPTIVE_SCHEDULER
     _cur_click_share = 0;
