@@ -69,6 +69,8 @@ static unsigned long greedy_schedule_jiffies;
 RouterThread::RouterThread(Master *master, int id)
     : _stop_flag(0), _master(master), _id(id)
 {
+    assert(reinterpret_cast<uintptr_t>(this) % CLICK_CACHE_LINE_SIZE == 0);
+
     _pending_head.x = 0;
     _pending_tail = &_pending_head;
 

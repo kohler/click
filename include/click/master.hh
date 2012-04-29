@@ -30,6 +30,7 @@ class Master { public:
 
     inline int nthreads() const;
     inline RouterThread *thread(int id) const;
+    inline RouterThread *unchecked_thread(int id) const;
     void wake_somebody();
 
 #if CLICK_USERLEVEL
@@ -39,7 +40,8 @@ class Master { public:
     static void signal_handler(int signo);	// not really public
 #endif
 
-    void kill_router(Router*);
+    Router *root_router() const			{ return _root_router; }
+    void kill_router(Router *router);
 
 #if CLICK_NS
     void initialize_ns(simclick_node_t *simnode);
@@ -57,17 +59,25 @@ class Master { public:
   private:
 
     // THREADS
-    RouterThread **_threads;
+    struct aligned_thread {
+	RouterThread t;
+	char padding[CLICK_CACHE_LINE_PAD_BYTES(sizeof(RouterThread))];
+    };
+    aligned_thread *_threads;
     int _nthreads;
+    size_t _threads_byte_offset;
 
     // ROUTERS
     Router *_routers;
     int _refcount;
-    void register_router(Router*);
-    void prepare_router(Router*);
-    void run_router(Router*, bool foreground);
-    void unregister_router(Router*);
+    Router *_root_router;
+    void register_router(Router *r);
+    void prepare_router(Router *r);
+    void run_router(Router *r, bool foreground);
+    void unregister_router(Router *r);
 
+    // LOCKS
+    atomic_uint32_t _master_paused CLICK_ALIGNED(CLICK_CACHE_LINE_SIZE);
 #if CLICK_LINUXMODULE
     spinlock_t _master_lock;
     struct task_struct *_master_lock_task;
@@ -75,7 +85,6 @@ class Master { public:
 #elif HAVE_MULTITHREAD
     Spinlock _master_lock;
 #endif
-    atomic_uint32_t _master_paused;
     inline void lock_master();
     inline void unlock_master();
 
@@ -119,24 +128,30 @@ class Master { public:
 inline int
 Master::nthreads() const
 {
-    return _nthreads - 1;
+    return _nthreads;
 }
 
-inline RouterThread*
+inline RouterThread *
+Master::unchecked_thread(int id) const
+{
+    return &_threads[id + 1].t;
+}
+
+inline RouterThread *
 Master::thread(int id) const
 {
     // return the requested thread, or the quiescent thread if there's no such
     // thread
-    if (unsigned(id + 1) < unsigned(_nthreads))
-	return _threads[id + 1];
+    if (unsigned(id + 1) <= unsigned(_nthreads))
+	return &_threads[id + 1].t;
     else
-	return _threads[0];
+	return &_threads[0].t;
 }
 
 inline void
 Master::wake_somebody()
 {
-    _threads[1]->wake();
+    unchecked_thread(0)->wake();
 }
 
 #if CLICK_USERLEVEL
@@ -175,8 +190,8 @@ TimerSet::next_timer_delay(bool more_tasks, Timestamp &t) const
 inline void
 Master::request_stop()
 {
-    for (RouterThread **t = _threads; t != _threads + _nthreads; ++t)
-	(*t)->request_stop();
+    for (aligned_thread *tp = _threads; tp != _threads + _nthreads + 1; ++tp)
+	tp->t.request_stop();
     // ensure that at least one thread is awake to handle the stop event
     wake_somebody();
 }
@@ -184,8 +199,8 @@ Master::request_stop()
 inline void
 Master::request_go()
 {
-    for (RouterThread **t = _threads; t != _threads + _nthreads; ++t)
-	(*t)->request_go();
+    for (aligned_thread *tp = _threads; tp != _threads + _nthreads + 1; ++tp)
+	tp->t.request_go();
 }
 
 inline void
