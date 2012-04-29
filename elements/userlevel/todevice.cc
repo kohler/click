@@ -384,6 +384,7 @@ ToDevice::run_task(Task *)
 	    _backoff = 0;
 	    checked_output_push(0, p);
 	    ++count;
+	    p = 0;
 	} else
 	    break;
     } while (count < _burst);
