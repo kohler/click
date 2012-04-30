@@ -201,14 +201,33 @@ class Task : private TaskLink { public:
 
     /** @brief Reschedule a task from the task's callback function.
      *
-     * @warning fast_reschedule() should be called while that task is being
-     * fired: Task::fire() calls the task's callback function (often
-     * Element::run_task()), which may call fast_reschedule() to reschedule
-     * the task.  It is an error to call @a task.fast_reschedule() at other
-     * times.  For instance, if MyElement::run_task() calls fast_reschedule(),
-     * then it is an error to call MyElement::run_task() from
-     * MyElement::run_timer() -- the fast_reschedule() might not actually take
-     * effect.
+     * @warning Only call @a task.fast_reschedule() while @a task is being
+     * fired, i.e., in its callback function. It is an error to call
+     * @task.fast_reschedule() at other times -- the task may not actually be
+     * rescheduled.
+     *
+     * Here's a typical, correct use of fast_reschedule():
+     *
+     * @code
+     * class MyElement : public Element {
+     *     ... Task _task; ... bool run_task(Task *t); ...
+     * };
+     * bool MyElement::run_task(Task *) {
+     *     do_some_work();
+     *     _task.fast_reschedule();
+     *     return true;
+     * }
+     * @endcode
+     *
+     * This assumes, however, that run_task() is only called directly by the
+     * driver. If you call run_task() from another context, _task may not
+     * actually be scheduled.
+     *
+     * @code
+     * void MyElement::run_timer(Timer *) {
+     *     run_task();   // XXX might not reschedule _task!
+     * }
+     * @endcode
      */
     inline void fast_reschedule() {
 	_status.is_scheduled = true;
