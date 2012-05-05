@@ -249,11 +249,15 @@ class ActiveNotifier : public Notifier { public:
 
     int add_activate_callback(callback_type f, void *v);
     void remove_activate_callback(callback_type f, void *v);
-    void listeners(Vector<Task*> &v) const;
+    void listeners(Vector<Task*> &v) const CLICK_DEPRECATED;
 
     inline void set_active(bool active, bool schedule = true);
     inline void wake();
     inline void sleep();
+
+#if CLICK_DEBUG_SCHEDULING
+    String unparse(Router *router) const;
+#endif
 
   private:
 

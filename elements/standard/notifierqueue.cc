@@ -91,24 +91,12 @@ NotifierQueue::pull(int)
     return p;
 }
 
-#if NOTIFIERQUEUE_DEBUG
-#include <click/straccum.hh>
-
+#if CLICK_DEBUG_SCHEDULING
 String
 NotifierQueue::read_handler(Element *e, void *)
 {
-    StringAccum sa;
     NotifierQueue *nq = static_cast<NotifierQueue *>(e);
-    sa << "notifier " << (nq->_empty_note.active() ? "on" : "off") << '\n';
-    Vector<Task *> v;
-    nq->_empty_note.listeners(v);
-    for (int i = 0; i < v.size(); i++) {
-	sa << "task " << ((void *)v[i]) << ' ';
-	if (Element *e = v[i]->element())
-	    sa << '[' << e->declaration() << "] ";
-	sa << (v[i]->scheduled() ? "scheduled\n" : "unscheduled\n");
-    }
-    return sa.take_string();
+    return "nonempty " + nq->_empty_note.unparse(nq->router());
 }
 
 void

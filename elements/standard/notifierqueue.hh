@@ -80,7 +80,7 @@ class NotifierQueue : public SimpleQueue { public:
     void push(int port, Packet *);
     Packet *pull(int port);
 
-#if NOTIFIERQUEUE_DEBUG
+#if CLICK_DEBUG_SCHEDULING
     void add_handlers();
 #endif
 
@@ -94,7 +94,7 @@ class NotifierQueue : public SimpleQueue { public:
     friend class InOrderQueue;
     friend class ECNQueue;
     friend class TokenQueue;
-#if NOTIFIERQUEUE_DEBUG
+#if CLICK_DEBUG_SCHEDULING
     static String read_handler(Element *, void *);
 #endif
 

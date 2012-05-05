@@ -427,9 +427,27 @@ ActiveNotifier::listeners(Vector<Task*>& v) const
     if (_listener1)
 	v.push_back(_listener1);
     else if (_listeners)
-	for (task_or_signal_t* l = _listeners; l->p > 1; l++)
+	for (task_or_signal_t* l = _listeners; l->p > 1; ++l)
 	    v.push_back(l->t);
 }
+
+#if CLICK_DEBUG_SCHEDULING
+String
+ActiveNotifier::unparse(Router *router) const
+{
+    StringAccum sa;
+    sa << signal().unparse(router) << '\n';
+    if (_listener1 || _listeners)
+	for (int i = 0; _listener1 ? i == 0 : _listeners[i].p > 1; ++i) {
+	    Task *t = _listener1 ? _listener1 : _listeners[i].t;
+	    sa << "task " << ((void *) t) << ' ';
+	    if (Element *e = t->element())
+		sa << '[' << e->declaration() << "] ";
+	    sa << (t->scheduled() ? "scheduled\n" : "unscheduled\n");
+	}
+    return sa.take_string();
+}
+#endif
 
 
 namespace {
