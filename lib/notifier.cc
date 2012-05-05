@@ -120,9 +120,9 @@ NotifierSignal::operator+=(const NotifierSignal &x)
 {
     // preserve busy_signal(); adding other incompatible signals
     // leads to overderived_signal()
-    if (idle() || (x.busy() && *this != busy_signal()))
+    if (idle() || (x.busy() && *this != busy_signal()) || !x.initialized())
 	*this = x;
-    else if (busy() || x.idle())
+    else if (busy() || !initialized() || x.idle())
 	/* do nothing */;
     else if (_mask && x._mask && _v.v1 == x._v.v1)
 	_mask |= x._mask;
