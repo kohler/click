@@ -77,6 +77,7 @@ FunctionTest::initialize(ErrorHandler *errh)
     CHECK(!glob_match("x.c", "?.o"));
     CHECK(!glob_match("xx.o", "?.o"));
     CHECK(glob_match("x.o.d", "x*.?*.*"));
+    CHECK(!glob_match("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacba", "*aa*aa*aa*aa*aa*aa*aa*aa*aa*aa*aa*aa*aa*b*c*"));
 #endif
 
     errh->message("All tests pass!");

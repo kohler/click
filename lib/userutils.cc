@@ -74,7 +74,8 @@ glob_match(const String &str, const String &pattern)
 		  case '*':
 		    if (*pp + 1 == pend)
 			return true;
-		    nextstate.push_back(*pp);
+		    if (nextstate.empty() || nextstate.back() != *pp)
+			nextstate.push_back(*pp);
 		    ++*pp;
 		    goto reswitch;
 		  case '\\':
