@@ -829,6 +829,10 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
 		daccum += darg;
 	    else if (what == ar_sub)
 		daccum -= darg;
+            else if (what == ar_min)
+                daccum = (daccum < darg ? daccum : darg);
+            else if (what == ar_max)
+                daccum = (daccum > darg ? daccum : darg);
 	    else if (what == ar_mul)
 		daccum *= darg;
 	    else
@@ -845,6 +849,10 @@ Script::arithmetic_handler(int, String &str, Element *, const Handler *h, ErrorH
 	    accum += arg;
 	else if (what == ar_sub)
 	    accum -= arg;
+	else if (what == ar_min)
+	    accum = (accum < arg ? accum : arg);
+	else if (what == ar_max)
+	    accum = (accum > arg ? accum : arg);
 	else if (what == ar_mul)
 	    accum *= arg;
 	else {
@@ -1155,6 +1163,19 @@ Script::basic_handler(int, String &str, Element *e, const Handler *h, ErrorHandl
 	return 0;
     }
 
+#define ARITH_BYTE_ORDER(o) case ar_##o: {		\
+	int x;						\
+	if (!cp_integer(str, &x))			\
+	    return errh->error("syntax error");		\
+	str = String( o (x));				\
+	return 0;					\
+    }
+    ARITH_BYTE_ORDER(htons)
+    ARITH_BYTE_ORDER(htonl)
+    ARITH_BYTE_ORDER(ntohs)
+    ARITH_BYTE_ORDER(ntohl)
+#undef ARITH_BYTE_ORDER
+
 #if CLICK_USERLEVEL
     case ar_cat:
     case ar_catq: {
@@ -1230,6 +1251,46 @@ Script::read_export_handler(Element *e, void *user_data)
     return scr->_vars[(intptr_t) user_data + 1];
 }
 
+int
+Script::var_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh)
+{
+    Script *s = static_cast<Script *>(e);
+    int what = (uintptr_t) h->read_user_data();
+    int r = 0;
+    String *varval = 0;
+
+    String varname = cp_shift_spacevec(str);
+    if (!varname && what == vh_shift)
+	varname = "args";
+    if (!varname)
+	r = errh->error("no variable");
+    else if (str && (what == vh_get || what == vh_shift))
+	r = errh->error("too many arguments");
+    else {
+	int i;
+	if (varname.equals("args", 4))
+	    varval = &s->_run_args;
+	else if ((i = s->find_variable(varname, what == vh_set)),
+		 i != s->_vars.size())
+	    varval = &s->_vars[i + 1];
+	else
+	    r = errh->error("undefined variable %<%#s%>", varname.c_str());
+    }
+
+    if (r >= 0) {
+	if (what == vh_get)
+	    str = *varval;
+	else if (what == vh_set) {
+	    *varval = str;
+	    str = String();
+	} else
+	    str = cp_shift_spacevec(*varval);
+    } else
+	str = String();
+
+    return r;
+}
+
 void
 Script::add_handlers()
 {
@@ -1238,6 +1299,8 @@ Script::add_handlers()
     set_handler("run", Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE, step_handler, 0, ST_RUN);
     set_handler("add", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_add, 0);
     set_handler("sub", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_sub, 0);
+    set_handler("min", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_min, 0);
+    set_handler("max", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_max, 0);
     set_handler("mul", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_mul, 0);
     set_handler("div", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_div, 0);
     set_handler("idiv", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_idiv, 0);
@@ -1266,11 +1329,18 @@ Script::add_handlers()
     set_handler("writable", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_writable, 0);
     set_handler("length", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_length, 0);
     set_handler("unquote", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_unquote, 0);
+    set_handler("htons", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_htons, 0);
+    set_handler("htonl", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_htonl, 0);
+    set_handler("ntohs", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_ntohs, 0);
+    set_handler("ntohl", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_ntohl, 0);
 #if CLICK_USERLEVEL
     set_handler("cat", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, basic_handler, ar_cat, 0);
     set_handler("catq", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, basic_handler, ar_catq, 0);
     set_handler("kill", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, basic_handler, ar_kill, 0);
 #endif
+    set_handler("get", Handler::OP_READ | Handler::READ_PARAM, var_handler, vh_get, 0);
+    set_handler("set", Handler::OP_WRITE, var_handler, vh_set, 0);
+    set_handler("shift", Handler::OP_READ | Handler::READ_PARAM, var_handler, vh_shift, 0);
     if (_type == type_proxy)
 	add_write_handler("*", star_write_handler, 0);
     for (int i = 0; i < _insns.size(); ++i)
