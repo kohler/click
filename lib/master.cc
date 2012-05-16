@@ -481,7 +481,7 @@ Master::info() const
 	else
 	    sa << "\twake";
 # endif
-	if (t->_pending_head)
+	if (t->_pending_head.x)
 	    sa << "\tpending";
 # if CLICK_USERLEVEL
 	if (t->select_set()._wake_pipe[0] >= 0) {

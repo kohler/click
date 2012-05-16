@@ -312,7 +312,11 @@ class Task : private TaskLink { public:
 
     Element *_owner;
 
-    volatile uintptr_t _pending_nextptr;
+    union Pending {
+	Task *t;
+	uintptr_t x;
+    };
+    Pending _pending_nextptr;
 
     Task(const Task &x);
     Task &operator=(const Task &x);
@@ -323,7 +327,7 @@ class Task : private TaskLink { public:
 #endif
     inline bool on_scheduled_list() const;
     inline bool on_pending_list() const {
-	return _pending_nextptr;
+	return _pending_nextptr.x != 0;
     }
 #if CLICK_DEBUG_SCHEDULING
  private:
@@ -343,9 +347,6 @@ class Task : private TaskLink { public:
     static bool error_hook(Task *task, void *user_data);
 
     void move_thread_second_half();
-
-    static inline Task *pending_to_task(uintptr_t ptr);
-    inline Task *pending_to_task() const;
 
     friend class RouterThread;
     friend class Master;
@@ -375,10 +376,11 @@ Task::Task(TaskCallback f, void *user_data)
 #if HAVE_MULTITHREAD
       _cycle_runs(0),
 #endif
-      _thread(0), _owner(0), _pending_nextptr(0)
+      _thread(0), _owner(0)
 {
     _status.home_thread_id = -1;
     _status.is_scheduled = _status.is_strong_unscheduled = false;
+    _pending_nextptr.x = 0;
 }
 
 inline
@@ -397,10 +399,11 @@ Task::Task(Element* e)
 #if HAVE_MULTITHREAD
       _cycle_runs(0),
 #endif
-      _thread(0), _owner(0), _pending_nextptr(0)
+      _thread(0), _owner(0)
 {
     _status.home_thread_id = -1;
     _status.is_scheduled = _status.is_strong_unscheduled = false;
+    _pending_nextptr.x = 0;
 }
 
 inline bool
@@ -672,18 +675,6 @@ Task::update_cycles(unsigned c)
     _cycle_runs = 0;
 }
 #endif
-
-inline Task *
-Task::pending_to_task(uintptr_t ptr)
-{
-    return reinterpret_cast<Task *>(ptr & ~(uintptr_t) 3);
-}
-
-inline Task *
-Task::pending_to_task() const
-{
-    return pending_to_task(_pending_nextptr);
-}
 
 CLICK_ENDDECLS
 #endif

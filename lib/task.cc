@@ -7,6 +7,7 @@
  * Copyright (c) 2002 International Computer Science Institute
  * Copyright (c) 2004-2007 Regents of the University of California
  * Copyright (c) 2008-2009 Meraki, Inc.
+ * Copyright (c) 1999-2012 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -110,7 +111,7 @@ Task::error_hook(Task *, void *)
 
 Task::~Task()
 {
-    if (scheduled() || _pending_nextptr)
+    if (scheduled() || on_pending_list())
 	cleanup();
 }
 
@@ -125,9 +126,9 @@ Task::master() const
 inline void
 Task::add_pending_locked(RouterThread *thread)
 {
-    if (!_pending_nextptr) {
-	_pending_nextptr = 1;
-	*thread->_pending_tail = reinterpret_cast<uintptr_t>(this);
+    if (!_pending_nextptr.x) {
+	_pending_nextptr.x = 1;
+	thread->_pending_tail->t = this;
 	thread->_pending_tail = &_pending_nextptr;
 	thread->add_pending();
     }
@@ -150,21 +151,19 @@ Task::add_pending()
 inline void
 Task::remove_pending_locked(RouterThread *thread)
 {
-    if (_pending_nextptr) {
-	volatile uintptr_t *thead = &thread->_pending_head, *tptr = thead;
-	while (Task *t = pending_to_task(*tptr))
-	    if (t == this) {
-		Task *next = pending_to_task(_pending_nextptr);
-		if (tptr != thead)
-		    *tptr = _pending_nextptr;
-		else
-		    *tptr = reinterpret_cast<uintptr_t>(next);
-		if (!next)
-		    thread->_pending_tail = tptr;
-		_pending_nextptr = 0;
-		break;
-	    } else
-		tptr = &t->_pending_nextptr;
+    if (_pending_nextptr.x) {
+	Pending *tptr = &thread->_pending_head;
+	while (tptr->x > 1 && tptr->t != this)
+	    tptr = &tptr->t->_pending_nextptr;
+	if (tptr->t == this) {
+	    *tptr = _pending_nextptr;
+	    if (_pending_nextptr.x <= 1) {
+		thread->_pending_tail = tptr;
+		if (tptr == &thread->_pending_head)
+		    tptr->x = 0;
+	    }
+	    _pending_nextptr.x = 0;
+	}
     }
 }
 
@@ -229,7 +228,7 @@ Task::cleanup()
 
 	// Perhaps the task is enqueued on the current pending
 	// collection.  If so, remove it.
-	if (_pending_nextptr) {
+	if (on_pending_list()) {
 	    remove_pending();
 
 	    // If not on the current pending list, perhaps this task
@@ -239,8 +238,8 @@ Task::cleanup()
 	    // pending list processing is so simple: processing a
 	    // pending list will NEVER cause a task to get deleted, so
 	    // ~Task is never called from RouterThread::process_pending().
-	    while (_pending_nextptr)
-		/* do nothing */;
+	    while (on_pending_list())
+		click_relax_fence();
 	}
 
 	_owner = 0;

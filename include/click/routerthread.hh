@@ -148,8 +148,8 @@ class RouterThread { public:
     atomic_uint32_t _task_blocker;
     atomic_uint32_t _task_blocker_waiting;
 
-    uintptr_t _pending_head;
-    volatile uintptr_t *_pending_tail;
+    Task::Pending _pending_head;
+    Task::Pending *_pending_tail;
     SpinlockIRQ _pending_lock;
 
     // SHARED STATE GROUP
@@ -267,10 +267,11 @@ RouterThread::master() const
 inline bool
 RouterThread::active() const
 {
+    click_compiler_fence();
 #if HAVE_TASK_HEAP
-    return _task_heap.size() != 0 || _pending_head;
+    return _task_heap.size() != 0 || _pending_head.x;
 #else
-    return _task_link._next != &_task_link || _pending_head;
+    return _task_link._next != &_task_link || _pending_head.x;
 #endif
 }
 

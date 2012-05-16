@@ -67,9 +67,11 @@ static unsigned long greedy_schedule_jiffies;
  */
 
 RouterThread::RouterThread(Master *master, int id)
-    : _stop_flag(0), _pending_head(0), _pending_tail(&_pending_head),
-      _master(master), _id(id)
+    : _stop_flag(0), _master(master), _id(id)
 {
+    _pending_head.x = 0;
+    _pending_tail = &_pending_head;
+
 #if !HAVE_TASK_HEAP
     _task_link._prev = _task_link._next = &_task_link;
 #endif
@@ -558,15 +560,16 @@ RouterThread::process_pending()
     // claim the current pending list
     set_thread_state(RouterThread::S_RUNPENDING);
     SpinlockIRQ::flags_t flags = _pending_lock.acquire();
-    uintptr_t my_pending = _pending_head;
-    _pending_head = 0;
+    Task::Pending my_pending = _pending_head;
+    _pending_head.x = 0;
     _pending_tail = &_pending_head;
     _pending_lock.release(flags);
 
     // process the list
-    while (Task *t = Task::pending_to_task(my_pending)) {
+    while (my_pending.x > 1) {
+	Task *t = my_pending.t;
 	my_pending = t->_pending_nextptr;
-	t->_pending_nextptr = 0;
+	t->_pending_nextptr.x = 0;
 	click_fence();
 	t->process_pending(this);
     }
@@ -627,7 +630,8 @@ RouterThread::driver()
 	iter++;
 
 	// run task requests
-	if (_pending_head)
+	click_compiler_fence();
+	if (_pending_head.x)
 	    process_pending();
 
 	// run tasks
