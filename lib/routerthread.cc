@@ -465,7 +465,7 @@ RouterThread::run_tasks(int ntasks)
 	    while (n != &_task_link && !PASS_GT(n->_pass, t->_pass))
 		n = n->_next;
 # else
-	    TaskLink *n = this;
+	    TaskLink *n = &_task_link;
 # endif
 	    if (t->_next != n) {
 		t->_next->_prev = t->_prev;

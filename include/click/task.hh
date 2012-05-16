@@ -563,9 +563,9 @@ Task::complete_schedule(unsigned new_pass)
     (void) new_pass;
 
     // schedule at the end of the list
-    _prev = _thread->_prev;
-    _next = _thread;
-    _thread->_prev = this;
+    _prev = _thread->_task_link._prev;
+    _next = &_thread->_task_link;
+    _thread->_task_link._prev = this;
     _prev->_next = this;
 #endif /* HAVE_STRIDE_SCHED */
 }
