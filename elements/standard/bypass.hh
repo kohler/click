@@ -111,7 +111,7 @@ class Bypass : public Element { public:
 
     void fix();
     static int write_handler(const String &s, Element *e, void *user_data, ErrorHandler *errh);
-    friend class Visitor;
+    friend struct Visitor;
 
 };
 
