@@ -437,6 +437,7 @@ iptable.hh
 lexer.hh
 list.hh
 llrpc.h
+machine.hh
 master.hh
 md5.h
 nameinfo.hh

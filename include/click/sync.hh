@@ -1,19 +1,9 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef CLICK_SYNC_HH
 #define CLICK_SYNC_HH
+#include <click/machine.hh>
 #include <click/glue.hh>
 #include <click/atomic.hh>
-#if CLICK_LINUXMODULE && defined(CONFIG_SMP)
-# include <click/cxxprotect.h>
-CLICK_CXX_PROTECT
-# include <linux/threads.h>
-# include <linux/sched.h>
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-#  define num_possible_cpus()	smp_num_cpus
-# endif
-CLICK_CXX_UNPROTECT
-# include <click/cxxunprotect.h>
-#endif
 #if CLICK_LINUXMODULE || (CLICK_USERLEVEL && HAVE_MULTITHREAD)
 # define CLICK_MULTITHREAD_SPINLOCK 1
 #endif
@@ -108,8 +98,9 @@ Spinlock::acquire()
     click_processor_t my_cpu = click_get_processor();
     if (_owner != my_cpu) {
 	while (_lock.swap(1) != 0)
-	    while (_lock != 0)
-		asm volatile ("" : : : "memory");
+	    do {
+		click_relax_fence();
+	    } while (_lock != 0);
 	_owner = my_cpu;
     }
     _depth++;
@@ -247,8 +238,9 @@ SimpleSpinlock::acquire()
     spin_lock(&_lock);
 #elif CLICK_MULTITHREAD_SPINLOCK
     while (_lock.swap(1) != 0)
-	while (_lock != 0)
-	    asm volatile ("" : : : "memory");
+	do {
+	    click_relax_fence();
+	} while (_lock != 0);
 #endif
 }
 
@@ -569,27 +561,6 @@ ReadWriteLock::release_write()
     for (unsigned i = 0; i < num_possible_cpus(); i++)
 	_l[i]._lock.release();
 #endif
-}
-
-
-/** @brief Provide a memory barrier. */
-inline void
-click_fence()
-{
-#if CLICK_LINUXMODULE
-    smp_mb();
-#elif HAVE_MULTITHREAD && HAVE___SYNC_SYNCHRONIZE
-    __sync_synchronize();
-#else
-    asm volatile("" : : : "memory");
-#endif
-}
-
-/** @brief Provide a memory barrier for the compiler. */
-inline void
-click_compiler_fence()
-{
-    asm volatile("" : : : "memory");
 }
 
 CLICK_ENDDECLS

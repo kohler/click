@@ -67,6 +67,7 @@ include/click/ip6table.hh
 include/click/lexer.hh
 include/click/list.hh
 include/click/llrpc.h
+include/click/machine.hh
 include/click/master.hh
 include/click/md5.h
 include/click/nameinfo.hh
