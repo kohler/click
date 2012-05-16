@@ -1,0 +1,35 @@
+%script
+click CONFIG
+
+%file CONFIG
+s0 :: Script(
+   print $(add 1 2 3),
+   print $(sub 10 2 2),
+   print $(min 10 6 20),
+   print $(max -1 6 3),
+   print $(mul 1 2 3),
+   print $(div 75 2.5 5),
+   print $(idiv 60 2 5),
+   print $(htonl $(ntohl 6)),
+   print $(htons $(ntohs 6)),
+   write set foovar foo bar baz,
+   print $(shift foovar),
+   print $(shift foovar),
+   print $(get foovar),
+   stop)
+
+%expect stdout
+6
+6
+6
+6
+6
+6
+6
+6
+6
+foo
+bar
+baz
+
+%expect stderr

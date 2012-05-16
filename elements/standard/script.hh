@@ -314,6 +314,11 @@ Subtracts a space-separated list of
 numbers; for example, 'C<sub 10 5 2>' returns
 "C<3>".
 
+=h min, max "read with parameters"
+
+Finds the minimum or maximum of a space-separated list of
+numbers; for example, 'C<max 5 10 2>' returns "C<10>".
+
 =h mul, div, idiv "read with parameters"
 
 Multiplies or divides a space-separated list of numbers and returns the
@@ -416,6 +421,20 @@ IDs.  Those processes are killed by that signal.  This handler is not
 accessible via ControlSocket.  The "$$" variable may be useful when calling
 C<kill>; it expands to the driver's process ID.
 
+=h get "read with parameters"
+
+The argument is a variable name.  Returns the value of that script variable.
+
+=h set w
+
+The argument is a variable name, followed by a value.  Sets the named variable
+to that value.
+
+=h shift w
+
+The argument is a variable name, which defaults to C<args>.  Shifts the first
+space-separated argument off the named variable and returns the result.
+
 =a DriverManager
 
 */
@@ -493,12 +512,14 @@ class Script : public Element { public:
 
     enum {
 	ST_STEP = 0, ST_RUN, ST_GOTO,
-	ar_add = 0, ar_sub, ar_mul, ar_div, ar_idiv, ar_mod, ar_rem,
+	ar_add = 0, ar_sub, ar_min, ar_max, ar_mul, ar_div, ar_idiv, ar_mod, ar_rem,
 	ar_neg, ar_abs,
 	AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
 	AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat, ar_catq,
 	ar_and, ar_or, ar_nand, ar_nor, ar_now, ar_if, ar_in,
-	ar_readable, ar_writable, ar_length, ar_unquote, ar_kill
+	ar_readable, ar_writable, ar_length, ar_unquote, ar_kill,
+	ar_htons, ar_htonl, ar_ntohs, ar_ntohl,
+	vh_get, vh_set, vh_shift
     };
 
     void add_insn(int, int, int = 0, const String & = String());
@@ -517,6 +538,7 @@ class Script : public Element { public:
     static int sprintf_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh);
     static int basic_handler(int, String&, Element*, const Handler*, ErrorHandler*);
     static String read_export_handler(Element*, void*);
+    static int var_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh);
     static int star_write_handler(const String&, Element*, void*, ErrorHandler*);
 
     friend class DriverManager;
