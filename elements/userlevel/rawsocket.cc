@@ -58,12 +58,6 @@ RawSocket::~RawSocket()
 int
 RawSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  CpVaParseCmd parsecmd = cpUnsignedShort;
-  if (conf.size() && conf[0].upper() == "TCP")
-    parsecmd = cpTCPPort;
-  else if (conf.size() && conf[0].upper() == "UDP")
-    parsecmd = cpUDPPort;
-
   String socktype;
   Args args(conf, this, errh);
   if (args.read_mp("TYPE", socktype).execute() < 0)
