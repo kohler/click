@@ -337,9 +337,9 @@ NotifierSignal::uninitialized_signal()
 inline bool
 NotifierSignal::active() const
 {
-    // 2011.Jul.3 Is this fence actually necessary with the new reschedule()
-    // plan??  It doesn't seem to be on one simple test, anyway.
-    // click_fence();
+    // 2012.May.16 This fence is necessary; consider, for example,
+    // InfiniteSource's checking of nonfull notifiers.
+    click_fence();
     if (likely(_mask))
 	return (*_v.v1 & _mask) != 0;
     else {
