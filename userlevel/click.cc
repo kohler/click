@@ -8,7 +8,7 @@
  * Copyright (c) 2001-2003 International Computer Science Institute
  * Copyright (c) 2004-2006 Regents of the University of California
  * Copyright (c) 2008-2009 Meraki, Inc.
- * Copyright (c) 1999-2011 Eddie Kohler
+ * Copyright (c) 1999-2012 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -142,7 +142,7 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 
 static Router *router;
 static ErrorHandler *errh;
-static bool started = 0;
+static bool running = false;
 
 extern "C" {
 static void
@@ -151,7 +151,7 @@ stop_signal_handler(int sig)
 #if !HAVE_SIGACTION
     signal(sig, SIG_DFL);
 #endif
-    if (!started)
+    if (!running)
 	kill(getpid(), sig);
     else
 	router->set_runcount(Router::STOP_RUNCOUNT);
@@ -585,6 +585,7 @@ main(int argc, char **argv)
 Copyright (C) 2001-2003 International Computer Science Institute\n\
 Copyright (C) 2008-2009 Meraki, Inc.\n\
 Copyright (C) 2004-2011 Regents of the University of California\n\
+Copyright (C) 1999-2012 Eddie Kohler\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -649,7 +650,7 @@ particular purpose.\n");
   // run driver
   // 10.Apr.2004 - Don't run the router if it has no elements.
   if (!quit_immediately && router->nelements()) {
-    started = true;
+    running = true;
     router->activate(errh);
     if (allow_reconfigure) {
       hotswap_thunk_router = new Router("", router->master());
@@ -664,7 +665,13 @@ particular purpose.\n");
 	other_threads.push_back(p);
     }
 #endif
+
+    // run driver
     router->master()->thread(0)->driver();
+
+    // now that the driver has stopped, SIGINT gets default handling
+    running = false;
+    click_fence();
   } else if (!quit_immediately && warnings)
     errh->warning("%s: configuration has no elements, exiting", filename_landmark(router_file, file_is_expr));
 
