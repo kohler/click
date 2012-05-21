@@ -12,14 +12,16 @@ template <typename AM> class vector_memory { public:
     typedef int size_type;
     typedef typename AM::type type;
     typedef type *iterator;
-    inline bool need_argument_copy(const type *argp) {
-	return fast_argument<type>::is_reference && (uintptr_t) argp - (uintptr_t) l_ < (size_t) (n_ * sizeof(type));
+    inline bool need_argument_copy(const type *argp) const {
+	return fast_argument<type>::is_reference
+	    && (uintptr_t) argp - (uintptr_t) l_ < (size_t) (n_ * sizeof(type));
     }
 
     vector_memory()
 	: l_(0), n_(0), capacity_(0) {
     }
     ~vector_memory();
+
     void assign(const vector_memory<AM> &x);
     void assign(size_type n, const type *vp);
     void resize(size_type n, const type *vp);
@@ -52,6 +54,7 @@ template <typename AM> class vector_memory { public:
     }
     bool reserve_and_push_back(size_type n, const type *vp);
     void swap(vector_memory<AM> &x);
+
     type *l_;
     size_type n_;
     size_type capacity_;
@@ -98,7 +101,6 @@ template <typename T>
 class Vector {
 
     typedef typename array_memory<T>::type array_memory_type;
-    typedef typename vector_memory<array_memory_type>::type memory_object;
     mutable vector_memory<array_memory_type> vm_;
 
   public:
@@ -136,7 +138,7 @@ class Vector {
 
     /** @brief Construct a vector containing @a n copies of @a v. */
     explicit Vector(size_type n, value_argument_type v) {
-	vm_.resize(n, (const memory_object *)&v);
+	vm_.resize(n, array_memory_type::cast(&v));
     }
 
     /** @brief Construct a vector as a copy of @a x. */
@@ -180,7 +182,9 @@ class Vector {
 	return (iterator) vm_.l_;
     }
     /** @overload */
-    const_iterator begin() const	{ return (const_iterator) vm_.l_; }
+    const_iterator begin() const {
+	return (const_iterator) vm_.l_;
+    }
 
     /** @brief Return an iterator for the end of the vector.
       @invariant end() == begin() + size() */
@@ -188,7 +192,9 @@ class Vector {
 	return (iterator) vm_.l_ + vm_.n_;
     }
     /** @overload */
-    const_iterator end() const		{ return (const_iterator) vm_.l_ + vm_.n_; }
+    const_iterator end() const {
+	return (const_iterator) vm_.l_ + vm_.n_;
+    }
 
 
     /** @brief Return a reference to the <em>i</em>th element.
@@ -209,7 +215,9 @@ class Vector {
 	return operator[](i);
     }
     /** @overload */
-    const T &at(size_type i) const	{ return operator[](i); }
+    const T &at(size_type i) const {
+	return operator[](i);
+    }
 
     /** @brief Return a reference to the first element.
       @pre !empty() */
@@ -217,7 +225,9 @@ class Vector {
 	return operator[](0);
     }
     /** @overload */
-    const T &front() const		{ return operator[](0); }
+    const T &front() const {
+	return operator[](0);
+    }
 
     /** @brief Return a reference to the last element (number size()-1).
       @pre !empty() */
@@ -225,7 +235,9 @@ class Vector {
 	return operator[](vm_.n_ - 1);
     }
     /** @overload */
-    const T &back() const		{ return operator[](vm_.n_ - 1); }
+    const T &back() const {
+	return operator[](vm_.n_ - 1);
+    }
 
     /** @brief Return a reference to the <em>i</em>th element.
       @pre 0 <= @a i < size()
@@ -236,7 +248,9 @@ class Vector {
 	return *(T *)&vm_.l_[i];
     }
     /** @overload */
-    const T &unchecked_at(size_type i) const	{ return *(T *)&vm_.l_[i]; }
+    const T &unchecked_at(size_type i) const {
+	return *(T *)&vm_.l_[i];
+    }
 
     /** @cond never */
     inline T &at_u(size_type i) CLICK_DEPRECATED;
@@ -248,7 +262,7 @@ class Vector {
       @param n new size
       @param v value used to fill new elements */
     void resize(size_type n, value_argument_type v = T()) {
-	vm_.resize(n, (memory_object *) &v);
+	vm_.resize(n, array_memory_type::cast(&v));
     }
 
     /** @brief Append element @a v.
@@ -256,7 +270,7 @@ class Vector {
       A copy of @a v is inserted at position size(). Takes amortized O(1)
       time. */
     void push_back(value_argument_type v) {
-	vm_.push_back((const memory_object *) &v);
+	vm_.push_back(array_memory_type::cast(&v));
     }
 
     /** @brief Remove the last element.
@@ -271,7 +285,7 @@ class Vector {
       A copy of @a v is added to position 0. Other elements are shifted one
       position forward. Takes O(size()) time. */
     void push_front(value_argument_type v) {
-	vm_.insert(vm_.l_, (const memory_object *) &v);
+	vm_.insert(vm_.l_, array_memory_type::cast(&v));
     }
 
     /** @brief Remove the first element.
@@ -285,7 +299,8 @@ class Vector {
     /** @brief Insert @a v before position @a it.
       @return An iterator pointing at the new element. */
     iterator insert(iterator it, value_argument_type v) {
-	return (iterator) vm_.insert((memory_object *) it, (const memory_object *) &v);
+	return (iterator) vm_.insert(array_memory_type::cast(it),
+				     array_memory_type::cast(&v));
     }
 
     /** @brief Remove the element at position @a it.
@@ -297,7 +312,8 @@ class Vector {
     /** @brief Remove the elements in [@a a, @a b).
       @return An iterator corresponding to @a b. */
     iterator erase(iterator a, iterator b) {
-	return (iterator) vm_.erase((memory_object *) a, (memory_object *) b);
+	return (iterator) vm_.erase(array_memory_type::cast(a),
+				    array_memory_type::cast(b));
     }
 
     /** @brief Remove all elements.
@@ -313,11 +329,15 @@ class Vector {
       This function changes the vector's capacity(), not its size(). If
       reserve(@a n) succeeds, then any succeeding call to resize(@a m) with @a
       m < @a n will succeed without allocating vector memory. */
-    bool reserve(size_type n)		{ return vm_.reserve_and_push_back(n, 0); }
+    bool reserve(size_type n) {
+	return vm_.reserve_and_push_back(n, 0);
+    }
 
 
     /** @brief Swap the contents of this vector and @a x. */
-    void swap(Vector<T> &x)		{ vm_.swap(x.vm_); }
+    void swap(Vector<T> &x) {
+	vm_.swap(x.vm_);
+    }
 
 
     /** @brief Replace this vector's contents with a copy of @a x. */
@@ -329,7 +349,7 @@ class Vector {
     /** @brief Replace this vector's contents with @a n copies of @a v.
       @post size() == @a n */
     Vector<T> &assign(size_type n, value_argument_type v = T()) {
-	vm_.assign(n, (const memory_object *) &v);
+	vm_.assign(n, array_memory_type::cast(&v));
 	return *this;
     }
 
@@ -345,14 +365,12 @@ template <typename T> const T &Vector<T>::at_u(size_type i) const {
 /** @endcond never */
 
 template <typename T>
-inline void click_swap(Vector<T> &a, Vector<T> &b)
-{
+inline void click_swap(Vector<T> &a, Vector<T> &b) {
     a.swap(b);
 }
 
 template <typename T>
-inline void assign_consume(Vector<T> &a, Vector<T> &b)
-{
+inline void assign_consume(Vector<T> &a, Vector<T> &b) {
     a.swap(b);
 }
 

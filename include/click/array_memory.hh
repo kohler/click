@@ -9,6 +9,12 @@ CLICK_DECLS
 
 template <size_t s> class sized_array_memory { public:
     typedef char_array<s> type;
+    template <typename T> static type *cast(T *x) {
+	return reinterpret_cast<type *>(x);
+    }
+    template <typename T> static const type *cast(const T *x) {
+	return reinterpret_cast<const type *>(x);
+    }
     static void fill(void *a, size_t n, const void *x) {
 	for (; n != 0; --n, a = (char *) a + s)
 	    memcpy(a, x, s);
@@ -43,6 +49,12 @@ template <size_t s> class sized_array_memory { public:
 
 template <typename T> class typed_array_memory { public:
     typedef T type;
+    static T *cast(T *x) {
+	return x;
+    }
+    static const T *cast(const T *x) {
+	return x;
+    }
     static void fill(T *a, size_t n, const T *x) {
 	for (size_t i = 0; i != n; ++i)
 	    new((void *) &a[i]) T(*x);

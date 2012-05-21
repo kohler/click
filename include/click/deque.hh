@@ -126,7 +126,6 @@ template <typename T>
 class Deque {
 
     typedef typename array_memory<T>::type array_memory_type;
-    typedef typename deque_memory<array_memory_type>::type memory_object;
     mutable deque_memory<array_memory_type> vm_;
 
   public:
@@ -154,7 +153,7 @@ class Deque {
     /** @brief Type of sizes (size()). */
     typedef int size_type;
 
-    /** @brief Constant passed to reserve() to grow the Vector. */
+    /** @brief Constant passed to reserve() to grow the deque. */
     enum { RESERVE_GROW = (size_type) -1 };
 
 
@@ -164,7 +163,7 @@ class Deque {
 
     /** @brief Construct a deque containing @a n copies of @a v. */
     explicit Deque(size_type n, value_argument_type v) {
-	vm_.resize(n, (const memory_object *)&v);
+	vm_.resize(n, array_memory_type::cast(&v));
     }
 
     /** @brief Construct a deque as a copy of @a x. */
@@ -208,15 +207,19 @@ class Deque {
 	return iterator(this, 0);
     }
     /** @overload */
-    const_iterator begin() const	{ return const_iterator(this, 0); }
+    const_iterator begin() const {
+	return const_iterator(this, 0);
+    }
 
-    /** @brief Return an iterator for the end of the vector.
+    /** @brief Return an iterator for the end of the deque.
       @invariant end() == begin() + size() */
     iterator end() {
 	return iterator(this, vm_.n_);
     }
     /** @overload */
-    const_iterator end() const		{ return const_iterator(this, vm_.n_); }
+    const_iterator end() const {
+	return const_iterator(this, vm_.n_);
+    }
 
 
     /** @brief Return a reference to the <em>i</em>th element.
@@ -237,7 +240,9 @@ class Deque {
 	return operator[](i);
     }
     /** @overload */
-    const T &at(size_type i) const	{ return operator[](i); }
+    const T &at(size_type i) const {
+	return operator[](i);
+    }
 
     /** @brief Return a reference to the first element.
       @pre !empty() */
@@ -245,7 +250,9 @@ class Deque {
 	return operator[](0);
     }
     /** @overload */
-    const T &front() const		{ return operator[](0); }
+    const T &front() const {
+	return operator[](0);
+    }
 
     /** @brief Return a reference to the last element (number size()-1).
       @pre !empty() */
@@ -276,19 +283,19 @@ class Deque {
     /** @endcond never */
 
 
-    /** @brief Resize the vector to contain @a n elements.
+    /** @brief Resize the deque to contain @a n elements.
       @param n new size
       @param v value used to fill new elements */
     void resize(size_type n, value_argument_type v = T()) {
-	vm_.resize(n, (memory_object *) &v);
+	vm_.resize(n, array_memory_type::cast(&v));
     }
 
-    /** @brief Append @a v to the end of the vector.
+    /** @brief Append @a v to the end of the deque.
 
       A copy of @a v is added to position size(). Takes amortized O(1)
       time. */
     void push_back(value_argument_type v) {
-	vm_.push_back((const memory_object *) &v);
+	vm_.push_back(array_memory_type::cast(&v));
     }
 
     /** @brief Remove the last element.
@@ -303,7 +310,7 @@ class Deque {
       A copy of @a v is added to position 0. Other elements are shifted one
       position forward. Takes amortized O(1) time. */
     void push_front(value_argument_type v) {
-	vm_.push_front((const memory_object *) &v);
+	vm_.push_front(array_memory_type::cast(&v));
     }
 
     /** @brief Remove the first element.
@@ -317,7 +324,7 @@ class Deque {
       @return An iterator pointing at the new element. */
     iterator insert(iterator it, value_argument_type v) {
 	assert(it.q_ == this);
-	if (likely(vm_.insert(it.p_, (const memory_object *) &v)))
+	if (likely(vm_.insert(it.p_, array_memory_type::cast(&v))))
 	    return it;
 	else
 	    return end();
@@ -347,14 +354,18 @@ class Deque {
     /** @brief Reserve space for at least @a n more elements.
       @return true iff reserve succeeded.
 
-      This function changes the vector's capacity(), not its size(). If
+      This function changes the deque's capacity(), not its size(). If
       reserve(@a n) succeeds, then any succeeding call to resize(@a m) with @a
-      m < @a n will succeed without allocating vector memory. */
-    bool reserve(size_type n)		{ return vm_.reserve_and_push(n, false, 0); }
+      m < @a n will succeed without allocating deque memory. */
+    bool reserve(size_type n) {
+	return vm_.reserve_and_push(n, false, 0);
+    }
 
 
     /** @brief Swap the contents of this deque and @a x. */
-    void swap(Deque<T> &x)		{ vm_.swap(x.vm_); }
+    void swap(Deque<T> &x) {
+	vm_.swap(x.vm_);
+    }
 
 
     /** @brief Replace this deque's contents with a copy of @a x. */
@@ -366,7 +377,7 @@ class Deque {
     /** @brief Replace this deque's contents with @a n copies of @a v.
       @post size() == @a n */
     Deque<T> &assign(size_type n, value_argument_type v = T()) {
-	vm_.assign(n, (const memory_object *) &v);
+	vm_.assign(n, array_memory_type::cast(&v));
 	return *this;
     }
 
