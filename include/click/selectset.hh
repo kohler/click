@@ -38,16 +38,12 @@ class SelectSet { public:
     SelectSet();
     ~SelectSet();
 
-    void initialize();
+    void initialize(RouterThread *thread);
 
-    int add_select(int fd, Element *element, int mask);
+    int add_select(RouterThread *thread, int fd, Element *element, int mask);
     int remove_select(int fd, Element *element, int mask);
 
     void run_selects(RouterThread *thread);
-    inline void wake_immediate() {
-	_wake_pipe_pending = true;
-	ignore_result(write(_wake_pipe[1], "", 1));
-    }
 
     void kill_router(Router *router);
 
@@ -60,13 +56,11 @@ class SelectSet { public:
 	Element *write;
 	int pollfd;
 	SelectorInfo()
-	    : read(0), write(0), pollfd(-1)
-	{
+	    : read(0), write(0), pollfd(-1) {
 	}
     };
 
     int _wake_pipe[2];
-    volatile bool _wake_pipe_pending;
 #if HAVE_ALLOW_KQUEUE
     int _kqueue;
 #endif
@@ -89,7 +83,7 @@ class SelectSet { public:
     void register_select(int fd, bool add_read, bool add_write);
     void remove_pollfd(int pi, int event);
     inline void call_selected(int fd, int mask) const;
-    inline bool post_select(RouterThread *thread, bool acquire);
+    inline bool post_select(RouterThread *thread, bool was_active, bool acquire);
 #if HAVE_ALLOW_KQUEUE
     void run_selects_kqueue(RouterThread *thread);
 #endif

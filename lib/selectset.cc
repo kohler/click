@@ -6,6 +6,7 @@
  * Copyright (c) 2003-2011 The Regents of the University of California
  * Copyright (c) 2010 Intel Corporation
  * Copyright (c) 2008-2010 Meraki, Inc.
+ * Copyright (c) 2008-2012 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -44,7 +45,6 @@ enum { POLLIN = Element::SELECT_READ, POLLOUT = Element::SELECT_WRITE };
 
 SelectSet::SelectSet()
 {
-    _wake_pipe_pending = false;
     _wake_pipe[0] = _wake_pipe[1] = -1;
 
 #if HAVE_ALLOW_KQUEUE
@@ -93,7 +93,7 @@ SelectSet::~SelectSet()
 }
 
 void
-SelectSet::initialize()
+SelectSet::initialize(RouterThread *thread)
 {
     if (_wake_pipe[0] < 0 && pipe(_wake_pipe) >= 0) {
 	fcntl(_wake_pipe[0], F_SETFL, O_NONBLOCK);
@@ -103,6 +103,7 @@ SelectSet::initialize()
 	register_select(_wake_pipe[0], true, false);
     }
     assert(_wake_pipe[0] >= 0);
+    thread->_wake_pipe_end = _wake_pipe[1];
 }
 
 void
@@ -195,7 +196,7 @@ SelectSet::register_select(int fd, bool add_read, bool add_write)
 }
 
 int
-SelectSet::add_select(int fd, Element *element, int mask)
+SelectSet::add_select(RouterThread *thread, int fd, Element *element, int mask)
 {
     if (fd < 0)
 	return -1;
@@ -238,7 +239,7 @@ SelectSet::add_select(int fd, Element *element, int mask)
 
 #if HAVE_MULTITHREAD
     // need to wake up selecting thread since there's more to select
-    wake_immediate();
+    thread->wake();
 #endif
 
     unlock();
@@ -327,7 +328,7 @@ SelectSet::remove_select(int fd, Element *element, int mask)
 }
 
 inline bool
-SelectSet::post_select(RouterThread *thread, bool acquire)
+SelectSet::post_select(RouterThread *thread, bool was_active, bool acquire)
 {
 #if HAVE_MULTITHREAD
     if (acquire) {
@@ -338,11 +339,11 @@ SelectSet::post_select(RouterThread *thread, bool acquire)
     (void) acquire;
 #endif
 
-    if (_wake_pipe_pending) {
-	_wake_pipe_pending = false;
+    if (!was_active) {
 	char crap[64];
 	while (read(_wake_pipe[0], crap, 64) == 64)
 	    /* do nothing */;
+	thread->mark_unblock();
     }
 
     if (thread->master()->paused() || thread->stop_flag())
@@ -387,10 +388,14 @@ SelectSet::run_selects_kqueue(RouterThread *thread)
     _select_lock.release();
 # endif
 
+    // Check activity.
+    bool was_active = thread->active();
+    bool is_active = was_active || thread->mark_block();
+
     // Decide how long to wait.
     struct timespec wait, *wait_ptr = &wait;
     Timestamp t;
-    int delay_type = thread->timer_set().next_timer_delay(thread->active(), t);
+    int delay_type = thread->timer_set().next_timer_delay(is_active, t);
     if (delay_type == 0)
 	wait.tv_sec = wait.tv_nsec = 0;
     else if (delay_type > 0)
@@ -403,7 +408,7 @@ SelectSet::run_selects_kqueue(RouterThread *thread)
     int n = kevent(_kqueue, 0, 0, &kev[0], 256, wait_ptr);
     int was_errno = errno;
 
-    if (post_select(thread, true))
+    if (post_select(thread, was_active, true))
 	return;
 
     thread->set_thread_state(RouterThread::S_RUNSELECT);
@@ -438,10 +443,14 @@ SelectSet::run_selects_poll(RouterThread *thread)
     Vector<struct pollfd> &my_pollfds(_pollfds);
 # endif
 
+    // Check activity.
+    bool was_active = thread->active();
+    bool is_active = was_active || thread->mark_block();
+
     // Decide how long to wait.
     int timeout;
     Timestamp t;
-    int delay_type = thread->timer_set().next_timer_delay(thread->active(), t);
+    int delay_type = thread->timer_set().next_timer_delay(is_active, t);
     if (delay_type == 0)
 	timeout = 0;
     else if (delay_type > 0)
@@ -453,7 +462,7 @@ SelectSet::run_selects_poll(RouterThread *thread)
     int n = poll(my_pollfds.begin(), my_pollfds.size(), timeout);
     int was_errno = errno;
 
-    if (post_select(thread, true))
+    if (post_select(thread, was_active, true))
 	return;
 
     thread->set_thread_state(RouterThread::S_RUNSELECT);
@@ -494,10 +503,14 @@ SelectSet::run_selects_select(RouterThread *thread)
     _select_lock.release();
 # endif
 
+    // Check activity.
+    bool was_active = thread->active();
+    bool is_active = was_active || thread->mark_block();
+
     // Decide how long to wait.
     struct timeval wait, *wait_ptr = &wait;
     Timestamp t;
-    int delay_type = thread->timer_set().next_timer_delay(thread->active(), t);
+    int delay_type = thread->timer_set().next_timer_delay(is_active, t);
     if (delay_type == 0)
 	timerclear(&wait);
     else if (delay_type > 0)
@@ -509,7 +522,7 @@ SelectSet::run_selects_select(RouterThread *thread)
     int n = select(n_select_fd, &read_mask, &write_mask, (fd_set*) 0, wait_ptr);
     int was_errno = errno;
 
-    if (post_select(thread, true))
+    if (post_select(thread, was_active, true))
 	return;
 
     thread->set_thread_state(RouterThread::S_RUNSELECT);
@@ -565,7 +578,7 @@ SelectSet::run_selects(RouterThread *thread)
 #if HAVE_MULTITHREAD
 	_select_lock.release();
 #endif
-	post_select(thread, false);
+	post_select(thread, true, false);
 	return;
     }
 

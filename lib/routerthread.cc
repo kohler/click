@@ -71,6 +71,7 @@ RouterThread::RouterThread(Master *master, int id)
 {
     _pending_head.x = 0;
     _pending_tail = &_pending_head;
+    _thread_blocked = 0;
 
 #if !HAVE_TASK_HEAP
     _task_link._prev = _task_link._next = &_task_link;
@@ -87,6 +88,10 @@ RouterThread::RouterThread(Master *master, int id)
     _max_click_share = 80 * Task::MAX_UTILIZATION / 100;
     _min_click_share = Task::MAX_UTILIZATION / 200;
     _cur_click_share = 0;	// because we aren't yet running
+#endif
+
+#if CLICK_USERLEVEL
+    _wake_pipe_end = -1;
 #endif
 
 #if CLICK_NS
@@ -494,10 +499,6 @@ RouterThread::run_tasks(int ntasks)
 inline void
 RouterThread::run_os()
 {
-#if CLICK_LINUXMODULE
-    // set state to interruptible early to avoid race conditions
-    set_current_state(TASK_INTERRUPTIBLE);
-#endif
     driver_unlock_tasks();
 #if HAVE_ADAPTIVE_SCHEDULER
     Timestamp t_before = Timestamp::now();
@@ -514,21 +515,26 @@ RouterThread::run_os()
     } else if (active()) {
       short_pause:
 	set_thread_state(S_PAUSED);
-	set_current_state(TASK_RUNNING);
 	schedule();
     } else if (_id != 0) {
       block:
+	if (!mark_block())
+	    set_current_state(TASK_INTERRUPTIBLE);
 	set_thread_state(S_BLOCKED);
 	schedule();
+	mark_unblock();
     } else if (Timestamp wait = timer_set().timer_expiry_steady_adjusted()) {
 	wait -= Timestamp::now_steady();
 	if (!(wait > Timestamp(0, Timestamp::subsec_per_sec / CLICK_HZ)))
 	    goto short_pause;
+	if (!mark_block())
+	    set_current_state(TASK_INTERRUPTIBLE);
 	set_thread_state(S_TIMERWAIT);
 	if (wait.sec() >= LONG_MAX / CLICK_HZ - 1)
 	    (void) schedule_timeout(LONG_MAX - CLICK_HZ - 1);
 	else
 	    (void) schedule_timeout(wait.jiffies() - 1);
+	mark_unblock();
     } else
 	goto block;
 #elif defined(CLICK_BSDMODULE)
@@ -539,9 +545,11 @@ RouterThread::run_os()
 	yield(curthread, NULL);
     } else {
 	set_thread_state(S_BLOCKED);
-	_sleep_ident = &_sleep_ident;	// arbitrary address, != NULL
-	tsleep(&_sleep_ident, PPAUSE, "pause", 1);
-	_sleep_ident = NULL;
+	if (!mark_block())
+	    tsleep(&_thread_blocked, PPAUSE, "pause", 1);
+	else
+	    yield(curthread, NULL);
+	mark_unblock();
     }
 #else
 # error "Compiling for unknown target."
@@ -584,7 +592,7 @@ RouterThread::driver()
     // this task is running the driver
     _linux_task = current;
 #elif CLICK_USERLEVEL
-    select_set().initialize();
+    select_set().initialize(this);
 # if CLICK_USERLEVEL && HAVE_MULTITHREAD
     _running_processor = click_current_processor();
 #  if HAVE___THREAD_STORAGE_CLASS
@@ -619,6 +627,7 @@ RouterThread::driver()
 #if !BSD_NETISRSCHED
 	// check to see if driver is stopped
 	if (_stop_flag > 0) {
+	    click_fence();
 	    driver_unlock_tasks();
 	    bool b = _master->check_driver();
 	    driver_lock_tasks();

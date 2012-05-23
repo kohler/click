@@ -1737,7 +1737,8 @@ Element::selected(int fd)
 int
 Element::add_select(int fd, int mask)
 {
-    return home_thread()->select_set().add_select(fd, this, mask);
+    RouterThread *thread = home_thread();
+    return thread->select_set().add_select(thread, fd, this, mask);
 }
 
 /** @brief Remove interest in @a mask events on file descriptor @a fd.

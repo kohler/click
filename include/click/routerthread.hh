@@ -152,15 +152,19 @@ class RouterThread { public:
     Task::Pending *_pending_tail;
     SpinlockIRQ _pending_lock;
 
+    uint32_t _thread_blocked;
+
     // SHARED STATE GROUP
     Master *_master CLICK_ALIGNED(CLICK_CACHE_LINE_SIZE);
     int _id;
-#if HAVE_MULTITHREAD && !CLICK_LINUXMODULE
-    click_processor_t _running_processor;
-#endif
 #if CLICK_LINUXMODULE
     struct task_struct *_linux_task;
     bool _greedy;
+#elif HAVE_MULTITHREAD
+    click_processor_t _running_processor;
+#endif
+#if CLICK_USERLEVEL
+    int _wake_pipe_end;
 #endif
   public:
     unsigned _tasks_per_iter;
@@ -177,7 +181,6 @@ class RouterThread { public:
 #if CLICK_BSDMODULE
     // XXX FreeBSD
     u_int64_t _old_tsc; /* MARKO - temp. */
-    void *_sleep_ident;
     int _oticks;
     bool _greedy;
 #endif
@@ -228,6 +231,8 @@ class RouterThread { public:
     inline bool current_thread_is_running() const;
     void request_stop();
     inline void request_go();
+    inline bool mark_block();
+    inline void mark_unblock();
 
     friend class Task;
     friend class Master;
@@ -427,20 +432,34 @@ RouterThread::unlock_tasks()
     }
 }
 
+inline bool
+RouterThread::mark_block()
+{
+    _thread_blocked = 1;
+    click_fence();
+    return active();
+}
+
+inline void
+RouterThread::mark_unblock()
+{
+    _thread_blocked = 0;
+}
+
 inline void
 RouterThread::wake()
 {
+    click_fence();
+    if (_thread_blocked != 1)
+	return;
 #if CLICK_LINUXMODULE
-    struct task_struct *task = _linux_task;
-    if (task)
+    if (struct task_struct *task = _linux_task)
 	wake_up_process(task);
 #elif CLICK_USERLEVEL
-    // see also Master::add_select()
     if (!current_thread_is_running())
-	_selects.wake_immediate();
+	ignore_result(write(_wake_pipe_end, "", 1));
 #elif CLICK_BSDMODULE && !BSD_NETISRSCHED
-    if (_sleep_ident)
-	wakeup_one(&_sleep_ident);
+    wakeup_one(&_thread_blocked);
 #endif
 }
 
