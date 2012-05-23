@@ -201,7 +201,6 @@ class RouterThread { public:
     ~RouterThread();
 
     // task requests
-    inline void add_pending();
 #if HAVE_STRIDE_SCHED
     inline unsigned pass() const {
 # if HAVE_TASK_HEAP
@@ -443,12 +442,6 @@ RouterThread::wake()
     if (_sleep_ident)
 	wakeup_one(&_sleep_ident);
 #endif
-}
-
-inline void
-RouterThread::add_pending()
-{
-    wake();
 }
 
 inline bool

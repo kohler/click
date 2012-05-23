@@ -130,7 +130,7 @@ Task::add_pending_locked(RouterThread *thread)
 	_pending_nextptr.x = 1;
 	thread->_pending_tail->t = this;
 	thread->_pending_tail = &_pending_nextptr;
-	thread->add_pending();
+	thread->wake();
     }
 }
 
