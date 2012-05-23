@@ -268,9 +268,9 @@ RouterThread::active() const
 {
     click_compiler_fence();
 #if HAVE_TASK_HEAP
-    return _task_heap.size() != 0 || _pending_head.x;
+    return _task_heap.size() != 0 || _pending_head.x || _stop_flag;
 #else
-    return _task_link._next != &_task_link || _pending_head.x;
+    return _task_link._next != &_task_link || _pending_head.x || _stop_flag;
 #endif
 }
 

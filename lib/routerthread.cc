@@ -133,6 +133,7 @@ RouterThread::RouterThread(Master *master, int id)
 
 RouterThread::~RouterThread()
 {
+    _stop_flag = false;
     assert(!active());
 }
 
