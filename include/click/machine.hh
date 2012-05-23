@@ -43,10 +43,11 @@ click_fence()
 {
 #if CLICK_LINUXMODULE
     smp_mb();
+#elif HAVE_MULTITHREAD && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))
+    // GCC 4.2.1 on Mac has __sync_synchronize, but it doesn't work!
+    asm volatile("mfence" : : : "memory");
 #elif HAVE_MULTITHREAD && HAVE___SYNC_SYNCHRONIZE
     __sync_synchronize();
-#elif HAVE_MULTITHREAD && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))
-    asm volatile("mfence" : : : "memory");
 #else
     click_compiler_fence();
 #endif
