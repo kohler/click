@@ -134,6 +134,12 @@ unlock_config_write(const char *file, int line)
 #define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->u)))
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+#define _set_nlink(inode, nlink)	set_nlink(inode, nlink)
+#else
+#define _set_nlink(inode, nlink)	inode->i_nlink = nlink
+#endif
+
 struct ClickInodeInfo {
     uint32_t config_generation;
 };
@@ -155,7 +161,7 @@ inode_out_of_date(struct inode *inode, int subdir_error)
 	if ((error = click_ino.prepare(click_router, click_config_generation)) < 0)
 	    return error;
 	INODE_INFO(inode).config_generation = click_config_generation;
-	inode->i_nlink = click_ino.nlink(inode->i_ino);
+	_set_nlink(inode, click_ino.nlink(inode->i_ino));
     }
     return 0;
 }
@@ -186,7 +192,7 @@ click_inode(struct super_block *sb, ino_t ino)
 	    inode->i_gid = click_fsmode.gid;
 	    inode->i_op = click_handler_inode_ops;
 	    inode->i_fop = click_handler_file_ops;
-	    inode->i_nlink = click_ino.nlink(ino);
+	    _set_nlink(inode, click_ino.nlink(ino));
 	} else {
 	    // can't happen
 	    iput(inode);
@@ -199,7 +205,7 @@ click_inode(struct super_block *sb, ino_t ino)
 	inode->i_gid = click_fsmode.gid;
 	inode->i_op = click_dir_inode_ops;
 	inode->i_fop = click_dir_file_ops;
-	inode->i_nlink = click_ino.nlink(ino);
+	_set_nlink(inode, click_ino.nlink(ino));
     }
 
     inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
@@ -268,7 +274,7 @@ click_dir_revalidate(struct dentry *dentry)
 	    /* preserve error */;
 	else {
 	    INODE_INFO(inode).config_generation = click_config_generation;
-	    inode->i_nlink = click_ino.nlink(inode->i_ino);
+	    _set_nlink(inode, click_ino.nlink(inode->i_ino));
 	}
     }
     UNLOCK_CONFIG_READ();
@@ -356,10 +362,14 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     UNLOCK_CONFIG_READ();
     if (!root_inode)
 	goto out_no_root;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 3, 0)
+    sb->s_root = d_make_root(root_inode);
+#else
     sb->s_root = d_alloc_root(root_inode);
+#endif
     MDEBUG("got root inode %p:%p", root_inode, root_inode->i_op);
     if (!sb->s_root)
-	goto out_no_root;
+	goto out_no_root_put;
     // XXX options
 
     MDEBUG("got root directory");
@@ -367,9 +377,12 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     MDEBUG("done click_read_super");
     return sb;
 
+  out_no_root_put:
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 3, 0)
+    iput(root_inode);
+#endif
   out_no_root:
     printk("<1>click_read_super: get root inode failed\n");
-    iput(root_inode);
     sb->s_dev = 0;
     return 0;
 }

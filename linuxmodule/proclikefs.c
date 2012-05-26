@@ -211,7 +211,7 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 	newfs->fs.owner = THIS_MODULE;
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)) && (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 3, 0))
 	INIT_LIST_HEAD(&newfs->fs.fs_supers);
 #endif
 	newfs_is_new = 1;
@@ -245,8 +245,11 @@ proclikefs_reinitialize_supers(struct proclikefs_file_system *pfs,
 			       void (*reread_super) (struct super_block *))
 {
     struct super_block *sb;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)) && (LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0))
     struct list_head *p;
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+    struct hlist_node *node;
 #endif
     THREAD_LOCK_ACQUIRE(fslist_lock);
     /* transfer superblocks */
@@ -254,8 +257,12 @@ proclikefs_reinitialize_supers(struct proclikefs_file_system *pfs,
 # if HAVE_LINUX_SB_LOCK
     THREAD_LOCK_ACQUIRE(sb_lock);
 # endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+    hlist_for_each_entry(sb, node, &pfs->fs.fs_supers, s_instances) {
+#else
     for (p = pfs->fs.fs_supers.next; p != &pfs->fs.fs_supers; p = p->next) {
 	sb = list_entry(p, struct super_block, s_instances);
+#endif
 	if (sb->s_type == &pfs->fs)
 	    (*reread_super)(sb);
 	else
@@ -374,10 +381,14 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 {
     struct super_block *sb, dummy_sb;
     struct file *filp;
-    struct list_head *p;
     struct proclikefs_file_operations *pfo;
     struct proclikefs_inode_operations *pio;
     struct inode dummy_inode;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+    struct hlist_node *node;
+#else
+    struct list_head *p;
+#endif
 
     if (!pfs)
 	return;
@@ -429,8 +440,12 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 # if HAVE_LINUX_SB_LOCK
     THREAD_LOCK_ACQUIRE(sb_lock);
 # endif
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+    hlist_for_each_entry(sb, node, &pfs->fs.fs_supers, s_instances) {
+#else
     for (p = pfs->fs.fs_supers.next; p != &pfs->fs.fs_supers; p = p->next) {
 	sb = list_entry(p, struct super_block, s_instances);
+#endif
 	proclikefs_kill_super(sb, &pfs->pfs_pfo->pfo_op);
     }
 # if HAVE_LINUX_SB_LOCK
