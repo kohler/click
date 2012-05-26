@@ -69,7 +69,7 @@ class Master { public:
     void unregister_router(Router*);
 
 #if CLICK_LINUXMODULE
-    spinlock_t _master_lock;
+    struct mutex _master_lock;
     struct task_struct *_master_lock_task;
     int _master_lock_count;
 #elif HAVE_MULTITHREAD
@@ -193,7 +193,7 @@ Master::lock_master()
 {
 #if CLICK_LINUXMODULE
     if (current != _master_lock_task) {
-	spin_lock(&_master_lock);
+	mutex_lock(&_master_lock);
 	_master_lock_task = current;
     } else
 	_master_lock_count++;
@@ -209,7 +209,7 @@ Master::unlock_master()
     assert(current == _master_lock_task);
     if (_master_lock_count == 0) {
 	_master_lock_task = 0;
-	spin_unlock(&_master_lock);
+	mutex_unlock(&_master_lock);
     } else
 	_master_lock_count--;
 #elif HAVE_MULTITHREAD

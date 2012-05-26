@@ -33,6 +33,7 @@ CLICK_CXX_PROTECT
 # include <linux/ctype.h>
 # include <linux/time.h>
 # include <linux/errno.h>
+# include <linux/mutex.h>
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 
