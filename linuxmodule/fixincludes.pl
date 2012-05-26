@@ -245,7 +245,7 @@ sub one_includeroot ($$) {
 	    if ($d eq "radix-tree.h") {
 		# errors in the RCU macros with rcu_dereference(*pslot)
 		1 while s<void \*\*pslot([^\}]*?)\{><void **____pslot$1\{char **pslot = (char **) ____pslot;>;
-		1 while s<void \*item([^\}]*?)\{><void *____item$1\{char *item = (char *) ____item;>;
+		1 while s<pslot, void \*item([^\}]*?)\{><pslot, void *____item$1\{char *item = (char *) ____item;>;
 	    }
 
 	    # CLICK_CXX_PROTECTED check
