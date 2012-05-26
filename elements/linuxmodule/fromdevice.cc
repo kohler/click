@@ -292,13 +292,23 @@ click_br_handle_frame_hook(struct net_bridge_port *p, struct sk_buff *skb)
 }
 
 #elif HAVE_LINUX_NETDEV_RX_HANDLER_REGISTER
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
 struct sk_buff *
 click_fromdevice_rx_handler(struct sk_buff *skb)
+#define RX_HANDLER_PASS skb
+#define RX_HANDLER_CONSUMED 0
+# else
+rx_handler_result_t
+click_fromdevice_rx_handler(struct sk_buff **pskb)
+# endif
 {
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39)
+    struct sk_buff *skb = *pskb;
+# endif
 # if CLICK_DEVICE_UNRECEIVABLE_SK_BUFF
     if (__get_cpu_var(click_device_unreceivable_sk_buff) == skb)
 	// This packet is being passed to Linux by ToHost.
-	return skb;
+	return RX_HANDLER_PASS;
 # endif
 
     int stolen = 0;
@@ -310,9 +320,9 @@ click_fromdevice_rx_handler(struct sk_buff *skb)
 	stolen = fd->got_skb(skb);
     from_device_map.unlock(false, lock_flags);
     if (stolen)
-	return 0;
+	return RX_HANDLER_CONSUMED;
     else
-	return skb;
+	return RX_HANDLER_PASS;
 }
 #endif
 
