@@ -137,15 +137,15 @@ static void fromhost_inet_setup(struct net_device *dev)
 net_device *
 FromHost::new_device(const char *name)
 {
-    read_lock(&dev_base_lock);
     void (*setup)(struct net_device *) = (_macaddr ? ether_setup : fromhost_inet_setup);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     net_device *dev = alloc_netdev(0, name, setup);
 #else
     int errcode;
+    read_lock(&dev_base_lock);
     net_device *dev = dev_alloc(name, &errcode);
-#endif
     read_unlock(&dev_base_lock);
+#endif
     if (!dev)
 	return 0;
 
