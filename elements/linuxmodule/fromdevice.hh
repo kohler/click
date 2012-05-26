@@ -193,7 +193,11 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
 };
 
 extern "C" {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
 struct sk_buff *click_fromdevice_rx_handler(struct sk_buff *skb);
+#else
+rx_handler_result_t click_fromdevice_rx_handler(struct sk_buff **pskb);
+#endif
 }
 
 #endif
