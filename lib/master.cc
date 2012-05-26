@@ -58,7 +58,7 @@ Master::Master(int nthreads)
 #endif
 
 #if CLICK_LINUXMODULE
-    spin_lock_init(&_master_lock);
+    THREAD_LOCK_INIT(_master_lock);
     _master_lock_task = 0;
     _master_lock_count = 0;
 #endif
@@ -204,9 +204,6 @@ Master::kill_router(Router *router)
 
     // Fix stopper
     request_stop();
-#if CLICK_LINUXMODULE && HAVE_LINUXMODULE_2_6
-    preempt_disable();
-#endif
     unlock_master();
 
     // Remove tasks
@@ -233,9 +230,6 @@ Master::kill_router(Router *router)
 #endif
 
     unpause();
-#if CLICK_LINUXMODULE && HAVE_LINUXMODULE_2_6
-    preempt_enable_no_resched();
-#endif
 
     // something has happened, so wake up threads
     for (RouterThread **tp = _threads + 1; tp != _threads + _nthreads; ++tp)

@@ -26,10 +26,11 @@
 #include <click/straccum.hh>
 #include <click/llrpc.h>
 #include <click/ino.hh>
+#include <click/glue.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
-#include <linux/spinlock.h>
+#include <linux/mutex.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 # include <linux/locks.h>
 #endif
@@ -46,7 +47,7 @@ static struct inode_operations *click_handler_inode_ops;
 static struct dentry_operations click_dentry_ops;
 static struct proclikefs_file_system *clickfs;
 
-static spinlock_t clickfs_lock;
+static THREAD_LOCK_DECLARE(clickfs_lock);
 static wait_queue_head_t clickfs_waitq;
 static atomic_t clickfs_read_count;
 extern uint32_t click_config_generation;
@@ -54,8 +55,8 @@ static int clickfs_ready;
 
 //#define SPIN_LOCK_MSG(l, file, line, what)	printk("<1>%s:%d: pid %d: %sing %p in clickfs\n", (file), (line), current->pid, (what), (l))
 #define SPIN_LOCK_MSG(l, file, line, what)	((void)(file), (void)(line))
-#define SPIN_LOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "lock"); spin_lock((l)); } while (0)
-#define SPIN_UNLOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "unlock"); spin_unlock((l)); } while (0)
+#define SPIN_LOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "lock"); THREAD_LOCK_ACQUIRE(*(l)); } while (0)
+#define SPIN_UNLOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "unlock"); THREAD_LOCK_RELEASE(*(l)); } while (0)
 
 #define LOCK_CONFIG_READ()	lock_config(__FILE__, __LINE__, 0)
 #define UNLOCK_CONFIG_READ()	unlock_config_read()
@@ -447,7 +448,7 @@ static String *handler_strings = 0;
 static HandlerStringInfo *handler_strings_info = 0;
 static int handler_strings_cap = 0;
 static int handler_strings_free = -1;
-static spinlock_t handler_strings_lock;
+static THREAD_LOCK_DECLARE(handler_strings_lock);
 
 #define FILP_STRINGNO(filp)		(reinterpret_cast<intptr_t>((filp)->private_data))
 #define FILP_READ_STRINGNO(filp)	FILP_STRINGNO(filp)
@@ -954,8 +955,8 @@ init_clickfs()
 #endif
     static_assert(HANDLER_DIRECT + HANDLER_DONE + HANDLER_RAW + HANDLER_SPECIAL_INODE + HANDLER_WRITE_UNLIMITED < Handler::USER_FLAG_0, "Too few driver handler flags available.");
 
-    spin_lock_init(&handler_strings_lock);
-    spin_lock_init(&clickfs_lock);
+    THREAD_LOCK_INIT(handler_strings_lock);
+    THREAD_LOCK_INIT(clickfs_lock);
     init_waitqueue_head(&clickfs_waitq);
     atomic_set(&clickfs_read_count, 0);
 
