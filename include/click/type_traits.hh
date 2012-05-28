@@ -98,7 +98,7 @@ template <typename T> constexpr bool fast_argument<T>::is_reference;
     @brief Template defining a fixed-size character array. */
 template <size_t S> struct char_array {
     char x[S];
-};
+} CLICK_SIZE_PACKED_ATTRIBUTE;
 template <size_t S> struct has_trivial_copy<char_array<S> > : public true_type {};
 
 

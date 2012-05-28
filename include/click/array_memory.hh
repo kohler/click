@@ -10,6 +10,7 @@ CLICK_DECLS
 template <size_t s> class sized_array_memory { public:
     typedef char_array<s> type;
     template <typename T> static type *cast(T *x) {
+	static_assert(sizeof(type) == s, "char_array<> size off");
 	return reinterpret_cast<type *>(x);
     }
     template <typename T> static const type *cast(const T *x) {
