@@ -1,11 +1,11 @@
 #ifndef CLICK_MACHINE_HH
 #define CLICK_MACHINE_HH 1
-#if CLICK_LINUXMODULE && defined(CONFIG_SMP)
+#if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 # include <linux/threads.h>
 # include <linux/sched.h>
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+# if defined(CONFIG_SMP) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 #  define num_possible_cpus()	smp_num_cpus
 # endif
 CLICK_CXX_UNPROTECT
