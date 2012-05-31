@@ -44,7 +44,9 @@ Args::initialize(const Vector<String> *conf)
     _slots = 0;
     _simple_slotbuf[0] = 0;
     _my_conf = !!_conf;
+#if CLICK_DEBUG_ARGS_USAGE
     _consumed = false;
+#endif
     _status = true;
     _simple_slotpos = 0;
     if (_conf)
@@ -82,7 +84,7 @@ Args::Args(const Args &x)
     : ArgContext(x),
       _my_conf(false), _simple_slotpos(0), _conf(0), _slots(0)
 {
-#if !NDEBUG
+#if CLICK_DEBUG_ARGS_USAGE
     _consumed = true;
 #endif
     _simple_slotbuf[0] = 0;
@@ -91,7 +93,7 @@ Args::Args(const Args &x)
 
 Args::~Args()
 {
-#if !NDEBUG
+#if CLICK_DEBUG_ARGS_USAGE
     if (_my_conf && _consumed && errh())
 	errh()->warning("Args::consume() did nothing; did you mean Args(this, errh).bind(conf)?");
 #endif
@@ -129,7 +131,7 @@ Args::operator=(const Args &x)
 	_arg_keyword = x._arg_keyword;
 	_read_status = x._read_status;
 	_status = x._status;
-#if !NDEBUG
+#if CLICK_DEBUG_ARGS_USAGE
 	_consumed = x._consumed;
 #endif
     }
@@ -159,7 +161,7 @@ Args::reset_from(int i)
 	    else
 		_kwpos.push_back(s - it->begin());
 	}
-#if !NDEBUG
+#if CLICK_DEBUG_ARGS_USAGE
 	_consumed = false;
 #endif
     }
@@ -172,7 +174,7 @@ Args::bind(Vector<String> &conf)
 	delete _conf;
     _conf = &conf;
     _my_conf = false;
-#if !NDEBUG
+#if CLICK_DEBUG_ARGS_USAGE
     _consumed = false;
 #endif
     return reset();
@@ -348,7 +350,7 @@ Args::find(const char *keyword, int flags, Slot *&slot_status)
 {
     _arg_keyword = keyword;
     _read_status = true;
-#if !NDEBUG
+#if CLICK_DEBUG_ARGS_USAGE
     _consumed = false;
 #endif
     slot_status = _slots;
@@ -496,7 +498,7 @@ int
 Args::consume()
 {
     strip();
-#if !NDEBUG
+#if CLICK_DEBUG_ARGS_USAGE
     _consumed = true;
 #endif
     return execute();

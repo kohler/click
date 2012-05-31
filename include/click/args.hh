@@ -740,7 +740,7 @@ class Args : public ArgContext {
 #endif
     };
 
-#if NDEBUG
+#if !CLICK_DEBUG_ARGS_USAGE
     bool _my_conf;
 #else
     bool _my_conf : 1;
