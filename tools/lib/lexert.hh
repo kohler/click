@@ -156,6 +156,7 @@ class LexerT { public:
     int _anonymous_class_count;
     int _group_depth;
     int _ngroups;
+    bool _last_connection_ends_output;
 
     Vector<String> _libraries;
 
@@ -166,9 +167,11 @@ class LexerT { public:
     LexerTInfo *_lexinfo;
     ErrorHandler *_errh;
 
-    void vlerror(const char *, const char *, const String &, const char *, va_list);
-    int lerror(const char *, const char *, const char *, ...);
-    int lerror(const Lexeme &, const char *, ...);
+    void xlerror(const char *pos1, const char *pos2, const String &landmark,
+		 const char *anno, const char *format, va_list val);
+    int lerror(const char *pos1, const char *pos2, const char *format, ...);
+    int lerror(const Lexeme &t, const char *format, ...);
+    int lwarning(const Lexeme &t, const char *format, ...);
     String anon_element_name(const String &) const;
 
     bool expect(int, bool no_error = false);
@@ -180,7 +183,7 @@ class LexerT { public:
     ElementClassT *force_element_type(const Lexeme &);
     void ydefine(RouterT *, const String &name, const String &value, const Lexeme &, bool &scope_order_error);
     void yrequire_library(const Lexeme &lexeme, const String &value);
-    void yconnection_check_useless(const Vector<int> &x, bool isoutput, const char *epos[2]);
+    void yconnection_check_useless(const Vector<int> &x, bool isoutput, const char *epos[2], bool done);
     static void yconnection_analyze_ports(const Vector<int> &x, bool isoutput,
 					  int &min_ports, int &expandable);
     void yconnection_connect_all(Vector<int> &outputs, Vector<int> &inputs, int connector, const char *pos1, const char *pos2);

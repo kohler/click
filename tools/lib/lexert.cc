@@ -106,6 +106,7 @@ LexerT::clear()
     _anonymous_class_count = 0;
     _group_depth = 0;
     _ngroups = 0;
+    _last_connection_ends_output = true;
     _libraries.clear();
 }
 
@@ -455,11 +456,12 @@ LexerT::FileState::landmark() const
 }
 
 void
-LexerT::vlerror(const char *pos1, const char *pos2, const String &lm, const char *fmt, va_list val)
+LexerT::xlerror(const char *pos1, const char *pos2, const String &lm,
+		const char *anno, const char *fmt, va_list val)
 {
     String text = _errh->vformat(fmt, val);
     _lexinfo->notify_error(text, pos1, pos2);
-    _errh->xmessage(lm, ErrorHandler::e_error, text);
+    _errh->xmessage(lm, anno, text);
 }
 
 int
@@ -467,7 +469,7 @@ LexerT::lerror(const char *pos1, const char *pos2, const char *format, ...)
 {
     va_list val;
     va_start(val, format);
-    vlerror(pos1, pos2, _file.landmark(), format, val);
+    xlerror(pos1, pos2, _file.landmark(), ErrorHandler::e_error, format, val);
     va_end(val);
     return -1;
 }
@@ -477,7 +479,17 @@ LexerT::lerror(const Lexeme &t, const char *format, ...)
 {
     va_list val;
     va_start(val, format);
-    vlerror(t.pos1(), t.pos2(), _file.landmark(), format, val);
+    xlerror(t.pos1(), t.pos2(), _file.landmark(), ErrorHandler::e_error, format, val);
+    va_end(val);
+    return -1;
+}
+
+int
+LexerT::lwarning(const Lexeme &t, const char *format, ...)
+{
+    va_list val;
+    va_start(val, format);
+    xlerror(t.pos1(), t.pos2(), _file.landmark(), ErrorHandler::e_warning, format, val);
     va_end(val);
     return -1;
 }
@@ -702,9 +714,12 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 		}
 	} else {
 	    bool nested = _router->scope().depth() || _group_depth;
-	    if (nested && (t.is(lexArrow) || t.is(lex2Arrow)))
+	    if (nested && (t.is(lexArrow) || t.is(lex2Arrow))) {
 		this_implicit = !in_allowed && (res[esize + 1] || !esize);
-	    else if (nested && t.is(','))
+		if (this_implicit && !res[esize + 1]
+		    && !_last_connection_ends_output)
+		    lwarning(t, "suggest %<input %s%> or %<[0] %s%> to start connection", t.string().c_str(), t.string().c_str());
+	    } else if (nested && t.is(','))
 		this_implicit = !!res[esize + 1];
 	    else if (nested && !t.is(lex2Colon))
 		this_implicit = in_allowed && (res[esize + 1] || !esize);
@@ -823,13 +838,17 @@ LexerT::yelement(Vector<int> &result, bool in_allowed, const char *epos[5])
 }
 
 void
-LexerT::yconnection_check_useless(const Vector<int> &x, bool isoutput, const char *epos[2])
+LexerT::yconnection_check_useless(const Vector<int> &x, bool isoutput, const char *epos[2], bool done)
 {
     for (const int *it = x.begin(); it != x.end(); it += 3 + it[1] + it[2])
 	if (it[isoutput ? 2 : 1] > 0) {
 	    lerror(epos[0], epos[1], isoutput ? "output ports ignored at end of chain" : "input ports ignored at start of chain");
 	    break;
 	}
+    if (done)
+	_last_connection_ends_output = x.size() > 0
+	    && x.size() == 3 + x[1] + x[2]
+	    && x[0] == _router->eindex("output");
 }
 
 void
@@ -941,12 +960,12 @@ LexerT::yconnection()
 	// get element
 	elements2.clear();
 	if (!yelement(elements2, !elements1.empty(), epos)) {
-	    yconnection_check_useless(elements1, true, epos + 3);
+	    yconnection_check_useless(elements1, true, epos + 3, true);
 	    return !elements1.empty();
 	}
 
 	if (elements1.empty())
-	    yconnection_check_useless(elements2, false, epos);
+	    yconnection_check_useless(elements2, false, epos, false);
 	else
 	    yconnection_connect_all(elements1, elements2, connector, last_element_pos, next_pos());
 
@@ -978,7 +997,7 @@ LexerT::yconnection()
 	    // FALLTHRU
 	case ';':
 	case lexEOF:
-	    yconnection_check_useless(elements2, true, epos + 3);
+	    yconnection_check_useless(elements2, true, epos + 3, true);
 	    return true;
 
 	default:
@@ -1139,6 +1158,7 @@ LexerT::ycompound(String name, const char *decl_pos1, const char *name_pos1)
 	_router = compound_class->cast_router();
 	_anonymous_offset = 2;
 	_ngroups = 0;
+	_last_connection_ends_output = true;
 
 	ycompound_arguments(compound_class);
 	while (ystatement('}'))
@@ -1192,6 +1212,7 @@ LexerT::ygroup(String name, int group_nports[2], const char *open_pos1, const ch
     int old_output = _router->__map_element_name("output", new_output->eindex());
     ++_group_depth;
     ++_ngroups;
+    _last_connection_ends_output = true;
 
     while (ystatement(')'))
 	/* nada */;
