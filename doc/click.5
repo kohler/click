@@ -101,14 +101,13 @@ Empty configuration strings can be omitted.
 .Rs
 .IR "name" " :: " "class" ;
 .Re
-You can also
-declare multiple elements using a comma-separated list of names.
+Multiple elements can be declared using a comma-separated list of names.
 .Rs
 .IR "name1" ", " "name2" ", ..., " "nameN" " ::"
 .IR "class" ( "config" );
 .Re
-You may also declare an element without specifying its name, in which case the
-system will choose an element name for you.  Such elements are called
+You may also declare an element without specifying its name. The
+system will choose an element name for you. Such elements are called
 .IR anonymous .
 For example:
 .Rs
@@ -201,7 +200,7 @@ means
 .IR "n2" " [\fIp2\fR] -> [\fIp3\fR] " "x" ;
 .Re
 One-to-many connections are also allowed; put the comma-separated
-list is on the right.
+list on the right.
 .LP
 You may declare elements within a many-to-one connection, but unlike with declaration shorthand,
 each declaration applies to only one name. For example
