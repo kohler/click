@@ -821,6 +821,7 @@ Lexer::FileState::lex_config(Lexer *lexer)
   const char *s = _pos;
   unsigned paren_depth = 1;
 
+  String r;
   for (; s < _end; s++)
     if (*s == '(')
       paren_depth++;
@@ -834,6 +835,12 @@ Lexer::FileState::lex_config(Lexer *lexer)
       if (s + 1 < _end && s[1] == '\n')
 	s++;
       _lineno++;
+    } else if (*s == '#' && (s == config_pos || s[-1] == '\n' || s[-1] == '\r')) {
+      r.append(config_pos, s - config_pos);
+      s = process_line_directive(s, lexer);
+      config_pos = s;
+      if (*s == '\n')
+        _lineno++;
     } else if (*s == '/' && s + 1 < _end) {
       if (s[1] == '/')
 	s = skip_line(s + 2) - 1;
@@ -845,7 +852,11 @@ Lexer::FileState::lex_config(Lexer *lexer)
       s = skip_backslash_angle(s + 2) - 1;
 
   _pos = s;
-  String r = _big_string.substring(config_pos, s);
+  if (r)
+    r += _big_string.substring(config_pos, s);
+  else
+    r = _big_string.substring(config_pos, s);
+
   return lexer->_compact_config ? r.compact() : r;
 }
 

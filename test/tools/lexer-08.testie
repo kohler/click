@@ -1,0 +1,19 @@
+%info
+Check cpp processor directives
+%script
+
+click A.click
+
+%file A.click
+m :: Message(
+# 100 "foobar.click"
+"test");
+m2 :: Message("test2");
+DriverManager(stop);
+
+%expect -w stdout
+%expect -w stderr
+A.click:1: While configuring 'm :: Message':
+  test
+foobar.click:101: While configuring 'm2 :: Message':
+  test2
