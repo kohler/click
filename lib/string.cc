@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2004-2007 Regents of the University of California
  * Copyright (c) 2008-2009 Meraki, Inc.
+ * Copyright (c) 2012 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -444,7 +445,7 @@ String::append_garbage(int len)
 }
 
 void
-String::append(const char *s, int len)
+String::append(const char *s, int len, memo_t *memo)
 {
     if (!s) {
 	assert(len <= 0);
@@ -458,7 +459,10 @@ String::append(const char *s, int len)
 	assign_out_of_memory();
     else if (unlikely(len == 0))
 	/* do nothing */;
-    else if (likely(!(_r.memo
+    else if (unlikely(_r.length == 0 && memo && !out_of_memory())) {
+	deref();
+	assign_memo(s, len, memo);
+    } else if (likely(!(_r.memo
 		      && s >= _r.memo->real_data
 		      && s + len <= _r.memo->real_data + _r.memo->capacity))) {
 	if (char *space = append_garbage(len))

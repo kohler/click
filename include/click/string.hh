@@ -496,15 +496,17 @@ class String { public:
 
     /** @brief Append the null-terminated C string @a s to this string.
      * @param cstr data to append */
-    void append(const char *cstr) {
-	append(cstr, -1);
+    inline void append(const char *cstr) {
+	append(cstr, -1, 0);
     }
 
     /** @brief Append the first @a len characters of @a s to this string.
      * @param s data to append
      * @param len length of data
      * @pre @a len @>= 0 */
-    void append(const char *s, int len);
+    inline void append(const char *s, int len) {
+	append(s, len, 0);
+    }
 
     /** @brief Appends the data from @a begin to @a end to the end of this
      * string.
@@ -530,7 +532,7 @@ class String { public:
      *
      * Returns the result. */
     inline String &operator+=(const String &x) {
-	append(x._r.data, x._r.length);
+	append(x._r.data, x._r.length, x._r.memo);
 	return *this;
     }
 
@@ -704,6 +706,7 @@ class String { public:
 
     void assign(const char *cstr, int len, bool need_deref);
     void assign_out_of_memory();
+    void append(const char *s, int len, memo_t *memo);
     static memo_t *create_memo(char *space, int dirty, int capacity);
     static void delete_memo(memo_t *memo);
 
