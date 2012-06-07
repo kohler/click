@@ -359,6 +359,7 @@ LexerT::FileState::lex_config(LexerT *lexer)
   const char *s = _pos;
   unsigned paren_depth = 1;
 
+  String r;
   for (; s < _end; s++)
     if (*s == '(')
       paren_depth++;
@@ -374,6 +375,10 @@ LexerT::FileState::lex_config(LexerT *lexer)
 	s++;
       _lineno++;
       _lset->new_line(offset(s + 1), _filename, _lineno);
+    } else if (*s == '#' && (s[-1] == '\n' || s[-1] == '\r')) {
+      r.append(config_pos, s - config_pos);
+      s = process_line_directive(s, lexer) - 1;
+      config_pos = s + 1;
     } else if (*s == '/' && s + 1 < _end) {
       if (s[1] == '/')
 	s = skip_line(s + 2) - 1;
@@ -386,8 +391,8 @@ LexerT::FileState::lex_config(LexerT *lexer)
 
   _pos = s;
   lexer->_lexinfo->notify_config_string(config_pos, s);
-  return Lexeme(lexConfig, _big_string.substring(config_pos, s),
-		config_pos);
+  r += _big_string.substring(config_pos, s);
+  return Lexeme(lexConfig, r, config_pos);
 }
 
 String
