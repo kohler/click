@@ -122,7 +122,11 @@ class String { public:
     }
 
     /** @brief Return a String containing @a len unknown characters. */
-    static String make_uninitialized(int len);
+    static inline String make_uninitialized(int len) {
+	String s;
+	s.append_uninitialized(len);
+	return s;
+    }
 
     /** @cond never */
     static inline String make_garbage(int len) {
@@ -222,8 +226,13 @@ class String { public:
     }
 
     /** @brief Return true iff the string is empty. */
-    inline bool operator!() const {
+    inline bool empty() const {
 	return _r.length == 0;
+    }
+
+    /** @brief Return true iff the string is empty. */
+    inline bool operator!() const {
+	return empty();
     }
 
 

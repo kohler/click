@@ -307,14 +307,6 @@ String::make_stable(const char *s, int len)
 }
 
 String
-String::make_uninitialized(int len)
-{
-    String s;
-    s.append_uninitialized(len);
-    return s;
-}
-
-String
 String::make_numeric(int_large_t num, int base, bool uppercase)
 {
     StringAccum sa;
