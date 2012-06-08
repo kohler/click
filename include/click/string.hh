@@ -122,7 +122,13 @@ class String { public:
     }
 
     /** @brief Return a String containing @a len unknown characters. */
-    static String make_garbage(int len);
+    static String make_uninitialized(int len);
+
+    /** @cond never */
+    static inline String make_garbage(int len) {
+	return make_uninitialized(len);
+    }
+    /** @endcond never */
 
     /** @brief Return a String that directly references the first @a len
      * characters of @a s.
@@ -266,7 +272,7 @@ class String { public:
 	const char *end_data = _r.data + _r.length;
 	if ((_r.memo && end_data >= _r.memo->real_data + _r.memo->dirty)
 	    || *end_data != '\0') {
-	    if (char *x = const_cast<String *>(this)->append_garbage(1)) {
+	    if (char *x = const_cast<String *>(this)->append_uninitialized(1)) {
 		*x = '\0';
 		--_r.length;
 	    }
@@ -525,7 +531,13 @@ class String { public:
      *
      * The caller may safely modify the returned memory.  Null is returned if
      * the string becomes out-of-memory. */
-    char *append_garbage(int len);
+    char *append_uninitialized(int len);
+
+    /** @cond never */
+    inline char *append_garbage(int len) {
+	return append_uninitialized(len);
+    }
+    /** @endcond never */
 
 
     /** @brief Append a copy of @a x to the end of this string.

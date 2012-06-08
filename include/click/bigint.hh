@@ -335,7 +335,7 @@ class Bigint { public:
 	// need d chars, min d s.t. 10^d >= 2^(sizeof(limb_type) * 8 * n)
 	// == min d s.t. d >= sizeof(limb_type) * 8 * n / lg 10
 	int div = (base >= 16 ? 4 : (base >= 8 ? 3 : 1));
-	String s = String::make_garbage((n * limb_bits) / div + 1);
+	String s = String::make_uninitialized((n * limb_bits) / div + 1);
 	char *q = const_cast<char *>(s.end());
 	assert(base >= 2 && base <= 36);
 	while (1) {

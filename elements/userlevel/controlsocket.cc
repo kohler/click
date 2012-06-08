@@ -638,7 +638,7 @@ ControlSocket::llrpc_command(connection &conn, const String &llrpcname, String d
   if ((command & _CLICK_IOC_IN) && data.length() != size)
     return conn.message(CSERR_LLRPC_ERROR, "LLRPC '" + llrpcname + "' requires " + String(size) + " bytes input data");
   else if (!(command & _CLICK_IOC_IN))
-    data = String::make_garbage(size);
+    data = String::make_uninitialized(size);
 
   // collect errors from proxy
   ControlSocketErrorHandler errh;

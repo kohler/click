@@ -486,7 +486,7 @@ FromFile::get_string(size_t size, ErrorHandler *errh)
 	_pos += size;
 	return String::make_stable((const char *) chunk, size);
     } else {
-	String s = String::make_garbage(size);
+	String s = String::make_uninitialized(size);
 	if (read(s.mutable_data(), size, errh) == (int) size)
 	    return s;
 	else

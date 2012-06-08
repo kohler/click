@@ -307,10 +307,10 @@ String::make_stable(const char *s, int len)
 }
 
 String
-String::make_garbage(int len)
+String::make_uninitialized(int len)
 {
     String s;
-    s.append_garbage(len);
+    s.append_uninitialized(len);
     return s;
 }
 
@@ -382,7 +382,7 @@ String::assign(const char *str, int len, bool need_deref)
 }
 
 char *
-String::append_garbage(int len)
+String::append_uninitialized(int len)
 {
     // Appending anything to "out of memory" leaves it as "out of memory"
     if (len <= 0 || _r.data == &oom_data)
@@ -463,11 +463,11 @@ String::append(const char *s, int len, memo_t *memo)
     } else if (likely(!(_r.memo
 		      && s >= _r.memo->real_data
 		      && s + len <= _r.memo->real_data + _r.memo->capacity))) {
-	if (char *space = append_garbage(len))
+	if (char *space = append_uninitialized(len))
 	    memcpy(space, s, len);
     } else {
 	String preserve_s(*this);
-	if (char *space = append_garbage(len))
+	if (char *space = append_uninitialized(len))
 	    memcpy(space, s, len);
     }
 }
@@ -476,7 +476,7 @@ void
 String::append_fill(int c, int len)
 {
     assert(len >= 0);
-    if (char *space = append_garbage(len))
+    if (char *space = append_uninitialized(len))
 	memset(space, c, len);
 }
 
