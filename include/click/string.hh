@@ -494,7 +494,7 @@ class String { public:
     }
 
 
-    /** @brief Append the null-terminated C string @a s to this string.
+    /** @brief Append the null-terminated C string @a cstr to this string.
      * @param cstr data to append */
     inline void append(const char *cstr) {
 	append(cstr, -1, 0);

@@ -121,8 +121,6 @@ void
 String::delete_memo(memo_t *memo)
 {
     assert(memo->capacity > 0);
-    if (memo->capacity < memo->dirty)
-	click_chatter("%.*s %d %d\n", memo->capacity,memo->real_data, memo->dirty, memo->capacity);
     assert(memo->capacity >= memo->dirty);
 #if HAVE_STRING_PROFILING
     int bucket = profile_memo_size_bucket(memo->dirty, memo->capacity);
