@@ -25,6 +25,7 @@
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <net/dst.h>
+#include <net/xfrm.h>
 #include <linux/if_ether.h>
 #include <linux/if_arp.h>
 #include <linux/etherdevice.h>
@@ -197,6 +198,11 @@ ToHost::push(int port, Packet *p)
 	skb->dst = 0;
     }
 #endif
+
+    // skb->sp may be set if the packet came from Linux originally and
+    // had xfrm states applied.  This must be cleared or linux will
+    // try to validate that xfrm policies still apply.
+    secpath_reset(skb);
 
     // MAC header is the data pointer
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
