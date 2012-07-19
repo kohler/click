@@ -5317,6 +5317,38 @@ $as_echo "#define HAVE_CXX_CONSTEXPR 1" >>confdefs.h
 
     fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the C++ compiler understands rvalue references" >&5
+$as_echo_n "checking whether the C++ compiler understands rvalue references... " >&6; }
+if ${ac_cv_cxx_rvalue_references+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int f(int &) { return 1; } int f(int &&) { return 0; }
+int
+main ()
+{
+return f(int());
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ac_cv_cxx_rvalue_references=yes
+else
+  ac_cv_cxx_rvalue_references=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_rvalue_references" >&5
+$as_echo "$ac_cv_cxx_rvalue_references" >&6; }
+    if test "$ac_cv_cxx_rvalue_references" = yes; then
+
+$as_echo "#define HAVE_CXX_RVALUE_REFERENCES 1" >>confdefs.h
+
+    fi
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the C++ compiler understands static_assert" >&5
 $as_echo_n "checking whether the C++ compiler understands static_assert... " >&6; }
 if ${ac_cv_cxx_static_assert+:} false; then :
@@ -5346,6 +5378,38 @@ $as_echo "$ac_cv_cxx_static_assert" >&6; }
     if test "$ac_cv_cxx_static_assert" = yes; then
 
 $as_echo "#define HAVE_CXX_STATIC_ASSERT 1" >>confdefs.h
+
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the C++ compiler understands template alias" >&5
+$as_echo_n "checking whether the C++ compiler understands template alias... " >&6; }
+if ${ac_cv_cxx_template_alias+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+template <typename T> struct X { typedef T type; }; template <typename T> using Y = X<T>; int f(int x) { return x; }
+int
+main ()
+{
+return f(Y<int>::type());
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ac_cv_cxx_template_alias=yes
+else
+  ac_cv_cxx_template_alias=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_template_alias" >&5
+$as_echo "$ac_cv_cxx_template_alias" >&6; }
+    if test "$ac_cv_cxx_template_alias" = yes; then
+
+$as_echo "#define HAVE_CXX_TEMPLATE_ALIAS 1" >>confdefs.h
 
     fi
 
@@ -7394,7 +7458,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7397 "configure"
+#line 7461 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER

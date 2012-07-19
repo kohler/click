@@ -113,7 +113,7 @@ and Linux header files are GCC-specific.)
 	fi
     fi
 
-    dnl check for C++0x constexpr and static_assert
+    dnl check for C++11 features
 
     AC_CACHE_CHECK([whether the C++ compiler understands constexpr], [ac_cv_cxx_constexpr], [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[constexpr int f(int x) { return x + 1; }]], [[]])],
@@ -122,11 +122,25 @@ and Linux header files are GCC-specific.)
 	AC_DEFINE([HAVE_CXX_CONSTEXPR], [1], [Define if the C++ compiler understands constexpr.])
     fi
 
+    AC_CACHE_CHECK([whether the C++ compiler understands rvalue references], [ac_cv_cxx_rvalue_references], [
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int f(int &) { return 1; } int f(int &&) { return 0; }]], [[return f(int());]])],
+	    [ac_cv_cxx_rvalue_references=yes], [ac_cv_cxx_rvalue_references=no])])
+    if test "$ac_cv_cxx_rvalue_references" = yes; then
+	AC_DEFINE([HAVE_CXX_RVALUE_REFERENCES], [1], [Define if the C++ compiler understands rvalue references.])
+    fi
+
     AC_CACHE_CHECK([whether the C++ compiler understands static_assert], [ac_cv_cxx_static_assert], [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[const int f = 2;]], [[static_assert(f == 2, "f should be 2");]])],
 	    [ac_cv_cxx_static_assert=yes], [ac_cv_cxx_static_assert=no])])
     if test "$ac_cv_cxx_static_assert" = yes; then
 	AC_DEFINE([HAVE_CXX_STATIC_ASSERT], [1], [Define if the C++ compiler understands static_assert.])
+    fi
+
+    AC_CACHE_CHECK([whether the C++ compiler understands template alias], [ac_cv_cxx_template_alias], [
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[template <typename T> struct X { typedef T type; }; template <typename T> using Y = X<T>; int f(int x) { return x; }]], [[return f(Y<int>::type());]])],
+	    [ac_cv_cxx_template_alias=yes], [ac_cv_cxx_template_alias=no])])
+    if test "$ac_cv_cxx_template_alias" = yes; then
+	AC_DEFINE([HAVE_CXX_TEMPLATE_ALIAS], [1], [Define if the C++ compiler understands template alias.])
     fi
 
     AC_CACHE_CHECK([[whether the C++ compiler understands #pragma interface]], [ac_cv_cxx_pragma_interface], [

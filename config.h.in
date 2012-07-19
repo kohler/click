@@ -73,8 +73,14 @@
 /* Define if the C++ compiler understands #pragma interface. */
 #undef HAVE_CXX_PRAGMA_INTERFACE
 
+/* Define if the C++ compiler understands rvalue references. */
+#undef HAVE_CXX_RVALUE_REFERENCES
+
 /* Define if the C++ compiler understands static_assert. */
 #undef HAVE_CXX_STATIC_ASSERT
+
+/* Define if the C++ compiler understands template alias. */
+#undef HAVE_CXX_TEMPLATE_ALIAS
 
 /* Define if the machine is indifferent to alignment. */
 #undef HAVE_INDIFFERENT_ALIGNMENT
