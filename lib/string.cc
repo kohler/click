@@ -186,6 +186,7 @@ String::profile_report(StringAccum &sa, int examples)
 /** @endcond never */
 
 
+/** @brief Construct a base-10 string representation of @a x. */
 String::String(int x)
 {
     if (x >= 0 && x < 10)
@@ -197,6 +198,7 @@ String::String(int x)
     }
 }
 
+/** @overload */
 String::String(unsigned x)
 {
     if (x < 10)
@@ -208,6 +210,7 @@ String::String(unsigned x)
     }
 }
 
+/** @overload */
 String::String(long x)
 {
     if (x >= 0 && x < 10)
@@ -219,6 +222,7 @@ String::String(long x)
     }
 }
 
+/** @overload */
 String::String(unsigned long x)
 {
     if (x < 10)
@@ -234,6 +238,7 @@ String::String(unsigned long x)
 // (use the code even at user level to hunt out bugs)
 
 #if HAVE_LONG_LONG
+/** @overload */
 String::String(long long x)
 {
     if (x >= 0 && x < 10)
@@ -245,6 +250,7 @@ String::String(long long x)
     }
 }
 
+/** @overload */
 String::String(unsigned long long x)
 {
     if (x < 10)
@@ -258,6 +264,7 @@ String::String(unsigned long long x)
 #endif
 
 #if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
+/** @overload */
 String::String(int64_t x)
 {
     if (x >= 0 && x < 10)
@@ -269,6 +276,7 @@ String::String(int64_t x)
     }
 }
 
+/** @overload */
 String::String(uint64_t x)
 {
     if (x < 10)
@@ -282,6 +290,8 @@ String::String(uint64_t x)
 #endif
 
 #if HAVE_FLOAT_TYPES
+/** @brief Construct a base-10 string representation of @a x.
+ * @note This function is only available at user level. */
 String::String(double x)
 {
     char buf[128];
@@ -298,6 +308,15 @@ String::make_claim(char *str, int len, int capacity)
     return String(str, len, new_memo);
 }
 
+/** @brief Return a String that directly references the first @a len
+ * characters of @a s.
+ *
+ * This function is suitable for static constant strings whose data is
+ * known to stay around forever, such as C string constants.  If @a len @<
+ * 0, treats @a s as a null-terminated C string.
+ *
+ * @warning The String implementation may access @a s[@a len], which
+ * should remain constant even though it's not part of the String. */
 String
 String::make_stable(const char *s, int len)
 {
@@ -306,6 +325,10 @@ String::make_stable(const char *s, int len)
     return String(s, len, 0);
 }
 
+/** @brief Create and return a string representation of @a x.
+ * @param x number
+ * @param base base; must be 8, 10, or 16, defaults to 10
+ * @param uppercase if true, then use uppercase letters in base 16 */
 String
 String::make_numeric(int_large_t num, int base, bool uppercase)
 {
@@ -314,6 +337,7 @@ String::make_numeric(int_large_t num, int base, bool uppercase)
     return sa.take_string();
 }
 
+/** @overload */
 String
 String::make_numeric(uint_large_t num, int base, bool uppercase)
 {
@@ -373,6 +397,11 @@ String::assign(const char *str, int len, bool need_deref)
     _r.length = len;
 }
 
+/** @brief Append @a len unknown characters to this string.
+ * @return Modifiable pointer to the appended characters.
+ *
+ * The caller may safely modify the returned memory.  Null is returned if
+ * the string becomes out-of-memory. */
 char *
 String::append_uninitialized(int len)
 {
@@ -464,6 +493,7 @@ String::append(const char *s, int len, memo_t *memo)
     }
 }
 
+/** @brief Append @a len copies of character @a c to this string. */
 void
 String::append_fill(int c, int len)
 {
@@ -472,6 +502,8 @@ String::append_fill(int c, int len)
 	memset(space, c, len);
 }
 
+/** @brief Ensure the string's data is unshared and return a mutable
+ * pointer to it. */
 char *
 String::mutable_data()
 {
@@ -490,6 +522,9 @@ String::mutable_data()
     return const_cast<char *>(_r.data);
 }
 
+/** @brief Null-terminate the string and return a mutable pointer to its
+ * data.
+ * @sa String::c_str */
 char *
 String::mutable_c_str()
 {
@@ -498,6 +533,20 @@ String::mutable_c_str()
   return const_cast<char *>(_r.data);
 }
 
+/** @brief Return a substring of this string, consisting of the @a len
+ * characters starting at index @a pos.
+ * @param pos substring's first position relative to the string
+ * @param len length of substring
+ *
+ * If @a pos is negative, starts that far from the end of the string.  If
+ * @a len is negative, leaves that many characters off the end of the
+ * string.  If @a pos and @a len specify a substring that is partly
+ * outside the string, only the part within the string is returned.  If
+ * the substring is beyond either end of the string, returns an empty
+ * string (but this should be considered a programming error; a future
+ * version may generate a warning for this case).
+ *
+ * @note String::substring() is intended to behave like Perl's substr(). */
 String
 String::substring(int pos, int len) const
 {
@@ -523,6 +572,13 @@ String::substring(int pos, int len) const
 	return String(_r.data + pos, pos2 - pos, _r.memo);
 }
 
+/** @brief Search for a character in a string.
+ * @param c character to search for
+ * @param start initial search position
+ *
+ * Return the index of the leftmost occurence of @a c, starting at index
+ * @a start and working up to the end of the string.  Returns -1 if @a c
+ * is not found. */
 int
 String::find_left(char c, int start) const
 {
@@ -534,24 +590,39 @@ String::find_left(char c, int start) const
     return -1;
 }
 
+/** @brief Search for a substring in a string.
+ * @param x substring to search for
+ * @param start initial search position
+ *
+ * Return the index of the leftmost occurence of the substring @a str,
+ * starting at index @a start and working up to the end of the string.
+ * Returns -1 if @a str is not found. */
 int
-String::find_left(const String &str, int start) const
+String::find_left(const String &x, int start) const
 {
     if (start < 0)
 	start = 0;
     if (start >= length())
 	return -1;
-    if (!str.length())
-	return 0;
-    int first_c = (unsigned char)str[0];
-    int pos = start, max_pos = length() - str.length();
+    if (!x.length())
+	return start;
+    int first_c = (unsigned char)x[0];
+    int pos = start, max_pos = length() - x.length();
     for (pos = find_left(first_c, pos); pos >= 0 && pos <= max_pos;
 	 pos = find_left(first_c, pos + 1))
-	if (!memcmp(_r.data + pos, str._r.data, str.length()))
+	if (!memcmp(_r.data + pos, x.data(), x.length()))
 	    return pos;
     return -1;
 }
 
+/** @brief Search for a character in a string.
+ * @param c character to search for
+ * @param start initial search position
+ *
+ * Return the index of the rightmost occurence of the character @a c,
+ * starting at index @a start and working back to the beginning of the
+ * string.  Returns -1 if @a c is not found.  @a start may start beyond
+ * the end of the string. */
 int
 String::find_right(char c, int start) const
 {
@@ -574,6 +645,10 @@ hard_lower(const String &s, int pos)
     return new_s;
 }
 
+/** @brief Return a lowercased version of this string.
+ *
+ * Translates the ASCII characters 'A' through 'Z' into their lowercase
+ * equivalents. */
 String
 String::lower() const
 {
@@ -595,6 +670,10 @@ hard_upper(const String &s, int pos)
     return new_s;
 }
 
+/** @brief Return an uppercased version of this string.
+ *
+ * Translates the ASCII characters 'a' through 'z' into their uppercase
+ * equivalents. */
 String
 String::upper() const
 {
@@ -623,6 +702,11 @@ hard_printable(const String &s, int pos)
     return sa.take_string();
 }
 
+/** @brief Return a "printable" version of this string.
+ *
+ * Translates control characters 0-31 into "control" sequences, such as
+ * "^@" for the null character, and characters 127-255 into octal escape
+ * sequences, such as "\377" for 255. */
 String
 String::printable() const
 {
@@ -633,6 +717,7 @@ String::printable() const
     return *this;
 }
 
+/** @brief Return a substring with spaces trimmed from the end. */
 String
 String::trim_space() const
 {
@@ -643,6 +728,9 @@ String::trim_space() const
     return (_r.length ? String() : *this);
 }
 
+/** @brief Return a hex-quoted version of the string.
+ *
+ * For example, the string "Abcd" would convert to "\<41626364>". */
 String
 String::quoted_hex() const
 {
@@ -662,29 +750,38 @@ String::quoted_hex() const
     return sa.take_string();
 }
 
+/** @brief Return a 32-bit hash function of the characters in [first, last).
+ *
+ * Uses Paul Hsieh's "SuperFastHash" algorithm, described at
+ * http://www.azillionmonkeys.com/qed/hash.html
+ * This hash function uses all characters in the string.
+ *
+ * @invariant If last1 - first1 == last2 - first2 and memcmp(first1, first2,
+ * last1 - first1) == 0, then hashcode(first1, last1) == hashcode(first2,
+ * last2). */
 uint32_t
-String::hashcode(const char *begin, const char *end)
+String::hashcode(const char *first, const char *last)
 {
-    if (end <= begin)
+    if (last <= first)
 	return 0;
 
-    uint32_t hash = end - begin;
+    uint32_t hash = last - first;
     int rem = hash & 3;
-    end -= rem;
+    last -= rem;
     uint32_t last16;
 
 #if !HAVE_INDIFFERENT_ALIGNMENT
-    if (!(reinterpret_cast<uintptr_t>(begin) & 1)) {
+    if (!(reinterpret_cast<uintptr_t>(first) & 1)) {
 #endif
 #define get16(p) (*reinterpret_cast<const uint16_t *>((p)))
-	for (; begin != end; begin += 4) {
-	    hash += get16(begin);
-	    uint32_t tmp = (get16(begin + 2) << 11) ^ hash;
+	for (; first != last; first += 4) {
+	    hash += get16(first);
+	    uint32_t tmp = (get16(first + 2) << 11) ^ hash;
 	    hash = (hash << 16) ^ tmp;
 	    hash += hash >> 11;
 	}
 	if (rem >= 2) {
-	    last16 = get16(begin);
+	    last16 = get16(first);
 	    goto rem2;
 	}
 #undef get16
@@ -698,14 +795,14 @@ String::hashcode(const char *begin, const char *end)
 #  error "unknown CLICK_BYTE_ORDER"
 # endif
 	// should be exactly the same as the code above
-	for (; begin != end; begin += 4) {
-	    hash += get16(begin);
-	    uint32_t tmp = (get16(begin + 2) << 11) ^ hash;
+	for (; first != last; first += 4) {
+	    hash += get16(first);
+	    uint32_t tmp = (get16(first + 2) << 11) ^ hash;
 	    hash = (hash << 16) ^ tmp;
 	    hash += hash >> 11;
 	}
 	if (rem >= 2) {
-	    last16 = get16(begin);
+	    last16 = get16(first);
 	    goto rem2;
 	}
 # undef get16
@@ -718,7 +815,7 @@ String::hashcode(const char *begin, const char *end)
 	if (rem == 3) {
 	    hash += last16;
 	    hash ^= hash << 16;
-	    hash ^= ((unsigned char) begin[2]) << 18;
+	    hash ^= ((unsigned char) first[2]) << 18;
 	    hash += hash >> 11;
 	} else {
 	    hash += last16;
@@ -726,7 +823,7 @@ String::hashcode(const char *begin, const char *end)
 	    hash += hash >> 17;
 	}
     } else if (rem == 1) {
-	hash += (unsigned char) *begin;
+	hash += (unsigned char) *first;
 	hash ^= hash << 10;
 	hash += hash >> 1;
     }
@@ -742,26 +839,14 @@ String::hashcode(const char *begin, const char *end)
     return hash;
 }
 
-#if 0
-// 11.Apr.2008 -- This old hash function was swapped out in favor of
-// SuperFastHash, above.
-size_t
-String::hashcode() const
-{
-    int l = length();
-    const char *d = data();
-    if (!l)
-	return 0;
-    else if (l == 1)
-	return d[0] | (d[0] << 8);
-    else if (l < 4)
-	return d[0] + (d[1] << 3) + (l << 12);
-    else
-	return d[0] + (d[1] << 8) + (d[2] << 16) + (d[3] << 24)
-	    + (l << 12) + (d[l-1] << 10);
-}
-#endif
-
+/** @brief Return true iff this string is equal to the data in @a s.
+ * @param s string data to compare to
+ * @param len length of @a s
+ *
+ * Same as String::compare(*this, String(s, len)) == 0.  If @a len @< 0,
+ * then treats @a s as a null-terminated C string.
+ *
+ * @sa String::compare(const String &a, const String &b) */
 bool
 String::equals(const char *s, int len) const
 {
@@ -781,6 +866,13 @@ String::equals(const char *s, int len) const
 	return memcmp(_r.data, s, len) == 0;
 }
 
+/** @brief Return true iff this string begins with the data in @a s.
+ * @param s string data to compare to
+ * @param len length of @a s
+ *
+ * If @a len @< 0, then treats @a s as a null-terminated C string.
+ *
+ * @sa String::compare(const String &a, const String &b) */
 bool
 String::starts_with(const char *s, int len) const
 {
@@ -797,6 +889,14 @@ String::starts_with(const char *s, int len) const
 	return memcmp(_r.data, s, len) == 0;
 }
 
+/** @brief Compare this string with the data in @a s.
+ * @param s string data to compare to
+ * @param len length of @a s
+ *
+ * Same as String::compare(*this, String(s, len)).  If @a len @< 0, then
+ * treats @a s as a null-terminated C string.
+ *
+ * @sa String::compare(const String &a, const String &b) */
 int
 String::compare(const char *s, int len) const
 {
