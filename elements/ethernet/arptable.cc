@@ -190,6 +190,7 @@ ARPTable::insert(IPAddress ip, const EtherAddress &eth, Packet **head)
     ae->_known = !eth.is_broadcast();
 
     ae->_live_at_j = now;
+    ae->_num_polls_since_reply = 0;
     ae->_polled_at_j = ae->_live_at_j - CLICK_HZ;
 
     if (ae->_age_link.next()) {
@@ -254,8 +255,13 @@ ARPTable::append_query(IPAddress ip, Packet *p)
     p->set_next(0);
 
     int r;
-    if (!click_jiffies_less(now, ae->_polled_at_j + CLICK_HZ / 10)) {
+    click_jiffies_t thresh_j = ae->_polled_at_j + CLICK_HZ / 10;
+    if (ae->_num_polls_since_reply > 5)
+	thresh_j = ae->_polled_at_j + CLICK_HZ * 2;
+    if (!click_jiffies_less(now, thresh_j)) {
 	ae->_polled_at_j = now;
+	if (ae->_num_polls_since_reply < 255)
+	    ++ae->_num_polls_since_reply;
 	r = 1;
     } else
 	r = 0;
