@@ -275,6 +275,11 @@
 #ifdef __cplusplus
 CLICK_DECLS
 template <typename T> struct DefaultArg;
+
+/** @class uninitialized_type
+    @brief Type tag indicating an object should not be initialized. */
+struct uninitialized_type {
+};
 CLICK_ENDDECLS
 #endif
 

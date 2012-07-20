@@ -8,8 +8,7 @@ CLICK_DECLS
 
 class EtherAddress { public:
 
-    struct uninitialized_t {
-    };
+    typedef uninitialized_type uninitialized_t;
 
     /** @brief Construct an EtherAddress equal to 00-00-00-00-00-00. */
     inline EtherAddress() {
@@ -25,7 +24,7 @@ class EtherAddress { public:
     }
 
     /** @brief Construct an uninitialized EtherAddress. */
-    inline EtherAddress(const uninitialized_t &unused) {
+    inline EtherAddress(const uninitialized_type &unused) {
 	(void) unused;
     }
 

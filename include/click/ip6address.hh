@@ -13,8 +13,7 @@ CLICK_DECLS
 
 class IP6Address { public:
 
-    struct uninitialized_t {
-    };
+    typedef uninitialized_type uninitialized_t;
 
     /** @brief Construct a zero-valued IP6Address (equal to ::). */
     inline IP6Address() {
@@ -43,7 +42,7 @@ class IP6Address { public:
     }
 
     /** @brief Construct an uninitialized IP6Address. */
-    inline IP6Address(const uninitialized_t &unused) {
+    inline IP6Address(const uninitialized_type &unused) {
 	(void) unused;
     }
 

@@ -14,8 +14,7 @@ template <typename T> class Vector;
 
 class IPAddress { public:
 
-    struct uninitialized_t {
-    };
+    typedef uninitialized_type uninitialized_t;
 
     /** @brief Construct an IPAddress equal to 0.0.0.0. */
     inline IPAddress()
@@ -64,7 +63,7 @@ class IPAddress { public:
     explicit IPAddress(const String &x);
 
     /** @brief Construct an uninitialized IPAddress. */
-    inline IPAddress(const uninitialized_t &unused) {
+    inline IPAddress(const uninitialized_type &unused) {
 	(void) unused;
     }
 

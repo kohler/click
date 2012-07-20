@@ -136,10 +136,15 @@ class StringAccum { public:
 	return _len != 0 ? &StringAccum::capacity : 0;
     }
 
-    /** @brief Return true iff the StringAccum does not contain characters.
-     *
-     * Returns true for empty and out-of-memory StringAccums. */
+    /** @brief Test if this StringAccum is empty.
+
+	Returns true iff length() == 0. */
     bool operator!() const {
+	return _len == 0;
+    }
+
+    /** @brief Test if this StringAccum is empty. */
+    bool empty() const {
 	return _len == 0;
     }
 
@@ -333,6 +338,20 @@ class StringAccum { public:
     /** @overload */
     void append_numeric(String::uint_large_t x, int base = 10, bool uppercase = true);
 
+    /** @brief Append Unicode character @a ch encoded in UTF-8.
+     * @return true if character was valid.
+     *
+     * Appends nothing if @a ch is not a valid Unicode character. */
+    inline bool append_utf8(int ch) {
+	if (unlikely(ch <= 0))
+	    return false;
+	else if (likely(ch <= 0x7F)) {
+	    append(static_cast<char>(ch));
+	    return true;
+	} else
+	    return append_utf8_hard(ch);
+    }
+
 
     /** @brief Append result of snprintf() to this StringAccum.
      * @param n maximum number of characters to print
@@ -404,6 +423,7 @@ class StringAccum { public:
 
     char *hard_extend(int nadjust, int nreserve);
     void hard_append(const char *s, int len);
+    bool append_utf8_hard(int ch);
 
     friend StringAccum &operator<<(StringAccum &sa, const char *s);
     friend StringAccum &operator<<(StringAccum &sa, const String &str);

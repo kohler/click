@@ -717,6 +717,70 @@ String::printable() const
     return *this;
 }
 
+/** @brief Return this string's contents encoded for JSON.
+    @pre *this is encoded in UTF-8.
+
+    For instance, String("a\"").json_quote() == "a\\\"". Note that the
+    double-quote characters that usually surround a JSON string are not
+    included. */
+String
+String::encode_json() const
+{
+    StringAccum sa;
+    const char *last = begin(), *end = this->end();
+    for (const char *s = last; s != end; ++s) {
+	int c = (unsigned char) *s;
+
+	// U+2028 and U+2029 can't appear in Javascript strings! (Though
+	// they are legal in JSON strings, according to the JSON
+	// definition.)
+	if (unlikely(c == 0xE2)
+	    && s + 2 < end && (unsigned char) s[1] == 0x80
+	    && (unsigned char) (s[2] | 1) == 0xA9)
+	    c = 0x2028 + (s[2] & 1);
+	else if (likely(c >= 32 && c != '\\' && c != '\"' && c != '/'))
+	    continue;
+
+	if (!sa.length())
+	    sa.reserve(length() + 16);
+	sa.append(last, s);
+	sa << '\\';
+	switch (c) {
+	case '\b':
+	    sa << 'b';
+	    break;
+	case '\f':
+	    sa << 'f';
+	    break;
+	case '\n':
+	    sa << 'n';
+	    break;
+	case '\r':
+	    sa << 'r';
+	    break;
+	case '\t':
+	    sa << 't';
+	    break;
+	case '\\':
+	case '\"':
+	case '/':
+	    sa.append((char) c);
+	    break;
+	default: // c is a control character, 0x2028, or 0x2029
+	    sa.snprintf(5, "u%04X", c);
+	    if (c > 255)	// skip rest of encoding of U+202[89]
+		s += 2;
+	    break;
+	}
+	last = s + 1;
+    }
+    if (sa.length()) {
+	sa.append(last, end);
+	return sa.take_string();
+    } else
+	return *this;
+}
+
 /** @brief Return a substring with spaces trimmed from the end. */
 String
 String::trim_space() const
@@ -917,6 +981,41 @@ String::compare(const char *s, int len) const
 	int v = memcmp(_r.data, s, len);
 	return (v ? v : 1);
     }
+}
+
+/** @brief Return a pointer to the next character in UTF-8 encoding.
+    @pre @a first @< @a last
+
+    If @a first doesn't point at a valid UTF-8 character, returns @a first. */
+const unsigned char *
+String::skip_utf8_char(const unsigned char *first, const unsigned char *last)
+{
+    int c = *first;
+    if (c > 0 && c < 0x80)
+        return first + 1;
+    else if (c < 0xC2)
+	/* zero, or bad/overlong encoding */;
+    else if (c < 0xE0) {	// 2 bytes: U+80-U+7FF
+        if (likely(first + 1 < last
+                   && first[1] >= 0x80 && first[1] < 0xC0))
+            return first + 2;
+    } else if (c < 0xF0) {	// 3 bytes: U+800-U+FFFF
+        if (likely(first + 2 < last
+                   && first[1] >= 0x80 && first[1] < 0xC0
+		   && first[2] >= 0x80 && first[2] < 0xC0
+                   && (c != 0xE0 || first[1] >= 0xA0) /* not overlong encoding */
+                   && (c != 0xED || first[1] < 0xA0) /* not surrogate */))
+            return first + 3;
+    } else if (c < 0xF5) {	// 4 bytes: U+10000-U+10FFFF
+        if (likely(first + 3 < last
+                   && first[1] >= 0x80 && first[1] < 0xC0
+		   && first[2] >= 0x80 && first[2] < 0xC0
+		   && first[3] >= 0x80 && first[3] < 0xC0
+                   && (c != 0xF0 || first[1] >= 0x90) /* not overlong encoding */
+                   && (c != 0xF4 || first[1] < 0x90) /* not >U+10FFFF */))
+            return first + 4;
+    }
+    return first;
 }
 
 CLICK_ENDDECLS

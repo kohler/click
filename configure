@@ -807,6 +807,7 @@ enable_icmp
 enable_ip
 enable_ip6
 enable_ipsec
+enable_json
 enable_local
 enable_radio
 enable_simple
@@ -1491,6 +1492,7 @@ Optional Features:
   --disable-ip            do not include IP elements
   --enable-ip6            include IPv6 elements
   --enable-ipsec          include IP security elements
+  --enable-json           include JSON helpers
   --enable-local          include local elements
   --enable-radio          include radio elements
   --disable-simple        do not include simple versions of other elements
@@ -6757,6 +6759,17 @@ if test "x$enable_ipsec" = xyes; then
     $as_echo "#define HAVE_IPSEC 1" >>confdefs.h
 
 fi
+# Check whether --enable-json was given.
+if test "${enable_json+set}" = set; then :
+  enableval=$enable_json;
+else
+  enable_json=NO
+fi
+test "x$enable_all_elements" = xyes -a \( "x$enable_json" = xNO -o "x$enable_json" = x \) && enable_json=yes
+if test "x$enable_json" = xyes; then
+    :
+
+fi
 # Check whether --enable-local was given.
 if test "${enable_local+set}" = set; then :
   enableval=$enable_local;
@@ -7517,7 +7530,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7520 "configure"
+#line 7533 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER

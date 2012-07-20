@@ -303,7 +303,7 @@ dnl
 dnl element collections
 dnl
 
-AC_ARG_ENABLE(all-elements, [  --enable-all-elements   include all provided element groups])
+AC_ARG_ENABLE([all-elements], [AS_HELP_STRING([--enable-all-elements], [include all provided element groups])])
 
 dnl ELEMENTS_ARG_ENABLE(COLLECTION, HELP-STRING, DEFAULT-VALUE)
 element_groups=""
@@ -327,6 +327,7 @@ ELEMENTS_ARG_ENABLE(icmp, [include ICMP elements], yes)
 ELEMENTS_ARG_ENABLE(ip, [include IP elements], yes)
 ELEMENTS_ARG_ENABLE(ip6, [include IPv6 elements], NO, AC_DEFINE(HAVE_IP6))
 ELEMENTS_ARG_ENABLE(ipsec, [include IP security elements], NO, AC_DEFINE(HAVE_IPSEC))
+ELEMENTS_ARG_ENABLE(json, [include JSON helpers], NO)
 ELEMENTS_ARG_ENABLE(local, [include local elements], NO)
 ELEMENTS_ARG_ENABLE(radio, [include radio elements], NO)
 ELEMENTS_ARG_ENABLE(simple, [include simple versions of other elements], yes)

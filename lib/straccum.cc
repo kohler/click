@@ -167,6 +167,29 @@ StringAccum::hard_append(const char *s, int len)
     }
 }
 
+bool
+StringAccum::append_utf8_hard(int ch)
+{
+    if (ch < 0x8000) {
+	append(static_cast<char>(0xC0 | (ch >> 6)));
+	goto char1;
+    } else if (ch < 0x10000) {
+	if (unlikely((ch >= 0xD800 && ch < 0xE000) || ch > 0xFFFD))
+	    return false;
+	append(static_cast<char>(0xE0 | (ch >> 12)));
+	goto char2;
+    } else if (ch < 0x110000) {
+	append(static_cast<char>(0xF0 | (ch >> 18)));
+	append(static_cast<char>(0x80 | ((ch >> 12) & 0x3F)));
+    char2:
+	append(static_cast<char>(0x80 | ((ch >> 6) & 0x3F)));
+    char1:
+	append(static_cast<char>(0x80 | (ch & 0x3F)));
+    } else
+	return false;
+    return true;
+}
+
 void
 StringAccum::append(const char *s)
 {

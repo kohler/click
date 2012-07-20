@@ -8,8 +8,7 @@ class Packet;
 
 class IPFlowID { public:
 
-    struct uninitialized_t {
-    };
+    typedef uninitialized_type uninitialized_t;
 
 
     /** @brief Construct an empty flow ID.
@@ -48,7 +47,7 @@ class IPFlowID { public:
     explicit IPFlowID(const click_ip *iph, bool reverse = false);
 
     /** @brief Construct an uninitialized flow ID. */
-    inline IPFlowID(const uninitialized_t &unused) {
+    inline IPFlowID(const uninitialized_type &unused) {
 	(void) unused;
     }
 

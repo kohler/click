@@ -165,8 +165,7 @@ class Timestamp { public:
 	NSUBSEC = subsec_per_sec
     };
 
-    struct uninitialized_t {
-    };
+    typedef uninitialized_type uninitialized_t;
 
     union rep_t;
 
