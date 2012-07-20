@@ -29,9 +29,10 @@ BridgeMessage::s(String tag) const {
   char* buf = new char[256];
   String s;
 
-  sprintf(buf, "%s %16s:%04hx: %2s  %x -> %16s  m/h/d: %hx/%hx/%hx",
+  sprintf(buf, "%s %16s:%04x: %2s  %x -> %16s  m/h/d: %x/%x/%x",
 	  tag.c_str(),
-	  String::make_numeric(static_cast<String::uint_large_t>(_bridge_id), 16, false).c_str(), _port_id,
+	  String::make_numeric(static_cast<String::uint_large_t>(_bridge_id), 16, false).c_str(),
+	  _port_id,
 	  _tc ? "TC" : "tc",
 	  _cost, String::make_numeric(static_cast<String::uint_large_t>(_root), 16, false).c_str(),
 	  _max_age, _hello_time, _forward_delay);
