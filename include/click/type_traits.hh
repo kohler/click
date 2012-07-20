@@ -80,18 +80,47 @@ template <typename T> struct has_trivial_copy<T *> : public true_type {};
 class IPAddress;
 template <> struct has_trivial_copy<IPAddress> : public true_type {};
 
+template <typename T> struct remove_reference {
+    typedef T type;
+};
+template <typename T> struct remove_reference<T &> {
+    typedef T type;
+};
+#if HAVE_CXX_RVALUE_REFERENCES
+template <typename T> struct remove_reference<T &&> {
+    typedef T type;
+};
+template <typename T>
+inline typename remove_reference<T>::type &&click_move(T &&x) {
+    return static_cast<typename remove_reference<T>::type &&>(x);
+}
+#endif
 
 /** @class fast_argument
   @brief Template defining a fast argument type for objects of type T.
 
   fast_argument<T>::type equals either "const T &" or "T".
   fast_argument<T>::is_reference is true iff fast_argument<T>::type is
-  a reference. */
-template <typename T> struct fast_argument {
-    static constexpr bool is_reference = !has_trivial_copy<T>::value || sizeof(T) > sizeof(void *);
-    typedef typename conditional<is_reference, const T &, T>::type type;
+  a reference. If fast_argument<T>::is_reference is true, then
+  fast_argument<T>::enable_rvalue_reference is a typedef to void; otherwise
+  it is not defined. */
+template <typename T, bool use_reference = (!has_trivial_copy<T>::value
+					    || sizeof(T) > sizeof(void *))>
+struct fast_argument;
+
+template <typename T> struct fast_argument<T, true> {
+    static constexpr bool is_reference = true;
+    typedef const T &type;
+#if HAVE_CXX_RVALUE_REFERENCES
+    typedef void enable_rvalue_reference;
+#endif
 };
-template <typename T> constexpr bool fast_argument<T>::is_reference;
+template <typename T> struct fast_argument<T, false> {
+    static constexpr bool is_reference = false;
+    typedef T type;
+};
+template <typename T> constexpr bool fast_argument<T, true>::is_reference;
+template <typename T> constexpr bool fast_argument<T, false>::is_reference;
 
 
 /** @class char_array
