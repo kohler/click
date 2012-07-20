@@ -4712,8 +4712,65 @@ done
 	DEPCFLAGS="-MD -MP"
 
 
+    save_cflags="$CFLAGS"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the C compiler accepts -W -Wall" >&5
+$as_echo_n "checking whether the C compiler accepts -W -Wall... " >&6; }
+if ${ac_cv_c_w_wall+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	CFLAGS="$CFLAGS -W -Wall"
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int f(int x) { return x; }
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_c_w_wall=yes
+else
+  ac_cv_c_w_wall=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_w_wall" >&5
+$as_echo "$ac_cv_c_w_wall" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the C compiler accepts -Werror" >&5
+$as_echo_n "checking whether the C compiler accepts -Werror... " >&6; }
+if ${ac_cv_c_werror+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	CFLAGS="$CFLAGS -Werror"
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int f(int x) { return x; }
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_c_werror=yes
+else
+  ac_cv_c_werror=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_werror" >&5
+$as_echo "$ac_cv_c_werror" >&6; }
+    CFLAGS="$save_cflags"
+
     WARNING_CFLAGS=
-    test -n "$GCC" -a -n "$ac_compile_with_warnings" && \
+    test -n "$ac_cv_c_w_wall" -a -n "$ac_compile_with_warnings" && \
 	WARNING_CFLAGS=" -W -Wall"
 
     test -z "$ac_user_cflags" && \
@@ -5284,6 +5341,9 @@ $as_echo "#define HAVE_NEW_H 1" >>confdefs.h
 	fi
     fi
 
+        save_cxxflags="$CXXFLAGS"
+    test -n "$ac_cv_c_w_wall" && CXXFLAGS="$CXXFLAGS -W -Wall"
+    test -n "$ac_cv_c_werror" && CXXFLAGS="$CXXFLAGS -Werror"
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the C++ compiler understands constexpr" >&5
 $as_echo_n "checking whether the C++ compiler understands constexpr... " >&6; }
@@ -5419,7 +5479,6 @@ if ${ac_cv_cxx_pragma_interface+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	save_cxxflags="$CXXFLAGS"; CXXFLAGS="$CXXFLAGS -Werror -Wall -W"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #pragma interface "foo.c"
@@ -5438,8 +5497,6 @@ else
   ac_cv_cxx_pragma_interface=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-        CXXFLAGS="$save_cxxflags"
-
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_pragma_interface" >&5
 $as_echo "$ac_cv_cxx_pragma_interface" >&6; }
@@ -5448,6 +5505,8 @@ $as_echo "$ac_cv_cxx_pragma_interface" >&6; }
 $as_echo "#define HAVE_CXX_PRAGMA_INTERFACE 1" >>confdefs.h
 
     fi
+
+    CXXFLAGS="$save_cxxflags"
 
 
     ac_base_cxx="$CXX"
@@ -7458,7 +7517,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7461 "configure"
+#line 7520 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER

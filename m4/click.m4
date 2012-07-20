@@ -51,8 +51,19 @@ AC_DEFUN([CLICK_PROG_CC], [
 	DEPCFLAGS="-MD -MP"
     AC_SUBST(DEPCFLAGS)
 
+    save_cflags="$CFLAGS"
+    AC_CACHE_CHECK([whether the C compiler accepts -W -Wall], [ac_cv_c_w_wall], [
+	CFLAGS="$CFLAGS -W -Wall"
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int f(int x) { return x; }]], [[]])],
+	    [ac_cv_c_w_wall=yes], [ac_cv_c_w_wall=no])])
+    AC_CACHE_CHECK([whether the C compiler accepts -Werror], [ac_cv_c_werror], [
+	CFLAGS="$CFLAGS -Werror"
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int f(int x) { return x; }]], [[]])],
+	    [ac_cv_c_werror=yes], [ac_cv_c_werror=no])])
+    CFLAGS="$save_cflags"
+
     WARNING_CFLAGS=
-    test -n "$GCC" -a -n "$ac_compile_with_warnings" && \
+    test -n "$ac_cv_c_w_wall" -a -n "$ac_compile_with_warnings" && \
 	WARNING_CFLAGS=" -W -Wall"
 
     test -z "$ac_user_cflags" && \
@@ -114,6 +125,9 @@ and Linux header files are GCC-specific.)
     fi
 
     dnl check for C++11 features
+    save_cxxflags="$CXXFLAGS"
+    test -n "$ac_cv_c_w_wall" && CXXFLAGS="$CXXFLAGS -W -Wall"
+    test -n "$ac_cv_c_werror" && CXXFLAGS="$CXXFLAGS -Werror"
 
     AC_CACHE_CHECK([whether the C++ compiler understands constexpr], [ac_cv_cxx_constexpr], [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[constexpr int f(int x) { return x + 1; }]], [[]])],
@@ -144,14 +158,13 @@ and Linux header files are GCC-specific.)
     fi
 
     AC_CACHE_CHECK([[whether the C++ compiler understands #pragma interface]], [ac_cv_cxx_pragma_interface], [
-	save_cxxflags="$CXXFLAGS"; CXXFLAGS="$CXXFLAGS -Werror -Wall -W"
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#pragma interface "foo.c"
-#pragma implementation "foo.c"]], [[]])], [ac_cv_cxx_pragma_interface=yes], [ac_cv_cxx_pragma_interface=no])
-        CXXFLAGS="$save_cxxflags"
-    ])
+#pragma implementation "foo.c"]], [[]])], [ac_cv_cxx_pragma_interface=yes], [ac_cv_cxx_pragma_interface=no])])
     if test "$ac_cv_cxx_pragma_interface" = yes; then
 	AC_DEFINE([HAVE_CXX_PRAGMA_INTERFACE], [1], [Define if the C++ compiler understands #pragma interface.])
     fi
+
+    CXXFLAGS="$save_cxxflags"
 
     dnl define correct warning options
 
