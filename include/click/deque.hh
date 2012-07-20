@@ -130,256 +130,71 @@ class Deque {
 
   public:
 
-    /** @brief Value type. */
-    typedef T value_type;
-
-    /** @brief Reference to value type. */
-    typedef T &reference;
-
-    /** @brief Const reference to value type. */
-    typedef const T &const_reference;
-
-    /** @brief Pointer to value type. */
-    typedef T *pointer;
-
-    /** @brief Pointer to const value type. */
-    typedef const T *const_pointer;
+    typedef T value_type;		///< Value type.
+    typedef T &reference;		///< Reference to value type.
+    typedef const T &const_reference;	///< Const reference to value type.
+    typedef T *pointer;			///< Pointer to value type.
+    typedef const T *const_pointer;	///< Pointer to const value type.
 
     /** @brief Type used for value arguments (either T or const T &). */
     typedef typename fast_argument<T>::type value_argument_type;
-
     typedef const T &const_access_type;
 
-    /** @brief Type of sizes (size()). */
-    typedef int size_type;
+    typedef int size_type;		///< Type of sizes (size()).
+
+    typedef Deque_iterator<T> iterator;	///< Iterator type.
+    typedef Deque_const_iterator<T> const_iterator; ///< Const iterator type.
 
     /** @brief Constant passed to reserve() to grow the deque. */
     enum { RESERVE_GROW = (size_type) -1 };
 
 
-    /** @brief Construct an empty deque. */
-    explicit Deque() {
-    }
+    explicit inline Deque();
+    explicit inline Deque(size_type n, value_argument_type v);
+    inline Deque(const Deque<T> &x);
 
-    /** @brief Construct a deque containing @a n copies of @a v. */
-    explicit Deque(size_type n, value_argument_type v) {
-	vm_.resize(n, array_memory_type::cast(&v));
-    }
+    inline Deque<T> &operator=(const Deque<T> &x);
+    inline Deque<T> &assign(size_type n, value_argument_type v = T());
 
-    /** @brief Construct a deque as a copy of @a x. */
-    Deque(const Deque<T> &x) {
-	vm_.assign(x.vm_);
-    }
+    inline iterator begin();
+    inline iterator end();
+    inline const_iterator begin() const;
+    inline const_iterator end() const;
+    inline const_iterator cbegin() const;
+    inline const_iterator cend() const;
 
-    /** @brief Destroy the deque, freeing its memory. */
-    ~Deque() {
-    }
+    inline size_type size() const;
+    inline size_type capacity() const;
+    inline bool empty() const;
+    inline void resize(size_type n, value_argument_type v = T());
+    inline bool reserve(size_type n);
 
+    inline T &operator[](size_type i);
+    inline const T &operator[](size_type i) const;
+    inline T &at(size_type i);
+    inline const T &at(size_type i) const;
+    inline T &front();
+    inline const T &front() const;
+    inline T &back();
+    inline const T &back() const;
 
-    /** @brief Return the number of elements. */
-    size_type size() const {
-	return vm_.n_;
-    }
-
-    /** @brief Test if the deque is empty (size() == 0). */
-    bool empty() const {
-	return vm_.n_ == 0;
-    }
-
-    /** @brief Return the deque's capacity.
-
-	The capacity is greater than or equal to the size(). Functions such as
-	resize(n) will not allocate new memory for the deque if n <=
-	capacity(). */
-    size_type capacity() const {
-	return vm_.capacity_;
-    }
-
-
-    /** @brief Const iterator type. */
-    typedef Deque_const_iterator<T> const_iterator;
-
-    /** @brief Iterator type. */
-    typedef Deque_iterator<T> iterator;
-
-    /** @brief Return an iterator for the first element in the deque. */
-    iterator begin() {
-	return iterator(this, 0);
-    }
-    /** @overload */
-    const_iterator begin() const {
-	return const_iterator(this, 0);
-    }
-
-    /** @brief Return an iterator for the end of the deque.
-      @invariant end() == begin() + size() */
-    iterator end() {
-	return iterator(this, vm_.n_);
-    }
-    /** @overload */
-    const_iterator end() const {
-	return const_iterator(this, vm_.n_);
-    }
-
-
-    /** @brief Return a reference to the <em>i</em>th element.
-      @pre 0 <= @a i < size() */
-    T &operator[](size_type i) {
-	assert((unsigned) i < (unsigned) vm_.n_);
-	return *(T *)&vm_.l_[vm_.i2p(i)];
-    }
-    /** @overload */
-    const T &operator[](size_type i) const {
-	assert((unsigned) i < (unsigned) vm_.n_);
-	return *(T *)&vm_.l_[vm_.i2p(i)];
-    }
-    /** @brief Return a reference to the <em>i</em>th element.
-      @pre 0 <= @a i < size()
-      @sa operator[]() */
-    T &at(size_type i) {
-	return operator[](i);
-    }
-    /** @overload */
-    const T &at(size_type i) const {
-	return operator[](i);
-    }
-
-    /** @brief Return a reference to the first element.
-      @pre !empty() */
-    T &front() {
-	return operator[](0);
-    }
-    /** @overload */
-    const T &front() const {
-	return operator[](0);
-    }
-
-    /** @brief Return a reference to the last element (number size()-1).
-      @pre !empty() */
-    T &back() {
-	return operator[](vm_.n_ - 1);
-    }
-    /** @overload */
-    const T &back() const {
-	return operator[](vm_.n_ - 1);
-    }
-
-    /** @brief Return a reference to the <em>i</em>th element.
-      @pre 0 <= @a i < size()
-
-      Unlike operator[]() and at(), this function does not check bounds,
-      even if assertions are enabled. Use with caution. */
-    T &unchecked_at(size_type i) {
-	return *(T *)&vm_.l_[vm_.i2p(i)];
-    }
-    /** @overload */
-    const T &unchecked_at(size_type i) const {
-	return *(T *)&vm_.l_[vm_.i2p(i)];
-    }
-
-    /** @cond never */
+    inline T &unchecked_at(size_type i);
+    inline const T &unchecked_at(size_type i) const;
     inline T &at_u(size_type i) CLICK_DEPRECATED;
     inline const T &at_u(size_type i) const CLICK_DEPRECATED;
-    /** @endcond never */
 
+    inline void push_back(value_argument_type v);
+    inline void pop_back();
+    inline void push_front(value_argument_type v);
+    inline void pop_front();
 
-    /** @brief Resize the deque to contain @a n elements.
-      @param n new size
-      @param v value used to fill new elements */
-    void resize(size_type n, value_argument_type v = T()) {
-	vm_.resize(n, array_memory_type::cast(&v));
-    }
+    inline iterator insert(iterator it, value_argument_type v);
+    inline iterator erase(iterator it);
+    inline iterator erase(iterator a, iterator b);
 
-    /** @brief Append @a v to the end of the deque.
+    inline void clear();
 
-      A copy of @a v is added to position size(). Takes amortized O(1)
-      time. */
-    void push_back(value_argument_type v) {
-	vm_.push_back(array_memory_type::cast(&v));
-    }
-
-    /** @brief Remove the last element.
-
-      Takes O(1) time. */
-    void pop_back() {
-	vm_.pop_back();
-    }
-
-    /** @brief Prepend element @a v.
-
-      A copy of @a v is added to position 0. Other elements are shifted one
-      position forward. Takes amortized O(1) time. */
-    void push_front(value_argument_type v) {
-	vm_.push_front(array_memory_type::cast(&v));
-    }
-
-    /** @brief Remove the first element.
-
-      Other elements are shifted one position backward. Takes O(1) time. */
-    void pop_front() {
-	vm_.pop_front();
-    }
-
-    /** @brief Insert @a v before position @a it.
-      @return An iterator pointing at the new element. */
-    iterator insert(iterator it, value_argument_type v) {
-	assert(it.q_ == this);
-	if (likely(vm_.insert(it.p_, array_memory_type::cast(&v))))
-	    return it;
-	else
-	    return end();
-    }
-
-    /** @brief Remove the element at position @a it.
-      @return An iterator pointing at the element following @a it. */
-    iterator erase(iterator it) {
-	assert(it.q_ == this);
-	return (it < end() ? erase(it, it + 1) : it);
-    }
-
-    /** @brief Remove the elements in [@a a, @a b).
-      @return An iterator corresponding to @a b. */
-    iterator erase(iterator a, iterator b) {
-	assert(a.q_ == this && b.q_ == this);
-	return iterator(this, vm_.erase(a.p_, b.p_));
-    }
-
-    /** @brief Remove all elements.
-      @post size() == 0 */
-    void clear() {
-	vm_.clear();
-    }
-
-
-    /** @brief Reserve space for at least @a n more elements.
-      @return true iff reserve succeeded.
-
-      This function changes the deque's capacity(), not its size(). If
-      reserve(@a n) succeeds, then any succeeding call to resize(@a m) with @a
-      m < @a n will succeed without allocating deque memory. */
-    bool reserve(size_type n) {
-	return vm_.reserve_and_push(n, false, 0);
-    }
-
-
-    /** @brief Swap the contents of this deque and @a x. */
-    void swap(Deque<T> &x) {
-	vm_.swap(x.vm_);
-    }
-
-
-    /** @brief Replace this deque's contents with a copy of @a x. */
-    Deque<T> &operator=(const Deque<T> &x) {
-	vm_.assign(x.vm_);
-	return *this;
-    }
-
-    /** @brief Replace this deque's contents with @a n copies of @a v.
-      @post size() == @a n */
-    Deque<T> &assign(size_type n, value_argument_type v = T()) {
-	vm_.assign(n, array_memory_type::cast(&v));
-	return *this;
-    }
+    inline void swap(Deque<T> &x);
 
 };
 
@@ -487,46 +302,314 @@ class Deque_iterator : public Deque_const_iterator<T> { public:
     }
 };
 
+/** @brief Construct an empty deque. */
 template <typename T>
-Deque_const_iterator<T> operator+(Deque_const_iterator<T> it, typename Deque<T>::size_type n)
-{
+inline Deque<T>::Deque() {
+}
+
+/** @brief Construct a deque containing @a n copies of @a v. */
+template <typename T>
+inline Deque<T>::Deque(size_type n, value_argument_type v) {
+    vm_.resize(n, array_memory_type::cast(&v));
+}
+
+/** @brief Construct a deque as a copy of @a x. */
+template <typename T>
+inline Deque<T>::Deque(const Deque<T> &x) {
+    vm_.assign(x.vm_);
+}
+
+/** @brief Return the number of elements. */
+template <typename T>
+inline typename Deque<T>::size_type Deque<T>::size() const {
+    return vm_.n_;
+}
+
+/** @brief Test if the deque is empty (size() == 0). */
+template <typename T>
+inline bool Deque<T>::empty() const {
+    return vm_.n_ == 0;
+}
+
+/** @brief Return the deque's capacity.
+
+    The capacity is greater than or equal to the size(). Functions such as
+    resize(n) will not allocate new memory for the deque if n <=
+    capacity(). */
+template <typename T>
+inline typename Deque<T>::size_type Deque<T>::capacity() const {
+    return vm_.capacity_;
+}
+
+/** @brief Return an iterator for the first element in the deque. */
+template <typename T>
+inline typename Deque<T>::iterator Deque<T>::begin() {
+    return iterator(this, 0);
+}
+
+/** @overload */
+template <typename T>
+inline typename Deque<T>::const_iterator Deque<T>::begin() const {
+    return const_iterator(this, 0);
+}
+
+/** @brief Return an iterator for the end of the deque.
+    @invariant end() == begin() + size() */
+template <typename T>
+inline typename Deque<T>::iterator Deque<T>::end() {
+    return iterator(this, vm_.n_);
+}
+
+/** @overload */
+template <typename T>
+inline typename Deque<T>::const_iterator Deque<T>::end() const {
+    return const_iterator(this, vm_.n_);
+}
+
+/** @brief Return a const_iterator for the beginning of the deque. */
+template <typename T>
+inline typename Deque<T>::const_iterator Deque<T>::cbegin() const {
+    return const_iterator(this, 0);
+}
+
+/** @brief Return a const_iterator for the end of the deque.
+    @invariant end() == begin() + size() */
+template <typename T>
+inline typename Deque<T>::const_iterator Deque<T>::cend() const {
+    return const_iterator(this, vm_.n_);
+}
+
+/** @brief Return a reference to the <em>i</em>th element.
+    @pre 0 <= @a i < size() */
+template <typename T>
+inline T &Deque<T>::operator[](size_type i) {
+    assert((unsigned) i < (unsigned) vm_.n_);
+    return *(T *)&vm_.l_[vm_.i2p(i)];
+}
+
+/** @overload */
+template <typename T>
+inline const T &Deque<T>::operator[](size_type i) const {
+    assert((unsigned) i < (unsigned) vm_.n_);
+    return *(T *)&vm_.l_[vm_.i2p(i)];
+}
+
+/** @brief Return a reference to the <em>i</em>th element.
+    @pre 0 <= @a i < size()
+    @sa operator[]() */
+template <typename T>
+inline T &Deque<T>::at(size_type i) {
+    return operator[](i);
+}
+
+/** @overload */
+template <typename T>
+inline const T &Deque<T>::at(size_type i) const {
+    return operator[](i);
+}
+
+/** @brief Return a reference to the first element.
+    @pre !empty() */
+template <typename T>
+inline T &Deque<T>::front() {
+    return operator[](0);
+}
+
+/** @overload */
+template <typename T>
+inline const T &Deque<T>::front() const {
+    return operator[](0);
+}
+
+/** @brief Return a reference to the last element (number size()-1).
+    @pre !empty() */
+template <typename T>
+inline T &Deque<T>::back() {
+    return operator[](vm_.n_ - 1);
+}
+
+/** @overload */
+template <typename T>
+inline const T &Deque<T>::back() const {
+    return operator[](vm_.n_ - 1);
+}
+
+/** @brief Return a reference to the <em>i</em>th element.
+    @pre 0 <= @a i < size()
+
+    Unlike operator[]() and at(), this function does not check bounds,
+    even if assertions are enabled. Use with caution. */
+template <typename T>
+inline T &Deque<T>::unchecked_at(size_type i) {
+    return *(T *)&vm_.l_[vm_.i2p(i)];
+}
+
+/** @overload */
+template <typename T>
+inline const T &Deque<T>::unchecked_at(size_type i) const {
+    return *(T *)&vm_.l_[vm_.i2p(i)];
+}
+
+/** @cond never */
+template <typename T>
+inline T &Deque<T>::at_u(size_type i) {
+    return unchecked_at(i);
+}
+
+template <typename T>
+inline const T &Deque<T>::at_u(size_type i) const {
+    return unchecked_at(i);
+}
+/** @endcond never */
+
+/** @brief Resize the deque to contain @a n elements.
+    @param n new size
+    @param v value used to fill new elements */
+template <typename T>
+inline void Deque<T>::resize(size_type n, value_argument_type v) {
+    vm_.resize(n, array_memory_type::cast(&v));
+}
+
+/** @brief Append @a v to the end of the deque.
+
+    A copy of @a v is added to position size(). Takes amortized O(1)
+    time. */
+template <typename T>
+inline void Deque<T>::push_back(value_argument_type v) {
+    vm_.push_back(array_memory_type::cast(&v));
+}
+
+/** @brief Remove the last element.
+
+    Takes O(1) time. */
+template <typename T>
+inline void Deque<T>::pop_back() {
+    vm_.pop_back();
+}
+
+/** @brief Prepend element @a v.
+
+    A copy of @a v is added to position 0. Other elements are shifted one
+    position forward. Takes amortized O(1) time. */
+template <typename T>
+inline void Deque<T>::push_front(value_argument_type v) {
+    vm_.push_front(array_memory_type::cast(&v));
+}
+
+/** @brief Remove the first element.
+
+    Other elements are shifted one position backward. Takes O(1) time. */
+template <typename T>
+inline void Deque<T>::pop_front() {
+    vm_.pop_front();
+}
+
+/** @brief Insert @a v before position @a it.
+    @return An iterator pointing at the new element. */
+template <typename T>
+inline typename Deque<T>::iterator
+Deque<T>::insert(iterator it, value_argument_type v) {
+    assert(it.q_ == this);
+    if (likely(vm_.insert(it.p_, array_memory_type::cast(&v))))
+	return it;
+    else
+	return end();
+}
+
+/** @brief Remove the element at position @a it.
+    @return An iterator pointing at the element following @a it. */
+template <typename T>
+inline typename Deque<T>::iterator
+Deque<T>::erase(iterator it) {
+    assert(it.q_ == this);
+    return (it < end() ? erase(it, it + 1) : it);
+}
+
+/** @brief Remove the elements in [@a a, @a b).
+    @return An iterator corresponding to @a b. */
+template <typename T>
+inline typename Deque<T>::iterator
+Deque<T>::erase(iterator a, iterator b) {
+    assert(a.q_ == this && b.q_ == this);
+    return iterator(this, vm_.erase(a.p_, b.p_));
+}
+
+/** @brief Remove all elements.
+    @post size() == 0 */
+template <typename T>
+inline void Deque<T>::clear() {
+    vm_.clear();
+}
+
+/** @brief Reserve space for at least @a n more elements.
+    @return true iff reserve succeeded.
+
+    This function changes the deque's capacity(), not its size(). If
+    reserve(@a n) succeeds, then any succeeding call to resize(@a m) with @a
+    m < @a n will succeed without allocating deque memory. */
+template <typename T>
+inline bool Deque<T>::reserve(size_type n) {
+    return vm_.reserve_and_push(n, false, 0);
+}
+
+/** @brief Swap the contents of this deque and @a x. */
+template <typename T>
+inline void Deque<T>::swap(Deque<T> &x) {
+    vm_.swap(x.vm_);
+}
+
+/** @brief Replace this deque's contents with a copy of @a x. */
+template <typename T>
+inline Deque<T> &Deque<T>::operator=(const Deque<T> &x) {
+    vm_.assign(x.vm_);
+    return *this;
+}
+
+/** @brief Replace this deque's contents with @a n copies of @a v.
+    @post size() == @a n */
+template <typename T>
+inline Deque<T> &Deque<T>::assign(size_type n, value_argument_type v) {
+    vm_.assign(n, array_memory_type::cast(&v));
+    return *this;
+}
+
+template <typename T>
+Deque_const_iterator<T> operator+(Deque_const_iterator<T> it,
+				  typename Deque<T>::size_type n) {
     return it += n;
 }
 
 template <typename T>
-Deque_const_iterator<T> operator-(Deque_const_iterator<T> it, typename Deque<T>::size_type n)
-{
+Deque_const_iterator<T> operator-(Deque_const_iterator<T> it,
+				  typename Deque<T>::size_type n) {
     return it -= n;
 }
 
 template <typename T>
-Deque_iterator<T> operator+(Deque_iterator<T> it, typename Deque<T>::size_type n)
-{
+Deque_iterator<T> operator+(Deque_iterator<T> it,
+			    typename Deque<T>::size_type n) {
     return it += n;
 }
 
 template <typename T>
-Deque_iterator<T> operator-(Deque_iterator<T> it, typename Deque<T>::size_type n)
-{
+Deque_iterator<T> operator-(Deque_iterator<T> it,
+			    typename Deque<T>::size_type n) {
     return it -= n;
 }
 
 template <typename T>
-typename Deque_const_iterator<T>::size_type operator-(const Deque_const_iterator<T> &a,
-						      const Deque_const_iterator<T> &b)
-{
+typename Deque_const_iterator<T>::size_type
+operator-(const Deque_const_iterator<T> &a, const Deque_const_iterator<T> &b) {
     return a.diff(b);
 }
 
 template <typename T>
-inline void click_swap(Deque<T> &a, Deque<T> &b)
-{
+inline void click_swap(Deque<T> &a, Deque<T> &b) {
     a.swap(b);
 }
 
 template <typename T>
-inline void assign_consume(Deque<T> &a, Deque<T> &b)
-{
+inline void assign_consume(Deque<T> &a, Deque<T> &b) {
     a.swap(b);
 }
 

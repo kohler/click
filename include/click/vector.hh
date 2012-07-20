@@ -105,264 +105,358 @@ class Vector {
 
   public:
 
-    /** @brief Value type. */
-    typedef T value_type;
-
-    /** @brief Reference to value type. */
-    typedef T &reference;
-
-    /** @brief Const reference to value type. */
-    typedef const T &const_reference;
-
-    /** @brief Pointer to value type. */
-    typedef T *pointer;
-
-    /** @brief Pointer to const value type. */
-    typedef const T *const_pointer;
+    typedef T value_type;		///< Value type.
+    typedef T &reference;		///< Reference to value type.
+    typedef const T &const_reference;	///< Const reference to value type.
+    typedef T *pointer;			///< Pointer to value type.
+    typedef const T *const_pointer;	///< Pointer to const value type.
 
     /** @brief Type used for value arguments (either T or const T &). */
     typedef typename fast_argument<T>::type value_argument_type;
-
     typedef const T &const_access_type;
 
-    /** @brief Type of sizes (size()). */
-    typedef int size_type;
+    typedef int size_type;		///< Type of sizes (size()).
+
+    typedef T *iterator;		///< Iterator type.
+    typedef const T *const_iterator;	///< Const iterator type.
 
     /** @brief Constant passed to reserve() to grow the Vector. */
     enum { RESERVE_GROW = (size_type) -1 };
 
 
-    /** @brief Construct an empty vector. */
-    explicit Vector() {
-    }
+    explicit inline Vector();
+    explicit inline Vector(size_type n, value_argument_type v);
+    inline Vector(const Vector<T> &x);
 
-    /** @brief Construct a vector containing @a n copies of @a v. */
-    explicit Vector(size_type n, value_argument_type v) {
-	vm_.resize(n, array_memory_type::cast(&v));
-    }
+    inline Vector<T> &operator=(const Vector<T> &x);
+    inline Vector<T> &assign(size_type n, value_argument_type v = T());
 
-    /** @brief Construct a vector as a copy of @a x. */
-    Vector(const Vector<T> &x) {
-	vm_.assign(x.vm_);
-    }
+    inline iterator begin();
+    inline iterator end();
+    inline const_iterator begin() const;
+    inline const_iterator end() const;
+    inline const_iterator cbegin() const;
+    inline const_iterator cend() const;
 
-    /** @brief Destroy the vector, freeing its memory. */
-    ~Vector() {
-    }
+    inline size_type size() const;
+    inline size_type capacity() const;
+    inline bool empty() const;
+    inline void resize(size_type n, value_argument_type v = T());
+    inline bool reserve(size_type n);
 
+    inline T &operator[](size_type i);
+    inline const T &operator[](size_type i) const;
+    inline T &at(size_type i);
+    inline const T &at(size_type i) const;
+    inline T &front();
+    inline const T &front() const;
+    inline T &back();
+    inline const T &back() const;
 
-    /** @brief Return the number of elements. */
-    size_type size() const {
-	return vm_.n_;
-    }
-
-    /** @brief Test if the vector is empty (size() == 0). */
-    bool empty() const {
-	return vm_.n_ == 0;
-    }
-
-    /** @brief Return the vector's capacity.
-
-	The capacity is greater than or equal to the size(). Functions such as
-	resize(n) will not allocate new memory for the vector if n <=
-	capacity(). */
-    size_type capacity() const {
-	return vm_.capacity_;
-    }
-
-
-    /** @brief Iterator type. */
-    typedef T *iterator;
-
-    /** @brief Const iterator type. */
-    typedef const T *const_iterator;
-
-    /** @brief Return an iterator for the first element in the vector. */
-    iterator begin() {
-	return (iterator) vm_.l_;
-    }
-    /** @overload */
-    const_iterator begin() const {
-	return (const_iterator) vm_.l_;
-    }
-
-    /** @brief Return an iterator for the end of the vector.
-      @invariant end() == begin() + size() */
-    iterator end() {
-	return (iterator) vm_.l_ + vm_.n_;
-    }
-    /** @overload */
-    const_iterator end() const {
-	return (const_iterator) vm_.l_ + vm_.n_;
-    }
-
-
-    /** @brief Return a reference to the <em>i</em>th element.
-      @pre 0 <= @a i < size() */
-    T &operator[](size_type i) {
-	assert((unsigned) i < (unsigned) vm_.n_);
-	return *(T *)&vm_.l_[i];
-    }
-    /** @overload */
-    const T &operator[](size_type i) const {
-	assert((unsigned) i < (unsigned) vm_.n_);
-	return *(T *)&vm_.l_[i];
-    }
-    /** @brief Return a reference to the <em>i</em>th element.
-      @pre 0 <= @a i < size()
-      @sa operator[]() */
-    T &at(size_type i) {
-	return operator[](i);
-    }
-    /** @overload */
-    const T &at(size_type i) const {
-	return operator[](i);
-    }
-
-    /** @brief Return a reference to the first element.
-      @pre !empty() */
-    T &front() {
-	return operator[](0);
-    }
-    /** @overload */
-    const T &front() const {
-	return operator[](0);
-    }
-
-    /** @brief Return a reference to the last element (number size()-1).
-      @pre !empty() */
-    T &back() {
-	return operator[](vm_.n_ - 1);
-    }
-    /** @overload */
-    const T &back() const {
-	return operator[](vm_.n_ - 1);
-    }
-
-    /** @brief Return a reference to the <em>i</em>th element.
-      @pre 0 <= @a i < size()
-
-      Unlike operator[]() and at(), this function does not check bounds,
-      even if assertions are enabled. Use with caution. */
-    T &unchecked_at(size_type i) {
-	return *(T *)&vm_.l_[i];
-    }
-    /** @overload */
-    const T &unchecked_at(size_type i) const {
-	return *(T *)&vm_.l_[i];
-    }
-
-    /** @cond never */
+    inline T &unchecked_at(size_type i);
+    inline const T &unchecked_at(size_type i) const;
     inline T &at_u(size_type i) CLICK_DEPRECATED;
     inline const T &at_u(size_type i) const CLICK_DEPRECATED;
-    /** @endcond never */
 
+    inline T *data();
+    inline const T *data() const;
 
-    /** @brief Resize the vector to contain @a n elements.
-      @param n new size
-      @param v value used to fill new elements */
-    void resize(size_type n, value_argument_type v = T()) {
-	vm_.resize(n, array_memory_type::cast(&v));
-    }
+    inline void push_back(value_argument_type v);
+    inline void pop_back();
+    inline void push_front(value_argument_type v);
+    inline void pop_front();
 
-    /** @brief Append element @a v.
+    inline iterator insert(iterator it, value_argument_type v);
+    inline iterator erase(iterator it);
+    inline iterator erase(iterator a, iterator b);
 
-      A copy of @a v is inserted at position size(). Takes amortized O(1)
-      time. */
-    void push_back(value_argument_type v) {
-	vm_.push_back(array_memory_type::cast(&v));
-    }
+    inline void clear();
 
-    /** @brief Remove the last element.
-
-      Takes O(1) time. */
-    void pop_back() {
-	vm_.pop_back();
-    }
-
-    /** @brief Prepend element @a v.
-
-      A copy of @a v is added to position 0. Other elements are shifted one
-      position forward. Takes O(size()) time. */
-    void push_front(value_argument_type v) {
-	vm_.insert(vm_.l_, array_memory_type::cast(&v));
-    }
-
-    /** @brief Remove the first element.
-
-      Other elements are shifted one position backward. Takes O(size())
-      time. */
-    void pop_front() {
-	vm_.erase(vm_.l_, vm_.l_ + 1);
-    }
-
-    /** @brief Insert @a v before position @a it.
-      @return An iterator pointing at the new element. */
-    iterator insert(iterator it, value_argument_type v) {
-	return (iterator) vm_.insert(array_memory_type::cast(it),
-				     array_memory_type::cast(&v));
-    }
-
-    /** @brief Remove the element at position @a it.
-      @return An iterator pointing at the element following @a it. */
-    iterator erase(iterator it) {
-	return (it < end() ? erase(it, it + 1) : it);
-    }
-
-    /** @brief Remove the elements in [@a a, @a b).
-      @return An iterator corresponding to @a b. */
-    iterator erase(iterator a, iterator b) {
-	return (iterator) vm_.erase(array_memory_type::cast(a),
-				    array_memory_type::cast(b));
-    }
-
-    /** @brief Remove all elements.
-      @post size() == 0 */
-    void clear() {
-	vm_.clear();
-    }
-
-
-    /** @brief Reserve space for at least @a n more elements.
-      @return true iff reserve succeeded.
-
-      This function changes the vector's capacity(), not its size(). If
-      reserve(@a n) succeeds, then any succeeding call to resize(@a m) with @a
-      m < @a n will succeed without allocating vector memory. */
-    bool reserve(size_type n) {
-	return vm_.reserve_and_push_back(n, 0);
-    }
-
-
-    /** @brief Swap the contents of this vector and @a x. */
-    void swap(Vector<T> &x) {
-	vm_.swap(x.vm_);
-    }
-
-
-    /** @brief Replace this vector's contents with a copy of @a x. */
-    Vector<T> &operator=(const Vector<T> &x) {
-	vm_.assign(x.vm_);
-	return *this;
-    }
-
-    /** @brief Replace this vector's contents with @a n copies of @a v.
-      @post size() == @a n */
-    Vector<T> &assign(size_type n, value_argument_type v = T()) {
-	vm_.assign(n, array_memory_type::cast(&v));
-	return *this;
-    }
+    inline void swap(Vector<T> &x);
 
 };
 
+/** @brief Construct an empty vector. */
+template <typename T>
+inline Vector<T>::Vector() {
+}
+
+/** @brief Construct a vector containing @a n copies of @a v. */
+template <typename T>
+inline Vector<T>::Vector(size_type n, value_argument_type v) {
+    vm_.resize(n, array_memory_type::cast(&v));
+}
+
+/** @brief Construct a vector as a copy of @a x. */
+template <typename T>
+inline Vector<T>::Vector(const Vector<T> &x) {
+    vm_.assign(x.vm_);
+}
+
+/** @brief Return the number of elements. */
+template <typename T>
+inline typename Vector<T>::size_type Vector<T>::size() const {
+    return vm_.n_;
+}
+
+/** @brief Test if the vector is empty (size() == 0). */
+template <typename T>
+inline bool Vector<T>::empty() const {
+    return vm_.n_ == 0;
+}
+
+/** @brief Return the vector's capacity.
+
+    The capacity is greater than or equal to the size(). Functions such as
+    resize(n) will not allocate new memory for the vector if n <=
+    capacity(). */
+template <typename T>
+inline typename Vector<T>::size_type Vector<T>::capacity() const {
+    return vm_.capacity_;
+}
+
+/** @brief Return an iterator for the first element in the vector. */
+template <typename T>
+inline typename Vector<T>::iterator Vector<T>::begin() {
+    return (iterator) vm_.l_;
+}
+
+/** @overload */
+template <typename T>
+inline typename Vector<T>::const_iterator Vector<T>::begin() const {
+    return (const_iterator) vm_.l_;
+}
+
+/** @brief Return an iterator for the end of the vector.
+    @invariant end() == begin() + size() */
+template <typename T>
+inline typename Vector<T>::iterator Vector<T>::end() {
+    return (iterator) vm_.l_ + vm_.n_;
+}
+
+/** @overload */
+template <typename T>
+inline typename Vector<T>::const_iterator Vector<T>::end() const {
+    return (const_iterator) vm_.l_ + vm_.n_;
+}
+
+/** @brief Return a const_iterator for the beginning of the vector. */
+template <typename T>
+inline typename Vector<T>::const_iterator Vector<T>::cbegin() const {
+    return (const_iterator) vm_.l_;
+}
+
+/** @brief Return a const_iterator for the end of the vector.
+    @invariant cend() == cbegin() + size() */
+template <typename T>
+inline typename Vector<T>::const_iterator Vector<T>::cend() const {
+    return (iterator) vm_.l_ + vm_.n_;
+}
+
+/** @brief Return a reference to the <em>i</em>th element.
+    @pre 0 <= @a i < size() */
+template <typename T>
+inline T &Vector<T>::operator[](size_type i) {
+    assert((unsigned) i < (unsigned) vm_.n_);
+    return *(T *)&vm_.l_[i];
+}
+
+/** @overload */
+template <typename T>
+inline const T &Vector<T>::operator[](size_type i) const {
+    assert((unsigned) i < (unsigned) vm_.n_);
+    return *(T *)&vm_.l_[i];
+}
+
+/** @brief Return a reference to the <em>i</em>th element.
+    @pre 0 <= @a i < size()
+    @sa operator[]() */
+template <typename T>
+inline T &Vector<T>::at(size_type i) {
+    return operator[](i);
+}
+
+/** @overload */
+template <typename T>
+inline const T &Vector<T>::at(size_type i) const {
+    return operator[](i);
+}
+
+/** @brief Return a reference to the first element.
+    @pre !empty() */
+template <typename T>
+inline T &Vector<T>::front() {
+    return operator[](0);
+}
+
+/** @overload */
+template <typename T>
+inline const T &Vector<T>::front() const {
+    return operator[](0);
+}
+
+/** @brief Return a reference to the last element (number size()-1).
+    @pre !empty() */
+template <typename T>
+inline T &Vector<T>::back() {
+    return operator[](vm_.n_ - 1);
+}
+
+/** @overload */
+template <typename T>
+inline const T &Vector<T>::back() const {
+    return operator[](vm_.n_ - 1);
+}
+
+/** @brief Return a reference to the <em>i</em>th element.
+    @pre 0 <= @a i < size()
+
+    Unlike operator[]() and at(), this function does not check bounds,
+    even if assertions are enabled. Use with caution. */
+template <typename T>
+inline T &Vector<T>::unchecked_at(size_type i) {
+    return *(T *)&vm_.l_[i];
+}
+
+/** @overload */
+template <typename T>
+inline const T &Vector<T>::unchecked_at(size_type i) const {
+    return *(T *)&vm_.l_[i];
+}
+
 /** @cond never */
-template <typename T> T &Vector<T>::at_u(size_type i) {
+template <typename T>
+inline T &Vector<T>::at_u(size_type i) {
     return unchecked_at(i);
 }
-template <typename T> const T &Vector<T>::at_u(size_type i) const {
+
+template <typename T>
+inline const T &Vector<T>::at_u(size_type i) const {
     return unchecked_at(i);
 }
 /** @endcond never */
+
+/** @brief Return a pointer to the vector's data.
+
+    May be null if empty(). */
+template <typename T>
+inline T *Vector<T>::data() {
+    return (T *) vm_.l_;
+}
+
+/** @overload */
+template <typename T>
+inline const T *Vector<T>::data() const {
+    return (const T *) vm_.l_;
+}
+
+/** @brief Resize the vector to contain @a n elements.
+    @param n new size
+    @param v value used to fill new elements */
+template <typename T>
+inline void Vector<T>::resize(size_type n, value_argument_type v) {
+    vm_.resize(n, array_memory_type::cast(&v));
+}
+
+/** @brief Append element @a v.
+
+    A copy of @a v is inserted at position size(). Takes amortized O(1)
+    time. */
+template <typename T>
+inline void Vector<T>::push_back(value_argument_type v) {
+    vm_.push_back(array_memory_type::cast(&v));
+}
+
+/** @brief Remove the last element.
+
+    Takes O(1) time. */
+template <typename T>
+inline void Vector<T>::pop_back() {
+    vm_.pop_back();
+}
+
+/** @brief Prepend element @a v.
+
+    A copy of @a v is added to position 0. Other elements are shifted one
+    position forward. Takes O(size()) time. */
+template <typename T>
+inline void Vector<T>::push_front(value_argument_type v) {
+    vm_.insert(vm_.l_, array_memory_type::cast(&v));
+}
+
+/** @brief Remove the first element.
+
+    Other elements are shifted one position backward. Takes O(size())
+    time. */
+template <typename T>
+inline void Vector<T>::pop_front() {
+    vm_.erase(vm_.l_, vm_.l_ + 1);
+}
+
+/** @brief Insert @a v before position @a it.
+    @return An iterator pointing at the new element. */
+template <typename T>
+inline typename Vector<T>::iterator
+Vector<T>::insert(iterator it, value_argument_type v) {
+    return (iterator) vm_.insert(array_memory_type::cast(it),
+				 array_memory_type::cast(&v));
+}
+
+/** @brief Remove the element at position @a it.
+    @return An iterator pointing at the element following @a it. */
+template <typename T>
+inline typename Vector<T>::iterator
+Vector<T>::erase(iterator it) {
+    return (it < end() ? erase(it, it + 1) : it);
+}
+
+/** @brief Remove the elements in [@a a, @a b).
+    @return An iterator corresponding to @a b. */
+template <typename T>
+inline typename Vector<T>::iterator
+Vector<T>::erase(iterator a, iterator b) {
+    return (iterator) vm_.erase(array_memory_type::cast(a),
+				array_memory_type::cast(b));
+}
+
+/** @brief Remove all elements.
+    @post size() == 0 */
+template <typename T>
+inline void Vector<T>::clear() {
+    vm_.clear();
+}
+
+/** @brief Reserve space for at least @a n more elements.
+    @return true iff reserve succeeded.
+
+    This function changes the vector's capacity(), not its size(). If
+    reserve(@a n) succeeds, then any succeeding call to resize(@a m) with @a
+    m < @a n will succeed without allocating vector memory. */
+template <typename T>
+inline bool Vector<T>::reserve(size_type n) {
+    return vm_.reserve_and_push_back(n, 0);
+}
+
+/** @brief Swap the contents of this vector and @a x. */
+template <typename T>
+inline void Vector<T>::swap(Vector<T> &x) {
+    vm_.swap(x.vm_);
+}
+
+/** @brief Replace this vector's contents with a copy of @a x. */
+template <typename T>
+inline Vector<T> &Vector<T>::operator=(const Vector<T> &x) {
+    vm_.assign(x.vm_);
+    return *this;
+}
+
+/** @brief Replace this vector's contents with @a n copies of @a v.
+    @post size() == @a n */
+template <typename T>
+inline Vector<T> &Vector<T>::assign(size_type n, value_argument_type v) {
+    vm_.assign(n, array_memory_type::cast(&v));
+    return *this;
+}
 
 template <typename T>
 inline void click_swap(Vector<T> &a, Vector<T> &b) {
