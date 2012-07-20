@@ -41,6 +41,16 @@ template <typename AM> class vector_memory { public:
 	} else
 	    reserve_and_push_back(-1, vp);
     }
+#if HAVE_CXX_RVALUE_REFERENCES
+    inline void move_construct_back(const type *vp) {
+	if (n_ < capacity_) {
+	    AM::mark_undefined(l_ + n_, 1);
+	    AM::move_construct(l_ + n_, vp);
+	    ++n_;
+	} else
+	    reserve_and_push_back(-1, vp);
+    }
+#endif
     inline void pop_back() {
 	assert(n_ > 0);
 	--n_;
@@ -127,8 +137,14 @@ class Vector {
     explicit inline Vector();
     explicit inline Vector(size_type n, value_argument_type v);
     inline Vector(const Vector<T> &x);
+#if HAVE_CXX_RVALUE_REFERENCES
+    inline Vector(Vector<T> &&x);
+#endif
 
     inline Vector<T> &operator=(const Vector<T> &x);
+#if HAVE_CXX_RVALUE_REFERENCES
+    inline Vector<T> &operator=(Vector<T> &&x);
+#endif
     inline Vector<T> &assign(size_type n, value_argument_type v = T());
 
     inline iterator begin();
@@ -162,6 +178,10 @@ class Vector {
     inline const T *data() const;
 
     inline void push_back(value_argument_type v);
+#if HAVE_CXX_RVALUE_REFERENCES
+    template <typename A = fast_argument<T> >
+    inline typename A::enable_rvalue_reference push_back(T &&v);
+#endif
     inline void pop_back();
     inline void push_front(value_argument_type v);
     inline void pop_front();
@@ -192,6 +212,14 @@ template <typename T>
 inline Vector<T>::Vector(const Vector<T> &x) {
     vm_.assign(x.vm_);
 }
+
+#if HAVE_CXX_RVALUE_REFERENCES
+/** @overload */
+template <typename T>
+inline Vector<T>::Vector(Vector<T> &&x) {
+    vm_.swap(x.vm_);
+}
+#endif
 
 /** @brief Return the number of elements. */
 template <typename T>
@@ -367,6 +395,15 @@ inline void Vector<T>::push_back(value_argument_type v) {
     vm_.push_back(array_memory_type::cast(&v));
 }
 
+#if HAVE_CXX_RVALUE_REFERENCES
+/** @overload */
+template <typename T> template <typename A>
+inline typename A::enable_rvalue_reference Vector<T>::push_back(T &&v)
+{
+    vm_.move_construct_back(array_memory_type::cast(&v));
+}
+#endif
+
 /** @brief Remove the last element.
 
     Takes O(1) time. */
@@ -449,6 +486,14 @@ inline Vector<T> &Vector<T>::operator=(const Vector<T> &x) {
     vm_.assign(x.vm_);
     return *this;
 }
+
+#if HAVE_CXX_RVALUE_REFERENCES
+template <typename T>
+inline Vector<T> &Vector<T>::operator=(Vector<T> &&x) {
+    vm_.swap(x.vm_);
+    return *this;
+}
+#endif
 
 /** @brief Replace this vector's contents with @a n copies of @a v.
     @post size() == @a n */

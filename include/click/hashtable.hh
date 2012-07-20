@@ -147,6 +147,14 @@ class HashTable<T> {
 	clone_elements(x);
     }
 
+#if HAVE_CXX_RVALUE_REFERENCES
+    /** @overload */
+    HashTable(HashTable<T> &&x)
+	: _rep() {
+	x.swap(*this);
+    }
+#endif
+
     /** @brief Destroy the hash table, freeing its memory. */
     ~HashTable();
 
@@ -283,6 +291,14 @@ class HashTable<T> {
 
     /** @brief Replace this hash table's contents with a copy of @a x. */
     HashTable<T> &operator=(const HashTable<T> &x);
+
+#if HAVE_CXX_RVALUE_REFERENCES
+    /** @overload */
+    inline HashTable<T> &operator=(HashTable<T> &&x) {
+	x.swap(*this);
+	return *this;
+    }
+#endif
 
   private:
 
@@ -589,6 +605,14 @@ class HashTable {
 	: _rep(x._rep), _default_value(x._default_value) {
     }
 
+#if HAVE_CXX_RVALUE_REFERENCES
+    /** @overload */
+    HashTable(HashTable<K, V> &&x)
+	: _rep(), _default_value() {
+	x.swap(*this);
+    }
+#endif
+
     /** @brief Destroy this hash table, freeing its memory. */
     ~HashTable() {
     }
@@ -801,10 +825,7 @@ class HashTable {
     /** @brief Swap the contents of this hash table and @a x. */
     void swap(HashTable<K, V> &x) {
 	_rep.swap(x._rep);
-
-	V odefault_value(_default_value);
-	_default_value = x._default_value;
-	x._default_value = odefault_value;
+	click_swap(x._default_value, _default_value);
     }
 
 
@@ -823,6 +844,14 @@ class HashTable {
 	_default_value = x._default_value;
 	return *this;
     }
+
+#if HAVE_CXX_RVALUE_REFERENCES
+    /** @overload */
+    HashTable<K, V> &operator=(HashTable<K, V> &&x) {
+	x.swap(*this);
+	return *this;
+    }
+#endif
 
   private:
 

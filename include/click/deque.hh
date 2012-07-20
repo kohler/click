@@ -45,6 +45,17 @@ template <typename AM> class deque_memory { public:
 	} else
 	    reserve_and_push(-1, false, vp);
     }
+#if HAVE_CXX_RVALUE_REFERENCES
+    inline void move_construct_back(const type *vp) {
+	if (n_ < capacity_) {
+	    size_type p = i2p(n_);
+	    AM::mark_undefined(l_ + p, 1);
+	    AM::move_construct(l_ + p, vp);
+	    ++n_;
+	} else
+	    reserve_and_push(-1, false, vp);
+    }
+#endif
     inline void pop_back() {
 	assert(n_ > 0);
 	--n_;
@@ -61,6 +72,17 @@ template <typename AM> class deque_memory { public:
 	} else
 	    reserve_and_push(-1, true, vp);
     }
+#if HAVE_CXX_RVALUE_REFERENCES
+    inline void move_construct_front(const type *vp) {
+	if (n_ < capacity_) {
+	    head_ = prevp(head_);
+	    AM::mark_undefined(l_ + head_, 1);
+	    AM::move_construct(l_ + head_, vp);
+	    ++n_;
+	} else
+	    reserve_and_push(-1, true, vp);
+    }
+#endif
     inline void pop_front() {
 	assert(n_ > 0);
 	--n_;
@@ -152,8 +174,14 @@ class Deque {
     explicit inline Deque();
     explicit inline Deque(size_type n, value_argument_type v);
     inline Deque(const Deque<T> &x);
+#if HAVE_CXX_RVALUE_REFERENCES
+    inline Deque(Deque<T> &&x);
+#endif
 
     inline Deque<T> &operator=(const Deque<T> &x);
+#if HAVE_CXX_RVALUE_REFERENCES
+    inline Deque<T> &operator=(Deque<T> &&x);
+#endif
     inline Deque<T> &assign(size_type n, value_argument_type v = T());
 
     inline iterator begin();
@@ -184,8 +212,16 @@ class Deque {
     inline const T &at_u(size_type i) const CLICK_DEPRECATED;
 
     inline void push_back(value_argument_type v);
+#if HAVE_CXX_RVALUE_REFERENCES
+    template <typename A = fast_argument<T> >
+    inline typename A::enable_rvalue_reference push_back(T &&v);
+#endif
     inline void pop_back();
     inline void push_front(value_argument_type v);
+#if HAVE_CXX_RVALUE_REFERENCES
+    template <typename A = fast_argument<T> >
+    inline typename A::enable_rvalue_reference push_front(T &&v);
+#endif
     inline void pop_front();
 
     inline iterator insert(iterator it, value_argument_type v);
@@ -318,6 +354,14 @@ template <typename T>
 inline Deque<T>::Deque(const Deque<T> &x) {
     vm_.assign(x.vm_);
 }
+
+#if HAVE_CXX_RVALUE_REFERENCES
+/** @brief Construct a deque as a copy of @a x. */
+template <typename T>
+inline Deque<T>::Deque(Deque<T> &&x) {
+    vm_.assign(x.vm_);
+}
+#endif
 
 /** @brief Return the number of elements. */
 template <typename T>
@@ -479,6 +523,14 @@ inline void Deque<T>::push_back(value_argument_type v) {
     vm_.push_back(array_memory_type::cast(&v));
 }
 
+#if HAVE_CXX_RVALUE_REFERENCES
+/** @overload */
+template <typename T> template <typename A>
+inline typename A::enable_rvalue_reference Deque<T>::push_back(T &&v) {
+    vm_.move_construct_back(array_memory_type::cast(&v));
+}
+#endif
+
 /** @brief Remove the last element.
 
     Takes O(1) time. */
@@ -495,6 +547,14 @@ template <typename T>
 inline void Deque<T>::push_front(value_argument_type v) {
     vm_.push_front(array_memory_type::cast(&v));
 }
+
+#if HAVE_CXX_RVALUE_REFERENCES
+/** @overload */
+template <typename T> template <typename A>
+inline typename A::enable_rvalue_reference Deque<T>::push_front(T &&v) {
+    vm_.move_construct_front(array_memory_type::cast(&v));
+}
+#endif
 
 /** @brief Remove the first element.
 
@@ -564,6 +624,15 @@ inline Deque<T> &Deque<T>::operator=(const Deque<T> &x) {
     vm_.assign(x.vm_);
     return *this;
 }
+
+#if HAVE_CXX_RVALUE_REFERENCES
+/** @brief Replace this deque's contents with those of @a x. */
+template <typename T>
+inline Deque<T> &Deque<T>::operator=(Deque<T> &&x) {
+    vm_.swap(x.vm_);
+    return *this;
+}
+#endif
 
 /** @brief Replace this deque's contents with @a n copies of @a v.
     @post size() == @a n */

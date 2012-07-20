@@ -53,6 +53,13 @@ class StringAccum { public:
 	append(x.data(), x.length());
     }
 
+#if HAVE_CXX_RVALUE_REFERENCES
+    StringAccum(StringAccum &&x)
+	: _s(x._s), _len(x._len), _cap(x._cap) {
+	x._cap = 0;
+    }
+#endif
+
     /** @brief Destroy a StringAccum, freeing its memory. */
     ~StringAccum() {
 	if (_cap > 0)
@@ -362,6 +369,13 @@ class StringAccum { public:
 	}
 	return *this;
     }
+
+#if HAVE_CXX_RVALUE_REFERENCES
+    StringAccum &operator=(StringAccum &&x) {
+	x.swap(*this);
+	return *this;
+    }
+#endif
 
     /** @brief Swap this StringAccum's contents with @a x. */
     void swap(StringAccum &x);

@@ -29,6 +29,9 @@ class String { public:
 
     inline String();
     inline String(const String &x);
+#if HAVE_CXX_RVALUE_REFERENCES
+    inline String(String &&x);
+#endif
     inline String(const char *cstr);
     inline String(const char *s, int len);
     inline String(const unsigned char *s, int len);
@@ -118,6 +121,9 @@ class String { public:
     String quoted_hex() const;
 
     inline String &operator=(const String &x);
+#if HAVE_CXX_RVALUE_REFERENCES
+    inline String &operator=(String &&x);
+#endif
     inline String &operator=(const char *cstr);
 
     inline void swap(String &x);
@@ -279,6 +285,14 @@ inline String::String() {
 inline String::String(const String &x) {
     assign(x);
 }
+
+#if HAVE_CXX_RVALUE_REFERENCES
+/** @overload */
+inline String::String(String &&x)
+    : _r(x._r) {
+    x._r.memo = 0;
+}
+#endif
 
 /** @brief Construct a String containing the C string @a cstr.
     @param cstr a null-terminated C string
@@ -571,6 +585,14 @@ inline String &String::operator=(const String &x) {
     }
     return *this;
 }
+
+#if HAVE_CXX_RVALUE_REFERENCES
+/** @overload */
+inline String &String::operator=(String &&x) {
+    swap(x);
+    return *this;
+}
+#endif
 
 /** @brief Assign this string to the C string @a cstr. */
 inline String &String::operator=(const char *cstr) {
