@@ -228,7 +228,7 @@ NotifierSignal::unparse(Router *router) const
 	    return "uninitialized";
 	else
 	    pos = sprintf(buf, "internal/");
-    } else if (router && (s = router->notifier_signal_name(_v.v1)) >= 0) {
+    } else if (router && (s = router->notifier_signal_name(_v.v1))) {
 	pos = sprintf(buf, "%.52s/", s.c_str());
     } else
 	pos = sprintf(buf, "@%p/", _v.v1);
