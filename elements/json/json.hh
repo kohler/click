@@ -1755,7 +1755,7 @@ inline Json::size_type Json::erase(const StringRef &key) {
 }
 
 /** @brief Merge the values of object Json @a x into this object Json.
-    @pre is_object() || is_null()
+    @pre (is_object() || is_null()) && (x.is_object() || x.is_null())
     @return this Json
 
     The key-value pairs in @a x are assigned to this Json. Null Jsons are

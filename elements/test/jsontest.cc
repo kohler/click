@@ -174,6 +174,17 @@ JsonTest::initialize(ErrorHandler *errh)
 	CHECK(j2.unparse() == "{\"b\":1}");
     }
 
+    {
+	Json j = Json::parse("{\"a\":true}");
+	if (j["foo"]["bar"])
+	    CHECK(false);
+	CHECK(j.unparse() == "{\"a\":true}");
+	j["foo"]["bar"] = true;
+	CHECK(j.unparse() == "{\"a\":true,\"foo\":{\"bar\":true}}");
+	//j["a"]["2"] = false;
+	//CHECK(j.unparse() == "{\"a\":{\"2\":false},\"foo\":{\"bar\":true}}");
+    }
+
     errh->message("All tests pass!");
     return 0;
 }
