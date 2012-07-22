@@ -297,6 +297,9 @@ class StringRef {
     inline const char *data() const;
     inline int length() const;
 
+    inline const char *begin() const;
+    inline const char *end() const;
+
     inline uint32_t hashcode() const;
 
   private:
@@ -763,6 +766,14 @@ inline const char *StringRef::data() const {
 
 inline int StringRef::length() const {
     return len_;
+}
+
+inline const char *StringRef::begin() const {
+    return data();
+}
+
+inline const char *StringRef::end() const {
+    return data() + length();
 }
 
 /** @relates String

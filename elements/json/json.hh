@@ -291,9 +291,13 @@ class Json { public:
     const String &hard_to_s() const;
     inline void force_number();
 
-    void hard_uniqueify(json_type type);
-    inline bool uniqueify_object();
-    inline bool uniqueify_array();
+    const Json &hard_get(const StringRef &key) const;
+    const Json &hard_get(size_type x) const;
+    Json &hard_get_insert(size_type x);
+
+    void hard_uniqueify(int type);
+    inline void uniqueify_object(bool convert);
+    inline void uniqueify_array(bool convert);
 
     bool unparse_is_complex() const;
     static void unparse_indent(StringAccum &sa, const unparse_manipulator &m, int depth);
@@ -403,20 +407,16 @@ inline Json::ObjectJson *Json::ojson() const {
     return static_cast<ObjectJson *>(_cjson);
 }
 
-inline bool Json::uniqueify_object() {
-    bool need = !_cjson || _cjson->refcount > 1;
-    if (need)
-	hard_uniqueify(j_object);
+inline void Json::uniqueify_object(bool convert) {
+    if (_type != j_object || !_cjson || _cjson->refcount > 1)
+	hard_uniqueify(convert ? j_object : -j_object);
     assert(_type == j_object);
-    return need;
 }
 
-inline bool Json::uniqueify_array() {
-    bool need = !_cjson || _cjson->refcount > 1;
-    if (need)
-	hard_uniqueify(j_array);
+inline void Json::uniqueify_array(bool convert) {
+    if (_type != j_array || !_cjson || _cjson->refcount > 1)
+	hard_uniqueify(convert ? j_array : -j_array);
     assert(_type == j_array);
-    return need;
 }
 
 
@@ -485,7 +485,7 @@ class Json::object_iterator : public const_object_iterator { public:
     object_iterator() {
     }
     value_type &operator*() const {
-	const_cast<Json *>(j_)->uniqueify_object();
+	const_cast<Json *>(j_)->uniqueify_object(false);
 	return j_->ojson()->item(i_).v_;
     }
     value_type *operator->() const {
@@ -579,11 +579,11 @@ class Json::array_iterator : public const_array_iterator { public:
     array_iterator() {
     }
     Json &operator*() const {
-	const_cast<Json *>(j_)->uniqueify_array();
+	const_cast<Json *>(j_)->uniqueify_array(false);
 	return j_->ajson()->values[i_];
     }
     Json &operator[](difference_type i) const {
-	const_cast<Json *>(j_)->uniqueify_array();
+	const_cast<Json *>(j_)->uniqueify_array(false);
 	return j_->ajson()->values[i_ + i];
     }
     Json *operator->() const {
@@ -1468,9 +1468,11 @@ inline Json::size_type Json::count(const StringRef &key) const {
     return _cjson ? ojson()->find(key.data(), key.length()) >= 0 : 0;
 }
 
-/** @brief Return the value at @a key in an object Json.
+/** @brief Return the value at @a key in an object or array Json.
 
-    Returns a null Json if !count(@a key). */
+    If this is an array Json, and @a key is the simplest base-10
+    representation of an integer <em>i</em>, then returns get(<em>i</em>). If
+    this is neither an array nor an object, returns a null Json. */
 inline const Json &Json::get(const StringRef &key) const {
     int i;
     ObjectJson *oj;
@@ -1478,28 +1480,28 @@ inline const Json &Json::get(const StringRef &key) const {
 	&& (i = oj->find(key.data(), key.length())) >= 0)
 	return oj->item(i).v_.second;
     else
-	return make_null();
+	return hard_get(key);
 }
 
 /** @brief Return a reference to the value of @a key in an object Json.
-    @pre is_object() || is_null()
 
-    If !count(@a key), then a null Json is inserted at @a key. If is_null(),
-    this Json is silently promoted to an empty object. */
+    This Json is first converted to an object. Arrays are converted to objects
+    with numeric keys. Other types of Json are converted to empty objects.
+    If !count(@a key), then a null Json is inserted at @a key. */
 inline Json &Json::get_insert(const String &key) {
-    uniqueify_object();
+    uniqueify_object(true);
     return ojson()->get_insert(key);
 }
 
 /** @overload */
 inline Json &Json::get_insert(const StringRef &key) {
-    uniqueify_object();
+    uniqueify_object(true);
     return ojson()->get_insert(key);
 }
 
 /** @overload */
 inline Json &Json::get_insert(const char *key) {
-    uniqueify_object();
+    uniqueify_object(true);
     return ojson()->get_insert(StringRef(key));
 }
 
@@ -1628,19 +1630,18 @@ inline const Json_get_proxy Json::get(const StringRef &key, String &x) const {
 }
 
 
-/** @brief Return the value at @a key in an object Json.
-
-    Returns a null Json if !count(@a key). */
+/** @brief Return the value at @a key in an object or array Json.
+    @sa Json::get() */
 inline const Json &Json::operator[](const StringRef &key) const {
     return get(key);
 }
 
 /** @brief Return a proxy reference to the value at @a key in an object Json.
-    @pre is_object() || is_null()
 
     Returns the current @a key value if it exists. Otherwise, returns a proxy
-    that acts like a null Json. If this proxy is assigned, the object is
-    extended as necessary to contain the new value. */
+    that acts like a null Json. If this proxy is assigned, this Json is
+    converted to an object as by get_insert(), and then extended as necessary
+    to contain the new value. */
 inline Json_object_proxy<Json> Json::operator[](const String &key) {
     return Json_object_proxy<Json>(*this, key);
 }
@@ -1687,12 +1688,12 @@ inline Json &Json::at_insert(const char *key) {
 }
 
 /** @brief Set the value of @a key to @a value in this object Json.
-    @pre is_object() || is_null()
     @return this Json
 
-    A null Json is promoted to an empty object. */
+    An array Json is converted to an object Json with numeric keys. Other
+    non-object Jsons are converted to empty objects. */
 template <typename T> inline Json &Json::set(const String &key, T value) {
-    uniqueify_object();
+    uniqueify_object(true);
     ojson()->get_insert(key) = Json(value);
     return *this;
 }
@@ -1700,7 +1701,7 @@ template <typename T> inline Json &Json::set(const String &key, T value) {
 #if HAVE_CXX_RVALUE_REFERENCES
 /** @overload */
 inline Json &Json::set(const String &key, Json &&value) {
-    uniqueify_object();
+    uniqueify_object(true);
     ojson()->get_insert(key) = click_move(value);
     return *this;
 }
@@ -1711,7 +1712,7 @@ inline Json &Json::set(const String &key, Json &&value) {
     @sa erase() */
 inline Json &Json::unset(const StringRef &key) {
     if (_type == j_object) {
-	uniqueify_object();
+	uniqueify_object(true);
 	ojson()->erase(key);
     }
     return *this;
@@ -1726,7 +1727,7 @@ inline Json &Json::unset(const StringRef &key) {
     An existing element with key @a x.first is not replaced. */
 inline Pair<Json::object_iterator, bool> Json::insert(const object_value_type &x) {
     assert(_type == j_object);
-    uniqueify_object();
+    uniqueify_object(false);
     ObjectJson *oj = ojson();
     int n = oj->n_, i = oj->find_insert(x.first, x.second);
     return make_pair(object_iterator(this, i), i == n);
@@ -1750,7 +1751,7 @@ inline Json::object_iterator Json::insert(object_iterator position, const object
     @return Number of items removed */
 inline Json::size_type Json::erase(const StringRef &key) {
     assert(_type == j_object);
-    uniqueify_object();
+    uniqueify_object(false);
     return ojson()->erase(key);
 }
 
@@ -1765,7 +1766,7 @@ inline Json &Json::merge(const Json &x) {
     assert(_type == j_object || _type == j_null);
     assert(x._type == j_object || x._type == j_null);
     if (x._cjson) {
-	uniqueify_object();
+	uniqueify_object(false);
 	ObjectJson *oj = ojson(), *xoj = x.ojson();
 	const ObjectItem *xb = xoj->os_, *xe = xb + xoj->n_;
 	for (; xb != xe; ++xb)
@@ -1787,27 +1788,30 @@ inline Json &Json::merge(const Json_proxy_base<U> &x) {
 
 /** @brief Return the @a x th array element.
 
-    Returns a null Json if !is_array() || x >= size(). */
+    If @a x is out of range of this array, returns a null Json. If this is an
+    object Json, then returns get(String(@a x)). If this is neither an object
+    nor an array, returns a null Json. */
 inline const Json &Json::get(size_type x) const {
     ArrayJson *aj;
     if (_type == j_array && (aj = ajson())
 	&& JsonVector::size_type(x) < aj->values.size())
 	return aj->values[x];
     else
-	return make_null();
+	return hard_get(x);
 }
 
 /** @brief Return a reference to the @a x th array element.
-    @pre is_array() || is_null()
 
-    A null Json is promoted to an array. The array is extended if @a x is out
-    of range. */
+    If this Json is an object, returns get_insert(String(x)). Otherwise this
+    Json is first converted to an array; non-arrays are converted to empty
+    arrays. The array is extended if @a x is out of range. */
 inline Json &Json::get_insert(size_type x) {
-    uniqueify_array();
-    ArrayJson *aj = ajson();
-    if (JsonVector::size_type(x) >= aj->values.size())
-	aj->values.resize(x + 1);
-    return aj->values[x];
+    ArrayJson *aj;
+    if (_type == j_array && (aj = ajson()) && aj->refcount == 1
+	&& JsonVector::size_type(x) < aj->values.size())
+	return aj->values[x];
+    else
+	return hard_get_insert(x);
 }
 
 /** @brief Return the @a x th element in an array Json.
@@ -1830,17 +1834,20 @@ inline Json &Json::at_insert(size_type x) {
 
 /** @brief Return the @a x th array element.
 
-    Returns a null Json if !is_array() || x >= size(). */
+    If @a x is out of range of this array, returns a null Json. If this is an
+    object Json, then returns get(String(@a x)). If this is neither an object
+    nor an array, returns a null Json. */
 inline const Json &Json::operator[](size_type x) const {
     return get(x);
 }
 
 /** @brief Return a proxy reference to the @a x th array element.
-    @pre is_array() || is_null()
 
-    Returns the current @a x th element if it exists. Otherwise, returns a
-    proxy that acts like a null Json. If this proxy is assigned, the array is
-    extended as necessary to contain the new value. */
+    If this Json is an object, returns operator[](String(x)). If this Json is
+    an array and @a x is in range, returns that element. Otherwise, returns a
+    proxy that acts like a null Json. If this proxy is assigned, this Json is
+    converted to an array, and then extended as necessary to contain the new
+    value. */
 inline Json_array_proxy<Json> Json::operator[](size_type x) {
     return Json_array_proxy<Json>(*this, x);
 }
@@ -1856,7 +1863,7 @@ inline const Json &Json::back() const {
     @pre is_array() && !empty() */
 inline Json &Json::back() {
     assert(_type == j_array && _cjson && ajson()->values.size() > 0);
-    uniqueify_array();
+    uniqueify_array(false);
     return ajson()->values.back();
 }
 
@@ -1866,7 +1873,7 @@ inline Json &Json::back() {
 
     A null Json is promoted to an array. */
 template <typename T> inline Json &Json::push_back(T x) {
-    uniqueify_array();
+    uniqueify_array(false);
     ajson()->values.push_back(Json(x));
     return *this;
 }
@@ -1874,7 +1881,7 @@ template <typename T> inline Json &Json::push_back(T x) {
 #if HAVE_CXX_RVALUE_REFERENCES
 /** @overload */
 inline Json &Json::push_back(Json &&x) {
-    uniqueify_array();
+    uniqueify_array(false);
     ajson()->values.push_back(click_move(x));
     return *this;
 }
@@ -1884,7 +1891,7 @@ inline Json &Json::push_back(Json &&x) {
     @pre is_array() && !empty() */
 void Json::pop_back() {
     assert(_type == j_array && _cjson && ajson()->values.size() > 0);
-    uniqueify_array();
+    uniqueify_array(false);
     ajson()->values.pop_back();
 }
 

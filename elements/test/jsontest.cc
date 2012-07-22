@@ -106,7 +106,7 @@ JsonTest::initialize(ErrorHandler *errh)
 	Json jcopy = j;
 	CHECK(j.size() == 5);
 	int count = 0;
-	for (Json::object_iterator it = jcopy.begin(); it != jcopy.end(); ++it) {
+	for (Json::iterator it = jcopy.begin(); it != jcopy.end(); ++it) {
 	    it->second = Json();
 	    ++count;
 	}
@@ -181,8 +181,17 @@ JsonTest::initialize(ErrorHandler *errh)
 	CHECK(j.unparse() == "{\"a\":true}");
 	j["foo"]["bar"] = true;
 	CHECK(j.unparse() == "{\"a\":true,\"foo\":{\"bar\":true}}");
-	//j["a"]["2"] = false;
-	//CHECK(j.unparse() == "{\"a\":{\"2\":false},\"foo\":{\"bar\":true}}");
+	j["a"]["2"] = false;
+	CHECK(j.unparse() == "{\"a\":{\"2\":false},\"foo\":{\"bar\":true}}");
+	j[3] = true;
+	CHECK(j.unparse() == "{\"a\":{\"2\":false},\"foo\":{\"bar\":true},\"3\":true}");
+	CHECK(j[3] == Json(true));
+	j = Json::parse("[1,2,3,4]");
+	CHECK(j["2"] == Json(3));
+	CHECK(j.unparse() == "[1,2,3,4]");
+	j["a"] = true;
+	CHECK(j.unparse() == "{\"0\":1,\"1\":2,\"2\":3,\"3\":4,\"a\":true}");
+	CHECK(j["2"] == Json(3));
     }
 
     errh->message("All tests pass!");
