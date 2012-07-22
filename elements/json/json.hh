@@ -33,8 +33,8 @@ class Json { public:
     class array_iterator;
     class const_array_iterator;
 
-    typedef object_iterator iterator;
-    typedef const_object_iterator const_iterator;
+    class iterator;
+    class const_iterator;
 
     typedef bool (Json::*unspecified_bool_type)() const;
     struct unparse_manipulator;
@@ -634,6 +634,119 @@ inline Json::const_array_iterator operator-(Json::const_array_iterator a, Json::
 inline Json::const_array_iterator::difference_type operator-(const Json::const_array_iterator &a, const Json::const_array_iterator &b) {
     assert(a.j_ == b.j_);
     return a.i_ - b.i_;
+}
+
+class Json::const_iterator { public:
+    typedef Pair<const String, Json &> value_type;
+    typedef const value_type *pointer_type;
+    typedef const value_type &reference_type;
+#if CLICK_USERLEVEL
+    typedef std::forward_iterator_tag iterator_category;
+#endif
+
+    const_iterator()
+	: value_(String(), *(Json *) 0) {
+    }
+    typedef bool (const_iterator::*unspecified_bool_type)() const;
+    operator unspecified_bool_type() const {
+	return live() ? &const_iterator::live : 0;
+    }
+    bool live() const {
+	return i_ >= 0;
+    }
+    const value_type &operator*() const {
+	return value_;
+    }
+    const value_type *operator->() const {
+	return &(**this);
+    }
+    const String &key() const {
+	return (**this).first;
+    }
+    const Json &value() const {
+	return (**this).second;
+    }
+    void operator++() {
+	++i_;
+	fix();
+    }
+    void operator++(int) {
+	++(*this);
+    }
+  private:
+    const Json *j_;
+    int i_;
+    value_type value_;
+    const_iterator(const Json *j, int i)
+	: j_(j), i_(i), value_(String(), *(Json *) 0) {
+	if (i_ >= 0)
+	    fix();
+    }
+    void fix() {
+	if (j_->_type == j_object) {
+	    ObjectJson *oj = j_->ojson();
+	retry:
+	    if (!oj || i_ >= oj->n_)
+		i_ = -1;
+	    else if (oj->item(i_).next_ == -2) {
+		++i_;
+		goto retry;
+	    } else {
+		value_.~Pair();
+		new((void *) &value_) value_type(oj->item(i_).v_.first,
+						 oj->item(i_).v_.second);
+	    }
+	} else {
+	    ArrayJson *aj = j_->ajson();
+	    if (!aj || i_ >= aj->values.size())
+		i_ = -1;
+	    else {
+		value_.~Pair();
+		new((void *) &value_) value_type(String(i_), aj->values[i_]);
+	    }
+	}
+    }
+    friend class Json;
+    friend bool operator==(const const_iterator &, const const_iterator &);
+};
+
+class Json::iterator : public const_iterator { public:
+    typedef value_type *pointer_type;
+    typedef value_type &reference_type;
+
+    iterator() {
+    }
+    value_type &operator*() const {
+	if (j_->_cjson->refcount > 1)
+	    uniqueify();
+	return const_cast<value_type &>(const_iterator::operator*());
+    }
+    value_type *operator->() const {
+	return &(**this);
+    }
+    Json &value() const {
+	return (**this).second;
+    }
+  private:
+    iterator(Json *j, int i)
+	: const_iterator(j, i) {
+    }
+    void uniqueify() const {
+	if (j_->_type == j_object)
+	    const_cast<Json *>(j_)->uniqueify_object(false);
+	else
+	    const_cast<Json *>(j_)->uniqueify_array(false);
+	const_cast<iterator *>(this)->fix();
+    }
+    friend class Json;
+};
+
+inline bool operator==(const Json::const_iterator &a, const Json::const_iterator &b) {
+    return a.j_ == b.j_ && a.i_ == b.i_;
+}
+
+inline bool operator!=(const Json::const_iterator &a, const Json::const_iterator &b) {
+    return !(a == b);
 }
 
 
@@ -1954,21 +2067,20 @@ inline Json::array_iterator Json::aend() {
     return array_iterator(this, aj ? aj->values.size() : 0);
 }
 
-
 inline Json::const_iterator Json::cbegin() const {
-    return cobegin();
+    return const_iterator(this, 0);
 }
 
 inline Json::const_iterator Json::cend() const {
-    return coend();
+    return const_iterator(this, -1);
 }
 
 inline Json::iterator Json::begin() {
-    return obegin();
+    return iterator(this, 0);
 }
 
 inline Json::iterator Json::end() {
-    return oend();
+    return iterator(this, -1);
 }
 
 inline Json::const_iterator Json::begin() const {
