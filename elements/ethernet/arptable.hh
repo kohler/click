@@ -146,6 +146,7 @@ class ARPTable : public Element { public:
 	ARPEntry *_hashnext;
 	EtherAddress _eth;
 	bool _known;
+	uint8_t _num_polls_since_reply;
 	click_jiffies_t _live_at_j;
 	click_jiffies_t _polled_at_j;
 	Packet *_head;
@@ -165,7 +166,7 @@ class ARPTable : public Element { public:
 	}
 	ARPEntry(IPAddress ip)
 	    : _ip(ip), _hashnext(), _eth(EtherAddress::make_broadcast()),
-	      _known(false), _head(), _tail() {
+	      _known(false), _num_polls_since_reply(0), _head(), _tail() {
 	}
     };
 
