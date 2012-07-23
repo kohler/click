@@ -255,13 +255,8 @@ ARPTable::append_query(IPAddress ip, Packet *p)
     p->set_next(0);
 
     int r;
-    click_jiffies_t thresh_j = ae->_polled_at_j + CLICK_HZ / 10;
-    if (ae->_num_polls_since_reply > 5)
-	thresh_j = ae->_polled_at_j + CLICK_HZ * 2;
-    if (!click_jiffies_less(now, thresh_j)) {
-	ae->_polled_at_j = now;
-	if (ae->_num_polls_since_reply < 255)
-	    ++ae->_num_polls_since_reply;
+    if (ae->allow_poll(now)) {
+	ae->mark_poll(now);
 	r = 1;
     } else
 	r = 0;

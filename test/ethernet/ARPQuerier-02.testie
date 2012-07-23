@@ -29,6 +29,6 @@ Idle -> [1]arpq3;
 DriverManager(wait_stop 3, print c.count, print c2.count, print c3.count)
 
 %expect stdout
-{{6|7}}
-{{6|7}}
+{{9|10}}
+{{9|10}}
 {{2|3}}
