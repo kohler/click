@@ -194,6 +194,12 @@ JsonTest::initialize(ErrorHandler *errh)
 	CHECK(j["2"] == Json(3));
     }
 
+    {
+	Json j = Json::parse("{}");
+	j.set("foo", String::make_out_of_memory()).set(String::make_out_of_memory(), 2);
+	CHECK(j.unparse() == "{\"foo\":\"\360\237\222\243ENOMEM\360\237\222\243\",\"\360\237\222\243ENOMEM\360\237\222\243\":2}");
+    }
+
     errh->message("All tests pass!");
     return 0;
 }
