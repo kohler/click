@@ -402,9 +402,11 @@ ConfParseTest::initialize(ErrorHandler *errh)
     xx << xx;
     CHECK(strcmp(xx.c_str(), "abcdefghijklmnbcdefghijklmabcdefghijklmnbcdefghijklm") == 0);
     xx << String::make_out_of_memory();
-    CHECK(xx.out_of_memory());
+    CHECK(!xx.out_of_memory());
+    xx.assign_out_of_memory();
     xx.append("X", 1);
     CHECK(xx.out_of_memory());
+    CHECK(xx.take_string() == String::make_out_of_memory());
 
     // String hash codes
     {
@@ -492,6 +494,13 @@ ConfParseTest::initialize(ErrorHandler *errh)
 	  .complete() >= 0
 	  && b == false && b2 == true && i32 == 3
 	  && results.size() == 0);
+
+    {
+	CHECK(String(true) + " " + String(false) == "true false");
+	StringAccum sa;
+	sa << true << ' ' << false;
+	CHECK(sa.take_string() == "true false");
+    }
 
     errh->message("All tests pass!");
     return 0;

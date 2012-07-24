@@ -64,8 +64,9 @@ class String { public:
 
     static inline const String &make_empty();
     static inline String make_uninitialized(int len);
-    static inline String make_garbage(int len);
-    static String make_stable(const char *s, int len = -1);
+    static inline String make_garbage(int len) CLICK_DEPRECATED;
+    static inline String make_stable(const char *cstr);
+    static inline String make_stable(const char *s, int len);
     static inline String make_stable(const char *first, const char *last);
     static String make_numeric(int_large_t x, int base = 10, bool uppercase = true);
     static String make_numeric(uint_large_t x, int base = 10, bool uppercase = true);
@@ -137,11 +138,11 @@ class String { public:
     inline void append(const String &x);
     inline void append(const char *cstr);
     inline void append(const char *s, int len);
-    inline void append(const char *begin, const char *end);
+    inline void append(const char *first, const char *last);
     inline void append(char c);
     void append_fill(int c, int len);
     char *append_uninitialized(int len);
-    inline char *append_garbage(int len);
+    inline char *append_garbage(int len) CLICK_DEPRECATED;
 
     inline String &operator+=(const String &x);
     inline String &operator+=(const char *cstr);
@@ -166,6 +167,8 @@ class String { public:
     static inline const String &make_out_of_memory();
     inline bool out_of_memory() const;
     static inline const char *out_of_memory_data();
+    static inline int out_of_memory_length();
+    static inline const char *empty_data();
 
 #if HAVE_STRING_PROFILING
     static void profile_report(StringAccum &sa, int examples = 0);
@@ -174,6 +177,8 @@ class String { public:
     static inline const char *skip_utf8_char(const char *first, const char *last);
     static const unsigned char *skip_utf8_char(const unsigned char *first,
 					       const unsigned char *last);
+
+    static const char bool_data[11];
 
   private:
 
@@ -265,18 +270,21 @@ class String { public:
 	    delete_memo(_r.memo);
     }
 
-    void assign(const char *cstr, int len, bool need_deref);
+    void assign(const char *s, int len, bool need_deref);
     void assign_out_of_memory();
     void append(const char *s, int len, memo_t *memo);
+    static inline memo_t *absent_memo() {
+	return reinterpret_cast<memo_t *>(uintptr_t(1));
+    }
     static memo_t *create_memo(char *space, int dirty, int capacity);
     static void delete_memo(memo_t *memo);
 
     static const char null_data;
-    static const char oom_data;
-    static const char bool_data[11];
+    static const char oom_data[15];
     static const char int_data[20];
     static const rep_t null_string_rep;
     static const rep_t oom_string_rep;
+    enum { oom_len = 14 };
 
     static String make_claim(char *, int, int); // claim memory
 
@@ -328,10 +336,7 @@ inline String::String(String &&x)
 /** @brief Construct a String containing the C string @a cstr.
     @param cstr a null-terminated C string
     @return A String containing the characters of @a cstr, up to but not
-    including the terminating null character.
-
-    If @a cstr equals String::out_of_memory_data(), constructs an
-    out-of-memory string. */
+    including the terminating null character. */
 inline String::String(const char *cstr) {
     assign(cstr, -1, false);
 }
@@ -341,10 +346,7 @@ inline String::String(const char *cstr) {
     @param s a string
     @param len number of characters to take from @a s.  If @a len @< 0,
     then takes @c strlen(@a s) characters.
-    @return A String containing @a len characters of @a s.
-
-    If @a s equals String::out_of_memory_data(), constructs an out-of-memory
-    string. */
+    @return A String containing @a len characters of @a s. */
 inline String::String(const char *s, int len) {
     assign(s, len, false);
 }
@@ -360,22 +362,22 @@ inline String::String(const unsigned char *s, int len) {
     @param last pointer one past last character in string (end iterator)
     @return A String containing the characters from @a first to @a last.
 
-    Constructs a null string if @a first @>= @a last.  If @a first equals
-    String::out_of_memory_data(), returns an out-of-memory string. */
+    Constructs an empty string if @a first @>= @a last. */
 inline String::String(const char *first, const char *last) {
-    assign(first, (last > first ? last - first : 0), false);
+    assign(first, (first < last ? last - first : 0), false);
 }
 
 /** @overload */
 inline String::String(const unsigned char *first, const unsigned char *last) {
     assign(reinterpret_cast<const char *>(first),
-	   (last > first ? last - first : 0), false);
+	   (first < last ? last - first : 0), false);
 }
 
 /** @brief Construct a String equal to "true" or "false" depending on the
     value of @a x. */
 inline String::String(bool x) {
-    assign_memo(bool_data + (x ? 0 : 5), x ? 4 : 5, 0);
+    // bool_data equals "false\0true\0"
+    assign_memo(bool_data + (-x & 6), 5 - x, 0);
 }
 
 /** @brief Construct a String containing the single character @a c. */
@@ -413,6 +415,30 @@ inline String String::make_garbage(int len) {
 }
 /** @endcond never */
 
+/** @brief Return a String that directly references the C string @a cstr.
+
+    The make_stable() functions are suitable for static constant strings
+    whose data is known to stay around forever, such as C string constants.
+
+    @warning The String implementation may access @a cstr's terminating null
+    character. */
+inline String String::make_stable(const char *cstr) {
+    return String(cstr, (cstr ? strlen(cstr) : 0), 0);
+}
+
+/** @brief Return a String that directly references the first @a len
+    characters of @a s.
+
+    If @a len @< 0, treats @a s as a null-terminated C string.
+
+    @warning The String implementation may access @a s[@a len], which
+    should remain constant even though it's not part of the String. */
+inline String String::make_stable(const char *s, int len) {
+    if (len < 0)
+	len = (s ? strlen(s) : 0);
+    return String(s, len, 0);
+}
+
 /** @brief Return a String that directly references the character data in
     [@a first, @a last).
     @param first pointer to the first character in the character data
@@ -426,10 +452,7 @@ inline String String::make_garbage(int len) {
     @warning The String implementation may access *@a last, which should
     remain constant even though it's not part of the String. */
 inline String String::make_stable(const char *first, const char *last) {
-    if (first < last)
-	return String::make_stable(first, last - first);
-    else
-	return String();
+    return String(first, (first < last ? last - first : 0), 0);
 }
 
 /** @brief Return a pointer to the string's data.
@@ -517,7 +540,7 @@ inline String::const_iterator String::end() const {
 
 /** @brief Test if the string is nonempty. */
 inline String::operator unspecified_bool_type() const {
-    return _r.length != 0 ? &String::length : 0;
+    return (_r.length != 0 ? &String::length : 0);
 }
 
 /** @brief Test if the string is empty. */
@@ -574,7 +597,7 @@ inline uint32_t String::hashcode(const unsigned char *first,
 
     @invariant  If s1 == s2, then s1.hashcode() == s2.hashcode(). */
 inline uint32_t String::hashcode() const {
-    return length() ? hashcode(begin(), end()) : 0;
+    return (length() ? hashcode(begin(), end()) : 0);
 }
 
 /** @brief Test if this string equals @a x. */
@@ -598,14 +621,14 @@ inline int String::compare(const String &a, const String &b) {
     Same as String::compare(*this, @a x).
     @sa String::compare(const String &a, const String &b) */
 inline int String::compare(const String &x) const {
-    return compare(x._r.data, x._r.length);
+    return compare(x.data(), x.length());
 }
 
 /** @brief Test if this string begins with prefix @a x.
 
     Same as String::starts_with(@a x.data(), @a x.length()). */
 inline bool String::starts_with(const String &x) const {
-    return starts_with(x._r.data, x._r.length);
+    return starts_with(x.data(), x.length());
 }
 
 /** @brief Assign this string to @a x. */
@@ -627,7 +650,7 @@ inline String &String::operator=(String &&x) {
 
 /** @brief Assign this string to the C string @a cstr. */
 inline String &String::operator=(const char *cstr) {
-    assign(cstr, -1, true);
+    assign(cstr, strlen(cstr), true);
     return *this;
 }
 
@@ -646,7 +669,7 @@ inline void String::append(const String &x) {
 /** @brief Append the null-terminated C string @a cstr to this string.
     @param cstr data to append */
 inline void String::append(const char *cstr) {
-    append(cstr, -1, 0);
+    append(cstr, strlen(cstr), absent_memo());
 }
 
 /** @brief Append the first @a len characters of @a s to this string.
@@ -654,7 +677,7 @@ inline void String::append(const char *cstr) {
     @param len length of data
     @pre @a len @>= 0 */
 inline void String::append(const char *s, int len) {
-    append(s, len, 0);
+    append(s, len, absent_memo());
 }
 
 /** @brief Appends the data from @a first to @a last to this string.
@@ -667,7 +690,7 @@ inline void String::append(const char *first, const char *last) {
 
 /** @brief Append the character @a c to this string. */
 inline void String::append(char c) {
-    append(&c, 1, 0);
+    append(&c, 1, absent_memo());
 }
 
 /** @cond never */
@@ -679,7 +702,7 @@ inline char *String::append_garbage(int len) {
 /** @brief Append @a x to this string.
     @return *this */
 inline String &String::operator+=(const String &x) {
-    append(x._r.data, x._r.length, x._r.memo);
+    append(x.data(), x.length(), x._r.memo);
     return *this;
 }
 
@@ -716,20 +739,30 @@ inline String String::compact() const {
 
 /** @brief Test if this is an out-of-memory string. */
 inline bool String::out_of_memory() const {
-    return _r.data == &oom_data;
+    return unlikely(data() == oom_data);
 }
 
-/** @brief Return a const reference to an out-of-memory String. */
+/** @brief Return a const reference to a canonical out-of-memory String. */
 inline const String &String::make_out_of_memory() {
     return reinterpret_cast<const String &>(oom_string_rep);
 }
 
-/** @brief Return the data pointer used for out-of-memory strings.
+/** @brief Return the data pointer used for out-of-memory strings. */
+inline const char *String::out_of_memory_data() {
+    return oom_data;
+}
+
+/** @brief Return the length of canonical out-of-memory strings. */
+inline int String::out_of_memory_length() {
+    return oom_len;
+}
+
+/** @brief Return the data pointer used for canonical empty strings.
 
     The returned value may be dereferenced; it points to a null
     character. */
-inline const char *String::out_of_memory_data() {
-    return &oom_data;
+inline const char *String::empty_data() {
+    return &null_data;
 }
 
 /** @brief Return a pointer to the next character in UTF-8 encoding.
@@ -789,12 +822,12 @@ inline bool operator==(const String &a, const String &b) {
 
 /** @relates String */
 inline bool operator==(const char *a, const String &b) {
-    return b.equals(a, -1);
+    return b.equals(a, strlen(a));
 }
 
 /** @relates String */
 inline bool operator==(const String &a, const char *b) {
-    return a.equals(b, -1);
+    return a.equals(b, strlen(b));
 }
 
 /** @relates String
@@ -808,12 +841,12 @@ inline bool operator!=(const String &a, const String &b) {
 
 /** @relates String */
 inline bool operator!=(const char *a, const String &b) {
-    return !b.equals(a, -1);
+    return !b.equals(a, strlen(a));
 }
 
 /** @relates String */
 inline bool operator!=(const String &a, const char *b) {
-    return !a.equals(b, -1);
+    return !a.equals(b, strlen(b));
 }
 
 /** @relates String

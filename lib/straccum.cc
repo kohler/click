@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2007 Regents of the University of California
  * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 1999-2012 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -48,37 +49,34 @@ CLICK_DECLS
  *
  * When there is not enough memory to add requested characters to a
  * StringAccum object, the object becomes a special "out-of-memory"
- * StringAccum.  Out-of-memory objects are contagious: the result of any
+ * StringAccum. Out-of-memory objects are contagious: the result of any
  * concatenation operation involving an out-of-memory StringAccum is another
- * out-of-memory StringAccum.  Appending an out-of-memory String with "sa <<
- * s" makes "sa" out-of-memory.  (However, other usually-equivalent calls,
- * such as "sa.append(s.begin(), s.end())", <em>do not</em> make "sa"
- * out-of-memory.)  Calling take_string() on an out-of-memory StringAccum
- * returns an out-of-memory String.
+ * out-of-memory StringAccum. Calling take_string() on an out-of-memory
+ * StringAccum returns an out-of-memory String.
  *
- * Out-of-memory StringAccum objects have length zero.
+ * Note that appending an out-of-memory String to a StringAccum <em>does
+ * not</em> make the StringAccum out-of-memory.
  */
 
-
+/** @brief Change this StringAccum into an out-of-memory StringAccum. */
 void
 StringAccum::assign_out_of_memory()
 {
-    assert(_cap >= 0);
-    if (_cap > 0)
-	CLICK_LFREE(_s - MEMO_SPACE, _cap + MEMO_SPACE);
-    _s = reinterpret_cast<unsigned char *>(const_cast<char *>(String::out_of_memory_data()));
-    _cap = -1;
-    _len = 0;
+    if (r_.cap > 0)
+	CLICK_LFREE(r_.s - MEMO_SPACE, r_.cap + MEMO_SPACE);
+    r_.s = reinterpret_cast<unsigned char *>(const_cast<char *>(String::empty_data()));
+    r_.cap = -1;
+    r_.len = 0;
 }
 
 char *
 StringAccum::grow(int want)
 {
     // can't append to out-of-memory strings
-    if (_cap < 0)
+    if (r_.cap < 0)
 	return 0;
 
-    int ncap = (_cap ? (_cap + MEMO_SPACE) * 2 : 128) - MEMO_SPACE;
+    int ncap = (r_.cap ? (r_.cap + MEMO_SPACE) * 2 : 128) - MEMO_SPACE;
     while (ncap <= want)
 	ncap = (ncap + MEMO_SPACE) * 2 - MEMO_SPACE;
 
@@ -89,23 +87,26 @@ StringAccum::grow(int want)
     }
     n += MEMO_SPACE;
 
-    if (_s) {
-	memcpy(n, _s, _len);
-	CLICK_LFREE(_s - MEMO_SPACE, _cap + MEMO_SPACE);
+    if (r_.cap > 0) {
+	memcpy(n, r_.s, r_.len);
+	CLICK_LFREE(r_.s - MEMO_SPACE, r_.cap + MEMO_SPACE);
     }
-    _s = n;
-    _cap = ncap;
-    return reinterpret_cast<char *>(_s + _len);
+    r_.s = n;
+    r_.cap = ncap;
+    return reinterpret_cast<char *>(r_.s + r_.len);
 }
 
+/** @brief Set the StringAccum's length to @a len.
+    @pre @a len >= 0
+    @return 0 on success, -ENOMEM on failure */
 int
 StringAccum::resize(int len)
 {
     assert(len >= 0);
-    if (len > _cap && !grow(len))
+    if (len > r_.cap && !grow(len))
 	return -ENOMEM;
     else {
-	_len = len;
+	r_.len = len;
 	return 0;
     }
 }
@@ -113,21 +114,27 @@ StringAccum::resize(int len)
 char *
 StringAccum::hard_extend(int nadjust, int nreserve)
 {
-    char *x = grow(_len + nadjust + nreserve);
+    char *x = grow(r_.len + nadjust + nreserve);
     if (x)
-	_len += nadjust;
+	r_.len += nadjust;
     return x;
 }
 
+/** @brief Null-terminate this StringAccum and return its data.
 
+    Note that the null character does not contribute to the StringAccum's
+    length(), and later append() and similar operations can overwrite it. If
+    appending the null character fails, the StringAccum becomes
+    out-of-memory and the returned value is a null string. */
 const char *
 StringAccum::c_str()
 {
-    if (_len < _cap || grow(_len))
-	_s[_len] = '\0';
-    return reinterpret_cast<char *>(_s);
+    if (r_.len < r_.cap || grow(r_.len))
+	r_.s[r_.len] = '\0';
+    return reinterpret_cast<char *>(r_.s);
 }
 
+/** @brief Append @a len copies of character @a c to the StringAccum. */
 void
 StringAccum::append_fill(int c, int len)
 {
@@ -140,30 +147,23 @@ StringAccum::hard_append(const char *s, int len)
 {
     // We must be careful about calls like "sa.append(sa.begin(), sa.end())";
     // a naive implementation might use sa's data after freeing it.
-    const char *my_s = reinterpret_cast<char *>(_s);
+    const char *my_s = reinterpret_cast<char *>(r_.s);
 
-    if (_len + len <= _cap) {
+    if (r_.len + len <= r_.cap) {
     success:
-	memcpy(_s + _len, s, len);
-	_len += len;
-    } else if (likely(s < my_s || s >= my_s + _cap)) {
-	if (grow(_len + len))
+	memcpy(r_.s + r_.len, s, len);
+	r_.len += len;
+    } else if (likely(s < my_s || s >= my_s + r_.cap)) {
+	if (grow(r_.len + len))
 	    goto success;
     } else {
-	unsigned char *old_s = _s;
-	int old_len = _len;
-	int old_cap = _cap;
-
-	_s = 0;
-	_len = 0;
-	_cap = 0;
-
-	if (char *new_s = extend(old_len + len)) {
-	    memcpy(new_s, old_s, old_len);
-	    memcpy(new_s + old_len, s, len);
+	rep_t old_r = r_;
+	r_ = rep_t();
+	if (char *new_s = extend(old_r.len + len)) {
+	    memcpy(new_s, old_r.s, old_r.len);
+	    memcpy(new_s + old_r.len, s, len);
 	}
-
-	CLICK_LFREE(old_s - MEMO_SPACE, old_cap + MEMO_SPACE);
+	CLICK_LFREE(old_r.s - MEMO_SPACE, old_r.cap + MEMO_SPACE);
     }
 }
 
@@ -190,21 +190,21 @@ StringAccum::append_utf8_hard(int ch)
     return true;
 }
 
-void
-StringAccum::append(const char *s)
-{
-    hard_append(s, strlen(s));
-}
+/** @brief Return a String object with this StringAccum's contents.
 
+    This operation donates the StringAccum's memory to the returned String.
+    After a call to take_string(), the StringAccum object becomes empty, and
+    any future append() operations may cause memory allocations. If the
+    StringAccum is out-of-memory, the returned String is also out-of-memory,
+    but the StringAccum's out-of-memory state is reset. */
 String
 StringAccum::take_string()
 {
     int len = length();
-    int cap = _cap;
-    char *str = reinterpret_cast<char *>(_s);
-    if (len > 0) {
-	_s = 0;
-	_len = _cap = 0;
+    int cap = r_.cap;
+    char *str = reinterpret_cast<char *>(r_.s);
+    if (len > 0 && cap > 0) {
+	r_ = rep_t();
 	return String::make_claim(str, len, cap);
     } else if (!out_of_memory())
 	return String();
@@ -214,15 +214,13 @@ StringAccum::take_string()
     }
 }
 
+/** @brief Swap this StringAccum's contents with @a x. */
 void
-StringAccum::swap(StringAccum &o)
+StringAccum::swap(StringAccum &x)
 {
-    unsigned char *os = o._s;
-    int olen = o._len, ocap = o._cap;
-    o._s = _s;
-    o._len = _len, o._cap = _cap;
-    _s = os;
-    _len = olen, _cap = ocap;
+    rep_t xr = x.r_;
+    x.r_ = r_;
+    r_ = xr;
 }
 
 /** @relates StringAccum
@@ -251,6 +249,7 @@ operator<<(StringAccum &sa, unsigned long u)
     return sa;
 }
 
+/** @overload */
 void
 StringAccum::append_numeric(String::uint_large_t num, int base, bool uppercase)
 {
@@ -305,6 +304,10 @@ StringAccum::append_numeric(String::uint_large_t num, int base, bool uppercase)
     append(trav, buf + 256);
 }
 
+/** @brief Append string representation of @a x to this StringAccum.
+    @param x number to append
+    @param base numeric base: must be 8, 10, or 16
+    @param uppercase true means use uppercase letters in base 16 */
 void
 StringAccum::append_numeric(String::int_large_t num, int base, bool uppercase)
 {
@@ -343,6 +346,18 @@ operator<<(StringAccum &sa, void *ptr)
     return sa;
 }
 
+/** @brief Append result of snprintf() to this StringAccum.
+    @param n maximum number of characters to print
+    @param format format argument to snprintf()
+
+    The terminating null character is not appended to the string.
+
+    @note The safe vsnprintf() variant is called if it exists. It does in
+    the Linux kernel, and on modern Unix variants. However, if it does not
+    exist on your machine, then this function is actually unsafe, and you
+    should make sure that the printf() invocation represented by your
+    arguments will never write more than @a n characters, not including the
+    terminating null. */
 StringAccum &
 StringAccum::snprintf(int n, const char *format, ...)
 {

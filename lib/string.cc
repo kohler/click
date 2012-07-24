@@ -42,25 +42,33 @@ CLICK_DECLS
  * <h3>Out-of-memory strings</h3>
  *
  * When there is not enough memory to create a particular string, a special
- * "out-of-memory" string is returned instead.  Out-of-memory strings are
+ * "out-of-memory" string is returned instead. Out-of-memory strings are
  * contagious: the result of any concatenation operation involving an
- * out-of-memory string is another out-of-memory string.  Thus, the final
+ * out-of-memory string is another out-of-memory string. Thus, the final
  * result of a series of String operations will be an out-of-memory string,
  * even if the out-of-memory condition occurs in the middle.
  *
- * Out-of-memory strings have zero characters, but they aren't equal to other
- * empty strings.  If @a s is a normal String (even an empty string), and @a
- * oom is an out-of-memory string, then @a s @< @a oom.
+ * The canonical out-of-memory string is 14 bytes long, and equals the UTF-8
+ * encoding of "\U0001F4A3ENOMEM\U0001F4A3" (that is, U+1F4A3 BOMB +
+ * "ENOMEM" + U+1F4A3 BOMB). This sequence is unlikely to show up in normal
+ * text, compares high relative to most other textual strings, and is valid
+ * UTF-8.
  *
- * All out-of-memory strings are equal and share the same data(), which is
- * different from the data() of any other string.  See
- * String::out_of_memory_data().  The String::make_out_of_memory() function
- * returns an out-of-memory string.
+ * All canonical out-of-memory strings are equal and share the same data(),
+ * which is different from the data() of any other string. See
+ * String::out_of_memory_data(). The String::make_out_of_memory() function
+ * returns a canonical out-of-memory string.
+ *
+ * Other strings may also be out-of-memory strings. For example,
+ * String::make_stable(String::out_of_memory_data()) ==
+ * String::make_out_of_memory(), and some (but not all) substrings of
+ * out-of-memory strings are also out-of-memory strings.
  */
 
 const char String::null_data = '\0';
-const char String::oom_data = '\0';
-const char String::bool_data[] = "true\0false";
+// oom_data is the UTF-8 encoding of U+1F4A3 BOMB + "ENOMEM" + U+1F4A3 BOMB
+const char String::oom_data[] = "\360\237\222\243ENOMEM\360\237\222\243";
+const char String::bool_data[] = "false\0true";
 const char String::int_data[] = "0\0001\0002\0003\0004\0005\0006\0007\0008\0009";
 
 #if HAVE_STRING_PROFILING > 1
@@ -73,7 +81,7 @@ const String::rep_t String::null_string_rep = {
     &null_data, 0, 0
 };
 const String::rep_t String::oom_string_rep = {
-    &oom_data, 0, 0
+    oom_data, oom_len, 0
 };
 
 #if HAVE_STRING_PROFILING
@@ -308,27 +316,10 @@ String::make_claim(char *str, int len, int capacity)
     return String(str, len, new_memo);
 }
 
-/** @brief Return a String that directly references the first @a len
- * characters of @a s.
- *
- * This function is suitable for static constant strings whose data is
- * known to stay around forever, such as C string constants.  If @a len @<
- * 0, treats @a s as a null-terminated C string.
- *
- * @warning The String implementation may access @a s[@a len], which
- * should remain constant even though it's not part of the String. */
-String
-String::make_stable(const char *s, int len)
-{
-    if (len < 0)
-	len = (s ? strlen(s) : 0);
-    return String(s, len, 0);
-}
-
 /** @brief Create and return a string representation of @a x.
- * @param x number
- * @param base base; must be 8, 10, or 16, defaults to 10
- * @param uppercase if true, then use uppercase letters in base 16 */
+    @param x number
+    @param base base; must be 8, 10, or 16, defaults to 10
+    @param uppercase if true, then use uppercase letters in base 16 */
 String
 String::make_numeric(int_large_t num, int base, bool uppercase)
 {
@@ -351,9 +342,7 @@ String::assign_out_of_memory()
 {
     if (_r.memo)
 	deref();
-    _r.memo = 0;
-    _r.data = &oom_data;
-    _r.length = 0;
+    _r = oom_string_rep;
 }
 
 void
@@ -380,7 +369,7 @@ String::assign(const char *str, int len, bool need_deref)
 
     if (len == 0) {
 	_r.memo = 0;
-	_r.data = (str == &oom_data ? str : &null_data);
+	_r.data = &null_data;
 
     } else {
 	// Make the memo a multiple of 16 characters and bigger than 'len'.
@@ -400,13 +389,13 @@ String::assign(const char *str, int len, bool need_deref)
 /** @brief Append @a len unknown characters to this string.
  * @return Modifiable pointer to the appended characters.
  *
- * The caller may safely modify the returned memory.  Null is returned if
+ * The caller may safely modify the returned memory. Null is returned if
  * the string becomes out-of-memory. */
 char *
 String::append_uninitialized(int len)
 {
     // Appending anything to "out of memory" leaves it as "out of memory"
-    if (len <= 0 || _r.data == &oom_data)
+    if (len <= 0 || out_of_memory())
 	return 0;
 
     // If we can, append into unused space. First, we check that there's
@@ -472,13 +461,13 @@ String::append(const char *s, int len, memo_t *memo)
     } else if (len < 0)
 	len = strlen(s);
 
-    if (s == &oom_data)
+    if (unlikely(len == 0) || out_of_memory())
+	/* do nothing */;
+    else if (unlikely(s == out_of_memory_data()) && !memo)
 	// Appending "out of memory" to a regular string makes it "out of
 	// memory"
 	assign_out_of_memory();
-    else if (unlikely(len == 0))
-	/* do nothing */;
-    else if (unlikely(_r.length == 0 && memo && !out_of_memory())) {
+    else if (_r.length == 0 && reinterpret_cast<uintptr_t>(memo) > 1) {
 	deref();
 	assign_memo(s, len, memo);
     } else if (likely(!(_r.memo
@@ -503,7 +492,7 @@ String::append_fill(int c, int len)
 }
 
 /** @brief Ensure the string's data is unshared and return a mutable
- * pointer to it. */
+    pointer to it. */
 char *
 String::mutable_data()
 {
@@ -523,30 +512,30 @@ String::mutable_data()
 }
 
 /** @brief Null-terminate the string and return a mutable pointer to its
- * data.
- * @sa String::c_str */
+    data.
+    @sa String::c_str */
 char *
 String::mutable_c_str()
 {
-  (void) mutable_data();
-  (void) c_str();
-  return const_cast<char *>(_r.data);
+    (void) mutable_data();
+    (void) c_str();
+    return const_cast<char *>(_r.data);
 }
 
 /** @brief Return a substring of this string, consisting of the @a len
- * characters starting at index @a pos.
- * @param pos substring's first position relative to the string
- * @param len length of substring
- *
- * If @a pos is negative, starts that far from the end of the string.  If
- * @a len is negative, leaves that many characters off the end of the
- * string.  If @a pos and @a len specify a substring that is partly
- * outside the string, only the part within the string is returned.  If
- * the substring is beyond either end of the string, returns an empty
- * string (but this should be considered a programming error; a future
- * version may generate a warning for this case).
- *
- * @note String::substring() is intended to behave like Perl's substr(). */
+    characters starting at index @a pos.
+    @param pos substring's first position relative to the string
+    @param len length of substring
+
+    If @a pos is negative, starts that far from the end of the string. If @a
+    len is negative, leaves that many characters off the end of the string.
+    If @a pos and @a len specify a substring that is partly outside the
+    string, only the part within the string is returned. If the substring is
+    beyond either end of the string, returns an empty string (but this
+    should be considered a programming error; a future version may generate
+    a warning for this case).
+
+    @note String::substring() is intended to behave like Perl's substr(). */
 String
 String::substring(int pos, int len) const
 {
@@ -646,16 +635,17 @@ hard_lower(const String &s, int pos)
 }
 
 /** @brief Return a lowercased version of this string.
- *
- * Translates the ASCII characters 'A' through 'Z' into their lowercase
- * equivalents. */
+
+    Translates the ASCII characters 'A' through 'Z' into their lowercase
+    equivalents. */
 String
 String::lower() const
 {
     // avoid copies
-    for (int i = 0; i < _r.length; i++)
-	if (_r.data[i] >= 'A' && _r.data[i] <= 'Z')
-	    return hard_lower(*this, i);
+    if (!out_of_memory())
+	for (int i = 0; i < _r.length; i++)
+	    if (_r.data[i] >= 'A' && _r.data[i] <= 'Z')
+		return hard_lower(*this, i);
     return *this;
 }
 
@@ -671,9 +661,9 @@ hard_upper(const String &s, int pos)
 }
 
 /** @brief Return an uppercased version of this string.
- *
- * Translates the ASCII characters 'a' through 'z' into their uppercase
- * equivalents. */
+
+    Translates the ASCII characters 'a' through 'z' into their uppercase
+    equivalents. */
 String
 String::upper() const
 {
@@ -703,24 +693,25 @@ hard_printable(const String &s, int pos)
 }
 
 /** @brief Return a "printable" version of this string.
- *
- * Translates control characters 0-31 into "control" sequences, such as
- * "^@" for the null character, and characters 127-255 into octal escape
- * sequences, such as "\377" for 255. */
+
+    Translates control characters 0-31 into "control" sequences, such as
+    "^@" for the null character, and characters 127-255 into octal escape
+    sequences, such as "\377" for 255. */
 String
 String::printable() const
 {
     // avoid copies
-    for (int i = 0; i < _r.length; i++)
-	if (_r.data[i] < 32 || _r.data[i] > 126)
-	    return hard_printable(*this, i);
+    if (!out_of_memory())
+	for (int i = 0; i < _r.length; i++)
+	    if (_r.data[i] < 32 || _r.data[i] > 126)
+		return hard_printable(*this, i);
     return *this;
 }
 
 /** @brief Return this string's contents encoded for JSON.
     @pre *this is encoded in UTF-8.
 
-    For instance, String("a\"").json_quote() == "a\\\"". Note that the
+    For instance, String("a\"").encode_json() == "a\\\"". Note that the
     double-quote characters that usually surround a JSON string are not
     included. */
 String
@@ -788,13 +779,12 @@ String::trim_space() const
     for (int i = _r.length - 1; i >= 0; i--)
 	if (!isspace((unsigned char) _r.data[i]))
 	    return substring(0, i + 1);
-    // return out-of-memory string if input is out-of-memory string
-    return (_r.length ? String() : *this);
+    return String();
 }
 
 /** @brief Return a hex-quoted version of the string.
- *
- * For example, the string "Abcd" would convert to "\<41626364>". */
+
+    For example, the string "Abcd" would convert to "\<41626364>". */
 String
 String::quoted_hex() const
 {
@@ -904,13 +894,13 @@ String::hashcode(const char *first, const char *last)
 }
 
 /** @brief Return true iff this string is equal to the data in @a s.
- * @param s string data to compare to
- * @param len length of @a s
- *
- * Same as String::compare(*this, String(s, len)) == 0.  If @a len @< 0,
- * then treats @a s as a null-terminated C string.
- *
- * @sa String::compare(const String &a, const String &b) */
+    @param s string data to compare to
+    @param len length of @a s
+
+    Same as String::compare(*this, String(s, len)) == 0. If @a len @< 0,
+    then treats @a s as a null-terminated C string.
+
+    @sa String::compare(const String &a, const String &b) */
 bool
 String::equals(const char *s, int len) const
 {
@@ -920,67 +910,44 @@ String::equals(const char *s, int len) const
     // strings compare unequal to other null strings, but equal to each other.
     if (len < 0)
 	len = strlen(s);
-    if (_r.length != len)
-	return false;
-    else if (_r.data == s)
-	return true;
-    else if (len == 0)
-	return (s != &oom_data && _r.data != &oom_data);
-    else
-	return memcmp(_r.data, s, len) == 0;
+    return length() == len && (data() == s || memcmp(data(), s, len) == 0);
 }
 
 /** @brief Return true iff this string begins with the data in @a s.
- * @param s string data to compare to
- * @param len length of @a s
- *
- * If @a len @< 0, then treats @a s as a null-terminated C string.
- *
- * @sa String::compare(const String &a, const String &b) */
+    @param s string data to compare to
+    @param len length of @a s
+
+    If @a len @< 0, then treats @a s as a null-terminated C string.
+
+    @sa String::compare(const String &a, const String &b) */
 bool
 String::starts_with(const char *s, int len) const
 {
     // See note on equals() re: "out-of-memory" strings.
     if (len < 0)
 	len = strlen(s);
-    if (_r.length < len)
-	return false;
-    else if (_r.data == s)
-	return true;
-    else if (len == 0)
-	return (s != &oom_data && _r.data != &oom_data);
-    else
-	return memcmp(_r.data, s, len) == 0;
+    return length() >= len && (data() == s || memcmp(data(), s, len) == 0);
 }
 
 /** @brief Compare this string with the data in @a s.
- * @param s string data to compare to
- * @param len length of @a s
- *
- * Same as String::compare(*this, String(s, len)).  If @a len @< 0, then
- * treats @a s as a null-terminated C string.
- *
- * @sa String::compare(const String &a, const String &b) */
+    @param s string data to compare to
+    @param len length of @a s
+
+    Same as String::compare(*this, String(s, len)).  If @a len @< 0, then
+    treats @a s as a null-terminated C string.
+
+    @sa String::compare(const String &a, const String &b) */
 int
 String::compare(const char *s, int len) const
 {
     if (len < 0)
 	len = strlen(s);
-    if (_r.data == s)
-	return _r.length - len;
-    else if (_r.data == &oom_data)
-	return 1;
-    else if (s == &oom_data)
-	return -1;
-    else if (_r.length == len)
-	return memcmp(_r.data, s, len);
-    else if (_r.length < len) {
-	int v = memcmp(_r.data, s, _r.length);
-	return (v ? v : -1);
-    } else {
-	int v = memcmp(_r.data, s, len);
-	return (v ? v : 1);
-    }
+    int lencmp = length() - len, cmp;
+    if (unlikely(data() == s))
+	cmp = 0;
+    else
+	cmp = memcmp(data(), s, lencmp < 0 ? length() : len);
+    return cmp ? cmp : lencmp;
 }
 
 /** @brief Return a pointer to the next character in UTF-8 encoding.
