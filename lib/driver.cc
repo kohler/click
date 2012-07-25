@@ -200,7 +200,7 @@ String
 click_compile_archive_file(const Vector<ArchiveElement> &archive,
 			   const ArchiveElement *ae,
 			   String package,
-			   const String &target, bool quiet,
+			   const String &target, int quiet,
 			   bool &tmpdir_populated, ErrorHandler *errh)
 {
     // create and populate temporary directory
@@ -243,8 +243,8 @@ click_compile_archive_file(const Vector<ArchiveElement> &archive,
     // prepare click-buildtool makepackage
     StringAccum compile_command;
     compile_command << *click_buildtool_prog << " makepackage "
-		    << (quiet ? "-q " : "") << "-C " << *tmpdir
-		    << " -t " << target;
+		    << (quiet > 0 ? "-q " : (quiet < 0 ? "-V " : ""))
+		    << "-C " << *tmpdir << " -t " << target;
 
     // check for compile flags
     const char *ss = ae->data.begin();
@@ -277,7 +277,7 @@ click_compile_archive_file(const Vector<ArchiveElement> &archive,
 
     // finish compile_command
     compile_command << ' ' << package << ' ' << filename << " 1>&2";
-    if (!quiet)
+    if (quiet <= 0)
 	errh->message("%s", compile_command.c_str());
     int compile_retval = system(compile_command.c_str());
     if (compile_retval == 127)

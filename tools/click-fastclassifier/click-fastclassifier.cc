@@ -81,7 +81,7 @@ static const Clp_Option options[] = {
 static const char *program_name;
 static String runclick_prog;
 static String click_buildtool_prog;
-static bool compile_quiet;
+static int compile_quiet;
 static bool verbose;
 
 void
@@ -480,7 +480,7 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
       cmd_sa << " -h '*." << interesting_handler_names[i] << "'";
     cmd_sa << " -q";
     if (verbose)
-      errh->message("Running command '%s' on configuration:\n%s", cmd_sa.c_str(), nr->configuration_string().c_str());
+      errh->message("Running command %<%s%> on configuration:\n%s", cmd_sa.c_str(), nr->configuration_string().c_str());
     handler_text = shell_command_output_string(cmd_sa.take_string(), nr->configuration_string(), errh);
   }
 
@@ -949,13 +949,20 @@ particular purpose.\n");
       compile_drivers |= 1 << Driver::USERLEVEL;
       break;
 
-     case QUIET_OPT:
-      compile_quiet = !clp->negated;
-      break;
+    case QUIET_OPT:
+	if (!clp->negated)
+	    compile_quiet = 1;
+	else if (compile_quiet == 1)
+	    compile_quiet = 0;
+	break;
 
-     case VERBOSE_OPT:
-      verbose = !clp->negated;
-      break;
+    case VERBOSE_OPT:
+	verbose = !clp->negated;
+	if (!clp->negated)
+	    compile_quiet = -1;
+	else if (compile_quiet == -1)
+	    compile_quiet = 0;
+	break;
 
      bad_option:
      case Clp_BadOption:

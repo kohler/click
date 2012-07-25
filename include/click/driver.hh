@@ -21,7 +21,7 @@ Router *click_read_router(String filename, bool is_expr, ErrorHandler * = 0, boo
 
 String click_compile_archive_file(const Vector<ArchiveElement> &ar,
 		const ArchiveElement *ae,
-		String package, const String &target, bool quiet,
+		String package, const String &target, int quiet,
 		bool &tmpdir_populated, ErrorHandler *errh);
 
 CLICK_ENDDECLS
@@ -34,7 +34,7 @@ void click_static_initialize();
 
 String click_compile_archive_file(const Vector<ArchiveElement> &archive,
 		const ArchiveElement *ae,
-		String package, const String &target, bool quiet,
+		String package, const String &target, int quiet,
 		bool &tmpdir_populated, ErrorHandler *errh);
 
 CLICK_ENDDECLS
