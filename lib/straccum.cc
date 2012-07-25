@@ -167,6 +167,12 @@ StringAccum::hard_append(const char *s, int len)
     }
 }
 
+void
+StringAccum::hard_append_cstr(const char *cstr)
+{
+    append(cstr, strlen(cstr));
+}
+
 bool
 StringAccum::append_utf8_hard(int ch)
 {
@@ -349,6 +355,7 @@ operator<<(StringAccum &sa, void *ptr)
 /** @brief Append result of snprintf() to this StringAccum.
     @param n maximum number of characters to print
     @param format format argument to snprintf()
+    @return *this
 
     The terminating null character is not appended to the string.
 

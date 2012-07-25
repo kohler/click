@@ -309,6 +309,14 @@ String::String(double x)
 #endif
 
 String
+String::hard_make_stable(const char *s, int len)
+{
+    if (len < 0)
+	len = strlen(s);
+    return String(s, len, 0);
+}
+
+String
 String::make_claim(char *str, int len, int capacity)
 {
     assert(str && len > 0 && capacity >= len);

@@ -273,6 +273,7 @@ class String { public:
     void assign(const char *s, int len, bool need_deref);
     void assign_out_of_memory();
     void append(const char *s, int len, memo_t *memo);
+    static String hard_make_stable(const char *s, int len);
     static inline memo_t *absent_memo() {
 	return reinterpret_cast<memo_t *>(uintptr_t(1));
     }
@@ -338,7 +339,10 @@ inline String::String(String &&x)
     @return A String containing the characters of @a cstr, up to but not
     including the terminating null character. */
 inline String::String(const char *cstr) {
-    assign(cstr, -1, false);
+    if (__builtin_constant_p(strlen(cstr)))
+	assign(cstr, strlen(cstr), false);
+    else
+	assign(cstr, -1, false);
 }
 
 /** @brief Construct a String containing the first @a len characters of
@@ -423,7 +427,10 @@ inline String String::make_garbage(int len) {
     @warning The String implementation may access @a cstr's terminating null
     character. */
 inline String String::make_stable(const char *cstr) {
-    return String(cstr, (cstr ? strlen(cstr) : 0), 0);
+    if (__builtin_constant_p(strlen(cstr)))
+	return String(cstr, strlen(cstr), 0);
+    else
+	return hard_make_stable(cstr, -1);
 }
 
 /** @brief Return a String that directly references the first @a len
@@ -434,9 +441,10 @@ inline String String::make_stable(const char *cstr) {
     @warning The String implementation may access @a s[@a len], which
     should remain constant even though it's not part of the String. */
 inline String String::make_stable(const char *s, int len) {
-    if (len < 0)
-	len = (s ? strlen(s) : 0);
-    return String(s, len, 0);
+    if (__builtin_constant_p(len) && len >= 0)
+	return String(s, len, 0);
+    else
+	return hard_make_stable(s, len);
 }
 
 /** @brief Return a String that directly references the character data in
@@ -650,7 +658,10 @@ inline String &String::operator=(String &&x) {
 
 /** @brief Assign this string to the C string @a cstr. */
 inline String &String::operator=(const char *cstr) {
-    assign(cstr, strlen(cstr), true);
+    if (__builtin_constant_p(strlen(cstr)))
+	assign(cstr, strlen(cstr), true);
+    else
+	assign(cstr, -1, true);
     return *this;
 }
 
@@ -669,7 +680,10 @@ inline void String::append(const String &x) {
 /** @brief Append the null-terminated C string @a cstr to this string.
     @param cstr data to append */
 inline void String::append(const char *cstr) {
-    append(cstr, strlen(cstr), absent_memo());
+    if (__builtin_constant_p(strlen(cstr)))
+	append(cstr, strlen(cstr), absent_memo());
+    else
+	append(cstr, -1, absent_memo());
 }
 
 /** @brief Append the first @a len characters of @a s to this string.
@@ -822,12 +836,18 @@ inline bool operator==(const String &a, const String &b) {
 
 /** @relates String */
 inline bool operator==(const char *a, const String &b) {
-    return b.equals(a, strlen(a));
+    if (__builtin_constant_p(strlen(a)))
+	return b.equals(a, strlen(a));
+    else
+	return b.equals(a, -1);
 }
 
 /** @relates String */
 inline bool operator==(const String &a, const char *b) {
-    return a.equals(b, strlen(b));
+    if (__builtin_constant_p(strlen(b)))
+	return a.equals(b, strlen(b));
+    else
+	return a.equals(b, -1);
 }
 
 /** @relates String
@@ -836,17 +856,17 @@ inline bool operator==(const String &a, const char *b) {
     Returns true iff !(@a a == @a b).  At most one of the operands can be a
     null-terminated C string. */
 inline bool operator!=(const String &a, const String &b) {
-    return !a.equals(b.data(), b.length());
+    return !(a == b);
 }
 
 /** @relates String */
 inline bool operator!=(const char *a, const String &b) {
-    return !b.equals(a, strlen(a));
+    return !(a == b);
 }
 
 /** @relates String */
 inline bool operator!=(const String &a, const char *b) {
-    return !a.equals(b, strlen(b));
+    return !(a == b);
 }
 
 /** @relates String
