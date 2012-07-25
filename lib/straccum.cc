@@ -114,7 +114,11 @@ StringAccum::resize(int len)
 char *
 StringAccum::hard_extend(int nadjust, int nreserve)
 {
-    char *x = grow(r_.len + nadjust + nreserve);
+    char *x;
+    if (r_.len + nadjust + nreserve <= r_.cap)
+	x = reinterpret_cast<char *>(r_.s + r_.len);
+    else
+	x = grow(r_.len + nadjust + nreserve);
     if (x)
 	r_.len += nadjust;
     return x;

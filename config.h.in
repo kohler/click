@@ -19,6 +19,9 @@
 /* Define for Click memory allocation debugging. */
 #undef CLICK_DMALLOC
 
+/* Define to generate smaller object files. */
+#undef CLICK_OPTIMIZE_SIZE
+
 /* Version number of package */
 #undef CLICK_VERSION
 

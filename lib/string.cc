@@ -519,6 +519,25 @@ String::mutable_data()
     return const_cast<char *>(_r.data);
 }
 
+const char *
+String::hard_c_str() const
+{
+    // See also c_str().
+    // We may already have a '\0' in the right place.  If _memo has no
+    // capacity, then this is one of the special strings (null or
+    // stable). We are guaranteed, in these strings, that _data[_length]
+    // exists. Otherwise must check that _data[_length] exists.
+    const char *end_data = _r.data + _r.length;
+    if ((_r.memo && end_data >= _r.memo->real_data + _r.memo->dirty)
+	|| *end_data != '\0') {
+	if (char *x = const_cast<String *>(this)->append_uninitialized(1)) {
+	    *x = '\0';
+	    --_r.length;
+	}
+    }
+    return _r.data;
+}
+
 /** @brief Null-terminate the string and return a mutable pointer to its
     data.
     @sa String::c_str */
@@ -901,16 +920,8 @@ String::hashcode(const char *first, const char *last)
     return hash;
 }
 
-/** @brief Return true iff this string is equal to the data in @a s.
-    @param s string data to compare to
-    @param len length of @a s
-
-    Same as String::compare(*this, String(s, len)) == 0. If @a len @< 0,
-    then treats @a s as a null-terminated C string.
-
-    @sa String::compare(const String &a, const String &b) */
 bool
-String::equals(const char *s, int len) const
+String::hard_equals(const char *s, int len) const
 {
     // It'd be nice to make "out-of-memory" strings compare unequal to
     // anything, even themselves, but this would be a bad idea for Strings

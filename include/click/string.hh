@@ -99,7 +99,7 @@ class String { public:
     String trim_space() const;
 
     inline bool equals(const String &x) const;
-    bool equals(const char *s, int len) const;
+    inline bool equals(const char *s, int len) const;
     static inline int compare(const String &a, const String &b);
     inline int compare(const String &x) const;
     int compare(const char *s, int len) const;
@@ -279,6 +279,8 @@ class String { public:
     }
     static memo_t *create_memo(char *space, int dirty, int capacity);
     static void delete_memo(memo_t *memo);
+    const char *hard_c_str() const;
+    bool hard_equals(const char *s, int len) const;
 
     static const char null_data;
     static const char oom_data[15];
@@ -483,6 +485,10 @@ inline int String::length() const {
     pointer.  The returned pointer is semi-temporary; it will persist until
     the string is destroyed or appended to. */
 inline const char *String::c_str() const {
+    // See also hard_c_str().
+#if CLICK_OPTIMIZE_SIZE || __OPTIMIZE_SIZE__
+    return hard_c_str();
+#else
     // We may already have a '\0' in the right place.  If _memo has no
     // capacity, then this is one of the special strings (null or
     // stable). We are guaranteed, in these strings, that _data[_length]
@@ -496,6 +502,7 @@ inline const char *String::c_str() const {
 	}
     }
     return _r.data;
+#endif
 }
 
 /** @brief Return a substring of the current string starting at @a first
@@ -611,6 +618,25 @@ inline uint32_t String::hashcode() const {
 /** @brief Test if this string equals @a x. */
 inline bool String::equals(const String &x) const {
     return equals(x.data(), x.length());
+}
+
+/** @brief Test if this string is equal to the data in @a s.
+    @param s string data to compare to
+    @param len length of @a s
+
+    Same as String::compare(*this, String(s, len)) == 0. If @a len @< 0,
+    then treats @a s as a null-terminated C string.
+
+    @sa String::compare(const String &a, const String &b) */
+inline bool String::equals(const char *s, int len) const {
+#if CLICK_OPTIMIZE_SIZE || __OPTIMIZE_SIZE__
+    return hard_equals(s, len);
+#else
+    if (__builtin_constant_p(len) && len >= 0)
+	return length() == len && memcmp(data(), s, len) == 0;
+    else
+	return hard_equals(s, len);
+#endif
 }
 
 /** @brief Compare two strings.

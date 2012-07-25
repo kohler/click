@@ -819,6 +819,7 @@ enable_wifi
 enable_experimental
 enable_skip_elements
 with_freebsd
+enable_smaller_code
 enable_int64
 enable_nanotimestamp
 enable_bound_port_transfer
@@ -1471,15 +1472,16 @@ Optional Features:
     --disable-poll        do not use poll()
     --disable-kqueue      do not use kqueue()
   --disable-linuxmodule   disable Linux kernel driver
-    --disable-fixincludes     do not patch Linux kernel headers for C++
-    --enable-multithread      support kernel multithreading
-    --enable-warp9            reduce PollDevice functionality for speed
-    --enable-kassert          enable kernel assertions
-    --enable-adaptive         use adaptive scheduler to flexibly arbitrate
-                              between Click and the kernel (EXPERIMENTAL)
-    --disable-linux-symbols   do not export Click symbols (breaks packages)
+    --disable-fixincludes do not patch Linux kernel headers for C++
+    --enable-multithread  support kernel multithreading
+    --enable-warp9        reduce PollDevice functionality for speed
+    --enable-kassert      enable kernel assertions
+    --enable-adaptive     use adaptive scheduler to flexibly arbitrate between
+                          Click and the kernel (EXPERIMENTAL)
+    --disable-linux-symbols
+                          do not export Click symbols (breaks packages)
   --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)
-    --disable-netisr          disable NETISR scheduling in BSD
+    --disable-netisr      disable NETISR scheduling in BSD
   --enable-nsclick        enable NS simulator driver
   --enable-all-elements   include all provided element groups
   --disable-analysis      do not include elements for network analysis
@@ -1503,6 +1505,7 @@ Optional Features:
   --enable-wifi           include wifi elements and support
   --enable-experimental   enable experimental elements in normal groups
   --enable-skip-elements=ELTS disable comma-separated elements
+  --enable-smaller-code   generate smaller code (sometimes slower)
   --disable-int64         disable 64-bit integer support
   --enable-nanotimestamp  enable nanosecond timestamps
   --enable-bound-port-transfer  enable port transfer function ptr optimization
@@ -7025,6 +7028,19 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 
+# Check whether --enable-smaller-code was given.
+if test "${enable_smaller_code+set}" = set; then :
+  enableval=$enable_smaller_code; :
+else
+  enable_smaller_code=no
+fi
+
+if test "x$enable_smaller_code" = xyes; then
+
+$as_echo "#define CLICK_OPTIMIZE_SIZE 1" >>confdefs.h
+
+fi
+
 # Check whether --enable-int64 was given.
 if test "${enable_int64+set}" = set; then :
   enableval=$enable_int64; :
@@ -7530,7 +7546,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7533 "configure"
+#line 7549 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER

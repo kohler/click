@@ -126,20 +126,22 @@ fi
 
 dnl linuxmodule driver and features
 
-AC_ARG_ENABLE(linuxmodule, [  --disable-linuxmodule   disable Linux kernel driver], :, [enable_linuxmodule=yes; enable_linuxmodule_default=yes])
+AC_ARG_ENABLE([linuxmodule],
+    [AS_HELP_STRING([--disable-linuxmodule], [disable Linux kernel driver])],
+    [:], [enable_linuxmodule=yes; enable_linuxmodule_default=yes])
 
-AC_ARG_ENABLE(fixincludes,
-  [[    --disable-fixincludes     do not patch Linux kernel headers for C++]],
-  :, enable_fixincludes=yes)
+AC_ARG_ENABLE([fixincludes],
+    [AS_HELP_STRING([  --disable-fixincludes], [do not patch Linux kernel headers for C++])],
+    [:], [enable_fixincludes=yes])
 LINUXMODULE_FIXINCLUDES=
 if test "$enable_fixincludes" = yes; then
     LINUXMODULE_FIXINCLUDES=1
 fi
 AC_SUBST(LINUXMODULE_FIXINCLUDES)
 
-AC_ARG_ENABLE(multithread,
-  [[    --enable-multithread      support kernel multithreading]],
-  :, enable_multithread=no)
+AC_ARG_ENABLE([multithread],
+    [AS_HELP_STRING([  --enable-multithread], [support kernel multithreading])],
+    [:], [enable_multithread=no])
 
 if test "$enable_multithread" != no -a "$enable_multithread" != 1; then
     AC_DEFINE_UNQUOTED(__MTCLICK__, 1)
@@ -150,25 +152,33 @@ else
     enable_multithread=no
 fi
 
-AC_ARG_ENABLE(warp9, [[    --enable-warp9            reduce PollDevice functionality for speed]], :, enable_warp9=no)
+AC_ARG_ENABLE([warp9],
+    [AS_HELP_STRING([  --enable-warp9], [reduce PollDevice functionality for speed])],
+    [:], [enable_warp9=no])
 if test "x$enable_warp9" = xyes; then
     AC_DEFINE(CLICK_WARP9)
 fi
 
 AC_DEFINE(HAVE_CLICKFS)
 
-AC_ARG_ENABLE(kassert, [[    --enable-kassert          enable kernel assertions]], :, enable_kassert=no)
+AC_ARG_ENABLE([kassert],
+    [AS_HELP_STRING([  --enable-kassert], [enable kernel assertions])],
+    [:], [enable_kassert=no])
 if test $enable_kassert = yes; then
     AC_DEFINE(HAVE_KERNEL_ASSERT)
 fi
 
-AC_ARG_ENABLE(adaptive, [[    --enable-adaptive         use adaptive scheduler to flexibly arbitrate
-                              between Click and the kernel (EXPERIMENTAL)]], :, enable_adaptive=no)
+AC_ARG_ENABLE([adaptive],
+    [AS_HELP_STRING([  --enable-adaptive], [use adaptive scheduler to flexibly arbitrate
+                              between Click and the kernel (EXPERIMENTAL)])],
+    [:], [enable_adaptive=no])
 if test "x$enable_adaptive" = xyes; then
     AC_DEFINE(HAVE_ADAPTIVE_SCHEDULER)
 fi
 
-AC_ARG_ENABLE(linux-symbols, [[    --disable-linux-symbols   do not export Click symbols (breaks packages)]], :, enable_linux_symbols=yes)
+AC_ARG_ENABLE([linux-symbols],
+    [AS_HELP_STRING([  --disable-linux-symbols], [do not export Click symbols (breaks packages)])],
+    [:], [enable_linux_symbols=yes])
 INCLUDE_KSYMS=no
 if test "x$enable_linux_symbols" = xyes; then
     INCLUDE_KSYMS=yes
@@ -178,9 +188,13 @@ AC_SUBST(INCLUDE_KSYMS)
 
 dnl bsdmodule driver and features
 
-AC_ARG_ENABLE(bsdmodule, [  --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)], :, enable_bsdmodule=no)
+AC_ARG_ENABLE([bsdmodule],
+    [AS_HELP_STRING([--enable-bsdmodule], [enable FreeBSD kernel driver (EXPERIMENTAL)])],
+    [:], [enable_bsdmodule=no])
 
-AC_ARG_ENABLE(netisr, [[    --disable-netisr          disable NETISR scheduling in BSD]], :, enable_netisr=yes)
+AC_ARG_ENABLE([netisr],
+    [AS_HELP_STRING([  --disable-netisr], [disable NETISR scheduling in BSD])],
+    [:], [enable_netisr=yes])
 if test $enable_netisr = yes; then
     AC_DEFINE(BSD_NETISRSCHED)
 fi
@@ -188,20 +202,24 @@ fi
 
 dnl nsclick driver and features
 
-AC_ARG_ENABLE(nsclick, [  --enable-nsclick        enable NS simulator driver], :, enable_nsclick=no)
+AC_ARG_ENABLE([nsclick],
+    [AS_HELP_STRING([--enable-nsclick], [enable NS simulator driver])],
+    [:], [enable_nsclick=no])
 
 
 dnl
 dnl How to build linuxmodule driver?
 dnl
 
-AC_ARG_WITH(linux, [[  --with-linux[=PATH]     Linux source code is in PATH]],
+AC_ARG_WITH([linux],
+    [AS_HELP_STRING([[--with-linux[=PATH]]], [Linux source code is in PATH])],
     [linuxpath=$withval], [linuxpath=NONE])
 test -z "$linuxpath" -o "$linuxpath" = yes && linuxpath=yes
 
-AC_ARG_WITH(linux-map, [[  --with-linux-map[=FILE] filename for Linux System.map [LINUXDIR/System.map]]],
-  [linux_system_map=$withval; if test -z "$withval" -o "$withval" = yes; then linux_system_map=NONE; fi],
-  linux_system_map=NONE)
+AC_ARG_WITH([linux-map],
+    [AS_HELP_STRING([[--with-linux-map[=FILE]]], [filename for Linux System.map [LINUXDIR/System.map]])],
+    [linux_system_map=$withval; if test -z "$withval" -o "$withval" = yes; then linux_system_map=NONE; fi],
+    [linux_system_map=NONE])
 
 linux_system_map_boot=no
 
@@ -434,7 +452,16 @@ dnl
 dnl integer types, endianness, int64, addressable va_list
 dnl
 
-AC_ARG_ENABLE(int64, [  --disable-int64         disable 64-bit integer support], :, enable_int64=yes)
+AC_ARG_ENABLE([smaller-code],
+    [AS_HELP_STRING([--enable-smaller-code], [generate smaller code (sometimes slower)])],
+    [:], [enable_smaller_code=no])
+if test "x$enable_smaller_code" = xyes; then
+    AC_DEFINE([CLICK_OPTIMIZE_SIZE], [1], [Define to generate smaller object files.])
+fi
+
+AC_ARG_ENABLE([int64],
+    [AS_HELP_STRING([--disable-int64], [disable 64-bit integer support])],
+    [:], [enable_int64=yes])
 
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)

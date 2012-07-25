@@ -387,6 +387,9 @@ inline void StringAccum::adjust_length(int delta) {
     and adjust_length(@a nadjust). Returns the result of the reserve()
     call. */
 inline char *StringAccum::extend(int nadjust, int nreserve) {
+#if CLICK_OPTIMIZE_SIZE || __OPTIMIZE_SIZE__
+    return hard_extend(nadjust, nreserve);
+#else
     assert(nadjust >= 0 && nreserve >= 0);
     if (r_.len + nadjust + nreserve <= r_.cap) {
 	char *x = reinterpret_cast<char *>(r_.s + r_.len);
@@ -394,6 +397,7 @@ inline char *StringAccum::extend(int nadjust, int nreserve) {
 	return x;
     } else
 	return hard_extend(nadjust, nreserve);
+#endif
 }
 
 /** @brief Remove characters from the end of the StringAccum.
