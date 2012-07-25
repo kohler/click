@@ -151,12 +151,6 @@ class String { public:
     // String operator+(String, const String &);
     // String operator+(String, const char *);
     // String operator+(const char *, const String &);
-    // String operator+(String, PermString);
-    // String operator+(PermString, const String &);
-    // String operator+(PermString, const char *);
-    // String operator+(const char *, PermString);
-    // String operator+(PermString, PermString);
-    // String operator+(String, char);
 
     inline String compact() const;
 
@@ -329,7 +323,7 @@ inline String::String(const String &x) {
 }
 
 #if HAVE_CXX_RVALUE_REFERENCES
-/** @overload */
+/** @brief Move-construct a String from @a x. */
 inline String::String(String &&x)
     : _r(x._r) {
     x._r.memo = 0;
@@ -675,7 +669,7 @@ inline String &String::operator=(const String &x) {
 }
 
 #if HAVE_CXX_RVALUE_REFERENCES
-/** @overload */
+/** @brief Move-assign this string to @a x. */
 inline String &String::operator=(String &&x) {
     swap(x);
     return *this;

@@ -479,8 +479,8 @@ String::append(const char *s, int len, memo_t *memo)
 	deref();
 	assign_memo(s, len, memo);
     } else if (likely(!(_r.memo
-		      && s >= _r.memo->real_data
-		      && s + len <= _r.memo->real_data + _r.memo->capacity))) {
+			&& s >= _r.memo->real_data
+			&& s + len <= _r.memo->real_data + _r.memo->capacity))) {
 	if (char *space = append_uninitialized(len))
 	    memcpy(space, s, len);
     } else {

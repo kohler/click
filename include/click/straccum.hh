@@ -439,6 +439,11 @@ inline void StringAccum::append(const char *s, int len) {
 #endif
 }
 
+/** @overload */
+inline void StringAccum::append(const unsigned char *s, int len) {
+    append(reinterpret_cast<const char *>(s), len);
+}
+
 /** @brief Append the null-terminated C string @a s to this StringAccum.
     @param s data to append */
 inline void StringAccum::append(const char *cstr) {
@@ -446,11 +451,6 @@ inline void StringAccum::append(const char *cstr) {
 	append(cstr, strlen(cstr));
     else
 	hard_append_cstr(cstr);
-}
-
-/** @overload */
-inline void StringAccum::append(const unsigned char *s, int len) {
-    append(reinterpret_cast<const char *>(s), len);
 }
 
 /** @brief Append the data from @a first to @a last to the end of this
