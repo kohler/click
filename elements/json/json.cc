@@ -195,7 +195,7 @@ template <typename T> bool string_to_int_key(const char *first,
 					     const char *last, T &x)
 {
     if (first == last || !isdigit((unsigned char) *first)
-	|| (first[0] == '0' && first + 1 != last && first[1] == '0'))
+	|| (first[0] == '0' && first + 1 != last))
 	return false;
     x = *first - '0';
     for (++first; first != last && isdigit((unsigned char) *first); ++first)
