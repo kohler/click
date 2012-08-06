@@ -142,6 +142,7 @@ Bitvector::operator|=(const Bitvector &o)
     if (o._max > _max)
 	resize(o._max + 1);
     int nn = max_word();
+    nn = (nn < o.max_word() ? nn : o.max_word());
     uint32_t *data = _data, *o_data = o._data;
     for (int i = 0; i <= nn; i++)
 	data[i] |= o_data[i];
