@@ -671,7 +671,9 @@ inline String &String::operator=(const String &x) {
 #if HAVE_CXX_RVALUE_REFERENCES
 /** @brief Move-assign this string to @a x. */
 inline String &String::operator=(String &&x) {
-    swap(x);
+    deref();
+    _r = x._r;
+    x._r.memo = 0;
     return *this;
 }
 #endif
