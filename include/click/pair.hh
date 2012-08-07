@@ -2,6 +2,7 @@
 #ifndef CLICK_PAIR_HH
 #define CLICK_PAIR_HH
 #include <click/hashcode.hh>
+#include <click/type_traits.hh>
 CLICK_DECLS
 
 template <class T, class U>
@@ -19,7 +20,8 @@ struct Pair {
 	: first(), second() {
     }
 
-    inline Pair(const T &t, const U &u)
+    inline Pair(typename fast_argument<T>::type t,
+		typename fast_argument<U>::type u)
 	: first(t), second(u) {
     }
 

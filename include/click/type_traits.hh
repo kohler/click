@@ -80,6 +80,23 @@ template <typename T> struct has_trivial_copy<T *> : public true_type {};
 class IPAddress;
 template <> struct has_trivial_copy<IPAddress> : public true_type {};
 
+/** @class is_reference
+  @brief Template determining whether T is a reference type.
+
+  is_reference<T> is equivalent to true_type if T is a reference type (T& or
+  T&&), false_type if it is not. */
+template <typename T> struct is_reference : public false_type {};
+template <typename T> struct is_reference<T &> : public true_type {};
+#if HAVE_CXX_RVALUE_REFERENCES
+template <typename T> struct is_reference<T &&> : public true_type {};
+#endif
+
+/** @class remove_reference
+  @brief Template removing any reference layer from T.
+
+  Assuming T is a non-reference type, then all of remove_reference<T>::type,
+  remove_reference<T&>::type, and remove_reference<T&&>::type are equivalent
+  to T. */
 template <typename T> struct remove_reference {
     typedef T type;
 };
@@ -104,8 +121,9 @@ inline typename remove_reference<T>::type &&click_move(T &&x) {
   a reference. If fast_argument<T>::is_reference is true, then
   fast_argument<T>::enable_rvalue_reference is a typedef to void; otherwise
   it is not defined. */
-template <typename T, bool use_reference = (!has_trivial_copy<T>::value
-					    || sizeof(T) > sizeof(void *))>
+template <typename T, bool use_reference = (!is_reference<T>::value
+					    && (!has_trivial_copy<T>::value
+						|| sizeof(T) > sizeof(void *)))>
 struct fast_argument;
 
 template <typename T> struct fast_argument<T, true> {
