@@ -203,11 +203,15 @@ extern const ArgContext blank_args;
       ...
   @endcode */
 class EtherAddressArg { public:
+    typedef void enable_direct_parse;
     static bool parse(const String &str, EtherAddress &value, const ArgContext &args = blank_args);
     static bool parse(const String &str, unsigned char *value, const ArgContext &args = blank_args) {
 	return parse(str, *reinterpret_cast<EtherAddress *>(value), args);
     }
-    static bool parse(const String &str, Args &args, unsigned char *value);
+    static bool direct_parse(const String &str, EtherAddress &value, Args &args);
+    static bool direct_parse(const String &str, unsigned char *value, Args &args) {
+	return direct_parse(str, *reinterpret_cast<EtherAddress *>(value), args);
+    }
 };
 
 template<> struct DefaultArg<EtherAddress> : public EtherAddressArg {};

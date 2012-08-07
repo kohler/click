@@ -85,6 +85,47 @@ class ArgContext { public:
 };
 
 
+/** @cond never */
+template <typename T> struct Args_has_enable_direct_parse {
+  private:
+    template <typename X> static char test(typename X::enable_direct_parse *);
+    template <typename> static int test(...);
+  public:
+    enum { value = (sizeof(test<T>(0)) == 1) };
+};
+template <typename P, bool direct = Args_has_enable_direct_parse<P>::value>
+struct Args_parse_helper;
+template <typename P> struct Args_parse_helper<P, false> {
+    template <typename T, typename X>
+    static T *slot(T &variable, X &args) {
+	return args.slot(variable);
+    }
+    template <typename T, typename X>
+    static bool parse(P parser, const String &str, T &s, X &args) {
+	return parser.parse(str, s, args);
+    }
+    template <typename T1, typename T2, typename X>
+    static bool parse(P parser, const String &str, T1 &s1, T2 &s2, X &args) {
+	return parser.parse(str, s1, s2, args);
+    }
+};
+template <typename P> struct Args_parse_helper<P, true> {
+    template <typename T, typename X>
+    static T *slot(T &variable, X &) {
+	return &variable;
+    }
+    template <typename T, typename X>
+    static bool parse(P parser, const String &str, T &s, X &args) {
+	return parser.direct_parse(str, s, args);
+    }
+    template <typename T1, typename T2, typename X>
+    static bool parse(P parser, const String &str, T1 &s1, T2 &s2, X &args) {
+	return parser.direct_parse(str, s1, s2, args);
+    }
+};
+/** @endcond never */
+
+
 /** @class Args
   @brief Argument parser class.
 
@@ -461,27 +502,26 @@ class Args : public ArgContext {
      * @param variable reference to result variable
      * @return *this
      *
-     * Calls @a parser.parse(string, *this, variable). */
+     * Calls @a parser.parse(string, variable, *this). */
     template<typename P, typename T>
     Args &read_with(const char *keyword, P parser, T &variable) {
-	return read_with(keyword, 0, parser, variable);
+	return read(keyword, parser, variable);
     }
     template<typename P, typename T>
     Args &read_m_with(const char *keyword, P parser, T &variable) {
-	return read_with(keyword, mandatory, parser, variable);
+	return read_m(keyword, parser, variable);
     }
     template<typename P, typename T>
     Args &read_p_with(const char *keyword, P parser, T &variable) {
-	return read_with(keyword, positional, parser, variable);
+	return read_p(keyword, parser, variable);
     }
     template<typename P, typename T>
     Args &read_mp_with(const char *keyword, P parser, T &variable) {
-	return read_with(keyword, mandatory | positional, parser, variable);
+	return read_mp(keyword, parser, variable);
     }
     template<typename P, typename T>
     Args &read_with(const char *keyword, int flags, P parser, T &variable) {
-	args_base_read_with(this, keyword, flags, parser, variable);
-	return *this;
+	return read(keyword, flags, parser, variable);
     }
 
     /** @brief Pass all matching arguments to a specified parser.
@@ -509,7 +549,7 @@ class Args : public ArgContext {
      * @param variable reference to result variable
      * @return *this
      *
-     * Calls @a parser.parse(string, *this, variable) zero or more times.
+     * Calls @a parser.parse(string, variable, *this) zero or more times.
      *
      * @note The value of read_status() is true iff at least one argument
      * matched and all matching arguments successfully parsed. */
@@ -614,8 +654,8 @@ class Args : public ArgContext {
     void base_read(const char *keyword, int flags, T &variable) {
 	Slot *slot_status;
 	if (String str = find(keyword, flags, slot_status)) {
-	    T *s = slot(variable);
-	    postparse(s && DefaultArg<T>().parse(str, *s, *this), slot_status);
+	    T *s = Args_parse_helper<DefaultArg<T> >::slot(variable, *this);
+	    postparse(s && Args_parse_helper<DefaultArg<T> >::parse(DefaultArg<T>(), str, *s, *this), slot_status);
 	}
     }
 
@@ -623,16 +663,16 @@ class Args : public ArgContext {
     void base_read_or_set(const char *keyword, int flags, T &variable, const V &value) {
 	Slot *slot_status;
 	String str = find(keyword, flags, slot_status);
-	T *s = slot(variable);
-	postparse(s && (str ? DefaultArg<T>().parse(str, *s, *this) : (*s = value, true)), slot_status);
+	T *s = Args_parse_helper<DefaultArg<T> >::slot(variable, *this);
+	postparse(s && (str ? Args_parse_helper<DefaultArg<T> >::parse(DefaultArg<T>(), str, *s, *this) : (*s = value, true)), slot_status);
     }
 
     template<typename P, typename T>
     void base_read(const char *keyword, int flags, P parser, T &variable) {
 	Slot *slot_status;
 	if (String str = find(keyword, flags, slot_status)) {
-	    T *s = slot(variable);
-	    postparse(s && parser.parse(str, *s, *this), slot_status);
+	    T *s = Args_parse_helper<P>::slot(variable, *this);
+	    postparse(s && Args_parse_helper<P>::parse(parser, str, *s, *this), slot_status);
 	}
     }
 
@@ -640,8 +680,8 @@ class Args : public ArgContext {
     void base_read_or_set(const char *keyword, int flags, P parser, T &variable, const V &value) {
 	Slot *slot_status;
 	String str = find(keyword, flags, slot_status);
-	T *s = slot(variable);
-	postparse(s && (str ? parser.parse(str, *s, *this) : (*s = value, true)), slot_status);
+	T *s = Args_parse_helper<P>::slot(variable, *this);
+	postparse(s && (str ? Args_parse_helper<P>::parse(parser, str, *s, *this) : (*s = value, true)), slot_status);
     }
 
     template<typename P, typename T1, typename T2>
@@ -649,9 +689,9 @@ class Args : public ArgContext {
 		   P parser, T1 &variable1, T2 &variable2) {
 	Slot *slot_status;
 	if (String str = find(keyword, flags, slot_status)) {
-	    T1 *s1 = slot(variable1);
-	    T2 *s2 = slot(variable2);
-	    postparse(s1 && s2 && parser.parse(str, *s1, *s2, *this), slot_status);
+	    T1 *s1 = Args_parse_helper<P>::slot(variable1, *this);
+	    T2 *s2 = Args_parse_helper<P>::slot(variable2, *this);
+	    postparse(s1 && s2 && Args_parse_helper<P>::parse(parser, str, *s1, *s2, *this), slot_status);
 	}
     }
 
@@ -660,13 +700,6 @@ class Args : public ArgContext {
 	Slot *slot_status;
 	if (String str = find(keyword, flags, slot_status))
 	    postparse(parser.parse(str, *this), slot_status);
-    }
-
-    template<typename P, typename T>
-    void base_read_with(const char *keyword, int flags, P parser, T &variable) {
-	Slot *slot_status;
-	if (String str = find(keyword, flags, slot_status))
-	    postparse(parser.parse(str, *this, variable), slot_status);
     }
 
     template<typename P>
@@ -685,8 +718,10 @@ class Args : public ArgContext {
     void base_read_all_with(const char *keyword, int flags, P parser, T &variable) {
 	Slot *slot_status;
 	int read_status = -1;
+	T *s = 0;
 	while (String str = find(keyword, flags, slot_status)) {
-	    postparse(parser.parse(str, *this, variable), slot_status);
+	    s = (read_status < 0 ? Args_parse_helper<P>::slot(variable, *this) : s);
+	    postparse(Args_parse_helper<P>::parse(parser, str, *s, *this), slot_status);
 	    read_status = (read_status != 0) && _read_status;
 	    flags &= ~mandatory;
 	}
@@ -850,16 +885,6 @@ template<typename P>
 void args_base_read_with(Args *args, const char *keyword, int flags, P parser)
 {
     args->base_read_with(keyword, flags, parser);
-}
-
-template<typename P, typename T>
-void args_base_read_with(Args *args, const char *keyword, int flags,
-			 P parser, T &variable) CLICK_NOINLINE;
-template<typename P, typename T>
-void args_base_read_with(Args *args, const char *keyword, int flags,
-			 P parser, T &variable)
-{
-    args->base_read_with(keyword, flags, parser, variable);
 }
 
 template<typename P>
@@ -1174,7 +1199,7 @@ class AnyArg { public:
 	result = str;
 	return true;
     }
-    static bool parse(const String &str, const ArgContext &, Vector<String> &result) {
+    static bool parse(const String &str, Vector<String> &result, const ArgContext & = blank_args) {
 	result.push_back(str);
 	return true;
     }

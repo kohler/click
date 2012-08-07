@@ -127,9 +127,9 @@ EtherAddressArg::parse(const String &str, EtherAddress &value, const ArgContext 
 }
 
 bool
-EtherAddressArg::parse(const String &str, Args &args, unsigned char *value)
+EtherAddressArg::direct_parse(const String &str, EtherAddress &value, Args &args)
 {
-    EtherAddress *s = args.slot(*reinterpret_cast<EtherAddress *>(value));
+    EtherAddress *s = args.slot(value);
     return s && parse(str, *s, args);
 }
 
