@@ -39,8 +39,8 @@ EnsureEther::configure(Vector<String> &conf, ErrorHandler *errh)
     memset(&_ethh.ether_dhost, 2, 6);
     if (Args(conf, this, errh)
 	.read_p("ETHERTYPE", etht)
-	.read_p_with("SRC", EtherAddressArg(), _ethh.ether_shost)
-	.read_p_with("DST", EtherAddressArg(), _ethh.ether_dhost)
+	.read_p("SRC", EtherAddressArg(), _ethh.ether_shost)
+	.read_p("DST", EtherAddressArg(), _ethh.ether_dhost)
 	.complete() < 0)
 	return -1;
     if (etht > 0xFFFF)

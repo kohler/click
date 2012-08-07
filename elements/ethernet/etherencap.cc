@@ -37,8 +37,8 @@ EtherEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     click_ether ethh;
     if (Args(conf, this, errh)
 	.read_mp("ETHERTYPE", ether_type)
-	.read_mp_with("SRC", EtherAddressArg(), ethh.ether_shost)
-	.read_mp_with("DST", EtherAddressArg(), ethh.ether_dhost)
+	.read_mp("SRC", EtherAddressArg(), ethh.ether_shost)
+	.read_mp("DST", EtherAddressArg(), ethh.ether_dhost)
 	.complete() < 0)
 	return -1;
     ethh.ether_type = htons(ether_type);

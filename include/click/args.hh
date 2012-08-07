@@ -502,7 +502,9 @@ class Args : public ArgContext {
      * @param variable reference to result variable
      * @return *this
      *
-     * Calls @a parser.parse(string, variable, *this). */
+     * Calls @a parser.parse(string, variable, *this).
+     *
+     * @deprecated Use read(keyword, parser, variable) instead. */
     template<typename P, typename T>
     Args &read_with(const char *keyword, P parser, T &variable) {
 	return read(keyword, parser, variable);

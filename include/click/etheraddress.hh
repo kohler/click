@@ -192,14 +192,14 @@ extern const ArgContext blank_args;
 /** @class EtherAddressArg
   @brief Parser class for Ethernet addresses.
 
-  This is the default parser for objects of EtherAddress type.  For 6-byte
-  arrays like "click_ether::ether_shost" and "click_ether::ether_dhost", it is
-  necessary use Args::read_with:
+  This is the default parser for objects of EtherAddress type. For 6-byte
+  arrays like "click_ether::ether_shost" and "click_ether::ether_dhost", you
+  must pass an EtherAddressArg() explicitly:
 
   @code
   struct click_ether ethh;
   ... Args(...) ...
-      .read_mp_with("SRC", EtherAddressArg(), ethh.ether_shost)
+      .read_mp("SRC", EtherAddressArg(), ethh.ether_shost)
       ...
   @endcode */
 class EtherAddressArg { public:

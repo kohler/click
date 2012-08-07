@@ -42,7 +42,7 @@ EtherSpanTree::configure(Vector<String> &conf, ErrorHandler *errh)
     _port.resize(noutputs());
 
     if (Args(conf, this, errh)
-	.read_mp_with("ADDR", EtherAddressArg(), _addr)
+	.read_mp("ADDR", EtherAddressArg(), _addr)
 	.read_mp("INPUT_SUPPRESSOR", ElementCastArg("Suppressor"), _input_sup)
 	.read_mp("OUTPUT_SUPPRESSOR", ElementCastArg("Suppressor"), _output_sup)
 	.read_mp("SWITCH", ElementCastArg("EtherSwitch"), _switch)
