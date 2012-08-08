@@ -173,6 +173,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
     _destaddr = IPAddress();
     _destmask = IPAddress();
     _clear_anno = true;
+    _burst = 8;
 
     if (Args(conf, this, errh)
 	.read_mp("DEVNAME", _devname)
@@ -182,6 +183,7 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("MTU", mtu)
 	.read("CAPACITY", _capacity)
 	.read("CLEAR_ANNO", _clear_anno)
+	.read("BURST", BoundedIntArg(1, 1000000), _burst)
 	.complete() < 0)
 	return -1;
 
@@ -498,11 +500,11 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
 bool
 FromHost::run_task(Task *)
 {
-    if (!_nonfull_signal)
+    if (!_nonfull_signal || unlikely(empty()))
 	return false;
 
-    if (likely(!empty())) {
-	Packet * volatile *q = queue();
+    Packet * volatile *q = queue();
+    for (int count = 0; count < _burst && !empty(); ++count) {
 	Packet *p = q[_head];
 	packet_memory_barrier(q[_head], _head);
 	_head = next_i(_head);
@@ -527,18 +529,16 @@ FromHost::run_task(Task *)
 	      bad:
 	        _ninvalid++;
 		checked_output_push(1, p);
-		goto done;
+		continue;
 	    }
 	}
 
 	output(0).push(p);
+    }
 
-      done:
-	if (!empty())
-	    _task.fast_reschedule();
-	return true;
-    } else
-	return false;
+    if (!empty())
+        _task.fast_reschedule();
+    return true;
 }
 
 String
@@ -548,6 +548,19 @@ FromHost::read_handler(Element *e, void *)
     return String(fh->size());
 }
 
+int FromHost::write_handler(const String &str, Element *e, void *thunk, ErrorHandler *errh)
+{
+    FromHost *fh = static_cast<FromHost *>(e);
+    switch (reinterpret_cast<intptr_t>(thunk)) {
+    case h_burst:
+        if (!BoundedIntArg(1, 1000000).parse(str, fh->_burst))
+            return errh->error("burst parameter must be integer between 1 and 1000000");
+	return 0;
+    default:
+	return 0;
+    }
+}
+
 void
 FromHost::add_handlers()
 {
@@ -555,6 +568,8 @@ FromHost::add_handlers()
     add_read_handler("length", read_handler, h_length);
     add_data_handlers("capacity", Handler::OP_READ, &_capacity);
     add_data_handlers("drops", Handler::OP_READ, &_drops);
+    add_data_handlers("burst", Handler::OP_READ, &_burst);
+    add_write_handler("burst", write_handler, h_burst);
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)

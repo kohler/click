@@ -73,6 +73,11 @@ If false, this area is left as it was received from Linux.
 (Note that the packet type, device, and header annotations are left as is.)
 Defaults to true.
 
+=item BURST
+
+Integer.  Sets the BURST parameter affecting how many packets are
+emitted per task execution.  BURST is 8 by default.
+
 =back
 
 =n
@@ -156,6 +161,8 @@ class FromHost : public AnyDevice, public Storage { public:
     net_device_stats _stats;
 #endif
 
+    int _burst;
+
     Task _task;
     Timer _wakeup_timer;
 
@@ -184,9 +191,9 @@ class FromHost : public AnyDevice, public Storage { public:
     static net_device_stats *fl_stats(net_device *dev);
 #endif
 
-    enum { h_length };
+    enum { h_length, h_burst };
     static String read_handler(Element *e, void *thunk);
-
+    static int write_handler(const String &, Element *, void *, ErrorHandler *);
 };
 
 #endif
