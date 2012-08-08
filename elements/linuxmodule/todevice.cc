@@ -258,7 +258,7 @@ ToDevice::cleanup(CleanupStage stage)
 #endif
 
 #ifdef NETIF_F_LLTX
-# define click_netif_needs_lock(dev)		(((dev)->features & NETIF_F_LLTX) != 0)
+# define click_netif_needs_lock(dev)		(((dev)->features & NETIF_F_LLTX) == 0)
 #else
 # define click_netif_needs_lock(dev)		1
 #endif
