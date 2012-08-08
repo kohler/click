@@ -281,7 +281,7 @@ RecycledSkbPool::recycle(struct sk_buff *skbs)
     struct sk_buff *skb = skbs;
     skbs = skbs->next;
 
-#if HAVE_SKB_RECYCLE
+#if HAVE_CLICK_SKB_RECYCLE
     // where should sk_buff go?
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
     unsigned char *skb_end = skb_end_pointer(skb);

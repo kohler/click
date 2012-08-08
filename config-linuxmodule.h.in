@@ -15,6 +15,9 @@
 /* Define if your Linux kernel has Click transmit notification extensions. */
 #undef HAVE_CLICK_KERNEL_TX_NOTIFY
 
+/* Define if your Linux kernel has Click skb_recycle. */
+#undef HAVE_CLICK_SKB_RECYCLE
+
 /* Define if fast checksum functions available. */
 #define HAVE_FAST_CHECKSUM 1
 

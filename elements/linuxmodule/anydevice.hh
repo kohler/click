@@ -64,7 +64,8 @@ CLICK_CXX_UNPROTECT
 # define SET_STATS(a,b,c)		/* nothing */
 #endif
 
-#if defined(HAVE_NETIF_RECEIVE_SKB) && !(HAVE___NETIF_RECEIVE_SKB || HAVE_NETIF_RECEIVE_SKB_EXTENDED)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 0) || defined(HAVE_NETIF_RECEIVE_SKB)) \
+	&& !(HAVE___NETIF_RECEIVE_SKB || HAVE_NETIF_RECEIVE_SKB_EXTENDED)
 # define CLICK_DEVICE_UNRECEIVABLE_SK_BUFF 1
 extern "C" {
 DECLARE_PER_CPU(sk_buff *, click_device_unreceivable_sk_buff);

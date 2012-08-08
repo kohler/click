@@ -225,7 +225,7 @@ ToHost::push(int port, Packet *p)
     int protocol = (_sniffers ? 0xFFFF : skb->protocol);
 
     // pass packet to Linux
-#ifdef HAVE_NETIF_RECEIVE_SKB /* from Linux headers */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 0) || defined(HAVE_NETIF_RECEIVE_SKB) /* from Linux headers */
     struct net_device *dev = skb->dev;
     local_bh_disable();
     dev_hold(dev);

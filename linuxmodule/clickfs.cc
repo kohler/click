@@ -132,6 +132,9 @@ unlock_config_write(const char *file, int line)
 #else
 #define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->u)))
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0)
+#define set_nlink(inode, nlink)		((inode)->i_nlink = (nlink))
+#endif
 
 struct ClickInodeInfo {
     uint32_t config_generation;
@@ -154,7 +157,7 @@ inode_out_of_date(struct inode *inode, int subdir_error)
 	if ((error = click_ino.prepare(click_router, click_config_generation)) < 0)
 	    return error;
 	INODE_INFO(inode).config_generation = click_config_generation;
-	inode->i_nlink = click_ino.nlink(inode->i_ino);
+	set_nlink(inode, click_ino.nlink(inode->i_ino));
     }
     return 0;
 }
@@ -185,7 +188,7 @@ click_inode(struct super_block *sb, ino_t ino)
 	    inode->i_gid = click_fsmode.gid;
 	    inode->i_op = click_handler_inode_ops;
 	    inode->i_fop = click_handler_file_ops;
-	    inode->i_nlink = click_ino.nlink(ino);
+	    set_nlink(inode, click_ino.nlink(ino));
 	} else {
 	    // can't happen
 	    iput(inode);
@@ -198,7 +201,7 @@ click_inode(struct super_block *sb, ino_t ino)
 	inode->i_gid = click_fsmode.gid;
 	inode->i_op = click_dir_inode_ops;
 	inode->i_fop = click_dir_file_ops;
-	inode->i_nlink = click_ino.nlink(ino);
+	set_nlink(inode, click_ino.nlink(ino));
     }
 
     inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
@@ -267,7 +270,7 @@ click_dir_revalidate(struct dentry *dentry)
 	    /* preserve error */;
 	else {
 	    INODE_INFO(inode).config_generation = click_config_generation;
-	    inode->i_nlink = click_ino.nlink(inode->i_ino);
+	    set_nlink(inode, click_ino.nlink(inode->i_ino));
 	}
     }
     UNLOCK_CONFIG_READ();

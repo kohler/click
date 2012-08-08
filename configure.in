@@ -1440,16 +1440,26 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
 	AC_DEFINE([HAVE_LINUX_POLLING], [1], [Define if your Linux kernel has polling extensions.])
     fi
 
-    AC_CHECK_DECL(skb_dst_drop, [ac_cv_skb_dst_drop=yes], [ac_cv_skb_dst_drop=no], [CLICK_LINUXMODULE_PROLOGUE()[
+    AC_CHECK_DECL([skb_dst_drop], [ac_cv_skb_dst_drop=yes], [ac_cv_skb_dst_drop=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <net/dst.h>]])
     if test $ac_cv_skb_dst_drop = yes; then
 	AC_DEFINE([HAVE_SKB_DST_DROP], [1], [Define if you have the skb_dst_drop function.])
     fi
 
-    AC_CHECK_DECL(skb_recycle, [ac_cv_skb_recycle=yes], [ac_cv_skb_recycle=no], [CLICK_LINUXMODULE_PROLOGUE()[
+    AC_CHECK_DECL([skb_recycle], [ac_cv_skb_recycle=yes], [ac_cv_skb_recycle=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]])
     if test $ac_cv_skb_recycle = yes; then
 	AC_DEFINE([HAVE_SKB_RECYCLE], [1], [Define if you have the skb_recycle function.])
+    fi
+
+    AC_CACHE_CHECK([whether skb_recycle returns an sk_buff], [ac_cv_linuxmodule_click_skb_recycle],
+	[AC_LANG_C
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>]],
+[[extern struct sk_buff *b; b = skb_recycle(b);]])],
+	[ac_cv_linuxmodule_click_skb_recycle=yes], [ac_cv_linuxmodule_click_skb_recycle=no])])
+    if test $ac_cv_linuxmodule_click_skb_recycle = yes; then
+	AC_DEFINE([HAVE_CLICK_SKB_RECYCLE], [1], [Define if your Linux kernel has Click skb_recycle.])
     fi
 
     AC_CHECK_DECL(skb_linearize, [ac_cv_skb_linearize=yes], [ac_cv_skb_linearize=no], [CLICK_LINUXMODULE_PROLOGUE()[
