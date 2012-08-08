@@ -502,6 +502,14 @@ ConfParseTest::initialize(ErrorHandler *errh)
 	CHECK(sa.take_string() == "true false");
     }
 
+    results.clear();
+    CHECK(Args(this, errh).push_back_args("A 1, B 2, A 3, A 4, A 5")
+	  .read_all("A", AnyArg(), results).read_status(b)
+	  .consume() >= 0);
+    CHECK(b == true);
+    CHECK(results.size() == 4);
+    CHECK(results[0] == "1" && results[1] == "3" && results[2] == "4" && results[3] == "5");
+
     errh->message("All tests pass!");
     return 0;
 }
