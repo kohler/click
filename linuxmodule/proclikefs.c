@@ -70,6 +70,18 @@
 # define DEBUG(args...) /* nada */
 #endif
 
+#ifdef CONFIG_PREEMPT
+# define THREAD_LOCK_DECLARE(lock) struct mutex lock;
+# define THREAD_LOCK_INIT(lock) mutex_init(&lock);
+# define THREAD_LOCK_ACQUIRE(lock) mutex_lock(&lock);
+# define THREAD_LOCK_RELEASE(lock) mutex_unlock(&lock);
+#else
+# define THREAD_LOCK_DECLARE(lock) spinlock_t lock;
+# define THREAD_LOCK_INIT(lock) spin_lock_init(&lock);
+# define THREAD_LOCK_ACQUIRE(lock) spin_lock(&lock);
+# define THREAD_LOCK_RELEASE(lock) spin_unlock(&lock);
+#endif
+
 struct proclikefs_file_operations {
     struct file_operations pfo_op;
     struct proclikefs_file_operations *pfo_next;
@@ -80,22 +92,29 @@ struct proclikefs_inode_operations {
     struct proclikefs_inode_operations *pio_next;
 };
 
+#define PROCLIKEFS_NAME_LEN (32)
+
 struct proclikefs_file_system {
     struct file_system_type fs;
-    struct list_head fs_list;
     atomic_t nsuper;
     int live;
-    spinlock_t lock;
+    int allocated;
+    THREAD_LOCK_DECLARE(lock);
     struct proclikefs_file_operations *pfs_pfo;
     struct proclikefs_inode_operations *pfs_pio;
-    char name[1];
+    char name[PROCLIKEFS_NAME_LEN];
 };
 
-static LIST_HEAD(fs_list);
-static spinlock_t fslist_lock;
-extern spinlock_t inode_lock;
+#ifndef MAX_PROCLIKEFS
+#define MAX_PROCLIKEFS (4)
+#endif
+
+static struct proclikefs_file_system pfs_filesystems[MAX_PROCLIKEFS];
+
+static THREAD_LOCK_DECLARE(fslist_lock);
+extern THREAD_LOCK_DECLARE(inode_lock);
 #if HAVE_LINUX_SB_LOCK
-extern spinlock_t sb_lock;
+extern THREAD_LOCK_DECLARE(sb_lock);
 #endif
 
 static struct super_operations proclikefs_null_super_operations;
@@ -137,8 +156,8 @@ struct proclikefs_file_system *
 proclikefs_register_filesystem(const char *name, int fs_flags,
 			       proclikefs_mountfunc mountfunc)
 {
-    struct proclikefs_file_system *newfs = 0;
-    struct list_head *next;
+    struct proclikefs_file_system *newfs = 0, *freefs = 0;
+    int which;
     int newfs_is_new = 0;
 
     if (!name)
@@ -153,39 +172,46 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
     MOD_INC_USE_COUNT;
 #endif
 
-    spin_lock(&fslist_lock);
+    THREAD_LOCK_ACQUIRE(fslist_lock);
 
-    for (next = fs_list.next; next != &fs_list; next = next->next) {
-	newfs = list_entry(next, struct proclikefs_file_system, fs_list);
-	if (strcmp(name, newfs->name) == 0) {
-	    if (newfs->live > 0) { /* active filesystem with that name */
-		spin_unlock(&fslist_lock);
-		MOD_DEC_USE_COUNT;
-		return 0;
-	    } else
-		break;
+    for (which = 0; which < MAX_PROCLIKEFS; which++) {
+	newfs = &pfs_filesystems[which];
+	if (newfs->allocated) {
+	    if (strcmp(name, newfs->name) == 0) {
+		if (newfs->live > 0) { /* active filesystem with that name */
+		    THREAD_LOCK_RELEASE(fslist_lock);
+		    MOD_DEC_USE_COUNT;
+		    return 0;
+		} else
+		    break;
+	    }
+	} else {
+	    if (!freefs)
+		freefs = newfs;
 	}
     }
 
-    if (!newfs) {
-	newfs = kzalloc(sizeof(struct proclikefs_file_system) + strlen(name), GFP_ATOMIC);
-	if (!newfs) {		/* out of memory */
-	    spin_unlock(&fslist_lock);
+
+    if (which == MAX_PROCLIKEFS) {
+	if (!freefs) {
+	    THREAD_LOCK_RELEASE(fslist_lock);
 	    MOD_DEC_USE_COUNT;
 	    return 0;
 	}
+	newfs = freefs;
 	newfs->pfs_pfo = 0;
 	newfs->pfs_pio = 0;
-	list_add(&newfs->fs_list, &fs_list);
-	strcpy(newfs->name, name);
-	spin_lock_init(&newfs->lock);
+	newfs->allocated = 1;
+	strncpy(newfs->name, name, PROCLIKEFS_NAME_LEN - 1);
+	newfs->name[PROCLIKEFS_NAME_LEN - 1] = 0; /* Just in case */
+	THREAD_LOCK_INIT(newfs->lock);
 	atomic_set(&newfs->nsuper, 0);
 	newfs->fs.name = newfs->name;
 	newfs->fs.next = 0;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 	newfs->fs.owner = THIS_MODULE;
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)) && (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 3, 0))
 	INIT_LIST_HEAD(&newfs->fs.fs_supers);
 #endif
 	newfs_is_new = 1;
@@ -210,7 +236,7 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
 	    printk("<1>proclikefs: error %d while initializing pfs[%p] (%s)\n", -err, newfs, name);
     }
 
-    spin_unlock(&fslist_lock);
+    THREAD_LOCK_RELEASE(fslist_lock);
     return newfs;
 }
 
@@ -219,24 +245,31 @@ proclikefs_reinitialize_supers(struct proclikefs_file_system *pfs,
 			       void (*reread_super) (struct super_block *))
 {
     struct super_block *sb;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)) && (LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0))
     struct list_head *p;
 #endif
-    spin_lock(&fslist_lock);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+    struct hlist_node *node;
+#endif
+    THREAD_LOCK_ACQUIRE(fslist_lock);
     /* transfer superblocks */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
 # if HAVE_LINUX_SB_LOCK
-    spin_lock(&sb_lock);
+    THREAD_LOCK_ACQUIRE(sb_lock);
 # endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+    hlist_for_each_entry(sb, node, &pfs->fs.fs_supers, s_instances) {
+#else
     for (p = pfs->fs.fs_supers.next; p != &pfs->fs.fs_supers; p = p->next) {
 	sb = list_entry(p, struct super_block, s_instances);
+#endif
 	if (sb->s_type == &pfs->fs)
 	    (*reread_super)(sb);
 	else
 	    printk("<1>proclikefs: confusion\n");
     }
 # if HAVE_LINUX_SB_LOCK
-    spin_unlock(&sb_lock);
+    THREAD_LOCK_RELEASE(sb_lock);
 # endif
 #else
     for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks);
@@ -244,7 +277,7 @@ proclikefs_reinitialize_supers(struct proclikefs_file_system *pfs,
 	if (sb->s_type == &pfs->fs)
 	    (*reread_super)(sb);
 #endif
-    spin_unlock(&fslist_lock);
+    THREAD_LOCK_RELEASE(fslist_lock);
 }
 
 static void
@@ -348,16 +381,20 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 {
     struct super_block *sb, dummy_sb;
     struct file *filp;
-    struct list_head *p;
     struct proclikefs_file_operations *pfo;
     struct proclikefs_inode_operations *pio;
     struct inode dummy_inode;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+    struct hlist_node *node;
+#else
+    struct list_head *p;
+#endif
 
     if (!pfs)
 	return;
 
     DEBUG("unregister_filesystem entry");
-    spin_lock(&fslist_lock);
+    THREAD_LOCK_ACQUIRE(fslist_lock);
 
     /* create a garbage inode (which requires creating a garbage superblock) */
     inode_init_once(&dummy_inode);
@@ -395,20 +432,24 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
     }
 #endif
 
-    spin_lock(&pfs->lock);
+    THREAD_LOCK_ACQUIRE(pfs->lock);
 
     /* clear out superblock operations */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
     DEBUG("clearing superblocks");
 # if HAVE_LINUX_SB_LOCK
-    spin_lock(&sb_lock);
+    THREAD_LOCK_ACQUIRE(sb_lock);
 # endif
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+    hlist_for_each_entry(sb, node, &pfs->fs.fs_supers, s_instances) {
+#else
     for (p = pfs->fs.fs_supers.next; p != &pfs->fs.fs_supers; p = p->next) {
 	sb = list_entry(p, struct super_block, s_instances);
+#endif
 	proclikefs_kill_super(sb, &pfs->pfs_pfo->pfo_op);
     }
 # if HAVE_LINUX_SB_LOCK
-    spin_unlock(&sb_lock);
+    THREAD_LOCK_RELEASE(sb_lock);
 # endif
 #else
     for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks);
@@ -426,8 +467,8 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 #endif
     MOD_DEC_USE_COUNT;
 
-    spin_unlock(&pfs->lock);
-    spin_unlock(&fslist_lock);
+    THREAD_LOCK_RELEASE(pfs->lock);
+    THREAD_LOCK_RELEASE(fslist_lock);
 }
 
 void
@@ -451,12 +492,11 @@ proclikefs_put_super(struct super_block *sb)
     atomic_dec(&pfs->nsuper);
     DEBUG("pfs[%p]: put_super for %s", pfs, pfs->fs.name);
     MOD_DEC_USE_COUNT;
-    spin_lock(&fslist_lock);
+    THREAD_LOCK_ACQUIRE(fslist_lock);
     if (!pfs->live && atomic_read(&pfs->nsuper) == 0) {
 	struct proclikefs_file_operations *pfo;
 	struct proclikefs_inode_operations *pio;
 
-	list_del(&pfs->fs_list);
 	unregister_filesystem(&pfs->fs);
 	while ((pfo = pfs->pfs_pfo)) {
 	    pfs->pfs_pfo = pfo->pfo_next;
@@ -466,9 +506,9 @@ proclikefs_put_super(struct super_block *sb)
 	    pfs->pfs_pio = pio->pio_next;
 	    kfree(pio);
 	}
-	kfree(pfs);
+	pfs->allocated = 0;
     }
-    spin_unlock(&fslist_lock);
+    THREAD_LOCK_RELEASE(fslist_lock);
 }
 
 struct file_operations *
@@ -477,10 +517,10 @@ proclikefs_new_file_operations(struct proclikefs_file_system *pfs)
     struct proclikefs_file_operations *pfo = kmalloc(sizeof(struct proclikefs_file_operations), GFP_ATOMIC);
 
     if (pfo) {
-	spin_lock(&fslist_lock);
+	THREAD_LOCK_ACQUIRE(fslist_lock);
 	pfo->pfo_next = pfs->pfs_pfo;
 	pfs->pfs_pfo = pfo;
-	spin_unlock(&fslist_lock);
+	THREAD_LOCK_RELEASE(fslist_lock);
 	memset(&pfo->pfo_op, 0, sizeof(struct file_operations));
     }
     return &pfo->pfo_op;
@@ -492,10 +532,10 @@ proclikefs_new_inode_operations(struct proclikefs_file_system *pfs)
     struct proclikefs_inode_operations *pio = kmalloc(sizeof(struct proclikefs_inode_operations), GFP_ATOMIC);
 
     if (pio) {
-	spin_lock(&fslist_lock);
+	THREAD_LOCK_ACQUIRE(fslist_lock);
 	pio->pio_next = pfs->pfs_pio;
 	pfs->pfs_pio = pio;
-	spin_unlock(&fslist_lock);
+	THREAD_LOCK_RELEASE(fslist_lock);
 	memset(&pio->pio_op, 0, sizeof(struct inode_operations));
     }
     return &pio->pio_op;
@@ -516,24 +556,23 @@ init_module(void)
 #endif
     proclikefs_null_super_operations.put_super = proclikefs_put_super;
     proclikefs_null_root_inode_operations.lookup = proclikefs_null_root_lookup;
-    spin_lock_init(&fslist_lock);
+    THREAD_LOCK_INIT(fslist_lock);
     return 0;
 }
 
 void
 cleanup_module(void)
 {
-    struct list_head *next;
-    spin_lock(&fslist_lock);
-    for (next = fs_list.next; next != &fs_list; ) {
-	struct proclikefs_file_system *pfs = list_entry(next, struct proclikefs_file_system, fs_list);
-	next = next->next;
-	if (pfs->live || atomic_read(&pfs->nsuper) != 0)
+    int which;
+    THREAD_LOCK_ACQUIRE(fslist_lock);
+    for (which = 0; which < MAX_PROCLIKEFS; which++ ) {
+	struct proclikefs_file_system *pfs = &pfs_filesystems[which];
+	if (pfs->allocated && (pfs->live || atomic_read(&pfs->nsuper) != 0))
 	    printk("<1>proclikefs: unregistering active FS %s, prepare to die\n", pfs->name);
 	unregister_filesystem(&pfs->fs);
-	kfree(pfs);
+	pfs->allocated = 0;
     }
-    spin_unlock(&fslist_lock);
+    THREAD_LOCK_RELEASE(fslist_lock);
 }
 
 #ifdef MODULE_AUTHOR

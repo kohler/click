@@ -33,6 +33,11 @@ CLICK_CXX_PROTECT
 # include <linux/ctype.h>
 # include <linux/time.h>
 # include <linux/errno.h>
+# ifdef CONFIG_PREEMPT
+#  include <linux/mutex.h>
+# else
+#  include <linux/spinlock.h>
+# endif
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 
@@ -619,6 +624,29 @@ click_get_cycles()
     return 0;
 #endif
 }
+
+// Locking and kernel preemption
+//
+// Be more judicious about the use of semaphores vs. mutexes. For now
+// only do this to make CONFIG_PREEMPT work reliably; perhaps in the
+// future this should be dependent upon kernel versions that have
+// mutex support
+
+#if CLICK_LINUXMODULE
+#ifdef CONFIG_PREEMPT
+#define THREAD_LOCK_DECLARE(lock)	struct mutex lock
+#define THREAD_LOCK_INIT(lock)		mutex_init(&lock)
+#define THREAD_LOCK_ACQUIRE(lock)	mutex_lock(&lock)
+#define THREAD_LOCK_TRY(lock)		mutex_trylock(&lock)
+#define THREAD_LOCK_RELEASE(lock)	mutex_unlock(&lock)
+#else
+#define THREAD_LOCK_DECLARE(lock)	spinlock_t lock;
+#define THREAD_LOCK_INIT(lock)		spin_lock_init(&lock)
+#define THREAD_LOCK_ACQUIRE(lock)	spin_lock(&lock)
+#define THREAD_LOCK_TRY(lock)		spin_trylock(&lock)
+#define THREAD_LOCK_RELEASE(lock)	spin_unlock(&lock)
+#endif
+#endif
 
 CLICK_ENDDECLS
 

@@ -26,10 +26,11 @@
 #include <click/straccum.hh>
 #include <click/llrpc.h>
 #include <click/ino.hh>
+#include <click/glue.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
-#include <linux/spinlock.h>
+#include <linux/mutex.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 # include <linux/locks.h>
 #endif
@@ -46,7 +47,7 @@ static struct inode_operations *click_handler_inode_ops;
 static struct dentry_operations click_dentry_ops;
 static struct proclikefs_file_system *clickfs;
 
-static spinlock_t clickfs_lock;
+static THREAD_LOCK_DECLARE(clickfs_lock);
 static wait_queue_head_t clickfs_waitq;
 static atomic_t clickfs_read_count;
 extern uint32_t click_config_generation;
@@ -54,8 +55,8 @@ static int clickfs_ready;
 
 //#define SPIN_LOCK_MSG(l, file, line, what)	printk("<1>%s:%d: pid %d: %sing %p in clickfs\n", (file), (line), current->pid, (what), (l))
 #define SPIN_LOCK_MSG(l, file, line, what)	((void)(file), (void)(line))
-#define SPIN_LOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "lock"); spin_lock((l)); } while (0)
-#define SPIN_UNLOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "unlock"); spin_unlock((l)); } while (0)
+#define SPIN_LOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "lock"); THREAD_LOCK_ACQUIRE(*(l)); } while (0)
+#define SPIN_UNLOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "unlock"); THREAD_LOCK_RELEASE(*(l)); } while (0)
 
 #define LOCK_CONFIG_READ()	lock_config(__FILE__, __LINE__, 0)
 #define UNLOCK_CONFIG_READ()	unlock_config_read()
@@ -133,6 +134,12 @@ unlock_config_write(const char *file, int line)
 #define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->u)))
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+#define _set_nlink(inode, nlink)	set_nlink(inode, nlink)
+#else
+#define _set_nlink(inode, nlink)	inode->i_nlink = nlink
+#endif
+
 struct ClickInodeInfo {
     uint32_t config_generation;
 };
@@ -154,7 +161,7 @@ inode_out_of_date(struct inode *inode, int subdir_error)
 	if ((error = click_ino.prepare(click_router, click_config_generation)) < 0)
 	    return error;
 	INODE_INFO(inode).config_generation = click_config_generation;
-	inode->i_nlink = click_ino.nlink(inode->i_ino);
+	_set_nlink(inode, click_ino.nlink(inode->i_ino));
     }
     return 0;
 }
@@ -185,7 +192,7 @@ click_inode(struct super_block *sb, ino_t ino)
 	    inode->i_gid = click_fsmode.gid;
 	    inode->i_op = click_handler_inode_ops;
 	    inode->i_fop = click_handler_file_ops;
-	    inode->i_nlink = click_ino.nlink(ino);
+	    _set_nlink(inode, click_ino.nlink(ino));
 	} else {
 	    // can't happen
 	    iput(inode);
@@ -198,7 +205,7 @@ click_inode(struct super_block *sb, ino_t ino)
 	inode->i_gid = click_fsmode.gid;
 	inode->i_op = click_dir_inode_ops;
 	inode->i_fop = click_dir_file_ops;
-	inode->i_nlink = click_ino.nlink(ino);
+	_set_nlink(inode, click_ino.nlink(ino));
     }
 
     inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
@@ -267,7 +274,7 @@ click_dir_revalidate(struct dentry *dentry)
 	    /* preserve error */;
 	else {
 	    INODE_INFO(inode).config_generation = click_config_generation;
-	    inode->i_nlink = click_ino.nlink(inode->i_ino);
+	    _set_nlink(inode, click_ino.nlink(inode->i_ino));
 	}
     }
     UNLOCK_CONFIG_READ();
@@ -355,10 +362,14 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     UNLOCK_CONFIG_READ();
     if (!root_inode)
 	goto out_no_root;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 3, 0)
+    sb->s_root = d_make_root(root_inode);
+#else
     sb->s_root = d_alloc_root(root_inode);
+#endif
     MDEBUG("got root inode %p:%p", root_inode, root_inode->i_op);
     if (!sb->s_root)
-	goto out_no_root;
+	goto out_no_root_put;
     // XXX options
 
     MDEBUG("got root directory");
@@ -366,9 +377,12 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     MDEBUG("done click_read_super");
     return sb;
 
+  out_no_root_put:
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 3, 0)
+    iput(root_inode);
+#endif
   out_no_root:
     printk("<1>click_read_super: get root inode failed\n");
-    iput(root_inode);
     sb->s_dev = 0;
     return 0;
 }
@@ -447,7 +461,7 @@ static String *handler_strings = 0;
 static HandlerStringInfo *handler_strings_info = 0;
 static int handler_strings_cap = 0;
 static int handler_strings_free = -1;
-static spinlock_t handler_strings_lock;
+static THREAD_LOCK_DECLARE(handler_strings_lock);
 
 #define FILP_STRINGNO(filp)		(reinterpret_cast<intptr_t>((filp)->private_data))
 #define FILP_READ_STRINGNO(filp)	FILP_STRINGNO(filp)
@@ -954,8 +968,8 @@ init_clickfs()
 #endif
     static_assert(HANDLER_DIRECT + HANDLER_DONE + HANDLER_RAW + HANDLER_SPECIAL_INODE + HANDLER_WRITE_UNLIMITED < Handler::USER_FLAG_0, "Too few driver handler flags available.");
 
-    spin_lock_init(&handler_strings_lock);
-    spin_lock_init(&clickfs_lock);
+    THREAD_LOCK_INIT(handler_strings_lock);
+    THREAD_LOCK_INIT(clickfs_lock);
     init_waitqueue_head(&clickfs_waitq);
     atomic_set(&clickfs_read_count, 0);
 

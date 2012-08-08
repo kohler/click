@@ -202,7 +202,7 @@ class SimpleSpinlock { public:
 
 #if CLICK_LINUXMODULE
   private:
-    spinlock_t _lock;
+    THREAD_LOCK_DECLARE(_lock);
 #elif CLICK_MULTITHREAD_SPINLOCK
   private:
     atomic_uint32_t _lock;
@@ -215,7 +215,7 @@ inline
 SimpleSpinlock::SimpleSpinlock()
 {
 #if CLICK_LINUXMODULE
-    spin_lock_init(&_lock);
+    THREAD_LOCK_INIT(_lock);
 #elif CLICK_MULTITHREAD_SPINLOCK
     _lock = 0;
 #endif
@@ -235,7 +235,7 @@ inline void
 SimpleSpinlock::acquire()
 {
 #if CLICK_LINUXMODULE
-    spin_lock(&_lock);
+    THREAD_LOCK_ACQUIRE(_lock);
 #elif CLICK_MULTITHREAD_SPINLOCK
     while (_lock.swap(1) != 0)
 	do {
@@ -254,7 +254,7 @@ inline bool
 SimpleSpinlock::attempt()
 {
 #if CLICK_LINUXMODULE
-    return spin_trylock(&_lock);
+    return THREAD_LOCK_TRY(_lock);
 #elif CLICK_MULTITHREAD_SPINLOCK
     return _lock.swap(1) == 0;
 #else
@@ -271,7 +271,7 @@ inline void
 SimpleSpinlock::release()
 {
 #if CLICK_LINUXMODULE
-    spin_unlock(&_lock);
+    THREAD_LOCK_RELEASE(_lock);
 #elif CLICK_MULTITHREAD_SPINLOCK
     _lock = 0;
 #endif
