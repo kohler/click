@@ -420,7 +420,7 @@ void
 Args::postparse(bool ok, Slot *slot_status)
 {
     if (!ok && _read_status)
-	error("syntax error");
+	error("parse error");
     _arg_keyword = 0;
 
     if (_read_status) {
