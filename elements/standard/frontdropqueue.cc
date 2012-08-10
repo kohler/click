@@ -52,7 +52,7 @@ FrontDropQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("out of memory");
 
   Storage::index_type i, j;
-  for (i = _tail - 1, j = new_capacity; i != _head; i = prev_i(i)) {
+  for (i = _tail, j = new_capacity; i != _head; i = prev_i(i)) {
     new_q[--j] = _q[i];
     if (j == 0) break;
   }
