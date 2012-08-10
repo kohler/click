@@ -23,20 +23,29 @@
 CLICK_DECLS
 
 void
-Bitvector::finish_copy_constructor(const Bitvector &o)
+Bitvector::finish_copy_constructor(const Bitvector &x)
 {
-    int nn = max_word();
-    _data = new word_type[nn + 1];
-    for (int i = 0; i <= nn; i++)
-	_data[i] = o._data[i];
+    _data = new word_type[word_size()];
+    memcpy(_data, x._data, word_size() * sizeof(word_type));
+}
+
+inline void
+Bitvector::clear_last() {
+    int m = _max;
+    if (m < 0)
+	_data[0] = 0;
+    else if ((m & wmask) != wmask) {
+	word_type mask = (word_type(1) << ((m & wmask) + 1)) - 1;
+	_data[m >> wshift] &= mask;
+    }
 }
 
 /** @brief Test if the bitvector's bits are all false. */
 bool
 Bitvector::zero() const
 {
-    int nn = max_word();
-    for (int i = 0; i <= nn; i++)
+    int nn = word_size();
+    for (int i = 0; i < nn; i++)
 	if (_data[i])
 	    return false;
     return true;
@@ -46,38 +55,32 @@ Bitvector::zero() const
 void
 Bitvector::clear()
 {
-    int nn = max_word();
-    for (int i = 0; i <= nn; i++)
-	_data[i] = 0;
+    memset(_data, 0, word_size() * sizeof(word_type));
 }
 
-void
-Bitvector::resize_to_max(int new_max, bool valid_n)
-{
-    int want_u = (new_max >> wshift) + 1;
-    int have_u = (valid_n ? max_word() : MAX_INLINE_WORD) + 1;
-    if (have_u < MAX_INLINE_WORD + 1)
-	have_u = MAX_INLINE_WORD + 1;
-    if (want_u <= have_u)
-	return;
 
-    word_type *new_data = new word_type[want_u];
-    memcpy(new_data, _data, have_u * sizeof(word_type));
-    memset(new_data + have_u, 0, (want_u - have_u) * sizeof(word_type));
-    if (_data != &_f0)
-	delete[] _data;
-    _data = new_data;
-}
+/** @brief Resize the bitvector to @a n bits.
+    @pre @a n >= 0
 
+    Any bits added to the bitvector are false. */
 void
-Bitvector::clear_last()
+Bitvector::resize(int n)
 {
-    if (unlikely(_max < 0))
-	_data[0] = 0;
-    else if ((_max & wmask) != wmask) {
-	word_type mask = (word_type(1) << ((_max & wmask) + 1)) - 1;
-	_data[_max>>wshift] &= mask;
+    if (n >= _max) {
+	int want_words = (n + wbits - 1) >> wshift;
+	int have_words = word_size();
+	if (want_words > ninline && want_words > have_words) {
+	    word_type *new_data = new word_type[want_words];
+	    memcpy(new_data, _data, have_words * sizeof(word_type));
+	    if (_data != _f)
+		delete[] _data;
+	    _data = new_data;
+	}
+	if (want_words > have_words)
+	    memset(_data + have_words, 0, (want_words - have_words) * sizeof(word_type));
     }
+    _max = n - 1;
+    clear_last();
 }
 
 /** @brief Set this bitvector to a copy of @a x.
@@ -88,18 +91,14 @@ Bitvector::operator=(const Bitvector &x)
 #if CLICK_LINUXMODULE || CLICK_BSDMODULE
     // We might not have been initialized properly.
     if (!_data)
-	_max = -1, _data = &_f0;
+	_max = -1, _data = _f;
 #endif
-    if (&x == this)
-	/* nada */;
-    else if (x.max_word() <= MAX_INLINE_WORD)
-	memcpy(_data, x._data, (MAX_INLINE_WORD + 1) * sizeof(word_type));
-    else {
-	if (_data != &_f0)
+    if (x.word_size() > word_size()) {
+	if (_data != _f)
 	    delete[] _data;
 	_data = new word_type[x.word_size()];
-	memcpy(_data, x._data, x.word_size() * sizeof(word_type));
     }
+    memcpy(_data, x._data, x.word_size() * sizeof(word_type));
     _max = x._max;
     return *this;
 }
@@ -110,15 +109,14 @@ Bitvector::operator=(const Bitvector &x)
 Bitvector &
 Bitvector::assign(int n, bool bit)
 {
-    resize(n);
-    word_type bits = (bit ? ~word_type(0) : word_type(0));
-    // 24.Jun.2008 -- Even if n <= 0, at least one word must be set to "bits."
-    // Otherwise assert(_max >= 0 || _data[0] == 0) will not hold.
-    int copy = (n > 0 ? word_size() : 1);
-    for (int i = 0; i < copy; i++)
-	_data[i] = bits;
-    if (bit)
-	clear_last();
+    if (n >= _max && n > inlinebits) {
+	if (_data != _f)
+	    delete[] _data;
+	_data = new word_type[(n + wbits - 1) >> wshift];
+    }
+    _max = n - 1;
+    memset(_data, bit ? 255 : 0, word_size() * sizeof(word_type));
+    clear_last();
     return *this;
 }
 
@@ -126,9 +124,9 @@ Bitvector::assign(int n, bool bit)
 void
 Bitvector::flip()
 {
-    int nn = max_word();
+    int nn = word_size();
     word_type *data = _data;
-    for (int i = 0; i <= nn; i++)
+    for (int i = 0; i < nn; i++)
 	data[i] = ~data[i];
     clear_last();
 }
@@ -140,9 +138,9 @@ Bitvector &
 Bitvector::operator&=(const Bitvector &x)
 {
     assert(x._max == _max);
-    int nn = max_word();
+    int nn = word_size();
     word_type *data = _data, *x_data = x._data;
-    for (int i = 0; i <= nn; i++)
+    for (int i = 0; i < nn; ++i)
 	data[i] &= x_data[i];
     return *this;
 }
@@ -155,10 +153,10 @@ Bitvector::operator|=(const Bitvector &x)
 {
     if (x._max > _max)
 	resize(x._max + 1);
-    int nn = max_word();
-    nn = (nn < x.max_word() ? nn : x.max_word());
+    int nn = word_size();
+    nn = (nn < x.word_size() ? nn : x.word_size());
     word_type *data = _data, *x_data = x._data;
-    for (int i = 0; i <= nn; i++)
+    for (int i = 0; i < nn; ++i)
 	data[i] |= x_data[i];
     return *this;
 }
@@ -170,9 +168,9 @@ Bitvector &
 Bitvector::operator^=(const Bitvector &x)
 {
     assert(x._max == _max);
-    int nn = max_word();
+    int nn = word_size();
     word_type *data = _data, *x_data = x._data;
-    for (int i = 0; i <= nn; i++)
+    for (int i = 0; i < nn; ++i)
 	data[i] ^= x_data[i];
     return *this;
 }
@@ -237,10 +235,10 @@ Bitvector::or_with_difference(const Bitvector &x, Bitvector &difference)
     assert(x._max == _max);
     if (difference._max != _max)
 	difference.resize(_max + 1);
-    int nn = max_word();
+    int nn = word_size();
     word_type *data = _data, *diff_data = difference._data;
     const word_type *x_data = x._data;
-    for (int i = 0; i <= nn; i++) {
+    for (int i = 0; i < nn; i++) {
 	diff_data[i] = x_data[i] & ~data[i];
 	data[i] |= x_data[i];
     }
@@ -266,21 +264,20 @@ Bitvector::nonzero_intersection(const Bitvector &x) const
 void
 Bitvector::swap(Bitvector &x)
 {
-    word_type u = _f0;
-    _f0 = x._f0;
-    x._f0 = u;
-
-    u = _f1;
-    _f1 = x._f1;
-    x._f1 = u;
+    if (x._data == x._f || _data == _f)
+	for (int i = 0; i < ninline; ++i) {
+	    word_type u = _f[i];
+	    _f[i] = x._f[i];
+	    x._f[i] = u;
+	}
 
     int m = _max;
     _max = x._max;
     x._max = m;
 
     word_type *d = _data;
-    _data = (x._data == &x._f0 ? &_f0 : x._data);
-    x._data = (d == &_f0 ? &x._f0 : d);
+    _data = (x._data == x._f ? _f : x._data);
+    x._data = (d == _f ? x._f : d);
 }
 
 CLICK_ENDDECLS

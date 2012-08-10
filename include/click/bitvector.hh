@@ -82,16 +82,15 @@ class Bitvector {
 
   private:
 
-    enum { MAX_INLINE_BIT = 63, MAX_INLINE_WORD = 1 };
+    enum { ninline = 2, inlinebits = ninline * wbits };
 
     int _max;
     word_type *_data;
-    word_type _f0;
-    word_type _f1;
+    word_type _f[ninline];
 
     void finish_copy_constructor(const Bitvector &);
-    void clear_last();
-    void resize_to_max(int, bool);
+    inline void clear_last();
+    void hard_resize(int, bool);
 
 };
 
@@ -124,41 +123,45 @@ class Bitvector::Bit { public:
 };
 
 
-
 /** @brief Construct an empty bitvector. */
 inline Bitvector::Bitvector()
-    : _max(-1), _data(&_f0), _f0(0), _f1(0) {
+    : _max(-1), _data(_f) {
+    _f[0] = 0;
 }
 
 /** @brief Construct an all-false bitvector with @a n elements.
     @pre @a n >= 0 */
 inline Bitvector::Bitvector(int n)
-    : _max(n - 1), _data(&_f0), _f0(0), _f1(0) {
+    : _data(_f) {
     assert(n >= 0);
-    if (_max > MAX_INLINE_BIT)
-	resize_to_max(_max, false);
+    if (n <= inlinebits) {
+	_max = n - 1;
+	memset(_f, 0, sizeof(_f));
+    } else {
+	_max = -1;
+	resize(_max);
+    }
 }
 
 /** @brief Construct a @a bit-valued length-1 bitvector. */
 inline Bitvector::Bitvector(bool bit)
-    : _max(0), _data(&_f0), _f0(bit), _f1(0) {
+    : _max(0), _data(_f) {
+    _f[0] = bit;
 }
 
 /** @brief Construct a @a bit-valued length-@a n bitvector.
     @pre @a n >= 0 */
 inline Bitvector::Bitvector(int n, bool b)
-    : _max(n - 1), _data(&_f0), _f0(0), _f1(0) {
-    assert(n >= 0);
-    if (_max > MAX_INLINE_BIT)
-	resize_to_max(_max, false);
-    if (b)
-	assign(n, b);
+    : _max(-1), _data(_f) {
+    assign(n, b);
 }
 
 /** @brief Construct a bitvector as a copy of @a x. */
 inline Bitvector::Bitvector(const Bitvector &x)
-    : _max(x._max), _data(&_f0), _f0(x._data[0]), _f1(x._data[1]) {
-    if (_max > MAX_INLINE_BIT)
+    : _max(x._max), _data(_f) {
+    if (_max < inlinebits)
+	memcpy(_data, x._data, ninline * sizeof(word_type));
+    else
 	finish_copy_constructor(x);
 }
 
@@ -166,7 +169,7 @@ inline Bitvector::Bitvector(const Bitvector &x)
 
     All outstanding Bit objects become invalid. */
 inline Bitvector::~Bitvector() {
-    if (_data != &_f0)
+    if (_data != _f)
 	delete[] _data;
 }
 
@@ -242,17 +245,6 @@ inline const Bitvector::word_type *Bitvector::data_words() const {
     return _data;
 }
 /** @endcond never */
-
-/** @brief Resize the bitvector to @a n bits.
-    @pre @a n >= 0
-
-    Any bits added to the bitvector are false. */
-inline void Bitvector::resize(int n) {
-    assert(n >= 0);
-    if (n - 1 > MAX_INLINE_BIT)
-	resize_to_max(n - 1, true);
-    _max = n - 1;
-}
 
 /** @brief Test bitvectors for equality. */
 inline bool operator==(const Bitvector &a, const Bitvector &b) {
