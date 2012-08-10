@@ -31,14 +31,7 @@ Bitvector::finish_copy_constructor(const Bitvector &o)
 	_data[i] = o._data[i];
 }
 
-void
-Bitvector::clear()
-{
-    int nn = max_word();
-    for (int i = 0; i <= nn; i++)
-	_data[i] = 0;
-}
-
+/** @brief Test if the bitvector's bits are all false. */
 bool
 Bitvector::zero() const
 {
@@ -47,6 +40,15 @@ Bitvector::zero() const
 	if (_data[i])
 	    return false;
     return true;
+}
+
+/** @brief Set all bits to false. */
+void
+Bitvector::clear()
+{
+    int nn = max_word();
+    for (int i = 0; i <= nn; i++)
+	_data[i] = 0;
 }
 
 void
@@ -78,45 +80,51 @@ Bitvector::clear_last()
     }
 }
 
+/** @brief Set this bitvector to a copy of @a x.
+    @return *this */
 Bitvector &
-Bitvector::operator=(const Bitvector &o)
+Bitvector::operator=(const Bitvector &x)
 {
 #if CLICK_LINUXMODULE || CLICK_BSDMODULE
     // We might not have been initialized properly.
     if (!_data)
 	_max = -1, _data = &_f0;
 #endif
-    if (&o == this)
+    if (&x == this)
 	/* nada */;
-    else if (o.max_word() <= MAX_INLINE_WORD)
-	memcpy(_data, o._data, 8);
+    else if (x.max_word() <= MAX_INLINE_WORD)
+	memcpy(_data, x._data, (MAX_INLINE_WORD + 1) * sizeof(word_type));
     else {
 	if (_data != &_f0)
 	    delete[] _data;
-	_data = new word_type[o.word_size()];
-	memcpy(_data, o._data, o.word_size() * sizeof(word_type));
+	_data = new word_type[x.word_size()];
+	memcpy(_data, x._data, x.word_size() * sizeof(word_type));
     }
-    _max = o._max;
+    _max = x._max;
     return *this;
 }
 
+/** @brief Set the bitvector to @a bit-valued length-@a n.
+    @pre @a n >= 0
+    @return *this */
 Bitvector &
-Bitvector::assign(int n, bool value)
+Bitvector::assign(int n, bool bit)
 {
     resize(n);
-    word_type bits = (value ? ~word_type(0) : word_type(0));
+    word_type bits = (bit ? ~word_type(0) : word_type(0));
     // 24.Jun.2008 -- Even if n <= 0, at least one word must be set to "bits."
     // Otherwise assert(_max >= 0 || _data[0] == 0) will not hold.
     int copy = (n > 0 ? word_size() : 1);
     for (int i = 0; i < copy; i++)
 	_data[i] = bits;
-    if (value)
+    if (bit)
 	clear_last();
     return *this;
 }
 
+/** @brief Flip all bits in this bitvector. */
 void
-Bitvector::negate()
+Bitvector::flip()
 {
     int nn = max_word();
     word_type *data = _data;
@@ -125,58 +133,78 @@ Bitvector::negate()
     clear_last();
 }
 
+/** @brief Modify this bitvector by bitwise and with @a x.
+    @pre @a x.size() == size()
+    @return *this */
 Bitvector &
-Bitvector::operator&=(const Bitvector &o)
+Bitvector::operator&=(const Bitvector &x)
 {
-    assert(o._max == _max);
+    assert(x._max == _max);
     int nn = max_word();
-    word_type *data = _data, *o_data = o._data;
+    word_type *data = _data, *x_data = x._data;
     for (int i = 0; i <= nn; i++)
-	data[i] &= o_data[i];
+	data[i] &= x_data[i];
     return *this;
 }
 
+/** @brief Modify this bitvector by bitwise or with @a x.
+    @post new size() == max(old size(), x.size())
+    @return *this */
 Bitvector &
-Bitvector::operator|=(const Bitvector &o)
+Bitvector::operator|=(const Bitvector &x)
 {
-    if (o._max > _max)
-	resize(o._max + 1);
+    if (x._max > _max)
+	resize(x._max + 1);
     int nn = max_word();
-    nn = (nn < o.max_word() ? nn : o.max_word());
-    word_type *data = _data, *o_data = o._data;
+    nn = (nn < x.max_word() ? nn : x.max_word());
+    word_type *data = _data, *x_data = x._data;
     for (int i = 0; i <= nn; i++)
-	data[i] |= o_data[i];
+	data[i] |= x_data[i];
     return *this;
 }
 
+/** @brief Modify this bitvector by bitwise exclusive or with @a x.
+    @pre @a x.size() == size()
+    @return *this */
 Bitvector &
-Bitvector::operator^=(const Bitvector &o)
+Bitvector::operator^=(const Bitvector &x)
 {
-    assert(o._max == _max);
+    assert(x._max == _max);
     int nn = max_word();
-    word_type *data = _data, *o_data = o._data;
+    word_type *data = _data, *x_data = x._data;
     for (int i = 0; i <= nn; i++)
-	data[i] ^= o_data[i];
+	data[i] ^= x_data[i];
     return *this;
 }
 
+/** @brief Modify this bitvector by bitwise or with an offset @a x.
+    @param x bitwise or operand
+    @param offset initial offset
+    @pre @a offset >= 0 && @a offset + @a x.size() <= size()
+
+    Logically shifts @a x to start at position @a offset, then performs
+    a bitwise or.  <code>a.offset_or(b, offset)</code> is equivalent to:
+    @code
+    for (int i = 0; i < b.size(); ++i)
+        a[offset+i] |= b[i];
+     @endcode */
 void
-Bitvector::offset_or(const Bitvector &o, int offset)
+Bitvector::offset_or(const Bitvector &x, int offset)
 {
-    assert(offset >= 0 && offset + o._max <= _max);
+    assert(offset >= 0 && offset + x._max <= _max);
     int bits_1st = offset & wmask;
     int my_pos = offset >> wshift;
-    int o_pos = 0;
+    int x_pos = 0;
     int my_max_word = max_word();
-    int o_max_word = o.max_word();
+    int x_max_word = x.max_word();
     word_type *data = _data;
-    const word_type *o_data = o._data;
-    assert((o._max < 0 && o_data[0] == 0)
-	   || (o._max & wmask) == wmask
-	   || (o_data[o_max_word] & ((word_type(1) << ((o._max & wmask) + 1)) - 1)) == o_data[o_max_word]);
+    const word_type *x_data = x._data;
+    assert((x._max < 0 && x_data[0] == 0)
+	   || (x._max & wmask) == wmask
+	   || (x_data[x_max_word] & ((word_type(1) << ((x._max & wmask) + 1)) - 1)) == x_data[x_max_word]);
 
     while (true) {
-	word_type val = o_data[o_pos];
+	word_type val = x_data[x_pos];
 	data[my_pos] |= (val << bits_1st);
 
 	my_pos++;
@@ -186,40 +214,55 @@ Bitvector::offset_or(const Bitvector &o, int offset)
 	if (bits_1st)
 	    data[my_pos] |= (val >> (wbits - bits_1st));
 
-	o_pos++;
-	if (o_pos > o_max_word)
+	x_pos++;
+	if (x_pos > x_max_word)
 	    break;
     }
 }
 
+
+/** @brief Modify this bitvector by bitwise or, returning difference.
+    @param x bitwise or operand
+    @param[out] difference set to (@a x - old *this)
+    @pre @a x.size() == size()
+    @post @a difference.size() == size()
+    @post @a x | *this == *this
+    @post (@a difference & *this & @a x) == @a difference
+
+    Same as operator|=, but any newly set bits are returned in @a
+    difference. */
 void
-Bitvector::or_with_difference(const Bitvector &o, Bitvector &diff)
+Bitvector::or_with_difference(const Bitvector &x, Bitvector &difference)
 {
-    assert(o._max == _max);
-    if (diff._max != _max)
-	diff.resize(_max + 1);
+    assert(x._max == _max);
+    if (difference._max != _max)
+	difference.resize(_max + 1);
     int nn = max_word();
-    word_type *data = _data, *diff_data = diff._data;
-    const word_type *o_data = o._data;
+    word_type *data = _data, *diff_data = difference._data;
+    const word_type *x_data = x._data;
     for (int i = 0; i <= nn; i++) {
-	diff_data[i] = o_data[i] & ~data[i];
-	data[i] |= o_data[i];
+	diff_data[i] = x_data[i] & ~data[i];
+	data[i] |= x_data[i];
     }
 }
 
+/** @brief Test whether this bitvector and @a x have a common true bit.
+
+    This bitvector and @a x may have different sizes. */
 bool
-Bitvector::nonzero_intersection(const Bitvector &o) const
+Bitvector::nonzero_intersection(const Bitvector &x) const
 {
-    int nn = o.max_word();
-    if (nn > max_word())
-	nn = max_word();
-    const word_type *data = _data, *o_data = o._data;
-    for (int i = 0; i <= nn; i++)
-	if (data[i] & o_data[i])
+    int nn = x.word_size();
+    if (nn > word_size())
+	nn = word_size();
+    const word_type *data = _data, *x_data = x._data;
+    for (int i = 0; i < nn; i++)
+	if (data[i] & x_data[i])
 	    return true;
     return false;
 }
 
+/** @brief Swap the contents of this bitvector and @a x. */
 void
 Bitvector::swap(Bitvector &x)
 {

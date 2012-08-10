@@ -976,7 +976,7 @@ next_flow_code(const char*& p, int port, Bitvector& code, ErrorHandler* errh, co
 		errh->error("%<%p{element}%> flow code: invalid character %<%c%>", e, *p);
 	}
 	if (negated)
-	    code.negate();
+	    code.flip();
 	if (!*p) {
 	    if (errh)
 		errh->error("%<%p{element}%> flow code: missing %<]%>", e);

@@ -677,7 +677,7 @@ next_flow_code(const char *&p, const char *last,
 		errh->error("flow code: invalid character %<%c%>", *p);
 	}
 	if (negated)
-	    code.negate();
+	    code.flip();
 	if (p == last) {
 	    if (errh)
 		errh->error("flow code: missing %<]%>");
@@ -921,7 +921,7 @@ ProcessingT::compound_flow_code(ErrorHandler *errh) const
 		found++;
 	    } else
 		disjoint |= codes[j];
-	disjoint.negate();
+	disjoint.flip();
 
 	common &= disjoint;
 	for (int j = 0; j < i; j++)

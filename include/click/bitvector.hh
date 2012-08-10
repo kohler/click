@@ -17,7 +17,8 @@ CLICK_DECLS
   Bitvectors are stored as arrays of data words with type word_type, each
   containing wbits bits. For some purposes it may be faster or easier to
   manipulate data words directly. */
-class Bitvector { public:
+class Bitvector {
+  public:
 
     class Bit;
     typedef bool (Bitvector::*unspecified_bool_type)() const;
@@ -25,190 +26,56 @@ class Bitvector { public:
     typedef uint32_t word_type;
     enum { wbits = 32, wshift = 5, wmask = 31 };
 
-    /** @brief Construct an empty bitvector. */
-    Bitvector()
-	: _max(-1), _data(&_f0), _f0(0), _f1(0) {
-    }
+    inline Bitvector();
+    explicit inline Bitvector(int n);
+    explicit inline Bitvector(bool bit);
+    inline Bitvector(int n, bool bit);
+    inline Bitvector(const Bitvector &x);
+    inline ~Bitvector();
 
-    /** @brief Construct an all-false bitvector with @a n elements.
-     * @pre @a n >= 0 */
-    explicit Bitvector(int n);
-
-    /** @brief Construct a @a bit-valued length-1 bitvector. */
-    explicit Bitvector(bool bit)
-	: _max(0), _data(&_f0), _f0(bit), _f1(0) {
-    }
-
-    /** @brief Construct a @a bit-valued length-@a n bitvector.
-     * @pre @a n >= 0 */
-    Bitvector(int n, bool bit);
-
-    /** @brief Construct a bitvector as a copy of @a x. */
-    Bitvector(const Bitvector &x);
-
-    /** @brief Destroy a bitvector.
-     *
-     * All outstanding Bit objects become invalid. */
-    ~Bitvector() {
-	if (_data != &_f0)
-	    delete[] _data;
-    }
-
-
-    /** @brief Return the number of bits in the bitvector. */
-    int size() const		{ return _max + 1; }
-
-    /** @brief Return true iff the bitvector's bits are all false. */
-    bool zero() const;
-
-    /** @brief Return true iff the bitvector's bits are all false.
-     * @sa zero() */
-    operator unspecified_bool_type() const {
-	return !zero() ? &Bitvector::zero : 0;
-    }
-
-
-    /** @brief Return the bit at position @a i.
-     * @pre 0 <= @a i < size() */
-    Bit operator[](int i);
-
-    /** @overload */
-    bool operator[](int i) const;
-
-    /** @brief Return the bit at position @a i, extending if necessary.
-     *
-     * If @a i >= size(), then the bitvector is resize()d to length @a i+1,
-     * which adds false bits to fill out the vector.
-     *
-     * @pre 0 <= @a i
-     * @post @a i < size() */
-    Bit force_bit(int i);
-
+    inline int size() const;
+    inline Bit operator[](int i);
+    inline bool operator[](int i) const;
+    inline Bit force_bit(int i);
 
     inline int word_size() const;
     inline int max_word() const;
     inline word_type *words();
     inline const word_type *words() const;
 
+    bool zero() const;
+    inline operator unspecified_bool_type() const;
+    inline bool operator!() const;
 
-    /** @brief Set all bits to false. */
+    Bitvector &assign(int n, bool bit);
+    Bitvector &operator=(const Bitvector &x);
     void clear();
-
-    /** @brief Resize the bitvector to @a n bits.
-     * @pre @a n >= 0
-     *
-     * Any bits added to the bitvector are false. */
     void resize(int n);
 
-    /** @brief Set the bitvector to @a bit-valued length-@a n.
-     * @pre @a n >= 0
-     * @return *this */
-    Bitvector &assign(int n, bool bit);
-
-    /** @brief Set the bitvector to a copy of @a x.
-     * @return *this */
-    Bitvector &operator=(const Bitvector &x);
-
-
-    /** @brief Check bitvectors for equality. */
-    bool operator==(const Bitvector &x) const {
-	return _max == x._max
-	    && memcmp(_data, x._data, word_size() * sizeof(word_type)) == 0;
-    }
-
-    /** @brief Check bitvectors for inequality. */
-    bool operator!=(const Bitvector &x) const {
-	return !(*this == x);
-    }
-
-
-    /** @brief Return the bitwise negation of this bitvector. */
-    inline Bitvector operator~() const;
-
-    /** @brief Return the bitwise and of two bitvectors.
-     * @pre @a x.size() == size() */
-    Bitvector operator&(const Bitvector &x) const;
-
-    /** @brief Return the bitwise or of two bitvectors.
-     * @pre @a x.size() == size() */
-    Bitvector operator|(const Bitvector &x) const;
-
-    /** @brief Return the bitwise exclusive or of two bitvectors.
-     * @pre @a x.size() == size() */
-    Bitvector operator^(const Bitvector &x) const;
-
-    /** @brief Return the bitwise subtraction of two bitvectors.
-     * @pre @a x.size() == size()
-     *
-     * <code>x - y</code> is equivalent to <code>x & ~y</code>. */
-    Bitvector operator-(const Bitvector &x) const;
-
-
-    /** @brief Negate this bitvector by flipping each of its bits. */
-    void negate();
-
-    /** @brief Modify this bitvector by bitwise and with @a x.
-     * @pre @a x.size() == size()
-     * @return *this */
-    Bitvector &operator&=(const Bitvector &x);
-
-    /** @brief Modify this bitvector by bitwise or with @a x.
-     * @pre @a x.size() == size()
-     * @return *this */
-    Bitvector &operator|=(const Bitvector &x);
-
-    /** @brief Modify this bitvector by bitwise exclusive or with @a x.
-     * @pre @a x.size() == size()
-     * @return *this */
-    Bitvector &operator^=(const Bitvector &x);
-
-    /** @brief Modify this bitvector by bitwise subtraction with @a x.
-     * @pre @a x.size() == size()
-     * @return *this
-     *
-     * Equivalent to <code>*this &= ~@a x</code>. */
-    Bitvector &operator-=(const Bitvector &x);
-
-
-    /** @brief Modify this bitvector by bitwise or with an offset @a x.
-     * @param x bitwise or operand
-     * @param offset initial offset
-     * @pre @a offset >= 0 && @a offset + @a x.size() <= size()
-     *
-     * Logically shifts @a x to start at position @a offset, then performs
-     * a bitwise or.  <code>a.offset_or(b, offset)</code> is equivalent to:
-     * @code
-     * for (int i = 0; i < b.size(); ++i)
-     *     a[offset+i] |= b[i];
-     * @endcode */
-    void offset_or(const Bitvector &x, int offset);
-
-    /** @brief Modify this bitvector by bitwise or, returning difference.
-     * @param x bitwise or operand
-     * @param[out] difference set to (@a x - old *this)
-     * @pre @a x.size() == size()
-     * @post @a difference.size() == size()
-     * @post @a x | *this == *this
-     * @post (@a difference & *this & @a x) == @a difference
-     *
-     * Same as operator|=, but additionally preserves any change in this
-     * bitvector.  Any newly set bits are returned in @a difference. */
-    void or_with_difference(const Bitvector &x, Bitvector &difference);
-
-
-    /** @brief Return whether this bitvector and @a x have a common true bit.
-     *
-     * This bitvector and @a x may have different sizes; the smaller is used. */
+    friend inline bool operator==(const Bitvector &a, const Bitvector &b);
+    friend inline bool operator!=(const Bitvector &a, const Bitvector &b);
     bool nonzero_intersection(const Bitvector &x) const;
 
+    inline Bitvector operator~() const;
+    friend inline Bitvector operator&(Bitvector a, const Bitvector &b);
+    friend inline Bitvector operator|(Bitvector a, const Bitvector &b);
+    friend inline Bitvector operator^(Bitvector a, const Bitvector &b);
+    friend inline Bitvector operator-(Bitvector a, const Bitvector &b);
 
-    /** @brief Swap the contents of this bitvector and @a x. */
+    void flip();
+    inline void negate();
+    Bitvector &operator&=(const Bitvector &x);
+    Bitvector &operator|=(const Bitvector &x);
+    Bitvector &operator^=(const Bitvector &x);
+    inline Bitvector &operator-=(const Bitvector &x);
+    void offset_or(const Bitvector &x, int offset);
+    void or_with_difference(const Bitvector &x, Bitvector &difference);
+
     void swap(Bitvector &x);
-
 
     /** @cond never */
     typedef word_type data_word_type CLICK_DEPRECATED;
-    enum { data_word_bits = word_bits };
+    enum { data_word_bits = wbits };
     inline word_type *data_words() CLICK_DEPRECATED;
     inline const word_type *data_words() const CLICK_DEPRECATED;
     /** @endcond never */
@@ -218,9 +85,9 @@ class Bitvector { public:
     enum { MAX_INLINE_BIT = 63, MAX_INLINE_WORD = 1 };
 
     int _max;
-    uint32_t *_data;
-    uint32_t _f0;
-    uint32_t _f1;
+    word_type *_data;
+    word_type _f0;
+    word_type _f1;
 
     void finish_copy_constructor(const Bitvector &);
     void clear_last();
@@ -236,63 +103,18 @@ class Bitvector { public:
   but Bit operations actually index into individual bits in some shared word. */
 class Bitvector::Bit { public:
 
-    /** @brief Construct a bit at offset @a bit_offset in data word @a w. */
-    Bit(Bitvector::word_type &w, int bit_offset)
-	: _p(w), _mask(Bitvector::word_type(1) << bit_offset) {
-    }
+    inline Bit(Bitvector::word_type &w, int bit_offset);
 
-    typedef Bitvector::unspecified_bool_type unspecified_bool_type;
+    inline operator bool() const;
 
-    /** @brief Check if this bit is true. */
-    inline operator unspecified_bool_type() const {
-	return (_p & _mask) != 0 ? &Bitvector::zero : 0;
-    }
+    inline Bit &operator=(bool x);
+    inline Bit &operator=(const Bit &x);
+    inline void flip();
 
-    /** @brief Set this bit to @a x. */
-    Bit &operator=(bool x) {
-	if (x)
-	    _p |= _mask;
-	else
-	    _p &= ~_mask;
-	return *this;
-    }
-
-    /** @overload */
-    Bit &operator=(const Bit &x) {
-	if (x._p & x._mask)
-	    _p |= _mask;
-	else
-	    _p &= ~_mask;
-	return *this;
-    }
-
-    /** @brief Modify this bit by bitwise and with @a x. */
-    Bit &operator&=(bool x) {
-	if (!x)
-	    _p &= ~_mask;
-	return *this;
-    }
-
-    /** @brief Modify this bit by bitwise or with @a x. */
-    Bit &operator|=(bool x) {
-	if (x)
-	    _p |= _mask;
-	return *this;
-    }
-
-    /** @brief Modify this bit by bitwise exclusive or with @a x. */
-    Bit &operator^=(bool x) {
-	if (x)
-	    _p ^= _mask;
-	return *this;
-    }
-
-    /** @brief Modify this bit by bitwise subtraction with @a x. */
-    Bit &operator-=(bool x) {
-	if (x)
-	    _p &= ~_mask;
-	return *this;
-    }
+    inline Bit &operator&=(bool x);
+    inline Bit &operator|=(bool x);
+    inline Bit &operator^=(bool x);
+    inline Bit &operator-=(bool x);
 
   private:
 
@@ -302,19 +124,30 @@ class Bitvector::Bit { public:
 };
 
 
-inline
-Bitvector::Bitvector(int n)
-    : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
-{
+
+/** @brief Construct an empty bitvector. */
+inline Bitvector::Bitvector()
+    : _max(-1), _data(&_f0), _f0(0), _f1(0) {
+}
+
+/** @brief Construct an all-false bitvector with @a n elements.
+    @pre @a n >= 0 */
+inline Bitvector::Bitvector(int n)
+    : _max(n - 1), _data(&_f0), _f0(0), _f1(0) {
     assert(n >= 0);
     if (_max > MAX_INLINE_BIT)
 	resize_to_max(_max, false);
 }
 
-inline
-Bitvector::Bitvector(int n, bool b)
-    : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
-{
+/** @brief Construct a @a bit-valued length-1 bitvector. */
+inline Bitvector::Bitvector(bool bit)
+    : _max(0), _data(&_f0), _f0(bit), _f1(0) {
+}
+
+/** @brief Construct a @a bit-valued length-@a n bitvector.
+    @pre @a n >= 0 */
+inline Bitvector::Bitvector(int n, bool b)
+    : _max(n - 1), _data(&_f0), _f0(0), _f1(0) {
     assert(n >= 0);
     if (_max > MAX_INLINE_BIT)
 	resize_to_max(_max, false);
@@ -322,40 +155,59 @@ Bitvector::Bitvector(int n, bool b)
 	assign(n, b);
 }
 
-inline
-Bitvector::Bitvector(const Bitvector &o)
-    : _max(o._max), _data(&_f0), _f0(o._data[0]), _f1(o._data[1])
-{
+/** @brief Construct a bitvector as a copy of @a x. */
+inline Bitvector::Bitvector(const Bitvector &x)
+    : _max(x._max), _data(&_f0), _f0(x._data[0]), _f1(x._data[1]) {
     if (_max > MAX_INLINE_BIT)
-	finish_copy_constructor(o);
+	finish_copy_constructor(x);
 }
 
-inline void
-Bitvector::resize(int n)
-{
-    assert(n >= 0);
-    if (n - 1 > MAX_INLINE_BIT)
-	resize_to_max(n - 1, true);
-    _max = n - 1;
+/** @brief Destroy a bitvector.
+
+    All outstanding Bit objects become invalid. */
+inline Bitvector::~Bitvector() {
+    if (_data != &_f0)
+	delete[] _data;
 }
 
-inline Bitvector::Bit
-Bitvector::operator[](int i)
-{
+/** @brief Return the number of bits in the bitvector. */
+inline int Bitvector::size() const {
+    return _max + 1;
+}
+
+/** @brief Test if the bitvector contains at least one true bit.
+    @sa zero() */
+inline Bitvector::operator unspecified_bool_type() const {
+    return !zero() ? &Bitvector::zero : 0;
+}
+
+/** @brief Test if the bitvector contains no true bits.
+    @sa zero() */
+inline bool Bitvector::operator!() const {
+    return zero();
+}
+
+/** @brief Return the bit at position @a i.
+    @pre 0 <= @a i < size() */
+inline Bitvector::Bit Bitvector::operator[](int i) {
     assert(i >= 0 && i <= _max);
     return Bit(_data[i>>wshift], i & wmask);
 }
 
-inline bool
-Bitvector::operator[](int i) const
-{
+/** @overload */
+inline bool Bitvector::operator[](int i) const {
     assert(i >= 0 && i <= _max);
     return (_data[i>>wshift] & (word_type(1) << (i & wmask))) != 0;
 }
 
-inline Bitvector::Bit
-Bitvector::force_bit(int i)
-{
+/** @brief Return the bit at position @a i, extending if necessary.
+
+    If @a i >= size(), then the bitvector is resize()d to length @a i+1,
+    which adds false bits to fill out the vector.
+
+    @pre 0 <= @a i
+    @post @a i < size() */
+inline Bitvector::Bit Bitvector::force_bit(int i) {
     assert(i >= 0);
     if (i > _max)
 	resize(i + 1);
@@ -391,58 +243,144 @@ inline const Bitvector::word_type *Bitvector::data_words() const {
 }
 /** @endcond never */
 
-inline Bitvector &
-Bitvector::operator-=(const Bitvector &o)
-{
-    return *this &= ~o;
+/** @brief Resize the bitvector to @a n bits.
+    @pre @a n >= 0
+
+    Any bits added to the bitvector are false. */
+inline void Bitvector::resize(int n) {
+    assert(n >= 0);
+    if (n - 1 > MAX_INLINE_BIT)
+	resize_to_max(n - 1, true);
+    _max = n - 1;
 }
 
-inline Bitvector
-Bitvector::operator~() const
-{
+/** @brief Test bitvectors for equality. */
+inline bool operator==(const Bitvector &a, const Bitvector &b) {
+    return a.size() == b.size()
+	&& memcmp(a.words(), b.words(), a.word_size() * sizeof(Bitvector::word_type)) == 0;
+}
+
+/** @brief Test bitvectors for inequality. */
+inline bool operator!=(const Bitvector &a, const Bitvector &b) {
+    return !(a == b);
+}
+
+/** @brief Modify this bitvector by bitwise subtraction with @a x.
+    @pre @a x.size() == size()
+    @return *this
+
+    Equivalent to <code>*this &= ~@a x</code>. */
+inline Bitvector &Bitvector::operator-=(const Bitvector &x) {
+    return *this &= ~x;
+}
+
+/** @brief Flip all bits in this bitvector.
+    @sa negate() */
+inline void Bitvector::negate() {
+    flip();
+}
+
+/** @brief Return the bitwise negation of this bitvector. */
+inline Bitvector Bitvector::operator~() const {
     Bitvector m = *this;
-    m.negate();
+    m.flip();
     return m;
 }
 
-inline Bitvector
-Bitvector::operator&(const Bitvector &o) const
-{
-    Bitvector m = *this;
-    m &= o;
-    return m;
+/** @brief Return the bitwise and of two bitvectors.
+    @pre @a a.size() == @a b.size() */
+inline Bitvector operator&(Bitvector a, const Bitvector &b) {
+    return a &= b;
 }
 
-inline Bitvector
-Bitvector::operator|(const Bitvector &o) const
-{
-    Bitvector m = *this;
-    m |= o;
-    return m;
+/** @brief Return the bitwise or of two bitvectors.
+    @pre @a a.size() == @a b.size() */
+inline Bitvector operator|(Bitvector a, const Bitvector &b) {
+    return a |= b;
 }
 
-inline Bitvector
-Bitvector::operator^(const Bitvector &o) const
-{
-    Bitvector m = *this;
-    m ^= o;
-    return m;
+/** @brief Return the bitwise exclusive or of two bitvectors.
+    @pre @a a.size() == @a b.size() */
+inline Bitvector operator^(Bitvector a, const Bitvector &b) {
+    return a ^= b;
 }
 
-inline Bitvector
-Bitvector::operator-(const Bitvector &o) const
-{
-    return *this & ~o;
+/** @brief Return the bitwise subtraction of two bitvectors.
+    @pre @a a.size() == @a b.size()
+
+    <code>a - b</code> is equivalent to <code>a & ~b</code>. */
+inline Bitvector operator-(Bitvector a, const Bitvector &b) {
+    return a & ~b;
 }
 
-inline void click_swap(Bitvector &a, Bitvector &b)
-{
+inline void click_swap(Bitvector &a, Bitvector &b) {
     a.swap(b);
 }
 
-inline void assign_consume(Bitvector &a, Bitvector &b)
-{
+inline void assign_consume(Bitvector &a, Bitvector &b) {
     a.swap(b);
+}
+
+
+/** @brief Construct a bit at offset @a bit_offset in data word @a w. */
+inline Bitvector::Bit::Bit(Bitvector::word_type &w, int bit_offset)
+    : _p(w), _mask(Bitvector::word_type(1) << bit_offset) {
+}
+
+/** @brief Test if this bit is true. */
+inline Bitvector::Bit::operator bool() const {
+    return (_p & _mask) != 0;
+}
+
+/** @brief Set this bit to @a x. */
+inline Bitvector::Bit &Bitvector::Bit::operator=(bool x) {
+    if (x)
+	_p |= _mask;
+    else
+	_p &= ~_mask;
+    return *this;
+}
+
+/** @overload */
+inline Bitvector::Bit &Bitvector::Bit::operator=(const Bit &x) {
+    if (x._p & x._mask)
+	_p |= _mask;
+    else
+	_p &= ~_mask;
+    return *this;
+}
+
+/** @brief Flip this bit. */
+inline void Bitvector::Bit::flip() {
+    _p ^= _mask;
+}
+
+/** @brief Modify this bit by bitwise and with @a x. */
+inline Bitvector::Bit &Bitvector::Bit::operator&=(bool x) {
+    if (!x)
+	_p &= ~_mask;
+    return *this;
+}
+
+/** @brief Modify this bit by bitwise or with @a x. */
+inline Bitvector::Bit &Bitvector::Bit::operator|=(bool x) {
+    if (x)
+	_p |= _mask;
+    return *this;
+}
+
+/** @brief Modify this bit by bitwise exclusive or with @a x. */
+inline Bitvector::Bit &Bitvector::Bit::operator^=(bool x) {
+    if (x)
+	_p ^= _mask;
+    return *this;
+}
+
+/** @brief Modify this bit by bitwise subtraction with @a x. */
+inline Bitvector::Bit &Bitvector::Bit::operator-=(bool x) {
+    if (x)
+	_p &= ~_mask;
+    return *this;
 }
 
 CLICK_ENDDECLS
