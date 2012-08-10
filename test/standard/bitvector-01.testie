@@ -1,0 +1,12 @@
+%info
+Tests bitvector functionality with the BitvectorTest element.
+
+%require
+click-buildtool provides BitvectorTest
+
+%script
+click -qe 'BitvectorTest'
+
+%expect stderr
+config:1:{{.*}}
+  All tests pass!
