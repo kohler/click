@@ -51,13 +51,16 @@ FrontDropQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
   if (new_q == 0)
     return errh->error("out of memory");
 
-  Storage::index_type i, j;
-  for (i = _tail - 1, j = new_capacity; i != _head; i = prev_i(i)) {
-    new_q[--j] = _q[i];
-    if (j == 0) break;
+  Storage::index_type i = _tail, j = new_capacity;
+  while (j != 0 && i != _head) {
+      i = prev_i(i);
+      --j;
+      new_q[j] = _q[i];
   }
-  for (; i != _head; i = prev_i(i))
-    _q[i]->kill();
+  while (i != _head) {
+      i = prev_i(i);
+      _q[i]->kill();
+  }
 
   CLICK_LFREE(_q, sizeof(Packet *) * (_capacity + 1));
   _q = new_q;
