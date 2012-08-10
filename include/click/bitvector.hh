@@ -12,10 +12,18 @@ CLICK_DECLS
 
   The Bitvector class implements a vector of individually addressable bits.
   It supports bitwise operations such as |= and &= as well as the usual
-  assignment and indexing operations. */
+  assignment and indexing operations.
+
+  Bitvectors are stored as arrays of data words with type word_type, each
+  containing wbits bits. For some purposes it may be faster or easier to
+  manipulate data words directly. */
 class Bitvector { public:
 
     class Bit;
+    typedef bool (Bitvector::*unspecified_bool_type)() const;
+
+    typedef uint32_t word_type;
+    enum { wbits = 32, wshift = 5, wmask = 31 };
 
     /** @brief Construct an empty bitvector. */
     Bitvector()
@@ -53,7 +61,6 @@ class Bitvector { public:
     /** @brief Return true iff the bitvector's bits are all false. */
     bool zero() const;
 
-    typedef bool (Bitvector::*unspecified_bool_type)() const;
     /** @brief Return true iff the bitvector's bits are all false.
      * @sa zero() */
     operator unspecified_bool_type() const {
@@ -78,6 +85,12 @@ class Bitvector { public:
     Bit force_bit(int i);
 
 
+    inline int word_size() const;
+    inline int max_word() const;
+    inline word_type *words();
+    inline const word_type *words() const;
+
+
     /** @brief Set all bits to false. */
     void clear();
 
@@ -99,12 +112,8 @@ class Bitvector { public:
 
     /** @brief Check bitvectors for equality. */
     bool operator==(const Bitvector &x) const {
-	if (_max != x._max)
-	    return false;
-	else if (_max <= MAX_INLINE_BIT)
-	    return memcmp(_data, x._data, 8) == 0;
-	else
-	    return memcmp(_data, x._data, (max_word() + 1)*4) == 0;
+	return _max == x._max
+	    && memcmp(_data, x._data, word_size() * sizeof(word_type)) == 0;
     }
 
     /** @brief Check bitvectors for inequality. */
@@ -197,31 +206,12 @@ class Bitvector { public:
     void swap(Bitvector &x);
 
 
-    /** @brief Data word type.
-     *
-     * Bitvectors are stored as arrays of data words, each containing
-     * data_word_bits bits.  For special purposes it may be faster or easier
-     * to manipulate data words directly. */
-    typedef uint32_t data_word_type;
-
-    enum {
-	data_word_bits = 32
-    };
-
-    /** @brief Return the index of the maximum valid data word. */
-    int max_word() const {
-	return (_max < 0 ? -1 : _max >> 5);
-    }
-
-    /** @brief Return a pointer to this bitvector's data words. */
-    data_word_type *data_words() {
-	return _data;
-    }
-
-    /** @overload */
-    const data_word_type *data_words() const {
-	return _data;
-    }
+    /** @cond never */
+    typedef word_type data_word_type CLICK_DEPRECATED;
+    enum { data_word_bits = word_bits };
+    inline word_type *data_words() CLICK_DEPRECATED;
+    inline const word_type *data_words() const CLICK_DEPRECATED;
+    /** @endcond never */
 
   private:
 
@@ -247,8 +237,8 @@ class Bitvector { public:
 class Bitvector::Bit { public:
 
     /** @brief Construct a bit at offset @a bit_offset in data word @a w. */
-    Bit(Bitvector::data_word_type &w, int bit_offset)
-	: _p(w), _mask(1U << bit_offset) {
+    Bit(Bitvector::word_type &w, int bit_offset)
+	: _p(w), _mask(Bitvector::word_type(1) << bit_offset) {
     }
 
     typedef Bitvector::unspecified_bool_type unspecified_bool_type;
@@ -306,8 +296,8 @@ class Bitvector::Bit { public:
 
   private:
 
-    uint32_t &_p;
-    uint32_t _mask;
+    Bitvector::word_type &_p;
+    Bitvector::word_type _mask;
 
 };
 
@@ -353,14 +343,14 @@ inline Bitvector::Bit
 Bitvector::operator[](int i)
 {
     assert(i >= 0 && i <= _max);
-    return Bit(_data[i>>5], i & 31);
+    return Bit(_data[i>>wshift], i & wmask);
 }
 
 inline bool
 Bitvector::operator[](int i) const
 {
     assert(i >= 0 && i <= _max);
-    return (_data[i>>5] & (1U << (i & 31))) != 0;
+    return (_data[i>>wshift] & (word_type(1) << (i & wmask))) != 0;
 }
 
 inline Bitvector::Bit
@@ -369,8 +359,37 @@ Bitvector::force_bit(int i)
     assert(i >= 0);
     if (i > _max)
 	resize(i + 1);
-    return Bit(_data[i>>5], i&31);
+    return Bit(_data[i>>wshift], i & wmask);
 }
+
+/** @brief Return the number of valid data words. */
+inline int Bitvector::word_size() const {
+    return (_max + wbits) >> wshift;
+}
+
+/** @brief Return the index of the maximum valid data word. */
+inline int Bitvector::max_word() const {
+    return (_max < 0 ? -1 : _max >> wshift);
+}
+
+/** @brief Return a pointer to this bitvector's data words. */
+inline Bitvector::word_type *Bitvector::words() {
+    return _data;
+}
+
+/** @overload */
+inline const Bitvector::word_type *Bitvector::words() const {
+    return _data;
+}
+
+/** @cond never */
+inline Bitvector::word_type *Bitvector::data_words() {
+    return _data;
+}
+inline const Bitvector::word_type *Bitvector::data_words() const {
+    return _data;
+}
+/** @endcond never */
 
 inline Bitvector &
 Bitvector::operator-=(const Bitvector &o)

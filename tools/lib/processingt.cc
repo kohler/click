@@ -791,9 +791,9 @@ ProcessingT::follow_flow(const Bitvector &source, bool source_isoutput,
 	   && sink.size() == npidx(!source_isoutput));
     Bitvector bv;
     // for speed with sparse Bitvectors, look into the Bitvector implementation
-    const uint32_t *source_words = source.data_words();
-    const int wb = Bitvector::data_word_bits;
-    for (int w = 0; w <= source.max_word(); ++w)
+    const Bitvector::word_type *source_words = source.words();
+    const int wb = Bitvector::wbits;
+    for (int w = 0; w < source.word_size(); ++w)
 	if (source_words[w]) {
 	    int m = std::min(source.size(), (w + 1) * wb);
 	    for (int pidx = w * wb; pidx < m; ++pidx)
