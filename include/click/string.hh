@@ -680,9 +680,10 @@ inline String &String::operator=(String &&x) {
 
 /** @brief Assign this string to the C string @a cstr. */
 inline String &String::operator=(const char *cstr) {
-    if (__builtin_constant_p(strlen(cstr)) && cstr)
+    if (__builtin_constant_p(strlen(cstr)) && cstr) {
+	deref();
 	assign_memo(cstr, strlen(cstr), 0);
-    else
+    } else
 	assign(cstr, -1, true);
     return *this;
 }
