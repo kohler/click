@@ -447,7 +447,7 @@ inline void StringAccum::append(const unsigned char *s, int len) {
 /** @brief Append the null-terminated C string @a s to this StringAccum.
     @param s data to append */
 inline void StringAccum::append(const char *cstr) {
-    if (__builtin_constant_p(strlen(cstr)))
+    if (__builtin_constant_p(strlen(cstr)) && cstr)
 	append(cstr, strlen(cstr));
     else
 	hard_append_cstr(cstr);

@@ -335,7 +335,7 @@ inline String::String(String &&x)
     @return A String containing the characters of @a cstr, up to but not
     including the terminating null character. */
 inline String::String(const char *cstr) {
-    if (__builtin_constant_p(strlen(cstr)))
+    if (__builtin_constant_p(strlen(cstr)) && cstr)
 	assign(cstr, strlen(cstr), false);
     else
 	assign(cstr, -1, false);
@@ -423,7 +423,7 @@ inline String String::make_garbage(int len) {
     @warning The String implementation may access @a cstr's terminating null
     character. */
 inline String String::make_stable(const char *cstr) {
-    if (__builtin_constant_p(strlen(cstr)))
+    if (__builtin_constant_p(strlen(cstr)) && cstr)
 	return String(cstr, strlen(cstr), 0);
     else
 	return hard_make_stable(cstr, -1);
@@ -680,7 +680,7 @@ inline String &String::operator=(String &&x) {
 
 /** @brief Assign this string to the C string @a cstr. */
 inline String &String::operator=(const char *cstr) {
-    if (__builtin_constant_p(strlen(cstr)))
+    if (__builtin_constant_p(strlen(cstr)) && cstr)
 	assign(cstr, strlen(cstr), true);
     else
 	assign(cstr, -1, true);
@@ -702,7 +702,7 @@ inline void String::append(const String &x) {
 /** @brief Append the null-terminated C string @a cstr to this string.
     @param cstr data to append */
 inline void String::append(const char *cstr) {
-    if (__builtin_constant_p(strlen(cstr)))
+    if (__builtin_constant_p(strlen(cstr)) && cstr)
 	append(cstr, strlen(cstr), absent_memo());
     else
 	append(cstr, -1, absent_memo());
@@ -858,7 +858,7 @@ inline bool operator==(const String &a, const String &b) {
 
 /** @relates String */
 inline bool operator==(const char *a, const String &b) {
-    if (__builtin_constant_p(strlen(a)))
+    if (__builtin_constant_p(strlen(a)) && a)
 	return b.equals(a, strlen(a));
     else
 	return b.equals(a, -1);
@@ -866,7 +866,7 @@ inline bool operator==(const char *a, const String &b) {
 
 /** @relates String */
 inline bool operator==(const String &a, const char *b) {
-    if (__builtin_constant_p(strlen(b)))
+    if (__builtin_constant_p(strlen(b)) && b)
 	return a.equals(b, strlen(b));
     else
 	return a.equals(b, -1);
