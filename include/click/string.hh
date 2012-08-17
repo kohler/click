@@ -336,7 +336,7 @@ inline String::String(String &&x)
     including the terminating null character. */
 inline String::String(const char *cstr) {
     if (__builtin_constant_p(strlen(cstr)) && cstr)
-	assign(cstr, strlen(cstr), false);
+	assign_memo(cstr, strlen(cstr), 0);
     else
 	assign(cstr, -1, false);
 }
@@ -681,7 +681,7 @@ inline String &String::operator=(String &&x) {
 /** @brief Assign this string to the C string @a cstr. */
 inline String &String::operator=(const char *cstr) {
     if (__builtin_constant_p(strlen(cstr)) && cstr)
-	assign(cstr, strlen(cstr), true);
+	assign_memo(cstr, strlen(cstr), 0);
     else
 	assign(cstr, -1, true);
     return *this;
