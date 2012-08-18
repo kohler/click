@@ -123,7 +123,7 @@ WifiDecap::simple_action(Packet *p)
   }
 
   uint16_t ether_type;
-  if (!_strict || memcmp(WIFI_LLC_HEADER, p_out->data() + wifi_header_size,
+  if (!_strict || !memcmp(WIFI_LLC_HEADER, p_out->data() + wifi_header_size,
 			 WIFI_LLC_HEADER_LEN)) {
 	  memcpy(&ether_type, p_out->data() + wifi_header_size + sizeof(click_llc) - 2, 2);
   } else {
