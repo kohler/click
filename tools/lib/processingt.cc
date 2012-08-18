@@ -677,7 +677,7 @@ next_flow_code(const char *&p, const char *last,
 		errh->error("flow code: invalid character %<%c%>", *p);
 	}
 	if (negated)
-	    code.negate();
+	    code.flip();
 	if (p == last) {
 	    if (errh)
 		errh->error("flow code: missing %<]%>");
@@ -791,9 +791,9 @@ ProcessingT::follow_flow(const Bitvector &source, bool source_isoutput,
 	   && sink.size() == npidx(!source_isoutput));
     Bitvector bv;
     // for speed with sparse Bitvectors, look into the Bitvector implementation
-    const uint32_t *source_words = source.data_words();
-    const int wb = Bitvector::data_word_bits;
-    for (int w = 0; w <= source.max_word(); ++w)
+    const Bitvector::word_type *source_words = source.words();
+    const int wb = Bitvector::wbits;
+    for (int w = 0; w < source.word_size(); ++w)
 	if (source_words[w]) {
 	    int m = std::min(source.size(), (w + 1) * wb);
 	    for (int pidx = w * wb; pidx < m; ++pidx)
@@ -921,7 +921,7 @@ ProcessingT::compound_flow_code(ErrorHandler *errh) const
 		found++;
 	    } else
 		disjoint |= codes[j];
-	disjoint.negate();
+	disjoint.flip();
 
 	common &= disjoint;
 	for (int j = 0; j < i; j++)
