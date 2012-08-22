@@ -29,7 +29,7 @@
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
-#include <linux/spinlock.h>
+#include <linux/mutex.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 # include <linux/locks.h>
 #endif
@@ -46,16 +46,16 @@ static struct inode_operations *click_handler_inode_ops;
 static struct dentry_operations click_dentry_ops;
 static struct proclikefs_file_system *clickfs;
 
-static spinlock_t clickfs_lock;
+static struct mutex clickfs_lock;
 static wait_queue_head_t clickfs_waitq;
 static atomic_t clickfs_read_count;
 extern uint32_t click_config_generation;
 static int clickfs_ready;
 
-//#define SPIN_LOCK_MSG(l, file, line, what)	printk("<1>%s:%d: pid %d: %sing %p in clickfs\n", (file), (line), current->pid, (what), (l))
-#define SPIN_LOCK_MSG(l, file, line, what)	((void)(file), (void)(line))
-#define SPIN_LOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "lock"); spin_lock((l)); } while (0)
-#define SPIN_UNLOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "unlock"); spin_unlock((l)); } while (0)
+//#define MUTEX_LOCK_MSG(l, file, line, what)	printk("<1>%s:%d: pid %d: %sing %p in clickfs\n", (file), (line), current->pid, (what), (l))
+#define MUTEX_LOCK_MSG(l, file, line, what)	((void)(file), (void)(line))
+#define MUTEX_LOCK(l, file, line)	do { MUTEX_LOCK_MSG((l), (file), (line), "lock"); mutex_lock((l)); } while (0)
+#define MUTEX_UNLOCK(l, file, line)	do { MUTEX_LOCK_MSG((l), (file), (line), "unlock"); mutex_unlock((l)); } while (0)
 
 #define LOCK_CONFIG_READ()	lock_config(__FILE__, __LINE__, 0)
 #define UNLOCK_CONFIG_READ()	unlock_config_read()
@@ -80,7 +80,7 @@ lock_config(const char *file, int line, int iswrite)
     add_wait_queue(&clickfs_waitq, &wait);
 #endif
     for (;;) {
-	SPIN_LOCK(&clickfs_lock, file, line);
+	MUTEX_LOCK(&clickfs_lock, file, line);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	prepare_to_wait(&clickfs_waitq, &wait, TASK_UNINTERRUPTIBLE);
 #else
@@ -89,14 +89,14 @@ lock_config(const char *file, int line, int iswrite)
 	int reads = atomic_read(&clickfs_read_count);
 	if (iswrite ? reads == 0 : reads >= 0)
 	    break;
-	SPIN_UNLOCK(&clickfs_lock, file, line);
+	MUTEX_UNLOCK(&clickfs_lock, file, line);
 	schedule();
     }
     if (iswrite)
 	atomic_dec(&clickfs_read_count);
     else
 	atomic_inc(&clickfs_read_count);
-    SPIN_UNLOCK(&clickfs_lock, file, line);
+    MUTEX_UNLOCK(&clickfs_lock, file, line);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     finish_wait(&clickfs_waitq, &wait);
 #else
@@ -450,7 +450,7 @@ static String *handler_strings = 0;
 static HandlerStringInfo *handler_strings_info = 0;
 static int handler_strings_cap = 0;
 static int handler_strings_free = -1;
-static spinlock_t handler_strings_lock;
+static struct mutex handler_strings_lock;
 
 #define FILP_STRINGNO(filp)		(reinterpret_cast<intptr_t>((filp)->private_data))
 #define FILP_READ_STRINGNO(filp)	FILP_STRINGNO(filp)
@@ -494,7 +494,7 @@ increase_handler_strings()
 static int
 next_handler_string(const Handler *h)
 {
-    SPIN_LOCK(&handler_strings_lock, __FILE__, __LINE__);
+    MUTEX_LOCK(&handler_strings_lock, __FILE__, __LINE__);
     if (handler_strings_free < 0)
 	increase_handler_strings();
     int hs = handler_strings_free;
@@ -502,20 +502,20 @@ next_handler_string(const Handler *h)
 	handler_strings_free = handler_strings_info[hs].next;
 	handler_strings_info[hs].flags = h->flags();
     }
-    SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
+    MUTEX_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
     return hs;
 }
 
 static void
 free_handler_string(int hs)
 {
-    SPIN_LOCK(&handler_strings_lock, __FILE__, __LINE__);
+    MUTEX_LOCK(&handler_strings_lock, __FILE__, __LINE__);
     if (hs >= 0 && hs < handler_strings_cap) {
 	handler_strings[hs] = String();
 	handler_strings_info[hs].next = handler_strings_free;
 	handler_strings_free = hs;
     }
-    SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
+    MUTEX_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
 }
 
 static void
@@ -957,8 +957,8 @@ init_clickfs()
 #endif
     static_assert(HANDLER_DIRECT + HANDLER_DONE + HANDLER_RAW + HANDLER_SPECIAL_INODE + HANDLER_WRITE_UNLIMITED < Handler::USER_FLAG_0, "Too few driver handler flags available.");
 
-    spin_lock_init(&handler_strings_lock);
-    spin_lock_init(&clickfs_lock);
+    mutex_init(&handler_strings_lock);
+    mutex_init(&clickfs_lock);
     init_waitqueue_head(&clickfs_waitq);
     atomic_set(&clickfs_read_count, 0);
 
@@ -1027,14 +1027,14 @@ cleanup_clickfs()
 
     // clean up handler_strings
     MDEBUG("cleaning up handler strings");
-    SPIN_LOCK(&handler_strings_lock, __FILE__, __LINE__);
+    MUTEX_LOCK(&handler_strings_lock, __FILE__, __LINE__);
     delete[] handler_strings;
     delete[] handler_strings_info;
     handler_strings = 0;
     handler_strings_info = 0;
     handler_strings_cap = -1;
     handler_strings_free = -1;
-    SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
+    MUTEX_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
 
     MDEBUG("click_ino cleanup");
     click_ino.cleanup();
