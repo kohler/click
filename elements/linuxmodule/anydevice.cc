@@ -183,7 +183,12 @@ AnyDevice::lookup_device(ErrorHandler *errh)
 void
 AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm, int flags)
 {
-    if (_dev == dev) {		// no device change == carrier sense only
+     if (!dev && !_dev && !_in_map && adm) {
+	adm->insert(this, flags & anydev_change);
+	return;
+    }
+
+   if (_dev == dev) {		// no device change == carrier sense only
 	bool carrier_ok = (_dev && netif_carrier_ok(_dev));
 	if (carrier_ok != _carrier_ok) {
 	    _carrier_ok = carrier_ok;
