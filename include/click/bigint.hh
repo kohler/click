@@ -177,7 +177,7 @@ class Bigint { public:
      * @param n number of limbs in @a a
      * @param b input value
      * @return carry */
-    static click_uint_large_t set(limb_type *a, int n, click_uint_large_t b) {
+    static click_uintmax_t set(limb_type *a, int n, click_uintmax_t b) {
 	while (n > 0) {
 	    *a++ = b;
 	    n--;

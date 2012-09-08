@@ -635,7 +635,7 @@ ErrorHandler::vxformat(int default_flags, const char *s, va_list val)
 		if ((flags & cf_signed) && (int64_t)qnum < 0)
 		    qnum = -(int64_t) qnum, flags |= cf_negative;
 		StringAccum sa;
-		sa.append_numeric(static_cast<String::uint_large_t>(qnum), base, (flags & cf_uppercase));
+		sa.append_numeric(static_cast<String::uintmax_t>(qnum), base, (flags & cf_uppercase));
 		s1 = s2 - sa.length();
 		memcpy(const_cast<char*>(s1), sa.data(), s2 - s1);
 		goto got_number;

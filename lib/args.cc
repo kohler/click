@@ -617,19 +617,20 @@ IntArg::parse(const char *begin, const char *end, bool is_signed, int size,
 }
 
 void
-IntArg::report_error(const ArgContext &args, bool negative,
-		     click_uint_large_t value) const
+IntArg::range_error(const ArgContext &args, bool is_signed,
+		    click_intmax_t value)
 {
-    if (status == status_range) {
-	const char *sgn = "-" + !negative;
-	args.error("out of range, bound %s%" CLICK_ERRHuLARGE, sgn, value);
-    }
+    status = status_range;
+    if (is_signed)
+	args.error("out of range, bound %" CLICK_ERRHdMAX, value);
+    else
+	args.error("out of range, bound %" CLICK_ERRHuMAX, click_uintmax_t(value));
 }
 
 
 namespace {
-typedef click_uint_large_t value_type;
-typedef click_int_large_t signed_value_type;
+typedef click_uintmax_t value_type;
+typedef click_intmax_t signed_value_type;
 
 const char *
 preparse_fraction(const char *begin, const char *end, bool is_signed,

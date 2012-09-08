@@ -90,8 +90,8 @@ class StringAccum { public:
     inline void append(const char *first, const char *last);
     inline void append(const unsigned char *first, const unsigned char *last);
     void append_fill(int c, int len);
-    void append_numeric(String::int_large_t x, int base = 10, bool uppercase = true);
-    void append_numeric(String::uint_large_t x, int base = 10, bool uppercase = true);
+    void append_numeric(String::intmax_t x, int base = 10, bool uppercase = true);
+    void append_numeric(String::uintmax_t x, int base = 10, bool uppercase = true);
 
     StringAccum &snprintf(int n, const char *format, ...) CLICK_SNPRINTF_ATTR;
 
@@ -570,13 +570,13 @@ inline StringAccum &operator<<(StringAccum &sa, unsigned x) {
 #if HAVE_LONG_LONG
 /** @overload */
 inline StringAccum &operator<<(StringAccum &sa, long long x) {
-    sa.append_numeric(static_cast<String::int_large_t>(x));
+    sa.append_numeric(static_cast<String::intmax_t>(x));
     return sa;
 }
 
 /** @overload */
 inline StringAccum &operator<<(StringAccum &sa, unsigned long long x) {
-    sa.append_numeric(static_cast<String::uint_large_t>(x));
+    sa.append_numeric(static_cast<String::uintmax_t>(x));
     return sa;
 }
 #endif
@@ -584,13 +584,13 @@ inline StringAccum &operator<<(StringAccum &sa, unsigned long long x) {
 #if HAVE_INT64_TYPES && !HAVE_INT64_IS_LONG && !HAVE_INT64_IS_LONG_LONG
 /** @overload */
 inline StringAccum &operator<<(StringAccum &sa, int64_t x) {
-    sa.append_numeric(static_cast<String::int_large_t>(x));
+    sa.append_numeric(static_cast<String::intmax_t>(x));
     return sa;
 }
 
 /** @overload */
 inline StringAccum &operator<<(StringAccum &sa, uint64_t x) {
-    sa.append_numeric(static_cast<String::uint_large_t>(x));
+    sa.append_numeric(static_cast<String::uintmax_t>(x));
     return sa;
 }
 #endif

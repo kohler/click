@@ -329,7 +329,7 @@ String::make_claim(char *str, int len, int capacity)
     @param base base; must be 8, 10, or 16, defaults to 10
     @param uppercase if true, then use uppercase letters in base 16 */
 String
-String::make_numeric(int_large_t num, int base, bool uppercase)
+String::make_numeric(intmax_t num, int base, bool uppercase)
 {
     StringAccum sa;
     sa.append_numeric(num, base, uppercase);
@@ -338,7 +338,7 @@ String::make_numeric(int_large_t num, int base, bool uppercase)
 
 /** @overload */
 String
-String::make_numeric(uint_large_t num, int base, bool uppercase)
+String::make_numeric(uintmax_t num, int base, bool uppercase)
 {
     StringAccum sa;
     sa.append_numeric(num, base, uppercase);

@@ -150,33 +150,42 @@ template <size_t S> struct has_trivial_copy<char_array<S> > : public true_type {
 
 
 #if HAVE_INT64_TYPES && (!HAVE_LONG_LONG || SIZEOF_LONG_LONG < 8)
-typedef int64_t click_int_large_t;
-typedef uint64_t click_uint_large_t;
-# define SIZEOF_CLICK_INT_LARGE_T 8
-# define CLICK_ERRHdLARGE "^64d"
-# define CLICK_ERRHuLARGE "^64u"
-# define CLICK_ERRHoLARGE "^64o"
-# define CLICK_ERRHxLARGE "^64x"
-# define CLICK_ERRHXLARGE "^64X"
+typedef int64_t click_intmax_t;
+typedef uint64_t click_uintmax_t;
+# define SIZEOF_CLICK_INTMAX_T 8
+# define CLICK_ERRHdMAX "^64d"
+# define CLICK_ERRHuMAX "^64u"
+# define CLICK_ERRHoMAX "^64o"
+# define CLICK_ERRHxMAX "^64x"
+# define CLICK_ERRHXMAX "^64X"
 #elif HAVE_LONG_LONG
-typedef long long click_int_large_t;
-typedef unsigned long long click_uint_large_t;
-# define SIZEOF_CLICK_INT_LARGE_T SIZEOF_LONG_LONG
-# define CLICK_ERRHdLARGE "lld"
-# define CLICK_ERRHuLARGE "llu"
-# define CLICK_ERRHoLARGE "llo"
-# define CLICK_ERRHxLARGE "llx"
-# define CLICK_ERRHXLARGE "llX"
+typedef long long click_intmax_t;
+typedef unsigned long long click_uintmax_t;
+# define SIZEOF_CLICK_INTMAX_T SIZEOF_LONG_LONG
+# define CLICK_ERRHdMAX "lld"
+# define CLICK_ERRHuMAX "llu"
+# define CLICK_ERRHoMAX "llo"
+# define CLICK_ERRHxMAX "llx"
+# define CLICK_ERRHXMAX "llX"
 #else
-typedef long click_int_large_t;
-typedef unsigned long click_uint_large_t;
-# define SIZEOF_CLICK_INT_LARGE_T SIZEOF_LONG
-# define CLICK_ERRHdLARGE "ld"
-# define CLICK_ERRHuLARGE "lu"
-# define CLICK_ERRHoLARGE "lo"
-# define CLICK_ERRHxLARGE "lx"
-# define CLICK_ERRHXLARGE "lX"
+typedef long click_intmax_t;
+typedef unsigned long click_uintmax_t;
+# define SIZEOF_CLICK_INTMAX_T SIZEOF_LONG
+# define CLICK_ERRHdMAX "ld"
+# define CLICK_ERRHuMAX "lu"
+# define CLICK_ERRHoMAX "lo"
+# define CLICK_ERRHxMAX "lx"
+# define CLICK_ERRHXMAX "lX"
 #endif
+
+typedef click_intmax_t click_int_large_t;
+typedef click_uintmax_t click_uint_large_t;
+#define SIZEOF_CLICK_INT_LARGE_T SIZEOF_CLICK_INTMAX_T
+#define CLICK_ERRHdLARGE CLICK_ERRHdMAX
+#define CLICK_ERRHuLARGE CLICK_ERRHuMAX
+#define CLICK_ERRHoLARGE CLICK_ERRHoMAX
+#define CLICK_ERRHxLARGE CLICK_ERRHxMAX
+#define CLICK_ERRHXLARGE CLICK_ERRHXMAX
 
 
 /** @class integer_traits
@@ -228,6 +237,7 @@ struct integer_traits<unsigned char> {
     typedef signed char signed_type;
     typedef unsigned char unsigned_type;
     typedef unsigned char type;
+    typedef click_uintmax_t max_type;
     static bool negative(type) { return false; }
 };
 
@@ -241,6 +251,7 @@ struct integer_traits<signed char> {
     typedef signed char signed_type;
     typedef unsigned char unsigned_type;
     typedef signed char type;
+    typedef click_intmax_t max_type;
     static bool negative(type x) { return x < 0; }
 };
 
@@ -272,6 +283,7 @@ struct integer_traits<unsigned short> {
     typedef short signed_type;
     typedef unsigned short unsigned_type;
     typedef unsigned short type;
+    typedef click_uintmax_t max_type;
     static bool negative(type) { return false; }
 };
 
@@ -285,6 +297,7 @@ struct integer_traits<short> {
     typedef short signed_type;
     typedef unsigned short unsigned_type;
     typedef short type;
+    typedef click_intmax_t max_type;
     static bool negative(type x) { return x < 0; }
 };
 
@@ -298,6 +311,7 @@ struct integer_traits<unsigned int> {
     typedef int signed_type;
     typedef unsigned int unsigned_type;
     typedef unsigned int type;
+    typedef click_uintmax_t max_type;
     static bool negative(type) { return false; }
 };
 
@@ -311,6 +325,7 @@ struct integer_traits<int> {
     typedef int signed_type;
     typedef unsigned int unsigned_type;
     typedef int type;
+    typedef click_intmax_t max_type;
     static bool negative(type x) { return x < 0; }
 };
 
@@ -324,6 +339,7 @@ struct integer_traits<unsigned long> {
     typedef long signed_type;
     typedef unsigned long unsigned_type;
     typedef unsigned long type;
+    typedef click_uintmax_t max_type;
     static bool negative(type) { return false; }
 };
 
@@ -337,6 +353,7 @@ struct integer_traits<long> {
     typedef long signed_type;
     typedef unsigned long unsigned_type;
     typedef long type;
+    typedef click_intmax_t max_type;
     static bool negative(type x) { return x < 0; }
 };
 
@@ -351,6 +368,7 @@ struct integer_traits<unsigned long long> {
     typedef long long signed_type;
     typedef unsigned long long unsigned_type;
     typedef unsigned long long type;
+    typedef click_uintmax_t max_type;
     static bool negative(type) { return false; }
 };
 
@@ -364,6 +382,7 @@ struct integer_traits<long long> {
     typedef long long signed_type;
     typedef unsigned long long unsigned_type;
     typedef long long type;
+    typedef click_intmax_t max_type;
     static bool negative(type x) { return x < 0; }
 };
 #endif
@@ -379,6 +398,7 @@ struct integer_traits<uint64_t> {
     typedef int64_t signed_type;
     typedef uint64_t unsigned_type;
     typedef uint64_t type;
+    typedef click_uintmax_t max_type;
     static bool negative(type) { return false; }
 };
 
@@ -392,6 +412,7 @@ struct integer_traits<int64_t> {
     typedef int64_t signed_type;
     typedef uint64_t unsigned_type;
     typedef int64_t type;
+    typedef click_intmax_t max_type;
     static bool negative(type x) { return x < 0; }
 };
 #endif

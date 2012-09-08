@@ -23,15 +23,17 @@ class String { public:
     typedef int (String::*unspecified_bool_type)() const;
 
 #if HAVE_INT64_TYPES && (!HAVE_LONG_LONG || SIZEOF_LONG_LONG <= 8)
-    typedef int64_t int_large_t;
-    typedef uint64_t uint_large_t;
+    typedef int64_t intmax_t;
+    typedef uint64_t uintmax_t;
 #elif HAVE_LONG_LONG
-    typedef long long int_large_t;
-    typedef unsigned long long uint_large_t;
+    typedef long long intmax_t;
+    typedef unsigned long long uintmax_t;
 #else
-    typedef long int_large_t;
-    typedef unsigned long uint_large_t;
+    typedef long intmax_t;
+    typedef unsigned long uintmax_t;
 #endif
+    typedef intmax_t int_large_t;
+    typedef uintmax_t uint_large_t;
 
     inline String();
     inline String(const String &x);
@@ -69,8 +71,8 @@ class String { public:
     static inline String make_stable(const char *cstr);
     static inline String make_stable(const char *s, int len);
     static inline String make_stable(const char *first, const char *last);
-    static String make_numeric(int_large_t x, int base = 10, bool uppercase = true);
-    static String make_numeric(uint_large_t x, int base = 10, bool uppercase = true);
+    static String make_numeric(intmax_t x, int base = 10, bool uppercase = true);
+    static String make_numeric(uintmax_t x, int base = 10, bool uppercase = true);
 
     inline const char *data() const;
     inline int length() const;

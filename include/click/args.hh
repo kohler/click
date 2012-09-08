@@ -1072,9 +1072,8 @@ class IntArg : public NumArg { public:
 	    || (status && status != status_range))
 	    return false;
 	else if (status == status_range) {
-	    typedef typename make_unsigned<V>::type unsigned_v_type;
-	    report_error(args, integer_traits<V>::negative(x),
-			 unsigned_v_type(x));
+	    range_error(args, integer_traits<V>::is_signed,
+			click_int_large_t(x));
 	    return false;
 	} else {
 	    result = x;
@@ -1089,8 +1088,8 @@ class IntArg : public NumArg { public:
 
     static const char *span(const char *begin, const char *end,
 			    bool is_signed, int &b);
-    void report_error(const ArgContext &args, bool negative,
-		      click_uint_large_t value) const;
+    void range_error(const ArgContext &args, bool is_signed,
+		     click_int_large_t value);
 
 };
 
@@ -1120,19 +1119,23 @@ class SaturatingIntArg : public IntArg { public:
 
   @sa IntArg */
 class BoundedIntArg : public IntArg { public:
-    BoundedIntArg(int min_value, int max_value, int b = 0)
+    template <typename T>
+    BoundedIntArg(T min_value, T max_value, int b = 0)
 	: IntArg(b), min_value(min_value), max_value(max_value) {
+	static_assert(integer_traits<T>::is_integral, "BoundedIntArg argument must be integral");
+	is_signed = integer_traits<T>::is_signed;
     }
 
-    template<typename V>
+    template <typename V>
     bool parse(const String &str, V &result, const ArgContext &args = blank_args) {
 	V x;
 	if (!IntArg::parse(str, x, args))
 	    return false;
-	else if (x < min_value || x > max_value) {
-	    int bound = x < min_value ? min_value : max_value;
-	    status = status_range;
-	    report_error(args, bound < 0, bound < 0 ? -bound : bound);
+	else if (!check_min(typename integer_traits<V>::max_type(x))) {
+	    range_error(args, is_signed, min_value);
+	    return false;
+	} else if (!check_max(typename integer_traits<V>::max_type(x))) {
+	    range_error(args, is_signed, max_value);
 	    return false;
 	} else {
 	    result = x;
@@ -1140,8 +1143,34 @@ class BoundedIntArg : public IntArg { public:
 	}
     }
 
-    int min_value;
-    int max_value;
+    inline bool check_min(click_int_large_t x) const {
+	if (is_signed)
+	    return x >= min_value;
+	else
+	    return x >= 0 && click_uint_large_t(x) >= click_uint_large_t(min_value);
+    }
+    inline bool check_min(click_uint_large_t x) const {
+	if (is_signed)
+	    return min_value < 0 || x >= click_uint_large_t(min_value);
+	else
+	    return click_uint_large_t(x) >= click_uint_large_t(min_value);
+    }
+    inline bool check_max(click_int_large_t x) const {
+	if (is_signed)
+	    return x <= max_value;
+	else
+	    return x >= 0 && click_uint_large_t(x) <= click_uint_large_t(max_value);
+    }
+    inline bool check_max(click_uint_large_t x) const {
+	if (is_signed)
+	    return max_value >= 0 && x <= click_uint_large_t(max_value);
+	else
+	    return click_uint_large_t(x) <= click_uint_large_t(max_value);
+    }
+
+    click_intmax_t min_value;
+    click_intmax_t max_value;
+    bool is_signed;
 };
 
 template<> struct DefaultArg<unsigned char> : public IntArg {};

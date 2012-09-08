@@ -261,7 +261,7 @@ operator<<(StringAccum &sa, unsigned long u)
 
 /** @overload */
 void
-StringAccum::append_numeric(String::uint_large_t num, int base, bool uppercase)
+StringAccum::append_numeric(String::uintmax_t num, int base, bool uppercase)
 {
     // Unparse a large integer. Linux kernel sprintf can't handle %lld, so we
     // provide our own function, and use it everywhere to catch bugs.
@@ -280,22 +280,22 @@ StringAccum::append_numeric(String::uint_large_t num, int base, bool uppercase)
 
     while (num > 0) {
 	// k = Approx[num/10] -- know that k <= num/10
-	String::uint_large_t k = (num >> 4) + (num >> 5) + (num >> 8)
+	String::uintmax_t k = (num >> 4) + (num >> 5) + (num >> 8)
 	    + (num >> 9) + (num >> 12) + (num >> 13) + (num >> 16)
 	    + (num >> 17);
-	String::uint_large_t m;
+	String::uintmax_t m;
 
 	// increase k until it exactly equals floor(num/10). on exit, m is
 	// the remainder: m < 10 and num == 10*k + m.
 	while (1) {
 	    // d = 10*k
-	    String::uint_large_t d = (k << 3) + (k << 1);
+	    String::uintmax_t d = (k << 3) + (k << 1);
 	    m = num - d;
 	    if (m < 10)
 		break;
 
 	    // delta = Approx[m/10] -- know that delta <= m/10
-	    String::uint_large_t delta = (m >> 4) + (m >> 5) + (m >> 8) + (m >> 9);
+	    String::uintmax_t delta = (m >> 4) + (m >> 5) + (m >> 8) + (m >> 9);
 	    if (m >= 0x1000)
 		delta += (m >> 12) + (m >> 13) + (m >> 16) + (m >> 17);
 
@@ -319,13 +319,13 @@ StringAccum::append_numeric(String::uint_large_t num, int base, bool uppercase)
     @param base numeric base: must be 8, 10, or 16
     @param uppercase true means use uppercase letters in base 16 */
 void
-StringAccum::append_numeric(String::int_large_t num, int base, bool uppercase)
+StringAccum::append_numeric(String::intmax_t num, int base, bool uppercase)
 {
     if (num < 0) {
 	*this << '-';
-	append_numeric(static_cast<String::uint_large_t>(-num), base, uppercase);
+	append_numeric(static_cast<String::uintmax_t>(-num), base, uppercase);
     } else
-	append_numeric(static_cast<String::uint_large_t>(num), base, uppercase);
+	append_numeric(static_cast<String::uintmax_t>(num), base, uppercase);
 }
 
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)

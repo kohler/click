@@ -1025,10 +1025,10 @@ cp_bool(const String &str, bool *result)
 
 /* Integer parsing helper functions */
 
-#define LARGEBITS		(sizeof(String::uint_large_t) * 8)
+#define LARGEBITS		(sizeof(String::uintmax_t) * 8)
 #define LARGEMSVBITS		6
 #define LARGETHRESHSHIFT	(LARGEBITS - LARGEMSVBITS)
-#define LARGETHRESH		((String::uint_large_t) 1 << LARGETHRESHSHIFT)
+#define LARGETHRESH		((String::uintmax_t) 1 << LARGETHRESHSHIFT)
 
 const char *
 cp_basic_integer(const char *begin, const char *end, int flags, int size,
