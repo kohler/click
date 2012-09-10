@@ -226,6 +226,13 @@
 # define CLICK_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #endif
 
+/* Define macro for cold (rarely used) functions. */
+#if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 3)
+# define CLICK_COLD /* nothing */
+#else
+# define CLICK_COLD __attribute__((cold))
+#endif
+
 /* Define ARCH_IS_BIG_ENDIAN based on CLICK_BYTE_ORDER. */
 #if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
 # define ARCH_IS_BIG_ENDIAN	1
