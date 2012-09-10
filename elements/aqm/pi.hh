@@ -13,8 +13,8 @@ class PI : public Element { public:
     enum { QUEUE_SCALE = 10 };
     typedef DirectEWMAX<StabilityEWMAXParameters<QUEUE_SCALE, uint64_t, int64_t> > ewma_type;
 
-    PI();
-    ~PI();
+    PI() CLICK_COLD;
+    ~PI() CLICK_COLD;
 
     const char *class_name() const		{ return "PI"; }
     const char *port_count() const		{ return PORTS_1_1X2; }
@@ -24,14 +24,14 @@ class PI : public Element { public:
     const ewma_type &average_queue_size() const { return _size; }
     int drops() const				{ return _drops; }
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     int check_params(double, double, double, unsigned, unsigned, ErrorHandler *) const ;
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
     void take_state(Element *, ErrorHandler *);
     bool can_live_reconfigure() const		{ return true; }
     int live_reconfigure(Vector<String> &, ErrorHandler *);
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     bool should_drop();
     void handle_drop(Packet *);

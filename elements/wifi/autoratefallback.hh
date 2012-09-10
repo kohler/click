@@ -27,15 +27,15 @@ Automatically determine the txrate for a give ethernet address.
 
 class AutoRateFallback : public Element { public:
 
-  AutoRateFallback();
-  ~AutoRateFallback();
+  AutoRateFallback() CLICK_COLD;
+  ~AutoRateFallback() CLICK_COLD;
 
   const char *class_name() const		{ return "AutoRateFallback"; }
   const char *port_count() const		{ return "2/0-2"; }
   const char *processing() const		{ return "ah/a"; }
   const char *flow_code() const			{ return "#/#"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const		{ return true; }
 
 
@@ -43,7 +43,7 @@ class AutoRateFallback : public Element { public:
 
   Packet *pull(int);
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   static String static_print_stats(Element *e, void *);
   String print_rates();
 

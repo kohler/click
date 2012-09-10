@@ -96,15 +96,15 @@ class Timer;
 
 class ChatterSocket : public Element { public:
 
-  ChatterSocket();
-  ~ChatterSocket();
+  ChatterSocket() CLICK_COLD;
+  ~ChatterSocket() CLICK_COLD;
 
   const char *class_name() const	{ return "ChatterSocket"; }
 
   int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
-  int configure(Vector<String> &conf, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
+  int configure(Vector<String> &conf, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
   void take_state(Element *, ErrorHandler *);
 
   void selected(int fd, int mask);

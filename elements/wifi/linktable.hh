@@ -57,13 +57,13 @@ class LinkTable: public Element{
 public:
 
   /* generic click-mandated stuff*/
-  LinkTable();
-  ~LinkTable();
-  void add_handlers();
+  LinkTable() CLICK_COLD;
+  ~LinkTable() CLICK_COLD;
+  void add_handlers() CLICK_COLD;
   const char* class_name() const { return "LinkTable"; }
-  int initialize(ErrorHandler *);
+  int initialize(ErrorHandler *) CLICK_COLD;
   void run_timer(Timer *);
-  int configure(Vector<String> &conf, ErrorHandler *errh);
+  int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
   void take_state(Element *, ErrorHandler *);
   void *cast(const char *n);
   /* read/write handlers */

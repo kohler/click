@@ -39,16 +39,16 @@ how often beacon packets are sent, in milliseconds.
 
 class AssociationResponder : public Element { public:
 
-  AssociationResponder();
-  ~AssociationResponder();
+  AssociationResponder() CLICK_COLD;
+  ~AssociationResponder() CLICK_COLD;
 
   const char *class_name() const	{ return "AssociationResponder"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const	{ return true; }
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   void send_association_response(EtherAddress, uint16_t status, uint16_t associd);
   void recv_association_request(Packet *p);

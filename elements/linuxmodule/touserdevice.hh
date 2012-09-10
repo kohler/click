@@ -115,8 +115,8 @@ class ToUserDevice : public Element
 {
 public:
 
-    ToUserDevice();
-    ~ToUserDevice();
+    ToUserDevice() CLICK_COLD;
+    ~ToUserDevice() CLICK_COLD;
 
     static void static_initialize();
     static void static_cleanup();
@@ -125,12 +125,12 @@ public:
     const char *port_count() const      { return PORTS_1_0; }
     const char *processing() const      { return PUSH; }
 
-    int    configure(Vector<String> &, ErrorHandler *);
+    int    configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     int    configure_phase() const      { return CONFIGURE_PHASE_DEFAULT - 1; }
     bool   run_task(Task *);
-    int    initialize(ErrorHandler *);
-    void   cleanup(CleanupStage);
-    void   add_handlers();
+    int    initialize(ErrorHandler *) CLICK_COLD;
+    void   cleanup(CleanupStage) CLICK_COLD;
+    void   add_handlers() CLICK_COLD;
     void   push(int, Packet *);
 
 private:
@@ -188,7 +188,7 @@ private:
     static int     dev_release(struct inode *inode, struct file *file);
     static uint    dev_poll(struct file *, struct poll_table_struct *);
 
-    static int write_handler(const String &, Element *e, void *, ErrorHandler *);
+    static int write_handler(const String &, Element *e, void *, ErrorHandler *) CLICK_COLD;
 
     friend class FromUserDevice;
 };

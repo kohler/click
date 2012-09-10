@@ -19,10 +19,10 @@ and adds them to its styles.
 
 class ClickyInfo : public Element { public:
 
-    ClickyInfo();
+    ClickyInfo() CLICK_COLD;
 
     const char *class_name() const	{ return "ClickyInfo"; }
-    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
 
 };
 

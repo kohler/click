@@ -43,13 +43,13 @@ StrideSched, Switch */
 
 class PullSwitch : public SimplePullSwitch { public:
 
-    PullSwitch();
+    PullSwitch() CLICK_COLD;
 
     const char *class_name() const		{ return "PullSwitch"; }
     void *cast(const char *name);
 
-    int initialize(ErrorHandler *errh);
-    void cleanup(CleanupStage stage);
+    int initialize(ErrorHandler *errh) CLICK_COLD;
+    void cleanup(CleanupStage stage) CLICK_COLD;
 
     void set_input(int input);
 

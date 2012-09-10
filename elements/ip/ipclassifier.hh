@@ -233,13 +233,13 @@ tcpdump(1) */
 
 class IPClassifier : public IPFilter { public:
 
-  IPClassifier();
-  ~IPClassifier();
+  IPClassifier() CLICK_COLD;
+  ~IPClassifier() CLICK_COLD;
 
   const char *class_name() const		{ return "IPClassifier"; }
   const char *processing() const		{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
 };
 

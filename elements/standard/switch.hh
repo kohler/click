@@ -37,14 +37,14 @@ RandomSwitch */
 
 class Switch : public Element { public:
 
-  Switch();
+  Switch() CLICK_COLD;
 
   const char *class_name() const		{ return "Switch"; }
   const char *port_count() const		{ return "1/-"; }
   const char *processing() const		{ return PUSH; }
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const		{ return true; }
 
   void push(int, Packet *);
@@ -55,8 +55,8 @@ class Switch : public Element { public:
 
   int _output;
 
-  static String read_param(Element *, void *);
-  static int write_param(const String &, Element *, void *, ErrorHandler *);
+  static String read_param(Element *, void *) CLICK_COLD;
+  static int write_param(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
 };
 

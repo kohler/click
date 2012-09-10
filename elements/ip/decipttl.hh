@@ -44,15 +44,15 @@ CLICK_DECLS
 
 class DecIPTTL : public Element { public:
 
-    DecIPTTL();
-    ~DecIPTTL();
+    DecIPTTL() CLICK_COLD;
+    ~DecIPTTL() CLICK_COLD;
 
     const char *class_name() const		{ return "DecIPTTL"; }
     const char *port_count() const		{ return PORTS_1_1X2; }
     const char *processing() const		{ return PROCESSING_A_AH; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
-    void add_handlers();
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 

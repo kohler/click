@@ -20,12 +20,12 @@ CLICK_DECLS
 
 class SetTCPChecksum : public Element { public:
 
-  SetTCPChecksum();
-  ~SetTCPChecksum();
+  SetTCPChecksum() CLICK_COLD;
+  ~SetTCPChecksum() CLICK_COLD;
 
   const char *class_name() const		{ return "SetTCPChecksum"; }
   const char *port_count() const		{ return PORTS_1_1; }
-  int configure(Vector<String> &conf, ErrorHandler *errh);
+  int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
 
   Packet *simple_action(Packet *);
 

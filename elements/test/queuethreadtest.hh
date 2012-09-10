@@ -30,8 +30,8 @@ class QueueThreadTest1 : public Element { public:
     const char *class_name() const		{ return "QueueThreadTest1"; }
     const char *port_count() const		{ return PORTS_0_1; }
 
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
   private:
 
@@ -64,7 +64,7 @@ class QueueThreadTest2 : public Element { public:
     const char *port_count() const		{ return PORTS_1_0; }
     const char *processing() const		{ return PULL; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
     bool run_task(Task *);
 
   private:

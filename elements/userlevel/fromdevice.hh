@@ -160,8 +160,8 @@ Returns a string indicating the encapsulation type on this link. Can be
 
 class FromDevice : public Element { public:
 
-    FromDevice();
-    ~FromDevice();
+    FromDevice() CLICK_COLD;
+    ~FromDevice() CLICK_COLD;
 
     const char *class_name() const	{ return "FromDevice"; }
     const char *port_count() const	{ return "0/1-2"; }
@@ -169,10 +169,10 @@ class FromDevice : public Element { public:
 
     enum { default_snaplen = 2046 };
     int configure_phase() const		{ return KernelFilter::CONFIGURE_PHASE_FROMDEVICE; }
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     inline String ifname() const	{ return _ifname; }
     inline int fd() const		{ return _fd; }
@@ -254,8 +254,8 @@ class FromDevice : public Element { public:
     String _bpf_filter;
 #endif
 
-    static String read_handler(Element*, void*);
-    static int write_handler(const String&, Element*, void*, ErrorHandler*);
+    static String read_handler(Element*, void*) CLICK_COLD;
+    static int write_handler(const String&, Element*, void*, ErrorHandler*) CLICK_COLD;
 
 };
 

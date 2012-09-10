@@ -76,16 +76,16 @@ class DSRArpTable : public Element
 
 public:
 
-  DSRArpTable();
-  ~DSRArpTable();
+  DSRArpTable() CLICK_COLD;
+  ~DSRArpTable() CLICK_COLD;
 
   const char *class_name() const	{ return "DSRArpTable"; }
   const char *port_count() const	{ return "3/3"; }
   const char *processing() const	{ return "aah/aah"; }
   const char *flow_code() const		{ return "#/#"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *errh);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *errh) CLICK_COLD;
 
   Packet *pull(int);
   void push(int, Packet *);

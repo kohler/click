@@ -145,13 +145,13 @@ class TCPRewriter : public IPRewriterBase { public:
 
     };
 
-    TCPRewriter();
-    ~TCPRewriter();
+    TCPRewriter() CLICK_COLD;
+    ~TCPRewriter() CLICK_COLD;
 
     const char *class_name() const		{ return "TCPRewriter"; }
     void *cast(const char *);
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
     IPRewriterEntry *add_flow(int ip_p, const IPFlowID &flowid,
 			      const IPFlowID &rewritten_flowid, int input);
@@ -162,7 +162,7 @@ class TCPRewriter : public IPRewriterBase { public:
 
     void push(int, Packet *);
 
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
  protected:
 

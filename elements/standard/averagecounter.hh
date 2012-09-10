@@ -42,11 +42,11 @@ CLICK_DECLS
 
 class AverageCounter : public Element { public:
 
-    AverageCounter();
+    AverageCounter() CLICK_COLD;
 
     const char *class_name() const		{ return "AverageCounter"; }
     const char *port_count() const		{ return PORTS_1_1; }
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
     uint32_t count() const			{ return _count; }
     uint32_t byte_count() const			{ return _byte_count; }
@@ -55,8 +55,8 @@ class AverageCounter : public Element { public:
     uint32_t ignore() const			{ return _ignore; }
     void reset();
 
-    int initialize(ErrorHandler *);
-    void add_handlers();
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 

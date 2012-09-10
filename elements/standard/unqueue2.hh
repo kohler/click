@@ -48,13 +48,13 @@ class Unqueue2 : public Element { public:
     const char *port_count() const		{ return PORTS_1_1; }
     const char *processing() const		{ return PULL_TO_PUSH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     bool run_task(Task *);
 
-    static String read_param(Element *e, void *);
+    static String read_param(Element *e, void *) CLICK_COLD;
 
   private:
 

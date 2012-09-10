@@ -36,13 +36,13 @@ class Block : public Element {
 
  public:
 
-  Block();
+  Block() CLICK_COLD;
 
   const char *class_name() const		{ return "Block"; }
   const char *port_count() const		{ return "1/2"; }
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   // bool can_live_reconfigure() const		{ return true; }
 
   void push(int port, Packet *);
@@ -52,8 +52,8 @@ class Block : public Element {
 
   int _thresh;
 
-  static int thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
-  static String thresh_read_handler(Element *e, void *);
+  static int thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh) CLICK_COLD;
+  static String thresh_read_handler(Element *e, void *) CLICK_COLD;
 
 };
 

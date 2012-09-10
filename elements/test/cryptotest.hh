@@ -22,11 +22,11 @@ initialization time. It does not route packets.
 
 class CryptoTest : public Element { public:
 
-    CryptoTest();
+    CryptoTest() CLICK_COLD;
 
     const char *class_name() const		{ return "CryptoTest"; }
 
-    int initialize(ErrorHandler *errh);
+    int initialize(ErrorHandler *errh) CLICK_COLD;
 
 };
 

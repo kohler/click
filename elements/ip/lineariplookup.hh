@@ -81,14 +81,14 @@ SortedIPLookup, LinuxIPLookup, IPRouteTable */
 
 class LinearIPLookup : public IPRouteTable { public:
 
-    LinearIPLookup();
-    ~LinearIPLookup();
+    LinearIPLookup() CLICK_COLD;
+    ~LinearIPLookup() CLICK_COLD;
 
     const char *class_name() const	{ return "LinearIPLookup"; }
     const char *port_count() const	{ return "1/-"; }
     const char *processing() const	{ return PUSH; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
     void push(int port, Packet *p);
 

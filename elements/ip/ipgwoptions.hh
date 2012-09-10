@@ -35,14 +35,14 @@ CLICK_DECLS
 
 class IPGWOptions : public Element { public:
 
-  IPGWOptions();
-  ~IPGWOptions();
+  IPGWOptions() CLICK_COLD;
+  ~IPGWOptions() CLICK_COLD;
 
   const char *class_name() const		{ return "IPGWOptions"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
-  int configure(Vector<String> &, ErrorHandler *);
-  void add_handlers();
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  void add_handlers() CLICK_COLD;
 
   uint32_t drops() const			{ return _drops; }
 

@@ -67,15 +67,15 @@ FrontDropQueue */
 
 class FullNoteQueue : public NotifierQueue { public:
 
-    FullNoteQueue();
+    FullNoteQueue() CLICK_COLD;
 
     const char *class_name() const		{ return "Queue"; }
     void *cast(const char *);
 
-    int configure(Vector<String> &conf, ErrorHandler *);
+    int configure(Vector<String> &conf, ErrorHandler *) CLICK_COLD;
     int live_reconfigure(Vector<String> &conf, ErrorHandler *errh);
 #if CLICK_DEBUG_SCHEDULING
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 #endif
 
     void push(int port, Packet *p);
@@ -93,7 +93,7 @@ class FullNoteQueue : public NotifierQueue { public:
     inline Packet *pull_failure();
 
 #if CLICK_DEBUG_SCHEDULING
-    static String read_handler(Element *e, void *user_data);
+    static String read_handler(Element *e, void *user_data) CLICK_COLD;
 #endif
 
 };

@@ -16,11 +16,11 @@ CLICK_DECLS
 
 class StoreData : public Element { public:
 
-    StoreData();
+    StoreData() CLICK_COLD;
 
     const char *class_name() const		{ return "StoreData"; }
     const char *port_count() const		{ return PORTS_1_1; }
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
     Packet *simple_action(Packet *);
 

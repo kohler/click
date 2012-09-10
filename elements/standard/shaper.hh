@@ -37,16 +37,16 @@ CLICK_DECLS
 
 class Shaper : public Element { public:
 
-    Shaper();
+    Shaper() CLICK_COLD;
 
     const char *class_name() const	{ return "Shaper"; }
     const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return PULL; }
     bool is_bandwidth() const		{ return class_name()[0] == 'B'; }
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     bool can_live_reconfigure() const	{ return true; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     Packet *pull(int);
 
@@ -54,7 +54,7 @@ class Shaper : public Element { public:
 
     GapRate _rate;
 
-    static String read_handler(Element *, void *);
+    static String read_handler(Element *, void *) CLICK_COLD;
 
 };
 

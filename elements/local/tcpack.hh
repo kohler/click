@@ -61,15 +61,15 @@ private:
   void send_ack();
 
 public:
-  TCPAck();
-  ~TCPAck();
+  TCPAck() CLICK_COLD;
+  ~TCPAck() CLICK_COLD;
 
   const char *class_name() const		{ return "TCPAck"; }
   const char *port_count() const		{ return "2/3"; }
   const char *processing() const		{ return "aa/aah"; }
 
-  int initialize(ErrorHandler *);
-  int configure(Vector<String> &conf, ErrorHandler *errh);
+  int initialize(ErrorHandler *) CLICK_COLD;
+  int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
 
   void push(int, Packet *);
   Packet *pull(int);

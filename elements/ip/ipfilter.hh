@@ -114,8 +114,8 @@ AddressInfo, tcpdump(1) */
 
 class IPFilter : public Element { public:
 
-    IPFilter();
-    ~IPFilter();
+    IPFilter() CLICK_COLD;
+    ~IPFilter() CLICK_COLD;
 
     static void static_initialize();
     static void static_cleanup();
@@ -127,8 +127,8 @@ class IPFilter : public Element { public:
     const char *flags() const			{ return ""; }
     bool can_live_reconfigure() const		{ return true; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void push(int port, Packet *);
 

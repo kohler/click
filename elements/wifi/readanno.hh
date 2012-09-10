@@ -26,8 +26,8 @@ FromDump(file) -> ReadAnno() -> xxxx
 
 class ReadAnno : public Element { public:
 
-  ReadAnno();
-  ~ReadAnno();
+  ReadAnno() CLICK_COLD;
+  ~ReadAnno() CLICK_COLD;
 
   const char *class_name() const		{ return "ReadAnno"; }
   const char *port_count() const		{ return PORTS_1_1; }

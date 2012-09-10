@@ -43,7 +43,7 @@ class DecIP6HLIM : public Element {
 
   int drops()					{ return _drops; }
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   Packet *simple_action(Packet *);
   void drop_it(Packet *);

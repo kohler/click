@@ -22,11 +22,11 @@ time. It does not route packets.
 
 class HeapTest : public Element { public:
 
-    HeapTest();
+    HeapTest() CLICK_COLD;
 
     const char *class_name() const		{ return "HeapTest"; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
 };
 

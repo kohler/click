@@ -27,8 +27,8 @@ ListenEtherSwitch
 
 class ListenEtherSwitch : public EtherSwitch { public:
 
-    ListenEtherSwitch();
-    ~ListenEtherSwitch();
+    ListenEtherSwitch() CLICK_COLD;
+    ~ListenEtherSwitch() CLICK_COLD;
 
     const char *class_name() const		{ return "ListenEtherSwitch"; }
     const char *port_count() const		{ return "-/=+"; }

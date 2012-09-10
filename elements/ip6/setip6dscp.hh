@@ -28,9 +28,9 @@ class SetIP6DSCP : public Element { public:
 
     uint8_t dscp() const		{ return ntohl(_dscp) >> IP6_DSCP_SHIFT; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
     bool can_live_reconfigure() const	{ return true; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     inline Packet *smaction(Packet *p);
     void push(int port, Packet *p);

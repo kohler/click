@@ -22,11 +22,11 @@ does not route packets.
 
 class JsonTest : public Element { public:
 
-    JsonTest();
+    JsonTest() CLICK_COLD;
 
     const char *class_name() const		{ return "JsonTest"; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
 };
 

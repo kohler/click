@@ -57,18 +57,18 @@ EtherSwitch, Suppressor
 class EtherSpanTree : public Element {
 
 public:
-  EtherSpanTree();
-  ~EtherSpanTree();
+  EtherSpanTree() CLICK_COLD;
+  ~EtherSpanTree() CLICK_COLD;
 
   const char *class_name() const		{ return "EtherSpanTree"; }
   const char *port_count() const		{ return "-/="; }
   const char *processing() const		{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   static String read_msgs(Element* f, void *);
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
 
   void periodic();

@@ -136,8 +136,8 @@ class RED : public Element { public:
 
     typedef DirectEWMAX<StabilityEWMAXParameters<QUEUE_SCALE, uint64_t, int64_t> > ewma_type;
 
-    RED();
-    ~RED();
+    RED() CLICK_COLD;
+    ~RED() CLICK_COLD;
 
     const char *class_name() const		{ return "RED"; }
     const char *port_count() const		{ return PORTS_1_1X2; }
@@ -147,13 +147,13 @@ class RED : public Element { public:
     const ewma_type &average_queue_size() const { return _size; }
     int drops() const				{ return _drops; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
     int check_params(unsigned min_thresh, unsigned max_thresh,
 		     unsigned max_p, unsigned stability, ErrorHandler *errh) const;
-    int initialize(ErrorHandler *errh);
+    int initialize(ErrorHandler *errh) CLICK_COLD;
     void take_state(Element *e, ErrorHandler *errh);
     bool can_live_reconfigure() const		{ return true; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     bool should_drop();
     void handle_drop(Packet *);
@@ -186,7 +186,7 @@ class RED : public Element { public:
 
     void set_C1_and_C2();
 
-    static String read_handler(Element *, void *);
+    static String read_handler(Element *, void *) CLICK_COLD;
 
     int finish_configure(unsigned min_thresh, unsigned max_thresh, bool gentle,
 			 unsigned max_p, unsigned stability,

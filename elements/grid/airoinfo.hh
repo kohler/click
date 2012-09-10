@@ -38,14 +38,14 @@ class AiroInfo : public Element {
 
 public:
 
-  AiroInfo();
-  ~AiroInfo();
+  AiroInfo() CLICK_COLD;
+  ~AiroInfo() CLICK_COLD;
 
   const char *class_name() const		{ return "AiroInfo"; }
   const char *port_count() const		{ return PORTS_0_0; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   /* If the card has signal strength and quality for sender E, return
    * true and place the information into DBM and QUALITY.  Else return

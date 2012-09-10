@@ -347,7 +347,7 @@ struct Json::ObjectJson : public ComplexJson {
 	: os_(), n_(0), capacity_(0), nremoved_(0) {
     }
     ObjectJson(const ObjectJson &x);
-    ~ObjectJson();
+    ~ObjectJson() CLICK_COLD;
     void grow(bool copy);
     int bucket(const char *s, int len) const {
 	return String::hashcode(s, s + len) & (hash_.size() - 1);

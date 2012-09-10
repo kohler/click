@@ -12,7 +12,7 @@ class StatelessTCPResponder : public Element { public:
 
     const char *class_name() const	{ return "StatelessTCPResponder"; }
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
     Packet *simple_action(Packet *);
 

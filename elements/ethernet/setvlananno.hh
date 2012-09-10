@@ -36,15 +36,15 @@ EtherVLANEncap */
 
 class SetVLANAnno : public Element { public:
 
-    SetVLANAnno();
-    ~SetVLANAnno();
+    SetVLANAnno() CLICK_COLD;
+    ~SetVLANAnno() CLICK_COLD;
 
     const char *class_name() const	{ return "SetVLANAnno"; }
     const char *port_count() const	{ return PORTS_1_1; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
     bool can_live_reconfigure() const	{ return true; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *p);
 
@@ -53,7 +53,7 @@ class SetVLANAnno : public Element { public:
     uint16_t _vlan_tci;
 
     enum { h_config, h_vlan_tci };
-    static String read_handler(Element *e, void *user_data);
+    static String read_handler(Element *e, void *user_data) CLICK_COLD;
 
 };
 

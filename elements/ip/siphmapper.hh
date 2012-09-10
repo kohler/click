@@ -184,15 +184,15 @@ private:
 
 class SourceIPHashMapper : public Element, public IPMapper { public:
 
-  SourceIPHashMapper();
-  ~SourceIPHashMapper();
+  SourceIPHashMapper() CLICK_COLD;
+  ~SourceIPHashMapper() CLICK_COLD;
 
   const char *class_name() const	{ return "SourceIPHashMapper"; }
   void *cast(const char *);
 
   int configure_phase() const		{ return IPRewriterBase::CONFIGURE_PHASE_MAPPER;}
-  int configure(Vector<String> &, ErrorHandler *);
-  void cleanup(CleanupStage);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
 
     void notify_rewriter(IPRewriterBase *user, IPRewriterInput *input,
 			 ErrorHandler *errh);

@@ -35,16 +35,16 @@
 
 class PerfCountAccum : public PerfCountUser { public:
 
-  PerfCountAccum();
-  ~PerfCountAccum();
+  PerfCountAccum() CLICK_COLD;
+  ~PerfCountAccum() CLICK_COLD;
 
   const char *class_name() const		{ return "PerfCountAccum"; }
   void *cast(const char *);
   const char *port_count() const		{ return PORTS_1_1; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void add_handlers();
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void add_handlers() CLICK_COLD;
 
   inline void smaction(Packet *);
   void push(int, Packet *p);
@@ -56,7 +56,7 @@ class PerfCountAccum : public PerfCountUser { public:
   uint64_t _accum;
   uint64_t _count;
 
-  static String read_handler(Element *, void *);
+  static String read_handler(Element *, void *) CLICK_COLD;
   static int reset_handler(const String &, Element *, void *, ErrorHandler *);
 
 };

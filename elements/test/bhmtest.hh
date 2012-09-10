@@ -22,11 +22,11 @@ does not route packets.
 
 class BigHashMapTest : public Element { public:
 
-    BigHashMapTest();
+    BigHashMapTest() CLICK_COLD;
 
     const char *class_name() const		{ return "BigHashMapTest"; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
 };
 

@@ -32,14 +32,14 @@ CLICK_DECLS
 class GridProbeReplyReceiver : public Element {
 
  public:
-  GridProbeReplyReceiver();
-  ~GridProbeReplyReceiver();
+  GridProbeReplyReceiver() CLICK_COLD;
+  ~GridProbeReplyReceiver() CLICK_COLD;
 
   const char *class_name() const		{ return "GridProbeReplyReceiver"; }
   const char *port_count() const		{ return PORTS_1_0; }
   const char *processing() const		{ return AGNOSTIC; }
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   Packet *simple_action(Packet *);
 

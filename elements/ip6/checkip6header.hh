@@ -57,12 +57,12 @@ class CheckIP6Header : public Element {
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   int drops() const				{ return _drops; }
 
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   Packet *simple_action(Packet *);
   void drop_it(Packet *);

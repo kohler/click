@@ -100,17 +100,17 @@ components.
 
 class Counter : public Element { public:
 
-    Counter();
-    ~Counter();
+    Counter() CLICK_COLD;
+    ~Counter() CLICK_COLD;
 
     const char *class_name() const		{ return "Counter"; }
     const char *port_count() const		{ return PORTS_1_1; }
 
     void reset();
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
     int llrpc(unsigned, void *);
 
     Packet *simple_action(Packet *);
@@ -142,8 +142,8 @@ class Counter : public Element { public:
     bool _count_triggered : 1;
     bool _byte_triggered : 1;
 
-    static String read_handler(Element *, void *);
-    static int write_handler(const String&, Element*, void*, ErrorHandler*);
+    static String read_handler(Element *, void *) CLICK_COLD;
+    static int write_handler(const String&, Element*, void*, ErrorHandler*) CLICK_COLD;
 
 };
 

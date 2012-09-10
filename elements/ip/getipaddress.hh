@@ -43,13 +43,13 @@ class GetIPAddress : public Element {
 
  public:
 
-  GetIPAddress();
-  ~GetIPAddress();
+  GetIPAddress() CLICK_COLD;
+  ~GetIPAddress() CLICK_COLD;
 
   const char *class_name() const		{ return "GetIPAddress"; }
   const char *port_count() const		{ return PORTS_1_1; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   Packet *simple_action(Packet *);
 

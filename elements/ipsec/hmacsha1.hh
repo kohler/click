@@ -28,11 +28,11 @@ public:
   const char *class_name() const	{ return "IPsecAuthHMACSHA1"; }
   const char *port_count() const	{ return "1/-"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   Packet *simple_action(Packet *);
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   static String drop_handler(Element *e, void *thunk);
 

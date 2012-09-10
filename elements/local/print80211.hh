@@ -39,7 +39,7 @@ class Print80211 : public Element { public:
   const char *class_name() const		{ return "Print80211"; }
   const char *port_count() const		{ return PORTS_1_1; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const		{ return true; }
 
   Packet *simple_action(Packet *);

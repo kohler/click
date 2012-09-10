@@ -188,8 +188,8 @@ struct IPRoute {
 class IPRouteTable : public Element { public:
 
     void* cast(const char*);
-    int configure(Vector<String>&, ErrorHandler*);
-    void add_handlers();
+    int configure(Vector<String>&, ErrorHandler*) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     virtual int add_route(const IPRoute& route, bool allow_replace, IPRoute* replaced_route, ErrorHandler* errh);
     virtual int remove_route(const IPRoute& route, IPRoute* removed_route, ErrorHandler* errh);

@@ -35,7 +35,7 @@ public:
   const char *processing() const { return PROCESSING_A_AH; }
   const char *flow_code()  const { return "x/xy"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   Packet *simple_action(Packet *);
 

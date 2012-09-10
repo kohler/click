@@ -53,14 +53,14 @@ ScheduleInfo
 
 class SchedOrderTest : public Element { public:
 
-    SchedOrderTest();
-    ~SchedOrderTest();
+    SchedOrderTest() CLICK_COLD;
+    ~SchedOrderTest() CLICK_COLD;
 
     const char *class_name() const		{ return "SchedOrderTest"; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     bool run_task(Task *);
 
@@ -77,7 +77,7 @@ class SchedOrderTest : public Element { public:
     Task _task;
     bool _stop;
 
-    static String read_handler(Element*, void*);
+    static String read_handler(Element*, void*) CLICK_COLD;
 
 };
 

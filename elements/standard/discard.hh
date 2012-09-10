@@ -53,14 +53,14 @@ Resets "count" to 0.
 
 class Discard : public Element { public:
 
-    Discard();
+    Discard() CLICK_COLD;
 
     const char *class_name() const		{ return "Discard"; }
     const char *port_count() const		{ return PORTS_1_0; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
-    int initialize(ErrorHandler *errh);
-    void add_handlers();
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
+    int initialize(ErrorHandler *errh) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void push(int, Packet *);
     bool run_task(Task *);
@@ -81,7 +81,7 @@ class Discard : public Element { public:
     bool _active;
 
     enum { h_reset_counts = 0, h_active = 1 };
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
 };
 

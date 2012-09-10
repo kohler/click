@@ -22,11 +22,11 @@ time.
 
 class ErrorTest : public Element { public:
 
-    ErrorTest();
+    ErrorTest() CLICK_COLD;
 
     const char *class_name() const		{ return "ErrorTest"; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
 };
 

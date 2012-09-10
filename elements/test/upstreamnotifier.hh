@@ -33,16 +33,16 @@ PullNull, Script, InfiniteSource
 
 class UpstreamNotifier : public Element { public:
 
-  UpstreamNotifier();
+  UpstreamNotifier() CLICK_COLD;
 
   const char *class_name() const	{ return "UpstreamNotifier"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PUSH; }
 
   void *cast(const char *);
-  int configure(Vector<String> &conf, ErrorHandler *);
+  int configure(Vector<String> &conf, ErrorHandler *) CLICK_COLD;
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   void push(int, Packet *);
 
   ActiveNotifier _notifier;

@@ -60,17 +60,17 @@ AggregateIPFlows, AggregateCounter, AggregateIP
 
 class AggregateIPAddrPair : public Element, public AggregateNotifier { public:
 
-    AggregateIPAddrPair();
-    ~AggregateIPAddrPair();
+    AggregateIPAddrPair() CLICK_COLD;
+    ~AggregateIPAddrPair() CLICK_COLD;
 
     const char *class_name() const	{ return "AggregateIPAddrPair"; }
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PROCESSING_A_AH; }
     void *cast(const char *);
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 
@@ -106,7 +106,7 @@ class AggregateIPAddrPair : public Element, public AggregateNotifier { public:
 
     void reap();
 
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
 };
 

@@ -28,18 +28,18 @@ private:
   unsigned _seq;
 
 public:
-  CopyTCPSeq();
-  ~CopyTCPSeq();
+  CopyTCPSeq() CLICK_COLD;
+  ~CopyTCPSeq() CLICK_COLD;
 
   const char *class_name() const	{ return "CopyTCPSeq"; }
   const char *port_count() const	{ return "2/2"; }
 
-  int initialize(ErrorHandler *);
-  int configure(Vector<String> &conf, ErrorHandler *errh);
+  int initialize(ErrorHandler *) CLICK_COLD;
+  int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
 
   void push(int, Packet *);
   Packet *pull(int);
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
 };
 

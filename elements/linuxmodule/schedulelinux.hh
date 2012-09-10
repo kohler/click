@@ -17,13 +17,13 @@
 
 class ScheduleLinux : public Element { public:
 
-  ScheduleLinux();
-  ~ScheduleLinux();
+  ScheduleLinux() CLICK_COLD;
+  ~ScheduleLinux() CLICK_COLD;
 
   const char *class_name() const		{ return "ScheduleLinux"; }
 
-  int initialize(ErrorHandler *);
-  void add_handlers();
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void add_handlers() CLICK_COLD;
 
   bool run_task(Task *);
 

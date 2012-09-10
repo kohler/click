@@ -16,8 +16,8 @@ CLICK_DECLS
 
 class EtherMirror : public Element { public:
 
-  EtherMirror();
-  ~EtherMirror();
+  EtherMirror() CLICK_COLD;
+  ~EtherMirror() CLICK_COLD;
 
   const char *class_name() const	{ return "EtherMirror"; }
   const char *port_count() const	{ return PORTS_1_1; }

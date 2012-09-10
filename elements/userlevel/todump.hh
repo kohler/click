@@ -92,8 +92,8 @@ FromDump, FromDevice.u, ToDevice.u, tcpdump(1) */
 
 class ToDump : public Element { public:
 
-    ToDump();
-    ~ToDump();
+    ToDump() CLICK_COLD;
+    ~ToDump() CLICK_COLD;
 
     const char *class_name() const	{ return "ToDump"; }
     const char *port_count() const	{ return "1/0-1"; }
@@ -101,10 +101,10 @@ class ToDump : public Element { public:
 
     // configure after FromDevice and FromDump
     int configure_phase() const		{ return CONFIGURE_PHASE_DEFAULT+100; }
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
     ToDump *hotswap_element() const;
     void take_state(Element *, ErrorHandler *);
 
@@ -133,8 +133,8 @@ class ToDump : public Element { public:
     NotifierSignal _signal;
     Element **_use_encap_from;
 
-    static String read_handler(Element *, void *);
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static String read_handler(Element *, void *) CLICK_COLD;
+    static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
     void write_packet(Packet *);
 
 };

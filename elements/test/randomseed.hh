@@ -29,14 +29,14 @@ Write this handler to reset the random seed, either to a particular value or
 
 class RandomSeed : public Element { public:
 
-    RandomSeed();
+    RandomSeed() CLICK_COLD;
 
     const char *class_name() const	{ return "RandomSeed"; }
 
     int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
     bool can_live_reconfigure() const	{ return true; }
-    int configure(Vector<String>&, ErrorHandler*);
-    void add_handlers();
+    int configure(Vector<String>&, ErrorHandler*) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
 };
 

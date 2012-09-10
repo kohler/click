@@ -22,11 +22,11 @@ does not route packets.
 
 class BitvectorTest : public Element { public:
 
-    BitvectorTest();
+    BitvectorTest() CLICK_COLD;
 
     const char *class_name() const		{ return "BitvectorTest"; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
 };
 

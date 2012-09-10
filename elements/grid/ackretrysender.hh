@@ -65,22 +65,22 @@ CLICK_DECLS
 
 class ACKRetrySender : public Element {
 public:
-  ACKRetrySender();
-  ~ACKRetrySender();
+  ACKRetrySender() CLICK_COLD;
+  ~ACKRetrySender() CLICK_COLD;
 
   const char *class_name() const { return "ACKRetrySender"; }
   const char *port_count() const { return "-/-"; }
   const char *processing() const { return "la/hh"; }
   const char *flow_code()  const { return "xy/xx"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *errh);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *errh) CLICK_COLD;
 
   bool run_task(Task *);
   void run_timer(Timer *);
   void push(int, Packet *);
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
 private:
   unsigned int _timeout; // msecs

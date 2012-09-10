@@ -158,17 +158,17 @@ FromDump, ToDump, mmap(2) */
 
 class FromDAGDump : public Element { public:
 
-    FromDAGDump();
-    ~FromDAGDump();
+    FromDAGDump() CLICK_COLD;
+    ~FromDAGDump() CLICK_COLD;
 
     const char *class_name() const		{ return "FromDAGDump"; }
     const char *port_count() const		{ return "0/1-2"; }
     const char *processing() const		{ return PROCESSING_A_AH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     bool run_task(Task *);
     Packet *pull(int);
@@ -250,8 +250,8 @@ class FromDAGDump : public Element { public:
     void stamp_to_time(uint64_t, Timestamp &) const;
     void prepare_times(const Timestamp &);
 
-    static String read_handler(Element *, void *);
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static String read_handler(Element *, void *) CLICK_COLD;
+    static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
 };
 

@@ -21,7 +21,7 @@ CLICK_DECLS
 class BufferConverter : public Element {
   static const int packet_tx_delay = 5; // 5 ms tx delay for mtu purposes
 
-  static String data_read_handler(Element *e, void *);
+  static String data_read_handler(Element *e, void *) CLICK_COLD;
   static int data_write_handler
     (const String &, Element *, void *, ErrorHandler *);
 
@@ -33,19 +33,19 @@ class BufferConverter : public Element {
   void oput(const String &);
 
 public:
-  BufferConverter();
-  ~BufferConverter();
+  BufferConverter() CLICK_COLD;
+  ~BufferConverter() CLICK_COLD;
 
   const char *class_name() const	{ return "BufferConverter"; }
   const char *port_count() const	{ return "2/1"; }
   const char *processing() const	{ return "lh/h"; }
 
-  int initialize(ErrorHandler *);
-  int configure(Vector<String> &conf, ErrorHandler *errh);
+  int initialize(ErrorHandler *) CLICK_COLD;
+  int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
 
   void push(int, Packet *p);
   void run_timer(Timer *);
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 };
 
 CLICK_ENDDECLS

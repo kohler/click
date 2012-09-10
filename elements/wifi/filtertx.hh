@@ -27,14 +27,14 @@ otherwise it drops the packets.
 
 class FilterTX : public Element { public:
 
-  FilterTX();
-  ~FilterTX();
+  FilterTX() CLICK_COLD;
+  ~FilterTX() CLICK_COLD;
 
   const char *class_name() const		{ return "FilterTX"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   static String static_print_drops(Element *, void *);
   static String static_print_max_failures(Element *, void *);
   static int static_write_max_failures(const String &arg, Element *e,

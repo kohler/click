@@ -79,12 +79,12 @@ InfiniteSource */
 
 class RandomSource : public InfiniteSource { public:
 
-  RandomSource();
+  RandomSource() CLICK_COLD;
 
   const char *class_name() const		{ return "RandomSource"; }
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   bool run_task(Task *);
   Packet *pull(int);

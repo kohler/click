@@ -4,13 +4,13 @@
 
 class PerfCountUser : public Element { public:
 
-  PerfCountUser();
-  ~PerfCountUser();
+  PerfCountUser() CLICK_COLD;
+  ~PerfCountUser() CLICK_COLD;
 
   bool is_base() const		{ return _metric0 > -2; }
 
   int prepare(const String &, ErrorHandler *, int force = -1);
-  int initialize(ErrorHandler *);
+  int initialize(ErrorHandler *) CLICK_COLD;
 
  private:
 

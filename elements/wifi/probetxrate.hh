@@ -55,15 +55,15 @@ and a wifi-enabled kernel module. (like hostap or airo).
 
 class ProbeTXRate : public Element { public:
 
-  ProbeTXRate();
-  ~ProbeTXRate();
+  ProbeTXRate() CLICK_COLD;
+  ~ProbeTXRate() CLICK_COLD;
 
   const char *class_name() const		{ return "ProbeTXRate"; }
   const char *port_count() const		{ return "2/0-2"; }
   const char *processing() const		{ return "ah/a"; }
   const char *flow_code() const			{ return "#/#"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const		{ return true; }
 
 
@@ -72,7 +72,7 @@ class ProbeTXRate : public Element { public:
   Packet *pull(int);
   void process_feedback(Packet *);
   void assign_rate(Packet *);
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
 
 

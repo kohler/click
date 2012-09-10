@@ -26,11 +26,11 @@ Write this handler to block execution for a specified number of seconds.
 
 class BlockThread : public Element { public:
 
-    BlockThread();
+    BlockThread() CLICK_COLD;
 
     const char *class_name() const	{ return "BlockThread"; }
 
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
   private:
 

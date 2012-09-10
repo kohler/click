@@ -84,16 +84,16 @@ Returns or sets the DST parameter.
 
 class IPEncap : public Element { public:
 
-  IPEncap();
-  ~IPEncap();
+  IPEncap() CLICK_COLD;
+  ~IPEncap() CLICK_COLD;
 
   const char *class_name() const		{ return "IPEncap"; }
   const char *port_count() const		{ return PORTS_1_1; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const		{ return true; }
-  int initialize(ErrorHandler *);
-  void add_handlers();
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void add_handlers() CLICK_COLD;
 
   Packet *simple_action(Packet *);
 
@@ -103,7 +103,7 @@ class IPEncap : public Element { public:
   atomic_uint32_t _id;
 
   inline void update_cksum(click_ip *, int) const;
-  static String read_handler(Element *, void *);
+  static String read_handler(Element *, void *) CLICK_COLD;
 
 };
 

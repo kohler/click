@@ -79,12 +79,12 @@ CLICK_DECLS
 class GridLocationInfo : public GridGenericLocInfo {
 
 public:
-  GridLocationInfo();
-  ~GridLocationInfo();
+  GridLocationInfo() CLICK_COLD;
+  ~GridLocationInfo() CLICK_COLD;
 
   const char *class_name() const { return "GridLocationInfo"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const { return true; }
   void *cast(const char *);
 
@@ -92,7 +92,7 @@ public:
   // difference''
   grid_location get_current_location(unsigned int *seq_no = 0);
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   int read_args(const Vector<String> &conf, ErrorHandler *errh);
 
   void set_new_dest(double v_lat, double v_lon);

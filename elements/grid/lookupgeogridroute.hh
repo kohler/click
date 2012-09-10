@@ -50,16 +50,16 @@ class GridLocationInfo;
 class LookupGeographicGridRoute : public Element, public GridRouteActor {
   public:
 
-  LookupGeographicGridRoute();
-  ~LookupGeographicGridRoute();
+  LookupGeographicGridRoute() CLICK_COLD;
+  ~LookupGeographicGridRoute() CLICK_COLD;
 
   const char *class_name() const		{ return "LookupGeographicGridRoute"; }
   void *cast(const char *);
   const char *port_count() const		{ return "1/2"; }
   const char *processing() const		{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   bool run_task(Task *);
 

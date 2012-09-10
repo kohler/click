@@ -106,16 +106,16 @@ CheckTCPHeader, CheckUDPHeader, CheckICMPHeader */
 
 class CheckIPHeader : public Element { public:
 
-  CheckIPHeader();
-  ~CheckIPHeader();
+  CheckIPHeader() CLICK_COLD;
+  ~CheckIPHeader() CLICK_COLD;
 
   const char *class_name() const		{ return "CheckIPHeader"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
   const char *flags() const			{ return "A"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  void add_handlers();
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  void add_handlers() CLICK_COLD;
 
   Packet *simple_action(Packet *);
 
@@ -159,7 +159,7 @@ class CheckIPHeader : public Element { public:
   static const char * const reason_texts[NREASONS];
 
   Packet *drop(Reason, Packet *);
-  static String read_handler(Element *, void *);
+  static String read_handler(Element *, void *) CLICK_COLD;
 
   friend class CheckIPHeader2;
 

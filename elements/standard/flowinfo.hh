@@ -26,12 +26,12 @@ has flow code CODE.
 
 class FlowInfo : public Element { public:
 
-    FlowInfo();
+    FlowInfo() CLICK_COLD;
 
     const char* class_name() const	{ return "FlowInfo"; }
 
     int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
-    int configure(Vector<String>&, ErrorHandler*);
+    int configure(Vector<String>&, ErrorHandler*) CLICK_COLD;
 
 };
 

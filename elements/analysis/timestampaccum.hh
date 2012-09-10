@@ -34,14 +34,14 @@ Resets C<count> and C<time> counters to zero when written.
 
 class TimestampAccum : public Element { public:
 
-    TimestampAccum();
-    ~TimestampAccum();
+    TimestampAccum() CLICK_COLD;
+    ~TimestampAccum() CLICK_COLD;
 
     const char *class_name() const	{ return "TimestampAccum"; }
     const char *port_count() const	{ return PORTS_1_1; }
 
-    int initialize(ErrorHandler *);
-    void add_handlers();
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 
@@ -50,7 +50,7 @@ class TimestampAccum : public Element { public:
     double _usec_accum;
     uint64_t _count;
 
-    static String read_handler(Element *, void *);
+    static String read_handler(Element *, void *) CLICK_COLD;
     static int reset_handler(const String &, Element *, void *, ErrorHandler *);
 
 };

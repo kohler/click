@@ -28,17 +28,17 @@ SetTXRate, FilterTX, AutoRateFallback
 
 class MadwifiRate : public Element { public:
 
-  MadwifiRate();
-  ~MadwifiRate();
+  MadwifiRate() CLICK_COLD;
+  ~MadwifiRate() CLICK_COLD;
 
   const char *class_name() const		{ return "MadwifiRate"; }
   const char *port_count() const		{ return "2/0-2"; }
   const char *processing() const		{ return "ah/a"; }
   const char *flow_code() const			{ return "#/#"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const		{ return true; }
-  int initialize(ErrorHandler *);
+  int initialize(ErrorHandler *) CLICK_COLD;
   void run_timer(Timer *);
   void adjust_all();
   void adjust(EtherAddress);
@@ -48,7 +48,7 @@ class MadwifiRate : public Element { public:
 
   Packet *pull(int);
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   static String static_print_stats(Element *e, void *);
   String print_rates();
 

@@ -65,15 +65,15 @@ Same as the BURST keyword.
 
 class Unqueue : public Element { public:
 
-    Unqueue();
+    Unqueue() CLICK_COLD;
 
     const char *class_name() const		{ return "Unqueue"; }
     const char *port_count() const		{ return PORTS_1_1; }
     const char *processing() const		{ return PULL_TO_PUSH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     bool run_task(Task *);
 
@@ -89,7 +89,7 @@ class Unqueue : public Element { public:
     enum {
 	h_active, h_reset, h_burst, h_limit
     };
-    static int write_param(const String &, Element *, void *, ErrorHandler *);
+    static int write_param(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
 };
 

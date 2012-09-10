@@ -34,14 +34,14 @@ SimPacketAnalyzer
 
 class ToSimTrace:public Element{
 public:
-  ToSimTrace();
-  ~ToSimTrace();
+  ToSimTrace() CLICK_COLD;
+  ~ToSimTrace() CLICK_COLD;
 
   const char* class_name() const { return "ToSimTrace"; }
   const char* processing() const { return PUSH; }
   const char* port_count() const { return PORTS_1_1; }
 
-  int configure(Vector<String> &conf, ErrorHandler *errh);
+  int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
   void push(int, Packet *packet);
 
 private:

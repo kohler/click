@@ -26,15 +26,15 @@ class FilterByRange : public Element {
 
 public:
 
-  FilterByRange();
-  ~FilterByRange();
+  FilterByRange() CLICK_COLD;
+  ~FilterByRange() CLICK_COLD;
 
   const char *class_name() const		{ return "FilterByRange"; }
   const char *port_count() const		{ return "1/2"; }
   const char *processing() const		{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   void push(int port, Packet *);
 

@@ -67,17 +67,17 @@ class FromUserDevice : public Element
 {
  public:
 
-    FromUserDevice();
-    ~FromUserDevice();
+    FromUserDevice() CLICK_COLD;
+    ~FromUserDevice() CLICK_COLD;
 
     const char *class_name() const      { return "FromUserDevice"; }
     const char *port_count() const      { return PORTS_0_1; }
     const char *processing() const      { return PULL; }
 
     void *cast(const char *);
-    int configure(Vector<String> &, ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet* pull(int port);
 

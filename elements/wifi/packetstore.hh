@@ -33,22 +33,22 @@ CLICK_DECLS
 
 class PacketStore : public Element { public:
 
-  PacketStore();
-  ~PacketStore();
+  PacketStore() CLICK_COLD;
+  ~PacketStore() CLICK_COLD;
 
   const char *class_name() const		{ return "PacketStore"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char* processing() const		{ return AGNOSTIC; }
-  int initialize(ErrorHandler *);
+  int initialize(ErrorHandler *) CLICK_COLD;
   const char *flow_code() const			{ return "#/#"; }
   void *cast(const char *);
 
   Packet *simple_action(Packet *);
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const		{ return false; }
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   class store {
   public:

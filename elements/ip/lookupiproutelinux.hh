@@ -39,13 +39,13 @@ CLICK_DECLS
 
 class LinuxIPLookup : public Element {
 public:
-  LinuxIPLookup();
-  ~LinuxIPLookup();
+  LinuxIPLookup() CLICK_COLD;
+  ~LinuxIPLookup() CLICK_COLD;
 
   const char *class_name() const	{ return "LinuxIPLookup"; }
   const char *port_count() const	{ return "1/1-"; }
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   void push(int, Packet *);
 

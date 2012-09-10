@@ -9,17 +9,17 @@ CLICK_DECLS
 class FromHost : public AnyDevice {
 
   public:
-    FromHost();
-    ~FromHost();
+    FromHost() CLICK_COLD;
+    ~FromHost() CLICK_COLD;
 
     const char *class_name() const	{ return "FromHost"; }
     const char *port_count() const	{ return PORTS_0_1; }
     const char *processing() const	{ return PUSH; }
 
     int configure_phase() const		{ return CONFIGURE_PHASE_FROMHOST; }
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
     bool run_task(Task *);
     struct ifqueue *_inq;
 

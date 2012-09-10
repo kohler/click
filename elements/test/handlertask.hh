@@ -46,13 +46,13 @@ ScheduleInfo
 
 class HandlerTask : public Element { public:
 
-    HandlerTask();
+    HandlerTask() CLICK_COLD;
 
     const char *class_name() const		{ return "HandlerTask"; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     bool run_task(Task *);
 

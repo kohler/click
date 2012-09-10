@@ -21,8 +21,8 @@ CLICK_DECLS
 
 class IPsecESPUnencap : public Element {
 public:
-  IPsecESPUnencap();
-  ~IPsecESPUnencap();
+  IPsecESPUnencap() CLICK_COLD;
+  ~IPsecESPUnencap() CLICK_COLD;
 
   const char *class_name() const	{ return "IPsecESPUnencap"; }
   const char *port_count() const	{ return PORTS_1_1; }

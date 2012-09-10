@@ -58,11 +58,11 @@ class IP6NDSolicitor : public Element {
   const char *processing() const		{ return PUSH; }
   const char *flow_code() const			{ return "xy/x"; }
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
   void take_state(Element *, ErrorHandler *);
 
   void push(int port, Packet *);

@@ -188,8 +188,8 @@ FromTcpdump */
 
 class FromDump : public Element { public:
 
-    FromDump();
-    ~FromDump();
+    FromDump() CLICK_COLD;
+    ~FromDump() CLICK_COLD;
 
     const char *class_name() const		{ return "FromDump"; }
     const char *port_count() const		{ return "0/1-2"; }
@@ -197,10 +197,10 @@ class FromDump : public Element { public:
     void *cast(const char *);
     String declaration() const;
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
     FromDump *hotswap_element() const;
     void take_state(Element *, ErrorHandler *);
 
@@ -256,8 +256,8 @@ class FromDump : public Element { public:
     void prepare_times(const Timestamp &);
     bool check_timing(Packet *p);
 
-    static String read_handler(Element *, void *);
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static String read_handler(Element *, void *) CLICK_COLD;
+    static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
 };
 

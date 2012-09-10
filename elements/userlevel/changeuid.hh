@@ -37,13 +37,13 @@ exception.
 
 class ChangeUID : public Element { public:
 
-    ChangeUID();
-    ~ChangeUID();
+    ChangeUID() CLICK_COLD;
+    ~ChangeUID() CLICK_COLD;
 
     const char *class_name() const	{ return "ChangeUID"; }
 
     int configure_phase() const		{ return CONFIGURE_PHASE_PRIVILEGED+1; }
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
 };
 

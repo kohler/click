@@ -125,16 +125,16 @@ ICMPPingEncap, ICMPPingResponder, ICMPPingRewriter */
 
 class ICMPPingSource : public Element { public:
 
-    ICMPPingSource();
-    ~ICMPPingSource();
+    ICMPPingSource() CLICK_COLD;
+    ~ICMPPingSource() CLICK_COLD;
 
     const char *class_name() const		{ return "ICMPPingSource"; }
     const char *port_count() const		{ return "0-1/1"; }
     const char *processing() const		{ return "h/a"; }
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void run_timer(Timer *);
     void push(int, Packet *);
@@ -172,8 +172,8 @@ class ICMPPingSource : public Element { public:
     ReceiverInfo *_receiver;
 
     Packet* make_packet(WritablePacket *q);
-    static String read_handler(Element*, void*);
-    static int write_handler(const String&, Element*, void*, ErrorHandler*);
+    static String read_handler(Element*, void*) CLICK_COLD;
+    static int write_handler(const String&, Element*, void*, ErrorHandler*) CLICK_COLD;
 
 };
 

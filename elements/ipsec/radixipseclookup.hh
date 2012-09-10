@@ -72,14 +72,14 @@ LinearIPLookup, SortedIPLookup, LinuxIPLookup
 //Changed to use ipsec extensions
 class RadixIPsecLookup : public IPsecRouteTable { public:
 
-    RadixIPsecLookup();
-    ~RadixIPsecLookup();
+    RadixIPsecLookup() CLICK_COLD;
+    ~RadixIPsecLookup() CLICK_COLD;
 
     const char *class_name() const		{ return "RadixIPsecLookup"; }
     const char *port_count() const		{ return "1/-"; }
     const char *processing() const		{ return PUSH; }
 
-    void cleanup(CleanupStage);
+    void cleanup(CleanupStage) CLICK_COLD;
 
     int add_route(const IPsecRoute&, bool, IPsecRoute*, ErrorHandler *);
     int remove_route(const IPsecRoute&, IPsecRoute*, ErrorHandler *);

@@ -93,15 +93,15 @@ tcpdpriv(1) */
 
 class AnonymizeIPAddr : public Element { public:
 
-    AnonymizeIPAddr();
-    ~AnonymizeIPAddr();
+    AnonymizeIPAddr() CLICK_COLD;
+    ~AnonymizeIPAddr() CLICK_COLD;
 
     const char *class_name() const	{ return "AnonymizeIPAddr"; }
     const char *port_count() const	{ return PORTS_1_1X2; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
     Packet *simple_action(Packet *);
 

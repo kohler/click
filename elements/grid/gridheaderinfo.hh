@@ -77,15 +77,15 @@ class GridHeaderInfo : public Element {
 
 public:
 
-  GridHeaderInfo();
-  ~GridHeaderInfo();
+  GridHeaderInfo() CLICK_COLD;
+  ~GridHeaderInfo() CLICK_COLD;
 
   const char *class_name() const { return "GridHeaderInfo"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const { return true; }
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   int read_args(const Vector<String> &conf, ErrorHandler *errh);
 
   struct info_t {

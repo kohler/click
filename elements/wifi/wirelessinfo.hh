@@ -62,17 +62,17 @@ Same as 'INTERVAL'.
 
 class WirelessInfo : public Element { public:
 
-  WirelessInfo();
-  ~WirelessInfo();
+  WirelessInfo() CLICK_COLD;
+  ~WirelessInfo() CLICK_COLD;
 
   const char *class_name() const		{ return "WirelessInfo"; }
   const char *port_count() const		{ return PORTS_0_0; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  void add_handlers();
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  void add_handlers() CLICK_COLD;
 
-  static String read_param(Element *, void *);
-  static int write_param(const String &in_s, Element *, void *, ErrorHandler *);
+  static String read_param(Element *, void *) CLICK_COLD;
+  static int write_param(const String &in_s, Element *, void *, ErrorHandler *) CLICK_COLD;
 
   void reset();
   String _ssid;

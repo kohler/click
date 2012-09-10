@@ -30,14 +30,14 @@ class YarvisMetric : public GridGenericMetric {
 
 public:
 
-  YarvisMetric();
-  ~YarvisMetric();
+  YarvisMetric() CLICK_COLD;
+  ~YarvisMetric() CLICK_COLD;
 
   const char *class_name() const { return "YarvisMetric"; }
   const char *port_count() const { return PORTS_0_0; }
   const char *processing() const { return AGNOSTIC; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const { return false; }
 
   void *cast(const char *);
