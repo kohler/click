@@ -1,0 +1,62 @@
+%info
+Performance test with many many different click elements
+
+%script
+
+# you can see a pretty picture with
+#   valgrind --tool=callgrind --callgrind-out-file=/tmp/cg.out click --simtime NUMPKTS=10000 CONFIG
+# and then run
+#   kcachegrind /tmp/cg.out
+
+time click --simtime NUMPKTS=100000 CONFIG
+
+%file CONFIG
+InfiniteSource(LENGTH 8, BURST 2)
+-> Align(4, 0)
+-> UDPIPEncap(1.1.1.1, 11, 2.2.2.2, 22, CHECKSUM false)
+-> StripToNetworkHeader
+-> IPClassifier(src 1.1.1.1)
+-> IPFilter(allow host 2.2.2.2)
+-> IPReassembler
+-> IPFragmenter(MTU 1500)
+-> UDPRewriter(keep 0 0)
+-> IPRewriter(keep 0 0)
+-> CheckIPHeader(0)
+-> CheckUDPHeader()
+-> DecIPTTL()
+-> GetIPAddress(IP dst)
+-> StoreIPAddress(dst)
+-> SetIPAddress(1.2.3.4)
+-> StripIPHeader
+-> UnstripIPHeader
+-> EtherEncap(0x0800, 00:01:02:03:04:05, 00:01:02:03:04:06)
+-> MarkMACHeader(0, 14)
+-> Classifier(12/0800)
+-> HostEtherFilter(00:01:02:03:04:06)
+-> VLANDecap
+-> VLANEncap
+-> SetVLANAnno(0)
+-> AverageCounter
+-> Null
+-> Print(ACTIVE false)
+-> IPPrint(ACTIVE false)
+-> ARPPrint(ACTIVE false)
+-> Switch(0)
+-> StaticSwitch(0)
+-> Paint(0)
+-> CheckPaint(0)
+-> PaintSwitch()
+-> RandomSample(DROP 0)
+-> Tee
+-> Strip(14)
+-> Unstrip(14)
+//-> Script(TYPE PACKET, return 0) // too slow
+-> c2 :: Counter
+-> Switch(0)
+-> Queue(100)
+-> PrioSched
+-> RoundRobinSched
+-> PullSwitch(0)
+-> Unqueue(BURST 3)
+-> c3 :: Counter(COUNT_CALL $NUMPKTS stop)
+-> Discard;
