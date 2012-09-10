@@ -42,13 +42,13 @@ Return or set the TIME argument.
 
 class AdjustTimestamp : public Element { public:
 
-    AdjustTimestamp();
-    ~AdjustTimestamp();
+    AdjustTimestamp() CLICK_COLD;
+    ~AdjustTimestamp() CLICK_COLD;
 
     const char *class_name() const		{ return "AdjustTimestamp"; }
     const char *port_count() const		{ return PORTS_1_1; }
-    int configure(Vector<String> &, ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 

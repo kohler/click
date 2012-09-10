@@ -144,18 +144,18 @@ FromIPSummaryDump, ToIPSummaryDump, AggregateIPFlows */
 
 class ToIPFlowDumps : public Element, public AggregateListener { public:
 
-    ToIPFlowDumps();
-    ~ToIPFlowDumps();
+    ToIPFlowDumps() CLICK_COLD;
+    ~ToIPFlowDumps() CLICK_COLD;
 
     const char *class_name() const	{ return "ToIPFlowDumps"; }
     const char *port_count() const	{ return "1/0-1"; }
 
     enum { CONFIGURE_PHASE = CONFIGURE_PHASE_DEFAULT };
     int configure_phase() const		{ return CONFIGURE_PHASE; }
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void push(int, Packet *);
     Packet *pull(int);
@@ -269,7 +269,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     int add_compressable(const String &, ErrorHandler *);
     inline void smaction(Packet *);
     static void gc_hook(Timer *, void *);
-    static int write_handler(const String &, Element *, void *, ErrorHandler*);
+    static int write_handler(const String &, Element *, void *, ErrorHandler*) CLICK_COLD;
 
 };
 

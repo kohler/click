@@ -28,14 +28,14 @@ QUEUES and STABILITY keywords, are as in the RED element.
 
 class AdaptiveRED : public RED { public:
 
-    AdaptiveRED();
-    ~AdaptiveRED();
+    AdaptiveRED() CLICK_COLD;
+    ~AdaptiveRED() CLICK_COLD;
 
     const char *class_name() const		{ return "AdaptiveRED"; }
     void *cast(const char *);
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
 
     void run_timer(Timer *);
 

@@ -138,18 +138,18 @@ public:
    */
 
 
-  UpdateGridRoutes();
-  ~UpdateGridRoutes();
+  UpdateGridRoutes() CLICK_COLD;
+  ~UpdateGridRoutes() CLICK_COLD;
 
   const char *class_name() const		{ return "UpdateGridRoutes"; }
   void *cast(const char *);
   const char *port_count() const		{ return "1/2"; }
   const char *processing() const		{ return AGNOSTIC; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   Packet *simple_action(Packet *);
 

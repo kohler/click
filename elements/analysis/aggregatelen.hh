@@ -42,13 +42,13 @@ AggregateIP, AggregateCounter
 
 class AggregateLength : public Element { public:
 
-    AggregateLength();
-    ~AggregateLength();
+    AggregateLength() CLICK_COLD;
+    ~AggregateLength() CLICK_COLD;
 
     const char *class_name() const	{ return "AggregateLength"; }
     const char *port_count() const	{ return PORTS_1_1; }
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
     void push(int, Packet *);
     Packet *pull(int);

@@ -44,14 +44,14 @@ class IPOutputCombo : public Element {
 
  public:
 
-  IPOutputCombo();
-  ~IPOutputCombo();
+  IPOutputCombo() CLICK_COLD;
+  ~IPOutputCombo() CLICK_COLD;
 
   const char *class_name() const		{ return "IPOutputCombo"; }
   const char *port_count() const		{ return "1/5"; }
   const char *processing() const		{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   void push(int, Packet *);
 

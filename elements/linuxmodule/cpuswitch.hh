@@ -18,8 +18,8 @@ class CPUSwitch : public Element {
 
  public:
 
-  CPUSwitch();
-  ~CPUSwitch();
+  CPUSwitch() CLICK_COLD;
+  ~CPUSwitch() CLICK_COLD;
 
   const char *class_name() const		{ return "CPUSwitch"; }
   const char *port_count() const		{ return "1/1-"; }

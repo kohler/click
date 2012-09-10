@@ -137,15 +137,15 @@ FromDump */
 
 class ProgressBar : public Element { public:
 
-    ProgressBar();
-    ~ProgressBar();
+    ProgressBar() CLICK_COLD;
+    ~ProgressBar() CLICK_COLD;
 
     const char *class_name() const		{ return "ProgressBar"; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void run_timer(Timer *);
 
@@ -176,8 +176,8 @@ class ProgressBar : public Element { public:
 
     bool get_value(int first, int last, double *);
 
-    static String read_handler(Element *, void *);
-    static int write_handler(const String &, Element *, void *, ErrorHandler*);
+    static String read_handler(Element *, void *) CLICK_COLD;
+    static int write_handler(const String &, Element *, void *, ErrorHandler*) CLICK_COLD;
 
 };
 

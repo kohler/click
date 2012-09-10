@@ -40,16 +40,16 @@ CLICK_DECLS
 class FloodingLocQuerier : public Element, public GridRouteActor {
  public:
 
-  FloodingLocQuerier();
-  ~FloodingLocQuerier();
+  FloodingLocQuerier() CLICK_COLD;
+  ~FloodingLocQuerier() CLICK_COLD;
 
   const char *class_name() const		{ return "FloodingLocQuerier"; }
   const char *port_count() const		{ return "2/2"; }
   const char *processing() const		{ return PUSH; }
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   void push(int port, Packet *);
 

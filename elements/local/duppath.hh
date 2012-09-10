@@ -15,14 +15,14 @@ class DupPath : public Element {
 
  public:
 
-  DupPath();
-  ~DupPath();
+  DupPath() CLICK_COLD;
+  ~DupPath() CLICK_COLD;
 
   const char *class_name() const		{ return "DupPath"; }
   const char *port_count() const		{ return "1/2"; }
   const char *processing() const		{ return "h/hl"; }
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
 
   void push(int port, Packet *);
   Packet *pull(int port);

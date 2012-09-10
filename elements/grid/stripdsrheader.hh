@@ -35,8 +35,8 @@ CLICK_DECLS
 
 class StripDSRHeader : public Element { public:
 
-    StripDSRHeader();
-    ~StripDSRHeader();
+    StripDSRHeader() CLICK_COLD;
+    ~StripDSRHeader() CLICK_COLD;
 
     const char *class_name() const		{ return "StripDSRHeader"; }
     const char *port_count() const		{ return PORTS_1_1; }

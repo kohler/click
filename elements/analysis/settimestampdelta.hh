@@ -46,14 +46,14 @@ SetTimestamp, AdjustTimestamp, TimeFilter */
 
 class SetTimestampDelta : public Element { public:
 
-    SetTimestampDelta();
-    ~SetTimestampDelta();
+    SetTimestampDelta() CLICK_COLD;
+    ~SetTimestampDelta() CLICK_COLD;
 
     const char *class_name() const	{ return "SetTimestampDelta"; }
     const char *port_count() const	{ return PORTS_1_1; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 
@@ -62,8 +62,8 @@ class SetTimestampDelta : public Element { public:
     int _type;
     Timestamp _first;
 
-    static String read_handler(Element *, void *);
-    static int write_handler(const String &, Element *, void *, ErrorHandler*);
+    static String read_handler(Element *, void *) CLICK_COLD;
+    static int write_handler(const String &, Element *, void *, ErrorHandler*) CLICK_COLD;
 
 };
 

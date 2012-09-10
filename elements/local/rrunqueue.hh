@@ -20,20 +20,20 @@ CLICK_DECLS
 
 class RoundRobinUnqueue : public Element { public:
 
-  RoundRobinUnqueue();
-  ~RoundRobinUnqueue();
+  RoundRobinUnqueue() CLICK_COLD;
+  ~RoundRobinUnqueue() CLICK_COLD;
 
   const char *class_name() const	{ return "RoundRobinUnqueue"; }
   const char *port_count() const	{ return "-/-"; }
   const char *processing() const	{ return PULL_TO_PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void add_handlers();
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void add_handlers() CLICK_COLD;
 
   bool run_task(Task *);
 
-  static String read_param(Element *e, void *);
+  static String read_param(Element *e, void *) CLICK_COLD;
 
  private:
 

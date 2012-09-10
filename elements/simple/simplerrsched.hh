@@ -26,8 +26,8 @@ CLICK_DECLS
 
 class SimpleRRSched : public Element { public:
 
-    SimpleRRSched();
-    ~SimpleRRSched();
+    SimpleRRSched() CLICK_COLD;
+    ~SimpleRRSched() CLICK_COLD;
 
     const char *class_name() const	{ return "SimpleRoundRobinSched"; }
     const char *port_count() const	{ return "-/1"; }

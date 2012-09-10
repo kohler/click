@@ -27,25 +27,25 @@ packet per SA.
  */
 class WifiFragment : public Element { public:
 
-  WifiFragment();
-  ~WifiFragment();
+  WifiFragment() CLICK_COLD;
+  ~WifiFragment() CLICK_COLD;
 
   const char *class_name() const	{ return "WifiFragment"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const	{ return true; }
 
   void push(int, Packet *);
 
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
 
   bool _debug;
   uint32_t _max_length;
-  static String read_param(Element *e, void *thunk);
+  static String read_param(Element *e, void *thunk) CLICK_COLD;
   static int write_param(const String &in_s, Element *e, void *vparam,
 			 ErrorHandler *errh);
  private:

@@ -21,12 +21,12 @@ CLICK_DECLS
 
 class SpinlockInfo : public Element { public:
 
-    SpinlockInfo();
-    ~SpinlockInfo();
+    SpinlockInfo() CLICK_COLD;
+    ~SpinlockInfo() CLICK_COLD;
 
     const char *class_name() const	{ return "SpinlockInfo"; }
     int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   private:
 

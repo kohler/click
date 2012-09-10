@@ -24,8 +24,8 @@ class CheckGridHeader : public Element {
 
  public:
 
-  CheckGridHeader();
-  ~CheckGridHeader();
+  CheckGridHeader() CLICK_COLD;
+  ~CheckGridHeader() CLICK_COLD;
 
   const char *class_name() const		{ return "CheckGridHeader"; }
   const char *port_count() const		{ return "1/1-2"; }
@@ -33,7 +33,7 @@ class CheckGridHeader : public Element {
 
   int drops() const				{ return _drops; }
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   Packet *simple_action(Packet *);
   void drop_it(Packet *);

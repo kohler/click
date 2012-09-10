@@ -87,8 +87,8 @@ class AnyDevice : public Element { public:
 	   CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_DEFAULT - 1,
 	   CONFIGURE_PHASE_POLLDEVICE = CONFIGURE_PHASE_DEFAULT };
 
-    AnyDevice();
-    ~AnyDevice();
+    AnyDevice() CLICK_COLD;
+    ~AnyDevice() CLICK_COLD;
 
     const String &devname() const	{ return _devname; }
     net_device *device() const		{ return _dev; }
@@ -156,7 +156,7 @@ class AnyDevice : public Element { public:
 
 class AnyTaskDevice : public AnyDevice { public:
 
-    AnyTaskDevice();
+    AnyTaskDevice() CLICK_COLD;
 
     inline void adjust_tickets(int work);
 
@@ -200,7 +200,7 @@ AnyTaskDevice::adjust_tickets(int work)
 
 class AnyDeviceMap { public:
 
-    void initialize();
+    void initialize() CLICK_COLD;
     inline void lock(bool write, unsigned long &flags);
     inline void unlock(bool write, unsigned long flags);
     inline AnyDevice *lookup(net_device *dev, AnyDevice *last) const;

@@ -211,13 +211,13 @@ class IPRewriter : public TCPRewriter { public:
 
     typedef UDPRewriter::UDPFlow UDPFlow;
 
-    IPRewriter();
-    ~IPRewriter();
+    IPRewriter() CLICK_COLD;
+    ~IPRewriter() CLICK_COLD;
 
     const char *class_name() const		{ return "IPRewriter"; }
     void *cast(const char *);
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
     IPRewriterEntry *get_entry(int ip_p, const IPFlowID &flowid, int input);
     HashContainer<IPRewriterEntry> *get_map(int mapid) {
@@ -240,7 +240,7 @@ class IPRewriter : public TCPRewriter { public:
 
     void push(int, Packet *);
 
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
   private:
 

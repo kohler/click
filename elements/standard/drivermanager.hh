@@ -45,7 +45,7 @@ the router configuration is destroyed.
 
 class DriverManager : public Script { public:
 
-    DriverManager();
+    DriverManager() CLICK_COLD;
 
     const char *class_name() const	{ return "DriverManager"; }
 

@@ -17,8 +17,8 @@ CLICK_DECLS
 
 class UnstripDSRHeader : public Element { public:
 
-  UnstripDSRHeader();
-  ~UnstripDSRHeader();
+  UnstripDSRHeader() CLICK_COLD;
+  ~UnstripDSRHeader() CLICK_COLD;
 
   const char *class_name() const		{ return "UnstripDSRHeader"; }
   const char *port_count() const		{ return PORTS_1_1; }

@@ -106,8 +106,8 @@ FromDevice.u, ToDevice.u, KernelTap, ifconfig(8) */
 
 class KernelTun : public Element { public:
 
-    KernelTun();
-    ~KernelTun();
+    KernelTun() CLICK_COLD;
+    ~KernelTun() CLICK_COLD;
 
     const char *class_name() const	{ return "KernelTun"; }
     const char *port_count() const	{ return "0-1/1-2"; }
@@ -117,10 +117,10 @@ class KernelTun : public Element { public:
 
     void *cast(const char *);
     int configure_phase() const		{ return CONFIGURE_PHASE_PRIVILEGED - 1; }
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void selected(int fd, int mask);
 

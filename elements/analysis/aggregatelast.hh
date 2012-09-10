@@ -63,22 +63,22 @@ AggregateFilter */
 
 class AggregateLast : public Element, public AggregateListener { public:
 
-    AggregateLast();
-    ~AggregateLast();
+    AggregateLast() CLICK_COLD;
+    ~AggregateLast() CLICK_COLD;
 
     const char *class_name() const	{ return "AggregateLast"; }
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PUSH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
     void push(int, Packet *);
     bool run_task(Task *);
 
     void aggregate_notify(uint32_t, AggregateEvent, const Packet *);
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
   private:
 
@@ -96,7 +96,7 @@ class AggregateLast : public Element, public AggregateListener { public:
 
     Packet **create_row(uint32_t agg);
     inline Packet **row(uint32_t agg);
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
 };
 

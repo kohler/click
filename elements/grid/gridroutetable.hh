@@ -99,8 +99,8 @@ public:
 
 public:
 
-  GridRouteTable();
-  ~GridRouteTable();
+  GridRouteTable() CLICK_COLD;
+  ~GridRouteTable() CLICK_COLD;
 
   const char *class_name() const		{ return "GridRouteTable"; }
   void *cast(const char *);
@@ -108,14 +108,14 @@ public:
   const char *processing() const		{ return "h/h"; }
   const char *flow_code() const                 { return "x/y"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   virtual bool can_live_reconfigure() const { return false; }
 
   Packet *simple_action(Packet *);
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
 
 private:

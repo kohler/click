@@ -40,13 +40,13 @@ EtherEncap */
 
 class EnsureEther : public Element { public:
 
-  EnsureEther();
-  ~EnsureEther();
+  EnsureEther() CLICK_COLD;
+  ~EnsureEther() CLICK_COLD;
 
   const char *class_name() const	{ return "EnsureEther"; }
   const char *port_count() const	{ return PORTS_1_1; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   Packet *smaction(Packet *);
   void push(int, Packet *);

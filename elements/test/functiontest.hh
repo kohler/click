@@ -22,11 +22,11 @@ integer functions, at initialization time. It does not route packets.
 
 class FunctionTest : public Element { public:
 
-    FunctionTest();
+    FunctionTest() CLICK_COLD;
 
     const char *class_name() const		{ return "FunctionTest"; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
 };
 

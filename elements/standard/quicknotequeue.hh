@@ -65,7 +65,7 @@ FrontDropQueue */
 
 class QuickNoteQueue : public FullNoteQueue { public:
 
-    QuickNoteQueue();
+    QuickNoteQueue() CLICK_COLD;
 
     const char *class_name() const		{ return "QuickNoteQueue"; }
     void *cast(const char *name);

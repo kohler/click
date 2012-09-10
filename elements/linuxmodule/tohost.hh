@@ -112,8 +112,8 @@
 
 class ToHost : public AnyDevice { public:
 
-    ToHost();
-    ~ToHost();
+    ToHost() CLICK_COLD;
+    ~ToHost() CLICK_COLD;
 
     static void static_initialize();
     static void static_cleanup();
@@ -124,10 +124,10 @@ class ToHost : public AnyDevice { public:
     const char *flags() const		{ return "S2"; }
 
     int configure_phase() const		{ return CONFIGURE_PHASE_TODEVICE; }
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void push(int port, Packet *);
 

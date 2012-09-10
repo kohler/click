@@ -35,8 +35,8 @@ keyword set to FALSE or a Socket with no inputs.
 
 class FromSocket : public Socket { public:
 
-  FromSocket();
-  ~FromSocket();
+  FromSocket() CLICK_COLD;
+  ~FromSocket() CLICK_COLD;
 
   const char *class_name() const	{ return "FromSocket"; }
   const char *processing() const	{ return PUSH; }

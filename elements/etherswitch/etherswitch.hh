@@ -61,16 +61,16 @@ ListenEtherSwitch, EtherSpanTree
 
 class EtherSwitch : public Element { public:
 
-  EtherSwitch();
-  ~EtherSwitch();
+  EtherSwitch() CLICK_COLD;
+  ~EtherSwitch() CLICK_COLD;
 
   const char *class_name() const		{ return "EtherSwitch"; }
   const char *port_count() const		{ return "2-/="; }
   const char *processing() const		{ return PUSH; }
   const char *flow_code() const			{ return "#/[^#]"; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
   void push(int port, Packet* p);
 

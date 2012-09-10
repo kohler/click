@@ -53,16 +53,16 @@ class KernelFilter : public Element { public:
 	CONFIGURE_PHASE_KERNELFILTER = CONFIGURE_PHASE_FROMDEVICE + 1
     };
 
-    KernelFilter();
-    ~KernelFilter();
+    KernelFilter() CLICK_COLD;
+    ~KernelFilter() CLICK_COLD;
 
     const char *class_name() const	{ return "KernelFilter"; }
     const char *port_count() const	{ return PORTS_0_0; }
     int configure_phase() const		{ return CONFIGURE_PHASE_KERNELFILTER; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
     static int device_filter(const String &devname, bool add_filter,
 			     ErrorHandler *errh,

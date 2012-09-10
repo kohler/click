@@ -23,8 +23,8 @@ CLICK_DECLS
 
 class SimplePrioSched : public Element { public:
 
-    SimplePrioSched();
-    ~SimplePrioSched();
+    SimplePrioSched() CLICK_COLD;
+    ~SimplePrioSched() CLICK_COLD;
 
     const char *class_name() const	{ return "SimplePrioSched"; }
     const char *port_count() const	{ return "-/1"; }

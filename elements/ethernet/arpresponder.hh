@@ -76,16 +76,16 @@ CLICK_DECLS
 
 class ARPResponder : public Element { public:
 
-    ARPResponder();
-    ~ARPResponder();
+    ARPResponder() CLICK_COLD;
+    ~ARPResponder() CLICK_COLD;
 
     const char *class_name() const		{ return "ARPResponder"; }
     const char *port_count() const		{ return PORTS_1_1X2; }
     const char *processing() const		{ return PROCESSING_A_AH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     bool can_live_reconfigure() const		{ return true; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 
@@ -124,7 +124,7 @@ class ARPResponder : public Element { public:
     int add(Vector<Entry> &v, const String &arg, ErrorHandler *errh) const;
     static void normalize(Vector<Entry> &v, bool warn, ErrorHandler *errh);
 
-    static String read_handler(Element *, void *);
+    static String read_handler(Element *, void *) CLICK_COLD;
     static int lookup_handler(int op, String &str, Element *e, const Handler *h, ErrorHandler *errh);
     static int add_handler(const String &s, Element *e, void *, ErrorHandler *errh);
     static int remove_handler(const String &s, Element *e, void *, ErrorHandler *errh);

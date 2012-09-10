@@ -33,7 +33,7 @@ public:
   const char *port_count() const { return PORTS_0_0; }
   const char *processing() const { return AGNOSTIC; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const { return false; }
 
   void *cast(const char *);

@@ -45,13 +45,13 @@ Resets C<count>, C<cycles>, and C<zero_count> counters to zero when written.
 
 class CycleCountAccum : public Element { public:
 
-    CycleCountAccum();
-    ~CycleCountAccum();
+    CycleCountAccum() CLICK_COLD;
+    ~CycleCountAccum() CLICK_COLD;
 
     const char *class_name() const	{ return "CycleCountAccum"; }
     const char *port_count() const	{ return PORTS_1_1; }
 
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     inline void smaction(Packet *);
     void push(int, Packet *p);
@@ -63,7 +63,7 @@ class CycleCountAccum : public Element { public:
     uint64_t _count;
     uint64_t _zero_count;
 
-    static String read_handler(Element *, void *);
+    static String read_handler(Element *, void *) CLICK_COLD;
     static int reset_handler(const String &, Element*, void*, ErrorHandler*);
 
 };

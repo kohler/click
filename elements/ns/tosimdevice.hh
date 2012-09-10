@@ -66,18 +66,18 @@ CLICK_DECLS
 
 class ToSimDevice : public Element { public:
 
-  ToSimDevice();
-  ~ToSimDevice();
+  ToSimDevice() CLICK_COLD;
+  ~ToSimDevice() CLICK_COLD;
 
   const char *class_name() const		{ return "ToSimDevice"; }
   const char *port_count() const		{ return PORTS_1_0; }
   //const char *flags() const			{ return "S2"; }
 
   int configure_phase() const { return CONFIGURE_PHASE_DEFAULT; }
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
   void uninitialize();
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   String ifname() const				{ return _ifname; }
   int fd() const				{ return _fd; }

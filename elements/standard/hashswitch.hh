@@ -29,13 +29,13 @@ class HashSwitch : public Element {
 
  public:
 
-  HashSwitch();
+  HashSwitch() CLICK_COLD;
 
   const char *class_name() const		{ return "HashSwitch"; }
   const char *port_count() const		{ return "1/1-"; }
   const char *processing() const		{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   void push(int port, Packet *);
 

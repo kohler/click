@@ -50,15 +50,15 @@ IPFilter, Classifier, IPClassifier, AggregateIP, AggregateIPFlows */
 
 class AggregateFilter : public Element { public:
 
-    AggregateFilter();
-    ~AggregateFilter();
+    AggregateFilter() CLICK_COLD;
+    ~AggregateFilter() CLICK_COLD;
 
     const char *class_name() const	{ return "AggregateFilter"; }
     const char *port_count() const	{ return "1/1-254"; }
     const char *processing() const	{ return PUSH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
     void push(int, Packet *);
 

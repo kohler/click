@@ -35,17 +35,17 @@ Shows the entries in the database.
 
 class AvailableRates : public Element { public:
 
-  AvailableRates();
-  ~AvailableRates();
+  AvailableRates() CLICK_COLD;
+  ~AvailableRates() CLICK_COLD;
 
   const char *class_name() const		{ return "AvailableRates"; }
   const char *port_count() const		{ return PORTS_0_0; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   void *cast(const char *n);
   bool can_live_reconfigure() const		{ return true; }
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   void take_state(Element *e, ErrorHandler *);
 
   Vector<int> lookup(EtherAddress eth);

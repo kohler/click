@@ -34,17 +34,17 @@ CLICK_DECLS
 class LocationTable : public Element {
 
 public:
-  LocationTable();
-  ~LocationTable();
+  LocationTable() CLICK_COLD;
+  ~LocationTable() CLICK_COLD;
 
   const char *class_name() const { return "LocationTable"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const { return true; }
 
   bool get_location(IPAddress ip, grid_location &loc, int &err_radius);
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   int read_args(const Vector<String> &conf, ErrorHandler *errh);
 
 

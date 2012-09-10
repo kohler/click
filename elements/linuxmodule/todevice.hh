@@ -111,8 +111,8 @@ struct netdev_queue;
 
 class ToDevice : public AnyTaskDevice { public:
 
-    ToDevice();
-    ~ToDevice();
+    ToDevice() CLICK_COLD;
+    ~ToDevice() CLICK_COLD;
 
     static void static_initialize();
     static void static_cleanup();
@@ -122,10 +122,10 @@ class ToDevice : public AnyTaskDevice { public:
     const char *processing() const	{ return PULL; }
 
     int configure_phase() const		{ return CONFIGURE_PHASE_TODEVICE; }
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     bool run_task(Task *);
 
@@ -188,7 +188,7 @@ class ToDevice : public AnyTaskDevice { public:
     int queue_packet(Packet *p, struct netdev_queue *txq);
 
     static String read_calls(Element *e, void *user_data);
-    static int write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh);
+    static int write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh) CLICK_COLD;
 
 };
 

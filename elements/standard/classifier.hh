@@ -74,7 +74,7 @@ CLICK_DECLS
 
 class Classifier : public Element { public:
 
-    Classifier();
+    Classifier() CLICK_COLD;
 
     const char *class_name() const		{ return "Classifier"; }
     const char *port_count() const		{ return "1/-"; }
@@ -83,8 +83,8 @@ class Classifier : public Element { public:
     const char *flags() const			{ return "A"; }
     bool can_live_reconfigure() const		{ return true; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
-    void add_handlers();
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void push(int port, Packet *);
 

@@ -23,7 +23,7 @@ CLICK_DECLS
 class TreeNode {
 public:
   TreeNode(IPAddress, IPAddress, IPAddress, unsigned);
-  ~TreeNode();
+  ~TreeNode() CLICK_COLD;
 
   void insert(IPAddress, IPAddress, IPAddress, unsigned);
   void remove(IPAddress, IPAddress);
@@ -47,12 +47,12 @@ private:
 
 class IndexTreesIPLookup : public Element {
 public:
-  IndexTreesIPLookup();
-  ~IndexTreesIPLookup();
+  IndexTreesIPLookup() CLICK_COLD;
+  ~IndexTreesIPLookup() CLICK_COLD;
 
   const char *class_name() const	{ return "IndexTreesIPLookup"; }
   const char *port_count() const	{ return PORTS_1_1; }
-  void cleanup(CleanupStage);
+  void cleanup(CleanupStage) CLICK_COLD;
 
   String dump_routes();
   void add_route(IPAddress, IPAddress, IPAddress, int);

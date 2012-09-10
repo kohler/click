@@ -35,8 +35,8 @@ keyword set to TRUE or a Socket with no outputs.
 
 class ToSocket : public Socket { public:
 
-  ToSocket();
-  ~ToSocket();
+  ToSocket() CLICK_COLD;
+  ~ToSocket() CLICK_COLD;
 
   const char *class_name() const	{ return "ToSocket"; }
   const char *processing() const	{ return PULL; }

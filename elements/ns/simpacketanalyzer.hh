@@ -23,8 +23,8 @@ CLICK_DECLS
 
 class SimPacketAnalyzer : public Element{
 public:
-  SimPacketAnalyzer();
-  ~SimPacketAnalyzer();
+  SimPacketAnalyzer() CLICK_COLD;
+  ~SimPacketAnalyzer() CLICK_COLD;
 
   const char *class_name() const  { return "SimPacketAnalyzer"; }
   const char *processing() const  { return PUSH; }

@@ -69,17 +69,17 @@ SocketHandlerProxy
 
 class KernelHandlerProxy : public HandlerProxy { public:
 
-    KernelHandlerProxy();
-    ~KernelHandlerProxy();
+    KernelHandlerProxy() CLICK_COLD;
+    ~KernelHandlerProxy() CLICK_COLD;
 
     const char* class_name() const	{ return "KernelHandlerProxy"; }
     void* cast(const char*);
 
-    int configure(Vector<String>&, ErrorHandler*);
+    int configure(Vector<String>&, ErrorHandler*) CLICK_COLD;
 
     int check_handler(const String&, bool write, ErrorHandler* errh);
 
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
     int llrpc(unsigned, void*);
 
   private:
@@ -91,7 +91,7 @@ class KernelHandlerProxy : public HandlerProxy { public:
 
     String handler_name_to_file_name(const String &str);
     static int handler_hook(int, String&, Element*, const Handler*, ErrorHandler*);
-    static int star_write_handler(const String&, Element*, void*, ErrorHandler*);
+    static int star_write_handler(const String&, Element*, void*, ErrorHandler*) CLICK_COLD;
     int complain(ErrorHandler*, const String&, int errcode, const String&);
     int complain_about_open(ErrorHandler*, const String&, int);
     int check_handler_name(const String&, ErrorHandler*);

@@ -22,11 +22,11 @@ initialization time. It does not route packets.
 
 class CLPTest : public Element { public:
 
-    CLPTest();
+    CLPTest() CLICK_COLD;
 
     const char *class_name() const		{ return "CLPTest"; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
 };
 

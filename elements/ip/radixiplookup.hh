@@ -71,15 +71,15 @@ LinearIPLookup, SortedIPLookup, LinuxIPLookup
 
 class RadixIPLookup : public IPRouteTable { public:
 
-    RadixIPLookup();
-    ~RadixIPLookup();
+    RadixIPLookup() CLICK_COLD;
+    ~RadixIPLookup() CLICK_COLD;
 
     const char *class_name() const		{ return "RadixIPLookup"; }
     const char *port_count() const		{ return "1/-"; }
     const char *processing() const		{ return PUSH; }
 
 
-    void cleanup(CleanupStage);
+    void cleanup(CleanupStage) CLICK_COLD;
 
     int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
     int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);

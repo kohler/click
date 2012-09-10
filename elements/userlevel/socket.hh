@@ -171,8 +171,8 @@ Integer. Per-packet headroom. Defaults to 28.
 
 class Socket : public Element { public:
 
-  Socket();
-  ~Socket();
+  Socket() CLICK_COLD;
+  ~Socket() CLICK_COLD;
 
 
   const char *class_name() const	{ return "Socket"; }
@@ -181,11 +181,11 @@ class Socket : public Element { public:
   const char *flow_code() const		{ return "x/y"; }
   const char *flags() const		{ return "S3"; }
 
-  virtual int configure(Vector<String> &conf, ErrorHandler *);
-  virtual int initialize(ErrorHandler *);
-  virtual void cleanup(CleanupStage);
+  virtual int configure(Vector<String> &conf, ErrorHandler *) CLICK_COLD;
+  virtual int initialize(ErrorHandler *) CLICK_COLD;
+  virtual void cleanup(CleanupStage) CLICK_COLD;
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   bool run_task(Task *);
   void selected(int fd, int mask);
   void push(int port, Packet*);

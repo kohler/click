@@ -53,18 +53,18 @@ class GridProxy : public Element {
 
 
 public:
-    GridProxy();
-    ~GridProxy();
+    GridProxy() CLICK_COLD;
+    ~GridProxy() CLICK_COLD;
 
     const char *class_name() const { return "GridProxy"; }
     const char *port_count() const { return "2/2"; }
     const char *processing() const { return PUSH; }
     const char *flags() const	   { return "A"; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void add_handlers();
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
     void push(int, Packet *);
 

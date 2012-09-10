@@ -260,16 +260,16 @@ public:
 
 public:
 
-  DSRRouteTable();
-  ~DSRRouteTable();
+  DSRRouteTable() CLICK_COLD;
+  ~DSRRouteTable() CLICK_COLD;
 
   const char *class_name() const { return "DSRRouteTable"; }
   const char *port_count() const { return "3/3"; }
   const char *processing() const { return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
-  int initialize(ErrorHandler *);
+  int initialize(ErrorHandler *) CLICK_COLD;
   void uninitialize();
 
   void push(int, Packet *);

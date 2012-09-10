@@ -64,16 +64,16 @@ Returns or sets the INTERVAL parameter.
 
 class TimedSource : public Element { public:
 
-  TimedSource();
+  TimedSource() CLICK_COLD;
 
   const char *class_name() const		{ return "TimedSource"; }
   const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  void add_handlers();
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
+  void add_handlers() CLICK_COLD;
 
   void run_timer(Timer *);
 
@@ -90,7 +90,7 @@ class TimedSource : public Element { public:
     uint32_t _headroom;
 
     enum { h_data, h_interval, h_active, h_reset, h_headroom };
-    static String read_param(Element *, void *);
+    static String read_param(Element *, void *) CLICK_COLD;
     static int change_param(const String &, Element *, void *, ErrorHandler *);
 
 };

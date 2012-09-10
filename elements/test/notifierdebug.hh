@@ -24,21 +24,21 @@ Returns the unparsed version of the signal.
 
 class NotifierDebug : public Element { public:
 
-    NotifierDebug();
+    NotifierDebug() CLICK_COLD;
 
     const char *class_name() const	{ return "NotifierDebug"; }
     const char *port_count() const	{ return PORTS_1_1; }
 
-    int initialize(ErrorHandler *errh);
+    int initialize(ErrorHandler *errh) CLICK_COLD;
 
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
     Packet *simple_action(Packet *);
 
   private:
 
     NotifierSignal _signal;
 
-    static String read_handler(Element *, void *);
+    static String read_handler(Element *, void *) CLICK_COLD;
 
 };
 

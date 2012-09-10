@@ -81,17 +81,17 @@ Returns or sets the DST parameter.
 
 class IPsecEncap : public Element { public:
 
-  IPsecEncap();
-  ~IPsecEncap();
+  IPsecEncap() CLICK_COLD;
+  ~IPsecEncap() CLICK_COLD;
 
   const char *class_name() const		{ return "IPsecEncap"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *flags() const			{ return "A"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const		{ return true; }
-  int initialize(ErrorHandler *);
-  void add_handlers();
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void add_handlers() CLICK_COLD;
 
   Packet *simple_action(Packet *);
 
@@ -104,7 +104,7 @@ class IPsecEncap : public Element { public:
 
   atomic_uint32_t _id;
 
-  static String read_handler(Element *, void *);
+  static String read_handler(Element *, void *) CLICK_COLD;
 
 };
 

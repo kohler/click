@@ -22,11 +22,11 @@ route packets.
 
 class DequeTest : public Element { public:
 
-    DequeTest();
+    DequeTest() CLICK_COLD;
 
     const char *class_name() const		{ return "DequeTest"; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
 };
 

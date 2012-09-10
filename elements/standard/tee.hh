@@ -26,13 +26,13 @@ class Tee : public Element {
 
  public:
 
-  Tee();
+  Tee() CLICK_COLD;
 
   const char *class_name() const		{ return "Tee"; }
   const char *port_count() const		{ return "1/1-"; }
   const char *processing() const		{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   void push(int, Packet *);
 
@@ -42,13 +42,13 @@ class PullTee : public Element {
 
  public:
 
-  PullTee();
+  PullTee() CLICK_COLD;
 
   const char *class_name() const		{ return "PullTee"; }
   const char *port_count() const		{ return "1/1-"; }
   const char *processing() const		{ return "l/lh"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   Packet *pull(int);
 

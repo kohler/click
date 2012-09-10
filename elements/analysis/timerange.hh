@@ -56,14 +56,14 @@ TimeFilter */
 
 class TimeRange : public Element { public:
 
-    TimeRange();
-    ~TimeRange();
+    TimeRange() CLICK_COLD;
+    ~TimeRange() CLICK_COLD;
 
     const char *class_name() const	{ return "TimeRange"; }
     const char *port_count() const	{ return PORTS_1_1; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 
@@ -77,8 +77,8 @@ class TimeRange : public Element { public:
     enum {
 	h_range, h_interval, h_reset
     };
-    static String read_handler(Element *, void *);
-    static int write_handler(const String &, Element *, void *, ErrorHandler*);
+    static String read_handler(Element *, void *) CLICK_COLD;
+    static int write_handler(const String &, Element *, void *, ErrorHandler*) CLICK_COLD;
 
 };
 

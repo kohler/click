@@ -65,8 +65,8 @@ public:
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   Packet *simple_action(Packet *);
 

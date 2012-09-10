@@ -27,15 +27,15 @@ CLICK_DECLS
 
 class TCPIPSend : public Element {
 public:
-  TCPIPSend();
-  ~TCPIPSend();
+  TCPIPSend() CLICK_COLD;
+  ~TCPIPSend() CLICK_COLD;
 
   const char *class_name() const	{ return "TCPIPSend"; }
   const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PUSH; }
 
 private:
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   static int send_write_handler
     (const String &conf, Element *e, void *, ErrorHandler *errh);
   Packet * make_packet(unsigned int, unsigned int, unsigned short,

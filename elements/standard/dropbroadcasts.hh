@@ -20,12 +20,12 @@ CLICK_DECLS
 class DropBroadcasts : public Element {
  public:
 
-  DropBroadcasts();
+  DropBroadcasts() CLICK_COLD;
 
   const char *class_name() const	{ return "DropBroadcasts"; }
   const char *port_count() const	{ return PORTS_1_1X2; }
   const char *processing() const	{ return PROCESSING_A_AH; }
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   uint32_t drops() const		{ return _drops; }
 

@@ -40,8 +40,8 @@ class AnyDevice : public Element { public:
            CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_DEFAULT - 1,
            CONFIGURE_PHASE_POLLDEVICE = CONFIGURE_PHASE_DEFAULT };
 
-    AnyDevice();
-    ~AnyDevice();
+    AnyDevice() CLICK_COLD;
+    ~AnyDevice() CLICK_COLD;
 
     const String &devname() const	{ return _devname; }
     struct ifnet *device() const	{ return _dev; }
@@ -79,7 +79,7 @@ class AnyDevice : public Element { public:
 
 class AnyTaskDevice : public AnyDevice { public:
 
-    AnyTaskDevice();
+    AnyTaskDevice() CLICK_COLD;
 
     void adjust_tickets(int work);
 
@@ -143,7 +143,7 @@ AnyDevice::adjust_tickets(int work)
 
 class AnyDeviceMap { public:
 
-    void initialize();
+    void initialize() CLICK_COLD;
     AnyDevice *lookup(struct ifnet *);
     AnyDevice *lookup_unknown(struct ifnet *);
     void insert(AnyDevice *);

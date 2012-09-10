@@ -132,8 +132,8 @@ typedef int netdev_tx_t;
 
 class FromHost : public AnyDevice, public Storage { public:
 
-    FromHost();
-    ~FromHost();
+    FromHost() CLICK_COLD;
+    ~FromHost() CLICK_COLD;
 
     static void static_initialize();
 
@@ -143,10 +143,10 @@ class FromHost : public AnyDevice, public Storage { public:
     void *cast(const char *name);
 
     int configure_phase() const		{ return CONFIGURE_PHASE_FROMHOST; }
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void add_handlers();
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
     int set_device_addresses(ErrorHandler *);
 
@@ -192,8 +192,8 @@ class FromHost : public AnyDevice, public Storage { public:
 #endif
 
     enum { h_length, h_burst };
-    static String read_handler(Element *e, void *thunk);
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static String read_handler(Element *e, void *thunk) CLICK_COLD;
+    static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 };
 
 #endif

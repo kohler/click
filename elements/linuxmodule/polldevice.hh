@@ -102,8 +102,8 @@ Resets C<count> counter to zero when written.
 
 class PollDevice : public AnyTaskDevice { public:
 
-  PollDevice();
-  ~PollDevice();
+  PollDevice() CLICK_COLD;
+  ~PollDevice() CLICK_COLD;
 
   static void static_initialize();
   static void static_cleanup();
@@ -113,10 +113,10 @@ class PollDevice : public AnyTaskDevice { public:
   const char *processing() const	{ return PUSH; }
 
   int configure_phase() const		{ return CONFIGURE_PHASE_POLLDEVICE; }
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  void add_handlers();
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
+  void add_handlers() CLICK_COLD;
 
   void change_device(net_device *);
   /* process a packet. return 0 if not wanted after all. */

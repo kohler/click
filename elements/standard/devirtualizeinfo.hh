@@ -7,10 +7,10 @@ class DevirtualizeInfo : public Element {
 
  public:
 
-  DevirtualizeInfo();
+  DevirtualizeInfo() CLICK_COLD;
 
   const char *class_name() const	{ return "DevirtualizeInfo"; }
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
 };
 

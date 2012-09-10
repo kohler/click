@@ -26,15 +26,15 @@ CLICK_DECLS
 
 class SnoopTCP : public Element { public:
 
-  SnoopTCP();
-  ~SnoopTCP();
+  SnoopTCP() CLICK_COLD;
+  ~SnoopTCP() CLICK_COLD;
 
   const char *class_name() const		{ return "SnoopTCP"; }
   const char *port_count() const		{ return "2/4"; }
   const char *processing() const		{ return "aa/aahh"; }
   const char *flow_code() const			{ return "xyz/xy"; }
 
-  int initialize(ErrorHandler *);
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   void push(int port, Packet *);
   Packet *pull(int port);
@@ -90,11 +90,11 @@ struct SnoopTCP::PCB {
   int next_i(int i) const	{ return (i+1) % S_CACHE_SIZE; }
   int prev_i(int i) const	{ return (i ? i-1 : S_CACHE_SIZE-1); }
 
-  PCB();
-  ~PCB();
+  PCB() CLICK_COLD;
+  ~PCB() CLICK_COLD;
 
   void clear(bool is_s);
-  void initialize(bool is_s, const click_tcp *, int datalen);
+  void initialize(bool is_s, const click_tcp *, int datalen) CLICK_COLD;
 
   int s_cache_size() const	{ return (_head >= _tail ? _head - _tail : S_CACHE_SIZE - (_tail - _head)); }
 

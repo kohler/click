@@ -100,18 +100,18 @@ class FromHost : public Element { public:
 	CONFIGURE_PHASE_TOHOST =  CONFIGURE_PHASE_FROMHOST + 1
     };
 
-    FromHost();
-    ~FromHost();
+    FromHost() CLICK_COLD;
+    ~FromHost() CLICK_COLD;
 
     const char *class_name() const	{ return "FromHost"; }
     const char *port_count() const	{ return PORTS_0_1; }
     const char *processing() const	{ return PUSH; }
 
     int configure_phase() const		{ return CONFIGURE_PHASE_FROMHOST; }
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     int fd() const			{ return _fd; }
     String dev_name() const		{ return _dev_name; }
@@ -148,7 +148,7 @@ class FromHost : public Element { public:
     int setup_tun(ErrorHandler *);
     void dealloc_tun();
 
-    static String read_param(Element *, void *);
+    static String read_param(Element *, void *) CLICK_COLD;
 
 };
 

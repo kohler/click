@@ -191,16 +191,16 @@ AggregateIP, AggregatePacketCounter, FromIPSummaryDump, FromDump */
 
 class AggregateCounter : public Element { public:
 
-    AggregateCounter();
-    ~AggregateCounter();
+    AggregateCounter() CLICK_COLD;
+    ~AggregateCounter() CLICK_COLD;
 
     const char *class_name() const	{ return "AggregateCounter"; }
     const char *port_count() const	{ return "1-2/1-2"; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     inline bool update(Packet *, bool frozen = false);
     void push(int, Packet *);
@@ -251,8 +251,8 @@ class AggregateCounter : public Element { public:
 
     void write_nodes(Node *, FILE *, WriteFormat, uint32_t *, int &, int, ErrorHandler *) const;
     static int write_file_handler(const String &, Element *, void *, ErrorHandler *);
-    static String read_handler(Element *, void *);
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static String read_handler(Element *, void *) CLICK_COLD;
+    static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
 };
 

@@ -30,18 +30,18 @@ CLICK_DECLS
 class GridProbeSender : public Element {
 
  public:
-  GridProbeSender();
-  ~GridProbeSender();
+  GridProbeSender() CLICK_COLD;
+  ~GridProbeSender() CLICK_COLD;
 
   const char *class_name() const		{ return "GridProbeSender"; }
   const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return PUSH; }
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   void send_probe(IPAddress &, unsigned int);
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
 private:
   IPAddress _ip;

@@ -133,15 +133,15 @@ AggregateLength, AggregateIPFlows, AggregateCounter, AggregatePaint
 
 class AggregateIP : public Element { public:
 
-    AggregateIP();
-    ~AggregateIP();
+    AggregateIP() CLICK_COLD;
+    ~AggregateIP() CLICK_COLD;
 
     const char *class_name() const	{ return "AggregateIP"; }
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PROCESSING_A_AH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void push(int, Packet *);
     Packet *pull(int);
@@ -158,7 +158,7 @@ class AggregateIP : public Element { public:
     Packet *handle_packet(Packet *);
     Packet *bad_packet(Packet *);
 
-    static String read_handler(Element *, void *);
+    static String read_handler(Element *, void *) CLICK_COLD;
 
 };
 

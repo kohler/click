@@ -16,13 +16,13 @@ CLICK_DECLS
 
 class DiscardNoFree : public Element { public:
 
-  DiscardNoFree();
+  DiscardNoFree() CLICK_COLD;
 
   const char *class_name() const		{ return "DiscardNoFree"; }
   const char *port_count() const		{ return PORTS_1_0; }
 
-  int initialize(ErrorHandler *);
-  void add_handlers();
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void add_handlers() CLICK_COLD;
 
   void push(int, Packet *);
   bool run_task(Task *);

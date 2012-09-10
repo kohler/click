@@ -28,13 +28,13 @@ Annotation names defined by default, such as PAINT, may not be redefined.
 
 class AnnotationInfo : public Element { public:
 
-    AnnotationInfo();
+    AnnotationInfo() CLICK_COLD;
 
     const char *class_name() const	{ return "AnnotationInfo"; }
 
     int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
-    int configure(Vector<String> &conf, ErrorHandler *errh);
-    int initialize(ErrorHandler *errh);
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
+    int initialize(ErrorHandler *errh) CLICK_COLD;
 
 };
 

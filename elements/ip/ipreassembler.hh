@@ -64,22 +64,22 @@ IPReassembler destroys its input packets' "next packet" annotations.
 
 class IPReassembler : public Element { public:
 
-    IPReassembler();
-    ~IPReassembler();
+    IPReassembler() CLICK_COLD;
+    ~IPReassembler() CLICK_COLD;
 
     const char *class_name() const	{ return "IPReassembler"; }
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PROCESSING_A_AH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
     int check(ErrorHandler * = 0);
 
     Packet *simple_action(Packet *);
 
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     struct ChunkLink {
 	uint16_t off;

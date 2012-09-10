@@ -11,8 +11,8 @@ CLICK_DECLS
 
 class SATable : public Element { public:
 
-  SATable();
-  ~SATable();
+  SATable() CLICK_COLD;
+  ~SATable() CLICK_COLD;
 
   const char *class_name() const		{ return "SATable"; }
   String print_sa_data();

@@ -38,28 +38,28 @@ class CPUQueue : public Element {
   int prev_i(int i) const { return (i!=0 ? i-1 : _capacity); }
   Packet *deq(int);
 
-  static String read_handler(Element *, void *);
+  static String read_handler(Element *, void *) CLICK_COLD;
 
  public:
 
-  CPUQueue();
-  ~CPUQueue();
+  CPUQueue() CLICK_COLD;
+  ~CPUQueue() CLICK_COLD;
 
   const char *class_name() const		{ return "CPUQueue"; }
   const char *port_count() const		{ return "1/1-"; }
   const char *processing() const		{ return PUSH_TO_PULL; }
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
 
   unsigned drops() const			{ return _drops; }
   unsigned capacity() const			{ return _capacity; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   void push(int port, Packet *);
   Packet *pull(int port);
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 };
 
 #endif

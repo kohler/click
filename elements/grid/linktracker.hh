@@ -57,17 +57,17 @@ public:
   bool get_bcast_stat(IPAddress dst, double &delivery_rate, Timestamp &last_update);
   void remove_all_stats(IPAddress dst);
 
-  LinkTracker();
-  ~LinkTracker();
+  LinkTracker() CLICK_COLD;
+  ~LinkTracker() CLICK_COLD;
 
   const char *class_name() const		{ return "LinkTracker"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return "a/a"; }
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   Packet *simple_action(Packet *);
 };

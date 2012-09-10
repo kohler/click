@@ -38,8 +38,8 @@ no outputs.
 
 class ToRawSocket : public RawSocket { public:
 
-  ToRawSocket();
-  ~ToRawSocket();
+  ToRawSocket() CLICK_COLD;
+  ~ToRawSocket() CLICK_COLD;
 
   const char *class_name() const	{ return "ToRawSocket"; }
   const char *processing() const	{ return PULL; }

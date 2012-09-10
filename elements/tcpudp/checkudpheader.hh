@@ -53,15 +53,15 @@ true.
 
 class CheckUDPHeader : public Element { public:
 
-  CheckUDPHeader();
-  ~CheckUDPHeader();
+  CheckUDPHeader() CLICK_COLD;
+  ~CheckUDPHeader() CLICK_COLD;
 
   const char *class_name() const		{ return "CheckUDPHeader"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  void add_handlers();
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  void add_handlers() CLICK_COLD;
 
   Packet *simple_action(Packet *);
   /* inline Packet *smaction(Packet *);
@@ -83,7 +83,7 @@ class CheckUDPHeader : public Element { public:
   static const char *reason_texts[NREASONS];
 
   Packet *drop(Reason, Packet *);
-  static String read_handler(Element *, void *);
+  static String read_handler(Element *, void *) CLICK_COLD;
 
 };
 

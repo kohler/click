@@ -78,13 +78,13 @@ the difference between the current time and the packet's initial time.
 class StoreUDPTimeSeqRecord : public Element
 {
 public:
-    StoreUDPTimeSeqRecord();
+    StoreUDPTimeSeqRecord() CLICK_COLD;
 
     const char *class_name() const	{ return "StoreUDPTimeSeqRecord"; }
     const char *port_count() const	{ return PORTS_1_1; }
 
-    void add_handlers();
-    int  configure(Vector<String> &conf, ErrorHandler *errh);
+    void add_handlers() CLICK_COLD;
+    int  configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
 
     Packet *simple_action(Packet *);
 
@@ -102,7 +102,7 @@ private:
     bool          _delta;  // if true put in_timestamp else out_timestamp
     uint32_t      _offset; //how much to shift to get to the IPv4/v6 header
 
-    static String read_handler(Element *, void *);
+    static String read_handler(Element *, void *) CLICK_COLD;
     static int    reset_handler(const String &, Element *, void *, ErrorHandler *);
 };
 

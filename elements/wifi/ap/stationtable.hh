@@ -20,13 +20,13 @@ public:
 
 class StationTable : public Element { public:
 
-  StationTable();
-  ~StationTable();
+  StationTable() CLICK_COLD;
+  ~StationTable() CLICK_COLD;
 
   const char *class_name() const		{ return "StationTable"; }
   const char *port_count() const		{ return PORTS_0_0; }
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   void take_state(Element *e, ErrorHandler *);
 
 

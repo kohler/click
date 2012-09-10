@@ -441,7 +441,7 @@ space-separated argument off the named variable and returns the result.
 
 class Script : public Element { public:
 
-    Script();
+    Script() CLICK_COLD;
 
     static void static_initialize();
     static void static_cleanup();
@@ -449,9 +449,9 @@ class Script : public Element { public:
     const char *class_name() const	{ return "Script"; }
     const char *port_count() const	{ return "-/-"; }
     const char *processing() const	{ return "ah/ah"; }
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void push(int port, Packet *p);
     Packet *pull(int port);
@@ -539,7 +539,7 @@ class Script : public Element { public:
     static int basic_handler(int, String&, Element*, const Handler*, ErrorHandler*);
     static String read_export_handler(Element*, void*);
     static int var_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh);
-    static int star_write_handler(const String&, Element*, void*, ErrorHandler*);
+    static int star_write_handler(const String&, Element*, void*, ErrorHandler*) CLICK_COLD;
 
     friend class DriverManager;
     friend class Expander;

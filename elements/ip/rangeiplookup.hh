@@ -82,17 +82,17 @@ SortedIPLookup, StaticIPLookup, LinuxIPLookup
 
 class RangeIPLookup : public IPRouteTable { public:
 
-    RangeIPLookup();
-    ~RangeIPLookup();
+    RangeIPLookup() CLICK_COLD;
+    ~RangeIPLookup() CLICK_COLD;
 
     const char *class_name() const      { return "RangeIPLookup"; }
     const char *port_count() const	{ return "1/-"; }
     const char *processing() const      { return PUSH; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
-    int initialize(ErrorHandler *errh);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
+    int initialize(ErrorHandler *errh) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
     void push(int port, Packet* p);
 
     int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);

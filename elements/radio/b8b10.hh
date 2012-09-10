@@ -21,8 +21,8 @@ public:
 
   const char *class_name() const	{ return "B8B10"; }
   const char *port_count() const	{ return PORTS_1_1; }
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   Packet *simple_action(Packet *);
 

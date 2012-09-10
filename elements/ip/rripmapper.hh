@@ -21,15 +21,15 @@ CLICK_DECLS
 
 class RoundRobinIPMapper : public Element, public IPMapper { public:
 
-    RoundRobinIPMapper();
-    ~RoundRobinIPMapper();
+    RoundRobinIPMapper() CLICK_COLD;
+    ~RoundRobinIPMapper() CLICK_COLD;
 
     const char *class_name() const	{ return "RoundRobinIPMapper"; }
     void *cast(const char *);
 
     int configure_phase() const		{ return IPRewriterBase::CONFIGURE_PHASE_MAPPER;}
-    int configure(Vector<String> &conf, ErrorHandler *errh);
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
     void notify_rewriter(IPRewriterBase *user, IPRewriterInput *input,
 			 ErrorHandler *errh);

@@ -25,14 +25,14 @@ argument can specify any one-byte annotation.
 
 class CheckPaint : public Element { public:
 
-    CheckPaint();
+    CheckPaint() CLICK_COLD;
 
     const char *class_name() const	{ return "CheckPaint"; }
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PROCESSING_A_AH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void push(int, Packet *);
     Packet *pull(int);

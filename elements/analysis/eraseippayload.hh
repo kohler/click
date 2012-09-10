@@ -25,8 +25,8 @@ have the same length, but all payload bytes are zero.
 
 class EraseIPPayload : public Element { public:
 
-    EraseIPPayload();
-    ~EraseIPPayload();
+    EraseIPPayload() CLICK_COLD;
+    ~EraseIPPayload() CLICK_COLD;
 
     const char *class_name() const	{ return "EraseIPPayload"; }
     const char *port_count() const	{ return PORTS_1_1; }

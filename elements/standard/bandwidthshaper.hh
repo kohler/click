@@ -27,7 +27,7 @@ CLICK_DECLS
 
 class BandwidthShaper : public Shaper { public:
 
-    BandwidthShaper();
+    BandwidthShaper() CLICK_COLD;
 
     const char *class_name() const	{ return "BandwidthShaper"; }
 

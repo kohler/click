@@ -45,16 +45,16 @@ AggregateLast, AggregateIP, AggregateIPFlows, AggregateCounter, AggregateFilter 
 
 class AggregateFirst : public Element, public AggregateListener { public:
 
-    AggregateFirst();
-    ~AggregateFirst();
+    AggregateFirst() CLICK_COLD;
+    ~AggregateFirst() CLICK_COLD;
 
     const char *class_name() const	{ return "AggregateFirst"; }
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PROCESSING_A_AH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
     inline Packet *smaction(Packet *);
     void push(int, Packet *);

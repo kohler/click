@@ -21,11 +21,11 @@ This element routes no packets and does all its work at initialization time.
 
 class BigintTest : public Element { public:
 
-    BigintTest();
+    BigintTest() CLICK_COLD;
 
     const char *class_name() const		{ return "BigintTest"; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
 };
 

@@ -36,11 +36,11 @@ SortedIPLookup, LinuxIPLookup, IPRouteTable */
 
 class StaticIPLookup : public LinearIPLookup { public:
 
-    StaticIPLookup();
-    ~StaticIPLookup();
+    StaticIPLookup() CLICK_COLD;
+    ~StaticIPLookup() CLICK_COLD;
 
     const char *class_name() const	{ return "StaticIPLookup"; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
     int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);

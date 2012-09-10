@@ -71,12 +71,12 @@ class AddressTranslator : public Element {
 
   class Mapping;
 
-  AddressTranslator();
-  ~AddressTranslator();
+  AddressTranslator() CLICK_COLD;
+  ~AddressTranslator() CLICK_COLD;
 
   const char *class_name() const		{ return "AddressTranslator"; }
   const char *port_count() const		{ return "2/2"; }
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   void push(int port, Packet *p);
   void add_map(IP6Address &mai,  bool binding);
   void add_map(IP6Address &iai, unsigned short ipi, IP6Address &mai, unsigned short mpi, IP6Address &ea, unsigned short ep, bool binding);
@@ -84,7 +84,7 @@ class AddressTranslator : public Element {
   void handle_inward(Packet *p);
 
   bool lookup(IP6Address &, unsigned short &, IP6Address &, unsigned short &, IP6Address &, unsigned short &, bool);
-  void cleanup(CleanupStage);
+  void cleanup(CleanupStage) CLICK_COLD;
 
 protected:
 
@@ -139,7 +139,7 @@ class AddressTranslator::Mapping {
 
  public:
 
-  Mapping();
+  Mapping() CLICK_COLD;
   void initialize(const IP6FlowID & new_flow) { _mapto = new_flow;     }
   const IP6FlowID &flow_id() const    {  return _mapto;        }
   unsigned short sport() const        { return _mapto.sport(); }

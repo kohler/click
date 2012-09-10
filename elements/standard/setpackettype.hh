@@ -23,7 +23,7 @@ was it broadcast? TYPE should be one of `C<HOST>', `C<BROADCAST>',
 
 class SetPacketType : public Element { public:
 
-    SetPacketType();
+    SetPacketType() CLICK_COLD;
 
     const char *class_name() const		{ return "SetPacketType"; }
     const char *port_count() const		{ return PORTS_1_1; }
@@ -31,7 +31,7 @@ class SetPacketType : public Element { public:
     static int parse_type(const String &);
     static const char *unparse_type(int);
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     bool can_live_reconfigure() const		{ return true; }
 
     Packet *simple_action(Packet *);

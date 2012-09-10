@@ -30,13 +30,13 @@ RandomSwitch, Paint, PaintTee */
 
 class PaintSwitch : public Element { public:
 
-    PaintSwitch();
+    PaintSwitch() CLICK_COLD;
 
     const char *class_name() const		{ return "PaintSwitch"; }
     const char *port_count() const		{ return "1/-"; }
     const char *processing() const		{ return PUSH; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
 
     void push(int, Packet *);
 
