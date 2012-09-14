@@ -1,0 +1,14 @@
+%info
+Check unspecified top-level elements
+%script
+ulimit -t 1
+click A.click || true
+click-flatten A.click || true
+
+%file A.click
+->Null;
+
+%expect -w stdout
+%expect -w stderr
+A.click:1: syntax error near '->'
+A.click:1: syntax error near '->'
