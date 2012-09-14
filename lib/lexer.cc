@@ -1335,7 +1335,7 @@ Lexer::yelement_name()
 		    lerror("stranded port ignored");
 		_ps->elements.resize(_ps->cur_epos);
 		if (_ps->cur_epos == 0) {
-		    if (_ps->first_element_set())
+		    if (nested && _ps->first_element_set())
 			unlex(t);
 		    else
 			lerror_syntax(t);
