@@ -50,15 +50,15 @@ PacketTest */
 
 class ComparePackets : public Element { public:
 
-    ComparePackets();
+    ComparePackets() CLICK_COLD;
 
     const char *class_name() const		{ return "ComparePackets"; }
     const char *port_count() const		{ return "2/2"; }
     const char *processing() const		{ return PULL; }
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet *pull(int);
 
@@ -76,7 +76,7 @@ class ComparePackets : public Element { public:
     uint32_t _diff_details[D_LAST];
 
     void check(Packet *, Packet *);
-    static String read_handler(Element *, void *);
+    static String read_handler(Element *, void *) CLICK_COLD;
 
 };
 

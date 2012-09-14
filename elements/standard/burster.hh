@@ -18,7 +18,7 @@ CLICK_DECLS
 
 class Burster : public TimedUnqueue { public:
 
-    Burster();
+    Burster() CLICK_COLD;
 
     const char *class_name() const		{ return "Burster"; }
     void *cast(const char *name);

@@ -44,13 +44,13 @@ Print, IPPrint, Print80211 */
 
 class PrintAiro : public Element { public:
 
-  PrintAiro();
-  ~PrintAiro();
+  PrintAiro() CLICK_COLD;
+  ~PrintAiro() CLICK_COLD;
 
   const char *class_name() const		{ return "PrintAiro"; }
   const char *port_count() const		{ return PORTS_1_1; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const		{ return true; }
 
   Packet *simple_action(Packet *);

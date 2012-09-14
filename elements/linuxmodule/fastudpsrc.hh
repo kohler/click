@@ -84,19 +84,19 @@ class FastUDPSource : public Element {
   unsigned _limit;
   bool _active;
 
-  FastUDPSource();
-  ~FastUDPSource();
+  FastUDPSource() CLICK_COLD;
+  ~FastUDPSource() CLICK_COLD;
 
   const char *class_name() const	{ return "FastUDPSource"; }
   const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PULL; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
   Packet *pull(int);
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   void reset();
   unsigned count() { return _count; }
   click_jiffies_t first() { return _first; }

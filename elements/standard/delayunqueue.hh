@@ -34,16 +34,16 @@ DelayShaper, SetTimestamp */
 
 class DelayUnqueue : public Element { public:
 
-    DelayUnqueue();
+    DelayUnqueue() CLICK_COLD;
 
     const char *class_name() const	{ return "DelayUnqueue"; }
     const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return PULL_TO_PUSH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     bool run_task(Task *);
 

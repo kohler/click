@@ -89,15 +89,15 @@ EnsureEther, StoreEtherAddress */
 
 class EtherVLANEncap : public Element { public:
 
-    EtherVLANEncap();
-    ~EtherVLANEncap();
+    EtherVLANEncap() CLICK_COLD;
+    ~EtherVLANEncap() CLICK_COLD;
 
     const char *class_name() const	{ return "EtherVLANEncap"; }
     const char *port_count() const	{ return PORTS_1_1; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
     bool can_live_reconfigure() const	{ return true; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     Packet *smaction(Packet *p);
     void push(int port, Packet *p);
@@ -110,8 +110,8 @@ class EtherVLANEncap : public Element { public:
     int _native_vlan;
 
     enum { h_config, h_vlan_tci };
-    static String read_handler(Element *e, void *user_data);
-    static int write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh);
+    static String read_handler(Element *e, void *user_data) CLICK_COLD;
+    static int write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh) CLICK_COLD;
 
 };
 

@@ -167,8 +167,8 @@ ARPTable, ARPResponder, ARPFaker, AddressInfo
 
 class ARPQuerier : public Element { public:
 
-    ARPQuerier();
-    ~ARPQuerier();
+    ARPQuerier() CLICK_COLD;
+    ~ARPQuerier() CLICK_COLD;
 
     const char *class_name() const		{ return "ARPQuerier"; }
     const char *port_count() const		{ return "2/1-2"; }
@@ -178,12 +178,12 @@ class ARPQuerier : public Element { public:
     const char *flags() const			{ return "L2"; }
     void *cast(const char *name);
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     int live_reconfigure(Vector<String> &, ErrorHandler *);
     bool can_live_reconfigure() const		{ return true; }
-    int initialize(ErrorHandler *errh);
-    void add_handlers();
-    void cleanup(CleanupStage stage);
+    int initialize(ErrorHandler *errh) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
+    void cleanup(CleanupStage stage) CLICK_COLD;
     void take_state(Element *e, ErrorHandler *errh);
 
     void push(int port, Packet *p);
@@ -213,8 +213,8 @@ class ARPQuerier : public Element { public:
     static void expire_hook(Timer *, void *);
     static String read_table(Element *, void *);
     static String read_table_xml(Element *, void *);
-    static String read_handler(Element *, void *);
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static String read_handler(Element *, void *) CLICK_COLD;
+    static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
     enum { h_table, h_table_xml, h_stats, h_insert, h_delete, h_clear,
 	   h_count, h_length };

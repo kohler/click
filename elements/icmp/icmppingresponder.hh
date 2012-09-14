@@ -32,8 +32,8 @@ ICMPSendPings, ICMPError */
 
 class ICMPPingResponder : public Element { public:
 
-  ICMPPingResponder();
-  ~ICMPPingResponder();
+  ICMPPingResponder() CLICK_COLD;
+  ~ICMPPingResponder() CLICK_COLD;
 
   const char *class_name() const	{ return "ICMPPingResponder"; }
   const char *port_count() const	{ return PORTS_1_1X2; }

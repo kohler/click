@@ -22,11 +22,11 @@ does not route packets.
 
 class HashTableTest : public Element { public:
 
-    HashTableTest();
+    HashTableTest() CLICK_COLD;
 
     const char *class_name() const		{ return "HashTableTest"; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
 };
 

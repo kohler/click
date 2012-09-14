@@ -30,12 +30,12 @@ class FixIPSrc : public Element {
   struct in_addr _my_ip;
 
 public:
-  FixIPSrc();
-  ~FixIPSrc();
+  FixIPSrc() CLICK_COLD;
+  ~FixIPSrc() CLICK_COLD;
 
   const char *class_name() const		{ return "FixIPSrc"; }
   const char *port_count() const		{ return PORTS_1_1; }
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   WritablePacket *fix_it(Packet *);
   Packet *simple_action(Packet *);

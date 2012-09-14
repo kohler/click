@@ -9,21 +9,21 @@ class HandlerCall;
 
 class FromHandler : public Element { public:
 
-    FromHandler();
-    ~FromHandler();
+    FromHandler() CLICK_COLD;
+    ~FromHandler() CLICK_COLD;
 
     const char *class_name() const		{ return "FromHandler"; }
     const char *port_count() const		{ return "0/1-2"; }
     const char *processing() const		{ return PROCESSING_A_AH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void set_active(bool);
     bool run_task(Task *);
-    static int write_handler(const String &s_in, Element *e, void *thunk, ErrorHandler *errh);
-    static String read_handler(Element *e, void *thunk);
+    static int write_handler(const String &s_in, Element *e, void *thunk, ErrorHandler *errh) CLICK_COLD;
+    static String read_handler(Element *e, void *thunk) CLICK_COLD;
 
   private:
     bool get_packet();

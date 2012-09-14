@@ -24,15 +24,15 @@ CLICK_DECLS
 
 class ACKResponder : public Element {
 public:
-  ACKResponder();
-  ~ACKResponder();
+  ACKResponder() CLICK_COLD;
+  ~ACKResponder() CLICK_COLD;
 
   const char *class_name() const { return "ACKResponder"; }
   const char *port_count() const { return "1/2"; }
   const char *processing() const { return PROCESSING_A_AH; }
   const char *flow_code()  const { return "x/xy"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   Packet *simple_action(Packet *);
 

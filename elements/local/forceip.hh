@@ -29,8 +29,8 @@ class ForceIP : public Element {
 
  public:
 
-  ForceIP();
-  ~ForceIP();
+  ForceIP() CLICK_COLD;
+  ~ForceIP() CLICK_COLD;
 
   const char *class_name() const		{ return "ForceIP"; }
   const char *port_count() const		{ return PORTS_1_1; }

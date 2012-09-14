@@ -49,7 +49,7 @@ When written, drops all packets in the Queue.
 
 class FrontDropQueue : public NotifierQueue { public:
 
-  FrontDropQueue();
+  FrontDropQueue() CLICK_COLD;
 
   const char *class_name() const		{ return "FrontDropQueue"; }
   void *cast(const char *);

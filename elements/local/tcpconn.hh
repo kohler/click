@@ -43,20 +43,20 @@ private:
   Packet *oput(Packet *p);
 
 public:
-  TCPConn();
-  ~TCPConn();
+  TCPConn() CLICK_COLD;
+  ~TCPConn() CLICK_COLD;
 
   const char *class_name() const		{ return "TCPConn"; }
   const char *port_count() const		{ return "2/3"; }
   const char *processing() const		{ return "hl/hlh"; }
 
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  int configure(Vector<String> &conf, ErrorHandler *errh);
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
+  int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
 
   void push(int, Packet *);
   Packet *pull(int);
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   static int ctrl_write_handler
     (const String &, Element *, void *, ErrorHandler *);

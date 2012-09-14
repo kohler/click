@@ -25,11 +25,11 @@ performs terribly, so it is deprecated.
 
 class SortedIPLookup : public LinearIPLookup { public:
 
-    SortedIPLookup();
-    ~SortedIPLookup();
+    SortedIPLookup() CLICK_COLD;
+    ~SortedIPLookup() CLICK_COLD;
 
     const char *class_name() const	{ return "SortedIPLookup"; }
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
     void push(int port, Packet *p);
 

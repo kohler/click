@@ -32,8 +32,8 @@ Clear all information for each source
 
 class RXStats : public Element { public:
 
-  RXStats();
-  ~RXStats();
+  RXStats() CLICK_COLD;
+  ~RXStats() CLICK_COLD;
 
   const char *class_name() const		{ return "RXStats"; }
   const char *port_count() const		{ return PORTS_1_1; }
@@ -41,7 +41,7 @@ class RXStats : public Element { public:
 
   Packet *simple_action(Packet *);
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   class DstInfo {
   public:

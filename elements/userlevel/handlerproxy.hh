@@ -7,8 +7,8 @@ class HandlerProxy : public Element { public:
 
     typedef ErrorHandler* (*ErrorReceiverHook)(const String&, void*);
 
-    HandlerProxy();
-    ~HandlerProxy();
+    HandlerProxy() CLICK_COLD;
+    ~HandlerProxy() CLICK_COLD;
 
     virtual int add_error_receiver(ErrorReceiverHook, void*);
     virtual int remove_error_receiver(ErrorReceiverHook, void*);

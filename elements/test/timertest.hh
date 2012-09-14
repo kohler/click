@@ -63,13 +63,13 @@ Unschedule the TimerTest's timer.
 
 class TimerTest : public Element { public:
 
-    TimerTest();
+    TimerTest() CLICK_COLD;
 
     const char *class_name() const		{ return "TimerTest"; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
-    int initialize(ErrorHandler *errh);
-    void add_handlers();
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
+    int initialize(ErrorHandler *errh) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void run_timer(Timer *t);
 
@@ -83,8 +83,8 @@ class TimerTest : public Element { public:
     void benchmark_fires(Timer *ts, int nts, const Timestamp &now);
 
     enum { h_scheduled, h_expiry, h_schedule_after, h_unschedule };
-    static String read_handler(Element *e, void *user_data);
-    static int write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh);
+    static String read_handler(Element *e, void *user_data) CLICK_COLD;
+    static int write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh) CLICK_COLD;
 
 };
 

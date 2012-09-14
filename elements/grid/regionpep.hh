@@ -24,18 +24,18 @@ class EstimateRouterRegion : public GridLocationInfo {
 
 public:
 
-  EstimateRouterRegion();
-  ~EstimateRouterRegion();
+  EstimateRouterRegion() CLICK_COLD;
+  ~EstimateRouterRegion() CLICK_COLD;
 
   const char *class_name() const		{ return "EstimateRouterRegion"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
   virtual void *cast(const char *);
   void run_timer(Timer *);
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   Packet *simple_action(Packet *p);
 
   grid_location get_current_location(void);

@@ -49,18 +49,18 @@ The ethernet header starts OFFSET bytes into the packet. Default OFFSET is 0.
 
 class HostEtherFilter : public Element { public:
 
-  HostEtherFilter();
-  ~HostEtherFilter();
+  HostEtherFilter() CLICK_COLD;
+  ~HostEtherFilter() CLICK_COLD;
 
   const char *class_name() const		{ return "HostEtherFilter"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PROCESSING_A_AH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const		{ return true; }
 
   Packet *simple_action(Packet *);
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
  private:
 

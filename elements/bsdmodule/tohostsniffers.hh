@@ -13,8 +13,8 @@ CLICK_DECLS
 
 class ToHostSniffers : public ToHost { public:
 
-    ToHostSniffers();
-    ~ToHostSniffers();
+    ToHostSniffers() CLICK_COLD;
+    ~ToHostSniffers() CLICK_COLD;
 
     const char *class_name() const		{ return "ToHostSniffers"; }
 

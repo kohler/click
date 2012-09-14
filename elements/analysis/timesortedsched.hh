@@ -79,8 +79,8 @@ FromDump
 
 class TimeSortedSched : public Element { public:
 
-    TimeSortedSched();
-    ~TimeSortedSched();
+    TimeSortedSched() CLICK_COLD;
+    ~TimeSortedSched() CLICK_COLD;
 
     const char *class_name() const	{ return "TimeSortedSched"; }
     const char *port_count() const	{ return "-/1"; }
@@ -88,10 +88,10 @@ class TimeSortedSched : public Element { public:
     const char *flags() const		{ return "S0"; }
     void *cast(const char *);
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
-    int initialize(ErrorHandler *errh);
-    void cleanup(CleanupStage stage);
-    void add_handlers();
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
+    int initialize(ErrorHandler *errh) CLICK_COLD;
+    void cleanup(CleanupStage stage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet *pull(int);
 

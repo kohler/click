@@ -34,18 +34,18 @@ CLICK_DECLS
 
 class StrideSched : public Element { public:
 
-    StrideSched();
+    StrideSched() CLICK_COLD;
 
     const char *class_name() const		{ return "StrideSched"; }
     const char *port_count() const		{ return "1-/1"; }
     const char *processing() const		{ return PULL; }
     const char *flags() const			{ return "S0"; }
 
-    int configure(Vector<String> &conf, ErrorHandler *);
+    int configure(Vector<String> &conf, ErrorHandler *) CLICK_COLD;
     bool can_live_reconfigure() const		{ return true; }
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     enum { STRIDE1 = 1U<<16, MAX_TICKETS = 1U<<15 };
     int tickets(int) const;
@@ -95,7 +95,7 @@ class StrideSched : public Element { public:
     int nclients() const {
 	return input_is_pull(0) ? ninputs() : noutputs();
     }
-    static String read_handler(Element *, void *);
+    static String read_handler(Element *, void *) CLICK_COLD;
 
 };
 

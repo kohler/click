@@ -100,16 +100,16 @@ SetTimestamp */
 
 class TimeFilter : public Element { public:
 
-    TimeFilter();
-    ~TimeFilter();
+    TimeFilter() CLICK_COLD;
+    ~TimeFilter() CLICK_COLD;
 
     const char *class_name() const	{ return "TimeFilter"; }
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PROCESSING_A_AH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 
@@ -133,8 +133,8 @@ class TimeFilter : public Element { public:
     enum {
 	h_start, h_end, h_interval, h_extend_interval
     };
-    static String read_handler(Element *, void *);
-    static int write_handler(const String &, Element *, void*, ErrorHandler *);
+    static String read_handler(Element *, void *) CLICK_COLD;
+    static int write_handler(const String &, Element *, void*, ErrorHandler *) CLICK_COLD;
 
 };
 

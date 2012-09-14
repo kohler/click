@@ -37,16 +37,16 @@ Switch */
 
 class SimplePullSwitch : public Element { public:
 
-    SimplePullSwitch();
-    ~SimplePullSwitch();
+    SimplePullSwitch() CLICK_COLD;
+    ~SimplePullSwitch() CLICK_COLD;
 
     const char *class_name() const		{ return "SimplePullSwitch"; }
     const char *port_count() const		{ return "-/1"; }
     const char *processing() const		{ return PULL; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
     bool can_live_reconfigure() const		{ return true; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     virtual void set_input(int input);
 
@@ -58,8 +58,8 @@ class SimplePullSwitch : public Element { public:
 
     int _input;
 
-    static String read_param(Element *, void *);
-    static int write_param(const String &, Element *, void *, ErrorHandler *);
+    static String read_param(Element *, void *) CLICK_COLD;
+    static int write_param(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
 };
 

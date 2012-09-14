@@ -21,11 +21,11 @@ packets.
 
 class ListTest : public Element { public:
 
-    ListTest();
+    ListTest() CLICK_COLD;
 
     const char *class_name() const		{ return "ListTest"; }
 
-    int initialize(ErrorHandler *errh);
+    int initialize(ErrorHandler *errh) CLICK_COLD;
 
 };
 

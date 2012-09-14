@@ -62,9 +62,9 @@ class UDPIP6Encap : public Element { public:
     const char *port_count() const	{ return PORTS_1_1; }
     const char *flags() const		{ return "A"; }
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     bool can_live_reconfigure() const	{ return true; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 
@@ -80,7 +80,7 @@ class UDPIP6Encap : public Element { public:
     bool _checked_aligned;
 #endif
 
-    static String read_handler(Element *, void *);
+    static String read_handler(Element *, void *) CLICK_COLD;
 
 
 };

@@ -90,15 +90,15 @@ public:
     };
 
 
-    IPRateMonitor();
-    ~IPRateMonitor();
+    IPRateMonitor() CLICK_COLD;
+    ~IPRateMonitor() CLICK_COLD;
 
   const char *class_name() const		{ return "IPRateMonitor"; }
   const char *port_count() const		{ return "1-2/1-2"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
 
   void set_resettime() {
       _resettime = EWMAParameters::epoch();
@@ -136,7 +136,7 @@ public:
 
     Counter* counter[MAX_COUNTERS];
     Stats(IPRateMonitor *m);
-    ~Stats();
+    ~Stats() CLICK_COLD;
 
   private:
     IPRateMonitor *_rm;             // XXX: this sucks
@@ -181,9 +181,9 @@ private:
 
   String print(Stats *s, String ip = "");
 
-  void add_handlers();
-  static String look_read_handler(Element *e, void *);
-  static String what_read_handler(Element *e, void *);
+  void add_handlers() CLICK_COLD;
+  static String look_read_handler(Element *e, void *) CLICK_COLD;
+  static String what_read_handler(Element *e, void *) CLICK_COLD;
   static int reset_write_handler
     (const String &, Element *, void *, ErrorHandler *);
   static int memmax_write_handler

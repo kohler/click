@@ -19,8 +19,8 @@ class HopcountMetric : public GridGenericMetric {
 
 public:
 
-  HopcountMetric();
-  ~HopcountMetric();
+  HopcountMetric() CLICK_COLD;
+  ~HopcountMetric() CLICK_COLD;
 
   const char *class_name() const { return "HopcountMetric"; }
   const char *port_count() const { return PORTS_0_0; }

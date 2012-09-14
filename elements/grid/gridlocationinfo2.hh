@@ -69,7 +69,7 @@ public:
 
   const char *class_name() const { return "GridLocationInfo2"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const { return true; }
   void *cast(const char *);
 
@@ -77,7 +77,7 @@ public:
   // difference''
   grid_location get_current_location(unsigned int *seq_no = 0);
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   int read_args(const Vector<String> &conf, ErrorHandler *errh);
 
   unsigned int seq_no() { return _seq_no; }

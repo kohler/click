@@ -30,14 +30,14 @@ CLICK_DECLS
 
 class PaintTee : public Element { public:
 
-    PaintTee();
+    PaintTee() CLICK_COLD;
 
     const char *class_name() const	{ return "PaintTee"; }
     const char *port_count() const	{ return "1/2"; }
     const char *processing() const	{ return PROCESSING_A_AH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 

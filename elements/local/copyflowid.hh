@@ -27,18 +27,18 @@ private:
   IPFlowID _flow;
 
 public:
-  CopyFlowID();
-  ~CopyFlowID();
+  CopyFlowID() CLICK_COLD;
+  ~CopyFlowID() CLICK_COLD;
 
   const char *class_name() const	{ return "CopyFlowID"; }
   const char *port_count() const	{ return "2/2"; }
 
-  int initialize(ErrorHandler *);
-  int configure(Vector<String> &conf, ErrorHandler *errh);
+  int initialize(ErrorHandler *) CLICK_COLD;
+  int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
 
   void push(int, Packet *);
   Packet *pull(int);
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
 };
 

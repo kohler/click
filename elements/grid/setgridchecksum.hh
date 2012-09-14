@@ -18,8 +18,8 @@ CLICK_DECLS
 
 class SetGridChecksum : public Element {
 public:
-  SetGridChecksum();
-  ~SetGridChecksum();
+  SetGridChecksum() CLICK_COLD;
+  ~SetGridChecksum() CLICK_COLD;
 
   const char *class_name() const		{ return "SetGridChecksum"; }
   const char *port_count() const		{ return PORTS_1_1; }

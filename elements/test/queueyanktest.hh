@@ -61,12 +61,12 @@ PacketTest */
 
 class QueueYankTest : public Element { public:
 
-    QueueYankTest();
+    QueueYankTest() CLICK_COLD;
 
     const char *class_name() const		{ return "QueueYankTest"; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
 
     void run_timer(Timer *);
 

@@ -348,18 +348,18 @@ FromIPSummaryDump, FromDump, ToDump */
 
 class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
-    ToIPSummaryDump();
-    ~ToIPSummaryDump();
+    ToIPSummaryDump() CLICK_COLD;
+    ~ToIPSummaryDump() CLICK_COLD;
 
     const char *class_name() const	{ return "ToIPSummaryDump"; }
     const char *port_count() const	{ return "1/0-1"; }
     const char *processing() const	{ return "a/h"; }
     const char *flags() const		{ return "S2"; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void push(int, Packet *);
     bool run_task(Task *);

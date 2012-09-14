@@ -33,20 +33,20 @@ Turns 802.11 packets into ethernet packets
 
 class WepDecap : public Element { public:
 
-  WepDecap();
-  ~WepDecap();
+  WepDecap() CLICK_COLD;
+  ~WepDecap() CLICK_COLD;
 
   const char *class_name() const	{ return "WepDecap"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const	{ return true; }
 
   Packet *simple_action(Packet *);
 
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
 
   bool _debug;

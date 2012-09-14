@@ -21,19 +21,19 @@ informatino such as rssi, noise, bitrate, etc.
 
 class AthdescDecap : public Element { public:
 
-  AthdescDecap();
-  ~AthdescDecap();
+  AthdescDecap() CLICK_COLD;
+  ~AthdescDecap() CLICK_COLD;
 
   const char *class_name() const	{ return "AthdescDecap"; }
   const char *port_count() const		{ return PORTS_1_1; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const	{ return true; }
 
   Packet *simple_action(Packet *);
 
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
 
   bool _debug;

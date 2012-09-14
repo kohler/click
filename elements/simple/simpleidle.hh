@@ -17,8 +17,8 @@ CLICK_DECLS
 
 class SimpleIdle : public Element { public:
 
-    SimpleIdle();
-    ~SimpleIdle();
+    SimpleIdle() CLICK_COLD;
+    ~SimpleIdle() CLICK_COLD;
 
     const char *class_name() const	{ return "SimpleIdle"; }
     const char *port_count() const	{ return "-/-"; }

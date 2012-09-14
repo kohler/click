@@ -69,14 +69,14 @@ IPPrint */
 
 class Print : public Element { public:
 
-    Print();
+    Print() CLICK_COLD;
 
     const char *class_name() const		{ return "Print"; }
     const char *port_count() const		{ return PORTS_1_1; }
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     bool can_live_reconfigure() const		{ return true; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 

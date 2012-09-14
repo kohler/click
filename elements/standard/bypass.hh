@@ -79,16 +79,16 @@ Switch, PullSwitch, Null, click-devirtualize
 */
 class Bypass : public Element { public:
 
-    Bypass();
+    Bypass() CLICK_COLD;
 
     const char *class_name() const	{ return "Bypass"; }
     const char *port_count() const	{ return "1-2/1-2"; }
     const char *flow_code() const	{ return "xy/[xy]x"; }
     void *cast(const char *name);
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
-    int initialize(ErrorHandler *errh);
-    void add_handlers();
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
+    int initialize(ErrorHandler *errh) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void push(int port, Packet *p);
     Packet *pull(int port);
@@ -110,7 +110,7 @@ class Bypass : public Element { public:
     bool _inline;
 
     void fix();
-    static int write_handler(const String &s, Element *e, void *user_data, ErrorHandler *errh);
+    static int write_handler(const String &s, Element *e, void *user_data, ErrorHandler *errh) CLICK_COLD;
     friend struct Visitor;
 
 };

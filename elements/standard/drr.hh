@@ -40,7 +40,7 @@ CLICK_DECLS
 
 class DRRSched : public Element { public:
 
-    DRRSched();
+    DRRSched() CLICK_COLD;
 
     const char *class_name() const		{ return "DRRSched"; }
     const char *port_count() const		{ return "-/1"; }
@@ -48,9 +48,9 @@ class DRRSched : public Element { public:
     const char *flags() const			{ return "S0"; }
     void *cast(const char *);
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
     Packet *pull(int port);
 

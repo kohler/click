@@ -86,16 +86,16 @@ class RangeIPLookup;
 
 class DirectIPLookup : public IPRouteTable { public:
 
-    DirectIPLookup();
-    ~DirectIPLookup();
+    DirectIPLookup() CLICK_COLD;
+    ~DirectIPLookup() CLICK_COLD;
 
     const char *class_name() const	{ return "DirectIPLookup"; }
     const char *port_count() const	{ return "1/-"; }
     const char *processing() const	{ return PUSH; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
-    void cleanup(CleanupStage stage);
-    void add_handlers();
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
+    void cleanup(CleanupStage stage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void push(int port, Packet* p);
 

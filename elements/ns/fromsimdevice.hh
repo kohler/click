@@ -59,16 +59,16 @@ class FromSimDevice : public Element {
 
  public:
 
-  FromSimDevice();
-  ~FromSimDevice();
+  FromSimDevice() CLICK_COLD;
+  ~FromSimDevice() CLICK_COLD;
 
   const char *class_name() const	{ return "FromSimDevice"; }
   const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PUSH; }
 
   int configure_phase() const		{ return CONFIGURE_PHASE_DEFAULT; }
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
   void uninitialize();
 
   String ifname() const			{ return _ifname; }

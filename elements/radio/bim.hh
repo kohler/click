@@ -15,15 +15,15 @@ CLICK_DECLS
 
 class BIM : public Element {
  public:
-  BIM();
-  ~BIM();
+  BIM() CLICK_COLD;
+  ~BIM() CLICK_COLD;
 
   const char *class_name() const	{ return "BIM"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PULL_TO_PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   void selected(int fd, int mask);
 

@@ -22,13 +22,13 @@
 
 class ThreadMonitor : public Element { public:
 
-    ThreadMonitor();
-    ~ThreadMonitor();
+    ThreadMonitor() CLICK_COLD;
+    ~ThreadMonitor() CLICK_COLD;
 
     const char *class_name() const	{ return "ThreadMonitor"; }
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
     void run_timer(Timer *);
 
   private:

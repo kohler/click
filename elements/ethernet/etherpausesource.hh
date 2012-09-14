@@ -73,16 +73,16 @@ class EtherPauseSource : public Element { public:
 
     static const unsigned NO_LIMIT = 0xFFFFFFFFU;
 
-    EtherPauseSource();
-    ~EtherPauseSource();
+    EtherPauseSource() CLICK_COLD;
+    ~EtherPauseSource() CLICK_COLD;
 
     const char *class_name() const	{ return "EtherPauseSource"; }
     const char *port_count() const	{ return PORTS_0_1; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
-    int initialize(ErrorHandler *errh);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
+    int initialize(ErrorHandler *errh) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void run_timer(Timer *);
     Packet *pull(int);

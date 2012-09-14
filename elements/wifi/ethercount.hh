@@ -32,8 +32,8 @@ Clear all information for each source
 
 class EtherCount : public Element { public:
 
-  EtherCount();
-  ~EtherCount();
+  EtherCount() CLICK_COLD;
+  ~EtherCount() CLICK_COLD;
 
   const char *class_name() const		{ return "EtherCount"; }
   const char *port_count() const		{ return PORTS_1_1; }
@@ -43,7 +43,7 @@ class EtherCount : public Element { public:
 
   Packet *simple_action(Packet *);
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   class DstInfo {
   public:

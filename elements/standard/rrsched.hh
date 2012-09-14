@@ -27,15 +27,15 @@ CLICK_DECLS
 
 class RRSched : public Element { public:
 
-    RRSched();
+    RRSched() CLICK_COLD;
 
     const char *class_name() const	{ return "RoundRobinSched"; }
     const char *port_count() const	{ return "-/1"; }
     const char *processing() const	{ return PULL; }
     const char *flags() const		{ return "S0"; }
 
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
     Packet *pull(int port);
 

@@ -26,15 +26,15 @@ ethernet headers, and all ethernet headers will be copied to each fragment.
 
 class TCPFragmenter : public Element { public:
 
-    TCPFragmenter();
-    ~TCPFragmenter();
+    TCPFragmenter() CLICK_COLD;
+    ~TCPFragmenter() CLICK_COLD;
 
     const char *class_name() const	{ return "TCPFragmenter"; }
     const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return PUSH; }
     bool can_live_reconfigure() const	{ return true; }
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
     void push(int, Packet *);
 

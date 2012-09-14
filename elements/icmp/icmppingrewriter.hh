@@ -97,13 +97,13 @@ class ICMPPingRewriter : public IPRewriterBase { public:
 
     };
 
-    ICMPPingRewriter();
-    ~ICMPPingRewriter();
+    ICMPPingRewriter() CLICK_COLD;
+    ~ICMPPingRewriter() CLICK_COLD;
 
     const char *class_name() const	{ return "ICMPPingRewriter"; }
     void *cast(const char *);
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
     IPRewriterEntry *get_entry(int ip_p, const IPFlowID &flowid, int input);
     IPRewriterEntry *add_flow(int ip_p, const IPFlowID &flowid,
@@ -112,7 +112,7 @@ class ICMPPingRewriter : public IPRewriterBase { public:
 
     void push(int, Packet *);
 
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
   private:
 

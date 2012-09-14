@@ -77,20 +77,20 @@ class ChuckCheck : public Element {
   unsigned _tail;
   unsigned _head_id;
 
-  static String read_handler(Element *, void *);
+  static String read_handler(Element *, void *) CLICK_COLD;
 
   inline void count(Packet *);
 
  public:
 
-  ChuckCheck();
-  ~ChuckCheck();
+  ChuckCheck() CLICK_COLD;
+  ~ChuckCheck() CLICK_COLD;
 
   const char *class_name() const		{ return "ChuckCheck"; }
   const char *port_count() const		{ return PORTS_1_1; }
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
-  int initialize(ErrorHandler *);
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   void push(int, Packet *);
   Packet *pull(int);

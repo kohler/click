@@ -23,8 +23,8 @@
 
 class SetCycleCount : public Element { public:
 
-  SetCycleCount();
-  ~SetCycleCount();
+  SetCycleCount() CLICK_COLD;
+  ~SetCycleCount() CLICK_COLD;
 
   const char *class_name() const		{ return "SetCycleCount"; }
   const char *port_count() const		{ return PORTS_1_1; }

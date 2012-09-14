@@ -37,15 +37,15 @@ class RIPSend : public Element {
 
  public:
 
-  RIPSend();
-  ~RIPSend();
+  RIPSend() CLICK_COLD;
+  ~RIPSend() CLICK_COLD;
 
   const char *class_name() const		{ return "RIPSend"; }
   const char *port_count() const		{ return PORTS_0_1; }
   const char *processing() const		{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   void run_timer(Timer *);
 

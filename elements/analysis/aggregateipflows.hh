@@ -145,18 +145,18 @@ AggregateIP, AggregateIPAddrPair, AggregateCounter, DriverManager */
 
 class AggregateIPFlows : public Element, public AggregateNotifier { public:
 
-    AggregateIPFlows();
-    ~AggregateIPFlows();
+    AggregateIPFlows() CLICK_COLD;
+    ~AggregateIPFlows() CLICK_COLD;
 
     const char *class_name() const	{ return "AggregateIPFlows"; }
     void *cast(const char *);
     const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PROCESSING_A_AH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void add_handlers();
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
 #if CLICK_USERLEVEL
     bool stats() const			{ return _traceinfo_file; }
@@ -257,7 +257,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     int handle_fragment(Packet *, HostPairInfo *);
     int handle_packet(Packet *);
 
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
 };
 

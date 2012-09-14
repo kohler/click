@@ -130,13 +130,13 @@ class IPAddrRewriter : public IPRewriterBase { public:
 
     };
 
-    IPAddrRewriter();
-    ~IPAddrRewriter();
+    IPAddrRewriter() CLICK_COLD;
+    ~IPAddrRewriter() CLICK_COLD;
 
     const char *class_name() const		{ return "IPAddrRewriter"; }
     void *cast(const char *);
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
     //void take_state(Element *, ErrorHandler *);
 
     inline IPRewriterEntry *get_entry(int ip_p, const IPFlowID &flowid, int input);
@@ -146,7 +146,7 @@ class IPAddrRewriter : public IPRewriterBase { public:
 
     void push(int, Packet *);
 
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
   protected:
 

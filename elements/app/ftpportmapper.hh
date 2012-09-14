@@ -85,15 +85,15 @@ CLICK_DECLS
 
 class FTPPortMapper : public Element { public:
 
-    FTPPortMapper();
-    ~FTPPortMapper();
+    FTPPortMapper() CLICK_COLD;
+    ~FTPPortMapper() CLICK_COLD;
 
     const char *class_name() const	{ return "FTPPortMapper"; }
     const char *port_count() const	{ return PORTS_1_1; }
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     bool can_live_reconfigure() const	{ return true; }
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
     Packet *simple_action(Packet *);
 

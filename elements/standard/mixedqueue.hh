@@ -74,7 +74,7 @@ When written, drops all packets in the queue.
 
 class MixedQueue : public NotifierQueue { public:
 
-    MixedQueue();
+    MixedQueue() CLICK_COLD;
 
     const char *class_name() const	{ return "MixedQueue"; }
     const char *port_count() const	{ return "2/1-2"; }

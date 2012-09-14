@@ -53,14 +53,14 @@ IPAddrRewriter
 
 class StoreIPAddress : public Element { public:
 
-    StoreIPAddress();
-    ~StoreIPAddress();
+    StoreIPAddress() CLICK_COLD;
+    ~StoreIPAddress() CLICK_COLD;
 
     const char *class_name() const		{ return "StoreIPAddress"; }
     const char *port_count() const		{ return PORTS_1_1X2; }
     const char *processing() const		{ return PROCESSING_A_AH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
     Packet *simple_action(Packet *);
 

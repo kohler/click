@@ -57,8 +57,8 @@ operations later in the packet's life.
 
 class RawSocket : public Element { public:
 
-  RawSocket();
-  ~RawSocket();
+  RawSocket() CLICK_COLD;
+  ~RawSocket() CLICK_COLD;
 
   const char *class_name() const	{ return "RawSocket"; }
   const char *port_count() const	{ return "0-1/0-1"; }
@@ -66,10 +66,10 @@ class RawSocket : public Element { public:
   const char *flow_code() const		{ return "x/y"; }
   const char *flags() const		{ return "S3"; }
 
-  int configure(Vector<String> &conf, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  void add_handlers();
+  int configure(Vector<String> &conf, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
+  void add_handlers() CLICK_COLD;
 
   bool run_task(Task *);
   void selected(int fd, int mask);

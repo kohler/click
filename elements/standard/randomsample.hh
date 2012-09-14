@@ -64,16 +64,16 @@ CLICK_DECLS
 
 class RandomSample : public Element { public:
 
-    RandomSample();
+    RandomSample() CLICK_COLD;
 
     const char *class_name() const		{ return "RandomSample"; }
     const char *port_count() const		{ return PORTS_1_1X2; }
     const char *processing() const		{ return PROCESSING_A_AH; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
     bool can_live_reconfigure() const		{ return true; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     void push(int port, Packet *);
     Packet *pull(int port);
@@ -89,8 +89,8 @@ class RandomSample : public Element { public:
     bool _active;
     atomic_uint32_t _drops;
 
-    static String read_handler(Element *, void *);
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static String read_handler(Element *, void *) CLICK_COLD;
+    static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 };
 
 CLICK_ENDDECLS

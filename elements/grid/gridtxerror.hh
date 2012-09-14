@@ -21,15 +21,15 @@ class GridGenericLogger;
 
 class GridTxError : public Element { public:
 
-  GridTxError();
-  ~GridTxError();
+  GridTxError() CLICK_COLD;
+  ~GridTxError() CLICK_COLD;
 
   const char *class_name() const { return "GridTxError"; }
   const char *port_count() const { return PORTS_1_0; }
   const char *processing() const { return PUSH; }
 
-  int initialize(ErrorHandler *);
-  int configure(Vector<String> &, ErrorHandler *);
+  int initialize(ErrorHandler *) CLICK_COLD;
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   void push(int, Packet *);
 
 private:

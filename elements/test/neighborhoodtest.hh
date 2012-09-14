@@ -25,13 +25,13 @@ evaluate upstream neighborhoods for individual input ports, and similarly for
 
 class NeighborhoodTest : public Element { public:
 
-    NeighborhoodTest();
+    NeighborhoodTest() CLICK_COLD;
 
     const char *class_name() const		{ return "NeighborhoodTest"; }
     const char *port_count() const		{ return "-/-"; }
     const char *flow_code() const		{ return "x/y"; }
 
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 

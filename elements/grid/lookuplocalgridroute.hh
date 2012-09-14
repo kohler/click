@@ -69,16 +69,16 @@ class GridGenericRouteTable;
 class LookupLocalGridRoute : public Element, public GridRouteActor  {
   public:
 
-  LookupLocalGridRoute();
-  ~LookupLocalGridRoute();
+  LookupLocalGridRoute() CLICK_COLD;
+  ~LookupLocalGridRoute() CLICK_COLD;
 
   const char *class_name() const		{ return "LookupLocalGridRoute"; }
   void *cast(const char *);
   const char *port_count() const		{ return "2/4"; }
   const char *processing() const		{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
 
   bool run_task(Task *);
 

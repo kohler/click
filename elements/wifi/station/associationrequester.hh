@@ -39,20 +39,20 @@ Sends an association request based on values of the handlers.
 
 class AssociationRequester : public Element { public:
 
-  AssociationRequester();
-  ~AssociationRequester();
+  AssociationRequester() CLICK_COLD;
+  ~AssociationRequester() CLICK_COLD;
 
   const char *class_name() const	{ return "AssociationRequester"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const	{ return true; }
 
   void push(int, Packet *);
   void send_assoc_req();
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
   void reset();
 
 

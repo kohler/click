@@ -179,14 +179,14 @@ class GridLogger : public GridGenericLogger {
 
 public:
 
-  GridLogger();
-  ~GridLogger();
+  GridLogger() CLICK_COLD;
+  ~GridLogger() CLICK_COLD;
 
   const char *class_name() const { return "GridLogger"; }
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const { return false; }
   void *cast(const char *);
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   // handlers
   static String read_logfile(Element *, void *);

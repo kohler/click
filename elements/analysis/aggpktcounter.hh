@@ -89,17 +89,17 @@ AggregateCounter, FromCapDump, AggregateIP, AggregateIPFlows */
 
 class AggregatePacketCounter : public Element { public:
 
-    AggregatePacketCounter();
-    ~AggregatePacketCounter();
+    AggregatePacketCounter() CLICK_COLD;
+    ~AggregatePacketCounter() CLICK_COLD;
 
     const char *class_name() const	{ return "AggregatePacketCounter"; }
     const char *port_count() const	{ return "1-/1-"; }
     const char *flow_code() const	{ return "#/#"; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     void push(int, Packet *);
     Packet *pull(int);
@@ -147,11 +147,11 @@ class AggregatePacketCounter : public Element { public:
     void end_flow(Flow *, ErrorHandler *);
     inline void smaction(int, Packet *);
 
-    static String read_handler(Element *, void *);
+    static String read_handler(Element *, void *) CLICK_COLD;
     typedef void (Flow::*FlowFunc)(Vector<uint32_t> &, const AggregatePacketCounter *) const;
     String flow_handler(uint32_t aggregate, FlowFunc func);
-    static int thing_read_handler(int, String&, Element*, const Handler*, ErrorHandler*);
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static int thing_read_handler(int, String&, Element*, const Handler*, ErrorHandler*) CLICK_COLD;
+    static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
 };
 

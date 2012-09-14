@@ -10,13 +10,13 @@ class DebugBridge : public Element {
 
  public:
 
-  DebugBridge();
-  ~DebugBridge();
+  DebugBridge() CLICK_COLD;
+  ~DebugBridge() CLICK_COLD;
 
   const char *class_name() const	{ return "DebugBridge"; }
   const char *port_count() const	{ return PORTS_1_1; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   Packet *simple_action(Packet *);
 };

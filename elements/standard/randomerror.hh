@@ -36,7 +36,7 @@ class RandomBitErrors : public Element {
 
  public:
 
-  RandomBitErrors();
+  RandomBitErrors() CLICK_COLD;
 
   const char *class_name() const		{ return "RandomBitErrors"; }
   const char *port_count() const		{ return PORTS_1_1; }
@@ -46,9 +46,9 @@ class RandomBitErrors : public Element {
   bool on() const				{ return _on; }
   void set_bit_error(unsigned);	// out of 0xFFFF
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const		{ return true; }
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   Packet *simple_action(Packet *);
 

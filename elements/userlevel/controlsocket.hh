@@ -224,17 +224,17 @@ UNIX.
 
 class ControlSocket : public Element { public:
 
-    ControlSocket();
-    ~ControlSocket();
+    ControlSocket() CLICK_COLD;
+    ~ControlSocket() CLICK_COLD;
 
     const char *class_name() const	{ return "ControlSocket"; }
 
-    int configure(Vector<String> &conf, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
+    int configure(Vector<String> &conf, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
     Element *hotswap_element() const;
     void take_state(Element *, ErrorHandler *);
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     void selected(int fd, int mask);
 

@@ -40,20 +40,20 @@ Sets or reads the next sequence number
 
 class WifiSeq : public Element { public:
 
-  WifiSeq();
-  ~WifiSeq();
+  WifiSeq() CLICK_COLD;
+  ~WifiSeq() CLICK_COLD;
 
   const char *class_name() const	{ return "WifiSeq"; }
   const char *port_count() const	{ return "1/-"; }
   const char *processing() const	{ return AGNOSTIC; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const	{ return true; }
 
   Packet *simple_action(Packet *);
 
-  void add_handlers();
-  static String read_param(Element *, void *);
+  void add_handlers() CLICK_COLD;
+  static String read_param(Element *, void *) CLICK_COLD;
   static int write_param(const String &in_s, Element *e, void *vparam,
 			 ErrorHandler *errh);
 

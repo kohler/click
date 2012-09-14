@@ -38,16 +38,16 @@ Sends an authentication request based on values of the handlers.
 
 class OpenAuthRequester : public Element { public:
 
-  OpenAuthRequester();
-  ~OpenAuthRequester();
+  OpenAuthRequester() CLICK_COLD;
+  ~OpenAuthRequester() CLICK_COLD;
 
   const char *class_name() const	{ return "OpenAuthRequester"; }
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const	{ return true; }
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   void send_auth_request();
   void push(int, Packet *);

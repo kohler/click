@@ -83,16 +83,16 @@ ARPQuerier
 
 class ARPTable : public Element { public:
 
-    ARPTable();
-    ~ARPTable();
+    ARPTable() CLICK_COLD;
+    ~ARPTable() CLICK_COLD;
 
     const char *class_name() const		{ return "ARPTable"; }
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     bool can_live_reconfigure() const		{ return true; }
     void take_state(Element *, ErrorHandler *);
-    void add_handlers();
-    void cleanup(CleanupStage);
+    void add_handlers() CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
 
     int lookup(IPAddress ip, EtherAddress *eth, uint32_t poll_timeout_j);
     EtherAddress lookup(IPAddress ip);
@@ -138,8 +138,8 @@ class ARPTable : public Element { public:
     enum {
 	h_table, h_insert, h_delete, h_clear
     };
-    static String read_handler(Element *e, void *user_data);
-    static int write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh);
+    static String read_handler(Element *e, void *user_data) CLICK_COLD;
+    static int write_handler(const String &str, Element *e, void *user_data, ErrorHandler *errh) CLICK_COLD;
 
     struct ARPEntry {		// This structure is now larger than I'd like
 	IPAddress _ip;		// (40B) but probably still fine.

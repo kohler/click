@@ -51,14 +51,14 @@ EtherVLANEncap, VLANDecap
 
 class VLANEncap : public Element { public:
 
-    VLANEncap();
-    ~VLANEncap();
+    VLANEncap() CLICK_COLD;
+    ~VLANEncap() CLICK_COLD;
 
     const char *class_name() const	{ return "VLANEncap"; }
     const char *port_count() const	{ return PORTS_1_1; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
     Packet *simple_action(Packet *);
 
@@ -69,7 +69,7 @@ class VLANEncap : public Element { public:
     int _native_vlan;
 
     enum { h_config, h_vlan_tci };
-    static String read_handler(Element *e, void *user_data);
+    static String read_handler(Element *e, void *user_data) CLICK_COLD;
 
 };
 

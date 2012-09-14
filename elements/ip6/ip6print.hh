@@ -33,7 +33,7 @@ class IP6Print : public Element { public:
   const char *class_name() const		{ return "IP6Print"; }
   const char *port_count() const		{ return PORTS_1_1; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   Packet *simple_action(Packet *);
 

@@ -64,7 +64,7 @@ When written, drops all packets in the queue.
 
 class SimpleQueue : public Element, public Storage { public:
 
-    SimpleQueue();
+    SimpleQueue() CLICK_COLD;
 
     int drops() const				{ return _drops; }
     int highwater_length() const		{ return _highwater_length; }
@@ -86,13 +86,13 @@ class SimpleQueue : public Element, public Storage { public:
     const char *processing() const		{ return "h/lh"; }
     void* cast(const char*);
 
-    int configure(Vector<String>&, ErrorHandler*);
-    int initialize(ErrorHandler*);
-    void cleanup(CleanupStage);
+    int configure(Vector<String>&, ErrorHandler*) CLICK_COLD;
+    int initialize(ErrorHandler*) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
     bool can_live_reconfigure() const		{ return true; }
     int live_reconfigure(Vector<String>&, ErrorHandler*);
     void take_state(Element*, ErrorHandler*);
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     void push(int port, Packet*);
     Packet* pull(int port);
@@ -108,8 +108,8 @@ class SimpleQueue : public Element, public Storage { public:
     friend class InOrderQueue;
     friend class ECNQueue;
 
-    static String read_handler(Element*, void*);
-    static int write_handler(const String&, Element*, void*, ErrorHandler*);
+    static String read_handler(Element*, void*) CLICK_COLD;
+    static int write_handler(const String&, Element*, void*, ErrorHandler*) CLICK_COLD;
 
 };
 

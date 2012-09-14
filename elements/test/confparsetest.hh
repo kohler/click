@@ -22,11 +22,11 @@ time. It does not route packets.
 
 class ConfParseTest : public Element { public:
 
-    ConfParseTest();
+    ConfParseTest() CLICK_COLD;
 
     const char *class_name() const		{ return "ConfParseTest"; }
 
-    int initialize(ErrorHandler *);
+    int initialize(ErrorHandler *) CLICK_COLD;
 
 };
 

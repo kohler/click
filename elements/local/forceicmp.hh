@@ -16,12 +16,12 @@ CLICK_DECLS
 
 class ForceICMP : public Element {
 public:
-  ForceICMP();
-  ~ForceICMP();
+  ForceICMP() CLICK_COLD;
+  ~ForceICMP() CLICK_COLD;
 
   const char *class_name() const		{ return "ForceICMP"; }
   const char *port_count() const		{ return PORTS_1_1; }
-  int configure(Vector<String> &conf, ErrorHandler *errh);
+  int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
 
   Packet *simple_action(Packet *);
 

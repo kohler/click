@@ -143,17 +143,17 @@ Measurement Workshop 2001.*/
 
 class FromCapDump : public Element { public:
 
-    FromCapDump();
-    ~FromCapDump();
+    FromCapDump() CLICK_COLD;
+    ~FromCapDump() CLICK_COLD;
 
     const char *class_name() const	{ return "FromCapDump"; }
     const char *port_count() const	{ return PORTS_0_1; }
     void *cast(const char *);
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     bool run_task(Task *);
     Packet *pull(int);
@@ -186,8 +186,8 @@ class FromCapDump : public Element { public:
 
     Packet *read_packet(ErrorHandler *);
 
-    static String read_handler(Element *, void *);
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static String read_handler(Element *, void *) CLICK_COLD;
+    static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
 };
 

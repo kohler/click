@@ -48,15 +48,15 @@ EtherVLANEncap, ARPQuerier, EnsureEther, StoreEtherAddress */
 
 class EtherEncap : public Element { public:
 
-    EtherEncap();
-    ~EtherEncap();
+    EtherEncap() CLICK_COLD;
+    ~EtherEncap() CLICK_COLD;
 
     const char *class_name() const	{ return "EtherEncap"; }
     const char *port_count() const	{ return PORTS_1_1; }
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     bool can_live_reconfigure() const	{ return true; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     Packet *smaction(Packet *);
     void push(int, Packet *);

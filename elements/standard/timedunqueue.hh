@@ -35,14 +35,14 @@ CLICK_DECLS
 
 class TimedUnqueue : public Element { public:
 
-    TimedUnqueue();
+    TimedUnqueue() CLICK_COLD;
 
     const char *class_name() const		{ return "TimedUnqueue"; }
     const char *port_count() const		{ return PORTS_1_1; }
     const char *processing() const		{ return PULL_TO_PUSH; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
-    int initialize(ErrorHandler *errh);
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
+    int initialize(ErrorHandler *errh) CLICK_COLD;
 
     bool run_task(Task *task);
 

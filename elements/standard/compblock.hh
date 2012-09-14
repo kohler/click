@@ -35,13 +35,13 @@ CLICK_DECLS
 
 class CompareBlock : public Element { public:
 
-  CompareBlock();
+  CompareBlock() CLICK_COLD;
 
   const char *class_name() const		{ return "CompareBlock"; }
   const char *port_count() const		{ return "1/2"; }
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   void push(int port, Packet *);
 
  private:
@@ -58,9 +58,9 @@ class CompareBlock : public Element { public:
   static int thresh_write_handler
     (const String &conf, Element *e, void *, ErrorHandler *errh);
 
-  static String rev_weight_read_handler(Element *e, void *);
-  static String fwd_weight_read_handler(Element *e, void *);
-  static String thresh_read_handler(Element *e, void *);
+  static String rev_weight_read_handler(Element *e, void *) CLICK_COLD;
+  static String fwd_weight_read_handler(Element *e, void *) CLICK_COLD;
+  static String thresh_read_handler(Element *e, void *) CLICK_COLD;
 };
 
 CLICK_ENDDECLS

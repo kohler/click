@@ -57,18 +57,18 @@ CLICK_DECLS
 
 class IPFragmenter : public Element { public:
 
-  IPFragmenter();
-  ~IPFragmenter();
+  IPFragmenter() CLICK_COLD;
+  ~IPFragmenter() CLICK_COLD;
 
   const char *class_name() const		{ return "IPFragmenter"; }
   const char *port_count() const		{ return PORTS_1_1X2; }
   const char *processing() const		{ return PUSH; }
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
   uint32_t drops() const			{ return _drops; }
   uint32_t fragments() const			{ return _fragments; }
 
-  void add_handlers();
+  void add_handlers() CLICK_COLD;
 
   void push(int, Packet *);
 

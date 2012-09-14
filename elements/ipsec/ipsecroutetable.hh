@@ -202,8 +202,8 @@ struct IPsecRoute {
 class IPsecRouteTable : public Element { public:
 
     void* cast(const char*);
-    int configure(Vector<String>&, ErrorHandler*);
-    void add_handlers();
+    int configure(Vector<String>&, ErrorHandler*) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     virtual int add_route(const IPsecRoute& route, bool allow_replace, IPsecRoute* replaced_route, ErrorHandler* errh);
     virtual int remove_route(const IPsecRoute& route, IPsecRoute* removed_route, ErrorHandler* errh);

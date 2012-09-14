@@ -104,15 +104,15 @@ CLICK_DECLS
 
 class ICMPError : public Element { public:
 
-    ICMPError();
-    ~ICMPError();
+    ICMPError() CLICK_COLD;
+    ~ICMPError() CLICK_COLD;
 
     const char *class_name() const		{ return "ICMPError"; }
     const char *port_count() const		{ return PORTS_1_1; }
 
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     bool can_live_reconfigure() const		{ return true; }
-    void add_handlers();
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 

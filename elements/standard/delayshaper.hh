@@ -37,17 +37,17 @@ Returns or sets the DELAY parameter.
 
 class DelayShaper : public Element, public ActiveNotifier { public:
 
-    DelayShaper();
+    DelayShaper() CLICK_COLD;
 
     const char *class_name() const	{ return "DelayShaper"; }
     const char *port_count() const	{ return PORTS_1_1; }
     const char *processing() const	{ return PULL; }
     void *cast(const char *);
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet *pull(int);
     void run_timer(Timer *);
@@ -60,8 +60,8 @@ class DelayShaper : public Element, public ActiveNotifier { public:
     NotifierSignal _upstream_signal;
     ActiveNotifier _notifier;
 
-    static String read_param(Element *, void *);
-    static int write_param(const String &, Element *, void *, ErrorHandler *);
+    static String read_param(Element *, void *) CLICK_COLD;
+    static int write_param(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 
 };
 

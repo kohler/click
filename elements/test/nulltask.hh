@@ -54,13 +54,13 @@ ScheduleInfo
 
 class NullTask : public Element { public:
 
-    NullTask();
+    NullTask() CLICK_COLD;
 
     const char *class_name() const		{ return "NullTask"; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     bool run_task(Task *);
 
@@ -72,7 +72,7 @@ class NullTask : public Element { public:
     bool _stop;
     bool _active;
 
-    static int write_handler(const String &str, Element *e, void *thunk, ErrorHandler *errh);
+    static int write_handler(const String &str, Element *e, void *thunk, ErrorHandler *errh) CLICK_COLD;
 
 };
 

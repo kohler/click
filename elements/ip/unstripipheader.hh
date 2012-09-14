@@ -18,8 +18,8 @@ CLICK_DECLS
 
 class UnstripIPHeader : public Element { public:
 
-  UnstripIPHeader();
-  ~UnstripIPHeader();
+  UnstripIPHeader() CLICK_COLD;
+  ~UnstripIPHeader() CLICK_COLD;
 
   const char *class_name() const		{ return "UnstripIPHeader"; }
   const char *port_count() const		{ return PORTS_1_1; }

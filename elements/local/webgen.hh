@@ -25,15 +25,15 @@ CLICK_DECLS
 class WebGen : public Element {
  public:
 
-  WebGen();
-  ~WebGen();
+  WebGen() CLICK_COLD;
+  ~WebGen() CLICK_COLD;
 
   const char *class_name() const		{ return "WebGen"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PUSH; }
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  int configure(Vector<String> &conf, ErrorHandler *errh);
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
+  int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
 
   Packet *simple_action(Packet *);
   void run_timer(Timer *);
@@ -48,7 +48,7 @@ private:
   // TCP Control Block
   class CB {
   public:
-    CB();
+    CB() CLICK_COLD;
 
     IPAddress _src;		// Our IP address.
     unsigned short _sport;	// network byte order.

@@ -68,16 +68,16 @@ private:
 
 public:
 
-  TCPBuffer();
-  ~TCPBuffer();
+  TCPBuffer() CLICK_COLD;
+  ~TCPBuffer() CLICK_COLD;
 
   const char *class_name() const		{ return "TCPBuffer"; }
   const char *port_count() const		{ return PORTS_1_1; }
   const char *processing() const		{ return PUSH_TO_PULL; }
 
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  int configure(Vector<String> &conf, ErrorHandler *errh);
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
+  int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
 
   void push(int, Packet *);
   Packet *pull(int);

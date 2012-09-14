@@ -51,9 +51,9 @@ class UMLSwitch : public Socket { public:
   const char *processing() const	{ return "l/h"; }
   const char *flow_code() const		{ return "x/y"; }
 
-  int configure(Vector<String> &conf, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
+  int configure(Vector<String> &conf, ErrorHandler *) CLICK_COLD;
+  int initialize(ErrorHandler *) CLICK_COLD;
+  void cleanup(CleanupStage) CLICK_COLD;
 
 private:
   struct sockaddr_un _ctl_addr;

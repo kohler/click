@@ -35,10 +35,10 @@ Error
 
 class MessageElement : public Element { public:
 
-    MessageElement();
+    MessageElement() CLICK_COLD;
 
     const char *class_name() const		{ return "Message"; }
-    int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
 };
 

@@ -17,8 +17,8 @@ CLICK_DECLS
 
 class Scramble : public Element {
 public:
-  Scramble();
-  ~Scramble();
+  Scramble() CLICK_COLD;
+  ~Scramble() CLICK_COLD;
 
   const char *class_name() const	{ return "Scramble"; }
   const char *port_count() const	{ return PORTS_1_1; }

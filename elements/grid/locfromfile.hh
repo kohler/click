@@ -31,12 +31,12 @@ CLICK_DECLS
 
 class LocFromFile : public GridLocationInfo {
 public:
-  LocFromFile();
-  ~LocFromFile();
+  LocFromFile() CLICK_COLD;
+  ~LocFromFile() CLICK_COLD;
 
   const char *class_name() const { return "LocFromFile"; }
 
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const { return true; }
   virtual void *cast(const char *);
 

@@ -31,13 +31,13 @@ annotation as is.  DST_ANNO defaults to true.
 
 class IPMirror : public Element { public:
 
-    IPMirror();
-    ~IPMirror();
+    IPMirror() CLICK_COLD;
+    ~IPMirror() CLICK_COLD;
 
     const char *class_name() const		{ return "IPMirror"; }
     const char *port_count() const		{ return PORTS_1_1; }
 
-    int configure(Vector<String> &conf, ErrorHandler *errh);
+    int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
     Packet *simple_action(Packet *);
 
   private:

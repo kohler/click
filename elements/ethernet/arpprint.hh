@@ -52,16 +52,16 @@ Returns or sets the ACTIVE parameter.
 
 class ARPPrint : public Element { public:
 
-    ARPPrint();
-    ~ARPPrint();
+    ARPPrint() CLICK_COLD;
+    ~ARPPrint() CLICK_COLD;
 
     const char *class_name() const		{ return "ARPPrint"; }
     const char *port_count() const		{ return PORTS_1_1; }
 
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
-    void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
+    int initialize(ErrorHandler *) CLICK_COLD;
+    void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     Packet *simple_action(Packet *);
 
