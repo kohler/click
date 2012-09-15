@@ -11858,6 +11858,40 @@ $as_echo "#define HAVE_NETDEV_USES_TRAILER_TAGS 1" >>confdefs.h
 
     fi
 
+    ac_fn_c_check_decl "$LINENO" "atomic_cmpxchg" "ac_cv_have_decl_atomic_cmpxchg" "#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#define new linux_new
+#define this linux_this
+#define delete linux_delete
+#define class linux_class
+#define virtual linux_virtual
+#define typename linux_typename
+#define private linux_private
+#define protected linux_protected
+#define public linux_public
+#define namespace linux_namespace
+#define false linux_false
+#define true linux_true
+#define CLICK_CXX_PROTECTED 1
+$linux_autoconf_include
+#include <asm/types.h>
+#include <asm/atomic.h>
+"
+if test "x$ac_cv_have_decl_atomic_cmpxchg" = xyes; then :
+  ac_cv_linux_atomic_cmpxchg=yes
+else
+  ac_cv_linux_atomic_cmpxchg=no
+fi
+
+    if test $ac_cv_linux_atomic_cmpxchg = yes; then
+
+$as_echo "#define HAVE_LINUX_ATOMIC_CMPXCHG 1" >>confdefs.h
+
+    fi
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for netdev_rx_handler_register kernel symbol" >&5
 $as_echo_n "checking for netdev_rx_handler_register kernel symbol... " >&6; }
 if ${ac_cv_linux_netdev_rx_handler_register+:} false; then :
