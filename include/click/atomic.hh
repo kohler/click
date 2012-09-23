@@ -535,7 +535,7 @@ atomic_uint32_t::compare_swap(uint32_t expected, uint32_t desired)
 		  : "r" (desired), "0" (expected), "m" (CLICK_ATOMIC_VAL)
 		  : "cc", "memory");
     return expected;
-#elif CLICK_LINUXMODULE && defined(atomic_cmpxchg)
+#elif CLICK_LINUXMODULE && HAVE_LINUX_ATOMIC_CMPXCHG
     return atomic_cmpxchg(&_val, expected, desired);
 #elif CLICK_LINUXMODULE
 # warning "using nonatomic approximation for atomic_uint32_t::compare_swap"
@@ -579,7 +579,7 @@ atomic_uint32_t::compare_and_swap(uint32_t expected, uint32_t desired)
 		  : "r" (desired), "m" (CLICK_ATOMIC_VAL), "a" (expected)
 		  : "cc", "memory");
     return (uint8_t) expected;
-#elif CLICK_LINUXMODULE && defined(atomic_cmpxchg)
+#elif CLICK_LINUXMODULE && HAVE_LINUX_ATOMIC_CMPXCHG
     return atomic_cmpxchg(&_val, expected, desired) == expected;
 #elif CLICK_LINUXMODULE
 # warning "using nonatomic approximation for atomic_uint32_t::compare_and_swap"

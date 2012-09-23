@@ -1521,6 +1521,12 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
 	AC_DEFINE([HAVE_NETDEV_USES_TRAILER_TAGS], [1], [Define if you have the netdev_uses_trailer_tags function.])
     fi
 
+    AC_CHECK_DECL(atomic_cmpxchg, [ac_cv_linux_atomic_cmpxchg=yes], [ac_cv_linux_atomic_cmpxchg=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <asm/atomic.h>]])
+    if test $ac_cv_linux_atomic_cmpxchg = yes; then
+	AC_DEFINE([HAVE_LINUX_ATOMIC_CMPXCHG], [1], [Define if you have the atomic_cmpxchg function.])
+    fi
+
     AC_CACHE_CHECK(for netdev_rx_handler_register kernel symbol, ac_cv_linux_netdev_rx_handler_register,
     [if grep "__ksymtab_netdev_rx_handler_register" $linux_system_map >/dev/null 2>&1; then
         ac_cv_linux_netdev_rx_handler_register=yes
