@@ -1452,6 +1452,9 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
 	AC_DEFINE([HAVE_SKB_RECYCLE], [1], [Define if you have the skb_recycle function.])
     fi
 
+save_cflags="$CFLAGS"
+CFLAGS="$save_cflags -Werror-implicit-function-declaration"
+
     AC_CACHE_CHECK([whether skb_recycle returns an sk_buff], [ac_cv_linuxmodule_click_skb_recycle],
 	[AC_LANG_C
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
@@ -1461,6 +1464,8 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     if test $ac_cv_linuxmodule_click_skb_recycle = yes; then
 	AC_DEFINE([HAVE_CLICK_SKB_RECYCLE], [1], [Define if your Linux kernel has Click skb_recycle.])
     fi
+
+CFLAGS="$save_cflags"
 
     AC_CHECK_DECL(skb_linearize, [ac_cv_skb_linearize=yes], [ac_cv_skb_linearize=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]])
