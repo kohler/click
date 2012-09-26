@@ -11369,6 +11369,63 @@ $as_echo "#define HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID 1" >>confdefs.h
 
     fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether skb_shinfo has tx_flags defining SKBTX_DEV_ZEROCOPY" >&5
+$as_echo_n "checking whether skb_shinfo has tx_flags defining SKBTX_DEV_ZEROCOPY... " >&6; }
+if ${ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#define new linux_new
+#define this linux_this
+#define delete linux_delete
+#define class linux_class
+#define virtual linux_virtual
+#define typename linux_typename
+#define private linux_private
+#define protected linux_protected
+#define public linux_public
+#define namespace linux_namespace
+#define false linux_false
+#define true linux_true
+#define CLICK_CXX_PROTECTED 1
+$linux_autoconf_include
+#include <asm/types.h>
+#include <linux/skbuff.h>
+int
+main ()
+{
+extern struct sk_buff *s; skb_shinfo(s)->tx_flags = SKBTX_DEV_ZEROCOPY;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=yes
+else
+  ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy" >&5
+$as_echo "$ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy" >&6; }
+    if test $ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy = yes; then
+
+$as_echo "#define HAVE_LINUX_SKB_SHINFO_TX_FLAGS_SKBTX_DEV_ZEROCOPY 1" >>confdefs.h
+
+    fi
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for device polling kernel extension" >&5
 $as_echo_n "checking for device polling kernel extension... " >&6; }
 if ${ac_cv_linuxmodule_net_device_polling+:} false; then :

@@ -1430,6 +1430,16 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
 	AC_DEFINE([HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID], [1], [Define if 'struct skb_shared_info' has an 'ip6_frag_id' member.])
     fi
 
+    AC_CACHE_CHECK([whether skb_shinfo has tx_flags defining SKBTX_DEV_ZEROCOPY], [ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy],
+	[AC_LANG_C
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>]],
+[[extern struct sk_buff *s; skb_shinfo(s)->tx_flags = SKBTX_DEV_ZEROCOPY;]])],
+	[ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=yes], [ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=no])])
+    if test $ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy = yes; then
+	AC_DEFINE([HAVE_LINUX_SKB_SHINFO_TX_FLAGS_SKBTX_DEV_ZEROCOPY], [1], [Define if 'struct skb_shared_info' has an 'tx_flags' member defining 'SKBTX_DEV_ZEROCOPY'.])
+    fi
+
     AC_CACHE_CHECK([for device polling kernel extension], [ac_cv_linuxmodule_net_device_polling],
 	[AC_LANG_C
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
