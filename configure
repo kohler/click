@@ -11494,6 +11494,9 @@ $as_echo "#define HAVE_SKB_RECYCLE 1" >>confdefs.h
 
     fi
 
+save_cflags="$CFLAGS"
+CFLAGS="$save_cflags -Werror-implicit-function-declaration"
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether skb_recycle returns an sk_buff" >&5
 $as_echo_n "checking whether skb_recycle returns an sk_buff... " >&6; }
 if ${ac_cv_linuxmodule_click_skb_recycle+:} false; then :
@@ -11550,6 +11553,8 @@ $as_echo "$ac_cv_linuxmodule_click_skb_recycle" >&6; }
 $as_echo "#define HAVE_CLICK_SKB_RECYCLE 1" >>confdefs.h
 
     fi
+
+CFLAGS="$save_cflags"
 
     ac_fn_c_check_decl "$LINENO" "skb_linearize" "ac_cv_have_decl_skb_linearize" "#if HAVE_LINUXMODULE_2_6
 # define KBUILD_STR(s)		#s
