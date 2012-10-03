@@ -618,9 +618,7 @@ String::find_left(const String &x, int start) const
 {
     if (start < 0)
 	start = 0;
-    if (start >= length())
-	return -1;
-    if (!x.length())
+    if (!x.length() && start <= length())
 	return start;
     int first_c = (unsigned char)x[0];
     int pos = start, max_pos = length() - x.length();
