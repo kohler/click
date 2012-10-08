@@ -600,9 +600,12 @@ String::find_left(char c, int start) const
 {
     if (start < 0)
 	start = 0;
-    for (int i = start; i < _r.length; i++)
-	if (_r.data[i] == c)
-	    return i;
+    if (start < _r.length) {
+	const char *x = (const char *)
+	    memchr(_r.data + start, c, _r.length - start);
+	if (x)
+	    return x - _r.data;
+    }
     return -1;
 }
 
@@ -618,14 +621,19 @@ String::find_left(const String &x, int start) const
 {
     if (start < 0)
 	start = 0;
-    if (!x.length() && start <= length())
-	return start;
-    int first_c = (unsigned char)x[0];
-    int pos = start, max_pos = length() - x.length();
-    for (pos = find_left(first_c, pos); pos >= 0 && pos <= max_pos;
-	 pos = find_left(first_c, pos + 1))
-	if (!memcmp(_r.data + pos, x.data(), x.length()))
-	    return pos;
+    if (x.length() == 0)
+	return start <= length() ? start : -1;
+    const char *pos = _r.data + start;
+    const char *end_pos = _r.data + length() - x.length() + 1;
+    char first_c = (unsigned char) x[0];
+    while (pos && pos < end_pos) {
+	pos = (const char *) memchr(pos, first_c, end_pos - pos);
+	if (!pos)
+	    break;
+	if (memcmp(pos + 1, x.data() + 1, x.length() - 1) == 0)
+	    return pos - _r.data;
+	++pos;
+    }
     return -1;
 }
 

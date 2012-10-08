@@ -431,6 +431,28 @@ ConfParseTest::initialize(ErrorHandler *errh)
 	CHECK(((uintptr_t) s3.data() & 3) != ((uintptr_t) s4.data() & 3));
     }
 
+    // String confparse
+    {
+	String s1 = String::make_stable("click-align");
+	CHECK(s1.find_left('c') == 0);
+	CHECK(s1.find_left('c', 1) == 3);
+	CHECK(s1.find_left('c', 3) == 3);
+	CHECK(s1.find_left('c', 4) == -1);
+	CHECK(s1.find_left("c") == 0);
+	CHECK(s1.find_left("c", 1) == 3);
+	CHECK(s1.find_left("c", 3) == 3);
+	CHECK(s1.find_left("c", 5) == -1);
+	CHECK(s1.find_left("li") == 1);
+	CHECK(s1.find_left("li", 2) == 7);
+	CHECK(s1.find_left("li", 8) == -1);
+	CHECK(s1.find_left("", 0) == 0);
+	CHECK(s1.find_left("", 10) == 10);
+	CHECK(s1.find_left("", 11) == 11);
+	CHECK(s1.find_left("", 12) == -1);
+	CHECK(s1.find_left("a") == 6);
+	CHECK(s1.substring(0, -1).find_left('n') == -1);
+    }
+
 #if CLICK_USERLEVEL
     // click_strcmp
     CHECK(click_strcmp("a", "b") < 0);
