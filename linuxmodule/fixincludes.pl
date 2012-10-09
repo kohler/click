@@ -257,6 +257,10 @@ sub one_includeroot ($$) {
 		s<^#define ACCESS_ONCE\(x\) \(\*\(volatile typeof\(x\) \*\)\&\(x\)\)><#define ACCESS_ONCE(x) (*(typeof(x) * volatile)&(x))>m;
 	    }
 
+	    if ($d eq "fs.h") {
+		s<enum migrate_mode;><enum migrate_mode \{DUMMY\};>;
+	    }
+
 	    # CLICK_CXX_PROTECTED check
 	    if (m<\A[\s\200-\377]*\z>) {
 		# empty file, do nothing

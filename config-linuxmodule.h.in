@@ -88,6 +88,9 @@
 /* Define if 'struct skb_shared_info' has an 'ip6_frag_id' member. */
 #undef HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID
 
+/* Define if 'struct skb_shared_info' has an 'tx_flags' member defining 'SKBTX_DEV_ZEROCOPY'. */
+#undef HAVE_LINUX_SKB_SHINFO_TX_FLAGS_SKBTX_DEV_ZEROCOPY
+
 /* Define if 'struct skb_shared_info' has a 'tso_size' member. */
 #undef HAVE_LINUX_SKB_SHINFO_TSO_SIZE
 

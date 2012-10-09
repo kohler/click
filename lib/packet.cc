@@ -692,6 +692,9 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
 # if HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID
     nskb_shinfo->ip6_frag_id = 0;
 # endif
+# if HAVE_LINUX_SKB_SHINFO_TX_FLAGS_SKBTX_DEV_ZEROCOPY
+    nskb_shinfo->tx_flags = 0;
+# endif
 
     shift_header_annotations(old_head, extra_headroom);
     return static_cast<WritablePacket *>(this);
