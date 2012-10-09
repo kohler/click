@@ -258,7 +258,7 @@ sub one_includeroot ($$) {
 	    }
 
 	    if ($d eq "fs.h") {
-		s<enum migrate_mode;><enum migrate_mode \{DUMMY\};>;
+		s<enum migrate_mode;><enum migrate_mode \{MIGRATE_DUMMY\};>;
 	    }
 
 	    # CLICK_CXX_PROTECTED check
