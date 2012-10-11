@@ -621,12 +621,14 @@ String::find_left(const String &x, int start) const
 {
     if (start < 0)
 	start = 0;
-    if (x.length() == 0)
-	return start <= length() ? start : -1;
+    if (x.length() == 0 && start <= length())
+	return start;
+    if (start + x.length() > length())
+	return -1;
     const char *pos = _r.data + start;
     const char *end_pos = _r.data + length() - x.length() + 1;
     char first_c = (unsigned char) x[0];
-    while (pos && pos < end_pos) {
+    while (pos < end_pos) {
 	pos = (const char *) memchr(pos, first_c, end_pos - pos);
 	if (!pos)
 	    break;
