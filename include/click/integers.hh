@@ -13,20 +13,40 @@ CLICK_DECLS
  */
 
 #if HAVE_INT64_TYPES && !defined(htonq)
+# if CLICK_BYTE_ORDER != CLICK_LITTLE_ENDIAN && CLICK_BYTE_ORDER != CLICK_BIG_ENDIAN
+inline uint64_t htonq(uint64_t x) __attribute__((error("unknown byte order")));
+# endif
+
 /** @brief Return @a x translated from host to network byte order. */
 inline uint64_t htonq(uint64_t x) {
+# if CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
     uint32_t hi = x >> 32;
     uint32_t lo = x & 0xffffffff;
     return (((uint64_t)htonl(lo)) << 32) | htonl(hi);
+# elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
+    return x;
+# else
+    return 0;
+# endif
 }
 #endif
 
 #if HAVE_INT64_TYPES && !defined(ntohq)
+# if CLICK_BYTE_ORDER != CLICK_LITTLE_ENDIAN && CLICK_BYTE_ORDER != CLICK_BIG_ENDIAN
+inline uint64_t htonq(uint64_t x) __attribute__((error("unknown byte order")));
+# endif
+
 /** @brief Return @a x translated from network to host byte order. */
 inline uint64_t ntohq(uint64_t x) {
+# if CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
     uint32_t hi = x >> 32;
     uint32_t lo = x & 0xffffffff;
     return (((uint64_t)ntohl(lo)) << 32) | ntohl(hi);
+# elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
+    return x;
+# else
+    return 0;
+# endif
 }
 #endif
 
