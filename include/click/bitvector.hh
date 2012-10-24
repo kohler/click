@@ -139,7 +139,7 @@ inline Bitvector::Bitvector(int n)
 	memset(_f, 0, sizeof(_f));
     } else {
 	_max = -1;
-	resize(_max);
+	resize(n);
     }
 }
 
