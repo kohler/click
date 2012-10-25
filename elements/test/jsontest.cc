@@ -134,8 +134,13 @@ JsonTest::initialize(ErrorHandler *errh)
     CHECK(j["a"].is_null());
     CHECK(j.count("a") == 1);
 
-    j = Json::make_object();
     Json k = Json::make_array();
+    {
+	CHECK(k.size() == 0);
+	Json::array_iterator it = k.abegin();
+	CHECK(!it.live());
+    }
+    j = Json::make_object();
     j["a"] = k[2];
     CHECK(j.size() == 1);
     CHECK(k.size() == 0);

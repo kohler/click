@@ -525,7 +525,7 @@ class Json::const_array_iterator { public:
 	return live() ? &const_array_iterator::live : 0;
     }
     bool live() const {
-	return j_->_type == j_array && JsonVector::size_type(i_) < j_->ajson()->values.size();
+	return j_->_type == j_array && j_->ajson() && JsonVector::size_type(i_) < j_->ajson()->values.size();
     }
     const Json &operator*() const {
 	return j_->ajson()->values[i_];
