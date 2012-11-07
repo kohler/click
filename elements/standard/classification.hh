@@ -357,7 +357,6 @@ inline int
 Program::match(const Packet *p)
 {
     const unsigned char *packet_data = p->data() - _align_offset;
-    Insn *ex = &_insn[0];	// avoid bounds checking
     int pos = 0;
 
     if (_output_everything >= 0)
@@ -366,6 +365,7 @@ Program::match(const Packet *p)
 	// common case never checks packet length
 	return length_checked_match(p);
 
+    Insn *ex = &_insn[0];     // avoid bounds checking
     do {
 	uint32_t data = *((const uint32_t *)(packet_data + ex[pos].offset));
 	data &= ex[pos].mask.u;
