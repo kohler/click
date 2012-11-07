@@ -1,0 +1,14 @@
+%info
+Test that an empty Classifier program doesn't crash and does the right thing.
+
+%script
+click --simtime CONFIG 2>OUT 1>&2
+
+%file CONFIG
+InfiniteSource(LIMIT 1, STOP true)
+-> Classifier(-)
+-> Print(A)
+-> Discard;
+
+%expect OUT
+A:{{.*}}
