@@ -174,7 +174,7 @@ IPFlowRawSockets::Flow::send_pkt(Packet *p, ErrorHandler *errh)
 
 IPFlowRawSockets::IPFlowRawSockets()
     : _nnoagg(0), _nagg(0), _agg_notifier(0), _task(this),
-      _gc_timer(gc_hook, this), _headroom(Packet::DEFAULT_HEADROOM)
+      _gc_timer(gc_hook, this), _headroom(Packet::default_headroom)
 {
     for (int i = 0; i < NFLOWMAP; i++)
 	_flowmap[i] = 0;

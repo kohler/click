@@ -19,6 +19,7 @@
  */
 
 #include <click/config.h>
+#define CLICK_PACKET_DEPRECATED_ENUM
 #include <click/packet.hh>
 #include <click/packet_anno.hh>
 #include <click/glue.hh>
