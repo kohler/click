@@ -4,6 +4,31 @@
 #include <click/etheraddress.hh>
 CLICK_DECLS
 
+/*
+=c
+
+ProbeRequester
+
+=s Wifi, Wireless Station
+
+Sends 802.11 probe requests
+
+=d
+
+=h debug read/write
+Enable debugging
+
+=h eth read/write
+Station's MAC address
+
+=h send_probe write only
+Sends a probe request
+
+
+=a
+
+ProbeResponder */
+
 class ProbeRequester : public Element { public:
 
   ProbeRequester();
