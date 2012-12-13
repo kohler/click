@@ -1,17 +1,16 @@
-#ifndef CLICK_STOREETHERADDRESS_HH
-#define CLICK_STOREETHERADDRESS_HH
+#ifndef CLICK_GETETHERADDRESS_HH
+#define CLICK_GETETHERADDRESS_HH
 #include <click/element.hh>
-#include <click/etheraddress.hh>
 CLICK_DECLS
 
 /*
 =c
 
-StoreEtherAddress(ADDR, OFFSET)
+GetEtherAddress(ANNO, OFFSET)
 
 =s ethernet
 
-stores Ethernet address in packet
+stores an ethernet address from a packet into an annotation.
 
 =d
 
@@ -22,32 +21,27 @@ The OFFSET argument may be 'src' or 'dst'.  These strings are equivalent to
 offsets 6 and 0, respectively, which are the offsets into an Ethernet header
 of the source and destination Ethernet addresses.
 
-=h addr read/write
-
-Return or set the ADDR argument.
-
 =a
 
-EtherEncap
+EtherEncap, SetEtherAddress, StoreEtherAddress
 */
 
-class StoreEtherAddress : public Element { public:
+class GetEtherAddress : public Element {
 
-    const char *class_name() const		{ return "StoreEtherAddress"; }
+  public:
+
+    const char *class_name() const		{ return "GetEtherAddress"; }
     const char *port_count() const		{ return PORTS_1_1X2; }
-    const char *processing() const		{ return PROCESSING_A_AH; }
+    const char *processing() const		{ return AGNOSTIC; }
 
     int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
-    void add_handlers() CLICK_COLD;
+    bool can_live_reconfigure() const		{ return true; }
 
     Packet *simple_action(Packet *);
 
- private:
-
+  private:
     uint32_t _offset;
-    bool _use_anno;
-    uint8_t _anno;
-    EtherAddress _address;
+    int _anno;
 
 };
 
