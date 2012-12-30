@@ -48,6 +48,11 @@ false.
 A write handler called once LIMIT packets are sent. END_CALL and
 STOP are mutually exclusive.
 
+=item TIMESTAMP
+
+Boolean. If false, do not set the timestamp annotation on generated
+packets. Defaults to true.
+
 =e
 
   RandomSource(64) -> Queue -> ...
