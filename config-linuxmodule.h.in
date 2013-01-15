@@ -52,6 +52,9 @@
 /* Define if your Linux kernel has files_lglock. */
 #undef HAVE_LINUX_FILES_LGLOCK
 
+/* Define if you have the d_make_root function. */
+#undef HAVE_LINUX_D_MAKE_ROOT
+
 /* Define if your Linux kernel has dev_ioctl. */
 #undef HAVE_LINUX_DEV_IOCTL
 

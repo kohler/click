@@ -10861,6 +10861,58 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_aware_system" >&5
 $as_echo "$ac_cv_cxx_aware_system" >&6; }
 
+    if test $ac_cv_cxx_aware_system = yes; then
+	DRIVERS="$DRIVERS linuxmodule"
+	TOOL_TARGETS="$TOOL_TARGETS click-install"
+	$as_echo "#define HAVE_LINUXMODULE_DRIVER 1" >>confdefs.h
+
+	HAVE_LINUXMODULE_DRIVER=1
+    elif test x$enable_linuxmodule_default = xyes; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+=========================================
+
+Your Linux kernel header files cause errors when included by a C++ program,
+so I won't try to compile the linuxmodule driver.
+
+Click modifies the Linux kernel's header files to make them work with
+C++, using the program 'linuxmodule/fixincludes.pl'. It looks like
+your kernel header files have features that 'linuxmodule/fixincludes.pl'
+doesn't know how to fix. You can report this error to us on the Click
+mailing list, or, even better, try to fix the error. See the config.log
+file for more information on the error.
+
+=========================================" >&5
+$as_echo "$as_me: WARNING:
+=========================================
+
+Your Linux kernel header files cause errors when included by a C++ program,
+so I won't try to compile the linuxmodule driver.
+
+Click modifies the Linux kernel's header files to make them work with
+C++, using the program 'linuxmodule/fixincludes.pl'. It looks like
+your kernel header files have features that 'linuxmodule/fixincludes.pl'
+doesn't know how to fix. You can report this error to us on the Click
+mailing list, or, even better, try to fix the error. See the config.log
+file for more information on the error.
+
+=========================================" >&2;}
+	    else
+	as_fn_error $? "
+=========================================
+
+Your Linux kernel header files cause errors when included by a C++ program.
+
+Click modifies the Linux kernel's header files to make them work with
+C++, using the program 'linuxmodule/fixincludes.pl'. It looks like
+your kernel header files have features that 'linuxmodule/fixincludes.pl'
+doesn't know how to fix. You can report this error to us on the Click
+mailing list, or, even better, try to fix the error. See the config.log
+file for more information on the error.
+
+=========================================" "$LINENO" 5
+    fi
+
+    if test $ac_cv_cxx_aware_system = yes; then
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether long and int64_t are the same type in the Linux kernel" >&5
 $as_echo_n "checking whether long and int64_t are the same type in the Linux kernel... " >&6; }
@@ -11954,6 +12006,40 @@ $as_echo "#define HAVE_LINUX_ATOMIC_CMPXCHG 1" >>confdefs.h
 
     fi
 
+    ac_fn_c_check_decl "$LINENO" "d_make_root" "ac_cv_have_decl_d_make_root" "#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#define new linux_new
+#define this linux_this
+#define delete linux_delete
+#define class linux_class
+#define virtual linux_virtual
+#define typename linux_typename
+#define private linux_private
+#define protected linux_protected
+#define public linux_public
+#define namespace linux_namespace
+#define false linux_false
+#define true linux_true
+#define CLICK_CXX_PROTECTED 1
+$linux_autoconf_include
+#include <asm/types.h>
+#include <linux/dcache.h>
+"
+if test "x$ac_cv_have_decl_d_make_root" = xyes; then :
+  ac_cv_linux_d_make_root=yes
+else
+  ac_cv_linux_d_make_root=no
+fi
+
+    if test $ac_cv_linux_d_make_root = yes; then
+
+$as_echo "#define HAVE_LINUX_D_MAKE_ROOT 1" >>confdefs.h
+
+    fi
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for netdev_rx_handler_register kernel symbol" >&5
 $as_echo_n "checking for netdev_rx_handler_register kernel symbol... " >&6; }
 if ${ac_cv_linux_netdev_rx_handler_register+:} false; then :
@@ -12002,69 +12088,13 @@ $as_echo "$ac_cv_linux_getboottime" >&6; }
 
     fi
 
+    fi
     CC="$save_cc"
     CXX="$save_cxx"
     CPPFLAGS="$save_cppflags"
     CFLAGS="$save_cflags"
     CXXFLAGS="$save_cxxflags"
     export CFLAGS CPPFLAGS
-
-    if test $ac_cv_cxx_aware_system = yes; then
-	DRIVERS="$DRIVERS linuxmodule"
-	TOOL_TARGETS="$TOOL_TARGETS click-install"
-	$as_echo "#define HAVE_LINUXMODULE_DRIVER 1" >>confdefs.h
-
-	HAVE_LINUXMODULE_DRIVER=1
-    elif test x$enable_linuxmodule_default = xyes; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
-=========================================
-
-Your Linux kernel header files cause errors when included by a C++ program,
-so I won't try to compile the linuxmodule driver.
-
-There are two common reasons for this error:
-1. You have not applied the Linux kernel patch that comes with this
-   distribution.  Apply the right patch and try again.  See the INSTALL
-   file for more information.
-2. Your Linux configuration enables some functionality that is not yet
-   covered by our patches.  Turn off this functionality and try again,
-   or fix the error and tell us how you did it.  See the config.log file
-   for more detailed information on the error.
-
-=========================================" >&5
-$as_echo "$as_me: WARNING:
-=========================================
-
-Your Linux kernel header files cause errors when included by a C++ program,
-so I won't try to compile the linuxmodule driver.
-
-There are two common reasons for this error:
-1. You have not applied the Linux kernel patch that comes with this
-   distribution.  Apply the right patch and try again.  See the INSTALL
-   file for more information.
-2. Your Linux configuration enables some functionality that is not yet
-   covered by our patches.  Turn off this functionality and try again,
-   or fix the error and tell us how you did it.  See the config.log file
-   for more detailed information on the error.
-
-=========================================" >&2;}
-	    else
-	as_fn_error $? "
-=========================================
-
-Your Linux kernel header files cause errors when included by a C++ program.
-
-There are two common reasons for this error:
-1. You have not applied the Linux kernel patch that comes with this
-   distribution.  Apply the right patch and try again.  See the INSTALL
-   file for more information.
-2. Your Linux configuration enables some functionality that is not yet
-   covered by our patches.  Turn off this functionality and try again,
-   or fix the error and tell us how you did it.  See the config.log file
-   for more detailed information on the error.
-
-=========================================" "$LINENO" 5
-    fi
 fi
 
 

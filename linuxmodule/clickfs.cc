@@ -358,7 +358,11 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     UNLOCK_CONFIG_READ();
     if (!root_inode)
 	goto out_no_root;
+#if HAVE_LINUX_D_MAKE_ROOT
+    sb->s_root = d_make_root(root_inode);
+#else
     sb->s_root = d_alloc_root(root_inode);
+#endif
     MDEBUG("got root inode %p:%p", root_inode, root_inode->i_op);
     if (!sb->s_root)
 	goto out_no_root;

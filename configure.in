@@ -1336,6 +1336,44 @@ $linux_autoconf_include
 #include <linux/skbuff.h>]], [[return 0]])], ac_cv_cxx_aware_system=yes, ac_cv_cxx_aware_system=no)
 	])
 
+    if test $ac_cv_cxx_aware_system = yes; then
+	DRIVERS="$DRIVERS linuxmodule"
+	TOOL_TARGETS="$TOOL_TARGETS click-install"
+	AC_DEFINE(HAVE_LINUXMODULE_DRIVER)
+	HAVE_LINUXMODULE_DRIVER=1
+    elif test x$enable_linuxmodule_default = xyes; then
+	AC_MSG_WARN([
+=========================================
+
+Your Linux kernel header files cause errors when included by a C++ program,
+so I won't try to compile the linuxmodule driver.
+
+Click modifies the Linux kernel's header files to make them work with
+C++, using the program 'linuxmodule/fixincludes.pl'. It looks like
+your kernel header files have features that 'linuxmodule/fixincludes.pl'
+doesn't know how to fix. You can report this error to us on the Click
+mailing list, or, even better, try to fix the error. See the config.log
+file for more information on the error.
+
+=========================================])
+	dnl ' fix syntax highlighting
+    else
+	AC_MSG_ERROR([
+=========================================
+
+Your Linux kernel header files cause errors when included by a C++ program.
+
+Click modifies the Linux kernel's header files to make them work with
+C++, using the program 'linuxmodule/fixincludes.pl'. It looks like
+your kernel header files have features that 'linuxmodule/fixincludes.pl'
+doesn't know how to fix. You can report this error to us on the Click
+mailing list, or, even better, try to fix the error. See the config.log
+file for more information on the error.
+
+=========================================])
+    fi
+
+    if test $ac_cv_cxx_aware_system = yes; then
 
     AC_CACHE_CHECK([whether long and int64_t are the same type in the Linux kernel],
 	ac_cv_long_64_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
@@ -1542,6 +1580,12 @@ CFLAGS="$save_cflags"
 	AC_DEFINE([HAVE_LINUX_ATOMIC_CMPXCHG], [1], [Define if you have the atomic_cmpxchg function.])
     fi
 
+    AC_CHECK_DECL([d_make_root], [ac_cv_linux_d_make_root=yes], [ac_cv_linux_d_make_root=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/dcache.h>]])
+    if test $ac_cv_linux_d_make_root = yes; then
+	AC_DEFINE([HAVE_LINUX_D_MAKE_ROOT], [1], [Define if you have the d_make_root function.])
+    fi
+
     AC_CACHE_CHECK(for netdev_rx_handler_register kernel symbol, ac_cv_linux_netdev_rx_handler_register,
     [if grep "__ksymtab_netdev_rx_handler_register" $linux_system_map >/dev/null 2>&1; then
         ac_cv_linux_netdev_rx_handler_register=yes
@@ -1566,53 +1610,14 @@ CFLAGS="$save_cflags"
         AC_DEFINE(HAVE_LINUX_GETBOOTTIME)
     fi
 
+    fi dnl ac_cv_cxx_aware_system
+
     CC="$save_cc"
     CXX="$save_cxx"
     CPPFLAGS="$save_cppflags"
     CFLAGS="$save_cflags"
     CXXFLAGS="$save_cxxflags"
     export CFLAGS CPPFLAGS
-
-    if test $ac_cv_cxx_aware_system = yes; then
-	DRIVERS="$DRIVERS linuxmodule"
-	TOOL_TARGETS="$TOOL_TARGETS click-install"
-	AC_DEFINE(HAVE_LINUXMODULE_DRIVER)
-	HAVE_LINUXMODULE_DRIVER=1
-    elif test x$enable_linuxmodule_default = xyes; then
-	AC_MSG_WARN([
-=========================================
-
-Your Linux kernel header files cause errors when included by a C++ program,
-so I won't try to compile the linuxmodule driver.
-
-There are two common reasons for this error:
-1. You have not applied the Linux kernel patch that comes with this
-   distribution.  Apply the right patch and try again.  See the INSTALL
-   file for more information.
-2. Your Linux configuration enables some functionality that is not yet
-   covered by our patches.  Turn off this functionality and try again,
-   or fix the error and tell us how you did it.  See the config.log file
-   for more detailed information on the error.
-
-=========================================])
-	dnl ' fix syntax highlighting
-    else
-	AC_MSG_ERROR([
-=========================================
-
-Your Linux kernel header files cause errors when included by a C++ program.
-
-There are two common reasons for this error:
-1. You have not applied the Linux kernel patch that comes with this
-   distribution.  Apply the right patch and try again.  See the INSTALL
-   file for more information.
-2. Your Linux configuration enables some functionality that is not yet
-   covered by our patches.  Turn off this functionality and try again,
-   or fix the error and tell us how you did it.  See the config.log file
-   for more detailed information on the error.
-
-=========================================])
-    fi
 fi
 
 
