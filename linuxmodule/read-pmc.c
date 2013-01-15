@@ -18,6 +18,9 @@
 #include <click/config.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
+#if HAVE_LINUX_ASM_SYSTEM_H
+# include <asm/system.h>
+#endif
 #if __i386__ || __x86_64__
 # include <asm/msr.h>
 #endif
