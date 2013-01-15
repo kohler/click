@@ -26,7 +26,7 @@ END {
 {
     ino[$3] = $1;
     linkcount[$3] = $2;
-    nlinks[$3] += 2; /* one for ., one for .. */
+    nlinks[$3] += 2; # one for ., one for ..
     if (index($3, "/"))
 	nlinks[$4]++;
 }
