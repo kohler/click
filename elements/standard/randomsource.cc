@@ -37,7 +37,7 @@ RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
     counter_t limit = -1;
     int burstsize = 1;
     int datasize = -1;
-    bool active = true, stop = false;
+    bool active = true, stop = false, timestamp = true;
     HandlerCall end_h;
 
     if (Args(conf, this, errh)
@@ -45,6 +45,7 @@ RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read_p("LIMIT", limit)
 	.read_p("BURST", burstsize)
 	.read_p("ACTIVE", active)
+	.read("TIMESTAMP", timestamp)
 	.read("STOP", stop)
 	.read("END_CALL", HandlerCallArg(HandlerCall::writable), end_h)
 	.complete() < 0)
@@ -61,6 +62,7 @@ RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
     _burstsize = burstsize;
     _count = 0;
     _active = active;
+    _timestamp = timestamp;
     delete _end_h;
     if (end_h)
 	_end_h = new HandlerCall(end_h);
