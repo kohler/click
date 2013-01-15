@@ -171,6 +171,7 @@ sub one_includeroot ($$) {
 	    # "extern asmlinkage" and other declaration weirdness
 	    s{\bextern\s+asmlinkage\b}{asmlinkage}g;
 	    s{\bextern\s+void\s+asmlinkage\b}{asmlinkage void}g;
+	    s&^(asmlinkage[^;]*)asmlinkage&$1&mg;
 	    s&^notrace\s*((?:static)?\s*inline[^;]*)\{&$1 notrace;\n$1\{&mg;
 	    s&^((?:static)?\s*inline\s*)notrace\s*([^;]*)\{&$1 $2 notrace;\n$1 $2\{&mg;
 
@@ -253,8 +254,9 @@ sub one_includeroot ($$) {
 	    if ($d eq "spinlock.h") {
 		s<struct\s+__raw_tickets\s+(\w+)\s*=\s*\{\s*tail:\s*(\S+?)\s*\};><struct __raw_tickets $1 = {}; $1.tail = $2;>;
 	    }
-	    if ($d eq "compiler.h") {
+	    if ($d eq "compiler.h" || $d eq "linkage.h") {
 		s<^#define ACCESS_ONCE\(x\) \(\*\(volatile typeof\(x\) \*\)\&\(x\)\)><#define ACCESS_ONCE(x) (*(typeof(x) * volatile)&(x))>m;
+		s<^(#define\s+notrace\s+__attribute__\(\(no_instrument_function\)\))><// g++ has stricter rules about this attribute. We can't deal.\n#ifdef __cplusplus\n#define notrace\n#else\n$1\n#endif>m;
 	    }
 
 	    if ($d eq "fs.h") {
