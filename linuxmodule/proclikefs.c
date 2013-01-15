@@ -6,6 +6,7 @@
  *
  * Copyright (c) 2002-2003 International Computer Science Institute
  * Copyright (c) 2005 Regents of the University of California
+ * Copyright (c) 2002-2013 Eddie Kohler
  *
  * This source code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -57,10 +58,27 @@
 
 #if HAVE_LINUX_FILES_LGLOCK
 # include <linux/lglock.h>
+# ifdef DECLARE_LGLOCK
+DECLARE_LGLOCK(files_lglock);
+#  define file_list_lock() lg_local_lock(files_lglock)
+#  define file_list_unlock() lg_local_unlock(files_lglock)
+# elif HAVE_LINUX_FILES_LGLOCK
+extern struct lglock files_lglock;
+#  define file_list_lock() lg_local_lock(&files_lglock)
+#  define file_list_unlock() lg_local_unlock(&files_lglock)
+# endif
 #endif
 
 #ifndef MOD_DEC_USE_COUNT
 # define MOD_DEC_USE_COUNT	module_put(THIS_MODULE)
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+# define fstype_supers_init(fst) INIT_HLIST_HEAD(&(fst)->fs_supers)
+# define fstype_for_each_super(sb, fst) hlist_for_each_entry(sb, hlist_pos, &(fst)->fs_supers, s_instances)
+#else
+# define fstype_supers_init(fst) INIT_LIST_HEAD(&(fst)->fs_supers);
+# define fstype_for_each_super(sb, fst) list_for_each_entry(sb, &(fst)->fs_supers, s_instances)
 #endif
 
 
@@ -182,12 +200,8 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
 	atomic_set(&newfs->nsuper, 0);
 	newfs->fs.name = newfs->name;
 	newfs->fs.next = 0;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 	newfs->fs.owner = THIS_MODULE;
-#endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
-	INIT_LIST_HEAD(&newfs->fs.fs_supers);
-#endif
+	fstype_supers_init(&newfs->fs);
 	newfs_is_new = 1;
     }
 
@@ -219,30 +233,22 @@ proclikefs_reinitialize_supers(struct proclikefs_file_system *pfs,
 			       void (*reread_super) (struct super_block *))
 {
     struct super_block *sb;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
-    struct list_head *p;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+    struct hlist_node *hlist_pos;
 #endif
     spin_lock(&fslist_lock);
     /* transfer superblocks */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
-# if HAVE_LINUX_SB_LOCK
+#if HAVE_LINUX_SB_LOCK
     spin_lock(&sb_lock);
-# endif
-    for (p = pfs->fs.fs_supers.next; p != &pfs->fs.fs_supers; p = p->next) {
-	sb = list_entry(p, struct super_block, s_instances);
+#endif
+    fstype_for_each_super(sb, &pfs->fs) {
 	if (sb->s_type == &pfs->fs)
 	    (*reread_super)(sb);
 	else
 	    printk("<1>proclikefs: confusion\n");
     }
-# if HAVE_LINUX_SB_LOCK
+#if HAVE_LINUX_SB_LOCK
     spin_unlock(&sb_lock);
-# endif
-#else
-    for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks);
-	 sb = sb_entry(sb->s_list.next))
-	if (sb->s_type == &pfs->fs)
-	    (*reread_super)(sb);
 #endif
     spin_unlock(&fslist_lock);
 }
@@ -253,18 +259,11 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
     struct dentry *dentry_tree;
     struct list_head *p;
     int cpu;
-#if HAVE_LINUX_FILES_LGLOCK
-    DECLARE_LGLOCK(files_lglock);
-#endif
     (void) cpu;
 
     DEBUG("killing files");
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
-# if HAVE_LINUX_FILES_LOCK
     file_list_lock();
-# elif HAVE_LINUX_FILES_LGLOCK
-    lg_local_lock(files_lglock);
-# endif
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
     for_each_possible_cpu(cpu) {
 	list_for_each(p, per_cpu_ptr(sb->s_files, cpu)) {
@@ -278,12 +277,8 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
 	filp->f_op = dummy;
     }
 # endif
-# if HAVE_LINUX_FILES_LOCK
     file_list_unlock();
-# elif HAVE_LINUX_FILES_LGLOCK
-    lg_local_unlock(files_lglock);
-# endif
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+#else
 # if HAVE_LINUX_FILES_LOCK
     file_list_lock();
 # endif
@@ -294,9 +289,6 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
 # if HAVE_LINUX_FILES_LOCK
     file_list_unlock();
 # endif
-#else
-    (void) dummy;
-    (void) p;
 #endif
 
     lock_super(sb);
@@ -347,8 +339,9 @@ void
 proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 {
     struct super_block *sb, dummy_sb;
-    struct file *filp;
-    struct list_head *p;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+    struct hlist_node *hlist_pos;
+#endif
     struct proclikefs_file_operations *pfo;
     struct proclikefs_inode_operations *pio;
     struct inode dummy_inode;
@@ -377,47 +370,18 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 	memcpy(io, dummy_inode.i_op, sizeof(struct inode_operations));
     }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
-    /* file operations cleared out superblock by superblock, below */
-    (void) filp;
-#else
-    /* clear out file operations */
-    /* inuse_filps is protected by the single kernel lock */
-    /* XXX locking? */
-    for (filp = inuse_filps; filp; filp = filp->f_next) {
-	struct dentry *dentry = filp->f_dentry;
-	if (!dentry)
-	    continue;
-	inode = dentry->d_inode;
-	if (!inode || !inode->i_sb || inode->i_sb->s_type != &pfs->fs)
-	    continue;
-	filp->f_op = &pfs->pfs_pfo->pfo_op;
-    }
-#endif
-
     spin_lock(&pfs->lock);
 
     /* clear out superblock operations */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
     DEBUG("clearing superblocks");
-# if HAVE_LINUX_SB_LOCK
+#if HAVE_LINUX_SB_LOCK
     spin_lock(&sb_lock);
-# endif
-    for (p = pfs->fs.fs_supers.next; p != &pfs->fs.fs_supers; p = p->next) {
-	sb = list_entry(p, struct super_block, s_instances);
+#endif
+    fstype_for_each_super(sb, &pfs->fs) {
 	proclikefs_kill_super(sb, &pfs->pfs_pfo->pfo_op);
     }
-# if HAVE_LINUX_SB_LOCK
+#if HAVE_LINUX_SB_LOCK
     spin_unlock(&sb_lock);
-# endif
-#else
-    for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks);
-	 sb = sb_entry(sb->s_list.next)) {
-	if (sb->s_type != &pfs->fs)
-	    continue;
-	proclikefs_kill_super(sb, &pfs->pfs_pfo->pfo_op);
-    }
-    (void) p;
 #endif
 
     pfs->live = 0;
@@ -537,7 +501,7 @@ cleanup_module(void)
 }
 
 #ifdef MODULE_AUTHOR
-MODULE_AUTHOR("Eddie Kohler <kohler@cs.ucla.edu>");
+MODULE_AUTHOR("Eddie Kohler <ekohler@gmail.com>");
 #endif
 #ifdef MODULE_DESCRIPTION
 MODULE_DESCRIPTION("Proclikefs: allow module unload of mounted filesystems");
