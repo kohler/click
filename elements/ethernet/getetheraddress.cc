@@ -27,7 +27,6 @@ int
 GetEtherAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int anno;
-    uint32_t offset;
     String off;
     if (Args(conf, this, errh)
 	.read_mp("ANNO", AnnoArg(6), anno)
@@ -35,6 +34,7 @@ GetEtherAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 	.complete() < 0)
 	return -1;
 
+    uint32_t offset = 0;
     if (off.lower() == "src")
 	offset = 6;
     else if (off.lower() == "dst")

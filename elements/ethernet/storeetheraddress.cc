@@ -27,7 +27,6 @@ StoreEtherAddress::configure(Vector<String> &conf, ErrorHandler *errh)
     String off;
     bool address_specified, anno_specified;
     int anno;
-    uint32_t offset;
     if (Args(conf, this, errh)
 	.read_mp("ADDR", _address).read_status(address_specified)
 	.read_mp("OFFSET", WordArg(), off)
@@ -38,6 +37,7 @@ StoreEtherAddress::configure(Vector<String> &conf, ErrorHandler *errh)
     if (!(address_specified ^ anno_specified))
 	return errh->error("must specify exactly one of ADDR/ANNO");
 
+    uint32_t offset = 0;
     if (off.lower() == "src")
 	offset = 6;
     else if (off.lower() == "dst")
