@@ -536,6 +536,17 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(results.size() == 4);
     CHECK(results[0] == "1" && results[1] == "3" && results[2] == "4" && results[3] == "5");
 
+    int32_t i32b;
+    i32 = i32b = 99;
+    CHECK(Args(this, errh).push_back_args("A 1")
+          .read_or_set("A", i32, 9).read_status(b)
+          .read_or_set("B", i32b, 3).read_status(b2)
+          .consume() >= 0);
+    CHECK(b == true);
+    CHECK(b2 == false);
+    CHECK(i32 == 1);
+    CHECK(i32b == 3);
+
     errh->message("All tests pass!");
     return 0;
 }

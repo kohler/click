@@ -4,7 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2011 Regents of the University of California
- * Copyright (c) 2012 Eddie Kohler
+ * Copyright (c) 2012-2013 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -329,7 +329,7 @@ ArgContext::message(const char *fmt, ...) const
 void
 ArgContext::xmessage(const String &anno, const String &str) const
 {
-    PrefixErrorHandler perrh(_errh, _arg_keyword ? String(_arg_keyword) + ": " : "");
+    PrefixErrorHandler perrh(_errh, error_prefix());
     perrh.xmessage(anno, str);
     if (perrh.nerrors())
 	_read_status = false;
@@ -338,7 +338,7 @@ ArgContext::xmessage(const String &anno, const String &str) const
 void
 ArgContext::xmessage(const String &anno, const char *fmt, va_list val) const
 {
-    PrefixErrorHandler perrh(_errh, _arg_keyword ? String(_arg_keyword) + ": " : "");
+    PrefixErrorHandler perrh(_errh, error_prefix());
     perrh.xmessage(anno, fmt, val);
     if (perrh.nerrors())
 	_read_status = false;
@@ -422,8 +422,9 @@ Args::postparse(bool ok, Slot *slot_status)
     if (!ok && _read_status)
 	error("parse error");
     _arg_keyword = 0;
+    _read_status = ok;
 
-    if (_read_status) {
+    if (ok) {
 	while (_simple_slotpos < simple_slotbuf_size
 	       && _simple_slotbuf[_simple_slotpos] != 0)
 	    _simple_slotpos +=

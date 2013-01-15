@@ -741,7 +741,7 @@ class Args : public ArgContext {
 	Slot *slot_status;
 	String str = find(keyword, flags, slot_status);
 	T *s = Args_parse_helper<DefaultArg<T> >::slot(variable, *this);
-	postparse(s && (str ? Args_parse_helper<DefaultArg<T> >::parse(DefaultArg<T>(), str, *s, *this) : (*s = value, _read_status = true, true)), slot_status);
+	postparse(s && (str ? Args_parse_helper<DefaultArg<T> >::parse(DefaultArg<T>(), str, *s, *this) : (*s = value, true)), slot_status);
     }
 
     template<typename P, typename T>
