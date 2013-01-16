@@ -91,7 +91,7 @@ NetmapInfo::ring::initialize_rings_rx(int timestamp)
 {
     ring_begin = 0;
     // 0 means "same count as the converse direction"
-    ring_end = nifp->ni_rx_queues ? nifp->ni_rx_queues : nifp->ni_tx_queues;
+    ring_end = nifp->ni_rx_rings ? nifp->ni_rx_rings : nifp->ni_tx_rings;
     if (timestamp >= 0) {
 	int flags = (timestamp > 0 ? NR_TIMESTAMP : 0);
 	for (unsigned i = ring_begin; i != ring_end; ++i)
@@ -103,7 +103,7 @@ void
 NetmapInfo::ring::initialize_rings_tx()
 {
     ring_begin = 0;
-    ring_end = nifp->ni_tx_queues ? nifp->ni_tx_queues : nifp->ni_rx_queues;
+    ring_end = nifp->ni_tx_rings ? nifp->ni_tx_rings : nifp->ni_rx_rings;
 }
 
 void
