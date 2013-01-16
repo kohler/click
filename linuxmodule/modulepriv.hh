@@ -17,7 +17,7 @@ CLICK_CXX_UNPROTECT
 # error "Linux version too old"
 #endif
 
-#if 0
+#if CLICK_MODULE_DEBUGGING
 # define MDEBUG(args...) do { printk("<1>kclick: " args); printk("\n"); } while (0)
 #else
 # define MDEBUG(args...) /* nada */

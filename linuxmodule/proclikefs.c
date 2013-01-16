@@ -44,6 +44,7 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # include <linux/namei.h>
 #endif
+#include <linux/dcache.h>
 #define CLICK_CONFIG_LINUXMODULE_SYMBOLS_ONLY 1
 #include <click/config-linuxmodule.h>
 #ifndef HAVE_LINUX_SB_LOCK
@@ -118,6 +119,7 @@ extern struct mutex sb_lock;
 
 static struct super_operations proclikefs_null_super_operations;
 static struct inode_operations proclikefs_null_root_inode_operations;
+static struct dentry_operations proclikefs_null_dentry_operations;
 
 EXPORT_SYMBOL(proclikefs_register_filesystem);
 EXPORT_SYMBOL(proclikefs_reinitialize_supers);
@@ -294,6 +296,8 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
     lock_super(sb);
 
     sb->s_op = &proclikefs_null_super_operations;
+    sb->s_d_op = 0;
+
     /* will not create new dentries any more */
 
     /* clear out dentries, starting from the root */
@@ -311,7 +315,7 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
 	struct list_head *next;
 	struct dentry *active = dentry_tree;
 	/* Process this dentry, move to next */
-	active->d_op = 0;
+	active->d_op = &proclikefs_null_dentry_operations;
 	dentry_tree = (struct dentry *)active->d_fsdata;
 	/* Prepend children to dentry_tree */
 	next = active->d_subdirs.next;
@@ -472,6 +476,20 @@ proclikefs_read_inode(struct inode *inode)
 }
 #endif
 
+static int
+proclikefs_d_revalidate(struct dentry *dir, struct nameidata *nd)
+{
+    (void) dir, (void) nd;
+    return 0;
+}
+
+static int
+proclikefs_d_delete(const struct dentry *dir)
+{
+    (void) dir;
+    return 0;
+}
+
 int
 init_module(void)
 {
@@ -480,6 +498,8 @@ init_module(void)
 #endif
     proclikefs_null_super_operations.put_super = proclikefs_put_super;
     proclikefs_null_root_inode_operations.lookup = proclikefs_null_root_lookup;
+    proclikefs_null_dentry_operations.d_revalidate = proclikefs_d_revalidate;
+    proclikefs_null_dentry_operations.d_delete = proclikefs_d_delete;
     mutex_init(&fslist_lock);
     return 0;
 }

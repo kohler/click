@@ -6,6 +6,7 @@
  * Copyright (c) 2002-2003 International Computer Science Institute
  * Copyright (c) 2004-2010 Regents of the University of California
  * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 2002-2013 Eddie Kohler
  *
  * This source code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -30,7 +31,9 @@
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <linux/mutex.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+# include <linux/namei.h>
+#else
 # include <linux/locks.h>
 #endif
 #include <linux/proc_fs.h>
@@ -252,7 +255,36 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
     }
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+static int
+click_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
+{
+    struct inode *inode = dentry->d_inode;
+    MDEBUG("click_dentry_revalidate %lx", (inode ? inode->i_ino : 0));
+    if (!inode)
+	return -EINVAL;
+    // XXX locking?
+    if (INODE_INFO(inode).config_generation == click_config_generation)
+	return 1;
+    if (click_ino.ino_element(inode->i_ino) >= 0) { // not a global directory
+	shrink_dcache_parent(dentry);
+	d_drop(dentry);
+	return 0;
+    }
+    if (nd->flags & LOOKUP_RCU)
+	return -ECHILD;
+
+    int error = 0;
+    LOCK_CONFIG_READ();
+    if ((error = click_ino.prepare(click_router, click_config_generation)) >= 0) {
+	INODE_INFO(inode).config_generation = click_config_generation;
+	set_nlink(inode, click_ino.nlink(inode->i_ino));
+	error = 1;
+    }
+    UNLOCK_CONFIG_READ();
+    return error;
+}
+#else
 static int
 click_dir_revalidate(struct dentry *dentry)
 {
@@ -352,6 +384,7 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     sb->s_blocksize_bits = 10;
     sb->s_magic = CLICKFS_SUPER_MAGIC;
     sb->s_op = &click_superblock_ops;
+    sb->s_d_op = &click_dentry_ops;
     MDEBUG("click_config_lock");
     LOCK_CONFIG_READ();
     root_inode = click_inode(sb, ClickIno::ino_globaldir);
@@ -364,6 +397,7 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     sb->s_root = d_alloc_root(root_inode);
 #endif
     MDEBUG("got root inode %p:%p", root_inode, root_inode->i_op);
+    MDEBUG("d_op %p:%p", &click_dentry_ops, sb->s_root->d_op);
     if (!sb->s_root)
 	goto out_no_root;
     // XXX options
@@ -421,6 +455,7 @@ click_reread_super(struct super_block *sb)
 	sb->s_blocksize = 1024;
 	sb->s_blocksize_bits = 10;
 	sb->s_op = &click_superblock_ops;
+	sb->s_d_op = &click_dentry_ops;
     } else
 	printk("<1>silly click_reread_super\n");
     unlock_super(sb);
@@ -982,6 +1017,9 @@ init_clickfs()
     // XXX statfs
 
     click_dentry_ops.d_delete = click_delete_dentry;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    click_dentry_ops.d_revalidate = click_dentry_revalidate;
+#endif
 
     click_dir_file_ops->read = generic_read_dir;
     click_dir_file_ops->readdir = click_dir_readdir;
