@@ -175,7 +175,11 @@ class FromDevice : public Element { public:
     void add_handlers() CLICK_COLD;
 
     inline String ifname() const	{ return _ifname; }
+#if FROMDEVICE_ALLOW_LINUX || FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_NETMAP
     inline int fd() const		{ return _fd; }
+#else
+    inline int fd() const		{ return -1; }
+#endif
 
     void selected(int fd, int mask);
 
