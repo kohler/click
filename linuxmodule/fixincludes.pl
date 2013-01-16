@@ -258,6 +258,9 @@ sub one_includeroot ($$) {
 		s<^#define ACCESS_ONCE\(x\) \(\*\(volatile typeof\(x\) \*\)\&\(x\)\)><#define ACCESS_ONCE(x) (*(typeof(x) * volatile)&(x))>m;
 		s<^(#define\s+notrace\s+__attribute__\(\(no_instrument_function\)\))><// g++ has stricter rules about this attribute. We can't deal.\n#ifdef __cplusplus\n#define notrace\n#else\n$1\n#endif>m;
 	    }
+	    if ($d eq "sysctl.h") {
+		s<^(\s+)(proc_handler \*proc_handler;.*)$><#ifdef __cplusplus\n$1::$2\n#else\n$1$2\n#endif>m;
+	    }
 
 	    if ($d eq "fs.h") {
 		s<enum migrate_mode;><enum migrate_mode \{MIGRATE_DUMMY\};>;

@@ -511,7 +511,7 @@ inline void
 ReadWriteLock::acquire_write()
 {
 #if CLICK_LINUXMODULE && defined(CONFIG_SMP)
-    for (unsigned i = 0; i < num_possible_cpus(); i++)
+    for (unsigned i = 0; i < (unsigned) num_possible_cpus(); i++)
 	_l[i]._lock.acquire();
 #endif
 }
@@ -532,7 +532,7 @@ ReadWriteLock::attempt_write()
 #if CLICK_LINUXMODULE && defined(CONFIG_SMP)
     bool all = true;
     unsigned i;
-    for (i = 0; i < num_possible_cpus(); i++)
+    for (i = 0; i < (unsigned) num_possible_cpus(); i++)
 	if (!(_l[i]._lock.attempt())) {
 	    all = false;
 	    break;
@@ -558,7 +558,7 @@ inline void
 ReadWriteLock::release_write()
 {
 #if CLICK_LINUXMODULE && defined(CONFIG_SMP)
-    for (unsigned i = 0; i < num_possible_cpus(); i++)
+    for (unsigned i = 0; i < (unsigned) num_possible_cpus(); i++)
 	_l[i]._lock.release();
 #endif
 }

@@ -249,7 +249,9 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
 	// couldn't get an inode
 	return reinterpret_cast<struct dentry *>(ERR_PTR(-EINVAL));
     else {
+#if !HAVE_LINUX_SUPER_BLOCK_S_D_OP
 	dentry->d_op = &click_dentry_ops;
+#endif
 	d_add(dentry, inode);
 	return 0;
     }
@@ -271,8 +273,10 @@ click_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
 	d_drop(dentry);
 	return 0;
     }
+# ifdef LOOKUP_RCU
     if (nd->flags & LOOKUP_RCU)
 	return -ECHILD;
+# endif
 
     int error = 0;
     LOCK_CONFIG_READ();
@@ -384,7 +388,9 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     sb->s_blocksize_bits = 10;
     sb->s_magic = CLICKFS_SUPER_MAGIC;
     sb->s_op = &click_superblock_ops;
+#if HAVE_LINUX_SUPER_BLOCK_S_D_OP
     sb->s_d_op = &click_dentry_ops;
+#endif
     MDEBUG("click_config_lock");
     LOCK_CONFIG_READ();
     root_inode = click_inode(sb, ClickIno::ino_globaldir);
@@ -455,7 +461,9 @@ click_reread_super(struct super_block *sb)
 	sb->s_blocksize = 1024;
 	sb->s_blocksize_bits = 10;
 	sb->s_op = &click_superblock_ops;
+#if HAVE_LINUX_SUPER_BLOCK_S_D_OP
 	sb->s_d_op = &click_dentry_ops;
+#endif
     } else
 	printk("<1>silly click_reread_super\n");
     unlock_super(sb);

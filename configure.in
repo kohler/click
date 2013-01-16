@@ -660,7 +660,7 @@ elif test -f "$linux_system_map"; then
 =========================================
 
 $linux_system_map exists, but is unreadable.
-Either run ./configure as root, run 'chmod go+r $linux_system_map' as root,
+Run 'sudo ./configure', run 'sudo chmod go+r $linux_system_map',
 or use the --with-linux=DIR and/or --with-linux-map=MAP options.
 
 =========================================])
@@ -1375,6 +1375,9 @@ file for more information on the error.
 
     if test $ac_cv_cxx_aware_system = yes; then
 
+
+    dnl Linux kernel basic types
+
     AC_CACHE_CHECK([whether long and int64_t are the same type in the Linux kernel],
 	ac_cv_long_64_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/types.h>
@@ -1385,7 +1388,6 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
     if test $ac_cv_long_64_linuxmodule = yes; then
 	AC_DEFINE([HAVE_INT64_IS_LONG_LINUXMODULE], [1], [Define if 'int64_t' is typedefed to 'long' in linuxmodule.])
     fi
-
 
     AC_CACHE_CHECK([whether long long and int64_t are the same type in the Linux kernel],
 	ac_cv_long_long_64_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
@@ -1398,7 +1400,6 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
 	AC_DEFINE([HAVE_INT64_IS_LONG_LONG_LINUXMODULE], [1], [Define if 'int64_t' is typedefed to 'long long' in linuxmodule.])
     fi
 
-
     AC_CACHE_CHECK([whether uintptr_t is defined in the Linux kernel],
 	ac_cv_uintptr_t_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/types.h>
@@ -1407,6 +1408,17 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
 	AC_DEFINE([HAVE_UINTPTR_T_LINUXMODULE], [1], [Define to 1 if Linux defines the type 'uintptr_t'.])
     fi
 
+
+    dnl Linux kernel basic configuration
+
+    AC_CHECK_DECL(atomic_cmpxchg, [ac_cv_linux_atomic_cmpxchg=yes], [ac_cv_linux_atomic_cmpxchg=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <asm/atomic.h>]])
+    if test $ac_cv_linux_atomic_cmpxchg = yes; then
+	AC_DEFINE([HAVE_LINUX_ATOMIC_CMPXCHG], [1], [Define if you have the atomic_cmpxchg function.])
+    fi
+
+
+    dnl Linux kernel network configuration
 
     AC_CACHE_CHECK([whether struct sk_buff has a security member], [ac_cv_linuxmodule_skbuff_security],
 	[AC_LANG_C
@@ -1574,18 +1586,6 @@ CFLAGS="$save_cflags"
 	AC_DEFINE([HAVE_NETDEV_USES_TRAILER_TAGS], [1], [Define if you have the netdev_uses_trailer_tags function.])
     fi
 
-    AC_CHECK_DECL(atomic_cmpxchg, [ac_cv_linux_atomic_cmpxchg=yes], [ac_cv_linux_atomic_cmpxchg=no], [CLICK_LINUXMODULE_PROLOGUE()[
-#include <asm/atomic.h>]])
-    if test $ac_cv_linux_atomic_cmpxchg = yes; then
-	AC_DEFINE([HAVE_LINUX_ATOMIC_CMPXCHG], [1], [Define if you have the atomic_cmpxchg function.])
-    fi
-
-    AC_CHECK_DECL([d_make_root], [ac_cv_linux_d_make_root=yes], [ac_cv_linux_d_make_root=no], [CLICK_LINUXMODULE_PROLOGUE()[
-#include <linux/dcache.h>]])
-    if test $ac_cv_linux_d_make_root = yes; then
-	AC_DEFINE([HAVE_LINUX_D_MAKE_ROOT], [1], [Define if you have the d_make_root function.])
-    fi
-
     AC_CACHE_CHECK(for netdev_rx_handler_register kernel symbol, ac_cv_linux_netdev_rx_handler_register,
     [if grep "__ksymtab_netdev_rx_handler_register" $linux_system_map >/dev/null 2>&1; then
         ac_cv_linux_netdev_rx_handler_register=yes
@@ -1593,6 +1593,9 @@ CFLAGS="$save_cflags"
     if test $ac_cv_linux_netdev_rx_handler_register = yes; then
         AC_DEFINE(HAVE_LINUX_NETDEV_RX_HANDLER_REGISTER)
     fi
+
+
+    dnl Linux kernel time configuration
 
     AC_CACHE_CHECK([for get_monotonic_coarse kernel symbol], [ac_cv_linux_get_monotonic_coarse],
     [if grep "__ksymtab_get_monotonic_coarse" $linux_system_map >/dev/null 2>&1; then
@@ -1608,6 +1611,25 @@ CFLAGS="$save_cflags"
     else ac_cv_linux_getboottime=no; fi])
     if test $ac_cv_linux_getboottime = yes; then
         AC_DEFINE(HAVE_LINUX_GETBOOTTIME)
+    fi
+
+
+    dnl Linux kernel file system configuration
+
+    AC_CACHE_CHECK([whether struct super_block has an s_d_op member], [ac_cv_linuxmodule_super_block_s_d_op],
+	[AC_LANG_C
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/fs.h>]],
+[[extern struct super_block *sb; sb->s_d_op = 0;]])],
+	[ac_cv_linuxmodule_super_block_s_d_op=yes], [ac_cv_linuxmodule_super_block_s_d_op=no])])
+    if test $ac_cv_linuxmodule_super_block_s_d_op = yes; then
+	AC_DEFINE([HAVE_LINUX_SUPER_BLOCK_S_D_OP], [1], [Define if 'struct super_block' has an 's_d_op' member.])
+    fi
+
+    AC_CHECK_DECL([d_make_root], [ac_cv_linux_d_make_root=yes], [ac_cv_linux_d_make_root=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/dcache.h>]])
+    if test $ac_cv_linux_d_make_root = yes; then
+	AC_DEFINE([HAVE_LINUX_D_MAKE_ROOT], [1], [Define if you have the d_make_root function.])
     fi
 
     fi dnl ac_cv_cxx_aware_system

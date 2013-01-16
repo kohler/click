@@ -9367,7 +9367,7 @@ $as_echo "$linux_system_map (unreadable)" >&6; }
 =========================================
 
 $linux_system_map exists, but is unreadable.
-Either run ./configure as root, run 'chmod go+r $linux_system_map' as root,
+Run 'sudo ./configure', run 'sudo chmod go+r $linux_system_map',
 or use the --with-linux=DIR and/or --with-linux-map=MAP options.
 
 =========================================" "$LINENO" 5
@@ -10914,6 +10914,8 @@ file for more information on the error.
 
     if test $ac_cv_cxx_aware_system = yes; then
 
+
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether long and int64_t are the same type in the Linux kernel" >&5
 $as_echo_n "checking whether long and int64_t are the same type in the Linux kernel... " >&6; }
 if ${ac_cv_long_64_linuxmodule+:} false; then :
@@ -10968,7 +10970,6 @@ $as_echo "$ac_cv_long_64_linuxmodule" >&6; }
 $as_echo "#define HAVE_INT64_IS_LONG_LINUXMODULE 1" >>confdefs.h
 
     fi
-
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether long long and int64_t are the same type in the Linux kernel" >&5
 $as_echo_n "checking whether long long and int64_t are the same type in the Linux kernel... " >&6; }
@@ -11025,7 +11026,6 @@ $as_echo "#define HAVE_INT64_IS_LONG_LONG_LINUXMODULE 1" >>confdefs.h
 
     fi
 
-
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether uintptr_t is defined in the Linux kernel" >&5
 $as_echo_n "checking whether uintptr_t is defined in the Linux kernel... " >&6; }
 if ${ac_cv_uintptr_t_linuxmodule+:} false; then :
@@ -11077,6 +11077,43 @@ $as_echo "$ac_cv_uintptr_t_linuxmodule" >&6; }
 $as_echo "#define HAVE_UINTPTR_T_LINUXMODULE 1" >>confdefs.h
 
     fi
+
+
+
+    ac_fn_cxx_check_decl "$LINENO" "atomic_cmpxchg" "ac_cv_have_decl_atomic_cmpxchg" "#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#define new linux_new
+#define this linux_this
+#define delete linux_delete
+#define class linux_class
+#define virtual linux_virtual
+#define typename linux_typename
+#define private linux_private
+#define protected linux_protected
+#define public linux_public
+#define namespace linux_namespace
+#define false linux_false
+#define true linux_true
+#define CLICK_CXX_PROTECTED 1
+$linux_autoconf_include
+#include <asm/types.h>
+#include <asm/atomic.h>
+"
+if test "x$ac_cv_have_decl_atomic_cmpxchg" = xyes; then :
+  ac_cv_linux_atomic_cmpxchg=yes
+else
+  ac_cv_linux_atomic_cmpxchg=no
+fi
+
+    if test $ac_cv_linux_atomic_cmpxchg = yes; then
+
+$as_echo "#define HAVE_LINUX_ATOMIC_CMPXCHG 1" >>confdefs.h
+
+    fi
+
 
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether struct sk_buff has a security member" >&5
@@ -11972,7 +12009,72 @@ $as_echo "#define HAVE_NETDEV_USES_TRAILER_TAGS 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "atomic_cmpxchg" "ac_cv_have_decl_atomic_cmpxchg" "#if HAVE_LINUXMODULE_2_6
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for netdev_rx_handler_register kernel symbol" >&5
+$as_echo_n "checking for netdev_rx_handler_register kernel symbol... " >&6; }
+if ${ac_cv_linux_netdev_rx_handler_register+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if grep "__ksymtab_netdev_rx_handler_register" $linux_system_map >/dev/null 2>&1; then
+        ac_cv_linux_netdev_rx_handler_register=yes
+    else ac_cv_linux_netdev_rx_handler_register=no; fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_netdev_rx_handler_register" >&5
+$as_echo "$ac_cv_linux_netdev_rx_handler_register" >&6; }
+    if test $ac_cv_linux_netdev_rx_handler_register = yes; then
+        $as_echo "#define HAVE_LINUX_NETDEV_RX_HANDLER_REGISTER 1" >>confdefs.h
+
+    fi
+
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for get_monotonic_coarse kernel symbol" >&5
+$as_echo_n "checking for get_monotonic_coarse kernel symbol... " >&6; }
+if ${ac_cv_linux_get_monotonic_coarse+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if grep "__ksymtab_get_monotonic_coarse" $linux_system_map >/dev/null 2>&1; then
+        ac_cv_linux_get_monotonic_coarse=yes
+    else ac_cv_linux_get_monotonic_coarse=no; fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_get_monotonic_coarse" >&5
+$as_echo "$ac_cv_linux_get_monotonic_coarse" >&6; }
+    if test $ac_cv_linux_get_monotonic_coarse = yes; then
+        $as_echo "#define HAVE_LINUX_GET_MONOTONIC_COARSE 1" >>confdefs.h
+
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getboottime kernel symbol" >&5
+$as_echo_n "checking for getboottime kernel symbol... " >&6; }
+if ${ac_cv_linux_getboottime+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if grep "__ksymtab_getboottime" $linux_system_map >/dev/null 2>&1; then
+        ac_cv_linux_getboottime=yes
+    else ac_cv_linux_getboottime=no; fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_getboottime" >&5
+$as_echo "$ac_cv_linux_getboottime" >&6; }
+    if test $ac_cv_linux_getboottime = yes; then
+        $as_echo "#define HAVE_LINUX_GETBOOTTIME 1" >>confdefs.h
+
+    fi
+
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether struct super_block has an s_d_op member" >&5
+$as_echo_n "checking whether struct super_block has an s_d_op member... " >&6; }
+if ${ac_cv_linuxmodule_super_block_s_d_op+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#if HAVE_LINUXMODULE_2_6
 # define KBUILD_STR(s)		#s
 # define KBUILD_BASENAME	KBUILD_STR(click)
 # define KBUILD_MODNAME		KBUILD_STR(click)
@@ -11992,17 +12094,27 @@ $as_echo "#define HAVE_NETDEV_USES_TRAILER_TAGS 1" >>confdefs.h
 #define CLICK_CXX_PROTECTED 1
 $linux_autoconf_include
 #include <asm/types.h>
-#include <asm/atomic.h>
-"
-if test "x$ac_cv_have_decl_atomic_cmpxchg" = xyes; then :
-  ac_cv_linux_atomic_cmpxchg=yes
+#include <linux/fs.h>
+int
+main ()
+{
+extern struct super_block *sb; sb->s_d_op = 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_linuxmodule_super_block_s_d_op=yes
 else
-  ac_cv_linux_atomic_cmpxchg=no
+  ac_cv_linuxmodule_super_block_s_d_op=no
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linuxmodule_super_block_s_d_op" >&5
+$as_echo "$ac_cv_linuxmodule_super_block_s_d_op" >&6; }
+    if test $ac_cv_linuxmodule_super_block_s_d_op = yes; then
 
-    if test $ac_cv_linux_atomic_cmpxchg = yes; then
-
-$as_echo "#define HAVE_LINUX_ATOMIC_CMPXCHG 1" >>confdefs.h
+$as_echo "#define HAVE_LINUX_SUPER_BLOCK_S_D_OP 1" >>confdefs.h
 
     fi
 
@@ -12037,54 +12149,6 @@ fi
     if test $ac_cv_linux_d_make_root = yes; then
 
 $as_echo "#define HAVE_LINUX_D_MAKE_ROOT 1" >>confdefs.h
-
-    fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for netdev_rx_handler_register kernel symbol" >&5
-$as_echo_n "checking for netdev_rx_handler_register kernel symbol... " >&6; }
-if ${ac_cv_linux_netdev_rx_handler_register+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if grep "__ksymtab_netdev_rx_handler_register" $linux_system_map >/dev/null 2>&1; then
-        ac_cv_linux_netdev_rx_handler_register=yes
-    else ac_cv_linux_netdev_rx_handler_register=no; fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_netdev_rx_handler_register" >&5
-$as_echo "$ac_cv_linux_netdev_rx_handler_register" >&6; }
-    if test $ac_cv_linux_netdev_rx_handler_register = yes; then
-        $as_echo "#define HAVE_LINUX_NETDEV_RX_HANDLER_REGISTER 1" >>confdefs.h
-
-    fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for get_monotonic_coarse kernel symbol" >&5
-$as_echo_n "checking for get_monotonic_coarse kernel symbol... " >&6; }
-if ${ac_cv_linux_get_monotonic_coarse+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if grep "__ksymtab_get_monotonic_coarse" $linux_system_map >/dev/null 2>&1; then
-        ac_cv_linux_get_monotonic_coarse=yes
-    else ac_cv_linux_get_monotonic_coarse=no; fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_get_monotonic_coarse" >&5
-$as_echo "$ac_cv_linux_get_monotonic_coarse" >&6; }
-    if test $ac_cv_linux_get_monotonic_coarse = yes; then
-        $as_echo "#define HAVE_LINUX_GET_MONOTONIC_COARSE 1" >>confdefs.h
-
-    fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getboottime kernel symbol" >&5
-$as_echo_n "checking for getboottime kernel symbol... " >&6; }
-if ${ac_cv_linux_getboottime+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if grep "__ksymtab_getboottime" $linux_system_map >/dev/null 2>&1; then
-        ac_cv_linux_getboottime=yes
-    else ac_cv_linux_getboottime=no; fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_getboottime" >&5
-$as_echo "$ac_cv_linux_getboottime" >&6; }
-    if test $ac_cv_linux_getboottime = yes; then
-        $as_echo "#define HAVE_LINUX_GETBOOTTIME 1" >>confdefs.h
 
     fi
 

@@ -259,44 +259,42 @@ static void
 proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
 {
     struct dentry *dentry_tree;
-    struct list_head *p;
+    struct file *filp;
     int cpu;
     (void) cpu;
 
     DEBUG("killing files");
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
+# define FILE_MEMBER f_u.fu_list
+#else
+# define FILE_MEMBER f_list
+#endif
+#if HAVE_LINUX_FILES_LOCK || HAVE_LINUX_FILES_LGLOCK
     file_list_lock();
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
+#else
+# warning "potential race: file_list_lock() is not available"
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) && CONFIG_SMP
     for_each_possible_cpu(cpu) {
-	list_for_each(p, per_cpu_ptr(sb->s_files, cpu)) {
-	    struct file *filp = list_entry(p, struct file, f_u.fu_list);
+	list_for_each_entry(filp, per_cpu_ptr(sb->s_files, cpu), FILE_MEMBER) {
 	    filp->f_op = dummy;
 	}
     }
-# else
-    list_for_each(p, &sb->s_files) {
-	struct file *filp = list_entry(p, struct file, f_u.fu_list);
-	filp->f_op = dummy;
-    }
-# endif
-    file_list_unlock();
 #else
-# if HAVE_LINUX_FILES_LOCK
-    file_list_lock();
-# endif
-    for (p = sb->s_files.next; p != &sb->s_files; p = p->next) {
-	struct file *filp = list_entry(p, struct file, f_list);
+    list_for_each_entry(filp, &sb->s_files, FILE_MEMBER) {
 	filp->f_op = dummy;
     }
-# if HAVE_LINUX_FILES_LOCK
+#endif
+#if HAVE_LINUX_FILES_LOCK || HAVE_LINUX_FILES_LGLOCK
     file_list_unlock();
-# endif
 #endif
 
     lock_super(sb);
 
     sb->s_op = &proclikefs_null_super_operations;
+#if HAVE_LINUX_SUPER_BLOCK_S_D_OP
     sb->s_d_op = 0;
+#endif
 
     /* will not create new dentries any more */
 
@@ -483,8 +481,11 @@ proclikefs_d_revalidate(struct dentry *dir, struct nameidata *nd)
     return 0;
 }
 
-static int
-proclikefs_d_delete(const struct dentry *dir)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 32)
+static int proclikefs_d_delete(const struct dentry *dir)
+#else
+static int proclikefs_d_delete(struct dentry *dir)
+#endif
 {
     (void) dir;
     return 0;
