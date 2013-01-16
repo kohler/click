@@ -201,14 +201,14 @@ int
 ClickIno::nlink(ino_t ino)
 {
     // must be called with config_lock held
-    int elementno = INO_ELEMENTNO(ino);
+    int elementno = ino_element(ino);
 
     // it might be a handler
-    if (INO_ISHANDLER(ino)) {
+    if (is_handler(ino)) {
 	// Number of links per handler: one for the .h directory; plus
 	// if element, one for the .e/EINDEX directory; plus
 	// if no conflict, one for the global or element directory.
-	int handlerno = INO_HANDLERNO(ino);
+	int handlerno = ino_handler(ino);
 	const Handler *h = Router::handler(_router, handlerno);
 	return 1 + (elementno >= 0 ? 1 : 0)
 	    + (element_name_search(h->name(), elementno) < 0 ? 1 : 0);
@@ -216,19 +216,19 @@ ClickIno::nlink(ino_t ino)
 
     // otherwise, it is a directory
     int nlink = 2;
-    if (ino == INO_ENUMBERSDIR && _router)
+    if (ino == ino_enumdir && _router)
 	nlink += _router->nelements();
-    if (INO_DT_HAS_N(ino)) {
+    if (has_names(ino)) {
 	int xi = xindex(elementno) + 1;
 	int next_xi = next_xindex(elementno);
-	if (INO_DT_HAS_H(ino) && !(_x[xi - 1].flags & X_FAKE))
+	if (has_handlers(ino) && !(_x[xi - 1].flags & X_FAKE))
 	    nlink++;		// for ".h" subdirectory
 	while (xi < next_xi) {
 	    nlink++;
 	    xi += _x[xi].skip + 1;
 	}
     }
-    if (ino == INO_GLOBALDIR)
+    if (ino == ino_globaldir)
 	nlink++;		// for ".e" subdirectory
     return nlink;
 }
@@ -240,7 +240,7 @@ ClickIno::lookup(ino_t ino, const String &component)
     // not save any references to it!
 
     // must be called with config_lock held
-    int elementno = INO_ELEMENTNO(ino);
+    int elementno = ino_element(ino);
     int nelements = (_router ? _router->nelements() : 0);
 
     // quit early on empty string
@@ -252,7 +252,7 @@ ClickIno::lookup(ino_t ino, const String &component)
 	return ino;
 
     // look for numbers
-    if (ino == INO_ENUMBERSDIR && component[0] >= '0' && component[0] <= '9') {
+    if (ino == ino_enumdir && component[0] >= '0' && component[0] <= '9') {
 	int eindex = component[0] - '0';
 	for (int i = 1; i < component.length(); i++)
 	    if (component[i] >= '0' && component[i] <= '9' && eindex < 1000000000)
@@ -261,52 +261,52 @@ ClickIno::lookup(ino_t ino, const String &component)
 		goto number_failed;
 	if (!_router || eindex >= _router->nelements())
 	    goto number_failed;
-	return INO_MKHUDIR(eindex);
+	return make_dir(dt_hu, eindex);
     }
 
   number_failed:
     // look for element number directory
-    if (ino == INO_GLOBALDIR && component.equals(".e", 2))
-	return INO_ENUMBERSDIR;
+    if (ino == ino_globaldir && component.equals(".e", 2))
+	return ino_enumdir;
 
     // look for handler directory
-    if (INO_DT_HAS_H(ino) && INO_DT_HAS_N(ino) && component.equals(".h", 2)
+    if (has_handlers(ino) && has_names(ino) && component.equals(".h", 2)
 	&& !(_x[xindex(elementno)].flags & X_FAKE))
-	return INO_MKHHDIR(elementno);
+	return make_dir(dt_hh, elementno);
 
     // look for names
-    if (INO_DT_HAS_N(ino)) {
+    if (has_names(ino)) {
 	// delimit boundaries of search region
 	int found = element_name_search(component, elementno);
 	if (found >= 0)
-	    return INO_MKHNDIR(ClickIno::elementno(found));
+	    return make_dir(dt_hn, ClickIno::elementno(found));
     }
 
     // look for handlers (no initial period)
-    if (INO_DT_HAS_H(ino) && elementno < nelements && component[0] != '.') {
+    if (has_handlers(ino) && elementno < nelements && component[0] != '.') {
 	Element *element = Router::element(_router, elementno);
 	int hi = Router::hindex(element, component);
 	if (hi >= 0)
 	    if (Router::handler(_router, hi)->visible())
-		return INO_MKHANDLER(elementno, hi);
+		return make_handler(elementno, hi);
     }
 
     // check for dot dot
     if (component.equals("..", 2)) {
-	if (ino == INO_ENUMBERSDIR || ino == INO_MKHHDIR(-1))
-	    return INO_GLOBALDIR;
-	else if (INO_DIRTYPE(ino) == INO_DT_HU)
-	    return INO_ENUMBERSDIR;
-	else if (INO_DIRTYPE(ino) == INO_DT_HH)
-	    return INO_MKHNDIR(elementno);
+	if (ino == ino_enumdir || ino == make_dir(dt_hh, -1))
+	    return ino_globaldir;
+	else if (dirtype(ino) == dt_hu)
+	    return ino_enumdir;
+	else if (dirtype(ino) == dt_hh)
+	    return make_dir(dt_hn, elementno);
 	else {
 	    int xi = xindex(elementno);
 	    int slash = _x[xi].name.find_right('/');
 	    if (slash < 0)
-		return INO_GLOBALDIR;
+		return ino_globaldir;
 	    int found = name_search(_x[xi].name.substring(0, slash), 1, _nentries - 1, 0);
 	    assert(found >= 0);
-	    return INO_MKHNDIR(ClickIno::elementno(found));
+	    return make_dir(dt_hn, ClickIno::elementno(found));
 	}
     }
 
@@ -343,7 +343,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 #define RD_XOFF		0x400000
 #define FILLDIR(a, b, c, d, e, f)  do { if (!filldir(a, b, c, d, e, f)) return stored; else stored++; } while (0)
 
-    int elementno = INO_ELEMENTNO(ino);
+    int elementno = ino_element(ino);
     int nelements = (_router ? _router->nelements() : 0);
     int stored = 0;
 
@@ -361,7 +361,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
     // handler names
     if (f_pos < RD_HOFF)
 	f_pos = RD_HOFF;
-    if (f_pos < RD_UOFF && INO_DT_HAS_H(ino) && elementno < nelements) {
+    if (f_pos < RD_UOFF && has_handlers(ino) && elementno < nelements) {
 	Element *element = Router::element(_router, elementno);
 	Vector<int> his;
 	Router::element_hindexes(element, his);
@@ -370,9 +370,9 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 	    // names are added at the end.
 	    int hi = his[his.size() - (f_pos - RD_HOFF) - 1];
 	    const Handler* h = Router::handler(_router, hi);
-	    if (!INO_DT_HAS_N(ino) || element_name_search(h->name(), elementno) < 0) {
+	    if (!has_names(ino) || element_name_search(h->name(), elementno) < 0) {
 		if (h->visible() && check_handler_name(h->name()))
-		    FILLDIR(h->name().data(), h->name().length(), INO_MKHANDLER(elementno, hi), DT_REG, f_pos, thunk);
+		    FILLDIR(h->name().data(), h->name().length(), make_handler(elementno, hi), DT_REG, f_pos, thunk);
 	    }
 	    f_pos++;
 	}
@@ -381,13 +381,13 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
     // subdirectory numbers
     if (f_pos < RD_UOFF)
 	f_pos = RD_UOFF;
-    if (f_pos < RD_NOFF && ino == INO_ENUMBERSDIR && _router) {
+    if (f_pos < RD_NOFF && ino == ino_enumdir && _router) {
 	char buf[10];
 	int nelem = _router->nelements();
 	while (f_pos >= RD_UOFF && f_pos < (uint32_t) RD_UOFF + nelem) {
 	    int elem = f_pos - RD_UOFF;
 	    sprintf(buf, "%d", elem);
-	    FILLDIR(buf, strlen(buf), INO_MKHUDIR(elem), DT_DIR, f_pos, thunk);
+	    FILLDIR(buf, strlen(buf), make_dir(dt_hu, elem), DT_DIR, f_pos, thunk);
 	    f_pos++;
 	}
     }
@@ -399,13 +399,13 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
     // subdirectory names
     if (f_pos < RD_NOFF)
 	f_pos = RD_NOFF;
-    if (f_pos < RD_XOFF && INO_DT_HAS_N(ino)) {
+    if (f_pos < RD_XOFF && has_names(ino)) {
 	int name_offset = _x[xi - 1].name.length();
 	if (name_offset > 0)
 	    name_offset++;	// skip slash
 	for (uint32_t j = RD_NOFF; xi < next_xi; xi += _x[xi].skip + 1, j++)
 	    if (f_pos == j) {
-		FILLDIR(_x[xi].name.data() + name_offset, _x[xi].name.length() - name_offset, INO_MKHNDIR(ClickIno::elementno(xi)), DT_DIR, f_pos, thunk);
+		FILLDIR(_x[xi].name.data() + name_offset, _x[xi].name.length() - name_offset, make_dir(dt_hn, ClickIno::elementno(xi)), DT_DIR, f_pos, thunk);
 		f_pos++;
 	    }
     }
@@ -413,13 +413,13 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
     // ".e" in global directory
     if (f_pos < RD_XOFF)
 	f_pos = RD_XOFF;
-    if (f_pos == RD_XOFF && ino == INO_GLOBALDIR) {
-	FILLDIR(".e", 2, INO_ENUMBERSDIR, DT_DIR, f_pos, thunk);
+    if (f_pos == RD_XOFF && ino == ino_globaldir) {
+	FILLDIR(".e", 2, ino_enumdir, DT_DIR, f_pos, thunk);
 	f_pos++;
     }
-    if (f_pos <= RD_XOFF + 1 && INO_DT_HAS_N(ino)
+    if (f_pos <= RD_XOFF + 1 && has_names(ino)
 	&& !(_x[xindex(elementno)].flags & X_FAKE)) {
-	FILLDIR(".h", 2, INO_MKHHDIR(elementno), DT_DIR, f_pos, thunk);
+	FILLDIR(".h", 2, make_dir(dt_hh, elementno), DT_DIR, f_pos, thunk);
 	f_pos++;
     }
 

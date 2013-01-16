@@ -152,7 +152,7 @@ inode_out_of_date(struct inode *inode, int subdir_error)
 {
     int error;
     if (INODE_INFO(inode).config_generation != click_config_generation) {
-	if (INO_ELEMENTNO(inode->i_ino) >= 0)
+	if (click_ino.has_element(inode->i_ino))
 	    return subdir_error;
 	if ((error = click_ino.prepare(click_router, click_config_generation)) < 0)
 	    return error;
@@ -180,8 +180,8 @@ click_inode(struct super_block *sb, ino_t ino)
     inode->i_ino = ino;
     INODE_INFO(inode).config_generation = click_config_generation;
 
-    if (INO_ISHANDLER(ino)) {
-	int hi = INO_HANDLERNO(ino);
+    if (click_ino.is_handler(ino)) {
+	int hi = click_ino.ino_handler(ino);
 	if (const Handler *h = Router::handler(click_router, hi)) {
 	    inode->i_mode = S_IFREG | (h->read_visible() ? click_fsmode.read : 0) | (h->write_visible() ? click_fsmode.write : 0);
 	    inode->i_uid = click_fsmode.uid;
@@ -264,7 +264,7 @@ click_dir_revalidate(struct dentry *dentry)
     int error = 0;
     LOCK_CONFIG_READ();
     if (INODE_INFO(inode).config_generation != click_config_generation) {
-	if (INO_ELEMENTNO(inode->i_ino) >= 0) // not a global directory
+	if (click_ino.ino_element(inode->i_ino) >= 0) // not a global directory
 	    error = -EIO;
 	else if ((error = click_ino.prepare(click_router, click_config_generation)) < 0)
 	    /* preserve error */;
@@ -312,7 +312,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 	goto done;
 
     // global '..'
-    if (ino == INO_GLOBALDIR && f_pos == 0) {
+    if (ino == ClickIno::ino_globaldir && f_pos == 0) {
 	if (!my_filldir("..", 2, filp->f_dentry->d_parent->d_inode->i_ino, f_pos, DT_DIR, &mfd))
 	    goto done;
 	f_pos++;
@@ -354,7 +354,7 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     sb->s_op = &click_superblock_ops;
     MDEBUG("click_config_lock");
     LOCK_CONFIG_READ();
-    root_inode = click_inode(sb, INO_GLOBALDIR);
+    root_inode = click_inode(sb, ClickIno::ino_globaldir);
     UNLOCK_CONFIG_READ();
     if (!root_inode)
 	goto out_no_root;
@@ -415,7 +415,7 @@ click_reread_super(struct super_block *sb)
     if (sb->s_root) {
 	struct inode *old_inode = sb->s_root->d_inode;
 	LOCK_CONFIG_READ();
-	sb->s_root->d_inode = click_inode(sb, INO_GLOBALDIR);
+	sb->s_root->d_inode = click_inode(sb, ClickIno::ino_globaldir);
 	UNLOCK_CONFIG_READ();
 	iput(old_inode);
 	sb->s_blocksize = 1024;
@@ -568,7 +568,7 @@ handler_open(struct inode *inode, struct file *filp)
 	retval = -EACCES;
     else if ((retval = inode_out_of_date(inode, -EIO)) < 0)
 	/* save retval */;
-    else if (!(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino))))
+    else if (!(h = Router::handler(click_router, click_ino.ino_handler(inode->i_ino))))
 	retval = -EIO;
     else if ((reading && !h->read_visible())
 	     || (writing && !h->write_visible()))
@@ -606,12 +606,12 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	struct inode *inode = filp->f_dentry->d_inode;
 	if ((retval = inode_out_of_date(inode, -EIO)) < 0)
 	    /* save retval */;
-	else if (!(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino))))
+	else if (!(h = Router::handler(click_router, click_ino.ino_handler(inode->i_ino))))
 	    retval = -EIO;
 	else if (!h->read_visible())
 	    retval = -EPERM;
 	else {
-	    int eindex = INO_ELEMENTNO(inode->i_ino);
+	    int eindex = click_ino.ino_element(inode->i_ino);
 	    Element *e = Router::element(click_router, eindex);
 
 	    if (handler_strings_info[stringno].flags & HANDLER_DIRECT) {
@@ -709,13 +709,13 @@ handler_do_write(struct file *filp, void *address_ptr)
 
     if ((retval = inode_out_of_date(inode, -EIO)) < 0)
 	/* save retval */;
-    else if (!(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino)))
+    else if (!(h = Router::handler(click_router, click_ino.ino_handler(inode->i_ino)))
 	     || !h->write_visible())
 	retval = -EIO;
     else if (handler_strings[stringno].out_of_memory())
 	retval = -ENOMEM;
     else {
-	int eindex = INO_ELEMENTNO(inode->i_ino);
+	int eindex = click_ino.ino_element(inode->i_ino);
 	Element *e = Router::element(click_router, eindex);
 	click_llrpc_call_handler_st chs;
 	chs.flags = 0;
@@ -856,8 +856,8 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
 	int stringno = FILP_STRINGNO(filp);
 	handler_strings_info[stringno].flags |= HANDLER_RAW;
 	retval = 0;
-    } else if (INO_ELEMENTNO(inode->i_ino) < 0
-	     || !(e = click_router->element(INO_ELEMENTNO(inode->i_ino))))
+    } else if (click_ino.ino_element(inode->i_ino) < 0
+	     || !(e = click_router->element(click_ino.ino_element(inode->i_ino))))
 	retval = -EIO;
     else {
 	union {

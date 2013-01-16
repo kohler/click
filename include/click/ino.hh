@@ -1,38 +1,17 @@
 // -*- c-basic-offset: 4; related-file-name: "../../lib/ino.cc" -*-
 #ifndef CLICK_INO_HH
 #define CLICK_INO_HH
-#include <click/string.hh>
+#include <click/router.hh>
 CLICK_DECLS
-class Router;
-
-// NB: inode number 0 is reserved for the system.
-#define INO_DIRTYPE(ino)		((int) ((unsigned) (ino) >> 28))
-#define INO_ELEMENTNO(ino)		((int)((ino) & 0xFFFFU) - 1)
-#define INO_HANDLERNO(ino)		((((ino) & 0xFFFFU) ? 0 : Router::FIRST_GLOBAL_HANDLER) + (((ino) >> 16) & 0x7FFFU))
-#define INO_DT_U			0x1U /* .e directory */
-#define INO_DT_HH			0x2U /* .h directory */
-#define INO_DT_HU			0x3U /* .e/index directory */
-#define INO_DT_HN			0x4U /* element name directory */
-#define INO_DT_GLOBAL			0x5U /* global directory */
-#define INO_DT_HAS_H(ino)		(INO_DIRTYPE((ino)) > (int) INO_DT_U)
-#define INO_DT_HAS_N(ino)		(INO_DIRTYPE((ino)) >= (int) INO_DT_HN)
-
-#define INO_MKHANDLER(e, hi)		((((hi) & 0x7FFFU) << 16) | (((e) + 1) & 0xFFFFU) | 0x80000000U)
-#define INO_MKHHDIR(e)			((INO_DT_HH << 28) | (((e) + 1) & 0xFFFFU))
-#define INO_MKHUDIR(e)			((INO_DT_HU << 28) | (((e) + 1) & 0xFFFFU))
-#define INO_MKHNDIR(e)			((INO_DT_HN << 28) | (((e) + 1) & 0xFFFFU))
-#define INO_GLOBALDIR			(INO_DT_GLOBAL << 28)
-#define INO_ENUMBERSDIR			(INO_DT_U << 28)
-#define INO_ISHANDLER(ino)		(((ino) & 0x80000000U) != 0)
 
 #define INO_DEBUG			0
 
-// /click: .e > .h > element names > global handlers
-// /click/.e: element numbers
-// /click/.e/NUM: handlers
-// /click/.h: global handlers
-// /click/ELEMENTNAME: .h > element names > element handlers
-// /click/ELEMENTNAME/.h: element handlers
+// /click: .e > .h > element names > global handlers [dt_global]
+// /click/.e: element numbers [dt_u]
+// /click/.e/NUM: handlers [dt_hu]
+// /click/.h: global handlers [dt_hh]
+// /click/ELEMENTNAME: .h > element names > element handlers [dt_hn]
+// /click/ELEMENTNAME/.h: element handlers [dt_hh]
 
 class ClickIno { public:
 
@@ -41,7 +20,30 @@ class ClickIno { public:
 
     uint32_t generation() const		{ return _generation; }
 
-    // All operations should be called with a configuration lock held.
+    // NB: inode number 0 is reserved for the system.
+    enum { dt_u = 1U, dt_hh = 2U, dt_hu = 3U, dt_hn = 4U, dt_global = 5U };
+    enum { ino_globaldir = (unsigned) (dt_global << 28),
+	   ino_enumdir = (unsigned) (dt_u << 28) };
+    static bool is_handler(unsigned ino)   { return (int32_t) ino < 0; }
+    static unsigned dirtype(unsigned ino)  { return ino >> 28; }
+    static bool has_element(unsigned ino)  { return ino & 0xFFFFU; }
+    static bool has_handlers(unsigned ino) { return ino > (dt_u << 28); }
+    static bool has_names(unsigned ino)    { return ino >= (dt_hn << 28); }
+    static int ino_element(unsigned ino)   { return (int) (ino & 0xFFFFU) - 1; }
+    static int ino_handler(unsigned ino) {
+	return (has_element(ino) ? 0 : Router::FIRST_GLOBAL_HANDLER)
+	    + ((ino >> 16) & 0x7FFFU);
+    }
+
+    static unsigned make_handler(int e, int hi) {
+	return 0x80000000U | ((hi & 0x7FFFU) << 16) | ((e + 1) & 0xFFFFU);
+    }
+    static unsigned make_dir(unsigned dtype, int e) {
+	return (dtype << 28) | ((e + 1) & 0xFFFFU);
+    }
+
+
+    // These operations should be called with a configuration lock held.
     inline int prepare(Router *router, uint32_t generation);
     int nlink(ino_t ino);
     ino_t lookup(ino_t dir, const String &component);
