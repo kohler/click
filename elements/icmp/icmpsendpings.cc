@@ -146,11 +146,7 @@ ICMPPingSource::make_packet(WritablePacket *q)
     icp->icmp_type = ICMP_ECHO;
     icp->icmp_code = 0;
     icp->icmp_identifier = _icmp_id;
-#ifdef __linux__
-    icp->icmp_sequence = ip_id;
-#else
     icp->icmp_sequence = htons(ip_id);
-#endif
 
     icp->icmp_cksum = click_in_cksum((const unsigned char *)icp, sizeof(click_icmp_sequenced) + _data.length());
 
@@ -226,11 +222,7 @@ ICMPPingSource::push(int, Packet *p)
 	    _receiver->nreceived++;
 	    *send_ts = -*send_ts;
 
-#ifdef __linux__
-	    uint16_t readable_seq = icmph->icmp_sequence;
-#else
 	    uint16_t readable_seq = ntohs(icmph->icmp_sequence);
-#endif
 	    if (_verbose)
 		click_chatter("%s: %d bytes from %p{ip_ptr}: icmp_seq=%u ttl=%u time=%d.%03d ms", declaration().c_str(), ntohs(iph->ip_len) - (iph->ip_hl << 2) - sizeof(*icmph), &iph->ip_src, readable_seq, iph->ip_ttl, (unsigned)(diffval/1000), (unsigned)(diffval % 1000));
 	}

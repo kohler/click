@@ -27,14 +27,14 @@ FromIPSummaryDump(IN1, STOP true, ZERO true, CHECKSUM true)
 1.0.0.2 5.0.0.5 echo 10
 
 %expect stderr
-a: 1.0.0.1 > 5.0.0.5: icmp echo (2560, 0)
-b: 2.0.0.2 > 5.0.0.5: icmp echo (2560, 0)
-c: 5.0.0.5 > 2.0.0.2: icmp echo-reply (2560, 0)
-d: 5.0.0.5 > 1.0.0.1: icmp echo-reply (2560, 0)
-a: 1.0.0.2 > 5.0.0.5: icmp echo (2560, 0)
-b: 2.0.0.2 > 5.0.0.5: icmp echo ({{(?!2560,)\d+}}, 0)
-c: 5.0.0.5 > 2.0.0.2: icmp echo-reply ({{(?!2560,)\d+}}, 0)
-d: 5.0.0.5 > 1.0.0.2: icmp echo-reply (2560, 0)
+a: 1.0.0.1 > 5.0.0.5: icmp echo (10, 0)
+b: 2.0.0.2 > 5.0.0.5: icmp echo (10, 0)
+c: 5.0.0.5 > 2.0.0.2: icmp echo-reply (10, 0)
+d: 5.0.0.5 > 1.0.0.1: icmp echo-reply (10, 0)
+a: 1.0.0.2 > 5.0.0.5: icmp echo (10, 0)
+b: 2.0.0.2 > 5.0.0.5: icmp echo ({{(?!10,)\d+}}, 0)
+c: 5.0.0.5 > 2.0.0.2: icmp echo-reply ({{(?!10,)\d+}}, 0)
+d: 5.0.0.5 > 1.0.0.2: icmp echo-reply (10, 0)
 
 %ignore stderr
 =={{\d+}}=={{(?!.*\b(?:uninit|[Ii]nvalid|Mismatched).*).*}}

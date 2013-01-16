@@ -55,7 +55,7 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   String contents = "no";
   String payload = "no";
   _label = "";
-  _swap = false;
+  _swap = true;
   _payload = false;
   _active = true;
   bool print_id = false;

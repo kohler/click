@@ -28,12 +28,12 @@ FromIPSummaryDump(IN1, STOP true, ZERO true, CHECKSUM true)
 1.0.0.1 5.0.0.5 echo 10
 
 %expect stderr
-a: 1.0.0.1 > 5.0.0.5: icmp echo (2560, 0)
-b: 2.0.0.2 > 5.0.0.5: icmp echo (2560, 0)
+a: 1.0.0.1 > 5.0.0.5: icmp echo (10, 0)
+b: 2.0.0.2 > 5.0.0.5: icmp echo (10, 0)
 c: 3.0.0.3 > 2.0.0.2: icmp 5.0.0.5 unreachable net
 d: 3.0.0.3 > 1.0.0.1: icmp 5.0.0.5 unreachable net
-d~: 1.0.0.1 > 5.0.0.5: icmp echo (2560, 0)
-c~: 2.0.0.2 > 5.0.0.5: icmp echo (2560, 0)
+d~: 1.0.0.1 > 5.0.0.5: icmp echo (10, 0)
+c~: 2.0.0.2 > 5.0.0.5: icmp echo (10, 0)
 
 %ignore stderr
 =={{\d+}}=={{(?!.*\b(?:uninit|[Ii]nvalid|Mismatched).*).*}}

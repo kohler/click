@@ -79,13 +79,8 @@ ICMPIPEncap::simple_action(Packet *p)
 
 	if(_icmp_type == ICMP_TSTAMP || _icmp_type == ICMP_TSTAMPREPLY || _icmp_type == ICMP_ECHO
 		|| _icmp_type == ICMP_ECHOREPLY || _icmp_type == ICMP_IREQ || _icmp_type == ICMP_IREQREPLY) {
-#ifdef __linux__
-		icmp->icmp_identifier = _icmp_id;
-		icmp->icmp_sequence = _ip_id;
-#else
 		icmp->icmp_identifier = htons(_icmp_id);
 		icmp->icmp_sequence = htons(_ip_id);
-#endif
 	}
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED

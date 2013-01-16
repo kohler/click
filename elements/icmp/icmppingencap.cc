@@ -83,13 +83,8 @@ ICMPPingEncap::simple_action(Packet *p)
 	icmp->icmp_type = ICMP_ECHO;
 	icmp->icmp_code = 0;
 	icmp->icmp_cksum = 0;
-#ifdef __linux__
-	icmp->icmp_identifier = _icmp_id;
-	icmp->icmp_sequence = _ip_id;
-#else
 	icmp->icmp_identifier = htons(_icmp_id);
 	icmp->icmp_sequence = htons(_ip_id);
-#endif
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
 	if (_aligned)
