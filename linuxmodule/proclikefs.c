@@ -113,8 +113,14 @@ struct proclikefs_file_system {
 static LIST_HEAD(fs_list);
 static struct mutex fslist_lock;
 extern struct mutex inode_lock;
-#if HAVE_LINUX_SB_LOCK
-extern struct mutex sb_lock;
+
+#if !HAVE_LINUX_SB_LOCK
+# define lock_sb()
+# define unlock_sb()
+#else
+extern spinlock_t sb_lock;
+# define lock_sb() spin_lock(&sb_lock)
+# define unlock_sb() spin_unlock(&sb_lock)
 #endif
 
 static struct super_operations proclikefs_null_super_operations;
@@ -240,18 +246,14 @@ proclikefs_reinitialize_supers(struct proclikefs_file_system *pfs,
 #endif
     mutex_lock(&fslist_lock);
     /* transfer superblocks */
-#if HAVE_LINUX_SB_LOCK
-    mutex_lock(&sb_lock);
-#endif
+    lock_sb();
     fstype_for_each_super(sb, &pfs->fs) {
 	if (sb->s_type == &pfs->fs)
 	    (*reread_super)(sb);
 	else
 	    printk("<1>proclikefs: confusion\n");
     }
-#if HAVE_LINUX_SB_LOCK
-    mutex_unlock(&sb_lock);
-#endif
+    unlock_sb();
     mutex_unlock(&fslist_lock);
 }
 
@@ -376,15 +378,11 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 
     /* clear out superblock operations */
     DEBUG("clearing superblocks");
-#if HAVE_LINUX_SB_LOCK
-    mutex_lock(&sb_lock);
-#endif
+    lock_sb();
     fstype_for_each_super(sb, &pfs->fs) {
 	proclikefs_kill_super(sb, &pfs->pfs_pfo->pfo_op);
     }
-#if HAVE_LINUX_SB_LOCK
-    mutex_unlock(&sb_lock);
-#endif
+    unlock_sb();
 
     pfs->live = 0;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
