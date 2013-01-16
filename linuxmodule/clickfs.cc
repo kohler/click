@@ -461,7 +461,7 @@ click_reread_super(struct super_block *sb)
     unlock_super(sb);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
 static int
 click_delete_dentry(const struct dentry *)
 {
