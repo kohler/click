@@ -772,6 +772,7 @@ create_mainw (void)
   gtk_box_pack_start (GTK_BOX (eview_elementbox), scrolledwindow10, FALSE, FALSE, 0);
   gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow10), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
   gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolledwindow10), GTK_SHADOW_IN);
+  gtk_widget_set_size_request (GTK_WIDGET (scrolledwindow10), -1, 60);
 
   eview_config = gtk_text_view_new ();
   gtk_widget_show (eview_config);

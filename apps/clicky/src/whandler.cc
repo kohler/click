@@ -228,6 +228,7 @@ int whandler::hinfo::create_display(whandler *wh)
 	wadd = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(wadd), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 	gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(wadd), GTK_SHADOW_IN);
+	gtk_widget_set_size_request(GTK_WIDGET(wadd), -1, 60);
 
 	GtkTextBuffer *buffer = gtk_text_buffer_new(wh->main()->binary_tag_table());
 	wdata = gtk_text_view_new_with_buffer(buffer);
