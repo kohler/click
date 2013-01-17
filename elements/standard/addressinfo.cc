@@ -61,6 +61,7 @@ CLICK_CXX_PROTECT
 # include <linux/rtnetlink.h>
 # include <linux/if_arp.h>
 # include <linux/inetdevice.h>
+# include <net/route.h>
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 #  include <net/net_namespace.h>
 # endif
@@ -332,18 +333,34 @@ AddressInfo::query_netdevice(const String &s, unsigned char *store,
 	&& (dev->type == ARPHRD_ETHER || dev->type == ARPHRD_80211)) {
 	memcpy(store, dev->dev_addr, 6);
 	found = true;
-    } else if (dev && (type == tc_ipv4 || type == tc_ipv4prefix)) {
+    } else if (dev && (type == tc_ipv4 || type == tc_ipv4prefix
+		       || type == tc_ipv4gw)) {
+	uint32_t addr[2];
 	if (in_device *in_dev = in_dev_get(dev)) {
 	    for_primary_ifa(in_dev) {
-		memcpy(store, &ifa->ifa_local, 4);
-		if (type == tc_ipv4prefix)
-		    memcpy(store + 4, &ifa->ifa_mask, 4);
+		addr[0] = ifa->ifa_local;
+		addr[1] = ifa->ifa_mask;
 		found = true;
 		break;
-	    }
-	    endfor_ifa(in_dev);
+	    } endfor_ifa(in_dev);
 	    in_dev_put(in_dev);
 	}
+	if (!found)
+	    /* do nothing */;
+	else if (type == tc_ipv4gw) {
+	    found = false;
+	    // Look up the route for the local address, with top octet
+	    // changed, as a likely proxy for the default route.
+	    struct rtable *rt = ip_route_output(dev_net(dev), addr[0] ^ htonl(0x01000000), 0, 0, dev->ifindex);
+	    if (!IS_ERR(rt)) {
+		if (rt->rt_gateway) {
+		    memcpy(store, &rt->rt_gateway, 4);
+		    found = true;
+		}
+		ip_rt_put(rt);
+	    }
+	} else
+	    memcpy(store, addr, type == tc_ipv4 ? 4 : 8);
     }
     if (dev)
 	dev_put(dev);
