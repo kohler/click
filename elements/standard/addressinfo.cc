@@ -351,7 +351,20 @@ AddressInfo::query_netdevice(const String &s, unsigned char *store,
 	    found = false;
 	    // Look up the route for the local address, with top octet
 	    // changed, as a likely proxy for the default route.
-	    struct rtable *rt = ip_route_output(dev_net(dev), addr[0] ^ htonl(0x01000000), 0, 0, dev->ifindex);
+	    unsigned slash8 = (uint32_t) ntohl(addr[0]) >> 24;
+	    addr[0] ^= htonl(0x01000000 << (slash8 == 1 || slash8 == 126));
+	    struct rtable *rt;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
+	    rt = ip_route_output(dev_net(dev), addr[0], 0, 0, dev->ifindex);
+#else
+	    struct flowi fl;
+	    int err;
+	    memset(&fl, 0, sizeof(fl));
+	    fl.oif = dev->ifindex;
+	    fl.fl4_dst = addr[0];
+	    if ((err = ip_route_output_key(&rt, &fl)) < 0)
+		rt = (struct rtable *) ERR_PTR(err);
+#endif
 	    if (!IS_ERR(rt)) {
 		if (rt->rt_gateway) {
 		    memcpy(store, &rt->rt_gateway, 4);
