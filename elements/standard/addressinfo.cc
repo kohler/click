@@ -354,15 +354,19 @@ AddressInfo::query_netdevice(const String &s, unsigned char *store,
 	    unsigned slash8 = (uint32_t) ntohl(addr[0]) >> 24;
 	    addr[0] ^= htonl(0x01000000 << (slash8 == 1 || slash8 == 126));
 	    struct rtable *rt;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39)
 	    rt = ip_route_output(dev_net(dev), addr[0], 0, 0, dev->ifindex);
 #else
 	    struct flowi fl;
-	    int err;
 	    memset(&fl, 0, sizeof(fl));
 	    fl.oif = dev->ifindex;
 	    fl.fl4_dst = addr[0];
-	    if ((err = ip_route_output_key(&rt, &fl)) < 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
+	    int err = ip_route_output_key(dev_net(dev), &rt, &fl);
+# else
+	    int err = ip_route_output_key(&rt, &fl);
+# endif
+	    if (err < 0)
 		rt = (struct rtable *) ERR_PTR(err);
 #endif
 	    if (!IS_ERR(rt)) {
