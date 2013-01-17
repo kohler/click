@@ -57,8 +57,12 @@ class Master { public:
   private:
 
     // THREADS
-    RouterThread **_threads;
+    struct aligned_thread : public RouterThread {
+        char padding[CLICK_CACHE_LINE_PAD_BYTES(sizeof(RouterThread))];
+    };
+    aligned_thread *_threads;
     int _nthreads;
+    size_t _threads_byte_offset;
 
     // ROUTERS
     Router *_routers;
@@ -128,15 +132,15 @@ Master::thread(int id) const
     // return the requested thread, or the quiescent thread if there's no such
     // thread
     if (unsigned(id + 1) <= unsigned(_nthreads))
-	return _threads[id];
+	return &_threads[id];
     else
-	return _threads[-1];
+	return &_threads[-1];
 }
 
 inline void
 Master::wake_somebody()
 {
-    _threads[0]->wake();
+    _threads[0].wake();
 }
 
 #if CLICK_USERLEVEL
@@ -176,7 +180,7 @@ inline void
 Master::request_stop()
 {
     for (int i = -1; i < _nthreads; ++i)
-        _threads[i]->request_stop();
+        _threads[i].request_stop();
     // ensure that at least one thread is awake to handle the stop event
     wake_somebody();
 }
@@ -185,7 +189,7 @@ inline void
 Master::request_go()
 {
     for (int i = -1; i < _nthreads; ++i)
-        _threads[i]->request_go();
+        _threads[i].request_go();
 }
 
 inline void

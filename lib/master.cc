@@ -6,6 +6,7 @@
  * Copyright (c) 2003-7 The Regents of the University of California
  * Copyright (c) 2010 Intel Corporation
  * Copyright (c) 2008-2011 Meraki, Inc.
+ * Copyright (c) 2003-2013 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -41,20 +42,25 @@ extern "C" { static void sighandler(int signo); }
 Master::Master(int nthreads)
     : _routers(0)
 {
+    static_assert(sizeof(aligned_thread) % CLICK_CACHE_LINE_SIZE == 0
+                  && sizeof(aligned_thread) >= sizeof(RouterThread), "bad RouterThread size");
+
     _refcount = 0;
     _master_paused = 0;
 
     _nthreads = nthreads;
-    _threads = new RouterThread *[_nthreads + 1] + 1;
+    char *threads_data = new char[sizeof(aligned_thread) * (_nthreads + 1) + CLICK_CACHE_LINE_SIZE];
+    _threads_byte_offset = CLICK_CACHE_LINE_PAD_BYTES(reinterpret_cast<uintptr_t>(threads_data));
+    _threads = reinterpret_cast<aligned_thread *>(threads_data + _threads_byte_offset) + 1;
     for (int tid = -1; tid < nthreads; tid++)
-	_threads[tid] = new RouterThread(this, tid);
+	new(reinterpret_cast<void *>(&_threads[tid])) RouterThread(this, tid);
 
 #if CLICK_USERLEVEL
     // signal information
     signals_pending = 0;
     _siginfo = 0;
     sigemptyset(&_sig_dispatching);
-    signal_thread = _threads[0];
+    signal_thread = &_threads[0];
 #endif
 
 #if CLICK_LINUXMODULE
@@ -90,8 +96,8 @@ Master::~Master()
     signal_thread = 0;
 #endif
     for (int i = -1; i < _nthreads; ++i)
-	delete _threads[i];
-    delete[] (_threads - 1);
+	_threads[i].~RouterThread();
+    delete[] (reinterpret_cast<char *>(_threads - 1) - _threads_byte_offset);
 }
 
 void
@@ -118,9 +124,9 @@ Master::pause()
 {
     _master_paused++;
     for (int i = 0; i < _nthreads; ++i) {
-	_threads[i]->timer_set().fence();
+	_threads[i].timer_set().fence();
 #if CLICK_USERLEVEL
-	_threads[i]->select_set().fence();
+	_threads[i].select_set().fence();
 #endif
     }
 }
@@ -129,9 +135,9 @@ void
 Master::block_all()
 {
     for (int i = 0; i < _nthreads; ++i)
-	_threads[i]->schedule_block_tasks();
+	_threads[i].schedule_block_tasks();
     for (int i = 0; i < _nthreads; ++i)
-	_threads[i]->block_tasks(true);
+	_threads[i].block_tasks(true);
     pause();
 }
 
@@ -140,7 +146,7 @@ Master::unblock_all()
 {
     unpause();
     for (int i = 0; i < _nthreads; ++i)
-	_threads[i]->unblock_tasks();
+	_threads[i].unblock_tasks();
 }
 
 
@@ -211,7 +217,7 @@ Master::kill_router(Router *router)
 
     // Remove tasks
     for (int i = -1; i < _nthreads; ++i)
-        _threads[i]->kill_router(router);
+        _threads[i].kill_router(router);
 
     // 4.Sep.2007 - Don't bother to remove pending tasks.  They will be
     // removed shortly anyway, either when the task itself is deleted or (more
@@ -239,7 +245,7 @@ Master::kill_router(Router *router)
 
     // something has happened, so wake up threads
     for (int i = 0; i < _nthreads; ++i)
-	_threads[i]->wake();
+	_threads[i].wake();
 }
 
 void
@@ -471,9 +477,9 @@ Master::info() const
 {
     StringAccum sa;
     sa << "paused:\t\t" << _master_paused << '\n';
-    sa << "stop_flag:\t" << _threads[-1]->_stop_flag << '\n';
+    sa << "stop_flag:\t" << _threads[-1]._stop_flag << '\n';
     for (int i = -1; i < _nthreads; ++i) {
-	RouterThread *t = _threads[i];
+	RouterThread *t = &_threads[i];
 	sa << "thread " << i << ":";
 # ifdef CLICK_LINUXMODULE
 	if (t->_sleeper)
