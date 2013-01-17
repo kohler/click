@@ -11,7 +11,7 @@ dnl The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
 dnl notice is a summary of the Click LICENSE file; the license in that file is
 dnl legally binding.
 
-AC_INIT([libclick], [2.0.1])
+AC_INIT([libclick], [2.1])
 AC_PREREQ(2.60)
 AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-userlevel.h:config-userlevel.h.in)
 

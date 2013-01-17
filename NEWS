@@ -1,5 +1,46 @@
 Click NEWS
 
+Version 2.1
+
+* Major Linux kernel module improvements. Click now runs patchlessly
+  inside Linux kernels up to version 3.5. Thanks to Kevin Paul
+  Herbert.
+
+* Json: Add new JSON handling functions as an element library
+  (--enable-json to get it).
+
+* RadixIPLookup: Make it cache aware. Thanks to Madhuri Venkatesh.
+
+* Native netmap support. Thanks to Luigi Rizzo.
+
+* NS fixes and scheduling improvements. Thanks to Björn Lichtblau and
+  Sascha Alexander Jopen.
+
+* Internal library improvements to String, StringAccum, Vector, Deque,
+  and others. Better performance, smaller code size.
+
+* Start preparing for C++11.
+
+* New elements include Bypass, NetmapInfo, JsonTest, NotifierTest, and
+  BitvectorTest.
+
+* New features to Script, FromDevice, ICMPPingSource, PullSwitch,
+  RawSocket, ARPTable, FromHost, ARPQuerier, AnyDevice, SetIPAddress,
+  AddressInfo, the IPsec elements, and others.
+
+* Bug fixes to IPRewriter, SetIPChecksum, BandwidthRatedSplitter,
+  InfiniteSource, FromHost, ToHost, ToDevice, FrontDropQueue, Print,
+  Classifier (and IPClassifier, etc.), the multithreaded-Click packet
+  pool, notifiers (particularly on multithreaded Click), Bitvector,
+  and the configuration lexer.
+
+* Thanks to Cliff Frey, and to Bart Braem, Beyers Cronje, Markku
+  Savela, Derrick Pallas, Ruetee Chitpranee, Wim Vandenberghe, Matteo
+  Croce, Justin Delegard, Raluca Musaloiu-E., Jim Roewe, Brian Kim,
+  Patrick Verkaik, Lalith Suresh, Jimmy Kjällman, Asa Zernik, Robert
+  Sombrutzki, Roman Chertov, Piotr Jurkiewicz, and others.
+
+
 Version 2.0.1   24.Sep.2011
 
 * ns-3 support, thanks to Lalith Suresh and Sascha Alexander Jopen.
