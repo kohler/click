@@ -51,6 +51,12 @@ SetIPAddress::simple_action(Packet *p)
     return p;
 }
 
+void
+SetIPAddress::add_handlers()
+{
+    add_data_handlers("addr", Handler::OP_READ | Handler::OP_WRITE, &_ip);
+}
+
 CLICK_ENDDECLS
 EXPORT_ELEMENT(SetIPAddress)
 ELEMENT_MT_SAFE(SetIPAddress)
