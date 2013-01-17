@@ -292,14 +292,14 @@ click_br_handle_frame_hook(struct net_bridge_port *p, struct sk_buff *skb)
 }
 
 #elif HAVE_LINUX_NETDEV_RX_HANDLER_REGISTER
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39)
+rx_handler_result_t
+click_fromdevice_rx_handler(struct sk_buff **pskb)
+# else
 struct sk_buff *
 click_fromdevice_rx_handler(struct sk_buff *skb)
 #define RX_HANDLER_PASS skb
 #define RX_HANDLER_CONSUMED 0
-# else
-rx_handler_result_t
-click_fromdevice_rx_handler(struct sk_buff **pskb)
 # endif
 {
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39)
