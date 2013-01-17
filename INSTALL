@@ -1,40 +1,42 @@
 CLICK INSTALLATION INSTRUCTIONS
 ===============================
 
-To compile any version of Click, you will need the GNU C compiler; a recent
-version of the GNU C++ compiler; and GNU Make. The './configure' script
-should complain if it cannot find software it needs.
+    To compile any version of Click, you will need the GNU C compiler;
+a recent version of the GNU C++ compiler; and GNU Make. The
+'./configure' script should complain if it cannot find software it
+needs.
 
-The user-level version of Click should compile and run on any Unixlike
-system, including Mac OS X.  The pcap library may be necessary to
-communicate with the network.  See the end of this document for portability
-notes for architectures other than the x86.
+    The user-level version of Click should compile and run on any
+Unixlike system, including Mac OS X. The pcap library may be necessary
+to communicate with the network. See the PORTABILITY section for
+portability notes for architectures other than the x86.
 
-The Linux kernel module requires a patched Linux 2.2, 2.4, or 2.6 system.
-We provide patches for Linux 2.2.18 through 2.2.21, 2.4.18 through 2.4.32,
-2.6.16.13, 2.6.19.2, and 2.6.24.7.  The patches do not apply against Red
-Hat kernels; use vanilla kernels from kernel.org.
+    Click also can run inside a Linux kernel as a module. For recent
+kernel versions (2.6.24-3.5 and possibly later), Click can run inside
+an unmodified kernel. For older kernels, and/or for the polling
+drivers that provide the best performance, you will need to patch the
+kernel. See PATCHED LINUX KERNEL below.
 
-The preliminary FreeBSD Click kernel module compiles against unpatched
-FreeBSD-STABLE versions after 700000.
+    The preliminary FreeBSD Click kernel module compiles against
+unpatched FreeBSD-STABLE versions after 700000.
 
-The ns module requires a patched version of the NS simulator.  We provide
-patches for ns version 2.30.  See the NS SIMULATOR section below.
+    The ns-3 network simulator supports integration with Click. See
+NS-3 CLICK INTEGRATION below.
+
+    The ns-2 module requires a patched version of the NS simulator.
+See the NS-2 MODULE section below.
 
 
 CONFIGURING
 -----------
 
-If you plan to use the Linux kernel module, you must patch your kernel
-first. See the 'Linux module' section below.
-
 Change to the Click source directory and run
 
 	./configure [--prefix=PREFIX]
 
-This will test your system and decide the versions that will work for you
-(user-level, Linux module, or both). It will tell you what is wrong if it
-cannot compile a version. Run
+This will test your system and decide the versions that will work for
+you (user-level, Linux kernel module, or both). It will tell you what
+is wrong if it cannot compile a version. Run
 
 	./configure --help
 
@@ -75,126 +77,110 @@ files.
 The configure script may not be able to find your pcap library if it's in a
 nonstandard place. It will report an error in this case. To fix the error,
 set the 'PCAP_INCLUDES' and 'PCAP_LIBS' variables in the options to
-'./configure'. 'PCAP_INCLUDES' tells the C preprocessor where to find
+`./configure`. 'PCAP_INCLUDES' tells the C preprocessor where to find
 'pcap.h', and 'PCAP_LIBS' tells the linker where to find 'libpcap.a'. One
-example setting would be './configure
-PCAP_INCLUDES=-I/usr/local/include/pcap PCAP_LIBS=-L/usr/local/lib/pcap'.
+example setting would be `./configure
+PCAP_INCLUDES=-I/usr/local/include/pcap PCAP_LIBS=-L/usr/local/lib/pcap`.
 
 
-LINUX MODULE
-------------
+LINUX KERNEL MODULE
+-------------------
 
-Before you can compile or use the Click loadable kernel module, you need to
-install, patch, compile, and boot a compatible Linux kernel. These
-instructions assume you have at least passing familiarity with compiling
-and running Linux kernels.
+The `./configure` script will attempt to compile a Linux kernel module
+by default. It will warn you if it cannot build a kernel module, and
+provide some hints about how to proceed. You can also run `./configure
+--enable-linuxmodule`.
 
- 1. Archive a complete, working Linux kernel and any corresponding modules.
-    This is in case something goes wrong and you need to revert to an old
-    kernel.
+To build and install the module, run
 
- 2. Get a vanilla Linux kernel source distribution from www.kernel.org or
-    one of its mirrors.  (Patched kernels, such as Red Hat kernels, usually
-    do not work.)  Unpack this distribution into /usr/src/linux.  (Save the
-    old kernel source tree, if you had one.)
+    gmake install
 
-    We supply patches for Linux 2.4.18-32, 2.6.16.13, 2.6.19.2, and
-    2.6.24.7.  A patch may or may not work for a slightly different kernel
-    version; we suggest you try it.
+This will create two module object files, `linuxmodule/click.ko` and
+`linuxmodule/proclikefs.ko`, and place them in `CLICKPREFIX/lib`. To
+install these modules and a router configuration, run
 
- 3. Install the Click Linux kernel patch:
+    CLICKPREFIX/sbin/click-install ROUTERCONFIGFILE
 
-	cd LINUXSRCDIR
-	patch -p0 -b < CLICKDIR/etc/linux-VERSION-patch
+Alternatively you could use /sbin/insmod by hand; see click.o(8).
 
-    Use the VERSION that applies to your kernel, as follows:
+The Linux kernel module is known to run (but not necessarily route
+packets) in kernel versions 2.6.24, 2.6.32, 3.0, 3.2, and 3.5. It
+should run on intermediate versions as well.
 
-    Kernel version	Patch
-    2.6.24.7		linux-2.6.24.7-patch
-    2.6.19.2		linux-2.6.19.2-patch
-    2.6.16.13		linux-2.6.16.13-patch
-    2.4.32		linux-2.4.32-patch
-    2.4.28		linux-2.4.26-patch
-    2.4.27		linux-2.4.26-patch
-    2.4.26		linux-2.4.26-patch
-    2.4.26-Debian	debian-2.4.26-patch
-    2.4.21		linux-2.4.21-patch
-    2.4.20		linux-2.4.20-patch
-    2.4.19		linux-2.4.18-patch
-    2.4.18		linux-2.4.18-patch
 
-    The patch fixes syntax errors in several header files (the C++ compiler
-    doesn't accept them), adds several new functions, and changes the
-    'struct device' kernel data structure. Therefore, you WILL need to
-    recompile any kernel modules that touch 'struct device'.
+PATCHED LINUX KERNEL
+--------------------
 
- 4. If your archived, working kernel has the same version number as the
-    patched kernel (they're both 2.4.18, for example), then it is a good
-    idea to change the patched kernel's 'EXTRAVERSION'. This way, the
-    modules for the new kernel won't overwrite the old, working modules.
-    Edit LINUXSRCDIR/Makefile and change the line 'EXTRAVERSION =' to
-    'EXTRAVERSION = -click', or whatever you would like.
+Older versions of Linux require explicit patching for Click to build.
+The Click patch also adds support for true device polling, a far more
+efficient way to process packets. The following instructions assume
+you have at least passing familiarity with compiling and running Linux
+kernels.
 
- 5. Configure the new kernel. The Click patch does not add any
-    configuration options, so you can start from your old configuration, or
-    you can do the usual 'make menuconfig'. Use a minimal set of
-    options.
+**NOTE:** Most Click users should either run Click at user level or
+use the patchless install procedure above.
 
-    Click is not currently safe for kernels with involuntary preemption.
-    Make sure that the CONFIG_PREEMPT option is off.
-    CONFIG_PREEMPT_VOLUNTARY is OK.  We welcome patches to improve Click's
-    preemption behavior.
+1. Archive a complete, working Linux kernel and any corresponding modules.
+   This is in case something goes wrong and you need to revert to an old
+   kernel.
 
- 6. Compile and install the kernel:
+2. Choose a kernel version for which we offer a patch. The patches are
+   in the `etc` directory (e.g., `etc/linux-2.6.24.7-patch`). A given
+   patch will often work for slightly different kernel versions.
 
-	make dep
-	make bzImage			(or zImage)
-	make install
-	make modules
-	make modules_install
+3. Get the corresponding Linux kernel source distribution from
+   www.kernel.org or one of its mirrors. (Patched kernels, such as Red
+   Hat kernels, usually do not work.) Unpack this distribution.
 
-    You may get errors in one of these steps, such as the 'make bzImage'
-    step. This indicates that you turned on too many options when
-    configuring your kernel. Return to Step 5, turn off the option that
-    seems to be causing a problem, and try again.
+4. Install the Click Linux kernel patch:
 
- 7. Reboot your machine with the new kernel.
+    cd LINUXSRCDIR
+    patch -p0 -b < CLICKDIR/etc/linux-VERSION-patch
 
- 8. Now you are ready to compile and install the Click module. Rerun
-    './configure' to tell the system about your new kernel:
+   The patch fixes syntax errors in several header files (the C++
+   compiler doesn't accept them), adds several new functions, and
+   changes the `struct device` kernel data structure. Therefore, you
+   WILL need to recompile any kernel modules that touch `struct
+   device`.
 
-	rm -f config.cache ; ./configure [OPTIONS]
+5. If your archived, working kernel has the same version number as the
+   patched kernel, then it is a good idea to change the patched
+   kernel's `EXTRAVERSION`. This way, the modules for the new kernel
+   won't overwrite the old, working modules. Edit LINUXSRCDIR/Makefile
+   and change the line `EXTRAVERSION =` to `EXTRAVERSION = -click`, or
+   whatever you would like.
 
-    If your Linux source is not in /usr/src/linux, give './configure' the
-    '--with-linux=LINUXDIR' option. If your System.map file is not in
-    LINUXDIR/System.map, give it the '--with-linux-map=MAPFILE' option.
+6. Configure the new kernel. The Click patch does not add any
+   configuration options, so you can start from your old
+   configuration, or you can do the usual 'make menuconfig'. Use a
+   minimal set of options.
 
-    If './configure' reports "Your header files must be patched before a
-    C++ program can include them", check that you applied the patch in Step
-    3, and that you supplied the correct '--with-linux' option to
-    './configure'.
+   Click may not be safe for kernels with involuntary preemption;
+   consider turning off CONFIG_PREEMPT. CONFIG_PREEMPT_VOLUNTARY is
+   OK. We welcome patches to improve Click's preemption behavior.
 
- 9. Then build and install the click module, its companion proclikefs
-    module, and the language tools:
+7. Compile and install the kernel:
 
-	gmake install
+    make dep
+    make bzImage			(or zImage)
+    make install
+    make modules
+    make modules_install
 
-    If you get errors while compiling the Linux kernel module (the
-    'linuxmodule' directory), and the errors look like they are in Linux
-    header files, you may have turned on too many options when configuring
-    your kernel. Return to Step 5, turn off the option that seems to be
-    causing a problem (for example, an error involving the "atalk_iface *"
-    type means you should turn off AppleTalk via CONFIG_ATALK), and try
-    again.
+    You may get errors in one of these steps, such as the `make
+    bzImage` step. This indicates that you turned on too many options
+    when configuring your kernel. Return to Step 5, turn off the
+    option that seems to be causing a problem, and try again.
 
-10. This will create two module object files, 'linuxmodule/click.ko' and
-    'linuxmodule/proclikefs.ko', and place them in 'CLICKPREFIX/lib'.  (In
-    Linux 2.4 and prior versions, the files end in '.o'.)  To install these
-    modules and a router configuration, run
+8. Reboot your machine with the new kernel.
 
-	CLICKPREFIX/sbin/click-install ROUTERCONFIGFILE
+9. Now you are ready to compile and install the Click module. Rerun
+   `./configure` to tell the system about your new kernel:
 
-    Alternatively you could use /sbin/insmod by hand; see click.o(8).
+    ./configure [OPTIONS]
+
+   (You may need the `--with-linux=LINUXDIR` and/or
+   `--with-linux-map=SYSTEM_MAP` options.) Then build and install as above.
 
 
 NS-3 CLICK INTEGRATION

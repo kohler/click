@@ -1,5 +1,5 @@
-THE CLICK MODULAR ROUTER RELEASE 2.0.1
-======================================
+THE CLICK MODULAR ROUTER
+========================
 
     This is the README file for the source release for the Click modular
 software router. More recent information may be available on the Web at
@@ -107,9 +107,6 @@ file: 'click CONFIGFILE'.
 
 Linux Kernel Module
 ...................
-
-    You must patch your Linux kernel first. See 'INSTALL' for more
-information.
 
     See the 'doc/click.o.8' manual page for a detailed description. To
 summarize, install a configuration by running 'click-install CONFIGFILE'.
