@@ -119,7 +119,7 @@ class Master { public:
 inline int
 Master::nthreads() const
 {
-    return _nthreads - 1;
+    return _nthreads;
 }
 
 inline RouterThread*
@@ -127,16 +127,16 @@ Master::thread(int id) const
 {
     // return the requested thread, or the quiescent thread if there's no such
     // thread
-    if (unsigned(id + 1) < unsigned(_nthreads))
-	return _threads[id + 1];
+    if (unsigned(id + 1) <= unsigned(_nthreads))
+	return _threads[id];
     else
-	return _threads[0];
+	return _threads[-1];
 }
 
 inline void
 Master::wake_somebody()
 {
-    _threads[1]->wake();
+    _threads[0]->wake();
 }
 
 #if CLICK_USERLEVEL
@@ -175,8 +175,8 @@ TimerSet::next_timer_delay(bool more_tasks, Timestamp &t) const
 inline void
 Master::request_stop()
 {
-    for (RouterThread **t = _threads; t != _threads + _nthreads; ++t)
-	(*t)->request_stop();
+    for (int i = -1; i < _nthreads; ++i)
+        _threads[i]->request_stop();
     // ensure that at least one thread is awake to handle the stop event
     wake_somebody();
 }
@@ -184,8 +184,8 @@ Master::request_stop()
 inline void
 Master::request_go()
 {
-    for (RouterThread **t = _threads; t != _threads + _nthreads; ++t)
-	(*t)->request_go();
+    for (int i = -1; i < _nthreads; ++i)
+        _threads[i]->request_go();
 }
 
 inline void

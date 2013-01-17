@@ -44,17 +44,17 @@ Master::Master(int nthreads)
     _refcount = 0;
     _master_paused = 0;
 
-    _nthreads = nthreads + 1;
-    _threads = new RouterThread *[_nthreads];
+    _nthreads = nthreads;
+    _threads = new RouterThread *[_nthreads + 1] + 1;
     for (int tid = -1; tid < nthreads; tid++)
-	_threads[tid + 1] = new RouterThread(this, tid);
+	_threads[tid] = new RouterThread(this, tid);
 
 #if CLICK_USERLEVEL
     // signal information
     signals_pending = 0;
     _siginfo = 0;
     sigemptyset(&_sig_dispatching);
-    signal_thread = _threads[1];
+    signal_thread = _threads[0];
 #endif
 
 #if CLICK_LINUXMODULE
@@ -89,9 +89,9 @@ Master::~Master()
 #if CLICK_USERLEVEL
     signal_thread = 0;
 #endif
-    for (int i = 0; i < _nthreads; i++)
+    for (int i = -1; i < _nthreads; ++i)
 	delete _threads[i];
-    delete[] _threads;
+    delete[] (_threads - 1);
 }
 
 void
@@ -117,7 +117,7 @@ void
 Master::pause()
 {
     _master_paused++;
-    for (int i = 1; i < _nthreads; ++i) {
+    for (int i = 0; i < _nthreads; ++i) {
 	_threads[i]->timer_set().fence();
 #if CLICK_USERLEVEL
 	_threads[i]->select_set().fence();
@@ -128,9 +128,9 @@ Master::pause()
 void
 Master::block_all()
 {
-    for (int i = 1; i < _nthreads; ++i)
+    for (int i = 0; i < _nthreads; ++i)
 	_threads[i]->schedule_block_tasks();
-    for (int i = 1; i < _nthreads; ++i)
+    for (int i = 0; i < _nthreads; ++i)
 	_threads[i]->block_tasks(true);
     pause();
 }
@@ -139,7 +139,7 @@ void
 Master::unblock_all()
 {
     unpause();
-    for (int i = 1; i < _nthreads; ++i)
+    for (int i = 0; i < _nthreads; ++i)
 	_threads[i]->unblock_tasks();
 }
 
@@ -210,8 +210,8 @@ Master::kill_router(Router *router)
     unlock_master();
 
     // Remove tasks
-    for (RouterThread **tp = _threads; tp != _threads + _nthreads; ++tp)
-	(*tp)->kill_router(router);
+    for (int i = -1; i < _nthreads; ++i)
+        _threads[i]->kill_router(router);
 
     // 4.Sep.2007 - Don't bother to remove pending tasks.  They will be
     // removed shortly anyway, either when the task itself is deleted or (more
@@ -238,8 +238,8 @@ Master::kill_router(Router *router)
 #endif
 
     // something has happened, so wake up threads
-    for (RouterThread **tp = _threads + 1; tp != _threads + _nthreads; ++tp)
-	(*tp)->wake();
+    for (int i = 0; i < _nthreads; ++i)
+	_threads[i]->wake();
 }
 
 void
@@ -471,10 +471,10 @@ Master::info() const
 {
     StringAccum sa;
     sa << "paused:\t\t" << _master_paused << '\n';
-    sa << "stop_flag:\t" << _threads[0]->_stop_flag << '\n';
-    for (int i = 0; i < _nthreads; i++) {
+    sa << "stop_flag:\t" << _threads[-1]->_stop_flag << '\n';
+    for (int i = -1; i < _nthreads; ++i) {
 	RouterThread *t = _threads[i];
-	sa << "thread " << (i - 1) << ":";
+	sa << "thread " << i << ":";
 # ifdef CLICK_LINUXMODULE
 	if (t->_sleeper)
 	    sa << "\tsleep";
