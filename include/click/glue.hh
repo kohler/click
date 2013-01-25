@@ -139,28 +139,35 @@ void click_random_srandom();
 extern uint32_t click_random_seed;
 #endif
 
+#if CLICK_NS
+extern uint32_t click_random();
+#else
 inline uint32_t click_random() {
-#if CLICK_BSDMODULE
+# if CLICK_BSDMODULE
     return random();
-#elif CLICK_LINUXMODULE
+# elif CLICK_LINUXMODULE
     click_random_seed = click_random_seed * 69069L + 5;
     return (click_random_seed ^ jiffies) & CLICK_RAND_MAX; // XXX jiffies??
-#elif HAVE_RANDOM && CLICK_RAND_MAX == RAND_MAX
+# elif HAVE_RANDOM && CLICK_RAND_MAX == RAND_MAX
+    // See also click_random() in ns/nsclick.cc
     return random();
-#else
+# else
     return rand();
-#endif
+# endif
 }
+#endif
 
 inline void click_srandom(uint32_t seed) {
 #if CLICK_BSDMODULE
     srandom(seed);
-#elif !CLICK_LINUXMODULE && HAVE_RANDOM && CLICK_RAND_MAX == RAND_MAX
-    srandom(seed);
-#elif !CLICK_LINUXMODULE && CLICK_RAND_MAX == RAND_MAX
-    srand(seed);
-#else
+#elif CLICK_LINUXMODULE
     click_random_seed = seed;
+#elif CLICK_NS
+    (void) seed; /* XXX */
+#elif HAVE_RANDOM && CLICK_RAND_MAX == RAND_MAX
+    srandom(seed);
+#else
+    srand(seed);
 #endif
 }
 

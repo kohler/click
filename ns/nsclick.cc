@@ -79,8 +79,28 @@ static void setsimstate(simclick_node_t *newstate) {
     cursimnode = newstate;
 }
 
-// functions for packages
 
+CLICK_DECLS
+
+uint32_t click_random() {
+    static bool sim_rng_support = simclick_sim_command(NULL, SIMCLICK_SUPPORTS, SIMCLICK_GET_RANDOM_INT);
+    if (sim_rng_support && cursimnode) {
+        uint32_t x;
+        simclick_sim_command(cursimnode, SIMCLICK_GET_RANDOM_INT, &x, (uint32_t) CLICK_RAND_MAX);
+        return x;
+    }
+#if HAVE_RANDOM && CLICK_RAND_MAX == RAND_MAX
+    // See also click_random() in include/click/glue.hh
+    return random();
+#else
+    return rand();
+#endif
+}
+
+CLICK_ENDDECLS
+
+
+// functions for packages
 
 extern "C" {
 
