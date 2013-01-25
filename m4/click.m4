@@ -23,6 +23,7 @@ AC_DEFUN([CLICK_INIT], [
     ac_user_kernel_cxxflags=${KERNEL_CXXFLAGS+y}
     ac_user_build_cxx=${BUILD_CXX+y}
     ac_user_depcflags=${DEPCFLAGS+y}
+    ac_user_depdirflag=${DEPDIRFLAG+y}
     ac_compile_with_warnings=y
 
     conf_auxdir=$1
@@ -50,6 +51,9 @@ AC_DEFUN([CLICK_PROG_CC], [
     test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depcflags" && \
 	DEPCFLAGS="-MD -MP"
     AC_SUBST(DEPCFLAGS)
+    test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depdirflag" && \
+	DEPDIRFLAG=['-MF $(DEPDIR)/$][*.d']
+    AC_SUBST(DEPDIRFLAG)
 
     save_cflags="$CFLAGS"
     AC_CACHE_CHECK([whether the C compiler accepts -W -Wall], [ac_cv_c_w_wall], [

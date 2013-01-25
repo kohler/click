@@ -24,6 +24,9 @@ RANLIB = @RANLIB@
 INSTALL = @INSTALL@
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
+DEPDIR = .deps
+DEPSTAMP = $(DEPDIR)/stamp
+
 .SUFFIXES:
 .SUFFIXES: .S .c .cc .o .s .ii
 
@@ -62,7 +65,7 @@ STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o errorelement.o \
 CPPFLAGS = @CPPFLAGS@ -DCLICK_USERLEVEL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
-DEPCFLAGS = @DEPCFLAGS@
+DEPCFLAGS = @DEPCFLAGS@ @DEPDIRFLAG@
 
 DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
@@ -89,11 +92,16 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 #!gmake
-DEPFILES := $(wildcard *.d)
+DEPFILES := $(wildcard $(DEPDIR)/*.d)
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 #!end gmake
+
+$(LIBOBJS): $(DEPSTAMP)
+$(DEPSTAMP):
+	@-mkdir $(DEPDIR) >/dev/null 2>&1
+	@touch $@
 
 install: install-lib
 install-lib: $(INSTALLLIBS)
@@ -103,7 +111,7 @@ uninstall:
 	for i in $(INSTALLLIBS); do rm -f $(DESTDIR)$(libdir)/$$i; done
 
 clean:
-	rm -f *.d *.o libclick.a
+	rm -f .deps *.o libclick.a
 clean-lib:
 	rm -f $(LIBOBJS) libclick.a
 distclean: clean

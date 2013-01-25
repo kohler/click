@@ -59,7 +59,7 @@ click-buildtool: $(srcdir)/click-buildtool.in config.status
 	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 	@chmod +x click-buildtool; touch click-buildtool
 
-$(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/m4/click.m4
+$(srcdir)/configure: $(srcdir)/configure.ac $(srcdir)/m4/click.m4
 	cd $(srcdir) && $(AUTOCONF)
 config.status: $(srcdir)/configure
 	$(SHELL) $(srcdir)/configure @ac_configure_args@
