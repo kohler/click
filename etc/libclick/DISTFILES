@@ -4,6 +4,7 @@ LICENSE
 NEWS
 README
 
+aclocal.m4
 etc/libclick/lc-Makefile.in:Makefile.in
 click-buildtool.in
 click-mkelemmap
@@ -11,7 +12,7 @@ config.guess
 config.h.in
 config-userlevel.h.in
 config.sub
-etc/libclick/lc-configure.in:configure.in
+etc/libclick/lc-configure.ac:configure.ac
 install-sh
 m4
 m4/click.m4

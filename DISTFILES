@@ -367,7 +367,7 @@ samp05_other.mp
 DISTFILES
 Makefile.in
 lc-Makefile.in
-lc-configure.in
+lc-configure.ac
 lc-libsrc-Makefile.in
 
 ./etc/samplellrpc:

@@ -2,13 +2,13 @@
 #ifndef CLICK_PATHVARS_H
 #define CLICK_PATHVARS_H
 
-/* Directory for binaries. */
+/* Install directory for Click executables. */
 #undef CLICK_BINDIR
 
-/* Directory for packages and kernel module. */
+/* Install directory for Click libraries and packages. */
 #undef CLICK_LIBDIR
 
-/* Directory for shared files. */
+/* Install directory for Click shared data. */
 #undef CLICK_DATADIR
 
 /* FreeBSD kernel include directory. */

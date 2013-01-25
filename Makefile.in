@@ -14,8 +14,6 @@ subdir = .
 conf_auxdir = @conf_auxdir@
 
 AUTOCONF = @AUTOCONF@
-# ACLOCAL = aclocal -I m4
-ACLOCAL = :
 PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_IF_CHANGED = @INSTALL_IF_CHANGED@
@@ -162,7 +160,7 @@ etc/pkg-config.mk: $(srcdir)/etc/pkg-config.mk.in config.status
 	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/m4/click.m4
-	cd $(srcdir) && $(ACLOCAL) && $(AUTOCONF)
+	cd $(srcdir) && $(AUTOCONF)
 config.status: $(srcdir)/configure
 	$(SHELL) $(srcdir)/configure @ac_configure_args@
 Makefile: config.status $(srcdir)/Makefile.in

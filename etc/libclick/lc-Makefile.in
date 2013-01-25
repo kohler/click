@@ -14,7 +14,6 @@ subdir = .
 conf_auxdir = @conf_auxdir@
 
 AUTOCONF = @AUTOCONF@
-ACLOCAL = aclocal -I m4
 PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_IF_CHANGED = @INSTALL_IF_CHANGED@
@@ -61,7 +60,7 @@ click-buildtool: $(srcdir)/click-buildtool.in config.status
 	@chmod +x click-buildtool; touch click-buildtool
 
 $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/m4/click.m4
-	cd $(srcdir) && $(ACLOCAL) && $(AUTOCONF)
+	cd $(srcdir) && $(AUTOCONF)
 config.status: $(srcdir)/configure
 	$(SHELL) $(srcdir)/configure @ac_configure_args@
 Makefile: config.status $(srcdir)/Makefile.in

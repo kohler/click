@@ -14,7 +14,6 @@ subdir = etc/libclick
 conf_auxdir = @conf_auxdir@
 
 AUTOCONF = @AUTOCONF@
-ACLOCAL = aclocal -I m4
 PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_IF_CHANGED = @INSTALL_IF_CHANGED@
@@ -47,7 +46,7 @@ dist: $(distdir).tar.gz
 $(distdir).tar.gz: distdir
 	tar czf $(distdir).tar.gz $(distdir)
 distdir: always
-	@if test `grep 'CLICK_VERSION=' $(top_srcdir)/configure.in` != `grep 'CLICK_VERSION=' $(srcdir)/lc-configure.in`; then \
+	@if test `grep 'CLICK_VERSION=' $(top_srcdir)/configure.in` != `grep 'CLICK_VERSION=' $(srcdir)/lc-configure.ac`; then \
 	  echo 'ERROR: Bad libclick CLICK_VERSION!'; exit 1; \
 	fi
 	-rm -rf $(distdir)
@@ -70,8 +69,8 @@ distdir: always
 	  fi; \
 	  echo $$df >>$(distdir)/DISTFILES; \
 	done
-	cd $(distdir) && $(PERL) -pi -e 's/enable_linuxmodule=yes/enable_linuxmodule=no/;' configure.in
-	cd $(distdir) && $(ACLOCAL) && $(AUTOCONF)
+	cd $(distdir) && $(PERL) -pi -e 's/enable_linuxmodule=yes/enable_linuxmodule=no/;' configure.ac
+	cd $(distdir) && $(AUTOCONF)
 	cd $(distdir) && rm -rf autom4te*
 	echo configure >>$(distdir)/DISTFILES
 

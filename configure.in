@@ -14,7 +14,7 @@ dnl legally binding.
 AC_INIT([click], [2.1])
 AC_PREREQ(2.60)
 AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in)
-AC_CONFIG_SRCDIR(click-buildtool.in)
+AC_CONFIG_SRCDIR([click-buildtool.in])
 
 CLICK_VERSION=$PACKAGE_VERSION
 
@@ -60,7 +60,7 @@ AC_SUBST(AR_CREATEFLAGS)
 
 
 dnl
-dnl check drivers to enable
+dnl drivers
 dnl
 
 dnl userlevel driver and features
@@ -954,7 +954,7 @@ dnl debugging malloc
 
 AC_ARG_ENABLE(dmalloc, [  --enable-dmalloc        enable debugging malloc], :, enable_dmalloc=no)
 if test $enable_dmalloc = yes; then
-    AC_DEFINE(CLICK_DMALLOC)
+    AC_DEFINE([CLICK_DMALLOC], [1], [Define for Click memory allocation debugging.])
 fi
 
 
@@ -973,7 +973,7 @@ Try again without '--enable-valgrind'.
 =========================================])
 	dnl ' fix syntax highlighting
     fi
-    AC_DEFINE(HAVE_VALGRIND)
+    AC_DEFINE([HAVE_VALGRIND], [1], [Define if Click should use Valgrind client requests.])
 fi
 
 
@@ -1779,9 +1779,9 @@ dnl
 dnl substitute path variables
 dnl
 
-AC_DEFINE_UNQUOTED(CLICK_BINDIR, "$bindir")
-AC_DEFINE_UNQUOTED(CLICK_LIBDIR, "$libdir")
-AC_DEFINE_UNQUOTED(CLICK_DATADIR, "$clickdatadir")
+AC_DEFINE_UNQUOTED([CLICK_BINDIR], ["$bindir"], [Install directory for Click executables.])
+AC_DEFINE_UNQUOTED([CLICK_LIBDIR], ["$libdir"], [Install directory for Click libraries and packages.])
+AC_DEFINE_UNQUOTED([CLICK_DATADIR], ["$clickdatadir"], [Install directory for Click shared data.])
 
 AC_SUBST(clickdatadir)
 AC_SUBST(clickbuild_bindir)
