@@ -105,6 +105,9 @@ TCPFragmenter::push(int, Packet *p)
         ip->ip_sum = click_in_cksum((unsigned char *)ip, q->network_header_length());
 #endif
 
+        if ((tcp->th_flags & TH_FIN) && offset + mtu < tcp_len)
+            tcp->th_flags ^= TH_FIN;
+
         tcp->th_seq = htonl(ntohl(tcp->th_seq) + offset);
         tcp->th_sum = 0;
 
