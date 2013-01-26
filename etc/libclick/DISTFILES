@@ -13,6 +13,7 @@ config.h.in
 config-userlevel.h.in
 config.sub
 etc/libclick/lc-configure.ac:configure.ac
+etc/libclick/lc-gitignore:.gitignore
 install-sh
 m4
 m4/click.m4

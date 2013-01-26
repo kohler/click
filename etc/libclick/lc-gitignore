@@ -1,0 +1,13 @@
+*.o
+/Makefile
+/click-buildtool
+autom4te*
+config.log
+config.status
+include/click/config-userlevel.h
+include/click/config.h
+include/click/pathvars.h
+libsrc/.deps
+libsrc/Makefile
+libsrc/libclick.a
+stamp-h
