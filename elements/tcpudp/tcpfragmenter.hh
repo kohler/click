@@ -43,11 +43,17 @@ class TCPFragmenter : public Element { public:
 
     int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
+    void add_handlers() CLICK_COLD;
+
     void push(int, Packet *);
 
   private:
     uint16_t _mtu;
     int8_t _mtu_anno;
+
+  atomic_uint32_t _fragments;
+  atomic_uint32_t _fragmented_count;
+  atomic_uint32_t _count;
 };
 
 CLICK_ENDDECLS

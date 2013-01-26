@@ -28,6 +28,9 @@ CLICK_DECLS
 TCPFragmenter::TCPFragmenter()
     : _mtu(0), _mtu_anno(-1)
 {
+    _fragments = 0;
+    _fragmented_count = 0;
+    _count = 0;
 }
 
 TCPFragmenter::~TCPFragmenter()
@@ -73,11 +76,13 @@ TCPFragmenter::push(int, Packet *p)
 
     int max_tcp_len = mtu - hlen;
 
+    _count++;
     if (!mtu || max_tcp_len <= 0 || tcp_len < max_tcp_len) {
         output(0).push(p);
         return;
     }
 
+    _fragmented_count++;
     for (int offset = 0; offset < tcp_len; offset += max_tcp_len) {
         Packet *p_clone;
         if (offset + max_tcp_len < tcp_len)
@@ -115,8 +120,17 @@ TCPFragmenter::push(int, Packet *p)
         int plen = q->end_data() - (uint8_t*)tcp;
         unsigned csum = click_in_cksum((unsigned char *)tcp, plen);
         tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, plen);
+        _fragments++;
         output(0).push(q);
     }
+}
+
+void
+TCPFragmenter::add_handlers()
+{
+    add_data_handlers("fragments", Handler::OP_READ, &_fragments);
+    add_data_handlers("fragmented_count", Handler::OP_READ, &_fragmented_count);
+    add_data_handlers("count", Handler::OP_READ, &_count);
 }
 
 CLICK_ENDDECLS
