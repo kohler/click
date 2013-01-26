@@ -107,7 +107,7 @@ clean:
 distclean:
 	@cd libsrc && $(MAKE) distclean
 	-rm -f config.h Makefile config.status
-	-rm -f include/click/config.h include/click/pathvars.h
+	-rm -f include/click/config.h include/click/config-userlevel.h include/click/pathvars.h
 	-rm -f config.cache config.log click-buildtool stamp-h
 
 
