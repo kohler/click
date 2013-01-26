@@ -53,21 +53,25 @@ TCPFragmenter::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 TCPFragmenter::push(int, Packet *p)
 {
+    int32_t hlen;
     int32_t tcp_len;
     {
         const click_ip *ip = p->ip_header();
         const click_tcp *tcp = p->tcp_header();
-        tcp_len = (ntohs(ip->ip_len)-(ip->ip_hl<<2)-(tcp->th_off<<2));
-
-        if (!_mtu || tcp_len < _mtu) {
-            output(0).push(p);
-            return;
-        }
+        hlen = (ip->ip_hl<<2) + (tcp->th_off<<2);
+        tcp_len = ntohs(ip->ip_len) - hlen;
     }
 
-    for (int offset = 0; offset < tcp_len; offset += _mtu) {
+    int max_tcp_len = _mtu - hlen;
+
+    if (!_mtu || max_tcp_len <= 0 || tcp_len < max_tcp_len) {
+        output(0).push(p);
+        return;
+    }
+
+    for (int offset = 0; offset < tcp_len; offset += max_tcp_len) {
         Packet *p_clone;
-        if (offset + _mtu < tcp_len)
+        if (offset + max_tcp_len < tcp_len)
             p_clone = p->clone();
         else {
             p_clone = p;
@@ -80,7 +84,7 @@ TCPFragmenter::push(int, Packet *p)
         click_ip *ip = q->ip_header();
         click_tcp *tcp = q->tcp_header();
         uint8_t *tcp_data = ((uint8_t *)tcp) + (tcp->th_off<<2);
-        int this_len = tcp_len - offset > _mtu ? _mtu : tcp_len - offset;
+        int this_len = tcp_len - offset > max_tcp_len ? max_tcp_len : tcp_len - offset;
         if (offset != 0)
             memcpy(tcp_data, tcp_data + offset, this_len);
         q->take(tcp_len - this_len);
