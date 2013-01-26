@@ -111,7 +111,8 @@ uninstall:
 	for i in $(INSTALLLIBS); do rm -f $(DESTDIR)$(libdir)/$$i; done
 
 clean:
-	rm -f .deps *.o libclick.a
+	rm -rf $(DEPDIR)
+	rm -f *.o libclick.a
 clean-lib:
 	rm -f $(LIBOBJS) libclick.a
 distclean: clean
