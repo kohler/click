@@ -26,6 +26,7 @@
 CLICK_DECLS
 
 TCPFragmenter::TCPFragmenter()
+    : _mtu(0), _mtu_anno(-1)
 {
 }
 
@@ -37,22 +38,30 @@ int
 TCPFragmenter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     uint16_t mtu;
+    int mtu_anno = -1;
+
     if (Args(conf, this, errh)
 	.read("MTU", mtu)
+	.read("MTU_ANNO", AnnoArg(2), mtu_anno)
 	.complete() < 0)
 	return -1;
 
-    if (mtu == 0)
-        return errh->error("MTU cannot be 0");
+    if (mtu == 0 && mtu_anno == -1)
+	return errh->error("At least one of MTU and MTU_ANNO must be set");
 
     _mtu = mtu;
-
+    _mtu_anno = mtu_anno;
     return 0;
 }
 
 void
 TCPFragmenter::push(int, Packet *p)
 {
+    int mtu = _mtu;
+    if (_mtu_anno >= 0 && p->anno_u16(_mtu_anno) &&
+	(!mtu || mtu > p->anno_u16(_mtu_anno)))
+	mtu = p->anno_u16(_mtu_anno);
+
     int32_t hlen;
     int32_t tcp_len;
     {
@@ -62,9 +71,9 @@ TCPFragmenter::push(int, Packet *p)
         tcp_len = ntohs(ip->ip_len) - hlen;
     }
 
-    int max_tcp_len = _mtu - hlen;
+    int max_tcp_len = mtu - hlen;
 
-    if (!_mtu || max_tcp_len <= 0 || tcp_len < max_tcp_len) {
+    if (!mtu || max_tcp_len <= 0 || tcp_len < max_tcp_len) {
         output(0).push(p);
         return;
     }
