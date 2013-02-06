@@ -714,6 +714,7 @@ CXXFLAGS
 EGREP
 GREP
 CPP
+DEPDIRFLAG
 DEPCFLAGS
 OBJEXT
 EXEEXT
@@ -3186,6 +3187,7 @@ _ACEOF
     ac_user_kernel_cxxflags=${KERNEL_CXXFLAGS+y}
     ac_user_build_cxx=${BUILD_CXX+y}
     ac_user_depcflags=${DEPCFLAGS+y}
+    ac_user_depdirflag=${DEPDIRFLAG+y}
     ac_compile_with_warnings=y
 
     conf_auxdir='$(top_srcdir)'
@@ -4715,6 +4717,9 @@ done
 
     test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depcflags" && \
 	DEPCFLAGS="-MD -MP"
+
+    test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depdirflag" && \
+	DEPDIRFLAG='-MF $(DEPDIR)/$*.d'
 
 
     save_cflags="$CFLAGS"
@@ -7546,7 +7551,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7549 "configure"
+#line 7554 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -9916,7 +9921,8 @@ else
 fi
 
 if test $enable_dmalloc = yes; then
-    $as_echo "#define CLICK_DMALLOC 1" >>confdefs.h
+
+$as_echo "#define CLICK_DMALLOC 1" >>confdefs.h
 
 fi
 
@@ -9953,7 +9959,8 @@ Try again without '--enable-valgrind'.
 
 =========================================" "$LINENO" 5
 	    fi
-    $as_echo "#define HAVE_VALGRIND 1" >>confdefs.h
+
+$as_echo "#define HAVE_VALGRIND 1" >>confdefs.h
 
 fi
 
@@ -12813,13 +12820,16 @@ fi
 
 
 
+
 cat >>confdefs.h <<_ACEOF
 #define CLICK_BINDIR "$bindir"
 _ACEOF
 
+
 cat >>confdefs.h <<_ACEOF
 #define CLICK_LIBDIR "$libdir"
 _ACEOF
+
 
 cat >>confdefs.h <<_ACEOF
 #define CLICK_DATADIR "$clickdatadir"
