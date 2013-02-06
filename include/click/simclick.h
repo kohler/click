@@ -107,6 +107,7 @@ int simclick_gettimeofday(struct timeval* tv);
 #define SIMCLICK_IF_PROMISC		12 // int ifid
 #define SIMCLICK_IPPREFIX_FROM_NAME	13 // const char *ifname, char *buf, int len
 #define SIMCLICK_GET_RANDOM_INT		14 // uint32_t *result, uint32_t max
+#define SIMCLICK_GET_DEFINES		15 // char *buf, size_t *size
 
 int simclick_sim_command(simclick_node_t *sim, int cmd, ...);
 int simclick_click_command(simclick_node_t *sim, int cmd, ...);

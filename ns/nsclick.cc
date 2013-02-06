@@ -120,6 +120,29 @@ int simclick_click_create(simclick_node_t *simnode, const char* router_file) {
     ErrorHandler *errh = ErrorHandler::default_handler();
     int before = errh->nerrors();
 
+    // Get the defines from the simulator, if supported.
+    if (simclick_sim_command(simnode, SIMCLICK_SUPPORTS, SIMCLICK_GET_DEFINES)) {
+        size_t defines_size = 512;
+        char *defines = (char *) malloc(defines_size);
+        if ((simclick_sim_command(simnode, SIMCLICK_GET_DEFINES, defines, &defines_size) == -1)) {
+            // Our buffer was too small, resize and try again.
+            defines = (char *) realloc(defines, defines_size);
+            simclick_sim_command(simnode, SIMCLICK_GET_DEFINES, defines, &defines_size);
+        }
+
+        // Process defines for click file parsing.
+        size_t defines_offset = 0;
+        while (defines_offset < defines_size) {
+            char *key = defines + defines_offset;
+            char *value = key + strlen(key) + 1;
+            defines_offset += (size_t) (value + strlen(value) + 1 - defines);
+            if (!click_lexer()->global_scope().define(key, value, false)) {
+                errh->error("parameter %s multiply defined", key);
+            }
+        }
+        free(defines);
+    }
+
     Router *r = click_read_router(router_file, false, errh, false);
     simnode->clickinfo = r;
     if (!r)
