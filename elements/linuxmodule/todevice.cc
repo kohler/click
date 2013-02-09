@@ -502,7 +502,8 @@ ToDevice::queue_packet(Packet *p, struct netdev_queue *txq)
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
-    ret = dev_queue_xmit(skb1);
+    // XXX should we call dev_hard_start_xmit???  Probably
+    ret = dev->netdev_ops->ndo_start_xmit(skb1, dev);
 #else
     ret = dev->hard_start_xmit(skb1, dev);
 #endif
