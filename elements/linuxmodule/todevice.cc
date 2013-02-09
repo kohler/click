@@ -257,9 +257,7 @@ ToDevice::cleanup(CleanupStage stage)
 # define click_netif_tx_queue_frozen(txq)	0
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30) && !HAVE_LINUX_POLLING
-# define click_netif_needs_lock(dev)		0 /* dev_queue_xmit() calls HARD_TX_LOCK() */
-#elif defined(NETIF_F_LLTX)
+#ifdef NETIF_F_LLTX
 # define click_netif_needs_lock(dev)		(((dev)->features & NETIF_F_LLTX) == 0)
 #else
 # define click_netif_needs_lock(dev)		1
