@@ -509,7 +509,7 @@ ToDevice::queue_packet(Packet *p, struct netdev_queue *txq)
 	txq_trans_update(txq);
 # endif
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
-    ret = dev_xmit_complete(ret);
+    ret = !dev_xmit_complete(ret);
 # else
     if (unlikely(ret == NET_XMIT_DROP))
 	p = NULL;
