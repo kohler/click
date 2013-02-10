@@ -257,9 +257,7 @@ ToDevice::cleanup(CleanupStage stage)
 # define click_netif_tx_queue_frozen(txq)	0
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30) && !HAVE_LINUX_POLLING
-# define click_netif_needs_lock(dev)		0 /* dev_queue_xmit() calls HARD_TX_LOCK() */
-#elif defined(NETIF_F_LLTX)
+#ifdef NETIF_F_LLTX
 # define click_netif_needs_lock(dev)		(((dev)->features & NETIF_F_LLTX) == 0)
 #else
 # define click_netif_needs_lock(dev)		1
@@ -504,8 +502,18 @@ ToDevice::queue_packet(Packet *p, struct netdev_queue *txq)
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
-    ret = dev_queue_xmit(skb1);
-    p = 0;
+    // logic here should mirror logic in linux/net/core/pktgen.c
+    ret = dev->netdev_ops->ndo_start_xmit(skb1, dev);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+    if (ret == NETDEV_TX_OK)
+	txq_trans_update(txq);
+# endif
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
+    ret = dev_xmit_complete(ret);
+# else
+    if (unlikely(ret == NET_XMIT_DROP))
+	p = NULL;
+# endif
 #else
     ret = dev->hard_start_xmit(skb1, dev);
 #endif
