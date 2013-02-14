@@ -222,7 +222,7 @@ ToDump::write_packet(Packet *p)
 
     // XXX writing to pipe?
     if (fwrite(&ph, sizeof(ph), 1, _fp) == 0
-	|| fwrite(p->data(), 1, to_write, _fp) == 0) {
+	|| (to_write > 0 && fwrite(p->data(), 1, to_write, _fp) == 0)) {
 	if (errno != EAGAIN) {
 	    _active = false;
 	    click_chatter("ToDump(%s): %s", _filename.c_str(), strerror(errno));
