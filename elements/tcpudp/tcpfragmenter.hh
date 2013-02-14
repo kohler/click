@@ -21,6 +21,13 @@ and tcp), length (ip length), and tcp sequence number (for all fragments except
 the first).  This means that TCPFragmenter can operate on packets that have
 ethernet headers, and all ethernet headers will be copied to each fragment.
 
+=item MTU
+Unsigned. If MTU is non-zero, then fragment every packet larger than MTU.
+
+=item MTU_ANNO
+Two Byte Annotation. If specified and annotation is non zero, then
+fragment every packet larger than the annotation's value.
+
 =a IPFragmenter, TCPIPEncap
 */
 
@@ -36,10 +43,17 @@ class TCPFragmenter : public Element { public:
 
     int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
 
+    void add_handlers() CLICK_COLD;
+
     void push(int, Packet *);
 
   private:
     uint16_t _mtu;
+    int8_t _mtu_anno;
+
+  atomic_uint32_t _fragments;
+  atomic_uint32_t _fragmented_count;
+  atomic_uint32_t _count;
 };
 
 CLICK_ENDDECLS
