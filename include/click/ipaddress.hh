@@ -107,6 +107,10 @@ class IPAddress { public:
 	return (_addr & htonl(0xF0000000U)) == htonl(0xE0000000U);
     }
 
+    inline bool is_link_local() const {
+	return (_addr & htonl(0xFFFF0000)) == htonl(0xA9FE0000);
+    }
+
     inline struct in_addr in_addr() const;
     inline operator struct in_addr() const;
 

@@ -109,6 +109,14 @@ class IP6Address { public:
 	    && (_addr.s6_addr32[2] == 0 || _addr.s6_addr32[2] == htonl(0x0000FFFFU));
     }
 
+    /** @brief Return true iff the address is a link-local address.
+     * fe80::/64
+     *
+     */
+    inline bool is_link_local() const {
+        return _addr.s6_addr32[0] == htonl(0xfe800000) && _addr.s6_addr32[1] == 0;
+    }
+
     /** @brief Extract embedded IPv4 address into @a x.
      * @param[out] x IPv4 address
      * @return true iff has_ip4_address() */
