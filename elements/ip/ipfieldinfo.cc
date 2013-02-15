@@ -259,7 +259,7 @@ IPField::parse(const char *begin, const char *end, int proto, IPField *result, E
     else if ((elim = cp_scanf(enam, end, " { %u - %u }", &offset, &length)))
 	length = length - offset + 1;
     else if (!field.ok()) {
-	click_chatter("%.*s", end - enam, enam);
+	click_chatter("%.*s", (int)(end - enam), enam);
 	return cp_ip_field_helper(begin, 0, errh);}
     else
 	elim = enam;
