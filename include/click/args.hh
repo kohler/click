@@ -1051,15 +1051,16 @@ class IntArg : public NumArg { public:
 
     template<typename V>
     bool parse_saturating(const String &str, V &result, const ArgContext &args = blank_args) {
-	(void) args;
 	constexpr bool is_signed = integer_traits<V>::is_signed;
 	constexpr int nlimb = int((sizeof(V) + sizeof(limb_type) - 1) / sizeof(limb_type));
 	limb_type x[nlimb];
 	if (parse(str.begin(), str.end(), is_signed, int(sizeof(V)), x, nlimb)
 	    != str.end())
 	    status = status_inval;
-	if (status && status != status_range)
+	if (status && status != status_range) {
+	    args.error("invalid number");
 	    return false;
+	}
 	typedef typename make_unsigned<V>::type unsigned_v_type;
 	extract_integer(x, reinterpret_cast<unsigned_v_type &>(result));
 	return true;
