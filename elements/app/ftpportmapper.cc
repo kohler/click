@@ -78,12 +78,17 @@ FTPPortMapper::simple_action(Packet *p)
   const unsigned char *data = p->data() + data_offset;
   unsigned len = p->length() - data_offset;
 
-  if (len < 4
+  if (len < 5
       || (data[0] != 'P' && data[0] != 'p')
       || (data[1] != 'O' && data[1] != 'o')
       || (data[2] != 'R' && data[2] != 'r')
       || (data[3] != 'T' && data[3] != 't')
       || data[4] != ' ')
+    return p;
+
+  IPFlowID control_flow(p);
+  IPRewriterEntry *p_mapping = _control_rewriter->get_entry(IP_PROTO_TCP, control_flow, -1);
+  if (!p_mapping)
     return p;
 
   // parse the PORT command
@@ -170,17 +175,13 @@ FTPPortMapper::simple_action(Packet *p)
   click_tcp *wp_tcph = wp->tcp_header();
 
   // update sequence numbers in old mapping
-  IPFlowID p_flow(p);
-  if (IPRewriterEntry *p_mapping = _control_rewriter->get_entry(IP_PROTO_TCP, p_flow, -1)) {
-    tcp_seq_t interesting_seqno = ntohl(wp_tcph->th_seq) + len;
-    TCPRewriter::TCPFlow *p_flow = static_cast<TCPRewriter::TCPFlow *>(p_mapping->flow());
-    p_flow->update_seqno_delta(p_mapping->direction(), interesting_seqno,
-			       buflen - port_arg_len);
-    // assume the annotation from the control rewriter also applies to the
-    // data
-    forward->flow()->set_reply_anno(p_flow->reply_anno());
-  } else
-    click_chatter("%p{element}: control packet with no mapping", this);
+  tcp_seq_t interesting_seqno = ntohl(wp_tcph->th_seq) + len;
+  TCPRewriter::TCPFlow *p_flow = static_cast<TCPRewriter::TCPFlow *>(p_mapping->flow());
+  p_flow->update_seqno_delta(p_mapping->direction(), interesting_seqno,
+                             buflen - port_arg_len);
+  // assume the annotation from the control rewriter also applies to the
+  // data
+  forward->flow()->set_reply_anno(p_flow->reply_anno());
 
   wp_tcph->th_sum = 0;
   unsigned wp_tcp_len = wp->length() - wp->transport_header_offset();
