@@ -144,6 +144,7 @@ int simclick_click_create(simclick_node_t *simnode, const char* router_file) {
     }
 
     Router *r = click_read_router(router_file, false, errh, false);
+    click_lexer()->global_scope().clear();
     simnode->clickinfo = r;
     if (!r)
 	return errh->fatal("%s: not a valid router", router_file);
