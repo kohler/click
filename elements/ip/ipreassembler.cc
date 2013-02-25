@@ -243,7 +243,7 @@ IPReassembler::make_queue(Packet *p, WritablePacket **q_pprev)
     q_iph->ip_off = (q_iph->ip_off & ~htons(IP_OFFMASK)); // leave MF, DF, RF
 
     if (_mtu_anno >= 0)
-	q->set_anno_u16(_mtu_anno, p->network_length());
+	q->set_anno_u16(_mtu_anno, q->network_length());
 
     PACKET_CHUNK(q).off = p_off;
     PACKET_CHUNK(q).lastoff = p_lastoff;
