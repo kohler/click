@@ -80,6 +80,7 @@ class RadixIPLookup : public IPRouteTable { public:
 
 
     void cleanup(CleanupStage) CLICK_COLD;
+    void add_handlers() CLICK_COLD;
 
     int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
     int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
@@ -108,6 +109,9 @@ class RadixIPLookup : public IPRouteTable { public:
 	return ((comb & 0xff000000) >> 24);
     }
 
+    void flush_table();
+
+    static int flush_handler(const String &, Element *, void *, ErrorHandler *);
 
     class Radix;
 

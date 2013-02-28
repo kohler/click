@@ -295,7 +295,7 @@ Timer::schedule_at_steady(const Timestamp &when)
 void
 Timer::schedule_after(const Timestamp &delta)
 {
-    schedule_at_steady(Timestamp::recent_steady() + delta);
+    schedule_at_steady(Timestamp::now_steady() + delta);
 }
 
 void

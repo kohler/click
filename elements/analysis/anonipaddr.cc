@@ -92,7 +92,7 @@ AnonymizeIPAddr::configure(Vector<String> &conf, ErrorHandler *errh)
 	    if (IntArg().parse(words[i], what) && what >= 0 && what < 256)
 		_preserve_8.push_back(what);
 	    else
-		return errh->error("PRESERVE_8 expects integer between 0 and 255", words[i].c_str());
+		return errh->error("PRESERVE_8 expects integer between 0 and 255");
     }
 
     return 0;
