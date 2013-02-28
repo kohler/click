@@ -179,6 +179,12 @@ RadixIPLookup::cleanup(CleanupStage)
     _radix = 0;
 }
 
+void
+RadixIPLookup::add_handlers()
+{
+    IPRouteTable::add_handlers();
+    add_write_handler("flush", flush_handler, 0, Handler::BUTTON);
+}
 
 String
 RadixIPLookup::dump_routes()
@@ -283,6 +289,25 @@ RadixIPLookup::lookup_route(IPAddress addr, IPAddress &gw) const
 	gw = 0;
 	return -1;
     }
+}
+
+void
+RadixIPLookup::flush_table()
+{
+    int level = 0;
+    _v.clear();
+    Radix::free_radix(_radix, level);
+    _radix = Radix::make_radix(0);
+    _vfree = -1;
+    _default_key = 0;
+}
+
+int
+RadixIPLookup::flush_handler(const String &, Element *e, void *, ErrorHandler *)
+{
+    RadixIPLookup *t = static_cast<RadixIPLookup *>(e);
+    t->flush_table();
+    return 0;
 }
 
 CLICK_ENDDECLS

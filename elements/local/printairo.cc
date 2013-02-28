@@ -125,7 +125,7 @@ PrintAiro::simple_action(Packet *p)
   unsigned int len = frame->an_rx_payload_len + ieee80211_header_len;
   if (len > sizeof(buf)) {
     click_chatter("%s: Frame too big to copy into buffer (%d > %d)\n",
-		  name().c_str(), len, sizeof(buf));
+		  name().c_str(), len, (int)sizeof(buf));
     return 0;
   }
 

@@ -1371,7 +1371,12 @@ Packet::make(struct sk_buff *skb)
 	atomic_dec(&skb->users);
     }
 # if HAVE_SKB_LINEARIZE
-    if (nskb && skb_linearize(nskb) != 0) {
+#  if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 17)
+    if (nskb && skb_linearize(nskb, GFP_ATOMIC) != 0)
+#  else
+    if (nskb && skb_linearize(nskb) != 0)
+#  endif
+    {
 	kfree_skb(nskb);
 	nskb = 0;
     }

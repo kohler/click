@@ -152,7 +152,7 @@ RFC2507d::simple_action(Packet *p)
     memcpy(&tcph, q->data() + sizeof(click_ip), sizeof(tcph));
     click_chatter("seq %d len %d",
                 (int)ntohl(tcph.th_seq),
-                q->length() - sizeof(tcph) - sizeof(iph));
+                (int)(q->length() - sizeof(tcph) - sizeof(iph)));
 
     {
       char *p = new char[q->length()];

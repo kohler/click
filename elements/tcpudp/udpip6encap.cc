@@ -117,6 +117,7 @@ UDPIP6Encap::simple_action(Packet *p_in)
     udp->uh_sport = _sport;
     udp->uh_dport = _dport;
     udp->uh_ulen = plen;
+    udp->uh_sum = 0;
     //TO DO: ADD SUPPORT FOR CORRECT CHECKSUM IN CASE OF ROUTING HEADER
     udp->uh_sum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, udp->uh_ulen, ip6->ip6_nxt, udp->uh_sum, (unsigned char *)(udp), udp->uh_ulen)); //reuse the icmp6 checksum calculation from ip6ndsolicitor.cc, because ICMPv6 uses the same checksum as UDP over IPv6 (see RFC 2460, 8.1)
 
