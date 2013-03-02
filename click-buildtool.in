@@ -8,7 +8,7 @@
 # Copyright (c) 2001-2003 International Computer Science Institute
 # Copyright (c) 2008 Meraki, Inc.
 # Copyright (c) 2004-2011 Regents of the University of California
-# Copyright (c) 2000-2012 Eddie Kohler
+# Copyright (c) 2000-2013 Eddie Kohler
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -161,6 +161,54 @@ $1"; shift 1;;
 
 if test "$1" = shortensyms; then
     shift 1; shortensyms "$@"; exit 0
+fi
+
+
+#######################
+# COMPILE-SHORTENSYMS #
+#######################
+
+compile_shortensyms_usage () {
+    echo "Usage: click-buildtool compile-shortensyms [BUILD COMMAND]..." 1>&2
+    echo "Try 'click-buildtool compile-shortensyms --help' for more information." 1>&2
+    exit 1
+}
+
+compile_shortensyms () {
+    args=
+    obj=
+    while [ x"$1" != x ]; do
+    case $1 in
+    -o)
+	if test $# -lt 2; then compile_shortensyms_usage; fi
+	obj="$2"; args="$args -o '$obj'"; shift 2;;
+    -h|--h|--he|--hel|--help)
+	cat <<'EOF' 1>&2
+'Click-buildtool compile-shortensyms' runs a build command and then runs
+'click-buildtool shortensyms' on the results. The BUILD COMMAND must contain
+a '-o OBJECT' argument.
+
+Usage: click-buildtool compile-shortensyms [BUILD COMMAND]
+
+Options:
+  -h, --help               Print this message and exit.
+
+Report bugs to <click@pdos.lcs.mit.edu>.
+EOF
+	exit 0;;
+    *)
+	args="$args '$1'"; shift 1;;
+    esac
+    done
+
+    eval $args
+    result=$?
+    test $result = 0 || exit $result
+    shortensyms $obj
+}
+
+if test "$1" = compile-shortensyms; then
+    shift 1; compile_shortensyms "$@"; exit 0
 fi
 
 
@@ -1557,6 +1605,7 @@ Usage: click-buildtool elem2make [-V] [-p PREFIX] < [ELEMENTS]
    or: click-buildtool kversion [--gpl]
    or: click-buildtool ksyms OBJS > KSYMSFILE
    or: click-buildtool shortensyms OBJS
+   or: click-buildtool compile-shortensyms [BUILD COMMAND]
    or: click-buildtool [--cflags | --otherlibs | --toolcflags | --toollibs]
 
 Options:
@@ -1592,6 +1641,8 @@ EOF
      shift 1; ksyms "$@"; exit 0;;
   shortensyms)
      shift 1; shortensyms "$@"; exit 0;;
+  compile-shortensyms)
+     shift 1; compile_shortensyms "$@"; exit 0;;
   --cf|--cfl|--cfla|--cflag|--cflags|--d|--de|--def|--defs)
      echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ @NETMAP_INCLUDES@ -I@includedir@; exit 0;;
   --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)

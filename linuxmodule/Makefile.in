@@ -128,13 +128,13 @@ else
 compile_option = -c
 endif
 
-cmd_shortensyms = $(CLICK_BUILDTOOL) shortensyms $@
+cmd_buildshorten = $(CLICK_BUILDTOOL) compile-shortensyms
 
 quiet_cmd_cxxcompile = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
-cmd_cxxcompile = $(CXXCOMPILE) $(CLICKDEPCFLAGS) $(compile_option) -o $@ $< && $(cmd_shortensyms)
+cmd_cxxcompile = $(cmd_buildshorten) $(CXXCOMPILE) $(CLICKDEPCFLAGS) $(compile_option) -o $@ $<
 
 quiet_cmd_cxxcompile_nodep = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
-cmd_cxxcompile_nodep = $(CXXCOMPILE) $(compile_option) -o $@ $< && $(cmd_shortensyms)
+cmd_cxxcompile_nodep = $(cmd_buildshorten) $(CXXCOMPILE) $(compile_option) -o $@ $<
 
 quiet_cmd_ccompile = CC $(quiet_modtag) $(subst $(obj)/,,$@)
 cmd_ccompile = $(COMPILE) $(CLICKDEPCFLAGS) $(compile_option) -o $@ $<
