@@ -16,6 +16,8 @@ CPUQueue::~CPUQueue()
 int
 CPUQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    if (NR_CPUS > 256)
+        return errh->error("too many CPUs for CPUQueue");
     unsigned new_capacity = 128;
     if (Args(conf, this, errh)
 	.read_p("CAPACITY", new_capacity)

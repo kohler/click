@@ -18,9 +18,6 @@
  */
 
 #include <click/element.hh>
-#if NR_CPUS > 256
-# error "too many CPUs for CPUQueue"
-#endif
 
 class CPUQueue : public Element {
   struct {
