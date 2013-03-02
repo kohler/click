@@ -1238,12 +1238,12 @@ if test $ac_have_linux_kernel = y; then
     fi
     AC_SUBST(linux_makeargs)
 
-    dnl check for Linux 2.6 #includes
+    dnl check for Linux #includes
     LINUX_DEBUG_FLAGS=
     if test -n "$LINUX_CFLAGS"; then
 	:
     elif test $LINUXMODULE_2_6 = 1; then
-	AC_MSG_CHECKING([for Linux 2.6 compilation flags])
+	AC_MSG_CHECKING([for Linux kernel compilation flags])
 	echo >conftest.c
 	make -C $linux_builddir M="`pwd`" $linux_makeargs --no-print-directory -p conftest.o >conftest.dat 2>&1
 	for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS LINUXINCLUDE debug_flags; do
@@ -1254,7 +1254,7 @@ if test $ac_have_linux_kernel = y; then
 	    AC_MSG_ERROR([
 ==============================================
 
-Can't find Linux 2.6 compilation flags.
+Can't find Linux compilation flags.
 
 ==============================================])
 	    dnl ' fix syntax highlighting

@@ -10743,8 +10743,8 @@ if test $ac_have_linux_kernel = y; then
     if test -n "$LINUX_CFLAGS"; then
 	:
     elif test $LINUXMODULE_2_6 = 1; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Linux 2.6 compilation flags" >&5
-$as_echo_n "checking for Linux 2.6 compilation flags... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Linux compilation flags" >&5
+$as_echo_n "checking for Linux compilation flags... " >&6; }
 	echo >conftest.c
 	make -C $linux_builddir M="`pwd`" $linux_makeargs --no-print-directory -p conftest.o >conftest.dat 2>&1
 	for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS LINUXINCLUDE debug_flags; do
@@ -10756,7 +10756,7 @@ $as_echo "not found" >&6; }
 	    as_fn_error $? "
 ==============================================
 
-Can't find Linux 2.6 compilation flags.
+Can't find Linux compilation flags.
 
 ==============================================" "$LINENO" 5
 	    	fi
