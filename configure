@@ -10743,8 +10743,8 @@ if test $ac_have_linux_kernel = y; then
     if test -n "$LINUX_CFLAGS"; then
 	:
     elif test $LINUXMODULE_2_6 = 1; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Linux compilation flags" >&5
-$as_echo_n "checking for Linux compilation flags... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Linux kernel compilation flags" >&5
+$as_echo_n "checking for Linux kernel compilation flags... " >&6; }
 	echo >conftest.c
 	make -C $linux_builddir M="`pwd`" $linux_makeargs --no-print-directory -p conftest.o >conftest.dat 2>&1
 	for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS LINUXINCLUDE debug_flags; do
@@ -12355,21 +12355,21 @@ test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 $as_echo_n "checking whether install accepts -C... " >&6; }
     echo X > conftest.1
     if $INSTALL -C conftest.1 conftest.2 >/dev/null 2>&1; then
-	INSTALL_IF_CHANGED='$(INSTALL) -C'
+	INSTALL_IF_CHANGED='${INSTALL} -C'
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
     else
-	INSTALL_IF_CHANGED='$(top_builddir)/installch'
+	INSTALL_IF_CHANGED='${top_builddir}/installch'
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
     fi
     rm -f conftest.1 conftest.2
 
-    CLICKINSTALL=`echo "$INSTALL" | sed 's|^\$(.*)/|\$(clickdatadir)/|'`
+    CLICKINSTALL=`echo "$INSTALL" | sed 's|^\$(.*)/|\${clickdatadir}/|'`
 
     CLICK_BUILD_INSTALL="$INSTALL"
 
-    CLICK_BUILD_INSTALL_IF_CHANGED="`echo "$INSTALL_IF_CHANGED" | sed 's|(INSTALL)|(CLICK_BUILD_INSTALL)|'`"
+    CLICK_BUILD_INSTALL_IF_CHANGED="`echo "$INSTALL_IF_CHANGED" | sed 's|{INSTALL}|{CLICK_BUILD_INSTALL}|'`"
 
 
 
