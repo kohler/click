@@ -1239,13 +1239,15 @@ if test $ac_have_linux_kernel = y; then
     AC_SUBST(linux_makeargs)
 
     dnl check for Linux 2.6 #includes
+    LINUX_DEBUG_FLAGS=
     if test -n "$LINUX_CFLAGS"; then
 	:
     elif test $LINUXMODULE_2_6 = 1; then
 	AC_MSG_CHECKING([for Linux 2.6 compilation flags])
-	make -C $linux_builddir M="`pwd`" $linux_makeargs --no-print-directory -p nonexistent.o >conftest.dat 2>&1
-	for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS LINUXINCLUDE; do
-	    eval l$v='"'"`grep ^$v' *:*=' conftest.dat | sed s/^$v' *:*= *//'`"'"'
+	echo >conftest.c
+	make -C $linux_builddir M="`pwd`" $linux_makeargs --no-print-directory -p conftest.o >conftest.dat 2>&1
+	for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS LINUXINCLUDE debug_flags; do
+	    eval l$v="'""`grep ^$v' *:*=' conftest.dat | sed s/^$v' *:*= *//'`""'"
 	done
 	if test -z "$lKBUILD_CPPFLAGS$lKBUILD_CFLAGS$lCPPFLAGS$lCFLAGS$lLINUXINCLUDE"; then
 	    AC_MSG_RESULT([not found])
@@ -1271,6 +1273,7 @@ Can't find Linux 2.6 compilation flags.
 	    -e s,-Werror-implicit-function-declaration,,g \
 	    -e 's,-W[^ ]*,,g' <conftest.dat`"
 	AC_MSG_RESULT($LINUX_CFLAGS)
+	LINUX_DEBUG_FLAGS="$ldebug_flags"
     fi
 
     LINUX_FIXINCLUDES_PROGRAM=
@@ -1291,8 +1294,9 @@ fixincludes.pl execution failed.
 	LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
 	CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s	$mydir	$clickbuild_includedir/click-linuxmodule	g"`"
     fi
-    AC_SUBST(LINUX_FIXINCLUDES_PROGRAM)
-    AC_SUBST(CLICKLINUX_FIXINCLUDES_PROGRAM)
+    AC_SUBST([LINUX_FIXINCLUDES_PROGRAM])
+    AC_SUBST([CLICKLINUX_FIXINCLUDES_PROGRAM])
+    AC_SUBST([LINUX_DEBUG_FLAGS])
 
 
     CPPFLAGS="$save_cppflags $LINUX_CFLAGS"
