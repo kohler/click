@@ -209,21 +209,9 @@ install-local: Makefile $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc all
 	$(CLICKmkinstalldirs) $(DESTDIR)$(libdir)
 	for i in $(patsubst %.o,%.ko,$(INSTALLOBJS)); do $(CLICK_BUILD_INSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
 	$(CLICK_BUILD_INSTALL_DATA) Module.symvers $(DESTDIR)$(libdir)/click.symvers
-install-include:
-	/bin/rm -f .install-include*
+install-include: $(top_builddir)/click-buildtool
 	$(CLICKmkinstalldirs) $(DESTDIR)$(includedir)/click-linuxmodule
-	(cd $(DESTDIR)$(includedir)/click-linuxmodule; find . -type d -print | grep /) >.install-include0 || true
-	(cd $(top_builddir)/include/click-linuxmodule; find . -type d -print | grep /) >.install-include1 || true
-	cat .install-include0 .install-include1 | sort | uniq -u >.install-include2
-	cat .install-include0 .install-include2 | sort | uniq -d | sed 's	^\.\(.*\)	'"$(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 /bin/rm -rf
-	cat .install-include1 .install-include2 | sort | uniq -d | sed 's	^\.\(.*\)	'"$(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 $(CLICKmkinstalldirs)
-	/bin/rm -f .install-include*
-	(cd $(DESTDIR)$(includedir)/click-linuxmodule; find . -type f -print | grep /) >.install-include0 || true
-	(cd $(top_builddir)/include/click-linuxmodule; find . -type f -print | grep /) >.install-include1 || true
-	cat .install-include0 .install-include1 | sort | uniq -u >.install-include2
-	cat .install-include0 .install-include2 | sort | uniq -d | sed 's	^\.\(.*\)	'"$(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 /bin/rm -f
-	cat .install-include1 | sed 's	^\.\(.*\)	'"$(top_builddir)/include/click-linuxmodule"'\1'" $(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 $(CLICK_BUILD_INSTALL_DATA_IF_CHANGED)
-	/bin/rm -f .install-include*
+	$(call verbose_cmd,$(top_builddir)/click-buildtool installtree -m 644 "$(top_builddir)/include/click-linuxmodule" "$(DESTDIR)$(includedir)/click-linuxmodule",INSTALL $(DESTDIR)$(includedir)/click-linuxmodule)
 install-man:
 	@:
 uninstall:

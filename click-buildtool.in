@@ -212,6 +212,92 @@ if test "$1" = compile-shortensyms; then
 fi
 
 
+###############
+# INSTALLTREE #
+###############
+
+installtree_usage () {
+    echo "Usage: click-buildtool installtree SRC DST" 1>&2
+    echo "Try 'click-buildtool installtree --help' for more information." 1>&2
+    exit 1
+}
+
+do_installtree () {
+    src="$1"; dst="$2"; mode="$3"
+    found=0
+    tty=; if test -t 1; then tty=y; fi
+    while read file; do
+	found=`expr $found + 1`
+	prfile=`echo "$dst/$file" | sed 's,/\./,/,g'`
+	if test -n "$tty"; then
+	    echo "                                                                           ... $prfile" | tr -d '\012'
+	else
+	    echo "  ... $prfile"
+	fi
+	if test ! -f "$src/$file"; then
+	    if ! rm -f "$dst/$file"; then echo; exit 1; fi
+	else
+	    dir=`echo "$dst/$file" | sed 's,/*[^/]*$,,'`
+	    if test ! -d "$dir" && ! mkdir -p "$dir"; then echo; exit 1; fi
+	    if ! cp "$src/$file" "$dst/$file"; then echo; exit 1; fi
+	    if ! chmod $mode "$dst/$file"; then echo; exit 1; fi
+	fi
+    done
+    if test "$found" != 0 -a -n "$tty"; then
+	echo "                                                                           ... $found" `if test $found = 0; then echo file; else echo files; fi` installed
+    fi
+}
+
+installtree () {
+    mode=755
+    src=
+    dst=
+    while [ x"$1" != x ]; do
+    case $1 in
+    -m|--m|--mo|--mod|--mode)
+	if test $# -lt 2; then installtree_usage; fi
+	mode="$2"; shift 2;;
+    -m*)
+	mode="`echo "$1" | sed 's/^-m//'`"; shift 1;;
+    --m=*|--mo=*|--mod=*|--mode=*)
+	mode="`echo "$1" | sed 's/^[^=]*=//'`"; shift 1;;
+    -h|--h|--he|--hel|--help)
+	cat <<'EOF' 1>&2
+'Click-buildtool installtree' installs many files into a directory. The
+files to install should be supplied, one to a line, on standard input.
+
+Usage: click-buildtool installtree SRC DEST
+
+Options:
+  -m, --mode MODE          Installation mode.
+  -h, --help               Print this message and exit.
+
+Report bugs to <click@pdos.lcs.mit.edu>.
+EOF
+	exit 0;;
+    -*)
+        installtree_usage;;
+    *)
+        if test -z "$src"; then src="$1"; elif test -z "$dst"; then dst="$1"; else installtree_usage; fi
+	shift 1;;
+    esac
+    done
+    if test -z "$dst"; then installtree_usage; fi
+
+    if test -z "$MD5SUM"; then MD5SUM="@MD5SUM@"; fi
+    if test -z "$MD5SUM" && echo | sum >/dev/null; then MD5SUM=sum; fi
+    if test -z "$MD5SUM"; then
+	echo "Sorry, 'click-buildtool installtree' requires a working 'md5sum' program." 1>&2
+	exit 1
+    fi
+
+    (	( cd $src; find . -type f -print | xargs -L 100 $MD5SUM )
+	( cd $dst; find . -type f -print | xargs -L 100 $MD5SUM )
+    ) | sort | uniq -u | awk '{ print $2 }' | sort | uniq \
+	| do_installtree "$src" "$dst" "$mode"
+}
+
+
 ############
 # FINDELEM #
 ############
@@ -1606,6 +1692,7 @@ Usage: click-buildtool elem2make [-V] [-p PREFIX] < [ELEMENTS]
    or: click-buildtool ksyms OBJS > KSYMSFILE
    or: click-buildtool shortensyms OBJS
    or: click-buildtool compile-shortensyms [BUILD COMMAND]
+   or: click-buildtool installtree DIR < FILELIST
    or: click-buildtool [--cflags | --otherlibs | --toolcflags | --toollibs]
 
 Options:
@@ -1643,6 +1730,8 @@ EOF
      shift 1; shortensyms "$@"; exit 0;;
   compile-shortensyms)
      shift 1; compile_shortensyms "$@"; exit 0;;
+  installtree)
+     shift 1; installtree "$@"; exit 0;;
   --cf|--cfl|--cfla|--cflag|--cflags|--d|--de|--def|--defs)
      echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ @NETMAP_INCLUDES@ -I@includedir@; exit 0;;
   --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)

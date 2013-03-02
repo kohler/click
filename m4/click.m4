@@ -471,20 +471,20 @@ AC_DEFUN([CLICK_PROG_INSTALL], [
     AC_MSG_CHECKING(whether install accepts -C)
     echo X > conftest.1
     if $INSTALL -C conftest.1 conftest.2 >/dev/null 2>&1; then
-	INSTALL_IF_CHANGED='$(INSTALL) -C'
+	INSTALL_IF_CHANGED='${INSTALL} -C'
 	AC_MSG_RESULT(yes)
     else
-	INSTALL_IF_CHANGED='$(top_builddir)/installch'
+	INSTALL_IF_CHANGED='${top_builddir}/installch'
 	AC_MSG_RESULT(no)
     fi
     rm -f conftest.1 conftest.2
-    AC_SUBST(INSTALL_IF_CHANGED)
-    CLICKINSTALL=`echo "$INSTALL" | sed 's|^\$(.*)/|\$(clickdatadir)/|'`
-    AC_SUBST(CLICKINSTALL)
+    AC_SUBST([INSTALL_IF_CHANGED])
+    CLICKINSTALL=`echo "$INSTALL" | sed 's|^\$(.*)/|\${clickdatadir}/|'`
+    AC_SUBST([CLICKINSTALL])
     CLICK_BUILD_INSTALL="$INSTALL"
-    AC_SUBST(CLICK_BUILD_INSTALL)
-    CLICK_BUILD_INSTALL_IF_CHANGED="`echo "$INSTALL_IF_CHANGED" | sed 's|(INSTALL)|(CLICK_BUILD_INSTALL)|'`"
-    AC_SUBST(CLICK_BUILD_INSTALL_IF_CHANGED)
+    AC_SUBST([CLICK_BUILD_INSTALL])
+    CLICK_BUILD_INSTALL_IF_CHANGED="`echo "$INSTALL_IF_CHANGED" | sed 's|{INSTALL}|{CLICK_BUILD_INSTALL}|'`"
+    AC_SUBST([CLICK_BUILD_INSTALL_IF_CHANGED])
 ])
 
 
