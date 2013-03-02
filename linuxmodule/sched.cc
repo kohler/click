@@ -100,9 +100,13 @@ click_sched(void *thunk)
     if (mycpu >= 0) {
 	mycpu += rt->thread_id();
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-	if (mycpu < num_possible_cpus() && cpu_online(mycpu))
+	if (mycpu < num_possible_cpus() && cpu_online(mycpu)) {
+#  if CONFIG_CPUMASK_OFFSTACK
+	    set_cpus_allowed_ptr(current, cpumask_of(mycpu));
+#  else
 	    set_cpus_allowed(current, cpumask_of_cpu(mycpu));
-	else
+#  endif
+	} else
 	    printk("<1>click: warning: cpu %d for thread %d offline\n", mycpu, rt->thread_id());
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 21)
 	if (mycpu < smp_num_cpus && (cpu_online_map & (1UL << cpu_logical_map(mycpu))))
