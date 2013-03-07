@@ -97,7 +97,7 @@ CheckIP6Header::simple_action(Packet *p)
 {
   const click_ip6 *ip = reinterpret_cast <const click_ip6 *>( p->data() + _offset);
   unsigned plen = p->length() - _offset;
-  struct IP6Address src;
+  class IP6Address src;
 
   // check if the packet is smaller than ip6 header
   // cast to int so very large plen is interpreted as negative
