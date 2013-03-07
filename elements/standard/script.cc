@@ -428,7 +428,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	case insn_append: {
 	    String word = cp_shift_spacevec(_args3[ipos]);
 	    String file = (_args3[ipos] ? _args3[ipos] : "-");
-	    _args3[ipos] = (">>" + (insn == insn_save)) + file + " " + word;
+	    _args3[ipos] = (&">>"[insn == insn_save]) + file + " " + word;
 	    /* FALLTHRU */
 	}
 #endif
