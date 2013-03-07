@@ -158,8 +158,7 @@ inline hashcode_t IPFlowID::hashcode() const
     uint16_t d = ntohs(dport());
     hashcode_t sx = CLICK_NAME(hashcode)(saddr());
     hashcode_t dx = CLICK_NAME(hashcode)(daddr());
-    return (ROT(sx, s%16)
-	    ^ ROT(dx, 31-d%16))
+    return (ROT(sx, (s % 16) + 1) ^ ROT(dx, 31 - (d % 16)))
 	^ ((d << 16) | s);
 }
 
