@@ -472,7 +472,7 @@ public:
   { return (CLICK_HZ * m) / 1000; }
 
 private:
-  class RouteEntry make_generic_rte(const RTEntry &rte) { return rte; }
+  struct RouteEntry make_generic_rte(const RTEntry &rte) { return rte; }
 
   /* update route metric with the last hop from the advertising node */
   void update_metric(RTEntry &);
