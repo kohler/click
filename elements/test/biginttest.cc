@@ -148,6 +148,14 @@ BigintTest::initialize(ErrorHandler *errh)
     CHECK0(bigint::multiply(x, x, 2, 10) == 0 && x[0] == 100 && x[1] == 0);
     CHECK0(bigint::multiply(x, x, 2, 4191384139U) == 0 && x[0] == 0x9698A54CU && x[1] == 0x61U);
 
+    {
+	int32_t quot, rem;
+	rem = int_divide((int32_t) 0x80000000, 2, quot);
+	CHECK0(quot == -0x40000000 && rem == 0);
+	rem = int_divide((int32_t) 0x80000000, 3, quot);
+	CHECK0(quot == -715827883 && rem == 1);
+    }
+
     errh->message("All tests pass!");
     return 0;
 }

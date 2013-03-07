@@ -375,7 +375,7 @@ inline uint64_t int_divide(uint64_t a, uint32_t b) {
 inline int64_t int_divide(int64_t a, uint32_t b) {
 # if CLICK_LINUXMODULE && BITS_PER_LONG < 64
     if (unlikely(a < 0)) {
-	uint64_t a_abs = -a - 1;
+	uint64_t a_abs = -(a + 1);
 	do_div(a_abs, b);
 	return (int64_t) -a_abs - 1;
     } else {
@@ -450,7 +450,7 @@ inline uint32_t int_divide(uint32_t a, uint32_t b, uint32_t &quot) {
 /** @overload */
 inline int32_t int_divide(int32_t a, uint32_t b, int32_t &quot) {
     if (unlikely(a < 0))
-	quot = -((-a - 1) / b) - 1;
+	quot = -(-(a + 1) / b) - 1;
     else
 	quot = a / b;
     return a - quot * b;
@@ -472,7 +472,7 @@ inline uint32_t int_divide(uint64_t a, uint32_t b, uint64_t &quot) {
 inline uint32_t int_divide(int64_t a, uint32_t b, int64_t &quot) {
 # if CLICK_LINUXMODULE && BITS_PER_LONG < 64
     if (unlikely(a < 0)) {
-	uint64_t a_abs = -a - 1;
+	uint64_t a_abs = -(a + 1);
 	uint32_t rem = do_div(a_abs, b);
 	quot = (int64_t) -a_abs - 1;
 	return rem ? b - rem : 0;
@@ -491,7 +491,7 @@ inline uint32_t int_divide(int64_t a, uint32_t b, int64_t &quot) {
     //			 rem = a % b;
     //			 if (rem < 0) div--, rem += b;".
     if (unlikely(a < 0))
-	quot = -((-a - 1) / b) - 1;
+	quot = -(-(a + 1) / b) - 1;
     else
 	quot = a / b;
     return a - quot * b;

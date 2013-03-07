@@ -1001,7 +1001,7 @@ Timestamp::sec() const
 {
 #if TIMESTAMP_REP_FLAT64
     if (unlikely(_t.x < 0))
-	return -value_div(-_t.x - 1, subsec_per_sec) - 1;
+	return -value_div(-(_t.x + 1), subsec_per_sec) - 1;
     else
 	return value_div(_t.x, subsec_per_sec);
 #else
@@ -1127,7 +1127,7 @@ Timestamp::make_jiffies(click_jiffies_difference_t jiffies)
     t._t.x = (int64_t) jiffies * (subsec_per_sec / CLICK_HZ);
 # else
     if (jiffies < 0)
-	t._t.sec = -((-jiffies - 1) / CLICK_HZ) - 1;
+	t._t.sec = -(-(jiffies + 1) / CLICK_HZ) - 1;
     else
 	t._t.sec = jiffies / CLICK_HZ;
     t._t.subsec = (jiffies - t._t.sec * CLICK_HZ) * (subsec_per_sec / CLICK_HZ);
@@ -1313,7 +1313,7 @@ operator-(const Timestamp &a)
     return t;
 #else
     if (a.subsec())
-	return Timestamp(-a.sec() - 1, Timestamp::subsec_per_sec - a.subsec());
+	return Timestamp(-(a.sec() + 1), Timestamp::subsec_per_sec - a.subsec());
     else
 	return Timestamp(-a.sec(), 0);
 #endif
