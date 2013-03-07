@@ -1014,7 +1014,7 @@ inline uint32_t
 Timestamp::subsec() const
 {
 #if TIMESTAMP_REP_FLAT64
-    return _t.x - sec() * subsec_per_sec;
+    return _t.x - (uint32_t) sec() * subsec_per_sec;
 #else
     return _t.subsec;
 #endif

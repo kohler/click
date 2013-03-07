@@ -357,6 +357,9 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK((-t).msecval() == -999);
     CHECK((-t).usecval() == -999000);
     CHECK((-t).nsecval() == -999000000);
+    t = Timestamp(0, 0) - Timestamp::make_msec(10000001);
+    CHECK(t.sec() == -10001 && t.usec() == 999000);
+    CHECK(t.subsec() == 999 * Timestamp::subsec_per_msec);
 
     CHECK(Timestamp(Timestamp::make_nsec(0, 999).timeval()) == Timestamp::make_usec(0, 0));
 #if TIMESTAMP_NANOSEC
