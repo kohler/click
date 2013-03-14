@@ -20,7 +20,7 @@ public:
 
     class IPAddress      dest_ip;      // IP address of this destination
 
-    class grid_location  dest_loc;     // location of dest, as contained in its route ads
+    struct grid_location dest_loc;     // location of dest, as contained in its route ads
     bool                 loc_good;     // is location any good?
     unsigned short       loc_err;      // error in metres
 

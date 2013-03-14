@@ -130,7 +130,7 @@ public:
   struct link_entry {
     static const int size = 8;
 
-    struct EtherAddress eth;
+    class EtherAddress eth;
     unsigned short num_rx;    // number of probe bcasts received from node during last tau msecs
 
     link_entry() : num_rx(0) { }
