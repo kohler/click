@@ -284,7 +284,7 @@ FromHost::set_device_addresses(ErrorHandler *errh)
         sin->sin_family = AF_INET;
         sin->sin_addr = _destaddr;
 # if HAVE_LINUX_INET_CTL_SOCK_CREATE
-	struct socket *sock = kmalloc(sizeof(struct socket), GFP_KERNEL);
+	struct socket *sock = (struct socket*) kmalloc(sizeof(struct socket), GFP_KERNEL);
 	sock->sk = 0;
 	if (res >= 0 && (res = inet_ctl_sock_create(&sock->sk, AF_INET, SOCK_RAW, IPPROTO_TCP, dev_net(_dev))) != 0) {
 	    errh->error("error %d creating control socket for device '%s'", res, _devname.c_str());
