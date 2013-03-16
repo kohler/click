@@ -230,7 +230,10 @@ do_installtree () {
 	found=`expr $found + 1`
 	prfile=`echo "$dst/$file" | sed 's,/\./,/,g'`
 	if test -n "$tty"; then
-	    echo "                                                                           ... $prfile" | tr -d '\012'
+            if test `echo "$prfile" | wc -c` -gt 71; then
+                prfile=`echo ".../$file" | sed 's,/\./,/,g'`
+            fi
+	    echo "                                                                              ... $prfile" | tr -d '\012'
 	else
 	    echo "  ... $prfile"
 	fi
@@ -244,7 +247,7 @@ do_installtree () {
 	fi
     done
     if test "$found" != 0 -a -n "$tty"; then
-	echo "                                                                           ... $found" `if test $found = 1; then echo file; else echo files; fi` installed
+	echo "                                                                              ... $found" `if test $found = 1; then echo file; else echo files; fi` installed
     fi
 }
 
