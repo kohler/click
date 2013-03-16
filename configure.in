@@ -1262,7 +1262,7 @@ Can't find Linux compilation flags.
 	echo "$lCPPFLAGS $lCFLAGS $lLINUXINCLUDE $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
 	LINUX_CFLAGS="`sed -e 's,-Iinclude ',-I$linux_builddir/include' ,g' \
 	    -e 's,-Iinclude2 ',-I$linux_builddir/include2' ,g' \
-	    -e 's,-Iarch/um/include/shared',-I$linux_builddir/arch/um/include/shared',g' \
+	    -e 's,-Iarch/',-I$linux_builddir/arch/',g' \
 	    -e 's, include/, '$linux_builddir/include/,g \
 	    -e s,-Iinclude/,-I${linux_srcdir}include/,g \
 	    -e s,-Wno-pointer-sign,,g \
