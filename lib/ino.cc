@@ -65,7 +65,7 @@ ClickIno::grow(int min_size)
 	return -ENOMEM;
     memcpy(nse, _x, sizeof(Entry) * _cap);
     for (int i = _cap; i < new_cap; i++)
-	new((void *)&nse[i]) String();
+	new((void *)&(nse[i].name)) String();
     CLICK_LFREE(_x, sizeof(Entry) * _cap);
     _x = nse;
     _cap = new_cap;
