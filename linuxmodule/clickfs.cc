@@ -27,6 +27,7 @@
 #include <click/straccum.hh>
 #include <click/llrpc.h>
 #include <click/ino.hh>
+#include <click/list.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -488,80 +489,52 @@ click_delete_dentry(struct dentry *)
 
 /*************************** Handler operations ******************************/
 
-struct HandlerStringInfo {
-    int next;
-    int flags;
+struct HandlerString {
+    String data;
+    int flags;                  // 0 means free
+    List_member<HandlerString> link;
 };
 
-static String *handler_strings = 0;
-static HandlerStringInfo *handler_strings_info = 0;
-static int handler_strings_cap = 0;
-static int handler_strings_free = -1;
+// handler_strings holds all currently active HandlerString objects, as well
+// as a selection of freed ones for fast reuse. Freed objects are at the
+// front() of the list.
+static List<HandlerString, &HandlerString::link>* handler_strings = 0;
+static int free_handler_strings = 0;
 static struct mutex handler_strings_lock;
 
-#define FILP_STRINGNO(filp)		(reinterpret_cast<intptr_t>((filp)->private_data))
-#define FILP_READ_STRINGNO(filp)	FILP_STRINGNO(filp)
-#define FILP_WRITE_STRINGNO(filp)	FILP_STRINGNO(filp)
+#define FILP_HS(filp)		(reinterpret_cast<HandlerString*>((filp)->private_data))
+#define FILP_READ_HS(filp)	FILP_HS(filp)
+#define FILP_WRITE_HS(filp)	FILP_HS(filp)
 
-static int
-increase_handler_strings()
-{
-    // must be called with handler_strings_lock held
-
-    if (handler_strings_cap < 0)	// in process of cleaning up module
-	return -1;
-
-    int new_cap = (handler_strings_cap ? 2*handler_strings_cap : 16);
-    String *new_strs = new String[new_cap];
-    if (!new_strs)
-	return -1;
-    HandlerStringInfo *new_infos = new HandlerStringInfo[new_cap];
-    if (!new_infos) {
-	delete[] new_strs;
-	return -1;
-    }
-
-    for (int i = 0; i < handler_strings_cap; i++)
-	new_strs[i] = handler_strings[i];
-    for (int i = handler_strings_cap; i < new_cap; i++)
-	new_infos[i].next = i + 1;
-    new_infos[new_cap - 1].next = handler_strings_free;
-    memcpy(new_infos, handler_strings_info, sizeof(HandlerStringInfo) * handler_strings_cap);
-
-    delete[] handler_strings;
-    delete[] handler_strings_info;
-    handler_strings_free = handler_strings_cap;
-    handler_strings_cap = new_cap;
-    handler_strings = new_strs;
-    handler_strings_info = new_infos;
-
-    return 0;
-}
-
-static int
-next_handler_string(const Handler *h)
-{
+static HandlerString* alloc_handler_string() {
     SPIN_LOCK(&handler_strings_lock, __FILE__, __LINE__);
-    if (handler_strings_free < 0)
-	increase_handler_strings();
-    int hs = handler_strings_free;
-    if (hs >= 0) {
-	handler_strings_free = handler_strings_info[hs].next;
-	handler_strings_info[hs].flags = h->flags();
+    HandlerString* hs = 0;
+    if (!handler_strings)
+        handler_strings = new List<HandlerString, &HandlerString::link>;
+    if (handler_strings) {
+        if (!handler_strings->empty() && !handler_strings->front()->flags) {
+            hs = handler_strings->front();
+            handler_strings->pop_front();
+            --free_handler_strings;
+        } else
+            hs = new HandlerString;
+        if (hs)
+            handler_strings->push_back(hs);
     }
     SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
     return hs;
 }
 
-static void
-free_handler_string(int hs)
-{
+static void free_handler_string(HandlerString* hs) {
     SPIN_LOCK(&handler_strings_lock, __FILE__, __LINE__);
-    if (hs >= 0 && hs < handler_strings_cap) {
-	handler_strings[hs] = String();
-	handler_strings_info[hs].next = handler_strings_free;
-	handler_strings_free = hs;
-    }
+    handler_strings->erase(hs);
+    hs->data = String();
+    hs->flags = 0;
+    if (free_handler_strings < 8) {
+        handler_strings->push_front(hs);
+        ++free_handler_strings;
+    } else
+        delete hs;
     SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
 }
 
@@ -602,7 +575,7 @@ handler_open(struct inode *inode, struct file *filp)
     bool writing = (filp->f_flags & O_ACCMODE) != O_RDONLY;
 
     int retval = 0;
-    int stringno = -1;
+    HandlerString* hs = 0;
     const Handler *h;
 
     if ((reading && writing)
@@ -616,20 +589,20 @@ handler_open(struct inode *inode, struct file *filp)
     else if ((reading && !h->read_visible())
 	     || (writing && !h->write_visible()))
 	retval = -EPERM;
-    else if ((stringno = next_handler_string(h)) < 0)
+    else if (!(hs = alloc_handler_string()))
 	retval = -ENOMEM;
     else {
-	handler_strings[stringno] = String();
+        hs->flags = h->flags();
 	retval = 0;
     }
 
     UNLOCK_CONFIG_READ();
 
-    if (retval < 0 && stringno >= 0) {
-	free_handler_string(stringno);
-	stringno = -1;
+    if (retval < 0 && hs) {
+	free_handler_string(hs);
+	hs = 0;
     }
-    filp->private_data = reinterpret_cast<void *>(stringno);
+    filp->private_data = hs;
     return retval;
 }
 
@@ -637,12 +610,12 @@ static ssize_t
 handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 {
     loff_t f_pos = *store_f_pos;
-    int stringno = FILP_READ_STRINGNO(filp);
-    if (stringno < 0 || stringno >= handler_strings_cap)
+    HandlerString* hs = FILP_READ_HS(filp);
+    if (!hs)
 	return -EIO;
 
     // (re)read handler if necessary
-    if ((handler_strings_info[stringno].flags & (HANDLER_DIRECT | HANDLER_DONE)) != HANDLER_DONE) {
+    if ((hs->flags & (HANDLER_DIRECT | HANDLER_DONE)) != HANDLER_DONE) {
 	LOCK_CONFIG_READ();
 	int retval;
 	const Handler *h;
@@ -657,39 +630,39 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	    int eindex = click_ino.ino_element(inode->i_ino);
 	    Element *e = Router::element(click_router, eindex);
 
-	    if (handler_strings_info[stringno].flags & HANDLER_DIRECT) {
+	    if (hs->flags & HANDLER_DIRECT) {
 		click_handler_direct_info hdi;
 		hdi.buffer = buffer;
 		hdi.count = count;
 		hdi.store_f_pos = store_f_pos;
-		hdi.string = &handler_strings[stringno];
+		hdi.string = &hs->data;
 		hdi.retval = 0;
 		(void) h->__call_read(e, &hdi);
 		count = hdi.count;
 		retval = hdi.retval;
 	    } else if (h->exclusive()) {
 		lock_threads();
-		handler_strings[stringno] = h->call_read(e);
+		hs->data = h->call_read(e);
 		unlock_threads();
 	    } else
-		handler_strings[stringno] = h->call_read(e);
+		hs->data = h->call_read(e);
 
 	    if (!h->raw()
-		&& !(handler_strings_info[stringno].flags & HANDLER_RAW)
-		&& !(handler_strings_info[stringno].flags & HANDLER_DIRECT)
-		&& handler_strings[stringno]
-		&& handler_strings[stringno].back() != '\n')
-		handler_strings[stringno] += '\n';
-	    retval = (handler_strings[stringno].out_of_memory() ? -ENOMEM : 0);
+		&& !(hs->flags & HANDLER_RAW)
+		&& !(hs->flags & HANDLER_DIRECT)
+		&& hs->data
+		&& hs->data.back() != '\n')
+		hs->data += '\n';
+	    retval = (hs->data.out_of_memory() ? -ENOMEM : 0);
 	}
 	UNLOCK_CONFIG_READ();
 	if (retval < 0)
 	    return retval;
-	handler_strings_info[stringno].flags |= HANDLER_DONE;
+	hs->flags |= HANDLER_DONE;
     }
 
-    if (!(handler_strings_info[stringno].flags & HANDLER_DIRECT)) {
-	const String &s = handler_strings[stringno];
+    if (!(hs->flags & HANDLER_DIRECT)) {
+	const String &s = hs->data;
 	if (f_pos > s.length())
 	    f_pos = s.length();
 	if (f_pos + count > s.length())
@@ -706,16 +679,16 @@ static ssize_t
 handler_write(struct file *filp, const char *buffer, size_t count, loff_t *store_f_pos)
 {
     loff_t f_pos = *store_f_pos;
-    int stringno = FILP_WRITE_STRINGNO(filp);
-    if (stringno < 0 || stringno >= handler_strings_cap)
+    HandlerString* hs = FILP_WRITE_HS(filp);
+    if (!hs)
 	return -EIO;
-    String &s = handler_strings[stringno];
+    String &s = hs->data;
     int old_length = s.length();
 
-    handler_strings_info[stringno].flags &= ~HANDLER_DONE;
+    hs->flags &= ~HANDLER_DONE;
 #ifdef LARGEST_HANDLER_WRITE
     if (f_pos + count > LARGEST_HANDLER_WRITE
-	&& !(handler_strings_info[stringno].flags & HANDLER_WRITE_UNLIMITED))
+	&& !(hs->flags & HANDLER_WRITE_UNLIMITED))
 	return -EFBIG;
 #endif
 
@@ -745,7 +718,7 @@ handler_write(struct file *filp, const char *buffer, size_t count, loff_t *store
 static int
 handler_do_write(struct file *filp, void *address_ptr)
 {
-    int stringno = FILP_WRITE_STRINGNO(filp);
+    HandlerString* hs = FILP_WRITE_HS(filp);
     struct inode *inode = filp->f_dentry->d_inode;
     const Handler *h;
     int retval;
@@ -755,7 +728,7 @@ handler_do_write(struct file *filp, void *address_ptr)
     else if (!(h = Router::handler(click_router, click_ino.ino_handler(inode->i_ino)))
 	     || !h->write_visible())
 	retval = -EIO;
-    else if (handler_strings[stringno].out_of_memory())
+    else if (hs->data.out_of_memory())
 	retval = -ENOMEM;
     else {
 	int eindex = click_ino.ino_element(inode->i_ino);
@@ -770,9 +743,9 @@ handler_do_write(struct file *filp, void *address_ptr)
 	    goto exit;
 	}
 
-	String data = handler_strings[stringno];
+	String data = hs->data;
 	if (!h->raw()
-	    && !(handler_strings_info[stringno].flags & HANDLER_RAW)
+	    && !(hs->flags & HANDLER_RAW)
 	    && (!address_ptr || !(chs.flags & CLICK_LLRPC_CALL_HANDLER_FLAG_RAW))
 	    && data
 	    && data.back() == '\n')
@@ -786,7 +759,7 @@ handler_do_write(struct file *filp, void *address_ptr)
 	} else
 	    retval = h->call_write(data, e, &cerrh);
 
-	handler_strings_info[stringno].flags |= HANDLER_DONE;
+	hs->flags |= HANDLER_DONE;
 
 	if (cerrh._sa && !address_ptr) {
 	    ErrorHandler *errh = click_logged_errh;
@@ -842,7 +815,7 @@ handler_flush(struct file *filp
 	      )
 {
     bool writing = (filp->f_flags & O_ACCMODE) != O_RDONLY;
-    int stringno = FILP_WRITE_STRINGNO(filp);
+    HandlerString* hs = FILP_WRITE_HS(filp);
     int retval = 0;
 
 #ifdef file_count
@@ -851,9 +824,8 @@ handler_flush(struct file *filp
     int f_count = atomic_read(&filp->f_count);
 #endif
 
-    if (writing && f_count == 1
-	&& stringno >= 0 && stringno < handler_strings_cap
-	&& !(handler_strings_info[stringno].flags & HANDLER_DONE)) {
+    if (writing && f_count == 1 && hs
+	&& !(hs->flags & HANDLER_DONE)) {
 	LOCK_CONFIG_WRITE();
 	retval = handler_do_write(filp, 0);
 	UNLOCK_CONFIG_WRITE();
@@ -866,9 +838,9 @@ static int
 handler_release(struct inode *, struct file *filp)
 {
     // free handler string
-    int stringno = FILP_READ_STRINGNO(filp);
-    if (stringno >= 0)
-	free_handler_string(stringno);
+    HandlerString* hs = FILP_READ_HS(filp);
+    if (hs)
+	free_handler_string(hs);
     return 0;
 }
 
@@ -891,13 +863,13 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
     else if (command == CLICK_LLRPC_CALL_HANDLER)
 	retval = handler_do_write(filp, reinterpret_cast<void *>(address));
     else if (command == CLICK_LLRPC_ABANDON_HANDLER) {
-	int stringno = FILP_STRINGNO(filp);
-	handler_strings_info[stringno].flags |= HANDLER_DONE;
-	handler_strings[stringno] = String();
+	HandlerString* hs = FILP_HS(filp);
+	hs->data = String();
+	hs->flags |= HANDLER_DONE;
 	retval = 0;
     } else if (command == CLICK_LLRPC_RAW_HANDLER) {
-	int stringno = FILP_STRINGNO(filp);
-	handler_strings_info[stringno].flags |= HANDLER_RAW;
+	HandlerString* hs = FILP_HS(filp);
+	hs->flags |= HANDLER_RAW;
 	retval = 0;
     } else if (click_ino.ino_element(inode->i_ino) < 0
 	     || !(e = click_router->element(click_ino.ino_element(inode->i_ino))))
@@ -1078,12 +1050,13 @@ cleanup_clickfs()
     // clean up handler_strings
     MDEBUG("cleaning up handler strings");
     SPIN_LOCK(&handler_strings_lock, __FILE__, __LINE__);
-    delete[] handler_strings;
-    delete[] handler_strings_info;
+    while (handler_strings && !handler_strings->empty()) {
+        HandlerString* hs = handler_strings->front();
+        handler_strings->pop_front();
+        delete hs;
+    }
+    delete handler_strings;
     handler_strings = 0;
-    handler_strings_info = 0;
-    handler_strings_cap = -1;
-    handler_strings_free = -1;
     SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
 
     MDEBUG("click_ino cleanup");
