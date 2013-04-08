@@ -115,9 +115,14 @@ NotifierSignal::static_initialize()
     static_value = true_mask | overderived_mask;
 }
 
-NotifierSignal &
-NotifierSignal::operator+=(const NotifierSignal &x)
-{
+/** @brief Make this signal derived by adding information from @a x.
+ * @param x the signal to add
+ *
+ * Creates a derived signal that combines information from this signal and
+ * @a x.  Equivalent to "*this = (*this + @a x)".
+ *
+ * @sa operator+(NotifierSignal, const NotifierSignal&) */
+NotifierSignal& NotifierSignal::operator+=(const NotifierSignal& x) {
     // preserve busy_signal(); adding other incompatible signals
     // leads to overderived_signal()
     if (idle() || (x.busy() && *this != busy_signal()) || !x.initialized())
@@ -203,9 +208,11 @@ NotifierSignal::hard_equals(const vmpair *a, const vmpair *b)
     return !a->mask && a->mask == b->mask;
 }
 
-String
-NotifierSignal::unparse(Router *router) const
-{
+/** @brief Return a human-readable representation of the signal.
+ * @param router the relevant router or null
+ *
+ * Useful for signal debugging. */
+String NotifierSignal::unparse(Router* router) const {
     if (!_mask) {
 	StringAccum sa;
 	for (vmpair *vm = _v.vm; vm->mask; ++vm)
