@@ -263,31 +263,30 @@ static int
 click_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
 {
     struct inode *inode = dentry->d_inode;
+    int r;
     MDEBUG("click_dentry_revalidate %lx", (inode ? inode->i_ino : 0));
     if (!inode)
 	return -EINVAL;
-    // XXX locking?
     if (INODE_INFO(inode).config_generation == click_config_generation)
 	return 1;
+
+    LOCK_CONFIG_READ();
     if (click_ino.ino_element(inode->i_ino) >= 0) { // not a global directory
 	shrink_dcache_parent(dentry);
 	d_drop(dentry);
-	return 0;
+	r = 0;
     }
 # ifdef LOOKUP_RCU
-    if (nd->flags & LOOKUP_RCU)
-	return -ECHILD;
+    else if (nd->flags & LOOKUP_RCU)
+	r = -ECHILD;
 # endif
-
-    int error = 0;
-    LOCK_CONFIG_READ();
-    if ((error = click_ino.prepare(click_router, click_config_generation)) >= 0) {
+    else if ((r = click_ino.prepare(click_router, click_config_generation)) >= 0) {
 	INODE_INFO(inode).config_generation = click_config_generation;
 	set_nlink(inode, click_ino.nlink(inode->i_ino));
-	error = 1;
+	r = 1;
     }
     UNLOCK_CONFIG_READ();
-    return error;
+    return r;
 }
 #else
 static int
