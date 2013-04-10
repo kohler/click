@@ -65,7 +65,7 @@ ClickIno::grow(int min_size)
 	return -ENOMEM;
     memcpy(nse, _x, sizeof(Entry) * _cap);
     for (int i = _cap; i < new_cap; i++)
-	new((void *)&nse[i]) String();
+	new((void *)&(nse[i].name)) String();
     CLICK_LFREE(_x, sizeof(Entry) * _cap);
     _x = nse;
     _cap = new_cap;
@@ -382,11 +382,11 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
     if (f_pos < RD_UOFF)
 	f_pos = RD_UOFF;
     if (f_pos < RD_NOFF && ino == ino_enumdir && _router) {
-	char buf[10];
+	char buf[11];
 	int nelem = _router->nelements();
 	while (f_pos >= RD_UOFF && f_pos < (uint32_t) RD_UOFF + nelem) {
 	    int elem = f_pos - RD_UOFF;
-	    sprintf(buf, "%d", elem);
+	    snprintf(buf, sizeof(buf), "%d", elem);
 	    FILLDIR(buf, strlen(buf), make_dir(dt_hu, elem), DT_DIR, f_pos, thunk);
 	    f_pos++;
 	}
