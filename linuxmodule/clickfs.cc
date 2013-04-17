@@ -520,6 +520,7 @@ static HandlerString* alloc_handler_string() {
         if (hs)
             handler_strings->push_back(hs);
     }
+    hs->flags = -1;
     SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
     return hs;
 }
