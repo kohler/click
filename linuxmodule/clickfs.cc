@@ -505,7 +505,7 @@ static struct mutex handler_strings_lock;
 #define FILP_READ_HS(filp)	FILP_HS(filp)
 #define FILP_WRITE_HS(filp)	FILP_HS(filp)
 
-static HandlerString* alloc_handler_string() {
+static HandlerString* alloc_handler_string(const Handler* h) {
     SPIN_LOCK(&handler_strings_lock, __FILE__, __LINE__);
     HandlerString* hs = 0;
     if (!handler_strings)
@@ -517,8 +517,10 @@ static HandlerString* alloc_handler_string() {
             --free_handler_strings;
         } else
             hs = new HandlerString;
-        if (hs)
+        if (hs) {
             handler_strings->push_back(hs);
+            hs->flags = h->flags();
+        }
     }
     SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
     return hs;
@@ -588,12 +590,10 @@ handler_open(struct inode *inode, struct file *filp)
     else if ((reading && !h->read_visible())
 	     || (writing && !h->write_visible()))
 	retval = -EPERM;
-    else if (!(hs = alloc_handler_string()))
+    else if (!(hs = alloc_handler_string(h)))
 	retval = -ENOMEM;
-    else {
-        hs->flags = h->flags();
+    else
 	retval = 0;
-    }
 
     UNLOCK_CONFIG_READ();
 
