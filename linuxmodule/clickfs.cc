@@ -50,7 +50,7 @@ static struct inode_operations *click_handler_inode_ops;
 static struct dentry_operations click_dentry_ops;
 static struct proclikefs_file_system *clickfs;
 
-static struct mutex clickfs_lock;
+static struct mutex clickfs_lock, click_ino_lock;
 static wait_queue_head_t clickfs_waitq;
 static atomic_t clickfs_read_count;
 extern uint32_t click_config_generation;
@@ -147,6 +147,18 @@ struct ClickInodeInfo {
 static ClickIno click_ino;
 
 // Must be called with LOCK_CONFIG_READ.
+
+static int click_ino_prepare() {
+    int r = 0;
+    if (click_ino.generation() != click_config_generation) {
+        SPIN_LOCK(&click_ino_lock, __FILE__, __LINE__);
+        r = click_ino.prepare(click_router, click_config_generation);
+        SPIN_UNLOCK(&click_ino_lock, __FILE__, __LINE__);
+    }
+    return r;
+}
+
+// Must be called with LOCK_CONFIG_READ.
 // Return "subdir_error" if this subdirectory was configuration-specific and
 // the configuration was changed.  Otherwise, updates this directory's link
 // count (if the configuration was changed) and returns 0.
@@ -158,7 +170,7 @@ inode_out_of_date(struct inode *inode, int subdir_error)
     if (INODE_INFO(inode).config_generation != click_config_generation) {
 	if (click_ino.has_element(inode->i_ino))
 	    return subdir_error;
-	if ((error = click_ino.prepare(click_router, click_config_generation)) < 0)
+	if ((error = click_ino_prepare()) < 0)
 	    return error;
 	INODE_INFO(inode).config_generation = click_config_generation;
 	set_nlink(inode, click_ino.nlink(inode->i_ino));
@@ -174,7 +186,7 @@ click_inode(struct super_block *sb, ino_t ino)
 {
     // Must be called with click_config_lock held.
 
-    if (click_ino.prepare(click_router, click_config_generation) < 0)
+    if (click_ino_prepare() < 0)
 	return 0;
 
     struct inode *inode = new_inode(sb);
@@ -271,7 +283,7 @@ click_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
 	return 1;
 
     LOCK_CONFIG_READ();
-    if (click_ino.ino_element(inode->i_ino) >= 0) { // not a global directory
+    if (click_ino.has_element(inode->i_ino)) { // not a global directory
 	shrink_dcache_parent(dentry);
 	d_drop(dentry);
 	r = 0;
@@ -280,11 +292,8 @@ click_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
     else if (nd->flags & LOOKUP_RCU)
 	r = -ECHILD;
 # endif
-    else if ((r = click_ino.prepare(click_router, click_config_generation)) >= 0) {
-	INODE_INFO(inode).config_generation = click_config_generation;
-	set_nlink(inode, click_ino.nlink(inode->i_ino));
-	r = 1;
-    }
+    else if ((r = inode_out_of_date(inode, -EIO)) == 0)
+        r = 1;
     UNLOCK_CONFIG_READ();
     return r;
 }
@@ -297,18 +306,8 @@ click_dir_revalidate(struct dentry *dentry)
     if (!inode)
 	return -EINVAL;
 
-    int error = 0;
     LOCK_CONFIG_READ();
-    if (INODE_INFO(inode).config_generation != click_config_generation) {
-	if (click_ino.ino_element(inode->i_ino) >= 0) // not a global directory
-	    error = -EIO;
-	else if ((error = click_ino.prepare(click_router, click_config_generation)) < 0)
-	    /* preserve error */;
-	else {
-	    INODE_INFO(inode).config_generation = click_config_generation;
-	    set_nlink(inode, click_ino.nlink(inode->i_ino));
-	}
-    }
+    int error = inode_out_of_date(inode, -EIO);
     UNLOCK_CONFIG_READ();
     return error;
 }
@@ -871,7 +870,7 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
 	hs->flags |= HANDLER_RAW;
 	retval = 0;
     } else if (click_ino.ino_element(inode->i_ino) < 0
-	     || !(e = click_router->element(click_ino.ino_element(inode->i_ino))))
+               || !(e = click_router->element(click_ino.ino_element(inode->i_ino))))
 	retval = -EIO;
     else {
 	union {
@@ -977,6 +976,7 @@ init_clickfs()
 
     mutex_init(&handler_strings_lock);
     mutex_init(&clickfs_lock);
+    mutex_init(&click_ino_lock);
     init_waitqueue_head(&clickfs_waitq);
     atomic_set(&clickfs_read_count, 0);
 

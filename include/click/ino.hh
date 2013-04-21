@@ -80,7 +80,6 @@ class ClickIno { public:
     };
 
   private:
-
     enum { X_FAKE = 1 };
 
     Entry* _x;
@@ -98,7 +97,6 @@ class ClickIno { public:
 
     int grow(int min_size);
     int true_prepare(Router*, uint32_t);
-
 };
 
 
