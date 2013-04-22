@@ -148,7 +148,7 @@ static ClickIno click_ino;
 
 // Must be called with LOCK_CONFIG_READ.
 
-static int click_ino_prepare() {
+static int click_ino_check() {
     int r = 0;
     if (click_ino.generation() != click_config_generation) {
         SPIN_LOCK(&click_ino_lock, __FILE__, __LINE__);
@@ -163,14 +163,16 @@ static int click_ino_prepare() {
 // the configuration was changed.  Otherwise, updates this directory's link
 // count (if the configuration was changed) and returns 0.
 
-static int
-inode_out_of_date(struct inode *inode, int subdir_error)
-{
+// If click_ino_check returns < 0, then it is not safe to access
+// click_ino. If click_ino_check returns 0, then it is safe to access
+// both click_ino and `inode`.
+
+static int click_ino_check(struct inode *inode, int subdir_error) {
     int error;
     if (INODE_INFO(inode).config_generation != click_config_generation) {
 	if (click_ino.has_element(inode->i_ino))
 	    return subdir_error;
-	if ((error = click_ino_prepare()) < 0)
+	if ((error = click_ino_check()) < 0)
 	    return error;
 	INODE_INFO(inode).config_generation = click_config_generation;
 	set_nlink(inode, click_ino.nlink(inode->i_ino));
@@ -186,7 +188,7 @@ click_inode(struct super_block *sb, ino_t ino)
 {
     // Must be called with click_config_lock held.
 
-    if (click_ino_prepare() < 0)
+    if (click_ino_check() < 0)
 	return 0;
 
     struct inode *inode = new_inode(sb);
@@ -244,7 +246,7 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
 
     struct inode *inode = 0;
     int error;
-    if ((error = inode_out_of_date(dir, -EIO)) >= 0) {
+    if ((error = click_ino_check(dir, -EIO)) >= 0) {
 	// BEWARE!  Using stable_string() here is quite dangerous, since the
 	// data is actually mutable.  The code path has been audited to make
 	// sure this is OK.
@@ -292,7 +294,7 @@ click_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
     else if (nd->flags & LOOKUP_RCU)
 	r = -ECHILD;
 # endif
-    else if ((r = inode_out_of_date(inode, -EIO)) == 0)
+    else if ((r = click_ino_check(inode, -EIO)) == 0)
         r = 1;
     UNLOCK_CONFIG_READ();
     return r;
@@ -307,7 +309,7 @@ click_dir_revalidate(struct dentry *dentry)
 	return -EINVAL;
 
     LOCK_CONFIG_READ();
-    int error = inode_out_of_date(inode, -EIO);
+    int error = click_ino_check(inode, -EIO);
     UNLOCK_CONFIG_READ();
     return error;
 }
@@ -341,7 +343,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 
     LOCK_CONFIG_READ();
 
-    int error = inode_out_of_date(inode, -ENOENT);
+    int error = click_ino_check(inode, -ENOENT);
     int stored = 0;
     if (error < 0)
 	goto done;
@@ -582,7 +584,7 @@ handler_open(struct inode *inode, struct file *filp)
 	|| (filp->f_flags & O_APPEND)
 	|| (writing && !(filp->f_flags & O_TRUNC)))
 	retval = -EACCES;
-    else if ((retval = inode_out_of_date(inode, -EIO)) < 0)
+    else if ((retval = click_ino_check(inode, -EIO)) < 0)
 	/* save retval */;
     else if (!(h = Router::handler(click_router, click_ino.ino_handler(inode->i_ino))))
 	retval = -EIO;
@@ -618,7 +620,7 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	int retval;
 	const Handler *h;
 	struct inode *inode = filp->f_dentry->d_inode;
-	if ((retval = inode_out_of_date(inode, -EIO)) < 0)
+	if ((retval = click_ino_check(inode, -EIO)) < 0)
 	    /* save retval */;
 	else if (!(h = Router::handler(click_router, click_ino.ino_handler(inode->i_ino))))
 	    retval = -EIO;
@@ -721,7 +723,7 @@ handler_do_write(struct file *filp, void *address_ptr)
     const Handler *h;
     int retval;
 
-    if ((retval = inode_out_of_date(inode, -EIO)) < 0)
+    if ((retval = click_ino_check(inode, -EIO)) < 0)
 	/* save retval */;
     else if (!(h = Router::handler(click_router, click_ino.ino_handler(inode->i_ino)))
 	     || !h->write_visible())
@@ -854,7 +856,7 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
     int retval;
     Element *e;
 
-    if ((retval = inode_out_of_date(inode, -EIO)) < 0)
+    if ((retval = click_ino_check(inode, -EIO)) < 0)
 	/* save retval */;
     else if (!click_router)
 	retval = -EINVAL;
