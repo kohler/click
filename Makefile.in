@@ -112,7 +112,7 @@ install-local-include: stamp-h installch
 	$(mkinstalldirs) $(DESTDIR)$(netincludedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/clicknet/*.h $(DESTDIR)$(netincludedir)
 install-include: install-local-include
-	@for d in $(ALL_TARGETS) tools; do (cd $$d && $(MAKE) install-include) || exit 1; done
+	@for d in $(ALL_TARGETS); do (cd $$d && $(MAKE) install-include) || exit 1; done
 install-lib:
 	@if echo $(ALL_TARGETS) | grep userlevel >/dev/null 2>&1; then cd userlevel && $(MAKE) install-lib; fi
 	@if echo $(ALL_TARGETS) | grep tools >/dev/null 2>&1; then cd tools && $(MAKE) install-lib; fi
