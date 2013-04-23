@@ -53,4 +53,17 @@ click_fence()
 #endif
 }
 
+/** @brief Write memory fence.
+
+    On x86, equivalent to click_compiler_fence(). */
+inline void click_write_fence() {
+#if CLICK_LINUXMODULE
+    smp_wmb();
+#elif HAVE_MULTITHREAD && (defined(__i386__) || defined(__arch_um__) || defined(__x86_64__))
+    click_compiler_fence();
+#else
+    click_fence();
+#endif
+}
+
 #endif
