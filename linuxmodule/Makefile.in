@@ -92,6 +92,7 @@ CLICK_BUILD_INSTALL_DATA = $(CLICK_BUILD_INSTALL) -m 644
 CLICK_BUILD_INSTALL_DATA_IF_CHANGED = $(CLICK_BUILD_INSTALL_IF_CHANGED) -m 644
 CLICKmkinstalldirs = $(conf_auxdir)/mkinstalldirs
 CLICK_BUILDTOOL = $(top_builddir)/click-buildtool
+MD5SUM = @MD5SUM@
 
 CLICK_ELEM2MAKE = $(CLICK_BUILDTOOL) elem2make --linux26
 
@@ -211,7 +212,7 @@ install-local: Makefile $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc all
 	$(CLICK_BUILD_INSTALL_DATA) Module.symvers $(DESTDIR)$(libdir)/click.symvers
 install-include: $(top_builddir)/click-buildtool
 	$(CLICKmkinstalldirs) $(DESTDIR)$(includedir)/click-linuxmodule
-	$(call verbose_cmd,$(top_builddir)/click-buildtool installtree -m 644 "$(top_builddir)/include/click-linuxmodule" "$(DESTDIR)$(includedir)/click-linuxmodule",INSTALL $(DESTDIR)$(includedir)/click-linuxmodule)
+	$(call verbose_cmd,MD5SUM=$(MD5SUM) $(srcdir)/fixincludes.pl installtree -m 644 "$(top_builddir)/include/click-linuxmodule" "$(DESTDIR)$(includedir)/click-linuxmodule",INSTALLHEADERS $(DESTDIR)$(includedir)/click-linuxmodule)
 install-man:
 	@:
 uninstall:
