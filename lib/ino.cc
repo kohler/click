@@ -103,9 +103,10 @@ ClickIno::true_prepare(Router *r, uint32_t generation)
 
     // exit early if router is empty
     if (nelem == 1) {
-	_generation = generation;
 	_router = r;
 	_x[0].flags = 0;
+        click_write_fence();
+	_generation = generation;
 	return 0;
     }
 
@@ -167,8 +168,9 @@ ClickIno::true_prepare(Router *r, uint32_t generation)
 
     // done
     _nentries = n;
-    _generation = generation;
     _router = r;
+    click_write_fence();
+    _generation = generation;
     return 0;
 }
 
