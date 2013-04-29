@@ -20,7 +20,7 @@ template <size_t s> class sized_array_memory { public:
 	for (; n != 0; --n, a = (char *) a + s)
 	    memcpy(a, x, s);
     }
-    static void move_construct(void *a, const void *x) {
+    static void move_construct(void* a, void* x) {
 	memcpy(a, x, s);
     }
     static void copy(void *dst, const void *src, size_t n) {
@@ -63,7 +63,7 @@ template <typename T> class typed_array_memory { public:
 	for (size_t i = 0; i != n; ++i)
 	    new((void *) &a[i]) T(*x);
     }
-    static void move_construct(T *a, const T *x) {
+    static void move_construct(T* a, T* x) {
 #if HAVE_CXX_RVALUE_REFERENCES
 	new((void *) a) T(click_move(*x));
 #else

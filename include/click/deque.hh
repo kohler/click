@@ -46,7 +46,7 @@ template <typename AM> class deque_memory { public:
 	    reserve_and_push(-1, false, vp);
     }
 #if HAVE_CXX_RVALUE_REFERENCES
-    inline void move_construct_back(const type *vp) {
+    inline void move_construct_back(type* vp) {
 	if (n_ < capacity_) {
 	    size_type p = i2p(n_);
 	    AM::mark_undefined(l_ + p, 1);
@@ -73,7 +73,7 @@ template <typename AM> class deque_memory { public:
 	    reserve_and_push(-1, true, vp);
     }
 #if HAVE_CXX_RVALUE_REFERENCES
-    inline void move_construct_front(const type *vp) {
+    inline void move_construct_front(type* vp) {
 	if (n_ < capacity_) {
 	    head_ = prevp(head_);
 	    AM::mark_undefined(l_ + head_, 1);
@@ -526,7 +526,7 @@ inline void Deque<T>::push_back(value_argument_type v) {
 #if HAVE_CXX_RVALUE_REFERENCES
 /** @overload */
 template <typename T> template <typename A>
-inline typename A::enable_rvalue_reference Deque<T>::push_back(T &&v) {
+inline typename A::enable_rvalue_reference Deque<T>::push_back(T&& v) {
     vm_.move_construct_back(array_memory_type::cast(&v));
 }
 #endif
@@ -551,7 +551,7 @@ inline void Deque<T>::push_front(value_argument_type v) {
 #if HAVE_CXX_RVALUE_REFERENCES
 /** @overload */
 template <typename T> template <typename A>
-inline typename A::enable_rvalue_reference Deque<T>::push_front(T &&v) {
+inline typename A::enable_rvalue_reference Deque<T>::push_front(T&& v) {
     vm_.move_construct_front(array_memory_type::cast(&v));
 }
 #endif

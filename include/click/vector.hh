@@ -42,7 +42,7 @@ template <typename AM> class vector_memory { public:
 	    reserve_and_push_back(-1, vp);
     }
 #if HAVE_CXX_RVALUE_REFERENCES
-    inline void move_construct_back(const type *vp) {
+    inline void move_construct_back(type* vp) {
 	if (n_ < capacity_) {
 	    AM::mark_undefined(l_ + n_, 1);
 	    AM::move_construct(l_ + n_, vp);
@@ -398,7 +398,7 @@ inline void Vector<T>::push_back(value_argument_type v) {
 #if HAVE_CXX_RVALUE_REFERENCES
 /** @overload */
 template <typename T> template <typename A>
-inline typename A::enable_rvalue_reference Vector<T>::push_back(T &&v)
+inline typename A::enable_rvalue_reference Vector<T>::push_back(T&& v)
 {
     vm_.move_construct_back(array_memory_type::cast(&v));
 }
