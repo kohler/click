@@ -85,7 +85,12 @@ endif
 ifeq ($(CLICK_LINUXMODULE_2_6),1)
 # Jump through hoops to avoid missing symbol warnings
 $(package).ko: Makefile Kbuild always $(PACKAGE_DEPS)
-	{ ( $(MAKE) -C $(clicklinux_builddir) M=$(shell pwd) $(LINUX_MAKEARGS) CLICK_PACKAGE_MAKING=linuxmodule-26 modules 2>&1 1>&3; echo $$? > .$(package).ko.status ) | grep -iv '^[\* ]*Warning:.*undefined' 1>&2; } 3>&1; v=`cat .$(package).ko.status`; rm .$(package).ko.status; exit $$v
+	@fifo=.$(package).ko.$$$$.$$RANDOM.errors; rm -f $$fifo; \
+	command="$(MAKE) -C $(clicklinux_builddir) M=$(shell pwd) $(LINUX_MAKEARGS) CLICK_PACKAGE_MAKING=linuxmodule-26 modules"; \
+	echo $$command; if mkfifo $$fifo; then \
+	    (grep -iv '^[\* ]*Warning:.*undefined' <$$fifo 1>&2; rm -f $$fifo) & \
+	    eval $$command 2>$$fifo; \
+	else eval $$command; fi
 Kbuild: $(CLICK_BUILDTOOL)
 	echo 'include $$(obj)/Makefile' > Kbuild
 	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) kbuild >> Kbuild
