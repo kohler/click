@@ -403,10 +403,10 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
     if test "$HAVE_PCAP" = yes; then
 	AC_DEFINE([HAVE_PCAP], [1], [Define if you have -lpcap and pcap.h.])
 
-	saveflags="$LDFLAGS"
-	LDFLAGS="$saveflags $PCAP_LIBS"
+	savelibs="$LIBS"
+	LIBS="$savelibs $PCAP_LIBS"
 	AC_CHECK_FUNCS([pcap_inject pcap_sendpacket pcap_setdirection pcap_setnonblock])
-	LDFLAGS="$saveflags"
+	LIBS="$savelibs"
     fi
 ])
 
