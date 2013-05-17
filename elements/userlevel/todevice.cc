@@ -146,15 +146,15 @@ ToDevice::initialize(ErrorHandler *errh)
 
     FromDevice *fd = find_fromdevice();
     if (fd && _method == method_default) {
-#if FROMDEVICE_ALLOW_NETMAP
+#if FROMDEVICE_ALLOW_NETMAP && TODEVICE_ALLOW_NETMAP
 	if (fd->netmap())
 	    _method = method_netmap;
 #endif
-#if FROMDEVICE_ALLOW_PCAP
+#if FROMDEVICE_ALLOW_PCAP && TODEVICE_ALLOW_PCAP
 	if (fd->pcap())
 	    _method = method_pcap;
 #endif
-#if FROMDEVICE_ALLOW_LINUX
+#if FROMDEVICE_ALLOW_LINUX && TODEVICE_ALLOW_LINUX
 	if (fd->linux_fd() >= 0)
 	    _method = method_linux;
 #endif
