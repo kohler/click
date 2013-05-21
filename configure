@@ -10337,8 +10337,8 @@ $as_echo "$ac_cv_pcap_library_path" >&6; }
 $as_echo "#define HAVE_PCAP 1" >>confdefs.h
 
 
-	saveflags="$LDFLAGS"
-	LDFLAGS="$saveflags $PCAP_LIBS"
+	savelibs="$LIBS"
+	LIBS="$savelibs $PCAP_LIBS"
 	for ac_func in pcap_inject pcap_sendpacket pcap_setdirection pcap_setnonblock
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
@@ -10351,7 +10351,7 @@ _ACEOF
 fi
 done
 
-	LDFLAGS="$saveflags"
+	LIBS="$savelibs"
     fi
 
 
