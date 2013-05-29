@@ -61,8 +61,8 @@ static int clickfs_ready;
 #define SPIN_LOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "lock"); mutex_lock((l)); } while (0)
 #define SPIN_UNLOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "unlock"); mutex_unlock((l)); } while (0)
 
-#define LOCK_CONFIG_READ()	lock_config(__FILE__, __LINE__, 0)
-#define UNLOCK_CONFIG_READ()	unlock_config_read()
+#define LOCK_CONFIG_READ()	lock_config(__FILE__, __LINE__, 1)
+#define UNLOCK_CONFIG_READ()	unlock_config_write(__FILE__, __LINE__)
 #define LOCK_CONFIG_WRITE()	lock_config(__FILE__, __LINE__, 1)
 #define UNLOCK_CONFIG_WRITE()	unlock_config_write(__FILE__, __LINE__)
 
