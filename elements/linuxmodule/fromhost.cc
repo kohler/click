@@ -556,6 +556,27 @@ int FromHost::write_handler(const String &str, Element *e, void *thunk, ErrorHan
         if (!BoundedIntArg(1, 1000000).parse(str, fh->_burst))
             return errh->error("burst parameter must be integer between 1 and 1000000");
 	return 0;
+    case h_ether: {
+        EtherAddress macaddr;
+        if (Args(errh).push_back_words(str)
+                .read_mp("ETHER", macaddr)
+                .complete() < 0)
+            return -1;
+        if (!macaddr)
+            return errh->error("ether parameter must be set");
+
+        if (fh->_macaddr != macaddr) {
+            fh->_macaddr = macaddr;
+            if (fh->_dev->flags & IFF_UP) {
+                if (!fh->_wakeup_timer.initialized())
+                    fh->_wakeup_timer.initialize(fh);
+                fh->_wakeup_timer.schedule_now();
+                return 0;
+            } else if (fh->set_device_addresses(errh) < 0)
+                return -1;
+        }
+        return 0;
+    }
     default:
 	return 0;
     }
@@ -570,6 +591,10 @@ FromHost::add_handlers()
     add_data_handlers("drops", Handler::OP_READ, &_drops);
     add_data_handlers("burst", Handler::OP_READ, &_burst);
     add_write_handler("burst", write_handler, h_burst);
+    if (_dev->type == ARPHRD_ETHER) {
+        add_data_handlers("ether", Handler::OP_READ, &_macaddr);
+        add_write_handler("ether", write_handler, h_ether);
+    }
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)

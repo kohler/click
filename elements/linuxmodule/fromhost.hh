@@ -191,7 +191,7 @@ class FromHost : public AnyDevice, public Storage { public:
     static net_device_stats *fl_stats(net_device *dev);
 #endif
 
-    enum { h_length, h_burst };
+    enum { h_length, h_burst, h_ether };
     static String read_handler(Element *e, void *thunk) CLICK_COLD;
     static int write_handler(const String &, Element *, void *, ErrorHandler *) CLICK_COLD;
 };
