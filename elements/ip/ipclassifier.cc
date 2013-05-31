@@ -21,6 +21,7 @@
 #include <click/glue.hh>
 #include <click/error.hh>
 #include <click/confparse.hh>
+#include <click/router.hh>
 CLICK_DECLS
 
 IPClassifier::IPClassifier()
@@ -42,9 +43,17 @@ IPClassifier::configure(Vector<String> &conf, ErrorHandler *errh)
     for (int i = 0; i < conf.size(); i++)
 	new_conf.push_back(String(i) + " " + conf[i]);
     int r = IPFilter::configure(new_conf, errh);
-    if (r >= 0)
+    if (r >= 0 && !router()->initialized())
 	_zprog.warn_unused_outputs(noutputs(), errh);
     return r;
+}
+
+void IPClassifier::add_handlers() {
+    IPFilter::add_handlers();
+    for (uintptr_t i = 0; i != (uintptr_t) noutputs(); ++i) {
+	add_read_handler("pattern" + String(i), read_positional_handler, (void*) i);
+	add_write_handler("pattern" + String(i), reconfigure_positional_handler, (void*) i);
+    }
 }
 
 CLICK_ENDDECLS
