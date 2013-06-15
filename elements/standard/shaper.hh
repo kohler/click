@@ -11,7 +11,7 @@ CLICK_DECLS
  * =s shaping
  * shapes traffic to maximum rate (pkt/s)
  * =processing
- * Push
+ * Pull
  * =d
  *
  * Shaper is a pull element that allows a maximum of RATE packets per second
@@ -23,10 +23,11 @@ CLICK_DECLS
  * burstiness.
  *
  * Pull requests on optional output port 1 return packets that do not meet the
- * shaping condition at the time of the pull. Note that such pull requests
- * may pull packets from upstream that would otherwise have been emitted
- * later on port 0. (This is different from L<RatedSplitter>, whose optional
- * output port 1 emits packets that would otherwise have been dropped.)
+ * shaping condition at the time of the pull. Use with care: packets are now
+ * pulled from upstream without shaping.  (This is different from
+ * L<RatedSplitter>, whose optional output port 1 emits packets that would
+ * otherwise just have been dropped.) Port 1 can be useful for sampling in
+ * pull context, as in the example below.
  *
  * =n
  *
@@ -36,6 +37,16 @@ CLICK_DECLS
  * granularity issue is negligible at low rates, and becomes serious at very
  * high rates; for example, Shaper cannot smoothly implement any rate between
  * 2.048e10 and 4.096e10 packets per second.
+ *
+ * =e
+ *
+ *   Rate limited printing in pull context:
+ *   ..
+ *   -> Shaper(10)
+ *   => ( [0] -> Print -> [0];
+ *        [1] -> [1] )
+ *   => RoundRobinSched
+ *   -> ..
  *
  * =h rate read/write
  *
