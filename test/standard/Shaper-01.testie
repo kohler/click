@@ -1,0 +1,74 @@
+%info
+Test that Shaper shapes on output 0, and only emits unshaped packets on output 1.
+
+%script
+click --simtime CONFIG
+
+%file CONFIG
+is :: InfiniteSource(LIMIT 100)
+	-> s :: Shaper(1000)
+	=> ( [0] -> shaped_counter :: Counter -> [0];
+	     [1] -> [1] )
+	=> RoundRobinSched
+	-> total_counter :: Counter
+	-> TimedSink(1ms);
+
+Script(
+	wait 150ms,
+	read shaped_counter.count,
+	read total_counter.count,
+
+	write shaped_counter.reset,
+	write total_counter.reset,
+	write s.rate 500,
+	write s.reset,
+	write is.reset,
+
+	wait 150ms,
+	read shaped_counter.count,
+	read total_counter.count,
+
+	write shaped_counter.reset,
+	write total_counter.reset,
+	write s.rate 250,
+	write s.reset,
+	write is.reset,
+
+	wait 150ms,
+	read shaped_counter.count,
+	read total_counter.count,
+
+	write shaped_counter.reset,
+	write total_counter.reset,
+	write s.rate 0,
+	write s.reset,
+	write is.reset,
+
+	wait 150ms,
+	read shaped_counter.count,
+	read total_counter.count,
+
+	stop,
+);
+
+%expect stderr
+
+shaped_counter.count:
+{{9[8-9]|100}}
+total_counter.count:
+100
+
+shaped_counter.count:
+{{4[8-9]|5[0-2]}}
+total_counter.count:
+100
+
+shaped_counter.count:
+{{2[3-7]}}
+total_counter.count:
+100
+
+shaped_counter.count:
+{{[012]}}
+total_counter.count:
+100
