@@ -45,13 +45,15 @@ Shaper::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 Packet *
-Shaper::pull(int)
+Shaper::pull(int port)
 {
     Packet *p = 0;
-    if (_rate.need_update(Timestamp::now())) {
+    bool need_update = _rate.need_update(Timestamp::now());
+    if (port == 0 && need_update) {
 	if ((p = input(0).pull()))
 	    _rate.update();
-    }
+    } else if (port == 1 && !need_update)
+	p = input(0).pull();
     return p;
 }
 
@@ -65,6 +67,14 @@ Shaper::read_handler(Element *e, void *)
 	return String(s->_rate.rate());
 }
 
+int
+Shaper::write_handler(const String &, Element *e, void *, ErrorHandler *)
+{
+    Shaper *s = static_cast<Shaper *>(e);
+    s->_rate.reset();
+    return 0;
+}
+
 void
 Shaper::add_handlers()
 {
@@ -72,6 +82,7 @@ Shaper::add_handlers()
     add_write_handler("rate", reconfigure_keyword_handler, "0 RATE");
     add_read_handler("config", read_handler);
     set_handler_flags("config", 0, Handler::CALM);
+    add_write_handler("reset", write_handler);
 }
 
 CLICK_ENDDECLS

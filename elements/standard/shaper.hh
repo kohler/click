@@ -10,6 +10,8 @@ CLICK_DECLS
  * Shaper(RATE)
  * =s shaping
  * shapes traffic to maximum rate (pkt/s)
+ * =processing
+ * Pull
  * =d
  *
  * Shaper is a pull element that allows a maximum of RATE packets per second
@@ -20,6 +22,13 @@ CLICK_DECLS
  * requests, then it will emit packets at the specified RATE with low
  * burstiness.
  *
+ * Pull requests on optional output port 1 return packets that do not meet the
+ * shaping condition at the time of the pull. Use with care: packets are now
+ * pulled from upstream without shaping.  (This is different from
+ * L<RatedSplitter>, whose optional output port 1 emits packets that would
+ * otherwise just have been dropped.) Port 1 can be useful for sampling in
+ * pull context, as in the example below.
+ *
  * =n
  *
  * Shaper cannot implement every rate smoothly. For example, it can smoothly
@@ -28,6 +37,16 @@ CLICK_DECLS
  * granularity issue is negligible at low rates, and becomes serious at very
  * high rates; for example, Shaper cannot smoothly implement any rate between
  * 2.048e10 and 4.096e10 packets per second.
+ *
+ * =e
+ *
+ *   Rate limited printing in pull context:
+ *   ..
+ *   -> Shaper(10)
+ *   => ( [0] -> Print -> [0];
+ *        [1] -> [1] )
+ *   => RoundRobinSched
+ *   -> ..
  *
  * =h rate read/write
  *
@@ -40,7 +59,7 @@ class Shaper : public Element { public:
     Shaper() CLICK_COLD;
 
     const char *class_name() const	{ return "Shaper"; }
-    const char *port_count() const	{ return PORTS_1_1; }
+    const char *port_count() const	{ return PORTS_1_1X2; }
     const char *processing() const	{ return PULL; }
     bool is_bandwidth() const		{ return class_name()[0] == 'B'; }
 
@@ -55,6 +74,7 @@ class Shaper : public Element { public:
     GapRate _rate;
 
     static String read_handler(Element *, void *) CLICK_COLD;
+    static int write_handler(const String &, Element *e, void *, ErrorHandler *);
 
 };
 
