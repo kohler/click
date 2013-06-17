@@ -1,8 +1,11 @@
+*.d
+*.o
+.*.cmd
 Makefile
 Module.symvers
-*.d
-elements.conf
-elements.mk
 elements.cc
+elements.conf
+elements.csmk
+elements.mk
 ksyms.c
 modules.order
