@@ -344,6 +344,9 @@ sub one_includeroot ($$) {
 	    if ($d eq "mpspec.h") {
 		s<^\#define\s+(\w+)\s+\{\s*\{\s*\[\s*0\s*\.\.\.\s*(\w+)\s*-\s*1\s*\]\s*=\s*(.*?)\s*\}\s*\}><expand_array_initializer($1, $2, $3)>emg;
 	    }
+            if ($d =~ m<\Adma->) {
+                s<DEFINE_DMA_ATTRS\((\w+)\);><struct dma_attrs $1; init_dma_attrs(&$1);>g;
+            }
 	    if ($d eq "kernel.h") {
 		# BUILD_BUG_ON_* cannot define a struct inside sizeof().
 		# Rather than negative-bitfield size, produce a negative
@@ -359,6 +362,14 @@ sub one_includeroot ($$) {
 	    if ($d eq "netdevice.h") {
 		1 while (s<(^struct net_device[ \n]*\{[\000-\377]*)^\tenum( \{[^}]*\}) (\w+)><enum net_device_$3$2;\n$1\tenum net_device_$3 $3>mg);
 	    }
+            if ($d eq "aio.h") {
+                while (1) {
+                    my($a) = s<^(\s*)(\S+)\s*=\s*\(struct kiocb\)\s*\{\s*(\w+):\s*(.*?),\s*><$1\($2\).$3 = $4;\n$1$2 = (struct kiocb) {>m;
+                    my($b) = s<^(\s*)(\S+)\s*=\s*\(struct kiocb\)\s*\{\s*(\.[\.\w]+)\s*=\s*(.*?),\s*><$1\($2\)$3 = $4;\n$1$2 = (struct kiocb) {>m;
+                    s<^(\s*)(\S+)\s*=\s*\(struct kiocb\)\s*\{\s*\}\s*;><>m;
+                    last if !$a && !$b;
+                }
+            }
 
 	    # ktime initializers
 	    if ($d eq "ktime.h") {

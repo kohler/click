@@ -146,19 +146,17 @@ proclikefs_null_read_super(struct super_block *sb, void *data, int silent)
 }
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
 static struct dentry *
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)
+proclikefs_null_root_lookup(struct inode *dir, struct dentry *dentry, unsigned flags)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
 proclikefs_null_root_lookup(struct inode *dir, struct dentry *dentry, struct nameidata *namei)
-{
-    return (struct dentry *)(ERR_PTR(-ENOENT));
-}
 #else
-static struct dentry *
 proclikefs_null_root_lookup(struct inode *dir, struct dentry *dentry)
+#endif
 {
     return (struct dentry *)(ERR_PTR(-ENOENT));
 }
-#endif
 
 static int
 proclikefs_defined(struct proclikefs_file_system *pfs)
@@ -291,7 +289,9 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
     file_list_unlock();
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0)
     lock_super(sb);
+#endif
 
     sb->s_op = &proclikefs_null_super_operations;
 #if HAVE_LINUX_SUPER_BLOCK_S_D_OP
@@ -335,7 +335,9 @@ proclikefs_kill_super(struct super_block *sb, struct file_operations *dummy)
     /* But the root inode can't be a dead inode */
     sb->s_root->d_inode->i_op = &proclikefs_null_root_inode_operations;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0)
     unlock_super(sb);
+#endif
     DEBUG("done killing super");
 }
 
@@ -470,10 +472,12 @@ proclikefs_read_inode(struct inode *inode)
 }
 #endif
 
-static int
-proclikefs_d_revalidate(struct dentry *dir, struct nameidata *nd)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)
+static int proclikefs_d_revalidate(struct dentry *dir, unsigned flags)
+#else
+static int proclikefs_d_revalidate(struct dentry *dir, struct nameidata *nd)
+#endif
 {
-    (void) dir, (void) nd;
     return 0;
 }
 

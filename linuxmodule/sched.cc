@@ -81,7 +81,9 @@ soft_spin_lock(spinlock_t *l)
 static int
 click_sched(void *thunk)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)
+    /* daemonize seems to be unnecessary */
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     daemonize("kclick");
 #else
     daemonize();

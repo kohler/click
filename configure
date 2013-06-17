@@ -10802,7 +10802,8 @@ fixincludes.pl execution failed.
 
 
 
-    CPPFLAGS="$save_cppflags $LINUX_CFLAGS"
+    # -w inhibits warning messages to make debugging actual errors easier
+    CPPFLAGS="$save_cppflags $LINUX_CFLAGS -w"
 
 
     # CLICK_LINUXMODULE_PROLOGUE()
@@ -10854,6 +10855,7 @@ $linux_autoconf_include
 #include <asm/types.h>
 #include <linux/signal.h>
 #include <linux/skbuff.h>
+#include <linux/sched.h>
 int
 main ()
 {
@@ -10923,6 +10925,9 @@ file for more information on the error.
 
 =========================================" "$LINENO" 5
     fi
+
+    # remove -w
+    CPPFLAGS="$save_cppflags $LINUX_CFLAGS"
 
     if test $ac_cv_cxx_aware_system = yes; then
 
@@ -12936,13 +12941,11 @@ if test "x$ac_cv_under_linux" = xyes; then
 fi
 
 if test $ac_have_linux_kernel = y; then
-    linux_version_h=`find_linuxpath include/linux/version.h`
-    ac_linux_version_code=`grep LINUX_VERSION_CODE $linux_version_h | sed 's/^.*CODE //'`
-    if test $ac_linux_version_code -ge 131584 -a $ac_linux_version_code -lt 131840; then
+    if test $linux_version_code -ge 131584 -a $linux_version_code -lt 131840; then
 	provisions="$provisions linux_2_2"
-    elif test $ac_linux_version_code -ge 132096 -a $ac_linux_version_code -lt 132352; then
+    elif test $linux_version_code -ge 132096 -a $linux_version_code -lt 132352; then
 	provisions="$provisions linux_2_4"
-    elif test $ac_linux_version_code -ge 132608 -a $ac_linux_version_code -lt 132864; then
+    elif test $linux_version_code -ge 132608 -a $linux_version_code -lt 132864; then
 	provisions="$provisions linux_2_6"
     fi
 fi

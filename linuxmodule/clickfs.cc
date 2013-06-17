@@ -235,7 +235,9 @@ click_inode(struct super_block *sb, ino_t ino)
 extern "C" {
 
 static struct dentry *
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)
+click_dir_lookup(struct inode *dir, struct dentry *dentry, unsigned)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 click_dir_lookup(struct inode *dir, struct dentry *dentry, struct nameidata *)
 #else
 click_dir_lookup(struct inode *dir, struct dentry *dentry)
@@ -274,7 +276,7 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int
-click_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
+click_dentry_revalidate(struct dentry *dentry, unsigned flags)
 {
     struct inode *inode = dentry->d_inode;
     int r;
@@ -291,7 +293,7 @@ click_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
 	r = 0;
     }
 # ifdef LOOKUP_RCU
-    else if (nd->flags & LOOKUP_RCU)
+    else if (flags & LOOKUP_RCU)
 	r = -ECHILD;
 # endif
     else if ((r = click_ino_check(inode, -EIO)) == 0)
@@ -299,6 +301,14 @@ click_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
     UNLOCK_CONFIG_READ();
     return r;
 }
+
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0)
+static int
+click_dentry_revalidate_nd(struct dentry *dentry, struct nameidata *nd)
+{
+    return click_dentry_revalidate(dentry, nd->flags);
+}
+# endif
 #else
 static int
 click_dir_revalidate(struct dentry *dentry)
@@ -452,7 +462,9 @@ click_get_sb(struct file_system_type *fs_type, int flags, const char *, void *da
 static void
 click_reread_super(struct super_block *sb)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 7, 0)
     lock_super(sb);
+#endif
     if (sb->s_root) {
 	struct inode *old_inode = sb->s_root->d_inode;
 	LOCK_CONFIG_READ();
@@ -467,7 +479,9 @@ click_reread_super(struct super_block *sb)
 #endif
     } else
 	printk("<1>silly click_reread_super\n");
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 7, 0)
     unlock_super(sb);
+#endif
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
@@ -998,8 +1012,10 @@ init_clickfs()
     // XXX statfs
 
     click_dentry_ops.d_delete = click_delete_dentry;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)
     click_dentry_ops.d_revalidate = click_dentry_revalidate;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    click_dentry_ops.d_revalidate = click_dentry_revalidate_nd;
 #endif
 
     click_dir_file_ops->read = generic_read_dir;
