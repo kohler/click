@@ -84,7 +84,7 @@ extern struct lglock files_lglock;
 
 
 #if 0
-# define DEBUG(args...) do { printk("<1>proclikefs: " args); printk("\n"); } while (0)
+# define DEBUG(args...) do { printk(KERN_ALERT "proclikefs: " args); printk("\n"); } while (0)
 #else
 # define DEBUG(args...) /* nada */
 #endif
@@ -176,7 +176,7 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     if (!try_module_get(THIS_MODULE)) {
-	printk("<1>proclikefs: error using module\n");
+	printk(KERN_ALERT "proclikefs: error using module\n");
 	return 0;
     }
 #else
@@ -199,7 +199,7 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
 		break;
 	}
     if (!newfs) {
-	printk("<1>proclikefs: out of file system space\n");
+	printk(KERN_ALERT "proclikefs: out of file system space\n");
 	return 0;
     }
 
@@ -226,7 +226,7 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
 	fstype_supers_init(&newfs->fs);
 	err = register_filesystem(&newfs->fs);
 	if (err != 0)
-	    printk("<1>proclikefs: error %d while initializing pfs[%p] (%s)\n", -err, newfs, name);
+	    printk(KERN_ALERT "proclikefs: error %d while initializing pfs[%p] (%s)\n", -err, newfs, name);
     }
 
     newfs->live = 1;
@@ -249,7 +249,7 @@ proclikefs_reinitialize_supers(struct proclikefs_file_system *pfs,
 	if (sb->s_type == &pfs->fs)
 	    (*reread_super)(sb);
 	else
-	    printk("<1>proclikefs: confusion\n");
+	    printk(KERN_ALERT "proclikefs: confusion\n");
     }
     unlock_sb();
     mutex_unlock(&fslist_lock);
@@ -404,7 +404,7 @@ proclikefs_read_super(struct super_block *sb)
     DEBUG("pfs[%p]: read_super for %s", pfs, pfs->fs.name);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     if (!try_module_get(THIS_MODULE))
-	printk("<1>proclikefs: error using module\n");
+	printk(KERN_ALERT "proclikefs: error using module\n");
 #else
     MOD_INC_USE_COUNT;
 #endif
@@ -518,7 +518,7 @@ cleanup_module(void)
     mutex_lock(&fslist_lock);
     for (i = 0; i < PROCLIKEFS_COUNT; ++i) {
 	if (proclikefs_defined(&fs_array[i]))
-	    printk("<1>proclikefs: unregistering active FS %s, prepare to die\n", fs_array[i].name);
+	    printk(KERN_ALERT "proclikefs: unregistering active FS %s, prepare to die\n", fs_array[i].name);
 	unregister_filesystem(&fs_array[i].fs);
     }
     mutex_unlock(&fslist_lock);

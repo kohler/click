@@ -146,12 +146,12 @@ click_chatter(const char *fmt, ...)
     static char buf[NR_CPUS][512];	// XXX
     click_processor_t cpu = click_get_processor();
     int i = vsnprintf(buf[cpu], 512, fmt, val);
-    printk("<1>%.*s\n", i, buf[cpu]);
+    printk(KERN_ALERT "%.*s\n", i, buf[cpu]);
     click_put_processor();
 # else
     static char buf[512];		// XXX
     int i = vsnprintf(buf, 512, fmt, val);
-    printk("<1>%.*s\n", i, buf);
+    printk(KERN_ALERT "%.*s\n", i, buf);
 # endif
 #elif CLICK_BSDMODULE
     vprintf(fmt, val);

@@ -5,6 +5,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2008 Meraki, Inc.
+ * Copyright (c) 1999-2013 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -196,8 +197,13 @@ KernelErrorHandler::emit(const String &str, void *, bool)
 	level = chatterlevel_ceiling;
 
     landmark = clean_landmark(landmark, true);
+#ifdef KERN_SOH
+    printk(KERN_SOH "%d%.*s%.*s\n", level, landmark.length(), landmark.begin(),
+	   (int) (str.end() - s), s);
+#else
     printk("<%d>%.*s%.*s\n", level, landmark.length(), landmark.begin(),
 	   (int) (str.end() - s), s);
+#endif
     log_line(landmark, s, str.end());
     return 0;
 }
@@ -358,7 +364,7 @@ cleanup_module()
     delete syslog_errh;
     click_logged_errh = syslog_errh = 0;
 
-    printk("<1>click module exiting\n");
+    printk(KERN_ALERT "click module exiting\n");
 
     // HashMap
     HashMap_ArenaFactory::static_cleanup();
@@ -368,13 +374,13 @@ cleanup_module()
 
     // report memory leaks
     if (Element::nelements_allocated)
-	printk("<1>click error: %d elements still allocated\n", Element::nelements_allocated);
+	printk(KERN_ALERT "click error: %d elements still allocated\n", Element::nelements_allocated);
     if (click_dmalloc_curnew) {
-	printk("<1>click error: %d outstanding news\n", (int) click_dmalloc_curnew);
+	printk(KERN_ALERT "click error: %d outstanding news\n", (int) click_dmalloc_curnew);
 	click_dmalloc_cleanup();
     }
 #ifdef HAVE_LINUX_READ_NET_SKBCOUNT
-    printk("<1>net_skbcount: %d\n", read_net_skbcount());
+    printk(KERN_ALERT "net_skbcount: %d\n", read_net_skbcount());
 #endif
 }
 

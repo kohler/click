@@ -56,7 +56,7 @@ static atomic_t clickfs_read_count;
 extern uint32_t click_config_generation;
 static int clickfs_ready;
 
-//#define SPIN_LOCK_MSG(l, file, line, what)	printk("<1>%s:%d: pid %d: %sing %p in clickfs\n", (file), (line), current->pid, (what), (l))
+//#define SPIN_LOCK_MSG(l, file, line, what)	printk(KERN_ALERT "%s:%d: pid %d: %sing %p in clickfs\n", (file), (line), current->pid, (what), (l))
 #define SPIN_LOCK_MSG(l, file, line, what)	((void)(file), (void)(line))
 #define SPIN_LOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "lock"); mutex_lock((l)); } while (0)
 #define SPIN_UNLOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "unlock"); mutex_unlock((l)); } while (0)
@@ -425,7 +425,7 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     return sb;
 
   out_no_root:
-    printk("<1>click_read_super: get root inode failed\n");
+    printk(KERN_ALERT "click_read_super: get root inode failed\n");
     iput(root_inode);
     sb->s_dev = 0;
     return 0;
@@ -478,7 +478,7 @@ click_reread_super(struct super_block *sb)
 	sb->s_d_op = &click_dentry_ops;
 #endif
     } else
-	printk("<1>silly click_reread_super\n");
+	printk(KERN_ALERT "silly click_reread_super\n");
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 7, 0)
     unlock_super(sb);
 #endif
@@ -1001,7 +1001,7 @@ init_clickfs()
 	|| !(click_dir_inode_ops = proclikefs_new_inode_operations(clickfs))
 	|| !(click_handler_file_ops = click_new_file_operations())
 	|| !(click_handler_inode_ops = proclikefs_new_inode_operations(clickfs))) {
-	printk("<1>click: could not initialize clickfs!\n");
+	printk(KERN_ALERT "click: could not initialize clickfs!\n");
 	return -EINVAL;
     }
 

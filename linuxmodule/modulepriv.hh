@@ -18,7 +18,7 @@ CLICK_CXX_UNPROTECT
 #endif
 
 #if CLICK_MODULE_DEBUGGING
-# define MDEBUG(args...) do { printk("<1>kclick: " args); printk("\n"); } while (0)
+# define MDEBUG(args...) do { printk(KERN_ALERT "kclick: " args); printk("\n"); } while (0)
 #else
 # define MDEBUG(args...) /* nada */
 #endif

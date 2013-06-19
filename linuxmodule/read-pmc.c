@@ -46,6 +46,6 @@ click_cycle_counter(int which, unsigned int *fnp, unsigned long long *valp)
 # endif
   wrmsrl(P6MSR_CTR0 + which, 0);
 #else
-  printk("<1>click_cycle_counter: not i386\n");
+  printk(KERN_ALERT "click_cycle_counter: not i386\n");
 #endif
 }

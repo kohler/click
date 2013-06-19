@@ -195,8 +195,8 @@ RecycledSkbPool::cleanup()
 #endif
 #if DEBUG_SKBMGR
   if (_freed > 0 || _allocated > 0)
-    printk ("poll %p: %d/%d freed, %d/%d allocated\n", this,
-	    _freed, _recycle_freed, _allocated, _recycle_allocated);
+    printk("poll %p: %d/%d freed, %d/%d allocated\n", this,
+           _freed, _recycle_freed, _allocated, _recycle_allocated);
 #endif
   unlock();
 }
@@ -352,7 +352,7 @@ RecycledSkbPool::allocate(unsigned headroom, unsigned size, int want, int *store
     _allocated++;
 #endif
     if (!skb) {
-      printk("<1>oops, kernel could not allocate memory for skbuff\n");
+      printk(KERN_ALERT "oops, kernel could not allocate memory for skbuff\n");
       break;
     }
     skb_reserve(skb, headroom);

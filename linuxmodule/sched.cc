@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2002-2003 International Computer Science Institute
  * Copyright (c) 2007 Regents of the University of California
+ * Copyright (c) 1999-2013 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -109,17 +110,17 @@ click_sched(void *thunk)
 	    set_cpus_allowed(current, cpumask_of_cpu(mycpu));
 #  endif
 	} else
-	    printk("<1>click: warning: cpu %d for thread %d offline\n", mycpu, rt->thread_id());
+	    printk(KERN_WARNING "click: warning: cpu %d for thread %d offline\n", mycpu, rt->thread_id());
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 21)
 	if (mycpu < smp_num_cpus && (cpu_online_map & (1UL << cpu_logical_map(mycpu))))
 	    set_cpus_allowed(current, 1UL << cpu_logical_map(mycpu));
 	else
-	    printk("<1>click: warning: cpu %d for thread %d offline\n", mycpu, rt->thread_id());
+	    printk(KERN_WARNING "click: warning: cpu %d for thread %d offline\n", mycpu, rt->thread_id());
 # endif
     }
 #endif
 
-    printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);
+    printk(KERN_ALERT "click: starting router thread pid %d (%p)\n", current->pid, rt);
 
     // add pid to thread list
     SOFT_SPIN_LOCK(&click_thread_lock);
@@ -143,7 +144,7 @@ click_sched(void *thunk)
 		break;
 	    }
 	}
-    printk("<1>click: stopping router thread pid %d\n", current->pid);
+    printk(KERN_ALERT "click: stopping router thread pid %d\n", current->pid);
     SPIN_UNLOCK(&click_thread_lock);
 
     return 0;
@@ -169,7 +170,7 @@ kill_router_threads()
     } while (num_threads > 0 && jiffies < out_jiffies);
 
     if (num_threads > 0) {
-	printk("<1>click: current router threads refuse to die!\n");
+	printk(KERN_ALERT "click: current router threads refuse to die!\n");
 	return -1;
     } else
 	return 0;
@@ -416,12 +417,12 @@ int
 click_cleanup_sched()
 {
     if (kill_router_threads() < 0) {
-	printk("<1>click: Following threads still active, expect a crash:\n");
+	printk(KERN_ALERT "click: Following threads still active, expect a crash:\n");
 	SOFT_SPIN_LOCK(&click_thread_lock);
 	for (int i = 0; i < click_thread_tasks->size(); i++) {
 	    struct task_struct *ct = (*click_thread_tasks)[i];
-	    printk("<1>click:   router thread pid %d\n", (int) ct->pid);
-	    printk("<1>click:   state %d, EIP %08lx\n", (int) ct->state, KSTK_EIP(ct));
+	    printk(KERN_ALERT "click:   router thread pid %d\n", (int) ct->pid);
+	    printk(KERN_ALERT "click:   state %d, EIP %08lx\n", (int) ct->state, KSTK_EIP(ct));
 	}
 	SPIN_UNLOCK(&click_thread_lock);
 	click_master->unuse();
