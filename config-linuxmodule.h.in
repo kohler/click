@@ -43,7 +43,7 @@
 /* Define if your Linux kernel architecture defines atomic_set_mask. */
 #undef HAVE_LINUX_ATOMIC_SET_MASK
 
-/* Define if your Linux kernel architecture defines atomic_cmpxchg */
+/* Define if your Linux kernel architecture defines atomic_cmpxchg. */
 #undef HAVE_LINUX_ATOMIC_CMPXCHG
 
 /* Define if your Linux kernel has files_lock. */

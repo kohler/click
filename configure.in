@@ -821,38 +821,6 @@ if test $ac_cv_linux_ktime_h = yes; then
     AC_DEFINE(HAVE_LINUX_KTIME_H)
 fi
 
-AC_CACHE_CHECK(for atomic_set_mask, ac_cv_linux_atomic_set_mask,
-[if grep atomic_set_mask `find_linuxpath include/asm/atomic.h` >/dev/null 2>&1; then
-  ac_cv_linux_atomic_set_mask=yes
-else ac_cv_linux_atomic_set_mask=no; fi])
-if test $ac_cv_linux_atomic_set_mask = yes; then
-    AC_DEFINE(HAVE_LINUX_ATOMIC_SET_MASK)
-fi
-
-AC_CACHE_CHECK(for atomic_add_return, ac_cv_linux_atomic_add_return,
-[if grep atomic_add_return `find_linuxpath include/asm/atomic.h` >/dev/null 2>&1; then
-  ac_cv_linux_atomic_add_return=yes
-else ac_cv_linux_atomic_add_return=no; fi])
-if test $ac_cv_linux_atomic_add_return = yes; then
-    AC_DEFINE(HAVE_LINUX_ATOMIC_ADD_RETURN)
-fi
-
-AC_CACHE_CHECK(for <asm/alternative.h>, ac_cv_linux_asm_alternative_h,
-[if test -r `find_linuxpath include/asm/alternative.h` >/dev/null 2>&1; then
-  ac_cv_linux_asm_alternative_h=yes
-else ac_cv_linux_asm_alternative_h=no; fi])
-if test $ac_cv_linux_asm_alternative_h = yes; then
-    AC_DEFINE(HAVE_LINUX_ASM_ALTERNATIVE_H)
-fi
-
-AC_CACHE_CHECK(for <asm/system.h>, ac_cv_linux_asm_system_h,
-[if test -r `find_linuxpath include/asm/system.h` >/dev/null 2>&1; then
-  ac_cv_linux_asm_system_h=yes
-else ac_cv_linux_asm_system_h=no; fi])
-if test $ac_cv_linux_asm_system_h = yes; then
-    AC_DEFINE(HAVE_LINUX_ASM_SYSTEM_H)
-fi
-
 fi
 
 
@@ -1423,7 +1391,39 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     AC_CHECK_DECL(atomic_cmpxchg, [ac_cv_linux_atomic_cmpxchg=yes], [ac_cv_linux_atomic_cmpxchg=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <asm/atomic.h>]])
     if test $ac_cv_linux_atomic_cmpxchg = yes; then
-	AC_DEFINE([HAVE_LINUX_ATOMIC_CMPXCHG], [1], [Define if you have the atomic_cmpxchg function.])
+	AC_DEFINE([HAVE_LINUX_ATOMIC_CMPXCHG], [1], [Define if your Linux kernel architecture defines atomic_cmpxchg.])
+    fi
+
+    AC_CHECK_DECL(atomic_set_mask, [ac_cv_linux_atomic_set_mask=yes], [ac_cv_linux_atomic_set_mask=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <asm/atomic.h>]])
+    if test $ac_cv_linux_atomic_set_mask = yes; then
+        AC_DEFINE([HAVE_LINUX_ATOMIC_SET_MASK], [1], [Define if your Linux kernel architecture defines atomic_set_mask.])
+    fi
+
+    AC_CHECK_DECL(atomic_add_return, [ac_cv_linux_atomic_add_return=yes], [ac_cv_linux_atomic_add_return=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <asm/atomic.h>]])
+    if test $ac_cv_linux_atomic_add_return = yes; then
+        AC_DEFINE([HAVE_LINUX_ATOMIC_ADD_RETURN], [1], [Define if your Linux kernel architecture defines atomic_add_return.])
+    fi
+
+    AC_CACHE_CHECK([for <asm/alternative.h>], [ac_cv_linux_asm_alternative_h],
+	[AC_LANG_C
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <asm/alternative.h>]],
+[[]])],
+	[ac_cv_linux_asm_alternative_h=yes], [ac_cv_linux_asm_alternative_h=no])])
+    if test $ac_cv_linux_asm_alternative_h = yes; then
+	AC_DEFINE([HAVE_LINUX_ASM_ALTERNATIVE_H], [1], [Define if you have the <asm/alternative.h> header file.])
+    fi
+
+    AC_CACHE_CHECK([for <asm/system.h>], [ac_cv_linux_asm_system_h],
+	[AC_LANG_C
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <asm/system.h>]],
+[[]])],
+	[ac_cv_linux_asm_system_h=yes], [ac_cv_linux_asm_system_h=no])])
+    if test $ac_cv_linux_asm_system_h = yes; then
+	AC_DEFINE([HAVE_LINUX_ASM_SYSTEM_H], [1], [Define if you have the <asm/system.h> header file.])
     fi
 
 

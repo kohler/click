@@ -9649,70 +9649,6 @@ if test $ac_cv_linux_ktime_h = yes; then
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for atomic_set_mask" >&5
-$as_echo_n "checking for atomic_set_mask... " >&6; }
-if ${ac_cv_linux_atomic_set_mask+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if grep atomic_set_mask `find_linuxpath include/asm/atomic.h` >/dev/null 2>&1; then
-  ac_cv_linux_atomic_set_mask=yes
-else ac_cv_linux_atomic_set_mask=no; fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_atomic_set_mask" >&5
-$as_echo "$ac_cv_linux_atomic_set_mask" >&6; }
-if test $ac_cv_linux_atomic_set_mask = yes; then
-    $as_echo "#define HAVE_LINUX_ATOMIC_SET_MASK 1" >>confdefs.h
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for atomic_add_return" >&5
-$as_echo_n "checking for atomic_add_return... " >&6; }
-if ${ac_cv_linux_atomic_add_return+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if grep atomic_add_return `find_linuxpath include/asm/atomic.h` >/dev/null 2>&1; then
-  ac_cv_linux_atomic_add_return=yes
-else ac_cv_linux_atomic_add_return=no; fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_atomic_add_return" >&5
-$as_echo "$ac_cv_linux_atomic_add_return" >&6; }
-if test $ac_cv_linux_atomic_add_return = yes; then
-    $as_echo "#define HAVE_LINUX_ATOMIC_ADD_RETURN 1" >>confdefs.h
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for <asm/alternative.h>" >&5
-$as_echo_n "checking for <asm/alternative.h>... " >&6; }
-if ${ac_cv_linux_asm_alternative_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -r `find_linuxpath include/asm/alternative.h` >/dev/null 2>&1; then
-  ac_cv_linux_asm_alternative_h=yes
-else ac_cv_linux_asm_alternative_h=no; fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_asm_alternative_h" >&5
-$as_echo "$ac_cv_linux_asm_alternative_h" >&6; }
-if test $ac_cv_linux_asm_alternative_h = yes; then
-    $as_echo "#define HAVE_LINUX_ASM_ALTERNATIVE_H 1" >>confdefs.h
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for <asm/system.h>" >&5
-$as_echo_n "checking for <asm/system.h>... " >&6; }
-if ${ac_cv_linux_asm_system_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -r `find_linuxpath include/asm/system.h` >/dev/null 2>&1; then
-  ac_cv_linux_asm_system_h=yes
-else ac_cv_linux_asm_system_h=no; fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_asm_system_h" >&5
-$as_echo "$ac_cv_linux_asm_system_h" >&6; }
-if test $ac_cv_linux_asm_system_h = yes; then
-    $as_echo "#define HAVE_LINUX_ASM_SYSTEM_H 1" >>confdefs.h
-
-fi
-
 fi
 
 
@@ -11128,6 +11064,188 @@ fi
     if test $ac_cv_linux_atomic_cmpxchg = yes; then
 
 $as_echo "#define HAVE_LINUX_ATOMIC_CMPXCHG 1" >>confdefs.h
+
+    fi
+
+    ac_fn_cxx_check_decl "$LINENO" "atomic_set_mask" "ac_cv_have_decl_atomic_set_mask" "#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#define new linux_new
+#define this linux_this
+#define delete linux_delete
+#define class linux_class
+#define virtual linux_virtual
+#define typename linux_typename
+#define private linux_private
+#define protected linux_protected
+#define public linux_public
+#define namespace linux_namespace
+#define false linux_false
+#define true linux_true
+#define CLICK_CXX_PROTECTED 1
+$linux_autoconf_include
+#include <asm/types.h>
+#include <asm/atomic.h>
+"
+if test "x$ac_cv_have_decl_atomic_set_mask" = xyes; then :
+  ac_cv_linux_atomic_set_mask=yes
+else
+  ac_cv_linux_atomic_set_mask=no
+fi
+
+    if test $ac_cv_linux_atomic_set_mask = yes; then
+
+$as_echo "#define HAVE_LINUX_ATOMIC_SET_MASK 1" >>confdefs.h
+
+    fi
+
+    ac_fn_cxx_check_decl "$LINENO" "atomic_add_return" "ac_cv_have_decl_atomic_add_return" "#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#define new linux_new
+#define this linux_this
+#define delete linux_delete
+#define class linux_class
+#define virtual linux_virtual
+#define typename linux_typename
+#define private linux_private
+#define protected linux_protected
+#define public linux_public
+#define namespace linux_namespace
+#define false linux_false
+#define true linux_true
+#define CLICK_CXX_PROTECTED 1
+$linux_autoconf_include
+#include <asm/types.h>
+#include <asm/atomic.h>
+"
+if test "x$ac_cv_have_decl_atomic_add_return" = xyes; then :
+  ac_cv_linux_atomic_add_return=yes
+else
+  ac_cv_linux_atomic_add_return=no
+fi
+
+    if test $ac_cv_linux_atomic_add_return = yes; then
+
+$as_echo "#define HAVE_LINUX_ATOMIC_ADD_RETURN 1" >>confdefs.h
+
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for <asm/alternative.h>" >&5
+$as_echo_n "checking for <asm/alternative.h>... " >&6; }
+if ${ac_cv_linux_asm_alternative_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#define new linux_new
+#define this linux_this
+#define delete linux_delete
+#define class linux_class
+#define virtual linux_virtual
+#define typename linux_typename
+#define private linux_private
+#define protected linux_protected
+#define public linux_public
+#define namespace linux_namespace
+#define false linux_false
+#define true linux_true
+#define CLICK_CXX_PROTECTED 1
+$linux_autoconf_include
+#include <asm/types.h>
+#include <asm/alternative.h>
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_linux_asm_alternative_h=yes
+else
+  ac_cv_linux_asm_alternative_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_asm_alternative_h" >&5
+$as_echo "$ac_cv_linux_asm_alternative_h" >&6; }
+    if test $ac_cv_linux_asm_alternative_h = yes; then
+
+$as_echo "#define HAVE_LINUX_ASM_ALTERNATIVE_H 1" >>confdefs.h
+
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for <asm/system.h>" >&5
+$as_echo_n "checking for <asm/system.h>... " >&6; }
+if ${ac_cv_linux_asm_system_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#if HAVE_LINUXMODULE_2_6
+# define KBUILD_STR(s)		#s
+# define KBUILD_BASENAME	KBUILD_STR(click)
+# define KBUILD_MODNAME		KBUILD_STR(click)
+#endif
+#define new linux_new
+#define this linux_this
+#define delete linux_delete
+#define class linux_class
+#define virtual linux_virtual
+#define typename linux_typename
+#define private linux_private
+#define protected linux_protected
+#define public linux_public
+#define namespace linux_namespace
+#define false linux_false
+#define true linux_true
+#define CLICK_CXX_PROTECTED 1
+$linux_autoconf_include
+#include <asm/types.h>
+#include <asm/system.h>
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_linux_asm_system_h=yes
+else
+  ac_cv_linux_asm_system_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_asm_system_h" >&5
+$as_echo "$ac_cv_linux_asm_system_h" >&6; }
+    if test $ac_cv_linux_asm_system_h = yes; then
+
+$as_echo "#define HAVE_LINUX_ASM_SYSTEM_H 1" >>confdefs.h
 
     fi
 
