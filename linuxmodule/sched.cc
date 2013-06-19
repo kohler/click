@@ -41,6 +41,9 @@ CLICK_CXX_PROTECT
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # include <linux/cpumask.h>
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0)
+# include <linux/kthread.h>
+#endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
@@ -373,12 +376,23 @@ click_init_sched(ErrorHandler *errh)
 	click_master->use();
 	RouterThread *thread = click_master->thread(i);
 	thread->set_greedy(greedy);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0)
+        struct task_struct* kthread = kthread_create
+            (click_sched, thread, "kclick");
+        if (!IS_ERR(kthread))
+            wake_up_process(kthread);
+        else {
+            errh->error("cannot create kernel thread for Click thread %i!", i);
+            click_master->unuse();
+        }
+#else
 	pid_t pid = kernel_thread
 	    (click_sched, thread, CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
 	if (pid < 0) {
 	    errh->error("cannot create kernel thread for Click thread %i!", i);
 	    click_master->unuse();
 	}
+#endif
     }
 
     Router::add_read_handler(0, "threads", read_threads, 0);
