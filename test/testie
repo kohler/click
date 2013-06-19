@@ -1841,4 +1841,4 @@ C<LC_ALL> to another value, set it in the %script section.
 
 =head1 AUTHOR
 
-Eddie Kohler, <kohler@cs.ucla.edu>
+Eddie Kohler, <kohler@seas.harvard.edu>

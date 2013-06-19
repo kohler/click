@@ -10,6 +10,6 @@
 # Note: dot may be obtained from http://www.graphviz.org
 #
 # Original author: Jose Vasconcellos <jvasco@bellatlantic.net>
-# Rewritten in click-pretty by Eddie Kohler <kohler@cs.ucla.edu>
+# Rewritten in click-pretty by Eddie Kohler
 
 click-pretty --dot "$@"
