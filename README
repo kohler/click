@@ -148,27 +148,33 @@ Click.
 COPYRIGHT AND LICENSE
 ---------------------
 
-    Most of Click is distributed under a version of the "MIT License",
-which is a BSD-like license. See the 'LICENSE' file for details.
+    Most of Click is distributed under the Click license, a version of
+the MIT License. See the 'LICENSE' file for details. Each source file
+should identify its license. Source files that do not identify a
+specific license are covered by the Click license.
 
-    Portions of the Click software are derived from the Linux kernel, and
-are thus distributed under the GNU General Public License, version 2. The
-GNU General Public License is available via the Web at
+    Parts of Click are distributed under different licenses. The
+specific licenses are listed below.
+
+    drivers/e1000*, etc/linux-*-patch, linuxmodule/proclikefs.c: These
+portions of the Click software are derived from the Linux kernel, and
+are thus distributed under the GNU General Public License, version 2.
+The GNU General Public License is available via the Web at
 <http://www.gnu.org/licenses/gpl.html>, or in the COPYING file in this
-directory. The GPL applies to the source files in drivers/e1000*, to the
-files etc/linux-*-patch, linuxmodule/clickfs.cc, linuxmodule/proclikefs.c,
-linuxmodule/sched.cc, and linuxmodule/skbmgr.cc, and some of the files in
-elements/linuxmodule.
+directory.
 
-    Portions of the Click software are derived from the GNU Multiple
-Precision Arithmetic Library, and are thus distributed under the GNU Lesser
-General Public License, version 3.  This license is available via the Web
-at <http://www.gnu.org/licenses/lgpl.html>.  The LGPL applies to the source
-file include/click/bigint.hh.
+    include/click/bigint.hh: This portion of the Click software
+derives from the GNU Multiple Precision Arithmetic Library, and is
+thus distributed under the GNU Lesser General Public License, version
+3. This license is available via the Web at
+<http://www.gnu.org/licenses/lgpl.html>. The LGPL specifically permits
+direct linking with code with other licenses.
 
-    Element code that uses only Click's interfaces will *not* be derived
-from the Linux kernel, so the BSD-like 'LICENSE' will apply, not the GPL or
-the LGPL.
+    Element code that uses only Click's interfaces will *not* be
+derived from the Linux kernel. (For instance, those interfaces have
+multiple implementations, including some that run at user level.)
+Thus, for element code that uses only Click's interfaces, the BSD-like
+Click license applies, not the GPL or the LGPL.
 
 
 BUGS, QUESTIONS, ETC.

@@ -1,9 +1,13 @@
-Portions of this software are subject to the license below.  The relevant
-source files are clearly marked; they refer to this file using the phrase
-"the Click LICENSE file".  This license is an MIT license, plus a clause
-(taken from the W3C license) requiring prior written permission to use our
-names in publicity.  The AUTHORS file lists the people who have contributed
-to this software.
+Most of the Click software is subject to the license below, which is
+called "the Click license" or "the Click LICENSE file." This license
+is an MIT license, plus a clause (taken from the W3C license)
+requiring prior written permission to use our names in publicity.
+
+The portions of the Click software not subject to this license are
+specifically marked, and also detailed in the README file.
+
+The AUTHORS file lists the people who have contributed to this
+software.
 
 ===========================================================================
 
@@ -11,8 +15,8 @@ to this software.
 (c) 2000-2009 Mazu Networks, Inc.
 (c) 2001-2009 International Computer Science Institute
 (c) 2004-2011 Regents of the University of California
-(c) 2006-2012 Meraki, Inc.
-(c) 2011-2012 President and Fellows of Harvard College
+(c) 2006-2013 Meraki, Inc.
+(c) 2011-2013 President and Fellows of Harvard College
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
