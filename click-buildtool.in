@@ -150,7 +150,7 @@ $1"; shift 1;;
   if (length() > '$len') {
     ("echo " orig " | '"$MD5SUM"'") | getline hash
     sub("[^A-Za-z_0-9.].*", "", hash)
-    $0 = substr($0, 1, '$len' - 12) ".H" substr(hash, 1, 10)
+    $0 = substr($0, 1, '$len' - 12) "_H" substr(hash, 1, 10)
   }
   print orig, $0;
 }' > $obj.shortenmap || exit 1
