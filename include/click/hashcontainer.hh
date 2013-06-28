@@ -162,7 +162,9 @@ class HashContainer { public:
     /** @overload */
     inline const_iterator begin(size_type n) const;
 
-    /** @brief Return 1 if an element with key @a key exists, 0 otherwise. */
+    /** @brief Test if an element with key @a key exists in the table. */
+    inline bool contains(const key_type& key) const;
+    /** @brief Return the number of elements with key @a key in the table. */
     inline size_type count(const key_type& key) const;
 
     /** @brief Return an iterator for an element with @a key, if any.
@@ -509,15 +511,25 @@ HashContainer<T, A>::begin(size_type b) const
 }
 
 template <typename T, typename A>
-inline typename HashContainer<T, A>::size_type
-HashContainer<T, A>::count(const key_type& key) const
+inline bool HashContainer<T, A>::contains(const key_type& key) const
 {
     size_type b = bucket(key);
     T **pprev;
     for (pprev = &_rep.buckets[b]; *pprev; pprev = &_rep.hashnext(*pprev))
 	if (_rep.hashkeyeq(_rep.hashkey(*pprev), key))
-            return 1;
-    return 0;
+            return true;
+    return false;
+}
+
+template <typename T, typename A>
+inline typename HashContainer<T, A>::size_type
+HashContainer<T, A>::count(const key_type& key) const
+{
+    size_type b = bucket(key), c = 0;
+    T **pprev;
+    for (pprev = &_rep.buckets[b]; *pprev; pprev = &_rep.hashnext(*pprev))
+	c += _rep.hashkeyeq(_rep.hashkey(*pprev), key);
+    return c;
 }
 
 template <typename T, typename A>
