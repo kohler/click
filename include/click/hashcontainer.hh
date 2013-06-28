@@ -162,6 +162,9 @@ class HashContainer { public:
     /** @overload */
     inline const_iterator begin(size_type n) const;
 
+    /** @brief Return 1 if an element with key @a key exists, 0 otherwise. */
+    inline size_type count(const key_type& key) const;
+
     /** @brief Return an iterator for an element with @a key, if any.
      *
      * If no element with @a key exists in the table, find() returns an
@@ -503,6 +506,18 @@ HashContainer<T, A>::begin(size_type b) const
 {
     click_hash_assert(b < _rep.nbuckets);
     return const_iterator(this, b, &_rep.buckets[b], _rep.buckets[b]);
+}
+
+template <typename T, typename A>
+inline typename HashContainer<T, A>::size_type
+HashContainer<T, A>::count(const key_type& key) const
+{
+    size_type b = bucket(key);
+    T **pprev;
+    for (pprev = &_rep.buckets[b]; *pprev; pprev = &_rep.hashnext(*pprev))
+	if (_rep.hashkeyeq(_rep.hashkey(*pprev), key))
+            return 1;
+    return 0;
 }
 
 template <typename T, typename A>
