@@ -94,12 +94,30 @@ static inline void md5_reinit(md5_state_t *pms) {
 
 static inline void md5_append(md5_state_t *pms, const unsigned char *data, int nbytes) {
     struct scatterlist sg;
-    sg_init_one(&sg, const_cast<uint8_t *>(data), nbytes);
+    if (likely(virt_addr_valid((unsigned long)data))) {
+        sg_init_one(&sg, const_cast<uint8_t *>(data), nbytes);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
-    crypto_hash_update(pms, &sg, nbytes);
+        crypto_hash_update(pms, &sg, nbytes);
 #else
-    crypto_digest_update(*pms, &sg, 1);
+        crypto_digest_update(*pms, &sg, 1);
 #endif
+    } else {
+        while (nbytes > 0) {
+            int len = nbytes;
+            int off = offset_in_page(data);
+            if (off + len > (int)PAGE_SIZE)
+                len = PAGE_SIZE - off;
+            sg_init_table(&sg, 1);
+            sg_set_page(&sg, vmalloc_to_page(const_cast<uint8_t *>(data)), len, off);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+            crypto_hash_update(pms, &sg, len);
+#else
+            crypto_digest_update(*pms, &sg, 1);
+#endif
+            data += len;
+            nbytes -= len;
+        }
+    }
 }
 
 static inline void md5_finish(md5_state_t *pms, unsigned char digest[16]) {
