@@ -1,9 +1,10 @@
 # pkg-linuxmodule-26.mk -- build tools for Click
 # Eddie Kohler
 #
+# Copyright (c) 2006-2013 Eddie Kohler
 # Copyright (c) 2006-2007 Regents of the University of California
 # Copyright (c) 2008 Meraki, Inc.
-# Copyright (c) 2011 Eddie Kohler
+# Copyright (c) 2013 President and Fellows of Harvard College
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -44,7 +45,7 @@ COMPILE = $(CLICKKERNEL_CC) $(LINUXCFLAGS) $(CLICKCPPFLAGS) \
 	$(DEFS) $(INCLUDES)
 
 packagesrcdir ?= $(srcdir)
-PACKAGE_OBJS ?= kpackage.ko
+PACKAGE_OBJS ?= $(package)-kmain.ko
 PACKAGE_DEPS ?=
 
 KBUILD_EXTRA_SYMBOLS ?= $(clickbuild_libdir)/click.symvers
@@ -84,26 +85,26 @@ top_builddir := $(obj)/$(top_builddir)
 builddir := $(obj)
 endif
 
--include $(obj)/kelements.mk
+-include $(obj)/$(package)-kelem.mk
 
 $(package)-objs := $(ELEMENT_OBJS) $(PACKAGE_OBJS) kversion.ko
 endif
 
 obj-m += $(package).o
 
-$(obj)/kelements.conf: $(CLICK_BUILDTOOL)
-	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r linuxmodule -r $(package) -P $(CLICKFINDELEMFLAGS) > $(obj)/kelements.conf
-$(obj)/kelements.mk: $(obj)/kelements.conf $(CLICK_BUILDTOOL)
-	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t linuxmodule < $(obj)/kelements.conf > $(obj)/kelements.mk
-$(obj)/kpackage.ko: $(obj)/kpackage.cc
+$(obj)/$(package)-kelem.conf: $(CLICK_BUILDTOOL)
+	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r linuxmodule -r $(package) -P $(CLICKFINDELEMFLAGS) > $(obj)/$(package)-kelem.conf
+$(obj)/$(package)-kelem.mk: $(obj)/$(package)-kelem.conf $(CLICK_BUILDTOOL)
+	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t linuxmodule < $(obj)/$(package)-kelem.conf > $(obj)/$(package)-kelem.mk
+$(obj)/$(package)-kmain.cc: $(obj)/$(package)-kelem.conf $(CLICK_BUILDTOOL)
+	$(CLICK_ELEM2PACKAGE) $(package) < $(obj)/$(package)-kelem.conf > $(obj)/$(package)-kmain.cc
+	@rm -f $(obj)/$(package)-kmain.kd
+$(obj)/$(package)-kmain.ko: $(obj)/$(package)-kmain.cc
 	$(call if_changed_dep,cxxcompile)
-$(obj)/kpackage.cc: $(obj)/kelements.conf $(CLICK_BUILDTOOL)
-	$(CLICK_ELEM2PACKAGE) $(package) < $(obj)/kelements.conf > $(obj)/kpackage.cc
-	@rm -f $(obj)/kpackage.kd
-$(obj)/kversion.ko: $(obj)/kversion.c
-	$(call if_changed_dep,ccompile)
 $(obj)/kversion.c: $(CLICK_BUILDTOOL)
 	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) kversion $(KVERSIONFLAGS) > $(obj)/kversion.c
+$(obj)/kversion.ko: $(obj)/kversion.c
+	$(call if_changed_dep,ccompile)
 
 DEPFILES := $(wildcard *.kd)
 ifneq ($(DEPFILES),)

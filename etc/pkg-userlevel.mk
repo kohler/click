@@ -1,8 +1,9 @@
 # pkg-userlevel.mk -- build tools for Click
 # Eddie Kohler
 #
+# Copyright (c) 2006-2013 Eddie Kohler
 # Copyright (c) 2006-2007 Regents of the University of California
-# Copyright (c) 2011 Eddie Kohler
+# Copyright (c) 2013 President and Fellows of Harvard College
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -34,7 +35,7 @@ INCLUDES ?= $(CLICKINCLUDES)
 LDFLAGS ?= $(CLICKLDMODULEFLAGS)
 
 packagesrcdir ?= $(srcdir)
-PACKAGE_OBJS ?= upackage.uo
+PACKAGE_OBJS ?= $(package)-umain.uo
 PACKAGE_LIBS ?=
 PACKAGE_DEPS ?=
 
@@ -73,7 +74,7 @@ endif
 	$(call cxxcompile_nodep,-E $< > $@,CXXCPP)
 
 ifneq ($(MAKECMDGOALS),clean)
--include uelements.mk
+-include $(package)-uelem.mk
 endif
 
 OBJS = $(ELEMENT_OBJS) $(PACKAGE_OBJS)
@@ -82,13 +83,13 @@ $(package).uo: $(clickbuild_datadir)/pkg-userlevel.mk $(OBJS) $(PACKAGE_DEPS)
 	$(CXXLINK) -o $(package).uo $(OBJS) $(ELEMENT_LIBS) $(PACKAGE_LIBS)
 	$(STRIP_UPACKAGE) $(package).uo
 
-elemlist uelements.conf: $(CLICK_BUILDTOOL)
-	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r userlevel -r $(package) -P $(CLICKFINDELEMFLAGS) > uelements.conf
-uelements.mk: uelements.conf $(CLICK_BUILDTOOL)
-	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t userlevel < uelements.conf > uelements.mk
-upackage.cc: uelements.conf $(CLICK_BUILDTOOL)
-	$(CLICK_ELEM2PACKAGE) $(package) < uelements.conf > upackage.cc
-	@rm -f upackage.ud
+elemlist $(package)-uelem.conf: $(CLICK_BUILDTOOL)
+	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r userlevel -r $(package) -P $(CLICKFINDELEMFLAGS) > $(package)-uelem.conf
+$(package)-uelem.mk: $(package)-uelem.conf $(CLICK_BUILDTOOL)
+	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t userlevel < $(package)-uelem.conf > $(package)-uelem.mk
+$(package)-umain.cc: $(package)-uelem.conf $(CLICK_BUILDTOOL)
+	$(CLICK_ELEM2PACKAGE) $(package) < $(package)-uelem.conf > $(package)-umain.cc
+	@rm -f $(package)-umain.ud
 
 DEPFILES := $(wildcard *.ud)
 ifneq ($(DEPFILES),)
@@ -96,6 +97,6 @@ include $(DEPFILES)
 endif
 
 clean:
-	-rm -f *.ud *.uo uelements.conf uelements.mk upackage.cc $(package).uo
+	-rm -f *.ud *.uo $(package)-uelem.conf $(package)-uelem.mk $(package)-umain.cc
 
 .PHONY: clean elemlist
