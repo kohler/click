@@ -43,8 +43,8 @@ INCLUDES = -I. -I$(top_builddir) -I$(srcdir) $(CLICKINCLUDES)
 
 # Everything below here will probably stay unchanged
 
-srcdir = @srcdir@
-top_srcdir = @top_srcdir@
+srcdir := @srcdir@
+top_srcdir := @top_srcdir@
 
 ifeq ($(CLICK_PACKAGE_MAKING),)
 prefix = @prefix@

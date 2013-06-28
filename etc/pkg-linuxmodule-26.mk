@@ -92,8 +92,10 @@ endif
 
 obj-m += $(package).o
 
+ifndef MKMINDRIVER
 $(obj)/$(package)-kelem.conf: $(CLICK_BUILDTOOL)
 	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r linuxmodule -r $(package) -P $(CLICKFINDELEMFLAGS) > $(obj)/$(package)-kelem.conf
+endif
 $(obj)/$(package)-kelem.mk: $(obj)/$(package)-kelem.conf $(CLICK_BUILDTOOL)
 	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t linuxmodule < $(obj)/$(package)-kelem.conf > $(obj)/$(package)-kelem.mk
 $(obj)/$(package)-kmain.cc: $(obj)/$(package)-kelem.conf $(CLICK_BUILDTOOL)

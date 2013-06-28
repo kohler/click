@@ -651,6 +651,38 @@ ElementMap::parse_default_file(const String &default_path, ErrorHandler *errh)
 }
 
 bool
+ElementMap::parse_package_file(const String& package_name, const RouterT* r, const String& default_path, ErrorHandler* errh)
+{
+    String mapname = "elementmap-" + package_name + ".xml";
+    String mapname2 = "elementmap." + package_name;
+
+    // look for elementmap in archive
+    if (r) {
+        int map_aei = r->archive_index(mapname);
+        if (map_aei < 0)
+            map_aei = r->archive_index(mapname2);
+        if (map_aei >= 0) {
+            parse(r->archive(map_aei).data, package_name);
+            return true;
+        }
+    }
+
+    // look for elementmap in file system
+    String fn = clickpath_find_file(mapname, "share", default_path);
+    if (!fn)
+        fn = clickpath_find_file(mapname2, "share", default_path);
+    if (fn) {
+        String text = file_string(fn, errh);
+        parse(text, package_name);
+        return true;
+    } else {
+        if (errh)
+            errh->warning("elementmap for package %<%s%> missing", package_name.c_str());
+        return false;
+    }
+}
+
+bool
 ElementMap::parse_requirement_files(RouterT *r, const String &default_path, ErrorHandler *errh, String *not_found_store)
 {
     String not_found;
@@ -667,37 +699,17 @@ ElementMap::parse_requirement_files(RouterT *r, const String &default_path, Erro
     for (int i = 0; i < requirements.size(); i += 2) {
 	if (!requirements[i].equals("package", 7))
 	    continue;
-
-	String req = requirements[i+1];
-	String mapname = "elementmap-" + req + ".xml";
-	String mapname2 = "elementmap." + req;
-
-	// look for elementmap in archive
-	int map_aei = r->archive_index(mapname);
-	if (map_aei < 0)
-	    map_aei = r->archive_index(mapname2);
-	if (map_aei >= 0) {
-	    parse(r->archive(map_aei).data, req);
-	    continue;
-	}
-
-	String fn = clickpath_find_file(mapname, "share", default_path);
-	if (!fn)
-	    fn = clickpath_find_file(mapname2, "share", default_path);
-	if (fn) {
-	    String text = file_string(fn, errh);
-	    parse(text, req);
-	} else {
+        if (!parse_package_file(requirements[i+1], r, default_path, 0)) {
 	    if (not_found)
 		not_found += ", ";
-	    not_found += "'" + req + "'";
+	    not_found += "'" + requirements[i+1] + "'";
 	}
     }
 
     if (not_found_store)
 	*not_found_store = not_found;
     if (not_found) {
-	errh->warning("package-specific elementmaps missing:\n  %s", not_found.c_str());
+	errh->warning("package elementmaps missing:\n  %s", not_found.c_str());
 	return false;
     } else
 	return true;

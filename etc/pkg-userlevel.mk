@@ -39,6 +39,11 @@ PACKAGE_OBJS ?= $(package)-umain.uo
 PACKAGE_LIBS ?=
 PACKAGE_DEPS ?=
 
+PACKAGE_CLEANFILES ?= $(package)-uelem.mk $(package)-umain.cc
+ifndef MINDRIVER
+PACKAGE_CLEANFILES += $(package)-uelem.conf
+endif
+
 STRIP_UPACKAGE ?= true
 
 CXXCOMPILE = $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(PACKAGE_CXXFLAGS) $(DEFS) $(INCLUDES)
@@ -83,8 +88,13 @@ $(package).uo: $(clickbuild_datadir)/pkg-userlevel.mk $(OBJS) $(PACKAGE_DEPS)
 	$(CXXLINK) -o $(package).uo $(OBJS) $(ELEMENT_LIBS) $(PACKAGE_LIBS)
 	$(STRIP_UPACKAGE) $(package).uo
 
+ifdef MINDRIVER
+elemlist:
+	@:
+else
 elemlist $(package)-uelem.conf: $(CLICK_BUILDTOOL)
 	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r userlevel -r $(package) -P $(CLICKFINDELEMFLAGS) > $(package)-uelem.conf
+endif
 $(package)-uelem.mk: $(package)-uelem.conf $(CLICK_BUILDTOOL)
 	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t userlevel < $(package)-uelem.conf > $(package)-uelem.mk
 $(package)-umain.cc: $(package)-uelem.conf $(CLICK_BUILDTOOL)
@@ -97,6 +107,6 @@ include $(DEPFILES)
 endif
 
 clean:
-	-rm -f *.ud *.uo $(package)-uelem.conf $(package)-uelem.mk $(package)-umain.cc
+	-rm -f *.ud *.uo $(PACKAGE_CLEANFILES)
 
 .PHONY: clean elemlist

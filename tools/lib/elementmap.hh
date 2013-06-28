@@ -48,6 +48,7 @@ class ElementMap { public:
     void parse(const String& data, const String& package_name, ErrorHandler* = 0);
     void parse_xml(const String& data, const String& package_name, ErrorHandler*);
     bool parse_default_file(const String& default_path, ErrorHandler*);
+    bool parse_package_file(const String& package_name, const RouterT* router, const String& default_path, ErrorHandler* errh);
     bool parse_requirement_files(RouterT*, const String& default_path, ErrorHandler*, String* not_found = 0);
     bool parse_all_files(RouterT*, const String& default_path, ErrorHandler*);
     static void report_file_not_found(String default_path, bool found_default, ErrorHandler*);

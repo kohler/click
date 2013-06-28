@@ -41,6 +41,11 @@ packagesrcdir ?= $(srcdir)
 PACKAGE_OBJS ?= $(package)-kmain.ko
 PACKAGE_DEPS ?=
 
+PACKAGE_CLEANFILES ?= $(package)-kelem.mk $(package)-kmain.cc kversion.c Kbuild
+ifndef MINDRIVER
+PACKAGE_CLEANFILES += $(package)-kelem.conf
+endif
+
 ifneq ($(CLICK_LINUXMODULE_2_6),1)
 
 CXXCOMPILE = $(CXX) $(CPPFLAGS) $(CFLAGS) $(CXXFLAGS) $(PACKAGE_CXXFLAGS) $(DEFS) $(INCLUDES)
@@ -101,8 +106,13 @@ $(package).ko: $(clickbuild_datadir)/pkg-linuxmodule.mk $(OBJS) $(PACKAGE_DEPS)
 	$(STRIP) -g $(package).ko
 endif
 
+ifdef MINDRIVER
+elemlist:
+	@:
+else
 elemlist $(package)-kelem.conf: $(CLICK_BUILDTOOL)
 	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r linuxmodule -r $(package) -P $(CLICKFINDELEMFLAGS) > $(package)-kelem.conf
+endif
 $(package)-kelem.mk: $(package)-kelem.conf $(CLICK_BUILDTOOL)
 	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t linuxmodule < $(package)-kelem.conf > $(package)-kelem.mk
 $(package)-kmain.cc: $(package)-kelem.conf $(CLICK_BUILDTOOL)
@@ -120,7 +130,7 @@ always:
 	@:
 clean:
 	-rm -f $(package).ko .$(package).ko.status
-	-rm -f *.kd *.ko $(package)-kelem.conf $(package)-kelem.mk $(package)-kmain.cc kversion.c Kbuild
+	-rm -f *.kd *.ko $(PACKAGE_CLEANFILES)
 	-rm -f .*.o.cmd .*.ko.cmd $(package).mod.c $(package).mod.o $(package).o
 	-rm -rf .tmp_versions
 

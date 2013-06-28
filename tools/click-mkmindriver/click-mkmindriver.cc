@@ -72,6 +72,7 @@ static const Clp_Option options[] = {
 static const char *program_name;
 
 static int driver = -1;
+static String subpackage;
 static HashTable<String, int> initial_requirements(-1);
 static bool verbose = false;
 
@@ -128,7 +129,7 @@ class Mindriver { public:
     void add_router_requirements(RouterT*, const ElementMap&, ErrorHandler*);
     bool add_traits(const Traits&, const ElementMap&, ErrorHandler*);
     bool resolve_requirement(const String& requirement, const ElementMap& emap, ErrorHandler* errh, bool complain = true);
-    void print_elements_conf(FILE*, String package, const ElementMap&, const String &top_srcdir);
+    void print_elements_conf(FILE*, String package, const ElementMap&, const ElementMap* constraint_emap, const String &top_srcdir);
 
     HashTable<String, int> _provisions;
     HashTable<String, int> _requirements;
@@ -290,7 +291,7 @@ Mindriver::resolve_requirement(const String& requirement, const ElementMap& emap
 }
 
 void
-Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap, const String &top_srcdir)
+Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap, const ElementMap* constraint_emap, const String &top_srcdir)
 {
     Vector<String> sourcevec;
     for (HashTable<String, int>::iterator iter = _source_files.begin();
@@ -304,11 +305,17 @@ Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap, 
     Vector<String> classvec(sourcevec.size(), String());
     HashTable<String, int> statichash(0);
 
+    HashTable<String, int> constraint_map(0);
+    if (constraint_emap)
+        for (int i = 1; i < constraint_emap->size(); ++i)
+            constraint_map[constraint_emap->traits_at(i).source_file] = 1;
+
     // collect header file and C++ element class definitions from emap
     for (int i = 1; i < emap.size(); i++) {
 	const Traits &elt = emap.traits_at(i);
 	int sourcei = _source_files.get(elt.source_file);
-	if (sourcei >= 0) {
+	if (sourcei >= 0
+            && (!constraint_emap || constraint_map.count(elt.source_file))) {
 	    // track ELEMENT_LIBS
 	    // ah, if only I had regular expressions
 	    if (!headervec[sourcei] && elt.libs) {
@@ -371,19 +378,41 @@ analyze_makefile(const String &directory, ErrorHandler *errh)
     if (before != errh->nerrors())
 	return String();
 
-    String expectation = String("\n## Click ") + Driver::requirement(driver) + " driver Makefile ##\n";
-    if (text.find_left(expectation) < 0) {
-	errh->error("%s lacks magic string\n(Does this directory have a Makefile for Click%,s %s driver?)", fn.c_str(), Driver::name(driver));
+    // What kind of driver is this?
+    int allowed_drivers = 0;
+    int pos;
+    if ((pos = text.find_left("\npackage := ")) >= 0) {
+        int endpos = text.find_left('\n', pos + 1);
+        subpackage = text.substring(pos + 12, endpos - (pos + 12));
+        if (text.find_left("\nMAKE_UPACKAGE = 1\n") >= 0)
+            allowed_drivers |= 1 << Driver::USERLEVEL;
+        if (text.find_left("\nMAKE_KPACKAGE = 1\n") >= 0)
+            allowed_drivers |= 1 << Driver::LINUXMODULE;
+    } else {
+        subpackage = String();
+        if (text.find_left("\n## Click userlevel driver Makefile ##\n") >= 0)
+            allowed_drivers |= 1 << Driver::USERLEVEL;
+        if (text.find_left("\n## Click linuxmodule driver Makefile ##\n") >= 0)
+            allowed_drivers |= 1 << Driver::LINUXMODULE;
+    }
+    if (allowed_drivers == 0) {
+        errh->error("%s unrecognized as Click Makefile", fn.c_str());
+        return String();
+    }
+
+    if (driver < 0)
+        driver = (allowed_drivers & (1 << Driver::USERLEVEL) ? Driver::USERLEVEL : Driver::LINUXMODULE);
+    if (!(allowed_drivers & (1 << driver))) {
+	errh->error("%s does not support %s driver", fn.c_str(), Driver::name(driver));
 	return String();
     }
 
-    int top_srcdir_pos = text.find_left("\ntop_srcdir := ");
-    if (top_srcdir_pos < 0) {
+    if ((pos = text.find_left("\ntop_srcdir := ")) < 0) {
 	errh->error("%s lacks top_srcdir variable", fn.c_str());
 	return String();
     }
-    int top_srcdir_end = text.find_left('\n', top_srcdir_pos + 1);
-    String top_srcdir = text.substring(top_srcdir_pos + 15, top_srcdir_end - (top_srcdir_pos + 15));
+    int endpos = text.find_left('\n', pos + 1);
+    String top_srcdir = text.substring(pos + 15, endpos - (pos + 15));
     if (top_srcdir.back() != '/')
 	top_srcdir += '/';
     return top_srcdir;
@@ -507,11 +536,12 @@ particular purpose.\n");
     }
 
   done:
-    if (driver < 0)
-	driver = Driver::USERLEVEL;
     if (!package_name)
 	errh->fatal("fatal error: no package name specified\nPlease supply the %<-p PKG%> option.");
-    if (extras) {
+
+    String top_srcdir = analyze_makefile(directory, (check ? errh : ErrorHandler::silent_handler()));
+
+    if (extras && !subpackage) {
 	md.require("Align", errh);
 	md.require("IPNameInfo", errh);
     }
@@ -520,6 +550,13 @@ particular purpose.\n");
     if (!default_emap.parse_default_file(CLICK_DATADIR, errh))
 	default_emap.report_file_not_found(CLICK_DATADIR, false, errh);
 
+    ElementMap* package_constraint_emap = 0;
+    if (subpackage) {
+        default_emap.parse_package_file(subpackage, 0, CLICK_DATADIR, errh);
+        package_constraint_emap = new ElementMap;
+        package_constraint_emap->parse_package_file(subpackage, 0, CLICK_DATADIR, ErrorHandler::silent_handler());
+    }
+
     for (int i = 0; i < router_filenames.size(); i++)
 	handle_router(md, router_filenames[i], default_emap, errh);
 
@@ -527,7 +564,7 @@ particular purpose.\n");
 	errh->fatal("no elements required");
 
     // add types that are always required
-    {
+    if (!subpackage) {
 	LandmarkErrorHandler lerrh(errh, "default requirements");
 	md.require("AddressInfo", &lerrh);
 	md.require("AlignmentInfo", &lerrh);
@@ -550,7 +587,8 @@ particular purpose.\n");
 	HashTable<String, int> old_reqs(-1);
 	old_reqs.swap(md._requirements);
 
-	for (HashTable<String, int>::iterator iter = old_reqs.begin(); iter.live(); iter++)
+	for (HashTable<String, int>::iterator iter = old_reqs.begin();
+             iter.live(); iter++)
 	    md.resolve_requirement(iter.key(), default_emap, errh);
 
 	if (!md._requirements.size())
@@ -561,21 +599,29 @@ particular purpose.\n");
 	exit(1);
 
     // Print elements_PKG.conf
-    String top_srcdir = analyze_makefile(directory, (check ? errh : ErrorHandler::silent_handler()));
-
     if (errh->nerrors() == 0) {
-	String fn = directory + String("elements_") + package_name + ".conf";
+	String fn = directory;
+        if (subpackage && driver == Driver::USERLEVEL)
+            fn += String(package_name) + "-uelem.conf";
+        else if (subpackage && driver == Driver::LINUXMODULE)
+            fn += String(package_name) + "-kelem.conf";
+        else
+            fn += String("elements_") + package_name + ".conf";
 	errh->message("Creating %s...", fn.c_str());
 	FILE *f = fopen(fn.c_str(), "w");
 	if (!f)
 	    errh->fatal("%s: %s", fn.c_str(), strerror(errno));
-	md.print_elements_conf(f, package_name, default_emap, top_srcdir);
+	md.print_elements_conf(f, package_name, default_emap, package_constraint_emap, top_srcdir);
 	fclose(f);
     }
 
     // Final message
     if (errh->nerrors() == 0) {
-	if (driver == Driver::USERLEVEL)
+        if (subpackage && driver == Driver::USERLEVEL)
+            errh->message("Build %<%s.uo%> with %<make MINDRIVER=%s%>.", package_name, package_name);
+        else if (subpackage && driver == Driver::LINUXMODULE)
+            errh->message("Build %<%s.ko%> with %<make MINDRIVER=%s%>.", package_name, package_name);
+	else if (driver == Driver::USERLEVEL)
 	    errh->message("Build %<%sclick%> with %<make MINDRIVER=%s%>.", package_name, package_name);
 	else
 	    errh->message("Build %<%sclick.ko%> with %<make MINDRIVER=%s%>.", package_name, package_name);

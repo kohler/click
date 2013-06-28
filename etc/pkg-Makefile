@@ -22,6 +22,10 @@ CLICK_BUILDTOOL = $(clickbuild_bindir)/click-buildtool
 CLICK_BUILDTOOL_FLAGS = -C $(clickbuild_prefix)
 CLICK_ELEM2PACKAGE = $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2package $(ELEM2PACKAGE_INCLUDES)
 
+ifdef MINDRIVER
+package := $(MINDRIVER)
+endif
+
 ifeq ($(CLICK_PACKAGE_MAKING),userlevel)
 include $(clickbuild_datadir)/pkg-userlevel.mk
 endif
