@@ -6,6 +6,7 @@
  * Copyright (c) 2001 Massachusetts Institute of Technology
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2004-2011 Regents of the University of California
+ * Copyright (c) 2013 President and Fellows of Harvard College
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -106,7 +107,7 @@ Options:\n\
   -d, --directory DIR      Put files in DIR. DIR must contain a 'Makefile'\n\
                            for the relevant driver. Default is '.'.\n\
   -E, --elements ELTS      Include element classes ELTS.\n\
-      --no-extras          Do include useful non-required element classes.\n\
+      --no-extras          Don't include surplus often-useful elements.\n\
   -V, --verbose            Print progress information.\n\
   -C, --clickpath PATH     Use PATH for CLICKPATH.\n\
       --help               Print this message and exit.\n\
