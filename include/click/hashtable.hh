@@ -908,7 +908,7 @@ inline typename HashTable<T>::iterator HashTable<T>::end()
 template <typename T>
 inline typename HashTable<T>::size_type HashTable<T>::count(key_const_reference key) const
 {
-    return _rep.count(key);
+    return _rep.contains(key);
 }
 
 template <typename T>
