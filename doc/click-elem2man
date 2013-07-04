@@ -49,8 +49,10 @@ my(%infosection_name) =
     ( 'package' => 'Package', 'io' => 'Ports', 'processing' => 'Processing',
       'drivers' => 'Drivers' );
 
-my $section = 'n';
+my $man_section = "7click";
+my $man_linksection = "7";
 my $package;
+my $gzip = undef;
 my $uninstall = 0;
 my(@all_outnames, %all_outsections, %summaries_by_section, %all_roff_summaries);
 
@@ -862,25 +864,37 @@ sub process_comment ($$$) {
 		$Title = $1;
 	    } else {
 		push @outfiles, $i;
-		push @outsections, $section;
+		push @outsections, $man_section;
 		$Title = $i;
 	    }
 	}
     } else {
 	$title = join(', ', @classes);
 	@outfiles = @classes;
-	@outsections = ($section) x @classes;
+	@outsections = ($man_section) x @classes;
     }
 
     # open new output file if necessary
     my($main_outname);
     if ($filename_func) {
-	$main_outname = &$filename_func($outfiles[0], $outsections[0]);
+        # maybe clean up old installation names
+        my(@killfiles);
+        for ($i = 0; $i != @outfiles; ++$i) {
+            push @killfiles, &$filename_func($outfiles[$i], $outsections[$i], 1);
+        }
+        foreach $i (@killfiles) {
+            print STDERR "Removing $i\n" if $verbose && -f $i;
+            unlink($i);
+        }
+
+        # install main file
+	$main_outname = &$filename_func($outfiles[0], $outsections[0], 0);
 	if ($uninstall) {
 	    print STDERR "Uninstalled $main_outname\n" if $verbose;
 	    unlink($main_outname);
 	    open(OUT, ">/dev/null");
-	} elsif (open(OUT, ">$main_outname")) {
+        } elsif ($gzip ? open(OUT, "|gzip -9 >$main_outname")
+                 : open(OUT, ">$main_outname")) {
 	    print STDERR "Writing to $main_outname\n" if $verbose;
 	} else {
 	    print STDERR "$main_outname: $!\n";
@@ -900,9 +914,9 @@ sub process_comment ($$$) {
 	if ($section_text[$i] =~ /\A\s*(.*?)(\n\s*\n.*\Z|\Z)/s) {
 	    my($bit, $last) = ($1, $2);
 	    while ($bit =~ m{(\b[A-Z][-\w@.+=]+)([,\s]|\Z)}g) {
-		$RelatedSource{$1} = 'n';
+		$RelatedSource{$1} = $man_linksection;
 	    }
-	    $bit =~ s{([-\w@.+=]+)([,\s]|\Z)}{$1(n)$2}g;
+	    $bit =~ s{([-\w@.+=]+)([,\s]|\Z)}{$1($man_linksection)$2}g;
 	    while ($bit =~ m{([-\w@.+=]+\(([0-9ln])\))}g) {
 		$RelatedSource{$1} = $2;
 	    }
@@ -1032,7 +1046,7 @@ sub process_comment ($$$) {
     if ($filename_func) {
 	close OUT;
 	for ($i = 1; $i < @outfiles; $i++) {
-	    my($outname) = &$filename_func($outfiles[$i], $outsections[$i]);
+	    my($outname) = &$filename_func($outfiles[$i], $outsections[$i], 0);
 	    print STDERR "Unlinking $outname\n" if $verbose;
 	    unlink($outname);
 	    if ($uninstall) {
@@ -1275,7 +1289,9 @@ output of click-mkelemmap.  '-' means standard input.
 Options:
   -f, --files FILE        Read header filenames from FILE.
   -e, --elementmap EMAP   Read information about other elements from EMAP.
-  -d, --directory DIR     Place generated manual pages in directory DIR.
+  -d, --directory DIR     Place generated files in directory DIR.
+  -m, --man MANDIR        Place generated man pages under MANDIR/manSEC.
+      --no-gzip           Do not gzip generated man pages.
   -P, --package PKG       Elements are in PKG package, or say 'DEFAULT'.
   -l, --list              Generate the elements(n) manual page as well.
   -L, --extend-list       Extend an existing elements(n) manual page.
@@ -1291,7 +1307,7 @@ EOD;
 }
 
 undef $/;
-my(@files, $fn, $elementlist, $any_files, $directory, $output_type);
+my(@files, $fn, $elementlist, $any_files, $directory, $output_type, $mandir);
 $output_type = 'nroff';
 
 while (@ARGV) {
@@ -1301,11 +1317,20 @@ while (@ARGV) {
 	$directory = shift @ARGV;
     } elsif (/^--directory=(.*)$/) {
 	$directory = $1;
+    } elsif (/^-m$/ || /^--man$/) {
+	usage() if !@ARGV;
+	$directory = shift @ARGV;
+        $mandir = 1;
+    } elsif (/^--man=(.*)$/) {
+	$directory = $1;
+        $mandir = 1;
     } elsif (/^-P$/ || /^--package$/) {
 	usage() if !@ARGV;
 	$package = shift @ARGV;
     } elsif (/^-V$/ || /^--verbose$/) {
 	$verbose = 1;
+    } elsif (/^--no-gzip$/) {
+        $gzip = "";
     } elsif (/^--package=(.*)$/) {
 	$package = $1;
     } elsif (/^-f$/ || /^--files$/) {
@@ -1354,22 +1379,42 @@ while (@ARGV) {
 }
 push @files, "-" if !$any_files;
 
-sub nroff_filename_func ($$) {
-    my($name, $sec) = @_;
-    "$directory/$name.$sec";
+my(%man_subdirs);
+sub nroff_filename_func ($$$) {
+    my($name, $sec, $destroy) = @_;
+    if ($destroy && $mandir) {
+        ("$directory/mann/$name.n");
+    } elsif ($destroy) {
+        ();
+    } elsif ($mandir) {
+        my($subdir) = substr($sec, 0, 1);
+        if (!exists($man_subdirs{$subdir}) && !-d "$directory/man$subdir") {
+            print STDERR "Creating $directory/man$subdir\n" if $verbose;
+            mkdir("$directory/man$subdir") || die "$directory/man$subdir: $!\n";
+        }
+        $man_subdirs{$subdir} = 1;
+        "$directory/man$subdir/$name.$sec$gzip";
+    } else {
+        "$directory/$name.$sec$gzip";
+    }
 }
 
-sub dokuwiki_filename_func ($$) {
-    my($name, $sec) = @_;
-    if ($sec eq 'n') {
-	"$directory/" . lc($name) . ".txt";
+sub dokuwiki_filename_func ($$$) {
+    my($name, $sec, $destroy) = @_;
+    if ($destroy) {
+        ();
+    } elsif ($sec eq $man_section) {
+	"$directory/" . lc($name) . ".txt$gzip";
     } else {
-	"$directory/" . lc($name) . "-$sec.txt";
+	"$directory/" . lc($name) . "-$sec.txt$gzip";
     }
 }
 
 if ($directory) {
-    $filename_func = ($output_type eq 'dokuwiki' ? \&dokuwiki_filename_func : \&nroff_filename_func);
+    $filename_func = ($output_type eq "dokuwiki" ? \&dokuwiki_filename_func : \&nroff_filename_func);
+}
+if (!defined($gzip)) {
+    $gzip = $output_type eq "nroff" ? ".gz" : "";
 }
 
 umask(022);
@@ -1489,7 +1534,12 @@ sub one_summary ($@) {
 sub write_elementlist ($$) {
     my($enamebase, $l_uninstall) = @_;
     if ($filename_func) {
-	my($fn) = &$filename_func($enamebase, $section);
+        foreach my $fn (&$filename_func($enamebase, $man_section, 1)) {
+            print STDERR "Removing $fn\n" if $verbose && -f $fn;
+            unlink($fn);
+        }
+
+	my($fn) = &$filename_func($enamebase, $man_section, 0);
 	if ($l_uninstall) {
 	    print STDERR "Removing $fn\n" if $verbose;
 	    unlink($fn);
@@ -1507,7 +1557,7 @@ sub write_elementlist ($$) {
 .\\" -*- mode: nroff -*-
 .\\" Generated by 'click-elem2man'
 $nroff_prologue
-.TH "\U$enamebase\E" $section "$today" "Click"
+.TH "\U$enamebase\E" $man_linksection "$today" "Click"
 .SH "NAME"
 $enamebase \- documented Click element classes
 .SH "DESCRIPTION"
@@ -1545,8 +1595,8 @@ EOD;
 
 sub read_main_elementlist () {
     if ($filename_func) {
-	my($fn) = &$filename_func('elements', $section);
-	$fn = &$filename_func('elements-click', $section) if !-r $fn;
+	my($fn) = &$filename_func('elements', $man_section, 0);
+	$fn = &$filename_func('elements-click', $man_section, 0) if !-r $fn;
 	read_elementlist($fn) if -r $fn && $elementlist > 1;
     }
 }

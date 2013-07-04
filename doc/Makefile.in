@@ -41,7 +41,7 @@ install: Makefile install-man
 	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(bindir))
 	$(call verbose_cmd,$(INSTALL) $(srcdir)/click-elem2man,INSTALL,$(DESTDIR)$(bindir)/click-elem2man)
 install-man: testie.1 $(top_builddir)/elementmap.xml Makefile
-	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man3 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man7 $(DESTDIR)$(mandir)/man8 $(DESTDIR)$(mandir)/mann)
+	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man3 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man7 $(DESTDIR)$(mandir)/man8)
 	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click.1 $(DESTDIR)$(mandir)/man1/click.1,INSTALLMANPAGES $(DESTDIR)$(mandir))
 	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click.5 $(DESTDIR)$(mandir)/man5/click.5)
 	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click.o.8 $(DESTDIR)$(mandir)/man8/click.o.8)
@@ -59,7 +59,7 @@ install-man: testie.1 $(top_builddir)/elementmap.xml Makefile
 	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-xform.1 $(DESTDIR)$(mandir)/man1/click-xform.1)
 	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(DESTDIR)$(mandir)/man7/elementdoc.7)
 	$(call verbose_cmd,$(INSTALL_DATA) testie.1 $(DESTDIR)$(mandir)/man1/testie.1)
-	$(call verbose_cmd,$(PERL) $(srcdir)/click-elem2man -l -d $(DESTDIR)$(mandir)/mann -P DEFAULT -p $(top_srcdir) $(top_builddir)/elementmap.xml,CLICK-ELEM2MAN -d $(DESTDIR)$(mandir)/mann)
+	$(call verbose_cmd,$(PERL) $(srcdir)/click-elem2man -l -m $(DESTDIR)$(mandir) -P DEFAULT -p $(top_srcdir) $(top_builddir)/elementmap.xml,CLICK-ELEM2MAN -m $(DESTDIR)$(mandir))
 
 uninstall: uninstall-man
 	/bin/rm -f $(DESTDIR)$(bindir)/click-elem2man
@@ -68,7 +68,7 @@ uninstall-man: $(top_builddir)/elementmap.xml
 	cd $(DESTDIR)$(mandir)/man5; /bin/rm -f click.5
 	cd $(DESTDIR)$(mandir)/man7; /bin/rm -f elementdoc.7
 	cd $(DESTDIR)$(mandir)/man8; /bin/rm -f click.o.8
-	$(PERL) $(srcdir)/click-elem2man -l -d $(DESTDIR)$(mandir)/mann -P DEFAULT -p $(top_srcdir) -u $(top_builddir)/elementmap.xml
+	$(PERL) $(srcdir)/click-elem2man -l -m $(DESTDIR)$(mandir) -P DEFAULT -p $(top_srcdir) -u $(top_builddir)/elementmap.xml
 
 testie.1: $(top_srcdir)/test/testie
 	@-if [ ! -f testie.1 -a -f $(srcdir)/testie.1 ]; then \
