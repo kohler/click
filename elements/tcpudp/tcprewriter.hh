@@ -80,6 +80,15 @@ packets to the rewritten destination address. Default is true.
 Returns a human-readable description of the TCPRewriter's current mapping
 table.
 
+=h lookup
+
+Takes a flow as a space-separated
+
+    saddr sport daddr dport
+
+and attempts to find a forward mapping for that flow. If found, rewrites the
+flow and returns in the same format.  Otherwise, returns nothing.
+
 =a IPRewriter, IPAddrRewriter, IPAddrPairRewriter, IPRewriterPatterns,
 FTPPortMapper */
 
@@ -181,6 +190,7 @@ class TCPRewriter : public IPRewriterBase { public:
     }
 
     static String tcp_mappings_handler(Element *, void *);
+    static int tcp_lookup_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh);
 
 };
 

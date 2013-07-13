@@ -357,11 +357,45 @@ TCPRewriter::tcp_mappings_handler(Element *e, void *)
     return sa.take_string();
 }
 
+int
+TCPRewriter::tcp_lookup_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh)
+{
+    TCPRewriter *rw = (TCPRewriter *)e;
+    IPAddress saddr, daddr;
+    unsigned short sport, dport;
+
+    if (Args(rw, errh).push_back_words(str)
+	.read_mp("SADDR", saddr)
+	.read_mp("SPORT", IPPortArg(IP_PROTO_TCP), sport)
+	.read_mp("DADDR", daddr)
+	.read_mp("DPORT", IPPortArg(IP_PROTO_TCP), dport)
+	.complete() < 0)
+	return -1;
+
+    HashContainer<IPRewriterEntry> *map = rw->get_map(IPRewriterInput::mapid_default);
+    if (!map)
+	return errh->error("no map!");
+
+    StringAccum sa;
+    IPFlowID flow(saddr, htons(sport), daddr, htons(dport));
+    if (Map::iterator iter = map->find(flow)) {
+	TCPFlow *f = static_cast<TCPFlow *>(iter->flow());
+	const IPFlowID &flowid = f->entry(iter->direction()).rewritten_flowid();
+
+	sa << flowid.saddr() << " " << ntohs(flowid.sport()) << " "
+	   << flowid.daddr() << " " << ntohs(flowid.dport());
+    }
+
+    str = sa.take_string();
+    return 0;
+}
+
 void
 TCPRewriter::add_handlers()
 {
     add_read_handler("table", tcp_mappings_handler, 0);
     add_read_handler("mappings", tcp_mappings_handler, 0, Handler::h_deprecated);
+    set_handler("lookup", Handler::OP_READ | Handler::READ_PARAM, tcp_lookup_handler, 0);
     add_rewriter_handlers(true);
 }
 
