@@ -1,5 +1,5 @@
 %info
-Pattern reconfiguration and mapping unparsing.
+Pattern reconfiguration, mapping unparsing, and mapping lookup.
 
 %script
 
@@ -18,7 +18,17 @@ ps[3] -> Counter(COUNT_CALL 1 s.run) -> Idle
 s :: Script(TYPE PASSIVE,
   write rw1.pattern0 pattern 1.0.0.4 1024-65534# - - 0 1,
   print rw1.patterns)
-DriverManager(pause, print >M rw1.tcp_table, stop)
+DriverManager(pause,
+	print >M rw1.tcp_table,
+	print >RM rw1.lookup 1.0.0.2 1024 1.0.0.3 1025,
+	print >>RM rw1.lookup 2.115.2.2 2 1.0.0.2 1024,
+	print >>RM rw1.lookup 2.115.2.2 2 1.0.0.3 1024,
+	print >>RM rw1.lookup 2.115.2.2 2 1.0.0.4 1024,
+	print >>RM rw1.lookup 2.115.2.2 2 1.0.0.4 1025,
+	print >>RM rw1.lookup 53.1.1.1 1 2.115.2.2 2,
+	print >>RM rw1.lookup 53.1.1.2 1 2.115.2.2 2,
+	print >>RM rw1.lookup 53.1.1.4 1 2.115.2.2 2,
+	stop)
 "
 
 sort M
@@ -73,6 +83,16 @@ sort M
 (53.1.1.1, 1, 2.115.2.2, 2) => (1.0.0.4, 1024, 2.115.2.2, 2) [*0 1] i0{{.*}}
 (53.1.1.2, 1, 2.115.2.2, 2) => (1.0.0.3, 1024, 2.115.2.2, 2) [*0 1] i1{{.*}}
 (53.1.1.4, 1, 2.115.2.2, 2) => (1.0.0.4, 1025, 2.115.2.2, 2) [*0 1] i0{{.*}}
+
+%expect RM
+1.0.0.2 1024 2.115.2.2 2
+1.0.0.3 1025 1.0.0.2 1024
+2.115.2.2 2 53.1.1.2 1
+2.115.2.2 2 53.1.1.1 1
+2.115.2.2 2 53.1.1.4 1
+1.0.0.4 1024 2.115.2.2 2
+1.0.0.3 1024 2.115.2.2 2
+1.0.0.4 1025 2.115.2.2 2
 
 %ignorex OUT1
 ^!.*
