@@ -12,7 +12,7 @@ FromIPSummaryDump(IN1, STOP true, CHECKSUM true, TIMING true)
 	-> Paint(0)
 	-> t :: ToIPSummaryDump(OUT1, CONTENTS direction proto src sport dst dport);
 ps[1] -> [1] rw [1] -> Paint(1) -> t;
-DriverManager(pause, print rw.tcp_mappings, print '==', print rw.udp_mappings)
+DriverManager(pause, print rw.tcp_table, print '==', print rw.udp_table)
 "
 
 %file IN1

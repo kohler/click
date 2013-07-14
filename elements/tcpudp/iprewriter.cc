@@ -181,8 +181,10 @@ IPRewriter::udp_mappings_handler(Element *e, void *)
 void
 IPRewriter::add_handlers()
 {
-    add_read_handler("tcp_mappings", tcp_mappings_handler);
-    add_read_handler("udp_mappings", udp_mappings_handler);
+    add_read_handler("tcp_table", tcp_mappings_handler);
+    add_read_handler("udp_table", udp_mappings_handler);
+    add_read_handler("tcp_mappings", tcp_mappings_handler, 0, Handler::h_deprecated);
+    add_read_handler("udp_mappings", udp_mappings_handler, 0, Handler::h_deprecated);
     add_rewriter_handlers(true);
 }
 

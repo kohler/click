@@ -360,7 +360,8 @@ TCPRewriter::tcp_mappings_handler(Element *e, void *)
 void
 TCPRewriter::add_handlers()
 {
-    add_read_handler("mappings", tcp_mappings_handler, 0);
+    add_read_handler("table", tcp_mappings_handler, 0);
+    add_read_handler("mappings", tcp_mappings_handler, 0, Handler::h_deprecated);
     add_rewriter_handlers(true);
 }
 

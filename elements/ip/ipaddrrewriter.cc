@@ -189,7 +189,8 @@ IPAddrRewriter::dump_mappings_handler(Element *e, void *)
 void
 IPAddrRewriter::add_handlers()
 {
-    add_read_handler("mappings", dump_mappings_handler);
+    add_read_handler("table", dump_mappings_handler);
+    add_read_handler("mappings", dump_mappings_handler, 0, Handler::h_deprecated);
     add_rewriter_handlers(true);
 }
 

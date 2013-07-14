@@ -171,9 +171,9 @@ packets to the rewritten destination address. Default is true.
 
 =back
 
-=h nmappings r
+=h table_size r
 
-Returns the number of mappings in this IPRewriter's mapping table.
+Returns the number of mappings in this IPRewriter's tables.
 
 =h mapping_failures r
 
@@ -181,10 +181,10 @@ Returns the number of mapping failures, which can occur, for example, when the
 IPRewriter runs out of source ports, or when a new flow is dropped because the
 IPRewriter is full.
 
-=h length r
+=h size r
 
 Returns the number of flows in the flow set.  This is generally the same as
-'nmappings', but can be more when several rewriters share a flow set.
+'table_size', but can be more when several rewriters share a flow set.
 
 =h capacity rw
 
@@ -193,16 +193,16 @@ space-separated numbers, where the first is the capacity and the second is the
 short-term flow reservation.  When writing, the short-term reservation can be
 omitted; it is then set to the minimum of 50 and one-eighth the capacity.
 
-=h tcp_mappings read-only
+=h tcp_table read-only
 
-Returns a human-readable description of the IPRewriter's current set of TCP
-mappings.  An unparsed mapping includes both directions' output ports; the
+Returns a human-readable description of the IPRewriter's current TCP mapping
+table. An unparsed mapping includes both directions' output ports; the
 relevant output port is starred.
 
-=h udp_mappings read-only
+=h udp_table read-only
 
-Returns a human-readable description of the IPRewriter's current set of
-UDP mappings.
+Returns a human-readable description of the IPRewriter's current UDP mapping
+table.
 
 =a TCPRewriter, IPAddrRewriter, IPAddrPairRewriter, IPRewriterPatterns,
 RoundRobinIPMapper, FTPPortMapper, ICMPRewriter, ICMPPingRewriter */

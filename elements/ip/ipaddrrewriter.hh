@@ -95,14 +95,14 @@ element, in which case this element will share the other element's capacity.
 
 =back
 
-=h mappings read-only
+=h table read-only
 
-Returns a human-readable description of the IPAddrRewriter's current set of
-mappings.
+Returns a human-readable description of the IPAddrRewriter's current mapping
+table.
 
-=h nmappings read-only
+=h table_size read-only
 
-Returns the number of currently installed mapping pairs.
+Returns the number of mappings in the table.
 
 =h patterns read-only
 

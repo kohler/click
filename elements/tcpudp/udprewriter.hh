@@ -152,10 +152,10 @@ packets to the rewritten destination address. Default is true.
 
 =back
 
-=h mappings read-only
+=h table read-only
 
-Returns a human-readable description of the UDPRewriter's current set of
-mappings.
+Returns a human-readable description of the UDPRewriter's current mapping
+table.
 
 =a TCPRewriter, IPAddrRewriter, IPAddrPairRewriter, IPRewriterPatterns,
 RoundRobinIPMapper, FTPPortMapper, ICMPRewriter, ICMPPingRewriter */

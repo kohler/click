@@ -18,7 +18,7 @@ ps[3] -> Counter(COUNT_CALL 1 s.run) -> Idle
 s :: Script(TYPE PASSIVE,
   write rw1.pattern0 pattern 1.0.0.4 1024-65534# - - 0 1,
   print rw1.patterns)
-DriverManager(pause, print >M rw1.tcp_mappings, stop)
+DriverManager(pause, print >M rw1.tcp_table, stop)
 "
 
 sort M

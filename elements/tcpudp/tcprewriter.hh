@@ -75,10 +75,10 @@ packets to the rewritten destination address. Default is true.
 
 =back
 
-=h mappings read-only
+=h table read-only
 
-Returns a human-readable description of the TCPRewriter's current set of
-mappings.
+Returns a human-readable description of the TCPRewriter's current mapping
+table.
 
 =a IPRewriter, IPAddrRewriter, IPAddrPairRewriter, IPRewriterPatterns,
 FTPPortMapper */
