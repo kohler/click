@@ -358,7 +358,7 @@ TCPRewriter::tcp_mappings_handler(Element *e, void *)
 }
 
 int
-TCPRewriter::tcp_lookup_handler(int, String &str, Element *e, const Handler *h, ErrorHandler *errh)
+TCPRewriter::tcp_lookup_handler(int, String &str, Element *e, const Handler *, ErrorHandler *errh)
 {
     TCPRewriter *rw = (TCPRewriter *)e;
     IPAddress saddr, daddr;
