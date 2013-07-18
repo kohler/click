@@ -635,84 +635,81 @@ ElementMap::pick_driver(int wanted_driver, const RouterT* router, ErrorHandler* 
 
 
 bool
-ElementMap::parse_default_file(const String &default_path, ErrorHandler *errh)
+ElementMap::find_and_parse_package_file(const String& package_name, const RouterT* r, const String& default_path, ErrorHandler* errh, const String& filetype, bool verbose)
 {
-    String default_fn = clickpath_find_file("elementmap.xml", "share", default_path);
-    if (!default_fn)
-	default_fn = clickpath_find_file("elementmap", "share", default_path);
-    if (default_fn) {
-	String text = file_string(default_fn, errh);
-	parse(text);
-	return true;
+    String mapname, mapname2;
+    if (package_name && package_name != "<archive>") {
+        mapname = "elementmap-" + package_name + ".xml";
+        mapname2 = "elementmap." + package_name;
     } else {
-	errh->warning("default elementmap missing");
-	return false;
+        mapname = "elementmap.xml";
+        mapname2 = "elementmap";
     }
-}
-
-bool
-ElementMap::parse_package_file(const String& package_name, const RouterT* r, const String& default_path, ErrorHandler* errh)
-{
-    String mapname = "elementmap-" + package_name + ".xml";
-    String mapname2 = "elementmap." + package_name;
 
     // look for elementmap in archive
     if (r) {
-        int map_aei = r->archive_index(mapname);
-        if (map_aei < 0)
-            map_aei = r->archive_index(mapname2);
-        if (map_aei >= 0) {
-            parse(r->archive(map_aei).data, package_name);
+        int aei = r->archive_index(mapname);
+        if (aei < 0)
+            aei = r->archive_index(mapname2);
+        if (aei >= 0) {
+            if (errh && verbose)
+                errh->message("parsing %s %<%s%> from configuration archive", filetype.c_str(), r->archive(aei).name.c_str());
+            parse(r->archive(aei).data, package_name);
             return true;
         }
     }
 
     // look for elementmap in file system
-    String fn = clickpath_find_file(mapname, "share", default_path);
-    if (!fn)
-        fn = clickpath_find_file(mapname2, "share", default_path);
-    if (fn) {
-        String text = file_string(fn, errh);
-        parse(text, package_name);
-        return true;
-    } else {
+    if (package_name != "<archive>") {
+        String fn = clickpath_find_file(mapname, "share", default_path);
+        if (!fn)
+            fn = clickpath_find_file(mapname2, "share", default_path);
+        if (fn) {
+            if (errh && verbose)
+                errh->message("parsing %s %<%s%>", filetype.c_str(), fn.c_str());
+            String text = file_string(fn, errh);
+            parse(text, package_name);
+            return true;
+        }
+
         if (errh)
-            errh->warning("elementmap for package %<%s%> missing", package_name.c_str());
-        return false;
+            errh->warning("%s missing", filetype.c_str());
     }
+
+    return false;
 }
 
 bool
-ElementMap::parse_requirement_files(RouterT *r, const String &default_path, ErrorHandler *errh, String *not_found_store)
+ElementMap::parse_default_file(const String &default_path, ErrorHandler *errh, bool verbose)
+{
+    return find_and_parse_package_file("", 0, default_path, errh, "default elementmap", verbose);
+}
+
+bool
+ElementMap::parse_package_file(const String& package_name, const RouterT* r, const String& default_path, ErrorHandler* errh, bool verbose)
+{
+    return find_and_parse_package_file(package_name, r, default_path, errh, errh->format("package %<%s%> elementmap", package_name.c_str()), verbose);
+}
+
+bool
+ElementMap::parse_requirement_files(RouterT *r, const String &default_path, ErrorHandler *errh, bool verbose)
 {
     String not_found;
 
     // try elementmap in archive
-    int defaultmap_aei = r->archive_index("elementmap.xml");
-    if (defaultmap_aei < 0)
-	defaultmap_aei = r->archive_index("elementmap");
-    if (defaultmap_aei >= 0)
-	parse(r->archive(defaultmap_aei).data, "<archive>");
+    find_and_parse_package_file("<archive>", r, "", errh, "archive elementmap", verbose);
 
     // parse elementmaps for requirements in required order
     const Vector<String> &requirements = r->requirements();
+    bool ok = true;
     for (int i = 0; i < requirements.size(); i += 2) {
 	if (!requirements[i].equals("package", 7))
 	    continue;
-        if (!parse_package_file(requirements[i+1], r, default_path, 0)) {
-	    if (not_found)
-		not_found += ", ";
-	    not_found += "'" + requirements[i+1] + "'";
-	}
+        if (!find_and_parse_package_file(requirements[i+1], r, default_path, errh, errh->format("package %<%s%> elementmap", requirements[i+1].c_str()), verbose))
+            ok = false;
     }
 
-    if (not_found_store)
-	*not_found_store = not_found;
-    if (not_found) {
-	errh->warning("package elementmaps missing:\n  %s", not_found.c_str());
-	return false;
-    } else
-	return true;
+    return ok;
 }
 
 bool
