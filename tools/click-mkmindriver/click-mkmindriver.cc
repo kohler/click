@@ -126,10 +126,10 @@ class Mindriver { public:
     void require(const String&, ErrorHandler*);
     void add_source_file(const String&, ErrorHandler*);
 
-    void add_router_requirements(RouterT*, const ElementMap&, ErrorHandler*);
+    void add_router_requirements(RouterT*, ElementMap&, ErrorHandler*);
     bool add_traits(const Traits&, const ElementMap&, ErrorHandler*);
     bool resolve_requirement(const String& requirement, const ElementMap& emap, ErrorHandler* errh, bool complain = true);
-    void print_elements_conf(FILE*, String package, const ElementMap&, const ElementMap* constraint_emap, const String &top_srcdir);
+    void print_elements_conf(FILE*, String package, const ElementMap&, const String &top_srcdir);
 
     HashTable<String, int> _provisions;
     HashTable<String, int> _requirements;
@@ -171,11 +171,10 @@ Mindriver::add_source_file(const String& fn, ErrorHandler* errh)
 }
 
 void
-Mindriver::add_router_requirements(RouterT* router, const ElementMap& default_map, ErrorHandler* errh)
+Mindriver::add_router_requirements(RouterT* router, ElementMap& emap, ErrorHandler* errh)
 {
     // find and parse elementmap
-    ElementMap emap(default_map);
-    emap.parse_requirement_files(router, CLICK_DATADIR, errh);
+    emap.parse_requirement_files(router, CLICK_DATADIR, errh, verbose);
 
     // check whether suitable for driver
     if (!emap.driver_compatible(router, driver)) {
@@ -195,8 +194,6 @@ Mindriver::add_router_requirements(RouterT* router, const ElementMap& default_ma
 	String tname = i.key()->name();
 	if (!emap.has_traits(tname))
 	    missing_sa << (nmissing++ ? ", " : "") << tname;
-	else if (emap.package(tname))
-	    /* do nothing; element was defined in a package */;
 	else
 	    require(tname, errh);
     }
@@ -208,7 +205,7 @@ Mindriver::add_router_requirements(RouterT* router, const ElementMap& default_ma
 }
 
 static void
-handle_router(Mindriver& md, String filename_in, const ElementMap &default_map, ErrorHandler *errh)
+handle_router(Mindriver& md, String filename_in, ElementMap &emap, ErrorHandler *errh)
 {
     // decide if 'filename' should be flattened
     bool flattenable = (filename_in[0] != 'a');
@@ -226,7 +223,7 @@ handle_router(Mindriver& md, String filename_in, const ElementMap &default_map, 
     if (router && flattenable)
 	router->flatten(&lerrh);
     if (router && errh->nerrors() == before)
-	md.add_router_requirements(router, default_map, &lerrh);
+	md.add_router_requirements(router, emap, &lerrh);
     delete router;
 }
 
@@ -291,7 +288,7 @@ Mindriver::resolve_requirement(const String& requirement, const ElementMap& emap
 }
 
 void
-Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap, const ElementMap* constraint_emap, const String &top_srcdir)
+Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap, const String &top_srcdir)
 {
     Vector<String> sourcevec;
     for (HashTable<String, int>::iterator iter = _source_files.begin();
@@ -305,17 +302,11 @@ Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap, 
     Vector<String> classvec(sourcevec.size(), String());
     HashTable<String, int> statichash(0);
 
-    HashTable<String, int> constraint_map(0);
-    if (constraint_emap)
-        for (int i = 1; i < constraint_emap->size(); ++i)
-            constraint_map[constraint_emap->traits_at(i).source_file] = 1;
-
     // collect header file and C++ element class definitions from emap
     for (int i = 1; i < emap.size(); i++) {
 	const Traits &elt = emap.traits_at(i);
 	int sourcei = _source_files.get(elt.source_file);
-	if (sourcei >= 0
-            && (!constraint_emap || constraint_map.count(elt.source_file))) {
+	if (sourcei >= 0 && emap.package(elt) == subpackage) {
 	    // track ELEMENT_LIBS
 	    // ah, if only I had regular expressions
 	    if (!headervec[sourcei] && elt.libs) {
@@ -547,15 +538,11 @@ particular purpose.\n");
     }
 
     ElementMap default_emap;
-    if (!default_emap.parse_default_file(CLICK_DATADIR, errh))
+    if (!default_emap.parse_default_file(CLICK_DATADIR, errh, verbose))
 	default_emap.report_file_not_found(CLICK_DATADIR, false, errh);
 
-    ElementMap* package_constraint_emap = 0;
-    if (subpackage) {
-        default_emap.parse_package_file(subpackage, 0, CLICK_DATADIR, errh);
-        package_constraint_emap = new ElementMap;
-        package_constraint_emap->parse_package_file(subpackage, 0, CLICK_DATADIR, ErrorHandler::silent_handler());
-    }
+    if (subpackage)
+        default_emap.parse_package_file(subpackage, 0, CLICK_DATADIR, errh, verbose);
 
     for (int i = 0; i < router_filenames.size(); i++)
 	handle_router(md, router_filenames[i], default_emap, errh);
@@ -611,7 +598,7 @@ particular purpose.\n");
 	FILE *f = fopen(fn.c_str(), "w");
 	if (!f)
 	    errh->fatal("%s: %s", fn.c_str(), strerror(errno));
-	md.print_elements_conf(f, package_name, default_emap, package_constraint_emap, top_srcdir);
+	md.print_elements_conf(f, package_name, default_emap, top_srcdir);
 	fclose(f);
     }
 
