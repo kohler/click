@@ -1437,9 +1437,9 @@ $1"; shift 1
     osuffix=".${L}o"
 
     if test -n "$dir"; then cd "$dir"; fi
-    echo > ${L}elements.conf
-    echo "$srcs" | $grep . | elem2make -t $driver > ${L}elements.mk
-    echo "PACKAGE_OBJS :=" >> ${L}elements.mk
+    echo > ${pkg}-${L}elem.conf
+    echo "$srcs" | $grep . | elem2make -t $driver > ${pkg}-${L}elem.mk
+    echo "PACKAGE_OBJS :=" >> ${pkg}-${L}elem.mk
 
     echo "package = $pkg
 
