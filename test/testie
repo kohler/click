@@ -400,8 +400,8 @@ sub braces_to_regex ($$) {
     wantarray ? ($re . $x, $message) : $re . $x;
 }
 
-sub _read_file_section ($$$$) {
-    my($tt, $args, $secname, $prefix) = @_;
+sub _read_file_section ($$$$;$) {
+    my($tt, $args, $secname, $prefix, $backup_file) = @_;
     $args =~ s/\s+$//;
 
     # split arguments to get fileref
@@ -432,7 +432,9 @@ sub _read_file_section ($$$$) {
     }
 
     # make sure there are filerefs
-    if (!@args) {
+    if (!@args && $backup_file) {
+        push @args, $backup_file;
+    } elsif (!@args) {
 	push @args, "stdin" if $secname eq 'file';
 	push @args, "stdout" if $secname eq 'expect' || $secname eq 'expectv' || $secname eq 'expectx';
 	push @args, "all" if $secname eq 'ignore' || $secname eq 'ignorev' || $secname eq 'ignorex';
@@ -560,13 +562,13 @@ sub parse ($) {
 	    } elsif ($command eq 'cut') {
 		$tt->_read_text_into('cut');
 	    } elsif ($command eq 'stdin' || $command eq 'input') {
-		$tt->_read_file_section($args, 'file', 'f');
+		$tt->_read_file_section($args, "file", "f", "stdin");
 	    } elsif ($command eq 'file') {
 		$tt->_read_file_section($args, 'file', 'f');
 	    } elsif ($command eq 'stdout' || $command eq 'output') {
-		$tt->_read_file_section($args, 'expect', 'e');
+		$tt->_read_file_section($args, "expect", "e", "stdout");
 	    } elsif ($command eq 'stderr') {
-		$tt->_read_file_section($args, 'expect', 'e');
+		$tt->_read_file_section($args, "expect", "e", "stderr");
 	    } elsif ($command eq 'expect') {
 		$tt->_read_file_section($args, 'expect', 'e');
 	    } elsif ($command eq 'expectx') {
