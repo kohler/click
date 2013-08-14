@@ -392,7 +392,7 @@ sub braces_to_regex ($$) {
 	    $x = $before . $after;
 	} else {
 	    $before = quotemeta($before) if $mode == 1;
-	    $re .= $before . $middle;
+            $re .= $before . "(?:" . $middle . ")";
 	    $x = $after;
 	}
     }
