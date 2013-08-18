@@ -72,13 +72,16 @@ static bool link_extract(PacketDesc& d, const FieldWriter *f)
 
 static void link_inject(PacketOdesc& d, const FieldReader *f)
 {
-    if (!d.p->mac_header() && !(d.p = d.p->push_mac_header(14)))
-	return;
+    if (!d.p->mac_header()) {
+        if (!(d.p = d.p->push_mac_header(14)))
+            return;
+        d.p->ether_header()->ether_type = htons(ETHERTYPE_IP);
+    }
     switch (f->user_data) {
-      case T_ETH_SRC:
+    case T_ETH_SRC:
 	memcpy(d.p->ether_header()->ether_shost, d.u8, 6);
 	break;
-      case T_ETH_DST:
+    case T_ETH_DST:
 	memcpy(d.p->ether_header()->ether_dhost, d.u8, 6);
 	break;
     case T_ETH_TYPE:
