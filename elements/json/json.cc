@@ -779,7 +779,7 @@ Json::parse_string(String &result, const String &str, const char *s, const char 
 		    }
 		    if (ch2 < 0xDC00 || ch2 > 0xDFFF)
 			return 0;
-		    else if (!sa.append_utf8(0x100000 + (ch - 0xD800) * 0x400 + (ch2 - 0xDC00)))
+		    else if (!sa.append_utf8(0x10000 + (ch - 0xD800) * 0x400 + (ch2 - 0xDC00)))
 			return 0;
 		    s += 11, last = s + 1;
 		} else {
