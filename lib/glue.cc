@@ -489,7 +489,7 @@ click_random(uint32_t low, uint32_t high)
     } else {
 	uint32_t count = ((uint32_t) CLICK_RAND_MAX + 1) / (high - low + 1);
 	uint32_t max = count * (high - low + 1);
-	while ((r = click_random()) > max)
+	while ((r = click_random()) >= max)
 	    /* try again */;
 	return (r / count) + low;
     }
