@@ -135,7 +135,7 @@ int simclick_click_create(simclick_node_t *simnode, const char* router_file) {
         while (defines_offset < defines_size) {
             char *key = defines + defines_offset;
             char *value = key + strlen(key) + 1;
-            defines_offset += (size_t) (value + strlen(value) + 1 - defines);
+            defines_offset = (size_t) (value + strlen(value) + 1 - defines);
             if (!click_lexer()->global_scope().define(key, value, false)) {
                 errh->error("parameter %s multiply defined", key);
             }
