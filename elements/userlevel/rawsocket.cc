@@ -22,6 +22,7 @@
 
 #include <click/config.h>
 #include "rawsocket.hh"
+#include <click/nameinfo.hh>
 #include <click/error.hh>
 #include <click/args.hh>
 #include <click/glue.hh>
@@ -58,32 +59,18 @@ RawSocket::~RawSocket()
 int
 RawSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  String socktype;
   Args args(conf, this, errh);
-  if (args.read_mp("TYPE", socktype).execute() < 0)
+
+  if (args.read_mp("TYPE", NamedIntArg(NameInfo::T_IP_PROTO), _protocol).execute() < 0)
     return -1;
-  if (socktype.upper() == "TCP")
-    args.read_p("PORT", IPPortArg(IP_PROTO_TCP), _port);
-  else if (socktype.upper() == "UDP")
-    args.read_p("PORT", IPPortArg(IP_PROTO_UDP), _port);
+  if (_protocol == IP_PROTO_TCP || _protocol == IP_PROTO_UDP)
+    args.read_p("PORT", IPPortArg(_protocol), _port);
   else
     args.read_p("PORT", _port);
   if (args.read("SNAPLEN", _snaplen)
       .read("HEADROOM", _headroom)
       .complete() < 0)
     return -1;
-
-  socktype = socktype.upper();
-  if (socktype == "TCP")
-    _protocol = IPPROTO_TCP;
-  else if (socktype == "UDP")
-    _protocol = IPPROTO_UDP;
-  else if (socktype == "GRE")
-    _protocol = IPPROTO_GRE;
-  else if (socktype == "ICMP")
-    _protocol = IPPROTO_ICMP;
-  else
-    return errh->error("unknown socket type `%s'", socktype.c_str());
 
   return 0;
 }
@@ -148,6 +135,11 @@ RawSocket::initialize(ErrorHandler *errh)
   int one = 1;
   if (setsockopt(_fd, 0, IP_HDRINCL, &one, sizeof(one)) < 0)
     return initialize_socket_error(errh, "IP_HDRINCL");
+
+  // Allow broadcast packets
+  one = 1;
+  if (setsockopt(_fd, SOL_SOCKET, SO_BROADCAST, &one, sizeof(one)) < 0)
+    return initialize_socket_error(errh, "SO_BROADCAST");
 
   if (noutputs())
     add_select(_fd, SELECT_READ);
