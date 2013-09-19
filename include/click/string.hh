@@ -268,8 +268,12 @@ class String { public:
     }
 
     inline void deref() const {
-	if (_r.memo && atomic_uint32_t::dec_and_test(_r.memo->refcount))
-	    delete_memo(_r.memo);
+	if (_r.memo) {
+	    assert(_r.memo->refcount);
+	    if (atomic_uint32_t::dec_and_test(_r.memo->refcount))
+		delete_memo(_r.memo);
+	    _r.memo = 0;
+	}
     }
 
     void assign(const char *s, int len, bool need_deref);
