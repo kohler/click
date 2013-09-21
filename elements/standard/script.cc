@@ -750,6 +750,7 @@ Script::step_handler(int op, String &str, Element *e, const Handler *h, ErrorHan
     scr->_run_handler_name = h->name();
     scr->_run_args = String();
     scr->_run_op = op;
+    int ret;
 
     if (what == ST_GOTO) {
 	int step = scr->find_label(cp_uncomment(data));
@@ -771,8 +772,10 @@ Script::step_handler(int op, String &str, Element *e, const Handler *h, ErrorHan
 	    nsteps = 1, steptype = STEP_NORMAL;
 	else if (IntArg().parse(data, nsteps))
 	    steptype = STEP_NORMAL;
-	else
-	    return errh->error("syntax error");
+	else {
+	    ret = errh->error("syntax error");
+            goto out;
+        }
     }
 
     if (!scr->_cur_steps) {
@@ -787,7 +790,13 @@ Script::step_handler(int op, String &str, Element *e, const Handler *h, ErrorHan
     } else if (what == ST_STEP)
 	*scr->_cur_steps += nsteps;
 
-    return scr->complete_step(&str);
+    ret = scr->complete_step(&str);
+
+ out:
+    scr->_run_handler_name = String();
+    scr->_run_args = String();
+    scr->_run_op = 0;
+    return ret;
 }
 
 #if HAVE_INT64_TYPES
