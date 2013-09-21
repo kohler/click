@@ -657,7 +657,7 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 		retval = hdi.retval;
 	    } else if (h->exclusive()) {
 		lock_threads();
-		hs->data = h->call_read(e);
+		hs->data = h->call_read(e).unique();
 		unlock_threads();
 	    } else
 		hs->data = h->call_read(e);
