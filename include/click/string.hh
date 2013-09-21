@@ -155,9 +155,12 @@ class String { public:
     // String operator+(String, const char *);
     // String operator+(const char *, const String &);
 
+    inline bool is_shared() const;
+    inline bool is_stable() const;
+
+    inline String unique() const;
     inline String compact() const;
 
-    inline bool data_shared() const;
     char *mutable_data();
     char *mutable_c_str();
 
@@ -761,13 +764,28 @@ inline String &String::operator+=(char c) {
 }
 
 /** @brief Test if the String's data is shared or immutable. */
-inline bool String::data_shared() const {
+inline bool String::is_shared() const {
     return !_r.memo || _r.memo->refcount != 1;
+}
+
+/** @brief Test if the String's data is immutable. */
+inline bool String::is_stable() const {
+    return !_r.memo;
+}
+
+/** @brief Return a unique version of this String.
+
+    The return value shares no data with any other non-stable String. */
+inline String String::unique() const {
+    if (!_r.memo || _r.memo->refcount == 1)
+	return *this;
+    else
+	return String(_r.data, _r.data + _r.length);
 }
 
 /** @brief Return a compact version of this String.
 
-    The compact version shares no more than 256 bytes of data with any other
+    The return value shares no more than 256 bytes of data with any other
     non-stable String. */
 inline String String::compact() const {
     if (!_r.memo || _r.memo->refcount == 1
