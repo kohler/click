@@ -2,7 +2,7 @@
 Check that ARPQuerier correctly rate-limits queries per IP address.
 
 %script
-click --simtime CONFIG
+$VALGRIND click --simtime CONFIG
 
 %file CONFIG
 ( InfiniteSource(LIMIT 50) -> IPEncap(tcp, 1.0.0.1, 2.0.0.2) -> [0];
