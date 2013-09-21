@@ -31,7 +31,7 @@
 CLICK_DECLS
 
 ARPTable::ARPTable()
-    : _entry_capacity(0), _packet_capacity(2048), _expire_timer(this)
+    : _entry_capacity(0), _packet_capacity(2048), _entry_packet_capacity(0), _expire_timer(this)
 {
     _entry_count = _packet_count = _drops = 0;
 }
@@ -47,6 +47,7 @@ ARPTable::configure(Vector<String> &conf, ErrorHandler *errh)
     if (Args(conf, this, errh)
 	.read("CAPACITY", _packet_capacity)
 	.read("ENTRY_CAPACITY", _entry_capacity)
+	.read("ENTRY_PACKET_CAPACITY", _entry_packet_capacity)
 	.read("TIMEOUT", timeout)
 	.complete() < 0)
 	return -1;
@@ -134,6 +135,7 @@ ARPTable::slim(click_jiffies_t now)
 		ae->_tail = 0;
 	    p->kill();
 	    --_packet_count;
+	    --ae->_entry_packet_count;
 	    ++_drops;
 	}
 	ae = ae->_age_link.next();
@@ -201,8 +203,8 @@ ARPTable::insert(IPAddress ip, const EtherAddress &eth, Packet **head)
     if (head) {
 	*head = ae->_head;
 	ae->_head = ae->_tail = 0;
-	for (Packet *p = *head; p; p = p->next())
-	    --_packet_count;
+	_packet_count -= ae->_entry_packet_count;
+	ae->_entry_packet_count = 0;
     }
 
     _table.balance();
@@ -243,6 +245,12 @@ ARPTable::append_query(IPAddress ip, Packet *p)
 	}
     }
 
+    if (_entry_packet_capacity && ae->_entry_packet_count >= _entry_packet_capacity) {
+	_drops++;
+	_lock.release_write();
+	return -ENOMEM;
+    }
+
     ++_packet_count;
     if (_packet_capacity && _packet_count > _packet_capacity)
 	slim(now);
@@ -253,6 +261,7 @@ ARPTable::append_query(IPAddress ip, Packet *p)
 	ae->_head = p;
     ae->_tail = p;
     p->set_next(0);
+    ++ae->_entry_packet_count;
 
     int r;
     if (ae->allow_poll(now)) {
