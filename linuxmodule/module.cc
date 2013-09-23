@@ -101,6 +101,7 @@ extern "C" void
 click_assert_failed(const char *file, int line, const char *problem_text)
 {
     click_chatter(KERN_ALERT "%s:%d: assertion failed: %s", file, line, problem_text);
+    dump_stack();
 #if HAVE_KERNEL_ASSERT
     if (assert_stops_router) {
 	if (click_router) {
