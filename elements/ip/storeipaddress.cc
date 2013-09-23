@@ -49,9 +49,9 @@ StoreIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 	return r;
     if (offset.lower() == "src")
 	_offset = -12;
-    else if (conf.back().lower() == "dst")
+    else if (offset.lower() == "dst")
 	_offset = -16;
-    else if (!IntArg().parse(conf.back(), _offset) || _offset < 0)
+    else if (!IntArg().parse(offset, _offset) || _offset < 0)
 	return errh->error("type mismatch: OFFSET requires integer");
     return 0;
 }
