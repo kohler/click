@@ -504,6 +504,15 @@ click_delete_dentry(struct dentry *)
 
 /*************************** Handler operations ******************************/
 
+// see static_assert below
+#define HS_ALIVE		1
+#define HS_READING		2
+#define HS_WRITING		4
+#define HS_DONE			8
+#define HS_RAW			16
+#define HS_DIRECT		HANDLER_DIRECT
+#define HS_WRITE_UNLIMITED	HANDLER_WRITE_UNLIMITED
+
 struct HandlerString {
     String data;
     int flags;                  // 0 means free
@@ -535,7 +544,8 @@ static HandlerString* alloc_handler_string(const Handler* h) {
             hs = new HandlerString;
         if (hs) {
             handler_strings->push_back(hs);
-            hs->flags = h->flags();
+            hs->flags = HS_ALIVE
+                | (h->flags() & (HS_WRITE_UNLIMITED | HS_DIRECT));
         }
     }
     SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
@@ -558,8 +568,8 @@ static void free_handler_string(HandlerString* hs) {
 static inline void handler_string_add_newline(HandlerString* hs,
                                               const Handler* h) {
     if (!h->raw()
-        && !(hs->flags & HANDLER_RAW)
-        && !(hs->flags & HANDLER_DIRECT)
+        && !(hs->flags & HS_RAW)
+        && !(hs->flags & HS_DIRECT)
         && hs->data
         && hs->data.back() != '\n')
         hs->data += '\n';
@@ -568,7 +578,7 @@ static inline void handler_string_add_newline(HandlerString* hs,
 static inline String handler_string_strip_newline(const HandlerString* hs,
                                                   const Handler* h) {
     if (!h->raw()
-        && !(hs->flags & HANDLER_RAW)
+        && !(hs->flags & HS_RAW)
         && hs->data
         && hs->data.back() == '\n')
         return hs->data.substring(hs->data.begin(), hs->data.end() - 1);
@@ -660,7 +670,7 @@ handler_prepare_read(HandlerString* hs, struct file* filp,
         int eindex = click_ino.ino_element(inode->i_ino);
         Element *e = Router::element(click_router, eindex);
 
-        if ((hs->flags & HANDLER_DIRECT) && buffer) {
+        if ((hs->flags & HS_DIRECT) && buffer) {
             click_handler_direct_info hdi;
             hdi.buffer = buffer;
             hdi.count = count;
@@ -670,7 +680,7 @@ handler_prepare_read(HandlerString* hs, struct file* filp,
             (void) h->__call_read(e, &hdi);
             count = hdi.count;
             retval = hdi.retval;
-        } else if (hs->flags & HANDLER_DIRECT)
+        } else if (hs->flags & HS_DIRECT)
             retval = -EINVAL;
         else {
             String param;
@@ -688,7 +698,7 @@ handler_prepare_read(HandlerString* hs, struct file* filp,
     }
     UNLOCK_CONFIG_READ();
     if (retval >= 0)
-        hs->flags |= HANDLER_DONE;
+        hs->flags |= HS_DONE;
     return retval;
 }
 
@@ -702,13 +712,13 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	return r;
 
     // (re)read handler if necessary
-    if ((hs->flags & (HANDLER_DIRECT | HANDLER_DONE)) != HANDLER_DONE) {
+    if ((hs->flags & (HS_DIRECT | HS_DONE)) != HS_DONE) {
         r = handler_prepare_read(hs, filp, buffer, count, store_f_pos);
         if (r < 0)
             return r;
     }
 
-    if (!(hs->flags & HANDLER_DIRECT)) {
+    if (!(hs->flags & HS_DIRECT)) {
 	const String &s = hs->data;
 	if (f_pos > s.length())
 	    f_pos = s.length();
@@ -733,10 +743,10 @@ handler_write(struct file *filp, const char *buffer, size_t count, loff_t *store
     String &s = hs->data;
     int old_length = s.length();
 
-    hs->flags &= ~HANDLER_DONE;
+    hs->flags &= ~HS_DONE;
 #ifdef LARGEST_HANDLER_WRITE
     if (f_pos + count > LARGEST_HANDLER_WRITE
-	&& !(hs->flags & HANDLER_WRITE_UNLIMITED))
+	&& !(hs->flags & HS_WRITE_UNLIMITED))
 	return -EFBIG;
 #endif
 
@@ -805,7 +815,7 @@ handler_do_write(struct file *filp, void *address_ptr)
 	} else
 	    retval = h->call_write(data, e, &cerrh);
 
-	hs->flags |= HANDLER_DONE;
+	hs->flags |= HS_DONE;
 
 	if (cerrh._sa && !address_ptr) {
 	    ErrorHandler *errh = click_logged_errh;
@@ -871,7 +881,7 @@ handler_flush(struct file *filp
 #endif
 
     if (writing && f_count == 1 && hs
-	&& !(hs->flags & HANDLER_DONE)) {
+	&& !(hs->flags & HS_DONE)) {
 	LOCK_CONFIG_WRITE();
 	retval = handler_do_write(filp, 0);
 	UNLOCK_CONFIG_WRITE();
@@ -911,11 +921,11 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
     else if (command == CLICK_LLRPC_ABANDON_HANDLER) {
 	HandlerString* hs = FILP_HS(filp);
 	hs->data = String();
-	hs->flags |= HANDLER_DONE;
+	hs->flags |= HS_DONE;
 	retval = 0;
     } else if (command == CLICK_LLRPC_RAW_HANDLER) {
 	HandlerString* hs = FILP_HS(filp);
-	hs->flags |= HANDLER_RAW;
+	hs->flags |= HS_RAW;
 	retval = 0;
     } else if (click_ino.ino_element(inode->i_ino) < 0
                || !(e = click_router->element(click_ino.ino_element(inode->i_ino))))
@@ -1020,7 +1030,8 @@ init_clickfs()
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo), "The file-system-specific data in struct inode isn't big enough.");
 #endif
-    static_assert(HANDLER_DIRECT + HANDLER_DONE + HANDLER_RAW + HANDLER_SPECIAL_INODE + HANDLER_WRITE_UNLIMITED < Handler::USER_FLAG_0, "Too few driver handler flags available.");
+    static_assert(HANDLER_DIRECT + HANDLER_WRITE_UNLIMITED < Handler::USER_FLAG_0, "Too few driver handler flags available.");
+    static_assert(((HS_DIRECT | HS_WRITE_UNLIMITED) & (HS_READING | HS_WRITING | HS_DONE | HS_RAW)) == 0, "Handler flag overlap.");
 
     mutex_init(&handler_strings_lock);
     mutex_init(&clickfs_lock);
