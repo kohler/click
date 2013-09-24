@@ -513,9 +513,9 @@ String::mutable_data()
     // _length; and if _capacity == 0, then deref() doesn't free _real_data.
     assert(!_r.memo || _r.memo->refcount > 1);
     // But in multithreaded situations we must hold a local copy of memo!
-    String do_not_delete_underlying_memo(*this);
-    deref();
-    assign(_r.data, _r.length, false);
+    String copy(*this);
+    deref(); // _r is now invalid
+    assign(copy.data(), copy.length(), false);
     return const_cast<char *>(_r.data);
 }
 
