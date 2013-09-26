@@ -58,10 +58,12 @@ static int clickfs_ready;
 #define SPIN_LOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "lock"); mutex_lock((l)); } while (0)
 #define SPIN_UNLOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "unlock"); mutex_unlock((l)); } while (0)
 
-#define LOCK_CONFIG_READ()	lock_config(__FILE__, __LINE__, 0)
-#define UNLOCK_CONFIG_READ()	unlock_config_read()
-#define LOCK_CONFIG_WRITE()	lock_config(__FILE__, __LINE__, 1)
-#define UNLOCK_CONFIG_WRITE()	unlock_config_write(__FILE__, __LINE__)
+#define LOCK_CONFIG(type)	lock_config(__FILE__, __LINE__, (type))
+#define UNLOCK_CONFIG(type)	unlock_config(__FILE__, __LINE__, (type))
+#define LOCK_CONFIG_READ()	LOCK_CONFIG(0)
+#define UNLOCK_CONFIG_READ()	UNLOCK_CONFIG(0)
+#define LOCK_CONFIG_WRITE()	LOCK_CONFIG(1)
+#define UNLOCK_CONFIG_WRITE()	UNLOCK_CONFIG(1)
 
 
 /*************************** Config locking *********************************/
@@ -94,21 +96,18 @@ lock_config(const char *file, int line, int iswrite)
 }
 
 static inline void
-unlock_config_read()
+unlock_config(const char* file, int line, int iswrite)
 {
-    assert(atomic_read(&clickfs_read_count) > 0);
     clickfs_task = 0;
-    atomic_dec(&clickfs_read_count);
-    wake_up(&clickfs_waitq);
-}
-
-static inline void
-unlock_config_write(const char *file, int line)
-{
-    assert(atomic_read(&clickfs_read_count) == -1);
-    clickfs_task = 0;
-    atomic_inc(&clickfs_read_count);
-    wake_up_all(&clickfs_waitq);
+    if (iswrite) {
+        assert(atomic_read(&clickfs_read_count) == -1);
+        atomic_inc(&clickfs_read_count);
+        wake_up_all(&clickfs_waitq);
+    } else {
+        assert(atomic_read(&clickfs_read_count) > 0);
+        atomic_dec(&clickfs_read_count);
+        wake_up(&clickfs_waitq);
+    }
 }
 
 
@@ -165,7 +164,7 @@ static int click_ino_check(struct inode *inode, int subdir_error) {
 static struct inode *
 click_inode(struct super_block *sb, ino_t ino)
 {
-    // Must be called with click_config_lock held.
+    // Must be called with clickfs_lock held.
 
     if (click_ino_check() < 0)
 	return 0;
