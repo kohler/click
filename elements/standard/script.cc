@@ -1303,9 +1303,9 @@ Script::var_handler(int, String &str, Element *e, const Handler *h, ErrorHandler
 void
 Script::add_handlers()
 {
-    set_handler("step", Handler::OP_WRITE, step_handler, 0, ST_STEP);
-    set_handler("goto", Handler::OP_WRITE, step_handler, 0, ST_GOTO);
-    set_handler("run", Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE, step_handler, 0, ST_RUN);
+    set_handler("step", Handler::OP_WRITE | Handler::h_nonconst, step_handler, 0, ST_STEP);
+    set_handler("goto", Handler::OP_WRITE | Handler::h_nonconst, step_handler, 0, ST_GOTO);
+    set_handler("run", Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE | Handler::h_nonconst, step_handler, 0, ST_RUN);
     set_handler("add", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_add, 0);
     set_handler("sub", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_sub, 0);
     set_handler("min", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_min, 0);
@@ -1348,8 +1348,8 @@ Script::add_handlers()
     set_handler("kill", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, basic_handler, ar_kill, 0);
 #endif
     set_handler("get", Handler::OP_READ | Handler::READ_PARAM, var_handler, vh_get, 0);
-    set_handler("set", Handler::OP_WRITE, var_handler, vh_set, 0);
-    set_handler("shift", Handler::OP_READ | Handler::READ_PARAM, var_handler, vh_shift, 0);
+    set_handler("set", Handler::OP_WRITE | Handler::h_nonconst, var_handler, vh_set, 0);
+    set_handler("shift", Handler::OP_READ | Handler::READ_PARAM | Handler::h_nonconst, var_handler, vh_shift, 0);
     if (_type == type_proxy)
 	add_write_handler("*", star_write_handler, 0);
     for (int i = 0; i < _insns.size(); ++i)
