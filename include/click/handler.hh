@@ -42,6 +42,9 @@ class Handler { public:
 	h_button = 0x2000,	///< @brief Write handler ignores data.
 	h_checkbox = 0x4000,	///< @brief Read/write handler is boolean and
 				///  should be rendered as a checkbox.
+        h_const = 0,            ///< @brief Read handler will not modify members
+        h_nonconst = 0x8000,    ///< @brief Read handler might modify members
+                                ///  and must be called exclusively
 	h_driver_flag_shift = 20,
 	h_driver_flag_0 = 1 << h_driver_flag_shift,
 				///< @brief First uninterpreted handler flag
@@ -142,6 +145,16 @@ class Handler { public:
      * is cleared by the h_nonexclusive flag.  */
     inline bool exclusive() const {
 	return !(_flags & h_nonexclusive);
+    }
+
+    /** @brief Check if this handler is nonconst.
+     *
+     * Nonconst read handlers might modify members of the Element on which
+     * they are called, making it necessary to obtain an exclusive lock
+     * prior to invoking call_read.  Handlers are const by default.  This is
+     * cleared by the h_nonexclusive flag.  */
+    inline bool nonconst() const {
+	return _flags & h_nonconst;
     }
 
     /** @brief Check if spaces should be preserved when calling this handler.
