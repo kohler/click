@@ -659,7 +659,12 @@ static ssize_t
 handler_prepare_read(HandlerString* hs, struct file* filp,
                      char* buffer, size_t count, loff_t* store_f_pos)
 {
-    LOCK_CONFIG_READ();
+    int locktype = 0;
+retry:
+    switch (locktype) {
+    case 0: LOCK_CONFIG_READ(); break;
+    case 1: LOCK_CONFIG_WRITE(); break;
+    }
     ssize_t retval;
     const Handler *h;
     struct inode *inode = filp->f_dentry->d_inode;
@@ -689,6 +694,11 @@ handler_prepare_read(HandlerString* hs, struct file* filp,
             String param;
             if ((filp->f_mode & FMODE_READ) && (filp->f_mode & FMODE_WRITE))
                 param = handler_string_strip_newline(hs, h);
+            if (h->nonconst() && locktype == 0) {
+                UNLOCK_CONFIG_READ();
+                locktype = 1;
+                goto retry;
+            }
             if (h->exclusive()) {
                 lock_threads();
                 hs->data = h->call_read(e, param, 0).unique();
@@ -699,7 +709,10 @@ handler_prepare_read(HandlerString* hs, struct file* filp,
             retval = (hs->data.out_of_memory() ? -ENOMEM : 0);
         }
     }
-    UNLOCK_CONFIG_READ();
+    switch (locktype) {
+    case 0: UNLOCK_CONFIG_READ(); break;
+    case 1: UNLOCK_CONFIG_WRITE(); break;
+    }
     if (retval >= 0)
         hs->flags |= HS_DONE;
     return retval;
