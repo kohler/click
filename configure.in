@@ -715,6 +715,15 @@ if test "$linux_version.$linux_patchlevel" = 2.6 -o "$linux_version" = 3; then
     LINUXMODULE_2_6=1
     AC_DEFINE([HAVE_LINUXMODULE_2_6], [1], [Define if the Click linuxmodule is compiled for a 2.6 or later kernel.])
 fi
+if [ "$LINUXMODULE_2_6" = 0 ]; then
+    AC_MSG_ERROR([
+=========================================
+
+Click no longer supports in-kernel compilation on Linux 2.4 kernels.
+Try an older version of Click.
+
+=========================================])
+fi
 AC_SUBST(LINUXMODULE_2_6)
 
 AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
@@ -1280,11 +1289,9 @@ fixincludes.pl execution failed.
 #endif
 "
     fi
-    AC_DEFUN([CLICK_LINUXMODULE_PROLOGUE], [[#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    AC_DEFUN([CLICK_LINUXMODULE_PROLOGUE], [[#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete

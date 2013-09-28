@@ -33,11 +33,7 @@
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <linux/mutex.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-# include <linux/namei.h>
-#else
-# include <linux/locks.h>
-#endif
+#include <linux/namei.h>
 #include <linux/proc_fs.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
@@ -76,21 +72,12 @@ static inline void
 lock_config(const char *file, int line, int iswrite)
 {
     wait_queue_t wait;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # define private linux_private
     init_wait(&wait);
 # undef private
-#else
-    init_waitqueue_entry(&wait, current);
-    add_wait_queue(&clickfs_waitq, &wait);
-#endif
     for (;;) {
 	SPIN_LOCK(&clickfs_lock, file, line);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	prepare_to_wait(&clickfs_waitq, &wait, TASK_UNINTERRUPTIBLE);
-#else
-	set_current_state(TASK_UNINTERRUPTIBLE);
-#endif
 	int reads = atomic_read(&clickfs_read_count);
 	if (iswrite ? reads == 0 : reads >= 0)
 	    break;
@@ -102,12 +89,7 @@ lock_config(const char *file, int line, int iswrite)
     else
 	atomic_inc(&clickfs_read_count);
     SPIN_UNLOCK(&clickfs_lock, file, line);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     finish_wait(&clickfs_waitq, &wait);
-#else
-    __set_current_state(TASK_RUNNING);
-    remove_wait_queue(&clickfs_waitq, &wait);
-#endif
     clickfs_task = current;
 }
 
@@ -132,11 +114,7 @@ unlock_config_write(const char *file, int line)
 
 /*************************** Inode constants ********************************/
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
 #define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->i_private)))
-#else
-#define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->u)))
-#endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0)
 #define set_nlink(inode, nlink)		((inode)->i_nlink = (nlink))
 #endif
@@ -242,10 +220,8 @@ extern "C" {
 static struct dentry *
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)
 click_dir_lookup(struct inode *dir, struct dentry *dentry, unsigned)
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-click_dir_lookup(struct inode *dir, struct dentry *dentry, struct nameidata *)
 #else
-click_dir_lookup(struct inode *dir, struct dentry *dentry)
+click_dir_lookup(struct inode *dir, struct dentry *dentry, struct nameidata *)
 #endif
 {
     LOCK_CONFIG_READ();
@@ -279,7 +255,6 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
     }
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int
 click_dentry_revalidate(struct dentry *dentry, unsigned flags)
 {
@@ -307,26 +282,11 @@ click_dentry_revalidate(struct dentry *dentry, unsigned flags)
     return r;
 }
 
-# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0)
 static int
 click_dentry_revalidate_nd(struct dentry *dentry, struct nameidata *nd)
 {
     return click_dentry_revalidate(dentry, nd->flags);
-}
-# endif
-#else
-static int
-click_dir_revalidate(struct dentry *dentry)
-{
-    struct inode *inode = dentry->d_inode;
-    MDEBUG("click_dir_revalidate %lx", (inode ? inode->i_ino : 0));
-    if (!inode)
-	return -EINVAL;
-
-    LOCK_CONFIG_READ();
-    int error = click_ino_check(inode, -EIO);
-    UNLOCK_CONFIG_READ();
-    return error;
 }
 #endif
 
@@ -377,11 +337,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
   done:
     UNLOCK_CONFIG_READ();
     filp->f_pos = f_pos;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     return (error ? error : stored);
-#else
-    return error;
-#endif
 }
 
 } // extern "C"
@@ -436,32 +392,30 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     return 0;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int
 click_fill_super(struct super_block *sb, void *data, int flags)
 {
     return click_read_super(sb, data, flags) ? 0 : -ENOMEM;
 }
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0)
 static struct dentry *
 click_get_sb(struct file_system_type *fs_type, int flags, const char *, void *data)
 {
     return mount_single(fs_type, flags, data, click_fill_super);
 }
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 static int
 click_get_sb(struct file_system_type *fs_type, int flags, const char *, void *data, struct vfsmount *vfsmount)
 {
     return get_sb_single(fs_type, flags, data, click_fill_super, vfsmount);
 }
-# else
+#else
 static struct super_block *
 click_get_sb(struct file_system_type *fs_type, int flags, const char *, void *data)
 {
     return get_sb_single(fs_type, flags, data, click_fill_super);
 }
-# endif
 #endif
 
 static void
@@ -730,12 +684,7 @@ handler_llseek(struct file* filp, loff_t offset, int origin)
     if (offset >= 0 && offset <= 0x7FFFFFFF) {
         if (offset != filp->f_pos) {
             filp->f_pos = offset;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
             filp->f_version = 0;
-#else
-            filp->f_reada = 0;
-            filp->f_version = ++event;
-#endif
         }
         return offset;
     } else
@@ -1061,15 +1010,8 @@ read_ino_info(Element *, void *)
 struct file_operations *
 click_new_file_operations()
 {
-    if (!clickfs) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    if (!clickfs)
 	clickfs = proclikefs_register_filesystem("click", 0, click_get_sb);
-#else
-	// NB: remove FS_SINGLE if it will ever make sense to have different
-	// Click superblocks -- if we introduce mount options, for example
-	clickfs = proclikefs_register_filesystem("click", FS_SINGLE, click_read_super);
-#endif
-    }
     if (clickfs)
 	return proclikefs_new_file_operations(clickfs);
     else
@@ -1079,9 +1021,6 @@ click_new_file_operations()
 int
 init_clickfs()
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-    static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo), "The file-system-specific data in struct inode isn't big enough.");
-#endif
     static_assert(HANDLER_DIRECT + HANDLER_WRITE_UNLIMITED < Handler::USER_FLAG_0, "Too few driver handler flags available.");
     static_assert(((HS_DIRECT | HS_WRITE_UNLIMITED) & (HS_READING | HS_DONE | HS_RAW)) == 0, "Handler flag overlap.");
 
@@ -1100,25 +1039,19 @@ init_clickfs()
 	return -EINVAL;
     }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-    click_superblock_ops.put_inode = force_delete;
-#endif
     click_superblock_ops.put_super = proclikefs_put_super;
     // XXX statfs
 
     click_dentry_ops.d_delete = click_delete_dentry;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)
     click_dentry_ops.d_revalidate = click_dentry_revalidate;
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#else
     click_dentry_ops.d_revalidate = click_dentry_revalidate_nd;
 #endif
 
     click_dir_file_ops->read = generic_read_dir;
     click_dir_file_ops->readdir = click_dir_readdir;
     click_dir_inode_ops->lookup = click_dir_lookup;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-    click_dir_inode_ops->revalidate = click_dir_revalidate;
-#endif
 
     click_handler_file_ops->llseek = handler_llseek;
     click_handler_file_ops->read = handler_read;

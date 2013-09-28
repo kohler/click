@@ -28,11 +28,7 @@
 #include <linux/module.h>
 #include "moduleparm.h"
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 52)
-# define CLICK_INT_MODULE_PARAM(param)	MODULE_PARM(param, "i")
-#else
-# define CLICK_INT_MODULE_PARAM(param)	module_param(param, int, 0)
-#endif
+#define CLICK_INT_MODULE_PARAM(param)	module_param(param, int, 0)
 
 static int accessible = 1;
 CLICK_INT_MODULE_PARAM(accessible);
@@ -59,11 +55,9 @@ static int greedy = 0;
 CLICK_INT_MODULE_PARAM(greedy);
 MODULE_PARM_DESC(greedy, "Click takes a whole CPU [0]");
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 21)
 static int cpu = -1;
 CLICK_INT_MODULE_PARAM(cpu);
 MODULE_PARM_DESC(cpu, "Click thread preferred CPU [-1=any]");
-#endif
 
 int
 click_parm(int which)
@@ -77,10 +71,8 @@ click_parm(int which)
 	return gid;
     case CLICKPARM_GREEDY:
 	return greedy;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 21)
     case CLICKPARM_CPU:
 	return cpu;
-#endif
 #if HAVE_MULTITHREAD
     case CLICKPARM_THREADS:
 	return threads;

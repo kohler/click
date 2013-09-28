@@ -29,21 +29,13 @@
 #endif
 #ifdef CONFIG_MODVERSIONS
 # define MODVERSIONS
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-#  include <linux/modversions.h>
-# endif
 #endif
 #include <linux/module.h>
 #include "proclikefs.h"
 #include <linux/string.h>
 #include <linux/slab.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-# include <linux/locks.h>
-#endif
 #include <linux/file.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-# include <linux/namei.h>
-#endif
+#include <linux/namei.h>
 #include <linux/dcache.h>
 #define CLICK_CONFIG_LINUXMODULE_SYMBOLS_ONLY 1
 #include <click/config-linuxmodule.h>
@@ -136,16 +128,6 @@ EXPORT_SYMBOL(proclikefs_put_super);
 EXPORT_SYMBOL(proclikefs_new_file_operations);
 EXPORT_SYMBOL(proclikefs_new_inode_operations);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-static struct super_block *
-proclikefs_null_read_super(struct super_block *sb, void *data, int silent)
-{
-    DEBUG("null_read_super");
-    sb->s_dev = 0;
-    return 0;
-}
-#endif
-
 static struct dentry *
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)
 proclikefs_null_root_lookup(struct inode *dir, struct dentry *dentry, unsigned flags)
@@ -174,14 +156,10 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
     if (!name || strlen(name) >= PROCLIKEFS_NAME_LEN)
 	return 0;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     if (!try_module_get(THIS_MODULE)) {
 	printk(KERN_ALERT "proclikefs: error using module\n");
 	return 0;
     }
-#else
-    MOD_INC_USE_COUNT;
-#endif
 
     mutex_lock(&fslist_lock);
 
@@ -209,11 +187,9 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0)
     newfs->fs.mount = mountfunc;
     newfs->fs.kill_sb = kill_anon_super;
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#else
     newfs->fs.get_sb = mountfunc;
     newfs->fs.kill_sb = kill_anon_super;
-#else
-    newfs->fs.read_super = mountfunc;
 #endif
 
     if (!proclikefs_defined(newfs)) {
@@ -387,9 +363,6 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
     unlock_sb();
 
     pfs->live = 0;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-    pfs->fs.read_super = proclikefs_null_read_super;
-#endif
     MOD_DEC_USE_COUNT;
 
     mutex_unlock(&pfs->lock);
@@ -402,12 +375,8 @@ proclikefs_read_super(struct super_block *sb)
     struct proclikefs_file_system *pfs = (struct proclikefs_file_system *) (sb->s_type);
     atomic_inc(&pfs->nsuper);
     DEBUG("pfs[%p]: read_super for %s", pfs, pfs->fs.name);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     if (!try_module_get(THIS_MODULE))
 	printk(KERN_ALERT "proclikefs: error using module\n");
-#else
-    MOD_INC_USE_COUNT;
-#endif
 }
 
 void

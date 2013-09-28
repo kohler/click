@@ -14,10 +14,8 @@ struct proclikefs_file_system;
 typedef struct dentry *(*proclikefs_mountfunc)(struct file_system_type *, int, const char *, void *);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
 typedef int (*proclikefs_mountfunc)(struct file_system_type *, int, const char *, void *, struct vfsmount *);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-typedef struct super_block *(*proclikefs_mountfunc)(struct file_system_type *, int, const char *, void *);
 #else
-typedef struct super_block *(*proclikefs_mountfunc)(struct super_block *, void *, int);
+typedef struct super_block *(*proclikefs_mountfunc)(struct file_system_type *, int, const char *, void *);
 #endif
 
 

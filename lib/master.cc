@@ -204,7 +204,7 @@ Master::kill_router(Router *router)
 
     // Fix stopper
     request_stop();
-#if CLICK_LINUXMODULE && HAVE_LINUXMODULE_2_6
+#if CLICK_LINUXMODULE
     preempt_disable();
 #endif
     unlock_master();
@@ -233,7 +233,7 @@ Master::kill_router(Router *router)
 #endif
 
     unpause();
-#if CLICK_LINUXMODULE && HAVE_LINUXMODULE_2_6
+#if CLICK_LINUXMODULE
     preempt_enable_no_resched();
 #endif
 

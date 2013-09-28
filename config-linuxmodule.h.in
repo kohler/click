@@ -216,7 +216,7 @@ typedef unsigned long uintptr_t;
 #endif
 
 /* Define KBUILD symbols. */
-#if !defined(KBUILD_STR) && HAVE_LINUXMODULE_2_6
+#if !defined(KBUILD_STR)
 # define KBUILD_STR(s)		#s
 # define KBUILD_BASENAME	KBUILD_STR(click)
 # define KBUILD_MODNAME		KBUILD_STR(click)

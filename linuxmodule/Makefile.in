@@ -59,10 +59,8 @@ endif
 INSTALLOBJS = $(DRIVER).o proclikefs.o
 
 
-ifeq (@LINUXMODULE_2_6@,1)
-
 ##########################################################################
-## LINUX 2.6								##
+## LINUX RULES								##
 
 KERNELPATH = @linux_builddir@
 
@@ -94,7 +92,7 @@ CLICKmkinstalldirs = $(conf_auxdir)/mkinstalldirs
 CLICK_BUILDTOOL = $(top_builddir)/click-buildtool
 MD5SUM = @MD5SUM@
 
-CLICK_ELEM2MAKE = $(CLICK_BUILDTOOL) elem2make --linux26
+CLICK_ELEM2MAKE = $(CLICK_BUILDTOOL) elem2make --linux
 
 CLICKCC = @KERNEL_CC@
 CLICKCXX = @KERNEL_CXX@
@@ -219,114 +217,9 @@ uninstall:
 	for i in $(patsubst %.o,%.ko,$(INSTALLOBJS)); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
 	(cd $(top_builddir)/include/click-linuxmodule; find . -type f -print) | grep / | sed 's	^\.\(.*\)	'"$(top_builddir)/include/click-linuxmodule"'\1'" $(DESTDIR)$(includedir)/click-linuxmodule"'\1	' | xargs -L 1 rm -f
 
-else
 
 ##########################################################################
-## LINUX 2.4								##
-
-top_srcdir := @top_srcdir@
-srcdir := @srcdir@
-top_builddir := ..
-
-VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/standard
-
-CC = @KERNEL_CC@
-CPP = @CPP@
-CXX = @KERNEL_CXX@
-CXXCPP = @CXXCPP@
-LD = @LD@
-STRIP = @STRIP@
-INSTALL = @INSTALL@
-INSTALL_DATA = $(INSTALL) -m 644
-mkinstalldirs = $(conf_auxdir)/mkinstalldirs
-CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make
-
-ifeq ($(V),1)
-ccompile = $(COMPILE) $(DEPCFLAGS) $(1)
-ccompile_nodep = $(COMPILE) $(1)
-cxxcompile = $(CXXCOMPILE) $(DEPCFLAGS) $(1)
-cxxcompile_nodep = $(CXXCOMPILE) $(1)
-else
-ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(DEPCFLAGS) $(1)
-ccompile_nodep = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
-cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(DEPCFLAGS) $(1)
-cxxcompile_nodep = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
-endif
-
-.SUFFIXES:
-.SUFFIXES: .c .cc .o .S .s .i .ii
-
-.c.o:
-	$(call ccompile,-c $< -o $@,CC)
-.c.i:
-	$(call ccompile_nodep,-E $< > $@,CPP)
-.s.o:
-	$(call ccompile,-c $< -o $@,ASM)
-.S.o:
-	$(call ccompile,-c $< -o $@,ASM)
-.cc.o:
-	$(call cxxcompile,-c $< -o $@,CXX)
-.cc.s:
-	$(call cxxcompile_nodep,-S $< -o $@,CXX -S)
-.cc.ii:
-	$(call cxxcompile_nodep,-E $< > $@,CXXCPP)
-
-
-OBJS = $(LIB_CXX_OBJS) $(LIB_C_OBJS) $(STD_ELEMENT_OBJS) $(ELEMENT_OBJS) \
-	$(LINUXMODULE_CXX_OBJS) $(LINUXMODULE_C_OBJS) $(ELEMENTSCONF).o
-
-CPPFLAGS = @CPPFLAGS@ -DCLICK_LINUXMODULE
-CFLAGS = @KERNEL_CFLAGS@
-CXXFLAGS = @KERNEL_CXXFLAGS@
-DEPCFLAGS = @DEPCFLAGS@
-
-DEFS = @DEFS@
-INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(srcdir) -I$(top_srcdir)
-LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@
-
-CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(CXXFLAGS)
-CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
-
-all: $(INSTALLOBJS)
-
-ifneq ($(MAKECMDGOALS),clean)
--include $(ELEMENTSCONF).mk
-endif
-
-$(DRIVER).o: Makefile $(OBJS)
-	$(LD) -r -o $(DRIVER).o $(OBJS)
-	$(STRIP) -g $(DRIVER).o
-
-proclikefs.o: proclikefs.c Makefile
-	$(COMPILE) -D__KERNEL__ -DMODULE $(DEPCFLAGS) -c $< -o $@
-
-DEPFILES := $(wildcard *.d)
-ifneq ($(DEPFILES),)
-include $(DEPFILES)
-endif
-
-install: install-local
-install-local: $(INSTALLOBJS)
-	$(mkinstalldirs) $(DESTDIR)$(libdir)
-	for i in $(INSTALLOBJS); do $(INSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
-install-include:
-	@:
-install-man:
-	@:
-uninstall:
-	for i in $(INSTALLOBJS); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
-
-endif
-
-
-##########################################################################
-## ANY LINUX								##
+## GENERIC RULES							##
 
 elemlist:
 	@/bin/rm -f elements.conf elements.csmk

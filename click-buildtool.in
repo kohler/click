@@ -27,7 +27,6 @@ set_clickbuild () {
 
 prefix=@prefix@
 set_clickbuild "$prefix"
-LINUXMODULE_2_6=@LINUXMODULE_2_6@
 gmake=@GMAKE@
 
 verbose=""
@@ -714,7 +713,7 @@ elem2make () {
     driver=""
     makevar=""
     date=`date`
-    linux26=x
+    linux=x
     bsdmake=0
     while [ x"$1" != x ]; do
     case $1 in
@@ -750,12 +749,12 @@ elem2make () {
 	this_exclude=`echo "$1" | sed 's/^[^=]*=//'`
 	for i in $this_exclude; do excludes=";/^$i"' \\$'"/d$excludes"; done
 	shift 1;;
-    --l|--li|--lin|--linu|--linux|--linux2|--linux26)
-	linux26=1; shift 1;;
+    --l|--li|--lin|--linu|--linux)
+	linux=1; shift 1;;
     --b|--bs|--bsd)
 	bsdmake=1; shift 1;;
-    --no-l|--no-li|--no-lin|--no-linu|--no-linux|--no-linux2|--no-linux26)
-	linux26=0; shift 1;;
+    --no-l|--no-li|--no-lin|--no-linu|--no-linux)
+	linux=0; shift 1;;
     -V|--verb|--verbo|--verbos|--verbose)
 	verbose=1; shift 1;;
     -h|--h|--he|--hel|--help)
@@ -770,7 +769,7 @@ Options:
   -t, --driver DRIVER      Set target driver to DRIVER ('userlevel',
                            'linuxmodule', 'bsdmodule', 'ns', or 'tool').
   -v, --make-variable N    Use make variable N.
-      --linux26            Generate Linux 2.6-style makefile fragment.
+      --linux              Generate Linux style makefile fragment.
       --bsd                Generate BSD make compatible Makefile.
   -x, --exclude FILE       Do not include FILE.
   -V, --verbose            Print more information.
@@ -791,7 +790,6 @@ EOF
 	    L=u
 	elif test "$driver" = 'kernel' -o "$driver" = 'linuxmodule'; then
 	    L=k
-	    test "$linux26" = x && linux26="$LINUXMODULE_2_6"
 	elif test "$driver" = 'bsdmodule'; then
 	    L=b
 	elif test "$driver" = 'ns' -o "$driver" = 'nsmodule'; then
@@ -803,8 +801,8 @@ EOF
 	    exit 1
 	fi
     fi
-    if test "$linux26" = 1 -a "$bsdmake" = 1; then
-	echo "--linux26 and --bsd are mutually exclusive" 1>&2
+    if test "$linux" = 1 -a "$bsdmake" = 1; then
+	echo "--linux and --bsd are mutually exclusive" 1>&2
 	exit 1
     fi
     osuffix=".${L}o"
@@ -828,7 +826,7 @@ EOF
     test -n "$libs" && libs=`echo "$libs" | tsort`
 
     # massage awk script based on Linux 2.6 or not
-    if test "$linux26" = 1; then
+    if test "$linux" = 1; then
 	set_subdir_scriptlet='
 	    if (dir != "" && substr(dir, 1, 1) == "/")
 		subdirs[dirid] = dir;
@@ -1264,7 +1262,6 @@ kversion_usage () {
 
 kversion () {
     gpl=0
-    linux26=$LINUXMODULE_2_6
     while [ x"$1" != x ]; do
     case $1 in
     --g|--gp|--gpl)

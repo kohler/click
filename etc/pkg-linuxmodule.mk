@@ -46,49 +46,6 @@ ifndef MINDRIVER
 PACKAGE_CLEANFILES += $(package)-kelem.conf
 endif
 
-ifneq ($(CLICK_LINUXMODULE_2_6),1)
-
-CXXCOMPILE = $(CXX) $(CPPFLAGS) $(CFLAGS) $(CXXFLAGS) $(PACKAGE_CXXFLAGS) $(DEFS) $(INCLUDES)
-CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
-COMPILE = $(CC) $(CPPFLAGS) $(CFLAGS) $(PACKAGE_CFLAGS) $(DEFS) $(INCLUDES)
-CCLD = $(CC)
-LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
-FIXDEP = @-sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
-
-ifeq ($(V),1)
-ccompile = $(COMPILE) $(DEPCFLAGS) $(1)
-ccompile_nodep = $(COMPILE) $(1)
-cxxcompile = $(CXXCOMPILE) $(DEPCFLAGS) $(1)
-cxxcompile_nodep = $(CXXCOMPILE) $(1)
-else
-ccompile = @/bin/echo ' ' $(2) $< && $(COMPILE) $(DEPCFLAGS) $(1)
-ccompile_nodep = @/bin/echo ' ' $(2) $< && $(COMPILE) $(1)
-cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(DEPCFLAGS) $(1)
-cxxcompile_nodep = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
-endif
-
-.SUFFIXES:
-.SUFFIXES: .c .cc .ko .kii
-
-.c.ko:
-	$(call ccompile,-c $< -o $@,CC)
-	$(FIXDEP)
-.cc.ko:
-	$(call cxxcompile,-c $< -o $@,CXX)
-	$(FIXDEP)
-.cc.kii:
-	$(call cxxcompile_nodep,-E $< > $@,CXXCPP)
-
-ifneq ($(MAKECMDGOALS),clean)
--include $(package)-kelem.mk
-endif
-
-OBJS = $(ELEMENT_OBJS) $(PACKAGE_OBJS) kversion.ko
-
-endif
-
-ifeq ($(CLICK_LINUXMODULE_2_6),1)
 # Jump through hoops to avoid missing symbol warnings
 $(package).ko: Makefile Kbuild always $(PACKAGE_DEPS)
 	@fifo=.$(package).ko.$$$$.$$RANDOM.errors; rm -f $$fifo; \
@@ -100,11 +57,6 @@ $(package).ko: Makefile Kbuild always $(PACKAGE_DEPS)
 Kbuild: $(CLICK_BUILDTOOL)
 	echo 'include $$(obj)/Makefile' > Kbuild
 	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) kbuild >> Kbuild
-else
-$(package).ko: $(clickbuild_datadir)/pkg-linuxmodule.mk $(OBJS) $(PACKAGE_DEPS)
-	$(LD) -r -o $(package).ko $(OBJS)
-	$(STRIP) -g $(package).ko
-endif
 
 ifdef MINDRIVER
 elemlist:

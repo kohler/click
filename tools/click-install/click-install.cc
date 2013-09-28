@@ -56,7 +56,6 @@
 #define EXPRESSION_OPT		304
 #define UNINSTALL_OPT		305
 #define HOTSWAP_OPT		306
-#define MAP_OPT			307
 #define VERBOSE_OPT		308
 #define THREADS_OPT		309
 #define PRIVATE_OPT		310
@@ -76,7 +75,6 @@ static const Clp_Option options[] = {
   { "hotswap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
   { "priority", 'n', PRIORITY_OPT, Clp_ValInt, 0 },
 #if FOR_LINUXMODULE
-  { "map", 'm', MAP_OPT, 0, 0 },
   { "private", 'p', PRIVATE_OPT, 0, Clp_Negate },
   { "threads", 'j', THREADS_OPT, Clp_ValUnsigned, 0 },
   { 0, 't', THREADS_OPT, Clp_ValUnsigned, 0 }, // deprecated
@@ -92,9 +90,6 @@ static const Clp_Option options[] = {
 };
 
 static const char *program_name;
-#if FOR_LINUXMODULE
-static bool output_map;
-#endif
 
 static String tmpdir;
 
@@ -128,10 +123,6 @@ Options:\n\
   -j, --threads N          Use N threads (multithreaded Click only).\n\
   -G, --greedy             Make Click thread take up an entire CPU.\n\
       --cpu N              Click thread runs on CPU N.\n");
-# if HAVE_LINUXMODULE_2_6
-  printf("\
-  -m, --map                Print load map to the standard output.\n");
-# endif
 #endif
   printf("\
   -V, --verbose            Print information about files installed.\n\
@@ -199,10 +190,7 @@ install_module(const String &filename, const String &options,
 	       ErrorHandler *errh)
 {
 #if FOR_LINUXMODULE
-  String cmdline = "/sbin/insmod ";
-  if (output_map)
-    cmdline += "-m ";
-  cmdline += filename;
+  String cmdline = "/sbin/insmod " + filename;
   if (options)
     cmdline += " " + options;
   int retval = system(cmdline.c_str());
@@ -322,7 +310,6 @@ main(int argc, char **argv)
   bool accessible = true;
   int threads = 1;
   bool greedy = false;
-  output_map = false;
   uid_t uid = 0;
   gid_t gid = 0;
   int cpu = -1;
@@ -385,14 +372,6 @@ particular purpose.\n");
      case PRIORITY_OPT:
       priority = clp->val.i;
       break;
-
-    case MAP_OPT:
-# if HAVE_LINUXMODULE_2_6
-	errh->warning("'%s' ignored on 2.6 kernels", Clp_CurOptionName(clp));
-# else
-	output_map = !clp->negated;
-# endif
-	break;
 
     case GREEDY_OPT:
 	greedy = !clp->negated;
@@ -488,13 +467,8 @@ particular purpose.\n");
     // find and install proclikefs.o
     StringMap modules(-1);
     if (read_active_modules(modules, errh) && modules["proclikefs"] < 0) {
-# if HAVE_LINUXMODULE_2_6
       String proclikefs_o =
 	clickpath_find_file("proclikefs.ko", "lib", CLICK_LIBDIR, errh);
-# else
-      String proclikefs_o =
-	clickpath_find_file("proclikefs.o", "lib", CLICK_LIBDIR, errh);
-# endif
       if (verbose)
 	errh->message("Installing proclikefs (%s)", proclikefs_o.c_str());
       install_module(proclikefs_o, String(), errh);
@@ -502,12 +476,9 @@ particular purpose.\n");
 #endif
 
     // find loadable module
-#if FOR_BSDMODULE || (FOR_LINUXMODULE && HAVE_LINUXMODULE_2_6)
+#if FOR_BSDMODULE || FOR_LINUXMODULE
     String click_o =
       clickpath_find_file("click.ko", "lib", CLICK_LIBDIR, errh);
-#elif FOR_LINUXMODULE
-    String click_o =
-      clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
 #endif
     if (verbose)
       errh->message("Installing Click module (%s)", click_o.c_str());

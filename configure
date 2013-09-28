@@ -9439,6 +9439,15 @@ if test "$linux_version.$linux_patchlevel" = 2.6 -o "$linux_version" = 3; then
 $as_echo "#define HAVE_LINUXMODULE_2_6 1" >>confdefs.h
 
 fi
+if  "$LINUXMODULE_2_6" = 0 ; then
+    as_fn_error $? "
+=========================================
+
+Click no longer supports in-kernel compilation on Linux 2.4 kernels.
+Try an older version of Click.
+
+=========================================" "$LINENO" 5
+fi
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Click Linux kernel extensions" >&5
@@ -10769,11 +10778,9 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -10876,11 +10883,9 @@ if ${ac_cv_long_64_linuxmodule+:} false; then :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -10931,11 +10936,9 @@ if ${ac_cv_long_long_64_linuxmodule+:} false; then :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -10986,11 +10989,9 @@ if ${ac_cv_uintptr_t_linuxmodule+:} false; then :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11033,11 +11034,9 @@ $as_echo "#define HAVE_UINTPTR_T_LINUXMODULE 1" >>confdefs.h
 
 
 
-    ac_fn_cxx_check_decl "$LINENO" "atomic_cmpxchg" "ac_cv_have_decl_atomic_cmpxchg" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    ac_fn_cxx_check_decl "$LINENO" "atomic_cmpxchg" "ac_cv_have_decl_atomic_cmpxchg" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11067,11 +11066,9 @@ $as_echo "#define HAVE_LINUX_ATOMIC_CMPXCHG 1" >>confdefs.h
 
     fi
 
-    ac_fn_cxx_check_decl "$LINENO" "atomic_set_mask" "ac_cv_have_decl_atomic_set_mask" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    ac_fn_cxx_check_decl "$LINENO" "atomic_set_mask" "ac_cv_have_decl_atomic_set_mask" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11101,11 +11098,9 @@ $as_echo "#define HAVE_LINUX_ATOMIC_SET_MASK 1" >>confdefs.h
 
     fi
 
-    ac_fn_cxx_check_decl "$LINENO" "atomic_add_return" "ac_cv_have_decl_atomic_add_return" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    ac_fn_cxx_check_decl "$LINENO" "atomic_add_return" "ac_cv_have_decl_atomic_add_return" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11148,11 +11143,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11205,11 +11198,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11264,11 +11255,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11321,11 +11310,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11378,11 +11365,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11435,11 +11420,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11492,11 +11475,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11549,11 +11530,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11606,11 +11585,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11663,11 +11640,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11720,11 +11695,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11764,11 +11737,9 @@ $as_echo "#define HAVE_LINUX_POLLING 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "skb_dst_drop" "ac_cv_have_decl_skb_dst_drop" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    ac_fn_c_check_decl "$LINENO" "skb_dst_drop" "ac_cv_have_decl_skb_dst_drop" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11798,11 +11769,9 @@ $as_echo "#define HAVE_SKB_DST_DROP 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "skb_recycle" "ac_cv_have_decl_skb_recycle" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    ac_fn_c_check_decl "$LINENO" "skb_recycle" "ac_cv_have_decl_skb_recycle" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11848,11 +11817,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11894,11 +11861,9 @@ $as_echo "#define HAVE_CLICK_SKB_RECYCLE 1" >>confdefs.h
 
 CFLAGS="$save_cflags"
 
-    ac_fn_c_check_decl "$LINENO" "skb_linearize" "ac_cv_have_decl_skb_linearize" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    ac_fn_c_check_decl "$LINENO" "skb_linearize" "ac_cv_have_decl_skb_linearize" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11941,11 +11906,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -11991,11 +11954,9 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-    ac_fn_c_check_decl "$LINENO" "net_enable_timestamp" "ac_cv_have_decl_net_enable_timestamp" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    ac_fn_c_check_decl "$LINENO" "net_enable_timestamp" "ac_cv_have_decl_net_enable_timestamp" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -12026,11 +11987,9 @@ $as_echo "#define HAVE_NET_ENABLE_TIMESTAMP 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "netif_tx_lock" "ac_cv_have_decl_netif_tx_lock" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    ac_fn_c_check_decl "$LINENO" "netif_tx_lock" "ac_cv_have_decl_netif_tx_lock" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -12061,11 +12020,9 @@ $as_echo "#define HAVE_NETIF_TX_LOCK 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "netdev_get_tx_queue" "ac_cv_have_decl_netdev_get_tx_queue" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    ac_fn_c_check_decl "$LINENO" "netdev_get_tx_queue" "ac_cv_have_decl_netdev_get_tx_queue" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -12096,11 +12053,9 @@ $as_echo "#define HAVE_NETDEV_GET_TX_QUEUE 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "netif_tx_queue_frozen" "ac_cv_have_decl_netif_tx_queue_frozen" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    ac_fn_c_check_decl "$LINENO" "netif_tx_queue_frozen" "ac_cv_have_decl_netif_tx_queue_frozen" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -12131,11 +12086,9 @@ $as_echo "#define HAVE_NETIF_TX_QUEUE_FROZEN 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "netdev_uses_dsa_tags" "ac_cv_have_decl_netdev_uses_dsa_tags" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    ac_fn_c_check_decl "$LINENO" "netdev_uses_dsa_tags" "ac_cv_have_decl_netdev_uses_dsa_tags" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -12166,11 +12119,9 @@ $as_echo "#define HAVE_NETDEV_USES_DSA_TAGS 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "netdev_uses_trailer_tags" "ac_cv_have_decl_netdev_uses_trailer_tags" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    ac_fn_c_check_decl "$LINENO" "netdev_uses_trailer_tags" "ac_cv_have_decl_netdev_uses_trailer_tags" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -12266,11 +12217,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete
@@ -12310,11 +12259,9 @@ $as_echo "#define HAVE_LINUX_SUPER_BLOCK_S_D_OP 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "d_make_root" "ac_cv_have_decl_d_make_root" "#if HAVE_LINUXMODULE_2_6
-# define KBUILD_STR(s)		#s
-# define KBUILD_BASENAME	KBUILD_STR(click)
-# define KBUILD_MODNAME		KBUILD_STR(click)
-#endif
+    ac_fn_c_check_decl "$LINENO" "d_make_root" "ac_cv_have_decl_d_make_root" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
 #define this linux_this
 #define delete linux_delete

@@ -38,30 +38,19 @@ CLICK_CXX_PROTECT
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <asm/bitops.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-# include <linux/cpumask.h>
-#endif
+#include <linux/cpumask.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0)
 # include <linux/kthread.h>
 #endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-# define MIN_PRIO	MAX_RT_PRIO
+#define MIN_PRIO	MAX_RT_PRIO
 /* MAX_PRIO already defined */
-# define PRIO2NICE(p)	((p) - MIN_PRIO - 20)
-# define NICE2PRIO(n)	(MIN_PRIO + (n) + 20)
-# define DEF_PRIO	NICE2PRIO(0)
-# define TASK_PRIO(t)	((t)->static_prio)
-#else
-# define MIN_PRIO	(-20)
-# define MAX_PRIO	20
-# define PRIO2NICE(p)	(p)
-# define NICE2PRIO(n)	(n)
-# define DEF_PRIO	DEF_NICE
-# define TASK_PRIO(t)	((t)->nice)
-#endif
+#define PRIO2NICE(p)	((p) - MIN_PRIO - 20)
+#define NICE2PRIO(n)	(MIN_PRIO + (n) + 20)
+#define DEF_PRIO	NICE2PRIO(0)
+#define TASK_PRIO(t)	((t)->static_prio)
 
 #define SOFT_SPIN_LOCK(l)	do { /*MDEBUG("soft_lock %s", #l);*/ soft_spin_lock((l)); } while (0)
 #define SPIN_UNLOCK(l)		do { /*MDEBUG("unlock %s", #l);*/ spin_unlock((l)); } while (0)
@@ -87,11 +76,8 @@ click_sched(void *thunk)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)
     /* daemonize seems to be unnecessary */
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    daemonize("kclick");
 #else
-    daemonize();
-    strcpy(current->comm, "kclick");
+    daemonize("kclick");
 #endif
 
     TASK_PRIO(current) = click_thread_priority;
@@ -105,21 +91,14 @@ click_sched(void *thunk)
     int mycpu = click_parm(CLICKPARM_CPU);
     if (mycpu >= 0) {
 	mycpu += rt->thread_id();
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	if (mycpu < num_possible_cpus() && cpu_online(mycpu)) {
-#  if CONFIG_CPUMASK_OFFSTACK
+# if CONFIG_CPUMASK_OFFSTACK
 	    set_cpus_allowed_ptr(current, cpumask_of(mycpu));
-#  else
+# else
 	    set_cpus_allowed(current, cpumask_of_cpu(mycpu));
-#  endif
+# endif
 	} else
 	    printk(KERN_WARNING "click: warning: cpu %d for thread %d offline\n", mycpu, rt->thread_id());
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 21)
-	if (mycpu < smp_num_cpus && (cpu_online_map & (1UL << cpu_logical_map(mycpu))))
-	    set_cpus_allowed(current, 1UL << cpu_logical_map(mycpu));
-	else
-	    printk(KERN_WARNING "click: warning: cpu %d for thread %d offline\n", mycpu, rt->thread_id());
-# endif
     }
 #endif
 
