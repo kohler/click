@@ -60,6 +60,7 @@ static int clickfs_ready;
 
 #define LOCK_CONFIG(type)	lock_config(__FILE__, __LINE__, (type))
 #define UNLOCK_CONFIG(type)	unlock_config(__FILE__, __LINE__, (type))
+#define DOWNGRADE_CONFIG_LOCK()	downgrade_config_lock(__FILE__, __LINE__)
 #define LOCK_CONFIG_READ()	LOCK_CONFIG(0)
 #define UNLOCK_CONFIG_READ()	UNLOCK_CONFIG(0)
 #define LOCK_CONFIG_WRITE()	LOCK_CONFIG(1)
@@ -108,6 +109,14 @@ unlock_config(const char* file, int line, int iswrite)
         atomic_dec(&clickfs_read_count);
         wake_up(&clickfs_waitq);
     }
+}
+
+static inline int
+downgrade_config_lock(const char* file, int line)
+{
+    assert(atomic_read(&clickfs_read_count) == -1);
+    atomic_set(&clickfs_read_count, 1);
+    return 0;
 }
 
 
@@ -612,7 +621,9 @@ static ssize_t
 handler_prepare_read(HandlerString* hs, struct file* filp,
                      char* buffer, size_t count, loff_t* store_f_pos)
 {
-    LOCK_CONFIG_READ();
+    int locktype = 0;
+ retry:
+    LOCK_CONFIG(locktype);
     ssize_t retval;
     const Handler *h;
     struct inode *inode = filp->f_dentry->d_inode;
@@ -622,7 +633,11 @@ handler_prepare_read(HandlerString* hs, struct file* filp,
         retval = -EIO;
     else if (!h->read_visible())
         retval = -EPERM;
-    else {
+    else if (!h->allow_concurrent_handlers() && locktype == 0) {
+        UNLOCK_CONFIG(locktype);
+        locktype = 1;
+        goto retry;
+    } else {
         int eindex = click_ino.ino_element(inode->i_ino);
         Element *e = Router::element(click_router, eindex);
 
@@ -642,9 +657,9 @@ handler_prepare_read(HandlerString* hs, struct file* filp,
             String param;
             if ((filp->f_mode & FMODE_READ) && (filp->f_mode & FMODE_WRITE))
                 param = handler_string_strip_newline(hs, h);
-            if (h->exclusive()) {
+            if (!h->allow_concurrent_threads()) {
                 lock_threads();
-                hs->data = h->call_read(e, param, 0).unique();
+                hs->data = h->call_read(e, param, 0);
                 unlock_threads();
             } else
                 hs->data = h->call_read(e, param, 0);
@@ -652,7 +667,7 @@ handler_prepare_read(HandlerString* hs, struct file* filp,
             retval = (hs->data.out_of_memory() ? -ENOMEM : 0);
         }
     }
-    UNLOCK_CONFIG_READ();
+    UNLOCK_CONFIG(locktype);
     if (retval >= 0)
         hs->flags |= HS_DONE;
     return retval;
@@ -777,6 +792,8 @@ handler_write(struct file *filp, const char *buffer, size_t count, loff_t *store
 static int
 handler_do_write(struct file *filp, void *address_ptr)
 {
+    int locktype = 1;
+    LOCK_CONFIG(locktype);
     HandlerString* hs = FILP_WRITE_HS(filp);
     struct inode *inode = filp->f_dentry->d_inode;
     const Handler *h;
@@ -790,6 +807,9 @@ handler_do_write(struct file *filp, void *address_ptr)
     else if (hs->data.out_of_memory())
 	retval = -ENOMEM;
     else {
+        if (h->allow_concurrent_handlers())
+            locktype = DOWNGRADE_CONFIG_LOCK();
+
 	int eindex = click_ino.ino_element(inode->i_ino);
 	Element *e = Router::element(click_router, eindex);
 	click_llrpc_call_handler_st chs;
@@ -809,7 +829,7 @@ handler_do_write(struct file *filp, void *address_ptr)
             data = hs->data;
 
 	ClickfsHandlerErrorHandler cerrh;
-	if (h->exclusive()) {
+	if (!h->allow_concurrent_threads()) {
 	    lock_threads();
 	    retval = h->call_write(data, e, &cerrh);
 	    unlock_threads();
@@ -861,6 +881,7 @@ handler_do_write(struct file *filp, void *address_ptr)
     }
 
   exit:
+    UNLOCK_CONFIG(locktype);
     return retval;
 }
 
@@ -881,11 +902,8 @@ handler_flush(struct file *filp
     int f_count = atomic_read(&filp->f_count);
 #endif
 
-    if (writing && f_count == 1 && hs && !(hs->flags & HS_DONE)) {
-	LOCK_CONFIG_WRITE();
+    if (writing && f_count == 1 && hs && !(hs->flags & HS_DONE))
 	retval = handler_do_write(filp, 0);
-	UNLOCK_CONFIG_WRITE();
-    }
 
     return retval;
 }

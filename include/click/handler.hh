@@ -93,18 +93,18 @@ class Handler { public:
     /** @endcond never */
 
 
-    /** @brief Check if this is a valid read handler. */
+    /** @brief Test if this is a valid read handler. */
     inline bool readable() const {
 	return _flags & h_read;
     }
 
-    /** @brief Check if this is a valid read handler that may accept
+    /** @brief Test if this is a valid read handler that may accept
      * parameters. */
     inline bool read_param() const {
 	return _flags & h_read_param;
     }
 
-    /** @brief Check if this is a public read handler.
+    /** @brief Test if this is a public read handler.
      *
      * Private handlers may be not called from outside the router
      * configuration.  Handlers are public by default; to make a read handler
@@ -113,12 +113,12 @@ class Handler { public:
 	return (_flags & (h_read | h_read_private)) == h_read;
     }
 
-    /** @brief Check if this is a valid write handler. */
+    /** @brief Test if this is a valid write handler. */
     inline bool writable() const {
 	return _flags & h_write;
     }
 
-    /** @brief Check if this is a public write handler.
+    /** @brief Test if this is a public write handler.
      *
      * Private handlers may not be called from outside the router
      * configuration.  Handlers are public by default; to make a write handler
@@ -127,23 +127,24 @@ class Handler { public:
 	return (_flags & (h_write | h_write_private)) == h_write;
     }
 
-    /** @brief Check if this is a public read or write handler. */
+    /** @brief Test if this is a public read or write handler. */
     inline bool visible() const {
 	return read_visible() || write_visible();
     }
 
-    /** @brief Check if this handler is exclusive.
-     *
-     * Exclusive handlers are mutually exclusive with all other router
-     * processing.  In the Linux kernel module driver, reading or writing an
-     * exclusive handler using the Click filesystem will first lock all router
-     * threads and handlers.  Handlers are exclusive by default.  Exclusivity
-     * is cleared by the h_nonexclusive flag.  */
-    inline bool exclusive() const {
-	return !(_flags & h_nonexclusive);
+    /** @brief Test if this handler can execute concurrently with other
+     *         handlers. */
+    inline bool allow_concurrent_handlers() const {
+        return (_flags & h_nonexclusive);
     }
 
-    /** @brief Check if spaces should be preserved when calling this handler.
+    /** @brief Test if this handler can execute concurrently with
+     *         router threads. */
+    inline bool allow_concurrent_threads() const {
+        return (_flags & h_nonexclusive);
+    }
+
+    /** @brief Test if spaces should be preserved when calling this handler.
      *
      * Some Click drivers perform some convenience processing on handler
      * values, for example by removing a terminating newline from write
