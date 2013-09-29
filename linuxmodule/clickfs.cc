@@ -47,9 +47,7 @@ static struct inode_operations *click_handler_inode_ops;
 static struct dentry_operations click_dentry_ops;
 static struct proclikefs_file_system *clickfs;
 
-static struct mutex clickfs_lock, click_ino_lock;
-static wait_queue_head_t clickfs_waitq;
-static atomic_t clickfs_read_count;
+static struct mutex clickfs_lock;
 extern uint32_t click_config_generation;
 static int clickfs_ready;
 
@@ -58,65 +56,37 @@ static int clickfs_ready;
 #define SPIN_LOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "lock"); mutex_lock((l)); } while (0)
 #define SPIN_UNLOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "unlock"); mutex_unlock((l)); } while (0)
 
-#define LOCK_CONFIG(type)	lock_config(__FILE__, __LINE__, (type))
-#define UNLOCK_CONFIG(type)	unlock_config(__FILE__, __LINE__, (type))
-#define DOWNGRADE_CONFIG_LOCK()	downgrade_config_lock(__FILE__, __LINE__)
-#define LOCK_CONFIG_READ()	LOCK_CONFIG(0)
-#define UNLOCK_CONFIG_READ()	UNLOCK_CONFIG(0)
-#define LOCK_CONFIG_WRITE()	LOCK_CONFIG(1)
-#define UNLOCK_CONFIG_WRITE()	UNLOCK_CONFIG(1)
+#define LOCK_CONFIG()		lock_config(__FILE__, __LINE__)
+#define UNLOCK_CONFIG(...)	unlock_config(__FILE__, __LINE__, ## __VA_ARGS__)
+#define DOWNGRADE_CONFIG_LOCK(r) downgrade_config_lock(__FILE__, __LINE__, r)
 
 
 /*************************** Config locking *********************************/
 
 extern struct task_struct *clickfs_task;
 
-static inline void
-lock_config(const char *file, int line, int iswrite)
+static inline Router*
+lock_config(const char* file, int line)
 {
-    wait_queue_t wait;
-# define private linux_private
-    init_wait(&wait);
-# undef private
-    for (;;) {
-	SPIN_LOCK(&clickfs_lock, file, line);
-	prepare_to_wait(&clickfs_waitq, &wait, TASK_UNINTERRUPTIBLE);
-	int reads = atomic_read(&clickfs_read_count);
-	if (iswrite ? reads == 0 : reads >= 0)
-	    break;
-	SPIN_UNLOCK(&clickfs_lock, file, line);
-	schedule();
-    }
-    if (iswrite)
-	atomic_dec(&clickfs_read_count);
-    else
-	atomic_inc(&clickfs_read_count);
-    SPIN_UNLOCK(&clickfs_lock, file, line);
-    finish_wait(&clickfs_waitq, &wait);
-    clickfs_task = current;
-}
-
-static inline void
-unlock_config(const char* file, int line, int iswrite)
-{
-    clickfs_task = 0;
-    if (iswrite) {
-        assert(atomic_read(&clickfs_read_count) == -1);
-        atomic_inc(&clickfs_read_count);
-        wake_up_all(&clickfs_waitq);
-    } else {
-        assert(atomic_read(&clickfs_read_count) > 0);
-        atomic_dec(&clickfs_read_count);
-        wake_up(&clickfs_waitq);
-    }
-}
-
-static inline int
-downgrade_config_lock(const char* file, int line)
-{
-    assert(atomic_read(&clickfs_read_count) == -1);
-    atomic_set(&clickfs_read_count, 1);
+    SPIN_LOCK(&clickfs_lock, file, line);
     return 0;
+}
+
+static inline void
+unlock_config(const char* file, int line, Router* read_locked_router = 0)
+{
+    if (read_locked_router)
+        read_locked_router->unuse();
+    else
+        SPIN_UNLOCK(&clickfs_lock, file, line);
+}
+
+static inline Router*
+downgrade_config_lock(const char* file, int line, Router* router)
+{
+    router->use();
+    SPIN_UNLOCK(&clickfs_lock, file, line);
+    return router;
 }
 
 
@@ -133,19 +103,16 @@ struct ClickInodeInfo {
 
 static ClickIno click_ino;
 
-// Must be called with LOCK_CONFIG_READ.
+// Must be called with LOCK_CONFIG held (& not downgraded).
 
 static int click_ino_check() {
     int r = 0;
-    if (click_ino.generation() != click_config_generation) {
-        SPIN_LOCK(&click_ino_lock, __FILE__, __LINE__);
+    if (click_ino.generation() != click_config_generation)
         r = click_ino.prepare(click_router, click_config_generation);
-        SPIN_UNLOCK(&click_ino_lock, __FILE__, __LINE__);
-    }
     return r;
 }
 
-// Must be called with LOCK_CONFIG_READ.
+// Must be called with LOCK_CONFIG held (& not downgraded).
 // Return "subdir_error" if this subdirectory was configuration-specific and
 // the configuration was changed.  Otherwise, updates this directory's link
 // count (if the configuration was changed) and returns 0.
@@ -232,7 +199,7 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry, unsigned)
 click_dir_lookup(struct inode *dir, struct dentry *dentry, struct nameidata *)
 #endif
 {
-    LOCK_CONFIG_READ();
+    LOCK_CONFIG();
     MDEBUG("click_dir_lookup %lx", dir->i_ino);
 
     struct inode *inode = 0;
@@ -248,7 +215,7 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry, struct nameidata *)
 	    error = -ENOENT;
     }
 
-    UNLOCK_CONFIG_READ();
+    UNLOCK_CONFIG();
     if (error < 0)
 	return reinterpret_cast<struct dentry *>(ERR_PTR(error));
     else if (!inode)
@@ -274,7 +241,7 @@ click_dentry_revalidate(struct dentry *dentry, unsigned flags)
     if (INODE_INFO(inode).config_generation == click_config_generation)
 	return 1;
 
-    LOCK_CONFIG_READ();
+    LOCK_CONFIG();
     if (click_ino.has_element(inode->i_ino)) { // not a global directory
 	shrink_dcache_parent(dentry);
 	d_drop(dentry);
@@ -286,7 +253,7 @@ click_dentry_revalidate(struct dentry *dentry, unsigned flags)
 # endif
     else if ((r = click_ino_check(inode, -EIO)) == 0)
         r = 1;
-    UNLOCK_CONFIG_READ();
+    UNLOCK_CONFIG();
     return r;
 }
 
@@ -324,7 +291,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
     uint32_t f_pos = filp->f_pos;
     MDEBUG("click_dir_readdir %lx", ino);
 
-    LOCK_CONFIG_READ();
+    LOCK_CONFIG();
 
     int error = click_ino_check(inode, -ENOENT);
     int stored = 0;
@@ -343,7 +310,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
     stored += click_ino.readdir(ino, f_pos, my_filldir, &mfd);
 
   done:
-    UNLOCK_CONFIG_READ();
+    UNLOCK_CONFIG();
     filp->f_pos = f_pos;
     return (error ? error : stored);
 }
@@ -372,9 +339,9 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     sb->s_d_op = &click_dentry_ops;
 #endif
     MDEBUG("click_config_lock");
-    LOCK_CONFIG_READ();
+    LOCK_CONFIG();
     root_inode = click_inode(sb, ClickIno::ino_globaldir);
-    UNLOCK_CONFIG_READ();
+    UNLOCK_CONFIG();
     if (!root_inode)
 	goto out_no_root;
 #if HAVE_LINUX_D_MAKE_ROOT
@@ -434,9 +401,9 @@ click_reread_super(struct super_block *sb)
 #endif
     if (sb->s_root) {
 	struct inode *old_inode = sb->s_root->d_inode;
-	LOCK_CONFIG_READ();
+	LOCK_CONFIG();
 	sb->s_root->d_inode = click_inode(sb, ClickIno::ino_globaldir);
-	UNLOCK_CONFIG_READ();
+	UNLOCK_CONFIG();
 	iput(old_inode);
 	sb->s_blocksize = 1024;
 	sb->s_blocksize_bits = 10;
@@ -582,7 +549,7 @@ extern "C" {
 static int
 handler_open(struct inode *inode, struct file *filp)
 {
-    LOCK_CONFIG_READ();
+    LOCK_CONFIG();
 
     bool reading = (filp->f_mode & FMODE_READ) != 0;
     bool writing = (filp->f_mode & FMODE_WRITE) != 0;
@@ -607,7 +574,7 @@ handler_open(struct inode *inode, struct file *filp)
     else
 	retval = 0;
 
-    UNLOCK_CONFIG_READ();
+    UNLOCK_CONFIG();
 
     if (retval < 0 && hs) {
 	free_handler_string(hs);
@@ -621,9 +588,7 @@ static ssize_t
 handler_prepare_read(HandlerString* hs, struct file* filp,
                      char* buffer, size_t count, loff_t* store_f_pos)
 {
-    int locktype = 0;
- retry:
-    LOCK_CONFIG(locktype);
+    Router* locktype = LOCK_CONFIG();
     ssize_t retval;
     const Handler *h;
     struct inode *inode = filp->f_dentry->d_inode;
@@ -633,13 +598,12 @@ handler_prepare_read(HandlerString* hs, struct file* filp,
         retval = -EIO;
     else if (!h->read_visible())
         retval = -EPERM;
-    else if (!h->allow_concurrent_handlers() && locktype == 0) {
-        UNLOCK_CONFIG(locktype);
-        locktype = 1;
-        goto retry;
-    } else {
+    else {
         int eindex = click_ino.ino_element(inode->i_ino);
         Element *e = Router::element(click_router, eindex);
+
+        if (h->allow_concurrent_handlers())
+            locktype = DOWNGRADE_CONFIG_LOCK(e->router());
 
         if ((hs->flags & HS_DIRECT) && buffer) {
             click_handler_direct_info hdi;
@@ -792,8 +756,7 @@ handler_write(struct file *filp, const char *buffer, size_t count, loff_t *store
 static int
 handler_do_write(struct file *filp, void *address_ptr)
 {
-    int locktype = 1;
-    LOCK_CONFIG(locktype);
+    Router* locktype = LOCK_CONFIG();
     HandlerString* hs = FILP_WRITE_HS(filp);
     struct inode *inode = filp->f_dentry->d_inode;
     const Handler *h;
@@ -807,11 +770,12 @@ handler_do_write(struct file *filp, void *address_ptr)
     else if (hs->data.out_of_memory())
 	retval = -ENOMEM;
     else {
-        if (h->allow_concurrent_handlers())
-            locktype = DOWNGRADE_CONFIG_LOCK();
-
 	int eindex = click_ino.ino_element(inode->i_ino);
 	Element *e = Router::element(click_router, eindex);
+
+        if (h->allow_concurrent_handlers())
+            locktype = DOWNGRADE_CONFIG_LOCK(e->router());
+
 	click_llrpc_call_handler_st chs;
 	chs.flags = 0;
 	int r;
@@ -922,10 +886,7 @@ static inline int
 do_handler_ioctl(struct inode *inode, struct file *filp,
 		 unsigned command, unsigned long address)
 {
-    if (command & _CLICK_IOC_SAFE)
-	LOCK_CONFIG_READ();
-    else
-	LOCK_CONFIG_WRITE();
+    Router* locktype = LOCK_CONFIG();
 
     int retval;
     Element *e;
@@ -949,6 +910,9 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
                || !(e = click_router->element(click_ino.ino_element(inode->i_ino))))
 	retval = -EIO;
     else {
+        if (command & _CLICK_IOC_SAFE)
+            locktype = DOWNGRADE_CONFIG_LOCK(e->router());
+
 	union {
 	    char buf[128];
 	    long align;
@@ -972,8 +936,12 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
 	    goto free_exit;
 
 	// call llrpc
-	arg_ptr = (size && (command & (_CLICK_IOC_IN | _CLICK_IOC_OUT)) ? data : address_ptr);
-	if (click_router->initialized())
+        if (size && (command & (_CLICK_IOC_IN | _CLICK_IOC_OUT)))
+            arg_ptr = data;
+        else
+            arg_ptr = address_ptr;
+
+	if (e->router()->initialized())
 	    retval = e->llrpc(command, arg_ptr);
 	else
 	    retval = e->Element::llrpc(command, arg_ptr);
@@ -988,10 +956,7 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
     }
 
   exit:
-    if (command & _CLICK_IOC_SAFE)
-	UNLOCK_CONFIG_READ();
-    else
-	UNLOCK_CONFIG_WRITE();
+    UNLOCK_CONFIG(locktype);
     return retval;
 }
 
@@ -1043,9 +1008,6 @@ init_clickfs()
 
     mutex_init(&handler_strings_lock);
     mutex_init(&clickfs_lock);
-    mutex_init(&click_ino_lock);
-    init_waitqueue_head(&clickfs_waitq);
-    atomic_set(&clickfs_read_count, 0);
 
     // clickfs creation moved to click_new_file_operations()
     if (!(click_dir_file_ops = click_new_file_operations())
