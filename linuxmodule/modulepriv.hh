@@ -24,8 +24,8 @@ CLICK_CXX_UNPROTECT
 #endif
 
 // see static_assert in clickfs.cc
-#define HANDLER_DIRECT			(Handler::DRIVER_FLAG_0)
-#define HANDLER_WRITE_UNLIMITED		(Handler::DRIVER_FLAG_0 << 1)
+#define HANDLER_DIRECT			(Handler::h_driver_flag_0)
+#define HANDLER_WRITE_UNLIMITED		(Handler::h_driver_flag_1)
 struct click_handler_direct_info;
 
 class KernelErrorHandler : public ErrorHandler { public:

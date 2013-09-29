@@ -42,13 +42,12 @@ class Handler { public:
 	h_button = 0x2000,	///< @brief Write handler ignores data.
 	h_checkbox = 0x4000,	///< @brief Read/write handler is boolean and
 				///  should be rendered as a checkbox.
-	h_driver_flag_shift = 20,
-	h_driver_flag_0 = 1 << h_driver_flag_shift,
-				///< @brief First uninterpreted handler flag
-				///  available for drivers.  Equals 1 <<
-				///  h_driver_flag_shift.
-	h_user_flag_shift = 25,
-	h_user_flag_0 = 1 << h_user_flag_shift,
+	h_driver_flag_0 = 1U << 26,
+        h_driver_flag_1 = 1U << 27,
+				///< @brief Uninterpreted handler flags
+				///  available for drivers.
+	h_user_flag_shift = 28,
+	h_user_flag_0 = 1U << h_user_flag_shift,
 				///< @brief First uninterpreted handler flag
 				///  available for element-specific use.
 				///  Equals 1 << h_user_flag_shift.
@@ -242,8 +241,6 @@ class Handler { public:
 	EXPENSIVE = h_expensive,
 	BUTTON = h_button,
 	CHECKBOX = h_checkbox,
-	DRIVER_FLAG_SHIFT = h_driver_flag_shift,
-	DRIVER_FLAG_0 = h_driver_flag_0,
 	USER_FLAG_SHIFT = h_user_flag_shift,
 	USER_FLAG_0 = h_user_flag_0
     };
