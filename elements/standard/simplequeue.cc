@@ -216,11 +216,11 @@ SimpleQueue::add_handlers()
 {
     add_read_handler("length", read_handler, 0);
     add_read_handler("highwater_length", read_handler, 1);
-    add_read_handler("capacity", read_handler, 2, Handler::CALM);
+    add_read_handler("capacity", read_handler, 2, Handler::h_calm);
     add_read_handler("drops", read_handler, 3);
     add_write_handler("capacity", reconfigure_keyword_handler, "0 CAPACITY");
-    add_write_handler("reset_counts", write_handler, 0, Handler::BUTTON | Handler::NONEXCLUSIVE);
-    add_write_handler("reset", write_handler, 1, Handler::BUTTON);
+    add_write_handler("reset_counts", write_handler, 0, Handler::h_button | Handler::h_nonexclusive);
+    add_write_handler("reset", write_handler, 1, Handler::h_button);
 }
 
 CLICK_ENDDECLS

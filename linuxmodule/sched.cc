@@ -376,13 +376,13 @@ click_init_sched(ErrorHandler *errh)
 
     Router::add_read_handler(0, "threads", read_threads, 0);
     Router::add_read_handler(0, "priority", read_priority, 0);
-    Router::add_write_handler(0, "priority", write_priority, 0, Handler::NONEXCLUSIVE);
+    Router::add_write_handler(0, "priority", write_priority, 0, Handler::h_nonexclusive);
 #if HAVE_ADAPTIVE_SCHEDULER
     static_assert(Task::MAX_UTILIZATION == 1000, "The adaptive scheduler requires Task::MAX_UTILIZATION == 1000.");
     Router::add_read_handler(0, "min_cpu_share", read_cpu_share, 0);
-    Router::add_write_handler(0, "min_cpu_share", write_cpu_share, 0, Handler::NONEXCLUSIVE);
+    Router::add_write_handler(0, "min_cpu_share", write_cpu_share, 0, Handler::h_nonexclusive);
     Router::add_read_handler(0, "max_cpu_share", read_cpu_share, (void *)1);
-    Router::add_write_handler(0, "max_cpu_share", write_cpu_share, (void *)1, Handler::NONEXCLUSIVE);
+    Router::add_write_handler(0, "max_cpu_share", write_cpu_share, (void *)1, Handler::h_nonexclusive);
     Router::add_read_handler(0, "cpu_share", read_cur_cpu_share, 0);
 #else
     Router::add_read_handler(0, "tasks_per_iter", read_sched_param,
@@ -394,11 +394,11 @@ click_init_sched(ErrorHandler *errh)
 
     // XXX believed to be OK to run in parallel with thread processing
     Router::add_write_handler(0, "tasks_per_iter", write_sched_param,
-			      (void *)H_TASKS_PER_ITER, Handler::NONEXCLUSIVE);
+			      (void *)H_TASKS_PER_ITER, Handler::h_nonexclusive);
     Router::add_write_handler(0, "iters_per_timers", write_sched_param,
-			      (void *)H_ITERS_PER_TIMERS, Handler::NONEXCLUSIVE);
+			      (void *)H_ITERS_PER_TIMERS, Handler::h_nonexclusive);
     Router::add_write_handler(0, "iters_per_os", write_sched_param,
-			      (void *)H_ITERS_PER_OS, Handler::NONEXCLUSIVE);
+			      (void *)H_ITERS_PER_OS, Handler::h_nonexclusive);
 
 #endif
 #if CLICK_DEBUG_MASTER

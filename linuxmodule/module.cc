@@ -315,7 +315,7 @@ init_module()
     Router::add_read_handler(0, "messages", read_messages, 0, HANDLER_DIRECT);
 #if HAVE_KERNEL_ASSERT
     Router::add_read_handler(0, "assert_stop", read_global, (void *) (intptr_t) h_assert_stop);
-    Router::add_write_handler(0, "assert_stop", write_assert_stop, 0, Handler::NONEXCLUSIVE);
+    Router::add_write_handler(0, "assert_stop", write_assert_stop, 0, Handler::h_nonexclusive);
 #endif
 
     // filesystem interface

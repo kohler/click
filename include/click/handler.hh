@@ -230,8 +230,6 @@ class Handler { public:
 	OP_READ = h_read,
 	OP_WRITE = h_write,
 	READ_PARAM = h_read_param,
-	EXCLUSIVE = h_exclusive,
-	NONEXCLUSIVE = h_nonexclusive,
 	RAW = h_raw,
 	READ_PRIVATE = h_read_private,
 	WRITE_PRIVATE = h_write_private,
@@ -243,6 +241,10 @@ class Handler { public:
 	CHECKBOX = h_checkbox,
 	USER_FLAG_SHIFT = h_user_flag_shift,
 	USER_FLAG_0 = h_user_flag_0
+    };
+    enum CLICK_DEPRECATED {
+	EXCLUSIVE = h_exclusive,
+	NONEXCLUSIVE = h_nonexclusive
     };
     /** @endcond never */
 

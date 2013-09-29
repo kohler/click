@@ -458,7 +458,7 @@ IPRewriterBase::add_rewriter_handlers(bool writable_patterns)
 	String name = "pattern" + String(i);
 	add_read_handler(name, read_handler, i);
 	if (writable_patterns)
-	    add_write_handler(name, pattern_write_handler, i, Handler::EXCLUSIVE);
+	    add_write_handler(name, pattern_write_handler, i);
     }
 }
 

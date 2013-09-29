@@ -606,7 +606,7 @@ particular purpose.\n");
  done:
   // provide hotconfig handler if asked
   if (allow_reconfigure)
-      Router::add_write_handler(0, "hotconfig", hotconfig_handler, 0, Handler::RAW | Handler::NONEXCLUSIVE);
+      Router::add_write_handler(0, "hotconfig", hotconfig_handler, 0, Handler::h_raw | Handler::h_nonexclusive);
   Router::add_read_handler(0, "timewarp", timewarp_read_handler, 0);
   if (Timestamp::warp_class() != Timestamp::warp_simulation)
       Router::add_write_handler(0, "timewarp", timewarp_write_handler, 0);
