@@ -254,14 +254,14 @@ RouterThread::client_update_pass(int client, const Timestamp &t_before)
 {
     Client &c = _clients[client];
     Timestamp t_now = Timestamp::now();
-    Timestamp::seconds_type elapsed = (t_now - t_before).usec1();
+    Timestamp::value_type elapsed = (t_now - t_before).usecval();
     if (elapsed > 0)
 	c.pass += (c.stride * elapsed) / DRIVER_QUANTUM;
     else
 	c.pass += c.stride;
 
     // check_restride
-    Timestamp::seconds_type elapsed = (t_now - _adaptive_restride_timestamp).usec1();
+    elapsed = (t_now - _adaptive_restride_timestamp).usecval();
     if (elapsed > DRIVER_RESTRIDE_INTERVAL || elapsed < 0) {
 	// mark new measurement period
 	_adaptive_restride_timestamp = t_now;

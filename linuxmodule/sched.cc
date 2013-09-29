@@ -221,23 +221,20 @@ read_master_info(Element *, void *)
 #if HAVE_ADAPTIVE_SCHEDULER
 
 static String
-read_cpu_share(Element *, void *thunk)
+read_cpu_share(Element*, void* user_data)
 {
-    int val = (thunk ? max_click_frac : min_click_frac);
+    int val = (user_data ? max_click_frac : min_click_frac);
     return cp_unparse_real10(val, 3);
 }
 
 static String
-read_cur_cpu_share(Element *, void *)
+read_cur_cpu_share(Element*, void *)
 {
-    if (click_router) {
-	StringAccum sa;
-	for (int i = 0; i < click_master->nthreads(); i++)
-	    sa << cp_unparse_real10(click_master->thread(i)->cur_cpu_share(), 3)
-	       << '\n';
-	return sa.take_string();
-    } else
-	return "0\n";
+    StringAccum sa;
+    for (int i = 0; i < click_master->nthreads(); i++)
+        sa << cp_unparse_real10(click_master->thread(i)->cur_cpu_share(), 3)
+           << '\n';
+    return sa.take_string();
 }
 
 static int
