@@ -86,7 +86,7 @@ elemlist:
 	for i in $(DRIVERS); do $(MAKE) CLICK_PACKAGE_MAKING=$$i elemlist; done
 
 elementmap-$(package).xml: $(clickbuild_bindir)/click-mkelemmap always
-	r="$(DRIVERS) $(package)"; echo $(srcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r "$$r" -P | $(clickbuild_bindir)/click-mkelemmap -r "$(package)" -t "$(DRIVERS)" -s `cd $(srcdir) && pwd` > elementmap-$(package).xml
+	r="$(DRIVERS) $(package)"; echo $(srcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r "$$r" -P $(CLICKFINDELEMFLAGS) | $(clickbuild_bindir)/click-mkelemmap -r "$(package)" -t "$(DRIVERS)" -s `cd $(srcdir) && pwd` > elementmap-$(package).xml
 
 install: install-obj install-man elementmap-$(package).xml always
 	$(mkinstalldirs) $(DESTDIR)$(clickdatadir)
