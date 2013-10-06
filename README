@@ -180,10 +180,9 @@ Click license applies, not the GPL or the LGPL.
 BUGS, QUESTIONS, ETC.
 ---------------------
 
-    We welcome bug reports, questions, comments, code, whatever you'd like
-to give us. We also have a mailing list for software announcements, and an
-anonymous Git repository (also accessible via CVS) where you can access our
-latest source code. Write us at
+    We welcome bug reports, questions, comments, code, whatever you'd
+like to give us. We also have a mailing list for software
+announcements. Write us at
 
 	click@pdos.lcs.mit.edu
 
