@@ -266,13 +266,52 @@ click_dentry_revalidate_nd(struct dentry *dentry, struct nameidata *nd)
 #endif
 
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+static bool
+my_filldir(const char *name, int namelen, ino_t ino, int dirtype, loff_t f_pos, void *thunk)
+{
+    struct dir_context* ctx = (struct dir_context*) thunk;
+    return dir_emit(ctx, name, namelen, ino, dirtype);
+}
+
+static int
+click_dir_iterate(struct file *filp, struct dir_context* ctx)
+{
+    struct inode *inode = filp->f_dentry->d_inode;
+    ino_t ino = inode->i_ino;
+    MDEBUG("click_dir_readdir %lx", ino);
+
+    LOCK_CONFIG();
+
+    int error = click_ino_check(inode, -ENOENT);
+    int stored = 0;
+    if (error < 0)
+	goto done;
+
+    // global '..'
+    if (ino == ClickIno::ino_globaldir && ctx->pos == 0) {
+	if (!my_filldir("..", 2, parent_ino(filp->f_dentry), ctx->pos, DT_DIR, ctx))
+	    goto done;
+        ctx->pos = 1;
+	stored++;
+    }
+
+    // real entries
+    stored += click_ino.readdir(ino, ctx->pos, my_filldir, ctx);
+
+  done:
+    UNLOCK_CONFIG();
+    return (error ? error : stored);
+}
+
+#else
 struct my_filldir_container {
     filldir_t filldir;
     void *dirent;
 };
 
 static bool
-my_filldir(const char *name, int namelen, ino_t ino, int dirtype, uint32_t f_pos, void *thunk)
+my_filldir(const char *name, int namelen, ino_t ino, int dirtype, loff_t f_pos, void *thunk)
 {
     my_filldir_container *mfd = (my_filldir_container *)thunk;
     int error = mfd->filldir(mfd->dirent, name, namelen, f_pos, ino, dirtype);
@@ -314,6 +353,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
     filp->f_pos = f_pos;
     return (error ? error : stored);
 }
+#endif
 
 } // extern "C"
 
@@ -1029,7 +1069,11 @@ init_clickfs()
 #endif
 
     click_dir_file_ops->read = generic_read_dir;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+    click_dir_file_ops->iterate = click_dir_iterate;
+#else
     click_dir_file_ops->readdir = click_dir_readdir;
+#endif
     click_dir_inode_ops->lookup = click_dir_lookup;
 
     click_handler_file_ops->llseek = handler_llseek;

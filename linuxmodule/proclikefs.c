@@ -68,7 +68,11 @@ extern struct lglock files_lglock;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
 # define fstype_supers_init(fst) INIT_HLIST_HEAD(&(fst)->fs_supers)
-# define fstype_for_each_super(sb, fst) hlist_for_each_entry(sb, hlist_pos, &(fst)->fs_supers, s_instances)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
+#  define fstype_for_each_super(sb, fst) hlist_for_each_entry(sb, &(fst)->fs_supers, s_instances)
+# else
+#  define fstype_for_each_super(sb, fst) hlist_for_each_entry(sb, hlist_pos, &(fst)->fs_supers, s_instances)
+# endif
 #else
 # define fstype_supers_init(fst) INIT_LIST_HEAD(&(fst)->fs_supers);
 # define fstype_for_each_super(sb, fst) list_for_each_entry(sb, &(fst)->fs_supers, s_instances)
@@ -215,7 +219,7 @@ proclikefs_reinitialize_supers(struct proclikefs_file_system *pfs,
 			       void (*reread_super) (struct super_block *))
 {
     struct super_block *sb;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)
     struct hlist_node *hlist_pos;
 #endif
     mutex_lock(&fslist_lock);
@@ -321,7 +325,7 @@ void
 proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 {
     struct super_block *sb, dummy_sb;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)
     struct hlist_node *hlist_pos;
 #endif
     struct proclikefs_file_operations *pfo;

@@ -405,6 +405,10 @@ sub one_includeroot ($$) {
 		s<enum migrate_mode;><enum migrate_mode \{MIGRATE_DUMMY\};>;
 	    }
 
+            if ($d eq "uaccess.h" || $d eq "syscalls.h") {
+                s<^#define (.*?) \\\n__typeof__\(__builtin_choose_expr\((.*?), (.*?), (.*?)\)\)(.*)><#if __cplusplus\n#define $1 typename click_conditional<($2), __typeof($3), __typeof($4)>::type$5\n#else\n#define $1 __typeof__(__builtin_choose_expr($2, $3, $4))$5\n#endif>m;
+            }
+
 	    # CLICK_CXX_PROTECTED check
 	    if (m<\A[\s\200-\377]*\z>) {
 		# empty file, do nothing

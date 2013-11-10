@@ -42,6 +42,9 @@ CLICK_CXX_PROTECT
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0)
 # include <linux/kthread.h>
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
+# include <linux/sched/rt.h>
+#endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 

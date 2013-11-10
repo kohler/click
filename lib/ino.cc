@@ -329,7 +329,7 @@ check_handler_name(const String &hname)
 }
 
 int
-ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
+ClickIno::readdir(ino_t ino, loff_t &f_pos, filldir_t filldir, void *thunk)
 {
     // File positions:
     // 0x000000           ..
