@@ -305,6 +305,15 @@ class Packet { public:
     inline const click_udp *udp_header() const;
     //@}
 
+#if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
+  protected:
+    typedef typeof(((struct sk_buff*)0)->mac_header) mac_header_type;
+    typedef typeof(((struct sk_buff*)0)->network_header) network_header_type;
+    typedef typeof(((struct sk_buff*)0)->transport_header) transport_header_type;
+# endif
+#endif
+
   private:
     /** @cond never */
     union Anno;
@@ -1067,7 +1076,7 @@ Packet::has_network_header() const
 #if CLICK_LINUXMODULE
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 #  if NET_SKBUFF_DATA_USES_OFFSET
-    return skb()->network_header != ~0U;
+    return skb()->network_header != (network_header_type) ~0U;
 #  else
     return skb()->network_header != 0;
 #  endif
@@ -1105,7 +1114,7 @@ Packet::has_transport_header() const
 #if CLICK_LINUXMODULE
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 #  if NET_SKBUFF_DATA_USES_OFFSET
-    return skb()->transport_header != ~0U;
+    return skb()->transport_header != (transport_header_type) ~0U;
 #  else
     return skb()->transport_header != 0;
 #  endif
@@ -1784,7 +1793,7 @@ Packet::clear_mac_header()
 {
 #if CLICK_LINUXMODULE	/* Linux kernel module */
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
-    skb()->mac_header = ~0U;
+    skb()->mac_header = (mac_header_type) ~0U;
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
     skb()->mac_header = 0;
 # else
@@ -1905,7 +1914,7 @@ Packet::clear_network_header()
 {
 #if CLICK_LINUXMODULE	/* Linux kernel module */
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
-    skb()->network_header = ~0U;
+    skb()->network_header = (network_header_type) ~0U;
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
     skb()->network_header = 0;
 # else
@@ -2021,7 +2030,7 @@ Packet::clear_transport_header()
 {
 #if CLICK_LINUXMODULE	/* Linux kernel module */
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
-    skb()->transport_header = ~0U;
+    skb()->transport_header = (transport_header_type) ~0U;
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
     skb()->transport_header = 0;
 # else
@@ -2040,9 +2049,9 @@ Packet::shift_header_annotations(const unsigned char *old_head,
     struct sk_buff *mskb = skb();
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
     (void) old_head;
-    mskb->mac_header += (mskb->mac_header == ~0U ? 0 : extra_headroom);
-    mskb->network_header += (mskb->network_header == ~0U ? 0 : extra_headroom);
-    mskb->transport_header += (mskb->transport_header == ~0U ? 0 : extra_headroom);
+    mskb->mac_header += (mskb->mac_header == (mac_header_type) ~0U ? 0 : extra_headroom);
+    mskb->network_header += (mskb->network_header == (network_header_type) ~0U ? 0 : extra_headroom);
+    mskb->transport_header += (mskb->transport_header == (transport_header_type) ~0U ? 0 : extra_headroom);
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
     ptrdiff_t shift = (mskb->head - old_head) + extra_headroom;
     mskb->mac_header += (mskb->mac_header ? shift : 0);
