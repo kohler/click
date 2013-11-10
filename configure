@@ -9439,7 +9439,7 @@ if test "$linux_version.$linux_patchlevel" = 2.6 -o "$linux_version" = 3; then
 $as_echo "#define HAVE_LINUXMODULE_2_6 1" >>confdefs.h
 
 fi
-if  "$LINUXMODULE_2_6" = 0 ; then
+if test "$LINUXMODULE_2_6" = 0; then
     as_fn_error $? "
 =========================================
 

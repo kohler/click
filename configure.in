@@ -715,7 +715,7 @@ if test "$linux_version.$linux_patchlevel" = 2.6 -o "$linux_version" = 3; then
     LINUXMODULE_2_6=1
     AC_DEFINE([HAVE_LINUXMODULE_2_6], [1], [Define if the Click linuxmodule is compiled for a 2.6 or later kernel.])
 fi
-if [ "$LINUXMODULE_2_6" = 0 ]; then
+if test "$LINUXMODULE_2_6" = 0; then
     AC_MSG_ERROR([
 =========================================
 
