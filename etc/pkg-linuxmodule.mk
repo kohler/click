@@ -66,7 +66,7 @@ elemlist $(package)-kelem.conf: $(CLICK_BUILDTOOL)
 	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r linuxmodule -r $(package) -P $(CLICKFINDELEMFLAGS) > $(package)-kelem.conf
 endif
 $(package)-kelem.mk: $(package)-kelem.conf $(CLICK_BUILDTOOL)
-	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t linuxmodule < $(package)-kelem.conf > $(package)-kelem.mk
+	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make --linux -t linuxmodule < $(package)-kelem.conf > $(package)-kelem.mk
 $(package)-kmain.cc: $(package)-kelem.conf $(CLICK_BUILDTOOL)
 	$(CLICK_ELEM2PACKAGE) $(package) < $(package)-kelem.conf > $(package)-kmain.cc
 	@rm -f $(package)-kmain.kd
@@ -82,7 +82,7 @@ always:
 	@:
 clean:
 	-rm -f $(package).ko .$(package).ko.status
-	-rm -f *.kd *.ko $(PACKAGE_CLEANFILES)
+	-rm -f *.k.d *.k.o $(PACKAGE_CLEANFILES)
 	-rm -f .*.o.cmd .*.ko.cmd $(package).mod.c $(package).mod.o $(package).o
 	-rm -rf .tmp_versions
 

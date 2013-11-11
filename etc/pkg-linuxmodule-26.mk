@@ -45,7 +45,7 @@ COMPILE = $(CLICKKERNEL_CC) $(LINUXCFLAGS) $(CLICKCPPFLAGS) \
 	$(DEFS) $(INCLUDES)
 
 packagesrcdir ?= $(srcdir)
-PACKAGE_OBJS ?= $(package)-kmain.ko
+PACKAGE_OBJS ?= $(package)-kmain.k.o
 PACKAGE_DEPS ?=
 
 KBUILD_EXTRA_SYMBOLS ?= $(clickbuild_libdir)/click.symvers
@@ -84,10 +84,8 @@ endif
 top_builddir := $(obj)/$(top_builddir)
 builddir := $(obj)
 endif
-
 -include $(obj)/$(package)-kelem.mk
-
-$(package)-objs := $(ELEMENT_OBJS) $(PACKAGE_OBJS) kversion.ko
+$(package)-objs := $(ELEMENT_OBJS) $(PACKAGE_OBJS) kversion.k.o
 endif
 
 obj-m += $(package).o
@@ -97,15 +95,15 @@ $(obj)/$(package)-kelem.conf: $(CLICK_BUILDTOOL)
 	echo $(packagesrcdir) | $(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) findelem -r linuxmodule -r $(package) -P $(CLICKFINDELEMFLAGS) > $(obj)/$(package)-kelem.conf
 endif
 $(obj)/$(package)-kelem.mk: $(obj)/$(package)-kelem.conf $(CLICK_BUILDTOOL)
-	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t linuxmodule < $(obj)/$(package)-kelem.conf > $(obj)/$(package)-kelem.mk
+	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make --linux -t linuxmodule < $(obj)/$(package)-kelem.conf > $(obj)/$(package)-kelem.mk
 $(obj)/$(package)-kmain.cc: $(obj)/$(package)-kelem.conf $(CLICK_BUILDTOOL)
 	$(CLICK_ELEM2PACKAGE) $(package) < $(obj)/$(package)-kelem.conf > $(obj)/$(package)-kmain.cc
 	@rm -f $(obj)/$(package)-kmain.kd
-$(obj)/$(package)-kmain.ko: $(obj)/$(package)-kmain.cc
+$(obj)/$(package)-kmain.k.o: $(obj)/$(package)-kmain.cc
 	$(call if_changed_dep,cxxcompile)
 $(obj)/kversion.c: $(CLICK_BUILDTOOL)
 	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) kversion $(KVERSIONFLAGS) > $(obj)/kversion.c
-$(obj)/kversion.ko: $(obj)/kversion.c
+$(obj)/kversion.k.o: $(obj)/kversion.c
 	$(call if_changed_dep,ccompile)
 
 DEPFILES := $(wildcard *.kd)

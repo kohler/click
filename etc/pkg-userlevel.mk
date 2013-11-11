@@ -35,7 +35,7 @@ INCLUDES ?= $(CLICKINCLUDES)
 LDFLAGS ?= $(CLICKLDMODULEFLAGS)
 
 packagesrcdir ?= $(srcdir)
-PACKAGE_OBJS ?= $(package)-umain.uo
+PACKAGE_OBJS ?= $(package)-umain.u.o
 PACKAGE_LIBS ?=
 PACKAGE_DEPS ?=
 
@@ -52,7 +52,7 @@ CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
 COMPILE = $(CC) $(CPPFLAGS) $(CFLAGS) $(PACKAGE_CFLAGS) $(DEFS) $(INCLUDES)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
-FIXDEP = @-sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
+FIXDEP = @-sed 's/\.o:/.u.o:/' < $*.d > $*.u.d; /bin/rm -f $*.d
 
 ifeq ($(V),1)
 ccompile = $(COMPILE) $(DEPCFLAGS) $(1)
@@ -67,15 +67,14 @@ cxxcompile_nodep = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
 endif
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .uo .uii
 
-.c.uo:
+%.u.o: %.c
 	$(call ccompile,-c $< -o $@,CC)
 	$(FIXDEP)
-.cc.uo:
+%.u.o: %.cc
 	$(call cxxcompile,-c $< -o $@,CXX)
 	$(FIXDEP)
-.cc.uii:
+%.u.ii: %.cc
 	$(call cxxcompile_nodep,-E $< > $@,CXXCPP)
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -99,14 +98,14 @@ $(package)-uelem.mk: $(package)-uelem.conf $(CLICK_BUILDTOOL)
 	$(CLICK_BUILDTOOL) $(CLICK_BUILDTOOL_FLAGS) elem2make -t userlevel < $(package)-uelem.conf > $(package)-uelem.mk
 $(package)-umain.cc: $(package)-uelem.conf $(CLICK_BUILDTOOL)
 	$(CLICK_ELEM2PACKAGE) $(package) < $(package)-uelem.conf > $(package)-umain.cc
-	@rm -f $(package)-umain.ud
+	@rm -f $(package)-umain.u.d
 
-DEPFILES := $(wildcard *.ud)
+DEPFILES := $(wildcard *.u.d)
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
 clean:
-	-rm -f *.ud *.uo $(PACKAGE_CLEANFILES)
+	-rm -f $(package).uo *.u.d *.u.o $(PACKAGE_CLEANFILES)
 
 .PHONY: clean elemlist

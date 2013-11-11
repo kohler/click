@@ -1,10 +1,8 @@
 *.d
-*.kd
 *.ko
 *.ko.cmd
 *.o
 *.o.cmd
-*.ud
 *.uo
 .tmp_versions
 Kbuild

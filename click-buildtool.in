@@ -801,11 +801,14 @@ EOF
 	    exit 1
 	fi
     fi
+    if test "$L" = k -a "$linux" = x -a "$bsdmake" = 0; then
+        linux=1
+    fi
     if test "$linux" = 1 -a "$bsdmake" = 1; then
 	echo "--linux and --bsd are mutually exclusive" 1>&2
 	exit 1
     fi
-    osuffix=".${L}o"
+    if test -n "$L"; then osuffix=".$L.o"; else osuffix=".o"; fi
     if test -z "$makevar"; then
 	makevar=$defmakevar
     fi
@@ -1431,7 +1434,7 @@ $1"; shift 1
 	echo "Unknown driver $driver" 1>&2
 	exit 1
     fi
-    osuffix=".${L}o"
+    if test -n "$L"; then osuffix=".$L.o"; else osuffix=".o"; fi
 
     if test -n "$dir"; then cd "$dir"; fi
     echo > ${pkg}-${L}elem.conf

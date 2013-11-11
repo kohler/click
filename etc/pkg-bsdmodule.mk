@@ -50,7 +50,7 @@ endif
 DEFS +=  -D_KERNEL  # XXX
 
 packagesrcdir ?= $(srcdir)
-PACKAGE_OBJS ?= bpackage.bo
+PACKAGE_OBJS ?= bpackage.b.o
 PACKAGE_DEPS ?=
 
 CXXCOMPILE = $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(PACKAGE_CXXFLAGS) $(DEFS) $(INCLUDES) $(DEPCFLAGS)
@@ -59,7 +59,7 @@ CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
 COMPILE = $(CC) $(CPPFLAGS) $(CFLAGS) $(PACKAGE_CFLAGS) $(DEFS) $(INCLUDES) $(DEPCFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
-FIXDEP = @-sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
+FIXDEP = @-sed 's/\.o:/.b.o:/' < $*.d > $*.b.d; /bin/rm -f $*.d
 
 ifeq ($(V),1)
 ccompile = $(COMPILE) $(1)
@@ -70,15 +70,14 @@ cxxcompile = @/bin/echo ' ' $(2) $< && $(CXXCOMPILE) $(1)
 endif
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .bo .bii
 
-.c.bo:
+%.b.o: %.c
 	$(call ccompile,-c $< -o $@,CC)
 	$(FIXDEP)
-.cc.bo:
+%.b.o: %.cc
 	$(call cxxcompile,-c $< -o $@,CXX)
 	$(FIXDEP)
-.cc.bii:
+%.b.ii: %.cc
 	$(call cxxcompile,-E $< > $@,CXXCPP)
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -108,6 +107,6 @@ always:
 	@:
 clean:
 	-rm -f $(package).bo
-	-rm -f *.bd *.bo belements.conf belements.mk bpackage.cc
+	-rm -f *.b.d *.b.o belements.conf belements.mk bpackage.cc
 
 .PHONY: clean elemlist always
