@@ -327,7 +327,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 
     struct inode *inode = filp->f_dentry->d_inode;
     ino_t ino = inode->i_ino;
-    uint32_t f_pos = filp->f_pos;
+    loff_t f_pos = filp->f_pos;
     MDEBUG("click_dir_readdir %lx", ino);
 
     LOCK_CONFIG();
