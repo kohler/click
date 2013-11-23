@@ -477,7 +477,7 @@ ToDevice::queue_packet(Packet *p, struct netdev_queue *txq)
 	    skb1 = nskb;
 	}
 	// printk("padding %d:%d:%d\n", skb1->truesize, skb1->len, 60-skb1->len);
-	skb_put(skb1, need_tail);
+	memset(skb_put(skb1, need_tail), 0, need_tail);
     }
 
     // set the device annotation;
