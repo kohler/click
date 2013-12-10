@@ -21,6 +21,7 @@
 
 #include <click/glue.hh>
 #include <click/atomic.hh>
+#include <click/sync.hh>
 #include <click/skbmgr.hh>
 
 #include <click/cxxprotect.h>
@@ -154,7 +155,7 @@ RecycledSkbPool::lock()
 {
   while (test_and_set_bit(0, &_lock)) {
     while (_lock)
-      /* nothing */;
+      click_relax_fence();
   }
 }
 
