@@ -74,7 +74,7 @@ class RecycledSkbPool { public:
  private:
 
   RecycledSkbBucket _buckets[NBUCKETS];
-  volatile unsigned long _lock;
+  unsigned long _lock;
 #if __MTCLICK__
   int _last_producer;
   atomic_uint32_t _consumers;
