@@ -3,6 +3,7 @@ use Symbol 'qualify_to_ref';
 use IO::Handle;
 use Errno;
 use POSIX ":sys_wait_h";
+use MIME::Base64;
 no locale;
 use bytes;
 require 5.006;
@@ -411,8 +412,8 @@ sub _read_file_section ($$$$;$) {
     die if $secname ne 'file' && $secname ne 'expect' && $secname ne 'expectv' && $secname ne 'expectx' && $secname ne 'ignore' && $secname ne 'ignorex' && $secname ne 'ignorev';
 
     # check for alternates and length
-    my($alternate, $delfirst, $whitespace, $regex_opts, $length)
-	= (0, 0, 0, '', undef);
+    my($alternate, $delfirst, $whitespace, $base64, $regex_opts, $length)
+	= (0, 0, 0, 0, '', undef);
     while (@args) {
 	if ($args[0] =~ /\A-a/) {
 	    $alternate = 1;
@@ -420,6 +421,8 @@ sub _read_file_section ($$$$;$) {
 	    $delfirst = 1;
 	} elsif ($args[0] =~ /\A-i/) {
 	    $regex_opts .= "(?i)";
+        } elsif ($args[0] =~ /\A-e/) {
+            $base64 = 1;
 	} elsif ($args[0] =~ /\A-w/) {
 	    $whitespace = 1;
 	} elsif ($args[0] =~ /\A\+(\d+)\z/) {
@@ -449,6 +452,10 @@ sub _read_file_section ($$$$;$) {
     }
     if (($secname eq 'file' || $secname eq 'expectv') && $whitespace) {
 	$tt->file_err("'\%$secname -w' is illegal");
+    }
+    $secname .= "v" if $secname eq "expect" && $base64;
+    if (($secname eq "filex" || $secname eq "expectx" || $secname eq "ignore" || $secname eq "ignorev" || $secname eq "ignorex") && $base64) {
+	$tt->file_err("'\%$secname -e' is illegal");
     }
 
     # read contents
@@ -491,6 +498,9 @@ sub _read_file_section ($$$$;$) {
 	$file_data =~ s{\{\{}{\{\{$regex_opts}g;
     } elsif ($regex_opts) {
 	$file_data =~ s{^(?=.)}{$regex_opts}mg;
+    }
+    if ($base64) {
+        $file_data = MIME::Base64::decode_base64($file_data);
     }
 
     # stick contents where appropriate
@@ -1397,17 +1407,18 @@ Usage: testie [OPTIONS] [FILE]...
 Options:
   VARIABLE=VALUE             Variable settings for test script.
   -V, --verbose              Print information for successful tests.
-  -VV, --superverbose        Print initial \%info for all tests.
+  -VV, --superverbose        Print initial %info for all tests.
   -s, --show TESTIEFILE      Show contents of TESTIEFILE on completion.
   -S, --show-raw TESTIEFILE  Like --show, but include ignored lines.
   --show-all                 Show contents of all TESTIEFILEs on completion.
   --show-all-raw             Like --show-all, but include ignored lines.
   --preserve-temporaries     Preserve temporary files.
   -e, --expand               Expand test files into current directory.
+  -p, --path DIR             Prepend DIR to PATH.
   -v, --version              Print version information and exit.
   --help                     Print this message and exit.
 
-Report bugs and suggestions to <kohler@icir.org>.
+Report bugs and suggestions to <kohler@seas.harvard.edu>.
 EOD;
     exit(0);
 }
@@ -1471,7 +1482,7 @@ sub search_dir ($$) {
 
 $dir = undef;
 
-my(@tests, $arg, $jobs);
+my(@tests, $arg, $jobs, @pathprepend);
 $Testie::_variables{"LC_ALL"} = "C";
 
 while (@ARGV) {
@@ -1500,9 +1511,16 @@ while (@ARGV) {
 	$dir = ".";
     } elsif (argcmp($_, '--help', 1)) {
 	help;
-    } elsif (argcmp($_, '--preserve-temporaries', 1)
-	     || argcmp($_, '--preserve-temps', 1)) {
+    } elsif (argcmp($_, '--preserve-temporaries', 2)
+	     || argcmp($_, '--preserve-temps', 2)) {
 	$preserve_temporaries = 1;
+    } elsif (/^-p$/ || argcmp($_, '--path', 2)) {
+	usage if @ARGV == 0;
+	push @pathprepend, shift @ARGV;
+    } elsif (/^-p(.+)$/) {
+	push @pathprepend, $1;
+    } elsif (argcmp($_, '--path', 2, $arg)) {
+	push @pathprepend, $arg;
     } elsif (/^-s$/ || argcmp($_, '--show', 2)) {
 	usage if @ARGV == 0;
 	push @show, [(shift @ARGV), 1];
@@ -1531,6 +1549,19 @@ while (@ARGV) {
     } else {
 	usage;
     }
+}
+
+# prepend to path
+if (@pathprepend) {
+    my($i, $cwd);
+    chomp($cwd = `pwd`);
+    for ($i = 0; $i != @pathprepend; ++$i) {
+        if ($pathprepend[$i] !~ m{\A/}) {
+            $pathprepend[$i] =~ s{\A\./}{};
+            $pathprepend[$i] = $cwd . "/" . $pathprepend[$i];
+        }
+    }
+    $ENV{"PATH"} = join(":", @pathprepend) . ":" . $ENV{"PATH"};
 }
 
 # check @show for stdout/stderr
@@ -1657,6 +1688,11 @@ F<testieNNNNN>, and are typically removed on test completion.
 Examining the contents of a test directory can be useful when
 debugging a test.
 
+=item B<-p>, B<--path> I<DIR>
+
+Prepend I<DIR> to the C<PATH> environment variable before running the
+test script.
+
 =item B<-V>, B<--verbose>
 
 Print information to standard error about successful tests as well as
@@ -1729,18 +1765,20 @@ paragraph of its contents is printed before the test results.
 This section is ignored. It is intended to comment out obsolete parts of
 the test.
 
-=item B<%file [-d] [+I<LENGTH>] I<FILENAME>...>
+=item B<%file [-de] [+I<LENGTH>] I<FILENAME>...>
 
 Create an input file for the script. I<FILENAME> can be B<stdin>,
 which sets the script's standard input. If B<+>I<LENGTH> is provided,
 the file data consists of the I<LENGTH> bytes following this line;
 otherwise, it consists of the data up to the next section. The B<-d>
 flag tells testie to delete the first character of each line in the
-section. To include a file with lines that start with B<%> (which
-would normally start a new section), use B<-d> and preface each line
-of the file with a space.
+section. The B<-e> flag indicates that the section was MIME
+Base64-encoded (see L<base64(1)>); it is decoded before use. To
+include a file with lines that start with B<%> (which would normally
+start a new section), use B<-d> and preface each line of the file with
+a space, or use B<-e>.
 
-=item B<%expect [-adiw] [+I<LENGTH>] I<FILENAME>...>
+=item B<%expect [-adeiw] [+I<LENGTH>] I<FILENAME>...>
 
 Define an expected output file. Differences between the script's
 output I<FILENAME> and the contents of the B<%expect> section will
@@ -1779,7 +1817,7 @@ compare the script's output file with each provided alternate; the
 test succeeds if any of the alternates match. The B<-d> flag behaves
 as in B<%file>.
 
-=item B<%expectv [-ad] [+I<LENGTH>] I<FILENAME>...>
+=item B<%expectv [-ade] [+I<LENGTH>] I<FILENAME>...>
 
 Define a literal expected output file. This behaves like B<%expect>,
 except that the script's output file must match the provided data
@@ -1794,15 +1832,15 @@ B<%expect>, except that every line is treated as a regular expression.
 C<{{?comment}}> blocks are ignored, but other brace pairs are treated
 according to the normal regular expression rules.
 
-=item B<%stdin [+I<LENGTH>]>
+=item B<%stdin [-de] [+I<LENGTH>]>
 
 Same as B<%file stdin>.
 
-=item B<%stdout [-adiw] [+I<LENGTH>]>
+=item B<%stdout [-adeiw] [+I<LENGTH>]>
 
 Same as B<%expect stdout>.
 
-=item B<%stderr [-adiw] [+I<LENGTH>]>
+=item B<%stderr [-adeiw] [+I<LENGTH>]>
 
 Same as B<%expect stderr>.
 
@@ -1815,7 +1853,7 @@ expression must match the whole line. I<FILENAME> may be B<all>, in which case
 the regular expressions will apply to all B<%expect> files. C<{{?comment}}>
 blocks are ignored.
 
-=item B<%ignore>, B<%ignorev>
+=item B<%ignore>, B<%ignorev [-adeiw] [+I<LENGTH>] [I<FILENAME>]>
 
 Like B<%ignorex>, but B<%ignore> parses regular expressions only inside
 double braces (C<{{ }}>), and B<%ignorev> lines must match exactly.
