@@ -402,13 +402,6 @@ ToDevice::run_task(Task *)
     }
 #endif
 
-#if CLICK_DEVICE_STATS
-    if (sent > 0)
-	_activations++;
-#endif
-
-    if (busy && sent == 0)
-	_busy_returns++;
 
 #if HAVE_LINUX_POLLING
     if (is_polling) {
@@ -428,6 +421,15 @@ ToDevice::run_task(Task *)
     tx_unlock(dev, txq);
 
 bail:
+
+#if CLICK_DEVICE_STATS
+    if (sent > 0)
+	_activations++;
+#endif
+
+    if (busy && sent == 0)
+	_busy_returns++;
+
     // If we're polling, never go to sleep! We're relying on ToDevice to clean
     // the transmit ring.
     // Otherwise, don't go to sleep if the signal isn't active and
