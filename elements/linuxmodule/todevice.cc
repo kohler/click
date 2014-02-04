@@ -358,7 +358,16 @@ ToDevice::run_task(Task *)
 		p = 0;
 	    }
 	}
-	if (!p && !(p = input(0).pull()))
+        if (!p) {
+	    tx_unlock(dev, txq);
+	    p = input(0).pull();
+	    if (!tx_trylock(dev, txq)) {
+	        _task.reschedule();
+	        _q = p;
+	        goto bail;
+            }
+        }
+        if (!p)
 	    break;
 
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
@@ -418,6 +427,7 @@ ToDevice::run_task(Task *)
 
     tx_unlock(dev, txq);
 
+bail:
     // If we're polling, never go to sleep! We're relying on ToDevice to clean
     // the transmit ring.
     // Otherwise, don't go to sleep if the signal isn't active and
