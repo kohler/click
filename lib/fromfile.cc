@@ -156,7 +156,7 @@ FromFile::read_buffer_mmap(ErrorHandler *errh)
     if (mmap_data == MAP_FAILED)
 	return error(errh, "mmap: %s", strerror(errno));
 
-    _data_packet = Packet::make((unsigned char *)mmap_data, _len, munmap_destructor);
+    _data_packet = Packet::make((unsigned char *)mmap_data, _len, munmap_destructor, 0);
     _buffer = _data_packet->data();
     _file_offset = _mmap_off;
     _mmap_off += _len;

@@ -55,7 +55,7 @@
 # endif
 #endif
 #if TODEVICE_ALLOW_NETMAP
-# include <sys/mman.h>
+//# include <sys/mman.h>
 #endif
 
 CLICK_DECLS
@@ -161,8 +161,9 @@ ToDevice::initialize(ErrorHandler *errh)
     }
 
 #if TODEVICE_ALLOW_NETMAP
+    // first choice is netmap by default
     if (_method == method_default || _method == method_netmap) {
-	if (fd && fd->netmap()) {
+	if (fd && fd->netmap()) { // fromdevice already open, reuse
 	    _fd = fd->fd();
 	    _netmap = *fd->netmap();
 	} else {
@@ -171,11 +172,11 @@ ToDevice::initialize(ErrorHandler *errh)
 		_my_fd = true;
 		add_select(_fd, SELECT_READ); // NB NOT writable!
 	    } else if (_method == method_netmap)
-		return -1;
+		return -1; // fail
 	}
 	if (_fd >= 0) {
 	    _method = method_netmap;
-	    _netmap.initialize_rings_tx();
+	    _netmap.initialize_rings_tx(); // no-op
 	}
     }
 #endif
@@ -267,7 +268,7 @@ ToDevice::cleanup(CleanupStage)
 #endif
 #if TODEVICE_ALLOW_NETMAP
     if (_fd >= 0 && _my_fd && _method == method_netmap) {
-	_netmap.close(_fd);
+	_netmap.close(_fd); // XXX _fd is not really needed
 	_fd = -1;
     }
 #endif
@@ -278,40 +279,6 @@ ToDevice::cleanup(CleanupStage)
 #endif
 }
 
-
-#if TODEVICE_ALLOW_NETMAP
-int
-ToDevice::netmap_send_packet(Packet *p)
-{
-    for (unsigned ri = _netmap.ring_begin; ri != _netmap.ring_end; ++ri) {
-	struct netmap_ring *ring = NETMAP_TXRING(_netmap.nifp, ri);
-	if (ring->avail == 0)
-	    continue;
-	unsigned cur = ring->cur;
-	unsigned buf_idx = ring->slot[cur].buf_idx;
-	if (buf_idx < 2)
-	    continue;
-	unsigned char *buf = (unsigned char *) NETMAP_BUF(ring, buf_idx);
-	uint32_t p_length = p->length();
-	if (NetmapInfo::is_netmap_buffer(p)
-	    && !p->shared() && p->buffer() == p->data()
-	    && noutputs() == 0) {
-	    ring->slot[cur].buf_idx = NETMAP_BUF_IDX(ring, (char *) p->buffer());
-	    ring->slot[cur].flags |= NS_BUF_CHANGED;
-	    NetmapInfo::buffer_destructor(buf, 0, 0);
-	    p->reset_buffer();
-	} else
-	    memcpy(buf, p->data(), p_length);
-	ring->slot[cur].len = p_length;
-	__asm__ volatile("" : : : "memory");
-	ring->cur = NETMAP_RING_NEXT(ring, cur);
-	ring->avail--;
-	return 0;
-    }
-    errno = ENOBUFS;
-    return -1;
-}
-#endif
 
 /*
  * Linux select marks datagram fd's as writeable when the socket
@@ -330,8 +297,13 @@ ToDevice::send_packet(Packet *p)
     errno = 0;
 
 #if TODEVICE_ALLOW_NETMAP
-    if (_method == method_netmap)
-	r = netmap_send_packet(p);
+    if (_method == method_netmap) {
+	if (_netmap.send_packet(p, noutputs())) { // fail
+	    errno = ENOBUFS;
+	    r = -1;
+	} else
+	    r = 0;
+    }
 #endif
 
 #if TODEVICE_ALLOW_PCAP

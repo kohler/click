@@ -196,7 +196,7 @@ class FromDevice : public Element { public:
 #endif
 
 #if FROMDEVICE_ALLOW_NETMAP
-    const NetmapInfo::ring *netmap() const { return _method == method_netmap ? &_netmap : 0; }
+    const NetmapInfo *netmap() const { return _method == method_netmap ? &_netmap : 0; }
 #endif
 
 #if FROMDEVICE_ALLOW_NETMAP || FROMDEVICE_ALLOW_PCAP
@@ -229,7 +229,7 @@ class FromDevice : public Element { public:
     }
 #endif
 #if FROMDEVICE_ALLOW_NETMAP
-    NetmapInfo::ring _netmap;
+    NetmapInfo _netmap;
     int netmap_dispatch();
 #endif
 
