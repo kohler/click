@@ -59,10 +59,6 @@
 # endif
 #endif
 
-#if FROMDEVICE_ALLOW_NETMAP
-# include <sys/mman.h>
-#endif
-
 CLICK_DECLS
 
 FromDevice::FromDevice()
@@ -462,61 +458,24 @@ FromDevice_get_packet(u_char* clientdata,
 CLICK_DECLS
 #endif
 
-#if FROMDEVICE_ALLOW_NETMAP
-int
-FromDevice::netmap_dispatch()
-{
-    int n = 0;
-    for (unsigned ri = _netmap.ring_begin; ri != _netmap.ring_end; ++ri) {
-	struct netmap_ring *ring = NETMAP_RXRING(_netmap.nifp, ri);
-	//click_chatter("netmap dispatch %s %u %u %u %u", _ifname.c_str(), ri, ring->cur, ring->reserved, ring->avail);
-
-	while (ring->reserved > 0 && NetmapInfo::refill(ring))
-	    /* click_chatter("Refilled") */;
-
-	if (ring->avail == 0)
-	    continue;
-
-	int nzcopy = (int) (ring->num_slots / 2) - (int) ring->reserved;
-
-	while (n != _burst && ring->avail > 0) {
-	    unsigned cur = ring->cur;
-	    unsigned buf_idx = ring->slot[cur].buf_idx;
-	    if (buf_idx < 2)
-		break;
-	    unsigned char *buf = (unsigned char *) NETMAP_BUF(ring, buf_idx);
-
-	    WritablePacket *p;
-	    if (nzcopy > 0) {
-		p = Packet::make(buf, ring->slot[cur].len, NetmapInfo::buffer_destructor);
-		++ring->reserved;
-		--nzcopy;
-	    } else {
-		p = Packet::make(_headroom, buf, ring->slot[cur].len, 0);
-		unsigned res1idx = NETMAP_RING_FIRST_RESERVED(ring);
-		ring->slot[res1idx].buf_idx = buf_idx;
-	    }
-	    ring->cur = NETMAP_RING_NEXT(ring, ring->cur);
-	    --ring->avail;
-	    ++n;
-
-	    emit_packet(p, 0, ring->ts);
-	}
-    }
-    return n;
-}
-#endif
 
 void
 FromDevice::selected(int, int)
 {
+    // netmap and pcap are essentially the same code, different
+    // dispatch function. This code is also in run_task()
+    // with fast_reschedule()
 #if FROMDEVICE_ALLOW_NETMAP
     if (_method == method_netmap) {
-	int r = netmap_dispatch();
+	// Read and push() at most one burst of packets.
+	int r = _netmap.dispatch(_burst,
+		reinterpret_cast<nm_cb_t>(FromDevice_get_packet), (u_char *) this);
 	if (r > 0) {
 	    _count += r;
 	    _task.reschedule();
-	}
+	} else if (r < 0 && ++_pcap_complaints < 5)
+	    ErrorHandler::default_handler()->error("%p{element}: %s",
+			this, "nm_dispatch failed");
     }
 #endif
 #if FROMDEVICE_ALLOW_PCAP
@@ -569,8 +528,14 @@ FromDevice::run_task(Task *)
     // Read and push() at most one burst of packets.
     int r = 0;
 # if FROMDEVICE_ALLOW_NETMAP
-    if (_method == method_netmap)
-	r = netmap_dispatch();
+    if (_method == method_netmap) {
+	// Read and push() at most one burst of packets.
+	r = _netmap.dispatch(_burst,
+		reinterpret_cast<nm_cb_t>(FromDevice_get_packet), (u_char *) this);
+	if (r < 0 && ++_pcap_complaints < 5)
+	    ErrorHandler::default_handler()->error("%p{element}: %s",
+			this, "nm_dispatch failed");
+    }
 # endif
 # if FROMDEVICE_ALLOW_PCAP
     if (_method == method_pcap) {

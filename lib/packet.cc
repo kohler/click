@@ -212,7 +212,7 @@ Packet::~Packet()
 	_data_packet->kill();
 # if CLICK_USERLEVEL
     else if (_head && _destructor)
-	_destructor(_head, _end - _head);
+	_destructor(_head, _end - _head, _destructor_arg);
     else
 	delete[] _head;
 # elif CLICK_BSDMODULE
@@ -552,7 +552,7 @@ Packet::make(uint32_t headroom, const void *data,
  * null. */
 WritablePacket *
 Packet::make(unsigned char *data, uint32_t length,
-	     buffer_destructor_type destructor)
+	     buffer_destructor_type destructor, void *arg)
 {
 # if HAVE_CLICK_PACKET_POOL
     WritablePacket *p = WritablePacket::pool_allocate(false);
@@ -564,6 +564,7 @@ Packet::make(unsigned char *data, uint32_t length,
 	p->_head = p->_data = data;
 	p->_tail = p->_end = data + length;
 	p->_destructor = destructor;
+	p->_destructor_arg = arg;
     }
     return p;
 }
@@ -735,7 +736,7 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
 	_data_packet->kill();
 # if CLICK_USERLEVEL
     else if (_destructor)
-	_destructor(old_head, old_end - old_head);
+	_destructor(old_head, old_end - old_head, _destructor_arg);
     else
 	delete[] old_head;
     _destructor = 0;

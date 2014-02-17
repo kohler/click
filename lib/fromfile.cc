@@ -118,7 +118,7 @@ FromFile::warning(ErrorHandler *errh, const char *format, ...) const
 
 #ifdef ALLOW_MMAP
 static void
-munmap_destructor(unsigned char *data, size_t amount)
+munmap_destructor(unsigned char *data, size_t amount, void *)
 {
     if (munmap((caddr_t)data, amount) < 0)
 	click_chatter("FromFile: munmap: %s", strerror(errno));
@@ -156,7 +156,7 @@ FromFile::read_buffer_mmap(ErrorHandler *errh)
     if (mmap_data == MAP_FAILED)
 	return error(errh, "mmap: %s", strerror(errno));
 
-    _data_packet = Packet::make((unsigned char *)mmap_data, _len, munmap_destructor);
+    _data_packet = Packet::make((unsigned char *)mmap_data, _len, munmap_destructor, 0);
     _buffer = _data_packet->data();
     _file_offset = _mmap_off;
     _mmap_off += _len;
