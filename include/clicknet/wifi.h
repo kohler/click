@@ -22,7 +22,8 @@ enum {
   WIFI_EXTRA_NO_SEQ		= (1<<5),
   WIFI_EXTRA_NO_TXF		= (1<<6),
   WIFI_EXTRA_DO_RTS_CTS		= (1<<7),
-  WIFI_EXTRA_DO_CTS		= (1<<8)
+  WIFI_EXTRA_DO_CTS		= (1<<8),
+  WIFI_EXTRA_TX_NOACK		= (1<<9)
 };
 
 
