@@ -78,10 +78,14 @@ Bypass::Visitor::visit(Element *e, bool isoutput, int port,
     if (!_applying) {
 	_e = e;
 	_port = port;
-    } else
+	return false;
+    } else if (Bypass *b = static_cast<Bypass *>(e->cast("Bypass"))) {
+	return (port == (b->_active ? 1 : 0 ));
+    } else {
 	// Just cheat.
 	const_cast<Element::Port &>(e->port(isoutput, port)).assign(isoutput, _e, _port);
-    return false;
+	return false;
+    }
 }
 
 void
