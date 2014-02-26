@@ -75,11 +75,12 @@ bool
 Bypass::Visitor::visit(Element *e, bool isoutput, int port,
 		       Element *, int, int)
 {
+    Bypass *b;
     if (!_applying) {
 	_e = e;
 	_port = port;
 	return false;
-    } else if (Bypass *b = static_cast<Bypass *>(e->cast("Bypass"))) {
+    } else if ((b = static_cast<Bypass *>(e->cast("Bypass"))) && !b->_inline) {
 	return (port == (b->_active ? 1 : 0 ));
     } else {
 	// Just cheat.
@@ -94,7 +95,8 @@ Bypass::fix()
     if (!_inline) {
 	bool direction = output_is_push(0);
 	Visitor v(this);
-	while (Bypass *b = static_cast<Bypass *>(v._e->cast("Bypass")))
+	Bypass *b;
+	while ((b = static_cast<Bypass *>(v._e->cast("Bypass"))) && !b->_inline)
 	    router()->visit(b, direction,
 			    b->_active ? 1 : 0, &v);
 	v._applying = true;
