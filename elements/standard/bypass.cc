@@ -43,6 +43,12 @@ Bypass::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("INLINE", _inline)
 	.complete() < 0)
 	return -1;
+
+    bool direction = output_is_push(0);
+    if (nports(direction) != 2)
+	return errh->error("must have two %s ports in %s context", direction ? "output" : "input",
+	    direction ? "push" : "pull");
+
     return 0;
 }
 
@@ -86,7 +92,7 @@ Bypass::fix()
 	Visitor v(this);
 	while (Bypass *b = static_cast<Bypass *>(v._e->cast("Bypass")))
 	    router()->visit(b, direction,
-			    b->_active ? b->nports(direction) - 1 : 0, &v);
+			    b->_active ? 1 : 0, &v);
 	v._applying = true;
 	router()->visit(this, !direction, 0, &v);
     }
