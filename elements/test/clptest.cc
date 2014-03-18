@@ -167,7 +167,9 @@ void clptest_errh(Clp_Parser *clp, const char *error) {
 }
 }
 
-#define CHECK(x) if (!(x)) errh->error("%s:%d: test `%s' failed", __FILE__, __LINE__, #x);
+#define CHECK(x) if (!(x)) errh->error("%s:%d: test %<%s%> failed", __FILE__, __LINE__, #x);
+#define CHECK_INTEQ(x, v) do { int val__ = (x); if (val__ != (v)) errh->error("%s:%d: test %<%s%> got %d, expected %d", __FILE__, __LINE__, #x, val__, (v)); } while (0)
+#define CHECK_STREQ(x, v) do { String val__ = (x); if (val__ != (v)) errh->error("%s:%d: test %<%s%> got %<%s%>, expected %<%s%>", __FILE__, __LINE__, #x, val__.c_str(), (v)); } while (0)
 #define CHECK_DATA(x, y, l) CHECK(memcmp((x), (y), (l)) == 0)
 #define nelem(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -184,9 +186,9 @@ CLPTest::initialize(ErrorHandler *errh)
     Clp_SetOptions(clp, nelem(options_x1), options_x1);
     Clp_SetArguments(clp, nelem(args_x1), args_x1);
     CHECK(sa.take_string() == "");
-    CHECK(Clp_Next(clp) == 1);
-    CHECK(Clp_Next(clp) == 2);
-    CHECK(Clp_Next(clp) == Clp_Done);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK_INTEQ(Clp_Next(clp), 2);
+    CHECK_INTEQ(Clp_Next(clp), Clp_Done);
 
     // Test 1b
     Clp_SetOptionChar(clp, '-', Clp_Short | Clp_Long);
@@ -196,127 +198,151 @@ CLPTest::initialize(ErrorHandler *errh)
     Clp_SetOptionChar(clp, '-', Clp_Short);
     Clp_SetOptions(clp, nelem(options_x2), options_x2);
     Clp_SetArguments(clp, nelem(args_x2), args_x2);
-    CHECK(sa.take_string() == "");
-    CHECK(Clp_Next(clp) == 2);
-    CHECK(Clp_Next(clp) == 1);
-    CHECK(Clp_Next(clp) == 3);
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "unrecognized option \342\200\230-b\342\200\231\n");
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "unrecognized option \342\200\230-\357\277\275\342\200\231\n");
-    CHECK(Clp_Next(clp) == 2);
-    CHECK(Clp_Next(clp) == 1);
-    CHECK(Clp_Next(clp) == Clp_Done);
+    CHECK_STREQ(sa.take_string(), "");
+    CHECK_INTEQ(Clp_Next(clp), 2);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK_INTEQ(Clp_Next(clp), 3);
+    CHECK_INTEQ(Clp_Next(clp), Clp_BadOption);
+    CHECK_STREQ(sa.take_string(), "unrecognized option \342\200\230-b\342\200\231\n");
+    CHECK_INTEQ(Clp_Next(clp), Clp_BadOption);
+    CHECK_STREQ(sa.take_string(), "unrecognized option \342\200\230-\357\277\275\342\200\231\n");
+    CHECK_INTEQ(Clp_Next(clp), 2);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK_INTEQ(Clp_Next(clp), Clp_Done);
 
     // Test 3
     Clp_SetOptions(clp, nelem(options_x3), options_x3);
     Clp_SetArguments(clp, nelem(args_x3), args_x3);
-    CHECK(sa.take_string() == "");
-    CHECK(Clp_Next(clp) == 1);
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "option \342\200\230--ab\342\200\231 is ambiguous\n(Possibilities are \342\200\230--abc\342\200\231, \342\200\230--abd\342\200\231, and \342\200\230--abde\342\200\231.)\n");
-    CHECK(Clp_Next(clp) == 2);
-    CHECK(Clp_Next(clp) == 3);
-    CHECK(Clp_Next(clp) == 4);
-    CHECK(Clp_Next(clp) == Clp_Done);
+    CHECK_STREQ(sa.take_string(), "");
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK_INTEQ(Clp_Next(clp), Clp_BadOption);
+    CHECK_STREQ(sa.take_string(), "option \342\200\230--ab\342\200\231 is ambiguous\n(Possibilities are \342\200\230--abc\342\200\231, \342\200\230--abd\342\200\231, and \342\200\230--abde\342\200\231.)\n");
+    CHECK_INTEQ(Clp_Next(clp), 2);
+    CHECK_INTEQ(Clp_Next(clp), 3);
+    CHECK_INTEQ(Clp_Next(clp), 4);
+    CHECK_INTEQ(Clp_Next(clp), Clp_Done);
 
     // Test 4
     Clp_SetOptions(clp, nelem(options_x4), options_x4);
     Clp_SetArguments(clp, nelem(args_x4), args_x4);
-    CHECK(sa.take_string() == "");
-    CHECK(Clp_Next(clp) == 1);
-    CHECK(Clp_Next(clp) == 2);
-    CHECK(Clp_Next(clp) == 1);
-    CHECK(Clp_Next(clp) == 2);
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "unrecognized option \342\200\230-b\342\200\231\n");
-    CHECK(Clp_Next(clp) == Clp_Done);
+    CHECK_STREQ(sa.take_string(), "");
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK_INTEQ(Clp_Next(clp), 2);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK_INTEQ(Clp_Next(clp), 2);
+    CHECK_INTEQ(Clp_Next(clp), Clp_BadOption);
+    CHECK_STREQ(sa.take_string(), "unrecognized option \342\200\230-b\342\200\231\n");
+    CHECK_INTEQ(Clp_Next(clp), Clp_Done);
 
     // Test 4b
     Clp_SetOptionChar(clp, '-', Clp_Long | Clp_Short);
     Clp_SetArguments(clp, nelem(args_x4), args_x4);
-    CHECK(sa.take_string() == "");
-    CHECK(Clp_Next(clp) == 1);
-    CHECK(Clp_Next(clp) == 2);
-    CHECK(Clp_Next(clp) == 1);
-    CHECK(Clp_Next(clp) == 1);
-    CHECK(Clp_Next(clp) == Clp_Done);
+    CHECK_STREQ(sa.take_string(), "");
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK_INTEQ(Clp_Next(clp), 2);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK_INTEQ(Clp_Next(clp), Clp_Done);
 
     // Test 5
     Clp_SetOptionChar(clp, '-', Clp_Short);
     Clp_SetOptions(clp, nelem(options_x5), options_x5);
     Clp_SetArguments(clp, nelem(args_x5), args_x5);
-    CHECK(sa.take_string() == "");
-    CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->val.i == 1);
-    CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->val.i == 2);
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "unrecognized option \342\200\230--a3\342\200\231\n");
-    CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->val.i == 4);
-    CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->val.i == 5);
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "\342\200\230-a\342\200\231 expects an integer, not \342\200\230x\342\200\231\n");
-    CHECK(Clp_Next(clp) == 2 && clp->have_val);
-    CHECK(1 && clp->have_val && clp->val.i == 1);
-    CHECK(Clp_Next(clp) == 2 && !clp->have_val);
-    CHECK(Clp_Next(clp) == Clp_NotOption && String(clp->vstr) == "2");
-    CHECK(Clp_Next(clp) == 2 && clp->have_val && clp->val.i == 3);
-    CHECK(Clp_Next(clp) == 2 && !clp->have_val);
-    CHECK(Clp_Next(clp) == Clp_NotOption && String(clp->vstr) == "4");
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "unrecognized option \342\200\230--c\342\200\231\n");
-    CHECK(Clp_Next(clp) == 3 && clp->negated);
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "unrecognized option \342\200\230-c\342\200\231\n");
-    CHECK(Clp_Next(clp) == Clp_Done);
+    CHECK_STREQ(sa.take_string(), "");
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->have_val && clp->val.i == 1);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->have_val && clp->val.i == 2);
+    CHECK_INTEQ(Clp_Next(clp), Clp_BadOption);
+    CHECK_STREQ(sa.take_string(), "unrecognized option \342\200\230--a3\342\200\231\n");
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->have_val && clp->val.i == 4);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->have_val && clp->val.i == 5);
+    CHECK_INTEQ(Clp_Next(clp), Clp_BadOption);
+    CHECK_STREQ(sa.take_string(), "\342\200\230-a\342\200\231 expects an integer, not \342\200\230x\342\200\231\n");
+    CHECK_INTEQ(Clp_Next(clp), 2);
+    CHECK(clp->have_val && clp->val.i == 1);
+    CHECK_INTEQ(Clp_Next(clp), 2);
+    CHECK(!clp->have_val);
+    CHECK_INTEQ(Clp_Next(clp), Clp_NotOption);
+    CHECK(String(clp->vstr) == "2");
+    CHECK_INTEQ(Clp_Next(clp), 2);
+    CHECK(clp->have_val && clp->val.i == 3);
+    CHECK_INTEQ(Clp_Next(clp), 2);
+    CHECK(!clp->have_val);
+    CHECK_INTEQ(Clp_Next(clp), Clp_NotOption);
+    CHECK(String(clp->vstr) == "4");
+    CHECK_INTEQ(Clp_Next(clp), Clp_BadOption);
+    CHECK_STREQ(sa.take_string(), "unrecognized option \342\200\230--c\342\200\231\n");
+    CHECK_INTEQ(Clp_Next(clp), 3);
+    CHECK(clp->negated);
+    CHECK_INTEQ(Clp_Next(clp), 3);
+    CHECK(clp->negated);
+    CHECK_INTEQ(Clp_Next(clp), Clp_Done);
 
     // Test 6
     Clp_SetOptionChar(clp, '+', Clp_LongNegated);
     Clp_SetOptions(clp, nelem(options_x6), options_x6);
     Clp_SetArguments(clp, nelem(args_x6), args_x6);
-    CHECK(sa.take_string() == "");
-    CHECK(Clp_Next(clp) == 1 && !clp->negated && clp->have_val && clp->val.i == 1);
-    CHECK(Clp_Next(clp) == 1 && clp->negated && !clp->have_val);
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "\342\200\230--no-art\342\200\231 can\342\200\231t take an argument\n");
-    CHECK(Clp_Next(clp) == 1 && clp->negated && !clp->have_val);
-    CHECK(Clp_Next(clp) == 1 && clp->negated && !clp->have_val);
-    CHECK(Clp_Next(clp) == 2 && !clp->negated && clp->have_val && clp->val.i == 2);
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "unrecognized option \342\200\230+b\342\200\231\n");
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "unrecognized option \342\200\230--no-b\342\200\231\n");
-    CHECK(Clp_Next(clp) == Clp_Done);
+    CHECK_STREQ(sa.take_string(), "");
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(!clp->negated && clp->have_val && clp->val.i == 1);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->negated && !clp->have_val);
+    CHECK_INTEQ(Clp_Next(clp), Clp_BadOption);
+    CHECK_STREQ(sa.take_string(), "\342\200\230--no-art\342\200\231 can\342\200\231t take an argument\n");
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->negated && !clp->have_val);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->negated && !clp->have_val);
+    CHECK_INTEQ(Clp_Next(clp), 2);
+    CHECK(!clp->negated && clp->have_val && clp->val.i == 2);
+    CHECK_INTEQ(Clp_Next(clp), Clp_BadOption);
+    CHECK_STREQ(sa.take_string(), "unrecognized option \342\200\230+b\342\200\231\n");
+    CHECK_INTEQ(Clp_Next(clp), Clp_BadOption);
+    CHECK_STREQ(sa.take_string(), "unrecognized option \342\200\230--no-b\342\200\231\n");
+    CHECK_INTEQ(Clp_Next(clp), Clp_Done);
 
     // Test 7
     Clp_SetOptions(clp, nelem(options_x7), options_x7);
     Clp_SetArguments(clp, nelem(args_x7), args_x7);
-    CHECK(sa.take_string() == "");
-    CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->vstr == String("--ar"));
-    CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->vstr == String("ar"));
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "\342\200\230-a\342\200\231 requires a non-option argument\n");
-    CHECK(Clp_Next(clp) == 2);
-    CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->vstr == String("--ar"));
-    CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->vstr == String("ar"));
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "\342\200\230--art\342\200\231 requires a non-option argument\n");
-    CHECK(Clp_Next(clp) == 3);
-    CHECK(Clp_Next(clp) == Clp_Done);
+    CHECK_STREQ(sa.take_string(), "");
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->have_val && clp->vstr == String("--ar"));
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->have_val && clp->vstr == String("ar"));
+    CHECK_INTEQ(Clp_Next(clp), Clp_BadOption);
+    CHECK_STREQ(sa.take_string(), "\342\200\230-a\342\200\231 requires a non-option argument\n");
+    CHECK_INTEQ(Clp_Next(clp), 2);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->have_val && clp->vstr == String("--ar"));
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->have_val && clp->vstr == String("ar"));
+    CHECK_INTEQ(Clp_Next(clp), Clp_BadOption);
+    CHECK_STREQ(sa.take_string(), "\342\200\230--art\342\200\231 requires a non-option argument\n");
+    CHECK_INTEQ(Clp_Next(clp), 3);
+    CHECK_INTEQ(Clp_Next(clp), Clp_Done);
 
     // Test 8
     Clp_AddStringListType(clp, Clp_ValAnimal, Clp_AllowNumbers,
 			  "cat", 1, "cattle", 2, "dog", 3, (const char *) 0);
     Clp_SetOptions(clp, nelem(options_x8), options_x8);
     Clp_SetArguments(clp, nelem(args_x8), args_x8);
-    CHECK(sa.take_string() == "");
-    CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->val.i == 1);
-    CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->val.i == 2);
-    CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->val.i == 3);
-    CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->val.i == 3);
-    CHECK(Clp_Next(clp) == Clp_BadOption);
-    CHECK(sa.take_string() == "ambiguous value \342\200\230c\342\200\231 for option \342\200\230--animal\342\200\231\n(Possibilities are \342\200\230cat\342\200\231 and \342\200\230cattle\342\200\231.)\n");
-    CHECK(Clp_Next(clp) == 1 && clp->have_val && clp->val.i == 4);
-    CHECK(Clp_Next(clp) == Clp_Done);
+    CHECK_STREQ(sa.take_string(), "");
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->have_val && clp->val.i == 1);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->have_val && clp->val.i == 2);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->have_val && clp->val.i == 3);
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->have_val && clp->val.i == 3);
+    CHECK_INTEQ(Clp_Next(clp), Clp_BadOption);
+    CHECK_STREQ(sa.take_string(), "option \342\200\230--animal=c\342\200\231 is ambiguous\n(Possibilities are \342\200\230cat\342\200\231 and \342\200\230cattle\342\200\231.)\n");
+    CHECK_INTEQ(Clp_Next(clp), 1);
+    CHECK(clp->have_val && clp->val.i == 4);
+    CHECK_INTEQ(Clp_Next(clp), Clp_Done);
 
     Clp_DeleteParser(clp);
     if (!errh->nerrors()) {
