@@ -582,18 +582,19 @@ path_find_file_2(const String &filename, const String &path,
     if (subdir && subdir.back() != '/')
 	subdir += "/";
 
-    const char *begin = path.begin();
-    const char *end = path.end();
+    const char* first = path.begin();
+    const char* last = path.end();
     int before_size = results.size();
 
-    do {
-	String dir = path.substring(begin, find(begin, end, ':'));
-	begin = dir.end() + 1;
+    while (1) {
+        const char* colon = find(first, last, ':');
+	String dir = path.substring(first, colon);
 
 	if (!dir && default_path) {
 	    // look in default path
 	    if (path_find_file_2(filename, default_path, "", 0, results, exit_early) && exit_early)
 		return true;
+            default_path = "";
 
 	} else if (dir) {
 	    if (dir.back() != '/')
@@ -617,7 +618,11 @@ path_find_file_2(const String &filename, const String &path,
 		    return true;
 	    }
 	}
-    } while (begin < end);
+
+        if (colon == last)
+            break;
+        first = colon + 1;
+    }
 
     return results.size() == before_size;
 }
