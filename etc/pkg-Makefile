@@ -106,7 +106,7 @@ uninstall-man: always elementmap-$(package).xml
 	$(clickbuild_bindir)/click-elem2man -L -m $(DESTDIR)$(mandir) -P $(package) -e $(clickbuild_datadir)/elementmap.xml -u elementmap-$(package).xml
 
 clean: always
-	@for i in $(DRIVERS); do $(MAKE) CLICK_PACKAGE_MAKING=$$i clean; done
+	@for i in userlevel linuxmodule bsdmodule; do $(MAKE) CLICK_PACKAGE_MAKING=$$i clean; done
 	-rm -f elementmap-$(package).xml conftest.*
 distclean: clean
 	-rm -f Makefile config.h config.status config.cache config.log
