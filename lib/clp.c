@@ -1114,13 +1114,15 @@ parse_int(Clp_Parser* clp, const char* arg, int complain, void* user_data)
         clp->val.u = (unsigned) clp->val.ul;
     if (*arg != 0 && *val == 0)
 	return 1;
-    else if (complain) {
-	const char *message = user_data != 0
-	    ? "%<%O%> expects a nonnegative integer, not %<%s%>"
-	    : "%<%O%> expects an integer, not %<%s%>";
-	return Clp_OptionError(clp, message, arg);
-    } else
-	return 0;
+    else {
+        if (complain) {
+            const char *message = type & 1
+                ? "%<%O%> expects a nonnegative integer, not %<%s%>"
+                : "%<%O%> expects an integer, not %<%s%>";
+            Clp_OptionError(clp, message, arg);
+        }
+        return 0;
+    }
 }
 
 static int
@@ -1134,10 +1136,11 @@ parse_double(Clp_Parser *clp, const char *arg, int complain, void *user_data)
 	clp->val.d = strtod(arg, (char **) &val);
     if (*arg != 0 && *val == 0)
 	return 1;
-    else if (complain)
-	return Clp_OptionError(clp, "%<%O%> expects a real number, not %<%s%>", arg);
-    else
+    else {
+        if (complain)
+            Clp_OptionError(clp, "%<%O%> expects a real number, not %<%s%>", arg);
 	return 0;
+    }
 }
 
 static int
