@@ -537,7 +537,8 @@ remove_file_on_exit(const String &file)
 	    click_signal(SIGINT, signal_handler, false);
 	    click_signal(SIGTERM, signal_handler, false);
 	    click_signal(SIGPIPE, signal_handler, false);
-	    atexit(atexit_remover);
+            if (!getenv("CLICK_PRESERVE_TEMPORARIES"))
+                atexit(atexit_remover);
 	}
 	if (char *x = new char[file.length() + 1]) {
 	    memcpy(x, file.data(), file.length());
