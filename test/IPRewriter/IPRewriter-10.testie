@@ -20,14 +20,14 @@ s :: Script(TYPE PASSIVE,
   print rw1.patterns)
 DriverManager(pause,
 	print >M rw1.tcp_table,
-	print >RM rw1.lookup 1.0.0.2 1024 1.0.0.3 1025,
-	print >>RM rw1.lookup 2.115.2.2 2 1.0.0.2 1024,
-	print >>RM rw1.lookup 2.115.2.2 2 1.0.0.3 1024,
-	print >>RM rw1.lookup 2.115.2.2 2 1.0.0.4 1024,
-	print >>RM rw1.lookup 2.115.2.2 2 1.0.0.4 1025,
-	print >>RM rw1.lookup 53.1.1.1 1 2.115.2.2 2,
-	print >>RM rw1.lookup 53.1.1.2 1 2.115.2.2 2,
-	print >>RM rw1.lookup 53.1.1.4 1 2.115.2.2 2,
+	print >RM rw1.tcp_lookup 1.0.0.2 1024 1.0.0.3 1025,
+	print >>RM rw1.tcp_lookup 2.115.2.2 2 1.0.0.2 1024,
+	print >>RM rw1.tcp_lookup 2.115.2.2 2 1.0.0.3 1024,
+	print >>RM rw1.tcp_lookup 2.115.2.2 2 1.0.0.4 1024,
+	print >>RM rw1.tcp_lookup 2.115.2.2 2 1.0.0.4 1025,
+	print >>RM rw1.tcp_lookup 53.1.1.1 1 2.115.2.2 2,
+	print >>RM rw1.tcp_lookup 53.1.1.2 1 2.115.2.2 2,
+	print >>RM rw1.tcp_lookup 53.1.1.4 1 2.115.2.2 2,
 	stop)
 "
 

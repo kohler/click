@@ -80,7 +80,7 @@ packets to the rewritten destination address. Default is true.
 Returns a human-readable description of the TCPRewriter's current mapping
 table.
 
-=h lookup
+=h lookup read
 
 Takes a flow as a space-separated
 

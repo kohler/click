@@ -204,6 +204,15 @@ relevant output port is starred.
 Returns a human-readable description of the IPRewriter's current UDP mapping
 table.
 
+=h tcp_lookup read
+
+Takes a TCP flow as a space-separated
+
+    saddr sport daddr dport
+
+and attempts to find a forward mapping for that flow. If found, rewrites the
+flow and returns in the same format.  Otherwise, returns nothing.
+
 =a TCPRewriter, IPAddrRewriter, IPAddrPairRewriter, IPRewriterPatterns,
 RoundRobinIPMapper, FTPPortMapper, ICMPRewriter, ICMPPingRewriter */
 
