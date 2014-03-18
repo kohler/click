@@ -1211,7 +1211,7 @@ parse_string_list(Clp_Parser *clp, const char *arg, int complain, void *user_dat
 	}
 	return ambiguity_error
 	    (clp, ambiguous, ambiguous_values, sl->items, sl->iopt,
-	     "", "option %<%O%> value %<%s%> is %s", arg, complaint);
+	     "", "option %<%V%> is %s", complaint);
     } else
 	return 0;
 }
@@ -2130,7 +2130,8 @@ Clp_vbsprintf(Clp_Parser *clp, Clp_BuildString *bs,
 	      break;
 	  }
 
-        case 'O': {
+        case 'O':
+        case 'V': {
             int optno = cli->current_option;
             const Clp_Option *opt = &cli->opt[optno];
             if (optno < 0)
@@ -2150,6 +2151,13 @@ Clp_vbsprintf(Clp_Parser *clp, Clp_BuildString *bs,
             } else {
                 append_build_string(bs, cli->option_chars, -1);
                 append_build_string(bs, opt->long_name + cli->iopt[optno].ilongoff, -1);
+            }
+            if (optno >= 0 && clp->have_val && *percent == 'V') {
+                if (cli->current_short && !cli->iopt[optno].ioptional)
+                    append_build_string(bs, " ", 1);
+                else if (!cli->current_short)
+                    append_build_string(bs, "=", 1);
+                append_build_string(bs, clp->vstr, -1);
             }
             break;
         }
@@ -2236,6 +2244,9 @@ do_error(Clp_Parser *clp, Clp_BuildString *bs)
  * <dt><tt>%</tt><tt>O</tt></dt>
  * <dd>The current option.  No values are read from the argument list; the
  * current option is defined in the Clp_Parser object itself.</dd>
+ * <dt><tt>%</tt><tt>V</tt></dt>
+ * <dd>Like <tt>%</tt><tt>O</tt>, but also includes the current value,
+ * if any.</dd>
  * <dt><tt>%%</tt></dt>
  * <dd>Prints a percent character.</dd>
  * <dt><tt>%</tt><tt>&lt;</tt></dt>
