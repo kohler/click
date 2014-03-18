@@ -8,7 +8,7 @@
 # Copyright (c) 2001-2003 International Computer Science Institute
 # Copyright (c) 2008 Meraki, Inc.
 # Copyright (c) 2004-2011 Regents of the University of California
-# Copyright (c) 2000-2013 Eddie Kohler
+# Copyright (c) 2000-2014 Eddie Kohler
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -1088,10 +1088,34 @@ provides_usage () {
     exit 1
 }
 
+default_elementmap_provisions () {
+    e=
+    test -f "${clickbuild_clickdatadir}/elementmap.xml" && e="${clickbuild_clickdatadir}/elementmap.xml"
+
+    oldprefix="$clickbuild_prefix"
+    path="$CLICKPATH"
+    while [ -z "$e" -a -n "$path" ]; do
+        clickbuild_prefix="`echo "$path" | sed 's/^\([^:]*\).*$/\1/'`"
+        path="`echo "$path" | sed 's/^[^:]*:*//'`"
+        if [ -n "$clickbuild_prefix" -a -f "@clickbuild_clickdatadir@/elementmap.xml" ]; then
+            e="@clickbuild_clickdatadir@/elementmap.xml"
+        elif [ -n "$clickbuild_prefix" -a -f "$clickbuild_prefix/elementmap.xml" ]; then
+            e="$clickbuild_prefix/elementmap.xml"
+        fi
+    done
+    clickbuild_prefix="$oldprefix"
+
+    if [ -n "$e" ]; then
+        elementmap_provisions "$e"
+    else
+        echo "click-buildtool: can't find default elementmap" 1>&2
+    fi
+}
+
 provides () {
     provisions="$default_provisions
 $driver_provisions
-"`elementmap_provisions ${clickbuild_clickdatadir}/elementmap.xml`
+"`default_elementmap_provisions`
     requirements=""
     stdin=n; query=n; print=n
     while [ x"$1" != x ]; do
@@ -1567,11 +1591,7 @@ case $1 in
   --vers|--versi|--versio|--version)
      cat <<'EOF'
 click-buildtool (Click) @CLICK_VERSION@
-Copyright (c) 2000-2001 Massachusetts Institute of Technology
-Copyright (c) 2000-2004 Mazu Networks, Inc.
-Copyright (c) 2001-2003 International Computer Science Institute
-Copyright (c) 2004-2007 Regents of the University of California
-Copyright (c) 2000-2012 Eddie Kohler
+Copyright (c) 2000-2014 Eddie Kohler and others
 This is free software; see the source for copying conditions.
 There is NO warranty, not even for merchantability or fitness for a
 particular purpose.

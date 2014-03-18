@@ -189,6 +189,15 @@ distclean:
 	-rm -f etc/pkg-config.mk
 	-rm -f elementmap.xml conftest.* installch
 
+check: userlevel tools elementmap.xml
+	$(top_srcdir)/test/testie -p $(top_builddir) -p $(top_builddir)/userlevel \
+		-p $(top_builddir)/tools/click-align \
+		-p $(top_builddir)/tools/click-fastclassifier \
+		-p $(top_builddir)/tools/click-flatten \
+		-p $(top_builddir)/tools/click-mkmindriver \
+		-p $(top_builddir)/tools/click-xform \
+		-p $(top_srcdir)/test \
+		CLICKPATH="`cd $(top_builddir); pwd`" $(top_srcdir)/test
 
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -246,4 +255,4 @@ distdir: $(srcdir)/configure
 	install install-doc install-lib install-man install-local install-include install-local-include $(INSTALL_TARGETS) \
 	clean clean-doc clean-local $(CLEAN_TARGETS) distclean \
 	uninstall uninstall-local uninstall-local-include \
-	dist distdir
+	dist distdir check
