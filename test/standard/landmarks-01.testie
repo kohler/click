@@ -17,5 +17,5 @@ y -> [1]x;
 x :: Idle;
 
 %expect stderr
-B:1: redeclaration of element 'x'
+{{\./|}}B:1: redeclaration of element 'x'
 A:2: element 'x' previously declared here
