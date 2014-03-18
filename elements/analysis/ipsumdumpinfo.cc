@@ -281,7 +281,7 @@ void outb(const PacketDesc& d, bool, const FieldWriter *f)
       }
       case B_6PTR: {
 	  char* c = d.sa->extend(6);
-	  memcpy(c, d.vptr, 6);
+	  memcpy(c, d.vptr[0], 6);
 	  break;
       }
       case B_8: {
