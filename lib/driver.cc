@@ -228,9 +228,6 @@ click_compile_archive_file(const Vector<ArchiveElement> &archive,
 
     // write .cc file
     String filename = ae->name;
-    int rightdot = filename.find_right('.');
-    if (rightdot >= 0 && filename.substring(0, rightdot) == package)
-	filename = package + "_" + filename.substring(rightdot);
     String filepath = *tmpdir + filename;
     FILE *f = fopen(filepath.c_str(), "w");
     if (!f) {

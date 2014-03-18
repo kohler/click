@@ -1458,7 +1458,7 @@ $1"; shift 1
 	echo "Unknown driver $driver" 1>&2
 	exit 1
     fi
-    if test -n "$L"; then osuffix=".$L.o"; else osuffix=".o"; fi
+    if test -n "$L"; then osuffix=".${L}o"; else osuffix=".o"; fi
 
     if test -n "$dir"; then cd "$dir"; fi
     echo > ${pkg}-${L}elem.conf

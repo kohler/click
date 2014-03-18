@@ -59,7 +59,6 @@ CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
 COMPILE = $(CC) $(CPPFLAGS) $(CFLAGS) $(PACKAGE_CFLAGS) $(DEFS) $(INCLUDES) $(DEPCFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
-FIXDEP = @-sed 's/\.o:/.b.o:/' < $*.d > $*.b.d; /bin/rm -f $*.d
 
 ifeq ($(V),1)
 ccompile = $(COMPILE) $(1)
@@ -73,10 +72,8 @@ endif
 
 %.b.o: %.c
 	$(call ccompile,-c $< -o $@,CC)
-	$(FIXDEP)
 %.b.o: %.cc
 	$(call cxxcompile,-c $< -o $@,CXX)
-	$(FIXDEP)
 %.b.ii: %.cc
 	$(call cxxcompile,-E $< > $@,CXXCPP)
 

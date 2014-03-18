@@ -52,7 +52,6 @@ CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
 COMPILE = $(CC) $(CPPFLAGS) $(CFLAGS) $(PACKAGE_CFLAGS) $(DEFS) $(INCLUDES)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
-FIXDEP = @-sed 's/\.o:/.u.o:/' < $*.d > $*.u.d; /bin/rm -f $*.d
 
 ifeq ($(V),1)
 ccompile = $(COMPILE) $(DEPCFLAGS) $(1)
@@ -70,10 +69,8 @@ endif
 
 %.u.o: %.c
 	$(call ccompile,-c $< -o $@,CC)
-	$(FIXDEP)
 %.u.o: %.cc
 	$(call cxxcompile,-c $< -o $@,CXX)
-	$(FIXDEP)
 %.u.ii: %.cc
 	$(call cxxcompile_nodep,-E $< > $@,CXXCPP)
 
@@ -84,7 +81,7 @@ endif
 OBJS = $(ELEMENT_OBJS) $(PACKAGE_OBJS)
 
 $(package).uo: $(clickbuild_datadir)/pkg-userlevel.mk $(OBJS) $(PACKAGE_DEPS)
-	$(CXXLINK) -o $(package).uo $(OBJS) $(ELEMENT_LIBS) $(PACKAGE_LIBS)
+	$(CXXLINK) $(OBJS) $(ELEMENT_LIBS) $(PACKAGE_LIBS)
 	$(STRIP_UPACKAGE) $(package).uo
 
 ifdef MINDRIVER
