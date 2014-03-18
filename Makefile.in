@@ -197,7 +197,7 @@ check: userlevel tools elementmap.xml
 		-p $(top_builddir)/tools/click-mkmindriver \
 		-p $(top_builddir)/tools/click-xform \
 		-p $(top_srcdir)/test \
-		CLICKPATH="`cd $(top_builddir); pwd`" $(top_srcdir)/test
+		CLICKPATH="`cd $(top_builddir); pwd`:" $(top_srcdir)/test
 
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
