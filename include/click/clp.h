@@ -8,18 +8,25 @@ extern "C" {
 /* clp.h - Public interface to CLP.
  * This file is part of CLP, the command line parser package.
  *
- * Copyright (c) 1997-2013 Eddie Kohler, ekohler@gmail.com
+ * Copyright (c) 1997-2014 Eddie Kohler, ekohler@gmail.com
+ *
+ * CLP is free software. It is distributed under the GNU General Public
+ * License, Version 2, or, alternatively and at your discretion, under the
+ * more permissive (BSD-like) Click LICENSE file as described below.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, subject to the conditions
- * listed in the Click LICENSE file, which is available in full at
- * http://www.pdos.lcs.mit.edu/click/license.html. The conditions include: you
- * must preserve this copyright notice, and you cannot mention the copyright
- * holders in advertising related to the Software without their permission.
- * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
- * notice is a summary of the Click LICENSE file; the license in that file is
- * legally binding. */
+ * copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, subject to the
+ * conditions listed in the Click LICENSE file, which is available in full at
+ * http://github.com/kohler/click/blob/master/LICENSE. The conditions
+ * include: you must preserve this copyright notice, and you cannot mention
+ * the copyright holders in advertising related to the Software without
+ * their permission. The Software is provided WITHOUT ANY WARRANTY, EXPRESS
+ * OR IMPLIED. This notice is a summary of the Click LICENSE file; the
+ * license in that file is binding. */
+
+#include <stdio.h>
+#include <stdarg.h>
 
 typedef struct Clp_Option Clp_Option;
 typedef struct Clp_Parser Clp_Parser;
@@ -65,16 +72,20 @@ struct Clp_Option {
 
 		Accepts an optional "+" or "-" sign, followed by one or more
 		digits.  The digits may be include a "0x" or "0X" prefix, for
-		a hexidecimal number, or a "0" prefix, for an octal number;
+		a hexadecimal number, or a "0" prefix, for an octal number;
 		otherwise it is decimal. */
 #define Clp_ValUnsigned		5	/**< @brief Option value is an
 					     unsigned int.
 
 		Accepts an optional "+" sign, followed by one or more
 		digits.  The digits may be include a "0x" or "0X" prefix, for
-		a hexidecimal number, or a "0" prefix, for an octal number;
+		a hexadecimal number, or a "0" prefix, for an octal number;
 		otherwise it is decimal. */
-#define Clp_ValDouble		6	/**< @brief Option value is a
+#define Clp_ValLong             6       /**< @brief Option value is a
+                                             signed long. */
+#define Clp_ValUnsignedLong     7       /**< @brief Option value is an
+                                             unsigned long. */
+#define Clp_ValDouble		8	/**< @brief Option value is a
 					     double.
 		Accepts a real number as defined by strtod(). */
 #define Clp_ValFirstUser	10	/**< @brief Value types >=
@@ -176,6 +187,8 @@ struct Clp_Parser {
     union {
 	int i;
 	unsigned u;
+        long l;
+        unsigned long ul;
 	double d;
 	const char *s;
 	void *pv;
@@ -253,9 +266,11 @@ int Clp_AddType(Clp_Parser *clp, int val_type, int flags,
 
 
 #define Clp_AllowNumbers	(1<<0)	/**< @brief String list flag: allow
-					   explicit numbers.
+					     explicit numbers.
 
 		See Clp_AddStringListType() and Clp_AddStringListTypeVec(). */
+#define Clp_StringListLong      (1<<1)  /**< @brief String list flag: values
+                                             have long type. */
 
 /** @brief Define a new string list value type for @a clp. */
 int Clp_AddStringListTypeVec(Clp_Parser *clp, int val_type, int flags,
@@ -290,11 +305,27 @@ void Clp_RestoreParser(Clp_Parser *clp, const Clp_ParserState *state);
 /** @brief Report a parser error. */
 int Clp_OptionError(Clp_Parser *clp, const char *format, ...);
 
+/** @brief Format a message. */
+int Clp_vsnprintf(Clp_Parser* clp, char* str, size_t size,
+                  const char* format, va_list val);
+
+/** @brief Print a message. */
+int Clp_fprintf(Clp_Parser* clp, FILE* f, const char* format, ...);
+
+/** @brief Print a message. */
+int Clp_vfprintf(Clp_Parser* clp, FILE* f, const char* format, va_list val);
+
 /** @brief Extract the current option as a string. */
 int Clp_CurOptionNameBuf(Clp_Parser *clp, char *buf, int len);
 
 /** @brief Extract the current option as a string. */
 const char *Clp_CurOptionName(Clp_Parser *clp);
+
+/** @brief Test if the current option had long name @a name. */
+int Clp_IsLong(Clp_Parser *clp, const char *long_name);
+
+/** @brief Test if the current option had short name @a name. */
+int Clp_IsShort(Clp_Parser *clp, int short_name);
 
 #undef CLP_SENTINEL
 #ifdef __cplusplus
