@@ -11,6 +11,7 @@ config.h
 config.log
 config.mk
 config.status
+configure.lineno
 depcomp
 elementmap
 elementmap.xml
