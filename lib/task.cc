@@ -251,19 +251,17 @@ Task::cleanup()
 void
 Task::true_reschedule()
 {
-    bool done = false;
     RouterThread *thread = _thread;
     if (unlikely(thread == 0 || thread->thread_id() < 0))
-	done = true;
-    else if (thread->current_thread_is_running()) {
+	return;
+    if (thread->current_thread_is_running()) {
 	Router *router = _owner->router();
 	if (router->_running >= Router::RUNNING_BACKGROUND) {
 	    fast_schedule();
-	    done = true;
+	    return;
 	}
     }
-    if (!done)
-	add_pending();
+    add_pending();
 }
 
 void
