@@ -27,6 +27,16 @@ isx :: InfiniteSource(LIMIT 1, ACTIVE false)
      loopbypass [1] -> Null -> [1] loopbypass )
 -> Discard;
 
+isy :: InfiniteSource(LIMIT 1, ACTIVE false)
+-> unitbypass1 :: Bypass(ACTIVE false)
+-> unitbypass2 :: Bypass(ACTIVE true)
+-> Discard;
+
+isz :: InfiniteSource(LIMIT 1, ACTIVE false)
+-> unitbypass1b :: Bypass(ACTIVE false)
+-> unitbypass2b :: Bypass(ACTIVE true)
+-> PullNull -> Discard;
+
 try_order :: Script(TYPE PASSIVE,
     // first negate so that we end up doing something
     write $1.active $(not $2),

@@ -56,13 +56,13 @@ Bypass::initialize(ErrorHandler *)
 void
 Bypass::push(int port, Packet *p)
 {
-    checked_output_push(_active && !port, p);
+    output(_active && !port && noutputs() > 1).push(p);
 }
 
 Packet *
 Bypass::pull(int port)
 {
-    return checked_input_pull(_active && !port);
+    return input(_active && !port && ninputs() > 1).pull();
 }
 
 Bypass::Locator::Locator(bool active)
@@ -76,9 +76,8 @@ Bypass::Locator::visit(Element* e, bool isoutput, int port,
     if (from_port != _port)
         return false;
     if (Bypass* b = static_cast<Bypass*>(e->cast("Bypass")))
-        if (!b->_inline
-            && (port == 1 || !b->_active || b->nports(!isoutput) > 1)) {
-            _port = b->_active && port == 0;
+        if (!b->_inline) {
+            _port = b->_active && port == 0 && b->nports(!isoutput) > 1;
             return true;
         }
     _e = e;
@@ -107,7 +106,7 @@ Bypass::Assigner::visit(Element* e, bool isoutput, int port,
     if (Bypass* b = static_cast<Bypass*>(e->cast("Bypass")))
         if (!b->_inline) {
             _interesting.push_back(b->eindex());
-            _interesting.push_back((b->_active == port ? 1 : 0)
+            _interesting.push_back((b->_active == port || b->nports(isoutput) == 1 ? 1 : 0)
                                    | (port == 0 ? 2 : 0));
             return true;
         }
