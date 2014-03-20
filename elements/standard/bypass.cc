@@ -65,16 +65,55 @@ Bypass::pull(int port)
     return checked_input_pull(_active && !port);
 }
 
+Bypass::Locator::Locator(bool active)
+    : _e(0), _port(active) {
+}
+
 bool
-Bypass::Visitor::visit(Element *e, bool isoutput, int port,
-		       Element *, int, int)
+Bypass::Locator::visit(Element* e, bool isoutput, int port,
+                       Element*, int from_port, int)
 {
-    if (!_applying) {
-	_e = e;
-	_port = port;
-    } else
-	// Just cheat.
-	const_cast<Element::Port &>(e->port(isoutput, port)).assign(isoutput, _e, _port);
+    if (from_port != _port)
+        return false;
+    if (Bypass* b = static_cast<Bypass*>(e->cast("Bypass")))
+        if (!b->_inline
+            && (port == 1 || !b->_active || b->nports(!isoutput) > 1)) {
+            _port = b->_active && port == 0;
+            return true;
+        }
+    _e = e;
+    _port = port;
+    return false;
+}
+
+Bypass::Assigner::Assigner(Element* e, int port)
+    : _e(e), _port(port) {
+}
+
+bool
+Bypass::Assigner::visit(Element* e, bool isoutput, int port,
+                        Element* from_e, int from_port, int)
+{
+    if (_interesting.empty()) {
+        _interesting.push_back(from_e->eindex());
+        _interesting.push_back(3);
+    }
+    for (int i = 0; i != _interesting.size(); i += 2)
+        if (_interesting[i] == from_e->eindex()
+            && (_interesting[i+1] & (1 << from_port)))
+            goto found;
+    return false;
+ found:
+    if (Bypass* b = static_cast<Bypass*>(e->cast("Bypass")))
+        if (!b->_inline) {
+            _interesting.push_back(b->eindex());
+            _interesting.push_back((b->_active == port ? 1 : 0)
+                                   | (port == 0 ? 2 : 0));
+            return true;
+        }
+    // Just cheat.
+    //click_chatter("Bypass: Assigning %p{element}:%d to %p{element}:%d\n", e, port, _e, _port);
+    const_cast<Element::Port&>(e->port(isoutput, port)).assign(isoutput, _e, _port);
     return false;
 }
 
@@ -83,12 +122,20 @@ Bypass::fix()
 {
     if (!_inline) {
 	bool direction = output_is_push(0);
-	Visitor v(this);
-	while (Bypass *b = static_cast<Bypass *>(v._e->cast("Bypass")))
-	    router()->visit(b, direction,
-			    b->_active ? b->nports(direction) - 1 : 0, &v);
-	v._applying = true;
-	router()->visit(this, !direction, 0, &v);
+        Locator loc(_active);
+        router()->visit(this, direction, _active, &loc);
+        if (loc._e) {
+            Assigner ass(loc._e, loc._port);
+            router()->visit(this, !direction, _active ? 0 : -1, &ass);
+        }
+        if (_active && nports(!direction) > 1) {
+            Locator loc(0);
+            router()->visit(this, direction, 0, &loc);
+            if (loc._e) {
+                Assigner ass(loc._e, loc._port);
+                router()->visit(this, !direction, 1, &ass);
+            }
+        }
     }
 }
 

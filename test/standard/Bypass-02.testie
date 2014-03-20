@@ -9,21 +9,30 @@ $VALGRIND click --simtime CONFIG 2>OUT 1>&2
 is :: InfiniteSource(LIMIT 1, ACTIVE false)
 -> parent :: Bypass
 => ( [0] -> child1 :: Bypass
-         => ( [0] -> Print(child1_0, CONTENTS ASCII)
+         => ( [0] -> print1_0 :: Print(child1_0, CONTENTS ASCII)
                   -> Discard;
-              [1] -> Print(child1_1, CONTENTS ASCII)
+              [1] -> print1_1 :: Print(child1_1, CONTENTS ASCII)
                   -> Discard; );
      [1] -> child2 :: Bypass
-         => ( [0] -> Print(child2_0, CONTENTS ASCII)
+         => ( [0] -> print2_0 :: Print(child2_0, CONTENTS ASCII)
                   -> Discard;
-              [1] -> Print(child2_1, CONTENTS ASCII)
+              [1] -> print2_1 :: Print(child2_1, CONTENTS ASCII)
                   -> Discard; ); );
+
+is1 :: InfiniteSource(LIMIT 1, ACTIVE false)
+-> [1] parent;
+
+isx :: InfiniteSource(LIMIT 1, ACTIVE false)
+=> ( [0] -> loopbypass :: Bypass(ACTIVE true) -> [0];
+     loopbypass [1] -> Null -> [1] loopbypass )
+-> Discard;
 
 try_order :: Script(TYPE PASSIVE,
     // first negate so that we end up doing something
     write $1.active $(not $2),
     write $3.active $(not $4),
     write $5.active $(not $6),
+    print "\n",
 
     write $1.active $2,
     write $3.active $4,
@@ -31,9 +40,12 @@ try_order :: Script(TYPE PASSIVE,
 
     write is.active true,
     write is.reset,
+    write is1.active true,
+    write is1.reset,
 );
 
 try_all_orders :: Script(TYPE PASSIVE,
+    print "\n\n\nBypass: $1 $2 $3",
     write try_order.run parent $1 child1 $2 child2 $3,
     wait 1,
     write try_order.run parent $1 child2 $3 child1 $2,
@@ -50,26 +62,32 @@ try_all_orders :: Script(TYPE PASSIVE,
 
 Script(
     write is.data child1_0,
+    write is1.data child1_0+,
     write try_all_orders.run false false false,
     wait 10,
     write try_all_orders.run false false true,
     wait 10,
 
     write is.data child1_1,
+    write is1.data child1_1+,
     write try_all_orders.run false true false,
     wait 10,
     write try_all_orders.run false true true,
     wait 10,
 
     write is.data child2_0,
+    write is1.data child1_0+,
     write try_all_orders.run true false false,
     wait 10,
+    write is1.data child1_1+,
     write try_all_orders.run true true false,
     wait 10,
 
     write is.data child2_1,
+    write is1.data child1_0+,
     write try_all_orders.run true false true,
     wait 10,
+    write is1.data child1_1+,
     write try_all_orders.run true true true,
     wait 10,
 
@@ -78,53 +96,104 @@ Script(
 
 %expect -w OUT
 child1_0:    8 |  child1_0
+child1_0:    9 |  child1_0 +
 child1_0:    8 |  child1_0
+child1_0:    9 |  child1_0 +
 child1_0:    8 |  child1_0
+child1_0:    9 |  child1_0 +
 child1_0:    8 |  child1_0
+child1_0:    9 |  child1_0 +
 child1_0:    8 |  child1_0
+child1_0:    9 |  child1_0 +
 child1_0:    8 |  child1_0
+child1_0:    9 |  child1_0 +
 child1_0:    8 |  child1_0
+child1_0:    9 |  child1_0 +
 child1_0:    8 |  child1_0
+child1_0:    9 |  child1_0 +
 child1_0:    8 |  child1_0
+child1_0:    9 |  child1_0 +
 child1_0:    8 |  child1_0
+child1_0:    9 |  child1_0 +
 child1_0:    8 |  child1_0
+child1_0:    9 |  child1_0 +
 child1_0:    8 |  child1_0
+child1_0:    9 |  child1_0 +
 
 child1_1:    8 |  child1_1
+child1_1:    9 |  child1_1 +
 child1_1:    8 |  child1_1
+child1_1:    9 |  child1_1 +
 child1_1:    8 |  child1_1
+child1_1:    9 |  child1_1 +
 child1_1:    8 |  child1_1
+child1_1:    9 |  child1_1 +
 child1_1:    8 |  child1_1
+child1_1:    9 |  child1_1 +
 child1_1:    8 |  child1_1
+child1_1:    9 |  child1_1 +
 child1_1:    8 |  child1_1
+child1_1:    9 |  child1_1 +
 child1_1:    8 |  child1_1
+child1_1:    9 |  child1_1 +
 child1_1:    8 |  child1_1
+child1_1:    9 |  child1_1 +
 child1_1:    8 |  child1_1
+child1_1:    9 |  child1_1 +
 child1_1:    8 |  child1_1
+child1_1:    9 |  child1_1 +
 child1_1:    8 |  child1_1
+child1_1:    9 |  child1_1 +
 
 child2_0:    8 |  child2_0
+child1_0:    9 |  child1_0 +
 child2_0:    8 |  child2_0
+child1_0:    9 |  child1_0 +
 child2_0:    8 |  child2_0
+child1_0:    9 |  child1_0 +
 child2_0:    8 |  child2_0
+child1_0:    9 |  child1_0 +
 child2_0:    8 |  child2_0
+child1_0:    9 |  child1_0 +
 child2_0:    8 |  child2_0
+child1_0:    9 |  child1_0 +
 child2_0:    8 |  child2_0
+child1_1:    9 |  child1_1 +
 child2_0:    8 |  child2_0
+child1_1:    9 |  child1_1 +
 child2_0:    8 |  child2_0
+child1_1:    9 |  child1_1 +
 child2_0:    8 |  child2_0
+child1_1:    9 |  child1_1 +
 child2_0:    8 |  child2_0
+child1_1:    9 |  child1_1 +
 child2_0:    8 |  child2_0
+child1_1:    9 |  child1_1 +
 
 child2_1:    8 |  child2_1
+child1_0:    9 |  child1_0 +
 child2_1:    8 |  child2_1
+child1_0:    9 |  child1_0 +
 child2_1:    8 |  child2_1
+child1_0:    9 |  child1_0 +
 child2_1:    8 |  child2_1
+child1_0:    9 |  child1_0 +
 child2_1:    8 |  child2_1
+child1_0:    9 |  child1_0 +
 child2_1:    8 |  child2_1
+child1_0:    9 |  child1_0 +
 child2_1:    8 |  child2_1
+child1_1:    9 |  child1_1 +
 child2_1:    8 |  child2_1
+child1_1:    9 |  child1_1 +
 child2_1:    8 |  child2_1
+child1_1:    9 |  child1_1 +
 child2_1:    8 |  child2_1
+child1_1:    9 |  child1_1 +
 child2_1:    8 |  child2_1
+child1_1:    9 |  child1_1 +
 child2_1:    8 |  child2_1
+child1_1:    9 |  child1_1 +
+
+%ignore
+Bypass:{{.*}}

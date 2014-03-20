@@ -94,14 +94,19 @@ class Bypass : public Element { public:
     Packet *pull(int port);
 
   private:
+    struct Locator : public RouterVisitor {
+        Element* _e;
+        int _port;
+        Locator(bool active);
+	bool visit(Element *e, bool isoutput, int port,
+		   Element *from_e, int from_port, int distance);
+    };
 
-    struct Visitor : public RouterVisitor {
-	Element *_e;
+    struct Assigner : public RouterVisitor {
+        Element* _e;
 	int _port;
-	bool _applying;
-	Visitor(Element *e)
-	    : _e(e), _applying(false) {
-	}
+        Vector<int> _interesting;
+	Assigner(Element *e, int port);
 	bool visit(Element *e, bool isoutput, int port,
 		   Element *from_e, int from_port, int distance);
     };
@@ -111,7 +116,8 @@ class Bypass : public Element { public:
 
     void fix();
     static int write_handler(const String &s, Element *e, void *user_data, ErrorHandler *errh) CLICK_COLD;
-    friend struct Visitor;
+    friend struct Locator;
+    friend struct Assigner;
 
 };
 
