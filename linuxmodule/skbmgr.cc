@@ -21,6 +21,7 @@
 
 #include <click/glue.hh>
 #include <click/atomic.hh>
+#include <click/sync.hh>
 #include <click/skbmgr.hh>
 
 #include <click/cxxprotect.h>
@@ -73,7 +74,7 @@ class RecycledSkbPool { public:
  private:
 
   RecycledSkbBucket _buckets[NBUCKETS];
-  volatile unsigned long _lock;
+  unsigned long _lock;
 #if __MTCLICK__
   int _last_producer;
   atomic_uint32_t _consumers;
@@ -154,7 +155,7 @@ RecycledSkbPool::lock()
 {
   while (test_and_set_bit(0, &_lock)) {
     while (_lock)
-      /* nothing */;
+      click_relax_fence();
   }
 }
 
