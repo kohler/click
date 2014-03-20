@@ -852,7 +852,7 @@ Router::set_flow_code_override(int eindex, const String &flow_code)
 
 /** @brief Traverse the router configuration from one of @a e's ports.
  * @param e element to start search
- * @param isoutput true to search down from outputs, false to search up from
+ * @param forward true to search down from outputs, false to search up from
  *   inputs
  * @param port port (or -1 to search all ports)
  * @param visitor RouterVisitor traversal object
@@ -863,8 +863,11 @@ Router::set_flow_code_override(int eindex, const String &flow_code)
  * traverses inside elements from port to port by Element::flow_code().  The
  * visitor can stop a traversal path by returning false from visit().
  *
+ * @a visitor ->@link RouterVisitor::visit visit() is called on input
+ * ports if @a forward is true and output ports if @a forward is false.
+ *
  * Equivalent to either visit_downstream() or visit_upstream(), depending on
- * @a isoutput.
+ * @a forward.
  *
  * @sa visit_downstream(), visit_upstream()
  */
