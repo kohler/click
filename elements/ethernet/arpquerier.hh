@@ -55,8 +55,8 @@ Keyword arguments are:
 
 Element.  Names an ARPTable element that holds this element's corresponding
 ARP state.  By default ARPQuerier creates its own internal ARPTable and uses
-that.  If TABLE is specified, CAPACITY, ENTRY_CAPACITY, and TIMEOUT are
-ignored.
+that.  If TABLE is specified, CAPACITY, ENTRY_CAPACITY, ENTRY_PACKET_CAPACITY,
+and TIMEOUT are ignored.
 
 =item CAPACITY
 
@@ -67,6 +67,11 @@ hold at a time.  Default is 2048.
 
 Unsigned integer.  The maximum number of ARP entries the table will hold
 at a time.  Default is 0, which means unlimited.
+
+=item ENTRY_PACKET_CAPACITY
+
+Unsigned integer.  The maximum number of saved packets the table will hold
+for any given ARP entry at a time.  Default is 0, which means unlimited.
 
 =item TIMEOUT
 

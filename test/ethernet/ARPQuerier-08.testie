@@ -1,0 +1,28 @@
+%info
+Check that ARPQuerier correctly rate-limits queries per IP address.
+
+%script
+$VALGRIND click --simtime CONFIG
+
+%file CONFIG
+( InfiniteSource(LIMIT 50) -> IPEncap(tcp, 1.0.0.1, 2.0.0.2) -> [0];
+  InfiniteSource(LIMIT 50) -> IPEncap(tcp, 1.0.0.1, 2.0.0.3) -> [0];
+  Idle -> [1]; )
+=> arpq::ARPQuerier(1.0.0.3, 2:1:1:1:1:1, ENTRY_PACKET_CAPACITY 10)
+-> Discard;
+
+( InfiniteSource(LIMIT 100) -> IPEncap(tcp, 1.0.0.1, 2.0.0.2) -> [0];
+  Idle -> [1]; )
+=> arpq2::ARPQuerier(1.0.0.3, 2:1:1:1:1:1, CAPACITY 10)
+-> Discard;
+
+Script(wait 1, read arpq.stats, read arpq2.stats, write stop);
+
+%expect -w stderr
+arpq.stats:
+80 packets killed
+2 ARP queries sent
+
+arpq2.stats:
+90 packets killed
+1 ARP queries sent
