@@ -46,6 +46,7 @@ class Element { public:
 #endif
 
     inline void checked_output_push(int port, Packet *p) const;
+    inline Packet* checked_input_pull(int port) const;
 
     // ELEMENT CHARACTERISTICS
     virtual const char *class_name() const = 0;
@@ -702,6 +703,25 @@ Element::checked_output_push(int port, Packet* p) const
 	_ports[1][port].push(p);
     else
 	p->kill();
+}
+
+/** @brief Pull a packet from input @a port, or return 0 if @a port is out of
+ * range.
+ *
+ * @param port input port number
+ *
+ * If @a port is in range (>= 0 and < ninputs()), then return the result
+ * of input(@a port).pull().  Otherwise, return null.
+ *
+ * @note It is invalid to call checked_input_pull() on a push input @a port.
+ */
+inline Packet*
+Element::checked_input_pull(int port) const
+{
+    if ((unsigned) port < (unsigned) ninputs())
+	return _ports[0][port].pull();
+    else
+	return 0;
 }
 
 #undef PORT_ASSIGN
