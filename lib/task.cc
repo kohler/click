@@ -223,24 +223,35 @@ Task::cleanup()
     GIANT_REQUIRED;
 #endif
     if (initialized()) {
+        // Mark the task as unscheduled.
 	strong_unschedule();
-	remove_from_scheduled_list();
 
 	// Perhaps the task is enqueued on the current pending
 	// collection.  If so, remove it.
-	if (on_pending_list()) {
+	if (on_pending_list())
 	    remove_pending();
 
-	    // If not on the current pending list, perhaps this task
-	    // is on some list currently being processed by
-	    // RouterThread::process_pending().  Wait until that
-	    // processing is done.  It is safe to simply spin because
-	    // pending list processing is so simple: processing a
-	    // pending list will NEVER cause a task to get deleted, so
-	    // ~Task is never called from RouterThread::process_pending().
-	    while (on_pending_list())
-		click_relax_fence();
-	}
+        // If not on the current pending list, perhaps this task
+        // is on some list currently being processed by
+        // RouterThread::process_pending().  Wait until that
+        // processing is done.  It is safe to simply spin because
+        // pending list processing is so simple: processing a
+        // pending list will NEVER cause a task to get deleted, so
+        // ~Task is never called from RouterThread::process_pending().
+        while (on_pending_list())
+            click_relax_fence();
+
+        // If currently scheduled, remove from schedule list.
+        // If scheduled on another thread, wait for that thread to
+        // notice. If scheduled on this thread, remove it.
+        if (on_scheduled_list()) {
+            assert(_thread && _thread->thread_id() >= 0);
+            while (on_scheduled_list()
+                   && !_thread->current_thread_is_running())
+                click_relax_fence();
+            if (_thread->current_thread_is_running())
+                remove_from_scheduled_list();
+        }
 
 	_owner = 0;
 	_thread = 0;
