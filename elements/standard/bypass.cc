@@ -56,13 +56,13 @@ Bypass::initialize(ErrorHandler *)
 void
 Bypass::push(int port, Packet *p)
 {
-    output(_active && !port).push(p);
+    checked_output_push(_active && !port, p);
 }
 
 Packet *
 Bypass::pull(int port)
 {
-    return input(_active && !port).pull();
+    return checked_input_pull(_active && !port);
 }
 
 bool
