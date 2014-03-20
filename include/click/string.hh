@@ -36,15 +36,15 @@ class String { public:
     typedef uintmax_t uint_large_t;
 
     inline String();
-    inline String(const String &x);
+    inline String(const String& x);
 #if HAVE_CXX_RVALUE_REFERENCES
-    inline String(String &&x);
+    inline String(String&& x);
 #endif
-    inline String(const char *cstr);
-    inline String(const char *s, int len);
-    inline String(const unsigned char *s, int len);
-    inline String(const char *first, const char *last);
-    inline String(const unsigned char *first, const unsigned char *last);
+    inline String(const char* cstr);
+    inline String(const char* s, int len);
+    inline String(const unsigned char* s, int len);
+    inline String(const char* first, const char* last);
+    inline String(const unsigned char* first, const unsigned char* last);
     explicit inline String(bool x);
     explicit inline String(char c);
     explicit inline String(unsigned char c);
@@ -65,16 +65,16 @@ class String { public:
 #endif
     inline ~String();
 
-    static inline const String &make_empty();
+    static inline const String& make_empty();
     static inline String make_uninitialized(int len);
     static inline String make_garbage(int len) CLICK_DEPRECATED;
-    static inline String make_stable(const char *cstr);
-    static inline String make_stable(const char *s, int len);
-    static inline String make_stable(const char *first, const char *last);
+    static inline String make_stable(const char* cstr);
+    static inline String make_stable(const char* s, int len);
+    static inline String make_stable(const char* first, const char* last);
     static String make_numeric(intmax_t x, int base = 10, bool uppercase = true);
     static String make_numeric(uintmax_t x, int base = 10, bool uppercase = true);
 
-    inline const char *data() const;
+    inline const char* data() const;
     inline int length() const;
 
     inline const char *c_str() const;
@@ -158,7 +158,8 @@ class String { public:
     inline bool is_shared() const;
     inline bool is_stable() const;
 
-    inline String unique() const;
+    inline String unique() const CLICK_DEPRECATED;
+    inline String unshared() const;
     inline String compact() const;
 
     char *mutable_data();
@@ -773,14 +774,22 @@ inline bool String::is_stable() const {
     return !_r.memo;
 }
 
-/** @brief Return a unique version of this String.
+/** @brief Return an unshared version of this String.
 
     The return value shares no data with any other non-stable String. */
-inline String String::unique() const {
+inline String String::unshared() const {
     if (!_r.memo || _r.memo->refcount == 1)
 	return *this;
     else
 	return String(_r.data, _r.data + _r.length);
+}
+
+/** @brief Return an unshared version of this String.
+    @deprecated Use String::unshared() instead.
+
+    The return value shares no data with any other non-stable String. */
+inline String String::unique() const {
+    return unshared();
 }
 
 /** @brief Return a compact version of this String.
