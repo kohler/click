@@ -43,6 +43,12 @@ Bypass::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("INLINE", _inline)
 	.complete() < 0)
 	return -1;
+
+    bool direction = output_is_push(0);
+    if (nports(direction) != 2)
+	return errh->error("must have two %s ports in %s context", direction ? "output" : "input",
+	    direction ? "push" : "pull");
+
     return 0;
 }
 
@@ -69,13 +75,18 @@ bool
 Bypass::Visitor::visit(Element *e, bool isoutput, int port,
 		       Element *, int, int)
 {
+    Bypass *b;
     if (!_applying) {
 	_e = e;
 	_port = port;
-    } else
+	return false;
+    } else if ((b = static_cast<Bypass *>(e->cast("Bypass"))) && !b->_inline) {
+	return (port == (b->_active ? 1 : 0 ));
+    } else {
 	// Just cheat.
 	const_cast<Element::Port &>(e->port(isoutput, port)).assign(isoutput, _e, _port);
-    return false;
+	return false;
+    }
 }
 
 void
@@ -84,9 +95,10 @@ Bypass::fix()
     if (!_inline) {
 	bool direction = output_is_push(0);
 	Visitor v(this);
-	while (Bypass *b = static_cast<Bypass *>(v._e->cast("Bypass")))
+	Bypass *b;
+	while ((b = static_cast<Bypass *>(v._e->cast("Bypass"))) && !b->_inline)
 	    router()->visit(b, direction,
-			    b->_active ? b->nports(direction) - 1 : 0, &v);
+			    b->_active ? 1 : 0, &v);
 	v._applying = true;
 	router()->visit(this, !direction, 0, &v);
     }

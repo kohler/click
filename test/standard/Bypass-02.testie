@@ -1,0 +1,136 @@
+%info
+Tests consecutive Bypasses.
+
+%script
+$VALGRIND click --simtime CONFIG 2>OUT 1>&2
+
+%file CONFIG
+
+is :: InfiniteSource(LIMIT 1, ACTIVE false)
+-> parent :: Bypass
+=> ( [0] -> child1 :: Bypass
+         => ( [0] -> Print(child1_0, CONTENTS ASCII)
+                  -> Discard;
+              [1] -> Print(child1_1, CONTENTS ASCII)
+                  -> Discard; );
+     [1] -> child2 :: Bypass
+         => ( [0] -> Print(child2_0, CONTENTS ASCII)
+                  -> Discard;
+              [1] -> Print(child2_1, CONTENTS ASCII)
+                  -> Discard; ); );
+
+try_order :: Script(TYPE PASSIVE,
+    // first negate so that we end up doing something
+    write $1.active $(not $2),
+    write $3.active $(not $4),
+    write $5.active $(not $6),
+
+    write $1.active $2,
+    write $3.active $4,
+    write $5.active $6,
+
+    write is.active true,
+    write is.reset,
+);
+
+try_all_orders :: Script(TYPE PASSIVE,
+    set a1 $1,
+    set a2 $2,
+    set a3 $3,
+    set a4 $4,
+    set a5 $5,
+    set a6 $6,
+    write try_order.run $a1 $a2 $a3 $a4 $a5 $a6,
+    wait 1,
+    write try_order.run $a1 $a2 $a5 $a6 $a3 $a4,
+    wait 1,
+    write try_order.run $a3 $a4 $a1 $a2 $a5 $a6,
+    wait 1,
+    write try_order.run $a3 $a4 $a5 $a6 $a1 $a2,
+    wait 1,
+    write try_order.run $a5 $a6 $a1 $a2 $a3 $a4,
+    wait 1,
+    write try_order.run $a5 $a6 $a3 $a4 $a1 $a2,
+    wait 1,
+);
+
+Script(
+    write is.data child1_0,
+    write try_all_orders.run parent false child1 false child2 false,
+    wait 10,
+    write try_all_orders.run parent false child1 false child2 true,
+    wait 10,
+
+    write is.data child1_1,
+    write try_all_orders.run parent false child1 true child2 false,
+    wait 10,
+    write try_all_orders.run parent false child1 true child2 true,
+    wait 10,
+
+    write is.data child2_0,
+    write try_all_orders.run parent true child1 false child2 false,
+    wait 10,
+    write try_all_orders.run parent true child1 true child2 false,
+    wait 10,
+
+    write is.data child2_1,
+    write try_all_orders.run parent true child1 false child2 true,
+    wait 10,
+    write try_all_orders.run parent true child1 true child2 true,
+    wait 10,
+
+    stop,
+);
+
+%expect -w OUT
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
