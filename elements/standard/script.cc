@@ -748,7 +748,6 @@ Script::step_handler(int op, String &str, Element *e, const Handler *h, ErrorHan
     int nsteps, steptype;
     int what = (uintptr_t) h->write_user_data();
     scr->_run_handler_name = h->name();
-    scr->_run_args = String();
     scr->_run_op = op;
     int ret;
 
@@ -794,7 +793,10 @@ Script::step_handler(int op, String &str, Element *e, const Handler *h, ErrorHan
 
  out:
     scr->_run_handler_name = String();
-    scr->_run_args = String();
+    if (ret || !scr->_run_args)
+        scr->_run_args = String();
+    else
+        scr->_run_args = scr->_run_args.unshared();
     scr->_run_op = 0;
     return ret;
 }
