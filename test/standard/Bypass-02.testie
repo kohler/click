@@ -1,0 +1,130 @@
+%info
+Tests consecutive Bypasses.
+
+%script
+$VALGRIND click --simtime CONFIG 2>OUT 1>&2
+
+%file CONFIG
+
+is :: InfiniteSource(LIMIT 1, ACTIVE false)
+-> parent :: Bypass
+=> ( [0] -> child1 :: Bypass
+         => ( [0] -> Print(child1_0, CONTENTS ASCII)
+                  -> Discard;
+              [1] -> Print(child1_1, CONTENTS ASCII)
+                  -> Discard; );
+     [1] -> child2 :: Bypass
+         => ( [0] -> Print(child2_0, CONTENTS ASCII)
+                  -> Discard;
+              [1] -> Print(child2_1, CONTENTS ASCII)
+                  -> Discard; ); );
+
+try_order :: Script(TYPE PASSIVE,
+    // first negate so that we end up doing something
+    write $1.active $(not $2),
+    write $3.active $(not $4),
+    write $5.active $(not $6),
+
+    write $1.active $2,
+    write $3.active $4,
+    write $5.active $6,
+
+    write is.active true,
+    write is.reset,
+);
+
+try_all_orders :: Script(TYPE PASSIVE,
+    write try_order.run parent $1 child1 $2 child2 $3,
+    wait 1,
+    write try_order.run parent $1 child2 $3 child1 $2,
+    wait 1,
+    write try_order.run child1 $2 parent $1 child2 $3,
+    wait 1,
+    write try_order.run child1 $2 child2 $3 parent $1,
+    wait 1,
+    write try_order.run child2 $3 parent $1 child1 $2,
+    wait 1,
+    write try_order.run child2 $3 child1 $2 parent $1,
+    wait 1,
+);
+
+Script(
+    write is.data child1_0,
+    write try_all_orders.run false false false,
+    wait 10,
+    write try_all_orders.run false false true,
+    wait 10,
+
+    write is.data child1_1,
+    write try_all_orders.run false true false,
+    wait 10,
+    write try_all_orders.run false true true,
+    wait 10,
+
+    write is.data child2_0,
+    write try_all_orders.run true false false,
+    wait 10,
+    write try_all_orders.run true true false,
+    wait 10,
+
+    write is.data child2_1,
+    write try_all_orders.run true false true,
+    wait 10,
+    write try_all_orders.run true true true,
+    wait 10,
+
+    stop,
+);
+
+%expect -w OUT
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+child1_0:    8 |  child1_0
+
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+child1_1:    8 |  child1_1
+
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+child2_0:    8 |  child2_0
+
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
+child2_1:    8 |  child2_1
