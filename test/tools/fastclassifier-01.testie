@@ -35,3 +35,4 @@ B: 4{{.*}}
 
 %ignore
 expensive{{.*}}
+make{{.*jobserver.*}}
