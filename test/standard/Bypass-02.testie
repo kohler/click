@@ -19,6 +19,13 @@ is :: InfiniteSource(LIMIT 1, ACTIVE false)
               [1] -> Print(child2_1, CONTENTS ASCII)
                   -> Discard; ); );
 
+isa :: InfiniteSource(LIMIT 1, ACTIVE false)
+=> ( [0] -> child1a :: Bypass -> [0];
+     child1a [1] -> Print(child1a_B, CONTENTS ASCII) -> [1] child1a )
+=> ( [0] -> child2a :: Bypass -> [0];
+     child2a [1] -> Print(child2a_B, CONTENTS ASCII) -> [1] child2a )
+=> Discard;
+
 try_order :: Script(TYPE PASSIVE,
     // first negate so that we end up doing something
     write $1.active $(not $2),
@@ -54,6 +61,19 @@ try_all_orders :: Script(TYPE PASSIVE,
     wait 1,
 );
 
+try_order_a :: Script(TYPE PASSIVE,
+    // first negate so that we end up doing something
+    write $1.active $(not $2),
+    write $3.active $(not $4),
+
+    write $1.active $2,
+    write $3.active $4,
+
+    write isa.data $5,
+    write isa.active true,
+    write isa.reset,
+);
+
 Script(
     write is.data child1_0,
     write try_all_orders.run parent false child1 false child2 false,
@@ -77,6 +97,17 @@ Script(
     write try_all_orders.run parent true child1 false child2 true,
     wait 10,
     write try_all_orders.run parent true child1 true child2 true,
+    wait 10,
+
+    write try_order_a.run child1a false child2a false none,
+    wait 10,
+    write try_order_a.run child1a false child2a true 2a,
+    wait 10,
+    write try_order_a.run child1a true child2a false 1a,
+    wait 10,
+    write try_order_a.run child1a true child2a true 1a2a,
+    wait 10,
+    write try_order_a.run child1a false child2a false none,
     wait 10,
 
     stop,
@@ -134,3 +165,8 @@ child2_1:    8 |  child2_1
 child2_1:    8 |  child2_1
 child2_1:    8 |  child2_1
 child2_1:    8 |  child2_1
+
+child2a_B:    2 |  2a
+child1a_B:    2 |  1a
+child1a_B:    2 |  1a2a
+child2a_B:    2 |  1a2a
