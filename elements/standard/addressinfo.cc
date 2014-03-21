@@ -451,7 +451,8 @@ AddressInfo::query_ip(const String &suffixed_s, unsigned char *store,
 {
     String s(suffixed_s);
     int colon = s.find_right(':');
-    if (colon >= 0) {
+    bool has_typestr = (colon >= 0);
+    if (has_typestr) {
 	String typestr = s.substring(colon).lower();
 	s = s.substring(0, colon);
 	union {
@@ -486,7 +487,7 @@ AddressInfo::query_ip(const String &suffixed_s, unsigned char *store,
     }
 
     return NameInfo::query(NameInfo::T_IP_ADDR, context, s, store, 4)
-	|| query_netdevice(s, store, tc_ipv4, 4, context);
+	|| (has_typestr && query_netdevice(s, store, tc_ipv4, 4, context));
 }
 
 bool
@@ -494,7 +495,8 @@ AddressInfo::query_ip_prefix(String s, unsigned char *store,
 			     unsigned char *mask_store, const Element *context)
 {
     int colon = s.find_right(':');
-    if (colon >= 0) {
+    bool has_typestr = (colon >= 0);
+    if (has_typestr) {
 	String typestr(s.substring(colon).lower());
 	if (!typestr.equals(":net", 4)
 	    && !typestr.equals(":ipnet", 6)
@@ -505,7 +507,7 @@ AddressInfo::query_ip_prefix(String s, unsigned char *store,
 
     uint8_t data[8];
     if (NameInfo::query(NameInfo::T_IP_PREFIX, context, s, &data[0], 8)
-	|| query_netdevice(s, data, tc_ipv4prefix, 8, context)) {
+	|| (has_typestr && query_netdevice(s, data, tc_ipv4prefix, 8, context))) {
 	memcpy(store, &data[0], 4);
 	memcpy(mask_store, &data[4], 4);
 	return true;
@@ -520,7 +522,8 @@ bool
 AddressInfo::query_ip6(String s, unsigned char *store, const Element *e)
 {
     int colon = s.find_right(':');
-    if (colon >= 0) {
+    bool has_typestr = (colon >= 0);
+    if (has_typestr) {
 	if (!s.substring(colon).lower().equals(":ip6", 4))
 	    return false;
 	s = s.substring(0, colon);
@@ -534,7 +537,8 @@ AddressInfo::query_ip6_prefix(String s, unsigned char *store,
 			      int *bits_store, const Element *context)
 {
     int colon = s.find_right(':');
-    if (colon >= 0) {
+    bool has_typestr = (colon >= 0);
+    if (has_typestr) {
 	if (!s.substring(colon).lower().equals(":ip6net", 7))
 	    return false;
 	s = s.substring(0, colon);
@@ -560,7 +564,8 @@ bool
 AddressInfo::query_ethernet(String s, unsigned char *store, const Element *context)
 {
     int colon = s.find_right(':');
-    if (colon >= 0) {
+    bool has_typestr = (colon >= 0);
+    if (has_typestr) {
 	String typestr(s.substring(colon).lower());
 	if (!typestr.equals(":eth", 4)
 	    && !typestr.equals(":ether", 6)
@@ -570,7 +575,7 @@ AddressInfo::query_ethernet(String s, unsigned char *store, const Element *conte
     }
 
     return NameInfo::query(NameInfo::T_ETHERNET_ADDR, context, s, store, 6)
-	|| query_netdevice(s, store, tc_ether, 6, context);
+	|| (has_typestr && query_netdevice(s, store, tc_ether, 6, context));
 }
 
 CLICK_ENDDECLS
