@@ -31,7 +31,7 @@
 CLICK_DECLS
 
 ARPTable::ARPTable()
-    : _entry_capacity(0), _packet_capacity(2048), _entry_packet_capacity(0), _expire_timer(this)
+    : _packet_search_head(0), _entry_capacity(0), _packet_capacity(2048), _entry_packet_capacity(0), _expire_timer(this)
 {
     _entry_count = _packet_count = _drops = 0;
 }
@@ -80,6 +80,7 @@ ARPTable::clear()
     }
     _entry_count = _packet_count = 0;
     _age.__clear();
+    _packet_search_head = 0;
 }
 
 void
@@ -95,11 +96,13 @@ ARPTable::take_state(Element *e, ErrorHandler *errh)
 
     _table.swap(arpt->_table);
     _age.swap(arpt->_age);
+    _packet_search_head = arpt->_packet_search_head;
     _entry_count = arpt->_entry_count;
     _packet_count = arpt->_packet_count;
     _drops = arpt->_drops;
     _alloc.swap(arpt->_alloc);
 
+    arpt->_packet_search_head = 0;
     arpt->_entry_count = 0;
     arpt->_packet_count = 0;
 }
@@ -113,6 +116,8 @@ ARPTable::slim(click_jiffies_t now)
     while ((ae = _age.front())
 	   && (ae->expired(now, _timeout_j)
 	       || (_entry_capacity && _entry_count > _entry_capacity))) {
+	if (_packet_search_head == ae)
+	    _packet_search_head = 0;
 	_table.erase(ae->_ip);
 	_age.pop_front();
 
@@ -127,8 +132,11 @@ ARPTable::slim(click_jiffies_t now)
 	--_entry_count;
     }
 
-    // Mark entries for polling, and delete packets to make space.
+    // Delete packets to make space.
+    if (_packet_search_head)
+	ae = _packet_search_head; // avoid searching all of _age list
     while (_packet_capacity && _packet_count > _packet_capacity) {
+	_packet_search_head = ae;
 	while (ae->_head && _packet_count > _packet_capacity) {
 	    Packet *p = ae->_head;
 	    if (!(ae->_head = p->next()))
@@ -180,6 +188,21 @@ ARPTable::ensure(IPAddress ip, click_jiffies_t now)
     return it.get();
 }
 
+// does ae1 precede ae2 in _age list?
+bool
+ARPTable::precedes(const ARPEntry *ae1, const ARPEntry *ae2)
+{
+    if (click_jiffies_less(ae1->_live_at_j, ae2->_live_at_j))
+	return true;
+
+    while (ae1 && ae1->_live_at_j == ae2->_live_at_j) {
+	if (ae1 == ae2)
+	   return true;
+	ae1 = ae1->_age_link.next();
+    }
+    return false;
+}
+
 int
 ARPTable::insert(IPAddress ip, const EtherAddress &eth, Packet **head)
 {
@@ -196,6 +219,8 @@ ARPTable::insert(IPAddress ip, const EtherAddress &eth, Packet **head)
     ae->_polled_at_j = ae->_live_at_j - CLICK_HZ;
 
     if (ae->_age_link.next()) {
+	if (ae == _packet_search_head)
+	    _packet_search_head = ae->_age_link.next();
 	_age.erase(ae);
 	_age.push_back(ae);
     }
@@ -239,6 +264,8 @@ ARPTable::append_query(IPAddress ip, Packet *p)
 	    while (next && click_jiffies_less(next->_live_at_j, ae->_live_at_j))
 		next = next->_age_link.next();
 	    if (ae_next != next) {
+		if (ae == _packet_search_head)
+		    _packet_search_head = ae_next;
 		_age.erase(ae);
 		_age.insert(next /* might be null */, ae);
 	    }
@@ -262,6 +289,8 @@ ARPTable::append_query(IPAddress ip, Packet *p)
     ae->_tail = p;
     p->set_next(0);
     ++ae->_entry_packet_count;
+    if (_packet_search_head && ae->_head == p && precedes(ae, _packet_search_head))
+	_packet_search_head = ae;
 
     int r;
     if (ae->allow_poll(now)) {
