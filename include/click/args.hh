@@ -811,8 +811,9 @@ class Args : public ArgContext {
 	Vector<T> *s = slot(variable);
 	while (String str = find(keyword, flags, slot_status)) {
 	    T sx;
-	    postparse(parser.parse(str, sx, *this), slot_status);
-	    if (_read_status)
+	    bool ok = parser.parse(str, sx, *this);
+	    postparse(ok, slot_status);
+	    if (ok && _read_status)
 		s->push_back(sx);
 	    read_status = (read_status != 0) && _read_status;
 	    flags &= ~mandatory;
