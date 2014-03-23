@@ -810,7 +810,7 @@ class Args : public ArgContext {
 	int read_status = -1;
 	Vector<T> *s = slot(variable);
 	while (String str = find(keyword, flags, slot_status)) {
-	    T sx;
+	    T sx = T();
 	    postparse(parser.parse(str, sx, *this), slot_status);
 	    if (_read_status)
 		s->push_back(sx);
