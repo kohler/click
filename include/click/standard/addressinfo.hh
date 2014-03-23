@@ -77,24 +77,25 @@ C<NAME:ipnet> by setting the lowest-order bit in the network address.
 
 =head1 DEFAULT ADDRESSES
 
-If you do not define an address for a given name, AddressInfo will use the
+If you do not define an address for a given NAME, AddressInfo will use the
 default, if any.  Defaults are as follows:
 
 =over 2
 
 =item *
 
-If DEVNAME is the name of an Ethernet device, then C<DEVNAME:eth> defaults to
-DEVNAME's Ethernet address.  (At userlevel, this works only on BSD and Linux.)
+For Ethernet addresses, Click checks for an Ethernet device named NAME, and
+uses its address. (At userlevel, this works only on BSD and Linux.)
 
 =item *
 
-C<DEVNAME:ip> defaults to the first primary IPv4 address associated with the
-device DEVNAME.
+For IPv4 addresses, Click checks for a network device named NAME, and uses
+its primary IPv4 address.
 
 =item *
 
-C<DEVNAME:gw> defaults to the device DEVNAME's default gateway.
+For C<NAME:gw>, Click checks for a network device named NAME, and uses its
+default gateway.
 
 =back
 
