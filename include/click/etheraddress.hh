@@ -204,14 +204,23 @@ extern const ArgContext blank_args;
   @endcode */
 class EtherAddressArg { public:
     typedef void enable_direct_parse;
-    static bool parse(const String &str, EtherAddress &value, const ArgContext &args = blank_args);
-    static bool parse(const String &str, unsigned char *value, const ArgContext &args = blank_args) {
+    EtherAddressArg(int flags = 0) : flags_(flags) {}
+    inline bool parse(const String& str, EtherAddress& value, const ArgContext& args = blank_args) {
+        return parse(str, value, args, flags_);
+    }
+    inline bool parse(const String& str, unsigned char* value, const ArgContext& args = blank_args) {
 	return parse(str, *reinterpret_cast<EtherAddress *>(value), args);
     }
-    static bool direct_parse(const String &str, EtherAddress &value, Args &args);
-    static bool direct_parse(const String &str, unsigned char *value, Args &args) {
+    inline bool direct_parse(const String& str, EtherAddress& value, Args& args) {
+        return direct_parse(str, value, args, flags_);
+    }
+    inline bool direct_parse(const String& str, unsigned char* value, Args& args) {
 	return direct_parse(str, *reinterpret_cast<EtherAddress *>(value), args);
     }
+  private:
+    int flags_;
+    static bool parse(const String& str, EtherAddress& value, const ArgContext& args, int flags);
+    static bool direct_parse(const String& str, EtherAddress& value, Args& args, int flags);
 };
 
 template<> struct DefaultArg<EtherAddress> : public EtherAddressArg {};

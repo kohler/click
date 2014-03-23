@@ -82,7 +82,8 @@ operator<<(StringAccum &sa, const EtherAddress &ea)
 
 
 bool
-EtherAddressArg::parse(const String &str, EtherAddress &value, const ArgContext &args)
+EtherAddressArg::parse(const String& str, EtherAddress& value, const ArgContext& args,
+                       int flags)
 {
     unsigned char data[6];
     int d = 0, p = 0, sep = 0;
@@ -119,18 +120,19 @@ EtherAddressArg::parse(const String &str, EtherAddress &value, const ArgContext 
     }
 
 #if !CLICK_TOOL
-    return AddressInfo::query_ethernet(str, value.data(), args.context());
+    return AddressInfo::query_ethernet(str, value.data(), args.context(), flags);
 #else
-    (void) args;
+    (void) args, (void) flags;
     return false;
 #endif
 }
 
 bool
-EtherAddressArg::direct_parse(const String &str, EtherAddress &value, Args &args)
+EtherAddressArg::direct_parse(const String& str, EtherAddress& value, Args& args,
+                              int flags)
 {
     EtherAddress *s = args.slot(value);
-    return s && parse(str, *s, args);
+    return s && parse(str, *s, args, flags);
 }
 
 CLICK_ENDDECLS
