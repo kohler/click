@@ -114,17 +114,20 @@ class AddressInfo : public Element { public:
     int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
     int configure(Vector<String> &conf, ErrorHandler *errh);
 
-    static bool query_ip(const String &s, unsigned char *store, const Element *context);
-    static bool query_ip_prefix(String s, unsigned char *store_addr, unsigned char *store_mask, const Element *context);
+    enum {
+        f_nodevice = 1
+    };
+    static bool query_ip(const String &s, unsigned char *store, const Element *context, int flags = 0);
+    static bool query_ip_prefix(String s, unsigned char *store_addr, unsigned char *store_mask, const Element *context, int flags = 0);
 #if HAVE_IP6
-    static bool query_ip6(String s, unsigned char *store, const Element *context);
-    static bool query_ip6_prefix(String s, unsigned char *store_addr, int *store_prefixlen, const Element *context);
+    static bool query_ip6(String s, unsigned char *store, const Element *context, int flags = 0);
+    static bool query_ip6_prefix(String s, unsigned char *store_addr, int *store_prefixlen, const Element *context, int flags = 0);
 #endif
-    static bool query_ethernet(String s, unsigned char *store, const Element *context);
+    static bool query_ethernet(String s, unsigned char *store, const Element *context, int flags = 0);
 
   private:
 
-    static bool query_netdevice(const String &name, unsigned char *store, int type, int len, const Element *context);
+    static bool query_netdevice(const String &name, unsigned char *store, int type, int len, const Element *context, int flags);
 
 };
 

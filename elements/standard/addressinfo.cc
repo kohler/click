@@ -280,10 +280,12 @@ create_ipv4gw_deviceinfo(const String &ifname, Vector<String> &deviceinfo)
 
 bool
 AddressInfo::query_netdevice(const String &s, unsigned char *store,
-			     int type, int len, const Element *context)
+			     int type, int len, const Element *context, int flags)
     // type is one of the tc_ constants
 {
     (void) s, (void) store, (void) type, (void) len, (void) context;
+    if (flags & f_nodevice)
+        return false;
 
 #if CLICK_USERLEVEL && !CLICK_NS && (HAVE_IFADDRS_H || defined(__linux__))
 
@@ -447,7 +449,7 @@ AddressInfo::query_netdevice(const String &s, unsigned char *store,
 
 bool
 AddressInfo::query_ip(const String &suffixed_s, unsigned char *store,
-		      const Element *context)
+		      const Element *context, int flags)
 {
     String s(suffixed_s);
     int colon = s.find_right(':');
@@ -461,7 +463,7 @@ AddressInfo::query_ip(const String &suffixed_s, unsigned char *store,
 	if (typestr.equals(":ip", 3) || typestr.equals(":ip4", 4))
 	    /* do nothing */;
 	else if (typestr.equals(":bcast", 6)) {
-	    if (query_ip_prefix(s, &u.x[0], &u.x[4], context)) {
+	    if (query_ip_prefix(s, &u.x[0], &u.x[4], context, flags)) {
 		u.addr[0] |= ~u.addr[1];
 		memcpy(store, u.x, 4);
 		return true;
@@ -472,9 +474,9 @@ AddressInfo::query_ip(const String &suffixed_s, unsigned char *store,
 		return true;
 	    else if (NameInfo::query(NameInfo::T_IP_PREFIX, context, s, &u.x[0], 8))
 		/* fall through */;
-	    else if (query_netdevice(s, store, tc_ipv4gw, 4, context))
+	    else if (query_netdevice(s, store, tc_ipv4gw, 4, context, flags))
 		return true;
-	    else if (query_netdevice(s, &u.x[0], tc_ipv4prefix, 8, context))
+	    else if (query_netdevice(s, &u.x[0], tc_ipv4prefix, 8, context, flags))
 		/* fall through */;
 	    else
 		return false;
@@ -486,12 +488,13 @@ AddressInfo::query_ip(const String &suffixed_s, unsigned char *store,
     }
 
     return NameInfo::query(NameInfo::T_IP_ADDR, context, s, store, 4)
-	|| query_netdevice(s, store, tc_ipv4, 4, context);
+	|| query_netdevice(s, store, tc_ipv4, 4, context, flags);
 }
 
 bool
 AddressInfo::query_ip_prefix(String s, unsigned char *store,
-			     unsigned char *mask_store, const Element *context)
+			     unsigned char *mask_store, const Element *context,
+                             int flags)
 {
     int colon = s.find_right(':');
     if (colon >= 0) {
@@ -505,7 +508,7 @@ AddressInfo::query_ip_prefix(String s, unsigned char *store,
 
     uint8_t data[8];
     if (NameInfo::query(NameInfo::T_IP_PREFIX, context, s, &data[0], 8)
-	|| query_netdevice(s, data, tc_ipv4prefix, 8, context)) {
+	|| query_netdevice(s, data, tc_ipv4prefix, 8, context, flags)) {
 	memcpy(store, &data[0], 4);
 	memcpy(mask_store, &data[4], 4);
 	return true;
@@ -517,7 +520,7 @@ AddressInfo::query_ip_prefix(String s, unsigned char *store,
 #ifdef HAVE_IP6
 
 bool
-AddressInfo::query_ip6(String s, unsigned char *store, const Element *e)
+AddressInfo::query_ip6(String s, unsigned char *store, const Element *e, int)
 {
     int colon = s.find_right(':');
     if (colon >= 0) {
@@ -531,7 +534,7 @@ AddressInfo::query_ip6(String s, unsigned char *store, const Element *e)
 
 bool
 AddressInfo::query_ip6_prefix(String s, unsigned char *store,
-			      int *bits_store, const Element *context)
+			      int *bits_store, const Element *context, int)
 {
     int colon = s.find_right(':');
     if (colon >= 0) {
@@ -557,7 +560,8 @@ AddressInfo::query_ip6_prefix(String s, unsigned char *store,
 
 
 bool
-AddressInfo::query_ethernet(String s, unsigned char *store, const Element *context)
+AddressInfo::query_ethernet(String s, unsigned char *store, const Element *context,
+                            int flags)
 {
     int colon = s.find_right(':');
     if (colon >= 0) {
@@ -570,7 +574,7 @@ AddressInfo::query_ethernet(String s, unsigned char *store, const Element *conte
     }
 
     return NameInfo::query(NameInfo::T_ETHERNET_ADDR, context, s, store, 6)
-	|| query_netdevice(s, store, tc_ether, 6, context);
+	|| query_netdevice(s, store, tc_ether, 6, context, flags);
 }
 
 CLICK_ENDDECLS
