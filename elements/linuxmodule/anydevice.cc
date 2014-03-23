@@ -28,8 +28,8 @@
 #include <click/handlercall.hh>
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
-#include <click/cxxprotect.h>
 #include <click/standard/addressinfo.hh>
+#include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # include <linux/if_arp.h>
