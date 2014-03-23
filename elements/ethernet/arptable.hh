@@ -200,6 +200,7 @@ class ARPTable : public Element { public:
     Table _table;
     typedef List<ARPEntry, &ARPEntry::_age_link> AgeList;
     AgeList _age;
+    ARPEntry *_packet_search_head; // no packets in earlier _age entries
     atomic_uint32_t _entry_count;
     atomic_uint32_t _packet_count;
     uint32_t _entry_capacity;
@@ -212,6 +213,7 @@ class ARPTable : public Element { public:
 
     ARPEntry *ensure(IPAddress ip, click_jiffies_t now);
     void slim(click_jiffies_t now);
+    static bool precedes(const ARPEntry *ae1, const ARPEntry *ae2);
 
 };
 
