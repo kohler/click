@@ -29,6 +29,7 @@
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <click/cxxprotect.h>
+#include <click/standard/addressinfo.hh>
 CLICK_CXX_PROTECT
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # include <linux/if_arp.h>
@@ -332,7 +333,7 @@ AnyDeviceMap::lookup_unknown(net_device *dev, AnyDevice *last) const
 	    return d;
 	} else if ((dev->type == ARPHRD_ETHER || dev->type == ARPHRD_80211)
 		   && !d->_devname_exists
-		   && EtherAddressArg().parse(d->devname(), en, d)
+		   && EtherAddressArg(AddressInfo::f_nodevice).parse(d->devname(), en, d)
 		   && memcmp(en, dev->dev_addr, 6) == 0)
 	    return d;
 
@@ -359,7 +360,7 @@ net_device *
 AnyDevice::get_by_ether_address(const String &name, Element *context)
 {
     unsigned char en[6];
-    if (!EtherAddressArg().parse(name, en, context))
+    if (!EtherAddressArg(AddressInfo::f_nodevice).parse(name, en, context))
 	return 0;
     read_lock(&dev_base_lock);
     net_device *dev;
