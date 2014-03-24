@@ -150,6 +150,8 @@ ARPQuerier::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 	if (my_bcast_ip == my_ip)
 	    my_bcast_ip = 0xFFFFFFFFU;
     }
+    if (have_capacity_slim_factor && !capacity_slim_factor)
+        return errh->error("CAPACITY_SLIM_FACTOR cannot be zero");
 
     if ((my_ip != _my_ip || my_en != _my_en) && _my_arpt)
 	_arpt->clear();

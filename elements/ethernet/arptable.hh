@@ -135,6 +135,7 @@ class ARPTable : public Element { public:
 	return _capacity_slim_factor;
     }
     void set_capacity_slim_factor(uint32_t capacity_slim_factor) {
+        assert(capacity_slim_factor != 0);
 	_capacity_slim_factor = capacity_slim_factor;
     }
     Timestamp timeout() const {

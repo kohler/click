@@ -53,7 +53,7 @@ ARPTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	.complete() < 0)
 	return -1;
     if (_capacity_slim_factor == 0)
-	errh->error("CAPACITY_SLIM_FACTOR cannot be zero");
+	return errh->error("CAPACITY_SLIM_FACTOR cannot be zero");
     set_timeout(timeout);
     if (_timeout_j) {
 	_expire_timer.initialize(this);
@@ -133,7 +133,9 @@ ARPTable::slim(click_jiffies_t now)
     // Delete packets to make space.
     if (_packet_capacity && _packet_count > _packet_capacity) {
 	uint32_t slim_capacity = _packet_capacity - _packet_capacity / _capacity_slim_factor;
-	if (slim_capacity == 0) // last packet may not have been added yet
+	if (slim_capacity == _packet_capacity) // always drop 1 packet
+            --slim_capacity;
+        else if (slim_capacity == 0) // last packet may not have been added yet
 	    slim_capacity = 1;
 	while (_packet_count > slim_capacity) {
 	    while (ae->_head && _packet_count > slim_capacity) {
