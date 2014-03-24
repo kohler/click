@@ -274,6 +274,34 @@ ToDevice::cleanup(CleanupStage stage)
 # define click_netif_lock_owner(dev, txq)	(dev)->xmit_lock_owner
 #endif
 
+static bool
+tx_trylock(struct net_device *dev, struct netdev_queue *txq) {
+    if (!click_netif_needs_lock(dev))
+        return true;
+
+    if (!spin_trylock_bh(&click_netif_lock(dev, txq)))
+        return false;
+
+    click_netif_lock_owner(dev, txq) = smp_processor_id();
+
+    return true;
+}
+
+static void
+tx_unlock(struct net_device *dev, struct netdev_queue *txq) {
+    if (!click_netif_needs_lock(dev))
+        return;
+
+#if HAVE_NETDEV_GET_TX_QUEUE
+    __netif_tx_unlock_bh(txq);
+#elif HAVE_NETIF_TX_LOCK
+    netif_tx_unlock_bh(dev);
+#else
+    dev->xmit_lock_owner = -1;
+    spin_unlock_bh(&dev->xmit_lock);
+#endif
+}
+
 bool
 ToDevice::run_task(Task *)
 {
@@ -287,14 +315,9 @@ ToDevice::run_task(Task *)
     struct netdev_queue *txq = 0;
 #endif
 
-    if (click_netif_needs_lock(dev)) {
-	ok = spin_trylock_bh(&click_netif_lock(dev, txq));
-	if (likely(ok))
-	    click_netif_lock_owner(dev, txq) = smp_processor_id();
-	else {
-	    _task.fast_reschedule();
-	    return false;
-	}
+    if (!tx_trylock(dev, txq)) {
+        _task.fast_reschedule();
+        return false;
     }
 
 #if CLICK_DEVICE_STATS
@@ -335,7 +358,16 @@ ToDevice::run_task(Task *)
 		p = 0;
 	    }
 	}
-	if (!p && !(p = input(0).pull()))
+        if (!p) {
+	    tx_unlock(dev, txq);
+	    p = input(0).pull();
+	    if (!tx_trylock(dev, txq)) {
+	        _task.reschedule();
+	        _q = p;
+	        goto bail;
+            }
+        }
+        if (!p)
 	    break;
 
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
@@ -370,13 +402,6 @@ ToDevice::run_task(Task *)
     }
 #endif
 
-#if CLICK_DEVICE_STATS
-    if (sent > 0)
-	_activations++;
-#endif
-
-    if (busy && sent == 0)
-	_busy_returns++;
 
 #if HAVE_LINUX_POLLING
     if (is_polling) {
@@ -393,16 +418,17 @@ ToDevice::run_task(Task *)
     }
 #endif
 
-    if (click_netif_needs_lock(dev)) {
-#if HAVE_NETDEV_GET_TX_QUEUE
-	__netif_tx_unlock_bh(txq);
-#elif HAVE_NETIF_TX_LOCK
-	netif_tx_unlock_bh(dev);
-#else
-	dev->xmit_lock_owner = -1;
-	spin_unlock_bh(&dev->xmit_lock);
+    tx_unlock(dev, txq);
+
+bail:
+
+#if CLICK_DEVICE_STATS
+    if (sent > 0)
+	_activations++;
 #endif
-    }
+
+    if (busy && sent == 0)
+	_busy_returns++;
 
     // If we're polling, never go to sleep! We're relying on ToDevice to clean
     // the transmit ring.
