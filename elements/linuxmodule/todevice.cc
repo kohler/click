@@ -470,14 +470,14 @@ ToDevice::queue_packet(Packet *p, struct netdev_queue *txq)
 	if (skb_tailroom(skb1) < need_tail) {
 	    if (++_too_short == 1)
 		printk("<1>ToDevice %s packet too small (len %d, tailroom %d, need %d), had to copy\n", dev->name, skb1->len, skb_tailroom(skb1), need_tail);
-	    struct sk_buff *nskb = skb_copy_expand(skb1, skb_headroom(skb1), skb_tailroom(skb1) + 60 - skb1->len, GFP_ATOMIC);
+	    struct sk_buff *nskb = skb_copy_expand(skb1, skb_headroom(skb1), need_tail, GFP_ATOMIC);
 	    kfree_skb(skb1);
 	    if (!nskb)
 		return -1;
 	    skb1 = nskb;
 	}
 	// printk("padding %d:%d:%d\n", skb1->truesize, skb1->len, 60-skb1->len);
-	skb_put(skb1, need_tail);
+	memset(skb_put(skb1, need_tail), 0, need_tail);
     }
 
     // set the device annotation;
