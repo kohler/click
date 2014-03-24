@@ -45,6 +45,13 @@ a time.  Default is zero, which means unlimited.
 Unsigned integer.  The maximum number of saved IP packets the ARPTable will hold
 for any given ARP entry at a time.  Default is zero, which means unlimited.
 
+=item CAPACITY_SLIM_FACTOR
+
+Unsigned integer. ARPTable removes 1/CAPACITY_SLIM_FACTOR of saved packets on
+exceeding CAPACITY. Default is 2.  Increase for better bounds on the number of
+saved packets; decrease for better performance under an nmap-style denial-of-
+service attack.
+
 =item TIMEOUT
 
 Time value.  The amount of time after which an ARP entry will expire.  Default
@@ -123,6 +130,12 @@ class ARPTable : public Element { public:
     }
     void set_entry_packet_capacity(uint32_t entry_packet_capacity) {
 	_entry_packet_capacity = entry_packet_capacity;
+    }
+    uint32_t capacity_slim_factor() const {
+	return _capacity_slim_factor;
+    }
+    void set_capacity_slim_factor(uint32_t capacity_slim_factor) {
+	_capacity_slim_factor = capacity_slim_factor;
     }
     Timestamp timeout() const {
 	return Timestamp::make_jiffies((click_jiffies_t) _timeout_j);
@@ -205,6 +218,7 @@ class ARPTable : public Element { public:
     uint32_t _entry_capacity;
     uint32_t _packet_capacity;
     uint32_t _entry_packet_capacity;
+    uint32_t _capacity_slim_factor;
     uint32_t _timeout_j;
     atomic_uint32_t _drops;
     SizedHashAllocator<sizeof(ARPEntry)> _alloc;

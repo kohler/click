@@ -31,7 +31,7 @@
 CLICK_DECLS
 
 ARPTable::ARPTable()
-    : _entry_capacity(0), _packet_capacity(2048), _entry_packet_capacity(0), _expire_timer(this)
+    : _entry_capacity(0), _packet_capacity(2048), _entry_packet_capacity(0), _capacity_slim_factor(2), _expire_timer(this)
 {
     _entry_count = _packet_count = _drops = 0;
 }
@@ -48,9 +48,12 @@ ARPTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("CAPACITY", _packet_capacity)
 	.read("ENTRY_CAPACITY", _entry_capacity)
 	.read("ENTRY_PACKET_CAPACITY", _entry_packet_capacity)
+	.read("CAPACITY_SLIM_FACTOR", _capacity_slim_factor)
 	.read("TIMEOUT", timeout)
 	.complete() < 0)
 	return -1;
+    if (_capacity_slim_factor == 0)
+	errh->error("CAPACITY_SLIM_FACTOR cannot be zero");
     set_timeout(timeout);
     if (_timeout_j) {
 	_expire_timer.initialize(this);
@@ -127,18 +130,23 @@ ARPTable::slim(click_jiffies_t now)
 	--_entry_count;
     }
 
-    // Mark entries for polling, and delete packets to make space.
-    while (_packet_capacity && _packet_count > _packet_capacity) {
-	while (ae->_head && _packet_count > _packet_capacity) {
-	    Packet *p = ae->_head;
-	    if (!(ae->_head = p->next()))
-		ae->_tail = 0;
-	    p->kill();
-	    --_packet_count;
-	    --ae->_entry_packet_count;
-	    ++_drops;
+    // Delete packets to make space.
+    if (_packet_capacity && _packet_count > _packet_capacity) {
+	uint32_t slim_capacity = _packet_capacity - _packet_capacity / _capacity_slim_factor;
+	if (slim_capacity == 0) // last packet may not have been added yet
+	    slim_capacity = 1;
+	while (_packet_count > slim_capacity) {
+	    while (ae->_head && _packet_count > slim_capacity) {
+		Packet *p = ae->_head;
+		if (!(ae->_head = p->next()))
+		    ae->_tail = 0;
+		p->kill();
+		--_packet_count;
+		--ae->_entry_packet_count;
+		++_drops;
+	    }
+	    ae = ae->_age_link.next();
 	}
-	ae = ae->_age_link.next();
     }
 }
 
