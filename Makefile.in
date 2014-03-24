@@ -189,7 +189,7 @@ distclean:
 	-rm -f etc/pkg-config.mk
 	-rm -f elementmap.xml conftest.* installch
 
-check: userlevel tools elementmap.xml
+check: $(ALL_TARGETS) Makefile elementmap.xml
 	$(top_srcdir)/test/testie -p $(top_builddir) -p $(top_builddir)/userlevel \
 		-p $(top_builddir)/tools/click-align \
 		-p $(top_builddir)/tools/click-fastclassifier \
