@@ -66,7 +66,7 @@ Bypass::pull(int port)
 }
 
 Bypass::Locator::Locator(int from_port)
-    : _e(0), _port(from_port) {
+    : _e(0), _port(0), _from_port(from_port) {
 }
 
 bool
@@ -74,11 +74,11 @@ Bypass::Locator::visit(Element* e, bool isoutput, int port,
                        Element*, int from_port, int)
 {
     //click_chatter("Bypass: Locator Visiting %p{element}:%d\n", e, port);
-    if (from_port != _port)
+    if (from_port != _from_port)
         return false;
     if (Bypass* b = static_cast<Bypass*>(e->cast("Bypass")))
         if (!b->_inline) {
-            _port = b->_active && port == 0 && b->nports(!isoutput) > 1;
+            _from_port = b->_active && port == 0 && b->nports(!isoutput) > 1;
             return true;
         }
     _e = e;

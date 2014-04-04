@@ -97,6 +97,7 @@ class Bypass : public Element { public:
     struct Locator : public RouterVisitor {
         Element* _e;
         int _port;
+        int _from_port;
         Locator(int from_port);
         bool visit(Element *e, bool isoutput, int port,
                    Element *from_e, int from_port, int distance);
