@@ -6,8 +6,8 @@ $VALGRIND click --simtime CONFIG 2>OUT 1>&2
 
 %file CONFIG
 
-is :: InfiniteSource(LIMIT 1, ACTIVE false)
--> parent :: Bypass
+is :: InfiniteSource(LIMIT 1, ACTIVE false), is1 :: InfiniteSource(LIMIT 1, ACTIVE false)
+=> parent :: Bypass
 => ( [0] -> child1 :: Bypass
          => ( [0] -> print1_0 :: Print(child1_0, CONTENTS ASCII)
                   -> Discard;
@@ -19,30 +19,22 @@ is :: InfiniteSource(LIMIT 1, ACTIVE false)
               [1] -> print2_1 :: Print(child2_1, CONTENTS ASCII)
                   -> Discard; ); );
 
-is1 :: InfiniteSource(LIMIT 1, ACTIVE false)
--> [1] parent;
-
-isx :: InfiniteSource(LIMIT 1, ACTIVE false)
-=> ( [0] -> loopbypass :: Bypass(ACTIVE true) -> [0];
-     loopbypass [1] -> Null -> [1] loopbypass )
--> Discard;
-
-isy :: InfiniteSource(LIMIT 1, ACTIVE false)
--> unitbypass1 :: Bypass(ACTIVE false)
--> unitbypass2 :: Bypass(ACTIVE true)
--> Discard;
-
-isz :: InfiniteSource(LIMIT 1, ACTIVE false)
--> unitbypass1b :: Bypass(ACTIVE false)
--> unitbypass2b :: Bypass(ACTIVE true)
--> PullNull -> Discard;
-
 isa :: InfiniteSource(LIMIT 1, ACTIVE false)
-=> ( [0] -> child1a :: Bypass -> [0];
-     child1a [1] -> Print(child1a_B, CONTENTS ASCII) -> [1] child1a )
-=> ( [0] -> child2a :: Bypass -> [0];
-     child2a [1] -> Print(child2a_B, CONTENTS ASCII) -> [1] child2a )
+-> ( [0] -> bp1a :: Bypass -> [0];
+     bp1a [1] -> Print(bp1a_B, CONTENTS ASCII) -> [1] bp1a )
+=> ( [0] -> bp2a :: Bypass -> [0];
+     bp2a [1] -> Print(bp2a_B, CONTENTS ASCII) -> [1] bp2a )
 => Discard;
+
+
+isb :: InfiniteSource(LIMIT 1, ACTIVE false)
+-> bp1b :: Bypass
+-> bp2b :: Bypass
+=> ( [0] -> [1] bp2b_insw :: InputSwitch(0) -> Print(bp2b_0, CONTENTS ASCII) -> [0];
+     [1] -> Print(bp2b_1, CONTENTS ASCII) -> [0]; )
+-> Discard;
+
+Idle -> bp2b_insw;
 
 try_order :: Script(TYPE PASSIVE,
     // first negate so that we end up doing something
@@ -121,15 +113,21 @@ Script(
     write try_all_orders.run true true true,
     wait 10,
 
-    write try_order_a.run child1a false child2a false none,
+    write try_order_a.run bp1a false bp2a false none,
     wait 10,
-    write try_order_a.run child1a false child2a true 2a,
+    write try_order_a.run bp1a false bp2a true 2a,
     wait 10,
-    write try_order_a.run child1a true child2a false 1a,
+    write try_order_a.run bp1a true bp2a false 1a,
     wait 10,
-    write try_order_a.run child1a true child2a true 1a2a,
+    write try_order_a.run bp1a true bp2a true 1a2a,
     wait 10,
-    write try_order_a.run child1a false child2a false none,
+    write try_order_a.run bp1a false bp2a false none,
+    wait 10,
+
+    write bp1b.active true,
+    write bp1b.active false,
+    write isb.data none,
+    write isb.active true,
     wait 10,
 
     stop,
@@ -236,10 +234,10 @@ child1_1:    9 |  child1_1 +
 child2_1:    8 |  child2_1
 child1_1:    9 |  child1_1 +
 
-child2a_B:    2 |  2a
-child1a_B:    2 |  1a
-child1a_B:    4 |  1a2a
-child2a_B:    4 |  1a2a
+bp2a_B:    2 |  2a
+bp1a_B:    2 |  1a
+bp1a_B:    4 |  1a2a
+bp2a_B:    4 |  1a2a
 
 %ignore
 Bypass:{{.*}}

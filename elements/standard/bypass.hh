@@ -97,18 +97,19 @@ class Bypass : public Element { public:
     struct Locator : public RouterVisitor {
         Element* _e;
         int _port;
-        Locator(bool active);
-	bool visit(Element *e, bool isoutput, int port,
-		   Element *from_e, int from_port, int distance);
+        int _from_port;
+        Locator(int from_port);
+        bool visit(Element *e, bool isoutput, int port,
+                   Element *from_e, int from_port, int distance);
     };
 
     struct Assigner : public RouterVisitor {
         Element* _e;
-	int _port;
+        int _port;
         Vector<int> _interesting;
-	Assigner(Element *e, int port);
-	bool visit(Element *e, bool isoutput, int port,
-		   Element *from_e, int from_port, int distance);
+        Assigner(Element *e, int port);
+        bool visit(Element *e, bool isoutput, int port,
+                   Element *from_e, int from_port, int distance);
     };
 
     bool _active;

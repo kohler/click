@@ -31,7 +31,7 @@ void *
 Bypass::cast(const char *name)
 {
     if (strcmp(name, "Bypass") == 0)
-	return this;
+        return this;
     return Element::cast(name);
 }
 
@@ -39,10 +39,10 @@ int
 Bypass::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     if (Args(conf, this, errh)
-	.read_p("ACTIVE", _active)
-	.read("INLINE", _inline)
-	.complete() < 0)
-	return -1;
+        .read_p("ACTIVE", _active)
+        .read("INLINE", _inline)
+        .complete() < 0)
+        return -1;
     return 0;
 }
 
@@ -65,19 +65,20 @@ Bypass::pull(int port)
     return input(_active && !port && ninputs() > 1).pull();
 }
 
-Bypass::Locator::Locator(bool active)
-    : _e(0), _port(active) {
+Bypass::Locator::Locator(int from_port)
+    : _e(0), _port(0), _from_port(from_port) {
 }
 
 bool
 Bypass::Locator::visit(Element* e, bool isoutput, int port,
                        Element*, int from_port, int)
 {
-    if (from_port != _port)
+    //click_chatter("Bypass: Locator Visiting %p{element}:%d\n", e, port);
+    if (from_port != _from_port)
         return false;
     if (Bypass* b = static_cast<Bypass*>(e->cast("Bypass")))
         if (!b->_inline) {
-            _port = b->_active && port == 0 && b->nports(!isoutput) > 1;
+            _from_port = b->_active && port == 0 && b->nports(!isoutput) > 1;
             return true;
         }
     _e = e;
@@ -95,7 +96,7 @@ Bypass::Assigner::visit(Element* e, bool isoutput, int port,
 {
     if (_interesting.empty()) {
         _interesting.push_back(from_e->eindex());
-        _interesting.push_back(3);
+        _interesting.push_back(3); // bit 1: port 0, bit 2: port 1
     }
     for (int i = 0; i != _interesting.size(); i += 2)
         if (_interesting[i] == from_e->eindex()
@@ -106,12 +107,12 @@ Bypass::Assigner::visit(Element* e, bool isoutput, int port,
     if (Bypass* b = static_cast<Bypass*>(e->cast("Bypass")))
         if (!b->_inline) {
             _interesting.push_back(b->eindex());
-            _interesting.push_back((b->_active == port || b->nports(isoutput) == 1 ? 1 : 0)
+            _interesting.push_back(((b->_active == port || b->nports(isoutput) == 1) ? 1 : 0)
                                    | (port == 0 ? 2 : 0));
             return true;
         }
     // Just cheat.
-    //click_chatter("Bypass: Assigning %p{element}:%d to %p{element}:%d\n", e, port, _e, _port);
+    //click_chatter("Bypass: Assigning %p{element}:%d to %p{element}:%d\n", _e, _port, e, port);
     const_cast<Element::Port&>(e->port(isoutput, port)).assign(isoutput, _e, _port);
     return false;
 }
@@ -120,11 +121,12 @@ void
 Bypass::fix()
 {
     if (!_inline) {
-	bool direction = output_is_push(0);
+        bool direction = output_is_push(0);
         Locator loc(_active);
         router()->visit(this, direction, _active, &loc);
         if (loc._e) {
             Assigner ass(loc._e, loc._port);
+            // for the reconnect port 1: if !_active then we already have the target. _active case is handled below
             router()->visit(this, !direction, _active ? 0 : -1, &ass);
         }
         if (_active && nports(!direction) > 1) {
@@ -144,10 +146,10 @@ Bypass::write_handler(const String &s, Element *e, void *, ErrorHandler *errh)
     Bypass *b = static_cast<Bypass *>(e);
     bool active;
     if (!BoolArg().parse(s, active))
-	return errh->error("syntax error");
+        return errh->error("syntax error");
     if (active != b->_active) {
-	b->_active = active;
-	b->fix();
+        b->_active = active;
+        b->fix();
     }
     return 0;
 }
