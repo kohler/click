@@ -26,6 +26,16 @@ isa :: InfiniteSource(LIMIT 1, ACTIVE false)
      bp2a [1] -> Print(bp2a_B, CONTENTS ASCII) -> [1] bp2a )
 => Discard;
 
+
+isb :: InfiniteSource(LIMIT 1, ACTIVE false)
+-> bp1b :: Bypass
+-> bp2b :: Bypass
+=> ( [0] -> [1] bp2b_insw :: InputSwitch(0) -> Print(bp2b_0, CONTENTS ASCII) -> [0];
+     [1] -> Print(bp2b_1, CONTENTS ASCII) -> [0]; )
+-> Discard;
+
+Idle -> bp2b_insw;
+
 try_order :: Script(TYPE PASSIVE,
     // first negate so that we end up doing something
     write $1.active $(not $2),
@@ -112,6 +122,12 @@ Script(
     write try_order_a.run bp1a true bp2a true 1a2a,
     wait 10,
     write try_order_a.run bp1a false bp2a false none,
+    wait 10,
+
+    write bp1b.active true,
+    write bp1b.active false,
+    write isb.data none,
+    write isb.active true,
     wait 10,
 
     stop,
