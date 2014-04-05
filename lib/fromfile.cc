@@ -118,7 +118,7 @@ FromFile::warning(ErrorHandler *errh, const char *format, ...) const
 
 #ifdef ALLOW_MMAP
 static void
-munmap_destructor(unsigned char *data, size_t amount)
+munmap_destructor(unsigned char *data, size_t amount, void*)
 {
     if (munmap((caddr_t)data, amount) < 0)
 	click_chatter("FromFile: munmap: %s", strerror(errno));

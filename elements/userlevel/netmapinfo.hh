@@ -27,7 +27,7 @@ class NetmapInfo { public:
     static bool is_netmap_buffer(Packet *p) {
 	return p->buffer_destructor() == buffer_destructor;
     }
-    static void buffer_destructor(unsigned char *buf, size_t) {
+    static void buffer_destructor(unsigned char *buf, size_t, void*) {
 	*reinterpret_cast<unsigned char **>(buf) = buffers;
 	buffers = buf;
     }

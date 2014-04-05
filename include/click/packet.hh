@@ -58,9 +58,10 @@ class Packet { public:
     static inline Packet *make(struct mbuf *mbuf) CLICK_WARN_UNUSED_RESULT;
 #endif
 #if CLICK_USERLEVEL
-    typedef void (*buffer_destructor_type)(unsigned char *buf, size_t sz);
-    static WritablePacket *make(unsigned char *data, uint32_t length,
-				buffer_destructor_type buffer_destructor) CLICK_WARN_UNUSED_RESULT;
+    typedef void (*buffer_destructor_type)(unsigned char* buf, size_t sz, void* argument);
+    static WritablePacket* make(unsigned char* data, uint32_t length,
+				buffer_destructor_type buffer_destructor,
+                                void* argument = (void*) 0) CLICK_WARN_UNUSED_RESULT;
 #endif
 
     static void static_cleanup();
@@ -722,15 +723,16 @@ class Packet { public:
     unsigned char *_data; /* where the packet starts */
     unsigned char *_tail; /* one beyond end of packet */
     unsigned char *_end;  /* one beyond end of allocated buffer */
-# if CLICK_USERLEVEL
-    buffer_destructor_type _destructor;
-# endif
 # if CLICK_BSDMODULE
     struct mbuf *_m;
 # endif
     AllAnno _aa;
 # if CLICK_NS
     SimPacketinfoWrapper _sim_packetinfo;
+# endif
+# if CLICK_USERLEVEL
+    buffer_destructor_type _destructor;
+    void* _destructor_argument;
 # endif
 #endif
 

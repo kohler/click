@@ -298,7 +298,7 @@ ToDevice::netmap_send_packet(Packet *p)
 	    && noutputs() == 0) {
 	    ring->slot[cur].buf_idx = NETMAP_BUF_IDX(ring, (char *) p->buffer());
 	    ring->slot[cur].flags |= NS_BUF_CHANGED;
-	    NetmapInfo::buffer_destructor(buf, 0);
+	    NetmapInfo::buffer_destructor(buf, 0, 0);
 	    p->reset_buffer();
 	} else
 	    memcpy(buf, p->data(), p_length);

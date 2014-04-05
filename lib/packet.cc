@@ -212,7 +212,7 @@ Packet::~Packet()
 	_data_packet->kill();
 # if CLICK_USERLEVEL
     else if (_head && _destructor)
-	_destructor(_head, _end - _head);
+	_destructor(_head, _end - _head, _destructor_argument);
     else
 	delete[] _head;
 # elif CLICK_BSDMODULE
@@ -226,9 +226,18 @@ Packet::~Packet()
 #if !CLICK_LINUXMODULE
 
 # if HAVE_CLICK_PACKET_POOL
+// ** Packet pools **
+
+// Click configurations usually allocate & free tons of packets and it's
+// important to do so quickly. This specialized packet allocator saves
+// pre-initialized Packet objects, either with or without data, for fast
+// reuse. It can support multithreaded deployments: each thread has its own
+// pool, with a global pool to even out imbalance.
+
 #  define CLICK_PACKET_POOL_BUFSIZ		2048
 #  define CLICK_PACKET_POOL_SIZE		1000 // see LIMIT in packetpool-01.testie
 #  define CLICK_GLOBAL_PACKET_POOL_COUNT	16
+
 namespace {
 struct PacketData {
     PacketData *next;
@@ -246,15 +255,29 @@ struct PacketPool {
 #  endif
 };
 }
+
+static PacketPool global_packet_pool;
+
 #  if HAVE_MULTITHREAD
+static volatile uint32_t global_packet_pool_lock;
 static __thread PacketPool *thread_packet_pool;
 static PacketPool *all_thread_packet_pools;
-static PacketPool global_packet_pool;
-static volatile uint32_t global_packet_pool_lock;
+#  endif
 
-static inline PacketPool *
-get_packet_pool()
-{
+/** @brief Return the local packet pool for this thread.
+    @pre make_local_packet_pool() has succeeded on this thread. */
+static inline PacketPool& local_packet_pool() {
+#  if HAVE_MULTITHREAD
+    return *thread_packet_pool;
+#  else
+    // If not multithreaded, there is only one packet pool.
+    return global_packet_pool;
+#  endif
+}
+
+/** @brief Create and return a local packet pool for this thread. */
+static inline PacketPool* make_local_packet_pool() {
+#  if HAVE_MULTITHREAD
     PacketPool *pp = thread_packet_pool;
     if (!pp && (pp = new PacketPool)) {
 	memset(pp, 0, sizeof(PacketPool));
@@ -267,16 +290,20 @@ get_packet_pool()
 	global_packet_pool_lock = 0;
     }
     return pp;
-}
 #  else
-static PacketPool packet_pool;
+    return &global_packet_pool;
 #  endif
+}
 
 WritablePacket *
 WritablePacket::pool_allocate(bool with_data)
 {
+    PacketPool& packet_pool = *make_local_packet_pool();
+    (void) with_data;
+
 #  if HAVE_MULTITHREAD
-    PacketPool &packet_pool = *get_packet_pool();
+    // Steal packets and/or data from the global pool if there's nothing on
+    // the local pool.
     if ((!packet_pool.p && global_packet_pool.p)
 	|| (with_data && !packet_pool.pd && global_packet_pool.pd)) {
 	while (atomic_uint32_t::swap(global_packet_pool_lock, 1) == 1)
@@ -301,13 +328,11 @@ WritablePacket::pool_allocate(bool with_data)
 	click_compiler_fence();
 	global_packet_pool_lock = 0;
     }
-#  else
-    (void) with_data;
-#  endif
+#  endif /* HAVE_MULTITHREAD */
 
     WritablePacket *p = packet_pool.p;
     if (p) {
-	packet_pool.p = static_cast<WritablePacket *>(p->next());
+	packet_pool.p = static_cast<WritablePacket*>(p->next());
 	--packet_pool.pcount;
     } else
 	p = new WritablePacket;
@@ -325,9 +350,7 @@ WritablePacket::pool_allocate(uint32_t headroom, uint32_t length,
     if (p) {
 	p->initialize();
 	PacketData *pd;
-#  if HAVE_MULTITHREAD
-	PacketPool &packet_pool = *thread_packet_pool;
-#  endif
+	PacketPool& packet_pool = local_packet_pool();
 	if (n == CLICK_PACKET_POOL_BUFSIZ && (pd = packet_pool.pd)) {
 	    packet_pool.pd = pd->next;
 	    --packet_pool.pdcount;
@@ -356,8 +379,8 @@ WritablePacket::recycle(WritablePacket *p)
     }
     p->~WritablePacket();
 
+    PacketPool& packet_pool = *make_local_packet_pool();
 #  if HAVE_MULTITHREAD
-    PacketPool &packet_pool = *get_packet_pool();
     if ((packet_pool.p && packet_pool.pcount == CLICK_PACKET_POOL_SIZE)
 	|| (data && packet_pool.pd && packet_pool.pdcount == CLICK_PACKET_POOL_SIZE)) {
 	while (atomic_uint32_t::swap(global_packet_pool_lock, 1) == 1)
@@ -396,7 +419,7 @@ WritablePacket::recycle(WritablePacket *p)
 	click_compiler_fence();
 	global_packet_pool_lock = 0;
     }
-#  else
+#  else /* !HAVE_MULTITHREAD */
     if (packet_pool.pcount == CLICK_PACKET_POOL_SIZE) {
 	::operator delete((void *) p);
 	p = 0;
@@ -405,7 +428,7 @@ WritablePacket::recycle(WritablePacket *p)
 	delete[] data;
 	data = 0;
     }
-#  endif
+#  endif /* HAVE_MULTITHREAD */
 
     if (p) {
 	++packet_pool.pcount;
@@ -422,7 +445,7 @@ WritablePacket::recycle(WritablePacket *p)
     }
 }
 
-#endif
+# endif /* HAVE_PACKET_POOL */
 
 bool
 Packet::alloc_data(uint32_t headroom, uint32_t length, uint32_t tailroom)
@@ -432,7 +455,7 @@ Packet::alloc_data(uint32_t headroom, uint32_t length, uint32_t tailroom)
 	tailroom = min_buffer_length - length - headroom;
 	n = min_buffer_length;
     }
-#if CLICK_USERLEVEL
+# if CLICK_USERLEVEL
     unsigned char *d = new unsigned char[n];
     if (!d)
 	return false;
@@ -440,7 +463,7 @@ Packet::alloc_data(uint32_t headroom, uint32_t length, uint32_t tailroom)
     _data = d + headroom;
     _tail = _data + length;
     _end = _head + n;
-#elif CLICK_BSDMODULE
+# elif CLICK_BSDMODULE
     //click_chatter("allocate new mbuf, length=%d", n);
     if (n > MJUM16BYTES) {
 	click_chatter("trying to allocate %d bytes: too many\n", n);
@@ -467,11 +490,12 @@ Packet::alloc_data(uint32_t headroom, uint32_t length, uint32_t tailroom)
     _m->m_len = length;
     _m->m_pkthdr.len = length;
     assimilate_mbuf();
-#endif
+# endif /* CLICK_USERLEVEL || CLICK_BSDMODULE */
     return true;
 }
 
-#endif
+#endif /* !CLICK_LINUXMODULE */
+
 
 /** @brief Create and return a new packet.
  * @param headroom headroom in new packet
@@ -538,21 +562,22 @@ Packet::make(uint32_t headroom, const void *data,
  * @param data data used in the new packet
  * @param length length of packet
  * @param destructor destructor function
+ * @param argument argument to destructor function
  * @return new packet, or null if no packet could be created
  *
- * The packet's data pointer becomes the @a data: the data is not copied into
- * the new packet, rather the packet owns the @a data pointer.  When the
- * packet's data is eventually destroyed, either because the packet is deleted
- * or because of something like a push() or full(), the @a destructor will be
- * called with arguments @a destructor(@a data, @a length).  (If @a destructor
- * is null, the packet data will be freed by <tt>delete[] @a data</tt>.)  The
- * packet has zero headroom and tailroom.
+ * The packet's data pointer becomes the @a data: the data is not copied
+ * into the new packet, rather the packet owns the @a data pointer. When the
+ * packet's data is eventually destroyed, either because the packet is
+ * deleted or because of something like a push() or full(), the @a
+ * destructor will be called as @a destructor(@a data, @a length, @a
+ * argument). (If @a destructor is null, the packet data will be freed by
+ * <tt>delete[] @a data</tt>.) The packet has zero headroom and tailroom.
  *
  * The returned packet's annotations are cleared and its header pointers are
  * null. */
 WritablePacket *
 Packet::make(unsigned char *data, uint32_t length,
-	     buffer_destructor_type destructor)
+	     buffer_destructor_type destructor, void* argument)
 {
 # if HAVE_CLICK_PACKET_POOL
     WritablePacket *p = WritablePacket::pool_allocate(false);
@@ -564,6 +589,7 @@ Packet::make(unsigned char *data, uint32_t length,
 	p->_head = p->_data = data;
 	p->_tail = p->_end = data + length;
 	p->_destructor = destructor;
+        p->_destructor_argument = argument;
     }
     return p;
 }
@@ -735,7 +761,7 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
 	_data_packet->kill();
 # if CLICK_USERLEVEL
     else if (_destructor)
-	_destructor(old_head, old_end - old_head);
+	_destructor(old_head, old_end - old_head, _destructor_argument);
     else
 	delete[] old_head;
     _destructor = 0;
@@ -957,7 +983,7 @@ Packet::static_cleanup()
     }
     assert(rounds == 0);
 # else
-    cleanup_pool(&packet_pool, 0);
+    cleanup_pool(&global_packet_pool, 0);
 # endif
 #endif
 }
