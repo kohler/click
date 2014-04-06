@@ -240,28 +240,40 @@ Packet::~Packet()
 
 namespace {
 struct PacketData {
-    PacketData *next;
+    PacketData* next;           // link to next free data buffer in pool
 #  if HAVE_MULTITHREAD
-    PacketData *pool_next;
+    PacketData* batch_next;     // link to next buffer batch
+    unsigned batch_pdcount;     // # buffers in this batch
 #  endif
 };
+
 struct PacketPool {
-    WritablePacket *p;
-    unsigned pcount;
-    PacketData *pd;
-    unsigned pdcount;
+    WritablePacket* p;          // free packets, linked by p->next()
+    unsigned pcount;            // # packets in `p` list
+    PacketData* pd;             // free data buffers, linked by pd->next
+    unsigned pdcount;           // # buffers in `pd` list
 #  if HAVE_MULTITHREAD
-    PacketPool *chain;
+    PacketPool* thread_pool_next; // link to next per-thread pool
 #  endif
 };
 }
 
-static PacketPool global_packet_pool;
-
 #  if HAVE_MULTITHREAD
-static volatile uint32_t global_packet_pool_lock;
 static __thread PacketPool *thread_packet_pool;
-static PacketPool *all_thread_packet_pools;
+
+struct GlobalPacketPool {
+    WritablePacket* pbatch;     // batches of free packets, linked by p->prev()
+                                //   p->anno_u32(0) is # packets in batch
+    unsigned pbatchcount;       // # batches in `pbatch` list
+    PacketData* pdbatch;        // batches of free data buffers
+    unsigned pdbatchcount;      // # batches in `pdbatch` list
+
+    PacketPool* thread_pools;   // all thread packet pools
+    volatile uint32_t lock;
+};
+static GlobalPacketPool global_packet_pool;
+#else
+static PacketPool global_packet_pool;
 #  endif
 
 /** @brief Return the local packet pool for this thread.
@@ -281,13 +293,13 @@ static inline PacketPool* make_local_packet_pool() {
     PacketPool *pp = thread_packet_pool;
     if (!pp && (pp = new PacketPool)) {
 	memset(pp, 0, sizeof(PacketPool));
-	while (atomic_uint32_t::swap(global_packet_pool_lock, 1) == 1)
+	while (atomic_uint32_t::swap(global_packet_pool.lock, 1) == 1)
 	    /* do nothing */;
-	pp->chain = all_thread_packet_pools;
-	all_thread_packet_pools = pp;
+	pp->thread_pool_next = global_packet_pool.thread_pools;
+	global_packet_pool.thread_pools = pp;
 	thread_packet_pool = pp;
 	click_compiler_fence();
-	global_packet_pool_lock = 0;
+	global_packet_pool.lock = 0;
     }
     return pp;
 #  else
@@ -304,29 +316,29 @@ WritablePacket::pool_allocate(bool with_data)
 #  if HAVE_MULTITHREAD
     // Steal packets and/or data from the global pool if there's nothing on
     // the local pool.
-    if ((!packet_pool.p && global_packet_pool.p)
-	|| (with_data && !packet_pool.pd && global_packet_pool.pd)) {
-	while (atomic_uint32_t::swap(global_packet_pool_lock, 1) == 1)
+    if ((!packet_pool.p && global_packet_pool.pbatch)
+	|| (with_data && !packet_pool.pd && global_packet_pool.pdbatch)) {
+	while (atomic_uint32_t::swap(global_packet_pool.lock, 1) == 1)
 	    /* do nothing */;
 
 	WritablePacket *pp;
-	if (!packet_pool.p && (pp = global_packet_pool.p)) {
-	    global_packet_pool.p = static_cast<WritablePacket *>(pp->prev());
-	    --global_packet_pool.pcount;
+	if (!packet_pool.p && (pp = global_packet_pool.pbatch)) {
+	    global_packet_pool.pbatch = static_cast<WritablePacket *>(pp->prev());
+	    --global_packet_pool.pbatchcount;
 	    packet_pool.p = pp;
-	    packet_pool.pcount = CLICK_PACKET_POOL_SIZE;
+	    packet_pool.pcount = pp->anno_u32(0);
 	}
 
 	PacketData *pd;
-	if (with_data && !packet_pool.pd && (pd = global_packet_pool.pd)) {
-	    global_packet_pool.pd = pd->pool_next;
-	    --global_packet_pool.pdcount;
+	if (with_data && !packet_pool.pd && (pd = global_packet_pool.pdbatch)) {
+	    global_packet_pool.pdbatch = pd->batch_next;
+	    --global_packet_pool.pdbatchcount;
 	    packet_pool.pd = pd;
-	    packet_pool.pdcount = CLICK_PACKET_POOL_SIZE;
+	    packet_pool.pdcount = pd->batch_pdcount;
 	}
 
 	click_compiler_fence();
-	global_packet_pool_lock = 0;
+	global_packet_pool.lock = 0;
     }
 #  endif /* HAVE_MULTITHREAD */
 
@@ -383,41 +395,43 @@ WritablePacket::recycle(WritablePacket *p)
 #  if HAVE_MULTITHREAD
     if ((packet_pool.p && packet_pool.pcount == CLICK_PACKET_POOL_SIZE)
 	|| (data && packet_pool.pd && packet_pool.pdcount == CLICK_PACKET_POOL_SIZE)) {
-	while (atomic_uint32_t::swap(global_packet_pool_lock, 1) == 1)
+	while (atomic_uint32_t::swap(global_packet_pool.lock, 1) == 1)
 	    /* do nothing */;
 
 	if (packet_pool.p && packet_pool.pcount == CLICK_PACKET_POOL_SIZE) {
-	    if (global_packet_pool.pcount == CLICK_GLOBAL_PACKET_POOL_COUNT) {
+	    if (global_packet_pool.pbatchcount == CLICK_GLOBAL_PACKET_POOL_COUNT) {
 		while (WritablePacket *p = packet_pool.p) {
 		    packet_pool.p = static_cast<WritablePacket *>(p->next());
 		    ::operator delete((void *) p);
 		}
 	    } else {
-		packet_pool.p->set_prev(global_packet_pool.p);
-		global_packet_pool.p = packet_pool.p;
-		++global_packet_pool.pcount;
+		packet_pool.p->set_prev(global_packet_pool.pbatch);
+                packet_pool.p->set_anno_u32(0, packet_pool.pcount);
+		global_packet_pool.pbatch = packet_pool.p;
+		++global_packet_pool.pbatchcount;
 		packet_pool.p = 0;
 	    }
 	    packet_pool.pcount = 0;
 	}
 
 	if (data && packet_pool.pd && packet_pool.pdcount == CLICK_PACKET_POOL_SIZE) {
-	    if (global_packet_pool.pdcount == CLICK_GLOBAL_PACKET_POOL_COUNT) {
+	    if (global_packet_pool.pdbatchcount == CLICK_GLOBAL_PACKET_POOL_COUNT) {
 		while (PacketData *pd = packet_pool.pd) {
 		    packet_pool.pd = pd->next;
 		    delete[] reinterpret_cast<unsigned char *>(pd);
 		}
 	    } else {
-		packet_pool.pd->pool_next = global_packet_pool.pd;
-		global_packet_pool.pd = packet_pool.pd;
-		++global_packet_pool.pdcount;
+		packet_pool.pd->batch_next = global_packet_pool.pdbatch;
+                packet_pool.pd->batch_pdcount = packet_pool.pdcount;
+		global_packet_pool.pdbatch = packet_pool.pd;
+		++global_packet_pool.pdbatchcount;
 		packet_pool.pd = 0;
 	    }
 	    packet_pool.pdcount = 0;
 	}
 
 	click_compiler_fence();
-	global_packet_pool_lock = 0;
+	global_packet_pool.lock = 0;
     }
 #  else /* !HAVE_MULTITHREAD */
     if (packet_pool.pcount == CLICK_PACKET_POOL_SIZE) {
@@ -964,21 +978,22 @@ Packet::static_cleanup()
 {
 #if HAVE_CLICK_PACKET_POOL
 # if HAVE_MULTITHREAD
-    while (PacketPool *pp = all_thread_packet_pools) {
-	all_thread_packet_pools = pp->chain;
+    while (PacketPool* pp = global_packet_pool.thread_pools) {
+	global_packet_pool.thread_pools = pp->thread_pool_next;
 	cleanup_pool(pp, 0);
 	delete pp;
     }
-    unsigned rounds = (global_packet_pool.pcount > global_packet_pool.pdcount ? global_packet_pool.pcount : global_packet_pool.pdcount);
+    unsigned rounds = global_packet_pool.pbatchcount;
+    if (rounds < global_packet_pool.pdbatchcount)
+        rounds = global_packet_pool.pdbatchcount;
     assert(rounds <= CLICK_GLOBAL_PACKET_POOL_COUNT);
-    while (global_packet_pool.p || global_packet_pool.pd) {
-	WritablePacket *next_p = global_packet_pool.p;
-	next_p = (next_p ? static_cast<WritablePacket *>(next_p->prev()) : 0);
-	PacketData *next_pd = global_packet_pool.pd;
-	next_pd = (next_pd ? next_pd->pool_next : 0);
-	cleanup_pool(&global_packet_pool, 1);
-	global_packet_pool.p = next_p;
-	global_packet_pool.pd = next_pd;
+    PacketPool fake_pool;
+    while (global_packet_pool.pbatch || global_packet_pool.pdbatch) {
+        if ((fake_pool.p = global_packet_pool.pbatch))
+            global_packet_pool.pbatch = static_cast<WritablePacket*>(fake_pool.p->prev());
+        if ((fake_pool.pd = global_packet_pool.pdbatch))
+            global_packet_pool.pdbatch = fake_pool.pd->batch_next;
+	cleanup_pool(&fake_pool, 1);
 	--rounds;
     }
     assert(rounds == 0);
