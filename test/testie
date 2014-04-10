@@ -702,14 +702,18 @@ EOD;
     }
 
     my($scriptarr, $linenoarr) = ($tt->{$script_type}, $tt->{$script_type . "_lineno"});
+    my($last_unfinished) = 0;
     foreach my $i (0..$#{$tt->{$script_type}}) {
 	my($ln, $text) = ($linenoarr->[$i], $scriptarr->[$i]);
-	$t .= "echo >&2; echo testie_lineno:$ln >&2\n" if !$::expand_mode;
+        if (!$::expand_mode && !$last_unfinished) {
+            $t .= "echo >&2; echo testie_lineno:$ln >&2\n";
+        }
 	my(@c, @d);
 	_shell_split(@c, "", @d, $text, 0);
 	die if @c != 1;
 	chomp $c[0];
 	next if $c[0] =~ /^\s*$/s;
+        $last_unfinished = ($c[0] =~ /(?:\&\&|\|\||\|)\s*\z/);
 	$c[0] =~ s,^(\s*)\./,$1../, if !$::expand_mode;
 	$t .= $c[0] . "\n";
     }
