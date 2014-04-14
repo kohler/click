@@ -469,35 +469,34 @@ FromDevice::netmap_dispatch()
     int n = 0;
     for (unsigned ri = _netmap.ring_begin; ri != _netmap.ring_end; ++ri) {
 	struct netmap_ring *ring = NETMAP_RXRING(_netmap.nifp, ri);
-	//click_chatter("netmap dispatch %s %u %u %u %u", _ifname.c_str(), ri, ring->cur, ring->reserved, ring->avail);
+	//click_chatter("netmap dispatch %s %u %u %u %u", _ifname.c_str(), ri, ring->cur, ring->tail, ring->head);
 
-	while (ring->reserved > 0 && NetmapInfo::refill(ring))
-	    /* click_chatter("Refilled") */;
+	while (NetmapInfo::nm_ring_reserved(ring) > 0 && NetmapInfo::refill(ring))
+	   ;// click_chatter("Refilled") ;
 
-	if (ring->avail == 0)
+	if (nm_ring_space(ring) == 0)
 	    continue;
 
-	int nzcopy = (int) (ring->num_slots / 2) - (int) ring->reserved;
-
-	while (n != _burst && ring->avail > 0) {
+	int nzcopy = (int) (ring->num_slots / 2) - (int) NetmapInfo::nm_ring_reserved(ring);
+	while (n != _burst && NetmapInfo::nm_ring_has_avail(ring)) {
 	    unsigned cur = ring->cur;
 	    unsigned buf_idx = ring->slot[cur].buf_idx;
 	    if (buf_idx < 2)
 		break;
 	    unsigned char *buf = (unsigned char *) NETMAP_BUF(ring, buf_idx);
-
 	    WritablePacket *p;
 	    if (nzcopy > 0) {
 		p = Packet::make(buf, ring->slot[cur].len, NetmapInfo::buffer_destructor);
-		++ring->reserved;
-		--nzcopy;
 	    } else {
 		p = Packet::make(_headroom, buf, ring->slot[cur].len, 0);
 		unsigned res1idx = NETMAP_RING_FIRST_RESERVED(ring);
+
 		ring->slot[res1idx].buf_idx = buf_idx;
+		ring->slot[res1idx].flags |= NS_BUF_CHANGED;
 	    }
-	    ring->cur = NETMAP_RING_NEXT(ring, ring->cur);
-	    --ring->avail;
+
+	    nzcopy = NetmapInfo::nm_advance(ring,nzcopy);
+
 	    ++n;
 
 	    emit_packet(p, 0, ring->ts);
