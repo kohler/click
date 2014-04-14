@@ -283,30 +283,32 @@ ToDevice::cleanup(CleanupStage)
 int
 ToDevice::netmap_send_packet(Packet *p)
 {
-    for (unsigned ri = _netmap.ring_begin; ri != _netmap.ring_end; ++ri) {
-	struct netmap_ring *ring = NETMAP_TXRING(_netmap.nifp, ri);
-	if (ring->avail == 0)
-	    continue;
-	unsigned cur = ring->cur;
-	unsigned buf_idx = ring->slot[cur].buf_idx;
-	if (buf_idx < 2)
-	    continue;
-	unsigned char *buf = (unsigned char *) NETMAP_BUF(ring, buf_idx);
-	uint32_t p_length = p->length();
-	if (NetmapInfo::is_netmap_buffer(p)
-	    && !p->shared() && p->buffer() == p->data()
-	    && noutputs() == 0) {
-	    ring->slot[cur].buf_idx = NETMAP_BUF_IDX(ring, (char *) p->buffer());
-	    ring->slot[cur].flags |= NS_BUF_CHANGED;
-	    NetmapInfo::buffer_destructor(buf, 0, 0);
-	    p->reset_buffer();
-	} else
-	    memcpy(buf, p->data(), p_length);
-	ring->slot[cur].len = p_length;
-	__asm__ volatile("" : : : "memory");
-	ring->cur = NETMAP_RING_NEXT(ring, cur);
-	ring->avail--;
-	return 0;
+	for (unsigned ri = _netmap.ring_begin; ri != _netmap.ring_end; ++ri) {
+		struct netmap_ring *ring = NETMAP_TXRING(_netmap.nifp, ri);
+
+		if (!NetmapInfo::nm_ring_has_avail(ring))
+			continue;
+
+		unsigned cur = ring->cur;
+		unsigned buf_idx = ring->slot[cur].buf_idx;
+
+		if (buf_idx < 2)
+			continue;
+		unsigned char *buf = (unsigned char *) NETMAP_BUF(ring, buf_idx);
+		uint32_t p_length = p->length();
+		if (NetmapInfo::is_netmap_buffer(p)
+			&& !p->shared() && p->buffer() == p->data()
+			&& noutputs() == 0) {
+			ring->slot[cur].buf_idx = NETMAP_BUF_IDX(ring, (char *) p->buffer());
+			ring->slot[cur].flags |= NS_BUF_CHANGED;
+			NetmapInfo::buffer_destructor(buf, 0, 0);
+			p->reset_buffer();
+		} else
+			memcpy(buf, p->data(), p_length);
+		ring->slot[cur].len = p_length;
+		__asm__ volatile("" : : : "memory");
+		NetmapInfo::nm_send_pkt(ring);
+		return 0;
     }
     errno = ENOBUFS;
     return -1;

@@ -115,7 +115,9 @@ NetmapInfo::ring::close(int fd)
 	netmap_memory = MAP_FAILED;
     }
     netmap_memory_lock.release();
+#if NETMAP_API < 10
     ioctl(fd, NIOCUNREGIF, (struct nmreq *) 0);
+#endif
     ::close(fd);
 }
 
