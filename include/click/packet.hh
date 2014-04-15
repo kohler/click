@@ -39,8 +39,12 @@ class Packet { public:
     // PACKET CREATION
 
     enum {
+#ifdef CLICK_MINIOS
+	default_headroom = 48,		///< Increase headroom for improved performance.
+#else
 	default_headroom = 28,		///< Default packet headroom() for
 					///  Packet::make().  4-byte aligned.
+#endif
 	min_buffer_length = 64		///< Minimum buffer_length() for
 					///  Packet::make()
     };
