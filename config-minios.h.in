@@ -108,6 +108,8 @@
 /* The size of a `off_t', as computed by sizeof. */
 #undef SIZEOF_OFF_T
 
+/* Use portable LLRPC */
+#define HAVE_PORTABLE_LLRPC 1
 
 /* Set feature test macros before anything is included. */
 #if HAVE_LARGE_FILE_SUPPORT && HAVE_INT64_TYPES
