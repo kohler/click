@@ -13,7 +13,7 @@ dnl legally binding.
 
 AC_INIT([click], [2.1])
 AC_PREREQ(2.60)
-AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in)
+AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in include/click/config-minios.h:config-minios.h.in)
 AC_CONFIG_SRCDIR([click-buildtool.in])
 
 CLICK_VERSION=$PACKAGE_VERSION
@@ -207,6 +207,91 @@ AC_ARG_ENABLE([nsclick],
     [:], [enable_nsclick=no])
 
 
+dnl minios driver
+
+AC_ARG_ENABLE([minios],
+     [AS_HELP_STRING([--enable-minios], [enable MiniOS application])],
+     [:], [enable_minios=no])
+
+AC_ARG_WITH([xen],
+    [AS_HELP_STRING([[--with-xen[=PATH]]], [Xen source code is in PATH])],
+    [xenpath=$withval], [xenpath=NONE])
+AC_ARG_WITH([minios],
+    [AS_HELP_STRING([[--with-minios[=PATH]]], [MiniOS source code is in PATH])],
+    [miniospath=$withval], [miniospath=NONE])
+AC_ARG_WITH([newlib],
+    [AS_HELP_STRING([[--with-newlib[=PATH]]], [Newlib is installed in PATH])],
+    [newlibpath=$withval], [newlibpath=NONE])
+AC_ARG_WITH([lwip],
+    [AS_HELP_STRING([[--with-lwip[=PATH]]], [Lwip is installed in PATH])],
+    [lwippath=$withval], [lwippath=NONE])
+
+if test "$enable_minios" = yes; then
+    if test "$xenpath" = NONE; then
+        xenpath="../xen"
+    fi
+    if test "$miniospath" = NONE; then
+        miniospath="../mini-os"
+    fi
+    if test "$newlibpath" = NONE; then
+        newlibpath="../toolchain/x86_64-root/x86_64-xen-elf"
+    fi
+    if test "$lwippath" = NONE; then
+        lwippath="../toolchain/x86_64-root/x86_64-xen-elf"
+    fi
+
+    xenpath="`readlink -f $xenpath`"
+    if test ! -d "$xenpath"; then
+        AC_MSG_ERROR([
+=========================================
+
+Can't find $xenpath, so I can't compile the minios driver!
+(You may need the --with-xen=DIR option.)
+
+=========================================])
+    fi
+    miniospath="`readlink -f $miniospath`"
+    if test ! -d "$miniospath"; then
+        AC_MSG_ERROR([
+=========================================
+
+Can't find $miniospath, so I can't compile the minios driver!
+(You may need the --with-minios=DIR option.)
+
+=========================================])
+    fi
+    newlibpath="`readlink -f $newlibpath`"
+    if test ! -d "$newlibpath"; then
+        AC_MSG_ERROR([
+=========================================
+
+Can't find $newlibpath, so I can't compile the minios driver!
+(You may need the --with-newlib=DIR option.)
+
+=========================================])
+    fi
+    lwippath="`readlink -f $lwippath`"
+    if test ! -d "$lwippath"; then
+        AC_MSG_ERROR([
+=========================================
+
+Can't find $lwippath, so I can't compile the minios driver!
+(You may need the --with-lwip=DIR option.)
+
+=========================================])
+    fi
+
+    xen_dir=$xenpath
+    AC_SUBST(xen_dir)
+    minios_dir=$miniospath
+    AC_SUBST(minios_dir)
+    newlib_dir=$newlibpath
+    AC_SUBST(newlib_dir)
+    lwip_dir=$lwippath
+    AC_SUBST(lwip_dir)
+fi
+
+
 dnl
 dnl How to build linuxmodule driver?
 dnl
@@ -358,7 +443,7 @@ ELEMENTS_ARG_ENABLE(wifi, [include wifi elements and support], NO)
 AC_ARG_ENABLE(experimental, [  --enable-experimental   enable experimental elements in normal groups], :, enable_experimental=no)
 AC_ARG_ENABLE(skip-elements, [  --enable-skip-elements=ELTS disable comma-separated elements], :, enable_skip_elements=no)
 
-for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^linuxmodule$/d;/^ns$/d;/^userlevel$/d')`; do
+for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^linuxmodule$/d;/^ns$/d;/^userlevel$/d;/^minios$/d')`; do
     enableval=`eval 'echo $'"enable_$i"`
     test "x$enable_all_elements" = xyes -a "x$enableval" '!=' xno && enableval=yes
     test -d "$srcdir/elements/$i" -a "$enableval" = "yes" && element_groups="$element_groups $i"
@@ -570,7 +655,7 @@ AC_ARG_ENABLE(dynamic-linking, [  --disable-dynamic-linking disable dynamic link
 if test "x$enable_dynamic_linking" = xyes; then
     CLICK_CHECK_DYNAMIC_LINKING
     if test "$HOST_TOOLS" != host -a "$enable_tools" != no; then
-	CLICK_CHECK_BUILD_DYNAMIC_LINKING
+        CLICK_CHECK_BUILD_DYNAMIC_LINKING
     fi
 fi
 
@@ -1034,7 +1119,7 @@ dnl possible drivers
 dnl
 
 POSSIBLE_DRIVERS=
-for i in bsdmodule linuxmodule ns userlevel; do
+for i in bsdmodule linuxmodule ns userlevel minios; do
     test -f $srcdir/$i/Makefile.in && POSSIBLE_DRIVERS="$POSSIBLE_DRIVERS $i"
 done
 AC_SUBST(POSSIBLE_DRIVERS)
@@ -1053,6 +1138,8 @@ HAVE_LINUXMODULE_DRIVER=0
 AC_SUBST(HAVE_LINUXMODULE_DRIVER)
 HAVE_BSDMODULE_DRIVER=0
 AC_SUBST(HAVE_BSDMODULE_DRIVER)
+HAVE_MINIOS_DRIVER=0
+AC_SUBST(HAVE_MINIOS_DRIVER)
 
 OTHER_TARGETS=
 AC_SUBST(OTHER_TARGETS)
@@ -1688,6 +1775,15 @@ if test "x$enable_nsclick" = xyes; then
 fi
 
 
+dnl check minios
+
+if test "x$enable_minios" = xyes; then
+    DRIVERS="$DRIVERS minios"
+    AC_DEFINE(HAVE_MINIOS_DRIVER)
+    HAVE_MINIOS_DRIVER=1
+fi
+
+
 dnl check tools
 
 if test "x$enable_tools" != xno; then
@@ -1900,6 +1996,9 @@ dnl
 config_files="Makefile click-buildtool click-compile config.mk installch tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile etc/pkg-config.mk"
 for ac_dir in $POSSIBLE_DRIVERS; do
     config_files="$config_files $ac_dir/Makefile"
+    if test "$ac_dir" = minios; then
+        config_files="$config_files $ac_dir/config.mk"
+    fi
 done
 for ac_dir in $TOOLDIRS; do
     config_files="$config_files tools/$ac_dir/Makefile"

@@ -1,0 +1,7 @@
+kernel		= './minios/build/clickos_x86_64'
+vcpus		= '1'
+cpus		= '2'
+memory		= '12'
+vif		= ['mac=00:15:17:15:5d:74,bridge=xenbr0']
+name		= 'click0'
+on_crash	= 'preserve'

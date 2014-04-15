@@ -48,7 +48,7 @@
 # include <click/lexer.hh>
 #endif
 
-#if CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_MINIOS
 # include <click/master.hh>
 # include <click/notifier.hh>
 # include <click/straccum.hh>
@@ -344,7 +344,7 @@ CLICK_ENDDECLS
 #endif /* CLICK_PACKAGE_LOADED || CLICK_TOOL */
 
 
-#ifdef CLICK_USERLEVEL
+#if defined(CLICK_USERLEVEL) || defined(CLICK_MINIOS)
 extern void click_export_elements();
 extern void click_unexport_elements();
 
@@ -492,10 +492,15 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
     if (is_expr) {
 	config_str = filename;
 	filename = "config";
+#ifdef CLICK_MINIOS
+    } else {
+        errh->error("MiniOS doesn't support loading configurations from files!");
+#else
     } else {
 	config_str = file_string(filename, errh);
 	if (!filename || filename == "-")
 	    filename = "<stdin>";
+#endif
     }
     if (errh->nerrors() > before)
 	return 0;
@@ -532,7 +537,7 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
 }
 
 CLICK_ENDDECLS
-#endif /* CLICK_USERLEVEL */
+#endif /* CLICK_USERLEVEL || CLICK_MINIOS */
 
 
 #if CLICK_TOOL

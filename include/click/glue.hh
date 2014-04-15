@@ -55,6 +55,24 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 
+#elif CLICK_MINIOS
+
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+# include <stdio.h>
+# include <stdlib.h>
+# include <stddef.h>
+# include <string.h>
+# include <ctype.h>
+# include <errno.h>
+# include <limits.h>
+# include <time.h>
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <sys/time.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
+
 #else /* CLICK_USERLEVEL */
 
 # include <stdio.h>
@@ -86,7 +104,7 @@ void click_chatter(const char *fmt, ...);
 
 // DEBUG MALLOC
 
-#if CLICK_DMALLOC && (CLICK_LINUXMODULE || CLICK_BSDMODULE)
+#if CLICK_DMALLOC && (CLICK_LINUXMODULE || CLICK_BSDMODULE || CLICK_MINIOS)
 extern uint32_t click_dmalloc_where;
 # define CLICK_DMALLOC_REG(s) do { const unsigned char *__str = reinterpret_cast<const unsigned char *>(s); click_dmalloc_where = (__str[0]<<24) | (__str[1]<<16) | (__str[2]<<8) | __str[3]; } while (0)
 #else
@@ -148,6 +166,8 @@ inline uint32_t click_random() {
 # elif CLICK_LINUXMODULE
     click_random_seed = click_random_seed * 69069L + 5;
     return (click_random_seed ^ jiffies) & CLICK_RAND_MAX; // XXX jiffies??
+#elif CLICK_MINIOS
+    return rand();
 # elif HAVE_RANDOM && CLICK_RAND_MAX == RAND_MAX
     // See also click_random() in ns/nsclick.cc
     return random();
@@ -162,6 +182,8 @@ inline void click_srandom(uint32_t seed) {
     srandom(seed);
 #elif CLICK_LINUXMODULE
     click_random_seed = seed;
+#elif CLICK_MINIOS
+    srand(seed);
 #elif CLICK_NS
     (void) seed; /* XXX */
 #elif HAVE_RANDOM && CLICK_RAND_MAX == RAND_MAX
@@ -621,6 +643,9 @@ click_get_cycles()
     uint32_t xlo, xhi;
     __asm__ __volatile__ ("rdtsc" : "=a" (xlo), "=d" (xhi));
     return xlo;
+#elif CLICK_MINIOS
+    /* FIXME: Implement click_get_cycles for MiniOS */
+    return 0;
 #else
     // add other architectures here
     return 0;

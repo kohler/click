@@ -32,6 +32,9 @@
 /* Define if the user-level driver was compiled. */
 #undef HAVE_USERLEVEL_DRIVER
 
+/* Define if the minios driver was compiled. */
+#undef HAVE_MINIOS_DRIVER
+
 /* Directory containing Linux sources. */
 #undef LINUX_SRCDIR
 

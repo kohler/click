@@ -416,7 +416,7 @@ class Timestamp { public:
      * @deprecated Use Timestamp::assign_now() instead. */
     inline void set_now() CLICK_DEPRECATED;
     /** @endcond never */
-#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE && !CLICK_MINIOS
     int set_timeval_ioctl(int fd, int ioctl_selector);
 #endif
 
@@ -843,6 +843,11 @@ Timestamp::assign_now(bool recent, bool steady, bool unwarped)
 	microuptime(&tvp);
     else
 	microtime(&tvp);
+    TIMESTAMP_RESOLVE_TVP;
+
+#elif CLICK_MINIOS
+    TIMESTAMP_DECLARE_TVP;
+    gettimeofday(&tvp, (struct timezone *) 0);
     TIMESTAMP_RESOLVE_TVP;
 
 #elif CLICK_NS

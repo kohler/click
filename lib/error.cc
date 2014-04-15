@@ -29,7 +29,7 @@
 #include <click/timestamp.hh>
 #include <click/confparse.hh>
 #include <click/algorithm.hh>
-#if CLICK_USERLEVEL || CLICK_TOOL
+#if CLICK_USERLEVEL || CLICK_TOOL || CLICK_MINIOS
 # include <unistd.h>
 #endif
 CLICK_DECLS
@@ -922,7 +922,7 @@ ErrorHandler::emit(const String &, void *user_data, bool)
 }
 
 
-#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL) || defined(CLICK_MINIOS)
 //
 // FILE ERROR HANDLER
 //
@@ -1215,7 +1215,7 @@ LandmarkErrorHandler::decorate(const String &str)
 // BAIL ERROR HANDLER
 //
 
-#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL) || defined(CLICK_MINIOS)
 
 BailErrorHandler::BailErrorHandler(ErrorHandler *errh, int l)
     : ErrorVeneer(errh), _level(l)

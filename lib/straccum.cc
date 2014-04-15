@@ -328,7 +328,7 @@ StringAccum::append_numeric(String::intmax_t num, int base, bool uppercase)
 	append_numeric(static_cast<String::uintmax_t>(num), base, uppercase);
 }
 
-#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL) || defined(CLICK_MINIOS)
 /** @relates StringAccum
     @brief Append decimal representation of @a d to @a sa.
     @return @a sa */

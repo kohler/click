@@ -155,12 +155,15 @@ class RouterThread { public:
     // SHARED STATE GROUP
     Master *_master CLICK_ALIGNED(CLICK_CACHE_LINE_SIZE);
     int _id;
-#if HAVE_MULTITHREAD && !CLICK_LINUXMODULE
+#if HAVE_MULTITHREAD && !(CLICK_LINUXMODULE || CLICK_MINIOS)
     click_processor_t _running_processor;
 #endif
 #if CLICK_LINUXMODULE
     struct task_struct *_linux_task;
     bool _greedy;
+#endif
+#if CLICK_MINIOS
+    struct thread *_minios_thread;
 #endif
   public:
     unsigned _tasks_per_iter;
@@ -359,6 +362,8 @@ RouterThread::current_thread_is_running() const
 {
 #if CLICK_LINUXMODULE
     return current == _linux_task && !running_in_interrupt();
+#elif CLICK_MINIOS
+    return get_current() == _minios_thread;
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD && HAVE___THREAD_STORAGE_CLASS
     return click_current_thread_id == _id;
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD

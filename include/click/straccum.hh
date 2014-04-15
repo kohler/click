@@ -157,7 +157,7 @@ inline StringAccum &operator<<(StringAccum &sa, unsigned long long x);
 inline StringAccum &operator<<(StringAccum &sa, int64_t x);
 inline StringAccum &operator<<(StringAccum &sa, uint64_t x);
 #endif
-#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL) || defined(CLICK_MINIOS)
 StringAccum &operator<<(StringAccum &sa, double x);
 #endif
 StringAccum &operator<<(StringAccum &sa, void *ptr);

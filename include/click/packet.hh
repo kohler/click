@@ -15,7 +15,7 @@
 #if CLICK_NS
 # include <click/simclick.h>
 #endif
-#if (CLICK_USERLEVEL || CLICK_NS) && (!HAVE_MULTITHREAD || HAVE___THREAD_STORAGE_CLASS)
+#if (CLICK_USERLEVEL || CLICK_NS || CLICK_MINIOS) && (!HAVE_MULTITHREAD || HAVE___THREAD_STORAGE_CLASS)
 # define HAVE_CLICK_PACKET_POOL 1
 #endif
 #ifndef CLICK_PACKET_DEPRECATED_ENUM
@@ -57,7 +57,7 @@ class Packet { public:
     // Packet now owns the mbuf.
     static inline Packet *make(struct mbuf *mbuf) CLICK_WARN_UNUSED_RESULT;
 #endif
-#if CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_MINIOS
     typedef void (*buffer_destructor_type)(unsigned char* buf, size_t sz, void* argument);
     static WritablePacket* make(unsigned char* data, uint32_t length,
 				buffer_destructor_type buffer_destructor,
@@ -89,7 +89,7 @@ class Packet { public:
     const struct mbuf *m() const	{ return (const struct mbuf *)_m; }
     struct mbuf *steal_m();
     struct mbuf *dup_jumbo_m(struct mbuf *mbuf);
-#elif CLICK_USERLEVEL
+#elif CLICK_USERLEVEL || CLICK_MINIOS
     buffer_destructor_type buffer_destructor() const {
 	return _destructor;
     }
@@ -254,7 +254,7 @@ class Packet { public:
      * @post new data() == old data() + @a offset (if no copy is made)
      * @post new buffer() == old buffer() (if no copy is made) */
     Packet *shift_data(int offset, bool free_on_failure = true) CLICK_WARN_UNUSED_RESULT;
-#if CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_MINIOS
     inline void shrink_data(const unsigned char *data, uint32_t length);
     inline void change_headroom_and_length(uint32_t headroom, uint32_t length);
 #endif
@@ -730,7 +730,7 @@ class Packet { public:
 # if CLICK_NS
     SimPacketinfoWrapper _sim_packetinfo;
 # endif
-# if CLICK_USERLEVEL
+# if CLICK_USERLEVEL || CLICK_MINIOS
     buffer_destructor_type _destructor;
     void* _destructor_argument;
 # endif
@@ -862,7 +862,7 @@ WritablePacket::initialize()
 {
     _use_count = 1;
     _data_packet = 0;
-# if CLICK_USERLEVEL
+# if CLICK_USERLEVEL || CLICK_MINIOS
     _destructor = 0;
 # elif CLICK_BSDMODULE
     _m = 0;
@@ -1661,7 +1661,7 @@ Packet::take(uint32_t len)
 #endif
 }
 
-#if CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_MINIOS
 /** @brief Shrink the packet's data.
  * @param data new data pointer
  * @param length new length

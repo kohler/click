@@ -667,6 +667,7 @@ PCAP_INCLUDES
 TOOL_TARGETS
 TOOLDIRS
 OTHER_TARGETS
+HAVE_MINIOS_DRIVER
 HAVE_BSDMODULE_DRIVER
 HAVE_LINUXMODULE_DRIVER
 HAVE_USERLEVEL_DRIVER
@@ -695,6 +696,10 @@ FINDELEMFLAGS
 element_groups
 linux_srcdir
 linux_builddir
+lwip_dir
+newlib_dir
+minios_dir
+xen_dir
 INCLUDE_KSYMS
 LINUXMODULE_FIXINCLUDES
 PTHREAD_LIBS
@@ -796,6 +801,11 @@ enable_linux_symbols
 enable_bsdmodule
 enable_netisr
 enable_nsclick
+enable_minios
+with_xen
+with_minios
+with_newlib
+with_lwip
 with_linux
 with_linux_map
 enable_all_elements
@@ -1485,6 +1495,7 @@ Optional Features:
   --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)
     --disable-netisr      disable NETISR scheduling in BSD
   --enable-nsclick        enable NS simulator driver
+  --enable-minios         enable MiniOS application
   --enable-all-elements   include all provided element groups
   --disable-analysis      do not include elements for network analysis
   --disable-app           do not include application-level elements
@@ -1525,6 +1536,10 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-xen[=PATH]       Xen source code is in PATH
+  --with-minios[=PATH]    MiniOS source code is in PATH
+  --with-newlib[=PATH]    Newlib is installed in PATH
+  --with-lwip[=PATH]      Lwip is installed in PATH
   --with-linux[=PATH]     Linux source code is in PATH
   --with-linux-map[=FILE] filename for Linux System.map [LINUXDIR/System.map]
   --with-freebsd[=SRC,INC] FreeBSD source code is in SRC [/usr/src/sys],
@@ -3158,7 +3173,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-ac_config_headers="$ac_config_headers include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in"
+ac_config_headers="$ac_config_headers include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in include/click/config-minios.h:config-minios.h.in"
 
 
 
@@ -6531,6 +6546,114 @@ fi
 
 
 
+# Check whether --enable-minios was given.
+if test "${enable_minios+set}" = set; then :
+  enableval=$enable_minios; :
+else
+  enable_minios=no
+fi
+
+
+
+# Check whether --with-xen was given.
+if test "${with_xen+set}" = set; then :
+  withval=$with_xen; xenpath=$withval
+else
+  xenpath=NONE
+fi
+
+
+# Check whether --with-minios was given.
+if test "${with_minios+set}" = set; then :
+  withval=$with_minios; miniospath=$withval
+else
+  miniospath=NONE
+fi
+
+
+# Check whether --with-newlib was given.
+if test "${with_newlib+set}" = set; then :
+  withval=$with_newlib; newlibpath=$withval
+else
+  newlibpath=NONE
+fi
+
+
+# Check whether --with-lwip was given.
+if test "${with_lwip+set}" = set; then :
+  withval=$with_lwip; lwippath=$withval
+else
+  lwippath=NONE
+fi
+
+
+if test "$enable_minios" = yes; then
+    if test "$xenpath" = NONE; then
+        xenpath="../xen"
+    fi
+    if test "$miniospath" = NONE; then
+        miniospath="../mini-os"
+    fi
+    if test "$newlibpath" = NONE; then
+        newlibpath="../toolchain/x86_64-root/x86_64-xen-elf"
+    fi
+    if test "$lwippath" = NONE; then
+        lwippath="../toolchain/x86_64-root/x86_64-xen-elf"
+    fi
+
+    xenpath="`readlink -f $xenpath`"
+    if test ! -d "$xenpath"; then
+        as_fn_error $? "
+=========================================
+
+Can't find $xenpath, so I can't compile the minios driver!
+(You may need the --with-xen=DIR option.)
+
+=========================================" "$LINENO" 5
+    fi
+    miniospath="`readlink -f $miniospath`"
+    if test ! -d "$miniospath"; then
+        as_fn_error $? "
+=========================================
+
+Can't find $miniospath, so I can't compile the minios driver!
+(You may need the --with-minios=DIR option.)
+
+=========================================" "$LINENO" 5
+    fi
+    newlibpath="`readlink -f $newlibpath`"
+    if test ! -d "$newlibpath"; then
+        as_fn_error $? "
+=========================================
+
+Can't find $newlibpath, so I can't compile the minios driver!
+(You may need the --with-newlib=DIR option.)
+
+=========================================" "$LINENO" 5
+    fi
+    lwippath="`readlink -f $lwippath`"
+    if test ! -d "$lwippath"; then
+        as_fn_error $? "
+=========================================
+
+Can't find $lwippath, so I can't compile the minios driver!
+(You may need the --with-lwip=DIR option.)
+
+=========================================" "$LINENO" 5
+    fi
+
+    xen_dir=$xenpath
+
+    minios_dir=$miniospath
+
+    newlib_dir=$newlibpath
+
+    lwip_dir=$lwippath
+
+fi
+
+
+
 
 # Check whether --with-linux was given.
 if test "${with_linux+set}" = set; then :
@@ -6882,7 +7005,7 @@ else
 fi
 
 
-for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^linuxmodule$/d;/^ns$/d;/^userlevel$/d')`; do
+for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^linuxmodule$/d;/^ns$/d;/^userlevel$/d;/^minios$/d')`; do
     enableval=`eval 'echo $'"enable_$i"`
     test "x$enable_all_elements" = xyes -a "x$enableval" '!=' xno && enableval=yes
     test -d "$srcdir/elements/$i" -a "$enableval" = "yes" && element_groups="$element_groups $i"
@@ -7552,7 +7675,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7555 "configure"
+#line 7678 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -10002,7 +10125,7 @@ done
 
 
 POSSIBLE_DRIVERS=
-for i in bsdmodule linuxmodule ns userlevel; do
+for i in bsdmodule linuxmodule ns userlevel minios; do
     test -f $srcdir/$i/Makefile.in && POSSIBLE_DRIVERS="$POSSIBLE_DRIVERS $i"
 done
 
@@ -10017,6 +10140,8 @@ HAVE_USERLEVEL_DRIVER=0
 HAVE_LINUXMODULE_DRIVER=0
 
 HAVE_BSDMODULE_DRIVER=0
+
+HAVE_MINIOS_DRIVER=0
 
 
 OTHER_TARGETS=
@@ -12320,6 +12445,15 @@ fi
 
 
 
+if test "x$enable_minios" = xyes; then
+    DRIVERS="$DRIVERS minios"
+    $as_echo "#define HAVE_MINIOS_DRIVER 1" >>confdefs.h
+
+    HAVE_MINIOS_DRIVER=1
+fi
+
+
+
 if test "x$enable_tools" != xno; then
     OTHER_TARGETS="$OTHER_TARGETS tools"
 fi
@@ -13041,6 +13175,9 @@ fi
 config_files="Makefile click-buildtool click-compile config.mk installch tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile etc/pkg-config.mk"
 for ac_dir in $POSSIBLE_DRIVERS; do
     config_files="$config_files $ac_dir/Makefile"
+    if test "$ac_dir" = minios; then
+        config_files="$config_files $ac_dir/config.mk"
+    fi
 done
 for ac_dir in $TOOLDIRS; do
     config_files="$config_files tools/$ac_dir/Makefile"
@@ -13759,6 +13896,7 @@ do
     "include/click/config-linuxmodule.h") CONFIG_HEADERS="$CONFIG_HEADERS include/click/config-linuxmodule.h:config-linuxmodule.h.in" ;;
     "include/click/config-ns.h") CONFIG_HEADERS="$CONFIG_HEADERS include/click/config-ns.h:config-ns.h.in" ;;
     "include/click/config-userlevel.h") CONFIG_HEADERS="$CONFIG_HEADERS include/click/config-userlevel.h:config-userlevel.h.in" ;;
+    "include/click/config-minios.h") CONFIG_HEADERS="$CONFIG_HEADERS include/click/config-minios.h:config-minios.h.in" ;;
     "default-1") CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
     "$config_files") CONFIG_FILES="$CONFIG_FILES $config_files" ;;
 

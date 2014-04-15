@@ -504,6 +504,12 @@ RouterThread::run_os()
 
 #if CLICK_USERLEVEL
     select_set().run_selects(this);
+#elif CLICK_MINIOS
+    /*
+     * MiniOS uses a cooperative scheduler. By schedule() we'll give a chance
+     * to the OS threads to run.
+     */
+    schedule();
 #elif CLICK_LINUXMODULE		/* Linux kernel module */
     if (_greedy) {
 	if (time_after(jiffies, greedy_schedule_jiffies + 5 * CLICK_HZ)) {

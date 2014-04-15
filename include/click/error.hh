@@ -2,7 +2,7 @@
 #ifndef CLICK_ERROR_HH
 #define CLICK_ERROR_HH
 #include <click/string.hh>
-#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL) || defined(CLICK_MINIOS)
 # include <stdio.h>
 #endif
 #if CLICK_BSDMODULE
@@ -638,7 +638,7 @@ class ErrorVeneer : public ErrorHandler { public:
 };
 
 
-#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL) || defined(CLICK_MINIOS)
 /** @class FileErrorHandler
  * @brief An ErrorHandler that prints error messages to a given file.
  *
@@ -857,7 +857,7 @@ class LandmarkErrorHandler : public ErrorVeneer { public:
 };
 
 
-#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL) || defined(CLICK_MINIOS)
 /** @class BailErrorHandler
  * @brief A stackable ErrorHandler that exits when errors occur.
  *
