@@ -31,7 +31,7 @@ CLICK_DECLS
 IP6Address::IP6Address(const String &str)
 {
     static_assert(sizeof(*this) == 16, "IPAddress has the wrong size.");
-    static_assert(sizeof(click_in6_addr) == 16, "click_in6_addr has the wrong size.");
+    static_assert(sizeof(struct in6_addr) == 16, "struct in6_addr has the wrong size.");
     static_assert(sizeof(struct click_ip6) == 40, "click_ip6 has the wrong size.");
     if (!IP6AddressArg::parse(str, *this))
 	memset(&_addr, 0, sizeof(_addr));
@@ -44,13 +44,13 @@ IP6Address::make_prefix(int prefix_len)
     IP6Address a = IP6Address::uninitialized_t();
     int i;
     for (i = 0; i < 4 && prefix_len >= 32; ++i, prefix_len -= 32)
-	a._addr.s6_addr32[i] = 0xFFFFFFFFU;
+	a.data32()[i] = 0xFFFFFFFFU;
     if (i < 4 && prefix_len > 0) {
-	a._addr.s6_addr32[i] = htonl(0xFFFFFFFFU << (32 - prefix_len));
+	a.data32()[i] = htonl(0xFFFFFFFFU << (32 - prefix_len));
 	++i;
     }
     for (; i < 4; ++i)
-	a._addr.s6_addr32[i] = 0;
+	a.data32()[i] = 0;
     return a;
 }
 
@@ -61,13 +61,13 @@ IP6Address::make_inverted_prefix(int prefix_len)
     IP6Address a = IP6Address::uninitialized_t();
     int i;
     for (i = 0; i < 4 && prefix_len >= 32; ++i, prefix_len -= 32)
-	a._addr.s6_addr32[i] = 0;
+	a.data32()[i] = 0;
     if (i < 4 && prefix_len > 0) {
-	a._addr.s6_addr32[i] = htonl(0xFFFFFFFFU >> prefix_len);
+	a.data32()[i] = htonl(0xFFFFFFFFU >> prefix_len);
 	++i;
     }
     for (; i < 4; ++i)
-	a._addr.s6_addr32[i] = 0xFFFFFFFFU;
+	a.data32()[i] = 0xFFFFFFFFU;
     return a;
 }
 
@@ -76,18 +76,18 @@ IP6Address::mask_to_prefix_len() const
 {
     // check that prefix is 0xFFFFFFFF
     int word = 0;
-    while (word < 4 && _addr.s6_addr32[word] == 0xFFFFFFFFU)
+    while (word < 4 && data32()[word] == 0xFFFFFFFFU)
 	word++;
     if (word == 4)
 	return 128;
 
     // check that suffix is zeros
     for (int zero_word = word + 1; zero_word < 4; ++zero_word)
-	if (_addr.s6_addr32[zero_word] != 0)
+	if (data32()[zero_word] != 0)
 	    return -1;
 
     // check swing word
-    int prefix = IPAddress(_addr.s6_addr32[word]).mask_to_prefix_len();
+    int prefix = IPAddress(data32()[word]).mask_to_prefix_len();
     return prefix + (prefix >= 0 ? word * 32 : 0);
 }
 
@@ -111,7 +111,7 @@ bool
 IP6Address::ip4_address(IPAddress &ip4) const
 {
     if (has_ip4_address()) {
-	ip4 = IPAddress(_addr.s6_addr32[3]);
+	ip4 = IPAddress(data32()[3]);
 	return true;
     } else
 	return false;
@@ -202,8 +202,8 @@ IP6Address::unparse_expanded() const
 
 
 uint16_t
-in6_fast_cksum(const struct click_in6_addr *saddr,
-               const struct click_in6_addr *daddr,
+in6_fast_cksum(const struct in6_addr *saddr,
+               const struct in6_addr *daddr,
                uint16_t len,
                uint8_t proto,
                uint16_t ori_csum,
@@ -215,20 +215,21 @@ in6_fast_cksum(const struct click_in6_addr *saddr,
 	uint16_t answer = 0;
 	uint32_t csum =0;
 	uint32_t carry;
-
+        const uint32_t *saddr32 = (const uint32_t *)&saddr->s6_addr[0];
+        const uint32_t *daddr32 = (const uint32_t *)&daddr->s6_addr[0];
 
 	//get the sum of source and destination address
 	for (int i=0; i<4; i++) {
 
-	  csum += ntohl(saddr->s6_addr32[i]);
-	  carry = (csum < ntohl(saddr->s6_addr32[i]));
+	  csum += ntohl(saddr32[i]);
+	  carry = (csum < ntohl(saddr32[i]));
 	  csum += carry;
 	}
 
 	for (int i=0; i<4; i++) {
 
-	   csum += ntohl(daddr->s6_addr32[i]);
-	   carry = (csum < ntohl(daddr->s6_addr32[i]));
+	   csum += ntohl(daddr32[i]);
+	   carry = (csum < ntohl(daddr32[i]));
 	   csum += carry;
 	}
 
@@ -267,8 +268,8 @@ in6_fast_cksum(const struct click_in6_addr *saddr,
 
 //This is the slow way for in6_cksum
 unsigned short
-in6_cksum(const struct click_in6_addr *saddr,
-	  const struct click_in6_addr *daddr,
+in6_cksum(const struct in6_addr *saddr,
+	  const struct in6_addr *daddr,
 	  uint16_t len,
 	  uint8_t proto,
 	  uint16_t ori_csum,
@@ -279,15 +280,16 @@ in6_cksum(const struct click_in6_addr *saddr,
 	uint16_t uproto;
 	uint16_t answer = 0;
 	uint32_t csum =0;
-
+        const uint16_t *saddr16 = (const uint16_t *)&saddr->s6_addr[0];
+        const uint16_t *daddr16 = (const uint16_t *)&daddr->s6_addr[0];
 
 	//get the sum of source and destination address
 	for (int i=0; i<8; i++) {
-	  csum += ntohs(saddr->s6_addr16[i]);
+	  csum += ntohs(saddr16[i]);
 	}
 
 	for (int i=0; i<8; i++) {
-	   csum += ntohs(daddr->s6_addr16[i]);
+	   csum += ntohs(daddr16[i]);
 	}
 
 	//get the sum of other fields:  packet length, protocal

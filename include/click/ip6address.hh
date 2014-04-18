@@ -30,14 +30,14 @@ class IP6Address { public:
      * The address has format ::@a x. */
     explicit inline IP6Address(IPAddress x) {
 	memset(&_addr, 0, 12);
-	_addr.s6_addr32[3] = x.addr();
+	data32()[3] = x.addr();
     }
 
     /** @brief Construct an IP6Address from a human-readable string. */
     explicit IP6Address(const String &x);		// "fec0:0:0:1::1"
 
     /** @brief Construct an IP6Address from a C structure. */
-    explicit inline IP6Address(const click_in6_addr &x)
+    explicit inline IP6Address(const struct in6_addr &x)
 	: _addr(x) {
     }
 
@@ -67,17 +67,17 @@ class IP6Address { public:
     typedef uint32_t (IP6Address::*unspecified_bool_type)() const;
     inline operator unspecified_bool_type() const;
 
-    operator const click_in6_addr &() const	{ return _addr; }
-    operator click_in6_addr &()			{ return _addr; }
-    const click_in6_addr &in6_addr() const	{ return _addr;	}
-    click_in6_addr &in6_addr()			{ return _addr;	}
+    operator const struct in6_addr &() const	{ return _addr; }
+    operator struct in6_addr &()			{ return _addr; }
+    const struct in6_addr &in6_addr() const	{ return _addr;	}
+    struct in6_addr &in6_addr()			{ return _addr;	}
 
     unsigned char *data()			{ return &_addr.s6_addr[0]; }
     const unsigned char *data() const		{ return &_addr.s6_addr[0]; }
-    uint16_t *data16()				{ return &_addr.s6_addr16[0]; }
-    const uint16_t *data16() const		{ return &_addr.s6_addr16[0]; }
-    uint32_t *data32()				{ return &_addr.s6_addr32[0]; }
-    const uint32_t *data32() const		{ return &_addr.s6_addr32[0]; }
+    uint16_t *data16()				{ return (uint16_t *)&_addr.s6_addr[0]; }
+    const uint16_t *data16() const		{ return (uint16_t *)&_addr.s6_addr[0]; }
+    uint32_t *data32()				{ return (uint32_t *)&_addr.s6_addr[0]; }
+    const uint32_t *data32() const		{ return (uint32_t *)&_addr.s6_addr[0]; }
 
     inline uint32_t hashcode() const;
 
@@ -105,8 +105,8 @@ class IP6Address { public:
      * "::w.x.y.z" or "::FFFF:w.x.y.z", where the embedded IPv4 address is
      * "w.x.y.z". */
     bool has_ip4_address() const {
-	return _addr.s6_addr32[0] == 0 && _addr.s6_addr32[1] == 0
-	    && (_addr.s6_addr32[2] == 0 || _addr.s6_addr32[2] == htonl(0x0000FFFFU));
+	return data32()[0] == 0 && data32()[1] == 0
+	    && (data32()[2] == 0 || data32()[2] == htonl(0x0000FFFFU));
     }
 
     /** @brief Return true iff the address is a link-local address.
@@ -114,7 +114,7 @@ class IP6Address { public:
      *
      */
     inline bool is_link_local() const {
-        return _addr.s6_addr32[0] == htonl(0xfe800000) && _addr.s6_addr32[1] == 0;
+        return data32()[0] == htonl(0xfe800000) && data32()[1] == 0;
     }
 
     /** @brief Extract embedded IPv4 address into @a x.
@@ -130,11 +130,11 @@ class IP6Address { public:
     // IP6Address operator~(const IP6Address &);
 
     inline IP6Address &operator&=(const IP6Address &);
-    inline IP6Address &operator&=(const click_in6_addr &);
+    inline IP6Address &operator&=(const struct in6_addr &);
     inline IP6Address &operator|=(const IP6Address &);
-    inline IP6Address &operator|=(const click_in6_addr &);
+    inline IP6Address &operator|=(const struct in6_addr &);
 
-    inline IP6Address &operator=(const click_in6_addr &);
+    inline IP6Address &operator=(const struct in6_addr &);
 
     void unparse(StringAccum &sa) const;
     String unparse() const;
@@ -147,7 +147,7 @@ class IP6Address { public:
 
   private:
 
-    click_in6_addr _addr;
+    struct in6_addr _addr;
 
 };
 
@@ -215,10 +215,10 @@ IP6Address::operator&=(const IP6Address &x)
 }
 
 inline IP6Address &
-IP6Address::operator&=(const click_in6_addr &x)
+IP6Address::operator&=(const struct in6_addr &x)
 {
     uint32_t *ai = data32();
-    const uint32_t *bi = x.s6_addr32;
+    const uint32_t *bi = (const uint32_t *)&x.s6_addr[0];
     ai[0] &= bi[0];
     ai[1] &= bi[1];
     ai[2] &= bi[2];
@@ -239,10 +239,10 @@ IP6Address::operator|=(const IP6Address &x)
 }
 
 inline IP6Address &
-IP6Address::operator|=(const click_in6_addr &x)
+IP6Address::operator|=(const struct in6_addr &x)
 {
     uint32_t *ai = data32();
-    const uint32_t *bi = x.s6_addr32;
+    const uint32_t *bi = (const uint32_t *)&x.s6_addr[0];
     ai[0] |= bi[0];
     ai[1] |= bi[1];
     ai[2] |= bi[2];
@@ -264,9 +264,9 @@ operator&(const IP6Address &a, const IP6Address &b)
 }
 
 inline IP6Address
-operator&(const click_in6_addr &a, const IP6Address &b)
+operator&(const struct in6_addr &a, const IP6Address &b)
 {
-    const uint32_t *ai = a.s6_addr32, *bi = b.data32();
+    const uint32_t *ai = (const uint32_t *)&a.s6_addr[0], *bi = b.data32();
     IP6Address result = IP6Address::uninitialized_t();
     uint32_t *ri = result.data32();
     ri[0] = ai[0] & bi[0];
@@ -303,7 +303,7 @@ operator~(const IP6Address &x)
 }
 
 inline IP6Address &
-IP6Address::operator=(const click_in6_addr &a)
+IP6Address::operator=(const struct in6_addr &a)
 {
     _addr = a;
     return *this;
@@ -329,7 +329,7 @@ SET_DST_IP6_ANNO(Packet *p, const IP6Address &a)
 }
 
 inline void
-SET_DST_IP6_ANNO(Packet *p, const click_in6_addr &a)
+SET_DST_IP6_ANNO(Packet *p, const struct in6_addr &a)
 {
     memcpy(p->anno_u8() + DST_IP6_ANNO_OFFSET, &a, DST_IP6_ANNO_SIZE);
 }

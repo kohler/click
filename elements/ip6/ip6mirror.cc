@@ -37,7 +37,7 @@ IP6Mirror::simple_action(Packet *p_in)
   // new checksum is same as old checksum
 
   click_ip6 *iph = p->ip6_header();
-  struct click_in6_addr tmpa = iph->ip6_src;
+  struct in6_addr tmpa = iph->ip6_src;
   iph->ip6_src = iph->ip6_dst;
   iph->ip6_dst = tmpa;
 

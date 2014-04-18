@@ -32,7 +32,7 @@ The Strip element can be used by the receiver to get rid of the
 encapsulation header.
 
 =e
-  UDPIPEncap(2001:2001:2001:2001::1, 1234, 2001:2001:2001:2001::2, 1234)
+  UDPIP6Encap(2001:2001:2001:2001::1, 1234, 2001:2001:2001:2001::2, 1234)
 
 =h src read/write
 
@@ -70,8 +70,8 @@ class UDPIP6Encap : public Element { public:
 
   private:
 
-    struct click_in6_addr _saddr;
-    struct click_in6_addr _daddr;
+    struct in6_addr _saddr;
+    struct in6_addr _daddr;
     uint16_t _sport;
     uint16_t _dport;
     bool _use_dst_anno;
