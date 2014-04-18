@@ -31,7 +31,7 @@ CLICK_DECLS
 IP6Address::IP6Address(const String &str)
 {
     static_assert(sizeof(*this) == 16, "IPAddress has the wrong size.");
-    static_assert(sizeof(struct in6_addr) == 16, "struct in6_addr has the wrong size.");
+    static_assert(sizeof(struct in6_addr) == 16, "in6_addr has the wrong size.");
     static_assert(sizeof(struct click_ip6) == 40, "click_ip6 has the wrong size.");
     if (!IP6AddressArg::parse(str, *this))
 	memset(&_addr, 0, sizeof(_addr));
@@ -107,14 +107,13 @@ IP6Address::ether_address(EtherAddress &mac) const
 	return false;
 }
 
-bool
-IP6Address::ip4_address(IPAddress &ip4) const
+IPAddress
+IP6Address::ip4_address() const
 {
-    if (has_ip4_address()) {
-	ip4 = IPAddress(data32()[3]);
-	return true;
+    if (is_ip4_mapped()) {
+	return IPAddress(data32()[3]);
     } else
-	return false;
+	return IPAddress();
 }
 
 void
@@ -125,15 +124,12 @@ IP6Address::unparse(StringAccum &sa) const
     const uint16_t *a16 = data16();
     const uint8_t *a8 = data();
 
-    // :: and special IPv4 addresses
+    // :: and IPv4 mapped addresses
     if (a32[0] == 0 && a32[1] == 0) {
 	if (a32[2] == 0 && a32[3] == 0) {
 	    sa.append("::", 2);
 	    return;
-	} else if (a32[2] == 0) {
-	    sa.snprintf(18, "::%d.%d.%d.%d", a8[12], a8[13], a8[14], a8[15]);
-	    return;
-	} else {
+	} else if (a32[2] == htonl(0x0000FFFFU)) {
 	    sa.snprintf(23, "::ffff:%d.%d.%d.%d", a8[12], a8[13], a8[14], a8[15]);
 	    return;
 	}
@@ -346,8 +342,10 @@ IP6AddressArg::basic_parse(const String &str, IP6Address &result, const ArgConte
 		coloncolon = d = (p ? d + 1 : d);
 		parts[d] = 0;
 		++s;
-	    } else if (!isxdigit((unsigned char) s[1]) || p == 0)
+	    } else if (!isxdigit((unsigned char) s[1]) || p == 0) {
+		d++;
 		break;
+	    }
 	    p = 0;
 	    ++d;
 	    continue;
@@ -363,8 +361,8 @@ IP6AddressArg::basic_parse(const String &str, IP6Address &result, const ArgConte
 	--d;
 
     // check for IPv4 address suffix
-    if ((d == 6 || (d < 6 && coloncolon >= 0)) && s != end) {
-	const char *t = s - 1;
+    if ((d == 6 || (d < 6 && coloncolon >= 0)) && parts[d-1] == 0xffff && s != end) {
+	const char *t = s;
 	while (t != begin && *t != ':')
 	    --t;
 	IPAddress ipv4;

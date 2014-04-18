@@ -303,8 +303,8 @@ ProtocolTranslator64::handle_ip6(Packet *p)
   IP6Address ip6_dst = IP6Address(ip6->ip6_dst);
   IP6Address ip6_src = IP6Address(ip6->ip6_src);
 
-  IPAddress ipa_dst, ipa_src;
-  if (ip6_dst.ip4_address(ipa_dst) && ip6_src.ip4_address(ipa_src))
+  IPAddress ipa_dst = ip6_dst.ip4_address(), ipa_src = ip6_src.ip4_address();
+  if (ipa_dst && ipa_src)
     {
 
        //translate protocol according to SIIT

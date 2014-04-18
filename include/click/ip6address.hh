@@ -25,12 +25,11 @@ class IP6Address { public:
 	memcpy(&_addr, x, sizeof(_addr));
     }
 
-    /** @brief Construct an IP6Address that represents an IPAddress.
+    /** @brief Construct an IPv4-Mappped IP6Address (RFC 4291-2.5.5.2)
      *
-     * The address has format ::@a x. */
+     * The address has format ::FFFF:@a x. */
     explicit inline IP6Address(IPAddress x) {
-	memset(&_addr, 0, 12);
-	data32()[3] = x.addr();
+	*this = x;
     }
 
     /** @brief Construct an IP6Address from a human-readable string. */
@@ -39,6 +38,11 @@ class IP6Address { public:
     /** @brief Construct an IP6Address from a C structure. */
     explicit inline IP6Address(const struct in6_addr &x)
 	: _addr(x) {
+    }
+
+    /** @brief Construct an IPv4-Mapped IP6Address from a C structure. */
+    explicit inline IP6Address(const struct in_addr &x) {
+	*this = x;
     }
 
     /** @brief Construct an uninitialized IP6Address. */
@@ -99,14 +103,21 @@ class IP6Address { public:
      * @return true iff has_ether_address() */
     bool ether_address(EtherAddress &x) const;
 
-    /** @brief Test if this address contains an embedded IPv4 address.
+    /** @brief Return true iff the address is a IPv4-mapped address.
      *
-     * An IPv6 address with embedded IPv4 address has format either
-     * "::w.x.y.z" or "::FFFF:w.x.y.z", where the embedded IPv4 address is
-     * "w.x.y.z". */
-    bool has_ip4_address() const {
+     * An IPv4-mapped address has format "::FFFF:w:x:y:z", where the
+     * embedded IPv4 address is "w.x.y.z". */
+    inline bool is_ip4_mapped() const {
 	return data32()[0] == 0 && data32()[1] == 0
-	    && (data32()[2] == 0 || data32()[2] == htonl(0x0000FFFFU));
+	    && data32()[2] == htonl(0x0000FFFFU);
+    }
+
+    /** @brief Return true iff the address is a multicast address
+     * s6_addr[0] = 0xff;
+     *
+     */
+    inline bool is_multicast() const {
+        return _addr.s6_addr[0] == 0xff;
     }
 
     /** @brief Return true iff the address is a link-local address.
@@ -117,10 +128,11 @@ class IP6Address { public:
         return data32()[0] == htonl(0xfe800000) && data32()[1] == 0;
     }
 
-    /** @brief Extract embedded IPv4 address into @a x.
-     * @param[out] x IPv4 address
-     * @return true iff has_ip4_address() */
-    bool ip4_address(IPAddress &x) const;
+    /** @brief Return IPv4-mapped address.
+     *
+     * @return non-empty IPv4 address iff is_ip4_mapped() is
+     *  true. IPAddress() otherwise */
+    IPAddress ip4_address() const;
 
     // bool operator==(const IP6Address &, const IP6Address &);
     // bool operator!=(const IP6Address &, const IP6Address &);
@@ -135,6 +147,7 @@ class IP6Address { public:
     inline IP6Address &operator|=(const struct in6_addr &);
 
     inline IP6Address &operator=(const struct in6_addr &);
+    inline IP6Address &operator=(const struct in_addr &);
 
     void unparse(StringAccum &sa) const;
     String unparse() const;
@@ -218,7 +231,7 @@ inline IP6Address &
 IP6Address::operator&=(const struct in6_addr &x)
 {
     uint32_t *ai = data32();
-    const uint32_t *bi = (const uint32_t *)&x.s6_addr[0];
+    const uint32_t *bi = (uint32_t *)&x.s6_addr[0];
     ai[0] &= bi[0];
     ai[1] &= bi[1];
     ai[2] &= bi[2];
@@ -242,7 +255,7 @@ inline IP6Address &
 IP6Address::operator|=(const struct in6_addr &x)
 {
     uint32_t *ai = data32();
-    const uint32_t *bi = (const uint32_t *)&x.s6_addr[0];
+    const uint32_t *bi = (uint32_t *)&x.s6_addr;
     ai[0] |= bi[0];
     ai[1] |= bi[1];
     ai[2] |= bi[2];
@@ -309,6 +322,15 @@ IP6Address::operator=(const struct in6_addr &a)
     return *this;
 }
 
+inline IP6Address &
+IP6Address::operator=(const struct in_addr &a)
+{
+    memset(&_addr, 0, 10);
+    data16()[5] = 0xffff;
+    data32()[3] = a.s_addr;
+    return *this;
+}
+
 inline uint32_t
 IP6Address::hashcode() const
 {
@@ -343,6 +365,11 @@ struct IP6AddressArg {
 				   const ArgContext &args = blank_args);
     static bool parse(const String &str, IP6Address &result,
 		      const ArgContext &args = blank_args);
+    static bool parse(const String &str, struct in6_addr &result,
+		      const ArgContext &args = blank_args) {
+        return parse(str, reinterpret_cast<IP6Address &>(result), args);
+    }
+
 };
 
 /** @class IP6PrefixArg
@@ -355,10 +382,16 @@ class IP6PrefixArg { public:
 	       const ArgContext &args = blank_args) const;
     bool parse(const String &str, IP6Address &addr, IP6Address &prefix,
 	       const ArgContext &args = blank_args) const;
+    bool parse(const String &str, struct in6_addr &addr, struct in6_addr &prefix,
+	       const ArgContext &args = blank_args) const {
+        return parse(str, reinterpret_cast<IP6Address &>(addr),
+                     reinterpret_cast<IP6Address &>(prefix), args);
+    }
     bool allow_bare_address;
 };
 
 template<> struct DefaultArg<IP6Address> : public IP6AddressArg {};
+template<> struct DefaultArg<struct in6_addr> : public IP6AddressArg {};
 template<> struct has_trivial_copy<IP6Address> : public true_type {};
 
 CLICK_ENDDECLS
