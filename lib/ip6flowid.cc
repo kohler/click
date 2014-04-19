@@ -26,15 +26,63 @@
 #include <click/straccum.hh>
 CLICK_DECLS
 
-IP6FlowID::IP6FlowID(Packet *p)
+IP6FlowID::IP6FlowID(const Packet *p, bool reverse)
 {
-  const click_ip6 *iph = p->ip6_header();
-  _saddr = IP6Address(iph->ip6_src);
-  _daddr = IP6Address(iph->ip6_dst);
-
+  assert(p->has_network_header() && p->has_transport_header());
+  const click_ip6 *ip6h = p->ip6_header();
+  const click_ip *iph = p->ip_header();
   const click_udp *udph = p->udp_header();
-  _sport = udph->uh_sport;	// network byte order
-  _dport = udph->uh_dport;	// network byte order
+
+  if (ip6h->ip6_v == 6) {
+    if (likely(!reverse)) {
+      assign(IP6Address(ip6h->ip6_src),udph->uh_sport,IP6Address(ip6h->ip6_dst),udph->uh_dport);
+    } else {
+      assign(IP6Address(ip6h->ip6_dst),udph->uh_dport,IP6Address(ip6h->ip6_src),udph->uh_sport);
+    }
+  } else {
+    assert(IP_FIRSTFRAG(iph));
+    if (likely(!reverse))
+      assign(iph->ip_src, udph->uh_sport,
+             iph->ip_dst, udph->uh_dport);
+    else
+      assign(iph->ip_dst, udph->uh_dport,
+             iph->ip_src, udph->uh_sport);
+  }
+}
+
+IP6FlowID::IP6FlowID(const click_ip6 *ip6h, bool reverse)
+{
+  assert(ip6h);
+  const click_udp *udph = reinterpret_cast<const click_udp *>(reinterpret_cast<const unsigned char *>(ip6h) + sizeof(click_ip6));
+
+  if (likely(!reverse)) {
+    assign(IP6Address(ip6h->ip6_src),udph->uh_sport,IP6Address(ip6h->ip6_dst),udph->uh_dport);
+  } else {
+    assign(IP6Address(ip6h->ip6_dst),udph->uh_dport,IP6Address(ip6h->ip6_src),udph->uh_sport);
+  }
+}
+
+IP6FlowID::IP6FlowID(const click_ip *iph, bool reverse)
+{
+  assert(iph && IP_FIRSTFRAG(iph));
+  const click_udp *udph = reinterpret_cast<const click_udp *>(reinterpret_cast<const unsigned char *>(iph) + (iph->ip_hl << 2));
+
+  if (likely(!reverse))
+    assign(iph->ip_src, udph->uh_sport,
+           iph->ip_dst, udph->uh_dport);
+  else
+    assign(iph->ip_dst, udph->uh_dport,
+           iph->ip_src, udph->uh_sport);
+
+}
+
+IPFlowID
+IP6FlowID::flow_id4() const
+{
+  if (is_ip4_mapped())
+    return IPFlowID(saddr4(),_sport,daddr4(),_dport);
+  else
+    return IPFlowID();
 }
 
 String
@@ -44,6 +92,13 @@ IP6FlowID::unparse() const
   sa << '(' << _saddr.unparse() << ", " << ntohs(_sport) << ", "
      << _daddr.unparse() << ", " << ntohs(_dport) << ')';
   return sa.take_string();
+}
+
+StringAccum &
+operator<<(StringAccum &sa, const IP6FlowID &flow_id)
+{
+  sa << flow_id.unparse();
+  return sa;
 }
 
 #if CLICK_USERLEVEL
