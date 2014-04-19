@@ -260,7 +260,7 @@ IP6NDAdvertiser::simple_action(Packet *p)
 
   else
     {
-      click_in6_addr ina;
+      struct in6_addr ina;
       memcpy(&ina, &ea->nd_tpa, 16);
     }
 

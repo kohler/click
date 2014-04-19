@@ -102,8 +102,8 @@ struct click_icmp6_redirect {
     uint8_t icmp6_code;
     uint16_t icmp6_cksum;
     uint32_t padding;
-    struct click_in6_addr icmp6_target;
-    struct click_in6_addr icmp6_dst;
+    struct in6_addr icmp6_target;
+    struct in6_addr icmp6_dst;
 };
 
 /* different struct names for each type of packet */
