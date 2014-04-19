@@ -129,6 +129,9 @@ IP6Address::unparse(StringAccum &sa) const
 	if (a32[2] == 0 && a32[3] == 0) {
 	    sa.append("::", 2);
 	    return;
+	} else if (a32[2] == 0) {
+	    sa.snprintf(23, "::%d.%d.%d.%d", a8[12], a8[13], a8[14], a8[15]);
+	    return;
 	} else if (a32[2] == htonl(0x0000FFFFU)) {
 	    sa.snprintf(23, "::ffff:%d.%d.%d.%d", a8[12], a8[13], a8[14], a8[15]);
 	    return;
@@ -343,7 +346,7 @@ IP6AddressArg::basic_parse(const String &str, IP6Address &result, const ArgConte
 		parts[d] = 0;
 		++s;
 	    } else if (!isxdigit((unsigned char) s[1]) || p == 0) {
-		d++;
+		++d;
 		break;
 	    }
 	    p = 0;

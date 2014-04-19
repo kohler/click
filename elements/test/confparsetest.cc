@@ -265,7 +265,7 @@ ConfParseTest::initialize(ErrorHandler *errh)
 	      && a.data32()[3] == ntohl(0x81903426));
 	IPAddress a4;
 	if (IPAddressArg().parse("ip4_addr", a4, this) == true)
-	    CHECK(cp_ip6_address("0:::ip4_addr", &a, this) == true
+	    CHECK(cp_ip6_address("0::ip4_addr", &a, this) == true
 		  && a.data32()[0] == 0x00000000 && a.data32()[1] == 0x00000000
 		  && a.data32()[2] == 0x00000000
 		  && a.data32()[3] == a4.addr());
