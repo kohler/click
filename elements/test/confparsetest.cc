@@ -269,12 +269,17 @@ ConfParseTest::initialize(ErrorHandler *errh)
 		  && a.data32()[0] == 0x00000000 && a.data32()[1] == 0x00000000
 		  && a.data32()[2] == 0x00000000
 		  && a.data32()[3] == a4.addr());
-	IPAddress b4("18.26.4.9"), c4;
-	CHECK(IP6Address(b4).has_ip4_address());
-	CHECK(IP6Address(b4).ip4_address(c4) && c4 == b4);
+	if (IPAddressArg().parse("ip4_addr", a4, this) == true)
+	    CHECK(cp_ip6_address("0::ffff:ip4_addr", &a, this) == true
+		  && a.data32()[0] == 0x00000000 && a.data32()[1] == 0x00000000
+		  && a.data32()[2] == htonl(0x0000FFFFU)
+		  && a.data32()[3] == a4.addr());
+	IPAddress b4("18.26.4.9");
+	CHECK(IP6Address(b4).is_ip4_mapped());
+	CHECK(IP6Address(b4).ip4_address() == b4);
 	a = IP6Address("::ffff:18.26.4.9");
-	CHECK(a.has_ip4_address());
-	CHECK(a.ip4_address(c4) && c4 == b4);
+	CHECK(a.is_ip4_mapped());
+	CHECK(a.ip4_address() == b4);
 	CHECK(cp_ip6_address("ffff:ffff:ffff:ffff:ffff:ffff::", &a, this) == true
 	      && a.data32()[0] == 0xFFFFFFFF
 	      && a.data32()[1] == 0xFFFFFFFF

@@ -1,34 +1,17 @@
 /* -*- mode: c; c-basic-offset: 4 -*- */
 #ifndef CLICKNET_IP6_H
 #define CLICKNET_IP6_H
-#include <clicknet/ip.h>
-#undef s6_addr
-#undef s6_addr16
-#undef s6_addr32
-#undef s6_addr64
-
-/*
- * <clicknet/ip6.h> -- our own definitions of IP6 headers
- * based on RFC 2460
- */
-
-/* IPv6 address , same as from /usr/include/netinet/in.h  */
-struct click_in6_addr {
-    union {
-	uint8_t		u6_addr8[16];
-	uint16_t	u6_addr16[8];
-	uint32_t	u6_addr32[4];
-#ifdef HAVE_INT64_TYPES
-	uint64_t	u6_addr64[2];
+//#include <clicknet/ip.h>
+/* get struct in6_addr */
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+#if CLICK_LINUXMODULE
+# include <net/checksum.h>
+# include <linux/in6.h>
+#else
+# include <sys/types.h>
+# include <netinet/in.h>
 #endif
-    } in6_u;
-};
-
-#define s6_addr in6_u.u6_addr8
-#define s6_addr16 in6_u.u6_addr16
-#define s6_addr32 in6_u.u6_addr32
-#define s6_addr64 in6_u.u6_addr64
-
 
 struct click_ip6 {
     union {
@@ -54,8 +37,8 @@ struct click_ip6 {
 #endif
 	} ip6_un3;
     } ip6_ctlun;
-    struct click_in6_addr ip6_src;	/* 8-23	 source address */
-    struct click_in6_addr ip6_dst;	/* 24-39 dest address */
+    struct in6_addr ip6_src;	/* 8-23	 source address */
+    struct in6_addr ip6_dst;	/* 24-39 dest address */
 };
 
 #define ip6_v			ip6_ctlun.ip6_un3.ip6_un3_v
@@ -76,23 +59,39 @@ struct click_ip6 {
 
 #define IP6_CHECK_V(hdr)	(((hdr).ip6_vfc & htonl(IP6_V_MASK)) == htonl(6 << IP6_V_SHIFT))
 
+#ifndef IP6PROTO_FRAGMENT
+#define IP6PROTO_FRAGMENT 0x2c
+#endif
+struct click_ip6_fragment {
+    uint8_t ip6_frag_nxt;
+    uint8_t ip6_frag_reserved;
+    uint16_t ip6_frag_offset;
+#define IP6_MF		0x0001
+#define IP6_OFFMASK	0xFFF8
+					/*	 bits 0-12: Fragment offset  */
+					/*	 bit 13-14: reserved	     */
+					/*	 bit 15: More Fragment	     */
+    uint32_t ip6_frag_id;
+};
+
 CLICK_DECLS
 
-uint16_t in6_fast_cksum(const struct click_in6_addr *saddr,
-			const struct click_in6_addr *daddr,
+uint16_t in6_fast_cksum(const struct in6_addr *saddr,
+			const struct in6_addr *daddr,
 			uint16_t len,
 			uint8_t proto,
 			uint16_t ori_csum,
 			const unsigned char *addr,
 			uint16_t len2);
 
-uint16_t in6_cksum(const struct click_in6_addr *saddr,
-		   const struct click_in6_addr *daddr,
+uint16_t in6_cksum(const struct in6_addr *saddr,
+		   const struct in6_addr *daddr,
 		   uint16_t len,
 		   uint8_t proto,
 		   uint16_t ori_csum,
 		   unsigned char *addr,
 		   uint16_t len2);
 
-CLICK_ENDDECLS
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 #endif
