@@ -141,7 +141,7 @@ Args::operator=(const Args &x)
 void
 Args::reset_from(int i)
 {
-    _kwpos.clear();
+    _kwpos.resize(i);
     if (_conf) {
 	_kwpos.reserve(_conf->size());
 	for (String *it = _conf->begin() + i; it != _conf->end(); ++it) {
