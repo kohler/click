@@ -47,6 +47,7 @@ class Router { public:
     static Element* element(const Router *router, int i);
 
     const String& ename(int i) const;
+    String ename_context(int i) const;
     String elandmark(int i) const;
     const String& econfiguration(int i) const;
     void set_econfiguration(int i, const String& conf);

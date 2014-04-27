@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2004-2008 Regents of the University of California
+ * Copyright (c) 2004-2014 Click authors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,24 +33,39 @@ StaticThreadSched::~StaticThreadSched()
 {
 }
 
+bool StaticThreadSched::set_preference(int eindex, int preference) {
+    if (eindex >= _thread_preferences.size())
+        _thread_preferences.resize(eindex + 1, THREAD_UNKNOWN);
+    _thread_preferences[eindex] = preference;
+    return true;
+}
+
 int
 StaticThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    Element *e;
+    String ename;
     int preference;
     for (int i = 0; i < conf.size(); i++) {
 	if (Args(this, errh).push_back_words(conf[i])
-	    .read_mp("ELEMENT", e)
+	    .read_mp("ELEMENT", ename)
 	    .read_mp("THREAD", preference)
 	    .complete() < 0)
 	    return -1;
-	if (e->eindex() >= _thread_preferences.size())
-	    _thread_preferences.resize(e->eindex() + 1, THREAD_UNKNOWN);
 	if (preference < -1 || preference >= master()->nthreads()) {
 	    errh->warning("thread preference %d out of range", preference);
 	    preference = (preference < 0 ? -1 : 0);
 	}
-	_thread_preferences[e->eindex()] = preference;
+        bool set = false;
+        if (Element* e = router()->find(ename, this))
+            set = set_preference(e->eindex(), preference);
+        else if (ename) {
+            ename = router()->ename_context(eindex()) + ename + "/";
+            for (int i = 0; i != router()->nelements(); ++i)
+                if (router()->ename(i).starts_with(ename))
+                    set = set_preference(i, preference);
+        }
+        if (!set)
+            Args(this, errh).error("%<%s%> does not name an element", ename.c_str());
     }
     _next_thread_sched = router()->thread_sched();
     router()->set_thread_sched(this);

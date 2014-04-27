@@ -5,7 +5,7 @@ Tests thread assignment.
 click-buildtool provides umultithread
 
 %script
-click --threads=2 -e '
+click --simtime --threads=2 -e '
 	StaticThreadSched(rs1 0, d1 0, rs2 1, d2 1);
 	rs1 :: RatedSource -> q1 :: Queue -> d1 :: Discard;
 	rs2 :: RatedSource -> q2 :: Queue -> d2 :: Discard;

@@ -278,10 +278,24 @@ Router::element(const Router *router, int eindex)
 const String &
 Router::ename(int eindex) const
 {
-    if (eindex < 0 || eindex >= nelements())
-	return String::make_empty();
-    else
+    if ((unsigned) eindex < (unsigned) nelements())
 	return _element_names[eindex];
+    else
+	return String::make_empty();
+}
+
+/** @brief  Returns element index @a eindex's name context.
+ *  @param  eindex  element index
+ *
+ *  The result is the context prefix for the element's name. This is the
+ *  string up to, and including, the last slash in the element's name.
+ *  Returns the empty string if @a eindex is out of range. */
+String
+Router::ename_context(int eindex) const
+{
+    String s = ename(eindex);
+    int slash = s.find_right('/');
+    return slash < 0 ? String() : s.substring(0, slash + 1);
 }
 
 /** @brief  Returns element index @a eindex's configuration string.

@@ -1,0 +1,22 @@
+%info
+Tests thread assignment for compounds.
+
+%require
+click-buildtool provides umultithread
+
+%script
+click --simtime --threads=2 -e '
+        StaticThreadSched(sub0 1);
+        sub0, sub1 :: {
+            src :: RatedSource -> q :: Queue -> d :: Discard;
+            StaticThreadSched(d 0);
+        }
+	Script(wait 1s, print sub0/src.home_thread, print sub0/d.home_thread,
+	       print sub1/src.home_thread, print sub1/d.home_thread, stop)
+'
+
+%expect stdout
+1
+0
+0
+0

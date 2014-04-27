@@ -30,10 +30,10 @@ class StaticThreadSched : public Element, public ThreadSched { public:
     int initial_home_thread_id(const Element *e);
 
   private:
-
     Vector<int> _thread_preferences;
     ThreadSched *_next_thread_sched;
 
+    bool set_preference(int eindex, int preference);
 };
 
 CLICK_ENDDECLS
