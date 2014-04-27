@@ -23,6 +23,7 @@
 #include <click/string.hh>
 #include <click/straccum.hh>
 #include <click/glue.hh>
+#include <click/vector.hh>
 CLICK_DECLS
 
 /** @file string.hh
@@ -975,6 +976,97 @@ String::compare(const char *s, int len) const
     else
 	cmp = memcmp(data(), s, lencmp < 0 ? length() : len);
     return cmp ? cmp : lencmp;
+}
+
+/** @brief Test whether this string matches the glob @a pattern.
+    @param pattern glob pattern
+    @return True iff this string matches @a pattern.
+
+    A glob pattern is a pattern that may contain wildcard characters.
+    <tt>*</tt> in the pattern matches zero or more arbitrary characters
+    in @a str; <tt>?</tt> matches exactly one arbitrary character in
+    @a str; <tt>[...]</tt> matches any of the characters in brackets;
+    and <tt>[^...]</tt> matches any character not in the brackets. A
+    backslash <tt>\\</tt> escapes a wildcard character so that it matches
+    only itself. */
+bool
+String::glob_match(const String& pattern) const
+{
+    const char *send = this->end();
+    const char *pend = pattern.end();
+
+    // quick common-case check for suffix matches
+    while (pattern.begin() < pend && this->begin() < send
+	   && pend[-1] != '*' && pend[-1] != '?' && pend[-1] != ']'
+	   && (pattern.begin() + 1 == pend || pend[-2] != '\\'))
+	if (pend[-1] == send[-1])
+	    --pend, --send;
+	else
+	    return false;
+
+    Vector<const char*> state, nextstate;
+    state.push_back(pattern.data());
+
+    for (const char *s = this->data(); s != send && state.size(); ++s) {
+	nextstate.clear();
+	for (const char **pp = state.begin(); pp != state.end(); ++pp)
+	    if (*pp != pend) {
+	      reswitch:
+		switch (**pp) {
+		  case '?':
+		    nextstate.push_back(*pp + 1);
+		    break;
+		  case '*':
+		    if (*pp + 1 == pend)
+			return true;
+		    if (nextstate.empty() || nextstate.back() != *pp)
+			nextstate.push_back(*pp);
+		    ++*pp;
+		    goto reswitch;
+		  case '\\':
+		    if (*pp + 1 != pend)
+			++*pp;
+		    goto normal_char;
+		  case '[': {
+		      const char *ec = *pp + 1;
+		      bool negated;
+		      if (ec != pend && *ec == '^') {
+			  negated = true;
+			  ++ec;
+		      } else
+			  negated = false;
+		      if (ec == pend)
+			  goto normal_char;
+
+		      bool found = false;
+		      do {
+			  if (*++ec == *s)
+			      found = true;
+		      } while (ec != pend && *ec != ']');
+		      if (ec == pend)
+			  goto normal_char;
+
+		      if (found == !negated)
+			  nextstate.push_back(ec + 1);
+		      break;
+		  }
+		  normal_char:
+		  default:
+		    if (**pp == *s)
+			nextstate.push_back(*pp + 1);
+		    break;
+		}
+	    }
+	state.swap(nextstate);
+    }
+
+    for (const char **pp = state.begin(); pp != state.end(); ++pp) {
+	while (*pp != pend && **pp == '*')
+	    ++*pp;
+	if (*pp == pend)
+	    return true;
+    }
+    return false;
 }
 
 /** @brief Return a pointer to the next character in UTF-8 encoding.

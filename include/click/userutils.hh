@@ -6,7 +6,9 @@
 CLICK_DECLS
 class ErrorHandler;
 
-bool glob_match(const String &string, const String &pattern);
+inline bool glob_match(const String &string, const String &pattern) {
+    return string.glob_match(pattern);
+}
 
 String percent_substitute(const String &string, int format1, ...);
 

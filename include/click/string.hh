@@ -108,6 +108,7 @@ class String { public:
     int compare(const char *s, int len) const;
     inline bool starts_with(const String &x) const;
     bool starts_with(const char *s, int len) const;
+    bool glob_match(const String& pattern) const;
 
     // bool operator==(const String &, const String &);
     // bool operator==(const String &, const char *);
