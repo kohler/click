@@ -683,6 +683,7 @@ deviceup-01.testie
 ./test/standard:
 BandwidthRatedUnqueue-01.testie
 Classifier-01.testie
+Clipboard-01.testie
 DelayShaper-notifier-01.testie
 FullNoteQueue-upstream-notifier-01.testie
 Hub-01.testie
