@@ -1,0 +1,25 @@
+%info
+Test that Resize works correctly.
+
+%script
+click CONFIG
+
+%file CONFIG
+RatedSource(DATA "ABCD", LIMIT 1, STOP true)
+-> Print()
+-> Resize(HEAD -2)
+-> Print()
+-> Resize(+4, -2)
+-> Print()
+-> Resize()
+-> Print()
+-> Resize(HEAD -8)
+-> Print()
+-> Discard();
+
+%expect stderr
+   4 | 41424344
+   2 | 4344
+   4 | 00004142
+   4 | 00004142
+   0
