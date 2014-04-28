@@ -1,0 +1,29 @@
+%info
+Test Clipboard.
+
+%script
+click CONFIG
+
+%file CONFIG
+clipboard :: Clipboard(0/1, 2/1, 9/1);
+
+TimedSource(0.002, "Simplistic")
+-> [0]clipboard[0]
+-> Discard();
+
+TimedSource(0.003, "Dance tour")
+-> [0]clipboard;
+
+TimedSource(0.004, "Ionize tub")
+-> [0]clipboard;
+
+TimedSource(0.001, ".a. is a .at,", LIMIT 4, STOP true)
+-> [1]clipboard[1]
+-> Print(CONTENTS ASCII)
+-> Discard();
+
+%expect stderr
+  13 |  .a. is a  .at,
+  13 |  Sam is a  cat,
+  13 |  Dan is a  rat,
+  13 |  Ian is a  bat,
