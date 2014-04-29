@@ -110,7 +110,7 @@ ToUserDevice::static_cleanup()
     dev_fops = 0;		// proclikefs will free eventually
 }
 
-#define GETELEM(filp)		((ToUserDevice *) (((struct file_priv *)filp->private_data)->dev));
+#define GETELEM(filp)		(ToUserDevice::elem_map[((struct file_priv *)filp->private_data)->minor_num])
 
 // open function - called when the "file" /dev/toclick is opened in userspace
 int
@@ -123,7 +123,7 @@ ToUserDevice::dev_open(struct inode *inode, struct file *filp)
     }
     //struct file_priv *f = (struct file_priv *)kmalloc(sizeof(struct file_priv), GFP_KERNEL);
     file_priv *f = (file_priv *) kmalloc(sizeof(struct file_priv), GFP_ATOMIC);
-    f->dev = (ToUserDevice*)elem_map[num];
+    f->minor_num = num;
     f->read_once = 0;
     f->p = 0;
     filp->private_data = (void *)f;
@@ -147,6 +147,8 @@ ssize_t
 ToUserDevice::dev_write(struct file *filp, const char *buff, size_t len, loff_t *ppos)
 {
     ToUserDevice *elem = GETELEM(filp);
+    if (!elem)
+	return -ENODEV;
     FromUserDevice *fud = elem->_from_user_device;
     if (!fud)
 	return -EPERM;
@@ -158,6 +160,8 @@ ssize_t
 ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t *ppos)
 {
     ToUserDevice *elem = GETELEM(filp);
+    if (!elem)
+	return -ENODEV;
     file_priv *f = (file_priv *)filp->private_data;
     unsigned nfetched = 0;
     ssize_t nread = 0;
@@ -236,7 +240,13 @@ ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t *ppos)
 		finish_wait(&elem->_proc_queue, &wq);
 		return -ERESTARTSYS;
 	    }
+
 	    schedule();
+
+	    elem = GETELEM(filp);
+	    if (!elem)
+		return -ENODEV;
+
 	    spin_lock(&elem->_lock); // LOCK
 	    elem->_sleep_proc--;
 	}
@@ -404,6 +414,7 @@ ToUserDevice::cleanup(CleanupStage stage)
 {
     if (stage < CLEANUP_CONFIGURED)
 	return; // have to quit, as configure was never called
+    elem_map[_dev_minor] = 0;
     spin_lock(&_lock); // LOCK
     DEV_NUM--;
     _exit = true; // signal for exit

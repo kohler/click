@@ -135,7 +135,7 @@ public:
 
 private:
     struct file_priv {
-        ToUserDevice *dev;
+        uint8_t minor_num;
         uint8_t read_once;
         Packet *p;
     };
