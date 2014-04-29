@@ -123,6 +123,8 @@ ToUserDevice::dev_open(struct inode *inode, struct file *filp)
     }
     //struct file_priv *f = (struct file_priv *)kmalloc(sizeof(struct file_priv), GFP_KERNEL);
     file_priv *f = (file_priv *) kmalloc(sizeof(struct file_priv), GFP_ATOMIC);
+    if (!f)
+	return -ENOMEM;
     f->minor_num = num;
     f->read_once = 0;
     f->p = 0;
