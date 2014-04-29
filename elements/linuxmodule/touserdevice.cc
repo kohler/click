@@ -451,7 +451,9 @@ ToUserDevice::process(Packet *p)
 		this_len = _pcap_snaplen;
 		wp->take(wp->length() - _pcap_snaplen);
 	    }
-	    wp->push(sizeof(struct pcaprec_hdr));
+	    wp = wp->push(sizeof(struct pcaprec_hdr));
+	    if (unlikely(!wp))
+		return false;
 	    struct pcaprec_hdr *h = (struct pcaprec_hdr *)wp->data();
 	    memset(h, 0, sizeof(struct pcaprec_hdr));
 	    Timestamp t = wp->timestamp_anno();
@@ -460,11 +462,15 @@ ToUserDevice::process(Packet *p)
 	    h->incl_len = htonl(this_len);
 	    h->orig_len = htonl(orig_len);
 	} else if (_encap_type == type_encap_len32) {
-	    wp->push(sizeof(uint32_t));
+	    wp = wp->push(sizeof(uint32_t));
+	    if (unlikely(!wp))
+		return false;
 	    uint32_t len = wp->length();
 	    memcpy(wp->data(), &len, sizeof(uint32_t));
 	} else if (_encap_type == type_encap_len_net16) {
-	    wp->push(sizeof(uint16_t));
+	    wp = wp->push(sizeof(uint16_t));
+	    if (unlikely(!wp))
+		return false;
 	    uint16_t len = htons(wp->length());
 	    memcpy(wp->data(), &len, sizeof(uint16_t));
 	}
