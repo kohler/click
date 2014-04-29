@@ -49,7 +49,7 @@ static int DEV_NUM = 0;
 
 struct file_operations *ToUserDevice::dev_fops;
 
-volatile ToUserDevice *ToUserDevice::elem_map[256] = {0};
+ToUserDevice * volatile ToUserDevice::elem_map[256] = {0};
 
 struct pcap_hdr {
     uint32_t magic_number;   /* magic number */

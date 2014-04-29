@@ -180,7 +180,7 @@ private:
     class FromUserDevice *_from_user_device;
 
     static struct file_operations *dev_fops;
-    static volatile ToUserDevice *elem_map[256];
+    static ToUserDevice * volatile elem_map[256];
 
     static ssize_t dev_read(struct file *file, char *buf, size_t count, loff_t *ppos);
     static ssize_t dev_write(struct file *filp, const char *buff, size_t len, loff_t *ppos);
