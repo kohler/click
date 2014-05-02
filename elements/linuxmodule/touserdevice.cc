@@ -51,6 +51,8 @@ struct file_operations *ToUserDevice::dev_fops;
 
 ToUserDevice * volatile ToUserDevice::elem_map[256] = {0};
 
+spinlock_t userdevice_lock;
+
 struct pcap_hdr {
     uint32_t magic_number;   /* magic number */
     uint16_t version_major;  /* major version number */
@@ -68,9 +70,19 @@ struct pcaprec_hdr {
     uint32_t orig_len;	     /* actual length of packet */
 };
 
+template <typename T>
+class ref_holder {
+public:
+    explicit ref_holder(T & t) : t_(t) { }
+    ~ref_holder() { --t_; }
+private:
+    T & t_;
+};
+
 ToUserDevice::ToUserDevice() : _task(this)
 {
     _exit = false;
+    _use_count = 0;
     _size = 0;
     _q = 0;
     _r_slot = 0;
@@ -95,6 +107,8 @@ extern struct file_operations *click_new_file_operations();
 void
 ToUserDevice::static_initialize()
 {
+    spin_lock_init(&userdevice_lock);
+
     if ((dev_fops = click_new_file_operations())) {
 	dev_fops->read	  = dev_read;
 	dev_fops->write	  = dev_write;
@@ -143,9 +157,17 @@ ToUserDevice::dev_release(struct inode *inode, struct file *filp)
 ssize_t
 ToUserDevice::dev_write(struct file *filp, const char *buff, size_t len, loff_t *ppos)
 {
+    spin_lock(&userdevice_lock);
     ToUserDevice *elem = GETELEM(filp);
+    if (elem)
+	++elem->_use_count;
+    spin_unlock(&userdevice_lock);
+
     if (!elem)
 	return -ENODEV;
+
+    ref_holder<typeof(elem->_use_count)> r(elem->_use_count);
+
     FromUserDevice *fud = elem->_from_user_device;
     if (!fud)
 	return -EPERM;
@@ -156,9 +178,17 @@ ToUserDevice::dev_write(struct file *filp, const char *buff, size_t len, loff_t 
 ssize_t
 ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t *ppos)
 {
+    spin_lock(&userdevice_lock);
     ToUserDevice *elem = GETELEM(filp);
+    if (elem)
+	++elem->_use_count;
+    spin_unlock(&userdevice_lock);
+
     if (!elem)
 	return -ENODEV;
+
+    ref_holder<typeof(elem->_use_count)> r(elem->_use_count);
+
     file_priv *f = (file_priv *)filp->private_data;
     unsigned nfetched = 0;
     ssize_t nread = 0;
@@ -240,8 +270,7 @@ ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t *ppos)
 
 	    schedule();
 
-	    elem = GETELEM(filp);
-	    if (!elem)
+	    if (!elem->_exit)
 		return -ENODEV;
 
 	    spin_lock(&elem->_lock); // LOCK
@@ -291,11 +320,18 @@ ToUserDevice::dev_read(struct file *filp, char *buff, size_t len, loff_t *ppos)
 uint
 ToUserDevice::dev_poll(struct file *filp, struct poll_table_struct *pt)
 {
+    spin_lock(&userdevice_lock);
     ToUserDevice *elem = GETELEM(filp);
-    uint mask = 0;
+    if (elem)
+	++elem->_use_count;
+    spin_unlock(&userdevice_lock);
 
     if (!elem)
 	return 0;
+
+    ref_holder<typeof(elem->_use_count)> r(elem->_use_count);
+
+    uint mask = 0;
     poll_wait(filp, &elem->_proc_queue, pt);
 
     FromUserDevice *fud = elem->_from_user_device;
@@ -391,7 +427,9 @@ ToUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	}
     }
     init_waitqueue_head(&_proc_queue);
+    spin_lock(&userdevice_lock);
     elem_map[_dev_minor] = this;
+    spin_unlock(&userdevice_lock);
     return 0;
 }
 
@@ -411,16 +449,21 @@ ToUserDevice::cleanup(CleanupStage stage)
 {
     if (stage < CLEANUP_CONFIGURED)
 	return; // have to quit, as configure was never called
+    spin_lock(&userdevice_lock);
     elem_map[_dev_minor] = 0;
+    spin_unlock(&userdevice_lock);
     spin_lock(&_lock); // LOCK
     DEV_NUM--;
     _exit = true; // signal for exit
     spin_unlock(&_lock); // UNLOCK
 
     if (_q) {
-	wake_up_interruptible(&_proc_queue);
-	while (waitqueue_active(&_proc_queue))
-	    schedule();
+	do {
+	    wake_up_interruptible(&_proc_queue);
+	    do {
+		schedule();
+	    } while (waitqueue_active(&_proc_queue));
+	} while (_use_count);
 
 	if (!DEV_NUM)
 	    unregister_chrdev(_dev_major, DEV_NAME);
