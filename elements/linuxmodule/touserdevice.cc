@@ -136,11 +136,6 @@ ToUserDevice::dev_open(struct inode *inode, struct file *filp)
 int
 ToUserDevice::dev_release(struct inode *inode, struct file *filp)
 {
-    ToUserDevice *elem = GETELEM(filp);
-    if (!elem) {
-	click_chatter("Empty private struct!\n");
-	return -EIO;
-    }
     kfree(filp->private_data);
     return 0;
 }
