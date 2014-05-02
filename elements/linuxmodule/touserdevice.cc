@@ -395,8 +395,8 @@ ToUserDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	    return - EIO;
 	}
     }
-    elem_map[_dev_minor] = this;
     init_waitqueue_head(&_proc_queue);
+    elem_map[_dev_minor] = this;
     return 0;
 }
 
