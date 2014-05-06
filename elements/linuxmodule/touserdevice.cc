@@ -150,6 +150,9 @@ ToUserDevice::dev_open(struct inode *inode, struct file *filp)
 int
 ToUserDevice::dev_release(struct inode *inode, struct file *filp)
 {
+    file_priv *f = (file_priv *)filp->private_data;
+    if (f && f->p)
+        f->p->kill();
     kfree(filp->private_data);
     return 0;
 }
