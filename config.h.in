@@ -208,6 +208,13 @@
 # define CLICK_NOINLINE /* nothing */
 #endif
 
+/* Define macro for funtions that should be inline-able even if compiling without optimization. */
+#if __GNUC__
+# define CLICK_ALWAYS_INLINE __attribute__((always_inline))
+#else
+# define CLICK_ALWAYS_INLINE /* nothing */
+#endif
+
 /* Define macros for declaring packed structures. */
 #ifdef __GNUC__
 # define CLICK_PACKED_STRUCTURE(open, close) open close __attribute__((packed))
