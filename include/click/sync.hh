@@ -310,8 +310,8 @@ class SpinlockIRQ { public:
     typedef int flags_t;
 #endif
 
-    inline flags_t acquire();
-    inline void release(flags_t);
+    inline flags_t acquire() CLICK_ALWAYS_INLINE;
+    inline void release(flags_t) CLICK_ALWAYS_INLINE;
 
 #if CLICK_LINUXMODULE
   private:
