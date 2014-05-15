@@ -66,6 +66,7 @@ IPFragmenter::optcopy(const click_ip *ip1, click_ip *ip2)
 	    ++oin;
 	else if (*oin == IPOPT_EOL
                  || oin + 1 == oin_end
+                 || oin[1] < 2
 		 || oin + oin[1] > oin_end)
 	    break;
         else {
