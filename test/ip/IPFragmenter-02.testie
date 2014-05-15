@@ -1,0 +1,21 @@
+%info
+Checks IPFragmenter's bad IP option handling.
+
+%script
+click CONFIG1
+
+%file CONFIG1
+InfiniteSource(DATA "\<4600002c 00000000 64063383 121a042c 0a000004 02000000 001e0028 00000000 00000000 50000000 8f550000>", LIMIT 1, STOP true)
+	-> CheckIPHeader(OFFSET 0)
+        -> IPFragmenter(40, HONOR_DF false)
+        -> Print(CONTENTS true, MAXLENGTH 1000)
+        -> Discard;
+
+%expect stderr
+  40 | 46000028 00002000 64061387 121a042c 0a000004 02000000 001e0028 00000000 00000000 50000000
+  24 | 45000018 00000002 64063695 121a042c 0a000004 8f550000
+
+%ignorex
+!.*
+
+%eof

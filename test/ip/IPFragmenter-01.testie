@@ -2,8 +2,6 @@
 Checks IPFragmenter's IP option handling.
 
 %script
-
-# read from a hand-written IPSummaryDump file; check headers, emit to a dump
 click CONFIG1
 
 %file CONFIG1
