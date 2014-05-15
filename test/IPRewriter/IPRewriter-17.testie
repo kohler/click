@@ -1,0 +1,33 @@
+%info
+Test flows with same source & destination.
+
+%script
+$VALGRIND click --simtime -e "
+rw :: IPRewriter(pattern 2.0.0.1 1024-65535# - - 0 1, drop,
+	MAPPING_CAPACITY 10, GUARANTEE 0);
+FromIPSummaryDump(IN1, STOP true, CHECKSUM true, TIMING true)
+	-> ps :: PaintSwitch
+	-> rw
+	-> Paint(0)
+	-> t :: ToIPSummaryDump(OUT1, CONTENTS direction proto src sport dst dport payload);
+ps[1] -> [1] rw [1] -> Paint(1) -> t;
+DriverManager(pause, print >INFO rw.mapping_failures)
+"
+
+%file IN1
+!data direction proto timestamp src sport dst dport payload
+# 10 empty flows
+> T 1 1.0.0.1 11 2.0.0.2 21 XXX
+> T 2 2.0.0.1 1025 2.0.0.1 1025 XXX
+< T 2 2.0.0.1 1025 2.0.0.1 1025 XXX
+
+%expect OUT1
+> T 2.0.0.1 1024 2.0.0.2 21 "XXX"
+> T 2.0.0.1 1025 2.0.0.1 1025 "XXX"
+< T 2.0.0.1 1025 2.0.0.1 1025 "XXX"
+
+%expect INFO
+0
+
+%ignorex
+!.*
