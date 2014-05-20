@@ -138,6 +138,9 @@
 /* The size of a `struct timeval', as computed by sizeof. */
 #undef SIZEOF_STRUCT_TIMEVAL
 
+/* The size of a `ptrdiff_t', as computed by sizeof. */
+#undef SIZEOF_PTRDIFF_T
+
 /* The size of a `void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P
 

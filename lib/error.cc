@@ -458,6 +458,7 @@ ErrorHandler::vxformat(int default_flags, const char *s, va_list val)
 	    s++;
 	    goto width_flags;
 	case 'z':
+	case 't':
 	    if (width_flag)
 		break;
 	    width_flag = *s++;
@@ -616,6 +617,9 @@ ErrorHandler::vxformat(int default_flags, const char *s, va_list val)
 #if SIZEOF_SIZE_T == 4
 	    case 'z':
 #endif
+#if SIZEOF_PTRDIFF_T == 4
+	    case 't':
+#endif
 		num = va_arg(val, unsigned);
 		if ((flags & cf_signed) && (int) num < 0)
 		    num = -(int) num, flags |= cf_negative;
@@ -629,6 +633,9 @@ ErrorHandler::vxformat(int default_flags, const char *s, va_list val)
 # endif
 # if SIZEOF_SIZE_T == 8
 	    case 'z':
+# endif
+# if SIZEOF_PTRDIFF_T == 8
+	    case 't':
 # endif
 	    case -64: {
 		uint64_t qnum = va_arg(val, uint64_t);
