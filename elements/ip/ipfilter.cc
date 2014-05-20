@@ -724,6 +724,7 @@ IPFilter::Primitive::compile(Classification::Wordwise::Program &p, Vector<int> &
       p.start_subtree(tree);
       Primitive copy(*this);
       if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR) {
+          p.start_subtree(tree);
 	  memcpy(copy._u.c, _u.c, 4);
 	  memcpy(copy._mask.c, _mask.c, 4);
 	  copy.add_comparison_exprs(p, tree, offset_mac + 8, 0, true, false);
@@ -731,8 +732,10 @@ IPFilter::Primitive::compile(Classification::Wordwise::Program &p, Vector<int> &
 	  memcpy(copy._u.c, _u.c + 4, 2);
 	  memcpy(copy._mask.c, _mask.c + 4, 2);
 	  copy.add_comparison_exprs(p, tree, offset_mac + 12, 0, true, false);
+          p.finish_subtree(tree, Classification::c_and);
       }
       if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR) {
+          p.start_subtree(tree);
 	  copy._u.u = copy._mask.u = 0;
 	  memcpy(copy._u.c + 2, _u.c, 2);
 	  memcpy(copy._mask.c + 2, _mask.c, 2);
@@ -740,6 +743,7 @@ IPFilter::Primitive::compile(Classification::Wordwise::Program &p, Vector<int> &
 	  memcpy(copy._u.c, _u.c + 2, 4);
 	  memcpy(copy._mask.c, _mask.c + 2, 4);
 	  copy.add_comparison_exprs(p, tree, offset_mac + 4, 0, true, false);
+          p.finish_subtree(tree, Classification::c_and);
       }
       goto finish_srcdst;
   }
