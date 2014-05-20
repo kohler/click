@@ -10,6 +10,7 @@ i :: Idle
 -> c :: IPFilter(allow src 0:1:2:3:4:5,
 		 allow src 10.0.0.0 & 8.0.0.0 = 8.0.0.0,
 		 allow dst 10:20:30:40:50:60,
+		 allow host 9:A:B:C:D:E,
 		 deny all)
 -> i;
 
@@ -17,7 +18,11 @@ i :: Idle
  0   8/00010203%ffffffff  yes->step 1  no->step 2
  1  12/04050000%ffff0000  yes->[0]  no->step 2
  2 268/0a000000%ffffffff  yes->[0]  no->step 3
- 3   0/00001020%0000ffff  yes->step 4  no->[X]
- 4   4/30405060%ffffffff  yes->[0]  no->[X]
+ 3   0/00001020%0000ffff  yes->step 4  no->step 5
+ 4   4/30405060%ffffffff  yes->[0]  no->step 5
+ 5   8/090a0b0c%ffffffff  yes->step 6  no->step 7
+ 6  12/0d0e0000%ffff0000  yes->[0]  no->step 7
+ 7   0/0000090a%0000ffff  yes->step 8  no->[X]
+ 8   4/0b0c0d0e%ffffffff  yes->[0]  no->[X]
 safe length 272
 alignment offset 0
