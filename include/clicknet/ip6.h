@@ -74,7 +74,6 @@ struct click_ip6_fragment {
     uint32_t ip6_frag_id;
 };
 
-CLICK_DECLS
 
 uint16_t in6_fast_cksum(const struct in6_addr *saddr,
 			const struct in6_addr *daddr,
