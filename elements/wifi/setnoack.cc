@@ -37,8 +37,6 @@ SetNoAck::~SetNoAck()
 Packet *
 SetNoAck::simple_action(Packet *p_in)
 {
-  uint8_t *dst_ptr = (uint8_t *) p_in->data();
-
   struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p_in);
   ceh->flags |= WIFI_EXTRA_TX_NOACK;
 
