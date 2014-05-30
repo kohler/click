@@ -175,19 +175,19 @@ static void tcp_outa(const PacketDesc& d, const FieldWriter *f)
 		    *d.sa << tcp_flags_word[flag];
 	break;
       case T_TCP_OPT:
-	if (!d.vptr)
+	if (!d.vptr[0] || d.vptr[0] == d.vptr[1])
 	    *d.sa << '.';
 	else
 	    unparse_tcp_opt(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_TCPOPT_ALL_NOPAD);
 	break;
       case T_TCP_NTOPT:
-	if (!d.vptr)
+	if (!d.vptr[0] || d.vptr[0] == d.vptr[1])
 	    *d.sa << '.';
 	else
 	    unparse_tcp_opt(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_TCPOPT_NTALL);
 	break;
       case T_TCP_SACK:
-	if (!d.vptr)
+	if (!d.vptr[0] || d.vptr[0] == d.vptr[1])
 	    *d.sa << '.';
 	else
 	    unparse_tcp_opt(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_TCPOPT_SACK);
@@ -223,19 +223,19 @@ static void tcp_outb(const PacketDesc& d, bool ok, const FieldWriter *f)
 {
     switch (f->user_data) {
       case T_TCP_OPT:
-	if (!ok || !d.vptr)
+	if (!ok || !d.vptr[0] || d.vptr[0] == d.vptr[1])
 	    *d.sa << '\0';
 	else
 	    unparse_tcp_opt_binary(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_TCPOPT_ALL);
 	break;
       case T_TCP_NTOPT:
-	if (!ok || !d.vptr)
+	if (!ok || !d.vptr[0] || d.vptr[0] == d.vptr[1])
 	    *d.sa << '\0';
 	else
 	    unparse_tcp_opt_binary(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_TCPOPT_NTALL);
 	break;
       case T_TCP_SACK:
-	if (!ok || !d.vptr)
+	if (!ok || !d.vptr[0] || d.vptr[0] == d.vptr[1])
 	    *d.sa << '\0';
 	else
 	    unparse_tcp_opt_binary(*d.sa, d.vptr[0], d.vptr[1] - d.vptr[0], DO_TCPOPT_SACK);
