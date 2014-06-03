@@ -30,7 +30,7 @@
 # include <unistd.h>
 # include <sys/types.h>
 # include <sys/stat.h>
-# ifndef CLICK_MINIOS
+# if CLICK_USERLEVEL
 #  include <fcntl.h>
 # endif
 #elif CLICK_LINUXMODULE
