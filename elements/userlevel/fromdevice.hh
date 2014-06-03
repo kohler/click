@@ -113,6 +113,11 @@ Boolean. If true, then emit packets that the kernel sends to the given
 interface, as well as packets that the kernel receives from it. Default is
 false.
 
+=item PROTOCOL
+
+Integer. If set and nonzero, then only emit packets with this link-level
+protocol. Only affects METHOD LINUX. Default is 0.
+
 =item HEADROOM
 
 Integer. Amount of bytes of headroom to leave before the packet data. Defaults

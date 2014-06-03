@@ -115,6 +115,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("HEADROOM out of range");
     if (_burst <= 0)
 	return errh->error("BURST out of range");
+    _protocol = htons(_protocol);
 
 #if FROMDEVICE_ALLOW_PCAP
     _bpf_filter = bpf_filter;
@@ -498,7 +499,8 @@ FromDevice::selected(int, int)
 	socklen_t fromlen = sizeof(sa);
 	WritablePacket *p = Packet::make(_headroom, 0, _snaplen, 0);
 	int len = recvfrom(_fd, p->data(), p->length(), MSG_TRUNC, (sockaddr *)&sa, &fromlen);
-	if (len > 0 && (sa.sll_pkttype != PACKET_OUTGOING || _outbound) && (ntohs(sa.sll_protocol) == _protocol || _protocol == 0)) {
+	if (len > 0 && (sa.sll_pkttype != PACKET_OUTGOING || _outbound)
+            && (_protocol == 0 || _protocol == sa.sll_protocol)) {
 	    if (len > _snaplen) {
 		assert(p->length() == (uint32_t)_snaplen);
 		SET_EXTRA_LENGTH_ANNO(p, len - _snaplen);
