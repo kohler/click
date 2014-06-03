@@ -1,0 +1,188 @@
+################################################################################
+# Basics
+################################################################################
+top_srcdir		:= @top_srcdir@
+srcdir			:= @srcdir@
+top_builddir	:= ..
+subdir			:= minios
+conf_auxdir		:= @conf_auxdir@
+
+xen_dir			:= @xen_dir@
+minios_dir		:= @minios_dir@
+newlib_dir		:= @newlib_dir@
+lwip_dir		:= @lwip_dir@
+
+XEN_ROOT		:= $(realpath $(xen_dir))
+MINIOS_ROOT		:= $(realpath $(minios_dir))
+NEWLIB_ROOT		:= $(realpath $(newlib_dir))
+LWIP_ROOT		:= $(realpath $(lwip_dir))
+
+default: all
+
+-include config.mk
+
+
+################################################################################
+# ClickOS
+################################################################################
+STUBDOM_NAME		:= clickos
+STUBDOM_ROOT		:= $(realpath $(srcdir))
+STUBDOM_BUILD_DIR	:= $(STUBDOM_ROOT)/build
+
+STUB_APP_SRC_DIR	 = $(STUBDOM_ROOT)
+STUB_APP_OBJ_DIR	 = $(STUBDOM_BUILD_DIR)/$(STUBDOM_NAME)
+STUB_APP_OBJS0		 = click.o
+STUB_APP_OBJS		 = $(addprefix $(STUB_APP_OBJ_DIR)/,$(STUB_APP_OBJS0))
+
+
+################################################################################
+# Click
+################################################################################
+CLICK_ROOT		:= $(realpath $(top_srcdir))
+CLICK_INCLUDES	 = -I$(CLICK_ROOT) -I$(CLICK_ROOT)/include
+CLICK_DEFINES	 = -DCLICK_MINIOS
+CLICK_SRC_DIR	 = $(CLICK_ROOT)/lib
+CLICK_OBJ_DIR	 = $(STUBDOM_BUILD_DIR)/click
+CLICK_OBJS0		 =		\
+	archive.o			\
+	args.o				\
+	atomic.o			\
+	bighashmap_arena.o	\
+	bitvector.o			\
+	confparse.o			\
+	crc32.o				\
+	driver.o			\
+	element.o			\
+	elemfilter.o		\
+	error.o				\
+	etheraddress.o		\
+	gaprate.o			\
+	glue.o				\
+	handlercall.o		\
+	hashallocator.o		\
+	in_cksum.o			\
+	integers.o			\
+	ipaddress.o			\
+	ipflowid.o			\
+	iptable.o			\
+	lexer.o				\
+	master.o			\
+	md5.o				\
+	nameinfo.o			\
+	notifier.o			\
+	packet.o			\
+	router.o			\
+	routerthread.o		\
+	routervisitor.o		\
+	straccum.o			\
+	string.o			\
+	task.o				\
+	timer.o				\
+	timerset.o			\
+	timestamp.o			\
+	variableenv.o
+CLICK_OBJS		 = $(addprefix $(CLICK_OBJ_DIR)/,$(CLICK_OBJS0))
+CLICK_DEPS		 = $(patsubst %.o,%.d,$(CLICK_OBJS))
+
+STUB_BUILD_DIRS	+= $(CLICK_OBJ_DIR)
+STUB_CINCLUDES	+= $(CLICK_INCLUDES)
+STUB_CDEFINES	+= $(CLICK_DEFINES)
+STUB_APP_OBJS	+= $(CLICK_OBJS)
+STUB_APP_DEPS	+= $(CLICK_DEPS)
+
+$(CLICK_OBJ_DIR)/%.o: $(CLICK_SRC_DIR)/%.c
+	$(call ccompile,-c $< -o $@,CC)
+
+$(CLICK_OBJ_DIR)/%.o: $(CLICK_SRC_DIR)/%.cc
+	$(call cxxcompile,-c $< -o $@,CXX)
+
+
+##############################
+# Click elements
+##############################
+CLICK_ELEMENTS_DIRS		 = minios @element_groups@
+CLICK_ELEMENTS_DIRS		+= $(CLICK_EXTRA_ELEMENT_GROUPS)
+CLICK_ELEMENTS_OBJ_DIR	 = $(CLICK_OBJ_DIR)/elements
+CLICK_ELEMENTS			 = $(CLICK_ELEMENTS_OBJ_DIR)/elements
+CLICK_ELEMENTS_OBJS		 = $(CLICK_ELEMENTS).o $(CLICK_ELEMENTS_OBJS0)
+CLICK_ELEMENTS_DEPS		 = $(patsubst %.o,%.d,$(CLICK_ELEMENTS_OBJS))
+
+STUB_BUILD_DIRS			+= $(CLICK_ELEMENTS_OBJ_DIR)
+STUB_APP_OBJS			+= $(CLICK_ELEMENTS_OBJS)
+STUB_APP_DEPS			+= $(CLICK_ELEMENTS_DEPS)
+
+
+.PHONY: elemlist
+elemlist:
+	@rm -f $(CLICK_ELEMENTS).conf
+	@$(MAKE) $(CLICK_ELEMENTS).conf
+
+$(CLICK_ELEMENTS).conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool $(srcdir)/elements.exclude | build-dirs
+	$(call verbose_cmd,echo $(CLICK_ELEMENTS_DIRS) | $(top_builddir)/click-buildtool findelem -r minios -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) >,FINDELEMENTS,$@)
+
+$(CLICK_ELEMENTS).mk: $(CLICK_ELEMENTS).conf $(top_builddir)/click-buildtool
+	$(call verbose_cmd,$(top_builddir)/click-buildtool elem2make -v CLICK_ELEMENTS_OBJS0 < $(CLICK_ELEMENTS).conf | sed -e '/patsubst/ n;s/\([a-zA-Z0-9_-]\+\.o\)/$$(CLICK_ELEMENTS_OBJ_DIR)\/\1/g;s/%\.o/$$(CLICK_ELEMENTS_OBJ_DIR)\/%.o/g' >,CREATE,$(CLICK_ELEMENTS).mk)
+
+$(CLICK_ELEMENTS).cc: $(CLICK_ELEMENTS).conf $(top_builddir)/click-buildtool
+	$(call verbose_cmd,$(top_builddir)/click-buildtool elem2export < $(CLICK_ELEMENTS).conf >,CREATE,$(CLICK_ELEMENTS).cc)
+	$(call verbose_cmd,$(RM),'RM ',$(CLICK_ELEMENTS).d)
+
+$(CLICK_ELEMENTS).o: $(CLICK_ELEMENTS).cc | build-reqs
+	$(call cxxcompile,-c $(CLICK_ELEMENTS).cc -o $@,CXX)
+
+
+ifeq (,$(filter $(MAKECMDGOALS),clean distclean elemlist $(CLICK_ELEMENTS).conf))
+-include $(CLICK_ELEMENTS).mk
+endif
+
+
+click: $(CLICK_OBJS) $(CLICK_ELEMENTS_OBJS)
+
+
+################################################################################
+# Misc
+################################################################################
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+stub: | Makefile
+
+.PHONY: clickos-banner
+clickos-banner:
+	@echo "                                                     "
+	@echo "            ____ _ _      _     ___  ____            "
+	@echo "           / ___| (_) ___| | __/ _ \/ ___|           "
+	@echo "          | |   | | |/ __| |/ / | | \___ \           "
+	@echo "          | |___| | | (__|   <| |_| |___) |          "
+	@echo "           \____|_|_|\___|_|\_\\\\\\___/|____/           "
+	@echo "                                              v0.1   "
+	@echo "                                                     "
+
+STUB_BANNER	:= clickos-banner
+
+.PHONY: clean-click clean-makefile distclean-click
+clean-click:
+	$(call verbose_cmd,$(RM)						\
+		$(wildcard $(CLICK_OBJ_DIR)/*.o)			\
+		$(wildcard $(CLICK_OBJ_DIR)/*.d)			\
+		$(wildcard $(CLICK_ELEMENTS).*)				\
+		$(wildcard $(CLICK_ELEMENTS_OBJ_DIR)/*.o)	\
+		$(wildcard $(CLICK_ELEMENTS_OBJ_DIR)/*.d),	\
+		'CLN $(CLICK_OBJ_DIR)')
+
+clean-makefile:
+	$(call verbose_cmd,$(RM),'CLN',Makefile)
+
+distclean-click:
+	$(call verbose_cmd,$(RMDIR),'CLN',$(CLICK_OBJ_DIR))
+
+clean-stub: clean-click
+distclean-stub: clean-makefile distclean-click
+
+
+################################################################################
+# MiniOS
+################################################################################
+include $(MINIOS_ROOT)/stub.mk
+

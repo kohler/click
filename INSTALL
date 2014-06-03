@@ -257,6 +257,75 @@ which begin with "tokernel", "discard", "fromkernel", and so forth.
 
 Please note that the NS-2 patch no longer requires libnet.
 
+CLICKOS
+-------
+
+Support for running Click as an operating system was originally
+developed by Joao Martins, Filipe Manco, Mohamed Ahmed and Felipe Huici at
+NEC Laboratories Europe.
+
+To compile a ClickOS image you must first build all its' dependencies. For
+convenience we bundle these in a repository called toolchain. The
+toolchain contains 'newlib' and 'lwip' that 'mini-os' requires in
+order to build:
+
+	git clone https://github.com/cnplab/mini-os.git mini-os
+	git clone https://github.com/cnplab/toolchain.git toolchain
+	cd toolchain
+	make
+
+Note that *you can skip* this step if you wish to use your own lwip and
+newlib versions for mini-os. Next, we proceed with building Click. We
+require Xen headers to build the guest, and the previously built toolchain.
+The latter is expected to be in the parent folder of the Click software package:
+
+	./configure --enable-minios --with-xen=/path/to/xen/sources
+
+If you wish to use your own, you simply have it specified in 'configure'
+like the example below:
+
+	./configure --enable-minios --with-xen=/path/to/xen/sources \
+		--with-newlib=/path/to/newlib --with-lwip=/path/to/lwip
+
+Afterwards we build the image by typing:
+
+	make minios
+
+And you should have an image available at './minios/build/clickos_x86_64'.
+To boot your image, type the following command in Domain-0:
+
+	xl create minios/config.xen
+
+Finally to instantiate a click configuration, you need to fetch your guest
+virtual machine id and dump your router configuration through the xenstore
+service:
+
+	DOMID=`xl list | grep click0 | awk -F' ' '{ print $2 }'`
+	xenstore-write /local/domain/$DOMID/clickos/0/config/0 "`cat config.click`"
+	xenstore-write /local/domain/$DOMID/clickos/0/status "Running"
+
+You should be able to see the following console output:
+
+	xl console click0
+	(...)
+	[on_status:205] router id 0
+	[on_status:206] status change to Running
+	Thread "click": pointer: 0x2000c10a00, stack: 0x220000
+	************************ NETFRONT for device/vif/0 **********
+
+
+	net TX ring size 256
+	net RX ring size 256
+	backend at /local/domain/0/backend/vif/6/0
+	mac is 00:15:17:15:5d:74
+	**************************
+	[router_thread:157] Starting driver...
+
+ClickOS is really fast at booting up, although it mostly depends on the tools underneath.
+If you are looking towards faster ways of booting up these virtual machines,
+have a look at the following Xen toolstack:
+
+	http://github.com/cnplab/cosmos
 
 CLICKY GUI
 ----------

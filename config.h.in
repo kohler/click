@@ -267,7 +267,7 @@
 #define ELEMENT_MT_SAFE(x)
 
 /* Assume CLICK_USERLEVEL unless otherwise defined. */
-#if !defined(CLICK_USERLEVEL) && !defined(CLICK_TOOL) && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE)
+#if !defined(CLICK_USERLEVEL) && !defined(CLICK_TOOL) && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE) && !defined(CLICK_MINIOS)
 # define CLICK_USERLEVEL 1
 #endif
 
@@ -289,6 +289,11 @@
 /* Define stuff under tools or a user-level driver. */
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 # include <click/config-userlevel.h>
+#endif
+
+/* Define stuff under a MiniOS application. */
+#ifdef CLICK_MINIOS
+# include <click/config-minios.h>
 #endif
 
 /* Ensure declaration of DefaultArg template. */

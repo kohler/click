@@ -146,7 +146,7 @@ Timestamp::warp_jump_steady(const Timestamp &expiry)
 }
 #endif
 
-#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE && !CLICK_MINIOS
 /** @brief Set this timestamp to a timeval obtained by calling ioctl.
     @param fd file descriptor
     @param ioctl_selector ioctl number

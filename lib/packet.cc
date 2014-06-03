@@ -24,7 +24,7 @@
 #include <click/packet_anno.hh>
 #include <click/glue.hh>
 #include <click/sync.hh>
-#if CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_MINIOS
 # include <unistd.h>
 #endif
 CLICK_DECLS
@@ -210,7 +210,7 @@ Packet::~Packet()
 #else
     if (_data_packet)
 	_data_packet->kill();
-# if CLICK_USERLEVEL
+# if CLICK_USERLEVEL || CLICK_MINIOS
     else if (_head && _destructor)
 	_destructor(_head, _end - _head, _destructor_argument);
     else
@@ -469,7 +469,7 @@ Packet::alloc_data(uint32_t headroom, uint32_t length, uint32_t tailroom)
 	tailroom = min_buffer_length - length - headroom;
 	n = min_buffer_length;
     }
-# if CLICK_USERLEVEL
+# if CLICK_USERLEVEL || CLICK_MINIOS
     unsigned char *d = new unsigned char[n];
     if (!d)
 	return false;
@@ -571,7 +571,7 @@ Packet::make(uint32_t headroom, const void *data,
 #endif
 }
 
-#if CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_MINIOS
 /** @brief Create and return a new packet (userlevel).
  * @param data data used in the new packet
  * @param length length of packet
@@ -628,7 +628,7 @@ Packet::clone()
     struct sk_buff *nskb = skb_clone(skb(), GFP_ATOMIC);
     return reinterpret_cast<Packet *>(nskb);
 
-#elif CLICK_USERLEVEL || CLICK_BSDMODULE
+#elif CLICK_USERLEVEL || CLICK_BSDMODULE || CLICK_MINIOS
 # if CLICK_BSDMODULE
     struct mbuf *m;
 
@@ -657,7 +657,7 @@ Packet::clone()
     memcpy(p, this, sizeof(Packet));
     p->_use_count = 1;
     p->_data_packet = this;
-# if CLICK_USERLEVEL
+# if CLICK_USERLEVEL || CLICK_MINIOS
     p->_destructor = 0;
 # else
     p->_m = m;
@@ -773,7 +773,7 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
     // free old data
     if (_data_packet)
 	_data_packet->kill();
-# if CLICK_USERLEVEL
+# if CLICK_USERLEVEL || CLICK_MINIOS
     else if (_destructor)
 	_destructor(old_head, old_end - old_head, _destructor_argument);
     else

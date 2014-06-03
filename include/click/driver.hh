@@ -5,7 +5,7 @@
 
 #define CLICK_DEFAULT_PROVIDES	/* nada */
 
-#if CLICK_USERLEVEL
+#if defined(CLICK_USERLEVEL) || defined(CLICK_MINIOS)
 CLICK_DECLS
 class Router;
 class Master;

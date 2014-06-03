@@ -108,7 +108,7 @@ struct click_llrpc_call_handler_st {
 
 /* data manipulation */
 
-#if CLICK_USERLEVEL
+#if CLICK_USERLEVEL || CLICK_MINIOS
 
 # define CLICK_LLRPC_GET_DATA(local, remote, size) (memcpy(local, remote, size), 0)
 # define CLICK_LLRPC_PUT_DATA(remote, local, size) (memcpy(remote, local, size), 0)
