@@ -251,6 +251,7 @@ class FromDevice : public Element { public:
     bool _timestamp : 1;
     int _was_promisc : 2;
     int _snaplen;
+    uint16_t _protocol;
     unsigned _headroom;
     enum { method_default, method_netmap, method_pcap, method_linux };
     int _method;
