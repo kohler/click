@@ -213,9 +213,7 @@ private:
 
   NotifierSignal _signal;	// packet is available to pull()
   WritablePacket *_rq;		// queue to receive pulled packets
-  int _backoff;			// backoff timer for when sendto() blocks
   Packet *_wq;			// queue to store pulled packet for when sendto() blocks
-  int _events;			// keeps track of the events for which select() is waiting
 
   int _family;			// AF_INET or AF_UNIX
   int _socktype;		// SOCK_STREAM or SOCK_DGRAM

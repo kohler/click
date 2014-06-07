@@ -356,7 +356,6 @@ Socket::selected(int fd, int)
       fcntl(_active, F_SETFD, FD_CLOEXEC);
 
       add_select(_active, SELECT_READ | SELECT_WRITE);
-      _events = SELECT_READ | SELECT_WRITE;
     }
 
     // read data from socket
