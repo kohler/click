@@ -172,17 +172,6 @@ Socket::initialize(ErrorHandler *errh)
       memcpy(_local.un.sun_path, _local_pathname.c_str(), _local_pathname.length());
   }
 
-  // enable timestamps
-  if (_timestamp) {
-#ifdef SO_TIMESTAMP
-    int one = 1;
-    if (setsockopt(_fd, SOL_SOCKET, SO_TIMESTAMP, &one, sizeof(one)) < 0)
-      return initialize_socket_error(errh, "setsockopt(SO_TIMESTAMP)");
-#else
-    return initialize_socket_error(errh, "TIMESTAMP not supported on this platform");
-#endif
-  }
-
 #ifdef TCP_NODELAY
   // disable Nagle algorithm
   if (_protocol == IPPROTO_TCP && _nodelay)
