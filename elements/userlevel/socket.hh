@@ -4,7 +4,6 @@
 #include <click/element.hh>
 #include <click/string.hh>
 #include <click/task.hh>
-#include <click/timer.hh>
 #include <click/notifier.hh>
 #include "../ip/iproutetable.hh"
 #include <sys/un.h>
@@ -196,7 +195,6 @@ class Socket : public Element { public:
 
 protected:
   Task _task;
-  Timer _timer;
 
 private:
   int _fd;	// socket descriptor

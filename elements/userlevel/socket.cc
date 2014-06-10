@@ -40,7 +40,7 @@
 CLICK_DECLS
 
 Socket::Socket()
-  : _task(this), _timer(this),
+  : _task(this),
     _fd(-1), _active(-1), _rq(0), _wq(0),
     _local_port(0), _local_pathname(""),
     _timestamp(true), _sndbuf(-1), _rcvbuf(-1),
@@ -259,7 +259,6 @@ Socket::initialize(ErrorHandler *errh)
     ScheduleInfo::join_scheduler(this, &_task, errh);
     _signal = Notifier::upstream_empty_signal(this, 0, &_task);
     add_select(_fd, SELECT_WRITE);
-    _timer.initialize(this);
   }
 
   return 0;
