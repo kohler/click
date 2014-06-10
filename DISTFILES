@@ -757,6 +757,9 @@ xform-ip-01.testie
 ./test/userlevel:
 ControlSocket-llrpc-01.testie
 ControlSocket-llrpc-02.testie
+McastSocket-01.testie
+McastSocket-02.testie
+McastSocket-03.testie
 Script-signal-01.testie
 Script-signal-02.testie
 Script-signal-03.testie
