@@ -40,7 +40,7 @@
 CLICK_DECLS
 
 Socket::Socket()
-  : _task(this), _timer(this),
+  : _task(this),
     _fd(-1), _active(-1), _rq(0), _wq(0),
     _local_port(0), _local_pathname(""),
     _timestamp(true), _sndbuf(-1), _rcvbuf(-1),
@@ -172,17 +172,6 @@ Socket::initialize(ErrorHandler *errh)
       memcpy(_local.un.sun_path, _local_pathname.c_str(), _local_pathname.length());
   }
 
-  // enable timestamps
-  if (_timestamp) {
-#ifdef SO_TIMESTAMP
-    int one = 1;
-    if (setsockopt(_fd, SOL_SOCKET, SO_TIMESTAMP, &one, sizeof(one)) < 0)
-      return initialize_socket_error(errh, "setsockopt(SO_TIMESTAMP)");
-#else
-    return initialize_socket_error(errh, "TIMESTAMP not supported on this platform");
-#endif
-  }
-
 #ifdef TCP_NODELAY
   // disable Nagle algorithm
   if (_protocol == IPPROTO_TCP && _nodelay)
@@ -259,7 +248,6 @@ Socket::initialize(ErrorHandler *errh)
     ScheduleInfo::join_scheduler(this, &_task, errh);
     _signal = Notifier::upstream_empty_signal(this, 0, &_task);
     add_select(_fd, SELECT_WRITE);
-    _timer.initialize(this);
   }
 
   return 0;
@@ -356,7 +344,6 @@ Socket::selected(int fd, int)
       fcntl(_active, F_SETFD, FD_CLOEXEC);
 
       add_select(_active, SELECT_READ | SELECT_WRITE);
-      _events = SELECT_READ | SELECT_WRITE;
     }
 
     // read data from socket

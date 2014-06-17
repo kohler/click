@@ -4,7 +4,6 @@
 #include <click/element.hh>
 #include <click/string.hh>
 #include <click/task.hh>
-#include <click/timer.hh>
 #include <click/notifier.hh>
 #include "../ip/iproutetable.hh"
 #include <sys/un.h>
@@ -196,7 +195,6 @@ class Socket : public Element { public:
 
 protected:
   Task _task;
-  Timer _timer;
 
 private:
   int _fd;	// socket descriptor
@@ -213,9 +211,7 @@ private:
 
   NotifierSignal _signal;	// packet is available to pull()
   WritablePacket *_rq;		// queue to receive pulled packets
-  int _backoff;			// backoff timer for when sendto() blocks
   Packet *_wq;			// queue to store pulled packet for when sendto() blocks
-  int _events;			// keeps track of the events for which select() is waiting
 
   int _family;			// AF_INET or AF_UNIX
   int _socktype;		// SOCK_STREAM or SOCK_DGRAM

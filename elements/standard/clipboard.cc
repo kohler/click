@@ -67,7 +67,10 @@ void
 Clipboard::push(int port, Packet *p)
 {
     if (port == 0) copy(p);
-    else p = paste(p);
+    else {
+        p = paste(p);
+        if (!p) return;
+    }
     output(port).push(p);
 }
 
