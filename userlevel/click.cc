@@ -74,7 +74,11 @@ CLICK_USING_DECLS
 #define THREADS_OPT		316
 #define SIMTIME_OPT		317
 #define SOCKET_OPT		318
-#define THREADS_AFF_OPT	319
+#define THREADS_AFF_OPT         319
+
+#ifdef __USE_GNU
+  #define AFFINITY_SUPPORT 1
+#endif
 
 static const Clp_Option options[] = {
     { "allow-reconfigure", 'R', ALLOW_RECONFIG_OPT, 0, Clp_Negate },
@@ -569,7 +573,11 @@ main(int argc, char **argv)
       break;
 
      case THREADS_AFF_OPT:
+#ifdef AFFINITY_SUPPORT
       setaffinity = true;
+#else
+      errh->warning("CPU affinity is not supported on this platform");
+#endif
       break;
 
     case SIMTIME_OPT: {
@@ -672,21 +680,24 @@ particular purpose.\n");
 	pthread_create(&p, 0, thread_driver, router->master()->thread(t));
 	other_threads.push_back(p);
 
+    #ifdef AFFINITY_SUPPORT
     if (setaffinity) {
         cpu_set_t set;
         CPU_ZERO(&set);
         CPU_SET(t, &set);
         pthread_setaffinity_np(p, sizeof(cpu_set_t), &set);
     }
+    #endif
     }
 #endif
-
+    #ifdef AFFINITY_SUPPORT
     if (setaffinity) {
     cpu_set_t set;
     CPU_ZERO(&set);
     CPU_SET(0, &set);
     sched_setaffinity(0, sizeof(cpu_set_t), &set);
     }
+    #endif 
 
     // run driver
     router->master()->thread(0)->driver();
