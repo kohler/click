@@ -74,6 +74,11 @@ CLICK_USING_DECLS
 #define THREADS_OPT		316
 #define SIMTIME_OPT		317
 #define SOCKET_OPT		318
+#define THREADS_AFF_OPT         319
+
+#ifdef __USE_GNU
+  #define AFFINITY_SUPPORT 1
+#endif
 
 static const Clp_Option options[] = {
     { "allow-reconfigure", 'R', ALLOW_RECONFIG_OPT, 0, Clp_Negate },
@@ -89,6 +94,7 @@ static const Clp_Option options[] = {
     { "simtime", 0, SIMTIME_OPT, Clp_ValDouble, Clp_Optional },
     { "simulation-time", 0, SIMTIME_OPT, Clp_ValDouble, Clp_Optional },
     { "threads", 'j', THREADS_OPT, Clp_ValInt, 0 },
+    { "affinity", 'a', THREADS_AFF_OPT, 0, 0 },
     { "time", 't', TIME_OPT, 0, 0 },
     { "unix-socket", 'u', UNIX_SOCKET_OPT, Clp_ValString, 0 },
     { "version", 'v', VERSION_OPT, 0, 0 },
@@ -121,6 +127,7 @@ Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
   -e, --expression EXPR         Use EXPR as router configuration.\n\
   -j, --threads N               Start N threads (default 1).\n\
+  -a, --affinity                Set cpu affinity to threads (default no).\n\
   -p, --port PORT               Listen for control connections on TCP port.\n\
   -u, --unix-socket FILE        Listen for control connections on Unix socket.\n\
       --socket FD               Add a file descriptor control connection.\n\
@@ -457,6 +464,7 @@ main(int argc, char **argv)
   bool file_is_expr = false;
   const char *output_file = 0;
   bool quit_immediately = false;
+  bool setaffinity = false;
   bool report_time = false;
   bool allow_reconfigure = false;
   Vector<String> handlers;
@@ -564,6 +572,14 @@ main(int argc, char **argv)
 #endif
       break;
 
+     case THREADS_AFF_OPT:
+#ifdef AFFINITY_SUPPORT
+      setaffinity = true;
+#else
+      errh->warning("CPU affinity is not supported on this platform");
+#endif
+      break;
+
     case SIMTIME_OPT: {
 	Timestamp::warp_set_class(Timestamp::warp_simulation);
 	Timestamp simbegin(clp->have_val ? clp->val.d : 1000000000);
@@ -663,8 +679,25 @@ particular purpose.\n");
 	pthread_t p;
 	pthread_create(&p, 0, thread_driver, router->master()->thread(t));
 	other_threads.push_back(p);
+
+    #ifdef AFFINITY_SUPPORT
+    if (setaffinity) {
+        cpu_set_t set;
+        CPU_ZERO(&set);
+        CPU_SET(t, &set);
+        pthread_setaffinity_np(p, sizeof(cpu_set_t), &set);
+    }
+    #endif
     }
 #endif
+    #ifdef AFFINITY_SUPPORT
+    if (setaffinity) {
+    cpu_set_t set;
+    CPU_ZERO(&set);
+    CPU_SET(0, &set);
+    sched_setaffinity(0, sizeof(cpu_set_t), &set);
+    }
+    #endif 
 
     // run driver
     router->master()->thread(0)->driver();
