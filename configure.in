@@ -81,12 +81,14 @@ if test "x$enable_user_multithread" = xyes; then
     AC_SEARCH_LIBS([pthread_create], [pthread], [ac_have_libpthread=yes], [ac_have_libpthread=no])
     AC_CHECK_HEADERS([pthread.h], [ac_have_pthread_h=yes], [ac_have_pthread_h=no])
     if test "$ac_have_libpthread$ac_have_pthread_h" = yesyes; then
-	AC_DEFINE(HAVE_USER_MULTITHREAD)
-	if echo "$LIBS" | grep -e -lpthread >/dev/null 2>&1; then
-	    PTHREAD_LIBS="-lpthread"
-	fi
+        AC_DEFINE([HAVE_USER_MULTITHREAD])
+        AC_CHECK_DECLS([pthread_setaffinity_np], [], [], [#define _GNU_SOURCE
+#include <pthread.h>])
+        if echo "$LIBS" | grep -e -lpthread >/dev/null 2>&1; then
+            PTHREAD_LIBS="-lpthread"
+        fi
     else
-	AC_MSG_ERROR([
+        AC_MSG_ERROR([
 =========================================
 
 Can't find -lpthread and/or <pthread.h>, so I can't compile with
@@ -310,23 +312,23 @@ linux_system_map_boot=no
 
 if test "x$linuxpath" = xNONE -o "x$linuxpath" = xyes; then
     if uname -r 2>/dev/null | grep '^\(2\.6\|3\.\)' >/dev/null 2>&1; then
-	linuxpath=/lib/modules/"`uname -r`"/build
-	linux_system_map_boot="`uname -r`"
+        linuxpath=/lib/modules/"`uname -r`"/build
+        linux_system_map_boot="`uname -r`"
     else
-	linuxpath=/usr/src/linux
+        linuxpath=/usr/src/linux
     fi
     if test ! -d "$linuxpath" -a "x$enable_linuxmodule" = xyes; then
-	if test "x$enable_linuxmodule_default" = xyes; then
-	    linuxpath=NONE; enable_linuxmodule=no
-	else
-	    AC_MSG_ERROR([
+        if test "x$enable_linuxmodule_default" = xyes; then
+            linuxpath=NONE; enable_linuxmodule=no
+        else
+            AC_MSG_ERROR([
 =========================================
 
 Can't find $linuxpath, so I can't compile the linuxmodule driver!
 (You may need the --with-linux=DIR option.)
 
 =========================================])
-	fi
+        fi
     fi
 fi
 
@@ -334,12 +336,12 @@ dnl find files in the Linux path
 find_linuxpath () {
     path="$linuxpath"
     while test -n "$path"; do
-	l=`echo "$path" | sed 's/^\([[^:]]*\).*/\1/'`
-	path=`echo "$path" | sed 's/^[[^:]]*:*//'`
-	if test -n "$l" -a -f "$l/$1"; then
-	    echo "$l/$1"
-	    return
-	fi
+        l=`echo "$path" | sed 's/^\([[^:]]*\).*/\1/'`
+        path=`echo "$path" | sed 's/^[[^:]]*:*//'`
+        if test -n "$l" -a -f "$l/$1"; then
+            echo "$l/$1"
+            return
+        fi
     done
     echo "/nonexistent_file"
 }
@@ -353,46 +355,46 @@ else
     dnl check $linuxpath for relative directories
     path="$linuxpath"
     while test -n "$path"; do
-	l=`echo "$path" | sed 's/^\([[^:]]*\).*/\1/'`
-	path=`echo "$path" | sed 's/^[[^>]]*:*//'`
-	if test -n "$l" && expr "_$l" : '_[[^/\\]]' >/dev/null; then
-	    AC_MSG_ERROR([
+        l=`echo "$path" | sed 's/^\([[^:]]*\).*/\1/'`
+        path=`echo "$path" | sed 's/^[[^>]]*:*//'`
+        if test -n "$l" && expr "_$l" : '_[[^/\\]]' >/dev/null; then
+            AC_MSG_ERROR([
 =========================================
 
 The --with-linux directory $l is relative.
 All Linux directories must be absolute paths starting with /.
 
 =========================================])
-	fi
+        fi
     done
 
     linux_skbuff_h=`find_linuxpath include/linux/skbuff.h`
     if test -r "$linux_skbuff_h"; then
-	linux_srcdir=`echo "$linux_skbuff_h" | sed 's_include/linux/skbuff\.h__'`
-	ac_have_linux_kernel=y
+        linux_srcdir=`echo "$linux_skbuff_h" | sed 's_include/linux/skbuff\.h__'`
+        ac_have_linux_kernel=y
     else
-	AC_MSG_ERROR([
+        AC_MSG_ERROR([
 =========================================
 
 Can't find include/linux/skbuff.h in $linuxpath.
 Are you sure $linuxpath contains Linux kernel source?
 
 =========================================])
-	dnl ' fix syntax highlighting
+        dnl ' fix syntax highlighting
     fi
 
     linux_config=`find_linuxpath .config`
     if test -r "$linux_config"; then
-	linux_builddir=`echo "$linux_config" | sed 's_/\.config__'`
+        linux_builddir=`echo "$linux_config" | sed 's_/\.config__'`
     else
-	AC_MSG_ERROR([
+        AC_MSG_ERROR([
 =========================================
 
 Can't find .config in $linuxpath.
 Are you sure $linuxpath contains a Linux kernel build?
 
 =========================================])
-	dnl ' fix syntax highlighting
+        dnl ' fix syntax highlighting
     fi
 fi
 
@@ -643,11 +645,11 @@ AC_CHECK_FUNCS([pselect sigaction])
 AC_CHECK_FUNCS([kqueue], [have_kqueue=yes])
 if test "x$have_kqueue" = xyes; then
     AC_CACHE_CHECK([whether EV_SET last argument is void *], [ac_cv_ev_set_udata_pointer],
-	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>]], [[struct kevent kev; EV_SET(&kev, 1, EVFILT_WRITE, EV_ADD, 0, 0, (void *) &kev);]])], [ac_cv_ev_set_udata_pointer=yes], [ac_cv_ev_set_udata_pointer=no])])
     if test $ac_cv_ev_set_udata_pointer = yes; then
-	AC_DEFINE([HAVE_EV_SET_UDATA_POINTER], [1], [Define if the last argument to EV_SET has pointer type.])
+        AC_DEFINE([HAVE_EV_SET_UDATA_POINTER], [1], [Define if the last argument to EV_SET has pointer type.])
     fi
 fi
 
@@ -674,12 +676,12 @@ if test "$enable_userlevel" = yes; then
     SOCKET_LIBS="$LIBS"; LIBS="$savelibs"
 
     AC_CACHE_CHECK([whether accept() uses socklen_t], [ac_cv_accept_socklen_t],
-	    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+            [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <sys/socket.h>
 ]], [[socklen_t sl; (void) accept(0, (struct sockaddr *) 0, &sl);]])],
-	ac_cv_accept_socklen_t=yes, ac_cv_accept_socklen_t=no)])
+        ac_cv_accept_socklen_t=yes, ac_cv_accept_socklen_t=no)])
     if test "$ac_cv_accept_socklen_t" = yes; then
-	AC_DEFINE([HAVE_ACCEPT_SOCKLEN_T], [1], [Define if accept() uses socklen_t.])
+        AC_DEFINE([HAVE_ACCEPT_SOCKLEN_T], [1], [Define if accept() uses socklen_t.])
     fi
 fi
 AC_SUBST(SOCKET_LIBS)
@@ -733,7 +735,7 @@ dnl Look for System.map
 if test "$linux_system_map" = NONE; then
     linux_system_map=`find_linuxpath System.map`
     if test "x$linux_system_map_boot" != xno -a ! -f "$linux_system_map"; then
-	linux_system_map=/boot/System.map-"$linux_system_map_boot"
+        linux_system_map=/boot/System.map-"$linux_system_map_boot"
     fi
 fi
 
@@ -752,7 +754,7 @@ or use the --with-linux=DIR and/or --with-linux-map=MAP options.
 =========================================])
 else
     if test "x$enable_linuxmodule_default" = xyes; then
-	AC_MSG_WARN([
+        AC_MSG_WARN([
 =========================================
 
 Can't find Linux System.map file $linux_system_map,
@@ -760,19 +762,19 @@ so I won't compile the linuxmodule driver.
 (You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================])
-	ac_have_linux_kernel=no
+        ac_have_linux_kernel=no
     else
-	if test "$linux_system_map" = /nonexistent_file; then
-	    linux_system_map="in $linuxpath"
-	fi
-	AC_MSG_ERROR([
+        if test "$linux_system_map" = /nonexistent_file; then
+            linux_system_map="in $linuxpath"
+        fi
+        AC_MSG_ERROR([
 =========================================
 
 Can't find Linux System.map file $linux_system_map.
 (You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================])
-	dnl ' fix syntax highlighting
+        dnl ' fix syntax highlighting
     fi
 fi
 
@@ -784,9 +786,9 @@ if test $ac_have_linux_kernel = y; then
 
 AC_MSG_CHECKING([Linux version])
 linuxpath_makefile=`find_linuxpath Makefile`
-linux_version=`grep '^VERSION[[ 	]]*=[[ 	]]*[[0-9]][[0-9]]*[[ 	]]*$' "$linuxpath_makefile" | tr -c -d 0-9`
-linux_patchlevel=`grep '^PATCHLEVEL[[ 	]]*=[[ 	]]*[[0-9]][[0-9]]*[[ 	]]*$' "$linuxpath_makefile" | tr -c -d 0-9`
-linux_sublevel=`grep '^SUBLEVEL[[ 	]]*=[[ 	]]*[[0-9]][[0-9]]*[[ 	]]*$' "$linuxpath_makefile" | tr -c -d 0-9`
+linux_version=`grep '^VERSION[[         ]]*=[[  ]]*[[0-9]][[0-9]]*[[    ]]*$' "$linuxpath_makefile" | tr -c -d 0-9`
+linux_patchlevel=`grep '^PATCHLEVEL[[   ]]*=[[  ]]*[[0-9]][[0-9]]*[[    ]]*$' "$linuxpath_makefile" | tr -c -d 0-9`
+linux_sublevel=`grep '^SUBLEVEL[[       ]]*=[[  ]]*[[0-9]][[0-9]]*[[    ]]*$' "$linuxpath_makefile" | tr -c -d 0-9`
 if test -n "$linux_version" -a -n "$linux_patchlevel" -a -z "$linux_sublevel"; then linux_sublevel=0; fi
 if test -n "$linux_version" -a -n "$linux_patchlevel" -a -n "$linux_sublevel"; then
     AC_MSG_RESULT([$linux_version.$linux_patchlevel.$linux_sublevel])
@@ -926,18 +928,18 @@ dnl
 if test $ac_have_bsd_kernel = y; then
     KERNEL_CXX="$KERNEL_CXX -fpermissive"
     AC_CACHE_CHECK(FreeBSD version, ac_cv_freebsd_version, [
-	save_flags="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/param.h>
+        save_flags="$CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/param.h>
 #if __FreeBSD_version < 700000
 #include <NONEXISTENT_FILE>
 #endif]], [[]])], ac_cv_freebsd_version=yes, ac_cv_freebsd_version=no)
-	CPPFLAGS="$save_flags"])
+        CPPFLAGS="$save_flags"])
     if test $ac_cv_freebsd_version = yes; then
-	AC_DEFINE(HAVE_CLICK_BSD_KERNEL)
-	AC_DEFINE(HAVE_BSD_POLLING)
+        AC_DEFINE(HAVE_CLICK_BSD_KERNEL)
+        AC_DEFINE(HAVE_BSD_POLLING)
     else
-	AC_MSG_WARN([
+        AC_MSG_WARN([
 =========================================
 
 Your version of FreeBSD is old.  Click works with FreeBSD 7.x and later.
@@ -946,29 +948,29 @@ Your version of FreeBSD is old.  Click works with FreeBSD 7.x and later.
     fi
 
     AC_CACHE_CHECK([whether long and int64_t are the same type in the FreeBSD kernel],
-	ac_cv_long_64_bsdmodule, [save_flags="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/param.h>
+        ac_cv_long_64_bsdmodule, [save_flags="$CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/param.h>
 #include <linux/types.h>
 void f1(long) {
 }
 void f1(int64_t) { // will fail if long long and int64_t are the same type
 }]], [[]])], ac_cv_long_64_bsdmodule=no, ac_cv_long_64_bsdmodule=yes)])
     if test $ac_cv_long_64_bsdmodule = yes; then
-	AC_DEFINE([HAVE_INT64_IS_LONG_BSDMODULE], [1], [Define if 'int64_t' is typedefed to 'long' in bsdmodule.])
+        AC_DEFINE([HAVE_INT64_IS_LONG_BSDMODULE], [1], [Define if 'int64_t' is typedefed to 'long' in bsdmodule.])
     fi
 
     AC_CACHE_CHECK([whether long long and int64_t are the same type in the FreeBSD kernel],
-	ac_cv_long_long_64_bsdmodule, [save_flags="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/param.h>
+        ac_cv_long_long_64_bsdmodule, [save_flags="$CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/param.h>
 #include <linux/types.h>
 void f1(long long) {
 }
 void f1(int64_t) { // will fail if long long and int64_t are the same type
 }]], [[]])], ac_cv_long_long_64_bsdmodule=no, ac_cv_long_long_64_bsdmodule=yes)])
     if test $ac_cv_long_long_64_bsdmodule = yes; then
-	AC_DEFINE([HAVE_INT64_IS_LONG_LONG_BSDMODULE], [1], [Define if 'int64_t' is typedefed to 'long long' in bsdmodule.])
+        AC_DEFINE([HAVE_INT64_IS_LONG_LONG_BSDMODULE], [1], [Define if 'int64_t' is typedefed to 'long long' in bsdmodule.])
     fi
 fi
 
@@ -1004,7 +1006,7 @@ AC_ARG_ENABLE(task-heap, [  --enable-task-heap      use heap for task list], :, 
 if test $enable_task_heap = yes -a $enable_stride = yes; then
     AC_DEFINE(HAVE_TASK_HEAP)
 elif test $enable_task_heap = yes; then
-	AC_MSG_WARN([
+        AC_MSG_WARN([
 =========================================
 
 Ignoring --enable-task-heap, which is incompatible with --disable-stride.
@@ -1027,14 +1029,14 @@ AC_ARG_ENABLE(valgrind, [  --enable-valgrind       extra support for debugging w
 if test $enable_valgrind = yes; then
     AC_CHECK_HEADERS(valgrind/memcheck.h, ac_found_valgrind_memcheck_h=yes, ac_found_valgrind_memcheck_h=no)
     if test $ac_found_valgrind_memcheck_h = no; then
-	AC_MSG_ERROR([
+        AC_MSG_ERROR([
 =========================================
 
 Can't find Valgrind header file 'valgrind/memcheck.h'.
 Try again without '--enable-valgrind'.
 
 =========================================])
-	dnl ' fix syntax highlighting
+        dnl ' fix syntax highlighting
     fi
     AC_DEFINE([HAVE_VALGRIND], [1], [Define if Click should use Valgrind client requests.])
 fi
@@ -1083,15 +1085,15 @@ shell_mkbuild () {
     val=`eval echo '$'"$1"`
     pval="$prefix"
     while test -n "$pval" -a -n "$val"; do
-	component=`echo "$val" | sed 's,^\(/[[^/]]*\).*,\1,'`
-	pcomponent=`echo "$pval" | sed 's,^\(/[[^/]]*\).*,\1,'`
-	if test "$component" != "$pcomponent"; then break; fi
-	val=`echo "$val" | sed 's,^/[[^/]]*,,'`
-	pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
+        component=`echo "$val" | sed 's,^\(/[[^/]]*\).*,\1,'`
+        pcomponent=`echo "$pval" | sed 's,^\(/[[^/]]*\).*,\1,'`
+        if test "$component" != "$pcomponent"; then break; fi
+        val=`echo "$val" | sed 's,^/[[^/]]*,,'`
+        pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
     done
     while test -n "$pval"; do
-	val="/..$val"
-	pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
+        val="/..$val"
+        pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
     done
     eval "clickbuild_$1='"'$'"{clickbuild_prefix}$val'"
 }
@@ -1146,8 +1148,8 @@ OTHER_TARGETS=
 AC_SUBST(OTHER_TARGETS)
 
 for i in click-align click-check click-combine click-devirtualize click-fastclassifier click-flatten click-ipopt click-mkmindriver click-pretty click-undead click-xform click2xml; do
-    test -d $srcdir/tools/$i &&	\
-	TOOLDIRS="$TOOLDIRS $i" TOOL_TARGETS="$TOOL_TARGETS $i"
+    test -d $srcdir/tools/$i && \
+        TOOLDIRS="$TOOLDIRS $i" TOOL_TARGETS="$TOOL_TARGETS $i"
 done
 for i in click-install; do
     test -d $srcdir/tools/$i && TOOLDIRS="$TOOLDIRS $i"
@@ -1163,13 +1165,13 @@ if test "$enable_userlevel" = yes; then
     CLICK_CHECK_LIBPCAP
     CLICK_CHECK_NETMAP
     if test "$HAVE_PCAP" != yes -a "$HAVE_NETMAP" != yes -a "$ac_cv_under_linux" != yes; then
-	AC_MSG_WARN([
+        AC_MSG_WARN([
 =========================================
 
 pcap.h and/or -lpcap not found; user-level driver can't steal packets.
 
 =========================================])
-	dnl ' fix syntax highlighting
+        dnl ' fix syntax highlighting
     fi
     DRIVERS="$DRIVERS userlevel"
     AC_DEFINE(HAVE_USERLEVEL_DRIVER)
@@ -1218,12 +1220,12 @@ if test "$properprefix" != no; then
     AC_LANG_CPLUSPLUS
 
     if test $have_prop_h = yes -a $have_libproper = yes; then
-	AC_DEFINE(HAVE_PROPER)
-	test -n "$properprefix" && PROPER_INCLUDES="-I$properprefix/include" && PROPER_LIBS="-L$properprefix/lib"
-	PROPER_LIBS="$PROPER_LIBS -lproper"
+        AC_DEFINE(HAVE_PROPER)
+        test -n "$properprefix" && PROPER_INCLUDES="-I$properprefix/include" && PROPER_LIBS="-L$properprefix/lib"
+        PROPER_LIBS="$PROPER_LIBS -lproper"
     elif test $explicit_proper = yes; then
-	PROPER_INCLUDES= PROPER_LIBS=
-	AC_MSG_ERROR([
+        PROPER_INCLUDES= PROPER_LIBS=
+        AC_MSG_ERROR([
 =========================================
 
 You explicitly specified --with-proper, but the proper headers and/or
@@ -1256,13 +1258,13 @@ if test "$expatprefix" != no; then
     LDFLAGS="$saveflags"
 
     if test $have_expat_h = yes -a $have_libexpat = yes; then
-	AC_DEFINE(HAVE_EXPAT)
-	XML2CLICK=xml2click
-	test -n "$expatprefix" && EXPAT_INCLUDES="-I$expatprefix/include" && EXPAT_LIBS="-L$expatprefix/lib"
-	EXPAT_LIBS="$EXPAT_LIBS -lexpat"
+        AC_DEFINE(HAVE_EXPAT)
+        XML2CLICK=xml2click
+        test -n "$expatprefix" && EXPAT_INCLUDES="-I$expatprefix/include" && EXPAT_LIBS="-L$expatprefix/lib"
+        EXPAT_LIBS="$EXPAT_LIBS -lexpat"
     elif test $explicit_expat = yes; then
-	EXPAT_INCLUDES= EXPAT_LIBS=
-	AC_MSG_ERROR([
+        EXPAT_INCLUDES= EXPAT_LIBS=
+        AC_MSG_ERROR([
 =========================================
 
 You explicitly specified --with-expat, but the expat headers and/or libraries
@@ -1294,70 +1296,70 @@ if test $ac_have_linux_kernel = y; then
     dnl check for arguments to pass to Linux make
     linux_makeargs=
     if test -n "$ARCH"; then
-	linux_makeargs="$linux_makeargs ARCH=$ARCH"
+        linux_makeargs="$linux_makeargs ARCH=$ARCH"
     fi
     if test -n "$CROSS_COMPILE"; then
-	linux_makeargs="$linux_makeargs CROSS_COMPILE=$CROSS_COMPILE"
+        linux_makeargs="$linux_makeargs CROSS_COMPILE=$CROSS_COMPILE"
     elif test -n "$ac_tool_prefix"; then
-	linux_makeargs="$linux_makeargs CROSS_COMPILE=$ac_tool_prefix"
+        linux_makeargs="$linux_makeargs CROSS_COMPILE=$ac_tool_prefix"
     fi
     AC_SUBST(linux_makeargs)
 
     dnl check for Linux #includes
     LINUX_DEBUG_FLAGS=
     if test -n "$LINUX_CFLAGS"; then
-	:
+        :
     elif test $LINUXMODULE_2_6 = 1; then
-	AC_MSG_CHECKING([for Linux kernel compilation flags])
-	echo >conftest.c
-	make -C $linux_builddir M="`pwd`" $linux_makeargs --no-print-directory -p conftest.o >conftest.dat 2>&1
-	for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS LINUXINCLUDE debug_flags; do
-	    eval l$v="'""`grep ^$v' *:*=' conftest.dat | sed s/^$v' *:*= *//'`""'"
-	done
-	if test -z "$lKBUILD_CPPFLAGS$lKBUILD_CFLAGS$lCPPFLAGS$lCFLAGS$lLINUXINCLUDE"; then
-	    AC_MSG_RESULT([not found])
-	    AC_MSG_ERROR([
+        AC_MSG_CHECKING([for Linux kernel compilation flags])
+        echo >conftest.c
+        make -C $linux_builddir M="`pwd`" $linux_makeargs --no-print-directory -p conftest.o >conftest.dat 2>&1
+        for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS LINUXINCLUDE debug_flags; do
+            eval l$v="'""`grep ^$v' *:*=' conftest.dat | sed s/^$v' *:*= *//'`""'"
+        done
+        if test -z "$lKBUILD_CPPFLAGS$lKBUILD_CFLAGS$lCPPFLAGS$lCFLAGS$lLINUXINCLUDE"; then
+            AC_MSG_RESULT([not found])
+            AC_MSG_ERROR([
 ==============================================
 
 Can't find Linux compilation flags.
 
 ==============================================])
-	    dnl ' fix syntax highlighting
-	fi
-	echo "$lCPPFLAGS $lCFLAGS $lLINUXINCLUDE $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
-	LINUX_CFLAGS="`sed -e 's,-Iinclude ',-I$linux_builddir/include' ,g' \
-	    -e 's,-Iinclude2 ',-I$linux_builddir/include2' ,g' \
-	    -e 's,-Iarch/',-I$linux_builddir/arch/',g' \
-	    -e 's, include/, '$linux_builddir/include/,g \
-	    -e s,-Iinclude/,-I${linux_srcdir}include/,g \
-	    -e s,-Wno-pointer-sign,,g \
-	    -e s,-fno-unit-at-a-time,,g \
-	    -e s,-Wstrict-prototypes,,g \
-	    -e s,-Wdeclaration-after-statement,,g \
-	    -e s,-fno-common,,g \
-	    -e s,-Werror-implicit-function-declaration,,g \
-	    -e 's,-W[^ ]*,,g' <conftest.dat`"
-	AC_MSG_RESULT($LINUX_CFLAGS)
-	LINUX_DEBUG_FLAGS="$ldebug_flags"
+            dnl ' fix syntax highlighting
+        fi
+        echo "$lCPPFLAGS $lCFLAGS $lLINUXINCLUDE $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
+        LINUX_CFLAGS="`sed -e 's,-Iinclude ',-I$linux_builddir/include' ,g' \
+            -e 's,-Iinclude2 ',-I$linux_builddir/include2' ,g' \
+            -e 's,-Iarch/',-I$linux_builddir/arch/',g' \
+            -e 's, include/, '$linux_builddir/include/,g \
+            -e s,-Iinclude/,-I${linux_srcdir}include/,g \
+            -e s,-Wno-pointer-sign,,g \
+            -e s,-fno-unit-at-a-time,,g \
+            -e s,-Wstrict-prototypes,,g \
+            -e s,-Wdeclaration-after-statement,,g \
+            -e s,-fno-common,,g \
+            -e s,-Werror-implicit-function-declaration,,g \
+            -e 's,-W[^ ]*,,g' <conftest.dat`"
+        AC_MSG_RESULT($LINUX_CFLAGS)
+        LINUX_DEBUG_FLAGS="$ldebug_flags"
     fi
 
     LINUX_FIXINCLUDES_PROGRAM=
     CLICKLINUX_FIXINCLUDES_PROGRAM=
     if test "$LINUXMODULE_FIXINCLUDES" = 1; then
-	AC_MSG_NOTICE([making C++-safe versions of Linux kernel headers (may take a while)])
-	mydir="`pwd`/include/click-linuxmodule"
-	$srcdir/linuxmodule/fixincludes.pl -o "$mydir" $LINUX_CFLAGS >conftest.dat
-	if test $? != 0; then
-	    AC_MSG_ERROR([
+        AC_MSG_NOTICE([making C++-safe versions of Linux kernel headers (may take a while)])
+        mydir="`pwd`/include/click-linuxmodule"
+        $srcdir/linuxmodule/fixincludes.pl -o "$mydir" $LINUX_CFLAGS >conftest.dat
+        if test $? != 0; then
+            AC_MSG_ERROR([
 ==============================================
 
 fixincludes.pl execution failed.
 
 ==============================================])
-	fi
-	LINUX_CFLAGS="`head -n 1 conftest.dat`"
-	LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
-	CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s	$mydir	$clickbuild_includedir/click-linuxmodule	g"`"
+        fi
+        LINUX_CFLAGS="`head -n 1 conftest.dat`"
+        LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
+        CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s       $mydir  $clickbuild_includedir/click-linuxmodule        g"`"
     fi
     AC_SUBST([LINUX_FIXINCLUDES_PROGRAM])
     AC_SUBST([CLICKLINUX_FIXINCLUDES_PROGRAM])
@@ -1372,8 +1374,8 @@ fixincludes.pl execution failed.
     # CLICK_LINUXMODULE_PROLOGUE()
     linux_autoconf_include=
     if test "$linux_version_code" -lt 132638; then
-	AC_DEFINE([HAVE_CHECK_AUTOCONF_INCLUDED], [1], [Define if the AUTOCONF_INCLUDED symbol should be checked.])
-	linux_autoconf_include="#if !defined(AUTOCONF_INCLUDED)
+        AC_DEFINE([HAVE_CHECK_AUTOCONF_INCLUDED], [1], [Define if the AUTOCONF_INCLUDED symbol should be checked.])
+        linux_autoconf_include="#if !defined(AUTOCONF_INCLUDED)
 # include <linux/autoconf.h>
 #endif
 "
@@ -1399,20 +1401,20 @@ $linux_autoconf_include
 
 
     AC_CACHE_CHECK([for C++-includable kernel header files], [ac_cv_cxx_aware_system],
-	[AC_LANG_CPLUSPLUS
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_CPLUSPLUS
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/signal.h>
 #include <linux/skbuff.h>
 #include <linux/sched.h>]], [[return 0]])], ac_cv_cxx_aware_system=yes, ac_cv_cxx_aware_system=no)
-	])
+        ])
 
     if test $ac_cv_cxx_aware_system = yes; then
-	DRIVERS="$DRIVERS linuxmodule"
-	TOOL_TARGETS="$TOOL_TARGETS click-install"
-	AC_DEFINE(HAVE_LINUXMODULE_DRIVER)
-	HAVE_LINUXMODULE_DRIVER=1
+        DRIVERS="$DRIVERS linuxmodule"
+        TOOL_TARGETS="$TOOL_TARGETS click-install"
+        AC_DEFINE(HAVE_LINUXMODULE_DRIVER)
+        HAVE_LINUXMODULE_DRIVER=1
     elif test x$enable_linuxmodule_default = xyes; then
-	AC_MSG_WARN([
+        AC_MSG_WARN([
 =========================================
 
 Your Linux kernel header files cause errors when included by a C++ program,
@@ -1426,9 +1428,9 @@ mailing list, or, even better, try to fix the error. See the config.log
 file for more information on the error.
 
 =========================================])
-	dnl ' fix syntax highlighting
+        dnl ' fix syntax highlighting
     else
-	AC_MSG_ERROR([
+        AC_MSG_ERROR([
 =========================================
 
 Your Linux kernel header files cause errors when included by a C++ program.
@@ -1453,33 +1455,33 @@ file for more information on the error.
     dnl Linux kernel basic types
 
     AC_CACHE_CHECK([whether long and int64_t are the same type in the Linux kernel],
-	ac_cv_long_64_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        ac_cv_long_64_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/types.h>
 void f1(long) {
 }
 void f1(int64_t) { // will fail if long and int64_t are the same type
 }]], [[]])], ac_cv_long_64_linuxmodule=no, ac_cv_long_64_linuxmodule=yes)])
     if test $ac_cv_long_64_linuxmodule = yes; then
-	AC_DEFINE([HAVE_INT64_IS_LONG_LINUXMODULE], [1], [Define if 'int64_t' is typedefed to 'long' in linuxmodule.])
+        AC_DEFINE([HAVE_INT64_IS_LONG_LINUXMODULE], [1], [Define if 'int64_t' is typedefed to 'long' in linuxmodule.])
     fi
 
     AC_CACHE_CHECK([whether long long and int64_t are the same type in the Linux kernel],
-	ac_cv_long_long_64_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        ac_cv_long_long_64_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/types.h>
 void f1(long long) {
 }
 void f1(int64_t) { // will fail if long long and int64_t are the same type
 }]], [[]])], ac_cv_long_long_64_linuxmodule=no, ac_cv_long_long_64_linuxmodule=yes)])
     if test $ac_cv_long_long_64_linuxmodule = yes; then
-	AC_DEFINE([HAVE_INT64_IS_LONG_LONG_LINUXMODULE], [1], [Define if 'int64_t' is typedefed to 'long long' in linuxmodule.])
+        AC_DEFINE([HAVE_INT64_IS_LONG_LONG_LINUXMODULE], [1], [Define if 'int64_t' is typedefed to 'long long' in linuxmodule.])
     fi
 
     AC_CACHE_CHECK([whether uintptr_t is defined in the Linux kernel],
-	ac_cv_uintptr_t_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        ac_cv_uintptr_t_linuxmodule, [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/types.h>
 ]], [[uintptr_t i = 0;]])], ac_cv_uintptr_t_linuxmodule=yes, ac_cv_uintptr_t_linuxmodule=no)])
     if test $ac_cv_uintptr_t_linuxmodule = yes; then
-	AC_DEFINE([HAVE_UINTPTR_T_LINUXMODULE], [1], [Define to 1 if Linux defines the type 'uintptr_t'.])
+        AC_DEFINE([HAVE_UINTPTR_T_LINUXMODULE], [1], [Define to 1 if Linux defines the type 'uintptr_t'.])
     fi
 
 
@@ -1488,7 +1490,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     AC_CHECK_DECL(atomic_cmpxchg, [ac_cv_linux_atomic_cmpxchg=yes], [ac_cv_linux_atomic_cmpxchg=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <asm/atomic.h>]])
     if test $ac_cv_linux_atomic_cmpxchg = yes; then
-	AC_DEFINE([HAVE_LINUX_ATOMIC_CMPXCHG], [1], [Define if your Linux kernel architecture defines atomic_cmpxchg.])
+        AC_DEFINE([HAVE_LINUX_ATOMIC_CMPXCHG], [1], [Define if your Linux kernel architecture defines atomic_cmpxchg.])
     fi
 
     AC_CHECK_DECL(atomic_set_mask, [ac_cv_linux_atomic_set_mask=yes], [ac_cv_linux_atomic_set_mask=no], [CLICK_LINUXMODULE_PROLOGUE()[
@@ -1504,141 +1506,141 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([for <asm/alternative.h>], [ac_cv_linux_asm_alternative_h],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <asm/alternative.h>]],
 [[]])],
-	[ac_cv_linux_asm_alternative_h=yes], [ac_cv_linux_asm_alternative_h=no])])
+        [ac_cv_linux_asm_alternative_h=yes], [ac_cv_linux_asm_alternative_h=no])])
     if test $ac_cv_linux_asm_alternative_h = yes; then
-	AC_DEFINE([HAVE_LINUX_ASM_ALTERNATIVE_H], [1], [Define if you have the <asm/alternative.h> header file.])
+        AC_DEFINE([HAVE_LINUX_ASM_ALTERNATIVE_H], [1], [Define if you have the <asm/alternative.h> header file.])
     fi
 
     AC_CACHE_CHECK([for <asm/system.h>], [ac_cv_linux_asm_system_h],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <asm/system.h>]],
 [[]])],
-	[ac_cv_linux_asm_system_h=yes], [ac_cv_linux_asm_system_h=no])])
+        [ac_cv_linux_asm_system_h=yes], [ac_cv_linux_asm_system_h=no])])
     if test $ac_cv_linux_asm_system_h = yes; then
-	AC_DEFINE([HAVE_LINUX_ASM_SYSTEM_H], [1], [Define if you have the <asm/system.h> header file.])
+        AC_DEFINE([HAVE_LINUX_ASM_SYSTEM_H], [1], [Define if you have the <asm/system.h> header file.])
     fi
 
 
     dnl Linux kernel network configuration
 
     AC_CACHE_CHECK([whether struct sk_buff has a security member], [ac_cv_linuxmodule_skbuff_security],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; s->security = 0;]])],
-	[ac_cv_linuxmodule_skbuff_security=yes], [ac_cv_linuxmodule_skbuff_security=no])])
+        [ac_cv_linuxmodule_skbuff_security=yes], [ac_cv_linuxmodule_skbuff_security=no])])
     if test $ac_cv_linuxmodule_skbuff_security = yes; then
-	AC_DEFINE([HAVE_LINUX_SKBUFF_SECURITY], [1], [Define if 'struct sk_buff' has a 'security' member.])
+        AC_DEFINE([HAVE_LINUX_SKBUFF_SECURITY], [1], [Define if 'struct sk_buff' has a 'security' member.])
     fi
 
     AC_CACHE_CHECK([whether struct sk_buff has an fclone member], [ac_cv_linuxmodule_skbuff_fclone],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; s->fclone = 0;]])],
-	[ac_cv_linuxmodule_skbuff_fclone=yes], [ac_cv_linuxmodule_skbuff_fclone=no])])
+        [ac_cv_linuxmodule_skbuff_fclone=yes], [ac_cv_linuxmodule_skbuff_fclone=no])])
     if test $ac_cv_linuxmodule_skbuff_fclone = yes; then
-	AC_DEFINE([HAVE_LINUX_SKBUFF_FCLONE], [1], [Define if 'struct sk_buff' has an 'fclone' member.])
+        AC_DEFINE([HAVE_LINUX_SKBUFF_FCLONE], [1], [Define if 'struct sk_buff' has an 'fclone' member.])
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has a tso_size member], [ac_cv_linuxmodule_skb_shinfo_tso_size],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->tso_size = 0;]])],
-	[ac_cv_linuxmodule_skb_shinfo_tso_size=yes], [ac_cv_linuxmodule_skb_shinfo_tso_size=no])])
+        [ac_cv_linuxmodule_skb_shinfo_tso_size=yes], [ac_cv_linuxmodule_skb_shinfo_tso_size=no])])
     if test $ac_cv_linuxmodule_skb_shinfo_tso_size = yes; then
-	AC_DEFINE([HAVE_LINUX_SKB_SHINFO_TSO_SIZE], [1], [Define if 'struct skb_shared_info' has a 'tso_size' member.])
+        AC_DEFINE([HAVE_LINUX_SKB_SHINFO_TSO_SIZE], [1], [Define if 'struct skb_shared_info' has a 'tso_size' member.])
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has a gso_size member], [ac_cv_linuxmodule_skb_shinfo_gso_size],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->gso_size = 0;]])],
-	[ac_cv_linuxmodule_skb_shinfo_gso_size=yes], [ac_cv_linuxmodule_skb_shinfo_gso_size=no])])
+        [ac_cv_linuxmodule_skb_shinfo_gso_size=yes], [ac_cv_linuxmodule_skb_shinfo_gso_size=no])])
     if test $ac_cv_linuxmodule_skb_shinfo_gso_size = yes; then
-	AC_DEFINE([HAVE_LINUX_SKB_SHINFO_GSO_SIZE], [1], [Define if 'struct skb_shared_info' has a 'gso_size' member.])
+        AC_DEFINE([HAVE_LINUX_SKB_SHINFO_GSO_SIZE], [1], [Define if 'struct skb_shared_info' has a 'gso_size' member.])
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has a ufo_size member], [ac_cv_linuxmodule_skb_shinfo_ufo_size],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->ufo_size = 0;]])],
-	[ac_cv_linuxmodule_skb_shinfo_ufo_size=yes], [ac_cv_linuxmodule_skb_shinfo_ufo_size=no])])
+        [ac_cv_linuxmodule_skb_shinfo_ufo_size=yes], [ac_cv_linuxmodule_skb_shinfo_ufo_size=no])])
     if test $ac_cv_linuxmodule_skb_shinfo_ufo_size = yes; then
-	AC_DEFINE([HAVE_LINUX_SKB_SHINFO_UFO_SIZE], [1], [Define if 'struct skb_shared_info' has a 'ufo_size' member.])
+        AC_DEFINE([HAVE_LINUX_SKB_SHINFO_UFO_SIZE], [1], [Define if 'struct skb_shared_info' has a 'ufo_size' member.])
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has an ip6_frag_id member], [ac_cv_linuxmodule_skb_shinfo_ip6_frag_id],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->ip6_frag_id = 0;]])],
-	[ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=yes], [ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=no])])
+        [ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=yes], [ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=no])])
     if test $ac_cv_linuxmodule_skb_shinfo_ip6_frag_id = yes; then
-	AC_DEFINE([HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID], [1], [Define if 'struct skb_shared_info' has an 'ip6_frag_id' member.])
+        AC_DEFINE([HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID], [1], [Define if 'struct skb_shared_info' has an 'ip6_frag_id' member.])
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has tx_flags defining SKBTX_DEV_ZEROCOPY], [ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->tx_flags = SKBTX_DEV_ZEROCOPY;]])],
-	[ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=yes], [ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=no])])
+        [ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=yes], [ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=no])])
     if test $ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy = yes; then
-	AC_DEFINE([HAVE_LINUX_SKB_SHINFO_TX_FLAGS_SKBTX_DEV_ZEROCOPY], [1], [Define if 'struct skb_shared_info' has an 'tx_flags' member defining 'SKBTX_DEV_ZEROCOPY'.])
+        AC_DEFINE([HAVE_LINUX_SKB_SHINFO_TX_FLAGS_SKBTX_DEV_ZEROCOPY], [1], [Define if 'struct skb_shared_info' has an 'tx_flags' member defining 'SKBTX_DEV_ZEROCOPY'.])
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has tx_flags.flags], [ac_cv_linuxmodule_skb_shinfo_tx_flags_union],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->tx_flags.flags = 0;]])],
-	[ac_cv_linuxmodule_skb_shinfo_tx_flags_union=yes], [ac_cv_linuxmodule_skb_shinfo_tx_flags_union=no])])
+        [ac_cv_linuxmodule_skb_shinfo_tx_flags_union=yes], [ac_cv_linuxmodule_skb_shinfo_tx_flags_union=no])])
     if test $ac_cv_linuxmodule_skb_shinfo_tx_flags_union = yes; then
-	AC_DEFINE([HAVE_LINUX_SKB_SHINFO_TX_FLAGS_UNION], [1], [Define if 'struct skb_shared_info' has a 'tx_flags.flags' member.])
+        AC_DEFINE([HAVE_LINUX_SKB_SHINFO_TX_FLAGS_UNION], [1], [Define if 'struct skb_shared_info' has a 'tx_flags.flags' member.])
     fi
 
     AC_CACHE_CHECK([for device polling kernel extension], [ac_cv_linuxmodule_net_device_polling],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/netdevice.h>]],
 [[extern struct net_device *d; d->polling = 0;]])],
-	[ac_cv_linuxmodule_net_device_polling=yes], [ac_cv_linuxmodule_net_device_polling=no])])
+        [ac_cv_linuxmodule_net_device_polling=yes], [ac_cv_linuxmodule_net_device_polling=no])])
     if test $ac_cv_linuxmodule_net_device_polling = yes; then
-	AC_DEFINE([HAVE_LINUX_POLLING], [1], [Define if your Linux kernel has polling extensions.])
+        AC_DEFINE([HAVE_LINUX_POLLING], [1], [Define if your Linux kernel has polling extensions.])
     fi
 
     AC_CHECK_DECL([skb_dst_drop], [ac_cv_skb_dst_drop=yes], [ac_cv_skb_dst_drop=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <net/dst.h>]])
     if test $ac_cv_skb_dst_drop = yes; then
-	AC_DEFINE([HAVE_SKB_DST_DROP], [1], [Define if you have the skb_dst_drop function.])
+        AC_DEFINE([HAVE_SKB_DST_DROP], [1], [Define if you have the skb_dst_drop function.])
     fi
 
     AC_CHECK_DECL([skb_recycle], [ac_cv_skb_recycle=yes], [ac_cv_skb_recycle=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]])
     if test $ac_cv_skb_recycle = yes; then
-	AC_DEFINE([HAVE_SKB_RECYCLE], [1], [Define if you have the skb_recycle function.])
+        AC_DEFINE([HAVE_SKB_RECYCLE], [1], [Define if you have the skb_recycle function.])
     fi
 
 save_cflags="$CFLAGS"
 CFLAGS="$save_cflags -Werror-implicit-function-declaration"
 
     AC_CACHE_CHECK([whether skb_recycle returns an sk_buff], [ac_cv_linuxmodule_click_skb_recycle],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *b; b = skb_recycle(b);]])],
-	[ac_cv_linuxmodule_click_skb_recycle=yes], [ac_cv_linuxmodule_click_skb_recycle=no])])
+        [ac_cv_linuxmodule_click_skb_recycle=yes], [ac_cv_linuxmodule_click_skb_recycle=no])])
     if test $ac_cv_linuxmodule_click_skb_recycle = yes; then
-	AC_DEFINE([HAVE_CLICK_SKB_RECYCLE], [1], [Define if your Linux kernel has Click skb_recycle.])
+        AC_DEFINE([HAVE_CLICK_SKB_RECYCLE], [1], [Define if your Linux kernel has Click skb_recycle.])
     fi
 
 CFLAGS="$save_cflags"
@@ -1646,17 +1648,17 @@ CFLAGS="$save_cflags"
     AC_CHECK_DECL(skb_linearize, [ac_cv_skb_linearize=yes], [ac_cv_skb_linearize=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]])
     if test $ac_cv_skb_linearize = yes; then
-	AC_DEFINE([HAVE_SKB_LINEARIZE], [1], [Define if you have the skb_linearize function.])
+        AC_DEFINE([HAVE_SKB_LINEARIZE], [1], [Define if you have the skb_linearize function.])
     fi
 
     AC_CACHE_CHECK([whether netif_receive_skb has been extended], [ac_cv_linuxmodule_netif_receive_skb_extended],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/netdevice.h>]],
 [[netif_receive_skb(0, 0, 0);]])],
-	[ac_cv_linuxmodule_netif_receive_skb_extended=yes], [ac_cv_linuxmodule_netif_receive_skb_extended=no])])
+        [ac_cv_linuxmodule_netif_receive_skb_extended=yes], [ac_cv_linuxmodule_netif_receive_skb_extended=no])])
     if test $ac_cv_linuxmodule_netif_receive_skb_extended = yes; then
-	AC_DEFINE([HAVE_NETIF_RECEIVE_SKB_EXTENDED], [1], [Define if netif_receive_skb takes 3 arguments.])
+        AC_DEFINE([HAVE_NETIF_RECEIVE_SKB_EXTENDED], [1], [Define if netif_receive_skb takes 3 arguments.])
     fi
 
     AC_LANG_C
@@ -1664,42 +1666,42 @@ CFLAGS="$save_cflags"
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>]])
     if test $ac_cv_net_enable_timestamp = yes; then
-	AC_DEFINE([HAVE_NET_ENABLE_TIMESTAMP], [1], [Define if you have the net_enable_timestamp function.])
+        AC_DEFINE([HAVE_NET_ENABLE_TIMESTAMP], [1], [Define if you have the net_enable_timestamp function.])
     fi
 
     AC_CHECK_DECL(netif_tx_lock, [ac_cv_netif_tx_lock=yes], [ac_cv_netif_tx_lock=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>]])
     if test $ac_cv_netif_tx_lock = yes; then
-	AC_DEFINE([HAVE_NETIF_TX_LOCK], [1], [Define if you have the netif_tx_lock function.])
+        AC_DEFINE([HAVE_NETIF_TX_LOCK], [1], [Define if you have the netif_tx_lock function.])
     fi
 
     AC_CHECK_DECL(netdev_get_tx_queue, [ac_cv_netdev_get_tx_queue=yes], [ac_cv_netdev_get_tx_queue=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>]])
     if test $ac_cv_netdev_get_tx_queue = yes; then
-	AC_DEFINE([HAVE_NETDEV_GET_TX_QUEUE], [1], [Define if you have the netdev_get_tx_queue function.])
+        AC_DEFINE([HAVE_NETDEV_GET_TX_QUEUE], [1], [Define if you have the netdev_get_tx_queue function.])
     fi
 
     AC_CHECK_DECL(netif_tx_queue_frozen, [ac_cv_netif_tx_queue_frozen=yes], [ac_cv_netif_tx_queue_frozen=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>]])
     if test $ac_cv_netif_tx_queue_frozen = yes; then
-	AC_DEFINE([HAVE_NETIF_TX_QUEUE_FROZEN], [1], [Define if you have the netif_tx_queue_frozen function.])
+        AC_DEFINE([HAVE_NETIF_TX_QUEUE_FROZEN], [1], [Define if you have the netif_tx_queue_frozen function.])
     fi
 
     AC_CHECK_DECL(netdev_uses_dsa_tags, [ac_cv_netdev_uses_dsa_tags=yes], [ac_cv_netdev_uses_dsa_tags=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>]])
     if test $ac_cv_netdev_uses_dsa_tags = yes; then
-	AC_DEFINE([HAVE_NETDEV_USES_DSA_TAGS], [1], [Define if you have the netdev_uses_dsa_tags function.])
+        AC_DEFINE([HAVE_NETDEV_USES_DSA_TAGS], [1], [Define if you have the netdev_uses_dsa_tags function.])
     fi
 
     AC_CHECK_DECL(netdev_uses_trailer_tags, [ac_cv_netdev_uses_trailer_tags=yes], [ac_cv_netdev_uses_trailer_tags=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>]])
     if test $ac_cv_netdev_uses_trailer_tags = yes; then
-	AC_DEFINE([HAVE_NETDEV_USES_TRAILER_TAGS], [1], [Define if you have the netdev_uses_trailer_tags function.])
+        AC_DEFINE([HAVE_NETDEV_USES_TRAILER_TAGS], [1], [Define if you have the netdev_uses_trailer_tags function.])
     fi
 
     AC_CACHE_CHECK(for netdev_rx_handler_register kernel symbol, ac_cv_linux_netdev_rx_handler_register,
@@ -1733,19 +1735,19 @@ CFLAGS="$save_cflags"
     dnl Linux kernel file system configuration
 
     AC_CACHE_CHECK([whether struct super_block has an s_d_op member], [ac_cv_linuxmodule_super_block_s_d_op],
-	[AC_LANG_C
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/fs.h>]],
 [[extern struct super_block *sb; sb->s_d_op = 0;]])],
-	[ac_cv_linuxmodule_super_block_s_d_op=yes], [ac_cv_linuxmodule_super_block_s_d_op=no])])
+        [ac_cv_linuxmodule_super_block_s_d_op=yes], [ac_cv_linuxmodule_super_block_s_d_op=no])])
     if test $ac_cv_linuxmodule_super_block_s_d_op = yes; then
-	AC_DEFINE([HAVE_LINUX_SUPER_BLOCK_S_D_OP], [1], [Define if 'struct super_block' has an 's_d_op' member.])
+        AC_DEFINE([HAVE_LINUX_SUPER_BLOCK_S_D_OP], [1], [Define if 'struct super_block' has an 's_d_op' member.])
     fi
 
     AC_CHECK_DECL([d_make_root], [ac_cv_linux_d_make_root=yes], [ac_cv_linux_d_make_root=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/dcache.h>]])
     if test $ac_cv_linux_d_make_root = yes; then
-	AC_DEFINE([HAVE_LINUX_D_MAKE_ROOT], [1], [Define if you have the d_make_root function.])
+        AC_DEFINE([HAVE_LINUX_D_MAKE_ROOT], [1], [Define if you have the d_make_root function.])
     fi
 
     fi dnl ac_cv_cxx_aware_system
@@ -1764,7 +1766,7 @@ dnl check bsdmodule for BSD
 if test $ac_have_bsd_kernel = y; then
     DRIVERS="$DRIVERS bsdmodule"
     if echo "$DRIVERS" | grep linuxmodule >/dev/null 2>&1; then :; else
-	TOOL_TARGETS="$TOOL_TARGETS click-install"
+        TOOL_TARGETS="$TOOL_TARGETS click-install"
     fi
     AC_DEFINE(HAVE_BSDMODULE_DRIVER)
     HAVE_BSDMODULE_DRIVER=1
@@ -1846,10 +1848,10 @@ AC_MSG_CHECKING(for working makeinfo)
 MAKEINFO=${MAKEINFO-makeinfo}
 if ($MAKEINFO --version) < /dev/null > conftest.out 2>&1; then
     if test `head -n 1 conftest.out | sed 's/^.* \([[0-9]][[0-9]]*\).*$/\1/'` -ge 4; then
-	AC_MSG_RESULT(found)
+        AC_MSG_RESULT(found)
     else
-	MAKEINFO='$(conf_auxdir)/missing makeinfo'
-	AC_MSG_RESULT(old)
+        MAKEINFO='$(conf_auxdir)/missing makeinfo'
+        AC_MSG_RESULT(old)
     fi
 else
     MAKEINFO='$(conf_auxdir)/missing makeinfo'
@@ -1861,10 +1863,10 @@ TEXI2DVI=${TEXI2DVI-texi2dvi}
 if ($TEXI2DVI --version) < /dev/null > conftest.out 2>&1; then
     dnl Search for a good version of texi2dvi
     if test `head -n 1 conftest.out | sed 's/.*Texinfo \([[0-9]][[0-9]]*\).*/\1/'` -ge 4; then
-	AC_MSG_RESULT(found)
+        AC_MSG_RESULT(found)
     else
-	TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
-	AC_MSG_RESULT(old)
+        TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
+        AC_MSG_RESULT(old)
     fi
 else
     TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
@@ -1874,7 +1876,7 @@ fi
 dnl Assume any version of install-info is OK
 if test ${INSTALL_INFO-xxx} = xxx; then
     AC_PATH_PROG(INSTALL_INFO, install-info, '$(conf_auxdir)/missing install-info',
-	$PATH:/sbin:/usr/sbin:/usr/local/sbin)
+        $PATH:/sbin:/usr/sbin:/usr/local/sbin)
 fi
 AC_MSG_CHECKING(for working install-info)
 if ($INSTALL_INFO --version) < /dev/null > conftest.out 2>&1; then
@@ -1957,11 +1959,11 @@ fi
 dnl add provision for linux kernel version
 if test $ac_have_linux_kernel = y; then
     if test $linux_version_code -ge 131584 -a $linux_version_code -lt 131840; then
-	provisions="$provisions linux_2_2"
+        provisions="$provisions linux_2_2"
     elif test $linux_version_code -ge 132096 -a $linux_version_code -lt 132352; then
-	provisions="$provisions linux_2_4"
+        provisions="$provisions linux_2_4"
     elif test $linux_version_code -ge 132608 -a $linux_version_code -lt 132864; then
-	provisions="$provisions linux_2_6"
+        provisions="$provisions linux_2_6"
     fi
 fi
 

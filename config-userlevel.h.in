@@ -153,6 +153,10 @@
 /* Placement new is always provided below. */
 #define HAVE_PLACEMENT_NEW 1
 
+/* Define to 1 if you have the declaration
+   of 'pthread_setaffinity_np', and to 0 if you don't. */
+#undef HAVE_DECL_PTHREAD_SETAFFINITY_NP
+
 /* Define if you have the <pwd.h> header file. */
 #undef HAVE_PWD_H
 

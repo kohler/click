@@ -8,7 +8,7 @@
  * Copyright (c) 2001-2003 International Computer Science Institute
  * Copyright (c) 2004-2006 Regents of the University of California
  * Copyright (c) 2008-2009 Meraki, Inc.
- * Copyright (c) 1999-2012 Eddie Kohler
+ * Copyright (c) 1999-2014 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -56,29 +56,25 @@
 #include "elements/userlevel/controlsocket.hh"
 CLICK_USING_DECLS
 
-#define HELP_OPT		300
-#define VERSION_OPT		301
-#define CLICKPATH_OPT		302
-#define ROUTER_OPT		303
-#define EXPRESSION_OPT		304
-#define QUIT_OPT		305
-#define OUTPUT_OPT		306
-#define HANDLER_OPT		307
-#define TIME_OPT		308
-#define PORT_OPT		310
-#define UNIX_SOCKET_OPT		311
-#define NO_WARNINGS_OPT		312
-#define WARNINGS_OPT		313
-#define ALLOW_RECONFIG_OPT	314
-#define EXIT_HANDLER_OPT	315
-#define THREADS_OPT		316
-#define SIMTIME_OPT		317
-#define SOCKET_OPT		318
+#define HELP_OPT                300
+#define VERSION_OPT             301
+#define CLICKPATH_OPT           302
+#define ROUTER_OPT              303
+#define EXPRESSION_OPT          304
+#define QUIT_OPT                305
+#define OUTPUT_OPT              306
+#define HANDLER_OPT             307
+#define TIME_OPT                308
+#define PORT_OPT                310
+#define UNIX_SOCKET_OPT         311
+#define NO_WARNINGS_OPT         312
+#define WARNINGS_OPT            313
+#define ALLOW_RECONFIG_OPT      314
+#define EXIT_HANDLER_OPT        315
+#define THREADS_OPT             316
+#define SIMTIME_OPT             317
+#define SOCKET_OPT              318
 #define THREADS_AFF_OPT         319
-
-#ifdef __USE_GNU
-  #define AFFINITY_SUPPORT 1
-#endif
 
 static const Clp_Option options[] = {
     { "allow-reconfigure", 'R', ALLOW_RECONFIG_OPT, 0, Clp_Negate },
@@ -110,13 +106,13 @@ short_usage()
 {
   fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
 Try '%s --help' for more information.\n",
-	  program_name, program_name);
+          program_name, program_name);
 }
 
 void
 usage()
 {
-  printf("\
+    printf("\
 'Click' runs a Click router configuration at user level. It installs the\n\
 configuration, reporting any errors to standard error, and then generally runs\n\
 until interrupted.\n\
@@ -126,8 +122,12 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
   -e, --expression EXPR         Use EXPR as router configuration.\n\
-  -j, --threads N               Start N threads (default 1).\n\
-  -a, --affinity                Set cpu affinity to threads (default no).\n\
+  -j, --threads N               Start N threads (default 1).\n");
+#if HAVE_DECL_PTHREAD_SETAFFINITY_NP
+    printf("\
+  -a, --affinity                Pin threads to CPUs (default no).\n");
+#endif
+    printf("\
   -p, --port PORT               Listen for control connections on TCP port.\n\
   -u, --unix-socket FILE        Listen for control connections on Unix socket.\n\
       --socket FD               Add a file descriptor control connection.\n\
@@ -159,9 +159,9 @@ stop_signal_handler(int sig)
     signal(sig, SIG_DFL);
 #endif
     if (!running)
-	kill(getpid(), sig);
+        kill(getpid(), sig);
     else
-	router->set_runcount(Router::STOP_RUNCOUNT);
+        router->set_runcount(Router::STOP_RUNCOUNT);
 }
 
 #if HAVE_EXECINFO_H
@@ -193,7 +193,7 @@ catch_dump_signal(int sig)
 
 static int
 call_read_handler(Element *e, String handler_name,
-		  bool print_name, ErrorHandler *errh)
+                  bool print_name, ErrorHandler *errh)
 {
   const Handler *rh = Router::handler(e, handler_name);
   String full_name = Handler::unparse_name(e, handler_name);
@@ -216,35 +216,35 @@ call_read_handler(Element *e, String handler_name,
 
 static int
 expand_handler_elements(const String& pattern, const String& handler_name,
-			Vector<Element*>& elements, Router* router)
+                        Vector<Element*>& elements, Router* router)
 {
     // first try element name
     if (Element* e = router->find(pattern)) {
-	elements.push_back(e);
-	return 1;
+        elements.push_back(e);
+        return 1;
     }
     // check if we have a pattern
     bool is_pattern = false;
     for (const char* s = pattern.begin(); s < pattern.end(); s++)
-	if (*s == '?' || *s == '*' || *s == '[') {
-	    is_pattern = true;
-	    break;
-	}
+        if (*s == '?' || *s == '*' || *s == '[') {
+            is_pattern = true;
+            break;
+        }
     // check pattern or type
     bool any = false;
     for (int i = 0; i < router->nelements(); i++)
-	if (is_pattern
-	    ? glob_match(router->ename(i), pattern)
-	    : router->element(i)->cast(pattern.c_str()) != 0) {
-	    any = true;
-	    const Handler* h = Router::handler(router->element(i), handler_name);
-	    if (h && h->read_visible())
-		elements.push_back(router->element(i));
-	}
+        if (is_pattern
+            ? glob_match(router->ename(i), pattern)
+            : router->element(i)->cast(pattern.c_str()) != 0) {
+            any = true;
+            const Handler* h = Router::handler(router->element(i), handler_name);
+            if (h && h->read_visible())
+                elements.push_back(router->element(i));
+        }
     if (!any)
-	return errh->error((is_pattern ? "no element matching %<%s%>" : "no element %<%s%>"), pattern.c_str());
+        return errh->error((is_pattern ? "no element matching %<%s%>" : "no element %<%s%>"), pattern.c_str());
     else
-	return 2;
+        return 2;
 }
 
 static int
@@ -257,20 +257,20 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
 
     // expand handler names
     for (int i = 0; i < handlers.size(); i++) {
-	const char *dot = find(handlers[i], '.');
-	if (dot == handlers[i].end()) {
-	    call_read_handler(router->root_element(), handlers[i], print_names, errh);
-	    continue;
-	}
+        const char *dot = find(handlers[i], '.');
+        if (dot == handlers[i].end()) {
+            call_read_handler(router->root_element(), handlers[i], print_names, errh);
+            continue;
+        }
 
-	String element_name = handlers[i].substring(handlers[i].begin(), dot);
-	String handler_name = handlers[i].substring(dot + 1, handlers[i].end());
+        String element_name = handlers[i].substring(handlers[i].begin(), dot);
+        String handler_name = handlers[i].substring(dot + 1, handlers[i].end());
 
-	Vector<Element*> elements;
-	int retval = expand_handler_elements(element_name, handler_name, elements, router);
-	if (retval >= 0)
-	    for (int j = 0; j < elements.size(); j++)
-		call_read_handler(elements[j], handler_name, print_names || retval > 1, errh);
+        Vector<Element*> elements;
+        int retval = expand_handler_elements(element_name, handler_name, elements, router);
+        if (retval >= 0)
+            for (int j = 0; j < elements.size(); j++)
+                call_read_handler(elements[j], handler_name, print_names || retval > 1, errh);
     }
 
     return (errh->nerrors() == before ? 0 : -1);
@@ -308,36 +308,36 @@ static String
 click_driver_control_socket_name(int number)
 {
     if (!number)
-	return "click_driver@@ControlSocket";
+        return "click_driver@@ControlSocket";
     else
-	return "click_driver@@ControlSocket@" + String(number);
+        return "click_driver@@ControlSocket@" + String(number);
 }
 
 static Router *
 parse_configuration(const String &text, bool text_is_expr, bool hotswap,
-		    ErrorHandler *errh)
+                    ErrorHandler *errh)
 {
     Master *new_master = 0, *master;
     if (router)
-	master = router->master();
+        master = router->master();
     else
-	master = new_master = new Master(nthreads);
+        master = new_master = new Master(nthreads);
 
     Router *r = click_read_router(text, text_is_expr, errh, false, master);
     if (!r) {
-	delete new_master;
-	return 0;
+        delete new_master;
+        return 0;
     }
 
     // add new ControlSockets
     String retries = (hotswap ? ", RETRIES 1, RETRY_WARNINGS false" : "");
     int ncs = 0;
     for (String *it = cs_ports.begin(); it != cs_ports.end(); ++it, ++ncs)
-	r->add_element(new ControlSocket, click_driver_control_socket_name(ncs), "TCP, " + *it + retries, "click", 0);
+        r->add_element(new ControlSocket, click_driver_control_socket_name(ncs), "TCP, " + *it + retries, "click", 0);
     for (String *it = cs_unix_sockets.begin(); it != cs_unix_sockets.end(); ++it, ++ncs)
-	r->add_element(new ControlSocket, click_driver_control_socket_name(ncs), "UNIX, " + *it + retries, "click", 0);
+        r->add_element(new ControlSocket, click_driver_control_socket_name(ncs), "UNIX, " + *it + retries, "click", 0);
     for (String *it = cs_sockets.begin(); it != cs_sockets.end(); ++it, ++ncs)
-	r->add_element(new ControlSocket, click_driver_control_socket_name(ncs), "SOCKET, " + *it + retries, "click", 0);
+        r->add_element(new ControlSocket, click_driver_control_socket_name(ncs), "SOCKET, " + *it + retries, "click", 0);
 
   // catch signals (only need to do the first time)
   if (!hotswap) {
@@ -351,12 +351,12 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
     const char *click_backtrace = getenv("CLICK_BACKTRACE");
     bool do_click_backtrace;
     if (click_backtrace && (!BoolArg().parse(click_backtrace, do_click_backtrace)
-			    || do_click_backtrace)) {
-	click_signal(SIGSEGV, catch_dump_signal, false);
-	click_signal(SIGBUS, catch_dump_signal, false);
-	click_signal(SIGILL, catch_dump_signal, false);
-	click_signal(SIGABRT, catch_dump_signal, false);
-	click_signal(SIGFPE, catch_dump_signal, false);
+                            || do_click_backtrace)) {
+        click_signal(SIGSEGV, catch_dump_signal, false);
+        click_signal(SIGBUS, catch_dump_signal, false);
+        click_signal(SIGILL, catch_dump_signal, false);
+        click_signal(SIGABRT, catch_dump_signal, false);
+        click_signal(SIGFPE, catch_dump_signal, false);
     }
 #endif
   }
@@ -394,25 +394,25 @@ static String
 timewarp_read_handler(Element *, void *)
 {
     if (Timestamp::warp_class() == Timestamp::warp_simulation)
-	return "simulation";
+        return "simulation";
     else if (Timestamp::warp_class() == Timestamp::warp_nowait)
-	return "nowait";
+        return "nowait";
     else
-	return String(Timestamp::warp_speed());
+        return String(Timestamp::warp_speed());
 }
 
 static int
 timewarp_write_handler(const String &text, Element *, void *, ErrorHandler *errh)
 {
     if (text == "nowait")
-	Timestamp::warp_set_class(Timestamp::warp_nowait);
+        Timestamp::warp_set_class(Timestamp::warp_nowait);
     else {
-	double factor;
-	if (!DoubleArg().parse(text, factor))
-	    return errh->error("expected double");
-	else if (factor <= 0)
-	    return errh->error("timefactor must be > 0");
-	Timestamp::warp_set_class(Timestamp::warp_linear, factor);
+        double factor;
+        if (!DoubleArg().parse(text, factor))
+            return errh->error("expected double");
+        else if (factor <= 0)
+            return errh->error("timefactor must be > 0");
+        Timestamp::warp_set_class(Timestamp::warp_linear, factor);
     }
     return 0;
 }
@@ -425,8 +425,8 @@ round_timeval(struct timeval *tv, int usec_divider)
 {
     tv->tv_usec = (tv->tv_usec + usec_divider / 2) / usec_divider;
     if (tv->tv_usec >= 1000000 / usec_divider) {
-	tv->tv_usec = 0;
-	++tv->tv_sec;
+        tv->tv_usec = 0;
+        ++tv->tv_sec;
     }
 }
 
@@ -449,6 +449,18 @@ cleanup(Clp_Parser *clp, int exit_value)
     return exit_value;
 }
 
+#if HAVE_DECL_PTHREAD_SETAFFINITY_NP
+static bool set_affinity = false;
+void do_set_affinity(pthread_t p, int cpu) {
+    cpu_set_t set;
+    CPU_ZERO(&set);
+    CPU_SET(cpu, &set);
+    pthread_setaffinity_np(p, sizeof(cpu_set_t), &set);
+}
+#else
+# define do_set_affinity(p, cpu) /* nothing */
+#endif
+
 int
 main(int argc, char **argv)
 {
@@ -464,7 +476,6 @@ main(int argc, char **argv)
   bool file_is_expr = false;
   const char *output_file = 0;
   bool quit_immediately = false;
-  bool setaffinity = false;
   bool report_time = false;
   bool allow_reconfigure = false;
   Vector<String> handlers;
@@ -478,8 +489,8 @@ main(int argc, char **argv)
      case EXPRESSION_OPT:
      router_file:
       if (router_file) {
-	errh->error("router configuration specified twice");
-	goto bad_option;
+        errh->error("router configuration specified twice");
+        goto bad_option;
       }
       router_file = clp->vstr;
       file_is_expr = (opt == EXPRESSION_OPT);
@@ -487,18 +498,18 @@ main(int argc, char **argv)
 
      case Clp_NotOption:
       for (const char *s = clp->vstr; *s; s++)
-	  if (*s == '=' && s > clp->vstr) {
-	      if (!click_lexer()->global_scope().define(String(clp->vstr, s), s + 1, false))
-		  errh->error("parameter %<%.*s%> multiply defined", s - clp->vstr, clp->vstr);
-	      goto next_argument;
-	  } else if (!isalnum((unsigned char) *s) && *s != '_')
-	      break;
+          if (*s == '=' && s > clp->vstr) {
+              if (!click_lexer()->global_scope().define(String(clp->vstr, s), s + 1, false))
+                  errh->error("parameter %<%.*s%> multiply defined", s - clp->vstr, clp->vstr);
+              goto next_argument;
+          } else if (!isalnum((unsigned char) *s) && *s != '_')
+              break;
       goto router_file;
 
      case OUTPUT_OPT:
       if (output_file) {
-	errh->error("output file specified twice");
-	goto bad_option;
+        errh->error("output file specified twice");
+        goto bad_option;
       }
       output_file = clp->vstr;
       break;
@@ -509,8 +520,8 @@ main(int argc, char **argv)
 
      case EXIT_HANDLER_OPT:
       if (exit_handler) {
-	errh->error("--exit-handler specified twice");
-	goto bad_option;
+        errh->error("--exit-handler specified twice");
+        goto bad_option;
       }
       exit_handler = clp->vstr;
       break;
@@ -520,14 +531,14 @@ main(int argc, char **argv)
       int portno_int = -1;
       String vstr(clp->vstr);
       if (IPPortArg(IP_PROTO_TCP).parse(vstr, portno))
-	  cs_ports.push_back(String(portno));
+          cs_ports.push_back(String(portno));
       else if (vstr && vstr.back() == '+'
-	       && IntArg().parse(vstr.substring(0, -1), portno_int)
-	       && portno_int > 0 && portno_int < 65536)
-	  cs_ports.push_back(String(portno_int) + "+");
+               && IntArg().parse(vstr.substring(0, -1), portno_int)
+               && portno_int > 0 && portno_int < 65536)
+          cs_ports.push_back(String(portno_int) + "+");
       else {
-	  Clp_OptionError(clp, "%<%O%> expects a TCP port number, not %<%s%>", clp->vstr);
-	  goto bad_option;
+          Clp_OptionError(clp, "%<%O%> expects a TCP port number, not %<%s%>", clp->vstr);
+          goto bad_option;
       }
       break;
   }
@@ -537,8 +548,8 @@ main(int argc, char **argv)
       break;
 
     case SOCKET_OPT:
-	cs_sockets.push_back(clp->vstr);
-	break;
+        cs_sockets.push_back(clp->vstr);
+        break;
 
      case ALLOW_RECONFIG_OPT:
       allow_reconfigure = !clp->negated;
@@ -563,28 +574,28 @@ main(int argc, char **argv)
      case THREADS_OPT:
       nthreads = clp->val.i;
       if (nthreads <= 1)
-	  nthreads = 1;
+          nthreads = 1;
 #if !HAVE_MULTITHREAD
       if (nthreads > 1) {
-	  errh->warning("Click was built without multithread support, running single threaded");
-	  nthreads = 1;
+          errh->warning("Click was built without multithread support, running single threaded");
+          nthreads = 1;
       }
 #endif
       break;
 
      case THREADS_AFF_OPT:
-#ifdef AFFINITY_SUPPORT
-      setaffinity = true;
+#if HAVE_DECL_PTHREAD_SETAFFINITY_NP
+      set_affinity = true;
 #else
       errh->warning("CPU affinity is not supported on this platform");
 #endif
       break;
 
     case SIMTIME_OPT: {
-	Timestamp::warp_set_class(Timestamp::warp_simulation);
-	Timestamp simbegin(clp->have_val ? clp->val.d : 1000000000);
-	Timestamp::warp_set_now(simbegin, simbegin);
-	break;
+        Timestamp::warp_set_class(Timestamp::warp_simulation);
+        Timestamp simbegin(clp->have_val ? clp->val.d : 1000000000);
+        Timestamp::warp_set_now(simbegin, simbegin);
+        break;
     }
 
      case CLICKPATH_OPT:
@@ -644,8 +655,8 @@ particular purpose.\n");
     if (strcmp(output_file, "-") != 0) {
       f = fopen(output_file, "w");
       if (!f) {
-	errh->error("%s: %s", output_file, strerror(errno));
-	exit_value = 1;
+        errh->error("%s: %s", output_file, strerror(errno));
+        exit_value = 1;
       }
     } else
       f = stdout;
@@ -654,7 +665,7 @@ particular purpose.\n");
       String s = Router::handler(root, "flatconfig")->call_read(root);
       ignore_result(fwrite(s.data(), 1, s.length(), f));
       if (f != stdout)
-	fclose(f);
+        fclose(f);
     }
   }
 
@@ -676,28 +687,13 @@ particular purpose.\n");
     }
 #if HAVE_MULTITHREAD
     for (int t = 1; t < nthreads; ++t) {
-	pthread_t p;
-	pthread_create(&p, 0, thread_driver, router->master()->thread(t));
-	other_threads.push_back(p);
-
-    #ifdef AFFINITY_SUPPORT
-    if (setaffinity) {
-        cpu_set_t set;
-        CPU_ZERO(&set);
-        CPU_SET(t, &set);
-        pthread_setaffinity_np(p, sizeof(cpu_set_t), &set);
+        pthread_t p;
+        pthread_create(&p, 0, thread_driver, router->master()->thread(t));
+        other_threads.push_back(p);
+        do_set_affinity(p, t);
     }
-    #endif
-    }
+    do_set_affinity(pthread_self(), 0);
 #endif
-    #ifdef AFFINITY_SUPPORT
-    if (setaffinity) {
-    cpu_set_t set;
-    CPU_ZERO(&set);
-    CPU_SET(0, &set);
-    sched_setaffinity(0, sizeof(cpu_set_t), &set);
-    }
-    #endif 
 
     // run driver
     router->master()->thread(0)->driver();

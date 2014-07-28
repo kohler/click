@@ -2084,6 +2084,52 @@ fi
 
 } # ac_fn_cxx_check_header_mongrel
 
+# ac_fn_cxx_check_decl LINENO SYMBOL VAR INCLUDES
+# -----------------------------------------------
+# Tests whether SYMBOL is declared in INCLUDES, setting cache variable VAR
+# accordingly.
+ac_fn_cxx_check_decl ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  as_decl_name=`echo $2|sed 's/ *(.*//'`
+  as_decl_use=`echo $2|sed -e 's/(/((/' -e 's/)/) 0&/' -e 's/,/) 0& (/g'`
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $as_decl_name is declared" >&5
+$as_echo_n "checking whether $as_decl_name is declared... " >&6; }
+if eval \${$3+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+#ifndef $as_decl_name
+#ifdef __cplusplus
+  (void) $as_decl_use;
+#else
+  (void) $as_decl_name;
+#endif
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  eval "$3=yes"
+else
+  eval "$3=no"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_cxx_check_decl
+
 # ac_fn_c_try_link LINENO
 # -----------------------
 # Try to link conftest.$ac_ext, and return whether this succeeded.
@@ -2542,52 +2588,6 @@ $as_echo "$ac_res" >&6; }
   eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
 
 } # ac_fn_cxx_check_func
-
-# ac_fn_cxx_check_decl LINENO SYMBOL VAR INCLUDES
-# -----------------------------------------------
-# Tests whether SYMBOL is declared in INCLUDES, setting cache variable VAR
-# accordingly.
-ac_fn_cxx_check_decl ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  as_decl_name=`echo $2|sed 's/ *(.*//'`
-  as_decl_use=`echo $2|sed -e 's/(/((/' -e 's/)/) 0&/' -e 's/,/) 0& (/g'`
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $as_decl_name is declared" >&5
-$as_echo_n "checking whether $as_decl_name is declared... " >&6; }
-if eval \${$3+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-#ifndef $as_decl_name
-#ifdef __cplusplus
-  (void) $as_decl_use;
-#else
-  (void) $as_decl_name;
-#endif
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  eval "$3=yes"
-else
-  eval "$3=no"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-eval ac_res=\$$3
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-
-} # ac_fn_cxx_check_decl
 
 # ac_fn_c_compute_int LINENO EXPR VAR INCLUDES
 # --------------------------------------------
@@ -4732,10 +4732,10 @@ done
     ac_base_cflags="$CFLAGS"
 
     test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depcflags" && \
-	DEPCFLAGS="-MD -MP"
+        DEPCFLAGS="-MD -MP"
 
     test -z "$ac_user_cflags" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depdirflag" && \
-	DEPDIRFLAG='-MF $(DEPDIR)/$*.d'
+        DEPDIRFLAG='-MF $(DEPDIR)/$*.d'
 
 
     save_cflags="$CFLAGS"
@@ -4745,8 +4745,8 @@ if ${ac_cv_c_w_wall+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	CFLAGS="$CFLAGS -W -Wall"
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        CFLAGS="$CFLAGS -W -Wall"
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 int f(int x) { return x; }
 int
@@ -4772,8 +4772,8 @@ if ${ac_cv_c_werror+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	CFLAGS="$CFLAGS -Werror"
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        CFLAGS="$CFLAGS -Werror"
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 int f(int x) { return x; }
 int
@@ -4797,10 +4797,10 @@ $as_echo "$ac_cv_c_werror" >&6; }
 
     WARNING_CFLAGS=
     test -n "$ac_cv_c_w_wall" -a -n "$ac_compile_with_warnings" && \
-	WARNING_CFLAGS=" -W -Wall"
+        WARNING_CFLAGS=" -W -Wall"
 
     test -z "$ac_user_cflags" && \
-	CFLAGS="$CFLAGS$WARNING_CFLAGS"
+        CFLAGS="$CFLAGS$WARNING_CFLAGS"
 
     for ac_header in sys/types.h unistd.h
 do :
@@ -5258,12 +5258,12 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
         if grep __cplusplus confdefs.h >/dev/null 2>&1; then
-	sed 's/#ifdef __cplusplus/#if defined(__cplusplus) \&\& !defined(__KERNEL__)/' < confdefs.h > confdefs.h~
-	mv confdefs.h~ confdefs.h
+        sed 's/#ifdef __cplusplus/#if defined(__cplusplus) \&\& !defined(__KERNEL__)/' < confdefs.h > confdefs.h~
+        mv confdefs.h~ confdefs.h
     fi
 
     if test -z "$GXX"; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
 =========================================
 
 Your C++ compiler ($CXX) is not a GNU C++ compiler!
@@ -5299,7 +5299,7 @@ if ${ac_cv_good_new_hdr+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <new>
 int
@@ -5329,13 +5329,13 @@ $as_echo "$ac_cv_good_new_hdr" >&6; }
 $as_echo "#define HAVE_NEW_HDR 1" >>confdefs.h
 
     else
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether <new.h> works" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether <new.h> works" >&5
 $as_echo_n "checking whether <new.h> works... " >&6; }
 if ${ac_cv_good_new_h+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <new.h>
 int
@@ -5360,11 +5360,11 @@ rm -f core conftest.err conftest.$ac_objext \
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_good_new_h" >&5
 $as_echo "$ac_cv_good_new_h" >&6; }
-	if test "$ac_cv_good_new_h" = yes; then
+        if test "$ac_cv_good_new_h" = yes; then
 
 $as_echo "#define HAVE_NEW_H 1" >>confdefs.h
 
-	fi
+        fi
     fi
 
         save_cxxflags="$CXXFLAGS"
@@ -5377,7 +5377,7 @@ if ${ac_cv_cxx_constexpr+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 constexpr int f(int x) { return x + 1; }
 int
@@ -5409,7 +5409,7 @@ if ${ac_cv_cxx_rvalue_references+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 int f(int &) { return 1; } int f(int &&) { return 0; }
 int
@@ -5441,7 +5441,7 @@ if ${ac_cv_cxx_static_assert+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 const int f = 2;
 int
@@ -5473,7 +5473,7 @@ if ${ac_cv_cxx_template_alias+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 template <typename T> struct X { typedef T type; }; template <typename T> using Y = X<T>; int f(int x) { return x; }
 int
@@ -5505,7 +5505,7 @@ if ${ac_cv_cxx_pragma_interface+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #pragma interface "foo.c"
 #pragma implementation "foo.c"
@@ -5539,7 +5539,7 @@ $as_echo "#define HAVE_CXX_PRAGMA_INTERFACE 1" >>confdefs.h
     ac_base_cxxflags="$CXXFLAGS"
 
     test -z "$ac_user_cxxflags" -a -n "$GXX" && \
-	CXXFLAGS="$CXXFLAGS$WARNING_CFLAGS"
+        CXXFLAGS="$CXXFLAGS$WARNING_CFLAGS"
 
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -5678,21 +5678,21 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
     test -z "$ac_user_kernel_cc" && \
-	KERNEL_CC="$ac_base_cc"
+        KERNEL_CC="$ac_base_cc"
 
 
     test -z "$ac_kernel_cflags" && \
-	KERNEL_CFLAGS=`echo "$ac_base_cflags -Wno-undef" | sed 's/-g//'`
+        KERNEL_CFLAGS=`echo "$ac_base_cflags -Wno-undef" | sed 's/-g//'`
 
 
 
 
     test -z "$ac_user_kernel_cxx" && \
-	KERNEL_CXX="$ac_base_cxx"
+        KERNEL_CXX="$ac_base_cxx"
 
 
     test -z "$ac_user_kernel_cxxflags" && \
-	KERNEL_CXXFLAGS=`echo "$ac_base_cxxflags -fno-exceptions -fno-rtti -fpermissive -Wno-undef -Wno-pointer-arith" | sed 's/-g//'`
+        KERNEL_CXXFLAGS=`echo "$ac_base_cxxflags -fno-exceptions -fno-rtti -fpermissive -Wno-undef -Wno-pointer-arith" | sed 's/-g//'`
 
 
 
@@ -6354,13 +6354,26 @@ fi
 done
 
     if test "$ac_have_libpthread$ac_have_pthread_h" = yesyes; then
-	$as_echo "#define HAVE_USER_MULTITHREAD 1" >>confdefs.h
+        $as_echo "#define HAVE_USER_MULTITHREAD 1" >>confdefs.h
 
-	if echo "$LIBS" | grep -e -lpthread >/dev/null 2>&1; then
-	    PTHREAD_LIBS="-lpthread"
-	fi
+        ac_fn_cxx_check_decl "$LINENO" "pthread_setaffinity_np" "ac_cv_have_decl_pthread_setaffinity_np" "#define _GNU_SOURCE
+#include <pthread.h>
+"
+if test "x$ac_cv_have_decl_pthread_setaffinity_np" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_PTHREAD_SETAFFINITY_NP $ac_have_decl
+_ACEOF
+
+        if echo "$LIBS" | grep -e -lpthread >/dev/null 2>&1; then
+            PTHREAD_LIBS="-lpthread"
+        fi
     else
-	as_fn_error $? "
+        as_fn_error $? "
 =========================================
 
 Can't find -lpthread and/or <pthread.h>, so I can't compile with
@@ -6677,35 +6690,35 @@ linux_system_map_boot=no
 
 if test "x$linuxpath" = xNONE -o "x$linuxpath" = xyes; then
     if uname -r 2>/dev/null | grep '^\(2\.6\|3\.\)' >/dev/null 2>&1; then
-	linuxpath=/lib/modules/"`uname -r`"/build
-	linux_system_map_boot="`uname -r`"
+        linuxpath=/lib/modules/"`uname -r`"/build
+        linux_system_map_boot="`uname -r`"
     else
-	linuxpath=/usr/src/linux
+        linuxpath=/usr/src/linux
     fi
     if test ! -d "$linuxpath" -a "x$enable_linuxmodule" = xyes; then
-	if test "x$enable_linuxmodule_default" = xyes; then
-	    linuxpath=NONE; enable_linuxmodule=no
-	else
-	    as_fn_error $? "
+        if test "x$enable_linuxmodule_default" = xyes; then
+            linuxpath=NONE; enable_linuxmodule=no
+        else
+            as_fn_error $? "
 =========================================
 
 Can't find $linuxpath, so I can't compile the linuxmodule driver!
 (You may need the --with-linux=DIR option.)
 
 =========================================" "$LINENO" 5
-	fi
+        fi
     fi
 fi
 
 find_linuxpath () {
     path="$linuxpath"
     while test -n "$path"; do
-	l=`echo "$path" | sed 's/^\([^:]*\).*/\1/'`
-	path=`echo "$path" | sed 's/^[^:]*:*//'`
-	if test -n "$l" -a -f "$l/$1"; then
-	    echo "$l/$1"
-	    return
-	fi
+        l=`echo "$path" | sed 's/^\([^:]*\).*/\1/'`
+        path=`echo "$path" | sed 's/^[^:]*:*//'`
+        if test -n "$l" -a -f "$l/$1"; then
+            echo "$l/$1"
+            return
+        fi
     done
     echo "/nonexistent_file"
 }
@@ -6718,45 +6731,45 @@ if test "x$linuxpath" = xNONE -o "x$linuxpath" = xno -o "x$enable_linuxmodule" !
 else
         path="$linuxpath"
     while test -n "$path"; do
-	l=`echo "$path" | sed 's/^\([^:]*\).*/\1/'`
-	path=`echo "$path" | sed 's/^[^>]*:*//'`
-	if test -n "$l" && expr "_$l" : '_[^/\\]' >/dev/null; then
-	    as_fn_error $? "
+        l=`echo "$path" | sed 's/^\([^:]*\).*/\1/'`
+        path=`echo "$path" | sed 's/^[^>]*:*//'`
+        if test -n "$l" && expr "_$l" : '_[^/\\]' >/dev/null; then
+            as_fn_error $? "
 =========================================
 
 The --with-linux directory $l is relative.
 All Linux directories must be absolute paths starting with /.
 
 =========================================" "$LINENO" 5
-	fi
+        fi
     done
 
     linux_skbuff_h=`find_linuxpath include/linux/skbuff.h`
     if test -r "$linux_skbuff_h"; then
-	linux_srcdir=`echo "$linux_skbuff_h" | sed 's_include/linux/skbuff\.h__'`
-	ac_have_linux_kernel=y
+        linux_srcdir=`echo "$linux_skbuff_h" | sed 's_include/linux/skbuff\.h__'`
+        ac_have_linux_kernel=y
     else
-	as_fn_error $? "
+        as_fn_error $? "
 =========================================
 
 Can't find include/linux/skbuff.h in $linuxpath.
 Are you sure $linuxpath contains Linux kernel source?
 
 =========================================" "$LINENO" 5
-	    fi
+            fi
 
     linux_config=`find_linuxpath .config`
     if test -r "$linux_config"; then
-	linux_builddir=`echo "$linux_config" | sed 's_/\.config__'`
+        linux_builddir=`echo "$linux_config" | sed 's_/\.config__'`
     else
-	as_fn_error $? "
+        as_fn_error $? "
 =========================================
 
 Can't find .config in $linuxpath.
 Are you sure $linuxpath contains a Linux kernel build?
 
 =========================================" "$LINENO" 5
-	    fi
+            fi
 fi
 
 
@@ -7393,7 +7406,7 @@ done
 
 
     if test $have_inttypes_h = no; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uintXX_t typedefs" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uintXX_t typedefs" >&5
 $as_echo_n "checking for uintXX_t typedefs... " >&6; }
 if ${ac_cv_uint_t+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -7416,7 +7429,7 @@ fi
 $as_echo "$ac_cv_uint_t" >&6; }
     fi
     if test $have_inttypes_h = no -a "$ac_cv_uint_t" = no; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for u_intXX_t typedefs" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for u_intXX_t typedefs" >&5
 $as_echo_n "checking for u_intXX_t typedefs... " >&6; }
 if ${ac_cv_u_int_t+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -7444,7 +7457,7 @@ $as_echo "$ac_cv_u_int_t" >&6; }
 $as_echo "#define HAVE_U_INT_TYPES 1" >>confdefs.h
 
     else
-	as_fn_error $? "
+        as_fn_error $? "
 =========================================
 
 Neither uint32_t nor u_int32_t defined by <inttypes.h> or <sys/types.h>!
@@ -7469,7 +7482,7 @@ else
 void get_value(char *buf, int offset, int32_t *value) {
     int i;
     for (i = 0; i < 4; i++)
-	buf[i + offset] = i;
+        buf[i + offset] = i;
     *value = *((int32_t *)(buf + offset));
 }
 int main(int argc, char *argv[]) {
@@ -7478,9 +7491,9 @@ int main(int argc, char *argv[]) {
     int32_t value, try_value;
     get_value(buf, 0, &value);
     for (i = 1; i < 4; i++) {
-	get_value(buf, i, &try_value);
-	if (value != try_value)
-	    exit(1);
+        get_value(buf, i, &try_value);
+        if (value != try_value)
+            exit(1);
     }
     exit(0);
 }
@@ -7538,9 +7551,9 @@ _ACEOF
 
 
     if test "x$have_inttypes_h" = xyes; then
-	inttypes_hdr='inttypes.h'
+        inttypes_hdr='inttypes.h'
     else
-	inttypes_hdr='sys/types.h'
+        inttypes_hdr='sys/types.h'
     fi
 
     ac_fn_cxx_check_type "$LINENO" "long long" "ac_cv_type_long_long" "$ac_includes_default"
@@ -7582,7 +7595,7 @@ fi
 
     have_int64_types=
     if test $ac_cv_int64_t = no -o $ac_cv_uint64_t = no; then
-	as_fn_error $? "
+        as_fn_error $? "
 =========================================
 
 int64_t types not defined by $inttypes_hdr!
@@ -7593,9 +7606,9 @@ Compile with '--disable-int64'.
 
 $as_echo "#define HAVE_INT64_TYPES 1" >>confdefs.h
 
-	have_int64_types=yes
+        have_int64_types=yes
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether long and int64_t are the same type" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether long and int64_t are the same type" >&5
 $as_echo_n "checking whether long and int64_t are the same type... " >&6; }
 if ${ac_cv_long_64+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -7606,7 +7619,7 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <$inttypes_hdr>
 void f1(long) {
@@ -7630,13 +7643,13 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_long_64" >&5
 $as_echo "$ac_cv_long_64" >&6; }
-	if test $ac_cv_long_64 = yes; then
+        if test $ac_cv_long_64 = yes; then
 
 $as_echo "#define HAVE_INT64_IS_LONG_USERLEVEL 1" >>confdefs.h
 
-	fi
+        fi
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether long long and int64_t are the same type" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether long long and int64_t are the same type" >&5
 $as_echo_n "checking whether long long and int64_t are the same type... " >&6; }
 if ${ac_cv_long_long_64+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -7647,7 +7660,7 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <$inttypes_hdr>
 void f1(long long) {
@@ -7671,11 +7684,11 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_long_long_64" >&5
 $as_echo "$ac_cv_long_long_64" >&6; }
-	if test $ac_cv_long_long_64 = yes; then
+        if test $ac_cv_long_long_64 = yes; then
 
 $as_echo "#define HAVE_INT64_IS_LONG_LONG_USERLEVEL 1" >>confdefs.h
 
-	fi
+        fi
     fi
 fi
 
@@ -7687,12 +7700,12 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
- 		    if test "x$ac_header" != x; then
-		        endian_hdr=$ac_header
-		    else
-			endian_hdr=$ac_hdr
-		    fi
-		    break
+                     if test "x$ac_header" != x; then
+                        endian_hdr=$ac_header
+                    else
+                        endian_hdr=$ac_hdr
+                    fi
+                    break
 else
   endian_hdr=no
 fi
@@ -7700,15 +7713,15 @@ fi
 done
 
     if test "x$endian_hdr" != xno; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking endianness" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking endianness" >&5
 $as_echo_n "checking endianness... " >&6; }
 if ${ac_cv_endian+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	    	    ac_cv_endian=0
-	    cat > conftest.$ac_ext <<EOF
-#line 7711 "configure"
+                        ac_cv_endian=0
+            cat > conftest.$ac_ext <<EOF
+#line 7724 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -7719,27 +7732,27 @@ BYTE_ORDER
 0
 #endif
 EOF
-	    ac_try="$ac_cpp conftest.$ac_ext >conftest.result 2>conftest.out"
-	    { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
+            ac_try="$ac_cpp conftest.$ac_ext >conftest.result 2>conftest.out"
+            { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }
-	    ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
-	    if test -z "$ac_err"; then
-		ac_cv_endian=`grep '^[1234]' conftest.result`
-		test -z "$ac_cv_endian" && ac_cv_endian=0
-	    else
-		echo "$ac_err" >&5
-		echo "configure: failed program was:" >&5
-		cat conftest.$ac_ext >&5
-	    fi
-	    rm -f conftest.$ac_ext conftest.result conftest.out
+            ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+            if test -z "$ac_err"; then
+                ac_cv_endian=`grep '^[1234]' conftest.result`
+                test -z "$ac_cv_endian" && ac_cv_endian=0
+            else
+                echo "$ac_err" >&5
+                echo "configure: failed program was:" >&5
+                cat conftest.$ac_ext >&5
+            fi
+            rm -f conftest.$ac_ext conftest.result conftest.out
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_endian" >&5
 $as_echo "$ac_cv_endian" >&6; }
     elif test "x$cross_compiling" != xyes ; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking endianness" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking endianness" >&5
 $as_echo_n "checking endianness... " >&6; }
 if ${ac_cv_endian+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -7755,7 +7768,7 @@ int main(int argc, char *argv[]) {
     union { int i; char c[4]; } u;
     FILE *f = fopen("conftestdata", "w");
     if (!f)
-	exit(1);
+        exit(1);
     u.i = ('1') | ('2' << 8) | ('3' << 16) | ('4' << 24);
     fprintf(f, "%4.4s\n", u.c);
     exit(0);
@@ -7774,7 +7787,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_endian" >&5
 $as_echo "$ac_cv_endian" >&6; }
     else
-	ac_cv_endian=0
+        ac_cv_endian=0
     fi
 
 cat >>confdefs.h <<_ACEOF
@@ -8376,7 +8389,7 @@ else
 fi
 
     if test "x$have_clock_gettime" = xyes; then
-	POSIX_CLOCK_LIBS="$LIBS"
+        POSIX_CLOCK_LIBS="$LIBS"
     fi
 
     ac_fn_cxx_check_func "$LINENO" "clock_gettime" "ac_cv_func_clock_gettime"
@@ -8535,7 +8548,7 @@ done
 
         ac_base_build_cxx="$CXX"
     test -z "$ac_user_build_cxx" -a -n "$ac_compile_with_warnings" && \
-	BUILD_CXX="$BUILD_CXX$WARNING_CFLAGS"
+        BUILD_CXX="$BUILD_CXX$WARNING_CFLAGS"
 
   for ac_prog in ar
 do
@@ -8651,7 +8664,7 @@ fi
 
 
     if test "$ac_cv_poll_h" = yes; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether <poll.h> is emulated" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether <poll.h> is emulated" >&5
 $as_echo_n "checking whether <poll.h> is emulated... " >&6; }
 if ${ac_cv_emulated_poll_h+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -8680,11 +8693,11 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_emulated_poll_h" >&5
 $as_echo "$ac_cv_emulated_poll_h" >&6; }
-	if test "x$ac_cv_emulated_poll_h" = xno; then
+        if test "x$ac_cv_emulated_poll_h" = xno; then
 
 $as_echo "#define HAVE_POLL_H 1" >>confdefs.h
 
-	fi
+        fi
     fi
 
 for ac_func in pselect sigaction
@@ -8823,7 +8836,7 @@ fi
 
 $as_echo "#define HAVE_DYNAMIC_LINKING 1" >>confdefs.h
 
-	ac_have_dynamic_linking=yes
+        ac_have_dynamic_linking=yes
     fi
 
 
@@ -8859,10 +8872,10 @@ $as_echo_n "checking compiler flags for building loadable modules... " >&6; }
     LDMODULEFLAGS=-shared
     SOSUFFIX=so
     if test "x$ac_have_dynamic_linking" = xyes; then
-	if echo "$ac_cv_target" | grep apple-darwin >/dev/null 2>&1; then
-	    LDMODULEFLAGS='-dynamiclib -flat_namespace -undefined suppress'
-	    SOSUFFIX=dylib
-	fi
+        if echo "$ac_cv_target" | grep apple-darwin >/dev/null 2>&1; then
+            LDMODULEFLAGS='-dynamiclib -flat_namespace -undefined suppress'
+            SOSUFFIX=dylib
+        fi
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDMODULEFLAGS" >&5
 $as_echo "$LDMODULEFLAGS" >&6; }
@@ -8938,7 +8951,7 @@ fi
 fi
 
     if test "x$ac_build_have_dlopen" = xyes -a "x$ac_build_have_dlfcn_h" = xyes; then
-	ac_build_have_dynamic_linking=yes
+        ac_build_have_dynamic_linking=yes
     fi
 
     BUILD_DL_LDFLAGS=
@@ -8969,7 +8982,7 @@ $as_echo "$ac_cv_build_rdynamic" >&6; }
 
 
     if test "x$ac_build_have_dynamic_linking" != "x$ac_have_dynamic_linking"; then
-	as_fn_error $? "
+        as_fn_error $? "
 =========================================
 
 You have configured Click with '--enable-dynamic-linking', which requires
@@ -9513,7 +9526,7 @@ if test $ac_have_linux_kernel = y; then
 if test "$linux_system_map" = NONE; then
     linux_system_map=`find_linuxpath System.map`
     if test "x$linux_system_map_boot" != xno -a ! -f "$linux_system_map"; then
-	linux_system_map=/boot/System.map-"$linux_system_map_boot"
+        linux_system_map=/boot/System.map-"$linux_system_map_boot"
     fi
 fi
 
@@ -9535,7 +9548,7 @@ or use the --with-linux=DIR and/or --with-linux-map=MAP options.
 =========================================" "$LINENO" 5
 else
     if test "x$enable_linuxmodule_default" = xyes; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
 =========================================
 
 Can't find Linux System.map file $linux_system_map,
@@ -9551,19 +9564,19 @@ so I won't compile the linuxmodule driver.
 (You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================" >&2;}
-	ac_have_linux_kernel=no
+        ac_have_linux_kernel=no
     else
-	if test "$linux_system_map" = /nonexistent_file; then
-	    linux_system_map="in $linuxpath"
-	fi
-	as_fn_error $? "
+        if test "$linux_system_map" = /nonexistent_file; then
+            linux_system_map="in $linuxpath"
+        fi
+        as_fn_error $? "
 =========================================
 
 Can't find Linux System.map file $linux_system_map.
 (You may need the --with-linux=DIR and/or --with-linux-map=MAP options.)
 
 =========================================" "$LINENO" 5
-	    fi
+            fi
 fi
 
 fi
@@ -9574,9 +9587,9 @@ if test $ac_have_linux_kernel = y; then
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking Linux version" >&5
 $as_echo_n "checking Linux version... " >&6; }
 linuxpath_makefile=`find_linuxpath Makefile`
-linux_version=`grep '^VERSION[ 	]*=[ 	]*[0-9][0-9]*[ 	]*$' "$linuxpath_makefile" | tr -c -d 0-9`
-linux_patchlevel=`grep '^PATCHLEVEL[ 	]*=[ 	]*[0-9][0-9]*[ 	]*$' "$linuxpath_makefile" | tr -c -d 0-9`
-linux_sublevel=`grep '^SUBLEVEL[ 	]*=[ 	]*[0-9][0-9]*[ 	]*$' "$linuxpath_makefile" | tr -c -d 0-9`
+linux_version=`grep '^VERSION[         ]*=[  ]*[0-9][0-9]*[    ]*$' "$linuxpath_makefile" | tr -c -d 0-9`
+linux_patchlevel=`grep '^PATCHLEVEL[   ]*=[  ]*[0-9][0-9]*[    ]*$' "$linuxpath_makefile" | tr -c -d 0-9`
+linux_sublevel=`grep '^SUBLEVEL[       ]*=[  ]*[0-9][0-9]*[    ]*$' "$linuxpath_makefile" | tr -c -d 0-9`
 if test -n "$linux_version" -a -n "$linux_patchlevel" -a -z "$linux_sublevel"; then linux_sublevel=0; fi
 if test -n "$linux_version" -a -n "$linux_patchlevel" -a -n "$linux_sublevel"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $linux_version.$linux_patchlevel.$linux_sublevel" >&5
@@ -9826,9 +9839,9 @@ if ${ac_cv_freebsd_version+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	save_flags="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        save_flags="$CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <sys/param.h>
 #if __FreeBSD_version < 700000
@@ -9848,17 +9861,17 @@ else
   ac_cv_freebsd_version=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-	CPPFLAGS="$save_flags"
+        CPPFLAGS="$save_flags"
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_freebsd_version" >&5
 $as_echo "$ac_cv_freebsd_version" >&6; }
     if test $ac_cv_freebsd_version = yes; then
-	$as_echo "#define HAVE_CLICK_BSD_KERNEL 1" >>confdefs.h
+        $as_echo "#define HAVE_CLICK_BSD_KERNEL 1" >>confdefs.h
 
-	$as_echo "#define HAVE_BSD_POLLING 1" >>confdefs.h
+        $as_echo "#define HAVE_BSD_POLLING 1" >>confdefs.h
 
     else
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
 =========================================
 
 Your version of FreeBSD is old.  Click works with FreeBSD 7.x and later.
@@ -9878,8 +9891,8 @@ if ${ac_cv_long_64_bsdmodule+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   save_flags="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <sys/param.h>
 #include <linux/types.h>
@@ -9916,8 +9929,8 @@ if ${ac_cv_long_long_64_bsdmodule+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   save_flags="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        CPPFLAGS="$CPPFLAGS -I$freebsd_includedir"
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <sys/param.h>
 #include <linux/types.h>
@@ -9999,7 +10012,7 @@ if test $enable_task_heap = yes -a $enable_stride = yes; then
     $as_echo "#define HAVE_TASK_HEAP 1" >>confdefs.h
 
 elif test $enable_task_heap = yes; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
 =========================================
 
 Ignoring --enable-task-heap, which is incompatible with --disable-stride.
@@ -10053,14 +10066,14 @@ fi
 done
 
     if test $ac_found_valgrind_memcheck_h = no; then
-	as_fn_error $? "
+        as_fn_error $? "
 =========================================
 
 Can't find Valgrind header file 'valgrind/memcheck.h'.
 Try again without '--enable-valgrind'.
 
 =========================================" "$LINENO" 5
-	    fi
+            fi
 
 $as_echo "#define HAVE_VALGRIND 1" >>confdefs.h
 
@@ -10116,15 +10129,15 @@ shell_mkbuild () {
     val=`eval echo '$'"$1"`
     pval="$prefix"
     while test -n "$pval" -a -n "$val"; do
-	component=`echo "$val" | sed 's,^\(/[^/]*\).*,\1,'`
-	pcomponent=`echo "$pval" | sed 's,^\(/[^/]*\).*,\1,'`
-	if test "$component" != "$pcomponent"; then break; fi
-	val=`echo "$val" | sed 's,^/[^/]*,,'`
-	pval=`echo "$pval" | sed 's,^/[^/]*,,'`
+        component=`echo "$val" | sed 's,^\(/[^/]*\).*,\1,'`
+        pcomponent=`echo "$pval" | sed 's,^\(/[^/]*\).*,\1,'`
+        if test "$component" != "$pcomponent"; then break; fi
+        val=`echo "$val" | sed 's,^/[^/]*,,'`
+        pval=`echo "$pval" | sed 's,^/[^/]*,,'`
     done
     while test -n "$pval"; do
-	val="/..$val"
-	pval=`echo "$pval" | sed 's,^/[^/]*,,'`
+        val="/..$val"
+        pval=`echo "$pval" | sed 's,^/[^/]*,,'`
     done
     eval "clickbuild_$1='"'$'"{clickbuild_prefix}$val'"
 }
@@ -10181,8 +10194,8 @@ OTHER_TARGETS=
 
 
 for i in click-align click-check click-combine click-devirtualize click-fastclassifier click-flatten click-ipopt click-mkmindriver click-pretty click-undead click-xform click2xml; do
-    test -d $srcdir/tools/$i &&	\
-	TOOLDIRS="$TOOLDIRS $i" TOOL_TARGETS="$TOOL_TARGETS $i"
+    test -d $srcdir/tools/$i && \
+        TOOLDIRS="$TOOLDIRS $i" TOOL_TARGETS="$TOOL_TARGETS $i"
 done
 for i in click-install; do
     test -d $srcdir/tools/$i && TOOLDIRS="$TOOLDIRS $i"
@@ -10198,13 +10211,13 @@ if test "$enable_userlevel" = yes; then
 
     HAVE_PCAP=yes
     if test "${PCAP_INCLUDES-NO}" = NO; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap.h" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap.h" >&5
 $as_echo_n "checking for pcap.h... " >&6; }
 if ${ac_cv_pcap_header_path+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <pcap.h>
 _ACEOF
@@ -10212,32 +10225,32 @@ if ac_fn_cxx_try_cpp "$LINENO"; then :
   ac_cv_pcap_header_path="found"
 else
   ac_cv_pcap_header_path='not found'
-	    test -r /usr/local/include/pcap/pcap.h && \
-		ac_cv_pcap_header_path='-I/usr/local/include/pcap'
-	    test -r /usr/include/pcap/pcap.h && \
-		ac_cv_pcap_header_path='-I/usr/include/pcap'
+            test -r /usr/local/include/pcap/pcap.h && \
+                ac_cv_pcap_header_path='-I/usr/local/include/pcap'
+            test -r /usr/include/pcap/pcap.h && \
+                ac_cv_pcap_header_path='-I/usr/include/pcap'
 fi
 rm -f conftest.err conftest.i conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pcap_header_path" >&5
 $as_echo "$ac_cv_pcap_header_path" >&6; }
-	if test "$ac_cv_pcap_header_path" = 'not found'; then
-	    HAVE_PCAP=
-	elif test "$ac_cv_pcap_header_path" != 'found'; then
-	    PCAP_INCLUDES="$ac_cv_pcap_header_path"
+        if test "$ac_cv_pcap_header_path" = 'not found'; then
+            HAVE_PCAP=
+        elif test "$ac_cv_pcap_header_path" != 'found'; then
+            PCAP_INCLUDES="$ac_cv_pcap_header_path"
         fi
     fi
 
     if test "$HAVE_PCAP" = yes; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether pcap.h works" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether pcap.h works" >&5
 $as_echo_n "checking whether pcap.h works... " >&6; }
 if ${ac_cv_working_pcap_h+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	    saveflags="$CPPFLAGS"
-	    CPPFLAGS="$saveflags $PCAP_INCLUDES"
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+            saveflags="$CPPFLAGS"
+            CPPFLAGS="$saveflags $PCAP_INCLUDES"
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <pcap.h>
 _ACEOF
@@ -10247,17 +10260,17 @@ else
   ac_cv_working_pcap_h=no
 fi
 rm -f conftest.err conftest.i conftest.$ac_ext
-	    CPPFLAGS="$saveflags"
+            CPPFLAGS="$saveflags"
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_pcap_h" >&5
 $as_echo "$ac_cv_working_pcap_h" >&6; }
-	test "$ac_cv_working_pcap_h" != yes && HAVE_PCAP=
+        test "$ac_cv_working_pcap_h" != yes && HAVE_PCAP=
     fi
 
     if test "$HAVE_PCAP" = yes; then
-	saveflags="$CPPFLAGS"
-	CPPFLAGS="$saveflags $PCAP_INCLUDES"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for bpf_timeval in pcap.h" >&5
+        saveflags="$CPPFLAGS"
+        CPPFLAGS="$saveflags $PCAP_INCLUDES"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for bpf_timeval in pcap.h" >&5
 $as_echo_n "checking for bpf_timeval in pcap.h... " >&6; }
 if ${ac_cv_bpf_timeval+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -10278,12 +10291,12 @@ rm -f conftest*
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_bpf_timeval" >&5
 $as_echo "$ac_cv_bpf_timeval" >&6; }
-	if test "$ac_cv_bpf_timeval" = yes; then
+        if test "$ac_cv_bpf_timeval" = yes; then
 
 $as_echo "#define HAVE_BPF_TIMEVAL 1" >>confdefs.h
 
-	fi
-	ac_fn_cxx_check_decl "$LINENO" "pcap_setnonblock" "ac_cv_have_decl_pcap_setnonblock" "#include <pcap.h>
+        fi
+        ac_fn_cxx_check_decl "$LINENO" "pcap_setnonblock" "ac_cv_have_decl_pcap_setnonblock" "#include <pcap.h>
 "
 if test "x$ac_cv_have_decl_pcap_setnonblock" = xyes; then :
   ac_have_decl=1
@@ -10295,7 +10308,7 @@ cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_PCAP_SETNONBLOCK $ac_have_decl
 _ACEOF
 
-	CPPFLAGS="$saveflags"
+        CPPFLAGS="$saveflags"
     fi
 
     test "$HAVE_PCAP" != yes && PCAP_INCLUDES=
@@ -10304,23 +10317,23 @@ _ACEOF
 
 
     if test "$HAVE_PCAP" = yes; then
-	if test "${PCAP_LIBS-NO}" = NO; then
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -lpcap" >&5
+        if test "${PCAP_LIBS-NO}" = NO; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -lpcap" >&5
 $as_echo_n "checking for -lpcap... " >&6; }
 if ${ac_cv_pcap_library_path+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-		saveflags="$LDFLAGS"
-		savelibs="$LIBS"
-		LIBS="$savelibs -lpcap $SOCKET_LIBS"
-		ac_ext=c
+                saveflags="$LDFLAGS"
+                savelibs="$LIBS"
+                LIBS="$savelibs -lpcap $SOCKET_LIBS"
+                ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 /* Override any GCC internal prototype to avoid an error.
@@ -10342,7 +10355,7 @@ if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_pcap_library_path="found"
 else
   LDFLAGS="$saveflags -L/usr/local/lib"
-		                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+                                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 /* Override any GCC internal prototype to avoid an error.
@@ -10370,29 +10383,29 @@ rm -f core conftest.err conftest.$ac_objext \
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-		LDFLAGS="$saveflags"
-		LIBS="$savelibs"
+                LDFLAGS="$saveflags"
+                LIBS="$savelibs"
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pcap_library_path" >&5
 $as_echo "$ac_cv_pcap_library_path" >&6; }
-	else
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -lpcap in \"$PCAP_LIBS\"" >&5
+        else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -lpcap in \"$PCAP_LIBS\"" >&5
 $as_echo_n "checking for -lpcap in \"$PCAP_LIBS\"... " >&6; }
 if ${ac_cv_pcap_library_path+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-		saveflags="$LDFLAGS"
-		LDFLAGS="$saveflags $PCAP_LIBS"
-		savelibs="$LIBS"
-		LIBS="$savelibs -lpcap $SOCKET_LIBS"
-		ac_ext=c
+                saveflags="$LDFLAGS"
+                LDFLAGS="$saveflags $PCAP_LIBS"
+                savelibs="$LIBS"
+                LIBS="$savelibs -lpcap $SOCKET_LIBS"
+                ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 /* Override any GCC internal prototype to avoid an error.
@@ -10417,19 +10430,19 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-		LDFLAGS="$saveflags"
-		LIBS="$savelibs"
+                LDFLAGS="$saveflags"
+                LIBS="$savelibs"
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pcap_library_path" >&5
 $as_echo "$ac_cv_pcap_library_path" >&6; }
-	fi
+        fi
         if test "$ac_cv_pcap_library_path" = "found"; then
-	    PCAP_LIBS='-lpcap'
-	elif test "$ac_cv_pcap_library_path" != "not found"; then
-	    PCAP_LIBS="$ac_cv_pcap_library_path -lpcap"
-	else
-	    HAVE_PCAP=
-	fi
+            PCAP_LIBS='-lpcap'
+        elif test "$ac_cv_pcap_library_path" != "not found"; then
+            PCAP_LIBS="$ac_cv_pcap_library_path -lpcap"
+        else
+            HAVE_PCAP=
+        fi
     fi
 
     test "$HAVE_PCAP" != yes && PCAP_LIBS=
@@ -10440,9 +10453,9 @@ $as_echo "$ac_cv_pcap_library_path" >&6; }
 $as_echo "#define HAVE_PCAP 1" >>confdefs.h
 
 
-	savelibs="$LIBS"
-	LIBS="$savelibs $PCAP_LIBS"
-	for ac_func in pcap_inject pcap_sendpacket pcap_setdirection pcap_setnonblock
+        savelibs="$LIBS"
+        LIBS="$savelibs $PCAP_LIBS"
+        for ac_func in pcap_inject pcap_sendpacket pcap_setdirection pcap_setnonblock
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -10454,7 +10467,7 @@ _ACEOF
 fi
 done
 
-	LIBS="$savelibs"
+        LIBS="$savelibs"
     fi
 
 
@@ -10468,13 +10481,13 @@ fi
 
 
     if test "$use_netmap" != "yes" -a "$use_netmap" != "no"; then
-	if test "${NETMAP_INCLUDES-NO}" != NO; then
-	    :
-	elif test -f "$use_netmap/net/netmap.h"; then
-	    NETMAP_INCLUDES="-I$use_netmap"
-	elif test -f "$use_netmap/include/net/netmap.h"; then
-	    NETMAP_INCLUDES="-I$use_netmap/include"
-	fi
+        if test "${NETMAP_INCLUDES-NO}" != NO; then
+            :
+        elif test -f "$use_netmap/net/netmap.h"; then
+            NETMAP_INCLUDES="-I$use_netmap"
+        elif test -f "$use_netmap/include/net/netmap.h"; then
+            NETMAP_INCLUDES="-I$use_netmap/include"
+        fi
     fi
     saveflags="$CPPFLAGS"
     CPPFLAGS="$saveflags $NETMAP_INCLUDES"
@@ -10496,17 +10509,17 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 $as_echo "$ac_cv_net_netmap_header_path" >&6; }
 
     if test "$ac_cv_net_netmap_header_path" = "found"; then
-	HAVE_NETMAP=yes
+        HAVE_NETMAP=yes
     fi
 
     if test "$HAVE_NETMAP" = yes; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether net/netmap.h works" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether net/netmap.h works" >&5
 $as_echo_n "checking whether net/netmap.h works... " >&6; }
 if ${ac_cv_working_net_netmap_h+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <net/netmap.h>
 _ACEOF
@@ -10519,7 +10532,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_net_netmap_h" >&5
 $as_echo "$ac_cv_working_net_netmap_h" >&6; }
-	test "$ac_cv_working_net_netmap_h" != yes && HAVE_NETMAP=
+        test "$ac_cv_working_net_netmap_h" != yes && HAVE_NETMAP=
     fi
 
     CPPFLAGS="$saveflags"
@@ -10531,7 +10544,7 @@ $as_echo "#define HAVE_NET_NETMAP_H 1" >>confdefs.h
 
 
     if test "$HAVE_PCAP" != yes -a "$HAVE_NETMAP" != yes -a "$ac_cv_under_linux" != yes; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
 =========================================
 
 pcap.h and/or -lpcap not found; user-level driver can't steal packets.
@@ -10543,7 +10556,7 @@ $as_echo "$as_me: WARNING:
 pcap.h and/or -lpcap not found; user-level driver can't steal packets.
 
 =========================================" >&2;}
-	    fi
+            fi
     DRIVERS="$DRIVERS userlevel"
     $as_echo "#define HAVE_USERLEVEL_DRIVER 1" >>confdefs.h
 
@@ -10700,13 +10713,13 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
     if test $have_prop_h = yes -a $have_libproper = yes; then
-	$as_echo "#define HAVE_PROPER 1" >>confdefs.h
+        $as_echo "#define HAVE_PROPER 1" >>confdefs.h
 
-	test -n "$properprefix" && PROPER_INCLUDES="-I$properprefix/include" && PROPER_LIBS="-L$properprefix/lib"
-	PROPER_LIBS="$PROPER_LIBS -lproper"
+        test -n "$properprefix" && PROPER_INCLUDES="-I$properprefix/include" && PROPER_LIBS="-L$properprefix/lib"
+        PROPER_LIBS="$PROPER_LIBS -lproper"
     elif test $explicit_proper = yes; then
-	PROPER_INCLUDES= PROPER_LIBS=
-	as_fn_error $? "
+        PROPER_INCLUDES= PROPER_LIBS=
+        as_fn_error $? "
 =========================================
 
 You explicitly specified --with-proper, but the proper headers and/or
@@ -10796,14 +10809,14 @@ fi
     LDFLAGS="$saveflags"
 
     if test $have_expat_h = yes -a $have_libexpat = yes; then
-	$as_echo "#define HAVE_EXPAT 1" >>confdefs.h
+        $as_echo "#define HAVE_EXPAT 1" >>confdefs.h
 
-	XML2CLICK=xml2click
-	test -n "$expatprefix" && EXPAT_INCLUDES="-I$expatprefix/include" && EXPAT_LIBS="-L$expatprefix/lib"
-	EXPAT_LIBS="$EXPAT_LIBS -lexpat"
+        XML2CLICK=xml2click
+        test -n "$expatprefix" && EXPAT_INCLUDES="-I$expatprefix/include" && EXPAT_LIBS="-L$expatprefix/lib"
+        EXPAT_LIBS="$EXPAT_LIBS -lexpat"
     elif test $explicit_expat = yes; then
-	EXPAT_INCLUDES= EXPAT_LIBS=
-	as_fn_error $? "
+        EXPAT_INCLUDES= EXPAT_LIBS=
+        as_fn_error $? "
 =========================================
 
 You explicitly specified --with-expat, but the expat headers and/or libraries
@@ -10833,72 +10846,72 @@ if test $ac_have_linux_kernel = y; then
 
         linux_makeargs=
     if test -n "$ARCH"; then
-	linux_makeargs="$linux_makeargs ARCH=$ARCH"
+        linux_makeargs="$linux_makeargs ARCH=$ARCH"
     fi
     if test -n "$CROSS_COMPILE"; then
-	linux_makeargs="$linux_makeargs CROSS_COMPILE=$CROSS_COMPILE"
+        linux_makeargs="$linux_makeargs CROSS_COMPILE=$CROSS_COMPILE"
     elif test -n "$ac_tool_prefix"; then
-	linux_makeargs="$linux_makeargs CROSS_COMPILE=$ac_tool_prefix"
+        linux_makeargs="$linux_makeargs CROSS_COMPILE=$ac_tool_prefix"
     fi
 
 
         LINUX_DEBUG_FLAGS=
     if test -n "$LINUX_CFLAGS"; then
-	:
+        :
     elif test $LINUXMODULE_2_6 = 1; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Linux kernel compilation flags" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Linux kernel compilation flags" >&5
 $as_echo_n "checking for Linux kernel compilation flags... " >&6; }
-	echo >conftest.c
-	make -C $linux_builddir M="`pwd`" $linux_makeargs --no-print-directory -p conftest.o >conftest.dat 2>&1
-	for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS LINUXINCLUDE debug_flags; do
-	    eval l$v="'""`grep ^$v' *:*=' conftest.dat | sed s/^$v' *:*= *//'`""'"
-	done
-	if test -z "$lKBUILD_CPPFLAGS$lKBUILD_CFLAGS$lCPPFLAGS$lCFLAGS$lLINUXINCLUDE"; then
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+        echo >conftest.c
+        make -C $linux_builddir M="`pwd`" $linux_makeargs --no-print-directory -p conftest.o >conftest.dat 2>&1
+        for v in KBUILD_CPPFLAGS KBUILD_CFLAGS CPPFLAGS CFLAGS LINUXINCLUDE debug_flags; do
+            eval l$v="'""`grep ^$v' *:*=' conftest.dat | sed s/^$v' *:*= *//'`""'"
+        done
+        if test -z "$lKBUILD_CPPFLAGS$lKBUILD_CFLAGS$lCPPFLAGS$lCFLAGS$lLINUXINCLUDE"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-	    as_fn_error $? "
+            as_fn_error $? "
 ==============================================
 
 Can't find Linux compilation flags.
 
 ==============================================" "$LINENO" 5
-	    	fi
-	echo "$lCPPFLAGS $lCFLAGS $lLINUXINCLUDE $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
-	LINUX_CFLAGS="`sed -e 's,-Iinclude ',-I$linux_builddir/include' ,g' \
-	    -e 's,-Iinclude2 ',-I$linux_builddir/include2' ,g' \
-	    -e 's,-Iarch/',-I$linux_builddir/arch/',g' \
-	    -e 's, include/, '$linux_builddir/include/,g \
-	    -e s,-Iinclude/,-I${linux_srcdir}include/,g \
-	    -e s,-Wno-pointer-sign,,g \
-	    -e s,-fno-unit-at-a-time,,g \
-	    -e s,-Wstrict-prototypes,,g \
-	    -e s,-Wdeclaration-after-statement,,g \
-	    -e s,-fno-common,,g \
-	    -e s,-Werror-implicit-function-declaration,,g \
-	    -e 's,-W^ *,,g' <conftest.dat`"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $LINUX_CFLAGS" >&5
+                    fi
+        echo "$lCPPFLAGS $lCFLAGS $lLINUXINCLUDE $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
+        LINUX_CFLAGS="`sed -e 's,-Iinclude ',-I$linux_builddir/include' ,g' \
+            -e 's,-Iinclude2 ',-I$linux_builddir/include2' ,g' \
+            -e 's,-Iarch/',-I$linux_builddir/arch/',g' \
+            -e 's, include/, '$linux_builddir/include/,g \
+            -e s,-Iinclude/,-I${linux_srcdir}include/,g \
+            -e s,-Wno-pointer-sign,,g \
+            -e s,-fno-unit-at-a-time,,g \
+            -e s,-Wstrict-prototypes,,g \
+            -e s,-Wdeclaration-after-statement,,g \
+            -e s,-fno-common,,g \
+            -e s,-Werror-implicit-function-declaration,,g \
+            -e 's,-W^ *,,g' <conftest.dat`"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LINUX_CFLAGS" >&5
 $as_echo "$LINUX_CFLAGS" >&6; }
-	LINUX_DEBUG_FLAGS="$ldebug_flags"
+        LINUX_DEBUG_FLAGS="$ldebug_flags"
     fi
 
     LINUX_FIXINCLUDES_PROGRAM=
     CLICKLINUX_FIXINCLUDES_PROGRAM=
     if test "$LINUXMODULE_FIXINCLUDES" = 1; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: making C++-safe versions of Linux kernel headers (may take a while)" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: making C++-safe versions of Linux kernel headers (may take a while)" >&5
 $as_echo "$as_me: making C++-safe versions of Linux kernel headers (may take a while)" >&6;}
-	mydir="`pwd`/include/click-linuxmodule"
-	$srcdir/linuxmodule/fixincludes.pl -o "$mydir" $LINUX_CFLAGS >conftest.dat
-	if test $? != 0; then
-	    as_fn_error $? "
+        mydir="`pwd`/include/click-linuxmodule"
+        $srcdir/linuxmodule/fixincludes.pl -o "$mydir" $LINUX_CFLAGS >conftest.dat
+        if test $? != 0; then
+            as_fn_error $? "
 ==============================================
 
 fixincludes.pl execution failed.
 
 ==============================================" "$LINENO" 5
-	fi
-	LINUX_CFLAGS="`head -n 1 conftest.dat`"
-	LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
-	CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s	$mydir	$clickbuild_includedir/click-linuxmodule	g"`"
+        fi
+        LINUX_CFLAGS="`head -n 1 conftest.dat`"
+        LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
+        CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s       $mydir  $clickbuild_includedir/click-linuxmodule        g"`"
     fi
 
 
@@ -10916,7 +10929,7 @@ fixincludes.pl execution failed.
 
 $as_echo "#define HAVE_CHECK_AUTOCONF_INCLUDED 1" >>confdefs.h
 
-	linux_autoconf_include="#if !defined(AUTOCONF_INCLUDED)
+        linux_autoconf_include="#if !defined(AUTOCONF_INCLUDED)
 # include <linux/autoconf.h>
 #endif
 "
@@ -10935,7 +10948,7 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -10978,13 +10991,13 @@ fi
 $as_echo "$ac_cv_cxx_aware_system" >&6; }
 
     if test $ac_cv_cxx_aware_system = yes; then
-	DRIVERS="$DRIVERS linuxmodule"
-	TOOL_TARGETS="$TOOL_TARGETS click-install"
-	$as_echo "#define HAVE_LINUXMODULE_DRIVER 1" >>confdefs.h
+        DRIVERS="$DRIVERS linuxmodule"
+        TOOL_TARGETS="$TOOL_TARGETS click-install"
+        $as_echo "#define HAVE_LINUXMODULE_DRIVER 1" >>confdefs.h
 
-	HAVE_LINUXMODULE_DRIVER=1
+        HAVE_LINUXMODULE_DRIVER=1
     elif test x$enable_linuxmodule_default = xyes; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
 =========================================
 
 Your Linux kernel header files cause errors when included by a C++ program,
@@ -11012,8 +11025,8 @@ mailing list, or, even better, try to fix the error. See the config.log
 file for more information on the error.
 
 =========================================" >&2;}
-	    else
-	as_fn_error $? "
+            else
+        as_fn_error $? "
 =========================================
 
 Your Linux kernel header files cause errors when included by a C++ program.
@@ -11301,7 +11314,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11356,7 +11369,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11413,7 +11426,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11468,7 +11481,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11523,7 +11536,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11578,7 +11591,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11633,7 +11646,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11688,7 +11701,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11743,7 +11756,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11798,7 +11811,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11853,7 +11866,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11975,7 +11988,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -12064,7 +12077,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -12375,7 +12388,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -12465,7 +12478,7 @@ fi
 if test $ac_have_bsd_kernel = y; then
     DRIVERS="$DRIVERS bsdmodule"
     if echo "$DRIVERS" | grep linuxmodule >/dev/null 2>&1; then :; else
-	TOOL_TARGETS="$TOOL_TARGETS click-install"
+        TOOL_TARGETS="$TOOL_TARGETS click-install"
     fi
     $as_echo "#define HAVE_BSDMODULE_DRIVER 1" >>confdefs.h
 
@@ -12594,12 +12607,12 @@ test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 $as_echo_n "checking whether install accepts -C... " >&6; }
     echo X > conftest.1
     if $INSTALL -C conftest.1 conftest.2 >/dev/null 2>&1; then
-	INSTALL_IF_CHANGED='${INSTALL} -C'
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+        INSTALL_IF_CHANGED='${INSTALL} -C'
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
     else
-	INSTALL_IF_CHANGED='${top_builddir}/installch'
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        INSTALL_IF_CHANGED='${top_builddir}/installch'
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
     fi
     rm -f conftest.1 conftest.2
@@ -12613,24 +12626,24 @@ $as_echo "no" >&6; }
 
 
     if test "${GMAKE-NO}" = NO; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for GNU make" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GNU make" >&5
 $as_echo_n "checking for GNU make... " >&6; }
 if ${ac_cv_gnu_make+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   if /bin/sh -c 'make -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
-	    ac_cv_gnu_make='make'
-	elif /bin/sh -c 'gmake -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
-	    ac_cv_gnu_make='gmake'
-	else
-	    ac_cv_gnu_make='not found'
-	fi
+            ac_cv_gnu_make='make'
+        elif /bin/sh -c 'gmake -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
+            ac_cv_gnu_make='gmake'
+        else
+            ac_cv_gnu_make='not found'
+        fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_gnu_make" >&5
 $as_echo "$ac_cv_gnu_make" >&6; }
-	test "$ac_cv_gnu_make" != 'not found' && GMAKE="$ac_cv_gnu_make"
+        test "$ac_cv_gnu_make" != 'not found' && GMAKE="$ac_cv_gnu_make"
     else
-	/bin/sh -c '$GMAKE -f /dev/null -n --version | grep GNU' >/dev/null 2>&1 || GMAKE=''
+        /bin/sh -c '$GMAKE -f /dev/null -n --version | grep GNU' >/dev/null 2>&1 || GMAKE=''
     fi
 
     SUBMAKE=''
@@ -12643,17 +12656,17 @@ $as_echo "$ac_cv_gnu_make" >&6; }
 $as_echo_n "checking for working autoconf... " >&6; }
     AUTOCONF="${AUTOCONF-autoconf}"
     if ($AUTOCONF --version) < /dev/null > conftest.out 2>&1; then
-	if test `head -n 1 conftest.out | sed 's/.*2\.\([0-9]*\).*/\1/'` -ge 13 2>/dev/null; then
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: found" >&5
+        if test `head -n 1 conftest.out | sed 's/.*2\.\([0-9]*\).*/\1/'` -ge 13 2>/dev/null; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: found" >&5
 $as_echo "found" >&6; }
-	else
-	    AUTOCONF='$(conf_auxdir)/missing autoconf'
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: old" >&5
+        else
+            AUTOCONF='$(conf_auxdir)/missing autoconf'
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: old" >&5
 $as_echo "old" >&6; }
-	fi
+        fi
     else
-	AUTOCONF='$(conf_auxdir)/missing autoconf'
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: missing" >&5
+        AUTOCONF='$(conf_auxdir)/missing autoconf'
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: missing" >&5
 $as_echo "missing" >&6; }
     fi
 
@@ -12662,7 +12675,7 @@ $as_echo "missing" >&6; }
         ac_foo=`echo 'exit($A<5);' | tr A \135`
 
     if test "${PERL-NO}" = NO; then
-	for ac_prog in perl5 perl
+        for ac_prog in perl5 perl
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -12705,9 +12718,9 @@ fi
 done
 test -n "$perl5" || perl5="missing"
 
-	test "$perl5" != missing && $perl5 -e "$ac_foo" && perl5=missing
-	if test "$perl5" = missing; then
-	    for ac_prog in perl5 perl
+        test "$perl5" != missing && $perl5 -e "$ac_foo" && perl5=missing
+        if test "$perl5" = missing; then
+            for ac_prog in perl5 perl
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -12750,19 +12763,19 @@ fi
 done
 test -n "$localperl5" || localperl5="missing"
 
-	    test "$localperl5" != missing && \
-		perl5="/usr/local/bin/$localperl5"
-	fi
+            test "$localperl5" != missing && \
+                perl5="/usr/local/bin/$localperl5"
+        fi
     else
-	perl5="$PERL"
+        perl5="$PERL"
     fi
 
     test "$perl5" != missing && $perl5 -e "$ac_foo" && perl5=missing
 
     if test "$perl5" = "missing"; then
-	PERL='$(conf_auxdir)/missing perl'
+        PERL='$(conf_auxdir)/missing perl'
     else
-	PERL="$perl5"
+        PERL="$perl5"
     fi
 
 
@@ -13015,11 +13028,11 @@ $as_echo_n "checking for working makeinfo... " >&6; }
 MAKEINFO=${MAKEINFO-makeinfo}
 if ($MAKEINFO --version) < /dev/null > conftest.out 2>&1; then
     if test `head -n 1 conftest.out | sed 's/^.* \([0-9][0-9]*\).*$/\1/'` -ge 4; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: found" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: found" >&5
 $as_echo "found" >&6; }
     else
-	MAKEINFO='$(conf_auxdir)/missing makeinfo'
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: old" >&5
+        MAKEINFO='$(conf_auxdir)/missing makeinfo'
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: old" >&5
 $as_echo "old" >&6; }
     fi
 else
@@ -13033,11 +13046,11 @@ $as_echo_n "checking for working texi2dvi... " >&6; }
 TEXI2DVI=${TEXI2DVI-texi2dvi}
 if ($TEXI2DVI --version) < /dev/null > conftest.out 2>&1; then
         if test `head -n 1 conftest.out | sed 's/.*Texinfo \([0-9][0-9]*\).*/\1/'` -ge 4; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: found" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: found" >&5
 $as_echo "found" >&6; }
     else
-	TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: old" >&5
+        TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: old" >&5
 $as_echo "old" >&6; }
     fi
 else
@@ -13176,11 +13189,11 @@ fi
 
 if test $ac_have_linux_kernel = y; then
     if test $linux_version_code -ge 131584 -a $linux_version_code -lt 131840; then
-	provisions="$provisions linux_2_2"
+        provisions="$provisions linux_2_2"
     elif test $linux_version_code -ge 132096 -a $linux_version_code -lt 132352; then
-	provisions="$provisions linux_2_4"
+        provisions="$provisions linux_2_4"
     elif test $linux_version_code -ge 132608 -a $linux_version_code -lt 132864; then
-	provisions="$provisions linux_2_6"
+        provisions="$provisions linux_2_6"
     fi
 fi
 
