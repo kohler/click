@@ -166,6 +166,7 @@ private:
     Task            _task;
     NotifierSignal  _signal;
     volatile bool   _exit;
+    atomic_uint32_t _use_count;
     // related to device management
     ulong                  _dev_major;
     ulong                  _dev_minor;
