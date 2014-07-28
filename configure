@@ -10906,7 +10906,8 @@ fixincludes.pl execution failed.
 
 
     # -w inhibits warning messages to make debugging actual errors easier
-    CPPFLAGS="$save_cppflags $LINUX_CFLAGS -w"
+    echo "$save_cppflags $LINUX_CFLAGS -w" >conftest.dat
+    CPPFLAGS="`sed -e s,-Werror=strict-prototypes,, <conftest.dat`"
 
 
     # CLICK_LINUXMODULE_PROLOGUE()
@@ -11028,7 +11029,8 @@ file for more information on the error.
     fi
 
     # remove -w
-    CPPFLAGS="$save_cppflags $LINUX_CFLAGS"
+    echo "$save_cppflags $LINUX_CFLAGS" >conftest.dat
+    CPPFLAGS="`sed -e s,-Werror=strict-prototypes,,g <conftest.dat`"
 
     if test $ac_cv_cxx_aware_system = yes; then
 

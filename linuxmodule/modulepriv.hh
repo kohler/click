@@ -73,8 +73,13 @@ struct click_fsmode_t {
     int write;
     int exec;
     int dir;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+    kuid_t uid;
+    kgid_t gid;
+#else
     uid_t uid;
     gid_t gid;
+#endif
 };
 extern click_fsmode_t click_fsmode;
 

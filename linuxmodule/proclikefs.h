@@ -29,8 +29,8 @@ void proclikefs_unregister_filesystem(struct proclikefs_file_system *);
 void proclikefs_read_super(struct super_block *);
 void proclikefs_put_super(struct super_block *);
 
-struct file_operations *proclikefs_new_file_operations(struct proclikefs_file_system *);
-struct inode_operations *proclikefs_new_inode_operations(struct proclikefs_file_system *);
+struct file_operations *proclikefs_new_file_operations(struct proclikefs_file_system *pfs, const char *name);
+struct inode_operations *proclikefs_new_inode_operations(struct proclikefs_file_system *pfs, const char *name);
 
 #ifdef __cplusplus
 }

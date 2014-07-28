@@ -401,10 +401,16 @@ sub one_includeroot ($$) {
 		s<^(\s+)(proc_handler \*proc_handler;.*)$><#ifdef __cplusplus\n$1::$2\n#else\n$1$2\n#endif>m;
 	    }
 
-	    if ($d eq "fs.h") {
-		s<enum migrate_mode;><enum migrate_mode \{MIGRATE_DUMMY\};>;
+	    if ($d eq "fs.h" || $d eq "netfilter.h") {
+		s<enum (migrate_mode|ip_conntrack_info);><enum $1 \{$1_DUMMY\};>;
 	    }
+            if ($d eq "context_tracking_state.h") {
+                s<(struct.*?\{[^}]*)enum\s+(\w+)(\s*[^{]*[{][^}]*[}])(\s*\w+)><enum $2$3;\n$1enum $2$4>;
+            }
 
+            if ($d eq "filter.h") {
+                s<offsetof\(([^,]*),\s*(\w+)\s*\[\s*([a-zA-Z]\w*)\s*\]\s*\)><(offsetof($1, $2) + sizeof((($1*) 0)-\>$2\[0]) * $3)>;
+            }
             if ($d eq "uaccess.h" || $d eq "syscalls.h") {
                 s<^#define (.*?) \\\n__typeof__\(__builtin_choose_expr\((.*?), (.*?), (.*?)\)\)(.*)><#if __cplusplus\n#define $1 typename click_conditional<($2), __typeof($3), __typeof($4)>::type$5\n#else\n#define $1 __typeof__(__builtin_choose_expr($2, $3, $4))$5\n#endif>m;
             }

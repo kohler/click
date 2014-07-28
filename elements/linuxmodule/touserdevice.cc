@@ -102,14 +102,14 @@ ToUserDevice::~ToUserDevice()
 {
 }
 
-extern struct file_operations *click_new_file_operations();
+extern struct file_operations *click_new_file_operations(const char* name);
 
 void
 ToUserDevice::static_initialize()
 {
     spin_lock_init(&userdevice_lock);
 
-    if ((dev_fops = click_new_file_operations())) {
+    if ((dev_fops = click_new_file_operations("ToUserDev"))) {
 	dev_fops->read	  = dev_read;
 	dev_fops->write	  = dev_write;
 	dev_fops->poll	  = dev_poll;

@@ -329,8 +329,14 @@ init_module()
     }
     click_fsmode.write = S_IWUSR | S_IWGRP;
     click_fsmode.dir = S_IFDIR | click_fsmode.read | click_fsmode.exec;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+    struct user_namespace* user_ns = current_user_ns();
+    click_fsmode.uid = make_kuid(user_ns, click_parm(CLICKPARM_UID));
+    click_fsmode.gid = make_kgid(user_ns, click_parm(CLICKPARM_GID));
+#else
     click_fsmode.uid = click_parm(CLICKPARM_UID);
     click_fsmode.gid = click_parm(CLICKPARM_GID);
+#endif
 
     init_clickfs();
 
