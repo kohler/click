@@ -144,7 +144,7 @@ Options:\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
-Report bugs to <click@pdos.lcs.mit.edu>.\n");
+Report bugs to <click@librelist.com>.\n");
 }
 
 static Router *router;

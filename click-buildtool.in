@@ -84,7 +84,7 @@ Options:
   -n, --length=N           Set maximum symbol length to N.
   -h, --help               Print this message and exit.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click@librelist.com>.
 EOF
 	exit 0;;
     *)
@@ -192,7 +192,7 @@ Usage: click-buildtool compile-shortensyms [BUILD COMMAND]
 Options:
   -h, --help               Print this message and exit.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click@librelist.com>.
 EOF
 	exit 0;;
     *)
@@ -351,7 +351,7 @@ Options:
       --checksum FILE        Write checksum data to FILE.
   -h, --help                 Print this message and exit.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click@librelist.com>.
 EOF
 	exit 0;;
     *)
@@ -775,7 +775,7 @@ Options:
   -V, --verbose            Print more information.
   -h, --help               Print this message and exit.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click@librelist.com>.
 EOF
 	exit 0;;
     *)
@@ -962,7 +962,7 @@ Options:
   -V, --verbose            Print more information.
   -h, --help               Print this message and exit.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click@librelist.com>.
 EOF
 	exit 0;;
     -*)
@@ -1160,7 +1160,7 @@ Options:
   -l, --print              Print 0 (REQs not provided) or 1 (REQs provided).
   -h, --help               Print this message and exit.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click@librelist.com>.
 EOF
 	exit 0;;
     -)
@@ -1211,7 +1211,7 @@ Usage: ld ... 2>&1 | click-buildtool quietlink
 Options:
   -h, --help                 Print this message and exit.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click@librelist.com>.
 EOF
 	exit 0;;
     *)
@@ -1265,7 +1265,7 @@ Usage: click-buildtool prefix
 Options:
   -h, --help                 Print this message and exit.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click@librelist.com>.
 EOF
 	exit 0;;
     *)
@@ -1305,7 +1305,7 @@ Options:
                            no license).
   -h, --help               Print this message and exit.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click@librelist.com>.
 EOF
 	exit 0;;
     *)
@@ -1353,7 +1353,7 @@ Usage: click-buildtool kbuild > Kbuild
 Options:
   -h, --help               Print this message and exit.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click@librelist.com>.
 EOF
 	exit 0;;
     *)
@@ -1425,7 +1425,7 @@ Options:
   -h, --help               Print this message and exit.
   -[other options]         Passed to the C/C++ compiler.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click@librelist.com>.
 EOF
 	exit 0;;
     -*)
@@ -1531,7 +1531,7 @@ Options:
   -C, --directory DIR      Switch to DIR directory before running.
   -h, --help               Print this message and exit.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click@librelist.com>.
 EOF
 	exit 0;;
     *)
@@ -1632,7 +1632,7 @@ Options:
   -C, --clickprefix PFX    Set the prefix for locating data files.
       --version            Print version number and exit.
 
-Report bugs to <click@pdos.lcs.mit.edu>.
+Report bugs to <click@librelist.com>.
 EOF
      exit 0;;
   findelem)

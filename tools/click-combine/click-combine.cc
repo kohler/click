@@ -92,7 +92,7 @@ Options:\n\
       --help             Print this message and exit.\n\
   -v, --version          Print version number and exit.\n\
 \n\
-Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
+Report bugs to <click@librelist.com>.\n", program_name);
 }
 
 static Vector<String> router_names;

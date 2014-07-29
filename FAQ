@@ -63,7 +63,7 @@ A. Benjie Chen, who designed the extensions, never wrote a document
    describing how to do this.  For now, you'll have to look at our
    additions to Linux's 'struct device', and the way they are used by our
    drivers.  You can always write us and ask for help:
-   <click@pdos.lcs.mit.edu>.
+   <click@librelist.com>.
 
 
 Q. Can I use Click without updating device drivers (that is, without

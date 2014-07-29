@@ -173,7 +173,7 @@ int
 KernelTun::alloc_tun(ErrorHandler *errh)
 {
 #if !KERNELTUN_LINUX && !KERNELTUN_NET && !KERNELTUN_OSX && !KERNELTAP_NET
-    return errh->error("%s is not yet supported on this system.\n(Please report this message to click@pdos.lcs.mit.edu.)", class_name());
+    return errh->error("%s is not yet supported on this system.\n(Please report this message to click@librelist.com.)", class_name());
 #endif
 
     int error, saved_error = 0;
