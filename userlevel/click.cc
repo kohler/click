@@ -122,7 +122,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
   -e, --expression EXPR         Use EXPR as router configuration.\n\
-  -j, --threads N               Start N threads (default 1).\n");
+  -j, --threads N               Start N threads (default 1).\n", program_name);
 #if HAVE_DECL_PTHREAD_SETAFFINITY_NP
     printf("\
   -a, --affinity                Pin threads to CPUs (default no).\n");
@@ -144,7 +144,7 @@ Options:\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
-Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
+Report bugs to <click@pdos.lcs.mit.edu>.\n");
 }
 
 static Router *router;
