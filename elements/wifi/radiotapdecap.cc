@@ -73,6 +73,9 @@ static int rt_check_header(struct ieee80211_radiotap_header *th, int len, u_int8
 
 	for (x = 0; x < NUM_RADIOTAP_ELEMENTS; x++) {
 		if (rt_el_present(th, x)) {
+		    int pad = bytes % radiotap_elem_to_bytes[x];
+		    if (pad)
+			bytes += radiotap_elem_to_bytes[x] - pad;
 		    offsets[x] = ptr + bytes;
 		    bytes += radiotap_elem_to_bytes[x];
 		}
