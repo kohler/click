@@ -36,12 +36,14 @@ int
 VLANEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String tci_word;
+    _ethertype = ETHERTYPE_8021Q;
     int tci = -1, id = 0, pcp = 0, native_vlan = 0;
     if (Args(conf, this, errh)
 	.read_p("VLAN_TCI", WordArg(), tci_word)
 	.read_p("VLAN_PCP", BoundedIntArg(0, 7), pcp)
 	.read("VLAN_ID", BoundedIntArg(0, 0xFFF), id)
 	.read("NATIVE_VLAN", BoundedIntArg(-1, 0xFFF), native_vlan)
+	.read("ETHERTYPE", _ethertype)
 	.complete() < 0)
 	return -1;
     if (tci_word && !tci_word.equals("ANNO", 4)
@@ -68,7 +70,7 @@ VLANEncap::simple_action(Packet *p)
     } else if (WritablePacket *q = p->push(4)) {
 	memmove(q->data(), q->data() + 4, 12);
 	click_ether_vlan *vlan = reinterpret_cast<click_ether_vlan *>(q->data());
-	vlan->ether_vlan_proto = htons(ETHERTYPE_8021Q);
+	vlan->ether_vlan_proto = htons(_ethertype);
 	vlan->ether_vlan_tci = tci;
 	q->set_mac_header(q->data(), sizeof(vlan));
 	return q;
@@ -113,6 +115,8 @@ VLANEncap::add_handlers()
     add_write_handler("vlan_pcp", reconfigure_keyword_handler, "VLAN_PCP");
     add_read_handler("native_vlan", read_keyword_handler, "NATIVE_VLAN");
     add_write_handler("native_vlan", reconfigure_keyword_handler, "NATIVE_VLAN");
+    add_read_handler("ethertype", read_keyword_handler, "ETHERTYPE");
+    add_write_handler("ethertype", reconfigure_keyword_handler, "ETHERTYPE");
 }
 
 CLICK_ENDDECLS
