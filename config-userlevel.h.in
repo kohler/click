@@ -217,6 +217,9 @@
 /* Define if you have the <valgrind/memcheck.h> header file. */
 #undef HAVE_VALGRIND_MEMCHECK_H
 
+/* Define to 1 to enable Click Packet tracing. */
+#undef HAVE_PACKET_TRACING
+
 /* Define if you have the vsnprintf function. */
 #undef HAVE_VSNPRINTF
 
