@@ -240,7 +240,7 @@ class Element { public:
 #if CLICK_STATS >= 1
 	mutable unsigned _packets;	// How many packets have we moved?
 #endif
-#if CLICK_STATS >= 2
+#if CLICK_STATS >= 2 || HAVE_PACKET_TRACING
 	Element* _owner;		// Whose input or output are we?
 #endif
 
@@ -515,12 +515,18 @@ Element::input_is_push(int port) const
 	&& !_ports[0][port].active();
 }
 
+#if HAVE_PACKET_TRACING
+# define OWNER_ASSIGN(o) _owner = (o)
+#else
+# define OWNER_ASSIGN(o) (void) (o)
+#endif
+
 #if CLICK_STATS >= 2
 # define PORT_ASSIGN(o) _packets = 0; _owner = (o)
 #elif CLICK_STATS >= 1
-# define PORT_ASSIGN(o) _packets = 0; (void) (o)
+# define PORT_ASSIGN(o) _packets = 0; OWNER_ASSIGN(o)
 #else
-# define PORT_ASSIGN(o) (void) (o)
+# define PORT_ASSIGN(o) OWNER_ASSIGN(o)
 #endif
 
 inline
@@ -609,6 +615,11 @@ inline void
 Element::Port::push(Packet* p) const
 {
     assert(_e && p);
+#if HAVE_PACKET_TRACING
+    if (p->traced())
+	click_chatter("traced_packet: %s [%td] -> [%d] %s\n", _owner->name().c_str(), this - _owner->_ports[1],
+							    (int) _port, _e->name().c_str());
+#endif
 #if CLICK_STATS >= 1
     ++_packets;
 #endif
@@ -680,6 +691,11 @@ Element::Port::pull() const
 #if CLICK_STATS >= 1
     if (p)
 	++_packets;
+#endif
+#if HAVE_PACKET_TRACING
+    if (p && p->traced())
+	click_chatter("traced_packet: %s [%d] -> [%td] %s \n", _e->name().c_str(), (int) _port,
+							      this - _owner->_ports[0], _owner->name().c_str());
 #endif
     return p;
 }

@@ -684,6 +684,11 @@ class Packet { public:
     inline void set_user_anno_u(int, uint32_t) CLICK_DEPRECATED;
     /** @endcond never */
 
+    inline bool traced();
+    inline bool set_traced(bool preempt);
+    inline bool unset_traced();
+    static inline void clear_traced();
+
   private:
 
     // Anno must fit in sk_buff's char cb[48].
@@ -738,6 +743,10 @@ class Packet { public:
     buffer_destructor_type _destructor;
     void* _destructor_argument;
 # endif
+#endif
+
+#if HAVE_PACKET_TRACING
+    static void *_traced_packet;
 #endif
 
     inline Packet() {
@@ -1323,6 +1332,56 @@ Packet::set_packet_type_anno(PacketType p)
 #endif
 }
 
+inline bool
+Packet::traced()
+{
+#if HAVE_PACKET_TRACING
+    return this == _traced_packet;
+#else
+    return false;
+#endif
+}
+
+inline bool
+Packet::set_traced(bool preempt)
+{
+#if HAVE_PACKET_TRACING
+    if (!_traced_packet || preempt) {
+	if (_traced_packet) {
+	    if (_traced_packet == this)
+		click_chatter("traced_packet: restarted traced packet\n");
+	    else
+		click_chatter("traced_packet: switched traced packet\n");
+	}
+	_traced_packet = this;
+	return true;
+    }
+#else
+    (void) preempt;
+#endif
+    return false;
+}
+
+inline bool
+Packet::unset_traced()
+{
+#if HAVE_PACKET_TRACING
+    if (this == _traced_packet) {
+	_traced_packet = 0;
+	return true;
+    }
+#endif
+    return false;
+}
+
+inline void
+Packet::clear_traced()
+{
+#if HAVE_PACKET_TRACING
+    _traced_packet = 0;
+#endif
+}
+
 /** @brief Create and return a new packet.
  * @param data data to be copied into the new packet
  * @param length length of packet
@@ -1408,6 +1467,8 @@ Packet::make(struct sk_buff *skb)
 inline void
 Packet::kill()
 {
+    if (unset_traced())
+	click_chatter("traced_packet: killed\n");
 #if CLICK_LINUXMODULE
     struct sk_buff *b = skb();
     b->next = b->prev = 0;

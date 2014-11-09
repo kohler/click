@@ -1003,4 +1003,8 @@ Packet::static_cleanup()
 #endif
 }
 
+#if HAVE_PACKET_TRACING
+void *Packet::_traced_packet = 0;
+#endif
+
 CLICK_ENDDECLS
