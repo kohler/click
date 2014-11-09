@@ -760,6 +760,7 @@ class Packet { public:
 
 #if !CLICK_LINUXMODULE
     bool alloc_data(uint32_t headroom, uint32_t length, uint32_t tailroom);
+    inline void dec_use_count();
 #endif
 #if CLICK_BSDMODULE
     static void assimilate_mbuf(Packet *p);
@@ -1476,14 +1477,24 @@ Packet::kill()
     b->list = 0;
 # endif
     skbmgr_recycle_skbs(b);
-#elif HAVE_CLICK_PACKET_POOL
-    if (_use_count.dec_and_test())
-	WritablePacket::recycle(static_cast<WritablePacket *>(this));
 #else
-    if (_use_count.dec_and_test())
-	delete this;
+    dec_use_count();
 #endif
 }
+
+#if !CLICK_LINUXMODULE
+inline void
+Packet::dec_use_count()
+{
+# if HAVE_CLICK_PACKET_POOL
+    if (_use_count.dec_and_test())
+	WritablePacket::recycle(static_cast<WritablePacket *>(this));
+# else
+    if (_use_count.dec_and_test())
+	delete this;
+# endif
+}
+#endif
 
 #if CLICK_BSDMODULE		/* BSD kernel module */
 inline void
