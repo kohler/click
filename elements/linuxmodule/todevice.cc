@@ -364,6 +364,7 @@ ToDevice::run_task(Task *)
 	    if (!tx_trylock(dev, txq)) {
 	        _task.reschedule();
 	        _q = p;
+	        _q_expiry_j = click_jiffies() + queue_timeout;
 	        goto bail;
             }
         }
