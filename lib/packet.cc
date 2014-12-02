@@ -654,16 +654,19 @@ Packet::clone()
 # endif
     if (!p)
 	return 0;
+    Packet* origin = this;
+    if (origin->_data_packet)
+        origin = origin->_data_packet;
     memcpy(p, this, sizeof(Packet));
     p->_use_count = 1;
-    p->_data_packet = this;
+    p->_data_packet = origin;
 # if CLICK_USERLEVEL || CLICK_MINIOS
     p->_destructor = 0;
 # else
     p->_m = m;
 # endif
     // increment our reference count because of _data_packet reference
-    _use_count++;
+    origin->_use_count++;
     return p;
 
 #endif /* CLICK_LINUXMODULE */
