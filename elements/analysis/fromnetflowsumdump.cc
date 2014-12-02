@@ -379,7 +379,8 @@ FromNetFlowSummaryDump::run_task(Task *)
 	return false;
     } else if (_timing && !check_timing(p))
 	return false;
-    output(0).push(_packet);
+    _packet = 0;
+    output(0).push(p);
     _task.fast_reschedule();
     return true;
 }
@@ -398,6 +399,7 @@ FromNetFlowSummaryDump::pull(int)
     else if (p && _timing && !check_timing(p))
 	return 0;
     _notifier.set_active(p != 0, true);
+    _packet = 0;
     return p;
 }
 
