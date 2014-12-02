@@ -7,11 +7,12 @@
 # undef __CHAR_UNSIGNED__
 #endif
 
-/* Define to byte order of target machine. */
-#undef CLICK_BYTE_ORDER
 #define CLICK_BIG_ENDIAN	4321
 #define CLICK_LITTLE_ENDIAN	1234
 #define CLICK_NO_ENDIAN		0
+
+/* Define to byte order of target machine. */
+#undef CLICK_BYTE_ORDER
 
 /* Define to enable debugging support for Click scheduling. */
 #undef CLICK_DEBUG_SCHEDULING

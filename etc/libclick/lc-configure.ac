@@ -72,12 +72,14 @@ if test "x$enable_user_multithread" = xyes; then
     AC_SEARCH_LIBS([pthread_create], [pthread], [ac_have_libpthread=yes], [ac_have_libpthread=no])
     AC_CHECK_HEADERS([pthread.h], [ac_have_pthread_h=yes], [ac_have_pthread_h=no])
     if test "$ac_have_libpthread$ac_have_pthread_h" = yesyes; then
-	AC_DEFINE(HAVE_USER_MULTITHREAD)
-	if echo "$LIBS" | grep -e -lpthread >/dev/null 2>&1; then
-	    PTHREAD_LIBS="-lpthread"
-	fi
+        AC_DEFINE([HAVE_USER_MULTITHREAD])
+        AC_CHECK_DECLS([pthread_setaffinity_np], [], [], [#define _GNU_SOURCE
+#include <pthread.h>])
+        if echo "$LIBS" | grep -e -lpthread >/dev/null 2>&1; then
+            PTHREAD_LIBS="-lpthread"
+        fi
     else
-	AC_MSG_ERROR([
+        AC_MSG_ERROR([
 =========================================
 
 Can't find -lpthread and/or <pthread.h>, so I can't compile with
@@ -177,6 +179,7 @@ AC_ARG_ENABLE([int64],
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(size_t)
+AC_CHECK_SIZEOF(ptrdiff_t)
 AC_CHECK_SIZEOF([void *])
 CLICK_CHECK_INTEGER_TYPES
 CLICK_CHECK_ALIGNMENT
@@ -194,9 +197,13 @@ dnl
 dnl timestamps
 dnl
 
-AC_CHECK_HEADERS([time.h])
+AC_CHECK_HEADERS_ONCE([time.h])
 AC_CHECK_SIZEOF([struct timeval])
-AC_CHECK_TYPES([struct timespec], have_timespec=yes, have_timespec=no)
+AC_CHECK_TYPES([struct timespec], [have_timespec=yes], [have_timespec=no],
+               [AC_INCLUDES_DEFAULT
+[#ifdef HAVE_TIME_H]
+[# include <time.h>]
+[#endif]])
 if test "x$have_timespec" = xyes; then
     AC_CHECK_SIZEOF([struct timespec])
 fi
@@ -230,18 +237,18 @@ dnl
 dnl headers, event detection, dynamic linking
 dnl
 
-AC_CHECK_HEADERS([termio.h netdb.h sys/event.h pwd.h grp.h execinfo.h])
+AC_CHECK_HEADERS_ONCE([termio.h netdb.h sys/event.h pwd.h grp.h execinfo.h])
 CLICK_CHECK_POLL_H
 AC_CHECK_FUNCS([pselect sigaction])
 
 AC_CHECK_FUNCS([kqueue], [have_kqueue=yes])
 if test "x$have_kqueue" = xyes; then
     AC_CACHE_CHECK([whether EV_SET last argument is void *], [ac_cv_ev_set_udata_pointer],
-	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>]], [[struct kevent kev; EV_SET(&kev, 1, EVFILT_WRITE, EV_ADD, 0, 0, (void *) &kev);]])], [ac_cv_ev_set_udata_pointer=yes], [ac_cv_ev_set_udata_pointer=no])])
     if test $ac_cv_ev_set_udata_pointer = yes; then
-	AC_DEFINE([HAVE_EV_SET_UDATA_POINTER], [1], [Define if the last argument to EV_SET has pointer type.])
+        AC_DEFINE([HAVE_EV_SET_UDATA_POINTER], [1], [Define if the last argument to EV_SET has pointer type.])
     fi
 fi
 
@@ -265,12 +272,12 @@ dnl if test "$enable_userlevel" = yes; then
     SOCKET_LIBS="$LIBS"; LIBS="$savelibs"
 
     AC_CACHE_CHECK([whether accept() uses socklen_t], [ac_cv_accept_socklen_t],
-	    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+            [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <sys/socket.h>
 ]], [[socklen_t sl; (void) accept(0, (struct sockaddr *) 0, &sl);]])],
-	ac_cv_accept_socklen_t=yes, ac_cv_accept_socklen_t=no)])
+        ac_cv_accept_socklen_t=yes, ac_cv_accept_socklen_t=no)])
     if test "$ac_cv_accept_socklen_t" = yes; then
-	AC_DEFINE([HAVE_ACCEPT_SOCKLEN_T], [1], [Define if accept() uses socklen_t.])
+        AC_DEFINE([HAVE_ACCEPT_SOCKLEN_T], [1], [Define if accept() uses socklen_t.])
     fi
 dnl fi
 AC_SUBST(SOCKET_LIBS)
@@ -289,7 +296,7 @@ dnl mmap
 dnl
 
 AC_LANG_C
-AC_CHECK_HEADERS(sys/mman.h)
+AC_CHECK_HEADERS_ONCE([sys/mman.h])
 AC_FUNC_MMAP
 AC_LANG_CPLUSPLUS
 AC_CHECK_FUNCS(madvise)
@@ -344,7 +351,7 @@ AC_ARG_ENABLE(task-heap, [  --enable-task-heap      use heap for task list], :, 
 if test $enable_task_heap = yes -a $enable_stride = yes; then
     AC_DEFINE(HAVE_TASK_HEAP)
 elif test $enable_task_heap = yes; then
-	AC_MSG_WARN([
+        AC_MSG_WARN([
 =========================================
 
 Ignoring --enable-task-heap, which is incompatible with --disable-stride.
@@ -367,14 +374,14 @@ AC_ARG_ENABLE(valgrind, [  --enable-valgrind       extra support for debugging w
 if test $enable_valgrind = yes; then
     AC_CHECK_HEADERS(valgrind/memcheck.h, ac_found_valgrind_memcheck_h=yes, ac_found_valgrind_memcheck_h=no)
     if test $ac_found_valgrind_memcheck_h = no; then
-	AC_MSG_ERROR([
+        AC_MSG_ERROR([
 =========================================
 
 Can't find Valgrind header file 'valgrind/memcheck.h'.
 Try again without '--enable-valgrind'.
 
 =========================================])
-	dnl ' fix syntax highlighting
+        dnl ' fix syntax highlighting
     fi
     AC_DEFINE([HAVE_VALGRIND], [1], [Define if Click should use Valgrind client requests.])
 fi
@@ -423,15 +430,15 @@ shell_mkbuild () {
     val=`eval echo '$'"$1"`
     pval="$prefix"
     while test -n "$pval" -a -n "$val"; do
-	component=`echo "$val" | sed 's,^\(/[[^/]]*\).*,\1,'`
-	pcomponent=`echo "$pval" | sed 's,^\(/[[^/]]*\).*,\1,'`
-	if test "$component" != "$pcomponent"; then break; fi
-	val=`echo "$val" | sed 's,^/[[^/]]*,,'`
-	pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
+        component=`echo "$val" | sed 's,^\(/[[^/]]*\).*,\1,'`
+        pcomponent=`echo "$pval" | sed 's,^\(/[[^/]]*\).*,\1,'`
+        if test "$component" != "$pcomponent"; then break; fi
+        val=`echo "$val" | sed 's,^/[[^/]]*,,'`
+        pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
     done
     while test -n "$pval"; do
-	val="/..$val"
-	pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
+        val="/..$val"
+        pval=`echo "$pval" | sed 's,^/[[^/]]*,,'`
     done
     eval "clickbuild_$1='"'$'"{clickbuild_prefix}$val'"
 }
@@ -448,6 +455,13 @@ for i in bin clickdata data dataroot include lib sbin; do
 done
 
 
+dnl
+dnl kernel interfaces
+dnl
+
+AC_CHECK_HEADERS_ONCE([ifaddrs.h linux/if_tun.h net/if_dl.h net/if_tap.h net/if_tun.h net/if_types.h net/bpf.h netpacket/packet.h])
+
+
 dnl pcap library
 dnl note: no longer need pcap under Linux
 
@@ -455,13 +469,13 @@ dnl if test "$enable_userlevel" = yes; then
     CLICK_CHECK_LIBPCAP
     CLICK_CHECK_NETMAP
     if test "$HAVE_PCAP" != yes -a "$HAVE_NETMAP" != yes -a "$ac_cv_under_linux" != yes; then
-	AC_MSG_WARN([
+        AC_MSG_WARN([
 =========================================
 
 pcap.h and/or -lpcap not found; user-level driver can't steal packets.
 
 =========================================])
-	dnl ' fix syntax highlighting
+        dnl ' fix syntax highlighting
     fi
     DRIVERS="$DRIVERS userlevel"
     AC_DEFINE(HAVE_USERLEVEL_DRIVER)
@@ -510,12 +524,12 @@ if test "$properprefix" != no; then
     AC_LANG_CPLUSPLUS
 
     if test $have_prop_h = yes -a $have_libproper = yes; then
-	AC_DEFINE(HAVE_PROPER)
-	test -n "$properprefix" && PROPER_INCLUDES="-I$properprefix/include" && PROPER_LIBS="-L$properprefix/lib"
-	PROPER_LIBS="$PROPER_LIBS -lproper"
+        AC_DEFINE(HAVE_PROPER)
+        test -n "$properprefix" && PROPER_INCLUDES="-I$properprefix/include" && PROPER_LIBS="-L$properprefix/lib"
+        PROPER_LIBS="$PROPER_LIBS -lproper"
     elif test $explicit_proper = yes; then
-	PROPER_INCLUDES= PROPER_LIBS=
-	AC_MSG_ERROR([
+        PROPER_INCLUDES= PROPER_LIBS=
+        AC_MSG_ERROR([
 =========================================
 
 You explicitly specified --with-proper, but the proper headers and/or
@@ -548,13 +562,13 @@ if test "$expatprefix" != no; then
     LDFLAGS="$saveflags"
 
     if test $have_expat_h = yes -a $have_libexpat = yes; then
-	AC_DEFINE(HAVE_EXPAT)
-	XML2CLICK=xml2click
-	test -n "$expatprefix" && EXPAT_INCLUDES="-I$expatprefix/include" && EXPAT_LIBS="-L$expatprefix/lib"
-	EXPAT_LIBS="$EXPAT_LIBS -lexpat"
+        AC_DEFINE(HAVE_EXPAT)
+        XML2CLICK=xml2click
+        test -n "$expatprefix" && EXPAT_INCLUDES="-I$expatprefix/include" && EXPAT_LIBS="-L$expatprefix/lib"
+        EXPAT_LIBS="$EXPAT_LIBS -lexpat"
     elif test $explicit_expat = yes; then
-	EXPAT_INCLUDES= EXPAT_LIBS=
-	AC_MSG_ERROR([
+        EXPAT_INCLUDES= EXPAT_LIBS=
+        AC_MSG_ERROR([
 =========================================
 
 You explicitly specified --with-expat, but the expat headers and/or libraries
@@ -602,10 +616,10 @@ AC_MSG_CHECKING(for working makeinfo)
 MAKEINFO=${MAKEINFO-makeinfo}
 if ($MAKEINFO --version) < /dev/null > conftest.out 2>&1; then
     if test `head -n 1 conftest.out | sed 's/^.* \([[0-9]][[0-9]]*\).*$/\1/'` -ge 4; then
-	AC_MSG_RESULT(found)
+        AC_MSG_RESULT(found)
     else
-	MAKEINFO='$(conf_auxdir)/missing makeinfo'
-	AC_MSG_RESULT(old)
+        MAKEINFO='$(conf_auxdir)/missing makeinfo'
+        AC_MSG_RESULT(old)
     fi
 else
     MAKEINFO='$(conf_auxdir)/missing makeinfo'
@@ -617,10 +631,10 @@ TEXI2DVI=${TEXI2DVI-texi2dvi}
 if ($TEXI2DVI --version) < /dev/null > conftest.out 2>&1; then
     dnl Search for a good version of texi2dvi
     if test `head -n 1 conftest.out | sed 's/.*Texinfo \([[0-9]][[0-9]]*\).*/\1/'` -ge 4; then
-	AC_MSG_RESULT(found)
+        AC_MSG_RESULT(found)
     else
-	TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
-	AC_MSG_RESULT(old)
+        TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
+        AC_MSG_RESULT(old)
     fi
 else
     TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
@@ -630,7 +644,7 @@ fi
 dnl Assume any version of install-info is OK
 if test ${INSTALL_INFO-xxx} = xxx; then
     AC_PATH_PROG(INSTALL_INFO, install-info, '$(conf_auxdir)/missing install-info',
-	$PATH:/sbin:/usr/sbin:/usr/local/sbin)
+        $PATH:/sbin:/usr/sbin:/usr/local/sbin)
 fi
 AC_MSG_CHECKING(for working install-info)
 if ($INSTALL_INFO --version) < /dev/null > conftest.out 2>&1; then

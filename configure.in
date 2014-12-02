@@ -571,9 +571,13 @@ dnl
 dnl timestamps
 dnl
 
-AC_CHECK_HEADERS([time.h])
+AC_CHECK_HEADERS_ONCE([time.h])
 AC_CHECK_SIZEOF([struct timeval])
-AC_CHECK_TYPES([struct timespec], have_timespec=yes, have_timespec=no)
+AC_CHECK_TYPES([struct timespec], [have_timespec=yes], [have_timespec=no],
+               [AC_INCLUDES_DEFAULT
+[#ifdef HAVE_TIME_H]
+[# include <time.h>]
+[#endif]])
 if test "x$have_timespec" = xyes; then
     AC_CHECK_SIZEOF([struct timespec])
 fi
@@ -638,7 +642,7 @@ dnl
 dnl headers, event detection, dynamic linking
 dnl
 
-AC_CHECK_HEADERS([termio.h netdb.h sys/event.h pwd.h grp.h execinfo.h])
+AC_CHECK_HEADERS_ONCE([termio.h netdb.h sys/event.h pwd.h grp.h execinfo.h])
 CLICK_CHECK_POLL_H
 AC_CHECK_FUNCS([pselect sigaction])
 
@@ -700,7 +704,7 @@ dnl mmap
 dnl
 
 AC_LANG_C
-AC_CHECK_HEADERS(sys/mman.h)
+AC_CHECK_HEADERS_ONCE([sys/mman.h])
 AC_FUNC_MMAP
 AC_LANG_CPLUSPLUS
 AC_CHECK_FUNCS(madvise)
@@ -1114,7 +1118,7 @@ dnl
 dnl kernel interfaces
 dnl
 
-AC_CHECK_HEADERS([ifaddrs.h linux/if_tun.h net/if_dl.h net/if_tap.h net/if_tun.h net/if_types.h net/bpf.h netpacket/packet.h])
+AC_CHECK_HEADERS_ONCE([ifaddrs.h linux/if_tun.h net/if_dl.h net/if_tap.h net/if_tun.h net/if_types.h net/bpf.h netpacket/packet.h])
 
 
 dnl
