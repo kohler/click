@@ -373,13 +373,14 @@ FromNetFlowSummaryDump::run_task(Task *)
 	return false;
 
     Packet *p = next_packet();
+    _packet = 0;
     if (!p) {
 	if (_stop)
 	    router()->please_stop_driver();
 	return false;
     } else if (_timing && !check_timing(p))
 	return false;
-    output(0).push(_packet);
+    output(0).push(p);
     _task.fast_reschedule();
     return true;
 }
@@ -393,6 +394,7 @@ FromNetFlowSummaryDump::pull(int)
     }
 
     Packet *p = next_packet();
+    _packet = 0;
     if (!p && _stop)
 	router()->please_stop_driver();
     else if (p && _timing && !check_timing(p))
