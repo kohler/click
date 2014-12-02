@@ -209,7 +209,7 @@ Packet::~Packet()
     panic("Packet destructor");
 #else
     if (_data_packet)
-	_data_packet->kill();
+ 	_data_packet->dec_use_count();
 # if CLICK_USERLEVEL || CLICK_MINIOS
     else if (_head && _destructor)
 	_destructor(_head, _end - _head, _destructor_argument);
@@ -775,7 +775,7 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
 
     // free old data
     if (_data_packet)
-	_data_packet->kill();
+ 	_data_packet->dec_use_count();
 # if CLICK_USERLEVEL || CLICK_MINIOS
     else if (_destructor)
 	_destructor(old_head, old_end - old_head, _destructor_argument);
@@ -1005,5 +1005,9 @@ Packet::static_cleanup()
 # endif
 #endif
 }
+
+#if HAVE_PACKET_TRACING
+void *Packet::_traced_packet = 0;
+#endif
 
 CLICK_ENDDECLS

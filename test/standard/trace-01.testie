@@ -1,0 +1,120 @@
+%require
+[ `echo 'Idle -> t::Trace -> Discard; Script(print t.global_have_tracing, stop)' | click --simtime` = true ]
+
+%info
+Tests packet tracing functionality
+
+%script
+$VALGRIND click --simtime CONFIG
+
+%file CONFIG
+
+// test push mode
+is1 :: InfiniteSource(LIMIT 3, ACTIVE false)
+-> trace_push :: Trace(LIMIT 2)
+-> RoundRobinSwitch
+=> [0, 2] isw :: InputSwitch(0)
+-> Print(post1, 0)
+-> Discard;
+
+Idle -> [1] isw;
+
+// test pull mode
+is2 :: InfiniteSource(LIMIT 2, ACTIVE false)
+-> trace_pull :: Trace
+-> [1] psw :: PullSwitch(1)
+-> Unqueue
+-> Print(post2, 0)
+-> Discard;
+
+Idle -> [0] psw;
+
+// test push mode with second output port
+is3 :: InfiniteSource(LIMIT 2, ACTIVE false)
+-> trace_push_output :: Trace
+=> ( [0] -> [0]; [1] -> Print(traced3, 0) -> Discard; )
+-> Print(post3, 0)
+-> Discard;
+
+// test pull mode with second output (latter is push)
+is4 :: InfiniteSource(LIMIT 2, ACTIVE false)
+-> trace_pull_output :: Trace
+=> ( [0] -> [0]; [1] -> Print(traced4, 0) -> Discard; )
+-> Unqueue
+-> Print(post4, 0)
+-> Discard;
+
+// test push mode with second NO_CLONE output port
+is5 :: InfiniteSource(LIMIT 2, ACTIVE false)
+-> trace_no_clone_output :: Trace(NO_CLONE true)
+=> ( [0] -> [0]; [1] -> Print(traced5, 0) -> [0]; )
+-> Print(post5, 0)
+-> Discard;
+
+Script(
+    write is1.active true,
+    wait 1,
+    write is2.active true,
+    wait 1,
+    write is3.active true,
+    wait 1,
+    write is4.active true,
+    wait 1,
+    write is5.active true,
+    wait 1,
+    write stop);
+
+%expect -w stderr
+traced_packet: started (trace_push :: Trace)
+traced_packet: trace_push [0] -> [0] RoundRobinSwitch@{{\d+}}
+traced_packet: RoundRobinSwitch@{{\d+}} [0] -> [0] isw
+traced_packet: isw [0] -> [0] Print@{{\d+}}
+post1:   69
+traced_packet: Print@{{\d+}} [0] -> [0] Discard@{{\d+}}
+traced_packet: killed
+
+traced_packet: started (trace_push :: Trace)
+traced_packet: trace_push [0] -> [0] RoundRobinSwitch@{{\d+}}
+traced_packet: RoundRobinSwitch@{{\d+}} [1] -> [2] isw
+traced_packet: killed
+
+post1:   69 {{? untraced}}
+
+traced_packet: started (trace_pull :: Trace)
+traced_packet: trace_pull [0] ->  [1] psw
+traced_packet: psw [0] -> [0] Unqueue@{{\d+}}
+traced_packet: Unqueue@{{\d+}} [0] -> [0] Print@{{\d+}}
+post2:   69
+traced_packet: Print@{{\d+}} [0] -> [0] Discard@{{\d+}}
+traced_packet: killed
+
+post2:   69 {{? untraced}}
+
+traced_packet: started (trace_push_output :: Trace)
+traced3:   69
+traced_packet: trace_push_output [0] -> [0] Print@{{\d+}}
+post3:   69
+traced_packet: Print@{{\d+}} [0] -> [0] Discard@{{\d+}}
+traced_packet: killed
+
+post3:   69 {{? untraced}}
+
+traced_packet: started (trace_pull_output :: Trace)
+traced4:   69
+traced_packet: trace_pull_output [0] -> [0] Unqueue@{{\d+}}
+traced_packet: Unqueue@{{\d+}} [0] -> [0] Print@{{\d+}}
+post4:   69
+traced_packet: Print@{{\d+}} [0] -> [0] Discard@{{\d+}}
+traced_packet: killed
+
+post4:   69 {{? untraced}}
+
+traced_packet: started (trace_no_clone_output :: Trace)
+traced_packet: trace_no_clone_output [1] -> [0] Print@{{\d+}}
+traced5:   69
+traced_packet: Print@{{\d+}} [0] -> [0] Print@{{\d+}}
+post5:   69
+traced_packet: Print@{{\d+}} [0] -> [0] Discard@{{\d+}}
+traced_packet: killed
+
+post5:   69 {{? untraced}}

@@ -483,6 +483,7 @@ bail:
 int
 ToDevice::queue_packet(Packet *p, struct netdev_queue *txq)
 {
+    p->unset_traced();
     struct sk_buff *skb1 = p->skb();
     struct net_device *dev = _dev;
 

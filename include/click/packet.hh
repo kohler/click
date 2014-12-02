@@ -684,6 +684,11 @@ class Packet { public:
     inline void set_user_anno_u(int, uint32_t) CLICK_DEPRECATED;
     /** @endcond never */
 
+    inline bool traced();
+    inline bool set_traced(bool preempt);
+    inline bool unset_traced();
+    static inline void clear_traced();
+
   private:
 
     // Anno must fit in sk_buff's char cb[48].
@@ -740,6 +745,10 @@ class Packet { public:
 # endif
 #endif
 
+#if HAVE_PACKET_TRACING
+    static void *_traced_packet;
+#endif
+
     inline Packet() {
 #if CLICK_LINUXMODULE
 	panic("Packet constructor");
@@ -751,6 +760,7 @@ class Packet { public:
 
 #if !CLICK_LINUXMODULE
     bool alloc_data(uint32_t headroom, uint32_t length, uint32_t tailroom);
+    inline void dec_use_count();
 #endif
 #if CLICK_BSDMODULE
     static void assimilate_mbuf(Packet *p);
@@ -1323,6 +1333,56 @@ Packet::set_packet_type_anno(PacketType p)
 #endif
 }
 
+inline bool
+Packet::traced()
+{
+#if HAVE_PACKET_TRACING
+    return this == _traced_packet;
+#else
+    return false;
+#endif
+}
+
+inline bool
+Packet::set_traced(bool preempt)
+{
+#if HAVE_PACKET_TRACING
+    if (!_traced_packet || preempt) {
+	if (_traced_packet) {
+	    if (_traced_packet == this)
+		click_chatter("traced_packet: restarted traced packet\n");
+	    else
+		click_chatter("traced_packet: switched traced packet\n");
+	}
+	_traced_packet = this;
+	return true;
+    }
+#else
+    (void) preempt;
+#endif
+    return false;
+}
+
+inline bool
+Packet::unset_traced()
+{
+#if HAVE_PACKET_TRACING
+    if (this == _traced_packet) {
+	_traced_packet = 0;
+	return true;
+    }
+#endif
+    return false;
+}
+
+inline void
+Packet::clear_traced()
+{
+#if HAVE_PACKET_TRACING
+    _traced_packet = 0;
+#endif
+}
+
 /** @brief Create and return a new packet.
  * @param data data to be copied into the new packet
  * @param length length of packet
@@ -1408,6 +1468,8 @@ Packet::make(struct sk_buff *skb)
 inline void
 Packet::kill()
 {
+    if (unset_traced())
+	click_chatter("traced_packet: killed\n");
 #if CLICK_LINUXMODULE
     struct sk_buff *b = skb();
     b->next = b->prev = 0;
@@ -1415,14 +1477,24 @@ Packet::kill()
     b->list = 0;
 # endif
     skbmgr_recycle_skbs(b);
-#elif HAVE_CLICK_PACKET_POOL
-    if (_use_count.dec_and_test())
-	WritablePacket::recycle(static_cast<WritablePacket *>(this));
 #else
-    if (_use_count.dec_and_test())
-	delete this;
+    dec_use_count();
 #endif
 }
+
+#if !CLICK_LINUXMODULE
+inline void
+Packet::dec_use_count()
+{
+# if HAVE_CLICK_PACKET_POOL
+    if (_use_count.dec_and_test())
+	WritablePacket::recycle(static_cast<WritablePacket *>(this));
+# else
+    if (_use_count.dec_and_test())
+	delete this;
+# endif
+}
+#endif
 
 #if CLICK_BSDMODULE		/* BSD kernel module */
 inline void

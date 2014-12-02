@@ -168,6 +168,7 @@ void
 ToHost::push(int port, Packet *p)
 {
     p->clear_annotations(false);
+    p->unset_traced();
 
     struct sk_buff *skb = p->skb();
 
