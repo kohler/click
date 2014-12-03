@@ -19,7 +19,7 @@ AC_CONFIG_HEADERS([include/click/config-bsdmodule.h:config-bsdmodule.h.in includ
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([bin/click-buildtool:click-buildtool.in], [chmod +x bin/click-buildtool])
 AC_CONFIG_FILES([bin/click-compile:click-compile.in], [chmod +x bin/click-compile])
-AC_CONFIG_FILES([installch], [chmod +x bin/installch])
+AC_CONFIG_FILES([installch], [chmod +x installch])
 AC_CONFIG_FILES([share/click/config.mk:config.mk.in share/click/pkg-config.mk])
 AC_CONFIG_FILES([doc/Makefile etc/libclick/Makefile tools/Makefile tools/lib/Makefile])
 AC_CONFIG_SRCDIR([click-buildtool.in])
