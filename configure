@@ -3197,7 +3197,23 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-ac_config_headers="$ac_config_headers include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in include/click/config-minios.h:config-minios.h.in"
+ac_config_headers="$ac_config_headers include/click/config.h:config.h.in"
+
+ac_config_headers="$ac_config_headers include/click/pathvars.h:pathvars.h.in"
+
+ac_config_headers="$ac_config_headers include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in include/click/config-minios.h:config-minios.h.in"
+
+ac_config_files="$ac_config_files Makefile"
+
+ac_config_files="$ac_config_files bin/click-buildtool:click-buildtool.in"
+
+ac_config_files="$ac_config_files bin/click-compile:click-compile.in"
+
+ac_config_files="$ac_config_files installch"
+
+ac_config_files="$ac_config_files share/click/config.mk:config.mk.in share/click/pkg-config.mk"
+
+ac_config_files="$ac_config_files doc/Makefile etc/libclick/Makefile tools/Makefile tools/lib/Makefile"
 
 
 
@@ -13308,23 +13324,47 @@ fi
 
 
 
-config_files="Makefile click-buildtool click-compile config.mk installch tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile etc/pkg-config.mk"
-for ac_dir in $POSSIBLE_DRIVERS; do
-    config_files="$config_files $ac_dir/Makefile"
-    if test "$ac_dir" = minios; then
-        config_files="$config_files $ac_dir/config.mk"
-    fi
-done
-for ac_dir in $TOOLDIRS; do
-    config_files="$config_files tools/$ac_dir/Makefile"
-done
-for ac_dir in etc include; do
+test -f $srcdir/bsdmodule/Makefile.in && ac_config_files="$ac_config_files bsdmodule/Makefile"
+
+test -f $srcdir/linuxmodule/Makefile.in && ac_config_files="$ac_config_files linuxmodule/Makefile"
+
+test -f $srcdir/minios/Makefile.in && ac_config_files="$ac_config_files minios/Makefile minios/config.mk"
+
+test -f $srcdir/ns/Makefile.in && ac_config_files="$ac_config_files ns/Makefile"
+
+test -f $srcdir/userlevel/Makefile.in && ac_config_files="$ac_config_files userlevel/Makefile"
+
+
+test -d $srcdir/tools/click-align && ac_config_files="$ac_config_files tools/click-align/Makefile"
+
+test -d $srcdir/tools/click-check && ac_config_files="$ac_config_files tools/click-check/Makefile"
+
+test -d $srcdir/tools/click-combine && ac_config_files="$ac_config_files tools/click-combine/Makefile"
+
+test -d $srcdir/tools/click-devirtualize && ac_config_files="$ac_config_files tools/click-devirtualize/Makefile"
+
+test -d $srcdir/tools/click-fastclassifier && ac_config_files="$ac_config_files tools/click-fastclassifier/Makefile"
+
+test -d $srcdir/tools/click-flatten && ac_config_files="$ac_config_files tools/click-flatten/Makefile"
+
+test -d $srcdir/tools/click-install && ac_config_files="$ac_config_files tools/click-install/Makefile"
+
+test -d $srcdir/tools/click-ipopt && ac_config_files="$ac_config_files tools/click-ipopt/Makefile"
+
+test -d $srcdir/tools/click-mkmindriver && ac_config_files="$ac_config_files tools/click-mkmindriver/Makefile"
+
+test -d $srcdir/tools/click-pretty && ac_config_files="$ac_config_files tools/click-pretty/Makefile"
+
+test -d $srcdir/tools/click-undead && ac_config_files="$ac_config_files tools/click-undead/Makefile"
+
+test -d $srcdir/tools/click-xform && ac_config_files="$ac_config_files tools/click-xform/Makefile"
+
+test -d $srcdir/tools/click2xml && ac_config_files="$ac_config_files tools/click2xml/Makefile"
+
+
+for ac_dir in bin etc include share share/click; do
     test ! -d "$ac_dir" && mkdir "$ac_dir"
 done
-
-ac_config_commands="$ac_config_commands default-1"
-
-ac_config_files="$ac_config_files $config_files"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -13859,7 +13899,6 @@ cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
 config_files="$ac_config_files"
 config_headers="$ac_config_headers"
-config_commands="$ac_config_commands"
 
 _ACEOF
 
@@ -13888,9 +13927,6 @@ $config_files
 
 Configuration headers:
 $config_headers
-
-Configuration commands:
-$config_commands
 
 Report bugs to the package provider."
 
@@ -14013,11 +14049,6 @@ _ASBOX
 
 _ACEOF
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
-#
-# INIT-COMMANDS
-#
-
-
 _ACEOF
 
 cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
@@ -14033,8 +14064,35 @@ do
     "include/click/config-ns.h") CONFIG_HEADERS="$CONFIG_HEADERS include/click/config-ns.h:config-ns.h.in" ;;
     "include/click/config-userlevel.h") CONFIG_HEADERS="$CONFIG_HEADERS include/click/config-userlevel.h:config-userlevel.h.in" ;;
     "include/click/config-minios.h") CONFIG_HEADERS="$CONFIG_HEADERS include/click/config-minios.h:config-minios.h.in" ;;
-    "default-1") CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
-    "$config_files") CONFIG_FILES="$CONFIG_FILES $config_files" ;;
+    "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "bin/click-buildtool") CONFIG_FILES="$CONFIG_FILES bin/click-buildtool:click-buildtool.in" ;;
+    "bin/click-compile") CONFIG_FILES="$CONFIG_FILES bin/click-compile:click-compile.in" ;;
+    "installch") CONFIG_FILES="$CONFIG_FILES installch" ;;
+    "share/click/config.mk") CONFIG_FILES="$CONFIG_FILES share/click/config.mk:config.mk.in" ;;
+    "share/click/pkg-config.mk") CONFIG_FILES="$CONFIG_FILES share/click/pkg-config.mk" ;;
+    "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
+    "etc/libclick/Makefile") CONFIG_FILES="$CONFIG_FILES etc/libclick/Makefile" ;;
+    "tools/Makefile") CONFIG_FILES="$CONFIG_FILES tools/Makefile" ;;
+    "tools/lib/Makefile") CONFIG_FILES="$CONFIG_FILES tools/lib/Makefile" ;;
+    "bsdmodule/Makefile") CONFIG_FILES="$CONFIG_FILES bsdmodule/Makefile" ;;
+    "linuxmodule/Makefile") CONFIG_FILES="$CONFIG_FILES linuxmodule/Makefile" ;;
+    "minios/Makefile") CONFIG_FILES="$CONFIG_FILES minios/Makefile" ;;
+    "minios/config.mk") CONFIG_FILES="$CONFIG_FILES minios/config.mk" ;;
+    "ns/Makefile") CONFIG_FILES="$CONFIG_FILES ns/Makefile" ;;
+    "userlevel/Makefile") CONFIG_FILES="$CONFIG_FILES userlevel/Makefile" ;;
+    "tools/click-align/Makefile") CONFIG_FILES="$CONFIG_FILES tools/click-align/Makefile" ;;
+    "tools/click-check/Makefile") CONFIG_FILES="$CONFIG_FILES tools/click-check/Makefile" ;;
+    "tools/click-combine/Makefile") CONFIG_FILES="$CONFIG_FILES tools/click-combine/Makefile" ;;
+    "tools/click-devirtualize/Makefile") CONFIG_FILES="$CONFIG_FILES tools/click-devirtualize/Makefile" ;;
+    "tools/click-fastclassifier/Makefile") CONFIG_FILES="$CONFIG_FILES tools/click-fastclassifier/Makefile" ;;
+    "tools/click-flatten/Makefile") CONFIG_FILES="$CONFIG_FILES tools/click-flatten/Makefile" ;;
+    "tools/click-install/Makefile") CONFIG_FILES="$CONFIG_FILES tools/click-install/Makefile" ;;
+    "tools/click-ipopt/Makefile") CONFIG_FILES="$CONFIG_FILES tools/click-ipopt/Makefile" ;;
+    "tools/click-mkmindriver/Makefile") CONFIG_FILES="$CONFIG_FILES tools/click-mkmindriver/Makefile" ;;
+    "tools/click-pretty/Makefile") CONFIG_FILES="$CONFIG_FILES tools/click-pretty/Makefile" ;;
+    "tools/click-undead/Makefile") CONFIG_FILES="$CONFIG_FILES tools/click-undead/Makefile" ;;
+    "tools/click-xform/Makefile") CONFIG_FILES="$CONFIG_FILES tools/click-xform/Makefile" ;;
+    "tools/click2xml/Makefile") CONFIG_FILES="$CONFIG_FILES tools/click2xml/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
@@ -14048,7 +14106,6 @@ done
 if $ac_need_defaults; then
   test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
   test "${CONFIG_HEADERS+set}" = set || CONFIG_HEADERS=$config_headers
-  test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
 # Have a temporary directory for convenience.  Make it in the build tree
@@ -14345,7 +14402,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 fi # test -n "$CONFIG_HEADERS"
 
 
-eval set X "  :F $CONFIG_FILES  :H $CONFIG_HEADERS    :C $CONFIG_COMMANDS"
+eval set X "  :F $CONFIG_FILES  :H $CONFIG_HEADERS    "
 shift
 for ac_tag
 do
@@ -14583,21 +14640,15 @@ $as_echo "$as_me: $ac_file is unchanged" >&6;}
   fi
  ;;
 
-  :C)  { $as_echo "$as_me:${as_lineno-$LINENO}: executing $ac_file commands" >&5
-$as_echo "$as_me: executing $ac_file commands" >&6;}
- ;;
+
   esac
 
 
   case $ac_file$ac_mode in
-    "default-1":C) for ac_file in $CONFIG_HEADERS; do
-    test $ac_file = include/click/config.h:config.h.in && echo > stamp-h
-done
-for ac_file in $CONFIG_FILES; do
-    test $ac_file = click-buildtool && chmod +x click-buildtool
-    test $ac_file = click-compile && chmod +x click-compile
-    test $ac_file = installch && chmod +x installch
-done ;;
+    "include/click/config.h":H) echo > stamp-h ;;
+    "bin/click-buildtool":F) chmod +x bin/click-buildtool ;;
+    "bin/click-compile":F) chmod +x bin/click-compile ;;
+    "installch":F) chmod +x bin/installch ;;
 
   esac
 done # for ac_tag

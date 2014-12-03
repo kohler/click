@@ -90,8 +90,7 @@ xml2click: Makefile $(XML2CLICK_OBJS) ../lib/$(LIBCLICKTOOL)
 	$(call cxxlink,$(DL_LDFLAGS) $(XML2CLICK_OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 DEPFILES := $(wildcard *.d)
 ifneq ($(DEPFILES),)

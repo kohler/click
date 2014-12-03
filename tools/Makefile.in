@@ -123,8 +123,7 @@ always:
 	@:
 
 Makefile: $(srcdir)/Makefile.in
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean: clean-lib $(CLEAN_TARGETS)
 clean-lib:

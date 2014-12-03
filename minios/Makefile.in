@@ -111,20 +111,22 @@ STUB_BUILD_DIRS			+= $(CLICK_ELEMENTS_OBJ_DIR)
 STUB_APP_OBJS			+= $(CLICK_ELEMENTS_OBJS)
 STUB_APP_DEPS			+= $(CLICK_ELEMENTS_DEPS)
 
+CLICK_BUILDTOOL		= $(top_builddir)/bin/click-buildtool
+
 
 .PHONY: elemlist
 elemlist:
 	@rm -f $(CLICK_ELEMENTS).conf
 	@$(MAKE) $(CLICK_ELEMENTS).conf
 
-$(CLICK_ELEMENTS).conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool $(srcdir)/elements.exclude | build-dirs
-	$(call verbose_cmd,echo $(CLICK_ELEMENTS_DIRS) | $(top_builddir)/click-buildtool findelem -r minios -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) >,FINDELEMENTS,$@)
+$(CLICK_ELEMENTS).conf: $(top_builddir)/config.status $(CLICK_BUILDTOOL) $(srcdir)/elements.exclude | build-dirs
+	$(call verbose_cmd,echo $(CLICK_ELEMENTS_DIRS) | $(CLICK_BUILDTOOL) findelem -r minios -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) >,FINDELEMENTS,$@)
 
-$(CLICK_ELEMENTS).mk: $(CLICK_ELEMENTS).conf $(top_builddir)/click-buildtool
-	$(call verbose_cmd,$(top_builddir)/click-buildtool elem2make -v CLICK_ELEMENTS_OBJS0 < $(CLICK_ELEMENTS).conf | sed -e '/patsubst/ n;s/\([a-zA-Z0-9_-]\+\.o\)/$$(CLICK_ELEMENTS_OBJ_DIR)\/\1/g;s/%\.o/$$(CLICK_ELEMENTS_OBJ_DIR)\/%.o/g' >,CREATE,$(CLICK_ELEMENTS).mk)
+$(CLICK_ELEMENTS).mk: $(CLICK_ELEMENTS).conf $(CLICK_BUILDTOOL)
+	$(call verbose_cmd,$(CLICK_BUILDTOOL) elem2make -v CLICK_ELEMENTS_OBJS0 < $(CLICK_ELEMENTS).conf | sed -e '/patsubst/ n;s/\([a-zA-Z0-9_-]\+\.o\)/$$(CLICK_ELEMENTS_OBJ_DIR)\/\1/g;s/%\.o/$$(CLICK_ELEMENTS_OBJ_DIR)\/%.o/g' >,CREATE,$(CLICK_ELEMENTS).mk)
 
-$(CLICK_ELEMENTS).cc: $(CLICK_ELEMENTS).conf $(top_builddir)/click-buildtool
-	$(call verbose_cmd,$(top_builddir)/click-buildtool elem2export < $(CLICK_ELEMENTS).conf >,CREATE,$(CLICK_ELEMENTS).cc)
+$(CLICK_ELEMENTS).cc: $(CLICK_ELEMENTS).conf $(CLICK_BUILDTOOL)
+	$(call verbose_cmd,$(CLICK_BUILDTOOL) elem2export < $(CLICK_ELEMENTS).conf >,CREATE,$(CLICK_ELEMENTS).cc)
 	$(call verbose_cmd,$(RM),'RM ',$(CLICK_ELEMENTS).d)
 
 $(CLICK_ELEMENTS).o: $(CLICK_ELEMENTS).cc | build-reqs
@@ -143,8 +145,7 @@ click: $(CLICK_OBJS) $(CLICK_ELEMENTS_OBJS)
 # Misc
 ################################################################################
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 stub: | Makefile
 

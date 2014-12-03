@@ -35,6 +35,8 @@ EXPORT_SYMS=YES
 CFLAGS+=$(INCLUDES) $(DEFS)
 CXXFLAGS+=-fpermissive -fno-exceptions -fno-rtti
 
+CLICK_BUILDTOOL = $(CLICKDIR)/bin/click-buildtool
+
 VPATH=$(.CURDIR):.:$(CLICKDIR)/lib:$(CLICKDIR)/elements
 
 #
@@ -79,14 +81,14 @@ elemlist:
 	@/bin/rm -f elements.conf
 	@$(MAKE) elements.conf
 
-elements.conf: $(CLICKDIR)/config.status $(CLICKDIR)/click-buildtool
-	echo "bsdmodule  app aqm ethernet icmp ip standard tcpudp threads" | $(CLICKDIR)/click-buildtool findelem -r bsdmodule -p $(CLICKDIR) -X $(CLICKDIR)/elements.exclude > elements.conf
+elements.conf: $(CLICKDIR)/config.status $(CLICK_BUILDTOOL)
+	echo "bsdmodule  app aqm ethernet icmp ip standard tcpudp threads" | $(CLICK_BUILDTOOL) findelem -r bsdmodule -p $(CLICKDIR) -X $(CLICKDIR)/elements.exclude > elements.conf
 
-elements.mk: elements.conf $(CLICKDIR)/click-buildtool
-	$(CLICKDIR)/click-buildtool elem2make --bsd < elements.conf > elements.mk
+elements.mk: elements.conf $(CLICK_BUILDTOOL)
+	$(CLICK_BUILDTOOL) elem2make --bsd < elements.conf > elements.mk
 
-elements.cc: elements.conf $(CLICKDIR)/click-buildtool
-	$(CLICKDIR)/click-buildtool elem2export < elements.conf > elements.cc
+elements.cc: elements.conf $(CLICK_BUILDTOOL)
+	$(CLICK_BUILDTOOL) elem2export < elements.conf > elements.cc
 	@rm -f elements.d
 
 .MAKEFILEDEPS:

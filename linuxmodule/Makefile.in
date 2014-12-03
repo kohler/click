@@ -89,7 +89,7 @@ CLICK_BUILD_INSTALL_IF_CHANGED = @CLICK_BUILD_INSTALL_IF_CHANGED@
 CLICK_BUILD_INSTALL_DATA = $(CLICK_BUILD_INSTALL) -m 644
 CLICK_BUILD_INSTALL_DATA_IF_CHANGED = $(CLICK_BUILD_INSTALL_IF_CHANGED) -m 644
 CLICKmkinstalldirs = $(conf_auxdir)/mkinstalldirs
-CLICK_BUILDTOOL = $(top_builddir)/click-buildtool
+CLICK_BUILDTOOL = $(top_builddir)/bin/click-buildtool
 MD5SUM = @MD5SUM@
 
 CLICK_ELEM2MAKE = $(CLICK_BUILDTOOL) elem2make --linux
@@ -233,8 +233,7 @@ $(ELEMENTSCONF).cc: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
 	@rm -f $(ELEMENTSCONF).d
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 always:
 	@:

@@ -13,7 +13,15 @@ dnl legally binding.
 
 AC_INIT([click], [2.1])
 AC_PREREQ(2.60)
-AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in include/click/config-minios.h:config-minios.h.in)
+AC_CONFIG_HEADERS([include/click/config.h:config.h.in], [echo > stamp-h])
+AC_CONFIG_HEADERS([include/click/pathvars.h:pathvars.h.in])
+AC_CONFIG_HEADERS([include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in include/click/config-minios.h:config-minios.h.in])
+AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([bin/click-buildtool:click-buildtool.in], [chmod +x bin/click-buildtool])
+AC_CONFIG_FILES([bin/click-compile:click-compile.in], [chmod +x bin/click-compile])
+AC_CONFIG_FILES([installch], [chmod +x bin/installch])
+AC_CONFIG_FILES([share/click/config.mk:config.mk.in share/click/pkg-config.mk])
+AC_CONFIG_FILES([doc/Makefile etc/libclick/Makefile tools/Makefile tools/lib/Makefile])
 AC_CONFIG_SRCDIR([click-buildtool.in])
 
 CLICK_VERSION=$PACKAGE_VERSION
@@ -2002,26 +2010,28 @@ dnl
 dnl Output
 dnl
 
-config_files="Makefile click-buildtool click-compile config.mk installch tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile etc/pkg-config.mk"
-for ac_dir in $POSSIBLE_DRIVERS; do
-    config_files="$config_files $ac_dir/Makefile"
-    if test "$ac_dir" = minios; then
-        config_files="$config_files $ac_dir/config.mk"
-    fi
-done
-for ac_dir in $TOOLDIRS; do
-    config_files="$config_files tools/$ac_dir/Makefile"
-done
-for ac_dir in etc include; do
+test -f $srcdir/bsdmodule/Makefile.in && AC_CONFIG_FILES([bsdmodule/Makefile])
+test -f $srcdir/linuxmodule/Makefile.in && AC_CONFIG_FILES([linuxmodule/Makefile])
+test -f $srcdir/minios/Makefile.in && AC_CONFIG_FILES([minios/Makefile minios/config.mk])
+test -f $srcdir/ns/Makefile.in && AC_CONFIG_FILES([ns/Makefile])
+test -f $srcdir/userlevel/Makefile.in && AC_CONFIG_FILES([userlevel/Makefile])
+
+test -d $srcdir/tools/click-align && AC_CONFIG_FILES([tools/click-align/Makefile])
+test -d $srcdir/tools/click-check && AC_CONFIG_FILES([tools/click-check/Makefile])
+test -d $srcdir/tools/click-combine && AC_CONFIG_FILES([tools/click-combine/Makefile])
+test -d $srcdir/tools/click-devirtualize && AC_CONFIG_FILES([tools/click-devirtualize/Makefile])
+test -d $srcdir/tools/click-fastclassifier && AC_CONFIG_FILES([tools/click-fastclassifier/Makefile])
+test -d $srcdir/tools/click-flatten && AC_CONFIG_FILES([tools/click-flatten/Makefile])
+test -d $srcdir/tools/click-install && AC_CONFIG_FILES([tools/click-install/Makefile])
+test -d $srcdir/tools/click-ipopt && AC_CONFIG_FILES([tools/click-ipopt/Makefile])
+test -d $srcdir/tools/click-mkmindriver && AC_CONFIG_FILES([tools/click-mkmindriver/Makefile])
+test -d $srcdir/tools/click-pretty && AC_CONFIG_FILES([tools/click-pretty/Makefile])
+test -d $srcdir/tools/click-undead && AC_CONFIG_FILES([tools/click-undead/Makefile])
+test -d $srcdir/tools/click-xform && AC_CONFIG_FILES([tools/click-xform/Makefile])
+test -d $srcdir/tools/click2xml && AC_CONFIG_FILES([tools/click2xml/Makefile])
+
+for ac_dir in bin etc include share share/click; do
     test ! -d "$ac_dir" && mkdir "$ac_dir"
 done
 
-AC_OUTPUT_COMMANDS([for ac_file in $CONFIG_HEADERS; do
-    test $ac_file = include/click/config.h:config.h.in && echo > stamp-h
-done
-for ac_file in $CONFIG_FILES; do
-    test $ac_file = click-buildtool && chmod +x click-buildtool
-    test $ac_file = click-compile && chmod +x click-compile
-    test $ac_file = installch && chmod +x installch
-done])
-AC_OUTPUT($config_files)
+AC_OUTPUT
