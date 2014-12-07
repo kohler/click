@@ -14648,7 +14648,7 @@ $as_echo "$as_me: $ac_file is unchanged" >&6;}
     "include/click/config.h":H) echo > stamp-h ;;
     "bin/click-buildtool":F) chmod +x bin/click-buildtool ;;
     "bin/click-compile":F) chmod +x bin/click-compile ;;
-    "installch":F) chmod +x bin/installch ;;
+    "installch":F) chmod +x installch ;;
 
   esac
 done # for ac_tag
