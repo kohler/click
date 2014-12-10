@@ -387,7 +387,10 @@ FromDevice::got_skb(struct sk_buff *skb)
     unsigned next = next_i(_tail), head = _head;
 
     if (next != head) { /* ours */
-	assert(skb_shared(skb) == 0); /* else skb = skb_clone(skb, GFP_ATOMIC); */
+	skb = skb_share_check(skb, GFP_ATOMIC);
+	if (!skb)
+	    return 1;
+	assert(skb_shared(skb) == 0);
 
 	/* Retrieve the MAC header. */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
