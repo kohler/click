@@ -57,7 +57,7 @@ static int rt_el_present(struct ieee80211_radiotap_header *th, u_int32_t element
 	return le32_to_cpu(th->it_present) & (1 << element);
 }
 
-static int rt_check_header(struct ieee80211_radiotap_header *th, int len, u_int8_t *offsets[])
+static int rt_check_header(struct ieee80211_radiotap_header *th, int len, u_int8_t *offsets[], bool doalign)
 {
 	int bytes = 0;
 	int x = 0;
@@ -73,9 +73,11 @@ static int rt_check_header(struct ieee80211_radiotap_header *th, int len, u_int8
 
 	for (x = 0; x < NUM_RADIOTAP_ELEMENTS; x++) {
 		if (rt_el_present(th, x)) {
-		    int pad = bytes % radiotap_elem_to_bytes[x];
-		    if (pad)
-			bytes += radiotap_elem_to_bytes[x] - pad;
+			if(doalign){
+		   		int pad = bytes % radiotap_elem_to_bytes[x];
+		   		if (pad)
+					bytes += radiotap_elem_to_bytes[x] - pad;
+			}
 		    offsets[x] = ptr + bytes;
 		    bytes += radiotap_elem_to_bytes[x];
 		}
@@ -104,7 +106,14 @@ int
 RadiotapDecap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _debug = false;
-    return Args(conf, this, errh).read("DEBUG", _debug).complete();
+    _doalign = true;
+    if (Args(conf, this, errh)
+	.read("DEBUG", _debug)
+	.read("DOALIGN", _doalign)
+	.complete() < 0)
+	return -1;
+
+	return 0;
 }
 
 Packet *
@@ -112,8 +121,9 @@ RadiotapDecap::simple_action(Packet *p)
 {
 	u_int8_t *offsets[NUM_RADIOTAP_ELEMENTS];
 	struct ieee80211_radiotap_header *th = (struct ieee80211_radiotap_header *) p->data();
+
 	struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
-	if (rt_check_header(th, p->length(), offsets)) {
+	if (rt_check_header(th, p->length(), offsets, _doalign)) {
 		memset((void*)ceh, 0, sizeof(struct click_wifi_extra));
 		ceh->magic = WIFI_EXTRA_MAGIC;
 
@@ -167,7 +177,7 @@ RadiotapDecap::simple_action(Packet *p)
 }
 
 
-enum {H_DEBUG};
+enum {H_DEBUG, H_DOALIGN};
 
 static String
 RadiotapDecap_read_param(Element *e, void *thunk)
@@ -175,7 +185,9 @@ RadiotapDecap_read_param(Element *e, void *thunk)
   RadiotapDecap *td = (RadiotapDecap *)e;
     switch ((uintptr_t) thunk) {
       case H_DEBUG:
-	return String(td->_debug) + "\n";
+		return String(td->_debug) + "\n";
+      case H_DOALIGN:
+		return String(td->_doalign) + "\n";
     default:
       return String();
     }
@@ -194,6 +206,13 @@ RadiotapDecap_write_param(const String &in_s, Element *e, void *vparam,
     f->_debug = debug;
     break;
   }
+  case H_DOALIGN:{ //doalgin
+    bool doalign;
+    if(!BoolArg().parse(s, doalign))
+	return errh->error("doalign parameter must be boolean");
+    f->_doalign = doalign;
+   break;
+  }
   }
   return 0;
 }
@@ -202,8 +221,9 @@ void
 RadiotapDecap::add_handlers()
 {
   add_read_handler("debug", RadiotapDecap_read_param, H_DEBUG);
-
+  add_read_handler("doalign", RadiotapDecap_read_param, H_DOALIGN);
   add_write_handler("debug", RadiotapDecap_write_param, H_DEBUG);
+  add_write_handler("doalign", RadiotapDecap_write_param, H_DOALIGN);
 }
 CLICK_ENDDECLS
 EXPORT_ELEMENT(RadiotapDecap)
