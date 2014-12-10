@@ -33,6 +33,7 @@ CLICK_DECLS
 	(1 << IEEE80211_RADIOTAP_RATE)		| \
 	(1 << IEEE80211_RADIOTAP_DBM_TX_POWER)	| \
 	(1 << IEEE80211_RADIOTAP_TX_FLAGS)	| \
+	(1 << IEEE80211_RADIOTAP_RTS_RETRIES)	| \
 	(1 << IEEE80211_RADIOTAP_DATA_RETRIES)	| \
 	0)
 
@@ -41,6 +42,7 @@ struct click_radiotap_header {
 	u_int8_t	wt_rate;
 	u_int8_t	wt_txpower;
 	u_int16_t	wt_tx_flags;
+	u_int8_t        wt_rts_retries;
 	u_int8_t        wt_data_retries;
 };
 
@@ -91,6 +93,7 @@ RadiotapEncap::simple_action(Packet *p)
           if (ceh->flags & WIFI_EXTRA_TX_NOACK) {
                   crh->wt_tx_flags |= IEEE80211_RADIOTAP_F_TX_NOACK;
           }
+	  crh->wt_rts_retries = 0;
 	  if (ceh->max_tries > 0) {
 		  crh->wt_data_retries = ceh->max_tries - 1;
 	  } else {
