@@ -14,6 +14,7 @@
 #include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/integers.hh>
+#include <click/packet_anno.hh>
 CLICK_DECLS
 
 #define CODEL_DEBUG 0
