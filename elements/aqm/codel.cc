@@ -13,6 +13,7 @@
 #include <click/router.hh>
 #include <click/args.hh>
 #include <click/straccum.hh>
+#include <click/integers.hh>
 CLICK_DECLS
 
 #define CODEL_DEBUG 0
@@ -241,9 +242,16 @@ CoDel::delegate_codel()
 Timestamp
 CoDel::control_law(Timestamp t)
 {
-    uint32_t val_click_ns = (_codel_interval_ts.msecval() * Timestamp::nsec_per_msec << 4)/(int_sqrt((uint32_t) _state_drops << 8));
-    uint32_t val_click_sec = val_click_ns / (Timestamp::nsec_per_sec);
-    uint32_t rem_ns = val_click_ns % (Timestamp::nsec_per_sec);
+    uint32_t scale_factor = 1 << 4;
+    uint32_t scale_factor_squared = scale_factor * scale_factor;
+    uint32_t scaled_codel_interval = _codel_interval_ts.msecval() * scale_factor;
+    uint32_t scaled_state_drops = _state_drops * scale_factor_squared;
+
+    uint32_t val_click_ns = int_divide(scaled_codel_interval * Timestamp::nsec_per_msec, int_sqrt(scaled_state_drops));
+
+    uint32_t rem_ns;
+    uint32_t val_click_sec = int_divide(val_click_ns, Timestamp::nsec_per_sec, rem_ns);
+
     Timestamp val_click_ts = Timestamp::make_nsec(val_click_sec, rem_ns);
     return (t + val_click_ts);
 }
