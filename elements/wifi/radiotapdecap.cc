@@ -123,6 +123,9 @@ RadiotapDecap::simple_action(Packet *p)
 				ceh->pad = 1;
 			}
 			if (flags & IEEE80211_RADIOTAP_F_FCS) {
+				if (flags & IEEE80211_RADIOTAP_F_BADFCS) {
+					ceh->flags |= WIFI_EXTRA_RX_ERR;
+				}
 				p->take(4);
 			}
 		}
@@ -145,7 +148,8 @@ RadiotapDecap::simple_action(Packet *p)
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_RX_FLAGS)) {
 			u_int16_t flags = le16_to_cpu(*((u_int16_t *) offsets[IEEE80211_RADIOTAP_RX_FLAGS]));
-			if (flags & IEEE80211_RADIOTAP_F_RX_BADFCS)
+			flags = flags << 8 | flags >> 8;
+			if ((flags & IEEE80211_RADIOTAP_F_RX_BADFCS) || (flags & IEEE80211_RADIOTAP_F_RX_BADPLCP))
 				ceh->flags |= WIFI_EXTRA_RX_ERR;
 		}
 
