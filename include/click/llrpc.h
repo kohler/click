@@ -33,14 +33,15 @@ CLICK_CXX_UNPROTECT
 # define _CLICK_IOC_IN		(_IOC_WRITE << _IOC_DIRSHIFT)
 #endif
 #define _CLICK_IOC_BASE_MASK	0x0FFFFFFF
+#define _CLICK_IOC_EXCLUSIVE	0x0000F000
 #define _CLICK_IOC_SAFE		0x00008000
 #define _CLICK_IOC_FLAT		0x00004000
 #define _CLICK_IOC_SIZE(io)	((io) >> 16 & 0xFFF)
 
-/* _CLICK_IO[S]: data transfer direction unknown, pass pointer unchanged;
-   _CLICK_IOR[S]: data of specified size sent from kernel to user;
-   _CLICK_IOW[S]: data of specified size sent from user to kernel;
-   _CLICK_IOWR[S]: data of specified size transferred in both directions. */
+/* _CLICK_IO[SE][F]: data transfer direction unknown, pass pointer unchanged;
+   _CLICK_IOR[SE][F]: data of specified size sent from kernel to user;
+   _CLICK_IOW[SE][F]: data of specified size sent from user to kernel;
+   _CLICK_IOWR[SE][F]: data of specified size transferred in both directions. */
 
 /* "Non-safe" LLRPCs will not be performed in parallel with other LLRPCs or
    handlers. */
@@ -57,14 +58,24 @@ CLICK_CXX_UNPROTECT
 #define _CLICK_IOWS(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_SAFE, (n), (sz))
 #define _CLICK_IOWRS(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_OUT|_CLICK_IOC_SAFE, (n), (sz))
 
+/* "Exclusive" LLRPCs will not be performed in parallel with other LLRPCs or
+   handlers and all click threads will be blocked. */
+#define _CLICK_IOE(n)		_CLICK_IOX(_CLICK_IOC_VOID|_CLICK_IOC_EXCLUSIVE, (n), 0)
+#define _CLICK_IORE(n, sz)	_CLICK_IOX(_CLICK_IOC_OUT|_CLICK_IOC_EXCLUSIVE, (n), (sz))
+#define _CLICK_IOWE(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_EXCLUSIVE, (n), (sz))
+#define _CLICK_IOWRE(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_OUT|_CLICK_IOC_EXCLUSIVE, (n), (sz))
+
 /* "Flat" LLRPCs do not contain pointers -- all data read or written is
-   contained in the size. They can be safe or unsafe. */
+   contained in the size. They can be safe, unsafe, or exclusive. */
 #define _CLICK_IORF(n, sz)	_CLICK_IOX(_CLICK_IOC_OUT|_CLICK_IOC_FLAT, (n), (sz))
 #define _CLICK_IOWF(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_FLAT, (n), (sz))
 #define _CLICK_IOWRF(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_OUT|_CLICK_IOC_FLAT, (n), (sz))
 #define _CLICK_IORSF(n, sz)	_CLICK_IOX(_CLICK_IOC_OUT|_CLICK_IOC_SAFE|_CLICK_IOC_FLAT, (n), (sz))
 #define _CLICK_IOWSF(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_SAFE|_CLICK_IOC_FLAT, (n), (sz))
 #define _CLICK_IOWRSF(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_OUT|_CLICK_IOC_SAFE|_CLICK_IOC_FLAT, (n), (sz))
+#define _CLICK_IOREF(n, sz)	_CLICK_IOX(_CLICK_IOC_OUT|_CLICK_IOC_EXCLUSIVE|_CLICK_IOC_FLAT, (n), (sz))
+#define _CLICK_IOWEF(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_EXCLUSIVE|_CLICK_IOC_FLAT, (n), (sz))
+#define _CLICK_IOWREF(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_OUT|_CLICK_IOC_EXCLUSIVE|_CLICK_IOC_FLAT, (n), (sz))
 
 #define CLICK_LLRPC_PROXY			_CLICK_IO(0)
 #define CLICK_LLRPC_GET_RATE			_CLICK_IOWRSF(1, 4)

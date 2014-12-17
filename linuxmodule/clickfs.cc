@@ -975,6 +975,9 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
 	    && (retval = CLICK_LLRPC_GET_DATA(data, address_ptr, size)) < 0)
 	    goto free_exit;
 
+	if (command & _CLICK_IOC_EXCLUSIVE)
+	    lock_threads();
+
 	// call llrpc
         if (size && (command & (_CLICK_IOC_IN | _CLICK_IOC_OUT)))
             arg_ptr = data;
@@ -985,6 +988,9 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
 	    retval = e->llrpc(command, arg_ptr);
 	else
 	    retval = e->Element::llrpc(command, arg_ptr);
+
+	if (command & _CLICK_IOC_EXCLUSIVE)
+	    unlock_threads();
 
 	// store outgoing data if necessary
 	if (retval >= 0 && size && (command & _CLICK_IOC_OUT))
