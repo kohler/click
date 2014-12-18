@@ -950,7 +950,8 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
                || !(e = click_router->element(click_ino.ino_element(inode->i_ino))))
 	retval = -EIO;
     else {
-        if (command & _CLICK_IOC_SAFE)
+        bool ioc_safe = (command & _CLICK_IOC_SAFE);
+        if (ioc_safe)
             locktype = DOWNGRADE_CONFIG_LOCK(e->router());
 
 	union {
@@ -975,6 +976,9 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
 	    && (retval = CLICK_LLRPC_GET_DATA(data, address_ptr, size)) < 0)
 	    goto free_exit;
 
+        if (!ioc_safe)
+            lock_threads();
+
 	// call llrpc
         if (size && (command & (_CLICK_IOC_IN | _CLICK_IOC_OUT)))
             arg_ptr = data;
@@ -985,6 +989,9 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
 	    retval = e->llrpc(command, arg_ptr);
 	else
 	    retval = e->Element::llrpc(command, arg_ptr);
+
+        if (!ioc_safe)
+            unlock_threads();
 
 	// store outgoing data if necessary
 	if (retval >= 0 && size && (command & _CLICK_IOC_OUT))
