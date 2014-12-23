@@ -3103,6 +3103,7 @@ fi
 
 as_fn_append ac_header_list " sys/types.h"
 as_fn_append ac_header_list " unistd.h"
+as_fn_append ac_header_list " stdint.h"
 as_fn_append ac_header_list " inttypes.h"
 as_fn_append ac_header_list " endian.h"
 as_fn_append ac_header_list " machine/endian.h"
@@ -7403,6 +7404,8 @@ $as_echo "$ac_cv_sizeof_void_p" >&6; }
 cat >>confdefs.h <<_ACEOF
 #define SIZEOF_VOID_P $ac_cv_sizeof_void_p
 _ACEOF
+
+
 
 
 

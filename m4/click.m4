@@ -617,7 +617,7 @@ dnl
 
 AC_DEFUN([CLICK_CHECK_INTEGER_TYPES], [
     AC_C_CHAR_UNSIGNED
-    AC_CHECK_HEADERS_ONCE([inttypes.h])
+    AC_CHECK_HEADERS_ONCE([stdint.h inttypes.h])
 
     if test x$ac_cv_header_inttypes_h = xno; then
         AC_CACHE_CHECK(for uintXX_t typedefs, ac_cv_uint_t,
