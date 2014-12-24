@@ -125,13 +125,7 @@ CoDel::handle_drop(Packet *p)
 Packet *
 CoDel::pull(int)
 {
-    Packet *pkt = delegate_codel();
-
-    // set the queue delay in the packet for stats later
-    if(pkt != NULL) {
-        SET_FIRST_TIMESTAMP_ANNO(pkt, (Timestamp::now() - FIRST_TIMESTAMP_ANNO(pkt)));
-    }
-    return pkt;
+    return delegate_codel();
 }
 
 // helper: pull a packet, and tracks if the sojourn time of the packet is above the target //
