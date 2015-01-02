@@ -489,14 +489,31 @@ void wmain::on_export_diagram()
 				(const char *) NULL);
     gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_ACCEPT);
     gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);
+    GtkWidget *combo_extensions = gtk_combo_box_text_new();
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo_extensions), "PDF");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo_extensions), "SVG");
+    gtk_combo_box_set_active(GTK_COMBO_BOX(combo_extensions), 0);
+    gtk_file_chooser_set_extra_widget(GTK_FILE_CHOOSER(dialog), combo_extensions);
 
     if (gtk_dialog_run(GTK_DIALOG(dialog)) != GTK_RESPONSE_ACCEPT) {
 	gtk_widget_destroy(dialog);
 	return;
     } else {
+	char final_filename[200];
 	char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-	_diagram->export_diagram(filename, false);
+	char *filename_ext = strrchr(filename, '.');
+	int export_to_index = gtk_combo_box_get_active(GTK_COMBO_BOX(combo_extensions));
+	const char *export_to;
+	if (filename_ext && (strncmp(".pdf", filename_ext, 5) == 0 || strncmp(".svg", filename_ext, 5) == 0))
+	    export_to = ""; // extension already valid
+	else if (export_to_index == 0)
+	    export_to = ".pdf";
+	else
+	    export_to = ".svg";
+	snprintf(final_filename, 200, "%s%s", filename, export_to);
+	final_filename[200-1] = '\0';
 	g_free(filename);
+	_diagram->export_diagram(final_filename, false);
 	gtk_widget_destroy(dialog);
     }
 }
