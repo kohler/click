@@ -1642,6 +1642,12 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
         AC_DEFINE([HAVE_SKB_RECYCLE], [1], [Define if you have the skb_recycle function.])
     fi
 
+    AC_CHECK_DECL([skb_recycle_check], [ac_cv_skb_recycle_check=yes], [ac_cv_skb_recycle_check=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>]])
+    if test $ac_cv_skb_recycle_check = yes; then
+        AC_DEFINE([HAVE_SKB_RECYCLE_CHECK], [1], [Define if you have the skb_recycle_check function.])
+    fi
+
 save_cflags="$CFLAGS"
 CFLAGS="$save_cflags -Werror-implicit-function-declaration"
 
