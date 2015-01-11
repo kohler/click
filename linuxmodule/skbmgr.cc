@@ -302,10 +302,10 @@ RecycledSkbPool::recycle(struct sk_buff *skbs)
 	  _buckets[bucket]._skbs[tail] = skb;
 	  _buckets[bucket]._tail = next;
 	  skb = 0;
-	}
 # if DEBUG_SKBMGR
-        _recycle_freed++;
+          _recycle_freed++;
 # endif
+	}
       }
       unlock();
     }
