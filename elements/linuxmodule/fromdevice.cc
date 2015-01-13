@@ -106,7 +106,8 @@ FromDevice::static_cleanup()
 
 FromDevice::FromDevice()
 {
-    _head = _tail = 0;
+    set_head(0);
+    set_tail(0);
 }
 
 FromDevice::~FromDevice()
@@ -140,7 +141,9 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	return -1;
 
     // make queue look full so packets sent to us are ignored
-    _head = _tail = _capacity = 0;
+    set_head(0);
+    set_tail(0);
+    _capacity = 0;
 
     net_device *dev = lookup_device(errh);
     set_device(dev, &from_device_map, anydev_from_device);
@@ -212,9 +215,10 @@ FromDevice::cleanup(CleanupStage stage)
     clear_device(&from_device_map, anydev_from_device);
 
     if (stage >= CLEANUP_INITIALIZED)
-	for (Storage::index_type i = _head; i != _tail; i = next_i(i))
+	for (Storage::index_type i = head(); i != tail(); i = next_i(i))
 	    _queue[i]->kill();
-    _head = _tail = 0;
+    set_head(0);
+    set_tail(0);
 }
 
 void
@@ -224,21 +228,23 @@ FromDevice::take_state(Element *e, ErrorHandler *errh)
 	SpinlockIRQ::flags_t flags;
 	local_irq_save(flags);
 
-	Storage::index_type fd_i = fd->_head;
-	while (fd_i != fd->_tail) {
-	    Storage::index_type next = next_i(_tail);
-	    if (next == _head)
+	Storage::index_type fd_i = fd->head();
+	while (fd_i != fd->tail()) {
+	    Storage::index_type t = fd->tail(), nt = next_i(t);
+	    if (nt == fd->head())
 		break;
-	    _queue[_tail] = fd->_queue[fd_i];
+	    _queue[t] = fd->_queue[fd_i];
 	    fd_i = fd->next_i(fd_i);
-	    _tail = next;
+	    set_tail(nt);
 	}
-	for (; fd_i != fd->_tail; fd_i = fd->next_i(fd_i))
+	for (; fd_i != fd->tail(); fd_i = fd->next_i(fd_i))
 	    fd->_queue[fd_i]->kill();
-	if (_head != _tail)
+	if (head() != tail())
 	    _task.reschedule();
 
-	fd->_head = fd->_tail = fd->_capacity = 0;
+	fd->set_head(0);
+        fd->set_tail(0);
+        fd->_capacity = 0;
 	_highwater_length = size();
 
 	local_irq_restore(flags);
@@ -384,9 +390,9 @@ FromDevice::got_skb(struct sk_buff *skb)
     if (!_active)
 	return 0;		// 0 means not handled
 
-    unsigned next = next_i(_tail), head = _head;
+    Storage::index_type h = head(), t = tail(), nt = next_i(t);
 
-    if (next != head) { /* ours */
+    if (nt != h) { /* ours */
 	skb = skb_share_check(skb, GFP_ATOMIC);
 	if (!skb)
 	    return 1;
@@ -400,27 +406,27 @@ FromDevice::got_skb(struct sk_buff *skb)
 #endif
 
 	Packet *p = Packet::make(skb);
-	_queue[_tail] = p; /* hand it to run_task */
-	packet_memory_barrier(_queue[_tail], _tail);
+	_queue[t] = p; /* hand it to run_task */
+	packet_memory_barrier(_queue[t]);
 
 #if CLICK_DEBUG_SCHEDULING
-	_schinfo[_tail].enq_time.assign_now();
+	_schinfo[t].enq_time.assign_now();
 	RouterThread *rt = _task.thread();
-	_schinfo[_tail].enq_state = rt->thread_state();
+	_schinfo[t].enq_state = rt->thread_state();
 	int enq_process_asleep = rt->sleeper() && rt->sleeper()->state != TASK_RUNNING;
-	_schinfo[_tail].enq_task_scheduled = _task.scheduled();
-	_schinfo[_tail].enq_epoch = rt->driver_epoch();
-	_schinfo[_tail].enq_task_epoch = rt->driver_task_epoch();
+	_schinfo[t].enq_task_scheduled = _task.scheduled();
+	_schinfo[t].enq_epoch = rt->driver_epoch();
+	_schinfo[t].enq_task_epoch = rt->driver_task_epoch();
 #endif
 
-	_tail = next;
+	set_tail(nt);
 	_task.reschedule();
 
 #if CLICK_DEBUG_SCHEDULING
-	_schinfo[_tail].enq_woke_process = enq_process_asleep && rt->sleeper()->state == TASK_RUNNING;
+	_schinfo[t].enq_woke_process = enq_process_asleep && rt->sleeper()->state == TASK_RUNNING;
 #endif
 
-	unsigned s = size(head, next);
+	unsigned s = size(h, nt);
 	if (s > _highwater_length)
 	    _highwater_length = s;
 
@@ -465,13 +471,14 @@ FromDevice::run_task(Task *)
 {
     _runs++;
     int npq = 0;
-    while (npq < _burst && _head != _tail) {
-	Packet *p = _queue[_head];
-	packet_memory_barrier(_queue[_head], _head);
+    Storage::index_type h;
+    while (npq < _burst && (h = head()) != tail()) {
+	Packet *p = _queue[h];
+	packet_memory_barrier(_queue[h]);
 #if CLICK_DEBUG_SCHEDULING
-	emission_report(_head);
+	emission_report(h);
 #endif
-	_head = next_i(_head);
+	set_head(next_i(h));
 	output(0).push(p);
 	npq++;
 	_count++;

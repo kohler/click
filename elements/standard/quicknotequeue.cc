@@ -36,13 +36,14 @@ QuickNoteQueue::cast(const char *n)
 Packet *
 QuickNoteQueue::pull(int)
 {
-    int h = _head, t = _tail;
+    int h = head(), t = tail();
     Packet *p;
 
     if (h != t) {
 	p = _q[h];
-	packet_memory_barrier(_q[h], _head);
-	_head = h = next_i(h);
+	packet_memory_barrier(_q[h]);
+        h = next_i(h);
+        set_head(h);
 	_full_note.wake();
     } else
 	p = 0;

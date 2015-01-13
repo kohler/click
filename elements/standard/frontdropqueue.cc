@@ -51,21 +51,21 @@ FrontDropQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
   if (new_q == 0)
     return errh->error("out of memory");
 
-  Storage::index_type i = _tail, j = new_capacity;
-  while (j != 0 && i != _head) {
+  Storage::index_type i = tail(), j = new_capacity;
+  while (j != 0 && i != head()) {
       i = prev_i(i);
       --j;
       new_q[j] = _q[i];
   }
-  while (i != _head) {
+  while (i != head()) {
       i = prev_i(i);
       _q[i]->kill();
   }
 
   CLICK_LFREE(_q, sizeof(Packet *) * (_capacity + 1));
   _q = new_q;
-  _head = j;
-  _tail = new_capacity;
+  set_head(j);
+  set_tail(new_capacity);
   _capacity = new_capacity;
   return 0;
 }
@@ -77,19 +77,19 @@ FrontDropQueue::take_state(Element *e, ErrorHandler *errh)
     if (!q)
 	return;
 
-    if (_tail != _head || _head != 0) {
+    if (tail() != head() || head() != 0) {
 	errh->error("already have packets enqueued, can%,t take state");
 	return;
     }
 
-    _tail = _capacity;
+    set_tail(_capacity);
     Storage::index_type i = _capacity, j = q->tail();
     while (i > 0 && j != q->head()) {
 	i--;
 	j = q->prev_i(j);
 	_q[i] = q->packet(j);
     }
-    _head = i;
+    set_head(i);
     _highwater_length = size();
 
     if (j != q->head())
@@ -109,19 +109,19 @@ FrontDropQueue::push(int, Packet *p)
     assert(p);
 
     // inline Queue::enq() for speed
-    Storage::index_type next = next_i(_tail);
+    Storage::index_type t = tail(), nt = next_i(t);
 
     // should this stuff be in Queue::enq?
-    if (next == _head) {
+    if (nt == head()) {
 	if (_drops == 0 && _capacity > 0)
 	    click_chatter("%p{element}: overflow", this);
-	checked_output_push(1, _q[_head]);
+	checked_output_push(1, _q[nt]);
 	_drops++;
-	_head = next_i(_head);
+	set_head(next_i(nt));
     }
 
-    _q[_tail] = p;
-    _tail = next;
+    _q[t] = p;
+    set_tail(nt);
 
     int s = size();
     if (s > _highwater_length)
