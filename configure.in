@@ -25,6 +25,8 @@ AC_CONFIG_FILES([doc/Makefile etc/libclick/Makefile tools/Makefile tools/lib/Mak
 AC_CONFIG_SRCDIR([click-buildtool.in])
 
 CLICK_VERSION=$PACKAGE_VERSION
+dnl NB a real tab character!
+tabchar='	'
 
 AC_SUBST(ac_configure_args)
 AC_DEFINE_UNQUOTED([CLICK_VERSION], ["$CLICK_VERSION"])
@@ -1371,7 +1373,7 @@ fixincludes.pl execution failed.
         fi
         LINUX_CFLAGS="`head -n 1 conftest.dat`"
         LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
-        CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s       $mydir  $clickbuild_includedir/click-linuxmodule        g"`"
+        CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s$tabchar$mydir$tabchar$clickbuild_includedir/click-linuxmodule${tabchar}g"`"
     fi
     AC_SUBST([LINUX_FIXINCLUDES_PROGRAM])
     AC_SUBST([CLICKLINUX_FIXINCLUDES_PROGRAM])
