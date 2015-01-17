@@ -134,6 +134,88 @@ RadiotapDecap::simple_action(Packet *p)
 
 	struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
 	if (rt_check_header(th, p->length(), offsets, _doalign)) {
+
+
+		printf("====================================\n");
+		printf("header ");
+		for(int i = 0; i< 4; i++){
+			printf("%.2x ", p->data()[i]);
+			// header rev (1), header pad (1), header len (2)
+		}
+		printf("|\n1st Bitmap ");
+		for(int i = 4; i< 8; i++){
+			printf("%.2x ", p->data()[i]);
+			// 1st present flags bitmap (4)
+		}
+		printf("|\n2nd Bitmap ");
+		for(int i = 8; i< 12; i++){
+			printf("%.2x ", p->data()[i]);
+			// 2nd present flags bitmap (4)
+		}
+		printf("|\n3rd Bitmap ");
+		for(int i = 12; i< 16; i++){
+			printf("%.2x ", p->data()[i]);
+			// 3rd present flags bitmap (4)
+		}
+		printf("|\nMAC timestamp ");
+		for(int i = 16; i< 24; i++){
+			printf("%.2x ", p->data()[i]);
+			// MAC timestamp (8)
+		}
+		printf("|\nFlags ");
+		for(int i = 24; i< 25; i++){
+			printf("%.2x ", p->data()[i]);
+			// Flags (1)
+		}
+		printf("|\nData Rate ");
+		for(int i = 25; i< 26; i++){
+			printf("%.2x ", p->data()[i]);
+			// Data Rate (1)
+		}
+		printf("|\nChannel Freq ");
+		for(int i = 26; i< 28; i++){
+			printf("%.2x ", p->data()[i]);
+			// Channel Frequency (2)
+		}
+		printf("|\nChannel Flags ");
+		for(int i = 28; i< 30; i++){
+			printf("%.2x ", p->data()[i]);
+			// Channel Flags (2)
+		}
+		printf("|\nRSSI ");
+		for(int i = 30; i< 32; i++){
+			printf("%.2x ", p->data()[i]);
+			// RSSI (1), Antenna index(1)
+		}
+		printf("|\nRX Flags ");
+		for(int i = 32; i< 34; i++){
+			printf("%.2x ", p->data()[i]);
+			// RX Flags (2)
+		}
+		printf("|\nRSSI_1 ");
+		for(int i = 34; i< 36; i++){
+			printf("%.2x ", p->data()[i]);
+			// RSSI (1) and Antenna index (1)
+		}
+		printf("|\nRSSI_2 ");
+		for(int i = 36; i< 38; i++){
+			printf("%.2x ", p->data()[i]);
+			// RSSI (1) and Antenna index (1)
+		}
+
+		printf("|\nREST ");
+		for(int i = 38; i< th->it_len; i++){
+			printf(">>%.2x ", p->data()[i]);
+			// REST, shouldn't be any
+		}
+
+
+
+
+
+
+
+
 		memset((void*)ceh, 0, sizeof(struct click_wifi_extra));
 		ceh->magic = WIFI_EXTRA_MAGIC;
 
@@ -149,17 +231,20 @@ RadiotapDecap::simple_action(Packet *p)
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_RATE)) {
 			ceh->rate = *(offsets[IEEE80211_RADIOTAP_RATE] + additional_radiotap_presents*4);
+			printf("ceh->rate=%x -->>IEEE80211_RADIOTAP_RATE\n", ceh->rate);
 		}
 
-		if (rt_el_present(th, IEEE80211_RADIOTAP_DBM_ANTSIGNAL))
+		if (rt_el_present(th, IEEE80211_RADIOTAP_DBM_ANTSIGNAL)){
 			ceh->rssi = *(offsets[IEEE80211_RADIOTAP_DBM_ANTSIGNAL] + additional_radiotap_presents*4);
-
+			printf("ceh->rssi=%x -->>IEEE80211_RADIOTAP_DBM_ANTSIGNAL\n", ceh->rssi);
+		}
 		if (rt_el_present(th, IEEE80211_RADIOTAP_DBM_ANTNOISE))
 			ceh->silence = *(offsets[IEEE80211_RADIOTAP_DBM_ANTNOISE] + additional_radiotap_presents*4);
 
-		if (rt_el_present(th, IEEE80211_RADIOTAP_DB_ANTSIGNAL))
+		if (rt_el_present(th, IEEE80211_RADIOTAP_DB_ANTSIGNAL)){
 			ceh->rssi = *(offsets[IEEE80211_RADIOTAP_DB_ANTSIGNAL] + additional_radiotap_presents*4);
-
+			printf("ceh->rssi=%x ==>> IEEE80211_RADIOTAP_DB_ANTSIGNAL\n", ceh->rssi);
+		}
 		if (rt_el_present(th, IEEE80211_RADIOTAP_DB_ANTNOISE))
 			ceh->silence = *(offsets[IEEE80211_RADIOTAP_DB_ANTNOISE] + additional_radiotap_presents*4);
 
