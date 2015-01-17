@@ -27,13 +27,14 @@
 #include <clicknet/llc.h>
 CLICK_DECLS
 
-#define NUM_RADIOTAP_ELEMENTS 18
+#define NUM_RADIOTAP_ELEMENTS 19
 
 static const int radiotap_elem_to_bytes[NUM_RADIOTAP_ELEMENTS] =
 	{8, /* IEEE80211_RADIOTAP_TSFT */
 	 1, /* IEEE80211_RADIOTAP_FLAGS */
 	 1, /* IEEE80211_RADIOTAP_RATE */
-	 4, /* IEEE80211_RADIOTAP_CHANNEL */
+	 2, /* IEEE80211_RADIOTAP_CHANNEL_FLAGS */
+	 2, /* IEEE80211_RADIOTAP_CHANNEL_FLAGS */
 	 2, /* IEEE80211_RADIOTAP_FHSS */
 	 1, /* IEEE80211_RADIOTAP_DBM_ANTSIGNAL */
 	 1, /* IEEE80211_RADIOTAP_DBM_ANTNOISE */
@@ -122,13 +123,22 @@ RadiotapDecap::simple_action(Packet *p)
 	u_int8_t *offsets[NUM_RADIOTAP_ELEMENTS];
 	struct ieee80211_radiotap_header *th = (struct ieee80211_radiotap_header *) p->data();
 
+	int additional_radiotap_presents = 0;
+	u_int32_t *tp = (u_int32_t*) &th->it_present;
+
+	while(le32_to_cpu(*tp) & (1 << IEEE80211_RADIOTAP_EXT)){
+		printf("+++++tp=%.4x\n", le32_to_cpu(*tp));
+		additional_radiotap_presents++;
+		tp += 1;
+	}
+
 	struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
 	if (rt_check_header(th, p->length(), offsets, _doalign)) {
 		memset((void*)ceh, 0, sizeof(struct click_wifi_extra));
 		ceh->magic = WIFI_EXTRA_MAGIC;
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_FLAGS)) {
-			u_int8_t flags = *offsets[IEEE80211_RADIOTAP_FLAGS];
+			u_int8_t flags = *(offsets[IEEE80211_RADIOTAP_FLAGS] + additional_radiotap_presents*4);
 			if (flags & IEEE80211_RADIOTAP_F_DATAPAD) {
 				ceh->pad = 1;
 			}
@@ -138,20 +148,20 @@ RadiotapDecap::simple_action(Packet *p)
 		}
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_RATE)) {
-			ceh->rate = *offsets[IEEE80211_RADIOTAP_RATE];
+			ceh->rate = *(offsets[IEEE80211_RADIOTAP_RATE] + additional_radiotap_presents*4);
 		}
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_DBM_ANTSIGNAL))
-			ceh->rssi = *offsets[IEEE80211_RADIOTAP_DBM_ANTSIGNAL];
+			ceh->rssi = *(offsets[IEEE80211_RADIOTAP_DBM_ANTSIGNAL] + additional_radiotap_presents*4);
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_DBM_ANTNOISE))
-			ceh->silence = *offsets[IEEE80211_RADIOTAP_DBM_ANTNOISE];
+			ceh->silence = *(offsets[IEEE80211_RADIOTAP_DBM_ANTNOISE] + additional_radiotap_presents*4);
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_DB_ANTSIGNAL))
-			ceh->rssi = *offsets[IEEE80211_RADIOTAP_DB_ANTSIGNAL];
+			ceh->rssi = *(offsets[IEEE80211_RADIOTAP_DB_ANTSIGNAL] + additional_radiotap_presents*4);
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_DB_ANTNOISE))
-			ceh->silence = *offsets[IEEE80211_RADIOTAP_DB_ANTNOISE];
+			ceh->silence = *(offsets[IEEE80211_RADIOTAP_DB_ANTNOISE] + additional_radiotap_presents*4);
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_RX_FLAGS)) {
 			u_int16_t flags = le16_to_cpu(*((u_int16_t *) offsets[IEEE80211_RADIOTAP_RX_FLAGS]));
@@ -160,14 +170,14 @@ RadiotapDecap::simple_action(Packet *p)
 		}
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_TX_FLAGS)) {
-			u_int16_t flags = le16_to_cpu(*((u_int16_t *) offsets[IEEE80211_RADIOTAP_TX_FLAGS]));
+			u_int16_t flags = le16_to_cpu(*((u_int16_t *) offsets[IEEE80211_RADIOTAP_TX_FLAGS] + additional_radiotap_presents*4));
 			ceh->flags |= WIFI_EXTRA_TX;
 			if (flags & IEEE80211_RADIOTAP_F_TX_FAIL)
 				ceh->flags |= WIFI_EXTRA_TX_FAIL;
 		}
 
 		if (rt_el_present(th, IEEE80211_RADIOTAP_DATA_RETRIES))
-			ceh->retries = *offsets[IEEE80211_RADIOTAP_DATA_RETRIES];
+			ceh->retries = *(offsets[IEEE80211_RADIOTAP_DATA_RETRIES] + additional_radiotap_presents*4);
 
 		p->pull(le16_to_cpu(th->it_len));
 		p->set_mac_header(p->data());  // reset mac-header pointer
