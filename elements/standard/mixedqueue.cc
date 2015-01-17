@@ -39,7 +39,7 @@ MixedQueue::push(int port, Packet *p)
     Packet *oldp = 0;
 
     if (port == 0) {		// FIFO insert, drop new packet if full
-	int h = _head, t = _tail, nt = next_i(t);
+	int h = head(), t = tail(), nt = next_i(t);
 	if (nt == h) {
 	    if (_drops == 0 && _capacity > 0)
 		click_chatter("%p{element}: overflow", this);
@@ -47,23 +47,23 @@ MixedQueue::push(int port, Packet *p)
 	    checked_output_push(1, p);
 	} else {
 	    _q[t] = p;
-	    packet_memory_barrier(_q[t], _tail);
-	    _tail = nt;
+	    packet_memory_barrier(_q[t]);
+	    set_tail(nt);
 	}
     } else {			// LIFO insert, drop old packet if full
-	int h = _head, t = _tail, ph = prev_i(h);
+	int h = head(), t = tail(), ph = prev_i(h);
 	if (ph == t) {
 	    if (_drops == 0 && _capacity > 0)
 		click_chatter("%p{element}: overflow", this);
 	    _drops++;
 	    t = prev_i(t);
 	    oldp = _q[t];
-	    packet_memory_barrier(_q[t], _tail);
-	    _tail = t;
+	    packet_memory_barrier(_q[t]);
+	    set_tail(t);
 	}
 	_q[ph] = p;
-	packet_memory_barrier(_q[ph], _head);
-	_head = ph;
+	packet_memory_barrier(_q[ph]);
+	set_head(ph);
     }
 
     int s = size();

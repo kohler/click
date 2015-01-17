@@ -99,7 +99,8 @@ FromHost::FromHost()
       _task(this), _wakeup_timer(fl_wakeup, this),
       _drops(0), _ninvalid(0)
 {
-    _head = _tail = 0;
+    set_head(0);
+    set_tail(0);
     _capacity = 100;
     _q.lgq = 0;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 32)
@@ -360,15 +361,16 @@ FromHost::cleanup(CleanupStage)
     fromlinux_map.remove(this, false);
 
     Packet * volatile *q = queue();
-    while (_head != _tail) {
-	Packet *p = q[_head];
+    while (head() != tail()) {
+	Packet *p = q[head()];
 	p->kill();
-	_head = next_i(_head);
+	set_head(next_i(head()));
     }
     if (_capacity > smq_size)
 	delete[] _q.lgq;
     _capacity = 1;
-    _head = _tail = 0;
+    set_head(0);
+    set_tail(0);
 
     if (_dev) {
 	dev_put(_dev);
@@ -461,8 +463,8 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
     unsigned long lock_flags;
     fromlinux_map.lock(false, lock_flags);
     if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0)) {
-	Storage::index_type next = fl->next_i(fl->_tail);
-	if (likely(next != fl->_head)) {
+        Storage::index_type t = fl->tail(), nt = fl->next_i(t);
+	if (likely(nt != fl->head())) {
 	    Packet * volatile *q = fl->queue();
 
 	    // skb->dst may be set since the packet came from Linux.  Since
@@ -483,9 +485,9 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
 	    fl->stats()->tx_packets++;
 	    fl->stats()->tx_bytes += p->length();
 	    fl->_task.reschedule();
-	    q[fl->_tail] = p;
-	    packet_memory_barrier(q[fl->_tail], fl->_tail);
-	    fl->_tail = next;
+	    q[t] = p;
+	    fl->packet_memory_barrier(q[t]);
+	    fl->set_tail(nt);
 	    ret = (netdev_tx_t) NETDEV_TX_OK;
 	} else {
 	    fl->_drops++;
@@ -505,9 +507,10 @@ FromHost::run_task(Task *)
 
     Packet * volatile *q = queue();
     for (int count = 0; count < _burst && !empty(); ++count) {
-	Packet *p = q[_head];
-	packet_memory_barrier(q[_head], _head);
-	_head = next_i(_head);
+        Storage::index_type h = head();
+	Packet *p = q[h];
+	packet_memory_barrier(q[h]);
+	set_head(next_i(h));
 
 	// Convenience for TYPE IP: set the IP header and destination address.
 	if (_dev->type == ARPHRD_NONE && p->length() >= 1) {

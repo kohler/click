@@ -32,8 +32,9 @@ class Storage { public:
     void set_head(index_type h)		{ _head = h; }
     void set_tail(index_type t)		{ _tail = t; }
 
-    static inline void packet_memory_barrier(Packet * volatile &packet,
-					     volatile index_type &index);
+    static inline void packet_memory_barrier(Packet* volatile& packet,
+                                             volatile index_type& index);
+    inline void packet_memory_barrier(Packet* volatile& packet);
 
   protected:
 
@@ -57,9 +58,15 @@ Storage::size() const
 }
 
 inline void
-Storage::packet_memory_barrier(Packet * volatile &packet, volatile index_type &index)
+Storage::packet_memory_barrier(Packet* volatile& packet, volatile index_type& index)
 {
     __asm__ volatile("" : : "m" (packet), "m" (index));
+}
+
+inline void
+Storage::packet_memory_barrier(Packet * volatile &packet)
+{
+    __asm__ volatile("" : : "m" (packet), "m" (_head), "m" (_tail));
 }
 
 CLICK_ENDDECLS

@@ -48,12 +48,12 @@ void
 NotifierQueue::push(int, Packet *p)
 {
     // Code taken from SimpleQueue::push().
-    int h = _head, t = _tail, nt = next_i(t);
+    int h = head(), t = tail(), nt = next_i(t);
 
     if (nt != h) {
 	_q[t] = p;
-	packet_memory_barrier(_q[t], _tail);
-	_tail = nt;
+	packet_memory_barrier(_q[t]);
+	set_tail(nt);
 
 	int s = size(h, nt);
 	if (s > _highwater_length)

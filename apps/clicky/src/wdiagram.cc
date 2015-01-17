@@ -11,6 +11,7 @@
 #include <math.h>
 #include <cairo-ps.h>
 #include <cairo-pdf.h>
+#include <cairo-svg.h>
 #include "wdiagram.hh"
 #include "dwidget.hh"
 #include "crouter.hh"
@@ -97,7 +98,7 @@ static cairo_status_t cairo_surface_stdout_write(void *, const unsigned char *st
 }
 }
 
-void cdiagram::export_pdf(const char *filename, crouter *cr,
+void cdiagram::export_to_file(const char *filename, crouter *cr,
 			  point page_size, point margin, double scale,
 			  bool multipage)
 {
@@ -113,16 +114,20 @@ void cdiagram::export_pdf(const char *filename, crouter *cr,
     cairo_destroy(cairo);
     cairo_surface_destroy(crs);
 
-    cd->export_pdf(filename, false, cr, generation, page_size, margin, scale, multipage);
+    cd->export_to_file(filename, false, cr, generation, page_size, margin, scale, multipage);
 
     delete cd;
 }
 
-void cdiagram::export_pdf(const char *filename, bool eps,
+void cdiagram::export_to_file(const char *filename, bool eps,
 			  crouter *cr, unsigned generation,
 			  point page_size, point margin, double scale,
 			  bool multipage)
 {
+    char *filename_save = strdup(filename);
+    char *filename_ext = strrchr(filename_save, '.');
+    if (filename_ext)
+        filename_ext++;
     if (eps || !page_size)
 	page_size = point(width() / scale + 2 * margin.x(),
 			  height() / scale + 2 * margin.y());
@@ -133,10 +138,12 @@ void cdiagram::export_pdf(const char *filename, bool eps,
 #if CAIRO_VERSION_MINOR >= 6 || (CAIRO_VERSION_MINOR == 5 && CAIRO_VERSION_MICRO >= 2)
 	cairo_ps_surface_set_eps(crs, TRUE);
 #endif
-    } else if (!filename || strcmp(filename, "") == 0 || strcmp(filename, "-") == 0)
-	crs = cairo_pdf_surface_create_for_stream(cairo_surface_stdout_write, 0, page_size.x(), page_size.y());
-    else
-	crs = cairo_pdf_surface_create(filename, page_size.x(), page_size.y());
+     } else if (!filename || strcmp(filename, "") == 0 || strcmp(filename, "-") == 0) // PDF stream on stdout
+        crs = cairo_pdf_surface_create_for_stream(cairo_surface_stdout_write, 0, page_size.x(), page_size.y());
+    else if (filename_ext && strncmp("svg", filename_ext, 4) == 0)
+        crs = cairo_svg_surface_create(filename, page_size.x(), page_size.y());
+    else // PDF by default
+        crs = cairo_pdf_surface_create(filename, page_size.x(), page_size.y());
 
     cairo_t *cairo = cairo_create(crs);
     dcontext dcx(cr, pango_cairo_create_layout(cairo), cairo,
@@ -176,6 +183,7 @@ void cdiagram::export_pdf(const char *filename, bool eps,
     g_object_unref(G_OBJECT(dcx.pl));
     cairo_destroy(dcx.cairo);
     cairo_surface_destroy(crs);
+    free(filename_save);
 }
 
 
@@ -455,7 +463,7 @@ void wdiagram::export_diagram(const char *filename, bool eps)
 {
     if (!_cdiagram)
 	router_create(true, true);
-    _cdiagram->export_pdf(filename, eps, main(), dcontext::step_generation(),
+    _cdiagram->export_to_file(filename, eps, main(), dcontext::step_generation(),
 			  point(0, 0), point(0, 0), 1, false);
 }
 

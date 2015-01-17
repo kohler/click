@@ -341,9 +341,9 @@ particular purpose.\n");
 
     if (do_pdf) {
 	if (pdf_multipage)
-	    clicky::cdiagram::export_pdf(pdf_file.c_str(), cr, point(612, 792), point(24, 24), pdf_scale, true);
+	    clicky::cdiagram::export_to_file(pdf_file.c_str(), cr, point(612, 792), point(24, 24), pdf_scale, true);
 	else
-	    clicky::cdiagram::export_pdf(pdf_file.c_str(), cr, point(0, 0), point(24, 24), pdf_scale, false);
+	    clicky::cdiagram::export_to_file(pdf_file.c_str(), cr, point(0, 0), point(24, 24), pdf_scale, false);
 	exit(0);
     }
 
