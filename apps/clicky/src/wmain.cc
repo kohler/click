@@ -36,7 +36,7 @@ static gboolean on_error_view_event(GtkWidget *, GdkEvent *, gpointer);
 }
 
 String wmain::last_savefile;
-static int num_main_windows = 0;
+Vector<wmain*> wmain::all_wmains;
 
 extern "C" {
 static void destroy(gpointer data) {
@@ -147,12 +147,10 @@ wmain::wmain(bool show_toolbar, bool show_list, dcss_set *ccss,
     set_diagram_mode(false, true);
     on_driver_changed();
 
-    gtk_quit_add_destroy(1, GTK_OBJECT(_window));
-    ++num_main_windows;
+    all_wmains.push_back(this);
 }
 
-wmain::~wmain()
-{
+wmain::~wmain() {
     // only call from GtkWidget destruction
     clear(false);
 
@@ -164,7 +162,12 @@ wmain::~wmain()
     delete _diagram;
     delete _handlers;
 
-    if (!--num_main_windows)
+    for (int i = 0; i != all_wmains.size(); ++i)
+        if (all_wmains[i] == this) {
+            all_wmains.erase(all_wmains.begin() + i);
+            break;
+        }
+    if (!all_wmains.size())
 	gtk_main_quit();
 }
 
@@ -585,7 +588,7 @@ void wmain::element_show(String ename, int expand, bool incremental)
     // expand and highlight whether or not viewed element changed
     if (expand != 0) {
 	GtkWidget *n = lookup_widget(_window, "eviewbox");
-	if (expand > 0 && !GTK_WIDGET_VISIBLE(n)) {
+	if (expand > 0 && !gtk_widget_get_visible(n)) {
 	    gtk_widget_show(n);
 	    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(lookup_widget(_window, "menu_view_element")), TRUE);
 	    GtkPaned *paned = GTK_PANED(lookup_widget(_window, "eviewpane"));
@@ -963,8 +966,8 @@ void wmain::on_error(bool replace, const String &dialog)
 	gtk_widget_hide(lookup_widget(_window, "elementtreesort"));
 	gtk_paned_set_position(pane, 2147483647);
     }
-    gtk_expander_set_expanded(GTK_EXPANDER(treeexpander), GTK_WIDGET_VISIBLE(treewindow));
-    if ((!gerrh->nerrors() || !replace) && GTK_WIDGET_VISIBLE(treewindow))
+    gtk_expander_set_expanded(GTK_EXPANDER(treeexpander), gtk_widget_get_visible(treewindow));
+    if ((!gerrh->nerrors() || !replace) && gtk_widget_get_visible(treewindow))
 	gtk_paned_set_position(pane, GTK_WIDGET(pane)->allocation.height / 3);
 
     // strip filename errors from error list

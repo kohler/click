@@ -74,7 +74,7 @@ class wdiagram { public:
     void router_create(bool incremental, bool always);
 
     bool visible() const {
-	return GTK_WIDGET_VISIBLE(_widget);
+	return gtk_widget_get_visible(_widget);
     }
 
     inline void redraw();

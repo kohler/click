@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
 	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \
 	@PACKAGE_CFLAGS@ \
@@ -9,7 +9,6 @@ INCLUDES = \
 bin_PROGRAMS = clicky
 
 clicky_SOURCES = \
-	interface.c interface.h \
 	support.c support.h \
 	gathererror.cc gathererror.hh \
 	permstr.cc permstr.hh \
@@ -30,6 +29,7 @@ clicky_SOURCES = \
 	transform.cc transform.hh \
 	ref.hh \
 	clicky.cc \
+	interface.c interface.h \
 	callbacks.h \
 	xcallbacks.c
 
