@@ -157,6 +157,9 @@
 /* Define if you have the skb_recycle function. */
 #undef HAVE_SKB_RECYCLE
 
+/* Define if you have the skb_recycle_check function. */
+#undef HAVE_SKB_RECYCLE_CHECK
+
 /* Define if you have the strnlen function. */
 #define HAVE_STRNLEN 1
 

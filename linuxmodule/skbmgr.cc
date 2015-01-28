@@ -226,6 +226,14 @@ RecycledSkbPool::size_to_higher_bucket(unsigned size)
 }
 
 inline unsigned
+RecycledSkbPool::size_to_lower_bucket_size(unsigned size)
+{
+  if (size >= 1800) return 1800;
+  if (size >= 500) return 500;
+  return size;
+}
+
+inline unsigned
 RecycledSkbPool::size_to_higher_bucket_size(unsigned size)
 {
   if (size <= 500) return 500;
@@ -282,7 +290,7 @@ RecycledSkbPool::recycle(struct sk_buff *skbs)
     struct sk_buff *skb = skbs;
     skbs = skbs->next;
 
-#if HAVE_CLICK_SKB_RECYCLE
+#if HAVE_CLICK_SKB_RECYCLE || HAVE_SKB_RECYCLE_CHECK
     // where should sk_buff go?
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
     unsigned char *skb_end = skb_end_pointer(skb);
@@ -297,15 +305,19 @@ RecycledSkbPool::recycle(struct sk_buff *skbs)
       int tail = _buckets[bucket]._tail;
       int next = _buckets[bucket].next_i(tail);
       if (next != _buckets[bucket]._head) {
+#if HAVE_CLICK_SKB_RECYCLE
 	// Note: skb_recycle_fast will free the skb if it cannot recycle it
 	if ((skb = skb_recycle(skb))) {
+#elif HAVE_SKB_RECYCLE_CHECK
+	if (skb_recycle_check(skb, size_to_lower_bucket_size(skb_end - skb->head))) {
+#endif
 	  _buckets[bucket]._skbs[tail] = skb;
 	  _buckets[bucket]._tail = next;
 	  skb = 0;
-	}
 # if DEBUG_SKBMGR
-        _recycle_freed++;
+          _recycle_freed++;
 # endif
+	}
       }
       unlock();
     }
