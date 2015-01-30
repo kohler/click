@@ -421,10 +421,8 @@ class ReadWriteLock { public:
   private:
     // allocate a cache line for every member
     struct lock_t {
-	union {
-	    Spinlock _lock;
-	    unsigned char reserved[L1_CACHE_BYTES];
-	};
+	Spinlock _lock;
+	unsigned char reserved[L1_CACHE_BYTES - sizeof(Spinlock)];
     } *_l;
 #endif
 
