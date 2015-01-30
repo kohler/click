@@ -69,6 +69,7 @@ class RecycledSkbPool { public:
   RecycledSkbBucket &bucket(int);
   static int size_to_lower_bucket(unsigned);
   static int size_to_higher_bucket(unsigned);
+  static unsigned size_to_lower_bucket_size(unsigned);
   static unsigned size_to_higher_bucket_size(unsigned);
 
  private:

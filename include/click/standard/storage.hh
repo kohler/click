@@ -37,8 +37,9 @@ class Storage { public:
     inline void packet_memory_barrier(Packet* volatile& packet);
 
   protected:
-
     index_type _capacity;
+
+  private:
     volatile index_type _head;
     volatile index_type _tail;
 
