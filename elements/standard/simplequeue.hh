@@ -121,7 +121,6 @@ SimpleQueue::enq(Packet *p)
     Storage::index_type h = head(), t = tail(), nt = next_i(t);
     if (nt != h) {
 	_q[t] = p;
-	packet_memory_barrier(_q[t]);
 	set_tail(nt);
 	int s = size(h, nt);
 	if (s > _highwater_length)
@@ -147,8 +146,7 @@ SimpleQueue::lifo_enq(Packet *p)
 	set_tail(t);
     }
     _q[ph] = p;
-    packet_memory_barrier(_q[ph]);
-    set_head(ph);
+    set_head_release(ph);
 }
 
 inline Packet *
@@ -157,7 +155,6 @@ SimpleQueue::deq()
     Storage::index_type h = head(), t = tail();
     if (h != t) {
 	Packet *p = _q[h];
-	packet_memory_barrier(_q[h]);
 	set_head(next_i(h));
 	assert(p);
 	return p;

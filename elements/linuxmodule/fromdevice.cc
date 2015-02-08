@@ -407,7 +407,6 @@ FromDevice::got_skb(struct sk_buff *skb)
 
 	Packet *p = Packet::make(skb);
 	_queue[t] = p; /* hand it to run_task */
-	packet_memory_barrier(_queue[t]);
 
 #if CLICK_DEBUG_SCHEDULING
 	_schinfo[t].enq_time.assign_now();
@@ -474,7 +473,6 @@ FromDevice::run_task(Task *)
     Storage::index_type h;
     while (npq < _burst && (h = head()) != tail()) {
 	Packet *p = _queue[h];
-	packet_memory_barrier(_queue[h]);
 #if CLICK_DEBUG_SCHEDULING
 	emission_report(h);
 #endif

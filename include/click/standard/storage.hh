@@ -1,6 +1,7 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef CLICK_STORAGE_HH
 #define CLICK_STORAGE_HH
+#include <click/machine.hh>
 CLICK_DECLS
 class Packet;
 
@@ -29,12 +30,16 @@ class Storage { public:
 
     // to be used with care
     void set_capacity(index_type c)	{ _capacity = c; }
-    void set_head(index_type h)		{ _head = h; }
-    void set_tail(index_type t)		{ _tail = t; }
+    inline void set_head(index_type h); // acquire barrier (read pkt)
+    inline void set_tail(index_type t); // release barrier (write pkt)
+    inline void set_head_release(index_type h); // release barrier (LIFO)
+    inline void set_tail_acquire(index_type t); // acquire barrier (LIFO)
 
     static inline void packet_memory_barrier(Packet* volatile& packet,
-                                             volatile index_type& index);
-    inline void packet_memory_barrier(Packet* volatile& packet);
+                                             volatile index_type& index)
+        __attribute__((deprecated));
+    inline void packet_memory_barrier(Packet* volatile& packet)
+        __attribute__((deprecated));
 
   protected:
     index_type _capacity;
@@ -56,6 +61,34 @@ inline int
 Storage::size() const
 {
     return size(_head, _tail);
+}
+
+inline void
+Storage::set_head(index_type h)
+{
+    click_read_fence();
+    _head = h;
+}
+
+inline void
+Storage::set_tail(index_type t)
+{
+    click_write_fence();
+    _tail = t;
+}
+
+inline void
+Storage::set_head_release(index_type h)
+{
+    click_write_fence();
+    _head = h;
+}
+
+inline void
+Storage::set_tail_acquire(index_type t)
+{
+    click_read_fence();
+    _tail = t;
 }
 
 inline void

@@ -144,7 +144,6 @@ SimpleQueue::push(int, Packet *p)
     // should this stuff be in SimpleQueue::enq?
     if (nt != h) {
 	_q[t] = p;
-	packet_memory_barrier(_q[t]);
 	set_tail(nt);
 
 	int s = size(h, nt);
