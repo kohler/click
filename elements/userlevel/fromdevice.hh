@@ -190,7 +190,7 @@ class FromDevice : public Element { public:
 
 #if FROMDEVICE_ALLOW_PCAP
     pcap_t *pcap() const		{ return _pcap; }
-    static const char *pcap_error(pcap_t *pcap, const char *ebuf);
+    static const char* fetch_pcap_error(pcap_t* pcap, const char* ebuf);
     static pcap_t *open_pcap(String ifname, int snaplen, bool promisc, ErrorHandler *errh);
 #endif
 
@@ -229,9 +229,6 @@ class FromDevice : public Element { public:
     int _pcap_complaints;
     friend void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*,
 				      const u_char*);
-    const char *pcap_error(const char *ebuf) {
-	return pcap_error(_pcap, ebuf);
-    }
 #endif
 #if FROMDEVICE_ALLOW_NETMAP
     NetmapInfo _netmap;
