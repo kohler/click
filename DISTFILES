@@ -768,6 +768,7 @@ timer-systime-01.testie
 timewarp-01.testie
 iprouter-01.testie
 uhotswap-01.testie
+uhotswap-multithread-01.testie
 
 ./tools:
 Makefile.in

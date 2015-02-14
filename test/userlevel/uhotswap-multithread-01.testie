@@ -1,0 +1,21 @@
+%script
+msleep () { click -e "DriverManager(wait ${1}ms)"; }
+
+(while [ ! -f PORT ]; do msleep 1; done && { cat CSIN; msleep 12; } | nc localhost `cat PORT` >CSOUT) &
+click -j2 -R -p 41900+ -e "s1::Script(print 'A'); s2::Script(print 'B'); StaticThreadSched(s1 0, s2 1);
+DriverManager(print >PORT click_driver@@ControlSocket.port, wait 1s, stop)"
+
+%file CSIN
+write hotconfig s1::Script(print 'A'); s2::Script(print 'B'); StaticThreadSched(s1 0, s2 1); DriverManager(wait_stop, wait 0.1s, stop)
+write stop true
+
+%expect CSOUT
+Click::ControlSocket/1.{{\d+}}
+200 Write handler{{.*}}
+200 Write handler{{.*}}
+
+%expect stdout
+{{[AB]}}
+{{[AB]}}
+{{[AB]}}
+{{[AB]}}
