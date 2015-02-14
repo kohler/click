@@ -270,6 +270,11 @@ FromDevice::open_pcap(String ifname, int snaplen, bool promisc,
     if (pcap_set_timeout(p, timeout_msec))
         errh->warning("%s: error while setting timeout", ifname.c_str());
 
+# if TIMESTAMP_NANOSEC && defined(PCAP_TSTAMP_PRECISION_NANO)
+    // request nanosecond precision
+    (void) pcap_set_tstamp_precision(p, PCAP_TSTAMP_PRECISION_NANO);
+# endif
+
     // activate pcap
     int r = pcap_activate(p);
     if (r < 0) {
@@ -317,6 +322,12 @@ FromDevice::initialize(ErrorHandler *errh)
 	    return -1;
 	_fd = pcap_fileno(_pcap);
 	char *ifname = _ifname.mutable_c_str();
+
+# if TIMESTAMP_NANOSEC && defined(PCAP_TSTAMP_PRECISION_NANO)
+        _pcap_nanosec = false;
+        if (pcap_get_tstamp_precision(_pcap) == PCAP_TSTAMP_PRECISION_NANO)
+            _pcap_nanosec = true;
+# endif
 
 # if HAVE_PCAP_SETDIRECTION
 	pcap_setdirection(_pcap, _outbound ? PCAP_D_INOUT : PCAP_D_IN);
@@ -468,8 +479,14 @@ FromDevice_get_packet(u_char* clientdata,
 {
     FromDevice *fd = (FromDevice *) clientdata;
     WritablePacket *p = Packet::make(fd->_headroom, data, pkthdr->caplen, 0);
-    fd->emit_packet(p, pkthdr->len - pkthdr->caplen,
-		    Timestamp::make_usec(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec));
+    Timestamp ts = Timestamp::uninitialized_t();
+#if TIMESTAMP_NANOSEC && defined(PCAP_TSTAMP_PRECISION_NANO)
+    if (fd->_pcap_nanosec)
+        ts = Timestamp::make_nsec(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
+    else
+#endif
+        ts = Timestamp::make_usec(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
+    fd->emit_packet(p, pkthdr->len - pkthdr->caplen, ts);
 }
 }
 CLICK_DECLS

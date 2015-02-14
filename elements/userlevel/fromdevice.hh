@@ -236,6 +236,9 @@ class FromDevice : public Element { public:
 #endif
 
     bool _force_ip;
+#if FROMDEVICE_ALLOW_PCAP && TIMESTAMP_NANOSEC && defined(PCAP_TSTAMP_PRECISION_NANO)
+    bool _pcap_nanosec;
+#endif
     int _burst;
     int _datalink;
 
