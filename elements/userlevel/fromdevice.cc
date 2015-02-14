@@ -49,14 +49,8 @@
 # include <sys/socket.h>
 # include <net/if.h>
 # include <features.h>
-# if __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 1
-#  include <netpacket/packet.h>
-#  include <net/ethernet.h>
-# else
-#  include <net/if_packet.h>
-#  include <linux/if_packet.h>
-#  include <linux/if_ether.h>
-# endif
+# include <linux/if_packet.h>
+# include <net/ethernet.h>
 #endif
 
 CLICK_DECLS
@@ -560,16 +554,20 @@ FromDevice::run_task(Task *)
 void
 FromDevice::kernel_drops(bool& known, int& max_drops) const
 {
-#if FROMDEVICE_ALLOW_LINUX
-    // You might be able to do this better by parsing netstat/ifconfig output,
-    // but for now, we just give up.
-#endif
     known = false, max_drops = -1;
 #if FROMDEVICE_ALLOW_PCAP
     if (_method == method_pcap) {
 	struct pcap_stat stats;
 	if (pcap_stats(_pcap, &stats) >= 0)
 	    known = true, max_drops = stats.ps_drop;
+    }
+#endif
+#if FROMDEVICE_ALLOW_LINUX && defined(PACKET_STATISTICS)
+    if (_method == method_linux) {
+        struct tpacket_stats stats;
+        socklen_t statsize = sizeof(stats);
+        if (getsockopt(_fd, SOL_PACKET, PACKET_STATISTICS, &stats, &statsize) >= 0)
+            known = true, max_drops = stats.tp_drops;
     }
 #endif
 }
