@@ -50,6 +50,7 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _snaplen = 2000;
     _extra_length = true;
     _unbuffered = false;
+    _nano = Timestamp::subsec_per_sec == Timestamp::nsec_per_sec;
 #if CLICK_NS
     bool per_node = false;
 #endif
@@ -61,6 +62,7 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("USE_ENCAP_FROM", AnyArg(), use_encap_from)
 	.read("EXTRA_LENGTH", _extra_length)
 	.read("UNBUFFERED", _unbuffered)
+        .read("NANO", _nano)
 #if CLICK_NS
 	.read("PER_NODE", per_node)
 #endif
@@ -161,7 +163,7 @@ ToDump::initialize(ErrorHandler *errh)
 
 	struct fake_pcap_file_header h;
 
-	h.magic = FAKE_PCAP_MAGIC;
+	h.magic = _nano ? FAKE_PCAP_MAGIC_NANO : FAKE_PCAP_MAGIC;
 	h.version_major = FAKE_PCAP_VERSION_MAJOR;
 	h.version_minor = FAKE_PCAP_VERSION_MINOR;
 
@@ -204,15 +206,11 @@ ToDump::write_packet(Packet *p)
 {
     struct fake_pcap_pkthdr ph;
 
-    const Timestamp& ts = p->timestamp_anno();
-    if (!ts) {
-	Timestamp now = Timestamp::now();
-	ph.ts.tv.tv_sec = now.sec();
-	ph.ts.tv.tv_usec = now.usec();
-    } else {
-	ph.ts.tv.tv_sec = ts.sec();
-	ph.ts.tv.tv_usec = ts.usec();
-    }
+    Timestamp ts = p->timestamp_anno();
+    if (!ts)
+        ts = Timestamp::now();
+    ph.ts.tv.tv_sec = ts.sec();
+    ph.ts.tv.tv_usec = _nano ? ts.nsec() : ts.usec();
 
     unsigned to_write = p->length();
     ph.len = to_write + (_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
