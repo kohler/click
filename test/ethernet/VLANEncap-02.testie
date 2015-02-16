@@ -1,0 +1,20 @@
+%script
+click CONFIG
+
+%file CONFIG
+InfiniteSource(DATA \<AAABACAD>, LIMIT 1, STOP true)
+  -> Print(x)
+  -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)
+  -> VLANEncap(0x1234, ETHERTYPE 0x88a8)
+  -> Print(a)
+  -> VLANDecap()
+  -> Print(b)
+  -> VLANDecap(ETHERTYPE 0x88a8)
+  -> Print(c)
+  -> Discard;
+
+%expect stderr
+x:    4 | aaabacad
+a:   22 | 02020202 02020101 01010101 88a81234 0800aaab acad
+b:   22 | 02020202 02020101 01010101 88a81234 0800aaab acad
+c:   18 | 02020202 02020101 01010101 0800aaab acad
