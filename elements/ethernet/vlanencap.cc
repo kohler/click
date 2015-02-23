@@ -54,6 +54,7 @@ VLANEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     _vlan_tci = htons((tci >= 0 ? tci : id) | (pcp << 13));
     _use_anno = tci_word.equals("ANNO", 4);
     _native_vlan = (native_vlan >= 0 ? htons(native_vlan) : -1);
+    _ethertype = htons(_ethertype);
     return 0;
 }
 
@@ -70,7 +71,7 @@ VLANEncap::simple_action(Packet *p)
     } else if (WritablePacket *q = p->push(4)) {
 	memmove(q->data(), q->data() + 4, 12);
 	click_ether_vlan *vlan = reinterpret_cast<click_ether_vlan *>(q->data());
-	vlan->ether_vlan_proto = htons(_ethertype);
+	vlan->ether_vlan_proto = _ethertype;
 	vlan->ether_vlan_tci = tci;
 	q->set_mac_header(q->data(), sizeof(vlan));
 	return q;
