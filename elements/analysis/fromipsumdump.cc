@@ -555,7 +555,6 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    if (!xlen || (d.p = d.p->put(xlen))) {
 		if (xlen && _zero)
 		    memset(d.p->end_data() - xlen, 0, xlen);
-		SET_EXTRA_LENGTH_ANNO(d.p, EXTRA_LENGTH_ANNO(d.p) - xlen);
 		set_checksums(d.p, d.p->ip_header());
 	    }
 	}
