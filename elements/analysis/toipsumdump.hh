@@ -100,7 +100,7 @@ contain those fields. Valid field names, with examples, are:
    count        Number of packets: '1'
    direction    Link number (PAINT_ANNO): '2', or '>'/'L'
                 for paint 0, '<'/'R'/'X' for paint 1
-   link         Like 'direction', but always numeric
+   link, paint  Like 'direction', but always numeric
    aggregate    Aggregate number (AGGREGATE_ANNO): '973'
    first_timestamp   Packet "first timestamp" (FIRST_
                 TIMESTAMP_ANNO): '996033261.451094'
