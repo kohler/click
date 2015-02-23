@@ -1,0 +1,45 @@
+%info
+Pad/Truncate.
+
+%require
+click-buildtool provides FromIPSummaryDump ToIPSummaryDump
+
+%script
+click CONFIG
+
+%file CONFIG
+FromIPSummaryDump(packets, STOP true)
+-> t :: Tee
+-> Paint(0)
+-> to :: ToIPSummaryDump(out, DATA paint ip_src ip_len ip_capture_len payload);
+
+t[1] -> Paint(1) -> Pad -> to;
+t[2] -> Paint(2) -> Truncate(44) -> to;
+t[3] -> Paint(3) -> Truncate(44) -> Pad -> to;
+t[4] -> Paint(4) -> Pad(44) -> to;
+t[5] -> Paint(5) -> Truncate(42) -> Pad(44) -> to;
+
+%file packets
+!IPSummaryDump 1.3
+!data ip_src ip_opt tcp_opt ip_len payload
+1.0.0.1 . . 50 "HiFart"
+1.0.0.2 . . - "HiFart"
+
+%ignore out
+!{{.*}}
+
+%expect out
+0 1.0.0.1 50 46 "HiFart"
+1 1.0.0.1 50 50 "HiFart\000\000\000\000"
+2 1.0.0.1 50 44 "HiFa"
+3 1.0.0.1 50 50 "HiFa\000\000\000\000\000\000"
+4 1.0.0.1 50 46 "HiFart"
+5 1.0.0.1 50 44 "Hi\000\000"
+0 1.0.0.2 46 46 "HiFart"
+1 1.0.0.2 46 46 "HiFart"
+2 1.0.0.2 46 44 "HiFa"
+3 1.0.0.2 46 46 "HiFa\000\000"
+4 1.0.0.2 46 46 "HiFart"
+5 1.0.0.2 46 44 "Hi\000\000"
+
+%expect stdout
