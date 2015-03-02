@@ -7,7 +7,7 @@
  * Copyright (c) 2001 Mazu Networks, Inc.
  * Copyright (c) 2005-2008 Regents of the University of California
  * Copyright (c) 2008-2009 Meraki, Inc.
- * Copyright (c) 2012 Eddie Kohler
+ * Copyright (c) 2012-2015 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -115,7 +115,7 @@ Script::static_cleanup()
 }
 
 Script::Script()
-    : _type(type_active), _write_status(0), _timer(this), _cur_steps(0)
+    : _type(-1), _write_status(0), _timer(this), _cur_steps(0)
 {
 }
 
@@ -197,6 +197,8 @@ Script::configure(Vector<String> &conf, ErrorHandler *errh)
 #endif
     else if (type_word)
 	return errh->error("bad TYPE");
+    else if (_type < 0)
+        _type = (ninputs() || noutputs() ? type_push : type_active);
 
     if (_type == type_driver) {
 	if (router()->attachment("Script"))
