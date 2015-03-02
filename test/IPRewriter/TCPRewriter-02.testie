@@ -10,7 +10,7 @@ FromIPSummaryDump(IN1, STOP true, CHECKSUM true, TIMING true)
 	-> ps :: PaintSwitch
 	-> rw
 	-> Paint(0)
-	-> t :: ToIPSummaryDump(OUT1, CONTENTS direction timestamp src sport dst dport);
+	-> t :: ToIPSummaryDump(OUT1, FIELDS direction timestamp src sport dst dport);
 ps[1] -> [1] rw [1] -> Paint(1) -> t;
 "
 

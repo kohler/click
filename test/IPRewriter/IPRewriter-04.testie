@@ -10,12 +10,12 @@ FromIPSummaryDump(IN1, STOP true, CHECKSUM true)
 	-> c1 :: CheckIPHeader(VERBOSE true)
 	-> [0]rw[0]
 	-> c2 :: CheckIPHeader(VERBOSE true)
-	-> ToIPSummaryDump(OUT1, CONTENTS src sport dst dport proto tcp_seq);
+	-> ToIPSummaryDump(OUT1, FIELDS src sport dst dport proto tcp_seq);
 f2 :: FromIPSummaryDump(IN2, ACTIVE false, STOP true, CHECKSUM true)
 	-> c3 :: CheckIPHeader(VERBOSE true)
 	-> [1]rw[1]
 	-> c4 :: CheckIPHeader(VERBOSE true)
-	-> ToIPSummaryDump(OUT2, CONTENTS src sport dst dport proto tcp_seq);
+	-> ToIPSummaryDump(OUT2, FIELDS src sport dst dport proto tcp_seq);
 DriverManager(wait_stop, write f2.active true, wait_stop)
 "
 

@@ -6,7 +6,7 @@ the ToIPSummaryDump again.
 click --simtime -e "
 f1::FromIPSummaryDump(DUMP1, STOP true) -> st::SetTimestamp -> q::Queue;
 f2::FromIPSummaryDump(DUMP2, ACTIVE false) -> st;
-q -> DelayShaper(0.05s) -> ToIPSummaryDump(-, CONTENTS ip_src);
+q -> DelayShaper(0.05s) -> ToIPSummaryDump(-, FIELDS ip_src);
 
 DriverManager(wait, wait_time 0.1s, write f2.active true, wait_time 0.1s)
 " | grep -v '^!'
@@ -14,7 +14,7 @@ DriverManager(wait, wait_time 0.1s, write f2.active true, wait_time 0.1s)
 click --simtime -e "
 f1::FromIPSummaryDump(DUMP1, STOP true) -> st::SetTimestamp -> q::Queue;
 f2::FromIPSummaryDump(DUMP2, ACTIVE false) -> st;
-q -> DelayShaper(0.15s) -> ToIPSummaryDump(-, CONTENTS ip_src);
+q -> DelayShaper(0.15s) -> ToIPSummaryDump(-, FIELDS ip_src);
 
 DriverManager(wait, wait_time 0.2s, write f2.active true, wait_time 0.2s)
 " | grep -v '^!'

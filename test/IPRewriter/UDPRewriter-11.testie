@@ -12,7 +12,7 @@ FromIPSummaryDump(IN1, TIMING true, STOP true)
 	-> ps :: PaintSwitch
 	-> [0]rw1[0]
 	-> Paint(0)
-	-> td :: ToIPSummaryDump(OUT1, CONTENTS direction src sport dst dport tcp_seq);
+	-> td :: ToIPSummaryDump(OUT1, FIELDS direction src sport dst dport tcp_seq);
 ps[1] -> [1]rw1[1] -> Paint(1) -> td;
 "
 

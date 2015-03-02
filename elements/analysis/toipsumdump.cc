@@ -53,8 +53,9 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 
     if (Args(conf, this, errh)
 	.read_mp("FILENAME", FilenameArg(), _filename)
+	.read("FIELDS", AnyArg(), save)
 	.read("CONTENTS", AnyArg(), save)
-	.read("DATA", AnyArg(), save)
+	.read("DATA", Args::deprecated, AnyArg(), save)
 	.read("VERBOSE", verbose)
 	.read("HEADER", header)
 	.read("BANNER", _banner)
@@ -91,7 +92,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
       found_prepare:
 	int s = f->binary_size();
 	if ((s < 0 || !f->outb) && binary)
-	    errh->error("cannot use CONTENTS %s with BINARY", word.c_str());
+	    errh->error("cannot use field %s with BINARY", word.c_str());
 	_binary_size += s;
 
 	// remove _multipacket if packet count specified

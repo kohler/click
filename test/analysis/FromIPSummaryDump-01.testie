@@ -7,7 +7,7 @@ click-buildtool provides FromIPSummaryDump
 click -e "
 FromIPSummaryDump(IN1, STOP true, CHECKSUM true)
 	-> CheckICMPHeader(VERBOSE true)
-	-> ToIPSummaryDump(-, DATA src dst icmp_type_name)
+	-> ToIPSummaryDump(-, FIELDS src dst icmp_type_name)
 "
 %file IN1
 !data src dst icmp_type
