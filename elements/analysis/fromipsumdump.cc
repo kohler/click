@@ -73,10 +73,10 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool stop = false, active = true, zero = true, checksum = false, multipacket = false, timing = false, allow_nonexistent = false;
     uint8_t default_proto = IP_PROTO_TCP;
     _sampling_prob = (1 << SAMPLING_SHIFT);
-    String default_contents, default_flowid;
+    String default_contents, default_flowid, data;
 
     if (Args(conf, this, errh)
-	.read_mp("FILENAME", FilenameArg(), _ff.filename())
+	.read_p("FILENAME", FilenameArg(), _ff.filename())
 	.read("STOP", stop)
 	.read("ACTIVE", active)
 	.read("ZERO", zero)
@@ -92,6 +92,7 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("FIELDS", AnyArg(), default_contents)
 	.read("FLOWID", AnyArg(), default_flowid)
 	.read("ALLOW_NONEXISTENT", allow_nonexistent)
+        .read("DATA", data)
 	.complete() < 0)
 	return -1;
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
@@ -114,6 +115,12 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	bang_data(default_contents, errh);
     if (default_flowid)
 	bang_flowid(default_flowid, errh);
+    if (data && _ff.filename())
+        return errh->error("FILENAME and DATA conflict");
+    else if (data && _ff.set_data(data, errh) < 0)
+        return -1;
+    else if (!_ff.filename())
+        return errh->error("FILENAME: required argument missing");
     return 0;
 }
 

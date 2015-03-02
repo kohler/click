@@ -17,7 +17,7 @@ class FromFile { public:
 
     const String &filename() const	{ return _filename; }
     String &filename()			{ return _filename; }
-    bool initialized() const		{ return _fd >= 0; }
+    bool initialized() const		{ return _fd != -1; }
 
     void set_landmark_pattern(const String &lp) { _landmark_pattern = lp; }
     String landmark(const String &landmark_pattern) const;
@@ -28,20 +28,21 @@ class FromFile { public:
 
     off_t file_pos() const		{ return _file_offset + _pos; }
 
-    int configure_keywords(Vector<String> &conf, Element *, ErrorHandler *);
-    int initialize(ErrorHandler *, bool allow_nonexistent = false);
-    void add_handlers(Element *, bool filepos_writable = false) const;
+    int configure_keywords(Vector<String>& conf, Element* e, ErrorHandler* errh);
+    int set_data(const String& data, ErrorHandler* errh);
+    int initialize(ErrorHandler* errh, bool allow_nonexistent = false);
+    void add_handlers(Element* e, bool filepos_writable = false) const;
     void cleanup();
     void take_state(FromFile &, ErrorHandler *);
 
     int seek(off_t want, ErrorHandler *);
 
-    int read(void *, uint32_t, ErrorHandler * = 0);
-    const uint8_t *get_unaligned(size_t, void *, ErrorHandler * = 0);
-    const uint8_t *get_aligned(size_t, void *, ErrorHandler * = 0);
-    String get_string(size_t, ErrorHandler * = 0);
-    Packet *get_packet(size_t, uint32_t sec, uint32_t subsec, ErrorHandler *);
-    Packet *get_packet_from_data(const void *buf, size_t buf_size, size_t full_size, uint32_t sec, uint32_t subsec, ErrorHandler *);
+    int read(void*, uint32_t, ErrorHandler * = 0);
+    const uint8_t* get_unaligned(size_t, void*, ErrorHandler* = 0);
+    const uint8_t* get_aligned(size_t, void*, ErrorHandler* = 0);
+    String get_string(size_t, ErrorHandler* = 0);
+    Packet* get_packet(size_t, uint32_t sec, uint32_t subsec, ErrorHandler *);
+    Packet* get_packet_from_data(const void *buf, size_t buf_size, size_t full_size, uint32_t sec, uint32_t subsec, ErrorHandler *);
     void shift_pos(int delta)		{ _pos += delta; }
 
     int read_line(String &str, ErrorHandler *errh, bool temporary = false);

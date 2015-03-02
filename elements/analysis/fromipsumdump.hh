@@ -13,7 +13,7 @@ CLICK_DECLS
 /*
 =c
 
-FromIPSummaryDump(FILENAME [, I<keywords> STOP, TIMING, ACTIVE, ZERO, CHECKSUM, PROTO, MULTIPACKET, SAMPLE, FIELDS, FLOWID])
+FromIPSummaryDump(FILENAME [, I<keywords> STOP, TIMING, ACTIVE, ZERO, CHECKSUM, PROTO, MULTIPACKET, SAMPLE, FIELDS, FLOWID, DATA])
 
 =s traces
 
@@ -105,6 +105,11 @@ will override this setting.
 Boolean.  If true, allow nonexistent and empty files: FromIPSummaryDump will
 successfully initialize even if the input file is nonexistent or empty.
 Defaults to false.
+
+=item DATA
+
+String. If set, FromIPSummaryDump reads from the DATA string, rather than
+from a file.
 
 =back
 
