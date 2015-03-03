@@ -11,7 +11,7 @@ FromIPSummaryDump(IN1, TIMING true, STOP true)
 	-> ps :: PaintSwitch
 	-> [0]rw1[0]
 	-> Paint(0)
-	-> td :: ToIPSummaryDump(OUT1, CONTENTS link src sport dst dport tcp_seq);
+	-> td :: ToIPSummaryDump(OUT1, FIELDS link src sport dst dport tcp_seq);
 ps[1] -> [1]rw1[1] -> Paint(1) -> td;
 ps[2] -> [2]rw1[2] -> Paint(2) -> td;
 ps[3] -> Counter(COUNT_CALL 1 s.run) -> Idle
