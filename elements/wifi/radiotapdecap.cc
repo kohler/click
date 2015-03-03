@@ -27,7 +27,7 @@
 #include <clicknet/llc.h>
 CLICK_DECLS
 
-#define NUM_RADIOTAP_ELEMENTS 18
+#define NUM_RADIOTAP_ELEMENTS 22
 
 static const int radiotap_elem_to_bytes[NUM_RADIOTAP_ELEMENTS] =
 	{8, /* IEEE80211_RADIOTAP_TSFT */
@@ -48,6 +48,10 @@ static const int radiotap_elem_to_bytes[NUM_RADIOTAP_ELEMENTS] =
 	 2, /* IEEE80211_RADIOTAP_TX_FLAGS */
 	 1, /* IEEE80211_RADIOTAP_RTS_RETRIES */
 	 1, /* IEEE80211_RADIOTAP_DATA_RETRIES */
+	 8, /* IEEE80211_RADIOTAP_XCHANNEL */
+	 3, /* IEEE80211_RADIOTAP_MCS */
+	 8, /* IEEE80211_RADIOTAP_A_MPDU_STATUS */
+	 12, /* IEEE80211_RADIOTAP_VHT */
 	};
 
 static int rt_el_present(struct ieee80211_radiotap_header *th, u_int32_t element)
@@ -73,9 +77,12 @@ static int rt_check_header(struct ieee80211_radiotap_header *th, int len, u_int8
 
 	for (x = 0; x < NUM_RADIOTAP_ELEMENTS; x++) {
 		if (rt_el_present(th, x)) {
-		    int pad = bytes % radiotap_elem_to_bytes[x];
+		    int radiotap_padding_size = radiotap_elem_to_bytes[x];
+		    if(x==IEEE80211_RADIOTAP_CHANNEL) radiotap_padding_size = 2;
+		    int pad = bytes % radiotap_padding_size;
+		    
 		    if (pad)
-			bytes += radiotap_elem_to_bytes[x] - pad;
+			bytes += radiotap_padding_size - pad;
 		    offsets[x] = ptr + bytes;
 		    bytes += radiotap_elem_to_bytes[x];
 		}
