@@ -161,6 +161,7 @@ Router::~Router()
 void
 Router::unuse()
 {
+    assert(_refcount);
     if (_refcount.dec_and_test())
 	delete this;
 }
