@@ -548,7 +548,7 @@ ToDevice::queue_packet(Packet *p, struct netdev_queue *txq)
 
  enqueued:
     if (ret != 0) {
-        _q = p;
+        _q = (Packet*)skb1;
 	_q_expiry_j = click_jiffies() + queue_timeout;
         if (++_holds == 1)
             printk("<1>ToDevice %s is full, packet delayed\n", dev->name);
