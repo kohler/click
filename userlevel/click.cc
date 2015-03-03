@@ -277,25 +277,6 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
 }
 
 
-// hotswapping
-
-static Router *hotswap_router;
-static Router *hotswap_thunk_router;
-static bool hotswap_hook(Task *, void *);
-static Task hotswap_task(hotswap_hook, 0);
-
-static bool
-hotswap_hook(Task *, void *)
-{
-    hotswap_thunk_router->set_foreground(false);
-    hotswap_router->activate(ErrorHandler::default_handler());
-    router->unuse();
-    router = hotswap_router;
-    router->use();
-    hotswap_router = 0;
-    return true;
-}
-
 // switching configurations
 
 static Vector<String> cs_unix_sockets;
@@ -373,21 +354,6 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
     return r;
 }
 
-static int
-hotconfig_handler(const String &text, Element *, void *, ErrorHandler *errh)
-{
-  if (Router *q = parse_configuration(text, true, true, errh)) {
-    if (hotswap_router)
-      hotswap_router->unuse();
-    hotswap_router = q;
-    hotswap_thunk_router->set_foreground(true);
-    hotswap_task.reschedule();
-    return 0;
-  } else
-    return -EINVAL;
-}
-
-
 // timewarping
 
 static String
@@ -418,8 +384,6 @@ timewarp_write_handler(const String &text, Element *, void *, ErrorHandler *errh
 }
 
 
-// main
-
 static void
 round_timeval(struct timeval *tv, int usec_divider)
 {
@@ -431,6 +395,7 @@ round_timeval(struct timeval *tv, int usec_divider)
 }
 
 #if HAVE_MULTITHREAD
+Vector<pthread_t> other_threads;
 extern "C" {
 static void *thread_driver(void *user_data)
 {
@@ -460,6 +425,58 @@ void do_set_affinity(pthread_t p, int cpu) {
 #else
 # define do_set_affinity(p, cpu) /* nothing */
 #endif
+
+// hotswapping
+
+static Router *hotswap_router;
+static Router *hotswap_thunk_router;
+static bool hotswap_hook(Task *, void *);
+static Task hotswap_task(hotswap_hook, 0);
+
+static bool
+hotswap_hook(Task *, void *)
+{
+    hotswap_thunk_router->set_foreground(false);
+    hotswap_router->activate(ErrorHandler::default_handler());
+    router->unuse();
+#if HAVE_MULTITHREAD
+    for (int i = 0; i < other_threads.size(); ++i) {
+        pthread_cancel(other_threads[i]);
+        pthread_join(other_threads[i], 0);
+    }
+    other_threads.clear();
+#endif
+    router = hotswap_router;
+    router->use();
+    hotswap_router = 0;
+#if HAVE_MULTITHREAD
+    for (int t = 1; t < nthreads; ++t) {
+        pthread_t p;
+        pthread_create(&p, 0, thread_driver, router->master()->thread(t));
+        other_threads.push_back(p);
+        do_set_affinity(p, t);
+    }
+    do_set_affinity(pthread_self(), 0);
+#endif
+    return true;
+}
+
+static int
+hotconfig_handler(const String &text, Element *, void *, ErrorHandler *errh)
+{
+  if (Router *q = parse_configuration(text, true, true, errh)) {
+    if (hotswap_router)
+      hotswap_router->unuse();
+    hotswap_router = q;
+    hotswap_thunk_router->set_foreground(true);
+    hotswap_task.reschedule();
+    return 0;
+  } else
+    return -EINVAL;
+}
+
+
+// main
 
 int
 main(int argc, char **argv)
@@ -645,9 +662,6 @@ particular purpose.\n");
   router->use();
 
   int exit_value = 0;
-#if HAVE_MULTITHREAD
-  Vector<pthread_t> other_threads;
-#endif
 
   // output flat configuration
   if (output_file) {
