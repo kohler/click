@@ -1090,18 +1090,19 @@ provides_usage () {
 
 default_elementmap_provisions () {
     e=
-    test -f "${clickbuild_clickdatadir}/elementmap.xml" && e="${clickbuild_clickdatadir}/elementmap.xml"
-
     oldprefix="$clickbuild_prefix"
     path="$CLICKPATH"
-    while [ -z "$e" -a -n "$path" ]; do
+    while [ -z "$e" ]; do
         clickbuild_prefix="`echo "$path" | sed 's/^\([^:]*\).*$/\1/'`"
         path="`echo "$path" | sed 's/^[^:]*:*//'`"
         if [ -n "$clickbuild_prefix" -a -f "@clickbuild_clickdatadir@/elementmap.xml" ]; then
             e="@clickbuild_clickdatadir@/elementmap.xml"
         elif [ -n "$clickbuild_prefix" -a -f "$clickbuild_prefix/elementmap.xml" ]; then
             e="$clickbuild_prefix/elementmap.xml"
+        elif [ -z "$clickbuild_prefix" -a -f "${clickbuild_clickdatadir}/elementmap.xml" ]; then
+            e="$clickbuild_clickdatadir/elementmap.xml"
         fi
+        if test -z "$path"; then break; fi
     done
     clickbuild_prefix="$oldprefix"
 

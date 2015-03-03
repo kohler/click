@@ -84,6 +84,7 @@ $(LIBCLICKTOOL):
 
 click-pretty: Makefile $(OBJS) ../lib/$(LIBCLICKTOOL)
 	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
+	@-mkdir -p ../../bin; ln -sf ../tools/click-pretty/$@ ../../bin/$@
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -101,7 +102,7 @@ uninstall:
 	/bin/rm -f $(DESTDIR)$(bindir)/click-pretty
 
 clean:
-	rm -f *.d *.o click-pretty
+	rm -f *.d *.o click-pretty ../../bin/click-pretty
 distclean: clean
 	-rm -f Makefile
 

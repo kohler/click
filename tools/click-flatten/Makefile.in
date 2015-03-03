@@ -84,6 +84,7 @@ $(LIBCLICKTOOL):
 
 click-flatten: Makefile $(OBJS) ../lib/$(LIBCLICKTOOL)
 	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
+	@-mkdir -p ../../bin; ln -sf ../tools/click-flatten/$@ ../../bin/$@
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -101,7 +102,7 @@ uninstall:
 	/bin/rm -f $(DESTDIR)$(bindir)/click-flatten
 
 clean:
-	rm -f *.d *.o click-flatten
+	rm -f *.d *.o click-flatten ../../bin/click-flatten
 distclean: clean
 	-rm -f Makefile
 

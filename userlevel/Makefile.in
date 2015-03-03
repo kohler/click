@@ -127,6 +127,7 @@ endif
 
 $(DRIVER): Makefile libclick.a $(OBJS)
 	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) libclick.a $(LIBS),LINK)
+	@-mkdir -p ../bin; ln -s ../userlevel/$@ ../bin/$@
 
 libclick.a: Makefile $(LIBOBJS)
 	$(call verbose_cmd,$(AR_CREATE) libclick.a $(LIBOBJS),AR libclick.a)
@@ -167,6 +168,7 @@ uninstall:
 
 clean:
 	rm -f *.d *.o $(INSTALLPROGS) $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc elements.conf elements.csmk libclick.a
+	@-for i in $(INSTALLPROGS); do rm -f ../bin/$$i; done
 clean-lib:
 	rm -f $(LIBOBJS) libclick.a
 distclean: clean
