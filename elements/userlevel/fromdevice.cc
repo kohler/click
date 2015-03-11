@@ -103,7 +103,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("TIMESTAMP", timestamp)
 	.complete() < 0)
 	return -1;
-    if (_snaplen > 8190 || _snaplen < 14)
+    if (_snaplen > 65535 || _snaplen < 14)
 	return errh->error("SNAPLEN out of range");
     if (_headroom > 8190)
 	return errh->error("HEADROOM out of range");
