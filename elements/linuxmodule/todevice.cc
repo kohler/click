@@ -642,18 +642,18 @@ void
 ToDevice::add_handlers()
 {
     add_read_handler("calls", read_calls, 0);
-    add_data_handlers("count", Handler::OP_READ, &_npackets);
-    add_data_handlers("drops", Handler::OP_READ, &_drops);
-    add_data_handlers("holds", Handler::OP_READ, &_holds);
-    add_data_handlers("packets", Handler::OP_READ | Handler::DEPRECATED, &_npackets);
+    add_data_handlers("count", Handler::f_read, &_npackets);
+    add_data_handlers("drops", Handler::f_read, &_drops);
+    add_data_handlers("holds", Handler::f_read, &_holds);
+    add_data_handlers("packets", Handler::f_read | Handler::f_deprecated, &_npackets);
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-    add_read_handler("pull_cycles", Handler::OP_READ, &_pull_cycles);
+    add_read_handler("pull_cycles", Handler::f_read, &_pull_cycles);
 #endif
 #if CLICK_DEVICE_STATS
-    add_read_handler("enqueue_cycles", Handler::OP_READ, &_time_queue);
-    add_read_handler("clean_dma_cycles", Handler::OP_READ, &_time_clean);
+    add_read_handler("enqueue_cycles", Handler::f_read, &_time_queue);
+    add_read_handler("clean_dma_cycles", Handler::f_read, &_time_clean);
 #endif
-    add_write_handler("reset_counts", write_handler, 0, Handler::BUTTON);
+    add_write_handler("reset_counts", write_handler, 0, Handler::f_button);
     add_task_handlers(&_task);
 }
 

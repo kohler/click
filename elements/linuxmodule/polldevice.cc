@@ -411,18 +411,18 @@ void
 PollDevice::add_handlers()
 {
     add_read_handler("calls", PollDevice_read_calls, 0);
-    add_data_handlers("count", Handler::OP_READ, &_npackets);
+    add_data_handlers("count", Handler::f_read, &_npackets);
     // XXX deprecated
-    add_data_handlers("packets", Handler::OP_READ | Handler::DEPRECATED, &_npackets);
+    add_data_handlers("packets", Handler::f_read | Handler::f_deprecated, &_npackets);
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-    add_data_handlers("push_cycles", Handler::OP_READ, &_push_cycles);
+    add_data_handlers("push_cycles", Handler::f_read, &_push_cycles);
 #endif
 #if CLICK_DEVICE_STATS
-    add_data_handlers("poll_cycles", Handler::OP_READ, &_time_poll);
-    add_data_handlers("refill_dma_cycles", Handler::OP_READ, &_time_refill);
+    add_data_handlers("poll_cycles", Handler::f_read, &_time_poll);
+    add_data_handlers("refill_dma_cycles", Handler::f_read, &_time_refill);
 #endif
-    add_write_handler("reset_counts", PollDevice_write_stats, 0, Handler::BUTTON);
-    add_data_handlers("buffers_reused", Handler::OP_READ, &_buffers_reused);
+    add_write_handler("reset_counts", PollDevice_write_stats, 0, Handler::f_button);
+    add_data_handlers("buffers_reused", Handler::f_read, &_buffers_reused);
     add_task_handlers(&_task);
 }
 

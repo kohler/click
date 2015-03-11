@@ -44,7 +44,7 @@ HandlerCall::initialize(int flags, const Element* context, ErrorHandler* errh)
 	if (!cp_handler_name(cp_shift_spacevec(value), &e, &hname, context, errh))
 	    return -EINVAL;
 	// unquote if required
-	if (flags & h_unquote_param)
+	if (flags & f_unquote_param)
 	    value = cp_unquote(value);
     } else
 	hname = _h->name();
@@ -52,7 +52,7 @@ HandlerCall::initialize(int flags, const Element* context, ErrorHandler* errh)
     // exit early if handlers not yet defined
     if (!e->router()->handlers_ready()) {
 	_e = reinterpret_cast<Element *>(4); // "initialization not attempted"
-	if (flags & h_preinitialize)
+	if (flags & f_preinitialize)
 	    return 0;
 	else
 	    return errh->error("handlers not yet defined");
@@ -259,7 +259,7 @@ HandlerCallArg::parse(const String &str, HandlerCall &result, const ArgContext &
 {
     HandlerCall hc(str);
     PrefixErrorHandler perrh(args.errh(), args.error_prefix());
-    if (hc.initialize(flags | HandlerCall::h_preinitialize, args.context(), &perrh) >= 0) {
+    if (hc.initialize(flags | HandlerCall::f_preinitialize, args.context(), &perrh) >= 0) {
 	result = hc;
 	return true;
     } else

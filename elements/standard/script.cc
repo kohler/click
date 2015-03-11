@@ -463,7 +463,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	    String result;
 	    if (text && (isalpha((unsigned char) text[0]) || text[0] == '@' || text[0] == '_')) {
 		HandlerCall hc(cp_expand(text, expander));
-		int flags = HandlerCall::OP_READ + ((insn == INSN_PRINTQ || insn == INSN_PRINTNQ) ? HandlerCall::UNQUOTE_PARAM : 0);
+		int flags = HandlerCall::f_read + ((insn == INSN_PRINTQ || insn == INSN_PRINTNQ) ? HandlerCall::UNQUOTE_PARAM : 0);
 		if (hc.initialize(flags, this, errh) >= 0) {
 		    ContextErrorHandler c_errh(errh, "While calling %<%s%>:", hc.unparse().c_str());
 		    result = hc.call_read(&c_errh);
@@ -491,7 +491,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	case INSN_READ:
 	case INSN_READQ: {
 	    HandlerCall hc(cp_expand(_args3[ipos], expander));
-	    int flags = HandlerCall::OP_READ + (insn == INSN_READQ ? HandlerCall::UNQUOTE_PARAM : 0);
+	    int flags = HandlerCall::f_read + (insn == INSN_READQ ? HandlerCall::UNQUOTE_PARAM : 0);
 	    if (hc.initialize(flags, this, errh) >= 0) {
 		ContextErrorHandler c_errh(errh, "While calling %<%s%>:", hc.unparse().c_str());
 		String result = hc.call_read(&c_errh);
@@ -504,7 +504,7 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
 	case INSN_WRITE:
 	case INSN_WRITEQ: {
 	    HandlerCall hc(cp_expand(_args3[ipos], expander));
-	    int flags = HandlerCall::OP_WRITE + (insn == INSN_WRITEQ ? HandlerCall::UNQUOTE_PARAM : 0);
+	    int flags = HandlerCall::f_write + (insn == INSN_WRITEQ ? HandlerCall::UNQUOTE_PARAM : 0);
 	    if (hc.initialize(flags, this, errh) >= 0) {
 		ContextErrorHandler c_errh(errh, "While calling %<%s%>:", hc.unparse().c_str());
 		_write_status = hc.call_write(&c_errh);
@@ -727,7 +727,7 @@ Script::Expander::expand(const String &vname, String &out, int vartype, int) con
     }
 
     if (vname.equals("write", 5)) {
-	out = BoolArg::unparse(script->_run_op & Handler::OP_WRITE);
+	out = BoolArg::unparse(script->_run_op & Handler::f_write);
 	return true;
     }
 
@@ -1226,7 +1226,7 @@ Script::basic_handler(int, String &str, Element *e, const Handler *h, ErrorHandl
     case ar_writable: {
 	Element *el;
 	const Handler *h;
-	int f = (what == ar_readable ? Handler::OP_READ : Handler::OP_WRITE);
+	int f = (what == ar_readable ? Handler::f_read : Handler::f_write);
 	while (String hname = cp_shift_spacevec(str))
 	    if (!cp_handler(hname, f, &el, &h, e)) {
 		str = String(false);
@@ -1253,7 +1253,7 @@ int
 Script::star_write_handler(const String &str, Element *e, void *, ErrorHandler *)
 {
     Script *s = static_cast<Script *>(e);
-    s->set_handler(str, Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE, step_handler, 0, ST_RUN);
+    s->set_handler(str, Handler::f_read | Handler::f_read_param | Handler::f_write, step_handler, 0, ST_RUN);
     return Router::hindex(s, str);
 }
 
@@ -1307,53 +1307,53 @@ Script::var_handler(int, String &str, Element *e, const Handler *h, ErrorHandler
 void
 Script::add_handlers()
 {
-    set_handler("step", Handler::OP_WRITE, step_handler, 0, ST_STEP);
-    set_handler("goto", Handler::OP_WRITE, step_handler, 0, ST_GOTO);
-    set_handler("run", Handler::OP_READ | Handler::READ_PARAM | Handler::OP_WRITE, step_handler, 0, ST_RUN);
-    set_handler("add", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_add, 0);
-    set_handler("sub", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_sub, 0);
-    set_handler("min", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_min, 0);
-    set_handler("max", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_max, 0);
-    set_handler("mul", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_mul, 0);
-    set_handler("div", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_div, 0);
-    set_handler("idiv", Handler::OP_READ | Handler::READ_PARAM, arithmetic_handler, ar_idiv, 0);
-    set_handler("mod", Handler::OP_READ | Handler::READ_PARAM, modrem_handler, ar_mod, 0);
-    set_handler("rem", Handler::OP_READ | Handler::READ_PARAM, modrem_handler, ar_rem, 0);
-    set_handler("neg", Handler::OP_READ | Handler::READ_PARAM, negabs_handler, ar_neg, 0);
-    set_handler("abs", Handler::OP_READ | Handler::READ_PARAM, negabs_handler, ar_abs, 0);
-    set_handler("eq", Handler::OP_READ | Handler::READ_PARAM, compare_handler, AR_EQ, 0);
-    set_handler("ne", Handler::OP_READ | Handler::READ_PARAM, compare_handler, AR_NE, 0);
-    set_handler("gt", Handler::OP_READ | Handler::READ_PARAM, compare_handler, AR_GT, 0);
-    set_handler("ge", Handler::OP_READ | Handler::READ_PARAM, compare_handler, AR_GE, 0);
-    set_handler("lt", Handler::OP_READ | Handler::READ_PARAM, compare_handler, AR_LT, 0);
-    set_handler("le", Handler::OP_READ | Handler::READ_PARAM, compare_handler, AR_LE, 0);
-    set_handler("not", Handler::OP_READ | Handler::READ_PARAM, basic_handler, AR_NOT, 0);
-    set_handler("sprintf", Handler::OP_READ | Handler::READ_PARAM, sprintf_handler, AR_SPRINTF, 0);
-    set_handler("first", Handler::OP_READ | Handler::READ_PARAM, basic_handler, AR_FIRST, 0);
-    set_handler("random", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_random, 0);
-    set_handler("and", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_and, 0);
-    set_handler("or", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_or, 0);
-    set_handler("nand", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_nand, 0);
-    set_handler("nor", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_nor, 0);
-    set_handler("if", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_if, 0);
-    set_handler("in", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_in, 0);
-    set_handler("now", Handler::OP_READ, basic_handler, ar_now, 0);
-    set_handler("readable", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_readable, 0);
-    set_handler("writable", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_writable, 0);
-    set_handler("length", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_length, 0);
-    set_handler("unquote", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_unquote, 0);
-    set_handler("htons", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_htons, 0);
-    set_handler("htonl", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_htonl, 0);
-    set_handler("ntohs", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_ntohs, 0);
-    set_handler("ntohl", Handler::OP_READ | Handler::READ_PARAM, basic_handler, ar_ntohl, 0);
+    set_handler("step", Handler::f_write, step_handler, 0, ST_STEP);
+    set_handler("goto", Handler::f_write, step_handler, 0, ST_GOTO);
+    set_handler("run", Handler::f_read | Handler::f_read_param | Handler::f_write, step_handler, 0, ST_RUN);
+    set_handler("add", Handler::f_read | Handler::f_read_param, arithmetic_handler, ar_add, 0);
+    set_handler("sub", Handler::f_read | Handler::f_read_param, arithmetic_handler, ar_sub, 0);
+    set_handler("min", Handler::f_read | Handler::f_read_param, arithmetic_handler, ar_min, 0);
+    set_handler("max", Handler::f_read | Handler::f_read_param, arithmetic_handler, ar_max, 0);
+    set_handler("mul", Handler::f_read | Handler::f_read_param, arithmetic_handler, ar_mul, 0);
+    set_handler("div", Handler::f_read | Handler::f_read_param, arithmetic_handler, ar_div, 0);
+    set_handler("idiv", Handler::f_read | Handler::f_read_param, arithmetic_handler, ar_idiv, 0);
+    set_handler("mod", Handler::f_read | Handler::f_read_param, modrem_handler, ar_mod, 0);
+    set_handler("rem", Handler::f_read | Handler::f_read_param, modrem_handler, ar_rem, 0);
+    set_handler("neg", Handler::f_read | Handler::f_read_param, negabs_handler, ar_neg, 0);
+    set_handler("abs", Handler::f_read | Handler::f_read_param, negabs_handler, ar_abs, 0);
+    set_handler("eq", Handler::f_read | Handler::f_read_param, compare_handler, AR_EQ, 0);
+    set_handler("ne", Handler::f_read | Handler::f_read_param, compare_handler, AR_NE, 0);
+    set_handler("gt", Handler::f_read | Handler::f_read_param, compare_handler, AR_GT, 0);
+    set_handler("ge", Handler::f_read | Handler::f_read_param, compare_handler, AR_GE, 0);
+    set_handler("lt", Handler::f_read | Handler::f_read_param, compare_handler, AR_LT, 0);
+    set_handler("le", Handler::f_read | Handler::f_read_param, compare_handler, AR_LE, 0);
+    set_handler("not", Handler::f_read | Handler::f_read_param, basic_handler, AR_NOT, 0);
+    set_handler("sprintf", Handler::f_read | Handler::f_read_param, sprintf_handler, AR_SPRINTF, 0);
+    set_handler("first", Handler::f_read | Handler::f_read_param, basic_handler, AR_FIRST, 0);
+    set_handler("random", Handler::f_read | Handler::f_read_param, basic_handler, ar_random, 0);
+    set_handler("and", Handler::f_read | Handler::f_read_param, basic_handler, ar_and, 0);
+    set_handler("or", Handler::f_read | Handler::f_read_param, basic_handler, ar_or, 0);
+    set_handler("nand", Handler::f_read | Handler::f_read_param, basic_handler, ar_nand, 0);
+    set_handler("nor", Handler::f_read | Handler::f_read_param, basic_handler, ar_nor, 0);
+    set_handler("if", Handler::f_read | Handler::f_read_param, basic_handler, ar_if, 0);
+    set_handler("in", Handler::f_read | Handler::f_read_param, basic_handler, ar_in, 0);
+    set_handler("now", Handler::f_read, basic_handler, ar_now, 0);
+    set_handler("readable", Handler::f_read | Handler::f_read_param, basic_handler, ar_readable, 0);
+    set_handler("writable", Handler::f_read | Handler::f_read_param, basic_handler, ar_writable, 0);
+    set_handler("length", Handler::f_read | Handler::f_read_param, basic_handler, ar_length, 0);
+    set_handler("unquote", Handler::f_read | Handler::f_read_param, basic_handler, ar_unquote, 0);
+    set_handler("htons", Handler::f_read | Handler::f_read_param, basic_handler, ar_htons, 0);
+    set_handler("htonl", Handler::f_read | Handler::f_read_param, basic_handler, ar_htonl, 0);
+    set_handler("ntohs", Handler::f_read | Handler::f_read_param, basic_handler, ar_ntohs, 0);
+    set_handler("ntohl", Handler::f_read | Handler::f_read_param, basic_handler, ar_ntohl, 0);
 #if CLICK_USERLEVEL
-    set_handler("cat", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, basic_handler, ar_cat, 0);
-    set_handler("catq", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, basic_handler, ar_catq, 0);
-    set_handler("kill", Handler::OP_READ | Handler::READ_PARAM | Handler::READ_PRIVATE, basic_handler, ar_kill, 0);
+    set_handler("cat", Handler::f_read | Handler::f_read_param | Handler::f_read_private, basic_handler, ar_cat, 0);
+    set_handler("catq", Handler::f_read | Handler::f_read_param | Handler::f_read_private, basic_handler, ar_catq, 0);
+    set_handler("kill", Handler::f_read | Handler::f_read_param | Handler::f_read_private, basic_handler, ar_kill, 0);
 #endif
-    set_handler("get", Handler::OP_READ | Handler::READ_PARAM, var_handler, vh_get, 0);
-    set_handler("set", Handler::OP_WRITE, var_handler, vh_set, 0);
-    set_handler("shift", Handler::OP_READ | Handler::READ_PARAM, var_handler, vh_shift, 0);
+    set_handler("get", Handler::f_read | Handler::f_read_param, var_handler, vh_get, 0);
+    set_handler("set", Handler::f_write, var_handler, vh_set, 0);
+    set_handler("shift", Handler::f_read | Handler::f_read_param, var_handler, vh_shift, 0);
     if (_type == type_proxy)
 	add_write_handler("*", star_write_handler, 0);
     for (int i = 0; i < _insns.size(); ++i)

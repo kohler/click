@@ -138,7 +138,7 @@ TimeSortedSched::pull(int)
 void
 TimeSortedSched::add_handlers()
 {
-    add_data_handlers("well_ordered", Handler::OP_READ | Handler::CHECKBOX, &_well_ordered);
+    add_data_handlers("well_ordered", Handler::f_read | Handler::f_checkbox, &_well_ordered);
 }
 
 CLICK_ENDDECLS

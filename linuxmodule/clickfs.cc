@@ -1050,7 +1050,7 @@ click_new_file_operations(const char* name)
 int
 init_clickfs()
 {
-    static_assert(HANDLER_DIRECT + HANDLER_WRITE_UNLIMITED < Handler::USER_FLAG_0, "Too few driver handler flags available.");
+    static_assert(HANDLER_DIRECT + HANDLER_WRITE_UNLIMITED < Handler::f_user0, "Too few driver handler flags available.");
     static_assert(((HS_DIRECT | HS_WRITE_UNLIMITED) & (HS_READING | HS_DONE | HS_RAW)) == 0, "Handler flag overlap.");
 
     mutex_init(&handler_strings_lock);
