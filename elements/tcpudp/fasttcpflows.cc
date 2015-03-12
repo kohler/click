@@ -91,9 +91,14 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_dport = dport;
   tcp->th_sum = 0;
   unsigned short len = _len-14-sizeof(click_ip);
+#if CLICK_LINUXMODULE
   unsigned csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-  tcp->th_sum = csum_tcpudp_magic
-    (_sipaddr.s_addr, _dipaddr.s_addr, len, IP_PROTO_TCP, csum);
+  tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
+                    len, IP_PROTO_TCP, csum);
+#else
+  unsigned csum = click_in_cksum((uint8_t *)tcp, len);
+  tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
+#endif
 
   q = _flows[flow].data_packet->uniqueify(); // better not fail
   _flows[flow].data_packet = q;
@@ -103,9 +108,14 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_dport = dport;
   tcp->th_sum = 0;
   len = _len-14-sizeof(click_ip);
+#if CLICK_LINUXMODULE
   csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-  tcp->th_sum = csum_tcpudp_magic
-    (_sipaddr.s_addr, _dipaddr.s_addr, len, IP_PROTO_TCP, csum);
+  tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
+                    len, IP_PROTO_TCP, csum);
+#else
+  csum = click_in_cksum((uint8_t *)tcp, len);
+  tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
+#endif
 
   q = _flows[flow].fin_packet->uniqueify(); // better not fail
   _flows[flow].fin_packet = q;
@@ -115,9 +125,14 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_dport = dport;
   tcp->th_sum = 0;
   len = _len-14-sizeof(click_ip);
+#if CLICK_LINUXMODULE
   csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-  tcp->th_sum = csum_tcpudp_magic
-    (_sipaddr.s_addr, _dipaddr.s_addr, len, IP_PROTO_TCP, csum);
+  tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
+                    len, IP_PROTO_TCP, csum);
+#else
+  csum = click_in_cksum((uint8_t *)tcp, len);
+  tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
+#endif
 }
 
 Packet *
@@ -165,7 +180,7 @@ FastTCPFlows::initialize(ErrorHandler *)
     // SYN packet
     WritablePacket *q = Packet::make(_len);
     _flows[i].syn_packet = q;
-    memcpy(_flows[i].syn_packet->data(), &_ethh, 14);
+    memcpy((void*)_flows[i].syn_packet->data(), &_ethh, 14);
     click_ip *ip =
       reinterpret_cast<click_ip *>(q->data()+14);
     click_tcp *tcp = reinterpret_cast<click_tcp *>(ip + 1);
@@ -195,9 +210,14 @@ FastTCPFlows::initialize(ErrorHandler *)
     tcp->th_urp = 0;
     tcp->th_sum = 0;
     unsigned short len = _len-14-sizeof(click_ip);
+#if CLICK_LINUXMODULE
     unsigned csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
     tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-				    len, IP_PROTO_TCP, csum);
+                      len, IP_PROTO_TCP, csum);
+#else
+    unsigned csum = click_in_cksum((uint8_t *)tcp, len);
+    tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
+#endif
 
     // DATA packet with PUSH and ACK
     q = Packet::make(_len);
@@ -231,9 +251,14 @@ FastTCPFlows::initialize(ErrorHandler *)
     tcp->th_urp = 0;
     tcp->th_sum = 0;
     len = _len-14-sizeof(click_ip);
+#if CLICK_LINUXMODULE
     csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
     tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-				    len, IP_PROTO_TCP, csum);
+                      len, IP_PROTO_TCP, csum);
+#else
+    csum = click_in_cksum((uint8_t *)tcp, len);
+    tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
+#endif
 
     // FIN packet
     q = Packet::make(_len);
@@ -267,9 +292,14 @@ FastTCPFlows::initialize(ErrorHandler *)
     tcp->th_urp = 0;
     tcp->th_sum = 0;
     len = _len-14-sizeof(click_ip);
+#if CLICK_LINUXMODULE
     csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
     tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-				    len, IP_PROTO_TCP, csum);
+                      len, IP_PROTO_TCP, csum);
+#else
+    csum = click_in_cksum((uint8_t *)tcp, len);
+    tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
+#endif
 
     _flows[i].flow_count = 0;
   }
@@ -410,5 +440,4 @@ FastTCPFlows::add_handlers()
   add_write_handler("limit", FastTCPFlows_limit_write_handler, 0);
 }
 
-ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(FastTCPFlows)
