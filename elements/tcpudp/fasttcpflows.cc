@@ -91,14 +91,8 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_dport = dport;
   tcp->th_sum = 0;
   unsigned short len = _len-14-sizeof(click_ip);
-#if CLICK_LINUXMODULE
-  unsigned csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-  tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-                    len, IP_PROTO_TCP, csum);
-#else
   unsigned csum = click_in_cksum((uint8_t *)tcp, len);
   tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
-#endif
 
   q = _flows[flow].data_packet->uniqueify(); // better not fail
   _flows[flow].data_packet = q;
@@ -108,14 +102,8 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_dport = dport;
   tcp->th_sum = 0;
   len = _len-14-sizeof(click_ip);
-#if CLICK_LINUXMODULE
-  csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-  tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-                    len, IP_PROTO_TCP, csum);
-#else
   csum = click_in_cksum((uint8_t *)tcp, len);
   tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
-#endif
 
   q = _flows[flow].fin_packet->uniqueify(); // better not fail
   _flows[flow].fin_packet = q;
@@ -125,14 +113,8 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_dport = dport;
   tcp->th_sum = 0;
   len = _len-14-sizeof(click_ip);
-#if CLICK_LINUXMODULE
-  csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-  tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-                    len, IP_PROTO_TCP, csum);
-#else
   csum = click_in_cksum((uint8_t *)tcp, len);
   tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
-#endif
 }
 
 Packet *
@@ -210,14 +192,8 @@ FastTCPFlows::initialize(ErrorHandler *)
     tcp->th_urp = 0;
     tcp->th_sum = 0;
     unsigned short len = _len-14-sizeof(click_ip);
-#if CLICK_LINUXMODULE
-    unsigned csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-    tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-                      len, IP_PROTO_TCP, csum);
-#else
     unsigned csum = click_in_cksum((uint8_t *)tcp, len);
     tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
-#endif
 
     // DATA packet with PUSH and ACK
     q = Packet::make(_len);
@@ -251,14 +227,8 @@ FastTCPFlows::initialize(ErrorHandler *)
     tcp->th_urp = 0;
     tcp->th_sum = 0;
     len = _len-14-sizeof(click_ip);
-#if CLICK_LINUXMODULE
-    csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-    tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-                      len, IP_PROTO_TCP, csum);
-#else
     csum = click_in_cksum((uint8_t *)tcp, len);
     tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
-#endif
 
     // FIN packet
     q = Packet::make(_len);
@@ -292,14 +262,8 @@ FastTCPFlows::initialize(ErrorHandler *)
     tcp->th_urp = 0;
     tcp->th_sum = 0;
     len = _len-14-sizeof(click_ip);
-#if CLICK_LINUXMODULE
-    csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-    tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-                      len, IP_PROTO_TCP, csum);
-#else
     csum = click_in_cksum((uint8_t *)tcp, len);
     tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
-#endif
 
     _flows[i].flow_count = 0;
   }
