@@ -2,6 +2,7 @@
 #ifndef CLICK_STORAGE_HH
 #define CLICK_STORAGE_HH
 #include <click/machine.hh>
+#include <click/atomic.hh>
 CLICK_DECLS
 class Packet;
 
@@ -9,6 +10,7 @@ class Storage { public:
 
     typedef uint32_t index_type;
     typedef int32_t signed_index_type;
+    static const index_type invalid_index = (index_type) -1;
 
     Storage()				: _head(0), _tail(0) { }
 
@@ -34,6 +36,7 @@ class Storage { public:
     inline void set_tail(index_type t); // release barrier (write pkt)
     inline void set_head_release(index_type h); // release barrier (LIFO)
     inline void set_tail_acquire(index_type t); // acquire barrier (LIFO)
+    inline index_type reserve_tail_atomic();
 
     static inline void packet_memory_barrier(Packet* volatile& packet,
                                              volatile index_type& index)
@@ -89,6 +92,19 @@ Storage::set_tail_acquire(index_type t)
 {
     click_read_fence();
     _tail = t;
+}
+
+inline Storage::index_type
+Storage::reserve_tail_atomic()
+{
+    index_type t, nt;
+    do {
+        t = _tail;
+        nt = next_i(t);
+        if (nt == _head)
+            return invalid_index;
+    } while (atomic_uint32_t::compare_swap(_tail, t, nt) != t);
+    return t;
 }
 
 inline void
