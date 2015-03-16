@@ -192,6 +192,10 @@ FromDevice::initialize(ErrorHandler *errh)
     _task.set_tickets(Task::DEFAULT_TICKETS);
 #endif
 
+    for (int i = 0; i < QSIZE; i ++) {
+            _queue[i] = 0;
+    }
+
     // set true queue size (now we can start receiving packets)
     _capacity = QSIZE;
 
@@ -390,13 +394,12 @@ FromDevice::got_skb(struct sk_buff *skb)
     if (!_active)
 	return 0;		// 0 means not handled
 
-    Storage::index_type h = head(), t = tail(), nt = next_i(t);
-
-    if (nt != h) { /* ours */
-	skb = skb_share_check(skb, GFP_ATOMIC);
-	if (!skb)
-	    return 1;
-	assert(skb_shared(skb) == 0);
+    skb = skb_share_check(skb, GFP_ATOMIC);
+    if (!skb)
+        return 1;
+    assert(skb_shared(skb) == 0);
+    unsigned t = reserve_tail_atomic();
+    if (t != invalid_index) { /* ours */
 
 	/* Retrieve the MAC header. */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
@@ -418,14 +421,13 @@ FromDevice::got_skb(struct sk_buff *skb)
 	_schinfo[t].enq_task_epoch = rt->driver_task_epoch();
 #endif
 
-	set_tail(nt);
 	_task.reschedule();
 
 #if CLICK_DEBUG_SCHEDULING
 	_schinfo[t].enq_woke_process = enq_process_asleep && rt->sleeper()->state == TASK_RUNNING;
 #endif
 
-	unsigned s = size(h, nt);
+	unsigned s = size(head(), tail());
 	if (s > _highwater_length)
 	    _highwater_length = s;
 
@@ -473,6 +475,11 @@ FromDevice::run_task(Task *)
     Storage::index_type h;
     while (npq < _burst && (h = head()) != tail()) {
 	Packet *p = _queue[h];
+	if (p == NULL) {
+	    _task.fast_reschedule();
+	    return npq > 0;
+	}
+	_queue[h] = 0;
 #if CLICK_DEBUG_SCHEDULING
 	emission_report(h);
 #endif
