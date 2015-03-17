@@ -47,7 +47,6 @@ MixedQueue::push(int port, Packet *p)
 	    checked_output_push(1, p);
 	} else {
 	    _q[t] = p;
-	    packet_memory_barrier(_q[t]);
 	    set_tail(nt);
 	}
     } else {			// LIFO insert, drop old packet if full
@@ -58,12 +57,10 @@ MixedQueue::push(int port, Packet *p)
 	    _drops++;
 	    t = prev_i(t);
 	    oldp = _q[t];
-	    packet_memory_barrier(_q[t]);
-	    set_tail(t);
+	    set_tail_acquire(t);
 	}
 	_q[ph] = p;
-	packet_memory_barrier(_q[ph]);
-	set_head(ph);
+	set_head_release(ph);
     }
 
     int s = size();

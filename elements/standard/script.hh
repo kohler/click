@@ -192,15 +192,16 @@ Scripts come in several types, including active scripts, which start running
 as soon as the configuration is loaded; passive scripts, which run only when
 prodded; signal scripts, which run in response to a signal; and driver
 scripts, which are active scripts that also control when the driver stops.
-The optional TYPE keyword argument is used to select a script type.  The types
+
+The optional TYPE keyword argument selects a script type. The types
 are:
 
 =over 8
 
 =item C<ACTIVE>
 
-The script starts running as soon as the router is initialized.  This is
-the default.
+The script starts running as soon as the router is initialized. ACTIVE is
+the default for Script elements without ports.
 
 =item C<PASSIVE>
 
@@ -220,9 +221,10 @@ arguments.
 
 =item C<PACKET>
 
-The script runs in response to a packet push or pull event.  Within the
-script, the C<$input> variable equals the packet input port.  The script's
-return value is used as the output port number.
+The script runs in response to a packet push or pull event. Within the
+script, the C<$input> variable equals the packet input port. The script's
+return value is used as the output port number. PACKET is the default for
+Script elements with ports.
 
 =item C<PROXY>
 

@@ -486,7 +486,6 @@ FromHost::fl_tx(struct sk_buff *skb, net_device *dev)
 	    fl->stats()->tx_bytes += p->length();
 	    fl->_task.reschedule();
 	    q[t] = p;
-	    fl->packet_memory_barrier(q[t]);
 	    fl->set_tail(nt);
 	    ret = (netdev_tx_t) NETDEV_TX_OK;
 	} else {
@@ -509,7 +508,6 @@ FromHost::run_task(Task *)
     for (int count = 0; count < _burst && !empty(); ++count) {
         Storage::index_type h = head();
 	Packet *p = q[h];
-	packet_memory_barrier(q[h]);
 	set_head(next_i(h));
 
 	// Convenience for TYPE IP: set the IP header and destination address.

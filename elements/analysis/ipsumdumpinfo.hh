@@ -65,6 +65,8 @@ struct PacketOdesc {
     bool is_ip;
     bool have_icmp_type : 1;
     bool have_icmp_code : 1;
+    bool have_ip_hl : 1;
+    bool have_tcp_hl : 1;
 
     union {
 	uint32_t v;
@@ -216,6 +218,7 @@ inline PacketDesc::PacketDesc(const Element *e_, Packet* p_, StringAccum* sa_, S
 
 inline PacketOdesc::PacketOdesc(const Element *e_, WritablePacket* p_, int default_ip_p_, const IPFlowID *default_ip_flowid_, int minor_version_)
     : p(p_), is_ip(true), have_icmp_type(false), have_icmp_code(false),
+      have_ip_hl(false), have_tcp_hl(false),
       e(e_), default_ip_p(default_ip_p_), default_ip_flowid(default_ip_flowid_),
       minor_version(minor_version_), want_len(0)
 {

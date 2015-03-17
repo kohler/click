@@ -402,10 +402,10 @@ void
 FromNLANRDump::add_handlers()
 {
     add_read_handler("sampling_prob", read_handler, H_SAMPLING_PROB);
-    add_read_handler("active", read_handler, H_ACTIVE, Handler::CHECKBOX);
+    add_read_handler("active", read_handler, H_ACTIVE, Handler::f_checkbox);
     add_write_handler("active", write_handler, H_ACTIVE);
     add_read_handler("encap", read_handler, H_ENCAP);
-    add_write_handler("stop", write_handler, H_STOP, Handler::BUTTON);
+    add_write_handler("stop", write_handler, H_STOP, Handler::f_button);
     add_read_handler("packet_filepos", read_handler, H_PACKET_FILEPOS);
     add_write_handler("extend_interval", write_handler, H_EXTEND_INTERVAL);
     _ff.add_handlers(this);

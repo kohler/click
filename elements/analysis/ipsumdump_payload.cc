@@ -87,42 +87,40 @@ static void account_payload_len(PacketOdesc &d, int32_t &off, uint32_t plen)
 	d.want_len = off + plen;
     else {
 	click_ip *iph = d.p->ip_header();
+        click_tcp *tcph;
 	uint32_t ip_len = (iph->ip_len ? ntohs(iph->ip_len) : d.want_len)
 	    + d.p->network_header_offset();
+        int delta = ip_len - (off + plen);
 
-	if (ip_len > off + plen) {
-	    int delta = ip_len - (off + plen);
-	    click_tcp *tcph = d.p->tcp_header();
+        if (delta > 0 && IP_FIRSTFRAG(iph) && iph->ip_p == IP_PROTO_TCP
+            && !d.have_tcp_hl && (tcph = d.p->tcp_header())
+            && tcph->th_off == (sizeof(click_tcp) >> 2)) {
+            int th_delta = delta - (delta & 3);
+            if (th_delta + sizeof(click_tcp) > (15 << 2))
+                th_delta = (15 << 2) - sizeof(click_tcp);
+            if (!(d.p = d.p->put(th_delta)))
+                return;
+            iph = d.p->ip_header(); // may have shifted
+            unsigned char *tx = d.p->transport_header() + sizeof(click_tcp);
+            memmove(tx + th_delta, tx, d.p->end_data() - (tx + th_delta));
+            memset(tx, TCPOPT_EOL, th_delta);
+            d.p->tcp_header()->th_off = (sizeof(click_tcp) + th_delta) >> 2;
+            delta -= th_delta;
+        }
 
-	    if (IP_FIRSTFRAG(iph) && iph->ip_p == IP_PROTO_TCP
-		&& tcph->th_off == (sizeof(click_tcp) >> 2)) {
-		int th_delta = delta - (delta & 3);
-		if (th_delta + sizeof(click_tcp) > (15 << 2))
-		    th_delta = (15 << 2) - sizeof(click_tcp);
-		if (!(d.p = d.p->put(th_delta)))
-		    return;
-		iph = d.p->ip_header(); // may have shifted
-		unsigned char *tx = d.p->transport_header() + sizeof(click_tcp);
-		memmove(tx + th_delta, tx, d.p->end_data() - (tx + th_delta));
-		memset(tx, TCPOPT_EOL, th_delta);
-		d.p->tcp_header()->th_off = (sizeof(click_tcp) + th_delta) >> 2;
-		delta -= th_delta;
-	    }
-
-	    if (iph->ip_hl == (sizeof(click_ip) >> 2) && delta > 0) {
-		int ip_delta = delta - (delta & 3);
-		if (ip_delta + sizeof(click_ip) > (15 << 2))
-		    ip_delta = (15 << 2) - sizeof(click_ip);
-		if (!(d.p = d.p->put(ip_delta)))
-		    return;
-		iph = d.p->ip_header(); // may have shifted
-		unsigned char *nx = d.p->network_header() + sizeof(click_ip);
-		memmove(nx + ip_delta, nx, d.p->end_data() - (nx + ip_delta));
-		memset(nx, IPOPT_EOL, ip_delta);
-		iph->ip_hl = (sizeof(click_ip) + ip_delta) >> 2;
-		d.p->set_ip_header(iph, sizeof(click_ip) + ip_delta);
-	    }
-	}
+        if (delta > 0 && !d.have_ip_hl && iph->ip_hl == (sizeof(click_ip) >> 2)) {
+            int ip_delta = delta - (delta & 3);
+            if (ip_delta + sizeof(click_ip) > (15 << 2))
+                ip_delta = (15 << 2) - sizeof(click_ip);
+            if (!(d.p = d.p->put(ip_delta)))
+                return;
+            iph = d.p->ip_header(); // may have shifted
+            unsigned char *nx = d.p->network_header() + sizeof(click_ip);
+            memmove(nx + ip_delta, nx, d.p->end_data() - (nx + ip_delta));
+            memset(nx, IPOPT_EOL, ip_delta);
+            iph->ip_hl = (sizeof(click_ip) + ip_delta) >> 2;
+            d.p->set_ip_header(iph, sizeof(click_ip) + ip_delta);
+        }
     }
 }
 

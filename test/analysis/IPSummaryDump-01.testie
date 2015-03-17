@@ -7,7 +7,7 @@ click-buildtool provides FromIPSummaryDump Truncate
 click -e "
 FromIPSummaryDump(IN1, STOP true, ZERO true)
 	-> s :: RoundRobinSwitch
-	-> t :: ToIPSummaryDump(OUT1, BAD_PACKETS true, DATA sport dport tcp_urp tcp_opt)
+	-> t :: ToIPSummaryDump(OUT1, BAD_PACKETS true, FIELDS sport dport tcp_urp tcp_opt)
 s[1] -> Truncate(41) -> t
 s[2] -> Truncate(38) -> t
 s[3] -> Truncate(23) -> t

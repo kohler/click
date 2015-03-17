@@ -188,17 +188,13 @@ distclean:
 	-rm -f include/click/config.h include/click/config-*.h include/click/pathvars.h
 	-rm -f config.cache config.log $(CLICK_BUILDTOOL) $(CLICK_COMPILE) stamp-h
 	-rm -f share/click/config.mk share/click/pkg-config.mk $(ELEMENTMAP)
-	-rm -f click-buildtool click-compile config.mk elementmap.xml etc/pkg-config.mk pkg-config.mk
+	-rm -f bin/click-buildtool bin/click-compile
+	-rm -f config.mk elementmap.xml etc/pkg-config.mk pkg-config.mk
 	-rm -f conftest.* installch
+	-rmdir bin
 
 check: $(ALL_TARGETS) Makefile $(ELEMENTMAP)
-	$(top_srcdir)/test/testie -p $(top_builddir) -p $(top_builddir)/userlevel \
-		-p $(top_builddir)/tools/click-align \
-		-p $(top_builddir)/tools/click-fastclassifier \
-		-p $(top_builddir)/tools/click-flatten \
-		-p $(top_builddir)/tools/click-mkmindriver \
-		-p $(top_builddir)/tools/click-xform \
-		-p $(top_srcdir)/test \
+	$(top_srcdir)/test/testie -p $(top_builddir)/bin -p $(top_srcdir)/test \
 		CLICKPATH="`cd $(top_builddir); pwd`:" $(top_srcdir)/test
 
 distdir = $(PACKAGE)-$(VERSION)

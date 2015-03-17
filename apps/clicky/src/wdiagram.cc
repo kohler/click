@@ -351,7 +351,7 @@ void wdiagram::router_create(bool incremental, bool always)
 	_cdiagram = 0;
     }
     // don't bother creating if widget not mapped
-    if (!always && !GTK_WIDGET_VISIBLE(_widget))
+    if (!always && !gtk_widget_get_visible(_widget))
 	return;
     if (!_cursor[0])
 	initialize();

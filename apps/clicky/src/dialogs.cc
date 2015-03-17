@@ -25,48 +25,41 @@ static void on_new_window_activate(GtkMenuItem *, gpointer user_data)
     rw->show();
 }
 
-static void on_open_file_activate(GtkMenuItem *, gpointer user_data)
-{
+static void on_open_file_activate(GtkMenuItem *, gpointer user_data) {
     reinterpret_cast<wmain *>(user_data)->on_open_file();
 }
 
-static void on_open_socket_activate(GtkMenuItem *, gpointer user_data)
-{
+static void on_open_socket_activate(GtkMenuItem *, gpointer user_data) {
     reinterpret_cast<wmain *>(user_data)->on_open_socket();
 }
 
-static void on_open_kernel_activate(GtkMenuItem *, gpointer user_data)
-{
+static void on_open_kernel_activate(GtkMenuItem *, gpointer user_data) {
     reinterpret_cast<wmain *>(user_data)->on_open_kernel();
 }
 
-static void on_save_activate(GtkMenuItem *, gpointer user_data)
-{
+static void on_save_activate(GtkMenuItem *, gpointer user_data) {
     reinterpret_cast<wmain *>(user_data)->on_save_file(false);
 }
 
-static void on_save_as_activate(GtkMenuItem *, gpointer user_data)
-{
+static void on_save_as_activate(GtkMenuItem *, gpointer user_data) {
     reinterpret_cast<wmain *>(user_data)->on_save_file(true);
 }
 
-static void on_export_diagram_activate(GtkMenuItem *, gpointer user_data)
-{
+static void on_export_diagram_activate(GtkMenuItem *, gpointer user_data) {
     reinterpret_cast<wmain *>(user_data)->on_export_diagram();
 }
 
-static void on_quit_activate(GtkMenuItem *, gpointer)
-{
+static void on_quit_activate(GtkMenuItem *, gpointer) {
+    while (wmain::all_wmains.size())
+        delete wmain::all_wmains[0];
     gtk_main_quit();
 }
 
-static void on_check_activate(GtkMenuItem *, gpointer user_data)
-{
+static void on_check_activate(GtkMenuItem *, gpointer user_data) {
     reinterpret_cast<wmain *>(user_data)->config_check(false);
 }
 
-static void on_install_activate(GtkMenuItem *, gpointer user_data)
-{
+static void on_install_activate(GtkMenuItem *, gpointer user_data) {
     reinterpret_cast<wmain *>(user_data)->config_check(true);
 }
 

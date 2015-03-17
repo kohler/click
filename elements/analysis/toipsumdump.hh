@@ -20,7 +20,7 @@ writes packet summary information to an ASCII file
 =d
 
 Writes summary information about incoming packets to FILENAME in a simple
-ASCII format---each line corresponds to a packet.  The CONTENTS keyword
+ASCII format---each line corresponds to a packet.  The FIELDS keyword
 argument determines what information is written.  Writes to standard output if
 FILENAME is a single dash `C<->'.  The BINARY keyword argument writes a packed
 binary format to save space.
@@ -34,7 +34,7 @@ Keyword arguments are:
 
 =over 8
 
-=item CONTENTS
+=item FIELDS
 
 Space-separated list of field names. Each line of the summary dump will
 contain those fields. Valid field names, with examples, are:
@@ -100,7 +100,7 @@ contain those fields. Valid field names, with examples, are:
    count        Number of packets: '1'
    direction    Link number (PAINT_ANNO): '2', or '>'/'L'
                 for paint 0, '<'/'R'/'X' for paint 1
-   link         Like 'direction', but always numeric
+   link, paint  Like 'direction', but always numeric
    aggregate    Aggregate number (AGGREGATE_ANNO): '973'
    first_timestamp   Packet "first timestamp" (FIRST_
                 TIMESTAMP_ANNO): '996033261.451094'
@@ -111,20 +111,20 @@ contain those fields. Valid field names, with examples, are:
 If a field does not apply to a particular packet -- for example, 'C<sport>' on
 an ICMP packet -- ToIPSummaryDump prints a single dash for that value.
 
-Default CONTENTS is 'ip_src ip_dst'. You may also use spaces instead of
+Default FIELDS is 'ip_src ip_dst'. You may also use spaces instead of
 underscores, in which case you must quote field names that contain a space --
 for example, 'C<ip_src ip_dst "tcp seq">'.
 
 =item HEADER
 
 Boolean. If true, then print any 'C<!>' header lines at the beginning
-of the dump to describe the dump contents. Default is true.
+of the dump to describe the dump format. Default is true.
 
 =item VERBOSE
 
 Boolean. If true, then print out a couple comments at the beginning of the
 dump describing the hostname and starting time, in addition to the 'C<!data>'
-line describing the log contents. Ignored if HEADER is false. Default is
+line describing the dumped fields. Ignored if HEADER is false. Default is
 false.
 
 =item BANNER
@@ -139,7 +139,7 @@ below). Defaults to false.
 
 =item MULTIPACKET
 
-Boolean. If true, and the CONTENTS option doesn't contain 'C<count>', then
+Boolean. If true, and the FIELDS option doesn't contain 'C<count>', then
 generate multiple summary entries for packets with nonzero extra-packets
 annotations. For example, if MULTIPACKET is true, and a packet has
 extra-packets annotation 1, then ToIPSummaryDump will generate 2 lines for
@@ -189,8 +189,8 @@ line, down to one field. Missing fields are treated as 'C<->'.
 
 =n
 
-The 'C<len>' and 'C<payload_len>' content types use the extra length
-annotation. The 'C<count>' content type uses the extra packets annotation.
+The 'C<len>' and 'C<payload_len>' fields use the extra length
+annotation. The 'C<count>' field uses the extra packets annotation.
 
 The characters corresponding to TCP flags are as follows:
 
@@ -211,7 +211,7 @@ contain an unsigned integer, representing the flags byte, or might use 'C<X>'
 and 'C<Y>' for ECE and CWR, respectively.
 
 Verson 1.0 of the IPSummaryDump file format expressed fragment offsets in
-8-byte units, not bytes. Content types in old dumps were sometimes quoted and
+8-byte units, not bytes. Fields in old dumps were sometimes quoted and
 contained spaces instead of underscores. In Version 1.2 files payload MD5
 checksums were sometimes incorrect.
 

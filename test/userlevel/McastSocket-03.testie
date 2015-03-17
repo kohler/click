@@ -1,0 +1,21 @@
+%info
+Test MulticastSocket without loop.
+
+%script
+# Assumes that a multicast route exists to any network device but 'lo'.
+# Most hosts have a default route to this effect.
+{
+    # Run two click instances in parallel.
+    { click CONFIG WHO=A >&2; } | { click CONFIG WHO=B; };
+} 2>&1 | sort -u
+# Sort to ensure reproducible output.
+
+%file CONFIG
+// LOOP is disabled, and since we're not sending over loopback, we
+// won't see any messages on localhost.
+RatedSource("$WHO says hi.", LIMIT 5, STOP true)
+-> McastSocket(233.252.0.0, 1234, LOOP false)
+-> Print("$WHO got", CONTENTS ASCII)
+-> Discard();
+
+%expect stdout

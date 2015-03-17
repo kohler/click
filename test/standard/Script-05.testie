@@ -1,0 +1,32 @@
+%script
+click CONFIG
+
+%file CONFIG
+FromIPSummaryDump(STOP true, DATA "!data ip_dst timestamp
+1.0.0.1 1
+1.0.0.3 2
+1.0.0.3 3
+1.0.0.2 4
+1.0.0.3 5
+1.0.0.3 6
+1.0.0.1 7
+1.0.0.3 8")
+   -> ip :: IPClassifier(dst 1.0.0.1, dst 1.0.0.2, dst 1.0.0.3);
+td :: ToIPSummaryDump(-, FIELDS ts_sec);
+
+ip[0] -> Script(write sw.switch 0) -> td;
+ip[1] -> Script(write sw.switch -1) -> td;
+ip[2] -> sw::Switch -> td;
+
+%expect stdout
+1
+2
+3
+4
+7
+8
+
+%expect stderr
+
+%ignorex
+!.*

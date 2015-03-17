@@ -6,7 +6,7 @@ click -e "
 InfiniteSource(LIMIT 3, STOP true)
   -> r :: RoundRobinSwitch
   -> ICMPIPEncap(1.0.0.1, 1.0.0.1, TYPE 8, CODE 0)
-  -> p :: ToIPSummaryDump(-, CONTENTS ip_src ip_dst ip_proto icmp_type icmp_code);
+  -> p :: ToIPSummaryDump(-, FIELDS ip_src ip_dst ip_proto icmp_type icmp_code);
 r[1] -> ICMPIPEncap(1.0.0.2, 1.0.0.2, TYPE 3, CODE 1) -> p;
 r[2] -> ICMPIPEncap(1.0.0.3, 1.0.0.3, TYPE 5, CODE 3) -> p;
 " | grep -v '^!'

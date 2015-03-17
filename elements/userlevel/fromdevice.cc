@@ -49,14 +49,8 @@
 # include <sys/socket.h>
 # include <net/if.h>
 # include <features.h>
-# if __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 1
-#  include <netpacket/packet.h>
-#  include <net/ethernet.h>
-# else
-#  include <net/if_packet.h>
-#  include <linux/if_packet.h>
-#  include <linux/if_ether.h>
-# endif
+# include <linux/if_packet.h>
+# include <net/ethernet.h>
 #endif
 
 CLICK_DECLS
@@ -109,7 +103,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("TIMESTAMP", timestamp)
 	.complete() < 0)
 	return -1;
-    if (_snaplen > 8190 || _snaplen < 14)
+    if (_snaplen > 65535 || _snaplen < 14)
 	return errh->error("SNAPLEN out of range");
     if (_headroom > 8190)
 	return errh->error("HEADROOM out of range");
@@ -236,8 +230,8 @@ FromDevice::set_promiscuous(int fd, String ifname, bool promisc)
 #endif /* FROMDEVICE_ALLOW_LINUX */
 
 #if FROMDEVICE_ALLOW_PCAP
-const char *
-FromDevice::pcap_error(pcap_t *pcap, const char *ebuf)
+const char*
+FromDevice::fetch_pcap_error(pcap_t* pcap, const char *ebuf)
 {
     if ((!ebuf || !ebuf[0]) && pcap)
 	ebuf = pcap_geterr(pcap);
@@ -251,30 +245,55 @@ pcap_t *
 FromDevice::open_pcap(String ifname, int snaplen, bool promisc,
 		      ErrorHandler *errh)
 {
+    // create pcap
     char ebuf[PCAP_ERRBUF_SIZE];
     ebuf[0] = 0;
-    pcap_t *pcap = pcap_open_live(ifname.mutable_c_str(), snaplen, promisc,
-			       1,     /* timeout: don't wait for packets */
-			       ebuf);
+    pcap_t* p = pcap_create(ifname.c_str(), ebuf);
+    if (!p) {
+        // Note: pcap error buffer will contain the interface name
+        errh->error("%s: %s", ifname.c_str(), fetch_pcap_error(0, ebuf));
+        return 0;
+    }
 
-    // Note: pcap error buffer will contain the interface name
-    if (!pcap) {
-	errh->error("%s while opening %s", pcap_error(0, ebuf), ifname.c_str());
-	return 0;
-    } else if (ebuf[0])
-	errh->warning("%s", ebuf);
+    // set snaplen and promisc
+    if (pcap_set_snaplen(p, snaplen))
+        errh->warning("%s: error while setting snaplen", ifname.c_str());
+    if (pcap_set_promisc(p, promisc))
+        errh->warning("%s: error while setting promisc", ifname.c_str());
 
-    // nonblocking I/O on the packet socket so we can poll
+    // set timeout
+    int timeout_msec = 1;
 # if HAVE_PCAP_SETNONBLOCK
-    ebuf[0] = 0;
-    if (pcap_setnonblock(pcap, 1, ebuf) < 0 || ebuf[0])
-	errh->warning("pcap_setnonblock: %s", pcap_error(pcap, ebuf));
-# else
-    if (fcntl(pcap_fileno(pcap), F_SETFL, O_NONBLOCK) < 0)
-	errh->warning("setting nonblocking: %s", strerror(errno));
+    // Since the socket will be made nonblocking, set the timeout higher.
+    timeout_msec = 500;
+# endif
+    if (pcap_set_timeout(p, timeout_msec))
+        errh->warning("%s: error while setting timeout", ifname.c_str());
+
+# if TIMESTAMP_NANOSEC && defined(PCAP_TSTAMP_PRECISION_NANO)
+    // request nanosecond precision
+    (void) pcap_set_tstamp_precision(p, PCAP_TSTAMP_PRECISION_NANO);
 # endif
 
-    return pcap;
+    // activate pcap
+    int r = pcap_activate(p);
+    if (r < 0) {
+        errh->error("%s: %s", ifname.c_str(), fetch_pcap_error(p, 0));
+        pcap_close(p);
+        p = 0;
+    } else if (r > 0)
+        errh->warning("%s: %s", ifname.c_str(), fetch_pcap_error(p, 0));
+
+    // set nonblocking
+# if HAVE_PCAP_SETNONBLOCK
+    if (pcap_setnonblock(p, 1, ebuf) < 0)
+	errh->warning("nonblocking %s: %s", ifname.c_str(), fetch_pcap_error(p, ebuf));
+# else
+    if (fcntl(pcap_fileno(p), F_SETFL, O_NONBLOCK) < 0)
+	errh->warning("nonblocking %s: %s", ifname.c_str(), strerror(errno));
+# endif
+
+    return p;
 }
 #endif
 
@@ -303,6 +322,12 @@ FromDevice::initialize(ErrorHandler *errh)
 	    return -1;
 	_fd = pcap_fileno(_pcap);
 	char *ifname = _ifname.mutable_c_str();
+
+# if TIMESTAMP_NANOSEC && defined(PCAP_TSTAMP_PRECISION_NANO)
+        _pcap_nanosec = false;
+        if (pcap_get_tstamp_precision(_pcap) == PCAP_TSTAMP_PRECISION_NANO)
+            _pcap_nanosec = true;
+# endif
 
 # if HAVE_PCAP_SETDIRECTION
 	pcap_setdirection(_pcap, _outbound ? PCAP_D_INOUT : PCAP_D_IN);
@@ -338,7 +363,7 @@ FromDevice::initialize(ErrorHandler *errh)
 	char ebuf[PCAP_ERRBUF_SIZE];
 	ebuf[0] = 0;
 	if (pcap_lookupnet(ifname, &localnet, &netmask, ebuf) < 0 || ebuf[0] != 0)
-	    errh->warning("%s", pcap_error(ebuf));
+	    errh->warning("%s", fetch_pcap_error(0, ebuf));
 
 	// Later versions of pcap distributed with linux (e.g. the redhat
 	// linux pcap-0.4-16) want to have a filter installed before they
@@ -347,9 +372,9 @@ FromDevice::initialize(ErrorHandler *errh)
 	// compile the BPF filter
 	struct bpf_program fcode;
 	if (pcap_compile(_pcap, &fcode, _bpf_filter.mutable_c_str(), 0, netmask) < 0)
-	    return errh->error("%s: %s", ifname, pcap_error(0));
+	    return errh->error("%s: %s", ifname, fetch_pcap_error(_pcap, 0));
 	if (pcap_setfilter(_pcap, &fcode) < 0)
-	    return errh->error("%s: %s", ifname, pcap_error(0));
+	    return errh->error("%s: %s", ifname, fetch_pcap_error(_pcap, 0));
 
 	_datalink = pcap_datalink(_pcap);
 	if (_force_ip && !fake_pcap_dlt_force_ipable(_datalink))
@@ -454,8 +479,14 @@ FromDevice_get_packet(u_char* clientdata,
 {
     FromDevice *fd = (FromDevice *) clientdata;
     WritablePacket *p = Packet::make(fd->_headroom, data, pkthdr->caplen, 0);
-    fd->emit_packet(p, pkthdr->len - pkthdr->caplen,
-		    Timestamp::make_usec(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec));
+    Timestamp ts = Timestamp::uninitialized_t();
+#if TIMESTAMP_NANOSEC && defined(PCAP_TSTAMP_PRECISION_NANO)
+    if (fd->_pcap_nanosec)
+        ts = Timestamp::make_nsec(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
+    else
+#endif
+        ts = Timestamp::make_usec(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
+    fd->emit_packet(p, pkthdr->len - pkthdr->caplen, ts);
 }
 }
 CLICK_DECLS
@@ -560,16 +591,20 @@ FromDevice::run_task(Task *)
 void
 FromDevice::kernel_drops(bool& known, int& max_drops) const
 {
-#if FROMDEVICE_ALLOW_LINUX
-    // You might be able to do this better by parsing netstat/ifconfig output,
-    // but for now, we just give up.
-#endif
     known = false, max_drops = -1;
 #if FROMDEVICE_ALLOW_PCAP
     if (_method == method_pcap) {
 	struct pcap_stat stats;
 	if (pcap_stats(_pcap, &stats) >= 0)
 	    known = true, max_drops = stats.ps_drop;
+    }
+#endif
+#if FROMDEVICE_ALLOW_LINUX && defined(PACKET_STATISTICS)
+    if (_method == method_linux) {
+        struct tpacket_stats stats;
+        socklen_t statsize = sizeof(stats);
+        if (getsockopt(_fd, SOL_PACKET, PACKET_STATISTICS, &stats, &statsize) >= 0)
+            known = true, max_drops = stats.tp_drops;
     }
 #endif
 }

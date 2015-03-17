@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * pad.{cc,hh} --
+ * pad.{cc,hh} -- extends packet length
  * Eddie Kohler
  *
  * Copyright (c) 2004 Regents of the University of California
@@ -19,27 +19,42 @@
 #include <click/config.h>
 #include "pad.hh"
 #include <click/packet_anno.hh>
+#include <click/args.hh>
 CLICK_DECLS
 
 Pad::Pad()
 {
 }
 
-Pad::~Pad()
+int
+Pad::configure(Vector<String>& conf, ErrorHandler* errh)
 {
+    _nbytes = 0;
+    _zero = true;
+    return Args(conf, this, errh)
+        .read_p("LENGTH", _nbytes)
+        .read("ZERO", _zero)
+        .complete();
 }
 
-Packet *
-Pad::simple_action(Packet *p_in)
+Packet*
+Pad::simple_action(Packet* p)
 {
-    if (EXTRA_LENGTH_ANNO(p_in)) {
-	if (WritablePacket *p = p_in->put(EXTRA_LENGTH_ANNO(p_in))) {
-	    SET_EXTRA_LENGTH_ANNO(p, 0);
-	    return p;
-	} else
-	    return 0;
-    } else
-	return p_in;
+    uint32_t nput;
+    if (unlikely(_nbytes))
+        nput = p->length() < _nbytes ? _nbytes - p->length() : 0;
+    else
+        nput = EXTRA_LENGTH_ANNO(p);
+    if (nput) {
+        WritablePacket* q = p->put(nput);
+        if (!q)
+            return 0;
+        if (_zero)
+            memset(q->end_data() - nput, 0, nput);
+        p = q;
+    }
+    SET_EXTRA_LENGTH_ANNO(p, 0);
+    return p;
 }
 
 CLICK_ENDDECLS

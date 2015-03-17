@@ -84,6 +84,7 @@ $(LIBCLICKTOOL):
 
 click-devirtualize: Makefile $(OBJS) ../lib/$(LIBCLICKTOOL)
 	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
+	@-mkdir -p ../../bin; ln -sf ../tools/click-devirtualize/$@ ../../bin/$@
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -101,7 +102,7 @@ uninstall:
 	/bin/rm -f $(DESTDIR)$(bindir)/click-devirtualize
 
 clean:
-	rm -f *.d *.o click-devirtualize
+	rm -f *.d *.o click-devirtualize ../../bin/click-devirtualize
 distclean: clean
 	-rm -f Makefile
 

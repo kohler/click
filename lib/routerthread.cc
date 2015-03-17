@@ -593,7 +593,7 @@ RouterThread::driver()
 # if CLICK_USERLEVEL && HAVE_MULTITHREAD
     _running_processor = click_current_processor();
 #  if HAVE___THREAD_STORAGE_CLASS
-    click_current_thread_id = _id;
+    click_current_thread_id = _id | 0x40000000;
 #  endif
 # endif
 #endif

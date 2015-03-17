@@ -7,14 +7,14 @@ click -e "FromIPSummaryDump(IN, STOP true, CHECKSUM true)
 -> MarkIPCE
 -> CheckIPHeader
 -> IPPrint(TOS true)
--> ToIPSummaryDump(OUT, DATA timestamp src dst ip_ecn)"
+-> ToIPSummaryDump(OUT, FIELDS timestamp src dst ip_ecn)"
 
 click -e "FromIPSummaryDump(IN, STOP true, CHECKSUM true)
 -> CheckIPHeader
 -> MarkIPCE(FORCE true)
 -> CheckIPHeader
 -> IPPrint(TOS true)
--> ToIPSummaryDump(OUT2, DATA timestamp src dst ip_ecn)"
+-> ToIPSummaryDump(OUT2, FIELDS timestamp src dst ip_ecn)"
 
 %file IN
 !data timestamp src dst ip_ecn

@@ -85,9 +85,11 @@ $(LIBCLICKTOOL):
 
 click2xml: Makefile $(CLICK2XML_OBJS) ../lib/$(LIBCLICKTOOL)
 	$(call cxxlink,$(DL_LDFLAGS) $(CLICK2XML_OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
+	@-mkdir -p ../../bin; ln -sf ../tools/click2xml/$@ ../../bin/$@
 
 xml2click: Makefile $(XML2CLICK_OBJS) ../lib/$(LIBCLICKTOOL)
 	$(call cxxlink,$(DL_LDFLAGS) $(XML2CLICK_OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
+	@-mkdir -p ../../bin; ln -sf ../tools/click2xml/$@ ../../bin/$@
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -107,7 +109,7 @@ uninstall:
 	test -z "@XML2CLICK@" || /bin/rm -f $(DESTDIR)$(bindir)/xml2click
 
 clean:
-	rm -f *.d *.o click2xml xml2click
+	rm -f *.d *.o click2xml xml2click ../../bin/click2xml ../../bin/xml2click
 distclean: clean
 	-rm -f Makefile
 

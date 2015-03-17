@@ -8,7 +8,7 @@
  * Copyright (c) 2001-2003 International Computer Science Institute
  * Copyright (c) 2004-2006 Regents of the University of California
  * Copyright (c) 2008-2009 Meraki, Inc.
- * Copyright (c) 1999-2014 Eddie Kohler
+ * Copyright (c) 1999-2015 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -147,8 +147,9 @@ Options:\n\
 Report bugs to <click@librelist.com>.\n");
 }
 
-static Router *router;
-static ErrorHandler *errh;
+static Master* click_master;
+static Router* click_router;
+static ErrorHandler* errh;
 static bool running = false;
 
 extern "C" {
@@ -161,7 +162,7 @@ stop_signal_handler(int sig)
     if (!running)
         kill(getpid(), sig);
     else
-        router->set_runcount(Router::STOP_RUNCOUNT);
+        click_router->set_runcount(Router::STOP_RUNCOUNT);
 }
 
 #if HAVE_EXECINFO_H
@@ -259,7 +260,8 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
     for (int i = 0; i < handlers.size(); i++) {
         const char *dot = find(handlers[i], '.');
         if (dot == handlers[i].end()) {
-            call_read_handler(router->root_element(), handlers[i], print_names, errh);
+            call_read_handler(click_router->root_element(), handlers[i],
+                              print_names, errh);
             continue;
         }
 
@@ -267,10 +269,12 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
         String handler_name = handlers[i].substring(dot + 1, handlers[i].end());
 
         Vector<Element*> elements;
-        int retval = expand_handler_elements(element_name, handler_name, elements, router);
+        int retval = expand_handler_elements(element_name, handler_name,
+                                             elements, click_router);
         if (retval >= 0)
             for (int j = 0; j < elements.size(); j++)
-                call_read_handler(elements[j], handler_name, print_names || retval > 1, errh);
+                call_read_handler(elements[j], handler_name,
+                                  print_names || retval > 1, errh);
     }
 
     return (errh->nerrors() == before ? 0 : -1);
@@ -279,22 +283,41 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
 
 // hotswapping
 
-static Router *hotswap_router;
-static Router *hotswap_thunk_router;
+static Router* hotswap_router;
+static Router* hotswap_thunk_router;
 static bool hotswap_hook(Task *, void *);
 static Task hotswap_task(hotswap_hook, 0);
 
 static bool
-hotswap_hook(Task *, void *)
+hotswap_hook(Task*, void*)
 {
     hotswap_thunk_router->set_foreground(false);
     hotswap_router->activate(ErrorHandler::default_handler());
-    router->unuse();
-    router = hotswap_router;
-    router->use();
+    click_router->unuse();
+    click_router = hotswap_router;
+    click_router->use();
     hotswap_router = 0;
     return true;
 }
+
+#if HAVE_MULTITHREAD
+static pthread_mutex_t hotswap_lock;
+
+extern "C" {
+static void* hotswap_threadfunc(void*)
+{
+    pthread_detach(pthread_self());
+    pthread_mutex_lock(&hotswap_lock);
+    if (hotswap_router) {
+        click_master->block_all();
+        hotswap_hook(0, 0);
+        click_master->unblock_all();
+    }
+    pthread_mutex_unlock(&hotswap_lock);
+    return 0;
+}
+}
+#endif
 
 // switching configurations
 
@@ -317,27 +340,21 @@ static Router *
 parse_configuration(const String &text, bool text_is_expr, bool hotswap,
                     ErrorHandler *errh)
 {
-    Master *new_master = 0, *master;
-    if (router)
-        master = router->master();
-    else
-        master = new_master = new Master(nthreads);
-
-    Router *r = click_read_router(text, text_is_expr, errh, false, master);
-    if (!r) {
-        delete new_master;
+    int before_errors = errh->nerrors();
+    Router *router = click_read_router(text, text_is_expr, errh, false,
+                                       click_master);
+    if (!router)
         return 0;
-    }
 
     // add new ControlSockets
     String retries = (hotswap ? ", RETRIES 1, RETRY_WARNINGS false" : "");
     int ncs = 0;
     for (String *it = cs_ports.begin(); it != cs_ports.end(); ++it, ++ncs)
-        r->add_element(new ControlSocket, click_driver_control_socket_name(ncs), "TCP, " + *it + retries, "click", 0);
+        router->add_element(new ControlSocket, click_driver_control_socket_name(ncs), "TCP, " + *it + retries, "click", 0);
     for (String *it = cs_unix_sockets.begin(); it != cs_unix_sockets.end(); ++it, ++ncs)
-        r->add_element(new ControlSocket, click_driver_control_socket_name(ncs), "UNIX, " + *it + retries, "click", 0);
+        router->add_element(new ControlSocket, click_driver_control_socket_name(ncs), "UNIX, " + *it + retries, "click", 0);
     for (String *it = cs_sockets.begin(); it != cs_sockets.end(); ++it, ++ncs)
-        r->add_element(new ControlSocket, click_driver_control_socket_name(ncs), "SOCKET, " + *it + retries, "click", 0);
+        router->add_element(new ControlSocket, click_driver_control_socket_name(ncs), "SOCKET, " + *it + retries, "click", 0);
 
   // catch signals (only need to do the first time)
   if (!hotswap) {
@@ -362,29 +379,40 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
   }
 
   // register hotswap router on new router
-  if (hotswap && router && router->initialized())
-    r->set_hotswap_router(router);
+  if (hotswap && click_router && click_router->initialized())
+      router->set_hotswap_router(click_router);
 
-  if (errh->nerrors() > 0 || r->initialize(errh) < 0) {
-    delete r;
-    delete new_master;
+  if (errh->nerrors() == before_errors
+      && router->initialize(errh) >= 0)
+    return router;
+  else {
+    delete router;
     return 0;
-  } else
-    return r;
+  }
 }
 
 static int
 hotconfig_handler(const String &text, Element *, void *, ErrorHandler *errh)
 {
-  if (Router *q = parse_configuration(text, true, true, errh)) {
-    if (hotswap_router)
-      hotswap_router->unuse();
-    hotswap_router = q;
-    hotswap_thunk_router->set_foreground(true);
-    hotswap_task.reschedule();
-    return 0;
+  if (Router *new_router = parse_configuration(text, true, true, errh)) {
+#if HAVE_MULTITHREAD
+      pthread_mutex_lock(&hotswap_lock);
+#endif
+      if (hotswap_router)
+          hotswap_router->unuse();
+      hotswap_router = new_router;
+      hotswap_thunk_router->set_foreground(true);
+#if HAVE_MULTITHREAD
+      pthread_t thread_ignored;
+      pthread_create(&thread_ignored, 0, hotswap_threadfunc, 0);
+      (void) thread_ignored;
+      pthread_mutex_unlock(&hotswap_lock);
+#else
+      hotswap_task.reschedule();
+#endif
+      return 0;
   } else
-    return -EINVAL;
+      return -EINVAL;
 }
 
 
@@ -446,6 +474,7 @@ cleanup(Clp_Parser *clp, int exit_value)
 {
     Clp_DeleteParser(clp);
     click_static_cleanup();
+    delete click_master;
     return exit_value;
 }
 
@@ -633,20 +662,22 @@ particular purpose.\n");
  done:
   // provide hotconfig handler if asked
   if (allow_reconfigure)
-      Router::add_write_handler(0, "hotconfig", hotconfig_handler, 0, Handler::h_raw | Handler::h_nonexclusive);
+      Router::add_write_handler(0, "hotconfig", hotconfig_handler, 0, Handler::f_raw | Handler::f_nonexclusive);
   Router::add_read_handler(0, "timewarp", timewarp_read_handler, 0);
   if (Timestamp::warp_class() != Timestamp::warp_simulation)
       Router::add_write_handler(0, "timewarp", timewarp_write_handler, 0);
 
   // parse configuration
-  router = parse_configuration(router_file, file_is_expr, false, errh);
-  if (!router)
+  click_master = new Master(nthreads);
+  click_router = parse_configuration(router_file, file_is_expr, false, errh);
+  if (!click_router)
     return cleanup(clp, 1);
-  router->use();
+  click_router->use();
 
   int exit_value = 0;
 #if HAVE_MULTITHREAD
   Vector<pthread_t> other_threads;
+  pthread_mutex_init(&hotswap_lock, 0);
 #endif
 
   // output flat configuration
@@ -661,7 +692,7 @@ particular purpose.\n");
     } else
       f = stdout;
     if (f) {
-      Element *root = router->root_element();
+      Element *root = click_router->root_element();
       String s = Router::handler(root, "flatconfig")->call_read(root);
       ignore_result(fwrite(s.data(), 1, s.length(), f));
       if (f != stdout)
@@ -676,11 +707,11 @@ particular purpose.\n");
 
   // run driver
   // 10.Apr.2004 - Don't run the router if it has no elements.
-  if (!quit_immediately && router->nelements()) {
+  if (!quit_immediately && click_router->nelements()) {
     running = true;
-    router->activate(errh);
+    click_router->activate(errh);
     if (allow_reconfigure) {
-      hotswap_thunk_router = new Router("", router->master());
+      hotswap_thunk_router = new Router("", click_master);
       hotswap_thunk_router->initialize(errh);
       hotswap_task.initialize(hotswap_thunk_router->root_element(), false);
       hotswap_thunk_router->activate(false, errh);
@@ -688,7 +719,7 @@ particular purpose.\n");
 #if HAVE_MULTITHREAD
     for (int t = 1; t < nthreads; ++t) {
         pthread_t p;
-        pthread_create(&p, 0, thread_driver, router->master()->thread(t));
+        pthread_create(&p, 0, thread_driver, click_master->thread(t));
         other_threads.push_back(p);
         do_set_affinity(p, t);
     }
@@ -696,7 +727,7 @@ particular purpose.\n");
 #endif
 
     // run driver
-    router->master()->thread(0)->driver();
+    click_master->thread(0)->driver();
 
     // now that the driver has stopped, SIGINT gets default handling
     running = false;
@@ -729,7 +760,7 @@ particular purpose.\n");
   // call exit handler
   if (exit_handler) {
     int before = errh->nerrors();
-    String exit_string = HandlerCall::call_read(exit_handler, router->root_element(), errh);
+    String exit_string = HandlerCall::call_read(exit_handler, click_router->root_element(), errh);
     bool b;
     if (errh->nerrors() != before)
       exit_value = -1;
@@ -743,15 +774,12 @@ particular purpose.\n");
     }
   }
 
-  Master *master = router->master();
-  router->unuse();
 #if HAVE_MULTITHREAD
   for (int i = 0; i < other_threads.size(); ++i)
-      master->thread(i + 1)->wake();
+      click_master->thread(i + 1)->wake();
   for (int i = 0; i < other_threads.size(); ++i)
       (void) pthread_join(other_threads[i], 0);
 #endif
-  delete master;
-
+  click_router->unuse();
   return cleanup(clp, exit_value);
 }

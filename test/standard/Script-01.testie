@@ -5,7 +5,7 @@ Tests Script TYPE PACKET.
 $VALGRIND click -e '
 FromIPSummaryDump(IN, STOP true)
 -> ps :: PaintSwitch;
-t :: ToIPSummaryDump(OUT, DATA link sport);
+t :: ToIPSummaryDump(OUT, FIELDS link sport);
 
 ps[0] -> Script(TYPE PACKET) -> Paint(0) -> t;
 ps[1] -> Script(TYPE PACKET, end) -> Paint(1) -> t;

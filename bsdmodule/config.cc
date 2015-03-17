@@ -184,8 +184,8 @@ click_init_config()
     Router::add_read_handler(0, "classes", read_classes, 0);
     Router::add_write_handler(0, "config", write_config, 0);
     Router::add_write_handler(0, "hotconfig", write_config, (void *)1);
-    Router::set_handler_flags(0, "config", HANDLER_REREAD | HANDLER_WRITE_UNLIMITED | Handler::RAW);
-    Router::set_handler_flags(0, "hotconfig", HANDLER_WRITE_UNLIMITED | Handler::RAW);
+    Router::set_handler_flags(0, "config", HANDLER_REREAD | HANDLER_WRITE_UNLIMITED | Handler::f_raw);
+    Router::set_handler_flags(0, "hotconfig", HANDLER_WRITE_UNLIMITED | Handler::f_raw);
 
     click_config_generation = 1;
     current_config = new String;

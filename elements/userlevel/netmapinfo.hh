@@ -16,7 +16,7 @@ typedef void (*nm_cb_t)(u_char *, const struct nm_pkthdr *, const u_char *d);
 #include <click/error.hh>
 CLICK_DECLS
 
-/* a queue of netmap buffers, by index */ 
+/* a queue of netmap buffers, by index */
 class NetmapBufQ {
     unsigned char *buf_start;	/* base address */
     unsigned int buf_size;

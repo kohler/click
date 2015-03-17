@@ -140,6 +140,7 @@ static void tcp_inject(PacketOdesc& d, const FieldReader *f)
     case T_TCP_OPT:
     case T_TCP_NTOPT:
     case T_TCP_SACK: {
+        d.have_tcp_hl = true;
 	if (!d.vptr[0] || d.vptr[0] == d.vptr[1])
 	    return;
 	int olen = d.vptr[1] - d.vptr[0];

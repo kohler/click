@@ -87,9 +87,8 @@ FastUDPFlows::change_ports(int flow)
   udp->uh_sum = 0;
   unsigned short len = _len-14-sizeof(click_ip);
   if (_cksum) {
-    unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
-    udp->uh_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-				    len, IP_PROTO_UDP, csum);
+    unsigned csum = click_in_cksum((uint8_t *)udp, len);
+    udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
   } else
     udp->uh_sum = 0;
 }
@@ -150,9 +149,8 @@ FastUDPFlows::initialize(ErrorHandler *)
     unsigned short len = _len-14-sizeof(click_ip);
     udp->uh_ulen = htons(len);
     if (_cksum) {
-      unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
-      udp->uh_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-				      len, IP_PROTO_UDP, csum);
+      unsigned csum = click_in_cksum((uint8_t *)udp, len);
+      udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
     } else
       udp->uh_sum = 0;
     _flows[i].flow_count = 0;
@@ -289,5 +287,4 @@ FastUDPFlows::add_handlers()
   add_write_handler("limit", FastUDPFlows_limit_write_handler, 0);
 }
 
-ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(FastUDPFlows)

@@ -180,8 +180,8 @@ Counter::add_handlers()
     add_read_handler("rate", read_handler, H_RATE);
     add_read_handler("bit_rate", read_handler, H_BIT_RATE);
     add_read_handler("byte_rate", read_handler, H_BYTE_RATE);
-    add_write_handler("reset", write_handler, H_RESET, Handler::BUTTON);
-    add_write_handler("reset_counts", write_handler, H_RESET, Handler::BUTTON | Handler::UNCOMMON);
+    add_write_handler("reset", write_handler, H_RESET, Handler::f_button);
+    add_write_handler("reset_counts", write_handler, H_RESET, Handler::f_button | Handler::f_uncommon);
     add_read_handler("count_call", read_handler, H_COUNT_CALL);
     add_write_handler("count_call", write_handler, H_COUNT_CALL);
     add_write_handler("byte_count_call", write_handler, H_BYTE_COUNT_CALL);
