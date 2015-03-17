@@ -1,35 +1,37 @@
-#ifndef FASTUDPFLOWS_HH
-#define FASTUDPFLOWS_HH
+#ifndef FASTTCPFLOWS_HH
+#define FASTTCPFLOWS_HH
 
 /*
  * =c
- * FastUDPFlows(RATE, LIMIT, LEN,
+ * FastTCPFlows(RATE, LIMIT, LENGTH,
  *              SRCETH, SRCIP,
  *              DSTETH, DSTIP,
- *              FLOWS, FLOWSIZE [, CHECKSUM, ACTIVE])
- * =s udp
- * creates packets flows with static UDP/IP/Ethernet headers
+ *              FLOWS, FLOWSIZE [, ACTIVE])
+ * =s tcp
+ * creates packets flows with static TCP/IP/Ethernet headers
  * =d
- * FastUDPFlows is a benchmark tool. At initialization time, FastUDPFlows
- * creates FLOWS number of UDP/IP packets of length LENGTH (min 60), with source
- * ethernet address SRCETH, source IP address SRCIP, destination ethernet
- * address DSTETH, and destination IP address DSTIP. Source and
- * destination ports are randomly generated. The UDP checksum is calculated if
- * CHECKSUM is true; it is true by default. Each time the FastUDPFlows
- * element is called, it selects a flow, increments the reference count on the
- * skbuff created and returns the skbuff object w/o copying or cloning.
- * Therefore, the packet returned by FastUDPFlows should not be modified.
+ * FastTCPFlows is a benchmark tool. At initialization time, FastTCPFlows
+ * creates FLOWS number of fake TCP/IP packets of length LENGTH (min 60), with
+ * source ethernet address SRCETH, source IP address SRCIP, destination
+ * ethernet address DSTETH, and destination IP address DSTIP. Source and
+ * destination ports are randomly generated. The TCP checksum is calculated.
+ * Each time the FastTCPFlows element is called, it selects a flow, increments
+ * the reference count on the skbuff created and returns the skbuff object w/o
+ * copying or cloning. Therefore, the packet returned by FastTCPFlows should
+ * not be modified.
  *
- * FastUDPFlows sents packets at RATE packets per second. It will send LIMIT
+ * FastTCPFlows sents packets at RATE packets per second. It will send LIMIT
  * number of packets in total. Each flow is limited to FLOWSIZE number of
  * packets. After FLOWSIZE number of packets are sent, the sort and dst port
- * will be modified.
+ * will be modified. FLOWSIZE must be greater than or equal to 3. For each
+ * flow, a SYN packet, a DATA packet, and a FIN packet are sent. These packets
+ * have the invalid sequence numbers, in order to avoid recomputing checksum.
  *
- * After FastUDPFlows has sent LIMIT packets, it will calculate the average
+ * After FastTCPFlows has sent LIMIT packets, it will calculate the average
  * send rate (packets per second) between the first and last packets sent and
  * make that available in the rate handler.
  *
- * By default FastUDPFlows is ACTIVE.
+ * By default FastTCPFlows is ACTIVE.
  *
  * =h count read-only
  * Returns the total number of packets that have been generated.
@@ -41,9 +43,9 @@
  * Change ACTIVE
  *
  * =e
- *  FastUDPFlows(100000, 500000, 60,
- *               0:0:0:0:0:0, 1.0.0.1, 1234,
- *               1:1:1:1:1:1, 2.0.0.2, 1234,
+ *  FastTCPFlows(100000, 500000, 60,
+ *               0:0:0:0:0:0, 1.0.0.1,
+ *               1:1:1:1:1:1, 2.0.0.2,
  *               100, 10)
  *    -> ToDevice;
  */
@@ -53,11 +55,12 @@
 #include <click/gaprate.hh>
 #include <click/packet.hh>
 #include <clicknet/ether.h>
-#include <clicknet/udp.h>
+#include <clicknet/tcp.h>
 
-class FastUDPFlows : public Element {
+class FastTCPFlows : public Element {
 
   bool _rate_limited;
+  bool _sent_all_fins;
   unsigned _len;
   click_ether _ethh;
   struct in_addr _sipaddr;
@@ -70,8 +73,10 @@ class FastUDPFlows : public Element {
   click_jiffies_t _last;
 
   struct flow_t {
-      Packet *packet;
-      int flow_count;
+    Packet *syn_packet;
+    Packet *fin_packet;
+    Packet *data_packet;
+    int flow_count;
   };
   flow_t *_flows;
   void change_ports(int);
@@ -86,10 +91,10 @@ class FastUDPFlows : public Element {
   unsigned _limit;
   bool _active;
 
-  FastUDPFlows() CLICK_COLD;
-  ~FastUDPFlows() CLICK_COLD;
+  FastTCPFlows() CLICK_COLD;
+  ~FastTCPFlows() CLICK_COLD;
 
-  const char *class_name() const	{ return "FastUDPFlows"; }
+  const char *class_name() const	{ return "FastTCPFlows"; }
   const char *port_count() const	{ return PORTS_0_1; }
   const char *processing() const	{ return PULL; }
 
