@@ -234,7 +234,11 @@ Master::kill_router(Router *router)
 
     unpause();
 #if CLICK_LINUXMODULE
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)
     preempt_enable();
+#  else
+    preempt_enable_no_resched();
+#  endif
 #endif
 
     // something has happened, so wake up threads
