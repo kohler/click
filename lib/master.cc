@@ -234,7 +234,7 @@ Master::kill_router(Router *router)
 
     unpause();
 #if CLICK_LINUXMODULE
-    preempt_enable_no_resched();
+    preempt_enable();
 #endif
 
     // something has happened, so wake up threads
