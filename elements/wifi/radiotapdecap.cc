@@ -130,7 +130,7 @@ RadiotapDecap::simple_action(Packet *p)
 	}
 
 	struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
-	if (rt_check_header(th, p->length(), offsets)) {
+	if (rt_check_header(th, p->length(), offsets, additional_it_present_flags)) {
 		memset((void*)ceh, 0, sizeof(struct click_wifi_extra));
 		ceh->magic = WIFI_EXTRA_MAGIC;
 
