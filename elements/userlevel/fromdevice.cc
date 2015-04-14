@@ -469,7 +469,7 @@ FromDevice::emit_packet(WritablePacket *p, int extra_len, const Timestamp &ts)
 }
 #endif
 
-#if FROMDEVICE_ALLOW_PCAP
+#if FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_NETMAP
 CLICK_ENDDECLS
 extern "C" {
 void
