@@ -38,6 +38,7 @@ class RadiotapDecap : public Element { public:
 
 
   bool _debug;
+  bool _doalign;
  private:
 
 };
