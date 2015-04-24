@@ -195,7 +195,9 @@ distclean:
 
 check: $(ALL_TARGETS) Makefile $(ELEMENTMAP)
 	$(top_srcdir)/test/testie -p $(top_builddir)/bin -p $(top_srcdir)/test \
-		CLICKPATH="`cd $(top_builddir); pwd`:" $(top_srcdir)/test
+		CLICKPATH="`cd $(top_builddir); pwd`:" \
+		CLICKTEST_PREINSTALL=1 \
+		$(top_srcdir)/test
 
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
