@@ -1,10 +1,8 @@
 %script
 
-click-align IPR | click --simtime > OUT
-echo '++p' | cat OUT - | dc > OUTA
+click-align IPR | click --simtime > OUTA
 
-click-xform -p IPR_PAT IPR | click-align | click --simtime > OUT
-echo '++p' | cat OUT - | dc > OUTB
+click-xform -p IPR_PAT IPR | click-align | click --simtime > OUTB
 
 %file IPR
 // fake-iprouter.click
@@ -163,7 +161,7 @@ c0[3] -> Print(c3) -> Discard;
 c1[3] -> Print(c3) -> Discard;
 
 // Print stuff
-DriverManager(wait_stop, print counter0.count, print out0.drops, print out0.length)
+DriverManager(wait_stop, print $(add $(counter0.count) $(out0.drops) $(out0.length)))
 
 %file IPR_PAT
 // ip.clickpat
