@@ -1,0 +1,5 @@
+language: c++
+compiler:
+  - gcc
+  - clang
+script: ./configure --disable-linuxmodule --enable-ip6 --enable-json && make && make check
