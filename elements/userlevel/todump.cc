@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2007 Regents of the University of California
+ * Copyright (c) 2015 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,6 +32,11 @@
 #include <click/packet_anno.hh>
 #include "fakepcap.hh"
 #include <click/userutils.hh>
+#if HAVE_PCAP
+extern "C" {
+# include <pcap.h>
+}
+#endif
 CLICK_DECLS
 
 ToDump::ToDump()
@@ -51,6 +57,9 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _extra_length = true;
     _unbuffered = false;
     _nano = Timestamp::subsec_per_sec == Timestamp::nsec_per_sec;
+#if HAVE_PCAP && !defined(PCAP_TSTAMP_PRECISION_NANO)
+    _nano = false;
+#endif
 #if CLICK_NS
     bool per_node = false;
 #endif

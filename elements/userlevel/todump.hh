@@ -11,7 +11,7 @@ CLICK_DECLS
 /*
 =c
 
-ToDump(FILENAME [, I<keywords> SNAPLEN, ENCAP, USE_ENCAP_FROM, EXTRA_LENGTH])
+ToDump(FILENAME [, I<keywords> SNAPLEN, ENCAP, USE_ENCAP_FROM, EXTRA_LENGTH, NANO])
 
 =s traces
 
@@ -68,9 +68,8 @@ false.
 
 =item NANO
 
-Boolean. Set to true to write nanosecond-precision timestamps. Default
-is true if Click was compiled with nanosecond-precision timestamps, false
-otherwise.
+Boolean. Set to true to write nanosecond-precision timestamps. Default depends
+on the version of tcpdump/pcap on the machine.
 
 =back
 
