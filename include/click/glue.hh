@@ -91,6 +91,7 @@ extern "C" int simclick_gettimeofday(struct timeval *);
 # endif
 # if HAVE_MULTITHREAD
 #  include <pthread.h>
+#  include <sched.h>
 # endif
 
 #endif
@@ -336,10 +337,17 @@ typedef struct device net_device;
 
 #if CLICK_LINUXMODULE
 typedef uint32_t click_processor_t;
+#  define CLICK_CPU_MAX NR_CPUS
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
 typedef pthread_t click_processor_t;
+#  define CLICK_CPU_MAX 256
 #else
 typedef int8_t click_processor_t;
+#  if HAVE_MULTITHREAD
+#    define CLICK_CPU_MAX 256
+#  else
+#    define CLICK_CPU_MAX 1
+#  endif
 #endif
 
 inline click_processor_t
@@ -372,6 +380,30 @@ click_put_processor()
 #endif
 }
 
+#if CLICK_USERLEVEL && HAVE_MULTITHREAD && HAVE___THREAD_STORAGE_CLASS
+extern __thread int click_current_thread_id;
+#endif
+
+#if CLICK_USERLEVEL
+extern int nthreads;
+#endif
+
+/**
+ * Return the current dynamic number of CPU
+ */
+inline uint32_t
+click_nr_cpu()
+{
+#if CLICK_LINUXMODULE
+    return NR_CPUS;
+#elif CLICK_USERLEVEL
+    return nthreads;
+#else //XXX BSDMODULE?
+    return 1;
+#endif
+}
+
+
 inline click_processor_t
 click_current_processor()
 {
@@ -388,6 +420,22 @@ click_current_processor()
 #endif
 }
 
+inline uint8_t
+click_current_cpu_id()
+{
+#if !HAVE_MULTITHREAD
+    return 0;
+#elif CLICK_USERLEVEL
+#  if HAVE___THREAD_STORAGE_CLASS
+    return click_current_thread_id & 0xff;
+#  else
+    return sched_getcpu();
+#  endif
+#else
+    return click_current_processor();
+#endif
+}
+
 inline click_processor_t
 click_invalid_processor()
 {
@@ -399,11 +447,6 @@ click_invalid_processor()
     return -1;
 #endif
 }
-
-#if CLICK_USERLEVEL && HAVE_MULTITHREAD && HAVE___THREAD_STORAGE_CLASS
-extern __thread int click_current_thread_id;
-#endif
-
 
 // TIMEVALS AND JIFFIES
 // click_jiffies_t is the type of click_jiffies() and must be unsigned.

@@ -325,7 +325,7 @@ static Vector<String> cs_unix_sockets;
 static Vector<String> cs_ports;
 static Vector<String> cs_sockets;
 static bool warnings = true;
-static int nthreads = 1;
+int nthreads = 1;
 
 static String
 click_driver_control_socket_name(int number)

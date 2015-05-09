@@ -25,7 +25,7 @@ class CPUQueue : public Element {
     unsigned _head;
     unsigned _tail;
     unsigned _pad[5];
-  } _q[NR_CPUS];
+  } _q[CLICK_CPU_MAX];
 
   unsigned _last;
   unsigned _capacity;

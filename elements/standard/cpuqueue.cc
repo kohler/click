@@ -16,7 +16,7 @@ CPUQueue::~CPUQueue()
 int
 CPUQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (NR_CPUS > 256)
+    if (click_nr_cpu() > 256)
         return errh->error("too many CPUs for CPUQueue");
     unsigned new_capacity = 128;
     if (Args(conf, this, errh)
@@ -30,7 +30,7 @@ CPUQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 CPUQueue::initialize(ErrorHandler *errh)
 {
-  for (int i=0; i<NR_CPUS; i++)
+  for (int i=0; i<click_nr_cpu(); i++)
     if (!(_q[i]._q = new Packet*[_capacity+1]))
       return errh->error("out of memory!");
   _drops = 0;
@@ -41,7 +41,7 @@ CPUQueue::initialize(ErrorHandler *errh)
 void
 CPUQueue::cleanup(CleanupStage)
 {
-  for (int i=0; i<NR_CPUS; i++) {
+  for (int i=0; i<click_nr_cpu(); i++) {
     for (int j = _q[i]._head; j != _q[i]._tail; j = next_i(j))
       _q[i]._q[j]->kill();
     delete[] _q[i]._q;
@@ -63,7 +63,7 @@ CPUQueue::deq(int n)
 void
 CPUQueue::push(int, Packet *p)
 {
-    int n = click_current_processor();
+    int n = click_current_cpu_id();
     int next = next_i(_q[n]._tail);
     if (next != _q[n]._head) {
 	_q[n]._q[_q[n]._tail] = p;
@@ -79,10 +79,10 @@ CPUQueue::pull(int port)
 {
     int n = _last;
     Packet *p = 0;
-    for (int i = 0; i < NR_CPUS; i++) {
+    for (int i = 0; i < click_nr_cpu(); i++) {
 	p = deq(n);
 	n++;
-	if (n == NR_CPUS)
+	if (n == click_nr_cpu())
 	    n = 0;
 	if (p) {
 	    _last = n;
@@ -113,6 +113,5 @@ CPUQueue::add_handlers()
   add_read_handler("drops", read_handler, 1);
 }
 
-ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(CPUQueue)
 ELEMENT_MT_SAFE(CPUQueue)
