@@ -325,7 +325,7 @@ static Vector<String> cs_unix_sockets;
 static Vector<String> cs_ports;
 static Vector<String> cs_sockets;
 static bool warnings = true;
-int nthreads = 1;
+int click_nthreads = 1;
 
 static String
 click_driver_control_socket_name(int number)
@@ -601,13 +601,13 @@ main(int argc, char **argv)
       break;
 
      case THREADS_OPT:
-      nthreads = clp->val.i;
-      if (nthreads <= 1)
-          nthreads = 1;
+      click_nthreads = clp->val.i;
+      if (click_nthreads <= 1)
+          click_nthreads = 1;
 #if !HAVE_MULTITHREAD
-      if (nthreads > 1) {
+      if (click_nthreads > 1) {
           errh->warning("Click was built without multithread support, running single threaded");
-          nthreads = 1;
+          click_nthreads = 1;
       }
 #endif
       break;
@@ -668,7 +668,7 @@ particular purpose.\n");
       Router::add_write_handler(0, "timewarp", timewarp_write_handler, 0);
 
   // parse configuration
-  click_master = new Master(nthreads);
+  click_master = new Master(click_nthreads);
   click_router = parse_configuration(router_file, file_is_expr, false, errh);
   if (!click_router)
     return cleanup(clp, 1);
@@ -717,7 +717,7 @@ particular purpose.\n");
       hotswap_thunk_router->activate(false, errh);
     }
 #if HAVE_MULTITHREAD
-    for (int t = 1; t < nthreads; ++t) {
+    for (int t = 1; t < click_nthreads; ++t) {
         pthread_t p;
         pthread_create(&p, 0, thread_driver, click_master->thread(t));
         other_threads.push_back(p);

@@ -385,24 +385,8 @@ extern __thread int click_current_thread_id;
 #endif
 
 #if CLICK_USERLEVEL
-extern int nthreads;
+extern int click_nthreads;
 #endif
-
-/**
- * Return the current dynamic number of CPU
- */
-inline uint32_t
-click_nr_cpu()
-{
-#if CLICK_LINUXMODULE
-    return NR_CPUS;
-#elif CLICK_USERLEVEL
-    return nthreads;
-#else //XXX BSDMODULE?
-    return 1;
-#endif
-}
-
 
 inline click_processor_t
 click_current_processor()
@@ -420,14 +404,14 @@ click_current_processor()
 #endif
 }
 
-inline uint8_t
+inline unsigned
 click_current_cpu_id()
 {
 #if !HAVE_MULTITHREAD
     return 0;
 #elif CLICK_USERLEVEL
 #  if HAVE___THREAD_STORAGE_CLASS
-    return click_current_thread_id & 0xff;
+    return click_current_thread_id & 0xffff;
 #  else
     return sched_getcpu();
 #  endif
@@ -435,6 +419,22 @@ click_current_cpu_id()
     return click_current_processor();
 #endif
 }
+
+/**
+ * Return an upper bound to click_current_cpu_id()
+ */
+inline unsigned
+click_max_cpu_ids()
+{
+#if CLICK_LINUXMODULE
+    return NR_CPUS;
+#elif CLICK_USERLEVEL
+    return click_nthreads;
+#else //XXX BSDMODULE?
+    return 1;
+#endif
+}
+
 
 inline click_processor_t
 click_invalid_processor()
