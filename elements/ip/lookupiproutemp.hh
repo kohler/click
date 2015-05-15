@@ -26,11 +26,8 @@ class LookupIPRouteMP : public Element {
     IPAddress _last_addr_2;
     IPAddress _last_gw_2;
     int _last_output_2;
-    int pad[2];
-  };
+  } __attribute__((aligned(64)));
 
-  // XXX a bit annoying that we don't get better alignment =(
-  int _pad[2];
 #if CLICK_USERLEVEL && HAVE_MULTITHREAD
   struct cache_entry *_cache;
 #else

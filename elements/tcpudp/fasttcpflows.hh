@@ -76,7 +76,7 @@ class FastTCPFlows : public Element {
     Packet *syn_packet;
     Packet *fin_packet;
     Packet *data_packet;
-    int flow_count;
+    unsigned flow_count;
   };
   flow_t *_flows;
   void change_ports(int);

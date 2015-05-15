@@ -85,7 +85,7 @@ FastUDPSourceIP6::incr_ports()
   udp->uh_sport = htons(_sport+_incr);
   udp->uh_dport = htons(_dport+_incr);
   udp->uh_sum = 0;
-  unsigned short len = _len-14-sizeof(click_ip6);
+  //unsigned short len = _len-14-sizeof(click_ip6);
   if (_cksum) {
     //need to chagne
     //unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
@@ -219,7 +219,7 @@ FastUDPSourceIP6_limit_write_handler
 (const String &s, Element *e, void *, ErrorHandler *errh)
 {
   FastUDPSourceIP6 *c = (FastUDPSourceIP6 *)e;
-  unsigned limit;
+  int limit;
   if (!IntArg().parse(s, limit))
     return errh->error("limit parameter must be integer >= 0");
   c->_limit = (limit >= 0 ? limit : c->NO_LIMIT);

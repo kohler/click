@@ -119,7 +119,7 @@ FastUDPFlows::initialize(ErrorHandler *)
   _count = 0;
   _flows = new flow_t[_nflows];
 
-  for (int i=0; i<_nflows; i++) {
+  for (unsigned i=0; i<_nflows; i++) {
     WritablePacket *q = Packet::make(_len);
     _flows[i].packet = q;
     memcpy(q->data(), &_ethh, 14);
@@ -163,7 +163,7 @@ void
 FastUDPFlows::cleanup(CleanupStage)
 {
   if (_flows) {
-    for (int i=0; i<_nflows; i++) {
+    for (unsigned i=0; i<_nflows; i++) {
       _flows[i].packet->kill();
       _flows[i].packet=0;
     }
@@ -241,7 +241,7 @@ FastUDPFlows_limit_write_handler
 (const String &s, Element *e, void *, ErrorHandler *errh)
 {
   FastUDPFlows *c = (FastUDPFlows *)e;
-  unsigned limit;
+  int limit;
   if (!IntArg().parse(s, limit))
     return errh->error("limit parameter must be integer >= 0");
   c->_limit = (limit >= 0 ? limit : c->NO_LIMIT);

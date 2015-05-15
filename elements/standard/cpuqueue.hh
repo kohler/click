@@ -31,8 +31,8 @@ class CPUQueue : public Element {
   unsigned _capacity;
   unsigned _drops;
 
-  int next_i(int i) const { return (i!=_capacity ? i+1 : 0); }
-  int prev_i(int i) const { return (i!=0 ? i-1 : _capacity); }
+  int next_i(unsigned i) const { return (i!=_capacity ? i+1 : 0); }
+  int prev_i(unsigned i) const { return (i!=0 ? i-1 : _capacity); }
   Packet *deq(int);
 
   static String read_handler(Element *, void *) CLICK_COLD;

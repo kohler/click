@@ -175,7 +175,6 @@ class FromCapDump : public Element { public:
     bool _stop : 1;
     bool _zero : 1;
     bool _checksum : 1;
-    bool _binary : 1;
     bool _active;
 
     Task _task;
