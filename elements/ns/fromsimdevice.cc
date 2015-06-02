@@ -120,7 +120,7 @@ FromSimDevice::uninitialize()
 void
 FromSimDevice::set_annotations(Packet *p,int ptype)
 {
-  static char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+  static uint8_t bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
   if (SIMCLICK_PTYPE_ETHER == ptype) {
     // check if multicast
@@ -147,6 +147,7 @@ FromSimDevice::incoming_packet(int ifid,int ptype,const unsigned char* data,
   Packet *p = Packet::make(_headroom, data, len, 0);
   set_annotations(p,ptype);
   p->set_sim_packetinfo(pinfo);
+  p->timestamp_anno().assign_now();
   output(0).push(p);
 
   return result;
