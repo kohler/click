@@ -144,6 +144,7 @@ FromSimDevice::incoming_packet(int ifid,int ptype,const unsigned char* data,
   Packet *p = Packet::make(data, len);
   set_annotations(p,ptype);
   p->set_sim_packetinfo(pinfo);
+  p->timestamp_anno().assign_now();
   output(0).push(p);
 
   return result;
