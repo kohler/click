@@ -27,10 +27,9 @@ CPUSwitch::~CPUSwitch()
 void
 CPUSwitch::push(int, Packet *p)
 {
-  int n = click_current_processor() % noutputs();
+  int n = click_current_cpu_id() % noutputs();
   output(n).push(p);
 }
 
-ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(CPUSwitch)
 ELEMENT_MT_SAFE(CPUSwitch)

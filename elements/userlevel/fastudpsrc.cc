@@ -218,7 +218,7 @@ FastUDPSource_limit_write_handler
 (const String &s, Element *e, void *, ErrorHandler *errh)
 {
   FastUDPSource *c = (FastUDPSource *)e;
-  unsigned limit;
+  int limit;
   if (!IntArg().parse(s, limit))
     return errh->error("limit parameter must be integer >= 0");
   c->_limit = (limit >= 0 ? limit : c->NO_LIMIT);

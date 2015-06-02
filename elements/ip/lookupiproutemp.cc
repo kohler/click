@@ -23,18 +23,21 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 
-#include <click/cxxprotect.h>
-CLICK_CXX_PROTECT
 #ifdef CLICK_LINUXMODULE
-#include <linux/sched.h>
+# include <click/cxxprotect.h>
+ CLICK_CXX_PROTECT
+# include <linux/sched.h>
+ CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
 #endif
-CLICK_CXX_UNPROTECT
-#include <click/cxxunprotect.h>
 
 CLICK_DECLS
 
 LookupIPRouteMP::LookupIPRouteMP()
 {
+#if HAVE_USER_MULTITHREAD
+    _cache = 0;
+#endif
 }
 
 LookupIPRouteMP::~LookupIPRouteMP()
@@ -84,13 +87,25 @@ LookupIPRouteMP::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 LookupIPRouteMP::initialize(ErrorHandler *)
 {
+#if HAVE_USER_MULTITHREAD
+  _cache = (struct cache_entry*)malloc(sizeof(*_cache) * click_max_cpu_ids());
+#endif
+
   click_chatter("LookupIPRouteMP alignment: %p, %p",
                 &(_cache[0]._last_addr_1), &(_cache[1]._last_addr_1));
-  for (int i=0; i<_cache_buckets; i++) {
+  for (unsigned i=0; i<click_max_cpu_ids(); i++) {
     _cache[i]._last_addr_1 = IPAddress();
     _cache[i]._last_addr_2 = IPAddress();
   }
   return 0;
+}
+
+void
+LookupIPRouteMP::cleanup(CleanupStage)
+{
+#if HAVE_USER_MULTITHREAD
+    free(_cache);
+#endif
 }
 
 void
@@ -99,12 +114,7 @@ LookupIPRouteMP::push(int, Packet *p)
   IPAddress a = p->dst_ip_anno();
   IPAddress gw;
   int ifi = -1;
-#ifdef CLICK_LINUXMODULE
-  int bucket = click_current_processor();
-  struct cache_entry *e = &_cache[bucket];
-#else
-  int bucket = 0;
-#endif
+  struct cache_entry *e = &_cache[click_current_cpu_id()];
 
   if (a) {
     if (a == e->_last_addr_1) {
@@ -138,5 +148,4 @@ LookupIPRouteMP::push(int, Packet *p)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(LookupIPRouteMP)

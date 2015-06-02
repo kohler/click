@@ -71,7 +71,7 @@ class FastUDPFlows : public Element {
 
   struct flow_t {
       Packet *packet;
-      int flow_count;
+      unsigned flow_count;
   };
   flow_t *_flows;
   void change_ports(int);
