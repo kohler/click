@@ -1,5 +1,8 @@
 #ifndef CPUQUEUE_HH
 #define CPUQUEUE_HH
+#include <click/element.hh>
+
+CLICK_DECLS
 
 /*
  * =c
@@ -16,9 +19,6 @@
  *
  * =a Queue
  */
-
-#include <click/element.hh>
-
 class CPUQueue : public Element {
   struct {
     Packet **_q;
@@ -59,4 +59,5 @@ class CPUQueue : public Element {
   void add_handlers() CLICK_COLD;
 };
 
+CLICK_ENDDECLS
 #endif

@@ -16,6 +16,8 @@
 #include "cpuswitch.hh"
 #include <click/error.hh>
 
+CLICK_DECLS
+
 CPUSwitch::CPUSwitch()
 {
 }
@@ -31,5 +33,6 @@ CPUSwitch::push(int, Packet *p)
   output(n).push(p);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(CPUSwitch)
 ELEMENT_MT_SAFE(CPUSwitch)

@@ -3,6 +3,8 @@
 #include <click/error.hh>
 #include <click/args.hh>
 
+CLICK_DECLS
+
 CPUQueue::CPUQueue()
   : _last(0), _drops(0)
 {
@@ -113,5 +115,6 @@ CPUQueue::add_handlers()
   add_read_handler("drops", read_handler, 1);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(CPUQueue)
 ELEMENT_MT_SAFE(CPUQueue)
