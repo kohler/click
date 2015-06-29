@@ -24,6 +24,8 @@
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
 
+CLICK_DECLS
+
 const unsigned FastUDPFlows::NO_LIMIT;
 
 FastUDPFlows::FastUDPFlows()
@@ -287,4 +289,5 @@ FastUDPFlows::add_handlers()
   add_write_handler("limit", FastUDPFlows_limit_write_handler, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(FastUDPFlows)
