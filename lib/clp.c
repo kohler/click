@@ -31,15 +31,15 @@
 #if HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
-
-/* By default, assume we have inttypes.h, strtoul, and uintptr_t. */
-#if !defined(HAVE_STRTOUL) && !defined(HAVE_CONFIG_H)
-# define HAVE_STRTOUL 1
-#endif
-#if defined(HAVE_INTTYPES_H) || !defined(HAVE_CONFIG_H)
+#if HAVE_INTTYPES_H || !defined(HAVE_CONFIG_H)
 # include <inttypes.h>
 #endif
-#if !defined(HAVE_UINTPTR_T) && defined(HAVE_CONFIG_H)
+
+/* By default, assume we have inttypes.h, strtoul, and uintptr_t. */
+#if !HAVE_STRTOUL && !defined(HAVE_CONFIG_H)
+# define HAVE_STRTOUL 1
+#endif
+#if !HAVE_UINTPTR_T && !HAVE_INTTYPES_H && defined(HAVE_CONFIG_H)
 typedef unsigned long uintptr_t;
 #endif
 

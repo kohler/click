@@ -40,8 +40,8 @@ ThreadSafeQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
     int r = NotifierQueue::live_reconfigure(conf, errh);
     if (r >= 0 && size() < capacity() && _q)
 	_full_note.wake();
-    _xhead = _head;
-    _xtail = _tail;
+    _xhead = head();
+    _xtail = tail();
     return r;
 }
 
@@ -53,12 +53,12 @@ ThreadSafeQueue::push(int, Packet *p)
     // Reserve a slot by incrementing _xtail
     Storage::index_type t, nt;
     do {
-	t = _tail;
+	t = tail();
 	nt = next_i(t);
     } while (_xtail.compare_swap(t, nt) != t);
     // Other pushers spin until _tail := nt (or _xtail := t)
 
-    Storage::index_type h = _head;
+    Storage::index_type h = head();
     if (nt != h)
 	push_success(h, t, nt, p);
     else {
@@ -75,12 +75,12 @@ ThreadSafeQueue::pull(int)
     // Reserve a slot by incrementing _xhead
     Storage::index_type h, nh;
     do {
-	h = _head;
+	h = head();
 	nh = next_i(h);
     } while (_xhead.compare_swap(h, nh) != h);
     // Other pullers spin until _head := nh (or _xhead := h)
 
-    Storage::index_type t = _tail;
+    Storage::index_type t = tail();
     if (t != h)
 	return pull_success(h, nh);
     else {

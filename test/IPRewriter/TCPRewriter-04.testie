@@ -14,7 +14,7 @@ FromIPSummaryDump(IN1, STOP true, CHECKSUM true)
 	-> [0]rw[0]
 	-> CheckIPHeader(VERBOSE true)
 	-> CheckTCPHeader(VERBOSE true)
-	-> ToIPSummaryDump(OUT1, CONTENTS src sport dst dport proto tcp_seq tcp_ack payload tcp_opt)
+	-> ToIPSummaryDump(OUT1, FIELDS src sport dst dport proto tcp_seq tcp_ack payload tcp_opt)
 "
 
 %file IN1

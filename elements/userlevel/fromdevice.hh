@@ -15,7 +15,6 @@ extern "C" {
 # if HAVE_PCAP_SETNONBLOCK && !HAVE_DECL_PCAP_SETNONBLOCK
 int pcap_setnonblock(pcap_t *p, int nonblock, char *errbuf);
 # endif
-void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*, const u_char*);
 }
 #endif
 
@@ -26,6 +25,9 @@ void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*, const u_char*);
 
 #if FROMDEVICE_ALLOW_NETMAP || FROMDEVICE_ALLOW_PCAP
 # include <click/task.hh>
+extern "C" {
+void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*, const u_char*);
+}
 #endif
 
 CLICK_DECLS
@@ -190,7 +192,7 @@ class FromDevice : public Element { public:
 
 #if FROMDEVICE_ALLOW_PCAP
     pcap_t *pcap() const		{ return _pcap; }
-    static const char *pcap_error(pcap_t *pcap, const char *ebuf);
+    static const char* fetch_pcap_error(pcap_t* pcap, const char* ebuf);
     static pcap_t *open_pcap(String ifname, int snaplen, bool promisc, ErrorHandler *errh);
 #endif
 
@@ -227,18 +229,20 @@ class FromDevice : public Element { public:
 #if FROMDEVICE_ALLOW_PCAP
     pcap_t *_pcap;
     int _pcap_complaints;
-    friend void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*,
-				      const u_char*);
-    const char *pcap_error(const char *ebuf) {
-	return pcap_error(_pcap, ebuf);
-    }
 #endif
 #if FROMDEVICE_ALLOW_NETMAP
     NetmapInfo _netmap;
     int netmap_dispatch();
 #endif
+#if FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_NETMAP
+    friend void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*,
+                                      const u_char*);
+#endif
 
     bool _force_ip;
+#if FROMDEVICE_ALLOW_PCAP && TIMESTAMP_NANOSEC && defined(PCAP_TSTAMP_PRECISION_NANO)
+    bool _pcap_nanosec;
+#endif
     int _burst;
     int _datalink;
 

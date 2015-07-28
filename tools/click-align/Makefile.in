@@ -84,6 +84,7 @@ $(LIBCLICKTOOL):
 
 click-align: Makefile $(OBJS) ../lib/$(LIBCLICKTOOL)
 	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
+	@-mkdir -p ../../bin; ln -sf ../tools/click-align/$@ ../../bin/$@
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -101,7 +102,7 @@ uninstall:
 	/bin/rm -f $(DESTDIR)$(bindir)/click-align
 
 clean:
-	rm -f *.d *.o click-align
+	rm -f *.d *.o click-align ../../bin/click-align
 distclean: clean
 	-rm -f Makefile
 

@@ -248,7 +248,7 @@ int whandler::hinfo::create_display(whandler *wh)
     } else {
 	wadd = wdata = gtk_entry_new();
 	if (!hv->editable()) {
-	    gtk_entry_set_editable(GTK_ENTRY(wdata), FALSE);
+	    gtk_editable_set_editable(GTK_EDITABLE(wdata), FALSE);
 	    g_object_set(wdata, "can-focus", FALSE, (const char *) NULL);
 	} else if (wh->active()) {
 	    g_signal_connect(wdata, "event", G_CALLBACK(on_handler_event), wh);
@@ -371,7 +371,7 @@ void whandler::hinfo::display(whandler *wh, bool change_form)
     if (!(hv->flags() & hflag_multiline) && (multiline || positions.size())) {
 	if (!change_form) {
 	    gtk_entry_set_text(GTK_ENTRY(wdata), "???");
-	    gtk_entry_set_position(GTK_ENTRY(wdata), -1);
+	    gtk_editable_set_position(GTK_EDITABLE(wdata), -1);
 	    return;
 	} else
 	    create(wh, hv->flags() | hflag_multiline, false);
@@ -398,7 +398,7 @@ void whandler::hinfo::display(whandler *wh, bool change_form)
 	gtk_text_buffer_place_cursor(b, &i1);
     } else {
 	gtk_entry_set_text(GTK_ENTRY(wdata), hv->hvalue().c_str());
-	gtk_entry_set_position(GTK_ENTRY(wdata), -1);
+	gtk_editable_set_position(GTK_EDITABLE(wdata), -1);
     }
 
     // Display parameters
@@ -428,7 +428,7 @@ void whandler::hinfo::display(whandler *wh, bool change_form)
 void whandler::display(const String &ename, bool incremental)
 {
     if ((_display_ename == ename && incremental)
-	|| !GTK_WIDGET_DRAWABLE(_eviewbox))
+	|| !gtk_widget_get_window(_eviewbox))
 	return;
     _display_ename = ename;
     gtk_container_foreach(GTK_CONTAINER(_handlerbox), destroy_callback, NULL);
@@ -651,17 +651,17 @@ void whandler::show_actions(GtkWidget *near, const String &hname, bool changed)
 
     // get monitor and widget coordinates
     gtk_widget_realize(near);
-    GdkScreen *screen = gdk_drawable_get_screen(near->window);
+    GdkScreen *screen = gdk_window_get_screen(near->window);
     gint monitor_num = gdk_screen_get_monitor_at_window(screen, near->window);
     GdkRectangle monitor;
     gdk_screen_get_monitor_geometry(screen, monitor_num, &monitor);
 
-    while (GTK_WIDGET_NO_WINDOW(near))
+    while (!gtk_widget_get_has_window(near))
 	near = near->parent;
     gint near_x1, near_y1, near_x2, near_y2;
     gdk_window_get_origin(near->window, &near_x1, &near_y1);
-    gdk_drawable_get_size(near->window, &near_x2, &near_y2);
-    near_x2 += near_x1, near_y2 += near_y1;
+    near_x2 = near_x1 + gdk_window_get_width(near->window);
+    near_y2 = near_y1 + gdk_window_get_height(near->window);
 
     // get action area requisition
     int which = (hi->writable() ? 0 : 1);

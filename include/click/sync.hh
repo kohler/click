@@ -419,10 +419,10 @@ class ReadWriteLock { public:
 
 #if CLICK_LINUXMODULE && defined(CONFIG_SMP)
   private:
-    // allocate 32 bytes (size of a cache line) for every member
+    // allocate a cache line for every member
     struct lock_t {
 	Spinlock _lock;
-	unsigned char reserved[32 - sizeof(Spinlock)];
+	unsigned char reserved[L1_CACHE_BYTES - sizeof(Spinlock)];
     } *_l;
 #endif
 

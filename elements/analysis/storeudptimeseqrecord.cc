@@ -161,7 +161,7 @@ int StoreUDPTimeSeqRecord::reset_handler(const String &, Element *e, void *, Err
 
 void StoreUDPTimeSeqRecord::add_handlers()
 {
-    add_data_handlers("count", Handler::OP_READ, &_count);
+    add_data_handlers("count", Handler::f_read, &_count);
     add_write_handler("reset", reset_handler);
 }
 

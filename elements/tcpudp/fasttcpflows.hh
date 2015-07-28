@@ -1,5 +1,13 @@
 #ifndef FASTTCPFLOWS_HH
 #define FASTTCPFLOWS_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/gaprate.hh>
+#include <click/packet.hh>
+#include <clicknet/ether.h>
+#include <clicknet/tcp.h>
+
+CLICK_DECLS
 
 /*
  * =c
@@ -44,19 +52,11 @@
  *
  * =e
  *  FastTCPFlows(100000, 500000, 60,
- *               0:0:0:0:0:0, 1.0.0.1, 1234,
- *               1:1:1:1:1:1, 2.0.0.2, 1234,
+ *               0:0:0:0:0:0, 1.0.0.1,
+ *               1:1:1:1:1:1, 2.0.0.2,
  *               100, 10)
  *    -> ToDevice;
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <click/gaprate.hh>
-#include <click/packet.hh>
-#include <clicknet/ether.h>
-#include <clicknet/tcp.h>
-
 class FastTCPFlows : public Element {
 
   bool _rate_limited;
@@ -76,7 +76,7 @@ class FastTCPFlows : public Element {
     Packet *syn_packet;
     Packet *fin_packet;
     Packet *data_packet;
-    int flow_count;
+    unsigned flow_count;
   };
   flow_t *_flows;
   void change_ports(int);
@@ -110,5 +110,5 @@ class FastTCPFlows : public Element {
   click_jiffies_t last() { return _last; }
 };
 
-
+CLICK_ENDDECLS
 #endif

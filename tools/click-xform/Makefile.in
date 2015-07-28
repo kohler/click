@@ -84,6 +84,7 @@ $(LIBCLICKTOOL):
 
 click-xform: Makefile $(OBJS) ../lib/$(LIBCLICKTOOL)
 	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
+	@-mkdir -p ../../bin; ln -sf ../tools/click-xform/$@ ../../bin/$@
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -101,7 +102,7 @@ uninstall:
 	/bin/rm -f $(DESTDIR)$(bindir)/click-xform
 
 clean:
-	rm -f *.d *.o click-xform
+	rm -f *.d *.o click-xform ../../bin/click-xform
 distclean: clean
 	-rm -f Makefile
 

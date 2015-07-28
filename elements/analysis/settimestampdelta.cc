@@ -100,7 +100,7 @@ void
 SetTimestampDelta::add_handlers()
 {
     add_read_handler("first", read_handler);
-    add_write_handler("reset", write_handler, 0, Handler::BUTTON);
+    add_write_handler("reset", write_handler, 0, Handler::f_button);
 }
 
 CLICK_ENDDECLS

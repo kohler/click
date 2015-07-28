@@ -10,7 +10,7 @@ r::RoundRobinIPMapper(- - - - 0 0, - - - - 1 0, - - - - 2 0);
 FromIPSummaryDump(-, STOP true)
 	-> rw::IPRewriter(r)
 	-> Paint(0)
-	-> td::ToIPSummaryDump(-, CONTENTS link);
+	-> td::ToIPSummaryDump(-, FIELDS link);
 rw[1] -> Paint(1) -> td;
 rw[2] -> Paint(2) -> td;
 

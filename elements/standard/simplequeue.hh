@@ -118,11 +118,10 @@ inline bool
 SimpleQueue::enq(Packet *p)
 {
     assert(p);
-    Storage::index_type h = _head, t = _tail, nt = next_i(t);
+    Storage::index_type h = head(), t = tail(), nt = next_i(t);
     if (nt != h) {
 	_q[t] = p;
-	packet_memory_barrier(_q[t], _tail);
-	_tail = nt;
+	set_tail(nt);
 	int s = size(h, nt);
 	if (s > _highwater_length)
 	    _highwater_length = s;
@@ -140,25 +139,23 @@ SimpleQueue::lifo_enq(Packet *p)
     // XXX NB: significantly more dangerous in a multithreaded environment
     // than plain (FIFO) enq().
     assert(p);
-    Storage::index_type h = _head, t = _tail, ph = prev_i(h);
+    Storage::index_type h = head(), t = tail(), ph = prev_i(h);
     if (ph == t) {
 	t = prev_i(t);
 	_q[t]->kill();
-	_tail = t;
+	set_tail(t);
     }
     _q[ph] = p;
-    packet_memory_barrier(_q[ph], _head);
-    _head = ph;
+    set_head_release(ph);
 }
 
 inline Packet *
 SimpleQueue::deq()
 {
-    Storage::index_type h = _head, t = _tail;
+    Storage::index_type h = head(), t = tail();
     if (h != t) {
 	Packet *p = _q[h];
-	packet_memory_barrier(_q[h], _head);
-	_head = next_i(h);
+	set_head(next_i(h));
 	assert(p);
 	return p;
     } else
@@ -172,16 +169,16 @@ SimpleQueue::yank1(Filter filter)
        'filter(Packet *)'. The returned packet must be deallocated by the
        caller. */
 {
-    for (Storage::index_type trav = _head; trav != _tail; trav = next_i(trav))
+    for (Storage::index_type trav = head(); trav != tail(); trav = next_i(trav))
 	if (filter(_q[trav])) {
 	    Packet *p = _q[trav];
 	    int prev = prev_i(trav);
-	    while (trav != _head) {
+	    while (trav != head()) {
 		_q[trav] = _q[prev];
 		trav = prev;
 		prev = prev_i(prev);
 	    }
-	    _head = next_i(_head);
+	    set_head(next_i(head()));
 	    return p;
 	}
     return 0;
@@ -194,7 +191,7 @@ SimpleQueue::yank1_peek(Filter filter)
        'filter(Packet *)'. The returned packet must *NOT* be deallocated by the
        caller. */
 {
-    for (Storage::index_type trav = _head; trav != _tail; trav = next_i(trav))
+    for (Storage::index_type trav = head(); trav != tail(); trav = next_i(trav))
 	if (filter(_q[trav])) {
 	    Packet *p = _q[trav];
 	    return p;
@@ -211,9 +208,9 @@ SimpleQueue::yank(Filter filter, Vector<Packet *> &yank_vec)
        that matched 'filter()'. Caller should deallocate any packets returned
        in 'yank_vec'. Returns the number of packets yanked. */
 {
-    Storage::index_type write_ptr = _tail;
+    Storage::index_type write_ptr = tail();
     int nyanked = 0;
-    for (Storage::index_type trav = _tail; trav != _head; ) {
+    for (Storage::index_type trav = tail(); trav != head(); ) {
 	trav = prev_i(trav);
 	if (filter(_q[trav])) {
 	    yank_vec.push_back(_q[trav]);
@@ -223,7 +220,7 @@ SimpleQueue::yank(Filter filter, Vector<Packet *> &yank_vec)
 	    _q[write_ptr] = _q[trav];
 	}
     }
-    _head = write_ptr;
+    set_head(write_ptr);
     return nyanked;
 }
 

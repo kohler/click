@@ -9,7 +9,7 @@ FromIPSummaryDump(IN1, STOP true, CHECKSUM true) ->
   rw :: IPAddrPairRewriter(pattern 3.0.0.1-3.0.0.255# - 0 0)
   -> CheckIPHeader(VERBOSE true)
   -> CheckTCPHeader(VERBOSE true)
-  -> ToIPSummaryDump(OUT1, DATA src dst)
+  -> ToIPSummaryDump(OUT1, FIELDS src dst)
 "
 
 %file IN1

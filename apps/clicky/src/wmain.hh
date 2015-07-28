@@ -107,6 +107,8 @@ class wmain : public crouter { public:
 	ElementT *element;
     };
 
+    static Vector<wmain*> all_wmains;
+
   private:
 
     // router

@@ -193,8 +193,8 @@ TimeFilter::write_handler(const String &s, Element *e, void *thunk, ErrorHandler
 void
 TimeFilter::add_handlers()
 {
-    add_data_handlers("start", Handler::OP_READ, &_first);
-    add_data_handlers("end", Handler::OP_READ, &_last);
+    add_data_handlers("start", Handler::f_read, &_first);
+    add_data_handlers("end", Handler::f_read, &_last);
     add_write_handler("start", write_handler, h_start);
     add_write_handler("end", write_handler, h_end);
     add_read_handler("interval", read_handler, h_interval);

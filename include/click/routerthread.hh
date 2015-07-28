@@ -365,7 +365,7 @@ RouterThread::current_thread_is_running() const
 #elif CLICK_MINIOS
     return get_current() == _minios_thread;
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD && HAVE___THREAD_STORAGE_CLASS
-    return click_current_thread_id == _id;
+    return click_current_thread_id == (_id | 0x40000000);
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     return click_current_processor() == _running_processor;
 #else

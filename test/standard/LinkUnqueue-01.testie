@@ -5,7 +5,7 @@ click --simtime CONFIG < DUMP | grep -v '^!'
 FromIPSummaryDump(-, STOP true)
 	-> Queue -> LinkUnqueue(0.005s, 100kb/s)
 	-> SetTimestampDelta
-	-> ToIPSummaryDump(-, CONTENTS timestamp ip_src);
+	-> ToIPSummaryDump(-, FIELDS timestamp ip_src);
 DriverManager(wait, wait_time 0.38s, stop)
 
 %file DUMP

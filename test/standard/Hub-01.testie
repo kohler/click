@@ -7,7 +7,7 @@ FromIPSummaryDump(X, STOP true)
 	-> p::PaintSwitch
 	-> h::Hub
 	-> Paint(0)
-	-> t::ToIPSummaryDump(Y, DATA link ip_src)
+	-> t::ToIPSummaryDump(Y, FIELDS link ip_src)
 
 	p[1] -> [1]h[1] -> Paint(1) -> t
 	p[2] -> [2]h[2] -> Paint(2) -> t

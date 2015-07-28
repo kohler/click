@@ -62,10 +62,13 @@ FromSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _packetbuf_size = 2048;
   _promisc = false;
+  _headroom = Packet::default_headroom;
+  _headroom += (4 - (_headroom + 2) % 4) % 4; // default 4/2 alignment
   if (Args(conf, this, errh)
       .read_mp("DEVNAME", _ifname)
       .read_p("PROMISC", _promisc)
       .read_p("SNAPLEN", _packetbuf_size)
+      .read("HEADROOM", _headroom)
       .complete() < 0)
     return -1;
   if (_packetbuf_size > 8192 || _packetbuf_size < 128)
@@ -117,7 +120,7 @@ FromSimDevice::uninitialize()
 void
 FromSimDevice::set_annotations(Packet *p,int ptype)
 {
-  static char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+  static uint8_t bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
   if (SIMCLICK_PTYPE_ETHER == ptype) {
     // check if multicast
@@ -141,9 +144,10 @@ FromSimDevice::incoming_packet(int ifid,int ptype,const unsigned char* data,
   int result = 0;
   (void) ifid;
 
-  Packet *p = Packet::make(data, len);
+  Packet *p = Packet::make(_headroom, data, len, 0);
   set_annotations(p,ptype);
   p->set_sim_packetinfo(pinfo);
+  p->timestamp_anno().assign_now();
   output(0).push(p);
 
   return result;

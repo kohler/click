@@ -1,5 +1,5 @@
 /*
- * fastudpsourceip6.{cc,hh} -- fast udp source, a benchmark tool
+ * fastudpsource.{cc,hh} -- fast udp source, a benchmark tool
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  *
@@ -15,16 +15,17 @@
  */
 
 #include <click/config.h>
-#include <clicknet/ip6.h>
-#include "fastudpsrcip6.hh"
+#include <clicknet/ip.h>
+#include "fastudpsrc.hh"
 #include <click/args.hh>
+#include <click/etheraddress.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
 
-const unsigned FastUDPSourceIP6::NO_LIMIT;
+const unsigned FastUDPSource::NO_LIMIT;
 
-FastUDPSourceIP6::FastUDPSourceIP6()
+FastUDPSource::FastUDPSource()
   : _packet(0)
 {
   _rate_limited = true;
@@ -32,12 +33,12 @@ FastUDPSourceIP6::FastUDPSourceIP6()
   _count = 0;
 }
 
-FastUDPSourceIP6::~FastUDPSourceIP6()
+FastUDPSource::~FastUDPSource()
 {
 }
 
 int
-FastUDPSourceIP6::configure(Vector<String> &conf, ErrorHandler *errh)
+FastUDPSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _cksum = true;
   _active = true;
@@ -49,10 +50,10 @@ FastUDPSourceIP6::configure(Vector<String> &conf, ErrorHandler *errh)
       .read_mp("LIMIT", limit)
       .read_mp("LENGTH", _len)
       .read_mp("SRCETH", EtherAddressArg(), _ethh.ether_shost)
-      .read_mp("SRCIP6", _sip6addr)
+      .read_mp("SRCIP", _sipaddr)
       .read_mp("SPORT", IPPortArg(IP_PROTO_UDP), _sport)
       .read_mp("DSTETH", EtherAddressArg(), _ethh.ether_dhost)
-      .read_mp("DSTIP6", _dip6addr)
+      .read_mp("DSTIP", _dipaddr)
       .read_mp("DPORT", IPPortArg(IP_PROTO_UDP), _dport)
       .read_p("CHECKSUM", _cksum)
       .read_p("INTERVAL", _interval)
@@ -63,7 +64,7 @@ FastUDPSourceIP6::configure(Vector<String> &conf, ErrorHandler *errh)
     click_chatter("warning: packet length < 60, defaulting to 60");
     _len = 60;
   }
-  _ethh.ether_type = htons(0x86DD);
+  _ethh.ether_type = htons(0x0800);
   if(rate != 0){
     _rate_limited = true;
     _rate.set_rate(rate, errh);
@@ -75,62 +76,60 @@ FastUDPSourceIP6::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-FastUDPSourceIP6::incr_ports()
+FastUDPSource::incr_ports()
 {
   WritablePacket *q = _packet->uniqueify(); // better not fail
   _packet = q;
-  click_ip6 *ip6 = reinterpret_cast<click_ip6 *>(q->data()+14);
-  click_udp *udp = reinterpret_cast<click_udp *>(ip6 + 1);
+  click_ip *ip = reinterpret_cast<click_ip *>(q->data()+14);
+  click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
   _incr++;
   udp->uh_sport = htons(_sport+_incr);
   udp->uh_dport = htons(_dport+_incr);
   udp->uh_sum = 0;
-  unsigned short len = _len-14-sizeof(click_ip6);
+  unsigned short len = _len-14-sizeof(click_ip);
   if (_cksum) {
-    //need to chagne
-    //unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
-    //udp->uh_sum = csum_tcpudp_magic(_sip6addr.s_addr, _dip6addr.s_addr,
-    //		    len, IP_PROTO_UDP, csum);
-    udp->uh_sum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, udp->uh_sum, (unsigned char *)udp, ip6->ip6_plen));
+    unsigned csum = click_in_cksum((uint8_t *)udp, len);
+    udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
   } else
     udp->uh_sum = 0;
 }
 
 int
-FastUDPSourceIP6::initialize(ErrorHandler *)
+FastUDPSource::initialize(ErrorHandler *)
 {
   _count = 0;
   _incr = 0;
   WritablePacket *q = Packet::make(_len);
   _packet = q;
   memcpy(q->data(), &_ethh, 14);
-  click_ip6 *ip6 = reinterpret_cast<click_ip6 *>(q->data()+14);
-  click_udp *udp = reinterpret_cast<click_udp *>(ip6 + 1);
+  click_ip *ip = reinterpret_cast<click_ip *>(q->data()+14);
+  click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
 
-  // set up IP6 header
-  ip6->ip6_flow = 0;
-  ip6->ip6_v = 6;
-  ip6->ip6_plen = htons(_len - 14 - sizeof(click_ip6));
-  ip6->ip6_nxt = IP_PROTO_UDP;
-  ip6->ip6_hlim = 250;
-  ip6->ip6_src = _sip6addr;
-  ip6->ip6_dst = _dip6addr;
-  SET_DST_IP6_ANNO(_packet, _dip6addr);
-  _packet->set_ip6_header(ip6, sizeof(click_ip6));
+  // set up IP header
+  ip->ip_v = 4;
+  ip->ip_hl = sizeof(click_ip) >> 2;
+  ip->ip_len = htons(_len-14);
+  ip->ip_id = 0;
+  ip->ip_p = IP_PROTO_UDP;
+  ip->ip_src = _sipaddr;
+  ip->ip_dst = _dipaddr;
+  ip->ip_tos = 0;
+  ip->ip_off = 0;
+  ip->ip_ttl = 250;
+  ip->ip_sum = 0;
+  ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
+  _packet->set_dst_ip_anno(IPAddress(_dipaddr));
+  _packet->set_ip_header(ip, sizeof(click_ip));
 
   // set up UDP header
   udp->uh_sport = htons(_sport);
   udp->uh_dport = htons(_dport);
   udp->uh_sum = 0;
-  unsigned short len = _len-14-sizeof(click_ip6);
+  unsigned short len = _len-14-sizeof(click_ip);
   udp->uh_ulen = htons(len);
   if (_cksum) {
-    //need to change, use our own checksum method
-    //unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
-    //udp->uh_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-    //			    len, IP_PROTO_UDP, csum);
-    udp->uh_sum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, udp->uh_sum, (unsigned char *)udp, ip6->ip6_plen));
-
+    unsigned csum = click_in_cksum((uint8_t *)udp, len);
+    udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
   } else
     udp->uh_sum = 0;
 
@@ -138,7 +137,7 @@ FastUDPSourceIP6::initialize(ErrorHandler *)
 }
 
 void
-FastUDPSourceIP6::cleanup(CleanupStage)
+FastUDPSource::cleanup(CleanupStage)
 {
   if (_packet) {
     _packet->kill();
@@ -147,7 +146,7 @@ FastUDPSourceIP6::cleanup(CleanupStage)
 }
 
 Packet *
-FastUDPSourceIP6::pull(int)
+FastUDPSource::pull(int)
 {
   Packet *p = 0;
 
@@ -176,7 +175,7 @@ FastUDPSourceIP6::pull(int)
 }
 
 void
-FastUDPSourceIP6::reset()
+FastUDPSource::reset()
 {
   _count = 0;
   _first = 0;
@@ -185,16 +184,16 @@ FastUDPSourceIP6::reset()
 }
 
 static String
-FastUDPSourceIP6_read_count_handler(Element *e, void *)
+FastUDPSource_read_count_handler(Element *e, void *)
 {
-  FastUDPSourceIP6 *c = (FastUDPSourceIP6 *)e;
+  FastUDPSource *c = (FastUDPSource *)e;
   return String(c->count());
 }
 
 static String
-FastUDPSourceIP6_read_rate_handler(Element *e, void *)
+FastUDPSource_read_rate_handler(Element *e, void *)
 {
-  FastUDPSourceIP6 *c = (FastUDPSourceIP6 *)e;
+  FastUDPSource *c = (FastUDPSource *)e;
   if(c->last() != 0){
     int d = c->last() - c->first();
     if (d < 1) d = 1;
@@ -206,20 +205,20 @@ FastUDPSourceIP6_read_rate_handler(Element *e, void *)
 }
 
 static int
-FastUDPSourceIP6_reset_write_handler
+FastUDPSource_reset_write_handler
 (const String &, Element *e, void *, ErrorHandler *)
 {
-  FastUDPSourceIP6 *c = (FastUDPSourceIP6 *)e;
+  FastUDPSource *c = (FastUDPSource *)e;
   c->reset();
   return 0;
 }
 
 static int
-FastUDPSourceIP6_limit_write_handler
+FastUDPSource_limit_write_handler
 (const String &s, Element *e, void *, ErrorHandler *errh)
 {
-  FastUDPSourceIP6 *c = (FastUDPSourceIP6 *)e;
-  unsigned limit;
+  FastUDPSource *c = (FastUDPSource *)e;
+  int limit;
   if (!IntArg().parse(s, limit))
     return errh->error("limit parameter must be integer >= 0");
   c->_limit = (limit >= 0 ? limit : c->NO_LIMIT);
@@ -227,10 +226,10 @@ FastUDPSourceIP6_limit_write_handler
 }
 
 static int
-FastUDPSourceIP6_rate_write_handler
+FastUDPSource_rate_write_handler
 (const String &s, Element *e, void *, ErrorHandler *errh)
 {
-  FastUDPSourceIP6 *c = (FastUDPSourceIP6 *)e;
+  FastUDPSource *c = (FastUDPSource *)e;
   unsigned rate;
   if (!IntArg().parse(s, rate))
     return errh->error("rate parameter must be integer >= 0");
@@ -242,10 +241,10 @@ FastUDPSourceIP6_rate_write_handler
 }
 
 static int
-FastUDPSourceIP6_active_write_handler
+FastUDPSource_active_write_handler
 (const String &s, Element *e, void *, ErrorHandler *errh)
 {
-  FastUDPSourceIP6 *c = (FastUDPSourceIP6 *)e;
+  FastUDPSource *c = (FastUDPSource *)e;
   bool active;
   if (!BoolArg().parse(s, active))
     return errh->error("active parameter must be boolean");
@@ -255,15 +254,14 @@ FastUDPSourceIP6_active_write_handler
 }
 
 void
-FastUDPSourceIP6::add_handlers()
+FastUDPSource::add_handlers()
 {
-  add_read_handler("count", FastUDPSourceIP6_read_count_handler, 0);
-  add_read_handler("rate", FastUDPSourceIP6_read_rate_handler, 0);
-  add_write_handler("rate", FastUDPSourceIP6_rate_write_handler, 0);
-  add_write_handler("reset", FastUDPSourceIP6_reset_write_handler, 0, Handler::BUTTON);
-  add_write_handler("active", FastUDPSourceIP6_active_write_handler, 0, Handler::CHECKBOX);
-  add_write_handler("limit", FastUDPSourceIP6_limit_write_handler, 0);
+  add_read_handler("count", FastUDPSource_read_count_handler, 0);
+  add_read_handler("rate", FastUDPSource_read_rate_handler, 0);
+  add_write_handler("rate", FastUDPSource_rate_write_handler, 0);
+  add_write_handler("reset", FastUDPSource_reset_write_handler, 0, Handler::BUTTON);
+  add_write_handler("active", FastUDPSource_active_write_handler, 0, Handler::CHECKBOX);
+  add_write_handler("limit", FastUDPSource_limit_write_handler, 0);
 }
-
-ELEMENT_REQUIRES(linuxmodule ip6)
-EXPORT_ELEMENT(FastUDPSourceIP6)
+ELEMENT_REQUIRES(userlevel)
+EXPORT_ELEMENT(FastUDPSource)

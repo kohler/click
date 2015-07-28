@@ -11,7 +11,7 @@ CLICK_DECLS
 /*
 =c
 
-ToDump(FILENAME [, I<keywords> SNAPLEN, ENCAP, USE_ENCAP_FROM, EXTRA_LENGTH])
+ToDump(FILENAME [, I<keywords> SNAPLEN, ENCAP, USE_ENCAP_FROM, EXTRA_LENGTH, NANO])
 
 =s traces
 
@@ -65,6 +65,11 @@ in packets' extra length annotations. Default is true.
 Boolean. Set to true if you want ToDump to use unbuffered IO when saving data to
 a file.  This is unlikely to work with compressed dump formats. Default is
 false.
+
+=item NANO
+
+Boolean. Set to true to write nanosecond-precision timestamps. Default depends
+on the version of tcpdump/pcap on the machine.
 
 =back
 
@@ -121,6 +126,7 @@ class ToDump : public Element { public:
     bool _active;
     bool _extra_length;
     bool _unbuffered;
+    bool _nano;
 
 #if HAVE_INT64_TYPES
     typedef uint64_t counter_t;

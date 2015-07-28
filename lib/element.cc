@@ -1894,18 +1894,18 @@ Element::add_write_handler(const char *name, WriteHandlerCallback write_callback
  *
  * Registers a comprehensive handler named @a name for this element.  The
  * handler handles the operations specified by @a flags, which can include
- * Handler::h_read, Handler::h_write, Handler::h_read_param, and others.
+ * Handler::f_read, Handler::f_write, Handler::f_read_param, and others.
  * Reading the handler calls the @a callback function like this:
  *
  * @code
  * String data;
- * int r = callback(Handler::h_read, data, e, h, errh);
+ * int r = callback(Handler::f_read, data, e, h, errh);
  * @endcode
  *
  * Writing the handler calls it like this:
  *
  * @code
- * int r = callback(Handler::h_write, data, e, h, errh);
+ * int r = callback(Handler::f_write, data, e, h, errh);
  * @endcode
  *
  * @a e is this element pointer, and @a h points to the Handler object for
@@ -2018,19 +2018,19 @@ Element::read_handlers_handler(Element *e, void *)
 		sa << 'w';
 	    if (h->read_param())
 		sa << '+';
-	    if (h->flags() & Handler::h_raw)
+	    if (h->flags() & Handler::f_raw)
 		sa << '%';
-	    if (h->flags() & Handler::h_calm)
+	    if (h->flags() & Handler::f_calm)
 		sa << '.';
-	    if (h->flags() & Handler::h_expensive)
+	    if (h->flags() & Handler::f_expensive)
 		sa << '$';
-	    if (h->flags() & Handler::h_uncommon)
+	    if (h->flags() & Handler::f_uncommon)
 		sa << 'U';
-	    if (h->flags() & Handler::h_deprecated)
+	    if (h->flags() & Handler::f_deprecated)
 		sa << 'D';
-	    if (h->flags() & Handler::h_button)
+	    if (h->flags() & Handler::f_button)
 		sa << 'b';
-	    if (h->flags() & Handler::h_checkbox)
+	    if (h->flags() & Handler::f_checkbox)
 		sa << 'c';
 	    sa << '\n';
 	}
@@ -2092,13 +2092,13 @@ Element::write_cycles_handler(const String &, Element *e, void *, ErrorHandler *
 void
 Element::add_default_handlers(bool allow_write_config)
 {
-  add_read_handler("name", read_name_handler, 0, Handler::h_calm);
-  add_read_handler("class", read_class_handler, 0, Handler::h_calm);
-  add_read_handler("config", read_config_handler, 0, Handler::h_calm);
+  add_read_handler("name", read_name_handler, 0, Handler::f_calm);
+  add_read_handler("class", read_class_handler, 0, Handler::f_calm);
+  add_read_handler("config", read_config_handler, 0, Handler::f_calm);
   if (allow_write_config && can_live_reconfigure())
     add_write_handler("config", write_config_handler, 0);
-  add_read_handler("ports", read_ports_handler, 0, Handler::h_calm);
-  add_read_handler("handlers", read_handlers_handler, 0, Handler::h_calm);
+  add_read_handler("ports", read_ports_handler, 0, Handler::f_calm);
+  add_read_handler("handlers", read_handlers_handler, 0, Handler::f_calm);
 #if CLICK_STATS >= 1
   add_read_handler("icounts", read_icounts_handler, 0);
   add_read_handler("ocounts", read_ocounts_handler, 0);
@@ -2271,7 +2271,7 @@ uint8_t_data_handler(int op, String &str, Element *element, const Handler *h, Er
 {
     uint8_t *ptr = reinterpret_cast<uint8_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
     int x;
-    if (op == Handler::h_read) {
+    if (op == Handler::f_read) {
 	str = String((int) *ptr);
 	return 0;
     } else if (IntArg().parse(str, x) && x >= 0 && x < 256) {
@@ -2285,7 +2285,7 @@ static int
 bool_data_handler(int op, String &str, Element *element, const Handler *h, ErrorHandler *errh)
 {
     bool *ptr = reinterpret_cast<bool *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
-    if (op == Handler::h_read) {
+    if (op == Handler::f_read) {
 	str = String(*ptr);
 	return 0;
     } else if (BoolArg().parse(str, *ptr))
@@ -2299,7 +2299,7 @@ uint16_t_data_handler(int op, String &str, Element *element, const Handler *h, E
 {
     uint16_t *ptr = reinterpret_cast<uint16_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
     int x;
-    if (op == Handler::h_read) {
+    if (op == Handler::f_read) {
 	str = String((int) *ptr);
 	return 0;
     } else if (IntArg().parse(str, x) && x >= 0 && x < 65536) {
@@ -2314,7 +2314,7 @@ uint16_t_net_data_handler(int op, String &str, Element *element, const Handler *
 {
     uint16_t *ptr = reinterpret_cast<uint16_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
     int x;
-    if (op == Handler::h_read) {
+    if (op == Handler::f_read) {
 	str = String((int) ntohs(*ptr));
 	return 0;
     } else if (IntArg().parse(str, x) && x >= 0 && x < 65536) {
@@ -2329,7 +2329,7 @@ uint32_t_net_data_handler(int op, String &str, Element *element, const Handler *
 {
     uint32_t *ptr = reinterpret_cast<uint32_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
     uint32_t x;
-    if (op == Handler::h_read) {
+    if (op == Handler::f_read) {
 	str = String(ntohl(*ptr));
 	return 0;
     } else if (IntArg().parse(str, x)) {
@@ -2343,7 +2343,7 @@ template <typename T> static int
 integer_data_handler(int op, String &str, Element *element, const Handler *h, ErrorHandler *errh)
 {
     T *ptr = reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
-    if (op == Handler::h_read) {
+    if (op == Handler::f_read) {
 	str = String(*ptr);
 	return 0;
     } else if (IntArg().parse(str, *ptr))
@@ -2357,7 +2357,7 @@ atomic_uint32_t_data_handler(int op, String &str, Element *element, const Handle
 {
     atomic_uint32_t *ptr = reinterpret_cast<atomic_uint32_t *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
     uint32_t value;
-    if (op == Handler::h_read) {
+    if (op == Handler::f_read) {
 	str = String(ptr->value());
 	return 0;
     } else if (IntArg().parse(str, value)) {
@@ -2372,7 +2372,7 @@ static int
 double_data_handler(int op, String &str, Element *element, const Handler *h, ErrorHandler *errh)
 {
     double *ptr = reinterpret_cast<double *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
-    if (op == Handler::h_read) {
+    if (op == Handler::f_read) {
 	str = String(*ptr);
 	return 0;
     } else if (DoubleArg().parse(str, *ptr))
@@ -2386,7 +2386,7 @@ static int
 string_data_handler(int op, String &str, Element *element, const Handler *h, ErrorHandler *)
 {
     String *ptr = reinterpret_cast<String *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
-    if (op == Handler::h_read)
+    if (op == Handler::f_read)
 	str = *ptr;
     else
 	*ptr = str;
@@ -2397,7 +2397,7 @@ static int
 ip_address_data_handler(int op, String &str, Element *element, const Handler *h, ErrorHandler *errh)
 {
     IPAddress *ptr = reinterpret_cast<IPAddress *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
-    if (op == Handler::h_read) {
+    if (op == Handler::f_read) {
 	str = ptr->unparse();
 	return 0;
     } if (IPAddressArg().parse(str, *ptr, element))
@@ -2410,7 +2410,7 @@ static int
 ether_address_data_handler(int op, String &str, Element *element, const Handler *h, ErrorHandler *errh)
 {
     EtherAddress *ptr = reinterpret_cast<EtherAddress *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
-    if (op == Handler::h_read) {
+    if (op == Handler::f_read) {
 	str = ptr->unparse();
 	return 0;
     } else if (cp_ethernet_address(str, ptr, element))
@@ -2423,7 +2423,7 @@ static int
 timestamp_data_handler(int op, String &str, Element *element, const Handler *h, ErrorHandler *errh)
 {
     Timestamp *ptr = reinterpret_cast<Timestamp *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
-    if (op == Handler::h_read) {
+    if (op == Handler::f_read) {
 	str = ptr->unparse();
 	return 0;
     } else if (cp_time(str, ptr))
@@ -2436,7 +2436,7 @@ static int
 interval_data_handler(int op, String &str, Element *element, const Handler *h, ErrorHandler *errh)
 {
     Timestamp *ptr = reinterpret_cast<Timestamp *>(reinterpret_cast<uintptr_t>(element) + reinterpret_cast<uintptr_t>(h->user_data(op)));
-    if (op == Handler::h_read) {
+    if (op == Handler::f_read) {
 	str = ptr->unparse_interval();
 	return 0;
     } else if (cp_time(str, ptr, true))
@@ -2455,13 +2455,13 @@ Element::add_data_handlers(const char *name, int flags, HandlerCallback callback
 /** @brief Register read and/or write handlers accessing @a data.
  *
  * @param name handler name
- * @param flags handler flags, containing at least one of Handler::h_read
- * and Handler::h_write
+ * @param flags handler flags, containing at least one of Handler::f_read
+ * and Handler::f_write
  * @param data pointer to data
  *
  * Registers read and/or write handlers named @a name for this element.  If
- * (@a flags & Handler::h_read), registers a read handler; if (@a flags &
- * Handler::h_write), registers a write handler.  These handlers read or set
+ * (@a flags & Handler::f_read), registers a read handler; if (@a flags &
+ * Handler::f_write), registers a write handler.  These handlers read or set
  * the data stored at @a *data, which might, for example, be an element
  * instance variable.  This data is unparsed and/or parsed using the expected
  * functions; for example, the <tt>bool</tt> version uses BoolArg::unparse()
@@ -2580,8 +2580,8 @@ Element::add_data_handlers(const char *name, int flags, String *data)
 
 /** @brief Register read and/or write handlers accessing @a data.
  * @param name handler name
- * @param flags handler flags, containing at least one of Handler::h_read
- * and Handler::h_write
+ * @param flags handler flags, containing at least one of Handler::f_read
+ * and Handler::f_write
  * @param data pointer to data
  * @param is_interval If true, the read handler unparses *@a data as an
  *   interval. */
@@ -2599,13 +2599,13 @@ Element::add_data_handlers(const char *name, int flags, Timestamp *data,
  * byte order.
  *
  * @param name handler name
- * @param flags handler flags, containing at least one of Handler::h_read
- * and Handler::h_write
+ * @param flags handler flags, containing at least one of Handler::f_read
+ * and Handler::f_write
  * @param data pointer to data
  *
  * Registers read and/or write handlers named @a name for this element.  If
- * (@a flags & Handler::h_read), registers a read handler; if (@a flags &
- * Handler::h_write), registers a write handler.  These handlers read or set
+ * (@a flags & Handler::f_read), registers a read handler; if (@a flags &
+ * Handler::f_write), registers a write handler.  These handlers read or set
  * the data stored at @a *data, which might, for example, be an element
  * instance variable.
  */
@@ -2645,7 +2645,7 @@ configuration_handler(int operation, String &str, Element *e,
 	&& (!keyword || !cp_keyword(conf[argno], &value, &rest) || !rest))
 	found = found_positional = true;
 
-    if (operation == Handler::h_read) {
+    if (operation == Handler::f_read) {
 	if (found_positional)
 	    str = conf[argno];
 	else if (found)
@@ -2699,7 +2699,7 @@ Element::read_positional_handler(Element *element, void *user_data)
 {
     String str;
     SilentErrorHandler errh;
-    (void) configuration_handler(Handler::h_read, str, element, (uintptr_t) user_data, 0, &errh);
+    (void) configuration_handler(Handler::f_read, str, element, (uintptr_t) user_data, 0, &errh);
     return str;
 }
 
@@ -2735,7 +2735,7 @@ Element::read_keyword_handler(Element *element, void *user_data)
 {
     String str;
     SilentErrorHandler errh;
-    (void) configuration_handler(Handler::h_read, str, element, -1, (const char *) user_data, &errh);
+    (void) configuration_handler(Handler::f_read, str, element, -1, (const char *) user_data, &errh);
     return str;
 }
 
@@ -2772,7 +2772,7 @@ Element::reconfigure_positional_handler(const String &arg, Element *e,
 					void *user_data, ErrorHandler *errh)
 {
     String str = arg;
-    return configuration_handler(Handler::h_write, str, e, (uintptr_t) user_data, 0, errh);
+    return configuration_handler(Handler::f_write, str, e, (uintptr_t) user_data, 0, errh);
 }
 
 /** @brief Standard write handler for reconfiguring an element by changing one
@@ -2812,7 +2812,7 @@ Element::reconfigure_keyword_handler(const String &arg, Element *e,
 				     void *user_data, ErrorHandler *errh)
 {
     String str = arg;
-    return configuration_handler(Handler::h_write, str, e, -1, (const char *) user_data, errh);
+    return configuration_handler(Handler::f_write, str, e, -1, (const char *) user_data, errh);
 }
 
 /** @brief Handle a low-level remote procedure call.

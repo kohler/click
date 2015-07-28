@@ -283,7 +283,7 @@ Program::negate_subtree(Vector<int> &tree, bool flip_short)
     while (first >= 0 && tree[first+1] != level)
 	--first;
 
-    for (int i = first; i < _insn.size(); i++) {
+    for (int i = first; i >= 0 && i < _insn.size(); i++) {
 	Insn &e = _insn[i];
 	if (e.yes() == j_failure)
 	    e.yes() = j_success;

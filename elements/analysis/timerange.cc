@@ -84,11 +84,11 @@ TimeRange::write_handler(const String &, Element *e, void *, ErrorHandler *)
 void
 TimeRange::add_handlers()
 {
-    add_data_handlers("first", Handler::OP_READ, &_first);
-    add_data_handlers("last", Handler::OP_READ, &_last);
+    add_data_handlers("first", Handler::f_read, &_first);
+    add_data_handlers("last", Handler::f_read, &_last);
     add_read_handler("range", read_handler, h_range);
     add_read_handler("interval", read_handler, h_interval);
-    add_write_handler("reset", write_handler, h_reset, Handler::BUTTON);
+    add_write_handler("reset", write_handler, h_reset, Handler::f_button);
 }
 
 CLICK_ENDDECLS

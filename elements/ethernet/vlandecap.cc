@@ -35,9 +35,14 @@ int
 VLANDecap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _anno = true;
-    return Args(conf, this, errh)
+    _ethertype = ETHERTYPE_8021Q;
+    if (Args(conf, this, errh)
 	.read_p("ANNO", _anno)
-        .complete();
+        .read("ETHERTYPE", _ethertype)
+        .complete() < 0)
+        return -1;
+    _ethertype = htons(_ethertype);
+    return 0;
 }
 
 Packet *
@@ -46,7 +51,7 @@ VLANDecap::simple_action(Packet *p)
     assert(!p->mac_header() || p->mac_header() == p->data());
     uint16_t tci = 0;
     const click_ether_vlan *vlan = reinterpret_cast<const click_ether_vlan *>(p->data());
-    if (vlan->ether_vlan_proto == htons(ETHERTYPE_8021Q)) {
+    if (vlan->ether_vlan_proto == _ethertype) {
 	tci = vlan->ether_vlan_tci;
 	if (WritablePacket *q = p->uniqueify()) {
 	    memmove(q->data() + 4, q->data(), 12);

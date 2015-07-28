@@ -1,0 +1,25 @@
+%info
+Test MulticastSocket without loop filtering.
+
+%script
+# Assumes that a multicast route exists to any network device but 'lo'.
+# Most hosts have a default route to this effect.
+{
+    # Run two click instances in parallel.
+    { click CONFIG WHO=A >&2; } | { click CONFIG WHO=B; };
+} 2>&1 | sort -u
+# Sort to ensure reproducible output.
+
+%file CONFIG
+// LOOP is enabled, and since we're not specifying a source address
+// that McastSocket can filter by, we'll get copies of our own traffic.
+RatedSource("$WHO says hi.", LIMIT 5, STOP true)
+-> McastSocket(233.252.0.0, 1234, LOOP true)
+-> Print("$WHO got", CONTENTS ASCII)
+-> Discard();
+
+%expect stdout
+A got:   10 |  A says h i.
+A got:   10 |  B says h i.
+B got:   10 |  A says h i.
+B got:   10 |  B says h i.
