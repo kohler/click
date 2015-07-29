@@ -31,11 +31,11 @@ class cdiagram : public rectangle { public:
     delt *point_elt(const point &p) const;
     void find_rect_elts(const rectangle &r, std::vector<dwidget *> &result) const;
 
-    static void export_pdf(const char *filename, crouter *cr,
+    static void export_to_file(const char *filename, crouter *cr,
 			   point page_size, point margin, double scale,
 			   bool multipage);
 
-    void export_pdf(const char *filename, bool eps,
+    void export_to_file(const char *filename, bool eps,
 		    crouter *cr, unsigned generation,
 		    point page_size, point margin, double scale,
 		    bool multipage);
@@ -74,7 +74,7 @@ class wdiagram { public:
     void router_create(bool incremental, bool always);
 
     bool visible() const {
-	return GTK_WIDGET_VISIBLE(_widget);
+	return gtk_widget_get_visible(_widget);
     }
 
     inline void redraw();

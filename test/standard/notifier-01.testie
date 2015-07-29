@@ -12,7 +12,7 @@ tss::TimeSortedSched(STOP true);
 f1 -> [0]tss;
 f2 -> [1]tss;
 f3 -> q::Queue -> [2]tss;
-tss -> ToIPSummaryDump(-, CONTENTS ip_src);
+tss -> ToIPSummaryDump(-, FIELDS ip_src);
 
 DriverManager(wait, write f3.active true, wait)
 " | grep -v '^!'

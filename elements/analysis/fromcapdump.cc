@@ -462,7 +462,7 @@ void
 FromCapDump::add_handlers()
 {
     add_read_handler("sampling_prob", read_handler, H_SAMPLING_PROB);
-    add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
+    add_data_handlers("active", Handler::f_read | Handler::f_checkbox, &_active);
     add_write_handler("active", write_handler, H_ACTIVE);
     add_read_handler("encap", read_handler, H_ENCAP);
     add_write_handler("stop", write_handler, H_STOP);

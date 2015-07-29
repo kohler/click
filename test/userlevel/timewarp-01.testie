@@ -8,10 +8,10 @@ now () {
     click -e 'Script(print $(now), stop)'
 }
 
-a=`now`; click X; b=`now`; echo $b - $a | bc
-a=`now`; click Y; b=`now`; echo $b - $a | bc
-a=`now`; click Z; b=`now`; echo $b - $a | bc
-a=`now`; click --simtime X; b=`now`; echo $b - $a | bc
+a=`now`; click X; b=`now`; perl -e "print $b - $a, \"\\n\""
+a=`now`; click Y; b=`now`; perl -e "print $b - $a, \"\\n\""
+a=`now`; click Z; b=`now`; perl -e "print $b - $a, \"\\n\""
+a=`now`; click --simtime X; b=`now`; perl -e "print $b - $a, \"\\n\""
 
 %file X
 
@@ -27,10 +27,10 @@ Script(write timewarp 2, set a $(now), wait 0.25s, write timewarp 1, wait 0.25s,
 
 %expect stdout
 0.5{{|[01].*}}
-.{{(48|49|50|51|52).*}}
+0.{{(48|49|50|51|52).*}}
 0.5{{|[01].*}}
-.{{(23|24|25|26|27).*}}
+0.{{(23|24|25|26|27).*}}
 0.5{{|[01].*}}
-.{{(35|36|37|38|39|40).*}}
+0.{{(35|36|37|38|39|40).*}}
 0.5{{|[01].*}}
-.{{(00|01).*}}
+0.{{(00|01).*}}

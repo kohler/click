@@ -24,6 +24,8 @@
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
 
+CLICK_DECLS
+
 const unsigned FastTCPFlows::NO_LIMIT;
 
 FastTCPFlows::FastTCPFlows()
@@ -91,9 +93,8 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_dport = dport;
   tcp->th_sum = 0;
   unsigned short len = _len-14-sizeof(click_ip);
-  unsigned csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-  tcp->th_sum = csum_tcpudp_magic
-    (_sipaddr.s_addr, _dipaddr.s_addr, len, IP_PROTO_TCP, csum);
+  unsigned csum = click_in_cksum((uint8_t *)tcp, len);
+  tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
 
   q = _flows[flow].data_packet->uniqueify(); // better not fail
   _flows[flow].data_packet = q;
@@ -103,9 +104,8 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_dport = dport;
   tcp->th_sum = 0;
   len = _len-14-sizeof(click_ip);
-  csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-  tcp->th_sum = csum_tcpudp_magic
-    (_sipaddr.s_addr, _dipaddr.s_addr, len, IP_PROTO_TCP, csum);
+  csum = click_in_cksum((uint8_t *)tcp, len);
+  tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
 
   q = _flows[flow].fin_packet->uniqueify(); // better not fail
   _flows[flow].fin_packet = q;
@@ -115,9 +115,8 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_dport = dport;
   tcp->th_sum = 0;
   len = _len-14-sizeof(click_ip);
-  csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-  tcp->th_sum = csum_tcpudp_magic
-    (_sipaddr.s_addr, _dipaddr.s_addr, len, IP_PROTO_TCP, csum);
+  csum = click_in_cksum((uint8_t *)tcp, len);
+  tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
 }
 
 Packet *
@@ -158,14 +157,14 @@ FastTCPFlows::initialize(ErrorHandler *)
   _sent_all_fins = false;
   _flows = new flow_t[_nflows];
 
-  for (int i=0; i<_nflows; i++) {
+  for (unsigned i=0; i<_nflows; i++) {
     unsigned short sport = (click_random() >> 2) % 0xFFFF;
     unsigned short dport = (click_random() >> 2) % 0xFFFF;
 
     // SYN packet
     WritablePacket *q = Packet::make(_len);
     _flows[i].syn_packet = q;
-    memcpy(_flows[i].syn_packet->data(), &_ethh, 14);
+    memcpy((void*)_flows[i].syn_packet->data(), &_ethh, 14);
     click_ip *ip =
       reinterpret_cast<click_ip *>(q->data()+14);
     click_tcp *tcp = reinterpret_cast<click_tcp *>(ip + 1);
@@ -195,9 +194,8 @@ FastTCPFlows::initialize(ErrorHandler *)
     tcp->th_urp = 0;
     tcp->th_sum = 0;
     unsigned short len = _len-14-sizeof(click_ip);
-    unsigned csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-    tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-				    len, IP_PROTO_TCP, csum);
+    unsigned csum = click_in_cksum((uint8_t *)tcp, len);
+    tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
 
     // DATA packet with PUSH and ACK
     q = Packet::make(_len);
@@ -231,9 +229,8 @@ FastTCPFlows::initialize(ErrorHandler *)
     tcp->th_urp = 0;
     tcp->th_sum = 0;
     len = _len-14-sizeof(click_ip);
-    csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-    tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-				    len, IP_PROTO_TCP, csum);
+    csum = click_in_cksum((uint8_t *)tcp, len);
+    tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
 
     // FIN packet
     q = Packet::make(_len);
@@ -267,9 +264,8 @@ FastTCPFlows::initialize(ErrorHandler *)
     tcp->th_urp = 0;
     tcp->th_sum = 0;
     len = _len-14-sizeof(click_ip);
-    csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
-    tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-				    len, IP_PROTO_TCP, csum);
+    csum = click_in_cksum((uint8_t *)tcp, len);
+    tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, len);
 
     _flows[i].flow_count = 0;
   }
@@ -281,7 +277,7 @@ void
 FastTCPFlows::cleanup(CleanupStage)
 {
   if (_flows) {
-    for (int i=0; i<_nflows; i++) {
+    for (unsigned i=0; i<_nflows; i++) {
       _flows[i].syn_packet->kill();
       _flows[i].data_packet->kill();
       _flows[i].fin_packet->kill();
@@ -364,7 +360,7 @@ FastTCPFlows_limit_write_handler
 (const String &s, Element *e, void *, ErrorHandler *errh)
 {
   FastTCPFlows *c = (FastTCPFlows *)e;
-  unsigned limit;
+  int limit;
   if (!IntArg().parse(s, limit))
     return errh->error("limit parameter must be integer >= 0");
   c->_limit = (limit >= 0 ? limit : c->NO_LIMIT);
@@ -410,5 +406,5 @@ FastTCPFlows::add_handlers()
   add_write_handler("limit", FastTCPFlows_limit_write_handler, 0);
 }
 
-ELEMENT_REQUIRES(linuxmodule)
+CLICK_ENDDECLS
 EXPORT_ELEMENT(FastTCPFlows)

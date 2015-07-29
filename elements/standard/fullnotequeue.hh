@@ -103,8 +103,7 @@ FullNoteQueue::push_success(Storage::index_type h, Storage::index_type t,
 			    Storage::index_type nt, Packet *p)
 {
     _q[t] = p;
-    packet_memory_barrier(_q[t], _tail);
-    _tail = nt;
+    set_tail(nt);
 
     int s = size(h, nt);
     if (s > _highwater_length)
@@ -138,8 +137,7 @@ FullNoteQueue::pull_success(Storage::index_type h,
 			    Storage::index_type nh)
 {
     Packet *p = _q[h];
-    packet_memory_barrier(_q[h], _head);
-    _head = nh;
+    set_head(nh);
 
     _sleepiness = 0;
     _full_note.wake();

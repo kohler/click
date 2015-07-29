@@ -27,7 +27,7 @@
 #include <clicknet/llc.h>
 CLICK_DECLS
 
-#define NUM_RADIOTAP_ELEMENTS 18
+#define NUM_RADIOTAP_ELEMENTS 22
 
 static const int radiotap_elem_to_bytes[NUM_RADIOTAP_ELEMENTS] =
 	{8, /* IEEE80211_RADIOTAP_TSFT */
@@ -48,6 +48,10 @@ static const int radiotap_elem_to_bytes[NUM_RADIOTAP_ELEMENTS] =
 	 2, /* IEEE80211_RADIOTAP_TX_FLAGS */
 	 1, /* IEEE80211_RADIOTAP_RTS_RETRIES */
 	 1, /* IEEE80211_RADIOTAP_DATA_RETRIES */
+	 8, /* IEEE80211_RADIOTAP_XCHANNEL */
+	 3, /* IEEE80211_RADIOTAP_MCS */
+	 8, /* IEEE80211_RADIOTAP_A_MPDU_STATUS */
+	 12, /* IEEE80211_RADIOTAP_VHT */
 	};
 
 static int rt_el_present(struct ieee80211_radiotap_header *th, u_int32_t element)
@@ -57,9 +61,10 @@ static int rt_el_present(struct ieee80211_radiotap_header *th, u_int32_t element
 	return le32_to_cpu(th->it_present) & (1 << element);
 }
 
-static int rt_check_header(struct ieee80211_radiotap_header *th, int len, u_int8_t *offsets[])
+static int rt_check_header(struct ieee80211_radiotap_header *th, int len, u_int8_t *offsets[], u_int8_t additional_it_present_flags)
 {
-	int bytes = 0;
+	int bytes = additional_it_present_flags * sizeof(u_int32_t);
+	bytes += bytes % 8;
 	int x = 0;
 	u_int8_t *ptr = (u_int8_t *)(th + 1);
 
@@ -73,9 +78,12 @@ static int rt_check_header(struct ieee80211_radiotap_header *th, int len, u_int8
 
 	for (x = 0; x < NUM_RADIOTAP_ELEMENTS; x++) {
 		if (rt_el_present(th, x)) {
-		    int pad = bytes % radiotap_elem_to_bytes[x];
+		    int radiotap_padding_size = radiotap_elem_to_bytes[x];
+		    if(x==IEEE80211_RADIOTAP_CHANNEL) radiotap_padding_size = 2;
+		    int pad = bytes % radiotap_padding_size;
+		    
 		    if (pad)
-			bytes += radiotap_elem_to_bytes[x] - pad;
+			bytes += radiotap_padding_size - pad;
 		    offsets[x] = ptr + bytes;
 		    bytes += radiotap_elem_to_bytes[x];
 		}
@@ -112,8 +120,17 @@ RadiotapDecap::simple_action(Packet *p)
 {
 	u_int8_t *offsets[NUM_RADIOTAP_ELEMENTS];
 	struct ieee80211_radiotap_header *th = (struct ieee80211_radiotap_header *) p->data();
+
+	u_int8_t additional_it_present_flags = 0;
+	u_int32_t *itpp = (u_int32_t*) &th->it_present;
+
+	while(le32_to_cpu(*itpp) & (1 << IEEE80211_RADIOTAP_EXT)){
+		additional_it_present_flags++;
+		itpp += 1;
+	}
+
 	struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p);
-	if (rt_check_header(th, p->length(), offsets)) {
+	if (rt_check_header(th, p->length(), offsets, additional_it_present_flags)) {
 		memset((void*)ceh, 0, sizeof(struct click_wifi_extra));
 		ceh->magic = WIFI_EXTRA_MAGIC;
 

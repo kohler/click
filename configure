@@ -3103,6 +3103,7 @@ fi
 
 as_fn_append ac_header_list " sys/types.h"
 as_fn_append ac_header_list " unistd.h"
+as_fn_append ac_header_list " stdint.h"
 as_fn_append ac_header_list " inttypes.h"
 as_fn_append ac_header_list " endian.h"
 as_fn_append ac_header_list " machine/endian.h"
@@ -3218,6 +3219,7 @@ ac_config_files="$ac_config_files doc/Makefile etc/libclick/Makefile tools/Makef
 
 
 CLICK_VERSION=$PACKAGE_VERSION
+tabchar='	'
 
 
 cat >>confdefs.h <<_ACEOF
@@ -7408,6 +7410,8 @@ _ACEOF
 
 
 
+
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether char is unsigned" >&5
 $as_echo_n "checking whether char is unsigned... " >&6; }
 if ${ac_cv_c_char_unsigned+:} false; then :
@@ -11015,7 +11019,7 @@ fixincludes.pl execution failed.
         fi
         LINUX_CFLAGS="`head -n 1 conftest.dat`"
         LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
-        CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s       $mydir  $clickbuild_includedir/click-linuxmodule        g"`"
+        CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s$tabchar$mydir$tabchar$clickbuild_includedir/click-linuxmodule${tabchar}g"`"
     fi
 
 
@@ -12075,6 +12079,38 @@ fi
     if test $ac_cv_skb_recycle = yes; then
 
 $as_echo "#define HAVE_SKB_RECYCLE 1" >>confdefs.h
+
+    fi
+
+    ac_fn_c_check_decl "$LINENO" "skb_recycle_check" "ac_cv_have_decl_skb_recycle_check" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
+#define new linux_new
+#define this linux_this
+#define delete linux_delete
+#define class linux_class
+#define virtual linux_virtual
+#define typename linux_typename
+#define private linux_private
+#define protected linux_protected
+#define public linux_public
+#define namespace linux_namespace
+#define false linux_false
+#define true linux_true
+#define CLICK_CXX_PROTECTED 1
+$linux_autoconf_include
+#include <asm/types.h>
+#include <linux/skbuff.h>
+"
+if test "x$ac_cv_have_decl_skb_recycle_check" = xyes; then :
+  ac_cv_skb_recycle_check=yes
+else
+  ac_cv_skb_recycle_check=no
+fi
+
+    if test $ac_cv_skb_recycle_check = yes; then
+
+$as_echo "#define HAVE_SKB_RECYCLE_CHECK 1" >>confdefs.h
 
     fi
 

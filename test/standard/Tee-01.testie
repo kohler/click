@@ -1,5 +1,5 @@
 %info
-Test that inline port layout works properly.
+Simple Tee test.
 
 %script
 click CONFIG

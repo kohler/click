@@ -4,11 +4,11 @@ click CONFIG
 %file CONFIG
 FromIPSummaryDump(F, STOP true)
 	-> t::AdjustTimestamp(-1)
-	-> ToIPSummaryDump(-, CONTENTS timestamp)
+	-> ToIPSummaryDump(-, FIELDS timestamp)
 	-> t2::AdjustTimestamp(+1.5)
-	-> ToIPSummaryDump(T2, CONTENTS timestamp)
+	-> ToIPSummaryDump(T2, FIELDS timestamp)
 	-> t3::AdjustTimestamp(+0.1, ALL true)
-	-> ToIPSummaryDump(T3, CONTENTS timestamp)
+	-> ToIPSummaryDump(T3, FIELDS timestamp)
 
 %file F
 !data timestamp

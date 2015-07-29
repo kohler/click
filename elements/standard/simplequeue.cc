@@ -52,7 +52,7 @@ SimpleQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 SimpleQueue::initialize(ErrorHandler *errh)
 {
-    assert(!_q && _head == 0 && _tail == 0);
+    assert(!_q && head() == 0 && tail() == 0);
     _q = (Packet **) CLICK_LALLOC(sizeof(Packet *) * (_capacity + 1));
     if (_q == 0)
 	return errh->error("out of memory");
@@ -79,15 +79,15 @@ SimpleQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("out of memory");
 
     Storage::index_type i, j;
-    for (i = _head, j = 0; i != _tail && j != new_capacity; i = next_i(i))
+    for (i = head(), j = 0; i != tail() && j != new_capacity; i = next_i(i))
 	new_q[j++] = _q[i];
-    for (; i != _tail; i = next_i(i))
+    for (; i != tail(); i = next_i(i))
 	_q[i]->kill();
 
     CLICK_LFREE(_q, sizeof(Packet *) * (_capacity + 1));
     _q = new_q;
-    _head = 0;
-    _tail = j;
+    set_head(0);
+    set_tail(j);
     _capacity = new_capacity;
     return 0;
 }
@@ -99,25 +99,25 @@ SimpleQueue::take_state(Element *e, ErrorHandler *errh)
     if (!q)
 	return;
 
-    if (_tail != _head || _head != 0) {
+    if (tail() != head() || head() != 0) {
 	errh->error("already have packets enqueued, can%,t take state");
 	return;
     }
 
-    _head = 0;
-    Storage::index_type i = 0, j = q->_head;
-    while (i < _capacity && j != q->_tail) {
+    set_head(0);
+    Storage::index_type i = 0, j = q->head();
+    while (i < _capacity && j != q->tail()) {
 	_q[i] = q->_q[j];
 	i++;
 	j = q->next_i(j);
     }
-    _tail = i;
+    set_tail(i);
     _highwater_length = size();
 
-    if (j != q->_tail)
+    if (j != q->tail())
 	errh->warning("some packets lost (old length %d, new capacity %d)",
 		      q->size(), _capacity);
-    while (j != q->_tail) {
+    while (j != q->tail()) {
 	q->_q[j]->kill();
 	j = q->next_i(j);
     }
@@ -128,7 +128,7 @@ SimpleQueue::take_state(Element *e, ErrorHandler *errh)
 void
 SimpleQueue::cleanup(CleanupStage)
 {
-    for (Storage::index_type i = _head; i != _tail; i = next_i(i))
+    for (Storage::index_type i = head(); i != tail(); i = next_i(i))
 	_q[i]->kill();
     CLICK_LFREE(_q, sizeof(Packet *) * (_capacity + 1));
     _q = 0;
@@ -139,13 +139,12 @@ SimpleQueue::push(int, Packet *p)
 {
     // If you change this code, also change NotifierQueue::push()
     // and FullNoteQueue::push().
-    Storage::index_type h = _head, t = _tail, nt = next_i(t);
+    Storage::index_type h = head(), t = tail(), nt = next_i(t);
 
     // should this stuff be in SimpleQueue::enq?
     if (nt != h) {
 	_q[t] = p;
-	packet_memory_barrier(_q[t], _tail);
-	_tail = nt;
+	set_tail(nt);
 
 	int s = size(h, nt);
 	if (s > _highwater_length)

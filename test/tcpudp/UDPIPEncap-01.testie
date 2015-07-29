@@ -6,7 +6,7 @@ click -e "
 InfiniteSource(LIMIT 3, STOP true)
   -> r :: RoundRobinSwitch
   -> UDPIPEncap(1.0.0.1, foo, 1.0.0.1, ssh)
-  -> p :: ToIPSummaryDump(-, CONTENTS ip_src sport ip_dst dport ip_proto);
+  -> p :: ToIPSummaryDump(-, FIELDS ip_src sport ip_dst dport ip_proto);
 r[1] -> UDPIPEncap(1.0.0.2, 20, 1.0.0.2, 30) -> p;
 r[2] -> { input -> UDPIPEncap(1.0.0.3, foo, 1.0.0.3, ssh) -> output;
     PortInfo(foo 80/udp ssh) } -> p;

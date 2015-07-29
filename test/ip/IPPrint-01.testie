@@ -1,5 +1,5 @@
 %script
-click -e "FromIPSummaryDump(IN, STOP true) -> IPPrint -> ToIPSummaryDump(OUT, DATA timestamp src dst sport dport proto ip_len ip_hl tcp_off tcp_flags)"
+click -e "FromIPSummaryDump(IN, STOP true) -> IPPrint -> ToIPSummaryDump(OUT, FIELDS timestamp src dst sport dport proto ip_len ip_hl tcp_off tcp_flags)"
 
 %file IN
 !data timestamp src dst sport dport proto ip_len ip_hl tcp_off tcp_flags
