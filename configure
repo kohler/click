@@ -837,6 +837,7 @@ enable_nanotimestamp
 enable_bound_port_transfer
 enable_tools
 enable_dynamic_linking
+enable_oml
 enable_stats
 enable_stride
 enable_task_heap
@@ -1524,6 +1525,7 @@ Optional Features:
   --enable-bound-port-transfer  enable port transfer function ptr optimization
   --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]
   --disable-dynamic-linking disable dynamic linking
+  --enable-oml            enable use of OML (OMF Measurement Library)
   --enable-stats[=LEVEL]  enable statistics collection
   --disable-stride        disable stride scheduler
   --enable-task-heap      use heap for task list
@@ -6501,7 +6503,6 @@ if test "$enable_fixincludes" = yes; then
 fi
 
 
-# Check whether --enable-multithread was given.
 if test "${enable_multithread+set}" = set; then :
   enableval=$enable_multithread; :
 else
@@ -10067,6 +10068,50 @@ $as_echo "#define HAVE_INT64_IS_LONG_LONG_BSDMODULE 1" >>confdefs.h
 fi
 
 
+
+
+# Check whether --enable-oml was given.
+if test "${enable_oml+set}" = set; then :
+  enableval=$enable_oml; :
+else
+  enable_oml=no
+fi
+
+if test "$enable_oml" = yes; then 
+
+  ac_fn_cxx_check_header_mongrel "$LINENO" "oml2/omlc.h" "ac_cv_header_oml2_omlc_h" "$ac_includes_default"
+  if test "x$ac_cv_header_oml2_omlc_h" = xyes; then :
+    cat >>confdefs.h <<_ACEOF
+#define CLICK_OML
+_ACEOF
+  LIBS="-loml2  $LIBS"
+  else
+    as_fn_error $? "
+=========================================
+
+Can't find OML header file 'oml2/omlc.h'.
+Try again without '--enable-oml'.
+
+=========================================" "$LINENO" 5
+  fi
+fi
+
+# Check whether Sigar header file is available.
+ac_fn_cxx_check_header_mongrel "$LINENO" "libsigar/sigar.h" "ac_cv_header_libsigar_sigar_h" "$ac_includes_default"
+if test "x$ac_cv_header_libsigar_sigar_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSIGAR_SIGAR_H
+_ACEOF
+  LIBS="-lsigar  $LIBS"
+else
+  ac_fn_cxx_check_header_mongrel "$LINENO" "sigar.h" "ac_cv_header_sigar_h" "$ac_includes_default"
+  if test "x$ac_cv_header_sigar_h" = xyes; then :
+    cat >>confdefs.h <<_ACEOF
+#define HAVE_SIGAR_H
+_ACEOF
+  LIBS="-lsigar  $LIBS"
+  fi
+fi
 
 
 # Check whether --enable-stats was given.

@@ -2,8 +2,6 @@
 #ifndef CLICK_CONFIG_H
 #define CLICK_CONFIG_H
 
-#define CLICK_OML
-
 /* Define to 1 if type `char' is unsigned and you are not using gcc.  */
 #ifndef __CHAR_UNSIGNED__
 # undef __CHAR_UNSIGNED__
