@@ -6503,6 +6503,7 @@ if test "$enable_fixincludes" = yes; then
 fi
 
 
+# Check whether --enable-multithread was given.
 if test "${enable_multithread+set}" = set; then :
   enableval=$enable_multithread; :
 else
