@@ -54,6 +54,9 @@
 #include <click/handlercall.hh>
 #include "elements/standard/quitwatcher.hh"
 #include "elements/userlevel/controlsocket.hh"
+#ifdef CLICK_OML
+#include "/usr/include/oml2/omlc.h"
+#endif
 CLICK_USING_DECLS
 
 #define HELP_OPT                300
@@ -497,6 +500,17 @@ main(int argc, char **argv)
   errh = ErrorHandler::default_handler();
 
   // read command line arguments
+#ifdef CLICK_OML
+  if (omlc_init("click", &argc, (const char**)argv, NULL) == -1)
+    errh->warning("Couldn't initialize OML\n");
+  for(int i=1; i<argc; ) {
+    if(!strncmp(argv[i], "--oml", 5)) {
+      for(int j=i; j<argc-1; j++) argv[j] = argv[j+1];
+      argc--;
+    }
+    else i++;
+  }
+#endif
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
   program_name = Clp_ProgramName(clp);
@@ -678,6 +692,10 @@ particular purpose.\n");
 #if HAVE_MULTITHREAD
   Vector<pthread_t> other_threads;
   pthread_mutex_init(&hotswap_lock, 0);
+#endif
+#ifdef CLICK_OML
+  if (omlc_start() == -1)
+    errh->error("Error starting up OML measurement streams\n");
 #endif
 
   // output flat configuration

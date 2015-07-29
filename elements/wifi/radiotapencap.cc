@@ -29,11 +29,18 @@ CLICK_DECLS
 
 
 
-#define CLICK_RADIOTAP_PRESENT (		\
+// It seems that DATA_RETRIES does not work well, so we removed this
+/*#define CLICK_RADIOTAP_PRESENT (		\
 	(1 << IEEE80211_RADIOTAP_RATE)		| \
 	(1 << IEEE80211_RADIOTAP_DBM_TX_POWER)	| \
 	(1 << IEEE80211_RADIOTAP_TX_FLAGS)	| \
 	(1 << IEEE80211_RADIOTAP_DATA_RETRIES)	| \
+	0)
+*/
+#define CLICK_RADIOTAP_PRESENT (		\
+	(1 << IEEE80211_RADIOTAP_RATE)		| \
+	(1 << IEEE80211_RADIOTAP_DBM_TX_POWER)	| \
+	(1 << IEEE80211_RADIOTAP_RTS_RETRIES)	| \
 	0)
 
 struct click_radiotap_header {
