@@ -84,7 +84,8 @@ unlock_config(const char* file, int line, Router* read_locked_router = 0)
 static inline Router*
 downgrade_config_lock(const char* file, int line, Router* router)
 {
-    router->use();
+    if (router)
+        router->use();
     SPIN_UNLOCK(&clickfs_lock, file, line);
     return router;
 }
@@ -643,7 +644,7 @@ handler_prepare_read(HandlerString* hs, struct file* filp,
         Element *e = Router::element(click_router, eindex);
 
         if (h->allow_concurrent_handlers())
-            locktype = DOWNGRADE_CONFIG_LOCK(e->router());
+            locktype = DOWNGRADE_CONFIG_LOCK(click_router);
 
         if ((hs->flags & HS_DIRECT) && buffer) {
             click_handler_direct_info hdi;
@@ -814,7 +815,7 @@ handler_do_write(struct file *filp, void *address_ptr)
 	Element *e = Router::element(click_router, eindex);
 
         if (h->allow_concurrent_handlers())
-            locktype = DOWNGRADE_CONFIG_LOCK(e->router());
+            locktype = DOWNGRADE_CONFIG_LOCK(click_router);
 
 	click_llrpc_call_handler_st chs;
 	chs.flags = 0;
