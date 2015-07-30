@@ -56,8 +56,9 @@
  * [including the GNU Public Licence.]
  */
 
-
+#include <click/config.h>
 #include "hmac.hh"
+CLICK_DECLS
 
 void OpenSSLDie(void)
 	{
@@ -157,3 +158,4 @@ unsigned char *HMAC(void *key, int key_len,unsigned char *d, size_t n, unsigned 
 		return(md);
 	}
 
+CLICK_ENDDECLS
