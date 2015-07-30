@@ -68,6 +68,8 @@ CLICK_USING_DECLS
 
 
 static simclick_node_t *cursimnode = NULL;
+int click_nthreads = 1;
+
 
 //
 // XXX
