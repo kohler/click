@@ -103,6 +103,7 @@ LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS) $(LINUXINCLUDE)" \
 	-e s,-Wdeclaration-after-statement,, \
 	-e s,-Wno-pointer-sign,, -e s,-fno-common,, \
 	-e s,-Werror-implicit-function-declaration,, \
+	-e "s,-std=[-a-z0-9]*,," \
 	-e "s,-Iinclude ,-I$(linux_builddir)/include ",g \
 	-e "s,-Iinclude2 ,-I$(linux_builddir)/include2 ",g \
 	-e s,-Iinclude/,-I$(linux_srcdir)include/,g \

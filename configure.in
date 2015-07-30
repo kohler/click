@@ -1351,6 +1351,7 @@ Can't find Linux compilation flags.
             -e s,-Wstrict-prototypes,,g \
             -e s,-Wdeclaration-after-statement,,g \
             -e s,-fno-common,,g \
+            -e 's,-std=[-a-z0-9+]*,,g' \
             -e s,-Werror-implicit-function-declaration,,g \
             -e 's,-W[^ ]*,,g' <conftest.dat`"
         AC_MSG_RESULT($LINUX_CFLAGS)
