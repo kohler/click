@@ -993,11 +993,13 @@ dnl
 dnl more features
 dnl
 
-dnl OML
+dnl OML (OMF Measurement Library)
 
-AC_ARG_ENABLE(oml, [[  --enable-oml  enable OML]], :, enable_oml=no)
-if test "$enable_oml" = yes; then
-    AC_DEFINE_UNQUOTED([CLICK_OML], $enable_oml)
+AC_ARG_WITH([oml],
+    [AS_HELP_STRING([[--with-oml]], [support OML (OMF Measurement Library) measurements])],
+    [:], [with_oml=no])
+if test "$with_oml" = yes; then
+    AC_DEFINE_UNQUOTED([CLICK_OML], $with_oml)
 fi
 
 dnl statistics

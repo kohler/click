@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "TESTIE 1"
-.TH TESTIE 1 "2013-06-19" "perl v5.14.2" ""
+.TH TESTIE 1 "2014-12-13" "perl v5.14.2" ""
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -133,214 +133,230 @@
 testie \- simple test harness
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
-.Vb 1
-\&  testie [OPTIONS] [FILE]...
-.Ve
+testie [\s-1OPTIONS\s0] [\s-1FILE\s0]...
 .SH "DESCRIPTION"
 .IX Header "DESCRIPTION"
-Testie is a simple test harness. Each testie test file incorporates a shell
-script to be run and, optionally, input and expected output files for that
-script. Testie runs the script; the test fails if any of the script
-commands fail, or if the script generates unexpected output.
+Testie is a simple test harness. A testie test comprises a shell
+script and, optionally, input and expected output files for that
+script. Testie runs the script; the test succeeds if all of the script
+commands succeed, and the actual output files match expectations.
 .PP
-To run testie, pass it one or more test filenames. It will print useful
-error messages for failed tests. Alternatively, give it directory names;
-the directories are recursively searched for '\fI*.testie\fR' files.
+Testie accepts test filenames and directories as arguments.
+Directories are recursively searched for \fI*.testie\fR files. It
+reports problems for failed tests, plus a summary.
 .PP
-Return status is 0 if all tests succeed, 1 if any test fails, and 2 if a
-test fails due to an internal error. Tests whose \f(CW%require\fR prerequisites
-fail do not affect the return status, except that if all tests'
-prerequisites fail, the return status is 1 instead of 0.
+Testie exits with status 0 if all tests succeed, 1 if any test fails,
+and 2 if a test fails due to an internal error. Tests whose \fB\f(CB%require\fB\fR
+prerequisites fail do not affect the exit status, except that if all
+tests' prerequisites fail, the return status is 1 instead of 0.
 .SH "OPTIONS"
 .IX Header "OPTIONS"
+.IP "\fB\-j\fR\fIN\fR, \fB\-\-jobs\fR=\fIN\fR" 8
+.IX Item "-jN, --jobs=N"
+Run up to \fIN\fR tests simultaneously. Like Make's \fB\-j\fR option.
 .IP "\fI\s-1VARIABLE\s0\fR=\fI\s-1VALUE\s0\fR" 8
 .IX Item "VARIABLE=VALUE"
 Provide an environment variable setting for \fI\s-1VARIABLE\s0\fR within the script.
-.IP "\-V, \-\-verbose" 8
+.IP "\fB\-s\fR, \fB\-\-show\fR \fI\s-1FILE\s0\fR" 8
+.IX Item "-s, --show FILE"
+Echo the contents of \fI\s-1FILE\s0\fR on completion. \fI\s-1FILE\s0\fR should be one of the
+filenames specified by \fB\f(CB%file\fB\fR or \fB\f(CB%expect\fB\fR, or \fBstdout\fR or \fBstderr\fR.
+Leaves out any ignored lines.
+.IP "\fB\-S\fR, \fB\-\-show\-raw\fR \fI\s-1FILE\s0\fR" 8
+.IX Item "-S, --show-raw FILE"
+Like \fB\-\-show\fR, but includes any ignored lines.
+.IP "\fB\-\-show\-all\fR" 8
+.IX Item "--show-all"
+Calls \fB\-\-show\fR for all filenames specified by any \fB\f(CB%expect\fB\fR, plus \fBstdout\fR
+and \fBstderr\fR. Leaves out any ignored lines.
+.IP "\fB\-\-show\-all\-raw\fR" 8
+.IX Item "--show-all-raw"
+Like \fB\-\-show\-all\fR, but includes any ignored lines.
+.IP "\fB\-e\fR, \fB\-\-expand\fR" 8
+.IX Item "-e, --expand"
+Don't run the given test; instead, expand its files into the current
+directory. The script is stored in a file called \fI\f(CI%script\fI\fR.
+.IP "\fB\-\-preserve\-temporaries\fR" 8
+.IX Item "--preserve-temporaries"
+Preserve temporary test directories. Testie runs each test in its own
+subdirectory of the current directory. Test directories are named
+\&\fItestieNNNNN\fR, and are typically removed on test completion.
+Examining the contents of a test directory can be useful when
+debugging a test.
+.IP "\fB\-p\fR, \fB\-\-path\fR \fI\s-1DIR\s0\fR" 8
+.IX Item "-p, --path DIR"
+Prepend \fI\s-1DIR\s0\fR to the \f(CW\*(C`PATH\*(C'\fR environment variable before running the
+test script.
+.IP "\fB\-V\fR, \fB\-\-verbose\fR" 8
 .IX Item "-V, --verbose"
 Print information to standard error about successful tests as well as
 unsuccessful tests.
-.IP "\-VV, \-\-superverbose" 8
+.IP "\fB\-VV\fR, \fB\-\-superverbose\fR" 8
 .IX Item "-VV, --superverbose"
-Like \-\-verbose, but use a slightly different format, and additionally print
-every test's \f(CW%info\fR section before the test results.
-.IP "\-q, \-\-quiet" 8
+Like \fB\-\-verbose\fR, but use a slightly different format, and
+additionally print every test's \fB\f(CB%info\fB\fR section before the test results.
+.IP "\fB\-q\fR, \fB\-\-quiet\fR" 8
 .IX Item "-q, --quiet"
 Don't print information to the terminal while running multiple tests.
-.IP "\-v, \-\-version" 8
+.IP "\fB\-v\fR, \fB\-\-version\fR" 8
 .IX Item "-v, --version"
 Print version number information and exit.
-.IP "\-\-help" 8
+.IP "\fB\-\-help\fR" 8
 .IX Item "--help"
 Print help information and exit.
-.IP "\-\-preserve\-temporaries" 8
-.IX Item "--preserve-temporaries"
-Preserve the temporary directory created for the test.
-.IP "\-s, \-\-show \s-1FILE\s0" 8
-.IX Item "-s, --show FILE"
-Echo the contents of \s-1FILE\s0 on completion. \s-1FILE\s0 should be one of the
-filenames specified by \f(CW%file\fR or \f(CW%expect\fR*, or 'stdout' or 'stderr'.
-Leaves out any ignored lines.
-.IP "\-S, \-\-show\-raw \s-1FILE\s0" 8
-.IX Item "-S, --show-raw FILE"
-Like \-\-show, but includes any ignored lines.
-.IP "\-\-show\-all" 8
-.IX Item "--show-all"
-Like '\-\-show' for all filenames specified by any \f(CW%expect\fR*, plus 'stdout'
-and 'stderr'.  Leaves out any ignored lines.
-.IP "\-\-show\-all\-raw" 8
-.IX Item "--show-all-raw"
-Like '\-\-show\-raw' for all filenames specified by any \f(CW%expect\fR*,
-plus 'stdout' and 'stderr'.  Includes any ignored lines.
-.IP "\-e, \-\-expand" 8
-.IX Item "-e, --expand"
-Don't run the given test; instead, expand its files into the current
-directory.  The script is stored in a file called '+script+'.
-.IP "\-j\fIN\fR, \-\-jobs=\fIN\fR" 8
-.IX Item "-jN, --jobs=N"
-Run up to \fIN\fR tests simultaneously.  Like Make's '\-j' option.
 .SH "FILE FORMAT"
 .IX Header "FILE FORMAT"
 Testie test files consist of several sections, each introduced by a line
-starting with %. There must be, at least, a \f(CW%script\fR section.
-.PP
-The \f(CW%file\fR and \f(CW%expect\fR* sections define input and/or output files by
-name. Testie runs its script in a private directory in \fI/tmp\fR; any files
-mentioned in \f(CW%file\fR or \f(CW%expect\fR* are placed in that directory.
-.ie n .IP "%script" 8
-.el .IP "\f(CW%script\fR" 8
+starting with \fB%\fR. There must be, at least, a \fB\f(CB%script\fB\fR section.
+The \fB\f(CB%file\fB\fR and \fB\f(CB%expect\fB\fR sections define input and output files by
+name.
+.ie n .IP "\fB\fB%script\fB\fR" 8
+.el .IP "\fB\f(CB%script\fB\fR" 8
 .IX Item "%script"
-The shell script (in sh syntax) that controls the test. Testie will run
-each command in sequence. Every command in the script must succeed, with
-exit status 0, or the test will fail. Use \f(CW%file\fR sections to define script
-input files and \f(CW%expect\fR* sections to check script output files for expected
-values.
+The \fBsh\fR shell script that controls the test. Testie will run each
+command in sequence. Every command in the script must succeed, with
+exit status 0, or the test will fail. Use \fB\f(CB%file\fB\fR sections to define
+script input files and \fB\f(CB%expect\fB\fR sections to check script output files
+for expected values.
 .Sp
-The \f(CW%script\fR section can contain multiple subtests. To start a new subtest,
-execute a command like \*(L"testie_subtest \s-1SECTIONNAME\s0\*(R". Testie will report the
-offending \s-1SECTIONNAME\s0 when standard output or error doesn't match an
-expected value.
-.ie n .IP "%require [\-q]" 8
-.el .IP "\f(CW%require\fR [\-q]" 8
+The \fB\f(CB%script\fB\fR section can contain subtests. To start a new subtest,
+execute a command like \f(CW\*(C`testie_subtest\ SECTIONNAME\*(C'\fR. Testie will
+report the problematic \f(CW\*(C`SECTIONNAME\*(C'\fR when standard output or error
+doesn't match an expected value.
+.Sp
+The script's environment is populated with any \fI\s-1VARIABLE\s0\fRs set on the
+testie command line with \fB\f(BI\s-1VARIABLE\s0\fB=\f(BI\s-1VALUE\s0\fB\fR syntax. Also, the
+\&\fB\f(CB$rundir\fB\fR environment variable is set to the directory in which
+testie was originally run.
+.ie n .IP "\fB\fB%require\fB [\-q]\fR" 8
+.el .IP "\fB\f(CB%require\fB [\-q]\fR" 8
 .IX Item "%require [-q]"
-A shell script (in sh syntax) defining prerequisites that must be satisfied
+An \fBsh\fR shell script defining prerequisites that must be satisfied
 before the test can run. Every command in the script must succeed, with
 exit status 0, for the test to run. Standard output and error are not
-checked, however. The \f(CW\*(C`\-q\*(C'\fR flag tells testie not to print an error message
+checked, however. The \fB\-q\fR flag tells testie not to print an error message
 if a requirement fails.
 .Sp
 Testie runs the requirement script before creating any other test files.
-For example, contents of \f(CW%file\fR sections are not available.
-.ie n .IP "%info" 8
-.el .IP "\f(CW%info\fR" 8
+For example, contents of \fB\f(CB%file\fB\fR sections are not available.
+.ie n .IP "\fB\fB%info\fB\fR" 8
+.el .IP "\fB\f(CB%info\fB\fR" 8
 .IX Item "%info"
-A short description of the test.  In \-\-superverbose mode, the first
+A short description of the test. In \fB\-\-superverbose\fR mode, the first
 paragraph of its contents is printed before the test results.
-.ie n .IP "%cut" 8
-.el .IP "\f(CW%cut\fR" 8
+.ie n .IP "\fB\fB%cut\fB\fR" 8
+.el .IP "\fB\f(CB%cut\fB\fR" 8
 .IX Item "%cut"
 This section is ignored. It is intended to comment out obsolete parts of
 the test.
-.ie n .IP "%file [\-d] [+LENGTH] \s-1FILENAME\s0..." 8
-.el .IP "\f(CW%file\fR [\-d] [+LENGTH] \s-1FILENAME\s0..." 8
-.IX Item "%file [-d] [+LENGTH] FILENAME..."
-Create an input file for the script. \s-1FILENAME\s0 can be 'stdin', which sets
-the script's standard input. If \s-1LENGTH\s0 is provided, the file data consists
-of the \s-1LENGTH\s0 bytes following this line. Otherwise, it consists of the data
-up to the next section. The \f(CW\*(C`\-d\*(C'\fR flag tells testie to delete the
-first character of each line in the section; this makes it possible to
-include files that have lines that start with %.
-.ie n .IP "%expectv [\-ad] [+LENGTH] \s-1FILENAME\s0..." 8
-.el .IP "\f(CW%expectv\fR [\-ad] [+LENGTH] \s-1FILENAME\s0..." 8
-.IX Item "%expectv [-ad] [+LENGTH] FILENAME..."
-An expected output file for the script. \s-1FILENAME\s0 can be 'stdout', for
-standard output. If \s-1LENGTH\s0 is provided, the file data consists of the
-\&\s-1LENGTH\s0 bytes following this line; otherwise, it consists of the data up to
-the next section.
+.ie n .IP "\fB\fB%file\fB [\-de] [+\f(BI\s-1LENGTH\s0\fB] \f(BI\s-1FILENAME\s0\fB...\fR" 8
+.el .IP "\fB\f(CB%file\fB [\-de] [+\f(BI\s-1LENGTH\s0\fB] \f(BI\s-1FILENAME\s0\fB...\fR" 8
+.IX Item "%file [-de] [+LENGTH] FILENAME..."
+Create an input file for the script. \fI\s-1FILENAME\s0\fR can be \fBstdin\fR,
+which sets the script's standard input. If \fB+\fR\fI\s-1LENGTH\s0\fR is provided,
+the file data consists of the \fI\s-1LENGTH\s0\fR bytes following this line;
+otherwise, it consists of the data up to the next section. The \fB\-d\fR
+flag tells testie to delete the first character of each line in the
+section. The \fB\-e\fR flag indicates that the section was \s-1MIME\s0
+Base64\-encoded (see \fIbase64\fR\|(1)); it is decoded before use. To
+include a file with lines that start with \fB%\fR (which would normally
+start a new section), use \fB\-d\fR and preface each line of the file with
+a space, or use \fB\-e\fR.
+.ie n .IP "\fB\fB%expect\fB [\-adeiw] [+\f(BI\s-1LENGTH\s0\fB] \f(BI\s-1FILENAME\s0\fB...\fR" 8
+.el .IP "\fB\f(CB%expect\fB [\-adeiw] [+\f(BI\s-1LENGTH\s0\fB] \f(BI\s-1FILENAME\s0\fB...\fR" 8
+.IX Item "%expect [-adeiw] [+LENGTH] FILENAME..."
+Define an expected output file. Differences between the script's
+output \fI\s-1FILENAME\s0\fR and the contents of the \fB\f(CB%expect\fB\fR section will
+cause the test to fail.
 .Sp
-Testie will run the script, then compare the script's output file with the
-provided data. They must match exactly or the test fails.
+\&\fI\s-1FILENAME\s0\fR can be \fBstdout\fR, for standard output. If \fB+\fR\fI\s-1LENGTH\s0\fR is
+provided, the file data consists of the \fI\s-1LENGTH\s0\fR bytes following this
+line; otherwise, it consists of the data up to the next section.
 .Sp
-The \f(CW\*(C`\-a\*(C'\fR flag marks this expected output as an alternate. Testie will
-compare the script's output file with each provided alternate; the test
-succeeds if any of the alternates match. The \f(CW\*(C`\-d\*(C'\fR flag behaves as in
-\&\f(CW%file\fR.
-.ie n .IP "%expect [\-adiw] [+LENGTH] \s-1FILENAME\s0..." 8
-.el .IP "\f(CW%expect\fR [\-adiw] [+LENGTH] \s-1FILENAME\s0..." 8
-.IX Item "%expect [-adiw] [+LENGTH] FILENAME..."
-An expected output file for the script. Arguments are as for \f(CW%expectv\fR.
+After running the script, testie compares the \fI\s-1FILENAME\s0\fR generated by
+the script with the provided data. The files are compared
+line-by-line. Testie ignores blank lines, differences in trailing
+whitespace, and lines in the script output that match \fB\f(CB%ignore\fB\fR
+patterns (see below). The \fB\-w\fR flag causes testie to ignore
+differences in amount of whitespace within each line.
 .Sp
-Testie will run the script, then compare the file generated by script
-with the provided data. The files are compared line-by-line. Testie
-ignores blank lines and trailing whitespace on each line. It also
-ignores lines in the script output that match \f(CW%ignore\fR patterns (see below).
-\&\f(CW%expect\fR lines can contain Perl regular expressions, enclosed by two
-sets of braces; so the \f(CW%expect\fR line
+\&\fB\f(CB%expect\fB\fR lines can contain Perl regular expressions, enclosed by two
+sets of braces. The \fB\f(CB%expect\fB\fR line
 .Sp
 .Vb 1
 \&    foo{{(bar)?}}
 .Ve
 .Sp
-matches either 'foo' or 'foobar'.
+matches either \f(CW\*(C`foo\*(C'\fR or \f(CW\*(C`foobar\*(C'\fR. The \fB\-i\fR flag makes all such
+regular expressions case-insensitive. (Text outside of regular
+expressions must match case.)
 .Sp
-Document an \f(CW%expect\fR line with \*(L"{{?comment}}\*(R" blocks.  For example:
+Document an \fB\f(CB%expect\fB\fR line with \f(CW\*(C`{{?comment}}\*(C'\fR blocks. For example:
 .Sp
 .Vb 1
 \&    foo                {{? the sort was in the right order}}
 .Ve
 .Sp
-Testie ignores whitespace before and after the \*(L"{{?comment}}\*(R" block, and if
+Testie ignores whitespace before and after the \f(CW\*(C`{{?comment}}\*(C'\fR block, and if
 the actual output differs from this expected line, it prints the comment in
 addition to the line differences.
 .Sp
-The \f(CW\*(C`\-a\*(C'\fR and \f(CW\*(C`\-d\*(C'\fR flags may also be used for \f(CW%expect\fR sections. Also, the
-\&\f(CW\*(C`\-i\*(C'\fR flag makes any regular expressions case-insensitive (text outside of
-regular expressions must match case), and the \f(CW\*(C`\-w\*(C'\fR flag ignores any
-differences in amount of whitespace within a line.
-.ie n .IP "%expectx [\-adiw] [+LENGTH] \s-1FILENAME\s0..." 8
-.el .IP "\f(CW%expectx\fR [\-adiw] [+LENGTH] \s-1FILENAME\s0..." 8
+The \fB\-a\fR flag marks this expected output as an alternate. Testie will
+compare the script's output file with each provided alternate; the
+test succeeds if any of the alternates match. The \fB\-d\fR flag behaves
+as in \fB\f(CB%file\fB\fR.
+.ie n .IP "\fB\fB%expectv\fB [\-ade] [+\f(BI\s-1LENGTH\s0\fB] \f(BI\s-1FILENAME\s0\fB...\fR" 8
+.el .IP "\fB\f(CB%expectv\fB [\-ade] [+\f(BI\s-1LENGTH\s0\fB] \f(BI\s-1FILENAME\s0\fB...\fR" 8
+.IX Item "%expectv [-ade] [+LENGTH] FILENAME..."
+Define a literal expected output file. This behaves like \fB\f(CB%expect\fB\fR,
+except that the script's output file must match the provided data
+\&\fIexactly\fR: \fB\f(CB%expectv\fB\fR never ignores whitespace differences, does not
+treat \f(CW\*(C`{{}}\*(C'\fR blocks as regular expressions, and does not parse
+\&\fB\f(CB%ignore\fB\fR patterns.
+.ie n .IP "\fB\fB%expectx\fB [\-adiw] [+\f(BI\s-1LENGTH\s0\fB] \f(BI\s-1FILENAME\s0\fB...\fR" 8
+.el .IP "\fB\f(CB%expectx\fB [\-adiw] [+\f(BI\s-1LENGTH\s0\fB] \f(BI\s-1FILENAME\s0\fB...\fR" 8
 .IX Item "%expectx [-adiw] [+LENGTH] FILENAME..."
-\&\f(CW%expectx\fR is just like \f(CW%expect\fR, except that every line is treated as a
-regular expression.  The input is parsed for \*(L"{{?comment}}\*(R" blocks, but
-other brace pairs are treated according to the normal regular expression
-rules.
-.ie n .IP "%stdin [+LENGTH]" 8
-.el .IP "\f(CW%stdin\fR [+LENGTH]" 8
-.IX Item "%stdin [+LENGTH]"
-Same as '%file stdin [\s-1ARGS\s0]'.
-.ie n .IP "%stdout [\-adiw] [+LENGTH]" 8
-.el .IP "\f(CW%stdout\fR [\-adiw] [+LENGTH]" 8
-.IX Item "%stdout [-adiw] [+LENGTH]"
-Same as '%expect stdout'.
-.ie n .IP "%stderr [\-adiw] [+LENGTH]" 8
-.el .IP "\f(CW%stderr\fR [\-adiw] [+LENGTH]" 8
-.IX Item "%stderr [-adiw] [+LENGTH]"
-Same as '%expect stderr'.
-.ie n .IP "%ignorex [\-di] [+LENGTH] [\s-1FILENAME\s0]" 8
-.el .IP "\f(CW%ignorex\fR [\-di] [+LENGTH] [\s-1FILENAME\s0]" 8
+Define a regular-expression expected output file. This behaves like
+\&\fB\f(CB%expect\fB\fR, except that every line is treated as a regular expression.
+\&\f(CW\*(C`{{?comment}}\*(C'\fR blocks are ignored, but other brace pairs are treated
+according to the normal regular expression rules.
+.ie n .IP "\fB\fB%stdin\fB [\-de] [+\f(BI\s-1LENGTH\s0\fB]\fR" 8
+.el .IP "\fB\f(CB%stdin\fB [\-de] [+\f(BI\s-1LENGTH\s0\fB]\fR" 8
+.IX Item "%stdin [-de] [+LENGTH]"
+Same as \fB\f(CB%file\fB stdin\fR.
+.ie n .IP "\fB\fB%stdout\fB [\-adeiw] [+\f(BI\s-1LENGTH\s0\fB]\fR" 8
+.el .IP "\fB\f(CB%stdout\fB [\-adeiw] [+\f(BI\s-1LENGTH\s0\fB]\fR" 8
+.IX Item "%stdout [-adeiw] [+LENGTH]"
+Same as \fB\f(CB%expect\fB stdout\fR.
+.ie n .IP "\fB\fB%stderr\fB [\-adeiw] [+\f(BI\s-1LENGTH\s0\fB]\fR" 8
+.el .IP "\fB\f(CB%stderr\fB [\-adeiw] [+\f(BI\s-1LENGTH\s0\fB]\fR" 8
+.IX Item "%stderr [-adeiw] [+LENGTH]"
+Same as \fB\f(CB%expect\fB stderr\fR.
+.ie n .IP "\fB\fB%ignorex\fB [\-di] [+\f(BI\s-1LENGTH\s0\fB] [\f(BI\s-1FILENAME\s0\fB]\fR" 8
+.el .IP "\fB\f(CB%ignorex\fB [\-di] [+\f(BI\s-1LENGTH\s0\fB] [\f(BI\s-1FILENAME\s0\fB]\fR" 8
 .IX Item "%ignorex [-di] [+LENGTH] [FILENAME]"
-Each line in the \f(CW%ignorex\fR section is a Perl regular expression.  Lines in
-the supplied \s-1FILENAME\s0 that match any of those regular expressions will not
-be considered when comparing files with \f(CW%expect\fR data.  The regular
-expression must match the whole line.  \s-1FILENAME\s0 may be 'all', in which case
-the regular expressions will apply to all \f(CW%expect\fR files.  \*(L"{{?comment}}\*(R"
+Each line in the \fB\f(CB%ignorex\fB\fR section is a Perl regular expression. Lines in
+the supplied \fI\s-1FILENAME\s0\fR that match any of those regular expressions will not
+be considered when comparing files with \fB\f(CB%expect\fB\fR data. The regular
+expression must match the whole line. \fI\s-1FILENAME\s0\fR may be \fBall\fR, in which case
+the regular expressions will apply to all \fB\f(CB%expect\fB\fR files. \f(CW\*(C`{{?comment}}\*(C'\fR
 blocks are ignored.
-.ie n .IP "%ignore, %ignorev" 8
-.el .IP "\f(CW%ignore\fR, \f(CW%ignorev\fR" 8
-.IX Item "%ignore, %ignorev"
-Like '%ignorex', but '%ignore' parses regular expressions only inside
-double braces (\*(L"{{ }}\*(R"), and '%ignorev' lines must match exactly.
-.ie n .IP "%include \s-1FILENAME\s0" 8
-.el .IP "\f(CW%include\fR \s-1FILENAME\s0" 8
+.ie n .IP "\fB\fB%ignore\fB\fR, \fB\fB%ignorev\fB [\-adeiw] [+\f(BI\s-1LENGTH\s0\fB] [\f(BI\s-1FILENAME\s0\fB]\fR" 8
+.el .IP "\fB\f(CB%ignore\fB\fR, \fB\f(CB%ignorev\fB [\-adeiw] [+\f(BI\s-1LENGTH\s0\fB] [\f(BI\s-1FILENAME\s0\fB]\fR" 8
+.IX Item "%ignore, %ignorev [-adeiw] [+LENGTH] [FILENAME]"
+Like \fB\f(CB%ignorex\fB\fR, but \fB\f(CB%ignore\fB\fR parses regular expressions only inside
+double braces (\f(CW\*(C`{{ }}\*(C'\fR), and \fB\f(CB%ignorev\fB\fR lines must match exactly.
+.ie n .IP "\fB\fB%include\fB \f(BI\s-1FILENAME\s0\fB\fR" 8
+.el .IP "\fB\f(CB%include\fB \f(BI\s-1FILENAME\s0\fB\fR" 8
 .IX Item "%include FILENAME"
 Interpolate the contents of another testie file.
-.ie n .IP "%eot" 8
-.el .IP "\f(CW%eot\fR" 8
+.ie n .IP "\fB\fB%eot\fB\fR" 8
+.el .IP "\fB\f(CB%eot\fB\fR" 8
 .IX Item "%eot"
-Marks the end of the current test.  The rest of the file will be parsed for
+Marks the end of the current test. The rest of the file will be parsed for
 additional tests.
-.ie n .IP "%eof" 8
-.el .IP "\f(CW%eof\fR" 8
+.ie n .IP "\fB\fB%eof\fB\fR" 8
+.el .IP "\fB\f(CB%eof\fB\fR" 8
 .IX Item "%eof"
 The rest of the file is ignored.
 .SH "EXAMPLE"
@@ -360,8 +376,8 @@ file.
 .SH "ENVIRONMENT"
 .IX Header "ENVIRONMENT"
 By default, testie sets the \f(CW\*(C`LC_ALL\*(C'\fR environment variable to \*(L"C\*(R"; without
-this setting commands like 'sort' have unpredictable effects.  To set
-\&\f(CW\*(C`LC_ALL\*(C'\fR to another value, set it in the \f(CW%script\fR section.
+this setting commands like \fBsort\fR have unpredictable effects. To set
+\&\f(CW\*(C`LC_ALL\*(C'\fR to another value, set it in the \fB\f(CB%script\fB\fR section.
 .SH "AUTHOR"
 .IX Header "AUTHOR"
 Eddie Kohler, <kohler@seas.harvard.edu>
