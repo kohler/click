@@ -38,6 +38,10 @@
    of 'pcap_setnonblock', and to 0 if you don't. */
 #undef HAVE_DECL_PCAP_SETNONBLOCK
 
+/* Define to 1 if you have the declaration
+ *    of 'pcap_set_immediate_mode', and to 0 if you don't. */
+#undef HAVE_DECL_PCAP_SET_IMMEDIATE_MODE
+
 /* Define if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
@@ -139,6 +143,9 @@
 
 /* Define if you have the pcap_setnonblock function. */
 #undef HAVE_PCAP_SETNONBLOCK
+
+/* Define if you have the pcap_set_immediate_mode function. */
+#undef HAVE_PCAP_SET_IMMEDIATE_MODE
 
 /* Define if you have -lproper and prop.h, and proper operations should be
    preferred to their non-proper counterparts. */
