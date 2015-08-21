@@ -10416,6 +10416,18 @@ cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_PCAP_SETNONBLOCK $ac_have_decl
 _ACEOF
 
+        ac_fn_cxx_check_decl "$LINENO" "pcap_set_immediate_mode" "ac_cv_have_decl_pcap_set_immediate_mode" "#include <pcap.h>
+"
+if test "x$ac_cv_have_decl_pcap_set_immediate_mode" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_PCAP_SET_IMMEDIATE_MODE $ac_have_decl
+_ACEOF
+
         CPPFLAGS="$saveflags"
     fi
 
@@ -10563,7 +10575,7 @@ $as_echo "#define HAVE_PCAP 1" >>confdefs.h
 
         savelibs="$LIBS"
         LIBS="$savelibs $PCAP_LIBS"
-        for ac_func in pcap_inject pcap_sendpacket pcap_setdirection pcap_setnonblock
+        for ac_func in pcap_inject pcap_sendpacket pcap_setdirection pcap_setnonblock pcap_set_immediate_mode
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"

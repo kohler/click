@@ -275,6 +275,11 @@ FromDevice::open_pcap(String ifname, int snaplen, bool promisc,
     (void) pcap_set_tstamp_precision(p, PCAP_TSTAMP_PRECISION_NANO);
 # endif
 
+# if HAVE_PCAP_SET_IMMEDIATE_MODE
+    if (pcap_set_immediate_mode(p, 1))
+        errh->warning("%s: error while setting immediate mode", ifname.c_str());
+# endif
+
     // activate pcap
     int r = pcap_activate(p);
     if (r < 0) {
