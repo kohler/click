@@ -10416,18 +10416,6 @@ cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_PCAP_SETNONBLOCK $ac_have_decl
 _ACEOF
 
-        ac_fn_cxx_check_decl "$LINENO" "pcap_set_immediate_mode" "ac_cv_have_decl_pcap_set_immediate_mode" "#include <pcap.h>
-"
-if test "x$ac_cv_have_decl_pcap_set_immediate_mode" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_PCAP_SET_IMMEDIATE_MODE $ac_have_decl
-_ACEOF
-
         CPPFLAGS="$saveflags"
     fi
 

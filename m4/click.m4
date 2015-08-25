@@ -405,7 +405,7 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
 
         savelibs="$LIBS"
         LIBS="$savelibs $PCAP_LIBS"
-        AC_CHECK_FUNCS([pcap_inject pcap_sendpacket pcap_setdirection pcap_setnonblock])
+        AC_CHECK_FUNCS([pcap_inject pcap_sendpacket pcap_setdirection pcap_setnonblock pcap_set_immediate_mode])
         LIBS="$savelibs"
     fi
 ])
