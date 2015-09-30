@@ -66,7 +66,6 @@ class AverageCounter : public Element { public:
     atomic_uint32_t _byte_count;
     atomic_uint32_t _first;
     atomic_uint32_t _last;
-    atomic_uint32_t _first_count;
     uint32_t _ignore;
 
 };

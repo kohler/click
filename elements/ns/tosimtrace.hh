@@ -50,7 +50,6 @@ private:
   SimPacketAnalyzer *_packetAnalyzer;
   String	_encap;
   int		_offset;
-  bool		_checkPaint;
 
 };
 
