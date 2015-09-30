@@ -37,7 +37,7 @@
 CLICK_DECLS
 
 ToSimTrace::ToSimTrace()
-                : _packetAnalyzer(0), _offset(0), _checkPaint(false)
+                : _packetAnalyzer(0), _offset(0)
 {
         additional_info_ = "";
 }

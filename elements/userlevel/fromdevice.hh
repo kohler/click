@@ -220,9 +220,6 @@ class FromDevice : public Element { public:
 #if FROMDEVICE_ALLOW_NETMAP || FROMDEVICE_ALLOW_PCAP
     Task _task;
 #endif
-#if FROMDEVICE_ALLOW_LINUX
-    unsigned char *_linux_packetbuf;
-#endif
 #if FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_NETMAP
     void emit_packet(WritablePacket *p, int extra_len, const Timestamp &ts);
 #endif
