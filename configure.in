@@ -135,6 +135,45 @@ if echo "$enable_select" | grep kqueue >/dev/null 2>&1 && test "$enable_kqueue" 
     AC_DEFINE([HAVE_ALLOW_KQUEUE], [1], [Define if kqueue() may be used to wait for file descriptor events.])
 fi
 
+AC_ARG_ENABLE([dpdk],
+    [AS_HELP_STRING([  --enable-dpdk], [use Intel DPDK])],
+    [:], [enable_dpdk=no])
+
+if test "x$enable_dpdk" = xyes; then
+    if test "x$enable_user_multithread" != xyes; then
+        AC_MSG_ERROR([
+=========================================
+
+--enable-dpdk requires --enable-user-multithread which was not provided.
+
+=========================================])
+    fi
+    if test ! -f "$RTE_SDK/$RTE_TARGET/include/rte_eal.h"; then
+        AC_MSG_ERROR([
+=========================================
+
+Cannot find \$RTE_SDK/\$RTE_TARGET/include/rte_eal.h for Intel DPDK.
+Define \$RTE_SDK and \$RTE_TARGET as per Intel DPDK documentation.
+
+=========================================])
+    fi
+    if test ! -f "$RTE_SDK/$RTE_TARGET/lib/librte_eal.a"; then
+        AC_MSG_ERROR([
+=========================================
+
+Cannot find \$RTE_SDK/\$RTE_TARGET/lib/librte_eal.a for Intel DPDK.
+Define \$RTE_SDK and \$RTE_TARGET as per Intel DPDK documentation.
+
+=========================================])
+    fi
+    rte_ver_major=`grep "#define RTE_VER_MAJOR" "$RTE_SDK/$RTE_TARGET/include/rte_version.h" | head -n 1 | awk '{print $3}'`
+    rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_SDK/$RTE_TARGET/include/rte_version.h" | head -n 1 | awk '{print $3}'`
+    AC_SUBST(RTE_VER_MAJOR, $rte_ver_major)
+    AC_SUBST(RTE_VER_MINOR, $rte_ver_minor)
+    AC_DEFINE([HAVE_DPDK])
+    AC_SUBST(USE_DPDK, yes)
+fi
+
 
 dnl linuxmodule driver and features
 
@@ -1955,6 +1994,11 @@ esac
 dnl add 'analysis' if analysis elements are available
 if test "x$enable_analysis" = xyes; then
     provisions="$provisions analysis"
+fi
+
+dnl add 'dpdk' if compiled with --enable-dpdk
+if test "x$enable_dpdk" = xyes; then
+    provisions="$provisions dpdk"
 fi
 
 dnl add 'experimental' if --enable-experimental was supplied

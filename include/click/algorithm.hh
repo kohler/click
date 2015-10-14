@@ -90,5 +90,8 @@ struct less {
     }
 };
 
+#define click_min(a, b) ((a) < (b) ? (a) : (b))
+#define click_max(a, b) ((a) > (b) ? (a) : (b))
+
 CLICK_ENDDECLS
 #endif

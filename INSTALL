@@ -328,6 +328,42 @@ have a look at the following Xen toolstack:
 	http://github.com/cnplab/cosmos
 
 
+DPDK
+----
+Support for using Intel DPDK for high speed userspace I/O is enabled using
+
+    ./configure --enable-dpdk --enable-user-multithread --disable-linuxmodule
+
+In order to configure and compile properly, the RTE_SDK and RTE_TARGET
+environment variable must be set, e.g.
+
+    export RTE_SDK=/path/to/dpdk-2.1.0/
+    export RTE_TARGET=x86_64-native-linuxapp-gcc
+
+Before running, DPDK must be set up properly, including support for huge pages
+and loading the DPDK module, e.g.
+
+    echo 1024 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
+    mkdir -p /mnt/huge
+    mount -t hugetlbfs nodev /mnt/huge
+    /sbin/insmod "$RTE_SDK/$RTE_TARGET/kmod/igb_uio.ko
+
+Refer to the DPDK documentation for more details.
+
+DPDK EAL arguments must be used before Click's own arguments. At least the
+following two arguments must be provided:
+
+    -c COREMASK : hexadecimal bitmask of cores to run on
+    -n NUM      : number of memory channels
+
+Note that Click's `-j` (or `--threads`) argument is not used in DPDK mode. The
+number of threads is set indirectly through the `-c` argument.
+
+A sample command to run a click configuration on 4 cores on a computer with
+4 memory channels could be:
+
+    click -c 0xf -n 4 configfile
+
 CLICKY GUI
 ----------
 
