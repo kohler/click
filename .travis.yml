@@ -6,3 +6,10 @@ script: ./configure --disable-linuxmodule --enable-ip6 --enable-json && make && 
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y tcpdump libpcap-dev time
+#addons:
+#  apt:
+#    packages:
+#    - tcpdump
+#    - libpcap-dev
+#    - time
+#sudo: false
