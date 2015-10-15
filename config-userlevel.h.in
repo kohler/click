@@ -214,6 +214,9 @@
 /* Define if a Click user-level driver might run multiple threads. */
 #undef HAVE_USER_MULTITHREAD
 
+/* Define if a Click user-level driver uses Intel DPDK. */
+#undef HAVE_DPDK
+
 /* Define if Click should use Valgrind client requests. */
 #undef HAVE_VALGRIND
 
