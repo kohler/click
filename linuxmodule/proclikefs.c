@@ -254,14 +254,14 @@ proclikefs_kill_super(struct super_block *sb)
 	struct dentry *active = dentry_tree;
 	/* Process this dentry, move to next */
 	active->d_op = &proclikefs_null_dentry_operations;
-	dentry_tree = (struct dentry *)active->d_fsdata;
+	dentry_tree = (struct dentry*) active->d_fsdata;
 	/* Prepend children to dentry_tree */
 	next = active->d_subdirs.next;
 	while (next != &active->d_subdirs) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
-	    struct dentry *child = list_entry(next, struct dentry, d_u.d_child);
+#if HAVE_LINUX_DENTRY_D_CHILD
+            struct dentry* child = list_entry(next, struct dentry, d_child);
 #else
-	    struct dentry *child = list_entry(next, struct dentry, d_child);
+	    struct dentry* child = list_entry(next, struct dentry, d_u.d_child);
 #endif
 	    next = next->next;
 	    d_drop(child);

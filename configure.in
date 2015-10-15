@@ -1812,6 +1812,17 @@ CFLAGS="$save_cflags"
         AC_DEFINE([HAVE_LINUX_D_MAKE_ROOT], [1], [Define if you have the d_make_root function.])
     fi
 
+    AC_CACHE_CHECK([whether struct dentry has a d_child member], [ac_cv_linuxmodule_dentry_d_child],
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/fs.h>
+#include <linux/dcache.h>]],
+[[extern struct dentry* de; de->d_child.next = 0;]])],
+        [ac_cv_linuxmodule_dentry_d_child=yes], [ac_cv_linuxmodule_dentry_d_child=no])])
+    if test $ac_cv_linuxmodule_dentry_d_child = yes; then
+        AC_DEFINE([HAVE_LINUX_DENTRY_D_CHILD], [1], [Define if 'struct dentry' has a 'd_child' member.])
+    fi
+
     fi dnl ac_cv_cxx_aware_system
 
     CC="$save_cc"

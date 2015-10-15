@@ -55,6 +55,9 @@
 /* Define if you have the d_make_root function. */
 #undef HAVE_LINUX_D_MAKE_ROOT
 
+/* Define if 'struct dentry' has a 'd_child' member. */
+#undef HAVE_LINUX_DENTRY_D_CHILD
+
 /* Define if your Linux kernel has dev_ioctl. */
 #undef HAVE_LINUX_DEV_IOCTL
 
