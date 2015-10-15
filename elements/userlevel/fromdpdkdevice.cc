@@ -30,45 +30,45 @@
 
 CLICK_DECLS
 
-FromDpdkDevice::FromDpdkDevice() :
+FromDPDKDevice::FromDPDKDevice() :
     _port_id(0), _queue_id(0), _promisc(true), _burst_size(32), _count(0),
     _task(this)
 {
 }
 
-FromDpdkDevice::~FromDpdkDevice()
+FromDPDKDevice::~FromDPDKDevice()
 {
 }
 
-int FromDpdkDevice::configure(Vector<String> &conf, ErrorHandler *errh)
+int FromDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int n_desc = -1;
 
     if (Args(conf, this, errh)
-        .read_mp("PORT_ID", _port_id)
-        .read_p("QUEUE_ID", _queue_id)
-        .read_p("PROMISC", _promisc)
-        .read_p("BURST", _burst_size)
-        .read_p("NDESC", n_desc)
+        .read_mp("PORT", _port_id)
+        .read_p("QUEUE", _queue_id)
+        .read("PROMISC", _promisc)
+        .read("BURST", _burst_size)
+        .read("NDESC", n_desc)
         .complete() < 0)
         return -1;
 
-    return DpdkDevice::add_rx_device(
+    return DPDKDevice::add_rx_device(
         _port_id, _queue_id, _promisc, (n_desc > 0) ? n_desc : 256, errh);
 }
 
-int FromDpdkDevice::initialize(ErrorHandler *errh)
+int FromDPDKDevice::initialize(ErrorHandler *errh)
 {
     ScheduleInfo::initialize_task(this, &_task, true, errh);
 
-    return DpdkDevice::initialize(errh);
+    return DPDKDevice::initialize(errh);
 }
 
-void FromDpdkDevice::cleanup(CleanupStage)
+void FromDPDKDevice::cleanup(CleanupStage)
 {
 }
 
-bool FromDpdkDevice::run_task(Task * t)
+bool FromDPDKDevice::run_task(Task * t)
 {
     struct rte_mbuf *pkts[_burst_size];
 
@@ -77,7 +77,7 @@ bool FromDpdkDevice::run_task(Task * t)
         rte_prefetch0(rte_pktmbuf_mtod(pkts[i], void *));
         WritablePacket *p =
             Packet::make(rte_pktmbuf_mtod(pkts[i], unsigned char *),
-                         rte_pktmbuf_data_len(pkts[i]), DpdkDevice::free_pkt,
+                         rte_pktmbuf_data_len(pkts[i]), DPDKDevice::free_pkt,
                          pkts[i]);
         p->set_packet_type_anno(Packet::HOST);
 
@@ -92,21 +92,21 @@ bool FromDpdkDevice::run_task(Task * t)
     return n;
 }
 
-String FromDpdkDevice::count_handler(Element *e, void *)
+String FromDPDKDevice::count_handler(Element *e, void *)
 {
-    FromDpdkDevice *fnd = static_cast<FromDpdkDevice *>(e);
+    FromDPDKDevice *fnd = static_cast<FromDPDKDevice *>(e);
     return String(fnd->_count);
 }
 
-int FromDpdkDevice::reset_count_handler(const String &, Element *e, void *,
+int FromDPDKDevice::reset_count_handler(const String &, Element *e, void *,
                                         ErrorHandler *)
 {
-    FromDpdkDevice *fnd = static_cast<FromDpdkDevice *>(e);
+    FromDPDKDevice *fnd = static_cast<FromDPDKDevice *>(e);
     fnd->_count = 0;
     return 0;
 }
 
-void FromDpdkDevice::add_handlers()
+void FromDPDKDevice::add_handlers()
 {
 	add_read_handler("count", count_handler, 0);
 	add_write_handler("reset_count", reset_count_handler, 0,
@@ -115,5 +115,5 @@ void FromDpdkDevice::add_handlers()
 
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel dpdk)
-EXPORT_ELEMENT(FromDpdkDevice)
-ELEMENT_MT_SAFE(FromDpdkDevice)
+EXPORT_ELEMENT(FromDPDKDevice)
+ELEMENT_MT_SAFE(FromDPDKDevice)

@@ -28,28 +28,28 @@
 
 CLICK_DECLS
 
-ToDpdkDevice::ToDpdkDevice() :
+ToDPDKDevice::ToDPDKDevice() :
     _iqueues(), _port_id(0), _queue_id(0), _blocking(false),
     _iqueue_size(1024), _burst_size(32), _timeout(0), _n_sent(0),
     _n_dropped(0), _congestion_warning_printed(false)
 {
 }
 
-ToDpdkDevice::~ToDpdkDevice()
+ToDPDKDevice::~ToDPDKDevice()
 {
 }
 
-int ToDpdkDevice::configure(Vector<String> &conf, ErrorHandler *errh)
+int ToDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int n_desc;
 
     if (Args(conf, this, errh)
         .read_mp("PORT", _port_id)
         .read_p("QUEUE", _queue_id)
-        .read_p("BLOCKING", _blocking)
-        .read_p("IQUEUE", _iqueue_size)
-        .read_p("BURST", _burst_size)
-        .read_p("TIMEOUT", _timeout)
+        .read("IQUEUE", _iqueue_size)
+        .read("BLOCKING", _blocking)
+        .read("BURST", _burst_size)
+        .read("TIMEOUT", _timeout)
         .read("NDESC",n_desc)
         .complete() < 0)
         return -1;
@@ -61,11 +61,11 @@ int ToDpdkDevice::configure(Vector<String> &conf, ErrorHandler *errh)
             "match BURST, that is %d", name().c_str(), _iqueue_size);
     }
 
-    return DpdkDevice::add_tx_device(
+    return DPDKDevice::add_tx_device(
         _port_id, _queue_id, (n_desc > 0) ? n_desc : 1024, errh);
 }
 
-int ToDpdkDevice::initialize(ErrorHandler *errh)
+int ToDPDKDevice::initialize(ErrorHandler *errh)
 {
     _iqueues.resize(click_max_cpu_ids());
 
@@ -77,37 +77,37 @@ int ToDpdkDevice::initialize(ErrorHandler *errh)
         }
     }
 
-    return DpdkDevice::initialize(errh);
+    return DPDKDevice::initialize(errh);
 }
 
-void ToDpdkDevice::cleanup(CleanupStage)
+void ToDPDKDevice::cleanup(CleanupStage)
 {
     for (int i = 0; i < _iqueues.size(); i++)
         delete[] _iqueues[i].pkts;
 }
 
-String ToDpdkDevice::n_sent_handler(Element *e, void *)
+String ToDPDKDevice::n_sent_handler(Element *e, void *)
 {
-    ToDpdkDevice *tdd = static_cast<ToDpdkDevice *>(e);
+    ToDPDKDevice *tdd = static_cast<ToDPDKDevice *>(e);
     return String(tdd->_n_sent);
 }
 
-String ToDpdkDevice::n_dropped_handler(Element *e, void *)
+String ToDPDKDevice::n_dropped_handler(Element *e, void *)
 {
-    ToDpdkDevice *tdd = static_cast<ToDpdkDevice *>(e);
+    ToDPDKDevice *tdd = static_cast<ToDPDKDevice *>(e);
     return String(tdd->_n_dropped);
 }
 
-int ToDpdkDevice::reset_counts_handler(const String &, Element *e, void *,
+int ToDPDKDevice::reset_counts_handler(const String &, Element *e, void *,
                                        ErrorHandler *)
 {
-    ToDpdkDevice *tdd = static_cast<ToDpdkDevice *>(e);
+    ToDPDKDevice *tdd = static_cast<ToDPDKDevice *>(e);
     tdd->_n_sent = 0;
     tdd->_n_dropped = 0;
     return 0;
 }
 
-void ToDpdkDevice::add_handlers()
+void ToDPDKDevice::add_handlers()
 {
     add_read_handler("n_sent", n_sent_handler, 0);
     add_read_handler("n_dropped", n_dropped_handler, 0);
@@ -122,11 +122,11 @@ void ToDpdkDevice::add_handlers()
 inline struct rte_mbuf* get_mbuf(Packet* p, bool create=true) {
     struct rte_mbuf* mbuf = 0;
 
-    if (likely(DpdkDevice::is_dpdk_packet(p))) {
+    if (likely(DPDKDevice::is_dpdk_packet(p))) {
         mbuf = (struct rte_mbuf *) p->destructor_argument();
-        p->set_buffer_destructor(DpdkDevice::fake_free_pkt);
+        p->set_buffer_destructor(DPDKDevice::fake_free_pkt);
     } else if (create) {
-        mbuf = rte_pktmbuf_alloc(DpdkDevice::get_mpool(rte_socket_id()));
+        mbuf = rte_pktmbuf_alloc(DPDKDevice::get_mpool(rte_socket_id()));
         memcpy((void*) rte_pktmbuf_mtod(mbuf, unsigned char *), p->data(),
                p->length());
         rte_pktmbuf_pkt_len(mbuf) = p->length();
@@ -136,14 +136,14 @@ inline struct rte_mbuf* get_mbuf(Packet* p, bool create=true) {
     return mbuf;
 }
 
-void ToDpdkDevice::run_timer(Timer *)
+void ToDPDKDevice::run_timer(Timer *)
 {
     flush_internal_queue(_iqueues[click_current_cpu_id()]);
 }
 
 /* Flush as much as possible packets from a given internal queue to the DPDK
  * device. */
-void ToDpdkDevice::flush_internal_queue(InternalQueue &iqueue) {
+void ToDPDKDevice::flush_internal_queue(InternalQueue &iqueue) {
     unsigned sent = 0;
     unsigned r;
     /* sub_burst is the number of packets DPDK should send in one call if
@@ -183,7 +183,7 @@ void ToDpdkDevice::flush_internal_queue(InternalQueue &iqueue) {
         iqueue.index = 0;
 }
 
-void ToDpdkDevice::push(int, Packet *p)
+void ToDPDKDevice::push(int, Packet *p)
 {
     // Get the thread-local internal queue
     InternalQueue &iqueue = _iqueues[click_current_cpu_id()];
@@ -230,5 +230,5 @@ void ToDpdkDevice::push(int, Packet *p)
 
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel dpdk)
-EXPORT_ELEMENT(ToDpdkDevice)
-ELEMENT_MT_SAFE(ToDpdkDevice)
+EXPORT_ELEMENT(ToDPDKDevice)
+ELEMENT_MT_SAFE(ToDPDKDevice)

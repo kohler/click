@@ -9,11 +9,11 @@
 CLICK_DECLS
 
 /*
-=title FromDpdkDevice
+=title FromDPDKDevice
 
 =c
 
-FromDpdkDevice(PORT [, QUEUE, PROMISC, BURST, NDESC])
+FromDPDKDevice(PORT [, QUEUE [, I<keywords> PROMISC, BURST, NDESC]])
 
 =s netdevices
 
@@ -38,11 +38,11 @@ Integer.  Port identifier of the device.
 =item QUEUE
 
 Integer.  Index of the queue to use. If omitted or negative, auto-increment
-between FromDpdkDevice attached to the same port will be used.
+between FromDPDKDevice attached to the same port will be used.
 
 =item PROMISC
 
-Boolean.  FromDpdkDevice puts the device in promiscuous mode if PROMISC is
+Boolean.  FromDPDKDevice puts the device in promiscuous mode if PROMISC is
 true. The default is false.
 
 =item BURST
@@ -61,7 +61,7 @@ support.
 
 =e
 
-  FromDpdkDevice(3, QUEUE 1) -> ...
+  FromDPDKDevice(3, QUEUE 1) -> ...
 
 =h count read-only
 
@@ -71,15 +71,15 @@ Returns the number of packets read by the device.
 
 Resets "count" to zero.
 
-=a DpdkInfo, ToDpdkDevice */
+=a DPDKInfo, ToDPDKDevice */
 
-class FromDpdkDevice : public Element {
+class FromDPDKDevice : public Element {
 public:
 
-    FromDpdkDevice() CLICK_COLD;
-    ~FromDpdkDevice() CLICK_COLD;
+    FromDPDKDevice() CLICK_COLD;
+    ~FromDPDKDevice() CLICK_COLD;
 
-    const char *class_name() const { return "FromDpdkDevice"; }
+    const char *class_name() const { return "FromDPDKDevice"; }
     const char *port_count() const { return PORTS_0_1; }
     const char *processing() const { return PUSH; }
     int configure_phase() const {

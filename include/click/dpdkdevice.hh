@@ -7,7 +7,7 @@
 
 CLICK_DECLS
 
-class DpdkDevice {
+class DPDKDevice {
 public:
 
     static struct rte_mempool *get_mpool(unsigned int);
@@ -22,7 +22,7 @@ public:
     static int initialize(ErrorHandler *errh);
 
     inline static bool is_dpdk_packet(Packet* p) {
-            return p->buffer_destructor() == DpdkDevice::free_pkt;
+            return p->buffer_destructor() == DPDKDevice::free_pkt;
     }
 
     static void free_pkt(unsigned char *, size_t, void *pktmbuf);
@@ -49,13 +49,13 @@ private:
         inline DevInfo() :
             n_rx_queues(0), n_tx_queues(0), promisc(false), n_rx_descs(0),
             n_tx_descs(0) {}
-        inline DevInfo(DpdkDevice::Dir dir, unsigned queue_id, bool promisc,
+        inline DevInfo(DPDKDevice::Dir dir, unsigned queue_id, bool promisc,
                        unsigned n_desc) :
-            n_rx_queues((dir == DpdkDevice::RX) ? queue_id + 1 : 0),
-            n_tx_queues((dir == DpdkDevice::TX) ? queue_id + 1 : 0),
+            n_rx_queues((dir == DPDKDevice::RX) ? queue_id + 1 : 0),
+            n_tx_queues((dir == DPDKDevice::TX) ? queue_id + 1 : 0),
             promisc(promisc),
-            n_rx_descs((dir == DpdkDevice::RX) ? n_desc : 256),
-            n_tx_descs((dir == DpdkDevice::TX) ? n_desc : 1024)
+            n_rx_descs((dir == DPDKDevice::RX) ? n_desc : 256),
+            n_tx_descs((dir == DPDKDevice::TX) ? n_desc : 1024)
             {}
 
         unsigned n_rx_queues;

@@ -101,9 +101,11 @@ CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
 USE_DPDK = @USE_DPDK@
+ifeq ($(USE_DPDK),yes)
+RTE_SDK = @RTE_SDK@
+RTE_TARGET = @RTE_TARGET@
 RTE_VER_MAJOR = @RTE_VER_MAJOR@
 RTE_VER_MINOR = @RTE_VER_MINOR@
-ifeq ($(USE_DPDK),yes)
 include dpdk.mk
 EXTRA_DRIVER_OBJS := dpdkdevice.o $(EXTRA_DRIVER_OBJS)
 endif

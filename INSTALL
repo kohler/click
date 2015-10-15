@@ -330,15 +330,16 @@ have a look at the following Xen toolstack:
 
 DPDK
 ----
-Support for using Intel DPDK for high speed userspace I/O is enabled using
 
-    ./configure --enable-dpdk --enable-user-multithread --disable-linuxmodule
+Support for using Intel DPDK for high-speed userspace I/O is enabled using
 
-In order to configure and compile properly, the RTE_SDK and RTE_TARGET
-environment variable must be set, e.g.
+    ./configure RTE_SDK=... RTE_TARGET=... \
+        --enable-dpdk --enable-user-multithread --disable-linuxmodule
 
-    export RTE_SDK=/path/to/dpdk-2.1.0/
-    export RTE_TARGET=x86_64-native-linuxapp-gcc
+where RTE_SDK and RTE_TARGET are defined as per the DPDK documentation, e.g.
+
+    RTE_SDK=/path/to/dpdk-2.1.0/
+    RTE_TARGET=x86_64-native-linuxapp-gcc
 
 Before running, DPDK must be set up properly, including support for huge pages
 and loading the DPDK module, e.g.
@@ -363,6 +364,7 @@ A sample command to run a click configuration on 4 cores on a computer with
 4 memory channels could be:
 
     click -c 0xf -n 4 configfile
+
 
 CLICKY GUI
 ----------

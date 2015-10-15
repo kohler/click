@@ -9,11 +9,11 @@
 CLICK_DECLS
 
 /*
-=title ToDpdkDevice
+=title ToDPDKDevice
 
 =c
 
-ToDpdkDevice(PORT [, QUEUE, IQUEUE, BLOCKING, BURST, TIMEOUT, NDESC]])
+ToDPDKDevice(PORT [, QUEUE [, I<keywords> IQUEUE, BLOCKING, etc.]])
 
 =s netdevices
 
@@ -39,7 +39,7 @@ Integer.  Port identifier of the device.
 =item QUEUE
 
 Integer.  Index of the queue to use. If omitted or negative, auto-increment
-between ToDpdkDevice attached to the same port will be used.
+between ToDPDKDevice attached to the same port will be used.
 
 =item IQUEUE
 
@@ -68,7 +68,7 @@ Integer.  Set a timeout to flush the internal queue. It is useful under low
 throughput as it could take a long time before reaching BURST packet in the
 internal queue. The timeout is expressed in milliseconds. Setting the timer to
 0 is not a bad idea as it will schedule after the source element (such as a
-FromDpdkDevice) will have finished its burst, or all incoming packets. This
+FromDPDKDevice) will have finished its burst, or all incoming packets. This
 would therefore ensure that a flush is done right after all packets have been
 processed by the Click pipeline. Setting a negative value disable the timer,
 this is generally acceptable if the thoughput of this element rarely drops
@@ -86,7 +86,7 @@ This element is only available at user level, when compiled with DPDK support.
 
 =e
 
-  ... -> ToDpdkDevice(2, QUEUE 0)
+  ... -> ToDPDKDevice(2, QUEUE 0, BLOCKING true)
 
 =h n_sent read-only
 
@@ -100,15 +100,15 @@ Returns the number of packets dropped by the device.
 
 Resets n_send and n_dropped counts to zero.
 
-=a DpdkInfo, FromDpdkDevice */
+=a DPDKInfo, FromDPDKDevice */
 
-class ToDpdkDevice : public Element {
+class ToDPDKDevice : public Element {
 public:
 
-    ToDpdkDevice() CLICK_COLD;
-    ~ToDpdkDevice() CLICK_COLD;
+    ToDPDKDevice() CLICK_COLD;
+    ~ToDPDKDevice() CLICK_COLD;
 
-    const char *class_name() const { return "ToDpdkDevice"; }
+    const char *class_name() const { return "ToDPDKDevice"; }
     const char *port_count() const { return PORTS_1_0; }
     const char *processing() const { return PUSH; }
     int configure_phase() const {

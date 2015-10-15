@@ -7,11 +7,11 @@
 CLICK_DECLS
 
 /*
-=title DpdkInfo
+=title DPDKInfo
 
 =c
 
-DpdkInfo()
+DPDKInfo([I<keywords> NB_MBUF, MBUF_SIZE, RX_PTHRESH, etc.])
 
 =s netdevices
 
@@ -19,10 +19,10 @@ Set DPDK global parameters.
 
 =d
 
-Set Intel's DPDK global parameters used by FromDpdkDevice and
-ToDpdkDevice elements. See DPDK documentation for details.
+Set Intel's DPDK global parameters used by FromDPDKDevice and
+ToDPDKDevice elements. See DPDK documentation for details.
 
-Arguments:
+Keyword arguments:
 
 =over 8
 
@@ -71,20 +71,20 @@ support.
 
 =e
 
-  DpdkInfo(NB_MBUF 1048576, MBUF_SIZE 4096, MBUF_CACHE_SIZE 512)
+  DPDKInfo(NB_MBUF 1048576, MBUF_SIZE 4096, MBUF_CACHE_SIZE 512)
 
-=a FromDpdkDevice, ToDpdkDevice */
+=a FromDPDKDevice, ToDPDKDevice */
 
-class DpdkInfo : public Element {
+class DPDKInfo : public Element {
 public:
 
-    const char *class_name() const { return "DpdkInfo"; }
+    const char *class_name() const { return "DPDKInfo"; }
 
     int configure_phase() const { return CONFIGURE_PHASE_FIRST; }
 
     int configure(Vector<String> &conf, ErrorHandler *errh);
 
-    static DpdkInfo *instance;
+    static DPDKInfo *instance;
 };
 
 CLICK_ENDDECLS

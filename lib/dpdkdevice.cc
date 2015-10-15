@@ -32,7 +32,7 @@ CLICK_DECLS
 
 /* Wraps rte_eth_dev_socket_id(), which may return -1 for valid ports when NUMA
  * is not well supported. This function will return 0 instead in that case. */
-int DpdkDevice::get_port_numa_node(unsigned port_id)
+int DPDKDevice::get_port_numa_node(unsigned port_id)
 {
     if (port_id >= rte_eth_dev_count())
         return -1;
@@ -40,7 +40,7 @@ int DpdkDevice::get_port_numa_node(unsigned port_id)
     return (numa_node == -1) ? 0 : numa_node;
 }
 
-unsigned int DpdkDevice::get_nb_txdesc(unsigned port_id)
+unsigned int DPDKDevice::get_nb_txdesc(unsigned port_id)
 {
     DevInfo *info = _devs.findp(port_id);
     if (!info)
@@ -49,13 +49,13 @@ unsigned int DpdkDevice::get_nb_txdesc(unsigned port_id)
     return info->n_tx_descs;
 }
 
-bool DpdkDevice::alloc_pktmbufs()
+bool DPDKDevice::alloc_pktmbufs()
 {
     // Count NUMA sockets
     int max_socket = -1;
     for (HashMap<unsigned, DevInfo>::const_iterator it = _devs.begin();
          it != _devs.end(); ++it) {
-        int numa_node = DpdkDevice::get_port_numa_node(it.key());
+        int numa_node = DPDKDevice::get_port_numa_node(it.key());
         if (numa_node > max_socket)
             max_socket = numa_node;
     }
@@ -72,7 +72,7 @@ bool DpdkDevice::alloc_pktmbufs()
     // Create a pktmbuf pool for each active socket
     for (HashMap<unsigned, DevInfo>::const_iterator it = _devs.begin();
          it != _devs.end(); ++it) {
-        int numa_node = DpdkDevice::get_port_numa_node(it.key());
+        int numa_node = DPDKDevice::get_port_numa_node(it.key());
         if (!_pktmbuf_pools[numa_node]) {
             char name[64];
             snprintf(name, 64, "mbuf_pool_%u", numa_node);
@@ -90,11 +90,11 @@ bool DpdkDevice::alloc_pktmbufs()
     return true;
 }
 
-struct rte_mempool *DpdkDevice::get_mpool(unsigned int socket_id) {
+struct rte_mempool *DPDKDevice::get_mpool(unsigned int socket_id) {
     return _pktmbuf_pools[socket_id];
 }
 
-int DpdkDevice::initialize_device(unsigned port_id, const DevInfo &info,
+int DPDKDevice::initialize_device(unsigned port_id, const DevInfo &info,
                                   ErrorHandler *errh)
 {
     struct rte_eth_conf dev_conf;
@@ -133,7 +133,7 @@ int DpdkDevice::initialize_device(unsigned port_id, const DevInfo &info,
     tx_conf.tx_thresh.wthresh = TX_WTHRESH;
     tx_conf.txq_flags |= ETH_TXQ_FLAGS_NOMULTSEGS | ETH_TXQ_FLAGS_NOOFFLOADS;
 
-    int numa_node = DpdkDevice::get_port_numa_node(port_id);
+    int numa_node = DPDKDevice::get_port_numa_node(port_id);
     for (unsigned i = 0; i < info.n_rx_queues; ++i) {
         if (rte_eth_rx_queue_setup(
                 port_id, i, info.n_rx_descs, numa_node, &rx_conf,
@@ -161,7 +161,7 @@ int DpdkDevice::initialize_device(unsigned port_id, const DevInfo &info,
     return 0;
 }
 
-int DpdkDevice::add_device(unsigned port_id, DpdkDevice::Dir dir,
+int DPDKDevice::add_device(unsigned port_id, DPDKDevice::Dir dir,
                            int &queue_id, bool promisc, unsigned n_desc,
                            ErrorHandler *errh)
 {
@@ -199,20 +199,20 @@ int DpdkDevice::add_device(unsigned port_id, DpdkDevice::Dir dir,
     return 0;
 }
 
-int DpdkDevice::add_rx_device(unsigned port_id, int &queue_id, bool promisc,
+int DPDKDevice::add_rx_device(unsigned port_id, int &queue_id, bool promisc,
                               unsigned n_desc, ErrorHandler *errh)
 {
     return add_device(
-        port_id, DpdkDevice::RX, queue_id, promisc, n_desc, errh);
+        port_id, DPDKDevice::RX, queue_id, promisc, n_desc, errh);
 }
 
-int DpdkDevice::add_tx_device(unsigned port_id, int &queue_id, unsigned n_desc,
+int DPDKDevice::add_tx_device(unsigned port_id, int &queue_id, unsigned n_desc,
                               ErrorHandler *errh)
 {
-    return add_device(port_id, DpdkDevice::TX, queue_id, false, n_desc, errh);
+    return add_device(port_id, DPDKDevice::TX, queue_id, false, n_desc, errh);
 }
 
-int DpdkDevice::initialize(ErrorHandler *errh)
+int DPDKDevice::initialize(ErrorHandler *errh)
 {
     if (_is_initialized)
         return 0;
@@ -222,10 +222,6 @@ int DpdkDevice::initialize(ErrorHandler *errh)
     if (rte_eal_pci_probe())
         return errh->error("Cannot probe the PCI bus");
 #endif
-
-    // We should maybe do PCI probing and get some stats when DpdkConfig loads
-    // so that we can check the following at configure time rather than during
-    // initialization
 
     const unsigned n_ports = rte_eth_dev_count();
     if (n_ports == 0)
@@ -250,28 +246,28 @@ int DpdkDevice::initialize(ErrorHandler *errh)
     return 0;
 }
 
-void DpdkDevice::free_pkt(unsigned char *, size_t, void *pktmbuf)
+void DPDKDevice::free_pkt(unsigned char *, size_t, void *pktmbuf)
 {
     rte_pktmbuf_free((struct rte_mbuf *) pktmbuf);
 }
 
-void DpdkDevice::fake_free_pkt(unsigned char *, size_t, void *)
+void DPDKDevice::fake_free_pkt(unsigned char *, size_t, void *)
 {
 }
 
-int DpdkDevice::NB_MBUF = 65536*8;
-int DpdkDevice::MBUF_SIZE =
+int DPDKDevice::NB_MBUF = 65536*8;
+int DPDKDevice::MBUF_SIZE =
     2048 + sizeof (struct rte_mbuf) + RTE_PKTMBUF_HEADROOM;
-int DpdkDevice::MBUF_CACHE_SIZE = 256;
-int DpdkDevice::RX_PTHRESH = 8;
-int DpdkDevice::RX_HTHRESH = 8;
-int DpdkDevice::RX_WTHRESH = 4;
-int DpdkDevice::TX_PTHRESH = 36;
-int DpdkDevice::TX_HTHRESH = 0;
-int DpdkDevice::TX_WTHRESH = 0;
+int DPDKDevice::MBUF_CACHE_SIZE = 256;
+int DPDKDevice::RX_PTHRESH = 8;
+int DPDKDevice::RX_HTHRESH = 8;
+int DPDKDevice::RX_WTHRESH = 4;
+int DPDKDevice::TX_PTHRESH = 36;
+int DPDKDevice::TX_HTHRESH = 0;
+int DPDKDevice::TX_WTHRESH = 0;
 
-bool DpdkDevice::_is_initialized = false;
-HashMap<unsigned, DpdkDevice::DevInfo> DpdkDevice::_devs;
-struct rte_mempool** DpdkDevice::_pktmbuf_pools;
+bool DPDKDevice::_is_initialized = false;
+HashMap<unsigned, DPDKDevice::DevInfo> DPDKDevice::_devs;
+struct rte_mempool** DPDKDevice::_pktmbuf_pools;
 
 CLICK_ENDDECLS

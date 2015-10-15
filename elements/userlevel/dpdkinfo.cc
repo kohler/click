@@ -22,31 +22,31 @@
 
 CLICK_DECLS
 
-int DpdkInfo::configure(Vector<String> &conf, ErrorHandler *errh) {
+int DPDKInfo::configure(Vector<String> &conf, ErrorHandler *errh) {
     if (instance) {
         return errh->error(
-            "There can be only one instance of DpdkInfo!");
+            "There can be only one instance of DPDKInfo!");
     }
     instance = this;
     if (Args(conf, this, errh)
-        .read_p("NB_MBUF", DpdkDevice::NB_MBUF)
-        .read_p("MBUF_SIZE", DpdkDevice::MBUF_SIZE)
-        .read_p("MBUF_CACHE_SIZE", DpdkDevice::MBUF_CACHE_SIZE)
-        .read_p("RX_PTHRESH", DpdkDevice::RX_PTHRESH)
-        .read_p("RX_HTHRESH", DpdkDevice::RX_HTHRESH)
-        .read_p("RX_WTHRESH", DpdkDevice::RX_WTHRESH)
-        .read_p("TX_PTHRESH", DpdkDevice::TX_PTHRESH)
-        .read_p("TX_HTHRESH", DpdkDevice::TX_HTHRESH)
-        .read_p("TX_WTHRESH", DpdkDevice::TX_WTHRESH)
+        .read("NB_MBUF", DPDKDevice::NB_MBUF)
+        .read("MBUF_SIZE", DPDKDevice::MBUF_SIZE)
+        .read("MBUF_CACHE_SIZE", DPDKDevice::MBUF_CACHE_SIZE)
+        .read("RX_PTHRESH", DPDKDevice::RX_PTHRESH)
+        .read("RX_HTHRESH", DPDKDevice::RX_HTHRESH)
+        .read("RX_WTHRESH", DPDKDevice::RX_WTHRESH)
+        .read("TX_PTHRESH", DPDKDevice::TX_PTHRESH)
+        .read("TX_HTHRESH", DPDKDevice::TX_HTHRESH)
+        .read("TX_WTHRESH", DPDKDevice::TX_WTHRESH)
         .complete() < 0)
         return -1;
 
     return 0;
 }
 
-DpdkInfo* DpdkInfo::instance = 0;
+DPDKInfo* DPDKInfo::instance = 0;
 
 CLICK_ENDDECLS
 
 ELEMENT_REQUIRES(dpdk)
-EXPORT_ELEMENT(DpdkInfo)
+EXPORT_ELEMENT(DPDKInfo)
