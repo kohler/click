@@ -7,17 +7,21 @@ connection between two 'netcat' processes that bridges the two devices via
 FTPPortMapper and TCPRewriter.
 
 %require
-[ `whoami` = root ]
+click-buildtool provides linuxmodule
+[ `whoami` = root ] || sudo -n true
 
 %script
+SUDO=; if ! [ `whoami` = root ]; then SUDO="sudo -n"; fi
+test -n "`which click-install`"
+
 usleep () { click -e "DriverManager(wait ${1}us)"; }
-click-install KERNELCONFIG
+$SUDO "`which click-install`" KERNELCONFIG
 (usleep 50000; echo Hopefully this worked.; usleep 40000) | nc -l 3000 >NETCAT2 &
 usleep 5000
 (echo PORT 200,200,200,200,200,200; usleep 20000; echo money; usleep 20000) | nc 1.0.0.2 3000 >NETCAT3
 cat /click/c1/c/count >COUNTERS
 cat /click/c2/c/count >>COUNTERS
-click-uninstall
+$SUDO "`which click-uninstall`"
 
 %file KERNELCONFIG
 fh1 :: FromHost(fake0, 1.0.0.1/24);

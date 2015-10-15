@@ -2,13 +2,17 @@
 Tests Notifier functionality in the kernel.
 
 %require
-[ `whoami` = root ]
+click-buildtool provides linuxmodule
+[ `whoami` = root ] || sudo -n true
 
 %script
+SUDO=; if ! [ `whoami` = root ]; then SUDO="sudo -n"; fi
+test -n "`which click-install`"
 usleep () { click -e "DriverManager(wait ${1}us)"; }
-click-install CONFIG
+$SUDO "`which click-install`" CONFIG
 usleep 200000
 cat /click/c/count > OUT
+$SUDO "`which click-uninstall`"
 
 %file CONFIG
 i :: InfiniteSource(ACTIVE false, LIMIT 5)

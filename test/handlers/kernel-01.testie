@@ -3,12 +3,15 @@
 This test installs a configuration with conflicting handler names.
 
 %require
-[ `whoami` = root ]
+click-buildtool provides linuxmodule
+[ `whoami` = root ] || sudo -n true
 
 %script
-click-install KERNELCONFIG
+test -n "`which click-install`"
+SUDO=; if ! [ `whoami` = root ]; then SUDO="sudo -n"; fi
+$SUDO "`which click-install`" KERNELCONFIG
 ls -aR /click >HANDLERS
-click-uninstall
+$SUDO "`which click-uninstall`"
 
 %file KERNELCONFIG
 config :: Idle;

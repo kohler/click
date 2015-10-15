@@ -2,21 +2,23 @@
 test device up/down
 
 %require
-[ `whoami` = root ]
 click-buildtool provides linuxmodule
+[ `whoami` = root ] || sudo -n true
 ifconfig eth1 >/dev/null 2>&1
 
 %script
+SUDO=; if ! [ `whoami` = root ]; then SUDO="sudo -n"; fi
+
 usleep () { click -e "DriverManager(wait ${1}us)"; }
-ifconfig eth1 down
-click-install KERNELCONFIG
+$SUDO ifconfig eth1 down
+$SUDO click-install KERNELCONFIG
 usleep 5000
-ifconfig eth1 up
+$SUDO ifconfig eth1 up
 usleep 5000
-ifconfig eth1 down
+$SUDO ifconfig eth1 down
 usleep 5000
-click-uninstall
-ifconfig eth1 up
+$SUDO click-uninstall
+$SUDO ifconfig eth1 up
 
 %file KERNELCONFIG
 FromDevice(eth1) -> Idle -> ToDevice(eth1)
