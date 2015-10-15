@@ -158,7 +158,7 @@ void ToDPDKDevice::flush_internal_queue(InternalQueue &iqueue) {
     _lock.acquire();
 
     do {
-        sub_burst = click_min(32, iqueue.nr_pending);
+        sub_burst = iqueue.nr_pending > 32 ? 32 : iqueue.nr_pending;
         if (iqueue.index + sub_burst >= _iqueue_size)
             // The sub_burst wraps around the ring
             sub_burst = _iqueue_size - iqueue.index;

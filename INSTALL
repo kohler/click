@@ -351,19 +351,19 @@ and loading the DPDK module, e.g.
 
 Refer to the DPDK documentation for more details.
 
-DPDK EAL arguments must be used before Click's own arguments. At least the
-following two arguments must be provided:
+Like with any other DPDK application, you have to pass DPDK EAL arguments first,
+append "--", then pass Click arguments. As the DPDK EAL will handle thread
+management instead of Click, Click's `-j` (or `--threads`) argument will be
+disabled when --enable-dpdk is provided, and you must at least give the
+following two EAL arguments, even if running on a single core :
 
     -c COREMASK : hexadecimal bitmask of cores to run on
     -n NUM      : number of memory channels
 
-Note that Click's `-j` (or `--threads`) argument is not used in DPDK mode. The
-number of threads is set indirectly through the `-c` argument.
-
 A sample command to run a click configuration on 4 cores on a computer with
-4 memory channels could be:
+4 memory channels and listen for control connections on TCP port 8080 would be :
 
-    click -c 0xf -n 4 configfile
+    click -c 0xf -n 4 -- -p 8080 configfile
 
 
 CLICKY GUI
