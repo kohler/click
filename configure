@@ -1524,13 +1524,16 @@ Optional Features:
   --disable-threads       do not include thread management elements
   --enable-wifi           include wifi elements and support
   --enable-experimental   enable experimental elements in normal groups
-  --enable-skip-elements=ELTS disable comma-separated elements
+  --enable-skip-elements=ELTS
+                          disable comma-separated elements
   --enable-smaller-code   generate smaller code (sometimes slower)
   --disable-int64         disable 64-bit integer support
   --enable-nanotimestamp  enable nanosecond timestamps
-  --enable-bound-port-transfer  enable port transfer function ptr optimization
-  --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]
-  --disable-dynamic-linking disable dynamic linking
+  --enable-bound-port-transfer
+                          enable port transfer function ptr optimization
+  --enable-tools=WHERE    enable tools (host/build/mixed/no) [[mixed]]
+  --disable-dynamic-linking
+                          disable dynamic linking
   --enable-stats[=LEVEL]  enable statistics collection
   --disable-stride        disable stride scheduler
   --enable-task-heap      use heap for task list
@@ -9773,7 +9776,7 @@ if test "$LINUXMODULE_2_6" = 0; then
 =========================================
 
 Click no longer supports in-kernel compilation on Linux 2.4 kernels.
-Try an older version of Click.
+Update your Linux or try an older version of Click.
 
 =========================================" "$LINENO" 5
 fi
