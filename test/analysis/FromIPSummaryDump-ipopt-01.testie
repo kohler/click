@@ -1,5 +1,7 @@
 %require -q
 click-buildtool provides FromIPSummaryDump
+printf '\xd4\xc3\xb2\xa1\x02\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\xd0\x07\x00\x00\x01\x00\x00\x00' > TESTDUMP
+tcpdump -r TESTDUMP >/dev/null 2>&1
 
 %script
 
