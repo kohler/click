@@ -11044,15 +11044,7 @@ Can't find Linux compilation flags.
 ==============================================" "$LINENO" 5
                     fi
         echo "$lCPPFLAGS $lCFLAGS $lLINUXINCLUDE $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
-        LINUX_CFLAGS="`sed -e 's,-Iinclude ',-I$linux_builddir/include' ,g' \
-            -e 's,-Iinclude2 ',-I$linux_builddir/include2' ,g' \
-            -e 's,-Iarch/',-I$linux_builddir/arch/,g \
-            -e 's,-I\./arch/',-I$linux_builddir/arch/,g \
-            -e 's,-I\./include/',-I$linux_builddir/include/,g \
-            -e 's, include/, '$linux_builddir/include/,g \
-            -e 's, \./include/, '$linux_builddir/include/,g \
-            -e s,-Iinclude/,-I${linux_srcdir}include/,g \
-            -e s,-Wno-pointer-sign,,g \
+        LINUX_CFLAGS="`sed -e s,-Wno-pointer-sign,,g \
             -e s,-fno-unit-at-a-time,,g \
             -e s,-Wstrict-prototypes,,g \
             -e s,-Wdeclaration-after-statement,,g \
@@ -11070,19 +11062,21 @@ $as_echo "$LINUX_CFLAGS" >&6; }
     if test "$LINUXMODULE_FIXINCLUDES" = 1; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: making C++-safe versions of Linux kernel headers (may take a while)" >&5
 $as_echo "$as_me: making C++-safe versions of Linux kernel headers (may take a while)" >&6;}
-        mydir="`pwd`/include/click-linuxmodule"
-        $srcdir/linuxmodule/fixincludes.pl -o "$mydir" $LINUX_CFLAGS >conftest.dat
+        mydir="`pwd`"
+        mysrcdir="$srcdir"
+        if expr $mysrcdir : / >/dev/null; then :; else mysrcdir="$mydir/$srcdir"; fi
+        (cd $linux_builddir; $mysrcdir/linuxmodule/click-linuxtool.pl -o "$mydir/include/click-linuxmodule" $LINUX_CFLAGS) >conftest.dat
         if test $? != 0; then
             as_fn_error $? "
 ==============================================
 
-fixincludes.pl execution failed.
+click-linuxtool.pl execution failed.
 
 ==============================================" "$LINENO" 5
         fi
         LINUX_CFLAGS="`head -n 1 conftest.dat`"
         LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
-        CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s$tabchar$mydir$tabchar$clickbuild_includedir/click-linuxmodule${tabchar}g"`"
+        CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s$tabchar$mydir/include/click-linuxmodule$tabchar$clickbuild_includedir/click-linuxmodule${tabchar}g"`"
     fi
 
 
@@ -11175,11 +11169,11 @@ Your Linux kernel header files cause errors when included by a C++ program,
 so I won't try to compile the linuxmodule driver.
 
 Click modifies the Linux kernel's header files to make them work with
-C++, using the program 'linuxmodule/fixincludes.pl'. It looks like
-your kernel header files have features that 'linuxmodule/fixincludes.pl'
-doesn't know how to fix. You can report this error to us on the Click
-mailing list, or, even better, try to fix the error. See the config.log
-file for more information on the error.
+C++, using the program 'linuxmodule/click-linuxtool.pl'. It looks like
+your kernel header files have features that tool doesn't know how to fix.
+You can report this error to us on the Click mailing list, or, even better,
+try to fix the error. See the config.log file for more information on the
+error.
 
 =========================================" >&5
 $as_echo "$as_me: WARNING:
@@ -11189,11 +11183,11 @@ Your Linux kernel header files cause errors when included by a C++ program,
 so I won't try to compile the linuxmodule driver.
 
 Click modifies the Linux kernel's header files to make them work with
-C++, using the program 'linuxmodule/fixincludes.pl'. It looks like
-your kernel header files have features that 'linuxmodule/fixincludes.pl'
-doesn't know how to fix. You can report this error to us on the Click
-mailing list, or, even better, try to fix the error. See the config.log
-file for more information on the error.
+C++, using the program 'linuxmodule/click-linuxtool.pl'. It looks like
+your kernel header files have features that tool doesn't know how to fix.
+You can report this error to us on the Click mailing list, or, even better,
+try to fix the error. See the config.log file for more information on the
+error.
 
 =========================================" >&2;}
             else
@@ -11203,11 +11197,11 @@ file for more information on the error.
 Your Linux kernel header files cause errors when included by a C++ program.
 
 Click modifies the Linux kernel's header files to make them work with
-C++, using the program 'linuxmodule/fixincludes.pl'. It looks like
-your kernel header files have features that 'linuxmodule/fixincludes.pl'
-doesn't know how to fix. You can report this error to us on the Click
-mailing list, or, even better, try to fix the error. See the config.log
-file for more information on the error.
+C++, using the program 'linuxmodule/click-linuxtool.pl'. It looks like
+your kernel header files have features that tool doesn't know how to fix.
+You can report this error to us on the Click mailing list, or, even better,
+try to fix the error. See the config.log file for more information on the
+error.
 
 =========================================" "$LINENO" 5
     fi

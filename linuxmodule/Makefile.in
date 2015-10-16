@@ -97,16 +97,13 @@ CLICK_ELEM2MAKE = $(CLICK_BUILDTOOL) elem2make --linux
 CLICKCC = @KERNEL_CC@
 CLICKCXX = @KERNEL_CXX@
 
-LINUXCFLAGS = $(shell echo "$(CPPFLAGS) $(CFLAGS) $(LINUXINCLUDE)" \
+LINUXCFLAGS := $(shell echo "$(CPPFLAGS) $(CFLAGS) $(LINUXINCLUDE)" \
 	"$(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) $(CFLAGS_MODULE)" | sed \
 	-e s,-fno-unit-at-a-time,, -e s,-Wstrict-prototypes,, \
 	-e s,-Wdeclaration-after-statement,, \
 	-e s,-Wno-pointer-sign,, -e s,-fno-common,, \
 	-e s,-Werror-implicit-function-declaration,, \
 	-e "s,-std=[-a-z0-9]*,," \
-	-e "s,-Iinclude ,-I$(linux_builddir)/include ",g \
-	-e "s,-Iinclude2 ,-I$(linux_builddir)/include2 ",g \
-	-e s,-Iinclude/,-I$(linux_srcdir)include/,g \
 	@LINUX_FIXINCLUDES_PROGRAM@)
 LINUX_DEBUG_FLAGS = @LINUX_DEBUG_FLAGS@
 CLICKCPPFLAGS = @CPPFLAGS@ -DCLICK_LINUXMODULE

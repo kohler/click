@@ -539,8 +539,8 @@ variableenv.cc
 ./linuxmodule:
 Makefile.in
 clickfs.cc
+click-linuxtool.pl
 config.cc
-fixincludes.pl
 kernelversion.c
 module.cc
 moduleparm.h

@@ -2,8 +2,8 @@
 use bytes;
 
 sub usage () {
-    print STDERR "Usage: fixincludes.pl [-V] -o OUTPUTDIR CFLAGS
-   or: fixincludes.pl installtree [-m MODE] SRC DST\n";
+    print STDERR "Usage: click-linuxtool.pl [-V] -o OUTPUTDIR CFLAGS
+   or: click-linuxtool.pl installtree [-m MODE] SRC DST\n";
     exit 1;
 }
 
@@ -11,7 +11,9 @@ sub mkpath (\%$) {
     my($dirs, $dir) = @_;
     my($superdir) = $dir;
     $superdir =~ s{/+[^/]+/*$}{};
-    &mkpath($dirs, $superdir) if !exists($dirs->{$superdir}) && $superdir ne "";
+    if (!exists($dirs->{$superdir}) && $superdir ne "") {
+        &mkpath($dirs, $superdir);
+    }
     if (!-d $dir && !mkdir($dir)) {
         print STDERR "$dir: $!\n";
         exit 1;
@@ -57,7 +59,7 @@ if (@ARGV > 0 && $ARGV[0] eq "installtree") {
         } elsif (`sh -c "sum < /dev/null" 2>/dev/null | awk '{print \$1}'` =~ /^$null_md5sum/) {
             $MD5SUM = "sum";
         } else {
-            print STDERR "Sorry, 'fixincludes.pl installtree' requires a working 'md5sum' program.\n";
+            print STDERR "Sorry, 'click-linuxtool.pl installtree' requires a working 'md5sum' program.\n";
             exit 1;
         }
     }
@@ -156,7 +158,7 @@ usage if !$outputroot || !@ARGV;
 for (my $i = 0; $i < @outputroot; ++$i) {
     $dir = join("/", @outputroot[0..$i]);
     next if $dir eq "" || -d $dir;
-    mkdir($dir) || die "fixincludes.pl: mkdir $dir: $!";
+    mkdir($dir) || die "click-linuxtool.pl: mkdir $dir: $!";
 }
 
 sub sprotect ($) {
@@ -218,7 +220,7 @@ sub expand_array_initializer ($$$) {
 	$text .= ($s == $sizes[0] ? "#if" : "#elif") . " $size == $s\n"
 	    . "#define $var {{" . join(",", ($val) x $s) . "}}\n";
     }
-    return $text . "#else\n#error \"fixincludes.pl needs updating\"\n#endif\n";
+    return $text . "#else\n#error \"click-linuxtool.pl needs updating\"\n#endif\n";
 }
 
 my($click_cxx_protect) = "#if defined(__cplusplus) && !CLICK_CXX_PROTECTED\n# error \"missing #include <click/cxxprotect.h>\"\n#endif\n";
@@ -234,8 +236,8 @@ sub one_includeroot ($$) {
 	$dd = ($ddx eq "" ? "" : "/$ddx");
 	$ddy = ($ddx eq "" ? "" : "$ddx/");
 
-	opendir(D, "$includeroot$dd") || die "fixincludes.pl: $includeroot$dd: $!";
-	-d "$outputroot$dd" || mkdir("$outputroot$dd") || die "fixincludes.pl: mkdir $outputroot$dd: $!";
+	opendir(D, "$includeroot$dd") || die "click-linuxtool.pl: $includeroot$dd: $!";
+	-d "$outputroot$dd" || mkdir("$outputroot$dd") || die "click-linuxtool.pl: mkdir $outputroot$dd: $!";
 
 	opendir(OD, "$outputroot$dd");
 	my(%previousfiles);
@@ -257,7 +259,7 @@ sub one_includeroot ($$) {
 	    print STDERR "$ddy$d\n" if $verbose;
 
 	    # Now we definitely have a file.
-	    open(F, $f) || die "fixincludes.pl: $f: $!";
+	    open(F, $f) || die "click-linuxtool.pl: $f: $!";
 	    $_ = <F>;
 	    close(F);
 
@@ -272,6 +274,7 @@ sub one_includeroot ($$) {
 	    # of the alternatives.  Since this is in strings, must
 	    # implement before string obfuscation
 	    s{\.section\s+\.smp_locks.*?\.previous(?:\\n)?}{}sg;
+	    s{\.pushsection\s+\.smp_locks.*?\.popsection(?:\\n)?}{}sg;
 
 	    # Obscure comments and things that would confuse parsing.
 
@@ -414,6 +417,12 @@ sub one_includeroot ($$) {
             if ($d eq "uaccess.h" || $d eq "syscalls.h") {
                 s<^#define (.*?) \\\n__typeof__\(__builtin_choose_expr\((.*?), (.*?), (.*?)\)\)(.*)><#if __cplusplus\n#define $1 typename click_conditional<($2), __typeof($3), __typeof($4)>::type$5\n#else\n#define $1 __typeof__(__builtin_choose_expr($2, $3, $4))$5\n#endif>m;
             }
+            if ($d eq "cpufeature.h") {
+                s{^#include <linux/bitops.h>}{/* #include <linux/bitops.h> */}m;
+            }
+            if ($d eq "sections.h") {
+                s{^extern(.*?) const void}{extern$1 const char}m;
+            }
 
 	    # CLICK_CXX_PROTECTED check
 	    if (m<\A[\s\200-\377]*\z>) {
@@ -438,8 +447,8 @@ sub one_includeroot ($$) {
 	    }
 
 	    # Write the fixed file.
-	    open(F, ">$outputroot$dd/$d") || die "fixincludes.pl: $outputroot$dd/$d: $!";
-	    print F "/* created by click/linuxmodule/fixincludes.pl on " . localtime() . " */\n/* from $f */\n", $_;
+	    open(F, ">$outputroot$dd/$d") || die "click-linuxtool.pl: $outputroot$dd/$d: $!";
+	    print F "/* created by click/linuxmodule/click-linuxtool.pl on " . localtime() . " */\n/* from $f */\n", $_;
 	    close(F);
 	}
 
@@ -456,14 +465,15 @@ sub one_includeroot ($$) {
 
 my(@new_argv, %done, $dir, $numdirs);
 $numdirs = 0;
-foreach my $i (@ARGV) {
+while (@ARGV) {
+    my($i) = shift @ARGV;
     if ($i =~ /^-I(.*)/) {
 	if (!-d $1) {
 	    # do not change argument
 	    push @new_argv, $i;
 	} elsif (!$done{$1}) {
 	    $dir = "$outputroot/include$numdirs";
-	    -d $dir || mkdir $dir || die "fixincludes.pl: mkdir $dir: $!";
+	    -d $dir || mkdir $dir || die "click-linuxtool.pl: mkdir $dir: $!";
 	    $done{$1} = $dir;
 	    ++$numdirs;
 	    one_includeroot($1, $dir);
@@ -471,6 +481,18 @@ foreach my $i (@ARGV) {
 	} else {
 	    push @new_argv, "-I" . $done{$1};
 	}
+    } elsif ($i eq "-include") {
+        push @new_argv, $i;
+        $i = shift @ARGV;
+        if ($i =~ /^\//) {
+            push @new_argv, $i;
+        } else {
+            my($cwd) = `pwd`;
+            $cwd =~ s/\s+\z//;
+            $cwd .= "/" if $cwd !~ /\/\z/;
+            push @new_argv, $cwd . $i;
+            $done{$i} = $cwd . $i;
+        }
     } else {
 	push @new_argv, $i;
     }
@@ -479,8 +501,8 @@ print join(" ", @new_argv), "\n";
 
 my(@sed, $k, $v);
 while (($k, $v) = each %done) {
-    push @sed, "-e s,$k,$v,";
+    push @sed, "-e s,-I$k,-I$v,";
 }
-@sed = sort { length($a) <=> length($b) } @sed;
+@sed = sort { length($b) <=> length($a) } @sed;
 push @sed, "-e s,\\ -I,\\ -isystem\\ ,g";
 print join(" ", @sed), "\n";
