@@ -79,6 +79,9 @@
 /* Define if you have the <linux/ktime.h> header file. */
 #undef HAVE_LINUX_KTIME_H
 
+/* Define if your Linux kernel exports ktime_mono_to_any. */
+#undef HAVE_LINUX_KTIME_MONO_TO_ANY
+
 /* Define if your Linux kernel has polling extensions. */
 #undef HAVE_LINUX_POLLING
 

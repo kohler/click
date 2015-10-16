@@ -1778,11 +1778,19 @@ CFLAGS="$save_cflags"
     dnl Linux kernel time configuration
 
     AC_CACHE_CHECK([for get_monotonic_coarse kernel symbol], [ac_cv_linux_get_monotonic_coarse],
-    [if grep "__ksymtab_get_monotonic_coarse" $linux_system_map >/dev/null 2>&1; then
+    [if grep '__ksymtab_get_monotonic_coarse$' $linux_system_map >/dev/null 2>&1; then
         ac_cv_linux_get_monotonic_coarse=yes
     else ac_cv_linux_get_monotonic_coarse=no; fi])
     if test $ac_cv_linux_get_monotonic_coarse = yes; then
         AC_DEFINE(HAVE_LINUX_GET_MONOTONIC_COARSE)
+    fi
+
+    AC_CACHE_CHECK([for ktime_mono_to_any kernel symbol], [ac_cv_linux_ktime_mono_to_any],
+    [if grep '__ksymtab_ktime_mono_to_any$' $linux_system_map >/dev/null 2>&1; then
+        ac_cv_linux_ktime_mono_to_any=yes
+    else ac_cv_linux_ktime_mono_to_any=no; fi])
+    if test $ac_cv_linux_ktime_mono_to_any = yes; then
+        AC_DEFINE(HAVE_LINUX_KTIME_MONO_TO_ANY)
     fi
 
     AC_CACHE_CHECK([for getboottime kernel symbol], [ac_cv_linux_getboottime],

@@ -801,6 +801,14 @@ Timestamp::assign_now(bool recent, bool steady, bool unwarped)
     if (recent && steady) {
 # if HAVE_LINUX_GET_MONOTONIC_COARSE
 	tsp = get_monotonic_coarse();
+# elif HAVE_LINUX_GETBOOTTIME && HAVE_LINUX_KTIME_MONO_TO_ANY
+        // XXX Is this even worth it????? Would it be faster to just get the
+        // current time?
+	tsp = current_kernel_time();
+        struct timespec delta =
+            ktime_to_timespec(ktime_mono_to_any(ktime_set(0, 0), TK_OFFS_REAL));
+	set_normalized_timespec(&tsp, tsp.tv_sec - delta.tv_sec,
+				tsp.tv_nsec - delta.tv_nsec);
 # elif HAVE_LINUX_GETBOOTTIME
 	tsp = current_kernel_time();
 	struct timespec delta;
