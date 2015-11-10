@@ -21,9 +21,6 @@
 #include <click/error.hh>
 #include <click/algorithm.hh>
 
-#include <rte_ethdev.h>
-#include <rte_mbuf.h>
-
 #include "todpdkdevice.hh"
 
 CLICK_DECLS

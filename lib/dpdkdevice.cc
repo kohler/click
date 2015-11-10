@@ -18,16 +18,6 @@
 #include <click/config.h>
 #include <click/dpdkdevice.hh>
 
-#include <rte_common.h>
-#include <rte_eal.h>
-#include <rte_ethdev.h>
-#include <rte_lcore.h>
-#include <rte_mbuf.h>
-#include <rte_mempool.h>
-#include <rte_pci.h>
-#include <rte_version.h>
-
-
 CLICK_DECLS
 
 /* Wraps rte_eth_dev_socket_id(), which may return -1 for valid ports when NUMA
