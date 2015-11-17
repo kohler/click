@@ -208,7 +208,7 @@ install-local: Makefile $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc all
 	$(CLICK_BUILD_INSTALL_DATA) Module.symvers $(DESTDIR)$(libdir)/click.symvers
 install-include: $(CLICK_BUILDTOOL)
 	$(CLICKmkinstalldirs) $(DESTDIR)$(includedir)/click-linuxmodule
-	$(call verbose_cmd,MD5SUM=$(MD5SUM) $(srcdir)/fixincludes.pl installtree -m 644 "$(top_builddir)/include/click-linuxmodule" "$(DESTDIR)$(includedir)/click-linuxmodule",INSTALLHEADERS $(DESTDIR)$(includedir)/click-linuxmodule)
+	$(call verbose_cmd,MD5SUM=$(MD5SUM) $(srcdir)/click-linuxtool.pl installtree -m 644 "$(top_builddir)/include/click-linuxmodule" "$(DESTDIR)$(includedir)/click-linuxmodule",INSTALLHEADERS $(DESTDIR)$(includedir)/click-linuxmodule)
 install-man:
 	@:
 uninstall:
