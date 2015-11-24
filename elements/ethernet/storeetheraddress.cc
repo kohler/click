@@ -28,7 +28,7 @@ StoreEtherAddress::configure(Vector<String> &conf, ErrorHandler *errh)
     bool address_specified, anno_specified;
     int anno;
     if (Args(conf, this, errh)
-	.read_mp("ADDR", _address).read_status(address_specified)
+	.read_p("ADDR", _address).read_status(address_specified)
 	.read_mp("OFFSET", WordArg(), off)
 	.read("ANNO", AnnoArg(6), anno).read_status(anno_specified)
 	.complete() < 0)
