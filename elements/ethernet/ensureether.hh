@@ -32,7 +32,7 @@ destination address 2:2:2:2:2:2:
 
 =a
 
-EnsureEther */
+EtherEncap, EtherRewrite */
 
 class EnsureEther : public Element { public:
 

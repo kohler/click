@@ -1,11 +1,11 @@
 /*
  * spinlockpush.{cc,hh} -- element acquires spinlock
- * Benjie Chen, Eddie Kohler
+ * Benjie Chen, Eddie Kohler, Tom Barbette
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  * Copyright (c) 2008 Meraki, Inc.
  * Copyright (c) 1999-2013 Eddie Kohler
- * Copyright (c) 2015 Tom Barbette
+ * Copyright (c) 2015 University of Liege
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),

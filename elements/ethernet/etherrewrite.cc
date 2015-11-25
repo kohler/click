@@ -1,5 +1,6 @@
 /*
  * EtherRewrite.{cc,hh} -- encapsulates packet in Ethernet header
+ * Tom Barbette
  *
  * Copyright (c) 2015 University of Liege
  *
