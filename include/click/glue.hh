@@ -62,6 +62,7 @@ CLICK_CXX_PROTECT
 # include <stdio.h>
 # include <stdlib.h>
 # include <stddef.h>
+# include <stdint.h>
 # include <string.h>
 # include <ctype.h>
 # include <errno.h>
@@ -78,6 +79,7 @@ CLICK_CXX_UNPROTECT
 # include <stdio.h>
 # include <stdlib.h>
 # include <stddef.h>
+# include <stdint.h>
 # include <string.h>
 # include <ctype.h>
 # include <errno.h>
