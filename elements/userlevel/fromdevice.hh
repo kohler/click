@@ -18,9 +18,9 @@ int pcap_setnonblock(pcap_t *p, int nonblock, char *errbuf);
 }
 #endif
 
-#if HAVE_NET_NETMAP_H
+#if HAVE_NETMAP
 # define FROMDEVICE_ALLOW_NETMAP 1
-# include "elements/userlevel/netmapinfo.hh"
+# include <click/netmapdevice.hh>
 #endif
 
 #if FROMDEVICE_ALLOW_NETMAP || FROMDEVICE_ALLOW_PCAP
@@ -187,7 +187,6 @@ class FromDevice : public Element { public:
 #else
     inline int fd() const		{ return -1; }
 #endif
-
     void selected(int fd, int mask);
 
 #if FROMDEVICE_ALLOW_PCAP
@@ -203,7 +202,7 @@ class FromDevice : public Element { public:
 #endif
 
 #if FROMDEVICE_ALLOW_NETMAP
-    const NetmapInfo *netmap() const { return _method == method_netmap ? &_netmap : 0; }
+    const NetmapDevice *netmap() const { return _method == method_netmap ? &_netmap : 0; }
 #endif
 
 #if FROMDEVICE_ALLOW_NETMAP || FROMDEVICE_ALLOW_PCAP
@@ -222,13 +221,14 @@ class FromDevice : public Element { public:
 #endif
 #if FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_NETMAP
     void emit_packet(WritablePacket *p, int extra_len, const Timestamp &ts);
+    static void emit_packet_arg(WritablePacket *p, int extra_len, const Timestamp &ts, void* arg);
 #endif
 #if FROMDEVICE_ALLOW_PCAP
     pcap_t *_pcap;
     int _pcap_complaints;
 #endif
 #if FROMDEVICE_ALLOW_NETMAP
-    NetmapInfo _netmap;
+    NetmapDevice _netmap;
     int netmap_dispatch();
 #endif
 #if FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_NETMAP

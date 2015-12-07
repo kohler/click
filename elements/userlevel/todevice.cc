@@ -279,7 +279,6 @@ ToDevice::cleanup(CleanupStage)
 #endif
 }
 
-
 /*
  * Linux select marks datagram fd's as writeable when the socket
  * buffer has enough space to do a send (sock_writeable() in
@@ -298,7 +297,7 @@ ToDevice::send_packet(Packet *p)
 
 #if TODEVICE_ALLOW_NETMAP
     if (_method == method_netmap) {
-	if (_netmap.send_packet(p, noutputs())) { // fail
+	if (_netmap.send_packet(p, noutputs() == 0)) { // fail
 	    errno = ENOBUFS;
 	    r = -1;
 	} else

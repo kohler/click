@@ -23,7 +23,6 @@ elements/userlevel/controlsocket.cc	"elements/userlevel/controlsocket.hh"	Contro
 elements/userlevel/fakepcap.cc	"elements/userlevel/fakepcap.hh"	
 elements/userlevel/fromdevice.cc	"elements/userlevel/fromdevice.hh"	FromDevice-FromDevice
 elements/userlevel/kernelfilter.cc	"elements/userlevel/kernelfilter.hh"	KernelFilter-KernelFilter
-elements/userlevel/netmapinfo.cc	"elements/userlevel/netmapinfo.hh"	
 elements/userlevel/todump.cc	"elements/userlevel/todump.hh"	ToDump-ToDump
 
 %ignorex

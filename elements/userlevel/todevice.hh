@@ -118,7 +118,7 @@ class ToDevice : public Element { public:
     int _fd;
 #endif
 #if TODEVICE_ALLOW_NETMAP
-    NetmapInfo _netmap;
+    NetmapDevice _netmap;
 #endif
     enum { method_default, method_netmap, method_linux, method_pcap, method_devbpf, method_pcapfd };
     int _method;
