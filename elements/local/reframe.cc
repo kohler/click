@@ -100,7 +100,7 @@ Reframe::reframe(void)
 	     p = p->next()) {
 	  memcpy(_header->end_data(), p->data(),
 		 MIN(p->length(), _foff + _flen - _header->length()));
-	  _header->put(MIN(p->length(), _foff + _flen - _header->length()));
+	  _header = _header->put(MIN(p->length(), _foff + _flen - _header->length()));
 	}
       }
 
@@ -157,7 +157,7 @@ Reframe::pull(int)
       if ((int) p->length() > _need) {
 	// too much
 	memcpy(p1->end_data(), p->data(), _need);
-	p1->put(_need);
+	p1 = p1->put(_need);
 	// save rest for later
 	p->pull(_need);
 	_have -= _need;
@@ -165,7 +165,7 @@ Reframe::pull(int)
       } else {
 	// not enough or just right
 	memcpy(p1->end_data(), p->data(), p->length());
-	p1->put(p->length());
+	p1 = p1->put(p->length());
 	_have -= p->length();
 	_need -= p->length();
 	// done with this packet
