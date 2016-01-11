@@ -163,7 +163,7 @@ void ToDPDKDevice::flush_internal_queue(InternalQueue &iqueue) {
             // The sub_burst wraps around the ring
             sub_burst = _iqueue_size - iqueue.index;
         r = rte_eth_tx_burst(_port_id, _queue_id, &iqueue.pkts[iqueue.index],
-                             iqueue.nr_pending);
+                             sub_burst);
 
         iqueue.nr_pending -= r;
         iqueue.index += r;
