@@ -1,0 +1,12 @@
+%script
+
+click -e "
+AlignmentInfo(src 8 2)
+AlignmentInfo(dst 8 2)
+src :: Idle -> dst :: Discard
+DriverManager(wait 0.1s, stop)
+"
+echo foo
+
+%expect stdout
+foo
