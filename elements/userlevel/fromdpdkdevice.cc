@@ -71,11 +71,14 @@ bool FromDPDKDevice::run_task(Task * t)
 
     unsigned n = rte_eth_rx_burst(_port_id, _queue_id, pkts, _burst_size);
     for (unsigned i = 0; i < n; ++i) {
-        rte_prefetch0(rte_pktmbuf_mtod(pkts[i], void *));
+        unsigned char* data = rte_pktmbuf_mtod(pkts[i], unsigned char *);
+        rte_prefetch0(data);
         WritablePacket *p =
-            Packet::make(rte_pktmbuf_mtod(pkts[i], unsigned char *),
+            Packet::make(data,
                          rte_pktmbuf_data_len(pkts[i]), DPDKDevice::free_pkt,
-                         pkts[i]);
+                         pkts[i],
+                         rte_pktmbuf_headroom(pkts[i]),
+                         rte_pktmbuf_tailroom(pkts[i]));
         p->set_packet_type_anno(Packet::HOST);
 
         output(0).push(p);

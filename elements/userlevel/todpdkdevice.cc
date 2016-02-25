@@ -123,6 +123,7 @@ inline struct rte_mbuf* get_mbuf(Packet* p, bool create=true) {
         mbuf = (struct rte_mbuf *) p->destructor_argument();
         rte_pktmbuf_pkt_len(mbuf) = p->length();
         rte_pktmbuf_data_len(mbuf) = p->length();
+        mbuf->data_off = p->headroom();
         if (p->shared()) {
             /*Prevent DPDK from freeing the buffer. When all shared packet
              * are freed, DPDKDevice::free_pkt will effectively destroy it.*/

@@ -65,7 +65,7 @@ class Packet { public:
     typedef void (*buffer_destructor_type)(unsigned char* buf, size_t sz, void* argument);
     static WritablePacket* make(unsigned char* data, uint32_t length,
 				buffer_destructor_type buffer_destructor,
-                                void* argument = (void*) 0) CLICK_WARN_UNUSED_RESULT;
+                                void* argument = (void*) 0, int headroom = 0, int tailroom = 0) CLICK_WARN_UNUSED_RESULT;
 #endif
 
     static void static_cleanup();
