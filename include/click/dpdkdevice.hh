@@ -1,6 +1,23 @@
 #ifndef CLICK_DPDKDEVICE_HH
 #define CLICK_DPDKDEVICE_HH
 
+//Prevent bug under some configurations (like travis-ci's one) where these macros get undefined
+#ifndef UINT8_MAX
+#define UINT8_MAX 255
+#endif
+#ifndef UINT16_MAX
+#define UINT16_MAX 65535
+#endif
+
+#include <rte_common.h>
+#include <rte_eal.h>
+#include <rte_ethdev.h>
+#include <rte_lcore.h>
+#include <rte_mbuf.h>
+#include <rte_mempool.h>
+#include <rte_pci.h>
+#include <rte_version.h>
+
 #include <click/packet.hh>
 #include <click/error.hh>
 #include <click/hashmap.hh>

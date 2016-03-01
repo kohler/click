@@ -23,9 +23,6 @@
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
 
-#include <rte_ethdev.h>
-#include <rte_mbuf.h>
-#include <rte_version.h>
 #include "fromdpdkdevice.hh"
 
 CLICK_DECLS

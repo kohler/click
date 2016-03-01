@@ -1,15 +1,27 @@
+cache:
+  apt: true
+  directories:
+    - dpdk-2.1.0
+    - tcpdump-4.7.4
+    - netmap-11.1
 language: c++
 compiler:
   - gcc
   - clang
-script: ./configure --disable-linuxmodule --enable-ip6 --enable-json && make && make check
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -y tcpdump libpcap-dev time
-#addons:
-#  apt:
-#    packages:
-#    - tcpdump
-#    - libpcap-dev
-#    - time
-#sudo: false
+script:
+  - ./configure --disable-linuxmodule --enable-ip6 --enable-json && make && make check
+  #Trying to build with DPDK support. Tests are not launched as the flags are different using DPDK due to EAL. Also, DPDK does not cope well with clang
+  - if [ "$CC" != "clang" ] ; then ./configure --disable-linuxmodule --enable-user-multithread --enable-dpdk && make ; fi
+  - ./configure --disable-linuxmodule --enable-user-multithread --with-netmap=`pwd`/netmap-11.1/sys/ && make && make check
+
+install:
+  - export PATH=$PATH:`pwd`/tcpdump-4.7.4/sbin/ && if [ ! -e "tcpdump-4.7.4/sbin/tcpdump" ] ; then wget http://www.tcpdump.org/release/tcpdump-4.7.4.tar.gz && tar -zxf tcpdump-4.7.4.tar.gz && cd tcpdump-4.7.4 && ./configure --prefix=`pwd` && make && make install && cd .. ; fi
+  - export RTE_SDK=`pwd`/dpdk-2.1.0 && export RTE_TARGET=x86_64-native-linuxapp-gcc && if [ ! -e "$RTE_SDK/$RTE_TARGET/include/rte_version.h" ] ; then wget http://dpdk.org/browse/dpdk/snapshot/dpdk-2.1.0.tar.gz && tar -zxf dpdk-2.1.0.tar.gz && cd dpdk-2.1.0 && make config T=$RTE_TARGET && make install T=$RTE_TARGET && cd .. ; fi
+  - if [ ! -e "netmap-11.1/sys/net/netmap.h" ] ; then wget https://github.com/luigirizzo/netmap/archive/v11.1.tar.gz && tar -xvf v11.1.tar.gz && cd netmap-11.1 && cd LINUX && ./configure --no-drivers && cd .. && cd .. ; fi
+addons:
+  apt:
+    packages:
+      - libpcap-dev
+      - time
+      - linux-headers-3.13.0-40-generic
+sudo: false
