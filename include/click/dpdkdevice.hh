@@ -65,7 +65,7 @@ private:
     static HashMap<unsigned, DevInfo> _devs;
     static struct rte_mempool** _pktmbuf_pools;
 
-    static int initialize_device(unsigned port_id, const DevInfo &info,
+    static int initialize_device(unsigned port_id, DevInfo &info,
                                  ErrorHandler *errh) CLICK_COLD;
 
     static bool alloc_pktmbufs() CLICK_COLD;
