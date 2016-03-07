@@ -241,6 +241,10 @@ int DPDKDevice::initialize(ErrorHandler *errh)
     if (_is_initialized)
         return 0;
 
+    if (!dpdk_enabled)
+	    return errh->error( "You have to launch Click with --dpdk to use the "
+							"DPDK");
+
     click_chatter("Initializing DPDK");
 #if RTE_VERSION < (RTE_VERSION_NUM(2,1,0,0))
     if (rte_eal_pci_probe())

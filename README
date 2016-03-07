@@ -149,20 +149,25 @@ must be enabled through the kernel cmdline.
     Refer to the DPDK documentation for more details about huge pages and
 binding devices or use the DPDK helper located in dpdk/tools/setup.sh.
 
-    Like with any other DPDK application, you have to pass DPDK EAL arguments
-first, append "--", then pass Click arguments. As the DPDK EAL will handle
+    Unlike most other DPDK application, you have to pass DPDK EAL arguments
+between --dpdk and "--", then pass Click arguments. As the DPDK EAL will handle
 thread management instead of Click, Click's `-j` (or `--threads`) argument
-will be disabled when --enable-dpdk is provided, and you must at least give the
-following two EAL arguments, even if running on a single core:
+will be disabled when --dpdk is provided. You should give at least the
+following two EAL arguments for best practice and is required with older
+versions of DPDK, even if running on a single core:
 
     -c COREMASK : hexadecimal bitmask of cores to run on
     -n NUM      : number of memory channels
 
+If not provided, DPDK will use all available cores.
+
 A sample command to run a click configuration on 4 cores on a computer with
 4 memory channels and listen for control connections on TCP port 8080 would be:
 
-    click -c 0xf -n 4 -- -p 8080 configfile
+    click --dpdk -c 0xf -n 4 -- -p 8080 configfile
 
+    If Click is launched without --dpdk, it will run in normal userlevel mode
+without involving DPDK EAL, meaning that any DPDK element will not work.
 
 Configurations
 ..............
