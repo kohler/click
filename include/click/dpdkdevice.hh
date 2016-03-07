@@ -27,6 +27,8 @@
 CLICK_DECLS
 class DPDKDeviceArg;
 
+extern bool dpdk_enabled;
+
 class DPDKDevice {
 public:
 

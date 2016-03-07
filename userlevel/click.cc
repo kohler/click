@@ -81,11 +81,13 @@ CLICK_USING_DECLS
 #define SIMTIME_OPT             317
 #define SOCKET_OPT              318
 #define THREADS_AFF_OPT         319
+#define DPDK_OPT                320
 
 static const Clp_Option options[] = {
     { "allow-reconfigure", 'R', ALLOW_RECONFIG_OPT, 0, Clp_Negate },
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ValString, 0 },
     { "expression", 'e', EXPRESSION_OPT, Clp_ValString, 0 },
+    { "dpdk", 0, DPDK_OPT, 0, 0 },
     { "file", 'f', ROUTER_OPT, Clp_ValString, 0 },
     { "handler", 'h', HANDLER_OPT, Clp_ValString, 0 },
     { "help", 0, HELP_OPT, 0, 0 },
@@ -129,6 +131,10 @@ Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
   -e, --expression EXPR         Use EXPR as router configuration.\n\
   -j, --threads N               Start N threads (default 1).\n", program_name);
+#if HAVE_DPDK
+    printf("\
+      --dpdk DPDK_ARGS --       Enable DPDK and give DPDK's own arguments.\n");
+#endif
 #if HAVE_DECL_PTHREAD_SETAFFINITY_NP
     printf("\
   -a, --affinity                Pin threads to CPUs (default no).\n");
@@ -332,6 +338,7 @@ static Vector<String> cs_ports;
 static Vector<String> cs_sockets;
 static bool warnings = true;
 int click_nthreads = 1;
+bool dpdk_enabled = false;
 
 static String
 click_driver_control_socket_name(int number)
@@ -466,16 +473,19 @@ round_timeval(struct timeval *tv, int usec_divider)
 
 #if HAVE_MULTITHREAD
 extern "C" {
-# ifndef HAVE_DPDK
 static void *thread_driver(void *user_data)
-# else
-static int thread_driver(void *user_data)
-# endif
 {
     RouterThread *thread = static_cast<RouterThread *>(user_data);
     thread->driver();
     return 0;
 }
+#if HAVE_DPDK
+static int thread_driver_dpdk(void *user_data) {
+    RouterThread *thread = static_cast<RouterThread *>(user_data);
+    thread->driver();
+    return 0;
+}
+#endif
 }
 #endif
 
@@ -488,13 +498,16 @@ cleanup(Clp_Parser *clp, int exit_value)
     return exit_value;
 }
 
-#if (HAVE_DECL_PTHREAD_SETAFFINITY_NP && !HAVE_DPDK)
 static bool set_affinity = false;
+
+#if (HAVE_DECL_PTHREAD_SETAFFINITY_NP)
 void do_set_affinity(pthread_t p, int cpu) {
-    cpu_set_t set;
-    CPU_ZERO(&set);
-    CPU_SET(cpu, &set);
-    pthread_setaffinity_np(p, sizeof(cpu_set_t), &set);
+    if (!dpdk_enabled) {
+        cpu_set_t set;
+        CPU_ZERO(&set);
+        CPU_SET(cpu, &set);
+        pthread_setaffinity_np(p, sizeof(cpu_set_t), &set);
+    }
 }
 #else
 # define do_set_affinity(p, cpu) /* nothing */
@@ -503,17 +516,6 @@ void do_set_affinity(pthread_t p, int cpu) {
 int
 main(int argc, char **argv)
 {
-#ifdef HAVE_DPDK
-  int n_eal_args = rte_eal_init(argc, argv);
-  if (n_eal_args < 0)
-    rte_exit(EXIT_FAILURE,
-             "Click was built with Intel DPDK support but there was an\n"
-             "          error parsing the EAL arguments.\n");
-  argc -= n_eal_args;
-  argv += n_eal_args;
-  click_nthreads = rte_lcore_count();
-#endif // HAVE_DPDK
-
   click_static_initialize();
   errh = ErrorHandler::default_handler();
 
@@ -530,6 +532,7 @@ main(int argc, char **argv)
   bool allow_reconfigure = false;
   Vector<String> handlers;
   String exit_handler;
+  Vector<char*> dpdk_arg;
 
   while (1) {
     int opt = Clp_Next(clp);
@@ -620,11 +623,20 @@ main(int argc, char **argv)
      case NO_WARNINGS_OPT:
       warnings = clp->negated;
       break;
-
+#if HAVE_DPDK
+     case DPDK_OPT: {
+      const char* arg;
+      do {
+        arg = Clp_Shift(clp, 1);
+        if (arg == NULL) break;
+        dpdk_arg.push_back(const_cast<char*>(arg));
+      } while (strcmp(arg, "--") != 0);
+      dpdk_enabled = true;
+      break;
+     }
+#endif // HAVE_DPDK
      case THREADS_OPT:
-#ifndef HAVE_DPDK
       click_nthreads = clp->val.i;
-#endif
       if (click_nthreads <= 1)
           click_nthreads = 1;
 #if !HAVE_MULTITHREAD
@@ -632,20 +644,12 @@ main(int argc, char **argv)
           errh->warning("Click was built without multithread support, running single threaded");
           click_nthreads = 1;
       }
-#else
-# if HAVE_DPDK
-      errh->warning("Click was built with DPDK support, use EAL core mask to set threads");
-# endif
 #endif
       break;
 
      case THREADS_AFF_OPT:
 #if HAVE_DECL_PTHREAD_SETAFFINITY_NP
-# ifdef HAVE_DPDK
-      errh->warning("Click was build with DPDK support, CPU affinity handled by DPDK");
-# else
       set_affinity = true;
-# endif
 #else
       errh->warning("CPU affinity is not supported on this platform");
 #endif
@@ -691,6 +695,20 @@ particular purpose.\n");
   }
 
  done:
+#if HAVE_DPDK
+    if (dpdk_enabled) {
+      if (click_nthreads > 1 || set_affinity) {
+          errh->warning("In DPDK mode, set the number of cores and affinity with DPDK EAL arguments");
+      }
+      int n_eal_args = rte_eal_init(dpdk_arg.size(), dpdk_arg.data());
+      if (n_eal_args < 0)
+      rte_exit(EXIT_FAILURE,
+             "Click was built with Intel DPDK support but there was an\n"
+             "          error parsing the EAL arguments.\n");
+      click_nthreads = rte_lcore_count();
+    }
+#endif
+
   // provide hotconfig handler if asked
   if (allow_reconfigure)
       Router::add_write_handler(0, "hotconfig", hotconfig_handler, 0, Handler::f_raw | Handler::f_nonexclusive);
@@ -706,9 +724,10 @@ particular purpose.\n");
   click_router->use();
 
   int exit_value = 0;
-#if (HAVE_MULTITHREAD && !HAVE_DPDK)
+#if (HAVE_MULTITHREAD)
   Vector<pthread_t> other_threads;
-  pthread_mutex_init(&hotswap_lock, 0);
+  if (!dpdk_enabled)
+      pthread_mutex_init(&hotswap_lock, 0);
 #endif
 
   // output flat configuration
@@ -750,24 +769,25 @@ particular purpose.\n");
     for (int t = 0; t < click_nthreads; ++t)
         click_master->thread(t)->mark_driver_entry();
 #if HAVE_MULTITHREAD
-# ifndef HAVE_DPDK
-    for (int t = 1; t < click_nthreads; ++t) {
-        pthread_t p;
-        pthread_create(&p, 0, thread_driver, click_master->thread(t));
-        other_threads.push_back(p);
-        do_set_affinity(p, t);
-    }
-    do_set_affinity(pthread_self(), 0);
-# else
-    {
+# if HAVE_DPDK
+    if (dpdk_enabled) {
         unsigned t = 1;
         unsigned lcore_id;
         RTE_LCORE_FOREACH_SLAVE(lcore_id) {
-            rte_eal_remote_launch(thread_driver, click_router->master()->thread(t++),
+            rte_eal_remote_launch(thread_driver_dpdk, click_router->master()->thread(t++),
                                   lcore_id);
         }
+    } else
+# endif //HAVE_DPDK
+    {
+        for (int t = 1; t < click_nthreads; ++t) {
+            pthread_t p;
+            pthread_create(&p, 0, thread_driver, click_master->thread(t));
+            other_threads.push_back(p);
+            do_set_affinity(p, t);
+        }
+        do_set_affinity(pthread_self(), 0);
     }
-# endif
 #endif
 
     // run driver
@@ -818,14 +838,21 @@ particular purpose.\n");
     }
   }
 
-#if HAVE_MULTITHREAD && !HAVE_DPDK
+#if HAVE_MULTITHREAD
+# if HAVE_DPDK
+  if (dpdk_enabled) {
+      rte_eal_mp_wait_lcore();
+	  goto click_cleanup;
+  }
+# endif
+
   for (int i = 0; i < other_threads.size(); ++i)
-      click_master->thread(i + 1)->wake();
+	  click_master->thread(i + 1)->wake();
   for (int i = 0; i < other_threads.size(); ++i)
-      (void) pthread_join(other_threads[i], 0);
-#elif HAVE_DPDK
-    rte_eal_mp_wait_lcore();
+	  (void) pthread_join(other_threads[i], 0);
 #endif
+
+click_cleanup:
   click_router->unuse();
   return cleanup(clp, exit_value);
 }
