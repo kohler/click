@@ -40,12 +40,10 @@ public:
     static int initialize(ErrorHandler *errh);
 
     inline static bool is_dpdk_packet(Packet* p) {
-            return p->buffer_destructor() == DPDKDevice::free_pkt;
+            return p->buffer_destructor() == DPDKDevice::free_pkt || (p->data_packet() && is_dpdk_packet(p->data_packet()));
     }
 
     static void free_pkt(unsigned char *, size_t, void *pktmbuf);
-
-    static void fake_free_pkt(unsigned char *, size_t, void *pktmbuf);
 
     static unsigned int get_nb_txdesc(unsigned port_id);
 

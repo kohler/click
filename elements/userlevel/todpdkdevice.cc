@@ -121,7 +121,17 @@ inline struct rte_mbuf* get_mbuf(Packet* p, bool create=true) {
 
     if (likely(DPDKDevice::is_dpdk_packet(p))) {
         mbuf = (struct rte_mbuf *) p->destructor_argument();
-        p->set_buffer_destructor(DPDKDevice::fake_free_pkt);
+        rte_pktmbuf_pkt_len(mbuf) = p->length();
+        rte_pktmbuf_data_len(mbuf) = p->length();
+        mbuf->data_off = p->headroom();
+        if (p->shared()) {
+            /*Prevent DPDK from freeing the buffer. When all shared packet
+             * are freed, DPDKDevice::free_pkt will effectively destroy it.*/
+            rte_mbuf_refcnt_update(mbuf, 1);
+        } else {
+            //Reset buffer, let DPDK free the buffer when it wants
+            p->reset_buffer();
+        }
     } else if (create) {
         mbuf = rte_pktmbuf_alloc(DPDKDevice::get_mpool(rte_socket_id()));
         memcpy((void*) rte_pktmbuf_mtod(mbuf, unsigned char *), p->data(),
