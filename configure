@@ -577,7 +577,7 @@ MAKEFLAGS=
 # Identity of this package.
 PACKAGE_NAME='click'
 PACKAGE_TARNAME='click'
-PACKAGE_VERSION='2.1'
+PACKAGE_VERSION='2.1 '`git rev-parse --short HEAD 2> /dev/null`
 PACKAGE_STRING='click 2.1'
 PACKAGE_BUGREPORT=''
 PACKAGE_URL=''
