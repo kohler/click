@@ -223,6 +223,8 @@ Task::cleanup()
     GIANT_REQUIRED;
 #endif
     if (initialized()) {
+        RouterThread *th = _thread;
+        th->lock_tasks();
         // Mark the task as unscheduled.
 	strong_unschedule();
 
@@ -255,6 +257,7 @@ Task::cleanup()
 
 	_owner = 0;
 	_thread = 0;
+        th->unlock_tasks();
     }
 }
 
