@@ -572,12 +572,15 @@ RouterThread::process_pending()
     _pending_lock.release(flags);
 
     // process the list
-    while (my_pending.x > 1) {
+    while (my_pending.x > 2) {
         Task *t = my_pending.t;
         my_pending = t->_pending_nextptr;
-        t->_pending_nextptr.x = 0;
+        // do not set _pending_nextptr to 0 until really done processing
+        t->_pending_nextptr.x = 1;
         click_fence();
         t->process_pending(this);
+        if (t->_pending_nextptr.x == 1)
+            t->_pending_nextptr.x = 0;
     }
 }
 

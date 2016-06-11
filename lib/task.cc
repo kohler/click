@@ -126,8 +126,8 @@ Task::master() const
 inline void
 Task::add_pending_locked(RouterThread *thread)
 {
-    if (!_pending_nextptr.x) {
-        _pending_nextptr.x = 1;
+    if (_pending_nextptr.x <= 1) {
+        _pending_nextptr.x = 2;
         thread->_pending_tail->t = this;
         thread->_pending_tail = &_pending_nextptr;
         thread->add_pending();
@@ -151,13 +151,13 @@ Task::add_pending()
 inline void
 Task::remove_pending_locked(RouterThread *thread)
 {
-    if (_pending_nextptr.x) {
+    if (_pending_nextptr.x > 1) {
         Pending *tptr = &thread->_pending_head;
-        while (tptr->x > 1 && tptr->t != this)
+        while (tptr->x > 2 && tptr->t != this)
             tptr = &tptr->t->_pending_nextptr;
         if (tptr->t == this) {
             *tptr = _pending_nextptr;
-            if (_pending_nextptr.x <= 1) {
+            if (_pending_nextptr.x <= 2) {
                 thread->_pending_tail = tptr;
                 if (tptr == &thread->_pending_head)
                     tptr->x = 0;
@@ -238,7 +238,7 @@ Task::cleanup()
         // pending list processing is so simple: processing a
         // pending list will NEVER cause a task to get deleted, so
         // ~Task is never called from RouterThread::process_pending().
-        while (on_pending_list())
+        while (needs_pending_processing())
             click_relax_fence();
 
         // If currently scheduled, remove from schedule list.

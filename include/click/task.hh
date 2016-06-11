@@ -346,6 +346,9 @@ class Task : private TaskLink { public:
 #endif
     inline bool on_scheduled_list() const;
     inline bool on_pending_list() const {
+        return _pending_nextptr.x > 1;
+    }
+    inline bool needs_pending_processing() const {
         return _pending_nextptr.x != 0;
     }
 #if CLICK_DEBUG_SCHEDULING
