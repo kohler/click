@@ -3,7 +3,7 @@
 #define CLICK_DRIVER_HH
 #include <click/package.hh>
 
-#define CLICK_DEFAULT_PROVIDES	/* nada */
+#define CLICK_DEFAULT_PROVIDES  /* nada */
 
 #if defined(CLICK_USERLEVEL) || defined(CLICK_MINIOS)
 CLICK_DECLS
@@ -20,9 +20,9 @@ Lexer *click_lexer();
 Router *click_read_router(String filename, bool is_expr, ErrorHandler * = 0, bool initialize = true, Master * = 0);
 
 String click_compile_archive_file(const Vector<ArchiveElement> &ar,
-		const ArchiveElement *ae,
-		String package, const String &target, int quiet,
-		bool &tmpdir_populated, ErrorHandler *errh);
+                const ArchiveElement *ae,
+                String package, const String &target, int quiet,
+                bool &tmpdir_populated, ErrorHandler *errh);
 
 CLICK_ENDDECLS
 #elif CLICK_TOOL
@@ -33,9 +33,9 @@ struct ArchiveElement;
 void click_static_initialize();
 
 String click_compile_archive_file(const Vector<ArchiveElement> &archive,
-		const ArchiveElement *ae,
-		String package, const String &target, int quiet,
-		bool &tmpdir_populated, ErrorHandler *errh);
+                const ArchiveElement *ae,
+                String package, const String &target, int quiet,
+                bool &tmpdir_populated, ErrorHandler *errh);
 
 CLICK_ENDDECLS
 #endif

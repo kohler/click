@@ -112,7 +112,7 @@ Task::error_hook(Task *, void *)
 Task::~Task()
 {
     if (scheduled() || on_pending_list())
-	cleanup();
+        cleanup();
 }
 
 Master *
@@ -127,10 +127,10 @@ inline void
 Task::add_pending_locked(RouterThread *thread)
 {
     if (!_pending_nextptr.x) {
-	_pending_nextptr.x = 1;
-	thread->_pending_tail->t = this;
-	thread->_pending_tail = &_pending_nextptr;
-	thread->add_pending();
+        _pending_nextptr.x = 1;
+        thread->_pending_tail->t = this;
+        thread->_pending_tail = &_pending_nextptr;
+        thread->add_pending();
     }
 }
 
@@ -139,12 +139,12 @@ Task::add_pending()
 {
     bool thread_match;
     do {
-	RouterThread *thread = _thread;
-	SpinlockIRQ::flags_t flags = thread->_pending_lock.acquire();
-	thread_match = thread == _thread;
-	if (thread_match && thread->thread_id() >= 0)
-	    add_pending_locked(thread);
-	thread->_pending_lock.release(flags);
+        RouterThread *thread = _thread;
+        SpinlockIRQ::flags_t flags = thread->_pending_lock.acquire();
+        thread_match = thread == _thread;
+        if (thread_match && thread->thread_id() >= 0)
+            add_pending_locked(thread);
+        thread->_pending_lock.release(flags);
     } while (!thread_match);
 }
 
@@ -152,18 +152,18 @@ inline void
 Task::remove_pending_locked(RouterThread *thread)
 {
     if (_pending_nextptr.x) {
-	Pending *tptr = &thread->_pending_head;
-	while (tptr->x > 1 && tptr->t != this)
-	    tptr = &tptr->t->_pending_nextptr;
-	if (tptr->t == this) {
-	    *tptr = _pending_nextptr;
-	    if (_pending_nextptr.x <= 1) {
-		thread->_pending_tail = tptr;
-		if (tptr == &thread->_pending_head)
-		    tptr->x = 0;
-	    }
-	    _pending_nextptr.x = 0;
-	}
+        Pending *tptr = &thread->_pending_head;
+        while (tptr->x > 1 && tptr->t != this)
+            tptr = &tptr->t->_pending_nextptr;
+        if (tptr->t == this) {
+            *tptr = _pending_nextptr;
+            if (_pending_nextptr.x <= 1) {
+                thread->_pending_tail = tptr;
+                if (tptr == &thread->_pending_head)
+                    tptr->x = 0;
+            }
+            _pending_nextptr.x = 0;
+        }
     }
 }
 
@@ -172,12 +172,12 @@ Task::remove_pending()
 {
     bool thread_match;
     do {
-	RouterThread *thread = _thread;
-	SpinlockIRQ::flags_t flags = thread->_pending_lock.acquire();
-	thread_match = thread == _thread;
-	if (thread_match)
-	    remove_pending_locked(thread);
-	thread->_pending_lock.release(flags);
+        RouterThread *thread = _thread;
+        SpinlockIRQ::flags_t flags = thread->_pending_lock.acquire();
+        thread_match = thread == _thread;
+        if (thread_match)
+            remove_pending_locked(thread);
+        thread->_pending_lock.release(flags);
     } while (!thread_match);
 }
 
@@ -204,7 +204,7 @@ Task::initialize(Element *owner, bool schedule)
     _status.home_thread_id = _thread->thread_id();
     _status.is_scheduled = schedule;
     if (schedule)
-	add_pending();
+        add_pending();
 }
 
 void
@@ -224,12 +224,12 @@ Task::cleanup()
 #endif
     if (initialized()) {
         // Mark the task as unscheduled.
-	strong_unschedule();
+        strong_unschedule();
 
-	// Perhaps the task is enqueued on the current pending
-	// collection.  If so, remove it.
-	if (on_pending_list())
-	    remove_pending();
+        // Perhaps the task is enqueued on the current pending
+        // collection.  If so, remove it.
+        if (on_pending_list())
+            remove_pending();
 
         // If not on the current pending list, perhaps this task
         // is on some list currently being processed by
@@ -253,8 +253,8 @@ Task::cleanup()
                 remove_from_scheduled_list();
         }
 
-	_owner = 0;
-	_thread = 0;
+        _owner = 0;
+        _thread = 0;
     }
 }
 
@@ -264,13 +264,13 @@ Task::true_reschedule()
 {
     RouterThread *thread = _thread;
     if (unlikely(thread == 0 || thread->thread_id() < 0))
-	return;
+        return;
     if (thread->current_thread_is_running()) {
-	Router *router = _owner->router();
-	if (router->_running >= Router::RUNNING_BACKGROUND) {
-	    fast_schedule();
-	    return;
-	}
+        Router *router = _owner->router();
+        if (router->_running >= Router::RUNNING_BACKGROUND) {
+            fast_schedule();
+            return;
+        }
     }
     add_pending();
 }
@@ -281,25 +281,25 @@ Task::move_thread_second_half()
     RouterThread *old_thread;
     SpinlockIRQ::flags_t flags;
     while (1) {
-	old_thread = _thread;
-	flags = old_thread->_pending_lock.acquire();
-	if (old_thread == _thread)
-	    break;
-	old_thread->_pending_lock.release(flags);
+        old_thread = _thread;
+        flags = old_thread->_pending_lock.acquire();
+        if (old_thread == _thread)
+            break;
+        old_thread->_pending_lock.release(flags);
     }
 
     if (old_thread->current_thread_is_running()
-	|| old_thread->thread_id() < 0) {
-	remove_from_scheduled_list();
-	remove_pending_locked(old_thread);
-	_thread = master()->thread(_status.home_thread_id);
-	old_thread->_pending_lock.release(flags);
+        || old_thread->thread_id() < 0) {
+        remove_from_scheduled_list();
+        remove_pending_locked(old_thread);
+        _thread = master()->thread(_status.home_thread_id);
+        old_thread->_pending_lock.release(flags);
 
-	if (_status.is_scheduled)
-	    add_pending();
+        if (_status.is_scheduled)
+            add_pending();
     } else {
-	add_pending_locked(old_thread);
-	old_thread->_pending_lock.release(flags);
+        add_pending_locked(old_thread);
+        old_thread->_pending_lock.release(flags);
     }
 }
 
@@ -307,11 +307,11 @@ void
 Task::move_thread(int new_thread_id)
 {
     if (likely(_thread != 0)) {
-	RouterThread *new_thread = master()->thread(new_thread_id);
-	// (new_thread->thread_id() might != new_thread_id)
-	_status.home_thread_id = new_thread->thread_id();
-	if (_status.home_thread_id != _thread->thread_id())
-	    move_thread_second_half();
+        RouterThread *new_thread = master()->thread(new_thread_id);
+        // (new_thread->thread_id() might != new_thread_id)
+        _status.home_thread_id = new_thread->thread_id();
+        if (_status.home_thread_id != _thread->thread_id())
+            move_thread_second_half();
     }
 }
 
@@ -325,19 +325,19 @@ Task::process_pending(RouterThread *thread)
 
     Task::Status status(_status);
     if (status.is_strong_unscheduled == 2) {
-	// clean up is_strong_unscheduled values used for driver stop events
-	Task::Status new_status(status);
-	new_status.is_strong_unscheduled = false;
-	atomic_uint32_t::compare_swap(_status.status, status.status, new_status.status);
+        // clean up is_strong_unscheduled values used for driver stop events
+        Task::Status new_status(status);
+        new_status.is_strong_unscheduled = false;
+        atomic_uint32_t::compare_swap(_status.status, status.status, new_status.status);
     }
 
     if (status.home_thread_id != thread->thread_id())
-	move_thread_second_half();
+        move_thread_second_half();
     else if (status.is_scheduled) {
-	if (router()->running())
-	    fast_schedule();
-	else
-	    add_pending();
+        if (router()->running())
+            fast_schedule();
+        else
+            add_pending();
     }
 }
 
