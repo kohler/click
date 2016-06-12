@@ -141,54 +141,54 @@ class Router { public:
     /** @cond never */
     // Needs to be public for Lexer, etc., but not useful outside
     struct Port {
-	int idx;
-	int port;
+        int idx;
+        int port;
 
-	Port() {
-	}
-	Port(int i, int p)
-	    : idx(i), port(p) {
-	}
+        Port() {
+        }
+        Port(int i, int p)
+            : idx(i), port(p) {
+        }
 
-	bool operator==(const Port &x) const {
-	    return idx == x.idx && port == x.port;
-	}
-	bool operator!=(const Port &x) const {
-	    return idx != x.idx || port != x.port;
-	}
-	bool operator<(const Port &x) const {
-	    return idx < x.idx || (idx == x.idx && port < x.port);
-	}
-	bool operator<=(const Port &x) const {
-	    return idx < x.idx || (idx == x.idx && port <= x.port);
-	}
+        bool operator==(const Port &x) const {
+            return idx == x.idx && port == x.port;
+        }
+        bool operator!=(const Port &x) const {
+            return idx != x.idx || port != x.port;
+        }
+        bool operator<(const Port &x) const {
+            return idx < x.idx || (idx == x.idx && port < x.port);
+        }
+        bool operator<=(const Port &x) const {
+            return idx < x.idx || (idx == x.idx && port <= x.port);
+        }
     };
 
     struct Connection {
-	Port p[2];
+        Port p[2];
 
-	Connection() {
-	}
-	Connection(int from_idx, int from_port, int to_idx, int to_port) {
-	    p[0] = Port(to_idx, to_port);
-	    p[1] = Port(from_idx, from_port);
-	}
+        Connection() {
+        }
+        Connection(int from_idx, int from_port, int to_idx, int to_port) {
+            p[0] = Port(to_idx, to_port);
+            p[1] = Port(from_idx, from_port);
+        }
 
-	const Port &operator[](int i) const {
-	    assert(i >= 0 && i < 2);
-	    return p[i];
-	}
-	Port &operator[](int i) {
-	    assert(i >= 0 && i < 2);
-	    return p[i];
-	}
+        const Port &operator[](int i) const {
+            assert(i >= 0 && i < 2);
+            return p[i];
+        }
+        Port &operator[](int i) {
+            assert(i >= 0 && i < 2);
+            return p[i];
+        }
 
-	bool operator==(const Connection &x) const {
-	    return p[0] == x.p[0] && p[1] == x.p[1];
-	}
-	bool operator<(const Connection &x) const {
-	    return p[0] < x.p[0] || (p[0] == x.p[0] && p[1] < x.p[1]);
-	}
+        bool operator==(const Connection &x) const {
+            return p[0] == x.p[0] && p[1] == x.p[1];
+        }
+        bool operator<(const Connection &x) const {
+            return p[0] < x.p[0] || (p[0] == x.p[0] && p[1] < x.p[1]);
+        }
     };
     /** @endcond never */
 
@@ -198,9 +198,9 @@ class Router { public:
     int sim_listen(int ifid, int element);
     int sim_if_ready(int ifid);
     int sim_write(int ifid, int ptype, const unsigned char *, int len,
-		  simclick_simpacketinfo *pinfo);
+                  simclick_simpacketinfo *pinfo);
     int sim_incoming_packet(int ifid, int ptype, const unsigned char *,
-			    int len, simclick_simpacketinfo* pinfo);
+                            int len, simclick_simpacketinfo* pinfo);
     void sim_trace(const char* event);
     int sim_get_node_id();
     int sim_get_next_pkt_id();
@@ -216,12 +216,12 @@ class Router { public:
     class RouterContextErrh;
 
     enum {
-	ROUTER_NEW, ROUTER_PRECONFIGURE, ROUTER_PREINITIALIZE,
-	ROUTER_LIVE, ROUTER_DEAD		// order is important
+        ROUTER_NEW, ROUTER_PRECONFIGURE, ROUTER_PREINITIALIZE,
+        ROUTER_LIVE, ROUTER_DEAD                // order is important
     };
     enum {
-	RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_PREPARING = 0,
-	RUNNING_BACKGROUND = 1, RUNNING_ACTIVE = 2
+        RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_PREPARING = 0,
+        RUNNING_BACKGROUND = 1, RUNNING_ACTIVE = 2
     };
 
     Master* _master;
@@ -243,8 +243,8 @@ class Router { public:
     mutable Vector<int> _element_home_thread_ids;
 
     struct element_landmark_t {
-	uint32_t first_landmarkid;
-	String filename;
+        uint32_t first_landmarkid;
+        String filename;
     };
     Vector<element_landmark_t> _element_landmarks;
     uint32_t _last_landmarkid;
@@ -276,15 +276,15 @@ class Router { public:
     String _configuration;
 
     struct notifier_signals_t {
-	enum { capacity = 4096 };
-	String name;
-	int nsig;
-	atomic_uint32_t sig[capacity / 32];
-	notifier_signals_t *next;
-	notifier_signals_t(const String &n, notifier_signals_t *nx)
-	    : name(n), nsig(0), next(nx) {
-	    memset(&sig[0], 0, sizeof(sig));
-	}
+        enum { capacity = 4096 };
+        String name;
+        int nsig;
+        atomic_uint32_t sig[capacity / 32];
+        notifier_signals_t *next;
+        notifier_signals_t(const String &n, notifier_signals_t *nx)
+            : name(n), nsig(0), next(nx) {
+            memset(&sig[0], 0, sizeof(sig));
+        }
     };
     notifier_signals_t *_notifier_signals;
     HashMap_ArenaFactory* _arena_factory;
@@ -305,7 +305,7 @@ class Router { public:
 
     Connection *remove_connection(Connection *cp);
     void hookup_error(const Port &p, bool isoutput, const char *message,
-		      ErrorHandler *errh, bool active = false);
+                      ErrorHandler *errh, bool active = false);
     int check_hookup_elements(ErrorHandler*);
     int check_hookup_range(ErrorHandler*);
     int check_hookup_completeness(ErrorHandler*);
@@ -320,7 +320,7 @@ class Router { public:
 
     void make_gports();
     inline int ngports(bool isout) const {
-	return _element_gport_offset[isout].back();
+        return _element_gport_offset[isout].back();
     }
     inline int gport(bool isoutput, const Port &port) const;
 
@@ -447,9 +447,9 @@ inline int
 Router::home_thread_id(const Element *e) const
 {
     if (initialized())
-	return _element_home_thread_ids[e->eindex() + 1];
+        return _element_home_thread_ids[e->eindex() + 1];
     else
-	return hard_home_thread_id(e);
+        return hard_home_thread_id(e);
 }
 
 /** @cond never */
@@ -500,9 +500,9 @@ inline const char *
 Router::flow_code_override(int eindex) const
 {
     if (_flow_code_override.size())
-	return hard_flow_code_override(eindex);
+        return hard_flow_code_override(eindex);
     else
-	return 0;
+        return 0;
 }
 
 inline void
