@@ -19,14 +19,15 @@
 #include <click/config.h>
 #include "taskthreadtest.hh"
 #include <click/glue.hh>
-#include <click/error.hh>
+#include <click/straccum.hh>
 #include <click/args.hh>
 #include <click/master.hh>
 CLICK_DECLS
 
 TaskThreadTest::TaskThreadTest()
-    : _main_task(main_task_callback, this), _tasks(),
-      _ntasks(4096), _free_batch(128), _change_batch(1024)
+    : _main_task(main_task_callback, this), _tasks(), _ttt_stats(),
+      _ntasks(4096), _free_batch(128), _change_batch(1024),
+      _main_tickets(Task::DEFAULT_TICKETS)
 {
 }
 
@@ -56,11 +57,14 @@ int
 TaskThreadTest::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     if (Args(conf, this, errh)
-	    .read("N", _ntasks)
-	    .read("FREES", _free_batch)
-	    .read("CHANGES", _change_batch)
-	    .complete() < 0)
-	    return -1;
+	.read("N", _ntasks)
+	.read("FREE", _free_batch)
+	.read("CHANGE", _change_batch)
+#if HAVE_STRIDE_SCHED
+        .read("MAIN_TICKETS", _main_tickets)
+#endif
+        .complete() < 0)
+        return -1;
     return 0;
 }
 
@@ -72,7 +76,13 @@ TaskThreadTest::initialize(ErrorHandler*)
         new(reinterpret_cast<char*>(&_tasks[i])) Task(this);
         _tasks[i].initialize(this, true);
     }
+    _ttt_stats = new ttt_stat[master()->nthreads()];
     _main_task.initialize(this, true);
+#if HAVE_STRIDE_SCHED
+    _main_task.set_tickets(_main_tickets);
+#else
+    (void) _main_tickets;
+#endif
     return 0;
 }
 
@@ -85,13 +95,32 @@ TaskThreadTest::cleanup(CleanupStage)
         delete[] reinterpret_cast<char*>(_tasks);
         _tasks = 0;
     }
+    delete[] _ttt_stats;
 }
 
 bool
 TaskThreadTest::run_task(Task* t)
 {
+    _ttt_stats[t->thread()->thread_id()].runs += 1;
     t->fast_reschedule();
     return true;
+}
+
+String
+TaskThreadTest::read_handler(Element* e, void*)
+{
+    TaskThreadTest* t = static_cast<TaskThreadTest*>(e);
+    StringAccum sa;
+    for (int i = 0; i < t->master()->nthreads(); ++i)
+        sa << (i ? " " : "") << t->_ttt_stats[i].runs;
+    sa << "\n";
+    return sa.take_string();
+}
+
+void
+TaskThreadTest::add_handlers()
+{
+    add_read_handler("runs", read_handler, H_RUNS);
 }
 
 CLICK_ENDDECLS
