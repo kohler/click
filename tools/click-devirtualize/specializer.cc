@@ -469,7 +469,7 @@ Specializer::output_includes(ElementTypeInfo &eti, StringAccum &out)
   int p = 0;
   while (p < len && isspace((unsigned char) s[p]))
     p++;
-  if (len - p > 7 < len && strncmp(s + p, "#ifndef", 7) == 0) {
+  if (len - p > 7 && strncmp(s + p, "#ifndef", 7) == 0) {
     int next = p + 7;
     for (; next < len && s[next] != '\n'; next++)
       /* nada */;
