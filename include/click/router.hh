@@ -89,7 +89,8 @@ class Router { public:
 
     inline ThreadSched* thread_sched() const;
     inline void set_thread_sched(ThreadSched* scheduler);
-    inline int home_thread_id(const Element *e) const;
+    inline int home_thread_id(const Element* e) const;
+    inline void set_home_thread_id(const Element* e, int home_thread);
 
     /** @cond never */
     // Needs to be public for NameInfo, but not useful outside
@@ -444,12 +445,18 @@ Router::set_thread_sched(ThreadSched* ts)
 }
 
 inline int
-Router::home_thread_id(const Element *e) const
+Router::home_thread_id(const Element* e) const
 {
     if (initialized())
         return _element_home_thread_ids[e->eindex() + 1];
     else
         return hard_home_thread_id(e);
+}
+
+inline void
+Router::set_home_thread_id(const Element* e, int home_thread_id)
+{
+    _element_home_thread_ids[e->eindex() + 1] = home_thread_id;
 }
 
 /** @cond never */
