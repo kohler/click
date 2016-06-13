@@ -183,11 +183,11 @@ RouterThread::request_stop()
 {
     _stop_flag = 1;
     if (current_thread_is_running()) {
-        // Set the current thread's tasks to "is_scheduled 2" and mark them as
-        // pending.  As a result the driver loop will not run these tasks:
-        // it's checking for "is_scheduled 1".  (We cannot call
-        // Task::remove_from_scheduled_list(), because run_tasks keeps the
-        // current task in limbo, so it must stay in the scheduled list.)
+        // Set the current thread's tasks to "is_strong_unscheduled 2" and
+        // mark them as pending. As a result the driver loop will not run
+        // these tasks. (We cannot call Task::remove_from_scheduled_list(),
+        // because run_tasks keeps the current task in limbo, so it must
+        // stay in the scheduled list.)
         Task::Status want_status;
         want_status.home_thread_id = thread_id();
         want_status.is_scheduled = true;
