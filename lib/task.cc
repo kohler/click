@@ -188,7 +188,9 @@ Task::initialize(Element *owner, bool schedule)
     assert(owner && !initialized() && !scheduled());
 
     Router *router = owner->router();
-    int tid = router->home_thread_id(owner);
+    int tid = _status.home_thread_id;
+    if (tid == -2)
+        tid = router->home_thread_id(owner);
     // Master::thread() returns the quiescent thread if its argument is out of
     // range
     _thread = router->master()->thread(tid);
@@ -306,13 +308,9 @@ Task::move_thread_second_half()
 void
 Task::move_thread(int new_thread_id)
 {
-    if (likely(_thread != 0)) {
-        RouterThread *new_thread = master()->thread(new_thread_id);
-        // (new_thread->thread_id() might != new_thread_id)
-        _status.home_thread_id = new_thread->thread_id();
-        if (_status.home_thread_id != _thread->thread_id())
-            move_thread_second_half();
-    }
+    _status.home_thread_id = new_thread_id;
+    if (likely(_thread != 0) && _status.home_thread_id != _thread->thread_id())
+        move_thread_second_half();
 }
 
 void

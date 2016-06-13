@@ -396,7 +396,7 @@ Task::Task(TaskCallback f, void *user_data)
 #endif
       _thread(0), _owner(0)
 {
-    _status.home_thread_id = -1;
+    _status.home_thread_id = -2;
     _status.is_scheduled = _status.is_strong_unscheduled = false;
     _pending_nextptr.x = 0;
 }
@@ -419,7 +419,7 @@ Task::Task(Element* e)
 #endif
       _thread(0), _owner(0)
 {
-    _status.home_thread_id = -1;
+    _status.home_thread_id = -2;
     _status.is_scheduled = _status.is_strong_unscheduled = false;
     _pending_nextptr.x = 0;
 }
