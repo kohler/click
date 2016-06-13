@@ -55,6 +55,7 @@ class RouterThread { public:
 
     inline bool stop_flag() const;
 
+    inline void mark_driver_entry();
     void driver();
 
     void kill_router(Router *router);
@@ -155,12 +156,13 @@ class RouterThread { public:
     // SHARED STATE GROUP
     Master *_master CLICK_ALIGNED(CLICK_CACHE_LINE_SIZE);
     int _id;
+    bool _driver_entered;
 #if HAVE_MULTITHREAD && !(CLICK_LINUXMODULE || CLICK_MINIOS)
     click_processor_t _running_processor;
 #endif
 #if CLICK_LINUXMODULE
-    struct task_struct *_linux_task;
     bool _greedy;
+    struct task_struct *_linux_task;
 #endif
 #if CLICK_MINIOS
     struct thread *_minios_thread;
@@ -230,6 +232,7 @@ class RouterThread { public:
 #endif
     static inline bool running_in_interrupt();
     inline bool current_thread_is_running() const;
+    inline bool current_thread_is_running_cleanup() const;
     void request_stop();
     inline void request_go();
 
@@ -357,6 +360,12 @@ RouterThread::running_in_interrupt()
 #endif
 }
 
+inline void
+RouterThread::mark_driver_entry()
+{
+    _driver_entered = true;
+}
+
 inline bool
 RouterThread::current_thread_is_running() const
 {
@@ -371,6 +380,12 @@ RouterThread::current_thread_is_running() const
 #else
     return true;
 #endif
+}
+
+inline bool
+RouterThread::current_thread_is_running_cleanup() const
+{
+    return current_thread_is_running() || (!_driver_entered && _id >= 0);
 }
 
 inline void

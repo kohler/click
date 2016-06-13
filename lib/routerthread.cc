@@ -7,7 +7,7 @@
  * Copyright (c) 2001-2002 International Computer Science Institute
  * Copyright (c) 2004-2007 Regents of the University of California
  * Copyright (c) 2008-2010 Meraki, Inc.
- * Copyright (c) 2000-2012 Eddie Kohler
+ * Copyright (c) 2000-2016 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -67,7 +67,7 @@ static unsigned long greedy_schedule_jiffies;
  */
 
 RouterThread::RouterThread(Master *master, int id)
-    : _stop_flag(0), _master(master), _id(id)
+    : _stop_flag(0), _master(master), _id(id), _driver_entered(false)
 {
     _pending_head.x = 0;
     _pending_tail = &_pending_head;
@@ -183,11 +183,10 @@ RouterThread::request_stop()
 {
     _stop_flag = 1;
     if (current_thread_is_running()) {
-        // Set the current thread's tasks to "is_strong_unscheduled 2" and
-        // mark them as pending. As a result the driver loop will not run
-        // these tasks. (We cannot call Task::remove_from_scheduled_list(),
-        // because run_tasks keeps the current task in limbo, so it must
-        // stay in the scheduled list.)
+        // Set the current thread's tasks to "is_strong_unscheduled 2" so
+        // the driver loop will not run them. (We cannot call
+        // Task::remove_from_scheduled_list(), because run_tasks keeps the
+        // current task in limbo, so it must stay in the scheduled list.)
         Task::Status want_status;
         want_status.home_thread_id = thread_id();
         want_status.is_scheduled = true;
@@ -196,8 +195,7 @@ RouterThread::request_stop()
         new_status.is_strong_unscheduled = 2;
 
         for (Task *t = task_begin(); t != task_end(); t = task_next(t))
-            if (atomic_uint32_t::compare_swap(t->_status.status, want_status.status, new_status.status) == want_status.status)
-                t->add_pending();
+            atomic_uint32_t::compare_swap(t->_status.status, want_status.status, new_status.status);
     }
 }
 
@@ -404,11 +402,13 @@ RouterThread::run_tasks(int ntasks)
         t = task_begin();
         if (t == task_end())
             break;
+        assert(t->_thread == this);
 
         if (unlikely(t->_status.status != want_status.status)) {
+            if (t->_status.home_thread_id != want_status.home_thread_id
+                || t->_status.is_strong_unscheduled == 2)
+                t->add_pending(0);
             t->remove_from_scheduled_list();
-            if (t->_status.home_thread_id != thread_id())
-                t->move_thread_second_half();
             continue;
         }
 
@@ -575,8 +575,6 @@ RouterThread::process_pending()
     while (my_pending.x > 1) {
         Task *t = my_pending.t;
         my_pending = t->_pending_nextptr;
-        t->_pending_nextptr.x = 0;
-        click_fence();
         t->process_pending(this);
     }
 }
@@ -585,6 +583,7 @@ void
 RouterThread::driver()
 {
     int iter = 0;
+    _driver_entered = true;
 #if CLICK_LINUXMODULE
     // this task is running the driver
     _linux_task = current;
@@ -690,6 +689,7 @@ RouterThread::driver()
 
     driver_unlock_tasks();
 
+    _driver_entered = false;
 #if HAVE_ADAPTIVE_SCHEDULER
     _cur_click_share = 0;
 #endif

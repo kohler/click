@@ -747,6 +747,8 @@ particular purpose.\n");
       hotswap_task.initialize(hotswap_thunk_router->root_element(), false);
       hotswap_thunk_router->activate(false, errh);
     }
+    for (int t = 0; t < click_nthreads; ++t)
+        click_master->thread(t)->mark_driver_entry();
 #if HAVE_MULTITHREAD
 # ifndef HAVE_DPDK
     for (int t = 1; t < click_nthreads; ++t) {

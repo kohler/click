@@ -193,11 +193,12 @@ class Task : private TaskLink { public:
 
     /** @brief Reschedule the task.
      *
-     * The task is rescheduled on its home thread.  The task will eventually
-     * run (unless the home thread is quiescent).
+     * The task is rescheduled on its home thread. It will eventually run,
+     * unless its home thread is quiescent or it has been
+     * strong_unschedule()d.
      *
      * @sa unschedule, strong_reschedule */
-    inline void reschedule();
+    void reschedule();
 
     /** @brief Reschedule a task from the task's callback function.
      *
@@ -347,28 +348,21 @@ class Task : private TaskLink { public:
     inline bool on_pending_list() const {
         return _pending_nextptr.x != 0;
     }
+    inline bool needs_cleanup() const;
 #if CLICK_DEBUG_SCHEDULING
  private:
 #endif
 
-    inline void add_pending_locked(RouterThread *thread);
-    void add_pending();
-    inline void remove_pending_locked(RouterThread *thread);
-    void remove_pending();
+    void add_pending(uintptr_t limit);
     void process_pending(RouterThread *thread);
 
-    inline void complete_schedule(unsigned new_pass);
-    inline void fast_schedule();
-    void true_reschedule();
+    void fast_schedule();
     inline void remove_from_scheduled_list();
 
     static bool error_hook(Task *task, void *user_data);
 
-    void move_thread_second_half();
-
     friend class RouterThread;
     friend class Master;
-
 };
 
 
@@ -440,6 +434,30 @@ Task::on_scheduled_list() const
 #endif
 }
 
+inline bool
+Task::needs_cleanup() const
+{
+#if HAVE_TASK_HEAP
+    int a;
+    uintptr_t b;
+    do {
+        a = _schedpos;
+        b = _pending_nextptr.x;
+        click_fence();
+    } while (a != _schedpos || b != _pending_nextptr.x);
+    return a >= 0 || b != 0;
+#else
+    TaskLink* a;
+    uintptr_t b;
+    do {
+        a = _prev;
+        b = _pending_nextptr.x;
+        click_fence();
+    } while (a != _prev || b != _pending_nextptr.x);
+    return a != 0 || b != 0;
+#endif
+}
+
 /** @cond never */
 /** @brief Return the task's callback function.
  * @deprecated Use callback() instead. */
@@ -479,11 +497,14 @@ Task::remove_from_scheduled_list()
         _thread->_task_heap.pop_back();
         if (_thread->_task_heap.size() > 0)
             _thread->task_reheapify_from(_schedpos, back);
+        click_fence();
         _schedpos = -1;
 #else
         _next->_prev = _prev;
         _prev->_next = _next;
-        _next = _prev = 0;
+        _next = 0;
+        click_fence();
+        _prev = 0;
 #endif
     }
 }
@@ -536,82 +557,6 @@ Task::adjust_tickets(int delta)
 }
 
 #endif /* HAVE_STRIDE_SCHED */
-
-
-inline void
-Task::complete_schedule(unsigned new_pass)
-{
-    assert(_thread && !on_scheduled_list());
-#if CLICK_LINUXMODULE
-    // tasks never run at interrupt time in Linux
-    assert(!in_interrupt());
-#endif
-#if CLICK_BSDMODULE
-    GIANT_REQUIRED;
-#endif
-
-#if HAVE_STRIDE_SCHED
-    // update pass
-    _pass = new_pass;
-
-# if HAVE_TASK_HEAP
-    _schedpos = _thread->_task_heap.size();
-    _thread->_task_heap.push_back(RouterThread::task_heap_element());
-    _thread->task_reheapify_from(_schedpos, this);
-# elif 0
-    // look for 'n' immediately before where we should be scheduled
-    TaskLink *n = _thread->_prev;
-    while (n != _thread && PASS_GT(n->_pass, _pass))
-        n = n->_prev;
-    // schedule after 'n'
-    _next = n->_next;
-    _prev = n;
-    n->_next = this;
-    _next->_prev = this;
-# else
-    // look for 'n' immediately after where we should be scheduled
-    TaskLink *n = _thread->_task_link._next;
-    while (n != &_thread->_task_link && !PASS_GT(n->_pass, _pass))
-        n = n->_next;
-    // schedule before 'n'
-    _prev = n->_prev;
-    _next = n;
-    n->_prev = this;
-    _prev->_next = this;
-# endif
-
-#else /* !HAVE_STRIDE_SCHED */
-    (void) new_pass;
-
-    // schedule at the end of the list
-    _prev = _thread->_task_link._prev;
-    _next = &_thread->_task_link;
-    _thread->_task_link._prev = this;
-    _prev->_next = this;
-#endif /* HAVE_STRIDE_SCHED */
-}
-
-inline void
-Task::fast_schedule()
-{
-    if (!on_scheduled_list()) {
-#if HAVE_STRIDE_SCHED
-        assert(_tickets >= 1);
-        complete_schedule(_thread->pass() + _stride);
-#else
-        complete_schedule(0);
-#endif
-    }
-}
-
-inline void
-Task::reschedule()
-{
-    _status.is_scheduled = true;
-    if (!on_scheduled_list()
-        || (likely(_thread) && !_thread->current_thread_is_running()))
-        true_reschedule();
-}
 
 
 /** @brief Fire the task by calling its callback function.
