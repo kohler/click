@@ -45,6 +45,10 @@ scheduling. Default is 1024.
 
 Unsigned integer. Scheduling priority for the main task.
 
+=item PROGRESS
+
+Boolean. If true, print periodic progress reports. Default is false.
+
 =back
 
 =h runs r
@@ -79,6 +83,11 @@ private:
     unsigned _free_batch;
     unsigned _change_batch;
     unsigned _main_tickets;
+    uint64_t _main_runs;
+    uint64_t _free_cycles;
+    uint64_t _create_cycles;
+    uint64_t _change_cycles;
+    bool _progress;
 
     static bool main_task_callback(Task*, void*);
     enum { H_RUNS };

@@ -27,16 +27,23 @@ CLICK_DECLS
 TaskThreadTest::TaskThreadTest()
     : _main_task(main_task_callback, this), _tasks(), _ttt_stats(),
       _ntasks(4096), _free_batch(128), _change_batch(1024),
-      _main_tickets(Task::DEFAULT_TICKETS)
+      _main_tickets(Task::DEFAULT_TICKETS), _main_runs(0),
+      _free_cycles(0), _create_cycles(0), _change_cycles(0),
+      _progress(false)
 {
 }
 
 bool TaskThreadTest::main_task_callback(Task* t, void* callback) {
     TaskThreadTest* e = static_cast<TaskThreadTest*>(callback);
     // free + recreate _free_batch
+    click_cycles_t cycles0 = click_get_cycles();
     unsigned n = click_random() % e->_ntasks;
     for (unsigned i = 0; i < e->_free_batch; ++i)
         e->_tasks[(n + i) % e->_ntasks].~Task();
+    click_cycles_t cycles1 = click_get_cycles();
+    e->_free_cycles += cycles1 - cycles0;
+    cycles0 = cycles1;
+
     unsigned nthreads = e->master()->nthreads();
     e->router()->set_home_thread_id(e, click_random() % nthreads);
     for (unsigned i = 0; i < e->_free_batch; ++i) {
@@ -44,12 +51,27 @@ bool TaskThreadTest::main_task_callback(Task* t, void* callback) {
         new(reinterpret_cast<char*>(&e->_tasks[j])) Task(e);
         e->_tasks[j].initialize(e, true);
     }
+    cycles1 = click_get_cycles();
+    e->_create_cycles += cycles1 - cycles0;
+    cycles0 = cycles1;
+
     // change thread for _change_batch
     for (unsigned i = 0; i < e->_change_batch; ++i) {
         unsigned j = click_random() % e->_ntasks;
         e->_tasks[j].move_thread((e->_tasks[j].home_thread_id() + 1) % nthreads);
     }
+    cycles1 = click_get_cycles();
+    e->_change_cycles += cycles1 - cycles0;
+
     t->fast_reschedule();
+    ++e->_main_runs;
+    if (e->_progress && e->_main_runs % (1 << 0) == 0) {
+        click_cycles_t t = e->_free_cycles + e->_create_cycles + e->_change_cycles;
+        click_chatter("%{element}: %llu runs (%llu free, %llu create, %llu change)", e, e->_main_runs,
+                      (e->_free_cycles * 1000) / t,
+                      (e->_create_cycles * 1000) / t,
+                      (e->_change_cycles * 1000) / t);
+    }
     return true;
 }
 
@@ -63,6 +85,7 @@ TaskThreadTest::configure(Vector<String> &conf, ErrorHandler *errh)
 #if HAVE_STRIDE_SCHED
         .read("MAIN_TICKETS", _main_tickets)
 #endif
+        .read("PROGRESS", _progress)
         .complete() < 0)
         return -1;
     return 0;
