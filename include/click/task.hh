@@ -116,7 +116,7 @@ class Task : private TaskLink { public:
     /** @brief Return the task's home thread ID.
      *
      * This is the @link RouterThread::thread_id() thread_id()@endlink of the
-     * thread on which this Task would run if it were scheduled.  This need
+     * thread on which this Task would run if it were scheduled. This need
      * not equal the ID of the current thread(), since changes in
      * home_thread_id() aren't always implemented immediately (because of
      * locking issues). */
@@ -173,8 +173,8 @@ class Task : private TaskLink { public:
      *
      * @note A scheduled task will usually run very soon, but not
      * always; due to locking issues, the effects of some reschedule()
-     * requests may be delayed.  Also, a task unscheduled with
-     * strong_unschedule() may apper scheduled(), but will not run
+     * requests may be delayed. Although a task unscheduled with
+     * strong_unschedule() may appear scheduled(), it will not run
      * until strong_reschedule() is called. */
     inline bool scheduled() const {
         return _status.is_scheduled;
@@ -264,8 +264,7 @@ class Task : private TaskLink { public:
      * currently scheduled, is rescheduled on thread @a new_thread_id
      * (which generally takes some time to take effect).  If @a new_thread_id
      * is less than zero or greater than the number of threads on the router,
-     * it is coerced to -1, and the task is scheduled on a quiescent thread
-     * that never actually runs.
+     * the task is scheduled on a quiescent thread that never actually runs.
      */
     void move_thread(int new_thread_id);
 
