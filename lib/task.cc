@@ -111,7 +111,7 @@ Task::error_hook(Task *, void *)
 
 Task::~Task()
 {
-    if (scheduled() || on_pending_list())
+    if (on_scheduled_list() || on_pending_list())
         cleanup();
 }
 
