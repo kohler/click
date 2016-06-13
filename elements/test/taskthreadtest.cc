@@ -19,6 +19,7 @@
 #include <click/config.h>
 #include "taskthreadtest.hh"
 #include <click/glue.hh>
+#include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/args.hh>
 #include <click/master.hh>
@@ -29,7 +30,7 @@ TaskThreadTest::TaskThreadTest()
       _ntasks(4096), _free_batch(128), _change_batch(1024),
       _main_tickets(Task::DEFAULT_TICKETS), _main_runs(0),
       _free_cycles(0), _create_cycles(0), _change_cycles(0),
-      _progress(false)
+      _progress(0)
 {
 }
 
@@ -65,12 +66,16 @@ bool TaskThreadTest::main_task_callback(Task* t, void* callback) {
 
     t->fast_reschedule();
     ++e->_main_runs;
-    if (e->_progress && e->_main_runs % (1 << 0) == 0) {
+    if (e->_progress && e->_main_runs % e->_progress == 0) {
         click_cycles_t t = e->_free_cycles + e->_create_cycles + e->_change_cycles;
         click_chatter("%{element}: %llu runs (%llu free, %llu create, %llu change)", e, e->_main_runs,
                       (e->_free_cycles * 1000) / t,
                       (e->_create_cycles * 1000) / t,
                       (e->_change_cycles * 1000) / t);
+        StringAccum sa;
+        for (int i = 0; i < e->master()->nthreads(); ++i)
+            sa << (i ? " " : "") << e->_ttt_stats[i].runs;
+        click_chatter("%{element}: %s", e, sa.c_str());
     }
     return true;
 }
@@ -88,6 +93,10 @@ TaskThreadTest::configure(Vector<String> &conf, ErrorHandler *errh)
         .read("PROGRESS", _progress)
         .complete() < 0)
         return -1;
+    if (_free_batch > _ntasks)
+        return errh->error("FREE must be no greater than N");
+    if (_change_batch > _ntasks)
+        return errh->error("CHANGE must be no greater than N");
     return 0;
 }
 

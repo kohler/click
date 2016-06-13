@@ -47,7 +47,8 @@ Unsigned integer. Scheduling priority for the main task.
 
 =item PROGRESS
 
-Boolean. If true, print periodic progress reports. Default is false.
+Unsigned integer. If nonzero, print periodic progress reports, the more
+often the lower the number. Default is 0.
 
 =back
 
@@ -87,7 +88,7 @@ private:
     uint64_t _free_cycles;
     uint64_t _create_cycles;
     uint64_t _change_cycles;
-    bool _progress;
+    unsigned _progress;
 
     static bool main_task_callback(Task*, void*);
     enum { H_RUNS };
