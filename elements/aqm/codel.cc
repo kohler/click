@@ -244,8 +244,8 @@ CoDel::control_law(Timestamp t)
 
     uint32_t val_click_ns = int_divide(scaled_codel_interval * Timestamp::nsec_per_msec, int_sqrt(scaled_state_drops));
 
-    uint32_t rem_ns;
-    uint32_t val_click_sec = int_divide(val_click_ns, Timestamp::nsec_per_sec, rem_ns);
+    uint32_t val_click_sec;
+    uint32_t rem_ns = int_divide(val_click_ns, Timestamp::nsec_per_sec, val_click_sec);   
 
     Timestamp val_click_ts = Timestamp::make_nsec(val_click_sec, rem_ns);
     return (t + val_click_ts);
@@ -279,10 +279,10 @@ void
 CoDel::add_handlers()
 {
     add_data_handlers("drops", Handler::OP_READ, &_total_drops);
-    add_read_handler("codel_interval", read_keyword_handler, "0 CODEL_INTERVAL");
-    add_write_handler("codel_interval", reconfigure_keyword_handler, "0 CODEL_INTERVAL");
-    add_read_handler("codel_target", read_keyword_handler, "1 CODEL_TARGET");
-    add_write_handler("codel_target", reconfigure_keyword_handler, "1 CODEL_TARGET");
+    add_read_handler("codel_interval", read_keyword_handler, "1 INTERVAL");
+    add_write_handler("codel_interval", reconfigure_keyword_handler, "1 INTERVAL");
+    add_read_handler("codel_target", read_keyword_handler, "0 TARGET");
+    add_write_handler("codel_target", reconfigure_keyword_handler, "0 TARGET");
     add_read_handler("stats", read_handler, 2);
     add_read_handler("queues", read_handler, 3);
     add_read_handler("config", read_handler, 4);
