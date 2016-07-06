@@ -9765,7 +9765,7 @@ $as_echo "unknown" >&6; }
 fi
 
 LINUXMODULE_2_6=0
-if test "$linux_version.$linux_patchlevel" = 2.6 -o "$linux_version" = 3; then
+if test "$linux_version.$linux_patchlevel" = 2.6 -o "$linux_version" -ge 3; then
     LINUXMODULE_2_6=1
 
 $as_echo "#define HAVE_LINUXMODULE_2_6 1" >>confdefs.h
