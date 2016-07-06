@@ -330,6 +330,9 @@ sub one_includeroot ($$) {
 	    # constant expressions
 	    s{__cpu_to_be32 *\( *([0-9][0-9a-fxA-FX]*) *\)}{__constant_htonl($1)}g;
 
+	    # de-const typeof in unions
+	    s{typeof\(x\)}{typeof(x + 0)}g;
+
 	    # stuff for particular files (what a shame)
 	    if ($d eq "page-flags.h") {
 		s{(#define PAGE_FLAGS_H)}{$1\n#undef private};
