@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 ToDPDKDevice::ToDPDKDevice() :
-    _iqueues(), _port_id(0), _queue_id(0), _blocking(false),
+    _iqueues(), _dev(0), _queue_id(0), _blocking(false),
     _iqueue_size(1024), _burst_size(32), _timeout(0), _n_sent(0),
     _n_dropped(0), _congestion_warning_printed(false)
 {
@@ -41,7 +41,7 @@ int ToDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     int n_desc;
 
     if (Args(conf, this, errh)
-        .read_mp("PORT", _port_id)
+        .read_mp("PORT", _dev)
         .read_p("QUEUE", _queue_id)
         .read("IQUEUE", _iqueue_size)
         .read("BLOCKING", _blocking)
@@ -58,8 +58,7 @@ int ToDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
             "match BURST, that is %d", name().c_str(), _iqueue_size);
     }
 
-    return DPDKDevice::add_tx_device(
-        _port_id, _queue_id, (n_desc > 0) ? n_desc : 1024, errh);
+    return _dev->add_tx_queue(_queue_id, (n_desc > 0) ? n_desc : 1024, errh);
 }
 
 int ToDPDKDevice::initialize(ErrorHandler *errh)
@@ -169,7 +168,7 @@ void ToDPDKDevice::flush_internal_queue(InternalQueue &iqueue) {
         if (iqueue.index + sub_burst >= _iqueue_size)
             // The sub_burst wraps around the ring
             sub_burst = _iqueue_size - iqueue.index;
-        r = rte_eth_tx_burst(_port_id, _queue_id, &iqueue.pkts[iqueue.index],
+        r = rte_eth_tx_burst(_dev->port_id, _queue_id, &iqueue.pkts[iqueue.index],
                              sub_burst);
 
         iqueue.nr_pending -= r;

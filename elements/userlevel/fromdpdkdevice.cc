@@ -28,7 +28,7 @@
 CLICK_DECLS
 
 FromDPDKDevice::FromDPDKDevice() :
-    _port_id(0), _queue_id(0), _promisc(true), _burst_size(32), _count(0),
+    _dev(0), _queue_id(0), _promisc(true), _burst_size(32), _count(0),
     _task(this)
 {
 }
@@ -42,7 +42,7 @@ int FromDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     int n_desc = -1;
 
     if (Args(conf, this, errh)
-        .read_mp("PORT", _port_id)
+        .read_mp("PORT", _dev)
         .read_p("QUEUE", _queue_id)
         .read("PROMISC", _promisc)
         .read("BURST", _burst_size)
@@ -50,8 +50,7 @@ int FromDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
         .complete() < 0)
         return -1;
 
-    return DPDKDevice::add_rx_device(
-        _port_id, _queue_id, _promisc, (n_desc > 0) ? n_desc : 256, errh);
+    return _dev->add_rx_queue(_queue_id, _promisc, (n_desc > 0) ? n_desc : 256, errh);
 }
 
 int FromDPDKDevice::initialize(ErrorHandler *errh)
@@ -69,7 +68,7 @@ bool FromDPDKDevice::run_task(Task * t)
 {
     struct rte_mbuf *pkts[_burst_size];
 
-    unsigned n = rte_eth_rx_burst(_port_id, _queue_id, pkts, _burst_size);
+    unsigned n = rte_eth_rx_burst(_dev->port_id, _queue_id, pkts, _burst_size);
     for (unsigned i = 0; i < n; ++i) {
         unsigned char* data = rte_pktmbuf_mtod(pkts[i], unsigned char *);
         rte_prefetch0(data);
