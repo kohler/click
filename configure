@@ -703,6 +703,7 @@ xen_dir
 INCLUDE_KSYMS
 LINUXMODULE_FIXINCLUDES
 USE_DPDK
+RTE_VER_YEAR
 RTE_VER_MINOR
 RTE_VER_MAJOR
 RTE_TARGET
@@ -6589,11 +6590,15 @@ Define \$RTE_SDK and \$RTE_TARGET as per Intel DPDK documentation.
     fi
     rte_ver_major=`grep "#define RTE_VER_MAJOR" "$RTE_SDK/$RTE_TARGET/include/rte_version.h" | head -n 1 | awk '{print $3}'`
     rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_SDK/$RTE_TARGET/include/rte_version.h" | head -n 1 | awk '{print $3}'`
+    rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_SDK/$RTE_TARGET/include/rte_version.h" | head -n 1 | awk '{print $3}'`
+
 
 
     RTE_VER_MAJOR=$rte_ver_major
 
     RTE_VER_MINOR=$rte_ver_minor
+
+    RTE_VER_YEAR=$rte_ver_year
 
     $as_echo "#define HAVE_DPDK 1" >>confdefs.h
 

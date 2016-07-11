@@ -56,9 +56,12 @@ public:
             return p->buffer_destructor() == DPDKDevice::free_pkt || (p->data_packet() && is_dpdk_packet(p->data_packet()));
     }
 
+    inline static rte_mbuf* get_pkt(unsigned numa_node);
+    inline static rte_mbuf* get_pkt();
     static void free_pkt(unsigned char *, size_t, void *pktmbuf);
 
     static int NB_MBUF;
+    static int MBUF_DATA_SIZE;
     static int MBUF_SIZE;
     static int MBUF_CACHE_SIZE;
     static int RX_PTHRESH;
@@ -92,6 +95,7 @@ private:
     static bool _is_initialized;
     static HashTable<unsigned, DPDKDevice> _devs;
     static struct rte_mempool** _pktmbuf_pools;
+    static bool no_more_buffer_msg_printed;
 
     int initialize_device(ErrorHandler *errh) CLICK_COLD;
     int add_queue(Dir dir, int &queue_id, bool promisc,
@@ -119,6 +123,22 @@ private:
 
     friend class DPDKDeviceArg;
 };
+
+inline rte_mbuf* DPDKDevice::get_pkt(unsigned numa_node) {
+    struct rte_mbuf* mbuf = rte_pktmbuf_alloc(get_mpool(numa_node));
+    if (unlikely(!mbuf)) {
+        if (!DPDKDevice::no_more_buffer_msg_printed)
+            click_chatter("No more DPDK buffer available ! Try using "
+                               "DPDKInfo to allocate more.");
+        else
+            DPDKDevice::no_more_buffer_msg_printed = true;
+    }
+    return mbuf;
+}
+
+inline rte_mbuf* DPDKDevice::get_pkt() {
+    return get_pkt(rte_socket_id());
+}
 
 /** @class DPDKPortArg
   @brief Parser class for DPDK Port, either an integer or a PCI address. */
