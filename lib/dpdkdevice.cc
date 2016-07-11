@@ -1,8 +1,9 @@
 /*
  * dpdkdevice.{cc,hh} -- library for interfacing with Intel's DPDK
+ * Cyril Soldani, Tom Barbette
  *
- * Copyright (c) 2014-2015 Cyril Soldani, University of Liège
- * Copyright (c) 2015 Tom Barbette, University of Liège
+ * Copyright (c) 2014-2016 University of Liege
+ * Copyright (c) 2016 Cisco Meraki
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +33,7 @@ int DPDKDevice::get_port_numa_node(unsigned port_id)
 
 unsigned int DPDKDevice::get_nb_txdesc(unsigned port_id)
 {
-    DevInfo *info = _devs.findp(port_id);
+    DevInfo *info = _devs.get_pointer(port_id);
     if (!info)
         return 0;
 
@@ -43,7 +44,7 @@ bool DPDKDevice::alloc_pktmbufs()
 {
     // Count NUMA sockets
     int max_socket = -1;
-    for (HashMap<unsigned, DevInfo>::const_iterator it = _devs.begin();
+    for (HashTable<unsigned, DevInfo>::const_iterator it = _devs.begin();
          it != _devs.end(); ++it) {
         int numa_node = DPDKDevice::get_port_numa_node(it.key());
         if (numa_node > max_socket)
@@ -60,7 +61,7 @@ bool DPDKDevice::alloc_pktmbufs()
     memset(_pktmbuf_pools, 0, (max_socket + 1) * sizeof(rte_mempool_p));
 
     // Create a pktmbuf pool for each active socket
-    for (HashMap<unsigned, DevInfo>::const_iterator it = _devs.begin();
+    for (HashTable<unsigned, DevInfo>::const_iterator it = _devs.begin();
          it != _devs.end(); ++it) {
         int numa_node = DPDKDevice::get_port_numa_node(it.key());
         if (!_pktmbuf_pools[numa_node]) {
@@ -130,7 +131,7 @@ int DPDKDevice::initialize_device(unsigned port_id, DevInfo &info,
     tx_conf.txq_flags |= ETH_TXQ_FLAGS_NOMULTSEGS | ETH_TXQ_FLAGS_NOOFFLOADS;
 
     int numa_node = DPDKDevice::get_port_numa_node(port_id);
-    for (unsigned i = 0; i < info.rx_queues.size(); ++i) {
+    for (int i = 0; i < info.rx_queues.size(); ++i) {
         if (rte_eth_rx_queue_setup(
                 port_id, i, info.n_rx_descs, numa_node, &rx_conf,
                 _pktmbuf_pools[numa_node]) != 0)
@@ -139,7 +140,7 @@ int DPDKDevice::initialize_device(unsigned port_id, DevInfo &info,
                 i, port_id, numa_node);
     }
 
-    for (unsigned i = 0; i < info.tx_queues.size(); ++i)
+    for (int i = 0; i < info.tx_queues.size(); ++i)
         if (rte_eth_tx_queue_setup(port_id, i, info.n_tx_descs, numa_node,
                                    &tx_conf) != 0)
             return errh->error(
@@ -190,10 +191,10 @@ int DPDKDevice::add_device(unsigned port_id, DPDKDevice::Dir dir,
         return errh->error(
             "Trying to configure DPDK device after initialization");
 
-    DevInfo *info = _devs.findp(port_id);
+    DevInfo *info = _devs.get_pointer(port_id);
     if (!info) {
-        _devs.insert(port_id, DevInfo());
-        info = _devs.findp(port_id);
+        _devs.find_insert(port_id, DevInfo());
+        info = _devs.get_pointer(port_id);
     }
 
 	if (dir == RX) {
@@ -258,7 +259,7 @@ int DPDKDevice::initialize(ErrorHandler *errh)
     if (n_ports == 0)
         return errh->error("No DPDK-enabled ethernet port found");
 
-    for (HashMap<unsigned, DevInfo>::const_iterator it = _devs.begin();
+    for (HashTable<unsigned, DevInfo>::const_iterator it = _devs.begin();
          it != _devs.end(); ++it)
         if (it.key() >= n_ports)
             return errh->error("Cannot find DPDK port %u", it.key());
@@ -266,7 +267,7 @@ int DPDKDevice::initialize(ErrorHandler *errh)
     if (!alloc_pktmbufs())
         return errh->error("Could not allocate packet MBuf pools");
 
-    for (HashMap<unsigned, DevInfo>::iterator it = _devs.begin();
+    for (HashTable<unsigned, DevInfo>::iterator it = _devs.begin();
          it != _devs.end(); ++it) {
         int ret = initialize_device(it.key(), it.value(), errh);
         if (ret < 0)
@@ -294,7 +295,7 @@ int DPDKDevice::TX_HTHRESH = 0;
 int DPDKDevice::TX_WTHRESH = 0;
 
 bool DPDKDevice::_is_initialized = false;
-HashMap<unsigned, DPDKDevice::DevInfo> DPDKDevice::_devs;
+HashTable<unsigned, DPDKDevice::DevInfo> DPDKDevice::_devs;
 struct rte_mempool** DPDKDevice::_pktmbuf_pools;
 
 CLICK_ENDDECLS

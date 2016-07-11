@@ -20,7 +20,7 @@
 
 #include <click/packet.hh>
 #include <click/error.hh>
-#include <click/hashmap.hh>
+#include <click/hashtable.hh>
 #include <click/vector.hh>
 
 CLICK_DECLS
@@ -77,7 +77,7 @@ private:
     };
 
     static bool _is_initialized;
-    static HashMap<unsigned, DevInfo> _devs;
+    static HashTable<unsigned, DevInfo> _devs;
     static struct rte_mempool** _pktmbuf_pools;
 
     static int initialize_device(unsigned port_id, DevInfo &info,
