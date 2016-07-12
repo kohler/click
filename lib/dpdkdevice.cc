@@ -99,10 +99,14 @@ int DPDKDevice::initialize_device(unsigned port_id, DevInfo &info,
     dev_conf.rx_adv_conf.rss_conf.rss_hf = ETH_RSS_IP;
 
     //We must open at least one queue per direction
-    if (info.rx_queues.size() == 0)
+    if (info.rx_queues.size() == 0) {
         info.rx_queues.resize(1);
-    if (info.tx_queues.size() == 0)
+        info.n_rx_descs = 256;
+    }
+    if (info.tx_queues.size() == 0) {
         info.tx_queues.resize(1);
+        info.n_tx_descs = 1024;
+    }
 
     if (rte_eth_dev_configure(port_id, info.rx_queues.size(), info.tx_queues.size(),
                               &dev_conf) < 0)
