@@ -341,31 +341,6 @@ where RTE_SDK and RTE_TARGET are defined as per the DPDK documentation, e.g.
     RTE_SDK=/path/to/dpdk-2.1.0/
     RTE_TARGET=x86_64-native-linuxapp-gcc
 
-Before running, DPDK must be set up properly, including support for huge pages
-and loading the DPDK module, e.g.
-
-    echo 1024 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
-    mkdir -p /mnt/huge
-    mount -t hugetlbfs nodev /mnt/huge
-    /sbin/insmod "$RTE_SDK/$RTE_TARGET/kmod/igb_uio.ko
-
-Refer to the DPDK documentation for more details.
-
-Like with any other DPDK application, you have to pass DPDK EAL arguments first,
-append "--", then pass Click arguments. As the DPDK EAL will handle thread
-management instead of Click, Click's `-j` (or `--threads`) argument will be
-disabled when --enable-dpdk is provided, and you must at least give the
-following two EAL arguments, even if running on a single core :
-
-    -c COREMASK : hexadecimal bitmask of cores to run on
-    -n NUM      : number of memory channels
-
-A sample command to run a click configuration on 4 cores on a computer with
-4 memory channels and listen for control connections on TCP port 8080 would be :
-
-    click -c 0xf -n 4 -- -p 8080 configfile
-
-
 CLICKY GUI
 ----------
 

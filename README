@@ -128,6 +128,42 @@ NS-2 Simulator
 is installed, the 'ns' command is able to run Click scripts as part of a
 normal NS-2 simulation.
 
+DPDK
+....
+
+    Before running in DPDK mode, the DPDK must be set up properly as per the
+DPDK documentation. That is, mainly setting up huge pages and binding some NIC
+to the DPDK userspace driver. E.g.
+
+    To set up huge pages:
+        echo 1024 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
+        mkdir -p /mnt/huge
+        mount -t hugetlbfs nodev /mnt/huge
+    On x86_64 you might achieve better performances with 1G huge pages, which
+must be enabled through the kernel cmdline.
+
+    To bind eth0 to DPDK:
+        modprobe uio_pci_generic
+        dpdk/tools/dpdk_nic_bind.py --bind=uio_pci_generic eth0
+
+    Refer to the DPDK documentation for more details about huge pages and
+binding devices or use the DPDK helper located in dpdk/tools/setup.sh.
+
+    Like with any other DPDK application, you have to pass DPDK EAL arguments
+first, append "--", then pass Click arguments. As the DPDK EAL will handle
+thread management instead of Click, Click's `-j` (or `--threads`) argument
+will be disabled when --enable-dpdk is provided, and you must at least give the
+following two EAL arguments, even if running on a single core:
+
+    -c COREMASK : hexadecimal bitmask of cores to run on
+    -n NUM      : number of memory channels
+
+A sample command to run a click configuration on 4 cores on a computer with
+4 memory channels and listen for control connections on TCP port 8080 would be:
+
+    click -c 0xf -n 4 -- -p 8080 configfile
+
+
 Configurations
 ..............
 
