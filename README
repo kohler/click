@@ -147,7 +147,7 @@ must be enabled through the kernel cmdline.
         dpdk/tools/dpdk_nic_bind.py --bind=uio_pci_generic eth0
 
     Refer to the DPDK documentation for more details about huge pages and
-binding devices. There are alternatives to uio_pci_generic.
+binding devices or use the DPDK helper located in dpdk/tools/setup.sh.
 
     Like with any other DPDK application, you have to pass DPDK EAL arguments
 first, append "--", then pass Click arguments. As the DPDK EAL will handle
