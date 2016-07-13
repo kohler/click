@@ -96,11 +96,11 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
     //We must open at least one queue per direction
     if (info.rx_queues.size() == 0) {
         info.rx_queues.resize(1);
-        info.n_rx_descs = 256;
+        info.n_rx_descs = 64;
     }
     if (info.tx_queues.size() == 0) {
         info.tx_queues.resize(1);
-        info.n_tx_descs = 1024;
+        info.n_tx_descs = 64;
     }
 
     if (rte_eth_dev_configure(port_id, info.rx_queues.size(), info.tx_queues.size(),
