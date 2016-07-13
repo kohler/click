@@ -31,20 +31,16 @@ int DPDKDevice::get_port_numa_node(unsigned port_id)
     return (numa_node == -1) ? 0 : numa_node;
 }
 
-unsigned int DPDKDevice::get_nb_txdesc(unsigned port_id)
+unsigned int DPDKDevice::get_nb_txdesc()
 {
-    DevInfo *info = _devs.get_pointer(port_id);
-    if (!info)
-        return 0;
-
-    return info->n_tx_descs;
+    return info.n_tx_descs;
 }
 
 bool DPDKDevice::alloc_pktmbufs()
 {
     // Count NUMA sockets
     int max_socket = -1;
-    for (HashTable<unsigned, DevInfo>::const_iterator it = _devs.begin();
+    for (HashTable<unsigned, DPDKDevice>::const_iterator it = _devs.begin();
          it != _devs.end(); ++it) {
         int numa_node = DPDKDevice::get_port_numa_node(it.key());
         if (numa_node > max_socket)
@@ -61,7 +57,7 @@ bool DPDKDevice::alloc_pktmbufs()
     memset(_pktmbuf_pools, 0, (max_socket + 1) * sizeof(rte_mempool_p));
 
     // Create a pktmbuf pool for each active socket
-    for (HashTable<unsigned, DevInfo>::const_iterator it = _devs.begin();
+    for (HashTable<unsigned, DPDKDevice>::const_iterator it = _devs.begin();
          it != _devs.end(); ++it) {
         int numa_node = DPDKDevice::get_port_numa_node(it.key());
         if (!_pktmbuf_pools[numa_node]) {
@@ -85,8 +81,7 @@ struct rte_mempool *DPDKDevice::get_mpool(unsigned int socket_id) {
     return _pktmbuf_pools[socket_id];
 }
 
-int DPDKDevice::initialize_device(unsigned port_id, DevInfo &info,
-                                  ErrorHandler *errh)
+int DPDKDevice::initialize_device(ErrorHandler *errh)
 {
     struct rte_eth_conf dev_conf;
     struct rte_eth_dev_info dev_info;
@@ -99,10 +94,14 @@ int DPDKDevice::initialize_device(unsigned port_id, DevInfo &info,
     dev_conf.rx_adv_conf.rss_conf.rss_hf = ETH_RSS_IP;
 
     //We must open at least one queue per direction
-    if (info.rx_queues.size() == 0)
+    if (info.rx_queues.size() == 0) {
         info.rx_queues.resize(1);
-    if (info.tx_queues.size() == 0)
+        info.n_rx_descs = 64;
+    }
+    if (info.tx_queues.size() == 0) {
         info.tx_queues.resize(1);
+        info.n_tx_descs = 64;
+    }
 
     if (rte_eth_dev_configure(port_id, info.rx_queues.size(), info.tx_queues.size(),
                               &dev_conf) < 0)
@@ -183,7 +182,7 @@ bool set_slot(Vector<bool> &v, int &id) {
 	return true;
 }
 
-int DPDKDevice::add_device(unsigned port_id, DPDKDevice::Dir dir,
+int DPDKDevice::add_queue(DPDKDevice::Dir dir,
                            int &queue_id, bool promisc, unsigned n_desc,
                            ErrorHandler *errh)
 {
@@ -191,38 +190,32 @@ int DPDKDevice::add_device(unsigned port_id, DPDKDevice::Dir dir,
         return errh->error(
             "Trying to configure DPDK device after initialization");
 
-    DevInfo *info = _devs.get_pointer(port_id);
-    if (!info) {
-        _devs.find_insert(port_id, DevInfo());
-        info = _devs.get_pointer(port_id);
-    }
-
 	if (dir == RX) {
-		if (info->rx_queues.size() > 0 && promisc != info->promisc)
+		if (info.rx_queues.size() > 0 && promisc != info.promisc)
 			return errh->error(
 				"Some elements disagree on whether or not device %u should"
 				" be in promiscuous mode", port_id);
-		info->promisc |= promisc;
+		info.promisc |= promisc;
 		if (n_desc > 0) {
-			if (n_desc != info->n_rx_descs && info->rx_queues.size() > 0)
+			if (n_desc != info.n_rx_descs && info.rx_queues.size() > 0)
 				return errh->error(
 						"Some elements disagree on the number of RX descriptors "
 						"for device %u", port_id);
-			info->n_rx_descs = n_desc;
+			info.n_rx_descs = n_desc;
 		}
-		if (!set_slot(info->rx_queues,queue_id))
+		if (!set_slot(info.rx_queues,queue_id))
 			return errh->error(
 						"Some elements are assigned to the same RX queue "
 						"for device %u", port_id);
 	} else {
 		if (n_desc > 0) {
-			if (n_desc != info->n_tx_descs && info->tx_queues.size() > 0)
+			if (n_desc != info.n_tx_descs && info.tx_queues.size() > 0)
 				return errh->error(
 						"Some elements disagree on the number of TX descriptors "
 						"for device %u", port_id);
-			info->n_tx_descs = n_desc;
+			info.n_tx_descs = n_desc;
 		}
-		if (!set_slot(info->tx_queues,queue_id))
+		if (!set_slot(info.tx_queues,queue_id))
 			return errh->error(
 						"Some elements are assigned to the same TX queue "
 						"for device %u", port_id);
@@ -231,17 +224,16 @@ int DPDKDevice::add_device(unsigned port_id, DPDKDevice::Dir dir,
     return 0;
 }
 
-int DPDKDevice::add_rx_device(unsigned port_id, int &queue_id, bool promisc,
+int DPDKDevice::add_rx_queue(int &queue_id, bool promisc,
                               unsigned n_desc, ErrorHandler *errh)
 {
-    return add_device(
-        port_id, DPDKDevice::RX, queue_id, promisc, n_desc, errh);
+    return add_queue(DPDKDevice::RX, queue_id, promisc, n_desc, errh);
 }
 
-int DPDKDevice::add_tx_device(unsigned port_id, int &queue_id, unsigned n_desc,
+int DPDKDevice::add_tx_queue(int &queue_id, unsigned n_desc,
                               ErrorHandler *errh)
 {
-    return add_device(port_id, DPDKDevice::TX, queue_id, false, n_desc, errh);
+    return add_queue(DPDKDevice::TX, queue_id, false, n_desc, errh);
 }
 
 int DPDKDevice::initialize(ErrorHandler *errh)
@@ -259,7 +251,7 @@ int DPDKDevice::initialize(ErrorHandler *errh)
     if (n_ports == 0)
         return errh->error("No DPDK-enabled ethernet port found");
 
-    for (HashTable<unsigned, DevInfo>::const_iterator it = _devs.begin();
+    for (HashTable<unsigned, DPDKDevice>::const_iterator it = _devs.begin();
          it != _devs.end(); ++it)
         if (it.key() >= n_ports)
             return errh->error("Cannot find DPDK port %u", it.key());
@@ -267,9 +259,9 @@ int DPDKDevice::initialize(ErrorHandler *errh)
     if (!alloc_pktmbufs())
         return errh->error("Could not allocate packet MBuf pools");
 
-    for (HashTable<unsigned, DevInfo>::iterator it = _devs.begin();
+    for (HashTable<unsigned, DPDKDevice>::iterator it = _devs.begin();
          it != _devs.end(); ++it) {
-        int ret = initialize_device(it.key(), it.value(), errh);
+        int ret = it.value().initialize_device(errh);
         if (ret < 0)
             return ret;
     }
@@ -281,6 +273,60 @@ int DPDKDevice::initialize(ErrorHandler *errh)
 void DPDKDevice::free_pkt(unsigned char *, size_t, void *pktmbuf)
 {
     rte_pktmbuf_free((struct rte_mbuf *) pktmbuf);
+}
+
+
+bool
+DPDKDeviceArg::parse(const String &str, DPDKDevice* &result, const ArgContext &ctx)
+{
+    int port_id;
+
+    if (!IntArg().parse(str, port_id)) {
+       //Try parsing a ffff:ff:ff.f format. Code adapted from EtherAddressArg::parse
+        unsigned data[4];
+        int d = 0, p = 0;
+        const char *s, *end = str.end();
+
+        for (s = str.begin(); s != end; ++s) {
+           int digit;
+           if (*s >= '0' && *s <= '9')
+             digit = *s - '0';
+           else if (*s >= 'a' && *s <= 'f')
+             digit = *s - 'a' + 10;
+           else if (*s >= 'A' && *s <= 'F')
+             digit = *s - 'A' + 10;
+           else {
+             if ((*s == ':' && d < 2 || *s == '.' && d == 2) && (p == 1 || (d < 3 && p == 2) || (d == 0 && (p == 3 || p == 4))) && d < 3) {
+               p = 0;
+               ++d;
+               continue;
+             } else
+               break;
+           }
+
+           if ((d == 0 && p == 4) || (d > 0 && p == 2) || (d == 3 && p == 1) || d == 4)
+               break;
+
+           data[d] = (p ? data[d] << 4 : 0) + digit;
+           ++p;
+        }
+
+        if (s == end && p != 0 && d != 3) {
+            ctx.error("invalid id or invalid PCI address format");
+            return false;
+        }
+
+        port_id = DPDKDevice::get_port_from_pci(data[0],data[1],data[2],data[3]);
+    }
+
+    if (port_id >= 0 && port_id < rte_eth_dev_count())
+        result = DPDKDevice::get_device(port_id);
+    else {
+        ctx.error("Cannot resolve PCI address to DPDK device");
+        return false;
+	}
+
+    return true;
 }
 
 int DPDKDevice::NB_MBUF = 65536;
@@ -295,7 +341,7 @@ int DPDKDevice::TX_HTHRESH = 0;
 int DPDKDevice::TX_WTHRESH = 0;
 
 bool DPDKDevice::_is_initialized = false;
-HashTable<unsigned, DPDKDevice::DevInfo> DPDKDevice::_devs;
+HashTable<unsigned, DPDKDevice> DPDKDevice::_devs;
 struct rte_mempool** DPDKDevice::_pktmbuf_pools;
 
 CLICK_ENDDECLS

@@ -33,7 +33,8 @@ Arguments:
 
 =item PORT
 
-Integer.  Port identifier of the device.
+Integer or PCI address.  Port identifier of the device, or a PCI address in the
+format fffff:ff:ff.f
 
 =item QUEUE
 
@@ -99,7 +100,7 @@ private:
     static int reset_count_handler(const String&, Element*, void*,
                                    ErrorHandler*) CLICK_COLD;
 
-    unsigned int _port_id;
+    DPDKDevice* _dev;
     int _queue_id;
     bool _promisc;
     unsigned int _burst_size;
