@@ -55,6 +55,11 @@ The default is 32.
 
 Integer.  Number of descriptors per ring. The default is 256.
 
+=item ALLOW_NONEXISTENT
+
+Boolean.  Do not fail if the PORT do not existent. If it's the case the task
+will never run and this element will behave like Idle.
+
 =back
 
 This element is only available at user level, when compiled with DPDK

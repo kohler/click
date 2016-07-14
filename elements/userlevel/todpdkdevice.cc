@@ -39,15 +39,18 @@ ToDPDKDevice::~ToDPDKDevice()
 int ToDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int n_desc;
+	String dev;
+	bool allow_nonexistent = false;
 
     if (Args(conf, this, errh)
-        .read_mp("PORT", _dev)
+        .read_mp("PORT", dev)
         .read_p("QUEUE", _queue_id)
         .read("IQUEUE", _iqueue_size)
         .read("BLOCKING", _blocking)
         .read("BURST", _burst_size)
         .read("TIMEOUT", _timeout)
         .read("NDESC",n_desc)
+        .read("ALLOW_NONEXISTENT", allow_nonexistent)
         .complete() < 0)
         return -1;
 
@@ -58,11 +61,21 @@ int ToDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
             "match BURST, that is %d", name().c_str(), _iqueue_size);
     }
 
+    if (!DPDKDeviceArg::parse(dev, _dev)) {
+        if (allow_nonexistent)
+            return 0;
+        else
+            return errh->error("%s : Unknown or invalid PORT", dev.c_str());
+    }
+
     return _dev->add_tx_queue(_queue_id, (n_desc > 0) ? n_desc : 1024, errh);
 }
 
 int ToDPDKDevice::initialize(ErrorHandler *errh)
 {
+    if (!_dev)
+        return 0;
+
     _iqueues.resize(click_max_cpu_ids());
 
     for (int i = 0; i < _iqueues.size(); i++) {
@@ -191,6 +204,9 @@ void ToDPDKDevice::flush_internal_queue(InternalQueue &iqueue) {
 
 void ToDPDKDevice::push(int, Packet *p)
 {
+    if (!_dev)
+        return;
+
     // Get the thread-local internal queue
     InternalQueue &iqueue = _iqueues[click_current_cpu_id()];
 

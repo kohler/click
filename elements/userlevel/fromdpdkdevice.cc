@@ -28,8 +28,8 @@
 CLICK_DECLS
 
 FromDPDKDevice::FromDPDKDevice() :
-    _dev(0), _queue_id(0), _promisc(true), _burst_size(32), _count(0),
-    _task(this)
+    _dev(0), _queue_id(0), _promisc(true), _burst_size(32),
+    _count(0), _task(this)
 {
 }
 
@@ -40,21 +40,34 @@ FromDPDKDevice::~FromDPDKDevice()
 int FromDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int n_desc = -1;
+    String dev;
+    bool allow_nonexistent = false;
 
     if (Args(conf, this, errh)
-        .read_mp("PORT", _dev)
+        .read_mp("PORT", dev)
         .read_p("QUEUE", _queue_id)
         .read("PROMISC", _promisc)
         .read("BURST", _burst_size)
         .read("NDESC", n_desc)
+        .read("ALLOW_NONEXISTENT", allow_nonexistent)
         .complete() < 0)
         return -1;
+
+    if (!DPDKDeviceArg::parse(dev, _dev)) {
+        if (allow_nonexistent)
+            return 0;
+        else
+            return errh->error("%s : Unknown or invalid PORT", dev.c_str());
+    }
 
     return _dev->add_rx_queue(_queue_id, _promisc, (n_desc > 0) ? n_desc : 256, errh);
 }
 
 int FromDPDKDevice::initialize(ErrorHandler *errh)
 {
+    if (!_dev)
+        return 0;
+
     ScheduleInfo::initialize_task(this, &_task, true, errh);
 
     return DPDKDevice::initialize(errh);
