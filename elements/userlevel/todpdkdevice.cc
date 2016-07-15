@@ -38,7 +38,7 @@ ToDPDKDevice::~ToDPDKDevice()
 
 int ToDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    int n_desc;
+    int n_desc = -1;
 	String dev;
 	bool allow_nonexistent = false;
 
