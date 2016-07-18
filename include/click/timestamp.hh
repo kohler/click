@@ -708,7 +708,7 @@ class Timestamp { public:
     static inline void value_div_mod(int32_t &div, int32_t &rem,
                                      value_type a, uint32_t b) {
         value_type quot;
-        rem = int_divide(a, b, quot);
+        rem = int_remainder(a, b, quot);
         div = quot;
     }
 

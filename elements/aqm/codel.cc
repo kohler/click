@@ -245,7 +245,7 @@ CoDel::control_law(Timestamp t)
     uint32_t val_click_ns = int_divide(scaled_codel_interval * Timestamp::nsec_per_msec, int_sqrt(scaled_state_drops));
 
     uint32_t val_click_sec;
-    uint32_t rem_ns = int_divide(val_click_ns, Timestamp::nsec_per_sec, val_click_sec);   
+    uint32_t rem_ns = int_remainder(val_click_ns, Timestamp::nsec_per_sec, val_click_sec);
 
     Timestamp val_click_ts = Timestamp::make_nsec(val_click_sec, rem_ns);
     return (t + val_click_ts);
