@@ -299,7 +299,9 @@ sub one_includeroot ($$) {
 	    # C comments (assume no string includes '/*')
 	    s{(/\*.*?\*/)}{sprotect($1)}gse;
 	    # C++ comments (assume no string includes '//')
-	    s{(//.*?)}{sprotect($1)}ge;
+	    s{(//[^\r\n]*)}{sprotect($1)}gse;
+            # #error
+	    s{^(#\s*error[^\r\n]*)}{sprotect($1)}gme;
 	    # strings
 	    s{("")}{sprotect($1)}ge;
 	    s{"((?:[^\\\"]|\\.)*)"}{"\"" . sprotect_str($1) . "\""}sge;
@@ -365,6 +367,9 @@ sub one_includeroot ($$) {
 	    if ($d eq "route.h") {
 		s{\b(\w+)\s*=\s*\{(\s*\w+:.*?)\}\s*;}{"$1;\n" . expand_initializer($1, $2, $f)}sge;
 	    }
+            if ($d eq "atomic.h") {
+                s{^(ATOMIC_OP.*?(?:and|or))_value}{$1}mg;
+            }
 	    if ($d eq "fs.h") {
 		s{\(struct\s+(\w+)\)\s*\{(\s*\w+:.*?)\}}{"({ struct $1 __magic_struct_$1;\n" . expand_initializer("__magic_struct_$1", $2, $f) . "\n__magic_struct_$1; })"}sge;
 	    }

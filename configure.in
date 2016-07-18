@@ -1572,6 +1572,16 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
         AC_DEFINE([HAVE_LINUX_ASM_ALTERNATIVE_H], [1], [Define if you have the <asm/alternative.h> header file.])
     fi
 
+    AC_CACHE_CHECK([for <asm/scatterlist.h>], [ac_cv_linux_asm_scatterlist_h],
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <asm/scatterlist.h>]],
+[[]])],
+        [ac_cv_linux_asm_scatterlist_h=yes], [ac_cv_linux_asm_scatterlist_h=no])])
+    if test $ac_cv_linux_asm_scatterlist_h = yes; then
+        AC_DEFINE([HAVE_LINUX_ASM_SCATTERLIST_H], [1], [Define if you have the <asm/scatterlist.h> header file.])
+    fi
+
     AC_CACHE_CHECK([for <asm/system.h>], [ac_cv_linux_asm_system_h],
         [AC_LANG_C
         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[

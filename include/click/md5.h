@@ -56,7 +56,9 @@
 CLICK_CXX_PROTECT
 # include <linux/err.h>
 # include <linux/crypto.h>
-# include <asm/scatterlist.h>
+# if HAVE_LINUX_ASM_SCATTERLIST_H
+#  include <asm/scatterlist.h>
+# endif
 # include <linux/scatterlist.h>
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>

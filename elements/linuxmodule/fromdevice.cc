@@ -280,7 +280,7 @@ static struct sk_buff *
 click_br_handle_frame_hook(struct net_bridge_port *p, struct sk_buff *skb)
 {
 # if CLICK_DEVICE_UNRECEIVABLE_SK_BUFF
-    if (__get_cpu_var(click_device_unreceivable_sk_buff) == skb)
+    if (CLICK_DEVICE_UNRECEIVABLE_SK_BUFF_READ() == skb)
 	// This packet is being passed to Linux by ToHost.
 	return skb;
 # endif
@@ -316,7 +316,7 @@ click_fromdevice_rx_handler(struct sk_buff *skb)
     struct sk_buff *skb = *pskb;
 # endif
 # if CLICK_DEVICE_UNRECEIVABLE_SK_BUFF
-    if (__get_cpu_var(click_device_unreceivable_sk_buff) == skb)
+    if (CLICK_DEVICE_UNRECEIVABLE_SK_BUFF_READ() == skb)
 	// This packet is being passed to Linux by ToHost.
 	return RX_HANDLER_PASS;
 # endif

@@ -244,9 +244,9 @@ ToHost::push(int port, Packet *p)
 	skb->pkt_type = PACKET_OTHERHOST;
 
     // This assignment prevents any FromDevice from re-receiving the packet.
-    __get_cpu_var(click_device_unreceivable_sk_buff) = skb;
+    CLICK_DEVICE_UNRECEIVABLE_SK_BUFF_WRITE(skb);
     netif_receive_skb(skb);
-    __get_cpu_var(click_device_unreceivable_sk_buff) = 0;
+    CLICK_DEVICE_UNRECEIVABLE_SK_BUFF_WRITE((struct sk_buff*) 0);
 # endif
 
     dev_put(dev);

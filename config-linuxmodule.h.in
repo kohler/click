@@ -34,6 +34,9 @@
 /* Define if you have the <asm/alternative.h> header file. */
 #undef HAVE_LINUX_ASM_ALTERNATIVE_H
 
+/* Define if you have the <asm/scatterlist.h> header file. */
+#undef HAVE_LINUX_ASM_SCATTERLIST_H
+
 /* Define if you have the <asm/system.h> header file. */
 #undef HAVE_LINUX_ASM_SYSTEM_H
 
