@@ -189,6 +189,15 @@
 # define CLICK_DEPRECATED __attribute__((deprecated))
 #endif
 
+/* Define macro for deprecated functions with message. */
+#if __GNUC__ < 3 || (__GNUC__ == 3 && __GNUC_MINOR__ == 0)
+# define CLICK_DEPRECATED_MSG(m) /* nothing */
+#elif __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 4)
+# define CLICK_DEPRECATED_MSG(m) __attribute__((deprecated))
+#else
+# define CLICK_DEPRECATED_MSG(m) __attribute__((deprecated(m)))
+#endif
+
 /* Define macro for deprecated enumerations. */
 #if __GNUC__ < 3 || (__GNUC__ == 3 && __GNUC_MINOR__ < 4)
 # define CLICK_DEPRECATED_ENUM /* nothing */
