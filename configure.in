@@ -23,6 +23,7 @@ AC_CONFIG_FILES([installch], [chmod +x installch])
 AC_CONFIG_FILES([share/click/config.mk:config.mk.in share/click/pkg-config.mk])
 AC_CONFIG_FILES([doc/Makefile etc/libclick/Makefile tools/Makefile tools/lib/Makefile])
 AC_CONFIG_SRCDIR([click-buildtool.in])
+ac_user_cxx=${CXX+y}
 
 CLICK_VERSION=$PACKAGE_VERSION
 dnl NB a real tab character!

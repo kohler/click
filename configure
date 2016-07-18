@@ -3227,6 +3227,7 @@ ac_config_files="$ac_config_files share/click/config.mk:config.mk.in share/click
 ac_config_files="$ac_config_files doc/Makefile etc/libclick/Makefile tools/Makefile tools/lib/Makefile"
 
 
+ac_user_cxx=${CXX+y}
 
 CLICK_VERSION=$PACKAGE_VERSION
 tabchar='	'
@@ -5426,6 +5427,57 @@ $as_echo "$ac_cv_good_new_h" >&6; }
 $as_echo "#define HAVE_NEW_H 1" >>confdefs.h
 
         fi
+    fi
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the C++ compiler understands 'auto'" >&5
+$as_echo_n "checking whether the C++ compiler understands 'auto'... " >&6; }
+if ${ac_cv_cxx_auto+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+struct s { int a; }; int f(s x) { auto &y = x; return y.a; }
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ac_cv_cxx_auto=yes
+else
+  ac_cv_cxx_auto=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_auto" >&5
+$as_echo "$ac_cv_cxx_auto" >&6; }
+    if test "$ac_cv_cxx_auto" != yes -a -z "$ac_user_cxx"; then
+        CXX="${CXX} -std=gnu++0x"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the C++ compiler with -std=gnu++0x understands 'auto'" >&5
+$as_echo_n "checking whether the C++ compiler with -std=gnu++0x understands 'auto'... " >&6; }
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+struct s { int a; }; int f(s x) { auto &y = x; return y.a; }
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ac_cv_cxx_auto=yes
+else
+  ac_cv_cxx_auto=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_auto" >&5
+$as_echo "$ac_cv_cxx_auto" >&6; }
     fi
 
         save_cxxflags="$CXXFLAGS"

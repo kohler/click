@@ -128,6 +128,18 @@ and Linux header files are GCC-specific.)
         fi
     fi
 
+    dnl require C++11
+    AC_CACHE_CHECK([whether the C++ compiler understands 'auto'], [ac_cv_cxx_auto], [
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[struct s { int a; }; int f(s x) { auto &y = x; return y.a; }]], [[]])],
+            [ac_cv_cxx_auto=yes], [ac_cv_cxx_auto=no])])
+    if test "$ac_cv_cxx_auto" != yes -a -z "$ac_user_cxx"; then
+        CXX="${CXX} -std=gnu++0x"
+        AC_MSG_CHECKING([whether the C++ compiler with -std=gnu++0x understands 'auto'])
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[struct s { int a; }; int f(s x) { auto &y = x; return y.a; }]], [[]])],
+            [ac_cv_cxx_auto=yes], [ac_cv_cxx_auto=no])
+        AC_MSG_RESULT([$ac_cv_cxx_auto])
+    fi
+
     dnl check for C++11 features
     save_cxxflags="$CXXFLAGS"
     test -n "$ac_cv_c_w_wall" && CXXFLAGS="$CXXFLAGS -W -Wall"
