@@ -66,61 +66,61 @@ void
 Timestamp::warp(bool steady, bool from_now)
 {
     if (_warp_class == warp_simulation) {
-	*this = _warp_flat_offset[steady];
-	if (from_now)
-	    for (int i = 0; i < 2; ++i) {
+        *this = _warp_flat_offset[steady];
+        if (from_now)
+            for (int i = 0; i < 2; ++i) {
 # if TIMESTAMP_REP_FLAT64 || TIMESTAMP_MATH_FLAT64
-		++_warp_flat_offset[i]._t.x;
+                ++_warp_flat_offset[i]._t.x;
 # else
-		++_warp_flat_offset[i]._t.subsec;
+                ++_warp_flat_offset[i]._t.subsec;
 # endif
-		_warp_flat_offset[i].add_fix();
-	    }
+                _warp_flat_offset[i].add_fix();
+            }
     } else if (_warp_speed == 1.0)
-	*this += _warp_flat_offset[steady];
+        *this += _warp_flat_offset[steady];
     else
-	*this = Timestamp((doubleval() + _warp_offset[steady]) * _warp_speed);
+        *this = Timestamp((doubleval() + _warp_offset[steady]) * _warp_speed);
 }
 
 void
 Timestamp::warp_set_class(warp_class_type w, double s)
 {
     if (w == warp_linear && _warp_class == warp_none && s == 1.0)
-	w = warp_none;
+        w = warp_none;
     if (w == warp_none) {
-	_warp_speed = 1.0;
-	_warp_flat_offset[0] = _warp_flat_offset[1] = Timestamp();
-	_warp_offset[0] = _warp_offset[1] = 0.0;
+        _warp_speed = 1.0;
+        _warp_flat_offset[0] = _warp_flat_offset[1] = Timestamp();
+        _warp_offset[0] = _warp_offset[1] = 0.0;
     }
     _warp_class = w;
     if (w == warp_linear) {
-	Timestamp now_raw = Timestamp::now_unwarped(),
-	    now_steady_raw = Timestamp::now_steady_unwarped(),
-	    now_adj = now_raw.warped(false),
-	    now_steady_adj = now_steady_raw.warped(true);
-	_warp_speed = s;
-	warp_adjust(false, now_raw, now_adj);
-	warp_adjust(true, now_steady_raw, now_steady_adj);
+        Timestamp now_raw = Timestamp::now_unwarped(),
+            now_steady_raw = Timestamp::now_steady_unwarped(),
+            now_adj = now_raw.warped(false),
+            now_steady_adj = now_steady_raw.warped(true);
+        _warp_speed = s;
+        warp_adjust(false, now_raw, now_adj);
+        warp_adjust(true, now_steady_raw, now_steady_adj);
     }
 }
 
 void
 Timestamp::warp_adjust(bool steady, const Timestamp &t_raw,
-		       const Timestamp &t_warped)
+                       const Timestamp &t_warped)
 {
     if (_warp_class == warp_simulation)
-	_warp_flat_offset[steady] = t_warped;
+        _warp_flat_offset[steady] = t_warped;
     else if (_warp_speed == 1.0)
-	_warp_flat_offset[steady] = t_warped - t_raw;
+        _warp_flat_offset[steady] = t_warped - t_raw;
     else
-	_warp_offset[steady] = t_warped.doubleval() / _warp_speed - t_raw.doubleval();
+        _warp_offset[steady] = t_warped.doubleval() / _warp_speed - t_raw.doubleval();
 }
 
 void
 Timestamp::warp_set_now(const Timestamp &t_system, const Timestamp &t_steady)
 {
     Timestamp now_raw = Timestamp::now_unwarped(),
-	now_steady_raw = Timestamp::now_steady_unwarped();
+        now_steady_raw = Timestamp::now_steady_unwarped();
     warp_adjust(false, now_raw, t_system);
     warp_adjust(true, now_steady_raw, t_steady);
 }
@@ -129,19 +129,19 @@ void
 Timestamp::warp_jump_steady(const Timestamp &expiry)
 {
     if (_warp_class == warp_simulation) {
-	if (_warp_flat_offset[1] < expiry) {
-	    _warp_flat_offset[0] += expiry - _warp_flat_offset[1];
-	    _warp_flat_offset[1] = expiry;
-	}
+        if (_warp_flat_offset[1] < expiry) {
+            _warp_flat_offset[0] += expiry - _warp_flat_offset[1];
+            _warp_flat_offset[1] = expiry;
+        }
     } else if (_warp_class == warp_nowait) {
-	Timestamp now_steady_raw = Timestamp::now_steady_unwarped(),
-	    now_steady = now_steady_raw.warped(true);
-	if (now_steady < expiry) {
-	    Timestamp now_raw = Timestamp::now_unwarped(),
-		now = now_raw.warped(false);
-	    warp_adjust(false, now_raw, now + expiry - now_steady);
-	    warp_adjust(true, now_steady_raw, expiry);
-	}
+        Timestamp now_steady_raw = Timestamp::now_steady_unwarped(),
+            now_steady = now_steady_raw.warped(true);
+        if (now_steady < expiry) {
+            Timestamp now_raw = Timestamp::now_unwarped(),
+                now = now_raw.warped(false);
+            warp_adjust(false, now_raw, now + expiry - now_steady);
+            warp_adjust(true, now_steady_raw, expiry);
+        }
     }
 }
 #endif
@@ -163,11 +163,11 @@ Timestamp::set_timeval_ioctl(int fd, int ioctl_selector)
     r = ioctl(fd, ioctl_selector, &_t.tv);
 # elif SIZEOF_STRUCT_TIMEVAL == 8 && TIMESTAMP_REP_BIG_ENDIAN
     if ((r = ioctl(fd, ioctl_selector, &_t)) >= 0)
-	_t.subsec = usec_to_subsec(_t.subsec);
+        _t.subsec = usec_to_subsec(_t.subsec);
 # else
     struct timeval tv;
     if ((r = ioctl(fd, ioctl_selector, &tv)) >= 0)
-	assign_usec(tv.tv_sec, tv.tv_usec);
+        assign_usec(tv.tv_sec, tv.tv_usec);
 # endif
     return r;
 }
@@ -178,14 +178,14 @@ StringAccum &
 operator<<(StringAccum &sa, const struct timeval &tv)
 {
     if (char *x = sa.reserve(30)) {
-	int len;
-	if (tv.tv_sec >= 0)
-	    len = sprintf(x, "%ld.%06ld", (long)tv.tv_sec, (long)tv.tv_usec);
-	else if (tv.tv_usec == 0)
-	    len = sprintf(x, "-%ld.%06ld", -(long)tv.tv_sec, (long)0);
-	else
-	    len = sprintf(x, "-%ld.%06ld", -((long)tv.tv_sec) - 1L, 1000000L - (long)tv.tv_usec);
-	sa.adjust_length(len);
+        int len;
+        if (tv.tv_sec >= 0)
+            len = sprintf(x, "%ld.%06ld", (long)tv.tv_sec, (long)tv.tv_usec);
+        else if (tv.tv_usec == 0)
+            len = sprintf(x, "-%ld.%06ld", -(long)tv.tv_sec, (long)0);
+        else
+            len = sprintf(x, "-%ld.%06ld", -((long)tv.tv_sec) - 1L, 1000000L - (long)tv.tv_usec);
+        sa.adjust_length(len);
     }
     return sa;
 }
@@ -198,30 +198,30 @@ StringAccum &
 operator<<(StringAccum &sa, const Timestamp& ts)
 {
     if (char *x = sa.reserve(33)) {
-	Timestamp::seconds_type sec;
-	uint32_t subsec;
-	if (!ts.is_negative())
-	    sec = ts.sec(), subsec = ts.subsec();
-	else {
-	    *x++ = '-';
-	    sa.adjust_length(1);
-	    if (ts.subsec() == 0)
-		sec = -ts.sec(), subsec = 0;
-	    else
-		sec = -ts.sec() - 1, subsec = Timestamp::subsec_per_sec - ts.subsec();
-	}
+        Timestamp::seconds_type sec;
+        uint32_t subsec;
+        if (!ts.is_negative())
+            sec = ts.sec(), subsec = ts.subsec();
+        else {
+            *x++ = '-';
+            sa.adjust_length(1);
+            if (ts.subsec() == 0)
+                sec = -ts.sec(), subsec = 0;
+            else
+                sec = -ts.sec() - 1, subsec = Timestamp::subsec_per_sec - ts.subsec();
+        }
 
-	int len;
+        int len;
 #if TIMESTAMP_NANOSEC
-	uint32_t usec = subsec / Timestamp::nsec_per_usec;
-	if (usec * Timestamp::nsec_per_usec == subsec)
-	    len = sprintf(x, "%ld.%06u", (long) sec, usec);
-	else
-	    len = sprintf(x, "%ld.%09u", (long) sec, subsec);
+        uint32_t usec = subsec / Timestamp::nsec_per_usec;
+        if (usec * Timestamp::nsec_per_usec == subsec)
+            len = sprintf(x, "%ld.%06u", (long) sec, usec);
+        else
+            len = sprintf(x, "%ld.%09u", (long) sec, subsec);
 #else
-	len = sprintf(x, "%ld.%06u", (long) sec, subsec);
+        len = sprintf(x, "%ld.%06u", (long) sec, subsec);
 #endif
-	sa.adjust_length(len);
+        sa.adjust_length(len);
     }
     return sa;
 }
@@ -239,23 +239,23 @@ Timestamp::unparse_interval() const
 {
     StringAccum sa;
     if (sec() == 0) {
-	uint32_t ss = subsec();
-	uint32_t ms = ss / subsec_per_msec;
-	if (ms * subsec_per_msec == ss)
-	    sa << ms << 'm' << 's';
-	else {
+        uint32_t ss = subsec();
+        uint32_t ms = ss / subsec_per_msec;
+        if (ms * subsec_per_msec == ss)
+            sa << ms << 'm' << 's';
+        else {
 #if TIMESTAMP_NANOSEC
-	    uint32_t us = ss / subsec_per_usec;
-	    if (us * subsec_per_usec == ss)
-		sa << us << 'u' << 's';
-	    else
-		sa << ss << 'n' << 's';
+            uint32_t us = ss / subsec_per_usec;
+            if (us * subsec_per_usec == ss)
+                sa << us << 'u' << 's';
+            else
+                sa << ss << 'n' << 's';
 #else
-	    sa << ss << 'u' << 's';
+            sa << ss << 'u' << 's';
 #endif
-	}
+        }
     } else
-	sa << *this << 's';
+        sa << *this << 's';
     return sa.take_string();
 }
 

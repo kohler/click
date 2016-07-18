@@ -34,34 +34,34 @@ ffs_msb(unsigned x)
     static uint8_t bvals[] = { 0, 4, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1 };
 
     if ((x & 0xFFFF0000) == 0) {
-	if (x == 0)		/* zero input ==> zero output */
-	    return 0;
-	add += 16;
+        if (x == 0)             /* zero input ==> zero output */
+            return 0;
+        add += 16;
     } else
-	x >>= 16;
+        x >>= 16;
 
     if ((x & 0xFF00) == 0)
-	add += 8;
+        add += 8;
     else
-	x >>= 8;
+        x >>= 8;
 
     if ((x & 0xF0) == 0)
-	add += 4;
+        add += 4;
     else
-	x >>= 4;
+        x >>= 4;
 
     return add + bvals[x & 0xF];
 }
 #endif
 
-#define ffs_msb_hilo(type)			\
-    size_t bits = sizeof(type) * 8;		\
-    type hi = (type) (x >> bits);		\
-    if (hi == 0) {				\
-	type lo = (type) x;			\
-	return lo ? bits + ffs_msb(lo) : 0;	\
-    } else					\
-	return ffs_msb(hi);
+#define ffs_msb_hilo(type)                      \
+    size_t bits = sizeof(type) * 8;             \
+    type hi = (type) (x >> bits);               \
+    if (hi == 0) {                              \
+        type lo = (type) x;                     \
+        return lo ? bits + ffs_msb(lo) : 0;     \
+    } else                                      \
+        return ffs_msb(hi);
 
 #if NEED_FFS_MSB_UNSIGNED_LONG
 int
@@ -108,34 +108,34 @@ ffs_lsb(uint32_t x)
     static uint8_t bvals[] = { 0, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1 };
 
     if ((x & 0x0000FFFF) == 0) {
-	if (x == 0)		/* zero input ==> zero output */
-	    return 0;
-	add += 16;
-	x >>= 16;
+        if (x == 0)             /* zero input ==> zero output */
+            return 0;
+        add += 16;
+        x >>= 16;
     }
 
     if ((x & 0x00FF) == 0) {
-	add += 8;
-	x >>= 8;
+        add += 8;
+        x >>= 8;
     }
 
     if ((x & 0x0F) == 0) {
-	add += 4;
-	x >>= 4;
+        add += 4;
+        x >>= 4;
     }
 
     return add + bvals[x & 0xF];
 }
 #endif
 
-#define ffs_lsb_hilo(type)			\
-    size_t bits = sizeof(type) * 8;		\
-    type lo = (type) x;				\
-    if (lo == 0) {				\
-	type hi = (type) (x >> bits);		\
-	return hi ? bits + ffs_lsb(hi) : 0;	\
-    } else					\
-	return ffs_lsb(lo);
+#define ffs_lsb_hilo(type)                      \
+    size_t bits = sizeof(type) * 8;             \
+    type lo = (type) x;                         \
+    if (lo == 0) {                              \
+        type hi = (type) (x >> bits);           \
+        return hi ? bits + ffs_lsb(hi) : 0;     \
+    } else                                      \
+        return ffs_lsb(lo);
 
 #if NEED_FFS_LSB_UNSIGNED_LONG
 int
@@ -176,7 +176,7 @@ uint32_t
 int_sqrt(uint32_t x)
 {
     if (x + 1 <= 1)
-	return (x ? 0xFFFFU : 0);
+        return (x ? 0xFFFFU : 0);
 
     // Newton's algorithm.
     uint32_t y, z;
@@ -187,13 +187,13 @@ int_sqrt(uint32_t x)
     y = 1 << ((32 - ffs_msb(x)) / 2 + 1);
 #endif
     do {
-	z = y;
-	y = (y + (x / y)) / 2;
+        z = y;
+        y = (y + (x / y)) / 2;
     } while (y < z);
     // Executed in the integer domain Newton's algorithm may terminate with an
     // overestimate.  Correct that.
     while (y * y > x)
-	--y;
+        --y;
     return y;
 }
 
@@ -203,7 +203,7 @@ uint64_t
 int_sqrt(uint64_t x)
 {
     if (x + 1 <= 1)
-	return (x ? 0xFFFFFFFFU : 0);
+        return (x ? 0xFFFFFFFFU : 0);
 
     // Newton's algorithm.
     uint64_t y, z;
@@ -214,13 +214,13 @@ int_sqrt(uint64_t x)
     y = 1 << ((64 - ffs_msb(x)) / 2 + 1);
 #endif
     do {
-	z = y;
-	y = (y + (x / y)) / 2;
+        z = y;
+        y = (y + (x / y)) / 2;
     } while (y < z);
     // Executed in the integer domain Newton's algorithm may terminate with an
     // overestimate.  Correct that.
     while (y * y > x)
-	--y;
+        --y;
     return y;
 }
 
