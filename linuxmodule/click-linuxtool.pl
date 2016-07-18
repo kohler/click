@@ -337,6 +337,9 @@ sub one_includeroot ($$) {
 	    s{(\w+)\s*-\s*\(\s*void\s*\*\s*\)}{(uintptr_t)$1 - (uintptr_t)}g;
 
 	    # stuff for particular files (what a shame)
+	    if ($d eq "rbtree_latch.h") {
+	    	s{container_of\(node, struct latch_tree_node, node\[idx\]\)}{idx==0 ? container_of(node, struct latch_tree_node, node[0]) : container_of(node, struct latch_tree_node, node[1])};
+	    }
 	    if ($d eq "page-flags.h") {
 		s{(#define PAGE_FLAGS_H)}{$1\n#undef private};
 		s{(#endif.*[\s\n]*)\z}{#define private linux_private\n$1};
