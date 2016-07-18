@@ -340,6 +340,9 @@ sub one_includeroot ($$) {
 	    if ($d eq "rbtree_latch.h") {
 	    	s{container_of\(node, struct latch_tree_node, node\[idx\]\)}{idx==0 ? container_of(node, struct latch_tree_node, node[0]) : container_of(node, struct latch_tree_node, node[1])};
 	    }
+	    if ($d eq "irq.h") {
+	    	s{enum irqchip_irq_state}{int}g;
+	    }
 	    if ($d eq "page-flags.h") {
 		s{(#define PAGE_FLAGS_H)}{$1\n#undef private};
 		s{(#endif.*[\s\n]*)\z}{#define private linux_private\n$1};
