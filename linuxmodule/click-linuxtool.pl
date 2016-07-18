@@ -1,5 +1,6 @@
 #! /usr/bin/perl -w
 use bytes;
+use MIME::Base64;
 
 sub usage () {
     print STDERR "Usage: click-linuxtool.pl [-V] -o OUTPUTDIR CFLAGS
@@ -162,14 +163,26 @@ for (my $i = 0; $i < @outputroot; ++$i) {
 }
 
 sub sprotect ($) {
-    my($t) = $_[0];
+    my($t) = encode_base64($_[0]);
     $t =~ tr/\000-\177/\200-\377/;
-    $t;
+    "\177" . $t;
+}
+
+sub sprotect_str ($) {
+    my($t) = $_[0];
+    $t =~ s{%P\[new\]}{%P[new_value]}g;
+    sprotect($t);
+}
+
+sub sunprotect1 ($) {
+    my($t) = $_[0];
+    $t =~ tr/\200-\377/\000-\177/;
+    decode_base64($t);
 }
 
 sub sunprotect ($) {
     my($t) = $_[0];
-    $t =~ tr/\200-\377/\000-\177/;
+    $t =~ s{\177([\200-\377]+)}{sunprotect1($1)}eg;
     $t;
 }
 
@@ -277,6 +290,8 @@ sub one_includeroot ($$) {
 	    s{\.pushsection\s+\.smp_locks.*?\.popsection(?:\\n)?}{}sg;
 
 	    # Obscure comments and things that would confuse parsing.
+            # Assume no \177 characters.
+            die if m/\177/;
 
 	    # DO NOT do preprocessor directives; we need to fix their
 	    # definitions
@@ -287,9 +302,9 @@ sub one_includeroot ($$) {
 	    s{(//.*?)}{sprotect($1)}ge;
 	    # strings
 	    s{("")}{sprotect($1)}ge;
-	    s{"(.*?[^\\])"}{"\"" . sprotect($1) . "\""}sge;
+	    s{"((?:[^\\\"]|\\.)*)"}{"\"" . sprotect_str($1) . "\""}sge;
 	    # characters
-	    s{'(.*?[^\\])'}{"\'" . sprotect($1) . "\'"}sge;
+	    s{'((?:[^\\\']|\\.)*)'}{"\'" . sprotect($1) . "\'"}sge;
 
 	    # Now fix problems.
 
@@ -314,9 +329,6 @@ sub one_includeroot ($$) {
 	    s{\bnew\b}{new_value}g;
 	    s{\band\b}{and_value}g;
 	    s{\bswap\b}{linux_swap}g;
-	    # including "P[new]" in inline assembly string (look for
-	    # protected version)
-	    1 while (s{(asm.*\333)\356\345\367\335}{$1\356\345\367\337\366\341\354\365\345\335}g);
 
 	    # "sizeof" isn't nice to the preprocessor
 	    s{sizeof(?:\s+(?:unsigned\s+)?long|\s*\(\s*(?:unsigned\s+)?long\s*\))}{(BITS_PER_LONG/8 /*=BITS_PER_BYTE*/)}g;
