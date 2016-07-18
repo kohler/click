@@ -414,6 +414,7 @@ sub one_includeroot ($$) {
 	    }
 	    if ($d eq "compiler.h" || $d eq "linkage.h") {
 		s<^#define ACCESS_ONCE\(x\) \(\*\(volatile typeof\(x\) \*\)\&\(x\)\)><#define ACCESS_ONCE(x) (*(typeof(x) * volatile)&(x))>m;
+		s<^#define ACCESS_ONCE\(x\) \(\*__ACCESS_ONCE\(x\)\)><#define ACCESS_ONCE(x) (*(typeof(x) * volatile)&(x))>m;
 		s<^(#define\s+notrace\s+__attribute__\(\(no_instrument_function\)\))><// g++ has stricter rules about this attribute. We can't deal.\n#ifdef __cplusplus\n#define notrace\n#else\n$1\n#endif>m;
 	    }
 	    if ($d eq "sysctl.h") {
