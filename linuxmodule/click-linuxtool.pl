@@ -357,6 +357,16 @@ sub one_includeroot ($$) {
 	    s{(\w+)\s*-\s*\(\s*void\s*\*\s*\)}{(uintptr_t)$1 - (uintptr_t)}g;
 
 	    # stuff for particular files (what a shame)
+	    if ($d eq "rbtree_latch.h") {
+	    	s{container_of\(node, struct latch_tree_node, node\[idx\]\)}{idx==0 ? container_of(node, struct latch_tree_node, node[0]) : container_of(node, struct latch_tree_node, node[1])};
+	    }
+	    if ($d eq "irq.h") {
+	    	s{enum irqchip_irq_state}{int}g;
+	    }
+	    if ($d eq "atomic.h") {
+	        s{\batomic_and\b}{atomic_and_value}g;
+	        s{\batomic64_and\b}{atomic64_and_value}g;
+	    }
 	    if ($d eq "page-flags.h") {
 		s{(#define PAGE_FLAGS_H)}{$1\n#undef private};
 		s{(#endif.*[\s\n]*)\z}{#define private linux_private\n$1};
@@ -434,6 +444,7 @@ sub one_includeroot ($$) {
 	    }
 	    if ($d eq "compiler.h" || $d eq "linkage.h") {
 		s<^#define ACCESS_ONCE\(x\) \(\*\(volatile typeof\(x\) \*\)\&\(x\)\)><#define ACCESS_ONCE(x) (*(typeof(x) * volatile)&(x))>m;
+		s<^#define ACCESS_ONCE\(x\) \(\*__ACCESS_ONCE\(x\)\)><#define ACCESS_ONCE(x) (*(typeof(x) * volatile)&(x))>m;
 		s<^(#define\s+notrace\s+__attribute__\(\(no_instrument_function\)\))><// g++ has stricter rules about this attribute. We can't deal.\n#ifdef __cplusplus\n#define notrace\n#else\n$1\n#endif>m;
 	    }
 	    if ($d eq "sysctl.h") {
