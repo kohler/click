@@ -343,6 +343,10 @@ sub one_includeroot ($$) {
 	    if ($d eq "irq.h") {
 	    	s{enum irqchip_irq_state}{int}g;
 	    }
+	    if ($d eq "atomic.h") {
+	        s{\batomic_and\b}{atomic_and_value}g;
+	        s{\batomic64_and\b}{atomic64_and_value}g;
+	    }
 	    if ($d eq "page-flags.h") {
 		s{(#define PAGE_FLAGS_H)}{$1\n#undef private};
 		s{(#endif.*[\s\n]*)\z}{#define private linux_private\n$1};
