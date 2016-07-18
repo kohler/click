@@ -11630,20 +11630,52 @@ $as_echo "#define HAVE_LINUX_ASM_SYSTEM_H 1" >>confdefs.h
 
     fi
 
+    ac_fn_c_check_decl "$LINENO" "set_cpus_allowed_ptr" "ac_cv_have_decl_set_cpus_allowed_ptr" "#define KBUILD_STR(s) #s
+#define KBUILD_BASENAME KBUILD_STR(click)
+#define KBUILD_MODNAME KBUILD_STR(click)
+#define new linux_new
+#define this linux_this
+#define delete linux_delete
+#define class linux_class
+#define virtual linux_virtual
+#define typename linux_typename
+#define private linux_private
+#define protected linux_protected
+#define public linux_public
+#define namespace linux_namespace
+#define false linux_false
+#define true linux_true
+#define CLICK_CXX_PROTECTED 1
+$linux_autoconf_include
+#include <asm/types.h>
+#include <linux/sched.h>
+"
+if test "x$ac_cv_have_decl_set_cpus_allowed_ptr" = xyes; then :
+  ac_cv_linux_set_cpus_allowed_ptr=yes
+else
+  ac_cv_linux_set_cpus_allowed_ptr=no
+fi
 
+    if test $ac_cv_linux_set_cpus_allowed_ptr = yes; then
+
+$as_echo "#define HAVE_LINUX_SET_CPUS_ALLOWED_PTR 1" >>confdefs.h
+
+    fi
+
+
+
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether struct sk_buff has a security member" >&5
 $as_echo_n "checking whether struct sk_buff has a security member... " >&6; }
 if ${ac_cv_linuxmodule_skbuff_security+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11672,7 +11704,7 @@ extern struct sk_buff *s; s->security = 0;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_cxx_try_compile "$LINENO"; then :
   ac_cv_linuxmodule_skbuff_security=yes
 else
   ac_cv_linuxmodule_skbuff_security=no
@@ -11692,13 +11724,7 @@ $as_echo_n "checking whether struct sk_buff has an fclone member... " >&6; }
 if ${ac_cv_linuxmodule_skbuff_fclone+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11727,7 +11753,7 @@ extern struct sk_buff *s; s->fclone = 0;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_cxx_try_compile "$LINENO"; then :
   ac_cv_linuxmodule_skbuff_fclone=yes
 else
   ac_cv_linuxmodule_skbuff_fclone=no
@@ -11747,13 +11773,7 @@ $as_echo_n "checking whether skb_shinfo has a tso_size member... " >&6; }
 if ${ac_cv_linuxmodule_skb_shinfo_tso_size+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11782,7 +11802,7 @@ extern struct sk_buff *s; skb_shinfo(s)->tso_size = 0;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_cxx_try_compile "$LINENO"; then :
   ac_cv_linuxmodule_skb_shinfo_tso_size=yes
 else
   ac_cv_linuxmodule_skb_shinfo_tso_size=no
@@ -11802,13 +11822,7 @@ $as_echo_n "checking whether skb_shinfo has a gso_size member... " >&6; }
 if ${ac_cv_linuxmodule_skb_shinfo_gso_size+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11837,7 +11851,7 @@ extern struct sk_buff *s; skb_shinfo(s)->gso_size = 0;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_cxx_try_compile "$LINENO"; then :
   ac_cv_linuxmodule_skb_shinfo_gso_size=yes
 else
   ac_cv_linuxmodule_skb_shinfo_gso_size=no
@@ -11857,13 +11871,7 @@ $as_echo_n "checking whether skb_shinfo has a ufo_size member... " >&6; }
 if ${ac_cv_linuxmodule_skb_shinfo_ufo_size+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11892,7 +11900,7 @@ extern struct sk_buff *s; skb_shinfo(s)->ufo_size = 0;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_cxx_try_compile "$LINENO"; then :
   ac_cv_linuxmodule_skb_shinfo_ufo_size=yes
 else
   ac_cv_linuxmodule_skb_shinfo_ufo_size=no
@@ -11912,13 +11920,7 @@ $as_echo_n "checking whether skb_shinfo has an ip6_frag_id member... " >&6; }
 if ${ac_cv_linuxmodule_skb_shinfo_ip6_frag_id+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -11947,7 +11949,7 @@ extern struct sk_buff *s; skb_shinfo(s)->ip6_frag_id = 0;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_cxx_try_compile "$LINENO"; then :
   ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=yes
 else
   ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=no
@@ -11967,13 +11969,7 @@ $as_echo_n "checking whether skb_shinfo has tx_flags defining SKBTX_DEV_ZEROCOPY
 if ${ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -12002,7 +11998,7 @@ extern struct sk_buff *s; skb_shinfo(s)->tx_flags = SKBTX_DEV_ZEROCOPY;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_cxx_try_compile "$LINENO"; then :
   ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=yes
 else
   ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=no
@@ -12017,18 +12013,12 @@ $as_echo "#define HAVE_LINUX_SKB_SHINFO_TX_FLAGS_SKBTX_DEV_ZEROCOPY 1" >>confdef
 
     fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether skb_shinfo has tx_flags.flags" >&5
-$as_echo_n "checking whether skb_shinfo has tx_flags.flags... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether skb_shinfo has a tx_flags union" >&5
+$as_echo_n "checking whether skb_shinfo has a tx_flags union... " >&6; }
 if ${ac_cv_linuxmodule_skb_shinfo_tx_flags_union+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -12057,7 +12047,7 @@ extern struct sk_buff *s; skb_shinfo(s)->tx_flags.flags = 0;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_cxx_try_compile "$LINENO"; then :
   ac_cv_linuxmodule_skb_shinfo_tx_flags_union=yes
 else
   ac_cv_linuxmodule_skb_shinfo_tx_flags_union=no
@@ -12077,13 +12067,7 @@ $as_echo_n "checking for device polling kernel extension... " >&6; }
 if ${ac_cv_linuxmodule_net_device_polling+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -12112,7 +12096,7 @@ extern struct net_device *d; d->polling = 0;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_cxx_try_compile "$LINENO"; then :
   ac_cv_linuxmodule_net_device_polling=yes
 else
   ac_cv_linuxmodule_net_device_polling=no
@@ -12127,7 +12111,7 @@ $as_echo "#define HAVE_LINUX_POLLING 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "skb_dst_drop" "ac_cv_have_decl_skb_dst_drop" "#define KBUILD_STR(s) #s
+    ac_fn_cxx_check_decl "$LINENO" "skb_dst_drop" "ac_cv_have_decl_skb_dst_drop" "#define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
 #define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
@@ -12159,7 +12143,7 @@ $as_echo "#define HAVE_SKB_DST_DROP 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "skb_recycle" "ac_cv_have_decl_skb_recycle" "#define KBUILD_STR(s) #s
+    ac_fn_cxx_check_decl "$LINENO" "skb_recycle" "ac_cv_have_decl_skb_recycle" "#define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
 #define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
@@ -12191,7 +12175,7 @@ $as_echo "#define HAVE_SKB_RECYCLE 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "skb_recycle_check" "ac_cv_have_decl_skb_recycle_check" "#define KBUILD_STR(s) #s
+    ac_fn_cxx_check_decl "$LINENO" "skb_recycle_check" "ac_cv_have_decl_skb_recycle_check" "#define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
 #define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
@@ -12231,13 +12215,7 @@ $as_echo_n "checking whether skb_recycle returns an sk_buff... " >&6; }
 if ${ac_cv_linuxmodule_click_skb_recycle+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -12266,7 +12244,7 @@ extern struct sk_buff *b; b = skb_recycle(b);
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_cxx_try_compile "$LINENO"; then :
   ac_cv_linuxmodule_click_skb_recycle=yes
 else
   ac_cv_linuxmodule_click_skb_recycle=no
@@ -12283,7 +12261,7 @@ $as_echo "#define HAVE_CLICK_SKB_RECYCLE 1" >>confdefs.h
 
 CFLAGS="$save_cflags"
 
-    ac_fn_c_check_decl "$LINENO" "skb_linearize" "ac_cv_have_decl_skb_linearize" "#define KBUILD_STR(s) #s
+    ac_fn_cxx_check_decl "$LINENO" "skb_linearize" "ac_cv_have_decl_skb_linearize" "#define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
 #define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
@@ -12320,13 +12298,7 @@ $as_echo_n "checking whether netif_receive_skb has been extended... " >&6; }
 if ${ac_cv_linuxmodule_netif_receive_skb_extended+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
@@ -12355,7 +12327,7 @@ netif_receive_skb(0, 0, 0);
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_cxx_try_compile "$LINENO"; then :
   ac_cv_linuxmodule_netif_receive_skb_extended=yes
 else
   ac_cv_linuxmodule_netif_receive_skb_extended=no
@@ -12370,13 +12342,7 @@ $as_echo "#define HAVE_NETIF_RECEIVE_SKB_EXTENDED 1" >>confdefs.h
 
     fi
 
-    ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-    ac_fn_c_check_decl "$LINENO" "net_enable_timestamp" "ac_cv_have_decl_net_enable_timestamp" "#define KBUILD_STR(s) #s
+    ac_fn_cxx_check_decl "$LINENO" "net_enable_timestamp" "ac_cv_have_decl_net_enable_timestamp" "#define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
 #define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
@@ -12409,7 +12375,7 @@ $as_echo "#define HAVE_NET_ENABLE_TIMESTAMP 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "netif_tx_lock" "ac_cv_have_decl_netif_tx_lock" "#define KBUILD_STR(s) #s
+    ac_fn_cxx_check_decl "$LINENO" "netif_tx_lock" "ac_cv_have_decl_netif_tx_lock" "#define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
 #define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
@@ -12442,7 +12408,7 @@ $as_echo "#define HAVE_NETIF_TX_LOCK 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "netdev_get_tx_queue" "ac_cv_have_decl_netdev_get_tx_queue" "#define KBUILD_STR(s) #s
+    ac_fn_cxx_check_decl "$LINENO" "netdev_get_tx_queue" "ac_cv_have_decl_netdev_get_tx_queue" "#define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
 #define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
@@ -12475,7 +12441,7 @@ $as_echo "#define HAVE_NETDEV_GET_TX_QUEUE 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "netif_tx_queue_frozen" "ac_cv_have_decl_netif_tx_queue_frozen" "#define KBUILD_STR(s) #s
+    ac_fn_cxx_check_decl "$LINENO" "netif_tx_queue_frozen" "ac_cv_have_decl_netif_tx_queue_frozen" "#define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
 #define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
@@ -12508,7 +12474,7 @@ $as_echo "#define HAVE_NETIF_TX_QUEUE_FROZEN 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "netdev_uses_dsa_tags" "ac_cv_have_decl_netdev_uses_dsa_tags" "#define KBUILD_STR(s) #s
+    ac_fn_cxx_check_decl "$LINENO" "netdev_uses_dsa_tags" "ac_cv_have_decl_netdev_uses_dsa_tags" "#define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
 #define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
@@ -12541,7 +12507,7 @@ $as_echo "#define HAVE_NETDEV_USES_DSA_TAGS 1" >>confdefs.h
 
     fi
 
-    ac_fn_c_check_decl "$LINENO" "netdev_uses_trailer_tags" "ac_cv_have_decl_netdev_uses_trailer_tags" "#define KBUILD_STR(s) #s
+    ac_fn_cxx_check_decl "$LINENO" "netdev_uses_trailer_tags" "ac_cv_have_decl_netdev_uses_trailer_tags" "#define KBUILD_STR(s) #s
 #define KBUILD_BASENAME KBUILD_STR(click)
 #define KBUILD_MODNAME KBUILD_STR(click)
 #define new linux_new
@@ -12715,6 +12681,7 @@ $as_echo "#define HAVE_LINUX_SUPER_BLOCK_S_D_OP 1" >>confdefs.h
 #define CLICK_CXX_PROTECTED 1
 $linux_autoconf_include
 #include <asm/types.h>
+#include <linux/fs.h>
 #include <linux/dcache.h>
 "
 if test "x$ac_cv_have_decl_d_make_root" = xyes; then :

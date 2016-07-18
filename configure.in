@@ -1582,12 +1582,18 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
         AC_DEFINE([HAVE_LINUX_ASM_SYSTEM_H], [1], [Define if you have the <asm/system.h> header file.])
     fi
 
+    AC_CHECK_DECL([set_cpus_allowed_ptr], [ac_cv_linux_set_cpus_allowed_ptr=yes], [ac_cv_linux_set_cpus_allowed_ptr=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/sched.h>]])
+    if test $ac_cv_linux_set_cpus_allowed_ptr = yes; then
+        AC_DEFINE([HAVE_LINUX_SET_CPUS_ALLOWED_PTR], [1], [Define if your Linux kernel has set_cpus_allowed_ptr.])
+    fi
+
 
     dnl Linux kernel network configuration
 
+    AC_LANG_CPLUSPLUS
     AC_CACHE_CHECK([whether struct sk_buff has a security member], [ac_cv_linuxmodule_skbuff_security],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; s->security = 0;]])],
         [ac_cv_linuxmodule_skbuff_security=yes], [ac_cv_linuxmodule_skbuff_security=no])])
@@ -1596,8 +1602,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([whether struct sk_buff has an fclone member], [ac_cv_linuxmodule_skbuff_fclone],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; s->fclone = 0;]])],
         [ac_cv_linuxmodule_skbuff_fclone=yes], [ac_cv_linuxmodule_skbuff_fclone=no])])
@@ -1606,8 +1611,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has a tso_size member], [ac_cv_linuxmodule_skb_shinfo_tso_size],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->tso_size = 0;]])],
         [ac_cv_linuxmodule_skb_shinfo_tso_size=yes], [ac_cv_linuxmodule_skb_shinfo_tso_size=no])])
@@ -1616,8 +1620,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has a gso_size member], [ac_cv_linuxmodule_skb_shinfo_gso_size],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->gso_size = 0;]])],
         [ac_cv_linuxmodule_skb_shinfo_gso_size=yes], [ac_cv_linuxmodule_skb_shinfo_gso_size=no])])
@@ -1626,8 +1629,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has a ufo_size member], [ac_cv_linuxmodule_skb_shinfo_ufo_size],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->ufo_size = 0;]])],
         [ac_cv_linuxmodule_skb_shinfo_ufo_size=yes], [ac_cv_linuxmodule_skb_shinfo_ufo_size=no])])
@@ -1636,8 +1638,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has an ip6_frag_id member], [ac_cv_linuxmodule_skb_shinfo_ip6_frag_id],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->ip6_frag_id = 0;]])],
         [ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=yes], [ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=no])])
@@ -1646,18 +1647,16 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has tx_flags defining SKBTX_DEV_ZEROCOPY], [ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->tx_flags = SKBTX_DEV_ZEROCOPY;]])],
         [ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=yes], [ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=no])])
     if test $ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy = yes; then
-        AC_DEFINE([HAVE_LINUX_SKB_SHINFO_TX_FLAGS_SKBTX_DEV_ZEROCOPY], [1], [Define if 'struct skb_shared_info' has an 'tx_flags' member defining 'SKBTX_DEV_ZEROCOPY'.])
+        AC_DEFINE([HAVE_LINUX_SKB_SHINFO_TX_FLAGS_SKBTX_DEV_ZEROCOPY], [1], [Define if 'struct skb_shared_info' has a 'tx_flags' member defining 'SKBTX_DEV_ZEROCOPY'.])
     fi
 
-    AC_CACHE_CHECK([whether skb_shinfo has tx_flags.flags], [ac_cv_linuxmodule_skb_shinfo_tx_flags_union],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+    AC_CACHE_CHECK([whether skb_shinfo has a tx_flags union], [ac_cv_linuxmodule_skb_shinfo_tx_flags_union],
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->tx_flags.flags = 0;]])],
         [ac_cv_linuxmodule_skb_shinfo_tx_flags_union=yes], [ac_cv_linuxmodule_skb_shinfo_tx_flags_union=no])])
@@ -1666,8 +1665,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([for device polling kernel extension], [ac_cv_linuxmodule_net_device_polling],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/netdevice.h>]],
 [[extern struct net_device *d; d->polling = 0;]])],
         [ac_cv_linuxmodule_net_device_polling=yes], [ac_cv_linuxmodule_net_device_polling=no])])
@@ -1697,8 +1695,7 @@ save_cflags="$CFLAGS"
 CFLAGS="$save_cflags -Werror-implicit-function-declaration"
 
     AC_CACHE_CHECK([whether skb_recycle returns an sk_buff], [ac_cv_linuxmodule_click_skb_recycle],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *b; b = skb_recycle(b);]])],
         [ac_cv_linuxmodule_click_skb_recycle=yes], [ac_cv_linuxmodule_click_skb_recycle=no])])
@@ -1715,8 +1712,7 @@ CFLAGS="$save_cflags"
     fi
 
     AC_CACHE_CHECK([whether netif_receive_skb has been extended], [ac_cv_linuxmodule_netif_receive_skb_extended],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/netdevice.h>]],
 [[netif_receive_skb(0, 0, 0);]])],
         [ac_cv_linuxmodule_netif_receive_skb_extended=yes], [ac_cv_linuxmodule_netif_receive_skb_extended=no])])
@@ -1724,7 +1720,6 @@ CFLAGS="$save_cflags"
         AC_DEFINE([HAVE_NETIF_RECEIVE_SKB_EXTENDED], [1], [Define if netif_receive_skb takes 3 arguments.])
     fi
 
-    AC_LANG_C
     AC_CHECK_DECL(net_enable_timestamp, [ac_cv_net_enable_timestamp=yes], [ac_cv_net_enable_timestamp=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>]])
@@ -1816,6 +1811,7 @@ CFLAGS="$save_cflags"
     fi
 
     AC_CHECK_DECL([d_make_root], [ac_cv_linux_d_make_root=yes], [ac_cv_linux_d_make_root=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/fs.h>
 #include <linux/dcache.h>]])
     if test $ac_cv_linux_d_make_root = yes; then
         AC_DEFINE([HAVE_LINUX_D_MAKE_ROOT], [1], [Define if you have the d_make_root function.])

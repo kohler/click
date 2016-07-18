@@ -95,7 +95,7 @@ click_sched(void *thunk)
     if (mycpu >= 0) {
 	mycpu += rt->thread_id();
 	if (mycpu < num_possible_cpus() && cpu_online(mycpu)) {
-# if CONFIG_CPUMASK_OFFSTACK
+# if CONFIG_CPUMASK_OFFSTACK || HAVE_LINUX_SET_CPUS_ALLOWED_PTR
 	    set_cpus_allowed_ptr(current, cpumask_of(mycpu));
 # else
 	    set_cpus_allowed(current, cpumask_of_cpu(mycpu));

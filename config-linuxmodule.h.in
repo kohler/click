@@ -91,6 +91,9 @@
 /* Define if your Linux kernel has sb_lock. */
 #undef HAVE_LINUX_SB_LOCK
 
+/* Define if your Linux kernel has set_cpus_allowed_ptr. */
+#undef HAVE_LINUX_SET_CPUS_ALLOWED_PTR
+
 /* Define if 'struct skb_shared_info' has a 'gso_size' member. */
 #undef HAVE_LINUX_SKB_SHINFO_GSO_SIZE
 

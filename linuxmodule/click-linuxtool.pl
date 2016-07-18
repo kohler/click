@@ -196,7 +196,7 @@ sub expand_initializer ($$$) {
     while (1) {
 	$v =~ s/\A\s+//;
 	if ($v =~ /\A\}(.*)\z/s) {
-	    die "(1)" if @prefix == 1;
+	    die "(1: $originalv)" if @prefix == 1;
 	    pop @prefix;
 	    $v = $1;
 	} elsif ($v =~ /\A,(.*)\z/s) {
@@ -328,6 +328,7 @@ sub one_includeroot ($$) {
 	    # "new" and other keywords
 	    s{\bnew\b}{new_value}g;
 	    s{\band\b}{and_value}g;
+	    s{\bcompl\b}{compl_value}g;
 	    s{\bswap\b}{linux_swap}g;
 
 	    # "sizeof" isn't nice to the preprocessor
@@ -346,7 +347,9 @@ sub one_includeroot ($$) {
             s{("[^"\n]*")([_a-zA-Z]+)}{$1 $2}g;
 
 	    # de-const typeof in unions
-	    s{typeof\(x\)}{typeof(x + 0)}g;
+            if ($d eq "compiler.h") {
+                s{(union\s*\{\s*typeof\()x\)}{$1x + 0)}g;
+            }
 
 	    # fix illegal void* arithmetic
 	    s{(\w+)\s*-\s*\(\s*void\s*\*\s*\)}{(uintptr_t)$1 - (uintptr_t)}g;
@@ -360,7 +363,10 @@ sub one_includeroot ($$) {
 		s{enum hrtimer_restart}{int};
 	    }
 	    if ($d eq "route.h") {
-		s{\b(\w+)\s*=\s*\{(\s*\w+:.*)\}\s*;}{"$1;\n" . expand_initializer($1, $2, $f)}sge;
+		s{\b(\w+)\s*=\s*\{(\s*\w+:.*?)\}\s*;}{"$1;\n" . expand_initializer($1, $2, $f)}sge;
+	    }
+	    if ($d eq "fs.h") {
+		s{\(struct\s+(\w+)\)\s*\{(\s*\w+:.*?)\}}{"({ struct $1 __magic_struct_$1;\n" . expand_initializer("__magic_struct_$1", $2, $f) . "\n__magic_struct_$1; })"}sge;
 	    }
 	    if ($d eq "types.h") {
 		s{(typedef.*bool\s*;)}{#ifndef __cplusplus\n$1\n#endif};
@@ -380,12 +386,16 @@ sub one_includeroot ($$) {
 	    if ($d eq "sched.h") {
 		s<^(extern char ___assert_task_state)((?:.*?\n)*?.*?\;.*)$><\#ifndef __cplusplus\n$1$2\n\#endif>mg;
 	    }
+            if ($d eq "projid.h" || $d eq "uidgid.h") {
+                s{\bK([A-Z]+)T_INIT\(-1\)}{K$1T_INIT((\L$1\E_t) -1)}g;
+            }
 	    if ($d eq "kobject.h") {
 		s<(^#include[\000-\377]*)(^enum kobj_ns_type\s+\{[\000-\377]*?\}.*\n)><$2$1>mg;
 	    }
 	    if ($d eq "netdevice.h") {
 		1 while (s<(^struct net_device[ \n]*\{[\000-\377]*)^\tenum( \{[^}]*\}) (\w+)><enum net_device_$3$2;\n$1\tenum net_device_$3 $3>mg);
-	    }
+                s{\((\w+\s*\+\s*\w+)\)\s*-\s*\(void\s*\*\)(\w+\s*)->head}{((unsigned char*) $1) - $2->head}g;
+            }
             if ($d eq "aio.h") {
                 while (1) {
                     my($a) = s<^(\s*)(\S+)\s*=\s*\(struct kiocb\)\s*\{\s*(\w+):\s*(.*?),\s*><$1\($2\).$3 = $4;\n$1$2 = (struct kiocb) {>m;
@@ -443,6 +453,12 @@ sub one_includeroot ($$) {
             }
             if ($d eq "sections.h") {
                 s{^extern(.*?) const void}{extern$1 const char}m;
+            }
+            if ($d eq "irq.h") {
+                s{^enum irqchip_irq_state;}{enum irqchip_irq_state : int;}m;
+            }
+            if ($d eq "interrupt.h") {
+                s{^enum irqchip_irq_state\s*\{}{enum irqchip_irq_state : int \{}m;
             }
 
 	    # CLICK_CXX_PROTECTED check
