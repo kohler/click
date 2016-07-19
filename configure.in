@@ -610,7 +610,7 @@ AC_CHECK_SIZEOF([void *])
 CLICK_CHECK_INTEGER_TYPES
 CLICK_CHECK_ALIGNMENT
 if test "x$enable_int64" = xyes; then
-    AC_CHECK_SIZEOF(long long)
+    AC_CHECK_SIZEOF([long long])
     CLICK_CHECK_INT64_TYPES
 fi
 CLICK_CHECK_ENDIAN
