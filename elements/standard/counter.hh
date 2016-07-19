@@ -99,6 +99,11 @@ components.
 */
 
 class Counter : public Element { public:
+#ifdef HAVE_INT64_TYPES
+    typedef uint64_t counter_t;
+#else
+    typedef uint32_t counter_t;
+#endif
 
     Counter() CLICK_COLD;
     ~Counter() CLICK_COLD;
@@ -120,12 +125,10 @@ class Counter : public Element { public:
   private:
 
 #ifdef HAVE_INT64_TYPES
-    typedef uint64_t counter_t;
     // Reduce bits of fraction for byte rate to avoid overflow
     typedef RateEWMAX<RateEWMAXParameters<4, 10, uint64_t, int64_t> > rate_t;
     typedef RateEWMAX<RateEWMAXParameters<4, 4, uint64_t, int64_t> > byte_rate_t;
 #else
-    typedef uint32_t counter_t;
     typedef RateEWMAX<RateEWMAXParameters<4, 10> > rate_t;
     typedef RateEWMAX<RateEWMAXParameters<4, 4> > byte_rate_t;
 #endif
