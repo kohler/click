@@ -31,30 +31,49 @@ env:
     - FRAMEWORK=dpdk VERSION=2.1.0
     - FRAMEWORK=dpdk VERSION=2.2.0
     - FRAMEWORK=vanilla
+
 script:
   - compile=true ; check=true
 
-  - if [ $FRAMEWORK == "netmap" ] ; then FRAMEWORK_FLAGS="--enable-user-multithread  --with-netmap=`pwd`/netmap-$VERSION/sys/" ; fi
-
-  - if [ $FRAMEWORK == "dpdk" ] ; then check=false && FRAMEWORK_FLAGS="--enable-user-multithread --enable-dpdk" && export RTE_SDK=`pwd`/dpdk-$VERSION && export RTE_TARGET=x86_64-native-linuxapp-gcc && if [ ! -e "$RTE_SDK/$RTE_TARGET/include/rte_version.h" ] ; then wget http://dpdk.org/browse/dpdk/snapshot/dpdk-$VERSION.tar.gz && tar -zxf dpdk-$VERSION.tar.gz && cd dpdk-$VERSION && make config T=$RTE_TARGET && make install T=$RTE_TARGET && cd .. ; fi ; fi
-
-  - if [ $FRAMEWORK == "vanilla" ] ; then
-      FRAMEWORK_FLAGS="" ;
+  - if [ $FRAMEWORK = "netmap" ]; then
+      FRAMEWORK_FLAGS="--enable-user-multithread --with-netmap=`pwd`/netmap-$VERSION/sys/";
     fi
 
-  - if [ $compile == true ] ; then
-      ./configure $FLAGS $FRAMEWORK_FLAGS && make ;
+  - if [ $FRAMEWORK = "dpdk" ] ; then
+      check=false
+      FRAMEWORK_FLAGS="--enable-user-multithread --enable-dpdk"
+      export RTE_SDK=`pwd`/dpdk-$VERSION
+      export RTE_TARGET=x86_64-native-linuxapp-gcc
+      if [ ! -e "$RTE_SDK/$RTE_TARGET/include/rte_version.h" ]; then
+        wget http://dpdk.org/browse/dpdk/snapshot/dpdk-$VERSION.tar.gz &&
+            tar -zxf dpdk-$VERSION.tar.gz &&
+            cd dpdk-$VERSION &&
+            make config T=$RTE_TARGET &&
+            make install T=$RTE_TARGET &&
+            cd ..
+      fi
     fi
-  - if [ $check == true ] ; then
-      make check ;
+
+  - if [ $FRAMEWORK = "vanilla" ] ; then
+      FRAMEWORK_FLAGS="--enable-ip6 --enable-json"
     fi
+
+  - if $compile; then
+      ./configure $FLAGS $FRAMEWORK_FLAGS && make
+    fi
+  - if $check; then
+      make check
+    fi
+
 install:
   - export PATH=$PATH:`pwd`/tcpdump-4.7.4/sbin/ && if [ ! -e "tcpdump-4.7.4/sbin/tcpdump" ] ; then wget http://www.tcpdump.org/release/tcpdump-4.7.4.tar.gz && tar -zxf tcpdump-4.7.4.tar.gz && cd tcpdump-4.7.4 && ./configure --prefix=`pwd` && make && make install && cd .. ; fi
   - if [ ! -e "netmap-11.1/sys/net/netmap.h" ] ; then wget https://github.com/luigirizzo/netmap/archive/v11.1.tar.gz && tar -xvf v11.1.tar.gz && cd netmap-11.1 && cd LINUX && ./configure --no-drivers && cd .. && cd .. ; fi
+
 addons:
   apt:
     packages:
       - libpcap-dev
       - time
       - linux-headers-3.13.0-40-generic
+
 sudo: false
