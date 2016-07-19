@@ -78,6 +78,14 @@ class FastUDPFlows : public Element {
   void change_ports(int);
   Packet *get_packet();
 
+  void set_length(unsigned len) {
+      if (len < 60) {
+          click_chatter("warning: packet length < 60, defaulting to 60");
+          len = 60;
+      }
+      _len = len;
+  }
+
  public:
 
   static const unsigned NO_LIMIT = 0xFFFFFFFFU;
@@ -98,6 +106,9 @@ class FastUDPFlows : public Element {
   int initialize(ErrorHandler *) CLICK_COLD;
   void cleanup(CleanupStage) CLICK_COLD;
   Packet *pull(int);
+
+  void cleanup_flows();
+  static int length_write_handler (const String &s, Element *e, void *, ErrorHandler *errh);
 
   void add_handlers() CLICK_COLD;
   void reset();

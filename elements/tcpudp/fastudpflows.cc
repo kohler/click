@@ -47,10 +47,11 @@ FastUDPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
   _active = true;
   unsigned rate;
   int limit;
+  int len;
   if (Args(conf, this, errh)
       .read_mp("RATE", rate)
       .read_mp("LIMIT", limit)
-      .read_mp("LENGTH", _len)
+      .read_mp("LENGTH", len)
       .read_mp("SRCETH", EtherAddressArg(), _ethh.ether_shost)
       .read_mp("SRCIP", _sipaddr)
       .read_mp("DSTETH", EtherAddressArg(), _ethh.ether_dhost)
@@ -61,10 +62,7 @@ FastUDPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
       .read_p("ACTIVE", _active)
       .complete() < 0)
     return -1;
-  if (_len < 60) {
-    click_chatter("warning: packet length < 60, defaulting to 60");
-    _len = 60;
-  }
+  set_length(len);
   _ethh.ether_type = htons(0x0800);
   if(rate != 0){
     _rate_limited = true;
@@ -162,16 +160,21 @@ FastUDPFlows::initialize(ErrorHandler *)
 }
 
 void
+FastUDPFlows::cleanup_flows() {
+    if (_flows) {
+        for (unsigned i=0; i<_nflows; i++) {
+            _flows[i].packet->kill();
+            _flows[i].packet=0;
+        }
+        delete[] _flows;
+        _flows = 0;
+    }
+}
+
+void
 FastUDPFlows::cleanup(CleanupStage)
 {
-  if (_flows) {
-    for (unsigned i=0; i<_nflows; i++) {
-      _flows[i].packet->kill();
-      _flows[i].packet=0;
-    }
-    delete[] _flows;
-    _flows = 0;
-  }
+	cleanup_flows();
 }
 
 Packet *
@@ -278,6 +281,22 @@ FastUDPFlows_active_write_handler
   return 0;
 }
 
+int
+FastUDPFlows::length_write_handler
+(const String &s, Element *e, void *, ErrorHandler *errh)
+{
+  FastUDPFlows *c = (FastUDPFlows *)e;
+  unsigned len;
+  if (!IntArg().parse(s, len))
+    return errh->error("length parameter must be integer");
+  if (len != c->_len) {
+	  c->set_length(len);
+	  c->cleanup_flows();
+	  c->initialize(0);
+  }
+  return 0;
+}
+
 void
 FastUDPFlows::add_handlers()
 {
@@ -287,6 +306,8 @@ FastUDPFlows::add_handlers()
   add_write_handler("reset", FastUDPFlows_reset_write_handler, 0, Handler::BUTTON);
   add_write_handler("active", FastUDPFlows_active_write_handler, 0, Handler::CHECKBOX);
   add_write_handler("limit", FastUDPFlows_limit_write_handler, 0);
+  add_data_handlers("length", Handler::OP_READ, &_len);
+  add_write_handler("length", length_write_handler, 0);
 }
 
 CLICK_ENDDECLS
