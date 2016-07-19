@@ -25,12 +25,12 @@ env:
   global:
     - FLAGS="--enable-ip6 --enable-json -disable-linuxmodule"
   matrix:
+    - FRAMEWORK=vanilla
     - FRAMEWORK=netmap VERSION=11.1
     - FRAMEWORK=dpdk VERSION=1.8.0
     - FRAMEWORK=dpdk VERSION=2.0.0
     - FRAMEWORK=dpdk VERSION=2.1.0
     - FRAMEWORK=dpdk VERSION=2.2.0
-    - FRAMEWORK=vanilla
 
 script:
   - compile=true ; check=true
@@ -40,29 +40,29 @@ script:
     fi
 
   - if [ $FRAMEWORK = "dpdk" ] ; then
-      check=false
-      FRAMEWORK_FLAGS="--enable-user-multithread --enable-dpdk"
-      export RTE_SDK=`pwd`/dpdk-$VERSION
-      export RTE_TARGET=x86_64-native-linuxapp-gcc
+      check=false;
+      FRAMEWORK_FLAGS="--enable-user-multithread --enable-dpdk";
+      export RTE_SDK=`pwd`/dpdk-$VERSION;
+      export RTE_TARGET=x86_64-native-linuxapp-gcc;
       if [ ! -e "$RTE_SDK/$RTE_TARGET/include/rte_version.h" ]; then
         wget http://dpdk.org/browse/dpdk/snapshot/dpdk-$VERSION.tar.gz &&
             tar -zxf dpdk-$VERSION.tar.gz &&
             cd dpdk-$VERSION &&
             make config T=$RTE_TARGET &&
             make install T=$RTE_TARGET &&
-            cd ..
-      fi
+            cd ..;
+      fi;
     fi
 
   - if [ $FRAMEWORK = "vanilla" ] ; then
-      FRAMEWORK_FLAGS="--enable-ip6 --enable-json"
+      FRAMEWORK_FLAGS="--enable-ip6 --enable-json";
     fi
 
   - if $compile; then
-      ./configure $FLAGS $FRAMEWORK_FLAGS && make
+      ./configure $FLAGS $FRAMEWORK_FLAGS && make;
     fi
   - if $check; then
-      make check
+      make check;
     fi
 
 install:
