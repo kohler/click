@@ -106,6 +106,8 @@ class Counter : public Element { public:
     const char *class_name() const		{ return "Counter"; }
     const char *port_count() const		{ return PORTS_1_1; }
 
+    counter_t count() const                     { return _count; }
+    counter_t byte_count() const                { return _byte_count; }
     void reset();
 
     int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
