@@ -11176,7 +11176,6 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11282,7 +11281,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11335,7 +11333,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11388,7 +11385,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11433,7 +11429,6 @@ $as_echo "#define HAVE_UINTPTR_T_LINUXMODULE 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11465,7 +11460,6 @@ $as_echo "#define HAVE_LINUX_ATOMIC_CMPXCHG 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11497,7 +11491,6 @@ $as_echo "#define HAVE_LINUX_ATOMIC_SET_MASK 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11542,7 +11535,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11597,7 +11589,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11652,7 +11643,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11694,7 +11684,6 @@ $as_echo "#define HAVE_LINUX_ASM_SYSTEM_H 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11741,7 +11730,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11790,7 +11778,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11839,7 +11826,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11888,7 +11874,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11937,7 +11922,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -11986,7 +11970,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12035,7 +12018,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12084,7 +12066,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12133,7 +12114,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12175,7 +12155,6 @@ $as_echo "#define HAVE_LINUX_POLLING 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12207,7 +12186,6 @@ $as_echo "#define HAVE_SKB_DST_DROP 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12239,7 +12217,6 @@ $as_echo "#define HAVE_SKB_RECYCLE 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12281,7 +12258,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12325,7 +12301,6 @@ CFLAGS="$save_cflags"
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12364,7 +12339,6 @@ else
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12406,7 +12380,6 @@ $as_echo "#define HAVE_NETIF_RECEIVE_SKB_EXTENDED 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12439,7 +12412,6 @@ $as_echo "#define HAVE_NET_ENABLE_TIMESTAMP 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12472,7 +12444,6 @@ $as_echo "#define HAVE_NETIF_TX_LOCK 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12505,7 +12476,6 @@ $as_echo "#define HAVE_NETDEV_GET_TX_QUEUE 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12538,7 +12508,6 @@ $as_echo "#define HAVE_NETIF_TX_QUEUE_FROZEN 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12571,7 +12540,6 @@ $as_echo "#define HAVE_NETDEV_USES_DSA_TAGS 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12685,7 +12653,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12727,7 +12694,6 @@ $as_echo "#define HAVE_LINUX_SUPER_BLOCK_S_D_OP 1" >>confdefs.h
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -12773,7 +12739,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace

@@ -331,6 +331,8 @@ sub one_includeroot ($$) {
 	    s{\bnew\b}{new_value}g;
 	    s{\band\b}{and_value}g;
 	    s{\bcompl\b}{compl_value}g;
+            s{\bprivate\b}{kprivate}g;
+            s{(PAGEFLAG[^)]*)kprivate}{$1private}g;
 	    s{\bswap\b}{linux_swap}g;
 
 	    # "sizeof" isn't nice to the preprocessor
@@ -357,10 +359,6 @@ sub one_includeroot ($$) {
 	    s{(\w+)\s*-\s*\(\s*void\s*\*\s*\)}{(uintptr_t)$1 - (uintptr_t)}g;
 
 	    # stuff for particular files (what a shame)
-	    if ($d eq "page-flags.h") {
-		s{(#define PAGE_FLAGS_H)}{$1\n#undef private};
-		s{(#endif.*[\s\n]*)\z}{#define private linux_private\n$1};
-	    }
 	    if ($d eq "timer.h") {
 		s{enum hrtimer_restart}{int};
 	    }
@@ -368,7 +366,7 @@ sub one_includeroot ($$) {
 		s{\b(\w+)\s*=\s*\{(\s*\w+:.*?)\}\s*;}{"$1;\n" . expand_initializer($1, $2, $f)}sge;
 	    }
             if ($d eq "atomic.h") {
-                s{^(ATOMIC_OP.*?(?:and|or))_value}{$1}mg;
+                s{^(ATOMIC_OP.*?(?:and|or|compl))_value}{$1}mg;
             }
 	    if ($d eq "fs.h") {
 		s{\(struct\s+(\w+)\)\s*\{(\s*\w+:.*?)\}}{"({ struct $1 __magic_struct_$1;\n" . expand_initializer("__magic_struct_$1", $2, $f) . "\n__magic_struct_$1; })"}sge;
