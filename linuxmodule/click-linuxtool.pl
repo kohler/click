@@ -431,12 +431,15 @@ sub one_includeroot ($$) {
 		s<struct\s+__raw_tickets\s+(\w+)\s*=\s*\{\s*tail:\s*(\S+?)\s*\};><struct __raw_tickets $1 = {}; $1.tail = $2;>;
 	    }
 	    if ($d eq "compiler.h" || $d eq "linkage.h") {
-		s<^#define ACCESS_ONCE\(x\) \(\*\(volatile typeof\(x\) \*\)\&\(x\)\)><#define ACCESS_ONCE(x) (*(typeof(x) * volatile)&(x))>m;
+		# s<^#define ACCESS_ONCE\(x\) \(\*\(volatile typeof\(x\) \*\)\&\(x\)\)><#define ACCESS_ONCE(x) (*(typeof(x) * volatile)&(x))>m;
 		s<^(#define\s+notrace\s+__attribute__\(\(no_instrument_function\)\))><// g++ has stricter rules about this attribute. We can't deal.\n#ifdef __cplusplus\n#define notrace\n#else\n$1\n#endif>m;
 	    }
 	    if ($d eq "sysctl.h") {
 		s<^(\s+)(proc_handler \*proc_handler;.*)$><#ifdef __cplusplus\n$1::$2\n#else\n$1$2\n#endif>m;
 	    }
+            if ($d eq "rbtree_latch.h") {
+                s{container_of\(node, (struct latch_tree_node), node\[idx\]\)}{(\{ ($1*) ((char*) node - offsetof($1, node[0]) - sizeof((($1*)0)->node[0]) * idx); \})};
+            }
 
 	    if ($d eq "fs.h" || $d eq "netfilter.h") {
 		s<enum (migrate_mode|ip_conntrack_info);><enum $1 \{$1_DUMMY\};>;
@@ -452,16 +455,14 @@ sub one_includeroot ($$) {
                 s<^#define (.*?) \\\n__typeof__\(__builtin_choose_expr\((.*?), (.*?), (.*?)\)\)(.*)><#if __cplusplus\n#define $1 typename click_conditional<($2), __typeof($3), __typeof($4)>::type$5\n#else\n#define $1 __typeof__(__builtin_choose_expr($2, $3, $4))$5\n#endif>m;
             }
             if ($d eq "cpufeature.h") {
-                s{^#include <linux/bitops.h>}{/* #include <linux/bitops.h> */}m;
+                s{^#include <linux/bitops.h>}{/* #include <linux/bitops.h> */}mg;
             }
             if ($d eq "sections.h") {
-                s{^extern(.*?) const void}{extern$1 const char}m;
+                s{^extern(.*?) const void}{extern$1 const char}mg;
             }
             if ($d eq "irq.h") {
-                s{^enum irqchip_irq_state;}{enum irqchip_irq_state : int;}m;
-            }
-            if ($d eq "interrupt.h") {
-                s{^enum irqchip_irq_state\s*\{}{enum irqchip_irq_state : int \{}m;
+                s{enum irqchip_irq_state;}{}g;
+                s{enum irqchip_irq_state\b}{int}g;
             }
 
 	    # CLICK_CXX_PROTECTED check
