@@ -60,6 +60,10 @@ static int clickfs_ready;
 #define UNLOCK_CONFIG(...)	unlock_config(__FILE__, __LINE__, ## __VA_ARGS__)
 #define DOWNGRADE_CONFIG_LOCK(r) downgrade_config_lock(__FILE__, __LINE__, r)
 
+#if !defined(f_dentry) && LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+# define f_dentry f_path.dentry
+#endif
+
 
 /*************************** Config locking *********************************/
 
@@ -892,7 +896,9 @@ handler_do_write(struct file *filp, void *address_ptr)
 
 static int
 handler_flush(struct file *filp
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
+              , fl_owner_t files
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
 	      , struct files_struct *files
 #endif
 	      )
