@@ -31,6 +31,7 @@ class Router { public:
     inline bool initialized() const;
     inline bool handlers_ready() const;
     inline bool running() const;
+    inline bool dying() const;
 
     // RUNCOUNT AND RUNCLASS
     enum { STOP_RUNCOUNT = -2147483647 - 1 };
@@ -371,6 +372,13 @@ inline bool
 Router::running() const
 {
     return _running > 0;
+}
+
+/** @brief  Return true iff the router is in the process of being killed. */
+inline bool
+Router::dying() const
+{
+    return _running == RUNNING_DEAD;
 }
 
 /** @brief  Return true iff the router has been successfully initialized. */

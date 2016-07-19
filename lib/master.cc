@@ -191,6 +191,9 @@ Master::kill_router(Router *router)
     assert(router && router->_master == this);
     int was_running = router->_running;
     router->_running = Router::RUNNING_DEAD;
+    assert(router->dying());
+    // After this point, tasks on this router will not be enqueued on
+    // threads' pending lists. We'll soon clear those lists.
     if (was_running >= Router::RUNNING_BACKGROUND)
         pause();
     else if (was_running == Router::RUNNING_PREPARING)
@@ -210,12 +213,18 @@ Master::kill_router(Router *router)
     unlock_master();
 
     // Remove tasks
+    // First, process the current RouterThread (if any). This avoids
+    // deadlock. Situation: Thread 2's pending list includes task
+    // T. Thread 2 calls Master::check_driver(), which calls
+    // kill_router(r). Meanwhile, thread 1 deletes task T: Thread 1
+    // will block until T is removed from Thread 2's pending list.
+    for (RouterThread** tp = _threads; tp != _threads + _nthreads; ++tp)
+        if ((*tp)->current_thread_is_running())
+            (*tp)->kill_router(router);
+    // Then process other RouterThreads.
     for (RouterThread **tp = _threads; tp != _threads + _nthreads; ++tp)
-        (*tp)->kill_router(router);
-
-    // 4.Sep.2007 - Don't bother to remove pending tasks.  They will be
-    // removed shortly anyway, either when the task itself is deleted or (more
-    // likely) when the pending list is processed.
+        if (!(*tp)->current_thread_is_running())
+            (*tp)->kill_router(router);
 
 #if CLICK_USERLEVEL
     // Remove signals

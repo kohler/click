@@ -79,7 +79,6 @@ class Master { public:
     inline void lock_master();
     inline void unlock_master();
 
-    // DRIVERMANAGER
     inline void request_stop();
     inline void request_go();
     bool check_driver();
@@ -113,7 +112,6 @@ class Master { public:
     friend class Task;
     friend class RouterThread;
     friend class Router;
-
 };
 
 inline int

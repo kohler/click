@@ -736,6 +736,7 @@ RouterThread::driver()
 void
 RouterThread::kill_router(Router *r)
 {
+    assert(r->dying());
     lock_tasks();
 #if HAVE_TASK_HEAP
     Task *t;
@@ -763,6 +764,9 @@ RouterThread::kill_router(Router *r)
     prev->_next = t;
     t->_prev = prev;
 #endif
+    click_compiler_fence();
+    if (_pending_head.x)
+        process_pending();
     unlock_tasks();
 
     _timers.kill_router(r);

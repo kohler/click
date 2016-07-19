@@ -211,9 +211,9 @@ Task::add_pending(uintptr_t limit)
         }
     }
 
-    // add to list
+    // add to list, unless the router is in the process of dying
     if (_pending_nextptr.x <= limit) {
-        if (thread->thread_id() >= 0) {
+        if (thread->thread_id() >= 0 && !router()->dying()) {
             _pending_nextptr.x = 1;
             thread->_pending_tail->t = this;
             thread->_pending_tail = &_pending_nextptr;
