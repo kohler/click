@@ -1,5 +1,9 @@
 Makefile
 *.d
+*.o
 elements.conf
 elements.mk
 elements.cc
+elements.csmk
+libnsclick.so
+libnsclick.dylib
