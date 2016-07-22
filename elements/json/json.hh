@@ -6,7 +6,7 @@
 #include <click/vector.hh>
 #include <click/glue.hh>
 #include <click/pair.hh>
-#if CLICK_USERLEVEL
+#if CLICK_USERLEVEL && !defined(__UCLIBC__)
 # include <iterator>
 #endif
 CLICK_DECLS
@@ -424,7 +424,7 @@ class Json::const_object_iterator { public:
     typedef Pair<const String, Json> value_type;
     typedef const value_type *pointer_type;
     typedef const value_type &reference_type;
-#if CLICK_USERLEVEL
+#if CLICK_USERLEVEL && !defined(__UCLIBC__)
     typedef std::forward_iterator_tag iterator_category;
 #endif
 
@@ -514,7 +514,7 @@ class Json::const_array_iterator { public:
     typedef Json value_type;
     typedef const Json *pointer_type;
     typedef const Json &reference_type;
-#if CLICK_USERLEVEL
+#if CLICK_USERLEVEL && !defined(__UCLIBC__)
     typedef std::random_access_iterator_tag iterator_category;
 #endif
 
@@ -640,7 +640,7 @@ class Json::const_iterator { public:
     typedef Pair<const String, Json &> value_type;
     typedef const value_type *pointer_type;
     typedef const value_type &reference_type;
-#if CLICK_USERLEVEL
+#if CLICK_USERLEVEL && !defined(__UCLIBC__)
     typedef std::forward_iterator_tag iterator_category;
 #endif
 
