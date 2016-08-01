@@ -365,8 +365,8 @@ sub one_includeroot ($$) {
 	    if ($d eq "route.h") {
 		s{\b(\w+)\s*=\s*\{(\s*\w+:.*?)\}\s*;}{"$1;\n" . expand_initializer($1, $2, $f)}sge;
 	    }
-            if ($d eq "atomic.h") {
-                s{^(ATOMIC(?:64)?_OP.*?(?:and|or|compl))_value}{$1}mg;
+            if ($d =~ /^atomic/) {
+                s{^(ATOMIC.*?(?:and|or|compl))_value}{$1}mg;
             }
 	    if ($d eq "fs.h") {
 		s{\(struct\s+(\w+)\)\s*\{(\s*\w+:.*?)\}}{"({ struct $1 __magic_struct_$1;\n" . expand_initializer("__magic_struct_$1", $2, $f) . "\n__magic_struct_$1; })"}sge;
