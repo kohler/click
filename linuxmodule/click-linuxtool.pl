@@ -452,7 +452,7 @@ sub one_includeroot ($$) {
                 s<offsetof\(([^,]*),\s*(\w+)\s*\[\s*([a-zA-Z]\w*)\s*\]\s*\)><(offsetof($1, $2) + sizeof((($1*) 0)-\>$2\[0]) * $3)>;
             }
             if ($d eq "uaccess.h" || $d eq "syscalls.h") {
-                s<^#define (.*?) \\\n__typeof__\(__builtin_choose_expr\((.*?), (.*?), (.*?)\)\)(.*)><#if __cplusplus\n#define $1 typename click_conditional<($2), __typeof($3), __typeof($4)>::type$5\n#else\n#define $1 __typeof__(__builtin_choose_expr($2, $3, $4))$5\n#endif>m;
+                s<^#define (.*?) \\\n__typeof__\(__builtin_choose_expr\((.*?), (.*?), (.*?)\)\)(.*)><#if __cplusplus\n#define $1 typename conditional<($2), __typeof($3), __typeof($4)>::type$5\n#else\n#define $1 __typeof__(__builtin_choose_expr($2, $3, $4))$5\n#endif>m;
             }
             if ($d eq "cpufeature.h") {
                 s{^#include <linux/bitops.h>}{/* #include <linux/bitops.h> */}mg;
