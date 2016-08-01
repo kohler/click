@@ -1478,8 +1478,8 @@ so I won't try to compile the linuxmodule driver.
 
 Click modifies the Linux kernel's header files to make them work with
 C++, using the program 'linuxmodule/click-linuxtool.pl'. It looks like
-your kernel header files have features that tool doesn't know how to fix.
-You can report this error to us on the Click mailing list, or, even better,
+your kernel header files have features the tool doesn't know how to fix.
+You can report this error to us via a Github issue, or, even better,
 try to fix the error. See the config.log file for more information on the
 error.
 
