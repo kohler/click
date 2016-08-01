@@ -19,9 +19,10 @@ dnl
 AC_INIT([clicky], [0.1])
 AC_CONFIG_SRCDIR([configure.ac])
 AM_INIT_AUTOMAKE
-AM_CONFIG_HEADER(config.h)
+AM_CONFIG_HEADER([config.h])
 AM_MAINTAINER_MODE
 AC_SUBST(ac_configure_args)
+ac_user_cxx=${CXX+y}
 
 AC_ISC_POSIX
 AC_PROG_MAKE_SET
@@ -32,6 +33,23 @@ AC_PROG_CXX
 AC_PROG_CXXCPP
 AC_PROG_INSTALL
 if test -n "$GCC" ; then CC="$CC -W -Wall" ; CXX="$CXX -W -Wall" ; fi
+
+dnl require C++11
+AC_LANG_CPLUSPLUS
+AC_CACHE_CHECK([whether the C++ compiler understands 'auto'], [ac_cv_cxx_auto], [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[struct s { int a; }; int f(s x) { auto &y = x; return y.a; }]], [[]])],
+                      [ac_cv_cxx_auto=yes], [ac_cv_cxx_auto=no])])
+if test "$ac_cv_cxx_auto" != yes -a -z "$ac_user_cxx"; then
+    savecxx="${CXX}"
+    CXX="${CXX} -std=gnu++0x"
+    AC_MSG_CHECKING([whether the C++ compiler with -std=gnu++0x understands 'auto'])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[struct s { int a; }; int f(s x) { auto &y = x; return y.a; }]], [[]])],
+                      [ac_cv_cxx_auto=yes], [ac_cv_cxx_auto=no])
+    AC_MSG_RESULT([$ac_cv_cxx_auto])
+    if test $ac_cv_cxx_auto != yes; then CXX="${savecxx}"; fi
+fi
+
+dnl pkgconfig
 
 pkg_modules="gtk+-2.0 >= 2.0.0"
 PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
