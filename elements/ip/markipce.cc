@@ -49,7 +49,7 @@ MarkIPCE::simple_action(Packet *p)
     } else if ((iph->ip_tos & IP_ECNMASK) == IP_ECN_CE)
 	return p;
 
-    WritablePacket *q = p->uniqueify();
+    WritablePacket *q;
     if (!(q = p->uniqueify()))
 	return 0;
 
