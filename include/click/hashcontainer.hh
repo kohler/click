@@ -15,11 +15,11 @@ template <typename T, typename A = HashContainer_adapter<T> > class HashContaine
 template <typename T, typename A = HashContainer_adapter<T> > class HashContainer;
 
 /** @cond never */
-template <typename T, typename A>
+template <typename T, typename A, typename S >
 class HashContainer_rep : public A {
     T **buckets;
-    size_t nbuckets;
-    size_t size;
+    S nbuckets;
+    S size;
     mutable size_t first_bucket;
     friend class HashContainer<T, A>;
     friend class HashContainer_const_iterator<T, A>;
@@ -88,7 +88,7 @@ class HashContainer { public:
     typedef T value_type;
 
     /** @brief Type of sizes. */
-    typedef size_t size_type;
+    typedef uint32_t size_type;
 
     enum {
 #if CLICK_LINUXMODULE
@@ -281,7 +281,7 @@ class HashContainer { public:
 
   private:
 
-    HashContainer_rep<T, A> _rep;
+    HashContainer_rep<T, A, size_type> _rep;
 
     HashContainer(const HashContainer<T, A> &);
     HashContainer<T, A> &operator=(const HashContainer<T, A> &);
@@ -649,7 +649,7 @@ inline void HashContainer<T, A>::clear()
 template <typename T, typename A>
 inline void HashContainer<T, A>::swap(HashContainer<T, A> &o)
 {
-    HashContainer_rep<T, A> rep(_rep);
+    HashContainer_rep<T, A, size_type> rep(_rep);
     _rep = o._rep;
     o._rep = rep;
 }
