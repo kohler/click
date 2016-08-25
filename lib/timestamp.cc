@@ -57,48 +57,48 @@ CLICK_DECLS
  */
 
 #if TIMESTAMP_WARPABLE
-Timestamp::warp_class_type Timestamp::_warp_class = Timestamp::warp_none;
-double Timestamp::_warp_speed = 1.0;
-Timestamp Timestamp::_warp_flat_offset[2];
-double Timestamp::_warp_offset[2] = { 0.0, 0.0 };
+Timestamp::warp_class_type TimestampWarp::kind = Timestamp::warp_none;
+double TimestampWarp::speed = 1.0;
+Timestamp TimestampWarp::flat_offset[2];
+double TimestampWarp::offset[2] = { 0.0, 0.0 };
 
 void
 Timestamp::warp(bool steady, bool from_now)
 {
-    if (_warp_class == warp_simulation) {
-        *this = _warp_flat_offset[steady];
+    if (TimestampWarp::kind == warp_simulation) {
+        *this = TimestampWarp::flat_offset[steady];
         if (from_now)
             for (int i = 0; i < 2; ++i) {
 # if TIMESTAMP_REP_FLAT64 || TIMESTAMP_MATH_FLAT64
-                ++_warp_flat_offset[i]._t.x;
+                ++TimestampWarp::flat_offset[i]._t.x;
 # else
-                ++_warp_flat_offset[i]._t.subsec;
+                ++TimestampWarp::flat_offset[i]._t.subsec;
 # endif
-                _warp_flat_offset[i].add_fix();
+                TimestampWarp::flat_offset[i].add_fix();
             }
-    } else if (_warp_speed == 1.0)
-        *this += _warp_flat_offset[steady];
+    } else if (TimestampWarp::speed == 1.0)
+        *this += TimestampWarp::flat_offset[steady];
     else
-        *this = Timestamp((doubleval() + _warp_offset[steady]) * _warp_speed);
+        *this = Timestamp((doubleval() + TimestampWarp::offset[steady]) * TimestampWarp::speed);
 }
 
 void
 Timestamp::warp_set_class(warp_class_type w, double s)
 {
-    if (w == warp_linear && _warp_class == warp_none && s == 1.0)
+    if (w == warp_linear && TimestampWarp::kind == warp_none && s == 1.0)
         w = warp_none;
     if (w == warp_none) {
-        _warp_speed = 1.0;
-        _warp_flat_offset[0] = _warp_flat_offset[1] = Timestamp();
-        _warp_offset[0] = _warp_offset[1] = 0.0;
+        TimestampWarp::speed = 1.0;
+        TimestampWarp::flat_offset[0] = TimestampWarp::flat_offset[1] = Timestamp();
+        TimestampWarp::offset[0] = TimestampWarp::offset[1] = 0.0;
     }
-    _warp_class = w;
+    TimestampWarp::kind = w;
     if (w == warp_linear) {
         Timestamp now_raw = Timestamp::now_unwarped(),
             now_steady_raw = Timestamp::now_steady_unwarped(),
             now_adj = now_raw.warped(false),
             now_steady_adj = now_steady_raw.warped(true);
-        _warp_speed = s;
+        TimestampWarp::speed = s;
         warp_adjust(false, now_raw, now_adj);
         warp_adjust(true, now_steady_raw, now_steady_adj);
     }
@@ -108,12 +108,12 @@ void
 Timestamp::warp_adjust(bool steady, const Timestamp &t_raw,
                        const Timestamp &t_warped)
 {
-    if (_warp_class == warp_simulation)
-        _warp_flat_offset[steady] = t_warped;
-    else if (_warp_speed == 1.0)
-        _warp_flat_offset[steady] = t_warped - t_raw;
+    if (TimestampWarp::kind == warp_simulation)
+        TimestampWarp::flat_offset[steady] = t_warped;
+    else if (TimestampWarp::speed == 1.0)
+        TimestampWarp::flat_offset[steady] = t_warped - t_raw;
     else
-        _warp_offset[steady] = t_warped.doubleval() / _warp_speed - t_raw.doubleval();
+        TimestampWarp::offset[steady] = t_warped.doubleval() / TimestampWarp::speed - t_raw.doubleval();
 }
 
 void
@@ -128,12 +128,12 @@ Timestamp::warp_set_now(const Timestamp &t_system, const Timestamp &t_steady)
 void
 Timestamp::warp_jump_steady(const Timestamp &expiry)
 {
-    if (_warp_class == warp_simulation) {
-        if (_warp_flat_offset[1] < expiry) {
-            _warp_flat_offset[0] += expiry - _warp_flat_offset[1];
-            _warp_flat_offset[1] = expiry;
+    if (TimestampWarp::kind == warp_simulation) {
+        if (TimestampWarp::flat_offset[1] < expiry) {
+            TimestampWarp::flat_offset[0] += expiry - TimestampWarp::flat_offset[1];
+            TimestampWarp::flat_offset[1] = expiry;
         }
-    } else if (_warp_class == warp_nowait) {
+    } else if (TimestampWarp::kind == warp_nowait) {
         Timestamp now_steady_raw = Timestamp::now_steady_unwarped(),
             now_steady = now_steady_raw.warped(true);
         if (now_steady < expiry) {

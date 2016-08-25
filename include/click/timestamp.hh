@@ -578,18 +578,14 @@ class Timestamp { public:
 
 
     /** @brief Return the active timewarp class. */
-    static inline int warp_class() {
-        return _warp_class;
-    }
+    static inline int warp_class();
 
     /** @brief Return the timewarp speed.
      *
      * Timewarp speed measures how much faster Timestamp::now() appears to
      * move compared with wall-clock time.  Only meaningful if warp_class() is
      * #warp_linear or #warp_nowait. */
-    static inline double warp_speed() {
-        return _warp_speed;
-    }
+    static inline double warp_speed();
 
 
     /** @brief Set the timewarp class to @a w.
@@ -636,9 +632,7 @@ class Timestamp { public:
     inline Timestamp warp_real_delay() const;
 
     /** @brief Return true iff time skips ahead around timer expirations. */
-    static inline bool warp_jumping() {
-        return _warp_class >= warp_nowait;
-    }
+    static inline bool warp_jumping();
 
     /** @brief Move Click time past a timer expiration.
      *
@@ -715,18 +709,8 @@ class Timestamp { public:
     inline void assign_now(bool recent, bool steady, bool unwarped);
 
 #if TIMESTAMP_WARPABLE
-    static warp_class_type _warp_class;
-    static double _warp_speed;
-    static Timestamp _warp_flat_offset[2];
-    static double _warp_offset[2];
-
     static inline void warp_adjust(bool steady, const Timestamp &t_raw, const Timestamp &t_warped);
-    inline Timestamp warped(bool steady) const {
-        Timestamp t = *this;
-        if (_warp_class)
-            t.warp(steady, false);
-        return t;
-    }
+    inline Timestamp warped(bool steady) const;
     void warp(bool steady, bool from_now);
 #endif
 
@@ -737,6 +721,38 @@ class Timestamp { public:
     friend inline Timestamp &operator-=(Timestamp &a, const Timestamp &b);
 
 };
+
+
+#if TIMESTAMP_WARPABLE
+/** @cond never */
+class TimestampWarp {
+    static Timestamp::warp_class_type kind;
+    static double speed;
+    static Timestamp flat_offset[2];
+    static double offset[2];
+    friend class Timestamp;
+};
+/** @endcond never */
+
+inline int Timestamp::warp_class() {
+    return TimestampWarp::kind;
+}
+
+inline double Timestamp::warp_speed() {
+    return TimestampWarp::speed;
+}
+
+inline bool Timestamp::warp_jumping() {
+    return TimestampWarp::kind >= warp_nowait;
+}
+
+inline Timestamp Timestamp::warped(bool steady) const {
+    Timestamp t = *this;
+    if (TimestampWarp::kind)
+        t.warp(steady, false);
+    return t;
+}
+#endif
 
 
 /** @brief Create a Timestamp measuring @a tv.
@@ -888,7 +904,7 @@ Timestamp::assign_now(bool recent, bool steady, bool unwarped)
 
 #if TIMESTAMP_WARPABLE
     // timewarping
-    if (!unwarped && _warp_class)
+    if (!unwarped && TimestampWarp::kind)
         warp(steady, true);
 #endif
 }
@@ -1428,10 +1444,10 @@ StringAccum& operator<<(StringAccum&, const Timestamp&);
 inline Timestamp
 Timestamp::warp_real_delay() const
 {
-    if (likely(!_warp_class) || _warp_speed == 1.0)
+    if (likely(!TimestampWarp::kind) || TimestampWarp::speed == 1.0)
         return *this;
     else
-        return *this / _warp_speed;
+        return *this / TimestampWarp::speed;
 }
 #endif
 
