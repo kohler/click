@@ -43,7 +43,6 @@ UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     IPAddress saddr;
     uint16_t sport, dport;
-    bool cksum;
     String daddr_str;
 
     if (Args(conf, this, errh)
@@ -51,7 +50,7 @@ UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read_mp("SPORT", IPPortArg(IP_PROTO_UDP), sport)
 	.read_mp("DST", AnyArg(), daddr_str)
 	.read_mp("DPORT", IPPortArg(IP_PROTO_UDP), dport)
-	.read_p("CHECKSUM", BoolArg(), cksum)
+	.read_p("CHECKSUM", BoolArg(), _cksum)
 	.complete() < 0)
 	return -1;
 
