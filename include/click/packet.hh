@@ -271,6 +271,7 @@ class Packet { public:
     inline void shrink_data(const unsigned char *data, uint32_t length);
     inline void change_headroom_and_length(uint32_t headroom, uint32_t length);
 #endif
+    bool copy(Packet* p, int headroom=0);
     //@}
 
     /** @name Header Pointers */
