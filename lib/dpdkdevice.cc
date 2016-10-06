@@ -109,7 +109,7 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
             "Cannot initialize DPDK port %u with %u RX and %u TX queues",
             port_id, info.rx_queues.size(), info.tx_queues.size());
     struct rte_eth_rxconf rx_conf;
-#if RTE_VER_MAJOR >= 2
+#if RTE_VERSION >= (RTE_VERSION_NUM(2,1,0,0))
     memcpy(&rx_conf, &dev_info.default_rxconf, sizeof rx_conf);
 #else
     bzero(&rx_conf,sizeof rx_conf);
@@ -119,7 +119,7 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
     rx_conf.rx_thresh.wthresh = RX_WTHRESH;
 
     struct rte_eth_txconf tx_conf;
-#if RTE_VER_MAJOR >= 2
+#if RTE_VERSION >= (RTE_VERSION_NUM(2,1,0,0))
     memcpy(&tx_conf, &dev_info.default_txconf, sizeof tx_conf);
 #else
     bzero(&tx_conf,sizeof tx_conf);
@@ -242,7 +242,7 @@ int DPDKDevice::initialize(ErrorHandler *errh)
         return 0;
 
     click_chatter("Initializing DPDK");
-#if RTE_VER_MAJOR < 2
+#if RTE_VERSION < (RTE_VERSION_NUM(2,1,0,0))
     if (rte_eal_pci_probe())
         return errh->error("Cannot probe the PCI bus");
 #endif
@@ -330,8 +330,9 @@ DPDKDeviceArg::parse(const String &str, DPDKDevice* &result, const ArgContext &c
 }
 
 int DPDKDevice::NB_MBUF = 65536;
-int DPDKDevice::MBUF_SIZE =
-    2048 + sizeof (struct rte_mbuf) + RTE_PKTMBUF_HEADROOM;
+int DPDKDevice::MBUF_DATA_SIZE = 2048;
+int DPDKDevice::MBUF_SIZE = MBUF_DATA_SIZE
+                          + sizeof (struct rte_mbuf) + RTE_PKTMBUF_HEADROOM;
 int DPDKDevice::MBUF_CACHE_SIZE = 256;
 int DPDKDevice::RX_PTHRESH = 8;
 int DPDKDevice::RX_HTHRESH = 8;
@@ -343,5 +344,6 @@ int DPDKDevice::TX_WTHRESH = 0;
 bool DPDKDevice::_is_initialized = false;
 HashTable<unsigned, DPDKDevice> DPDKDevice::_devs;
 struct rte_mempool** DPDKDevice::_pktmbuf_pools;
+bool DPDKDevice::no_more_buffer_msg_printed = false;
 
 CLICK_ENDDECLS
