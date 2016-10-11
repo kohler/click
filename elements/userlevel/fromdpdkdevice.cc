@@ -120,8 +120,8 @@ int FromDPDKDevice::reset_count_handler(const String &, Element *e, void *,
 
 void FromDPDKDevice::add_handlers()
 {
-	add_read_handler("count", count_handler, 0);
-	add_write_handler("reset_count", reset_count_handler, 0,
+    add_read_handler("count", count_handler, 0);
+    add_write_handler("reset_count", reset_count_handler, 0,
                           Handler::BUTTON);
 }
 

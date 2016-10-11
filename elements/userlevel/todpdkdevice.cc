@@ -39,8 +39,8 @@ ToDPDKDevice::~ToDPDKDevice()
 int ToDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int n_desc = -1;
-	String dev;
-	bool allow_nonexistent = false;
+    String dev;
+    bool allow_nonexistent = false;
 
     if (Args(conf, this, errh)
         .read_mp("PORT", dev)
