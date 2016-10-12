@@ -41,14 +41,11 @@ env:
     - FRAMEWORK=dpdk VERSION=16.07
 
 script:
-  - compile=true ; check=true
-
   - if [ $FRAMEWORK = "netmap" ]; then
       FRAMEWORK_FLAGS="--enable-user-multithread --with-netmap=`pwd`/netmap-$VERSION/sys/";
     fi
 
   - if [ $FRAMEWORK = "dpdk" ] ; then
-      check=false;
       FRAMEWORK_FLAGS="--enable-user-multithread --enable-dpdk";
       export RTE_SDK=`pwd`/dpdk-$VERSION;
       export RTE_TARGET=x86_64-native-linuxapp-gcc;
@@ -69,12 +66,8 @@ script:
       FRAMEWORK_FLAGS="--enable-ip6 --enable-json";
     fi
 
-  - if $compile; then
-      ./configure $FLAGS $FRAMEWORK_FLAGS && make;
-    fi
-  - if $check; then
-      make check;
-    fi
+  - ./configure $FLAGS $FRAMEWORK_FLAGS && make
+  - make check
 
 install:
   - export PATH=$PATH:`pwd`/tcpdump-4.7.4/sbin/ && if [ ! -e "tcpdump-4.7.4/sbin/tcpdump" ] ; then wget http://www.tcpdump.org/release/tcpdump-4.7.4.tar.gz && tar -zxf tcpdump-4.7.4.tar.gz && cd tcpdump-4.7.4 && ./configure --prefix=`pwd` && make && make install && cd .. ; fi
