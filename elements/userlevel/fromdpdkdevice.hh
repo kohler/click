@@ -27,6 +27,13 @@ On the contrary to FromDevice.u which acts as a sniffer by default, packets
 received by devices put in DPDK mode will NOT be received by the kernel, and
 will thus be processed only once.
 
+To use RSS (Receive Side Scaling) to receive packets from the same device
+on multiple queues (possibly pinned to different Click threads), simply
+use multiple FromDPDKDevice with the same PORT argument. Each
+FromDPDKDevice will open a different RX queue attached to the same port,
+and packets will be dispatched among the FromDPDKDevice elements that
+you can pin to different thread using StaticThreadSched.
+
 Arguments:
 
 =over 8
