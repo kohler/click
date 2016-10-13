@@ -2,6 +2,7 @@
 #define CLICK_HASHCONTAINER_HH
 #include <click/glue.hh>
 #include <click/hashcode.hh>
+#include <click/libdivide.h>
 #if CLICK_DEBUG_HASHMAP
 # define click_hash_assert(x) assert(x)
 #else
@@ -21,6 +22,7 @@ class HashContainer_rep : public A {
     S nbuckets;
     S size;
     mutable size_t first_bucket;
+    libdivide_u32_t bucket_divider;
     friend class HashContainer<T, A>;
     friend class HashContainer_const_iterator<T, A>;
     friend class HashContainer_iterator<T, A>;
@@ -435,6 +437,8 @@ HashContainer<T, A>::HashContainer()
     _rep.nbuckets = initial_bucket_count;
     _rep.buckets = (T **) CLICK_LALLOC(sizeof(T *) * _rep.nbuckets);
     _rep.first_bucket = _rep.nbuckets;
+    _rep.bucket_divider = libdivide_u32_gen(_rep.nbuckets);
+    click_hash_assert(_rep.nbuckets == libdivide_u32_recover(&_rep.bucket_divider));
     for (size_type b = 0; b < _rep.nbuckets; ++b)
 	_rep.buckets[b] = 0;
 }
@@ -449,6 +453,8 @@ HashContainer<T, A>::HashContainer(size_type nb)
     _rep.nbuckets = b;
     _rep.buckets = (T **) CLICK_LALLOC(sizeof(T *) * _rep.nbuckets);
     _rep.first_bucket = _rep.nbuckets;
+    _rep.bucket_divider = libdivide_u32_gen(_rep.nbuckets);
+    click_hash_assert(_rep.nbuckets == libdivide_u32_recover(&_rep.bucket_divider));
     for (b = 0; b < _rep.nbuckets; ++b)
 	_rep.buckets[b] = 0;
 }
@@ -463,7 +469,12 @@ template <typename T, typename A>
 inline typename HashContainer<T, A>::size_type
 HashContainer<T, A>::bucket(const key_type &key) const
 {
-    return ((size_type) hashcode(key)) % _rep.nbuckets;
+    size_type h = hashcode(key);
+    size_type d = libdivide_u32_do(h, &_rep.bucket_divider);
+    size_type r = h - _rep.nbuckets * d;
+    click_hash_assert(_rep.nbuckets == libdivide_u32_recover(&_rep.bucket_divider));
+    click_hash_assert(r == h % _rep.nbuckets);
+    return r;
 }
 
 template <typename T, typename A>
@@ -673,6 +684,8 @@ void HashContainer<T, A>::rehash(size_type n)
     _rep.nbuckets = new_nbuckets;
     _rep.buckets = new_buckets;
     _rep.first_bucket = 0;
+    _rep.bucket_divider = libdivide_u32_gen(_rep.nbuckets);
+    click_hash_assert(_rep.nbuckets == libdivide_u32_recover(&_rep.bucket_divider));
 
     for (size_t b = 0; b < old_nbuckets; b++)
 	for (T *element = old_buckets[b]; element; ) {
