@@ -176,6 +176,7 @@ class Program { public:
     }
 
     void add_insn(Vector<int> &tree, int offset, uint32_t value, uint32_t mask);
+    void add_raw_insn(Insn new_insn);
 
     Vector<int> init_subtree() const;
     void start_subtree(Vector<int> &tree) const;
@@ -196,6 +197,9 @@ class Program { public:
     void optimize(const int *offset_map_begin, const int *offset_map_end, int last_offset);
 
     void warn_unused_outputs(int noutputs, ErrorHandler *errh) const;
+
+    void offset_insn_tree(int step_offset);
+    void redirect_unfinished_insn_tree(int new_target);
 
     int match(const Packet *p);
 
