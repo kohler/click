@@ -1208,12 +1208,40 @@ IPFilter::Parser::parse_test(int pos, bool negated)
 }
 
 void
+merge_programs(Classification::Wordwise::Program &p1, Classification::Wordwise::Program &p2)
+{
+    int step_offset = p1.ninsn();
+    int jump_target = step_offset;
+    if (p1.ninsn() == 0) {
+        // p1 program is empty.
+        // If it has a valid target, we always jump to it. p2 is ignored.
+        // If target is invalid, proceed as normal. Resulting tree == p2.
+        int target = -p1.output_everything();
+
+        //check if target is valid
+        if (target != Classification::j_never + 1) {
+            return;
+        }
+    }
+    if (p2.ninsn() == 0) {
+        jump_target = -p2.output_everything();
+    }
+
+    p1.redirect_unfinished_insn_tree(jump_target);
+    p2.offset_insn_tree(step_offset);
+
+    for (int i = 0; i < p2.ninsn(); i++) {
+       p1.add_raw_insn(p2.insn(i));
+    }
+}
+
+void
 IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 			const Vector<String> &conf, int noutputs,
 			const Element *context, ErrorHandler *errh)
 {
-    Classification::Wordwise::Program prog;
-    Vector<int> tree = prog.init_subtree();
+    static const int offset_map[] = { offset_net + 8, offset_net + 3 };
+    Vector<Classification::Wordwise::Program> progs;
 
     // [QUALS] [host|net|port|proto] [data]
     // QUALS ::= src | dst | src and dst | src or dst | \empty
@@ -1251,6 +1279,8 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 		cerrh.error("unknown slot ID %<%s%>", slotwd.c_str());
 	}
 
+	Classification::Wordwise::Program prog;
+	Vector<int> tree = prog.init_subtree();
 	prog.start_subtree(tree);
 
 	// check for "-"
@@ -1266,19 +1296,41 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 	}
 
 	prog.finish_subtree(tree, Classification::c_and, -slot);
+	progs.push_back(prog);
     }
 
-    if (tree.size())
-	prog.finish_subtree(tree, Classification::c_or, Classification::j_never, Classification::j_never);
+    int num_progs = progs.size();
+    if (num_progs == 1) {
+        progs[0].optimize(offset_map, offset_map + 2, Classification::offset_max);
+    } else {
+        //recursivly merge programs in pairs of two
+        int n = 1;
+        while (n * 2 <= num_progs) {
+            for (int i = 0; i < num_progs; i += n * 2) {
+                int a = i;
+                int b = i + n;
+                if (b < num_progs) {
+                    merge_programs(progs[a], progs[b]);
+                    progs[a].optimize(offset_map, offset_map + 2, Classification::offset_max);
+                } else {
+                    //odd prog at end, not merging yet
+                    continue;
+                }
+            }
+            n = n * 2;
+        }
 
-    // click_chatter("%s", prog.unparse().c_str());
-    static const int offset_map[] = { offset_net + 8, offset_net + 3 };
-    prog.optimize(offset_map, offset_map + 2, Classification::offset_max);
+        //check if there is an odd program at the end not yet merged
+        if (n != num_progs) {
+            merge_programs(progs[0], progs[n]);
+            progs[0].optimize(offset_map, offset_map + 2, Classification::offset_max);
+        }
+    }
 
     // Compress the program into _zprog.
     // It helps to do another bubblesort for things like ports.
-    prog.bubble_sort_and_exprs(offset_map, offset_map + 2, Classification::offset_max);
-    zprog.compile(prog, PERFORM_BINARY_SEARCH, MIN_BINARY_SEARCH);
+    progs[0].bubble_sort_and_exprs(offset_map, offset_map + 2, Classification::offset_max);
+    zprog.compile(progs[0], PERFORM_BINARY_SEARCH, MIN_BINARY_SEARCH);
 
     // click_chatter("%s", zprog.unparse().c_str());
 }

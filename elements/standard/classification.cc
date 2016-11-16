@@ -203,6 +203,12 @@ Program::add_insn(Vector<int> &tree, int offset, uint32_t value, uint32_t mask)
 }
 
 void
+Program::add_raw_insn(Insn new_insn)
+{
+    _insn.push_back(new_insn);
+}
+
+void
 Program::redirect_subtree(int first, int last, int success, int failure)
 {
     for (int i = first; i < last; ++i) {
@@ -212,6 +218,34 @@ Program::redirect_subtree(int first, int last, int success, int failure)
 		in.j[k] = success;
 	    else if (in.j[k] == j_failure)
 		in.j[k] = failure;
+    }
+}
+
+void
+Program::redirect_unfinished_insn_tree(int new_target)
+{
+    for (int i = 0; i < ninsn(); i++) {
+        Insn &insn = _insn[i];
+        for (int k = 0; k < 2; k++) {
+            //check for unlinked jumps
+            if (insn.j[k] == j_never + 1) {
+                insn.j[k] = new_target;
+            }
+        }
+    }
+}
+
+void
+Program::offset_insn_tree(int step_offset)
+{
+    for (int i = 0; i < ninsn(); i++) {
+        Insn &insn = _insn[i];
+        for (int k = 0; k < 2; k++) {
+            //only positive jumps point to other states
+            if (insn.j[k] > 0) {
+                insn.j[k] +=  step_offset;
+            }
+        }
     }
 }
 
