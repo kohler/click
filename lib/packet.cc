@@ -611,7 +611,6 @@ Packet::make(unsigned char *data, uint32_t length,
     }
     return p;
 }
-#endif
 
 /** @brief Copy the content and annotations of another packet (userlevel).
  * @param source packet
@@ -629,6 +628,7 @@ Packet::copy(Packet* p, int headroom)
     set_mac_header(p->mac_header() ? data() + p->mac_header_offset() : 0);
     set_network_header(p->network_header() ? data() + p->network_header_offset() : 0, p->network_header_length());
 }
+#endif
 
 //
 // UNIQUEIFICATION
