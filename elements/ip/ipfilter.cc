@@ -784,7 +784,7 @@ IPFilter::Primitive::compile(Classification::Wordwise::Program &p, Vector<int> &
 
   }
 
-  p.finish_subtree(tree);
+  p.finish_subtree(tree, Classification::c_and);
 }
 
 
@@ -925,7 +925,7 @@ IPFilter::Parser::parse_expr_iterative(int pos)
 	    new_state = s_factor0;
 	    break;
 	finish_term:
-	    _prog.finish_subtree(_tree);
+	    _prog.finish_subtree(_tree, Classification::c_and);
 	    break;
 
 	case s_factor0:
@@ -1208,39 +1208,10 @@ IPFilter::Parser::parse_test(int pos, bool negated)
 }
 
 void
-merge_programs(Classification::Wordwise::Program &p1, Classification::Wordwise::Program &p2)
-{
-    int step_offset = p1.ninsn();
-    int jump_target = step_offset;
-    if (p1.ninsn() == 0) {
-        // p1 program is empty.
-        // If it has a valid target, we always jump to it. p2 is ignored.
-        // If target is invalid, proceed as normal. Resulting tree == p2.
-        int target = -p1.output_everything();
-
-        //check if target is valid
-        if (target != Classification::j_never + 1) {
-            return;
-        }
-    }
-    if (p2.ninsn() == 0) {
-        jump_target = -p2.output_everything();
-    }
-
-    p1.redirect_unfinished_insn_tree(jump_target);
-    p2.offset_insn_tree(step_offset);
-
-    for (int i = 0; i < p2.ninsn(); i++) {
-       p1.add_raw_insn(p2.insn(i));
-    }
-}
-
-void
 IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 			const Vector<String> &conf, int noutputs,
 			const Element *context, ErrorHandler *errh)
 {
-    static const int offset_map[] = { offset_net + 8, offset_net + 3 };
     Vector<Classification::Wordwise::Program> progs;
 
     // [QUALS] [host|net|port|proto] [data]
@@ -1279,7 +1250,8 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 		cerrh.error("unknown slot ID %<%s%>", slotwd.c_str());
 	}
 
-	Classification::Wordwise::Program prog;
+        progs.push_back(Classification::Wordwise::Program());
+	Classification::Wordwise::Program& prog = progs.back();
 	Vector<int> tree = prog.init_subtree();
 	prog.start_subtree(tree);
 
@@ -1295,37 +1267,24 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 		cerrh.error("garbage after expression at %<%s%>", words[pos].c_str());
 	}
 
-	prog.finish_subtree(tree, Classification::c_and, -slot);
-	progs.push_back(prog);
+	prog.finish_subtree(tree, Classification::c_and,
+                            -slot, Classification::j_failure);
     }
 
-    int num_progs = progs.size();
-    if (num_progs == 1) {
+    static const int offset_map[] = { offset_net + 8, offset_net + 3 };
+    // merge programs
+    for (int merge_step = 1; merge_step < progs.size(); merge_step *= 2)
+        for (int i = 0; i + merge_step < progs.size(); i += 2 * merge_step) {
+            progs[i].add_or_program(progs[i + merge_step]);
+            progs[i].optimize(offset_map, offset_map + 2, Classification::offset_max);
+        }
+    // special-case single program
+    if (progs.empty())
+        progs.push_back(Classification::Wordwise::Program());
+    if (progs.size() == 1)
         progs[0].optimize(offset_map, offset_map + 2, Classification::offset_max);
-    } else {
-        //recursivly merge programs in pairs of two
-        int n = 1;
-        while (n * 2 <= num_progs) {
-            for (int i = 0; i < num_progs; i += n * 2) {
-                int a = i;
-                int b = i + n;
-                if (b < num_progs) {
-                    merge_programs(progs[a], progs[b]);
-                    progs[a].optimize(offset_map, offset_map + 2, Classification::offset_max);
-                } else {
-                    //odd prog at end, not merging yet
-                    continue;
-                }
-            }
-            n = n * 2;
-        }
-
-        //check if there is an odd program at the end not yet merged
-        if (n != num_progs) {
-            merge_programs(progs[0], progs[n]);
-            progs[0].optimize(offset_map, offset_map + 2, Classification::offset_max);
-        }
-    }
+    // any remaining failure branches drop the input
+    progs[0].set_failure(Classification::j_never);
 
     // Compress the program into _zprog.
     // It helps to do another bubblesort for things like ports.

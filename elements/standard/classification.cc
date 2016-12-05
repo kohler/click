@@ -203,12 +203,6 @@ Program::add_insn(Vector<int> &tree, int offset, uint32_t value, uint32_t mask)
 }
 
 void
-Program::add_raw_insn(Insn new_insn)
-{
-    _insn.push_back(new_insn);
-}
-
-void
 Program::redirect_subtree(int first, int last, int success, int failure)
 {
     for (int i = first; i < last; ++i) {
@@ -218,34 +212,6 @@ Program::redirect_subtree(int first, int last, int success, int failure)
 		in.j[k] = success;
 	    else if (in.j[k] == j_failure)
 		in.j[k] = failure;
-    }
-}
-
-void
-Program::redirect_unfinished_insn_tree(int new_target)
-{
-    for (int i = 0; i < ninsn(); i++) {
-        Insn &insn = _insn[i];
-        for (int k = 0; k < 2; k++) {
-            //check for unlinked jumps
-            if (insn.j[k] == j_never + 1) {
-                insn.j[k] = new_target;
-            }
-        }
-    }
-}
-
-void
-Program::offset_insn_tree(int step_offset)
-{
-    for (int i = 0; i < ninsn(); i++) {
-        Insn &insn = _insn[i];
-        for (int k = 0; k < 2; k++) {
-            //only positive jumps point to other states
-            if (insn.j[k] > 0) {
-                insn.j[k] +=  step_offset;
-            }
-        }
     }
 }
 
@@ -320,13 +286,13 @@ Program::negate_subtree(Vector<int> &tree, bool flip_short)
     for (int i = first; i >= 0 && i < _insn.size(); i++) {
 	Insn &e = _insn[i];
 	if (e.yes() == j_failure)
-	    e.yes() = j_success;
+	    e.set_yes(j_success);
 	else if (e.yes() == j_success)
-	    e.yes() = j_failure;
+	    e.set_yes(j_failure);
 	if (e.no() == j_failure)
-	    e.no() = j_success;
+	    e.set_no(j_success);
 	else if (e.no() == j_success)
-	    e.no() = j_failure;
+	    e.set_no(j_failure);
 	if (flip_short)
 	    e.short_output = !e.short_output;
     }
@@ -812,7 +778,7 @@ Program::combine_compatible_states()
 		uint32_t the_bit = in.value.u ^ no_in.value.u;
 		in.value.u &= ~the_bit;
 		in.mask.u &= ~the_bit;
-		in.no() = no_in.no();
+		in.set_no(no_in.no());
 		++i;
 		continue;
 	    }
@@ -823,7 +789,7 @@ Program::combine_compatible_states()
 	if (in.no() == yes_in.yes() && yes_in.flippable())
 	    yes_in.flip();
 	if (in.no() == yes_in.no() && yes_in.compatible(in, true)) {
-	    in.yes() = yes_in.yes();
+	    in.set_yes(yes_in.yes());
 	    if (!in.mask.u)	// but probably yes_in.mask.u is always != 0...
 		in.offset = yes_in.offset;
 	    in.value.u = (in.value.u & in.mask.u) | (yes_in.value.u & yes_in.mask.u);
@@ -949,6 +915,43 @@ Program::optimize(const int *offset_map_begin,
     _safe_length -= _align_offset;
 
     // click_chatter("%s", unparse().c_str());
+}
+
+void
+Program::set_failure(int failure)
+{
+    if (_output_everything == -j_failure) {
+        assert(failure <= 0);
+        _output_everything = -failure;
+    }
+    for (int i = 0; i < ninsn(); ++i) {
+        Insn& insn = _insn[i];
+        for (int k = 0; k < 2; ++k)
+            if (insn.j[k] == j_failure)
+                insn.j[k] = failure;
+    }
+}
+
+void
+Program::add_or_program(const Program& next_program)
+{
+    // Append `next_program` to this program as with c_or: failure
+    // jumps in this program will jump to `next_program`. Expectation:
+    // This program has been part-finished (contains no j_success jumps).
+
+    // If this program sends all output somewhere, ignore next_program.
+    if (_output_everything < 0 || _output_everything == -j_failure) {
+        // Update this program's unlinked jumps
+        int failure = -next_program.output_everything();
+        if (failure > 0)
+            failure = ninsn();
+        set_failure(failure);
+
+        // Add next program
+        int offset = ninsn();
+        for (int i = 0; i < next_program.ninsn(); ++i)
+            _insn.push_back(next_program._insn[i].offset_by(offset));
+    }
 }
 
 

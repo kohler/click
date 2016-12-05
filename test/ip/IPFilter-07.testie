@@ -8,6 +8,7 @@ click SCRIPT2 -qh c.program
 click SCRIPT3 -qh c.program
 click SCRIPT4 -qh c.program
 click SCRIPT5 -qh c.program
+click SCRIPT6 -qh c.program
 
 %file SCRIPT1
 Idle -> c::IPFilter(allow false) -> Idle;
@@ -24,6 +25,9 @@ Idle -> c::IPFilter(allow src 10.0.0.1) -> Idle;
 %file SCRIPT5
 Idle -> c::IPFilter() -> Idle;
 
+%file SCRIPT6
+Idle -> c::IPFilter(allow false, allow false, allow false, allow false, allow src 10.0.0.1) -> Idle;
+
 %expect stdout
 all->[{{2147483647|X}}]
 safe length 0
@@ -39,4 +43,7 @@ safe length 272
 alignment offset 0
 all->[{{2147483647|X}}]
 safe length 0
+alignment offset 0
+ 0 268/0a000001%ffffffff  yes->[0]  no->[X]
+safe length 272
 alignment offset 0
