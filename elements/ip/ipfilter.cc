@@ -1236,10 +1236,7 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 		slot = 0;
 		if (noutputs == 0)
 		    cerrh.error("%<allow%> is meaningless, element has zero outputs");
-	    } else if (slotwd == "deny") {
-		if (noutputs > 1)
-		    cerrh.warning("meaning of %<deny%> has changed (now it means %<drop%>)");
-	    } else if (slotwd == "drop")
+	    } else if (slotwd == "deny" || slotwd == "drop")
 		/* nada */;
 	    else if (IntArg().parse(slotwd, slot)) {
 		if (slot < 0 || slot >= noutputs) {
