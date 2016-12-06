@@ -10,7 +10,7 @@
  * Copyright (c) 2004-2011 Regents of the University of California
  * Copyright (c) 2008-2012 Meraki, Inc.
  * Copyright (c) 2010 Intel Corporation
- * Copyright (c) 2012 Eddie Kohler
+ * Copyright (c) 2012-2016 Eddie Kohler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -1196,6 +1196,8 @@ Lexer::yport(bool isoutput)
 {
     if (!expect('[', true))
         return;
+    int last_port = -1;
+    bool dash = false;
 
     while (1) {
         Lexeme t = lex();
@@ -1205,7 +1207,13 @@ Lexer::yport(bool isoutput)
                 lerror("syntax error: port number should be integer");
                 port = 0;
             }
-            _ps->push_back_port(isoutput, port);
+            if (dash) {
+                for (++last_port; last_port <= port; ++last_port)
+                    _ps->push_back_port(isoutput, last_port);
+            } else {
+                _ps->push_back_port(isoutput, port);
+                last_port = port;
+            }
         } else if (t.is(']')) {
             if (_ps->nports(isoutput) == 0)
                 _ps->push_back_port(isoutput, 0);
@@ -1220,7 +1228,11 @@ Lexer::yport(bool isoutput)
         t = lex();
         if (t.is(']'))
             break;
-        else if (!t.is(',')) {
+        else if (t.is('-') && !dash)
+            dash = true;
+        else if (t.is(','))
+            dash = false;
+        else {
             lerror("syntax error: expected %<,%>");
             unlex(t);
         }
