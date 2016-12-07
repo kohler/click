@@ -124,8 +124,11 @@ class HashTable<T> {
     /** @brief Value type.  value_type::key_type must exist. */
     typedef T value_type;
 
-    /** @brief Type of sizes (size(), bucket_count()). */
+    /** @brief Type of sizes (size()). */
     typedef typename rep_type::size_type size_type;
+
+    /** @brief Type of bucket sizes (bucket_count()). */
+    typedef typename rep_type::bucket_count_type bucket_count_type;
 
 
     /** @brief Construct an empty hash table. */
@@ -137,7 +140,7 @@ class HashTable<T> {
      *
      * In kernel modules HashTable has a maximum bucket count, so
      * HashTable(n).bucket_count() might be less than @a n. */
-    explicit HashTable(size_type n)
+    explicit HashTable(bucket_count_type n)
 	: _rep(n) {
     }
 
@@ -170,13 +173,13 @@ class HashTable<T> {
     }
 
     /** @brief Return the number of buckets. */
-    inline size_type bucket_count() const {
+    inline bucket_count_type bucket_count() const {
 	return _rep.bucket_count();
     }
 
     /** @brief Return the number of elements in hash bucket @a n.
      * @param n bucket number, >= 0 and < bucket_count() */
-    inline size_type bucket_size(size_type n) const {
+    inline size_type bucket_size(bucket_count_type n) const {
 	return _rep.bucket_size(n);
     }
 
@@ -287,7 +290,7 @@ class HashTable<T> {
      *
      * If @a n < bucket_count(), this function may make the hash table
      * slower. */
-    void rehash(size_type n) {
+    void rehash(bucket_count_type n) {
 	_rep.rehash(n);
     }
 
@@ -585,6 +588,9 @@ class HashTable {
     /** @brief Type of sizes. */
     typedef typename rep_type::size_type size_type;
 
+    /** @brief Type of bucket sizes. */
+    typedef typename rep_type::bucket_count_type bucket_count_type;
+
 
     /** @brief Construct an empty hash table with normal default value. */
     HashTable()
@@ -599,7 +605,7 @@ class HashTable {
     /** @brief Construct an empty hash table with at least @a n buckets.
      * @param d default value
      * @param n minimum number of buckets */
-    HashTable(const mapped_type &d, size_type n)
+    HashTable(const mapped_type &d, bucket_count_type n)
 	: _rep(n), _default_value(d) {
     }
 
@@ -632,13 +638,13 @@ class HashTable {
     }
 
     /** @brief Return the number of buckets in the hash table. */
-    inline size_type bucket_count() const {
+    inline bucket_count_type bucket_count() const {
 	return _rep.bucket_count();
     }
 
     /** @brief Return the number of elements in bucket @a n.
      * @param n bucket number, >= 0 and < bucket_count() */
-    inline size_type bucket_size(size_type n) const {
+    inline size_type bucket_size(bucket_count_type n) const {
 	return _rep.bucket_size(n);
     }
 
@@ -842,7 +848,7 @@ class HashTable {
      *
      * All existing iterators are invalidated.  If @a n < bucket_count(), this
      * function may make the hash table slower. */
-    void rehash(size_type nb) {
+    void rehash(bucket_count_type nb) {
 	_rep.rehash(nb);
     }
 
@@ -1014,7 +1020,7 @@ template <typename T>
 void HashTable<T>::clone_elements(const HashTable<T> &o)
   // requires that 'this' is empty and has the same number of buckets as 'o'
 {
-    size_type b = (size_type) -1;
+    bucket_count_type b = (bucket_count_type) -1;
     typename rep_type::iterator j = _rep.end();
     for (typename rep_type::const_iterator i = o._rep.begin(); i; ++i) {
 	if (b != i.bucket())
