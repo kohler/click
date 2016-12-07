@@ -300,7 +300,7 @@ DPDKDeviceArg::parse(const String &str, DPDKDevice* &result, const ArgContext &c
            else if (*s >= 'A' && *s <= 'F')
              digit = *s - 'A' + 10;
            else {
-             if ((*s == ':' && d < 2 || *s == '.' && d == 2) && (p == 1 || (d < 3 && p == 2) || (d == 0 && (p == 3 || p == 4))) && d < 3) {
+             if (((*s == ':' && d < 2) || (*s == '.' && d == 2)) && (p == 1 || (d < 3 && p == 2) || (d == 0 && (p == 3 || p == 4))) && d < 3) {
                p = 0;
                ++d;
                continue;
