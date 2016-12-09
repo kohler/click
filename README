@@ -149,7 +149,7 @@ must be enabled through the kernel cmdline.
     Refer to the DPDK documentation for more details about huge pages and
 binding devices or use the DPDK helper located in dpdk/tools/setup.sh.
 
-    Unlike most other DPDK application, you have to pass DPDK EAL arguments
+    Unlike most other DPDK applications, you have to pass DPDK EAL arguments
 between --dpdk and "--", then pass Click arguments. As the DPDK EAL will handle
 thread management instead of Click, Click's `-j` (or `--threads`) argument
 will be disabled when --dpdk is provided. You should give at least the

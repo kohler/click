@@ -842,14 +842,14 @@ particular purpose.\n");
 # if HAVE_DPDK
   if (dpdk_enabled) {
       rte_eal_mp_wait_lcore();
-	  goto click_cleanup;
+      goto click_cleanup;
   }
 # endif
 
   for (int i = 0; i < other_threads.size(); ++i)
-	  click_master->thread(i + 1)->wake();
+      click_master->thread(i + 1)->wake();
   for (int i = 0; i < other_threads.size(); ++i)
-	  (void) pthread_join(other_threads[i], 0);
+      (void) pthread_join(other_threads[i], 0);
 #endif
 
 click_cleanup:
