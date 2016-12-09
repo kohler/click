@@ -91,7 +91,14 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_KVARGS)         += -lrte_kvargs
 _LDLIBS-$(CONFIG_RTE_LIBRTE_MBUF)           += -lrte_mbuf
 _LDLIBS-$(CONFIG_RTE_LIBRTE_MBUF_OFFLOAD)   += -lrte_mbuf_offload
 _LDLIBS-$(CONFIG_RTE_LIBRTE_IP_FRAG)        += -lrte_ip_frag
+
+ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] &&  [ $(RTE_VER_YEAR) -ge 16 ] && [ $(RTE_VER_MONTH) -ge 11 ] && echo true),true)
+_LDLIBS-$(CONFIG_RTE_LIBRTE_ETHER)          += -lrte_ethdev
+_LDLIBS-$(CONFIG_RTE_LIBRTE_NET)            += -lrte_net
+else
 _LDLIBS-$(CONFIG_RTE_LIBRTE_ETHER)          += -lethdev
+endif
+
 #Following line is kept for backward compatibility with DPDK<=2.0.0
 _LDLIBS-$(CONFIG_RTE_LIBRTE_MALLOC)         += -lrte_malloc
 _LDLIBS-$(CONFIG_RTE_LIBRTE_CRYPTODEV)      += -lrte_cryptodev
