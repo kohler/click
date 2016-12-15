@@ -24,13 +24,14 @@ struct PacketDesc {
     const click_udp *udph;
     const click_tcp *tcph;
     const click_icmp *icmph;
-    int tailpad;		// # bytes extraneous data at end of packet
+    int tailpad;                // # bytes extraneous data at end of packet
 
     union {
-	uint32_t v;
-	uint32_t u32[2];
-	uint8_t u8[8];
-	const uint8_t *vptr[2];
+        uint32_t v;
+        uint32_t u32[2];
+        int32_t i32[2];
+        uint8_t u8[8];
+        const uint8_t *vptr[2];
     };
 
     StringAccum* sa;
@@ -40,23 +41,23 @@ struct PacketDesc {
     const Element *e;
 
     inline PacketDesc(const Element *e, Packet *p, StringAccum* sa, StringAccum* bad_sa, bool careful_trunc, bool force_extra_length);
-    void clear_values()			{ vptr[0] = vptr[1] = 0; }
+    void clear_values()                 { vptr[0] = vptr[1] = 0; }
 
     // These accessors reduce the Packet's length by network-level padding.
     // (The Packet's length may include extraneous data at the end; e.g. a
     // 54-byte IP packet with 6 padding bytes.  'tailpad' records the amount
     // of this data.  We do not modify the packet itself.)
     const unsigned char *end_data() const {
-	return p->end_data() - tailpad;
+        return p->end_data() - tailpad;
     }
     uint32_t length() const {
-	return p->length() - tailpad;
+        return p->length() - tailpad;
     }
     uint32_t network_length() const {
-	return p->network_length() - tailpad;
+        return p->network_length() - tailpad;
     }
     uint32_t transport_length() const {
-	return p->transport_length() - tailpad;
+        return p->transport_length() - tailpad;
     }
 };
 
@@ -69,10 +70,10 @@ struct PacketOdesc {
     bool have_tcp_hl : 1;
 
     union {
-	uint32_t v;
-	uint32_t u32[2];
-	uint8_t u8[8];
-	const uint8_t *vptr[2];
+        uint32_t v;
+        uint32_t u32[2];
+        uint8_t u8[8];
+        const uint8_t *vptr[2];
     };
 
     StringAccum sa;
@@ -83,7 +84,7 @@ struct PacketOdesc {
     uint32_t want_len;
 
     inline PacketOdesc(const Element *e, WritablePacket *p, int default_ip_p, const IPFlowID *default_ip_flowid, int minor_version);
-    void clear_values()			{ vptr[0] = vptr[1] = 0; }
+    void clear_values()                 { vptr[0] = vptr[1] = 0; }
     bool make_ip(int ip_p);
     bool make_transp();
   private:
@@ -106,7 +107,7 @@ enum {
 };
 
 struct FieldWriter {
-    const char *name;		// must come first
+    const char *name;           // must come first
     int type;
     int user_data;
     void (*prepare)(PacketDesc &, const FieldWriter *);
@@ -119,24 +120,24 @@ struct FieldWriter {
     static const FieldWriter *find(const String &name);
 
     static int binary_size(int type) {
-	if (type < 0)
-	    return -1;
-	else
-	    return type & 256;
+        if (type < 0)
+            return -1;
+        else
+            return type & 256;
     }
     inline int binary_size() const {
-	return binary_size(type);
+        return binary_size(type);
     }
 };
 
 struct FieldReader {
-    const char *name;		// must come first
+    const char *name;           // must come first
     int type;
     int user_data;
     int order;
     bool (*ina)(PacketOdesc &, const String &, const FieldReader *);
     const uint8_t *(*inb)(PacketOdesc &, const uint8_t *, const uint8_t *,
-			  const FieldReader *);
+                          const FieldReader *);
     void (*inject)(PacketOdesc &, const FieldReader *);
 
     static void add(const FieldReader *);
@@ -144,12 +145,12 @@ struct FieldReader {
     static const FieldReader *find(const String &name);
 
     inline int binary_size() const {
-	return FieldWriter::binary_size(type);
+        return FieldWriter::binary_size(type);
     }
 };
 
 struct FieldSynonym {
-    const char *name;		// must come first
+    const char *name;           // must come first
     const char *synonym;
     static void add(const FieldSynonym *);
     static void remove(const FieldSynonym *);
@@ -227,9 +228,9 @@ inline PacketOdesc::PacketOdesc(const Element *e_, WritablePacket* p_, int defau
 inline bool PacketOdesc::make_ip(int ip_p)
 {
     if ((!is_ip || !p->has_network_header()
-	 || p->network_length() < (int) sizeof(click_ip))
-	&& !hard_make_ip())
-	return false;
+         || p->network_length() < (int) sizeof(click_ip))
+        && !hard_make_ip())
+        return false;
     return !ip_p || !p->ip_header()->ip_p || p->ip_header()->ip_p == ip_p;
 }
 
@@ -238,11 +239,11 @@ inline bool PacketOdesc::make_transp()
     // assumes make_ip()
     assert(is_ip && p->network_header());
     if (!IP_FIRSTFRAG(p->ip_header()))
-	return false;
+        return false;
     if (p->transport_length() < 8)
-	return hard_make_transp();
+        return hard_make_transp();
     else
-	return true;
+        return true;
 }
 
 inline bool field_missing(const PacketDesc &d, int proto, int l)
