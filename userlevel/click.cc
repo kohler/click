@@ -626,6 +626,7 @@ main(int argc, char **argv)
 #if HAVE_DPDK
      case DPDK_OPT: {
       const char* arg;
+      dpdk_arg.push_back(argv[0]);
       do {
         arg = Clp_Shift(clp, 1);
         if (arg == NULL) break;
