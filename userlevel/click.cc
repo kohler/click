@@ -502,7 +502,7 @@ static bool set_affinity = false;
 
 #if (HAVE_DECL_PTHREAD_SETAFFINITY_NP)
 void do_set_affinity(pthread_t p, int cpu) {
-    if (!dpdk_enabled) {
+    if (!dpdk_enabled && set_affinity) {
         cpu_set_t set;
         CPU_ZERO(&set);
         CPU_SET(cpu, &set);
