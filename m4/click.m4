@@ -563,16 +563,16 @@ dnl
 AC_DEFUN([CLICK_PROG_GMAKE], [
     if test "${GMAKE-NO}" = NO; then
         AC_CACHE_CHECK(for GNU make, ac_cv_gnu_make,
-        [if /bin/sh -c 'make -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
+        [if /bin/sh -c 'make -f /dev/null -n --version | grep GNU' >/dev/null 2>/dev/null; then
             ac_cv_gnu_make='make'
-        elif /bin/sh -c 'gmake -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
+        elif /bin/sh -c 'gmake -f /dev/null -n --version | grep GNU' >/dev/null 2>/dev/null; then
             ac_cv_gnu_make='gmake'
         else
             ac_cv_gnu_make='not found'
         fi])
         test "$ac_cv_gnu_make" != 'not found' && GMAKE="$ac_cv_gnu_make"
     else
-        /bin/sh -c '$GMAKE -f /dev/null -n --version | grep GNU' >/dev/null 2>&1 || GMAKE=''
+        /bin/sh -c '$GMAKE -f /dev/null -n --version | grep GNU' >/dev/null 2>/dev/null || GMAKE='1'
     fi
 
     SUBMAKE=''
