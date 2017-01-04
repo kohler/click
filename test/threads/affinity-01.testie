@@ -1,0 +1,38 @@
+%info
+Test affinity parameters
+
+%require
+taskset -V
+click-buildtool provides umultithread
+test "$(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1)" -gt 1
+
+%script
+#Affinity to core 0
+click --affinity=0 -e 'Script(wait 200ms,stop)' >/dev/null 2>/dev/null &
+pid=$!
+sleep 0.1
+taskset -p $pid | rev | cut -d' ' -f1
+
+#Affinity to core 1
+click --affinity=1 -e 'Script(wait 200ms,stop)' >/dev/null 2>/dev/null &
+pid=$!
+sleep 0.1
+taskset -p $pid | rev | cut -d' ' -f1
+
+#No affinity
+click --no-affinity -e 'Script(wait 200ms,stop)' >/dev/null 2>/dev/null &
+pid=$!
+sleep 0.1
+[ "$(taskset -p $pid | rev | cut -d' ' -f1)" = "$(taskset -p 1 | rev | cut -d' ' -f1)" ] && echo "match"
+
+#Default is no affinity
+click -e 'Script(wait 200ms,stop)' >/dev/null 2>/dev/null &
+pid=$!
+sleep 0.1
+[ "$(taskset -p $pid | rev | cut -d' ' -f1)" = "$(taskset -p 1 | rev | cut -d' ' -f1)" ] && echo "match"
+
+%expect stdout
+1
+2
+match
+match
