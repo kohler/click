@@ -12960,9 +12960,9 @@ $as_echo_n "checking for GNU make... " >&6; }
 if ${ac_cv_gnu_make+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if /bin/sh -c 'make -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
+  if /bin/sh -c 'make -f /dev/null -n --version | grep GNU' >/dev/null 2>/dev/null; then
             ac_cv_gnu_make='make'
-        elif /bin/sh -c 'gmake -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
+        elif /bin/sh -c 'gmake -f /dev/null -n --version | grep GNU' >/dev/null 2>/dev/null; then
             ac_cv_gnu_make='gmake'
         else
             ac_cv_gnu_make='not found'
@@ -12972,7 +12972,7 @@ fi
 $as_echo "$ac_cv_gnu_make" >&6; }
         test "$ac_cv_gnu_make" != 'not found' && GMAKE="$ac_cv_gnu_make"
     else
-        /bin/sh -c '$GMAKE -f /dev/null -n --version | grep GNU' >/dev/null 2>&1 || GMAKE=''
+        /bin/sh -c '$GMAKE -f /dev/null -n --version | grep GNU' >/dev/null 2>/dev/null || GMAKE='1'
     fi
 
     SUBMAKE=''
