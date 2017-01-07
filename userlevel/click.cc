@@ -98,7 +98,8 @@ static const Clp_Option options[] = {
     { "simtime", 0, SIMTIME_OPT, Clp_ValDouble, Clp_Optional },
     { "simulation-time", 0, SIMTIME_OPT, Clp_ValDouble, Clp_Optional },
     { "threads", 'j', THREADS_OPT, Clp_ValInt, 0 },
-    { "affinity", 'a', THREADS_AFF_OPT, 0, 0 },
+    { "cpu", 0, THREADS_AFF_OPT, Clp_ValInt, Clp_Optional | Clp_Negate },
+    { "affinity", 'a', THREADS_AFF_OPT, Clp_ValInt, Clp_Optional | Clp_Negate },
     { "time", 't', TIME_OPT, 0, 0 },
     { "unix-socket", 'u', UNIX_SOCKET_OPT, Clp_ValString, 0 },
     { "version", 'v', VERSION_OPT, 0, 0 },
@@ -137,7 +138,7 @@ Options:\n\
 #endif
 #if HAVE_DECL_PTHREAD_SETAFFINITY_NP
     printf("\
-  -a, --affinity                Pin threads to CPUs (default no).\n");
+  -a, --affinity[=N]            Pin threads to CPUs starting at #N (default 0).\n");
 #endif
     printf("\
   -p, --port PORT               Listen for control connections on TCP port.\n\
@@ -498,14 +499,14 @@ cleanup(Clp_Parser *clp, int exit_value)
     return exit_value;
 }
 
-static bool set_affinity = false;
+static int click_affinity_offset = -1;
 
 #if (HAVE_DECL_PTHREAD_SETAFFINITY_NP)
 void do_set_affinity(pthread_t p, int cpu) {
-    if (!dpdk_enabled && set_affinity) {
+    if (!dpdk_enabled && click_affinity_offset >= 0) {
         cpu_set_t set;
         CPU_ZERO(&set);
-        CPU_SET(cpu, &set);
+        CPU_SET(cpu + click_affinity_offset, &set);
         pthread_setaffinity_np(p, sizeof(cpu_set_t), &set);
     }
 }
@@ -650,7 +651,12 @@ main(int argc, char **argv)
 
      case THREADS_AFF_OPT:
 #if HAVE_DECL_PTHREAD_SETAFFINITY_NP
-      set_affinity = true;
+      if (clp->negated)
+          click_affinity_offset = -1;
+      else if (clp->have_val)
+          click_affinity_offset = clp->val.i;
+      else
+          click_affinity_offset = 0;
 #else
       errh->warning("CPU affinity is not supported on this platform");
 #endif
@@ -698,7 +704,7 @@ particular purpose.\n");
  done:
 #if HAVE_DPDK
     if (dpdk_enabled) {
-      if (click_nthreads > 1 || set_affinity) {
+      if (click_nthreads > 1 || click_affinity_offset >= 0) {
           errh->warning("In DPDK mode, set the number of cores and affinity with DPDK EAL arguments");
       }
       int n_eal_args = rte_eal_init(dpdk_arg.size(), dpdk_arg.data());
