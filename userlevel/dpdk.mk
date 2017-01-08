@@ -73,14 +73,6 @@ ifeq ($(CONFIG_RTE_LIBRTE_VHOST_USER),n)
 _LDLIBS-$(CONFIG_RTE_LIBRTE_VHOST)          += -lfuse
 endif
 
-ifeq ($(CONFIG_RTE_BUILD_SHARED_LIB),n)
-_LDLIBS-$(CONFIG_RTE_LIBRTE_MLX4_PMD)       += -libverbs
-endif # ! CONFIG_RTE_BUILD_SHARED_LIBS
-
-ifeq ($(CONFIG_RTE_BUILD_SHARED_LIB),n)
-_LDLIBS-$(CONFIG_RTE_LIBRTE_MLX5_PMD)       += -libverbs
-endif # ! CONFIG_RTE_BUILD_SHARED_LIBS
-
 _LDLIBS-$(CONFIG_RTE_LIBRTE_BNX2X_PMD)      += -lz
 
 _LDLIBS-y += -Wl,--start-group
@@ -130,8 +122,8 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_FM10K_PMD)      += -lrte_pmd_fm10k
 _LDLIBS-$(CONFIG_RTE_LIBRTE_IXGBE_PMD)      += -lrte_pmd_ixgbe
 _LDLIBS-$(CONFIG_RTE_LIBRTE_E1000_PMD)      += -lrte_pmd_e1000
 _LDLIBS-$(CONFIG_RTE_LIBRTE_ENA_PMD)        += -lrte_pmd_ena
-_LDLIBS-$(CONFIG_RTE_LIBRTE_MLX4_PMD)       += -lrte_pmd_mlx4
-_LDLIBS-$(CONFIG_RTE_LIBRTE_MLX5_PMD)       += -lrte_pmd_mlx5
+_LDLIBS-$(CONFIG_RTE_LIBRTE_MLX4_PMD)       += -lrte_pmd_mlx4 -libverbs
+_LDLIBS-$(CONFIG_RTE_LIBRTE_MLX5_PMD)       += -lrte_pmd_mlx5 -libverbs
 _LDLIBS-$(CONFIG_RTE_LIBRTE_MPIPE_PMD)      += -lrte_pmd_mpipe -lgxio
 _LDLIBS-$(CONFIG_RTE_LIBRTE_QEDE_PMD)       += -lrte_pmd_qede -lz
 _LDLIBS-$(CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD) += -lrte_pmd_thunderx_nicvf -lm
