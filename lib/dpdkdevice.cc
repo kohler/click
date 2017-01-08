@@ -158,68 +158,69 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
 }
 
 /**
- * Set v[id] to true in vector v, expanding it if necessary. If id is 0, the first
- * 	available slot will be taken.
- * If v[id] is already true, this function return false. True if it is a new slot
- * 	or if the existing slot was false.
+ * Set v[id] to true in vector v, expanding it if necessary. If id is 0,
+ * the first available slot will be taken.
+ * If v[id] is already true, this function return false. True if it is a
+ *   new slot or if the existing slot was false.
  */
 bool set_slot(Vector<bool> &v, int &id) {
-	if (id <= 0) {
-		int i;
-		for (i = 0; i < v.size(); i ++) {
-			if (!v[i]) break;
-		}
-		id = i;
-		if (id >= v.size())
-			v.resize(id + 1, false);
-	}
-	if (id >= v.size()) {
-		v.resize(id + 1,false);
-	}
-	if (v[id])
-		return false;
-	v[id] = true;
-	return true;
+    if (id <= 0) {
+        int i;
+        for (i = 0; i < v.size(); i ++) {
+            if (!v[i]) break;
+        }
+        id = i;
+        if (id >= v.size())
+            v.resize(id + 1, false);
+    }
+    if (id >= v.size()) {
+        v.resize(id + 1,false);
+    }
+    if (v[id])
+        return false;
+    v[id] = true;
+    return true;
 }
 
 int DPDKDevice::add_queue(DPDKDevice::Dir dir,
                            int &queue_id, bool promisc, unsigned n_desc,
                            ErrorHandler *errh)
 {
-    if (_is_initialized)
+    if (_is_initialized) {
         return errh->error(
             "Trying to configure DPDK device after initialization");
+    }
 
-	if (dir == RX) {
-		if (info.rx_queues.size() > 0 && promisc != info.promisc)
-			return errh->error(
-				"Some elements disagree on whether or not device %u should"
-				" be in promiscuous mode", port_id);
-		info.promisc |= promisc;
-		if (n_desc > 0) {
-			if (n_desc != info.n_rx_descs && info.rx_queues.size() > 0)
-				return errh->error(
-						"Some elements disagree on the number of RX descriptors "
-						"for device %u", port_id);
-			info.n_rx_descs = n_desc;
-		}
-		if (!set_slot(info.rx_queues,queue_id))
-			return errh->error(
-						"Some elements are assigned to the same RX queue "
-						"for device %u", port_id);
-	} else {
-		if (n_desc > 0) {
-			if (n_desc != info.n_tx_descs && info.tx_queues.size() > 0)
-				return errh->error(
-						"Some elements disagree on the number of TX descriptors "
-						"for device %u", port_id);
-			info.n_tx_descs = n_desc;
-		}
-		if (!set_slot(info.tx_queues,queue_id))
-			return errh->error(
-						"Some elements are assigned to the same TX queue "
-						"for device %u", port_id);
-	}
+    if (dir == RX) {
+        if (info.rx_queues.size() > 0 && promisc != info.promisc)
+            return errh->error(
+                "Some elements disagree on whether or not device %u should"
+                " be in promiscuous mode", port_id);
+        info.promisc |= promisc;
+        if (n_desc > 0) {
+            if (n_desc != info.n_rx_descs && info.rx_queues.size() > 0)
+                return errh->error(
+                        "Some elements disagree on the number of RX descriptors "
+                        "for device %u", port_id);
+            info.n_rx_descs = n_desc;
+        }
+        if (!set_slot(info.rx_queues,queue_id))
+            return errh->error(
+                        "Some elements are assigned to the same RX queue "
+                        "for device %u", port_id);
+    } else {
+        if (n_desc > 0) {
+            if (n_desc != info.n_tx_descs && info.tx_queues.size() > 0)
+                return errh->error(
+                        "Some elements disagree on the number of TX descriptors "
+                        "for device %u", port_id);
+            info.n_tx_descs = n_desc;
+        }
+        if (!set_slot(info.tx_queues,queue_id))
+            return errh->error(
+                        "Some elements are assigned to the same TX queue "
+                        "for device %u", port_id);
+    }
 
     return 0;
 }
@@ -242,7 +243,7 @@ int DPDKDevice::initialize(ErrorHandler *errh)
         return 0;
 
     if (!dpdk_enabled)
-	    return errh->error( "Supply the --dpdk argument to use DPDK.");
+        return errh->error( "Supply the --dpdk argument to use DPDK.");
 
     click_chatter("Initializing DPDK");
 #if RTE_VERSION < (RTE_VERSION_NUM(2,1,0,0))
@@ -327,7 +328,7 @@ DPDKDeviceArg::parse(const String &str, DPDKDevice* &result, const ArgContext &c
     else {
         ctx.error("Cannot resolve PCI address to DPDK device");
         return false;
-	}
+    }
 
     return true;
 }
