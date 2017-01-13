@@ -73,8 +73,6 @@ ifeq ($(CONFIG_RTE_LIBRTE_VHOST_USER),n)
 _LDLIBS-$(CONFIG_RTE_LIBRTE_VHOST)          += -lfuse
 endif
 
-_LDLIBS-$(CONFIG_RTE_LIBRTE_BNX2X_PMD)      += -lz
-
 _LDLIBS-y += -Wl,--start-group
 
 ifneq ($(CONFIG_RTE_BUILD_COMBINE_LIBS),y)
@@ -113,7 +111,8 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD)     += -lrte_pmd_virtio
 else
 _LDLIBS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD)     += -lrte_pmd_virtio_uio
 endif
-_LDLIBS-$(CONFIG_RTE_LIBRTE_BNX2X_PMD)      += -lrte_pmd_bnx2x -lz
+_LDLIBS-$(CONFIG_RTE_LIBRTE_BNX2X_PMD)      += -lrte_pmd_bnx2x
+_NEED_LZ-$(CONFIG_RTE_LIBRTE_BNX2X_PMD)      = -lz
 _LDLIBS-$(CONFIG_RTE_LIBRTE_BNXT_PMD)       += -lrte_pmd_bnxt
 _LDLIBS-$(CONFIG_RTE_LIBRTE_CXGBE_PMD)      += -lrte_pmd_cxgbe
 _LDLIBS-$(CONFIG_RTE_LIBRTE_ENIC_PMD)       += -lrte_pmd_enic
@@ -125,7 +124,10 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_ENA_PMD)        += -lrte_pmd_ena
 _LDLIBS-$(CONFIG_RTE_LIBRTE_MLX4_PMD)       += -lrte_pmd_mlx4 -libverbs
 _LDLIBS-$(CONFIG_RTE_LIBRTE_MLX5_PMD)       += -lrte_pmd_mlx5 -libverbs
 _LDLIBS-$(CONFIG_RTE_LIBRTE_MPIPE_PMD)      += -lrte_pmd_mpipe -lgxio
-_LDLIBS-$(CONFIG_RTE_LIBRTE_QEDE_PMD)       += -lrte_pmd_qede -lz
+_LDLIBS-$(CONFIG_RTE_LIBRTE_QEDE_PMD)       += -lrte_pmd_qede
+ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && [ \( $(RTE_VER_YEAR) -gt 16 \) -o \( $(RTE_VER_MINOR) -ge 11 \) ] && echo true),true)
+_NEED_LZ-$(CONFIG_RTE_LIBRTE_QEDE_PMD)       = -lz
+endif
 _LDLIBS-$(CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD) += -lrte_pmd_thunderx_nicvf -lm
 _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_SZEDATA2)   += -lrte_pmd_szedata2
 _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_RING)       += -lrte_pmd_ring
@@ -152,6 +154,7 @@ endif # ! $(CONFIG_RTE_BUILD_SHARED_LIB)
 
 endif # ! CONFIG_RTE_BUILD_COMBINE_LIBS
 
+_LDLIBS-y += $(_NEED_LZ-y)
 _LDLIBS-y += $(EXECENV_LDLIBS)
 _LDLIBS-y += -Wl,--end-group
 _LDLIBS-y += -Wl,--no-whole-archive
