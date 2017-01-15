@@ -29,7 +29,7 @@ int DPDKInfo::configure(Vector<String> &conf, ErrorHandler *errh) {
     }
     instance = this;
     if (Args(conf, this, errh)
-        .read_mp("NB_MBUF", DPDKDevice::NB_MBUF)
+        .read_p("NB_MBUF", DPDKDevice::NB_MBUF)
         .read("MBUF_SIZE", DPDKDevice::MBUF_SIZE)
         .read("MBUF_CACHE_SIZE", DPDKDevice::MBUF_CACHE_SIZE)
         .read("RX_PTHRESH", DPDKDevice::RX_PTHRESH)
