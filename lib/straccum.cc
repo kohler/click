@@ -347,7 +347,7 @@ operator<<(StringAccum &sa, double d)
     @brief Append hexadecimal representation of @a ptr's value to @a sa.
     @return @a sa */
 StringAccum &
-operator<<(StringAccum &sa, void *ptr)
+operator<<(StringAccum &sa, const void *ptr)
 {
     if (char *x = sa.reserve(30)) {
 	int len = sprintf(x, "%p", ptr);
