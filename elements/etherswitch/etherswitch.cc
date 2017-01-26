@@ -49,7 +49,7 @@ EtherSwitch::broadcast(int source, Packet *p)
   int n = noutputs();
   assert((unsigned) source < (unsigned) n);
   int sent = 0;
-  for (int i = 0; i < n; i++)
+  for (int i = n - 1; i >=0 ; i--)
     if (i != source) {
       Packet *pp = (sent < n - 2 ? p->clone() : p);
       output(i).push(pp);
